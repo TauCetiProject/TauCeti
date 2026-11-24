@@ -447,10 +447,10 @@ theorem log_mul_of_norm_sub_one_lt {y w : A} (hy : ‖y - 1‖ < amiceRadius p 0
 
 end NormedCommRing
 
-/-- For `‖x‖ < r₀` and every integer `n`, `exp (n • x) = exp x ^ n`, in every complete normed field
-over `ℚ_[p]`. -/
-theorem exp_zsmul_of_norm_lt {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L] [CompleteSpace L]
-    (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) : exp (n • x) = exp x ^ n := by
+/-- For `‖x‖ < r₀` and every integer `n`, `exp (n • x) = exp x ^ n`, in every complete normed
+division ring over `ℚ_[p]`. -/
+theorem exp_zsmul_of_norm_lt {L : Type*} [NormedDivisionRing L] [NormedAlgebra ℚ_[p] L]
+    [CompleteSpace L] (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) : exp (n • x) = exp x ^ n := by
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg
   · simpa using exp_nsmul_of_norm_lt n hx
