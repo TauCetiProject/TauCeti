@@ -134,7 +134,7 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le {θ : ℝ} (hθ : 0 < θ) {q : 
     eLpNorm (fun t ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, φ s) q multHaar ≤
       ENNReal.ofReal θ⁻¹ * eLpNorm (fun s ↦ ENNReal.ofReal (s ^ (1 - θ)) * φ s) q multHaar := by
   have hφ_mh : AEMeasurable φ multHaar :=
-    multHaar_def ▸ hφ.mono_ac (withDensity_absolutelyContinuous _ _)
+    hφ.mono_ac multHaar_absolutelyContinuous_volume_Ioi
   simp_rw [setLIntegral_eq_setLIntegral_multHaar measurableSet_Ioc Ioc_subset_Ioi_self]
   refine (eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le hθ hq
     (measurable_id.ennreal_ofReal.aemeasurable.mul hφ_mh)).trans_eq ?_
@@ -179,7 +179,7 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ�
     eLpNorm (fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, φ s) q multHaar ≤
       ENNReal.ofReal θ⁻¹ * eLpNorm (fun s ↦ ENNReal.ofReal (s ^ (1 + θ)) * φ s) q multHaar := by
   have hφ_mh : AEMeasurable φ multHaar :=
-    multHaar_def ▸ hφ.mono_ac (withDensity_absolutelyContinuous _ _)
+    hφ.mono_ac multHaar_absolutelyContinuous_volume_Ioi
   have hlhs : (fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, φ s) =ᵐ[multHaar]
       fun t ↦ ENNReal.ofReal (t ^ θ) * ∫⁻ s in Ici t, ENNReal.ofReal s * φ s ∂multHaar :=
     ae_pos_multHaar.mono fun t ht ↦ by
