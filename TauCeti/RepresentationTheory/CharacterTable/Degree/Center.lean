@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Degree
+public import TauCeti.Data.Nat.Factorization.PowDvd
+public import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 public import TauCeti.RepresentationTheory.Induction.Restriction
 public import TauCeti.RepresentationTheory.Tensor.External
 
@@ -51,18 +52,6 @@ section Helpers
 
 variable {k : Type*} {H : Type u} {V : Type v} [Field k] [Group H] [AddCommGroup V] [Module k V]
 
-/-- The scalars by which a subgroup acts on an irreducible representation are multiplicative:
-`λ(z⁻¹) λ(z) = 1`. -/
-private theorem inv_mul_self_of_forall_apply_eq_smul (ρ : Representation k H V)
-    [ρ.IsIrreducible] (Z : Subgroup H) (lam : Z → k) (hlam : ∀ (z : Z) v, ρ z v = lam z • v)
-    (z : Z) : lam z⁻¹ * lam z = 1 := by
-  have := (inferInstance : ρ.IsIrreducible).nontrivial
-  obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
-  have h1 : ρ ((z : H) * (z⁻¹ : Z)) v₀ = v₀ := by simp
-  rw [map_mul, mul_apply_eq_comp, hlam z⁻¹, map_smul, hlam, smul_smul] at h1
-  have h2 : (lam z⁻¹ * lam z - 1) • v₀ = 0 := by rw [sub_smul, h1, one_smul, sub_self]
-  exact sub_eq_zero.mp ((smul_eq_zero.mp h2).resolve_right hv₀)
-
 /-- The embedding `(z, a) ↦ (z, ι(z)⁻¹ a)` of `Z × A` into `H × G`, a homomorphism because `ι`
 takes central values. -/
 private def antidiagonalHom {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* G)
@@ -73,7 +62,6 @@ private def antidiagonalHom {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* 
     have hcomm (x : G) : (ι q.1)⁻¹ * x = x * (ι q.1)⁻¹ :=
       (Subgroup.mem_center_iff.mp (inv_mem (hι q.1)) x).symm
     refine Prod.ext (by simp) ?_
-    change (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2) = (ι p.1)⁻¹ * p.2 * ((ι q.1)⁻¹ * q.2)
     calc (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2)
         = (ι q.1)⁻¹ * ((ι p.1)⁻¹ * p.2) * q.2 := by simp only [map_mul, mul_inv_rev, mul_assoc]
       _ = (ι p.1)⁻¹ * p.2 * (ι q.1)⁻¹ * q.2 := by rw [hcomm]
@@ -93,22 +81,6 @@ section Center
 
 variable {k : Type*} {H : Type u} {V : Type v} [Field k] [IsAlgClosed k] [CharZero k] [Group H]
   [AddCommGroup V] [Module k V]
-
-/-- If `d^(m+1)` divides `c * i^(m+1)` for every `m`, with `c ≠ 0`, then `d` divides `i`: for each
-prime the exponent in `d` exceeds that in `i` by at most `v_p(c) / (m + 1)`. -/
-private theorem dvd_of_forall_pow_dvd_mul_pow {d c i : ℕ} (hd : d ≠ 0) (hc : c ≠ 0)
-    (h : ∀ m : ℕ, d ^ (m + 1) ∣ c * i ^ (m + 1)) : d ∣ i := by
-  rcases eq_or_ne i 0 with rfl | hi
-  · exact dvd_zero d
-  rw [← Nat.factorization_le_iff_dvd hd hi]
-  intro p
-  have hm := (Nat.factorization_le_iff_dvd (pow_ne_zero _ hd)
-    (mul_ne_zero hc (pow_ne_zero _ hi))).mpr (h (c.factorization p)) p
-  rw [Nat.factorization_mul hc (pow_ne_zero _ hi), Nat.factorization_pow,
-    Nat.factorization_pow] at hm
-  simp only [Finsupp.smul_apply, smul_eq_mul, Finsupp.add_apply] at hm
-  by_contra hlt
-  nlinarith [not_le.mp hlt]
 
 /-- The inductive step of the tensor-power argument, generalised over the group `G` carrying the
 running tensor power `σ`, the central copy `ι` of `Z` and the central subgroup `A` acting
@@ -132,7 +104,10 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
       mul_dvd_mul_right (finrank_dvd_card (σ.ofQuotient A)) (Nat.card A)
   | succ m ih =>
     intro G _ W _ _ σ hσ ι hι hισ A hA hAσ
-    have hinv := inv_mul_self_of_forall_apply_eq_smul ρ Z lam hlam
+    have := (inferInstance : ρ.IsIrreducible).nontrivial
+    have hinv (z : Z) : lam z⁻¹ * lam z = 1 := by
+      rw [← map_mul_of_forall_apply_eq_smul (ρ.comp Z.subtype) hlam, inv_mul_cancel,
+        map_one_of_forall_apply_eq_smul (ρ.comp Z.subtype) hlam]
     let φ := antidiagonalHom Z ι hι A
     have hφ : Function.Injective φ := antidiagonalHom_injective Z ι hι A
     have hcard : Nat.card φ.range = Nat.card Z * Nat.card A := by
@@ -180,12 +155,12 @@ theorem finrank_dvd_index_of_le_center [Finite H] (ρ : Representation k H V) [�
   -- Schur's lemma: a central element acts by a scalar
   have hscal (z : Z) : ∃ c : k, ∀ v, ρ z v = c • v :=
     IsIrreducible.exists_forall_apply_eq_smul (ρ z) fun g v => by
-      rw [← mul_apply_eq_comp, ← map_mul, ← mul_apply_eq_comp, ← map_mul,
-        (Subgroup.mem_center_iff.mp (hZ z.property) g).symm]
+      have hzg : Commute (z : H) g := (Subgroup.mem_center_iff.mp (hZ z.property) g).symm
+      rw [← mul_apply_eq_comp, (hzg.map ρ).eq, mul_apply_eq_comp]
   choose lam hlam using hscal
   have hd : finrank k V ≠ 0 := (IsIrreducible.finrank_pos (inferInstance : ρ.IsIrreducible)).ne'
   have hZc : Nat.card Z ≠ 0 := Nat.card_pos.ne'
-  refine dvd_of_forall_pow_dvd_mul_pow hd hZc fun m => ?_
+  refine Nat.dvd_of_forall_pow_dvd_mul_pow hd hZc fun m => ?_
   have key := finrank_mul_pow_dvd_aux ρ Z hZ lam hlam m ρ inferInstance Z.subtype
     (fun z => hZ z.property) hlam ⊥ bot_le (by simp)
   rw [Subgroup.card_bot, one_mul, ← Z.card_mul_index] at key
