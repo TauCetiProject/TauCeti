@@ -12,6 +12,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
 
 /-!
 # The parameter zeros of Tricomi's function for a positive argument
@@ -79,11 +80,8 @@ private theorem isBigO_momentIntegrand (x : ℝ) (k : ℕ) (a : ℝ) :
     ((isLittleO_log_rpow_atTop one_pos).isBigO.congr_right (fun t => rpow_one t)).sub
       (isLittleO_const_id_atTop _).isBigO
   have hpow : (fun t : ℝ => t ^ ((k : ℝ) + (a - 1)) * exp (-t)) =O[atTop]
-      fun t => exp (-(1 / 2) * t) := by
-    refine ((isLittleO_rpow_exp_pos_mul_atTop _ (by norm_num : (0 : ℝ) < 1 / 2)).isBigO.mul
-      (isBigO_refl (fun t : ℝ => exp (-t)) atTop)).congr_right fun t => ?_
-    rw [← exp_add]
-    ring_nf
+      fun t => exp (-(1 / 2) * t) :=
+    (Gamma_integrand_isLittleO _).isBigO.congr_left fun t => mul_comm _ _
   refine ((hlog.pow k).mul (isBigO_refl (fun t : ℝ => t ^ (a - 1) * exp (-t)) atTop)).trans ?_
   refine (hpow.congr' ?_ EventuallyEq.rfl)
   filter_upwards [eventually_gt_atTop 0] with t ht
@@ -169,6 +167,19 @@ private theorem momentIntegrand_nonneg {x t : ℝ} (hx : 0 < x) (ht : x ≤ t) (
   unfold momentIntegrand
   have : 0 ≤ log t - log x := by linarith
   positivity
+
+/-- For `x ≥ 0` the zeroth moment is the upper incomplete Gamma function `Γ(a, x)`. -/
+private theorem re_upperIncompleteGamma_ofReal {x : ℝ} (hx : 0 ≤ x) (a : ℝ) :
+    (Complex.upperIncompleteGamma a x).re = upperMoment x 0 a := by
+  have h : ∫ t in Ioi x, (t : ℂ) ^ ((a : ℂ) - 1) * Complex.exp (-(t : ℂ)) =
+      ((upperMoment x 0 a : ℝ) : ℂ) := by
+    rw [upperMoment, ← integral_complex_ofReal]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+    rw [momentIntegrand, pow_zero, one_mul, Complex.ofReal_mul,
+      Complex.ofReal_cpow (hx.trans (le_of_lt ht)), Complex.ofReal_exp]
+    push_cast
+    ring
+  rw [Complex.upperIncompleteGamma_ofReal, h, Complex.ofReal_re]
 
 /-- The moments are nonnegative. -/
 private theorem upperMoment_nonneg {x : ℝ} (hx : 0 < x) (k : ℕ) (a : ℝ) : 0 ≤ upperMoment x k a :=
@@ -274,28 +285,20 @@ private theorem hasDerivAt_regularizedGamma_ofReal (a : ℝ) {t : ℝ} (ht : 0 <
   rw [hG, hpow]
   linear_combination -(a : ℂ) * (t : ℂ) ^ ((a : ℂ) - 1) * hrec
 
-/-- `P(·, x)` is continuous on `[0, ∞)` for a positive parameter, and on `(0, ∞)` for any. -/
-private theorem continuousAt_regularizedGamma_ofReal (a : ℝ) {t : ℝ} (h : 0 < a ∨ t ≠ 0) :
-    ContinuousAt (fun s : ℝ => Complex.regularizedGamma a s) t := by
-  simp only [Complex.regularizedGamma_def]
-  exact (Complex.continuousAt_ofReal_cpow_const t a (by simpa using h)).mul
-    ((Complex.differentiable_tricomiIncompleteGamma a).continuous.comp
-      Complex.continuous_ofReal).continuousAt
-
 open Complex in
 /-- For `a > 0` and `x > 0`, the complex `P(a, x)` is Tau Ceti's real regularized lower
 incomplete Gamma function. -/
 private theorem regularizedGamma_ofReal_of_pos {a t : ℝ} (ha : 0 < a) (ht : 0 < t) :
     Complex.regularizedGamma a t = (TauCeti.regularizedGamma a t : ℂ) := by
-  have hint := (intervalIntegrable_rpow_mul_exp_neg (p := a - 1) (by linarith) 0 t).mul_const
-    (Real.Gamma a)⁻¹
-  have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.le
-    (fun s _ => (continuousAt_regularizedGamma_ofReal a (Or.inl ha)).continuousWithinAt)
-    (fun s hs => hasDerivAt_regularizedGamma_ofReal a hs.1) ⟨hint.1.ofReal, hint.2.ofReal⟩
-  rw [intervalIntegral.integral_ofReal, intervalIntegral.integral_mul_const,
-    ← lowerIncompleteGamma_eq_integral ht.le, ofReal_zero, Complex.regularizedGamma_def _ 0,
-    zero_cpow (ofReal_ne_zero.2 ha.ne'), zero_mul, sub_zero] at hftc
-  rw [← hftc, regularizedGamma_eq_div, div_eq_mul_inv]
+  have ha' : 0 < (a : ℂ).re := by rwa [ofReal_re]
+  -- DLMF 8.2.1 at `r = 1` identifies the complex `γ(a, t)` with the real one
+  have h := intervalIntegral_cpow_mul_exp_neg_mul ha' one_ne_zero ht.le
+  simp only [one_mul, one_cpow] at h
+  have hlow : Complex.lowerIncompleteGamma a t = (TauCeti.lowerIncompleteGamma a t : ℂ) := by
+    rw [← h, ofReal_lowerIncompleteGamma_eq_partialGamma ht.le, Complex.partialGamma]
+    exact intervalIntegral.integral_congr fun s _ => by push_cast; ring
+  rw [regularizedGamma_eq_div, ofReal_div, ← hlow, Complex.lowerIncompleteGamma_def, ← Gamma_ofReal,
+    mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero_of_re_pos ha')]
 
 open Complex in
 /-- `P(a, x) → 1` as `x → ∞`, for every real `a`. For `a > 0` this is the limit of the real
@@ -338,13 +341,14 @@ open Complex in
 hence `γ*(a, x) = x^{-a} (1 - Γ(a, x) / Γ(a))`. -/
 private theorem tricomi_ofReal_eq (a : ℝ) {x : ℝ} (hx : 0 < x) :
     tricomiIncompleteGamma a x =
-      ((x ^ (-a) * (1 - upperMoment x 0 a * (Real.Gamma a)⁻¹) : ℝ) : ℂ) := by
+      ((x ^ (-a) * (1 - (Complex.upperIncompleteGamma a x).re * (Real.Gamma a)⁻¹) : ℝ) : ℂ) := by
+  rw [re_upperIncompleteGamma_ofReal hx.le]
   have h0 : IntegrableOn (fun t => momentIntegrand x 0 a t * (Real.Gamma a)⁻¹) (Ioi x) :=
     (integrableOn_momentIntegrand hx 0 a).mul_const _
   have hint : IntegrableOn (fun t => t ^ (a - 1) * Real.exp (-t) * (Real.Gamma a)⁻¹) (Ioi x) :=
     h0.congr_fun (fun t _ => by simp [momentIntegrand]) measurableSet_Ioi
   have hftc := integral_Ioi_of_hasDerivAt_of_tendsto
-    (continuousAt_regularizedGamma_ofReal a (Or.inr hx.ne')).continuousWithinAt
+    (hasDerivAt_regularizedGamma_ofReal a hx).continuousAt.continuousWithinAt
     (fun t ht => hasDerivAt_regularizedGamma_ofReal a (hx.trans ht)) hint.ofReal
     (tendsto_regularizedGamma_ofReal_atTop a)
   rw [integral_complex_ofReal, integral_mul_const] at hftc
@@ -359,7 +363,7 @@ private theorem tricomi_ofReal_eq (a : ℝ) {x : ℝ} (hx : 0 < x) :
 
 /-- The log-gap `D(a, x) = log Γ(a) - log Γ(a, x)`. On the band it has the sign of `γ*(a, x)`. -/
 private def logGap (x a : ℝ) : ℝ :=
-  Real.log (Real.Gamma a) - Real.log (upperMoment x 0 a)
+  Real.log (Real.Gamma a) - Real.log (Complex.upperIncompleteGamma a x).re
 
 /-- The parameter derivative `ψ(a) - V₁/V₀ - log x` of the log-gap. -/
 private def logGapDeriv (x a : ℝ) : ℝ :=
@@ -370,25 +374,23 @@ private def logGapDeriv2 (x a : ℝ) : ℝ :=
   deriv Real.digamma a -
     (upperMoment x 2 a * upperMoment x 0 a - upperMoment x 1 a ^ 2) / upperMoment x 0 a ^ 2
 
-/-- The band `(-2n, 1 - 2n)` contains no pole of `Γ`. -/
-private theorem ne_neg_natCast_of_mem_Ioo {n : ℕ} {a : ℝ} (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n))
-    (m : ℕ) : a ≠ -(m : ℝ) := by
-  rintro rfl
-  have h1 : (m : ℝ) < 2 * n := by linarith [ha.1]
-  have h2 : 2 * (n : ℝ) < m + 1 := by linarith [ha.2]
-  norm_cast at h1 h2
-  omega
+/-- The band `(-2n, 1 - 2n)` contains no pole of `Γ`: its shift by `-1` lies between the
+consecutive poles `-(2n + 1)` and `-2n`. -/
+private theorem ne_neg_natCast_of_mem_band {n : ℕ} {a : ℝ}
+    (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) (m : ℕ) : a ≠ -(m : ℝ) := fun h =>
+  Real.ne_neg_natCast_of_mem_Ioo (k := 2 * n) (a := a - 1)
+    ⟨by push_cast; linarith [ha.1], by push_cast; linarith [ha.2]⟩ (m + 1) (by push_cast; linarith)
 
 /-- The parameter derivative of the log-gap. -/
 private theorem hasDerivAt_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
     (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
     HasDerivAt (logGap x) (logGapDeriv x a) a := by
   have hV := upperMoment_zero_pos hx a
-  have h := (Real.hasDerivAt_log_Gamma (ne_neg_natCast_of_mem_Ioo ha)).sub
+  have h := (Real.hasDerivAt_log_Gamma (ne_neg_natCast_of_mem_band ha)).sub
     ((hasDerivAt_upperMoment hx 0 a).log hV.ne')
   convert h using 1
   · funext b
-    simp only [logGap, Pi.sub_apply, Function.comp_apply]
+    simp only [logGap, re_upperIncompleteGamma_ofReal hx.le, Pi.sub_apply, Function.comp_apply]
   · simp only [logGapDeriv, zero_add]
     field_simp
     ring
@@ -398,7 +400,7 @@ private theorem hasDerivAt_logGapDeriv {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ
     (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
     HasDerivAt (logGapDeriv x) (logGapDeriv2 x a) a := by
   have hV := upperMoment_zero_pos hx a
-  have hd := (Real.differentiableAt_digamma (ne_neg_natCast_of_mem_Ioo ha)).hasDerivAt
+  have hd := (Real.differentiableAt_digamma (ne_neg_natCast_of_mem_band ha)).hasDerivAt
   have h := (hd.sub ((hasDerivAt_upperMoment hx 1 a).div (hasDerivAt_upperMoment hx 0 a)
     hV.ne')).sub_const (Real.log x)
   convert h using 1
@@ -414,7 +416,7 @@ private theorem logGapDeriv2_pos {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n)
     (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) : 0 < logGapDeriv2 x a := by
   have hV := upperMoment_zero_pos hx a
   -- `ψ'(a) = ψ'(a + 2n) + ∑_{k < 2n} 1 / (a + k)²` with `ψ'(a + 2n) ≥ 0`
-  have hrec := Real.deriv_digamma_apply_add_nat (ne_neg_natCast_of_mem_Ioo ha) (2 * n)
+  have hrec := Real.deriv_digamma_apply_add_nat (ne_neg_natCast_of_mem_band ha) (2 * n)
   have hψ := Real.deriv_digamma_nonneg (x := a + (2 * n : ℕ)) fun m h => by
     push_cast at h
     linarith [ha.1, (m.cast_nonneg : (0 : ℝ) ≤ m)]
@@ -462,24 +464,21 @@ private theorem logGapDeriv2_pos {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n)
 /-- The log-gap is strictly convex in `a` on the band. -/
 private theorem strictConvexOn_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n) :
     StrictConvexOn ℝ (Ioo (-2 * (n : ℝ)) (1 - 2 * n)) (logGap x) := by
-  have hmono : StrictMonoOn (logGapDeriv x) (Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :=
-    strictMonoOn_of_deriv_pos (convex_Ioo _ _)
-      (fun a ha => (hasDerivAt_logGapDeriv hx ha).continuousAt.continuousWithinAt)
-      (fun a ha => by
-        rw [interior_Ioo] at ha
-        rw [(hasDerivAt_logGapDeriv hx ha).deriv]
-        exact logGapDeriv2_pos hx hn ha)
-  refine StrictMonoOn.strictConvexOn_of_deriv (convex_Ioo _ _)
-    (fun a ha => (hasDerivAt_logGap hx ha).continuousAt.continuousWithinAt) ?_
-  rw [interior_Ioo]
-  exact hmono.congr fun a ha => (hasDerivAt_logGap hx ha).deriv.symm
+  refine strictConvexOn_of_deriv2_pos' (convex_Ioo _ _)
+    (fun a ha => (hasDerivAt_logGap hx ha).continuousAt.continuousWithinAt) fun a ha => ?_
+  have hd : deriv (logGap x) =ᶠ[𝓝 a] logGapDeriv x := by
+    filter_upwards [isOpen_Ioo.mem_nhds ha] with b hb
+    exact (hasDerivAt_logGap hx hb).deriv
+  rw [Function.iterate_succ_apply, Function.iterate_one, hd.deriv_eq,
+    (hasDerivAt_logGapDeriv hx ha).deriv]
+  exact logGapDeriv2_pos hx hn ha
 
 open Complex in
 /-- On the band, `γ*(a, x) = x^{-a} (1 - e^{-D(a, x)})` for `x > 0`. -/
 private theorem tricomi_eq_ofReal_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
     (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
     tricomiIncompleteGamma a x = ((x ^ (-a) * (1 - Real.exp (-logGap x a)) : ℝ) : ℂ) := by
-  rw [tricomi_ofReal_eq a hx, logGap, neg_sub, Real.exp_sub,
+  rw [tricomi_ofReal_eq a hx, logGap, re_upperIncompleteGamma_ofReal hx.le, neg_sub, Real.exp_sub,
     Real.exp_log (upperMoment_zero_pos hx a),
     Real.exp_log (Real.Gamma_pos_of_mem_Ioo ⟨ha.1, by linarith [ha.2]⟩), div_eq_mul_inv]
 
@@ -595,7 +594,8 @@ private theorem upperMoment_zero_lt {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : 
 /-- The log-gap is strictly increasing in `x`. -/
 private theorem logGap_lt_logGap {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
     logGap x a < logGap y a := by
-  rw [logGap, logGap]
+  rw [logGap, logGap, re_upperIncompleteGamma_ofReal hx.le,
+    re_upperIncompleteGamma_ofReal (hx.trans hxy).le]
   have := Real.log_lt_log (upperMoment_zero_pos (hx.trans hxy) a) (upperMoment_zero_lt hx hxy a)
   linarith
 
@@ -728,7 +728,7 @@ private theorem exists_logGap_nonneg {n : ℕ} (hn : 1 ≤ n) :
     exact Real.exp_le_exp.2 (by linarith [le_max_right 1 (Real.log (2 * n).factorial)])
   have hπ : 1 / ((2 * n).factorial : ℝ) ≤ π / ((2 * n).factorial : ℝ) :=
     div_le_div_of_nonneg_right (by linarith [Real.two_le_pi]) hfac.le
-  rw [logGap, sub_nonneg]
+  rw [logGap, re_upperIncompleteGamma_ofReal (by linarith), sub_nonneg]
   exact Real.log_le_log (upperMoment_zero_pos (by linarith) a)
     (hV.trans (hexp.trans (hπ.trans (div_factorial_le_Gamma hn ha))))
 
@@ -885,28 +885,18 @@ private theorem param_zeros_sSup {n : ℕ} (hn : 1 ≤ n) :
       deriv (deriv fun b : ℝ => (tricomiIncompleteGamma b (sSup (negSet n) : ℝ)).re) a₀ ≠ 0 := by
   have hx := sSup_negSet_pos hn
   obtain ⟨a₀, ha₀, hD₀⟩ := exists_logGap_sSup_eq_zero hn
-  -- `a₀` minimizes the nonnegative log-gap, so `∂ₐD` vanishes there
-  have hmin : IsLocalMin (logGap (sSup (negSet n))) a₀ := by
-    filter_upwards [isOpen_Ioo.mem_nhds ha₀] with b hb
-    rw [hD₀]
-    exact logGap_sSup_nonneg hn hb
-  have hd₀ := hmin.hasDerivAt_eq_zero (hasDerivAt_logGap hx ha₀)
+  -- every zero of the nonnegative log-gap minimizes it on the band
+  have hmin : ∀ b, logGap (sSup (negSet n)) b = 0 →
+      IsMinOn (logGap (sSup (negSet n))) (Ioo (-2 * (n : ℝ)) (1 - 2 * n)) b :=
+    fun b hb => isMinOn_iff.2 fun c hc => hb ▸ logGap_sSup_nonneg hn hc
+  have hd₀ := ((hmin a₀ hD₀).isLocalMin (isOpen_Ioo.mem_nhds ha₀)).hasDerivAt_eq_zero
+    (hasDerivAt_logGap hx ha₀)
   refine ⟨a₀, ?_, ?_, ?_⟩
   · ext b
     simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
     refine ⟨fun ⟨hb, hzero⟩ => ?_, fun h => h ▸ ⟨ha₀, (tricomi_eq_zero_iff hx ha₀).2 hD₀⟩⟩
-    have hDb := (tricomi_eq_zero_iff hx hb).1 hzero
-    -- a second zero would make the log-gap negative between the two
-    by_contra hne
-    rcases lt_or_gt_of_ne hne with h | h
-    · have hc : (b + a₀) / 2 ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n) :=
-        ⟨by linarith [hb.1], by linarith [ha₀.2]⟩
-      exact (logGap_sSup_nonneg hn hc).not_gt (logGap_neg_of_lt_of_lt hx hn hb ha₀
-        (by linarith) (by linarith) hDb.le hD₀.le)
-    · have hc : (a₀ + b) / 2 ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n) :=
-        ⟨by linarith [ha₀.1], by linarith [hb.2]⟩
-      exact (logGap_sSup_nonneg hn hc).not_gt (logGap_neg_of_lt_of_lt hx hn ha₀ hb
-        (by linarith) (by linarith) hD₀.le hDb.le)
+    exact (strictConvexOn_logGap hx hn).eq_of_isMinOn
+      (hmin b ((tricomi_eq_zero_iff hx hb).1 hzero)) (hmin a₀ hD₀) hb ha₀
   · rw [deriv_re_tricomi hx ha₀, hD₀, hd₀]
     simp
   · rw [deriv_deriv_re_tricomi hx ha₀ hD₀ hd₀]
