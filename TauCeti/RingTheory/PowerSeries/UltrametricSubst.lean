@@ -25,7 +25,7 @@ Let `f` and `g` be power series over an ultrametric normed field `K` with `f.sub
 `f` is a left inverse of `g` under formal composition. If their coefficients satisfy
 `‖cₙ‖ R ^ (n - 1) ≤ 1` for every `n`, then in every ultrametric normed `K`-algebra `A`, at every
 `x` with `‖x‖ < R` at which the two series converge, `f (g x) = x`. The algebra `A` need not be
-commutative or a field, and its norm need only be submultiplicative, with `‖c • a‖ ≤ ‖c‖ ‖a‖`.
+commutative or a field, and its norm need only be submultiplicative.
 
 The proof compares truncations. Below both truncation degrees, the composite of the truncation of
 `f` with the truncation of `g` agrees with `X` (`PowerSeries.coeff_trunc_comp_trunc`). The bound
@@ -77,11 +77,14 @@ private theorem norm_aeval_trunc_aeval_trunc_sub_le {f g : K⟦X⟧} (hf0 : coef
     · simpa using hR.le
   -- The bound `‖cₙ‖ Rⁿ ≤ R` says that the Gauss norm at radius `R` is at most `R`.
   set v := NormedField.toAbsoluteValue K
+  -- Mathlib has no apply lemma for `NormedField.toAbsoluteValue`; it unfolds to the norm.
+  have hv (a : K) : v a = ‖a‖ := rfl
   have hle {P : Polynomial K} (hP : ∀ n, ‖P.coeff n‖ * R ^ n ≤ R) : P.gaussNorm v R ≤ R := by
     obtain ⟨i, hi⟩ := P.exists_eq_gaussNorm v R
-    exact hi ▸ hP i
+    rw [hi, hv]
+    exact hP i
   have hcomp (k : ℕ) : ‖((trunc M f).comp (trunc N g)).coeff k‖ * R ^ k ≤ R :=
-    (Polynomial.le_gaussNorm v _ hR.le k).trans <|
+    (hv _ ▸ Polynomial.le_gaussNorm v _ hR.le k).trans <|
       (Polynomial.gaussNorm_comp_le IsUltrametricDist.isNonarchimedean_norm hR.le _
         (hle (htrunc hg0 hg N))).trans (hle (htrunc hf0 hf M))
   -- `F ∘ Q - X` vanishes below degree `min M N` and has coefficients bounded by `‖cₖ‖ Rᵏ ≤ R`.

@@ -14,7 +14,6 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Algebra.Logarithm.Basic
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.UltrametricSubst
@@ -22,26 +21,26 @@ import TauCeti.RingTheory.PowerSeries.UltrametricSubst
 /-!
 # The exponential and the logarithm on the `p`-adic disc
 
-Let `A` be a complete ultrametric normed algebra over `ℚ_[p]`: its norm is submultiplicative and
-`‖c • a‖ ≤ ‖c‖ ‖a‖` for `c ∈ ℚ_[p]`, but it need not be multiplicative, and `A` need not be a
-field or even commutative. Examples are `ℂ_[p]` and the finite extensions of `ℚ_[p]`, but also
-Banach algebras such as affinoid algebras and algebras of continuous functions on a compact space
-with the supremum norm. Mathlib's exponential series converges on the open disc `‖x‖ < r₀` of
-radius `r₀ = p ^ (-1 / (p - 1))`, which is `TauCeti.amiceRadius p 0`, and Mathlib's logarithm
-series converges on the open unit disc `‖y - 1‖ < 1` about `1`. On the disc of radius `r₀` the
-exponential preserves norms, `‖exp x - 1‖ = ‖x‖`, the logarithm preserves norms,
-`‖log y‖ = ‖y - 1‖`, and the two are inverse to each other. Hence the exponential maps the first
-disc bijectively onto the disc of radius `r₀` about `1`: it maps into it by
-`TauCeti.norm_exp_sub_one_of_norm_lt`, it is injective by `TauCeti.injOn_exp_ball` (via
-`TauCeti.log_exp_of_norm_lt`), and it is onto because `TauCeti.norm_log_of_norm_sub_one_lt` puts
-`log y` in the first disc and `TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
+Let `A` be a complete ultrametric normed algebra over `ℚ_[p]`: its norm is submultiplicative but
+need not be multiplicative, and `A` need not be a field or even commutative. Examples are `ℂ_[p]`
+and the finite extensions of `ℚ_[p]`, but also Banach algebras such as affinoid algebras and
+algebras of continuous functions on a compact space with the supremum norm. Mathlib's exponential
+series converges on the open disc `‖x‖ < r₀` of radius `r₀ = p ^ (-1 / (p - 1))`, which is
+`TauCeti.amiceRadius p 0`, and Mathlib's logarithm series converges on the open unit disc
+`‖y - 1‖ < 1` about `1`. On the disc of radius `r₀` the exponential preserves norms,
+`‖exp x - 1‖ = ‖x‖`, the logarithm preserves norms, `‖log y‖ = ‖y - 1‖`, and the two are inverse to
+each other. Hence the exponential maps the first disc bijectively onto the disc of radius `r₀` about
+`1`: it maps into it by `TauCeti.norm_exp_sub_one_of_norm_lt`, it is injective by
+`TauCeti.injOn_exp_ball` (via `TauCeti.log_exp_of_norm_lt`), and it is onto because
+`TauCeti.norm_log_of_norm_sub_one_lt` puts `log y` in the first disc and
+`TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
 
 On these discs, the exponential turns sums of commuting elements into products and the logarithm
 turns products of commuting elements into sums. For `‖t‖ < r₀`, the continuous additive character
 `x ↦ (1 + t) ^ x` of `ℤ_p` (Mathlib's `PadicInt.addChar_of_value_at_one`) is then
 `x ↦ exp (x log (1 + t))`: both sides are continuous in `x` and equal `(1 + t) ^ n` at natural
-numbers `n`, which are dense in `ℤ_p`. In particular `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`, with equality
-when `ℚ_[p]` acts isometrically, as on a normed field.
+numbers `n`, which are dense in `ℤ_p`. In particular `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖` in every such
+`A`.
 
 The key estimate is the sharp factorial bound `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≥ 1`
 (`TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`): by Legendre's formula
@@ -88,7 +87,7 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
   `log (y * w) = log y + log w` for commuting `y` and `w`.
 * `TauCeti.addChar_of_value_at_one_eq_exp_smul_log`: `(1 + t) ^ x = exp (x log (1 + t))`.
 * `TauCeti.norm_addChar_of_value_at_one_sub_one_le`, `TauCeti.norm_addChar_of_value_at_one_sub_one`:
-  `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`, with equality for isometric scalars.
+  `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖` and `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖`.
 
 ## References
 
@@ -354,12 +353,16 @@ theorem log_mul_of_commute_of_norm_sub_one_lt {y w : A} (hyw : Commute y w)
       ((IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hy' hw')),
     log_exp_of_norm_lt hy', log_exp_of_norm_lt hw']
 
+/-- For `‖t‖ < r₀`, the logarithm preserves the norm: `‖log (1 + t)‖ = ‖t‖`. -/
+private theorem norm_log_one_add_of_norm_lt {t : A} (ht : ‖t‖ < amiceRadius p 0) :
+    ‖log (1 + t)‖ = ‖t‖ := by
+  rw [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left]
+
 /-- For `‖t‖ < r₀` and `x ∈ ℤ_p`, `x • log (1 + t)` lies in the disc of radius `r₀`. -/
 private theorem norm_coe_smul_log_one_add_lt {t : A} (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
-    ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 := by
-  refine (norm_smul_le _ _).trans_lt <|
-    (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt ?_
-  rwa [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left]
+    ‖(x : ℚ_[p]) • log (1 + t)‖ < amiceRadius p 0 :=
+  (norm_smul_le _ _).trans_lt <| (mul_le_of_le_one_left (norm_nonneg _) x.norm_le_one).trans_lt <|
+    (norm_log_one_add_of_norm_lt ht).trans_lt ht
 
 /-- **The binomial power as an exponential.** In a complete ultrametric normed algebra over
 `ℚ_[p]`, for `‖t‖ < r₀` and `x ∈ ℤ_p`, the continuous additive character
@@ -369,8 +372,7 @@ theorem addChar_of_value_at_one_eq_exp_smul_log [Algebra ℤ_[p] A] [IsBoundedSM
     PadicInt.addChar_of_value_at_one t
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x =
       exp ((x : ℚ_[p]) • log (1 + t)) := by
-  have hL : ‖log (1 + t)‖ < amiceRadius p 0 := by
-    rwa [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left]
+  have hL : ‖log (1 + t)‖ < amiceRadius p 0 := (norm_log_one_add_of_norm_lt ht).trans_lt ht
   -- Both sides are continuous in `x` and agree with `(1 + t) ^ n` at natural numbers `n`.
   have hcont : Continuous fun x : ℤ_[p] ↦ exp ((x : ℚ_[p]) • log (1 + t)) :=
     (continuousOn_exp (𝕂 := ℚ_[p])).comp_continuous
@@ -391,18 +393,18 @@ theorem norm_addChar_of_value_at_one_sub_one_le [Algebra ℤ_[p] A] [IsBoundedSM
   rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
     norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x)]
   refine (norm_smul_le _ _).trans_eq ?_
-  rw [norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left, PadicInt.norm_def]
+  rw [norm_log_one_add_of_norm_lt ht, PadicInt.norm_def]
 
-/-- When the scalars act isometrically, for instance in a normed field over `ℚ_[p]`, the binomial
-power satisfies `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖` for `‖t‖ < r₀` and `x ∈ ℤ_p`. -/
-theorem norm_addChar_of_value_at_one_sub_one [Algebra ℤ_[p] A] [IsBoundedSMul ℤ_[p] A]
-    [NormSMulClass ℚ_[p] A] {t : A} (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
+/-- In every complete ultrametric normed algebra over `ℚ_[p]`, the binomial power satisfies
+`‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖` for `‖t‖ < r₀` and `x ∈ ℤ_p`. -/
+theorem norm_addChar_of_value_at_one_sub_one [Algebra ℤ_[p] A] [IsBoundedSMul ℤ_[p] A] {t : A}
+    (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
     ‖PadicInt.addChar_of_value_at_one t
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x - 1‖ =
       ‖x‖ * ‖t‖ := by
   rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
     norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x), norm_smul,
-    norm_log_of_norm_sub_one_lt (by simpa using ht), add_sub_cancel_left, PadicInt.norm_def]
+    norm_log_one_add_of_norm_lt ht, PadicInt.norm_def]
 
 end NormedRing
 
