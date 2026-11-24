@@ -103,6 +103,8 @@ vanishes at a point exactly when `N` and `P` do (`flatDeformation_familyNormalMo
 A family constant along the base has vanishing base couplings, and the results for
 base-independent variations are this special case (`familyNormalModelConnection_comp_snd`,
 `familyNormalModelSpinor_comp_snd`).
+The integrated squared norms of `N` and `P` are computed in
+`TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Energy`.
 
 ## References
 
