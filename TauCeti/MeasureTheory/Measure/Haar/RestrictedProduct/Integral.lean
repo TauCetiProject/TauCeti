@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
+public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Right
+public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Split
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.Pi
 import TauCeti.Algebra.BigOperators.Finprod
@@ -18,7 +19,8 @@ Let `(G i)` be a countable family of second-countable locally compact groups wit
 `B i` and left Haar measures `μ i` with `μ i (B i) = 1` for all but finitely many `i`, and let
 `restrictedHaar B μ hμB` be the restricted product of the `μ i` on `Πʳ i, [G i, B i]`.
 
-For a finite set `T` of indices, `restrictedProductSplit B T` splits `Πʳ i, [G i, B i]` as the
+For a finite set `T` of indices, `restrictedProductSplit B T`
+(`TauCeti/Topology/Algebra/RestrictedProduct/Away/Split.lean`) splits `Πʳ i, [G i, B i]` as the
 product of the finite product `Π i : T, G i` with the restricted product over the complement of
 `T`. It carries `restrictedHaar B μ hμB` to the product of `Measure.pi fun i : T ↦ μ i` with the
 restricted Haar product over the complement (`measurePreserving_restrictedProductSplit`), so an
@@ -36,7 +38,6 @@ almost every index pushes `restrictedHaar` to the restricted product of the push
 
 ## Main definitions and results
 
-* `TauCeti.restrictedProductSplit`: the splitting of a restricted product at a finite set.
 * `TauCeti.measurePreserving_restrictedProductSplit`,
   `TauCeti.integral_restrictedHaar_eq_integral_integral`: Fubini for `restrictedHaar`.
 * `TauCeti.integral_restrictedHaar_finprod`, `TauCeti.integrable_restrictedHaar_finprod`:
@@ -62,103 +63,12 @@ open scoped ENNReal RestrictedProduct
 
 namespace TauCeti
 
-/-- Split a finitary product at a finite set `T`: the product over `T` times the finitary product
-over the complement of `T`. -/
-private theorem finprod_eq_prod_mul_finprod_compl {ι M : Type*} [CommMonoid M] {f : ι → M}
-    (hf : (Function.mulSupport f).Finite) (T : Finset ι) :
-    ∏ᶠ i, f i = (∏ i : T, f i.val) * ∏ᶠ i : {i // i ∉ T}, f i.val := by
-  classical
-  rw [← finprod_comp_equiv (Equiv.sumCompl fun i ↦ i ∈ T),
-    finprod_sum_type (fun j ↦ f (Equiv.sumCompl (fun i ↦ i ∈ T) j)) (Set.toFinite _)
-      (hf.preimage Subtype.val_injective.injOn), finprod_eq_prod_of_fintype]
-  simp
-
 section Split
 
 variable {ι : Type*} [DecidableEq ι] {G : ι → Type*} {K : ι → Type*} [∀ i, Group (G i)]
   [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
 
-/-- The splitting of `Πʳ i, [G i, B i]` at a finite set `T` of indices, as the product of the
-finite product `Π i : T, G i` with the restricted product over the complement of `T`. -/
-@[to_additive addRestrictedProductSplit /-- The splitting of `Πʳ i, [G i, B i]` at a finite set
-`T` of indices, as the product of the finite product `Π i : T, G i` with the restricted product
-over the complement of `T`. -/]
-def restrictedProductSplit (B : ∀ i, K i) (T : Finset ι) :
-    (Πʳ i, [G i, B i]) ≃* (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] where
-  toFun x := (fun i ↦ x i.val,
-    ⟨fun i ↦ x i.val, Subtype.val_injective.tendsto_cofinite.eventually x.property⟩)
-  invFun y := ⟨fun i ↦ if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩, by
-    rw [Filter.eventually_cofinite]
-    refine (T.finite_toSet.union
-      ((Filter.eventually_cofinite.mp y.2.property).image Subtype.val)).subset fun i hi ↦ ?_
-    by_cases h : i ∈ T
-    · exact Or.inl h
-    · refine Or.inr ⟨⟨i, h⟩, ?_, rfl⟩
-      simp only [mem_ofPred_eq, h, ↓reduceDIte] at hi
-      exact hi⟩
-  left_inv x := by
-    ext i
-    simp
-  right_inv y := by
-    ext i
-    · simp [i.property]
-    · simp [i.property]
-  map_mul' _ _ := rfl
-
 variable (B : ∀ i, K i) (T : Finset ι)
-
-/-- The finite component of `restrictedProductSplit B T` reads off the coordinates in `T`. -/
-@[to_additive (attr := simp) addRestrictedProductSplit_apply_fst /-- The finite component of
-`addRestrictedProductSplit B T` reads off the coordinates in `T`. -/]
-theorem restrictedProductSplit_apply_fst (x : Πʳ i, [G i, B i]) (i : T) :
-    (restrictedProductSplit B T x).1 i = x i := by
-  rfl
-
-/-- The restricted component of `restrictedProductSplit B T` reads off the coordinates outside
-`T`. -/
-@[to_additive (attr := simp) addRestrictedProductSplit_apply_snd /-- The restricted component of
-`addRestrictedProductSplit B T` reads off the coordinates outside `T`. -/]
-theorem restrictedProductSplit_apply_snd (x : Πʳ i, [G i, B i]) (i : {i // i ∉ T}) :
-    (restrictedProductSplit B T x).2 i = x i := by
-  rfl
-
-/-- The inverse of `restrictedProductSplit B T` takes its coordinates in `T` from the finite
-component. -/
-@[to_additive addRestrictedProductSplit_symm_apply_of_mem /-- The inverse of
-`addRestrictedProductSplit B T` takes its coordinates in `T` from the finite component. -/]
-theorem restrictedProductSplit_symm_apply_of_mem
-    (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) {i : ι} (hi : i ∈ T) :
-    (restrictedProductSplit B T).symm y i = y.1 ⟨i, hi⟩ := by
-  change (if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩ : G i) = _
-  simp [hi]
-
-/-- The inverse of `restrictedProductSplit B T` takes its coordinates outside `T` from the
-restricted component. -/
-@[to_additive addRestrictedProductSplit_symm_apply_of_notMem /-- The inverse of
-`addRestrictedProductSplit B T` takes its coordinates outside `T` from the restricted
-component. -/]
-theorem restrictedProductSplit_symm_apply_of_notMem
-    (y : (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val]) {i : ι} (hi : i ∉ T) :
-    (restrictedProductSplit B T).symm y i = y.2 ⟨i, hi⟩ := by
-  change (if h : i ∈ T then y.1 ⟨i, h⟩ else y.2 ⟨i, h⟩ : G i) = _
-  simp [hi]
-
-/-- The inverse image of a box under the inverse of `restrictedProductSplit B T` is the product
-of the box over `T` with the box over the complement. -/
-@[to_additive preimage_addRestrictedProductSplit_symm_box /-- The inverse image of a box under the
-inverse of `addRestrictedProductSplit B T` is the product of the box over `T` with the box over
-the complement. -/]
-theorem preimage_restrictedProductSplit_symm_box (C : ∀ i, Set (G i)) :
-    (restrictedProductSplit B T).symm ⁻¹' box C =
-      (univ.pi fun i : T ↦ C i) ×ˢ box fun i : {i // i ∉ T} ↦ C i := by
-  ext y
-  simp only [mem_preimage, mem_box, mem_prod, mem_univ_pi]
-  refine ⟨fun h ↦ ⟨fun i ↦ ?_, fun i ↦ ?_⟩, fun ⟨h₁, h₂⟩ i ↦ ?_⟩
-  · simpa [restrictedProductSplit_symm_apply_of_mem B T y i.property] using h i
-  · simpa [restrictedProductSplit_symm_apply_of_notMem B T y i.property] using h i
-  · by_cases hi : i ∈ T
-    · simpa [restrictedProductSplit_symm_apply_of_mem B T y hi] using h₁ ⟨i, hi⟩
-    · simpa [restrictedProductSplit_symm_apply_of_notMem B T y hi] using h₂ ⟨i, hi⟩
 
 /-- After splitting at a finite set `T` outside which every `f i` is the indicator of `B i`, the
 function `x ↦ ∏ᶠ i, f i (x i)` is the product of a function of the coordinates in `T` with the
@@ -174,12 +84,9 @@ private theorem finprod_restrictedProductSplit_symm {M₀ : Type*} [CommMonoidWi
   have hcompl (i : {i // i ∉ T}) : f i ((restrictedProductSplit B T).symm y i) =
       (B i.val : Set (G i.val)).indicator 1 (y.2 i) := by
     rw [hT i i.property, restrictedProductSplit_symm_apply_of_notMem B T y i.property]
-  have hfin : (Function.mulSupport fun i ↦ f i ((restrictedProductSplit B T).symm y i)).Finite := by
-    refine (T.finite_toSet.union
-      ((Filter.eventually_cofinite.mp y.2.property).image Subtype.val)).subset fun i hi ↦ ?_
-    by_cases h : i ∈ T
-    · exact Or.inl h
-    · exact Or.inr ⟨⟨i, h⟩, fun hy ↦ hi ((hcompl ⟨i, h⟩).trans (indicator_of_mem hy 1)), rfl⟩
+  have hfin : Function.HasFiniteMulSupport fun i ↦ f i ((restrictedProductSplit B T).symm y i) :=
+    finite_of_forall_mem_imp_apply_notMem (A := fun i ↦ (B i : Set (G i))) T y.2 fun i h hi hy ↦
+      hi ((hcompl ⟨i, h⟩).trans (indicator_of_mem hy 1))
   rw [finprod_eq_prod_mul_finprod_compl hfin T]
   congr 1
   · exact Finset.prod_congr rfl fun i _ ↦ by
@@ -194,65 +101,7 @@ private theorem finprod_restrictedProductSplit_symm {M₀ : Type*} [CommMonoidWi
       refine ((Filter.eventually_cofinite.mp y.2.property)).subset fun j hj ↦ fun hjB ↦ hj ?_
       exact indicator_of_mem hjB 1
 
-variable [Countable ι] [∀ i, TopologicalSpace (G i)] [∀ i, SecondCountableTopology (G i)]
-  [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)]
-
-/-- `restrictedProductSplit B T` is measurable. -/
-@[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit
-/-- `addRestrictedProductSplit B T` is measurable. -/]
-theorem measurable_restrictedProductSplit : Measurable (restrictedProductSplit B T) := by
-  refine Measurable.prodMk ?_ ?_
-  · exact measurable_pi_iff.mpr fun i ↦ measurable_eval i.val
-  · exact measurable_rng_iff.mpr fun i ↦ measurable_eval (R := G) i.val
-
-/-- The inverse of `restrictedProductSplit B T` is measurable. -/
-@[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit_symm
-/-- The inverse of `addRestrictedProductSplit B T` is measurable. -/]
-theorem measurable_restrictedProductSplit_symm :
-    Measurable (restrictedProductSplit B T).symm := by
-  refine measurable_rng_iff.mpr fun i ↦ ?_
-  by_cases hi : i ∈ T
-  · simp_rw [restrictedProductSplit_symm_apply_of_mem B T _ hi]
-    exact (measurable_pi_apply _).comp measurable_fst
-  · simp_rw [restrictedProductSplit_symm_apply_of_notMem B T _ hi]
-    exact (measurable_eval (R := fun i : {i // i ∉ T} ↦ G i.val) ⟨i, hi⟩).comp measurable_snd
-
-/-- `restrictedProductSplit B T` as a measurable equivalence. -/
-@[to_additive addRestrictedProductSplitMeasurableEquiv
-/-- `addRestrictedProductSplit B T` as a measurable equivalence. -/]
-def restrictedProductSplitMeasurableEquiv :
-    (Πʳ i, [G i, B i]) ≃ᵐ (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] where
-  toEquiv := (restrictedProductSplit B T).toEquiv
-  measurable_toFun := measurable_restrictedProductSplit B T
-  measurable_invFun := measurable_restrictedProductSplit_symm B T
-
-/-- The underlying function of `restrictedProductSplitMeasurableEquiv B T` is
-`restrictedProductSplit B T`. -/
-@[to_additive (attr := simp) coe_addRestrictedProductSplitMeasurableEquiv
-/-- The underlying function of `addRestrictedProductSplitMeasurableEquiv B T` is
-`addRestrictedProductSplit B T`. -/]
-theorem coe_restrictedProductSplitMeasurableEquiv :
-    ⇑(restrictedProductSplitMeasurableEquiv B T) = restrictedProductSplit B T := by
-  rfl
-
-/-- The inverse of `restrictedProductSplitMeasurableEquiv B T` is the inverse of
-`restrictedProductSplit B T`. -/
-@[to_additive (attr := simp) coe_addRestrictedProductSplitMeasurableEquiv_symm
-/-- The inverse of `addRestrictedProductSplitMeasurableEquiv B T` is the inverse of
-`addRestrictedProductSplit B T`. -/]
-theorem coe_restrictedProductSplitMeasurableEquiv_symm :
-    ⇑(restrictedProductSplitMeasurableEquiv B T).symm = (restrictedProductSplit B T).symm := by
-  rfl
-
 end Split
-
-/-- Openness of a family of reference sets passes to its restriction to a subtype of the index
-type. -/
-instance fact_isOpen_coe_subtype_val {ι : Type*} {G : ι → Type*} {K : ι → Type*}
-    [∀ i, TopologicalSpace (G i)] [∀ i, SetLike (K i) (G i)] {B : ∀ i, K i}
-    [hB : Fact (∀ i, IsOpen (B i : Set (G i)))] (p : ι → Prop) :
-    Fact (∀ i : Subtype p, IsOpen (B i.val : Set (G i.val))) :=
-  ⟨fun i ↦ hB.out i.val⟩
 
 section Measure
 
@@ -323,6 +172,18 @@ theorem integral_restrictedHaar_eq_integral_integral {E : Type*} [NormedAddCommG
 
 end Fubini
 
+include hμB in
+omit [Countable ι] [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)]
+  [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
+  [∀ i, SecondCountableTopology (G i)] [∀ i, BorelSpace (G i)] [∀ i, SubgroupClass (K i) (G i)]
+  hBopen [∀ i, (μ i).IsHaarMeasure] in
+/-- A finite set of indices outside which `f i` is the indicator of `B i` and `μ i (B i) = 1`. -/
+private theorem exists_finset_eq_indicator_and_measure_eq_one {𝕜 : Type*} [One 𝕜] [Zero 𝕜]
+    {f : ∀ i, G i → 𝕜} (hfB : ∀ᶠ i in cofinite, f i = (B i : Set (G i)).indicator 1) :
+    ∃ T : Finset ι, ∀ i ∉ T, f i = (B i : Set (G i)).indicator 1 ∧ μ i (B i) = 1 :=
+  ⟨(mem_cofinite.mp (hfB.and hμB)).toFinset, fun _ hi ↦
+    Classical.byContradiction fun hnot ↦ hi ((Set.Finite.mem_toFinset _).mpr hnot)⟩
+
 /-- **Integral of a factorizable function.** Let `f i : G i → 𝕜` be functions with `f i` the
 indicator of `B i` for all but finitely many `i`. The integral of `x ↦ ∏ᶠ i, f i (x i)` over
 `Πʳ i, [G i, B i]` for `restrictedHaar` is the finitary product of the integrals of the `f i`. -/
@@ -335,28 +196,33 @@ theorem integral_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ i,
     (hfB : ∀ᶠ i in cofinite, f i = (B i : Set (G i)).indicator 1) :
     ∫ x, ∏ᶠ i, f i (x i) ∂restrictedHaar B μ hμB = ∏ᶠ i, ∫ y, f i y ∂μ i := by
   classical
-  let T : Finset ι := (mem_cofinite.mp (hfB.and hμB)).toFinset
-  have hT (i : ι) (hi : i ∉ T) : f i = (B i : Set (G i)).indicator 1 ∧ μ i (B i) = 1 :=
-    Classical.byContradiction fun hnot ↦ hi ((Set.Finite.mem_toFinset _).mpr hnot)
+  obtain ⟨T, hT⟩ := exists_finset_eq_indicator_and_measure_eq_one B μ hμB hfB
   have hint (i : ι) (hi : i ∉ T) : ∫ y, f i y ∂μ i = 1 := by
     simp [(hT i hi).1, integral_indicator (hBopen.out i).measurableSet, measureReal_def,
       (hT i hi).2]
+  -- the local integrals are `1` off `T`
+  have hloc : ∏ᶠ i, ∫ y, f i y ∂μ i = ∏ i : T, ∫ y, f i y ∂μ i := by
+    have hfin : Function.HasFiniteMulSupport fun i ↦ ∫ y, f i y ∂μ i :=
+      T.finite_toSet.subset fun i hi ↦ by_contra fun hiT ↦ hi (hint i hiT)
+    rw [finprod_eq_prod_mul_finprod_compl hfin T,
+      finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ hint i.val i.property, mul_one]
+  -- the indicator of the box `Π i ∉ T, B i` has integral `1` over the complement of `T`
+  have hbox : ∫ z, (box fun i : {i // i ∉ T} ↦ (B i.val : Set (G i.val))).indicator 1 z
+      ∂restrictedHaar (fun i : {i // i ∉ T} ↦ B i.val) (fun i ↦ μ i.val)
+        (Subtype.val_injective.tendsto_cofinite.eventually hμB) = (1 : 𝕜) := by
+    rw [integral_indicator (measurableSet_box fun i ↦ (hBopen.out i.val).measurableSet),
+      Pi.one_def, setIntegral_const, measureReal_def, restrictedHaar_box_self,
+      finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ (hT i.val i.property).2]
+    simp
   have h := (measurePreserving_restrictedProductSplit B μ hμB T).symm
     (restrictedProductSplitMeasurableEquiv B T)
   rw [← h.integral_comp' fun x ↦ ∏ᶠ i, f i (x i)]
   simp_rw [coe_restrictedProductSplitMeasurableEquiv_symm,
     finprod_restrictedProductSplit_symm B T fun i hi ↦ (hT i hi).1]
+  -- Fubini for a product of a function on `Π i : T, G i` and one on the complement
   rw [integral_prod_mul (fun y : Π i : T, G i ↦ ∏ i : T, f i (y i))
       ((box fun i : {i // i ∉ T} ↦ (B i.val : Set (G i.val))).indicator 1),
-    integral_fintype_prod_eq_prod, integral_indicator (measurableSet_box fun i ↦
-      (hBopen.out i.val).measurableSet), Pi.one_def, setIntegral_const,
-    measureReal_def, restrictedHaar_box_self,
-    finprod_eq_prod_mul_finprod_compl (T.finite_toSet.subset fun i hi ↦ ?_) T]
-  · rw [finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ (hT i.val i.property).2,
-      finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ hint i.val i.property]
-    simp
-  · by_contra hiT
-    exact hi (hint i hiT)
+    integral_fintype_prod_eq_prod, hbox, mul_one, hloc]
 
 /-- A factorizable function `x ↦ ∏ᶠ i, f i (x i)`, with `f i` integrable for every `i` and equal to
 the indicator of `B i` for all but finitely many `i`, is integrable for `restrictedHaar`. -/
@@ -369,9 +235,7 @@ theorem integrable_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ 
     (hfB : ∀ᶠ i in cofinite, f i = (B i : Set (G i)).indicator 1) :
     Integrable (fun x ↦ ∏ᶠ i, f i (x i)) (restrictedHaar B μ hμB) := by
   classical
-  let T : Finset ι := (mem_cofinite.mp (hfB.and hμB)).toFinset
-  have hT (i : ι) (hi : i ∉ T) : f i = (B i : Set (G i)).indicator 1 ∧ μ i (B i) = 1 :=
-    Classical.byContradiction fun hnot ↦ hi ((Set.Finite.mem_toFinset _).mpr hnot)
+  obtain ⟨T, hT⟩ := exists_finset_eq_indicator_and_measure_eq_one B μ hμB hfB
   have h := (measurePreserving_restrictedProductSplit B μ hμB T).symm
     (restrictedProductSplitMeasurableEquiv B T)
   refine (h.integrable_comp_emb (restrictedProductSplitMeasurableEquiv B T).symm.measurableEmbedding
@@ -417,12 +281,8 @@ theorem eventually_map_mulEquiv_apply_eq_one
     ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
   filter_upwards [hφ, hμU] with i hbij hi
   rw [map_apply (show Measurable (φ i) from (φ i).continuous.measurable)
-    (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet]
-  convert hi using 2
-  ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ hbij.mapsTo hx⟩
-  obtain ⟨y, hy, hyx⟩ := hbij.surjOn hx
-  exact (φ i).injective hyx ▸ hy
+    (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet, ← hbij.image_eq,
+    (φ i).injective.preimage_image, hi]
 
 /-- **Functoriality of `restrictedHaar`.** Let `φ i : G i ≃ₜ* H i` be isomorphisms of
 topological groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
@@ -451,14 +311,12 @@ theorem map_restrictedProductCongrRight_restrictedHaar
       box fun i ↦ φ i ⁻¹' C i := by
     ext x
     simp only [mem_preimage, mem_box, restrictedProductCongrRight_apply]
+    -- `(φ i).toMulEquiv` and `φ i` have the same underlying function by definition; Mathlib has
+    -- no `simp` lemma for this coercion
     rfl
   have hCU : ∀ᶠ i in cofinite, φ i ⁻¹' C i = U i := by
     filter_upwards [hCU', hφ] with i hi hbij
-    rw [hi]
-    ext x
-    refine ⟨fun hx ↦ ?_, fun hx ↦ hbij.mapsTo hx⟩
-    obtain ⟨y, hy, hyx⟩ := hbij.surjOn hx
-    exact (φ i).injective hyx ▸ hy
+    rw [hi, ← hbij.image_eq, (φ i).injective.preimage_image]
   rw [map_apply hΦ (measurableSet_box fun i ↦ (hC i).measurableSet), hpre,
     restrictedHaar_box_eq_finprod U μ hμU hCU]
   exact finprod_congr fun i ↦ (map_apply (φ i).measurable (hC i).measurableSet).symm
