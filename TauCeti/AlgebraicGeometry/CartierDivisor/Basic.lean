@@ -182,6 +182,21 @@ lemma regularUnitToFunctionField_apply (U : X.Opens) [Nonempty U]
       Units.map (X.germToFunctionField U).hom.toMonoidHom f := by
   rfl
 
+/-- Restricting a regular unit to a smaller nonempty open preserves its function-field unit. -/
+@[simp 1100]
+lemma _root_.AlgebraicGeometry.Scheme.regularUnitToFunctionField_map
+    {U V : X.Opens} [Nonempty U] [Nonempty V] (h : V ≤ U) (g : Γ(X, U)ˣ) :
+    regularUnitToFunctionField X V
+        (Units.map (X.presheaf.map (homOfLE h).op).hom g) =
+      regularUnitToFunctionField X U g := by
+  apply Units.ext
+  simp only [regularUnitToFunctionField_apply, Units.coe_map]
+  -- The units map exposes ring-hom values; the germ law uses the categorical section map.
+  change X.germToFunctionField V (X.presheaf.map (homOfLE h).op (g : Γ(X, U))) =
+    X.germToFunctionField U (g : Γ(X, U))
+  exact X.presheaf.germ_res_apply (homOfLE h) (genericPoint X)
+    (TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem V) g
+
 /-- The equivalence from rational units to function-field units carries the image of a regular
 unit to the unit induced by its germ in the function field. -/
 lemma rationalUnitSectionsEquiv_toRationalUnitSheaf_app (U : X.Opens) [Nonempty U]
@@ -336,6 +351,12 @@ def principalCartierDivisorAddHom : Additive X.functionFieldˣ →+ CartierDivis
 /-- The principal Cartier divisor of a nonzero rational function. -/
 def principalCartierDivisor (f : X.functionFieldˣ) : CartierDivisor X :=
   principalCartierDivisorAddHom X (Additive.ofMul f)
+
+/-- The principal Cartier divisor is its rational-unit class on the whole scheme. -/
+lemma _root_.AlgebraicGeometry.Scheme.principalCartierDivisor_eq_rationalUnitClass
+    (f : X.functionFieldˣ) :
+    principalCartierDivisor X f = rationalUnitClass X ⊤ (Additive.ofMul f) :=
+  (rfl)
 
 /-- The principal-divisor homomorphism sends an additively written rational unit to its
 principal Cartier divisor. -/

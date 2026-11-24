@@ -53,6 +53,8 @@ base point only up to conjugation by étale paths.
   functoriality of the image of étale paths.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_id`, `TauCeti.FiniteEtaleScheme.mapAutFiber_comp`:
   functoriality of the induced homomorphisms of étale fundamental groups.
+* `TauCeti.FiniteEtaleScheme.mapAutFiber_eq_conjAut`: `mapAutFiber f h` is precomposition with
+  base change, conjugated by `pullbackCompFiberIso`.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_conjAut`: compatibility with change of base point.
 
 ## References
@@ -167,6 +169,16 @@ theorem mapFiberIso_comp (f : T ⟶ S) (g : S ⟶ U) {x : Spec (.of Ω) ⟶ T}
   -- The two sides differ only in writing `(pullback g ⋙ pullback f).obj X` (`Functor.comp_obj`).
   rfl
 
+/-- The image of a loop `σ` at `x` is `σ` precomposed with base change along `f`, conjugated by
+the identification of base change followed by the fibre at `x` with the fibre at `y`. -/
+private theorem mapFiberIso_asIso_eq_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T}
+    {y : Spec (.of Ω) ⟶ S} (h : x ≫ f = y) (σ : Aut (fiber x)) :
+    mapFiberIso f h h σ.asIso = ((pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).conjAut
+      (((Functor.whiskeringLeft _ _ _).obj (pullback f)).mapAut (fiber x) σ)).asIso := by
+  rw [Iso.conjAut_apply, Functor.mapAut_apply_asIso]
+  ext X : 3
+  simp [mapFiberIso, -pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
+
 /-- The continuous homomorphism of étale fundamental groups `π₁(T, x) →ₜ* π₁(S, y)` induced by
 `f : T ⟶ S`, where `h : x ≫ f = y`: a loop `σ` at `x` goes to its image `mapFiberIso f h h σ`,
 whose component at a finite étale `S`-scheme `X` is the component of `σ` at `X ×_S T`. -/
@@ -184,11 +196,8 @@ noncomputable def mapAutFiber (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec 
     -- The map is conjugation by the identification of base change followed by the fibre at `x`
     -- with the fibre at `y`, after precomposition with base change along `f`.
     refine ((pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).continuous_conjAut.comp
-      (continuous_mapAut_whiskeringLeft (pullback f) (fiber x))).congr fun σ ↦ ?_
-    ext1
-    rw [Function.comp_apply, Iso.conjAut_apply, Functor.mapAut_apply_asIso]
-    ext X : 3
-    simp [mapFiberIso, -pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
+      (continuous_mapAut_whiskeringLeft (pullback f) (fiber x))).congr
+        fun σ ↦ Aut.ext (mapFiberIso_asIso_eq_conjAut f h σ).symm
 
 /-- The loop `mapAutFiber f h σ` is the image of the loop `σ` under `f`. -/
 @[simp]
@@ -196,6 +205,15 @@ theorem mapAutFiber_apply_asIso (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spe
     (h : x ≫ f = y) (σ : Aut (fiber x)) :
     (mapAutFiber f h σ).asIso = mapFiberIso f h h σ.asIso :=
   (rfl)
+
+/-- The homomorphism of étale fundamental groups induced by `f : T ⟶ S` is precomposition with
+base change along `f`, conjugated by the identification of base change followed by the fibre at
+`x` with the fibre at `y`. -/
+theorem mapAutFiber_eq_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S}
+    (h : x ≫ f = y) (σ : Aut (fiber x)) :
+    mapAutFiber f h σ = (pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).conjAut
+      (((Functor.whiskeringLeft _ _ _).obj (pullback f)).mapAut (fiber x) σ) :=
+  Aut.ext (mapFiberIso_asIso_eq_conjAut f h σ)
 
 /-- The identity of `S` induces the identity of `π₁(S, x)`. -/
 @[simp]

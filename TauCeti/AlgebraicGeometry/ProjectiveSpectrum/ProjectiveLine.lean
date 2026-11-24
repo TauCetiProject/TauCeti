@@ -21,6 +21,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
@@ -492,6 +493,18 @@ theorem polynomialChartι_mem_range_iff (i : Fin 2) (q : Spec (.of R[X])) :
   -- `Spec` has the prime-spectrum carrier, with its native basic-open membership.
   exact PrimeSpectrum.mem_basicOpen X q
 
+/-- The two polynomial chart coordinates are inverse in the degree-zero coordinate ring
+of their overlap. -/
+theorem coordinateFractions_mul :
+    awayMap 𝒜 (coord_mem R 1) rfl ((awayEquivPolynomial R 0).symm X) *
+      awayMap 𝒜 (coord_mem R 0) (mul_comm (coord R 0) (coord R 1))
+        ((awayEquivPolynomial R 1).symm X) = 1 := by
+  simp only [awayEquivPolynomial_symm_X, awayMap_mk]
+  ext
+  simp only [val_mul, Away.val_mk, val_one, Localization.mk_mul]
+  rw [← Localization.mk_one, Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+  exact ⟨1, by simp; ring⟩
+
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
 theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
   SymmetricAlgebra.iSup_basicOpen_ι_eq_top R (Fin 2 → R) (fun i ↦ Pi.single i 1) (by
@@ -668,25 +681,70 @@ the constant polynomials. -/
 theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
     chartSectionsEquiv R i ((projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
       C ((Scheme.ΓSpecIso (.of R)).hom a) := by
-  suffices h : (projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top ≫
-        ((awayι R i).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      (Scheme.ΓSpecIso (.of R)).hom ≫ CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i))) by
-    rw [chartSectionsEquiv_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, h]
-    simp
-  rw [← cancel_epi (Scheme.ΓSpecIso (.of R)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-    reassoc_of% Scheme.Hom.appLE_comp_appLE (awayι R i)
-    (projectiveLine R ↘ Spec (.of R)) ⊤ (awayι R i ''ᵁ ⊤) ⊤ le_top
-    (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The `show` reads `appLE ⊤ ⊤` as `appTop` through `appLE_eq_app`, relying on the
-  -- definitional equalities `f ⁻¹ᵁ ⊤ = ⊤` (`Scheme.Hom.preimage_top`, proved by `rfl`) and
-  -- `f.app ⊤ = f.appTop` (`appTop` is an abbreviation); a plain `rw` cannot match the preimage.
-  -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
-  rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+  rw [chartSectionsEquiv_apply, Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (awayι_over R i)]
+  simp
 
 /-- The chart `D₊(Xᵢ)`, as the image of `awayι`, is the basic open set of `Xᵢ`. -/
 theorem image_awayι_top (i : Fin 2) : awayι R i ''ᵁ ⊤ = Proj.basicOpen 𝒜 (coord R i) := by
   rw [Scheme.Hom.image_top_eq_opensRange, Proj.opensRange_awayι]
+
+/-- The affine coordinate of the chart `D₊(Xᵢ)`: `X₁ / X₀` on `D₊(X₀)` and `X₀ / X₁` on `D₊(X₁)`. -/
+noncomputable def affineCoordinate (i : Fin 2) :
+    Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) :=
+  Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm X)
+
+/-- The affine coordinate is the section represented by the other homogeneous coordinate
+in the degree-zero chart localization. -/
+theorem affineCoordinate_def (i : Fin 2) : affineCoordinate R i =
+    Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm X) :=
+  (rfl)
+
+/-- On any subopen of a standard chart, the affine coordinate has value `Xᵢʳᵉᵛ/Xᵢ`
+in each homogeneous localization. -/
+theorem val_res_affineCoordinate (i : Fin 2) (V : (projectiveLine R).Opens)
+    (hi : V ≤ Proj.basicOpen 𝒜 (coord R i)) (x : V) :
+    (((projectiveLine R).presheaf.map (homOfLE hi).op (affineCoordinate R i)).val x).val =
+      Localization.mk (coord R i.rev) ⟨coord R i, hi x.property⟩ := by
+  rw [affineCoordinate, awayEquivPolynomial_symm_X]
+  erw [Proj.val_awayToSection_mk_apply]
+  simp only [pow_one]
+
+/-- The affine coordinate of the chart `D₊(Xᵢ)` is invertible exactly on the overlap. -/
+theorem basicOpen_affineCoordinate (i : Fin 2) :
+    (projectiveLine R).basicOpen (affineCoordinate R i) =
+      Proj.basicOpen 𝒜 (coord R 0 * coord R 1) := by
+  rw [affineCoordinate, awayEquivPolynomial_symm_X, Proj.basicOpen_awayToSection_mk]
+  fin_cases i
+  · rfl
+  · exact (Proj.basicOpen_mul _ _ _).trans
+      ((inf_comm _ _).trans (Proj.basicOpen_mul _ _ _).symm)
+
+/-- The affine coordinates multiply to one after restriction to any common subopen. -/
+theorem affineCoordinate_res_mul (V : (projectiveLine R).Opens)
+    (h₀ : V ≤ Proj.basicOpen 𝒜 (coord R 0))
+    (h₁ : V ≤ Proj.basicOpen 𝒜 (coord R 1)) :
+    (projectiveLine R).presheaf.map (homOfLE h₀).op (affineCoordinate R 0) *
+      (projectiveLine R).presheaf.map (homOfLE h₁).op (affineCoordinate R 1) = 1 := by
+  let W := Proj.basicOpen 𝒜 (coord R 0 * coord R 1)
+  have hW₀ : W ≤ Proj.basicOpen 𝒜 (coord R 0) :=
+    (Proj.basicOpen_mul _ _ _).trans_le inf_le_left
+  have hW₁ : W ≤ Proj.basicOpen 𝒜 (coord R 1) :=
+    (Proj.basicOpen_mul _ _ _).trans_le inf_le_right
+  have hW : (projectiveLine R).presheaf.map (homOfLE hW₀).op (affineCoordinate R 0) *
+      (projectiveLine R).presheaf.map (homOfLE hW₁).op (affineCoordinate R 1) = 1 := by
+    have he₀ := congr($(Proj.awayMap_awayToSection 𝒜 (coord_mem R 1)
+      (rfl : coord R 0 * coord R 1 = _)) ((awayEquivPolynomial R 0).symm X)).symm
+    have he₁ := congr($(Proj.awayMap_awayToSection 𝒜 (coord_mem R 0)
+      (mul_comm (coord R 0) (coord R 1))) ((awayEquivPolynomial R 1).symm X)).symm
+    exact (congrArg₂ (· * ·) he₀ he₁).trans
+      ((map_mul (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)).hom _ _).symm.trans
+        ((congrArg (Proj.awayToSection 𝒜 (coord R 0 * coord R 1))
+          (coordinateFractions_mul R)).trans (map_one
+            (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)).hom)))
+  have hVW : V ≤ W := (le_inf h₀ h₁).trans (Proj.basicOpen_mul _ _ _).ge
+  have h := congrArg ((projectiveLine R).presheaf.map (homOfLE hVW).op) hW
+  rw [map_mul, map_one, ← Functor.map_comp_apply, ← Functor.map_comp_apply] at h
+  exact h
 
 /-- `chartSectionsEquiv` sends the function `Proj.awayToSection a` on `D₊(Xᵢ)` to the
 dehomogenization of the fraction `a`. -/

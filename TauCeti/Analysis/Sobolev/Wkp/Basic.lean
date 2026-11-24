@@ -322,6 +322,19 @@ theorem value_neg_ae (k : ℕ) (u : Wkp mu Omega p k) :
     ⇑(value k (-u)) =ᵐ[mu.restrict Omega] -⇑(value k u) := by
   simpa only [value_neg] using Lp.coeFn_neg (value k u)
 
+/-- The highest weak derivative preserves negation. (Not `@[simp]`: the `simpNF` linter reports
+that `simp` cannot use it to rewrite its own left-hand side.) -/
+theorem iteratedGradient_neg (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (-u) = -iteratedGradient k u :=
+  map_neg (iteratedGradientL k) u
+
+/-- The highest weak derivative of the negation of a Sobolev function is almost everywhere the
+negation of its highest weak derivative. -/
+theorem iteratedGradient_neg_ae (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    ⇑(iteratedGradient k (-u)) =ᵐ[mu.restrict Omega] -⇑(iteratedGradient k u) := by
+  rw [iteratedGradient_neg]
+  exact Lp.coeFn_neg (iteratedGradient k u)
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
@@ -573,6 +586,11 @@ Successive uniqueness of weak derivatives determines every higher component. -/
 theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → u = v
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
+
+/-- The `Lᵖ` value map is injective on `W^{k,p}(Ω)`, by uniqueness of weak derivatives. -/
+theorem valueL_injective (k : ℕ) :
+    Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) k) :=
+  fun _ _ h ↦ ext k (by simpa only [valueL_apply] using h)
 
 open scoped Distributions in
 /-- **Sobolev functions are determined by their integrals against test functions**: if

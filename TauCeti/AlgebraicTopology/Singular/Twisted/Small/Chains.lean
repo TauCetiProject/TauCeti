@@ -27,14 +27,18 @@ coefficients and continuous maps compatible with the families act on small chain
 (`smallTwistedChainComplexCoefficientMap`, `smallTwistedChainComplexMap`). For a subspace `A`, the
 twisted chains of `A` with the restricted system are exactly the chains supported in `A`
 (`TauCeti.LocalCoefficientSystem.subspaceTwistedChainComplexIso`); this identifies the terms
-of the Mayer–Vietoris sequence with homology of subspaces. More generally, for a family `U` inside
-a subset `S`, the chains of `S` subordinate to the preimages of `U` are the chains of `X`
-subordinate to `U` (`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexMap_subtypeVal`).
-Both follow from `TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexLift`. For an open
-cover, every finite
-twisted chain becomes small after sufficiently many subdivisions. This supplies the smallness
-input to the local-coefficient excision argument; no natural choice of subdivision depth or
-chain retraction is asserted here.
+of the Mayer–Vietoris sequence with homology of subspaces. Under it the map induced by an inclusion
+of subspaces is the inclusion of supports, so one is a quasi-isomorphism exactly when the other is
+(`TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexInclusion_iff`). More generally,
+for a family `U` inside a subset `S`, the chains of `S` subordinate to the preimages of `U` are the
+chains of `X` subordinate to `U`
+(`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexMap_subtypeVal`). Both follow from
+`TauCeti.LocalCoefficientSystem.isIso_smallTwistedChainComplexLift`. For an open cover, every
+finite twisted chain becomes small after sufficiently many subdivisions. This supplies the
+smallness input to the local-coefficient excision argument; no natural choice of subdivision depth
+or chain retraction is asserted here. Each degree of the small chains is nevertheless a retract of
+the twisted chains, so it is projective when the fibres of `L` are
+(`TauCeti.LocalCoefficientSystem.projective_smallTwistedChainComplex_X`).
 
 The constructions use `twistedSingularChain`, `twistedSubdivisionChainMap` and the native
 Lebesgue-number theorem for affine subdivision. Coefficients remain in their actual fibres
@@ -668,6 +672,61 @@ lemma isIso_smallTwistedChainComplexMap_subtypeVal {S : Set X} (hUS : ∀ i, U i
     obtain ⟨b, rfl⟩ := hc
     exact ⟨b, rfl⟩
 
+/-- The inclusion of the twisted chains of `X` supported in `S` into those supported in `T` is a
+quasi-isomorphism exactly when the inclusion `S ⊆ T` induces a quasi-isomorphism on twisted chains,
+with `L` restricted to `S` and `T`. -/
+lemma quasiIso_smallTwistedChainComplexInclusion_iff {S T : Set X} (h : S ⊆ T) :
+    QuasiIso (smallTwistedChainComplexSubsetInclusion L h) ↔
+      QuasiIso (subsetTwistedChainComplexMap L h) := by
+  rw [← quasiIso_iff_comp_right _ (subspaceTwistedChainComplexIso L T).inv,
+    smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv,
+    quasiIso_iff_comp_left]
+
 end Subspace
+
+section Projective
+
+open Classical in
+/-- The projection of twisted chains onto the chains subordinate to `U`, keeping the summand of
+each simplex lying in a member of `U` and killing the summand of every other simplex. -/
+private def smallTwistedChainsRetraction (n : ℕ) :
+    L.twistedChainComplex.X n ⟶ ModuleCat.of R (smallTwistedChains L U n) :=
+  twistedChainComplexDesc L fun σ ↦
+    if hσ : σ ∈ (X.smallSingularSubcomplex U).obj _ then
+      ModuleCat.ofHom ((ιTwistedChainComplex L n σ).hom.codRestrict _
+        (ιTwistedChainComplex_mem_smallTwistedChains L U hσ))
+    else 0
+
+/-- The retraction fixes the chains subordinate to `U`. -/
+private lemma smallTwistedChainsRetraction_apply {n : ℕ} {c : L.twistedChainComplex.X n}
+    (hc : c ∈ smallTwistedChains L U n) :
+    ((smallTwistedChainsRetraction L U n).hom c : L.twistedChainComplex.X n) = c := by
+  -- Both sides are additive in `c`, and agree on the summand of each small simplex.
+  refine Submodule.iSup_induction _ (motive := fun c ↦
+    ((smallTwistedChainsRetraction L U n).hom c : L.twistedChainComplex.X n) = c) hc ?_
+    (by simp) fun _ _ h₁ h₂ ↦ by rw [map_add, Submodule.coe_add, h₁, h₂]
+  rintro ⟨σ, hσ⟩ _ ⟨x, rfl⟩
+  rw [← ModuleCat.comp_apply, smallTwistedChainsRetraction,
+    ιTwistedChainComplex_twistedChainComplexDesc, dite_eq_left hσ, ModuleCat.ofHom_apply,
+    LinearMap.codRestrict_apply]
+
+/-- The retraction splits the inclusion of the chains subordinate to `U`. -/
+private lemma ofHom_subtype_comp_smallTwistedChainsRetraction (n : ℕ) :
+    ModuleCat.ofHom (smallTwistedChains L U n).subtype ≫ smallTwistedChainsRetraction L U n =
+      𝟙 _ := by
+  ext c
+  rw [ModuleCat.comp_apply, ModuleCat.id_apply]
+  exact smallTwistedChainsRetraction_apply L U c.property
+
+/-- If every fibre of `L` is projective, then so is every degree of the complex of twisted chains
+subordinate to `U`: it is a retract of the corresponding degree of the twisted chain complex. -/
+instance projective_smallTwistedChainComplex_X [∀ x, Projective (L.obj x)] (n : ℕ) :
+    Projective ((smallTwistedChainComplex L U).X n) := by
+  rw [smallTwistedChainComplex_X]
+  exact Retract.projective (Y := L.twistedChainComplex.X n)
+    ⟨ModuleCat.ofHom (smallTwistedChains L U n).subtype,
+    smallTwistedChainsRetraction L U n, ofHom_subtype_comp_smallTwistedChainsRetraction L U n⟩
+
+end Projective
 
 end TauCeti.LocalCoefficientSystem

@@ -11,7 +11,7 @@ public import TauCeti.Topology.Homotopy.Monodromy.PreimageComponents
 
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Algebra.Module.LocallyConvex
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The positive triangles of a cover of the thrice-punctured sphere

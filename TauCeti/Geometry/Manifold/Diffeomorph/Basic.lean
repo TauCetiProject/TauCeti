@@ -24,11 +24,13 @@ differential is preserved by precomposition and postcomposition, and the tangent
 the ranges of its differentials, are unchanged by precomposition with a diffeomorphism and are
 mapped by the differential under postcomposition.
 These facts support inverse isometries, calibrated immersions, and transport of curve
-differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
-a partial diffeomorphism is also characterized, for composition with partial coordinates, and
-pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism (`m ≤ n`) preserves
-membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
+differentiability through diffeomorphisms. The underlying equivalence and function of a
+diffeomorphism viewed as a partial diffeomorphism are also characterized, for composition with
+partial coordinates, and pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism
+(`m ≤ n`) preserves membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
 `Diffeomorph.trans_mem_maximalAtlas_iff`).
+The linear map underlying the differential of a diffeomorphism viewed as a linear equivalence
+(`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential.
 -/
 
 public section
@@ -52,6 +54,10 @@ is its everywhere-defined equivalence. -/
 @[simp]
 theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
     h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
+
+/-- A diffeomorphism viewed as a partial diffeomorphism has the diffeomorphism as its function.
+Not a simp lemma: `toPartialDiffeomorph_toPartialEquiv` already lets simp prove it. -/
+theorem coe_toPartialDiffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) : ⇑h.toPartialDiffeomorph = h := (rfl)
 
 /-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
 `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
@@ -188,6 +194,13 @@ theorem mdifferentiableAt_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn 
   · intro hf
     exact hf.comp x (h.mdifferentiable hn x)
 
+/-- The linear map underlying the differential of a diffeomorphism, viewed as a linear equivalence,
+is the differential. -/
+theorem mfderivToContinuousLinearEquiv_toLinearMap (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M) :
+    (h.mfderivToContinuousLinearEquiv hn x).toLinearEquiv.toLinearMap =
+      (mfderiv I J h x).toLinearMap :=
+  congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn)
+
 section TangentImage
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -251,11 +264,8 @@ theorem range_mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
     LinearMap.range (mfderiv K J (h ∘ f) x).toLinearMap =
       (LinearMap.range (mfderiv K I f x).toLinearMap).map
         (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap := by
-  have hder : (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap =
-      (mfderiv I J h (f x)).toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn (x := f x))
   rw [h.mfderiv_diffeomorph_comp hn, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
-    hder]
+    h.mfderivToContinuousLinearEquiv_toLinearMap hn]
 
 /-- Precomposition with a diffeomorphism does not change tangent images: the range of the
 differential of `f ∘ h` at `x` is the range of the differential of `f` at `h x`. No

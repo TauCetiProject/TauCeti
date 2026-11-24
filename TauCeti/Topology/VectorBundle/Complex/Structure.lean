@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Symplectic.Finrank
+public import TauCeti.Geometry.Symplectic.Transport
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.RestrictScalars
@@ -218,6 +219,19 @@ theorem coord_coord_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).b
     ⟨(trivializationAt F V b₀).symmL ℝ b w,
       Trivialization.continuousLinearMapAt_symmL _ hb w⟩
   rw [coord_apply J hb, coord_apply J hb, apply_apply, map_neg]
+
+/-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
+theorem transport_almostComplexStructureAt_apply {b₀ b : B}
+    (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
+    (J.almostComplexStructureAt b).transport ((trivializationAt F V b₀).linearEquivAt ℝ b hb) w =
+      J.coord b₀ b w := by
+  -- On the base set, the trivialization's linear equivalence is its continuous linear map.
+  have he (v : V b) : (trivializationAt F V b₀).linearEquivAt ℝ b hb v =
+      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v :=
+    ((trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v).symm
+  obtain ⟨v, rfl⟩ := ((trivializationAt F V b₀).linearEquivAt ℝ b hb).surjective w
+  rw [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply,
+    almostComplexStructureAt_apply, he, he, coord_apply J hb]
 
 /-- The complex linear part `(1 - J' b ∘ J' b₀) / 2` of the identity of `F`, from the complex
 structure `J' b₀ = J.coord b₀ b₀` to the complex structure `J' b = J.coord b₀ b`: as a linear
