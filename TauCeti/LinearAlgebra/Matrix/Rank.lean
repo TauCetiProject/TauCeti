@@ -61,9 +61,10 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
-* `Matrix.IsIdempotentElem.rank_one_sub_add_rank` and `Matrix.OrthogonalIdempotents.rank_sum`:
-  over a field, the ranks of `e` and `1 - e` add up to the size of the matrix, and the rank of a
-  sum of orthogonal idempotent matrices is the sum of their ranks.
+* `Matrix.IsIdempotentElem.rank_one_sub_add_rank`, `Matrix.IsIdempotentElem.rank_add` and
+  `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the ranks of `e` and `1 - e` add up to
+  the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
+  their ranks.
 * `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
   sum of the ranks of its diagonal blocks.
 * `Matrix.rank_conjTranspose_of_field` and
@@ -408,14 +409,15 @@ theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Fini
       (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap ∘ₗ
         (A.mulVecLin.prodMap D.mulVecLin) ∘ₗ
           (LinearEquiv.sumArrowLequivProdArrow l l' K K).toLinearMap := by
-    refine LinearMap.ext fun x => funext fun i => ?_
-    rcases i with i | i <;>
-      simp [fromBlocks_mulVec, Function.comp_def,
-        funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst (R := K) x),
-        funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd (R := K) x)]
-  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, h,
-    LinearMap.range_comp, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
-    LinearMap.range_prodMap, LinearEquiv.finrank_map_eq]
+    refine LinearMap.ext fun x => ?_
+    obtain ⟨⟨u, v⟩, rfl⟩ := (LinearEquiv.sumArrowLequivProdArrow l l' K K).symm.surjective x
+    ext (i | i) <;> simp [fromBlocks_mulVec, Function.comp_def]
+  have hr : LinearMap.range (fromBlocks A 0 0 D).mulVecLin =
+      ((LinearMap.range A.mulVecLin).prod (LinearMap.range D.mulVecLin)).map
+        (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap := by
+    simp [h, LinearMap.range_comp, LinearMap.range_prodMap]
+  simp only [← finrank_range_mulVecLin]
+  rw [hr, LinearEquiv.finrank_map_eq]
   exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
 
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
@@ -474,6 +476,28 @@ theorem IsIdempotentElem.rank_one_sub_add_rank [Fintype m] [DecidableEq m] {e : 
   rw [rank_zero, add_zero] at h
   omega
 
+/-- The rank of the sum of two idempotent matrices `p` and `q` with `p * q = 0` and `q * p = 0`
+is the sum of their ranks: the range of `p + q` is the direct sum of the ranges. -/
+theorem IsIdempotentElem.rank_add [Fintype m] {p q : Matrix m m K}
+    (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (hpq : p * q = 0) (hqp : q * p = 0) :
+    (p + q).rank = p.rank + q.rank := by
+  have hsup : LinearMap.range (p + q).mulVecLin =
+      LinearMap.range p.mulVecLin ⊔ LinearMap.range q.mulVecLin := by
+    refine le_antisymm (by rw [mulVecLin_add]; exact LinearMap.range_add_le _ _) (sup_le ?_ ?_)
+    · rintro _ ⟨v, rfl⟩
+      exact ⟨p *ᵥ v, by simp [mulVec_mulVec, hp.eq, hqp]⟩
+    · rintro _ ⟨v, rfl⟩
+      exact ⟨q *ᵥ v, by simp [mulVec_mulVec, hq.eq, hpq]⟩
+  have hdisj : Disjoint (LinearMap.range p.mulVecLin) (LinearMap.range q.mulVecLin) := by
+    rw [Submodule.disjoint_def]
+    rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
+    simp only [mulVecLin_apply] at hw ⊢
+    calc p *ᵥ v = p *ᵥ (q *ᵥ w) := by rw [hw, mulVec_mulVec, hp.eq]
+      _ = 0 := by rw [mulVec_mulVec, hpq, zero_mulVec]
+  simp only [← finrank_range_mulVecLin]
+  rw [hsup, ← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot]
+  simp
+
 /-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
 the sum is the direct sum of the ranges. -/
 theorem OrthogonalIdempotents.rank_sum [Fintype m] [DecidableEq m] {I : Type*}
@@ -483,30 +507,12 @@ theorem OrthogonalIdempotents.rank_sum [Fintype m] [DecidableEq m] {I : Type*}
   induction s using Finset.induction_on with
   | empty => simp
   | insert a s ha ih =>
-    set p := e a
-    set q := ∑ i ∈ s, e i
-    have hp : p * p = p := (he.idem a).eq
-    have hq : q * q = q := he.isIdempotentElem_sum.eq
-    have hpq : p * q = 0 := he.mul_sum_of_notMem ha
-    have hqp : q * p = 0 :=
-      Finset.sum_mul s e p ▸ Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
-    -- the range of `p + q` is the direct sum of the ranges of `p` and `q`
-    have hsup : LinearMap.range (p + q).mulVecLin =
-        LinearMap.range p.mulVecLin ⊔ LinearMap.range q.mulVecLin := by
-      refine le_antisymm (by rw [mulVecLin_add]; exact LinearMap.range_add_le _ _) (sup_le ?_ ?_)
-      · rintro _ ⟨v, rfl⟩
-        exact ⟨p *ᵥ v, by simp [mulVec_mulVec, hp, hqp]⟩
-      · rintro _ ⟨v, rfl⟩
-        exact ⟨q *ᵥ v, by simp [mulVec_mulVec, hq, hpq]⟩
-    have hdisj : Disjoint (LinearMap.range p.mulVecLin) (LinearMap.range q.mulVecLin) := by
-      rw [Submodule.disjoint_def]
-      rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
-      simp only [mulVecLin_apply] at hw ⊢
-      calc p *ᵥ v = p *ᵥ (q *ᵥ w) := by rw [hw, mulVec_mulVec, hp]
-        _ = 0 := by rw [mulVec_mulVec, hpq, zero_mulVec]
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih, ← finrank_range_mulVecLin,
-      ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, hsup,
-      ← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot, finrank_bot, add_zero]
+    have hqp : (∑ i ∈ s, e i) * e a = 0 := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
+    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
+    exact IsIdempotentElem.rank_add (he.idem a) he.isIdempotentElem_sum
+      (he.mul_sum_of_notMem ha) hqp
 
 section Field
 

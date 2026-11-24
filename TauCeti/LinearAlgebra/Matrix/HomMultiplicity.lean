@@ -13,9 +13,11 @@ public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.LinearAlgebra.Matrix.Trace
+import TauCeti.Data.Matrix.Basis
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Trace.Idempotent
+import TauCeti.RingTheory.Idempotents.Matrix
 
 /-!
 # Homomorphisms between full matrix algebras
@@ -45,9 +47,6 @@ classification of `⋆`-homomorphisms `Mₙ(ℂ) → Mₘ(ℂ)` to the multiplic
 
 ## Main statements
 
-* `Matrix.orthogonalIdempotents_map_single`, `Matrix.map_single_mul_map_single` and
-  `Matrix.star_map_single`: the images of the matrix units under a homomorphism out of `Mₙ(R)`
-  into any ring multiply like matrix units, and a `⋆`-homomorphism maps adjoints to adjoints.
 * `Matrix.homMultiplicity_eq_rank_map_single`: the multiplicity is the rank of the image of any
   diagonal matrix unit.
 * `Matrix.homMultiplicity_eq_zero_iff`, `NonUnitalAlgHom.homMultiplicity_zero` and
@@ -101,37 +100,11 @@ theorem homMultiplicity_of_isEmpty [IsEmpty n] [FunLike F (Matrix n n K) (Matrix
     homMultiplicity f = 0 := by
   simp [homMultiplicity]
 
-section MatrixUnits
-
-variable {R B : Type*} [Semiring R] [FunLike F (Matrix n n R) B]
-
-/-- The image of a diagonal matrix unit is idempotent. -/
-theorem isIdempotentElem_map_single [Mul B] [MulHomClass F (Matrix n n R) B] (f : F) (i : n) :
-    IsIdempotentElem (f (single i i 1)) :=
-  IsIdempotentElem.map (by simp [IsIdempotentElem]) f
-
-/-- The images of the diagonal matrix units are orthogonal idempotents. -/
-theorem orthogonalIdempotents_map_single [Semiring B] [NonUnitalRingHomClass F (Matrix n n R) B]
-    (f : F) : OrthogonalIdempotents fun i : n => f (single i i 1) :=
-  ⟨isIdempotentElem_map_single f, fun i j hij => by simp [← map_mul, hij]⟩
-
-/-- The images of the matrix units multiply like matrix units. -/
-theorem map_single_mul_map_single [NonUnitalNonAssocSemiring B]
-    [NonUnitalRingHomClass F (Matrix n n R) B] (f : F) (i j k l : n) :
-    f (single i j 1) * f (single k l 1) = if j = k then f (single i l 1) else 0 := by
-  rw [← map_mul]
-  split_ifs with h
-  · rw [h, single_mul_single_same, mul_one]
-  · simp [h]
-
 omit [Fintype n] in
-/-- A `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of a matrix unit `Eᵢⱼ` to the adjoint of its
-image. -/
-theorem star_map_single [StarRing R] [Star B] [StarHomClass F (Matrix n n R) B] (f : F)
-    (i j : n) : star (f (single i j 1)) = f (single j i 1) := by
-  rw [← map_star, star_eq_conjTranspose, conjTranspose_single, star_one]
-
-end MatrixUnits
+/-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
+private theorem single_eq_smul_single_one {R : Type*} [MulZeroOneClass R] (i j : n) (c : R) :
+    single i j c = c • single i j (1 : R) := by
+  rw [smul_single, smul_eq_mul, mul_one]
 
 section NonUnitalAlgHomClass
 
@@ -173,10 +146,9 @@ private theorem trace_map_single (i k l : n) :
 private theorem trace_map_eq_rank_map_single_mul (i : n) (x : Matrix n n K) :
     (f x).trace = (f (single i i 1)).rank * x.trace := by
   conv_lhs => rw [matrix_eq_sum_single x]
-  have hsingle (k l : n) : single k l (x k l) = x k l • single k l (1 : K) := by
-    rw [smul_single, smul_eq_mul, mul_one]
-  simp only [hsingle, map_sum, map_smul, trace_sum, trace_smul, trace_map_single f i,
-    smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  simp only [single_eq_smul_single_one _ _ (x _ _), map_sum, map_smul, trace_sum, trace_smul,
+    trace_map_single f i, smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true]
   rw [trace, Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
 
@@ -470,8 +442,8 @@ private theorem sum_mul_map (x : Matrix n n R) :
   | h_zero => simp
   | h_add p q hp hq => rw [map_add, map_add, mul_add, add_mul, hp, hq]
   | h_std_basis k l c =>
-    have hc : single k l c = c • single k l (1 : R) := by rw [smul_single, smul_eq_mul, mul_one]
-    rw [hc, map_smul, map_smul, mul_smul_comm, smul_mul_assoc, sum_mul_map_single]
+    rw [single_eq_smul_single_one k l c, map_smul, map_smul, mul_smul_comm, smul_mul_assoc,
+      sum_mul_map_single]
 
 private theorem map_one_mul_sum :
     ψ 1 * ∑ j, ψ (single j i 1) * v * φ (single i j 1) =

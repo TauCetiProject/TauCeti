@@ -204,8 +204,10 @@ matrix form of `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`. -/
 theorem IsIdempotentElem.trace_eq_rank {ι A : Type*} [Fintype ι] [CommRing A] [IsLocalRing A]
     {e : Matrix ι ι A} (he : IsIdempotentElem e) : e.trace = (e.rank : A) := by
   classical
+  have h : IsIdempotentElem (toLin' e) := by
+    rw [IsIdempotentElem, Module.End.mul_eq_comp, ← toLin'_mul, he.eq]
   rw [← trace_toLin'_eq, ← finrank_range_mulVecLin, ← toLin'_apply']
-  exact LinearMap.trace_eq_finrank_range_of_isIdempotentElem (he.map toLinAlgEquiv')
+  exact LinearMap.trace_eq_finrank_range_of_isIdempotentElem h
 
 /-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
 an idempotent is the dimension of its range. This is the matrix form of
