@@ -20,7 +20,7 @@ Mathlib's `NormedSpace.log` on `ℚ_[p]` turns products into sums on the closed 
 This is the homomorphism property of `TauCeti.NumberTheory.LocalField.DeepUnits.Basic` for the
 local field `ℚ_[p]`, whose absolute ramification index is one, restated with Mathlib's `p`-adic
 norm instead of the unit filtration. Together with the results of
-`TauCeti.NumberTheory.Padics.ExponentialDisc`, it is the analytic input for the logarithm on the
+`TauCeti.NumberTheory.Padics.Exp.Disc`, it is the analytic input for the logarithm on the
 principal units `1 + qℤ_p`, with `q = p` for odd `p` and `q = 4` for `p = 2`, in
 `TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`. The norm and inverse identities of
 the exponential and logarithm on these discs are the cases of
