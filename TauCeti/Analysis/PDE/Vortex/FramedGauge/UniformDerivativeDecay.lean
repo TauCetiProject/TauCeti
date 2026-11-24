@@ -29,15 +29,15 @@ like `exp (-c |z|)` for every rate `c < 1 / 2`
 depend on the vortex. This file makes the constants uniform over vortices whose zeros lie in a fixed
 disc, and so over every compact window of divisors, collisions of zeros included.
 
-* `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_le_norm_sub`:
+* `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_le_norm_sub`:
   for every degree `m`, order `n` and rate `0 ≤ c < 1 / 2` there are `K ≥ 0` and `R` such that
   `‖Dⁿ (u⁻¹ · x - (0, 1)) (z)‖ ≤ K exp (-c ρ)` at every point `z` at distance at least `ρ ≥ R` from
-  the zeros near which the section is `|α| u`. The derivatives of `ℓ` up to order `n + 1` obey such
-  bounds (`TauCeti.Vortex.exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp`); the
-  connection part of the end field is linear in `Dℓ`, and the derivatives of its section part
-  `exp (ℓ / 2) - 1` follow by the Faà di Bruno bound (`ContDiffAt.norm_iteratedFDeriv_exp_comp_le`)
-  since `ℓ ≤ 0`.
-* `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_mem_norm_le`:
+  the zeros, provided the section is `|α| u` near `z`. The derivatives of `ℓ` up to order `n + 1`
+  obey such bounds (`TauCeti.Vortex.exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp`);
+  the connection part of the end field is linear in `Dℓ` (`TauCeti.Vortex.exists_endField_eq_add`),
+  and the derivatives of its section part `exp (ℓ / 2) - 1` follow by the Faà di Bruno bound
+  (`ContDiffAt.norm_iteratedFDeriv_exp_comp_le`) since `ℓ ≤ 0`.
+* `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le`:
   if the zeros lie in the closed disc of radius `r`, the same bound holds with `exp (-c |z|)` for
   `|z| ≥ R`, with `K` and `R` depending only on `m`, `n`, `c` and `r`.
 
@@ -50,9 +50,9 @@ coefficients, and the roots of `P_a` have norm less than `‖a‖ + 1`
 (`TauCeti.Polynomial.norm_lt_of_isRoot_monicOfCoeff`). Hence, in the winding-`m` end
 trivialization, the fields `g_a · x_a` tend to the vacuum with all spatial derivatives bounded by
 `K exp (-c |z|)`, uniformly over a bounded set of coefficients
-(`exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isBounded`) and over
+(`exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded`) and over
 a compact set of divisors in `Sym ℂ m`
-(`exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isCompact`).
+(`exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact`).
 This is the spatial part of the decay of the normalized families over compact divisor windows;
 derivatives in the coefficients are not treated here.
 
@@ -133,18 +133,9 @@ private theorem exists_norm_iteratedFDeriv_endField_le (n : ℕ) {K : ℝ} (hK :
       ‖iteratedFDeriv ℝ n (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
         (Real.exp (ℓ w / 2) - 1) / 2, 0]) z‖ ≤ C * E := by
   -- The end field is `L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)` for two fixed linear maps.
-  set L₁ : (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    (-(1 / 2 : ℝ)) • (ContinuousLinearMap.apply ℝ ℝ I).smulRight (EuclideanSpace.single 0 1) +
-      (1 / 2 : ℝ) • (ContinuousLinearMap.apply ℝ ℝ 1).smulRight (EuclideanSpace.single 1 1)
-  set L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single 2 (1 / 2))
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add
   refine ⟨‖L₁‖ * K + ‖L₂‖ * (n ! * max 1 K ^ (n + 1)), by positivity,
     fun ℓ z E hℓ hℓ₀ hE₀ hE₁ hD ↦ ?_⟩
-  have hL : (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
-      (Real.exp (ℓ w / 2) - 1) / 2, 0]) =
-      fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1) := by
-    ext w i
-    fin_cases i <;> simp [L₁, L₂] <;> ring
   have hDℓ : ContDiffAt ℝ ∞ (fderiv ℝ ℓ) z := hℓ.fderiv_right (by norm_cast)
   have hE : ContDiffAt ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2) - 1) z :=
     (Real.contDiff_exp.contDiffAt.comp z (hℓ.div_const 2)).sub contDiffAt_const
@@ -164,7 +155,7 @@ private theorem exists_norm_iteratedFDeriv_endField_le (n : ℕ) {K : ℝ} (hK :
         iteratedFDeriv ℝ n (fun w ↦ L₂ (Real.exp (ℓ w / 2) - 1)) z :=
     fun_iteratedFDeriv_add_apply ((L₁.contDiff.contDiffAt.comp z hDℓ).of_le (by simp))
       ((L₂.contDiff.contDiffAt.comp z hE).of_le (by simp))
-  rw [hL, hadd]
+  rw [hL ℓ, hadd]
   calc _ ≤ ‖L₁‖ * (K * E) + ‖L₂‖ * (n ! * max 1 K ^ (n + 1) * E) :=
         (norm_add_le _ _).trans (add_le_add h₁ h₂)
     _ = _ := by ring
@@ -174,10 +165,11 @@ private theorem exists_norm_iteratedFDeriv_endField_le (n : ℕ) {K : ℝ} (hK :
 /-- **Uniform decay in an end trivialization, away from the zeros.** For every degree `m`, order
 `n` and rate `0 ≤ c < 1 / 2` there are constants `K ≥ 0` and `R` with the following property. Let
 `x` be a smooth plane vortex with the degree-`m` end framing and zero divisor `D`, and let `z` be a
-point at distance at least `ρ ≥ R` from every zero near which the section of `x` is `|α|` times a
-gauge `u`. Then the end trivialization `u⁻¹ · x` satisfies
+point at distance at least `ρ ≥ R` from every zero of `x`, near which the section of `x` is `|α|`
+times a gauge `u`. Then the end trivialization `u⁻¹ · x` satisfies
 `‖Dⁿ (u⁻¹ · x - (0, 1)) (z)‖ ≤ K exp (-c ρ)`. -/
-theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_le_norm_sub
+theorem
+    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_le_norm_sub
     (m n : ℕ) {c : ℝ} (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K R, 0 ≤ K ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ) (u : ℂ → Circle),
       ContDiff ℝ ∞ x → (∀ z, equation x z = 0) →
@@ -231,7 +223,8 @@ property. Let `x` be a smooth plane vortex with the degree-`m` end framing whose
 closed disc of radius `r`, and let `|z| ≥ R` be a point near which the section of `x` is `|α|` times
 a gauge `u`. Then the end trivialization `u⁻¹ · x` satisfies
 `‖Dⁿ (u⁻¹ · x - (0, 1)) (z)‖ ≤ K exp (-c |z|)`. -/
-theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_mem_norm_le
+theorem
+    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le
     (m n : ℕ) (r : ℝ) {c : ℝ} (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K R, 0 ≤ K ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ) (u : ℂ → Circle),
       ContDiff ℝ ∞ x → (∀ z, equation x z = 0) →
@@ -241,7 +234,7 @@ theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_fora
         ‖iteratedFDeriv ℝ n (fun w ↦ gaugeTransform u⁻¹ x w - vacuumField w) z‖ ≤
           K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨K, R, hK, h⟩ :=
-    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_le_norm_sub
+    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_le_norm_sub
       m n hc₀ hc
   refine ⟨K * Real.exp (c * r), R + r, by positivity,
     fun x D u hx hsol hframe hD hr z hz hphase ↦ ?_⟩
@@ -263,7 +256,7 @@ the monic polynomial `P_a` with these coefficients, normalized at its end by the
 `g_a`. For every bounded set `S` of coefficients, order `n` and rate `0 ≤ c < 1 / 2` there are
 constants `K ≥ 0` and `R` such that the winding-`m` end trivialization `y_a` of `g_a · x_a`
 satisfies `‖Dⁿ (y_a - (0, 1)) (z)‖ ≤ K exp (-c |z|)` for every `a ∈ S` and `|z| ≥ R`. -/
-theorem exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isBounded
+theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded
     {m : ℕ} (hm : 0 < m) {S : Set (Fin m → ℂ)} (hS : Bornology.IsBounded S) (n : ℕ) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K R, 0 ≤ K ∧ ∀ a ∈ S, ∀ z : ℂ, R ≤ ‖z‖ →
@@ -272,7 +265,7 @@ theorem exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isBound
         vacuumField w) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨r, hr⟩ := hS.exists_norm_le
   obtain ⟨K, R, hK, h⟩ :=
-    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_of_forall_mem_norm_le
+    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le
       m n (r + 1) hc₀ hc
   obtain ⟨R', hR'⟩ := exists_forall_sectionValue_gaugeTransform_polynomialGauge hS
   refine ⟨K, max R (R' + 1), hK, fun a ha z hz ↦ ?_⟩
@@ -308,7 +301,7 @@ compact set `S` of divisors in `Sym ℂ m`, collisions of zeros included, every 
 `0 ≤ c < 1 / 2` there are constants `K ≥ 0` and `R` such that the winding-`m` end trivialization
 `y_D` of `g_D · x_D` satisfies `‖Dⁿ (y_D - (0, 1)) (z)‖ ≤ K exp (-c |z|)` for every `D ∈ S` and
 `|z| ≥ R`. -/
-theorem exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isCompact
+theorem exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact
     {m : ℕ} (hm : 0 < m) {S : Set (Sym ℂ m)} (hS : IsCompact S) (n : ℕ) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K R, 0 ≤ K ∧ ∀ D ∈ S, ∀ z : ℂ, R ≤ ‖z‖ →
@@ -319,13 +312,10 @@ theorem exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isCompa
   have hS' : IsCompact (Sym.coeffEquiv ℂ m '' S) := by
     simpa only [Sym.coeffHomeomorph_apply] using hS.image (Sym.coeffHomeomorph ℂ m).continuous
   obtain ⟨K, R, hK, h⟩ :=
-    exists_norm_iteratedFDeriv_gaugeTransform_polynomialVortex_le_of_isBounded hm
+    exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded hm
       hS'.isBounded n hc₀ hc
   refine ⟨K, R, hK, fun D hD z hz ↦ ?_⟩
-  have hP : (Sym.toMonic D : ℂ[X]) = monicOfCoeff (Sym.coeffEquiv ℂ m D) := by
-    conv_lhs => rw [← (Sym.coeffEquiv ℂ m).symm_apply_apply D]
-    exact Sym.toMonic_coeffEquiv_symm _
-  rw [hP]
+  rw [Sym.toMonic_eq_monicOfCoeff_coeffEquiv]
   exact h _ ⟨D, hD, rfl⟩ z hz
 
 end TauCeti.Vortex
