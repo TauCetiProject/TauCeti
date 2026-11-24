@@ -29,7 +29,9 @@ of geometric sums of mixed powers of equal-degree monic polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`, and
 a power of a linear factor splits off a product of linear factors over a multiset in which its
-root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`.
+root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`. Without
+zero divisors, a nonzero constant multiple of `∏_{i ∈ s} (X - r i)` has exactly the roots `r i`
+with `i ∈ s` (`TauCeti.isRoot_C_mul_prod_X_sub_C_iff`).
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -186,6 +188,17 @@ end Polynomial
 namespace TauCeti
 
 open Polynomial
+
+/-- A nonzero constant multiple of a product of linear factors over a ring without zero divisors
+vanishes exactly at the `r i` with `i ∈ s`. -/
+@[simp↓]
+theorem isRoot_C_mul_prod_X_sub_C_iff {R ι : Type*} [CommRing R] [NoZeroDivisors R] {l : R}
+    (hl : l ≠ 0) (s : Finset ι) (r : ι → R) (z : R) :
+    (C l * ∏ i ∈ s, (X - C (r i))).IsRoot z ↔ ∃ i ∈ s, r i = z := by
+  have : Nontrivial R := ⟨⟨l, 0, hl⟩⟩
+  have := NoZeroDivisors.to_isDomain R
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp only [root_X_sub_C]
 
 /-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
 `cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then

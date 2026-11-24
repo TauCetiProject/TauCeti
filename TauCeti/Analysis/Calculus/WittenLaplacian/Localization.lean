@@ -80,6 +80,8 @@ quasimodes at different critical points combine into a low-energy space.
 * `TauCeti.sum_smul_euclideanWittenLaplacian_smul_apply`: the pointwise IMS localization formula.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`: the IMS localization formula for the
   quadratic form of `Δ_t`.
+* `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for
+  the localized pieces give a lower bound for the quadratic form of `Δ_t`.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
@@ -262,6 +264,32 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
           (((hJ a ha x hx).continuousAt_fderiv two_ne_zero).clm_apply continuousAt_const).pow 2
   rw [← integral_finsetSum A hint, integral_congr_ae (Eventually.of_forall hpt), integral_add hP hQ,
     add_sub_cancel_right]
+
+/-- **The lower bound of IMS localization.** Under the hypotheses of
+`TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`, suppose that `∑ₐ |∇Jₐ|² ≤ K` wherever `φ`
+does not vanish, and that the quadratic form of `Δ_t` at each localized piece `Jₐ φ` is at least
+`Bₐ`. Then `∑ₐ Bₐ - K ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`. -/
+theorem sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : Type*}
+    {A : Finset α} {J : α → (ι → ℝ) → ℝ} {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hJ : ∀ a ∈ A, ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 (J a) x) (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) (hJA : ∀ x, φ x ≠ 0 → ∑ a ∈ A, J a x ^ 2 = 1) {K : ℝ}
+    (hK : ∀ x, φ x ≠ 0 → ∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2 ≤ K) {t : ℝ}
+    {B : α → ℝ}
+    (hB : ∀ a ∈ A, B a ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t (J a • φ) x s * (J a • φ) x s) :
+    ∑ a ∈ A, B a - K * ∫ x, ∑ s, φ x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  rw [integral_sum_euclideanWittenLaplacian_mul_eq hf hJ hφ hφc hJA t]
+  refine sub_le_sub (Finset.sum_le_sum hB) ?_
+  -- The localization error is at most `K ∫ |φ|²`.
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun x ↦ ?_)
+    (hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl continuousOn_const)
+    (Eventually.of_forall fun x ↦ ?_)
+  · positivity
+  · by_cases hx : φ x = 0
+    · simp [hx]
+    exact mul_le_mul_of_nonneg_right (hK x hx) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
 /-! ### The lower bound away from the critical points -/
 

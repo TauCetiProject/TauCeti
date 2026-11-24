@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 This file establishes the pseudofunctorial coherence laws for the base-change functors
 `f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` constructed in
-`TauCeti/AlgebraicGeometry/Sites/Etale/Over.lean`, together with base-change comparison
+`TauCeti/AlgebraicGeometry/Sites/Etale/Over/Basic.lean`, together with base-change comparison
 isomorphisms across commutative and Cartesian squares and the resulting contravariant
 pseudofunctor on schemes.
 

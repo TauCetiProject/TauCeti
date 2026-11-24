@@ -21,10 +21,14 @@ real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple
 constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
 (`Complex.mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`). For `z` in the sector
 `Re z ≤ c ‖z‖`, `c < 1`, around the negative real axis,
-`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. These inequalities control reciprocal kernels in
-sectorial and Stieltjes integrals and resolvent symbols. A nonzero point of such a sector, with
-`0 < δ`, lies in the slit plane, and every sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is
-preconnected (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
+`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
+`(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
+These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
+symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, as does every
+point of an exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` with `0 ≤ r` and `θ ≤ π`
+(`Complex.setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane`), and every
+sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
+(`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 -/
 
 public section
@@ -92,6 +96,16 @@ theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz
       rw [norm_neg, neg_re]
       nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
   rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
+
+/-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t` with a nonnegative real `t` satisfy
+`(1 - max c (-1)) / 2 * (1 + ‖r‖ t) ≤ ‖1 - r t‖`, which keeps them away from `0` for `c < 1`. -/
+theorem mul_one_add_le_norm_one_sub_mul {c : ℝ} {r : ℂ} (hr : r.re ≤ c * ‖r‖) {t : ℝ}
+    (ht : 0 ≤ t) : (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) ≤ ‖1 - r * t‖ := by
+  have hnorm : ‖r * t‖ = ‖r‖ * t := by rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
+  have h := mul_add_norm_le_norm_ofReal_sub (z := r * t) zero_le_one (by
+    rw [hnorm]
+    simpa [mul_assoc] using mul_le_mul_of_nonneg_right hr ht)
+  rwa [hnorm, Complex.ofReal_one] at h
 
 /-- For every complex `z` and real `t`,
 `‖z + t‖² - (cos (arg z / 2) * (‖z‖ + t))² = (sin (arg z / 2) * (‖z‖ - t))²`. -/
@@ -174,6 +188,13 @@ slit plane. -/
 theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ)
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
+
+/-- For `0 ≤ r` and `θ ≤ π`, the open exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` lies in
+the slit exterior `{z | r < ‖z‖} ∩ slitPlane`. -/
+theorem setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane {r θ : ℝ} (hr : 0 ≤ r)
+    (hθ : θ ≤ Real.pi) : {z : ℂ | r < ‖z‖ ∧ |z.arg| < θ} ⊆ {z | r < ‖z‖} ∩ slitPlane :=
+  fun _ hz ↦ ⟨hz.1, mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθ)
+    (norm_pos_iff.1 (hr.trans_lt hz.1))⟩
 
 /-- Every sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected. -/
 theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
