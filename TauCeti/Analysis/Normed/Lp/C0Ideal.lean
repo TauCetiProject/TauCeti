@@ -178,6 +178,6 @@ instance normOneClass_quotient_c0Ideal : NormOneClass (lp A ∞ ⧸ c0Ideal A) :
 /-- The quotient of a bounded product of normed rings with `‖1‖ = 1`, over an infinite index type,
 by the `c₀` ideal is nonzero. -/
 instance nontrivial_quotient_c0Ideal : Nontrivial (lp A ∞ ⧸ c0Ideal A) :=
-  nontrivial_of_ne 1 0 fun h ↦ by simpa [h] using (norm_one (α := lp A ∞ ⧸ c0Ideal A)).symm
+  NormOneClass.nontrivial
 
 end lp

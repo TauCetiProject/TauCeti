@@ -13,7 +13,10 @@ public import Mathlib.Order.DirectedInverseSystem
 
 A sequence of ⋆-algebra homomorphisms `f n : A n →⋆ₐ[R] A (n + 1)` determines, for `i ≤ j`, the
 composite `A i →⋆ₐ[R] A j` of `f i, …, f (j - 1)`. These composites form a directed system over
-`ℕ`, which is how sequential inductive limits are usually presented.
+`ℕ`, which is how sequential inductive limits are usually presented. This is the ⋆-algebra
+homomorphism version of Mathlib's `FirstOrder.Language.DirectedSystem.natLERec` and
+`FirstOrder.Language.DirectedSystem.natLERec.directedSystem` (`Mathlib.ModelTheory.DirectLimit`),
+whose construction through `Nat.leRecOn` it follows.
 
 ## Main definitions
 
