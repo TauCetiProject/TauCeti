@@ -1,9 +1,10 @@
 name: Pages
 
 # Build the Verso website in web/ and deploy it to GitHub Pages, with the API reference under
-# /docs that api-docs.yml generates. Pushes that touch the site or the chart generators redeploy
-# it; the three-hour schedule (and workflow_dispatch) also regenerates the Statistics charts, so
-# they track the project as it grows.
+# /docs that api-docs.yml generates. Pushes that touch web/ or the roadmap JSON files in scripts/
+# redeploy it. The chart generators come from TauCetiTools, so a change to them shows up at the
+# next three-hour scheduled run (which also regenerates the Statistics charts) or a
+# workflow_dispatch.
 #
 # The jobs are TauCetiTools' pages.yml at main, which documents how data preparation, the site
 # build, the fallback, the deploy and the docgen branch update work. This file keeps what GitHub
