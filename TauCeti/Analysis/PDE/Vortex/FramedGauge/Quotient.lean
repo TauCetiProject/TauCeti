@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology
+import Mathlib.Topology.LocalAtTarget
 import TauCeti.Analysis.Complex.Circle
 
 /-!
@@ -447,16 +448,12 @@ a quotient map onto `vortexModuli`. -/
 theorem isQuotientMap_vortexModuli_quotientMk (hk : 3 ≤ k) :
     IsQuotientMap fun x : {x : SobolevFieldSpace f m k | ∀ z, equation x z = 0} ↦
       (⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩ : vortexModuli f m hs) := by
-  refine isQuotientMap_of_isOpenQuotientMap_of_isInducing Subtype.val Subtype.val
-    (fun x ↦ ⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩)
-    (Quotient.mk _) rfl .subtypeVal
-    (fun ⟨q, hq⟩ ↦ by
-      obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
-      exact ⟨⟨x, hx⟩, rfl⟩)
-    MulAction.isOpenQuotientMap_quotientMk .subtypeVal ?_
-  rintro x ⟨_, ⟨y, hy, rfl⟩, hyx⟩
-  exact ⟨⟨x, (mk_mem_vortexModuli_iff hk).1
-    (hyx ▸ mk_mem_vortexModuli (hs := hs) y.property)⟩, rfl⟩
+  have hset : {x : SobolevFieldSpace f m k | ∀ z, equation x z = 0} =
+      Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
+        (SobolevFieldSpace f m k)) ⁻¹' vortexModuli f m hs :=
+    Set.ext fun _ ↦ (mk_mem_vortexModuli_iff hk).symm
+  exact (MulAction.isOpenQuotientMap_quotientMk.restrictPreimage
+    (vortexModuli f m hs)).isQuotientMap.comp (Homeomorph.setCongr hset).isQuotientMap
 
 end SobolevFieldSpace
 

@@ -728,8 +728,9 @@ theorem connectionDifferenceCLM_apply
 difference of `(x, y)`. -/
 theorem gaugeForm_eq_connectionDifferenceCLM {u : ℂ → Circle}
     {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (h : gaugeTransform u x = y) (z : ℂ) :
-    gaugeForm u z = connectionDifferenceCLM (x z, y z) :=
-  (gaugeTransform_eq_iff.1 h z).1
+    gaugeForm u z = connectionDifferenceCLM (x z, y z) := by
+  rw [connectionDifferenceCLM_apply]
+  exact (gaugeTransform_eq_iff.1 h z).1
 
 /-- **A differentiable gauge between `C^n` fields is `C^(n+1)`.** Converse to
 `contDiff_gaugeTransform`: if `u` is differentiable and both `x` and `gaugeTransform u x` are

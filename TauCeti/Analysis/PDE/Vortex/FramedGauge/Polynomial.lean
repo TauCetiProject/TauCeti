@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 import Mathlib.Algebra.Order.Chebyshev
