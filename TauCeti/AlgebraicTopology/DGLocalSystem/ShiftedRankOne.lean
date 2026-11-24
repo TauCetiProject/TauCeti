@@ -80,6 +80,21 @@ def shiftedTensorEquiv (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b R) :
     (L.tensor.obj 𝓕).rightShift (-n) ≃ₗ[R] 𝓕 :=
   ((L.tensor.obj 𝓕).rightShiftEquiv (-n)).trans (DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕)
 
+/-- `shiftedTensorEquiv` first forgets the right shift of `𝓕 ⊗ L`, then the restriction of
+scalars along the twist. -/
+theorem shiftedTensorEquiv_apply (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b R)
+    (x : (L.tensor.obj 𝓕).rightShift (-n)) :
+    L.shiftedTensorEquiv n 𝓕 x =
+      DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 ((L.tensor.obj 𝓕).rightShiftEquiv (-n) x) :=
+  (rfl)
+
+/-- The inverse of `shiftedTensorEquiv` composes the inverses in the opposite order. -/
+theorem shiftedTensorEquiv_symm_apply (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b R) (y : 𝓕) :
+    (L.shiftedTensorEquiv n 𝓕).symm y =
+      ((L.tensor.obj 𝓕).rightShiftEquiv (-n)).symm
+        ((DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕).symm y) :=
+  (rfl)
+
 /-- An element of `𝓕 ⊗ L[n]` has cohomological degree `q` exactly when the corresponding element
 of `𝓕` has degree `q - n`. -/
 @[simp]
@@ -89,7 +104,7 @@ theorem shiftedTensorEquiv_mem_grading_iff (n q : ℤ) (𝓕 : DGLocalSystem.{uM
       x ∈ ((L.tensor.obj 𝓕).rightShift (-n)).grading q := by
   have hx := (L.tensor.obj 𝓕).rightShiftEquiv_mem_grading_iff (-n) q x
   rw [DGRightModuleCat.mem_restrictScalars_obj_grading, ← sub_eq_add_neg] at hx
-  exact hx
+  rwa [shiftedTensorEquiv_apply]
 
 /-- The differential of `𝓕 ⊗ L[n]` is that of `𝓕`, with no sign. -/
 @[simp]
@@ -97,7 +112,7 @@ theorem shiftedTensorEquiv_differential (n : ℤ) (𝓕 : DGLocalSystem.{uM} B b
     (x : (L.tensor.obj 𝓕).rightShift (-n)) :
     L.shiftedTensorEquiv n 𝓕 (((L.tensor.obj 𝓕).rightShift (-n)).differential x) =
       𝓕.differential (L.shiftedTensorEquiv n 𝓕 x) := by
-  rw [shiftedTensorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply]
+  rw [shiftedTensorEquiv_apply, shiftedTensorEquiv_apply]
   exact (congrArg _ ((L.tensor.obj 𝓕).rightShiftEquiv_differential (-n) x)).trans
     (DGRightModuleCat.restrictScalarsEquiv_differential L.twist 𝓕 _)
 
@@ -110,7 +125,7 @@ theorem shiftedTensorEquiv_op_smul_lof_ofCube (n : ℤ) (𝓕 : DGLocalSystem.{u
       (n * k).negOnePow • (L.ρ (σ 0) : R) • (op (cubicalChainLof (MooreLoopSpace B b) R k
         (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R σ)) •
           L.shiftedTensorEquiv n 𝓕 x) := by
-  rw [shiftedTensorEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+  rw [shiftedTensorEquiv_apply, shiftedTensorEquiv_apply,
     DGRightModuleCat.rightShiftEquiv_op_smul_of_mem _ _ (cubicalChainLof_mem _ _ _),
     map_zsmul_unit, tensor_smul_lof_ofCube, neg_mul_neg]
 
@@ -143,11 +158,12 @@ theorem shiftEquiv_shiftedTensorIsoShift_hom_app_of_mem (n : ℤ) (𝓕 : DGLoca
     DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕
         ((L.tensor.obj 𝓕).shiftEquiv (-n) ((L.shiftedTensorIsoShift n).hom.app 𝓕 x)) =
       (n * p).negOnePow • L.shiftedTensorEquiv n 𝓕 x := by
+  rw [shiftedTensorEquiv_apply] at hx
   have hx' : (L.tensor.obj 𝓕).rightShiftEquiv (-n) x ∈ (L.tensor.obj 𝓕).grading (-p) :=
     (DGRightModuleCat.mem_restrictScalars_obj_grading _ _ _ _).2 hx
   rw [shiftedTensorIsoShift_hom_app,
     DGRightModuleCat.shiftEquiv_rightShiftIsoShift_hom_apply_of_mem _ _ hx', map_zsmul_unit,
-    neg_mul_neg, shiftedTensorEquiv, LinearEquiv.trans_apply]
+    neg_mul_neg, shiftedTensorEquiv_apply]
 
 /-- The Koszul factor of the inverse `(𝓕 ⊗ L)[n] ≅ 𝓕 ⊗ L[n]`: on `α ⊗ ℓ` with `α` of homological
 degree `p`, it is again multiplication by `(-1)^(n p)`. -/
@@ -161,7 +177,7 @@ theorem shiftedTensorEquiv_shiftedTensorIsoShift_inv_app_of_mem (n : ℤ)
         DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 ((L.tensor.obj 𝓕).shiftEquiv (-n) x) := by
   have hx' : (L.tensor.obj 𝓕).shiftEquiv (-n) x ∈ (L.tensor.obj 𝓕).grading (-p) :=
     (DGRightModuleCat.mem_restrictScalars_obj_grading _ _ _ _).2 hx
-  rw [shiftedTensorIsoShift_inv_app, shiftedTensorEquiv, LinearEquiv.trans_apply,
+  rw [shiftedTensorIsoShift_inv_app, shiftedTensorEquiv_apply,
     DGRightModuleCat.rightShiftEquiv_rightShiftIsoShift_inv_apply_of_mem _ _ hx', map_zsmul_unit,
     neg_mul_neg]
 
