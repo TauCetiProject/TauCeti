@@ -5,57 +5,50 @@ Authors: The Tau Ceti contributors, Claude
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.Probability.Independence.Basic
 
 /-!
 # Tensorization of small-ball probabilities
 
-Suppose that independent random vectors `ζ k`, indexed by a finite type of cardinality `n`, all
-satisfy a small-ball bound that is linear in the radius at every radius `r ≥ ε`:
-`P(‖ζ k‖ < r) ≤ K r + a`. Then the probability that the sum of their squared norms is less than
-`ε ^ 2 * n` is exponentially small in `n`:
+Suppose that independent random vectors `ζ k`, indexed by a finite type of cardinality `n` and
+possibly taking values in different spaces, all satisfy a small-ball bound that is linear in the
+radius at every radius `r ≥ ε`: `P(‖ζ k‖ < r) ≤ K r + a`. Then the probability that the sum of
+their squared norms is less than `ε ^ 2 * n` is bounded by an `n`-th power:
 `P(∑ k, ‖ζ k‖ ^ 2 < ε ^ 2 * n) ≤ (2 e (2 K ε + a)) ^ n`.
+For fixed parameters with `2 e (2 K ε + a) < 1`, the bound decays exponentially in `n`.
 
 For `a = 0` this is the tensorization lemma of Rudelson and Vershynin; requiring the
 small-ball bound only at radii `r ≥ ε` recovers their lower threshold `ε₀`. The additive term `a`
 absorbs radius-independent error terms of small-ball estimates, such as the term `C / D` for a
 lower bound `D` on the least common denominator of the coefficients.
 
-For a matrix `A` with independent rows, indexed by a finite type of cardinality `m`, the
-coordinates of the image `A x` of a fixed vector are independent. Small-ball bounds for the
-coordinates then give `P(‖A x‖ < ε √m) ≤ (2 e (2 K ε + a)) ^ m`. This is the single-vector
-estimate of invertibility arguments on level sets of the least common denominator.
+The application to the image of a fixed vector under a matrix with independent rows is in
+`TauCeti.Probability.RandomMatrix.SmallBall`.
 
-The bounds assume only independence, not measurability, so they hold for outer probabilities
+The bound assumes only independence, not measurability, so it holds for outer probabilities
 of arbitrary random vectors.
 
 ## Main results
 
 * `ProbabilityTheory.iIndepFun.measureReal_sum_norm_sq_lt_le`: tensorization of small-ball
   bounds for independent random vectors.
-* `ProbabilityTheory.iIndepFun.measureReal_norm_toEuclideanLin_lt_mul_sqrt_le`: the small-ball
-  bound for the image of a fixed vector under a matrix with independent rows.
 
 ## References
 
 * M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
-  matrices*, Advances in Mathematics 218 (2008), Lemma 2.2 and Lemma 5.5.
-* M. Rudelson and R. Vershynin, *The smallest singular value of a random rectangular matrix*,
-  Communications on Pure and Applied Mathematics 62 (2009), Lemma 4.6.
+  matrices*, Advances in Mathematics 218 (2008), Lemma 2.2.
 -/
 
 public section
 
-open MeasureTheory Finset Matrix
+open MeasureTheory Finset
 
 namespace ProbabilityTheory.iIndepFun
 
-variable {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι] [SeminormedAddCommGroup E]
-  {P : Measure Ω} {ζ : ι → Ω → E}
+variable {Ω ι : Type*} {E : ι → Type*} [MeasurableSpace Ω] [Fintype ι]
+  [∀ k, SeminormedAddCommGroup (E k)] {P : Measure Ω} {ζ : ∀ k, Ω → E k}
 
 omit [MeasurableSpace Ω] in
 /-- An outcome with `∑ k, ‖ζ k ω‖ ^ 2 < ε ^ 2 * n` lies in a product of balls of radii
@@ -92,7 +85,7 @@ private theorem setOf_sum_norm_sq_lt_subset_iUnion [DecidableEq ι] {ε : ℝ} (
       single_le_sum (f := fun k ↦ j k ^ 2) (fun _ _ ↦ Nat.zero_le _) (mem_univ k)
     _ < Fintype.card ι := hsum
 
-omit [MeasurableSpace Ω] [SeminormedAddCommGroup E] in
+omit [MeasurableSpace Ω] [∀ k, SeminormedAddCommGroup (E k)] in
 /-- The grid sum of products of the radius bounds `K * ((i + 1) * ε) + a` over grid points
 `j` with `∑ k, j k ^ 2 < n` is at most `(2 e (2 K ε + a)) ^ n`. -/
 private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
@@ -102,12 +95,8 @@ private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
       (2 * Real.exp 1 * (2 * K * ε + a)) ^ Fintype.card ι := by
   set n := Fintype.card ι
   set b : ℕ → ℝ := fun i ↦ K * ((i + 1) * ε) + a
-  -- Since `b` is affine, `∑ i < m, 2⁻ⁱ b i = 2 b 1 - 2 * 2⁻ᵐ b (m + 1)`.
-  have hgeom (m : ℕ) :
-      ∑ i ∈ range m, (1 / 2 : ℝ) ^ i * b i + 2 * (1 / 2) ^ m * b (m + 1) = 2 * b 1 := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [sum_range_succ, ← ih]; simp only [b]; push_cast; ring
+  -- Since `b` is affine, `2⁻ⁱ b i = F i - F (i + 1)` for `F i = 2 * 2⁻ⁱ b (i + 1)`.
+  set F : ℕ → ℝ := fun i ↦ 2 * (1 / 2) ^ i * b (i + 1)
   have hexp (i : ℕ) : Real.exp (-(i : ℝ) ^ 2) ≤ (1 / 2) ^ i := calc
     Real.exp (-(i : ℝ) ^ 2) ≤ Real.exp (i * (-1)) := by
       have : (i : ℝ) ≤ (i : ℝ) ^ 2 := by exact_mod_cast Nat.le_self_pow two_ne_zero i
@@ -120,10 +109,13 @@ private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
   have hfactor : ∑ i ∈ range n, Real.exp (-(i : ℝ) ^ 2) * b i ≤ 2 * b 1 := calc
     _ ≤ ∑ i ∈ range n, (1 / 2 : ℝ) ^ i * b i :=
       sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hexp i) (hb i)
-    _ ≤ 2 * b 1 := by
-      have := hgeom n
-      have : 0 ≤ 2 * (1 / 2 : ℝ) ^ n * b (n + 1) := by have := hb (n + 1); positivity
-      linarith
+    _ = F 0 - F n := by
+      rw [← sum_range_sub']
+      refine sum_congr rfl fun i _ ↦ ?_
+      push_cast [F, b]
+      ring
+    _ ≤ F 0 := sub_le_self _ (mul_nonneg (by positivity) (hb (n + 1)))
+    _ = 2 * b 1 := by simp [F]
   calc
     _ ≤ ∑ j ∈ Fintype.piFinset fun _ : ι ↦ range n,
           Real.exp (n - ∑ k, (j k : ℝ) ^ 2) * ∏ k, b (j k) := by
@@ -136,25 +128,29 @@ private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
     _ = Real.exp n * ∏ _k : ι, ∑ i ∈ range n, Real.exp (-(i : ℝ) ^ 2) * b i := by
       rw [prod_univ_sum, mul_sum]
       refine sum_congr rfl fun j _ ↦ ?_
-      rw [prod_mul_distrib, ← Real.exp_sum, ← mul_assoc, ← Real.exp_add, sum_neg_distrib,
-        sub_eq_add_neg]
+      have hw :
+          Real.exp (n - ∑ k, (j k : ℝ) ^ 2) = Real.exp n * ∏ k, Real.exp (-(j k : ℝ) ^ 2) := by
+        rw [sub_eq_add_neg, Real.exp_add, ← sum_neg_distrib, Real.exp_sum]
+      simp only [hw, prod_mul_distrib, mul_assoc]
     _ ≤ Real.exp n * ∏ _k : ι, 2 * b 1 :=
       mul_le_mul_of_nonneg_left (prod_le_prod₀ (fun _ _ ↦ sum_nonneg fun i _ ↦
         mul_nonneg (Real.exp_pos _).le (hb i)) fun _ _ ↦ hfactor) (Real.exp_pos _).le
+    _ = (Real.exp 1 * (2 * b 1)) ^ n := by
+      simp only [prod_const, card_univ, mul_pow, Real.exp_one_pow, n]
     _ = (2 * Real.exp 1 * (2 * K * ε + a)) ^ n := by
-      rw [prod_const, card_univ, ← Real.exp_one_pow, ← mul_pow]
-      simp only [b]
-      push_cast
+      congr 1
+      push_cast [b]
       ring
 
-variable [MeasurableSpace E] [OpensMeasurableSpace E]
+variable [∀ k, MeasurableSpace (E k)] [∀ k, OpensMeasurableSpace (E k)]
 
 /-- **Tensorization of small-ball probabilities.** Let `ζ k` be independent random vectors,
 indexed by a finite type of cardinality `n`, and let `ε ≥ 0`. If each `ζ k` satisfies the
 linear small-ball bound `P(‖ζ k‖ < r) ≤ K * r + a` at every radius `r ≥ ε`, then
 `P(∑ k, ‖ζ k‖ ^ 2 < ε ^ 2 * n) ≤ (2 e (2 K ε + a)) ^ n`.
 
-The random vectors need not be measurable, and the probabilities are outer measures. -/
+The random vectors may take values in different spaces and need not be measurable; the
+probabilities are outer measures. -/
 theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun ζ P) {ε K a : ℝ} (hε : 0 ≤ ε)
     (hsmall : ∀ k, ∀ r, ε ≤ r → P.real {ω | ‖ζ k ω‖ < r} ≤ K * r + a) :
     P.real {ω | ∑ k, ‖ζ k ω‖ ^ 2 < ε ^ 2 * Fintype.card ι} ≤
@@ -179,29 +175,5 @@ theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun ζ P) {ε K a : ℝ} (h�
     _ ≤ _ := sum_le_sum fun j _ ↦ (hprod _).trans_le <|
       prod_le_prod₀ (fun _ _ ↦ measureReal_nonneg) fun k _ ↦ hsmall k _ (hr (j k))
     _ ≤ _ := sum_filter_prod_le fun i ↦ hb _ (hr i)
-
-/-- **Small-ball bound for the image of a fixed vector.** Let `A` be a random matrix with
-independent rows, indexed by a finite type of cardinality `m`, let `x` be a fixed vector and let
-`ε ≥ 0`. If every coordinate of `A x` satisfies the linear small-ball bound
-`P(‖(A x) i‖ < r) ≤ K * r + a` at every radius `r ≥ ε`, then
-`P(‖A x‖ < ε √m) ≤ (2 e (2 K ε + a)) ^ m`. -/
-theorem measureReal_norm_toEuclideanLin_lt_mul_sqrt_le {m n 𝕜 : Type*} [Fintype m] [Fintype n]
-    [DecidableEq n] [RCLike 𝕜] [MeasurableSpace 𝕜] [OpensMeasurableSpace 𝕜]
-    {A : Ω → Matrix m n 𝕜}
-    (hind : iIndepFun (fun i ω ↦ (A ω).row i) P) (x : EuclideanSpace 𝕜 n) {ε K a : ℝ}
-    (hε : 0 ≤ ε) (hsmall : ∀ i, ∀ r, ε ≤ r → P.real {ω | ‖A ω i ⬝ᵥ x‖ < r} ≤ K * r + a) :
-    P.real {ω | ‖toEuclideanLin (A ω) x‖ < ε * Real.sqrt (Fintype.card m)} ≤
-      (2 * Real.exp 1 * (2 * K * ε + a)) ^ Fintype.card m := by
-  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  have hY : iIndepFun (fun i ω ↦ ‖A ω i ⬝ᵥ x‖) P :=
-    hind.comp (fun _ (w : n → 𝕜) ↦ ‖w ⬝ᵥ x‖) fun _ ↦
-      Continuous.measurable (by simp only [dotProduct]; fun_prop)
-  refine le_trans (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _))
-    (hY.measureReal_sum_norm_sq_lt_le hε (by simpa only [norm_norm] using hsmall))
-  rw [Set.mem_ofPred_eq] at hω ⊢
-  have hnorm : ‖toEuclideanLin (A ω) x‖ ^ 2 = ∑ i, ‖‖A ω i ⬝ᵥ x‖‖ ^ 2 := by
-    simp only [norm_norm, EuclideanSpace.norm_sq_eq, toLpLin_apply, mulVec]
-  have hsq := pow_lt_pow_left₀ hω (norm_nonneg _) two_ne_zero
-  rwa [hnorm, mul_pow, Real.sq_sqrt (Nat.cast_nonneg _)] at hsq
 
 end ProbabilityTheory.iIndepFun
