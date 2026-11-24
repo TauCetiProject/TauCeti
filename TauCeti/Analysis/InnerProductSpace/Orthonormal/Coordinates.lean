@@ -37,6 +37,7 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   dimension `2 * n`, the complex coordinates `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i`, as a real
   linear equivalence `V ≃ₗ[ℝ] ℂⁿ`. In dimension four these are
   `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` (`OrthonormalBasis.complexCoords_two_apply`).
+  They preserve norms (`OrthonormalBasis.norm_toLp_complexCoords`).
 
 ## Main statements
 
@@ -215,6 +216,7 @@ noncomputable def complexCoords (n : ℕ) (b : OrthonormalBasis (Fin (2 * n)) �
   (b.repr.trans (TauCeti.complexEuclideanRealLinearIsometryEquiv n).symm).toLinearEquiv.trans
     (WithLp.linearEquiv 2 ℝ (Fin n → ℂ))
 
+/-- The `j`-th complex coordinate of `v` is `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i`. -/
 @[simp]
 theorem complexCoords_apply {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (v : V)
     (j : Fin n) :
@@ -226,6 +228,7 @@ theorem complexCoords_apply {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
   rw [TauCeti.complexEuclideanRealLinearIsometryEquiv_symm_apply, b.repr_apply_apply,
     b.repr_apply_apply]
 
+/-- The inverse of `complexCoords` sends `z` to `∑ⱼ (re zⱼ) b (2 * j) + (im zⱼ) b (2 * j + 1)`. -/
 theorem complexCoords_symm_apply {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
     (z : Fin n → ℂ) :
     (b.complexCoords n).symm z =
@@ -249,6 +252,15 @@ theorem complexCoords_two_apply (b : OrthonormalBasis (Fin 4) ℝ V) (v : V) :
   -- The frame indices `Fin.cast _ (finProdFinEquiv (i, a))` evaluate to numerals.
   fin_cases i <;> rfl
 
+/-- The complex coordinates preserve norms: `v ↦ toLp (b.complexCoords n v)` is a real isometry
+from `V` onto `EuclideanSpace ℂ (Fin n)`. -/
+@[simp]
+theorem norm_toLp_complexCoords {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (v : V) :
+    ‖WithLp.toLp 2 (b.complexCoords n v)‖ = ‖v‖ :=
+  (b.repr.trans (TauCeti.complexEuclideanRealLinearIsometryEquiv n).symm).norm_map v
+
+/-- In dimension four, the inverse of the complex coordinates sends `z` to
+`(re z₀) b₀ + (im z₀) b₁ + (re z₁) b₂ + (im z₁) b₃`. -/
 @[simp]
 theorem complexCoords_two_symm_apply (b : OrthonormalBasis (Fin 4) ℝ V) (z : Fin 2 → ℂ) :
     (b.complexCoords 2).symm z =
