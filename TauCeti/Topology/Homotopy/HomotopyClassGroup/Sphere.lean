@@ -250,7 +250,8 @@ noncomputable def sphereZeroMulEquiv :
         -- `S⁰` consists of the north pole and its antipode.
         have ht : (t : EuclideanSpace ℝ (Fin 1)) ∈ ({(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1)),
             -(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1))} : Set _) :=
-          sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin (sphereNorthPole 0).2 ▸ t.2
+          sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin
+            (sphereNorthPole 0).property ▸ t.property
         rcases ht with ht | ht
         · rw [show t = sphereNorthPole 0 from Subtype.ext ht]
           exact h.1
