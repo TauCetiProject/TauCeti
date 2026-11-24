@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import Mathlib.Probability.ProductMeasure
 
 import Mathlib.MeasureTheory.Measure.LogLikelihoodRatio
 import TauCeti.InformationTheory.KullbackLeibler.Basic
@@ -34,12 +35,18 @@ real Gaussian laws of variance `v`, transported along `WithLp.toLp 2`
 under that measurable equivalence and tensorizes over finite products (`TauCeti.klDiv_pi`), so the
 divergence is the sum of the coordinate divergences, `‖a - b‖ ^ 2 / (2 v)`.
 
+The Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)` with `θ - θ'` finitely
+supported have the same factors off the support, so their divergence is the finite sum of the
+coordinate divergences over the support (`TauCeti.klDiv_infinitePi`).
+
 ## Main statements
 
 * `Real.klDiv_gaussianReal`: the relative entropy between real Gaussian laws with a common
   variance.
 * `TauCeti.klDiv_multivariateGaussian`: the relative entropy between isotropic Gaussian laws on
   Euclidean space with a common variance.
+* `TauCeti.klDiv_infinitePi_gaussianReal`: the relative entropy between Gaussian sequence laws
+  whose means differ in finitely many coordinates.
 
 ## References
 
@@ -103,5 +110,21 @@ theorem klDiv_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq ι]
   rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, EuclideanSpace.real_norm_sq_eq,
     Finset.sum_div]
   simp
+
+/-- The relative entropy between two Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)`
+whose means differ in finitely many coordinates is `∑ⱼ (θⱼ - θ'ⱼ) ^ 2 / (2 ε ^ 2)`. -/
+theorem klDiv_infinitePi_gaussianReal {ι : Type*} (θ θ' : ι → ℝ) {ε : ℝ} (hε : ε ≠ 0)
+    (hθ : (Function.support (θ - θ')).Finite) :
+    klDiv (Measure.infinitePi fun j ↦ gaussianReal (θ j) (ε ^ 2).toNNReal)
+        (Measure.infinitePi fun j ↦ gaussianReal (θ' j) (ε ^ 2).toNNReal) =
+      ENNReal.ofReal ((∑ j ∈ hθ.toFinset, (θ j - θ' j) ^ 2) / (2 * ε ^ 2)) := by
+  have hv : (ε ^ 2).toNNReal ≠ 0 := by simp [hε]
+  rw [klDiv_infinitePi _ _ hθ.toFinset fun j hj ↦ ?_]
+  · simp_rw [Real.klDiv_gaussianReal _ _ hv]
+    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ by positivity, Finset.sum_div,
+      Real.coe_toNNReal _ (sq_nonneg ε)]
+  · simp only [Set.Finite.mem_toFinset, Function.mem_support, Pi.sub_apply, ne_eq,
+      not_not, sub_eq_zero] at hj
+    rw [hj]
 
 end TauCeti
