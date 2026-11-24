@@ -57,14 +57,14 @@ invariant (`[(-1, -1)]^C(4, 2) = 1`), yet are not isometric because `-1` is not 
   presentations.
 * `TauCeti.RegularFormClass.hasseInvariant_add`: the formula for arbitrary classes, with its
   cross term expressed through their discriminants.
+* `TauCeti.RegularFormClass.hasseInvariant_natCast`: the sum of `n` squares `n⟨1⟩` has trivial
+  Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_scale`: the formula for scaling a diagonal
   presentation by a unit.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
-* `TauCeti.RegularFormClass.hasseInvariant_nsmul_mk_rankOne` and
-  `TauCeti.RegularFormClass.hasseInvariant_nsmul_one`: the Hasse invariant of `n • ⟨a⟩`
-  and `n • ⟨1⟩`.
+* `TauCeti.RegularFormClass.hasseInvariant_nsmul_mk_rankOne`: the Hasse invariant of `n • ⟨a⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of the pure
   quaternion norm form `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
@@ -258,6 +258,21 @@ theorem hasseInvariant_add (x y : RegularFormClass K) :
       simpa only [discr_mk, quaternionClassOnSquareClasses_squareClass] using
         hasseInvariant_add_mk p q
 
+/-- The sum of `n` squares `n⟨1⟩` has trivial Hasse invariant. -/
+@[simp]
+theorem hasseInvariant_natCast (n : ℕ) : hasseInvariant (n : RegularFormClass K) = 1 := by
+  induction n with
+  | zero => rw [Nat.cast_zero, hasseInvariant_zero]
+  | succ n ih =>
+    rw [Nat.cast_succ, hasseInvariant_add, ih, hasseInvariant_one, discr_natCast, discr_one,
+      quaternionClassOnSquareClasses_zero_left, one_mul, one_mul]
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial Hasse invariant, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem hasseInvariant_ofNat (n : ℕ) [n.AtLeastTwo] :
+    hasseInvariant (ofNat(n) : RegularFormClass K) = 1 :=
+  hasseInvariant_natCast n
+
 /-- **Scaling formula** for any regular-form class: multiplying by `⟨a⟩` changes the Hasse
 invariant by a rank-dependent sign symbol and a symbol with its discriminant. -/
 theorem hasseInvariant_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
@@ -324,13 +339,6 @@ theorem hasseInvariant_nsmul_mk_rankOne (n : ℕ) (a : Kˣ) :
       quaternionClassOnSquareClasses_squareClass, quaternionClass_self, ← pow_add,
       Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
 
--- Not @[simp]: `RegularFormClass K` is a semiring in downstream modules, where `nsmul_eq_mul`
--- and `mul_one` rewrite the left-hand side to `↑n` and make this declaration fail `simpNF`.
-/-- The orthogonal sum of `n` positive unit lines `⟨1, …, 1⟩` has trivial Hasse invariant. -/
-theorem hasseInvariant_nsmul_one (n : ℕ) :
-    hasseInvariant (n • (1 : RegularFormClass K)) = 1 := by
-  rw [← mk_rankOne_one, hasseInvariant_nsmul_mk_rankOne, quaternionClass_one_left, one_pow]
-
 /-! ### Non-classification over semireal fields -/
 
 section Semireal
@@ -353,13 +361,13 @@ theorem four_nsmul_one_ne_four_nsmul_neg_one :
   dsimp only
   refine ⟨by rw [rank_nsmul, rank_one, mul_one], by rw [rank_nsmul, rank_mk, mul_one],
     by rw [discr_nsmul, discr_one, smul_zero], ?_,
-    hasseInvariant_nsmul_one 4, ?_, ?_⟩
+    by rw [nsmul_one, hasseInvariant_natCast], ?_, ?_⟩
   · rw [discr_nsmul, discr_mk, Fin.prod_univ_one, ← squareClass_pow]
     exact (squareClass_eq_zero_iff _).mpr ⟨(-1 : Kˣ) ^ 2, by rw [← pow_add]⟩
   · rw [hasseInvariant_nsmul_mk_rankOne,
       (quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 4 2)).mpr (by decide)]
   · intro h
-    rw [← mk_rankOne_one, nsmul_mk_rankOne, nsmul_mk_rankOne, mk_eq_mk_iff] at h
+    rw [← mk_rankOne_one, ← mk_const, ← mk_const, mk_eq_mk_iff] at h
     obtain ⟨e⟩ := h
     have hneg : presentedForm (⟨4, fun _ => (1 : Kˣ)⟩ : RegularFormPresentation K)
         (e.symm (Pi.single 0 1)) = -1 := by

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+public import TauCeti.LinearAlgebra.Projectivization.Signs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -54,6 +55,8 @@ makes the moment function Morse–Bott.
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
+* `TauCeti.projectiveMomentFunction_smul`: it is invariant under the sign changes of the
+  homogeneous coordinates.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
@@ -468,13 +471,21 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
     fun v v' t h ↦ by
       have ht : t ≠ 0 := by
         rintro rfl
-        exact v.2 (by simpa using h)
+        exact v.property (by simpa using h)
       simp only [h, momentQuotient_smul w ht]
 
 @[simp]
 theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
+
+/-- The moment function is invariant under the sign changes of the homogeneous coordinates. -/
+@[simp]
+theorem projectiveMomentFunction_smul (w : Fin (n + 1) → ℝ) (ε : Fin (n + 1) → ℤˣ)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w (ε • x) = projectiveMomentFunction 𝕜 w x := by
+  induction x using ind with | h v hv =>
+  simp only [smul_mk, projectiveMomentFunction_mk, Pi.smul_apply', norm_units_zsmul]
 
 /-- In the affine chart at the coordinate `k`, the moment function with weights `w` is the chart
 model with `a = w k` and `ν = w ∘ k.succAbove`. -/
@@ -997,6 +1008,21 @@ theorem criticalCount_projectiveMomentFunction_real {w : Fin (n + 1) → ℝ} (h
     criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j = if j ≤ n then 1 else 0 := by
   simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul,
     encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
+
+/-- **One critical point of each even index on `ℂℙⁿ`.** For pairwise distinct weights the moment
+function on complex projective space has exactly one critical point of each even index `m ≤ 2n`,
+and none of odd index or of index above `2n`. -/
+theorem criticalCount_projectiveMomentFunction_complex {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (m : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) m =
+      if Even m ∧ m ≤ 2 * n then 1 else 0 := by
+  split_ifs with h
+  · obtain ⟨⟨j, rfl⟩, hj⟩ := h
+    rw [← two_mul, ← Complex.finrank_real_complex, criticalCount_projectiveMomentFunction_mul hw]
+    simp [show j ≤ n by lia]
+  · refine criticalCount_projectiveMomentFunction_eq_zero hw fun j hj hjm ↦ h ?_
+    rw [Complex.finrank_real_complex] at hjm
+    exact ⟨⟨j, by lia⟩, by lia⟩
 
 /-- For pairwise distinct weights, at most one critical point of the moment function on `ℝℙⁿ` has
 a given index. -/

@@ -62,10 +62,9 @@ namespace RegularFormClass
 class with negative index of inertia `q = sigNeg x` has Hasse invariant `[(-1, -1)]^C(q, 2)`. -/
 theorem hasseInvariant_eq_pow_choose_sigNeg (x : RegularFormClass K) :
     hasseInvariant x = BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ x.sigNeg.choose 2 := by
-  conv_lhs => rw [eq_sigPos_nsmul_add_sigNeg_nsmul x]
-  rw [hasseInvariant_add, hasseInvariant_nsmul_one, one_mul, hasseInvariant_nsmul_mk_rankOne,
-    discr_nsmul, discr_one, smul_zero, BrauerGroup.quaternionClassOnSquareClasses_zero_left,
-    mul_one]
+  conv_lhs => rw [eq_sigPos_nsmul_add_sigNeg_nsmul x, nsmul_one]
+  rw [hasseInvariant_add, hasseInvariant_natCast, one_mul, hasseInvariant_nsmul_mk_rankOne,
+    discr_natCast, BrauerGroup.quaternionClassOnSquareClasses_zero_left, mul_one]
 
 /-- Over an ordered real closed field, the Hasse invariant of a regular-form class is trivial if
 and only if `C(sigNeg x, 2)` is even. -/

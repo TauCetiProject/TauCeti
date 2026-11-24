@@ -186,7 +186,7 @@ theorem descendSlash_slash_mapGL_of_nebentypus (k : ℤ) [NeZero p] (hpsq : p ^ 
       = (↑(χ ((Gamma0Map N).toHomUnits δ)) : ℂ) • f) :
     descendSlash k p N f ∣[k] (mapGL ℝ (γ : SL(2, ℤ)) : GL (Fin 2) ℝ)
       = (↑(χ₀ ((Gamma0Map (N / p)).toHomUnits γ)) : ℂ) • descendSlash k p N f := by
-  apply descendSlash_slash_mapGL_of_mem_Gamma0 k hpsq γ.2
+  apply descendSlash_slash_mapGL_of_mem_Gamma0 k hpsq γ.property
   intro δ hδ hd
   have hdvd : N / p ∣ N := Nat.div_dvd_of_dvd ((dvd_pow_self p two_ne_zero).trans hpsq)
   have hmap : ZMod.unitsMap hdvd ((Gamma0Map N).toHomUnits ⟨δ, hδ⟩) =
@@ -256,7 +256,7 @@ theorem descendSlash_slash_mapGL_of_nebentypus_of_prime (k : ℤ) (hp : p.Prime)
     descendSlash k p N f ∣[k] (mapGL ℝ (γ : SL(2, ℤ)) : GL (Fin 2) ℝ)
       = (↑(χ₀ ((Gamma0Map (N / p)).toHomUnits γ)) : ℂ) • descendSlash k p N f := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  apply descendSlash_slash_mapGL_of_mem_Gamma0_of_prime k hp hpN γ.2
+  apply descendSlash_slash_mapGL_of_mem_Gamma0_of_prime k hp hpN γ.property
   intro δ hδ hd
   have hdvd : N / p ∣ N := Nat.div_dvd_of_dvd hpN
   have hmap : ZMod.unitsMap hdvd ((Gamma0Map N).toHomUnits ⟨δ, hδ⟩) =

@@ -61,6 +61,8 @@ If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 
 * `LieSubalgebra.ad_pow_three_eq_smul_ad`: the same cubic for `ad x` on a Lie subalgebra.
 * `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
   when their bracket vanishes.
+* `Module.End.commutator_apply`: the bracket of two endomorphisms, applied to a vector.
+* `TauCeti.map_lie_eq_zero`: a ring homomorphism into a commutative ring kills commutators.
 
 ## References
 
@@ -200,3 +202,27 @@ theorem ad_pow_three_eq_smul_ad {K : LieSubalgebra R A} {u : K} {c : R}
     LieAlgebra.ad_pow_three_eq_smul_ad hu, LinearMap.smul_apply]
 
 end LieSubalgebra
+
+namespace Module.End
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} {M : Type v} [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- The bracket of two endomorphisms, applied to a vector. -/
+@[simp]
+theorem commutator_apply (X Y : Module.End R M) (m : M) : ⁅X, Y⁆ m = X (Y m) - Y (X m) := by
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp]
+
+end Module.End
+
+namespace TauCeti
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- A ring homomorphism into a commutative ring kills commutators. -/
+theorem map_lie_eq_zero {B C F : Type*} [Ring B] [CommRing C] [FunLike F B C]
+    [RingHomClass F B C] (ε : F) (a b : B) : ε ⁅a, b⁆ = 0 := by
+  rw [Ring.lie_def, map_sub, map_mul, map_mul, mul_comm, sub_self]
+
+end TauCeti

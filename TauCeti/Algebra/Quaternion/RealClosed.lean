@@ -76,7 +76,7 @@ theorem quaternionClass_eq_ite_neg (a b : Kˣ) :
     quaternionClass a b =
       if (a : K) < 0 ∧ (b : K) < 0 then quaternionClass (-1 : Kˣ) (-1) else 1 := by
   split_ifs with h
-  · exact quaternionClass_of_neg h.1 h.2
+  · exact quaternionClass_of_neg h.left h.right
   · rcases lt_or_gt_of_ne a.ne_zero with ha | ha
     · rcases lt_or_gt_of_ne b.ne_zero with hb | hb
       · exact absurd ⟨ha, hb⟩ h
@@ -92,7 +92,7 @@ theorem quaternionClass_eq_one_iff_pos (a b : Kˣ) :
   rw [quaternionClass_eq_ite_neg]
   split_ifs with h
   · exact ⟨fun h1 => absurd h1 quaternionClass_neg_one_neg_one_ne_one,
-      fun hpos => by rcases hpos with ha' | hb' <;> linarith [h.1, h.2]⟩
+      fun hpos => by rcases hpos with ha' | hb' <;> linarith [h.left, h.right]⟩
   · refine ⟨fun _ => ?_, fun _ => rfl⟩
     rcases lt_or_gt_of_ne ha with ha' | ha'
     · exact Or.inr ((lt_or_gt_of_ne hb).resolve_left fun hb' => h ⟨ha', hb'⟩)

@@ -7,6 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.DiffAdd
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of Montgomery differential addition
@@ -22,6 +23,8 @@ pairs over a composite modulus.
 -/
 
 namespace TauCeti.Montgomery
+
+open TauCeti.Examples.Montgomery.CurveX3AddX
 
 -- Over `𝔽₇`: the output `(2, 3)` represents `x(P + Q) = 3`.
 example : diffAdd (⟨3, 1⟩ : Pair (ZMod 7)) ⟨1, 1⟩ ⟨5, 1⟩ = ⟨2, 3⟩ := by
@@ -47,13 +50,10 @@ example : (⟨1, 3⟩ : Pair (ZMod 5)).cross ⟨2, 1⟩ = 0 := by
 example :
     ∃ h : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0,
       diffAdd (coordinates 0 1 (.some 2 0 h)) ⟨1, 0⟩ (coordinates 0 1 (.some 2 0 h)) ≠ 0 := by
-  have h : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
-    simp only [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff,
-      model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-    decide +revert
   have h₂ : (2 : ZMod 5) ≠ 0 := by decide
   have : Fact (Nat.Prime 5) := ⟨by decide⟩
-  exact ⟨h, diffAdd_coordinates_some_ne_zero h₂ one_ne_zero h h₂⟩
+  exact ⟨nonsingular_two_zero_five,
+    diffAdd_coordinates_some_ne_zero h₂ one_ne_zero nonsingular_two_zero_five h₂⟩
 
 -- Modulo `35`: the pairs of `[2]P`, `P` and `P` for the starting pair `(22, 1)`.
 example : diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩ = ⟨1, 8⟩ := by

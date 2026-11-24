@@ -22,11 +22,12 @@ or regular quadratic form depends only on `σ mod 8`:
 * `c(x) = [(-1, -1)]` when `σ % 8 ∈ {3, 4, 5, 6}`, and
 * `c(x) = 1` when `σ % 8 ∈ {0, 1, 2, 7}`.
 
-On `⟨1, …, 1⟩` of rank `n` (`σ = n`), this reproduces the Bott-periodic pattern
-`1, 1, [ℍ], [ℍ], [ℍ], [ℍ], 1, 1` for `n = 1, …, 8`, governed solely by the `C(n + 1, 4)` exponent
-of Lam's comparison (Lam V.3.20). On `⟨-1, -1, -1⟩` (`σ = -3`, `(-3) % 8 = 5`), `c = [ℍ]` while
-`s = [ℍ]` and both correction factors in Lam V.3.20 equal `[ℍ]`, confirming that the discriminant
-correction `[(-1, d)]^C(n - 1, 2)` cannot be omitted.
+On `⟨1, …, 1⟩` of rank `n` (`σ = n`), this generalizes the sum-of-squares computation in
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Real`, reproducing the Bott-periodic
+pattern `1, 1, [ℍ], [ℍ], [ℍ], [ℍ], 1, 1` for `n = 1, …, 8`, governed solely by the `C(n + 1, 4)`
+exponent of Lam's comparison (Lam V.3.20). On `⟨-1, -1, -1⟩` (`σ = -3`, `(-3) % 8 = 5`), `c = [ℍ]`
+while `s = [ℍ]` and both correction factors in Lam V.3.20 equal `[ℍ]`, confirming that the
+discriminant correction `[(-1, d)]^C(n - 1, 2)` cannot be omitted.
 
 The formula also illustrates how additivity behaves over `ℝ` when only one summand lies in
 `I(ℝ)²`: `4 ∈ I(ℝ)²` and `3 ∉ I(ℝ)²` still satisfy `c(4 + 3) = 1 = [ℍ] · [ℍ]`. For the general
@@ -34,7 +35,8 @@ semireal failure of additivity `c(2 + 1) ≠ c(2) · c(1)`, see
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`; for the general semireal non-classification
 witness `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne` showing that
 `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share all four invariants `(4, 0, 1, [(-1, -1)])` while
-remaining non-isometric, see `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford`.
+remaining non-isometric, see
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Basic`.
 
 ## Main results
 
@@ -81,9 +83,13 @@ theorem cliffordInvariant_eq_ite_signature (x : WittRing K) :
       else 1 := by
   have h0 : 0 ≤ signature x % 8 := Int.emod_nonneg _ (by norm_num)
   have _ : signature x % 8 < 8 := Int.emod_lt_of_pos _ (by norm_num)
+  have hc : ((signature x % 8).toNat + 1).choose 4 % 2 =
+      ((signature x % 8).toNat + 1) / 4 % 2 := by
+    simpa [Nat.ModEq] using
+      Choose.choose_pow_mul_modEq_choose_div_nat (p := 2) ((signature x % 8).toNat + 1) 2 1
   have heven : Even (((signature x % 8).toNat + 1).choose 4) ↔
       ¬(3 ≤ signature x % 8 ∧ signature x % 8 ≤ 6) := by
-    rw [Nat.even_choose_four_iff, Nat.even_iff]
+    rw [Nat.even_iff, hc]
     omega
   rw [cliffordInvariant_eq_pow_choose_emod_signature, BrauerGroup.quaternionClass_pow]
   simp only [heven, ite_not]

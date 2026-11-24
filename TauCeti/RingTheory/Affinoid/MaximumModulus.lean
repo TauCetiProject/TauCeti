@@ -82,7 +82,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
   -- Choose `m` of norm one exceeding every exponent of every coefficient of norm `‖f‖`; there are
   -- finitely many such coefficients since `f` is restricted and nonzero.
   have hD : {t : Fin n →₀ ℕ | ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖}.Finite := by
-    have h := f.2.eventually (gt_mem_nhds (norm_pos_iff.mpr hf))
+    have h := f.property.eventually (gt_mem_nhds (norm_pos_iff.mpr hf))
     simp only [Filter.eventually_cofinite, not_lt, one_pow, Finsupp.prod_fun_one, mul_one] at h
     exact h.subset fun t ht ↦ ht.ge
   obtain ⟨m, hNm, hm⟩ := IsUltrametricDist.exists_lt_norm_natCast_eq_one K
@@ -151,7 +151,7 @@ private theorem exists_supSeminorm_le_pointNorm_of_isDomain {B : Type*} [CommRin
   refine ⟨y, ?_⟩
   rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := T) f, ← hi,
     MvPowerSeries.supSeminorm_eq_norm, ← hx]
-  exact (Real.rpow_one_div_natCast_sub_le_iff (pointNorm_nonneg _) (pointNorm_nonneg f) i.2).mpr
+  exact (Real.rpow_one_div_natCast_sub_le_iff (pointNorm_nonneg _) (pointNorm_nonneg f) i.isLt).mpr
     (hy i)
 
 /-- **The maximum modulus principle.** On a nonzero affinoid algebra the supremum seminorm is
@@ -235,7 +235,7 @@ theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {B : Type*} [CommRing B]
   · refine hB.supSeminorm_aeval_le hε0.le hε1 hX (by simp [c₀]) fun t ↦ ?_
     rcases eq_or_ne t 0 with rfl | ht
     · simp [c₀]
-    · rw [MvPolynomial.coeff_sub, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
+    · rw [AddMonoidAlgebra.coeff_sub_apply, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
       have h := norm_coeff_le_norm P t
       rw [hP, coe_polynomialToRestricted, MvPolynomial.coeff_coe] at h
       exact h.trans hPg
