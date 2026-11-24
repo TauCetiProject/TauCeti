@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.Indicator
 
@@ -31,6 +32,12 @@ the junk value `0`.
   the spectrum of an almost-projection.
 * `TauCeti.norm_sub_roundProjection_le`, `TauCeti.norm_one_sub_roundProjection_mul_le`:
   `‖h - Q‖ ≤ 2δ` and `‖(1 - Q)h‖ ≤ 2δ`.
+
+## References
+
+* N. P. Brown, *Invariant means and finite representation theory of C⋆-algebras*, Mem. Amer.
+  Math. Soc. 184 (2006), no. 865; arXiv:math/0304009v2, Lemma 2.7. The rounding is the
+  spectral-projection step of the operator-norm version of its unitalization.
 -/
 
 public section
@@ -95,12 +102,8 @@ theorem isStarProjection_roundProjection (h : A) : IsStarProjection (roundProjec
   isStarProjection_cfc_indicator h _
 
 /-- The rounding of `h` commutes with `h`. -/
-theorem commute_roundProjection (h : A) : Commute (roundProjection h) h := by
-  by_cases hh : IsSelfAdjoint h
-  · simpa [roundProjection_def, cfc_id' ℝ h] using
-      cfc_commute_cfc ((Set.Ici (1 / 2 : ℝ)).indicator (1 : ℝ → ℝ)) (fun t : ℝ ↦ t) h
-  · rw [roundProjection_def, cfc_apply_of_not_predicate h hh]
-    exact Commute.zero_left h
+theorem commute_roundProjection (h : A) : Commute (roundProjection h) h :=
+  Commute.cfc_real (Commute.refl h) _
 
 variable {h : A} {δ : ℝ}
 

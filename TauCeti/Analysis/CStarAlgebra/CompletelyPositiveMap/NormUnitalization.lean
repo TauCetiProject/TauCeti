@@ -30,6 +30,12 @@ this, because compressing creates the cross term `Qφ(a)(1 - Q)·(1 - Q)φ(b)Q`.
 * `CompletelyPositiveMap.norm_compress_map_mul_sub_le`,
   `CompletelyPositiveMap.norm_roundProjection_compress_map_mul_sub_le`: the defect estimate for
   `QφQ`.
+
+## References
+
+* N. P. Brown, *Invariant means and finite representation theory of C⋆-algebras*, Mem. Amer.
+  Math. Soc. 184 (2006), no. 865; arXiv:math/0304009v2, Lemma 2.7. This file begins the
+  operator-norm version of its unitalization.
 -/
 
 public section
