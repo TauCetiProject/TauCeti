@@ -536,10 +536,10 @@ theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.I
       rw [map_mul, map_pow]; refine (norm_mul_le _ _).trans_lt <| (mul_le_mul (norm_pow_le _ r)
         (norm_algebraMap_le_one hα y) (norm_nonneg _) (by positivity)).trans_lt ?_
       simpa [norm_algebraMap_T] using hr
-    have h1 : ‖f (algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y))‖ < 1 := by
-      rw [← dist_zero_right, ← f.map_zero]; exact hball (by rwa [dist_zero_right])
-    rw [map_mul, map_pow, f.map_mul, f.map_pow, norm_mul, norm_pow] at h1
-    change ‖g T‖ ^ r * ‖g y‖ < 1 at h1; rw [hgT] at h1
+    have h1 : ‖g (T ^ r * y)‖ < 1 := by
+      rw [RingHom.comp_apply, ← dist_zero_right, ← f.map_zero]
+      exact hball (by rwa [dist_zero_right])
+    rw [map_mul, map_pow, norm_mul, norm_pow, hgT] at h1
     rw [← one_div, le_div_iff₀' (pow_pos (norm_pos_iff.2 ht0) r)]; exact h1.le
   exact IsLocalization.ringHom_ext (Submonoid.powers (T : AnnularRing p)) <| RingHom.ext fun x ↦
     (RingHom.congr_fun (ringHom_eq_eval_of_bounded ht g hg_bound hg_alg hgT hgU) x).trans
