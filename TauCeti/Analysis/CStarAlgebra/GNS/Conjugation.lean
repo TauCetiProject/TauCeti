@@ -60,6 +60,16 @@ private noncomputable def preGNSConj (hf : ∀ a b, f (a * b) = f (b * a)) :
   right_inv _ := by simp
   norm_map' x := by simp [preGNS_norm_def, hf (f.ofPreGNS x)]
 
+/-- The pre-GNS conjugation sends `x` to the class of `(ofPreGNS x)⋆`. -/
+private theorem preGNSConj_apply (hf : ∀ a b, f (a * b) = f (b * a)) (x : f.PreGNS) :
+    preGNSConj f hf x = f.toPreGNS (star (f.ofPreGNS x)) :=
+  rfl
+
+/-- The pre-GNS conjugation is its own inverse. -/
+private theorem preGNSConj_symm (hf : ∀ a b, f (a * b) = f (b * a)) :
+    (preGNSConj f hf).symm = preGNSConj f hf :=
+  LinearIsometryEquiv.ext fun _ ↦ rfl
+
 /-- The **modular conjugation** of a tracial positive functional `f`: the conjugate-linear
 isometric involution of the GNS space extending `[a] ↦ [a⋆]`. -/
 noncomputable def gnsConj (hf : ∀ a b, f (a * b) = f (b * a)) : f.GNS ≃ₗᵢ⋆[ℂ] f.GNS :=
@@ -70,8 +80,8 @@ variable (hf : ∀ a b, f (a * b) = f (b * a))
 /-- The modular conjugation sends the class of `a` to the class of `a⋆`. -/
 @[simp]
 theorem gnsConj_apply_coe (a : A) :
-    gnsConj f hf (f.toPreGNS a : f.GNS) = (f.toPreGNS (star a) : f.GNS) :=
-  LinearIsometryEquiv.completion_apply_coe _ (f.toPreGNS a)
+    gnsConj f hf (f.toPreGNS a : f.GNS) = (f.toPreGNS (star a) : f.GNS) := by
+  rw [gnsConj, LinearIsometryEquiv.completion_apply_coe, preGNSConj_apply, ofPreGNS_toPreGNS]
 
 /-- The modular conjugation sends the class of `a` to the class of `a⋆`, in terms of the class
 map `f.toGNS`. -/
@@ -81,8 +91,8 @@ theorem gnsConj_apply_toGNS (a : A) : gnsConj f hf (f.toGNS a) = f.toGNS (star a
 
 /-- The modular conjugation is its own inverse. -/
 @[simp]
-theorem gnsConj_symm : (gnsConj f hf).symm = gnsConj f hf :=
-  LinearIsometryEquiv.completion_symm (preGNSConj f hf)
+theorem gnsConj_symm : (gnsConj f hf).symm = gnsConj f hf := by
+  rw [gnsConj, LinearIsometryEquiv.completion_symm, preGNSConj_symm]
 
 /-- The modular conjugation is an involution. -/
 @[simp]
