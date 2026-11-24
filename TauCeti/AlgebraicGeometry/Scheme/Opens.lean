@@ -36,6 +36,9 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
   preimage under `f'` of an open of the base lying over `W` lies in the preimage under `g'` of
   `f⁻¹ W`.
+* `TauCeti.AlgebraicGeometry.preimage_preimage_eq_of_comp_eq` and
+  `TauCeti.AlgebraicGeometry.preimageSquareIso`: the two sides of a commutative square of schemes
+  have the same preimages of opens of the base.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -169,6 +172,30 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
   refine (inf_eq_right.mpr ?_).symm
   rw [← Scheme.Hom.comp_preimage, hw, Scheme.Hom.comp_preimage]
   exact f'.preimage_mono h
+
+/-- In a commutative square `g' ≫ f = f' ≫ g` of schemes, the two sides of the square have the
+same preimages of opens of the base `S`. -/
+theorem preimage_preimage_eq_of_comp_eq {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'}
+    {g : S' ⟶ S} {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) (V : S.Opens) :
+    f' ⁻¹ᵁ g ⁻¹ᵁ V = g' ⁻¹ᵁ f ⁻¹ᵁ V :=
+  (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ V) h).symm
+
+/-- In a commutative square `g' ≫ f = f' ≫ g` of schemes, taking preimages of opens of the base
+`S` along the two sides of the square gives isomorphic functors. -/
+def preimageSquareIso {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S}
+    {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) :
+    (Opens.map f.base).op ⋙ (Opens.map g'.base).op ≅
+      (Opens.map g.base).op ⋙ (Opens.map f'.base).op :=
+  NatIso.ofComponents (fun U ↦ eqToIso (congrArg op
+    (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ U.unop) h))) (fun _ ↦ rfl)
+
+/-- The components of `preimageSquareIso` are the identifications of the two preimages. -/
+@[simp]
+lemma preimageSquareIso_hom_app {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'}
+    {g : S' ⟶ S} {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g) (U : S.Opensᵒᵖ) :
+    (preimageSquareIso h).hom.app U =
+      eqToHom (congrArg op (congrArg (fun φ : X' ⟶ S ↦ φ ⁻¹ᵁ U.unop) h)) :=
+  (rfl)
 
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
