@@ -333,7 +333,7 @@ theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero {g : HolomorphicGermSpace K}
   obtain ⟨ε, hε, hfε⟩ := Metric.eventually_nhds_iff_ball.1 (hf x hx).eventually_analyticAt
   let B : Opens V := ⟨ball x (ε / 2), isOpen_ball⟩
   obtain ⟨b, hb⟩ := exists_eqOn_extend_of_isCompact_closure (U := B)
-    isBounded_ball.isCompact_closure fun z hz =>
+    isBounded_ball.isCompact_closure <| DifferentiableOn.diffContOnCl fun z hz =>
       (hfε z (closedBall_subset_ball (half_lt_self hε) (closure_ball_subset_closedBall hz)))
         |>.differentiableWithinAt
   have hB := extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero
@@ -408,8 +408,9 @@ theorem exists_ofBounded_eq (g : HolomorphicGermSpace K) :
     ∃ n, ∃ f : boundedHolomorphicFunctions ℂ (U n), ofBounded (hU.subset n) f = g := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   obtain ⟨n, hn⟩ := hU.exists_subset (isOpen_analyticAt ℂ f) hf
-  obtain ⟨b, hb⟩ := exists_eqOn_extend_of_isCompact_closure (hU.isCompact_closure n)
-    fun z hz => (((hU.closure_subset n).trans hn) hz : AnalyticAt ℂ f z).differentiableWithinAt
+  obtain ⟨b, hb⟩ := exists_eqOn_extend_of_isCompact_closure (hU.isCompact_closure n) <|
+    DifferentiableOn.diffContOnCl fun z hz =>
+      (((hU.closure_subset n).trans hn) hz : AnalyticAt ℂ f z).differentiableWithinAt
   refine ⟨n + 1, b, ?_⟩
   rw [ofBounded_apply]
   exact congrArg _ (ofFun_eq_of_eqOn _ _ (U (n + 1)).isOpen (hU.subset _) hb)

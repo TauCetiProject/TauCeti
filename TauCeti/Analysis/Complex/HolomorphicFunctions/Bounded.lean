@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
@@ -202,12 +203,13 @@ theorem extend_of (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ) (hC : 
     {z : V} (hz : z ∈ U) : extend (of U g hg C hC) z = g z := by
   rw [extend_apply _ ⟨z, hz⟩, of_apply]
 
-/-- A map holomorphic on the compact closure of `U` restricts to an element of `H^∞(U, E)`. -/
+/-- A map holomorphic on `U` and continuous on its compact closure restricts to an element of
+`H^∞(U, E)`. -/
 theorem exists_eqOn_extend_of_isCompact_closure {g : V → E} (hU : IsCompact (closure (U : Set V)))
-    (hg : DifferentiableOn ℂ g (closure U)) :
+    (hg : DiffContOnCl ℂ g U) :
     ∃ f : boundedHolomorphicFunctions E U, EqOn (extend f) g U := by
   obtain ⟨C, hC⟩ := hU.exists_bound_of_continuousOn hg.continuousOn
-  exact ⟨of U g (hg.mono subset_closure) C fun z hz => hC z (subset_closure hz),
+  exact ⟨of U g hg.differentiableOn C fun z hz => hC z (subset_closure hz),
     fun z hz => extend_of _ _ _ _ hz⟩
 
 /-- **Cauchy estimate.** On a ball of radius `R` inside `U`, a bounded holomorphic map `f` is
