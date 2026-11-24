@@ -102,7 +102,8 @@ theorem erf_I_mul_ofReal (y : ℝ) :
   have hint (s : ℝ) : (I * y) * cexp (-((s : ℂ) * (I * y)) ^ 2) =
       I * ((y * Real.exp ((s * y) ^ 2) : ℝ) : ℂ) := by
     push_cast
-    rw [show -((s : ℂ) * (I * y)) ^ 2 = ((s : ℂ) * y) ^ 2 by ring_nf; rw [I_sq]; ring]
+    rw [show -((s : ℂ) * (I * y)) ^ 2 = ((s : ℂ) * y) ^ 2 by
+      linear_combination (-(s : ℂ) ^ 2 * (y : ℂ) ^ 2) * I_sq]
     ring
   rw [erf_def, intervalIntegral.integral_congr fun s _ ↦ hint s,
     intervalIntegral.integral_const_mul, intervalIntegral.integral_ofReal,
@@ -194,10 +195,9 @@ private theorem not_forall_erf_eq_polynomial_eval_mul_cexp (P Q : ℂ[X]) :
     exact hr (by simpa using congrArg (fun p : ℂ[X] ↦ p.coeff 0) hPpoly.symm)
   -- The coefficient of `X ^ (deg P + 1)` in `P′ − 2XP` is `−2` times the leading coefficient.
   have hcoeff := congrArg (fun p : ℂ[X] ↦ p.coeff (P.natDegree + 1)) hPpoly
-  simp only [coeff_sub, coeff_derivative, coeff_C_mul, coeff_X_mul, coeff_C, Nat.succ_ne_zero,
-    ite_false, coeff_eq_zero_of_natDegree_lt (Nat.lt_succ_of_lt (Nat.lt_succ_self _)), zero_mul,
-    zero_sub, neg_eq_zero, mul_eq_zero, two_ne_zero, false_or] at hcoeff
-  exact hP (leadingCoeff_eq_zero.mp hcoeff)
+  simp only [coeff_sub, coeff_derivative, coeff_C_mul, coeff_X_mul, coeff_C] at hcoeff
+  rw [coeff_eq_zero_of_natDegree_lt (by omega)] at hcoeff
+  exact hP (by simpa using hcoeff)
 
 /-- `erf` has infinitely many zeros. -/
 theorem infinite_setOf_erf_eq_zero : {z : ℂ | erf z = 0}.Infinite := fun hfin ↦ by
@@ -207,14 +207,17 @@ theorem infinite_setOf_erf_eq_zero : {z : ℂ | erf z = 0}.Infinite := fun hfin 
 
 /-- `erf` has infinitely many zeros in the open first quadrant. -/
 theorem infinite_erf_zeros_firstQuadrant :
-    {z : ℂ | 0 < z.re ∧ 0 < z.im ∧ erf z = 0}.Infinite := by
-  set S := {z : ℂ | 0 < z.re ∧ 0 < z.im ∧ erf z = 0}
+    {z : ℂ | erf z = 0 ∧ 0 < z.re ∧ 0 < z.im}.Infinite := by
+  set S := {z : ℂ | erf z = 0 ∧ 0 < z.re ∧ 0 < z.im}
   intro hS
+  have hconj : Function.Injective (starRingEnd ℂ) := (starRingEnd ℂ).injective
   refine infinite_setOf_erf_eq_zero ((((((Set.finite_singleton 0).union hS).union
-    (hS.image Neg.neg)).union (hS.image conj)).union (hS.image fun z ↦ -conj z)).subset ?_)
+    (hS.preimage neg_injective.injOn)).union (hS.preimage hconj.injOn)).union
+    (hS.preimage (neg_injective.comp hconj).injOn)).subset ?_)
   intro z (hz : erf z = 0)
+  simp only [Set.mem_union, Set.mem_preimage, Set.mem_singleton_iff, Function.comp_apply]
   by_cases h0 : z = 0
-  · simp [h0]
+  · tauto
   have hre : z.re ≠ 0 := fun h ↦ h0 <| by
     have hz' : z = I * z.im := by apply Complex.ext <;> simp [h]
     rw [hz', erf_I_mul_ofReal_eq_zero_iff] at hz
@@ -224,13 +227,15 @@ theorem infinite_erf_zeros_firstQuadrant :
     rw [hz', erf_ofReal_eq_zero_iff] at hz
     rw [hz', hz, ofReal_zero]
   rcases hre.lt_or_gt with hre | hre <;> rcases him.lt_or_gt with him | him
-  · exact Or.inl <| Or.inl <| Or.inr ⟨-z, ⟨by simpa using hre, by simpa using him,
-      by rw [erf_neg, hz, neg_zero]⟩, neg_neg z⟩
-  · exact Or.inr ⟨-conj z, ⟨by simpa using hre, by simpa using him,
-      by rw [erf_neg, erf_conj, hz, map_zero, neg_zero]⟩, by simp⟩
-  · exact Or.inl <| Or.inr ⟨conj z, ⟨by simpa using hre, by simpa using him,
-      by rw [erf_conj, hz, map_zero]⟩, by simp⟩
-  · exact Or.inl <| Or.inl <| Or.inl <| Or.inr ⟨hre, him, hz⟩
+  · have : -z ∈ S := ⟨by rw [erf_neg, hz, neg_zero], by simpa using hre, by simpa using him⟩
+    tauto
+  · have : -conj z ∈ S :=
+      ⟨by rw [erf_neg, erf_conj, hz, map_zero, neg_zero], by simpa using hre, by simpa using him⟩
+    tauto
+  · have : conj z ∈ S := ⟨by rw [erf_conj, hz, map_zero], by simpa using hre, by simpa using him⟩
+    tauto
+  · have : z ∈ S := ⟨hz, hre, him⟩
+    tauto
 
 end Complex
 
