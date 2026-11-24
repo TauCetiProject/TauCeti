@@ -250,9 +250,7 @@ for every exponent `p`. -/
 theorem IsSobolevCRCoefficients.of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω)
     (hS : ContinuousOn S Ω) : IsSobolevCRCoefficients p Ω J (fderiv ℝ J) S := by
   have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  exact ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-    fun z hz => (hJ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz),
-    hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
+  exact ⟨hJ.hasWeakFDerivOn_fderiv, hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
 
 section Holder
 
