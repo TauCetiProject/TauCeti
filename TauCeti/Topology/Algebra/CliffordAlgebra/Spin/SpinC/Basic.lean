@@ -85,6 +85,7 @@ theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :
     hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom (by
       rw [ker_mk]
       exact (finite_spinCKernel Q hQ).isDiscrete)
+
 /-- The determinant character `[s, z] ↦ z²` is continuous for the quotient topology. -/
 @[fun_prop]
 theorem continuous_det : Continuous (det Q hQ) := by

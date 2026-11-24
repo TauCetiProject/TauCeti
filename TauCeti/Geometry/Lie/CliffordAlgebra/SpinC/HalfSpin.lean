@@ -257,8 +257,9 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin
             |>.toContMDiffMonoidMorphism IS IS)) X := by
           rw [realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin]
       _ = lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
-          rw [lieMap_comp, LieHom.comp_apply, ← ContinuousMonoidHom.lieMap_def,
-            ← realSpinLieEquivUnitsRange_apply]
+          symm
+          simp only [IS, realSpinLieEquivUnitsRange_apply, ContinuousMonoidHom.lieMap_def,
+            lieMap_comp, LieHom.comp_apply]
   rw [hlie, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply (R := S →L[ℂ] S),
     unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom]
   simp only [realSpinLieEquivQuadratic_apply, realQuadraticLieSubalgebraEvenIncl_apply]

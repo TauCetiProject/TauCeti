@@ -145,16 +145,17 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
     prodLieEquiv (ContinuousMonoidHom.lieMap (I := I'') (I' := I.prod I') (f.prod g) D) =
       (ContinuousMonoidHom.lieMap (I := I'') (I' := I) f D,
         ContinuousMonoidHom.lieMap (I := I'') (I' := I') g D) := by
-  rw [prodLieEquiv_apply,
-    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_fst (I := I) (I' := I') (G := G) (G' := G'),
-    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_snd (I := I) (I' := I') (G := G) (G' := G'),
-    ← ContinuousMonoidHom.lieMap_def, ← ContinuousMonoidHom.lieMap_def]
   have h1 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I)
     (f.prod g) (ContinuousMonoidHom.fst G G') D
+  rw [ContinuousMonoidHom.fst_comp_prod,
+    ContinuousMonoidHom.lieMap_def (I := I.prod I') (I' := I) (ContinuousMonoidHom.fst G G'),
+    ContinuousMonoidHom.toContMDiffMonoidMorphism_fst] at h1
   have h2 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I')
     (f.prod g) (ContinuousMonoidHom.snd G G') D
-  rw [ContinuousMonoidHom.fst_comp_prod] at h1
-  rw [ContinuousMonoidHom.snd_comp_prod] at h2
+  rw [ContinuousMonoidHom.snd_comp_prod,
+    ContinuousMonoidHom.lieMap_def (I := I.prod I') (I' := I') (ContinuousMonoidHom.snd G G'),
+    ContinuousMonoidHom.toContMDiffMonoidMorphism_snd] at h2
+  rw [prodLieEquiv_apply]
   exact Prod.ext h1.symm h2.symm
 
 /-- The left factor inclusion maps a derivation to the first summand of the product Lie algebra. -/

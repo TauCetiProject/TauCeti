@@ -211,7 +211,9 @@ theorem realSpinProdDetLinearEquiv_apply (p : 𝔰 × ℝ) :
     realSpinProdDetLinearEquiv n hQ p = ιS p.1 + realDetLieLift n hQ p.2 := by
   dsimp only [realSpinProdDetLinearEquiv]
   rw [LinearEquiv.trans_apply, realDetLieLinearEquiv_apply]
-  rfl
+  simp only [LinearEquiv.prodCongr_apply, LinearEquiv.trans_apply,
+    LieEquiv.coe_toLinearEquiv, LinearEquiv.refl_apply]
+  rw [LinearEquiv.coe_ofEq_apply, coe_realSpinLieEquivDetKer_apply]
 
 /-- Evaluating the determinant weight on `realSpinProdDetLinearEquiv (X, a)` recovers `a`. -/
 @[simp]

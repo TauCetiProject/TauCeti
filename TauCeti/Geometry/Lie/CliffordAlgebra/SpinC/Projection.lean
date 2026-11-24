@@ -213,11 +213,15 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
               spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)) X := by
         rw [realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom]
     _ = realSpinToSpecialOrthogonalLieEquiv n X := by
-        rw [ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO),
-          ← realSpinLieEquivUnitsRange_apply,
-          ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
-          ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-          ← realSpinToSpecialOrthogonalLieEquiv_apply]
+        symm
+        simp only [realSpinToSpecialOrthogonalLieEquiv_apply,
+          realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
+          realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+          realSpinLieEquivUnitsRange_apply]
+        exact (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO)
+          (realCliffordSpinContinuousMulEquivUnitsRange n :
+            spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)
+          (realCliffordSpinToSpecialOrthogonalCarrierRange n) X).symm
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
