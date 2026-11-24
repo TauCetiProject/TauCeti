@@ -14,6 +14,7 @@ public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Nat.Digits
 
 /-!
 # Serre's weight table on classified local data
@@ -528,13 +529,13 @@ abbrev CharExponents (p : ℕ) : Type :=
 
 /-- The exponents of the inertial characters described by the data: `{a, b}` modulo `p - 1` on
 niveau one, the conjugate pair `{a + p * b, b + p * a}` modulo `p ^ 2 - 1` on niveau two, and on
-wild data the powers `α` and `β - 1` of `χ` modulo `p - 1` together with the flag. For `2 ≤ p`
+wild data the powers `α` and `β` of `χ` modulo `p - 1` together with the flag. For `2 ≤ p`
 this encoding is injective (`charExponents_injective`), and it turns `twist` into adding `1` to
 the powers of `χ` and `p + 1` to the powers of `ψ` (`charExponents_twist`). -/
 def charExponents : SerreWeightData p → CharExponents p
   | niveauOne a b _ _ => .inl s(a, b)
   | niveauTwo a b _ _ => .inr (.inl s((a + p * b : ℕ), (b + p * a : ℕ)))
-  | wild α β _ _ _ tres _ => .inr (.inr (α, (β - 1 : ℕ), tres))
+  | wild α β _ _ _ tres _ => .inr (.inr (α, β, tres))
 
 @[simp]
 lemma charExponents_niveauOne {a b : ℕ} {hab : a ≤ b} {hb : b ≤ p - 2} :
@@ -548,7 +549,7 @@ lemma charExponents_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
 @[simp]
 lemma charExponents_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β ≤ p - 1} {tres : Bool}
     {htres : tres = true → β = α + 1} :
-    (wild α β hα hβ hβp tres htres).charExponents = .inr (.inr (α, (β - 1 : ℕ), tres)) := (rfl)
+    (wild α β hα hβ hβp tres htres).charExponents = .inr (.inr (α, β, tres)) := (rfl)
 
 /-- The effect of `n` twists by `χ = ψ ^ (p + 1)` on the exponents of the inertial characters:
 powers of `χ` increase by `n` and powers of `ψ` by `n * (p + 1)`. -/
@@ -579,19 +580,17 @@ private lemma add_mul_lt (hp : 2 ≤ p) {x y : ℕ} (hx : x ≤ p - 1) (hy : y �
   · have := Nat.mul_le_mul_left (q + 2) hy'
     omega
 
-/-- Base `p` digits are unique: `x + p * y` with `x < p` determines `x` and `y`. -/
-private lemma eq_and_eq_of_add_mul_eq {x y x' y' : ℕ} (hx : x < p) (hx' : x' < p)
-    (h : x + p * y = x' + p * y') : x = x' ∧ y = y' := by
-  have hp0 : 0 < p := by omega
-  have h₁ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨rfl, hx⟩
-  have h₂ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨h.symm, hx'⟩
-  omega
-
 /-- For `2 ≤ p`, Serre's data are determined by the exponents of their inertial characters. -/
 theorem charExponents_injective (hp : 2 ≤ p) :
     Function.Injective (charExponents (p := p)) := by
   have inj {n x y : ℕ} (hx : x < n) (hy : y < n) (h : (x : ZMod n) = y) : x = y :=
     CharP.natCast_injOn_Iio (ZMod n) n hx hy h
+  -- The stable-line exponents `β ∈ [1, p - 1]` are compared through `β - 1 < p - 1`.
+  have inj' {n x y : ℕ} (hx : 0 < x) (hy : 0 < y) (hxn : x ≤ n) (hyn : y ≤ n)
+      (h : (x : ZMod n) = y) : x = y := by
+    have := inj (n := n) (x := x - 1) (y := y - 1) (by omega) (by omega)
+      (by rw [Nat.cast_pred hx, Nat.cast_pred hy, h])
+    omega
   intro d d' h
   cases d <;> cases d' <;> simp only [charExponents_niveauOne, charExponents_niveauTwo,
     charExponents_wild, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, Prod.mk.injEq, Sym2.eq_iff,
@@ -599,12 +598,11 @@ theorem charExponents_injective (hp : 2 ≤ p) :
   · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> have h₁ := inj (by omega) (by omega) h₁ <;>
       have h₂ := inj (by omega) (by omega) h₂ <;> omega
   · rcases h with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;>
-      have h₁ := eq_and_eq_of_add_mul_eq (by omega) (by omega) <|
+      have h₁ := Nat.eq_and_eq_of_add_mul_eq (by omega) (by omega) <|
         inj (add_mul_lt hp (by omega) (by omega) (by omega))
           (add_mul_lt hp (by omega) (by omega) (by omega)) h₁ <;> omega
   · obtain ⟨h₁, h₂, h₃⟩ := h
-    have h₂ := inj (by omega) (by omega) h₂
-    exact ⟨inj (by omega) (by omega) h₁, by omega, h₃⟩
+    exact ⟨inj (by omega) (by omega) h₁, inj' (by omega) (by omega) (by omega) (by omega) h₂, h₃⟩
 
 /-- Twisting by `χ = ψ ^ (p + 1)` adds `1` to the powers of `χ` and `p + 1` to the powers of `ψ`
 in the exponents of the inertial characters. -/
