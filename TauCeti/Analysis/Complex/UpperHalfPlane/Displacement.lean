@@ -59,7 +59,8 @@ by both kinds of element, except by dilations with `s` close to `0`.
 ## Main results
 
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`, at most the logarithm
-  of the sum of the squares of the entries by `Matrix.SpecialLinearGroup.dist_smul_I_le_log`.
+  of the sum of the squares of the entries by `Matrix.SpecialLinearGroup.dist_smul_I_le_log`, and
+  by `Matrix.SpecialLinearGroup.dist_smul_I_le_log_int` for an integral matrix.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.cosh_dist_dilation_smul`: the displacement of a point by a dilation,
@@ -135,6 +136,14 @@ theorem dist_smul_I_le_log (g : SL(2, ℝ)) :
   have h₂ := Real.exp_pos (-dist (g • I) I)
   rw [Real.le_log_iff_exp_le (by linarith)]
   linarith
+
+/-- The integral case of `Matrix.SpecialLinearGroup.dist_smul_I_le_log`: for
+`γ = !![a, b; c, d] ∈ SL(2, ℤ)`, `dist (γ • I) I ≤ log (a² + b² + c² + d²)`. -/
+theorem dist_smul_I_le_log_int (γ : SL(2, ℤ)) :
+    dist (γ • I) I ≤ Real.log ((γ 0 0 ^ 2 + γ 0 1 ^ 2 + γ 1 0 ^ 2 + γ 1 1 ^ 2 : ℤ) : ℝ) := by
+  have h := dist_smul_I_le_log (map (Int.castRingHom ℝ) γ)
+  rw [map_intCastRingHom_smul] at h
+  simpa using h
 
 /-- The base-point displacement of a conjugate of `k = !![a, b; -b, a]`:
 `N(B k B⁻¹) - 2 = b² (N(B)² - 4)`, where `N` is the sum of the squares of the entries. -/

@@ -131,14 +131,8 @@ theorem four_mul_log_div_two_le_dist_smul_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : 
 private theorem dist_smul_I_le_of_sum_sq_le (γ : SL(2, ℤ)) {c : ℝ} (hN : 0 < N)
     (h : ((γ 0 0 ^ 2 + γ 0 1 ^ 2 + γ 1 0 ^ 2 + γ 1 1 ^ 2 : ℤ) : ℝ) ≤ c * (N : ℝ) ^ 4) :
     dist (γ • I) I ≤ 4 * Real.log N + Real.log c := by
-  have hd := Matrix.SpecialLinearGroup.dist_smul_I_le_log
-    (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ)
-  rw [Matrix.SpecialLinearGroup.map_intCastRingHom_smul] at hd
-  have hentry (i j : Fin 2) :
-      (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ : SL(2, ℝ)) i j = (γ i j : ℝ) := by
-    simp
-  simp only [hentry] at hd
-  push_cast at h
+  have hd := Matrix.SpecialLinearGroup.dist_smul_I_le_log_int γ
+  push_cast at h hd
   have hpos : 0 < (γ 0 0 : ℝ) ^ 2 + (γ 0 1 : ℝ) ^ 2 + (γ 1 0 : ℝ) ^ 2 + (γ 1 1 : ℝ) ^ 2 := by
     have hdet := γ.det_coe
     rw [Matrix.det_fin_two] at hdet
