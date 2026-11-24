@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Associated
+import TauCeti.Algebra.Regular.Basic
 
 /-!
 # Divisors of products of prime powers
@@ -23,6 +24,8 @@ global cancellation is required, and the prime factors `p i` need not be distinc
 * `TauCeti.dvd_finsetProd_pow_iff_of_prime`: `q ∣ ∏ i ∈ s, p i ^ m i` for left-regular primes
   `p i` if and only if `q` is associated to `∏ i ∈ s, p i ^ k i` for some `k` with `k i ≤ m i` on
   `s`.
+* `TauCeti.exists_associated_finsetProd_pow_of_dvd_pow`: if `f` is left-regular and associated to
+  `∏ i ∈ s, p i`, any divisor of `f ^ n` is associated to `∏ i ∈ s, p i ^ k i` with `k i ≤ n`.
 -/
 
 public section
@@ -85,5 +88,19 @@ theorem dvd_finsetProd_pow_iff_of_prime {ι : Type*} {s : Finset ι} {p : ι →
           rw [Function.update_of_ne (ne_of_mem_of_not_mem hi has)]
       rw [hprod]
       exact hqb.trans (hbk.mul_left _)
+
+/-- In a commutative monoid with zero, if `f` is left-regular and associated to a finite product
+`∏ i ∈ s, p i` of primes, then any divisor `a` of `f ^ n` is associated to `∏ i ∈ s, p i ^ k i`
+for some exponents `k i ≤ n`. -/
+theorem exists_associated_finsetProd_pow_of_dvd_pow {ι : Type*} {s : Finset ι} {p : ι → M}
+    {f a : M} {n : ℕ} (hp : ∀ i ∈ s, Prime (p i)) (hf : Associated f (∏ i ∈ s, p i))
+    (hreg : IsLeftRegular f) (h : a ∣ f ^ n) :
+    ∃ k : ι → ℕ, (∀ i ∈ s, k i ≤ n) ∧ Associated a (∏ i ∈ s, p i ^ k i) := by
+  have h' : a ∣ ∏ i ∈ s, p i ^ n := by
+    rw [Finset.prod_pow]
+    exact h.trans hf.pow_pow.dvd
+  have hregp : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦
+    hreg.of_dvd ((Finset.dvd_prod_of_mem p hi).trans hf.symm.dvd)
+  exact (dvd_finsetProd_pow_iff_of_prime hp hregp (fun _ ↦ n)).mp h'
 
 end TauCeti

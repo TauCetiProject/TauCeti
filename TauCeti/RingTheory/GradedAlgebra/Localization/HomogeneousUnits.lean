@@ -41,7 +41,7 @@ subscheme `D(f)`; the quotient of `ℤ` by these degrees is the group `ShiftClas
 `A_f` up to graded isomorphism. Primality cannot be dropped: in `k[x]` with `x` of degree `1`, the
 element `x ^ 2` has degree `2`, but `x = x ^ 3 / x ^ 2` is a unit of degree `1` after inverting it.
 When `f ∈ 𝒜 e` is a regular prime and `homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e`, the
-shift class group is `ZMod e.natAbs` (`TauCeti.shiftClassGroupAwayPrimeEquiv`). Whenever
+shift class group is `ZMod e.natAbs` (`TauCeti.shiftClassGroupAwayGradingPrimeEquiv`). Whenever
 `PrimeSpectrum.basicOpen f` is preconnected (in particular when `PrimeSpectrum A` is
 preirreducible), every compatible `ℤ`-grading of the free rank-one module over `Localization.Away f`
 is classified by a unique shift class
@@ -50,8 +50,8 @@ is classified by a unique shift class
 
 ## Main definitions
 
-* `TauCeti.shiftClassGroupAwayPrimeEquiv`: identification of `ShiftClassGroup (awayGrading 𝒜 hf)`
-  with `ZMod e.natAbs` when `f ∈ 𝒜 e` is a regular prime and
+* `TauCeti.shiftClassGroupAwayGradingPrimeEquiv`: identification of
+  `ShiftClassGroup (awayGrading 𝒜 hf)` with `ZMod e.natAbs` when `f ∈ 𝒜 e` is a regular prime and
   `homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e`.
 
 ## Main results
@@ -161,22 +161,17 @@ theorem homogeneousUnitDegrees_awayGrading_of_associated_prod {β : Type*}
     (hassoc : Associated f (∏ i ∈ s, p i)) (hreg : IsLeftRegular f) :
     homogeneousUnitDegrees (awayGrading 𝒜 hf) =
       homogeneousUnitDegrees 𝒜 ⊔ AddSubgroup.closure (e '' (s : Set β)) := by
-  rw [homogeneousUnitDegrees_awayGrading]
-  refine le_antisymm ?_ (sup_le (homogeneousUnitDegrees_le_awayGrading_aux 𝒜) ?_)
-  · rw [AddSubgroup.closure_le]
+  refine le_antisymm ?_ (sup_le (homogeneousUnitDegrees_le_awayGrading 𝒜 hf) ?_)
+  · rw [homogeneousUnitDegrees_awayGrading, AddSubgroup.closure_le]
     rintro d ⟨a, ha, n, hdvd⟩
-    have hdvd' : a ∣ ∏ i ∈ s, p i ^ n := by
-      rw [Finset.prod_pow]
-      exact hdvd.trans hassoc.pow_pow.dvd
-    have hregp : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦
-      hreg.of_dvd ((Finset.dvd_prod_of_mem p hi).trans hassoc.symm.dvd)
-    obtain ⟨k, -, u, hu⟩ :=
-      (TauCeti.dvd_finsetProd_pow_iff_of_prime hp hregp (fun _ ↦ n)).mp hdvd'
+    obtain ⟨k, hk, u, hu⟩ :=
+      TauCeti.exists_associated_finsetProd_pow_of_dvd_pow hp hassoc hreg hdvd
     have hpk_mem : ∏ i ∈ s, p i ^ k i ∈ 𝒜 (∑ i ∈ s, k i • e i) :=
       SetLike.prod_mem_graded 𝒜 (fun i ↦ k i • e i) (fun i ↦ p i ^ k i)
         fun i hi ↦ SetLike.pow_mem_graded (k i) (hmem i hi)
     have hpk_reg : IsLeftRegular (∏ i ∈ s, p i ^ k i) :=
-      IsLeftRegular.prod fun i hi ↦ (hregp i hi).pow (k i)
+      (hreg.pow n).of_dvd ((Finset.prod_dvd_prod_of_dvd _ _ fun i hi ↦
+        pow_dvd_pow (p i) (hk i hi)).trans (by rw [Finset.prod_pow]; exact hassoc.symm.pow_pow.dvd))
     have hu_mem : ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (d - ∑ i ∈ s, k i • e i) := by
       refine mem_of_mul_mem_add_of_isLeftRegular 𝒜 hpk_mem hpk_reg ?_
       have hau : (∏ i ∈ s, p i ^ k i) * (u⁻¹ : Aˣ) = a := by
@@ -190,14 +185,8 @@ theorem homogeneousUnitDegrees_awayGrading_of_associated_prod {β : Type*}
       (AddSubgroup.mem_sup_right hsum)
   · rw [AddSubgroup.closure_le]
     rintro _ ⟨i, hi, rfl⟩
-    exact AddSubgroup.subset_closure
-      ⟨p i, hmem i hi, 1, by simpa using (Finset.dvd_prod_of_mem p hi).trans hassoc.symm.dvd⟩
-where
-  homogeneousUnitDegrees_le_awayGrading_aux (𝒜 : ι → Submodule R A) {f : A} :
-      homogeneousUnitDegrees 𝒜 ≤
-        AddSubgroup.closure {d | ∃ a ∈ 𝒜 d, ∃ n : ℕ, a ∣ f ^ n} := by
-    rw [homogeneousUnitDegrees_le_iff]
-    exact fun u c hu ↦ AddSubgroup.subset_closure ⟨u, hu, 0, by simp⟩
+    exact mem_homogeneousUnitDegrees_awayGrading_of_dvd 𝒜 hf (hmem i hi)
+      ((Finset.dvd_prod_of_mem p hi).trans hassoc.symm.dvd)
 
 /-- Inverting a regular homogeneous prime `f ∈ 𝒜 e` adjoins `e` to `homogeneousUnitDegrees 𝒜`. -/
 theorem homogeneousUnitDegrees_awayGrading_of_prime {f : A} {e : ι}
@@ -282,7 +271,7 @@ variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 /-- When `f ∈ 𝒜 e` is a regular prime in a `ℤ`-graded algebra `A` whose homogeneous unit degrees
 all lie in `AddSubgroup.zmultiples e`, the shift class group of `Localization.Away f` is
 `ZMod e.natAbs`. -/
-noncomputable def shiftClassGroupAwayPrimeEquiv {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
+noncomputable def shiftClassGroupAwayGradingPrimeEquiv {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
     (hprime : Prime f) (hreg : IsLeftRegular f)
     (hle : homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e) :
     ShiftClassGroup (awayGrading 𝒜 hf) ≃+ ZMod e.natAbs :=
@@ -292,10 +281,10 @@ noncomputable def shiftClassGroupAwayPrimeEquiv {f : A} {e : ℤ} (hf : f ∈ �
 /-- The identification of `ShiftClassGroup (awayGrading 𝒜 hf)` with `ZMod e.natAbs` sends the
 class of a shift `d` to `d mod |e|`. -/
 @[simp]
-theorem shiftClassGroupAwayPrimeEquiv_mk {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
+theorem shiftClassGroupAwayGradingPrimeEquiv_mk {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
     (hprime : Prime f) (hreg : IsLeftRegular f)
     (hle : homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e) (d : ℤ) :
-    shiftClassGroupAwayPrimeEquiv 𝒜 hf hprime hreg hle d = d :=
+    shiftClassGroupAwayGradingPrimeEquiv 𝒜 hf hprime hreg hle d = d :=
   ShiftClassGroup.equivZMod_mk _ d
 
 end TauCeti

@@ -9,7 +9,6 @@ public import Mathlib.Algebra.BigOperators.Associated
 public import Mathlib.GroupTheory.MonoidLocalization.Away
 import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 import TauCeti.Algebra.BigOperators.Associated
-import TauCeti.Algebra.Regular.Basic
 
 /-!
 # Units of monoid localizations away from primes and products of primes
@@ -75,12 +74,7 @@ theorem isUnit_iff_exists_mul_pow_eq_finsetProd {f : M} (F : AwayMap f N)
       rw [← hxn]
       exact hx.mul (F.map_units ⟨f ^ n, n, rfl⟩)
     obtain ⟨_, ⟨m, rfl⟩, hm⟩ := F.map_isUnit_iff.mp ha
-    have hm' : a ∣ ∏ i ∈ s, p i ^ m := by
-      rw [Finset.prod_pow]
-      exact hm.trans hf.pow_pow.dvd
-    have hregp : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦
-      hreg.of_dvd ((Finset.dvd_prod_of_mem p hi).trans hf.symm.dvd)
-    obtain ⟨k, -, u, hu⟩ := (TauCeti.dvd_finsetProd_pow_iff_of_prime hp hregp (fun _ ↦ m)).mp hm'
+    obtain ⟨k, -, u, hu⟩ := TauCeti.exists_associated_finsetProd_pow_of_dvd_pow hp hf hreg hm
     refine ⟨u⁻¹, k, n, ?_⟩
     have hau : a = (u⁻¹ : Mˣ) * ∏ i ∈ s, p i ^ k i := by
       rw [← hu, mul_comm a u, ← mul_assoc, Units.inv_mul, one_mul]
