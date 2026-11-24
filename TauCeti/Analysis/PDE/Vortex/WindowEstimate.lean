@@ -36,14 +36,17 @@ The weighted `L²` estimate is already uniform in this sense
 an elliptic estimate whose constant depends on the field only through bounds on its derivatives
 (`TauCeti.Vortex.exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add`): for
 a smooth field `x` and a matrix `A` of smooth coefficients, both with derivatives bounded by `B`
-through order `k`, every weak `L²` solution of `L_x y = f + A y` satisfies
+through order `k`, a weak `L²` solution `y` of `L_x y = f + A y` whose coordinates in `H^(k+1)`
+are given satisfies the a priori estimate
 
 `‖y‖_(H^(k+1)) ≤ K (‖f‖_(H^k) + ‖y‖_(L²))`
 
-with `K` depending only on `k` and `B`. The principal part of `L_x` is that of the vacuum operator
-`L₀`, and `L_x - L₀` is multiplication by a matrix whose entries are coordinates of
-`x - vacuumField`. So `y` is a weak solution of `L₀ y = f + A' y`, where the derivatives of `A'`
-through order `k` are bounded by `2 B + 1/2`.
+with `K` depending only on `k` and `B`. Such coordinates exist as soon as those of `f` in `H^k` do
+(`TauCeti.Vortex.mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add`).
+The principal part of `L_x` is that of the vacuum operator `L₀`, and `L_x - L₀` is
+multiplication by a matrix whose entries are coordinates of `x - vacuumField`. So `y` is a weak
+solution of `L₀ y = f + A' y`, where the derivatives of `A'` through order `k` are bounded by
+`2 B + 1/2`.
 The vacuum estimate `‖y‖_(H^(j+1)) ≤ K₀ (‖g‖_(H^j) + ‖y‖_(L²))` holds with `K₀` depending only on
 `j`, and multiplication by a function whose derivatives through order `j` are bounded by `M`
 has norm at most `C_j M` on the real elements of `H^j`
@@ -59,8 +62,8 @@ Sobolev norms are those of the coordinates in Mathlib's Bessel-potential spaces 
 
 * `TauCeti.Vortex.exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add`,
   `TauCeti.Vortex.exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add`: the
-  elliptic estimates for `L_x - A` and `L_x* - A`, with constants depending only on the order and
-  on a bound for the derivatives of `x` and `A`.
+  a priori elliptic estimates for `L_x - A` and `L_x* - A`, with constants depending only on the
+  order and on a bound for the derivatives of `x` and `A`.
 * `TauCeti.Vortex.exists_forall_norm_exp_mul_smul_le_mul_norm_of_forall_mem_norm_le`: the weighted
   Sobolev estimate for the right inverse, uniformly over the vortices of degree `m` with zeros in
   a fixed disc and derivatives bounded by `B`.
@@ -139,37 +142,6 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_add_mulVec {j k : ℕ} (h
           · exact (hwn a b).trans (by gcongr; exact norm_le_pi_norm u b)
       _ = ‖v‖ + 4 * C * B * ‖u‖ := by simp; ring
 
-/-- The entries of the zeroth-order matrix of `L_x - L₀`, at a smooth field whose coordinates have
-derivatives bounded by `B` through order `k`, are smooth with derivatives bounded by
-`B + ‖vacuumField 0‖` through order `k`. -/
-private theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ} {B : ℝ}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hxb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) (i j : Fin 4) :
-    ContDiff ℝ ∞ (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) ∧
-      ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
-        (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) z‖ ≤
-          B + ‖vacuumField 0‖ := by
-  have hB : 0 ≤ B := (norm_nonneg _).trans (hxb 0 0 (Nat.zero_le k) 0)
-  set P : (ℂ → ℝ) → Prop := fun g ↦ ContDiff ℝ ∞ g ∧
-    ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ B + ‖vacuumField 0‖
-  have h0 : P 0 := ⟨contDiff_const, fun n _ z ↦ by
-    simp only [Pi.zero_def, iteratedFDeriv_fun_zero, Pi.zero_apply, norm_zero]
-    positivity⟩
-  have hneg {g : ℂ → ℝ} (hg : P g) : P (-g) :=
-    ⟨hg.1.neg, fun n hn z ↦ by rw [iteratedFDeriv_neg_apply, norm_neg]; exact hg.2 n hn z⟩
-  have hw (a : Fin 4) : P fun z ↦ (x z - vacuumField z) a := by
-    have hxa : ContDiff ℝ ∞ fun z ↦ x z a := contDiff_euclidean.1 hx a
-    have he : (fun z ↦ (x z - vacuumField z) a) = (fun z ↦ x z a) - fun _ ↦ vacuumField 0 a :=
-      funext fun z ↦ by simp only [PiLp.sub_apply, Pi.sub_apply, vacuumField_apply]
-    rw [he]
-    refine ⟨hxa.sub contDiff_const, fun n hn z ↦ ?_⟩
-    rw [iteratedFDeriv_sub_apply (hxa.contDiffAt.of_le (mod_cast le_top)) contDiffAt_const]
-    refine (norm_sub_le _ _).trans (add_le_add (hxb a n hn z) ?_)
-    rcases eq_or_ne n 0 with rfl | hn
-    · simpa using PiLp.norm_apply_le (vacuumField 0) a
-    · simp [iteratedFDeriv_const_of_ne hn]
-  fin_cases i <;> fin_cases j <;> first | exact h0 | exact hw _ | exact hneg (hw _)
-
 /-- Subtracting an entry of the zeroth-order matrix of `L_x - L₀` from a smooth coefficient with
 derivatives bounded by `B` gives a smooth coefficient with derivatives bounded by
 `2 B + ‖vacuumField 0‖`. -/
@@ -183,13 +155,21 @@ private theorem contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix
           2 * B + ‖vacuumField 0‖ := by
   obtain ⟨hZ, hZb⟩ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb a b
   refine ⟨hg.sub hZ, fun n hn z ↦ ?_⟩
-  rw [show (fun z ↦ g z - gaugeFixedZerothOrderMatrix (x z - vacuumField z) a b) =
-      g - fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) a b from rfl,
-    iteratedFDeriv_sub_apply (hg.contDiffAt.of_le (mod_cast le_top))
+  rw [fun_iteratedFDeriv_sub_apply (hg.contDiffAt.of_le (mod_cast le_top))
       (hZ.contDiffAt.of_le (mod_cast le_top))]
   linarith [norm_sub_le (iteratedFDeriv ℝ n g z)
     (iteratedFDeriv ℝ n (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) a b) z),
     hgb n hn z, hZb n hn z]
+
+/-- Coefficients with derivatives bounded through order `k` multiply `L²` fields into `L²`. -/
+private theorem memLp_mulVec_of_norm_iteratedFDeriv_le {k : ℕ} {Z : Fin 4 → Fin 4 → ℂ → ℝ}
+    {B : ℝ} (hZ : ∀ i j, ContDiff ℝ ∞ (Z i j))
+    (hZb : ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (Z i j) z‖ ≤ B)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume) :
+    MemLp (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, Z i j z * y z j)) 2 volume :=
+  memLp_of_mem_sobolevFields (mulVec_mem_sobolevFields_natCast 0 hZ (fun i j ↦
+    ⟨B, (norm_nonneg _).trans (hZb i j 0 (Nat.zero_le k) 0),
+      fun n hn z ↦ hZb i j n (hn.trans (Nat.zero_le k)) z⟩) (by simpa using hy))
 
 /-- **Moving the zeroth-order part to the right side.** Let `P` and `P₀` be the formal adjoints of
 two operators on test fields that differ by a matrix `Z` of coefficients, in the sense that
@@ -237,7 +217,7 @@ variable {P : (ℂ → EuclideanSpace ℝ (Fin 4)) → ℂ → EuclideanSpace �
 /-- One order of the uniform bootstrap, by induction on the order `j ≤ k + 1`. Here `P` is the
 formal adjoint at the vacuum of the operator (`L₀` or `L₀*`), and `hest` is the elliptic estimate
 for it at every order, whose constant depends only on the order. For a weak `L²` solution `y` of
-`L₀ y = f + A y`, with `A` bounded by `B` through order `k`, the `H^j` coordinates of `y` are
+`L₀ y = f + A y`, with `A` bounded by `B` through order `k`, given `H^j` coordinates of `y` are
 bounded by `K (‖f‖_(H^k) + ‖y‖_(L²))`, with `K` depending only on `k`, `B` and `j`. -/
 private theorem exists_norm_le_of_vacuum
     (hest : ∀ j : ℕ, ∃ K ≥ 0, ∀ (y f : ℂ → EuclideanSpace ℝ (Fin 4))
@@ -306,18 +286,24 @@ private theorem exists_norm_le_of_vacuum
       _ = K₀ * (1 + C * |B| * Kj) * (‖v‖ + (eLpNorm y 2 volume).toReal) := by
           rw [abs_of_nonneg hB]; ring
 
-/-- **The uniform bootstrap from the vacuum.** If the elliptic estimate for `P` holds at every
-order with a constant depending only on the order, then weak `L²` solutions of `L₀ y = f + A y`,
-with `A` smooth and bounded by `B` through order `k`, satisfy
-`‖y‖_(H^(k+1)) ≤ K (‖f‖_(H^k) + ‖y‖_(L²))` with `K` depending only on `k` and `B`. -/
+/-- **The uniform bootstrap from the vacuum.** Here `hest` is the elliptic estimate for `P` with a
+zeroth-order term at every order, as given at the vacuum by
+`exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add` and
+`exists_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add`. Taking no zeroth-order term
+there, weak `L²` solutions of `L₀ y = f + A y` with given `H^(k+1)` coordinates, with `A` smooth
+and bounded by `B` through order `k`, satisfy `‖y‖_(H^(k+1)) ≤ K (‖f‖_(H^k) + ‖y‖_(L²))` with `K`
+depending only on `k` and `B`. -/
 private theorem exists_norm_le_mul_add_of_vacuum
-    (hest : ∀ j : ℕ, ∃ K ≥ 0, ∀ (y f : ℂ → EuclideanSpace ℝ (Fin 4))
-      (u : Fin 4 → H^{(j : ℝ) + 1}(ℂ)) (v : Fin 4 → H^{(j : ℝ)}(ℂ)),
-      (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) →
-      (∀ a, ⇑(inclusionLp (Nat.cast_nonneg j) (v a)) =ᵐ[volume] fun z ↦ (f z a : ℂ)) →
-      (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
-        ∫ z, ⟪y z, P η z⟫ = ∫ z, ⟪f z, η z⟫) →
-      ‖u‖ ≤ K * (‖v‖ + (eLpNorm y 2 volume).toReal))
+    (hest : ∀ (j : ℕ) (A : Fin 4 → Fin 4 → ℂ → ℝ), (∀ i i', ContDiff ℝ ∞ (A i i')) →
+      (∀ i i', ∃ M ≥ 0, ∀ n ≤ j, ∀ z, ‖iteratedFDeriv ℝ n (A i i') z‖ ≤ M) →
+      ∃ K ≥ 0, ∀ (y f : ℂ → EuclideanSpace ℝ (Fin 4))
+        (u : Fin 4 → H^{(j : ℝ) + 1}(ℂ)) (v : Fin 4 → H^{(j : ℝ)}(ℂ)),
+        (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) →
+        (∀ a, ⇑(inclusionLp (Nat.cast_nonneg j) (v a)) =ᵐ[volume] fun z ↦ (f z a : ℂ)) →
+        (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+          ∫ z, ⟪y z, P η z⟫ =
+            ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ i' : Fin 4, A i i' z * y z i'), η z⟫) →
+        ‖u‖ ≤ K * (‖v‖ + (eLpNorm y 2 volume).toReal))
     (k : ℕ) (B : ℝ) :
     ∃ K ≥ 0, ∀ (A : Fin 4 → Fin 4 → ℂ → ℝ), (∀ i j, ContDiff ℝ ∞ (A i j)) →
       (∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ B) →
@@ -329,7 +315,10 @@ private theorem exists_norm_le_mul_add_of_vacuum
         ∫ z, ⟪y z, P η z⟫ =
           ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫) →
       ‖u‖ ≤ K * (‖v‖ + (eLpNorm y 2 volume).toReal) := by
-  obtain ⟨K, hK, hKb⟩ := exists_norm_le_of_vacuum hest k B (k + 1) le_rfl
+  obtain ⟨K, hK, hKb⟩ := exists_norm_le_of_vacuum (fun j ↦ (hest j (fun _ _ _ ↦ 0)
+    (fun _ _ ↦ contDiff_const) fun _ _ ↦ ⟨0, le_rfl, fun n _ z ↦ by simp⟩).imp
+      fun K hK ↦ ⟨hK.1, fun y f u v hu hv hweak ↦ hK.2 y f u v hu hv fun η hη hηc ↦ by
+        simpa [← Pi.zero_def] using hweak η hη hηc⟩) k B (k + 1) le_rfl
   refine ⟨K, hK, fun A hA hAb y f u v hu hv hweak ↦ ?_⟩
   have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
     ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
@@ -361,13 +350,16 @@ private theorem contDiff_vacuumField_and_exists_norm_iteratedFDeriv_le :
 /-- **The elliptic estimate for `L_x - A`, uniformly in the field.** For every order `k` and bound
 `B` there is a constant `K` with the following property. Let `x` be a smooth field and `A` a
 `4 × 4` matrix of smooth real functions, all of whose coordinates and entries have derivatives
-bounded by `B` through order `k`. Every square-integrable weak solution `y` of `L_x y = f + A y`,
-tested against smooth compactly supported fields, satisfies
+bounded by `B` through order `k`. A square-integrable weak solution `y` of `L_x y = f + A y`,
+tested against smooth compactly supported fields, with given coordinates
+`u : Fin 4 → H^(k+1)(ℂ)`, satisfies the a priori estimate
 
-`‖y‖_(H^(k+1)) ≤ K (‖f‖_(H^k) + ‖y‖_(L²))`.
+`‖y‖_(H^(k+1)) ≤ K (‖f‖_(H^k) + ‖y‖_(L²))`,
 
-The Sobolev norms are those of the coordinates `u : Fin 4 → H^(k+1)(ℂ)` of `y` and
-`v : Fin 4 → H^k(ℂ)` of `f`. For a single field this is
+where the Sobolev norms are those of `u` and of the coordinates `v : Fin 4 → H^k(ℂ)` of `f`. Such
+`u` exist as soon as `v` does, by
+`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add`. For a single field
+this is
 `exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add`; here the constant depends on
 `x` and `A` only through `B`. -/
 theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add (k : ℕ)
@@ -387,45 +379,39 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add
   obtain ⟨hvac, hvacb⟩ := contDiff_vacuumField_and_exists_norm_iteratedFDeriv_le
   -- The bootstrap from the vacuum estimate, whose constant depends only on the order.
   obtain ⟨K, hK, hKb⟩ := exists_norm_le_mul_add_of_vacuum (P := gaugeFixedAdjoint vacuumField)
-    (fun j ↦ (exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add j
-      (x := vacuumField) (A := fun _ _ _ ↦ 0) hvac (fun i n _ ↦ hvacb i n)
-      (fun _ _ ↦ contDiff_const) (fun _ _ ↦ ⟨0, le_rfl, fun n _ z ↦ by simp⟩)).imp
-      fun K hK ↦ ⟨hK.1, fun y f u v hu hv hweak ↦ hK.2 y f u v hu hv fun η hη hηc ↦ by
-        simpa [← Pi.zero_def] using hweak η hη hηc⟩) k (2 * B + ‖vacuumField 0‖)
+    (fun j _ ↦ exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add j hvac
+      fun i n _ ↦ hvacb i n) k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb y f u v hu hv hweak ↦ ?_⟩
   -- `y` is a weak solution of `L₀ y = f + (A - Z) y`, where `Z` is the matrix of `L_x - L₀`.
   have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) i j
-  have hy : y ∈ sobolevFields ((0 : ℕ) : ℝ) := by
-    simpa using memLp_of_mem_sobolevFields
-      ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
-  -- Bounded coefficients multiply `L²` into `L²`.
-  have hL2 {Z : Fin 4 → Fin 4 → ℂ → ℝ} {B₀ : ℝ} (hZ : ∀ i j, ContDiff ℝ ∞ (Z i j))
-      (hZb : ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (Z i j) z‖ ≤ B₀) :=
-    memLp_of_mem_sobolevFields (mulVec_mem_sobolevFields_natCast 0 hZ (fun i j ↦
-      ⟨B₀, (norm_nonneg _).trans (hZb i j 0 (Nat.zero_le k) 0),
-        fun n hn z ↦ hZb i j n (hn.trans (Nat.zero_le k)) z⟩) hy)
+  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
+    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
   exact hKb _ (fun i j ↦ (hA' i j).1) (fun i j ↦ (hA' i j).2) y f u v hu hv fun η hη hηc ↦
     integral_inner_eq_add_sub_mulVec (P := gaugeFixedAdjoint x)
       (fun η z v ↦ by rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x
         vacuumField, gaugeFixedZerothOrder_apply])
       (fun η hη hηc ↦ memLp_gaugeFixedAdjoint hvac.continuous (hη.of_le (by simp)) hηc)
-      (memLp_of_mem_sobolevFields hy)
-      (memLp_of_mem_sobolevFields
+      hy (memLp_of_mem_sobolevFields
         ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩))
-      (hL2 hA hAb) (hL2 (fun i j ↦ (hZ i j).1) fun i j ↦ (hZ i j).2) hweak hη hηc
+      (memLp_mulVec_of_norm_iteratedFDeriv_le hA hAb hy)
+      (memLp_mulVec_of_norm_iteratedFDeriv_le (fun i j ↦ (hZ i j).1) (fun i j ↦ (hZ i j).2) hy)
+      hweak hη hηc
 
 /-- **The elliptic estimate for `L_x* - A`, uniformly in the field.** For every order `k` and
 bound `B` there is a constant `K` with the following property. Let `x` be a smooth field and `A`
 a `4 × 4` matrix of smooth real functions, all of whose coordinates and entries have derivatives
-bounded by `B` through order `k`. Every square-integrable weak solution `η` of
-`L_x* η = g + A η`, in the sense that `∫ ⟪η, L_x w⟫ = ∫ ⟪g + A η, w⟫` for every smooth compactly
-supported field `w`, satisfies
+bounded by `B` through order `k`. A square-integrable weak solution `η` of `L_x* η = g + A η`, in
+the sense that `∫ ⟪η, L_x w⟫ = ∫ ⟪g + A η, w⟫` for every smooth compactly supported field `w`,
+with given coordinates `u : Fin 4 → H^(k+1)(ℂ)`, satisfies the a priori estimate
 
-`‖η‖_(H^(k+1)) ≤ K (‖g‖_(H^k) + ‖η‖_(L²))`.
+`‖η‖_(H^(k+1)) ≤ K (‖g‖_(H^k) + ‖η‖_(L²))`,
 
-For a single field this is `exists_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add`;
+where the Sobolev norms are those of `u` and of the coordinates `v : Fin 4 → H^k(ℂ)` of `g`. Such
+`u` exist as soon as `v` does, by
+`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add`. For a single field
+this is `exists_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add`;
 here the constant depends on `x` and `A` only through `B`. -/
 theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add (k : ℕ)
     (B : ℝ) :
@@ -445,43 +431,29 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
   -- The bootstrap from the vacuum estimate for the adjoint, whose constant depends only on the
   -- order.
   obtain ⟨K, hK, hKb⟩ := exists_norm_le_mul_add_of_vacuum (P := gaugeFixedOperator vacuumField)
-    (fun j ↦ (exists_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add j
-      (x := vacuumField) (A := fun _ _ _ ↦ 0) hvac (fun i n _ ↦ hvacb i n)
-      (fun _ _ ↦ contDiff_const) (fun _ _ ↦ ⟨0, le_rfl, fun n _ z ↦ by simp⟩)).imp
-      fun K hK ↦ ⟨hK.1, fun η g u v hu hv hweak ↦ hK.2 η g u v hu hv fun w hw hwc ↦ by
-        simpa [← Pi.zero_def] using hweak w hw hwc⟩) k (2 * B + ‖vacuumField 0‖)
+    (fun j _ ↦ exists_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add j hvac
+      fun i n _ ↦ hvacb i n) k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb η g u v hu hv hweak ↦ ?_⟩
   -- `η` is a weak solution of `L₀* η = g + (A - Zᵀ) η`, where `Z` is the matrix of `L_x - L₀`.
   have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) j i
-  have hη : η ∈ sobolevFields ((0 : ℕ) : ℝ) := by
-    simpa using memLp_of_mem_sobolevFields
-      ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
-  -- Bounded coefficients multiply `L²` into `L²`.
-  have hL2 {Z : Fin 4 → Fin 4 → ℂ → ℝ} {B₀ : ℝ} (hZ : ∀ i j, ContDiff ℝ ∞ (Z i j))
-      (hZb : ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (Z i j) z‖ ≤ B₀) :=
-    memLp_of_mem_sobolevFields (mulVec_mem_sobolevFields_natCast 0 hZ (fun i j ↦
-      ⟨B₀, (norm_nonneg _).trans (hZb i j 0 (Nat.zero_le k) 0),
-        fun n hn z ↦ hZb i j n (hn.trans (Nat.zero_le k)) z⟩) hη)
-  -- Pointwise `⟪η, Z w⟫ = ⟪Zᵀ η, w⟫`, through the adjoint of the matrix.
-  have hT (Zm : Matrix (Fin 4) (Fin 4) ℝ) (a b : EuclideanSpace ℝ (Fin 4)) :
-      ⟪a, Zm.toEuclideanLin b⟫ = ⟪WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, Zm j i * a j), b⟫ := by
-    rw [← LinearMap.adjoint_inner_left, ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint,
-      Matrix.conjTranspose_eq_transpose_of_trivial, Matrix.toLpLin_apply,
-      funext (Matrix.mulVec_apply_eq_sum _ _)]
-    simp only [Matrix.transpose_apply]
+  have hη : MemLp η 2 volume := memLp_of_mem_sobolevFields
+    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
   exact hKb _ (fun i j ↦ (hA' i j).1) (fun i j ↦ (hA' i j).2) η g u v hu hv fun w hw hwc ↦
     integral_inner_eq_add_sub_mulVec (P := gaugeFixedOperator x)
       (Z := fun i j z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) j i)
-      (fun w z v ↦ by rw [gaugeFixedOperator_eq_add_gaugeFixedZerothOrder x vacuumField,
-        inner_add_right, gaugeFixedZerothOrder_eq_toEuclideanLin, hT])
+      (fun w z v ↦ by
+        rw [inner_gaugeFixedOperator_eq_add_inner_toEuclideanLin_transpose x vacuumField,
+          Matrix.toLpLin_apply, funext (Matrix.mulVec_apply_eq_sum _ _)]
+        simp only [Matrix.transpose_apply])
       (fun w hw hwc ↦ (continuous_gaugeFixedOperator hvac.continuous
         (hw.of_le (by simp))).memLp_of_hasCompactSupport (hasCompactSupport_gaugeFixedOperator hwc))
-      (memLp_of_mem_sobolevFields hη)
-      (memLp_of_mem_sobolevFields
+      hη (memLp_of_mem_sobolevFields
         ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩))
-      (hL2 hA hAb) (hL2 (fun i j ↦ (hZ j i).1) fun i j ↦ (hZ j i).2) hweak hw hwc
+      (memLp_mulVec_of_norm_iteratedFDeriv_le hA hAb hη)
+      (memLp_mulVec_of_norm_iteratedFDeriv_le (fun i j ↦ (hZ j i).1) (fun i j ↦ (hZ j i).2) hη)
+      hweak hw hwc
 
 /-! ### The weighted estimates over a window of divisors -/
 
@@ -530,45 +502,19 @@ theorem exists_forall_norm_exp_mul_smul_le_mul_norm_of_forall_mem_norm_le (m : �
       ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
         (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
           fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) a : ℂ)) ∧ ‖u‖ ≤ K * ‖v‖ := by
-  -- `exp(c ρ) y` solves `L_x Y = exp(c ρ) f + A Y` for the weight commutator `A`, so the uniform
-  -- elliptic estimate bounds it by `‖exp(c ρ) f‖_(H^k)` and its weighted `L²` norm, which the
-  -- uniform weighted `L²` estimate bounds by `‖exp(c ρ) f‖_(L²)`.
+  -- The uniform weighted `L²` estimate bounds `exp(c ρ) y` in `L²` by `exp(c ρ) f`, and the uniform
+  -- elliptic estimate for the weight commutator turns this into the Sobolev bound.
   obtain ⟨K₀, hK₀⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le
     (μ := volume) m r hc
   obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add k (max B M)
-  refine ⟨K₁ * (1 + 4 * K₀), by positivity,
-    fun x D hx hsol hframe hD hDr hxb f y hweak horth v hv ↦ ?_⟩
-  have hK := hK₀ x D hx hsol hframe hD hDr f y hweak horth
-  have hwf : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) ∈ sobolevFields k :=
-    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
-  have hwy : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume :=
-    memLp_iff.2 <| hK.trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_of_mem_sobolevFields hwf).eLpNorm_lt_top)
-  have hweak' (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :=
-    integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq (c := c) hx.continuous (Lp.memLp y)
-      (Lp.memLp f) (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hη hηc
-  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
-    (exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp k hx
-      (fun i n hn ↦ ⟨B, hxb i n hn⟩) (Lp.memLp y) (Lp.memLp f)
-      (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hwy hwf)
-  refine ⟨u, hu, ?_⟩
-  have hL2 : (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume).toReal ≤
-      4 * K₀ * ‖v‖ := by
-    refine ENNReal.toReal_le_of_le_ofReal (by positivity) (hK.trans ?_)
-    rw [show (4 : ℝ) * K₀ * ‖v‖ = K₀ * (4 * ‖v‖) by ring, ENNReal.ofReal_mul K₀.coe_nonneg,
-      ENNReal.ofReal_coe_nnreal]
-    gcongr
-    exact eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv
-  calc ‖u‖ ≤ K₁ * (‖v‖ +
-        (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume).toReal) :=
-        hK₁b x (expWeightCoeff c) hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
-          (contDiff_expWeightCoeff c) (fun i j n hn z ↦ (hM i j n hn z).trans (le_max_right _ _))
-          _ _ u v hu hv hweak'
-    _ ≤ K₁ * (‖v‖ + 4 * K₀ * ‖v‖) := by gcongr
-    _ = K₁ * (1 + 4 * K₀) * ‖v‖ := by ring
+  exact ⟨K₁ * (1 + 4 * K₀), by positivity, fun x D hx hsol hframe hD hDr hxb f y hweak horth v hv ↦
+    exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le k hx
+      (fun i n hn ↦ ⟨B, hxb i n hn⟩) hK₁
+      (hK₁b x (expWeightCoeff c) hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
+        (contDiff_expWeightCoeff c) fun i j n hn z ↦ (hM i j n hn z).trans (le_max_right _ _))
+      hweak (hK₀ x D hx hsol hframe hD hDr f y hweak horth) hv⟩
 
 /-- **The weighted Sobolev estimate for the adjoint of the right inverse, uniformly over a window
 of divisors.** For every degree `m`, radius `r`, bound `B`, rate `|c| < 1/2` and order `k` there
@@ -611,51 +557,24 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_
         (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
           fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) a : ℂ)) ∧
         ‖u‖ ≤ K * ‖v‖ := by
-  -- `H = exp(c ρ) Q† g` solves `L_x* H = exp(c ρ) g - Aᵀ H` for the weight commutator `A`, so the
-  -- uniform elliptic estimate for `L_x*` bounds it by `‖exp(c ρ) g‖_(H^k)` and its weighted `L²`
-  -- norm, which the uniform weighted `L²` estimate for `Q†` bounds by `‖exp(c ρ) g‖_(L²)`.
+  -- The uniform weighted `L²` estimate for `Q†` bounds `exp(c ρ) Q† g` in `L²` by `exp(c ρ) g`,
+  -- and the uniform elliptic estimate for `L_x*` with the weight commutator turns this into the
+  -- Sobolev bound.
   obtain ⟨K₀, hK₀⟩ := exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le
     (μ := volume) m r hc
-  obtain ⟨M, hM₀, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
-  refine ⟨K₁ * (1 + 4 * K₀), by positivity,
-    fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦ ?_⟩
-  have hK := hK₀ x D hx hsol hframe hD hDr Q hweak horth g
-  have hA (i j : Fin 4) : ContDiff ℝ ∞ (fun z ↦ -expWeightCoeff c j i z) :=
-    (contDiff_expWeightCoeff c j i).neg
   have hAb (i j : Fin 4) (n : ℕ) (hn : n ≤ k) (z : ℂ) :
       ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ max B M := by
     rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
     exact (hM j i n hn z).trans (le_max_right _ _)
-  have hwg : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) ∈ sobolevFields k :=
-    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
-  have hHweak (w : ℂ → EuclideanSpace ℝ (Fin 4)) (hw : ContDiff ℝ ∞ w)
-      (hwc : HasCompactSupport w) :=
-    integral_inner_exp_mul_smul_gaugeFixedOperator_eq (c := c) hx.continuous (Lp.memLp _)
-      (Lp.memLp g) (fun w hw hwc ↦ integral_inner_adjoint_apply_gaugeFixedOperator_eq
-        hx.continuous hweak hg (hw.of_le (by exact_mod_cast le_top)) hwc) hw hwc
-  have hH : MemLp
-      (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 volume :=
-    memLp_iff.2 <| hK.trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_of_mem_sobolevFields hwg).eLpNorm_lt_top)
-  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
-    (mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq_add k hx
-      (fun i n hn ↦ ⟨B, hxb i n hn⟩) hA (fun i j ↦ ⟨max B M, le_max_of_le_right hM₀, hAb i j⟩)
-      hH hwg hHweak)
-  refine ⟨u, hu, ?_⟩
-  have hL2 : (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
-      ContinuousLinearMap.adjoint Q g z) 2 volume).toReal ≤ 4 * K₀ * ‖v‖ := by
-    refine ENNReal.toReal_le_of_le_ofReal (by positivity) (hK.trans ?_)
-    rw [show (4 : ℝ) * K₀ * ‖v‖ = K₀ * (4 * ‖v‖) by ring, ENNReal.ofReal_mul K₀.coe_nonneg,
-      ENNReal.ofReal_coe_nnreal]
-    gcongr
-    exact eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv
-  calc ‖u‖ ≤ K₁ * (‖v‖ + (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
-        ContinuousLinearMap.adjoint Q g z) 2 volume).toReal) :=
-        hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _)) hA hAb _ _ u v hu hv
-          hHweak
-    _ ≤ K₁ * (‖v‖ + 4 * K₀ * ‖v‖) := by gcongr
-    _ = K₁ * (1 + 4 * K₀) * ‖v‖ := by ring
+  exact ⟨K₁ * (1 + 4 * K₀), by positivity,
+    fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦
+      exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_adjoint_apply_le k hx
+        (fun i n hn ↦ ⟨B, hxb i n hn⟩) hK₁
+        (hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
+          (fun i j ↦ (contDiff_expWeightCoeff c j i).neg) hAb)
+        hweak hg (hK₀ x D hx hsol hframe hD hDr Q hweak horth g) hv⟩
 
 end TauCeti.Vortex

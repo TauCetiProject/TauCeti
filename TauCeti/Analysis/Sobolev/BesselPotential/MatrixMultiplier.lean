@@ -271,7 +271,7 @@ theorem exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le (k : ℕ) :
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (Nat.zero_le k) 0)
   have hF : u ∈ realSubmodule E (Nat.cast_nonneg k) :=
     (mem_realSubmodule_iff _).2 (hu.mono fun x hx ↦ by rw [hx, Complex.ofReal_im])
-  set F : realSubmodule E (Nat.cast_nonneg k) := ⟨u, hF⟩
+  set F : realSubmodule E (Nat.cast_nonneg k) := ⟨u, hF⟩ with hFu
   have hw₀ : e.symm F ∈ wkp0Submodule (volume : Measure E) ⊤ 2 k := by
     rw [wkp0Submodule_top_eq_top (p := 2) ENNReal.ofNat_ne_top]
     trivial
@@ -285,11 +285,9 @@ theorem exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le (k : ℕ) :
     filter_upwards [Wkp.coeFn_inclusionLp_toRealSubmodule k v₀.val, hv',
       Wkp.value_toRealSubmodule_symm k F, hu] with x h₁ h₂ h₃ h₄
     rw [h₁, h₂ (Set.mem_univ x)]
-    rw [h₃]
-    change ((ψ x * (inclusionLp (Nat.cast_nonneg k) u x).re : ℝ) : ℂ) = _
-    rw [h₄, Complex.ofReal_re]
+    rw [h₃, hFu, Submodule.coe_mk u hF, h₄, Complex.ofReal_re]
   · calc ‖(e v₀ : H^{(k : ℝ)}(E))‖
-        = ‖e v₀‖ := rfl
+        = ‖e v₀‖ := Submodule.norm_coe _
       _ ≤ ‖e.toContinuousLinearMap‖ * ‖v₀.val‖ :=
           e.toContinuousLinearMap.le_opNorm v₀.val
       _ ≤ ‖e.toContinuousLinearMap‖ *
@@ -304,7 +302,7 @@ theorem exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le (k : ℕ) :
           gcongr
           exact e.symm.toContinuousLinearMap.le_opNorm F
       _ = _ := by
-          rw [show ‖F‖ = ‖u‖ from rfl]
+          rw [← Submodule.norm_coe, hFu, Submodule.coe_mk u hF]
           ring
 
 end BesselPotentialSpace

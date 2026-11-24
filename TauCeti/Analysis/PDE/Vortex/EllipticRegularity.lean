@@ -51,7 +51,9 @@ multiplication by the transposed matrix.
 * `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: the elliptic
   bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
-  coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
+  coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`), since those
+  coefficients have derivatives bounded by `B + ‖vacuumField 0‖` when the coordinates of `x` have
+  derivatives bounded by `B` (`contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le`).
 * `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add`: the same for weak
   solutions of `L_x y = f + A y`, where `A` is a matrix of smooth coefficients with bounded
   derivatives through order `k`, such as the commutator of `L_x` with a weight.
@@ -275,37 +277,42 @@ private theorem mem_sobolevFields_one_of_integral_inner_eq
   simpa using mem_sobolevFields_add_one_of_integral_inner_eq hT hK (hreg 0) hy hg
     fun η hη hc ↦ integral_inner_vacuumField_eq hK hB hy hf hzo hη hc (hweak η hη hc)
 
-/-- The zeroth-order coefficients at a smooth field whose coordinates have bounded derivatives
-through order `k` are smooth with bounded derivatives through order `k`. -/
-private theorem contDiff_gaugeFixedZerothOrderMatrix_and_bounded {k : ℕ}
+/-- The entries of the zeroth-order matrix of `L_x - L₀`, at a smooth field whose coordinates have
+derivatives bounded by `B` through order `k`, are smooth with derivatives bounded by
+`B + ‖vacuumField 0‖` through order `k`. -/
+theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ} {B : ℝ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) (i j : Fin 4) :
+    (hxb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) (i j : Fin 4) :
     ContDiff ℝ ∞ (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) ∧
-      ∃ M ≥ 0, ∀ n ≤ k, ∀ z,
-        ‖iteratedFDeriv ℝ n (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) z‖ ≤
-          M := by
-  set P : (ℂ → ℝ) → Prop :=
-    fun g ↦ ContDiff ℝ ∞ g ∧ ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ M
-  have h0 : P 0 := ⟨contDiff_const, 0, le_rfl, fun n _ z ↦ by simp⟩
-  have hneg {g : ℂ → ℝ} (hg : P g) : P (-g) :=
-    ⟨hg.1.neg, hg.2.imp fun M hM ↦ ⟨hM.1, fun n hn z ↦ by
-      rw [iteratedFDeriv_neg_apply, norm_neg]
-      exact hM.2 n hn z⟩⟩
+      ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
+        (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) z‖ ≤
+          B + ‖vacuumField 0‖ := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hxb 0 0 (Nat.zero_le k) 0)
+  set P : (ℂ → ℝ) → Prop := fun g ↦ ContDiff ℝ ∞ g ∧
+    ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ B + ‖vacuumField 0‖
+  have h0 : P fun _ ↦ 0 := ⟨contDiff_const, fun n _ z ↦ by
+    simp only [iteratedFDeriv_fun_zero, Pi.zero_apply, norm_zero]
+    positivity⟩
+  have hneg {g : ℂ → ℝ} (hg : P g) : P fun z ↦ -g z :=
+    ⟨hg.1.neg, fun n hn z ↦ by
+      rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
+      exact hg.2 n hn z⟩
   have hw (a : Fin 4) : P fun z ↦ (x z - vacuumField z) a := by
     have hxa : ContDiff ℝ ∞ fun z ↦ x z a := contDiff_euclidean.1 hx a
     have he : (fun z ↦ (x z - vacuumField z) a) = (fun z ↦ x z a) - fun _ ↦ vacuumField 0 a :=
       funext fun z ↦ by simp only [PiLp.sub_apply, Pi.sub_apply, vacuumField_apply]
     rw [he]
-    -- A single bound for the derivatives through order `k`.
-    obtain ⟨M, hMx⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound a)
-    have hM := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hMx).1
-    refine ⟨hxa.sub contDiff_const, M + ‖vacuumField 0 a‖, by positivity, fun n hn z ↦ ?_⟩
+    refine ⟨hxa.sub contDiff_const, fun n hn z ↦ ?_⟩
     rw [iteratedFDeriv_sub_apply (hxa.contDiffAt.of_le (mod_cast le_top)) contDiffAt_const]
-    refine (norm_sub_le _ _).trans (add_le_add (hMx n hn z) ?_)
+    refine (norm_sub_le _ _).trans (add_le_add (hxb a n hn z) ?_)
     rcases eq_or_ne n 0 with rfl | hn
-    · simp
+    · simpa using PiLp.norm_apply_le (vacuumField 0) a
     · simp [iteratedFDeriv_const_of_ne hn]
-  fin_cases i <;> fin_cases j <;> first | exact h0 | exact hw _ | exact hneg (hw _)
+  -- Each entry of the matrix is `0`, a coordinate `w a` of `w = x z - vacuumField z`, or `-w a`.
+  fin_cases i <;> fin_cases j <;>
+    simp only [gaugeFixedZerothOrderMatrix, Matrix.of_apply, Matrix.cons_val', Matrix.empty_val',
+      Matrix.cons_val_fin_one, Fin.isValue] <;>
+    first | exact h0 | exact hw _ | exact hneg (hw _)
 
 /-- One step of the elliptic bootstrap: a field `y ∈ L²` with `∫ ⟪y, K x η⟫ = ∫ ⟪f, η⟫` for every
 smooth compactly supported test field `η`, where `f ∈ H^s`, lies in `H^(s+1)` as soon as the
@@ -341,14 +348,18 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, K x η z⟫ = ∫ z, ⟪f z, η z⟫) :
     y ∈ sobolevFields (k + 1) := by
-  have hM := contDiff_gaugeFixedZerothOrderMatrix_and_bounded hx hbound
+  -- A single bound for the derivatives of the four coordinates through order `k`.
+  choose M hM using fun i ↦ exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound i)
+  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx
+    (B := ∑ a, |M a|) fun i n hn z ↦ (hM i n hn z).trans ((le_abs_self _).trans
+      (Finset.single_le_sum (f := fun a ↦ |M a|) (fun a _ ↦ abs_nonneg _) (Finset.mem_univ i)))
   have hzo : (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) ∈ sobolevFields k := by
     simp_rw [toEuclideanLin_apply_eq_toLp]
     refine mulVec_mem_sobolevFields_natCast k (A := fun i j z ↦ A (x z - vacuumField z) i j)
       (fun i j ↦ ?_) (fun i j ↦ ?_) hy <;>
     · obtain ⟨a, b, hab⟩ := hA i j
       simp only [hab]
-      first | exact (hM a b).1 | exact (hM a b).2
+      first | exact (hZ a b).1 | exact ⟨_, by positivity, (hZ a b).2⟩
   exact mem_sobolevFields_add_one_of_zerothOrder_mem hT hK hreg hB hzo
     (memLp_of_mem_sobolevFields hy) hf hweak
 
