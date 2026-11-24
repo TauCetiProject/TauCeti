@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
-public import TauCeti.Topology.VectorBundle.Thom.CoverChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
 
 /-!
 # Lifted orientation-twisted cocycles and the equivariant Thom quasi-isomorphism
@@ -41,8 +41,9 @@ representation (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`), whic
 which `2` is invertible the twisted Thom isomorphism is proved by a transfer instead
 (`thomPairSingularHomologyEquivTwistedHomology`); the argument here needs no such hypothesis.
 
-The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.CoverChainMap`, whose index
-type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type` here.
+The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap`,
+whose index type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type`
+here.
 
 ## Main results
 
@@ -95,15 +96,6 @@ local instance : MulAction ℤˣ
 -- `TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient`.
 attribute [local instance] thomPairFstMulAction thomPairSndMulAction
 
-omit [Fintype ι] in
-/-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
-involution. -/
-theorem neg_one_smul_eq_deckThomPairMap_fst_apply
-    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
-    (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v :=
-  Pullback.totalSpace_ext ((neg_one_smul_eq_deck v.proj).trans (deckThomPairMap_fst_proj v).symm)
-    ((lift_smul _ v).trans (lift_deckThomPairMap_fst v).symm)
-
 /-- The continuity `thomPairFstMulAction_continuousConstSMul` of the action of `ℤˣ` on the total
 space of the Thom pair of the bundle pulled back to the orientation cover. -/
 local instance : ContinuousConstSMul ℤˣ
@@ -115,16 +107,6 @@ vectors of the Thom pair of the bundle pulled back to the orientation cover. -/
 local instance : ContinuousConstSMul ℤˣ
     (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
   thomPairSndMulAction_continuousConstSMul
-
-omit [Fintype ι] in
-/-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
-involution, as a morphism of topological spaces. -/
-theorem neg_one_smul_eq_deckThomPairMap_fst :
-    TopCat.ofHom ⟨((-1 : ℤˣ) • · : (thomPair F
-        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
-      continuous_const_smul _⟩ =
-      TopPair.Hom.fst (deckThomPairMap F E ι) :=
-  TopCat.ext neg_one_smul_eq_deckThomPairMap_fst_apply
 
 /-- **Lifted cocycles are semi-invariant for the sign character.** A relative cocycle `φ` of
 `(E, E₀)` with coefficients in the orientation system lifts to a cocycle of the Thom pair
@@ -180,9 +162,7 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
           (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
     QuasiIso (TopPair.singularChainsRepCap
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (G := ℤˣ) (p₀ := thomPairProj F _) (fun u v ↦
-        (thomPairProj_apply F _ (u • v)).trans <| (proj_smul_totalSpace u v).trans <|
-          congrArg (u • ·) (thomPairProj_apply F _ v).symm)
+      (G := ℤˣ) (p₀ := thomPairProj F _) thomPairProj_smul
       (Units.map (Int.castRingHom R : ℤ →* R))
       (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) := by
   refine quasiIso_singularChainsRepCap_thomPair _ _ _ _ ?_
