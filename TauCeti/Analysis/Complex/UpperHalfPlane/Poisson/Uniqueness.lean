@@ -20,7 +20,8 @@ For a representation `(c, ν)` the function `F(z) = c z + i S[ν](z)`, with `S[�
 integral, is holomorphic on `ℂ₊` with imaginary part `c Im z + P[ν](z)` and real part `0` at `i`.
 Two such functions with the same imaginary part differ by a holomorphic function with real values,
 which is constant by the open mapping theorem, hence zero. Since
-`i S[ν](z) = (1 / π) ∫ ((x - z)⁻¹ - x / (1 + x ^ 2)) dν(x)`, uniqueness of the Herglotz
+`i S[ν](z) = (1 / π) ∫ ((x - z)⁻¹ - x / (1 + x ^ 2)) dν(x)`
+(`TauCeti.I_mul_upperHalfPlaneSchwarzIntegral`), uniqueness of the Herglotz
 representation (`TauCeti.eq_and_eq_of_eq_subtractedResolventKernel_add`,
 `TauCeti.eq_of_eq_subtractedResolventKernel_add`) gives `c = c'` and `ν / π = ν' / π`.
 
@@ -62,16 +63,7 @@ measure `ν / π`. -/
 private theorem reprFun_eq (c : ℝ) (ν : Measure ℝ) (z : ℂ) :
     reprFun c ν z = (0 : ℝ) + c * z + ∫ x, subtractedResolventKernel z x
       ∂(ENNReal.ofReal π⁻¹ • ν) := by
-  rw [reprFun, upperHalfPlaneSchwarzIntegral_def, integral_smul_measure,
-    ENNReal.toReal_ofReal (by positivity), ← mul_assoc, mul_inv, ← mul_assoc,
-    mul_comm I, mul_assoc _ I, mul_inv_cancel₀ I_ne_zero, mul_one]
-  simp [Complex.real_smul, ofReal_inv]
-
-/-- The measure `ν / π` has finite weighted mass when `ν` is Poisson-finite. -/
-private theorem lintegral_lt_top_smul {ν : Measure ℝ} (hν : IsPoissonFinite ν) :
-    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂(ENNReal.ofReal π⁻¹ • ν) < ⊤ := by
-  rw [lintegral_smul_measure]
-  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν)
+  rw [reprFun, I_mul_upperHalfPlaneSchwarzIntegral, ofReal_zero, zero_add]
 
 /-- **Uniqueness of the Poisson representation of a positive harmonic function.** If
 `c Im z + P[ν](z) = c' Im z + P[ν'](z)` on the upper half-plane for Poisson-finite measures `ν`
@@ -100,8 +92,10 @@ theorem eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq {c c' : ℝ} {�
   have hrep' := fun z (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) ↦
     (hF z hz).trans (reprFun_eq c' ν' z)
   refine ⟨(eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep').2, ?_⟩
-  have hsmul := eq_of_eq_subtractedResolventKernel_add (lintegral_lt_top_smul hν)
-    (lintegral_lt_top_smul hν') hrep hrep'
+  have hfin (μ : Measure ℝ) (hμ : IsPoissonFinite μ) :=
+    (isPoissonFinite_iff_lintegral_lt_top _).1 ((isPoissonFinite_iff _).2
+      (((isPoissonFinite_iff μ).1 hμ).smul_measure (ENNReal.ofReal_ne_top (r := π⁻¹))))
+  have hsmul := eq_of_eq_subtractedResolventKernel_add (hfin ν hν) (hfin ν' hν') hrep hrep'
   have hπ : ENNReal.ofReal π⁻¹ ≠ 0 := by simp [Real.pi_pos]
   ext s _
   have := congrArg (fun μ : Measure ℝ ↦ μ s) hsmul
