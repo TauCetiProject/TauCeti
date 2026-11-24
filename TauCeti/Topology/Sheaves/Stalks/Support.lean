@@ -193,6 +193,21 @@ end Sheaf
 
 end Zero
 
+section AddZeroClass
+
+variable [∀ A, AddZeroClass (CC A)] [∀ A B, AddMonoidHomClass (FC A B) (CC A) (CC B)]
+  (F : X.Presheaf C) {U : Opens X}
+
+/-- The support of a sum of sections lies in the union of their supports. -/
+theorem sectionSupport_add_subset (s t : ToType (F.obj (op U))) :
+    F.sectionSupport (s + t) ⊆ F.sectionSupport s ∪ F.sectionSupport t := by
+  rintro x ⟨hx, h⟩
+  by_contra h'
+  simp only [Set.mem_union, not_or, notMem_sectionSupport_iff hx] at h'
+  exact h (by rw [map_add, h'.1, h'.2, add_zero])
+
+end AddZeroClass
+
 section AddGroup
 
 variable [∀ A, AddGroup (CC A)] [∀ A B, AddMonoidHomClass (FC A B) (CC A) (CC B)]
@@ -204,14 +219,6 @@ theorem sectionSupport_neg (s : ToType (F.obj (op U))) :
     F.sectionSupport (-s) = F.sectionSupport s := by
   ext x
   simp [mem_sectionSupport_iff, map_neg]
-
-/-- The support of a sum of sections lies in the union of their supports. -/
-theorem sectionSupport_add_subset (s t : ToType (F.obj (op U))) :
-    F.sectionSupport (s + t) ⊆ F.sectionSupport s ∪ F.sectionSupport t := by
-  rintro x ⟨hx, h⟩
-  by_contra h'
-  simp only [Set.mem_union, not_or, notMem_sectionSupport_iff hx] at h'
-  exact h (by rw [map_add, h'.1, h'.2, add_zero])
 
 /-- The support of a difference of sections lies in the union of their supports. -/
 theorem sectionSupport_sub_subset (s t : ToType (F.obj (op U))) :
