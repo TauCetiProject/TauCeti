@@ -202,6 +202,7 @@ theorem IsMaximallyDominating.of_comp_of_isOpenImmersion {f : X ⟶ Y} {g : Y �
     exact h hx
 
 /-- Composing with an open immersion neither creates nor destroys maximal domination. -/
+@[simp]
 theorem isMaximallyDominating_comp_iff_of_isOpenImmersion (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsOpenImmersion g] : (f ≫ g).IsMaximallyDominating ↔ f.IsMaximallyDominating :=
   ⟨.of_comp_of_isOpenImmersion, g.isMaximallyDominating_of_isOpenImmersion.comp⟩
@@ -248,6 +249,7 @@ theorem isMaximallyDominating_of_isDominant [IrreducibleSpace X] (f : X ⟶ Y) [
 /-- The canonical morphism `Spec κ(y) ⟶ Y` from the spectrum of the residue field at `y` is
 maximally dominating exactly when `y` is a component-generic point of `Y`. For instance the
 inclusion of the origin of the affine line over a field is not maximally dominating. -/
+@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.isMaximallyDominating_fromSpecResidueField_iff (y : Y) :
     (Y.fromSpecResidueField y).IsMaximallyDominating ↔ y ∈ genericPoints Y := by
   rw [isMaximallyDominating_iff_genericPoint_mem, Scheme.fromSpecResidueField_apply]
