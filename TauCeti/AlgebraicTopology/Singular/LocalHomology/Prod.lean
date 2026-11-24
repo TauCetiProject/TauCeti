@@ -9,10 +9,12 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
 import TauCeti.CategoryTheory.GradedObject.Monoidal
+import TauCeti.Geometry.Manifold.Instances.TopCatSphere
 
 /-!
 # The fundamental class of a product of manifolds
@@ -45,6 +47,15 @@ The proof uses no local computation in a product of charts. Fix a point `z = (x,
 * The composite `Hₘ(M; R) ⊗ Hₙ(N; S) → Hₘ₊ₙ(M × N, M × N ∖ {z}; R ⊗ S)` is then a split
   monomorphism between modules free of rank one, hence it carries the generator `μ ⊗ ν` to a
   generator of the local homology at `z` (`LinearMap.span_singleton_apply_eq_top_of_leftInverse`).
+
+Since the standard generator `[Sᵈ⁺¹]` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` is a fundamental class
+(`TauCeti.isFundamentalClass_singularHomologyTopCatSphereGenerator`), the cross product
+`[Sᵈ⁺¹] × ν` is a fundamental class of `Sᵈ⁺¹ × N` for every fundamental class `ν` of `N`
+(`TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`). Its
+coefficients are `k ⊗ k`; read with coefficients `k` through `k ⊗ k ≅ k` it is still a fundamental
+class (`TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`). For a closed connected
+oriented three-manifold `Y`, this is the fundamental class `[S¹] × [Y]` of the four-manifold
+`S¹ × Y`, on which its intersection form is evaluated.
 
 ## Manifolds with boundary
 
@@ -86,6 +97,9 @@ The generator is not compared here with the local orientation of the product ori
 
 * `TauCeti.IsFundamentalClass.singularHomologyCross`: the cross product of fundamental classes of
   closed connected manifolds is a fundamental class of their product.
+* `TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`: the
+  cross product of the standard generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)` with a fundamental class of `N` is a
+  fundamental class of `Sᵈ⁺¹ × N`.
 * `TauCeti.span_singularHomologyKunnethPair_tmul_eq_top`: the Künneth class of local generators
   generates the local homology of a product.
 * `TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`: the cubical cross product of
@@ -188,6 +202,31 @@ theorem IsFundamentalClass.singularHomologyCross
     (eT.span_singleton_eq_top_iff_isUnit.2 heT)
 
 end Cross
+
+section Sphere
+
+variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
+  {N F : Type w} [TopologicalSpace N] [T2Space N] [CompactSpace N] [ConnectedSpace N]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N] {d n : ℕ}
+
+/-- **The fundamental class of `Sᵈ⁺¹ × N`.** Let `N` be a compact connected manifold of dimension
+`n` and `k` a principal ideal domain. If `ν ∈ Hₙ(N; k)` is a fundamental class, then the cross
+product `[Sᵈ⁺¹] × ν ∈ Hᵈ⁺¹⁺ⁿ(Sᵈ⁺¹ × N; k ⊗ k)` of the standard generator
+`TauCeti.singularHomologyTopCatSphereGenerator` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` with `ν` is a fundamental class
+of `Sᵈ⁺¹ × N`. -/
+theorem IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross
+    (hn : finrank ℝ F = n)
+    {ν : ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of k k) n : ModuleCat.{w} k)}
+    (hν : IsFundamentalClass ν) :
+    IsFundamentalClass (M := TopCat.sphere.{w} (d + 1) × N)
+      ((TopCat.singularHomologyCross (TopCat.sphere.{w} (d + 1)) (TopCat.of N)
+        (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
+        (singularHomologyTopCatSphereGenerator k d ⊗ₜ ν)) :=
+  IsFundamentalClass.singularHomologyCross (M := TopCat.sphere.{w} (d + 1))
+    (E := ULift.{w} (Fin (d + 1)) → ℝ) (LinearEquiv.refl k k) (LinearEquiv.refl k k) (by simp) hn
+    (isFundamentalClass_singularHomologyTopCatSphereGenerator k d) hν
+
+end Sphere
 
 section ProdPair
 

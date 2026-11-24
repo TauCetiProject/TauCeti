@@ -37,9 +37,10 @@ modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primit
 `p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
-with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
-power `-1`, so if `a / b` has order `2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd
-multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible by `p`.
+with `k` a multiple of the order. In particular `p > 1` has order `f` modulo `p ^ f - 1`. Modulo
+a prime `p`, an element of even order `2 * m` has `m`-th power `-1`, so if `a / b` has order
+`2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd multiples `k` of `m`; for `b = 1` this
+decides which `q ^ k + 1` are divisible by `p`.
 
 ## Main results
 
@@ -62,6 +63,8 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
   primitive root modulo every `p ^ e`.
+* `TauCeti.ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is
+  `f`.
 * `Nat.Prime.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul`: if `a / b` has order `2 * m ≠ 0` modulo
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
@@ -282,6 +285,21 @@ theorem orderOf_natCast_prime_pow_eq_totient {p g : ℕ} (hp : p.Prime) (hp2 : p
   rw [Nat.totient_prime_pow_succ hp, ← hpow, Nat.div_mul_cancel hdvd]
 
 end ZMod
+
+namespace TauCeti.ZMod
+
+/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`. At `f = 0` the modulus is `0`, and
+the order `0` in `ZMod 0 = ℤ` means that `p` has infinite multiplicative order. -/
+@[simp]
+theorem orderOf_natCast_pow_sub_one {p : ℕ} (hp : 1 < p) (f : ℕ) :
+    orderOf (p : ZMod (p ^ f - 1)) = f := by
+  have hdvd := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1
+    dvd_rfl
+  have ho := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega)
+    (orderOf (p : ZMod (p ^ f - 1)))).2 dvd_rfl
+  exact Nat.dvd_antisymm hdvd ((Nat.pow_sub_one_dvd_pow_sub_one_iff hp).mp ho)
+
+end TauCeti.ZMod
 
 /-! ### Divisibility of `a ^ k + b ^ k` -/
 
