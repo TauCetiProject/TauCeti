@@ -15,6 +15,7 @@ import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Localization.NormTrace
 import TauCeti.Analysis.InnerProductSpace.Gram.Projection
 import TauCeti.Data.Int.Round
+import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 
@@ -138,12 +139,8 @@ theorem det_gram_t2Vector {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis 
   let M : Matrix ι ι ℂ := of fun i k ↦ e k (b i)
   -- The determinant of the embedding matrix squares to the discriminant.
   have hM : M.det ^ 2 = (discr K : ℂ) := by
-    have hdiscr : Algebra.discr ℚ (fun i ↦ (b i : K)) = (discr K : ℚ) := by
-      rw [← NumberField.discr_eq_discr K b, ← eq_intCast (algebraMap ℤ ℚ),
-        ← Algebra.discr_localizationLocalization ℤ (nonZeroDivisors ℤ) K b]
-      congr 1
-      ext i
-      simp [Basis.localizationLocalization_apply]
+    have hdiscr : Algebra.discr ℚ (fun i ↦ (b i : K)) = (discr K : ℚ) :=
+      discr_eq_of_integralBasis b
     have h := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ ℂ (fun i ↦ (b i : K))
       (e.trans (RingHom.equivRatAlgHom K ℂ))
     have hMe : Algebra.embeddingsMatrixReindex ℚ ℂ (fun i ↦ (b i : K))
@@ -157,19 +154,16 @@ theorem det_gram_t2Vector {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis 
   have hG : Complex.ofRealHom.mapMatrix (gram ℝ fun i ↦ t2Vector K (b i)) =
       M.map (starRingEnd ℂ) * Mᵀ := by
     ext i j
-    rw [RingHom.mapMatrix_apply, map_apply, gram_apply, Complex.ofRealHom_eq_coe,
-      ofReal_inner_t2Vector, Matrix.mul_apply]
-    simp only [M, map_apply, transpose_apply, of_apply]
+    simp only [Matrix.mul_apply, RingHom.mapMatrix_apply, map_apply, gram_apply,
+      Complex.ofRealHom_eq_coe, ofReal_inner_t2Vector, M, transpose_apply, of_apply]
     exact (e.sum_comp fun σ ↦ conj (σ (b i : K)) * σ (b j : K)).symm
   -- `det (conj M) = conj (det M)` and `conj z * z = ‖z‖ ^ 2`, so `det (conj M) * det M` is
   -- `‖det M‖ ^ 2 = ‖det M ^ 2‖ = |discr K|`.
   have hconj : (M.map (starRingEnd ℂ)).det * M.det = ‖M.det ^ 2‖ := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, Complex.conj_mul', norm_pow,
-      Complex.ofReal_pow]
+    simp [← RingHom.mapMatrix_apply, ← RingHom.map_det, Complex.conj_mul']
   have hdet := congr_arg det hG
-  rw [← RingHom.map_det, det_mul, det_transpose, hconj, hM, Complex.norm_intCast,
-    Complex.ofRealHom_eq_coe] at hdet
-  exact_mod_cast hdet
+  simp only [← RingHom.map_det, det_mul, det_transpose, hconj, hM] at hdet
+  simpa using hdet
 
 variable (K) in
 /-- The projection `t2Vector K x - (Tr x / n) • t2Vector K 1` of the `T₂` vector of `x` away from
