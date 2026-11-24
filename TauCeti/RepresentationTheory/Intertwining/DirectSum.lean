@@ -199,6 +199,13 @@ noncomputable def IntertwiningMap.directSumToModule {U : Type*} [AddCommMonoid U
     simp [directSum_apply, (f i).isIntertwining]
 
 @[simp]
+theorem IntertwiningMap.directSumToModule_toLinearMap {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
+    (f : ∀ i, IntertwiningMap (ρ i) τ) :
+    (directSumToModule f).toLinearMap = DirectSum.toModule k ι U fun i ↦ (f i).toLinearMap :=
+  (rfl)
+
+@[simp]
 theorem IntertwiningMap.directSumToModule_lof {U : Type*} [AddCommMonoid U] [Module k U]
     {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
     (f : ∀ i, IntertwiningMap (ρ i) τ) (i : ι) (v : V i) :

@@ -53,11 +53,7 @@ theorem IntertwiningMap.ofMulAction_quotient_ext
       f' (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1)) : f = f' := by
   refine IntertwiningMap.ext <| (MonoidAlgebra.basis (G ⧸ U) A).ext fun x ↦ ?_
   induction x using QuotientGroup.induction_on with | H g =>
-  have hg : MonoidAlgebra.single (g : G ⧸ U) (1 : A) =
-      ofMulAction A G (G ⧸ U) g (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) := by
-    simp [ofMulAction_single]
-  simp only [MonoidAlgebra.basis_apply, IntertwiningMap.coe_toLinearMap, hg,
-    IntertwiningMap.isIntertwining, h]
+  simpa [← IntertwiningMap.isIntertwining, ofMulAction_single] using congrArg (ρ g) h
 
 /-- The image of the basis vector of the coset `U` under an intertwining map out of `A[G ⧸ U]` is
 fixed by `U`. -/
@@ -68,20 +64,13 @@ theorem IntertwiningMap.le_stabilizer_apply_single_one
     QuotientGroup.eq.2 (by simpa using U.inv_mem hu)
   rw [mem_stabilizer, ← f.isIntertwining, ofMulAction_single, hu']
 
-end Semiring
-
-section CommSemiring
-
-variable {A G V : Type*} [CommSemiring A] [Group G] [AddCommMonoid V] [Module A V]
-  {ρ : Representation A G V}
-
 variable (ρ) in
 /-- For a subgroup `U` fixing `v`, the intertwining map `A[G ⧸ U] → V` sending the basis vector
 of the coset `g U` to `ρ g v`. -/
 noncomputable def cosetLift (U : Subgroup G) (v : V) (hU : U ≤ ρ.stabilizer v) :
     IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ :=
-  ((MonoidAlgebra.basis (G ⧸ U) A).constr A
-    (ρ.orbitMap v ∘ Subgroup.quotientMapOfLE hU)).intertwiningMap_of_isIntertwiningMap _ _
+  (Finsupp.linearCombination A (ρ.orbitMap v ∘ Subgroup.quotientMapOfLE hU) ∘ₗ
+    (MonoidAlgebra.basis (G ⧸ U) A).repr.toLinearMap).intertwiningMap_of_isIntertwiningMap _ _
     fun g x ↦ by
       induction x using MonoidAlgebra.induction_linear with
       | zero => simp
@@ -97,12 +86,12 @@ theorem cosetLift_single (U : Subgroup G) (v : V) (hU : U ≤ ρ.stabilizer v) (
 
 /-- **Uniqueness of the coset lift**: every intertwining map out of `A[G ⧸ U]` is the coset lift
 of its value on the basis vector of the coset `U`. -/
-theorem IntertwiningMap.eq_cosetLift {U : Subgroup G}
+theorem IntertwiningMap.eq_cosetLift
     (f : IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ) :
     f = ρ.cosetLift U _ f.le_stabilizer_apply_single_one := by
   ext
   simp
 
-end CommSemiring
+end Semiring
 
 end Representation

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Smooth.FinitelyGenerated
 import Mathlib.LinearAlgebra.Dimension.Finite
+import TauCeti.RepresentationTheory.OfMulAction.CosetLift
 
 /-!
 # Examples of finitely generated smooth representations
