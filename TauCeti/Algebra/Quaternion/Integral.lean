@@ -31,10 +31,11 @@ the involution `star x = trd(x) - x`.
 
 * `QuaternionAlgebra.aeval_X_sq_sub_C_mul_X_add_C_eq_zero`: every quaternion is a root of
   `X² - trd(x) X + nrd(x)`.
-* `QuaternionAlgebra.isIntegral_iff`: a quaternion over a field is integral over `R` exactly when
-  its reduced trace and reduced norm are.
-* `QuaternionAlgebra.isIntegral_iff_mem_range`: over an integrally closed domain with fraction
-  field `F`, a quaternion is integral exactly when its reduced trace and reduced norm lie in `R`.
+* `TauCeti.QuaternionAlgebra.isIntegral_iff`: a quaternion over a field is integral over `R`
+  exactly when its reduced trace and reduced norm are.
+* `TauCeti.QuaternionAlgebra.isIntegral_iff_mem_range`: over an integrally closed domain with
+  fraction field `F`, a quaternion is integral exactly when its reduced trace and reduced norm lie
+  in `R`.
 
 ## References
 
@@ -64,6 +65,12 @@ theorem aeval_X_sq_sub_C_mul_X_add_C_eq_zero (x : ℍ[S,c₁,c₂,c₃]) :
   noncomm_ring
 
 end CommRing
+
+end QuaternionAlgebra
+
+namespace TauCeti.QuaternionAlgebra
+
+open _root_.QuaternionAlgebra
 
 section Field
 
@@ -127,4 +134,4 @@ theorem isIntegral_iff_mem_range [IsFractionRing R F] [IsIntegrallyClosed R]
 
 end Field
 
-end QuaternionAlgebra
+end TauCeti.QuaternionAlgebra
