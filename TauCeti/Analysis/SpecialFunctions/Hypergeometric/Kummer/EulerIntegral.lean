@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Transformation
 
 /-!
 # Kummer's integral for the regularized confluent hypergeometric function
@@ -24,7 +25,9 @@ for every complex `z`, with principal powers of the positive reals `t` and `1 - 
 `n`-th term into `zⁿ / n!` times the Beta integral `B(a + n, b - a)`, which is the `n`-th term of
 `Γ(a) Γ(b - a) 𝐌(a, b, z)`. The interchange is the termwise Beta integration
 `Complex.hasSum_inv_Gamma_mul_integral_of_hasSum_mul_pow` shared with Euler's integral for the
-Gauss function. The substitution `t ↦ 1 - t` gives the reflected form with weight `e^{-z t}`.
+Gauss function. Combined with Kummer's transformation
+`Complex.regularizedHGFun_singleton_eq_exp_mul`, it gives the reflected form with weight `e^{-z t}`,
+which is the substitution `t ↦ 1 - t` in the integral.
 
 This is the confluent limit of Euler's integral for the Gauss function,
 `Complex.regularizedGaussHGFun_eq_eulerIntegral`, and the integral representation behind the
@@ -79,22 +82,9 @@ theorem regularizedHGFun_singleton_eq_exp_mul_integral {a b : ℂ} (ha : 0 < a.r
     (hab : a.re < b.re) (z : ℂ) :
     regularizedHGFun {a} {b} z = (Gamma a * Gamma (b - a))⁻¹ * exp z *
       ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t)) := by
-  have hsub := intervalIntegral.integral_comp_sub_left (a := (0 : ℝ)) (b := 1)
-    (fun t : ℝ => (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t))) 1
-  rw [sub_self, sub_zero] at hsub
-  have hreflect : (∫ t : ℝ in 0..1, (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1) * exp (z * t)) =
-      exp z * ∫ t : ℝ in 0..1,
-        (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t)) := by
-    rw [← hsub, ← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr fun t _ => ?_
-    have he : exp (z * t) = exp z * exp (-(z * (1 - (t : ℂ)))) := by
-      rw [← exp_add]
-      congr 1
-      ring
-    simp only [ofReal_sub, ofReal_one, sub_sub_cancel]
-    rw [he]
-    ring
-  rw [regularizedHGFun_singleton_eq_integral ha hab, hreflect]
-  exact (mul_assoc _ _ _).symm
+  rw [regularizedHGFun_singleton_eq_exp_mul, regularizedHGFun_singleton_eq_integral
+    (by simpa using hab) (by simpa using ha), sub_sub_cancel]
+  simp only [neg_mul]
+  ring
 
 end Complex
