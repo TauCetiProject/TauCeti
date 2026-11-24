@@ -36,6 +36,7 @@ Witt ring.
 
 * `TauCeti.BigWittVector S R`: the big Witt vectors of `R` indexed by the truncation set `S`, with
   its `CommRing` instance.
+* `TauCeti.BigWittVector.mk' x`: the big Witt vector with coordinates `x_n`, `n ∈ S`.
 * `TauCeti.BigWittVector.ghostMap`: the ghost map `W_S(R) →+* (S → R)`, `x ↦ (w_n(x))_{n ∈ S}`.
 * `TauCeti.BigWittVector.map f`: the ring homomorphism `W_S(R) →+* W_S(R')` applying a ring
   homomorphism `f : R →+* R'` to every coordinate.
@@ -109,6 +110,29 @@ instance : Subsingleton (BigWittVector ⊥ R) :=
     rw [x.coeff_eq_zero_of_notMem n TruncationSet.notMem_bot,
       y.coeff_eq_zero_of_notMem n TruncationSet.notMem_bot]⟩
 
+/-- The big Witt vector with coordinates `x_n`, `n ∈ S`: the coordinates of `x` outside `S` are
+discarded. -/
+def mk' (x : ℕ → R) : BigWittVector S R :=
+  ⟨(S : Set ℕ).indicator x, fun _ hn ↦ Set.indicator_of_notMem hn _⟩
+
+theorem coeff_mk' (x : ℕ → R) (n : ℕ) :
+    (mk' x : BigWittVector S R).coeff n = (S : Set ℕ).indicator x n :=
+  (rfl)
+
+@[simp]
+theorem coeff_mk'_of_mem (x : ℕ → R) {n : ℕ} (hn : n ∈ S) :
+    (mk' x : BigWittVector S R).coeff n = x n :=
+  Set.indicator_of_mem (SetLike.mem_coe.2 hn) _
+
+/-- Every big Witt vector is constructed from its coordinates. -/
+@[simp]
+theorem mk'_coeff (x : BigWittVector S R) : mk' x.coeff = x := by
+  ext n
+  by_cases hn : n ∈ S
+  · exact coeff_mk'_of_mem _ hn
+  · rw [x.coeff_eq_zero_of_notMem n hn]
+    exact Set.indicator_of_notMem hn _
+
 end Zero
 
 variable [CommRing R] [CommRing R'] [CommRing R'']
@@ -131,7 +155,7 @@ private abbrev instZeroAux : Zero (BigWittVector S R) :=
   ⟨⟨0, fun _ _ ↦ rfl⟩⟩
 
 private abbrev instOneAux : One (BigWittVector S R) :=
-  ⟨⟨(S : Set ℕ).indicator (Pi.single 1 1), fun _ hn ↦ Set.indicator_of_notMem hn _⟩⟩
+  ⟨mk' (Pi.single 1 1)⟩
 
 private abbrev instAddAux : Add (BigWittVector S R) :=
   ⟨fun x y ↦ peval (X 0 + X 1) ![x, y]⟩
@@ -199,22 +223,13 @@ private theorem ghostFun_peval {idx : Type*} (Φ : MvPolynomial idx ℤ)
   exact (ghostPolynomial_congr fun d hd ↦ coeff_peval_of_mem Φ x (S.mem_of_dvd n.prop hd)).trans
     (ghostPolynomial_aeval_wittStructure Φ _ (S.ne_zero_of_mem n.prop))
 
-private theorem ghostFun_zero : ghostFun (0 : BigWittVector S R) = 0 := by
-  funext n
-  exact (ghostPolynomial_eq_sum _ _).trans (Finset.sum_eq_zero fun d hd ↦ mul_eq_zero_of_right _
-    (zero_pow (Nat.div_pos (Nat.divisor_le hd) (Nat.pos_of_mem_divisors hd)).ne'))
+private theorem ghostFun_zero : ghostFun (0 : BigWittVector S R) = 0 :=
+  funext fun n ↦ ghostPolynomial_zero_right n
 
-private theorem ghostFun_one : ghostFun (1 : BigWittVector S R) = 1 := by
-  funext n
-  have hn := S.ne_zero_of_mem n.prop
-  refine (ghostPolynomial_congr (y := Pi.single 1 1)
-    fun d hd ↦ Set.indicator_of_mem (SetLike.mem_coe.2 (S.mem_of_dvd n.prop hd)) _).trans ?_
-  rw [ghostPolynomial_eq_sum, Finset.sum_eq_single 1]
-  · simp
-  · intro d hd' hd
-    rw [Pi.single_eq_of_ne hd,
-      zero_pow (Nat.div_pos (Nat.divisor_le hd') (Nat.pos_of_mem_divisors hd')).ne', mul_zero]
-  · simp [hn]
+private theorem ghostFun_one : ghostFun (1 : BigWittVector S R) = 1 :=
+  funext fun n ↦
+    (ghostPolynomial_congr fun _ hd ↦ coeff_mk'_of_mem _ (S.mem_of_dvd n.prop hd)).trans
+      (ghostPolynomial_single_one (S.ne_zero_of_mem n.prop))
 
 private theorem ghostFun_add (x y : BigWittVector S R) :
     ghostFun (x + y) = ghostFun x + ghostFun y := by
@@ -294,11 +309,10 @@ private theorem mapFun_peval (f : R →+* R') {idx : Type*} (Φ : MvPolynomial i
 private theorem mapFun_surjective (f : R →+* R') (hf : Surjective f) :
     Surjective (mapFun f : BigWittVector S R → BigWittVector S R') := by
   intro x
-  refine ⟨⟨(S : Set ℕ).indicator (surjInv hf ∘ x.coeff), fun _ hn ↦
-    Set.indicator_of_notMem hn _⟩, ext fun n ↦ ?_⟩
-  by_cases hn : n ∈ (S : Set ℕ)
-  · simp [mapFun, Set.indicator_of_mem hn, surjInv_eq hf]
-  · simp [mapFun, Set.indicator_of_notMem hn, x.coeff_eq_zero_of_notMem n hn]
+  refine ⟨mk' (surjInv hf ∘ x.coeff), ext fun n ↦ ?_⟩
+  by_cases hn : n ∈ S
+  · simp [mapFun, hn, surjInv_eq hf]
+  · simp [coeff_eq_zero_of_notMem _ n hn]
 
 private theorem mapFun_zero (f : R →+* R') : mapFun f (0 : BigWittVector S R) = 0 :=
   ext fun _ ↦ map_zero f
@@ -466,10 +480,9 @@ theorem ghostMap_bijective_of_isUnit (hS : ∀ n ∈ S, IsUnit (n : R)) :
   refine ⟨ghostMap_injective fun p hp _ ↦ (hS p hp).isSMulRegular R, fun b ↦ ?_⟩
   obtain ⟨x, hx⟩ := exists_ghostPolynomial_eq_of_isUnit hS
     fun n ↦ if h : n ∈ S then b ⟨n, h⟩ else 0
-  refine ⟨⟨(S : Set ℕ).indicator x, fun _ hn ↦ Set.indicator_of_notMem hn _⟩, funext fun n ↦ ?_⟩
+  refine ⟨mk' x, funext fun n ↦ ?_⟩
   rw [ghostMap_apply]
-  refine (ghostPolynomial_congr fun d hd ↦
-    Set.indicator_of_mem (SetLike.mem_coe.2 (S.mem_of_dvd n.prop hd)) _).trans ?_
+  refine (ghostPolynomial_congr fun d hd ↦ coeff_mk'_of_mem x (S.mem_of_dvd n.prop hd)).trans ?_
   simp [hx n n.prop]
 
 /-! ### Functoriality in the coefficients -/
@@ -519,7 +532,7 @@ theorem ghostMap_map (f : R →+* R') (x : BigWittVector S R) (n : S) :
 /-- Forgetting the coordinates outside a smaller truncation set, before the ring structure is
 available. -/
 private def restrictFun (_ : T ≤ S) (x : BigWittVector S R) : BigWittVector T R :=
-  ⟨(T : Set ℕ).indicator x.coeff, fun _ hn ↦ Set.indicator_of_notMem hn _⟩
+  mk' x.coeff
 
 private theorem restrictFun_peval (h : T ≤ S) {idx : Type*} (Φ : MvPolynomial idx ℤ)
     (x : idx → BigWittVector S R) :
@@ -528,10 +541,10 @@ private theorem restrictFun_peval (h : T ≤ S) {idx : Type*} (Φ : MvPolynomial
   by_cases hn : n ∈ T
   · rw [coeff_peval_of_mem Φ _ hn]
     dsimp only [restrictFun]
-    rw [Set.indicator_of_mem (SetLike.mem_coe.2 hn), coeff_peval_of_mem Φ _ (h hn)]
+    rw [coeff_mk'_of_mem _ hn, coeff_peval_of_mem Φ _ (h hn)]
     refine aeval_wittStructure_congr Φ fun i d hd ↦ ?_
     dsimp only [comp_apply, restrictFun]
-    exact (Set.indicator_of_mem (SetLike.mem_coe.2 (T.mem_of_dvd hn hd)) _).symm
+    exact (coeff_mk'_of_mem _ (T.mem_of_dvd hn hd)).symm
   · rw [coeff_eq_zero_of_notMem _ n hn, coeff_eq_zero_of_notMem _ n hn]
 
 /-- For truncation sets `T ≤ S`, the restriction `W_S(R) →+* W_T(R)`, which forgets the
@@ -540,10 +553,9 @@ def restrict (h : T ≤ S) : BigWittVector S R →+* BigWittVector T R where
   toFun := restrictFun h
   map_zero' := ext fun n ↦ Set.indicator_apply_eq_zero.2 fun _ ↦ coeff_zero n
   map_one' := ext fun n ↦ by
-    by_cases hn : n ∈ (T : Set ℕ)
-    · simp [restrictFun, coeff_one, Set.indicator_of_mem hn,
-        Set.indicator_of_mem (SetLike.mem_coe.2 (h hn))]
-    · simp [restrictFun, coeff_one, Set.indicator_of_notMem hn]
+    by_cases hn : n ∈ T
+    · simp [restrictFun, coeff_one, hn, h hn]
+    · simp [coeff_eq_zero_of_notMem _ n hn]
   map_add' x y := by
     rw [add_eq_peval, add_eq_peval, restrictFun_peval]
     congr 1

@@ -68,12 +68,12 @@ private theorem exists_ghostPolynomial_eq_aeval (Φ : MvPolynomial idx ℤ) :
   refine (ghost_image ⊤ (fun p ↦ (expand p : _ →ₐ[ℤ] _).toRingHom)
     (fun p hp _ ↦ hφ p hp) _).2 fun p hp n _ _ ↦ ?_
   -- reduce modulo the ideal and compare the arguments of `Φ`
-  rw [← Ideal.Quotient.eq, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, comp_aeval_apply,
-    ← Ideal.Quotient.mkₐ_eq_mk ℤ, comp_aeval_apply, comp_aeval_apply]
+  rw [← Ideal.Quotient.eq]
+  simp only [← Ideal.Quotient.mkₐ_eq_mk ℤ, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    comp_aeval_apply]
   congr 2
   funext i
-  rw [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq]
-  exact ghostPolynomial_sub_map_ghostPolynomial_div_mem hp _ (hφ p hp) n _
+  exact Ideal.Quotient.eq.2 (ghostPolynomial_sub_map_ghostPolynomial_div_mem hp _ (hφ p hp) n _)
 
 /-- The `n`-th big Witt structure polynomial of an integral polynomial `Φ` in variables indexed by
 `idx`: the unique integral polynomials `φ_n`, `n > 0`, in the variables `X (i, k)` whose ghost
