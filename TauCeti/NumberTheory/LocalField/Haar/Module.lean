@@ -357,7 +357,9 @@ theorem addHaar_preimage_smul_module_of_isNonarchimedeanLocalField (μ : Measure
     [μ.IsAddHaarMeasure] {c : E} (hc : c ≠ 0) (s : Set V) :
     μ ((c • ·) ⁻¹' s) =
       (((normalizedAbsoluteValue E c : ℝ≥0) : ℝ≥0∞) ^ Module.finrank E V)⁻¹ * μ s := by
-  have hpre : (c • ·) ⁻¹' s = (c • (LinearMap.id : V →ₗ[E] V)) ⁻¹' s := rfl
+  have hpre : (c • ·) ⁻¹' s = (c • (LinearMap.id : V →ₗ[E] V)) ⁻¹' s := by
+    ext x
+    simp
   have hdet : (c • (LinearMap.id : V →ₗ[E] V)).det ≠ 0 := by
     rw [LinearMap.det_smul, LinearMap.det_id, mul_one]
     exact pow_ne_zero _ hc
@@ -369,7 +371,8 @@ theorem addHaar_preimage_smul_module_of_isNonarchimedeanLocalField (μ : Measure
 theorem map_smul_module_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] {c : E} (hc : c ≠ 0) :
     map (c • ·) μ =
       (((normalizedAbsoluteValue E c : ℝ≥0) ^ Module.finrank E V)⁻¹ : ℝ≥0) • μ := by
-  have hfun : (c • · : V → V) = ⇑(c • (LinearMap.id : V →ₗ[E] V)) := rfl
+  have hfun : (c • · : V → V) = ⇑(c • (LinearMap.id : V →ₗ[E] V)) :=
+    funext fun x ↦ by simp
   have hdet : (c • (LinearMap.id : V →ₗ[E] V)).det ≠ 0 := by
     rw [LinearMap.det_smul, LinearMap.det_id, mul_one]
     exact pow_ne_zero _ hc

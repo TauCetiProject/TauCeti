@@ -65,7 +65,8 @@ theorem localAddHaar_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)]
   have h : (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
       (𝒪[v.adicCompletion K] : Set (v.adicCompletion K)) := by
     rw [v.integer_eq_adicCompletionIntegers (K := K)]
-    rfl
+    ext x
+    simp [ValuationSubring.mem_toSubring]
   rw [h, localAddHaar_integer]
 
 /-- **Adic completion Haar character equals pinned `nnnorm`.** When `R` has finite quotients, the
