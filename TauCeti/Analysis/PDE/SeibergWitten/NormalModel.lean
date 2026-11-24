@@ -150,8 +150,7 @@ theorem inner_quadraticTwoFormPolar_ιMulti_zero_one (hu₀₁ : ‖u₀‖ = 1)
         ιMulti ℝ 2 ![e 0, e 1]⟫ = (conj α * f).re / 2 := by
   have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self
-      hQ hkl he h₀ h₂ hu₀,
+    cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
     inner_add_left,
     inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
     inner_self_eq_norm_sq_to_K, hu₀₁, ← inner_conj_symm, h0]
@@ -178,8 +177,7 @@ theorem inner_quadraticTwoFormPolar_ιMulti_zero_three (hu₀₁ : ‖u₀‖ = 
   have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   have h1 : ‖pairedSpinor e u₀‖ = 1 := by rw [norm_pairedSpinor hQ hρ, hu₀₁]
   rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self
-      hQ hkl he h₀ h₂ hu₀,
+    cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
     inner_add_left,
     inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
     inner_self_eq_norm_sq_to_K, h1, h0]
@@ -916,7 +914,7 @@ theorem flatDeformationDirac_familyNormalModel
       Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) with hY
   rw [flatDeformationDirac_familyNormalModel_eq_sum x hΞ hΗ,
     sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
-    sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀]
+    sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀]
   have hΞw := hΞ.hasFDerivAt_slice_fst.differentiableAt
   have hΗw := hΗ.hasFDerivAt_slice_fst.differentiableAt
   have hΞz := differentiableAt_euclidean.1 hΞ.hasFDerivAt_slice_snd.differentiableAt
