@@ -73,6 +73,18 @@ theorem IsSubduction.remainder_mem_iff (h : m.IsSubduction b f Q r)
   rw [h.eq_aeval_add]
   exact ⟨A.add_mem hQ, fun hf ↦ by simpa using A.sub_mem hf hQ⟩
 
+variable (m b) in
+/-- The negative `-(b i)` of a generator subducts to zero in one step, with the expression
+`-X i`. -/
+theorem isSubduction_neg_X (i : ι) : m.IsSubduction b (-b i) (-X i) 0 where
+  eq_aeval_add := by simp
+  support_le u hu := by
+    rw [MvPolynomial.support_neg, X] at hu
+    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
+    simp [degree_neg]
+  irreducible := by simp
+  degree_le := by simp
+
 end CommRing
 
 variable [Field k] {m : MonomialOrder σ}
