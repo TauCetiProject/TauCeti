@@ -168,13 +168,11 @@ theorem isAutomorphic_const (c : ℂ) : IsAutomorphic N 1 (fun _ ↦ c) :=
 /-- On an automorphic function, `χ (-1)` acts trivially: `-I ∈ Γ₀(N)` fixes every point of `ℍ`
 and has lower-right entry `-1`. -/
 theorem IsAutomorphic.char_neg_one_smul (hf : IsAutomorphic N χ f) : χ (-1) • f = f := by
-  have h := char_neg_one_smul_of_mem_functionCharSpace hf
-  rwa [zpow_zero, one_smul, MulChar.coe_equivToUnitHom, Units.val_neg, Units.val_one] at h
+  simpa using char_neg_one_smul_of_mem_functionCharSpace hf
 
 /-- **The parity lemma.** A nonzero automorphic function forces the nebentypus to be even. -/
 theorem IsAutomorphic.even (hf : IsAutomorphic N χ f) (hf0 : f ≠ 0) : χ.Even := by
-  have h := char_neg_one_of_mem_functionCharSpace hf hf0
-  rwa [zpow_zero, MulChar.coe_equivToUnitHom, Units.val_neg, Units.val_one] at h
+  simpa [DirichletCharacter.Even] using char_neg_one_of_mem_functionCharSpace hf hf0
 
 /-- **The parity lemma.** For an odd nebentypus the only automorphic function is `0`. -/
 theorem IsAutomorphic.eq_zero_of_odd (hf : IsAutomorphic N χ f) (hχ : χ.Odd) : f = 0 :=

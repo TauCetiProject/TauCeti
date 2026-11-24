@@ -114,7 +114,8 @@ theorem char_neg_one_smul_of_mem_functionCharSpace {f : ℍ → ℂ}
   rw [Gamma0.coe_negOne, mapGL_neg_one, ModularForm.slash_neg_one,
     Gamma0Map_toHomUnits_negOne] at h
   rw [← h]
-  rfl
+  funext z
+  simp
 
 /-- **The parity lemma for `χ`-invariant functions.** If a nonzero function `f : ℍ → ℂ`
 satisfies the weight-`k` nebentypus relation for `Γ₀(N)` and `χ`, then `χ(-1) = (-1)^k`. -/
