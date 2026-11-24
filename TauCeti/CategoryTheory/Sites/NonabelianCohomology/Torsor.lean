@@ -46,6 +46,8 @@ relative to a fixed family of objects; here no covering is chosen.
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
   global section.
+* `CategoryTheory.Sheaf.NonabelianH1.subsingleton_of_isTerminal`: if every covering sieve of a
+  terminal object contains its identity, every torsor is trivial.
 
 ## References
 
@@ -55,7 +57,7 @@ relative to a fixed family of objects; here no covering is chosen.
 
 public section
 
-open CategoryTheory Opposite
+open CategoryTheory Limits Opposite
 
 universe w v u
 
@@ -247,6 +249,20 @@ lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.o
     (fun _ _ _ _ _ ↦ Subsingleton.elim _ _) P.coversTop P.sheaf.property
   exact ⟨s.val, s.property⟩
 
+/-- If `T` is a terminal object over which every covering sieve contains the identity, as for
+the whole space of a local scheme in its small Zariski site, every `G`-torsor has a global
+section: some object over which it has a section receives a map from `T`. -/
+lemma nonempty_sections_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
+    (hJ : ∀ S ∈ J T, S (𝟙 T)) : P.sheaf.obj.sections.Nonempty := by
+  obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
+  refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
+  dsimp only
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
+  congr 3
+  apply Quiver.Hom.unop_inj
+  rw [unop_comp, Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Category.assoc,
+    hT.hom_ext (g.unop ≫ hT.from _) (hT.from _)]
+
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/
 lemma exists_sections_eq_of_smul_invariant (P : Torsor G) {F : Sheaf J (Type w)}
@@ -342,6 +358,16 @@ instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) whe
     induction y using ind with | h Q => ?_
     rw [(mk_eq_one_iff P).2 P.nonempty_sections_of_subsingleton,
       (mk_eq_one_iff Q).2 Q.nonempty_sections_of_subsingleton]
+
+/-- If `T` is a terminal object over which every covering sieve contains the identity, every
+`G`-torsor is trivial. -/
+lemma subsingleton_of_isTerminal {T : C} (hT : IsTerminal T) (hJ : ∀ S ∈ J T, S (𝟙 T)) :
+    Subsingleton (NonabelianH1 G) where
+  allEq x y := by
+    induction x using ind with | h P => ?_
+    induction y using ind with | h Q => ?_
+    rw [(mk_eq_one_iff P).2 (P.nonempty_sections_of_isTerminal hT hJ),
+      (mk_eq_one_iff Q).2 (Q.nonempty_sections_of_isTerminal hT hJ)]
 
 end NonabelianH1
 
