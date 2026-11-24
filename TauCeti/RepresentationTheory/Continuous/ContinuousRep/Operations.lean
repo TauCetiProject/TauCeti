@@ -122,24 +122,25 @@ variable {N : Type*} [AddCommMonoid N] [Module A N] [TopologicalSpace N]
 
 /-- The restriction of a morphism of continuous representations. -/
 def Hom.res (f : Hom ρ σ) (φ : Γ' →ₜ* Γ) : Hom (ρ.res φ) (σ.res φ) where
-  toLinearMap := f.toIntertwiningMap.toLinearMap
-  isIntertwining' g := f.toIntertwiningMap.isIntertwining' (φ g)
-  cont := f.cont
+  toIntertwiningMap := f.toIntertwiningMap.res φ.toMonoidHom
+  cont := by simpa using f.cont
 
 @[simp]
 theorem Hom.res_apply (f : Hom ρ σ) (φ : Γ' →ₜ* Γ) (x : M) : f.res φ x = f x :=
-  (rfl)
+  congrFun (f.toIntertwiningMap.coe_res φ.toMonoidHom) x
 
 /-- The restriction of an isomorphism of continuous representations. -/
 def Iso.res (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) : Iso (ρ.res φ) (σ.res φ) where
-  toRepresentationEquiv := .mk e.toRepresentationEquiv.toLinearEquiv fun g =>
-    e.toRepresentationEquiv.isIntertwining' (φ g)
-  continuous_toFun := e.continuous_toFun
-  continuous_invFun := e.continuous_invFun
+  toRepresentationEquiv := e.toRepresentationEquiv.res φ.toMonoidHom
+  continuous_toFun := e.continuous_toFun.congr fun x =>
+    (e.toRepresentationEquiv.res_apply φ.toMonoidHom x).symm
+  continuous_invFun := by
+    simpa [Representation.Equiv.coe_invFun] using e.continuous_invFun.congr fun x =>
+      (e.toRepresentationEquiv.symm.res_apply φ.toMonoidHom x).symm
 
 @[simp]
 theorem Iso.res_apply (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) (x : M) : e.res φ x = e x :=
-  (rfl)
+  e.toRepresentationEquiv.res_apply φ.toMonoidHom x
 
 /-- Restriction commutes with products. -/
 @[simp]
