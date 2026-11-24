@@ -459,9 +459,8 @@ theorem exists_continuousOn_mem_closure_sphericalPendulumPeriod_apply_two_mul_pi
       have hb : ![sphericalPendulumPeriod (1 + r * cos t) (r * sin t), -L t] =
           ![sphericalPendulumPeriod (1 + r * cos t) (r * sin t),
             -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)] - ![0, 2 * π] := by
-        rw [hL₂ t ⟨htπ, ht.2.lt_of_ne ht₂⟩]
-        ext i
-        fin_cases i <;> simp; ring
+        rw [hL₂ t ⟨htπ, ht.2.lt_of_ne ht₂⟩, neg_add', Matrix.cons_sub_cons, Matrix.cons_sub_cons,
+          Matrix.empty_sub_empty, sub_zero]
       rw [hb]
       exact sub_mem (AddSubgroup.subset_closure (mem_insert _ _))
         (AddSubgroup.subset_closure (mem_insert_of_mem _ rfl))

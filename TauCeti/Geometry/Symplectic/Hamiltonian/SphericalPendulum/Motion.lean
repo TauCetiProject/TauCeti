@@ -471,8 +471,10 @@ theorem continuousOn_sphericalPendulumPeriod :
 
 /-- **Continuity of the period across the axis.** For `h > -1` with `h ≠ 1`, the period `T` of the
 height is continuous at the value `(h, 0)` on the axis of zero vertical angular momentum. The
-excluded values are genuine: at the focus–focus value `(1, 0)` the period integral diverges, and
-below the bottom value `(-1, 0)` the fibres are empty. -/
+excluded values `(1, 0)` and `(-1, 0)` are genuine discontinuities: at the focus–focus value
+`(1, 0)` the period integral diverges, and at the bottom value `(-1, 0)` the period is `0` while
+nearby periods are close to `π`. Values with `h < -1` are left out because their fibres are empty
+(the period is `0` there by convention), not because continuity fails. -/
 theorem continuousAt_sphericalPendulumPeriod_zero_right {h : ℝ} (hh : -1 < h) (h1 : h ≠ 1) :
     ContinuousAt (fun c : ℝ × ℝ ↦ sphericalPendulumPeriod c.1 c.2) (h, 0) :=
   ((continuousAt_const (y := (2 : ℝ))).mul
