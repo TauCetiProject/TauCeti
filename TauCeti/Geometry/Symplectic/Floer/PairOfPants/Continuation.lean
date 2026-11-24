@@ -465,11 +465,35 @@ theorem perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbatio
   rw [pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos hG hH
     (by simpa [← mul_assoc] using (by linarith : (0 : ℝ) < ζ.1))]
   have h1 : smoothTransition (ζ.1 - 1) = 1 := smoothTransition.one_of_one_le (by linarith)
-  simp only [Complex.I_im, map_smul, Complex.real_smul, Complex.mul_re, Complex.mul_im,
-    Complex.ofReal_re, Complex.ofReal_im, Complex.equivRealProdCLM_symm_apply_re,
-    Complex.equivRealProdCLM_symm_apply_im, zero_mul, sub_zero, add_zero, ← mul_assoc,
-    endSign_mul_self, one_mul, h1, continuationHomotopy_def, positiveEndHamiltonian_apply]
+  simp [h1, continuationHomotopy_def, positiveEndHamiltonian_apply, ← mul_assoc]
   ring
+
+/-- On the neck of the end `q`, beyond the collar, the pullback of the perturbation along the
+translated positive end chart is the continuation datum: it sends `∂_s` to `0` and `∂_t` to
+`C'_q`. -/
+private theorem perturbationPullback_positiveEndChart_add_eq (hG : ∀ r, Periodic (G r) 1)
+    (hH : ∀ r, Periodic (H r) 1) {w : ℝ × ℝ} (hw : 2 ≤ w.1 + L q) :
+    perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal w = (fun _ ↦ 0) ∧
+      perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag w =
+        continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q) w := by
+  refine ⟨funext fun x ↦ ?_, funext fun x ↦ ?_⟩
+  · rw [perturbationPullback_comp_add_right,
+      perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineReal
+        (hG q) (hH q) (by simp only [Prod.fst_add]; linarith)]
+  · rw [perturbationPullback_comp_add_right,
+      perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineImag
+        (hG q) (hH q) (by simpa only [Prod.fst_add] using hw)]
+    simp
 
 end Necks
 
@@ -773,50 +797,6 @@ private theorem mdifferentiableAt_pairOfPantsContinuationPerturbation
       (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
       (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const
 
-/-- On the neck of the end `q`, beyond the collar, the pullback of the perturbation along the
-translated positive end chart is the continuation datum. -/
-private theorem perturbedMFDeriv_comp_positiveEndChart_add_eq (ω : SmoothTwoForm I M)
-    (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1) (u : ℝ × ℝ → M) {w : ℝ × ℝ}
-    (hw : 2 ≤ w.1 + L q) :
-    ω.perturbedMFDeriv (fun _ _ ↦ 0)
-        (continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q))
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w =
-      ω.perturbedMFDeriv
-        (perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineReal)
-        (perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineImag)
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w := by
-  have hs : perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineReal w = fun _ ↦ 0 := funext fun x ↦ by
-    rw [perturbationPullback_comp_add_right,
-      perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineReal
-        (hG q) (hH q) (by simp only [Prod.fst_add]; linarith)]
-  have ht : perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineImag w =
-        continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q) w :=
-    funext fun x ↦ by
-      rw [perturbationPullback_comp_add_right,
-        perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineImag
-          (hG q) (hH q) (by simpa only [Prod.fst_add] using hw)]
-      simp
-  refine ContinuousLinearMap.ext fun a ↦ ?_
-  simp only [perturbedMFDeriv_apply, hs, ht]
-
 /-- **The necks solve the continuation equation, for a manifold target.** Let `u` solve the Floer
 equation of the pair-of-pants perturbation with continuation necks at the point
 `φ'_q(w + (L_q, 0))` of the end `q`, read in its positive end chart `φ'_q` translated by the neck
@@ -842,7 +822,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_continuationHomotopy_comp_positiveEn
         (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w).toLinearMap := by
   have hS : positiveEndChart q (w + (L q, 0)) ∈ thricePuncturedSphereReal :=
     positiveEndChart_mem_thricePuncturedSphereReal (by simp only [Prod.fst_add]; linarith)
-  rw [perturbedMFDeriv_comp_positiveEndChart_add_eq ω hG hH u hw]
+  obtain ⟨hs, ht⟩ := perturbationPullback_positiveEndChart_add_eq hG hH hw
+  rw [ω.perturbedMFDeriv_congr_perturbation _ hs.symm ht.symm]
   refine ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback (u := u)
     (φ := fun w ↦ positiveEndChart q (w + (L q, 0)))
     (hasFDerivAt_positiveEndChart_add q (L q, 0) w).differentiableAt hu
@@ -882,9 +863,9 @@ theorem floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ 1)
     (mdifferentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ Complex.I)
   rw [(hasFDerivAt_positiveEndChart_add q (L q, 0) w).fderiv] at h
+  obtain ⟨hs, ht⟩ := perturbationPullback_positiveEndChart_add_eq hG hH hw
   rw [← h]
-  simp only [floerEnergyDensity_def, Function.comp_def,
-    perturbedMFDeriv_comp_positiveEndChart_add_eq ω hG hH u hw]
+  exact ω.floerEnergyDensity_congr_perturbation _ hs.symm ht.symm
 
 /-- **The energy of a neck, for a manifold target.** Let `s` be a measurable set of points `w`
 with `w.1 + L_q ≥ 2` in a band `ℝ × [t₀, t₀ + 1)` of angular width one, and let `u` be
