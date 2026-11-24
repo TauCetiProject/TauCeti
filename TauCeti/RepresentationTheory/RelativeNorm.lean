@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
@@ -51,6 +52,9 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
   `Representation.relNorm_linHom_mem`, `Representation.relNorm_linHom_apply_of_mem`: relative-norm
   averaging of linear maps under conjugation, sending `H`-equivariant maps to `G`-equivariant maps
   and scaling projections onto `G`-invariant submodules by `[G : H]`.
+* `Representation.isProj_inv_index_smul_relNorm_linHom`: when `[G : H]` is invertible, the
+  normalized relative norm of a projection onto a `G`-invariant submodule is again a projection
+  onto it.
 * `Representation.relTransfer_mem_coinvariantsKer`: the relative transfer carries the augmentation
   submodule of `G` into the augmentation submodule of `H`.
 * `Representation.relTransfer_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
@@ -243,6 +247,25 @@ theorem relNorm_linHom_apply_of_mem (ρ : Representation R G V) {S : Submodule R
     Finset.card_univ, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
 
 end LinHom
+
+section Semifield
+
+variable [Semifield R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
+
+/-- **Averaging a projection.** If `S` is a `G`-invariant submodule, `f` is a projection onto `S`
+and the index `[G : H]` is invertible, then `[G : H]⁻¹ • relNorm (linHom ρ ρ) H f` is again a
+projection onto `S`. It is `G`-equivariant when `f` is `H`-equivariant, by
+`Representation.relNorm_linHom_apply_comm`. -/
+theorem isProj_inv_index_smul_relNorm_linHom (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S)
+    {f : V →ₗ[R] V} (hf : LinearMap.IsProj S f) (hH : (H.index : R) ≠ 0) :
+    LinearMap.IsProj S ((H.index : R)⁻¹ • relNorm (linHom ρ ρ) H f) where
+  map_mem x := S.smul_mem _ (relNorm_linHom_mem ρ hS hf.map_mem x)
+  map_id x hx := by
+    rw [LinearMap.smul_apply, relNorm_linHom_apply_of_mem ρ hS hf.map_id hx,
+      ← Nat.cast_smul_eq_nsmul R, smul_smul, inv_mul_cancel₀ hH, one_smul]
+
+end Semifield
 
 section Ring
 
