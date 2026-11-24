@@ -28,7 +28,8 @@ graph itself. This file records how these sets sit relative to each other inside
 These are the facts used when a domain with `C^{k,α}` boundary is described near each boundary
 point as the region above a graph. The file also names that description for `k = 2`:
 `Set.HasC2HolderBoundary Ω α` says that near every point of `frontier Ω`, in some ball, `Ω` is the
-region above the graph of a `C^{2,α}` function.
+region above the graph of a `C^{2,α}` function; such a set is open
+(`Set.HasC2HolderBoundary.isOpen`).
 -/
 
 public section
@@ -119,5 +120,16 @@ theorem hasC2HolderBoundary_iff {Ω : Set E} {α : ℝ≥0} :
       HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
       Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r :=
   Iff.rfl
+
+/-- A set with `C^{2,α}` boundary is open: near each frontier point it agrees with the open region
+above the graph of a continuous function, so none of its frontier points belongs to it. -/
+theorem HasC2HolderBoundary.isOpen {Ω : Set E} {α : ℝ≥0} (h : Ω.HasC2HolderBoundary α) :
+    IsOpen Ω := by
+  refine disjoint_frontier_iff_isOpen.1 (disjoint_left.2 fun z hz hzΩ => hz.2 ?_)
+  obtain ⟨ν, γ, -, r, -, hγ, -, -, -, -, hr, hΩr⟩ := h z hz
+  have hopen : IsOpen (Ω ∩ ball z r) := by
+    rw [hΩr]
+    exact (isOpen_lt hγ.continuous (continuous_id.inner continuous_const)).inter isOpen_ball
+  exact interior_maximal inter_subset_left hopen ⟨hzΩ, mem_ball_self hr⟩
 
 end Set

@@ -255,7 +255,7 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : �
 /-! ### The global estimate -/
 
 /-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary.** Let `0 < α < 1`
-and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`):
+and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`):
 every `z ∈ ∂Ω` has a ball `B(z, r)` in which `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the graph
 of a `C^{2,α}` function, for a unit vector `ν` and a `C²` function `γ` invariant along `ν` with
 `‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and `D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be
@@ -272,7 +272,7 @@ special case of an operator without lower-order terms and zero boundary data, bo
 Hölder seminorm of the Hessian, with the lower-order norms of `u` kept on the right instead of
 being absorbed by interpolation. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩb : Bornology.IsBounded Ω)
     (hchart : Ω.HasC2HolderBoundary α)
     {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
@@ -314,7 +314,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
       push Not at hnear
       have hxΩ : x ∈ Ω := by
         by_contra hxΩ
-        exact (hnear x ⟨hx, by rwa [hΩ.interior_eq]⟩).not_gt (by rwa [dist_self])
+        exact (hnear x ⟨hx, by rwa [hchart.isOpen.interior_eq]⟩).not_gt (by rwa [dist_self])
       have hball : ball x ε ⊆ Ω := isPreconnected_ball.subset_of_disjoint_frontier
         (disjoint_left.2 fun p hp hpf => (hnear p hpf).not_gt (mem_ball'.1 hp))
         ⟨x, mem_ball_self hε, hxΩ⟩
