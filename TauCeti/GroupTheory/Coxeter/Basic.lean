@@ -8,14 +8,20 @@ module
 public import Mathlib.GroupTheory.Coxeter.Basic
 
 /-!
-# Elementary facts about Coxeter words
+# Elementary facts about Coxeter words and systems
 
 This file evaluates Mathlib's alternating words through an arbitrary family, specialises that
 evaluation to the lengths the braid relations are read off at, and computes the reversal of an
 alternating word. It splits the Coxeter relations into involutions and braid relations, and it
-also records the degenerate rank-zero case: a Coxeter system whose simple reflections are indexed
-by an empty type has a trivial group. Finally, it builds the homomorphism of Coxeter groups induced
-by a map of index types along which the Coxeter matrices agree.
+also provides elementary transport and rank-zero helpers for Coxeter systems: a Coxeter system
+whose simple reflections are indexed by an empty type has a trivial group. Finally, it builds the
+homomorphism of Coxeter groups induced by a map of index types along which the Coxeter matrices
+agree.
+
+## Main definitions
+
+* `CoxeterSystem.castMatrix`: transport a `CoxeterSystem M W` along an equality `M = M'` of Coxeter
+  matrices on the same index type.
 
 ## Main results
 
@@ -32,6 +38,8 @@ by a map of index types along which the Coxeter matrices agree.
   its length is even, and leaves it unchanged when its length is odd.
 * `CoxeterMatrix.isLiftable_iff`: a family satisfies the Coxeter relations exactly when it
   consists of involutions satisfying the braid relations.
+* `CoxeterSystem.castMatrix_simple` and `CoxeterSystem.wordProd_castMatrix`: `castMatrix` preserves
+  simple reflections and word products.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
@@ -45,6 +53,10 @@ by a map of index types along which the Coxeter matrices agree.
   `CoxeterMatrix.reindexGroupEquiv` on the presented groups
   (`CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex`). That it is injective and
   length-preserving is proved in `TauCeti/GroupTheory/Coxeter/Restriction.lean`.
+
+## References
+
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter IV, §1.
 -/
 
 public section
@@ -185,6 +197,24 @@ end CoxeterMatrix
 namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-- Transport a `CoxeterSystem` along an equality of Coxeter matrices on the same index type. -/
+protected def castMatrix {M' : CoxeterMatrix B} (h : M = M') : CoxeterSystem M' W :=
+  h ▸ cs
+
+/-- `CoxeterSystem.castMatrix` leaves every simple reflection unchanged. -/
+@[simp]
+theorem castMatrix_simple {M' : CoxeterMatrix B} (h : M = M') (i : B) :
+    (cs.castMatrix h).simple i = cs.simple i := by
+  subst h
+  rfl
+
+/-- `CoxeterSystem.castMatrix` leaves every word product unchanged. -/
+@[simp]
+theorem wordProd_castMatrix {M' : CoxeterMatrix B} (h : M = M') (ω : List B) :
+    (cs.castMatrix h).wordProd ω = cs.wordProd ω := by
+  subst h
+  rfl
 
 include cs in
 /-- A Coxeter system whose simple reflections are indexed by an empty type has a trivial group:
