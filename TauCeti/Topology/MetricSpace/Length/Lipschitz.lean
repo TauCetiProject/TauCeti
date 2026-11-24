@@ -83,12 +83,16 @@ theorem IsLengthSpace.exists_dist_le_of_dist_le_add [IsLengthSpace X] {p x : X} 
     (r := r) (by linarith)
   have hsr : s / r ≤ 1 := (div_le_one hr).2 (by linarith)
   let τ : unitInterval := ⟨s / r, div_nonneg hs hr.le, hsr⟩
+  have hd (a b : I) : dist (f a) (f b) ≤ r * |(a : ℝ) - b| := by
+    simpa only [Real.coe_toNNReal _ hr.le, Subtype.dist_eq, Real.dist_eq] using
+      hf.dist_le_mul a b
+  have hτ : r * (τ : ℝ) = s := mul_div_cancel₀ _ hr.ne'
   refine ⟨f τ, ?_, ?_⟩
-  · simpa [hf0, Real.coe_toNNReal _ hr.le, Subtype.dist_eq, τ, Real.dist_eq,
-      abs_of_nonneg (div_nonneg hs hr.le), mul_div_cancel₀ _ hr.ne'] using hf.dist_le_mul 0 τ
-  · have h := hf.dist_le_mul τ 1
-    simp [hf1, Real.coe_toNNReal _ hr.le, Subtype.dist_eq, τ, Real.dist_eq,
-      abs_of_nonpos (sub_nonpos.mpr hsr), mul_sub, mul_div_cancel₀ _ hr.ne'] at h
+  · have h := hd 0 τ
+    rw [hf0, Icc.coe_zero, zero_sub, abs_neg, abs_of_nonneg τ.property.1] at h
     linarith
+  · have h := hd τ 1
+    rw [hf1, Icc.coe_one, abs_of_nonpos (sub_nonpos.mpr τ.property.2)] at h
+    nlinarith
 
 end TauCeti
