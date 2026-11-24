@@ -43,9 +43,9 @@ hyperelliptic curve, where `G` has formal degree `2g + 2` but may have actual de
   infinity makes the discriminant vanish.
 * `Polynomial.formDiscr_C_mul`: homogeneity of degree `2n - 2` in the coefficients.
 * `Polynomial.formDiscr_reflect`: invariance under the inversion `x ↦ 1/x` of the binary form.
-* `Polynomial.algebraMap_formDiscr_of_natDegree_eq`,
-  `Polynomial.algebraMap_formDiscr_of_natDegree_eq_pred`: the root-product formula
-  `formDiscr n G = lc ^ (2n - 2) · ∏_{i < j} (rᵢ - rⱼ)²` in both degrees.
+* `Polynomial.formDiscr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq_of_natDegree_eq`,
+  `Polynomial.formDiscr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq_of_natDegree_eq_pred`: the
+  root-product formula `formDiscr n G = lc ^ (2n - 2) · ∏_{i < j} (rᵢ - rⱼ)²` in both degrees.
 
 ## Implementation notes
 
@@ -355,9 +355,9 @@ theorem formDiscr_reflect (n : ℕ) (G : R[X]) : (G.reflect n).formDiscr n = G.f
 
 /-- **The root-product formula in the generic degree.** If `G` has degree `n` and `r` enumerates
 its roots in a domain `L`, then `formDiscr n G = lc(G) ^ (2n - 2) · ∏_{i < j} (rᵢ - rⱼ)²`. -/
-theorem algebraMap_formDiscr_of_natDegree_eq {L : Type*} [CommRing L] [IsDomain L] [Algebra R L]
-    {n : ℕ} {G : R[X]} (hG : G.natDegree = n) {r : Fin G.natDegree → L}
-    (hr : IsRootEnumeration G r) :
+theorem formDiscr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq_of_natDegree_eq {L : Type*}
+    [CommRing L] [IsDomain L] [Algebra R L] {n : ℕ} {G : R[X]} (hG : G.natDegree = n)
+    {r : Fin G.natDegree → L} (hr : IsRootEnumeration G r) :
     algebraMap R L (G.formDiscr n) = algebraMap R L G.leadingCoeff ^ (2 * n - 2) *
       ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
   subst hG
@@ -368,8 +368,8 @@ enumerates its finite roots in a domain `L`, then
 `formDiscr n G = lc(G) ^ (2n - 2) · ∏_{i < j} (rᵢ - rⱼ)²`, the formula of the generic degree
 with the exponent of degree `n`. In projective coordinates the root at infinity `(1 : 0)` has
 determinant `±1` against each finite root `(rᵢ : 1)`, so it adds no factor to the product. -/
-theorem algebraMap_formDiscr_of_natDegree_eq_pred {L : Type*} [CommRing L] [IsDomain L]
-    [Algebra R L] {n : ℕ} {G : R[X]} (hG : G.natDegree = n - 1)
+theorem formDiscr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq_of_natDegree_eq_pred {L : Type*}
+    [CommRing L] [IsDomain L] [Algebra R L] {n : ℕ} {G : R[X]} (hG : G.natDegree = n - 1)
     {r : Fin G.natDegree → L} (hr : IsRootEnumeration G r) :
     algebraMap R L (G.formDiscr n) = algebraMap R L G.leadingCoeff ^ (2 * n - 2) *
       ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
