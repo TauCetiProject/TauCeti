@@ -17,10 +17,12 @@ and generator, with `ε ^ k = (-1) ^ r` for the sign `ε` of `s * g * s⁻¹`. T
 weight-`k` automorphy sheaf on a horodisc as the frame
 `TauCeti.Subgroup.CuspDatum.automorphyFrame D s k r` times a function of the cusp coordinate `q`,
 its coefficient `TauCeti.Subgroup.CuspDatum.automorphyDescent D s k r f`. This file proves the
-converse direction of this local trivialization: the frame times any function `G` of `q`,
-`TauCeti.Subgroup.CuspDatum.automorphySection D s k r G`, is a local section. So the local
-sections at a regular or irregular cusp are exactly the frame times the functions of the cusp
-coordinate, in the width parameter and with the errata order convention built into the frame:
+converse direction of this local trivialization: the frame times a function `G` of `q`,
+`TauCeti.Subgroup.CuspDatum.automorphySection D s k r G`, is a local section when `G` is
+holomorphic on the disc of cusp-coordinate values of the horodisc, including at the cusp `q = 0`.
+So the local sections at a regular or irregular cusp are exactly the frame times the functions of
+the cusp coordinate that are holomorphic on that disc, in the width parameter and with the errata
+order convention built into the frame:
 this is the local description at the cusp of the invertible sheaf on the compact quotient that the
 weight-`k` transformation data induces (Diamond–Shurman §§3.5–3.6).
 
