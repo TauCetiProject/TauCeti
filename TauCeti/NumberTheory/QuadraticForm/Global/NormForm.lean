@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanSymbol
 import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 
 /-!
-# Local-to-global representation by binary quadratic forms
+# Local-to-global representation by the norm plane `⟨1, -d⟩`
 
 For a nonzero element `d` of a number field `K`, the binary norm plane `⟨1, -d⟩`, written in
 coordinates as `x² - d y²`, represents a scalar `a ∈ K` over `K` if and only if it represents `a`
