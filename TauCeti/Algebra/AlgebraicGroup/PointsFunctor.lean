@@ -89,9 +89,8 @@ theorem extendPoint_self (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
 theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     {A : CommAlgCat.{w} R} {B : CommAlgCat.{x} R} (f : A →ₐ[R] B)
     (g : points (H := H) (CommAlgCat.of R R)) :
-    AlgHom.mapValue (H := H) f (extendPoint H A g) = extendPoint H B g := by
-  rw [extendPoint, extendPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp,
-    Algebra.comp_ofId]
+    AlgHom.mapValue (H := H) f (extendPoint H A g) = extendPoint H B g :=
+  AlgHom.mapValue_mapValue_ofId f g
 
 /-- The group homomorphism on points induced by a morphism of value algebras.
 
@@ -187,7 +186,7 @@ algebra: every value-algebra morphism `φ : A ⟶ B` maps `S A` into `S B`, and 
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (S A)
   map {A B} φ := GrpCat.ofHom
-    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.2)
+    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.property)
   map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by simp
   map_comp φ ψ := GrpCat.ext fun g ↦ Subtype.ext <| by
     simp only [CommAlgCat.hom_comp, AlgHom.mapValue_comp]
@@ -212,7 +211,7 @@ lemma subgroupFunctor_map
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (subgroupFunctor (H := H) S hS).map φ = GrpCat.ofHom
       (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B)
-        fun g ↦ hS φ g.2) :=
+        fun g ↦ hS φ g.property) :=
   rfl
 
 /-- The inclusion of a stable family of point subgroups into the functor of points is natural. -/

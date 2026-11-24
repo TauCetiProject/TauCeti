@@ -17,8 +17,10 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 `TauCeti.multHaar` is the measure `dt / t` on `ℝ`, concentrated on `(0, ∞)`: Lebesgue measure on
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
-(`TauCeti.map_multHaar_mul_left`), is invariant under inversion (`TauCeti.map_multHaar_inv`),
-and gives the interval `[1, e]` mass one.
+(`TauCeti.map_multHaar_mul_left`, `TauCeti.eLpNorm_comp_mul_left_multHaar`), is invariant under
+inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one. The power map
+`t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
+`L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -29,11 +31,15 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
 
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
-(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
-Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
-`dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
-integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The
-integral of `u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
+(`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.setLIntegral_multHaar_eq_setLIntegral`,
+`TauCeti.setLIntegral_eq_setLIntegral_multHaar`, `TauCeti.integral_multHaar_eq_setIntegral`,
+`TauCeti.integrable_multHaar_iff`), and a right-continuous function on `(0, ∞)` has
+`dt / t`-essential supremum equal to its pointwise supremum
+(`TauCeti.essSup_multHaar_eq_iSup_Ioi`). In particular the Mellin transform
+`mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against `dt / t`
+(`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the integrability of
+`t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The integral of
+`u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
 (`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`), and by dilation the kernel
 `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in each variable
 (`TauCeti.lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_right`,
@@ -52,7 +58,7 @@ integrals against `dt / t`.
 public section
 
 open MeasureTheory Measure Set
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -135,6 +141,37 @@ theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = m
     simp [Real.exp_add, Real.exp_log hc]
   rw [← map_volume_exp, map_map (measurable_const_mul c) Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp (measurable_const_add _), map_add_left_eq_self]
+
+/-- The `L^q(dt / t)` seminorm is invariant under the dilations `t ↦ c * t`, `c > 0`. -/
+theorem eLpNorm_comp_mul_left_multHaar {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    (f : ℝ → ε) {c : ℝ} (hc : 0 < c) (q : ℝ≥0∞) :
+    eLpNorm (fun t ↦ f (c * t)) q multHaar = eLpNorm f q multHaar := by
+  rw [← Function.comp_def, ← (measurableEmbedding_mulLeft₀ hc.ne').eLpNorm_map_measure,
+    map_multHaar_mul_left hc]
+
+/-- The image of `dt / t` under the power map `t ↦ t ^ γ`, `γ ≠ 0`, is `|γ|⁻¹ dt / t`. -/
+theorem map_multHaar_rpow {γ : ℝ} (hγ : γ ≠ 0) :
+    multHaar.map (· ^ γ) = ENNReal.ofReal |γ⁻¹| • multHaar := by
+  have hcomp : (· ^ γ) ∘ Real.exp = Real.exp ∘ (γ * ·) := by
+    ext u
+    simp [← Real.exp_mul, mul_comm]
+  rw [← map_volume_exp, map_map (measurable_id'.pow_const γ) Real.measurable_exp, hcomp,
+    ← map_map Real.measurable_exp (measurable_const_mul γ), Real.map_volume_mul_left hγ,
+    Measure.map_smul]
+  exact Real.measurable_exp.aemeasurable
+
+/-- Under the power map `t ↦ t ^ γ`, `γ ≠ 0`, the `L^q(dt / t)` seminorm is multiplied by
+`|γ| ^ (-1 / q)`: `‖g (t ^ γ)‖_{L^q(dt / t)} = |γ| ^ (-1 / q) ‖g‖_{L^q(dt / t)}`, read in `[0, ∞]`
+as `|γ⁻¹| ^ (1 / q)`. -/
+theorem eLpNorm_comp_rpow_multHaar {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    {g : ℝ → ε} (hg : AEStronglyMeasurable g multHaar) {γ : ℝ} (hγ : γ ≠ 0) (q : ℝ≥0∞) :
+    eLpNorm (fun t ↦ g (t ^ γ)) q multHaar =
+      ENNReal.ofReal |γ⁻¹| ^ (1 / q).toReal * eLpNorm g q multHaar := by
+  have hc : ENNReal.ofReal |γ⁻¹| ≠ 0 := by simpa using hγ
+  have hmap := map_multHaar_rpow hγ
+  rw [← Function.comp_def, ← eLpNorm_map_measure (hmap ▸ hg.smul_measure _)
+    (measurable_id'.pow_const γ).aemeasurable, hmap, eLpNorm_smul_measure_of_ne_zero hc,
+    smul_eq_mul]
 
 /-- `dt / t` is invariant under inversion on `(0, ∞)`. -/
 theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
@@ -301,6 +338,50 @@ end GeometricIntervals
 
 section Integral
 
+/-- The lower integral against `dt / t` is the lower integral of `t⁻¹ * f t` over `(0, ∞)`. -/
+theorem lintegral_multHaar_eq_setLIntegral (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t, f t ∂multHaar = ∫⁻ t in Ioi 0, ENNReal.ofReal t⁻¹ * f t := by
+  rw [multHaar_def, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  rfl
+
+/-- On any measurable set `s`, the lower integral against `dt / t` is the lower integral of
+`t⁻¹ * f t` over `s ∩ (0, ∞)`. -/
+theorem setLIntegral_multHaar_eq_setLIntegral {s : Set ℝ} (hs : MeasurableSet s)
+    (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t in s, f t ∂multHaar = ∫⁻ t in s ∩ Ioi 0, ENNReal.ofReal t⁻¹ * f t := by
+  rw [← lintegral_indicator hs, lintegral_multHaar_eq_setLIntegral,
+    ← Measure.restrict_restrict hs, ← lintegral_indicator hs]
+  exact setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦
+    (indicator_mul_right s (fun u ↦ ENNReal.ofReal u⁻¹) f).symm
+
+/-- On a measurable subset `s` of `(0, ∞)`, the Lebesgue lower integral of `f` is the lower
+integral of `t * f t` against `dt / t`. -/
+theorem setLIntegral_eq_setLIntegral_multHaar {s : Set ℝ} (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t in s, f t = ∫⁻ t in s, ENNReal.ofReal t * f t ∂multHaar := by
+  rw [setLIntegral_multHaar_eq_setLIntegral hs, inter_eq_self_of_subset_left hs0]
+  refine setLIntegral_congr_fun hs fun t ht ↦ ?_
+  have ht0 : 0 < t := hs0 ht
+  rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ht0.le), inv_mul_cancel₀ ht0.ne',
+    ENNReal.ofReal_one, one_mul]
+
+/-- A function with values in `ℝ≥0∞` that is right continuous on `(0, ∞)` has essential supremum
+with respect to `dt / t` equal to its pointwise supremum on `(0, ∞)`. -/
+theorem essSup_multHaar_eq_iSup_Ioi {f : ℝ → ℝ≥0∞}
+    (hf : ∀ t > 0, ContinuousWithinAt f (Ici t) t) :
+    essSup f multHaar = ⨆ t > 0, f t := by
+  refine le_antisymm
+    (essSup_le_of_ae_le _ (ae_pos_multHaar.mono fun t ht ↦ le_iSup₂_of_le t ht le_rfl))
+    (iSup₂_le fun t ht ↦ ?_)
+  by_contra! hlt
+  obtain ⟨u, htu, hu⟩ := mem_nhdsGE_iff_exists_Ico_subset.1
+    ((hf t ht).eventually (IsOpen.mem_nhds isOpen_Ioi hlt))
+  have hpos : 0 < multHaar (Ico t u) := by
+    rw [multHaar_Ico ht htu.le, ENNReal.ofReal_pos, sub_pos]
+    exact Real.log_lt_log ht htu
+  exact hpos.ne' (measure_mono_null hu (meas_essSup_lt (f := f)))
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A function is integrable against `dt / t` exactly when `t⁻¹ • f t` is integrable on
@@ -402,6 +483,23 @@ theorem integrable_multHaar_cpow_smul_iff {f : ℝ → E} {s : ℂ} :
     Integrable (fun t : ℝ ↦ (t : ℂ) ^ s • f t) multHaar ↔ MellinConvergent f s := by
   rw [integrable_multHaar_iff, MellinConvergent]
   exact integrableOn_congr_fun (fun t ht ↦ inv_smul_cpow_smul ht s (f t)) measurableSet_Ioi
+
+/-- No pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, because
+`t ^ (Re z - 1)` is not integrable on `(0, ∞)` for any `z : ℂ`. -/
+theorem not_integrable_multHaar_cpow (z : ℂ) :
+    ¬ Integrable (fun t : ℝ ↦ (t : ℂ) ^ z) multHaar := by
+  intro h
+  refine not_integrableOn_Ioi_rpow (z - 1).re ?_
+  have hm : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • (1 : ℂ)) (Ioi 0) :=
+    integrable_multHaar_cpow_smul_iff.mp (by simpa only [smul_eq_mul, mul_one] using h)
+  refine IntegrableOn.congr_fun hm.norm (fun t ht ↦ ?_) measurableSet_Ioi
+  rw [smul_eq_mul, mul_one, Complex.norm_cpow_eq_rpow_re_of_pos ht]
+
+/-- Because no pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, its Bochner
+integral vanishes for every `z : ℂ`. -/
+theorem integral_multHaar_cpow_eq_zero (z : ℂ) :
+    ∫ t : ℝ, (t : ℂ) ^ z ∂multHaar = 0 :=
+  integral_undef (not_integrable_multHaar_cpow z)
 
 end Mellin
 

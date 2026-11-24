@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LowDimTopology.Heegaard.CurveHomology
-public import TauCeti.LowDimTopology.Heegaard.HatDifferential
+public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
 import TauCeti.Data.ZMod.Units
 import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Algebra.BigOperators.Fin
@@ -44,7 +44,12 @@ structures of `L(p, q)`. The diagram has no nonzero periodic domain, so it is we
 These are the combinatorial inputs to the computation `HF̂(L(p, q)) ≅ 𝔽₂^p`: the hat differential
 only counts domains joining two generators, and weak admissibility excludes index-one domains from
 a generator to itself, so the hat differential of this diagram vanishes
-(`TauCeti.HeegaardRegionSystem.hatDifferential_lensSpace`).
+(`TauCeti.HeegaardRegionSystem.hatDifferential_lensSpace`). The minus differential, which also
+counts domains through the basepoint, vanishes as well
+(`TauCeti.HeegaardRegionSystem.minusDifferential_lensSpace`): a domain from a generator to itself
+is a multiple `m Σ` of the whole surface, of Maslov index `2 m ≠ 1`. So the complexes `CF⁻`,
+`CF^∞` and `CF⁺` of this diagram have zero differential too, with `p` generators over `𝔽₂[U]`,
+`𝔽₂[U, U⁻¹]` and `𝔽₂[U, U⁻¹] / 𝔽₂[U]`.
 
 ## Main definitions
 
@@ -71,6 +76,10 @@ a generator to itself, so the hat differential of this diagram vanishes
   `TauCeti.HeegaardRegionSystem.isNice_lensSpace`: every region is a square, so with all region
   Euler characteristics one the diagram is nice.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_lensSpace`: the hat differential vanishes.
+* `TauCeti.HeegaardRegionSystem.minusDifferential_lensSpace`,
+  `TauCeti.HeegaardRegionSystem.infinityDifferential_lensSpace` and
+  `TauCeti.HeegaardRegionSystem.plusDifferential_lensSpace`: so do the minus, infinity and plus
+  differentials.
 
 ## References
 
@@ -112,7 +121,7 @@ def lensSpace (r : ZMod p) : HeegaardRegionSystem 1 (ZMod p) (ZMod p) Unit where
   betaLeft j := j - 1
   betaRight j := j
   regionNonempty := inferInstance
-  crossingCompatible j := Or.inl ⟨by simp [sub_eq_add_neg],
+  crossingCompatible j := isCrossingCompatible_iff.mpr <| Or.inl ⟨by simp [sub_eq_add_neg],
     by simp [sub_eq_add_neg, add_right_comm], rfl, by simp [sub_eq_add_neg]⟩
   regionCovered s := Or.inl ⟨s, Or.inl rfl⟩
   basepoint _ := r
@@ -295,7 +304,7 @@ noncomputable def lensSpaceCurveHomologyEquiv : (lensSpace p q r).CurveHomology 
     ⟨(injective_iff_map_eq_zero _).mpr fun x hx => by
       obtain ⟨c, rfl⟩ := CurveHomology.mk_surjective _ x
       exact (CurveHomology.mk_eq_zero_iff _).mpr
-        (mem_arcRelations_of_betaWinding_eq_zero c.2
+        (mem_arcRelations_of_betaWinding_eq_zero c.property
           (by rwa [windingHom_mk, ← betaWinding_apply] at hx)),
     fun a => ⟨_, (windingHom_epsilon 0 a).trans (sub_zero a)⟩⟩
 
@@ -411,6 +420,41 @@ on the `p` generators `x_a` (`lensSpaceGenerator_bijective`), has zero different
 theorem hatDifferential_lensSpace : (lensSpace p q r).hatDifferential 1 = 0 :=
   hatDifferential_eq_zero_iff.mpr fun x y =>
     hatCoefficient_eq_zero_of_hatDomains_eq_empty (hatDomains_lensSpace x y)
+
+/-- No domain is counted by the minus differential of the lens space diagram, whatever its
+multiplicity at the basepoint: distinct generators are joined by no domain, and since the only
+periodic domain is zero, a domain from a generator to itself is a multiple `m Σ` of the whole
+surface, whose Maslov index `2 m` is not `1`. -/
+@[simp]
+theorem minusDomains_lensSpace (x y : (lensSpace p q r).Generator) :
+    (lensSpace p q r).minusDomains 1 x y = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun D hD' => ?_
+  obtain ⟨hD, -, hμ⟩ := mem_minusDomains_iff.mp hD'
+  obtain rfl := exists_isDomainBetween_lensSpace_iff.mp ⟨D, hD⟩
+  have hP := (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains ()).mp hD
+  rw [periodicDomains_lensSpace, AddSubgroup.mem_bot, sub_eq_zero] at hP
+  obtain ⟨m, rfl⟩ : ∃ m : ℤ, D = m • 1 := ⟨_, hP⟩
+  rw [map_zsmul, maslovIndex_one_eq_two (by simp [ZMod.card]) x x, zsmul_eq_mul] at hμ
+  have h : m * 2 = 1 := by exact_mod_cast hμ
+  omega
+
+/-- The minus differential of the genus-one diagram of `L(p, q)` vanishes, so its complex `CF⁻`
+is the free `(ZMod 2)[X]`-module on the `p` generators `x_a` with zero differential. -/
+@[simp]
+theorem minusDifferential_lensSpace : (lensSpace p q r).minusDifferential 1 = 0 :=
+  minusDifferential_eq_zero_iff.mpr fun x y =>
+    minusCoefficient_eq_zero_of_minusDomains_eq_empty (minusDomains_lensSpace x y)
+
+/-- The infinity differential of the genus-one diagram of `L(p, q)` vanishes. -/
+@[simp]
+theorem infinityDifferential_lensSpace : (lensSpace p q r).infinityDifferential 1 = 0 :=
+  infinityDifferential_eq_zero_iff.mpr fun x y =>
+    minusCoefficient_eq_zero_of_minusDomains_eq_empty (minusDomains_lensSpace x y)
+
+/-- The plus differential of the genus-one diagram of `L(p, q)` vanishes. -/
+@[simp]
+theorem plusDifferential_lensSpace : (lensSpace p q r).plusDifferential 1 = 0 :=
+  Submodule.linearMap_qext _ (LinearMap.ext fun c => by simp)
 
 end HeegaardRegionSystem
 

@@ -35,6 +35,8 @@ a torus chosen over `ℤ` specializes to every commutative ring.
 * `TauCeti.SplitMaximalTorus.comapOfIso`: transport along an isomorphism of coordinate Hopf
   algebras.
 * `TauCeti.SplitMaximalTorus.baseChange`: base change along `R → S`.
+* `TauCeti.SplitMaximalTorus.baseChange_coordinateMap_hom_one_tmul`: the base-changed torus
+  restricts `1 ⊗ h` to the coefficient image of the restriction of `h`.
 * `TauCeti.SplitMaximalTorus.definingIdeal_baseChange`: the base-changed torus is cut out by the
   base change of the defining ideal.
 
@@ -270,6 +272,16 @@ theorem baseChange_coordinateMap (T : SplitMaximalTorus R H r) :
         (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso R S
           (SplitTorus.characterGroup (ULift.{u} (Fin r)))).hom :=
   (rfl)
+
+/-- The base-changed torus restricts `1 ⊗ h` to the restriction of `h` to the original torus,
+with its coefficients mapped along `R → S`. -/
+theorem baseChange_coordinateMap_hom_one_tmul (T : SplitMaximalTorus R H r) (h : H) :
+    (T.baseChange S).coordinateMap.hom (1 ⊗ₜ h) =
+      MonoidAlgebra.mapAlgHom _ (Algebra.ofId R S) (T.coordinateMap.hom h) := by
+  rw [baseChange_coordinateMap, CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
+    MonoidAlgebra.scalarTensorBialgEquiv_tmul, one_smul]
 
 /-- The defining ideal of the base-changed torus is the base change of the defining ideal. -/
 @[simp]

@@ -145,7 +145,7 @@ theorem finite_adjoin {E : Type*} [Field E] [Algebra k E] (x : E)
   swap
   · -- `x` is algebraic: `k[x] = k⟮x⟯` is a field, and `C ≃ L`
     have hsurj : Function.Surjective (algebraMap (Algebra.adjoin k {x}) k⟮x⟯) := fun y ↦ by
-      have hy : (y : E) ∈ (k⟮x⟯).toSubalgebra := y.2
+      have hy : (y : E) ∈ (k⟮x⟯).toSubalgebra := y.property
       rw [adjoin_simple_toSubalgebra_of_isAlgebraic (not_not.mp hx)] at hy
       exact ⟨⟨y, hy⟩, Subtype.ext rfl⟩
     have : Module.Finite (Algebra.adjoin k {x}) k⟮x⟯ := RingHom.Finite.of_surjective _ hsurj

@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFi
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
-import Mathlib.Data.Set.Card.Arithmetic
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.ClusterSet
@@ -371,36 +370,17 @@ degree hypothesis; over a marked point `q`, it says that the multiset of local d
 is a partition of `n`. -/
 theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
     ∑ᶠ z ∈ X.π ⁻¹' {y}, X.localDegree z = n := by
-  set F := X.π ⁻¹' {y}
-  have hF : F.Finite := X.finite_preimage_singleton y
-  -- Separate the points of the fibre `F` by pairwise disjoint neighbourhoods `V z`, on which the
-  -- local degree counts the preimages of each point near `y`.
-  obtain ⟨U, hU, hUdisj⟩ := hF.t2_separation
-  choose V hVU hVo hzV hV using fun z =>
-    (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
-      ((hU z).2.mem_nhds (hU z).1)
-  -- Since `π` is closed, the fibres near `y` lie in the union of the `V z`.
-  have ht : ∀ᶠ y' in 𝓝 y, X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z :=
-    X.isProperMap.isClosedMap.eventually_nhds_fiber y fun z hz ↦
-      Filter.Eventually.mono ((hVo z).mem_nhds (hzV z)) fun _ hV ↦ mem_biUnion hz hV
-  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z ∧
-      ∀ z ∈ F, (V z ∩ X.π ⁻¹' {y'}).ncard = X.localDegree z := by
-    have hmarked : (marked \ {y})ᶜ ∈ 𝓝 y :=
-      (finite_marked.sdiff).isClosed.isOpen_compl.mem_nhds fun h => h.2 rfl
-    filter_upwards [nhdsWithin_le_nhds hmarked, self_mem_nhdsWithin, nhdsWithin_le_nhds ht,
-      hF.eventually_all.2 fun z (hz : X.π z = y) => hz ▸ hV z] with y' hy'm hy'y hy't hy'V
-    exact ⟨fun h => hy'm ⟨h, hy'y⟩, hy't, hy'V⟩
-  -- Pick an unmarked `y'` near `y`: its `n` preimages are distributed among the `V z`.
-  obtain ⟨y', hy'm, hy't, hy'V⟩ := hnear.exists
-  have hcover : X.π ⁻¹' {y'} = ⋃ z ∈ F, V z ∩ X.π ⁻¹' {y'} := by
-    refine Subset.antisymm (fun z' hz' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
-    obtain ⟨z, hz, hz'z⟩ := mem_iUnion₂.1 (hy't hz')
-    exact mem_biUnion hz ⟨hz'z, hz'⟩
-  refine Eq.trans ?_ (X.natCard_preimage_singleton y' hy'm)
-  rw [Nat.card_coe_set_eq, hcover,
-    hF.ncard_biUnion (fun _ _ => (X.finite_preimage_singleton y').subset inter_subset_right)
-      (hUdisj.mono fun z => inter_subset_left.trans (hVU z))]
-  exact (finsum_mem_congr rfl hy'V).symm
+  -- Near `y`, the local degrees over `y` count the preimages of every other point.
+  have hcount := X.isProperMap.isClosedMap.eventually_ncard_preimage_eq_finsum
+    X.finite_preimage_singleton fun z (hz : X.π z = y) _ hN => by
+      rw [← hz]
+      exact (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq hN
+  -- Pick an unmarked such point: it has `n` preimages.
+  have hmarked : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked :=
+    nhdsNE_le_codiscrete y finite_marked.compl_mem_codiscrete
+  obtain ⟨y', hy', hy'm⟩ := (hcount.and hmarked).exists
+  rw [← hy', ← Nat.card_coe_set_eq]
+  exact X.natCard_preimage_singleton y' hy'm
 
 /-- The degree of a branched cover is positive: an unmarked point has a nonempty finite fibre. -/
 theorem ne_zero (X : TopBranchedCover n) : n ≠ 0 := by
@@ -671,21 +651,21 @@ private theorem exists_tendsto_comap_val_nhds
   by_cases hx : x ∈ X.π ⁻¹' range toOnePoint
   · refine ⟨f ⟨x, hx⟩, ?_⟩
     rw [← nhds_subtype_eq_comap]
-    exact (continuous_subtype_val.comp hf).continuousAt
+    exact (continuous_subtypeVal.comp hf).continuousAt
   -- At a point `x` of a marked fibre, the cluster set of `f` is connected, since the unbranched
   -- part has preconnected approach regions at `x`, and lies in the finite fibre of `Y` over
   -- `X.π x`. So it has at most one point, and compactness of `Y` turns it into a limit.
   -- Read `f` as a map `g` on the total space of `X`, continuous on the unbranched part.
   obtain ⟨g, hg⟩ : ∃ g : X.Z → Y.Z, ∀ z : X.π ⁻¹' range toOnePoint, g z = f z :=
-    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtype_val.comp hf)⟩
+    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp hf)⟩
   have hgc : ContinuousOn g (X.π ⁻¹' range toOnePoint) := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (continuous_subtype_val.comp hf).congr fun z ↦ (hg z).symm
+    exact (continuous_subtypeVal.comp hf).congr fun z ↦ (hg z).symm
   suffices h : ∃ y, Tendsto g (𝓝[X.π ⁻¹' range toOnePoint] x) (𝓝 y) by
     obtain ⟨y, hy⟩ := h
     refine ⟨y, ?_⟩
     rw [show Subtype.val ∘ f = g ∘ Subtype.val from funext fun z ↦ (hg z).symm,
-      ← tendsto_map'_iff, subtype_coe_map_comap]
+      ← tendsto_map'_iff, subtypeVal_map_comap]
     exact hy
   refine exists_tendsto_of_clusterSetOn_subsingleton isCompact_univ (mapsTo_univ _ _)
     (X.dense_preimage_range.closure_eq ▸ mem_univ x) ?_
@@ -719,7 +699,7 @@ variable (f : C(X.π ⁻¹' range toOnePoint, Y.π ⁻¹' range toOnePoint))
 /-- On the unbranched part, the extension of `f` is `f`. -/
 @[simp]
 theorem extend_apply_val (z : X.π ⁻¹' range toOnePoint) : extend f hπ z = f z :=
-  X.dense_preimage_range.extend_eq (continuous_subtype_val.comp f.continuous) z
+  X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp f.continuous) z
 
 /-- A continuous map of total spaces agreeing with `f` on the unbranched part is the extension
 of `f`. -/
@@ -860,15 +840,15 @@ transformation of `π` restricts to one of the unbranched cover `TauCeti.TopBran
 and every deck transformation of the unbranched cover extends uniquely across the marked fibres
 (`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
 def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
-  toFun φ := ⟨(⟨φ.1, congrFun φ.2⟩ : Iso X X).restrict,
+  toFun φ := ⟨(⟨φ.val, congrFun φ.property⟩ : Iso X X).restrict,
     deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
-  invFun ψ := ⟨(Iso.ofRestrict ψ.1 fun z ↦ by
+  invFun ψ := ⟨(Iso.ofRestrict ψ.val fun z ↦ by
       simpa using congrArg (fun w : ThricePuncturedSphere ↦ ((w : ℂ) : OnePoint ℂ))
         (deck.proj_smul ψ z)).toHomeomorph,
     deck.mem_iff.2 (funext (Iso.π_apply _))⟩
   left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
     (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
-      Iso.ofRestrict _ _ = (⟨φ.1, congrFun φ.2⟩ : Iso X X))
+      Iso.ofRestrict _ _ = (⟨φ.val, congrFun φ.property⟩ : Iso X X))
   right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
   map_mul' _ _ := rfl
 

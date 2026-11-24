@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
 public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
 public import TauCeti.Analysis.ODE.LyapunovPerron.Linear
 import TauCeti.Analysis.Calculus.Contracting
-import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 
 /-!

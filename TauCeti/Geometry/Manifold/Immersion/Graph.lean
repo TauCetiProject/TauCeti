@@ -33,8 +33,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem ContDiffOn.isImmersionAtOfComplement_graph {g : E → F} {s : Set E}
     (hg : ContDiffOn 𝕜 n g s) (hs : IsOpen s) {x : E} (hx : x ∈ s) :
     Manifold.IsImmersionAtOfComplement F 𝓘(𝕜, E) 𝓘(𝕜, E × F) n (fun u ↦ (u, g u)) x := by
-  obtain ⟨ψ, hψ₁, hψ₂, hψsrc, hψapp⟩ :=
-    (ContinuousLinearEquiv.refl 𝕜 (E × F)).exists_contDiffOn_shear 0 hs hg
+  obtain ⟨ψ, hψ₁, hψ₂, hψsrc, hψapp⟩ := hg.exists_contDiffOn_graphShear hs
   have hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E × F) n (E × F) :=
     ψ.mem_maximalAtlas_of_contMDiffOn (contMDiffOn_iff_contDiffOn.mpr hψ₁)
       (contMDiffOn_iff_contDiffOn.mpr hψ₂)

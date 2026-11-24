@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Compl
+public import TauCeti.AlgebraicTopology.Cohomology.Point
 public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
@@ -63,6 +64,10 @@ first two maps do not affect the kernels and images at `Hⁿ_c(X)` and `Hᵐ_c(U
 * `TopCat.compactSupportCohomologyMayerVietoris_exact₃` and
   `TopCat.compactSupportCohomologyMayerVietoris_exact₁`: exactness at `Hⁿ_c(X)` and at
   `Hᵐ_c(U ∩ V)`.
+* `TopCat.isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero`: the middle map is an
+  isomorphism when `Hⁿ_c(U ∩ V)` and `Hⁿ⁺¹_c(U ∩ V)` vanish.
+* `TopCat.isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint`: for a cover by two disjoint
+  open sets, `Hⁿ_c(U) ⊞ Hⁿ_c(V) ≅ Hⁿ_c(X)`.
 
 ## References
 
@@ -207,9 +212,9 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
     C'.isCompact.binary_compact_cover U.isOpen V.isOpen
       (by rw [← Opens.coe_sup, hUV, Opens.coe_top]; exact Set.subset_univ _)
   obtain ⟨K₂, hK₂⟩ := exists_compacts_map_inclusion'_eq (K := KX ⊔ ⟨K₁, hK₁⟩)
-    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.2) hK₁U)
+    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.property) hK₁U)
   obtain ⟨L₂, hL₂⟩ := exists_compacts_map_inclusion'_eq (K := LX ⊔ ⟨L₁, hL₁⟩)
-    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.2) hL₁V)
+    (Set.union_subset (by rintro _ ⟨x, -, rfl⟩; exact x.property) hL₁V)
   let S := (K₂.map _ (Opens.inclusion' U).hom.continuous : Set X)
   let T := (L₂.map _ (Opens.inclusion' V).hom.continuous : Set X)
   have hSeq : S = (KX : Set X) ∪ K₁ := hK₂
@@ -240,8 +245,8 @@ private lemma exists_compactSupportCohomologyExtend_eq_neg_of_add_eq_zero (hUV :
   obtain ⟨M', hM'⟩ := exists_compacts_map_inclusion'_eq (U := U ⊓ V)
     (K := ⟨S ∩ T, (K₂.map _ (map_continuous _)).isCompact.inter_right
       (L₂.map _ (map_continuous _)).isCompact.isClosed⟩)
-    (Set.inter_subset_inter (by rintro _ ⟨x, -, rfl⟩; exact x.2)
-      (by rintro _ ⟨x, -, rfl⟩; exact x.2))
+    (Set.inter_subset_inter (by rintro _ ⟨x, -, rfl⟩; exact x.property)
+      (by rintro _ ⟨x, -, rfl⟩; exact x.property))
   refine ⟨compactSupportCohomologyι n M' (singularCohomologyComplCompactsMap hiW.injective M'
     n (singularCohomologyComplRestrict R k M hM'.ge n z)), ?_, ?_⟩
   · rw [compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap
@@ -640,6 +645,42 @@ lemma compactSupportCohomologyMayerVietoris_exact₁ (hUV : U ⊔ V = ⊤) (n m 
   rw [compactSupportCohomologyMayerVietorisδ_compactSupportCohomologyι_apply U V hUV h _ hK hL
     hKU' hLV' subset_rfl, hid, mayerVietorisδAux_apply, ha,
     singularCohomologyComplRestrict_compactSupportCohomologyRestrict_apply]
+
+variable (R k M) in
+/-- If `Hⁿ_c(U ∩ V)` and `Hⁿ⁺¹_c(U ∩ V)` vanish, for instance when `U` and `V` are disjoint, the
+middle map `Hⁿ_c(U) ⊞ Hⁿ_c(V) ⟶ Hⁿ_c(X)` of the Mayer–Vietoris sequence of an open cover
+`X = U ∪ V` is an isomorphism. -/
+lemma isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero (hUV : U ⊔ V = ⊤) (n : ℕ)
+    (h₀ : IsZero (((Opens.toTopCat X).obj (U ⊓ V)).compactSupportCohomology R k M n))
+    (h₁ : IsZero (((Opens.toTopCat X).obj (U ⊓ V)).compactSupportCohomology R k M (n + 1))) :
+    IsIso (compactSupportCohomologyMayerVietorisFromBiprod R k M U V n) := by
+  have := (compactSupportCohomologyMayerVietoris_exact₂ R k M U V hUV n).mono_g
+    (h₀.eq_of_src _ _)
+  have := (compactSupportCohomologyMayerVietoris_exact₃ R k M U V hUV n (n + 1)).epi_f
+    (h₁.eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+variable (R k M) in
+/-- For a cover of `X` by two disjoint open sets `U` and `V`, the sum
+`Hⁿ_c(U) ⊞ Hⁿ_c(V) ⟶ Hⁿ_c(X)` of the extensions along the subspace inclusions `↥U → X` and
+`↥V → X` is an isomorphism: it is the middle map of the Mayer–Vietoris sequence, and
+`Hᵐ_c(U ∩ V)` vanishes in every degree. -/
+lemma isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint (hUV : U ⊔ V = ⊤)
+    (hd : Disjoint U V) (n : ℕ) :
+    IsIso (biprod.desc
+      (compactSupportCohomologyExtend (R := R) (k := k) (M := M)
+        (f := ofHom (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, X))) U.isOpenEmbedding' n)
+      (compactSupportCohomologyExtend (R := R) (k := k) (M := M)
+        (f := ofHom (⟨Subtype.val, continuous_subtypeVal⟩ : C(V, X))) V.isOpenEmbedding' n)) := by
+  have : IsEmpty ((Opens.toTopCat X).obj (U ⊓ V)) :=
+    ⟨fun x ↦ Set.disjoint_left.1 (Opens.coe_disjoint.2 hd) (Opens.mem_inf.1 x.property).1
+      (Opens.mem_inf.1 x.property).2⟩
+  have h (m : ℕ) := (TauCeti.isZero_singularCohomology_of_isEmpty R k M
+    ((Opens.toTopCat X).obj (U ⊓ V)) m).of_iso (compactSupportCohomologyIsoOfCompactSpace m)
+  -- By definition, `compactSupportCohomologyMayerVietorisFromBiprod` is this map, read on
+  -- `(Opens.toTopCat X).obj U = TopCat.of ↥U`, with `Opens.inclusion' U` the subspace inclusion.
+  exact isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero R k M U V hUV n (h n)
+    (h (n + 1))
 
 end Connecting
 

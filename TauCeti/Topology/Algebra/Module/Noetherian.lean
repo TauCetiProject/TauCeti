@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Baire.CompleteMetrizable
+import TauCeti.Topology.Algebra.Module.Baire
 
 /-!
 # Noetherianity from closed submodules
@@ -16,15 +17,17 @@ Let `A` be a ring with a topology in which zero is a limit of units. This holds 
 admits a sequence of units converging to zero, such as a Tate ring, through the instance
 `TauCeti.HasZeroSequenceOfUnits.nhdsWithin_isUnit_neBot`. Over such a ring a topological module
 has no proper submodule with nonempty interior (Mathlib's
-`Submodule.eq_top_of_nonempty_interior'`), and this file draws a consequence of that for
-completely pseudometrisable modules. The same fact gives the remaining implications of Wedhorn's
-Theorem 6.16, in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
+`Submodule.eq_top_of_nonempty_interior'`), so by Baire category a Baire module is not a countable
+union of proper closed submodules (`Submodule.exists_forall_notMem_of_isClosed`). This file draws a
+consequence of that for completely pseudometrisable modules. The same fact about interiors gives
+the remaining implications of Wedhorn's Theorem 6.16, in
+`TauCeti.Topology.Algebra.OpenMapping.Converse`.
 
 Over such a ring, a completely pseudometrisable topological module all of whose submodules are
 closed is noetherian, generalising the converse half of Wedhorn's Proposition 6.17. Given an
-ascending chain of submodules, their union `S` is closed, hence completely pseudometrisable and so
-a Baire space. The members of the chain are closed in `S` and cover it, so one of them has interior
-in `S`. That member is then an open submodule of `S`, hence all of `S`, and the chain stops there.
+`ℕ`-indexed ascending chain of submodules, their union `S` is closed, hence completely
+pseudometrisable and so a Baire space. The members of the chain are countably many closed
+submodules of `S` covering it, so one of them is all of `S`, and the chain stops there.
 
 Over a complete Hausdorff Tate ring the forward half, that every submodule of a noetherian module is
 closed, is `TauCeti.Huber.isClosed_of_isNoetherian`; the two halves are assembled into Wedhorn's
@@ -61,16 +64,17 @@ theorem isNoetherian_of_forall_isClosed [TopologicalSpace M]
   -- The union `S` of the chain is closed, hence completely pseudometrisable and Baire.
   have : IsCompletelyPseudoMetrizableSpace S := (h S).isCompletelyPseudoMetrizableSpace
   have : ContinuousAdd S := S.toAddSubmonoid.continuousAdd
-  -- The members of the chain, seen inside `S`, are closed and cover `S`.
-  let C : ℕ → Submodule A S := fun n ↦ (f n).comap S.subtype
-  have hC : ∀ n, IsClosed (C n : Set S) := fun n ↦ (h (f n)).preimage continuous_subtype_val
-  have hcover : ⋃ n, (C n : Set S) = Set.univ := by
-    refine Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr ?_
-    exact (Submodule.mem_iSup_of_directed f f.monotone.directed_le).mp x.2
-  obtain ⟨n, hn⟩ := nonempty_interior_of_iUnion_of_closed hC hcover
-  -- That member is open in `S`, hence all of `S`.
-  have hS : S ≤ f n :=
-    Submodule.comap_subtype_eq_top.mp (Submodule.eq_top_of_nonempty_interior' _ hn)
+  -- The members of the chain, seen inside `S`, are closed submodules covering `S`; as `S` is
+  -- Baire, they are not all proper.
+  obtain ⟨n, hn⟩ : ∃ n, (f n).comap S.subtype = ⊤ := by
+    by_contra! hne
+    obtain ⟨x, hx⟩ := Submodule.exists_forall_notMem_of_isClosed _
+      (fun n ↦ by
+        rw [Submodule.comap_coe, Submodule.coe_subtype]
+        exact (h (f n)).preimage continuous_subtypeVal) hne
+    obtain ⟨n, hn⟩ := (Submodule.mem_iSup_of_directed f f.monotone.directed_le).mp x.property
+    exact hx n (Submodule.mem_comap.mpr hn)
+  have hS : S ≤ f n := Submodule.comap_subtype_eq_top.mp hn
   exact ⟨n, fun m hm ↦ le_antisymm (f.monotone hm) ((le_iSup f m).trans hS)⟩
 
 end TauCeti

@@ -97,6 +97,23 @@ theorem continuationHom_comp (ν : RowFiniteContinuationCocycle mP mQ)
       ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, continuationHom_f_apply,
       continuationHom_f_apply]
 
+/-- **Naturality of continuation maps**: the continuation map of a row-finite continuation cocycle
+commutes with the coefficient maps of morphisms of DG right modules. -/
+@[reassoc]
+theorem coefficientCochainComplexMap_comp_continuationHom (ν : RowFiniteContinuationCocycle mP mQ)
+    {N : Type uM} [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+    {𝒩 : ℤ → Submodule R N} [DirectSum.Decomposition 𝒩]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒩] {dN : N →ₗ[R] N}
+    (hM : IsDGRightModule hA ℳ dM) (hN : IsDGRightModule hA 𝒩 dN) (f : DGRightModuleHom hM hN) :
+    mP.coefficientCochainComplexMap hM hN f ≫ ν.continuationHom hN =
+      ν.continuationHom hM ≫ mQ.coefficientCochainComplexMap hM hN f := by
+  ext n x
+  apply (mQ.coefficientCochainComplexXEquiv hN n).injective
+  apply Subtype.ext
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    continuationHom_f_apply, coefficientCochainComplexXEquiv_coefficientCochainComplexMap_f_apply]
+  exact ν.coefficientMap_mapRange f.toLinearMap _
+
 end RowFiniteContinuationCocycle
 
 /-! ### The homotopy of a parametrized cocycle -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -27,9 +28,9 @@ nonpositive order, and of first derivatives composed with the Bessel potential o
 multipliers of Mihlin type, and so bounded on `Lᵖ` for `1 < p < ∞`.
 
 The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times the linear map
-`2r ⟪x, ·⟫`, and a smooth function times a continuous linear map gains half a power of
+`2r ⟪x, ·⟫`, and a `C^k` function times a continuous linear map gains half a power of
 `1 + ‖x‖ ^ 2` in its derivative bounds
-(`ContinuousLinearMap.exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
+(`ContinuousLinearMap.norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
 by induction on `k`. Rescaling the argument by `c ≠ 0` changes `1 + ‖x‖ ^ 2` by at most a constant
 factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 
@@ -41,6 +42,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   bracket power `(1 + ‖x‖ ^ 2) ^ r` and its complex version are smooth.
 * `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the bounds for the
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
+* `TauCeti.exists_norm_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: for
+  `k + s ≤ 0`, the derivatives of `(1 + ‖x‖ ^ 2) ^ (s / 2)` stay bounded after multiplication by
+  `‖x‖ ^ k`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
@@ -49,18 +53,25 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le`: the derivative bounds for the
   translated bracket power `(1 + ‖x + y‖ ^ 2) ^ (s / 2)`, uniformly in the translation `y` up to
   the factor `⟨y⟩ ^ (|s| + k)` from Peetre's inequality.
-* `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a symbol of order
-  `m`, such as a bracket power, times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and
-  adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative.
-* `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
-  `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
-* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
-  `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
-  rescaled argument `c x` and its derivative bounds.
-* `TauCeti.one_add_norm_smul_sq_rpow_half_le`: on an annulus `0 < c ≤ ‖ζ‖ ≤ d`, the bracket power
-  `(1 + ‖t ζ‖ ^ 2) ^ (u / 2)` is `O(t ^ u)` for `t ≥ 1`.
-* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
-  on the left with a continuous linear map preserves bracket bounds on derivatives.
+* `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a `C^N` symbol
+  of order `m`, such as a bracket power, times a `C^N` cutoff `χ` localized where
+  `1 + ‖x‖ ^ 2 ≍ R ^ 2` and adapted to the scale `R`: for `k ≤ N`, the product is
+  `O(R ^ m / R ^ k)` in its `k`-th derivative, with a constant proportional to the constant in
+  the symbol estimates.
+* `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow`: finitely many symbol
+  estimates hold with a common constant.
+* `TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow`: the constant of a symbol estimate
+  is nonnegative.
+* `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the derivative bounds for the
+  bracket power `(1 + ‖c x‖ ^ 2) ^ r` of a rescaled argument.
+* `TauCeti.exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow`,
+  `TauCeti.exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow`: symbol estimates of orders
+  `a` and `b` give estimates of order `a + b` for products and `N a` for `N`-th powers, uniformly
+  in a parameter.
+* `TauCeti.hasFDerivAt_norm_smul_sq_rpow`: the derivative of `(‖c ξ‖ ^ 2) ^ μ` away from `0`.
+* `TauCeti.hasFDerivAt_one_add_norm_smul_sq_rpow`: the derivative of `(1 + ‖c ξ‖ ^ 2) ^ r`.
+* `TauCeti.contDiff_norm_smul_sq_rpow_smul`: `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing
+  near `0` is smooth.
 
 ## References
 
@@ -69,8 +80,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 -/
 
 public section
-
-open scoped ContDiff
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -89,25 +98,20 @@ theorem norm_iteratedFDeriv_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) (j : ℕ
     exact Real.le_sqrt_of_sq_le (by linarith)
   · rw [norm_iteratedFDeriv_one, L.fderiv]
     simp
-  · -- The derivative of `L` is the constant map `L`, whose derivatives of positive order vanish.
-    have hL : fderiv ℝ L = fun _ ↦ L := funext fun _ ↦ L.fderiv
-    have h : iteratedFDeriv ℝ (j + 2) L x = 0 := by
-      rw [← norm_eq_zero, ← norm_iteratedFDeriv_fderiv, hL,
-        iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
-      simp
-    rw [h, norm_zero]
+  · rw [L.iteratedFDeriv_add_two, norm_zero]
     positivity
 
-/-- If the first `k` derivatives of a smooth function `g` satisfy the bracket bounds
-`‖D^i g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
-continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`. -/
-theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) {g : E → ℝ}
-    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
-    (hgk : ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
-      C * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
-  choose! C hC using hgk
-  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * C i * ‖L‖, fun x ↦ ?_⟩
+/-- If the derivatives of order `i ≤ k` of a `C^k` scalar function `g` satisfy the bracket bounds
+`‖D^i g x‖ ≤ C i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
+continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`, with the explicit
+constant `∑ i ≤ k, (k choose i) C i ‖L‖` from the Leibniz rule. -/
+theorem norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : E →L[ℝ] G) {g : E → 𝕜}
+    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ} {C : ℕ → ℝ}
+    (hgk : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C i * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) (x : E) :
+    ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
+      (∑ i ∈ Finset.range (k + 1), k.choose i * C i * ‖L‖) *
+        (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
   refine (norm_iteratedFDeriv_smul_le hg L.contDiff x le_rfl).trans ?_
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
@@ -115,7 +119,7 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
   -- exponents add up to `ρ + 1 / 2 - k / 2`.
   have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
   have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
-  have h₁ := hC i hik x
+  have h₁ := hgk i hik x
   have h₀ : 0 ≤ C i * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2) := (norm_nonneg _).trans h₁
   have h₂ := L.norm_iteratedFDeriv_le_one_add_norm_sq_rpow (k - i) x
   have hexp : (1 + ‖x‖ ^ 2) ^ (ρ - i / 2) * (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2) =
@@ -130,103 +134,69 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
         rw [← hexp]
         ring
 
-/-- Composing on the left with a continuous linear map `L` preserves a bracket bound
-`‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ`, with the constant multiplied by `‖L‖`. -/
-theorem exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ}
-    (hg : ContDiff ℝ k g) {ρ : ℝ}
-    (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
-  obtain ⟨C, hC⟩ := hgk
-  refine ⟨‖L‖ * max C 0, fun x ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g x‖ :=
-        L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
-    _ ≤ ‖L‖ * (max C 0 * (1 + ‖x‖ ^ 2) ^ ρ) :=
-        mul_le_mul_of_nonneg_left ((hC x).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
-    _ = ‖L‖ * max C 0 * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
+/-- If the derivatives of order `i ≤ k` of a `C^k` scalar function `g` satisfy the bracket bounds
+`‖D^i g x‖ ≤ C_i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
+continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`. -/
+theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : E →L[ℝ] G) {g : E → 𝕜}
+    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
+    (hgk : ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
+  choose! C hC using hgk
+  exact ⟨_, L.norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow hg hC⟩
 
 end ContinuousLinearMap
 
 namespace TauCeti
 
-/-- Where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, every power `(1 + ‖ξ‖ ^ 2) ^ (u / 2)` of the Japanese
-bracket is at most `max (a ^ (u / 2)) (b ^ (u / 2)) R ^ u`. -/
-theorem one_add_norm_sq_rpow_half_le {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ : E}
-    (hξ : a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) (u : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u := by
-  have hb : 0 < b := pos_of_mul_pos_left ((mul_pos ha (by positivity)).trans_le
-    (hξ.1.trans hξ.2)) (by positivity)
-  have hRu (c : ℝ) (hc : 0 < c) : (c * R ^ 2) ^ (u / 2) = c ^ (u / 2) * R ^ u := by
-    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
-    congr 2
-    push_cast
-    ring
-  rcases le_total 0 u with hu | hu
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (b * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow (by positivity) hξ.2 (by positivity)
-      _ ≤ _ := by
-          rw [hRu b hb]
-          gcongr
-          exact le_max_right _ _
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (a * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) hξ.1 (by linarith)
-      _ ≤ _ := by
-          rw [hRu a ha]
-          gcongr
-          exact le_max_left _ _
-
-/-- For `p ≥ 0`, the bracket power `(1 + ‖x‖ ^ 2) ^ (p / 2)` is at most `(1 + ‖x‖) ^ p`. -/
-theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0 ≤ p) :
-    (1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p := by
-  rw [show p / 2 = 1 / 2 * p by ring, Real.rpow_mul (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg x]⟩
+/-- The constant `W` of a bound `‖f ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ r`, such as a symbol estimate, is
+nonnegative. -/
+theorem nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow {F : Type*} [SeminormedAddGroup F]
+    {f : E → F} {W r : ℝ}
+    (h : ∀ ξ, ‖f ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ r) : 0 ≤ W :=
+  nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (h 0)) (by positivity)
 
 section NormedSpace
 
 variable [NormedSpace ℝ E]
 
-/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `w` be a `C^N`
-function with the symbol estimates `‖D^i w ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for
-`i ≤ N`, and let `a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following
-property. Let `R > 0` and let `χ` be a `C^N` real function such that
-`a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`.
-Then
-`‖D^k (χ • w)‖ ≤ K R ^ m / R ^ k` for `k ≤ N`: on the support of `χ` the symbol `w` behaves like
-the constant `R ^ m`. -/
-theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : ContDiff ℝ N w)
-    {m : ℝ} (hwm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
-    {a b : ℝ} (ha : 0 < a) (B : ℕ → ℝ) :
-    ∃ K, 0 ≤ K ∧ ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
+/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `a > 0`, `b` and
+`B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following property. Let `w` be a `C^N` function
+with the symbol estimates `‖D^i w ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ N`,
+let `R > 0` and let `χ` be a `C^N` real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the
+support of `χ` and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then
+`‖D^k (χ • w)‖ ≤ K W R ^ m / R ^ k` for `k ≤ N`: on the support of `χ` the symbol `w` behaves like
+the constant `R ^ m`. The constant `K` depends neither on `w` nor on `W`. -/
+theorem exists_norm_iteratedFDeriv_cutoff_smul_le (N : ℕ) (m : ℝ) {a b : ℝ} (ha : 0 < a)
+    (B : ℕ → ℝ) :
+    ∃ K, 0 ≤ K ∧ ∀ (w : E → G) (W : ℝ), ContDiff ℝ N w →
+      (∀ i ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
       (∀ ξ ∈ tsupport χ, a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) →
       (∀ k ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B k / R ^ k) → ∀ k ≤ N, ∀ ξ,
-        ‖iteratedFDeriv ℝ k (fun ξ ↦ χ ξ • w ξ) ξ‖ ≤ K * R ^ m / R ^ k := by
-  choose! W hW using hwm
-  have hW0 {i : ℕ} (hi : i ≤ N) : 0 ≤ W i := by simpa using (norm_nonneg _).trans (hW i hi 0)
+        ‖iteratedFDeriv ℝ k (fun ξ ↦ χ ξ • w ξ) ξ‖ ≤ K * W * R ^ m / R ^ k := by
   set P : ℕ → ℝ := fun i ↦ max (a ^ ((m - i) / 2)) (b ^ ((m - i) / 2))
   have hP0 (i : ℕ) : 0 ≤ P i := le_max_of_le_left (by positivity)
   -- The Leibniz constant of order `k`, and their sum over `k ≤ N`.
   set S : ℕ → ℝ := fun k ↦
-    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i))
-  have hS0 {k : ℕ} (hk : k ∈ Finset.range (N + 1)) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by
-    have := hW0 ((k.sub_le i).trans (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)))
-    have := hP0 (k - i); positivity
-  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k hk ↦ hS0 hk,
-    fun R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
+    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * P (k - i)
+  have hS0 (k : ℕ) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by have := hP0 (k - i); positivity
+  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k _ ↦ hS0 k,
+    fun w W hw hW R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
+  have hW0 : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
   -- By the Leibniz rule, each term `D^i χ D^(k-i) w` is `O(R ^ (-i) R ^ (m - (k - i)))`, which is
   -- `O(R ^ m / R ^ k)`; it vanishes off the support of `χ`.
   have hterm (i : ℕ) (hi : i ∈ Finset.range (k + 1)) :
       (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤
-        (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) * (R ^ m / R ^ k) := by
+        (k.choose i : ℝ) * max (B i) 0 * P (k - i) * (W * R ^ m / R ^ k) := by
     have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
     have hkiN : k - i ≤ N := (k.sub_le i).trans hk
-    have := hW0 hkiN
     have := hP0 (k - i)
     by_cases hξ : ξ ∈ tsupport χ
-    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
+    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
         (hW (k - i) hkiN ξ).trans (mul_le_mul_of_nonneg_left
-          (one_add_norm_sq_rpow_half_le ha hR (hsupp ξ hξ) _) (hW0 hkiN))
+          (one_add_norm_sq_rpow_le_max_mul_rpow ha hR (hsupp ξ hξ) _) hW0)
       have hχi : ‖iteratedFDeriv ℝ i χ ξ‖ ≤ max (B i) 0 / R ^ i :=
         (hB i (hik.trans hk) ξ).trans (by gcongr; exact le_max_left _ _)
       have hpow : 1 / R ^ i * R ^ (m - (k - i : ℕ)) = R ^ m / R ^ k := by
@@ -234,53 +204,100 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
         field_simp
       calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖
           ≤ (k.choose i : ℝ) * (max (B i) 0 / R ^ i) *
-              (W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
+              (W * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
             gcongr
-        _ = (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) *
-              (1 / R ^ i * R ^ (m - (k - i : ℕ))) := by
+        _ = (k.choose i : ℝ) * max (B i) 0 * P (k - i) *
+              (W * (1 / R ^ i * R ^ (m - (k - i : ℕ)))) := by
             ring
-        _ = _ := by rw [hpow]
+        _ = _ := by rw [hpow, mul_div_assoc]
     · rw [image_eq_zero_of_notMem_tsupport (fun h ↦ hξ (tsupport_iteratedFDeriv_subset _ h)),
         norm_zero, mul_zero, zero_mul]
       positivity
   refine (norm_iteratedFDeriv_smul_le hχ hw ξ (by exact_mod_cast hk)).trans
     ((Finset.sum_le_sum hterm).trans ?_)
-  rw [← Finset.sum_mul, mul_div_assoc]
+  rw [← Finset.sum_mul, mul_div_assoc, mul_div_assoc, ← mul_assoc]
   gcongr
-  exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+  exact Finset.single_le_sum (fun k _ ↦ hS0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
-/-- Rescaling the argument by `c ≠ 0` changes `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor. -/
-theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
-    ∃ C, ∀ x : E, (1 + ‖c • x‖ ^ 2) ^ r ≤ C * (1 + ‖x‖ ^ 2) ^ r := by
-  have hc2 : 0 < c ^ 2 := by positivity
-  refine ⟨max (max 1 (c ^ 2) ^ r) (min 1 (c ^ 2) ^ r), fun x ↦ ?_⟩
-  have hx : 0 < 1 + ‖x‖ ^ 2 := by positivity
-  rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  rcases le_total 0 r with hr | hr
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (max 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [le_max_left 1 (c ^ 2), le_max_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = max 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r := Real.mul_rpow (by positivity) hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (min 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow_of_nonpos (mul_pos (lt_min one_pos hc2) hx)
-            (by nlinarith [min_le_left 1 (c ^ 2), min_le_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = min 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r :=
-          Real.mul_rpow (lt_min one_pos hc2).le hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+/-- **A common constant in symbol estimates.** If the derivatives of `w` of order at most `N` have
+the symbol estimates `‖D^i w ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m`, then they have
+them with one constant `W` for all `i ≤ N`. -/
+theorem exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow {w : E → G} {m : ℝ}
+    {N : ℕ}
+    (hwm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) :
+    ∃ W, ∀ i ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2) := by
+  choose! C hC using hwm
+  refine ⟨∑ i ∈ Finset.range (N + 1), max (C i) 0, fun i hi ξ ↦ (hC i hi ξ).trans ?_⟩
+  gcongr
+  exact (le_max_left _ _).trans (Finset.single_le_sum (f := fun i ↦ max (C i) 0)
+    (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (Nat.lt_succ_of_le hi)))
 
-/-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
-at most a multiple of `t ^ u`: `(1 + ‖t ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2))
-((1 + d ^ 2) ^ (u / 2)) t ^ u`. -/
-theorem one_add_norm_smul_sq_rpow_half_le {c d t : ℝ} (hc : 0 < c) (ht : 1 ≤ t) {ζ : E}
-    (hζ : c ≤ ‖ζ‖ ∧ ‖ζ‖ ≤ d) (u : ℝ) :
-    (1 + ‖t • ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2)) ((1 + d ^ 2) ^ (u / 2)) * t ^ u := by
-  have ht0 : 0 < t := one_pos.trans_le ht
-  have htζ : ‖t • ζ‖ = t * ‖ζ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
-  have hlo := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.1 ht0.le)
-  have hhi := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.2 ht0.le)
-  exact one_add_norm_sq_rpow_half_le (by positivity) ht0
-    ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith [one_le_pow₀ (n := 2) ht]⟩ u
+/-- **Symbol estimates for products, uniformly in a parameter.** If the first `k` derivatives of
+two families of `C^k` functions with values in a normed algebra satisfy the symbol estimates
+`‖D^i f t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)` and `‖D^i g t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)`
+of orders `a` and `b`, with constants independent of the parameter `t`, then by the Leibniz rule
+the `k`-th derivative of the product `f t * g t` satisfies the estimate of order `a + b`, again
+uniformly in `t`. -/
+theorem exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] {f g : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    (hg : ∀ t, ContDiff ℝ k (g t)) {a b : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (hgk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (g t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x * g t x) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+  choose! A hA using hfk
+  choose! B hB using hgk
+  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * |A i| * |B (k - i)|, fun t x ↦ ?_⟩
+  refine (norm_iteratedFDeriv_mul_le (hf t) (hg t) x le_rfl).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  -- The `i`-th Leibniz term carries `D^i f` and `D^(k - i) g`, whose orders add up to
+  -- `a + b - k`.
+  have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hexp : (1 + ‖x‖ ^ 2) ^ ((a - i) / 2) * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2) =
+      (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+    rw [← Real.rpow_add hw, Nat.cast_sub hik]
+    ring_nf
+  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (f t) x‖ * ‖iteratedFDeriv ℝ (k - i) (g t) x‖
+      ≤ k.choose i * (|A i| * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)) *
+          (|B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2)) := by
+        gcongr
+        · exact (hA i hik t x).trans (by gcongr; exact le_abs_self _)
+        · exact (hB (k - i) (Nat.sub_le k i) t x).trans (by gcongr; exact le_abs_self _)
+    _ = k.choose i * |A i| * |B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+        rw [← hexp]
+        ring
+
+/-- **Symbol estimates for powers, uniformly in a parameter.** If the first `k` derivatives of a
+family of `C^k` functions with values in a normed algebra satisfy the symbol estimates of order
+`a`, with constants independent of the parameter `t`, then the `k`-th derivative of their `N`-th
+powers satisfies the estimate of order `N a`. -/
+theorem exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] {f : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    {a : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (N : ℕ) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x ^ N) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((N * a - k) / 2) := by
+  induction N generalizing k with
+  | zero =>
+    refine ⟨1, fun t x ↦ ?_⟩
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · simp only [pow_zero, iteratedFDeriv_const_of_ne hk, Pi.zero_apply, norm_zero, one_mul]
+      positivity
+  | succ N ih =>
+    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow
+      (fun t ↦ (hf t).pow N) hf
+      (fun i hi ↦ ih (fun t ↦ (hf t).of_le (mod_cast hi)) fun i' hi' ↦ hfk i' (hi'.trans hi))
+      hfk
+    refine ⟨C, fun t x ↦ ?_⟩
+    simp only [pow_succ]
+    refine (hC t x).trans_eq ?_
+    congr 2
+    push_cast
+    ring
 
 end NormedSpace
 
@@ -296,16 +313,60 @@ theorem contDiff_ofReal_one_add_norm_sq_rpow (r : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ r : ℝ) : ℂ) :=
   Complex.ofRealCLM.contDiff.comp (contDiff_one_add_norm_sq_rpow r)
 
-/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`. -/
-theorem hasFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
-    HasFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
+/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`, in the
+strict sense. -/
+theorem hasStrictFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
+    HasStrictFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
       ((1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ x)) x := by
-  have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_add 1).rpow_const (p := r)
+  have h := ((hasStrictFDerivAt_norm_sq x).const_add 1).rpow_const (p := r)
     (Or.inl (by positivity))
   convert h using 1
   ext v
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
+
+/-- The derivative of the power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, away from `c ξ = 0`, is
+`μ (‖c ξ‖ ^ 2) ^ (μ - 1)` times `2 c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_norm_smul_sq_rpow {c : ℝ} {ξ : E} (hcξ : c • ξ ≠ 0) (μ : ℝ) :
+    HasFDerivAt (fun ξ : E ↦ (‖c • ξ‖ ^ 2) ^ μ)
+      ((μ * (‖c • ξ‖ ^ 2) ^ (μ - 1)) • ((2 * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := ((hasStrictFDerivAt_norm_sq (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)).rpow_const (p := μ)
+      (Or.inl (pow_ne_zero 2 (norm_ne_zero_iff.2 hcξ)))
+  refine h.congr_fderiv ?_
+  ext v
+  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, innerSL_apply_apply, inner_smul_left, inner_smul_right,
+    smul_eq_mul, nsmul_eq_mul, RCLike.conj_to_real]
+  ring
+
+/-- The derivative of the bracket power `(1 + ‖c ξ‖ ^ 2) ^ r` of a rescaled argument is
+`(1 + ‖c ξ‖ ^ 2) ^ (r - 1)` times `2 r c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_one_add_norm_smul_sq_rpow {c : ℝ} (r : ℝ) (ξ : E) :
+    HasFDerivAt (fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r)
+      ((1 + ‖c • ξ‖ ^ 2) ^ (r - 1) • ((2 * r * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := (hasStrictFDerivAt_one_add_norm_sq_rpow r (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+open Topology in
+/-- A power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, homogeneous of degree `2μ`, times a smooth
+function vanishing near `0` is smooth, for `c ≠ 0` and every real `μ`. -/
+theorem contDiff_norm_smul_sq_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : ℝ} (hc : c ≠ 0) {n : WithTop ℕ∞} {g : E → F} (hg : ContDiff ℝ n g)
+    (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
+    ContDiff ℝ n fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
+  refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+    filter_upwards [hg0] with η hη
+    simp [hη]
+  · have hne : ‖c • ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (smul_ne_zero hc hξ))
+    exact ((((contDiff_norm_sq ℝ).comp (contDiff_const_smul c)).contDiffAt.rpow_const_of_ne
+      hne).smul hg.contDiffAt)
 
 /-- **Derivative bounds for powers of the Japanese bracket.** For every real `r` and every `k`,
 `‖D^k (1 + ‖x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`: each derivative of
@@ -322,7 +383,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (r : ℝ) (k : ℕ) :
   · -- The derivative is a lower bracket power times a continuous linear map.
     have hderiv : fderiv ℝ (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r) =
         fun x ↦ (1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ) x :=
-      funext fun x ↦ (hasFDerivAt_one_add_norm_sq_rpow r x).fderiv
+      funext fun x ↦ (hasStrictFDerivAt_one_add_norm_sq_rpow r x).hasFDerivAt.fderiv
     obtain ⟨C, hC⟩ := ((2 * r) • innerSL ℝ).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
         (contDiff_one_add_norm_sq_rpow (r - 1))
         (ρ := r - 1) fun i hi ↦ ih i (Nat.lt_succ_of_le hi) (r - 1)
@@ -376,6 +437,35 @@ theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ)
           (contDiff_one_add_norm_sq_rpow (s / 2)).contDiffAt le_rfl
     _ ≤ _ := (hC x).trans_eq (by rw [sub_div])
 
+/-- **Bracket powers of negative order absorb polynomial weights.** If `k + s ≤ 0`, every
+derivative of the complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)` stays bounded after
+multiplication by `‖x‖ ^ k`: `‖x‖ ^ k ‖D^i (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C` for all `x`. -/
+theorem exists_norm_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le {k : ℕ}
+    {s : ℝ} (hks : k + s ≤ 0) (i : ℕ) :
+    ∃ C, ∀ x : E, ‖x‖ ^ k *
+      ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (E := E) s i
+  refine ⟨|C|, fun x ↦ ?_⟩
+  have h1 : 1 ≤ 1 + ‖x‖ ^ 2 := le_add_of_nonneg_right (by positivity)
+  have hx : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+    calc ‖x‖ ^ k = (‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+          rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
+          ring_nf
+      _ ≤ _ := Real.rpow_le_rpow (by positivity) (by linarith) (by positivity)
+  have hexp : (k : ℝ) / 2 + (s - i) / 2 ≤ 0 := by
+    have : (0 : ℝ) ≤ i := i.cast_nonneg
+    linarith
+  calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖
+      ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) * (|C| * (1 + ‖x‖ ^ 2) ^ ((s - i) / 2)) :=
+        mul_le_mul hx ((hC x).trans (by gcongr; exact le_abs_self _)) (norm_nonneg _)
+          (by positivity)
+    _ = |C| * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2 + (s - i) / 2) := by
+        rw [Real.rpow_add (by positivity)]
+        ring
+    _ ≤ |C| * 1 :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_one_of_one_le_of_nonpos h1 hexp) (abs_nonneg _)
+    _ = |C| := mul_one _
+
 /-- **Derivative bounds for a linear function times a bracket power.** For every `v`, every real
 `r` and every `k`, `‖D^k (⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2)`. -/
 theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r : ℝ) (k : ℕ) :
@@ -411,28 +501,20 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : 
     (k : ℕ) :
     ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) x‖ ≤
       C * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by
-  set g : E →L[ℝ] E := c • ContinuousLinearMap.id ℝ E
   set f : E → ℝ := fun x ↦ (1 + ‖x‖ ^ 2) ^ r
   have hf : ContDiff ℝ k f := contDiff_one_add_norm_sq_rpow r
-  have hg (x : E) : g x = c • x := by simp [g]
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) r k
   obtain ⟨K, hK⟩ := exists_one_add_norm_smul_sq_rpow_le (E := E) hc (r - k / 2)
-  refine ⟨max C 0 * K * ‖g‖ ^ k, fun x ↦ ?_⟩
-  have hcomp : (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) = f ∘ g := by
-    funext x
-    simp only [Function.comp_apply, f, hg]
-  rw [hcomp, g.iteratedFDeriv_comp_right hf x le_rfl]
-  calc ‖(iteratedFDeriv ℝ k f (g x)).compContinuousLinearMap fun _ ↦ g‖
-        ≤ ‖iteratedFDeriv ℝ k f (g x)‖ * ∏ _ : Fin k, ‖g‖ :=
-        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
-    _ = ‖iteratedFDeriv ℝ k f (g x)‖ * ‖g‖ ^ k := by simp
-    _ ≤ max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2) * ‖g‖ ^ k := by
+  refine ⟨|c| ^ k * max C 0 * K, fun x ↦ ?_⟩
+  -- The `k`-th derivative of `x ↦ f (c • x)` is `c ^ k` times that of `f` at `c • x`.
+  rw [iteratedFDeriv_comp_const_smul c hf, norm_smul, norm_pow, Real.norm_eq_abs]
+  calc |c| ^ k * ‖iteratedFDeriv ℝ k f (c • x)‖
+      ≤ |c| ^ k * (max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2)) := by
         gcongr
-        rw [← hg]
-        exact (hC (g x)).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-    _ ≤ max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2)) * ‖g‖ ^ k := by
+        exact (hC (c • x)).trans (by gcongr; exact le_max_left _ _)
+    _ ≤ |c| ^ k * (max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2))) := by
         gcongr
         exact hK x
-    _ = max C 0 * K * ‖g‖ ^ k * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
+    _ = |c| ^ k * max C 0 * K * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
 
 end TauCeti

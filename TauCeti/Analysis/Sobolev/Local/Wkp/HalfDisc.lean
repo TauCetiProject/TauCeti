@@ -96,10 +96,11 @@ theorem MemWkpLoc.exists_wkp_upperHalf_iteratedGradient_ae_eq (n : ℕ) {u : ℂ
       Wkp.iteratedGradient n v =ᵐ[volume.restrict (W.upperHalf : Set ℂ)] G n := by
   have hWΩ' : W.upperHalf ≤ Ω.upperHalf :=
     Opens.upperHalf_mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ))
-  exact Wkp.exists_value_iteratedGradient_ae_eq_of_chain n
+  obtain ⟨v, hv, htop, -⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain n
     (memLpLoc_inter_setOf_im_nonneg_iff.1 hu W hWc hWΩ) (h0.mono hWΩ')
     (fun i hi => (hG i hi).mono hWΩ')
     (fun i hi => memLpLoc_inter_setOf_im_nonneg_iff.1 (hGp i hi) W hWc hWΩ)
+  exact ⟨v, hv, htop⟩
 
 /-- **A half-disc Sobolev function is Sobolev on upper halves.** If
 `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is real, then on the upper half `W ∩ {0 < im}` of every open
@@ -149,7 +150,7 @@ theorem memWkpLoc_inter_setOf_im_nonneg_of_forall_wkp {u : ℂ → ℝ}
     have hGp : ∀ i ≤ n, MemLpLoc p ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) (G i) :=
       fun i hi => memLpLoc_inter_setOf_im_nonneg_iff.2 fun W hWc hWΩ => by
         obtain ⟨v, hv⟩ := h W hWc hWΩ
-        obtain ⟨G', h0', hG', hGp', -⟩ := Wkp.exists_iteratedGradient_chain n v
+        obtain ⟨G', h0', hG', hGp', -, -⟩ := Wkp.exists_iteratedGradient_chain n v
         have hWΩ' : W.upperHalf ≤ Ω.upperHalf :=
           Opens.upperHalf_mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ))
         exact (hGp' i hi).ae_eq (ae_eq_of_iteratedGradient_chain n (h0'.congr_ae hv) hG'
