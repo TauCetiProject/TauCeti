@@ -93,9 +93,14 @@ instance instAddCommGroup {B : Type*} [CommRing B] (f : A →+* B) (M : Type*) [
 variable {f : A →+* B} {M : Type*} [AddCommMonoid M] [Module A M]
 
 /-- The pure tensor `b ⊗ m` in `B ⊗[A, f] M`. -/
-@[expose] def tmul (b : B) (m : M) : TensorAlong f M :=
+def tmul (b : B) (m : M) : TensorAlong f M :=
   letI := f.toAlgebra
   b ⊗ₜ[A] m
+
+/-- `tmul b m` is the pure tensor `b ⊗ₜ[A] m` of `B ⊗[A] M` for `f.toAlgebra`. -/
+theorem tmul_def (b : B) (m : M) :
+    (tmul b m : TensorAlong f M) = (letI := f.toAlgebra; (b ⊗ₜ[A] m : B ⊗[A] M)) :=
+  (rfl)
 
 @[simp]
 theorem zero_tmul (m : M) : tmul (0 : B) m = (0 : TensorAlong f M) :=
@@ -148,9 +153,15 @@ theorem ext {N : Type*} [AddCommMonoid N] [Module B N] {φ ψ : TensorAlong f M 
 
 variable (f) in
 /-- The basis `1 ⊗ b i` of `B ⊗[A, f] M` extending a basis `b` of `M`. -/
-@[expose] def basis {ι : Type*} (b : Module.Basis ι A M) : Module.Basis ι B (TensorAlong f M) :=
+def basis {ι : Type*} (b : Module.Basis ι A M) : Module.Basis ι B (TensorAlong f M) :=
   letI := f.toAlgebra
   Algebra.TensorProduct.basis B b
+
+/-- `basis f b` is Mathlib's base-changed basis `Algebra.TensorProduct.basis B b` for
+`f.toAlgebra`. -/
+theorem basis_def {ι : Type*} (b : Module.Basis ι A M) :
+    basis f b = (letI := f.toAlgebra; Algebra.TensorProduct.basis B b) :=
+  (rfl)
 
 @[simp]
 theorem basis_apply {ι : Type*} (b : Module.Basis ι A M) (i : ι) :

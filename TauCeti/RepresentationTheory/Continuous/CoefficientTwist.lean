@@ -131,7 +131,7 @@ theorem baseChangeAlong_apply (g : Γ) :
 theorem baseChangeAlong_apply_tmul (g : Γ) (b : B) (m : M) :
     ρ.baseChangeAlong f hf g (TensorAlong.tmul b m) = TensorAlong.tmul b (ρ g m) := by
   let := f.toAlgebra
-  rw [baseChangeAlong_apply]
+  rw [baseChangeAlong_apply, TensorAlong.tmul_def, TensorAlong.tmul_def]
   exact LinearMap.baseChange_tmul (ρ g) b m
 
 /-- **Entrywise formula.** In the base-changed basis, the matrix of the extension of scalars of
@@ -143,7 +143,7 @@ theorem toMatrix_baseChangeAlong_apply {ι : Type*} [Fintype ι] [DecidableEq ι
         (ρ.baseChangeAlong f hf g) =
       (LinearMap.toMatrix b b (ρ g)).map f := by
   let := f.toAlgebra
-  rw [baseChangeAlong_apply]
+  rw [baseChangeAlong_apply, TensorAlong.basis_def]
   exact LinearMap.toMatrix_baseChange B (ρ g) b b
 
 end BaseChangeAlong
@@ -211,6 +211,7 @@ theorem baseChangeAlongCompIso_tmul (c : C) (b : B) (m : M) :
     ρ.baseChangeAlongCompIso f g hf hg (TensorAlong.tmul c (TensorAlong.tmul b m)) =
       TensorAlong.tmul (g b * c) m := by
   along_comp_instances f g hf hg A B C M
+  rw [TensorAlong.tmul_def, TensorAlong.tmul_def, TensorAlong.tmul_def]
   exact ρ.baseChangeTransIso_tmul B C c b m
 
 @[simp]
@@ -218,6 +219,7 @@ theorem baseChangeAlongCompIso_symm_tmul (c : C) (m : M) :
     (ρ.baseChangeAlongCompIso f g hf hg).symm (TensorAlong.tmul c m) =
       TensorAlong.tmul c (TensorAlong.tmul 1 m) := by
   along_comp_instances f g hf hg A B C M
+  rw [TensorAlong.tmul_def, TensorAlong.tmul_def, TensorAlong.tmul_def]
   exact ρ.baseChangeTransIso_symm_tmul B C c m
 
 end CompIso
@@ -239,6 +241,7 @@ def baseChangeAlongOfCharacterIso :
 theorem baseChangeAlongOfCharacterIso_tmul (b : B) (a : A) :
     baseChangeAlongOfCharacterIso f hf χ (TensorAlong.tmul b a) = f a * b := by
   along_instances f hf A B A
+  rw [TensorAlong.tmul_def]
   exact (baseChangeOfCharacterIso_tmul B χ b a).trans (Algebra.smul_def a b)
 
 end OfCharacter
@@ -270,6 +273,7 @@ theorem baseChangeAlongIdIso_tmul (a : A) (m : M) :
     ρ.baseChangeAlongIdIso (TensorAlong.tmul a m) = a • m := by
   let : TopologicalSpace (A ⊗[A] M) := moduleTopology A _
   have : IsModuleTopology A (A ⊗[A] M) := ⟨rfl⟩
+  rw [TensorAlong.tmul_def]
   exact ρ.baseChangeSelfIso_tmul a m
 
 @[simp]
@@ -277,6 +281,7 @@ theorem baseChangeAlongIdIso_symm_apply (m : M) :
     ρ.baseChangeAlongIdIso.symm m = TensorAlong.tmul 1 m := by
   let : TopologicalSpace (A ⊗[A] M) := moduleTopology A _
   have : IsModuleTopology A (A ⊗[A] M) := ⟨rfl⟩
+  rw [TensorAlong.tmul_def]
   exact ρ.baseChangeSelfIso_symm_apply m
 
 end IdIso
@@ -336,6 +341,13 @@ theorem coeffTwistReflIso_symm_apply (m : M) :
 def coeffTwistIsoOfEqRefl (h : σ = RingEquiv.refl A) : Iso (ρ.coeffTwist σ hσ) ρ := by
   subst h
   exact ρ.coeffTwistReflIso
+
+/-- `coeffTwistIsoOfEqRefl` sends `a ⊗ m` to `a • m`. -/
+@[simp]
+theorem coeffTwistIsoOfEqRefl_tmul (h : σ = RingEquiv.refl A) (a : A) (m : M) :
+    ρ.coeffTwistIsoOfEqRefl σ hσ h (TensorAlong.tmul a m) = a • m := by
+  subst h
+  exact ρ.coeffTwistReflIso_tmul a m
 
 /-- **Composition of twists**: twisting by `σ` and then by `τ` is twisting by
 `σ.trans τ = τ ∘ σ`. -/
@@ -443,6 +455,15 @@ def frobTwistZModIso {p : ℕ} [Fact p.Prime] [TopologicalSpace (ZMod p)]
     (ρ : ContinuousRep Γ (ZMod p) M) : Iso (ρ.frobTwist p) ρ :=
   ρ.coeffTwistIsoOfEqRefl _ _ (RingEquiv.ext fun x => by
     simp [ZMod.frobenius_zmod])
+
+/-- `frobTwistZModIso` sends `a ⊗ m` to `a • m`. -/
+@[simp]
+theorem frobTwistZModIso_tmul {p : ℕ} [Fact p.Prime] [TopologicalSpace (ZMod p)]
+    [IsTopologicalSemiring (ZMod p)] {M : Type*} [AddCommMonoid M] [Module (ZMod p) M]
+    [TopologicalSpace M] [IsModuleTopology (ZMod p) M] [Module.Finite (ZMod p) M]
+    (ρ : ContinuousRep Γ (ZMod p) M) (a : ZMod p) (m : M) :
+    ρ.frobTwistZModIso (TensorAlong.tmul a m) = a • m :=
+  ρ.coeffTwistIsoOfEqRefl_tmul _ _ _ a m
 
 /-- **Twisting coefficients is not conjugation**: if some value of a character `χ` is not fixed
 by Frobenius, the character line is not isomorphic to its Frobenius twist, which is the line of
