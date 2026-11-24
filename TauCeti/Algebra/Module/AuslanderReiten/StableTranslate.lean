@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Functor
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
@@ -22,7 +22,7 @@ Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-modul
 * `D` sends projective right modules to injective left modules, so it carries maps through
   projectives to maps through injectives, and descends to a functor from the opposite of right
   modules modulo projectives to left modules modulo injectives (`TauCeti.stableMatlisDualOp`, in
-  `TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable`).
+  `TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Basic`).
 
 Defining `τ` as the composite of these functors makes it a functor without choices beyond the
 presentations defining `Tr`; changing them gives an isomorphic functor. On objects it is the class
