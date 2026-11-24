@@ -38,18 +38,18 @@ variable {K : Type*} [Field K] {ι : Type*}
 theorem coe_tuple_eq_zero_iff {y : ι → 𝓞 K} : (fun i ↦ (y i : K)) = 0 ↔ y = 0 := by
   simp [funext_iff]
 
-variable [NumberField K]
-
-open Module
-
 /-- An algebraic integer that is rational is an integer. -/
-theorem exists_intCast_eq_of_coe_mem_range {y : 𝓞 K}
+theorem exists_intCast_eq_of_coe_mem_range [CharZero K] {y : 𝓞 K}
     (hy : (y : K) ∈ Set.range (algebraMap ℚ K)) : ∃ m : ℤ, (m : 𝓞 K) = y := by
   obtain ⟨q, hq⟩ := hy
   have h : IsIntegral ℤ (algebraMap ℚ K q) := hq ▸ isIntegral_coe y
   have hint : IsIntegral ℤ q := isIntegral_algebraMap_iff.mp h
   obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
   exact ⟨m, ext (by simpa using hq)⟩
+
+variable [NumberField K]
+
+open Module
 
 variable (K) in
 /-- **`1` extends to a `ℤ`-basis of `𝓞 K`.** Since `𝓞 K ∩ ℚ = ℤ`, the quotient `𝓞 K / ℤ` is

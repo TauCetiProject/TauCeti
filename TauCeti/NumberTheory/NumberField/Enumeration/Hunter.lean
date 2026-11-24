@@ -14,6 +14,8 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Localization.NormTrace
 import TauCeti.Analysis.InnerProductSpace.Gram.Projection
+import TauCeti.Data.Int.Round
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 
 /-!
@@ -105,11 +107,7 @@ theorem norm_t2Vector_sq (x : K) : ‖t2Vector K x‖ ^ 2 = ∑ σ : K →+* ℂ
 /-- The real inner product of the `T₂` vectors of `1` and `x` is the trace of `x`. -/
 theorem inner_t2Vector_one (x : K) :
     ⟪t2Vector K 1, t2Vector K x⟫_ℝ = Algebra.trace ℚ K x := by
-  have h := congr(Complex.re $(trace_eq_sum_embeddings ℂ (K := ℚ) (x := x)))
-  rw [Complex.re_sum, ← Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun φ ↦ (φ x).re)
-    (fun σ ↦ (σ x).re) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply], eq_ratCast,
-    Complex.ratCast_re] at h
-  simp [PiLp.inner_apply, h]
+  simp [PiLp.inner_apply, sum_re_embeddings_eq_trace]
 
 /-- The squared norm of the `T₂` vector of `1` is the degree `[K : ℚ]`. -/
 theorem norm_t2Vector_one_sq : ‖t2Vector K 1‖ ^ 2 = finrank ℚ K := by
@@ -163,11 +161,14 @@ theorem det_gram_t2Vector {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis 
       ofReal_inner_t2Vector, Matrix.mul_apply]
     simp only [M, map_apply, transpose_apply, of_apply]
     exact (e.sum_comp fun σ ↦ conj (σ (b i : K)) * σ (b j : K)).symm
+  -- `det (conj M) = conj (det M)` and `conj z * z = ‖z‖ ^ 2`, so `det (conj M) * det M` is
+  -- `‖det M‖ ^ 2 = ‖det M ^ 2‖ = |discr K|`.
+  have hconj : (M.map (starRingEnd ℂ)).det * M.det = ‖M.det ^ 2‖ := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, Complex.conj_mul', norm_pow,
+      Complex.ofReal_pow]
   have hdet := congr_arg det hG
-  rw [← RingHom.map_det, det_mul, det_transpose,
-    show (M.map (starRingEnd ℂ)).det = conj M.det from (RingHom.map_det _ M).symm,
-    Complex.ofRealHom_eq_coe, Complex.conj_mul', ← Complex.ofReal_pow, ← norm_pow, hM,
-    Complex.norm_intCast] at hdet
+  rw [← RingHom.map_det, det_mul, det_transpose, hconj, hM, Complex.norm_intCast,
+    Complex.ofRealHom_eq_coe] at hdet
   exact_mod_cast hdet
 
 variable (K) in
@@ -202,25 +203,9 @@ private theorem sum_norm_sq_eq_norm_projT2_sq_add (x : K) :
 private theorem projT2_intCast (k : ℤ) : projT2 K (k : K) = 0 := by
   have hn : (finrank ℚ K : ℝ) ≠ 0 := by exact_mod_cast finrank_pos.ne'
   have hk : (k : K) = algebraMap ℚ K k := (map_intCast _ k).symm
-  rw [projT2_apply, ← zsmul_one k, map_zsmul, zsmul_one, hk, Algebra.trace_algebraMap,
-    nsmul_eq_mul, Rat.cast_mul, Rat.cast_natCast, Rat.cast_intCast, mul_div_cancel_left₀ _ hn,
-    Int.cast_smul_eq_zsmul, sub_self]
-
-/-- The trace reduction: `s t + k n ∈ [0, n / 2]` for a sign `s` and an integer `k`. -/
-private theorem exists_sign_mul_add_mul_mem (t : ℤ) {n : ℤ} (hn : 0 < n) :
-    ∃ s k : ℤ, (s = 1 ∨ s = -1) ∧ 0 ≤ s * t + k * n ∧ 2 * (s * t + k * n) ≤ n := by
-  have h1 := Int.emod_add_mul_ediv t n
-  have h2 := Int.emod_nonneg t hn.ne'
-  have h3 := Int.emod_lt_of_pos t hn
-  by_cases h : 2 * (t % n) ≤ n
-  · refine ⟨1, -(t / n), Or.inl rfl, ?_⟩
-    have : 1 * t + -(t / n) * n = t % n := by linear_combination -h1
-    rw [this]
-    exact ⟨h2, h⟩
-  · refine ⟨-1, t / n + 1, Or.inr rfl, ?_⟩
-    have : -1 * t + (t / n + 1) * n = n - t % n := by linear_combination h1
-    rw [this]
-    constructor <;> omega
+  have ht : t2Vector K (k : K) = k • t2Vector K 1 := by rw [← map_zsmul, zsmul_one]
+  rw [projT2_apply, ht, hk, Algebra.trace_algebraMap]
+  simp [hn, ← Int.cast_smul_eq_zsmul ℝ]
 
 /-- The Gram matrix of `Q` in the basis `e (inr j)` of `𝓞 K / ℤ` has determinant `|discr K| / n`:
 it is the Schur complement of the corner `n` in the `T₂` Gram matrix of the basis `e`. -/
@@ -251,8 +236,16 @@ private theorem exists_trace_mem_and_norm_projT2_eq (θ₀ : 𝓞 K) :
       Algebra.trace ℚ K (θ : K) ≤ (finrank ℚ K : ℚ) / 2 ∧
       ‖projT2 K (θ : K)‖ = ‖projT2 K (θ₀ : K)‖ ∧
       ((θ : K) ∈ Set.range (algebraMap ℚ K) → (θ₀ : K) ∈ Set.range (algebraMap ℚ K)) := by
-  obtain ⟨s, k, hs, h0, h2⟩ := exists_sign_mul_add_mul_mem (Algebra.trace ℤ (𝓞 K) θ₀)
-    (n := finrank ℚ K) (by exact_mod_cast finrank_pos)
+  -- Take `k₀ n` nearest to `t = Tr θ₀`, then the sign `s` of `t - k₀ n`; set `k = -s k₀`.
+  obtain ⟨s, k, hs, h0, h2⟩ : ∃ s k : ℤ, (s = 1 ∨ s = -1) ∧
+      0 ≤ s * Algebra.trace ℤ (𝓞 K) θ₀ + k * finrank ℚ K ∧
+      2 * (s * Algebra.trace ℤ (𝓞 K) θ₀ + k * finrank ℚ K) ≤ finrank ℚ K := by
+    have hn : (0 : ℤ) < finrank ℚ K := by exact_mod_cast finrank_pos
+    obtain ⟨c, hc⟩ := Int.exists_two_mul_abs_sub_mul_le (Algebra.trace ℤ (𝓞 K) θ₀) hn.ne'
+    rw [abs_of_pos hn] at hc
+    rcases abs_cases (Algebra.trace ℤ (𝓞 K) θ₀ - c * finrank ℚ K) with ⟨h, h'⟩ | ⟨h, h'⟩
+    · exact ⟨1, -c, Or.inl rfl, by linarith, by linarith⟩
+    · exact ⟨-1, c, Or.inr rfl, by linarith, by linarith⟩
   have hcoe : ((s • θ₀ + k : 𝓞 K) : K) = s • (θ₀ : K) + algebraMap ℚ K k := by simp
   have htr : Algebra.trace ℚ K ((s • θ₀ + k : 𝓞 K) : K) =
       ((s * Algebra.trace ℤ (𝓞 K) θ₀ + k * finrank ℚ K : ℤ) : ℚ) := by
