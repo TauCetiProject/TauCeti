@@ -187,7 +187,7 @@ theorem isSubduction (e : DSmoothEquiv X Y) : IsSubduction e where
   dSmooth := e.dSmooth
   locallyLifts {_ p} hp := locallyLifts_iff.mpr fun z _ ↦
     ⟨univ, isOpen_univ, mem_univ z, subset_univ univ, e.symm ∘ p,
-      isPlotOn_of_isPlot (e.symm.dSmooth _ p hp) univ, fun y _ ↦ e.apply_symm_apply (p y)⟩
+      (e.symm.dSmooth _ p hp).isPlotOn univ, fun y _ ↦ e.apply_symm_apply (p y)⟩
 
 /-- Product of two diffeological diffeomorphisms. -/
 def prodCongr (e₁ : DSmoothEquiv X Y) (e₂ : DSmoothEquiv Q R) : DSmoothEquiv (X × Q) (Y × R) :=

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -58,6 +59,11 @@ structures are (`TauCeti.Floer.tames_cappedAlmostComplex`,
   pieces do not depend on the neck length. In the coordinate of `ℂ`, it is the structure for
   `L = 0` read through the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q L`, at
   the center of the end and beyond the neck (`TauCeti.Floer.cappedAlmostComplex_endShift`).
+  For `r ≥ 1`, from the neck onwards, at the point with
+  end coordinates `±(z + L + 4)` where `Re z + L ≥ -2`, it is the negative plane structure
+  `TauCeti.Floer.negativePlaneAlmostComplex` of the end family `t ↦ J_q(±t)` at the point with
+  coordinates `z` of the end at `∞`
+  (`TauCeti.Floer.cappedAlmostComplex_cylindricalEndLift_endSign_mul_add`).
 * It is smooth jointly in `r`, `L`, the point `w ∈ ℂ`, including the poles `0` and `1`, and the
   parameter `x` (`TauCeti.Floer.contMDiff_cappedAlmostComplex`); on a vector space, with fixed
   `r` and `L`, it is `C^n` in the real coordinates of `ℂ` and the target point
@@ -269,6 +275,15 @@ theorem eventually_cocompact_cappedAlmostComplex_eq_base (h₀ : ω.Compatible J
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r hw x
 
+/-- **The structure is `J₀` beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the capped structure is `J₀` outside the disc of radius `2 exp (2π (L₀ + 3))`, which
+contains the truncation `S_{L + 3}`. -/
+theorem cappedAlmostComplex_eq_base_of_lt_norm (h₀ : ω.Compatible J₀) (r : ℝ) {L₀ : ℝ}
+    (hL : L ≤ L₀) {w : ℂ} (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) :
+    cappedAlmostComplex h₀ J hJ r L w x = J₀ :=
+  cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
+
 variable {q : Puncture}
 
 /-- **The structure on an end.** If `J q` has period one in `t`, then on the part `±s > 0` of the
@@ -336,6 +351,43 @@ theorem cappedAlmostComplex_endShift (h₀ : ω.Compatible J₀) (hJp : Function
       q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
     have key := cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJ := hJ) h₀ hJp r hL hw x
     rwa [cylindricalEndLift_add_endSign_mul, q.cylindricalEndLift_endCoord hc] at key
+
+/-- **The PSS plane pieces are negative planes.** If `J q` has period one in `t` and `r ≥ 1`, then
+at the point of the end `q` with end coordinates `±(z + L + 4)`, where `Re z + L ≥ -2`, the capped
+structure is the negative plane structure of the end family `t ↦ J q (±t)` at the point with end
+coordinates `z` of the end at `∞`. Both are the inverse Cayley transform of
+`β(-Re z - 1) • cayley (J q (±Im z) x)`, which does not depend on `L`. -/
+theorem cappedAlmostComplex_cylindricalEndLift_endSign_mul_add (h₀ : ω.Compatible J₀)
+    (hJp : Function.Periodic (J q) 1) (hr : 1 ≤ r) {z : ℂ} (hz : -2 ≤ z.re + L) (x : M) :
+    cappedAlmostComplex h₀ J hJ r L (q.cylindricalEndLift (q.endSign * (z + ↑(L + 4)))) x =
+      negativePlaneAlmostComplex h₀ (fun t ↦ J q (q.endSign * t)) (fun t ↦ hJ q _)
+        (inf.cylindricalEndLift z) x := by
+  have hre : q.endSign * (↑q.endSign * (z + ↑(L + 4))).re = z.re + L + 4 := by
+    simp [← mul_assoc, add_assoc]
+  have him : (↑q.endSign * (z + ↑(L + 4))).im = q.endSign * z.im := by simp
+  refine h₀.eq_of_cayley_eq (tames_cappedAlmostComplex h₀ r L _ x)
+    (tames_negativePlaneAlmostComplex h₀ _ x) ?_
+  -- The translation by `L + 4` turns the neck profile into the transition `β(-Re z - 1)`.
+  have hs : L + 3 - (z.re + L + 4) = -z.re - 1 := by ring
+  rw [cayley_cappedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp r L (by rw [hre]; linarith),
+    hre, him, smoothTransition.one_of_one_le hr, smoothTransition.one_of_one_le (by linarith),
+    one_mul, one_mul, hs]
+  rcases lt_or_ge z.re 0 with hz₀ | hz₀
+  · -- On the end of the plane the negative plane structure is given by the same formula.
+    have hJp' : Function.Periodic (fun t ↦ J q (q.endSign * t)) 1 := by
+      rcases q.endSign_eq_one_or_eq_neg_one with h | h <;> intro t <;> simp only [h]
+      · simpa using hJp t
+      · simpa [mul_add, ← sub_eq_add_neg] using hJp.sub_eq (-t)
+    rw [cayley_negativePlaneAlmostComplex_cylindricalEndLift_of_neg h₀ hJp' hz₀]
+  · -- Near the pole both structures are the base structure.
+    have hn : ‖inf.cylindricalEndLift z‖ ≤ 2 * Real.exp (2 * π) := by
+      rw [cylindricalEndLift_inf, norm_mul, Complex.norm_exp, Complex.norm_ofNat]
+      gcongr
+      simp only [Complex.mul_re, Complex.neg_re, Complex.mul_im, Complex.neg_im,
+        Complex.ofReal_re, Complex.ofReal_im, Complex.re_ofNat, Complex.im_ofNat]
+      nlinarith [Real.pi_pos]
+    rw [negativePlaneAlmostComplex_eq_of_norm_le h₀ hn, AlmostComplexStructure.cayley_self,
+      smoothTransition.zero_of_nonpos (by linarith), zero_smul]
 
 /-- **The structure is the pair-of-pants structure up to the necks.** For `r ≥ 1`, at points where
 the signed longitudinal coordinate of every end is at most `L + 2`, such as the points of the

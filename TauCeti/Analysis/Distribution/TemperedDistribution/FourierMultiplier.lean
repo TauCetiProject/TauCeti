@@ -35,8 +35,11 @@ the starting point of Bernstein's inequalities.
   is the multiplier on Schwartz functions with the reflected symbol, `(T_g u) f = u (T_{g(-·)} f)`.
 * `TemperedDistribution.fourierMultiplierCLM_apply_apply_of_even`: a multiplier with an even
   symbol is the transpose of the multiplier on Schwartz functions, `(T_g u) f = u (T_g f)`.
-* `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
-  Fourier multipliers.
+* `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`,
+  `TemperedDistribution.iteratedLineDerivOp_fourierMultiplierCLM`: directional derivatives and
+  their iterates commute with Fourier multipliers.
+* `TemperedDistribution.fourierMultiplierCLM_fourierInv_delta`: a Fourier multiplier with symbol
+  `g` acts on the plane wave `𝓕⁻ δ_ξ` as multiplication by `g(ξ)`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
@@ -80,8 +83,7 @@ theorem fourierMultiplierCLM_apply_apply_transpose (g : E → ℂ) (u : 𝓢'(E,
   · rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hgt]
   have hgt' : ¬ (fun ξ ↦ g (-ξ)).HasTemperateGrowth := fun h ↦ hgt <| by
     simpa [Function.comp_def] using h.comp (by fun_prop : (fun ξ : E ↦ -ξ).HasTemperateGrowth)
-  simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
-    SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt']
+  simp [hgt, hgt', SchwartzMap.fourierMultiplierCLM_apply]
 
 /-- **Multipliers with even symbols are symmetric.** If the symbol `g` is even, the Fourier
 multiplier `T_g` on tempered distributions is the transpose of the one on Schwartz functions:
@@ -106,6 +108,24 @@ theorem lineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGro
   rw [lineDeriv_eq_fourierMultiplierCLM, lineDeriv_eq_fourierMultiplierCLM, map_smul,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hg hinner,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hinner hg, mul_comm g]
+
+/-- Iterated directional derivatives commute with Fourier multipliers of temperate growth. -/
+theorem iteratedLineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) {k : ℕ}
+    (m : Fin k → E) (u : 𝓢'(E, F)) :
+    ∂^{m} (fourierMultiplierCLM F g u) = fourierMultiplierCLM F g (∂^{m} u) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, ih, lineDerivOp_fourierMultiplierCLM hg,
+      LineDeriv.iteratedLineDerivOp_succ_left]
+
+omit [NormedAddCommGroup F] [NormedSpace ℂ F] in
+/-- **Fourier multipliers act on plane waves by their symbol.** The Fourier multiplier with symbol
+`g` of temperate growth multiplies the plane wave `𝓕⁻ δ_ξ` by `g ξ`. -/
+theorem fourierMultiplierCLM_fourierInv_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    fourierMultiplierCLM ℂ g (𝓕⁻ (delta ξ)) = g ξ • 𝓕⁻ (delta ξ) := by
+  rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_delta hg,
+    FourierTransform.fourierInv_smul]
 
 /-- **Differentiation does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
 `s`, so does that of `∂_m u`. -/
@@ -142,7 +162,7 @@ theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
       by_cases hξ : ξ ∈ s
       · rw [hgs ξ hξ, zero_smul]
       · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
-    · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+    · simp [hg]
   rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
     h, map_zero]
 

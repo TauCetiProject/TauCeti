@@ -131,8 +131,8 @@ theorem norm_sub_one_eq_one_of_ne_pow {p : ℕ} (hp : p.Prime) (hpK : ‖(p : K)
       exact hn k rfl
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
     have h := hζ.norm_sub_one_pow_totient_prime_pow
-    rw [IsUltrametricDist.norm_natCast_eq_one_of_coprime ((Nat.coprime_primes hq' hp).2 hqp)
-      hpK] at h
+    rw [IsUltrametricDist.norm_natCast_eq_one_of_coprime hpK
+      ((Nat.coprime_primes hp hq').2 hqp.symm)] at h
     exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) (Nat.totient_pos.2 (NeZero.pos _)).ne').1 h
   · exact hζ.norm_sub_one_of_not_isPrimePow (fun h ↦ hn 0 (by simpa using h)) hpow
 

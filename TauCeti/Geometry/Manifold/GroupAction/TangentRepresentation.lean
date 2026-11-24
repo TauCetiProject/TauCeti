@@ -44,6 +44,8 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
   derivatives at `x`.
 * `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
   of `T_x M`.
+* `TauCeti.tangentRepresentationOfMemFixedPoints`: at a point fixed by the whole group, the
+  representation of the whole group on `T_x M`.
 
 ## Main results
 
@@ -155,6 +157,20 @@ theorem mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints
       ∀ g : G, mfderiv I I (fun y : M ↦ g • y) x v = v := by
   rw [mem_invariants_tangentRepresentation_iff]
   exact ⟨fun h g ↦ h g (hx g), fun h g _ ↦ h g⟩
+
+/-- The tangent representation of the whole group `G` on `T_x M` at a point `x` fixed by `G`,
+whose stabilizer is all of `G`: `g` acts by the derivative of `g • ·` at `x`. -/
+noncomputable def tangentRepresentationOfMemFixedPoints (hx : x ∈ fixedPoints G M)
+    (hd : ∀ g : G, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    Representation 𝕜 G (TangentSpace I x) :=
+  (tangentRepresentation fun g _ ↦ hd g).toRepresentation.comp
+    ((MonoidHom.id G).codRestrict (stabilizer G x) hx)
+
+@[simp]
+theorem tangentRepresentationOfMemFixedPoints_apply (hx : x ∈ fixedPoints G M)
+    (hd : ∀ g : G, MDifferentiableAt I I (fun y : M ↦ g • y) x) (g : G) (v : TangentSpace I x) :
+    tangentRepresentationOfMemFixedPoints hx hd g v = mfderiv I I (fun y : M ↦ g • y) x v :=
+  (rfl)
 
 /-- **Conjugation of tangent representations along an orbit.** The derivative at `x` of the action
 of `h` intertwines the tangent representation at `x` with the tangent representation at `h • x`,

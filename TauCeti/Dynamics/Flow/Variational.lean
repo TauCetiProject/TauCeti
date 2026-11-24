@@ -9,6 +9,10 @@ public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
+-- Private: the cutoff of a locally `C¹` field to a globally Lipschitz one, and uniqueness of
+-- solutions, are used only inside the proof of the local variational equation.
+import Mathlib.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 -- Private: parametric integrals, the chain rule and the local-inverse derivative are used only
 -- inside proofs.
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
@@ -45,10 +49,16 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
   time-dependent flow `φ(s, t)` of a jointly `C^(n+1)` field (`TauCeti.timeDependentFlow`) is
   `C^(n+1)` in `(s, t, x)`, and `∂ₜ Dφ(s, t)(x) = Dvₜ(φ(s, t) x) ∘ Dφ(s, t)(x)`.
+* `TauCeti.contDiff_timeDependentFlow_apply`: the time maps of a `C^r` time-dependent field are
+  `C^r`, for every `r : ℕ∞`.
 * `TauCeti.differentiable_timeDependentFlow` and
   `TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`: consequently `Dφ(s, t)(x)` exists and is
   the propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ξ' = Dv_r(φ(s, r) x) ξ`
   along the orbit of `x`, from time `s` to time `t`.
+* `ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt`: the variational equation at the initial
+  time holds for any family of maps of a finite-dimensional space whose curves solve the equation
+  of a field which is `C¹` near the initial point, not only for a global flow. This is the form in
+  which it applies to a maximal flow on a manifold read in a chart.
 -/
 
 public section
@@ -302,6 +312,15 @@ theorem contDiff_timeDependentFlow (n : ℕ)
   funext p
   simp [globalSolution_timeDependentSuspension]
 
+/-- A time-dependent field which is jointly `C^r` has `C^r` time maps, for every `r : ℕ∞`. -/
+theorem contDiff_timeDependentFlow_apply {r : ℕ∞} (hvs : ContDiff ℝ r fun p : ℝ × E ↦ v p.1 p.2)
+    (s t : ℝ) : ContDiff ℝ r (timeDependentFlow v hv s t) := by
+  refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
+  have hι : ContDiff ℝ m fun x : E ↦ ((s, t), x) := contDiff_const.prodMk contDiff_id
+  cases m with
+  | zero => exact contDiff_zero.2 ((continuous_timeDependentFlow v hv).comp hι.continuous)
+  | succ m => exact (contDiff_timeDependentFlow hv m (hvs.of_le (by exact_mod_cast hm))).comp hι
+
 variable (hvs : ContDiff ℝ 1 fun p : ℝ × E ↦ v p.1 p.2)
 include hvs
 
@@ -402,5 +421,76 @@ theorem fderiv_timeDependentFlow_eq_dysonSeriesLeft (s t : ℝ) (x : E) :
   simpa [hself, Function.comp_def, ContinuousLinearMap.mul_def] using h
 
 end TimeDependent
+
+/-! ### Local flows
+
+A maximal flow on a manifold, read in a chart, is defined only near a point and solves the
+equation of a field which is `C¹` only on the chart. Cutting the field off away from the point
+makes it globally Lipschitz without changing it nearby, and by uniqueness of solutions the curves
+of the family near the point are then curves of the global flow of the cut-off field. -/
+
+section Local
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The variational equation of a local flow at its initial time.** Let `ψ u` be maps of a
+finite-dimensional space which are the identity near `z₀` at time `t₀`, depend jointly
+continuously on `(u, z)` at `(t₀, z₀)`, and whose curves `u ↦ ψ u z` solve near `(t₀, z₀)` the
+equation `y' = Y u y` of a time-dependent field `Y` which is jointly `C¹` at `(t₀, z₀)`. Then
+`u ↦ Dψ_u(z₀)` has derivative `DY_{t₀}(z₀)` at `t₀`: only the spatial derivative of the field
+enters. A maximal flow on a manifold read in a chart is such a family. -/
+theorem _root_.ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt {Y ψ : ℝ → E → E} {t₀ : ℝ}
+    {z₀ : E}
+    (hY : ContDiffAt ℝ 1 (fun p : ℝ × E ↦ Y p.1 p.2) (t₀, z₀))
+    (hψc : ContinuousAt (fun p : ℝ × E ↦ ψ p.1 p.2) (t₀, z₀))
+    (hψ₀ : ∀ᶠ z in 𝓝 z₀, ψ t₀ z = z)
+    (hψ : ∀ᶠ p in 𝓝 (t₀, z₀), HasDerivAt (fun u ↦ ψ u p.2) (Y p.1 (ψ p.1 p.2)) p.1) :
+    HasDerivAt (fun u ↦ fderiv ℝ (ψ u) z₀) (fderiv ℝ (Y t₀) z₀) t₀ := by
+  -- A globally Lipschitz `C¹` field `g` agreeing with `Y` near `(t₀, z₀)`.
+  obtain ⟨U, hU, hYU⟩ := hY.contDiffOn le_rfl (by simp)
+  -- The cutoff lemma states its order as `n + 1`, so the order `1` is recast as `0 + 1`.
+  obtain ⟨g, K, hg, hgK, hgY⟩ :=
+    (show ContDiffOn ℝ ((0 : ℕ∞) + 1) (fun p : ℝ × E ↦ Y p.1 p.2) U by simpa using hYU)
+      |>.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hU
+  set w : ℝ → E → E := fun u z ↦ g (u, z)
+  have hw : LipschitzWith K (timeDependentSuspension w) :=
+    lipschitzWith_timeDependentSuspension hgK
+  have hws : ContDiff ℝ 1 fun p : ℝ × E ↦ w p.1 p.2 := by simpa [w] using hg
+  have hwK (u : ℝ) : LipschitzOnWith (K * 1) (w u) univ :=
+    (hgK.comp (LipschitzWith.prodMk_left u)).lipschitzOnWith
+  -- Near `(t₀, z₀)` the curves of `ψ` solve the equation of `w`, since they stay where `g = Y`.
+  have hψz₀ : ψ t₀ z₀ = z₀ := hψ₀.self_of_nhds
+  have hgY' : ∀ᶠ p in 𝓝 (t₀, z₀), g (p.1, ψ p.1 p.2) = Y p.1 (ψ p.1 p.2) := by
+    have hgY₀ : ∀ᶠ q in 𝓝 (t₀, ψ t₀ z₀), g q = Y q.1 q.2 := by rw [hψz₀]; exact hgY
+    exact (continuousAt_fst.prodMk hψc).tendsto.eventually hgY₀
+  rw [nhds_prod_eq] at hψ hgY'
+  obtain ⟨pa, hpa, pb, hpb, hP⟩ := eventually_prod_iff.1 (hψ.and hgY')
+  obtain ⟨ε, hε, hεpa⟩ := Metric.eventually_nhds_iff_ball.1 hpa
+  -- So they are the curves of the global flow of `w` from time `t₀`.
+  have heq : ∀ u ∈ Ioo (t₀ - ε) (t₀ + ε),
+      ψ u =ᶠ[𝓝 z₀] timeDependentFlow w hw t₀ u := fun u hu ↦ by
+    filter_upwards [hpb, hψ₀] with z hz hz₀
+    have hball : Metric.ball t₀ ε = Ioo (t₀ - ε) (t₀ + ε) := Real.ball_eq_Ioo t₀ ε
+    refine ODE_solution_unique_of_mem_Ioo (a := t₀ - ε) (b := t₀ + ε) (t₀ := t₀)
+      (f := fun u ↦ ψ u z) (g := fun u ↦ timeDependentFlow w hw t₀ u z) (s := fun _ ↦ univ)
+      (fun r _ ↦ hwK r)
+      ⟨by linarith, by linarith⟩ (fun r hr ↦ ⟨?_, mem_univ _⟩)
+      (fun r _ ↦ ⟨hasDerivAt_timeDependentFlow w hw t₀ r z, mem_univ _⟩)
+      (by rw [hz₀, timeDependentFlow_self]) hu
+    obtain ⟨hd, hgr⟩ := hP (hεpa r (hball ▸ hr)) hz
+    simpa only [w, hgr] using hd
+  -- The variational equation of the global flow at its initial time.
+  have hflow := hasDerivAt_fderiv_timeDependentFlow hw hws t₀ t₀ z₀
+  have hself : timeDependentFlow w hw t₀ t₀ = id := funext (timeDependentFlow_self w hw t₀)
+  have hslice : w t₀ =ᶠ[𝓝 z₀] Y t₀ :=
+    (continuousAt_const.prodMk continuousAt_id).tendsto.eventually
+      (p := fun q : ℝ × E ↦ g q = Y q.1 q.2) hgY
+  rw [hself, fderiv_id, ContinuousLinearMap.comp_id, id_eq, hslice.fderiv_eq] at hflow
+  refine hflow.congr_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhds (by linarith : t₀ - ε < t₀) (by linarith : t₀ < t₀ + ε)]
+    with u hu
+  exact (heq u hu).fderiv_eq
+
+end Local
 
 end TauCeti
