@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Topology.Instances.NNReal
 
 /-!
 # The modular character: continuity, right translation and inversion
@@ -46,8 +47,6 @@ none of this assumes σ-finiteness.
 
 ## Main statements
 
-* `MonoidHom.eq_one_of_mem_of_isCompact`: a continuous homomorphism to `ℝ≥0` is trivial on every
-  compact subgroup.
 * `TauCeti.le_ker_modularCharacter_of_isCompact` and `TauCeti.center_le_ker_modularCharacter`:
   the modular character is trivial on every compact subgroup and on the centre.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul`: right translation of compactly
@@ -136,21 +135,6 @@ theorem modularCharacter_mul_inv_cancel_right (x y : G) :
     (Measure.modularCharacter (x * y) : ℝ) * (Measure.modularCharacter y⁻¹ : ℝ) =
       Measure.modularCharacter x := by
   rw [map_mul, NNReal.coe_mul, mul_assoc, modularCharacter_mul_inv, mul_one]
-
-/-- A continuous homomorphism `f : G →* ℝ≥0` is trivial on every compact subgroup: its image is
-compact, hence bounded, and a value `≠ 1` would have unbounded powers or unbounded inverse
-powers. -/
-theorem _root_.MonoidHom.eq_one_of_mem_of_isCompact {H : Type*} [Group H] [TopologicalSpace H]
-    (f : H →* ℝ≥0) (hf : Continuous f) {K : Subgroup H} (hK : IsCompact (K : Set H)) {k : H}
-    (hk : k ∈ K) : f k = 1 := by
-  obtain ⟨M, hM⟩ := (hK.image hf).isBounded.bddAbove
-  have hbdd (x : H) (hx : x ∈ K) : ¬ 1 < f x := fun h1 => by
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M h1
-    exact hn.not_ge <| hM ⟨x ^ n, K.pow_mem hx n, map_pow _ _ _⟩
-  have hpos : 0 < f k := pos_iff_ne_zero.mpr ((Group.isUnit k).map f).ne_zero
-  refine le_antisymm (not_lt.mp (hbdd k hk)) (not_lt.mp fun h => hbdd k⁻¹ (K.inv_mem hk) ?_)
-  rw [map_inv]
-  exact one_lt_inv_iff₀.mpr ⟨hpos, h⟩
 
 /-- The modular character is trivial on every compact subgroup
 (`MonoidHom.eq_one_of_mem_of_isCompact`). -/
