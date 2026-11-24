@@ -46,8 +46,8 @@ form on a subgroup containing `-1` vanishes.
 * `TauCeti.IsWeakForm.meromorphicAt_cuspFunction_slash`,
   `TauCeti.isWeakForm_iff_meromorphicAt_cuspFunction`: weak forms are the holomorphic invariant
   functions with meromorphic cusp germs.
-* `TauCeti.eq_zero_of_slash_neg_one_eq`, `TauCeti.IsWeakForm.eq_zero_of_neg_one_mem`: in odd
-  weight, invariance under `-1` forces `f = 0`.
+* `TauCeti.IsWeakForm.eq_zero_of_neg_one_mem`: in odd weight, a weak form on a subgroup containing
+  `-1` vanishes.
 * `TauCeti.isWeakForm_inv_discriminant`, `TauCeti.not_exists_modularForm_coe_eq_inv_discriminant`:
   `Δ⁻¹` is a weak form and not a modular form.
 
@@ -227,19 +227,10 @@ theorem isWeakForm_iff_meromorphicAt_cuspFunction [Γ.FiniteIndex] :
 
 /-! ### Odd weight -/
 
-/-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
-because `f ∣[k] (-1) = -f`. -/
-theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
-  funext τ
-  have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
-    rw [ModularForm.SL_slash_neg k f 1, SlashAction.slash_one, hk.neg_one_zpow, neg_one_smul]
-  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans h) τ
-  simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
-
 /-- In odd weight, a weak form on a subgroup containing `-1` vanishes. -/
 theorem IsWeakForm.eq_zero_of_neg_one_mem (hf : IsWeakForm Γ k f) (hΓ : -1 ∈ Γ) (hk : Odd k) :
     f = 0 :=
-  eq_zero_of_slash_neg_one_eq (hf.slash_eq _ hΓ) hk
+  ModularForm.eq_zero_of_slash_neg_one_eq (hf.slash_eq _ hΓ) hk
 
 /-! ### Modular forms -/
 
