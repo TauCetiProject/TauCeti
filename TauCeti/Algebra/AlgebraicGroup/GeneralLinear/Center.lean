@@ -169,16 +169,16 @@ theorem scalarTorusCenterHom_surjective (A : CommAlgCat.{u} k) :
     Function.Surjective (scalarTorusCenterHom n A) := by
   intro g
   have hgcentral :
-      pointsMulEquiv (R := k) (A := A) n g.1 ∈
+      pointsMulEquiv (R := k) (A := A) n g.val ∈
         Subgroup.center (Matrix.GeneralLinearGroup (Fin n) A) := by
     have hgcenter :
-        g.1 ∈ Subgroup.center
+        g.val ∈ Subgroup.center
           (HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) := by
       apply HopfAlgebra.center_le_center
       rw [← CommHopfAlgCat.centerPointsSubgroup_eq_center]
-      exact g.2
+      exact g.property
     exact (Subgroup.centerCongr (pointsMulEquiv (R := k) (A := A) n)
-      ⟨g.1, hgcenter⟩).2
+      ⟨g.val, hgcenter⟩).property
   rw [Matrix.GeneralLinearGroup.center_eq_range_scalar] at hgcentral
   obtain ⟨a, ha⟩ := hgcentral
   refine ⟨(MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).symm a, ?_⟩

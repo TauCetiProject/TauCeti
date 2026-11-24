@@ -220,7 +220,7 @@ theorem hasPr_iff_forall_exists_comp_eq_id [CompleteSpace M] [IsUltrametricDist 
   let B := {x : M // ‖x‖ ≤ 1}
   let : TopologicalSpace B := ⊥
   have : DiscreteTopology B := ⟨rfl⟩
-  have hb : Memℓp (fun b : B ↦ (b : M)) ⊤ := memℓp_infty ⟨1, by rintro _ ⟨b, rfl⟩; exact b.2⟩
+  have hb : Memℓp (fun b : B ↦ (b : M)) ⊤ := memℓp_infty ⟨1, by rintro _ ⟨b, rfl⟩; exact b.property⟩
   set q : C₀(B, R) →L[R] M := linearCombination R ⟨_, hb⟩
   have hq : Surjective q := fun y ↦ by
     obtain rfl | hy := eq_or_ne y 0

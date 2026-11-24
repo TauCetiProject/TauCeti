@@ -60,7 +60,7 @@ instance : IsEmpty (preprojectiveA2VertexZero ⟶ preprojectiveA2VertexZero) := 
   constructor
   intro e
   have h : zigzagA2Graph.Adj 0 0 := by
-    simpa only [OrientedQuiver.vertexEquiv_symm_vertex] using e.1
+    simpa only [OrientedQuiver.vertexEquiv_symm_vertex] using e.val
   exact (zigzagA2Graph_adj 0 0).mp h (by decide)
 
 instance : IsEmpty (preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero) := by
@@ -68,14 +68,14 @@ instance : IsEmpty (preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero) := b
   intro e
   have h : (1 : Fin 2) < 0 := by
     simpa only [OrientedQuiver.vertexEquiv_symm_vertex,
-      Orientation.mem_ofLinearOrder_iff] using e.2
+      Orientation.mem_ofLinearOrder_iff] using e.property
   omega
 
 instance : IsEmpty (preprojectiveA2VertexOne ⟶ preprojectiveA2VertexOne) := by
   constructor
   intro e
   have h : zigzagA2Graph.Adj 1 1 := by
-    simpa only [OrientedQuiver.vertexEquiv_symm_vertex] using e.1
+    simpa only [OrientedQuiver.vertexEquiv_symm_vertex] using e.val
   exact (zigzagA2Graph_adj 1 1).mp h (by decide)
 
 /-- Finite enumeration of the vertices of the chosen `A₂` orientation. -/
@@ -382,7 +382,7 @@ private theorem a2ShortPath_injective : Function.Injective a2ShortPath := by
   apply Fin.ext
   have hc := congrArg
     (fun x : ShortPath (Symmetrify preprojectiveA2Quiver) 2 =>
-      2 * x.1.2.2.length + (preprojectiveA2DoubledVertexEquiv.symm x.1.1).val) h
+      2 * x.val.2.2.length + (preprojectiveA2DoubledVertexEquiv.symm x.val.1).val) h
   fin_cases i <;> fin_cases j <;>
     simp only [a2ShortPath, preprojectiveA2DoubledVertexEquiv_symm_zero,
       preprojectiveA2DoubledVertexEquiv_symm_one] at hc <;>
@@ -428,7 +428,7 @@ noncomputable def preprojectiveA2Basis :
 
 private theorem preprojectiveA2Basis_apply (i : Fin 4) :
     preprojectiveA2Basis k i =
-      preprojectiveMk k preprojectiveA2Quiver (ofPath (a2ShortPath i).1) := by
+      preprojectiveMk k preprojectiveA2Quiver (ofPath (a2ShortPath i).val) := by
   rw [preprojectiveA2Basis, Module.Basis.map_apply, Module.Basis.reindex_apply,
     Equiv.symm_symm, AlgEquiv.toLinearEquiv_apply]
   apply (preprojectiveAlgebraEquivA2 k).injective

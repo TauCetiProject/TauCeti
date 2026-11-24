@@ -64,7 +64,8 @@ theorem extendToLocalization_eq_zero_iff {v : Valuation A Γ₀} {M : Submonoid 
   refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ map_zero _⟩
   obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective M x
   dsimp only at hx ⊢
-  have hs : v s ≠ 0 := fun h ↦ Ideal.mem_primeCompl_iff.mp (hM s.2) ((mem_supp_iff _ _).mpr h)
+  have hs : v s ≠ 0 := fun h ↦ Ideal.mem_primeCompl_iff.mp (hM s.property)
+      ((mem_supp_iff _ _).mpr h)
   rw [extendToLocalization_mk', mul_eq_zero, inv_eq_zero, or_iff_left hs] at hx
   rw [hv a hx, IsLocalization.mk'_zero]
 

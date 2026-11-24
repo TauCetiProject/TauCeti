@@ -121,11 +121,11 @@ two-form, `H` a jointly `C¹` time-dependent Hamiltonian and `w` a `C²` variati
 `1`-periodic in `t`, whose loop `w (s₀, ·)` has a cap. Then the action of the loops `w (s, ·)` has
 derivative `∫₀¹ σ(∂_t w - X_{H_t}(w), ∂_s w) dt` at `s₀`, with all terms taken at `(s₀, t)`. -/
 theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction (h : σ.IsNondegenerate)
-    (hw : IsWeaklyExact σ.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hw : IsWeaklyExact σ.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w) (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z)
     {s₀ : ℝ} (hcap : ∃ u, IsCap I u fun t ↦ w (s₀, t)) :
-    HasDerivAt (fun s ↦ contractibleLoopAction σ.1 H fun t ↦ w (s, t))
-      (∫ t in 0..1, σ.1 (w (s₀, t))
+    HasDerivAt (fun s ↦ contractibleLoopAction σ.val H fun t ↦ w (s, t))
+      (∫ t in 0..1, σ.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
   simp only [contractibleLoopAction_def]
@@ -160,12 +160,12 @@ variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M}
 /-- Along a `C²` variation through loops of a loop `γ` with a cap, the action of the loops has
 at `s = 0` the derivative given by the first variation formula. -/
 private theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_zero
-    (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.1)
+    (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hcap : ∃ u, IsCap I u γ)
     {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
     (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) (h0 : ∀ t, w (0, t) = γ t) :
-    HasDerivAt (fun s ↦ contractibleLoopAction σ.1 H fun t ↦ w (s, t))
-      (∫ t in 0..1, σ.1 (w (0, t))
+    HasDerivAt (fun s ↦ contractibleLoopAction σ.val H fun t ↦ w (s, t))
+      (∫ t in 0..1, σ.val (w (0, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)]) 0 :=
   h.hasDerivAt_contractibleLoopAction hw hH hwc hper (funext h0 ▸ hcap)
@@ -174,10 +174,10 @@ private theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_
 exact two-form and a jointly `C¹` Hamiltonian, a `C²` loop with a cap which is a `1`-periodic orbit
 of `X_H` is a critical point of the contractible action. -/
 theorem SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical (h : σ.IsNondegenerate)
-    (hw : IsWeaklyExact σ.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hw : IsWeaklyExact σ.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (hcap : ∃ u, IsCap I u γ)
     (horbit : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1) :
-    IsContractibleLoopActionCritical σ.1 H γ where
+    IsContractibleLoopActionCritical σ.val H γ where
   contMDiff := hγ
   apply_add_one := (mem_periodicSolutions.mp horbit).2
   exists_isCap := hcap
@@ -191,8 +191,8 @@ exact two-form on a manifold without boundary modelled on a finite-dimensional s
 jointly `C¹` Hamiltonian, `1`-periodic in time. Then a critical point of the contractible action
 is a `1`-periodic orbit of `X_H`. -/
 theorem IsContractibleLoopActionCritical.mem_periodicSolutions [I.Boundaryless]
-    (hc : IsContractibleLoopActionCritical σ.1 H γ) (h : σ.IsNondegenerate)
-    (hw : IsWeaklyExact σ.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hc : IsContractibleLoopActionCritical σ.val H γ) (h : σ.IsNondegenerate)
+    (hw : IsWeaklyExact σ.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hP : ∀ t, H (t + 1) = H t) :
     γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1 :=
   h.mem_periodicSolutions_of_forall_integral_eq_zero hH hP (n := 2) (by norm_num)
@@ -206,10 +206,10 @@ finite-dimensional space, and `H` a jointly `C¹` Hamiltonian, `1`-periodic in t
 with a cap is a critical point of the contractible action exactly when it is a `1`-periodic orbit
 of `X_H`. -/
 theorem SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical_iff [I.Boundaryless]
-    (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.1)
+    (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hP : ∀ t, H (t + 1) = H t)
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (hcap : ∃ u, IsCap I u γ) :
-    IsContractibleLoopActionCritical σ.1 H γ ↔
+    IsContractibleLoopActionCritical σ.val H γ ↔
       γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1 :=
   ⟨fun hc ↦ hc.mem_periodicSolutions h hw hH hP, h.isContractibleLoopActionCritical hw hH hγ hcap⟩
 

@@ -61,44 +61,45 @@ in the product of its scalar extensions to finitely many finite completions and 
 finitely many real places, for the module topologies on those scalar extensions. -/
 theorem denseRange_one_tmul [FiniteDimensional K V]
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal})
-    [∀ v : S, TopologicalSpace (v.1.FiniteScalarExtension (V := V))]
-    [∀ v : S, IsModuleTopology (v.1.adicCompletion K) (v.1.FiniteScalarExtension (V := V))]
-    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.1)]
-    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.1)] :
+    [∀ v : S, TopologicalSpace (v.val.FiniteScalarExtension (V := V))]
+    [∀ v : S, IsModuleTopology (v.val.adicCompletion K) (v.val.FiniteScalarExtension (V := V))]
+    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.val)]
+    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.val)] :
     DenseRange fun x : V =>
-      ((fun v : S => ((1 : v.1.adicCompletion K) ⊗ₜ[K] x : v.1.FiniteScalarExtension)),
+      ((fun v : S => ((1 : v.val.adicCompletion K) ⊗ₜ[K] x : v.val.FiniteScalarExtension)),
         fun w : T =>
-          letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
-          ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1)) := by
+          letI : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
+          ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.val)) := by
   classical
   let b := Module.finBasis K V
-  let P := (∀ v : S, v.1.adicCompletion K) × ∀ _ : T, ℝ
+  let P := (∀ v : S, v.val.adicCompletion K) × ∀ _ : T, ℝ
   -- Assemble local vectors from their coordinates with respect to `b`.
   let Φ : (Fin (Module.finrank K V) → P) →
-      (∀ v : S, v.1.FiniteScalarExtension (V := V)) × ∀ w : T, RealScalarExtension (V := V) w.1 :=
+      (∀ v : S, v.val.FiniteScalarExtension (V := V)) × ∀ w : T, RealScalarExtension (V := V) w.val
+          :=
     fun c =>
-      (fun v => (b.baseChange (v.1.adicCompletion K)).equivFun.symm fun i => (c i).1 v,
+      (fun v => (b.baseChange (v.val.adicCompletion K)).equivFun.symm fun i => (c i).1 v,
         fun w =>
-          letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
+          letI : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
           (b.baseChange ℝ).equivFun.symm fun i => (c i).2 w)
   have hΦc : Continuous Φ := by
     refine .prodMk (continuous_pi fun v => ?_) (continuous_pi fun w => ?_)
-    · have := IsModuleTopology.toContinuousAdd (v.1.adicCompletion K)
-        (v.1.FiniteScalarExtension (V := V))
+    · have := IsModuleTopology.toContinuousAdd (v.val.adicCompletion K)
+        (v.val.FiniteScalarExtension (V := V))
       exact (IsModuleTopology.continuous_of_linearMap
-        (b.baseChange (v.1.adicCompletion K)).equivFun.symm.toLinearMap).comp
+        (b.baseChange (v.val.adicCompletion K)).equivFun.symm.toLinearMap).comp
         (continuous_pi fun i => ((continuous_apply v).comp continuous_fst).comp
           (continuous_apply i))
-    · let : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
-      have := IsModuleTopology.toContinuousAdd ℝ (RealScalarExtension (V := V) w.1)
+    · let : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
+      have := IsModuleTopology.toContinuousAdd ℝ (RealScalarExtension (V := V) w.val)
       exact (IsModuleTopology.continuous_of_linearMap
         (b.baseChange ℝ).equivFun.symm.toLinearMap).comp
         (continuous_pi fun i => ((continuous_apply w).comp continuous_snd).comp
           (continuous_apply i))
   have hΦs : Function.Surjective Φ := fun y => by
-    refine ⟨fun i => (fun v => (b.baseChange (v.1.adicCompletion K)).equivFun (y.1 v) i,
+    refine ⟨fun i => (fun v => (b.baseChange (v.val.adicCompletion K)).equivFun (y.1 v) i,
       fun w =>
-        letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
+        letI : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
         (b.baseChange ℝ).equivFun (y.2 w) i), ?_⟩
     ext v <;> simp only [Φ, LinearEquiv.symm_apply_apply]
   have hcoord := hΦs.denseRange.comp
@@ -114,7 +115,7 @@ theorem denseRange_one_tmul [FiniteDimensional K V]
     rw [LinearEquiv.eq_symm_apply]
     funext i
     simp [Algebra.smul_def]
-  · let : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
+  · let : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
     simp only [Φ, Pi.map, Function.comp_apply]
     rw [LinearEquiv.eq_symm_apply]
     funext i
@@ -126,19 +127,19 @@ a number field has its localization in every one of these neighbourhoods. The lo
 carry their module topologies. -/
 theorem exists_one_tmul_mem_of_mem_nhds [FiniteDimensional K V]
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal})
-    [∀ v : S, TopologicalSpace (v.1.FiniteScalarExtension (V := V))]
-    [∀ v : S, IsModuleTopology (v.1.adicCompletion K) (v.1.FiniteScalarExtension (V := V))]
-    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.1)]
-    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.1)]
-    {y : ∀ v : S, v.1.FiniteScalarExtension (V := V)}
-    {z : ∀ w : T, RealScalarExtension (V := V) w.1}
-    {N : ∀ v : S, Set (v.1.FiniteScalarExtension (V := V))}
-    {M : ∀ w : T, Set (RealScalarExtension (V := V) w.1)}
+    [∀ v : S, TopologicalSpace (v.val.FiniteScalarExtension (V := V))]
+    [∀ v : S, IsModuleTopology (v.val.adicCompletion K) (v.val.FiniteScalarExtension (V := V))]
+    [∀ w : T, TopologicalSpace (RealScalarExtension (V := V) w.val)]
+    [∀ w : T, IsModuleTopology ℝ (RealScalarExtension (V := V) w.val)]
+    {y : ∀ v : S, v.val.FiniteScalarExtension (V := V)}
+    {z : ∀ w : T, RealScalarExtension (V := V) w.val}
+    {N : ∀ v : S, Set (v.val.FiniteScalarExtension (V := V))}
+    {M : ∀ w : T, Set (RealScalarExtension (V := V) w.val)}
     (hN : ∀ v, N v ∈ 𝓝 (y v)) (hM : ∀ w, M w ∈ 𝓝 (z w)) :
-    ∃ x : V, (∀ v : S, ((1 : v.1.adicCompletion K) ⊗ₜ[K] x : v.1.FiniteScalarExtension) ∈ N v) ∧
+    ∃ x : V, (∀ v : S, ((1 : v.val.adicCompletion K) ⊗ₜ[K] x : v.val.FiniteScalarExtension) ∈ N v) ∧
       ∀ w : T,
-        letI : Algebra K ℝ := (embedding_of_isReal w.1.2).toAlgebra
-        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1) ∈ M w := by
+        letI : Algebra K ℝ := (embedding_of_isReal w.val.property).toAlgebra
+        ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.val) ∈ M w := by
   have hU : (Set.univ.pi N) ×ˢ (Set.univ.pi M) ∈ 𝓝 (y, z) :=
     prod_mem_nhds (set_pi_mem_nhds Set.finite_univ fun v _ => hN v)
       (set_pi_mem_nhds Set.finite_univ fun w _ => hM w)

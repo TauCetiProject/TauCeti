@@ -78,7 +78,7 @@ theorem restrict_addEar_toGraph (o : H.Orientation) (ear : G.Ear H) :
 /-- Every vertex traced by an ear lies on the directed ear, so it is reachable from the ear's
 start and reaches the ear's end. -/
 private theorem nonempty_arrowWalk_of_mem_toGraph (o : H.Orientation) (ear : G.Ear H)
-    (x : ear.add.vertexSet) (hx : x.1 ∈ V(ear.toGraph)) :
+    (x : ear.add.vertexSet) (hx : x.val ∈ V(ear.toGraph)) :
     Nonempty (ArrowWalk (o.addEar ear).Hom
         (Set.inclusion ear.base_le_add.vertexSet_mono ⟨ear.toWalk.1, ear.toWalk_fst_mem⟩) x) ∧
       Nonempty (ArrowWalk (o.addEar ear).Hom x
@@ -93,7 +93,7 @@ private theorem nonempty_arrowWalk_of_mem_toGraph (o : H.Orientation) (ear : G.E
   let directed := (q.mapLe ear.toGraph_le_add).toOriented hqAdd
     (ear.base_le_add.vertexSet_mono ear.toWalk_fst_mem)
   have hxDirected : x ∈ directed.vertices := by
-    have hxSupport : x.1 ∈ directed.vertices.unattach := by
+    have hxSupport : x.val ∈ directed.vertices.unattach := by
       rw [Walk.vertices_toOriented]
       simpa only [Walk.support_mapLe_eq_support, q, Walk.support_transfer,
         Ear.vertexSet_toGraph, Set.mem_ofPred_eq] using hx
@@ -119,9 +119,9 @@ private theorem exists_arrowWalks_base (o : H.Orientation) (ear : G.Ear H)
       Nonempty (ArrowWalk (o.addEar ear).Hom (Set.inclusion ear.base_le_add.vertexSet_mono a) x) ∧
         Nonempty (ArrowWalk (o.addEar ear).Hom x
           (Set.inclusion ear.base_le_add.vertexSet_mono b)) := by
-  have hx : x.1 ∈ V(H) ∪ V(ear.toGraph) := by
+  have hx : x.val ∈ V(H) ∪ V(ear.toGraph) := by
     rw [← ear.vertexSet_add]
-    exact x.2
+    exact x.property
   rcases hx with hx | hx
   · exact ⟨⟨x, hx⟩, ⟨x, hx⟩, ⟨.nil x⟩, ⟨.nil x⟩⟩
   · exact ⟨_, _, nonempty_arrowWalk_of_mem_toGraph o ear x hx⟩
@@ -153,11 +153,11 @@ theorem exists_stronglyConnected_orientation (d : G.EarDecomposition H)
       rw [isVertexStart_iff] at hd
       obtain ⟨x, hx⟩ := hd
       rw [hx]
-      let o := Orientation.ofEdgeEnds (Graph.noEdge {x.1} β)
+      let o := Orientation.ofEdgeEnds (Graph.noEdge {x.val} β)
       refine ⟨o, ?_⟩
       intro a b
-      have ha := a.2
-      have hb := b.2
+      have ha := a.property
+      have hb := b.property
       simp only [vertexSet_noEdge, Set.mem_singleton_iff] at ha hb
       have hab : a = b := Subtype.ext (ha.trans hb.symm)
       subst b

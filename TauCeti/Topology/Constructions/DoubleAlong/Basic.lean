@@ -14,7 +14,9 @@ public import Mathlib.Topology.Constructions.SumProd
 `TauCeti.DoubleAlong A` is the native topological pushout of the inclusion `A ↪ X` with itself.
 The subset need not be open or closed. The two copies have a common continuous retraction, the
 fold, so each copy is embedded even for arbitrary `A`. The swap exchanges the two copies and
-fixes precisely their common image, namely the image of `A`.
+fixes precisely their common image, namely the image of `A`. A homeomorphism carrying `A` onto a
+subset `B` glues to a homeomorphism of the doubles (`TauCeti.DoubleAlong.congr`), which commutes
+with the swaps and the folds.
 
 Closedness of `A` is reserved for the separation and countability results in `Separation`.
 This construction concerns topological spaces: an analytic doubled atlas and an antiholomorphic
@@ -283,6 +285,70 @@ theorem desc_inr {Y : Type v} [TopologicalSpace Y] (f g : C(X, Y))
     congrArg (fun k : C(X ⊕ X, Y) ↦ k (Sum.inr x))
       ((isQuotientMap_quotientMap A).lift_comp
         (⟨Sum.elim f g, f.continuous.sumElim g.continuous⟩ : C(X ⊕ X, Y)) _)
+
+section Congr
+
+variable {A} {Y : Type v} [TopologicalSpace Y] (e : X ≃ₜ Y) {B : Set Y} (h : e '' A = B)
+
+include h in
+/-- The two sheet maps of `DoubleAlong B`, composed with a homeomorphism carrying `A` onto `B`,
+agree on `A`. -/
+private theorem inl_comp_eq_inr_comp (x : A) : inl B (e x) = inr B (e x) :=
+  inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.property⟩
+
+/-- Two copies of a homeomorphism that carries `A` onto `B` glue to a homeomorphism of the
+doubles. -/
+noncomputable def congr : DoubleAlong A ≃ₜ DoubleAlong B where
+  toFun := desc A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h)
+  invFun := desc B ((inl A).comp e.symm) ((inr A).comp e.symm)
+    fun y ↦ inl_coe_eq_inr A ⟨e.symm y, by
+      have hy : (y : Y) ∈ e '' A := by rw [h]; exact y.property
+      obtain ⟨x, hx, hxy⟩ := hy
+      rwa [← hxy, e.symm_apply_apply]⟩
+  left_inv p := by
+    induction p using induction_on <;> simp
+  right_inv p := by
+    induction p using induction_on <;> simp
+  continuous_toFun := ContinuousMap.continuous _
+  continuous_invFun := ContinuousMap.continuous _
+
+@[simp]
+theorem congr_inl (x : X) : congr e h (inl A x) = inl B (e x) :=
+  desc_inl A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h) x
+
+@[simp]
+theorem congr_inr (x : X) : congr e h (inr A x) = inr B (e x) :=
+  desc_inr A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h) x
+
+/-- The inverse of the glued homeomorphism is the glued inverse. -/
+@[simp]
+theorem congr_symm :
+    (congr e h).symm = congr e.symm (by rw [← h]; exact e.symm_image_image A) := by
+  ext p
+  rw [Homeomorph.symm_apply_eq]
+  induction p using induction_on <;> simp
+
+/-- The glued homeomorphism intertwines the two sheet swaps. -/
+@[simp]
+theorem congr_swap (p : DoubleAlong A) : congr e h (swap A p) = swap B (congr e h p) := by
+  induction p using induction_on <;> simp
+
+/-- The glued homeomorphism lies over the homeomorphism of the base. -/
+@[simp]
+theorem fold_congr (p : DoubleAlong A) : fold B (congr e h p) = e (fold A p) := by
+  induction p using induction_on <;> simp
+
+/-- The glued homeomorphism carries the fixed set of the sheet swap onto that of the other
+double. -/
+theorem image_congr_fixed : congr e h '' {p | swap A p = p} = {p | swap B p = p} := by
+  subst h
+  ext p
+  have hp : fold _ p = e (fold A ((congr e rfl).symm p)) := by
+    rw [← fold_congr e rfl, Homeomorph.apply_symm_apply]
+  rw [(congr e rfl).image_eq_preimage_symm, mem_preimage, mem_ofPred_eq, mem_ofPred_eq,
+    swap_eq_self_iff, swap_eq_self_iff, hp, e.injective.mem_set_image]
+
+end Congr
 
 /-- Continuity on the double can be checked on its two sheets, for an arbitrary target space. -/
 theorem continuous_iff {Y : Type v} [TopologicalSpace Y] {f : DoubleAlong A → Y} :

@@ -22,6 +22,8 @@ not construct that orthogonal Lie equivalence.
 
 * `CliffordAlgebra.bivectorExteriorEquivQuadraticLieSubalgebra`: the exterior
   square is linearly equivalent to the quadratic Lie subalgebra.
+* `CliffordAlgebra.finrank_quadraticLieSubalgebra`: over a finite free module of rank `n`, the
+  quadratic elements have rank `n.choose 2`.
 * `CliffordAlgebra.bivectorLieRing` and
   `CliffordAlgebra.bivectorLieAlgebra`: the Lie structures transported to the
   exterior square.
@@ -70,6 +72,12 @@ theorem coe_bivectorExteriorEquivQuadraticLieSubalgebra_symm_apply
   rw [← equivExterior_bivectorExterior Q,
     ← coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- The quadratic elements of a Clifford algebra over a finite free module of rank `n` form a
+module of rank `n.choose 2`, the rank of the second exterior power. -/
+theorem finrank_quadraticLieSubalgebra [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
+    Module.finrank R (quadraticLieSubalgebra Q) = (Module.finrank R M).choose 2 := by
+  rw [← (bivectorExteriorEquivQuadraticLieSubalgebra Q).finrank_eq, exteriorPower.finrank_eq]
 
 /-- The Lie ring structure on the second exterior power transported from the quadratic elements
 through `bivectorExteriorEquivQuadraticLieSubalgebra`. It is explicit in `Q` because the

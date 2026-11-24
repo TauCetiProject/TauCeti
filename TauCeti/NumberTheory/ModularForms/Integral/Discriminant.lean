@@ -94,7 +94,7 @@ theorem span_integralAtCusps_eq_top_of_add_twelve (hΓN : (Γ(N) : Subgroup (GL 
     ext g
     simp only [Submodule.mem_iInf, LinearMap.mem_ker, hφ,
       mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero hΓN]
-    exact ⟨fun h i ↦ h i.1 i.2 i.2.2, fun h γ n hn ↦ h (γ, ⟨n, hn⟩)⟩
+    exact ⟨fun h i ↦ h i.1 i.2 i.2.isLt, fun h γ n hn ↦ h (γ, ⟨n, hn⟩)⟩
   have hspan := iInf_ker_eq_span_inter (fun _ hr _ hv ↦ smul_mem_integralAtCusps hr hv) h φ
     fun i g hg ↦ hφ i g ▸ (mem_integralAtCusps_iff_qExpansion_coeff_mem hΓN).mp hg i.1 i.2
   rw [← hrange] at hspan

@@ -6,12 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
+public import Mathlib.CategoryTheory.EqToHom
 
 /-!
-# Functors from concrete categories
+# Basic lemmas for concrete categories
 
-Functorial composition out of a concrete category can be checked pointwise on the underlying
-functions, even when the morphisms have different presentations.
+Elementwise and pointwise properties of morphisms and functors in a concrete category.
+
+## Main results
+
+* `CategoryTheory.Functor.map_comp_eq_of_apply_eq`: functorial composition out of a concrete
+  category can be checked pointwise on the underlying functions, even when the morphisms have
+  different presentations.
+* `TauCeti.eqToHom_apply_heq`: applying the transport morphism `eqToHom h` along an equality
+  `h : X = Y` of objects in a concrete category preserves elements up to heterogeneous equality.
 -/
 
 public section
@@ -34,3 +42,17 @@ lemma map_comp_eq_of_apply_eq {D : Type u} [Category.{v} D]
   exact congrArg F.map (ConcreteCategory.ext_apply fun x ↦ (comp_apply f g x).trans (hfg x))
 
 end CategoryTheory.Functor
+
+namespace TauCeti
+
+/-- Applying the transport morphism `eqToHom h` along an equality `h : X = Y` of objects in a
+concrete category preserves elements up to heterogeneous equality. -/
+@[simp]
+theorem eqToHom_apply_heq {C : Type*} [Category* C] {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+    {X Y : C} (h : X = Y) (x : ToType X) :
+    (eqToHom h) x ≍ x := by
+  subst h
+  simp
+
+end TauCeti

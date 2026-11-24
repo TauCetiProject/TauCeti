@@ -144,7 +144,7 @@ lemma inl_apply (x : L) : inl c x = ofProd c (x, 0) := (rfl)
 theorem continuous_sectionOfVanishing (S : LieSubalgebra R L)
     (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
     Continuous (sectionOfVanishing c S hc) :=
-  ((inl c).continuous.comp continuous_subtype_val).congr fun x ↦ by simp
+  ((inl c).continuous.comp continuous_subtypeVal).congr fun x ↦ by simp
 
 /-- With discrete coefficient coordinates, the split-preimage equivalence is continuous. -/
 theorem continuous_splitEquivOfVanishing [LieModule.IsTrivial L M]
@@ -157,7 +157,7 @@ theorem continuous_splitEquivOfVanishing [LieModule.IsTrivial L M]
   simp only [Function.comp_def, coe_splitEquivOfVanishing]
   apply continuous_iff.mpr
   simp only [Equiv.symm_apply_apply]
-  exact ⟨continuous_subtype_val.comp continuous_fst,
+  exact ⟨continuous_subtypeVal.comp continuous_fst,
     (IsLocallyConstant.of_discrete e.symm).comp_continuous continuous_snd⟩
 
 /-- The inverse split-preimage equivalence is continuous for any topology on the coefficient
@@ -167,8 +167,8 @@ theorem continuous_splitEquivOfVanishing_symm [LieModule.IsTrivial L M]
     (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
     (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
     Continuous (splitEquivOfVanishing c S e hc).symm := by
-  exact ((((continuous_proj c).comp continuous_subtype_val).subtype_mk _).prodMk
-    (((isLocallyConstant_snd c).comp_continuous continuous_subtype_val).comp e).continuous).congr
+  exact ((((continuous_proj c).comp continuous_subtypeVal).subtype_mk _).prodMk
+    (((isLocallyConstant_snd c).comp_continuous continuous_subtypeVal).comp e).continuous).congr
       fun v ↦ (splitEquivOfVanishing_symm_apply c S e hc v).symm
 
 /-- The section `inl` is a right inverse of the projection. -/
@@ -215,13 +215,13 @@ theorem range_inl_inter_ker_proj :
 instance : DiscreteTopology (proj c).ker := by
   refine discreteTopology_iff_isOpen_singleton.mpr fun v ↦ ?_
   have h : ({v} : Set (proj c).ker) =
-      Subtype.val ⁻¹' ((fun w ↦ ((ofProd c).symm w).2) ⁻¹' {((ofProd c).symm v.1).2}) := by
+      Subtype.val ⁻¹' ((fun w ↦ ((ofProd c).symm w).2) ⁻¹' {((ofProd c).symm v.val).2}) := by
     ext w
     simp only [Set.mem_singleton_iff, Set.mem_preimage]
     refine ⟨fun h ↦ h ▸ rfl, fun h ↦ Subtype.ext ((ofProd c).symm.injective ?_)⟩
-    exact Prod.ext (((mem_ker_proj c).mp w.2).trans ((mem_ker_proj c).mp v.2).symm) h
+    exact Prod.ext (((mem_ker_proj c).mp w.property).trans ((mem_ker_proj c).mp v.property).symm) h
   rw [h]
-  exact ((isLocallyConstant_snd c).isOpen_fiber _).preimage continuous_subtype_val
+  exact ((isLocallyConstant_snd c).isOpen_fiber _).preimage continuous_subtypeVal
 
 /-- The kernel `0 × M` of the projection is closed when the points of `L` are closed. -/
 theorem isClosed_ker_proj [T1Space L] : IsClosed ((proj c).ker : Set (ofTwoCocycle c)) :=

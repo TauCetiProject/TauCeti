@@ -75,7 +75,7 @@ private theorem exists_conj_mem_torus_of_isDiag_star_left_conjugate (g : SU2)
     rw [inv_inv, Submonoid.coe_mul, Submonoid.coe_mul, ← Matrix.star_eq_inv,
       Matrix.specialUnitaryGroup.coe_star]
   have hcmul : (c : ℂ) * star (c : ℂ) = 1 := by
-    rw [Complex.star_def, Complex.mul_conj, Circle.normSq_coe, Complex.ofReal_one]
+    rw [Complex.star_def]; exact Circle.coe_mul_conj c
   rw [hcoe, hu]
   simp only [star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul, hcmul, one_smul]
   exact hdiagG
@@ -85,7 +85,7 @@ Equivalently, every special unitary `2 × 2` matrix is diagonalised by a special
 theorem exists_conj_mem_torus (g : SU2) : ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
   have : IsStarNormal (g : Matrix (Fin 2) (Fin 2) ℂ) :=
     Unitary.coe_isStarNormal
-      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.2⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
+      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.property⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
   obtain ⟨U, hU, d, hd⟩ :=
     Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (g : Matrix (Fin 2) (Fin 2) ℂ)
   exact exists_conj_mem_torus_of_isDiag_star_left_conjugate g (U := ⟨U, hU⟩)

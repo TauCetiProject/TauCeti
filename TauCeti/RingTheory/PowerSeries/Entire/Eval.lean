@@ -145,9 +145,8 @@ theorem IsEntire.evalAt_sub (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
 
 /-- Evaluation commutes with scalar multiplication of entire series. -/
 theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
-    (a • f).evalAt b = a • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt b).const_smul a)
+    (a • f).evalAt b = a • f.evalAt b :=
+  evalAt_smul_of_summable (hf.hasSum_evalAt b).summable a
 
 /-- Evaluation commutes with finite sums of entire series. -/
 theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
@@ -167,9 +166,11 @@ series to a complete normed algebra. -/
 noncomputable def IsEntire.evalAtHom (b : A) : IsEntire.subring R →+* A where
   toFun f := (f : R⟦X⟧).evalAt b
   map_one' := evalAt_one b
-  map_mul' f g := (IsEntire.mem_subring.mp f.2).evalAt_mul (IsEntire.mem_subring.mp g.2) b
+  map_mul' f g := (IsEntire.mem_subring.mp f.property).evalAt_mul
+      (IsEntire.mem_subring.mp g.property) b
   map_zero' := evalAt_zero b
-  map_add' f g := (IsEntire.mem_subring.mp f.2).evalAt_add (IsEntire.mem_subring.mp g.2) b
+  map_add' f g := (IsEntire.mem_subring.mp f.property).evalAt_add
+      (IsEntire.mem_subring.mp g.property) b
 
 /-- The evaluation homomorphism at `b` sends an entire series `f` to `f(b)`. -/
 @[simp]

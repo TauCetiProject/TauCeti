@@ -55,7 +55,7 @@ public section
 
 namespace TauCeti
 
-open Module CliffordAlgebra
+open Module _root_.CliffordAlgebra
 
 universe u
 

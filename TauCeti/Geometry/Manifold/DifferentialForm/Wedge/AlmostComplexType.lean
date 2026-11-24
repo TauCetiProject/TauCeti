@@ -71,7 +71,7 @@ theorem alternatingDerivation_wedgeWith
   Subtype.ext <| funext fun x ↦ by
     simp only [coe_alternatingDerivation, Submodule.coe_add, Pi.add_apply,
       SmoothForm.coe_wedgeWith, RoughForm.wedgeWith_apply']
-    exact (A x).alternatingDerivation_pairedWedge μ μ.continuous₂ (φ.1 x) (ψ.1 x)
+    exact (A x).alternatingDerivation_pairedWedge μ μ.continuous₂ (φ.val x) (ψ.val x)
 
 end ContMDiffSection
 
@@ -174,11 +174,11 @@ def wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ) :
   LinearMap.mk₂ ℂ (fun φ ψ ↦
     ⟨LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (by omega : (p + q) + (r + s) = (p + r) + (q + s))
-        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1),
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.val ψ.val),
       (mem_typeForms _ _ _ _).mpr
-        ((((mem_typeForms _ _ _ _).mp φ.2).wedgeWith
+        ((((mem_typeForms _ _ _ _).mp φ.property).wedgeWith
           (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
-          ((mem_typeForms _ _ _ _).mp ψ.2)).cast _)⟩)
+          ((mem_typeForms _ _ _ _).mp ψ.property)).cast _)⟩)
     (fun _ _ _ ↦ Subtype.ext <| by simp [map_add])
     (fun c φ ψ ↦ Subtype.ext <| by
       simp only [Submodule.coe_smul, SmoothForm.wedgeWith_bilinearRestrictScalars_smul_left]
@@ -198,10 +198,10 @@ regrouping. -/
 theorem coe_wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ)
     (φ : J.typeForms (F := F₁) p q)
     (ψ : J.typeForms (F := F₂) r s) :
-    (J.wedgeWithType μ p q r s φ ψ).1 =
+    (J.wedgeWithType μ p q r s φ ψ).val =
       LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (by omega : (p + q) + (r + s) = (p + r) + (q + s))
-        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1) := (rfl)
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.val ψ.val) := (rfl)
 
 end SmoothAlmostComplexStructure
 

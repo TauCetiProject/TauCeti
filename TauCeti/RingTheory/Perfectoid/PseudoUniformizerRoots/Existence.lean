@@ -133,7 +133,8 @@ theorem exists_pow_dvd_rootPB_zero_sub_and_associated [T0Space R] [IsHuberRing R
     refine isPseudoUniformizer_iff.mpr
       ⟨hϖ₁.isUnit.mul (u.isUnit.map (powerBoundedSubring R).subtype), ?_⟩
     rw [mul_comm]
-    exact (mem_powerBoundedSubring.mp (u : powerBoundedSubring R).2).isTopologicallyNilpotent_mul
+    exact (mem_powerBoundedSubring.mp
+        (u : powerBoundedSubring R).property).isTopologicallyNilpotent_mul
       hϖ₁.isTopologicallyNilpotent
   refine ⟨ofPowerBounded ψ hpu ((Associated.pow_pow ⟨u, hu⟩).dvd_iff_dvd_left.mp hdvd), ?_, ?_⟩
   · rwa [rootPB_ofPowerBounded]

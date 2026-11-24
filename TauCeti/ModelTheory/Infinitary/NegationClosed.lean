@@ -18,9 +18,11 @@ the negation closure of the empty set is empty.
 
 The **negation closure** of a set `S` of formulas is the least negation-closed fragment containing
 it. It contains, for instance, the iterated negations `¬φ`, `¬¬φ`, … of each member `φ` of `S`
-and of its components. Unlike the formation closure, the negation closure adds no atomic formulas,
-so the negation closure of a countable set is countable over every language, however many symbols
-it has.
+and of its components. Unlike the formation closure, the negation closure adds no atomic formulas
+and introduces no new function or relation symbols, so the negation closure of a countable set is
+countable over every language, however many symbols it has. Along any language homomorphism
+`g : L →ᴸ L'`, `NegationClosed` is preserved by both `map g` and `comap g`, and `negationClosure`
+commutes with `map g`; reflecting `NegationClosed` along `map g` requires `g` to be injective.
 
 ## Main definitions
 
@@ -39,6 +41,15 @@ it has.
   the empty fragment.
 * `FirstOrder.Language.Fragment.negationClosure_countable`: over any language, a countable set has
   a countable negation closure.
+* `FirstOrder.Language.Fragment.functionsIn_negationClosure`,
+  `FirstOrder.Language.Fragment.relationsIn_negationClosure`: negation closure adds no occurring
+  symbols.
+* `FirstOrder.Language.Fragment.NegationClosed.comap`,
+  `FirstOrder.Language.Fragment.NegationClosed.map`,
+  `FirstOrder.Language.Fragment.map_negationClosure` and
+  `FirstOrder.Language.Fragment.negationClosed_map_iff`: preservation of `NegationClosed` under
+  `comap` and `map`, commutation of `negationClosure` with `map`, and reflection of
+  `NegationClosed` under injective `map`.
 
 ## References
 
@@ -47,7 +58,7 @@ it has.
 
 public section
 
-universe u v
+universe u v u' v'
 
 namespace FirstOrder
 
@@ -205,7 +216,92 @@ theorem negationClosure_countable {S : Set (Σ n, L.BoundedFormulaω Empty n)} (
     (SetLike.coe_subset_coe.2 ((negationClosure_le_iff (negationClosed_negationLimit S)).2 ?_))
   exact fun p hp => mem_negationLimit.2 ⟨0, hp⟩
 
+/-! ### Occurring symbols and transport along language maps -/
+
+/-- Every symbol-bounded fragment is negation-closed, since negation introduces no symbols. -/
+theorem negationClosed_ofSymbols (F : Set (Σ k, L.Functions k)) (R : Set (Σ k, L.Relations k)) :
+    (ofSymbols F R).NegationClosed :=
+  ⟨fun h => by
+    rw [mem_ofSymbols, BoundedFormulaInf.functionsIn_not, BoundedFormulaInf.relationsIn_not]
+    exact mem_ofSymbols.1 h⟩
+
+/-- Negation closure adds no function symbols: the function symbols of `negationClosure S` are
+exactly those occurring in `S`. -/
+@[simp]
+theorem functionsIn_negationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    (negationClosure S).functionsIn = ⋃ s ∈ S, s.2.functionsIn := by
+  refine Set.Subset.antisymm ?_
+    (functionsIn_generated S ▸ functionsIn_mono (generated_le_negationClosure S))
+  exact (le_ofSymbols_iff.1 ((negationClosure_le_iff (negationClosed_ofSymbols _ _)).2
+    fun s hs => mem_ofSymbols.2 ⟨fun _ hs' => Set.mem_iUnion₂.2 ⟨s, hs, hs'⟩,
+      fun _ hs' => Set.mem_iUnion₂.2 ⟨s, hs, hs'⟩⟩)).1
+
+/-- Negation closure adds no relation symbols: the relation symbols of `negationClosure S` are
+exactly those occurring in `S`. -/
+@[simp]
+theorem relationsIn_negationClosure (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    (negationClosure S).relationsIn = ⋃ s ∈ S, s.2.relationsIn := by
+  refine Set.Subset.antisymm ?_
+    (relationsIn_generated S ▸ relationsIn_mono (generated_le_negationClosure S))
+  exact (le_ofSymbols_iff.1 ((negationClosure_le_iff (negationClosed_ofSymbols _ _)).2
+    fun s hs => mem_ofSymbols.2 ⟨fun _ hs' => Set.mem_iUnion₂.2 ⟨s, hs, hs'⟩,
+      fun _ hs' => Set.mem_iUnion₂.2 ⟨s, hs, hs'⟩⟩)).2
+
+section LanguageMap
+
+variable {L' : Language.{u', v'}}
+
+/-- Pulling back a negation-closed fragment along any language homomorphism gives a negation-closed
+fragment. -/
+theorem NegationClosed.comap {B : Fragment L'} (hB : B.NegationClosed) (g : L →ᴸ L') :
+    (B.comap g).NegationClosed :=
+  ⟨fun h => by
+    rw [mem_comap, LHom.onBoundedFormulaInf_not]
+    exact hB.not_mem (mem_comap.1 h)⟩
+
+/-- Mapping a negation-closed fragment along any language homomorphism gives a negation-closed
+fragment. No injectivity of `g` is needed. -/
+theorem NegationClosed.map {A : Fragment L} (hA : A.NegationClosed) (g : L →ᴸ L') :
+    (A.map g).NegationClosed :=
+  ⟨fun h => by
+    obtain ⟨φ, hφ, hψ⟩ := mem_map.1 h
+    exact mem_map.2 ⟨φ.not, hA.not_mem hφ, by rw [LHom.onBoundedFormulaInf_not, hψ]⟩⟩
+
+/-- Along an injective language map, `A.map g` is negation-closed exactly when `A` is. -/
+theorem negationClosed_map_iff {g : L →ᴸ L'} (hg : g.Injective) {A : Fragment L} :
+    (A.map g).NegationClosed ↔ A.NegationClosed :=
+  ⟨fun h => by
+    rw [← comap_map_of_injective hg A]
+    exact h.comap g, fun h => h.map g⟩
+
+/-- **Mapping commutes with negation closure**, along any language homomorphism. -/
+theorem map_negationClosure (g : L →ᴸ L') (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    (negationClosure S).map g =
+      negationClosure ((fun p : Σ n, L.BoundedFormulaω Empty n =>
+        (⟨p.1, g.onBoundedFormulaInf p.2⟩ : Σ n, L'.BoundedFormulaω Empty n)) '' S) := by
+  refine le_antisymm ?_ ((negationClosure_le_iff ((negationClosed_negationClosure S).map g)).2 ?_)
+  · rw [map_le_iff_le_comap, negationClosure_le_iff ((negationClosed_negationClosure _).comap g)]
+    exact fun p hp => mem_comap.2 (subset_negationClosure _ ⟨p, hp, rfl⟩)
+  · rintro _ ⟨⟨n, φ⟩, hp, rfl⟩
+    exact onBoundedFormulaInf_mem_map g (subset_negationClosure S hp)
+
+end LanguageMap
+
 end Fragment
+
+namespace LEquiv
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}}
+
+/-- Mapping along a language equivalence preserves and reflects negation closure. -/
+@[simp]
+theorem negationClosed_map_iff (e : L ≃ᴸ L') {A : Fragment L} :
+    (A.map e.toLHom).NegationClosed ↔ A.NegationClosed :=
+  ⟨fun h => by
+    simpa only [Fragment.map_map, e.left_inv, Fragment.map_id] using h.map e.invLHom,
+    fun h => h.map e.toLHom⟩
+
+end LEquiv
 
 end Language
 

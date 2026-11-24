@@ -127,21 +127,21 @@ def rootSubgroupClosedSubgroup (k : Fin 4 ⊕ Fin 4) : ClosedSubgroupScheme grou
 /-- The closed subgroup is represented by the numbered root-subgroup morphism. -/
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (k : Fin 4 ⊕ Fin 4) :
-    (rootSubgroupClosedSubgroup k).1 =
+    (rootSubgroupClosedSubgroup k).val =
       letI := mono_rootSubgroup k
       Subobject.mk (rootSubgroup k) :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- Each closed root subgroup is canonically isomorphic to the additive group scheme over `ℤ`. -/
 def rootSubgroupClosedSubgroupIso (k : Fin 4 ⊕ Fin 4) :
-    ((rootSubgroupClosedSubgroup k).1 : Grp (Over (Spec (CommRingCat.of ℤ)))) ≅
+    ((rootSubgroupClosedSubgroup k).val : Grp (Over (Spec (CommRingCat.of ℤ)))) ≅
       AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (rootSubgroup k)
 
 /-- The parametrization of the closed image followed by its inclusion recovers the root map. -/
 @[simp]
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 4 ⊕ Fin 4) :
-    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
+    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).val.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
 

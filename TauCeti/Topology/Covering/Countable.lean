@@ -46,34 +46,13 @@ a covering map with connected total space over a second-countable space is secon
 theorem _root_.IsCoveringMap.secondCountableTopology [SecondCountableTopology X]
     [PreconnectedSpace E] (hp : IsCoveringMap p) : SecondCountableTopology E := by
   choose U hxU hU S hSo hSi _ _ hSd hSU using fun x ↦ (hp x).exists_sheets
-  obtain ⟨T, hTc, hTcover⟩ := isOpen_iUnion_countable U hU
-  have := hTc.to_subtype
-  let V : (Σ x : T, p ⁻¹' {(x : X)}) → Set E := fun a ↦ S a.1 a.2
-  have hVo (a) : IsOpen (V a) := hSo a.1 a.2
-  have hVsc (a) : SecondCountableTopology (V a) := by
-    have hlocal := hp.isLocalHomeomorph.comp (hVo a).isOpenEmbedding_subtypeVal.isLocalHomeomorph
-    have hemb := hlocal.isOpenEmbedding_of_injective
-      (fun e e' h ↦ Subtype.ext (hSi a.1 a.2 e.property e'.property h))
-    exact hemb.isEmbedding.secondCountableTopology
-  refine secondCountableTopology_of_isOpen_cover V hVo ?_ hVsc fun a ↦ ?_
-  · refine eq_univ_of_forall fun e ↦ ?_
-    have hx : p e ∈ ⋃ i ∈ T, U i := hTcover ▸ mem_iUnion.mpr ⟨p e, hxU (p e)⟩
-    obtain ⟨x, hxT, hex⟩ := mem_iUnion₂.mp hx
-    obtain ⟨j, hj⟩ := mem_iUnion.mp (hSU x ▸ hex : e ∈ ⋃ j, S x j)
-    exact mem_iUnion.mpr ⟨⟨⟨x, hxT⟩, j⟩, hj⟩
-  · have hsub : {b | (V a ∩ V b).Nonempty} ⊆
-        ⋃ y : T, Sigma.mk y '' {j | (V a ∩ S y j).Nonempty} := by
-      rintro ⟨y, j⟩ hb
-      exact mem_iUnion.mpr ⟨y, j, hb, rfl⟩
-    refine Countable.mono hsub (countable_iUnion fun y ↦ Countable.image ?_ _)
-    have := (hVsc a).to_separableSpace
-    have hcount := Set.PairwiseDisjoint.countable_of_isOpen
-      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S y j)
-      (a := {j | (V a ∩ S y j).Nonempty})
-      (fun i _ j _ hij ↦ ((hSd y hij).preimage _))
-      (fun j _ ↦ (hSo y j).preimage continuous_subtype_val)
-      (fun j ⟨e, he, he'⟩ ↦ ⟨⟨e, he⟩, he'⟩)
-    exact hcount
+  refine secondCountableTopology_of_preimage_isOpen_cover p U hU
+    (range_subset_iff.mpr fun e ↦ mem_iUnion.mpr ⟨p e, hxU (p e)⟩) S hSo (fun x j ↦ ?_) hSd
+    (fun x ↦ (hSU x).subset)
+  have hlocal := hp.isLocalHomeomorph.comp (hSo x j).isOpenEmbedding_subtypeVal.isLocalHomeomorph
+  have hemb := hlocal.isOpenEmbedding_of_injective
+    (fun e e' h ↦ Subtype.ext (hSi x j e.property e'.property h))
+  exact hemb.isEmbedding.secondCountableTopology
 
 /-- The fibres of a covering map with connected total space over a second-countable space are
 countable. -/

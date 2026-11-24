@@ -17,8 +17,9 @@ character `χ : G →* kˣ`. It acts on the one-dimensional `k`-module `k` by sc
 This file packages that action as `Representation.ofLinearCharacter χ`, bundles it as an object
 `FDRep.ofLinearCharacter χ` of `FDRep k G`, and records the facts every consumer of a linear
 character needs: over a field its character is `χ` and it is simple; over a commutative ring it
-has rank one. Restriction along a homomorphism pulls `χ` back, and two of these representations
-are isomorphic exactly when the two characters are equal.
+has rank one and `g` acts with characteristic polynomial `X - χ g`. Restriction along a
+homomorphism pulls `χ` back, and two of these representations are isomorphic exactly when the two
+characters are equal.
 
 The construction is the common core of the linear characters of the Borel subgroup and of
 `GL₂`; keeping it here avoids separate scalar-action implementations for each group. It is also
@@ -42,10 +43,15 @@ representation, and its irreducibility is what the Mackey criterion decides.
   representation.
 * `Representation.char_ofLinearCharacter` and `FDRep.char_ofLinearCharacter`: the trace character
   is the original character, coerced into the coefficient field.
+* `Representation.charpoly_ofLinearCharacter_apply`: over a commutative ring, `g` acts with
+  characteristic polynomial `X - χ g`.
 * `Representation.isIrreducible_ofLinearCharacter`: a line has no room for a proper nonzero
   subrepresentation.
 * `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
   representation is the line of `χ` exactly when each `g` acts by the scalar `χ g`.
+* `Representation.stabilizer_ofLinearCharacter_one` and
+  `Representation.ker_le_stabilizer_ofLinearCharacter`: the stabilizer of `1` is the kernel of
+  `χ`, which fixes every vector.
 * `FDRep.ofLinearCharacter_def`: the bundled representation is the unbundled one, bundled.
 * `FDRep.finrank_ofLinearCharacter`: it is a line.
 * `FDRep.simple_ofLinearCharacter`: it is a simple object of `FDRep k G`, being a line.
@@ -126,6 +132,14 @@ theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
     simp [mul_comm]
   rw [h, LinearMap.trace_smulRight, LinearMap.id_apply]
 
+/-- **The characteristic polynomial of a one-dimensional representation.** The element `g` acts
+on the line `k` with characteristic polynomial `X - χ g`. -/
+@[simp]
+theorem charpoly_ofLinearCharacter_apply [CommRing k] [Monoid G] (χ : G →* kˣ) (g : G) :
+    (ofLinearCharacter χ g).charpoly = Polynomial.X - Polynomial.C (χ g : k) := by
+  rw [← LinearMap.charpoly_toMatrix _ (Module.Basis.singleton Unit k)]
+  simp [Matrix.charpoly, Matrix.det_unique, LinearMap.toMatrix_apply]
+
 /-- A one-dimensional representation is irreducible, having no room for a proper nonzero
 subrepresentation. -/
 instance isIrreducible_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) :
@@ -150,6 +164,24 @@ theorem IsIrreducible.nonempty_equiv_ofLinearCharacter_iff [Field k] [Monoid G] 
       simpa [h, mul_smul] using smul_comm (χ g : k) c v
   have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
   exact ⟨(f.ofBijective ((IsIrreducible.bijective_or_eq_zero f).resolve_right hf)).symm⟩
+
+section Stabilizer
+
+variable [CommSemiring k] [Group G]
+
+/-- The stabilizer of `1` in the representation of a linear character `χ` is the kernel of `χ`. -/
+@[simp]
+theorem stabilizer_ofLinearCharacter_one (χ : G →* kˣ) :
+    (ofLinearCharacter χ).stabilizer 1 = χ.ker := by
+  ext g
+  simp [mem_stabilizer, Units.val_eq_one]
+
+/-- The kernel of a linear character `χ` fixes every vector of its representation. -/
+theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* kˣ) (x : k) :
+    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := by
+  simpa using (ofLinearCharacter χ).le_stabilizer_smul x 1
+
+end Stabilizer
 
 end Representation
 

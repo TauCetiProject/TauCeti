@@ -10,12 +10,16 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Continuous
 
 /-!
-# Comparing right derivatives of convex functions
+# Derivatives and convexity on intervals
 
 For real convex functions on a set `I`, inequalities between slopes on adjacent intervals imply
 inequalities between their right derivatives at interior points. If the slopes interlace in
 both directions, the difference of the functions is constant on the interior of `I`. These
 results support uniqueness up to an additive constant when derivatives agree only on a dense set.
+
+A real function whose third derivative is positive on `(a, b)` and whose second derivative is
+continuous on `[a, b]` and nonnegative at `a` is strictly convex on `[a, b]`, since its second
+derivative increases from a nonnegative value.
 
 ## Main statements
 
@@ -23,6 +27,13 @@ results support uniqueness up to an additive constant when derivatives agree onl
   adjacent-slope inequalities.
 * `ConvexOn.sub_eq_sub_of_slope_le` proves constancy of the difference when the slopes
   interlace.
+* `ConvexOn.add_rightDeriv_mul_sub_le`: the tangent line with the right derivative as slope lies
+  below a convex function.
+* `ConvexOn.exists_mul_sub_le_max_zero`: a supporting line with nonnegative slope and
+  nonpositive intercept to the positive part of a convex function `Φ` on `[0, ∞)` with
+  `Φ 0 ≤ 0`.
+* `TauCeti.strictConvexOn_Icc_of_deriv3_pos`: strict convexity on `[a, b]` from a positive third
+  derivative and a nonnegative second derivative at `a`.
 
 ## References
 
@@ -83,4 +94,54 @@ theorem sub_eq_sub_of_slope_le (hφ : ConvexOn ℝ I φ) (hψ : ConvexOn ℝ I �
     (hψ.rightDeriv_le_rightDeriv_of_slope_le hφ hx (h₂ x · · hxI)), sub_self] at hd
   exact hasDerivWithinAt_Ioi_iff_Ici.1 hd
 
+/-- **The tangent line of a convex function.** At an interior point `x` of `I`, the line through
+`(x, φ x)` whose slope is the right derivative of `φ` at `x` lies below `φ` on all of `I`. -/
+theorem add_rightDeriv_mul_sub_le (hφ : ConvexOn ℝ I φ) {x y : ℝ} (hx : x ∈ interior I)
+    (hy : y ∈ I) : φ x + derivWithin φ (Ioi x) x * (y - x) ≤ φ y := by
+  rcases lt_trichotomy x y with hxy | rfl | hyx
+  · have h := hφ.rightDeriv_le_slope_of_mem_interior hx hy hxy
+    rw [slope_def_field, le_div_iff₀ (sub_pos.2 hxy)] at h
+    linarith
+  · simp
+  · have hslope := hφ.slope_le_leftDeriv_of_mem_interior hy hx hyx
+    rw [slope_def_field, div_le_iff₀ (sub_pos.2 hyx)] at hslope
+    have hderiv := mul_le_mul_of_nonneg_right (hφ.leftDeriv_le_rightDeriv_of_mem_interior hx)
+      (sub_pos.2 hyx).le
+    linarith
+
+/-- **A supporting line to the positive part.** If `Φ` is convex on `[0, ∞)` with `Φ 0 ≤ 0`, then
+at every `c > 0` the positive part `max (Φ ·) 0` has a supporting line `s ↦ k * s - d` with slope
+`k ≥ 0` and intercept `-d ≤ 0`: it lies below `max (Φ ·) 0` on `[0, ∞)` and touches it at `c`. -/
+theorem exists_mul_sub_le_max_zero {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0)
+    {c : ℝ} (hc : 0 < c) :
+    ∃ k d : ℝ, 0 ≤ k ∧ 0 ≤ d ∧ (∀ s, 0 ≤ s → k * s ≤ max (Φ s) 0 + d) ∧
+      max (Φ c) 0 + d = k * c := by
+  set Ψ : ℝ → ℝ := fun s ↦ max (Φ s) 0
+  have hΨ : ConvexOn ℝ (Ici 0) Ψ := hΦ.sup (convexOn_const 0 (convex_Ici 0))
+  have hc' : c ∈ interior (Ici (0 : ℝ)) := by rwa [interior_Ici]
+  set k := derivWithin Ψ (Ioi c) c
+  have htan (s : ℝ) (hs : 0 ≤ s) : Ψ c + k * (s - c) ≤ Ψ s := hΨ.add_rightDeriv_mul_sub_le hc' hs
+  -- The tangent line passes below the origin, where `Ψ` vanishes, so its slope is nonnegative.
+  have hd : 0 ≤ k * c - Ψ c := by linarith [htan 0 le_rfl, show Ψ 0 = 0 from max_eq_right hΦ0]
+  have hk : 0 ≤ k := nonneg_of_mul_nonneg_left (by linarith [le_max_right (Φ c) 0]) hc
+  exact ⟨k, k * c - Ψ c, hk, hd, fun s hs ↦ by linarith [htan s hs], by ring⟩
+
 end ConvexOn
+
+namespace TauCeti
+
+/-- A function whose second derivative is continuous on `[a, b]` and nonnegative at `a`, and whose
+third derivative is positive on `(a, b)`, is strictly convex on `[a, b]`. -/
+theorem strictConvexOn_Icc_of_deriv3_pos {g : ℝ → ℝ} {a b : ℝ} (hc : ContinuousOn g (Icc a b))
+    (h2 : 0 ≤ deriv^[2] g a) (hc2 : ContinuousOn (deriv^[2] g) (Icc a b))
+    (h3 : ∀ x ∈ Ioo a b, 0 < deriv^[3] g x) : StrictConvexOn ℝ (Icc a b) g := by
+  have hmono : StrictMonoOn (deriv^[2] g) (Icc a b) := by
+    refine strictMonoOn_of_deriv_pos (convex_Icc _ _) hc2 fun y hy => ?_
+    rw [interior_Icc] at hy
+    rw [← Function.iterate_succ_apply' deriv]
+    exact h3 y hy
+  refine strictConvexOn_of_deriv2_pos (convex_Icc _ _) hc fun y hy => ?_
+  rw [interior_Icc] at hy
+  exact h2.trans_lt (hmono (left_mem_Icc.2 (hy.1.trans hy.2).le) (Ioo_subset_Icc_self hy) hy.1)
+
+end TauCeti
