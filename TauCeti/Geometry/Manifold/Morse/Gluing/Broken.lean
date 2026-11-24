@@ -591,7 +591,7 @@ private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdapted
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) hlocq hφZ hZ φ.mem_source hqφZ hqZ hq htr
-  obtain ⟨η, hη, K, k, hk, hk₀, hkpts⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
+  obtain ⟨η, hη, K, k, hk, hk₀, hkpts, -⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
     (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (by simp [hχ₀, φ.apply_self])
     (hχs.mono fun _ hz ↦ hz.2)
   refine ⟨η, hη, K, k, hk, hk₀, fun u hu ↦ ?_⟩
