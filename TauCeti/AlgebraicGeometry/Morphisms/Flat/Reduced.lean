@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 
 /-!
 # Descent of reducedness along a flat morphism
@@ -29,13 +30,9 @@ universe u
 theorem isReduced_stalk_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
     (x : X) [_root_.IsReduced (X.presheaf.stalk x)] :
     _root_.IsReduced (Y.presheaf.stalk (f x)) := by
-  have := Flat.stalkMap f x
   algebraize [(f.stalkMap x).hom]
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) := by
-    rw [RingHom.algebraMap_toAlgebra]
-    infer_instance
   have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
-    Module.FaithfullyFlat.of_flat_of_isLocalHom
+    f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
   exact isReduced_of_injective (algebraMap _ (X.presheaf.stalk x))
     (FaithfulSMul.algebraMap_injective _ _)
 

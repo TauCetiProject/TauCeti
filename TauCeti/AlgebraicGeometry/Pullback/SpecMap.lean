@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.AlgebraicGeometry.PullbackCarrier
+import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
@@ -29,6 +31,9 @@ Compatible affine charts on any pullback square give an affine tensor-product ch
 product (`exists_isOpenImmersion_spec_tensorProduct_of_isPullback`) and pointwise lifts of primes
 with contracted-prime identification (`exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback`).
 
+Extension of coefficients `R[X] → S[X]` along an `R`-algebra `S` is a pushout of commutative
+rings, so `Spec S[X]` is the base change `Spec R[X] ×_{Spec R} Spec S` of the affine line.
+
 A split scheme `Spec (ι → L)` stays split after base change to a commutative `L`-algebra `F`,
 with model `Spec (ι → F)` and compatibility with both pullback projections.
 
@@ -43,6 +48,8 @@ with model `Spec (ι → F)` and compatibility with both pullback projections.
   with explicit projections and range.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback`: pointwise
   affine chart extraction on a pullback square with projected prime identification.
+* `TauCeti.AlgebraicGeometry.isPullback_SpecMap_polynomial`: `Spec S[X]` is the base change of
+  `Spec R[X]` along `Spec S ⟶ Spec R`.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 * `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
@@ -150,6 +157,26 @@ theorem exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback
   refine ⟨ι, hι, q, Spec.map φR q, rfl, h₁, h₂,
     by simpa only [Scheme.Hom.comp_apply] using congrArg (fun k : _ ⟶ X ↦ k q) h₂,
     (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φR q)).trans (PrimeSpectrum.comap_asIdeal _ q)⟩
+
+section Polynomial
+
+open scoped Polynomial
+
+/-- **Base change of the affine line**: for an `R`-algebra `S`, the square formed by extension of
+coefficients `Spec S[X] ⟶ Spec R[X]`, the structure morphisms and `Spec S ⟶ Spec R` is a
+pullback, that is, `Spec S[X] = Spec R[X] ×_{Spec R} Spec S`. -/
+lemma isPullback_SpecMap_polynomial (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] :
+    IsPullback (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom (algebraMap R S))))
+      (Spec.map (CommRingCat.ofHom (algebraMap S S[X])))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R[X])))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
+  -- `R[X] → S[X]` is the algebra map of the non-instance `Polynomial.algebra`, which makes
+  -- `R[X] ⊗[R] S = S[X]` a pushout of commutative rings.
+  let := Polynomial.algebra R S
+  exact isPullback_SpecMap_of_isPushout _ _ _ _
+    (CommRingCat.isPushout_of_isPushout R S R[X] S[X]).flip
+
+end Polynomial
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/

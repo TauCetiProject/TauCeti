@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Chord
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Inequalities for the error functions
