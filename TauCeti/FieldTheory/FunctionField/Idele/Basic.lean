@@ -11,6 +11,8 @@ public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Diagonal
 
+import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Kernel
+
 /-!
 # The idele group of an algebraic function field
 
@@ -241,10 +243,9 @@ theorem divisor_mulSingle [DecidableEq (Place k F)] (P : Place k F) (u : P.Compl
 
 /-- **The kernel of the divisor map** is the group of unit ideles. -/
 theorem divisor_eq_zero_iff {x : IdeleGroup k F} : divisor x = 0 ↔ x ∈ unitIdeles k F := by
-  rw [mem_unitIdeles_iff_ord_eq_zero]
-  refine ⟨fun h P ↦ ?_, fun h ↦ WeilDivisor.ext fun P ↦ ?_⟩
-  · rw [← coeff_divisor, h, WeilDivisor.coeff_zero]
-  · rw [coeff_divisor, h P, WeilDivisor.coeff_zero]
+  rw [mem_unitIdeles_iff_ord_eq_zero, ← divisorHom_ofMul, divisorHom, ← AddMonoidHom.mem_ker]
+  simpa only [orderSystem_ord] using
+    (orderSystem k F).mem_principalKernel_iff_forall_ord_eq_zero (g := Additive.ofMul x)
 
 /-- **The divisor map is surjective**: every divisor is the divisor of an idele, built from local
 elements of prescribed order at finitely many places. -/
