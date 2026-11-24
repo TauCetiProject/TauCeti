@@ -105,6 +105,12 @@ theorem toContinuousLinearMap_dqEquiv : dqEquiv.toContinuousLinearMap = dq :=
 theorem dqEquiv_apply (h : Fin 4 → ℝ) : dqEquiv h = dq h :=
   (rfl)
 
+/-- Evaluating `dqEquiv.symm` on `q` gives its coordinate tuple. -/
+@[simp]
+theorem dqEquiv_symm_apply (q : ℍ) :
+    dqEquiv.symm q = QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q :=
+  (rfl)
+
 theorem dq_apply (h : Fin 4 → ℝ) : dq h = ⟨h 0, h 1, h 2, h 3⟩ :=
   (rfl)
 

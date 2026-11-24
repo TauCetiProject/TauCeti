@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Quaternion.Cauchy.IteratedFDeriv
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Star
+import Mathlib.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Quaternion.Reflection
 
 /-!
@@ -29,8 +30,7 @@ Fueter regularity on the open cube, and `‖f‖ ≤ M` on the eight three-dimen
 Taking `r = R / 2` inscribes the cube in `Metric.closedBall q₀ R` (since `√4 · (R / 2) = R`),
 yielding universal ball bounds `TauCeti.exists_leftFueter_iteratedFDeriv_ball_bound`,
 `TauCeti.leftFueter_iteratedFDeriv_bound`, and—by isometric reflection invariance
-(`TauCeti.norm_iteratedFDeriv_star`, `TauCeti.norm_iteratedFDeriv_comp_star`)—their right-regular
-counterparts with the identical dimension-only constants.
+(`starₗᵢ ℝ`)—their right-regular counterparts with the identical dimension-only constants.
 
 ## Main declarations
 
@@ -153,10 +153,10 @@ theorem exists_leftFueter_iteratedFDeriv_cube_boundary_bound (m : ℕ) :
     norm_iteratedFDeriv_cube_boundary_le hr hC_K.le m (fun hsep ↦ hK m le_rfl hr hsep) _
       (iteratedFDeriv_left_cauchyFueter_box hc hf (fun _ ↦ by linarith) (fun _ ↦ by linarith) m)
       (fun i x hne ↦ by
-        simpa only [mul_assoc, norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single,
+        simpa only [mul_assoc, smul_eq_mul, norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single,
           norm_one, one_mul] using
-          norm_iteratedFDeriv_cauchyFueterKernel_right_mul_const_le hne
-            (dq (Pi.single i 1) * f (dq x)) m)
+          (contDiffAt_cauchyFueterKernel_right hne).norm_iteratedFDeriv_smul_const_le
+            (dq (Pi.single i 1) * f (dq x)))
       hM⟩
 
 /-- Universal cube-boundary Cauchy–Fueter estimate for right regular functions: for every order
@@ -179,9 +179,13 @@ theorem exists_rightFueter_iteratedFDeriv_cube_boundary_bound (m : ℕ) :
     norm_iteratedFDeriv_cube_boundary_le hr hC_K.le m (fun hsep ↦ hK m le_rfl hr hsep) _
       (iteratedFDeriv_right_cauchyFueter_box hc hf (fun _ ↦ by linarith) (fun _ ↦ by linarith) m)
       (fun i x hne ↦ by
-        simpa only [norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single, norm_one, mul_one] using
-          (norm_iteratedFDeriv_const_mul_cauchyFueterKernel_right_le hne
-            (f (dq x) * dq (Pi.single i 1)) m).trans_eq (mul_comm _ _))
+        have hsmul := iteratedFDeriv_const_smul_apply' (i := m) (a := f (dq x) * dq (Pi.single i 1))
+          (contDiffAt_cauchyFueterKernel_right hne)
+        simp only [smul_eq_mul] at hsmul
+        have hle := (norm_smul_le (f (dq x) * dq (Pi.single i 1))
+          (iteratedFDeriv ℝ m (cauchyFueterKernel (dq x)) (dq x₀))).trans_eq (mul_comm _ _)
+        simpa only [← hsmul, norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single, norm_one,
+          mul_one] using hle)
       hM⟩
 
 /-- Universal ball Cauchy–Fueter estimate for functions continuous on `closedBall q₀ R` and left
@@ -248,8 +252,11 @@ theorem exists_rightFueter_iteratedFDeriv_ball_bound (m : ℕ) :
   have hM_refl : ∀ q ∈ closedBall (star q₀) R, ‖star (f (star q))‖ ≤ M := fun q hq ↦ by
     rw [_root_.norm_star]
     exact hM (star q) (hcb_star q hq)
+  let σ : ℍ ≃ₗᵢ[ℝ] ℍ := starₗᵢ ℝ
+  have hcomp : (fun x ↦ star (f (star x))) = (σ ∘ f) ∘ σ := rfl
   have hbound := hleft hR hc_refl hf_refl hM_refl
-  rwa [norm_iteratedFDeriv_star, norm_iteratedFDeriv_comp_star, star_star] at hbound
+  rwa [hcomp, σ.norm_iteratedFDeriv_comp_right, σ.norm_iteratedFDeriv_comp_left,
+    show σ (star q₀) = q₀ from star_star q₀] at hbound
 
 /-- Universal interior derivative estimate for left Fueter regular functions on a domain containing
 `closedBall q₀ R` (`R > 0`): for each order `m`, a constant `C > 0` depending only on `m` bounds
