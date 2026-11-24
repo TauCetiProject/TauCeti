@@ -19,13 +19,16 @@ projections `πX : X' ⟶ X` and `πY : Y' ⟶ Y`, and an `S`-partial map `f : X
 Its base change `f' = AlgebraicGeometry.Scheme.PartialMap.baseChange`, defined on `V' = πX⁻¹(V)`,
 is the base change of the morphism `f_V : V ⟶ Y` along `πY`: the square with `πX ∣_ V`, `f'_{V'}`,
 `f_V` and `πY` is cartesian. This file draws two consequences, which for a field extension
-`K'/K` say that `f_{K'}` is dominant when `f` is, and that `Γ_{f_{K'}} = (Γ_f)_{K'}`.
+`K'/K` and a geometrically irreducible `X` say that `f_{K'}` is dominant when `f` is, and that
+`Γ_{f_{K'}} = (Γ_f)_{K'}`.
 
 * *Dominance.* When `p` is universally open (for instance `Spec K' ⟶ Spec K`), `πY` is an open map
   and the base change of the dominant `f_V` is dominant
-  (`AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap`). Through the characterization of the
-  base change (`AlgebraicGeometry.Scheme.RationalMap.existsUnique_compHom_eq_comp`), every
-  `S'`-rational map `f'` with `πY ∘ f' = f ∘ πX` is then dominant.
+  (`AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap`). When moreover `X'` is
+  preirreducible, `X` is nonempty and `πX` is dominant, so that the composite `f ∘ πX` is defined,
+  the characterization of the base change
+  (`AlgebraicGeometry.Scheme.RationalMap.existsUnique_compHom_eq_comp`) shows that every
+  `S'`-rational map `f'` with `πY ∘ f' = f ∘ πX` is dominant.
 * *Graph.* The relative graph `γ_f = (ι_V, f_V) : V ⟶ X ×_S Y`
   (`TauCeti.AlgebraicGeometry.opensGraph`) base changes to `γ_{f'} : V' ⟶ X' ×_{S'} Y'` along the
   natural map `X' ×_{S'} Y' ⟶ X ×_S Y`, which is itself a base change of `πX`
