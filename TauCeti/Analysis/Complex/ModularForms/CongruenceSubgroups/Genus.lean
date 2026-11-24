@@ -97,15 +97,16 @@ private theorem finite_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ 
   H.isCofinite_map_sl2zToPSL2R.finite_ellipticOrbits.subset fun q hq ↦
     (H.mem_ellipticOrbits_map_sl2zToPSL2R_iff q).mpr (hq ▸ hm)
 
-/-- On the orbits of stabilizer order `m ∈ {2, 3}` the summand `1 - 1 / m` of the elliptic defect
+omit [H.FiniteIndex] in
+/-- On the orbits of stabilizer order `m` the summand `1 - 1 / m` of the elliptic defect
 is constant, so its sum is `1 - 1 / m` times the number of such orbits. -/
-private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ m = 3) :
+private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq (m : ℕ) :
     ∑ᶠ q ∈ {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ | cardStabilizerOnOrbit q = m},
         (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) =
       Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = m} *
         (1 - (m : ℝ)⁻¹) := by
   rw [finsum_mem_congr rfl fun q (hq : cardStabilizerOnOrbit q = m) ↦ by rw [hq]]
-  exact ((H.finite_setOf_cardStabilizerOnOrbit_eq hm).finsum_mem_const _).trans (nsmul_eq_mul _ _)
+  exact (Set.finsum_mem_const _ _).trans (nsmul_eq_mul _ _)
 
 /-- **The elliptic defect of a finite-index subgroup of `SL(2, ℤ)`.** Summing `1 - 1 / m` over the
 elliptic orbits, of orders `m = 2` and `m = 3`, gives `ε₂ / 2 + 2 ε₃ / 3`. -/
@@ -122,8 +123,7 @@ theorem finsum_mem_ellipticOrbits_map_sl2zToPSL2R :
       Set.ext H.mem_ellipticOrbits_map_sl2zToPSL2R_iff,
     finsum_mem_union hdisj (H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inl rfl))
       (H.finite_setOf_cardStabilizerOnOrbit_eq (Or.inr rfl)),
-    H.finsum_mem_setOf_cardStabilizerOnOrbit_eq (Or.inl rfl),
-    H.finsum_mem_setOf_cardStabilizerOnOrbit_eq (Or.inr rfl)]
+    H.finsum_mem_setOf_cardStabilizerOnOrbit_eq 2, H.finsum_mem_setOf_cardStabilizerOnOrbit_eq 3]
   push_cast
   ring
 
