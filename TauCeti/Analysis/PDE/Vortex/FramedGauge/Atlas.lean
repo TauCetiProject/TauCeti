@@ -202,6 +202,23 @@ theorem vortexModuliEquiv_apply (hk : 3 < k) (q : vortexModuli f m hs) :
     vortexModuliEquiv hk q = vortexModuliDivisor hk q :=
   (rfl)
 
+/-- The inverse of the equivalence sends a divisor to the orbit of any continuous vortex of
+`A_m^k` with that divisor. -/
+theorem vortexModuliEquiv_symm_apply_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
+    (hx : ∀ z, equation x z = 0) {D : Sym ℂ m}
+    (hD : sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hx⟩ = D) :
+    (vortexModuliEquiv hk).symm D =
+      (⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ : vortexModuli f m hs) :=
+  (vortexModuliEquiv hk).symm_apply_eq.2 <| by
+    rw [vortexModuliEquiv_apply, vortexModuliDivisor_mk hk hx, hD]
+
+/-- The divisor of the orbit that the inverse of the equivalence assigns to a divisor is that
+divisor. -/
+@[simp]
+theorem vortexModuliDivisor_vortexModuliEquiv_symm (hk : 3 < k) (D : Sym ℂ m) :
+    vortexModuliDivisor hk ((vortexModuliEquiv (f := f) (hs := hs) hk).symm D) = D := by
+  rw [← vortexModuliEquiv_apply, Equiv.apply_symm_apply]
+
 /-- **The divisor of a vortex orbit depends continuously on the orbit.** For `k ≥ 4`, the zero
 divisor is continuous on the vortex moduli space in `A_m^k / G_(k+1)`, with the topology of
 `Sym ℂ m` as a quotient of `ℂᵐ`. -/
