@@ -43,12 +43,6 @@ theorem five_sub_seven_mul_mem_Ioo : (5 : ℝ) - 7 * (√2 / 2) ∈ Ioo 0 (1 / 1
     norm_num
   constructor <;> linarith
 
-private theorem continuous_translate (a : ℝ) :
-    Continuous (CircleDeg1Lift.translate (Multiplicative.ofAdd a) : CircleDeg1Lift) := by
-  rw [show ⇑(CircleDeg1Lift.translate (Multiplicative.ofAdd a) : CircleDeg1Lift) =
-    fun y ↦ a + y from funext (CircleDeg1Lift.translate_apply a)]
-  exact continuous_const_add a
-
 /-- Strict comparison at the irrational value `α = √2/2`: the translation by `α + 1/10` has
 translation number larger than `α`. -/
 theorem translationNumber_lt_translate :
@@ -58,7 +52,7 @@ theorem translationNumber_lt_translate :
   have h := CircleDeg1Lift.translationNumber_lt_of_forall_lt_of_irrational_left
     (f := (CircleDeg1Lift.translate (Multiplicative.ofAdd (√2 / 2)) : CircleDeg1Lift))
     (g := (CircleDeg1Lift.translate (Multiplicative.ofAdd (√2 / 2 + 1 / 10)) : CircleDeg1Lift))
-    (continuous_translate _) (continuous_translate _)
+    (CircleDeg1Lift.continuous_translate _) (CircleDeg1Lift.continuous_translate _)
     (fun x ↦ by simp only [CircleDeg1Lift.translate_apply]; linarith)
     (by
       rw [CircleDeg1Lift.translationNumber_translate]
