@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Morita.CentralIdempotent
 import TauCeti.Algebra.Module.LinearMap.SMul
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 
@@ -511,8 +512,7 @@ theorem coe_oddVolumeSubmoduleRestrictEvenEquiv_symm_apply
 variable [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S]
 
 private theorem isSimpleRing_even_baseChange : IsSimpleRing ↥(even (Q.baseChange ℂ)) := by
-  have hQnd : Q.Nondegenerate :=
-    QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+  have hQnd : Q.Nondegenerate := QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ
   refine TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank
     (QuadraticForm.Nondegenerate.baseChange (A := ℂ) hQnd) ?_
   rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]

@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.QuadraticForm.Radical
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 
 /-!
@@ -84,8 +84,7 @@ theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   -- The Fock model of an orthogonal complex structure, with an orthonormal basis of `W`.
   obtain ⟨J, hJ⟩ := TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq (V := V) ⟨ℓ, hℓ⟩
   have hQJ (v : V) : Q (J v) = Q v := by rw [hQ, hQ, hJ]
-  have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by
-    simpa [hQ] using hv
+  have hQnd : Q.Nondegenerate := QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ
   obtain ⟨b, hb⟩ := J.exists_basis_polar_tmulConj hQJ hQnd hQ ℓ (by omega)
   let ρF := AlgEquiv.ofBijective (J.fockAction hQJ hQnd) (J.fockAction_bijective hQJ hQnd)
   -- An intertwiner `T` from the Fock module to `S`.

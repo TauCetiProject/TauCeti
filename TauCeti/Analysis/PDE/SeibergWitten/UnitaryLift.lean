@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
@@ -92,6 +94,16 @@ for `c(v) c(w) u` in `TauCeti.LinearAlgebra.CliffordAlgebra.Kahler`
 (`TauCeti.AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply`), this gives the
 Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
 
+**The frame model.** Reading `V` as `ℂ²` through the complex coordinates of the unitary frame
+(`OrthonormalBasis.complexCoords`), which are the coordinates of the complex basis `(e₀, e₂)` of
+`(V, J)` (`TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply`), a
+rotation in `U(V, J)` is a unitary matrix, and this identifies `U(V, J)` with `U(2)`
+(`TauCeti.AlmostComplexStructure.unitaryGroupFrameEquiv`). Through it the
+canonical lift is the explicit quaternionic lift `OrthonormalBasis.spinCUnitary` of `U(2)`
+(`TauCeti.SeibergWitten.unitaryLift_eq_spinCUnitary`). Both lift
+`g ↦ (g, det g)` along `Spinᶜ(4) → SO(4) × U(1)`, and such a lift is unique because every element
+of `U(2)` is a square (`OrthonormalBasis.eq_spinCUnitary`).
+
 ## Main definitions
 
 * `TauCeti.SeibergWitten.canonicalLineFixingSubgroup o ρ J hQ₀`: the elements of `Spinᶜ(4)`
@@ -126,6 +138,10 @@ Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the can
   canonical line.
 * `TauCeti.SeibergWitten.det_unitaryLift`: the determinant character of the canonical lift is the
   complex determinant.
+* `TauCeti.SeibergWitten.unitaryLift_unitaryGroupFrameEquiv` and
+  `TauCeti.SeibergWitten.unitaryLift_eq_spinCUnitary`: in the complex coordinates of the unitary
+  frame, the canonical lift is the quaternionic lift `OrthonormalBasis.spinCUnitary` of `U(2)`,
+  which needs no spin module.
 * `TauCeti.SeibergWitten.isClosed_canonicalLineFixingSubgroup` and
   `TauCeti.SeibergWitten.continuous_unitaryLift`: the subgroup fixing the canonical line is closed,
   and the canonical lift is continuous.
@@ -366,8 +382,7 @@ rotation homomorphism is the twisting circle, which acts on the canonical line b
 theorem eq_one_of_mem_canonicalLineFixingSubgroup_of_toSpecialOrthogonal_eq_one
     {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀)
     (h1 : spinCGroup.toSpecialOrthogonal Q hQ₀ x = 1) : x = 1 := by
-  have hQn : Q.Nondegenerate :=
-    QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+  have hQn : Q.Nondegenerate := QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   -- The kernel of the rotation homomorphism is the twisting circle.
   obtain ⟨w, rfl⟩ : ∃ w : Circle, spinCGroup.ofCircle Q hQ₀ w = x := by
@@ -396,8 +411,7 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     {A : TauCeti.QuadraticMap.specialOrthogonalGroup Q} (hA : A ∈ J.unitaryGroup Q) :
     ∃ x ∈ canonicalLineFixingSubgroup o ρ J hQ₀, spinCGroup.toSpecialOrthogonal Q hQ₀ x = A := by
-  have hQn : Q.Nondegenerate :=
-    QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+  have hQn : Q.Nondegenerate := QuadraticMap.nondegenerate_of_eq_neg_norm_sq hQ
   obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_isSquare Q hQn (fun v _ ↦ by
     rw [invOf_eq_inv, hQ]
     exact ⟨‖v‖⁻¹, by ring⟩) A
@@ -762,6 +776,57 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
   exact spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hb A v
 
 end ComplexDeterminant
+
+/-! ### The frame model of the canonical lift -/
+
+section FrameModel
+
+open scoped Matrix
+open AlmostComplexStructure (unitaryGroupFrameEquiv complexCoords_unitaryGroupFrameEquiv_apply)
+
+variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+
+/-- **The frame model of the canonical lift.** The canonical lift of `unitaryGroupFrameEquiv g`
+is `e.spinCUnitary g`: in the complex coordinates of the unitary frame `e`, `unitaryLift` is the
+quaternionic lift `OrthonormalBasis.spinCUnitary` of `U(2)`, which needs no spin module. Both
+lift `g ↦ (g, det g)` along `Spinᶜ(4) → SO(4) × U(1)` (`det_unitaryLift`,
+`OrthonormalBasis.det_spinCUnitary`), and such a lift is unique
+(`OrthonormalBasis.eq_spinCUnitary`). -/
+theorem unitaryLift_unitaryGroupFrameEquiv (g : Matrix.unitaryGroup (Fin 2) ℂ) :
+    unitaryLift hQ he h₀ h₂ hQ₀ hW hρ (unitaryGroupFrameEquiv hQ h₀ h₂ g) =
+      e.spinCUnitary hQ hQ₀ g := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  -- The complex coordinates of `e` are `ℂ`-linear for the complex structure `J` on `V`.
+  let C := (AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂).equivFun
+  refine DFunLike.congr_fun (e.eq_spinCUnitary hQ hQ₀
+    (φ := (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ).comp (unitaryGroupFrameEquiv hQ h₀ h₂).toMonoidHom)
+    (fun k v ↦ by
+      rw [MonoidHom.comp_apply, toSpecialOrthogonal_unitaryLift]
+      exact complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ k v)
+    (fun k ↦ Circle.ext ?_)) g
+  -- The complex determinant of the rotation is the determinant of its matrix `g` in `C`.
+  rw [MonoidHom.comp_apply, det_unitaryLift, Matrix.UnitaryGroup.coe_detCircle,
+    ← LinearMap.det_toLin', ← LinearMap.det_conj _ C.symm]
+  congr 1
+  refine LinearMap.ext fun v ↦ C.injective ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
+    LinearEquiv.apply_symm_apply, IsComplexLinearMap.toComplexLinearMap_apply,
+    Matrix.toLin'_apply]
+  rw [AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply,
+    AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply]
+  exact complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ k v
+
+/-- **The canonical lift in a unitary frame.** The canonical lift of a rotation `A` in `U(V, J)` is
+the frame model `e.spinCUnitary` of its matrix `(unitaryGroupFrameEquiv).symm A` in the complex
+coordinates of `e`. -/
+theorem unitaryLift_eq_spinCUnitary (A : J.unitaryGroup Q) :
+    unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A =
+      e.spinCUnitary hQ hQ₀ ((unitaryGroupFrameEquiv hQ h₀ h₂).symm A) := by
+  rw [← unitaryLift_unitaryGroupFrameEquiv hQ he h₀ h₂ hQ₀ hW hρ, MulEquiv.apply_symm_apply]
+
+end FrameModel
 
 /-! ### Continuity of the canonical lift -/
 

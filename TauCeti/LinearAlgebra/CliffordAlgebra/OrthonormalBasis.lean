@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Orthonormal bases in the Clifford algebra of minus the squared norm
@@ -28,6 +30,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 
 * `QuadraticMap.isOrtho_iff_inner_eq_zero`: orthogonality for `Q` is orthogonality for the inner
   product.
+* `QuadraticMap.nondegenerate_of_eq_neg_norm_sq`: `Q` is nondegenerate.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
   of `Q`.
 * `OrthonormalBasis.isOrtho_apply`, `OrthonormalBasis.pairwise_isOrtho_map`: distinct orthonormal
@@ -94,6 +97,10 @@ include hQ
 theorem QuadraticMap.isOrtho_iff_inner_eq_zero {x y : V} : Q.IsOrtho x y ↔ ⟪x, y⟫ = 0 := by
   rw [QuadraticMap.isOrtho_def, hQ, hQ, hQ, norm_add_sq_real]
   constructor <;> intro h <;> linarith
+
+/-- For `Q v = -‖v‖²`, `Q` is nondegenerate, since it is anisotropic. -/
+theorem QuadraticMap.nondegenerate_of_eq_neg_norm_sq : Q.Nondegenerate :=
+  QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
 
 namespace OrthonormalBasis
 
