@@ -55,7 +55,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 
 ## Main results
 
-* `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
+* `Real.inv_sqrt_mul_sq`, `Real.div_sqrt_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` and
+  `(x / √a) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
 * `Real.sqrt_sq_mul`, `Real.sqrt_mul_sq`: `√(x ^ 2 * y) = |x| * √y` and
   `√(x * y ^ 2) = √x * |y|`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
@@ -93,7 +94,6 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
-* `Real.div_sqrt_two_sq`: `(x / √2)² = x² / 2`.
 * `Real.add_sqrt_sq_add_pos`, `Real.image_add_sqrt_sq_add_eq_Ioi`: for `p > 0`, the substitution
   `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`.
 * `Real.strictMonoOn_mul_sqrt_sq_add_sub`: for `c > 0`, `y ↦ y (√(y² + c) − y)` is strictly
@@ -176,6 +176,10 @@ theorem max_sqrt_mul_sq_lt_abs_sq_sub {a r t : ℝ} (ha : 0 ≤ a) (ht : 0 ≤ t
 @[simp]
 theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^ 2 = x ^ 2 / a := by
   rw [mul_pow, inv_pow, sq_sqrt ha, inv_mul_eq_div]
+
+/-- Dividing by `√a` and squaring divides the square by `a`. -/
+theorem div_sqrt_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : (x / √a) ^ 2 = x ^ 2 / a := by
+  rw [div_pow, sq_sqrt ha]
 
 /-- A square factor comes out of a square root as its absolute value. -/
 theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by
@@ -427,10 +431,6 @@ theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p
 /-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`. -/
 theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : (√2)⁻¹ ^ 2 + (√2)⁻¹ ^ 2 = (1 : ℝ) := by
   rw [inv_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
-
-/-- Dividing by `√2` halves the square: `(x / √2)² = x² / 2`. -/
-theorem div_sqrt_two_sq (x : ℝ) : (x / √2) ^ 2 = x ^ 2 / 2 := by
-  rw [div_pow, sq_sqrt zero_le_two]
 
 /-- For `0 < p`, `t + √(t² + p)` is positive. -/
 theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by

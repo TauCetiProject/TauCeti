@@ -441,7 +441,7 @@ theorem one_sub_cdf_gaussianReal_eq_erfc (r : ℝ) :
 theorem one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div {r : ℝ} (hr : 0 < r) :
     1 - cdf (gaussianReal 0 1) r < gaussianPDFReal 0 1 r / r := by
   have h := Real.erfc_lt_exp_neg_sq_div (div_pos hr (by positivity : (0 : ℝ) < √2))
-  rw [Real.div_sqrt_two_sq, ← neg_div] at h
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
   have h2 : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   simp only [one_sub_cdf_gaussianReal_eq_erfc, gaussianPDFReal_def, NNReal.coe_one, mul_one,
     sub_zero]
@@ -458,7 +458,7 @@ theorem one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div {r : ℝ} (hr : 0 < r) :
 theorem one_sub_cdf_gaussianReal_le_exp_div_two {r : ℝ} (hr : 0 ≤ r) :
     1 - cdf (gaussianReal 0 1) r ≤ Real.exp (-r ^ 2 / 2) / 2 := by
   have h := Real.erfc_le_exp_neg_sq (div_nonneg hr (Real.sqrt_nonneg 2))
-  rw [Real.div_sqrt_two_sq, ← neg_div] at h
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
   rw [one_sub_cdf_gaussianReal_eq_erfc]
   gcongr
 
@@ -466,7 +466,7 @@ theorem one_sub_cdf_gaussianReal_le_exp_div_two {r : ℝ} (hr : 0 ≤ r) :
 theorem one_sub_cdf_gaussianReal_lt_exp_div_two {r : ℝ} (hr : 0 < r) :
     1 - cdf (gaussianReal 0 1) r < Real.exp (-r ^ 2 / 2) / 2 := by
   have h := Real.erfc_lt_exp_neg_sq (div_pos hr (by positivity : (0 : ℝ) < √2))
-  rw [Real.div_sqrt_two_sq, ← neg_div] at h
+  rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
   rw [one_sub_cdf_gaussianReal_eq_erfc]
   gcongr
 
