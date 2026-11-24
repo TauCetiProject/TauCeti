@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
-import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
@@ -51,7 +50,8 @@ functions and changes of frame bounded on the Sobolev scale of a vector bundle.
 * **Real orders.** Between two consecutive integers by the interpolation theorem for the Hilbert
   scale (`SchwartzMap.HasSobolevExtension.interpolate`) for the bounded extension on Schwartz
   functions, and by the complex interpolation of the spaces `H^{s,p}`
-  (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`) for tempered distributions.
+  (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`, applied through
+  `TemperedDistribution.MemSobolev.map_of_forall_intCast`) for tempered distributions.
 * **Matrices.** Expanding `A` in a basis `(Lᵢ)` of `F →L[ℂ] G`, multiplication by `A` is the sum
   of the scalar multiplications by the coordinates of `A` followed by the constant maps `Lᵢ`.
 
@@ -186,34 +186,9 @@ growth, `g f` is the junk value `0`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_top : p ≠ ∞)
     {s : ℝ} {g : E → ℂ}
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
-    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F g f) := by
-  rcases eq_or_ne (Int.fract s) 0 with hs | hs
-  · -- An integer order `s = ⌊s⌋`, for which `⌈|s|⌉ = |⌊s⌋|`.
-    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
-    have hc : ⌈|((⌊s⌋ : ℤ) : ℝ)|⌉₊ = (⌊s⌋).natAbs := by
-      rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast, Nat.ceil_natCast]
-    rw [hk] at hc
-    rw [← hk] at hf ⊢
-    exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top (hc ▸ hbd)
-  -- Otherwise interpolate between the integer orders `⌊s⌋` and `⌊s⌋ + 1`.
-  have h₀ := Int.natAbs_floor_le_natCeil_abs s
-  have h₁ := Int.natAbs_floor_add_one_le_natCeil_abs hs
-  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
-    rw [← Int.self_sub_floor]
-    push_cast
-    ring
-  have hθ' : Int.fract s ∈ Set.Ioo (0 : ℝ) 1 :=
-    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
-  have hp' :
-      p⁻¹ = ENNReal.ofReal (1 - Int.fract s) * p⁻¹ + ENNReal.ofReal (Int.fract s) * p⁻¹ := by
-    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
-      ENNReal.ofReal_one, one_mul]
-  rw [hθ] at hf ⊢
-  exact MemSobolev.map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hθ' hp' _
-    (fun _ hu ↦ hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top
-      fun n hn ↦ hbd n (hn.trans h₀))
-    (fun _ hu ↦ hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top
-      fun n hn ↦ hbd n (hn.trans h₁)) hf
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F g f) :=
+  hf.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
+    hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top fun n hn ↦ hbd n (hn.trans hk)
 
 /-- **Matrix multipliers with bounded derivatives preserve `H^{s,p}`, for every real `s`.** Let
 `1 < p < ∞`, let `F` and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` be `⌈|s|⌉` times

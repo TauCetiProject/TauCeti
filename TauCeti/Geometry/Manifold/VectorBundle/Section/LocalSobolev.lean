@@ -75,6 +75,8 @@ multiples and finite sums. Exchanging the roles of the two charts gives the conv
   functional on bundle tests has a finite Sobolev order near every compact set.
 * `Bundle.Trivialization.forall_isLocallyMemSobolevAt_chartComponent_iff`: for `1 < p < ∞`,
   local `H^{s,p}` regularity of all components does not depend on the chart and the frame.
+* `Bundle.Trivialization.isLocallyMemSobolevAt_chartComponent_of_basis`: the components along a
+  basis of `F` control the local `H^{s,p}` regularity of all components.
 * `TauCeti.BundleTest.IsLocallyMemSobolevAt`: the functional `T` is `H^{s,p}` near a point of `M`,
   and `TauCeti.BundleTest.isLocallyMemSobolevAt_iff`, its characterization in every chart and
   frame; `TauCeti.BundleTest.isLocallyMemSobolevAt_two_iff` compares it with
@@ -128,7 +130,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Finitely many components, along a basis of `F`, control the local `H^{s,p}` regularity of all
 components. -/
-private theorem isLocallyMemSobolevAt_chartComponent_of_basis {ι : Type*} [Finite ι]
+theorem isLocallyMemSobolevAt_chartComponent_of_basis {ι : Type*} [Finite ι]
     (b : Module.Basis ι ℝ F) (T : BundleTest I F V →L_c[ℝ] ℝ) {s : ℝ} {y : E} (hy : y ∈ c.target)
     (h : ∀ i, (t.chartComponent c hc hct T (b i)).IsLocallyMemSobolevAt s p y) (v : F) :
     (t.chartComponent c hc hct T v).IsLocallyMemSobolevAt s p y := by
@@ -380,6 +382,12 @@ def IsLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M) 
     (hct : c.source ⊆ t.baseSet), x ∈ c.source ∧
     ∀ v, (t.chartComponent c hc hct T v).IsLocallySobolevAt s (c x)
 
+/-- For `p = 2`, being `H^{s,2}` near `x` is being `H^s` near `x` in the sense of
+`TauCeti.BundleTest.IsLocallySobolevAt`. -/
+theorem isLocallyMemSobolevAt_two_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
+    IsLocallyMemSobolevAt s 2 T x ↔ IsLocallySobolevAt s T x := by
+  simp only [IsLocallyMemSobolevAt, IsLocallySobolevAt, Distribution.isLocallyMemSobolevAt_two_iff]
+
 /-- **Local Sobolev regularity in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `T` is `H^s` near `x` exactly when every component of
 its local representative in `(t, c)` is `H^s` near `c x`. -/
@@ -388,23 +396,14 @@ theorem isLocallySobolevAt_iff {s : ℝ} (T : BundleTest I F V →L_c[ℝ] ℝ)
     (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
     (hct : c.source ⊆ t.baseSet) {x : M} (hx : x ∈ c.source) :
     IsLocallySobolevAt s T x ↔
-      ∀ v, (t.chartComponent c hc hct T v).IsLocallySobolevAt s (c x) :=
-  ⟨fun ⟨t₀, _, _, hc₀, hcs₀, hct₀, hx₀, h⟩ ↦
-    (forall_isLocallySobolevAt_chartComponent_iff (t' := t₀) (hc' := hc₀) (hct' := hct₀)
-      (hc := hc) (hct := hct) hcs hcs₀ T hx hx₀).1 h,
-    fun h ↦ ⟨t, inferInstance, c, hc, hcs, hct, hx, h⟩⟩
-
-/-- For `p = 2`, being `H^{s,2}` near `x` is being `H^s` near `x` in the sense of
-`TauCeti.BundleTest.IsLocallySobolevAt`. -/
-theorem isLocallyMemSobolevAt_two_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
-    IsLocallyMemSobolevAt s 2 T x ↔ IsLocallySobolevAt s T x := by
-  simp only [IsLocallyMemSobolevAt, IsLocallySobolevAt, Distribution.isLocallyMemSobolevAt_two_iff]
+      ∀ v, (t.chartComponent c hc hct T v).IsLocallySobolevAt s (c x) := by
+  simpa only [isLocallyMemSobolevAt_two_iff, Distribution.isLocallyMemSobolevAt_two_iff] using
+    isLocallyMemSobolevAt_iff (p := 2) ENNReal.one_lt_two ENNReal.ofNat_ne_top T hc hcs hct hx
 
 /-- Being `H^s` near `x` gets weaker as `s` decreases. -/
 theorem IsLocallySobolevAt.mono {s s' : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     (h : IsLocallySobolevAt s T x) (hs : s' ≤ s) : IsLocallySobolevAt s' T x :=
-  let ⟨t, ht, c, hc, hcs, hct, hx, h⟩ := h
-  ⟨t, ht, c, hc, hcs, hct, hx, fun v ↦ (h v).mono hs⟩
+  isLocallyMemSobolevAt_two_iff.1 ((isLocallyMemSobolevAt_two_iff.2 h).of_le hs)
 
 /-- The points near which `T` is `H^s` form an open set. -/
 theorem isOpen_setOf_isLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
@@ -414,42 +413,40 @@ theorem isOpen_setOf_isLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[�
 /-- A sum of functionals `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.add {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     (h : IsLocallySobolevAt s T x) (h' : IsLocallySobolevAt s T' x) :
-    IsLocallySobolevAt s (T + T') x := by
-  obtain ⟨t, _, c, hc, hcs, hct, hx, hT⟩ := h
-  refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  rw [chartComponent_add]
-  exact (hT v).add ((isLocallySobolevAt_iff T' hc hcs hct hx).1 h' v)
+    IsLocallySobolevAt s (T + T') x :=
+  isLocallyMemSobolevAt_two_iff.1 ((isLocallyMemSobolevAt_two_iff.2 h).add ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top (isLocallyMemSobolevAt_two_iff.2 h'))
 
 /-- A real multiple of a functional `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.smul {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
-    (h : IsLocallySobolevAt s T x) (a : ℝ) : IsLocallySobolevAt s (a • T) x := by
-  obtain ⟨t, _, c, hc, hcs, hct, hx, hT⟩ := h
-  refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  rw [chartComponent_smul]
-  exact (hT v).smul _
+    (h : IsLocallySobolevAt s T x) (a : ℝ) : IsLocallySobolevAt s (a • T) x :=
+  isLocallyMemSobolevAt_two_iff.1 ((isLocallyMemSobolevAt_two_iff.2 h).smul a)
 
 /-- The negative of a functional `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.neg {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
-    (h : IsLocallySobolevAt s T x) : IsLocallySobolevAt s (-T) x := by
-  simpa using h.smul (-1)
+    (h : IsLocallySobolevAt s T x) : IsLocallySobolevAt s (-T) x :=
+  isLocallyMemSobolevAt_two_iff.1 (isLocallyMemSobolevAt_two_iff.2 h).neg
 
 /-- A nonzero real multiple of `T` is `H^s` near `x` exactly when `T` is. -/
 theorem isLocallySobolevAt_smul_iff {s : ℝ} {a : ℝ} (ha : a ≠ 0)
     {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
-    IsLocallySobolevAt s (a • T) x ↔ IsLocallySobolevAt s T x :=
-  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ ha] using h.smul a⁻¹, fun h ↦ h.smul a⟩
+    IsLocallySobolevAt s (a • T) x ↔ IsLocallySobolevAt s T x := by
+  simpa only [isLocallyMemSobolevAt_two_iff] using
+    isLocallyMemSobolevAt_smul_iff (p := 2) (T := T) (x := x) ha
 
 /-- The negative of `T` is `H^s` near `x` exactly when `T` is. -/
 @[simp]
 theorem isLocallySobolevAt_neg_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} :
     IsLocallySobolevAt s (-T) x ↔ IsLocallySobolevAt s T x := by
-  rw [← neg_one_smul ℝ T, isLocallySobolevAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
+  simpa only [isLocallyMemSobolevAt_two_iff] using
+    isLocallyMemSobolevAt_neg_iff (p := 2) (T := T) (x := x)
 
 /-- A difference of functionals `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.sub {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     (h : IsLocallySobolevAt s T x) (h' : IsLocallySobolevAt s T' x) :
-    IsLocallySobolevAt s (T - T') x := by
-  simpa [sub_eq_add_neg] using h.add h'.neg
+    IsLocallySobolevAt s (T - T') x :=
+  isLocallyMemSobolevAt_two_iff.1 ((isLocallyMemSobolevAt_two_iff.2 h).sub ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top (isLocallyMemSobolevAt_two_iff.2 h'))
 
 /-! ### The `H^s` singular support -/
 
@@ -518,11 +515,8 @@ variable [I.Boundaryless]
 
 /-- On a manifold without boundary, the zero functional is `H^s` near every point. -/
 theorem isLocallySobolevAt_zero (s : ℝ) (x : M) :
-    IsLocallySobolevAt s (0 : BundleTest I F V →L_c[ℝ] ℝ) x := by
-  obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
-  refine ⟨trivializationAt F V x, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  rw [chartComponent_zero]
-  exact isLocallySobolevAt_zero_iff.2 (c.map_source hx)
+    IsLocallySobolevAt s (0 : BundleTest I F V →L_c[ℝ] ℝ) x :=
+  isLocallyMemSobolevAt_two_iff.1 (isLocallyMemSobolevAt_zero s x)
 
 /-- On a manifold without boundary, the zero functional has empty `H^s` singular support. -/
 @[simp]
