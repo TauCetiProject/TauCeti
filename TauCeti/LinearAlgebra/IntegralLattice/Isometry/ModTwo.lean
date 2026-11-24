@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 public import TauCeti.LinearAlgebra.QuadraticForm.ModTwo
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.Algebra.Group.Invertible
 
 /-!
 # Isometries of an even lattice modulo two
@@ -131,11 +132,6 @@ theorem ker_reductionModTwoHom : (reductionModTwoHom hL).ker = congruenceSubgrou
   · intro h
     refine Subtype.ext <| LinearEquiv.ext fun c ↦ ?_
     simpa using LinearMap.congr_fun h c
-
-/-- An element equal to `1` has inverse `1`, whatever its `Invertible` witness. -/
-private theorem invOf_eq_one_of_eq_one {M : Type*} [Monoid M] {a : M} [Invertible a]
-    (h : a = 1) : ⅟a = 1 :=
-  invOf_eq_right_inv (by rw [h, mul_one])
 
 /-- **Root reflections reduce to orthogonal transvections.** The reflection in a lattice vector
 `x` of norm `2` acts on `L / 2L` as the orthogonal transvection in the class of `x`, the
