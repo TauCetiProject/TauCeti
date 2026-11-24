@@ -735,6 +735,12 @@ theorem sobolevSpaceCongr_ofMemSobolev (B : SquareChartPartition κ I F V) {s : 
       B.ofMemSobolev s ((A.memSobolev_iff_memSobolev B).1 hT) :=
   B.toDistribution_injective s (by simp)
 
+/-- The identification of the Sobolev spaces of a partition with itself is the identity. -/
+@[simp]
+theorem sobolevSpaceCongr_refl (s : ℝ) :
+    A.sobolevSpaceCongr A s = ContinuousLinearEquiv.refl ℝ (A.sobolevSpace s) :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ A.toDistribution_injective s (by simp)
+
 /-- The inverse of the identification from `A` to `B` is the identification from `B` to `A`. -/
 @[simp]
 theorem sobolevSpaceCongr_symm (B : SquareChartPartition κ I F V) (s : ℝ) :
