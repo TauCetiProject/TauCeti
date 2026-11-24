@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
@@ -104,12 +105,10 @@ private theorem exists_riemannZeta_ne_zero_of_abs_im_le_one :
   set Z : Set ℂ := {z ∈ K | LFunctionTrivChar₁ 1 z = 0}
   have hZ : IsCompact Z :=
     hK.inter_right (isClosed_eq (differentiable_LFunctionTrivChar₁ 1).continuous continuous_const)
-  have htriv {z : ℂ} (hz : z ≠ 1) : LFunctionTrivChar₁ 1 z = (z - 1) * riemannZeta z := by
-    rw [LFunctionTrivChar₁, Function.update_of_ne hz, LFunctionTrivChar, LFunction_modOne_eq]
   have hline (z : ℂ) (hz : 1 ≤ z.re) : LFunctionTrivChar₁ 1 z ≠ 0 := by
     rcases eq_or_ne z 1 with rfl | hz1
     · exact LFunctionTrivChar₁_apply_one_ne_zero 1
-    · rw [htriv hz1]
+    · rw [LFunctionTrivChar₁_one_apply_of_ne_one hz1]
       exact mul_ne_zero (sub_ne_zero.2 hz1) (riemannZeta_ne_zero_of_one_le_re hz)
   have hne_of_not_mem (δ : ℝ) (hδ_half : δ ≤ 1 / 2) (hdisj : ∀ z ∈ Z, z.re < 1 - δ)
       (s : ℂ) (hs1 : s ≠ 1) (hsim : |s.im| ≤ 1) (hsre : 1 - δ ≤ s.re) : riemannZeta s ≠ 0 := by
@@ -118,7 +117,7 @@ private theorem exists_riemannZeta_ne_zero_of_abs_im_le_one :
     have hsK : s ∈ K :=
       Complex.mem_reProdIm.2 ⟨Set.mem_Icc.2 ⟨by linarith, h1.le⟩, Set.mem_Icc.2 (abs_le.mp hsim)⟩
     have hsZ : LFunctionTrivChar₁ 1 s ≠ 0 := fun h0 ↦ (hdisj s ⟨hsK, h0⟩).not_ge hsre
-    rw [htriv hs1] at hsZ
+    rw [LFunctionTrivChar₁_one_apply_of_ne_one hs1] at hsZ
     exact right_ne_zero_of_mul hsZ
   rcases Z.eq_empty_or_nonempty with hZe | hZne
   · exact ⟨1 / 2, by norm_num, hne_of_not_mem (1 / 2) le_rfl (by simp [hZe])⟩

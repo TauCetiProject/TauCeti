@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.PSeries
@@ -52,7 +51,6 @@ Siegel's theorem on real zeros.
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
-* `TauCeti.inv_riemannZeta_re_le_norm_riemannZeta`: `(Re ζ(Re s))⁻¹ ≤ ‖ζ(s)‖` for `Re s > 1`.
 * `TauCeti.one_lt_riemannZeta_re` and `TauCeti.strictAntiOn_riemannZeta_re`: `1 < Re ζ(σ)` for
   real `σ > 1`, and `σ ↦ Re ζ(σ)` is strictly decreasing on `(1, ∞)`.
 * `TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT`: `(x - 1) ζ(x) → 1` as real `x → 1⁺`.
@@ -119,30 +117,6 @@ theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
       ← Real.rpow_neg (by positivity)]
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, ← hsum.tsum_eq, ← hnorm]
   exact norm_tsum_le_tsum_norm (hnorm ▸ hsum.summable)
-
-/-- On `Re s > 1`, `‖ζ(s)‖` is at least `(Re ζ(Re s))⁻¹`. -/
-theorem inv_riemannZeta_re_le_norm_riemannZeta {s : ℂ} (hs : 1 < s.re) :
-    ((riemannZeta s.re).re)⁻¹ ≤ ‖riemannZeta s‖ := by
-  have hsum := hasSum_nat_rpow_neg_riemannZeta_re hs
-  have hterm (n : ℕ) :
-      ‖LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s n‖ ≤ (n : ℝ) ^ (-s.re) := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [Real.zero_rpow (by linarith : -s.re ≠ 0)]
-    simp only [LSeries.norm_term_eq, hn, ↓reduceIte, norm_intCast]
-    rw [Real.rpow_neg (Nat.cast_nonneg n), ← one_div]
-    gcongr
-    exact_mod_cast ArithmeticFunction.abs_moebius_le_one
-  have hsμ := hsum.summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hterm
-  have hmul := LSeries_one_mul_Lseries_moebius hs
-  rw [LSeries_one_eq_riemannZeta hs] at hmul
-  have hζ : 0 < ‖riemannZeta s‖ := norm_pos_iff.2 (riemannZeta_ne_zero_of_one_lt_re hs)
-  rw [inv_le_comm₀ (riemannZeta_re_pos_of_one_lt hs) hζ]
-  calc ‖riemannZeta s‖⁻¹ = ‖LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s‖ :=
-        inv_eq_of_mul_eq_one_right (by rw [← norm_mul, hmul, norm_one])
-    _ ≤ ∑' n, ‖LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s n‖ :=
-        norm_tsum_le_tsum_norm hsμ
-    _ ≤ ∑' n : ℕ, (n : ℝ) ^ (-s.re) := hsμ.tsum_le_tsum hterm hsum.summable
-    _ = (riemannZeta s.re).re := hsum.tsum_eq
 
 /-- For real `σ > 1`, `1 < Re ζ(σ)`: the term `n = 1` of `∑ n ^ (-σ)` is `1` and the term `n = 2`
 is positive. -/

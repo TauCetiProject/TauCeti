@@ -11,7 +11,8 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.Meromorphic.Divisor
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Growth
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 
@@ -27,16 +28,8 @@ its analytic order `m(ρ)`.
 
 ## Main results
 
-* `TauCeti.LFunctionTrivChar₁_one_apply_of_ne_one`: `LFunctionTrivChar₁ 1 s = (s - 1) ζ(s)`
-  for `s ≠ 1`.
-* `TauCeti.analyticOrderAt_LFunctionTrivChar₁_one`: away from `1`, the analytic orders of
-  `LFunctionTrivChar₁ 1` and `ζ` agree.
 * `TauCeti.finsum_subtype_riemannZeta_eq_finsum_divisor`: the order-weighted sum over the zeros
   of `ζ` in a closed disc is the divisor sum of `LFunctionTrivChar₁ 1` on that disc.
-* `TauCeti.re_sub_one_div_le_norm_LFunctionTrivChar₁_one`: `‖(s₀ - 1) ζ(s₀)‖ ≥ (σ₀ - 1) / Re ζ(σ₀)`
-  for `σ₀ = Re s₀ > 1`.
-* `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le`: a polynomial bound for
-  `(s - 1) ζ(s)` on discs of fixed radius centred on a vertical line.
 * `TauCeti.riemannZeta_local_logDeriv`: the local expansion of `ζ′/ζ`.
 
 ## Implementation notes
@@ -44,7 +37,10 @@ its analytic order `m(ρ)`.
 The entire function `LFunctionTrivChar₁ 1` has logarithmic derivative `ζ′/ζ(s) + 1/(s - 1)` and
 the same zeros and orders as `ζ`. Landau's local lemma
 `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_le` on the discs of radii `r'` and `r' + 1` about
-`s₀` turns the disc bound and the centre lower bound above into the expansion.
+`s₀` turns two inputs into the expansion: the disc bound
+`TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le`, and the centre lower bound
+`‖(s₀ - 1) ζ(s₀)‖ ≥ (σ₀ - 1) exp(-Re ζ(σ₀))` from
+`DirichletCharacter.exp_neg_re_riemannZeta_le_norm_LFunction`.
 
 ## References
 
@@ -59,21 +55,6 @@ public section
 open Complex DirichletCharacter Metric Set Filter Topology
 
 namespace TauCeti
-
-/-- Away from `s = 1`, Mathlib's pole-removed zeta function is `(s - 1) ζ(s)`. -/
-theorem LFunctionTrivChar₁_one_apply_of_ne_one {s : ℂ} (hs : s ≠ 1) :
-    LFunctionTrivChar₁ 1 s = (s - 1) * riemannZeta s := by
-  rw [LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, LFunction_modOne_eq]
-
-/-- Away from `s = 1`, the analytic orders of `(s - 1) ζ(s)` and `ζ(s)` agree. -/
-theorem analyticOrderAt_LFunctionTrivChar₁_one {ρ : ℂ} (hρ : ρ ≠ 1) :
-    analyticOrderAt (LFunctionTrivChar₁ 1) ρ = analyticOrderAt riemannZeta ρ := by
-  have hev : LFunctionTrivChar₁ 1 =ᶠ[𝓝 ρ] (fun z ↦ z - 1) * riemannZeta :=
-    Filter.mem_of_superset (isOpen_ne.mem_nhds hρ) fun z hz ↦
-      LFunctionTrivChar₁_one_apply_of_ne_one hz
-  have hlin : AnalyticAt ℂ (fun z : ℂ ↦ z - 1) ρ := by fun_prop
-  rw [analyticOrderAt_congr hev, analyticOrderAt_mul hlin (analyticOn_riemannZeta ρ hρ),
-    hlin.analyticOrderAt_eq_zero.mpr (sub_ne_zero.mpr hρ), zero_add]
 
 /-- The zeros of `ζ` in a closed disc, weighted by analytic order, are the divisor of the entire
 function `LFunctionTrivChar₁ 1` on that disc. -/
@@ -107,40 +88,6 @@ theorem finsum_subtype_riemannZeta_eq_finsum_divisor (s₀ s : ℂ) (r' : ℝ) :
       rw [(hF ρ trivial).divisor_apply_eq_zero hne, Int.cast_zero, zero_div]
     · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hmem, Int.cast_zero, zero_div]
 
-/-- At a point with real part `σ₀ > 1`, `‖(s₀ - 1) ζ(s₀)‖ ≥ (σ₀ - 1) / Re ζ(σ₀)`. -/
-theorem re_sub_one_div_le_norm_LFunctionTrivChar₁_one {s₀ : ℂ} (hs₀ : 1 < s₀.re) :
-    (s₀.re - 1) / (riemannZeta s₀.re).re ≤ ‖LFunctionTrivChar₁ 1 s₀‖ := by
-  have hs₀1 : s₀ ≠ 1 := by
-    rintro rfl
-    simp at hs₀
-  rw [LFunctionTrivChar₁_one_apply_of_ne_one hs₀1, norm_mul, div_eq_mul_inv]
-  refine mul_le_mul ?_ (inv_riemannZeta_re_le_norm_riemannZeta hs₀)
-    (inv_nonneg.mpr (riemannZeta_re_pos_of_one_lt hs₀).le) (norm_nonneg _)
-  simpa using re_le_norm (s₀ - 1)
-
-/-- On the closed discs of a fixed radius `R` centred on a vertical line `Re s₀ = σ₀`,
-`‖(s - 1) ζ(s)‖ ≤ K (|Im s₀| + 2) ^ B` with `K > 0` and `B` independent of `s₀`. -/
-theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ R : ℝ) :
-    ∃ K B : ℝ, 0 < K ∧ ∀ s₀ w : ℂ, s₀.re = σ₀ → ‖w - s₀‖ ≤ R →
-      ‖LFunctionTrivChar₁ 1 w‖ ≤ K * (|s₀.im| + 2) ^ B := by
-  obtain ⟨C, B, hC⟩ := exists_norm_LFunctionTrivChar₁_one_le_rpow (σ₀ - R) (σ₀ + R)
-  refine ⟨max C 1 * (|R| + 1) ^ max B 0, max B 0,
-    mul_pos (lt_max_of_lt_right one_pos) (Real.rpow_pos_of_pos (by positivity) _),
-    fun s₀ w hs₀ hw ↦ ?_⟩
-  have hre := abs_re_le_norm (w - s₀)
-  rw [sub_re, hs₀, abs_le] at hre
-  have him := (abs_sub_abs_le_abs_sub w.im s₀.im).trans ((sub_im w s₀ ▸ abs_im_le_norm _).trans hw)
-  calc ‖LFunctionTrivChar₁ 1 w‖ ≤ C * (|w.im| + 2) ^ B := hC w (by linarith) (by linarith)
-    _ ≤ max C 1 * (|w.im| + 2) ^ max B 0 := by
-        gcongr
-        · exact le_max_left _ _
-        · linarith [abs_nonneg w.im]
-        · exact le_max_left _ _
-    _ ≤ max C 1 * ((|R| + 1) * (|s₀.im| + 2)) ^ max B 0 := by
-        gcongr
-        nlinarith [abs_nonneg s₀.im, le_abs_self R, abs_nonneg R]
-    _ = _ := by rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
-
 /-- **The local expansion of `ζ′/ζ`.** For real `σ₀ > 1` and radii `0 < r < r'` there is a
 constant `C` such that for every `s₀` with `Re s₀ = σ₀` and every `s ≠ 1` with `‖s - s₀‖ ≤ r` and
 `ζ(s) ≠ 0`, `ζ′/ζ(s) + 1/(s - 1)` differs from `∑ m(ρ)/(s - ρ)` over the zeros `ρ` of `ζ` with
@@ -154,8 +101,8 @@ theorem riemannZeta_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hr :
   have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
   obtain ⟨K, B, hK, hdisc⟩ :=
     exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le σ₀ (r' + 1)
-  set c₀ := (σ₀ - 1) / (riemannZeta σ₀).re
-  have hc₀ : 0 < c₀ := div_pos (by linarith) (riemannZeta_re_pos_of_one_lt hσ₀)
+  set c₀ := (σ₀ - 1) * Real.exp (-(riemannZeta σ₀).re) with hc₀def
+  have hc₀ : 0 < c₀ := mul_pos (by linarith) (Real.exp_pos _)
   have hlog : 0 < Real.log ((r' + 1) / r') :=
     Real.log_pos ((one_lt_div (by linarith)).mpr (by linarith))
   have hR : 0 < (r' + 1) ^ 2 - r' * r := by nlinarith
@@ -170,7 +117,13 @@ theorem riemannZeta_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hr :
   have ht : 2 ≤ t := by simp [t]
   set M := K * t ^ B / c₀ with hMdef
   have hcentre : c₀ ≤ ‖LFunctionTrivChar₁ 1 s₀‖ := by
-    simpa [c₀, hs₀] using re_sub_one_div_le_norm_LFunctionTrivChar₁_one (s₀ := s₀) (by linarith)
+    have hs₀1 : s₀ ≠ 1 := fun h ↦ by simp [h] at hs₀; linarith
+    rw [LFunctionTrivChar₁_one_apply_of_ne_one hs₀1, norm_mul, hc₀def, ← hs₀]
+    gcongr
+    · simpa using re_le_norm (s₀ - 1)
+    · simpa [LFunction_modOne_eq] using
+        (1 : DirichletCharacter ℂ 1).exp_neg_re_riemannZeta_le_norm_LFunction
+          (s := s₀) (by linarith)
   have hsphere (w : ℂ) (hw : w ∈ sphere s₀ (r' + 1)) :
       ‖LFunctionTrivChar₁ 1 w‖ ≤ M * ‖LFunctionTrivChar₁ 1 s₀‖ := by
     refine (hdisc s₀ w hs₀ (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)).trans ?_
