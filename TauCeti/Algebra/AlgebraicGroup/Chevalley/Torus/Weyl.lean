@@ -165,6 +165,12 @@ instance normal_torusPoints_subgroupOf_weylSubgroup :
     (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)).Normal :=
   Subgroup.normal_subgroupOf_of_le_normalizer (D.weylSubgroup_le_normalizer_range_torusPoints A)
 
+/-- Every coroot point `h_γ(s)` lies in `D.weylSubgroup A` over every commutative ring `A`. -/
+theorem corootPoints_mem_weylSubgroup (γ : Fin t.numRoots) (s : Aˣ) :
+    D.corootPoints γ A s ∈ D.weylSubgroup A := by
+  rw [D.corootPoints_apply]
+  exact D.torusPoints_mem_weylSubgroup A _
+
 end
 
 end TauCeti.DynkinType.ChevalleyDatum
