@@ -65,8 +65,11 @@ which are not formalized here.
 * `TauCeti.HeegaardRegionSystem.IsAlphaPath.sub_eq_sum_alphaCrossingNumber_mul`: along a path
   from `r` to `r'`, a domain with `α`-boundary `∑ aᵢ αᵢ` changes by `∑ kᵢ aᵢ`.
 * `TauCeti.HeegaardRegionSystem.IsAlphaPath.append` and
-  `TauCeti.HeegaardRegionSystem.IsAlphaPath.reverse`: paths concatenate and reverse, and their
-  crossing numbers add and negate.
+  `TauCeti.HeegaardRegionSystem.IsAlphaPath.reverse`: paths concatenate and reverse.
+* `TauCeti.HeegaardRegionSystem.alphaCrossingNumber_append`,
+  `TauCeti.HeegaardRegionSystem.alphaCrossingNumber_reverse` and
+  `TauCeti.HeegaardRegionSystem.alphaCrossingNumber_map_not`: crossing numbers add under
+  concatenation, are unchanged by reversing the list and negate when every crossing is flipped.
 * `TauCeti.HeegaardRegionSystem.basepointChangeEquiv_trans`: moving the basepoint in two steps is
   moving it in one.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_basepointChangeEquiv`: the Maslov index drops by
@@ -239,9 +242,7 @@ private theorem sub_smul_one_mem_periodicDomains {P : Region → ℤ}
     (hP : P ∈ (H.withBasepoints fun _ : Unit => z₁).periodicDomains) :
     P - P z₂ • 1 ∈ (H.withBasepoints fun _ : Unit => z₂).periodicDomains := by
   rw [mem_periodicDomains_withBasepoints_iff] at hP ⊢
-  refine ⟨by simp, ?_, ?_⟩
-  · rw [map_sub, map_zsmul, alphaBoundary_one, smul_zero, sub_zero, hP.2.1]
-  · rw [map_sub, map_zsmul, betaBoundary_one, smul_zero, sub_zero, hP.2.2]
+  refine ⟨by simp, ?_, ?_⟩ <;> rw [map_sub, map_zsmul] <;> simp [hP.2.1, hP.2.2]
 
 variable (z₁ z₂) in
 /-- Moving the single basepoint from the region `z₁` to the region `z₂` identifies the periodic

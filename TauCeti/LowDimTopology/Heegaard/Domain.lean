@@ -515,9 +515,9 @@ theorem mem_periodicDomains_iff {P : Region → ℤ} :
 theorem mem_periodicDomains_withBasepoints_iff {z : Region} {P : Region → ℤ} :
     P ∈ (H.withBasepoints fun _ : Unit => z).periodicDomains ↔
       P z = 0 ∧ H.alphaArcBoundary (H.alphaBoundary P) = 0 ∧
-        H.betaArcBoundary (H.betaBoundary P) = 0 := by
-  simp only [mem_periodicDomains_iff, forall_const, funext_iff, alphaArcBoundary_apply,
-    alphaBoundary_apply, betaArcBoundary_apply, betaBoundary_apply]
+        H.betaArcBoundary (H.betaBoundary P) = 0 :=
+  -- `withBasepoints` changes only `basepoint`, so the boundary maps agree definitionally.
+  ⟨fun h => ⟨h.1 (), h.2⟩, fun h => ⟨fun _ => h.1, h.2⟩⟩
 
 /-- A domain is periodic exactly when it has multiplicity zero at every basepoint and its
 boundary is `∑ aᵢ αᵢ + ∑ bⱼ βⱼ` for some integers `aᵢ`, `bⱼ`. -/
