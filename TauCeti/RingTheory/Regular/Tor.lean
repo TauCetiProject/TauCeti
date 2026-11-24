@@ -151,8 +151,7 @@ def torOneQuotientSpanSingletonIsoOfIsTorsionBy (hf : IsSMulRegular R f) {X : Mo
     (hX : Module.IsTorsionBy R X f) :
     ((Tor (ModuleCat.{u} R) 1).obj X).obj (of R (R ⧸ Ideal.span {f})) ≅ X :=
   torOneQuotientSpanSingletonIso hf X ≪≫
-    ((LinearEquiv.ofEq _ _ ((Module.isTorsionBy_iff_torsionBy_eq_top f).mp hX)).trans
-      Submodule.topEquiv).toModuleIso
+    (LinearEquiv.ofTop _ ((Module.isTorsionBy_iff_torsionBy_eq_top f).mp hX)).toModuleIso
 
 /-- **`Tor₁^R(R ⧸ (f), R ⧸ (f)) ≅ R ⧸ (f)`** for `f` regular on `R`: the kernel of multiplication by
 `f` on `R ⧸ (f)` is everything. -/
