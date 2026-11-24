@@ -89,14 +89,9 @@ quaternion with those coordinates. -/
 theorem coe_homeomorphSphere_symm_apply (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
     ((homeomorphSphere.symm x : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
       Quaternion.toComplexMatrix (Quaternion.linearIsometryEquivTuple.symm x) := by
-  change (((GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm
-    (Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup
-      (Quaternion.unitaryHomeomorphSphere.symm ⟨Quaternion.linearIsometryEquivTuple.symm x, _⟩)) :
-        GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) = _
-  rw [GLSpecialUnitary.coe_continuousMulEquiv_symm_apply,
+  simp [homeomorphSphere, ContinuousMulEquiv.toHomeomorph_eq_coe,
     Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup_apply,
-    Quaternion.coe_unitaryEquivSpecialUnitaryGroup_apply,
-    Quaternion.coe_unitaryHomeomorphSphere_symm_apply]
+    Quaternion.coe_unitaryEquivSpecialUnitaryGroup_apply]
 
 /-- `SU(2)` is simply connected, as the group of unit quaternions. -/
 instance instSimplyConnectedSpace : SimplyConnectedSpace (GLSpecialUnitary (Fin 2) ℂ) :=
