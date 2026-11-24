@@ -57,6 +57,9 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finRotate_ofNat`: reading natural times modulo `k`, `finRotate k` moves to the next time;
+  `Fin.image_range_ofNat_eq_image_univ`: at least `k` consecutive times visit every entry of a
+  tuple of length `k`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -440,6 +443,27 @@ theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
   | succ m =>
     rw [coe_finRotate]
     simp [Fin.ext_iff]
+
+/-- Reading the times `i : ℕ` modulo `k`, the cyclic successor `finRotate k` of the index at time
+`i` is the index at time `i + 1`. -/
+theorem finRotate_ofNat {k : ℕ} [NeZero k] (i : ℕ) :
+    finRotate k (Fin.ofNat k i) = Fin.ofNat k (i + 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by have := NeZero.ne k; omega⟩
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+
+/-- Reading a tuple of length `k` along at least `k` consecutive times modulo `k` visits exactly
+the entries of the tuple. -/
+theorem image_range_ofNat_eq_image_univ {α : Type*} [DecidableEq α] {k m : ℕ} [NeZero k]
+    (w : Fin k → α) (hkm : k ≤ m) :
+    (Finset.range m).image (fun i => w (Fin.ofNat k i)) = Finset.univ.image w := by
+  ext x
+  constructor
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨_, Finset.mem_univ _, rfl⟩
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨i.val, Finset.mem_range.mpr (by omega), by simp⟩
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
