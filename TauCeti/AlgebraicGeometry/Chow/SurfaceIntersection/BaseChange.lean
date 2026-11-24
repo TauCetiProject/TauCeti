@@ -15,7 +15,8 @@ import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 The surface intersection number of two line-bundle classes is unchanged by extension of the
 ground field. The comparison uses the actual pullback classes in a cartesian square.
 Quasi-compactness and quasi-separation suffice for flat base change of the truncated Euler
-characteristic defining the pairing.
+characteristic defining the pairing. This truncated Euler characteristic uses `Module.finrank`,
+so infinite-dimensional cohomology contributes zero.
 
 Numerical equivalence of the extended classes implies numerical equivalence of the original
 classes. The converse requires testing against classes on the extended scheme that need not

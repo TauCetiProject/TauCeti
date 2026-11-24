@@ -20,8 +20,9 @@ for instance separated of finite type over the field, and in particular proper. 
 after base change is its actual pullback. No smoothness, rational point or geometric connectedness
 is needed, so the result applies to nodal and to reducible proper curves.
 
-Coefficient and structure-sheaf cohomology dimensions in every degree are preserved by field
-extension, by flat base change of cohomology
+The truncated Euler characteristic uses `Module.finrank`, so infinite-dimensional cohomology
+contributes zero. The `Module.finrank` values of coefficient and structure-sheaf cohomology in
+every degree are preserved by field extension, by flat base change of cohomology
 (`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). In particular,
 pullback preserves and reflects having Euler-characteristic degree zero under extension of the base
 field. Pullback along an isomorphism of schemes over the field preserves degree on every scheme,
@@ -52,7 +53,8 @@ namespace LineBundleClass
 
 include H in
 /-- Extension of the ground field preserves every truncated Euler characteristic of a
-line-bundle class on a quasi-compact quasi-separated scheme. -/
+line-bundle class on a quasi-compact quasi-separated scheme. The truncated Euler characteristic
+uses `Module.finrank`, so infinite-dimensional cohomology contributes zero. -/
 theorem eulerCharBelow_pullback [CompactSpace X] [QuasiSeparatedSpace X]
     (a : LineBundleClass X) (n : ℕ) :
     eulerCharBelow K (pullback g a) n = eulerCharBelow k a n := by
