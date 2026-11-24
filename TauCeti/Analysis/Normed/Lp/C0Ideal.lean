@@ -99,11 +99,22 @@ theorem star_mem_c0Ideal [∀ i, StarRing (A i)] [∀ i, NormedStarGroup (A i)] 
     (ha : a ∈ c0Ideal A) : star a ∈ c0Ideal A :=
   mem_c0Ideal.2 (by simpa [lp.star_apply] using mem_c0Ideal.1 ha)
 
-/-- **The quotient norm of the bounded product by the `c₀` ideal** is the limit superior of the
-coordinate norms along the cofinite filter. The index type is infinite; for a finite one the
-quotient is zero. -/
-theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
+/-- Over a finite index type both sides of `lp.norm_mk_c0Ideal` are `0`: every family lies in the
+`c₀` ideal, and the cofinite filter is `⊥`, so the limit superior is `sInf` of all of `ℝ`, which
+is `0` by `Real.sInf_of_not_bddBelow`. -/
+private theorem norm_mk_c0Ideal_of_finite [Finite ι] (a : lp A ∞) :
     ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = limsup (fun i ↦ ‖a i‖) cofinite := by
+  rw [TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 (mem_c0Ideal.2 (by simp [cofinite_eq_bot])),
+    _root_.norm_zero, cofinite_eq_bot, limsup, limsSup, map_bot]
+  simp only [eventually_bot, Set.ofPred_true]
+  exact (Real.sInf_of_not_bddBelow not_bddBelow_univ).symm
+
+/-- **The quotient norm of the bounded product by the `c₀` ideal** is the limit superior of the
+coordinate norms along the cofinite filter. For a finite index type both sides are `0`. -/
+theorem norm_mk_c0Ideal (a : lp A ∞) :
+    ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) a‖ = limsup (fun i ↦ ‖a i‖) cofinite := by
+  rcases finite_or_infinite ι with hι | hι
+  · exact norm_mk_c0Ideal_of_finite a
   have hbdd : IsBoundedUnder (· ≤ ·) cofinite (fun i ↦ ‖a i‖) :=
     isBoundedUnder_of ⟨‖a‖, fun i ↦ norm_apply_le_norm ENNReal.top_ne_zero a i⟩
   have hcobdd : IsCoboundedUnder (· ≤ ·) cofinite (fun i ↦ ‖a i‖) :=
