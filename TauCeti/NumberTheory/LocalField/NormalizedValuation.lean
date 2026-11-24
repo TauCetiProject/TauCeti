@@ -72,8 +72,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   orders the elements of `K` as `ValuativeRel.valuation` does.
 * `TauCeti.normalizedAbsoluteValue_lt_iff_le_inv_mul`: the values of the normalized absolute value
   are discrete, so `|x|_K < |a|_K` exactly when `|x|_K ≤ q⁻¹ |a|_K`.
-* `TauCeti.integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq`: the ring of integers is
-  `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`.
+* `TauCeti.integer_eq_singleton_union_iUnion_setOf_normalizedAbsoluteValue_eq`: the ring of
+  integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`.
 * `TauCeti.eq_normalizedValuation`: the kernel condition together with the uniformizer equation
   characterizes the normalized valuation among homomorphisms `Kˣ →* Multiplicative ℤ`.
 * `TauCeti.isUnit_iff_normalizedValuationWithZero_eq_one`,
@@ -484,7 +484,7 @@ theorem residueFieldCard_pos {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
 
 /-- The inverse `q⁻¹` of the residue-field cardinality is less than one, so `1 - q⁻¹` is
 positive. -/
-theorem sub_inv_residueFieldCard_pos {R : Type*} [Field R] [LinearOrder R]
+theorem one_sub_inv_residueFieldCard_pos {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] :
     (0 : R) < 1 - (Nat.card 𝓀[K] : R)⁻¹ :=
   sub_pos.2 (inv_lt_one_of_one_lt₀ one_lt_residueFieldCard)
@@ -618,7 +618,7 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
 
 /-- The ring of integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`, where `q`
 is the cardinality of the residue field. -/
-theorem integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq :
+theorem integer_eq_singleton_union_iUnion_setOf_normalizedAbsoluteValue_eq :
     (𝒪[K] : Set K) = {0} ∪
       ⋃ n : ℕ, {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))} := by
   ext x

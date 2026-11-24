@@ -112,7 +112,7 @@ theorem scalingDensity_eq_zero_of_nonpos (hβ : β ≤ 0) : scalingDensity K β 
   · simp
   rw [scalingDensity_apply_of_ne_zero hx, Pi.zero_apply, ENNReal.ofReal_eq_zero]
   refine mul_nonpos_of_nonpos_of_nonneg
-    (div_nonpos_of_nonpos_of_nonneg ?_ sub_inv_residueFieldCard_pos.le) (by positivity)
+    (div_nonpos_of_nonpos_of_nonneg ?_ one_sub_inv_residueFieldCard_pos.le) (by positivity)
   linarith [Real.one_le_rpow (one_lt_residueFieldCard (K := K)).le (neg_nonneg.2 hβ)]
 
 /-- At `β = 1` the density is the indicator function of `K ∖ {0}`. -/
@@ -121,7 +121,7 @@ theorem scalingDensity_one : scalingDensity K 1 = ({0}ᶜ : Set K).indicator 1 :
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   rw [scalingDensity_apply_of_ne_zero hx, Set.indicator_of_mem (by simpa using hx),
-    Real.rpow_neg_one, div_self (sub_inv_residueFieldCard_pos (K := K)).ne', sub_self,
+    Real.rpow_neg_one, div_self (one_sub_inv_residueFieldCard_pos (K := K)).ne', sub_self,
     Real.rpow_zero, one_mul, ENNReal.ofReal_one, Pi.one_apply]
 
 /-- The density is measurable: it is locally constant away from `0`. -/
@@ -183,8 +183,8 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
     scalingDensity_apply_of_ne_zero ha0, ← mul_assoc]
   · congr 1
     rw [one_sub_inv_residueFieldCard_eq_ofReal, ← ENNReal.ofReal_coe_nnreal,
-      ← ENNReal.ofReal_mul sub_inv_residueFieldCard_pos.le,
-      ← ENNReal.ofReal_mul' (mul_nonneg sub_inv_residueFieldCard_pos.le (by positivity))]
+      ← ENNReal.ofReal_mul one_sub_inv_residueFieldCard_pos.le,
+      ← ENNReal.ofReal_mul' (mul_nonneg one_sub_inv_residueFieldCard_pos.le (by positivity))]
     congr 1
     have hx : ((Nat.card 𝓀[K] : ℝ) ^ (-k)) ^ (β - 1) * (Nat.card 𝓀[K] : ℝ) ^ (-k) =
         (Nat.card 𝓀[K] : ℝ) ^ (-(k * β)) := by
@@ -289,7 +289,7 @@ theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
     exact fun n h ↦ (zpow_pos residueFieldCard_pos _).ne h
   have hmeas (n : ℕ) := measurableSet_setOf_normalizedAbsoluteValue_eq (K := K)
     ((Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ)))
-  conv_lhs => rw [integer_eq_union_iUnion_setOf_normalizedAbsoluteValue_eq]
+  conv_lhs => rw [integer_eq_singleton_union_iUnion_setOf_normalizedAbsoluteValue_eq]
   rw [measure_union (Set.disjoint_singleton_left.2 h0) (MeasurableSet.iUnion hmeas),
     measure_iUnion hdisj hmeas, withDensity_scalingDensity_singleton_zero, zero_add]
   simp_rw [withDensity_scalingDensity_setOf_eq_zpow]
