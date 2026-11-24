@@ -102,6 +102,14 @@ noncomputable def pointsHomeomorphZeroSet :
 theorem coe_pointsHomeomorphZeroSet_apply (x : S →ₐ[K] K) :
     (P.pointsHomeomorphZeroSet x : ι → K) = fun i ↦ x (P.val i) := (rfl)
 
+/-- Recovering a point from a zero of the relations gives the prescribed generator values. -/
+@[simp]
+theorem pointsHomeomorphZeroSet_symm_apply_val
+    (y : {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0}) (i : ι) :
+    P.pointsHomeomorphZeroSet.symm y (P.val i) = y.val i := by
+  have h := P.coe_pointsHomeomorphZeroSet_apply (P.pointsHomeomorphZeroSet.symm y)
+  simpa using (congrArg (fun w ↦ w i) h).symm
+
 end BaseRing
 
 end Algebra.Presentation

@@ -31,9 +31,9 @@ basis of the Kähler differentials of `S` over `K`.
 
 The proof applies Mathlib's implicit function theorem, `ImplicitFunctionData`, to the relations
 as left function and to the coordinate projection as right function, at the coordinate vector of
-the point, through `ImplicitFunctionData.exists_openPartialHomeomorph_levelSet`. The two kernels
-are complementary (`Matrix.isCompl_ker_mulVecLin_ker_funLeft`) because the Jacobian minor is
-invertible at every point of a submersive presentation
+the point, through `ImplicitFunctionData.levelSetChart`. The two kernels are complementary
+(`Matrix.isCompl_ker_mulVecLin_ker_funLeft`) because the Jacobian minor is invertible at every
+point of a submersive presentation
 (`Algebra.SubmersivePresentation.isUnit_det_jacobiMatrix_solution`). No hypothesis on the
 characteristic of `K` is needed, and the theorem applies over `ℝ`, `ℂ` and every nonarchimedean
 local field.
@@ -147,19 +147,16 @@ private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
   classical
   let := Fintype.ofFinite ι
   let := Fintype.ofFinite σ
-  obtain ⟨e, he, hee⟩ : ∃ e : OpenPartialHomeomorph
-      {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0} (↥(Set.range P.map)ᶜ → K),
-      ⟨fun i ↦ x (P.val i), funext (P.eval_relation_eq_zero x)⟩ ∈ e.source ∧
-        ∀ y, e y = P.coordProj y.val :=
-    ImplicitFunctionData.exists_openPartialHomeomorph_levelSet (P.implicitData x) (c := 0)
-      (funext (P.eval_relation_eq_zero x))
+  let e := (P.implicitData x).levelSetChart (c := 0) (funext (P.eval_relation_eq_zero x))
+  have he := (P.implicitData x).mem_levelSetChart_source (c := 0)
+    (funext (P.eval_relation_eq_zero x))
   refine ⟨P.pointsHomeomorphZeroSet.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩
   · rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
       Set.univ_inter, Set.mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply]
     convert he using 1
     exact Subtype.ext (P.toPresentation.coe_pointsHomeomorphZeroSet_apply x)
   · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      Homeomorph.toOpenPartialHomeomorph_apply, hee]
+      Homeomorph.toOpenPartialHomeomorph_apply, ImplicitFunctionData.levelSetChart_apply]
     ext i
     simp [coordProj_apply]
 
