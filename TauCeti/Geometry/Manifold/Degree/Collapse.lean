@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Degree.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Maps to a sphere with a regular value of one preimage
@@ -20,17 +22,17 @@ dimension `n`, and let `Sⁿ` be the unit sphere of a real inner product space `
 (`TauCeti.exists_contMDiff_sphere_isRegularValue_preimage_eq_singleton`). For orientations of `M`
 and of `Sⁿ` the signed count of this fibre is therefore `1` or `-1`
 (`TauCeti.exists_contMDiff_sphere_degreeAtRegularValue_eq_one_or_eq_neg_one`), so when `M` is
-compact the map has degree `±1`: it is a smooth model of the map collapsing the complement of a
-coordinate ball to a point.
+compact and `1 ≤ n`, so that `Sⁿ` is connected, the map has degree `±1`: it is a smooth model of
+the map collapsing the complement of a coordinate ball to a point.
 
 The map is built in a chart at `x₀`. Fix a unit vector `e` of `E` and a linear isomorphism `L` of
 `W` onto the hyperplane `e^⊥`, and a smooth bump function `β` on `W` equal to `1` near the image
 `c` of `x₀` and vanishing outside a ball `B` around `c` inside the chart. The vector
 `v z = β z • L (z - c) + (1 - 2 β z) • e` never vanishes, so `z ↦ v z / ‖v z‖` is a smooth map
 `W → Sⁿ`. It equals the north pole `e` outside `B`, so read in the chart it extends by `e` to a
-smooth map on `M`. It takes the value `-e` only at `c`, and its projection to `e^⊥ ≅ W` is
-`(β z / ‖v z‖) • (z - c)`, whose derivative at `c` is the identity, so its derivative at `c` is
-injective.
+smooth map on `M` (`TauCeti.Manifold.exists_contMDiff_eq_comp_extChartAt`). It takes the value
+`-e` only at `c`, and its projection to `e^⊥ ≅ W` is `(β z / ‖v z‖) • (z - c)`, whose derivative at
+`c` is the identity, so its derivative at `c` is injective.
 
 ## Main results
 
@@ -74,6 +76,19 @@ private def bubbleNormalized (z : W) : E :=
 
 variable {L P e}
 
+/-- The bump is `1` at its centre. -/
+private theorem bump_apply_center : β c = 1 :=
+  β.one_of_mem_closedBall (mem_closedBall_self β.rIn_pos.le)
+
+/-- At the centre the bubble vector is `-e`. -/
+private theorem bubbleVec_center : bubbleVec β L e c = -e := by
+  rw [bubbleVec, bump_apply_center, sub_self, map_zero, smul_zero, zero_add]
+  norm_num
+
+/-- A unit vector is not its own negative. -/
+private theorem ne_neg_of_norm_eq_one (he : ‖e‖ = 1) : e ≠ -e :=
+  fun h ↦ ne_neg_of_mem_unit_sphere ℝ ⟨e, by simp [he]⟩ (Subtype.ext h)
+
 /-- The bubble vector never vanishes: its component along `e` is `1 - 2 β z`, and its component
 `β z • (z - c)` in `W` vanishes only where `β z = 0` or `z = c`, where `β = 1`. -/
 private theorem bubbleVec_ne_zero (hPL : ∀ w, P (L w) = w) (hPe : P e = 0)
@@ -86,7 +101,7 @@ private theorem bubbleVec_ne_zero (hPL : ∀ w, P (L w) = w) (hPe : P e = 0)
   have hβ : β z = 1 / 2 := by simp at h₁; linarith
   rcases smul_eq_zero.1 h₂ with h₃ | h₃
   · rw [hβ] at h₃; norm_num at h₃
-  · rw [sub_eq_zero.1 h₃, β.one_of_mem_closedBall (mem_closedBall_self β.rIn_pos.le)] at hβ
+  · rw [sub_eq_zero.1 h₃, bump_apply_center] at hβ
     norm_num at hβ
 
 /-- The projection of the normalized bubble vector to `W` is `(β z / ‖v z‖) • (z - c)`. -/
@@ -102,11 +117,7 @@ private theorem bubbleNormalized_of_le_dist (he : ‖e‖ = 1) {z : W} (hz : β.
 
 /-- At the centre the normalized bubble vector is `-e`. -/
 private theorem bubbleNormalized_self (he : ‖e‖ = 1) : bubbleNormalized β L e c = -e := by
-  have h1 : β c = 1 := β.one_of_mem_closedBall (mem_closedBall_self β.rIn_pos.le)
-  have h2 : bubbleVec β L e c = -e := by
-    rw [bubbleVec, h1, sub_self, map_zero, smul_zero, zero_add]
-    norm_num
-  rw [bubbleNormalized, h2, norm_neg, he, inv_one, one_smul]
+  rw [bubbleNormalized, bubbleVec_center, norm_neg, he, inv_one, one_smul]
 
 /-- The normalized bubble vector is `-e` only at the centre. -/
 private theorem eq_of_bubbleNormalized_eq_neg (hPL : ∀ w, P (L w) = w) (hPe : P e = 0)
@@ -120,12 +131,7 @@ private theorem eq_of_bubbleNormalized_eq_neg (hPL : ∀ w, P (L w) = w) (hPe : 
     · -- Where the bump vanishes, the bubble vector is `e`, not `-e`.
       have h' : bubbleNormalized β L e z = e := by simp [bubbleNormalized, bubbleVec, h, he]
       rw [h'] at hz
-      have : e = 0 := by
-        have := congrArg (· + e) hz
-        simp only [neg_add_cancel] at this
-        rw [← two_smul ℝ e] at this
-        exact (smul_eq_zero.1 this).resolve_left two_ne_zero
-      simp [this] at he
+      exact absurd hz (ne_neg_of_norm_eq_one he)
   · exact sub_eq_zero.1 h
 
 /-- The bubble vector is smooth. -/
@@ -155,9 +161,7 @@ private theorem injective_fderiv_bubbleNormalized (hPL : ∀ w, P (L w) = w) (hP
     (hn.inv (norm_ne_zero_iff.2 (hne c))).mul
       (β.contDiff.differentiable (by simp : (∞ : WithTop ℕ∞) ≠ 0) c)
   have hs1 : ‖bubbleVec β L e c‖⁻¹ * β c = 1 := by
-    have h1 : β c = 1 := β.one_of_mem_closedBall (mem_closedBall_self β.rIn_pos.le)
-    rw [bubbleVec, h1, sub_self, map_zero, smul_zero, zero_add]
-    norm_num [he]
+    rw [bubbleVec_center, bump_apply_center, norm_neg, he, inv_one, one_mul]
   have hP : HasFDerivAt (fun z ↦ P (bubbleNormalized β L e z)) (ContinuousLinearMap.id ℝ W) c := by
     have h := hs.hasFDerivAt.smul ((hasFDerivAt_id c).sub_const c)
     simp only [id_eq, sub_self, ContinuousLinearMap.smulRight_zero, add_zero, hs1, one_smul] at h
@@ -182,7 +186,8 @@ private theorem injective_mfderiv_codRestrict_bubbleNormalized (hPL : ∀ w, P (
   -- The inclusion of the sphere composed with `g` is the normalized bubble vector.
   have hval := mfderiv_comp c ((contMDiff_coe_sphere (m := ∞)).mdifferentiableAt
     (by simp : (∞ : WithTop ℕ∞) ≠ 0)) ((hg c).mdifferentiableAt (by simp : (∞ : WithTop ℕ∞) ≠ 0))
-  have hcoe : ((↑) : sphere (0 : E) 1 → E) ∘ g = bubbleNormalized β L e := rfl
+  have hcoe : ((↑) : sphere (0 : E) 1 → E) ∘ g = bubbleNormalized β L e :=
+    funext fun _ ↦ Set.val_codRestrict_apply ..
   rw [hcoe, mfderiv_eq_fderiv] at hval
   have hinj : Injective ⇑((mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (g c)).comp
       (mfderiv 𝓘(ℝ, W) (𝓡 n) g c)) := by
@@ -225,58 +230,6 @@ private theorem exists_bubbleData (hW : finrank ℝ W = n) :
   · exact Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self e)
       (A w).property |> fun h ↦ by rwa [real_inner_comm] at h
 
-omit [FiniteDimensional ℝ W] [I.Boundaryless] [T2Space M] [Fact (finrank ℝ E = n + 1)] in
-/-- A map agreeing near `x₀` with `g ∘ φ`, for the extended chart `φ` at `x₀` and a map `g` with
-injective derivative at `φ x₀`, has injective derivative at `x₀`. -/
-private theorem injective_mfderiv_of_eventuallyEq_comp_extChartAt {N : Type*}
-    [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] {x₀ : M} {f : M → N}
-    {g : W → N} (hgd : MDifferentiableAt 𝓘(ℝ, W) (𝓡 n) g (extChartAt I x₀ x₀))
-    (hg : Injective (mfderiv 𝓘(ℝ, W) (𝓡 n) g (extChartAt I x₀ x₀)))
-    (hev : f =ᶠ[𝓝 x₀] g ∘ extChartAt I x₀) : Injective (mfderiv I (𝓡 n) f x₀) := by
-  have hφ := (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x₀)).hasMFDerivAt
-  rw [((hgd.hasMFDerivAt.comp x₀ hφ).congr_of_eventuallyEq hev).mfderiv,
-    ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
-  refine (tangentSpaceCast _ _ _).injective.comp (hg.comp ?_)
-  obtain ⟨A, hA⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x₀)
-  rw [← hA]
-  exact A.injective
-
-omit [I.Boundaryless] [Fact (finrank ℝ E = n + 1)] in
-open scoped Classical in
-/-- A smooth map `g` on the model space which is constant, equal to `c`, outside a closed ball
-inside the target of the extended chart at `x₀` extends, read in that chart, to a smooth map on
-`M` equal to `c` off the chart domain. -/
-private theorem exists_contMDiff_eq_comp_extChartAt {N : Type*} [TopologicalSpace N]
-    [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] (x₀ : M) {r : ℝ}
-    (hball : closedBall (extChartAt I x₀ x₀) r ⊆ (extChartAt I x₀).target) {g : W → N}
-    (hg : ContMDiff 𝓘(ℝ, W) (𝓡 n) ∞ g) {c : N}
-    (hc : ∀ z, r < dist z (extChartAt I x₀ x₀) → g z = c) :
-    ∃ f : M → N, ContMDiff I (𝓡 n) ∞ f ∧
-      (∀ x ∈ (chartAt H x₀).source, f x = g (extChartAt I x₀ x)) ∧
-      ∀ x ∉ (chartAt H x₀).source, f x = c := by
-  set φ := extChartAt I x₀
-  have hsrc : φ.source = (chartAt H x₀).source := extChartAt_source I x₀
-  let f : M → N := fun x ↦ if x ∈ (chartAt H x₀).source then g (φ x) else c
-  have hfg : ∀ x ∈ (chartAt H x₀).source, f x = g (φ x) := fun x hx ↦ by simp [f, hx]
-  -- Outside the compact preimage `K` of the closed ball, `f` is `c`.
-  set K := φ.symm '' closedBall (φ x₀) r
-  have hK : IsClosed K := ((isCompact_closedBall _ _).image_of_continuousOn
-    ((continuousOn_extChartAt_symm x₀).mono hball)).isClosed
-  have hKs : K ⊆ (chartAt H x₀).source := by
-    rintro _ ⟨z, hz, rfl⟩
-    rw [← hsrc]
-    exact φ.map_target (hball hz)
-  have hfK (x : M) (hx : x ∉ K) : f x = c := by
-    simp only [f]
-    split_ifs with hxs
-    · refine hc _ (not_le.1 fun h ↦ hx ⟨φ x, mem_closedBall.2 h, φ.left_inv (by rwa [hsrc])⟩)
-    · rfl
-  -- `f` is smooth on the chart domain and on the complement of `K`, which cover `M`.
-  refine ⟨f, contMDiff_of_contMDiffOn_union_of_isOpen
-    ((hg.comp_contMDiffOn contMDiffOn_extChartAt).congr hfg) (contMDiffOn_const.congr hfK)
-    (eq_univ_of_forall fun x ↦ (em (x ∈ K)).imp (fun h ↦ hKs h) id)
-    (chartAt H x₀).open_source hK.isOpen_compl, hfg, fun x hx ↦ by simp [f, hx]⟩
-
 /-- The collapse map: a smooth map `f : M → Sⁿ` and a point `y` whose fibre is the single point
 `x₀`, at which the derivative of `f` is injective. -/
 private theorem exists_collapse (hW : finrank ℝ W = n) (x₀ : M) :
@@ -296,8 +249,8 @@ private theorem exists_collapse (hW : finrank ℝ W = n) (x₀ : M) :
   have hg : ContMDiff 𝓘(ℝ, W) (𝓡 n) ∞ g :=
     (contDiff_bubbleNormalized β hPL hPe hLe he).contMDiff.codRestrict_sphere hS
   let north : sphere (0 : E) 1 := ⟨e, by simp [he]⟩
-  obtain ⟨f, hf, hfg, hfc⟩ := exists_contMDiff_eq_comp_extChartAt (c := north) (r := r / 2) x₀
-    ((closedBall_subset_ball (by linarith)).trans hball) hg
+  obtain ⟨f, hf, hfg, hfc⟩ := Manifold.exists_contMDiff_eq_comp_extChartAt (c := north)
+    (r := r / 2) x₀ ((closedBall_subset_ball (by linarith)).trans hball) hg
     fun z hz ↦ Subtype.ext (bubbleNormalized_of_le_dist β he hz.le)
   have hx₀ : x₀ ∈ (chartAt H x₀).source := mem_chart_source H x₀
   refine ⟨f, ⟨-e, by simp [he]⟩, hf, Set.ext fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩, ?_⟩
@@ -307,10 +260,7 @@ private theorem exists_collapse (hW : finrank ℝ W = n) (x₀ : M) :
       exact φ.injOn (by rwa [hsrc]) (by rwa [hsrc])
         (eq_of_bubbleNormalized_eq_neg β hPL hPe hLe he (congrArg Subtype.val hx))
     · rw [mem_preimage, mem_singleton_iff, hfc x hxs] at hx
-      have h2 : (2 : ℝ) • e = 0 := by
-        rw [two_smul]
-        exact add_eq_zero_iff_eq_neg.2 (congrArg Subtype.val hx)
-      simp [(norm_ne_zero_iff.1 (by rw [he]; exact one_ne_zero) : e ≠ 0)] at h2
+      exact absurd (congrArg Subtype.val hx) (ne_neg_of_norm_eq_one he)
   · rw [mem_singleton_iff.1 hx]
     exact (hfg x₀ hx₀).trans (Subtype.ext (bubbleNormalized_self β he))
   · -- Near `x₀`, `f` is `g ∘ φ`.
@@ -329,8 +279,8 @@ theorem exists_contMDiff_sphere_isRegularValue_preimage_eq_singleton (hW : finra
   obtain ⟨f, y, hf, hy, hinj⟩ := exists_collapse (E := E) (I := I) hW x₀
   refine ⟨f, y, hf, isRegularValue_iff.2 fun x hx ↦ ?_, hy⟩
   obtain rfl : x = x₀ := by
-    have hx' : x ∈ f ⁻¹' {y} := hx
-    rwa [hy] at hx'
+    rw [← mem_singleton_iff, ← hy, mem_preimage, mem_singleton_iff]
+    exact hx
   have hdim : finrank ℝ (TangentSpace I x) = finrank ℝ (TangentSpace (𝓡 n) (f x)) :=
     hW.trans finrank_euclideanSpace_fin.symm
   exact isRegularPoint_iff.2 ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
@@ -339,8 +289,8 @@ theorem exists_contMDiff_sphere_isRegularValue_preimage_eq_singleton (hW : finra
 /-- **A map to the sphere of degree `±1` at a regular value.** For orientations `o` of a
 Hausdorff boundaryless smooth manifold `M` of dimension `n` and `o'` of the unit sphere `Sⁿ` of a
 real inner product space of dimension `n + 1`, there are a smooth map `f : M → Sⁿ` and a regular
-value `y` of `f` at which the signed count of the fibre is `1` or `-1`. When `M` is compact, `f`
-therefore has degree `±1`. -/
+value `y` of `f` at which the signed count of the fibre is `1` or `-1`. When `M` is compact and
+`1 ≤ n`, so that `Sⁿ` is connected, `f` therefore has degree `±1`. -/
 theorem exists_contMDiff_sphere_degreeAtRegularValue_eq_one_or_eq_neg_one [Nonempty M]
     (hW : finrank ℝ W = n) (o : Manifold.Orientation I M (Fin n))
     (o' : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) :
@@ -351,8 +301,8 @@ theorem exists_contMDiff_sphere_degreeAtRegularValue_eq_one_or_eq_neg_one [Nonem
   obtain ⟨f, y, hf, hy, hfy⟩ :=
     exists_contMDiff_sphere_isRegularValue_preimage_eq_singleton (E := E) (I := I) hW x₀
   have hx₀ : f x₀ = y := by
-    have : x₀ ∈ f ⁻¹' {y} := by rw [hfy]; rfl
-    exact this
+    rw [← mem_singleton_iff, ← mem_preimage, hfy]
+    exact mem_singleton x₀
   refine ⟨f, y, hf, hy, ?_⟩
   rw [degreeAtRegularValue_eq_sum (s := {x₀}) fun x ↦ by
     rw [Finset.mem_singleton, ← mem_singleton_iff, ← hfy, mem_preimage, mem_singleton_iff],

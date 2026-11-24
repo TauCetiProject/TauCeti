@@ -567,12 +567,10 @@ theorem exists_singularHomologyMap_int_eq_degreeAtRegularValue_smul {k : ℕ}
     ((isFundamentalClass_singularHomologyFunctor_map_app_iff integralCoeffIso.symm ν).2 hν)
   refine ⟨s, hs, ?_⟩
   have hnat := CategoryTheory.ConcreteCategory.congr_hom (τ.naturality (TopCat.ofHom f)) μ
-  have hinj : Function.Injective (τ.app (TopCat.of N)) := by
-    intro a b hab
-    have := congrArg (((singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).map
-      integralCoeffIso.hom).app (TopCat.of N)) hab
-    simpa [τ, ← CategoryTheory.ConcreteCategory.comp_apply, ← CategoryTheory.NatTrans.comp_app,
-      ← CategoryTheory.Functor.map_comp] using this
+  -- `τ` is the image of an isomorphism, so its components are injective.
+  have hinj : Function.Injective (τ.app (TopCat.of N)) :=
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).mapIso integralCoeffIso.symm).app
+      (TopCat.of N)).toLinearEquiv.injective
   exact hinj ((hnat.trans h).trans (map_zsmul (ModuleCat.Hom.hom _) _ ν).symm)
 
 end AnyModel

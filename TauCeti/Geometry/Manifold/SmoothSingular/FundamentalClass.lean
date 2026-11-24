@@ -56,7 +56,7 @@ steps prove it for all of them.
 
 ## Main results
 
-* `TauCeti.closedFormHomologyPeriod_mul_integralTopForm_comm`: on a compact connected oriented
+* `TauCeti.closedFormHomologyPeriod_mul_integralTopForm_comm`: on a compact preconnected oriented
   boundaryless manifold, the periods of top forms on a fixed class are proportional to their
   integrals.
 * `TauCeti.exists_closedFormHomologyPeriod_eq_mul_integralTopForm`: the period of a closed
@@ -93,12 +93,12 @@ namespace TauCeti
 section Proportional
 
 variable {W H C : Type} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ W H} [I.Boundaryless]
-  [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C] [T2Space C] [CompactSpace C]
-  [ConnectedSpace C] {n : ℕ}
+  [TopologicalSpace H] {I : ModelWithCorners ℝ W H}
+  [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C] [BoundarylessManifold I C]
+  [T2Space C] [CompactSpace C] [PreconnectedSpace C] {n : ℕ}
 
-/-- **Periods of top forms are proportional to their integrals.** On a compact connected oriented
-boundaryless manifold of dimension `n`, the periods of closed `n`-forms on any fixed class
+/-- **Periods of top forms are proportional to their integrals.** On a compact preconnected
+oriented boundaryless manifold of dimension `n`, the periods of closed `n`-forms on any fixed class
 `c ∈ Hₙ(C; ℤ)` are proportional to their integrals: `⟨[η], c⟩ ∫ η₀ = ⟨[η₀], c⟩ ∫ η`. Indeed a
 closed top form of integral zero is exact. -/
 theorem closedFormHomologyPeriod_mul_integralTopForm_comm
@@ -186,6 +186,8 @@ private theorem exists_closedFormHomologyPeriod_mpullback_sphereAreaForm (hW : f
     Manifold.Orientation.exists_singularHomologyMap_int_eq_degreeAtRegularValue_smul (k := 1)
     hW finrank_euclideanSpace_fin o sphereOrientation₂ (f := ⟨f, hf.continuous⟩)
     (hf.of_le (by simp)) hy hμ hν
+  -- `hmap` is stated in degree `1 + 1` for the bundled map `⟨f, _⟩ : C(C, S²)`; restate it in
+  -- degree `2`, which is the same degree by definition, so that it rewrites the period below.
   have hmap' : ContinuousMap.singularHomologyMap ℤ 2 ⟨f, hf.continuous⟩ μ =
       (s * degreeAtRegularValue o sphereOrientation₂ f y) • ν := hmap
   refine ⟨f, hf, s, degreeAtRegularValue o sphereOrientation₂ f y, hs, hd, ?_, ?_⟩

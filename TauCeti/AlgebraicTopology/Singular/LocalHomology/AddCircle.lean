@@ -88,8 +88,7 @@ theorem isFundamentalClass_addCircleProdFundamentalClass :
       (LinearEquiv.refl ℤ ℤ) (by simp) (by simp)
       (AddCircle.isFundamentalClass_fundamentalClass p)
       (AddCircle.isFundamentalClass_fundamentalClass q))
-  exact (congrArg (IsFundamentalClass (M := AddCircle p × AddCircle q) (N := ModuleCat.of ℤ ℤ)
-    (n := 2)) ((addCircleProdFundamentalClass_def p q).trans
-      (TopCat.singularHomologyCrossBilinear_apply ℤ _ _ 1 1 2 rfl _ _))).mpr h
+  rw [addCircleProdFundamentalClass_def, TopCat.singularHomologyCrossBilinear_apply ℤ _ _ 1 1 2 rfl]
+  exact h
 
 end TauCeti
