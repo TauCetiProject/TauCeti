@@ -11,11 +11,10 @@ public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 /-!
 # Open immersions of finitely presented schemes descend along cofiltered limits
 
-Let `D : I ⥤ Scheme` be a cofiltered diagram of quasi-compact quasi-separated schemes with affine
-transition maps and limit `S = lim Dⱼ`, and let `g : X ⟶ Y` be a morphism of schemes over a member
-`Dᵢ`, with `X` locally of finite presentation and quasi-compact over `Dᵢ` and `Y` locally of finite
-type and quasi-separated over `Dᵢ`. If the base change `g_S` of `g` to `S` is an open immersion,
-then so is the base change of `g` to some `Dⱼ` (Stacks, Lemma 32.8.12 (0EUU)).
+Let `D : I ⥤ Scheme` be a cofiltered diagram of schemes with affine transition maps and limit
+`S = lim Dⱼ`, and let `g : X ⟶ Y` be a locally finitely presented morphism of schemes over a member
+`Dᵢ`, with `X` quasi-compact and `Y` quasi-separated. If the base change `g_S` of `g` to `S` is an
+open immersion, then so is the base change of `g` to some `Dⱼ` (Stacks, Lemma 32.8.12 (0EUU)).
 
 The image of `g_S` is a quasi-compact open of `S ×_{Dᵢ} Y`, which is the limit of the base changes
 `Dₗ ×_{Dᵢ} Y`. Quasi-compact opens of such a limit come from a member (Stacks, Tag 01Z4,
@@ -47,10 +46,9 @@ include hc in
 /-- The case of `exists_isOpenImmersion_pullbackMap` in which some quasi-compact open `V` of `Y`
 contains the image of `g`, and its preimage in `S ×_{Dᵢ} Y` lies in the image of the base change
 of `g` to `S`. -/
-private lemma exists_isOpenImmersion_pullbackMap_of_le_opensRange
-    [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I}
-    {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i} [LocallyOfFinitePresentation p]
-    [QuasiCompact p] [LocallyOfFiniteType q] [QuasiSeparated q] (g : X ⟶ Y) (hg : g ≫ q = p)
+private lemma exists_isOpenImmersion_pullbackMap_of_le_opensRange {i : I}
+    {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i} [CompactSpace X]
+    [QuasiSeparatedSpace Y] (g : X ⟶ Y) (hg : g ≫ q = p) [LocallyOfFinitePresentation g]
     [IsOpenImmersion
       (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg]))]
     (V : Y.Opens) (hVc : IsCompact (V : Set Y)) (hgV : g ⁻¹ᵁ V = ⊤)
@@ -96,10 +94,9 @@ private lemma exists_isOpenImmersion_pullbackMap_of_le_opensRange
     exact hx
   -- Hence some finite-stage base change of `ψ` is an isomorphism, and that of `g` is the
   -- composite of this isomorphism with the open immersion base changed from `V.ι`.
-  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace p
-  have : QuasiSeparatedSpace V := quasiSeparatedSpace_of_quasiSeparated (V.ι ≫ q)
-  have : LocallyOfFinitePresentation (ψ ≫ V.ι ≫ q) := hψq ▸ inferInstance
-  have : LocallyOfFinitePresentation ψ := locallyOfFinitePresentation_of_comp ψ (V.ι ≫ q)
+  have : QuasiSeparatedSpace V := quasiSeparatedSpace_of_quasiSeparated V.ι
+  have : LocallyOfFinitePresentation (ψ ≫ V.ι) := hψ ▸ inferInstance
+  have : LocallyOfFinitePresentation ψ := locallyOfFinitePresentation_of_comp ψ V.ι
   obtain ⟨j, hji, hj⟩ := hc.exists_isIso_pullbackMap ψ hψq
   refine ⟨j, hji, ?_⟩
   have := hι (D.map hji)
@@ -110,8 +107,8 @@ include hc in
 /-- If the base change of `g` to the limit is an open immersion, its image is the preimage of a
 quasi-compact open `V` of the base change of `Y` to some `Dₗ` over `Dᵢ` which contains the image
 of the base change of `g` to `Dₗ`. -/
-private lemma exists_opens_preimage_eq_opensRange [∀ i, CompactSpace (D.obj i)] {i : I}
-    {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i} [QuasiCompact p] (g : X ⟶ Y)
+private lemma exists_opens_preimage_eq_opensRange {i : I}
+    {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i} [CompactSpace X] (g : X ⟶ Y)
     (hg : g ≫ q = p)
     [IsOpenImmersion
       (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg]))] :
@@ -131,10 +128,14 @@ private lemma exists_opens_preimage_eq_opensRange [∀ i, CompactSpace (D.obj i)
   have map_φB {j k : Over i} (f : j ⟶ k) :
       (D.pullbackOver p).map f ≫ φB k = φB j ≫ (D.pullbackOver q).map f := by
     apply pullback.hom_ext <;> simp [φB]
+  -- The base changes of `X` are quasi-compact, since the projections to `X` are affine.
+  have := isAffineHom_π_app D c hc i
+  have : CompactSpace ↑(pullback (c.π.app i) p) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.snd (c.π.app i) p)
+  have (j : Over i) : CompactSpace ((D.pullbackOver p).obj j) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.snd (D.map j.hom) p)
   -- The image of `φ` is a quasi-compact open of the limit of the base changes of `Y`, hence the
   -- preimage of a quasi-compact open `V` of some member.
-  have : CompactSpace (((Functor.const I).obj c.pt).obj i) :=
-    Scheme.compactSpace_of_isLimit D c hc
   obtain ⟨k, V, hVc, hVφ⟩ := exists_preimage_eq _ _ (hc.pullbackOver q) φ.opensRange
     (isCompact_range φ.continuous)
   -- The preimage of `V` in the corresponding member for `X` pulls back to everything in the
@@ -149,15 +150,14 @@ private lemma exists_opens_preimage_eq_opensRange [∀ i, CompactSpace (D.obj i)
     exact congrArg (· ⁻¹ᵁ V) ((c.pullbackOver q).w f)
 
 include hc in
-/-- Let `S = lim Dⱼ` be a cofiltered limit of quasi-compact quasi-separated schemes with affine
-transition maps, and `g : X ⟶ Y` a morphism of schemes over a member `Dᵢ`, with `X` locally of
-finite presentation and quasi-compact over `Dᵢ`, and `Y` locally of finite type and
-quasi-separated over `Dᵢ`. If the base change of `g` to `S` is an open immersion, then so is its
-base change to some `Dⱼ`. Stacks, Lemma 32.8.12 (0EUU). -/
-theorem exists_isOpenImmersion_pullbackMap [∀ i, CompactSpace (D.obj i)]
-    [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i}
-    {q : Y ⟶ D.obj i} [LocallyOfFinitePresentation p] [QuasiCompact p] [LocallyOfFiniteType q]
-    [QuasiSeparated q] (g : X ⟶ Y) (hg : g ≫ q = p)
+/-- Let `S = lim Dⱼ` be a cofiltered limit of schemes with affine transition maps, and
+`g : X ⟶ Y` a locally finitely presented morphism of schemes over a member `Dᵢ`, from a
+quasi-compact scheme to a quasi-separated scheme. If the base change of `g` to `S` is an open
+immersion, then so is its base change to some `Dⱼ`. The members of the base diagram need not be
+quasi-compact or quasi-separated. Stacks, Lemma 32.8.12 (0EUU). -/
+theorem exists_isOpenImmersion_pullbackMap {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i}
+    {q : Y ⟶ D.obj i} [CompactSpace X] [QuasiSeparatedSpace Y] (g : X ⟶ Y) (hg : g ≫ q = p)
+    [LocallyOfFinitePresentation g]
     [IsOpenImmersion
       (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg]))] :
     ∃ (j : I) (hji : j ⟶ i), IsOpenImmersion
@@ -167,6 +167,14 @@ theorem exists_isOpenImmersion_pullbackMap [∀ i, CompactSpace (D.obj i)]
   let φ := pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])
   let gl := pullback.map (D.map l.hom) p (D.map l.hom) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])
   have hgl : gl ≫ pullback.fst _ _ = pullback.fst _ _ := by simp [gl]
+  -- The hypotheses on `g` pass to its base change `gl`, since the projections are affine.
+  have : CompactSpace ↑(pullback (D.map l.hom) p) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.snd (D.map l.hom) p)
+  have : QuasiSeparatedSpace ↑(pullback (D.map l.hom) q) :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.snd (D.map l.hom) q)
+  have : LocallyOfFinitePresentation gl :=
+    MorphismProperty.pullbackMap (P := @LocallyOfFinitePresentation)
+      (inferInstanceAs (LocallyOfFinitePresentation (𝟙 _))) ‹_› (by simp) hg.symm
   -- These isomorphisms `e` identify the second projection with the projection to `Dₗ ×_{Dᵢ} Y`.
   let e {Z : Scheme.{u}} (s : Z ⟶ D.obj i) := c.pullbackOverIso l.hom s
   have hcompat :
@@ -181,7 +189,7 @@ theorem exists_isOpenImmersion_pullbackMap [∀ i, CompactSpace (D.obj i)]
       (by simp [hgl])) :=
     (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq @IsOpenImmersion l.hom
       (a := φ) (by simp [φ]) hgl hcompat).mpr inferInstance
-  have hsnd := c.pullbackOverIso_hom_π_app l.hom q
+  have hsnd := c.pullbackOverIso_hom_pullbackMap l.hom q
   obtain ⟨j, hjl, hj⟩ := hc.exists_isOpenImmersion_pullbackMap_of_le_opensRange gl hgl V hVc hgV
     (by
       intro z hz
