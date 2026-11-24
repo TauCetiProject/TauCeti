@@ -24,8 +24,9 @@ The lower bound comes from product frames, the upper bound from the shuffle expa
 wedge. On a frame where the external product splits into a value of each factor, its value is
 bounded by `‖φ‖ ‖ψ‖` once the projected components have norm at most one. Exchanging the factors
 multiplies values by `(-1) ^ (k * l)` and preserves the comass.
-None of this needs an inner product; the comass equality for a decomposable factor and products
-of calibrated frames are in `TauCeti.Analysis.InnerProductSpace.Orthonormal.ExternalProduct`.
+None of this needs an inner product; the comass equalities for a decomposable or top-degree
+factor, and products of calibrated frames, are in
+`TauCeti.Analysis.InnerProductSpace.Orthonormal.ExternalProduct`.
 
 ## Main definitions
 
