@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.Analysis.MvPolynomial.Deriv
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 import Mathlib.Algebra.Polynomial.Eval.SMul
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Algebra.MvPolynomial.Polynomial
 
@@ -81,8 +80,8 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   coefficient vector is the preimage of `V · y + R e₀` under the grid point map.
 * `TauCeti.exists_eq_map_waldschmidtPointMap_sup`: every subspace of `V · y + R e₀` containing
   `e₀` is `V' · y + R e₀` for a subspace `V' ≤ V` containing the coefficient vector.
-* `TauCeti.finrank_map_waldschmidtPointMap_sup`: over a field, if `V` contains the coefficient
-  vector, then `V · y + K e₀` has the same dimension as `V`.
+* `TauCeti.finrank_map_waldschmidtPointMap_sup`: if `V` contains the coefficient vector, then
+  `V · y + R e₀` has the same rank as `V`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm`: a linear form with nonzero last
   coefficient `cₘ` is `-cₘ` times the normalized linear form.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm_comp_swap`: normalization at an
@@ -423,72 +422,50 @@ theorem exists_eq_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
   rw [Submodule.mem_comap, ← add_sub_cancel_right (waldschmidtPointMap b v) x, hvx]
   exact W'.sub_mem hw (hspan hx)
 
-end PointMap
-
-section FinrankPointMap
-
-open Module
-
-variable {K : Type*} [Field K]
-
-/-- The grid points `s · y` of the indices `s` in a subspace `V ⊆ Kᵐ` containing the coefficient
+/-- The grid points `s · y` of the indices `s` in a subspace `V ⊆ Rᵐ` containing the coefficient
 vector `c = (β₁, …, β_{m-1}, -1)`, together with the direction `e₀` of the derivatives, span a
-subspace `W = Y(V) + K e₀` of the same dimension as `V`, where `Y` is the grid point map. If
-`β₀ ≠ 0`, then `Y` is injective and `e₀ ∈ Y(V)`; if `β₀ = 0`, then `Y` has kernel `K c` and
-`e₀ ∉ Y(V)`. -/
-theorem finrank_map_waldschmidtPointMap_sup (b : Fin (n + 1) → K)
-    {V : Submodule K (Fin (n + 1) → K)} (hV : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V) :
-    finrank K ↥(V.map (waldschmidtPointMap b) ⊔ K ∙ Pi.single 0 1) = finrank K V := by
-  set Y := waldschmidtPointMap b
-  set e₀ : Fin (n + 1) → K := Pi.single 0 1
-  set c : Fin (n + 1) → K := Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)
-  -- A vector in the kernel of `Y` is a multiple of the coefficient vector.
-  have hker (v : Fin (n + 1) → K) (hv : Y v = 0) : v = -v (Fin.last n) • c :=
-    eq_neg_smul_snoc_of_waldschmidtPointMap_mem b (hv ▸ Submodule.zero_mem _)
-  have hc := waldschmidtPointMap_snoc b
-  by_cases hb : b 0 = 0
-  · -- `Y(V)` meets the line `K e₀` only in `0`, and loses at most the line `K c` of `V`.
-    have hinf : V.map Y ⊓ K ∙ e₀ = ⊥ := by
-      refine (Submodule.eq_bot_iff _).2 fun x ⟨⟨v, _, hvx⟩, hx⟩ ↦ ?_
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hx
-      have := congrFun hvx 0
-      simp [Y, e₀, hb] at this
-      simp [this]
-    have he₀ : e₀ ≠ 0 := by simp [e₀]
-    have hsup := Submodule.finrank_sup_add_finrank_inf_eq (V.map Y) (K ∙ e₀)
-    rw [hinf, finrank_bot, finrank_span_singleton he₀] at hsup
-    have hrank := LinearMap.finrank_range_add_finrank_ker (Y ∘ₗ V.subtype)
-    rw [LinearMap.range_comp, Submodule.range_subtype] at hrank
-    have hker₁ : finrank K (LinearMap.ker (Y ∘ₗ V.subtype)) ≤ 1 := by
-      rw [← Submodule.finrank_map_subtype_eq]
-      have hc0 : c ≠ 0 := fun h ↦ by simpa [c] using congrFun h (Fin.last n)
-      refine (Submodule.finrank_mono (s := _) (t := K ∙ c) ?_).trans
-        (finrank_span_singleton hc0).le
-      rintro _ ⟨v, hv, rfl⟩
-      rw [Submodule.subtype_apply, hker v (LinearMap.mem_ker.1 hv)]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self c)
-    have hker₂ : 1 ≤ finrank K (LinearMap.ker (Y ∘ₗ V.subtype)) := by
-      rw [hb, neg_zero, Pi.single_zero] at hc
-      refine Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2
-        ⟨⟨c, hV⟩, by simpa using hc, fun h ↦ ?_⟩)
-      have := congrFun (congrArg Subtype.val h) (Fin.last n)
-      simp [c] at this
-    lia
-  · -- `Y` is injective and `e₀ ∈ Y(V)`, so `Y(V) ⊔ K e₀ = Y(V) ≃ V`.
-    have he₀ : e₀ ∈ V.map Y := by
-      refine ⟨(-b 0)⁻¹ • c, V.smul_mem _ hV, ?_⟩
-      rw [map_smul, hc, ← Pi.single_smul, smul_eq_mul, inv_mul_cancel₀ (neg_ne_zero.2 hb)]
-    have hinj : Injective Y := by
-      rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-      intro v hv
-      have h0 := congrFun (LinearMap.mem_ker.1 hv) 0
-      simp only [Y, waldschmidtPointMap_apply_zero, Pi.zero_apply, mul_eq_zero, hb,
-        or_false] at h0
-      rw [hker v hv, h0, neg_zero, zero_smul]
-    rw [sup_eq_left.2 ((Submodule.span_singleton_le_iff_mem _ _).2 he₀)]
-    exact (Submodule.equivMapOfInjective Y hinj V).finrank_eq.symm
+submodule `W = Y(V) + R e₀` of the same rank as `V`, where `Y` is the grid point map. Replacing
+`β₀` by `1` changes `Y` only by multiples of `e₀` and makes it injective with `-c ↦ e₀`, so it
+maps `V` isomorphically onto `W`. -/
+theorem finrank_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
+    {V : Submodule R (Fin (n + 1) → R)} (hV : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V) :
+    Module.finrank R ↥(V.map (waldschmidtPointMap b) ⊔ R ∙ Pi.single 0 1) =
+      Module.finrank R V := by
+  set e₀ : Fin (n + 1) → R := Pi.single 0 1
+  -- The grid point map `Y'` with `β₀` replaced by `1`.
+  set Y' := waldschmidtPointMap (Fin.cons 1 (Fin.tail b) : Fin (n + 1) → R)
+  have hdiff (v : Fin (n + 1) → R) :
+      waldschmidtPointMap b v = Y' v + (v (Fin.last n) * (b 0 - 1)) • e₀ := by
+    ext i
+    cases i using Fin.cases
+    · simp [Y', e₀]
+      ring
+    · simp [Y', e₀, waldschmidtPointMap_apply_succ, Fin.tail]
+  have he₀ : e₀ ∈ V.map Y' := by
+    refine ⟨_, V.neg_mem hV, ?_⟩
+    have hc := waldschmidtPointMap_snoc (Fin.cons 1 (Fin.tail b) : Fin (n + 1) → R)
+    simp only [Fin.cons_succ, Fin.tail, Fin.cons_zero] at hc
+    rw [map_neg, hc, Pi.single_neg, neg_neg]
+  have hW : V.map (waldschmidtPointMap b) ⊔ R ∙ e₀ = V.map Y' := by
+    refine le_antisymm (sup_le ?_ ((Submodule.span_singleton_le_iff_mem _ _).2 he₀)) ?_
+    · rintro _ ⟨v, hv, rfl⟩
+      rw [hdiff]
+      exact add_mem (Submodule.mem_map_of_mem hv) (Submodule.smul_mem _ _ he₀)
+    · rintro _ ⟨v, hv, rfl⟩
+      rw [← add_sub_cancel_right (Y' v) ((v (Fin.last n) * (b 0 - 1)) • e₀), ← hdiff]
+      exact sub_mem (Submodule.mem_sup_left (Submodule.mem_map_of_mem hv))
+        (Submodule.mem_sup_right (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)))
+  have hinj : Injective Y' := by
+    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+    intro v hv
+    have h0 := congrFun (LinearMap.mem_ker.1 hv) 0
+    simp only [Y', waldschmidtPointMap_apply_zero, Fin.cons_zero, mul_one, Pi.zero_apply] at h0
+    rw [eq_neg_smul_snoc_of_waldschmidtPointMap_mem _ (v := v) (hv ▸ Submodule.zero_mem _), h0,
+      neg_zero, zero_smul]
+  rw [hW]
+  exact (Submodule.equivMapOfInjective Y' hinj V).finrank_eq.symm
 
-end FinrankPointMap
+end PointMap
 
 /-- Waldschmidt's auxiliary function `z ↦ F(z) exp(t (z₀ + λ₁ z₁ + ⋯ + λ_{m-1} z_{m-1}))` on
 `ℂᵐ`, for a polynomial `F` and an integer `t`; here `l = (λ₁, …, λₘ)`, of which `λₘ` does not
