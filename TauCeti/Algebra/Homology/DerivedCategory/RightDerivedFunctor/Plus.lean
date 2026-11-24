@@ -95,20 +95,23 @@ theorem isIso_rightDerivedFunctorPlusUnit_app (hinj : ∀ (Y : C), Injective Y �
     (K : CochainComplex.Plus C) (hK : ∀ n, P (K.obj.X n)) :
     IsIso (F.rightDerivedFunctorPlusUnit.app K) := by
   obtain ⟨b, _⟩ := K.property
-  obtain ⟨L, i, _, _, hL, _⟩ :=
+  obtain ⟨L, i, _, hi, hL, hLb⟩ :=
     CochainComplex.Plus.modelCategoryQuillen.exists_mono_quasiIso_injective K.obj (b - 1) b
-  -- `L`, viewed as a bounded below complex of injective objects
+  -- `L`, viewed as a bounded below complex of injective objects: mapping its lift back along
+  -- `InjectiveObject.ι C` gives `L` by definition, so `hLb` is the required bound
   let L' : CochainComplex.Plus (InjectiveObject C) :=
     ⟨HomologicalComplex.liftObjectProperty _ L hL, b - 1,
-      (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C) _).1
-        (by assumption)⟩
+      (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C) _).1 hLb⟩
   let i' : K ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj L' := ObjectProperty.homMk i
-  -- `i` and `F(i)` are quasi-isomorphisms
+  -- `i` and `F(i)` are quasi-isomorphisms; by definition `i'.hom` is `i` and
+  -- `(F.mapCochainComplexPlus.map i').hom` is `(F.mapHomologicalComplex _).map i`
   have : IsIso (DerivedCategory.Plus.Q.map i') :=
-    Localization.inverts _ (CochainComplex.Plus.quasiIso C) i' (by assumption)
+    Localization.inverts _ (CochainComplex.Plus.quasiIso C) i'
+      ((CochainComplex.Plus.quasiIso_iff C i').2 hi)
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map i')) :=
     Localization.inverts _ (CochainComplex.Plus.quasiIso D) _
-      (F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n))
+      ((CochainComplex.Plus.quasiIso_iff D _).2
+        (F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n)))
   -- the map `F(L) ⟶ RF(L)` is an isomorphism, as `L` has injective terms
   have h := F.rightDerivedFunctorPlusUnit.naturality i'
   dsimp only [Functor.comp_map] at h
