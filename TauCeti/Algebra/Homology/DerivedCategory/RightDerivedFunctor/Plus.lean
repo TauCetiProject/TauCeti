@@ -71,18 +71,17 @@ quasi-isomorphism `K ⟶ L` between complexes with terms in `P`, where `L` vanis
 theorem quasiIso_map_of_mono_of_isStrictlyGE {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f]
     [QuasiIso f] (b : ℤ) [L.IsStrictlyGE b] (hK : ∀ n, P (K.X n))
     (hL : ∀ n, P (L.X n)) : QuasiIso ((F.mapHomologicalComplex _).map f) := by
-  let S := ShortComplex.mk f (cokernel.π f) (cokernel.condition f)
-  have hS : S.ShortExact := ShortComplex.ShortExact.mk'
-    (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f)) inferInstance inferInstance
+  let S := ShortComplex.cokernelSequence f
+  have hS : S.ShortExact := TauCeti.cokernelSequence_shortExact f
   have hSn := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
   -- the cokernel of `f` is acyclic, vanishes below degree `b` and has terms in `P`
-  have : (cokernel f).IsStrictlyGE b := (CochainComplex.isStrictlyGE_iff _ b).2 fun i hi ↦
-    have := (hSn i).epi_g
+  have : S.X₃.IsStrictlyGE b := (CochainComplex.isStrictlyGE_iff _ b).2 fun i hi ↦
+    have : Epi (S.g.f i) := (hSn i).epi_g
     (L.isZero_of_isStrictlyGE b i hi).of_epi (S.g.f i)
   have hFS : (S.map (F.mapHomologicalComplex _)).ShortExact :=
     HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ hF _ (hSn n) (hK n) (hL n)
   exact hFS.quasiIso_f_iff.2 (HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE F P hP hF
-    b (hS.quasiIso_f_iff.1 inferInstance) fun n ↦ hP _ (hSn n) (hK n) (hL n))
+    b (hS.quasiIso_f_iff.1 (inferInstanceAs (QuasiIso f))) fun n ↦ hP _ (hSn n) (hK n) (hL n))
 
 variable [HasDerivedCategory C] [HasDerivedCategory D] [EnoughInjectives C]
 
