@@ -32,7 +32,10 @@ For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
 `CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
 `i'` with base change along `i` and then along `t`;
 when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
-change along `t` of the fiber at `i`.
+change along `t` of the fiber at `i`. For a commuting triangle `a ≫ b = d`, the natural isomorphism
+`CategoryTheory.Over.pullbackCompIsoOfEq` identifies base change along `b` and then along `a` with
+base change along `d`, coherently for three composable morphisms
+(`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`).
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -175,6 +178,70 @@ theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A :
   Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
 end CommSquare
+
+section Triangle
+
+variable {X Y Z : C} {a : X ⟶ Y} {b : Y ⟶ Z} {d : X ⟶ Z} [HasPullbacksAlong a]
+  [HasPullbacksAlong b] [HasPullbacksAlong d]
+
+/-- For a commuting triangle `a ≫ b = d`, base change along `b` and then along `a` is naturally
+isomorphic to base change along `d`. This is `pullbackComp a b`, inverted and transported along
+the equality `a ≫ b = d`. -/
+noncomputable def pullbackCompIsoOfEq (h : a ≫ b = d) : pullback b ⋙ pullback a ≅ pullback d :=
+  (pullbackComp a b).symm ≪≫ eqToIso (by subst h; rfl)
+
+/-- `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_fst (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫ pullback.fst A.hom d =
+      pullback.fst (pullback.snd A.hom b) a ≫ pullback.fst A.hom b := by
+  subst h
+  simp [pullbackCompIsoOfEq, pullbackComp]
+
+/-- `pullbackCompIsoOfEq` commutes with the projections to `X`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_snd (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫ pullback.snd A.hom d =
+      pullback.snd (pullback.snd A.hom b) a :=
+  Over.w ((pullbackCompIsoOfEq h).hom.app A)
+
+/-- The inverse of `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_fst_fst (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫ pullback.fst (pullback.snd A.hom b) a ≫
+      pullback.fst A.hom b = pullback.fst A.hom d := by
+  subst h
+  simp [pullbackCompIsoOfEq, pullbackComp]
+
+/-- The inverse of `pullbackCompIsoOfEq` commutes with the projections to `X`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_snd (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫ pullback.snd (pullback.snd A.hom b) a =
+      pullback.snd A.hom d :=
+  Over.w ((pullbackCompIsoOfEq h).inv.app A)
+
+/-- The identifications `pullbackCompIsoOfEq` are coherent for three composable morphisms
+`x ≫ a ≫ b`: identifying base change along `x ≫ (a ≫ b)` in one step agrees with identifying it
+first along `a ≫ b` and then along `(x ≫ a) ≫ b`. -/
+theorem pullbackCompIsoOfEq_hom_app_eq {W : C} {x : W ⟶ X} {y : W ⟶ Y} {v : X ⟶ Z} {w : W ⟶ Z}
+    [HasPullbacksAlong x] [HasPullbacksAlong y] [HasPullbacksAlong v] [HasPullbacksAlong w]
+    (hxa : x ≫ a = y) (hab : a ≫ b = v) (hyb : y ≫ b = w) (hxv : x ≫ v = w) (A : Over Z) :
+    (pullbackCompIsoOfEq hxv).hom.app A =
+      (pullback x).map ((pullbackCompIsoOfEq hab).inv.app A) ≫
+        (pullbackCompIsoOfEq hxa).hom.app ((pullback b).obj A) ≫
+          (pullbackCompIsoOfEq hyb).hom.app A := by
+  -- The identity is checked on the two projections out of `A ×_Z W`; the projection lemmas for
+  -- the middle factor are stated for `A ×_Z Y` as an object of `Over Y`.
+  have h₁ := pullbackCompIsoOfEq_hom_app_left_fst_assoc hxa ((pullback b).obj A)
+    (pullback.fst A.hom b)
+  have h₂ := pullbackCompIsoOfEq_hom_app_left_snd hxa ((pullback b).obj A)
+  dsimp only [pullback_obj_hom] at h₁ h₂
+  ext1
+  apply pullback.hom_ext
+  · simp [h₁]
+  · simp [h₂]
+
+end Triangle
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/
