@@ -94,24 +94,15 @@ theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R
   simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
 
 /-- In a seminormed ring whose seminorm is power-multiplicative and ultrametric, every element
-integral over `ℤ` has norm at most `1`. -/
+integral over `ℤ` has norm at most `1`. This is the norm analogue of
+`IsNonarchimedean.apply_le_one_of_isIntegral_int`, and like it a case of
+`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`. -/
 theorem IsUltrametricDist.norm_le_one_of_isIntegral {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] (hR : IsPowMul (‖·‖ : R → ℝ)) {x : R} (hx : IsIntegral ℤ x) :
-    ‖x‖ ≤ 1 := by
-  by_contra! hx1
-  have : Nontrivial R := ⟨x, 0, by rintro rfl; rw [norm_zero] at hx1; linarith⟩
-  -- `‖1‖ = ‖1‖ ^ 2`, and `‖1‖ ≠ 0` as `‖x‖ ≤ ‖x‖ ‖1‖`, so the integers have norm at most `1`.
-  have h1 : ‖(1 : R)‖ = 1 := by
-    have h2 := hR 1 (n := 2) (by norm_num)
-    have h3 : ‖x‖ ≤ ‖x‖ * ‖(1 : R)‖ := by simpa using norm_mul_le x 1
-    rw [one_pow] at h2
-    nlinarith [norm_nonneg (1 : R)]
-  obtain ⟨p, hpm, hp⟩ := hx
-  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap ℤ R)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    norm_nonneg norm_mul_le hR isNonarchimedean_norm (by rwa [Polynomial.eval_map])
-  rw [Polynomial.coeff_map, eq_intCast] at hle
-  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge
-    (hle.trans (h1 ▸ norm_intCast_le_norm_one _))
+    ‖x‖ ≤ 1 :=
+  isNonarchimedean_norm.apply_le_one_of_isIntegral_of_isPowMul norm_nonneg norm_mul_le hR
+    (fun z ↦ eq_intCast (algebraMap ℤ R) z ▸ (norm_intCast_le_norm_one z).trans hR.map_one_le_one)
+    hx
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1`, arbitrarily large natural numbers have norm
 one: of two consecutive natural numbers, one has norm one, since their difference does. -/
