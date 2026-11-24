@@ -189,16 +189,11 @@ instance : MulAction (GL (Fin n) 𝕜)ᵐᵒᵖ (FrameBundle 𝕜 n F E) where
       (ContinuousLinearMap.isInvertible_comp_equiv (e := toContinuousLinearEquiv g.unop)).2
         v.isInvertible⟩
   one_smul v := Subtype.ext <| TotalSpace.ext rfl <| heq_of_eq <|
-    ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd
-      (show toContinuousLinearEquiv (unop 1 : GL (Fin n) 𝕜) w = w by
-        simp only [toContinuousLinearEquiv_apply]
-        simp)
+    ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd <|
+      DFunLike.congr_fun (map_one toContinuousLinearEquiv) w
   mul_smul g h v := Subtype.ext <| TotalSpace.ext rfl <| heq_of_eq <|
-    ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd
-      (show toContinuousLinearEquiv (unop (g * h)) w =
-          toContinuousLinearEquiv (unop h) (toContinuousLinearEquiv (unop g) w) by
-        simp only [toContinuousLinearEquiv_apply]
-        simp [Matrix.mulVec_mulVec])
+    ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd <|
+      DFunLike.congr_fun (map_mul toContinuousLinearEquiv h.unop g.unop) w
 
 theorem smul_def (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) :
     g • v = mk v.proj ((toContinuousLinearEquiv g.unop).trans v.frameEquiv) :=
