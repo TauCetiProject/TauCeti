@@ -142,22 +142,6 @@ theorem eventually_abs_norm_mfderiv_sub_norm_le (h : IsAsymptoticallyEuclideanEn
     simpa using (lt_add_one R).trans_le hxR
   exact (hC x hx v).trans (mul_le_mul_of_nonneg_right hxε (norm_nonneg v))
 
-/-- Every point of `M` lies outside the image of the exterior of all large balls: by injectivity
-of the end, a point `φ z` of its image is not the image of a point outside the ball of radius
-`‖z‖`. -/
-private theorem eventually_notMem_image (h : IsAsymptoticallyEuclideanEnd I t R φ) (p : M) :
-    ∀ᶠ a in atTop, p ∉ φ '' (closedBall 0 a)ᶜ := by
-  by_cases hp : p ∈ φ '' (closedBall 0 R)ᶜ
-  · obtain ⟨z, hz, rfl⟩ := hp
-    filter_upwards [eventually_ge_atTop ‖z‖] with a ha ⟨y, hy, hyz⟩
-    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le] at hy hz
-    have hyR : y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
-      simpa using hz.trans (ha.trans_lt hy)
-    rw [h.injOn hyR (by simpa using hz) hyz] at hy
-    linarith
-  · filter_upwards [eventually_ge_atTop R] with a ha
-    exact fun hpa ↦ hp (image_mono (compl_subset_compl.2 (closedBall_subset_closedBall ha)) hpa)
-
 /-! ### The lower bound -/
 
 variable [IsManifold I ∞ M]
@@ -175,45 +159,39 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
     (hlt : pathELength I γ 0 s < ENNReal.ofReal (c * (‖x‖ - b))) :
     γ s ∈ φ '' (ball 0 (2 * ‖x‖ - b) \ closedBall 0 b) := by
   set S : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 (2 * ‖x‖ - b) \ ball 0 b
-  obtain ⟨e, he⟩ : ∃ e, e = h.toPartialDiffeomorph := ⟨_, rfl⟩
-  have hes : e.source = (closedBall 0 R)ᶜ := he ▸ h.toPartialDiffeomorph_source
-  have het : e.target = φ '' (closedBall 0 R)ᶜ := he ▸ h.toPartialDiffeomorph_target
-  have hec : ⇑e.toOpenPartialHomeomorph = φ := he ▸ h.coe_toPartialDiffeomorph
-  have hSR : S ⊆ (closedBall 0 R)ᶜ := fun y hy ↦ by
-    simp only [S, Set.mem_sdiff, mem_ball_zero_iff, not_lt] at hy
-    simpa using hb.trans_le hy.2
-  -- Read the path in the coordinates of the end, through the inverse of the end.
-  have hinv {y} (hy : y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) : e.invFun (φ y) = y := by
-    rw [← hec]
-    exact e.left_inv (hes ▸ hy)
-  have hmem {r} (hr : r ∈ Icc 0 s) : e.invFun (γ r) ∈ S ∧ φ (e.invFun (γ r)) = γ r := by
+  have hSR : S ⊆ (closedBall 0 R)ᶜ :=
+    (sdiff_subset_compl _ _).trans (compl_subset_compl.2 (closedBall_subset_ball hb))
+  -- Read the path in the coordinates of the end, through the inverse `ψ` of the end.
+  set ψ := h.toPartialDiffeomorph.symm
+  have hmem {r} (hr : r ∈ Icc 0 s) : ψ (γ r) ∈ S ∧ φ (ψ (γ r)) = γ r := by
     obtain ⟨y, hy, hyr⟩ := hsub hr
-    rw [← hyr, hinv (hSR hy)]
+    rw [← hyr, h.toPartialDiffeomorph_symm_apply (hSR hy)]
     exact ⟨hy, rfl⟩
-  have hy : ContDiffOn ℝ 1 (e.invFun ∘ γ) (Icc 0 s) :=
-    contMDiffOn_iff_contDiffOn.1 ((e.contMDiffOn_invFun.of_le (by simp)).comp hγ fun r hr ↦ by
-      rw [mem_preimage, het, ← (hmem hr).2]
+  have hy : ContDiffOn ℝ 1 (ψ ∘ γ) (Icc 0 s) :=
+    contMDiffOn_iff_contDiffOn.1 ((ψ.contMDiffOn.of_le (by simp)).comp hγ fun r hr ↦ by
+      rw [mem_preimage, ← (hmem hr).2, PartialDiffeomorph.symm_toPartialEquiv,
+        PartialEquiv.symm_source, toPartialDiffeomorph_target]
       exact mem_image_of_mem φ (hSR (hmem hr).1))
   have hdiff (r) (hr : r ∈ Icc 0 s) :
-      MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ (e.invFun (γ r)) :=
+      MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ (ψ (γ r)) :=
     (h.contMDiffOn.contMDiffAt (isClosed_closedBall.isOpen_compl.mem_nhds
       (hSR (hmem hr).1))).mdifferentiableAt (by simp)
   have hlen := Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp hs hy hdiff
     fun r hr ↦ hc _ (hmem hr).1
-  have hx : e.invFun (φ x) = x := hinv (by simpa using hb.trans hbx)
-  rw [pathELength_congr (γ := φ ∘ e.invFun ∘ γ) (γ' := γ) fun r hr ↦ (hmem hr).2,
+  have hx : ψ (φ x) = x := h.toPartialDiffeomorph_symm_apply (by simpa using hb.trans hbx)
+  rw [pathELength_congr (γ := φ ∘ ψ ∘ γ) (γ' := γ) fun r hr ↦ (hmem hr).2,
     Function.comp_apply, Function.comp_apply, hγ0, hx] at hlen
   -- The coordinates have moved by less than `‖x‖ - b`.
-  have hdisp : ‖e.invFun (γ s) - x‖ < ‖x‖ - b := by
+  have hdisp : ‖ψ (γ s) - x‖ < ‖x‖ - b := by
     have := hlen.trans_lt hlt
     rw [← ofReal_norm, ← ENNReal.ofReal_mul hc0.le,
       ENNReal.ofReal_lt_ofReal_iff (mul_pos hc0 (by linarith))] at this
     exact lt_of_mul_lt_mul_left this hc0.le
-  refine ⟨e.invFun (γ s), ⟨?_, ?_⟩, (hmem (right_mem_Icc.2 hs)).2⟩
+  refine ⟨ψ (γ s), ⟨?_, ?_⟩, (hmem (right_mem_Icc.2 hs)).2⟩
   · rw [mem_ball_zero_iff]
-    linarith [norm_sub_norm_le (e.invFun (γ s)) x]
+    linarith [norm_sub_norm_le (ψ (γ s)) x]
   · rw [mem_closedBall_zero_iff, not_le]
-    linarith [norm_sub_norm_le x (e.invFun (γ s)), norm_sub_rev (e.invFun (γ s)) x]
+    linarith [norm_sub_norm_le x (ψ (γ s)), norm_sub_rev (ψ (γ s)) x]
 
 /-- The lower bound for one annulus `b ≤ ‖y‖ ≤ 2 ‖x‖ - b`, `a < b < ‖x‖`: a path from `φ x` that
 is shorter than `c (‖x‖ - b)` stays in the image of the annulus, so it cannot reach a point
@@ -229,21 +207,16 @@ private theorem ofReal_mul_sub_le_riemannianEDist_of_lt [T2Space M]
   -- The closed annulus `S` and its open interior `U`, with images `φ '' S ⊇ φ '' U` in `M`.
   set S : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 (2 * ‖x‖ - b) \ ball 0 b
   set U : Set (EuclideanSpace ℝ (Fin n)) := ball 0 (2 * ‖x‖ - b) \ closedBall 0 b
-  have hSa : S ⊆ (closedBall 0 a)ᶜ := fun y hy ↦ by
-    simp only [S, Set.mem_sdiff, mem_ball_zero_iff, not_lt] at hy
-    simpa using hab.trans_le hy.2
+  have hSa : S ⊆ (closedBall 0 a)ᶜ :=
+    (sdiff_subset_compl _ _).trans (compl_subset_compl.2 (closedBall_subset_ball hab))
   have hSR : S ⊆ (closedBall 0 R)ᶜ :=
     hSa.trans (compl_subset_compl.2 (closedBall_subset_closedBall ha))
   have hUS : U ⊆ S := sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall
   have hTc : IsClosed (φ '' S) :=
     (((isCompact_closedBall 0 _).diff isOpen_ball).image_of_continuousOn
       (h.contMDiffOn.continuousOn.mono hSR)).isClosed
-  have hVo : IsOpen (φ '' U) := by
-    obtain ⟨e, he⟩ : ∃ e, e = h.toPartialDiffeomorph := ⟨_, rfl⟩
-    have hUe : U ⊆ e.source := he ▸ h.toPartialDiffeomorph_source ▸ hUS.trans hSR
-    have hec : ⇑e.toOpenPartialHomeomorph = φ := he ▸ h.coe_toPartialDiffeomorph
-    exact hec ▸ e.toOpenPartialHomeomorph.isOpen_image_of_subset_source
-      (isOpen_ball.sdiff isClosed_closedBall) hUe
+  have hVo : IsOpen (φ '' U) :=
+    h.isOpen_image_of_subset (isOpen_ball.sdiff isClosed_closedBall) (hUS.trans hSR)
   have hxS : x ∈ S := by
     simp only [S, Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff, not_lt]
     constructor <;> linarith
@@ -272,7 +245,8 @@ private theorem ofReal_mul_sub_le_riemannianEDist_of_lt [T2Space M]
 asymptotically Euclidean end stretches vectors by at least the factor `c ≥ 0` outside the ball
 of radius `a ≥ R`, then the Riemannian distance from `φ x` to any point `p` outside the image of
 that exterior is at least `c (‖x‖ - a)`. The point `p` may lie outside the end altogether, and
-the paths from `φ x` to `p` may leave the end. -/
+the paths from `φ x` to `p` may leave the end. Every `p` satisfies the hypothesis for all large
+`a`, by `eventually_notMem_image_compl_closedBall`. -/
 theorem ofReal_mul_sub_le_riemannianEDist [T2Space M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
     {a c : ℝ} (ha : R ≤ a) (hc0 : 0 ≤ c)
     (hc : ∀ y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) a)ᶜ, ∀ v : EuclideanSpace ℝ (Fin n),
@@ -307,7 +281,8 @@ private theorem exists_sub_le_dist (h : IsAsymptoticallyEuclideanEnd I t R φ) (
   obtain ⟨r, -, hr⟩ :=
     (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).eventually_iff.1
       (h.eventually_abs_norm_mfderiv_sub_norm_le ht hε)
-  obtain ⟨a, ha, hpa⟩ := ((eventually_ge_atTop (max r R)).and (h.eventually_notMem_image p)).exists
+  obtain ⟨a, ha, hpa⟩ := ((eventually_ge_atTop (max r R)).and
+    (h.eventually_notMem_image_compl_closedBall p)).exists
   refine ⟨(1 - ε) * a, fun x ↦ ?_⟩
   have hc (y) (hy : y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) a)ᶜ)
       (v : EuclideanSpace ℝ (Fin n)) :
