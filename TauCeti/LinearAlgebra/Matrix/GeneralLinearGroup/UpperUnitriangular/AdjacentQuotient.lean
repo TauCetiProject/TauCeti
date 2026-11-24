@@ -12,8 +12,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular
 # The adjacent quotient of an upper-unitriangular group
 
 For a ring `R` and `n : ℕ`, write `U = Uₙ₊₁(R)` for the upper-unitriangular `(n+1) × (n+1)`
-matrices, indexed by `Fin (n + 1)`, and `U¹` for the subgroup of matrices whose first
-superdiagonal vanishes (`superdiagonalSubgroup 2`). Entries one step above the diagonal add
+matrices, indexed by `Fin (n + 1)`, and `U^2` for the subgroup of matrices whose first
+superdiagonal vanishes (`superdiagonalSubgroup 2`, following the numbering of `Nilpotent.lean`,
+where `U^1 = U`; Harpaz–Wittenberg call this subgroup `U¹`). Entries one step above the diagonal add
 under multiplication, even though the entries further out acquire cross terms: the `(0, 2)` entry
 of `gh` contains `g₀₁h₁₂`. So reading off the first superdiagonal is a homomorphism
 
@@ -21,10 +22,10 @@ of `gh` contains `g₀₁h₁₂`. So reading off the first superdiagonal is a h
 U → (Rⁿ, +),  g ↦ (g_{i,i+1})ᵢ,
 ```
 
-which is surjective, with kernel exactly `U¹`. It identifies the adjacent quotient `U/U¹` with
+which is surjective, with kernel exactly `U^2`. It identifies the adjacent quotient `U/U^2` with
 `Rⁿ`. A homomorphism into `U` thus has adjacent quotient a tuple of homomorphisms into `(R, +)`,
 the adjacent entries; this is how characters `χ₀, …, χₙ₋₁` enter the lifting problems for
-unitriangular groups behind Massey products, and how `U/U¹` acts on the higher layers of the
+unitriangular groups behind Massey products, and how `U/U^2` acts on the higher layers of the
 filtration by conjugation.
 
 ## Main declarations
@@ -32,8 +33,8 @@ filtration by conjugation.
 * `TauCeti.UpperUnitriangularGroup.adjacentHom`: the homomorphism `U →* Multiplicative (Fin n → R)`
   reading off the first superdiagonal.
 * `TauCeti.UpperUnitriangularGroup.sparseLift`: the section `a ↦ 1 + ∑ᵢ aᵢ E_{i,i+1}`.
-* `TauCeti.UpperUnitriangularGroup.ker_adjacentHom`: the kernel is `U¹`.
-* `TauCeti.UpperUnitriangularGroup.adjacentQuotientEquiv`: `U ⧸ U¹ ≃* Multiplicative (Fin n → R)`.
+* `TauCeti.UpperUnitriangularGroup.ker_adjacentHom`: the kernel is `U^2`.
+* `TauCeti.UpperUnitriangularGroup.adjacentQuotientEquiv`: `U ⧸ U^2 ≃* Multiplicative (Fin n → R)`.
 * `TauCeti.UpperUnitriangularGroup.adjacentHom_comp_map` and
   `TauCeti.UpperUnitriangularGroup.adjacentQuotientEquiv_map`: naturality in the coefficient
   ring.
@@ -159,7 +160,7 @@ theorem adjacentHom_surjective : Function.Surjective (adjacentHom R n) :=
   fun x ↦ ⟨sparseLift R x.toAdd, by simp⟩
 
 variable (R n) in
-/-- The adjacent quotient `Uₙ₊₁(R) ⧸ U¹` is identified with `(Rⁿ, +)` by the entries one step
+/-- The adjacent quotient `Uₙ₊₁(R) ⧸ U^2` is identified with `(Rⁿ, +)` by the entries one step
 above the diagonal. -/
 noncomputable def adjacentQuotientEquiv :
     upperUnitriangularGroup (Fin (n + 1)) R ⧸ superdiagonalSubgroup (R := R) (n := n + 1) 2 ≃*
@@ -204,7 +205,7 @@ theorem adjacentHom_comp_map (f : R →+* S) :
   simp
 
 /-- The adjacent quotient is natural in the coefficient ring: base change on `Uₙ₊₁` descends to the
-quotients by `U¹`, and corresponds to applying `f` coordinatewise to the tuple. -/
+quotients by `U^2`, and corresponds to applying `f` coordinatewise to the tuple. -/
 theorem adjacentQuotientEquiv_map (f : R →+* S)
     (x : upperUnitriangularGroup (Fin (n + 1)) R ⧸ superdiagonalSubgroup (R := R) (n := n + 1) 2) :
     adjacentQuotientEquiv S n
