@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Vertex.HasseDeriv
 public import TauCeti.Algebra.Vertex.ResidueProduct
 public import TauCeti.Algebra.Vertex.NormalOrder
+public import Mathlib.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Nat.Choose.Sum
 import TauCeti.RingTheory.Binomial
@@ -43,7 +44,9 @@ products (`lie_ncoeff_nthProduct`).
 
 ## Main results
 
-* `VertexOperator.ncoeff_nthProduct_apply_eq_sum`: unified mode formula for all `n, m : ℤ`.
+* `VertexOperator.ncoeff_nthProduct_apply_eq_sum` and
+  `VertexOperator.ncoeff_nthProduct_apply`: unified mode formula for all `n, m : ℤ` in finite-sum
+  and `finsum` forms.
 * `VertexOperator.nthProduct_derivative_left`: `(∂A)₍ₙ₎ B = -n • A₍ₙ₋₁₎ B`.
 * `VertexOperator.derivative_nthProduct`: `∂(A₍ₙ₎ B) = (∂A)₍ₙ₎ B + A₍ₙ₎ (∂B)`.
 * `VertexOperator.lie_ncoeff_nthProduct_eq_add`, `VertexOperator.lie_ncoeff_nthProduct`:
@@ -142,7 +145,12 @@ theorem lie_ncoeff_eq_sum_nthProduct {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) (m n : ℤ) :
     ⁅A[[m]], B[[n]]⁆ =
       ∑ j ∈ range N, Ring.choose m j • (nthProduct (j : ℤ) A B)[[m + n - j]] := by
-  simpa only [nthProduct_natCast] using h.lie_ncoeff m n
+  have hc := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
+  rw [Finset.sum_apply, Finset.sum_apply, commutatorDistribution_apply] at hc
+  rw [Ring.lie_def, hc]
+  refine sum_congr rfl fun j _ ↦ ?_
+  rw [nthProduct_natCast, FormalDistribution.deltaTerm_apply,
+    ncoeff_nonnegResidueProduct_eq_residue]
 
 end IsLocalOfOrder
 
@@ -411,29 +419,6 @@ theorem ncoeff_neg_one_nthProduct_apply {A B : VertexOperator R V} {vac : V}
   rw [ncoeff_nthProduct_apply_eq_sum n A B (-1) vac (K := 1)
     (fun i _ ↦ hA i (Nat.cast_nonneg i)) (fun i hi ↦ hB (-1 + i) (by omega))]
   simp [hA 0 le_rfl]
-
-/-- Left `n`-th products with the identity field vanish except at `n = -1`, where they act as the
-identity. -/
-theorem nthProduct_idField_left (n : ℤ) (B : VertexOperator R V) :
-    nthProduct n (idField : VertexOperator R V) B = if n = -1 then B else 0 := by
-  rcases le_or_gt 0 n with hn | hn
-  · have hne : n ≠ -1 := by omega
-    simp [nthProduct_of_nonneg hn, hne]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
-    cases k with
-    | zero => simp
-    | succ k =>
-      rw [nthProduct_neg_natCast_sub_one, hasseDeriv_succ_idField, normalOrder_zero_left]
-      split_ifs <;> [omega; rfl]
-
-/-- Right `n`-th products with the identity field vanish for `n ≥ 0` and yield the `(-n - 1)`-st
-Hasse derivative for `n < 0`. -/
-theorem nthProduct_idField_right (n : ℤ) (A : VertexOperator R V) :
-    nthProduct n A (idField : VertexOperator R V) =
-      if 0 ≤ n then 0 else hasseDeriv (-n - 1).toNat A := by
-  rcases le_or_gt 0 n with hn | hn
-  · simp [nthProduct_of_nonneg hn, hn]
-  · simp [nthProduct_of_neg hn, not_le.mpr hn]
 
 /-- **Mode iterate formula** (`m = 0` case of the Borcherds identity) for any two vertex operators
 over a commutative ring, in `finsum` form:

@@ -24,24 +24,21 @@ Without division, the divided power `T^{(s)} c` is represented by the creation c
 `c₍₋ₛ₋₁₎|0⟩`, whose `s!`-fold multiple is `Tˢ c`
 (`TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`). The identities are
 stated in this division-free form over a torsion-free module, as well as in the `Tˢ / s!` form over
-`ℚ` (`TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`,
-`TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymmetry`).
+`ℚ` (`TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`).
 
 ## Main results
 
 * `TauCeti.FormalVertexAxioms.ncoeff_field_apply_ncoeff_field_apply_vacuum_eq_sum`: a mode moves
   past a creation vector by `b₍q₎ (a₍ₚ₎|0⟩) = ∑_l (q choose l) (b₍q₋ₗ₎ a)₍ₚ₊ₗ₎|0⟩`, the
   coefficient form of `Y(b,w) e^{zT} a = e^{zT} Y(b,w-z) a`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_vacuum`: finite-sum skew symmetry
-  `a₍ₙ₎ b = ∑_s (-1)^{n+s+1} (b₍ₙ₊ₛ₎ a)₍₋ₛ₋₁₎|0⟩`.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum`: finite-sum skew
+  symmetry `a₍ₙ₎ b = ∑_s (-1)^{n+s+1} (b₍ₙ₊ₛ₎ a)₍₋ₛ₋₁₎|0⟩`.
 * `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`: finite-sum `e^{zT}` form
   over `ℚ`.
 * `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`:
   `a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymmetry_vacuum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymmetry`: `finsum` skew symmetry in
-  division-free and `ℚ`-algebra forms.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_skewSymmetry_vacuum`: division-free `finsum` skew
+  symmetry.
 
 ## Implementation notes
 
@@ -225,19 +222,6 @@ theorem ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum [HasUniqueDiv V] (a 
     rw [show -1 + (N : ℤ) - ↑(K - 1 - s) = n + s by omega,
       show n - (N : ℤ) + ↑(K - 1 - s) = -s - 1 by omega, smul_smul, hsign, Units.smul_def]
 
-/-- **Skew symmetry (division-free form).** Over any module with unique divisibility, for any
-cutoff `K : ℕ` above which `b₍ₙ₊ⱼ₎ a = 0`,
-`a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (b₍ₙ₊ⱼ₎ a)₍₋ⱼ₋₁₎|0⟩`. -/
-theorem ncoeff_field_apply_eq_sum_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) {K : ℕ}
-    (hba : ∀ j : ℕ, K ≤ j → ((A.field b)[[n + j]]) a = 0) :
-    ((A.field a)[[n]]) b =
-      ∑ j ∈ range K, Int.negOnePow (n + j + 1) •
-        ((A.field (((A.field b)[[n + j]]) a))[[-j - 1]]) A.vacuum := by
-  rw [A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n K fun k hk ↦ by
-    have hk' : k = n + ((k - n).toNat : ℤ) := by omega
-    rw [hk']
-    exact hba (k - n).toNat (by omega)]
-
 /-- **Skew symmetry (`e^{zT}` form).** Over a `ℚ`-module, for any cutoff `K : ℕ` above which
 `b₍ₙ₊ⱼ₎ a = 0`, `a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (j!)⁻¹ • Tʲ (b₍ₙ₊ⱼ₎ a)`. -/
 theorem ncoeff_field_apply_eq_sum_translation_pow [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
@@ -246,7 +230,10 @@ theorem ncoeff_field_apply_eq_sum_translation_pow [Module ℚ V] (a b : V) (n : 
       ∑ j ∈ range K, Int.negOnePow (n + j + 1) • (j.factorial : ℚ)⁻¹ •
         (A.translation ^ j) (((A.field b)[[n + j]]) a) := by
   have : HasUniqueDiv V := .of_module_rat V
-  rw [A.ncoeff_field_apply_eq_sum_vacuum a b n hba]
+  rw [A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n K fun k hk ↦ by
+    have hk' : k = n + ((k - n).toNat : ℤ) := by omega
+    rw [hk']
+    exact hba (k - n).toNat (by omega)]
   refine sum_congr rfl fun j _ ↦ ?_
   rw [A.ncoeff_field_apply_vacuum_neg]
 
@@ -276,19 +263,11 @@ theorem ncoeff_field_apply_skewSymmetry_vacuum [HasUniqueDiv V] (a b : V) (n : �
         ((A.field (((A.field b)[[n + i]]) a))[[-(i : ℤ) - 1]]) A.vacuum := by
   obtain ⟨M, hM⟩ := (A.field b).exists_forall_ncoeff_add_apply_eq_zero a n
   rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := M) fun i hi ↦ by simp [hM i hi],
-    A.ncoeff_field_apply_eq_sum_vacuum a b n hM]
+    A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n M fun k hk ↦ by
+      have hk' : k = n + ((k - n).toNat : ℤ) := by omega
+      rw [hk']
+      exact hM (k - n).toNat (by omega)]
   refine sum_congr rfl fun i _ ↦ ?_
   rw [Int.negOnePow_succ, Units.smul_def, Units.val_neg, neg_smul]
-
-/-- **Skew symmetry (`ℚ`-algebra `finsum` form):**
-`a₍ₙ₎ b = ∑ᶠ i : ℕ, -(-1)ⁿ⁺ⁱ (i!)⁻¹ Tⁱ (b₍ₙ₊ᵢ₎ a)`. -/
-theorem ncoeff_field_apply_skewSymmetry [Algebra ℚ R] (a b : V) (n : ℤ) :
-    ((A.field a)[[n]]) b =
-      ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
-        (algebraMap ℚ R (i.factorial : ℚ)⁻¹ • (A.translation ^ i) (((A.field b)[[n + i]]) a)) := by
-  let : Module ℚ V := Module.compHom V (algebraMap ℚ R)
-  have : HasUniqueDiv V := .of_module_rat V
-  rw [A.ncoeff_field_apply_skewSymmetry_vacuum a b n]
-  exact finsum_congr fun i ↦ by rw [A.ncoeff_field_neg_succ_apply_vacuum]
 
 end TauCeti.FormalVertexAxioms

@@ -42,9 +42,8 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   `TauCeti.FormalVertexAxioms.ncoeff_field_apply_translation`:
   `a₍ₙ₎ (T b) = T (a₍ₙ₎ b) + n a₍ₙ₋₁₎ b`.
 * `TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`:
-  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg`, and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_neg_succ_apply_vacuum`:
-  `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
+  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` its
+  form `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
 * `TauCeti.FormalVertexAxioms.eq_of_ncoeff_apply_vacuum_eq`: Goddard's uniqueness theorem, a field
   local to every `Y(a,z)` is determined by its values on the vacuum.
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
@@ -138,12 +137,6 @@ theorem ncoeff_field_translation (a : V) (n : ℤ) :
     (A.field (A.translation a))[[n]] = (-n) • (A.field a)[[n - 1]] := by
   rw [A.field_translation, ncoeff_derivative]
 
-/-- Iterated translation intertwines with iterated formal differentiation of fields. -/
-theorem field_pow_translation (a : V) (k : ℕ) :
-    A.field ((A.translation ^ k) a) = (derivative^[k]) (A.field a) := by
-  rw [FunLike.coe_pow_eq_iterate]
-  exact Function.Semiconj.iterate_right A.field_translation k a
-
 /-- Translation is a derivation of each mode: `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`. -/
 theorem translation_ncoeff_apply (a b : V) (n : ℤ) :
     A.translation (((A.field a)[[n]]) b) =
@@ -179,13 +172,6 @@ theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
     ((A.field a)[[-k - 1]]) A.vacuum = (k.factorial : ℚ)⁻¹ • (A.translation ^ k) a := by
   rw [← A.factorial_smul_ncoeff_field_apply_vacuum, ← Nat.cast_smul_eq_nsmul ℚ,
     inv_smul_smul₀ (by exact_mod_cast k.factorial_ne_zero)]
-
-/-- The `ℚ`-algebra form of `FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`
-(cf. `ncoeff_field_apply_vacuum_neg`), `a₍₋ₖ₋₁₎|0⟩ = (k!)⁻¹ • Tᵏ a`. -/
-theorem ncoeff_field_neg_succ_apply_vacuum [Algebra ℚ R] (a : V) (k : ℕ) :
-    ((A.field a)[[-(k : ℤ) - 1]]) A.vacuum =
-      algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (A.translation ^ k) a := by
-  simpa using ncoeff_neg_succ_apply_of_lie A.translation_vacuum (A.lie_translation_ncoeff a) k
 
 /-! ### Extensionality -/
 

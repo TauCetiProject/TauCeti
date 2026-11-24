@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import TauCeti.RingTheory.LaurentSeries.HahnModuleDerivative
 public import Mathlib.Algebra.Lie.OfAssociative
-import TauCeti.Algebra.Module.Rat
 import TauCeti.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
@@ -127,15 +126,6 @@ theorem ncoeff_apply_of_nonneg [HasUniqueDiv V] {T : Module.End R V} {vac : V}
     have hk' : ((k + 1 : ℕ) : ℤ) - 1 = k := by push_cast; ring
     rw [hk', ih (k + 1) (by omega), map_zero, eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
     exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
-
-/-- Over a `ℚ`-algebra, if `T vac = 0` and `B` is translation-covariant with respect to `T`,
-then `B₍₋ₖ₋₁₎ vac = (k!)⁻¹ • Tᵏ (B₍₋₁₎ vac)`. -/
-theorem ncoeff_neg_succ_apply_of_lie [Algebra ℚ R] {T : Module.End R V} {vac : V}
-    (hvac : T vac = 0) {B : VertexOperator R V}
-    (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (k : ℕ) :
-    (B[[-(k : ℤ) - 1]]) vac = algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (T ^ k) ((B[[-1]]) vac) :=
-  TauCeti.eq_inv_smul_of_nsmul k.factorial_ne_zero
-    (by simpa only [natCast_zsmul] using factorial_smul_ncoeff_apply hvac hT k)
 
 /-- If `V` has unique divisibility, `T vac = 0`, and two `T`-covariant fields agree at mode `-1`
 on `vac`, then all of their modes agree on `vac`. -/

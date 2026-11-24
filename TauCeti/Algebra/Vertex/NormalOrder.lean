@@ -18,8 +18,7 @@ nonnegative modes on the right. For fields `A` and `B`, its normalized coefficie
                  ∑ᶠ i : ℕ, B[[n-i-1]] (A[[i]] v)`.
 
 Both sums are finite on each vector, though generally not finite as sums of endomorphisms.
-We prove that these coefficients again define a field, without assuming mutual locality, that
-`idField` is a two-sided unit (`normalOrder_idField_left`, `normalOrder_idField_right`), and that
+We prove that these coefficients again define a field, without assuming mutual locality, and that
 formal differentiation is a derivation of normal ordering (`VertexOperator.derivative_normalOrder`).
 This is the binary operation needed to form quadratic current fields.
 
@@ -271,46 +270,6 @@ theorem normalOrder_sum_right {ι : Type*} (A : VertexOperator R V) (s : Finset 
     (B : ι → VertexOperator R V) :
     normalOrder A (∑ i ∈ s, B i) = ∑ i ∈ s, normalOrder A (B i) :=
   map_sum (normalOrderₗ A) B s
-
-/-- The identity field is a left unit for normal ordering. -/
-@[simp]
-theorem normalOrder_idField_left (B : VertexOperator R V) :
-    normalOrder (idField : VertexOperator R V) B = B := by
-  refine ext_ncoeff fun n ↦ LinearMap.ext fun v ↦ ?_
-  have hnonneg (i : ℕ) : (i : ℤ) ≠ -1 := by omega
-  have hne (i : ℕ) (hi : i ≠ 0) : -(i : ℤ) - 1 ≠ -1 := by omega
-  rw [ncoeff_normalOrder, normalOrderCoeff_apply, add_comm,
-    finsum_eq_zero_of_forall_eq_zero (fun i ↦ by simp [ncoeff_idField, hnonneg i]),
-    zero_add, finsum_eq_single _ 0 (fun i hi ↦ by simp [ncoeff_idField, hne i hi])]
-  simp [ncoeff_idField]
-
-/-- The identity field is a right unit for normal ordering. -/
-@[simp]
-theorem normalOrder_idField_right (A : VertexOperator R V) :
-    normalOrder A (idField : VertexOperator R V) = A := by
-  refine ext_ncoeff fun n ↦ LinearMap.ext fun v ↦ ?_
-  rw [ncoeff_normalOrder, normalOrderCoeff_apply]
-  -- `idField[[k]]` is nonzero only at `k = -1`: for `n ≥ 0` this selects `i = n.toNat` in the
-  -- right sum (`n - i - 1 = -1`), whereas for `n < 0` it selects `i = (-n - 1).toNat` in the
-  -- left sum (`n + i = -1`).
-  rcases le_or_gt 0 n with hn | hn
-  · have hleft (i : ℕ) : n + i ≠ -1 := by omega
-    have hidx : n - (n.toNat : ℤ) - 1 = -1 := by omega
-    have hnat : (n.toNat : ℤ) = n := by omega
-    have hright (i : ℕ) (hi : i ≠ n.toNat) : n - i - 1 ≠ -1 := by omega
-    rw [finsum_eq_zero_of_forall_eq_zero (fun i ↦ by simp [ncoeff_idField, hleft i]), zero_add,
-      finsum_eq_single _ n.toNat (fun i hi ↦ by simp [ncoeff_idField, hright i hi]),
-      hidx, hnat]
-    simp [ncoeff_idField]
-  · have hright (i : ℕ) : n - i - 1 ≠ -1 := by omega
-    have hidx : n + ((-n - 1).toNat : ℤ) = -1 := by omega
-    have hnat : -((-n - 1).toNat : ℤ) - 1 = n := by omega
-    have hleft (i : ℕ) (hi : i ≠ (-n - 1).toNat) : n + i ≠ -1 := by omega
-    rw [add_comm, finsum_eq_zero_of_forall_eq_zero (fun i ↦ by simp [ncoeff_idField, hright i]),
-      zero_add,
-      finsum_eq_single _ (-n - 1).toNat (fun i hi ↦ by simp [ncoeff_idField, hleft i hi]),
-      hidx, hnat]
-    simp [ncoeff_idField]
 
 /-- Formal differentiation is a derivation of normal ordering:
 `∂(:AB:) = :(∂A)B: + :A(∂B):`. -/

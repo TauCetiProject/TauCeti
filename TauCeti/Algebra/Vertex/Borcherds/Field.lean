@@ -28,8 +28,6 @@ The proof proceeds by two-way Pascal recurrence on `m` starting from the `m = 0`
 
 * `VertexOperator.IsLocalOfOrder.borcherds_finsum`: the field-level Borcherds identity in
   `finsum` form over any commutative ring.
-* `VertexOperator.IsLocalOfOrder.borcherds`: explicit finite-cutoff form of the field-level
-  Borcherds identity.
 
 ## References
 
@@ -85,15 +83,6 @@ private theorem borcherdsLHS_eq_sum {A B : VertexOperator R V} {v : V} {m n r : 
   unfold borcherdsLHS
   exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by
     simp [borcherdsLHSTerm, hM i hi]
-
-private theorem borcherdsRHS_eq_sum {A B : VertexOperator R V} {v : V} {m n r : ℤ} {M : ℕ}
-    (hB : ∀ i : ℕ, M ≤ i → (B[[r + i]]) v = 0) (hA : ∀ i : ℕ, M ≤ i → (A[[m + i]]) v = 0) :
-    borcherdsRHS A B v m n r =
-      ∑ i ∈ range M, ((-1 : ℤ) ^ i * Ring.choose n i) •
-        (borcherdsRHSTerm₁ A B v m n r i - borcherdsRHSTerm₂ A B v m n r i) := by
-  unfold borcherdsRHS
-  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by
-    simp [borcherdsRHSTerm₁, borcherdsRHSTerm₂, hB i hi, hA i hi]
 
 private theorem borcherdsRHS_eq_sub (A B : VertexOperator R V) (v : V) (m n r : ℤ) :
     borcherdsRHS A B v m n r =
@@ -218,34 +207,6 @@ theorem IsLocalOfOrder.borcherds_finsum {A B : VertexOperator R V} {N : ℕ}
           (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) := by
   simpa only [borcherdsLHS, borcherdsRHS, borcherdsLHSTerm, borcherdsRHSTerm₁,
     borcherdsRHSTerm₂] using borcherds_eq h v m n r
-
-/-- **Field-level Borcherds identity** with explicit finite cutoff `M`, over any commutative ring:
-all three mode expressions vanish for `i ≥ M`, and the finite sums over `Finset.range M` agree. -/
-theorem IsLocalOfOrder.borcherds {A B : VertexOperator R V} {N : ℕ}
-    (h : A.IsLocalOfOrder B N) (v : V) (m n r : ℤ) :
-    ∃ M : ℕ,
-      (∀ i : ℕ, M ≤ i → ((nthProduct (n + i) A B)[[m + r - i]]) v = 0) ∧
-      (∀ i : ℕ, M ≤ i →
-        (A[[m + n - i]]) ((B[[r + i]]) v) = 0 ∧ (B[[n + r - i]]) ((A[[m + i]]) v) = 0) ∧
-      (∑ i ∈ range M, Ring.choose m i • ((nthProduct (n + i) A B)[[m + r - i]]) v) =
-        ∑ i ∈ range M, ((-1 : ℤ) ^ i * Ring.choose n i) •
-          ((A[[m + n - i]]) ((B[[r + i]]) v) -
-            (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) := by
-  obtain ⟨K₁, hK₁⟩ := h.exists_nthProduct_add_cutoff n
-  obtain ⟨K₂, hK₂⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
-  obtain ⟨K₃, hK₃⟩ := A.exists_forall_ncoeff_add_apply_eq_zero v m
-  let M := max K₁ (max K₂ K₃)
-  have hcut (i : ℕ) (hi : M ≤ i) : nthProduct (n + i) A B = 0 :=
-    hK₁ i (by omega)
-  have hB (i : ℕ) (hi : M ≤ i) : (B[[r + i]]) v = 0 :=
-    hK₂ i (by omega)
-  have hA (i : ℕ) (hi : M ≤ i) : (A[[m + i]]) v = 0 :=
-    hK₃ i (by omega)
-  refine ⟨M, fun i hi ↦ by simp [hcut i hi],
-    fun i hi ↦ ⟨by simp [hB i hi], by simp [hA i hi]⟩, ?_⟩
-  have hfin := borcherds_eq h v m n r
-  rw [borcherdsLHS_eq_sum hcut, borcherdsRHS_eq_sum hB hA] at hfin
-  simpa only [borcherdsLHSTerm, borcherdsRHSTerm₁, borcherdsRHSTerm₂] using hfin
 
 end BorcherdsField
 

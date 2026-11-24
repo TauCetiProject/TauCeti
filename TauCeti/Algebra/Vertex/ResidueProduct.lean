@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.FormalDistribution
-public import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
 
@@ -19,20 +18,10 @@ commutators. They define a native `VertexOperator` without any locality assumpti
 on each vector, truncation follows from truncation of `B` on that vector and on the
 finitely many vectors obtained by applying `A[[i]]`, for `0 ≤ i ≤ n`.
 
-The construction is bilinear, annihilated on either side by the identity field, and if the fields
-are local of order `N`, all products with index at least `N` vanish. Together with the delta
-expansion of mutual locality, these products govern the mode commutator formula
-`[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A_{(j)} B)₍ₘ₊ₙ₋ⱼ₎`
-(`VertexOperator.IsLocalOfOrder.lie_ncoeff`). Negative residue products involve normal ordering
+The construction is bilinear. If the fields are local of order `N`, all products
+with index at least `N` vanish. These are the singular products used in the
+operator product expansion; negative residue products involve normal ordering
 and are not constructed here.
-
-## Main definitions and results
-
-* `VertexOperator.nonnegResidueProduct`, `ncoeff_nonnegResidueProduct`: the bilinear nonnegative
-  residue product and its normalized modes.
-* `VertexOperator.IsLocalOfOrder.nonnegResidueProduct_eq_zero`, `nonnegResidueProduct_idField_left`,
-  `nonnegResidueProduct_idField_right`: vanishing above a locality bound and with `idField`.
-* `VertexOperator.IsLocalOfOrder.lie_ncoeff`: commutator formula for mutually local fields.
 
 ## References
 
@@ -44,7 +33,7 @@ public section
 
 noncomputable section
 
-open Finset Filter TauCeti
+open Finset Filter
 
 namespace VertexOperator
 
@@ -146,29 +135,5 @@ theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {
   apply ext_ncoeff
   intro m
   simpa using isLocalOfOrder_iff.mp (h.mono hn) 0 m
-
-/-- Every nonnegative residue product with the identity field on the left vanishes. -/
-@[simp]
-theorem nonnegResidueProduct_idField_left (n : ℕ) (B : VertexOperator R V) :
-    nonnegResidueProduct n (idField : VertexOperator R V) B = 0 :=
-  (isLocalOfOrder_idField B).nonnegResidueProduct_eq_zero (Nat.zero_le n)
-
-/-- Every nonnegative residue product with the identity field on the right vanishes. -/
-@[simp]
-theorem nonnegResidueProduct_idField_right (n : ℕ) (A : VertexOperator R V) :
-    nonnegResidueProduct n A (idField : VertexOperator R V) = 0 :=
-  (isLocalOfOrder_idField A).symm.nonnegResidueProduct_eq_zero (Nat.zero_le n)
-
-/-- **Commutator formula for mutually local vertex operators.** If `A` and `B` are local of order
-`N`, then `[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A_{(j)} B)₍ₘ₊ₙ₋ⱼ₎` over any commutative ring. -/
-theorem IsLocalOfOrder.lie_ncoeff {A B : VertexOperator R V} {N : ℕ}
-    (h : A.IsLocalOfOrder B N) (m n : ℤ) :
-    ⁅A[[m]], B[[n]]⁆ =
-      ∑ j ∈ range N, Ring.choose m j • (nonnegResidueProduct j A B)[[m + n - j]] := by
-  have hc := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
-  rw [Finset.sum_apply, Finset.sum_apply, commutatorDistribution_apply] at hc
-  rw [Ring.lie_def, hc]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [FormalDistribution.deltaTerm_apply, ncoeff_nonnegResidueProduct_eq_residue]
 
 end VertexOperator
