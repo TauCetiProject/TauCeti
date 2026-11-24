@@ -46,6 +46,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChain_isDGAlgebra`: `C_*(Ω_b B; R)` is a differential graded algebra.
 * `TauCeti.loopChainMap_lof`, `TauCeti.loopChainAugmentation_lof_zero`,
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
+* `TauCeti.loopChainMap_cubicalChainPoint`, `TauCeti.loopChainAugmentation_cubicalChainPoint`:
+  `C_*(Ωf)` sends the point chain of `γ` to that of `Ωf γ`, and the augmentation sends it to `1`.
 * `TauCeti.loopChainMap_apply`: `C_*(Ωf)` is the push-forward of chains along `Ωf`.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
@@ -125,6 +127,12 @@ theorem loopChainAugmentation_lof_succ (k : ℕ)
   rw [loopChainAugmentation, cubicalChainAugmentation_lof,
     cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero k)]
 
+/-- The augmentation of the point chain of a Moore loop is `1`. -/
+@[simp]
+theorem loopChainAugmentation_cubicalChainPoint (γ : MooreLoopSpace B b) :
+    loopChainAugmentation B b R (cubicalChainPoint (MooreLoopSpace B b) R γ) = 1 :=
+  cubicalChainAugmentation_cubicalChainPoint γ
+
 end Algebra
 
 section Map
@@ -151,6 +159,13 @@ theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
       cubicalChainLof (MooreLoopSpace B' b') R n
         (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap n y) := by
   rw [loopChainMap, cubicalChainDGAlgHom_lof]
+
+/-- `C_*(Ωf)` sends the point chain of a Moore loop `γ` to the point chain of `Ωf γ`. -/
+@[simp]
+theorem loopChainMap_cubicalChainPoint (f : C(B, B')) (hf : f b = b') (γ : MooreLoopSpace B b) :
+    loopChainMap R f hf (cubicalChainPoint (MooreLoopSpace B b) R γ) =
+      cubicalChainPoint (MooreLoopSpace B' b') R (MooreLoopSpace.map f hf γ) := by
+  rw [loopChainMap_def, cubicalChainDGAlgHom_cubicalChainPoint]
 
 /-- `C_*(Ωf)` is the push-forward of chains along `Ωf`. -/
 theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :

@@ -279,7 +279,7 @@ theorem loopCellAugmentation_differential (γ : MooreLoopSpace B b)
       (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
           (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u) =
       0 := by
-  simp [loopCellAugmentation_apply, loopChainAugmentation_def]
+  simp [loopCellAugmentation_apply]
 
 variable (B b R) in
 /-- **The loop in the attaching row cannot be dropped.** For every space and every nontrivial

@@ -217,11 +217,7 @@ theorem cubicalChainPoint_smul_cubicalChainModulePoint (g : G) (y : Y) :
     cubicalChainPoint G R g • cubicalChainModulePoint Y H R y =
       cubicalChainModulePoint Y H R (g • y) := by
   rw [cubicalChainPoint_def, cubicalChainModulePoint_def, cubicalChainModulePoint_def,
-    lof_smul_cubicalChainModuleLof, leftAct_ofCube]
-  congr 2
-  ext x
-  rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply]
-  simp [SingularCube.point_apply]
+    lof_smul_cubicalChainModuleLof, leftAct_ofCube_point]
 
 end LeftAction
 
