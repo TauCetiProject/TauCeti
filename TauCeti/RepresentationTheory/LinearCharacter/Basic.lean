@@ -121,6 +121,16 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
+/-- The kernel of the line of a linear character is the kernel of the character. -/
+@[simp]
+theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker]
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h 1
+  · simp [h]
+
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
 theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
