@@ -216,7 +216,7 @@ theorem coe_trace_integerRing (y : 𝒪[L]) :
 
 /-- The norm of an element of `𝒪[L]` lies in `𝒪[K]`. -/
 theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ 𝒪[K] := by
-  simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
+  simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).property
 
 variable (K L) in
 /-- The norm of a uniformizer of `𝒪[L]` is associated to the residue-degree power of a

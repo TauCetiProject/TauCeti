@@ -175,7 +175,7 @@ theorem exists_tendsto_liminf_le_gammaLiminf (F : ℕ → X → EReal) (x : X) :
       fun _ hn ↦ by simpa only [iInf_lt_iff, exists_prop] using hn
   obtain ⟨φ, hφ, hφP⟩ := extraction_forall_of_frequently h
   choose y hys hyc using hφP
-  refine ⟨Function.extend φ y fun _ ↦ x, hs.1.tendsto_right_iff.2 fun k _ ↦ ?_, ?_⟩
+  refine ⟨Function.extend φ y fun _ ↦ x, hs.toHasBasis.tendsto_right_iff.2 fun k _ ↦ ?_, ?_⟩
   · filter_upwards [eventually_ge_atTop (φ k)] with n hn
     by_cases hn' : ∃ j, φ j = n
     · obtain ⟨j, rfl⟩ := hn'
@@ -211,7 +211,7 @@ theorem exists_tendsto_limsup_le_gammaLimsup (F : ℕ → X → EReal) (x : X) :
   have hv : ∀ᶠ n in atTop, v n ∈ s (κ n) ∧ F n (v n) < c (κ n) := hκP.mono fun n hn ↦ by
     simp only [v, dite_eq_left hn]
     exact hn.choose_spec
-  refine ⟨v, hs.1.tendsto_right_iff.2 fun k _ ↦ ?_, ?_⟩
+  refine ⟨v, hs.toHasBasis.tendsto_right_iff.2 fun k _ ↦ ?_, ?_⟩
   · filter_upwards [hv, hκ.eventually_ge_atTop k] with n hn hkn
     exact hs.antitone hkn hn.1
   · refine le_of_forall_gt fun d hd ↦ ?_

@@ -33,8 +33,8 @@ modular symbols are in `TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.
 
 ## Main results
 
-* `TauCeti.ModularSymbols.rawPairing_single_sub_single_tmul`: the raw pairing sends
-  `([α] - [β]) ⊗ P` to `∫_β^α f(z) P(z, 1) dz`.
+* `TauCeti.ModularSymbols.rawPairing_divisor_tmul`: the raw pairing sends `([α] - [β]) ⊗ P`, the
+  divisor of the path from `β` to `α` tensored with `P`, to `∫_β^α f(z) P(z, 1) dz`.
 * `TauCeti.ModularSymbols.rawPairing_add`, `TauCeti.ModularSymbols.rawPairing_smul`: the raw
   pairing is `ℂ`-linear in the cusp form.
 
@@ -112,20 +112,19 @@ theorem rawPairing_tmul [CuspFormClass F 𝒢 k] (f : F) (hk : k = w + 2)
     rawPairing R f hk (D ⊗ₜ[R] P) =
       Finsupp.linearCombination R
         (fun α ↦ cuspIntegral (periodIntegrand f P) ∞ α)
-        (MonoidAlgebra.coeff D.1) := by
+        (MonoidAlgebra.coeff D.val) := by
   simp [rawPairing, periodDivisorPairing, Finsupp.linearCombination_apply, periodAtCusp_apply]
 
-/-- The raw pairing sends `([α] - [β]) ⊗ P` to the period from `β` to `α`. This is the
-characteristic formula relating the analytic pairing to the generators of modular symbols. -/
+/-- The raw pairing sends `([α] - [β]) ⊗ P`, the divisor of the path from `β` to `α` tensored with
+`P`, to the period from `β` to `α`. This is the characteristic formula relating the analytic
+pairing to the generators of modular symbols. -/
 @[simp]
-theorem rawPairing_single_sub_single_tmul [CuspFormClass F 𝒢 k] (f : F)
+theorem rawPairing_divisor_tmul [CuspFormClass F 𝒢 k] (f : F)
     (hk : k = w + 2)
     (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
-    rawPairing R f hk
-        (⟨single α (1 : R) - single β 1, single_sub_single_mem_degreeZero α β⟩ ⊗ₜ[R] P) =
-      cuspIntegral (periodIntegrand f P) β α := by
-  rw [rawPairing_tmul]
+    rawPairing R f hk (divisor R β α ⊗ₜ[R] P) = cuspIntegral (periodIntegrand f P) β α := by
+  rw [rawPairing_tmul, coe_divisor]
   rw [MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single, MonoidAlgebra.coeff_single, map_sub,
     Finsupp.linearCombination_single, Finsupp.linearCombination_single, one_smul, one_smul]
   have hadd := cuspIntegral_periodIntegrand_add_adjacent f hk P ∞ β α
@@ -139,8 +138,8 @@ theorem rawPairing_add (f g : CuspForm 𝒢 k) (hk : k = w + 2) :
   have hγ : 0 < ((mapGL ℚ γ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
     rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
     exact one_pos
-  rw [LinearMap.add_apply, rawPairing_single_sub_single_tmul, rawPairing_single_sub_single_tmul,
-    rawPairing_single_sub_single_tmul, FunLike.coe_add, periodIntegrand_add_left]
+  rw [LinearMap.add_apply, rawPairing_divisor_tmul, rawPairing_divisor_tmul,
+    rawPairing_divisor_tmul, FunLike.coe_add, periodIntegrand_add_left]
   exact cuspIntegral_add (integrableOn_resToImagAxis_periodIntegrand_slash f hk P hγ)
     (integrableOn_resToImagAxis_periodIntegrand_slash g hk P hγ)
 
@@ -148,7 +147,7 @@ theorem rawPairing_add (f g : CuspForm 𝒢 k) (hk : k = w + 2) :
 theorem rawPairing_smul [𝒢.HasDetOne] (c : ℂ) (f : CuspForm 𝒢 k) (hk : k = w + 2) :
     rawPairing R (c • f) hk = c • rawPairing R f hk := by
   refine hom_ext_unimodular fun γ P ↦ ?_
-  rw [LinearMap.smul_apply, rawPairing_single_sub_single_tmul, rawPairing_single_sub_single_tmul,
+  rw [LinearMap.smul_apply, rawPairing_divisor_tmul, rawPairing_divisor_tmul,
     FunLike.coe_smul, periodIntegrand_smul_left, cuspIntegral_smul, smul_eq_mul]
 
 end TauCeti.ModularSymbols

@@ -204,8 +204,8 @@ private theorem gauge_compat {c : X → ι} (hc : ∀ y, y ∈ U (c y))
         t i j ⟨y, hi, hj⟩ ≫ t j k ⟨y, hj, hk⟩ = t i k ⟨y, hi, hk⟩)
     {G : ∀ i, FundamentalGroupoid (U i) ⥤ SingleObj Kˣ}
     (hG : ∀ (i : ι) (y z : FundamentalGroupoid (U i)) (g : y ⟶ z), (G i).map g =
-      t (c y.as.1) i ⟨y.as.1, hc _, y.as.2⟩ ≫ (F i).map g ≫
-        t i (c z.as.1) ⟨z.as.1, z.as.2, hc _⟩)
+      t (c y.as.val) i ⟨y.as.val, hc _, y.as.property⟩ ≫ (F i).map g ≫
+        t i (c z.as.val) ⟨z.as.val, z.as.property, hc _⟩)
     (i j : ι) :
     FundamentalGroupoid.map (ContinuousMap.inclusion (inter_subset_left : U i ∩ U j ⊆ U i)) ⋙
         G i =
@@ -221,34 +221,34 @@ private theorem gauge_compat {c : X → ι} (hc : ∀ y, y ∈ U (c y))
   let gj : Kˣ :=
     (F j).map ((FundamentalGroupoid.map
       (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j))).map g)
-  change t (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩ ≫ gi ≫
-      t i (c z.as.1) ⟨z.as.1, z.as.2.1, hc _⟩ =
-    t (c y.as.1) j ⟨y.as.1, hc _, y.as.2.2⟩ ≫ gj ≫
-      t j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩
+  change t (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩ ≫ gi ≫
+      t i (c z.as.val) ⟨z.as.val, z.as.property.1, hc _⟩ =
+    t (c y.as.val) j ⟨y.as.val, hc _, y.as.property.2⟩ ≫ gj ≫
+      t j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩
   -- Work in the unit group: SingleObj composition is reversed multiplication.
   let tr (i j : ι) (y : ↥(U i ∩ U j)) : Kˣ := t i j y
-  have hy : tr i j y.as * tr (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩ =
-      tr (c y.as.1) j ⟨y.as.1, hc _, y.as.2.2⟩ := by
+  have hy : tr i j y.as * tr (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩ =
+      tr (c y.as.val) j ⟨y.as.val, hc _, y.as.property.2⟩ := by
     simpa only [SingleObj.comp_as_mul] using
-      htcocycle (c y.as.1) i j y.as.1 (hc _) y.as.2.1 y.as.2.2
-  have hz : tr j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩ * tr i j z.as =
-      tr i (c z.as.1) ⟨z.as.1, z.as.2.1, hc _⟩ := by
+      htcocycle (c y.as.val) i j y.as.val (hc _) y.as.property.1 y.as.property.2
+  have hz : tr j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩ * tr i j z.as =
+      tr i (c z.as.val) ⟨z.as.val, z.as.property.1, hc _⟩ := by
     simpa only [SingleObj.comp_as_mul] using
-      htcocycle i j (c z.as.1) z.as.1 z.as.2.1 z.as.2.2 (hc _)
+      htcocycle i j (c z.as.val) z.as.val z.as.property.1 z.as.property.2 (hc _)
   have hn : tr i j z.as * gi = gj * tr i j y.as := by
     simpa only [SingleObj.comp_as_mul] using htnat i j y.as z.as g
   simp only [SingleObj.comp_as_mul]
-  change tr i (c z.as.1) ⟨z.as.1, z.as.2.1, hc _⟩ * gi *
-      tr (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩ =
-    tr j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩ * gj *
-      tr (c y.as.1) j ⟨y.as.1, hc _, y.as.2.2⟩
+  change tr i (c z.as.val) ⟨z.as.val, z.as.property.1, hc _⟩ * gi *
+      tr (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩ =
+    tr j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩ * gj *
+      tr (c y.as.val) j ⟨y.as.val, hc _, y.as.property.2⟩
   calc
-    _ = (tr j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩ * tr i j z.as) * gi *
-        tr (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩ :=
-      congrArg (fun v ↦ v * gi * tr (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩) hz.symm
-    _ = tr j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩ * (gj * tr i j y.as) *
-        tr (c y.as.1) i ⟨y.as.1, hc _, y.as.2.1⟩ := by
-      rw [mul_assoc (tr j (c z.as.1) ⟨z.as.1, z.as.2.2, hc _⟩) (tr i j z.as) gi, hn]
+    _ = (tr j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩ * tr i j z.as) * gi *
+        tr (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩ :=
+      congrArg (fun v ↦ v * gi * tr (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩) hz.symm
+    _ = tr j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩ * (gj * tr i j y.as) *
+        tr (c y.as.val) i ⟨y.as.val, hc _, y.as.property.1⟩ := by
+      rw [mul_assoc (tr j (c z.as.val) ⟨z.as.val, z.as.property.2, hc _⟩) (tr i j z.as) gi, hn]
     _ = _ := by
       rw [mul_assoc, mul_assoc, hy, ← mul_assoc]
 
@@ -274,26 +274,27 @@ private theorem exists_gauge_functors {x : X} (hCover : ∀ y, ∃ i, U i ∈ �
           (ContinuousMap.inclusion (inter_subset_right : U i ∩ U j ⊆ U j)) ⋙ G j) ∧
       ∀ (i : ι) (g : FundamentalGroup (U i) ⟨x, hx i⟩), (G i).map g.asHom = (F i).map g.asHom := by
   classical
-  have htself (i : ι) (y : U i) : t i i ⟨y, y.2, y.2⟩ = 𝟙 _ := by
-    apply (cancel_epi (t i i ⟨y, y.2, y.2⟩)).mp
-    exact (htcocycle i i i y y.2 y.2 y.2).trans (Category.comp_id _).symm
+  have htself (i : ι) (y : U i) : t i i ⟨y, y.property, y.property⟩ = 𝟙 _ := by
+    apply (cancel_epi (t i i ⟨y, y.property, y.property⟩)).mp
+    exact (htcocycle i i i y y.property y.property y.property).trans (Category.comp_id _).symm
   -- Choose a reference member at each point and conjugate the local functors into that gauge.
   let c (y : X) : ι := (hCover y).choose
   have hc (y : X) : y ∈ U (c y) := mem_of_mem_nhds (hCover y).choose_spec
   let G (i : ι) : FundamentalGroupoid (U i) ⥤ SingleObj Kˣ :=
     { obj := fun _ ↦ SingleObj.star Kˣ
       map := fun {y z} g ↦
-        t (c y.as.1) i ⟨y.as.1, hc _, y.as.2⟩ ≫ (F i).map g ≫
-          t i (c z.as.1) ⟨z.as.1, z.as.2, hc _⟩
+        t (c y.as.val) i ⟨y.as.val, hc _, y.as.property⟩ ≫ (F i).map g ≫
+          t i (c z.as.val) ⟨z.as.val, z.as.property, hc _⟩
       map_id := fun y ↦ by
         erw [CategoryTheory.Functor.map_id, Category.id_comp,
-          htcocycle (c y.as.1) i (c y.as.1) y.as.1 (hc _) y.as.2 (hc _)]
-        exact htself (c y.as.1) ⟨y.as.1, hc _⟩
+          htcocycle (c y.as.val) i (c y.as.val) y.as.val (hc _) y.as.property (hc _)]
+        exact htself (c y.as.val) ⟨y.as.val, hc _⟩
       map_comp := fun {y z w} g h ↦ by
         rw [Functor.map_comp]
         simp only [Category.assoc]
-        rw [← Category.assoc (t i (c z.as.1) _) (t (c z.as.1) i _) _,
-          htcocycle i (c z.as.1) i z.as.1 z.as.2 (hc _) z.as.2, htself, Category.id_comp] }
+        rw [← Category.assoc (t i (c z.as.val) _) (t (c z.as.val) i _) _,
+          htcocycle i (c z.as.val) i z.as.val z.as.property (hc _) z.as.property, htself,
+              Category.id_comp] }
   refine ⟨G, gauge_compat hc htnat htcocycle (G := G) fun _ _ _ _ ↦ rfl, fun i g ↦ ?_⟩
   -- Both transition endpoints are the basepoint, where each transition is the identity.
   change t (c x) i _ ≫ (F i).map g.asHom ≫ t i (c x) _ = _

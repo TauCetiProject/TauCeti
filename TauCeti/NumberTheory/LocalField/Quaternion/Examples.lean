@@ -214,11 +214,6 @@ theorem nonempty_algEquiv_matrix_five_five_padicTwo :
   (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 1 3).mpr
     exists_eq_sq_sub_mul_sq_five_five_padicTwo
 
-/-- `(5, 5)_{ℚ_2} = +1`. -/
-theorem hilbertSymbol_five_five_padicTwo :
-    hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 5 (by norm_num)) = 1 :=
-  (hilbertSymbol_eq_one_iff _ _).mpr exists_eq_sq_sub_mul_sq_five_five_padicTwo
-
 /-- `5` is a norm from `ℚ_2(√5)`. -/
 theorem exists_norm_eq_five_five_padicTwo : ∃ z : QuadraticAlgebra ℚ_[2] 5 0, z.norm = 5 :=
   (nonempty_algEquiv_matrix_tfae_five_five_padicTwo.out 2 3).mpr

@@ -206,7 +206,7 @@ theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
   have hrs : w.restrict s ≠ 0 := fun h ↦ hs0' (w.restrict_eq_zero_iff.mp h)
   obtain ⟨d, _, hd⟩ := hasFullCharacteristicGroup_iff.mp
     (hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top.mpr htop) _
-    (inv_pos.mpr (zero_lt_iff.mpr hrs))
+    (inv_pos.mpr (pos_iff_ne_zero.mpr hrs))
   have hone : (1 : w.ValueGroup₀) ≤ w.restrict (d * s) := by
     rw [map_mul]
     have h := mul_le_mul_left hd (w.restrict s)
@@ -264,11 +264,11 @@ private theorem exists_basicOpenFinset_of_forall_cofinalValue {v : Spv A} (S : F
   have hs0' : w s ≠ 0 := fun h ↦
     hs0 ((valuation_le_iff v s 0).mp (by rw [← hw]; simp [h]))
   have hrs : (0 : w.ValueGroup₀) < w.restrict s :=
-    zero_lt_iff.mpr fun h ↦ hs0' (w.restrict_eq_zero_iff.mp h)
+    pos_iff_ne_zero.mpr fun h ↦ hs0' (w.restrict_eq_zero_iff.mp h)
   have key : ∀ σ ∈ S, ∃ n : ℕ, w.restrict σ ^ n < w.restrict s := fun σ hσ ↦
     cofinalValue_iff.mp (hcof σ hσ) _ hrs
   choose n hn using key
-  refine ⟨insert f (S.attach.image fun σ ↦ σ.1 ^ n σ.1 σ.2), Finset.mem_insert_self _ _,
+  refine ⟨insert f (S.attach.image fun σ ↦ σ.val ^ n σ.val σ.property), Finset.mem_insert_self _ _,
     fun σ hσ ↦ ⟨n σ hσ, Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨⟨σ, hσ⟩,
       Finset.mem_attach _ _, rfl⟩)⟩, (mem_basicOpenFinset_iff _ _ _).mpr ⟨?_, hs0⟩⟩
   intro t ht
@@ -329,7 +329,7 @@ theorem instTopologicalSpace_spvOfIdeal_eq_generateFrom (I : Ideal A)
       = TopologicalSpace.generateFrom (rationalFamily I hfg) := by
   refine le_antisymm (le_generateFrom ?_) ?_
   · rintro _ ⟨T, u, -, rfl⟩
-    exact (isOpen_basicOpenFinset T u).preimage continuous_subtype_val
+    exact (isOpen_basicOpenFinset T u).preimage continuous_subtypeVal
   · -- the subtype instance is by definition the induced topology; naming that as an equation
     -- lets `induced_generateFrom_eq` fire without a goal-shaping tactic
     have hind : (inferInstance : TopologicalSpace (spvOfIdeal I hfg))
@@ -566,6 +566,6 @@ theorem isProConstructible_val_preimage_setOfPred_forall_vle_one (I : Ideal A)
   exact IsProConstructible.biInter fun a _ ↦
     (isCompact_of_mem_rationalFamily I hfg
       ⟨{a, 1}, 1, isAdmissible_of_one_mem (by simp), rfl⟩).isProConstructible
-      ((isOpen_basicOpenFinset _ _).preimage continuous_subtype_val)
+      ((isOpen_basicOpenFinset _ _).preimage continuous_subtypeVal)
 
 end TauCeti.ValuationSpectrum

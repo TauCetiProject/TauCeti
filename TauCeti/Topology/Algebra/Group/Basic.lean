@@ -12,7 +12,8 @@ public import Mathlib.Topology.Algebra.Group.Basic
 
 A subgroup inherits continuous or separately continuous multiplication for the subspace topology.
 Mathlib provides these instances for submonoids, but instance search does not see a subgroup as a
-submonoid, so the subgroup instances are registered separately.
+submonoid, so the subgroup instances are registered separately. Likewise, every `SubgroupClass`
+subobject of a topological group inherits `IsTopologicalGroup`.
 
 In a Hausdorff magma with separately continuous multiplication the center is closed, next to
 Mathlib's `Set.isClosed_centralizer`: each defining identity of a central element is an
@@ -22,14 +23,23 @@ Over a compact subset of a topological group, conjugation is equicontinuous at t
 every identity neighbourhood `U`, a smaller identity neighbourhood `V` satisfies
 `x * y * x⁻¹ ∈ U` for all `x` in the compact set and `y ∈ V`.
 
+If the quotient `(x, y) ↦ u₁ x / u₂ y` of two maps from nonempty spaces is continuous, each map is
+continuous, being recovered from it by fixing the other variable.
+
 ## Main results
 
 * `Subgroup.separatelyContinuousMul`: a subgroup inherits `SeparatelyContinuousMul`.
 * `Subgroup.continuousMul`: a subgroup inherits `ContinuousMul`, without continuity of inversion.
+* `SubgroupClass.isTopologicalGroup` / `AddSubgroupClass.isTopologicalAddGroup`: every
+  `SubgroupClass` (or `AddSubgroupClass`) subobject of a topological group inherits
+  `IsTopologicalGroup` (or `IsTopologicalAddGroup`).
 * `Set.isClosed_center`: the center of a Hausdorff magma with separately continuous
   multiplication is closed.
 * `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
   equicontinuity of conjugation over a compact set at the identity.
+* `TauCeti.continuous_and_continuous_of_continuous_div` /
+  `TauCeti.continuous_and_continuous_of_continuous_sub`: maps whose quotient (or difference) on a
+  product of nonempty spaces is continuous are continuous.
 -/
 
 public section
@@ -56,6 +66,16 @@ instance Subgroup.separatelyContinuousMul {G : Type*} [TopologicalSpace G] [Grou
     [SeparatelyContinuousMul G] (S : Subgroup G) : SeparatelyContinuousMul S :=
   S.toSubmonoid.separatelyContinuousMul
 
+-- Prefer subclasses of `IsTopologicalGroup` over `SubgroupClass`, matching `SubgroupClass.toGroup`.
+/-- Every subgroup-like subobject of a topological group is a topological group for the subspace
+topology. -/
+@[to_additive /-- Every additive-subgroup-like subobject of a topological additive group is a
+topological additive group for the subspace topology. -/]
+instance (priority := 75) SubgroupClass.isTopologicalGroup {G S : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [SetLike S G] [SubgroupClass S G] (s : S) :
+    IsTopologicalGroup s :=
+  Topology.IsInducing.subtypeVal.isTopologicalGroup (SubmonoidClass.subtype s)
+
 section
 
 open Filter Set
@@ -80,3 +100,22 @@ theorem IsCompact.exists_nhds_one_conj_subset {G : Type*} [Group G] [Topological
   exact interior_subset (mem_preimage.mp (hAB (mk_mem_prod (hCA hx) hy)))
 
 end
+
+namespace TauCeti
+
+/-- If `(x, y) ↦ u₁ x / u₂ y` is continuous on a product of nonempty spaces, then `u₁` and `u₂`
+are continuous. -/
+@[to_additive /-- If `(x, y) ↦ u₁ x - u₂ y` is continuous on a product of nonempty spaces, then
+`u₁` and `u₂` are continuous. -/]
+theorem continuous_and_continuous_of_continuous_div {X Y G : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [Nonempty X] [Nonempty Y] [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] {u₁ : X → G} {u₂ : Y → G}
+    (h : Continuous fun p : X × Y ↦ u₁ p.1 / u₂ p.2) : Continuous u₁ ∧ Continuous u₂ := by
+  obtain ⟨x₀⟩ := ‹Nonempty X›
+  obtain ⟨y₀⟩ := ‹Nonempty Y›
+  exact ⟨((h.comp (continuous_id.prodMk (continuous_const (y := y₀)))).mul
+      (continuous_const (y := u₂ y₀))).congr fun x ↦ div_mul_cancel (u₁ x) (u₂ y₀),
+    ((h.comp ((continuous_const (y := x₀)).prodMk continuous_id)).inv.mul
+      (continuous_const (y := u₁ x₀))).congr fun y ↦ by simp⟩
+
+end TauCeti
