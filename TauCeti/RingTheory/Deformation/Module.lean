@@ -60,7 +60,9 @@ identity of `kⁿ`, so they are different module deformations.
 ## Main results
 
 * `TauCeti.Deformation.ModuleDeformation.exists_basis`: every module deformation has a basis
-  lifting the standard basis of `kⁿ`.
+  lifting the standard basis of `kⁿ`; by
+  `TauCeti.Deformation.ModuleDeformation.reduction_eq_augmentation_repr`, in such a basis the
+  reduction of a vector is the family of augmentations of its coordinates.
 * `TauCeti.Deformation.ModuleDeformation.baseChangeEquiv`: an isomorphism out of a base change,
   induced by a semilinear map sending a basis to a basis; it gives the isomorphisms
   `TauCeti.Deformation.ModuleDeformation.baseChangeId` and
@@ -162,6 +164,14 @@ instance (D : ModuleDeformation ρbar A) : Module.Finite A.obj.left D :=
   have := (D.linearIndependent_reduction (Module.Free.chooseBasis A.obj.left D)).finite
   Module.Finite.of_basis (Module.Free.chooseBasis A.obj.left D)
 
+/-- A semilinear map to `kⁿ` sending a family `e` to the standard basis sends `∑ cᵢ • eᵢ` to the
+images of the coefficients `cᵢ`. -/
+private theorem map_sum_smul_eq_of_eq_single {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {σ : R →+* k} (r : M →ₛₗ[σ] n → k) {e : n → M}
+    (he : ∀ i, r (e i) = Pi.single i 1) (c : n → R) : r (∑ i, c i • e i) = fun i ↦ σ (c i) := by
+  ext j
+  simp [map_sum, he, Finset.sum_apply, Pi.single_apply]
+
 /-- Every module deformation has a basis lifting the standard basis of `kⁿ`. -/
 theorem exists_basis (D : ModuleDeformation ρbar A) :
     ∃ e : Module.Basis n A.obj.left D, ∀ i, D.reduction (e i) = Pi.single i 1 := by
@@ -186,12 +196,17 @@ theorem exists_basis (D : ModuleDeformation ρbar A) :
     refine ⟨∑ i, a (D.reduction v i) • e i, Submodule.sum_mem _ fun i _ ↦
       Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩), ?_⟩
     rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq,
-      ← reduction_eq_zero_iff, map_sub, map_sum]
-    simp only [LinearMap.map_smulₛₗ, he, ha, RingHom.coe_coe]
-    rw [sub_eq_zero]
-    ext j
-    simp [Finset.sum_apply, Pi.single_apply]
+      ← reduction_eq_zero_iff, map_sub, map_sum_smul_eq_of_eq_single D.reduction he, sub_eq_zero]
+    exact funext fun i ↦ ha _
   exact ⟨basisOfTopLeSpanOfCardEqFinrank e hspan' hcard, fun i ↦ by simp [he]⟩
+
+/-- In a basis `e` lifting the standard basis of `kⁿ`, the reduction of a vector is the family of
+augmentations of its coordinates. -/
+theorem reduction_eq_augmentation_repr (D : ModuleDeformation ρbar A)
+    (e : Module.Basis n A.obj.left D) (he : ∀ i, D.reduction (e i) = Pi.single i 1) (v : D) :
+    D.reduction v = fun i ↦ A.augmentation (e.repr v i) := by
+  conv_lhs => rw [← e.sum_repr v]
+  exact map_sum_smul_eq_of_eq_single D.reduction he _
 
 /-- Over the residue field `k`, the reduction map of a module deformation is injective. -/
 theorem reduction_injective_residue (D : ModuleDeformation ρbar (residue Λ k)) :
@@ -207,53 +222,90 @@ reduction maps. -/
 structure Equiv (D D' : ModuleDeformation ρbar A) extends
     toRepresentationEquiv : Representation.Equiv D.action D'.action where
   /-- The isomorphism is compatible with the reduction maps. -/
-  reduction_apply (v : D) : D'.reduction (toRepresentationEquiv v) = D.reduction v
+  reduction_apply' (v : D) : D'.reduction (toRepresentationEquiv v) = D.reduction v
 
 namespace Equiv
 
-attribute [simp] reduction_apply
+variable {D D' D'' : ModuleDeformation ρbar A}
 
 /-- An isomorphism of module deformations is determined by its underlying isomorphism of
 representations. -/
+theorem toRepresentationEquiv_injective :
+    Function.Injective (toRepresentationEquiv : D.Equiv D' → _) := by
+  rintro ⟨e, _⟩ ⟨e', _⟩ rfl
+  rfl
+
+instance : EquivLike (D.Equiv D') D D' where
+  coe e := e.toRepresentationEquiv
+  inv e := e.toRepresentationEquiv.symm
+  left_inv e := e.toRepresentationEquiv.symm_apply_apply
+  right_inv e := e.toRepresentationEquiv.apply_symm_apply
+  coe_injective' _ _ h _ := toRepresentationEquiv_injective (DFunLike.coe_injective h)
+
+instance : LinearEquivClass (D.Equiv D') A.obj.left D D' where
+  map_add e := map_add e.toRepresentationEquiv
+  map_smulₛₗ e := map_smul e.toRepresentationEquiv
+
+@[simp]
+theorem coe_toRepresentationEquiv (e : D.Equiv D') : ⇑e.toRepresentationEquiv = e :=
+  (rfl)
+
+/-- An isomorphism of module deformations is compatible with the reduction maps. -/
+@[simp]
+theorem reduction_apply (e : D.Equiv D') (v : D) : D'.reduction (e v) = D.reduction v :=
+  e.reduction_apply' v
+
+/-- An isomorphism of module deformations is determined by its values. -/
 @[ext]
-theorem ext {D D' : ModuleDeformation ρbar A} {e e' : D.Equiv D'}
-    (h : e.toRepresentationEquiv = e'.toRepresentationEquiv) : e = e' := by
-  cases e
-  cases e'
-  congr
+theorem ext {e e' : D.Equiv D'} (h : ∀ v, e v = e' v) : e = e' :=
+  DFunLike.ext _ _ h
 
 /-- The identity isomorphism of a module deformation. -/
 def refl (D : ModuleDeformation ρbar A) : D.Equiv D where
   toRepresentationEquiv := .refl D.action
-  reduction_apply _ := rfl
+  reduction_apply' _ := rfl
 
 @[simp]
 theorem refl_toRepresentationEquiv (D : ModuleDeformation ρbar A) :
     (refl D).toRepresentationEquiv = .refl D.action :=
   (rfl)
 
+@[simp]
+theorem refl_apply (D : ModuleDeformation ρbar A) (v : D) : refl D v = v :=
+  (rfl)
+
 /-- The inverse of an isomorphism of module deformations. -/
-def symm {D D' : ModuleDeformation ρbar A} (e : D.Equiv D') : D'.Equiv D where
+def symm (e : D.Equiv D') : D'.Equiv D where
   toRepresentationEquiv := e.toRepresentationEquiv.symm
-  reduction_apply v := by
+  reduction_apply' v := by
     rw [← e.reduction_apply]
     exact congrArg D'.reduction (e.toLinearEquiv.apply_symm_apply v)
 
 @[simp]
-theorem symm_toRepresentationEquiv {D D' : ModuleDeformation ρbar A} (e : D.Equiv D') :
+theorem symm_toRepresentationEquiv (e : D.Equiv D') :
     e.symm.toRepresentationEquiv = e.toRepresentationEquiv.symm :=
   (rfl)
 
-/-- The composite of two isomorphisms of module deformations. -/
-def trans {D D' D'' : ModuleDeformation ρbar A} (e : D.Equiv D') (e' : D'.Equiv D'') :
-    D.Equiv D'' where
-  toRepresentationEquiv := e.toRepresentationEquiv.trans e'.toRepresentationEquiv
-  reduction_apply v := (e'.reduction_apply _).trans (e.reduction_apply v)
+@[simp]
+theorem apply_symm_apply (e : D.Equiv D') (v : D') : e (e.symm v) = v :=
+  e.toRepresentationEquiv.apply_symm_apply v
 
 @[simp]
-theorem trans_toRepresentationEquiv {D D' D'' : ModuleDeformation ρbar A} (e : D.Equiv D')
-    (e' : D'.Equiv D'') :
+theorem symm_apply_apply (e : D.Equiv D') (v : D) : e.symm (e v) = v :=
+  e.toRepresentationEquiv.symm_apply_apply v
+
+/-- The composite of two isomorphisms of module deformations. -/
+def trans (e : D.Equiv D') (e' : D'.Equiv D'') : D.Equiv D'' where
+  toRepresentationEquiv := e.toRepresentationEquiv.trans e'.toRepresentationEquiv
+  reduction_apply' v := (e'.reduction_apply _).trans (e.reduction_apply v)
+
+@[simp]
+theorem trans_toRepresentationEquiv (e : D.Equiv D') (e' : D'.Equiv D'') :
     (e.trans e').toRepresentationEquiv = e.toRepresentationEquiv.trans e'.toRepresentationEquiv :=
+  (rfl)
+
+@[simp]
+theorem trans_apply (e : D.Equiv D') (e' : D'.Equiv D'') (v : D) : e.trans e' v = e' (e v) :=
   (rfl)
 
 end Equiv
@@ -306,12 +358,13 @@ noncomputable def baseChange (D : ModuleDeformation ρbar A) : ModuleDeformation
     ker_reduction_le t ht := by
       obtain ⟨e, he⟩ := D.exists_basis
       let e' := Algebra.TensorProduct.basis B.obj.left e
+      have he' (i : n) : baseChangeReduction f D (e' i) = Pi.single i 1 := by
+        simp [e', Algebra.TensorProduct.basis_apply, baseChangeReduction_tmul, he]
       rw [← e'.sum_repr t]
       refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul ?_ trivial
       have h := congrFun (LinearMap.mem_ker.mp ht) i
-      rw [← e'.sum_repr t, map_sum] at h
-      simpa [e', Algebra.TensorProduct.basis_apply, baseChangeReduction_tmul, he,
-        Finset.sum_apply, Pi.single_apply] using h
+      rw [← e'.sum_repr t, map_sum_smul_eq_of_eq_single _ he'] at h
+      exact augmentation_eq_zero_iff.mp h
     reduction_action g t := by
       induction t using TensorProduct.inductionOn with
       | tmul b v =>
@@ -393,7 +446,7 @@ noncomputable def baseChangeEquiv {D : ModuleDeformation ρbar A} {D' : ModuleDe
     (hb : ∀ i, ψ (b i) = b' i) : (D.baseChange f).Equiv D' where
   toRepresentationEquiv := .mk ((D.baseChangeBasis f b).equiv b' (_root_.Equiv.refl ι)) fun g ↦
     (D.baseChangeBasis f b).ext fun i ↦ by simp [baseChangeBasis_equiv_toBaseChange ψ b b' hb, hψ]
-  reduction_apply := LinearMap.congr_fun ((D.baseChangeBasis f b).ext
+  reduction_apply' := LinearMap.congr_fun ((D.baseChangeBasis f b).ext
     (f₁ := D'.reduction ∘ₛₗ ((D.baseChangeBasis f b).equiv b' (_root_.Equiv.refl ι)).toLinearMap)
     (f₂ := (D.baseChange f).reduction)
     fun i ↦ by simp [baseChangeBasis_equiv_toBaseChange ψ b b' hb, hψ'])
@@ -406,7 +459,7 @@ theorem baseChangeEquiv_toBaseChange {D : ModuleDeformation ρbar A}
     (hψ' : ∀ v, D'.reduction (ψ v) = D.reduction v) {ι : Type*}
     (b : Module.Basis ι A.obj.left D) (b' : Module.Basis ι B.obj.left D')
     (hb : ∀ i, ψ (b i) = b' i) (v : D) :
-    (baseChangeEquiv ψ hψ hψ' b b' hb).toRepresentationEquiv (D.toBaseChange f v) = ψ v :=
+    baseChangeEquiv ψ hψ hψ' b b' hb (D.toBaseChange f v) = ψ v :=
   baseChangeBasis_equiv_toBaseChange ψ b b' hb v
 
 variable {f} in
@@ -417,7 +470,7 @@ theorem baseChangeEquiv_baseChangeBasis {D : ModuleDeformation ρbar A}
     (hψ' : ∀ v, D'.reduction (ψ v) = D.reduction v) {ι : Type*}
     (b : Module.Basis ι A.obj.left D) (b' : Module.Basis ι B.obj.left D')
     (hb : ∀ i, ψ (b i) = b' i) (i : ι) :
-    (baseChangeEquiv ψ hψ hψ' b b' hb).toRepresentationEquiv (D.baseChangeBasis f b i) = b' i := by
+    baseChangeEquiv ψ hψ hψ' b b' hb (D.baseChangeBasis f b i) = b' i := by
   simp [hb]
 
 /-- Base change along the identity of `A` is isomorphic to the original deformation. -/
@@ -431,7 +484,7 @@ noncomputable def baseChangeId (D : ModuleDeformation ρbar A) : (D.baseChange (
 
 @[simp]
 theorem baseChangeId_toBaseChange (D : ModuleDeformation ρbar A) (v : D) :
-    (baseChangeId D).toRepresentationEquiv (D.toBaseChange (𝟙 A) v) = v :=
+    baseChangeId D (D.toBaseChange (𝟙 A) v) = v :=
   baseChangeEquiv_toBaseChange _ _ _ _ _ _ v
 
 /-- The map `v ↦ 1 ⊗ (1 ⊗ v)` from a module deformation to its iterated base change along `f` and
@@ -457,7 +510,7 @@ noncomputable def baseChangeComp (g : B ⟶ C) (D : ModuleDeformation ρbar A) :
 
 @[simp]
 theorem baseChangeComp_toBaseChange (g : B ⟶ C) (D : ModuleDeformation ρbar A) (v : D) :
-    (baseChangeComp f g D).toRepresentationEquiv (D.toBaseChange (f ≫ g) v) =
+    baseChangeComp f g D (D.toBaseChange (f ≫ g) v) =
       (D.baseChange f).toBaseChange g (D.toBaseChange f v) :=
   baseChangeEquiv_toBaseChange _ _ _ _ _ _ v
 
@@ -469,7 +522,7 @@ noncomputable def Equiv.baseChange {D D' : ModuleDeformation ρbar A} (e : D.Equ
     -- The carrier of `D.baseChange f` is by definition `B ⊗[A] V` and `D.toBaseChange f v` is by
     -- definition `1 ⊗ₜ v`, so `Representation.Equiv.baseChange_tmul` computes the isomorphism
     -- on `D.toBaseChange f v`.
-    reduction_apply := LinearMap.congr_fun (baseChange_hom_ext f D
+    reduction_apply' := LinearMap.congr_fun (baseChange_hom_ext f D
       (ψ₁ := (D'.baseChange f).reduction ∘ₛₗ
         (e.toRepresentationEquiv.baseChange B.obj.left).toLinearMap)
       (ψ₂ := (D.baseChange f).reduction) fun v ↦
@@ -481,8 +534,7 @@ noncomputable def Equiv.baseChange {D D' : ModuleDeformation ρbar A} (e : D.Equ
 @[simp]
 theorem Equiv.baseChange_toBaseChange {D D' : ModuleDeformation ρbar A} (e : D.Equiv D')
     (v : D) :
-    (e.baseChange f).toRepresentationEquiv (D.toBaseChange f v) =
-      D'.toBaseChange f (e.toRepresentationEquiv v) :=
+    e.baseChange f (D.toBaseChange f v) = D'.toBaseChange f (e v) :=
   letI : Algebra A.obj.left B.obj.left := f.hom.left.hom.toAlgebra
   e.toRepresentationEquiv.baseChange_tmul B.obj.left 1 v
 
@@ -613,52 +665,94 @@ sending the framing of the source to the framing of the target. -/
 structure Equiv (D D' : FramedModuleDeformation ρbar A) extends
     toModuleDeformationEquiv : D.toModuleDeformation.Equiv D'.toModuleDeformation where
   /-- The isomorphism preserves the framings. -/
-  map_basis (i : n) : toRepresentationEquiv (D.basis i) = D'.basis i
+  map_basis' (i : n) : toRepresentationEquiv (D.basis i) = D'.basis i
 
 namespace Equiv
 
-attribute [simp] map_basis
+variable {D D' D'' : FramedModuleDeformation ρbar A}
 
 /-- An isomorphism of framed module deformations is determined by its underlying isomorphism of
 module deformations. -/
+theorem toModuleDeformationEquiv_injective :
+    Function.Injective (toModuleDeformationEquiv : D.Equiv D' → _) := by
+  rintro ⟨e, _⟩ ⟨e', _⟩ rfl
+  rfl
+
+instance : EquivLike (D.Equiv D') D D' where
+  coe e := e.toModuleDeformationEquiv
+  inv e := e.toModuleDeformationEquiv.symm
+  left_inv e := e.toModuleDeformationEquiv.symm_apply_apply
+  right_inv e := e.toModuleDeformationEquiv.apply_symm_apply
+  coe_injective' _ _ h _ := toModuleDeformationEquiv_injective (DFunLike.coe_injective h)
+
+instance : LinearEquivClass (D.Equiv D') A.obj.left D D' where
+  map_add e := map_add e.toModuleDeformationEquiv
+  map_smulₛₗ e := map_smul e.toModuleDeformationEquiv
+
+@[simp]
+theorem coe_toModuleDeformationEquiv (e : D.Equiv D') : ⇑e.toModuleDeformationEquiv = e :=
+  (rfl)
+
+/-- An isomorphism of framed module deformations is compatible with the reduction maps. -/
+@[simp]
+theorem reduction_apply (e : D.Equiv D') (v : D) : D'.reduction (e v) = D.reduction v :=
+  e.toModuleDeformationEquiv.reduction_apply v
+
+/-- An isomorphism of framed module deformations preserves the framings. -/
+@[simp]
+theorem map_basis (e : D.Equiv D') (i : n) : e (D.basis i) = D'.basis i :=
+  e.map_basis' i
+
+/-- An isomorphism of framed module deformations is determined by its values. -/
 @[ext]
-theorem ext {D D' : FramedModuleDeformation ρbar A} {e e' : D.Equiv D'}
-    (h : e.toModuleDeformationEquiv = e'.toModuleDeformationEquiv) : e = e' := by
-  cases e
-  cases e'
-  congr
+theorem ext {e e' : D.Equiv D'} (h : ∀ v, e v = e' v) : e = e' :=
+  DFunLike.ext _ _ h
 
 /-- The identity isomorphism of a framed module deformation. -/
 def refl (D : FramedModuleDeformation ρbar A) : D.Equiv D where
   toModuleDeformationEquiv := ModuleDeformation.Equiv.refl _
-  map_basis _ := rfl
+  map_basis' _ := rfl
 
 @[simp]
 theorem refl_toModuleDeformationEquiv (D : FramedModuleDeformation ρbar A) :
     (refl D).toModuleDeformationEquiv = ModuleDeformation.Equiv.refl D.toModuleDeformation :=
   (rfl)
 
+@[simp]
+theorem refl_apply (D : FramedModuleDeformation ρbar A) (v : D) : refl D v = v :=
+  (rfl)
+
 /-- The inverse of an isomorphism of framed module deformations. -/
-def symm {D D' : FramedModuleDeformation ρbar A} (e : D.Equiv D') : D'.Equiv D where
+def symm (e : D.Equiv D') : D'.Equiv D where
   toModuleDeformationEquiv := e.toModuleDeformationEquiv.symm
-  map_basis i := e.toLinearEquiv.symm_apply_eq.mpr (e.map_basis i).symm
+  map_basis' i := e.toLinearEquiv.symm_apply_eq.mpr (e.map_basis i).symm
 
 @[simp]
-theorem symm_toModuleDeformationEquiv {D D' : FramedModuleDeformation ρbar A} (e : D.Equiv D') :
+theorem symm_toModuleDeformationEquiv (e : D.Equiv D') :
     e.symm.toModuleDeformationEquiv = e.toModuleDeformationEquiv.symm :=
   (rfl)
 
-/-- The composite of two isomorphisms of framed module deformations. -/
-def trans {D D' D'' : FramedModuleDeformation ρbar A} (e : D.Equiv D') (e' : D'.Equiv D'') :
-    D.Equiv D'' where
-  toModuleDeformationEquiv := e.toModuleDeformationEquiv.trans e'.toModuleDeformationEquiv
-  map_basis i := (congrArg e'.toRepresentationEquiv (e.map_basis i)).trans (e'.map_basis i)
+@[simp]
+theorem apply_symm_apply (e : D.Equiv D') (v : D') : e (e.symm v) = v :=
+  e.toModuleDeformationEquiv.apply_symm_apply v
 
 @[simp]
-theorem trans_toModuleDeformationEquiv {D D' D'' : FramedModuleDeformation ρbar A}
-    (e : D.Equiv D') (e' : D'.Equiv D'') :
+theorem symm_apply_apply (e : D.Equiv D') (v : D) : e.symm (e v) = v :=
+  e.toModuleDeformationEquiv.symm_apply_apply v
+
+/-- The composite of two isomorphisms of framed module deformations. -/
+def trans (e : D.Equiv D') (e' : D'.Equiv D'') : D.Equiv D'' where
+  toModuleDeformationEquiv := e.toModuleDeformationEquiv.trans e'.toModuleDeformationEquiv
+  map_basis' i := (congrArg e' (e.map_basis i)).trans (e'.map_basis i)
+
+@[simp]
+theorem trans_toModuleDeformationEquiv (e : D.Equiv D') (e' : D'.Equiv D'') :
     (e.trans e').toModuleDeformationEquiv =
       e.toModuleDeformationEquiv.trans e'.toModuleDeformationEquiv :=
+  (rfl)
+
+@[simp]
+theorem trans_apply (e : D.Equiv D') (e' : D'.Equiv D'') (v : D) : e.trans e' v = e' (e v) :=
   (rfl)
 
 end Equiv
@@ -686,7 +780,7 @@ original framed deformation. -/
 noncomputable def baseChangeId (D : FramedModuleDeformation ρbar A) :
     (D.baseChange (𝟙 A)).Equiv D where
   toModuleDeformationEquiv := D.toModuleDeformation.baseChangeId
-  map_basis i := by
+  map_basis' i := by
     rw [baseChange_basis]
     exact ModuleDeformation.baseChangeId_toBaseChange _ _
 
@@ -700,7 +794,7 @@ iterated base change. -/
 noncomputable def baseChangeComp (g : B ⟶ C) (D : FramedModuleDeformation ρbar A) :
     (D.baseChange (f ≫ g)).Equiv ((D.baseChange f).baseChange g) where
   toModuleDeformationEquiv := D.toModuleDeformation.baseChangeComp f g
-  map_basis i := by
+  map_basis' i := by
     rw [baseChange_basis, baseChange_basis, baseChange_basis]
     exact ModuleDeformation.baseChangeComp_toBaseChange _ _ _ _
 
@@ -713,7 +807,7 @@ theorem baseChangeComp_toModuleDeformationEquiv (g : B ⟶ C) (D : FramedModuleD
 noncomputable def Equiv.baseChange {D D' : FramedModuleDeformation ρbar A} (e : D.Equiv D') :
     (D.baseChange f).Equiv (D'.baseChange f) where
   toModuleDeformationEquiv := e.toModuleDeformationEquiv.baseChange f
-  map_basis i := by
+  map_basis' i := by
     rw [baseChange_basis, baseChange_basis]
     exact (ModuleDeformation.Equiv.baseChange_toBaseChange _ _ _).trans
       (congrArg _ (e.map_basis i))
@@ -749,8 +843,8 @@ noncomputable def equivOfResidue (D D' : FramedModuleDeformation ρbar (residue 
   toRepresentationEquiv := .mk (basisEquiv D D') fun g ↦ D.basis.ext fun i ↦
     D'.reduction_injective_residue (by
       simp [reduction_basisEquiv, basisEquiv_basis, ModuleDeformation.reduction_action])
-  reduction_apply := reduction_basisEquiv D D'
-  map_basis := basisEquiv_basis D D'
+  reduction_apply' := reduction_basisEquiv D D'
+  map_basis' := basisEquiv_basis D D'
 
 end Residue
 
