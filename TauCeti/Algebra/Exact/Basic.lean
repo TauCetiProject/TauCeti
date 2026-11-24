@@ -8,12 +8,14 @@ module
 public import Mathlib.Algebra.Exact.Basic
 
 /-!
-# Elementary invariance properties of exact pairs
+# Elementary properties of exact pairs
 
-Precomposing the first map of a multiplicative (or additive) exact pair `f : M → N`, `g : N → P`
-with a surjective map `p : M' → M` does not change the range of `f` and therefore preserves and
-reflects exactness (`Function.MulExact.comp_iff_of_surjective`). No commutativity or homomorphism
-structure is needed.
+* `Function.MulExact.comp_iff_of_surjective`: precomposing the first map of a multiplicative (or
+  additive) exact pair `f : M → N`, `g : N → P` with a surjective map `p : M' → M` preserves and
+  reflects exactness.
+* `MonoidHom.mulExact_subtype_ker_map`: for a monoid homomorphism `f : G →* M` out of a group `G`,
+  the kernel inclusion `f.ker.subtype` and `f` form an exact pair, with additive counterpart
+  `AddMonoidHom.exact_subtype_ker_map`.
 -/
 
 public section
@@ -31,3 +33,14 @@ theorem comp_iff_of_surjective {M' M N P : Type*} [One P]
   simp only [Function.MulExact, hp.range_comp]
 
 end Function.MulExact
+
+namespace MonoidHom
+
+/-- The kernel inclusion `f.ker.subtype` and `f` form an exact pair. -/
+@[to_additive
+  /-- The kernel inclusion `f.ker.subtype` and `f` form an exact pair. -/]
+theorem mulExact_subtype_ker_map {G M : Type*} [Group G] [MulOneClass M] (f : G →* M) :
+    Function.MulExact f.ker.subtype f :=
+  fun y ↦ ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, fun ⟨x, hx⟩ ↦ hx ▸ x.property⟩
+
+end MonoidHom

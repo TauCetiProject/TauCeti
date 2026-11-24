@@ -21,6 +21,8 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 * `1`, `algebraMap`, and `A * B` laws (`operatorMultiplication_one`,
   `operatorMultiplication_algebraMap`, `operatorMultiplication_comp_operatorMultiplication`);
 * the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
+* the symmetry `⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫` on `L²` for an `ι`-symmetric symbol `A`
+  (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one);
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
@@ -266,6 +268,35 @@ theorem inner_indicatorMultiplication_left (hs : MeasurableSet s) (f g : Lp E 2 
   by_cases hx : x ∈ s <;> simp [hf, hg, hx]
 
 end InnerProductSpace
+
+section Symmetric
+
+variable [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [InnerProductSpace 𝕜 F] {ι : E →L[𝕜] F}
+
+/-- If `A x` is `ι`-symmetric (`⟪A x u, ι v⟫ = ⟪ι u, A x v⟫`) for almost every `x`, multiplication
+by `A` is symmetric for the pairing of `A f` with `ι ∘ g` in `L²`:
+`⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫`. -/
+theorem inner_operatorMultiplication_compLpL {A : Lp (E →L[𝕜] F) ∞ μ}
+    (hA : ∀ᵐ x ∂μ, ∀ u v : E, ⟪A x u, ι v⟫_𝕜 = ⟪ι u, A x v⟫_𝕜) (f g : Lp E 2 μ) :
+    ⟪operatorMultiplication 2 A f, ι.compLpL 2 μ g⟫_𝕜 =
+      ⟪ι.compLpL 2 μ f, operatorMultiplication 2 A g⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [operatorMultiplication_ae A f, operatorMultiplication_ae A g,
+    ι.coeFn_compLpL f, ι.coeFn_compLpL g, hA] with x hf hg hιf hιg hx
+  rw [hf, hg, hιf, hιg, hx]
+
+/-- For an `ι`-symmetric `B` (`⟪B u, ι v⟫ = ⟪ι u, B v⟫`), postcomposition by `B` is symmetric for
+the pairing of `B ∘ f` with `ι ∘ g` in `L²`: `⟪B ∘ f, ι ∘ g⟫ = ⟪ι ∘ f, B ∘ g⟫`. -/
+theorem inner_compLpL_compLpL {B : E →L[𝕜] F} (hB : ∀ u v : E, ⟪B u, ι v⟫_𝕜 = ⟪ι u, B v⟫_𝕜)
+    (f g : Lp E 2 μ) :
+    ⟪B.compLpL 2 μ f, ι.compLpL 2 μ g⟫_𝕜 = ⟪ι.compLpL 2 μ f, B.compLpL 2 μ g⟫_𝕜 := by
+  have hB' := (memLp_top_const (μ := μ) B).coeFn_toLp
+  rw [← operatorMultiplication_of_ae_eq_const (p := 2) hB']
+  exact inner_operatorMultiplication_compLpL (hB'.mono fun x hx ↦ hx ▸ hB) f g
+
+end Symmetric
 
 section Hilbert
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
-import TauCeti.LinearAlgebra.Submodule.Primitive
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
@@ -92,15 +92,15 @@ theorem isTorsionFree_quotient_range_iff_forall_isMaximal [Module.IsTorsionFree 
       ∀ p : Ideal R, p.IsMaximal → ker (f.baseChange (R ⧸ p)) ≤ (ker f).baseChange (R ⧸ p) := by
   refine ⟨fun _ p _ ↦ (ker_baseChange_of_flat_quotient_range _ f).le, fun h ↦ ?_⟩
   -- Factor a nonzero scalar into primes and apply the prime case to each factor.
-  refine (range f).isTorsionFree_quotient_of_smul_mem fun d n hd hn ↦ ?_
+  refine Submodule.isTorsionFree_quotient_iff.mpr fun d n hd hn ↦ ?_
   induction d using UniqueFactorizationMonoid.induction_on_prime generalizing n with
-  | h₁ => exact absurd rfl hd
+  | h₁ => exact absurd hd not_isRegular_zero
   | h₂ u hu =>
     obtain ⟨u, rfl⟩ := hu
     simpa [smul_smul] using Submodule.smul_mem _ (↑u⁻¹ : R) hn
   | h₃ a π ha hπ ih =>
     rw [mul_smul] at hn
-    exact ih _ ha (mem_range_of_prime_smul_mem_range f hπ
+    exact ih _ (.of_ne_zero ha) (mem_range_of_prime_smul_mem_range f hπ
       (h _ (PrincipalIdealRing.isMaximal_of_irreducible hπ.irreducible)) hn)
 
 /-- Over a principal ideal domain, for a linear map `f : M →ₗ[R] N` into a torsion-free module,

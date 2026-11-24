@@ -389,7 +389,8 @@ variable (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 algebraic weights `x ↦ x ^ k`. -/
 noncomputable def inclusion : WeightSpace p K where
   toMonoidHom := Units.map (padicIntAlgebraMap p K).toMonoidHom
-  continuous_toFun := Continuous.units_map _ continuous_padicIntAlgebraMap
+  continuous_toFun :=
+    Continuous.units_map _ (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))
 
 variable {K}
 

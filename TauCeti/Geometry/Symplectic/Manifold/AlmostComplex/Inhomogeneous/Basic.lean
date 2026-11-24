@@ -163,6 +163,23 @@ theorem contMDiff_tangentHom (A : DomainDependentHomSection I M IP P n) :
           verticalTangentBundle I M IP P q) q (A.tangentHom q)) := by
   exact A.contMDiff.congr fun _ ↦ rfl
 
+/-- Evaluating a native Hom section along a `Cⁿ` map `b` on a `Cⁿ` field `ξ` of domain tangent
+vectors over `(b y).1` gives a `Cⁿ` field of target tangent vectors over `(b y).2`. -/
+theorem contMDiff_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] (A : DomainDependentHomSection I M IP P n) {b : N → P × M}
+    (hb : ContMDiff I' (IP.prod I) n b) {ξ : ∀ y, TangentSpace IP (b y).1}
+    (hξ : ContMDiff I' IP.tangent n (fun y ↦ TotalSpace.mk' EP (b y).1 (ξ y))) :
+    ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y).2 (A.tangentHom (b y) (ξ y))) := by
+  -- Read `ξ` in the pulled-back horizontal bundle, apply `A` there, and push the result to `TM`.
+  have hξ' : ContMDiff I' ((IP.prod I).prod 𝓘(ℝ, EP)) n
+      (fun y ↦ TotalSpace.mk' EP (E := horizontalTangentBundle I M IP P) (b y) (ξ y)) :=
+    (Pullback.contMDiff_iff (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
+      contMDiff_fst).2 ⟨hb, hξ⟩
+  simp only [tangentHom_apply]
+  exact (Pullback.contMDiff_lift (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
+    contMDiff_snd).comp ((A.contMDiff.comp hb).clm_bundle_apply hξ')
+
 /-- Restrict a native ambient Hom section to the intrinsic tangent bundles of an open product. -/
 def restrictOpen (A : DomainDependentHomSection I M IP P n)
     (U : TopologicalSpace.Opens P) (V : TopologicalSpace.Opens M) :

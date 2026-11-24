@@ -57,12 +57,17 @@ quantifier closure places their conjunction inside `Σ⁰₂(Z)`.
 * `TauCeti.ArithmeticalHierarchy.isDelta_succ_iff_isSigma_zero_iterate_jump`,
   `TauCeti.ArithmeticalHierarchy.isDelta_succ_mem_iff_turingReducible_iterate_jump`: `Δ⁰_{n+1}(Z)`
   predicates and sets are those computable in `Z⁽ⁿ⁾`.
+* `TauCeti.ArithmeticalHierarchy.isSigma_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isPi_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isDelta_iterate_jump_iff`: exact `Σ⁰`, `Π⁰`, and `Δ⁰` levels
+  of the iterated jump `Z⁽ⁿ⁾`.
 * `TauCeti.ArithmeticalHierarchy.not_isPi_succ_iterate_jump`,
   `TauCeti.ArithmeticalHierarchy.not_isDelta_succ_iterate_jump`,
   `TauCeti.ArithmeticalHierarchy.isDelta_succ_succ_turingJoin_iterate_jump_compl`,
   `TauCeti.ArithmeticalHierarchy.not_isSigma_succ_turingJoin_iterate_jump_compl`,
-  `TauCeti.ArithmeticalHierarchy.not_isPi_succ_turingJoin_iterate_jump_compl`: strictness of
-  every inclusion in the relativized arithmetical hierarchy.
+  `TauCeti.ArithmeticalHierarchy.not_isPi_succ_turingJoin_iterate_jump_compl`: strictness at
+  positive levels (`Σ⁰_{n+1}(Z) ≠ Π⁰_{n+1}(Z)`, `Δ⁰_{n+1}(Z) ⊂ Σ⁰_{n+1}(Z), Π⁰_{n+1}(Z)`, and
+  `Σ⁰_{n+1}(Z) ∪ Π⁰_{n+1}(Z) ⊂ Δ⁰_{n+2}(Z)`).
 
 ## References
 
@@ -364,6 +369,39 @@ theorem not_isDelta_iterate_jump_of_le (hmn : m ≤ n + 1) :
 theorem not_isDelta_compl_iterate_jump_of_le (hmn : m ≤ n + 1) :
     ¬IsDelta Z m (· ∈ (Set.jump^[n + 1] Z)ᶜ) := fun h =>
   not_isDelta_succ_compl_iterate_jump (h.of_le hmn)
+
+/-- Exact `Σ⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Σ⁰ₘ(Z)` if and only if `n ≤ m`. -/
+@[simp]
+theorem isSigma_iterate_jump_iff : IsSigma Z m (· ∈ Set.jump^[n] Z) ↔ n ≤ m := by
+  constructor
+  · intro h
+    by_contra hnm
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+    exact not_isSigma_iterate_jump_of_le (by omega) h
+  · intro hnm
+    cases n with
+    | zero =>
+      rw [Function.iterate_zero_apply]
+      exact (isSigma_zero_mem_iff_turingReducible.2 .rfl).of_le hnm
+    | succ k => exact isSigma_succ_iterate_jump.of_le hnm
+
+/-- Exact `Π⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Π⁰ₘ(Z)` if and only if `n = 0 ∨ n < m`. -/
+@[simp]
+theorem isPi_iterate_jump_iff : IsPi Z m (· ∈ Set.jump^[n] Z) ↔ n = 0 ∨ n < m := by
+  cases n with
+  | zero =>
+    simp [(isPi_zero_iff.2 (isSigma_zero_mem_iff_turingReducible.2 .rfl)).of_le (Nat.zero_le m)]
+  | succ k =>
+    refine ⟨fun h => Or.inr (not_le.1 fun hmk => not_isPi_iterate_jump_of_le hmk h), ?_⟩
+    rintro (h | hkm)
+    · exact absurd h (Nat.succ_ne_zero k)
+    · exact isSigma_succ_iterate_jump.pi_succ.of_le hkm
+
+/-- Exact `Δ⁰` level of the `n`-th jump: `Z⁽ⁿ⁾ ∈ Δ⁰ₘ(Z)` if and only if `n = 0 ∨ n < m`. -/
+@[simp]
+theorem isDelta_iterate_jump_iff : IsDelta Z m (· ∈ Set.jump^[n] Z) ↔ n = 0 ∨ n < m := by
+  rw [isDelta_iff, isSigma_iterate_jump_iff, isPi_iterate_jump_iff]
+  omega
 
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement is `Δ⁰_{n+2}` relative to `Z`. -/
 theorem isDelta_succ_succ_turingJoin_iterate_jump_compl :

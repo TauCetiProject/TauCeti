@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Boo
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Topology.Order.Interval
 
