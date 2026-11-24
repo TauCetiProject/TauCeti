@@ -15,7 +15,7 @@ too. This is Mathlib's `deriv_conj_conj` for a function with `conj ∘ f ∘ con
 
 ## Main results
 
-* `deriv_conj_of_forall_conj` — `deriv f (conj z) = conj (deriv f z)` when `f` commutes with
+* `TauCeti.deriv_conj_of_forall_conj` — `deriv f (conj z) = conj (deriv f z)` when `f` commutes with
   conjugation.
 -/
 
@@ -25,8 +25,12 @@ open scoped ComplexConjugate
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NormedStarGroup 𝕜]
 
+namespace TauCeti
+
 /-- If `f` commutes with conjugation, then so does its derivative. -/
 theorem deriv_conj_of_forall_conj {f : 𝕜 → 𝕜} (hf : ∀ w, f (conj w) = conj (f w)) (z : 𝕜) :
     deriv f (conj z) = conj (deriv f z) := by
   have h : conj ∘ f ∘ conj = f := funext fun w => by simp [hf]
   simpa [h] using congrFun (deriv_conj_conj (f := f)) (conj z)
+
+end TauCeti

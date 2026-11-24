@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Scorer
 import TauCeti.Analysis.Calculus.Deriv.Star
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Airy.Equation
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The Airy functions on the real line
@@ -23,14 +25,14 @@ and `Bi(x) ≥ 3^{−5/6} x / Γ(4/3)` gives `Bi(x) → ∞` as `x → ∞`.
 
 ## Main results
 
-* `TauCeti.airyAi_conj`, `TauCeti.airyBi_conj`, `TauCeti.deriv_airyAi_conj`,
-  `TauCeti.deriv_airyBi_conj` — conjugation symmetry.
-* `Real.airyAi`, `Real.airyBi` — the real restrictions, with `TauCeti.ofReal_real_airyAi`,
-  `TauCeti.ofReal_real_airyBi` — `Ai(x)` and `Bi(x)` are the casts of their real restrictions.
+* `Complex.airyAi_conj`, `Complex.airyBi_conj`, `Complex.deriv_airyAi_conj`,
+  `Complex.deriv_airyBi_conj` — conjugation symmetry.
+* `Real.airyAi`, `Real.airyBi` — the real restrictions, with `Real.ofReal_real_airyAi`,
+  `Real.ofReal_real_airyBi` — `Ai(x)` and `Bi(x)` are the casts of their real restrictions.
 * `Real.hasDerivAt_airyAi`, `Real.hasDerivAt_airyBi` — the derivatives of the real restrictions,
-  and `TauCeti.ofReal_deriv_real_airyAi`, `TauCeti.ofReal_deriv_real_airyBi` — `Ai′(x)` and
+  and `Real.ofReal_deriv_real_airyAi`, `Real.ofReal_deriv_real_airyBi` — `Ai′(x)` and
   `Bi′(x)` are real.
-* `TauCeti.ofReal_real_scorerGi` — `Gi(x)` is the cast of its real restriction.
+* `Real.ofReal_real_scorerGi` — `Gi(x)` is the cast of its real restriction.
 * `Real.airyBi_pos`, `Real.deriv_airyBi_pos` — `Bi > 0` and `Bi′ > 0` on `[0, ∞)`.
 * `Real.tendsto_airyBi_atTop` — `Bi(x) → ∞` as `x → ∞`.
 
@@ -57,37 +59,38 @@ namespace TauCeti
 
 /-! ### Conjugation symmetry -/
 
-/-- `conj (3 ^ s) = 3 ^ conj s`. -/
+/-- `conj (3 ^ s) = 3 ^ conj s`, the case `r = 3` of `TauCeti.ofReal_cpow_conj`. -/
 private theorem conj_three_cpow (s : ℂ) : conj ((3 : ℂ) ^ s) = 3 ^ conj s := by
-  have h := conj_cpow 3 (conj s) (by simp [Real.pi_ne_zero.symm])
-  rwa [conj_conj, map_ofNat, eq_comm] at h
+  simpa using (ofReal_cpow_conj (r := 3) (by norm_num) s).symm
 
 /-- For real `b`, `z ↦ ₀F₁(; b; z³/9)` commutes with conjugation. -/
 private theorem airy_hypergeometric_conj (b : ℝ) (z : ℂ) :
     regularizedHGFun 0 {(b : ℂ)} (conj z ^ 3 / 9) =
       conj (regularizedHGFun 0 {(b : ℂ)} (z ^ 3 / 9)) := by
-  rw [← regularizedHGFun_zero_singleton_conj, map_div₀, map_pow, map_ofNat]
+  rw [← regularizedHGFun_zero_ofReal_singleton_conj, map_div₀, map_pow, map_ofNat]
 
 /-- `Ai(conj z) = conj Ai(z)`. -/
-theorem airyAi_conj (z : ℂ) : airyAi (conj z) = conj (airyAi z) := by
+theorem _root_.Complex.airyAi_conj (z : ℂ) : airyAi (conj z) = conj (airyAi z) := by
   have h1 := airy_hypergeometric_conj (2 / 3) z
   have h2 := airy_hypergeometric_conj (4 / 3) z
   push_cast at h1 h2
   simp [airyAi_def, conj_three_cpow, h1, h2, map_div₀, map_ofNat]
 
 /-- `Bi(conj z) = conj Bi(z)`. -/
-theorem airyBi_conj (z : ℂ) : airyBi (conj z) = conj (airyBi z) := by
+theorem _root_.Complex.airyBi_conj (z : ℂ) : airyBi (conj z) = conj (airyBi z) := by
   have h1 := airy_hypergeometric_conj (2 / 3) z
   have h2 := airy_hypergeometric_conj (4 / 3) z
   push_cast at h1 h2
   simp [airyBi_def, conj_three_cpow, h1, h2, map_div₀, map_ofNat]
 
 /-- `Ai′(conj z) = conj Ai′(z)`. -/
-theorem deriv_airyAi_conj (z : ℂ) : deriv airyAi (conj z) = conj (deriv airyAi z) :=
+theorem _root_.Complex.deriv_airyAi_conj (z : ℂ) :
+    deriv airyAi (conj z) = conj (deriv airyAi z) :=
   deriv_conj_of_forall_conj airyAi_conj z
 
 /-- `Bi′(conj z) = conj Bi′(z)`. -/
-theorem deriv_airyBi_conj (z : ℂ) : deriv airyBi (conj z) = conj (deriv airyBi z) :=
+theorem _root_.Complex.deriv_airyBi_conj (z : ℂ) :
+    deriv airyBi (conj z) = conj (deriv airyBi z) :=
   deriv_conj_of_forall_conj airyBi_conj z
 
 /-! ### The real restrictions -/
@@ -104,25 +107,20 @@ def _root_.Real.airyBi (x : ℝ) : ℝ := (TauCeti.airyBi x).re
 /-- The defining expression of the real restriction of `Bi`. -/
 theorem _root_.Real.airyBi_def (x : ℝ) : Real.airyBi x = (TauCeti.airyBi x).re := (rfl)
 
-/-- A function that commutes with conjugation is real on the real line. -/
-private theorem ofReal_re_of_conj {f : ℂ → ℂ} (hf : ∀ z, f (conj z) = conj (f z)) (x : ℝ) :
-    ((f x).re : ℂ) = f x :=
-  conj_eq_iff_re.1 (by rw [← hf, conj_ofReal])
-
 /-- On the real line `Ai` is real: `Ai(x)` is the cast of `Real.airyAi x`. -/
 @[simp, norm_cast]
-theorem ofReal_real_airyAi (x : ℝ) : ((Real.airyAi x : ℝ) : ℂ) = airyAi x :=
-  ofReal_re_of_conj airyAi_conj x
+theorem _root_.Real.ofReal_real_airyAi (x : ℝ) : ((Real.airyAi x : ℝ) : ℂ) = airyAi x :=
+  ofReal_re_apply_of_forall_conj airyAi_conj x
 
 /-- On the real line `Bi` is real: `Bi(x)` is the cast of `Real.airyBi x`. -/
 @[simp, norm_cast]
-theorem ofReal_real_airyBi (x : ℝ) : ((Real.airyBi x : ℝ) : ℂ) = airyBi x :=
-  ofReal_re_of_conj airyBi_conj x
+theorem _root_.Real.ofReal_real_airyBi (x : ℝ) : ((Real.airyBi x : ℝ) : ℂ) = airyBi x :=
+  ofReal_re_apply_of_forall_conj airyBi_conj x
 
 /-- On the real line `Gi` is real: `Gi(x)` is the cast of `Real.scorerGi x`. -/
 @[simp, norm_cast]
-theorem ofReal_real_scorerGi (x : ℝ) : ((Real.scorerGi x : ℝ) : ℂ) = scorerGi x := by
-  rw [Real.scorerGi_def, Complex.scorerGi_def, Real.scorerHi_ofReal, ← ofReal_real_airyBi,
+theorem _root_.Real.ofReal_real_scorerGi (x : ℝ) : ((Real.scorerGi x : ℝ) : ℂ) = scorerGi x := by
+  rw [Real.scorerGi_def, Complex.scorerGi_def, Real.scorerHi_ofReal, ← Real.ofReal_real_airyBi,
     ← ofReal_sub, ofReal_re]
 
 /-- The derivative of the real restriction of `Ai` is `Re Ai′(x)`. -/
@@ -147,15 +145,17 @@ theorem _root_.Real.differentiable_airyBi : Differentiable ℝ Real.airyBi := fu
 
 /-- On the real line `Ai′` is real: `Ai′(x)` is the cast of the derivative of `Real.airyAi`. -/
 @[simp, norm_cast]
-theorem ofReal_deriv_real_airyAi (x : ℝ) : ((deriv Real.airyAi x : ℝ) : ℂ) = deriv airyAi x := by
+theorem _root_.Real.ofReal_deriv_real_airyAi (x : ℝ) :
+    ((deriv Real.airyAi x : ℝ) : ℂ) = deriv airyAi x := by
   rw [(Real.hasDerivAt_airyAi x).deriv]
-  exact ofReal_re_of_conj deriv_airyAi_conj x
+  exact ofReal_re_apply_of_forall_conj deriv_airyAi_conj x
 
 /-- On the real line `Bi′` is real: `Bi′(x)` is the cast of the derivative of `Real.airyBi`. -/
 @[simp, norm_cast]
-theorem ofReal_deriv_real_airyBi (x : ℝ) : ((deriv Real.airyBi x : ℝ) : ℂ) = deriv airyBi x := by
+theorem _root_.Real.ofReal_deriv_real_airyBi (x : ℝ) :
+    ((deriv Real.airyBi x : ℝ) : ℂ) = deriv airyBi x := by
   rw [(Real.hasDerivAt_airyBi x).deriv]
-  exact ofReal_re_of_conj deriv_airyBi_conj x
+  exact ofReal_re_apply_of_forall_conj deriv_airyBi_conj x
 
 /-! ### Positivity and growth of `Bi` -/
 
