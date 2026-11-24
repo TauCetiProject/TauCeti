@@ -6,18 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # Central subgroups and Lie algebra centralizers
 
-Every central closed subgroup scheme of `G = Spec H` acts trivially in the adjoint representation
-and therefore lies scheme-theoretically inside `C_G(x)` for every Lie algebra element `x ∈ 𝔤`.
-In Hopf coordinates, `centralizerHopfIdeal H x ≤ I` for every central Hopf ideal `I`, and in
-particular `centralizerHopfIdeal H x ≤ CommHopfAlgCat.centerDefiningIdeal H`.
+Let `G = Spec H` be an affine group over a field `k` with finite-dimensional cotangent space
+`Bialgebra.CotangentSpace k H` (for which `Algebra.FiniteType k H` suffices). Every central
+closed subgroup scheme of `G` acts trivially in the adjoint representation and therefore lies
+scheme-theoretically inside `C_G(x)` for every Lie algebra element `x ∈ 𝔤`. In Hopf coordinates,
+`centralizerHopfIdeal H x ≤ I` for every central Hopf ideal `I`, and in particular
+`centralizerHopfIdeal H x ≤ CommHopfAlgCat.centerDefiningIdeal H`.
 
 Consequently, when a homomorphism `f : H ⟶ K` has central kernel, the scheme-theoretic kernel of
-the induced centralizer morphism `C_K(x) → C_H(df(x))` is canonically isomorphic to `ker(f)`.
+the induced centralizer morphism `C_K(x) → C_H(df(x))` is canonically isomorphic to `ker(f)`
+(see `CommHopfAlgCat.Hom.kernelCentralizerMapIso` and
+`CommHopfAlgCat.Hom.kernelCentralizerMapIsoOfLe` in
+`TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map`).
 
 ## Main declarations
 

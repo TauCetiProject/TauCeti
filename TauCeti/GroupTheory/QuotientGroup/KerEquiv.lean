@@ -25,9 +25,9 @@ definitions. The first two are the group-theoretic counterparts of Mathlib's
 `RingHom.quotientKerEquivOfSurjective_symm_apply`; all three belong beside their definitions in
 Mathlib.
 
-It also provides `TauCeti.QuotientGroup.descOfSurjective`: descending a monoid-valued
-homomorphism `φ : P →* M` along any surjective group homomorphism `p : P →* Q` whose kernel is
-contained in `φ.ker` (whereas `MonoidHom.liftOfSurjective` requires a group target).
+It also provides `MonoidHom.liftOfSurjectiveToMonoid`: descending a monoid-valued homomorphism
+`ψ : P →* M'` along any surjective group homomorphism `p : P →* Q` whose kernel is contained in
+`ψ.ker` (whereas `MonoidHom.liftOfSurjective` requires a group target).
 
 ## Main statements
 
@@ -43,9 +43,9 @@ contained in `φ.ker` (whereas `MonoidHom.liftOfSurjective` requires a group tar
 * `TauCeti.QuotientGroup.quotientKerEquivRange_symm_apply`: the inverse sends `φ g` back to the
   class of `g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply`.
-* `TauCeti.QuotientGroup.descOfSurjective`: descend a monoid-valued homomorphism along a
-  surjective group homomorphism, with `_apply`, `_comp`, `_unique`, kernel, and injectivity laws
-  (and additive counterparts under `TauCeti.QuotientAddGroup`).
+* `MonoidHom.liftOfSurjectiveToMonoid`: descend a monoid-valued homomorphism along a surjective
+  group homomorphism, with `_apply`, `_comp`, `_unique`, kernel, and injectivity laws (and
+  additive counterparts under `AddMonoidHom`).
 
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
@@ -95,7 +95,13 @@ theorem quotientKerEquivRange_symm_apply (g : G) :
     (QuotientGroup.quotientKerEquivRange φ).symm (φ.rangeRestrict g) = (g : G ⧸ φ.ker) :=
   (MulEquiv.symm_apply_eq _).2 (quotientKerEquivRange_apply_mk φ g).symm
 
-section DescOfSurjective
+end QuotientGroup
+
+end TauCeti
+
+namespace MonoidHom
+
+section LiftOfSurjectiveToMonoid
 
 variable {P Q M' : Type*} [Group P] [Group Q] [Monoid M']
   (p : P →* Q) (hp : Function.Surjective p) (ψ : P →* M') (hψ : p.ker ≤ ψ.ker)
@@ -103,59 +109,56 @@ variable {P Q M' : Type*} [Group P] [Group Q] [Monoid M']
 /-- Descend a monoid-valued homomorphism along a surjective group homomorphism whose kernel is
 contained in `ψ.ker`. Unlike `MonoidHom.liftOfSurjective`, the target `M'` need only be a
 monoid. -/
-@[to_additive TauCeti.QuotientAddGroup.descOfSurjective
+@[to_additive
   /-- Descend an additive-monoid-valued homomorphism along a surjective additive group
   homomorphism whose kernel is contained in `ψ.ker`. -/]
-noncomputable def descOfSurjective : Q →* M' :=
-  (QuotientGroup.lift p.ker ψ hψ).comp (QuotientGroup.liftEquiv p.ker hp rfl).symm.toMonoidHom
+noncomputable def liftOfSurjectiveToMonoid : Q →* M' :=
+  (QuotientGroup.lift p.ker ψ hψ).comp
+    (QuotientGroup.quotientKerEquivOfSurjective p hp).symm.toMonoidHom
 
 /-- The descended homomorphism agrees with `ψ` after precomposing with `p`. -/
-@[to_additive (attr := simp) TauCeti.QuotientAddGroup.descOfSurjective_apply
+@[to_additive (attr := simp)
   /-- The descended additive homomorphism agrees with `ψ` after precomposing with `p`. -/]
-theorem descOfSurjective_apply (g : P) :
-    descOfSurjective p hp ψ hψ (p g) = ψ g := by
-  have hmk : (QuotientGroup.liftEquiv p.ker hp rfl).symm (p g) = (g : P ⧸ p.ker) :=
-    (QuotientGroup.liftEquiv p.ker hp rfl).symm_apply_eq.mpr
-      (QuotientGroup.liftEquiv_coe p.ker hp rfl g).symm
-  dsimp only [descOfSurjective]
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hmk, QuotientGroup.lift_mk]
+theorem liftOfSurjectiveToMonoid_apply (g : P) :
+    liftOfSurjectiveToMonoid p hp ψ hψ (p g) = ψ g := by
+  dsimp only [liftOfSurjectiveToMonoid]
+  rw [comp_apply, MulEquiv.coe_toMonoidHom,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply, QuotientGroup.lift_mk]
 
 /-- Precomposing the descended homomorphism with `p` recovers `ψ`. -/
-@[to_additive (attr := simp) TauCeti.QuotientAddGroup.descOfSurjective_comp
+@[to_additive (attr := simp)
   /-- Precomposing the descended additive homomorphism with `p` recovers `ψ`. -/]
-theorem descOfSurjective_comp :
-    (descOfSurjective p hp ψ hψ).comp p = ψ :=
-  MonoidHom.ext (descOfSurjective_apply p hp ψ hψ)
+theorem liftOfSurjectiveToMonoid_comp :
+    (liftOfSurjectiveToMonoid p hp ψ hψ).comp p = ψ :=
+  MonoidHom.ext (liftOfSurjectiveToMonoid_apply p hp ψ hψ)
 
 /-- A homomorphism out of the target of a surjection is uniquely determined by its precomposition
 with `p`. -/
-@[to_additive TauCeti.QuotientAddGroup.descOfSurjective_unique
+@[to_additive
   /-- An additive homomorphism out of the target of a surjection is uniquely determined by its
   precomposition with `p`. -/]
-theorem descOfSurjective_unique (χ : Q →* M') (hχ : ∀ g, χ (p g) = ψ g) :
-    χ = descOfSurjective p hp ψ hψ :=
-  (MonoidHom.cancel_right hp).mp ((MonoidHom.ext hχ).trans (descOfSurjective_comp p hp ψ hψ).symm)
+theorem liftOfSurjectiveToMonoid_unique (χ : Q →* M') (hχ : ∀ g, χ (p g) = ψ g) :
+    χ = liftOfSurjectiveToMonoid p hp ψ hψ :=
+  (cancel_right hp).mp ((MonoidHom.ext hχ).trans (liftOfSurjectiveToMonoid_comp p hp ψ hψ).symm)
 
 /-- The kernel of the descended homomorphism is the image of `ψ.ker` under `p`. -/
-@[to_additive TauCeti.QuotientAddGroup.ker_descOfSurjective
+@[to_additive
   /-- The kernel of the descended additive homomorphism is the image of `ψ.ker` under `p`. -/]
-theorem ker_descOfSurjective :
-    (descOfSurjective p hp ψ hψ).ker = ψ.ker.map p :=
-  MonoidHom.ker_eq_map_of_comp_eq hp (descOfSurjective_comp p hp ψ hψ)
+theorem ker_liftOfSurjectiveToMonoid :
+    (liftOfSurjectiveToMonoid p hp ψ hψ).ker = ψ.ker.map p :=
+  ker_eq_map_of_comp_eq hp (liftOfSurjectiveToMonoid_comp p hp ψ hψ)
 
 /-- The descended homomorphism is injective if and only if `ψ.ker = p.ker`. -/
-@[to_additive TauCeti.QuotientAddGroup.injective_descOfSurjective_iff
+@[to_additive
   /-- The descended additive homomorphism is injective if and only if `ψ.ker = p.ker`. -/]
-theorem injective_descOfSurjective_iff :
-    Function.Injective (descOfSurjective p hp ψ hψ) ↔ ψ.ker = p.ker := by
-  rw [descOfSurjective, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
+theorem injective_liftOfSurjectiveToMonoid_iff :
+    Function.Injective (liftOfSurjectiveToMonoid p hp ψ hψ) ↔ ψ.ker = p.ker := by
+  rw [liftOfSurjectiveToMonoid, coe_comp, MulEquiv.coe_toMonoidHom,
     EquivLike.injective_comp, QuotientGroup.injective_lift_iff, eq_comm]
 
-end DescOfSurjective
+end LiftOfSurjectiveToMonoid
 
-end QuotientGroup
-
-end TauCeti
+end MonoidHom
 
 namespace Subgroup
 

@@ -31,10 +31,11 @@ transport.
 * `TauCeti.HopfIdeal.componentGroupConjugationEquiv_one`,
   `TauCeti.HopfIdeal.componentGroupConjugationEquiv_trans`,
   `TauCeti.HopfIdeal.componentGroupConjugationEquiv_symm`,
-  `TauCeti.HopfIdeal.componentGroupConjugationEquiv_self_eq_conj`, and
+  `TauCeti.HopfIdeal.componentGroupConjugationEquiv_self_eq_conj`,
+  `TauCeti.HopfIdeal.componentGroupConjugationEquiv_self_eq_refl_of_mem_identityComponent`, and
   `TauCeti.HopfIdeal.componentGroupInclusion_componentGroupConjugationEquiv`: identity,
-  composition, inverse, inner self-conjugation, triviality on `N°(k)`, and ambient-homomorphism
-  compatibility laws for `componentGroupConjugationEquiv`.
+  composition, inverse, inner self-conjugation, triviality of conjugation by points of `N°(k)` on
+  `π₀(N)`, and ambient-homomorphism compatibility laws for `componentGroupConjugationEquiv`.
 * `TauCeti.HopfIdeal.mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv`: naturality
   with respect to nested closed-subgroup inclusions.
 
