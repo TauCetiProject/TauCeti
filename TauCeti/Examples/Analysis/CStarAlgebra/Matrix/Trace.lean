@@ -108,7 +108,7 @@ example : (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (matrixUnit (0 
     (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (matrixUnit (0 : Fin 2) 1)).toLinearMap =
       normalizedTrace (matrixUnit (0 : Fin 2) 1) ∧
     normalizedTrace (matrixUnit (0 : Fin 2) 1) = 0 := by
-  simp [trace_toEuclideanCLM, Matrix.trace_single_eq_of_ne]
+  simp [Matrix.trace_single_eq_of_ne]
 
 /-! ### `k = 0` -/
 

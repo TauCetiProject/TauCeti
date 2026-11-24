@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Scalar C⋆-matrices as operators on `EuclideanSpace`
@@ -53,11 +54,10 @@ theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i : n) :
   simp [toEuclideanCLM_apply, EuclideanSpace.inner_single_left]
 
 /-- The trace of the operator of a matrix is the trace of the matrix. -/
+@[simp]
 theorem trace_toEuclideanCLM (x : CStarMatrix n n ℂ) :
     LinearMap.trace ℂ _ (toEuclideanCLM x).toLinearMap = (ofMatrix.symm x).trace := by
-  rw [LinearMap.trace_eq_matrix_trace ℂ (EuclideanSpace.basisFun n ℂ).toBasis,
-    toEuclideanCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin]
+  rw [toEuclideanCLM_apply, Matrix.trace_toEuclideanCLM]
 
 /-- `toEuclideanCLM` preserves norms. -/
 @[simp]
