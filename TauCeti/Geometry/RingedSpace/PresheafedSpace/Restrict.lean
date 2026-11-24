@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
+public import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 public import TauCeti.Topology.Category.TopCat.Opens
 
 import TauCeti.Topology.Sheaves.Presheaf
@@ -23,8 +24,6 @@ of Mathlib's `AlgebraicGeometry.Scheme.homOfLE`.
 * `AlgebraicGeometry.PresheafedSpace.pullbackRestrictIso`:
   `pullback (X.ofRestrict U) (X.ofRestrict V) ≅ X|_{U ⊓ V}`.
 * `AlgebraicGeometry.PresheafedSpace.restrictTopSectionsIso`: `Γ(X, U) ≅ Γ(X|_U, ⊤)`.
-* `AlgebraicGeometry.PresheafedSpace.Hom.appLE`: restricted section map `Γ(Y, U) ⟶ Γ(X, V)` for
-  `V ≤ f⁻¹ U`.
 
 ## Main results
 
@@ -54,90 +53,6 @@ variable {C : Type u} [Category.{v} C] (X : PresheafedSpace.{v, u, w} C)
 theorem restrict_presheaf_map {U : TopCat} {f : U ⟶ (X : TopCat)} (h : Topology.IsOpenEmbedding f)
     {V W : (Opens U)ᵒᵖ} (i : V ⟶ W) :
     (X.restrict h).presheaf.map i = X.presheaf.map (h.functor.map i.unop).op := (rfl)
-
-namespace Hom
-
-/-- Given a morphism of presheafed spaces `f : X ⟶ Y` and open sets `U : Opens Y`, `V : Opens X`
-with `V ≤ f⁻¹ U`, this is the induced restriction map `Γ(Y, U) ⟶ Γ(X, V)` on sections. -/
-def appLE {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) (V : Opens X)
-    (e : V ≤ (Opens.map f.base).obj U) :
-    Y.presheaf.obj (op U) ⟶ X.presheaf.obj (op V) :=
-  f.c.app (op U) ≫ X.presheaf.map (homOfLE e).op
-
-/-- Unfolding rule for `PresheafedSpace.Hom.appLE`. -/
-theorem appLE_def {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) (V : Opens X)
-    (e : V ≤ (Opens.map f.base).obj U) :
-    f.appLE U V e = f.c.app (op U) ≫ X.presheaf.map (homOfLE e).op := (rfl)
-
-@[reassoc (attr := simp)]
-theorem appLE_map {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) {U : Opens Y} {V V' : Opens X}
-    (e : V ≤ (Opens.map f.base).obj U) (i : op V ⟶ op V') :
-    f.appLE U V e ≫ X.presheaf.map i = f.appLE U V' (i.unop.le.trans e) :=
-  (Category.assoc _ _ _).trans <|
-    congrArg (f.c.app (op U) ≫ ·) (TopCat.Presheaf.map_comp_map_eq X.presheaf _ i _)
-
-@[reassoc (attr := simp)]
-theorem map_appLE {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) {U U' : Opens Y} {V : Opens X}
-    (e : V ≤ (Opens.map f.base).obj U) (i : op U' ⟶ op U) :
-    Y.presheaf.map i ≫ f.appLE U V e =
-      f.appLE U' V (e.trans ((Opens.map f.base).map i.unop).le) := by
-  rw [appLE, ← Category.assoc, f.c.naturality i, Category.assoc]
-  exact congrArg (f.c.app (op U') ≫ ·) (TopCat.Presheaf.map_comp_map_eq X.presheaf _ _ _)
-
-theorem app_eq_appLE {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) :
-    (f.c.app (op U) : Y.presheaf.obj (op U) ⟶ X.presheaf.obj (op ((Opens.map f.base).obj U))) =
-      f.appLE U ((Opens.map f.base).obj U) le_rfl := by
-  simp [appLE]
-
-@[simp]
-theorem appLE_eq_app {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) :
-    f.appLE U ((Opens.map f.base).obj U) le_rfl = f.c.app (op U) :=
-  (app_eq_appLE f U).symm
-
-@[simp]
-theorem id_appLE (X : PresheafedSpace.{v, u, w} C) {U V : Opens X}
-    (e : V ≤ (Opens.map (𝟙 X : X ⟶ X).base).obj U) :
-    (𝟙 X : X ⟶ X).appLE U V e = X.presheaf.map (homOfLE e).op := by
-  rw [appLE, id_c_app]
-  exact TopCat.Presheaf.map_comp_map_eq X.presheaf _ _ _
-
-@[reassoc]
-theorem appLE_comp_appLE {X Y Z : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (U : Opens Z) (V : Opens Y) (W : Opens X)
-    (e₁ : V ≤ (Opens.map g.base).obj U) (e₂ : W ≤ (Opens.map f.base).obj V) :
-    g.appLE U V e₁ ≫ f.appLE V W e₂ =
-      (f ≫ g).appLE U W
-        ((e₂.trans ((Opens.map f.base).map (homOfLE e₁)).le).trans
-          (eqToHom (by rw [comp_base, Opens.map_comp_obj])).le) := by
-  rw [appLE, appLE, appLE, comp_c_app, Category.assoc]
-  refine (congrArg (g.c.app (op U) ≫ ·) ?_).trans (Category.assoc _ _ _).symm
-  rw [← Category.assoc, f.c.naturality]
-  exact (Category.assoc _ _ _).trans <|
-    congrArg (f.c.app _ ≫ ·) (TopCat.Presheaf.map_comp_map_eq X.presheaf _ _ _)
-
-@[simp, reassoc]
-theorem comp_appLE {X Y Z : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (U : Opens Z) (W : Opens X) (e : W ≤ (Opens.map (f ≫ g).base).obj U) :
-    (f ≫ g).appLE U W e =
-      g.c.app (op U) ≫ f.appLE ((Opens.map g.base).obj U) W
-        (e.trans (eqToHom (by rw [comp_base, Opens.map_comp_obj])).le) := by
-  rw [appLE, appLE, comp_c_app]
-  refine (Category.assoc _ _ _).trans (congrArg (g.c.app (op U) ≫ ·) ?_)
-  exact congrArg (f.c.app _ ≫ X.presheaf.map ·) (Subsingleton.elim _ _)
-
-theorem appLE_congr {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) {U U' : Opens Y}
-    {V V' : Opens X} (e : V ≤ (Opens.map f.base).obj U) (hU : U = U') (hV : V = V')
-    (P : ∀ {R S : C} (_ : R ⟶ S), Prop) :
-    P (f.appLE U V e) ↔ P (f.appLE U' V' (hU ▸ hV ▸ e)) := by
-  subst hU; subst hV; rfl
-
-theorem congr_appLE {X Y : PresheafedSpace.{v, u, w} C} {k₁ k₂ : X ⟶ Y} (hk : k₁ = k₂)
-    {U : Opens Y} {V : Opens X}
-    (h₁ : V ≤ (Opens.map k₁.base).obj U) (h₂ : V ≤ (Opens.map k₂.base).obj U) :
-    k₁.appLE U V h₁ = k₂.appLE U V h₂ := by
-  subst hk; rfl
-
-end Hom
 
 /-- For opens `V ≤ W` of `X`, the inclusion of the restriction of `X` to `V` into its restriction
 to `W`. Its components are restriction maps of the presheaf of `X`. -/
@@ -264,7 +179,7 @@ is the presheaf restriction `Γ(X, W) ⟶ Γ(X, V)` followed by `restrictTopSect
       fun x _ ↦ h x.2) :
     (X.ofRestrict V.isOpenEmbedding).appLE W ⊤ hle =
       X.presheaf.map (homOfLE h).op ≫ (X.restrictTopSectionsIso V).hom := by
-  rw [Hom.appLE, ofRestrict_c_app, restrictTopSectionsIso_hom]
+  rw [Hom.appLE_def, ofRestrict_c_app, restrictTopSectionsIso_hom]
   exact (congrArg (_ ≫ ·) (X.restrict_presheaf_map V.isOpenEmbedding (homOfLE hle).op)).trans
     (TopCat.Presheaf.map_comp_eq_map_comp X.presheaf _ _ _ _)
 
@@ -314,7 +229,9 @@ theorem restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top {V W : Opens X} (h 
     exact congrArg (k.c.app _ ≫ Z.presheaf.map ·) (Subsingleton.elim _ _)
   rw [Hom.comp_appLE, hnat]
   refine (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ k.c.app (op ⊤)) (X.ofRestrict_appLE hUW hleU)).trans (Category.assoc _ _ _)
+    (congrArg (· ≫ k.c.app (op ⊤))
+      ((Hom.appLE_def _ _ _ _).symm.trans (X.ofRestrict_appLE hUW hleU))).trans
+      (Category.assoc _ _ _)
 
 /-- Compatibility of `restrictTopSectionsIso` with factorizations `l ≫ Y|_V = h ≫ X|_U ≫ f`
 for opens `V ≤ W` and `U ≤ f⁻¹ W`. -/

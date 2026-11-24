@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Morphism
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.SectionsTopology
 public import TauCeti.Topology.Category.TopCommRingCat.Adic
 
-import TauCeti.Geometry.RingedSpace.PresheafedSpace.Restrict
+import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
