@@ -30,6 +30,8 @@ the specialization `m₁ = ⊥` corresponds to Mathlib's scalar law of total var
 
 ## Main statements
 
+* `ProbabilityTheory.condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq`: the conditional variance is
+  the conditional expectation of `(X - Y) ^ 2` whenever `Y` is a.e. the conditional mean.
 * `ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp'`: `Var[X | m] = E[X² | m] - E[X | m]²`
   almost everywhere, for a square-integrable `X` and an arbitrary measure.
 * `ProbabilityTheory.condVar_ae_eq_condExp_condVar_add_condVar_condExp`: the conditional law of
@@ -49,6 +51,12 @@ namespace ProbabilityTheory
 
 variable {Ω : Type*} {m m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure[m₀] Ω} {X : Ω → ℝ}
 
+/-- If the conditional mean of `X` is almost everywhere equal to `Y`, then the conditional variance
+of `X` is the conditional expectation of the squared deviation `(X - Y) ^ 2`, almost everywhere. -/
+theorem condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq {Y : Ω → ℝ} (h : μ[X | m] =ᵐ[μ] Y) :
+    Var[X; μ | m] =ᵐ[μ] μ[(X - Y) ^ 2 | m] :=
+  condExp_congr_ae (h.mono fun ω hω ↦ by simp [hω])
+
 /-- The conditional variance of a square-integrable `X` is the conditional second moment minus the
 square of the conditional mean, `μ`-almost everywhere, for an arbitrary measure `μ`. This is
 Mathlib's `condVar_ae_eq_condExp_sq_sub_sq_condExp` without its finiteness assumption on `μ`. -/
@@ -67,9 +75,8 @@ theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X
   set s := spanningSets (μ.trim hm) n
   have hs : MeasurableSet[m] s := measurableSet_spanningSets _ n
   have hmean := condExp_restrict_ae_eq_restrict hm hs hXi
-  have hvar : Var[X; μ.restrict s | m] =ᵐ[μ.restrict s] Var[X; μ | m] := by
-    simp only [condVar]
-    exact (condExp_congr_ae (hmean.mono fun ω hω ↦ by simp [hω])).trans
+  have hvar : Var[X; μ.restrict s | m] =ᵐ[μ.restrict s] Var[X; μ | m] :=
+    (condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq hmean).trans
       (condExp_restrict_ae_eq_restrict hm hs hsq)
   filter_upwards [condVar_ae_eq_condExp_sq_sub_sq_condExp hm (hX.restrict s), hmean, hvar,
     condExp_restrict_ae_eq_restrict (f := X ^ 2) hm hs hX.integrable_sq] with ω h₁ h₂ h₃ h₄

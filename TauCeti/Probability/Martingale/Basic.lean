@@ -226,9 +226,8 @@ theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
       fun ω ↦ Y i ω ^ 2 + μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] ω := by
   have hc := hY.condExp_ae_eq hij
   -- The conditional variance of `Y j` given `ℱ i`, centred at `μ[Y j | ℱ i] = Y i`.
-  have hvar : Var[Y j; μ | ℱ i] =ᵐ[μ] μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] := by
-    simp only [ProbabilityTheory.condVar]
-    exact condExp_congr_ae (hc.mono fun ω hω ↦ by simp [hω])
+  have hvar : Var[Y j; μ | ℱ i] =ᵐ[μ] μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] :=
+    ProbabilityTheory.condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq hc
   filter_upwards [ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp' (ℱ.le i) hj, hvar, hc]
     with ω h₁ h₂ h₃
   simp only [Pi.sub_apply, Pi.pow_apply] at h₁
