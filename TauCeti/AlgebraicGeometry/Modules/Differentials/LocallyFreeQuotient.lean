@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
-import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
-import TauCeti.AlgebraicGeometry.Modules.StalkMap
+import TauCeti.AlgebraicGeometry.Modules.Stalk
 import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
