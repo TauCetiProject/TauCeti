@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.StateSpace
+public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import Mathlib.Analysis.CStarAlgebra.Unitary.Span
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.RingTheory.TraceFunctional.Star
@@ -36,6 +37,9 @@ it with the set of β-KMS states of the trivial dynamics for every `β`.
   (`IsTracialState.comp_of_surjective`).
 * `PositiveContinuousLinearMap.isTracialState_iff_of_comm`: on a commutative C⋆-algebra every
   state is tracial, so `T(A) = S(A)` (`TauCeti.tracialStates_eq_stateSpace`).
+* `PositiveContinuousLinearMap.isTracialState_unitization_iff`: the extension `τ⁺¹` of a positive
+  functional to the unitization (`PositiveContinuousLinearMap.unitization`) is a tracial state
+  exactly when `τ` is.
 * `PositiveContinuousLinearMap.not_isTracialState_of_mul_star_add_mul_star_eq_one`: a unital
   C⋆-algebra containing two isometries `s, t` with `s * star s + t * star t = 1` has no tracial
   state.
@@ -308,3 +312,22 @@ theorem mapsTo_pullbackFunctional_tracialStates (f : F) :
 end Unital
 
 end TauCeti
+
+namespace PositiveContinuousLinearMap
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {τ : A →P[ℂ] ℂ}
+
+/-- The extension `τ⁺¹` is a tracial state of `Unitization ℂ A` exactly when `τ` is a tracial
+state of `A`. -/
+@[simp]
+theorem isTracialState_unitization_iff : τ.unitization.IsTracialState ↔ τ.IsTracialState := by
+  simp only [isTracialState_iff, norm_unitization, and_congr_right_iff]
+  refine fun _ => ⟨fun h a b => ?_, unitization_map_mul_comm⟩
+  simpa only [← Unitization.inr_mul, unitization_apply_inr] using h a b
+
+/-- The extension of a tracial state to the unitization is a tracial state. -/
+theorem IsTracialState.unitization (hτ : τ.IsTracialState) : τ.unitization.IsTracialState :=
+  isTracialState_unitization_iff.mpr hτ
+
+end PositiveContinuousLinearMap

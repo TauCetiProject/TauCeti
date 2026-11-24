@@ -87,7 +87,7 @@ private theorem finsum_weight_traceDetFiber_two_mul_sq_step {a : ℤ} (ha : a �
       ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val := by
   have ht : 2 * a + 2 = 2 * (a + 1) := by ring
   have hn : a ^ 2 + 2 * a + 1 = (a + 1) ^ 2 := by ring
-  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (sq_pos_of_ne_zero ha)
+  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (pow_ne_zero 2 ha)
   rw [ht, hn] at h
   exact h
 

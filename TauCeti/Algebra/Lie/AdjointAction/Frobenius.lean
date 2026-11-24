@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.CharP.Lemmas
 -- Non-public: `Module.End.instExpChar` gives `Module.End R A` the exponential characteristic
 -- of `A`.
 import TauCeti.Algebra.CharP.LinearMaps
@@ -40,11 +41,17 @@ equivalence is the passage from adjoint nilpotence to a central `p`-th power tha
 positive-characteristic half of Ado--Iwasawa runs on.
 
 The characteristic-free iterated-commutator expansion that this identity collapses,
-`ad_pow_apply`, is in `TauCeti.Algebra.Lie.AdjointAction.Basic`.
+`ad_pow_apply`, is in `TauCeti.Algebra.Lie.AdjointAction.Basic`. One step earlier it collapses
+too: for a prime `p`, the `(p - 1)`-fold commutator with `a` is the sum of all products
+`a ^ m * b * a ^ (p - 1 - m)` (`ad_pow_sub_one_apply`), since `(p - 1).choose m = (-1) ^ m` in
+characteristic `p`. This is the form in which the `(p - 1)`-fold commutator enters Jacobson's
+formula for `(a + b) ^ p`.
 
 ## Main statements
 
 * `TauCeti.LieAlgebra.ad_pow_expChar_pow`: the Frobenius commutator identity.
+* `TauCeti.LieAlgebra.ad_pow_sub_one_apply`: in characteristic a prime `p`, the `(p - 1)`-fold
+  commutator with `a` is `b ↦ ∑ m < p, a ^ m * b * a ^ (p - 1 - m)`.
 * `TauCeti.LieAlgebra.ad_pow_expChar_pow_eq_zero_iff`: the `p ^ n`-th power of `ad R A a` vanishes
   exactly when `a ^ p ^ n` is central.
 * `TauCeti.LieAlgebra.isNilpotent_ad_iff_exists_pow_expChar_pow_mem_center`: in characteristic
@@ -123,5 +130,16 @@ theorem isNilpotent_ad_iff_exists_pow_expChar_pow_mem_center (p : ℕ) [ExpChar 
     IsNilpotent (LieAlgebra.ad R A a) ↔ ∃ n : ℕ, a ^ p ^ n ∈ Subalgebra.center R A :=
   ⟨exists_pow_expChar_pow_mem_center_of_isNilpotent_ad p hp,
     fun ⟨_, h⟩ ↦ isNilpotent_ad_of_pow_expChar_pow_mem_center p h⟩
+
+/-- In characteristic a prime `p`, the `(p - 1)`-fold commutator of `a` with `b` is the sum of
+the `p` products `a ^ m * b * a ^ (p - 1 - m)`, all with coefficient `1`. -/
+theorem ad_pow_sub_one_apply (p : ℕ) [Fact p.Prime] [CharP A p] (a b : A) :
+    (LieAlgebra.ad R A a ^ (p - 1)) b = ∑ m ∈ Finset.range p, a ^ m * b * a ^ (p - 1 - m) := by
+  rw [ad_pow_apply, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  have hm : m ≤ p - 1 := by grind
+  rw [← Nat.choose_symm hm, ← Nat.cast_smul_eq_nsmul A,
+    TauCeti.natCast_choose_sub_one_eq_neg_one_pow p (Nat.sub_le _ _), neg_pow a]
+  rcases neg_one_pow_eq_or A (p - 1 - m) with h | h <;> simp [h]
 
 end TauCeti.LieAlgebra

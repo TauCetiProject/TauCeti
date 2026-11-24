@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.Ideal.Span
 
 The integral sign representation `TauCeti.intSignRep` of the infinite cyclic group
 `Multiplicative ℤ`, in which `n` acts on `ℤ` by `(-1) ^ n`. For its generator `T`, the map
-`T - 𝟙` is multiplication by `-2`, so it has range `2ℤ`.
+`T - 𝟙` is multiplication by `-2`, so it has range `2ℤ`; dually, precomposition with `T - 𝟙` is
+multiplication by `-2` on `Hom(ℤ, ℤ)`, whose range corresponds to `2ℤ` under evaluation at `1`.
 
 ## Main definitions
 
@@ -24,6 +25,10 @@ The integral sign representation `TauCeti.intSignRep` of the infinite cyclic gro
 * `TauCeti.intSignRep_ρ_ofAdd_one`: the generator acts by `-1`.
 * `TauCeti.intSignRep_ρ_ofAdd_one_sub_id_apply`: `T - 𝟙` is multiplication by `-2`.
 * `TauCeti.range_intSignRep_ρ_ofAdd_one_sub_id`: `T - 𝟙` has range `2ℤ`.
+* `TauCeti.lcomp_intSignRep_ρ_ofAdd_one_sub_id_apply`: precomposition with `T - 𝟙` is
+  multiplication by `-2` on `Hom(ℤ, ℤ)`.
+* `TauCeti.map_range_lcomp_intSignRep_ρ_ofAdd_one_sub_id`: the range of precomposition with
+  `T - 𝟙` corresponds to `2ℤ` under the evaluation isomorphism `Hom(ℤ, ℤ) ≃ ℤ`.
 -/
 
 public section
@@ -61,5 +66,26 @@ theorem range_intSignRep_ρ_ofAdd_one_sub_id :
   rw [LinearMap.mem_range, Ideal.mem_span_singleton]
   constructor <;> rintro ⟨y, rfl⟩ <;>
     exact ⟨-y, by rw [intSignRep_ρ_ofAdd_one_sub_id_apply]; ring⟩
+
+/-- In the sign representation, precomposition with `T - 𝟙` is multiplication by `-2` on
+`Hom(ℤ, ℤ)`. -/
+theorem lcomp_intSignRep_ρ_ofAdd_one_sub_id_apply (φ : ℤ →ₗ[ℤ] ℤ) :
+    LinearMap.lcomp ℤ ℤ (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) φ = -2 • φ := by
+  ext
+  simpa [intSignRep_ρ_ofAdd_one_sub_id_apply] using φ.map_smul (2 : ℤ) 1
+
+/-- In the sign representation, the maps `φ ∘ (T - 𝟙)` correspond to `2ℤ` under the evaluation
+isomorphism `Hom(ℤ, ℤ) ≃ ℤ`. -/
+theorem map_range_lcomp_intSignRep_ρ_ofAdd_one_sub_id :
+    (LinearMap.range (LinearMap.lcomp ℤ ℤ
+        (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id))).map
+      (LinearMap.ringLmapEquivSelf ℤ ℤ ℤ : (ℤ →ₗ[ℤ] ℤ) →ₗ[ℤ] ℤ) = Ideal.span {(2 : ℤ)} := by
+  ext x
+  rw [Submodule.mem_map, Ideal.mem_span_singleton']
+  constructor
+  · rintro ⟨_, ⟨φ, rfl⟩, rfl⟩
+    exact ⟨-φ 1, by simp⟩
+  · rintro ⟨y, rfl⟩
+    exact ⟨_, ⟨-y • LinearMap.id, rfl⟩, by simp⟩
 
 end TauCeti

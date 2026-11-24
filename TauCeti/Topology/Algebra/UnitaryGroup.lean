@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.Star.Unitary
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
@@ -61,10 +62,11 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   closed.
 * `Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`: the unitary subgroup of the general linear
   group over `ℝ` or `ℂ` is compact.
-* `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
-  in `U(r + m)` is continuous.
-* `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embedding of `SU(m)` in
-  `SU(r + m)` is continuous.
+* `Matrix.UnitaryGroup.continuous_toSpecialUnitaryAt`: rescaling a column of a unitary matrix to
+  make it special unitary is continuous.
+* `Matrix.UnitaryGroup.continuous_fromBlocksOne`,
+  `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embeddings `B ↦ diag(1_r, B)`
+  of `U(m)` in `U(r + m)` and of `SU(m)` in `SU(r + m)` are continuous.
 -/
 
 public section
@@ -180,6 +182,16 @@ theorem continuous_fromBlocksOne (m : ℕ) :
   exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
     continuous_subtypeVal).matrix_reindex _ _
 
+/-- Multiplying the column `j` of a unitary matrix by the conjugate of its determinant,
+`A ↦ toSpecialUnitaryAt j A`, is continuous. -/
+theorem continuous_toSpecialUnitaryAt [IsTopologicalRing 𝕜] [ContinuousStar 𝕜] {n : Type*}
+    [Fintype n] [DecidableEq n] (j : n) :
+    Continuous (toSpecialUnitaryAt (R := 𝕜) j : unitaryGroup n 𝕜 → specialUnitaryGroup n 𝕜) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_toSpecialUnitaryAt]
+  exact continuous_subtypeVal.matrix_mul (Continuous.matrix_diagonal
+    (continuous_const.update j (continuous_subtypeVal.matrix_det.star)))
+
 end Matrix.UnitaryGroup
 
 namespace Matrix.specialUnitaryGroup
@@ -191,8 +203,8 @@ theorem continuous_fromBlocksOne (m : ℕ) :
     Continuous (fromBlocksOne 𝕜 r m) := by
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, coe_fromBlocksOne]
-  exact continuous_subtypeVal.comp
-    ((UnitaryGroup.continuous_fromBlocksOne m).comp (continuous_subtypeVal.subtype_mk _))
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtypeVal).matrix_reindex _ _
 
 end Matrix.specialUnitaryGroup
 

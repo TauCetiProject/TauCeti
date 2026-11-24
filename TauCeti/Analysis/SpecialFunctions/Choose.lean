@@ -30,11 +30,16 @@ The statement includes boundary limits such as `x = 0`; no divergence hypothesis
 needed. It is useful for finite-population limits, where one of a population and its complement
 may stay bounded.
 
+For a fixed positive lower index, `n.choose k` itself tends to infinity with `n`, so limits along
+`n` can be reindexed by these binomial coefficients.
+
 When the lower index is a sufficiently small fraction of the upper index, any fixed
 exponential rate bounds the binomial coefficient times a fixed base to the lower index.
 
 ## Main results
 
+* `TauCeti.tendsto_choose_atTop` — for a fixed positive lower index, `n.choose k` tends to
+  infinity.
 * `TauCeti.tendsto_choose_div_pow_of_tendsto_div` — the normalized fixed-order binomial
   coefficient along an asymptotically proportional sequence.
 * `TauCeti.tendsto_choose_mul_div_choose_of_tendsto_div` — the resulting limit of the ratio
@@ -48,6 +53,19 @@ public section
 open Filter Polynomial Topology
 
 namespace TauCeti
+
+/-- For a fixed positive lower index `k`, the binomial coefficients `n.choose k` tend to infinity
+with `n`. -/
+theorem tendsto_choose_atTop {k : ℕ} (hk : k ≠ 0) :
+    Tendsto (fun n : ℕ ↦ n.choose k) atTop atTop := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  refine tendsto_atTop_atTop_of_monotone (Nat.choose_mono _) fun b ↦ ⟨b + j + 1, ?_⟩
+  clear hk
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [show b + (j + 1) + 1 = b + j + 1 + 1 by omega, Nat.choose_succ_succ']
+    exact ih.trans (Nat.le_add_right _ _)
 
 /-- A fixed-order binomial coefficient has its expected leading-term limit along any sequence
 whose ratio to a common denominator converges.

@@ -349,6 +349,22 @@ theorem primrec_evaln {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
     Primrec₂.right).of_eq fun p => ?_
   exact getElem?_evalnTable_bind (σ := σ p.1) _ _ _
 
+/-- Bounded query answers are primitive recursive in the oracle parameter, the two bounds,
+the program and the address, provided the parameter type is `Primcodable` and answer lookup
+is primitive recursive jointly in the parameter and address. -/
+theorem primrec_boundedAnswers
+    {answers : α → ℕ → Option ℕ} (hσ : Primrec₂ answers) :
+    Primrec fun p : (α × ℕ × Code × ℕ) × ℕ =>
+      p.1.2.2.1.boundedAnswers (answers p.1.1) p.1.2.1 p.2 p.1.2.2.2 := by
+  have hguard : Primrec₂ fun (p : (α × ℕ × Code × ℕ) × ℕ) (h : Halt) =>
+      Option.guard (fun _ => h.use ≤ p.2) h.output :=
+    .mk <| option_guard
+      ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
+        (snd.comp (fst.comp fst))).primrecRel)
+      (Halt.primrec_output.comp snd)
+  exact (option_bind ((primrec_evaln hσ).comp fst) hguard).of_eq fun _ => by
+    rw [boundedAnswers_def]
+
 /-- The stage use is primitive recursive, uniformly in a parameter `a` on which the answers `σ a`
 depend primitive recursively, and in the fuel, the program and the argument. -/
 theorem primrec_stageUse {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :

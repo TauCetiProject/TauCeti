@@ -37,10 +37,18 @@ with `C` depending only on the dimension. Combined with a Sobolev–Poincaré in
 reverse Hölder inequality for `‖∇u‖` behind Meyers' higher integrability theorem; the datum
 `F` enters there at the integrability that one wants for `∇u`.
 
+A scalar datum `f` as well, in the equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, adds the term
+`(4/λ) ∫_Ω ψ² f u`, and `(4/λ) ∫_{B(x₀, R)} |f u|` on balls. This is the form needed for the
+interior Schauder estimate of divergence-form equations, whose datum has both parts.
+
 ## Main declarations
 
+* `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_add_divergence`: the
+  Caccioppoli inequality for a right-hand side `f + div F`.
+* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_add_divergence`: its form on
+  concentric balls.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence`: the
-  Caccioppoli inequality for a datum in divergence form.
+  Caccioppoli inequality for a datum in divergence form, the case `f = 0`.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_divergence`: its form on concentric
   balls.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence`: the form
@@ -115,27 +123,30 @@ private theorem two_div_mul_neg_inner_le (hlam : 0 < lam) (z w : ℝ)
 
 variable [DecidableEq ι]
 
-/-- **The Caccioppoli inequality for a datum in divergence form.** Let `a` be measurable and
-uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` be
-a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in `Ω`, in the sense that `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for
-every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`. Then for every smooth `ψ` with compact
-support, either contained in `Ω` or arbitrary when `u ∈ H¹₀(Ω)`,
+/-- **The Caccioppoli inequality for a right-hand side `f + div F`.** Let `a` be measurable and
+uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `f ∈ L²(Ω)` and `F ∈ L²(Ω; ℝⁿ)`, and let
+`u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` in `Ω`, in the sense that
+`a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`. Then
+for every smooth `ψ` with compact support, either contained in `Ω` or arbitrary when
+`u ∈ H¹₀(Ω)`,
 
-`∫_Ω ψ² ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) ∫_Ω ‖∇ψ‖² u² + (12/λ²) ∫_Ω ψ² ‖F‖²`. -/
-theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
+`∫_Ω ψ² ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) ∫_Ω ‖∇ψ‖² u² + (12/λ²) ∫_Ω ψ² ‖F‖² + (4/λ) ∫_Ω ψ² f u`. -/
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_add_divergence
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hF : MemLp F 2 (mu.restrict Omega))
-    {u : W1p mu Omega 2}
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {f : EuclideanSpace ℝ ι → ℝ}
+    (hF : MemLp F 2 (mu.restrict Omega)) {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
     (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
       2 * ((2 * Lam / lam) ^ 2 + 1) * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
-        + 12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu := by
-  obtain ⟨v, -, hgradv, hstep⟩ :=
+        + 12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu
+        + 4 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
+  obtain ⟨v, hvalue, hgradv, hstep⟩ :=
     h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt hts
-  -- By the weak equation, the energy is `∫_Ω G` with `G = -⟪F, ∇(ψ² u)⟫`.
+  -- By the weak equation, the energy is `∫_Ω ψ² f u + ∫_Ω G` with `G = -⟪F, ∇(ψ² u)⟫`.
   set G : EuclideanSpace ℝ ι → ℝ := fun x => -⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ
   have hG : Integrable G (mu.restrict Omega) :=
     (hF.integrable_inner (Lp.memLp (W1p.gradient (v : W1p mu Omega 2)))).neg
@@ -143,7 +154,13 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
       W1p.value u x • ∇ ψ x) + (ψ x * W1p.value u x) • ∇ ψ x⟫_ℝ := by
     filter_upwards [hgradv] with x hx
     simp only [G, hx]
-  rw [hu v, ← integral_neg] at hstep
+  have hfv : ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu =
+      ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
+    refine integral_congr_ae ?_
+    filter_upwards [hvalue] with x hx
+    rw [hx]
+    ring
+  rw [hu v, hfv, sub_eq_add_neg, ← integral_neg] at hstep
   obtain ⟨M, -, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
   -- Young's inequality absorbs the part of the datum term that contains `∇u`.
   have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
@@ -174,6 +191,98 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
   · linear_combination 2 * hstep + 2 * hGle
   · exact (hI1.const_mul _).add hI2
 
+/-- **The Caccioppoli inequality for a datum in divergence form.** Let `a` be measurable and
+uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` be
+a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in `Ω`, in the sense that `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for
+every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`. Then for every smooth `ψ` with compact
+support, either contained in `Ω` or arbitrary when `u ∈ H¹₀(Ω)`,
+
+`∫_Ω ψ² ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) ∫_Ω ‖∇ψ‖² u² + (12/λ²) ∫_Ω ψ² ‖F‖²`.
+
+This is the case `f = 0` of
+`TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_add_divergence`. -/
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hF : MemLp F 2 (mu.restrict Omega))
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
+      2 * ((2 * Lam / lam) ^ 2 + 1) * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
+        + 12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu := by
+  simpa using h.setIntegral_sq_mul_norm_gradient_sq_le_add_divergence ha (f := 0) hF
+    (fun v => by simp [hu v]) hψ hcpt hts
+
+open Filter Metric in
+/-- **The Caccioppoli inequality for a right-hand side `f + div F`, on concentric balls.** There
+is a constant `C > 0`, depending only on the dimension, such that the following holds for every
+additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
+`0 < λ ≤ Λ`, let `f ∈ L²(Ω)` and `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy
+`a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. For every pair of balls
+`B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
+
+`∫_{B(x₀, r)} ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) (C / (R - r))² ∫_{B(x₀, R)} u²`
+`  + (12/λ²) ∫_{B(x₀, R)} ‖F‖² + (4/λ) ∫_{B(x₀, R)} |f u|`. -/
+theorem exists_setIntegral_ball_norm_gradient_sq_le_add_divergence :
+    ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) → MemLp f 2 (mu.restrict Omega) →
+      MemLp F 2 (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
+        2 * ((2 * Lam / lam) ^ 2 + 1) * (C / (R - r)) ^ 2 *
+            ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu
+          + 12 / lam ^ 2 * ∫ x in ball x₀ R, ‖F x‖ ^ 2 ∂mu
+          + 4 / lam * ∫ x in ball x₀ R, |f x * W1p.value u x| ∂mu := by
+  obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff
+    (ι := ι)
+  refine ⟨C, hC0, ?_⟩
+  intro mu _ Omega a lam Lam f F u x₀ r R h ha hf hF hu hrR hball
+  have hlam := h.pos
+  have hfu : Integrable (fun x => f x * W1p.value u x) (mu.restrict Omega) :=
+    hf.integrable_mul (Lp.memLp (W1p.value u))
+  have hFi : Integrable (fun x => ‖F x‖ ^ 2) (mu.restrict Omega) := hF.norm.integrable_sq
+  -- The datum density `g = (12/λ²) ‖F‖² + (4/λ) |f u|`.
+  have hloc := hC u (A := 2 * ((2 * Lam / lam) ^ 2 + 1))
+    (g := fun x => 12 / lam ^ 2 * ‖F x‖ ^ 2 + 4 / lam * |f x * W1p.value u x|)
+    (by positivity) ((hFi.const_mul _).add (hfu.abs.const_mul _))
+    (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
+      obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+      have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
+        (hψ.continuous.pow 2).aestronglyMeasurable
+      have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_pow]
+        exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
+      have hI3 := hFi.bdd_mul hψ2 hψ2M
+      have hI4 := hfu.bdd_mul hψ2 hψ2M
+      have hI5 := hfu.abs.bdd_mul hψ2 hψ2M
+      refine (h.setIntegral_sq_mul_norm_gradient_sq_le_add_divergence ha hF hu hψ hcpt
+        (.inl hts)).trans ?_
+      -- Only `f u ≤ |f u|` remains.
+      have hmono : ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu ≤
+          ∫ x in Omega, ψ x ^ 2 * |f x * W1p.value u x| ∂mu := by
+        refine integral_mono (hI4.congr (Eventually.of_forall fun x => by simp only; ring)) hI5
+          fun x => ?_
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left (le_abs_self _) (sq_nonneg _)
+      simp_rw [mul_add, mul_left_comm (ψ _ ^ 2)]
+      rw [integral_add (hI3.const_mul _) (hI5.const_mul _), integral_const_mul,
+        integral_const_mul, ← add_assoc]
+      gcongr
+  have hFB : IntegrableOn (fun x => 12 / lam ^ 2 * ‖F x‖ ^ 2) (ball x₀ R) mu :=
+    IntegrableOn.mono_set (hFi.const_mul _) hball
+  have hfuB : IntegrableOn (fun x => 4 / lam * |f x * W1p.value u x|) (ball x₀ R) mu :=
+    IntegrableOn.mono_set (hfu.abs.const_mul _) hball
+  rwa [integral_add hFB hfuB, integral_const_mul, integral_const_mul, ← add_assoc] at hloc
+
 open Filter Metric in
 /-- **The Caccioppoli inequality for a datum in divergence form, on concentric balls.** There is
 a constant `C > 0`, depending only on the dimension, such that the following holds for every
@@ -182,7 +291,9 @@ additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω`
 `v ∈ H¹₀(Ω)`. For every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
 
 `∫_{B(x₀, r)} ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) (C / (R - r))² ∫_{B(x₀, R)} u² + (12/λ²) ∫_{B(x₀, R)} ‖F‖²`.
--/
+
+This is the case `f = 0` of
+`TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_add_divergence`. -/
 theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
@@ -197,17 +308,9 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
         2 * ((2 * Lam / lam) ^ 2 + 1) * (C / (R - r)) ^ 2 *
             ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu
           + 12 / lam ^ 2 * ∫ x in ball x₀ R, ‖F x‖ ^ 2 ∂mu := by
-  obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff
-    (ι := ι)
-  refine ⟨C, hC0, ?_⟩
-  intro mu _ Omega a lam Lam F u x₀ r R h ha hF hu hrR hball
-  -- The datum density `g = (12/λ²) ‖F‖²`.
-  have hloc := hC u (A := 2 * ((2 * Lam / lam) ^ 2 + 1)) (g := fun x => 12 / lam ^ 2 * ‖F x‖ ^ 2)
-    (by positivity) (hF.norm.integrable_sq.const_mul _)
-    (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
-      simp_rw [mul_left_comm (ψ _ ^ 2), integral_const_mul]
-      exact h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inl hts)
-  rwa [integral_const_mul] at hloc
+  obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_divergence (ι := ι)
+  refine ⟨C, hC0, fun h ha hF hu hrR hball => ?_⟩
+  simpa using hC h ha (f := 0) MemLp.zero hF (fun v => by simp [hu v]) hrR hball
 
 open Filter Metric in
 /-- **The Caccioppoli inequality for a datum in divergence form, with the mean subtracted.**
@@ -266,8 +369,8 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
   have e2 : ∫ x in ball y R, W1p.value w x ^ 2 ∂mu =
       ∫ x in ball y R, (W1p.value u x - m) ^ 2 ∂mu := by
     refine integral_congr_ae ?_
-    filter_upwards [W1p.value_add_const_ae uB (-m), W1p.value_restrictL_ae hB u] with x h1 h2
-    rw [h1, h2, sub_eq_add_neg]
+    filter_upwards [W1p.value_restrictL_add_const_ae hB u (-m)] with x hx
+    rw [hx, sub_eq_add_neg]
   rwa [e1, e2] at hcacc
 
 open Filter Metric in

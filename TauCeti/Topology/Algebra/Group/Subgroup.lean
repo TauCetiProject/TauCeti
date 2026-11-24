@@ -102,6 +102,7 @@ series of a profinite group.
 * `Subgroup.isCompact_sup_of_le_normalizer`: the join of two compact subgroups, the first
   normalizing the second, is compact.
 * `Subgroup.isCompact_conj_smul`: a conjugate of a compact subgroup is compact.
+* `Subgroup.isOpen_map_conj_iff`: a conjugate of a subgroup is open exactly when the subgroup is.
 * `Subgroup.maximal_isCompact_iff_exists_eq_conj_smul`: if every compact subgroup is conjugate
   into a maximal compact subgroup `U`, the maximal compact subgroups are the conjugates of `U`.
 * `Subgroup.isClosed_normalizer`: the normalizer of a closed subset is closed.
@@ -318,6 +319,16 @@ theorem isCompact_conj_smul [ContinuousMul G] (g : G) {H : Subgroup G}
     (hH : IsCompact (H : Set G)) : IsCompact ((MulAut.conj g • H : Subgroup G) : Set G) := by
   rw [coe_pointwise_smul, ← Set.image_smul]
   exact hH.image (by simp only [MulAut.smul_def, MulAut.conj_apply]; fun_prop)
+
+omit [IsTopologicalGroup G] in
+/-- In a group with separately continuous multiplication, a conjugate `g H g⁻¹` of a subgroup `H`
+is open exactly when `H` is, since conjugation by `g` is a homeomorphism. -/
+theorem isOpen_map_conj_iff [SeparatelyContinuousMul G] (g : G) {H : Subgroup G} :
+    IsOpen (H.map (MulAut.conj g : G →* G) : Set G) ↔ IsOpen (H : Set G) := by
+  rw [coe_map]
+  convert (Homeomorph.smul (ConjAct.toConjAct g)).isOpen_image (s := (H : Set G)) using 2
+  ext h
+  simp [ConjAct.toConjAct_smul]
 
 omit [IsTopologicalGroup G] in
 open scoped Pointwise in

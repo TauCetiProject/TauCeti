@@ -14,8 +14,9 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 /-!
 # Locally constant functions on topological groups
 
-An additive homomorphism from a group with separately continuous addition whose kernel is open
-is locally constant, even when its codomain is only an `AddZeroClass`. Open kernels are preserved
+A homomorphism from a group with separately continuous multiplication whose kernel is open is
+locally constant, even when its codomain is only a `MulOneClass`
+(`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
 by taking integer multiples of additive homomorphisms into an additive commutative group.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
@@ -23,7 +24,9 @@ the neighbourhood on which it is constant depends on the point. On a *compact* g
 dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x` for **every**
 `x : G` and every `v : V`. This file records that subgroup,
 `TauCeti.rightTranslationStabilizer f`, and its openness,
-`TauCeti.isOpen_rightTranslationStabilizer`.
+`TauCeti.isOpen_rightTranslationStabilizer`. The same holds on any topological group for a
+locally constant function with compact support, which vanishes off a compact set
+(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -43,19 +46,26 @@ chosen point; no associativity, identity or inverse is needed.
 
 public section
 
+namespace MonoidHom
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- A homomorphism with open kernel is locally constant. -/
+@[to_additive /-- An additive homomorphism with open kernel is locally constant. -/]
+theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the quotient `x⁻¹ * y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ x⁻¹ * y) ⁻¹' (χ.ker : Set G)) :=
+    hχ.preimage (continuous_id.const_mul x⁻¹)
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  exact χ.eq_iff.mpr hy
+
+end MonoidHom
+
 namespace AddMonoidHom
 
 variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [SeparatelyContinuousAdd G]
-
-/-- An additive homomorphism with open kernel is locally constant. -/
-theorem isLocallyConstant_of_isOpen_ker [AddZeroClass A] (χ : G →+ A)
-    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  -- Near `x`, the difference `-x + y` lies in the open kernel.
-  have hopen : IsOpen ((fun y : G ↦ -x + y) ⁻¹' (χ.ker : Set G)) :=
-    hχ.preimage (continuous_id.const_add (-x))
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  exact χ.eq_iff.mpr hy
 
 /-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
 theorem isOpen_ker_zsmul [AddCommGroup A] (χ : G →+ A)
@@ -125,6 +135,25 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hVopen.mem_nhds hV1)
     fun g hg x => ?_)
   simpa using hV g hg x
+
+/-- A locally constant function with compact support on a topological group is *uniformly*
+locally constant: its right-translation stabilizer is an open subgroup. The group need not be
+compact, since the function vanishes off its compact support. -/
+theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
+    [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
+    (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by
+  -- Uniform local constancy on the compact support, near `1`.
+  obtain ⟨V, hVopen, hV1, hV⟩ :=
+    hf.exists_isOpen_forall_mem_mul_right_eq hfc.isCompact (1 : G) continuous_id.continuousAt
+  have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+  refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+    (inv_mem_nhds_one G hVn)) fun g hg x => ?_)
+  -- If `x` or `x * g` lies in the support, translate from that point; otherwise both values vanish.
+  by_cases hx : x ∈ tsupport f
+  · simpa using hV g hg.1 x hx
+  by_cases hxg : x * g ∈ tsupport f
+  · simpa using (hV g⁻¹ hg.2 (x * g) hxg).symm
+  rw [image_eq_zero_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hxg]
 
 end TauCeti
 
