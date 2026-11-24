@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Topology
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 
 /-!
 # Invariant vectors in the closed convex hull of an orbit
@@ -49,23 +49,8 @@ theorem exists_mem_closedConvexHull_mem_invariants (hρ : ρ.IsUnitary) (ξ : H)
   set C := closedConvexHull ℝ (Set.range fun g ↦ ρ g ξ)
   have hξC : ξ ∈ C := subset_closedConvexHull ⟨1, by simp⟩
   -- `C` is a nonempty complete convex set, so it has an element `η` of minimal norm.
-  obtain ⟨η, hηC, hη⟩ : ∃ η ∈ C, ∀ w ∈ C, ‖η‖ ≤ ‖w‖ := by
-    -- The real inner product `re ⟪x, y⟫` is compatible with the given real scalar action.
-    let : InnerProductSpace ℝ H :=
-      { ‹NormedSpace ℝ H› with
-        inner x y := RCLike.re ⟪x, y⟫_𝕜
-        norm_sq_eq_re_inner := norm_sq_eq_re_inner
-        conj_inner_symm x y := inner_re_symm (𝕜 := 𝕜) y x
-        add_left x y z := by rw [inner_add_left, map_add]
-        smul_left x y r := by
-          rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), inner_smul_left, RCLike.conj_ofReal,
-            RCLike.re_ofReal_mul, conj_trivial] }
-    obtain ⟨η, hηC, hη⟩ := exists_norm_eq_iInf_of_complete_convex ⟨ξ, hξC⟩
-      isClosed_closedConvexHull.isComplete convex_closedConvexHull 0
-    refine ⟨η, hηC, fun w hw ↦ ?_⟩
-    have := ciInf_le (f := fun w : C ↦ ‖(0 : H) - w‖)
-      ⟨0, Set.forall_mem_range.mpr fun _ ↦ norm_nonneg _⟩ ⟨w, hw⟩
-    rwa [← hη, zero_sub, norm_neg, zero_sub, norm_neg] at this
+  obtain ⟨η, hηC, hη⟩ := TauCeti.exists_mem_forall_norm_le_of_isComplete_convex 𝕜 ⟨ξ, hξC⟩
+    isClosed_closedConvexHull.isComplete convex_closedConvexHull
   -- Each `ρ g` maps `C` into itself.
   have hmaps (g : G) : ∀ w ∈ C, ρ g w ∈ C := by
     refine closedConvexHull_min (t := ρ g ⁻¹' C) ?_
