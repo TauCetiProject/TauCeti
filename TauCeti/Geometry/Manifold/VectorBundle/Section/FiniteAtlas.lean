@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
 import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.LocallyCompact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 
@@ -45,7 +46,7 @@ compact manifold modelled on a locally compact space admits a subordinate finite
 Derivatives are taken within extended chart targets and interiors are relative to them, so
 boundary and corner charts are included throughout. Whenever a compact coordinate piece has nonempty
 relative interior in an extended chart target, the model vector space is automatically locally
-compact (`TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target`), so covering
+compact (`ModelWithCorners.locallyCompactSpace_of_nonempty_interior_extChartAt_target`), so covering
 finite-atlas comparisons and Banach completeness need no separate local compactness assumption on
 the model space. Neither finite rank of the fibres nor Hausdorffness of the base is required.
 
@@ -59,9 +60,6 @@ the model space. Neither finite rank of the fibres nor Hausdorffness of the base
 
 ## Main results
 
-* `TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target`: a compact subset with
-  nonempty relative interior in an extended chart target forces local compactness of the model
-  space.
 * `ContMDiffSection.exists_chartCkSeminorm_le_finiteAtlasSeminorm` and
   `ContMDiffSection.exists_finiteAtlasSeminorm_le`: dominance of compact chart-frame `C^k`
   seminorms and equivalence of finite chart-frame `C^k` norms.
@@ -93,53 +91,6 @@ public noncomputable section
 open Bundle Set Filter Topology TopologicalSpace
 open scoped ContDiff Manifold TauCeti.ManifoldWeakWhitney
 
-namespace TauCeti
-
-/-- If an extended chart target contains a compact subset with nonempty relative interior, then the
-model vector space is locally compact. -/
-theorem locallyCompactSpace_of_nonempty_interior_extChartAt_target
-    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} {S : Set (extChartAt I x).target}
-    (hS : IsCompact S) (hne : (interior S).Nonempty) :
-    LocallyCompactSpace E := by
-  obtain ⟨U, hU, hSU⟩ := isOpen_induced_iff.mp (isOpen_interior (s := S))
-  let O : Opens M := ⟨(extChartAt I x).source ∩ extChartAt I x ⁻¹' U,
-    (continuousOn_extChartAt x).isOpen_inter_preimage (isOpen_extChartAt_source x) hU⟩
-  have hmem : ∀ y : O, (⟨extChartAt I x y, (extChartAt I x).map_source y.property.1⟩ :
-      (extChartAt I x).target) ∈ interior S :=
-    fun y ↦ hSU ▸ y.property.2
-  have : Nonempty O := by
-    obtain ⟨z, hz⟩ := hne
-    refine ⟨⟨(extChartAt I x).symm z, (extChartAt I x).map_target z.property, ?_⟩⟩
-    rw [mem_preimage, (extChartAt I x).right_inv z.property]
-    exact (hSU ▸ hz : z ∈ Subtype.val ⁻¹' U)
-  have : CompactSpace S := isCompact_iff_compactSpace.mp hS
-  let V : Set S := {z | (z.val : E) ∈ U}
-  have hV_open : IsOpen V := hU.preimage (continuous_subtypeVal.comp continuous_subtypeVal)
-  have : LocallyCompactSpace V := hV_open.locallyCompactSpace
-  let e : O ≃ₜ V :=
-    { toFun y := ⟨⟨⟨extChartAt I x y, (extChartAt I x).map_source y.property.1⟩,
-        interior_subset (hmem y)⟩, y.property.2⟩
-      invFun z := ⟨(extChartAt I x).symm z.val.val, (extChartAt I x).map_target z.val.val.property,
-        by rw [mem_preimage, (extChartAt I x).right_inv z.val.val.property]; exact z.property⟩
-      left_inv y := Subtype.ext ((extChartAt I x).left_inv y.property.1)
-      right_inv z := Subtype.ext (Subtype.ext (Subtype.ext
-        ((extChartAt I x).right_inv z.val.val.property)))
-      continuous_toFun := Continuous.subtype_mk (Continuous.subtype_mk (Continuous.subtype_mk
-        ((continuousOn_extChartAt x).comp_continuous continuous_subtypeVal
-          fun y ↦ y.property.1) _) _) _
-      continuous_invFun := Continuous.subtype_mk
-        ((continuousOn_extChartAt_symm x).comp_continuous
-          (continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_subtypeVal))
-          fun z ↦ z.val.val.property) _ }
-  have : LocallyCompactSpace O := e.isOpenEmbedding.locallyCompactSpace
-  exact LocallyCompactSpace.of_locallyCompact_manifold O I
-
-end TauCeti
-
 namespace ContMDiffSection
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -147,9 +98,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  {V : M → Type*}
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [FiberBundle F V]
+
+/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
+instance subsingleton_of_isEmpty {n : ℕ∞ω} [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
+  coe_injective.subsingleton
+
+variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
 section FiniteAtlasSeminorm
 
@@ -529,16 +486,11 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover
           := by
   have heq : frameTopology (I := I) (n := n) e' U' hU' =
       frameTopology (I := I) (n := n) e U hU := by
-    by_cases hM : Nonempty M
-    · obtain ⟨y⟩ := hM
-      obtain ⟨i, _, _, hz⟩ := hK y
-      have : LocallyCompactSpace E :=
-        TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target I (K i).isCompact ⟨_, hz⟩
+    rcases isEmpty_or_nonempty M with _ | _
+    · exact Subsingleton.elim _ _
+    · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
       exact frameTopology_eq_of_covers e' U' hU' hcover' e U hU
         (TauCeti.cover_of_extChartAt_cover hK)
-    · have : IsEmpty M := not_nonempty_iff.mp hM
-      have : Subsingleton Cₛ^n⟮I; F, V⟯ := ⟨fun _ _ ↦ ContMDiffSection.ext fun x ↦ isEmptyElim x⟩
-      exact Subsingleton.elim _ _
   rw [heq]
   exact withSeminorms_finiteAtlasSeminorm_subtype e U hU hK
 
@@ -647,11 +599,9 @@ theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [CompleteSpace F] :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     CompleteSpace Cₛ^k⟮I; F, V⟯ := by
   let _ := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
-  by_cases hM : Nonempty M
-  · obtain ⟨y⟩ := hM
-    obtain ⟨i, _, _, hz⟩ := hK y
-    have : LocallyCompactSpace E :=
-      TauCeti.locallyCompactSpace_of_nonempty_interior_extChartAt_target I (K i).isCompact ⟨_, hz⟩
+  rcases isEmpty_or_nonempty M with _ | _
+  · infer_instance
+  · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
     have htop : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯).toTopologicalSpace =
         (frameUniformSpace (I := I) (n := k) e U hU).toTopologicalSpace :=
       (topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK).trans
@@ -663,9 +613,6 @@ theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [CompleteSpace F] :
     rw [e_unif]
     exact completeSpace_frameTopology (I := I) (n := k) e U hU
       (TauCeti.cover_of_extChartAt_cover hK)
-  · have : IsEmpty M := not_nonempty_iff.mp hM
-    have : Subsingleton Cₛ^k⟮I; F, V⟯ := ⟨fun _ _ ↦ ContMDiffSection.ext fun x ↦ isEmptyElim x⟩
-    infer_instance
 
 end Topology
 
