@@ -15,7 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
-import TauCeti.Geometry.Manifold.Riemannian.ArcLength
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -74,12 +74,14 @@ trajectories of Morse functions
   `x₀ ≠ 0` no rate faster than `2 / a` holds
   (`not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`).
   For `a = 4` the trajectory is `x₀ exp (-t / 2)` at distance `2 |x₀| exp (-t / 2)`: the rate `2`
-  of the standard metric is not preserved under rescaling the metric. The length of the trajectory
-  between the times `t ≤ s` is `√a |x₀| (exp (-2 t / a) - exp (-2 s / a))`
+  of the standard metric is not preserved under rescaling the metric. The metric `a dx²` multiplies
+  lengths by `√a` (`TauCeti.pathELength_toWithMetric_scaledLineMetric`). The length of the
+  trajectory between the times `t ≤ s` is `√a |x₀| (exp (-2 t / a) - exp (-2 s / a))`
   (`TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`), so its tail
   length from time `t` on is `√a |x₀| exp (-2 t / a)`
   (`TauCeti.iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`), `√a` times
-  the square root of the energy `x₀² exp (-4 t / a)`.
+  the square root of the energy `x₀² exp (-4 t / a)`. The lengths for the standard metric are the
+  case `a = 1`.
 
 ## References
 
@@ -211,72 +213,6 @@ theorem sq_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
       x₀ ^ 2 * Real.exp (-(4 * t)) := by
   rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_natCast_mul]
   ring_nf
-
-/-- The length of the trajectory of `-grad x²` through `x₀` between the times `t ≤ s` is
-`|x₀| (exp (-2 t) - exp (-2 s))`. -/
-theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ : ℝ) {t s : ℝ} (hts : t ≤ s) :
-    Manifold.pathELength 𝓘(ℝ, ℝ)
-        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
-      ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s)))) := by
-  -- The speed of the trajectory at time `u` is `2 |x₀| exp (-2 u)`.
-  have hspeed : ∀ u, ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u ↦ x₀ * Real.exp (-(2 * u))) u 1‖ₑ =
-      ENNReal.ofReal (2 * |x₀| * Real.exp (-(2 * u))) := by
-    intro u
-    -- The unit tangent vector at `u` is the real number `1`.
-    have h1 : NormedSpace.fromTangentSpace u (1 : TangentSpace 𝓘(ℝ, ℝ) u) = (1 : ℝ) := rfl
-    rw [mfderiv_eq_fderiv, eNorm_tangentSpace_vectorSpace,
-      (hasDerivAt_mul_exp_neg_mul 2 x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
-    simp [h1]
-    ring_nf
-  have hcont : Continuous fun u : ℝ ↦ 2 * |x₀| * Real.exp (-(2 * u)) := by fun_prop
-  -- The antiderivative `-|x₀| exp (-2 u)` of the speed.
-  have hF : ∀ u, HasDerivAt (fun u ↦ -(|x₀| * Real.exp (-(2 * u))))
-      (2 * |x₀| * Real.exp (-(2 * u))) u := by
-    intro u
-    have h : HasDerivAt (fun s : ℝ ↦ -(2 * s)) (-2) u := by
-      simpa using ((hasDerivAt_id u).const_mul 2).fun_neg
-    convert (h.exp.const_mul |x₀|).neg using 1
-    ring
-  rw [maximalIntegralCurve_neg_mgradient_sq_eq, Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-  simp_rw [hspeed]
-  rw [← ofReal_integral_eq_lintegral_ofReal (hcont.integrableOn_Icc)
-      (Eventually.of_forall fun u ↦ by positivity),
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hts,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ ↦ hF u)
-      (hcont.intervalIntegrable t s)]
-  ring_nf
-
-/-- **The tail length of a trajectory of the quadratic well.** From time `t` on, the trajectory
-of `-grad x²` through `x₀` has length `|x₀| exp (-2 t)`. -/
-theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
-    ⨆ s, Manifold.pathELength 𝓘(ℝ, ℝ)
-        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
-      ENNReal.ofReal (|x₀| * Real.exp (-(2 * t))) := by
-  refine le_antisymm (iSup_le fun s ↦ ?_) ?_
-  · rcases le_or_gt t s with hts | hst
-    · rw [pathELength_maximalIntegralCurve_neg_mgradient_sq x₀ hts]
-      gcongr
-      exact sub_le_self _ (Real.exp_pos _).le
-    · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge]
-      simp
-  · -- The lengths up to time `s` tend to the claimed value as `s → ∞`.
-    have hlim : Tendsto (fun s ↦ ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) -
-        Real.exp (-(2 * s))))) atTop (𝓝 (ENNReal.ofReal (|x₀| * Real.exp (-(2 * t))))) := by
-      refine ENNReal.tendsto_ofReal ?_
-      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp
-        (tendsto_id.const_mul_atTop (by norm_num : (0 : ℝ) < 2))).const_sub
-          (Real.exp (-(2 * t)))).const_mul |x₀|
-    refine le_of_tendsto' hlim fun s ↦ ?_
-    rcases le_or_gt t s with hts | hst
-    · rw [← pathELength_maximalIntegralCurve_neg_mgradient_sq x₀ hts]
-      exact le_iSup (fun s ↦ Manifold.pathELength 𝓘(ℝ, ℝ)
-        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s) s
-    · -- Before time `t` the length difference is negative, so its positive part is `0`.
-      have : |x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s))) ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _)
-          (sub_nonpos.2 (Real.exp_le_exp.2 (by linarith)))
-      rw [ENNReal.ofReal_of_nonpos this]
-      exact bot_le
 
 /-- The trajectory of `-grad x²` through `x₀` is at Riemannian distance exactly
 `|x₀| exp (-2 t)` from the critical point `0` at time `t`. -/
@@ -503,9 +439,29 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
     ⟨C, hC, h.mono fun t ht ↦ ?_⟩
   rwa [← riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric]
 
+/-- **Lengths for the metric `a dx²`.** Transported to the copy carrying `a dx²`, a curve in `ℝ`
+is `√a` times as long. -/
+theorem pathELength_toWithMetric_scaledLineMetric (γ : ℝ → ℝ) (t s : ℝ) :
+    Manifold.pathELength 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha) ∘ γ) t s =
+      ENNReal.ofReal √a * Manifold.pathELength 𝓘(ℝ, ℝ) γ t s := by
+  have hspeed (u : ℝ) :
+      ‖curveVelocity 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha) ∘ γ) u‖ₑ =
+        ENNReal.ofReal √a * ‖curveVelocity 𝓘(ℝ, ℝ) γ u‖ₑ := by
+    rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (Real.sqrt_nonneg a),
+      ContMDiffRiemannianMetric.norm_curveVelocity_toWithMetric,
+      ← Real.sqrt_mul_self (norm_nonneg _), ← Real.sqrt_mul ha.le,
+      ← real_inner_self_eq_norm_mul_norm, scaledLineMetric, ContMDiffRiemannianMetric.rescale_inner]
+    -- `scaledLineMetric` rescales the standard metric of `ℝ`, which is by definition the inner
+    -- product of its tangent spaces.
+    rfl
+  rw [pathELength_eq_setLIntegral_enorm_curveVelocity_Icc,
+    pathELength_eq_setLIntegral_enorm_curveVelocity_Icc,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  exact lintegral_congr hspeed
+
 /-- For the metric `a dx²`, the length of the trajectory of `-grad x²` through `x₀` between the
 times `t` and `s` is `√a |x₀| (exp (-2 t / a) - exp (-2 s / a))`; for `s < t` both sides vanish.
-For `a = 1` this is `TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_sq`. -/
+The case `a = 1` is `TauCeti.pathELength_maximalIntegralCurve_neg_mgradient_sq`. -/
 theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ t s : ℝ) :
     Manifold.pathELength 𝓘(ℝ, ℝ)
         (maximalIntegralCurve
@@ -518,17 +474,12 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀
   · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
       Measure.restrict_empty, lintegral_zero_measure, eq_comm, ENNReal.ofReal_eq_zero]
     exact mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (hf hst.le))
-  -- The line `u ↦ x₀ u` has constant speed `√a |x₀|` for `a dx²`.
-  have hspeed (u : ℝ) :
-      ‖curveVelocity 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha) ∘ (x₀ * ·)) u‖ =
-        √a * |x₀| := by
-    rw [(contMDiff_toWithMetric.mdifferentiableAt one_ne_zero).curveVelocity_comp_mfderiv
-        (by simpa using (hasDerivAt_id u).const_mul x₀),
-      norm_eq_sqrt_real_inner, inner_def]
-    -- The velocity is the tangent vector `x₀` of `ℝ`, transported to the copy and back.
-    erw [mfderiv_ofWithMetric_mfderiv_toWithMetric, scaledLineMetric_inner]
-    rw [Real.sqrt_mul ha.le, Real.sqrt_mul_self_eq_abs]
-  -- The trajectory is this line reparametrized by the antitone `τ ↦ exp (-2 τ / a)`.
+  -- The line `u ↦ x₀ u` of `ℝ` has constant speed `|x₀|`.
+  have hspeed (u : ℝ) : ‖curveVelocity 𝓘(ℝ, ℝ) (x₀ * ·) u‖ = |x₀| := by
+    rw [curveVelocity_eq_deriv, ((hasDerivAt_id' u).const_mul x₀).deriv, mul_one]
+    exact norm_tangentSpace_vectorSpace.trans (Real.norm_eq_abs x₀)
+  -- The trajectory is this line, transported to the copy and reparametrized by the antitone
+  -- `τ ↦ exp (-2 τ / a)`.
   have hγ : maximalIntegralCurve
       (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2))
       (toWithMetric _ x₀) =
@@ -537,13 +488,14 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀
   rw [hγ, Manifold.pathELength_comp_of_antitoneOn hts (hf.antitoneOn _) (by fun_prop)
       ((contMDiff_toWithMetric.comp (by fun_prop : ContDiff ℝ 1 (x₀ * ·)).contMDiff).mdifferentiable
         one_ne_zero).mdifferentiableOn,
-    pathELength_eq_of_norm_curveVelocity_eq fun u _ ↦ hspeed u,
-    ← ENNReal.ofReal_mul (by positivity)]
+    pathELength_toWithMetric_scaledLineMetric, pathELength_eq_of_norm_curveVelocity_eq
+      fun u _ ↦ hspeed u, ← ENNReal.ofReal_mul (by positivity),
+    ← ENNReal.ofReal_mul (by positivity), mul_assoc]
 
 /-- **The tail length for the metric `a dx²`.** From time `t` on, the trajectory of `-grad x²`
 through `x₀` has length `√a |x₀| exp (-2 t / a)`. This is `√a` times the square root of the energy
 `x₀² exp (-4 t / a)`, so the constant bounding the tail length by the square root of the energy
-depends on the metric. For `a = 1` this is
+depends on the metric. The case `a = 1` is
 `TauCeti.iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq`. -/
 theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ t : ℝ) :
     ⨆ s, Manifold.pathELength 𝓘(ℝ, ℝ)
@@ -557,6 +509,45 @@ theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric 
       (pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric ha x₀ t s).symm)
   simpa using (tendsto_const_nhds.sub (Real.tendsto_exp_neg_atTop_nhds_zero.comp
     (tendsto_id.const_mul_atTop (div_pos two_pos ha)))).const_mul (√a * |x₀|)
+
+/-! The lengths for the standard metric are the case `a = 1`. -/
+
+/-- The trajectory of `-grad x²` through `x₀` for the standard metric has the same lengths as the
+one for the metric `1 dx²`. -/
+private theorem pathELength_maximalIntegralCurve_neg_mgradient_sq_eq_scaledLineMetric_one
+    (x₀ t s : ℝ) :
+    Manifold.pathELength 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
+      Manifold.pathELength 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ)
+          (fun y : WithMetric (scaledLineMetric one_pos) ↦ y.ofWithMetric ^ 2))
+          (toWithMetric _ x₀)) t s := by
+  have h := pathELength_toWithMetric_scaledLineMetric one_pos
+    (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s
+  rw [Real.sqrt_one, ENNReal.ofReal_one, one_mul] at h
+  rw [← h, funext (maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric one_pos x₀),
+    maximalIntegralCurve_neg_mgradient_sq_eq]
+  simp only [div_one, Function.comp_def]
+
+/-- The length of the trajectory of `-grad x²` through `x₀` between the times `t` and `s` is
+`|x₀| (exp (-2 t) - exp (-2 s))`; for `s < t` both sides vanish. -/
+theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t s : ℝ) :
+    Manifold.pathELength 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
+      ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s)))) := by
+  rw [pathELength_maximalIntegralCurve_neg_mgradient_sq_eq_scaledLineMetric_one,
+    pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric]
+  simp
+
+/-- **The tail length of a trajectory of the quadratic well.** From time `t` on, the trajectory
+of `-grad x²` through `x₀` has length `|x₀| exp (-2 t)`. -/
+theorem iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
+    ⨆ s, Manifold.pathELength 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
+      ENNReal.ofReal (|x₀| * Real.exp (-(2 * t))) := by
+  simp_rw [pathELength_maximalIntegralCurve_neg_mgradient_sq_eq_scaledLineMetric_one,
+    iSup_pathELength_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric]
+  simp
 
 end ScaledMetric
 
