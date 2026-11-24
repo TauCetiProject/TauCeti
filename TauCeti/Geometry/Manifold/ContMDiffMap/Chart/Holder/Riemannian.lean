@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Holder.Basic
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
@@ -28,8 +30,8 @@ continuously into the atlas Hölder space `C^{0,α}(M, F)`
 * `TauCeti.CompactChartAtlas.lipschitzOnWith_chartSymmLipschitzConst`: the inverse chart of the
   atlas is Lipschitz on each piece with constant `chartSymmLipschitzConst`.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.ofHolderSpaceL`: the continuous linear inclusion
-  `HolderSpace α M F → A.CkHolderSpace 0 α F`, with `coe_ofHolderSpaceL` and
-  `ofHolderSpaceL_injective`.
+  `HolderSpace α M F → A.CkHolderSpace 0 α F`, with `coe_ofHolderSpaceL`,
+  `ofHolderSpaceL_injective` and the operator-norm bound `opNorm_ofHolderSpaceL_le`.
 -/
 
 public section
@@ -154,6 +156,13 @@ def ofHolderSpaceL : HolderSpace α M F →L[ℝ] A.CkHolderSpace 0 α F :=
     (1 + ∑ i, (A.chartSymmLipschitzConst i : ℝ) ^ (α : ℝ)) norm_ofHolderSpace_le
 
 variable {A α F}
+
+/-- The operator norm of the inclusion of the Hölder space for the Riemannian distance is at most
+`1 + ∑ᵢ Lᵢ^α`, where `Lᵢ` is the Lipschitz constant of the inverse chart on the `i`th piece. -/
+theorem opNorm_ofHolderSpaceL_le :
+    ‖ofHolderSpaceL A α F‖ ≤ 1 + ∑ i, (A.chartSymmLipschitzConst i : ℝ) ^ (α : ℝ) :=
+  LinearMap.mkContinuous_norm_le _
+    (add_nonneg zero_le_one (Finset.sum_nonneg fun _ _ ↦ by positivity)) _
 
 @[simp]
 theorem coe_ofHolderSpaceL (f : HolderSpace α M F) : ⇑(ofHolderSpaceL A α F f) = f :=
