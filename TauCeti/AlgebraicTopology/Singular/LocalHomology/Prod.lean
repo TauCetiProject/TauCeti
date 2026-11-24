@@ -484,6 +484,9 @@ theorem span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_to
       ← TopPair.singularChainComplexMap_comp,
       ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ h''
         (by rw [MonoidalCategory.id_tensorHom_id, Category.id_comp])]
+    -- The two singular chain maps differ only in their face map: `TopCat.ofHom g` typed on the
+    -- ambient space `(ofSubset (range j₁)ᶜ).fst ⊗ (ofSubset (range j₂)ᶜ).fst` of the product
+    -- subspace, against `gt`, the same map typed on `X₁ ⊗ X₂`. These spaces agree by unfolding.
     rfl
   -- The cross product restricts to a generator of the local homology of the product at `(x, y)`.
   have hw := span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding hj₁ μ₁ μ₂ r.1 r.2

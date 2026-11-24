@@ -317,7 +317,10 @@ theorem cubicalChainComplexProdComparison_comp_cubicalToSingularRel {Z : Type u}
     ← TopPair.singularChainComplexMap_comp]
   refine congrArg (_ ≫ TopPair.singularChainComplexMap · _) (hom_ext_of_fst _ ?_)
   simp only [Hom.fst_comp, prodLeftToProdSubspace_fst, prodLeftToPreimageUnion_fst, ofSubsetMap_fst]
-  rfl
+  -- Both sides are `𝟙 _ ≫ TopCat.ofHom f`, with the identity typed on the ambient space of the
+  -- product subspace on the left and on `X ⊗ Y` on the right; these agree only up to unfolding,
+  -- so `rw [Category.id_comp]` cannot see the left composite.
+  exact (Category.id_comp _).trans (Category.id_comp _).symm
 
 end Naturality
 
