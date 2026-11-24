@@ -106,7 +106,8 @@ theorem pointedType_def (c : RelationalConfiguration L V) (a : Fin n → V) :
 in the decoded structure. -/
 @[simp]
 theorem pointedType_apply (c : RelationalConfiguration L V) (a : Fin n → V) (φ : F.slice n) :
-    F.pointedType c a φ ↔ @BoundedFormulaInf.Realize L ℕ Empty V c.toStructure n φ.1 Empty.elim a :=
+    F.pointedType c a φ ↔
+      @BoundedFormulaInf.Realize L ℕ Empty V c.toStructure n φ.val Empty.elim a :=
   letI := c.toStructure
   truthAssignment_apply F a φ
 
@@ -133,7 +134,7 @@ configurations. -/
 theorem measurable_pointedType_apply [Countable V] (a : Fin n → V) (φ : F.slice n) :
     Measurable fun c : RelationalConfiguration L V => F.pointedType c a φ :=
   measurableSet_setOfPred.1 <| by
-    simpa only [pointedType_apply] using measurableSet_setOf_realize φ.1 Empty.elim a
+    simpa only [pointedType_apply] using measurableSet_setOf_realize φ.val Empty.elim a
 
 /-- On a countable carrier, the coded type of a fixed tuple is a Borel function of the
 configuration. -/
@@ -281,8 +282,9 @@ theorem countable_typeSpectrum_of_countable_quotient [Countable V]
     (F.typeSpectrum n C).Countable := by
   -- The spectra of the members of `C` form the image of its countably many classes.
   have hC := (Setoid.countable_quotient_comap_val_iff.1 ‹_›).image
-    (Quotient.lift (s := F.typeSpectrumSetoid n) (fun c => F.typeSpectrum n {c}) fun _ _ => id)
-  rw [← image_comp] at hC
+    (Quotient.lift (s := F.typeSpectrumSetoid n) (fun c => F.typeSpectrum n {c})
+      fun _ _ => F.typeSpectrumSetoid_apply.1)
+  rw [← image_comp, Quotient.lift_comp_mk] at hC
   rw [typeSpectrum_eq_biUnion, ← sUnion_image]
   exact hC.sUnion (forall_mem_image.2 fun c _ => F.countable_typeSpectrum_singleton n c)
 
@@ -300,7 +302,7 @@ theorem countable_typeSpectrum_or_hasCantorAntichainOn [∀ n, Countable (L.Rela
     ((F.typeSpectrumSetoid n).comap Subtype.val)
     (fun _ _ hxy => F.isoSetoid_le_typeSpectrumSetoid n hxy)
     ((F.measurableSet_setOf_typeSpectrumSetoid hF).preimage
-      (measurable_subtype_coe.prodMap measurable_subtype_coe))
+      (measurable_subtypeVal.prodMap measurable_subtypeVal))
   · exact .inl F.countable_typeSpectrum_of_countable_quotient
   · exact .inr hA
 
