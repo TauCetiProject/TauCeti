@@ -273,6 +273,12 @@ theorem adaptedJacksonDeriv_apply (p : R[X]) :
 @[simp] theorem adaptedJacksonDeriv_X : adaptedJacksonDeriv q (X : R[X]) = C (1 - q) := by
   simp [adaptedJacksonDeriv_apply, Algebra.smul_def]
 
+/-- `D'_q (X ^ n) = C (1 - q ^ n) * X ^ (n - 1)`. -/
+theorem adaptedJacksonDeriv_X_pow (n : ℕ) :
+    adaptedJacksonDeriv q (X ^ n : R[X]) = C (1 - q ^ n) * X ^ (n - 1) := by
+  rw [adaptedJacksonDeriv_apply, Algebra.smul_def, algebraMap_eq, qDerivative_X_pow,
+    ← mul_assoc, ← map_mul, mul_neg_geom_sum]
+
 /-- `D'_q (X ^ (n + 1)) = C (1 - q ^ (n + 1)) * X ^ n`. -/
 @[simp] theorem adaptedJacksonDeriv_X_pow_succ (n : ℕ) :
     adaptedJacksonDeriv q (X ^ (n + 1) : R[X]) = C (1 - q ^ (n + 1)) * X ^ n := by

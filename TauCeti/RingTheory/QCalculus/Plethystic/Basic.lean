@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.AdamsExpand
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 import TauCeti.RingTheory.PowerSeries.Expand
-import TauCeti.RingTheory.PowerSeries.LaurentCoeffBounds
+import TauCeti.RingTheory.QCalculus.Plethystic.SupportBounds
 import TauCeti.RingTheory.PowerSeries.Log
 
 /-!
@@ -27,7 +27,8 @@ using `PowerSeries.adamsExpand` (`ψ ^ n`) from `TauCeti.RingTheory.PowerSeries.
 * `PowerSeries.plethysticExp F`, `PowerSeries.plethysticExpMonoidHom`, and
   `PowerSeries.plethysticExpUnitsHom`: `PE(F) = exp (plethysticLogSum F)`, satisfying
   additivity-to-multiplicativity (`_add`, `_neg`, `_sub`, `_nsmul`, `_zsmul`, `_sum`), Adams
-  compatibility, bidegree congruence (`PowerSeries.coeff_coeff_plethysticExp_eq_of_coeff_eq`),
+  compatibility (`PowerSeries.adamsExpand_subst_exp`, `PowerSeries.adamsExpand_plethysticExp`),
+  bidegree congruence (`PowerSeries.coeff_coeff_plethysticExp_eq_of_coeff_eq`),
   monomial product formulas, and integrality over `ℤ⸨X⸩⟦X⟧`.
 
 ## References
@@ -126,7 +127,7 @@ theorem plethysticLogSum_zsmul (m : ℤ) (F : (A⸨X⸩)⟦X⟧) :
     plethysticLogSum (m • F) = m • plethysticLogSum F :=
   (plethysticLogSumHom (A := A)).map_zsmul m F
 
-/-- Removing a `t`-constant series gives `0` under `plethysticLogSum`. -/
+/-- The plethystic logarithmic sum sends every `t`-constant series to `0`. -/
 @[simp] theorem plethysticLogSum_C (c : A⸨X⸩) : plethysticLogSum (C c) = 0 := by
   ext (_ | k)
   · simp [coeff_zero_eq_constantCoeff_apply]
@@ -178,6 +179,7 @@ theorem plethysticExp_def (F : (A⸨X⸩)⟦X⟧) :
     plethysticExp F = (PowerSeries.exp A⸨X⸩).subst (plethysticLogSum F) := by
   rfl
 
+/-- The constant coefficient of `PE(F)` is `1`. -/
 @[simp] theorem constantCoeff_plethysticExp (F : (A⸨X⸩)⟦X⟧) :
     constantCoeff (plethysticExp F) = 1 :=
   constantCoeff_subst_exp (constantCoeff_plethysticLogSum F)
@@ -187,6 +189,7 @@ theorem plethysticExp_def (F : (A⸨X⸩)⟦X⟧) :
     logOf (plethysticExp F) = plethysticLogSum F :=
   logOf_subst_exp (constantCoeff_plethysticLogSum F)
 
+/-- `PE(0) = 1`. -/
 @[simp] theorem plethysticExp_zero : plethysticExp (0 : (A⸨X⸩)⟦X⟧) = 1 :=
   (logOf_inj (constantCoeff_plethysticExp 0) constantCoeff_one).mp (by simp)
 
@@ -275,6 +278,19 @@ theorem plethysticExp_zsmul (m : ℤ) (F : (A⸨X⸩)⟦X⟧) :
   rw [plethysticExpUnitsHom_apply, plethysticExpUnitsHom_apply, IsUnit.unit_spec,
     toAdd_zpow, toAdd_ofAdd] at h
   exact h
+
+/-- Combined Adams dilation commutes with substitution into `PowerSeries.exp`. -/
+theorem adamsExpand_subst_exp (m : ℕ+) {G : (A⸨X⸩)⟦X⟧} (hG : HasSubst G) :
+    adamsExpand A m ((PowerSeries.exp A⸨X⸩).subst G) =
+      (PowerSeries.exp A⸨X⸩).subst (adamsExpand A m G) := by
+  have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A m).toRingHom G) :=
+    PowerSeries.hasSubst_iff.mpr (hG.const.map (LaurentSeries.expand A m).toRingHom)
+  have hmap :
+      PowerSeries.map (LaurentSeries.expand A m).toRingHom ((PowerSeries.exp A⸨X⸩).subst G) =
+        (PowerSeries.exp A⸨X⸩).subst (PowerSeries.map (LaurentSeries.expand A m).toRingHom G) :=
+    (PowerSeries.map_subst hG (PowerSeries.exp A⸨X⸩)).trans (by rw [PowerSeries.map_exp]; rfl)
+  rw [adamsExpand_apply, hmap, adamsExpand_apply]
+  exact PowerSeries.expand_subst (m : ℕ) m.ne_zero hsub' (PowerSeries.exp A⸨X⸩)
 
 /-- **Adams compatibility**: `ψ ^ m (PE(F)) = PE(ψ ^ m (F))`. -/
 theorem adamsExpand_plethysticExp (m : ℕ+) (F : (A⸨X⸩)⟦X⟧) :

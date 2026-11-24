@@ -13,15 +13,18 @@ import TauCeti.RingTheory.HahnSeries.Multiplication
 # Laurent-coefficient support bounds in `(R⸨X⸩)⟦X⟧`
 
 This file records slope-`m` and uniform lower support bounds on the inner Laurent coefficients of
-power series in `(R⸨X⸩)⟦X⟧` under multiplication and powers.
+power series in `(R⸨X⸩)⟦X⟧` under multiplication and powers, for use in the integrality proof of
+the plethystic exponential (`PowerSeries.exists_map_eq_plethysticExp`):
 
-Pairing a slope-`m` lower support bound on a series `G₁` (vanishing below `q`-degree `a * m` in
-`t`-degree `a`, preserved under multiplication and powers) with a uniform lower support bound on
-the positive `t`-coefficients of a series `G₂` with constant term `1` (preserved under positive
-powers) lets readers discard high Laurent-degree tails at any fixed bidegree `(k, r)`:
-`coeff_coeff_mul_eq_left_of_lt_mul` shows `[q ^ r t ^ k] (G₁ * G₂) = [q ^ r t ^ k] G₁` whenever
-`r < k * m + N` and `m ≤ 0`, as used in the integrality proof for the plethystic exponential
-(`PowerSeries.exists_map_eq_plethysticExp`).
+* **Slope-`m` lower vanishing**: vanishing below `q`-degree `a * m` in `t`-degree `a` is
+  satisfied by `1` and preserved under multiplication and powers.
+* **Uniform lower vanishing under positive powers**: for `0 ≤ N`, vanishing of all positive
+  `t`-coefficients below `q`-degree `N` when `constantCoeff = 0` is preserved under all positive
+  powers (`PowerSeries.coeff_coeff_pow_eq_zero_of_lt_of_constantCoeff_eq_zero`).
+* **Product comparison**: if `G₁` satisfies the slope-`m` lower bound (`m ≤ 0`) and `G₂` has
+  constant term `1` with positive `t`-coefficients vanishing below `q`-degree `N`, then
+  `[q ^ r t ^ k] (G₁ * G₂) = [q ^ r t ^ k] G₁` whenever `r < k * m + N`
+  (`PowerSeries.coeff_coeff_mul_eq_left_of_lt_mul`).
 
 ## Main results
 

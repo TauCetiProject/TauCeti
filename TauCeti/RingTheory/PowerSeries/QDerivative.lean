@@ -16,7 +16,7 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 This file develops the Jackson `q`-derivative and adapted Jackson `q`-derivative on formal power
 series, without any division or invertibility assumptions:
 
-* `PowerSeries.jacksonDeriv q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧` over any commutative
+* `PowerSeries.qDerivative q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧` over any commutative
   semiring `A`, agreeing with `Polynomial.qDerivative q` on polynomials and specializing at `q = 1`
   to `d⁄dX`.
 * `PowerSeries.adaptedJacksonDeriv q`: `D'_q = (1 - q) D_q` on `A⟦X⟧` over any commutative ring
@@ -57,84 +57,92 @@ variable {A B : Type*} [CommSemiring A] [CommSemiring B]
 
 /-- The **Jackson `q`-derivative** on power series, sending `X ^ n` to `[n]_q X ^ (n - 1)` where
 `[n]_q = ∑_{i < n} q ^ i`. -/
-noncomputable def jacksonDeriv (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ where
+noncomputable def qDerivative (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ where
   toFun f := mk fun n ↦ (∑ i ∈ range (n + 1), q ^ i) * coeff (n + 1) f
   map_add' f g := by ext n; simp [mul_add]
   map_smul' r f := by ext n; simp [mul_left_comm]
 
-/-- Coefficient formula for `PowerSeries.jacksonDeriv`:
+/-- Coefficient formula for `PowerSeries.qDerivative`:
 `coeff n (D_q f) = [n + 1]_q * coeff (n + 1) f`. -/
-@[simp] theorem coeff_jacksonDeriv (q : A) (f : A⟦X⟧) (n : ℕ) :
-    coeff n (jacksonDeriv q f) = (∑ i ∈ range (n + 1), q ^ i) * coeff (n + 1) f := by
-  simp [jacksonDeriv]
+@[simp] theorem coeff_qDerivative (q : A) (f : A⟦X⟧) (n : ℕ) :
+    coeff n (qDerivative q f) = (∑ i ∈ range (n + 1), q ^ i) * coeff (n + 1) f := by
+  simp [qDerivative]
 
-@[simp] theorem jacksonDeriv_C (q a : A) : jacksonDeriv q (C a) = 0 := by ext n; simp
+/-- The `q`-derivative of a constant power series is `0`. -/
+@[simp] theorem qDerivative_C (q a : A) : qDerivative q (C a) = 0 := by ext n; simp
 
-@[simp] theorem jacksonDeriv_X (q : A) : jacksonDeriv q (X : A⟦X⟧) = 1 := by
+/-- The `q`-derivative of `1` is `0`. -/
+@[simp] theorem qDerivative_one (q : A) : qDerivative q (1 : A⟦X⟧) = 0 := by ext n; simp
+
+/-- The `q`-derivative of `X` is `1`. -/
+@[simp] theorem qDerivative_X (q : A) : qDerivative q (X : A⟦X⟧) = 1 := by
   ext (_ | n) <;> simp [coeff_X, coeff_one]
 
-/-- `D_q (X ^ (n + 1)) = C ([n + 1]_q) * X ^ n`. -/
-@[simp] theorem jacksonDeriv_X_pow_succ (q : A) (n : ℕ) :
-    jacksonDeriv q (X ^ (n + 1) : A⟦X⟧) = C (∑ i ∈ range (n + 1), q ^ i) * X ^ n := by
-  ext k; rw [coeff_jacksonDeriv, coeff_X_pow, coeff_C_mul_X_pow]; by_cases h : k = n <;> simp [h]
+/-- `D_q (X ^ n) = C ([n]_q) * X ^ (n - 1)`. -/
+theorem qDerivative_X_pow (q : A) (n : ℕ) :
+    qDerivative q (X ^ n : A⟦X⟧) = C (∑ i ∈ range n, q ^ i) * X ^ (n - 1) := by
+  rcases n with _ | n
+  · simp
+  · ext k; rw [coeff_qDerivative, coeff_X_pow, coeff_C_mul_X_pow]; by_cases h : k = n <;> simp [h]
 
-/-- `PowerSeries.jacksonDeriv` agrees with `Polynomial.qDerivative` on polynomials. -/
-@[simp] theorem jacksonDeriv_coe (q : A) (p : A[X]) :
-    jacksonDeriv q (p : A⟦X⟧) = (Polynomial.qDerivative q p : A⟦X⟧) := by
+/-- `D_q (X ^ (n + 1)) = C ([n + 1]_q) * X ^ n`. -/
+@[simp] theorem qDerivative_X_pow_succ (q : A) (n : ℕ) :
+    qDerivative q (X ^ (n + 1) : A⟦X⟧) = C (∑ i ∈ range (n + 1), q ^ i) * X ^ n := by
+  simpa using qDerivative_X_pow q (n + 1)
+
+/-- `PowerSeries.qDerivative` agrees with `Polynomial.qDerivative` on polynomials. -/
+@[simp] theorem qDerivative_coe (q : A) (p : A[X]) :
+    qDerivative q (p : A⟦X⟧) = (Polynomial.qDerivative q p : A⟦X⟧) := by
   ext n; simp [Polynomial.coeff_qDerivative, mul_comm]
 
-/-- At `q = 1`, the Jackson derivative is the ordinary power-series derivative. -/
-@[simp] theorem jacksonDeriv_one (f : A⟦X⟧) : jacksonDeriv (1 : A) f = d⁄dX f := by
-  ext n; simp [coeff_derivative, mul_comm]
+/-- At `q = 1`, `PowerSeries.qDerivative` is the ordinary derivative's underlying linear map. -/
+@[simp] theorem qDerivative_one_eq_derivative :
+    qDerivative (1 : A) = (d⁄dX : Derivation A A⟦X⟧ A⟦X⟧).toLinearMap := by
+  ext f n; simp [coeff_derivative, mul_comm]
 
-/-- The Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_jacksonDeriv (φ : A →+* B) (q : A) (f : A⟦X⟧) :
-    map φ (jacksonDeriv q f) = jacksonDeriv (φ q) (map φ f) := by ext n; simp [map_sum]
+/-- At `q = 1`, `PowerSeries.qDerivative` agrees pointwise with `d⁄dX`. -/
+theorem qDerivative_one_apply (f : A⟦X⟧) : qDerivative (1 : A) f = d⁄dX f :=
+  congrArg (· f) qDerivative_one_eq_derivative
 
-/-- **Twisted Leibniz rule** for the Jackson derivative:
+/-- The `q`-derivative commutes with coefficient ring homomorphisms. -/
+theorem map_qDerivative (φ : A →+* B) (q : A) (f : A⟦X⟧) :
+    map φ (qDerivative q f) = qDerivative (φ q) (map φ f) := by ext n; simp [map_sum]
+
+/-- **Twisted Leibniz rule** for the `q`-derivative:
 `D_q (f * g) = D_q f * g + f(q X) * D_q g`. -/
-theorem jacksonDeriv_mul (q : A) (f g : A⟦X⟧) :
-    jacksonDeriv q (f * g) = jacksonDeriv q f * g + rescale q f * jacksonDeriv q g := by
+theorem qDerivative_mul (q : A) (f g : A⟦X⟧) :
+    qDerivative q (f * g) = qDerivative q f * g + rescale q f * qDerivative q g := by
   ext n
   let pf : A[X] := trunc (n + 2) f
   let pg : A[X] := trunc (n + 2) g
-  have htrunc (h : A⟦X⟧) : trunc (n + 2) ((trunc (n + 2) h : A[X]) : A⟦X⟧) = trunc (n + 2) h :=
-    trunc_eq_trunc_iff.mpr fun k hk ↦ by rw [Polynomial.coeff_coe, coeff_trunc, ite_eq_left hk]
-  have hjd (h₁ h₂ : A⟦X⟧) (hh : trunc (n + 2) h₁ = trunc (n + 2) h₂) :
-      trunc (n + 1) (jacksonDeriv q h₁) = trunc (n + 1) (jacksonDeriv q h₂) :=
+  have hqd (h₁ h₂ : A⟦X⟧) (hh : trunc (n + 2) h₁ = trunc (n + 2) h₂) :
+      trunc (n + 1) (qDerivative q h₁) = trunc (n + 1) (qDerivative q h₂) :=
     trunc_eq_trunc_iff.mpr fun k hk ↦ by
-      simp only [coeff_jacksonDeriv]
+      simp only [coeff_qDerivative]
       rw [coeff_eq_of_trunc_eq hh (by omega)]
   have hres : trunc (n + 1) (rescale q (pf : A⟦X⟧)) = trunc (n + 1) (rescale q f) :=
     trunc_eq_trunc_iff.mpr fun k hk ↦ by
       simp only [coeff_rescale]
-      rw [coeff_eq_of_trunc_eq (htrunc f) (by omega)]
-  have hlhs : coeff n (jacksonDeriv q (f * g)) =
+      rw [coeff_eq_of_trunc_eq (trunc_trunc f) (by omega)]
+  have hlhs : coeff n (qDerivative q (f * g)) =
       coeff n ((Polynomial.qDerivative q (pf * pg) : A[X]) : A⟦X⟧) := by
-    rw [← jacksonDeriv_coe, Polynomial.coe_mul, coeff_jacksonDeriv, coeff_jacksonDeriv,
-      coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq (htrunc f) (htrunc g)) (by omega)]
+    rw [← qDerivative_coe, Polynomial.coe_mul, coeff_qDerivative, coeff_qDerivative,
+      coeff_mul_eq_coeff_trunc_mul_trunc f g (Nat.lt_succ_self (n + 1))]
   have hcomp :
       ((pf.comp (Polynomial.C q * Polynomial.X) : A[X]) : A⟦X⟧) = rescale q (pf : A⟦X⟧) := by
-    induction pf using Polynomial.induction_on' with
-    | add p₁ p₂ hp₁ hp₂ => simp only [Polynomial.add_comp, Polynomial.coe_add, map_add, hp₁, hp₂]
-    | monomial k a =>
-      simp only [← Polynomial.C_mul_X_pow_eq_monomial, Polynomial.mul_comp, Polynomial.C_comp,
-        Polynomial.pow_comp, Polynomial.X_comp, Polynomial.coe_mul, Polynomial.coe_C,
-        Polynomial.coe_pow, Polynomial.coe_X]
-      rw [mul_pow, ← mul_assoc, ← map_pow C, ← map_mul C]
-      ext d
-      simp only [coeff_C_mul_X_pow, coeff_rescale]
-      split_ifs with h <;> simp [h, mul_comm]
-  have hrhs1 : coeff n (jacksonDeriv q f * g) =
+    ext k
+    rw [Polynomial.coeff_coe, Polynomial.comp_C_mul_X_coeff, coeff_rescale, Polynomial.coeff_coe,
+      mul_comm]
+  have hrhs1 : coeff n (qDerivative q f * g) =
       coeff n ((Polynomial.qDerivative q pf * pg : A[X]) : A⟦X⟧) := by
-    rw [Polynomial.coe_mul, ← jacksonDeriv_coe]
-    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq (hjd f _ (htrunc f).symm)
-      (trunc_eq_of_trunc_eq_of_le (htrunc g).symm (by omega))) (Nat.lt_succ_self n)
-  have hrhs2 : coeff n (rescale q f * jacksonDeriv q g) =
+    rw [Polynomial.coe_mul, ← qDerivative_coe]
+    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq (hqd f _ (trunc_trunc f).symm)
+      (trunc_eq_of_trunc_eq_of_le (trunc_trunc g).symm (by omega))) (Nat.lt_succ_self n)
+  have hrhs2 : coeff n (rescale q f * qDerivative q g) =
       coeff n ((pf.comp (Polynomial.C q * Polynomial.X) * Polynomial.qDerivative q pg : A[X]) :
         A⟦X⟧) := by
-    rw [Polynomial.coe_mul, hcomp, ← jacksonDeriv_coe]
-    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq hres.symm (hjd g _ (htrunc g).symm))
+    rw [Polynomial.coe_mul, hcomp, ← qDerivative_coe]
+    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq hres.symm (hqd g _ (trunc_trunc g).symm))
       (Nat.lt_succ_self n)
   rw [hlhs, Polynomial.qDerivative_mul, Polynomial.coe_add, map_add, map_add, hrhs1, hrhs2]
 
@@ -147,32 +155,38 @@ variable {A B : Type*} [CommRing A] [CommRing B]
 /-- The **adapted Jackson `q`-derivative** `D'_q = (1 - q) D_q` on power series, sending `X ^ n` to
 `(1 - q ^ n) X ^ (n - 1)`. -/
 noncomputable def adaptedJacksonDeriv (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ :=
-  (1 - q) • jacksonDeriv q
+  (1 - q) • qDerivative q
 
 /-- Unfolding definition of `PowerSeries.adaptedJacksonDeriv`. -/
 theorem adaptedJacksonDeriv_apply (q : A) (f : A⟦X⟧) :
-    adaptedJacksonDeriv q f = (1 - q) • jacksonDeriv q f :=
+    adaptedJacksonDeriv q f = (1 - q) • qDerivative q f :=
   (rfl)
 
 /-- Coefficient formula for `PowerSeries.adaptedJacksonDeriv`:
 `coeff n (D'_q f) = (1 - q ^ (n + 1)) * coeff (n + 1) f`. -/
 @[simp] theorem coeff_adaptedJacksonDeriv (q : A) (f : A⟦X⟧) (n : ℕ) :
     coeff n (adaptedJacksonDeriv q f) = (1 - q ^ (n + 1)) * coeff (n + 1) f := by
-  rw [adaptedJacksonDeriv_apply, coeff_smul, smul_eq_mul, coeff_jacksonDeriv, ← mul_assoc,
+  rw [adaptedJacksonDeriv_apply, coeff_smul, smul_eq_mul, coeff_qDerivative, ← mul_assoc,
     mul_neg_geom_sum]
 
+/-- The adapted Jackson derivative of a constant power series is `0`. -/
 @[simp] theorem adaptedJacksonDeriv_C (q a : A) : adaptedJacksonDeriv q (C a) = 0 := by
   simp [adaptedJacksonDeriv_apply]
 
+/-- The adapted Jackson derivative of `X` is `C (1 - q)`. -/
 @[simp] theorem adaptedJacksonDeriv_X (q : A) : adaptedJacksonDeriv q (X : A⟦X⟧) = C (1 - q) := by
   simp [adaptedJacksonDeriv_apply, Algebra.smul_def]
+
+/-- `D'_q (X ^ n) = C (1 - q ^ n) * X ^ (n - 1)`. -/
+theorem adaptedJacksonDeriv_X_pow (q : A) (n : ℕ) :
+    adaptedJacksonDeriv q (X ^ n : A⟦X⟧) = C (1 - q ^ n) * X ^ (n - 1) := by
+  rw [adaptedJacksonDeriv_apply, Algebra.smul_def, algebraMap_eq, qDerivative_X_pow,
+    ← mul_assoc, ← map_mul, mul_neg_geom_sum]
 
 /-- `D'_q (X ^ (n + 1)) = C (1 - q ^ (n + 1)) * X ^ n`. -/
 @[simp] theorem adaptedJacksonDeriv_X_pow_succ (q : A) (n : ℕ) :
     adaptedJacksonDeriv q (X ^ (n + 1) : A⟦X⟧) = C (1 - q ^ (n + 1)) * X ^ n := by
-  ext k
-  rw [coeff_adaptedJacksonDeriv, coeff_X_pow, coeff_C_mul_X_pow]
-  by_cases h : k = n <;> simp [h]
+  simpa using adaptedJacksonDeriv_X_pow q (n + 1)
 
 /-- `PowerSeries.adaptedJacksonDeriv` agrees with `Polynomial.adaptedJacksonDeriv` on
 polynomials. -/
@@ -192,7 +206,7 @@ theorem map_adaptedJacksonDeriv (φ : A →+* B) (q : A) (f : A⟦X⟧) :
 theorem adaptedJacksonDeriv_mul (q : A) (f g : A⟦X⟧) :
     adaptedJacksonDeriv q (f * g) =
       adaptedJacksonDeriv q f * g + rescale q f * adaptedJacksonDeriv q g := by
-  simp only [adaptedJacksonDeriv_apply, jacksonDeriv_mul, smul_add, smul_mul_assoc, mul_smul_comm]
+  simp only [adaptedJacksonDeriv_apply, qDerivative_mul, smul_add, smul_mul_assoc, mul_smul_comm]
 
 /-- Difference identity: `X * D'_q f = f - f(q X)`. -/
 theorem X_mul_adaptedJacksonDeriv (q : A) (f : A⟦X⟧) :

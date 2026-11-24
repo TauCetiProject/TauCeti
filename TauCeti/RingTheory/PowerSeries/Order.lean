@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Order
-import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Self-multiplication cancellation and orders of power series
@@ -38,17 +37,14 @@ of `X ^ n` in `f`.
 * `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
 * `PowerSeries.exists_forall_le_order_sub`: a sequence whose consecutive terms agree below degree
   `n` has a limit agreeing with its `n`-th term below degree `n`.
-* `PowerSeries.isUnit_one_sub_of_constantCoeff_eq_zero`,
-  `PowerSeries.isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero`,
-  `PowerSeries.isUnit_one_sub_X_pow_succ`: `1 - f`, `1 - f ^ (n + 1)`, and `1 - X ^ (n + 1)` are
-  units when `constantCoeff f = 0`.
-
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
   `(coeff n f) ^ k` when `f` has order at least `n`.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
+* `PowerSeries.coeff_eval_eq_sum_range`: evaluating a polynomial over `R⟦X⟧` at a series without
+  constant term only uses terms of degree at most `k` for the `k`-th coefficient.
 
 ## Provenance
 
@@ -132,21 +128,6 @@ theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
   rw [map_sub, sub_eq_zero] at h
   rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
 
-/-- A power series of the form `1 - f` is a unit whenever `f` has zero constant coefficient. -/
-theorem isUnit_one_sub_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
-    IsUnit (1 - f) :=
-  isUnit_iff_constantCoeff.mpr (by simp [hf])
-
-/-- A power series of the form `1 - f ^ (n + 1)` is a unit whenever `f` has zero constant
-coefficient. -/
-theorem isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0)
-    (n : ℕ) : IsUnit (1 - f ^ (n + 1)) :=
-  isUnit_one_sub_of_constantCoeff_eq_zero (by simp [hf])
-
-/-- Every series `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`. -/
-theorem isUnit_one_sub_X_pow_succ (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
-  isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero constantCoeff_X n
-
 end Ring
 
 /-- If `f` has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th
@@ -175,16 +156,19 @@ theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantC
   rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
   exact hf
 
-/-- If `n` is strictly smaller than the order of `ψ`, then the `n`-th coefficient of
-`φ * (1 + ψ)` equals the `n`-th coefficient of `φ`. -/
-theorem coeff_mul_one_add_of_lt_order {φ ψ : R⟦X⟧} (n : ℕ) (h : (n : ℕ∞) < ψ.order) :
-    coeff n (φ * (1 + ψ)) = coeff n φ := by
-  rw [mul_add, mul_one, map_add, coeff_mul_of_lt_order h, add_zero]
-
-/-- Multiplying by `1 + X ^ m` preserves `coeff k` whenever `k < m`. -/
-theorem coeff_mul_one_add_X_pow (f : R⟦X⟧) {k m : ℕ} (h : k < m) :
-    coeff k (f * (1 + X ^ m)) = coeff k f :=
-  coeff_mul_one_add_of_lt_order k
-    ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero m constantCoeff_X))
+/-- Evaluating a polynomial over `R⟦X⟧` at a series `g` without constant term only uses terms of
+degree at most `k` for the `k`-th coefficient. -/
+theorem coeff_eval_eq_sum_range (p : Polynomial R⟦X⟧) {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) (k : ℕ) :
+    coeff k (p.eval g) = ∑ n ∈ Finset.range (k + 1), coeff k (p.coeff n * g ^ n) := by
+  rw [Polynomial.eval_eq_sum_range' (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ (k + 1))),
+    map_sum]
+  symm
+  refine Finset.sum_subset (Finset.range_mono (le_max_right _ _)) fun n _ hn ↦ ?_
+  have hlt : k < n := by simp only [Finset.mem_range, not_lt] at hn; omega
+  exact coeff_of_lt_order k
+    ((Nat.cast_lt.mpr hlt).trans_le
+      ((le_order_pow_of_constantCoeff_eq_zero n hg).trans
+        (le_add_self.trans (le_order_mul (p.coeff n) (g ^ n)))))
 
 end PowerSeries

@@ -7,20 +7,20 @@ module
 
 public import TauCeti.RingTheory.QCalculus.Series
 import Mathlib.RingTheory.PowerSeries.Expand
+import Mathlib.RingTheory.PowerSeries.PiTopology
 import Mathlib.Tactic.Ring
-import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Euler's square-exponent product identity
 
-This file defines the two sides of Euler's raw square-exponent product identity in `R⟦X⟧` by
-coefficient stabilization and proves that they agree over any commutative ring `R`, without unit
-hypotheses:
+This file defines the two sides of Euler's raw square-exponent product identity in `R⟦X⟧` and
+proves that they agree over any commutative ring `R`, without unit hypotheses:
 
-* `TauCeti.eulerOddProd R`: `∏_{i ≥ 0} (1 + r ^ (2 i + 1))` over any commutative semiring `R`.
+* `TauCeti.eulerOddProd R`: `∏_{i ≥ 0} (1 + r ^ (2 i + 1))` over any commutative semiring `R`,
+  defined as an infinite product in `R⟦X⟧` under `PowerSeries.WithPiTopology`.
 * `TauCeti.eulerSqSeries R`: `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n` over any commutative
-  ring `R`.
+  ring `R`, defined by coefficient stabilization.
 * `TauCeti.eulerSqSeries_eq_eulerOddProd`: `eulerSqSeries R = eulerOddProd R`.
 
 ## References
@@ -36,7 +36,7 @@ hypotheses:
 public section
 
 open Finset PowerSeries
-open scoped Polynomial PowerSeries
+open scoped Polynomial PowerSeries PowerSeries.WithPiTopology
 
 namespace TauCeti
 
@@ -46,28 +46,51 @@ variable {R : Type*} [CommSemiring R]
 
 variable (R) in
 /-- The right-hand side `∏_{i ≥ 0} (1 + r ^ (2 i + 1))` of Euler's raw identity in `R⟦X⟧`,
-defined by coefficient stabilization. -/
+defined as the infinite product `∏' i, (1 + r ^ (2 i + 1))` for the product topology on `R⟦X⟧`
+induced by the discrete topology on `R`. -/
 noncomputable def eulerOddProd : R⟦X⟧ :=
-  PowerSeries.mk fun k ↦ coeff k (∏ i ∈ range (k + 1), (1 + (X : R⟦X⟧) ^ (2 * i + 1)))
+  letI : TopologicalSpace R := ⊥
+  ∏' i : ℕ, (1 + (X : R⟦X⟧) ^ (2 * i + 1))
 
 /-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
 over `i < N` whenever `k < 2 * N + 1`. -/
 theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1) :
     coeff k (eulerOddProd R) =
       coeff k (∏ i ∈ range N, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) := by
-  have hmono : ∀ a b, k < 2 * a + 1 → a ≤ b →
-      coeff k (∏ i ∈ range b, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
-        coeff k (∏ i ∈ range a, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) := by
-    intro a b ha hab
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
-    induction d with
-    | zero => rfl
-    | succ d ih =>
-      rw [← Nat.add_assoc, prod_range_succ, coeff_mul_one_add_X_pow _ (by omega), ih (by omega)]
-  rw [eulerOddProd, coeff_mk]
-  rcases le_total N (k + 1) with hle | hle
-  · exact hmono N (k + 1) hN hle
-  · exact (hmono (k + 1) N (by omega) hle).symm
+  nontriviality R
+  let : TopologicalSpace R := ⊥
+  have : DiscreteTopology R := ⟨rfl⟩
+  have hm : Multipliable fun i : ℕ ↦ (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
+    apply WithPiTopology.multipliable_one_add_of_tendsto_order_atTop_nhds_top
+    refine ENat.tendsto_nhds_top_iff_natCast_lt.mpr fun n ↦ Filter.eventually_atTop.mpr ⟨n, ?_⟩
+    intro m hm
+    rw [order_X_pow]
+    norm_cast
+    omega
+  have hprod := hm.hasProd
+  rw [HasProd, WithPiTopology.tendsto_iff_coeff_tendsto] at hprod
+  have ht := hprod k
+  rw [nhds_discrete, Filter.tendsto_pure] at ht
+  obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp ht
+  have hs := hs₀ (s₀ ∪ range N) Finset.subset_union_left
+  change coeff k (∏ i ∈ s₀ ∪ range N, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
+    coeff k (eulerOddProd R) at hs
+  rw [← hs, ← Finset.prod_sdiff (Finset.subset_union_right (s₁ := s₀) (s₂ := range N)), mul_comm]
+  classical
+  have htail : ∀ t : Finset ℕ, (∀ i ∈ t, N ≤ i) → ∀ f : R⟦X⟧,
+      coeff k (f * ∏ i ∈ t, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) = coeff k f := by
+    intro t ht f
+    induction t using Finset.induction_on generalizing f with
+    | empty => simp
+    | insert a t ha ih =>
+      rw [Finset.prod_insert ha, ← mul_assoc, ih (fun i hi ↦ ht i (Finset.mem_insert_of_mem hi))]
+      rw [mul_add, mul_one, map_add, coeff_mul_X_pow']
+      have haN : N ≤ a := ht a (Finset.mem_insert_self a t)
+      simp [Nat.not_le.mpr (by omega : k < 2 * a + 1)]
+  exact htail ((s₀ ∪ range N) \ range N)
+    (fun i hi ↦ by
+      simp only [Finset.mem_sdiff, Finset.mem_union, Finset.mem_range, not_lt] at hi
+      exact hi.2) _
 
 /-- Constant coefficient of `eulerOddProd R` is `1`. -/
 @[simp] theorem constantCoeff_eulerOddProd : constantCoeff (eulerOddProd R) = 1 := by
@@ -181,8 +204,8 @@ theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
     rw [Polynomial.eval_qPochhammer, Polynomial.eval_X, Polynomial.eval_C, qPochhammer_def]
     refine prod_congr rfl fun i _ ↦ ?_
     rw [← pow_mul, neg_mul, sub_neg_eq_add, ← pow_succ']
-  rw [eulerSqSeries, eulerOddProd, coeff_mk, coeff_mk, ← hp_eval, map_sum,
-    coeff_eval_eq_sum_range p (by simp)]
+  rw [eulerSqSeries, coeff_mk, coeff_eulerOddProd_eq_prod_of_lt k (N := k + 1) (by omega),
+    ← hp_eval, map_sum, coeff_eval_eq_sum_range p (by simp)]
   refine sum_congr rfl fun n _ ↦ ?_
   rw [mul_comm (p.coeff n), ← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, neg_eq_neg_one_mul,
     mul_pow, mul_assoc, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_C_mul,

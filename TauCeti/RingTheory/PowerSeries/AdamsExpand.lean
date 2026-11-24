@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Exp
-public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
@@ -26,10 +24,9 @@ variable `q ↦ q ^ n` (via `LaurentSeries.expand`) and the outer power-series v
 * `PowerSeries.coeff_adamsExpand_mul`, `PowerSeries.coeff_adamsExpand_of_not_dvd`: outer
   `t`-coefficients of `ψ ^ n (F)`.
 * `PowerSeries.coeff_coeff_adamsExpand`: double-coefficient formula for `[q ^ i t ^ k] ψ ^ n (F)`.
-* `PowerSeries.adamsExpand_one`, `PowerSeries.adamsExpand_adamsExpand`: identity and
-  functoriality `ψ ^ m ∘ ψ ^ n = ψ ^ (m * n)`.
+* `PowerSeries.adamsExpand_one`, `PowerSeries.adamsExpand_comp_adamsExpand`,
+  `PowerSeries.adamsExpand_adamsExpand`: identity and functoriality `ψ ^ m ∘ ψ ^ n = ψ ^ (m * n)`.
 * `PowerSeries.map_adamsExpand`: compatibility with coefficientwise ring homomorphisms.
-* `PowerSeries.adamsExpand_subst_exp`: compatibility with substitution into `PowerSeries.exp`.
 -/
 
 public section
@@ -127,18 +124,27 @@ variable (R) in
 @[simp] theorem adamsExpand_one : adamsExpand R 1 = AlgHom.id R (R⸨X⸩)⟦X⟧ := by
   ext F k i; simpa using coeff_coeff_adamsExpand_mul 1 F k i
 
-/-- Functoriality of combined Adams dilation: `ψ ^ m (ψ ^ n (F)) = ψ ^ (m * n) (F)`. -/
-theorem adamsExpand_adamsExpand (m n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
-    adamsExpand R m (adamsExpand R n F) = adamsExpand R (m * n) F := by
+variable (R) in
+/-- Functoriality of combined Adams dilation as algebra endomorphisms:
+`ψ ^ m ∘ ψ ^ n = ψ ^ (m * n)`. -/
+@[simp] theorem adamsExpand_comp_adamsExpand (m n : ℕ+) :
+    (adamsExpand R m).comp (adamsExpand R n) = adamsExpand R (m * n) := by
+  apply AlgHom.ext; intro F
   have hcomp :
       (LaurentSeries.expand R m).toRingHom.comp (LaurentSeries.expand R n).toRingHom =
         (LaurentSeries.expand R (m * n)).toRingHom :=
     RingHom.ext (LaurentSeries.expand_expand m n)
+  change adamsExpand R m (adamsExpand R n F) = adamsExpand R (m * n) F
   rw [adamsExpand_apply, adamsExpand_apply, adamsExpand_apply,
     map_expand (n : ℕ) n.ne_zero (LaurentSeries.expand R m).toRingHom,
     ← expand_mul (m : ℕ) m.ne_zero (n : ℕ) n.ne_zero, ← RingHom.comp_apply,
     ← PowerSeries.map_comp, hcomp]
   rfl
+
+/-- Functoriality of combined Adams dilation: `ψ ^ m (ψ ^ n (F)) = ψ ^ (m * n) (F)`. -/
+@[simp] theorem adamsExpand_adamsExpand (m n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
+    adamsExpand R m (adamsExpand R n F) = adamsExpand R (m * n) F :=
+  AlgHom.congr_fun (adamsExpand_comp_adamsExpand R m n) F
 
 /-- Coefficientwise ring homomorphisms commute with `PowerSeries.adamsExpand`. -/
 theorem map_adamsExpand {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ+) (F : (R⸨X⸩)⟦X⟧) :
@@ -150,20 +156,6 @@ theorem map_adamsExpand {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ+) (F 
     RingHom.ext (LaurentSeries.mapRingHom_expand φ n)
   rw [adamsExpand_apply, adamsExpand_apply, map_expand, ← RingHom.comp_apply,
     ← PowerSeries.map_comp, ← RingHom.comp_apply, ← PowerSeries.map_comp, hcomp]
-
-/-- Combined Adams dilation commutes with substitution into `PowerSeries.exp`. -/
-theorem adamsExpand_subst_exp {A : Type*} [CommRing A] [Algebra ℚ A] (n : ℕ+)
-    {G : (A⸨X⸩)⟦X⟧} (hG : HasSubst G) :
-    adamsExpand A n ((PowerSeries.exp A⸨X⸩).subst G) =
-      (PowerSeries.exp A⸨X⸩).subst (adamsExpand A n G) := by
-  have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
-    PowerSeries.hasSubst_iff.mpr (hG.const.map (LaurentSeries.expand A n).toRingHom)
-  have hmap :
-      PowerSeries.map (LaurentSeries.expand A n).toRingHom ((PowerSeries.exp A⸨X⸩).subst G) =
-        (PowerSeries.exp A⸨X⸩).subst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
-    (PowerSeries.map_subst hG (PowerSeries.exp A⸨X⸩)).trans (by rw [PowerSeries.map_exp]; rfl)
-  rw [adamsExpand_apply, hmap]
-  exact PowerSeries.expand_subst (n : ℕ) n.ne_zero hsub' (PowerSeries.exp A⸨X⸩)
 
 end AdamsExpand
 

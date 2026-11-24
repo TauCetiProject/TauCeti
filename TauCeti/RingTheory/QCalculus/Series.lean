@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.Algebra.Ring.QPochhammer
-public import TauCeti.RingTheory.PowerSeries.Order
+public import TauCeti.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.PowerSeries.QDerivative
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.PowerSeries.Log
@@ -65,10 +65,12 @@ unique solution to `D_q f = f`, `constantCoeff f = 1` (`TauCeti.eq_jacksonExp_if
 noncomputable def jacksonExp (q : A) (_hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ Ring.inverse (qFactorial q n)
 
+/-- Coefficient formula for `TauCeti.jacksonExp`: `coeff n (jacksonExp q hq) = ([n]_q!)⁻¹ʳ`. -/
 @[simp] theorem coeff_jacksonExp (q : A) (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i))
     (n : ℕ) : coeff n (jacksonExp q hq) = Ring.inverse (qFactorial q n) :=
   coeff_mk n _
 
+/-- The constant coefficient of `TauCeti.jacksonExp` is `1`. -/
 @[simp] theorem constantCoeff_jacksonExp (q : A)
     (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
     constantCoeff (jacksonExp q hq) = 1 := by
@@ -85,17 +87,17 @@ theorem coeff_two_jacksonExp (q : A) (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1
   rw [coeff_jacksonExp, qFactorial_succ, qFactorial_one, one_mul]; simp [sum_range_succ]
 
 /-- Under unit hypotheses on all positive `[n]_q`, the Jackson exponential satisfies `D_q f = f`. -/
-theorem jacksonDeriv_jacksonExp {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
-    jacksonDeriv q (jacksonExp q hq) = jacksonExp q hq := by
+theorem qDerivative_jacksonExp {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) :
+    qDerivative q (jacksonExp q hq) = jacksonExp q hq := by
   ext n
-  rw [coeff_jacksonDeriv, coeff_jacksonExp, coeff_jacksonExp, qFactorial_succ,
+  rw [coeff_qDerivative, coeff_jacksonExp, coeff_jacksonExp, qFactorial_succ,
     Ring.inverse_mul (Or.inr (hq n)), ← mul_assoc, Ring.mul_inverse_cancel _ (hq n), one_mul]
 
 /-- **Uniqueness of the Jackson initial-value problem**: when every positive `[n]_q` is a unit,
 `jacksonExp q hq` is the unique power series satisfying `D_q f = f` and `constantCoeff f = 1`. -/
 theorem eq_jacksonExp_iff {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)) {f : A⟦X⟧} :
-    f = jacksonExp q hq ↔ jacksonDeriv q f = f ∧ constantCoeff f = 1 := by
-  refine ⟨fun h ↦ h ▸ ⟨jacksonDeriv_jacksonExp hq, constantCoeff_jacksonExp q hq⟩, ?_⟩
+    f = jacksonExp q hq ↔ qDerivative q f = f ∧ constantCoeff f = 1 := by
+  refine ⟨fun h ↦ h ▸ ⟨qDerivative_jacksonExp hq, constantCoeff_jacksonExp q hq⟩, ?_⟩
   rintro ⟨hderiv, hzero⟩
   ext n
   induction n with
@@ -104,7 +106,7 @@ theorem eq_jacksonExp_iff {q : A} (hq : ∀ n, IsUnit (∑ i ∈ range (n + 1), 
       Ring.inverse_one]
   | succ n ih =>
     have hstep := congrArg (coeff n) hderiv
-    rw [coeff_jacksonDeriv, ih, coeff_jacksonExp] at hstep
+    rw [coeff_qDerivative, ih, coeff_jacksonExp] at hstep
     rw [coeff_jacksonExp, qFactorial_succ, Ring.inverse_mul (Or.inr (hq n))]
     exact (Ring.inverse_mul_eq_iff_eq_mul _ _ _ (hq n)).mpr hstep.symm |>.symm
 
@@ -162,28 +164,37 @@ unit and `Ring.inverse` is its exact multiplicative inverse. -/
 noncomputable def qBinomialSeries (a q : A) (_hq : ∀ n, IsUnit (1 - q ^ (n + 1))) : A⟦X⟧ :=
   PowerSeries.mk fun n ↦ qPochhammer a q n * Ring.inverse (qPochhammer q q n)
 
+/-- Coefficient formula for `TauCeti.qPochhammerSeries`:
+`coeff n (E_q(t)) = (-1) ^ n * q ^ (n (n - 1) / 2) * ((q; q)_n)⁻¹ʳ`. -/
 @[simp] theorem coeff_qPochhammerSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
     coeff n (qPochhammerSeries q hq) =
       (-1) ^ n * q ^ (n * (n - 1) / 2) * Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
+/-- Coefficient formula for `TauCeti.qPochhammerInvSeries`:
+`coeff n (U_q(t)) = ((q; q)_n)⁻¹ʳ`. -/
 @[simp] theorem coeff_qPochhammerInvSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
     coeff n (qPochhammerInvSeries q hq) = Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
+/-- Coefficient formula for `TauCeti.qBinomialSeries`:
+`coeff n (qBinomialSeries a q hq) = (a; q)_n * ((q; q)_n)⁻¹ʳ`. -/
 @[simp] theorem coeff_qBinomialSeries (a q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) (n : ℕ) :
     coeff n (qBinomialSeries a q hq) = qPochhammer a q n * Ring.inverse (qPochhammer q q n) :=
   coeff_mk n _
 
+/-- The constant coefficient of `TauCeti.qPochhammerSeries` is `1`. -/
 @[simp] theorem constantCoeff_qPochhammerSeries (q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
     constantCoeff (qPochhammerSeries q hq) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qPochhammerSeries]; simp
 
+/-- The constant coefficient of `TauCeti.qPochhammerInvSeries` is `1`. -/
 @[simp] theorem constantCoeff_qPochhammerInvSeries (q : A)
     (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
     constantCoeff (qPochhammerInvSeries q hq) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qPochhammerInvSeries]; simp
 
+/-- The constant coefficient of `TauCeti.qBinomialSeries` is `1`. -/
 @[simp] theorem constantCoeff_qBinomialSeries (a q : A) (hq : ∀ n, IsUnit (1 - q ^ (n + 1))) :
     constantCoeff (qBinomialSeries a q hq) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_qBinomialSeries]; simp
@@ -384,12 +395,6 @@ theorem qPochhammerSeries_mul_qPochhammerInvSeries {q : A} (hq : ∀ n, IsUnit (
     qPochhammerSeries q hq * qPochhammerInvSeries q hq = 1 := by
   simpa using rescale_qPochhammerSeries_mul_qPochhammerInvSeries (1 : A) hq
 
-/-- At `q = 0`, `U_0(t) * (1 - t) = 1`. -/
-theorem qPochhammerInvSeries_zero_mul
-    (hq : ∀ n, IsUnit (1 - (0 : A) ^ (n + 1)) := fun n ↦ by simp) :
-    qPochhammerInvSeries (0 : A) hq * (1 - X) = 1 := by
-  simpa [qPochhammerSeries_zero, mul_comm] using qPochhammerSeries_mul_qPochhammerInvSeries hq
-
 end FormalPochhammer
 
 /-! ### Formal logarithms of `E_q` and `U_q` -/
@@ -485,6 +490,7 @@ theorem coeff_coeff_integralQPochhammer_eq_of_lt (m k : ℕ) {N : ℕ} (hN : m <
   rw [← Polynomial.coeff_coe, hcoe, integralQPochhammer, coeff_mk, coeff_mk,
     coeff_coeff_qPochhammer_eq_of_lt m k hN]
 
+/-- The constant coefficient of `TauCeti.integralQPochhammer R` is `1`. -/
 @[simp] theorem constantCoeff_integralQPochhammer : constantCoeff (integralQPochhammer R) = 1 := by
   ext m
   rw [← coeff_zero_eq_constantCoeff_apply,
