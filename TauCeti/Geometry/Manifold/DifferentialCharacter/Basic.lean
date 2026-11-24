@@ -102,6 +102,16 @@ theorem mem_differentialCharacters_iff {k : ℕ}
         c) = ((integrationCochain φ.val).hom c : UnitAddCircle) :=
   Iff.rfl
 
+variable {I M} in
+/-- Two differential characters are equal once they agree on every cycle. -/
+@[ext]
+theorem differentialCharacters.ext {k : ℕ} {χ ψ : differentialCharacters I M k}
+    (h : ∀ z, (χ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+      →+ UnitAddCircle) z =
+        (ψ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+          →+ UnitAddCircle) z) : χ = ψ :=
+  Subtype.ext (AddMonoidHom.ext h)
+
 end Characters
 
 namespace differentialCharacters
@@ -251,19 +261,6 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
   {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
 
-omit [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- Pushing forward the boundary of a smooth singular integral chain along a smooth map gives the
-boundary of its pushforward: the element form of `HomologicalComplex.toCycles_cyclesMap`. -/
-private theorem cyclesMap_toCycles_apply (hf : ContMDiff I J ∞ f)
-    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X (k + 1)) :
-    cyclesMap (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k
-      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
-        c) =
-      ((smoothSingularSubcomplex J N : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
-        ((SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)).f (k + 1)
-          c) :=
-  ConcreteCategory.congr_hom (toCycles_cyclesMap _ (k + 1) k) c
-
 /-- **Pullback of differential characters** along a smooth map `f : M → N`: precomposition with
 the pushforward of cycles. A curvature `φ` of `χ` pulls back to the curvature `f^*φ`. -/
 def pullback (hf : ContMDiff I J ∞ f) : differentialCharacters J N k →+ differentialCharacters I M k
@@ -274,7 +271,7 @@ def pullback (hf : ContMDiff I J ∞ f) : differentialCharacters J N k →+ diff
     obtain ⟨φ, hφ⟩ := mem_differentialCharacters_iff.mp χ.property
     refine ⟨SmoothForm.mpullback f hf φ, fun c ↦ ?_⟩
     rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-      cyclesMap_toCycles_apply, hφ, SmoothForm.coe_mpullback,
+      moduleCat_cyclesMap_toCycles_apply, hφ, SmoothForm.coe_mpullback,
       integrationCochain_chainComplexMap_apply hf]⟩
   map_zero' := rfl
   map_add' _ _ := rfl
@@ -297,7 +294,7 @@ variable (I M k) in
 theorem pullback_id :
     pullback (I := I) (J := I) (M := M) (N := M) (f := id) (k := k) contMDiff_id =
       AddMonoidHom.id _ := by
-  refine AddMonoidHom.ext fun χ ↦ Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
+  ext χ z
   rw [pullback_apply, AddMonoidHom.id_apply]
   exact congrArg _ (moduleCat_iCycles_injective _ k (by simp [smoothSingularSubcomplexMap_id]))
 
@@ -308,7 +305,7 @@ theorem pullback_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace �
     [ChartedSpace H'' P] [IsManifold K 1 P] {g : N → P} (hg : ContMDiff J K ∞ g)
     (hf : ContMDiff I J ∞ f) :
     pullback (k := k) (hg.comp hf) = (pullback hf).comp (pullback hg) := by
-  refine AddMonoidHom.ext fun χ ↦ Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
+  ext χ z
   rw [AddMonoidHom.comp_apply, pullback_apply, pullback_apply, pullback_apply]
   refine congrArg _ (moduleCat_iCycles_injective _ k ?_)
   simp [smoothSingularSubcomplexMap_comp hg hf]
@@ -317,7 +314,7 @@ theorem pullback_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace �
 @[simp]
 theorem pullback_ofForm [IsManifold I 2 M] [IsManifold J 2 N] (hf : ContMDiff I J ∞ f)
     (η : SmoothForm J N ℝ k) : pullback hf (ofForm η) = ofForm (SmoothForm.mpullback f hf η) := by
-  refine Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
+  ext z
   rw [pullback_apply, ofForm_apply, ofForm_apply, moduleCat_iCycles_cyclesMap_apply,
     SmoothForm.coe_mpullback, integrationCochain_chainComplexMap_apply hf]
 
@@ -327,8 +324,8 @@ theorem curvature_pullback [IsManifold I ∞ M] [BoundarylessManifold I M] [IsMa
     [BoundarylessManifold J N] (hf : ContMDiff I J ∞ f) (χ : differentialCharacters J N k) :
     curvature (pullback hf χ) = SmoothForm.mpullback f hf (curvature χ) :=
   curvature_eq_of_forall fun c ↦ by
-    rw [pullback_apply, cyclesMap_toCycles_apply, apply_toCycles, SmoothForm.coe_mpullback,
-      integrationCochain_chainComplexMap_apply hf]
+    rw [pullback_apply, moduleCat_cyclesMap_toCycles_apply, apply_toCycles,
+      SmoothForm.coe_mpullback, integrationCochain_chainComplexMap_apply hf]
 
 end Pullback
 
