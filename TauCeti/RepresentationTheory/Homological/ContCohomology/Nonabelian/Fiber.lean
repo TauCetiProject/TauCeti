@@ -84,7 +84,7 @@ include hE
 theorem twist (c : Cocycle G A) :
     IsGroupExtension G (ContinuousMonoidHom.subgroupSubtype (Twist.ker c p hE.compatible_right))
       (Twist.map c (ContinuousMonoidHom.id G) p hE.compatible_right) where
-  map_smul_left _ _ := (rfl)
+  map_smul_left := Twist.coe_smul_ker
   map_smul_right := Twist.map_smul (ContinuousMonoidHom.id G) p hE.compatible_right
   isEmbedding := IsEmbedding.subtypeVal
   surjective x := by
@@ -163,8 +163,7 @@ theorem map_eq_mk_map_iff_mem_range (c : Cocycle G A) {x : NonabelianH1 G A} :
       simp [hpc, hE.map_smul_right]
     refine ⟨NonabelianH1.mk ((c.ofTwistEquiv.symm (f.twist b)).liftOfMemRange _
       (hE.twist c).isEmbedding (hE.twist c).compatible_left hmem), ?_⟩
-    rw [Function.comp_apply, map_mk, Cocycle.map_liftOfMemRange, ofTwistEquiv_mk,
-      Equiv.apply_symm_apply, mk_twist]
+    simp
   · rintro ⟨y, rfl⟩
     induction y using induction_on with | mk d =>
     simp only [Function.comp_apply, map_mk, ofTwistEquiv_mk]
