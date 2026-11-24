@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Measure.LogLikelihoodRatio
 import TauCeti.InformationTheory.KullbackLeibler.Basic
 import TauCeti.InformationTheory.KullbackLeibler.Pi
 import TauCeti.Probability.Distributions.Gaussian.Affine
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Tilted
 
 /-!
@@ -76,10 +77,8 @@ theorem _root_.Real.klDiv_gaussianReal (a b : ℝ) {v : ℝ≥0} (hv : v ≠ 0) 
   have hint : Integrable (llr μ (μ.tilted (t * ·))) μ :=
     integrable_llr_tilted_right Measure.AbsolutelyContinuous.rfl hlin hself hexp
   have hval := integral_llr_tilted_right Measure.AbsolutelyContinuous.rfl hlin hexp hself
-  have hZ : ∫ x, exp (t * x) ∂μ = exp (a * t + v * t ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := a) (v := v)) t
-  rw [integral_congr_ae (llr_self μ), hZ, log_exp, integral_const_mul,
-    integral_id_gaussianReal] at hval
+  rw [integral_congr_ae (llr_self μ), Probability.integral_exp_mul_gaussianReal a v t, log_exp,
+    integral_const_mul, integral_id_gaussianReal] at hval
   simp only [Pi.zero_apply, integral_zero] at hval
   rw [hb, klDiv_of_ac_of_integrable (absolutelyContinuous_tilted hexp) hint, hval, ← hb,
     probReal_univ]

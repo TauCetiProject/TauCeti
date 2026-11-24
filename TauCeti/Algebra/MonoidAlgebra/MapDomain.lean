@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.GroupTheory.Finiteness
+
 import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -15,8 +17,9 @@ import TauCeti.Data.Finsupp.MapDomain
 Functoriality of `MonoidAlgebra.mapDomain`, the map `R[M] → R[N]` induced by a map `M → N` of the
 index types, in the form of the corresponding `Finsupp.mapDomain` lemmas: the identity induces the
 identity, a composite induces the composite, a surjection induces a surjection, and any map
-induces a map whose image consists of the elements supported on its range. Mathlib states
-the first two only for the bundled ring and algebra homomorphisms `mapDomainRingHom` and
+induces a map whose image consists of the elements supported on its range; so finitely many
+elements of a group algebra come from the group algebra of a finitely generated subgroup. Mathlib
+states the first two only for the bundled ring and algebra homomorphisms `mapDomainRingHom` and
 `mapDomainAlgHom`; the unbundled forms are what a computation with the coefficients of an
 inverse system of group algebras uses. Also: the image of `mapDomain f` commutes with a monomial
 `single n r` as soon as every `f m` commutes with `n` and `r` is central, so on an `R[N]`-module on
@@ -34,6 +37,9 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
 * `MonoidAlgebra.mem_range_mapDomain_iff`: the image of the map induced by any map consists of
   the elements supported on its range, with additive form
   `AddMonoidAlgebra.mem_range_mapDomain_iff`.
+* `MonoidAlgebra.exists_fg_forall_mem_range_mapDomain`: finitely many elements of a group algebra
+  lie in the image of the group algebra of a finitely generated subgroup, with additive form
+  `AddMonoidAlgebra.exists_fg_forall_mem_range_mapDomain`.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central, with additive form
   `AddMonoidAlgebra.mapDomain_commute_single`.
@@ -90,6 +96,20 @@ theorem mem_range_mapDomain_iff {f : M → N} (x : MonoidAlgebra R N) :
   rw [hsupp, ← Finsupp.mem_range_mapDomain_iff' f x.coeff]
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨y.coeff, by rw [← hy, coeff_mapDomain]⟩, fun ⟨y, hy⟩ ↦ ?_⟩
   exact ⟨ofCoeff y, ext <| by rw [coeff_mapDomain, coeff_ofCoeff, hy]⟩
+
+/-- Finitely many elements of a group algebra `R[G]` lie in the image of the group algebra of a
+finitely generated subgroup of `G`. -/
+@[to_additive
+/-- Finitely many elements of a group algebra `R[G]` lie in the image of the group algebra of a
+finitely generated subgroup of `G`. -/]
+theorem exists_fg_forall_mem_range_mapDomain {G : Type*} [Group G]
+    (s : Finset (MonoidAlgebra R G)) :
+    ∃ H : Subgroup G, H.FG ∧ ∀ x ∈ s, x ∈ Set.range (mapDomain (R := R) H.subtype) := by
+  classical
+  refine ⟨.closure ↑(s.biUnion fun x ↦ x.coeff.support),
+    (Subgroup.fg_iff _).mpr ⟨_, rfl, Finset.finite_toSet _⟩, fun x hx ↦ ?_⟩
+  refine (mem_range_mapDomain_iff x).mpr fun g hg ↦ ?_
+  exact ⟨⟨g, Subgroup.subset_closure (Finset.mem_biUnion.mpr ⟨x, hx, hg⟩)⟩, rfl⟩
 
 /-- The image of `mapDomain f` commutes with the monomial `single n r` when every value of `f`
 commutes with `n` and `r` is central. -/

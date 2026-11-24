@@ -6,424 +6,355 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
-public import TauCeti.Topology.Algebra.Torsor.Semilinear
+public import TauCeti.Algebra.Torsor.Basic
+public import Mathlib.Algebra.Torsor.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Equivariant torsors and continuous nonabelian first cohomology
+# Continuous nonabelian first cohomology classifies smooth torsors
 
-Let a group `G` with a topology act continuously by group automorphisms on a topological group
-`A`. A **`(G, A)`-torsor** is a topological right `A`-torsor `P`, written as a topological torsor
-`Torsor Aᵐᵒᵖ P` with `IsTopologicalTorsor P`, so that `p · a` is `MulOpposite.op a • p`, together
-with a continuous left action of `G` that is **semilinear**:
+Let a topological group `G` act on a group `A` by group automorphisms. A **smooth
+`(G, A)`-torsor** is an `A`-torsor `X` (a nonempty set with a simply transitive action of `A`,
+Mathlib's `Torsor A X`) with an action of `G` with open stabilizers, compatible in the sense that
+`g • (a • x) = (g • a) • (g • x)`. For a profinite Galois group `G` these are the stalks of
+torsors under the sheaf of groups of a smooth `G`-group `A` on the site of finite continuous
+`G`-sets, and the comparison below is the cocycle description of such torsors.
 
-`g • (p · a) = (g • p) · (g • a)`.
+A point `x` of a smooth torsor `X` gives a continuous cocycle
+(`TauCeti.NonabelianH1.SmoothTorsor.cocycle`), determined by `g • x = (f g)⁻¹ • x`; moving the
+point changes the cocycle by a coboundary, so the class `TauCeti.NonabelianH1.SmoothTorsor.cls X`
+in `H¹(G, A)` is well defined. Two smooth torsors are isomorphic exactly when they have the same
+class (`TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_iff`).
 
-A point `p` of such a torsor gives a continuous cocycle `c_p`, the unique map with
-`g • p = p · c_p g`. Moving the point to `p · a` replaces `c_p` by its twist
-`g ↦ a⁻¹ * c_p g * g • a`, and an isomorphism of torsors (a homeomorphism respecting both actions)
-preserves it, so the class `[P] = [c_p]` of `H¹(G, A)` depends only on the isomorphism class of
-`P`. Conversely, a cocycle `c` gives the torsor `A` with right multiplication and the twisted
-action `g ⋆ x = c g * g • x`, whose point `1` has cocycle `c`. This is the classification of
-`(G, A)`-torsors by `H¹(G, A)`: torsors are isomorphic exactly when their classes agree, every
-class is the class of a torsor, and a torsor has a `G`-fixed point exactly when its class is the
-base point.
-
-For a curve `X` with base point `b`, the torsor of étale (or unipotent) paths from `b` to a
-rational point `x` is a torsor of this kind under the fundamental group at `b`, with `G` the
-absolute Galois group; its class is the path class of `x` used in nonabelian Chabauty.
-
-The semilinearity class `TauCeti.IsSemilinearTorsor` and the isomorphisms
-`TauCeti.TorsorEquiv` of `(G, A)`-torsors are in `TauCeti.Topology.Algebra.Torsor.Semilinear`.
+For discrete `A` with a continuous action of `G`, a cocycle `f` conversely defines the smooth
+torsor `TauCeti.NonabelianH1.Cocycle.torsor f`, whose underlying set
+`TauCeti.NonabelianH1.Cocycle.TorsorCarrier f` is a copy of `A`, with `A` acting by left
+multiplication and `g` acting by `x ↦ (g • x) * (f g)⁻¹`. It has class `f`
+(`TauCeti.NonabelianH1.SmoothTorsor.cls_torsor`), so every class arises
+(`TauCeti.NonabelianH1.SmoothTorsor.cls_surjective`).
 
 ## Main definitions
 
-* `TauCeti.NonabelianH1.Cocycle.ofPoint G p`: the cocycle `c_p` of a point `p`.
-* `TauCeti.TorsorEquiv.ofCocycleEq p q h`: the isomorphism of torsors sending `p` to a point `q`
-  with the same cocycle.
-* `TauCeti.NonabelianH1.Cocycle.TorsorModel c`: the torsor `A` with the action
-  `g ⋆ x = c g * g • x` defined by a cocycle `c`.
-* `TauCeti.NonabelianH1.ofTorsor G P`: the class `[P]` of a torsor in `H¹(G, A)`.
-* `TauCeti.NonabelianH1.BundledTorsor G A`: `(G, A)`-torsors bundled with their carrier, with
-  the setoid of isomorphism.
-* `TauCeti.NonabelianH1.torsorClassEquiv`: the bijection between isomorphism classes of
-  `(G, A)`-torsors and `H¹(G, A)`.
+* `TauCeti.NonabelianH1.SmoothTorsor G A`: smooth `(G, A)`-torsors, with isomorphisms
+  `TauCeti.NonabelianH1.SmoothTorsor.Iso`.
+* `TauCeti.NonabelianH1.SmoothTorsor.cocycle`: the cocycle of a smooth torsor at a point.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls`: the class of a smooth torsor in `H¹(G, A)`.
+* `TauCeti.NonabelianH1.Cocycle.torsor f`: the smooth torsor of a cocycle `f`, with underlying
+  set `TauCeti.NonabelianH1.Cocycle.TorsorCarrier f`.
 
 ## Main results
 
-* `TauCeti.NonabelianH1.Cocycle.ofPoint_op_smul`: `c_{p · a}` is the twist of `c_p` by `a`.
-* `TauCeti.NonabelianH1.Cocycle.ofPoint_torsorEquiv_apply`: isomorphisms of torsors preserve the
-  cocycle of a point.
-* `TauCeti.NonabelianH1.ofTorsor_eq_ofTorsor_iff`: two torsors have the same class exactly when
-  they are isomorphic.
-* `TauCeti.NonabelianH1.ofTorsor_torsorModel`: the torsor of a cocycle has the class of that
-  cocycle.
-* `TauCeti.NonabelianH1.ofTorsor_eq_one_iff`: a torsor has a `G`-fixed point exactly when its
-  class is the base point.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_iff`: two smooth torsors have the same class
+  exactly when they are isomorphic.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_one_iff`: a smooth torsor has the trivial class
+  exactly when `G` fixes one of its points.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_torsor`: the torsor of a cocycle has its class.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_surjective`: for discrete `A` with a continuous action,
+  every class is the class of a smooth torsor.
 
 ## References
 
-* M. Kim, *The motivic fundamental group of `P¹ ∖ {0, 1, ∞}` and the theorem of Siegel*,
-  Invent. Math. 161 (2005), §1, Proposition 1 and its proof.
-* J.-P. Serre, *Galois Cohomology*, Springer, 1997, I.5.2, Proposition 33.
+* J.-P. Serre, *Galois Cohomology*, Springer, 1997, I.5.
 -/
 
 public section
-
-open MulOpposite
 
 namespace TauCeti
 
 namespace NonabelianH1
 
-universe u v w
+universe u v w w' w''
 
-variable {G : Type u} {A : Type v} [Group G] [Group A]
+variable (G : Type u) (A : Type v) [Group G] [TopologicalSpace G] [Group A]
+  [MulDistribMulAction G A]
 
-variable [TopologicalSpace G] [TopologicalSpace A] [MulDistribMulAction G A]
-
-section Point
-
-variable {P Q : Type*} [TopologicalSpace P] [Torsor Aᵐᵒᵖ P] [IsTopologicalTorsor P]
-  [MulAction G P] [ContinuousSMul G P] [IsSemilinearTorsor G A P]
-  [TopologicalSpace Q] [Torsor Aᵐᵒᵖ Q] [IsTopologicalTorsor Q]
-  [MulAction G Q] [ContinuousSMul G Q] [IsSemilinearTorsor G A Q]
-
-namespace Cocycle
-
-variable (G) in
-/-- The **cocycle of a point** `p` of a `(G, A)`-torsor: the continuous cocycle `c_p` with
-`g • p = p · c_p g` (`TauCeti.NonabelianH1.Cocycle.op_ofPoint_smul`). -/
-def ofPoint (p : P) : Cocycle G A where
-  toFun g := unop ((g • p) /ₛ p)
-  continuous_toFun := by fun_prop
-  map_mul' g h := op_injective <| by
-    rw [op_mul, op_unop, op_unop, ← IsSemilinearTorsor.smul_sdiv_smul, sdiv_mul_sdiv_cancel,
-      mul_smul]
-
-theorem ofPoint_apply (p : P) (g : G) : ofPoint G p g = unop ((g • p) /ₛ p) :=
-  (rfl)
-
-/-- The defining property of the cocycle of a point: `g • p = p · c_p g`. -/
-@[simp]
-theorem op_ofPoint_smul (p : P) (g : G) : op (ofPoint G p g) • p = g • p :=
-  sdiv_smul _ _
-
-/-- The cocycle of a point is the unique map with `g • p = p · c_p g`. -/
-theorem ofPoint_apply_eq_iff {p : P} {g : G} {a : A} : ofPoint G p g = a ↔ g • p = op a • p := by
-  rw [← op_ofPoint_smul, smul_right_cancel_iff, op_inj]
-
-/-- The difference of a `G`-translate and a point, in terms of the cocycle of the point. -/
-theorem smul_sdiv_eq_mul_op_ofPoint (g : G) (p q : P) :
-    (g • p) /ₛ q = op (g • unop (p /ₛ q)) * op (ofPoint G q g) := by
-  rw [← IsSemilinearTorsor.smul_sdiv_smul, ofPoint_apply, op_unop, sdiv_mul_sdiv_cancel]
-
-/-- A point is fixed by `G` exactly when its cocycle is trivial. -/
-theorem ofPoint_eq_one_iff {p : P} : ofPoint G p = 1 ↔ ∀ g : G, g • p = p := by
-  simp only [Cocycle.ext_iff, one_apply, ofPoint_apply_eq_iff, op_one, one_smul]
-
-/-- **Change of point**: the cocycle of `p · a` is the twist of the cocycle of `p` by `a`. -/
-theorem ofPoint_op_smul [ContinuousMul A] [ContinuousSMul G A] (p : P) (a : A) :
-    ofPoint G (op a • p) = (ofPoint G p).twist a := by
-  ext g
-  rw [ofPoint_apply_eq_iff, IsSemilinearTorsor.smul_op_smul, ← op_ofPoint_smul p g]
-  simp only [twist_apply, ← mul_smul, op_mul, op_inv, mul_assoc, inv_mul_cancel, mul_one]
-
-/-- An isomorphism of torsors preserves the cocycle of a point. -/
-@[simp]
-theorem ofPoint_torsorEquiv_apply (e : TorsorEquiv G A P Q) (p : P) :
-    ofPoint G (e p) = ofPoint G p := by
-  ext g
-  rw [ofPoint_apply_eq_iff, ← e.map_smul, ← op_ofPoint_smul p g, e.map_op_smul]
-
-end Cocycle
-
-/-- The isomorphism of torsors sending a point `p` to a point `q` with the same cocycle: it sends
-`p · a` to `q · a`. -/
-def _root_.TauCeti.TorsorEquiv.ofCocycleEq (p : P) (q : Q)
-    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) : TorsorEquiv G A P Q where
-  toHomeomorph := (Homeomorph.smulConst p).symm.trans (Homeomorph.smulConst q)
-  map_op_smul' a x := by simp [smul_sdiv_assoc, mul_smul]
-  map_smul' g x := by
-    simp only [Equiv.toFun_as_coe, Homeomorph.coe_toEquiv, Homeomorph.trans_apply,
-      Homeomorph.smulConst_apply, Homeomorph.smulConst_symm_apply,
-      Cocycle.smul_sdiv_eq_mul_op_ofPoint, mul_smul, h, Cocycle.op_ofPoint_smul,
-      ← IsSemilinearTorsor.smul_op_smul, op_unop]
-
-@[simp]
-theorem _root_.TauCeti.TorsorEquiv.ofCocycleEq_apply (p : P) (q : Q)
-    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) (x : P) :
-    TorsorEquiv.ofCocycleEq p q h x = (x /ₛ p) • q :=
-  (rfl)
-
-/-- The isomorphism `TauCeti.TorsorEquiv.ofCocycleEq p q h` sends `p` to `q`. -/
-theorem _root_.TauCeti.TorsorEquiv.ofCocycleEq_apply_self (p : P) (q : Q)
-    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) : TorsorEquiv.ofCocycleEq p q h p = q := by
-  simp
-
-end Point
-
-namespace Cocycle
-
-/-- The **torsor model** `P_c` of a cocycle `c`: a copy of `A`, a right `A`-torsor under right
-multiplication, on which `g : G` acts by `g ⋆ x = c g * g • x`
-(`TauCeti.NonabelianH1.Cocycle.TorsorModel.toOriginal_smul`). It lives in any universe above that of
-`A`, so that it can be compared with torsors with carriers in larger universes. -/
-@[ext]
-structure TorsorModel (c : Cocycle G A) : Type max v w where
-  /-- The point of the torsor model with a given underlying element of `A`. -/
-  ofOriginal ::
-  /-- The underlying element of `A` of a point of the torsor model. -/
-  toOriginal : A
-
-namespace TorsorModel
-
-variable {c : Cocycle G A}
-
-@[simp]
-theorem toOriginal_ofOriginal (a : A) : (ofOriginal a : TorsorModel.{u, v, w} c).toOriginal = a :=
-  (rfl)
-
-@[simp]
-theorem ofOriginal_toOriginal (x : TorsorModel.{u, v, w} c) : ofOriginal x.toOriginal = x :=
-  (rfl)
-
-/-- The torsor model carries the topology of `A`. -/
-instance : TopologicalSpace (TorsorModel.{u, v, w} c) :=
-  .induced toOriginal ‹_›
-
-@[continuity, fun_prop]
-theorem continuous_toOriginal : Continuous (toOriginal : TorsorModel.{u, v, w} c → A) :=
-  continuous_induced_dom
-
-@[continuity, fun_prop]
-theorem continuous_ofOriginal : Continuous (ofOriginal : A → TorsorModel.{u, v, w} c) :=
-  continuous_induced_rng.2 continuous_id
-
-variable (c) in
-/-- The underlying identification `A ≃ₜ P_c` of the torsor model. It does not respect the actions
-of `G`. -/
-def homeomorph : A ≃ₜ TorsorModel.{u, v, w} c where
-  toFun := ofOriginal
-  invFun := toOriginal
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem coe_homeomorph : ⇑(homeomorph.{u, v, w} c) = ofOriginal :=
-  (rfl)
-
-@[simp]
-theorem coe_homeomorph_symm : ⇑(homeomorph.{u, v, w} c).symm = toOriginal :=
-  (rfl)
-
-/-- The right action of `A` on the torsor model, `x · a = x * a`. -/
-instance : SMul Aᵐᵒᵖ (TorsorModel.{u, v, w} c) :=
-  ⟨fun a x ↦ ofOriginal (x.toOriginal * unop a)⟩
-
-@[simp]
-theorem toOriginal_op_smul (a : Aᵐᵒᵖ) (x : TorsorModel.{u, v, w} c) :
-    (a • x).toOriginal = x.toOriginal * unop a :=
-  (rfl)
-
-/-- The difference of two points `x, y` of the torsor model is `y⁻¹ * x`. -/
-instance : SDiv Aᵐᵒᵖ (TorsorModel.{u, v, w} c) :=
-  ⟨fun x y ↦ op (y.toOriginal⁻¹ * x.toOriginal)⟩
-
-@[simp]
-theorem sdiv_eq (x y : TorsorModel.{u, v, w} c) : x /ₛ y = op (y.toOriginal⁻¹ * x.toOriginal) :=
-  (rfl)
-
-/-- The torsor model is a right `A`-torsor under right multiplication. -/
-instance : Torsor Aᵐᵒᵖ (TorsorModel.{u, v, w} c) where
-  nonempty := ⟨ofOriginal 1⟩
-  one_smul _ := by ext; simp
-  mul_smul _ _ _ := by ext; simp [mul_assoc]
-  sdiv_smul' _ _ := by ext; simp
-  smul_sdiv' _ _ := by simp
-
-/-- The point `x * y` of the torsor model is the right translate of `x` by `y`. -/
-theorem ofOriginal_mul (x y : A) :
-    (ofOriginal (x * y) : TorsorModel.{u, v, w} c) = op y • ofOriginal x :=
-  (rfl)
-
-instance [IsTopologicalGroup A] : IsTopologicalTorsor (TorsorModel.{u, v, w} c) where
-  continuous_smul := continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, toOriginal_op_smul]
-    fun_prop
-  continuous_sdiv := by
-    simp only [sdiv_eq]
-    fun_prop
-
-/-- The action of `G` on the torsor model, `g ⋆ x = c g * g • x`. -/
-instance : SMul G (TorsorModel.{u, v, w} c) :=
-  ⟨fun g x ↦ ofOriginal (c g * g • x.toOriginal)⟩
-
-@[simp]
-theorem toOriginal_smul (g : G) (x : TorsorModel.{u, v, w} c) :
-    (g • x).toOriginal = c g * g • x.toOriginal :=
-  (rfl)
-
-/-- The `G`-translate of the point `x` of the torsor model is the point `c g * g • x`. -/
-@[simp]
-theorem smul_ofOriginal (g : G) (x : A) :
-    g • (ofOriginal x : TorsorModel.{u, v, w} c) = ofOriginal (c g * g • x) :=
-  (rfl)
-
-instance : MulAction G (TorsorModel.{u, v, w} c) where
-  one_smul _ := by ext; simp
-  mul_smul _ _ _ := by ext; simp [apply_mul, mul_smul, smul_mul', mul_assoc]
-
-instance [ContinuousMul A] [ContinuousSMul G A] : ContinuousSMul G (TorsorModel.{u, v, w} c) where
-  continuous_smul := continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, toOriginal_smul]
-    fun_prop
-
-instance : IsSemilinearTorsor G A (TorsorModel.{u, v, w} c) where
-  smul_op_smul g a x := by
-    ext
-    simp only [toOriginal_smul, toOriginal_op_smul, unop_op, smul_mul', mul_assoc]
-
-end TorsorModel
-
-variable [IsTopologicalGroup A] [ContinuousSMul G A]
-
-/-- The cocycle of the point `x` of the torsor model of `c` is the twist of `c` by `x`. -/
-theorem ofPoint_ofOriginal (c : Cocycle G A) (x : A) :
-    ofPoint G (TorsorModel.ofOriginal x : TorsorModel.{u, v, w} c) = c.twist x := by
-  ext g
-  rw [ofPoint_apply_eq_iff]
-  ext
-  simp [twist_apply, mul_assoc]
-
-/-- The cocycle of the point `1` of the torsor model of `c` is `c`. -/
-@[simp]
-theorem ofPoint_ofOriginal_one (c : Cocycle G A) :
-    ofPoint G (TorsorModel.ofOriginal 1 : TorsorModel.{u, v, w} c) = c := by
-  rw [ofPoint_ofOriginal, twist_one]
-
-end Cocycle
-
-section Class
-
-variable (G) (P : Type*) {Q : Type*} [TopologicalSpace P] [Torsor Aᵐᵒᵖ P]
-  [IsTopologicalTorsor P] [MulAction G P] [ContinuousSMul G P] [IsSemilinearTorsor G A P]
-  [TopologicalSpace Q] [Torsor Aᵐᵒᵖ Q] [IsTopologicalTorsor Q]
-  [MulAction G Q] [ContinuousSMul G Q] [IsSemilinearTorsor G A Q]
-
-/-- The **class** `[P] ∈ H¹(G, A)` of a `(G, A)`-torsor: the class of the cocycle of any of its
-points (`TauCeti.NonabelianH1.ofTorsor_eq_mk`). -/
-noncomputable def ofTorsor : NonabelianH1 G A :=
-  mk (Cocycle.ofPoint G (Classical.arbitrary P))
-
-variable {G P}
-variable [IsTopologicalGroup A] [ContinuousSMul G A]
-
-/-- The class of a torsor is the class of the cocycle of each of its points. -/
-theorem ofTorsor_eq_mk (p : P) : ofTorsor G P = mk (Cocycle.ofPoint G p) := by
-  rw [ofTorsor, ← sdiv_smul p (Classical.arbitrary P), ← op_unop (p /ₛ _),
-    Cocycle.ofPoint_op_smul, mk_twist]
-
-/-- **Torsors are classified by `H¹`**: two `(G, A)`-torsors have the same class exactly when they
-are isomorphic. -/
-theorem ofTorsor_eq_ofTorsor_iff :
-    ofTorsor G P = ofTorsor G Q ↔ Nonempty (TorsorEquiv G A P Q) := by
-  obtain ⟨p⟩ : Nonempty P := inferInstance
-  obtain ⟨q⟩ : Nonempty Q := inferInstance
-  constructor
-  · rw [ofTorsor_eq_mk p, ofTorsor_eq_mk q, mk_eq_mk_iff]
-    rintro ⟨a, ha⟩
-    refine ⟨TorsorEquiv.ofCocycleEq (op a • p) q ?_⟩
-    rw [Cocycle.ofPoint_op_smul]
-    exact Cocycle.ext fun g ↦ by rw [Cocycle.twist_apply, ha]
-  · rintro ⟨e⟩
-    rw [ofTorsor_eq_mk p, ofTorsor_eq_mk (e p), Cocycle.ofPoint_torsorEquiv_apply]
-
-/-- The torsor model of a cocycle has the class of that cocycle. -/
-@[simp]
-theorem ofTorsor_torsorModel (c : Cocycle G A) :
-    ofTorsor G (Cocycle.TorsorModel.{u, v, w} c) = mk c := by
-  rw [ofTorsor_eq_mk (Cocycle.TorsorModel.ofOriginal 1), Cocycle.ofPoint_ofOriginal_one]
-
-/-- A torsor has a `G`-fixed point exactly when its class is the base point. -/
-theorem ofTorsor_eq_one_iff : ofTorsor G P = 1 ↔ ∃ p : P, ∀ g : G, g • p = p := by
-  constructor
-  · obtain ⟨p⟩ : Nonempty P := inferInstance
-    rw [ofTorsor_eq_mk p, mk_eq_one_iff]
-    rintro ⟨a, ha⟩
-    refine ⟨op a⁻¹ • p, Cocycle.ofPoint_eq_one_iff.mp <| Cocycle.ext fun g ↦ ?_⟩
-    rw [Cocycle.ofPoint_op_smul, Cocycle.twist_apply, ha]
-    simp
-  · rintro ⟨p, hp⟩
-    rw [ofTorsor_eq_mk p, Cocycle.ofPoint_eq_one_iff.mpr hp, mk_one]
-
-end Class
-
-section Bundled
-
-variable (G A)
-
-/-- A `(G, A)`-torsor bundled with its carrier type: a topological right `A`-torsor with a
-continuous semilinear action of `G`. -/
-structure BundledTorsor where
-  /-- The underlying space of the torsor. -/
+/-- A **smooth `(G, A)`-torsor**: an `A`-torsor with an action of `G` with open stabilizers,
+satisfying `g • (a • x) = (g • a) • (g • x)`. -/
+structure SmoothTorsor where
+  /-- The underlying set. -/
   carrier : Type w
-  /-- The topology of the torsor. -/
-  [topologicalSpace : TopologicalSpace carrier]
-  /-- The right action of `A`, as a torsor structure under `Aᵐᵒᵖ`. -/
-  [torsor : Torsor Aᵐᵒᵖ carrier]
-  /-- The right action of `A` is that of a topological torsor. -/
-  [isTopologicalTorsor : IsTopologicalTorsor carrier]
+  /-- The `A`-torsor structure: a simply transitive action of `A` on a nonempty set. -/
+  [torsorA : Torsor A carrier]
   /-- The action of `G`. -/
-  [mulAction : MulAction G carrier]
-  /-- The action of `G` is continuous. -/
-  [continuousSMul : ContinuousSMul G carrier]
-  /-- The action of `G` is semilinear. -/
-  [isSemilinearTorsor : IsSemilinearTorsor G A carrier]
+  [mulActionG : MulAction G carrier]
+  /-- The actions are compatible: `g • (a • x) = (g • a) • (g • x)`. -/
+  smul_distrib_smul : ∀ (g : G) (a : A) (x : carrier), g • a • x = (g • a) • g • x
+  /-- The stabilizers of `G` are open. -/
+  isOpen_stabilizer : ∀ x : carrier, IsOpen (MulAction.stabilizer G x : Set G)
 
-attribute [instance] BundledTorsor.topologicalSpace BundledTorsor.torsor
-  BundledTorsor.isTopologicalTorsor BundledTorsor.mulAction BundledTorsor.continuousSMul
-  BundledTorsor.isSemilinearTorsor
+namespace SmoothTorsor
 
-namespace BundledTorsor
+attribute [instance] torsorA mulActionG
 
-instance : CoeSort (BundledTorsor.{u, v, w} G A) (Type w) :=
-  ⟨carrier⟩
+variable {G A}
 
-/-- Isomorphism of `(G, A)`-torsors: `P ≈ Q` when there is an isomorphism `P ≃ Q` of torsors. -/
-instance setoid : Setoid (BundledTorsor.{u, v, w} G A) where
-  r P Q := Nonempty (TorsorEquiv G A P Q)
-  iseqv := ⟨fun P ↦ ⟨.refl G A P⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩
+/-- An **isomorphism of smooth torsors**: a bijection commuting with both actions. -/
+@[ext]
+structure Iso (P : SmoothTorsor.{u, v, w} G A) (Q : SmoothTorsor.{u, v, w'} G A) where
+  /-- The underlying bijection. -/
+  toEquiv : P.carrier ≃ Q.carrier
+  /-- The bijection commutes with the action of `A`. -/
+  map_smul_A : ∀ (a : A) (x : P.carrier), toEquiv (a • x) = a • toEquiv x
+  /-- The bijection commutes with the action of `G`. -/
+  map_smul_G : ∀ (g : G) (x : P.carrier), toEquiv (g • x) = g • toEquiv x
 
-theorem equiv_iff {P Q : BundledTorsor.{u, v, w} G A} :
-    P ≈ Q ↔ Nonempty (TorsorEquiv G A P Q) :=
-  Iff.rfl
+namespace Iso
 
-end BundledTorsor
+variable {P : SmoothTorsor.{u, v, w} G A} {Q : SmoothTorsor.{u, v, w'} G A}
+  {R : SmoothTorsor.{u, v, w''} G A}
 
-variable [IsTopologicalGroup A] [ContinuousSMul G A]
+/-- The identity isomorphism of a smooth torsor. -/
+def refl (P : SmoothTorsor.{u, v, w} G A) : P.Iso P where
+  toEquiv := Equiv.refl _
+  map_smul_A _ _ := rfl
+  map_smul_G _ _ := rfl
 
-/-- **Torsors are classified by `H¹`**: the bijection between isomorphism classes of
-`(G, A)`-torsors and `H¹(G, A)` sending a torsor to its class. Its inverse sends the class of a
-cocycle `c` to the torsor model of `c`. -/
-noncomputable def torsorClassEquiv :
-    Quotient (BundledTorsor.setoid.{u, v, max v w} G A) ≃ NonabelianH1 G A :=
-  .ofBijective (Quotient.lift (fun P ↦ ofTorsor G P) fun _ _ h ↦ ofTorsor_eq_ofTorsor_iff.mpr h)
-    ⟨fun P Q ↦ Quotient.inductionOn₂ P Q fun _ _ h ↦ Quotient.sound <|
-      ofTorsor_eq_ofTorsor_iff.mp h,
-    fun c ↦ c.induction_on fun c ↦ ⟨⟦⟨Cocycle.TorsorModel.{u, v, w} c⟩⟧, ofTorsor_torsorModel c⟩⟩
+/-- The inverse of an isomorphism of smooth torsors. -/
+def symm (e : P.Iso Q) : Q.Iso P where
+  toEquiv := e.toEquiv.symm
+  map_smul_A a x := e.toEquiv.symm_apply_eq.mpr <| by rw [e.map_smul_A, Equiv.apply_symm_apply]
+  map_smul_G g x := e.toEquiv.symm_apply_eq.mpr <| by rw [e.map_smul_G, Equiv.apply_symm_apply]
+
+/-- The composition of isomorphisms of smooth torsors. -/
+def trans (e : P.Iso Q) (e' : Q.Iso R) : P.Iso R where
+  toEquiv := e.toEquiv.trans e'.toEquiv
+  map_smul_A a x := by rw [Equiv.trans_apply, e.map_smul_A, e'.map_smul_A, Equiv.trans_apply]
+  map_smul_G g x := by rw [Equiv.trans_apply, e.map_smul_G, e'.map_smul_G, Equiv.trans_apply]
 
 @[simp]
-theorem torsorClassEquiv_mk (P : BundledTorsor.{u, v, max v w} G A) :
-    torsorClassEquiv G A ⟦P⟧ = ofTorsor G P :=
+theorem refl_toEquiv (P : SmoothTorsor.{u, v, w} G A) : (refl P).toEquiv = Equiv.refl _ :=
   (rfl)
 
-/-- The inverse of the classification sends the class of a cocycle to its torsor model. -/
 @[simp]
-theorem torsorClassEquiv_symm_mk (c : Cocycle G A) :
-    (torsorClassEquiv.{u, v, w} G A).symm (mk c) = ⟦⟨Cocycle.TorsorModel.{u, v, w} c⟩⟧ :=
-  (torsorClassEquiv G A).symm_apply_eq.mpr (ofTorsor_torsorModel c).symm
+theorem symm_toEquiv (e : P.Iso Q) : e.symm.toEquiv = e.toEquiv.symm :=
+  (rfl)
 
-end Bundled
+@[simp]
+theorem trans_toEquiv (e : P.Iso Q) (e' : Q.Iso R) :
+    (e.trans e').toEquiv = e.toEquiv.trans e'.toEquiv :=
+  (rfl)
+
+end Iso
+
+variable (P : SmoothTorsor.{u, v, w} G A)
+
+variable [TopologicalSpace A] [ContinuousMul G]
+
+/-- The **cocycle of a smooth torsor at a point** `x`: the cocycle `f` with
+`g • x = (f g)⁻¹ • x`, that is `f g = x /ₛ (g • x)`. -/
+noncomputable def cocycle (x : P.carrier) : Cocycle G A where
+  toFun g := x /ₛ (g • x)
+  continuous_toFun := by
+    -- It is constant on the left cosets of the open stabilizer of `x`.
+    refine IsLocallyConstant.continuous (IsLocallyConstant.iff_exists_open _ |>.mpr fun g ↦ ?_)
+    refine ⟨(g⁻¹ * ·) ⁻¹' (MulAction.stabilizer G x : Set G),
+      (P.isOpen_stabilizer x).preimage (continuous_const.mul continuous_id), by simp,
+      fun h hh ↦ ?_⟩
+    rw [Set.mem_preimage, SetLike.mem_coe, MulAction.mem_stabilizer_iff] at hh
+    have : h • x = g • x :=
+      calc h • x = g • (g⁻¹ * h) • x := by rw [smul_smul, mul_inv_cancel_left]
+        _ = g • x := by rw [hh]
+    rw [this]
+  map_mul' g h := by
+    -- With `a = x /ₛ (g • x)` and `b = x /ₛ (h • x)`, so that `g • x = a⁻¹ • x` and
+    -- `h • x = b⁻¹ • x`, compute `(g * h) • x = (g • b)⁻¹ • a⁻¹ • x = (a * g • b)⁻¹ • x`.
+    have hgh : (g * h) • x = ((x /ₛ (g • x)) * g • (x /ₛ (h • x)))⁻¹ • x := by
+      conv_lhs => rw [mul_smul, ← inv_sdiv_smul x (h • x), P.smul_distrib_smul,
+        ← inv_sdiv_smul x (g • x), smul_smul]
+      rw [mul_inv_rev, smul_inv']
+    rw [hgh, sdiv_smul_eq_sdiv_div, sdiv_self, one_div, inv_inv]
+
+@[simp]
+theorem cocycle_apply (x : P.carrier) (g : G) : P.cocycle x g = x /ₛ (g • x) :=
+  (rfl)
+
+/-- The defining property of the cocycle at `x`: `g • x = (f g)⁻¹ • x`. -/
+theorem smul_eq_inv_cocycle_smul (x : P.carrier) (g : G) : g • x = (P.cocycle x g)⁻¹ • x :=
+  (inv_sdiv_smul x (g • x)).symm
+
+theorem cocycle_apply_eq_iff {x : P.carrier} {g : G} {a : A} :
+    P.cocycle x g = a ↔ g • x = a⁻¹ • x := by
+  rw [cocycle_apply, ← inv_inj, inv_sdiv_eq_sdiv_rev, eq_smul_iff_sdiv_eq]
+
+/-- Moving the point by `b` changes the cocycle to `g ↦ b * f g * (g • b)⁻¹`. -/
+theorem cocycle_smul (x : P.carrier) (b : A) (g : G) :
+    P.cocycle (b • x) g = b * P.cocycle x g * (g • b)⁻¹ := by
+  rw [cocycle_apply_eq_iff, P.smul_distrib_smul, smul_eq_inv_cocycle_smul, smul_smul, smul_smul]
+  congr 1
+  group
+
+/-- Cocycles of a smooth torsor at different points are cohomologous. -/
+theorem mk_cocycle_eq (x y : P.carrier) :
+    NonabelianH1.mk (P.cocycle x) = NonabelianH1.mk (P.cocycle y) := by
+  rw [← sdiv_smul y x, mk_eq_mk_iff]
+  exact ⟨(y /ₛ x)⁻¹, fun g ↦ by rw [cocycle_smul, inv_inv, smul_inv']⟩
+
+/-- The **class of a smooth torsor** in `H¹(G, A)`: the class of its cocycle at any point. -/
+noncomputable def cls : NonabelianH1 G A :=
+  NonabelianH1.mk (P.cocycle (Classical.arbitrary P.carrier))
+
+theorem cls_eq (x : P.carrier) : P.cls = NonabelianH1.mk (P.cocycle x) :=
+  P.mk_cocycle_eq _ x
+
+/-- A smooth torsor has the trivial class exactly when `G` fixes one of its points. -/
+theorem cls_eq_one_iff : P.cls = 1 ↔ ∃ x : P.carrier, ∀ g : G, g • x = x := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
+  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
+    obtain ⟨a, ha⟩ := mk_eq_one_iff.mp (P.cls_eq x ▸ h)
+    refine ⟨a • x, fun g ↦ ?_⟩
+    have h1 : P.cocycle (a • x) g = 1 := by
+      rw [cocycle_smul, ha]
+      group
+    rw [cocycle_apply_eq_iff, inv_one, one_smul] at h1
+    exact h1
+  · rw [P.cls_eq x, mk_eq_one_iff]
+    exact ⟨1, fun g ↦ by simp [hx]⟩
+
+variable {P} {Q : SmoothTorsor.{u, v, w'} G A}
+
+/-- An isomorphism of smooth torsors preserves cocycles. -/
+@[simp]
+theorem Iso.cocycle_eq (e : P.Iso Q) (x : P.carrier) : Q.cocycle (e.toEquiv x) = P.cocycle x :=
+  Cocycle.ext fun g ↦ by
+    rw [cocycle_apply_eq_iff, ← e.map_smul_G, ← e.map_smul_A, ← smul_eq_inv_cocycle_smul]
+
+/-- Smooth torsors with equal cocycles at two points are isomorphic, by the bijection
+`a • x ↦ a • y`. -/
+noncomputable def isoOfCocycleEq {x : P.carrier} {y : Q.carrier}
+    (h : P.cocycle x = Q.cocycle y) : P.Iso Q where
+  toEquiv := (Equiv.smulConst x).symm.trans (Equiv.smulConst y)
+  map_smul_A a z := by
+    simp only [Equiv.trans_apply, Equiv.coe_smulConst_symm, Equiv.coe_smulConst, smul_sdiv_assoc,
+      mul_smul]
+  map_smul_G g z := by
+    simp only [Equiv.trans_apply, Equiv.coe_smulConst_symm, Equiv.coe_smulConst]
+    -- Write `z = (z /ₛ x) • x` and move `g` past it on both sides.
+    conv_lhs => rw [← sdiv_smul z x]
+    rw [P.smul_distrib_smul, smul_eq_inv_cocycle_smul P x g, smul_smul, smul_sdiv,
+      Q.smul_distrib_smul, smul_eq_inv_cocycle_smul Q y g, smul_smul, h]
+
+@[simp]
+theorem isoOfCocycleEq_apply {x : P.carrier} {y : Q.carrier} (h : P.cocycle x = Q.cocycle y)
+    (z : P.carrier) : (isoOfCocycleEq h).toEquiv z = (z /ₛ x) • y :=
+  (rfl)
+
+/-- **Smooth torsors are classified by `H¹(G, A)`**: two smooth torsors are isomorphic exactly
+when they have the same class. -/
+theorem cls_eq_cls_iff : P.cls = Q.cls ↔ Nonempty (P.Iso Q) := by
+  refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ ?_⟩
+  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
+    obtain ⟨y⟩ := (inferInstance : Nonempty Q.carrier)
+    rw [P.cls_eq x, Q.cls_eq y, mk_eq_mk_iff] at h
+    obtain ⟨a, ha⟩ := h
+    refine ⟨isoOfCocycleEq (x := a⁻¹ • x) (y := y) (Cocycle.ext fun g ↦ ?_)⟩
+    rw [cocycle_smul, ha, smul_inv', inv_inv]
+  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
+    rw [P.cls_eq x, Q.cls_eq (e.toEquiv x), e.cocycle_eq]
+
+end SmoothTorsor
+
+variable [TopologicalSpace A]
+
+namespace Cocycle
+
+variable {G A}
+
+/-- The underlying set of the smooth torsor of a cocycle `f`: a copy of `A`, on which `A` acts
+by left multiplication and `g : G` by `x ↦ (g • x) * (f g)⁻¹`. -/
+@[ext]
+structure TorsorCarrier (f : Cocycle G A) where
+  /-- The element of `A`. -/
+  val : A
+
+namespace TorsorCarrier
+
+variable (f : Cocycle G A)
+
+/-- `A` acts on the torsor of a cocycle by left multiplication. -/
+instance instSMulA : SMul A (TorsorCarrier f) where
+  smul a x := ⟨a * x.val⟩
+
+/-- The quotient of two points of the torsor of a cocycle. -/
+instance instSDiv : SDiv A (TorsorCarrier f) where
+  sdiv x y := x.val / y.val
+
+@[simp]
+theorem val_smul_A (a : A) (x : TorsorCarrier f) : (a • x).val = a * x.val :=
+  (rfl)
+
+@[simp]
+theorem sdiv_def (x y : TorsorCarrier f) : x /ₛ y = x.val / y.val :=
+  (rfl)
+
+instance : Nonempty (TorsorCarrier f) :=
+  ⟨⟨1⟩⟩
+
+/-- The torsor of a cocycle is an `A`-torsor under left multiplication, pulled back from `A`
+as a torsor over itself. -/
+instance instTorsor : Torsor A (TorsorCarrier f) :=
+  Function.Injective.torsor TorsorCarrier.val (fun _ _ ↦ TorsorCarrier.ext) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl)
+
+/-- `g : G` acts on the torsor of `f` by `x ↦ (g • x) * (f g)⁻¹`. -/
+instance instSMulG : SMul G (TorsorCarrier f) where
+  smul g x := ⟨(g • x.val) * (f g)⁻¹⟩
+
+@[simp]
+theorem val_smul_G (g : G) (x : TorsorCarrier f) : (g • x).val = (g • x.val) * (f g)⁻¹ :=
+  (rfl)
+
+instance instMulActionG : MulAction G (TorsorCarrier f) where
+  one_smul x := TorsorCarrier.ext (by simp)
+  mul_smul g h x := TorsorCarrier.ext (by
+    simp only [val_smul_G, f.apply_mul, smul_mul', smul_inv', mul_inv_rev, mul_smul, mul_assoc])
+
+end TorsorCarrier
+
+variable [DiscreteTopology A] [ContinuousSMul G A]
+
+/-- The **smooth torsor of a cocycle** `f`: the set `TorsorCarrier f`, a copy of `A`, with `A`
+acting by left multiplication and `g : G` by `x ↦ (g • x) * (f g)⁻¹`. -/
+noncomputable abbrev torsor (f : Cocycle G A) : SmoothTorsor.{u, v, v} G A where
+  carrier := TorsorCarrier f
+  smul_distrib_smul g a x := TorsorCarrier.ext (by simp [smul_mul', mul_assoc])
+  isOpen_stabilizer x := by
+    -- The stabilizers are open since `A` is discrete and the action of `G` on `A` is continuous.
+    have hc : Continuous fun g : G ↦ (g • x.val, f g) :=
+      (continuous_id.smul continuous_const).prodMk f.continuous
+    have hs : (MulAction.stabilizer G x : Set G) =
+        (fun g : G ↦ (g • x.val, f g)) ⁻¹' {p : A × A | p.1 * p.2⁻¹ = x.val} := by
+      ext g
+      simp only [Set.mem_preimage, Set.mem_ofPred_eq, SetLike.mem_coe,
+        MulAction.mem_stabilizer_iff, TorsorCarrier.ext_iff, TorsorCarrier.val_smul_G]
+    rw [hs]
+    exact (isOpen_discrete _).preimage hc
+
+variable [ContinuousMul G]
+
+/-- The cocycle of the torsor of `f` at the point `1` is `f`. -/
+@[simp]
+theorem cocycle_torsor (f : Cocycle G A) : f.torsor.cocycle (⟨1⟩ : TorsorCarrier f) = f :=
+  ext fun g ↦ f.torsor.cocycle_apply_eq_iff.mpr <| TorsorCarrier.ext <| by simp
+
+end Cocycle
+
+namespace SmoothTorsor
+
+variable {G A} [DiscreteTopology A] [ContinuousSMul G A] [ContinuousMul G]
+
+/-- The smooth torsor of a cocycle `f` has class `[f]`. -/
+@[simp]
+theorem cls_torsor (f : Cocycle G A) : f.torsor.cls = NonabelianH1.mk f := by
+  rw [cls_eq _ (⟨1⟩ : Cocycle.TorsorCarrier f), Cocycle.cocycle_torsor]
+
+/-- The class map from smooth torsors to `H¹(G, A)` is surjective. -/
+theorem cls_surjective :
+    Function.Surjective fun P : SmoothTorsor.{u, v, v} G A ↦ P.cls := by
+  intro c
+  obtain ⟨f, rfl⟩ := NonabelianH1.mk_surjective c
+  exact ⟨f.torsor, cls_torsor f⟩
+
+end SmoothTorsor
 
 end NonabelianH1
 

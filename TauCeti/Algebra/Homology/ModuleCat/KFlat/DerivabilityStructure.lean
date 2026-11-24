@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Category.ModuleCat.LeftResolution
 import Mathlib.Algebra.Category.ModuleCat.Projective

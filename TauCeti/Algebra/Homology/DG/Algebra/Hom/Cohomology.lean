@@ -37,6 +37,10 @@ cohomology of the comparison between differential graded algebras and `A∞` alg
   cohomology preserves identities and composition.
 * `TauCeti.DGAlgHom.bijective_cohomologyMap_iff_forall_cycles`: the quasi-isomorphism condition
   expressed directly on cycles and boundaries.
+* `TauCeti.DGAlgHom.exists_d_eq_and_apply_eq` and `TauCeti.DGAlgHom.exists_mem_d_eq_and_apply_eq`:
+  along a surjective quasi-isomorphism `f`, a cycle `z` whose image is the boundary of `c` is the
+  boundary of a preimage of `c`; this is the obstruction step of the lifting lemma for Sullivan
+  algebras.
 
 ## References
 
@@ -165,6 +169,42 @@ theorem bijective_cohomologyMap_iff_forall_cycles (f : DGAlgHom hA hB) :
     ← sub_eq_zero (b := Ideal.Quotient.mk _ _), ← map_sub, hA.quotientMk_eq_zero_iff,
     hB.quotientMk_eq_zero_iff, hA.mem_boundaries, hB.mem_boundaries, Subalgebra.coe_sub,
     f.cyclesMap_apply_coe, Subtype.forall, Subtype.exists, exists_prop]
+
+/-- **Lifting a cell along a surjective quasi-isomorphism.** Let `f : A → B` be a surjective
+morphism of differential graded algebras inducing a bijection on cohomology. If `z` is a cycle of
+`A` and `c ∈ B` satisfies `dB c = f z`, then `z = dA a` for some `a` with `f a = c`. For `c = 0`
+this says that the kernel of `f` is acyclic. -/
+theorem exists_d_eq_and_apply_eq (f : DGAlgHom hA hB) (hf : Function.Surjective f)
+    (hfc : Function.Bijective f.cohomologyMap) {z : A} (hz : dA z = 0) {c : B}
+    (hc : dB c = f z) : ∃ a, dA a = z ∧ f a = c := by
+  obtain ⟨hsurj, hinj⟩ := f.bijective_cohomologyMap_iff_forall_cycles.1 hfc
+  obtain ⟨a₀, rfl⟩ := hf c
+  -- `z - dA a₀` is a cycle mapped to `0`, hence a boundary `dA a₁`.
+  obtain ⟨a₁, ha₁⟩ := hinj (z - dA a₀)
+    (by rw [hA.mem_cycles, map_sub, hz, hA.sq_zero, sub_zero])
+    ⟨0, by rw [map_zero, map_sub, ← f.map_d, hc, sub_self]⟩
+  -- `f a₁` is a cycle, so it is the image of a cycle `w` up to a boundary `dB (f a₂)`.
+  obtain ⟨w, hw, b, hb⟩ := hsurj (f a₁)
+    (by rw [hB.mem_cycles, f.map_d, ha₁, map_sub, ← f.map_d, hc, sub_self])
+  obtain ⟨a₂, rfl⟩ := hf b
+  refine ⟨a₀ + a₁ - w + dA a₂, ?_, ?_⟩
+  · rw [map_add, map_sub, map_add, ha₁, hA.mem_cycles.1 hw, hA.sq_zero]
+    abel
+  · rw [map_add, map_sub, map_add, ← f.map_d, hb]
+    abel
+
+/-- **Lifting a homogeneous cell along a surjective quasi-isomorphism.** Let `f : A → B` be a
+surjective morphism of differential graded algebras inducing a bijection on cohomology. If `z` is
+a cycle of `A` of degree `p + 1` and `c ∈ B` of degree `p` satisfies `dB c = f z`, then
+`z = dA a` for some `a` of degree `p` with `f a = c`. -/
+theorem exists_mem_d_eq_and_apply_eq (f : DGAlgHom hA hB) (hf : Function.Surjective f)
+    (hfc : Function.Bijective f.cohomologyMap) {p : ℤ} {z : A} (hzp : z ∈ 𝒜 (p + 1))
+    (hz : dA z = 0) {c : B} (hcp : c ∈ ℬ p) (hc : dB c = f z) :
+    ∃ a ∈ 𝒜 p, dA a = z ∧ f a = c := by
+  obtain ⟨a, rfl, rfl⟩ := f.exists_d_eq_and_apply_eq hf hfc hz hc
+  refine ⟨DirectSum.decompose 𝒜 a p, SetLike.coe_mem _, ?_, ?_⟩
+  · rw [hA.toIsNonUnitalDGAlgebra.map_decompose, DirectSum.decompose_of_mem_same _ hzp]
+  · rw [map_directSumDecompose 𝒜 ℬ, DirectSum.decompose_of_mem_same _ hcp]
 
 end DGAlgHom
 

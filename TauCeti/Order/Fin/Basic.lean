@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Order.Fin.Basic
+public import Mathlib.Order.Fin.Basic
+public import Mathlib.Order.Interval.Set.Defs
 
 /-!
 # Order characterizations on `Fin`
@@ -20,9 +21,13 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   below every `i'` with `j ≤ i'.castSucc`.
 * `Fin.eq_iff_forall_castSucc_lt_and_le`: two indices `r, j : Fin (k + 1)` are equal if and only
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
+* `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
+  is strictly increasing.
 -/
 
 public section
+
+open Set
 
 namespace Fin
 
@@ -72,5 +77,14 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
       replace hlt := lt_of_not_ge hlt
       let i' : Fin k := ⟨r.val, by omega⟩
       exact (lt_irrefl r) (hlow i' hlt)
+
+/-- A tuple `w` separated by a `ℤ`-indexed sequence `a`, in the sense that
+`a k < w k < a (k + 1)` for every index `k`, is strictly increasing. -/
+theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : Fin n → α}
+    {a : ℤ → α} (h : ∀ k : Fin n, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) : StrictMono w := by
+  obtain _ | n := n
+  · exact fun i ↦ i.elim0
+  · exact strictMono_iff_lt_succ.2 fun i ↦
+      ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
 
 end Fin

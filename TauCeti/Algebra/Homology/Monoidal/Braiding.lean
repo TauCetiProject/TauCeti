@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
+public import Mathlib.Tactic.Ring
 
 /-!
 # The Koszul braiding on cochain complexes
@@ -48,7 +50,7 @@ structures.
 
 The two auxiliary equations `HomologicalComplex.whiskerLeft_eq_mapBifunctorMap` and
 `HomologicalComplex.whiskerRight_eq_mapBifunctorMap` of
-`TauCeti/Algebra/Homology/Monoidal/Summand.lean`, which record that the whiskerings of
+`TauCeti/Algebra/Homology/Monoidal/Basic.lean`, which record that the whiskerings of
 `CochainComplex C ℤ` are `HomologicalComplex.mapBifunctorMap`, are used in the hexagon proofs.
 
 For module-valued complexes, this braiding supplies the signs in Hom-complex composition
