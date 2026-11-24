@@ -27,7 +27,8 @@ open scoped LaurentPolynomial
 
 variable (K : Type*) [Field K] [NumberField K]
 
--- Evaluation at `T` identifies the adelic points of `𝔾ₘ` with the ideles, as groups.
+-- Evaluation at `T` is injective on the adelic points of `𝔾ₘ`; through `pointsMulEquiv` they are
+-- the ideles as a group.
 example : Function.Injective
     fun x : AdelicPoints (𝓞 K) K K[T;T⁻¹] ↦ x.ofConv (LaurentPolynomial.T 1) := by
   intro x y hxy
@@ -41,12 +42,12 @@ example : ¬Topology.IsEmbedding
   intro h
   apply IdeleGroup.not_isEmbedding_val (𝓞 K) K
   let e := MultiplicativeGroup.pointsContinuousMulEquiv K (AdeleRing (𝓞 K) K)
-  convert h.comp e.symm.toHomeomorph.isEmbedding using 1
-  funext u
-  change (u : AdeleRing (𝓞 K) K) = (e.symm u).ofConv (LaurentPolynomial.T 1)
-  rw [MultiplicativeGroup.pointsContinuousMulEquiv_symm_apply,
-    MultiplicativeGroup.pointsMulEquiv_symm_apply]
-  simp
+  have he : (Units.val : (AdeleRing (𝓞 K) K)ˣ → AdeleRing (𝓞 K) K) =
+      (fun x : AdelicPoints (𝓞 K) K K[T;T⁻¹] ↦ x.ofConv (LaurentPolynomial.T 1)) ∘ e.symm := by
+    funext u
+    simp [e, MultiplicativeGroup.pointsMulEquiv_symm_apply]
+  rw [he]
+  exact h.comp e.symm.toHomeomorph.isEmbedding
 
 -- The adelic points of the trivial group `Spec K` form a subsingleton.
 example (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K] :

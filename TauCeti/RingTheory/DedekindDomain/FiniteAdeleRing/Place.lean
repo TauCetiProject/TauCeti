@@ -44,6 +44,8 @@ places; it is a closed embedding as well.
   is the set of finite adeles vanishing away from `v`;
   `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_ofAdicCompletion` is the multiplicative
   counterpart.
+* `IsDedekindDomain.FiniteAdeleRing.tendsto_ofAdicCompletion_cofinite`: local integers placed at
+  single places tend to `1` in the finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.single_mem_integralAdeles_iff`: a finite adele supported at
   `v` is integral exactly when its `v`-component is.
 
@@ -165,6 +167,45 @@ theorem isClosedEmbedding_ofAdicCompletion (v : HeightOneSpectrum R) :
   classical
   exact TauCeti.isClosedEmbedding_restrictedProduct_mulSingle
     (fun w : HeightOneSpectrum R ↦ w.adicCompletionIntegers K) v
+
+variable (K) in
+/-- The finite adele `ofAdicCompletion K v x` has `v`-component `x`. -/
+@[simp]
+theorem ofAdicCompletion_apply_self (v : HeightOneSpectrum R) (x : v.adicCompletion K) :
+    ofAdicCompletion K v x v = x := by
+  classical
+  exact RestrictedProduct.mulSingle_eq_same _ v x
+
+variable (K) in
+/-- The finite adele `ofAdicCompletion K v x` is `1` at every place other than `v`. -/
+@[simp]
+theorem ofAdicCompletion_apply_of_ne {v w : HeightOneSpectrum R} (h : w ≠ v)
+    (x : v.adicCompletion K) : ofAdicCompletion K v x w = 1 := by
+  classical
+  exact RestrictedProduct.mulSingle_eq_of_ne _ x h
+
+/-- For local integers `x v ∈ 𝒪_v`, the finite adeles `ofAdicCompletion K v (x v)`, equal to `x v`
+at `v` and to `1` at every other place, tend to `1` as `v` leaves every finite set of places. -/
+theorem tendsto_ofAdicCompletion_cofinite {x : ∀ v : HeightOneSpectrum R, v.adicCompletion K}
+    (hx : ∀ v, x v ∈ v.adicCompletionIntegers K) :
+    Filter.Tendsto (fun v ↦ ofAdicCompletion K v (x v)) Filter.cofinite (𝓝 1) := by
+  classical
+  let y : HeightOneSpectrum R → ∀ w : HeightOneSpectrum R, w.adicCompletionIntegers K :=
+    fun v ↦ Pi.mulSingle v ⟨x v, hx v⟩
+  have hy : Filter.Tendsto y Filter.cofinite (𝓝 1) := by
+    refine tendsto_pi_nhds.2 fun w ↦ tendsto_nhds_of_eventually_eq ?_
+    filter_upwards [Filter.eventually_cofinite_ne w] with v hv
+    exact Pi.mulSingle_eq_of_ne' hv _
+  have hc := (RestrictedProduct.isEmbedding_structureMap (R := fun v : HeightOneSpectrum R ↦
+    v.adicCompletion K) (A := fun v ↦ (v.adicCompletionIntegers K : Set _))
+    (𝓕 := Filter.cofinite)).continuous
+  refine ((hc.tendsto 1).comp hy).congr fun v ↦ FiniteAdeleRing.ext K fun w ↦ ?_
+  rcases eq_or_ne w v with rfl | hw
+  · rw [ofAdicCompletion_apply_self]
+    exact (RestrictedProduct.structureMap_apply (i := w) ..).trans (by simp [y])
+  · rw [ofAdicCompletion_apply_of_ne K hw]
+    exact (RestrictedProduct.structureMap_apply (i := w) ..).trans
+      (by simp [y, Pi.mulSingle_eq_of_ne hw])
 
 /-- A finite adele supported at `v` is integral exactly when its `v`-component lies in the local
 integers. -/

@@ -43,7 +43,7 @@ product of the unit groups `K_vˣ` at the finite places with respect to the loca
 a restricted product over all places, and it shows that the units topology of the adele ring is
 the restricted-product topology of the local unit groups.
 
-This topology is not the subspace topology of the adele ring: when `R` has infinitely many
+This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
 height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
 ideles into the adeles is not an embedding.
 
@@ -326,27 +326,16 @@ variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- **The ideles do not carry the subspace topology of the adeles** when `R` has infinitely many
 height-one primes, for instance for the ring of integers of a number field: the inclusion of the
-idele group, with the units topology, into the adele ring is not an embedding. Uniformizers `π_v`
-placed at single finite places tend to `1` in the adele ring, while their inverses never enter the
-open set of adeles whose finite components are integral. -/
+idele group, with the units topology, into the adele ring is not an embedding. -/
 theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
     ¬IsEmbedding (Units.val : IdeleGroup R K → AdeleRing R K) := by
   intro h
-  choose x hx hxinv using fun v : HeightOneSpectrum R ↦
-    v.exists_mem_adicCompletionIntegers_inv_notMem K
-  let u : HeightOneSpectrum R → IdeleGroup R K := fun v ↦
-    ofFiniteIdele R K (Units.map (FiniteAdeleRing.ofAdicCompletion K v) (x v))
-  have hu : Tendsto u cofinite (𝓝 1) := by
-    rw [h.isInducing.tendsto_nhds_iff, Units.val_one]
-    exact tendsto_const_nhds.prodMk_nhds (FiniteAdeleRing.tendsto_ofAdicCompletion_cofinite hx)
-  have hopen : IsOpen {a : AdeleRing R K | ∀ w, a.2 w ∈ w.adicCompletionIntegers K} :=
-    (RestrictedProduct.isOpen_forall_mem fun w ↦ Valued.isOpen_valuationSubring _).preimage
-      continuous_snd
-  obtain ⟨v, hv⟩ := (((Units.continuous_coe_inv.tendsto 1).comp hu).eventually
-    (hopen.mem_nhds fun w ↦ by
-      rw [inv_one, Units.val_one]
-      exact one_mem _)).exists
-  refine hxinv v ?_
-  simpa [u, ← map_inv, FiniteAdeleRing.ofAdicCompletion_apply_self] using hv v
+  -- `ofFiniteIdele` is an embedding, since `toFiniteIdele` is a continuous left inverse
+  have hof : IsEmbedding (ofFiniteIdele R K) :=
+    Function.LeftInverse.isEmbedding (toFiniteIdele_ofFiniteIdele R K)
+      (Units.continuous_map continuous_snd)
+      (Units.continuous_map (continuous_const.prodMk continuous_id))
+  exact FiniteAdeleRing.not_isEmbedding_val R K <|
+    .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (h.comp hof)
 
 end NumberField.IdeleGroup
