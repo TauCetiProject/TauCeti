@@ -15,8 +15,9 @@ of the position is a classical symbol of order `m` (`TauCeti.ClassicalSymbol.smu
 symbol of `ψ Op(a)`, for instance the left factor of a compression `φ Op(a) ψ` by cutoffs. Its full
 symbol is `TauCeti.Symbol.smulLeft` (`TauCeti.ClassicalSymbol.toSymbol_smulLeft`), whose
 coefficient and quantization are `TauCeti.Symbol.coefficient_smulLeft` and
-`TauCeti.Symbol.quantizeSchwartzValue_smulLeft`, and its principal symbol is `ψ(x) σ(a)(x, ξ)`
-(`TauCeti.ClassicalSymbol.coefficient_principal_smulLeft`).
+`TauCeti.Symbol.quantizeSchwartzValue_smulLeft`, its homogeneous terms are `ψ(x) aⱼ(x, ξ)`
+(`TauCeti.ClassicalSymbol.coefficient_term_smulLeft`), and its principal symbol is
+`ψ(x) σ(a)(x, ξ)` (`TauCeti.ClassicalSymbol.coefficient_principal_smulLeft`).
 -/
 
 public section
@@ -46,16 +47,21 @@ theorem toSymbol_smulLeft : (smulLeft hψ a).toSymbol = Symbol.smulLeft hψ a.to
   funext p
   simp [smulLeft, Symbol.coefficient_inclusion, ContinuousLinearMap.smul_comp]
 
-/-- The principal symbol of `ψ(x) a(x, ξ)` is `ψ(x) σ(a)(x, ξ)`. -/
+/-- The homogeneous terms of `ψ(x) a(x, ξ)` are `ψ(x) aⱼ(x, ξ)`. -/
 @[simp]
-theorem coefficient_principal_smulLeft (x ξ : CoordinateSpace n) :
-    (smulLeft hψ a).principal.coefficient (x, ξ) = ψ x • a.principal.coefficient (x, ξ) := by
+theorem coefficient_term_smulLeft (j : ℕ) (x ξ : CoordinateSpace n) :
+    ((smulLeft hψ a).term j).coefficient (x, ξ) = ψ x • (a.term j).coefficient (x, ξ) := by
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp [HomogeneousSymbol.zero_covector]
   have hψξ := coefficient_principal_ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ W)
     (hψ.smul contDiff_const) (x := x) hξ
   rw [coefficient_principal] at hψξ
   ext v
-  simp [smulLeft, hψξ]
+  simp [smulLeft, coefficient_compTerms, Finset.sum_range_succ', hψξ]
+
+/-- The principal symbol of `ψ(x) a(x, ξ)` is `ψ(x) σ(a)(x, ξ)`. -/
+theorem coefficient_principal_smulLeft (x ξ : CoordinateSpace n) :
+    (smulLeft hψ a).principal.coefficient (x, ξ) = ψ x • a.principal.coefficient (x, ξ) := by
+  simp
 
 end TauCeti.ClassicalSymbol
