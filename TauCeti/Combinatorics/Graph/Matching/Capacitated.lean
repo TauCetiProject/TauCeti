@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Bipartition
+public import TauCeti.Combinatorics.Graph.Incidence.Isomorphism
 public import TauCeti.Combinatorics.Graph.Matching.Basic
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 import Mathlib.Algebra.GroupWithZero.Indicator
@@ -38,6 +39,9 @@ graph are all allowed.
 
 ## Main results
 
+* `Graph.Iso.isCapacitatedMatching_comp_iff`, `Graph.Iso.isCapacitatedMatching_comp_symm_iff`:
+  pulling vertex capacities and edge multiplicities back, or pushing them forward, along a graph
+  isomorphism preserves and reflects multiset capacitated matchings.
 * `Graph.IsCapacitatedMatching.sum_le_sum_of_isVertexCover`: **weak duality**, the size of a
   multiset capacitated matching is at most the weight of any vertex cover.
 * `Graph.IsCapacitatedMatching.isMatching`: in a loopless multigraph, the edges used by a multiset
@@ -68,7 +72,7 @@ public section
 open Finset TauCeti
 open scoped Graph
 
-universe u v
+universe u v u' v'
 
 namespace Graph
 
@@ -93,6 +97,25 @@ theorem isCapacitatedMatching_def :
 @[simp]
 theorem isCapacitatedMatching_zero : G.IsCapacitatedMatching b 0 :=
   fun _ ↦ by simp
+
+/-- Pulling vertex capacities and edge multiplicities back along a graph isomorphism preserves
+and reflects multiset capacitated matchings. -/
+@[simp]
+theorem Iso.isCapacitatedMatching_comp_iff {α' : Type u'} {β' : Type v'} {H : Graph α' β'}
+    [Fintype E(H)] (f : Iso G H) (b : V(H) → ℕ) (x : E(H) → ℕ) :
+    G.IsCapacitatedMatching (b ∘ f.vertexEquiv) (x ∘ f.edgeEquiv) ↔
+      H.IsCapacitatedMatching b x := by
+  rw [isCapacitatedMatching_def, isCapacitatedMatching_def, ← f.vertexEquiv.forall_congr_right]
+  simp [Finset.sum_map]
+
+/-- Pushing vertex capacities and edge multiplicities forward along a graph isomorphism preserves
+and reflects multiset capacitated matchings. -/
+@[simp]
+theorem Iso.isCapacitatedMatching_comp_symm_iff {α' : Type u'} {β' : Type v'} {H : Graph α' β'}
+    [Fintype E(H)] (f : Iso G H) (b : V(G) → ℕ) (x : E(G) → ℕ) :
+    H.IsCapacitatedMatching (b ∘ f.vertexEquiv.symm) (x ∘ f.edgeEquiv.symm) ↔
+      G.IsCapacitatedMatching b x := by
+  simpa using f.symm.isCapacitatedMatching_comp_iff b x
 
 /-! ### Ordinary matchings as unit-capacity matchings -/
 
@@ -126,7 +149,7 @@ theorem isMatching_iff_isCapacitatedMatching_indicator [G.Loopless] (M : Set E(G
 /-- In a unit-capacity multiset matching, every actual edge has multiplicity at most one. -/
 theorem IsCapacitatedMatching.apply_le_one (hx : G.IsCapacitatedMatching 1 x) (e : E(G)) :
     x e ≤ 1 := by
-  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet e.property
   let u' : V(G) := ⟨u, huv.left_mem⟩
   have he : e ∈ G.incidentEdges {u'} :=
     (mem_incidentEdges G).2 ⟨u', by simp, huv.inc_left⟩
@@ -154,22 +177,23 @@ theorem IsCapacitatedMatching.isMatching_setOf_eq_one [G.Loopless]
 matchings. The equivalence retains each selected edge identity as multiplicity one. -/
 noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
     {M : Set E(G) // G.IsMatching M} ≃ {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
-  toFun M := ⟨M.1.indicator 1, (isMatching_iff_isCapacitatedMatching_indicator M.1).1 M.2⟩
-  invFun x := ⟨{e | x.1 e = 1}, x.2.isMatching_setOf_eq_one⟩
+  toFun M := ⟨M.val.indicator 1, (isMatching_iff_isCapacitatedMatching_indicator M.val).1
+      M.property⟩
+  invFun x := ⟨{e | x.val e = 1}, x.property.isMatching_setOf_eq_one⟩
   left_inv M := by
     ext e
     exact Set.indicator_eq_one_iff_mem ℕ
-  right_inv x := Subtype.ext x.2.indicator_setOf_eq_one
+  right_inv x := Subtype.ext x.property.indicator_setOf_eq_one
 
 @[simp]
 theorem matchingEquivUnitCapacitated_apply [G.Loopless] (M : {M : Set E(G) // G.IsMatching M}) :
-    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
+    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.val.indicator 1 :=
   (rfl)
 
 @[simp]
 theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
     (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
-    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
+    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.val e = 1} :=
   (rfl)
 
 namespace IsCapacitatedMatching
@@ -199,7 +223,7 @@ theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Fins
     (hC : G.IsVertexCover (C : Set V(G))) :
     ∑ e, x e ≤ ∑ v ∈ C, b v := by
   classical
-  calc ∑ e, x e ≤ ∑ e : E(G), ∑ v ∈ C with G.Inc e.1 v.1, x e := sum_le_sum fun e _ ↦ by
+  calc ∑ e, x e ≤ ∑ e : E(G), ∑ v ∈ C with G.Inc e.val v.val, x e := sum_le_sum fun e _ ↦ by
         -- Some vertex of the cover is incident with `e`.
         obtain ⟨v, hv, he⟩ := hC.exists_mem_inc e
         exact single_le_sum (f := fun _ ↦ x e) (fun _ _ ↦ Nat.zero_le _)

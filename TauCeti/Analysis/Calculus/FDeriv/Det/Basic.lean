@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.Matrix.Normed
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -27,7 +29,8 @@ row replacements, or equivalently Jacobi's adjugate formula:
 At an invertible matrix this is `det A * trace (A⁻¹ * H)`, and at the identity it is `trace H`.
 The matrix determinant is smooth, the matrix index may be empty, and none of the matrix
 results require the field to be complete. The determinant of a continuous linear endomorphism
-of a normed space is also smooth; this result assumes a complete field.
+of a normed space is also smooth, and in finite dimension its derivative at an invertible `A` with
+inverse `B` is `H ↦ det A * trace (B ∘ H)`; these results assume a complete field.
 
 The multilinear proof generalizes the real determinant calculus in the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Matrix/DeterminantDerivative.lean).
@@ -43,6 +46,8 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 * `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
   of a normed space is smooth over a complete field (it is the constant `1` in infinite
   dimension).
+* `ContinuousLinearMap.hasFDerivAt_det_one`, `ContinuousLinearMap.hasFDerivAt_det_of_comp_eq_one`:
+  Jacobi's formula for the determinant of continuous endomorphisms of a finite-dimensional space.
 * `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
 * `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
 * `Matrix.fderiv_det_updateRow`: the row-replacement formula for a field with one row fixed.
@@ -218,6 +223,14 @@ theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
 
 end Matrix
 
+/-- Jacobi's inverse formula for the derivative of a matrix curve's determinant. -/
+theorem HasDerivAt.matrix_det {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
+    [NontriviallyNormedField 𝕜] {A : 𝕜 → Matrix n n 𝕜} {A' : Matrix n n 𝕜} {a : 𝕜}
+    (hA : HasDerivAt A A' a) (hdet : IsUnit (A a).det) :
+    HasDerivAt (fun t ↦ (A t).det) ((A a).det * ((A a)⁻¹ * A').trace) a := by
+  exact ((Matrix.differentiable_det (A a)).hasFDerivAt.comp_hasDerivAt a hA).congr_deriv
+    (Matrix.fderiv_det_apply hdet A')
+
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
@@ -232,19 +245,48 @@ theorem contDiff_det {r : ℕ∞ω} :
   by_cases hE : FiniteDimensional 𝕜 E
   swap
   · simpa [LinearMap.det_eq_one_of_not_module_finite hE] using contDiff_const
+  have h := Matrix.contDiff_det (r := r).comp (toMatrixCLM (Module.finBasis 𝕜 E)).contDiff
+  convert h using 2 with f
+  exact (det_toMatrixCLM _ f).symm
+
+/-- **Jacobi's formula at the identity.** The derivative of `f ↦ det f` at `1` is the trace. -/
+theorem hasFDerivAt_det_one :
+    HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) (TauCeti.traceCLM 𝕜 E) 1 := by
   let b := Module.finBasis 𝕜 E
-  let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E))
-      (Fin (Module.finrank 𝕜 E)) 𝕜 :=
-    { (LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜) with
-      cont := ((LinearMap.toMatrix b b).toLinearMap.comp
-        (ContinuousLinearMap.coeLM 𝕜)).continuous_of_finiteDimensional }
-  have h := (Matrix.contDiff_det (𝕜 := 𝕜) (n := Fin (Module.finrank 𝕜 E)) (r := r)).comp
-    L.contDiff
-  have hL (f : E →L[𝕜] E) : L f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) := (rfl)
-  have hfun : Matrix.det ∘ (L : (E →L[𝕜] E) → _) =
-      (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
-    funext f
-    exact (congrArg Matrix.det (hL f)).trans (LinearMap.det_toMatrix b _)
-  exact hfun ▸ h
+  have h1 : toMatrixCLM b 1 = 1 := by
+    rw [toMatrixCLM_apply, toLinearMap_one, Module.End.one_eq_id, LinearMap.toMatrix_id]
+  have hdet : HasFDerivAt Matrix.det _ (toMatrixCLM b 1) := h1 ▸ Matrix.hasFDerivAt_det_one
+  refine ((hdet.comp 1 (toMatrixCLM b).hasFDerivAt)
+    |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun f ↦ (det_toMatrixCLM b f).symm))
+    |>.congr_fderiv ?_
+  ext H
+  -- The derivative carries the operator-norm topology on matrices and `toMatrixCLM` the product
+  -- topology; they are defeq but not syntactically equal, so `toMatrixCLM_apply` is applied as a
+  -- term rather than by rewriting.
+  refine (congrArg Matrix.trace (toMatrixCLM_apply b H)).trans ?_
+  rw [TauCeti.traceCLM_apply, LinearMap.trace_eq_matrix_trace 𝕜 b]
+
+/-- **Jacobi's formula at an invertible endomorphism.** If `A ∘ B = 1`, the derivative of
+`f ↦ det f` at `A` is `H ↦ det A * trace (B ∘ H)`. -/
+theorem hasFDerivAt_det_of_comp_eq_one {A B : E →L[𝕜] E} (hAB : A ∘L B = 1) :
+    HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E))
+      (LinearMap.det (A : E →ₗ[𝕜] E) • (TauCeti.traceCLM 𝕜 E).comp (compL 𝕜 E E E B)) A := by
+  -- In finite dimension a right inverse is a left inverse.
+  have hBA : B ∘L A = 1 := comp_eq_one_comm.1 hAB
+  have hdet : HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E))
+      (TauCeti.traceCLM 𝕜 E) (compL 𝕜 E E E B A) := by
+    rw [compL_apply, hBA]
+    exact hasFDerivAt_det_one
+  have h := (hdet.comp A (compL 𝕜 E E E B).hasFDerivAt).const_mul
+    (LinearMap.det (A : E →ₗ[𝕜] E))
+  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun f ↦ ?_)).congr_fderiv ?_
+  · simp only [Function.comp_apply, compL_apply]
+    rw [← LinearMap.det_comp]
+    congr 1
+    ext x
+    simp only [LinearMap.comp_apply, coe_coe, comp_apply]
+    rw [← comp_apply A B, hAB, one_apply_eq_self]
+  · ext H
+    simp
 
 end ContinuousLinearMap

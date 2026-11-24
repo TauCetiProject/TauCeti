@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+public import TauCeti.LinearAlgebra.Projectivization.Signs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -54,6 +55,8 @@ makes the moment function Morse–Bott.
 
 * `TauCeti.projectiveMomentFunction`: the moment function with weights `w`.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
+* `TauCeti.projectiveMomentFunction_smul`: it is invariant under the sign changes of the
+  homogeneous coordinates.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
@@ -90,6 +93,8 @@ makes the moment function Morse–Bott.
   `f` at a critical point `x` is `dim_ℝ 𝕜 * #{i | w i < f x}`, and at `[eₖ]` it is
   `dim_ℝ 𝕜 * #{i | w i < w k}`, which is `dim_ℝ 𝕜 * k` for increasing weights
   (`TauCeti.manifoldMorseIndex_projectiveMomentFunction_of_strictMono`).
+* `TauCeti.projectiveMomentFunctionCriticalPointsEquiv`: for distinct weights, the critical
+  points of index `j` are the `[eₖ]` with `dim_ℝ 𝕜 * #{i | w i < w k} = j`.
 * `TauCeti.totalCriticalCount_projectiveMomentFunction` and
   `TauCeti.criticalCount_projectiveMomentFunction`: the critical counts.
 * `TauCeti.criticalCount_projectiveMomentFunction_mul` and
@@ -101,6 +106,8 @@ makes the moment function Morse–Bott.
   two of them have the same index.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
   standard weights, `[eₖ]` has index `2 * k`.
+* `TauCeti.projectiveMomentFunctionNatCastCriticalPointsEquiv`: with the standard weights, the
+  critical points of index `j` are the `[eₖ]` with `dim_ℝ 𝕜 * k = j`.
 
 ## References
 
@@ -468,13 +475,21 @@ def projectiveMomentFunction (w : Fin (n + 1) → ℝ) : ℙ 𝕜 (Fin (n + 1) �
     fun v v' t h ↦ by
       have ht : t ≠ 0 := by
         rintro rfl
-        exact v.2 (by simpa using h)
+        exact v.property (by simpa using h)
       simp only [h, momentQuotient_smul w ht]
 
 @[simp]
 theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
+
+/-- The moment function is invariant under the sign changes of the homogeneous coordinates. -/
+@[simp]
+theorem projectiveMomentFunction_smul (w : Fin (n + 1) → ℝ) (ε : Fin (n + 1) → ℤˣ)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    projectiveMomentFunction 𝕜 w (ε • x) = projectiveMomentFunction 𝕜 w x := by
+  induction x using ind with | h v hv =>
+  simp only [smul_mk, projectiveMomentFunction_mk, Pi.smul_apply', norm_units_zsmul]
 
 /-- In the affine chart at the coordinate `k`, the moment function with weights `w` is the chart
 model with `a = w k` and `ν = w ∘ k.succAbove`. -/
@@ -954,22 +969,51 @@ theorem totalCriticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (h
     mk_single_injective.encard_range, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
   norm_cast
 
+/-- **The critical points of the moment function by index.** For pairwise distinct weights, the
+critical points of index `j` of the moment function are the coordinate points `[eₖ]` with `j`
+equal to the real dimension of `𝕜` times the number of weights below `w k`; this equivalence
+sends `k` to `[eₖ]`. -/
+def projectiveMomentFunctionCriticalPointsEquiv {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (j : ℕ) :
+    {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard = j} ≃
+      ↥{x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) |
+        manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x = j} :=
+  Equiv.ofBijective
+    (fun k ↦ ⟨mk 𝕜 (Pi.single k.val 1) (by simp),
+      mk_single_mem_criticalPoints_projectiveMomentFunction w k.val,
+      (manifoldMorseIndex_projectiveMomentFunction w k.val).trans k.property⟩)
+    -- The ascription keeps the abstracted proof at type `Bijective _`: without it the proof gets
+    -- the unfolded type `Injective _ ∧ Surjective _`, and `simp` no longer rewrites with
+    -- `Equiv.coe_ofBijective` in `coe_projectiveMomentFunctionCriticalPointsEquiv_apply`.
+    (show Bijective _ from
+      ⟨fun _ _ h ↦ Subtype.ext (mk_single_injective (congrArg Subtype.val h)), fun x ↦ by
+        have hx : x.val ∈ range fun k ↦ mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) := by
+          rw [← criticalPoints_projectiveMomentFunction hw]
+          exact x.property.1
+        obtain ⟨k, hk⟩ := mem_range.mp hx
+        refine ⟨⟨k, ?_⟩, Subtype.ext hk⟩
+        rw [← manifoldMorseIndex_projectiveMomentFunction w k, hk]
+        exact x.property.2⟩)
+
+/-- The equivalence `TauCeti.projectiveMomentFunctionCriticalPointsEquiv` sends `k` to the
+coordinate point `[eₖ]`. -/
+@[simp]
+theorem coe_projectiveMomentFunctionCriticalPointsEquiv_apply {w : Fin (n + 1) → ℝ}
+    (hw : Injective w) (j : ℕ)
+    (k : {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard = j}) :
+    (projectiveMomentFunctionCriticalPointsEquiv hw j k : ℙ 𝕜 (Fin (n + 1) → 𝕜)) =
+      mk 𝕜 (Pi.single k.val 1) (by simp) := by
+  simp [projectiveMomentFunctionCriticalPointsEquiv]
+
 /-- For pairwise distinct weights, the number of critical points of index `j` of the moment
 function is the number of coordinates `k` with `j` equal to the real dimension of `𝕜` times the
 number of weights below `w k`. -/
 theorem criticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : Injective w) (j : ℕ) :
     criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) j =
       {k | Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard = j}.encard := by
-  rw [criticalCount_def, criticalPoints_projectiveMomentFunction hw,
-    ← (mk_single_injective (K := 𝕜) (ι := Fin (n + 1))).encard_image]
-  congr 1
-  ext x
-  simp only [mem_ofPred_eq, mem_range, mem_image]
-  constructor
-  · rintro ⟨⟨k, rfl⟩, hx⟩
-    exact ⟨k, by rwa [← manifoldMorseIndex_projectiveMomentFunction], rfl⟩
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨⟨k, rfl⟩, by rwa [manifoldMorseIndex_projectiveMomentFunction]⟩
+  rw [criticalCount_def]
+  exact (encard_congr (s := {k | Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard = j})
+    (projectiveMomentFunctionCriticalPointsEquiv hw j)).symm
 
 /-- **Critical counts by index.** For pairwise distinct weights the moment function has exactly
 one critical point of index `dim_ℝ 𝕜 * j` for each `j ≤ n`, and none for larger `j`. -/
@@ -998,6 +1042,36 @@ theorem criticalCount_projectiveMomentFunction_real {w : Fin (n + 1) → ℝ} (h
   simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul,
     encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
 
+/-- **One critical point of each even index on `ℂℙⁿ`.** For pairwise distinct weights the moment
+function on complex projective space has exactly one critical point of each even index `m ≤ 2n`,
+and none of odd index or of index above `2n`. -/
+theorem criticalCount_projectiveMomentFunction_complex {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (m : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) m =
+      if Even m ∧ m ≤ 2 * n then 1 else 0 := by
+  split_ifs with h
+  · obtain ⟨⟨j, rfl⟩, hj⟩ := h
+    rw [← two_mul, ← Complex.finrank_real_complex, criticalCount_projectiveMomentFunction_mul hw]
+    simp [show j ≤ n by lia]
+  · refine criticalCount_projectiveMomentFunction_eq_zero hw fun j hj hjm ↦ h ?_
+    rw [Complex.finrank_real_complex] at hjm
+    exact ⟨⟨j, by lia⟩, by lia⟩
+
+/-- **The Morse indices on `ℂℙⁿ` are lacunary.** For pairwise distinct weights, no two critical
+points of the moment function on complex projective space have Morse indices differing by one:
+the indices are all even. -/
+theorem manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one {w : Fin (n + 1) → ℝ}
+    (hw : Injective w) :
+    ∀ x ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w),
+      ∀ y ∈ criticalPoints 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w),
+        manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) x ≠
+          manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) y + 1 := by
+  rw [criticalPoints_projectiveMomentFunction hw]
+  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
+    Complex.finrank_real_complex]
+  omega
+
 /-- For pairwise distinct weights, at most one critical point of the moment function on `ℝℙⁿ` has
 a given index. -/
 theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real
@@ -1013,13 +1087,45 @@ theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real
 
 /-! ### The standard weights -/
 
+/-- The standard weights `w i = i` are increasing. -/
+private theorem strictMono_natCast_val : StrictMono fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
+  Nat.strictMono_cast.comp Fin.val_strictMono
+
 /-- With the standard weights `w i = i`, the coordinate point `[eₖ]` has Morse index the real
 dimension of `𝕜` times `k`. -/
 theorem manifoldMorseIndex_projectiveMomentFunction_natCast (k : Fin (n + 1)) :
     manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ))
       (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * k :=
-  manifoldMorseIndex_projectiveMomentFunction_of_strictMono
-    (Nat.strictMono_cast.comp Fin.val_strictMono) k
+  manifoldMorseIndex_projectiveMomentFunction_of_strictMono strictMono_natCast_val k
+
+/-- With the standard weights `w i = i` the moment function is a Morse function. -/
+theorem isMorse_projectiveMomentFunction_natCast :
+    IsMorse 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) :=
+  isMorse_projectiveMomentFunction strictMono_natCast_val.injective
+
+variable (𝕜 n) in
+/-- **The critical points of the moment function with the standard weights, by index.** With the
+standard weights `w i = i`, the critical points of index `j` of the moment function are the
+coordinate points `[eₖ]` with `j` equal to the real dimension of `𝕜` times `k`; this equivalence
+sends `k` to `[eₖ]`. -/
+def projectiveMomentFunctionNatCastCriticalPointsEquiv (j : ℕ) :
+    {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = j} ≃
+      ↥{x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜)
+          (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) |
+        manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ))
+          x = j} :=
+  (Equiv.subtypeEquivRight fun _ ↦ by
+    rw [ncard_setOf_lt_of_strictMono strictMono_natCast_val]).trans
+      (projectiveMomentFunctionCriticalPointsEquiv strictMono_natCast_val.injective j)
+
+/-- The equivalence `TauCeti.projectiveMomentFunctionNatCastCriticalPointsEquiv` sends `k` to the
+coordinate point `[eₖ]`. -/
+@[simp]
+theorem coe_projectiveMomentFunctionNatCastCriticalPointsEquiv_apply (j : ℕ)
+    (k : {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = j}) :
+    (projectiveMomentFunctionNatCastCriticalPointsEquiv 𝕜 n j k : ℙ 𝕜 (Fin (n + 1) → 𝕜)) =
+      mk 𝕜 (Pi.single k.val 1) (by simp) := by
+  simp [projectiveMomentFunctionNatCastCriticalPointsEquiv]
 
 /-- **The Morse index on complex projective space.** For the moment function
 `[z] ↦ (∑ j, j * ‖z j‖ ^ 2) / ∑ j, ‖z j‖ ^ 2` on `ℂℙⁿ`, the coordinate point `[eₖ]` has Morse

@@ -15,6 +15,7 @@ documentation below.
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Conj
 
 /-!
 # Bounded perturbations and unitary conjugation of partial linear maps
@@ -23,12 +24,16 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
   viewed as a partial map on the full domain, is self-adjoint.
 * `LinearPMap.isSelfAdjoint_perturb_bounded`: adding a bounded self-adjoint
   operator to a self-adjoint partial map preserves self-adjointness.
-* `LinearPMap.unitaryConj`: transports a partial map, including its domain,
-  along a linear isometric equivalence. Self-adjointness is preserved by this
-  conjugation.
+* `LinearPMap.adjoint_conj`: for any partial map `A` and a linear isometric
+  equivalence `U`, the adjoint of the conjugate `U A U⁻¹` (see `LinearPMap.conj`)
+  is `U A† U⁻¹`.
+* `LinearPMap.isSelfAdjoint_conj_iff`: `U A U⁻¹` is self-adjoint exactly when
+  `A` is.
 
 The algebraic, domain-defined perturbation API is in
-`TauCeti.LinearAlgebra.LinearPMap.Perturbation`.
+`TauCeti.LinearAlgebra.LinearPMap.Perturbation`, and conjugation by linear and
+continuous linear equivalences in `TauCeti.LinearAlgebra.LinearPMap.Conj` and
+`TauCeti.Topology.Algebra.Module.LinearPMap.Conj`.
 
 ## Provenance
 
@@ -126,130 +131,72 @@ theorem isSelfAdjoint_perturb_bounded {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoin
 
 end Bounded
 
-section UnitaryConj
+section Conj
 
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
 
-/-- The unitary conjugate `U A U⁻¹`, with domain obtained by transporting
-`A.domain` along the linear isometric equivalence `U`. -/
-noncomputable def unitaryConj (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H) : H' →ₗ.[𝕜] H' where
-  domain := A.domain.comap U.symm.toLinearMap
-  toFun :=
-    let D : Submodule 𝕜 H' := A.domain.comap U.symm.toLinearMap
-    let p : D →ₗ[𝕜] A.domain :=
-      (U.symm.toLinearMap.comp D.subtype).codRestrict A.domain (fun x => x.property)
-    U.toLinearMap.comp (A.toFun.comp p)
+/-! The conjugate `U A U⁻¹` by a linear isometric equivalence `U` is written
+`A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')`, the form in which the conjugation lemmas for continuous
+linear equivalences (density, closedness, resolvents, spectra) apply. -/
 
-/-- Membership in the conjugated domain is membership after transport by `U.symm`. -/
-@[simp] theorem mem_unitaryConj_domain_iff {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H} {x : H'} :
-    x ∈ (unitaryConj U A).domain ↔ U.symm x ∈ A.domain := Iff.rfl
-
-/-- Evaluate the unitary conjugate on its transported domain. -/
-@[simp]
-theorem unitaryConj_apply (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
-    (x : (unitaryConj U A).domain) :
-    unitaryConj U A x =
-      U (A ⟨U.symm (x : H'),
-        (mem_unitaryConj_domain_iff (U := U) (A := A)).mp x.property⟩) := by
-  rfl
-/-- `U` carries `A.domain` into the conjugated domain.  This is the membership
-witness needed to state `unitaryConj_apply_map`, which is the form of the
-conjugation law that is usable from the *original* domain. -/
-theorem map_mem_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H) (y : A.domain) :
-    U (y : H) ∈ (unitaryConj U A).domain := by
-  rw [mem_unitaryConj_domain_iff, U.symm_apply_apply]
-  exact y.2
-
-/-- **The intertwining law**, in the form consumers want: conjugation composed
-with `U` is `U` composed with `A`, indexed by the *original* domain rather than
-the conjugated one. -/
-theorem unitaryConj_apply_map (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H) (y : A.domain) :
-    unitaryConj U A ⟨U (y : H), map_mem_unitaryConj_domain U A y⟩ = U (A y) := by
-  rw [unitaryConj_apply]
-  congr 1
-  exact congrArg A (Subtype.ext (U.symm_apply_apply (y : H)))
-
-/-- The domain of a unitary conjugate of a densely defined operator is dense: `U` is a surjective
-isometry, so it carries a dense set to a dense set. -/
-theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
-    (hdenseA : Dense (A.domain : Set H)) : Dense ((unitaryConj U A).domain : Set H') := by
-  have himg : (U : H ≃ₗᵢ[𝕜] H') '' (A.domain : Set H) ⊆ ((unitaryConj U A).domain : Set H') := by
-    rintro _ ⟨w, hw, rfl⟩
-    simpa only [SetLike.mem_coe] using (map_mem_unitaryConj_domain U A ⟨w, hw⟩)
-  exact Dense.mono himg ((U.toHomeomorph.isDenseEmbedding).dense_image.mpr hdenseA)
-
-section UnitaryConjSelfAdjoint
+/-- Conjugation by a linear isometric equivalence preserves formal adjointness. -/
+theorem IsFormalAdjoint.conj {T S : H →ₗ.[𝕜] H} (h : T.IsFormalAdjoint S) (U : H ≃ₗᵢ[𝕜] H') :
+    (T.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).IsFormalAdjoint
+      (S.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) := fun x y ↦ by
+  simpa [LinearIsometryEquiv.inner_map_eq_flip] using
+    h ⟨_, mem_conj_domain_iff.1 x.property⟩ ⟨_, mem_conj_domain_iff.1 y.property⟩
 
 variable [CompleteSpace H] [CompleteSpace H']
 
-/-- If `A` is self-adjoint, then the adjoint of `unitaryConj U A` has no larger domain than
-`unitaryConj U A`. -/
-private theorem mem_unitaryConj_domain_of_mem_adjoint_domain {U : H ≃ₗᵢ[𝕜] H'}
-    {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoint A) {y : H'}
-    (hy : y ∈ (_root_.LinearPMap.adjoint (unitaryConj U A)).domain) :
-    y ∈ (unitaryConj U A).domain := by
-  set B := unitaryConj U A with hB
-  have hdenseB : Dense (B.domain : Set H') := dense_unitaryConj_domain U A hA.dense_domain
-  have hform := _root_.LinearPMap.adjoint_isFormalAdjoint (T := B) hdenseB ⟨y, hy⟩
-  rw [hB, mem_unitaryConj_domain_iff]
-  have hwit : ∀ u : A.domain,
-      ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜 = ⟪U.symm y, A u⟫_𝕜 := by
-    intro u
-    have h := hform ⟨U (u : H), map_mem_unitaryConj_domain U A u⟩
-    rw [unitaryConj_apply_map] at h
-    calc ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜
-        = ⟪(_root_.LinearPMap.adjoint B) ⟨y, hy⟩, U (u : H)⟫_𝕜 := by
-          rw [← U.inner_map_map (U.symm _) (u : H), U.apply_symm_apply]
-      _ = ⟪y, U (A u)⟫_𝕜 := h
-      _ = ⟪U.symm y, A u⟫_𝕜 := by
-          rw [← U.inner_map_map (U.symm y) (A u), U.apply_symm_apply]
-  have hmem : U.symm y ∈ (_root_.LinearPMap.adjoint A).domain :=
-    _root_.LinearPMap.mem_adjoint_domain_of_exists _
-      ⟨U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), hwit⟩
-  rwa [_root_.LinearPMap.isSelfAdjoint_def.mp hA] at hmem
+/-- A vector lies in the domain of the adjoint of `U A U⁻¹` exactly when its preimage under `U`
+lies in the domain of `A†`. -/
+private theorem mem_adjoint_conj_domain_iff {A : H →ₗ.[𝕜] H} (U : H ≃ₗᵢ[𝕜] H') {y : H'} :
+    y ∈ (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))†.domain ↔ U.symm y ∈ A†.domain := by
+  have hφ : Continuous fun x : (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain ↦
+      (⟨U.symm x, by simpa using mem_conj_domain_iff.1 x.property⟩ : A.domain) :=
+    (U.symm.continuous.comp continuous_subtypeVal).subtype_mk _
+  have hψ : Continuous fun x : A.domain ↦
+      (⟨U x, map_mem_conj_domain x⟩ : (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain) :=
+    (U.continuous.comp continuous_subtypeVal).subtype_mk _
+  rw [mem_adjoint_domain_iff, mem_adjoint_domain_iff]
+  refine ⟨fun h ↦ (h.comp hψ).congr fun x ↦ ?_, fun h ↦ (h.comp hφ).congr fun x ↦ ?_⟩
+  · simp [LinearIsometryEquiv.inner_map_eq_flip]
+  · simp [LinearIsometryEquiv.inner_map_eq_flip]
 
-/-- Unitary conjugation preserves self-adjointness, transporting the domain. -/
-theorem isSelfAdjoint_unitaryConj {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H}
-    (hA : IsSelfAdjoint A) : IsSelfAdjoint (unitaryConj U A) := by
-  set B := unitaryConj U A with hB
-  have hB_apply (x : B.domain) (hx : U.symm (x : H') ∈ A.domain) :
-      B x = U (A ⟨U.symm (x : H'), hx⟩) := by
-    simpa only [hB] using (unitaryConj_apply U A x)
-  have hdenseA : Dense (A.domain : Set H) := hA.dense_domain
-  have hsymA : A.IsFormalAdjoint A := hA.isFormalAdjoint
-  have hdenseB : Dense (B.domain : Set H') := dense_unitaryConj_domain U A hdenseA
-  -- symmetry of `B`
-  have hsymB : B.IsFormalAdjoint B := by
-    intro x y
-    have hx : U.symm (x : H') ∈ A.domain := by
-      apply (mem_unitaryConj_domain_iff (U := U) (A := A)).mp
-      simpa only [hB] using x.property
-    have hy : U.symm (y : H') ∈ A.domain := by
-      apply (mem_unitaryConj_domain_iff (U := U) (A := A)).mp
-      simpa only [hB] using y.property
-    calc ⟪B x, (y : H')⟫_𝕜
-        = ⟪U (A ⟨U.symm (x : H'), hx⟩), U (U.symm (y : H'))⟫_𝕜 := by
-          rw [U.apply_symm_apply, hB_apply x hx]
-      _ = ⟪A ⟨U.symm (x : H'), hx⟩, U.symm (y : H')⟫_𝕜 := U.inner_map_map _ _
-      _ = ⟪U.symm (x : H'), A ⟨U.symm (y : H'), hy⟩⟫_𝕜 :=
-          hsymA ⟨U.symm (x : H'), hx⟩ ⟨U.symm (y : H'), hy⟩
-      _ = ⟪U (U.symm (x : H')), U (A ⟨U.symm (y : H'), hy⟩)⟫_𝕜 :=
-          (U.inner_map_map _ _).symm
-      _ = ⟪(x : H'), B y⟫_𝕜 := by
-          rw [U.apply_symm_apply, hB_apply y hy]
-  -- the adjoint domain of `B` sits inside `B`'s domain
-  have hsub : ∀ y : H', y ∈ (_root_.LinearPMap.adjoint B).domain → y ∈ B.domain := fun y hy ↦
-    mem_unitaryConj_domain_of_mem_adjoint_domain hA hy
-  have hle : B ≤ _root_.LinearPMap.adjoint B :=
-    _root_.LinearPMap.IsFormalAdjoint.le_adjoint (T := B) (S := B) hdenseB hsymB
-  have hdomeq : B.domain = (_root_.LinearPMap.adjoint B).domain :=
-    le_antisymm hle.1 hsub
-  rw [_root_.LinearPMap.isSelfAdjoint_def]
-  exact (_root_.LinearPMap.eq_of_le_of_domain_eq hle hdomeq).symm
+/-- **Adjoint of a unitary conjugate.** For a linear isometric equivalence `U`,
+`(U A U⁻¹)† = U A† U⁻¹`. -/
+@[simp]
+theorem adjoint_conj (A : H →ₗ.[𝕜] H) (U : H ≃ₗᵢ[𝕜] H') :
+    (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))† = (A†).conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H') := by
+  by_cases hA : Dense (A.domain : Set H)
+  · have hA' : Dense ((A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain : Set H') := by
+      simpa using hA
+    refine le_antisymm ?_ (((adjoint_isFormalAdjoint hA).symm.conj U).le_adjoint hA')
+    rw [← conj_le_conj_iff (e := ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H').symm), conj_conj_symm]
+    have h := (adjoint_isFormalAdjoint hA').symm.conj U.symm
+    rw [LinearIsometryEquiv.toContinuousLinearEquiv_symm, ContinuousLinearEquiv.toLinearEquiv_symm,
+      conj_conj_symm] at h
+    exact h.le_adjoint hA
+  · -- Off dense domains both adjoints take the junk value `0`, on the same domain.
+    have hA' : ¬Dense ((A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain : Set H') := by
+      simpa using hA
+    refine ext (Submodule.ext fun y ↦ ?_) fun y hy hy' ↦ ?_
+    · simp [mem_adjoint_conj_domain_iff]
+    · rw [adjoint_apply_of_not_dense hA', conj_apply, adjoint_apply_of_not_dense hA,
+        _root_.map_zero]
 
-end UnitaryConjSelfAdjoint
+/-- Conjugation by a linear isometric equivalence preserves self-adjointness. -/
+theorem _root_.IsSelfAdjoint.conj {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoint A)
+    (U : H ≃ₗᵢ[𝕜] H') : IsSelfAdjoint (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) := by
+  rw [isSelfAdjoint_def, adjoint_conj, isSelfAdjoint_def.1 hA]
 
-end UnitaryConj
+/-- A unitary conjugate `U A U⁻¹` is self-adjoint exactly when `A` is. -/
+@[simp]
+theorem isSelfAdjoint_conj_iff {A : H →ₗ.[𝕜] H} (U : H ≃ₗᵢ[𝕜] H') :
+    IsSelfAdjoint (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) ↔ IsSelfAdjoint A :=
+  ⟨fun h ↦ by simpa using h.conj U.symm, (·.conj U)⟩
+
+end Conj
 
 end HilbertSpace
 

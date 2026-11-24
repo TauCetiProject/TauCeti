@@ -47,8 +47,8 @@ variable (R) (B : ι → Type*) [∀ i, CommRing (B i)] [∀ i, Algebra R (B i)]
 /-- Integral closure commutes with finite products, by taking coordinates of integral tuples. -/
 def integralClosurePiAlgEquiv :
     integralClosure R (∀ i, B i) ≃ₐ[R] ∀ i, integralClosure R (B i) where
-  toFun x i := ⟨x.1 i, (isIntegral_pi_iff.mp x.2) i⟩
-  invFun x := ⟨fun i ↦ (x i).1, isIntegral_pi_iff.mpr fun i ↦ (x i).2⟩
+  toFun x i := ⟨x.val i, (isIntegral_pi_iff.mp x.property) i⟩
+  invFun x := ⟨fun i ↦ (x i).val, isIntegral_pi_iff.mpr fun i ↦ (x i).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -58,7 +58,7 @@ def integralClosurePiAlgEquiv :
 /-- The product comparison takes an integral tuple to its coordinates. -/
 @[simp]
 theorem integralClosurePiAlgEquiv_apply (x : integralClosure R (∀ i, B i)) (i : ι) :
-    (integralClosurePiAlgEquiv R B x i : B i) = x.1 i := (rfl)
+    (integralClosurePiAlgEquiv R B x i : B i) = x.val i := (rfl)
 
 /-- The inverse product comparison assembles the coordinates into an integral tuple. -/
 @[simp]

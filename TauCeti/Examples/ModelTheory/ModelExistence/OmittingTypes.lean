@@ -237,12 +237,12 @@ theory `T` satisfied by `StdNat`. -/
 theorem isSatisfiable_insert_iInf_unnamedType_of_stdNat_model (T : ConstLang.Theory) [StdNat ⊨ T]
     (s : Finset (ConstLang.BoundedFormula Empty 1))
     (hs : (s : Set (ConstLang.BoundedFormula Empty 1)) ⊆ unnamedType) :
-    (insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T).IsSatisfiable := by
+    (insert (BoundedFormula.iInf fun ψ : s => ψ.val).exs T).IsSatisfiable := by
   classical
   -- `StdNat` realizes the finite conjunction at a natural number exceeding all constants in `s`.
-  choose idx hidx using fun ψ : s => mem_unnamedType_iff.1 (hs ψ.2)
+  choose idx hidx using fun ψ : s => mem_unnamedType_iff.1 (hs ψ.property)
   let N : ℕ := (Finset.univ.sup idx) + 1
-  have hM : StdNat ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T := by
+  have hM : StdNat ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.val).exs T := by
     refine Theory.model_insert_iff.2 ⟨(Sentence.realize_exs _).2 ?_, inferInstance⟩
     refine ⟨fun _ => ⟨N⟩, BoundedFormula.realize_iInf.2 fun ψ => ?_⟩
     rw [← hidx ψ, realize_neConstFormula_iff, coe_con_stdNat]

@@ -124,7 +124,7 @@ private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V
     ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v := by
   have : Finite A := hAfin.to_subtype
   -- the restricted action of `G` on `A`; `hsmul` records its defining evaluation
-  let _ : SMul G A := ⟨fun g x => ⟨ρ g x, hstab g x x.2⟩⟩
+  let _ : SMul G A := ⟨fun g x => ⟨ρ g x, hstab g x x.property⟩⟩
   have hsmul : ∀ (g : G) (x : A), ((g • x : A) : V) = ρ g x := fun _ _ => rfl
   let _ : MulAction G A :=
     { one_smul := fun x => Subtype.ext (by rw [hsmul]; simp)
@@ -135,7 +135,7 @@ private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V
   let H := MonoidHom.mrange φ
   -- Every element of the image has `p`-power order, so the image monoid is a group.
   have hpow (σ : H) : ∃ n : ℕ, σ ^ p ^ n = 1 := by
-    obtain ⟨g, hg⟩ := σ.2
+    obtain ⟨g, hg⟩ := σ.property
     obtain ⟨n, hn⟩ := hρ g
     refine ⟨n, Subtype.ext ?_⟩
     simp only [SubmonoidClass.coe_pow, OneMemClass.coe_one]
@@ -153,7 +153,7 @@ private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V
   -- the zero vector is a fixed point, so the orbit count produces a second one
   have h0 : (⟨0, hA0⟩ : A) ∈ MulAction.fixedPoints H A := by
     intro σ
-    obtain ⟨g, hg⟩ := σ.2
+    obtain ⟨g, hg⟩ := σ.property
     rw [hval]
     apply Subtype.ext
     rw [← hg, hφ]

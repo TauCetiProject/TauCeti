@@ -37,7 +37,7 @@ theorem mem_pointedCone_hull_range_iff {ι R M : Type*}
     | add w z _ _ hw hz => simpa using add_nonneg hw hz
     | smul a w _ hw =>
       simpa only [← Nonneg.coe_smul, map_smul, Finsupp.smul_apply, smul_eq_mul] using
-        mul_nonneg a.2 hw
+        mul_nonneg a.property hw
   · intro hv
     rw [← b.linearCombination_repr v, Finsupp.linearCombination_apply, Finsupp.sum]
     apply Submodule.sum_mem

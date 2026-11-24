@@ -131,7 +131,7 @@ theorem exists_isMultiCoupling_isMinOn_lintegral [Finite ι] [Nonempty ι]
   let : PseudoMetricSpace (∀ i, X i) :=
     TopologicalSpace.pseudoMetrizableSpacePseudoMetric (∀ i, X i)
   let μ' : ∀ i, ProbabilityMeasure (X i) := fun i ↦ ⟨μ i, inferInstance⟩
-  obtain ⟨γ, hγ, hγmin⟩ := exists_isMinOn_lintegral ⟨_, (MultiCoupling.pi μ').2⟩
+  obtain ⟨γ, hγ, hγmin⟩ := exists_isMinOn_lintegral ⟨_, (MultiCoupling.pi μ').property⟩
     (isCompact_setOfPred_isMultiCoupling (μ := μ') hμ) hc
   refine ⟨γ.toMeasure, hγ, fun γ' (hγ' : Measure.IsMultiCoupling γ' μ) ↦ ?_⟩
   have := hγ'.isProbabilityMeasure (Classical.arbitrary ι)

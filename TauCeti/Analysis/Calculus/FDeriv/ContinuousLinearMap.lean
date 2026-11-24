@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Derivatives of continuous-linear-map applications
@@ -27,14 +28,16 @@ records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its con
 linear map to a fixed vector (or of a varying bilinear map to two fixed vectors, together with the
 second derivative of the latter), the product rule
 for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
-field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
-function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
-out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
-within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
-families of linear and bilinear maps are tested on vectors. Composing a family of continuous linear
-maps on the left with a fixed one composes its derivative with that map. An injective operator
-also recovers a vanishing vector derivative when the position derivative and the derivative of
-the corresponding affine expression vanish.
+field of symmetric bilinear maps takes symmetric values. If an endomorphism field has locally
+constant square on a fixed vector, its derivative anticommutes with its value on that vector; in
+particular each derivative of a family squaring to `-1` anticommutes with it. A continuous linear
+map vanishing on a function near a point vanishes on its derivative there. Finally, a family of
+continuous linear maps out of a finite-dimensional space is differentiable, or has a given scalar
+derivative, within a set or at a point, exactly when each of its evaluations does; this is
+how derivatives of families of linear and bilinear maps are tested on vectors. Composing a family
+of continuous linear maps on the left with a fixed one composes its derivative with that map. An
+injective operator also recovers a vanishing vector derivative when the position derivative and the
+derivative of the corresponding affine expression vanish.
 
 ## Main declarations
 
@@ -46,8 +49,12 @@ the corresponding affine expression vanish.
 * `TauCeti.hasFDerivAt_pairing`: the derivative of the evaluation pairing `(x, φ) ↦ φ x` of a
   space with its continuous linear maps, in particular with its continuous dual.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `HasDerivWithinAt.clm_apply_self`, `HasDerivAt.clm_apply_self`: the derivative of a
+  time-dependent symmetric scalar-valued bilinear form evaluated along a curve.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
+* `TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`: each derivative of a family of continuous
+  linear maps squaring to `-1` near a point anticommutes with its value there.
 * `TauCeti.clm_apply_fderiv_eq_zero`: a continuous linear map that vanishes on `g` near a point
   vanishes on the derivative of `g` there.
 * `TauCeti.differentiableWithinAt_clm_apply`: a family of continuous linear maps out of a
@@ -60,6 +67,9 @@ the corresponding affine expression vanish.
   pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
 * `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
   fixed continuous linear map composes its derivative with that map.
+* `HasDerivAtFilter.bilinearComp`, `HasDerivWithinAt.bilinearComp`, `HasDerivAt.bilinearComp`:
+  pulling back a family of bilinear forms along fixed trial maps pulls back its derivative,
+  including when the spaces are only seminormed.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero`: recover a zero
   derivative through an injective operator when its parameter derivative vanishes.
 * `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_eq_zero`: the unshifted case.
@@ -159,6 +169,30 @@ theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F
     ContinuousLinearMap.flip_apply]
   abel
 
+/-- Differentiating a time-dependent symmetric bilinear form along the diagonal of a curve,
+within a set. Symmetry is needed only at the point of differentiation. -/
+theorem _root_.HasDerivWithinAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜] 𝕜}
+    {c' : F →L[𝕜] F →L[𝕜] 𝕜} {u : 𝕜 → F} {u' : F} {s : Set 𝕜} {t : 𝕜}
+    (hc : HasDerivWithinAt c c' s t) (hu : HasDerivWithinAt u u' s t)
+    (hsym : ∀ v w, c t v w = c t w v) :
+    HasDerivWithinAt (fun r ↦ c r (u r) (u r))
+      (c' (u t) (u t) + 2 * c t (u t) u') s t := by
+  convert (hc.clm_apply hu).clm_apply hu using 1
+  simp only [add_apply, hsym u' (u t)]
+  ring
+
+/-- Differentiating a time-dependent symmetric bilinear form along the diagonal of a curve.
+Symmetry is needed only at the point of differentiation. -/
+theorem _root_.HasDerivAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜] 𝕜}
+    {c' : F →L[𝕜] F →L[𝕜] 𝕜} {u : 𝕜 → F} {u' : F} {t : 𝕜}
+    (hc : HasDerivAt c c' t) (hu : HasDerivAt u u' t)
+    (hsym : ∀ v w, c t v w = c t w v) :
+    HasDerivAt (fun r ↦ c r (u r) (u r)) (c' (u t) (u t) + 2 * c t (u t) u') t := by
+  -- Inferring the arguments from `hc` times out in unification on the nested operator space.
+  have hc' := HasDerivAt.hasDerivWithinAt (𝕜 := 𝕜) (F := F →L[𝕜] F →L[𝕜] 𝕜)
+    (f := c) (f' := c') (x := t) (s := univ) hc
+  exact hasDerivWithinAt_univ.mp (hc'.clm_apply_self hu.hasDerivWithinAt hsym)
+
 /-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
 derivative of `c` at `x`. -/
 theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
@@ -169,6 +203,31 @@ theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
     have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
     rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If the square of an endomorphism field is locally constant on a fixed vector, its
+derivative anticommutes with its value on that vector, including for totalized derivatives. -/
+theorem fderiv_apply_apply_eq_neg_of_eventually_const
+    {J : E → F →L[𝕜] F} {p : E} {v c : F}
+    (hJ : ∀ᶠ y in 𝓝 p, J y (J y v) = c) (w : E) :
+    fderiv 𝕜 J p w (J p v) = -J p (fderiv 𝕜 J p w v) := by
+  by_cases hd : DifferentiableAt 𝕜 J p
+  · have hder := hd.hasFDerivAt.clm_apply
+      (hd.hasFDerivAt.clm_apply (hasFDerivAt_const (x := p) v))
+    have hzero := congrArg (fun L : E →L[𝕜] F ↦ L w)
+      (hder.unique ((hasFDerivAt_const c p).congr_of_eventuallyEq hJ))
+    simp only [add_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add] at hzero
+    exact eq_neg_of_add_eq_zero_right hzero
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- **Derivatives of a square-minus-one family anticommute with it.** If `J y` squares to `-1` for
+`y` near `x`, differentiating `J ∘ J = -1` gives `J' u (J v) = -J (J' u v)` for the derivative
+`J'` of `J` at `x`. Where `J` is not differentiable its derivative is zero, and the identity is
+trivial. -/
+theorem fderiv_apply_apply_eq_neg_of_eventually_sq {J : E → F →L[𝕜] F} {x : E}
+    (hJsq : ∀ᶠ y in 𝓝 x, ∀ w, J y (J y w) = -w) (u : E) (v : F) :
+    fderiv 𝕜 J x u (J x v) = -J x (fderiv 𝕜 J x u v) :=
+  fderiv_apply_apply_eq_neg_of_eventually_const (hJsq.mono fun _ hy ↦ hy v) u
 
 /-- If a continuous linear map `L` vanishes on `g` near `x`, then `L` vanishes on every directional
 derivative of `g` at `x`. -/
@@ -327,5 +386,43 @@ theorem deriv_eq_zero_of_apply_self_pos_of_deriv_clm_apply_add_eq_zero
 end Real
 
 end TauCeti
+
+section BilinearComp
+
+variable {V W F G F' : Type*}
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {c : 𝕜 → V →L[𝕜] W →L[𝕜] F'} {c' : V →L[𝕜] W →L[𝕜] F'}
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative along any filter. All spaces need only seminorms. -/
+theorem HasDerivAtFilter.bilinearComp {l : Filter (𝕜 × 𝕜)} (hc : HasDerivAtFilter c c' l)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivAtFilter (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) l := by
+  -- The form space need not be normed, so apply the pullback directly to the remainder.
+  refine HasFDerivAtFilter.of_isLittleOTVS ?_
+  have h := (ContinuousLinearMap.bilinearCompL (G := F') e f).isBigOTVS_comp.trans_isLittleOTVS
+    hc.hasFDerivAtFilter.isLittleOTVS
+  simpa only [Function.comp_def, map_sub, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
+    ContinuousLinearMap.bilinearCompL_apply, sub_smul] using h
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative within a set. All spaces need only seminorms. -/
+theorem HasDerivWithinAt.bilinearComp {s : Set 𝕜} {t : 𝕜}
+    (hc : HasDerivWithinAt c c' s t) (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivWithinAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) s t :=
+  HasDerivAtFilter.bilinearComp hc e f
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative at a point. All spaces need only seminorms. -/
+theorem HasDerivAt.bilinearComp {t : 𝕜}
+    (hc : HasDerivAt c c' t) (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) t :=
+  HasDerivAtFilter.bilinearComp hc e f
+
+end BilinearComp
 
 end

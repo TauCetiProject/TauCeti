@@ -171,7 +171,7 @@ theorem finitePoissonLaw_apply (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasu
   have hQ : Measurable fun p : ℝ≥0 × ProbabilityMeasure X =>
       (⟨(p.2 : Measure X).map Measure.dirac, inferInstance⟩ : ProbabilityMeasure (Measure X)) :=
     ((Measure.measurable_map _ Measure.measurable_dirac).comp
-      (measurable_subtype_coe.comp measurable_snd)).subtype_mk
+      (measurable_subtypeVal.comp measurable_snd)).subtype_mk
   exact measurable_compoundPoissonMeasure_probability.comp (measurable_fst.prodMk hQ)
 
 /-- The mean random measure of the sampling construction is `r • Q`. -/

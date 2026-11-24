@@ -224,7 +224,7 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
   have hΔ1 : valuation K ((Δ : K) - 1) ≤ valuation K 4 := by
     rw [hΔK, add_sub_cancel_left, map_mul]
     simpa using mul_le_mul' (le_refl (valuation K (4 : K)))
-      ((Valuation.mem_integer_iff _ _).mp c.2)
+      ((Valuation.mem_integer_iff _ _).mp c.property)
   refine ⟨Δ, fun hsq ↦ ?_, by simp [Δ, normalizedValuation_integerUnits], hΔ1, hcrit⟩
   -- A square `Δ` would make a uniformizer, of odd valuation, a norm.
   have : Invertible (2 : K) := invertibleOfNonzero h2

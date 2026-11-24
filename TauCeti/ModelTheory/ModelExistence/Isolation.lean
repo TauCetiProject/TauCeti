@@ -224,10 +224,10 @@ theorem exists_isolating_of_finite_of_realize {T : L.Theory} {M : Type w} [L.Str
     ∃ φ : L.BoundedFormula Empty n,
       (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
   have := hp.fintype
-  refine ⟨BoundedFormula.iInf fun ψ : p => ψ.1, ?_, fun ψ hψ => ?_⟩
-  · have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : p => ψ.1).exs T :=
+  refine ⟨BoundedFormula.iInf fun ψ : p => ψ.val, ?_, fun ψ hψ => ?_⟩
+  · have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : p => ψ.val).exs T :=
       model_insert_iff.2 ⟨(Sentence.realize_exs _).2
-        ⟨a, BoundedFormula.realize_iInf.2 fun q => ha q.1 q.2⟩, inferInstance⟩
+        ⟨a, BoundedFormula.realize_iInf.2 fun q => ha q.val q.property⟩, inferInstance⟩
     let := hM
     exact Model.isSatisfiable M
   · refine models_sentence_iff.2 fun N => (Sentence.realize_alls _).2 fun b => ?_

@@ -147,19 +147,19 @@ public theorem Gamma1_map_inv_conjAct_frickeGL_eq :
     ConjAct.ofConjAct_toConjAct, map_inv, inv_inv, Subgroup.mem_map]
   constructor
   · rintro ⟨τ, hτ, hτy⟩
-    refine ⟨frickeConjSL ⟨τ, Gamma1_in_Gamma0 N hτ⟩, frickeConjSL_mem_Gamma1 τ hτ, ?_⟩
+    refine ⟨frickeConjSL ⟨τ, Gamma1_le_Gamma0 N hτ⟩, frickeConjSL_mem_Gamma1 τ hτ, ?_⟩
     have h : mapGL ℝ τ * frickeGL ℝ N
-        = frickeGL ℝ N * mapGL ℝ (frickeConjSL ⟨τ, Gamma1_in_Gamma0 N hτ⟩) :=
-      mapGL_mul_frickeGL ℝ ⟨τ, Gamma1_in_Gamma0 N hτ⟩
+        = frickeGL ℝ N * mapGL ℝ (frickeConjSL ⟨τ, Gamma1_le_Gamma0 N hτ⟩) :=
+      mapGL_mul_frickeGL ℝ ⟨τ, Gamma1_le_Gamma0 N hτ⟩
     rw [hτy] at h
     refine (mul_left_cancel (a := frickeGL ℝ N) ?_).symm
     rw [← h]
     group
   · rintro ⟨σ, hσ, rfl⟩
-    refine ⟨frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩, frickeConjSL_mem_Gamma1 σ hσ, ?_⟩
+    refine ⟨frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩, frickeConjSL_mem_Gamma1 σ hσ, ?_⟩
     have h : frickeGL ℝ N * mapGL ℝ σ
-        = mapGL ℝ (frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩) * frickeGL ℝ N :=
-      frickeGL_mul_mapGL ℝ ⟨σ, Gamma1_in_Gamma0 N hσ⟩
+        = mapGL ℝ (frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩) * frickeGL ℝ N :=
+      frickeGL_mul_mapGL ℝ ⟨σ, Gamma1_le_Gamma0 N hσ⟩
     rw [h]
     group
 
