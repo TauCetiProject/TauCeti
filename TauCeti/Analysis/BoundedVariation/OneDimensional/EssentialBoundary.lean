@@ -8,11 +8,10 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.MeasureTheory.Covering.EssentialBoundary.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
 # Perimeter on the line is bounded by the number of essential boundary points
@@ -40,8 +39,6 @@ or at most `1` (`TauCeti.Real.perimeter_Iio`, `TauCeti.Real.perimeter_Ioi`), and
 
 ## Main results
 
-* `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: a half-line ending at `x` has
-  perimeter `1` in an open set containing `x` and `0` in any other open set.
 * `TauCeti.Real.perimeter_ball_le_one` and `TauCeti.Real.perimeter_ball_eq_zero`: the perimeter in a
   ball meeting `∂ᵉs` at most in its centre, or not at all.
 * `TauCeti.Real.perimeter_le_encard_essentialBoundary_inter`: `P(s; Ω) ≤ #(∂ᵉs ∩ Ω)`.
@@ -51,32 +48,11 @@ or at most `1` (`TauCeti.Real.perimeter_Iio`, `TauCeti.Real.perimeter_Ioi`), and
 public section
 
 open Filter Set MeasureTheory Metric TopologicalSpace
-open scoped Topology ENNReal Set.Notation RealInnerProductSpace
+open scoped Topology ENNReal Set.Notation
 
 namespace TauCeti.Real
 
 variable {s : Set ℝ} {x : ℝ}
-
-/-- **The perimeter of a half-line ending at a point**: by `TauCeti.perimeter_setOf_inner_lt`, the
-perimeter of `(-∞, x)` in an open set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
-theorem perimeter_Iio (x : ℝ) (Ω : Opens ℝ) :
-    perimeter volume Ω (Iio x) = (Ω : Set ℝ).indicator 1 x := by
-  have h := perimeter_setOf_inner_lt (F := ℝ) (ν := 1) (by simp) x Ω
-  have hlt : {y : ℝ | ⟪y, (1 : ℝ)⟫ < x} = Iio x := by ext y; simp
-  have heq : {y : ℝ | ⟪y, (1 : ℝ)⟫ = x} = {x} := by ext y; simp
-  rw [hlt, heq, Module.finrank_self, tsub_self, Measure.euclideanHausdorffMeasure_zero] at h
-  rw [h]
-  by_cases hx : x ∈ (Ω : Set ℝ)
-  · rw [inter_singleton_of_mem hx, Measure.hausdorffMeasure_zero_singleton,
-      indicator_of_mem hx, Pi.one_apply]
-  · rw [inter_singleton_eq_empty.2 hx, measure_empty, indicator_of_notMem hx]
-
-/-- **The perimeter of a half-line starting at a point**: the perimeter of `(x, ∞)` in an open
-set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
-theorem perimeter_Ioi (x : ℝ) (Ω : Opens ℝ) :
-    perimeter volume Ω (Ioi x) = (Ω : Set ℝ).indicator 1 x := by
-  rw [← compl_Iic, perimeter_compl, perimeter_congr_ae (ae_restrict_of_ae Iio_ae_eq_Iic.symm)]
-  exact perimeter_Iio x Ω
 
 /-- **No essential boundary in a ball, no perimeter.** If no point of `B(x, ε)` lies in the
 essential boundary of a null-measurable set `s ⊆ ℝ`, then `P(s; B(x, ε)) = 0`. -/
@@ -203,10 +179,7 @@ theorem perimeter_le_encard_essentialBoundary_inter (hs : NullMeasurableSet s) (
             (Set.mem_preimage.2 ⟨hx, x.property⟩ : x ∈ (Ω : Set ℝ) ↓∩ (B ∩ Ω)),
             Pi.one_apply, Pi.one_apply]
         · rw [indicator_of_notMem hx, indicator_of_notMem (by exact fun h => hx h.1)]
-    _ = ((Ω : Set ℝ) ↓∩ (B ∩ Ω)).encard := by
-        rw [← tsum_subtype]
-        simp only [Pi.one_apply]
-        exact ENNReal.tsum_set_one _
+    _ = ((Ω : Set ℝ) ↓∩ (B ∩ Ω)).encard := ENNReal.tsum_indicator_one _
     _ ≤ (B ∩ Ω).encard := by
         exact_mod_cast encard_preimage_val_le_encard_right _ _
 

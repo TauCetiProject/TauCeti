@@ -45,13 +45,6 @@ namespace TauCeti.Real
 
 variable {s : Set ℝ} {x : ℝ}
 
-/-- The primitive of `1_s` only depends on `s` up to a null set. -/
-private theorem integral_indicator_congr {t : Set ℝ} (hst : s =ᵐ[volume] t) (a y : ℝ) :
-    ∫ z in a..y, s.indicator (1 : ℝ → ℝ) z = ∫ z in a..y, t.indicator (1 : ℝ → ℝ) z :=
-  intervalIntegral.integral_congr_ae <| by
-    filter_upwards [indicator_ae_eq_of_ae_eq_set (f := (1 : ℝ → ℝ)) hst] with z hz _
-    exact hz
-
 /-- `TauCeti.Real.hasDerivAt_integral_indicator_of_hasDensityAt_zero` for a measurable set. -/
 private theorem hasDerivAt_integral_indicator_of_hasDensityAt_zero_aux (hs : MeasurableSet s)
     (a : ℝ)
@@ -98,7 +91,7 @@ theorem hasDerivAt_integral_indicator_of_hasDensityAt_zero (hs : NullMeasurableS
     (h : HasDensityAt volume s x 0) :
     HasDerivAt (fun y => ∫ t in a..y, s.indicator (1 : ℝ → ℝ) t) 0 x := by
   obtain ⟨t, -, ht, hts⟩ := hs.exists_measurable_superset_ae_eq
-  simp_rw [integral_indicator_congr hts.symm a]
+  simp_rw [intervalIntegral.integral_indicator_one_congr_ae hts.symm a]
   exact hasDerivAt_integral_indicator_of_hasDensityAt_zero_aux ht a (h.congr_ae hts.symm)
 
 /-- **The primitive of `1_s` at a point of density one.** If a null-measurable set `s` has
@@ -108,7 +101,7 @@ theorem hasDerivAt_integral_indicator_of_hasDensityAt_one (hs : NullMeasurableSe
     HasDerivAt (fun y => ∫ t in a..y, s.indicator (1 : ℝ → ℝ) t) 1 x := by
   obtain ⟨u, -, hu, hus⟩ := hs.exists_measurable_superset_ae_eq
   replace h := h.congr_ae hus.symm
-  simp_rw [integral_indicator_congr hus.symm a]
+  simp_rw [intervalIntegral.integral_indicator_one_congr_ae hus.symm a]
   clear hs hus
   have h0 : HasDensityAt volume uᶜ x 0 :=
     (hasDensityAt_compl_zero_iff hu.nullMeasurableSet

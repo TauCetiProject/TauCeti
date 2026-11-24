@@ -35,6 +35,9 @@ vanishes off `Ω`, which gives the upper bound. For the lower bound, test with `
 cutoff `χ` takes values in `[0, 1]` and equals one on a compact subset of
 `Ω ∩ {⟪x, ν⟫ = c}`, and use the inner regularity of Lebesgue measure on the hyperplane.
 
+On the line, a half-line ending at `x` has perimeter `1` in an open set containing `x` and `0` in
+any other open set (`TauCeti.Real.perimeter_Iio`, `TauCeti.Real.perimeter_Ioi`).
+
 ## References
 
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 12 (sets of
@@ -156,5 +159,32 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
         volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
   rw [perimeter_setOf_inner_lt hν, Opens.coe_mk,
     euclideanHausdorffMeasure_ball_inter_setOf_inner_eq hν x hr]
+
+namespace Real
+
+/-- **The perimeter of a half-line ending at a point**: by `TauCeti.perimeter_setOf_inner_lt`, the
+perimeter of `(-∞, x)` in an open set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Iio (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Iio x) = (Ω : Set ℝ).indicator 1 x := by
+  have h := perimeter_setOf_inner_lt (F := ℝ) (ν := 1) (by simp) x Ω
+  have hlt : {y : ℝ | ⟪y, (1 : ℝ)⟫ < x} = Iio x := by ext y; simp
+  have heq : {y : ℝ | ⟪y, (1 : ℝ)⟫ = x} = {x} := by ext y; simp
+  rw [hlt, heq, Module.finrank_self, tsub_self, Measure.euclideanHausdorffMeasure_zero] at h
+  rw [h]
+  by_cases hx : x ∈ (Ω : Set ℝ)
+  · rw [inter_singleton_of_mem hx, Measure.hausdorffMeasure_zero_singleton,
+      indicator_of_mem hx, Pi.one_apply]
+  · rw [inter_singleton_eq_empty.2 hx, measure_empty, indicator_of_notMem hx]
+
+/-- **The perimeter of a half-line starting at a point**: the perimeter of `(x, ∞)` in an open
+set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/
+@[simp]
+theorem perimeter_Ioi (x : ℝ) (Ω : Opens ℝ) :
+    perimeter volume Ω (Ioi x) = (Ω : Set ℝ).indicator 1 x := by
+  rw [← compl_Iic, perimeter_compl, perimeter_congr_ae (ae_restrict_of_ae Iio_ae_eq_Iic.symm)]
+  exact perimeter_Iio x Ω
+
+end Real
 
 end TauCeti
