@@ -93,10 +93,7 @@ theorem adicCompletionResidueMap_apply_map (x : ResidueField R) :
     hι.adicCompletionResidueMap
       (ResidueField.map (algebraMap R (_root_.AdicCompletion (maximalIdeal R) R)) x) = ι x := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  rw [adicCompletionResidueMap,
-    AdicCompletion.restrictScalarsEquivOfPrimaryComponent_symm_apply_apply,
-    LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    ← AdicCompletion.residueFieldEquiv_apply, AlgEquiv.symm_apply_apply]
+  simp [adicCompletionResidueMap, ← AdicCompletion.residueFieldEquiv_apply]
 
 @[simp]
 theorem adicCompletionResidueMap_residue_algebraMap (r : R) :

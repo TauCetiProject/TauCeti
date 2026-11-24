@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Jacobson.Ideal
-import Mathlib.RingTheory.FiniteLength
 import Mathlib.RingTheory.Nakayama
 
 /-!
@@ -17,16 +16,12 @@ import Mathlib.RingTheory.Nakayama
 Let `R` be a commutative ring and `M` an Artinian `R`-module. For any finitely generated ideal `I`
 contained in the Jacobson radical of `R`, the descending chain `n ↦ I ^ n • R • x` stabilizes for
 each `x ∈ M`, so Nakayama's lemma forces `I ^ n • x = 0`
-(`Ideal.primaryComponent_eq_top_of_isArtinian`). Moreover, for any ideal `I` with semisimple
-quotient `R ⧸ I`, the `I`-torsion submodule of an Artinian module is finitely generated over `R ⧸ I`
-(`TauCeti.finite_quotient_torsionBySet`). No Noetherian or local hypothesis on `R` is needed.
+(`Ideal.primaryComponent_eq_top_of_isArtinian`). No Noetherian or local hypothesis on `R` is needed.
 
 ## Main results
 
 * `Ideal.primaryComponent_eq_top_of_isArtinian`: over any commutative ring, an Artinian module is
   `I`-power torsion for every finitely generated ideal `I ≤ Ring.jacobson R`.
-* `TauCeti.finite_quotient_torsionBySet`: for any ideal `I` with semisimple quotient `R ⧸ I`, the
-  `I`-torsion submodule of an Artinian module is finitely generated over `R ⧸ I`.
 
 ## References
 
@@ -67,18 +62,3 @@ theorem primaryComponent_eq_top_of_isArtinian (I : Ideal R) [IsArtinian R M]
   rwa [hbot, Submodule.mem_bot] at hmem
 
 end Ideal
-
-namespace TauCeti
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- For any ideal `I` with semisimple quotient `R ⧸ I`, the `I`-torsion submodule of an Artinian
-`R`-module is finitely generated over `R ⧸ I`. No Noetherian or local hypothesis is needed. -/
-theorem finite_quotient_torsionBySet [IsArtinian R M] (I : Ideal R) [IsSemisimpleRing (R ⧸ I)] :
-    Module.Finite (R ⧸ I) (Submodule.torsionBySet R M (I : Set R)) := by
-  have : IsArtinian (R ⧸ I) (Submodule.torsionBySet R M (I : Set R)) :=
-    isArtinian_of_tower R (isArtinian_submodule' _)
-  exact ((IsSemisimpleModule.finite_tfae (R := R ⧸ I)
-    (M := Submodule.torsionBySet R M (I : Set R))).out 3 1).mp this
-
-end TauCeti

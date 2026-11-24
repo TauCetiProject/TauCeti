@@ -58,6 +58,11 @@ short-exactness equivalences in both directions
   `TauCeti.IsInjectiveEnvelope.shortExact_map_adicCompletionMatlisDuality_inverse`, and their
   `_iff` / `_leftOp` forms: the Matlis anti-equivalence reverses short exact sequences in both
   directions.
+
+## References
+
+* The Stacks Project, Remark 47.7.9, Tag 0EGL.
+* W. Bruns, J. Herzog, *Cohen–Macaulay rings*, Theorem 3.2.13.
 -/
 
 public section
@@ -65,6 +70,67 @@ public section
 noncomputable section
 
 open CategoryTheory CategoryTheory.Limits IsLocalRing Opposite TauCeti
+
+section Helpers
+
+universe u v w
+
+private theorem exact_injective_surjective_lcomp {A : Type u} {B : Type*} [Ring A] [Ring B]
+    {E : Type v} [AddCommGroup E] [Module A E] [Module B E] [SMulCommClass A B E]
+    [Small.{v} A] [Module.Injective A E]
+    {X₁ X₂ X₃ : Type w} [AddCommGroup X₁] [Module A X₁]
+    [AddCommGroup X₂] [Module A X₂] [AddCommGroup X₃] [Module A X₃]
+    {f : X₁ →ₗ[A] X₂} {g : X₂ →ₗ[A] X₃}
+    (hf : Function.Injective f) (hg : Function.Surjective g) (hfg : Function.Exact f g) :
+    Function.Exact (g.lcomp B E) (f.lcomp B E) ∧
+      Function.Injective (g.lcomp B E) ∧
+      Function.Surjective (f.lcomp B E) :=
+  ⟨Function.Exact.lcomp_of_surjective E hfg hg,
+   LinearMap.lcomp_injective_of_surjective _ hg,
+   fun φ ↦ Module.Injective.extension_property A E X₁ X₂ f hf φ⟩
+
+private theorem shortExact_op_map_of_lcomp {A : Type u} {B : Type*} [Ring A] [Ring B]
+    {E : Type v} [AddCommGroup E] [Module A E] [Module B E] [SMulCommClass A B E]
+    [Small.{v} A] [Module.Injective A E]
+    {F : (ModuleCat.{w} A)ᵒᵖ ⥤ ModuleCat.{max v w} B} [F.PreservesZeroMorphisms]
+    (e : ∀ M : ModuleCat.{w} A, F.obj (op M) ≃ₗ[B] (M →ₗ[A] E))
+    (he : ∀ {M M' : ModuleCat.{w} A} (g : M ⟶ M') (φ : F.obj (op M')) (x : M),
+      e M (F.map g.op φ) x = e M' φ (g x))
+    {S : ShortComplex (ModuleCat.{w} A)} (hS : S.ShortExact) :
+    (S.op.map F).ShortExact := by
+  have ⟨hex, hinj, hsurj⟩ := exact_injective_surjective_lcomp (B := B) (E := E)
+    hS.moduleCat_injective_f hS.moduleCat_surjective_g
+    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact)
+  refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
+  · intro φ
+    constructor
+    · intro hφ
+      have hφ' : S.f.hom.lcomp B E (e S.X₂ φ) = 0 := by
+        ext x
+        simpa [ShortComplex.map_g, he] using congrArg (fun f ↦ e S.X₁ f x) hφ
+      obtain ⟨ψ, hψ⟩ := (hex (e S.X₂ φ)).mp hφ'
+      refine ⟨(e S.X₃).symm ψ, (e S.X₂).injective ?_⟩
+      ext x
+      simpa [ShortComplex.map_f, he] using LinearMap.congr_fun hψ x
+    · rintro ⟨ψ, rfl⟩
+      apply (e S.X₁).injective
+      ext x
+      have hfg : S.g (S.f x) = 0 := by
+        rw [← ConcreteCategory.comp_apply, S.zero]
+        simp
+      simp [ShortComplex.map_f, ShortComplex.map_g, he, hfg]
+  · intro φ₁ φ₂ hφ
+    apply (e S.X₃).injective
+    apply hinj
+    ext x
+    simpa [ShortComplex.map_f, he] using congrArg (fun f ↦ e S.X₂ f x) hφ
+  · intro φ
+    obtain ⟨ψ, hψ⟩ := hsurj (e S.X₁ φ)
+    refine ⟨(e S.X₂).symm ψ, (e S.X₁).injective ?_⟩
+    ext x
+    simpa [ShortComplex.map_g, he] using LinearMap.congr_fun hψ x
+
+end Helpers
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -242,46 +308,14 @@ theorem shortExact_map_matlisDualAdicCompletion {S : ShortComplex (ModuleCat.{w}
     (hS : S.ShortExact) : (S.op.map hι.matlisDualAdicCompletion).ShortExact := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := hι.moduleInjective
-  refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
-  · intro (φ : hι.matlisDualAdicCompletionObj S.X₂)
-    constructor
-    · intro (hφ : hι.matlisDualAdicCompletionMap S.f φ = 0)
-      have hφ' : S.f.hom.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E
-          (hι.matlisDualAdicCompletionObjEquiv S.X₂ φ) = 0 := by
-        ext x
-        simpa using congrArg (fun f ↦ hι.matlisDualAdicCompletionObjEquiv S.X₁ f x) hφ
-      obtain ⟨ψ, hψ⟩ := (Function.Exact.lcomp_of_surjective E
-        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact)
-        hS.moduleCat_surjective_g _).mp hφ'
-      refine ⟨(hι.matlisDualAdicCompletionObjEquiv S.X₃).symm ψ, ?_⟩
-      change hι.matlisDualAdicCompletionMap S.g
-        ((hι.matlisDualAdicCompletionObjEquiv S.X₃).symm ψ) = φ
-      apply (hι.matlisDualAdicCompletionObjEquiv S.X₂).injective
-      ext x
-      simpa using LinearMap.congr_fun hψ x
-    · rintro ⟨(ψ : hι.matlisDualAdicCompletionObj S.X₃), rfl⟩
-      change hι.matlisDualAdicCompletionMap S.f (hι.matlisDualAdicCompletionMap S.g ψ) = 0
-      apply (hι.matlisDualAdicCompletionObjEquiv S.X₁).injective
-      ext x
-      have hfg : S.g (S.f x) = 0 := by
-        rw [← ConcreteCategory.comp_apply, S.zero]
-        simp
-      simp [hfg]
-  · intro (φ₁ : hι.matlisDualAdicCompletionObj S.X₃)
-      (φ₂ : hι.matlisDualAdicCompletionObj S.X₃)
-      (hφ : hι.matlisDualAdicCompletionMap S.g φ₁ = hι.matlisDualAdicCompletionMap S.g φ₂)
-    apply (hι.matlisDualAdicCompletionObjEquiv S.X₃).injective
-    exact LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g
-      (congrArg (hι.matlisDualAdicCompletionObjEquiv S.X₂) hφ)
-  · intro (φ : hι.matlisDualAdicCompletionObj S.X₁)
-    obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property R E S.X₁ S.X₂ S.f.hom
-      hS.moduleCat_injective_f (hι.matlisDualAdicCompletionObjEquiv S.X₁ φ)
-    refine ⟨(hι.matlisDualAdicCompletionObjEquiv S.X₂).symm ψ, ?_⟩
-    change hι.matlisDualAdicCompletionMap S.f
-      ((hι.matlisDualAdicCompletionObjEquiv S.X₂).symm ψ) = φ
-    apply (hι.matlisDualAdicCompletionObjEquiv S.X₁).injective
-    ext x
-    exact LinearMap.congr_fun hψ x
+  refine shortExact_op_map_of_lcomp
+    (fun M ↦ (eqToIso (hι.matlisDualAdicCompletion_obj (op M))).toLinearEquiv.trans
+      (hι.matlisDualAdicCompletionObjEquiv M))
+    (fun g φ x ↦ ?_) hS
+  simp only [LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, eqToIso.hom]
+  rw [← ConcreteCategory.comp_apply, matlisDualAdicCompletion_map, Category.assoc, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id, ConcreteCategory.comp_apply]
+  simp
 
 /-- **Exactness of `Hom_{R̂}(-, E)`**: applying `matlisDualOfAdicCompletion` reverses every short
 exact sequence of `R̂`-modules into a short exact sequence of `R`-modules. -/
@@ -291,46 +325,14 @@ theorem shortExact_map_matlisDualOfAdicCompletion
     (T.op.map hι.matlisDualOfAdicCompletion).ShortExact := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := hι.adicCompletion.moduleInjective
-  refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
-  · intro (φ : hι.matlisDualOfAdicCompletionObj T.X₂)
-    constructor
-    · intro (hφ : hι.matlisDualOfAdicCompletionMap T.f φ = 0)
-      have hφ' : T.f.hom.lcomp R E (hι.matlisDualOfAdicCompletionObjEquiv T.X₂ φ) = 0 := by
-        ext x
-        simpa using congrArg (fun f ↦ hι.matlisDualOfAdicCompletionObjEquiv T.X₁ f x) hφ
-      obtain ⟨ψ, hψ⟩ := (Function.Exact.lcomp_of_surjective E
-        ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact T).1 hT.exact)
-        hT.moduleCat_surjective_g _).mp hφ'
-      refine ⟨(hι.matlisDualOfAdicCompletionObjEquiv T.X₃).symm ψ, ?_⟩
-      change hι.matlisDualOfAdicCompletionMap T.g
-        ((hι.matlisDualOfAdicCompletionObjEquiv T.X₃).symm ψ) = φ
-      apply (hι.matlisDualOfAdicCompletionObjEquiv T.X₂).injective
-      ext x
-      simpa using LinearMap.congr_fun hψ x
-    · rintro ⟨(ψ : hι.matlisDualOfAdicCompletionObj T.X₃), rfl⟩
-      change hι.matlisDualOfAdicCompletionMap T.f (hι.matlisDualOfAdicCompletionMap T.g ψ) = 0
-      apply (hι.matlisDualOfAdicCompletionObjEquiv T.X₁).injective
-      ext x
-      have hfg : T.g (T.f x) = 0 := by
-        rw [← ConcreteCategory.comp_apply, T.zero]
-        simp
-      simp [hfg]
-  · intro (φ₁ : hι.matlisDualOfAdicCompletionObj T.X₃)
-      (φ₂ : hι.matlisDualOfAdicCompletionObj T.X₃)
-      (hφ : hι.matlisDualOfAdicCompletionMap T.g φ₁ = hι.matlisDualOfAdicCompletionMap T.g φ₂)
-    apply (hι.matlisDualOfAdicCompletionObjEquiv T.X₃).injective
-    exact LinearMap.lcomp_injective_of_surjective _ hT.moduleCat_surjective_g
-      (congrArg (hι.matlisDualOfAdicCompletionObjEquiv T.X₂) hφ)
-  · intro (φ : hι.matlisDualOfAdicCompletionObj T.X₁)
-    obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property
-      (_root_.AdicCompletion (maximalIdeal R) R) E T.X₁ T.X₂ T.f.hom
-      hT.moduleCat_injective_f (hι.matlisDualOfAdicCompletionObjEquiv T.X₁ φ)
-    refine ⟨(hι.matlisDualOfAdicCompletionObjEquiv T.X₂).symm ψ, ?_⟩
-    change hι.matlisDualOfAdicCompletionMap T.f
-      ((hι.matlisDualOfAdicCompletionObjEquiv T.X₂).symm ψ) = φ
-    apply (hι.matlisDualOfAdicCompletionObjEquiv T.X₁).injective
-    ext x
-    exact LinearMap.congr_fun hψ x
+  refine shortExact_op_map_of_lcomp
+    (fun N ↦ (eqToIso (hι.matlisDualOfAdicCompletion_obj (op N))).toLinearEquiv.trans
+      (hι.matlisDualOfAdicCompletionObjEquiv N))
+    (fun g φ x ↦ ?_) hT
+  simp only [LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, eqToIso.hom]
+  rw [← ConcreteCategory.comp_apply, matlisDualOfAdicCompletion_map, Category.assoc, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id, ConcreteCategory.comp_apply]
+  simp
 
 end SmallFunctors
 
