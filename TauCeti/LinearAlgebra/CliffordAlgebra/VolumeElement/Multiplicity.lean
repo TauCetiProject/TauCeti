@@ -987,14 +987,17 @@ theorem oddVolumeTwoFactorEquiv_apply
 -- inverse signatures spell out the `Prop` conversions as direct `Eq.trans` terms.
 /-- The inverse of `oddVolumeTwoFactorEquiv` projects onto `E⁺` and applies the inverse of
 `oddVolumeFactorEquiv` on the first factor, and similarly onto `E⁻` on the second factor. -/
-theorem oddVolumeTwoFactorEquiv_symm_apply (hn : Odd n) (m : E) :
+theorem oddVolumeTwoFactorEquiv_symm_apply (m : E) :
     (oddVolumeTwoFactorEquiv o hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m =
-      ((oddVolumeFactorEquiv o hn hQ hsurj₁
+      ((oddVolumeFactorEquiv o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂) hQ hsurj₁
           (fun s ↦ (hω₁ s).trans (one_smul ℂ s).symm)).symm
-          ((oddVolumeDecomposition o hn hQ).symm m).1,
-       (oddVolumeFactorEquiv o hn hQ hsurj₂
+          ((oddVolumeDecomposition o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂)
+              hQ).symm m).1,
+       (oddVolumeFactorEquiv o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂) hQ hsurj₂
           (fun s ↦ (hω₂ s).trans (neg_one_smul ℂ s).symm)).symm
-          ((oddVolumeDecomposition o hn hQ).symm m).2) := by
+          ((oddVolumeDecomposition o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂)
+              hQ).symm m).2) := by
+  have hn := odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂
   apply (oddVolumeTwoFactorEquiv o hQ hsurj₁ hsurj₂ hω₁ hω₂).injective
   rw [LinearEquiv.apply_symm_apply, oddVolumeTwoFactorEquiv_apply,
     ← coe_oddVolumeFactorEquiv_apply o hn hQ hsurj₁ (complexVolume_smul_eq_one_smul o hω₁),
@@ -1005,22 +1008,24 @@ theorem oddVolumeTwoFactorEquiv_symm_apply (hn : Odd n) (m : E) :
 /-- First component of the inverse of `oddVolumeTwoFactorEquiv`: project to `E⁺` and apply the
 inverse of `oddVolumeFactorEquiv`. -/
 @[simp]
-theorem oddVolumeTwoFactorEquiv_symm_fst (hn : Odd n) (m : E) :
+theorem oddVolumeTwoFactorEquiv_symm_fst (m : E) :
     ((oddVolumeTwoFactorEquiv o hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).1 =
-      (oddVolumeFactorEquiv o hn hQ hsurj₁
+      (oddVolumeFactorEquiv o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂) hQ hsurj₁
           (fun s ↦ (hω₁ s).trans (one_smul ℂ s).symm)).symm
-        ((oddVolumeDecomposition o hn hQ).symm m).1 :=
-  congrArg Prod.fst (oddVolumeTwoFactorEquiv_symm_apply o hQ hsurj₁ hsurj₂ hω₁ hω₂ hn m)
+        ((oddVolumeDecomposition o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂)
+            hQ).symm m).1 :=
+  congrArg Prod.fst (oddVolumeTwoFactorEquiv_symm_apply o hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
 
 /-- Second component of the inverse of `oddVolumeTwoFactorEquiv`: project to `E⁻` and apply the
 inverse of `oddVolumeFactorEquiv`. -/
 @[simp]
-theorem oddVolumeTwoFactorEquiv_symm_snd (hn : Odd n) (m : E) :
+theorem oddVolumeTwoFactorEquiv_symm_snd (m : E) :
     ((oddVolumeTwoFactorEquiv o hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).2 =
-      (oddVolumeFactorEquiv o hn hQ hsurj₂
+      (oddVolumeFactorEquiv o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂) hQ hsurj₂
           (fun s ↦ (hω₂ s).trans (neg_one_smul ℂ s).symm)).symm
-        ((oddVolumeDecomposition o hn hQ).symm m).2 :=
-  congrArg Prod.snd (oddVolumeTwoFactorEquiv_symm_apply o hQ hsurj₁ hsurj₂ hω₁ hω₂ hn m)
+        ((oddVolumeDecomposition o (odd_of_complexVolume_smul_eq_self_neg o hQ hω₁ hω₂)
+            hQ).symm m).2 :=
+  congrArg Prod.snd (oddVolumeTwoFactorEquiv_symm_apply o hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
 
 /-- Naturality of `oddVolumeTwoFactorEquiv` under any Clifford-linear map `g : E →ₗ[Cℓ] F`. -/
 theorem map_oddVolumeTwoFactorEquiv {F : Type*} [AddCommGroup F] [Module ℂ F]
