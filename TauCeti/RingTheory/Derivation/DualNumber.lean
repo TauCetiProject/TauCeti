@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
+public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.DualNumber.Map
 
 /-!
@@ -21,8 +21,10 @@ The conditions for such automorphisms to commute with a morphism are the corresp
 compatibility conditions on derivations; in particular, fixing a target map or a marking
 amounts to a vanishing condition on the derivation.
 
-The construction uses `TauCeti.derivationToTrivSqZeroExtEquivLift` for the correspondence
-between derivations and lifts, and `DualNumber.lift` to extend a lift to the dual numbers.
+The automorphism `TauCeti.derivationLieAlgebra.toDualNumberAut` is built for derivations of a
+not necessarily commutative algebra, using `DualNumber.lift` to extend `a ↦ a + (D a) ε` to the
+dual numbers; `Derivation.toDualNumberAut` is its commutative case through
+`TauCeti.derivationEquivDerivationLieAlgebra`.
 The group isomorphism `TauCeti.derivationEquivInfinitesimalDualNumberAut` between derivations
 and the subgroup `TauCeti.infinitesimalDualNumberAut` is obtained in
 `TauCeti.Algebra.Lie.Derivation.InfinitesimalAut` as the commutative case of the statement for
@@ -38,59 +40,112 @@ public section
 
 open TrivSqZeroExt DualNumber
 
-namespace Derivation
+namespace TauCeti.derivationLieAlgebra
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
-private def dualNumberEnd (d : Derivation R A A) : A[ε] →ₐ[R] A[ε] :=
-  DualNumber.lift ⟨((TauCeti.derivationToTrivSqZeroExtEquivLift R A A d).val, ε),
-    eps_mul_eps, fun _ ↦ Commute.all _ _⟩
+/-- The algebra map `a ↦ a + (D a) ε` attached to a derivation; its multiplicativity is the
+Leibniz rule. -/
+private def toDualNumberAlgHom (D : derivationLieAlgebra R A) : A →ₐ[R] A[ε] where
+  toFun a := inl a + inr ((D : Module.End R A) a)
+  map_one' := by ext <;> simp
+  map_mul' a b := by ext <;> simp [add_comm]
+  map_zero' := by ext <;> simp
+  map_add' a b := by ext <;> simp [add_add_add_comm]
+  commutes' r := by ext <;> simp [algebraMap_eq_inl']
 
-private theorem dualNumberEnd_fst (d : Derivation R A A) (z : A[ε]) :
-    (dualNumberEnd d z).fst = z.fst := by
-  simp [dualNumberEnd, DualNumber.lift_apply_apply]
+private def dualNumberEnd (D : derivationLieAlgebra R A) : A[ε] →ₐ[R] A[ε] :=
+  DualNumber.lift ⟨(toDualNumberAlgHom D, ε), eps_mul_eps, fun a ↦ by
+    ext <;> simp [toDualNumberAlgHom]⟩
 
-private theorem dualNumberEnd_snd (d : Derivation R A A) (z : A[ε]) :
-    (dualNumberEnd d z).snd = z.snd + d z.fst := by
-  simp [dualNumberEnd, DualNumber.lift_apply_apply, add_comm]
+private theorem dualNumberEnd_fst (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (dualNumberEnd D z).fst = z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply, toDualNumberAlgHom]
 
-/-- The infinitesimal automorphism `a + b ε ↦ a + (b + d a) ε` attached to a derivation.
-Its inverse is the automorphism attached to `-d`. -/
-def toDualNumberAut (d : Derivation R A A) : A[ε] ≃ₐ[R] A[ε] :=
-  AlgEquiv.ofAlgHom (dualNumberEnd d) (dualNumberEnd (-d))
+private theorem dualNumberEnd_snd (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (dualNumberEnd D z).snd = z.snd + (D : Module.End R A) z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply, toDualNumberAlgHom, add_comm]
+
+/-- The infinitesimal automorphism `a + b ε ↦ a + (b + D a) ε` attached to a derivation `D`.
+Its inverse is the automorphism attached to `-D`. -/
+def toDualNumberAut (D : derivationLieAlgebra R A) : A[ε] ≃ₐ[R] A[ε] :=
+  AlgEquiv.ofAlgHom (dualNumberEnd D) (dualNumberEnd (-D))
     (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
     (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
 
 /-- An infinitesimal automorphism leaves the scalar part unchanged. -/
 @[simp]
+theorem toDualNumberAut_fst (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (toDualNumberAut D z).fst = z.fst :=
+  dualNumberEnd_fst D z
+
+/-- The infinitesimal part changes by the derivation of the scalar part. -/
+@[simp]
+theorem toDualNumberAut_snd (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (toDualNumberAut D z).snd = z.snd + (D : Module.End R A) z.fst :=
+  dualNumberEnd_snd D z
+
+/-- An infinitesimal automorphism fixes `ε`. -/
+@[simp]
+theorem toDualNumberAut_eps (D : derivationLieAlgebra R A) : toDualNumberAut D ε = ε := by
+  ext <;> simp
+
+@[simp]
+theorem toDualNumberAut_zero : toDualNumberAut (0 : derivationLieAlgebra R A) = 1 := by
+  ext z <;> simp
+
+/-- Addition of derivations corresponds to composition of infinitesimal automorphisms. -/
+@[simp]
+theorem toDualNumberAut_add (D E : derivationLieAlgebra R A) :
+    toDualNumberAut (D + E) = toDualNumberAut D * toDualNumberAut E := by
+  ext z <;> simp [add_left_comm, add_comm]
+
+@[simp]
+theorem toDualNumberAut_neg (D : derivationLieAlgebra R A) :
+    toDualNumberAut (-D) = (toDualNumberAut D)⁻¹ := by
+  ext z <;> simp [toDualNumberAut, dualNumberEnd_fst, dualNumberEnd_snd]
+
+end TauCeti.derivationLieAlgebra
+
+namespace Derivation
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- The infinitesimal automorphism `a + b ε ↦ a + (b + d a) ε` attached to a derivation: the
+commutative case of `TauCeti.derivationLieAlgebra.toDualNumberAut`. -/
+def toDualNumberAut (d : Derivation R A A) : A[ε] ≃ₐ[R] A[ε] :=
+  TauCeti.derivationLieAlgebra.toDualNumberAut (TauCeti.derivationEquivDerivationLieAlgebra d)
+
+/-- An infinitesimal automorphism leaves the scalar part unchanged. -/
+@[simp]
 theorem toDualNumberAut_fst (d : Derivation R A A) (z : A[ε]) :
     (d.toDualNumberAut z).fst = z.fst :=
-  dualNumberEnd_fst d z
+  TauCeti.derivationLieAlgebra.toDualNumberAut_fst _ z
 
 /-- The infinitesimal part changes by the derivation of the scalar part. -/
 @[simp]
 theorem toDualNumberAut_snd (d : Derivation R A A) (z : A[ε]) :
-    (d.toDualNumberAut z).snd = z.snd + d z.fst :=
-  dualNumberEnd_snd d z
+    (d.toDualNumberAut z).snd = z.snd + d z.fst := by
+  simp [toDualNumberAut]
 
 @[simp]
-theorem toDualNumberAut_eps (d : Derivation R A A) : d.toDualNumberAut ε = ε := by
-  ext <;> simp
+theorem toDualNumberAut_eps (d : Derivation R A A) : d.toDualNumberAut ε = ε :=
+  TauCeti.derivationLieAlgebra.toDualNumberAut_eps _
 
 @[simp]
 theorem toDualNumberAut_zero : (0 : Derivation R A A).toDualNumberAut = 1 := by
-  ext z <;> simp
+  simp [toDualNumberAut]
 
 /-- Addition of derivations corresponds to composition of infinitesimal automorphisms. -/
 @[simp]
 theorem toDualNumberAut_add (d e : Derivation R A A) :
     (d + e).toDualNumberAut = d.toDualNumberAut * e.toDualNumberAut := by
-  ext z <;> simp [add_left_comm, add_comm]
+  simp [toDualNumberAut]
 
 @[simp]
 theorem toDualNumberAut_neg (d : Derivation R A A) :
     (-d).toDualNumberAut = d.toDualNumberAut⁻¹ := by
-  ext z <;> simp [toDualNumberAut, dualNumberEnd_fst, dualNumberEnd_snd]
+  simp [toDualNumberAut]
 
 /-- Infinitesimal automorphisms commute with the coefficient map of `f` exactly when
 their derivations are compatible with `f`. This is the affine compatibility criterion
