@@ -795,6 +795,12 @@ theorem summable_neg_log_one_sub_sub_inv_absNorm :
   simpa only [Real.rpow_neg_one] using
     summable_neg_log_one_sub_sub_absNorm_rpow (K := K) (s := 1) (by norm_num)
 
+/-- For every nonzero prime ideal `𝔭` of `𝓞 K`, `-log (1 - N𝔭⁻¹) - N𝔭⁻¹ > 0`. -/
+theorem neg_log_one_sub_inv_absNorm_sub_inv_absNorm_pos {K : Type*} [Field K] [NumberField K]
+    (v : HeightOneSpectrum (𝓞 K)) :
+    0 < -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ :=
+  Real.neg_log_one_sub_inv_sub_inv_pos (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))
+
 /-- **Mertens' constant of a number field is strictly smaller than `γ + log κ_K`**, because each
 prime-ideal remainder `-log (1 - N𝔭⁻¹) - N𝔭⁻¹` is strictly positive and `𝓞 K` has at least one
 nonzero prime ideal. -/
@@ -804,10 +810,8 @@ theorem mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue 
   have hpos : 0 < ∑' v : HeightOneSpectrum (𝓞 K),
       (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) :=
     (summable_neg_log_one_sub_sub_inv_absNorm K).tsum_pos
-      (fun v ↦ (Real.neg_log_one_sub_inv_sub_inv_pos
-        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))).le) v₀
-      (Real.neg_log_one_sub_inv_sub_inv_pos
-        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v₀)))
+      (fun v ↦ (neg_log_one_sub_inv_absNorm_sub_inv_absNorm_pos v).le) v₀
+      (neg_log_one_sub_inv_absNorm_sub_inv_absNorm_pos v₀)
   have hneg : ∑' v : HeightOneSpectrum (𝓞 K),
       (Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹) =
       -∑' v : HeightOneSpectrum (𝓞 K),
@@ -840,8 +844,7 @@ theorem isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm :
   have hnonneg : 0 ≤ (∑' v, r v) - primeSummatory K r x := htail.nonneg fun v ↦ by
     split_ifs
     · exact le_rfl
-    · exact (Real.neg_log_one_sub_inv_sub_inv_pos
-        (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v))).le
+    · exact (neg_log_one_sub_inv_absNorm_sub_inv_absNorm_pos v).le
   rw [Real.norm_of_nonneg hnonneg, Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), mul_comm,
     ← htail.tsum_eq, ← tsum_mul_left]
   refine htail.summable.tsum_le_tsum (fun v ↦ ?_) (hZ.mul_left _)

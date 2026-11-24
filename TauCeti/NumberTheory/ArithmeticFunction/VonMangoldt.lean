@@ -46,7 +46,7 @@ prime divisors of any level is bounded by the endpoint prime series, uniformly i
 * `ArithmeticFunction.vonMangoldt.sum_Icc_nonprime_div_le_two_mul_log_four` and
   `ArithmeticFunction.vonMangoldt.tsum_nonprime_div_le`: the finite and infinite sums are at most
   `2 log 4`.
-* `TauCeti.vonMangoldt_div_mul_log_prime_pow`: at any prime power `p ^ k`,
+* `ArithmeticFunction.vonMangoldt.div_mul_log_prime_pow`: at any prime power `p ^ k`,
   `Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`.
 -/
 
@@ -270,13 +270,9 @@ theorem tsum_nonprime_div_le :
   exact mem_Icc.mpr ⟨Nat.one_le_iff_ne_zero.mpr (ne_of_mem_erase hn),
     le_sup (f := id) (mem_of_mem_erase hn)⟩
 
-end ArithmeticFunction.vonMangoldt
-
-namespace TauCeti
-
 /-- At any prime power `p ^ k` (including `k = 0`, where both sides vanish by division by zero),
 `Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`. -/
-theorem vonMangoldt_div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+theorem div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
     vonMangoldt (p ^ k) / (((p ^ k : ℕ) : ℝ) * Real.log ((p ^ k : ℕ) : ℝ)) =
       ((p : ℝ)⁻¹) ^ k / (k : ℝ) := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -287,4 +283,4 @@ theorem vonMangoldt_div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
   rw [vonMangoldt_apply_pow hk, vonMangoldt_apply_prime hp, Nat.cast_pow, Real.log_pow, inv_pow]
   field_simp
 
-end TauCeti
+end ArithmeticFunction.vonMangoldt
