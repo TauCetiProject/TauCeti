@@ -192,17 +192,19 @@ theorem exists_homotopyEquiv_of_d_apply_notMem [IsLocalRing R]
     by_cases h₁ : k = i
     · subst h₁
       rw [hki]
-      exact ⟨hi.1, hi.2.1⟩
+      exact ⟨TauCeti.IsLocalRing.free_ker_of_apply_eq_one hs,
+        LinearMap.finite_ker_of_apply_eq_one hs⟩
     by_cases h₂ : k = j
     · subst h₂
       rw [hkj]
-      exact ⟨hj.1, hj.2.1⟩
+      exact ⟨TauCeti.IsLocalRing.free_ker_of_apply_eq_one hs,
+        LinearMap.finite_ker_of_apply_eq_one hs⟩
     rw [hk h₁ h₂]
     have : Module.Finite R (⊤ : Submodule R (C.X k)) := .equiv Submodule.topEquiv.symm
     have : Module.Projective R (⊤ : Submodule R (C.X k)) := .of_equiv Submodule.topEquiv.symm
     exact ⟨Module.free_of_projective_of_isLocalRing, ‹_›⟩
-  · rw [(ek i).finrank_eq, hki, hi.2.2]
-  · rw [(ek j).finrank_eq, hkj, hj.2.2]
+  · rw [(ek i).finrank_eq, hki, hi]
+  · rw [(ek j).finrank_eq, hkj, hj]
   · intro k h₁ h₂
     rw [(ek k).finrank_eq, hk h₁ h₂, finrank_top]
 

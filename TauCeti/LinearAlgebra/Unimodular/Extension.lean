@@ -356,9 +356,7 @@ theorem hasUnimodularExtension_of_forall_free {R : Type u} [CommRing R]
   let K := LinearMap.ker f
   let e : (K × R) ≃ₗ[R] (Fin (n + 1) → R) := LinearMap.kerProdEquivOfApplyEqOne hf
   have : Module.Free R (K × R) := Module.Free.of_equiv e.symm
-  have : Module.Finite R (K × R) := Module.Finite.equiv e.symm
-  have : Module.Finite R K :=
-    Module.Finite.of_surjective (LinearMap.fst R K R) LinearMap.fst_surjective
+  have : Module.Finite R K := LinearMap.finite_ker_of_apply_eq_one hf
   have : IsStablyFree R K := IsStablyFree.of_free_prod R K R
   have : Module.Free R K := h K inferInstance inferInstance
   have hrank : finrank R K = n := by

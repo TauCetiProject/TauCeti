@@ -532,6 +532,7 @@ endomorphism `p` of a complex `K` is homotopic to zero, the inclusion of its ker
 equivalence. Its homotopy inverse is the projection `𝟙 - p`
 (`HomotopyEquiv.ofKernel_inv_comp_kernel_ι`), which retracts the inclusion on the nose
 (`HomotopyEquiv.kernel_ι_comp_ofKernel_inv`). -/
+@[no_expose]
 def ofKernel (hp : p ≫ p = p) (h : Homotopy p 0) : HomotopyEquiv (kernel p) K where
   hom := kernel.ι p
   inv := kernel.lift p (𝟙 K - p) (by rw [Preadditive.sub_comp, Category.id_comp, hp, sub_self])
