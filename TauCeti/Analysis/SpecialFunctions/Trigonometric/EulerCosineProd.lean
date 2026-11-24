@@ -98,26 +98,24 @@ theorem hasProdLocallyUniformly_euler_cos_prod :
       (fun z ↦ cos (π * z)) := by
   set f : ℕ → ℂ → ℂ := fun n z ↦ 1 - 4 * z ^ 2 / (2 * (n : ℂ) + 1) ^ 2 with hf
   -- The factor deviations are summable uniformly on every compact set.
-  have hloc : HasProdLocallyUniformly f (fun z ↦ ∏' n, f n z) := by
-    rw [hasProdLocallyUniformly_iff_tendstoLocallyUniformly,
-      tendstoLocallyUniformly_iff_forall_isCompact]
-    intro K hK
-    obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
-    have hu : Summable fun n : ℕ ↦ 4 * R ^ 2 * (((n : ℝ) + 1) ^ 2)⁻¹ :=
-      (((summable_nat_add_iff 1).mpr (Real.summable_nat_pow_inv.mpr one_lt_two)).mul_left
-        (4 * R ^ 2)).congr fun n ↦ by push_cast; ring
-    have hbound : ∀ᶠ n : ℕ in atTop, ∀ z ∈ K,
-        ‖-(4 * z ^ 2 / (2 * (n : ℂ) + 1) ^ 2)‖ ≤ 4 * R ^ 2 * (((n : ℝ) + 1) ^ 2)⁻¹ := by
-      refine Eventually.of_forall fun n z hz ↦ ?_
-      have hnorm : ‖2 * (n : ℂ) + 1‖ = 2 * n + 1 := by exact_mod_cast norm_natCast (2 * n + 1)
-      rw [norm_neg, norm_div, norm_mul, norm_pow, norm_pow, hnorm, ← div_eq_mul_inv,
-        RCLike.norm_ofNat]
-      have hz' : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg z) (hR z hz) 2
-      gcongr
-      linarith
-    have h := Summable.hasProdUniformlyOn_nat_one_add
-      (f := fun n z ↦ -(4 * z ^ 2 / (2 * (n : ℂ) + 1) ^ 2)) hK hu hbound fun n ↦ by fun_prop
-    simpa only [← sub_eq_add_neg, hasProdUniformlyOn_iff_tendstoUniformlyOn] using h
+  have hloc : HasProdLocallyUniformly f (fun z ↦ ∏' n, f n z) :=
+    hasProdLocallyUniformly_of_forall_compact fun K hK ↦ by
+      obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
+      have hu : Summable fun n : ℕ ↦ 4 * R ^ 2 * (((n : ℝ) + 1) ^ 2)⁻¹ :=
+        (((summable_nat_add_iff 1).mpr (Real.summable_nat_pow_inv.mpr one_lt_two)).mul_left
+          (4 * R ^ 2)).congr fun n ↦ by push_cast; ring
+      have hbound : ∀ᶠ n : ℕ in atTop, ∀ z ∈ K,
+          ‖-(4 * z ^ 2 / (2 * (n : ℂ) + 1) ^ 2)‖ ≤ 4 * R ^ 2 * (((n : ℝ) + 1) ^ 2)⁻¹ := by
+        refine Eventually.of_forall fun n z hz ↦ ?_
+        have hnorm : ‖2 * (n : ℂ) + 1‖ = 2 * n + 1 := by exact_mod_cast norm_natCast (2 * n + 1)
+        rw [norm_neg, norm_div, norm_mul, norm_pow, norm_pow, hnorm, ← div_eq_mul_inv,
+          RCLike.norm_ofNat]
+        have hz' : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg z) (hR z hz) 2
+        gcongr
+        linarith
+      have h := Summable.hasProdUniformlyOn_nat_one_add
+        (f := fun n z ↦ -(4 * z ^ 2 / (2 * (n : ℂ) + 1) ^ 2)) hK hu hbound fun n ↦ by fun_prop
+      simpa only [← sub_eq_add_neg] using h
   -- The limit is continuous and equals `cos (π z)` off the integers, hence everywhere.
   have hcont : Continuous fun z ↦ ∏' n, f n z :=
     hloc.continuous (Frequently.of_forall fun s ↦ by simp only [hf]; fun_prop)

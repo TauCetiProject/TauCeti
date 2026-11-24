@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
+import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 
 /-!

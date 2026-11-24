@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
-public import TauCeti.Analysis.Complex.PartialFraction
+public import TauCeti.Analysis.Normed.Field.PartialFraction
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ComplexDeriv
 import Mathlib.Topology.Algebra.Module.Cardinality
