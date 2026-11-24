@@ -10,7 +10,8 @@ public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.MellinInversion
 public import TauCeti.Analysis.MellinTransform.SmoothCutoff
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Smoothed coefficient sums as Mellin inverses
@@ -201,29 +202,6 @@ theorem LSeries.hasSum_mul_smoothCutoff {f : ℕ → ℂ} {ν : ℝ → ℝ} {ε
   · simp
   · rw [mellinInv_mellin_smoothCutoff hν hνs hε hσ (by positivity), div_eq_mul_inv]
 
-/-- For `0 ≤ ε ≤ 1`, `2^ε - 2^{-ε} ≤ 2ε`: by Bernoulli's inequality `2^ε ≤ 1 + ε`, and then
-`2^{-ε} ≥ (1 + ε)⁻¹ ≥ 1 - ε`. -/
-private lemma two_rpow_sub_two_rpow_neg_le {ε : ℝ} (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
-    (2 : ℝ) ^ ε - 2 ^ (-ε) ≤ 2 * ε := by
-  have h1 : (2 : ℝ) ^ ε ≤ 1 + ε := by
-    simpa [one_add_one_eq_two] using rpow_one_add_le_one_add_mul_self (s := 1) (by norm_num) hε0 hε1
-  have hpos : (0 : ℝ) < 2 ^ ε := by positivity
-  have h2 : 1 - ε ≤ (2 : ℝ) ^ (-ε) := by
-    rw [rpow_neg zero_le_two, ← one_div, le_div_iff₀ hpos]
-    nlinarith
-  linarith
-
-/-- The open interval `(⌊z⌋₊, ⌈y⌉₊)` of natural numbers has at most `y - z + 1` elements. -/
-private lemma card_Ioo_floor_ceil_le {y z : ℝ} (hz : 0 ≤ z) (hzy : z ≤ y) :
-    ((Finset.Ioo ⌊z⌋₊ ⌈y⌉₊).card : ℝ) ≤ y - z + 1 := by
-  rw [Nat.card_Ioo, Nat.sub_sub]
-  rcases le_or_gt ⌈y⌉₊ (⌊z⌋₊ + 1) with h | h
-  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
-    linarith
-  · rw [Nat.cast_sub h.le]
-    push_cast
-    linarith [Nat.ceil_lt_add_one (hz.trans hzy), Nat.lt_floor_add_one z]
-
 /-- Outside the window `(2^{-ε}X, 2^ε X)` the sharp weight `1_{0 < n ≤ X}` and the smoothed weight
 `χ_ε(n / X)` of a bump agree. -/
 private lemma sharp_sub_smoothCutoff_eq_zero {ν : ℝ → ℝ} (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
@@ -330,7 +308,7 @@ theorem norm_sum_sub_tsum_mul_smoothCutoff_le {f : ℕ → ℂ} {B : ℝ}
       gcongr
       exacts [by norm_num, by linarith]
     have := card_Ioo_floor_ceil_le (by positivity) hzy
-    nlinarith [two_rpow_sub_two_rpow_neg_le hε.le hε1]
+    nlinarith [rpow_sub_rpow_neg_le two_pos hε.le hε1]
   rw [sum_sub_tsum_mul_smoothCutoff_eq hνs hνm hε hε1 hX0]
   calc _ ≤ T.card * (3 * B * Real.log X) := by simpa using norm_sum_le_of_le T hterm
     _ ≤ (2 * ε * X + 1) * (3 * B * Real.log X) := by
