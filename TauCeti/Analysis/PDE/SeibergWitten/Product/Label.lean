@@ -15,8 +15,10 @@ Let `Y` be a space and `X = (ℝ / pℤ) × Y`. A `Spinᶜ` structure on `X` twi
 `E` has determinant class `l = 2e - κ`, where `e = c₁(E)` and `κ` is the canonical class, and the
 expected dimension of its Seiberg–Witten moduli space is `d(e) = e · e - κ · e`. When `Y` is a
 closed oriented three-manifold, the canonical class of the product structure is pulled back from
-`Y`, and the energy identity for the unperturbed equations on `X` shows that only labels pulled
-back from `Y` can carry solutions (Baldridge). The second cohomology splits as
+`Y`, and the energy identity for the unperturbed equations on `X` shows that the moduli space is
+empty for a label that is not pulled back from `Y` and has `d(e) ≥ 0`; so the Seiberg–Witten
+invariant is supported on labels pulled back from `Y` (Baldridge, Theorem A). The second
+cohomology splits as
 `H²(X; ℤ) = pr₂^* H²(Y; ℤ) ⊕ θ_p ⌣ pr₂^* H¹(Y; ℤ)`
 (`TopCat.singularCohomologyAddCircleProdSlantEquiv`), and the cross summand `H¹(Y; ℤ)` is
 torsion-free. This file proves the consequences for labels, for an arbitrary space `Y` and with
@@ -80,8 +82,6 @@ theorem two_smul_sub_mem_range_singularCohomologyMap_snd_addCircle_iff
       e ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
         (M := 𝟙_ (ModuleCat.{0} ℤ)) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y)
           2).hom := by
-  -- `H¹(Y; ℤ)` is torsion-free since the coefficient module `𝟙_ (ModuleCat ℤ)` is `ℤ`
-  have : IsAddTorsionFree (𝟙_ (ModuleCat.{0} ℤ)) := inferInstanceAs (IsAddTorsionFree ℤ)
   rw [Submodule.sub_mem_iff_left _ hκ]
   exact TopCat.zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff _ Y (n := 1) two_ne_zero e
 
@@ -102,14 +102,9 @@ theorem homologyMap_two_smul_sub_mem_range_singularCohomologyMap_snd_addCircle_i
       e ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
         (M := 𝟙_ (ModuleCat.{0} ℤ)) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y)
           2).hom := by
-  rw [← two_smul_sub_mem_range_singularCohomologyMap_snd_addCircle_iff hκ]
-  refine ⟨TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective Y g hg _,
-    fun hl ↦ ?_⟩
-  -- the slant product by the circuit class commutes with the change of coefficients
-  rw [TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff] at hl ⊢
-  rw [TopCat.singularSlant_linearYonedaObjMap _ (TopCat.of (AddCircle p)) Y
-    (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom g 1 1 (1 + 1) (add_comm 1 1) (AddCircle.fundamentalClass p),
-    hl, map_zero]
+  exact (TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle_iff
+    (n := 1) Y g (Y.injective_homologyMap_linearYonedaObjMap_one g hg) _).trans
+      (two_smul_sub_mem_range_singularCohomologyMap_snd_addCircle_iff hκ)
 
 /-- **The dimension of a label on `(ℝ / pℤ) × Y`**: let `κ ∈ H²((ℝ / pℤ) × Y; ℤ)` be pulled back
 from `Y`, and pair against `[ℝ / pℤ] × y` for a class `y ∈ H₃(Y; ℤ)`. Write
