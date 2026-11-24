@@ -186,7 +186,8 @@ theorem tendsto_normalizedTwoNorm_map_mul_sub_of_mem {a : A}
     (ha : a ∈ asymptoticTwoNormDomain l φ hφ) (b : A) :
     Tendsto (fun i ↦ normalizedTwoNorm (φ i (a * b) - φ i a * φ i b)) l (𝓝 0) :=
   squeeze_zero (fun _ ↦ normalizedTwoNorm_nonneg _)
-    (fun i ↦ normalizedTwoNorm_map_mul_sub_le' (hφ i) a b) (by simpa using ha.2.mul_const ‖b‖)
+    (fun i ↦ normalizedTwoNorm_map_mul_sub_le' (hφ i) a b)
+    (by simpa using ((mem_asymptoticTwoNormDomain_iff hφ).1 ha).2.sqrt.mul_const ‖b‖)
 
 /-- **Asymptotic multiplicativity on the 2-norm domain, on the right.** For `a ∈ D₂` and every
 `b`, `‖φᵢ(ba) - φᵢ(b)φᵢ(a)‖₂ → 0`. -/
@@ -194,21 +195,22 @@ theorem tendsto_normalizedTwoNorm_map_mul_sub_of_mem' {a : A}
     (ha : a ∈ asymptoticTwoNormDomain l φ hφ) (b : A) :
     Tendsto (fun i ↦ normalizedTwoNorm (φ i (b * a) - φ i b * φ i a)) l (𝓝 0) :=
   squeeze_zero (fun _ ↦ normalizedTwoNorm_nonneg _)
-    (fun i ↦ normalizedTwoNorm_map_mul_sub_le (hφ i) b a) (by simpa using ha.1.const_mul ‖b‖)
+    (fun i ↦ normalizedTwoNorm_map_mul_sub_le (hφ i) b a)
+    (by simpa using ((mem_asymptoticTwoNormDomain_iff hφ).1 ha).1.sqrt.const_mul ‖b‖)
 
 /-- **Asymptotic multiplicativity on the norm domain, on the left.** For `a ∈ D_∞` and every
 `b`, `‖φᵢ(ab) - φᵢ(a)φᵢ(b)‖ → 0`. -/
 theorem tendsto_norm_map_mul_sub_of_mem {a : A} (ha : a ∈ asymptoticNormDomain l φ hφ) (b : A) :
     Tendsto (fun i ↦ ‖φ i (a * b) - φ i a * φ i b‖) l (𝓝 0) :=
   squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ norm_map_mul_sub_le' (hφ i) a b)
-    (by simpa using ha.2.mul_const ‖b‖)
+    (by simpa using ((mem_asymptoticNormDomain_iff hφ).1 ha).2.sqrt.mul_const ‖b‖)
 
 /-- **Asymptotic multiplicativity on the norm domain, on the right.** For `a ∈ D_∞` and every
 `b`, `‖φᵢ(ba) - φᵢ(b)φᵢ(a)‖ → 0`. -/
 theorem tendsto_norm_map_mul_sub_of_mem' {a : A} (ha : a ∈ asymptoticNormDomain l φ hφ) (b : A) :
     Tendsto (fun i ↦ ‖φ i (b * a) - φ i b * φ i a‖) l (𝓝 0) :=
   squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ norm_map_mul_sub_le (hφ i) b a)
-    (by simpa using ha.1.const_mul ‖b‖)
+    (by simpa using ((mem_asymptoticNormDomain_iff hφ).1 ha).1.sqrt.const_mul ‖b‖)
 
 /-- **The generating-set criterion in 2-norm.** If `‖φᵢ(s⋆s) - φᵢ(s⋆)φᵢ(s)‖₂ → 0` and
 `‖φᵢ(ss⋆) - φᵢ(s)φᵢ(s⋆)‖₂ → 0` for every `s` in a set `S` generating `A` as a C⋆-algebra, then
