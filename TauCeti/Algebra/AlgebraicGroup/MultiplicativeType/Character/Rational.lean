@@ -126,6 +126,17 @@ theorem coe_groupLikeEquivFixedPoints_apply (hH : multiplicativeTypeCommHopfAlgP
   rw [groupLikeEquivFixedPoints]
   rfl
 
+/-- The inverse of `groupLikeEquivFixedPoints` descends a Galois-fixed geometric character to the
+character over `k` whose scalar extension it is. -/
+@[simp]
+theorem groupLikeBaseChange_groupLikeEquivFixedPoints_symm
+    (hH : multiplicativeTypeCommHopfAlgProperty k H)
+    (χ : FixedPoints.subgroup (Field.absoluteGaloisGroup k)
+      (CommHopfAlgCat.geometricCharacterGroup H.obj)) :
+    groupLikeBaseChange (hH.groupLikeEquivFixedPoints.symm χ) =
+      (χ : CommHopfAlgCat.geometricCharacterGroup H.obj) := by
+  rw [← hH.coe_groupLikeEquivFixedPoints_apply, MulEquiv.apply_symm_apply]
+
 /-- **A group of multiplicative type is diagonalizable exactly when the absolute Galois group
 acts trivially on its geometric characters.** This holds over every field. -/
 theorem groupLikeSpannedProperty_iff_forall_smul_eq
