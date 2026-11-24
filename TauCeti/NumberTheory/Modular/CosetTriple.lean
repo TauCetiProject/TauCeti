@@ -189,7 +189,11 @@ theorem equivalent_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e e' : PSL(2, ℤ
 the re-indexing permutation `e.symm.trans e'`. -/
 theorem modularTriple_eq_smul (Γ' : Subgroup PSL(2, ℤ)) (e e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     modularTriple Γ' e' = (e.symm.trans e') • modularTriple Γ' e := by
-  ext1 <;> simp [Equiv.permutationRepresentation_eq_conj e e']
+  rw [modularTriple_eq_cosetTriple Γ' e, modularTriple_eq_cosetTriple Γ' e',
+    TriangleGroup.cosetTriple_eq_smul _ (Equiv.trans _ e)]
+  congr 1
+  ext
+  simp
 
 /-- The connected isomorphism class of the modular triple of a finite-index subgroup
 `Γ' ≤ PSL(2, ℤ)`, independent of the coset numbering. -/
