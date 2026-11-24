@@ -740,10 +740,11 @@ instance [QuasiSeparated f] : QuasiSeparated (f.perfection p hX hY) :=
     (fun _ _ _ _ ↦ inferInstance) ‹_›
 
 instance [IsAffineHom f] : IsAffineHom (f.perfection p hX hY) :=
+  -- Instance search does not reach this parent of Mathlib's `IsMultiplicative @IsAffineHom`.
   have : MorphismProperty.IsStableUnderComposition @IsAffineHom :=
     ⟨fun _ _ _ _ ↦ inferInstance⟩
   f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsAffineHom
-    (fun _ _ _ _ ↦ (IsIntegralHom.iff_universallyClosed_and_isAffineHom.1 inferInstance).2) ‹_›
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
 
 instance [IsSeparated f] : IsSeparated (f.perfection p hX hY) :=
   f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsSeparated
