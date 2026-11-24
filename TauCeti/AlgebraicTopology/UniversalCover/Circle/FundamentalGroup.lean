@@ -528,14 +528,8 @@ theorem bijective_mapOfEq_toCircle_of_zpowers_eq_top {X : Type*} [TopologicalSpa
       zpowersHom _ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ∘
         fundamentalGroupMulEquiv 1 :=
     funext (mapOfEq_toCircle_apply γ)
-  -- A generator of an infinite group has infinite order.
-  have hγ' := orderOf_eq_zero_iff.1
-    (Infinite.orderOf_eq_zero_of_forall_mem_zpowers fun y ↦ hγ ▸ Subgroup.mem_top y)
   rw [h]
-  refine ⟨((injective_zpow_iff_not_isOfFinOrder.2 hγ').comp Multiplicative.toAdd.injective).comp
-    (fundamentalGroupMulEquiv 1).injective, fun y ↦ ?_⟩
-  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hγ ▸ Subgroup.mem_top y)
-  exact ⟨(fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd k), by simp⟩
+  exact (zpowersHom_bijective hγ).comp (fundamentalGroupMulEquiv 1).bijective
 
 /-- A loop whose class is sent to the generator by an identification `π₁(X, x) ≃* ℤ`, read as a
 map from the circle, induces a bijection on fundamental groups. -/

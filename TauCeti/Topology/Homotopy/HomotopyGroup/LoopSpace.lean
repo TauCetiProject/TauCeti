@@ -495,6 +495,7 @@ theorem GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fi
 
 /-- The inverse of `pi1MulEquivFundamentalGroup` sends the class of a loop to the class of the
 corresponding one-dimensional generalized loop. -/
+@[simp]
 theorem HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk (γ : Path x x) :
     pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ)) =
       (⟦(genLoopEquivOfUnique (Fin 1)).symm γ⟧ : π_ 1 X x) :=

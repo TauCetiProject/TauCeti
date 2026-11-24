@@ -7,11 +7,11 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Analysis.Complex.Circle.Basic
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.GenLoop.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
@@ -147,6 +147,18 @@ def projectiveLineLift : C(I × I, sphere (0 : EuclideanSpace ℂ (Fin (n + 1)))
   continuous_toFun := continuous_subtypeVal.comp
     ((hemisphereHomeomorph w).symm.continuous.comp (continuous_chordVector hvw))
 
+/-- The Hopf lift at `(s, t)` is `κ v + √(1 - |κ|²) w`, with the chord point `κ` written as
+`AffineMap.lineMap 1 e^{2πit} s`. -/
+private theorem coe_projectiveLineLift_apply_lineMap (s t : I) :
+    (projectiveLineLift v w hvw (s, t) : EuclideanSpace ℂ (Fin (n + 1))) =
+      AffineMap.lineMap (1 : ℂ) (Circle.exp (2 * π * t) : ℂ) (s : ℝ) •
+          (v : EuclideanSpace ℂ (Fin (n + 1))) +
+        ((√(1 - ‖AffineMap.lineMap (1 : ℂ) (Circle.exp (2 * π * t) : ℂ) (s : ℝ)‖ ^ 2) : ℝ) : ℂ) •
+          (w : EuclideanSpace ℂ (Fin (n + 1))) := by
+  simp only [projectiveLineLift, ContinuousMap.coe_mk, coe_hemisphereHomeomorph_symm_apply,
+    chordVector, ← Submodule.norm_coe, norm_smul, norm_eq_of_mem_sphere, mul_one,
+    Complex.coe_smul]
+
 /-- The Hopf lift at `(s, t)` is `κ v + √(1 - |κ|²) w`, for `κ = (1 - s) + s e^{2πit}`. -/
 theorem coe_projectiveLineLift_apply (s t : I) :
     (projectiveLineLift v w hvw (s, t) : EuclideanSpace ℂ (Fin (n + 1))) =
@@ -154,9 +166,8 @@ theorem coe_projectiveLineLift_apply (s t : I) :
           (v : EuclideanSpace ℂ (Fin (n + 1))) +
         ((√(1 - ‖((1 - (s : ℝ) : ℝ) : ℂ) + ((s : ℝ) : ℂ) * (Circle.exp (2 * π * t) : ℂ)‖ ^ 2)
           : ℝ) : ℂ) • (w : EuclideanSpace ℂ (Fin (n + 1))) := by
-  simp only [projectiveLineLift, ContinuousMap.coe_mk, coe_hemisphereHomeomorph_symm_apply,
-    chordVector, ← Submodule.norm_coe, norm_smul, norm_eq_of_mem_sphere, mul_one,
-    AffineMap.lineMap_apply_module, Complex.real_smul, Complex.coe_smul]
+  simp only [coe_projectiveLineLift_apply_lineMap, AffineMap.lineMap_apply_module,
+    Complex.real_smul, mul_one]
 
 /-- The value of the Hopf lift at a point where the chord is a unit complex number `u` is
 `u v`. -/
@@ -164,9 +175,8 @@ private theorem coe_projectiveLineLift_of_lineMap_eq {s t : I} {u : ℂ} (hu : �
     (h : AffineMap.lineMap (1 : ℂ) (Circle.exp (2 * π * t) : ℂ) (s : ℝ) = u) :
     (projectiveLineLift v w hvw (s, t) : EuclideanSpace ℂ (Fin (n + 1))) =
       u • (v : EuclideanSpace ℂ (Fin (n + 1))) := by
-  simp only [projectiveLineLift, ContinuousMap.coe_mk, coe_hemisphereHomeomorph_symm_apply,
-    chordVector, h, ← Submodule.norm_coe, norm_smul, hu, norm_eq_of_mem_sphere, mul_one,
-    one_pow, sub_self, Real.sqrt_zero, zero_smul, add_zero]
+  rw [coe_projectiveLineLift_apply_lineMap, h, hu, one_pow, sub_self, Real.sqrt_zero,
+    Complex.ofReal_zero, zero_smul, add_zero]
 
 @[simp]
 theorem projectiveLineLift_zero_left (t : I) : projectiveLineLift v w hvw (0, t) = v :=
@@ -262,10 +272,12 @@ theorem hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop :
 /-- **The projective line has degree one.** The identification `π₂(CPⁿ, [v]) ≃* ℤ` of
 `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`, through the Hopf boundary and the degree of loops
 of the circle, sends the class of the projective-line double loop to the generator `1`. -/
-theorem pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop (hn : n ≠ 0) :
-    pi2MulEquivInt v hn ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ =
+theorem pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop :
+    pi2MulEquivInt v (ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
+        (ne_zero_of_mem_unit_sphere w) hvw)
+        ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ =
       Multiplicative.ofAdd 1 := by
-  refine (pi2MulEquivInt_apply v hn _).trans ?_
+  refine (pi2MulEquivInt_apply v _ _).trans ?_
   rw [hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop, ← HomotopyGroup.map_mk]
   -- The Hopf boundary lands in the unit sphere of `ℂ`; carried back to the circle, it is the class
   -- of the counterclockwise loop.
@@ -279,11 +291,9 @@ theorem pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop (hn : n ≠ 0) :
 read as a square, generates `π₂(CPⁿ, [v]) ≅ ℤ`. -/
 theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top :
     Subgroup.zpowers (G := π_ 2 (ComplexProjectiveSpace n) (mk n v))
-      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ := by
-  have hn := ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
-    (ne_zero_of_mem_unit_sphere w) hvw
-  exact (pi2MulEquivInt v hn).zpowers_eq_top_of_apply_eq_ofAdd_one
-    (pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop hvw hn)
+      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ :=
+  MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one _
+    (pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop hvw)
 
 /-! ### The adjoint map -/
 
@@ -313,9 +323,10 @@ theorem projectiveLineLoopMap_exp (s : I) :
   Path.toCircle_exp _ s
 
 /-- The projective-line double loop, as a class of `π₁(Ω CPⁿ)`, has degree one in `ℤ`. -/
-private theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop
-    (hn : n ≠ 0) :
-    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans (pi2MulEquivInt v hn))
+private theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop :
+    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans (pi2MulEquivInt v
+        (ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
+          (ne_zero_of_mem_unit_sphere w) hvw)))
         (FundamentalGroup.fromPath (.mk (projectiveLineDoubleLoop v w hvw))) =
       Multiplicative.ofAdd 1 := by
   rw [MulEquiv.trans_apply, HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk,
@@ -326,13 +337,14 @@ private theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projec
 `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`, the map `j_*` on fundamental groups is the degree
 `π₁(S¹, 1) ≃* ℤ` of `Circle.fundamentalGroupMulEquiv`. -/
 theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap
-    (hn : n ≠ 0) (δ : FundamentalGroup Circle 1) :
-    pi2MulEquivInt v hn (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+    (δ : FundamentalGroup Circle 1) :
+    pi2MulEquivInt v (ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
+        (ne_zero_of_mem_unit_sphere w) hvw) (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
         (FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
           (projectiveLineLoopMap_one hvw) δ)) =
       Circle.fundamentalGroupMulEquiv 1 δ :=
   Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
-    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw hn) δ
+    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw) δ
 
 /-- **The adjoint map `j : S¹ → Ω CPⁿ` is bijective on fundamental groups**: it induces a
 bijection `π₁(S¹, 1) → π₁(Ω CPⁿ, refl)`. Bijectivity does not see the sign of `j`, which is
@@ -342,8 +354,6 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
     Function.Bijective (FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
       (projectiveLineLoopMap_one hvw)) :=
   Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
-    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw
-      (ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
-        (ne_zero_of_mem_unit_sphere w) hvw))
+    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw)
 
 end TauCeti.ComplexProjectiveSpace
