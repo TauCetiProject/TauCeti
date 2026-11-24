@@ -342,7 +342,7 @@ variable (S) in
 /-- The set where one coordinate is smaller than another is definable. -/
 @[simp]
 theorem definable_setOf_lt (i j : Fin n) : S.Definable n {x | x i < x j} := by
-  have h : S.Definable 2 {x | x 0 < x 1} := S.definable_setOf_lt'
+  have h : S.Definable 2 {x | x 0 < x 1} := S.definable_def.2 S.definable_setOf_lt'
   simpa [preimage] using h.preimage_comp ![i, j]
 
 variable (S) in
@@ -404,24 +404,25 @@ theorem definable_graph (hf : S.DefinableMapOn f A) :
 /-- Maps that agree on `A` are definable on `A` together. -/
 theorem congr (hf : S.DefinableMapOn f A) (hfg : EqOn f g A) : S.DefinableMapOn g A := by
   rw [definableMapOn_def, ← image_congr fun x hx => congrArg (Fin.append x) (hfg hx)]
-  exact hf
+  exact hf.definable_graph
 
 /-- The domain of a definable map is definable. -/
 theorem definable (hf : S.DefinableMapOn f A) : S.Definable m A := by
-  convert hf.image_comp (Fin.castAdd k) using 1
+  convert hf.definable_graph.image_comp (Fin.castAdd k) using 1
   rw [image_image]
   simp [Function.comp_def]
 
 /-- The image of the domain of a definable map is definable. -/
 theorem definable_image (hf : S.DefinableMapOn f A) : S.Definable k (f '' A) := by
-  convert hf.image_comp (Fin.natAdd m) using 1
+  convert hf.definable_graph.image_comp (Fin.natAdd m) using 1
   rw [image_image]
   simp [Function.comp_def]
 
 /-- The preimage of a definable set under a definable map is definable. -/
 theorem definable_inter_preimage (hf : S.DefinableMapOn f A) {B : Set (Fin k → R)}
     (hB : S.Definable k B) : S.Definable m (A ∩ f ⁻¹' B) := by
-  convert (hf.inter (hB.preimage_comp (Fin.natAdd m))).image_comp (Fin.castAdd k) using 1
+  convert (hf.definable_graph.inter (hB.preimage_comp (Fin.natAdd m))).image_comp
+    (Fin.castAdd k) using 1
   ext x
   simp [Function.comp_def, and_comm]
 
@@ -429,7 +430,7 @@ theorem definable_inter_preimage (hf : S.DefinableMapOn f A) {B : Set (Fin k →
 theorem mono (hf : S.DefinableMapOn f A) (hB : S.Definable m B) (hBA : B ⊆ A) :
     S.DefinableMapOn f B := by
   rw [definableMapOn_def]
-  convert hf.inter (hB.preimage_comp (Fin.castAdd k)) using 1
+  convert hf.definable_graph.inter (hB.preimage_comp (Fin.castAdd k)) using 1
   ext z
   constructor
   · rintro ⟨x, hx, rfl⟩
