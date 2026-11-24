@@ -128,6 +128,8 @@ noncomputable def qPowerFrobeniusGrpHom (G : Grp (Over (Spec (CommRingCat.of k))
   Functor.mapGrpIdIso.inv.app G ≫
     (Functor.mapGrpNatTrans (qPowerFrobeniusNatTrans k a ha)).app G ≫ Functor.mapGrpIdIso.hom.app G
 
+-- `rfl`: the components of `Functor.mapGrpIdIso` at `G` have underlying morphism `𝟙 G.X`, as
+-- for `relativeFrobeniusGrpHom_hom_hom_left` in `Frobenius/Relative.lean`.
 @[simp]
 theorem qPowerFrobeniusGrpHom_hom_hom (G : Grp (Over (Spec (CommRingCat.of k)))) :
     (qPowerFrobeniusGrpHom k a ha G).hom.hom = qPowerFrobeniusOver k a ha G.X :=

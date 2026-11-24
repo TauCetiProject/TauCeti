@@ -169,15 +169,24 @@ theorem isPullback_langKernelι :
 
 variable {G}
 
+/-- A point `x : T ⟶ G` is killed by the Lang map viewed as a homomorphism of group schemes if and
+only if it is killed by the Lang map of `G` as a commutative group scheme. -/
+private theorem comp_forget₂Grp_map_langMap_eq_one_iff {T : Over (Spec (CommRingCat.of k))}
+    (x : T ⟶ G.X) :
+    x ≫ ((CommGrp.forget₂Grp _).map (langMap k a ha G)).hom.hom = 1 ↔
+      x ≫ (langMap k a ha G).hom.hom.hom = 1 := by
+  rw [CommGrp.forget₂Grp_map_hom]
+  -- `Iff.rfl`: the group object `(CommGrp.forget₂Grp _).obj G` has carrier `G.X` with the same
+  -- group structure, so the unit points `1 : T ⟶ G.X` on the two sides agree by definition.
+  exact Iff.rfl
+
 /-- A point `x : T ⟶ G` over `k` factors through the kernel of the Lang map if and only if the
 Lang map kills it. -/
 theorem exists_comp_langKernelι_iff_comp_langMap {T : Over (Spec (CommRingCat.of k))}
     (x : T ⟶ G.X) :
     (∃ y, y ≫ langKernelι k a ha G = x) ↔ x ≫ (langMap k a ha G).hom.hom.hom = 1 :=
-  -- the group object underlying `G` in `Grp (Over S)` has the same carrier `G.X`
-  (exists_comp_kernel_ι_hom_iff (f := (CommGrp.forget₂Grp _).map (langMap k a ha G)) x).trans <| by
-    rw [CommGrp.forget₂Grp_map_hom]
-    exact Iff.rfl
+  (exists_comp_kernel_ι_hom_iff (f := (CommGrp.forget₂Grp _).map (langMap k a ha G)) x).trans
+    (comp_forget₂Grp_map_langMap_eq_one_iff k a ha x)
 
 variable (G) in
 /-- The Lang map kills its kernel: the inclusion of the kernel followed by the Lang map is the unit
@@ -204,9 +213,8 @@ theorem exists_comp_langKernelι (x : 𝟙_ (Over (Spec (CommRingCat.of k))) ⟶
 Frobenius: `F_T ≫ x = x`, where `F_T` is the `q`-power Frobenius of `T`. -/
 noncomputable def langKernelLift {T : Over (Spec (CommRingCat.of k))} (x : T ⟶ G.X)
     (hx : qPowerFrobeniusOver k a ha T ≫ x = x) : T ⟶ (langKernel k a ha G).X :=
-  have h : x ≫ (langMap k a ha G).hom.hom.hom = 1 := by
+  kernelLift x <| (comp_forget₂Grp_map_langMap_eq_one_iff k a ha x).2 <| by
     rw [comp_langMap_hom_hom_hom, hx, div_self']
-  kernelLift x (by rw [CommGrp.forget₂Grp_map_hom]; exact h)
 
 /-- The point `langKernelLift x hx` of the kernel of the Lang map maps to `x` in `G`. -/
 @[reassoc (attr := simp)]
@@ -321,6 +329,12 @@ namespace Gm
 
 variable {T : Over (Spec (CommRingCat.of k))}
 
+include ha in
+omit [Field k] [CharP k p] in
+/-- The finite field `k` with `p ^ a` elements has nonzero cardinality. -/
+private theorem natCard_ne_zero : Nat.card k ≠ 0 :=
+  ha ▸ pow_ne_zero a (Fact.out : p.Prime).ne_zero
+
 /-- **Frobenius on the points of `𝔾_m`.** The `q`-power Frobenius of the test scheme `T` raises the
 unit of `Γ(T, 𝒪_T)` attached to a point of `𝔾_m` to its `q`-th power. -/
 theorem pointsMulEquiv_qPowerFrobeniusOver_comp (x : T ⟶ (Gm (Spec (CommRingCat.of k))).X) :
@@ -334,9 +348,9 @@ theorem pointsMulEquiv_qPowerFrobeniusOver_comp (x : T ⟶ (Gm (Spec (CommRingCa
 theorem pointsMulEquiv_comp_langMap (x : T ⟶ (Gm (Spec (CommRingCat.of k))).X) :
     pointsMulEquiv T (x ≫ (langMap k a ha (GmCommGrp (Spec (CommRingCat.of k)))).hom.hom.hom) =
       pointsMulEquiv T x ^ (Nat.card k - 1) := by
-  have hq : Nat.card k ≠ 0 := ha ▸ pow_ne_zero a (Fact.out : p.Prime).ne_zero
   rw [comp_langMap_hom_hom_hom k a ha (G := GmCommGrp (Spec (CommRingCat.of k))), map_div,
-    pointsMulEquiv_qPowerFrobeniusOver_comp, ← pow_sub_one_mul hq, mul_div_cancel_right]
+    pointsMulEquiv_qPowerFrobeniusOver_comp, ← pow_sub_one_mul (natCard_ne_zero k a ha),
+    mul_div_cancel_right]
 
 /-- **The kernel of the Lang map of `𝔾_m`.** A point of `𝔾_m` with values in `T` factors through
 the kernel of the Lang map if and only if the attached unit `u` of `Γ(T, 𝒪_T)` satisfies
@@ -344,9 +358,9 @@ the kernel of the Lang map if and only if the attached unit `u` of `Γ(T, 𝒪_T
 theorem exists_comp_langKernelι_iff (x : T ⟶ (Gm (Spec (CommRingCat.of k))).X) :
     (∃ y, y ≫ langKernelι k a ha (GmCommGrp (Spec (CommRingCat.of k))) = x) ↔
       pointsMulEquiv T x ^ (Nat.card k - 1) = 1 := by
-  have hq : Nat.card k ≠ 0 := ha ▸ pow_ne_zero a (Fact.out : p.Prime).ne_zero
   rw [GroupScheme.exists_comp_langKernelι_iff, ← (pointsMulEquiv T).injective.eq_iff,
-    pointsMulEquiv_qPowerFrobeniusOver_comp, ← pow_sub_one_mul hq, mul_eq_right]
+    pointsMulEquiv_qPowerFrobeniusOver_comp, ← pow_sub_one_mul (natCard_ne_zero k a ha),
+    mul_eq_right]
 
 end Gm
 
