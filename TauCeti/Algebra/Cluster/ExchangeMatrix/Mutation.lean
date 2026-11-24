@@ -26,7 +26,9 @@ mutable and on the frozen rows; a square matrix is mutated along `Function.Embed
 
 This file defines the operation on plain matrices, proves that it is an involution and that it
 commutes with negation, with passage to submatrices (in particular to the principal block and
-along reindexing), and with block diagonal sums. It then shows that a skew-symmetrizer of a
+along reindexing), and with block diagonal sums. Mutation also commutes with zero extension
+of the frozen boundary and acts factorwise on amalgamations along shared frozen vertices.
+It then shows that a skew-symmetrizer of a
 square matrix is still one after mutation, so mutation acts on exchange matrices.
 
 ## Main definitions
@@ -50,6 +52,11 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
 * `TauCeti.ExchangeMatrix.submatrix_mutation`, `TauCeti.ExchangeMatrix.principal_mutation`,
   `TauCeti.ExchangeMatrix.mutation_reindex`, `TauCeti.ExchangeMatrix.mutation_sum_inl`,
   `TauCeti.ExchangeMatrix.mutation_sum_inr`: the same compatibilities for exchange matrices.
+
+* `TauCeti.ExchangeMatrix.mutation_extendFrozen`: mutation commutes with zero extension
+  of the frozen boundary.
+* `TauCeti.ExchangeMatrix.mutation_amalgamate`: mutation acts in its selected amalgamated
+  factor and fixes the other factors.
 
 ## References
 
@@ -472,6 +479,83 @@ theorem mutation_sum_inr (k : K₂) : (B₁.sum B₂).mutation (Sum.inr k) = B�
   ext : 1 <;> simp
 
 end sum
+
+section FrozenExtension
+
+variable {J F : Type*} [DecidableEq J] [DecidableEq F]
+
+/-- Mutation commutes with extending the frozen boundary by zero: original rows mutate as
+before, and added frozen rows remain zero. -/
+@[simp] theorem mutation_extendFrozen
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F) (k : K) :
+    (B.extendFrozen e).mutation k = (B.mutation k).extendFrozen e := by
+  classical
+  ext : 1
+  · ext (i | f) j
+    · simp [mutation_matrix, matrixMutation_apply]
+    · by_cases hf : f ∈ Set.range e
+      · obtain ⟨f, rfl⟩ := hf
+        simp [mutation_matrix, matrixMutation_apply]
+      · simp [mutation_matrix, matrixMutation_apply, hf]
+  · simp
+
+end FrozenExtension
+
+section Amalgamation
+
+variable {A F : Type*} {M L : A → Type*} [DecidableEq A]
+  [DecidableEq F] [∀ a, DecidableEq (M a)]
+variable (e : ∀ a, L a ↪ F)
+  (Bs : ∀ a, ExchangeMatrix (Function.Embedding.inl : M a ↪ M a ⊕ L a))
+
+/-- Mutation replaces the selected factor by its mutation, leaves every other factor's
+columns unchanged, and retains one row per common frozen vertex. -/
+@[simp] theorem mutation_amalgamate (a : A) [DecidableEq (L a)] (k : M a) :
+    (amalgamate e Bs).mutation ⟨a, k⟩ =
+      amalgamate e (Function.update Bs a ((Bs a).mutation k)) := by
+  have hf : Function.Injective (Sum.map (Sigma.mk (β := M) a) (id : F → F)) :=
+    (sigma_mk_injective (β := M)).sumMap Function.injective_id
+  have hr : ((amalgamate e Bs).mutation ⟨a, k⟩).submatrix
+      (Sum.map (Sigma.mk a) id) (Sigma.mk a) (fun _ ↦ by simp) =
+        ((Bs a).mutation k).extendFrozen (e a) := by
+    rw [(amalgamate e Bs).submatrix_mutation hf (fun _ ↦ by simp),
+      submatrix_amalgamate_all_frozen, mutation_extendFrozen]
+  have hc {b : A} (j : M b) (hba : b ≠ a) (i : (Σ a, M a) ⊕ F) :
+      ((amalgamate e Bs).mutation ⟨a, k⟩).matrix i ⟨b, j⟩ =
+        (amalgamate e Bs).matrix i ⟨b, j⟩ := by
+    simpa only [mutation_matrix] using matrixMutation_apply_of_apply_row_eq_zero
+      (row := Function.Embedding.inl) (B := (amalgamate e Bs).matrix) (k := ⟨a, k⟩)
+      (j := ⟨b, j⟩) (fun h ↦ hba (congrArg Sigma.fst h))
+      (amalgamate_matrix_ne e Bs k j hba.symm) i
+  apply (eq_amalgamate_iff e (Function.update Bs a ((Bs a).mutation k)) _).2
+  constructor
+  · intro b
+    by_cases hba : b = a
+    · subst b
+      simpa using hr
+    · rw [Function.update_of_ne hba]
+      calc
+        _ = (amalgamate e Bs).submatrix (Sum.map (Sigma.mk b) id) (Sigma.mk b)
+            (fun _ ↦ by simp) := by
+          ext : 1
+          · ext r j
+            simpa only [submatrix_matrix, Matrix.submatrix_apply] using
+              hc j hba (Sum.map (Sigma.mk b) id r)
+          · funext j
+            simp
+        _ = _ := submatrix_amalgamate_all_frozen e Bs b
+  · intro b c hbc i j
+    by_cases hca : c = a
+    · subst c
+      rw [mutation_matrix, matrixMutation_apply_of_apply_col_eq_zero
+        (row := Function.Embedding.inl) (B := (amalgamate e Bs).matrix) (k := ⟨a, k⟩)
+        (fun h ↦ hbc (congrArg Sigma.fst (Sum.inl_injective h)))
+        (amalgamate_matrix_ne e Bs i k hbc) ⟨a, j⟩]
+      exact amalgamate_matrix_ne e Bs i j hbc
+    · rw [hc j hca]
+      exact amalgamate_matrix_ne e Bs i j hbc
+
+end Amalgamation
 
 end ExchangeMatrix
 
