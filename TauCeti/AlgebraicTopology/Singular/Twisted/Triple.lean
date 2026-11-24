@@ -62,8 +62,7 @@ private lemma composite_comp_twistedChainComplexπ :
 private def isColimitCompositeCokernel :
     IsColimit (CokernelCofork.ofπ ((totalPair.obj T).twistedChainComplexπ L)
       (T.composite_comp_twistedChainComplexπ L)) := by
-  have ht := (totalPair.obj T).isColimitCokernelCoforkTwistedChainComplex L
-  rw [TopPair.cokernelCoforkTwistedChainComplex_def] at ht
+  have ht := (totalPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ L
   have : IsIso (TopPair.twistedSubspaceChainComplexMap (innerToTotal.app T) L) := by
     rw [TopPair.twistedSubspaceChainComplexMap_def]
     have hid : IsIso (twistedChainComplexMap (𝟙 T.thd)
@@ -140,15 +139,14 @@ abbrev twistedChainComplexShortComplex :
 /-- The relative twisted chain sequence of a triple is short exact. -/
 lemma shortExact_twistedChainComplexShortComplex :
     (T.twistedChainComplexShortComplex L).ShortExact := by
-  have hi := (innerPair.obj T).isColimitCokernelCoforkTwistedChainComplex
-    ((outerPair.obj T).subspaceSystem L)
-  have ho := (outerPair.obj T).isColimitCokernelCoforkTwistedChainComplex L
-  rw [TopPair.cokernelCoforkTwistedChainComplex_def] at hi ho
   exact shortExact_of_isColimit_cokernelCofork rfl
     (by
       have : Mono T.outerMap := (TopCat.mono_iff_injective _).2 T.isEmbedding_outerMap.injective
       infer_instance)
-    hi (T.isColimitCompositeCokernel L) ho
+    ((innerPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ
+      ((outerPair.obj T).subspaceSystem L))
+    (T.isColimitCompositeCokernel L)
+    ((outerPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ L)
     (TopPair.twistedChainComplexπ_comp_twistedChainComplexMap (innerToTotal.app T) L)
     (T.twistedChainComplexπ_comp_totalToOuter L)
 
@@ -221,6 +219,34 @@ lemma twistedHomologyTotalToOuter_naturality_coefficient
     ((congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
       (T.twistedChainComplexTotalToOuter_naturality η)).trans
       (HomologicalComplex.homologyMap_comp _ _ _))
+
+/-- The quotient `Hₖ(X, B) ⟶ Hₖ(X, A)` of a triple commutes with a map `g'` of the total pairs and
+a map `g` of the outer pairs that have the same ambient component, once the coefficients are
+matched. -/
+@[reassoc]
+lemma twistedHomologyTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
+    {S : LocalCoefficientSystem.{u, v, max v w} R T'.fst}
+    (g : outerPair.obj T ⟶ outerPair.obj T') (g' : totalPair.obj T ⟶ totalPair.obj T')
+    (hg : TopPair.Hom.fst g' = TopPair.Hom.fst g)
+    (a : L ⟶ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj S)
+    (a' : L ⟶ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g').hom).obj S)
+    (ha : a' ≫ eqToHom (congrArg (fun t : T.fst ⟶ T'.fst ↦
+      (LocalCoefficientSystem.pullback t.hom).obj S) hg) = a)
+    (k : ℕ) :
+    T.twistedHomologyTotalToOuter L k ≫ (outerPair.obj T).twistedHomologyCoefficientMap a k ≫
+        TopPair.twistedHomologyMap g S k =
+      (totalPair.obj T).twistedHomologyCoefficientMap a' k ≫
+        TopPair.twistedHomologyMap g' S k ≫ T'.twistedHomologyTotalToOuter S k := by
+  simp only [twistedHomologyTotalToOuter, ← HomologicalComplex.homologyMap_comp]
+  congr 1
+  apply (cancel_epi ((totalPair.obj T).twistedChainComplexπ L)).1
+  rw [twistedChainComplexπ_comp_totalToOuter_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
+    twistedChainComplexπ_comp_totalToOuter, twistedChainComplexMap_congr _ S hg, ← ha,
+    twistedChainComplexCoefficientMap_comp_assoc, eqToIso.hom, Category.assoc]
 
 /-- The triple sequence ends with a surjection on degree-zero relative homology. -/
 instance epi_twistedHomologyTotalToOuter_zero : Epi (T.twistedHomologyTotalToOuter L 0) :=
@@ -337,5 +363,48 @@ theorem isIso_twistedHomologyMap_innerToTotal_of_isZero (n : ℕ)
       (innerToTotal.app T) L n) :=
     (T.twistedHomology_exact_total L n).epi_f (hn.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
+
+/-- The quotient `Hₖ(X,B;L) ⟶ Hₖ(X,A;L)` is an isomorphism when the inner relative groups
+`Hₖ(A,B;L|A)` and, for `k > 0`, `Hₖ₋₁(A,B;L|A)` vanish. -/
+theorem isIso_twistedHomologyTotalToOuter_of_isZero (k : ℕ)
+    (hk : IsZero ((innerPair.obj T).twistedHomology ((outerPair.obj T).subspaceSystem L) k))
+    (hk' : ∀ m, m + 1 = k →
+      IsZero ((innerPair.obj T).twistedHomology ((outerPair.obj T).subspaceSystem L) m)) :
+    IsIso (T.twistedHomologyTotalToOuter L k) := by
+  have : Mono (T.twistedHomologyTotalToOuter L k) :=
+    (T.twistedHomology_exact_total L k).mono_g (hk.eq_of_src _ _)
+  have : Epi (T.twistedHomologyTotalToOuter L k) := by
+    cases k with
+    | zero => infer_instance
+    | succ m => exact (T.twistedHomology_exact_outer L (m + 1) m).epi_f ((hk' m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- For nested subsets `C ⊆ B ⊆ A` of `X`, the quotients `C(X,C;L) ⟶ C(X,B;L) ⟶ C(X,A;L)` compose
+to the quotient `C(X,C;L) ⟶ C(X,A;L)`. -/
+@[simp, reassoc]
+lemma twistedChainComplexTotalToOuter_ofSubset_comp {X : TopCat.{v}} {A B C : Set X}
+    (hCB : C ⊆ B) (hBA : B ⊆ A) (L : LocalCoefficientSystem.{u, v, max v w} R X) :
+    (ofSubset hCB).twistedChainComplexTotalToOuter L ≫
+        (ofSubset hBA).twistedChainComplexTotalToOuter L =
+      (ofSubset (hCB.trans hBA)).twistedChainComplexTotalToOuter L := by
+  refine (totalPair.obj (ofSubset hCB)).twistedChainComplex_hom_ext L ?_
+  -- All three quotients are induced by the identity of `C(X;L)`, but their pairs agree with
+  -- `TopPair.ofSubset` only up to unfolding, so `rw` cannot match them and `erw` is needed.
+  erw [twistedChainComplexπ_comp_totalToOuter_assoc,
+    (ofSubset hBA).twistedChainComplexπ_comp_totalToOuter L,
+    (ofSubset (hCB.trans hBA)).twistedChainComplexπ_comp_totalToOuter L]
+  rfl
+
+/-- For nested subsets `C ⊆ B ⊆ A` of `X`, the quotients `Hₖ(X,C;L) ⟶ Hₖ(X,B;L) ⟶ Hₖ(X,A;L)`
+compose to the quotient `Hₖ(X,C;L) ⟶ Hₖ(X,A;L)`. -/
+@[simp, reassoc]
+lemma twistedHomologyTotalToOuter_ofSubset_comp {X : TopCat.{v}} {A B C : Set X}
+    (hCB : C ⊆ B) (hBA : B ⊆ A) (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
+    (ofSubset hCB).twistedHomologyTotalToOuter L k ≫
+        (ofSubset hBA).twistedHomologyTotalToOuter L k =
+      (ofSubset (hCB.trans hBA)).twistedHomologyTotalToOuter L k :=
+  (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · k)
+      (twistedChainComplexTotalToOuter_ofSubset_comp hCB hBA L))
 
 end TauCeti.TopTriple

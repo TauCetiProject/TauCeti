@@ -54,6 +54,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   a symplectic basis.**
 * `LinearMap.BilinForm.nondegenerate_of_toMatrix_eq_J`: a finite basis in which `B` has matrix
   `Matrix.J` witnesses `B.Nondegenerate`.
+* `LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J`: two symplectic bases
+  of the same form differ by a symplectic matrix.
 * `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
   have relative determinant `1`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
@@ -195,14 +197,22 @@ theorem nondegenerate_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
   exact Matrix.Nondegenerate.of_det_mem_nonZeroDivisors
     (Matrix.isUnit_det_J l R).mem_nonZeroDivisors
 
+/-- **Symplectic bases differ by a symplectic matrix.** If `B` has the standard symplectic matrix
+`Matrix.J` in two bases `b` and `c`, the change of basis matrix `b.toMatrix c` is symplectic. -/
+theorem basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J {l : Type*} [Fintype l]
+    [DecidableEq l] {B : BilinForm R M} {b c : Basis (l ⊕ l) R M}
+    (hb : BilinForm.toMatrix b B = Matrix.J l R) (hc : BilinForm.toMatrix c B = Matrix.J l R) :
+    b.toMatrix c ∈ Matrix.symplecticGroup l R := by
+  have h := toMatrix_mul_basis_toMatrix b c B
+  rwa [hb, hc, ← SymplecticGroup.mem_iff'] at h
+
 /-- **Symplectic bases have unit relative determinant.** Two bases in which `B` has the standard
 symplectic matrix `Matrix.J` differ by a symplectic matrix, so `b.det c = 1`. -/
 theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
     {B : BilinForm R M} {b c : Basis (l ⊕ l) R M} (hb : BilinForm.toMatrix b B = Matrix.J l R)
     (hc : BilinForm.toMatrix c B = Matrix.J l R) : b.det c = 1 := by
-  have h := toMatrix_mul_basis_toMatrix b c B
-  rw [hb, hc, ← SymplecticGroup.mem_iff'] at h
-  rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
+  rw [Basis.det_apply,
+    SymplecticGroup.det_eq_one (basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J hb hc)]
 
 end Determinant
 

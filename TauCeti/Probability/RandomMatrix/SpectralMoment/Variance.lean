@@ -9,6 +9,7 @@ public import TauCeti.Probability.RandomMatrix.Covariance
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Expected
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Covariance, variance, and concentration of Wigner empirical spectral moments
@@ -30,8 +31,6 @@ Borel--Cantelli lemma is established in
 
 ## Main results
 
-* `memLp_integral_pow_spectralMeasure_wignerMatrix`: the `k`-th empirical spectral moment of
-  `Hₙ₊₁` lies in `Lᵖ` under `L^(p * k)` entries.
 * `abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le` and
   `variance_integral_pow_spectralMeasure_wignerMatrix_le`: quantitative `O((n + 1)⁻²)` covariance
   and variance bounds for empirical spectral moments of all orders.
@@ -64,17 +63,6 @@ section FixedSpace
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
-
-/-- If the entries of the Wigner array lie in `L^(p * k)` on a finite measure space, the `k`-th
-empirical spectral moment of `Hₙ₊₁` lies in `Lᵖ` for every `p : ℝ≥0∞`, `k`, and `n`, without
-independence or centering. -/
-theorem memLp_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {p : ℝ≥0∞} {k : ℕ}
-    (hξp : ∀ ij, MemLp (ξ ij) (p * k) P) (hηp : ∀ i, MemLp (η i) (p * k) P) (n : ℕ) :
-    MemLp (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P := by
-  simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin]
-  exact (memLp_trace_pow_wignerMatrix (n := n + 1) (fun ij _ ↦ hξp ij)
-    (fun i _ ↦ hηp i)).re.const_mul _
 
 /-- **Empirical spectral moment covariance bound.** Under independent centered entries in
 `L^(k₁ + k₂)` with `(k₁ + k₂)`-th absolute moments bounded by `B`, the covariance between the
@@ -140,9 +128,9 @@ theorem variance_integral_pow_spectralMeasure_wignerMatrix_le
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
       2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
   have := hindep.isProbabilityMeasure
-  have hm := (memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp) n).aemeasurable
+  have hm := (memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+    (fun ij _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij)
+    (fun i _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i)).aemeasurable
   have h2k : k + k = 2 * k := (two_mul k).symm
   have hdiv : (k + k) / 2 = k := by omega
   have hcov := abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
@@ -172,9 +160,9 @@ theorem measure_integral_pow_spectralMeasure_wignerMatrix_sub_mean_ge
         (wignerMatrix_isHermitian ξ η ω' (n + 1)) : Measure ℝ)) ∂P|} ≤
       ENNReal.ofReal ((2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
   have := hindep.isProbabilityMeasure
-  have hmem := memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp) n
+  have hmem := memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+    (fun ij _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij)
+    (fun i _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i)
   have hvar := variance_integral_pow_spectralMeasure_wignerMatrix_le
     hindep hξzero hηzero hξp hηp hξ hη n
   exact (meas_ge_le_variance_div_sq hmem hε).trans
@@ -240,9 +228,9 @@ theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
   have hmem (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ k
       ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) 2 (P n) :=
-    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp n)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp n) n
+    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+      (fun ij _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp n ij)
+      (fun i _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp n i)
   have hvar : Tendsto (fun n ↦ Var[fun ω ↦ ∫ x, x ^ k
       ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ); P n]) atTop (𝓝 0) :=
@@ -285,10 +273,12 @@ theorem tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probab
       (tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
         hindep hξzero hηzero (fun n ij ↦ (hξp n ij).mono_exponent hle)
         (fun n i ↦ (hηp n i).mono_exponent hle)
-        (fun n ij ↦ (hξp n ij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-          (Real.sqrt_le_sqrt (hξ n ij)))
-        (fun n i ↦ (hηp n i).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-          (Real.sqrt_le_sqrt (hη n i)))).abs
+        (fun n ij ↦ ((hξp n ij).integrable_norm_pow'
+          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+            (Real.sqrt_le_sqrt (hξ n ij)))
+        (fun n i ↦ ((hηp n i).integrable_norm_pow'
+          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+            (Real.sqrt_le_sqrt (hη n i)))).abs
   have hev : ∀ᶠ n in atTop,
       P n {ω | ε ≤ |M n ω|} ≤ P n {ω | ε / 2 ≤ |M n ω - ∫ ω', M n ω' ∂P n|} := by
     filter_upwards [hmean.eventually (gt_mem_nhds (half_pos hε))] with n hn

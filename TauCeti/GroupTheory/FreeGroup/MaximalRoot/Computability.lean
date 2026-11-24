@@ -10,6 +10,9 @@ public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Computability
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 public import TauCeti.GroupTheory.FreeGroup.Reduce
+import Mathlib.Tactic.Linarith
+import TauCeti.Data.List.Commutation
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Word
 
 /-!
 # Primitive-recursive maximal roots in free groups
@@ -86,45 +89,24 @@ private theorem period_spec {v : List (α × Bool)} (hv : v ≠ []) :
 /- The block of least period of a nonempty cyclically reduced word is not a proper power. -/
 private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
     (hv : IsCyclicallyReduced v) (hv0 : v ≠ []) :
-    ¬Group.IsProperPower (mk (v.take (period v))) := by
+    ¬TauCeti.IsProperPower (mk (v.take (period v))) := by
   obtain ⟨hj, hjv, hrep, hmin⟩ := period_spec hv0
   set j := period v
   set b := v.take j with hbdef
   set k := v.length / j
   have hk : k ≠ 0 := (Nat.div_pos hjv hj).ne'
   have hb0 : b ≠ [] := by simp [hbdef, take_eq_nil_iff, hv0, hj.ne']
-  -- The block is cyclically reduced: it is a prefix of `v` with the same first and last letters.
-  have hb : IsCyclicallyReduced b := by
-    refine ⟨hv.isReduced.infix (take_prefix j v).isInfix, fun x hx y hy => hv.2 x ?_ y ?_⟩
-    · rwa [hrep, getLast?_flatten_replicate hk]
-    · rwa [hrep, head?_flatten_replicate hk]
-  intro hpp
-  obtain ⟨y, n, hn, hy⟩ := Group.isProperPower_iff.mp hpp
-  -- Write `b = y ^ n` as a word: `b` is the `n`-th repetition of a shorter block `v'`.
-  have hword : b = reduceCyclically.conjugator y.toWord ++
-      (replicate n (reduceCyclically y.toWord)).flatten ++
-      invRev (reduceCyclically.conjugator y.toWord) := by
-    have := congrArg toWord hy
-    rwa [toWord_mk, hb.isReduced.reduce_eq, toWord_pow,
-      reduceCyclically.reduce_flatten_replicate isReduced_toWord,
-      ite_eq_right (by omega : ¬n = 0)] at this
-  have hc : reduceCyclically.conjugator y.toWord = [] := by
-    by_contra hc
-    exact not_isCyclicallyReduced_append_append_invRev hc _ (hword ▸ hb)
-  rw [hc, nil_append, invRev,
-    map_nil, reverse_nil, append_nil] at hword
-  set v' := reduceCyclically y.toWord
-  have hv' : v' ≠ [] := by
-    intro h
-    rw [h, flatten_replicate_nil] at hword
-    exact hb0 hword
-  have hi : 0 < v'.length := length_pos_iff.mpr hv'
+  -- The block is cyclically reduced, so it would be a word power `v'ⁿ` with `n ≥ 2`.
+  have hb : IsCyclicallyReduced b := (hrep ▸ hv).of_flatten_replicate hk
+  rw [hb.isProperPower_mk_iff]
+  rintro ⟨v', n, hn, hword⟩
+  have hi : 0 < v'.length := length_pos_iff.2 fun h ↦ hb0 (by simpa [h] using hword)
   have hblen : b.length = j := by simp [hbdef, hjv]
   have hjn : j = n * v'.length := by
     rw [← hblen, hword]
     simp
   have hvv : v = (replicate (k * n) v').flatten := by
-    rw [hrep, hword, ← flatten_replicate_replicate, flatten_flatten, map_replicate]
+    rw [hrep, hword, flatten_replicate_flatten_replicate]
   have hkn : k * n ≠ 0 := Nat.mul_ne_zero hk (by omega)
   -- Then `v'` is a shorter period of `v`, contradicting the minimality of `j`.
   refine hmin v'.length hi (by rw [hjn]; nlinarith) ?_
@@ -134,8 +116,7 @@ private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
   have hdiv : v.length / v'.length = k * n := by
     rw [hvv]
     simp [Nat.mul_div_cancel _ hi]
-  rw [htake, hdiv]
-  exact hvv
+  rwa [htake, hdiv]
 
 /- The maximal-root pair of the element represented by a reduced word `u`, computed from the
 least period of its cyclic reduction. -/
@@ -150,7 +131,7 @@ private theorem rootWord_nil : rootWord ([] : List (α × Bool)) = ([], 0) := by
 
 private theorem rootWord_toWord {x : FreeGroup α} (hx : x ≠ 1) :
     ∃ r : FreeGroup α, ∃ k : ℕ, rootWord x.toWord = (r.toWord, k) ∧
-      k ≠ 0 ∧ r ^ k = x ∧ ¬Group.IsProperPower r := by
+      k ≠ 0 ∧ r ^ k = x ∧ ¬TauCeti.IsProperPower r := by
   set c := reduceCyclically.conjugator x.toWord
   set v := reduceCyclically x.toWord
   have hv0 : v ≠ [] := reduceCyclically_toWord_eq_nil_iff.not.mpr hx
@@ -165,7 +146,7 @@ private theorem rootWord_toWord {x : FreeGroup α} (hx : x ≠ 1) :
     ?_, ?_⟩
   · rw [hr, conj_pow, pow_mk, ← hrep, inv_mk, mul_mk, mul_mk,
       reduceCyclically.conj_conjugator_reduceCyclically, mk_toWord]
-  · rw [hr, Group.isProperPower_conj_iff]
+  · rw [hr, TauCeti.isProperPower_conj_iff]
     exact not_isProperPower_mk_take_period hv hv0
 
 private theorem primrec_rootWord [Primcodable α] :
@@ -205,7 +186,7 @@ theorem exists_primrec_maximalRoot [Primcodable α] [DecidableEq α] :
     ∃ f : List (α × Bool) → List (α × Bool) × ℕ, Primrec f ∧
       (∀ w, mk w = 1 → f w = ([], 0)) ∧
       ∀ w, mk w ≠ 1 → ∀ (r : FreeGroup α) (k : ℕ),
-        f w = (r.toWord, k) ↔ k ≠ 0 ∧ r ^ k = mk w ∧ ¬Group.IsProperPower r := by
+        f w = (r.toWord, k) ↔ k ≠ 0 ∧ r ^ k = mk w ∧ ¬TauCeti.IsProperPower r := by
   refine ⟨fun w => rootWord (reduce w), primrec_rootWord.comp primrec_reduce,
     fun w hw => ?_, fun w hw r k => ?_⟩
   · dsimp only
