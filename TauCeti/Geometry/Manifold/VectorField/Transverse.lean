@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Slice
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -137,21 +138,12 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
     (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
     (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
     mvfderiv I h (ι s) = 0 := by
-  -- A function that is not differentiable at `ι s` has zero differential there by convention.
-  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
-  swap
-  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
   set L := (mfderiv J I ι s).toLinearMap
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hdim ▸ Nat.succ_pos _)
   have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
-  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`
-  -- (trivially when `ι` is not differentiable at `s`, as then `L = 0`).
-  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
-    by_cases hιs : MDifferentiableAt J I ι s
-    · have hc := mvfderiv_comp_apply s hh hιs w
-      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-      exact hc.symm
-    · rw [show L w = 0 by simp [L, mfderiv_zero_of_not_mdifferentiableAt hιs], map_zero]
+  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
+  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 :=
+    mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero h0 w
   -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
   have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
     refine Submodule.eq_top_of_finrank_eq ?_
