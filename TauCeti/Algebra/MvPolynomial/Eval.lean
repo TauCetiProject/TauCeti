@@ -31,10 +31,14 @@ Over an ordered field, evaluating a polynomial at a coordinatewise rational map
 be cleared to a single polynomial `A` up to multiplication by a polynomial `B` that is strictly
 positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
 
+When the coordinates of an evaluation lie in the base semiring of an algebra, applying a
+base-linear functional to the resulting value is again polynomial in those coordinates.
+
 Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
 
 ## Main results
 
+* `MvPolynomial.exists_eval_eq_linearMap`: a base-linear image of an evaluation at base points.
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.eval_sub_eval_mem`, `MvPolynomial.eval_sub_eval_mem_of_vars`: values at points
@@ -51,7 +55,25 @@ public section
 
 namespace MvPolynomial
 
-variable {σ S subS : Type*} [CommSemiring S] [SetLike subS S] [SubsemiringClass subS S]
+variable {σ : Type*}
+
+/-- A base-linear image of a polynomial evaluation at base points is again polynomial. -/
+theorem exists_eval_eq_linearMap {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+    (f : S →ₗ[R] R) (p : MvPolynomial σ S) :
+    ∃ q : MvPolynomial σ R, ∀ x : σ → R, eval x q = f (eval (algebraMap R S ∘ x) p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => exact ⟨C (f a), fun _ ↦ by simp⟩
+  | add p q hp hq =>
+    obtain ⟨p', hp'⟩ := hp
+    obtain ⟨q', hq'⟩ := hq
+    exact ⟨p' + q', fun x ↦ by simp [hp' x, hq' x]⟩
+  | mul_X p i hp =>
+    obtain ⟨p', hp'⟩ := hp
+    refine ⟨p' * X i, fun x ↦ ?_⟩
+    simp only [map_mul, eval_X, Function.comp_apply, hp']
+    rw [mul_comm (eval _ p), ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+
+variable {S subS : Type*} [CommSemiring S] [SetLike subS S] [SubsemiringClass subS S]
 
 /-- **Clearing denominators in a polynomial value.** If the coefficients of `p` lie in a
 subsemiring `s`, `p` has total degree at most `T`, and `c ∈ s` is a common denominator of the

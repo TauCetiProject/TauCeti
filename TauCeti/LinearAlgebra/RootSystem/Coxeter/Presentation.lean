@@ -30,8 +30,9 @@ count is the least length of a word in the simple reflections (`TauCeti.isLeast_
 the product of two simple reflections has the order prescribed by the Coxeter matrix
 (`RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase`), and the exchange
 condition is the root-level strong exchange condition
-(`TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx`): when the last letter does not lengthen a word,
-its simple root is an inversion of the word, and the reflection in it deletes a letter.
+(`RootPairing.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx`): when the last
+letter does not lengthen a word, its simple root is an inversion of the word, and the reflection
+in it deletes a letter.
 
 ## Main definitions
 
@@ -152,7 +153,10 @@ private theorem exchange_weylCoxeterHom (l : List b.support) (i : b.support)
       (inversions P b (wordProd P b l)).ncard := by
     rcases ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property with h | h <;> omega
   have hmem := (ncard_inversions_mul_ofIdx_lt_iff P b _ hpos).mp hlt
-  exact exists_wordProd_eraseIdx_eq_mul_ofIdx P b hpos l ((mem_inversions P b _ _).mp hmem).2
+  obtain ⟨j, hj, -, hprod⟩ :=
+    P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx b hpos l
+      ((mem_inversions P b _ _).mp hmem).2
+  exact ⟨j, hj, hprod⟩
 
 /-- **Tits' theorem: the braid relations are the only relations among the simple reflections.**
 The canonical homomorphism from the Coxeter group of a base to the Weyl group is injective. -/
