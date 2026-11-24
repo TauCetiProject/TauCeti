@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Group.Action.Units
 import Mathlib.Algebra.Ring.Int.Units
 
 /-!
-# Integer unit signs acting on modules
+# Integer scalars and integer unit signs acting on modules
+
+Integer scalar multiplication is compatible with multiplication even in a nonunital ring.
 
 The sign action of an integer unit agrees with the action of its image in the scalar ring.
 This lets integer signs in the scalar ring, such as powers of `-1`, combine with integer unit
@@ -23,6 +25,12 @@ with multiplication, because `(-1) • a` is the additive inverse of `a`.
 public section
 
 namespace TauCeti
+
+/-- Integer scalar multiplication is compatible with multiplication in a nonunital,
+nonassociative ring. The usual scalar-tower instance for unital rings has higher priority. -/
+instance (priority := 100) intIsScalarTowerMul {R : Type*} [NonUnitalNonAssocRing R] :
+    IsScalarTower ℤ R R where
+  smul_assoc z x y := (AddMonoidHom.mulRight y).map_zsmul z x
 
 /-- Acting by the image of an integer unit in the scalar ring and then by a second integer unit
 is the action of their product as integer units. -/
