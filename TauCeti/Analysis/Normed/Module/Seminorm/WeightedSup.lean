@@ -79,7 +79,7 @@ theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w h
 /-- Without an estimate `‖L i a‖ ≤ C * w i` for every `a`, the supremum `weightedSup L w hw` is
 the junk value `⊥`. Mathlib has no API for unbounded suprema of seminorms, so this unfolds the
 definition of `Seminorm.instSupSet`. -/
-private theorem weightedSup_eq_bot (h : ¬∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i) :
+theorem weightedSup_eq_bot (h : ¬∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i) :
     weightedSup L w hw = ⊥ := by
   have hb := Seminorm.bddAbove_iff.not.1
     ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 h)
