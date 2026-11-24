@@ -22,7 +22,7 @@ For `1 < Re s` and `0 < Re c`, the shifted exponential-kernel integrand
 `t ↦ (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))` is integrable on `(0, ∞)` via the
 shared scalar bound `(1 - exp (-t))⁻¹ ≤ 1 + t⁻¹` (`TauCeti.inv_one_sub_exp_neg_le`), and any
 compact subset of `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}` admits a common integrable majorant
-(`TauCeti.exists_integrableOn_norm_hurwitzMellinIntegrand_le`).
+(`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`).
 
 Termwise integration of `exp ((1 - c) * t) / (exp t - 1) = ∑_{k ≥ 0} exp (-(k + c) * t)` gives the
 infinite series representation `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`, and specializing
@@ -30,11 +30,12 @@ to `c = 1` yields `TauCeti.integrableOn_cpow_div_exp_sub_one`.
 
 ## Main results
 
-* `TauCeti.integrableOn_hurwitzMellinIntegrand`: integrability of
+* `TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`: integrability of
   `t ↦ (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))` on `Ioi 0` for `1 < s.re` and
   `0 < c.re`.
-* `TauCeti.exists_integrableOn_norm_hurwitzMellinIntegrand_le`: parameter-uniform integrable
-  majorant on compact subsets of `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`.
+* `TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`:
+  parameter-uniform integrable majorant on compact subsets of
+  `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`.
 * `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`: termwise integration of
   `t^{s−1} e^{(1−c)t}/(e^t − 1) = ∑_{k ≥ 0} t^{s−1} e^{−(k+c)t}` over any subset of `(0, ∞)` for
   `1 < s.re` and `0 < c.re`.
@@ -53,7 +54,8 @@ namespace TauCeti
 
 /-- For `1 < s.re` and `0 < c.re`, the Mellin–Laplace integrand
 `t ↦ (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))` is integrable on `Ioi 0`. -/
-theorem integrableOn_hurwitzMellinIntegrand {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
+theorem integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg {s c : ℂ} (hs : 1 < s.re)
+    (hc : 0 < c.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))) (Ioi 0) := by
   have hs0 : 0 < s.re := by linarith
   have hs1 : 0 < (s - 1).re := by simpa using hs
@@ -92,8 +94,8 @@ theorem integrableOn_hurwitzMellinIntegrand {s c : ℂ} (hs : 1 < s.re) (hc : 0 
 
 /-- On any compact subset `K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`, the Mellin–Laplace
 integrand is dominated on `(0, ∞)` by a single parameter-independent integrable function. -/
-theorem exists_integrableOn_norm_hurwitzMellinIntegrand_le {K : Set (ℂ × ℂ)} (hK : IsCompact K)
-    (hK_sub : K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}) :
+theorem exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le {K : Set (ℂ × ℂ)}
+    (hK : IsCompact K) (hK_sub : K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}) :
     ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧
       ∀ p ∈ K, ∀ t ∈ Ioi (0 : ℝ),
         ‖(t : ℂ) ^ (p.1 - 1) * (cexp (-p.2 * t) / (1 - cexp (-t)))‖ ≤ g t := by
@@ -114,8 +116,8 @@ theorem exists_integrableOn_norm_hurwitzMellinIntegrand_le {K : Set (ℂ × ℂ)
   refine ⟨fun t : ℝ =>
       ‖(t : ℂ) ^ ((a : ℂ) - 1) * (cexp (-(η : ℂ) * t) / (1 - cexp (-t)))‖ +
         ‖(t : ℂ) ^ ((b : ℂ) - 1) * (cexp (-(η : ℂ) * t) / (1 - cexp (-t)))‖,
-    (integrableOn_hurwitzMellinIntegrand ha hη).norm.add
-      (integrableOn_hurwitzMellinIntegrand hb hη).norm,
+    (integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg ha hη).norm.add
+      (integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg hb hη).norm,
     fun p hp t ht => ?_⟩
   have ht0 : (0 : ℝ) < t := ht
   have h1e : 0 < 1 - Real.exp (-t) := by
@@ -187,7 +189,7 @@ theorem hasSum_setIntegral_cpow_mul_exp_neg_mul {s c : ℂ} (hs : 1 < s.re) (hc 
 /-- For `1 < Re s`, `t ↦ t^{s−1}/(e^t − 1)` is integrable on `(0, ∞)`. -/
 theorem integrableOn_cpow_div_exp_sub_one {s : ℂ} (hs : 1 < s.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) / (cexp t - 1)) (Ioi 0) := by
-  refine (integrableOn_hurwitzMellinIntegrand (c := 1) hs one_pos).congr_fun
+  refine (integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg (c := 1) hs one_pos).congr_fun
     (fun t _ => ?_) measurableSet_Ioi
   simp only [neg_one_mul, Complex.exp_neg_div_one_sub_exp_neg, ← div_eq_mul_inv]
 

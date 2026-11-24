@@ -71,7 +71,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   base on a suitable sector.
 * `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
   extends to a `k`-th root function complex differentiable at that point.
-* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` --
+* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one`, `TauCeti.cpow_add_one'` --
   multiplying a principal power by `w⁻¹` or `w` lowers or raises the exponent by one.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
@@ -343,13 +343,18 @@ theorem cpow_mul_inv {s : ℂ} (hs : s ≠ 1) (w : ℂ) : w ^ s * w⁻¹ = w ^ (
   · rw [inv_zero, mul_zero, zero_cpow (sub_ne_zero.mpr hs)]
   · rw [cpow_sub _ _ hw, cpow_one, div_eq_mul_inv]
 
+/-- Multiplying a principal power by its nonzero base raises the exponent by one:
+`w ^ (s + 1) = w ^ s * w`. -/
+theorem cpow_add_one {w : ℂ} (hw : w ≠ 0) (s : ℂ) : w ^ (s + 1) = w ^ s * w := by
+  rw [Complex.cpow_add _ _ hw, Complex.cpow_one]
+
 /-- Multiplying a principal power by its base raises the exponent by one:
 `w ^ (s + 1) = w ^ s * w`. Away from `s + 1 = 0` this also holds at `w = 0`, where both sides
 vanish. -/
 theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^ s * w := by
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
-  · rw [Complex.cpow_add _ _ hw, Complex.cpow_one]
+  · exact cpow_add_one hw s
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/

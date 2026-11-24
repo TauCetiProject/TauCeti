@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.LSeries.RiemannZeta.BernoulliKernel
 
 /-!
@@ -43,9 +44,7 @@ theorem integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta {s : ℂ} (hs : 1
   refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
   have ht0 : (0 : ℝ) < t := ht
   have hpow : (t : ℂ) ^ (s - 1) = (t : ℂ) ^ (s - 1 - 1) * (t : ℂ) := by
-    conv_lhs =>
-      rw [show s - 1 = (s - 1 - 1) + 1 by ring, cpow_add _ _ (ofReal_ne_zero.mpr ht0.ne'),
-        cpow_one]
+    simpa [sub_add_cancel] using cpow_add_one (ofReal_ne_zero.mpr ht0.ne') (s - 1 - 1)
   dsimp only
   rw [bernoulliKernel_of_ne_zero ht0.ne', smul_eq_mul, ofReal_div, ofReal_sub, ofReal_one,
     ofReal_exp, ← mul_div_assoc, ← hpow]

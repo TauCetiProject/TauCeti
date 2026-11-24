@@ -105,7 +105,7 @@ theorem exp_neg_mul_div_one_sub_exp_neg (c z : 𝕜) :
     congr 1
     ring
   have hne : exp z ≠ 0 :=
-    (isUnit_exp_of_mem_ball ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)).ne_zero
+    left_ne_zero_of_mul_eq_one (by rw [← exp_add_of_continuousSMul, add_neg_cancel, exp_zero])
   rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ hne]
 
 /-- Coefficient-free specialization of `exp_neg_mul_div_one_sub_exp_neg`:

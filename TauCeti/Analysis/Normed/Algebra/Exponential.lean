@@ -134,19 +134,24 @@ end Normed
 section Field
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
-  [CompleteSpace 𝕜]
+
+private theorem mem_eball_expSeries_radius (x : 𝕜) :
+    x ∈ Metric.eball 0 (expSeries 𝕜 𝕜).radius := by
+  rw [expSeries_radius_eq_top]
+  exact edist_lt_top _ _
+
+variable [CompleteSpace 𝕜]
 
 /-- In a complete characteristic-zero normed field with continuous rational scalar multiplication,
 `NormedSpace.exp` turns addition into multiplication everywhere. -/
 theorem exp_add_of_continuousSMul (x y : 𝕜) : exp (x + y) = exp x * exp y :=
   exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
-    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+    (mem_eball_expSeries_radius x) (mem_eball_expSeries_radius y)
 
 /-- In a complete characteristic-zero normed field with continuous rational scalar multiplication,
 `NormedSpace.exp` has derivative `NormedSpace.exp x` at every point `x : 𝕜`. -/
 theorem hasDerivAt_exp_of_continuousSMul (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x :=
-  _root_.hasDerivAt_exp_of_mem_ball ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+  _root_.hasDerivAt_exp_of_mem_ball (mem_eball_expSeries_radius x)
 
 end Field
 

@@ -25,8 +25,9 @@ For any `[NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜
 (`NormedSpace.dslope_exp_eq_exp_mul_dslope_zero`), specializing to both
 `Real.dslope_exp_eq_exp_mul_dslope_zero` and `Complex.dslope_exp_eq_exp_mul_dslope_zero`.
 Over `ℂ`, `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero integer multiple of
-`2 * π * I`. In particular, it does not vanish on the horizontal strip `|(b - a).im| < 2 * π` or on
-`Metric.ball a (2 * π)`.
+`2 * π * I`. In particular, it does not vanish on the horizontal strip `|(b - a).im| < 2 * π`
+(`Complex.dslope_exp_ne_zero_of_abs_im_sub_lt`,
+`Complex.abs_im_snd_lt_subset_dslope_exp_neg_ne_zero`) or on `Metric.ball a (2 * π)`.
 -/
 
 public section
@@ -125,6 +126,12 @@ theorem dslope_exp_ne_zero_of_abs_im_sub_lt {a b : ℂ} (h : |(b - a).im| < 2 * 
   have habs : |(b - a).im| = |(k : ℝ)| * (2 * Real.pi) := by
     rw [him, abs_mul, abs_of_pos Real.two_pi_pos]
   nlinarith [Real.pi_pos]
+
+/-- Every point `(c, z)` with `|z.im| < 2 * π` lies in the nonvanishing locus
+`{p : E × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
+theorem abs_im_snd_lt_subset_dslope_exp_neg_ne_zero {E : Type*} :
+    {p : E × ℂ | |p.2.im| < 2 * Real.pi} ⊆ {p : E × ℂ | dslope exp 0 (-p.2) ≠ 0} :=
+  fun _ hp => dslope_exp_ne_zero_of_abs_im_sub_lt (by simpa using hp)
 
 /-- On the real axis, `dslope Complex.exp (x : ℂ) (y : ℂ)` does not vanish. -/
 theorem dslope_exp_ofReal_ne_zero (x y : ℝ) : dslope exp (x : ℂ) (y : ℂ) ≠ 0 :=

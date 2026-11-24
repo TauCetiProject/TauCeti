@@ -72,7 +72,7 @@ L-function decompositions in `TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
   `s = 1`.
 * `TauCeti.complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi` and
   `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integral representation
-  (using `TauCeti.integrableOn_hurwitzMellinIntegrand` and
+  (using `TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg` and
   `TauCeti.integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries` from
   `TauCeti.Analysis.MellinTransform.ExpKernel` and
   `TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel`) and agreement with
@@ -222,14 +222,12 @@ theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s
   have hcongr : EqOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
       (fun t : ℝ => hurwitzBernoulliCoeff (M + 1) c * (t : ℂ) ^ (s + M - 1) +
         (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) * hurwitzTaylorQuot (M + 1) c t)
-      (Ioc 0 1) := fun t _ => by
+      (Ioc 0 1) := fun t ht => by
     dsimp only
     have hpow : (t : ℂ) ^ (s + M - 1) * (t : ℂ) =
         (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) := by
-      have hne : (s + M - 1) + 1 ≠ 0 := fun h0 => by
-        have hre := congrArg Complex.re h0; simp at hre; linarith
       have hexp : s + ((M + 1 : ℕ) : ℂ) - 1 = (s + M - 1) + 1 := by push_cast; ring
-      rw [hexp, TauCeti.cpow_add_one' hne]
+      rw [hexp, TauCeti.cpow_add_one (ofReal_ne_zero.mpr ht.1.ne')]
     rw [hurwitzTaylorQuot_eq_add_mul_succ M c t, mul_add, mul_comm ((t : ℂ) ^ _),
       ← mul_assoc ((t : ℂ) ^ _), hpow]
   unfold hurwitzHeadIntegral
@@ -472,7 +470,7 @@ theorem tendsto_sub_one_mul_complexHurwitzZeta {c : ℂ} (hc : 0 < c.re) :
 
 /-! ### Mellin–Laplace integral representation and agreement with `complexHurwitzSeries` -/
 
-private theorem eqOn_hurwitzStageZero_add_cpow {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
+private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
     EqOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * hurwitzTaylorQuot 0 c t + (t : ℂ) ^ (s - 2))
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))))
       (Ioc 0 1) := fun t ht => by
@@ -482,10 +480,8 @@ private theorem eqOn_hurwitzStageZero_add_cpow {s : ℂ} (hs : 1 < s.re) (c : �
   simp only [Finset.range_one, Finset.sum_singleton, hurwitzBernoulliCoeff_zero, pow_zero,
     mul_one, zero_add, pow_one] at hdecomp
   have hpow : (t : ℂ) ^ (s - 1) = (t : ℂ) ^ (s - 2) * (t : ℂ) := by
-    have hne : (s - 2) + 1 ≠ 0 := fun h0 => by
-      have hre := congrArg Complex.re h0; simp at hre; linarith
     have hexp : s - 1 = (s - 2) + 1 := by ring
-    rw [hexp, TauCeti.cpow_add_one' hne]
+    rw [hexp, TauCeti.cpow_add_one ht_ne]
   rw [hpow, mul_assoc, ← hdecomp, hurwitzKernel_of_ne_zero c ht_ne]
   ring
 
@@ -502,7 +498,7 @@ private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (
     (intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1) (r := s - 2)
       (by simp; linarith)).1]
   exact setIntegral_congr_fun measurableSet_Ioc fun t ht => by
-    simpa using eqOn_hurwitzStageZero_add_cpow hs c ht
+    simpa using eqOn_hurwitzStageZero_add_cpow s c ht
 
 /-- **Mellin–Laplace integral representation of the complex Hurwitz zeta function.** For
 `1 < s.re` and `0 < c.re`, `complexHurwitzZeta s c` equals `(Gamma s)⁻¹` times the integral of
@@ -515,7 +511,7 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
   have hs0 : -((0 : ℕ) : ℝ) < s.re := by simp; linarith
   have hint_Ioc : IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioc 0 1) :=
-    (integrableOn_hurwitzMellinIntegrand hs hc).mono_set Ioc_subset_Ioi_self
+    (integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg hs hc).mono_set Ioc_subset_Ioi_self
   rw [complexHurwitzZeta, hurwitzCore_eq_stage hs0 c]
   unfold hurwitzStageCore
   rw [hurwitzTailIntegral_def]

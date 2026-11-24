@@ -20,8 +20,9 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 # Mellin–Laplace kernel for the complex Hurwitz zeta function
 
 Bridges the elementary Mellin–Laplace kernel estimates in
-`TauCeti.Analysis.MellinTransform.ExpKernel` (`TauCeti.integrableOn_hurwitzMellinIntegrand`,
-`TauCeti.exists_integrableOn_norm_hurwitzMellinIntegrand_le`, and
+`TauCeti.Analysis.MellinTransform.ExpKernel`
+(`TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`,
+`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`, and
 `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`) to `TauCeti.complexHurwitzSeries`: for
 `1 < Re s` and `0 < Re c`,
 `∫₀^∞ t^{s−1} e^{−ct} / (1 − e^{−t}) dt = Γ(s) * complexHurwitzSeries s c`.
