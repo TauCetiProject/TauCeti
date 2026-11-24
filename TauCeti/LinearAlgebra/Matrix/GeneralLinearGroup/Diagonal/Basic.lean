@@ -144,8 +144,7 @@ theorem diagGL_const (a : kˣ) :
 scalar element `a`. -/
 theorem diagGL_const_mul (a : kˣ) (t : ι → kˣ) :
     diagGL (fun i => a * t i) = Matrix.GeneralLinearGroup.scalar ι a * diagGL t := by
-  rw [← diagGL_const, ← map_mul]
-  rfl
+  rw [← diagGL_const, ← map_mul, Pi.mul_def]
 
 /-- An invertible diagonal matrix with two distinct diagonal entries is not scalar. -/
 theorem notMem_range_scalar_diagGL {t : ι → kˣ} {i j : ι} (ht : t i ≠ t j) :

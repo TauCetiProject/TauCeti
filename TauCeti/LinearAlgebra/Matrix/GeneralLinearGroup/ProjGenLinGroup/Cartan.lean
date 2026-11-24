@@ -9,12 +9,14 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteVal
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Identity
 import TauCeti.GroupTheory.DoubleCoset.Inv
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.DoubleCoset.Orbits
 import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
+import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
 # The Cartan decomposition of `PGL₂` over a discretely valued field
@@ -68,43 +70,9 @@ namespace TauCeti
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {ϖ : R} {π : Kˣ}
 
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- A power of the image of a uniformizer is the image of a unit only for the exponent zero. -/
-private theorem eq_zero_of_zpow_eq_algebraMap (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
-    {j : ℤ} {v : Rˣ} (h : (π : K) ^ j = algebraMap R K v) : j = 0 := by
-  have key (m : ℕ) (w : Rˣ) (hw : (π : K) ^ m = algebraMap R K w) : m = 0 := by
-    rw [← hπ, ← map_pow] at hw
-    have hunit : IsUnit (ϖ ^ m) := IsFractionRing.injective R K hw ▸ w.isUnit
-    by_contra hm
-    exact hϖ.not_isUnit ((isUnit_pow_iff hm).mp hunit)
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg j
-  · exact_mod_cast key m v (by simpa using h)
-  · have hm : (π : K) ^ m = algebraMap R K (v⁻¹ : Rˣ) := by
-      rw [_root_.zpow_neg, zpow_natCast] at h
-      rw [map_units_inv, ← h, inv_inv]
-    simp [key m v⁻¹ hm]
-
-/-- A unit of `K` whose square is the image of a unit of `R` is itself the image of a unit. -/
-private theorem exists_algebraMap_eq_of_sq_eq (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
-    (u : Kˣ) {w : Rˣ} (h : (u : K) ^ 2 = algebraMap R K w) :
-    ∃ v : Rˣ, algebraMap R K v = u := by
-  obtain ⟨j, v, hv⟩ := IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
-    (K := K) hϖ u.ne_zero
-  rw [hπ, Units.smul_def, Algebra.smul_def] at hv
-  have hj : (π : K) ^ (2 * j) = algebraMap R K (w * v⁻¹ ^ 2 : Rˣ) := by
-    have hpow : ((π : K) ^ j) ^ 2 = (π : K) ^ (2 * j) := by
-      rw [mul_comm, _root_.zpow_mul, zpow_ofNat]
-    rw [hv, mul_pow, hpow] at h
-    rw [Units.val_mul, map_mul, ← h, mul_comm (_ ^ 2), mul_assoc, Units.val_pow_eq_pow_val,
-      ← map_pow, ← map_mul, ← mul_pow, Units.mul_inv, one_pow, map_one, mul_one]
-  have h2j := eq_zero_of_zpow_eq_algebraMap hϖ hπ hj
-  refine ⟨v, ?_⟩
-  rw [hv, show j = 0 by omega, zpow_zero, mul_one]
-
 /-- An element of `GL₂(K)` whose class lies in the image of `GL₂(R)` in `PGL₂(K)`, and whose
 determinant is the image of a unit of `R`, lies in the image of `GL₂(R)` in `GL₂(K)`. -/
-private theorem mem_range_map_of_mk_mem (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
-    {M : GL (Fin 2) K}
+private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
     (hM : ProjGenLinGroup.mk M ∈
       (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range)
     {w : Rˣ} (hw : (GeneralLinearGroup.det M : K) = algebraMap R K w) :
@@ -115,7 +83,8 @@ private theorem mem_range_map_of_mk_mem (hϖ : Irreducible ϖ) (hπ : algebraMap
   simp only [map_mul, GeneralLinearGroup.det_scalar, Fintype.card_fin, Units.val_mul,
     Units.val_pow_eq_pow_val, hw, GeneralLinearGroup.map_det, Units.coe_map,
     MonoidHom.coe_ofClass] at hdet
-  obtain ⟨v, hv⟩ := exists_algebraMap_eq_of_sq_eq hϖ hπ u (w := w * (GeneralLinearGroup.det y)⁻¹)
+  obtain ⟨v, hv⟩ := IsDiscreteValuationRing.exists_algebraMap_eq_of_pow_eq_algebraMap two_ne_zero
+    (x := (u : K)) (w := w * (GeneralLinearGroup.det y)⁻¹)
     (by
       rw [Units.val_mul, map_mul, ← hdet, mul_comm (algebraMap R K _), mul_assoc, ← map_mul,
         Units.mul_inv, map_one, mul_one])
@@ -144,14 +113,13 @@ theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap 
       GeneralLinearGroup.map (algebraMap R K) x * diagGL ![1, π ^ k] : GL (Fin 2) K) i j =
         ((![1, π ^ k] i)⁻¹ : Kˣ) * algebraMap R K (x i j) * (![1, π ^ k] j : Kˣ) := by
     rw [← map_inv, Units.val_mul, Units.val_mul, diagGL_coe, diagGL_coe, mul_diagonal,
-      diagonal_mul, GeneralLinearGroup.map_apply]
-    rfl
+      diagonal_mul, GeneralLinearGroup.map_apply, Pi.inv_apply]
   rw [Subgroup.mem_comap, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv,
     MulAut.smul_def, MulAut.conj_apply, inv_inv, MonoidHom.comp_apply, ← map_inv, ← map_mul,
     ← map_mul, GL2K0.mem_iff, hmax, Ideal.mem_span_singleton]
   constructor
   · intro hmem
-    obtain ⟨y, hy⟩ := mem_range_map_of_mk_mem hϖ hπ hmem (w := GeneralLinearGroup.det x)
+    obtain ⟨y, hy⟩ := mem_range_map_of_mk_mem hmem (w := GeneralLinearGroup.det x)
       (by simp [GeneralLinearGroup.map_det, mul_comm])
     have h10 := hentry 1 0
     rw [← hy, GeneralLinearGroup.map_apply] at h10
@@ -209,8 +177,7 @@ theorem exists_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algeb
   have himage : (ProjGenLinGroup.mk : GL (Fin 2) K →* PGL(2, K)) ''
       ((GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range : Set (GL (Fin 2) K)) =
         (f.range : Set PGL(2, K)) := by
-    rw [MonoidHom.coe_range, MonoidHom.coe_range, ← Set.range_comp]
-    rfl
+    rw [← Subgroup.coe_map, MonoidHom.map_range]
   induction g using ProjGenLinGroup.induction_on with | mk M => ?_
   -- push the Cartan decomposition of `M` in `GL₂(K)` down to `PGL₂(K)`
   obtain ⟨a, ha, hM⟩ := exists_monotone_mem_doubleCoset_diagGL_zpow hϖ hπ M
@@ -253,8 +220,7 @@ theorem eq_of_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algebr
     (K := K) hϖ u.ne_zero
   have huv : u = Units.map (algebraMap R K : R →* K) v * π ^ j := Units.ext <| by
     rw [hv, hπ, Units.smul_def, Algebra.smul_def, Units.val_mul, Units.coe_map,
-      Units.val_zpow_eq_zpow_val]
-    rfl
+      MonoidHom.coe_ofClass, Units.val_zpow_eq_zpow_val]
   have hmem : (diagGL fun i ↦ π ^ (![0, (k : ℤ)] i)) ∈
       doubleCoset (diagGL fun i ↦ π ^ (![j, (l : ℤ) + j] i))
         (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range
@@ -359,7 +325,7 @@ theorem natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow [Finite (ResidueFiel
       (Quotient.mk (QuotientGroup.rightRel Γ) '' S) = (QuotientGroup.mk : _ → _ ⧸ Γ) '' S := by
     rw [Set.image_image]
     conv_rhs => rw [← hS, ← Set.image_inv_eq_inv, Set.image_image]
-    rfl
+    exact Set.image_congr fun x _ ↦ QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk x
   rw [← Nat.card_image_of_injective (Equiv.injective _), himage,
     natCard_image_mk_doubleCoset_mk_diagGL_pow hϖ hπ hk]
 

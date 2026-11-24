@@ -8,10 +8,11 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.RingTheory.Localization.Integer
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 import TauCeti.LinearAlgebra.Matrix.InvariantFactor
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.Localization.IntegerMultiple
 
 /-!
 # The Cartan decomposition of `GLₙ` over a discretely valued field
@@ -28,11 +29,10 @@ of the integral points `GLₙ(R)`, embedded in `GLₙ(K)` by `Matrix.GeneralLine
 `K = ℚ_p` and `R = ℤ_p` this is the decomposition `GLₙ(ℚ_p) = ⊔ GLₙ(ℤ_p) p^a GLₙ(ℤ_p)` over the
 dominant exponents `a`.
 
-Existence clears denominators and takes a Smith normal form over `R`
-(`Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`). Uniqueness reads the exponents
-off the valuations of minors: `a₀ + ⋯ + aₖ₋₁` is the least valuation of a `k × k` minor, a
-quantity that two-sided multiplication by `GLₙ(R)` does not change
-(`Matrix.exists_valuation_det_submatrix_eq_prefixSum_of_mul_mul_eq_diagonal`).
+Existence clears denominators (`TauCeti.IsLocalization.exists_matrix_map_eq_smul`) and takes a
+Smith normal form over `R` (`Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`).
+Uniqueness is the uniqueness of that Smith normal form (`Matrix.eq_of_mul_mul_eq_diagonal_pow`),
+which reads the exponents off the valuations of minors.
 
 ## Main results
 
@@ -55,32 +55,6 @@ open Matrix DoubleCoset
 
 namespace TauCeti
 
-section Denominators
-
-variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {ϖ : R}
-  {ι : Type*}
-
-/-- **Clearing the denominators of a matrix over the fraction field of a discrete valuation
-ring.** Some power of a uniformizer multiplies a given matrix over `K` into the image of the
-matrices over `R`. -/
-theorem exists_map_eq_pow_smul_of_irreducible [Finite ι] (hϖ : Irreducible ϖ)
-    (M : Matrix ι ι K) :
-    ∃ (m : ℕ) (A : Matrix ι ι R), A.map (algebraMap R K) = algebraMap R K ϖ ^ m • M := by
-  have := Fintype.ofFinite ι
-  obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples (nonZeroDivisors R) Finset.univ
-    (fun p : ι × ι ↦ M p.1 p.2)
-  obtain ⟨m, u, hu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
-    (nonZeroDivisors.ne_zero b.property) hϖ
-  choose r hr using fun i j ↦ hb (i, j) (Finset.mem_univ _)
-  refine ⟨m, Matrix.of fun i j ↦ ↑u⁻¹ * r i j, ?_⟩
-  ext i j
-  simp only [map_apply, of_apply, map_mul, hr, Algebra.smul_def, hu]
-  rw [Matrix.smul_apply, smul_eq_mul, ← mul_assoc, ← mul_assoc, ← map_mul, Units.inv_mul, map_one,
-    one_mul, map_pow]
-
-end Denominators
-
 section Diagonal
 
 variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K] {ϖ : R} {π : Kˣ} {n : ℕ}
@@ -93,7 +67,7 @@ private theorem coe_diagGL_zpow_natCast (hπ : algebraMap R K ϖ = π) (α : Fin
   ext i j
   by_cases hij : i = j <;> simp [hij, ← hπ]
 
-/-- Multiplying the exponents of `diag(π^a)` by a common shift multiplies it by a scalar. -/
+/-- Adding a common shift `m` to the exponents of `diag(π^a)` multiplies it by the scalar `π^m`. -/
 private theorem diagGL_zpow_add_const (a : Fin n → ℤ) (m : ℤ) :
     (diagGL fun i ↦ π ^ (a i + m) : GL (Fin n) K) =
       GeneralLinearGroup.scalar (Fin n) (π ^ m) * diagGL fun i ↦ π ^ a i := by
@@ -105,53 +79,6 @@ end Diagonal
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {ϖ : R} {π : Kˣ} {n : ℕ}
 
-/-- **Uniqueness of a Smith normal form with uniformizer powers.** If two diagonal matrices of
-powers of a uniformizer, with monotone exponents, are equivalent under `GLₙ(R)`, then their
-exponents agree. -/
-private theorem eq_of_diagonal_pow_eq_mul_mul (hϖ : Irreducible ϖ) {α β : Fin n → ℕ}
-    (hα : Monotone α) (hβ : Monotone β) (L Q : GL (Fin n) R)
-    (h : (diagonal fun i ↦ ϖ ^ α i) = (L : Matrix (Fin n) (Fin n) R) *
-      diagonal (fun i ↦ ϖ ^ β i) * (Q : Matrix (Fin n) (Fin n) R)) : α = β := by
-  set v := IsDiscreteValuationRing.addVal R
-  have hv : ∀ x, 0 ≤ v x := fun _ ↦ zero_le
-  have hval (γ : Fin n → ℕ) (i : Fin n) : v (ϖ ^ γ i) = (γ i : ℕ∞) := by
-    rw [IsDiscreteValuationRing.addVal_pow, IsDiscreteValuationRing.addVal_uniformizer hϖ,
-      nsmul_one]
-  have hchain (γ : Fin n → ℕ) (hγ : Monotone γ) :
-      ∀ ⦃i j : Fin n⦄, i ≤ j → ϖ ^ γ i ∣ ϖ ^ γ j := fun _ _ hij ↦ pow_dvd_pow ϖ (hγ hij)
-  -- `diagonal (ϖ ^ α)` has the Smith normal forms `ϖ ^ α` and, through `h`, `ϖ ^ β`.
-  have hβsnf : (↑L⁻¹ : Matrix (Fin n) (Fin n) R) * (diagonal fun i ↦ ϖ ^ α i) *
-      (↑Q⁻¹ : Matrix (Fin n) (Fin n) R) = diagonal fun i ↦ ϖ ^ β i :=
-    (GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq L Q).2 h.symm
-  have hαsnf : (1 : Matrix (Fin n) (Fin n) R) * (diagonal fun i ↦ ϖ ^ α i) * 1 =
-      diagonal fun i ↦ ϖ ^ α i := by rw [Matrix.one_mul, Matrix.mul_one]
-  have hunit (g : GL (Fin n) R) : IsUnit (g : Matrix (Fin n) (Fin n) R).det :=
-    (Matrix.GeneralLinearGroup.det g).isUnit
-  -- the least valuation of a `k × k` minor is the prefix sum of either exponent vector
-  have hprefix (k : ℕ) (hk : k ≤ n) : prefixSum k α = prefixSum k β := by
-    have key (γ δ : Fin n → ℕ) (hγ : Monotone γ) (hδ : Monotone δ) (L' Q' : Matrix _ _ R)
-        (hL' : IsUnit L'.det) (hQ' : IsUnit Q'.det)
-        (hγsnf : L' * (diagonal fun i ↦ ϖ ^ α i) * Q' = diagonal fun i ↦ ϖ ^ γ i)
-        (L'' Q'' : Matrix _ _ R) (hL'' : IsUnit L''.det) (hQ'' : IsUnit Q''.det)
-        (hδsnf : L'' * (diagonal fun i ↦ ϖ ^ α i) * Q'' = diagonal fun i ↦ ϖ ^ δ i) :
-        (prefixSum k fun i ↦ (γ i : ℕ∞)) ≤ prefixSum k fun i ↦ (δ i : ℕ∞) := by
-      obtain ⟨f, g, hfg⟩ := exists_valuation_det_submatrix_eq_prefixSum_of_mul_mul_eq_diagonal
-        hv hL'' hQ'' (hchain δ hδ) hδsnf hk
-      have hle := prefixSum_le_valuation_det_submatrix_of_mul_mul_eq_diagonal
-        hv hL' hQ' (hchain γ hγ) hγsnf hk f g
-      simp only [hval] at hfg hle
-      exact hle.trans hfg.le
-    have h₁ := key α β hα hβ 1 1 (by simp) (by simp) hαsnf _ _ (hunit L⁻¹) (hunit Q⁻¹) hβsnf
-    have h₂ := key β α hβ hα _ _ (hunit L⁻¹) (hunit Q⁻¹) hβsnf 1 1 (by simp) (by simp) hαsnf
-    have hcast (γ : Fin n → ℕ) : (prefixSum k fun i ↦ (γ i : ℕ∞)) = (prefixSum k γ : ℕ) := by
-      simp [prefixSum_def]
-    rw [hcast, hcast] at h₁ h₂
-    exact_mod_cast le_antisymm h₁ h₂
-  funext i
-  have h₁ := hprefix (i + 1) i.isLt
-  rw [prefixSum_succ i.isLt, prefixSum_succ i.isLt, hprefix i i.isLt.le] at h₁
-  exact Nat.add_left_cancel h₁
-
 /-- **Existence in the Cartan decomposition of `GLₙ(K)`.** Every `g ∈ GLₙ(K)` lies in the `GLₙ(R)`
 double coset of `diag(π^{a₀}, …, π^{aₙ₋₁})` for some monotone `a`. Here `π` is the image of a
 uniformizer of the discrete valuation ring `R` in its fraction field `K`. -/
@@ -160,7 +87,10 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
     ∃ a : Fin n → ℤ, Monotone a ∧ g ∈ doubleCoset (diagGL fun i ↦ π ^ a i)
       (GeneralLinearGroup.map (n := Fin n) (algebraMap R K)).range
       (GeneralLinearGroup.map (n := Fin n) (algebraMap R K)).range := by
-  obtain ⟨m, A, hA⟩ := exists_map_eq_pow_smul_of_irreducible hϖ (g : Matrix (Fin n) (Fin n) K)
+  have := hϖ.isLocalizationAway_fractionRing (K := K)
+  obtain ⟨⟨_, m, rfl⟩, A, hA⟩ :=
+    IsLocalization.exists_matrix_map_eq_smul (Submonoid.powers ϖ) (g : Matrix (Fin n) (Fin n) K)
+  rw [← algebraMap_smul K, map_pow] at hA
   obtain ⟨L, Q, s, hL, hQ, hs, hLAQ⟩ := exists_smith_normal_form_of_isDiscreteValuationRing A
   set L' : GL (Fin n) R := nonsingInvUnit L hL
   set Q' : GL (Fin n) R := nonsingInvUnit Q hQ
@@ -199,11 +129,13 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
       diagGL_coe, ← RingHom.mapMatrix_apply, ← map_mul]
     rw [show s = fun i ↦ (u i : R) * ϖ ^ e i from funext hsu, ← diagonal_mul_diagonal]
     simp only [Matrix.mul_assoc]
+  -- `g = π^{-m} (π^m g)`, and the scalar `π^{-m}` is central
+  have hg : g = GeneralLinearGroup.scalar (Fin n) (π ^ (-(m : ℤ))) *
+      (GeneralLinearGroup.scalar (Fin n) (π ^ (m : ℤ)) * g) := by
+    rw [← mul_assoc, ← map_mul, ← _root_.zpow_add, neg_add_cancel, zpow_zero, map_one, one_mul]
   have hc := Subgroup.mem_center_iff.mp (scalar_mem_center (ι := Fin n) (π ^ (-(m : ℤ))))
-  rw [diagGL_zpow_add_const, ← mul_assoc, hc, mul_assoc, mul_assoc,
-    ← mul_assoc (GeneralLinearGroup.map _ _), ← hmat, ← mul_assoc, ← map_mul, ← _root_.zpow_add,
-    neg_add_cancel, zpow_zero, map_one,
-    one_mul]
+  rw [hg, hmat, diagGL_zpow_add_const, ← mul_assoc _ (GeneralLinearGroup.scalar _ _), hc]
+  simp only [mul_assoc]
 
 /-- Two diagonal elements `diag(π^a)` and `diag(π^b)` of `GLₙ(K)` with monotone exponents lie in the
 same `GLₙ(R)` double coset only if `a = b`. -/
@@ -238,8 +170,11 @@ private theorem eq_of_monotone_of_diagGL_zpow_mem_doubleCoset (hϖ : Irreducible
   have hR := congrArg (fun g : GL (Fin n) K ↦ (g : Matrix (Fin n) (Fin n) K)) hGL
   simp only [Units.val_mul, coe_diagGL_zpow_natCast hπ, GeneralLinearGroup.val_map_apply,
     ← RingHom.mapMatrix_apply, ← map_mul] at hR
-  have hαβ := eq_of_diagonal_pow_eq_mul_mul hϖ hαmono hβmono _ _
-    (Matrix.map_injective (IsFractionRing.injective R K) hR)
+  have hαβ := eq_of_mul_mul_eq_diagonal_pow (L := 1) (Q := 1) hϖ hαmono hβmono (by simp) (by simp)
+    (GeneralLinearGroup.det x⁻¹).isUnit (GeneralLinearGroup.det y⁻¹).isUnit
+    (by rw [Matrix.one_mul, Matrix.mul_one])
+    ((GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq x y).2
+      (Matrix.map_injective (IsFractionRing.injective R K) hR).symm)
   funext i
   have := congrFun hαβ i
   have := hαa i
