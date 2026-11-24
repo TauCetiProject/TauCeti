@@ -47,12 +47,9 @@ example (σ : Matrix (Fin 1) (Fin 1) R →ₐ[R] Matrix (Fin 1) (Fin 1) R) : σ 
 example : innerAut (upperRightHom (1 : ℤ_[3])) (single 0 0 1) = !![1, -1; 0, 0] := by
   have hE : (single 0 0 1 : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 0; 0, 0] := by
     ext i j
-    fin_cases i <;> fin_cases j <;> rfl
-  have hg : (upperRightHom (1 : ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 1; 0, 1] := rfl
-  have hg' : (((upperRightHom (1 : ℤ_[3]))⁻¹ : GL (Fin 2) ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) =
-      !![1, -1; 0, 1] := rfl
-  rw [innerAut_apply, hE, hg, hg']
-  ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  rw [innerAut_apply, upperRightHom_apply, Units.inv_mk, hE]
+  ext i j : 1
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
 
 end TauCeti.InnerAutExamples

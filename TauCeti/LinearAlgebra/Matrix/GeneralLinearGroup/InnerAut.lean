@@ -49,9 +49,9 @@ fppf quotient of `GLₙ` by its center.
 ## Implementation notes
 
 Write `Eᵢⱼ` for the matrix units and fix an index `b`. For each `a`, the matrices
-`Gᵦ = ∑ⱼ σ(Eⱼₐ) Eᵦⱼ` and `Hᵦ = ∑ⱼ Eⱼᵦ σ(Eₐⱼ)` satisfy `σ(x) Gᵦ = Gᵦ x` and `Hᵦ Gᵦ = σ(Eₐₐ)ᵦᵦ`, a
+`Gₐ = ∑ⱼ σ(Eⱼₐ) Eᵦⱼ` and `Hₐ = ∑ⱼ Eⱼᵦ σ(Eₐⱼ)` satisfy `σ(x) Gₐ = Gₐ x` and `Hₐ Gₐ = σ(Eₐₐ)ᵦᵦ`, a
 scalar. Since the `Eₐₐ` sum to `1`, these scalars sum to `1` over `a`, so they generate the unit
-ideal. Wherever `σ(Eₐₐ)ᵦᵦ` is invertible, `Gᵦ` is invertible and conjugates `x` to `σ(x)`. Over a
+ideal. Wherever `σ(Eₐₐ)ᵦᵦ` is invertible, `Gₐ` is invertible and conjugates `x` to `σ(x)`. Over a
 local semiring one of these scalars is already a unit.
 
 ## References
@@ -144,7 +144,7 @@ private theorem apply_mul_intertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A)
       Finset.sum_eq_single k (fun j _ hj => by simp [mul_assoc, hj]) (by simp)]
     simp [mul_assoc]
 
-/-- `Hᵦ Gᵦ` is the scalar matrix `σ(Eₐₐ)ᵦᵦ`. -/
+/-- `Hₐ Gₐ` is the scalar matrix `σ(Eₐₐ)ᵦᵦ`. -/
 private theorem coIntertwiner_mul_intertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A) (a b : n) :
     coIntertwiner σ a b * intertwiner σ a b = Matrix.scalar n (σ (single a a 1) b b) := by
   -- `σ(Eₐⱼ) σ(Eₖₐ) = σ(Eₐⱼ Eₖₐ)` vanishes unless `j = k`, when it is `σ(Eₐₐ)`.
