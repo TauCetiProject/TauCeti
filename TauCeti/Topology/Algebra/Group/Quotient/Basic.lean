@@ -92,16 +92,16 @@ instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [Continuou
 
 open Topology in
 /-- The coset space `G ⧸ K` of a topological group by any subgroup `K`, normal or not, is regular.
-For `x = [g]` and a neighbourhood `s` of `x`, choose a neighbourhood `V` of `1` with
-`[v⁻¹ * w * g] ∈ s` for `v, w ∈ V`. The image of `V * g` is a neighbourhood of `x`, and its closure
-lies in `s`: a point `[h]` of the closure has `[v * h] = [w * g]` for some `v, w ∈ V`, as the open
-projection maps `V * h` to a neighbourhood of `[h]`, so `[h] = [v⁻¹ * w * g]`. When `K` is closed,
-`G ⧸ K` is also `T1` (`QuotientGroup.instT1Space`), hence `T3`. -/
+When `K` is closed, `G ⧸ K` is also `T1` (`QuotientGroup.instT1Space`), hence `T3`. -/
 @[to_additive /-- The coset space `G ⧸ K` of an additive topological group by any subgroup `K`,
 normal or not, is regular. When `K` is closed, `G ⧸ K` is also `T1`
 (`QuotientAddGroup.instT1Space`), hence `T3`. -/]
 instance instRegularSpace {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     (K : Subgroup G) : RegularSpace (G ⧸ K) := by
+  -- For `x = [g]` and a neighbourhood `s` of `x`, choose a neighbourhood `V` of `1` with
+  -- `[v⁻¹ * w * g] ∈ s` for `v, w ∈ V`. The image of `V * g` is a neighbourhood of `x`, and its
+  -- closure lies in `s`: a point `[h]` of the closure has `[v * h] = [w * g]` for some `v, w ∈ V`,
+  -- as the open projection maps `V * h` to a neighbourhood of `[h]`, so `[h] = [v⁻¹ * w * g]`.
   refine .of_exists_mem_nhds_isClosed_subset fun x s hs ↦ ?_
   obtain ⟨g, rfl⟩ := mk_surjective x
   have hπ (h : G) : IsOpenMap fun w : G ↦ ((w * h : G) : G ⧸ K) :=
