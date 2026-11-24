@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
+public import Mathlib.Topology.Algebra.ValuativeRel.Completion
 public import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -14,10 +15,10 @@ public import TauCeti.Topology.Algebra.IsOpenUnits
 Let `E` be a commutative ring with a valuative relation and valuation ring `𝒪[E]`. The structure
 map `Algebra.ofId 𝒪[E] E` is the inclusion of `𝒪[E]` into `E`. When the topology of `E` is
 defined by its valuation, `𝒪[E]` is open and closed in `E`, so this inclusion is both a closed and
-an open embedding. When `E` is a field with open units, such as a nonarchimedean local field, the
-units of `𝒪[E]` are the elements of valuation one, an open subset of `𝒪[E]`, so `𝒪[E]` has open
-units with continuous inversion. This is the hypothesis under which the points of a scheme over
-`𝒪[E]` carry their chart topology.
+an open embedding. When `E` is a field whose topology is defined by its valuation, such as a
+nonarchimedean local field, `E` has open units, and the units of `𝒪[E]` are the elements of
+valuation one, an open subset of `𝒪[E]`, so `𝒪[E]` has open units with continuous inversion.
+This is the hypothesis under which the points of a scheme over `𝒪[E]` carry their chart topology.
 
 ## Main results
 
@@ -28,7 +29,7 @@ units with continuous inversion. This is the hypothesis under which the points o
   closed and open embedding.
 * `TauCeti.completeSpace_integer`: `𝒪[E]` is a complete uniform subspace when `E` is complete.
 * `TauCeti.isOpen_setOf_isUnit_integer` and `TauCeti.instIsOpenUnitsInteger`: over a field, the
-  units of `𝒪[E]` are open, and `𝒪[E]` has open units when `E` does.
+  units of `𝒪[E]` are open, and `𝒪[E]` has open units.
 -/
 
 public section
@@ -81,12 +82,16 @@ theorem isOpen_setOf_isUnit_integer : IsOpen {x : 𝒪[E] | IsUnit x} := by
   rw [this]
   exact ((valuation E).isClopen_ball 1).compl.isOpen.preimage continuous_subtypeVal
 
-/-- The valuation ring `𝒪[E]` of a field with open units whose topology is defined by its
-valuation has open units: its units are open and inversion is continuous on them. This holds for
-every nonarchimedean local field `E`. -/
-instance instIsOpenUnitsInteger [IsOpenUnits E] : IsOpenUnits 𝒪[E] :=
+/-- The valuation ring `𝒪[E]` of a field whose topology is defined by its valuation has open
+units: its units are open and inversion is continuous on them. This holds for every
+nonarchimedean local field `E`. The field `E` itself has open units, as a Hausdorff topological
+division ring. -/
+instance instIsOpenUnitsInteger : IsOpenUnits 𝒪[E] :=
   .of_isEmbedding (f := (Subring.subtype 𝒪[E] : 𝒪[E] →* E))
-    isOpenEmbedding_ofId_integer.isEmbedding isOpen_setOf_isUnit_integer
+    (by
+      rw [MonoidHom.coe_ofClass, Subring.coe_subtype, ← coe_ofId_integer]
+      exact isOpenEmbedding_ofId_integer.isEmbedding)
+    isOpen_setOf_isUnit_integer
 
 end Field
 

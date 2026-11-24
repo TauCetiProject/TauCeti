@@ -27,13 +27,16 @@ integral model of finite type of an algebraic group, the points `𝒳(𝒪[E])` 
 space. These are the spaces of points of groups over local fields on which Haar measures and
 compact open subgroups live.
 
-## Main results
+## Applying the general results
 
-* `TauCeti.SchemePointTopology.locallyCompactSpace_of_localField`: `X(E)` is Hausdorff and locally
-  compact for `X` separated and locally of finite type over `E`.
+With `TauCeti.SchemePointTopology` open, the general results apply over `E` and `𝒪[E]`, as the
+examples below show.
 
-Over `𝒪[E]`, `TauCeti.SchemePointTopology.locallyCompactSpace_of_locallyOfFiniteType` applies
-directly: `𝒳(𝒪[E])` is locally compact for `𝒳` locally of finite type over `𝒪[E]`.
+* `TauCeti.SchemePointTopology.t2Space_of_isSeparated` and
+  `TauCeti.SchemePointTopology.locallyCompactSpace_of_locallyOfFiniteType`: `X(E)` is Hausdorff
+  and locally compact for `X` separated and locally of finite type over `E`.
+* `TauCeti.SchemePointTopology.locallyCompactSpace_of_locallyOfFiniteType`: `𝒳(𝒪[E])` is locally
+  compact for `𝒳` locally of finite type over `𝒪[E]`.
 
 ## References
 
@@ -53,12 +56,15 @@ namespace TauCeti.SchemePointTopology
 variable (E : Type u) [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E]
 
-/-- The points of a scheme separated and locally of finite type over a nonarchimedean local field
+/- The points of a scheme separated and locally of finite type over a nonarchimedean local field
 `E` form a Hausdorff, locally compact space for the chart topology. -/
-theorem locallyCompactSpace_of_localField {X : Scheme.{u}} (f : X ⟶ Spec (.of E))
-    [IsSeparated f] [LocallyOfFiniteType f] :
-    T2Space (Points (R := E) f) ∧ LocallyCompactSpace (Points (R := E) f) :=
-  ⟨t2Space_of_isSeparated f, locallyCompactSpace_of_locallyOfFiniteType f⟩
+example {X : Scheme.{u}} (f : X ⟶ Spec (.of E)) [IsSeparated f] :
+    T2Space (Points (R := E) f) :=
+  t2Space_of_isSeparated f
+
+example {X : Scheme.{u}} (f : X ⟶ Spec (.of E)) [LocallyOfFiniteType f] :
+    LocallyCompactSpace (Points (R := E) f) :=
+  locallyCompactSpace_of_locallyOfFiniteType f
 
 /- The integral points of a scheme locally of finite type over `𝒪[E]` are locally compact, by the
 general result applied over `𝒪[E]`, whose open units come from `TauCeti.instIsOpenUnitsInteger`. -/
