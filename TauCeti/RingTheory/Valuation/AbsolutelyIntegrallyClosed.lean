@@ -99,12 +99,14 @@ theorem exists_subset_valuationRing_subring_cardinalMk_le (V : Type*) [CommRing 
   let K := FractionRing V
   have := IsAbsolutelyIntegrallyClosed.isAlgClosed (A := V) K
   obtain ⟨L, hsL, hL, hcard⟩ := exists_isAlgClosed_subfield_cardinalMk_le K (algebraMap V K '' s)
-  refine ⟨L.toSubring.comap (algebraMap V K), fun x hx ↦ hsL ⟨x, hx, rfl⟩, inferInstance,
+  refine ⟨L.toSubring.comap (algebraMap V K), fun x hx ↦
+    Subring.mem_comap.mpr ((L.mem_toSubring _).mpr (hsL ⟨x, hx, rfl⟩)), inferInstance,
     inferInstance, inferInstance, ?_⟩
-  -- `V ∩ L` embeds into `L`, whose cardinality is bounded by that of `s`.
-  calc #(L.toSubring.comap (algebraMap V K)) ≤ #L :=
-        mk_le_of_injective (f := fun x ↦ (⟨algebraMap V K x, x.property⟩ : L)) fun x y h ↦
-          Subtype.ext (IsFractionRing.injective V K congr(($h).val))
+  -- `V ∩ L` is the preimage of `L` under the injective map `V → K`, so it is no larger than `L`,
+  -- whose cardinality is bounded by that of `s`.
+  calc #(L.toSubring.comap (algebraMap V K)) ≤ #L := by
+        rw [← SetLike.coe_sort_coe, Subring.coe_comap, Subfield.coe_toSubring]
+        exact mk_preimage_of_injective _ _ (IsFractionRing.injective V K)
     _ ≤ max #(algebraMap V K '' s) ℵ₀ := hcard
     _ ≤ max #s ℵ₀ := max_le_max_right ℵ₀ mk_image_le
 

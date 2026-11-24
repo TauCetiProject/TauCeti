@@ -259,11 +259,13 @@ a field containing `V`, then so does `c`. -/
 private theorem mem_comap_of_mul_eq [FaithfulSMul V K] {a b c : V}
     (ha : a ∈ L.toSubring.comap (algebraMap V K)) (hb : b ∈ L.toSubring.comap (algebraMap V K))
     (ha0 : a ≠ 0) (h : a * c = b) : c ∈ L.toSubring.comap (algebraMap V K) := by
+  rw [Subring.mem_comap, Subfield.mem_toSubring] at ha hb ⊢
   have ha0' : algebraMap V K a ≠ 0 :=
     (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective V K)).mpr ha0
   have hc : algebraMap V K c = algebraMap V K b / algebraMap V K a := by
     rw [eq_div_iff ha0', ← h, map_mul, mul_comm]
-  simpa [Subring.mem_comap, hc] using L.div_mem hb ha
+  rw [hc]
+  exact L.div_mem hb ha
 
 /-- The trace `V ∩ L` of a valuation ring `V` on a subfield `L` of a field containing `V` is a
 valuation ring. -/
@@ -285,8 +287,10 @@ instance isLocalHom_subtype_comap : IsLocalHom (L.toSubring.comap (algebraMap V 
     obtain ⟨y, hy⟩ := isUnit_iff_exists_inv.mp hx
     have hy' : algebraMap V K y = (algebraMap V K x)⁻¹ :=
       eq_inv_of_mul_eq_one_right (by simpa using congrArg (algebraMap V K) hy)
+    have hxL : algebraMap V K x ∈ L := (L.mem_toSubring _).mp (Subring.mem_comap.mp x.property)
     have hyL : y ∈ L.toSubring.comap (algebraMap V K) := by
-      simpa [Subring.mem_comap, hy'] using L.inv_mem x.property
+      rw [Subring.mem_comap, Subfield.mem_toSubring, hy']
+      exact L.inv_mem hxL
     exact isUnit_iff_exists_inv.mpr ⟨⟨y, hyL⟩, Subtype.ext hy⟩
 
 end Subfield
