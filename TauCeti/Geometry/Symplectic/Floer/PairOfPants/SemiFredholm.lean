@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.SemiFredholm
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 
 /-!
-# The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
+# The semi-Fredholm estimates of the linearized Floer operator and its adjoint on the pair of pants
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space and let `D_u` be the linearized Floer
 operator (`TauCeti.SymplecticForm.floerLinearization`) along a map `u` of the pair of pants
@@ -54,8 +56,35 @@ the almost complex structure (`integral_associatedBilinForm_floerLinearization_i
 
 Sections are `C²` maps `ξ : ℝ × ℝ → V` with compact support in `S`; read in a positive end chart,
 their energy density is integrable over every half-cylinder
-(`TauCeti.Floer.integrableOn_sobolevDensity_comp_positiveEndChart`). The Sobolev completion, the
-finiteness of the cokernel and the Fredholm index are not treated here.
+(`TauCeti.Floer.integrableOn_sobolevDensity_comp_positiveEndChart`).
+
+The same patching gives the semi-Fredholm estimate of the formal adjoint `D_u^*`
+(`TauCeti.SymplecticForm.floerLinearizationAdjoint`), whose kernel is the cokernel of `D_u`. A
+`C²` covector field `η` with compact support in `S` is read on the end `q` as the form
+`η'_q = η (φ'_q ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), and `D_u^* η` is measured by
+`∫ ρ⁻¹ ‖D_u^* η‖²` for the cylindrical weight `ρ = TauCeti.Floer.cylindricalWeight`. This is the
+weighted `L²` norm dual, under the pairing `∫ η(ξ)`, to the weighted norm `∫ ρ ‖ξ‖²` of the
+Sobolev space `W^{1,2}_0(S, V)` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev`:
+
+`∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
+`  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`.
+
+* `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`
+  patches it together, with the same cutoffs, from estimates of the adjoint on the three ends,
+  weighted by `|z - c_q|²` for the center `c_q` of the end, and the `L²` estimate
+  `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint_of_subset`
+  of the adjoint on compact parts of the domain. The adjoint differentiates the cutoffs in the
+  collars only (`TauCeti.SymplecticForm.floerLinearizationAdjoint_fun_smul`). On the part `±s ≥ 0`
+  of each end the weight `|z - c_q|²` is at most `5 ρ⁻¹`
+  (`TauCeti.Floer.cylindricalWeight_mul_norm_sub_endCenter_sq_le`), and on the compact core `ρ` is
+  bounded above and below.
+* `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_add` is
+  the estimate along a Floer pair of pants for the pair-of-pants perturbation, from the end
+  estimate of the adjoint
+  (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`).
+
+The Sobolev completion, the regularity of weak cokernel elements, the finiteness of the cokernel
+and the Fredholm index are not treated here.
 
 ## References
 
@@ -677,5 +706,650 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
       (hux q) (hδ q)
   exact exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends
     ω hJ hKs hKt hu hc hend
+
+/-! ### The semi-Fredholm estimate of the formal adjoint -/
+
+/-- On the part `±s > 0` of the end `q`, where `J` and `u` are `C¹` along `u`, a `C¹` covector
+field reads in the positive end chart as a form `η (φ'_q ·) ∘ (a + b J)` that is `C¹`. -/
+private theorem contDiffAt_covectorPullback_positiveEndChart
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (q : Puncture) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
+    ContDiffAt ℝ 1 (covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ := by
+  set φ := positiveEndChart q
+  have hS : φ ζ ∈ thricePuncturedSphereReal := positiveEndChart_mem_thricePuncturedSphereReal hζ
+  have hφ : ContDiffAt ℝ 1 φ ζ := (contDiff_positiveEndChart q 1).contDiffAt
+  have hA : ContDiff ℝ 1 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
+    ((contDiff_positiveEndChart q 2).fderiv_right (by norm_num)).clm_apply contDiff_const
+  have hJζ : ContDiffAt ℝ 1
+      (fun ζ' ↦ (J (φ ζ') (u (φ ζ'))).toLinearMap.toContinuousLinearMap) ζ :=
+    (hJ _ hS).comp (f := fun ζ' ↦ (φ ζ', u (φ ζ'))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
+  rw [funext (covectorPullback_apply φ _ u η)]
+  exact (hη.contDiffAt.comp ζ hφ).clm_comp
+    (((contDiff_fst.comp hA).contDiffAt.smul contDiffAt_const).add
+      ((contDiff_snd.comp hA).contDiffAt.smul hJζ))
+
+/-- A `C¹` covector field with compact support in the part `±s ≥ a > 0` of the end `q` has
+integrable `W^{1,2}` energy density, read in the positive end chart, over the half-cylinder
+`(0, ∞) × [0, 1]`: its reading vanishes outside a band `a ≤ s ≤ N`. -/
+private theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) {q : Puncture} {a : ℝ} (ha : 0 < a)
+    (hηa : tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ a ≤ (positiveEndCoord q z).1}) :
+    IntegrableOn (sobolevDensity (covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η)) (Ioi 0 ×ˢ Icc 0 1) := by
+  set η' := covectorPullback (positiveEndChart q)
+    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
+  obtain ⟨N, hN⟩ :=
+    exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc (fun z hz ↦ (hηa hz).1) q
+  -- The reading vanishes near every point outside the band `a ≤ s ≤ N`.
+  have hzero (ζ : ℝ × ℝ) (hζ : ζ.1 < a ∨ N < ζ.1) : η' =ᶠ[𝓝 ζ] 0 := by
+    have h : η ∘ positiveEndChart q =ᶠ[𝓝 ζ] 0 := by
+      rcases hζ with hζ | hζ
+      · filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hζ] with ζ' hζ'
+        refine image_eq_zero_of_notMem_tsupport (f := η) fun h ↦ ?_
+        have := (hηa h).2
+        rw [fst_positiveEndCoord_positiveEndChart] at this
+        exact absurd hζ' (not_lt.2 this)
+      · exact hN ζ hζ
+    filter_upwards [h] with ζ' hζ'
+    simp only [η', covectorPullback_apply, Pi.zero_apply]
+    rw [show η (positiveEndChart q ζ') = 0 from hζ', ContinuousLinearMap.zero_comp]
+  have hK : IsCompact (Icc (a / 2) (max N a) ×ˢ Icc (0 : ℝ) 1) :=
+    isCompact_Icc.prod isCompact_Icc
+  refine (ContinuousOn.integrableOn_compact hK fun ζ hζ ↦ ?_).of_forall_sdiff_eq_zero
+    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  · exact (continuousAt_sobolevDensity (contDiffAt_covectorPullback_positiveEndChart hJ hu hη q
+      (lt_of_lt_of_le (by linarith) hζ.1.1))).continuousWithinAt
+  · have h : ζ.1 < a ∨ N < ζ.1 := by
+      by_contra! h'
+      exact hζ.2 ⟨⟨by linarith [h'.1], h'.2.trans (le_max_left _ _)⟩, hζ.1.2⟩
+    rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ h), sobolevDensity_zero]
+
+/-- For a `C¹` covector field `η` with compact support in `S`, the formal adjoint `D_u^* η`
+weighted by the inverse of the cylindrical weight, `ρ⁻¹ ‖D_u^* η‖²`, is integrable: it is
+continuous with compact support. -/
+private theorem integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    Integrable fun z ↦ (cylindricalWeight z)⁻¹ *
+      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu hη hηS
+  have hsupp : support (fun z ↦ (cylindricalWeight z)⁻¹ *
+      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) ⊆ tsupport η := fun z hz ↦ by
+    by_contra h
+    exact hz (by simp [floerLinearizationAdjoint_of_notMem_tsupport h])
+  have hc : ContinuousOn (fun z ↦ (cylindricalWeight z)⁻¹ *
+      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) thricePuncturedSphereReal :=
+    (isWeight_cylindricalWeight.continuousOn.inv₀ fun z hz ↦
+      (isWeight_cylindricalWeight.pos z hz).ne').mul (hD.norm.pow 2).continuousOn
+  exact (hc.continuous_of_tsupport_subset isOpen_thricePuncturedSphereReal
+    ((closure_minimal hsupp (isClosed_tsupport η)).trans hηS)).integrable_of_hasCompactSupport
+    (hηc.mono' hsupp)
+
+/-- **The weighted norm of the adjoint on a cut-off covector field.** Let `f` be smooth on `S` with
+`|f| ≤ 1`, with derivative supported in a compact set `K` and bounded by `M` there, and let
+`‖J‖ ≤ B` along `u` and `ρ⁻¹ ≤ W` on `K`, for the cylindrical weight `ρ`. Then for a `C²` covector
+field `η` with compact support in `S`,
+`∫ ρ⁻¹ ‖D^* (f η)‖² ≤ 2 ∫ ρ⁻¹ ‖D^* η‖² + 2 (M (1 + B))² W ∫_K ‖η‖²`. -/
+private theorem integral_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_fun_smul_le
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
+    (hf : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 f z) (hf₁ : ∀ z, |f z| ≤ 1)
+    (hfK : ∀ z ∈ thricePuncturedSphereReal, fderiv ℝ f z ≠ 0 → z ∈ K) {M B W : ℝ}
+    (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, ‖J z (u z)‖ ≤ B)
+    (hW₀ : 0 ≤ W) (hW : ∀ z ∈ K, (cylindricalWeight z)⁻¹ ≤ W) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    ∫ z, (cylindricalWeight z)⁻¹ *
+        ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
+      2 * (∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+        2 * (M * (1 + B)) ^ 2 * W * ∫ z in K, ‖η z‖ ^ 2 := by
+  have hfη : ContDiff ℝ 2 fun z ↦ f z • η z := contDiff_smul_of_tsupport_subset hf hη hηS
+  have hint := integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq ω hJ hKs
+    hKt hu (hη.of_le one_le_two) hηc hηS
+  have hind : Integrable (K.indicator fun z ↦ ‖η z‖ ^ 2) :=
+    ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator
+      hK.measurableSet
+  calc _ ≤ ∫ z, (2 * ((cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+        2 * (M * (1 + B)) ^ 2 * W * K.indicator (fun z ↦ ‖η z‖ ^ 2) z) := by
+        refine integral_mono (integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq
+          ω hJ hKs hKt hu (hfη.of_le one_le_two) (hηc.smul_left (f := f))
+          ((tsupport_smul_subset_right _ _).trans hηS))
+          ((hint.const_mul 2).add (hind.const_mul _)) fun z ↦ ?_
+        have hρ := inv_nonneg.2 (cylindricalWeight_nonneg z)
+        have hind₀ : 0 ≤ 2 * (M * (1 + B)) ^ 2 * W * K.indicator (fun z ↦ ‖η z‖ ^ 2) z :=
+          mul_nonneg (by positivity) (indicator_nonneg (fun _ _ ↦ sq_nonneg _) z)
+        by_cases hzS : z ∈ thricePuncturedSphereReal
+        · have hfd := (hf z hzS).differentiableAt two_ne_zero
+          have hηd := hη.differentiable two_ne_zero z
+          have hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
+            ((hJ z hzS).comp (f := fun w ↦ (w, u w)) z
+              (contDiffAt_id.prodMk (hu z hzS))).differentiableAt one_ne_zero
+          by_cases hz : fderiv ℝ f z = 0
+          · have h := norm_floerLinearizationAdjoint_fun_smul_sq_le (ω := ω) (Ks := Ks) (Kt := Kt)
+              hfd hηd hJu (hf₁ z) (M := 0) (B := ‖J z (u z)‖) (by simp [hz]) le_rfl
+            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
+            nlinarith [mul_le_mul_of_nonneg_left h hρ]
+          · have hzK := hfK z hzS hz
+            have h := norm_floerLinearizationAdjoint_fun_smul_sq_le (ω := ω) (Ks := Ks) (Kt := Kt)
+              hfd hηd hJu (hf₁ z) (hM z hzK) (hB z hzK)
+            rw [indicator_of_mem hzK]
+            have h₁ := mul_le_mul_of_nonneg_left h hρ
+            have h₂ : (cylindricalWeight z)⁻¹ * (2 * (M * (1 + B)) ^ 2 * ‖η z‖ ^ 2) ≤
+                W * (2 * (M * (1 + B)) ^ 2 * ‖η z‖ ^ 2) :=
+              mul_le_mul_of_nonneg_right (hW z hzK) (by positivity)
+            nlinarith
+        · have hz : z ∉ tsupport fun w ↦ f w • η w := fun h ↦
+            hzS (hηS (tsupport_smul_subset_right _ _ h))
+          rw [floerLinearizationAdjoint_of_notMem_tsupport hz, norm_zero, zero_pow two_ne_zero,
+            mul_zero]
+          positivity
+    _ = _ := by
+        rw [integral_add (hint.const_mul 2) (hind.const_mul _), integral_const_mul,
+          integral_const_mul, integral_indicator hK.measurableSet]
+
+/-- **The end piece of a covector field.** Beyond `R₀ + 1` on the end `q`, a covector field agrees
+with its cut-off `β_q η`, so the energy of its reading in the positive end chart there is at most
+the energy of the reading of the cut-off field on the whole end. -/
+private theorem setIntegral_sobolevDensity_covectorPullback_le_endCutoff
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 0 < R₀)
+    (q : Puncture) {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u
+          (fun z ↦ endCutoff R₀ q z • η z)) ζ := by
+  have hβη : ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • η z :=
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_endCutoff R₀ q hz) hη hηS
+  calc _ = ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+        (positiveEndChart q) (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u
+          (fun z ↦ endCutoff R₀ q z • η z)) ζ := by
+        refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+        refine (sobolevDensity_congr_of_eventuallyEq ?_).symm
+        filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ.1] with ζ' hζ'
+        rw [covectorPullback_fun_smul, endCutoff_eq_one
+          (by rw [fst_positiveEndCoord_positiveEndChart]; exact le_of_lt hζ'), one_smul]
+    _ ≤ _ := by
+        have hs : tsupport (fun z ↦ endCutoff R₀ q z • η z) ⊆
+            {z | z ∈ thricePuncturedSphereReal ∧ R₀ ≤ (positiveEndCoord q z).1} :=
+          tsupport_endCutoff_smul_subset (R₀ := R₀) (q := q) (ξ := η) hηS
+        exact setIntegral_mono_set
+          (integrableOn_sobolevDensity_covectorPullback_positiveEndChart hJ hu
+            (hβη.of_le one_le_two) (hηc.smul_left (f := endCutoff R₀ q)) hR₀ hs)
+          (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
+          (.of_forall fun _ hζ ↦ prod_mono (Ioi_subset_Ioi (by linarith)) subset_rfl hζ)
+
+/-- **The weights on an end.** On covector fields supported in the part `±s ≥ 0` of the end `q`,
+the weight `|z - c_q|²` of the end estimate of the adjoint is at most `5 ρ⁻¹`, for the cylindrical
+weight `ρ`. -/
+private theorem integral_norm_sub_endCenter_sq_mul_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) (q : Puncture)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηq : tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ 0 ≤ (positiveEndCoord q z).1}) :
+    ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+        ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
+      5 * ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (.of_forall fun z ↦ by positivity)
+    ((integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq ω hJ hKs hKt hu hη
+      hηc fun z hz ↦ (hηq hz).1).const_mul 5) (.of_forall fun z ↦ ?_)
+  by_cases hz : z ∈ tsupport η
+  · obtain ⟨hzS, hzq⟩ := hηq hz
+    have hρ := isWeight_cylindricalWeight.pos z hzS
+    have hw := cylindricalWeight_mul_norm_sub_endCenter_sq_le q
+      (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hzS) q) hzq
+    have hd :
+        ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤ 5 * (cylindricalWeight z)⁻¹ := by
+      rw [le_mul_inv_iff₀ hρ]
+      linarith
+    calc _ ≤ 5 * (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 :=
+          mul_le_mul_of_nonneg_right hd (sq_nonneg _)
+      _ = _ := by ring
+  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
+
+/-- **The end estimate of the adjoint on a cut-off covector field.** If the formal adjoint
+controls, with the weight `|z - c_q|²`, the energy in the positive end chart of `q` of covector
+fields supported in the part `±s > R_q` of the end, then for `R_q < R₀` the energy of a covector
+field beyond `R₀ + 1` on that end is controlled by `ρ⁻¹ ‖D^* (β_q η)‖²`. -/
+private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 0 < R₀)
+    {q : Puncture} {Cq Rq : ℝ} (hRq : Rq < R₀)
+    (hend : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ Rq < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        Cq * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) {E : ℝ}
+    (hE : ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+        (fun w ↦ endCutoff R₀ q w • η w) z‖ ^ 2 ≤ E) :
+    ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+      max Cq 0 * (5 * E) := by
+  have hβη : ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • η z :=
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_endCutoff R₀ q hz) hη hηS
+  have hsupp : tsupport (fun z ↦ endCutoff R₀ q z • η z) ⊆
+      {z | z ∈ thricePuncturedSphereReal ∧ R₀ ≤ (positiveEndCoord q z).1} :=
+    tsupport_endCutoff_smul_subset (R₀ := R₀) (q := q) (ξ := η) hηS
+  have hD := integral_norm_sub_endCenter_sq_mul_le ω (J := fun w y ↦
+    (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu q (hβη.of_le one_le_two)
+    (hηc.smul_left (f := endCutoff R₀ q)) fun z hz ↦ ⟨(hsupp hz).1, hR₀.le.trans (hsupp hz).2⟩
+  have hD₀ : 0 ≤ ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+      ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        Ks Kt u (fun w ↦ endCutoff R₀ q w • η w) z‖ ^ 2 :=
+    integral_nonneg fun _ ↦ by positivity
+  refine (setIntegral_sobolevDensity_covectorPullback_le_endCutoff hJ hu hR₀ q hη hηc hηS).trans <|
+    (hend hβη (hηc.smul_left (f := endCutoff R₀ q)) fun z hz ↦
+      ⟨(hsupp hz).1, hRq.trans_le (hsupp hz).2⟩).trans ?_
+  exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
+    (mul_le_mul_of_nonneg_left (hD.trans (by linarith)) (le_max_right _ _))
+
+/-- On a compact set `K ⊆ S` where the cylindrical weight is at most `P`, the `L²` norm on `K` of a
+continuous field `g` with `ρ⁻¹ ‖g‖²` integrable is at most `P ∫ ρ⁻¹ ‖g‖²`. -/
+private theorem setIntegral_norm_sq_le_mul_integral_inv_cylindricalWeight_mul {E : Type*}
+    [NormedAddCommGroup E] {K : Set (ℝ × ℝ)} (hK : IsCompact K)
+    (hKS : K ⊆ thricePuncturedSphereReal) {P : ℝ} (hP₀ : 0 ≤ P)
+    (hP : ∀ z ∈ K, cylindricalWeight z ≤ P) {g : ℝ × ℝ → E} (hg : Continuous g)
+    (hgi : Integrable fun z ↦ (cylindricalWeight z)⁻¹ * ‖g z‖ ^ 2) :
+    ∫ z in K, ‖g z‖ ^ 2 ≤ P * ∫ z, (cylindricalWeight z)⁻¹ * ‖g z‖ ^ 2 := by
+  calc _ ≤ ∫ z in K, P * ((cylindricalWeight z)⁻¹ * ‖g z‖ ^ 2) := by
+        refine setIntegral_mono_on ((hg.norm.pow 2).continuousOn.integrableOn_compact hK)
+          (hgi.const_mul P).integrableOn hK.measurableSet fun z hz ↦ ?_
+        have hρ := isWeight_cylindricalWeight.pos z (hKS hz)
+        rw [← mul_assoc, ← div_eq_mul_inv]
+        exact le_mul_of_one_le_left (sq_nonneg _) ((one_le_div hρ).2 (hP z hz))
+    _ ≤ _ := by
+        rw [integral_const_mul]
+        exact mul_le_mul_of_nonneg_left (setIntegral_le_integral hgi (ae_of_all _ fun z ↦
+          mul_nonneg (inv_nonneg.2 (cylindricalWeight_nonneg z)) (sq_nonneg _))) hP₀
+
+/-- **The core estimate of the adjoint.** If `D_u^*` satisfies the `L²` estimate `hint` on covector
+fields supported in `K = S_{R₀ + 1}`, where the cylindrical weight is at most `P`, the energy of a
+covector field on `S_{R₀}` is controlled by `ρ⁻¹ ‖D_u^* ((1 - ∑_q β_q) η)‖²` and by the `L²` norm
+of `η` on `K`. -/
+private theorem setIntegral_sobolevDensity_le_of_coreCutoff_floerLinearizationAdjoint
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
+    {C₀ P : ℝ} (hC₀ : 0 ≤ C₀) (hP₀ : 0 ≤ P)
+    (hP : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), cylindricalWeight z ≤ P)
+    (hint : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      tsupport η ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1) →
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+          (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+        C₀ * ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+          (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2))
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
+      C₀ * (P * (∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u
+          (fun w ↦ coreCutoff R₀ w • η w) z‖ ^ 2) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2 := by
+  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1)
+  have hK : IsCompact K := isCompact_preimage_truncation _
+  have hKS : K ⊆ thricePuncturedSphereReal :=
+    preimage_truncation_subset_thricePuncturedSphereReal _
+  set ηc : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ coreCutoff R₀ w • η w
+  have hηc' : ContDiff ℝ 2 ηc :=
+    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) hη hηS
+  have hηcS : tsupport ηc ⊆ thricePuncturedSphereReal :=
+    (tsupport_smul_subset_right _ _).trans hηS
+  have hDcont := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ hKs hKt hu
+    (hηc'.of_le one_le_two) hηcS
+  have hw := integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq ω hJ hKs hKt
+    hu (hηc'.of_le one_le_two) (hηc.smul_left (f := coreCutoff R₀)) hηcS
+  have hI {g : ℝ × ℝ → ℝ} (hg : Continuous g) : IntegrableOn g K :=
+    hg.continuousOn.integrableOn_compact hK
+  have hηcY : ∫ z in K, ‖ηc z‖ ^ 2 ≤ ∫ z in K, ‖η z‖ ^ 2 := by
+    refine setIntegral_mono_on (hI (by have := hηc'.continuous; fun_prop))
+      (hI (by have := hη.continuous; fun_prop)) hK.measurableSet fun z _ ↦ ?_
+    simp only [ηc, norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) (abs_coreCutoff_le_one hR₀ z)
+  have hDK := setIntegral_norm_sq_le_mul_integral_inv_cylindricalWeight_mul hK hKS hP₀ hP hDcont hw
+  have hsplit : ∫ z in K, (‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2 + ‖ηc z‖ ^ 2) =
+      (∫ z in K, ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) + ∫ z in K, ‖ηc z‖ ^ 2 :=
+    integral_add (hI (by fun_prop)) (hI (by have := hηc'.continuous; fun_prop))
+  have hcont := hηc'.continuous
+  have hdcont := hηc'.continuous_fderiv two_ne_zero
+  calc _ ≤ ∫ z in K, sobolevDensity ηc z := setIntegral_sobolevDensity_le_coreCutoff R₀ hη hηS
+    _ = (∫ z in K, (‖fderiv ℝ ηc z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ηc z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ηc z‖ ^ 2 := by
+        simp only [sobolevDensity_apply]
+        exact integral_add (hI (by fun_prop)) (hI (by fun_prop))
+    _ ≤ _ := by
+        gcongr
+        have hs : tsupport ηc ⊆ K := tsupport_coreCutoff_smul_subset (ξ := η) hR₀ hηS
+        refine (hint hηc' hs).trans ?_
+        rw [hsplit]
+        exact mul_le_mul_of_nonneg_left (add_le_add hDK hηcY) hC₀
+
+/-- **The adjoint at one height, with explicit constants.** Under the hypotheses of
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`,
+let `R₀ ≥ 1` lie above the heights `R q` of the end estimates, and on `K = S_{R₀ + 1}` let
+`‖J‖ ≤ B` along `u`, let the derivatives of the cutoffs at height `R₀` be at most `M`, let
+`ρ ≤ P` and `ρ⁻¹ ≤ W`, and let the adjoint satisfy the `L²` estimate with constant `C₀`. Then the
+energy of a covector field beyond `R₀ + 1` on the ends and on `S_{R₀}` is at most an explicit
+multiple of `∫ ρ⁻¹ ‖D_u^* η‖² + ∫_K ‖η‖²`. -/
+private theorem sum_setIntegral_add_setIntegral_le_of_ends_adjoint (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {C R : Puncture → ℝ}
+    (hend : ∀ q ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C q * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2)
+    {R₀ : ℝ} (hR₀ : 1 ≤ R₀) (hR : ∀ q, R q < R₀) {B M P W C₀ : ℝ}
+    (hB : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+      ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ B)
+    (hMq : ∀ q, ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+      ‖fderiv ℝ (endCutoff R₀ q) z‖ ≤ M)
+    (hMc : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+      ‖fderiv ℝ (coreCutoff R₀) z‖ ≤ M) (hP₀ : 0 ≤ P)
+    (hP : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), cylindricalWeight z ≤ P)
+    (hW₀ : 0 ≤ W)
+    (hW : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+      (cylindricalWeight z)⁻¹ ≤ W) (hC₀ : 0 ≤ C₀)
+    (hint : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      tsupport η ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1) →
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+          (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+        C₀ * ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
+          (‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2))
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
+    (∑ q, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+        (positiveEndChart q) (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
+      ((∑ q, max (C q) 0) * (5 * (2 + 2 * (M * (1 + B)) ^ 2 * W)) +
+          C₀ * (P * (2 + 2 * (M * (1 + B)) ^ 2 * W) + 1) + 1) *
+        ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2) := by
+  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1)
+  have hK : IsCompact K := isCompact_preimage_truncation _
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
+  set k := 2 + 2 * (M * (1 + B)) ^ 2 * W
+  set X := ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J' Ks Kt u η z‖ ^ 2
+  set Y := ∫ z in K, ‖η z‖ ^ 2
+  have hX : 0 ≤ X := integral_nonneg fun z ↦
+    mul_nonneg (inv_nonneg.2 (cylindricalWeight_nonneg z)) (sq_nonneg _)
+  have hY : 0 ≤ Y := setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _
+  have hkXY : 2 * X + 2 * (M * (1 + B)) ^ 2 * W * Y ≤ k * (X + Y) := by
+    have : 0 ≤ 2 * (M * (1 + B)) ^ 2 * W := by positivity
+    nlinarith
+  -- The ends, through the end cutoffs, and the core, through the core cutoff.
+  have hends (q : Puncture) :=
+    setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff ω hJ hKs hKt hu
+      (by linarith) (hR q) (hend q) hη hηc hηS
+      ((integral_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_fun_smul_le ω (J := J')
+        hJ hKs hKt hu hK (fun z hz ↦ contDiffAt_endCutoff R₀ q hz)
+        (fun z ↦ abs_le.2 ⟨by linarith [endCutoff_nonneg R₀ q z], endCutoff_le_one R₀ q z⟩)
+        (fun z hz ↦ mem_preimage_truncation_of_fderiv_endCutoff_ne_zero (by linarith) hz)
+        (hMq q) hB hW₀ hW hη hηc hηS).trans hkXY)
+  have hDc := integral_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_fun_smul_le ω
+    (J := J') hJ hKs hKt hu hK (fun z hz ↦ contDiffAt_coreCutoff R₀ hz)
+    (abs_coreCutoff_le_one (by linarith))
+    (fun z hz ↦ mem_preimage_truncation_of_fderiv_coreCutoff_ne_zero (by linarith) hz) hMc hB
+    hW₀ hW hη hηc hηS
+  have hcore := setIntegral_sobolevDensity_le_of_coreCutoff_floerLinearizationAdjoint ω
+    (J := J') hJ hKs hKt hu (by linarith) hC₀ hP₀ hP hint hη hηc hηS
+  calc _ ≤ (∑ q, max (C q) 0 * (5 * (k * (X + Y)))) +
+        (C₀ * (P * (k * (X + Y)) + (X + Y)) + (X + Y)) := by
+        refine add_le_add (Finset.sum_le_sum fun q _ ↦ hends q) (hcore.trans ?_)
+        gcongr
+        · exact hDc.trans hkXY
+        · linarith
+        · linarith
+    _ = _ := by
+        rw [← Finset.sum_mul]
+        ring
+
+/-- **Patching the adjoint at one height.** Under the hypotheses of
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`
+and for every height `R₀ ≥ 1` above the heights `R q` of the end estimates, the energy of a covector
+field beyond `R₀ + 1` on the ends and on the truncation `S_{R₀}` is controlled by
+`ρ⁻¹ ‖D_u^* η‖²` and by `η` on `S_{R₀ + 1}`. -/
+private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z))) {C R : Puncture → ℝ}
+    (hend : ∀ q ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C q * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2)
+    {R₀ : ℝ} (hR₀ : 1 ≤ R₀) (hR : ∀ q, R q < R₀) :
+    ∃ C', 0 ≤ C' ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (positiveEndChart q) (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
+        C' * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2) := by
+  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1)
+  have hK : IsCompact K := isCompact_preimage_truncation _
+  have hKS : K ⊆ thricePuncturedSphereReal :=
+    preimage_truncation_subset_thricePuncturedSphereReal _
+  -- Bounds on `K` for `J` along `u`, the derivatives of the cutoffs, the weight and its inverse.
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn
+    (f := fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
+    fun z hz ↦ ((hJ z (hKS hz)).continuousAt.comp₂ continuousAt_id
+      (hu z (hKS hz)).continuousAt).continuousWithinAt
+  obtain ⟨M, hMq, hMc⟩ := exists_forall_norm_fderiv_cutoff_le R₀
+  have hρc : ContinuousOn cylindricalWeight K :=
+    isWeight_cylindricalWeight.continuousOn.mono hKS
+  obtain ⟨P, hP⟩ := hK.exists_bound_of_continuousOn hρc
+  obtain ⟨W, hW⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ (cylindricalWeight z)⁻¹)
+    (hρc.inv₀ fun z hz ↦ (isWeight_cylindricalWeight.pos z (hKS hz)).ne')
+  -- The estimate of the adjoint on the compact core `K`.
+  obtain ⟨C₀, hC₀, hint⟩ :=
+    exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint_of_subset
+      ω hK (fun z hz ↦ hJ z (hKS hz)) (fun z hz ↦ hKs z (hKS hz)) (fun z hz ↦ hKt z (hKS hz))
+      (fun z hz ↦ hu z (hKS hz)) (fun z hz ↦ hc z (hKS hz))
+  exact ⟨_, by positivity, fun η hη hηc hηS ↦ sum_setIntegral_add_setIntegral_le_of_ends_adjoint ω
+    hJ hKs hKt hu hend hR₀ hR hB hMq hMc (le_max_right P 0)
+    (fun z hz ↦ (Real.le_norm_self _).trans ((hP z hz).trans (le_max_left _ _)))
+    (le_max_right W 0) (fun z hz ↦ (Real.le_norm_self _).trans ((hW z hz).trans (le_max_left _ _)))
+    hC₀ hint hη hηc hηS⟩
+
+/-- **Patching end estimates into the semi-Fredholm estimate of the adjoint on the pair of
+pants.** Let `J(z)` be compatible along `u` on `S = ℂ ∖ {0, 1}`, with `J` `C¹` and `K_s`, `K_t`
+`C²` at the points `(z, u z)`, and `u` `C¹` on `S`. Suppose that on each end `q` the formal adjoint
+`D_u^*` controls the energy in the positive end chart `φ'_q`: there are `C q` and `R q` such that
+every `C²` covector field `η` with compact support in the part `±s > R q` of the end satisfies
+`∫_{(0, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C q ∫ |z - c_q|² ‖D_u^* η‖²`, where
+`η' = η (φ'_q ·) ∘ (a + b J)` is `η` read in the chart (`TauCeti.Floer.covectorPullback`) and
+`c_q` is the center of the end. Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` covector
+field `η` with compact support in `S` satisfies
+
+`∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
+`  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`,
+
+where `ρ = TauCeti.Floer.cylindricalWeight` is the cylindrical weight and `S_T` the truncation of
+`S` at height `T`. The weight `ρ⁻¹` is the one for which `L²(S, ρ⁻¹)` is dual to the weighted
+`L²` norm `∫ ρ ‖ξ‖²` of `W^{1,2}_0(S, V)` under the pairing `∫ η(ξ)`, and on each end it is
+comparable to `|z - c_q|²` (`TauCeti.Floer.cylindricalWeight_mul_norm_sub_endCenter_sq_le`). -/
+theorem
+  exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z))) {C R : Puncture → ℝ}
+    (hend : ∀ q ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C q * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2) :
+    ∃ C', 0 ≤ C' ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity η z ≤
+        C' * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
+  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
+  -- second the core `S_{R₀ + 1}`.
+  set R₀ := 1 + ∑ q, |R q|
+  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
+  have hR (q : Puncture) : R q < R₀ := by
+    have := (le_abs_self (R q)).trans
+      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
+    linarith
+  obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux
+    hJ hKs hKt hu hc (C := C) (R := R) hend (by linarith) hR
+  obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux
+    hJ hKs hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
+      (lt_add_one _)
+  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun η hη hηc hηS ↦ ?_⟩
+  have e₁ := h₁ hη hηc hηS
+  have e₂ := h₂ hη hηc hηS
+  have hη2 := hη.continuous.norm.pow 2
+  have hX : 0 ≤ ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
+    integral_nonneg fun z ↦ mul_nonneg (inv_nonneg.2 (cylindricalWeight_nonneg z)) (sq_nonneg _)
+  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2 ≤
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖η z‖ ^ 2 :=
+    setIntegral_mono_set (hη2.continuousOn.integrableOn_compact (isCompact_preimage_truncation _))
+      (ae_of_all _ fun _ ↦ sq_nonneg _)
+      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
+  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
+      sobolevDensity η z :=
+    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
+      sobolevDensity_nonneg η z
+  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
+      sobolevDensity (covectorPullback (positiveEndChart q)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ :=
+    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
+      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
+  nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
+
+/-- **The semi-Fredholm estimate of the formal adjoint along a Floer pair of pants.** Let `H_q` be
+jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end
+Hamiltonians `H'_q` have globally Lipschitz suspended vector fields, and let `x_q` be orbits of
+`H'_q` starting at nondegenerate fixed points of the time-one maps. Let `u` be a `C¹` solution on
+`S` of the Floer equation for the pair-of-pants perturbation of `H`, along which `J` is `C¹` and
+compatible, whose loops in each positive end chart `φ'_q` converge uniformly to `x_q` while the
+slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend uniformly to zero. Suppose that far out on each end,
+beyond a height `R₁`, `u` is `C²` and `J` is a `C²` family `J_q(t)` compatible along `x_q`. Then
+there are `C ≥ 0` and `T ≥ 0` such that every `C²` covector field `η` with compact support in `S`
+satisfies
+
+`∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
+`  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of the pair-of-pants perturbation,
+where `η'_q = η (φ'_q ·) ∘ (a + b J)` is `η` read in the chart `φ'_q` as a `(0, 1)`-form
+(`TauCeti.Floer.covectorPullback`) and `ρ = TauCeti.Floer.cylindricalWeight`. This is the estimate
+of `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` for the
+adjoint, whose kernel is the cokernel of `D_u`. -/
+theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_add
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
+    (hX : ∀ q, LipschitzWith (L q)
+      (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : Puncture → ℝ → V}
+    (hx : ∀ q t, HasDerivAt (x q)
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x q t)) t)
+    (hnd : ∀ q, IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) (hX q) 0 1) (x q 0))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJe : ∀ q, ContDiff ℝ 2 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
+    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2) {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z (u z)) (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
+      (Icc 0 1))
+    (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart q)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity η z ≤
+        C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
+  choose C R hend using fun q ↦
+    ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint hH hHs
+      q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) hJ hu (hu₂ q) hc hF (hux q) (hδ q)
+  exact
+    exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
+      ω hJ (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
+      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hc
+      hend
 
 end TauCeti.SymplecticForm

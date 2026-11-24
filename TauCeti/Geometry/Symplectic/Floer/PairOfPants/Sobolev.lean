@@ -51,7 +51,9 @@ such as the semi-Fredholm estimate of the linearized Floer operator along a Floe
 transfer to the norm of `H1`. Pointwise, the weight is at least `|w - c_q|⁻²` for the center `c_q`
 of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
-`TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
+`TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`), and on the part `±s ≥ 0` of
+the end `q` it is at most `5 |w - c_q|⁻²`
+(`TauCeti.Floer.cylindricalWeight_mul_norm_sub_endCenter_sq_le`): the distance `|w - c_q|` to the
 center of the end is, up to the constant `2π`, the conformal factor of the end chart.
 
 ## References
@@ -196,6 +198,18 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
   have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
   rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
   simpa using inv_anti₀ (inv_pos.2 hd) h
+
+/-- **The cylindrical weight on the ends, from above.** On the part `±s ≥ 0` of the end `q`, the
+cylindrical weight is at most `5 |z - c_q|⁻²` for the center `c_q` of the end. With
+`inv_norm_sub_endCenter_sq_le_cylindricalWeight`, the weight is comparable there to
+`|z - c_q|⁻²`, the conformal factor of the end chart up to `4π²`. -/
+theorem cylindricalWeight_mul_norm_sub_endCenter_sq_le (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) (hs : 0 ≤ (positiveEndCoord q z).1) :
+    cylindricalWeight z * ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤ 5 := by
+  have h := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q
+    (z := q.endSign • positiveEndCoord q z) (by simpa [← mul_assoc] using hs)).2
+  rw [det_fderiv_endChart, ← positiveEndChart_apply, positiveEndChart_positiveEndCoord q hz] at h
+  nlinarith [mul_pos pi_pos pi_pos]
 
 /-- **The `W^{1,2}` density on the ends, from the weighted density.** On the part `±s ≥ 0` of the
 end `q`, the `W^{1,2}` density `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates
