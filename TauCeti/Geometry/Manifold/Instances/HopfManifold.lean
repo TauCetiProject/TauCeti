@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Analysis.Normed.Module.Connected
 public import TauCeti.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.Geometry.Manifold.Instances.NonzeroVectors
 public import TauCeti.Geometry.Manifold.Instances.Quotient
@@ -16,6 +17,7 @@ public import TauCeti.Topology.Compactness.LocallyCompact
 import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Topology.Instances.ZMultiples
 import TauCeti.Analysis.Normed.Field.ZPowers
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Hopf manifolds
