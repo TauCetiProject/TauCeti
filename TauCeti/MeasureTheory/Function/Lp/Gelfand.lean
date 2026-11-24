@@ -499,7 +499,7 @@ theorem sum_norm_gelfandLinearIsometryEquiv_sq_le {g : ι → Lp 𝕜 ∞ μ} {C
     ∑ i, ‖gelfandLinearIsometryEquiv 𝕜 μ (g i) y‖ ^ 2 ≤ C := by
   rcases le_or_gt 0 C with hC | hC
   · have hnorm : ‖squareFunction g‖ ≤ √C := by
-      refine Lp.norm_top_le_of_ae_bound (Real.sqrt_nonneg C) ?_
+      refine Lp.norm_le_of_ae_bound_top (Real.sqrt_nonneg C) ?_
       filter_upwards [coeFn_squareFunction g, hg] with x hx hle
       rw [hx, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
       exact Real.sqrt_le_sqrt hle
