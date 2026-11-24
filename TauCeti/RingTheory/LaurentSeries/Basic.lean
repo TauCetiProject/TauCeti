@@ -48,8 +48,6 @@ derivative `f' / f` is the order of `f`.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.XUnit`: the indeterminate `X` packaged as a unit of `R⸨X⸩` over any
-  semiring `R`, with coercion lemmas `coe_XUnit` and `coe_XUnit_inv`.
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
 * `TauCeti.LaurentSeries.mem_range_ofPowerSeries_iff`: the Laurent series coming from power series
@@ -136,30 +134,6 @@ theorem order_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
 end PowerSeries
 
 namespace TauCeti.LaurentSeries
-
-section Semiring
-
-variable (R : Type*) [Semiring R]
-
-/-- The indeterminate `X` packaged as a unit of the formal Laurent series semiring `R⸨X⸩`, with
-inverse `X⁻¹`. -/
-noncomputable def XUnit : R⸨X⸩ˣ where
-  val := HahnSeries.single 1 1
-  inv := HahnSeries.single (-1) 1
-  val_inv := by simp [← HahnSeries.single_zero_one]
-  inv_val := by simp [← HahnSeries.single_zero_one]
-
-/-- The underlying series of `TauCeti.LaurentSeries.XUnit R` is `HahnSeries.single 1 1`. -/
-@[simp, grind =]
-theorem coe_XUnit : ((XUnit R : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single 1 1 :=
-  (rfl)
-
-/-- The underlying series of `(TauCeti.LaurentSeries.XUnit R)⁻¹` is `HahnSeries.single (-1) 1`. -/
-@[simp, grind =]
-theorem coe_XUnit_inv : (((XUnit R)⁻¹ : R⸨X⸩ˣ) : R⸨X⸩) = HahnSeries.single (-1) 1 :=
-  (rfl)
-
-end Semiring
 
 variable {R : Type*} [CommSemiring R]
 

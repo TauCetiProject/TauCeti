@@ -358,9 +358,8 @@ variable {E ι : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 theorem addHaar_image_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
     [μ.IsAddHaarMeasure] (A : Matrix ι ι E) (s : Set (ι → E)) :
     μ (A.mulVec '' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := addHaar_image_linearMap_of_isNonarchimedeanLocalField μ (Matrix.toLin' A) s
-  rwa [LinearMap.det_toLin', hcoe] at h
+  rw [← Matrix.coe_mulVecLin A, ← Matrix.toLin'_apply' A,
+    addHaar_image_linearMap_of_isNonarchimedeanLocalField, LinearMap.det_toLin']
 
 /-- Preimage of a set under `A.mulVec` (`A.det ≠ 0`) on `ι → E` scales any additive Haar measure
 by `|det A|_E⁻¹`. -/
@@ -368,23 +367,37 @@ by `|det A|_E⁻¹`. -/
 theorem addHaar_preimage_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
     [μ.IsAddHaarMeasure] {A : Matrix ι ι E} (hA : A.det ≠ 0) (s : Set (ι → E)) :
     μ (A.mulVec ⁻¹' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := addHaar_preimage_linearMap_of_isNonarchimedeanLocalField μ (f := Matrix.toLin' A)
-    (by rw [LinearMap.det_toLin']; exact hA) s
-  rwa [LinearMap.det_toLin', hcoe] at h
+  rw [← Matrix.coe_mulVecLin A, ← Matrix.toLin'_apply' A,
+    addHaar_preimage_linearMap_of_isNonarchimedeanLocalField μ (by rwa [LinearMap.det_toLin']),
+    LinearMap.det_toLin']
 
 /-- Pushforward of additive Haar measure on `ι → E` under `A.mulVec` (`A.det ≠ 0`). -/
 theorem map_mulVec_addHaar (μ : Measure (ι → E)) [μ.IsAddHaarMeasure] {A : Matrix ι ι E}
     (hA : A.det ≠ 0) :
     map A.mulVec μ = ((normalizedAbsoluteValue E A.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
-  have h := map_linearMap_addHaar μ (f := Matrix.toLin' A)
-    (by rw [LinearMap.det_toLin']; exact hA)
-  rwa [LinearMap.det_toLin', hcoe] at h
+  rw [← Matrix.coe_mulVecLin A, ← Matrix.toLin'_apply' A,
+    map_linearMap_addHaar μ (by rwa [LinearMap.det_toLin']), LinearMap.det_toLin']
 
 end MatrixSpace
 
 section ProdChecks
+
+section Helpers
+
+variable {E : Type*} [Field E]
+
+private noncomputable def firstCoordScale (a : E) : (E × E) →ₗ[E] (E × E) :=
+  LinearMap.prodMap (a • (LinearMap.id : E →ₗ[E] E)) (LinearMap.id : E →ₗ[E] E)
+
+private theorem coe_firstCoordScale (a : E) :
+    ⇑(firstCoordScale a) = fun p : E × E ↦ (a * p.1, p.2) := by
+  ext p <;> simp [firstCoordScale]
+
+private theorem det_firstCoordScale (a : E) : LinearMap.det (firstCoordScale a) = a := by
+  rw [firstCoordScale, LinearMap.det_prodMap, LinearMap.det_smul, Module.finrank_self, pow_one,
+    LinearMap.det_id, mul_one, mul_one]
+
+end Helpers
 
 variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E]
@@ -394,42 +407,25 @@ variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] (a : E) (s : Set (E × E)) :
     μ ((fun p : E × E ↦ (a * p.1, p.2)) '' s) =
       ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞) * μ s := by
-  let f : (E × E) →ₗ[E] (E × E) :=
-    LinearMap.prodMap (a • (LinearMap.id : E →ₗ[E] E)) (LinearMap.id : E →ₗ[E] E)
-  have hf : ⇑f = fun p : E × E ↦ (a * p.1, p.2) := by
-    ext p <;> simp [f]
-  have hdet : LinearMap.det f = a := by
-    rw [LinearMap.det_prodMap, LinearMap.det_smul, Module.finrank_self, pow_one,
-      LinearMap.det_id, mul_one, mul_one]
-  rw [← hf, addHaar_image_linearMap_of_isNonarchimedeanLocalField μ f s, hdet]
+  rw [← coe_firstCoordScale a, addHaar_image_linearMap_of_isNonarchimedeanLocalField,
+    det_firstCoordScale]
 
 /-- Sanity check on `E × E`: pushing an additive Haar measure forward along `(x, y) ↦ (a * x, y)`
 (`a ≠ 0`) rescales it by `|a|_E⁻¹`. -/
 example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] {a : E} (ha : a ≠ 0) :
     map (fun p : E × E ↦ (a * p.1, p.2)) μ =
       ((normalizedAbsoluteValue E a : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  let f : (E × E) →ₗ[E] (E × E) :=
-    LinearMap.prodMap (a • (LinearMap.id : E →ₗ[E] E)) (LinearMap.id : E →ₗ[E] E)
-  have hf : ⇑f = fun p : E × E ↦ (a * p.1, p.2) := by
-    ext p <;> simp [f]
-  have hdet : LinearMap.det f = a := by
-    rw [LinearMap.det_prodMap, LinearMap.det_smul, Module.finrank_self, pow_one,
-      LinearMap.det_id, mul_one, mul_one]
-  rw [← hf, map_linearMap_addHaar μ (hdet.symm ▸ ha), hdet]
+  rw [← coe_firstCoordScale a, map_linearMap_addHaar μ (by rwa [det_firstCoordScale]),
+    det_firstCoordScale]
 
 /-- Sanity check on `E × E`: diagonal scaling `(x, y) ↦ (ϖ * x, y)` by a uniformizer `ϖ ∈ Eˣ`
 pushes any additive Haar measure forward to `q • μ`. -/
 example (μ : Measure (E × E)) [μ.IsAddHaarMeasure] {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
     map (fun p : E × E ↦ ((ϖ : E) * p.1, p.2)) μ = (Nat.card 𝓀[E] : ℝ≥0) • μ := by
-  let f : (E × E) →ₗ[E] (E × E) :=
-    LinearMap.prodMap ((ϖ : E) • (LinearMap.id : E →ₗ[E] E)) (LinearMap.id : E →ₗ[E] E)
-  have hf : ⇑f = fun p : E × E ↦ ((ϖ : E) * p.1, p.2) := by
-    ext p <;> simp [f]
-  have hdet : LinearMap.det f = ϖ := by
-    rw [LinearMap.det_prodMap, LinearMap.det_smul, Module.finrank_self, pow_one,
-      LinearMap.det_id, mul_one, mul_one]
-  rw [← hf, map_linearMap_addHaar μ (hdet.symm ▸ ϖ.ne_zero), hdet, normalizedAbsoluteValue_coe,
-    (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_neg_one]
+  rw [← coe_firstCoordScale (ϖ : E),
+    map_linearMap_addHaar μ (by rw [det_firstCoordScale]; exact ϖ.ne_zero),
+    det_firstCoordScale, normalizedAbsoluteValue_coe, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd,
+    zpow_neg_one]
   congr 1
   push_cast
   exact inv_inv _

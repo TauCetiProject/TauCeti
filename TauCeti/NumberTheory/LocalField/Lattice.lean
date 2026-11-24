@@ -242,19 +242,17 @@ omit [TopologicalSpace V] [IsModuleTopology E V] in
 theorem IsFullLattice.normalizedAbsoluteValue_det_of_mem_stabilizer {T : V ≃ₗ[E] V}
     (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
     TauCeti.normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) = 1 := by
-  have hmaps := TauCeti.mem_stabilizer_set_iff_mapsTo.mp hT
-  have hT_L : ∀ x ∈ L, T x ∈ L := fun x hx ↦ by simpa [LinearEquiv.smul_def] using hmaps.1 hx
-  have hTi_L : ∀ x ∈ L, T.symm x ∈ L := fun x hx ↦ by simpa [LinearEquiv.smul_def] using hmaps.2 hx
-  let g : L ≃ₗ[𝒪[E]] L := LinearEquiv.ofLinearMap
-    (((T : V →ₗ[E] V).restrictScalars 𝒪[E]).restrict hT_L)
-    (((T.symm : V →ₗ[E] V).restrictScalars 𝒪[E]).restrict hTi_L)
-    (by ext x; exact T.apply_symm_apply x)
-    (by ext x; exact T.symm_apply_apply x)
+  have hmap : L.map ((T.restrictScalars 𝒪[E] : V ≃ₗ[𝒪[E]] V) : V →ₗ[𝒪[E]] V) = L := by
+    apply SetLike.coe_injective
+    rw [Submodule.map_coe]
+    simpa [LinearEquiv.smul_def] using Set.image_smul.trans (MulAction.mem_stabilizer_iff.mp hT)
+  let g : L ≃ₗ[𝒪[E]] L := (T.restrictScalars 𝒪[E]).ofSubmodules L L hmap
   have : Module.Finite 𝒪[E] L := IsLattice.finite E L
   have : Module.Free 𝒪[E] L := IsLattice.free E L
   have hdet : LinearMap.det (T : V →ₗ[E] V) =
       algebraMap 𝒪[E] E (LinearMap.det (g : L →ₗ[𝒪[E]] L)) :=
-    LinearMap.det_eq_algebraMap_det_of_isFullLattice (T : V →ₗ[E] V) (g : L →ₗ[𝒪[E]] L) fun _ ↦ rfl
+    LinearMap.det_eq_algebraMap_det_of_isFullLattice (T : V →ₗ[E] V) (g : L →ₗ[𝒪[E]] L) fun x ↦
+      (T.restrictScalars 𝒪[E]).ofSubmodules_apply hmap x
   obtain ⟨u, hu⟩ := g.isUnit_det'
   rw [hdet, ← hu]
   exact TauCeti.normalizedAbsoluteValue_coe_unit u

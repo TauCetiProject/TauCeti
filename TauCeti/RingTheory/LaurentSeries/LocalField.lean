@@ -31,7 +31,7 @@ equal-characteristic local field `𝔽_q((X))`, with residue field `𝔽_q` and 
   `TauCeti.LaurentSeries.natCard_residueField` and `TauCeti.LaurentSeries.ringChar_residueField`.
 * `TauCeti.LaurentSeries.isNonarchimedeanLocalField`: for a finite field `K`, `K⸨X⸩` is a
   nonarchimedean local field.
-* `TauCeti.LaurentSeries.isUniformizer_XUnit`: for a finite field `K`, `X` is a uniformizer of
+* `TauCeti.LaurentSeries.isUniformizer_unitX`: for a finite field `K`, `X` is a uniformizer of
   `K⸨X⸩`.
 
 ## Implementation notes
@@ -130,13 +130,14 @@ instance isNonarchimedeanLocalField [Finite K] : IsNonarchimedeanLocalField K⸨
   exact ⟨⟩
 
 /-- `X` is a uniformizer of `K⸨X⸩` when `K` is finite. -/
-theorem isUniformizer_XUnit [Finite K] : IsUniformizer K⸨X⸩ (XUnit K) := by
-  have hv : (Valued.v ((XUnit K : K⸨X⸩ˣ) : K⸨X⸩) : ℤᵐ⁰) = WithZero.exp (-1) := by
+theorem isUniformizer_unitX [Finite K] : IsUniformizer K⸨X⸩ (unitX : K⸨X⸩ˣ) := by
+  have hv : (Valued.v ((unitX : K⸨X⸩ˣ) : K⸨X⸩) : ℤᵐ⁰) = WithZero.exp (-1) := by
     have h := _root_.LaurentSeries.valuation_X_pow K 1
-    simpa [coe_XUnit, PowerSeries.coe_X] using h
-  have hnorm : (normalizedValuation K⸨X⸩ (XUnit K) : ℤᵐ⁰) = WithZero.exp 1 := by
+    simpa [val_unitX, PowerSeries.coe_X] using h
+  have hnorm : (normalizedValuation K⸨X⸩ (unitX : K⸨X⸩ˣ) : ℤᵐ⁰) = WithZero.exp 1 := by
     have h0 := Valuation.normalizedValuationWithZero_eq_inv_of_surjective
-      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰) (_root_.LaurentSeries.valuation_surjective K) (XUnit K)
+      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰) (_root_.LaurentSeries.valuation_surjective K)
+      (unitX : K⸨X⸩ˣ)
     rw [normalizedValuationWithZero_coe, hv, ← WithZero.exp_neg, neg_neg] at h0
     exact h0
   rw [isUniformizer_def, ← WithZero.coe_inj, hnorm, WithZero.exp_eq_coe_ofAdd]
