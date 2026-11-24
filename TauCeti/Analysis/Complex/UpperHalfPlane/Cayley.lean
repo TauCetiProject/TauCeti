@@ -29,6 +29,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 
 ## Main statements
 
+* `TauCeti.norm_sub_I_lt_norm_add_I_iff`: a point is closer to `i` than to `-i` exactly when it
+  lies in the open upper half-plane.
 * `TauCeti.norm_sub_I_div_add_I_le_one_iff` and `TauCeti.norm_sub_I_div_add_I_lt_one_iff`: the
   transform lands in the closed (open) unit disc exactly at points of the closed (open) upper
   half-plane.
@@ -96,9 +98,14 @@ theorem add_I_ne_zero_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : z + I ≠ 0 := 
   linarith
 
 /-- The squared distances from `z` to `-i` and to `i` differ by `4 * z.im`. -/
-private theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 * z.im := by
+theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 * z.im := by
   simp only [Complex.sq_norm, normSq_apply, add_re, add_im, sub_re, sub_im, I_re, I_im]
   ring
+
+/-- A point is closer to `i` than to `-i` exactly when it lies in the open upper half-plane. -/
+theorem norm_sub_I_lt_norm_add_I_iff {z : ℂ} : ‖z - I‖ < ‖z + I‖ ↔ 0 < z.im := by
+  rw [← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_I_sq]
+  constructor <;> intro h <;> linarith
 
 /-- The Cayley transform lies in the closed unit disc exactly on the closed upper half-plane. -/
 theorem norm_sub_I_div_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
