@@ -331,17 +331,10 @@ theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsinglet
   · obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
     have := hρ.nontrivial
     obtain ⟨v, hv⟩ := exists_ne (0 : Fin n → k)
-    -- the line through `v` is invariant, hence everything
-    let σ : Subrepresentation ρ :=
-      { toSubmodule := k ∙ v
-        apply_mem_toSubmodule g w hw := by
-          rwa [Subsingleton.elim g 1, map_one, one_apply_eq_self] }
-    have hσ : σ = ⊤ := (eq_bot_or_eq_top σ).resolve_left fun h => hv <| by
-      have hmem : v ∈ σ.toSubmodule := Submodule.mem_span_singleton_self v
-      rwa [h, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
-    have h1 : finrank k (Fin n → k) = 1 := by
-      rw [← finrank_top k (Fin n → k), ← Subrepresentation.toSubmodule_top (ρ := ρ), ← hσ]
-      exact finrank_span_singleton hv
+    -- every vector is invariant, so the irreducible `ρ` is a line
+    have hne : ρ.invariants ≠ ⊥ := (Submodule.ne_bot_iff _).2
+      ⟨v, fun g => by rw [Subsingleton.elim g 1, map_one]; rfl, hv⟩
+    have h1 := hρ.finrank_eq_one_of_invariants_ne_bot hne
     refine Set.mem_singleton_iff.mpr (funext fun g => ?_)
     rw [Subsingleton.elim g 1, Representation.char_one, h1, Nat.cast_one]
   · rw [Set.mem_singleton_iff.mp hf]
