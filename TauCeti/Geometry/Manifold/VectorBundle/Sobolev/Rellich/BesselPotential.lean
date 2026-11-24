@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
@@ -96,14 +96,11 @@ spaces of a square chart partition is a compact operator. -/
 theorem isCompactOperator_inclusion {r s : ℝ} (h : r < s) :
     IsCompactOperator (A.inclusion h.le) := by
   -- A Schwartz function `φ` equal to `1` on the finitely many compact chart supports.
-  obtain ⟨ψ, hψ, -, hψ1, hψc, -⟩ :=
-    (isCompact_iUnion fun i ↦ (A.chartSupport i).isCompact).exists_contDiff_cutoff isOpen_univ
+  obtain ⟨φ, -, -, hφ1⟩ :=
+    (isCompact_iUnion fun i ↦ (A.chartSupport i).isCompact).exists_schwartzMap_cutoff isOpen_univ
       (subset_univ _)
-  obtain ⟨φ, hφψ⟩ : ∃ φ : 𝓢(E, ℂ), ∀ y, φ y = (ψ y : ℂ) :=
-    ⟨(hψc.comp_left Complex.ofReal_zero).toSchwartzMap (Complex.ofRealCLM.contDiff.comp hψ),
-      HasCompactSupport.toSchwartzMap_toFun _ _⟩
-  have hφ (i : ι) : EqOn φ 1 (A.chartSupport i) := fun y hy ↦ by
-    rw [hφψ, interior_subset (hψ1 (mem_iUnion_of_mem i hy)), Pi.one_apply, Complex.ofReal_one]
+  have hφ (i : ι) : EqOn φ 1 (A.chartSupport i) := fun y hy ↦
+    hφ1.self_of_nhdsSet y (mem_iUnion_of_mem i hy)
   -- In every component, the inclusion is `u ↦ φ u`, which is compact from `H^s` to `H^r`.
   let g (v : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) :
       PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{r}(E, ℂ) :=
@@ -116,9 +113,7 @@ theorem isCompactOperator_inclusion {r s : ℝ} (h : r < s) :
   have hgA (u : A.sobolevSpace s) : g u = A.inclusion h.le u := PiLp.ext fun k ↦ by
     simp [g, A.smulLeftCLM_apply_of_eqOn_one (hφ k.1)]
   have hcod := (hg.comp_clm (A.sobolevSpace s).subtypeL).codRestrict
-    (fun u ↦ by
-      rw [Function.comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype, hgA]
-      exact SetLike.coe_mem _) (A.isClosed_sobolevSpace r)
+    (fun u ↦ by simp [hgA]) (A.isClosed_sobolevSpace r)
   convert hcod using 1
   ext u : 2
   exact (hgA u).symm
