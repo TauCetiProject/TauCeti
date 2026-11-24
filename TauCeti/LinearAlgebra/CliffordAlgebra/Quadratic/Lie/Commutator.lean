@@ -206,7 +206,7 @@ theorem not_isIsotypic_commutator [Nontrivial L] :
       maxTrivSubmodule K L (CliffordAlgebra (killingQuadraticForm K L)) := by
     refine (mem_maxTrivSubmodule K L _ _).mpr fun x ↦ ?_
     have hx : ⁅x, e ⟨_, hc⟩⁆ = 0 :=
-      Subtype.ext ((mem_maxTrivSubmodule K L _ _).mp (hTle (e ⟨_, hc⟩).2) x)
+      Subtype.ext ((mem_maxTrivSubmodule K L _ _).mp (hTle (e ⟨_, hc⟩).property) x)
     have hmap : e ⁅x, ⟨_, hc⟩⁆ = ⁅x, e ⟨_, hc⟩⁆ := e.map_lie'
     rw [← hmap, EmbeddingLike.map_eq_zero_iff] at hx
     exact congrArg Subtype.val hx

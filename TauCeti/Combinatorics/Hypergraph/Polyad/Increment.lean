@@ -62,7 +62,7 @@ theorem sum_relativeDensity_ofTriple_on (c : κ)
   have h := H.sum_relativeDensity_ofTriple_mul (S := T) c
     (fun x ↦ if x ∈ U then 1 else 0) (fun x y hxy ↦ by simp only [hU x y hxy])
   have hcount : ∑ x ∈ U, (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) =
-      #{x ∈ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
+      #{x ∈ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
     simpa [mul_ite, sum_ite_mem, inter_comm, inter_filter] using h
   rw [hcount, relDensityOn_def]
   push_cast

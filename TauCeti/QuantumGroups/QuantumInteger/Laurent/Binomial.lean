@@ -40,9 +40,6 @@ domain `ℤ[v, v⁻¹]`.
   the symmetry `[n choose n - r]_v = [n choose r]_v` for `r ≤ n`.
 * `TauCeti.laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFactorial`:
   `[n choose r]_v [r]_v! [n - r]_v! = [n]_v!` for `r ≤ n`.
-* `TauCeti.laurentQuantumBinomial_mul`, `TauCeti.quantumBinomial_mul`, and
-  `TauCeti.quantumBinomial_mul_mul_comm`: subset-of-subset and 4-way multinomial interchange
-  identities, valid unconditionally at all field parameters including `0`, `±1`, and roots of unity.
 * `TauCeti.signedLaurentQuantumBinomial_mul_laurentQuantumFactorial`: the product formula
   `[m choose r]_v [r]_v! = [m]_v [m-1]_v ⋯ [m-r+1]_v`, which determines `[m choose r]_v`.
 * `TauCeti.signedLaurentQuantumBinomial_neg`: the reflection
@@ -196,55 +193,6 @@ theorem laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFac
   refine eq_of_forall_laurentEval_eq fun K _ u hu => ?_
   simpa [laurentEval_laurentQuantumFactorial hu] using
     quantumBinomial_mul_quantumFactorial_mul_quantumFactorial (u : K) h
-
-/-- **Subset-of-subset identity**:
-`[n choose k]_v [k choose s]_v = [n choose s]_v [n - s choose k - s]_v` for `s ≤ k`. -/
-theorem laurentQuantumBinomial_mul {n k s : ℕ} (hsk : s ≤ k) :
-    laurentQuantumBinomial n k * laurentQuantumBinomial k s =
-      laurentQuantumBinomial n s * laurentQuantumBinomial (n - s) (k - s) := by
-  obtain hnk | hkn := lt_or_ge n k
-  · rw [laurentQuantumBinomial_eq_zero_of_lt hnk, zero_mul]
-    obtain hns | hsn := lt_or_ge n s
-    · rw [laurentQuantumBinomial_eq_zero_of_lt hns, zero_mul]
-    · rw [laurentQuantumBinomial_eq_zero_of_lt (by omega : n - s < k - s), mul_zero]
-  · refine mul_right_cancel₀ (mul_ne_zero (mul_ne_zero (laurentQuantumFactorial_ne_zero s)
-      (laurentQuantumFactorial_ne_zero (k - s))) (laurentQuantumFactorial_ne_zero (n - k))) ?_
-    let hfac {a b : ℕ} (h : b ≤ a) :=
-      laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFactorial h
-    have h4 := hfac (Nat.sub_le_sub_right hkn s); rw [Nat.sub_sub_sub_cancel_right hsk] at h4
-    linear_combination laurentQuantumBinomial n k * laurentQuantumFactorial (n - k) * hfac hsk +
-      hfac hkn - laurentQuantumBinomial n s * laurentQuantumFactorial s * h4 -
-      hfac (hsk.trans hkn)
-
-/-- **Subset-of-subset identity** for `quantumBinomial` over any field (including `q = 0`, `q = ±1`,
-and roots of unity). -/
-theorem quantumBinomial_mul {K : Type*} [Field K] (q : K) {n k s : ℕ} (hsk : s ≤ k) :
-    quantumBinomial q n k * quantumBinomial q k s =
-      quantumBinomial q n s * quantumBinomial q (n - s) (k - s) := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp only [quantumBinomial_zero_left]
-    by_cases hkn : k = n <;> by_cases hk0 : k = 0 <;> by_cases hs0 : s = 0 <;>
-      by_cases hsn : s = n <;> simp_all; omega
-  · simpa using congrArg (laurentEval (R := ℤ) (Units.mk0 q hq))
-      (laurentQuantumBinomial_mul (n := n) (k := k) (s := s) hsk)
-
-/-- **Four-way quantum multinomial interchange** over any field:
-`[N choose r][r choose a₁][s choose a₂] = [N choose c][c choose a₁][b choose b₁]`. -/
-theorem quantumBinomial_mul_mul_comm {K : Type*} [Field K] (q : K) (a₁ b₁ a₂ b₂ : ℕ) :
-    quantumBinomial q (a₁ + b₁ + (a₂ + b₂)) (a₁ + b₁) *
-        quantumBinomial q (a₁ + b₁) a₁ * quantumBinomial q (a₂ + b₂) a₂ =
-      quantumBinomial q (a₁ + a₂ + (b₁ + b₂)) (a₁ + a₂) *
-        quantumBinomial q (a₁ + a₂) a₁ * quantumBinomial q (b₁ + b₂) b₁ := by
-  rw [add_add_add_comm a₁ b₁ a₂ b₂, quantumBinomial_mul q (Nat.le_add_right a₁ b₁),
-    quantumBinomial_mul q (Nat.le_add_right a₁ a₂), add_assoc a₁ a₂, Nat.add_sub_cancel_left,
-    Nat.add_sub_cancel_left, Nat.add_sub_cancel_left, ← add_assoc a₂ b₁, add_comm a₂ b₁,
-    add_assoc b₁ a₂, mul_assoc, mul_assoc]; congr 1
-  have hs1 := (quantumBinomial_symm q (n := b₁ + (a₂ + b₂)) (Nat.le_add_right b₁ (a₂ + b₂))).symm
-  rw [Nat.add_sub_cancel_left] at hs1
-  rw [hs1, quantumBinomial_mul q (Nat.le_add_right a₂ b₂), Nat.add_sub_cancel_left,
-    add_comm a₂ b₂, ← add_assoc b₁ b₂ a₂, Nat.add_sub_cancel]; congr 1
-  simpa [Nat.add_sub_cancel_left] using
-    quantumBinomial_symm q (n := b₁ + b₂) (Nat.le_add_right b₁ b₂)
 
 /-- The Laurent Gaussian with signed upper argument. For `a > 0`, its value at `-a`
 is `(-1)^r [a+r-1 choose r]_v`. -/

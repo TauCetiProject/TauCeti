@@ -61,6 +61,10 @@ compatible with `S` and admits an `S`-lift (`isCompatible_of_V_eq_empty`,
 
 * `TauCeti.GroupAlgGeom.Lift.HasLift.isCompatible`: a system of equations with an `S`-lift is
   compatible with `S`.
+* `TauCeti.GroupAlgGeom.Lift.hasLift_of_forall_sumElim_wordMap_mem_V`,
+  `TauCeti.GroupAlgGeom.Lift.hasLiftNe_of_forall_sumElim_wordMap_mem_V`: words `y(X)` solving `T`
+  at every point of a family `Θ` whose ideal `I(Θ)` lies in the radical of `S` give an `S`-lift,
+  and an inequation `W ≠ 1` lifts with them when `W(v, y(v)) ≠ 1` at one solution `v` of `S`.
 * `TauCeti.GroupAlgGeom.Lift.hasLift_of_mem_V_inl`: a solution of `T` in `G[X]` at the tuple of
   variables gives an `S`-lift for every `S`.
 * `TauCeti.GroupAlgGeom.Lift.hasCompleteLift_iff_of_ne`: when some coefficient is nontrivial in
@@ -89,7 +93,8 @@ compatible with `S` and admits an `S`-lift (`isCompatible_of_V_eq_empty`,
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §6, Definitions 24–27, and §7.6, Definition 44.
+  (2005), §6, Definitions 24–27, §7.4, the end of the proof of Theorem 9 (lifts from words solving
+  `T` on a discriminating family), and §7.6, Definition 44.
 * O. Kharlampovich, A. Myasnikov, *Algebraic geometry over free groups: lifting solutions into
   generic points*, Contemp. Math. 378 (2005), Introduction and §2.
 -/
@@ -232,18 +237,6 @@ theorem HasLift.isCompatible (h : HasLift ι S T) : IsCompatible ι S T := by
   refine ⟨CoordGroup.evalGHom v hv ∘ w, ?_⟩
   simpa [Sum.comp_elim] using (CoordGroup.evalGHom v hv).comp_mem_V hw
 
-/-- A solution `Y(X)` of `T` in `G[X]` at the tuple of variables gives an `S`-lift of `T` for
-every system `S`. -/
-theorem hasLift_of_mem_V_inl {w : Y → GX G X}
-    (hw : Sum.elim (fun x => inr (FreeGroup.of x)) w ∈ V (inl : G →* GX G X) T) :
-    HasLift ι S T := by
-  have h := (evalGHom (CoordGroup.coeff ι S) (CoordGroup.genericPoint ι S)).comp_mem_V hw
-  have hμ : ⇑(evalGHom (CoordGroup.coeff ι S) (CoordGroup.genericPoint ι S)) ∘
-      (fun x => inr (FreeGroup.of x)) = CoordGroup.genericPoint ι S :=
-    funext fun x => by simp
-  rw [Sum.comp_elim, hμ] at h
-  exact ⟨_, h⟩
-
 /-- When the coordinate group of `S` is trivial, for instance over a trivial group, every system
 of equations admits an `S`-lift. -/
 theorem hasLift_of_subsingleton [Subsingleton (CoordGroup ι S)] : HasLift ι S T :=
@@ -257,6 +250,51 @@ theorem hasLift_of_V_eq_empty (hS : V ι S = ∅) : HasLift ι S T :=
 /-- When the coordinate group of `S` is trivial, no inequation admits an `S`-lift. -/
 theorem not_hasLiftNe_of_subsingleton [Subsingleton (CoordGroup ι S)] : ¬HasLiftNe ι S T W :=
   fun ⟨_, _, hw⟩ => hw (Subsingleton.elim _ _)
+
+/-! ### Lifts from words solving the system on a separating family -/
+
+private theorem eval_sumElim_wordMap {K : Type*} [Group K] (κ : G →* K) (y : Y → GX G X) (p : X → K)
+    (w : GX G (X ⊕ Y)) : eval κ (Sum.elim p (wordMap κ y p)) w =
+      eval κ p (eval (inl : G →* GX G X) (Sum.elim (fun x => inr (FreeGroup.of x)) y) w) := by
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  exact congrArg (eval κ · w) (funext fun z => by cases z <;> simp)
+
+private theorem sumElim_genericPoint_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I ι Θ ≤ Rad ι S)
+    (y : Y → GX G X) (hT : ∀ θ ∈ Θ, Sum.elim θ (wordMap ι y θ) ∈ V ι T) :
+    Sum.elim (CoordGroup.genericPoint ι S)
+        (wordMap (CoordGroup.coeff ι S) y (CoordGroup.genericPoint ι S)) ∈
+      V (CoordGroup.coeff ι S) T :=
+  mem_V.2 fun t ht => by
+    rw [eval_sumElim_wordMap, CoordGroup.eval_genericPoint, QuotientGroup.eq_one_iff]
+    exact hΘ <| mem_I.2 fun θ hθ =>
+      (eval_sumElim_wordMap ι y θ t).symm.trans (mem_V.1 (hT θ hθ) t ht)
+
+/-- Let `Θ` be a family of points whose ideal `I(Θ)`, the words vanishing at every point of `Θ`,
+lies in the radical of `S`; for a family of solutions of `S` this says that the evaluations at the
+points of `Θ` separate the coordinate group of `S`. If words `y(X)` solve `T(X, Y) = 1` at every
+point of `Θ`, that is, `(θ, y(θ))` solves `T` for every `θ ∈ Θ`, then `T` admits an `S`-lift,
+given by the images of the words `y(X)` in the coordinate group. -/
+theorem hasLift_of_forall_sumElim_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I ι Θ ≤ Rad ι S)
+    (y : Y → GX G X) (hT : ∀ θ ∈ Θ, Sum.elim θ (wordMap ι y θ) ∈ V ι T) : HasLift ι S T :=
+  ⟨_, sumElim_genericPoint_wordMap_mem_V hΘ y hT⟩
+
+/-- Let `Θ` be a family of points whose ideal `I(Θ)` lies in the radical of `S`. If words `y(X)`
+solve `T(X, Y) = 1` at every point of `Θ`, and `W(v, y(v)) ≠ 1` at some solution `v` of `S`, then
+`T = 1 ∧ W ≠ 1` admits an `S`-lift, given by the images of the words `y(X)` in the coordinate
+group. -/
+theorem hasLiftNe_of_forall_sumElim_wordMap_mem_V {Θ : Set (X → H)} (hΘ : I ι Θ ≤ Rad ι S)
+    (y : Y → GX G X) (hT : ∀ θ ∈ Θ, Sum.elim θ (wordMap ι y θ) ∈ V ι T) {v : X → H} (hv : v ∈ V ι S)
+    (hW : eval ι (Sum.elim v (wordMap ι y v)) W ≠ 1) : HasLiftNe ι S T W := by
+  refine ⟨_, sumElim_genericPoint_wordMap_mem_V hΘ y hT, fun h => hW ?_⟩
+  rw [eval_sumElim_wordMap, CoordGroup.eval_genericPoint, QuotientGroup.eq_one_iff] at h
+  exact (eval_sumElim_wordMap ι y v W).trans (mem_Rad.1 h v hv)
+
+/-- A solution `Y(X)` of `T` in `G[X]` at the tuple of variables gives an `S`-lift of `T` for
+every system `S`: the words `Y(X)` solve `T` at every solution of `S`. -/
+theorem hasLift_of_mem_V_inl {w : Y → GX G X}
+    (hw : Sum.elim (fun x => inr (FreeGroup.of x)) w ∈ V (inl : G →* GX G X) T) : HasLift ι S T :=
+  hasLift_of_forall_sumElim_wordMap_mem_V (Rad_def S).ge w fun θ _ => mem_V.2 fun t ht => by
+    rw [eval_sumElim_wordMap, mem_V.1 hw t ht, map_one]
 
 /-! ### Complete lifts -/
 
@@ -439,10 +477,8 @@ theorem hasLiftNe_diagonal [Nontrivial H] (ι : G →* H) :
       {(inr (of (Sum.inr ())) : GX G (Unit ⊕ Unit)) * (inr (of (Sum.inl ())))⁻¹}
       (inr (of (Sum.inr ()))) := by
   obtain ⟨h, hh⟩ := exists_ne (1 : H)
-  refine ⟨fun _ => CoordGroup.genericPoint ι ∅ (), by simp, ?_⟩
-  suffices (inr (of ()) : GX G Unit) ∉ Rad ι ∅ by
-    simpa [CoordGroup.genericPoint_apply, QuotientGroup.eq_one_iff]
-  exact fun hmem => hh (by simpa using mem_Rad.1 hmem (fun _ => h) (by simp))
+  exact hasLiftNe_of_forall_sumElim_wordMap_mem_V (Rad_def _).ge (fun _ => inr (of ()))
+    (fun θ _ => by simp) (v := fun _ => h) (by simp) (by simpa using hh)
 
 /-- The system `y = x ∧ y ≠ 1` is not compatible with the empty system. Together with
 `hasLiftNe_diagonal`, this shows that a lift of a system with an inequation does not force

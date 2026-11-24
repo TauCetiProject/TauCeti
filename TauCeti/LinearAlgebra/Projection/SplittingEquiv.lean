@@ -25,11 +25,17 @@ to two fibre metrics are compared.
 
 ## Main definitions
 
+* `Submodule.equivOfIsCompl`: the linear equivalence `p₁ ≃ₗ[R] p₂` between two complements of a
+  common submodule `q`, projecting along `q`.
 * `Submodule.splittingEquiv`: the automorphism of `E` carrying the splitting `p₁ ⊕ q₁` onto
   `p₂ ⊕ q₂` by projecting each summand along the other summand of the second splitting.
 
 ## Main results
 
+* `Submodule.equivOfIsCompl_apply`, `Submodule.equivOfIsCompl_symm_apply`: `equivOfIsCompl` and its
+  inverse act by `Submodule.projectionOnto` along `q`.
+* `Submodule.quotientEquivOfIsCompl_conj_mapQ`: on an `f`-invariant submodule `q`,
+  `q.quotientEquivOfIsCompl` conjugates `q.mapQ` to the action on a `f`-invariant complement `p`.
 * `Submodule.splittingEquiv_apply`: the formula `x ↦ π₂ (π₁ x) + π₂' (π₁' x)` in terms of the
   projections `π` onto the first summands and `π'` onto the second summands.
 * `Submodule.splittingEquiv_symm_apply`: the inverse is `y ↦ π₁₂ (π₂ y) + π₁₂' (π₂' y)`, where
@@ -43,7 +49,40 @@ public section
 
 namespace Submodule
 
-variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E] {p₁ q₁ p₂ q₂ : Submodule R E}
+section Ring
+
+variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E]
+
+/-- Two complements `p₁` and `p₂` of a common submodule `q` are linearly equivalent via `E ⧸ q`:
+the forward map projects onto `p₂` along `q`, and the inverse map projects onto `p₁` along `q`. -/
+noncomputable def equivOfIsCompl (p₁ p₂ q : Submodule R E) (h₁ : IsCompl p₁ q)
+    (h₂ : IsCompl p₂ q) : p₁ ≃ₗ[R] p₂ :=
+  (q.quotientEquivOfIsCompl p₁ h₁.symm).symm.trans (q.quotientEquivOfIsCompl p₂ h₂.symm)
+
+/-- Unfolds `Submodule.equivOfIsCompl` as the composition through `E ⧸ q`. -/
+theorem equivOfIsCompl_def (p₁ p₂ q : Submodule R E) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q) :
+    equivOfIsCompl p₁ p₂ q h₁ h₂ =
+      (q.quotientEquivOfIsCompl p₁ h₁.symm).symm.trans (q.quotientEquivOfIsCompl p₂ h₂.symm) :=
+  (rfl)
+
+/-- `Submodule.equivOfIsCompl` evaluates as `p₂.projectionOnto q h₂`. -/
+@[simp]
+theorem equivOfIsCompl_apply (p₁ p₂ q : Submodule R E) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q)
+    (x : p₁) : equivOfIsCompl p₁ p₂ q h₁ h₂ x = p₂.projectionOnto q h₂ x := by
+  simp [equivOfIsCompl]
+
+/-- Reversing `Submodule.equivOfIsCompl` swaps the two complements. -/
+@[simp]
+theorem equivOfIsCompl_symm (p₁ p₂ q : Submodule R E) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q) :
+    (equivOfIsCompl p₁ p₂ q h₁ h₂).symm = equivOfIsCompl p₂ p₁ q h₂ h₁ :=
+  (rfl)
+
+/-- The inverse of `Submodule.equivOfIsCompl` evaluates as `p₁.projectionOnto q h₁`. -/
+theorem equivOfIsCompl_symm_apply (p₁ p₂ q : Submodule R E) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q)
+    (y : p₂) : (equivOfIsCompl p₁ p₂ q h₁ h₂).symm y = p₁.projectionOnto q h₁ y := by
+  simp
+
+variable {p₁ q₁ p₂ q₂ : Submodule R E}
 
 /-- The automorphism of `E` comparing two splittings `E = p₁ ⊕ q₁` and `E = p₂ ⊕ q₂` in general
 position, that is, with `p₁` complementary to `q₂` and `q₁` complementary to `p₂`. It maps `p₁`
@@ -138,5 +177,24 @@ theorem splittingEquiv_self : splittingEquiv h₁ h₁ h₁ h₁.symm = LinearEq
   rw [splittingEquiv_apply, projection_apply_of_mem_left h₁ (projection_apply_mem h₁ x),
     projection_apply_of_mem_left h₁.symm (projection_apply_mem h₁.symm x),
     projection_add_projection_eq_self, LinearEquiv.refl_apply]
+
+end Ring
+
+section CommRing
+
+variable {R E : Type*} [CommRing R] [AddCommGroup E] [Module R E]
+
+/-- If `p` is complementary to an `f`-invariant submodule `q` and `g : Module.End R p` agrees with
+`f` on `p`, then `q.quotientEquivOfIsCompl p hp.symm` conjugates `q.mapQ q f hq` to `g`. -/
+theorem quotientEquivOfIsCompl_conj_mapQ {p q : Submodule R E} (hp : IsCompl p q)
+    {f : Module.End R E} (hq : q ≤ q.comap f) {g : Module.End R p}
+    (hg : ∀ u : p, (g u : E) = f u) :
+    (q.quotientEquivOfIsCompl p hp.symm).conj (q.mapQ q f hq) = g := by
+  ext u
+  simp only [LinearEquiv.conj_apply_apply, quotientEquivOfIsCompl_symm_apply, mapQ_apply,
+    quotientEquivOfIsCompl_apply_mk, ← hg u]
+  exact congrArg Subtype.val (projectionOnto_apply_of_mem_left hp (g u).property)
+
+end CommRing
 
 end Submodule

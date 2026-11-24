@@ -221,7 +221,7 @@ theorem doubleTriangleSidePairing_pair_ne_self (i : Fin 4) :
 
 /-- The double of a triangle has no self-paired side. -/
 instance : IsEmpty {i : Fin 4 // (P.doubleTriangleSidePairing h₀ h₁).pair i = i} :=
-  ⟨fun i ↦ doubleTriangleSidePairing_pair_ne_self i.1 i.2⟩
+  ⟨fun i ↦ doubleTriangleSidePairing_pair_ne_self i.val i.property⟩
 
 /-- The successor along the vertex cycles of the double fixes `P 0` and `P 1` and exchanges the
 mirror image `P 2'` of `P 2` with `P 2`. -/

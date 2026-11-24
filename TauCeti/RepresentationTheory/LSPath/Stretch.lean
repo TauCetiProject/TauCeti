@@ -48,16 +48,16 @@ private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
       {p : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} ×
         {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} |
         (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b (n • lam)) p.2 p.1})
-    (hf : ∀ w, (f w).1 = w.1) (hC : IsAChain a lam C) :
+    (hf : ∀ w, (f w).val = w.val) (hC : IsAChain a lam C) :
     IsAChain a (n • lam) (C.map f) := by
   have hscaled (k : Fin C.length) : ∃ z : ℤ,
-      a * P.reflectionBond b ((C k.castSucc).1 • n • lam) ((C k.succ).1 • n • lam) = z := by
+      a * P.reflectionBond b ((C k.castSucc).val • n • lam) ((C k.succ).val • n • lam) = z := by
     obtain ⟨z, hz⟩ := isAChain_iff_forall_reflectionBond.mp hC k
     refine ⟨(n : ℤ) * z, ?_⟩
     rw [P.reflectionBond_smul_nsmul b]
     push_cast
     rw [mul_left_comm a, hz]
-  have hentry (j : Fin (C.length + 1)) : ((C.map f) j).1 = (C j).1 :=
+  have hentry (j : Fin (C.length + 1)) : ((C.map f) j).val = (C j).val :=
     (congrArg Subtype.val (RelSeries.map_apply C f j)).trans (hf _)
   apply isAChain_iff_forall_reflectionBond.mpr
   -- `RelSeries.map` preserves length definitionally, so both chains use `Fin C.length`.
@@ -99,10 +99,10 @@ theorem length_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
 @[simp]
 theorem dir_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
     (j : Fin ((π.stretch n hn).length + 1)) :
-    ((π.stretch n hn).dir j).1 =
-      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).1 := by
+    ((π.stretch n hn).dir j).val =
+      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).val := by
   simp only [stretch, coe_minimalCosetRepNsmulEquiv]
-  exact congrArg (fun k ↦ (π.dir k).1) (Fin.ext rfl)
+  exact congrArg (fun k ↦ (π.dir k).val) (Fin.ext rfl)
 
 @[simp]
 theorem time_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
@@ -123,7 +123,7 @@ theorem duration_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
 /-- Stretching keeps the list of Weyl-group directions unchanged. -/
 @[simp↓]
 theorem ofFn_dir_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
-    (List.ofFn fun j ↦ ((π.stretch n hn).dir j).1) = List.ofFn fun j ↦ (π.dir j).1 := by
+    (List.ofFn fun j ↦ ((π.stretch n hn).dir j).val) = List.ofFn fun j ↦ (π.dir j).val := by
   rw [List.ofFn_congr (congrArg (· + 1) (π.length_stretch n hn))]
   simp only [dir_stretch, Fin.cast_cast, Fin.cast_eq_self]
 
@@ -139,7 +139,7 @@ theorem stretch_injective (n : ℕ) (hn : 0 < n) :
     Function.Injective (fun π : LSPath P b lam ↦ π.stretch n hn) := by
   intro π ρ h
   apply LSPath.ext
-  · have hd := congrArg (fun η ↦ List.ofFn fun j ↦ (η.dir j).1) h
+  · have hd := congrArg (fun η ↦ List.ofFn fun j ↦ (η.dir j).val) h
     simp only [ofFn_dir_stretch] at hd
     exact List.map_injective_iff.mpr Subtype.val_injective
       (by simpa only [List.map_ofFn, Function.comp_def] using hd)

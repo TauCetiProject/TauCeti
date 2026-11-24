@@ -72,7 +72,7 @@ section Rat
 
 open Rat.HeightOneSpectrum
 
-local instance (ℓ : Nat.Primes) : Fact (ℓ : ℕ).Prime := ⟨ℓ.2⟩
+local instance (ℓ : Nat.Primes) : Fact (ℓ : ℕ).Prime := ⟨ℓ.property⟩
 
 /-- The `p`-adic cyclotomic character of the local Artin symbol of `a ∈ ℚˣ` at the prime `ℓ`. -/
 private abbrev ratLocalFactor (ℓ : ℕ) [Fact ℓ.Prime] (a : ℚˣ) : ℤ_[p]ˣ :=
@@ -162,7 +162,7 @@ private theorem finprod_ratLocalFactor_mul_eq_one (a : ℚˣ) :
     mul_ne_zero (mul_ne_zero (Fact.out : p.Prime).ne_zero
       (Int.natAbs_ne_zero.2 (Rat.num_ne_zero.2 a.ne_zero))) (a : ℚ).den_ne_zero
   have hT (ℓ : ℕ) (hℓ : ℓ ∈ T) : ℓ.Prime := Nat.prime_of_mem_primeFactors hℓ
-  let ι : T ↪ Nat.Primes := ⟨fun ℓ ↦ ⟨ℓ, hT ℓ ℓ.2⟩, fun _ _ h ↦
+  let ι : T ↪ Nat.Primes := ⟨fun ℓ ↦ ⟨ℓ, hT ℓ ℓ.property⟩, fun _ _ h ↦
     Subtype.ext (congrArg (fun q : Nat.Primes ↦ (q : ℕ)) h)⟩
   rw [finprod_eq_prod_of_mulSupport_subset (s := T.attach.map ι) _ fun ℓ hℓ ↦ ?_,
     Finset.prod_map]
@@ -189,7 +189,7 @@ private theorem finprod_ratLocalFactor_mul_eq_one (a : ℚˣ) :
   · by_contra h
     have hℓT : ¬ (ℓ : ℕ) ∣ p * (a : ℚ).num.natAbs * (a : ℚ).den := fun hd ↦
       h (Finset.mem_coe.2 (Finset.mem_map.2
-        ⟨⟨ℓ, Nat.mem_primeFactors.2 ⟨ℓ.2, hd, hS⟩⟩, Finset.mem_attach _ _, rfl⟩))
+        ⟨⟨ℓ, Nat.mem_primeFactors.2 ⟨ℓ.property, hd, hS⟩⟩, Finset.mem_attach _ _, rfl⟩))
     refine hℓ (ratLocalFactor_eq_one p (fun he ↦ hℓT ?_) (fun hd ↦ hℓT ?_) fun hd ↦ hℓT ?_)
     · rw [he]
       exact (dvd_mul_right _ _).mul_right _

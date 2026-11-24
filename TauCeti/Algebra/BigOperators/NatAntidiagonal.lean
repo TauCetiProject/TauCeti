@@ -28,18 +28,23 @@ derivation `D` acts on one factor at a time, into a recursion for the degree-`k`
 double product, as in generating-function arguments.
 
 The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the triangle `i < N`,
-`j < N - i`, so that the inner sum can be evaluated for each fixed `i`.
+`j < N - i`, so that the inner sum can be evaluated for each fixed `i`. A sum over a rectangle
+`i < N`, `j < K` is the sum over the antidiagonals below any `L ≤ min N K` plus the terms with
+`i + j ≥ L`; when the antidiagonal sums are `e` at `0` and `0` beyond, as in the order-by-order
+equations of a formal inverse, the first part is `e`.
 
 ## Main results
 
 * `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst`: associativity of the antidiagonal
   convolution.
-* `Finset.Nat.prod_antidiagonal_prod_antidiagonal_comm`: four-way antidiagonal interchange between
-  `(a₁ + b₁) + (a₂ + b₂) = n` and `(a₁ + a₂) + (b₁ + b₂) = n`.
 * `Finset.Nat.natCast_add_one_smul_sum_antidiagonal_succ`: the weighted split of a sum over
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
   triangle.
+* `Finset.Nat.sum_range_sum_range_sub_eq`: the sum over a triangle when the antidiagonal sums
+  vanish beyond the first.
+* `Finset.Nat.sum_range_sum_range_eq_add`: the split of a sum over a rectangle into the
+  antidiagonals below `L` and the remaining terms.
 -/
 
 public section
@@ -58,19 +63,6 @@ theorem prod_antidiagonal_prod_antidiagonal_fst {M : Type*} [CommMonoid M] (n : 
   -- reindex the triples: `((a + b, c), (a, b)) ↦ ((a, b + c), (b, c))`
   apply prod_nbij' (fun x => ⟨(x.2.1, x.2.2 + x.1.2), (x.2.2, x.1.2)⟩)
     (fun x => ⟨(x.1.1 + x.2.1, x.2.2), (x.1.1, x.2.1)⟩) <;> aesop (add simp [add_assoc])
-
-/-- **Four-way antidiagonal interchange**: the product of `f a₁ b₁ a₂ b₂` over
-`(a₁ + b₁) + (a₂ + b₂) = n` agrees with the product over `(a₁ + a₂) + (b₁ + b₂) = n`. -/
-@[to_additive /-- **Four-way antidiagonal interchange**: the sum of `f a₁ b₁ a₂ b₂` over
-`(a₁ + b₁) + (a₂ + b₂) = n` agrees with the sum over `(a₁ + a₂) + (b₁ + b₂) = n`. -/]
-theorem prod_antidiagonal_prod_antidiagonal_comm {M : Type*} [CommMonoid M] (n : ℕ)
-    (f : ℕ → ℕ → ℕ → ℕ → M) :
-    (∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 u.2 v.1 v.2) =
-      ∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 v.1 u.2 v.2 := by
-  simp only [prod_sigma']
-  apply prod_nbij' (fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩)
-    (fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩) <;>
-    aesop (add safe tactic (by omega))
 
 variable {M : Type*}
 
@@ -99,5 +91,30 @@ theorem sum_range_sum_antidiagonal [AddCommMonoid M] (g : ℕ → ℕ → M) (N 
       ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j := by
   simp_rw [sum_antidiagonal_eq_sum_range_succ g]
   exact sum_range_diag_flip N g
+
+/-- If the sum over the antidiagonal `i + j = k` is `e` for `k = 0` and `0` otherwise, then the sum
+over the triangle `i < N`, `j < N - i` is `e` for every `N ≠ 0`. -/
+theorem sum_range_sum_range_sub_eq [AddCommMonoid M] {g : ℕ → ℕ → M} {e : M}
+    (hg : ∀ k, ∑ i ∈ range (k + 1), g i (k - i) = if k = 0 then e else 0) {N : ℕ} (hN : N ≠ 0) :
+    ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j = e := by
+  rw [← sum_range_diag_flip, sum_congr rfl fun k _ ↦ hg k]
+  simp [Nat.pos_of_ne_zero hN]
+
+/-- A sum over the rectangle `i < N`, `j < K` splits into the sum over the antidiagonals below
+`L ≤ min N K`, written as the triangle `i < L`, `j < L - i`, and the remaining terms, written as
+`j = L - i + l` for `l < K - (L - i)`. -/
+theorem sum_range_sum_range_eq_add [AddCommMonoid M] (g : ℕ → ℕ → M) {N K L : ℕ} (hN : L ≤ N)
+    (hK : L ≤ K) :
+    ∑ i ∈ range N, ∑ j ∈ range K, g i j =
+      ∑ i ∈ range L, ∑ j ∈ range (L - i), g i j +
+        ∑ i ∈ range N, ∑ l ∈ range (K - (L - i)), g i (L - i + l) := by
+  have hsplit (i : ℕ) : ∑ j ∈ range K, g i j =
+      ∑ j ∈ range (L - i), g i j + ∑ l ∈ range (K - (L - i)), g i (L - i + l) := by
+    rw [← sum_range_add, Nat.add_sub_cancel' (by omega)]
+  have hlow : ∑ i ∈ range N, ∑ j ∈ range (L - i), g i j =
+      ∑ i ∈ range L, ∑ j ∈ range (L - i), g i j := by
+    rw [← Nat.add_sub_cancel' hN, sum_range_add]
+    simp
+  rw [sum_congr rfl fun i _ ↦ hsplit i, sum_add_distrib, hlow]
 
 end Finset.Nat

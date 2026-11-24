@@ -46,18 +46,18 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [No
 bundle total space. The reference inner products on the fibres need not be continuous. -/
 theorem continuous_metricChangeBetween :
     Continuous fun p : TotalSpace F E ↦
-      (⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.2⟩ : TotalSpace F E) := by
+      (⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.snd⟩ : TotalSpace F E) := by
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   let e := trivializationAt F E p₀.proj
   have hp₀ : p₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.proj
   -- A single actual fibre supplies a Hilbert model; no reference metric continuity is needed.
   let e₀ := e.continuousLinearEquivAt ℝ p₀.proj hp₀
-  let σ (y : e.baseSet) := e₀.trans (e.continuousLinearEquivAt ℝ y y.2).symm
+  let σ (y : e.baseSet) := e₀.trans (e.continuousLinearEquivAt ℝ y y.property).symm
   have hσ (w : E p₀.proj) :
       Continuous fun y : e.baseSet ↦ TotalSpace.mk' F (y : B) (σ y w) := by
     refine (e.continuousOn_symm.comp_continuous
-      (continuous_subtype_val.prodMk (continuous_const (y := e₀ w)))
-      fun y ↦ ⟨y.2, Set.mem_univ _⟩).congr fun y ↦ ?_
+      (continuous_subtypeVal.prodMk (continuous_const (y := e₀ w)))
+      fun y ↦ ⟨y.property, Set.mem_univ _⟩).congr fun y ↦ ?_
     simp [σ]
   let h' (y : e.baseSet) := (h.inner y).bilinearComp
     (σ y : E p₀.proj →L[ℝ] E y) (σ y : E p₀.proj →L[ℝ] E y)
@@ -78,43 +78,43 @@ theorem continuous_metricChangeBetween :
   have hU : U ∈ 𝓝 p₀ := (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hp₀
   refine ContinuousOn.continuousAt ?_ hU
   rw [continuousOn_iff_continuous_domRestrict]
-  let y : U → e.baseSet := fun x ↦ ⟨x.1.proj, x.2⟩
+  let y : U → e.baseSet := fun x ↦ ⟨x.val.proj, x.property⟩
   have hy : Continuous y :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
-  have hz : Continuous fun x : U ↦ (e x.1).2 :=
-    continuous_snd.comp (e.continuousOn.comp_continuous continuous_subtype_val
-      fun x ↦ e.mem_source.2 x.2)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
+  have hz : Continuous fun x : U ↦ (e x.val).2 :=
+    continuous_snd.comp (e.continuousOn.comp_continuous continuous_subtypeVal
+      fun x ↦ e.mem_source.2 x.property)
   -- Express the output in the ordinary chart, then identify it by coordinate naturality.
   have hout := (e.continuousOn_symm.comp_continuous
-    ((continuous_subtype_val.comp hy).prodMk
+    ((continuous_subtypeVal.comp hy).prodMk
       (e₀.continuous.comp ((hT.comp hy).clm_apply (e₀.symm.continuous.comp hz))))
-    fun x ↦ ⟨x.2, Set.mem_univ _⟩)
+    fun x ↦ ⟨x.property, Set.mem_univ _⟩)
   refine hout.congr fun x ↦ ?_
   simp only [Function.comp_apply]
   have hcoord := ContinuousLinearMap.metricChangeBetween_bilinearComp
     (h.inner (y x)) (k.inner (y x)) (σ (y x))
     (h.isStrictlyPositive_continuousLinearMapOfBilin_inner (y x))
-    (k.isStrictlyPositive_continuousLinearMapOfBilin_inner (y x)) (e₀.symm (e x.1).2)
-  have hσx : σ (y x) (e₀.symm (e x.1).2) = x.1.2 := by
-    simpa [σ, y] using e.symm_proj_apply x.1 x.2
+    (k.isStrictlyPositive_continuousLinearMapOfBilin_inner (y x)) (e₀.symm (e x.val).2)
+  have hσx : σ (y x) (e₀.symm (e x.val).2) = x.val.snd := by
+    simpa [σ, y] using e.symm_proj_apply x.val x.property
   rw [hσx] at hcoord
   rw [hcoord]
-  simpa [σ, y] using e.symm_apply_apply_mk x.2
-    ((h.inner x.1.proj).metricChangeBetween (k.inner x.1.proj) x.1.2)
+  simpa [σ, y] using e.symm_apply_apply_mk x.property
+    ((h.inner x.val.proj).metricChangeBetween (k.inner x.val.proj) x.val.snd)
 
 /-- The canonical positive source-self-adjoint transport between two continuous Riemannian
 metrics, as a homeomorphism of the original total space. -/
 def metricChangeBetweenHomeomorph : TotalSpace F E ≃ₜ TotalSpace F E where
-  toFun p := ⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.2⟩
-  invFun p := ⟨p.proj, (k.inner p.proj).metricChangeBetween (h.inner p.proj) p.2⟩
+  toFun p := ⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.snd⟩
+  invFun p := ⟨p.proj, (k.inner p.proj).metricChangeBetween (h.inner p.proj) p.snd⟩
   left_inv p := TotalSpace.ext rfl <| heq_of_eq <|
     ContinuousLinearMap.metricChangeBetween_apply_metricChangeBetween _ _
       (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)
-      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.2
+      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.snd
   right_inv p := TotalSpace.ext rfl <| heq_of_eq <|
     ContinuousLinearMap.metricChangeBetween_apply_metricChangeBetween _ _
       (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)
-      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.2
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.snd
   -- The generic bundle homeomorphism combinator requires a finite-dimensional model even when
   -- the base is empty. Here finite dimensionality is needed only on the actual fibres.
   continuous_toFun := h.continuous_metricChangeBetween k
@@ -125,12 +125,12 @@ def metricChangeBetweenHomeomorph : TotalSpace F E ≃ₜ TotalSpace F E where
 /-- The canonical metric-change homeomorphism applies the intrinsic transport in each fibre. -/
 theorem metricChangeBetweenHomeomorph_apply (p : TotalSpace F E) :
     h.metricChangeBetweenHomeomorph k p =
-      ⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.2⟩ := (rfl)
+      ⟨p.proj, (h.inner p.proj).metricChangeBetween (k.inner p.proj) p.snd⟩ := (rfl)
 
 /-- The inverse applies the transport with the two metrics interchanged. -/
 theorem metricChangeBetweenHomeomorph_symm_apply (p : TotalSpace F E) :
     (h.metricChangeBetweenHomeomorph k).symm p =
-      ⟨p.proj, (k.inner p.proj).metricChangeBetween (h.inner p.proj) p.2⟩ := (rfl)
+      ⟨p.proj, (k.inner p.proj).metricChangeBetween (h.inner p.proj) p.snd⟩ := (rfl)
 
 /-- Metric transport preserves the projection to the base. -/
 @[simp]
@@ -177,7 +177,7 @@ theorem metricChangeBetweenHomeomorph_apply_metricChangeHomeomorph
       k.metricChangeHomeomorph
         ⟨p.proj, (h.inner p.proj).metricChangeCompositionCorrection (k.inner p.proj)
           (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)
-          (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.2⟩ := by
+          (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj) p.snd⟩ := by
   rw [metricChangeBetweenHomeomorph_apply, metricChangeHomeomorph_apply,
     metricChangeHomeomorph_apply]
   apply congrArg (TotalSpace.mk' F p.proj)
@@ -185,6 +185,6 @@ theorem metricChangeBetweenHomeomorph_apply_metricChangeHomeomorph
     congr($(ContinuousLinearMap.metricChangeBetween_mul_metricChangeTransport
       (h.inner p.proj) (k.inner p.proj)
       (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)
-      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.2)
+      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.snd)
 
 end Bundle.ContinuousRiemannianMetric

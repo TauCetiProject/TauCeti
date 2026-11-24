@@ -311,7 +311,7 @@ theorem isOpen_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Subrin
     rw [isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P]
     simp only [mem_supp_iff]
   rw [hset]
-  exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtype_val
+  exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtypeVal
 
 omit [IsTopologicalRing A] in
 /-- A rational subset whose denominator belongs to the extended ideal of definition consists of
@@ -513,11 +513,11 @@ theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
   -- and `w` is analytic because `A⟨T/s⟩` is Tate
   have hvspa : v ∈ spa Aplus := ((mem_rationalSubset_iff Aplus T s v).mp hv).1
   set w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm ⟨⟨v, hvspa⟩, hv⟩
-  have hvw : v = comap (toCompletionLoc P T s S hden) w.1 := by
+  have hvw : v = comap (toCompletionLoc P T s S hden) w.val := by
     have h := congrFun (val_comp_spaCompletedLocalizationHomeomorph P Aplus hP T s S hden) w
     simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
     rw [← spaComapLoc_val, ← h]
-  have hw : IsAnalyticPoint w.1 := isAnalyticPoint_of_isTateRing w.1
+  have hw : IsAnalyticPoint w.val := isAnalyticPoint_of_isTateRing w.val
   refine ⟨hvspa, ?_⟩
   rw [hvw]
   exact hw.comap (PairOfDefinition.isAdicHom_toCompletionLoc P T s S hden)

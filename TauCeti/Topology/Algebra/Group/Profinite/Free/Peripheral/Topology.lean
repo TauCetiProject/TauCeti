@@ -144,7 +144,7 @@ theorem continuous_exponent : Continuous (exponent hF e hr) := by
   refine continuous_of_isClosed_graph ?_
   rw [graph_exponent]
   exact (isClosed_peripheralGraph hF (basis e) hfg).preimage
-    (continuous_subtype_val.prodMap continuous_id)
+    (continuous_subtypeVal.prodMap continuous_id)
 
 end Exponent
 

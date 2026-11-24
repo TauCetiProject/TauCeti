@@ -58,7 +58,7 @@ open `(Proj 𝒜).basicOpen b ≤ U` through its restriction (`Scheme.Modules.mo
 is pointwise through its values in the homogeneous localizations. -/
 private theorem smul_basicOpen_apply {U : (Proj 𝒜).Opens} (b c : Γ(Proj 𝒜, U))
     (t : Γ(twistingSheaf 𝒜 n, (Proj 𝒜).basicOpen b)) (x : (Proj 𝒜).basicOpen b) :
-    (c • t).1 x = (c.1 ⟨x.1, (Proj 𝒜).basicOpen_le b x.2⟩).val * t.1 x :=
+    (c • t).val x = (c.val ⟨x.val, (Proj 𝒜).basicOpen_le b x.property⟩).val * t.val x :=
   (rfl)
 
 variable {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) {k : ℕ} {g : A} (hg : g ∈ 𝒜 (k • d))
@@ -66,8 +66,8 @@ variable {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) {k : ℕ} {g : A} (hg : g ∈ �
 /-- The powers of the function `g / fᵏ` on `D₊(f)` take the values `(g / fᵏ)ᴺ` in the
 localizations. -/
 private theorem val_awayToSection_mk_pow_apply (N : ℕ) (y : basicOpen 𝒜 f) :
-    (((awayToSection 𝒜 f (Away.mk 𝒜 hf k g hg)) ^ N).1 y).val =
-      Localization.mk g ⟨f ^ k, fun h ↦ y.2 (y.1.isPrime.mem_of_pow_mem k h)⟩ ^ N :=
+    (((awayToSection 𝒜 f (Away.mk 𝒜 hf k g hg)) ^ N).val y).val =
+      Localization.mk g ⟨f ^ k, fun h ↦ y.property (y.val.isPrime.mem_of_pow_mem k h)⟩ ^ N :=
   (congrArg val (Proj.pow_apply _ _ _ N)).trans
     ((val_pow _ _).trans (congrArg (· ^ N) (val_awayToSection_mk_apply ..)))
 
@@ -88,12 +88,12 @@ private theorem exists_pow_smul_eq_basicOpenRestrict (hd : 0 < d)
     (SetLike.pow_mem_graded _ hf) _ (fun x hx h ↦ hx (x.isPrime.mem_of_pow_mem _ h)), ?_⟩
   refine Eq.trans ?_ ((Scheme.Modules.basicOpenRestrict_apply _ _ _).trans (res_const ..)).symm
   refine ext fun x ↦ ?_
-  have hx : x.1 ∈ basicOpen 𝒜 (f * g) := hV ▸ x.2
-  have e : t.1 x = _ := (res_apply _ t ⟨x.1, hx⟩).symm.trans
-    (congr($ht.1 ⟨x.1, hx⟩).trans (const_apply ..))
+  have hx : x.val ∈ basicOpen 𝒜 (f * g) := hV ▸ x.property
+  have e : t.val x = _ := (res_apply _ t ⟨x.val, hx⟩).symm.trans
+    (congr(($ht).val ⟨x.val, hx⟩).trans (const_apply ..))
   refine (smul_basicOpen_apply _ _ t x).trans (Eq.trans ?_ (const_apply ..).symm)
   refine (congrArg₂ (· * ·)
-    (val_awayToSection_mk_pow_apply hf hg m ⟨x.1, (Proj 𝒜).basicOpen_le _ x.2⟩) e).trans ?_
+    (val_awayToSection_mk_pow_apply hf hg m ⟨x.val, (Proj 𝒜).basicOpen_le _ x.property⟩) e).trans ?_
   rw [Localization.mk_pow, Localization.mk_mul, Localization.mk_eq_mk_iff,
     Localization.r_iff_exists]
   exact ⟨1, by simp; ring⟩
@@ -119,12 +119,12 @@ private theorem exists_pow_smul_eq_zero (hd : 0 < d) (s : Γ(twistingSheaf 𝒜 
   obtain ⟨N, hN⟩ := (const_eq_zero_iff (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜
     (by omega) (SetLike.mul_mem_graded hf hg)) ..).1 h0
   refine ⟨N, ext fun x ↦ ?_⟩
-  have e : s.1 x = _ := congr($hs'.1 x).trans (const_apply ..)
+  have e : s.val x = _ := congr(($hs').val x).trans (const_apply ..)
   refine (smul_apply _ _ x).trans ((congrArg₂ (· * ·)
     (val_awayToSection_mk_pow_apply hf hg N x) e).trans (Eq.trans ?_ (zero_apply x).symm))
   rw [Localization.mk_pow, Localization.mk_mul, Localization.mk_eq_mk'_apply,
     IsLocalization.mk'_eq_zero_iff]
-  exact ⟨⟨f ^ N, fun h ↦ x.2 (x.1.isPrime.mem_of_pow_mem N h)⟩, by linear_combination hN⟩
+  exact ⟨⟨f ^ N, fun h ↦ x.property (x.val.isPrime.mem_of_pow_mem N h)⟩, by linear_combination hN⟩
 
 /-- For `f` homogeneous of positive degree and a function `a` on `D₊(f)`, the restriction of
 sections of `𝒪(n)` from `D₊(f)` to the locus `(Proj 𝒜).basicOpen a` where `a` is invertible is
@@ -147,10 +147,11 @@ variable (𝒜 n) in
 instance isQuasicoherent_twistingSheaf : (twistingSheaf 𝒜 n).IsQuasicoherent :=
   -- the standard opens `D₊(f)`, `f` homogeneous of positive degree, form an affine open cover
   Scheme.Modules.isQuasicoherent_of_isLocalizedModule (ι := {p : A × ℕ // 0 < p.2 ∧ p.1 ∈ 𝒜 p.2})
-    _ (fun p ↦ basicOpen 𝒜 p.1.1) (fun p ↦ isAffineOpen_basicOpen 𝒜 p.1.1 p.2.2 p.2.1)
+    _ (fun p ↦ basicOpen 𝒜 p.val.1) (fun p ↦ isAffineOpen_basicOpen 𝒜 p.val.1 p.property.2
+        p.property.1)
     (eq_top_iff.2 fun x _ ↦ by
       obtain ⟨i, hi, f, hf, hfx⟩ := ProjectiveSpectrum.exists_le_mem_notMem (𝒜 := 𝒜) x 1
       exact Opens.mem_iSup.2 ⟨⟨(f, i), by omega, hf⟩, hfx⟩)
-    fun p a ↦ twistingSheaf.isLocalizedModule_basicOpenRestrict p.2.2 p.2.1 a
+    fun p a ↦ twistingSheaf.isLocalizedModule_basicOpenRestrict p.property.2 p.property.1 a
 
 end AlgebraicGeometry.Proj

@@ -57,7 +57,7 @@ noncomputable def exteriorPowerCoact (n : ℕ) :
     (fun x ↦ by
       rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
         ← DirectSum.decomposeTensor_apply]
-      exact exteriorAlgebraCoact_mem_decomposeTensor x.2)
+      exact exteriorAlgebraCoact_mem_decomposeTensor x.property)
 
 /-- Including the exterior-power coaction recovers the coaction on the exterior algebra. -/
 @[simp]

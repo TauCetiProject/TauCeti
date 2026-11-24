@@ -90,8 +90,8 @@ private theorem exists_complexification_of_local {E : Type*} [NormedAddCommGroup
       AnalyticOnNhd ℂ F (ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) r) ∧
         (∀ y ∈ ball (x : ι → ℝ) r, F (fun i ↦ (y i : ℂ)) = g y) ∧
           ∀ z, F (star z) = star (F z) := by
-    obtain ⟨r, hr, F, hF, hFg, hFs⟩ := hloc x x.2
-    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU x x.2
+    obtain ⟨r, hr, F, hF, hFg, hFs⟩ := hloc x x.property
+    obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU x x.property
     exact ⟨min r ε, lt_min hr hε, (ball_subset_ball (min_le_right _ _)).trans hεU, F,
       hF.mono (ball_subset_ball (min_le_left _ _)),
       fun y hy ↦ hFg y (ball_subset_ball (min_le_left _ _) hy), hFs⟩
@@ -165,8 +165,8 @@ theorem exists_eqOn_of_forall_real {E : Type*} [NormedAddCommGroup E] [NormedSpa
   -- polydiscs centred at the real points of `U`, contained in `W`, with real points in `U`
   have hball (x : U) : ∃ s > (0 : ℝ), ball (fun i ↦ ((x : ι → ℝ) i : ℂ)) s ⊆ W ∧
       ball (x : ι → ℝ) s ⊆ U := by
-    obtain ⟨ε, hε, hεW⟩ := Metric.isOpen_iff.1 hW _ (hUW x x.2)
-    obtain ⟨δ, hδ, hδU⟩ := Metric.isOpen_iff.1 hU x x.2
+    obtain ⟨ε, hε, hεW⟩ := Metric.isOpen_iff.1 hW _ (hUW x x.property)
+    obtain ⟨δ, hδ, hδU⟩ := Metric.isOpen_iff.1 hU x x.property
     exact ⟨min ε δ, lt_min hε hδ, (ball_subset_ball (min_le_left _ _)).trans hεW,
       (ball_subset_ball (min_le_right _ _)).trans hδU⟩
   choose s hs hsW hsU using hball

@@ -46,8 +46,8 @@ are equal. -/
 theorem ext_of_denseRange_unitBall {u : ℕ → closedBall (0 : E) 1} (hu : DenseRange u)
     {f g : WeakDual 𝕜 E} (h : ∀ n, f (u n) = g (u n)) : f = g := by
   have heq : ∀ x : closedBall (0 : E) 1, f x = g x :=
-    congrFun (hu.equalizer ((map_continuous f).comp continuous_subtype_val)
-      ((map_continuous g).comp continuous_subtype_val) (funext h))
+    congrFun (hu.equalizer ((map_continuous f).comp continuous_subtypeVal)
+      ((map_continuous g).comp continuous_subtypeVal) (funext h))
   have hn : ‖toStrongDual f - toStrongDual g‖ ≤ 0 := by
     refine ContinuousLinearMap.opNorm_le_of_ball (ε := 1) zero_lt_one le_rfl ?_
     intro x hx
@@ -62,7 +62,7 @@ theorem isEmbedding_eval_denseSeq {K : Set (WeakDual 𝕜 E)} (hK : IsCompact K)
     Topology.IsEmbedding (fun f : K ↦ fun n ↦ (f : WeakDual 𝕜 E) (u n)) := by
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   have hc : Continuous (fun f : K ↦ fun n ↦ (f : WeakDual 𝕜 E) (u n)) :=
-    continuous_pi fun n ↦ (eval_continuous (u n : E)).comp continuous_subtype_val
+    continuous_pi fun n ↦ (eval_continuous (u n : E)).comp continuous_subtypeVal
   exact (hc.isClosedEmbedding fun f g hfg ↦
     Subtype.ext (ext_of_denseRange_unitBall hu (congrFun hfg))).isEmbedding
 

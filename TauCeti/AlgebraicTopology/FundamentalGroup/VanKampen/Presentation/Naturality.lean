@@ -204,7 +204,7 @@ lemma vanKampenCoverQuotientMap_eq {f' : C(X, Y)} (hff' : ∀ i, EqOn f f' (U i)
   · rw [← FundamentalGroup.mapOfEq_rfl]
     refine congrArg Monoid.CoprodI.of
       (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq ?_ _ _ _ a).symm
-    exact ContinuousMap.ext fun z ↦ Subtype.ext (hff' i z.2)
+    exact ContinuousMap.ext fun z ↦ Subtype.ext (hff' i z.property)
 
 /-- Every self-refinement of a based family induces the identity on its presentation quotient. -/
 @[simp]

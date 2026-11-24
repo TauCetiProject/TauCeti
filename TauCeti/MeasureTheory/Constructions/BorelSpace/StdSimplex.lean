@@ -39,7 +39,7 @@ coordinate space. -/
 theorem measurableEmbedding_toFun_comp_weights :
     MeasurableEmbedding fun p : StdSimplex R ι ↦ (p.weights : ι → R) := by
   let _ := Fintype.ofFinite ι
-  refine MeasurableEmbedding.iff_comap_eq.mpr ⟨injective_toFun_comp_weights, rfl, ?_⟩
+  refine MeasurableEmbedding.iff_comap_eq.mpr ⟨toFun_comp_weights_injective, rfl, ?_⟩
   rw [range_toFun_comp_weights]
   exact (MeasurableSet.iInter fun i ↦
     (isClosed_Ici.preimage (continuous_apply i)).measurableSet).inter

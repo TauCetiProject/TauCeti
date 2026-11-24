@@ -61,9 +61,10 @@ theorem exists_eq_smul_op_smul_mk_diagonal (hn : 0 < n) (x : TraceFormulaMatrixM
       ∃ (g : SL(2, ℤ)) (γ : PSL(2, ℤ)), x = g • mk (TraceFormulaMatrix.diagonal d₀ d₁ h) <• γ := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   -- the Smith normal form `L A R = diag(d₀, d₁)` gives `A = L⁻¹ diag(d₀, d₁) R⁻¹`
-  obtain ⟨L, R, d, hd, hdvd, hLR⟩ := A.1.exists_smith_normal_form_of_det_pos (A.2.symm ▸ hn)
+  obtain ⟨L, R, d, hd, hdvd, hLR⟩ := A.val.exists_smith_normal_form_of_det_pos
+      (A.property.symm ▸ hn)
   have hdet : d 0 * d 1 = n := by
-    simpa [Fin.prod_univ_two, A.2] using prod_eq_det_of_mul_mul_eq_diagonal hLR
+    simpa [Fin.prod_univ_two, A.property] using prod_eq_det_of_mul_mul_eq_diagonal hLR
   refine ⟨d 0, d 1, hdet, hd 0, hdvd (Fin.zero_le 1), L⁻¹, (R : PSL(2, ℤ))⁻¹, ?_⟩
   rw [eq_inv_smul_iff, MulOpposite.op_inv, eq_inv_smul_iff, smul_mk, op_smul_mk]
   congr 1
@@ -77,9 +78,10 @@ theorem exists_eq_smul_op_smul_mk_diagonal (hn : 0 < n) (x : TraceFormulaMatrixM
 theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) (hn : n ≠ 0)
     {A : TraceFormulaMatrix n} :
     mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔
-      d₀ ∣ A.1 0 0 ∧ d₀ ∣ A.1 0 1 ∧ d₁ ∣ A.1 1 0 ∧ d₁ ∣ A.1 1 1 := by
+      d₀ ∣ A.val 0 0 ∧ d₀ ∣ A.val 0 1 ∧ d₁ ∣ A.val 1 0 ∧ d₁ ∣ A.val 1 1 := by
   rw [mk_mem_orbit_op_mk_iff, TraceFormulaMatrix.val_diagonal, ← Matrix.diagonal_vec2,
-    Matrix.exists_eq_diagonal_mul_iff (by simp [A.2, h]) (A.2 ▸ IsRegular.of_ne_zero hn).left]
+    Matrix.exists_eq_diagonal_mul_iff (by simp [A.property, h]) (A.property ▸ IsRegular.of_ne_zero
+        hn).left]
   simp [Fin.forall_fin_two, and_assoc]
 
 /-- **The `Γ_∞`-orbit of a diagonal matrix**: the class of `A` lies in the orbit of
@@ -89,10 +91,10 @@ theorem mk_mem_orbit_op_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n) 
 theorem mk_mem_orbit_zpowers_T_mk_diagonal_iff {d₀ d₁ : ℤ} (h : d₀ * d₁ = n)
     {A : TraceFormulaMatrix n} :
     mk A ∈ MulAction.orbit (Subgroup.zpowers T) (mk (TraceFormulaMatrix.diagonal d₀ d₁ h)) ↔
-      ∃ j : ℤ, A.1 = !![d₀, j * d₁; 0, d₁] ∨ A.1 = -!![d₀, j * d₁; 0, d₁] := by
+      ∃ j : ℤ, A.val = !![d₀, j * d₁; 0, d₁] ∨ A.val = -!![d₀, j * d₁; 0, d₁] := by
   rw [MulAction.mem_orbit_iff, Subgroup.exists_zpowers]
   refine exists_congr fun j ↦ ?_
-  have hT : (T ^ j • TraceFormulaMatrix.diagonal d₀ d₁ h).1 = !![d₀, j * d₁; 0, d₁] := by
+  have hT : (T ^ j • TraceFormulaMatrix.diagonal d₀ d₁ h).val = !![d₀, j * d₁; 0, d₁] := by
     simp [FixedDetMatrices.smul_coe, coe_T_zpow]
   rw [Subgroup.smul_def, smul_mk, mk_eq_iff]
   grind [FixedDetMatrices.ext', TraceFormulaMatrix.val_neg]

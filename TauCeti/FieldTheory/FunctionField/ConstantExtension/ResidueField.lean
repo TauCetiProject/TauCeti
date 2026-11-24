@@ -152,7 +152,7 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
   -- At the place `Q` below `P'`, the finite case writes the residue of `g` over `L`.
   have hgQ : (⟨g, hgL⟩ : E) ∈ Q.integers := by
     rw [mem_integers_restrict_iff]
-    exact g.2
+    exact g.property
   have hmem : IsLocalRing.residue Q.integers ⟨_, hgQ⟩ ∈
       Submodule.span (Q.restrict k F).ResidueField (Set.range (algebraMap L Q.ResidueField)) := by
     rw [span_range_algebraMap_residueField_eq_top_of_finiteDimensional hF hex hE Q]
@@ -171,7 +171,7 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
     have ha : (a : F) ∈ P.integers := by
       rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
         mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
-      exact a.2
+      exact a.property
     refine ⟨IsLocalRing.residue P.integers ⟨a, ha⟩, ?_⟩
     rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
       IsLocalRing.ResidueField.algebraMap_residue]
@@ -339,17 +339,17 @@ theorem exists_constantCompositum_eq_top_nonempty_algHom {E : Type*} [Field E] [
   the distinct minimal polynomials of these generators, a separable polynomial. -/
   choose α hα using fun R : s ↦
     letI := (R : Place k F).finiteDimensional_residueField hF
-    letI := hs R R.2
+    letI := hs R R.property
     Field.exists_primitive_element k (R : Place k F).ResidueField
   choose β hβ using fun Q : t ↦
     letI := (Q : Place k E).finiteDimensional_residueField hE
-    letI := ht Q Q.2
+    letI := ht Q Q.property
     Field.exists_primitive_element k (Q : Place k E).ResidueField
   have hαsep (R : s) : IsSeparable k (α R) := by
-    have := hs R R.2
+    have := hs R R.property
     exact Algebra.IsSeparable.isSeparable k (α R)
   have hβsep (Q : t) : IsSeparable k (β Q) := by
-    have := ht Q Q.2
+    have := ht Q Q.property
     exact Algebra.IsSeparable.isSeparable k (β Q)
   set T : Finset k[X] := Finset.univ.image (fun R ↦ minpoly k (α R)) ∪
     Finset.univ.image (fun Q ↦ minpoly k (β Q))

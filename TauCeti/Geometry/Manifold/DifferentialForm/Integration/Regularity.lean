@@ -86,6 +86,27 @@ theorem integralTopForm_of_tsupport_subset_chart
   simp
 
 /-- On a finite-dimensional normed space with a constant orientation, the oriented integral of
+an integrable top form is the integral of its coefficient in any positively oriented basis
+against that basis's Haar measure. -/
+theorem integralTopForm_model_eq_integral_of_integrableTopForm
+    (o : _root_.Orientation ℝ E (Fin k)) (hk : Fintype.card (Fin k) = Module.finrank ℝ E)
+    {φ : RoughForm 𝓘(ℝ, E) E ℝ k} (hi : IntegrableTopForm φ)
+    (b : Module.Basis (Fin k) ℝ E) (hb : b.orientation = o) :
+    integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) o hk) φ =
+      ∫ x, φ x b ∂b.addHaar := by
+  rw [Manifold.Orientation.model_eq_mk, integralTopForm_eq_chartIntegral _ φ hi 0 (by simp),
+    Manifold.OrientationLift.chartIntegral_eq_integral_mpullback _ φ b 0,
+    ← hb.trans (Manifold.OrientationLift.ofHasGroupoid_modelOrientation o hk).symm,
+    _root_.Orientation.signBasis_orientation]
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Measure.restrict_univ, Units.val_one, Int.cast_one, one_mul]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  simp only [id_eq, mpullback_id]
+  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp),
+    Manifold.OrientationLift.ofHasGroupoid_sign]
+  simp
+
+/-- On a finite-dimensional normed space with a constant orientation, the oriented integral of
 a compactly supported C0 top form is the integral of its coefficient in any positively oriented
 basis against that basis's Haar measure. -/
 theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
@@ -94,17 +115,8 @@ theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
     (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
     (b : Module.Basis (Fin k) ℝ E) (hb : b.orientation = o) :
     integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) o hk) φ =
-      ∫ x, φ x b ∂b.addHaar := by
-  rw [Manifold.Orientation.model_eq_mk,
-    integralTopForm_of_tsupport_subset_chart _ hφ hc 0 (by simp) b
-      (hb.trans (Manifold.OrientationLift.ofHasGroupoid_modelOrientation o hk).symm)]
-  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, PartialEquiv.refl_symm,
-    PartialEquiv.refl_coe, Measure.restrict_univ]
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  simp only [id_eq, mpullback_id]
-  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp),
-    Manifold.OrientationLift.ofHasGroupoid_sign]
-  simp
+      ∫ x, φ x b ∂b.addHaar :=
+  integralTopForm_model_eq_integral_of_integrableTopForm o hk (hφ.integrableTopForm hc b) b hb
 
 /-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
 continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/

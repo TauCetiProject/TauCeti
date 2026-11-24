@@ -60,7 +60,7 @@ theorem map_max_pi_gumbelMeasure (m : ℝ) :
   apply Measure.eq_of_cdf
   ext x
   rw [cdf_max_iid hindep hlaw x, cdf_gumbelMeasure_eq hs, cdf_gumbelMeasure_eq hs,
-    ← Real.exp_nat_mul]
+    ← Real.exp_natCast_mul]
   have hshift : -((x - (m + s * Real.log (Fintype.card ι))) / s) =
       Real.log (Fintype.card ι) + -((x - m) / s) := by
     field_simp

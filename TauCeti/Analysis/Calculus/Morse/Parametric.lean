@@ -9,7 +9,6 @@ public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # The parametric Morse lemma in trivial and general vector bundles
@@ -29,28 +28,27 @@ The fibre coordinate is canonical: `TauCeti.parametricMorseCoord f (b, v) = R (b
 `R (b, v)` is the canonical congruence `TauCeti.morseCongruence` of the averaged vertical Hessian
 with the vertical Hessian at `(b, 0)`. Because no choice enters, it is natural for fibrewise linear
 changes of coordinates: if `g (b, v) = f (b, e b v)` for any linear equivalences `e b`, then
-`parametricMorseCoord g (b, v) = (e b)⁻¹ (parametricMorseCoord f (b, e b v))` at every point whose
-slice of `f` is `C²` (`TauCeti.parametricMorseCoord_comp`). This identity is exact, not only near
-the zero section, since the square root near the identity commutes with conjugation. The
-coordinate also depends only on the germ of `f` along the zero section
-(`Filter.EventuallyEq.parametricMorseCoord`) and reads `f` only along fibres, so
-if `f' (σ b, T b v) = f (b, v)` near the zero section, for any change of parameter `σ` and fibre
-isomorphisms `T b` depending continuously on `b`, then
+`parametricMorseCoord g (b, v) = (e b)⁻¹ (parametricMorseCoord f (b, e b v))` at every point
+(`TauCeti.parametricMorseCoord_comp`). This identity is exact: it needs no regularity of `f`,
+neither continuity of `e` nor nondegeneracy, and holds away from the zero section too, since the
+square root near the identity commutes with conjugation. The coordinate also depends only on the
+germ of `f` along the zero section (`Filter.EventuallyEq.parametricMorseCoord`) and reads `f` only
+along fibres, so if `f' (σ b, T b v) = f (b, v)` near the zero section, for any change of
+parameter `σ` and any fibre isomorphisms `T b`, then
 `parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))` near the zero section
 (`TauCeti.eventually_parametricMorseCoord_transition`).
 
 On a vector bundle `V` with fibre `F`, a function `g` on the total space read in a trivialization
 `e` is the family `(b, w) ↦ g ⟨b, e.symm b w⟩` on `B × F`. Read in two trivializations, the
-canonical coordinates of `g` agree exactly over the intersection of their base sets, wherever the
-slice of `g` over the base point is `C²`
+canonical coordinates of `g` agree exactly over the intersection of their base sets
 (`Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`), because the
 two families differ by the fibrewise linear coordinate change. This gives a fibre-preserving map
 of the total space, `TauCeti.bundleMorseCoord g`, defined in the trivialization at each base point.
-Over every base point where `g` is `C²` along the fibre, it can be computed in any linear
-trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so there it does not depend on the
-trivialization. It vanishes on the zero section (`TauCeti.bundleMorseCoord_zeroSection`) and is
-the candidate for patching the local normal forms near the zero section; its smoothness, and that
-it is a change of coordinates near the zero section, are not proved here.
+It can be computed in any linear trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so
+it does not depend on the trivialization. It vanishes on the zero section
+(`TauCeti.bundleMorseCoord_zeroSection`) and is the candidate for patching the local normal forms
+near the zero section; its smoothness, and that it is a change of coordinates near the zero
+section, are not proved here.
 
 ## Main declarations
 
@@ -72,10 +70,10 @@ it is a change of coordinates near the zero section, are not proved here.
   resulting coordinate change and local chart on a product neighbourhood, given by the canonical
   coordinate.
 * `Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`: the canonical
-  coordinates read in two trivializations of a vector bundle agree where the slice is `C²`.
+  coordinates read in two trivializations of a vector bundle agree.
 * `TauCeti.bundleMorseCoord`: the fibre-preserving map of the total space of a vector bundle
-  given by the canonical Morse coordinate, with `Bundle.Trivialization.bundleMorseCoord_eq` (where
-  the slice is `C²`, it is computed in any linear trivialization) and
+  given by the canonical Morse coordinate, with `Bundle.Trivialization.bundleMorseCoord_eq` (it is
+  computed in any linear trivialization) and
   `TauCeti.bundleMorseCoord_zeroSection` (it vanishes on the zero section).
 
 ## References
@@ -104,8 +102,8 @@ the averaged vertical Hessian along the segment from `(b, 0)` to `(b, v)` with t
 Hessian at `(b, 0)`. For a `C^2` family whose zero section is critical near `a` and whose
 vertical Hessian `H b` at `(b, 0)` is invertible at `b = a`, near `(a, 0)` it satisfies
 `f (b, v) = f (b, 0) + 2⁻¹ * H b (parametricMorseCoord f (b, v)) (parametricMorseCoord f (b, v))`
-(`TauCeti.eventually_eq_add_parametricMorseCoord`). Wherever the slice of `f` is `C^2`, the
-coordinate is natural for fibrewise linear changes of coordinates
+(`TauCeti.eventually_eq_add_parametricMorseCoord`). The coordinate is natural for fibrewise linear
+changes of coordinates `e b`: it is carried to that of `f` by `(e b)⁻¹`
 (`TauCeti.parametricMorseCoord_comp`). -/
 def parametricMorseCoord (f : P × E → ℝ) (z : P × E) : E :=
   morseCongruence (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0)
@@ -156,17 +154,16 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
 /-- **The canonical parametric Morse coordinate is natural for fibrewise linear changes of
 coordinates.** Let `e b : E' ≃L[ℝ] E` be linear equivalences and `g (b, v) = f (b, e b v)`. At
-every point `z` over a base point whose slice of `f` is `C²`, the canonical coordinate of `g` is
-that of `f` read through `e z.1`:
+every point `z`, the canonical coordinate of `g` is that of `f` read through `e z.1`:
 `parametricMorseCoord g z = (e z.1)⁻¹ (parametricMorseCoord f (z.1, e z.1 z.2))`.
 
-No continuity of `e`, nondegeneracy or smallness is needed, since the canonical congruence is
-natural exactly (`TauCeti.morseCongruence_bilinearComp`). Applied to the coordinate changes of a
-vector bundle, this says that the canonical coordinates of a function read in two trivializations
-agree over the intersection of their base sets, at every base point where the slice is `C²`, so
-that there they define a single fibre-preserving map of the total space. -/
-theorem parametricMorseCoord_comp {e : P → E' ≃L[ℝ] E} {z : P × E'}
-    (hf : ContDiff ℝ 2 fun v ↦ f (z.1, v)) :
+No regularity of `f`, continuity of `e`, nondegeneracy or smallness is needed, since the averaged
+Hessian is natural without differentiability (`TauCeti.hessianAverage_comp_continuousLinearEquiv`)
+and the canonical congruence is natural exactly (`TauCeti.morseCongruence_bilinearComp`). Applied
+to the coordinate changes of a vector bundle, this says that the canonical coordinates of a
+function read in two trivializations agree over the intersection of their base sets, so that they
+define a single fibre-preserving map of the total space. -/
+theorem parametricMorseCoord_comp (e : P → E' ≃L[ℝ] E) (z : P × E') :
     parametricMorseCoord (fun z ↦ f (z.1, e z.1 z.2)) z =
       (e z.1).symm (parametricMorseCoord f (z.1, e z.1 z.2)) := by
   -- The forms of the pulled-back slice are the pullbacks of the forms of the slice of `f`.
@@ -181,7 +178,7 @@ theorem parametricMorseCoord_comp {e : P → E' ≃L[ℝ] E} {z : P × E'}
         (e z.1 : E' →L[ℝ] E) (e z.1 : E' →L[ℝ] E) := by
     ext w w'
     simpa [Function.comp_def] using
-      hessianAverage_comp_continuousLinearEquiv_apply hf (e z.1) 0 z.2 w w'
+      hessianAverage_comp_continuousLinearEquiv_apply (fun v ↦ f (z.1, v)) (e z.1) 0 z.2 w w'
   rw [parametricMorseCoord_def, parametricMorseCoord_def, hH, hA, morseCongruence_bilinearComp]
   simp
 
@@ -302,38 +299,24 @@ theorem parametricMorseCoord_comp_prodMap (f : P' × E → ℝ) (σ : P → P') 
     parametricMorseCoord (fun z ↦ f (σ z.1, z.2)) (b, v) = parametricMorseCoord f (σ b, v) := by
   simp only [parametricMorseCoord_def]
 
-/-- **The canonical parametric Morse coordinate under a change of trivialization.** Let `f` be a
-`C^2` family, and let `f'` be the same family in other coordinates near the zero section:
-`f' (σ b, T b v) = f (b, v)` for `(b, v)` near `(a, 0)`, where
-`σ` is any change of parameter and `T b : E ≃L[ℝ] E'` are linear isomorphisms of the fibres
-depending continuously on `b` at `a`. No regularity of `f'` or `σ` is assumed. Then near `(a, 0)`
-the canonical coordinates correspond:
+omit [NormedSpace ℝ P] [CompleteSpace E] in
+/-- **The canonical parametric Morse coordinate under a change of trivialization.** Let `f'` be
+the family `f` written in other coordinates near the zero section: `f' (σ b, T b v) = f (b, v)`
+for `(b, v)` near `(a, 0)`, where `σ` is any change of parameter and `T b : E ≃L[ℝ] E'` are linear
+isomorphisms of the fibres. No regularity of `f`, `f'` or `σ`, no continuity of `T` in `b` and no
+nondegeneracy is assumed. Then near `(a, 0)` the canonical coordinates correspond:
 `parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))`. -/
-theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
-    (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
+theorem eventually_parametricMorseCoord_transition
     (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z) :
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseCoord f' (σ z.1, T z.1 z.2) =
       T z.1 (parametricMorseCoord f z) := by
-  -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
-  have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
-    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-      ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
-        (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
-  -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
-  have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    hT.tendsto_prodMk_clm_apply
-  have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    hTsymm.tendsto_prodMk_clm_apply
-  -- Read in the parameter of `f`, the family `f'` is near `(a, 0)` the pullback of `f` along
-  -- `(T b)⁻¹`, whose canonical coordinate is natural.
-  have hloc : (fun z : P × E' ↦ f' (σ z.1, z.2)) =ᶠ[𝓝 (a, 0)]
-      fun z ↦ f (z.1, (T z.1).symm z.2) := by
-    filter_upwards [hψsymm.eventually hcomp] with z hz
-    simpa using hz
-  filter_upwards [hψ.eventually hloc.parametricMorseCoord] with z hloc'
-  rw [parametricMorseCoord_comp_prodMap] at hloc'
-  rw [hloc', parametricMorseCoord_comp (e := fun b ↦ (T b).symm)
-    (hf.comp (contDiff_const.prodMk contDiff_id))]
+  -- The family `f` is near `(a, 0)` the pullback of `f'` along `(b, v) ↦ (σ b, T b v)`, whose
+  -- canonical coordinate is natural.
+  filter_upwards [Filter.EventuallyEq.parametricMorseCoord
+    (f₁ := fun z ↦ f' (σ z.1, T z.1 z.2)) hcomp] with z hz
+  have h := parametricMorseCoord_comp (f := fun z : P × E' ↦ f' (σ z.1, z.2)) T z
+  rw [parametricMorseCoord_comp_prodMap, hz] at h
+  rw [h]
   simp
 
 end Transition
@@ -424,12 +407,12 @@ variable {B F : Type*} [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace 
 /-- **The canonical Morse coordinates of a function on a vector bundle, read in two
 trivializations, agree.** Over a point `b` of both base sets, read the function `g` on the total
 space in the trivializations `e` and `e'` as the families `(b, w) ↦ g ⟨b, e.symm b w⟩` and
-`(b, w) ↦ g ⟨b, e'.symm b w⟩`. If the slice over `b` of the first is `C²`, then for every vector
-`v` of the fibre over `b` their canonical parametric Morse coordinates at the coordinates of `v`,
-transported back to the fibre, are the same vector. -/
+`(b, w) ↦ g ⟨b, e'.symm b w⟩`. For every vector `v` of the fibre over `b`, their canonical
+parametric Morse coordinates at the coordinates of `v`, transported back to the fibre, are the same
+vector. -/
 theorem _root_.Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord
     (e e' : Trivialization F (π F V)) [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B}
-    (hb : b ∈ e.baseSet ∩ e'.baseSet) (hg : ContDiff ℝ 2 fun w ↦ g ⟨b, e.symm b w⟩) (v : V b) :
+    (hb : b ∈ e.baseSet ∩ e'.baseSet) (v : V b) :
     e'.symm b (parametricMorseCoord (fun z ↦ g ⟨z.1, e'.symm z.1 z.2⟩) (b, (e' ⟨b, v⟩).2)) =
       e.symm b (parametricMorseCoord (fun z ↦ g ⟨z.1, e.symm z.1 z.2⟩) (b, (e ⟨b, v⟩).2)) := by
   -- A vector with coordinates `w` in one trivialization has coordinates `T w` in the other,
@@ -445,7 +428,7 @@ theorem _root_.Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametri
   rw [parametricMorseCoord_congr_of_eqOn (g := fun z ↦ g ⟨z.1, e.symm z.1
       (e'.coordChangeL ℝ e z.1 z.2)⟩) isOpen_univ (starConvex_univ 0) hslice (Set.mem_univ _),
     parametricMorseCoord_comp (f := fun z ↦ g ⟨z.1, e.symm z.1 z.2⟩)
-      (e := fun b ↦ e'.coordChangeL ℝ e b) hg, e'.coordChangeL_apply e hb.symm,
+      (fun b ↦ e'.coordChangeL ℝ e b), e'.coordChangeL_apply e hb.symm,
     e'.symm_apply_apply_mk hb.2, e'.symm_coordChangeL e hb, hsymm hb]
 
 variable [∀ b, TopologicalSpace (V b)] [FiberBundle F V] [VectorBundle ℝ F V]
@@ -454,10 +437,9 @@ variable (F) in
 /-- The **canonical Morse coordinate** of a function `g` on the total space of a vector bundle: at
 a vector `v` over `b`, the canonical parametric Morse coordinate of `g` read in the trivialization
 at `b`, transported back to the fibre over `b`. This is a fibre-preserving map of the total space.
-Over every base point where `g` is `C²` along the fibre it agrees with the canonical coordinate
-read in any linear trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so there it does
-not depend on the trivialization. Its smoothness, and that it is a change of coordinates near the
-zero section, are not proved here. -/
+It agrees with the canonical coordinate read in any linear trivialization
+(`Bundle.Trivialization.bundleMorseCoord_eq`), so it does not depend on the trivialization. Its
+smoothness, and that it is a change of coordinates near the zero section, are not proved here. -/
 noncomputable def bundleMorseCoord (g : TotalSpace F V → ℝ) (v : TotalSpace F V) : V v.proj :=
   (trivializationAt F V v.proj).symm v.proj
     (parametricMorseCoord (fun z ↦ g ⟨z.1, (trivializationAt F V v.proj).symm z.1 z.2⟩)
@@ -474,15 +456,13 @@ theorem bundleMorseCoord_def (g : TotalSpace F V → ℝ) (v : TotalSpace F V) :
   (rfl)
 
 /-- **The canonical Morse coordinate of a function on a vector bundle is computed in any linear
-trivialization** whose base set contains the base point, provided the function read in it is `C²`
-along the fibre. -/
+trivialization** whose base set contains the base point. -/
 theorem _root_.Bundle.Trivialization.bundleMorseCoord_eq (e : Trivialization F (π F V))
-    [e.IsLinear ℝ] {v : TotalSpace F V} (hv : v.proj ∈ e.baseSet)
-    (hg : ContDiff ℝ 2 fun w ↦ g ⟨v.proj, e.symm v.proj w⟩) :
+    [e.IsLinear ℝ] {v : TotalSpace F V} (hv : v.proj ∈ e.baseSet) :
     bundleMorseCoord F g v =
       e.symm v.proj (parametricMorseCoord (fun z ↦ g ⟨z.1, e.symm z.1 z.2⟩) (v.proj, (e v).2)) :=
   e.symm_parametricMorseCoord_eq_symm_parametricMorseCoord (trivializationAt F V v.proj)
-    ⟨hv, FiberBundle.mem_baseSet_trivializationAt' v.proj⟩ hg v.2
+    ⟨hv, FiberBundle.mem_baseSet_trivializationAt' v.proj⟩ v.snd
 
 /-- The canonical Morse coordinate of a function on a vector bundle vanishes on the zero
 section. -/

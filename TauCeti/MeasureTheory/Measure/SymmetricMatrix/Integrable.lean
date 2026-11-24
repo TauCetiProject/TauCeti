@@ -44,7 +44,7 @@ theorem integrable_iff_integrable_coe_apply :
     have hcoords : Integrable (fun ω => symmetricCoordinates p (f ω)) μ := by
       rw [← memLp_one_iff_integrable]
       refine MemLp.of_eval fun ij => ?_
-      simpa only [symmetricCoordinates_apply] using memLp_one_iff_integrable.2 (h ij.1.1 ij.1.2)
+      simpa only [symmetricCoordinates_apply] using memLp_one_iff_integrable.2 (h ij.val.1 ij.val.2)
     have hcomp : ((symmetricCoordinates p).symm.toContinuousLinearMap ∘
         fun ω => symmetricCoordinates p (f ω)) = f := by
       funext ω

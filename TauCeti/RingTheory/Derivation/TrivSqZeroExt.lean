@@ -82,12 +82,12 @@ def derivationToTrivSqZeroExtEquivLift :
         (fstHom R B M).comp ψ = IsScalarTower.toAlgHom R A B} where
   toFun d := ⟨liftOfDerivation R d, by ext a; simp [liftOfDerivation]⟩
   invFun ψ :=
-    { toLinearMap := (sndHom B M).restrictScalars R ∘ₗ ψ.1.toLinearMap
+    { toLinearMap := (sndHom B M).restrictScalars R ∘ₗ ψ.val.toLinearMap
       map_one_eq_zero' := by simp
       leibniz' a b := by
-        simp [fst_apply_of_comp_eq R ψ.2, ← MulOpposite.algebraMap_apply] }
+        simp [fst_apply_of_comp_eq R ψ.property, ← MulOpposite.algebraMap_apply] }
   left_inv d := by ext a; simp [liftOfDerivation]
-  right_inv ψ := by ext a <;> simp [liftOfDerivation, fst_apply_of_comp_eq R ψ.2]
+  right_inv ψ := by ext a <;> simp [liftOfDerivation, fst_apply_of_comp_eq R ψ.property]
 
 variable {R A B}
 
@@ -106,7 +106,7 @@ lemma derivationToTrivSqZeroExtEquivLift_apply_snd (d : Derivation R A M) (a : A
 @[simp]
 lemma derivationToTrivSqZeroExtEquivLift_symm_apply (ψ : {ψ : A →ₐ[R] TrivSqZeroExt B M //
       (fstHom R B M).comp ψ = IsScalarTower.toAlgHom R A B}) (a : A) :
-    (derivationToTrivSqZeroExtEquivLift R A B).symm ψ a = snd (ψ.1 a) := by
+    (derivationToTrivSqZeroExtEquivLift R A B).symm ψ a = snd (ψ.val a) := by
   simp [derivationToTrivSqZeroExtEquivLift]
 
 end TauCeti

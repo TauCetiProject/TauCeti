@@ -144,11 +144,11 @@ lemma exists_adjugate_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
           φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
   let A : SL(2, ℤ) :=
-    ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+    .mk !![(n : ℤ), -v; (N : ℤ), u] (by rw [Matrix.det_fin_two_of]; linear_combination huv)
   let B : SL(2, ℤ) :=
-    ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
-  refine ⟨A, mem_Gamma0_iff_dvd.mpr dvd_rfl, eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
-    mem_Gamma1_of_dvd_lowerRow (dvd_neg.mpr dvd_rfl) (dvd_zero _),
+    .mk !![u * n, v; -(N : ℤ), 1] (by rw [Matrix.det_fin_two_of]; linear_combination huv)
+  refine ⟨A, mem_Gamma0_iff_dvd.mpr (by simp [A]), eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
+    mem_Gamma1_of_dvd_lowerRow (by simp [B]) (by simp [B]),
     adjugate_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
       (by rw [coe_mapGL_fin_two]; simp [B])⟩
   -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
@@ -165,14 +165,14 @@ lemma exists_natDiagGL_mul_mapGL_eq_of_isCoprime {n : ℕ} (hn : 0 < n) {t : ℤ
   obtain ⟨α, β, hαβ⟩ := ht
   push_cast at hαβ
   let A : SL(2, ℤ) :=
-    ⟨!![α, -(β * n); (N : ℤ), t], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
+    .mk !![α, -(β * n); (N : ℤ), t] (by rw [Matrix.det_fin_two_of]; linear_combination hαβ)
   let A' : SL(2, ℤ) :=
-    ⟨!![α, -β; n * (N : ℤ), t], by rw [Matrix.det_fin_two_of]; linear_combination hαβ⟩
-  refine ⟨A, A', rfl, rfl, rfl, rfl, Units.ext ?_⟩
+    .mk !![α, -β; n * (N : ℤ), t] (by rw [Matrix.det_fin_two_of]; linear_combination hαβ)
+  refine ⟨A, A', by simp [A], by simp [A], by simp [A'], by simp [A'], Units.ext ?_⟩
   rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hn, coe_mapGL_int_rat_fin_two,
     coe_mapGL_int_rat_fin_two, Matrix.mul_fin_two, Matrix.mul_fin_two]
-  simp only [A, A', Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+  simp only [A, A', Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
   congrm !![?_, ?_; ?_, ?_] <;> push_cast <;> ring
 
 /-- **A diamond label can be carried across `diag(1, n)`.** For every `n ≠ 0` and every
@@ -264,14 +264,15 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p) (hσ10 :
   obtain ⟨a', ha'⟩ := hpa
   have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
   -- the new left factor, integral because `p ∣ a`; its determinant is `1` by those of `γ` and `σ`
-  obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), δ 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) ∧
-      δ 0 1 = γ 0 1 * σ 0 0 - a' * σ 0 1 ∧ δ 1 0 = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) ∧
-      δ 1 1 = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 :=
-    ⟨⟨!![γ 0 0 - γ 0 1 * (N : ℤ), γ 0 1 * σ 0 0 - a' * σ 0 1;
-        (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)), (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1], by
-      rw [Matrix.det_fin_two_of]
-      linear_combination γ.fin_two_mul_sub_mul_eq_one + (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) * hσdet +
-        (σ 0 1 * (γ 1 1 * (N : ℤ) - γ 1 0)) * ha'⟩, rfl, rfl, rfl, rfl⟩
+  let δ : SL(2, ℤ) := .mk !![γ 0 0 - γ 0 1 * (N : ℤ), γ 0 1 * σ 0 0 - a' * σ 0 1;
+      (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)), (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1] (by
+    rw [Matrix.det_fin_two_of]
+    linear_combination γ.fin_two_mul_sub_mul_eq_one + (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) * hσdet +
+      (σ 0 1 * (γ 1 1 * (N : ℤ) - γ 1 0)) * ha')
+  have e00 : δ 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) := by simp [δ]
+  have e01 : δ 0 1 = γ 0 1 * σ 0 0 - a' * σ 0 1 := by simp [δ]
+  have e10 : δ 1 0 = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) := by simp [δ]
+  have e11 : δ 1 1 = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 := by simp [δ]
   obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
   refine ⟨δ, mem_Gamma1_iff_dvd_lowerRow.mpr ?_,
     natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries hp hσ10 hσ11 ha' e00 e01 e10 e11⟩
@@ -290,9 +291,9 @@ lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 
     (hσ11 : σ 1 1 = (p : ℤ)) :
     ∃ γ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = primeRep σ p none := by
   -- `γ` has lower row `(N, 1)`, and determinant `m p − n N = 1`, the Bézout relation of `σ`
-  let γ : SL(2, ℤ) := ⟨!![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1], by
-    rw [Matrix.det_fin_two_of, mul_one, mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11]⟩
-  refine ⟨γ, mem_Gamma1_of_dvd_lowerRow dvd_rfl (dvd_zero _), Units.ext ?_⟩
+  let γ : SL(2, ℤ) := .mk !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] (by
+    rw [Matrix.det_fin_two_of, mul_one, mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11])
+  refine ⟨γ, mem_Gamma1_of_dvd_lowerRow (by simp [γ]) (by simp [γ]), Units.ext ?_⟩
   rw [Units.val_mul, coe_natDiagGL_one hp, coe_primeRep_none hp, coe_mapGL_int_rat_fin_two,
     Matrix.mul_fin_two]
   simp [γ, hσ10, hσ11, mul_comm (p : ℚ)]

@@ -19,9 +19,7 @@ negative toral weights and roots of unity are included.
 
 The proof extends the Pascal-recurrence argument of
 `TauCeti.quantumBinomial_add_left_eq` to signed upper arguments: downward induction
-uses that every Laurent monomial is a unit. Specializing `m = -1` and `n = r > 0` yields the
-alternating Gaussian vanishing `∑_{k=0}^r (-1)^k v^(±k(r-1)) [r choose k]_v = 0` used in coproduct
-compatibility for quantum Serre relations. The normalization is that of G. Lusztig,
+uses that every Laurent monomial is a unit. The normalization is that of G. Lusztig,
 *Introduction to Quantum Groups*, §§1.3 and 34.
 -/
 
@@ -115,48 +113,5 @@ theorem signedLaurentQuantumBinomial_add_left_eq (m n : ℤ) (r : ℕ) :
       -- The Pascal coefficient is a Laurent monomial, so it can be cancelled even
       -- when a quantum factorial would vanish after specialization.
       exact mul_left_cancel₀ (isUnit_T (-((r : ℤ) + 1))).ne_zero heq
-
-/-- **Alternating Laurent Gaussian vanishing**: for `r > 0`,
-`∑_{k=0}^r (-1)^k v^(k*(r-1)) [r choose k]_v = 0` in `ℤ[v, v⁻¹]`. -/
-theorem sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial {r : ℕ} (hr : 0 < r) :
-    ∑ k ∈ range (r + 1),
-      (-1) ^ k * T ((k : ℤ) * ((r : ℤ) - 1)) * laurentQuantumBinomial r k = 0 := by
-  have h := signedLaurentQuantumBinomial_add_left_eq (-1) r r
-  have htop : (-1 : ℤ) + r = ((r - 1 : ℕ) : ℤ) := by omega
-  rw [htop, signedLaurentQuantumBinomial_natCast, laurentQuantumBinomial_eq_zero_of_lt (by omega),
-    Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
-  have hterm : ∀ k ∈ range (r + 1),
-      T ((r : ℤ) * k - (-1) * ((r - k : ℕ) : ℤ)) *
-          signedLaurentQuantumBinomial (-1) k * signedLaurentQuantumBinomial r (r - k) =
-        T (r : ℤ) * ((-1) ^ k * T ((k : ℤ) * ((r : ℤ) - 1)) * laurentQuantumBinomial r k) := by
-    intro k hk
-    have hkr : k ≤ r := Nat.lt_succ_iff.mp (mem_range.mp hk)
-    have hexp : (r : ℤ) * k - (-1) * ((r : ℤ) - k) = (r : ℤ) + (k : ℤ) * ((r : ℤ) - 1) := by ring
-    rw [signedLaurentQuantumBinomial_neg_one, signedLaurentQuantumBinomial_natCast,
-      laurentQuantumBinomial_symm hkr, Nat.cast_sub hkr, hexp, T_add]
-    ring
-  rw [sum_congr rfl hterm, ← mul_sum] at h
-  exact mul_left_cancel₀ (isUnit_T (r : ℤ)).ne_zero (h.symm.trans (mul_zero _).symm)
-
-/-- **Inverted alternating Laurent Gaussian vanishing** in `ℤ[v, v⁻¹]` for `r > 0`. -/
-theorem sum_neg_one_pow_mul_T_neg_mul_laurentQuantumBinomial {r : ℕ} (hr : 0 < r) :
-    ∑ k ∈ range (r + 1),
-      (-1) ^ k * T (-((k : ℤ) * ((r : ℤ) - 1))) * laurentQuantumBinomial r k = 0 := by
-  simpa using congrArg invert (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hr)
-
-/-- **Alternating quantum binomial vanishing** over a field for `q ≠ 0` and `r > 0`. -/
-theorem sum_neg_one_pow_mul_zpow_mul_quantumBinomial {K : Type*} [Field K] {q : K} (hq : q ≠ 0)
-    {r : ℕ} (hr : 0 < r) :
-    ∑ k ∈ range (r + 1),
-      (-1 : K) ^ k * q ^ ((k : ℤ) * ((r : ℤ) - 1)) * quantumBinomial q r k = 0 := by
-  simpa [Units.val_zpow_eq_zpow_val] using congrArg (laurentEval (R := ℤ) (Units.mk0 q hq))
-    (sum_neg_one_pow_mul_T_mul_laurentQuantumBinomial hr)
-
-/-- **Inverted alternating quantum binomial vanishing** over a field for `q ≠ 0` and `r > 0`. -/
-theorem sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial {K : Type*} [Field K] {q : K} (hq : q ≠ 0)
-    {r : ℕ} (hr : 0 < r) :
-    ∑ k ∈ range (r + 1),
-      (-1 : K) ^ k * q ^ (-((k : ℤ) * ((r : ℤ) - 1))) * quantumBinomial q r k = 0 := by
-  simpa [inv_zpow, zpow_neg] using sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) hr
 
 end TauCeti

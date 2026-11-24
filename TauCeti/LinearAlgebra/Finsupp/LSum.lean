@@ -22,6 +22,8 @@ values `f (Finsupp.single i 1) j` are the matrix coefficients of `f`. For a line
   `f z = z.sum fun i a ↦ σ a • f (Finsupp.single i 1)`.
 * `LinearMap.apply_apply_eq_finsuppSum_mul`: the `j`-th coordinate of `f z` is
   `z.sum fun i a ↦ σ a * f (Finsupp.single i 1) j`.
+* `LinearMap.apply_single_apply_eq_mul`: the `j`-th coordinate of `f (Finsupp.single i r)` is
+  `σ r * f (Finsupp.single i 1) j`.
 -/
 
 public section
@@ -42,5 +44,11 @@ coordinate of `f z` is `∑ i, σ (z i) * (f (Finsupp.single i 1)) j`. -/
 theorem apply_apply_eq_finsuppSum_mul (f : (ι →₀ R) →ₛₗ[σ] (κ →₀ S)) (z : ι →₀ R) (j : κ) :
     f z j = z.sum fun i a ↦ σ a * f (Finsupp.single i 1) j := by
   simp [f.apply_eq_finsuppSum_smul z, Finsupp.sum_apply]
+
+/-- The coefficient of `j` in the image under a semilinear map between free modules of `r` times
+a generator `i` is `σ r` times the coefficient of `j` in the image of `i`. -/
+theorem apply_single_apply_eq_mul (f : (ι →₀ R) →ₛₗ[σ] (κ →₀ S)) (i : ι) (r : R) (j : κ) :
+    f (Finsupp.single i r) j = σ r * f (Finsupp.single i 1) j := by
+  rw [← Finsupp.smul_single_one, map_smulₛₗ, Finsupp.smul_apply, smul_eq_mul]
 
 end LinearMap
