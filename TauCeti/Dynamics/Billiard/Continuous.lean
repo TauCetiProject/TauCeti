@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.NextCollision
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
 
@@ -47,6 +44,8 @@ put the next collision parameter of `y` in `(a, b)`. No second derivative of `χ
   `TauCeti.StrictConvexBilliardTable.continuousAt_nextTangential`,
   `TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`: the next-collision map is
   continuous on the strip.
+* `TauCeti.StrictConvexBilliardTable.continuousOn_nextParam`: for fixed `s`, the next collision
+  parameter depends continuously on the tangential component.
 
 ## References
 
@@ -96,9 +95,7 @@ theorem continuous_deriv : Continuous (deriv χ) := by
   -- So `t ↦ ω(u, χ(t) - χ(s))` has a minimum at `s`, where its derivative `ω(u, χ'(s))` vanishes.
   have hzero : o.areaForm u (deriv χ s) = 0 :=
     IsLocalMin.hasDerivAt_eq_zero (f := fun t ↦ o.areaForm u (χ t - χ s))
-      (Eventually.of_forall fun t ↦ by simpa using hleft t)
-      ((o.areaForm u).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt s
-        ((χ.differentiableAt s).hasDerivAt.sub_const (χ s)))
+      (Eventually.of_forall fun t ↦ by simpa using hleft t) (χ.hasDerivAt_areaForm_sub u s s)
   have hinner : ⟪u, deriv χ s⟫ = 1 ∨ ⟪u, deriv χ s⟫ = -1 := by
     simpa [hzero, hu, χ.norm_deriv s] using o.inner_sq_add_areaForm_sq u (deriv χ s)
   rcases hinner with h | h
@@ -133,8 +130,7 @@ private theorem exists_areaForm_neg_pos_near_nextParam {s v ε : ℝ} (hv : v �
   set f : ℝ → ℝ := fun t ↦ o.areaForm (χ.outgoingDir s v) (χ t - χ s)
   -- At `t₀`, the function `f` crosses zero with positive slope `ω(u, χ'(t₀))`.
   have hderiv : HasDerivAt f (o.areaForm (χ.outgoingDir s v) (deriv χ t₀)) t₀ :=
-    (o.areaForm (χ.outgoingDir s v)).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t₀
-      ((χ.differentiableAt t₀).hasDerivAt.sub_const (χ s))
+    χ.hasDerivAt_areaForm_sub _ s t₀
   have hpos : 0 < o.areaForm (χ.outgoingDir s v) (deriv χ t₀) := by
     rw [o.areaForm_swap, neg_pos]
     exact χ.areaForm_deriv_nextParam_outgoingDir_neg hv
@@ -156,8 +152,7 @@ theorem continuousAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     (o.areaForm'.continuous₂.comp₂ χ.continuous_outgoingDir
       (continuous_const.sub (χ.continuous.comp continuous_fst)))
   have hf' : ∀ x : ℝ × ℝ, Continuous (f x) := fun x ↦
-    (LinearMap.continuous_of_finiteDimensional (o.areaForm (χ.outgoingDir x.1 x.2))).comp
-      (χ.continuous.sub continuous_const)
+    continuous_iff_continuousAt.2 fun t ↦ (χ.hasDerivAt_areaForm_sub _ x.1 t).continuousAt
   rw [ContinuousAt, Metric.tendsto_nhds]
   intro ε hε
   obtain ⟨a, b, hsa, ha₁, ha₂, hb₁, hb₂, hbs, hfa, hfb⟩ :=
@@ -174,6 +169,11 @@ theorem continuousAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     χ.eq_nextParam_of_areaForm_eq_zero h₅ ⟨h₃.trans ht.1, ht.2.trans h₄⟩ hft
   rw [← heq, Real.dist_eq, abs_sub_lt_iff]
   constructor <;> linarith [ht.1, ht.2]
+
+/-- For fixed `s`, the next collision parameter depends continuously on the tangential component. -/
+theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-1) 1) :=
+  fun _ hv ↦ ((χ.continuousAt_nextParam hv).comp
+    (continuous_const.prodMk continuous_id).continuousAt).continuousWithinAt
 
 /-- The next tangential component `w(s, v)` is continuous on the strip. -/
 theorem continuousAt_nextTangential {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :

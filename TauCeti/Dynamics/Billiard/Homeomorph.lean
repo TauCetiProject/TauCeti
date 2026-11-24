@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Billiard.Inverse
 public import Mathlib.Topology.Algebra.Group.Quotient
 import TauCeti.Dynamics.Billiard.Continuous
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The billiard map is a homeomorphism
@@ -65,18 +66,12 @@ theorem continuous_nextCollisionEquiv : Continuous χ.nextCollisionEquiv := by
   funext x
   ext <;> simp
 
-/-- The time reversal `v ↦ -v` of tangential components is continuous on `(-1, 1)`. -/
-private theorem continuous_neg_Ioo :
-    Continuous fun v : Ioo (-1 : ℝ) 1 ↦
-      (⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩ : Ioo (-1 : ℝ) 1) :=
-  continuous_subtypeVal.neg.subtype_mk _
-
 /-- The inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` of the next-collision map is continuous. -/
 theorem continuous_nextCollisionEquiv_symm : Continuous χ.nextCollisionEquiv.symm := by
   convert ((continuous_fst.sub (continuous_const (y := χ.period))).prodMk
-    (continuous_neg_Ioo.comp continuous_snd)).comp
+    ((continuous_neg_Ioo (1 : ℝ)).comp continuous_snd)).comp
       (χ.continuous_nextCollisionEquiv.comp
-        (continuous_fst.prodMk (continuous_neg_Ioo.comp continuous_snd))) using 1
+        (continuous_fst.prodMk ((continuous_neg_Ioo (1 : ℝ)).comp continuous_snd))) using 1
   funext x
   ext <;> simp
 
@@ -111,8 +106,8 @@ theorem continuous_billiardMap : Continuous χ.billiardMap := by
 
 /-- The inverse `ι ∘ β ∘ ι` of the billiard map is continuous. -/
 theorem continuous_billiardMap_symm : Continuous χ.billiardMap.symm := by
-  convert (continuous_id.prodMap continuous_neg_Ioo).comp
-    (χ.continuous_billiardMap.comp (continuous_id.prodMap continuous_neg_Ioo)) using 1
+  convert (continuous_id.prodMap (continuous_neg_Ioo (1 : ℝ))).comp
+    (χ.continuous_billiardMap.comp (continuous_id.prodMap (continuous_neg_Ioo (1 : ℝ)))) using 1
   funext ⟨θ, v⟩
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
   ext <;> simp
