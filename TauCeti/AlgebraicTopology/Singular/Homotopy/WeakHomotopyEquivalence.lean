@@ -85,6 +85,9 @@ from, in `TauCeti.AlgebraicTopology.Cohomology.WeakHomotopyEquivalence`.
   and isomorphisms on homology with local coefficients.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_normalizedTwistedCubicalChainComplexMap`: the
   cubical form with local coefficients.
+* `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_subsetTwistedChainComplexMap`: an inclusion of
+  subspaces which is a weak homotopy equivalence induces a quasi-isomorphism of twisted chains,
+  with the local system restricted to each subspace.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`: a weak homotopy
   equivalence induces isomorphisms on singular homology with coefficients in any module.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_chainComplexMap`,
@@ -206,6 +209,23 @@ theorem isIso_twistedHomologyMap (hf : f.IsWeakHomotopyEquivalence)
     IsIso (twistedHomologyMap (TopCat.ofHom f) L n) :=
   have := hf.quasiIso_twistedChainComplexMap L
   inferInstance
+
+/-- **An inclusion of subspaces which is a weak homotopy equivalence induces a quasi-isomorphism
+of singular chains with local coefficients**: if `A ⊆ B ⊆ Z` and the inclusion of `A` in `B` is a
+weak homotopy equivalence, then for every local coefficient system `L` on `Z` the map of twisted
+chains of `A` and of `B`, with `L` restricted to each, is a quasi-isomorphism. -/
+theorem quasiIso_subsetTwistedChainComplexMap {Z : TopCat.{v}} {A B : Set Z} {h : A ⊆ B}
+    (hf : (ContinuousMap.inclusion h).IsWeakHomotopyEquivalence)
+    (L : LocalCoefficientSystem.{u, v, v} R Z) :
+    QuasiIso (subsetTwistedChainComplexMap L h) := by
+  have := hf.quasiIso_twistedChainComplexMap
+    ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+  rw [subsetTwistedChainComplexMap_def]
+  -- The change of coefficients starts at the pullback along `(subtypeVal B).comp (inclusion h)`,
+  -- which is the pullback along `subtypeVal A` only after unfolding, so instance search cannot
+  -- see that it is an isomorphism and the instance is given explicitly.
+  exact quasiIso_comp (hφ := @quasiIso_of_isIso _ _ _ _ _ _ _ _
+    (isIso_twistedChainComplexCoefficientMap _) _ _) _ _
 
 /-- **A weak homotopy equivalence induces a quasi-isomorphism of normalized cubical chains with
 local coefficients.** -/

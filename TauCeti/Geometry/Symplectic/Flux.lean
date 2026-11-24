@@ -30,8 +30,12 @@ Hence the flux form is closed whenever the final diffeomorphism `φ₁` preserve
 class is the **flux** `Flux(φ) ∈ H¹_dR(M)`. Only the endpoint condition is needed for this; the
 intermediate diffeomorphisms of a symplectic isotopy also preserve `σ`, but that is not used here.
 
-For an exact form `σ = dθ` the flux depends only on the final diffeomorphism: it is the class of
-the closed form `φ₁^* θ - θ` (`TauCeti.Diffeotopy.flux_mextDerivₗ`). In particular a
+For an exact form `σ = dθ` the flux form is `φ₁^* θ - θ - d g` for some smooth function `g`
+which vanishes at the points that the diffeotopy never moves
+(`TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`); the proof constructs `g` as
+`x ↦ ∫₀¹ θ(∂ₜ φ_t x) dt`. So the flux depends only on the final
+diffeomorphism: it is the class of the closed form `φ₁^* θ - θ`
+(`TauCeti.Diffeotopy.flux_mextDerivₗ`). In particular a
 diffeotopy whose final diffeomorphism is the identity has zero flux for an exact form
 (`TauCeti.Diffeotopy.flux_eq_zero_of_final_eq_refl`).
 
@@ -62,6 +66,8 @@ whose terms at the time ends vanish because `G` is stationary in `s` there.
   vectors.
 * `TauCeti.Diffeotopy.mextDerivₗ_fluxForm`: `d (Flux φ) = φ₁^* σ - σ` for closed `σ`.
 * `TauCeti.Diffeotopy.flux_refl`: the constant diffeotopy has zero flux.
+* `TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`: for `σ = dθ`, the flux form is
+  `φ₁^* θ - θ - d g` for a function `g` vanishing where the diffeotopy is stationary.
 * `TauCeti.Diffeotopy.flux_mextDerivₗ`: for `σ = dθ`, the flux is the class of `φ₁^* θ - θ`.
 * `TauCeti.Diffeotopy.flux_eq_of_final_eq`: for exact `σ`, diffeotopies with the same final
   diffeomorphism have the same flux.
@@ -284,27 +290,42 @@ theorem flux_refl (σ : closedForms J M 2)
 
 /-! ### Exact forms -/
 
-/-- For an exact two-form `dθ`, the flux form differs from `φ₁^* θ - θ` by an exact form, namely
-`-d g` for the function `g x = ∫₀¹ θ(∂ₜ φ_t x) dt`. -/
-theorem fluxForm_mextDerivₗ_sub_mem_exactForms (θ : SmoothForm J M ℝ 1) :
-    Φ.fluxForm (mextDerivₗ J 1 θ) - (SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ) ∈
-      exactForms J M 1 := by
+/-- **The flux form of an exact form.** For an exact two-form `dθ`, the flux form is
+`φ₁^* θ - θ - d g` for some smooth function `g` vanishing at every point which no map of the
+diffeotopy moves. The proof takes `g x = ∫₀¹ θ(∂ₜ φ_t x) dt`, the homotopy operator of the
+pullback of `θ` along the motion. -/
+theorem exists_fluxForm_mextDerivₗ_eq (θ : SmoothForm J M ℝ 1) :
+    ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, Φ (t, x) = x) → g.val x = 0) ∧
+      Φ.fluxForm (mextDerivₗ J 1 θ) =
+        SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ - mextDerivₗ J 0 g := by
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
-  set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap θ
+  set φ := SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap θ with hφ_def
   have hφ : IsSmoothForm (J.prod (𝓡∂ 1)) 1 φ.val := φ.isSmoothForm.of_le (by simp)
   have hd : mextDeriv φ.val =
       (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap (mextDerivₗ J 1 θ)).val := by
     rw [← SmoothForm.mextDerivₗ_mpullback, mextDerivₗ_apply]
-  rw [exactForms_succ]
-  refine ⟨-⟨homotopyOperator φ.val,
-    (IsSmoothForm.homotopyOperator φ.isSmoothForm).mem_smoothBundleForms⟩,
+  refine ⟨⟨homotopyOperator φ.val,
+    (IsSmoothForm.homotopyOperator φ.isSmoothForm).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
     Subtype.ext (funext fun x ↦ ?_)⟩
+  · -- Over a point which is never moved, the motion is stationary in time.
+    have h0 := homotopyOperator_mpullback_apply_eq_zero (I := J) (f := Φ.cylinderMap)
+      (fun t ↦ (Φ.cylinderMap_apply (x, t)).trans (hx t)) θ.val
+    rwa [← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap, ← hφ_def] at h0
   -- The cochain-homotopy identity for `φ = Φ^* θ` on the cylinder, with `d φ = Φ^* (d θ)`.
   have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x
   rw [hd, mpullback_slice_one_sub_mpullback_slice_zero] at key
-  rw [map_neg, Submodule.coe_neg, Pi.neg_apply, mextDerivₗ_apply, Submodule.coe_sub, Pi.sub_apply,
-    Submodule.coe_sub, Pi.sub_apply, ← key, coe_fluxForm]
+  rw [Submodule.coe_sub, Pi.sub_apply, Submodule.coe_sub, Pi.sub_apply, mextDerivₗ_apply, ← key,
+    coe_fluxForm]
   abel
+
+/-- For an exact two-form `dθ`, the flux form differs from `φ₁^* θ - θ` by an exact form, namely
+`-d g` for a smooth function `g` (`TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`). -/
+theorem fluxForm_mextDerivₗ_sub_mem_exactForms (θ : SmoothForm J M ℝ 1) :
+    Φ.fluxForm (mextDerivₗ J 1 θ) - (SmoothForm.mpullback Φ.final Φ.final.contMDiff θ - θ) ∈
+      exactForms J M 1 := by
+  obtain ⟨g, -, hg⟩ := Φ.exists_fluxForm_mextDerivₗ_eq θ
+  rw [exactForms_succ]
+  exact ⟨-g, by rw [map_neg, hg, sub_sub_cancel_left]⟩
 
 /-- **The flux of an exact form.** For `σ = dθ`, the flux of a diffeotopy whose final
 diffeomorphism `φ₁` preserves `σ` is the class of the closed form `φ₁^* θ - θ`. In particular it

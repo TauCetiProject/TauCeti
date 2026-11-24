@@ -38,6 +38,8 @@ terms is, since the inverses of its terms are again compatible.
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
 * `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
   reduced.
+* `TauCeti.pow_pow_of_succ_pow_eq`: in a compatible root sequence, `t (j + k)` is a `p ^ k`-th
+  root of `t j`.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -165,6 +167,14 @@ end PreTilt
 
 namespace TauCeti
 
+/-- For compatible `p`-power roots `t (k + 1) ^ p = t k`, the root `t (j + k)` is a `p ^ k`-th
+root of `t j`. -/
+theorem pow_pow_of_succ_pow_eq {M : Type*} [Monoid M] {p : ℕ} {t : ℕ → M}
+    (ht : ∀ k, t (k + 1) ^ p = t k) (j k : ℕ) : t (j + k) ^ p ^ k = t j := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [← ih, ← add_assoc, ← ht (j + k), ← pow_mul, pow_succ']
+
 section CommMonoid
 
 variable {R : Type*} [CommMonoid R] {p : ℕ} {r : ℕ → R}
@@ -177,10 +187,7 @@ theorem dvd_of_compatible_roots (hr : ∀ n, r (n + 1) ^ p = r n)
       simpa only [hp, pow_zero] using (hr n).symm
     simp only [hone, dvd_refl]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  have hpow : r (m + k) ^ p ^ k = r m := by
-    simpa only [Perfection.coeffMonoidHom_mk] using
-      Perfection.coeffMonoidHom_pow_p_pow' (⟨r, hr⟩ : Perfection R p) m k
-  rw [← hpow]
+  rw [← pow_pow_of_succ_pow_eq hr m k]
   exact dvd_pow_self _ (pow_ne_zero k hp)
 
 end CommMonoid

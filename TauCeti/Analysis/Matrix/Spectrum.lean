@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
@@ -43,6 +44,9 @@ A unit eigenvector of a simple eigenvalue is a unimodular multiple of the matchi
 so the quadratic form of any matrix `C` at it is a diagonal entry of `Uᴴ C U`. This identifies the
 first variation of a simple eigenvalue.
 
+Over `ℝ`, where the conjugate transpose is the transpose, the spectral theorem diagonalizes a
+symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻¹ = Oᵀ`.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -71,7 +75,14 @@ first variation of a simple eigenvalue.
 * `Matrix.IsHermitian.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary` — `Uᴴ B U` is the
   diagonal matrix of eigenvalues;
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
-  eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`.
+  eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
+* `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
+  for an invertible `O` with `O⁻¹ = Oᵀ`;
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` and
+  `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
+  `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
+  matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
+  matrix-indexed one.
 
 ## References
 
@@ -373,3 +384,53 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
     simp +contextual [Multiset.mem_replicate]
 
 end Matrix
+
+namespace Matrix.IsSymm
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Orthogonal diagonalization.** A real symmetric matrix is `O * diagonal d * O⁻¹` for an
+invertible `O` with `O⁻¹ = Oᵀ`; one can take for `O` the eigenvector unitary and for `d` the
+eigenvalues. -/
+theorem exists_orthogonal_diagonal {X : Matrix ι ι ℝ} (hX : X.IsSymm) :
+    ∃ (O : GL ι ℝ) (d : ι → ℝ), ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) = (O : Matrix ι ι ℝ)ᵀ ∧
+      X = O * diagonal d * ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) := by
+  have hH : X.IsHermitian := by
+    rw [IsHermitian, conjTranspose_eq_transpose_of_trivial]
+    exact hX
+  have hstar : star (hH.eigenvectorUnitary : Matrix ι ι ℝ) =
+      (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ :=
+    conjTranspose_eq_transpose_of_trivial _
+  refine ⟨⟨hH.eigenvectorUnitary, (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ,
+    hstar ▸ Unitary.coe_mul_star_self _, hstar ▸ Unitary.coe_star_mul_self _⟩,
+    hH.eigenvalues, rfl, ?_⟩
+  conv_lhs => rw [hH.spectral_theorem]
+  simp [Unitary.conjStarAlgAut_apply, hstar]
+
+end Matrix.IsSymm
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
+
+/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
+corresponding matrix-indexed eigenvalue. -/
+@[simp]
+theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) :
+    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
+      hA.eigenvalues₀ i := by
+  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
+canonical finite equivalence. -/
+theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i, hA.eigenvalues k ≠
+      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) := by
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  intro k hk
+  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
+  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+end Matrix.IsHermitian

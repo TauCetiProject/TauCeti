@@ -22,7 +22,8 @@ Pushforward along a proper map preserves finiteness on compact sets. In particul
 proper embeddings and translations can transport locally finite measures.
 
 A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets: the image
-is a countable union of images under open embeddings of chart domains. If it is surjective, it has
+is a countable union of images under open embeddings of chart domains. If it is surjective, a map
+out of its codomain is therefore measurable exactly when its composite with it is, and it has
 a measurable section, given over the target of each of countably many charts by the inverse chart.
 
 ## Main results
@@ -31,6 +32,7 @@ a measurable section, given over the target of each of countably many charts by 
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 * `IsLocalHomeomorph.measurableSet_image`
+* `IsLocalHomeomorph.measurable_comp_iff`
 * `IsLocalHomeomorph.exists_measurable_rightInverse`
 * `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
@@ -79,6 +81,17 @@ theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace 
   rw [hfe x, ← Set.image_domRestrict]
   exact (e x).isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
     (measurable_subtypeVal hs)
+
+/-- For a surjective local homeomorphism `f` out of a Lindelöf space, a map `g` out of the
+codomain of `f` is measurable exactly when `g ∘ f` is. -/
+theorem IsLocalHomeomorph.measurable_comp_iff {α β γ : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] [BorelSpace α] [LindelofSpace α] [TopologicalSpace β]
+    [MeasurableSpace β] [BorelSpace β] [MeasurableSpace γ] {f : α → β}
+    (hf : IsLocalHomeomorph f) (hsurj : Function.Surjective f) {g : β → γ} :
+    Measurable (g ∘ f) ↔ Measurable g := by
+  refine ⟨fun hg s hs ↦ ?_, fun hg ↦ hg.comp hf.continuous.measurable⟩
+  rw [← hsurj.image_preimage (g ⁻¹' s)]
+  exact hf.measurableSet_image (hg hs)
 
 /-- A surjective local homeomorphism out of a Lindelöf space has a measurable section: a
 measurable map `s` with `f (s y) = y` for every `y`. -/

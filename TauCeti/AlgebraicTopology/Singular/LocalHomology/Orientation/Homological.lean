@@ -35,6 +35,9 @@ orientation (`TauCeti.HomologicalOrientation.ofSimplyConnectedSpace`).
 
 * `TauCeti.HomologicalOrientation M E d`: a transport-invariant family of local orientations.
 * `-o`: the reversed orientation.
+* `TauCeti.HomologicalOrientation.ofLocalOrientationTransport`: the orientation of a
+  path-connected manifold obtained by transporting a local orientation whose transport does not
+  depend on the path.
 * `TauCeti.HomologicalOrientation.ofSimplyConnectedSpace`: the orientation of a simply connected
   manifold extending a given local orientation.
 * `TauCeti.HomologicalOrientation.localOrientationEquiv`: `ℤ ≃ₗ[ℤ] H_d(M, M ∖ {x}; ℤ)`, sending
@@ -145,23 +148,15 @@ theorem eq_of_apply_eq [ConnectedSpace M] {o o' : HomologicalOrientation M E d} 
 two orientations of a connected manifold agree up to reversal. -/
 theorem eq_or_eq_neg [ConnectedSpace M] (hd : finrank ℝ E = d)
     (o o' : HomologicalOrientation M E d) : o' = o ∨ o' = -o := by
-  subst hd
   obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := M)
-  rcases IsLocalOrientation.eq_or_eq_neg
-      (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
-      (o x).property (o' x).property with h | h
-  · exact Or.inl (eq_of_apply_eq (x := x) (Subtype.ext h))
-  · exact Or.inr (eq_of_apply_eq (x := x) (Subtype.ext h))
+  exact (LocalOrientation.eq_or_eq_neg_of_finrank_eq hd (o x) (o' x)).imp eq_of_apply_eq
+    eq_of_apply_eq
 
 /-- In the dimension of a nonempty manifold, an orientation differs from its reversal. -/
 theorem neg_ne [Nonempty M] (hd : finrank ℝ E = d) (o : HomologicalOrientation M E d) :
     -o ≠ o := by
-  subst hd
   obtain ⟨x⟩ := ‹Nonempty M›
-  intro h
-  exact IsLocalOrientation.neg_ne
-    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
-    (o x).property (congrArg Subtype.val (DFunLike.congr_fun h x))
+  exact fun h ↦ LocalOrientation.neg_ne hd (o x) (DFunLike.congr_fun h x)
 
 /-- In the dimension of the manifold, a local orientation has infinite order: integral multiples
 of `o x` with distinct coefficients are distinct. -/
@@ -173,43 +168,82 @@ theorem zsmul_left_injective (hd : finrank ℝ E = d) (o : HomologicalOrientatio
     (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x)), sub_zsmul, h]
   simp
 
-section SimplyConnected
+section Transport
 
-variable [SimplyConnectedSpace M]
+variable [PathConnectedSpace M]
 
-/-- **Orientations of a simply connected manifold.** A local orientation at one point extends, by
-transport along paths, to an orientation; all paths between two points are homotopic, so the
-transport does not depend on the path. -/
-def ofSimplyConnectedSpace (x : M) (z : LocalOrientation M x d) : HomologicalOrientation M E d where
+/-- **Orientations by transport.** On a path-connected manifold, a local orientation `z` at `x`
+whose transport along path classes from `x` depends only on their end extends, by transport along
+paths, to an orientation. -/
+def ofLocalOrientationTransport (x : M) (z : LocalOrientation M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      localOrientationTransport M E d f z = localOrientationTransport M E d g z) :
+    HomologicalOrientation M E d where
   toFun y := localOrientationTransport M E d
     (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y) :
       FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) z
   localOrientationTransport_toFun' f := by
     rw [← Equiv.trans_apply, ← localOrientationTransport_comp]
-    exact congrArg (localOrientationTransport M E d · z)
-      (Subsingleton.elim (α := Path.Homotopic.Quotient x _) _ _)
+    exact h _ _
+
+/-- The orientation obtained by transport from a local orientation `z` at `x` is, at `y`, the
+transport of `z` along any path class from `x` to `y`. -/
+theorem ofLocalOrientationTransport_apply (x : M) (z : LocalOrientation M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      localOrientationTransport M E d f z = localOrientationTransport M E d g z) (y : M)
+    (f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
+    ofLocalOrientationTransport x z h y = localOrientationTransport M E d f z :=
+  h _ f
+
+/-- The orientation obtained by transport from a local orientation `z` at `x` is `z` at `x`. -/
+@[simp]
+theorem ofLocalOrientationTransport_apply_self (x : M) (z : LocalOrientation M x d)
+    (h : ∀ {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y),
+      localOrientationTransport M E d f z = localOrientationTransport M E d g z) :
+    ofLocalOrientationTransport x z h x = z := by
+  rw [ofLocalOrientationTransport_apply x z h x (𝟙 _), localOrientationTransport_id,
+    Equiv.refl_apply]
+
+end Transport
+
+section SimplyConnected
+
+variable [SimplyConnectedSpace M]
+
+/-- In a simply connected manifold, transport along a path class from `x` depends only on its
+end, since all path classes with the same ends are equal. -/
+private theorem localOrientationTransport_eq_of_simplyConnectedSpace {x : M}
+    (z : LocalOrientation M x d) {y : FundamentalGroupoid M} (f g : FundamentalGroupoid.mk x ⟶ y) :
+    localOrientationTransport M E d f z = localOrientationTransport M E d g z :=
+  congrArg (localOrientationTransport M E d · z)
+    (Subsingleton.elim (α := Path.Homotopic.Quotient x _) f g)
+
+/-- **Orientations of a simply connected manifold.** A local orientation at one point extends, by
+transport along paths, to an orientation; all paths between two points are homotopic, so the
+transport does not depend on the path. -/
+def ofSimplyConnectedSpace (x : M) (z : LocalOrientation M x d) : HomologicalOrientation M E d :=
+  ofLocalOrientationTransport x z (localOrientationTransport_eq_of_simplyConnectedSpace z)
 
 /-- The orientation extending a local orientation `z` at `x` is, at `y`, the transport of `z`
 along any path from `x` to `y`. -/
 theorem ofSimplyConnectedSpace_apply (x : M) (z : LocalOrientation M x d) (y : M)
     (f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
     ofSimplyConnectedSpace (E := E) x z y = localOrientationTransport M E d f z :=
-  congrArg (localOrientationTransport M E d · z)
-    (Subsingleton.elim (α := Path.Homotopic.Quotient x y) _ _)
+  ofLocalOrientationTransport_apply x z (localOrientationTransport_eq_of_simplyConnectedSpace z)
+    y f
 
 /-- The orientation extending a local orientation `z` at `x` is `z` at `x`. -/
 @[simp]
 theorem ofSimplyConnectedSpace_apply_self (x : M) (z : LocalOrientation M x d) :
-    ofSimplyConnectedSpace (E := E) x z x = z := by
-  rw [ofSimplyConnectedSpace_apply x z x (𝟙 _), localOrientationTransport_id, Equiv.refl_apply]
+    ofSimplyConnectedSpace (E := E) x z x = z :=
+  ofLocalOrientationTransport_apply_self x z
+    (localOrientationTransport_eq_of_simplyConnectedSpace z)
 
 /-- A simply connected manifold is orientable. -/
 theorem nonempty_of_simplyConnectedSpace (hd : finrank ℝ E = d) :
     Nonempty (HomologicalOrientation M E d) := by
   obtain ⟨x⟩ := (inferInstance : Nonempty M)
-  cases d with
-  | zero => exact ⟨ofSimplyConnectedSpace x (exists_localOrientation_of_zero_dim_chart x hd).some⟩
-  | succ d => exact ⟨ofSimplyConnectedSpace x (exists_localOrientation_of_chart x hd).some⟩
+  exact ⟨ofSimplyConnectedSpace x (LocalOrientation.nonempty hd x).some⟩
 
 end SimplyConnected
 
@@ -229,23 +263,18 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
 orientation `o x`. -/
 def localOrientationEquiv (o : HomologicalOrientation M E d) (hd : finrank ℝ E = d) (x : M) :
     ℤ ≃ₗ[ℤ] (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d) :=
-  -- `int_smul_eq_zsmul` matches the module action of `ℤ` with the `zsmul` of
-  -- `zsmul_left_injective` and `isLocalOrientation_iff`.
-  LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _ (o x).val)
-    ⟨fun c c' h ↦ o.zsmul_left_injective hd x
-        ((int_smul_eq_zsmul _ c _).symm.trans (h.trans (int_smul_eq_zsmul _ c' _))),
-      fun y ↦ let ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).1 (o x).property y
-        ⟨c, (int_smul_eq_zsmul _ c _).trans hc⟩⟩
+  (o x).property.linearEquiv
+    (hd ▸ singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
 
 @[simp]
 theorem localOrientationEquiv_apply (o : HomologicalOrientation M E d) (hd : finrank ℝ E = d)
     (x : M) (c : ℤ) : o.localOrientationEquiv hd x c = c • (o x).val :=
-  (LinearMap.toSpanSingleton_apply ℤ _ _ c).trans (int_smul_eq_zsmul _ c _)
+  (o x).property.linearEquiv_apply _ c
 
 @[simp]
 theorem localOrientationEquiv_symm_apply_self (o : HomologicalOrientation M E d)
     (hd : finrank ℝ E = d) (x : M) : (o.localOrientationEquiv hd x).symm (o x).val = 1 :=
-  (LinearEquiv.symm_apply_eq _).2 (by simp)
+  (o x).property.linearEquiv_symm_self _
 
 /-- **Tensoring with a local orientation is injective.** In the dimension of the manifold, the
 local homology `H_d(M, M ∖ {x}; ℤ)` is infinite cyclic, generated by the local orientation `o x`,
