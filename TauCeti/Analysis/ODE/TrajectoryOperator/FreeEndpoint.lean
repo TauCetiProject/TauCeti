@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Parametric
+public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
+import TauCeti.Analysis.Fredholm.Stabilization
+import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import TauCeti.Analysis.ODE.TrajectoryOperator.Tanh
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
@@ -54,11 +58,21 @@ with `AL` the class of `A - w' • id`. The results are:
   `(ξ, v)` lies in it exactly when `u = exp (-w) • ξ + ∑ i, χ i • v i` solves `u' + A u = 0`. So
   the kernel corresponds to the solutions of this form. For a weight bounded below, `u` tends at
   each end to the free variable attached there
-  (`TauCeti.WeakDerivStep.tendsto_exp_neg_smul_toZeroAtInfty_add_sum`);
+  (`TauCeti.WeakDerivStep.tendsto_exp_neg_smul_toZeroAtInfty_add_sum`). Conversely, every
+  solution `u` whose weighted difference `exp w • (u - ∑ i, χ i • v i)` lies in `Lᵖ` comes from
+  the kernel (`TauCeti.WeakDerivStep.exists_coprod_endTailL_eq_zero_of_hasDerivAt`). For `p = 2`,
+  reading off the initial value of `u` and the free variables identifies the kernel with the space
+  `TauCeti.weightedAsymptoticSolutions` of such solutions
+  (`TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv`,
+  `TauCeti.WeakDerivStep.finrank_ker_coprod_endTailL`), and the inverse recovers the path as the
+  weighted difference of any such solution
+  (`TauCeti.WeakDerivStep.coe_toZeroAtInfty_kerCoprodEndTailLEquiv_symm_apply`);
 * **the index** (`TauCeti.WeakDerivStep.index_coprod_endTailL`): when the weighted operator is
   Fredholm, so is the extended operator
   (`ContinuousLinearMap.IsFredholm.coprod_of_finiteDimensional`), and its index is
-  `index D_{A - w'} + ∑ i, dim K i`.
+  `index D_{A - w'} + ∑ i, dim K i`. For a continuous family on a finite-dimensional inner product
+  space, the extended operator is Fredholm whenever the shifted limits `A± - δ± • id` have Lyapunov
+  forms (`TauCeti.WeakDerivStep.isFredholm_coprod_endTailL_of_hasLyapunovForm`).
 
 **Symmetric limits and the Morse–Bott count.** For finite-dimensional `E` and symmetric limits
 `A±`, the weighted operator is Fredholm as soon as the limits `δ±` of the slope `w'` are not
@@ -204,6 +218,48 @@ theorem memLp_endTail_zero {p : ℝ≥0∞} (hw : Continuous w) (hχ : ContDiff 
 
 end EndTail
 
+section WeightedAsymptoticSolutions
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
+
+/-- The **solutions with weighted asymptotics**: the pairs `(x, v)` of an initial value `x` and a
+family `v` of free endpoint variables in the spaces `K i` for which some solution `u` of
+`u' + A u = 0` with `u 0 = x` has square-integrable weighted difference
+`exp w • (u - ∑ i, χ i • v i)`. This is a model of the kernel of the extended operator
+(`TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv`), as `TauCeti.squareIntegrableSolutions` is of the
+kernel of the trajectory operator. -/
+def weightedAsymptoticSolutions (A : ℝ → F →L[ℝ] F) (w : ℝ → ℝ) (K : ι → Submodule ℝ F)
+    (χ : ι → ℝ → ℝ) : Submodule ℝ (F × Π i, K i) where
+  carrier := {q | ∃ u : ℝ → F, u 0 = q.1 ∧ (∀ s, HasDerivAt u (-A s (u s)) s) ∧
+    MemLp (fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (q.2 i : F))) 2}
+  zero_mem' := ⟨0, rfl, fun s ↦ by simp, by simp⟩
+  add_mem' := by
+    rintro ⟨_, v⟩ ⟨_, v'⟩ ⟨u, rfl, hu, hu2⟩ ⟨u', rfl, hu', hu'2⟩
+    refine ⟨u + u', rfl, fun s ↦ by simpa [add_comm] using (hu s).add (hu' s), ?_⟩
+    convert hu2.add hu'2 using 1
+    ext s
+    simp only [Prod.snd_add, Pi.add_apply, Submodule.coe_add, smul_add, Finset.sum_add_distrib]
+    module
+  smul_mem' := by
+    rintro c ⟨_, v⟩ ⟨u, rfl, hu, hu2⟩
+    refine ⟨c • u, rfl, fun s ↦ by simpa using (hu s).const_smul c, ?_⟩
+    convert hu2.const_smul c using 1
+    ext s
+    simp only [Prod.smul_snd, Pi.smul_apply, SetLike.val_smul, Finset.smul_sum, smul_sub,
+      smul_comm c]
+
+/-- A pair lies in `TauCeti.weightedAsymptoticSolutions A w K χ` when its first component is the
+initial value of a solution of `u' + A u = 0` whose weighted difference from its free endpoint
+variables is square integrable. -/
+theorem mem_weightedAsymptoticSolutions {A : ℝ → F →L[ℝ] F} {w : ℝ → ℝ} {K : ι → Submodule ℝ F}
+    {χ : ι → ℝ → ℝ} {q : F × Π i, K i} :
+    q ∈ weightedAsymptoticSolutions A w K χ ↔
+      ∃ u : ℝ → F, u 0 = q.1 ∧ (∀ s, HasDerivAt u (-A s (u s)) s) ∧
+        MemLp (fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (q.2 i : F))) 2 :=
+  Iff.rfl
+
+end WeightedAsymptoticSolutions
+
 namespace WeakDerivStep
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {w : ℝ → ℝ}
@@ -241,6 +297,14 @@ theorem endTailL_apply_ae (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) 
       fun s ↦ ∑ i, endTail w (χ i) A (v i) s :=
   MemLp.coeFn_toLp (memLp_sum_endTail hmem v)
 
+omit [∀ i, FiniteDimensional ℝ (K i)] in
+/-- The end tails of a family of free variables add up to the weighted image
+`exp w • (S' + A S)` of `S = ∑ i, χ i • v i` under `u ↦ u' + A u`. -/
+private theorem sum_endTail_apply (v : Π i, K i) (s : ℝ) :
+    ∑ i, endTail w (χ i) A (v i) s = Real.exp (w s) •
+      (∑ i, deriv (χ i) s • (v i : F) + A s (∑ i, χ i s • (v i : F))) := by
+  simp [endTail_apply, Finset.smul_sum, Finset.sum_add_distrib, map_sum]
+
 /-- The extended operator vanishes at `(ξ, v)` exactly when the weak derivative of `ξ` is,
 almost everywhere, the right-hand side `w' ξ - A ξ - exp w • (S' + A S)` of the weighted
 equation, with `S = ∑ i, χ i • v i`. -/
@@ -256,10 +320,6 @@ private theorem coprod_endTailL_eq_zero_iff_ae [CompleteSpace F] (hp : p ≠ ∞
       (fun s ↦ weakFDeriv _ ξ s 1) =ᵐ[volume] fun s ↦
         w' s • toZeroAtInfty hp ξ s - A s (toZeroAtInfty hp ξ s) -
           Real.exp (w s) • (∑ i, deriv (χ i) s • (v i : F) + A s (∑ i, χ i s • (v i : F))) := by
-  -- The end tails add up to the weighted image of `∑ i, χ i • v i` under `D_A`.
-  have hT (s : ℝ) : ∑ i, endTail w (χ i) A (v i) s = Real.exp (w s) •
-      (∑ i, deriv (χ i) s • (v i : F) + A s (∑ i, χ i s • (v i : F))) := by
-    simp [endTail_apply, Finset.smul_sum, Finset.sum_add_distrib, map_sum]
   have hD := trajectoryOperator_apply_ae (p := p) AL ξ
   have hE := endTailL_apply_ae hmem v
   have hsum := Lp.coeFn_add (trajectoryOperator (p := p) AL ξ) (endTailL w χ A hmem v)
@@ -269,14 +329,14 @@ private theorem coprod_endTailL_eq_zero_iff_ae [CompleteSpace F] (hp : p ≠ ∞
   constructor
   · intro h
     filter_upwards [hD, hE, hsum, hprev, hAL, h] with s hDs hEs hsums hprevs hALs h0s
-    rw [hsums, Pi.add_apply, hDs, hEs, hALs, hprevs, hT] at h0s
+    rw [hsums, Pi.add_apply, hDs, hEs, hALs, hprevs, sum_endTail_apply] at h0s
     simp only [Pi.zero_apply, sub_apply, smul_apply, ContinuousLinearMap.id_apply] at h0s
     rw [← sub_eq_zero, ← h0s]
     abel
   · intro h
     filter_upwards [hD, hE, hsum, hprev, hAL, h] with s hDs hEs hsums hprevs hALs hs
     -- `rewrite` rather than `rw`: closing the goal by `rfl` would unfold the `Lᵖ` classes.
-    rewrite [hsums, Pi.add_apply, hDs, hEs, hALs, hprevs, hT]
+    rewrite [hsums, Pi.add_apply, hDs, hEs, hALs, hprevs, sum_endTail_apply]
     simp only [Pi.zero_apply, sub_apply, smul_apply, ContinuousLinearMap.id_apply] at hs ⊢
     linear_combination (norm := module) hs
 
@@ -352,6 +412,290 @@ theorem index_coprod_endTailL [CompleteSpace F]
   have := hD.finite_ker
   let : FiniteDimensional ℝ (_ ⧸ (trajectoryOperator (p := p) AL).range) := hD.finite_coker
   rw [ContinuousLinearMap.index_coprod, Module.finrank_pi_fintype, Nat.cast_sum]
+
+/-- **Solutions with weighted asymptotics come from the kernel.** Let `AL` be the class of
+`A - w' • id`. If `u` solves `u' + A u = 0` and its weighted difference
+`exp w • (u - ∑ i, χ i • v i)` from the free endpoint variables `v` lies in `Lᵖ`, then that
+difference is the value of a path `ξ` with `(ξ, v)` in the kernel of the extended operator. This
+is the converse of `TauCeti.WeakDerivStep.coprod_endTailL_eq_zero_iff`. -/
+theorem exists_coprod_endTailL_eq_zero_of_hasDerivAt [CompleteSpace F] {w' : ℝ → ℝ}
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hχ : ∀ i, Differentiable ℝ (χ i))
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) p)
+    {u : ℝ → F} (hu : ∀ s, HasDerivAt u (-A s (u s)) s) (v : Π i, K i)
+    (hv : MemLp (fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F))) p) :
+    ∃ ξ, (trajectoryOperator AL).coprod (endTailL w χ A hmem) (ξ, v) = 0 ∧
+      ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ξ)
+        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+          fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F)) := by
+  set ψ : ℝ → F := fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F))
+  set g : ℝ → F := fun s ↦ -∑ i, endTail w (χ i) A (v i) s
+  have hS (s : ℝ) : HasDerivAt (fun s ↦ ∑ i, χ i s • (v i : F))
+      (∑ i, deriv (χ i) s • (v i : F)) s :=
+    HasDerivAt.fun_sum fun i _ ↦ ((hχ i) s).hasDerivAt.smul_const (v i : F)
+  -- `ψ` solves the weighted equation `ψ' = g - (A - w') ψ`: it is the change of unknown of the
+  -- solution `u = exp (-w) • ψ + ∑ i, χ i • v i`.
+  have hψ (s : ℝ) : HasDerivAt ψ (g s - (A s - w' s • ContinuousLinearMap.id ℝ F) (ψ s)) s := by
+    refine ((forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add (A := A) hw hS).mpr
+      (fun s ↦ ?_) s).congr_deriv ?_
+    · simpa only [ψ, Real.exp_neg, inv_smul_smul₀ (Real.exp_pos _).ne', sub_add_cancel]
+        using hu s
+    · simp only [g, sum_endTail_apply, sub_apply, smul_apply, ContinuousLinearMap.id_apply]
+      abel
+  have hg : MemLp g p := (memLp_finsetSum _ fun i _ ↦ hmem i _ (v i).property).neg
+  obtain ⟨ξ, hξ, hξψ⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt hAL hψ hv hg
+  refine ⟨ξ, ?_, hξψ⟩
+  rw [ContinuousLinearMap.coprod_apply, Lp.eq_zero_iff_ae_eq_zero]
+  filter_upwards [Lp.coeFn_add (trajectoryOperator AL ξ) (endTailL w χ A hmem v), hξ,
+    endTailL_apply_ae hmem v] with s hs h1 h2
+  rw [hs, Pi.add_apply, h1, h2, neg_add_cancel, Pi.zero_apply]
+
+section Kernel
+
+/-! ### The kernel of the extended operator -/
+
+variable [CompleteSpace F] {w' : ℝ → ℝ}
+  {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+  {hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) 2}
+
+omit [∀ i, FiniteDimensional ℝ (K i)] in
+variable (w χ) in
+/-- Evaluation `(ξ, v) ↦ (exp (-w 0) • ξ 0 + ∑ i, χ i 0 • v i, v)` at time `0`, through the
+continuous representative of `ξ`: on the kernel of the extended operator, the initial value of
+the solution `u = exp (-w) • ξ + ∑ i, χ i • v i` together with the free endpoint variables. -/
+private def freeEndpointEval :
+    (WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ×
+      Π i, K i) →ₗ[ℝ] F × Π i, K i where
+  toFun q := (Real.exp (-w 0) • toZeroAtInfty ENNReal.ofNat_ne_top q.1 0 +
+    ∑ i, χ i 0 • (q.2 i : F), q.2)
+  map_add' q q' := by
+    rw [Prod.mk_add_mk]
+    congr 1
+    simp only [map_add, FunLike.coe_add,
+      Pi.add_apply, Submodule.coe_add, smul_add, Finset.sum_add_distrib]
+    abel
+  map_smul' c q := by
+    rw [RingHom.id_apply, Prod.smul_mk]
+    congr 1
+    simp only [map_smul, FunLike.coe_smul,
+      Pi.smul_apply, SetLike.val_smul, smul_add, Finset.smul_sum, smul_comm c]
+
+omit [∀ i, FiniteDimensional ℝ (K i)] in
+private theorem freeEndpointEval_apply
+    (q : WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ×
+      Π i, K i) :
+    freeEndpointEval w χ q = (Real.exp (-w 0) • toZeroAtInfty ENNReal.ofNat_ne_top q.1 0 +
+      ∑ i, χ i 0 • (q.2 i : F), q.2) :=
+  rfl
+
+/-- The evaluation of a kernel element is a solution with weighted asymptotics. -/
+private theorem freeEndpointEval_mem (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    {q : WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ×
+      Π i, K i}
+    (h0 : (trajectoryOperator AL).coprod (endTailL w χ A hmem) q = 0) :
+    freeEndpointEval w χ q ∈ weightedAsymptoticSolutions A w K χ := by
+  obtain ⟨ξ, v⟩ := q
+  refine ⟨fun s ↦ Real.exp (-w s) • toZeroAtInfty ENNReal.ofNat_ne_top ξ s +
+      ∑ i, χ i s • (v i : F), by rw [freeEndpointEval_apply],
+    (coprod_endTailL_eq_zero_iff ENNReal.ofNat_ne_top hw hw' hχ hA hAL hmem ξ v).1 h0, ?_⟩
+  have hξ : MemLp (toZeroAtInfty ENNReal.ofNat_ne_top ξ) 2 := by
+    simpa using (Lp.memLp (prev (ContinuousLinearMap.id ℝ
+      (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ξ)).ae_eq
+        (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty ENNReal.ofNat_ne_top ξ))
+  convert hξ using 1
+  funext s
+  simp only [freeEndpointEval_apply, add_sub_cancel_right, Real.exp_neg,
+    smul_inv_smul₀ (Real.exp_pos _).ne']
+
+/-- A kernel element with zero evaluation vanishes: its solution has zero initial value, hence
+vanishes, and its free endpoint variables are zero. -/
+private theorem eq_zero_of_freeEndpointEval_eq_zero (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    {q : WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) ×
+      Π i, K i}
+    (h0 : (trajectoryOperator AL).coprod (endTailL w χ A hmem) q = 0)
+    (he : freeEndpointEval w χ q = 0) : q = 0 := by
+  obtain ⟨ξ, v⟩ := q
+  have hu := (coprod_endTailL_eq_zero_iff ENNReal.ofNat_ne_top hw hw' hχ hA hAL hmem ξ v).1 h0
+  rw [freeEndpointEval_apply, Prod.mk_eq_zero] at he
+  obtain ⟨he₁, rfl⟩ := he
+  have hz (s : ℝ) : HasDerivAt (0 : ℝ → F) (-A s ((0 : ℝ → F) s)) s := by
+    simp
+  have hu0 := hA.neg.eq_of_hasDerivAt_clm_apply hu hz (t₀ := 0) he₁
+  have hξ : toZeroAtInfty ENNReal.ofNat_ne_top ξ = 0 := by
+    ext s
+    simpa using congrFun hu0 s
+  rw [Prod.mk_eq_zero]
+  exact ⟨toZeroAtInfty_injective ENNReal.ofNat_ne_top (hξ.trans (map_zero _).symm), rfl⟩
+
+/-- Evaluation on the kernel of the extended operator, with values in the solutions with weighted
+asymptotics. -/
+private def kerFreeEndpointEval (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :
+    ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker →ₗ[ℝ]
+      weightedAsymptoticSolutions A w K χ :=
+  ((freeEndpointEval w χ).domRestrict
+    ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker).codRestrict _
+    fun q ↦ freeEndpointEval_mem hA hw hw' hχ hAL q.property
+
+private theorem kerFreeEndpointEval_apply (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (q : ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker) :
+    (kerFreeEndpointEval hA hw hw' hχ hAL q : F × Π i, K i) = freeEndpointEval w χ q := by
+  unfold kerFreeEndpointEval
+  exact (LinearMap.codRestrict_apply _ _ q).trans (LinearMap.domRestrict_apply _ _ _)
+
+private theorem bijective_kerFreeEndpointEval (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :
+    Function.Bijective (kerFreeEndpointEval (hmem := hmem) hA hw hw' hχ hAL) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun q he ↦ Subtype.ext ?_, fun y ↦ ?_⟩
+  · exact eq_zero_of_freeEndpointEval_eq_zero hA hw hw' hχ hAL q.property
+      (congrArg Subtype.val he)
+  · obtain ⟨⟨x, v⟩, hy⟩ := y
+    -- Unification of these membership and existence statements against their uses is slow, so
+    -- their implicit arguments are given and the existential is destructured by `obtain`.
+    have hy' := (mem_weightedAsymptoticSolutions (A := A) (w := w) (K := K) (χ := χ)
+      (q := (x, v))).1 hy
+    obtain ⟨u, hu0, hu, hv⟩ := hy'
+    dsimp only at hu0 hv
+    have key := exists_coprod_endTailL_eq_zero_of_hasDerivAt (A := A) (w := w) (K := K) (χ := χ)
+      (p := 2) (AL := AL) (hmem := hmem) (w' := w') hw
+      (fun i ↦ (hχ i).differentiable one_ne_zero) hAL hu v hv
+    obtain ⟨ξ, h0, hξ⟩ := key
+    refine ⟨⟨(ξ, v), h0⟩, Subtype.ext ?_⟩
+    -- The continuous representative of `ξ` is the weighted difference of `u` everywhere.
+    have hc : ⇑(toZeroAtInfty ENNReal.ofNat_ne_top ξ) =
+        fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F)) :=
+      coe_toZeroAtInfty_eq_of_ae_eq ENNReal.ofNat_ne_top
+        ((continuous_iff_continuousAt.2 fun s ↦ (hw s).continuousAt).rexp.smul
+          ((continuous_iff_continuousAt.2 fun s ↦ (hu s).continuousAt).sub
+            (continuous_finsetSum _ fun i _ ↦ (hχ i).continuous.smul continuous_const)))
+        (by simpa using hξ)
+    rw [kerFreeEndpointEval_apply, freeEndpointEval_apply]
+    simp only [hc, Real.exp_neg, inv_smul_smul₀ (Real.exp_pos _).ne', sub_add_cancel]
+    exact Prod.ext hu0 rfl
+
+/-- **The kernel of the extended operator is the space of solutions with weighted asymptotics.**
+Let `A` be continuous, `w` differentiable with continuous derivative `w'`, the cutoffs `χ i` of
+class `C¹`, and `AL` the class of `A - w' • id`. Sending a kernel element `(ξ, v)` to the initial
+value of the solution `u = exp (-w) • ξ + ∑ i, χ i • v i` of `u' + A u = 0`
+(`TauCeti.WeakDerivStep.coprod_endTailL_eq_zero_iff`), together with `v`, is a linear equivalence
+onto `TauCeti.weightedAsymptoticSolutions A w K χ`. -/
+def kerCoprodEndTailLEquiv (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :
+    ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker ≃ₗ[ℝ]
+      weightedAsymptoticSolutions A w K χ :=
+  LinearEquiv.ofBijective _ (bijective_kerFreeEndpointEval hA hw hw' hχ hAL)
+
+/-- The equivalence `TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv` sends a kernel element `(ξ, v)`
+to `(u 0, v)`, for the solution `u = exp (-w) • ξ + ∑ i, χ i • v i`, with `ξ` read through its
+continuous representative. -/
+theorem kerCoprodEndTailLEquiv_apply (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (q : ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker) :
+    (kerCoprodEndTailLEquiv hA hw hw' hχ hAL q : F × Π i, K i) =
+      (Real.exp (-w 0) • toZeroAtInfty ENNReal.ofNat_ne_top q.val.1 0 +
+        ∑ i, χ i 0 • (q.val.2 i : F), q.val.2) := by
+  rw [kerCoprodEndTailLEquiv, LinearEquiv.ofBijective_apply, kerFreeEndpointEval_apply,
+    freeEndpointEval_apply]
+
+/-- The equivalence `TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv` keeps the free endpoint
+variables. -/
+theorem kerCoprodEndTailLEquiv_apply_snd (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (q : ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker) :
+    (kerCoprodEndTailLEquiv hA hw hw' hχ hAL q : F × Π i, K i).2 = q.val.2 := by
+  rw [kerCoprodEndTailLEquiv_apply]
+
+/-- The inverse of `TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv` keeps the free endpoint
+variables. -/
+theorem kerCoprodEndTailLEquiv_symm_apply_snd (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (y : weightedAsymptoticSolutions A w K χ) :
+    ((kerCoprodEndTailLEquiv (hmem := hmem) hA hw hw' hχ hAL).symm y).val.2 = y.val.2 := by
+  rw [← kerCoprodEndTailLEquiv_apply_snd hA hw hw' hχ hAL, LinearEquiv.apply_symm_apply]
+
+/-- The inverse of `TauCeti.WeakDerivStep.kerCoprodEndTailLEquiv` sends `(x, v)` to the pair whose
+path, read through its continuous representative, is the weighted difference
+`exp w • (u - ∑ i, χ i • v i)` of any solution `u` of `u' + A u = 0` with `u 0 = x`. -/
+theorem coe_toZeroAtInfty_kerCoprodEndTailLEquiv_symm_apply (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (y : weightedAsymptoticSolutions A w K χ) {u : ℝ → F} (hu0 : u 0 = y.val.1)
+    (hu : ∀ s, HasDerivAt u (-A s (u s)) s) :
+    ⇑(toZeroAtInfty ENNReal.ofNat_ne_top
+        ((kerCoprodEndTailLEquiv (hmem := hmem) hA hw hw' hχ hAL).symm y).val.1) =
+      fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (y.val.2 i : F)) := by
+  obtain ⟨q, rfl⟩ := (kerCoprodEndTailLEquiv (hmem := hmem) hA hw hw' hχ hAL).surjective y
+  simp only [kerCoprodEndTailLEquiv_apply] at hu0
+  rw [LinearEquiv.symm_apply_apply, kerCoprodEndTailLEquiv_apply_snd]
+  -- The path of `q` and `u` solve `u' + A u = 0` with the same initial value, so they agree.
+  rw [← hA.neg.eq_of_hasDerivAt_clm_apply
+    ((coprod_endTailL_eq_zero_iff ENNReal.ofNat_ne_top hw hw' hχ hA hAL hmem q.val.1 q.val.2).1
+      q.property) hu (t₀ := 0) hu0.symm]
+  funext s
+  simp only [add_sub_cancel_right, Real.exp_neg, smul_inv_smul₀ (Real.exp_pos _).ne']
+
+/-- The kernel of the extended operator has the dimension of the space of solutions with weighted
+asymptotics. -/
+theorem finrank_ker_coprod_endTailL (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w' s) s)
+    (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :
+    Module.finrank ℝ ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker =
+      Module.finrank ℝ (weightedAsymptoticSolutions A w K χ) :=
+  (kerCoprodEndTailLEquiv hA hw hw' hχ hAL).finrank_eq
+
+end Kernel
+
+/-- **The extended operator with hyperbolic shifted limits is Fredholm.** Let `A` be a continuous
+family of operators on a finite-dimensional real inner product space with limits `A±` at `±∞`, and
+`w'` a continuous weight slope with limits `δ±`. If the shifted limits `A± - δ± • id` have Lyapunov
+forms, that is, have no purely imaginary eigenvalue, then for the class `AL` of `A - w' • id` the
+extended operator is Fredholm. Unlike
+`TauCeti.WeakDerivStep.index_coprod_endTailL_eq_finrank_pointSpectralSubspace_sub_finrank_add`,
+the limits need not be symmetric. -/
+theorem isFredholm_coprod_endTailL_of_hasLyapunovForm {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {A : ℝ → E →L[ℝ] E} {K : ι → Submodule ℝ E}
+    {w' : ℝ → ℝ} (hA : Continuous A) (hw' : Continuous w') {Aminus Aplus : E →L[ℝ] E}
+    {δminus δplus : ℝ} (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hw'bot : Tendsto w' atBot (𝓝 δminus)) (hw'top : Tendsto w' atTop (𝓝 δplus))
+    (hminus : (Aminus - δminus • ContinuousLinearMap.id ℝ E).HasLyapunovForm)
+    (hplus : (Aplus - δplus • ContinuousLinearMap.id ℝ E).HasLyapunovForm)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E)
+    (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) 2) :
+    ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).IsFredholm :=
+  (isFredholm_trajectoryOperator_of_hasLyapunovForm (hA.sub (hw'.smul continuous_const)) hminus
+    hplus (hbot.sub (hw'bot.smul tendsto_const_nhds)) (htop.sub (hw'top.smul tendsto_const_nhds))
+    AL hAL).coprod_of_finiteDimensional _
 
 section SymmetricLimits
 
