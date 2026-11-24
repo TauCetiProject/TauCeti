@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Cluster.BFZ.Word
 public import TauCeti.Data.Finset.Sort
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Data.Fintype.Fin
 
 /-!
 # Occurrence coordinates for signed BFZ words
@@ -42,6 +44,21 @@ theorem mem_bfzOccurrencePositions (w : List (Fin r × Bool)) (i : Fin r)
     k ∈ bfzOccurrencePositions w i ↔ (bfzLetter w k).1 = i := by
   simp only [bfzOccurrencePositions, Finset.mem_filter, Finset.mem_univ, true_and]
 
+/-- The occurrences consist of the word's letters of that colour and its one prefix position. -/
+@[simp]
+theorem card_bfzOccurrencePositions (w : List (Fin r × Bool)) (i : Fin r) :
+    (bfzOccurrencePositions w i).card = (w.map Prod.fst).count i + 1 := by
+  have hw : (w.map Prod.fst).count i =
+      (Finset.univ.filter fun k : Fin w.length ↦ (w.get k).1 = i).card := by
+    simpa only [List.get_eq_getElem, List.ofFn_getElem_eq_map] using
+      List.count_ofFn (fun k : Fin w.length ↦ (w.get k).1) i
+  have hp : (Finset.univ.filter fun k : Fin r ↦ k.rev = i) = {i.rev} := by
+    ext k
+    simp [Fin.rev_eq_iff]
+  rw [bfzOccurrencePositions, Finset.card_filter, Fin.sum_univ_add]
+  simp only [bfzLetter_castAdd, bfzLetter_natAdd, ← Finset.card_filter]
+  rw [hp, Finset.card_singleton, ← hw, Nat.add_comm]
+
 /-- Every simple index has its negative-prefix occurrence, even in an empty word. -/
 theorem bfzOccurrencePositions_nonempty (w : List (Fin r × Bool)) (i : Fin r) :
     (bfzOccurrencePositions w i).Nonempty := by
@@ -69,6 +86,14 @@ theorem range_bfzOccurrence (w : List (Fin r × Bool)) (i : Fin r) :
   ext k
   exact mem_bfzOccurrencePositions w i k
 
+/-- Every position of a given colour is some enumerated occurrence of that colour. -/
+theorem exists_bfzOccurrence_eq_of_fst (w : List (Fin r × Bool)) (i : Fin r)
+    {k : Fin (r + w.length)} (hk : (bfzLetter w k).1 = i) :
+    ∃ n, bfzOccurrence w i n = k := by
+  have h : k ∈ Set.range (bfzOccurrence w i) := by
+    simpa only [range_bfzOccurrence, Set.mem_ofPred_eq] using hk
+  exact h
+
 /-- An occurrence is specified by its colour and the number of equal-colour positions before it. -/
 theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
     (n : Fin (bfzOccurrencePositions w i).card) (k : Fin (r + w.length)) :
@@ -79,13 +104,38 @@ theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
     exact ⟨bfzLetter_bfzOccurrence_fst w i n,
       Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl n⟩
   · rintro ⟨hk, hn⟩
-    obtain ⟨m, rfl⟩ := show k ∈ Set.range (bfzOccurrence w i) by
-      rw [range_bfzOccurrence]
-      exact hk
+    obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hk
     have hCount : ((bfzOccurrencePositions w i).filter (fun j ↦ j < bfzOccurrence w i m)).card =
         (m : ℕ) := Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl m
     have hm : (m : ℕ) = n := hCount.symm.trans hn
     exact congrArg (bfzOccurrence w i) (Fin.ext hm).symm
+
+/-- Occurrence zero is the distinguished negative-prefix position, independently of the
+proof of the cardinality bound. -/
+@[simp]
+theorem bfzOccurrence_zero (w : List (Fin r × Bool)) (i : Fin r)
+    (h : 0 < (bfzOccurrencePositions w i).card) :
+    bfzOccurrence w i ⟨0, h⟩ = i.rev.castAdd w.length := by
+  apply (bfzOccurrence_eq_iff w i ⟨0, h⟩ _).mpr
+  refine ⟨by simp, ?_⟩
+  rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro k hk hlt
+  have hklt : (k : ℕ) < r := by
+    have hi := i.rev.isLt
+    have hl := Fin.lt_def.mp hlt
+    simp only [Fin.val_castAdd] at hl
+    omega
+  have hkc : k = (⟨k, hklt⟩ : Fin r).castAdd w.length := Fin.ext rfl
+  have he : (⟨k, hklt⟩ : Fin r).rev = i := by
+    have hletter := (mem_bfzOccurrencePositions w i k).mp hk
+    rw [hkc, bfzLetter_castAdd] at hletter
+    exact hletter
+  have he' : (⟨k, hklt⟩ : Fin r) = i.rev := by
+    simpa only [Fin.rev_rev] using congrArg Fin.rev he
+  have heval := congrArg Fin.val he'
+  have hl := Fin.lt_def.mp hlt
+  simp only [Fin.val_castAdd] at hl heval
+  omega
 
 /-- Successive occurrence numbers are successive BFZ positions of that simple index. -/
 theorem bfzSuccessor_bfzOccurrence_succ (w : List (Fin r × Bool)) (i : Fin r)
@@ -95,17 +145,13 @@ theorem bfzSuccessor_bfzOccurrence_succ (w : List (Fin r × Bool)) (i : Fin r)
       bfzOccurrence w i ⟨(n : ℕ) + 1, hn⟩ := by
   rw [bfzSuccessor_eq_iff]
   refine ⟨(bfzOccurrence w i).strictMono
-    (show n < (⟨(n : ℕ) + 1, hn⟩ : Fin (bfzOccurrencePositions w i).card) from
-      Nat.lt_succ_self _), by simp, ?_⟩
+    (Fin.lt_def.mpr (Nat.lt_succ_self _)), by simp, ?_⟩
   intro k hnk hk
   have hki : (bfzLetter w k).1 = i := hk.trans (bfzLetter_bfzOccurrence_fst w i n)
-  obtain ⟨m, rfl⟩ := show k ∈ Set.range (bfzOccurrence w i) by
-    rw [range_bfzOccurrence]
-    exact hki
+  obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hki
   apply (bfzOccurrence w i).monotone
   have hnm : n < m := (bfzOccurrence w i).lt_iff_lt.mp hnk
-  change (n : ℕ) + 1 ≤ (m : ℕ)
-  exact hnm
+  simpa only [Fin.le_def, Fin.val_mk] using Nat.succ_le_of_lt (Fin.lt_def.mp hnm)
 
 /-- An enumerated occurrence is terminal exactly when its occurrence number is last. -/
 theorem bfzSuccessor_bfzOccurrence_eq_top_iff (w : List (Fin r × Bool)) (i : Fin r)
@@ -123,9 +169,7 @@ theorem bfzSuccessor_bfzOccurrence_eq_top_iff (w : List (Fin r × Bool)) (i : Fi
     rw [bfzSuccessor_eq_top_iff]
     intro k hnk hk
     have hki : (bfzLetter w k).1 = i := hk.trans (bfzLetter_bfzOccurrence_fst w i n)
-    obtain ⟨m, rfl⟩ := show k ∈ Set.range (bfzOccurrence w i) by
-      rw [range_bfzOccurrence]
-      exact hki
+    obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hki
     have hnm : n < m := (bfzOccurrence w i).lt_iff_lt.mp hnk
     have _hm := m.isLt
     omega
