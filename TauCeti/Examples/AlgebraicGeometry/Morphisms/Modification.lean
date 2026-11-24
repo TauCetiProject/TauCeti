@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Frobenius.Finite
 public import TauCeti.AlgebraicGeometry.Frobenius.Iterate
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
-import Mathlib.Algebra.Polynomial.Div
+import Mathlib.Algebra.Polynomial.Inductions
 import Mathlib.AlgebraicGeometry.Morphisms.Finite
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.DualNumber
