@@ -102,12 +102,8 @@ theorem of_span_eq_top
 end IsSchur
 
 /-- Every representation of rank at most one is Schur. -/
-theorem isSchur_of_subsingleton [Subsingleton n] (ρbar : G →* GL n k) : ρbar.IsSchur := by
-  intro M _
-  rcases isEmpty_or_nonempty n with _ | ⟨⟨i⟩⟩
-  · exact ⟨0, Subsingleton.elim _ _⟩
-  · refine ⟨M i i, Matrix.ext fun a b ↦ ?_⟩
-    rw [Subsingleton.elim a i, Subsingleton.elim b i, scalar_apply, diagonal_apply_eq]
+theorem isSchur_of_subsingleton [Subsingleton n] (ρbar : G →* GL n k) : ρbar.IsSchur :=
+  fun _ _ ↦ mem_range_scalar_of_commute_single fun i j hij ↦ (hij (Subsingleton.elim i j)).elim
 
 variable (G) in
 /-- The trivial representation is Schur exactly in rank at most one: in rank at least two every
@@ -174,7 +170,8 @@ theorem exists_smul_eq_of_isSchur (hρbar : ρbar.IsSchur) {ρ ρ' : Lift ρbar 
       (.of_surjective _ A.augmentation_surjective))
     (ρ := ρ.toMonoidHom) (ρ' := ρ'.toMonoidHom) ρ.map_augmentation_apply
     ρ'.map_augmentation_apply ha
-  exact ⟨⟨b, ArtinLocalAlg.mem_strictKernel_iff.mpr (MonoidHom.mem_ker.mp hb)⟩, ext hbρ⟩
+  exact ⟨⟨b, ArtinLocalAlg.mem_strictKernel_iff.mpr (MonoidHom.mem_ker.mp hb)⟩,
+    ext fun g ↦ by rw [Lift.smul_apply]; exact hbρ g⟩
 
 end Lift
 
