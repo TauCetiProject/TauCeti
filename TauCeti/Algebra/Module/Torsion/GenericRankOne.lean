@@ -59,8 +59,7 @@ theorem exists_smul_eq_smul_of_finrank_eq_one (h : finrank F (F ⊗[R] M) = 1) {
   obtain ⟨b, a, ha, rfl⟩ := IsFractionRing.div_surjective R c
   have ha' : algebraMap R F a ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors ha
   refine ⟨a, b, nonZeroDivisors.ne_zero ha, hinj ?_⟩
-  rw [TensorProduct.mk_apply, TensorProduct.mk_apply, tmul_smul, tmul_smul, ← hc,
-    ← algebraMap_smul F a, smul_smul, mul_div_cancel₀ _ ha', algebraMap_smul]
+  simp [← hc, ← smul_assoc, Algebra.smul_def, mul_div_cancel₀ _ ha']
 
 /-- **Multiples of an element of a module of generic rank one have finite index.** If `M` is a
 finitely generated torsion-free module over a domain `R` with finite quotients and fraction field
