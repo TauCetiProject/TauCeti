@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.Ring.Regular
 public import Mathlib.FieldTheory.Finite.Basic
+public import TauCeti.Algebra.Ring.FrobeniusLift
 
 /-!
 # δ-rings
@@ -162,11 +163,8 @@ theorem IsFrobeniusLift.mk_eq {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
 theorem IsFrobeniusLift.mk_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) (n : ℕ) (x : A) :
     Ideal.Quotient.mk (Ideal.span {(p : A)}) ((f ^ n) x) =
       Ideal.Quotient.mk (Ideal.span {(p : A)}) x ^ p ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [RingHom.coe_pow, Function.iterate_succ_apply', ← RingHom.coe_pow, hf.mk_eq, map_pow, ih,
-      ← pow_mul, pow_succ]
+  rw [← map_pow, Ideal.Quotient.eq, Ideal.mem_span_singleton]
+  exact dvd_pow_apply_sub_pow_pow hf.dvd_sub_pow n x
 
 /-- Modulo `p`, the product `x · f(x) ⋯ f^(r - 1)(x)` of the iterates of a Frobenius lift `f` is
 `x ^ (1 + p + ⋯ + p ^ (r - 1))`. -/
