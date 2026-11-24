@@ -190,11 +190,11 @@ homeomorphic ring isomorphisms `B ≃+* B'` and `C ≃+* C'` over `A`. -/
 noncomputable def congr : CompletedTensor A B C ≃+* CompletedTensor A B' C' :=
   RingEquiv.ofRingHom
     (map (RingHom.id A) e f (by rw [he, RingHom.comp_id]) (by rw [hf, RingHom.comp_id])
-      (show Continuous (e : B →+* B') from hec) (show Continuous (f : C →+* C') from hfc))
+      (by rwa [RingEquiv.coe_toRingHom]) (by rwa [RingEquiv.coe_toRingHom]))
     (map (RingHom.id A) e.symm f.symm
       (by rw [symm_comp_algebraMap_of_comp_algebraMap e he, RingHom.comp_id])
       (by rw [symm_comp_algebraMap_of_comp_algebraMap f hf, RingHom.comp_id])
-      (show Continuous (e.symm : B' →+* B) from hes) (show Continuous (f.symm : C' →+* C) from hfs))
+      (by rwa [RingEquiv.coe_toRingHom]) (by rwa [RingEquiv.coe_toRingHom]))
     (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
       (by ext; simp) (by ext; simp))
     (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
