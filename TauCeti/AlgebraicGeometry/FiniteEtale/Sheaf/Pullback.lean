@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 
 /-!

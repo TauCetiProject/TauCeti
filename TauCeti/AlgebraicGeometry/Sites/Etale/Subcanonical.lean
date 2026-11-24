@@ -8,8 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
-import Mathlib.CategoryTheory.Sites.EffectiveEpimorphic
 import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
+import TauCeti.CategoryTheory.Sites.Subcanonical
 
 /-!
 # The étale topologies are subcanonical
@@ -76,12 +76,8 @@ instance (S : Scheme.{u}) : (smallEtaleTopology S).Subcanonical :=
 /-- A surjective morphism in the small étale site of `S` is an effective epimorphism, because it
 generates a covering sieve for the subcanonical small étale topology. -/
 theorem Etale.effectiveEpi_of_surjective {S : Scheme.{u}} {U V : S.Etale} (f : U ⟶ V)
-    [Surjective f.left] : EffectiveEpi f := by
-  refine (Sieve.effectiveEpimorphic_singleton f).mp
-    ((Presieve.EffectiveEpimorphic.iff_forall_isSheafFor_yoneda _).mpr fun W ↦ ?_)
-  rw [Presieve.isSheafFor_iff_generate]
-  exact (GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable
-    (J := smallEtaleTopology S) (yoneda.obj W))
-    (Sieve.generate (.singleton f)) (mem_smallEtaleTopology_singleton_of_surjective f)
+    [Surjective f.left] : EffectiveEpi f :=
+  (smallEtaleTopology S).effectiveEpi_of_generate_singleton_mem f
+    (mem_smallEtaleTopology_singleton_of_surjective f)
 
 end AlgebraicGeometry.Scheme

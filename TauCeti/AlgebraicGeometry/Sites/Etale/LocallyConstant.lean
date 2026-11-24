@@ -69,8 +69,7 @@ theorem IsLocallyConstantIn.of_etaleCover_constantSheaf {P : ObjectProperty A}
     (h : ∀ i, ∃ M, P M ∧ Nonempty (((u i).smallEtalePullback A).obj F ≅
       (constantSheaf (smallEtaleTopology (U i)) A).obj M)) :
     F.IsLocallyConstantIn (smallEtaleTopology S) P := by
-  have hterm : IsTerminal (Etale.mk (𝟙 S)) :=
-    IsTerminal.isTerminalOfObj (Etale.forget S) _ CategoryTheory.Over.mkIdTerminal
+  have hterm : IsTerminal (Etale.mk (𝟙 S)) := Etale.mkIdTerminal S
   rw [F.isLocallyConstantIn_iff_of_isTerminal P hterm]
   let g (i : ι) : Etale.mk (u i) ⟶ Etale.mk (𝟙 S) :=
     MorphismProperty.Over.homMk (u i) (Category.comp_id (u i))

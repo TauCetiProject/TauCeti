@@ -65,7 +65,9 @@ sections of `trivialCover S M` is the constant étale sheaf with value `M`
 * `TauCeti.FiniteEtaleScheme.toSheafOfHomIdIso`: the sheaf of sections of `ofHom (𝟙 S)` is the
   constant sheaf on `PUnit`.
 * `TauCeti.FiniteEtaleScheme.toSheafTrivialCoverIso`: the sheaf of sections of `trivialCover S M`
-  is the constant étale sheaf with value `M`.
+  is the constant étale sheaf with value `M`, identifying each summand inclusion `trivialCover.ι`
+  with the corresponding constant map from `PUnit`
+  (`TauCeti.FiniteEtaleScheme.toSheaf_map_trivialCover_ι_comp_toSheafTrivialCoverIso_hom`).
 * Instances: `toSheaf S` preserves finite limits, finite coproducts, quotients by finite groups
   and epimorphisms.
 
@@ -233,19 +235,69 @@ noncomputable def toSheafOfHomIdIso (S : Scheme.{u}) :
     (asIso ((sheafificationAdjunction (Scheme.smallEtaleTopology S) (Type u)).counit.app
       (Sheaf.terminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}))).symm
 
-/-- The sheaf of sections of `trivialCover S M` is the constant étale sheaf with value `M`. -/
-noncomputable def toSheafTrivialCoverIso (S : Scheme.{u}) (M : Type u) [Finite M] :
-    (toSheaf S).obj (trivialCover S M) ≅
-      (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).obj M :=
+private noncomputable def isColimitPUnitCofan (M : Type u) :
+    IsColimit (Cofan.mk M (fun m ↦ TypeCat.ofHom (fun _ : PUnit.{u + 1} ↦ m))) :=
+  Cofan.IsColimit.mk _ (fun s ↦ TypeCat.ofHom fun m ↦ s.inj m PUnit.unit)
+    (fun s m ↦ by ext ⟨⟩; rfl)
+    (fun s f hf ↦ by ext m; exact congrArg (fun g ↦ g PUnit.unit) (hf m))
+
+private noncomputable def trivialCoverToSheafNatIso (S : Scheme.{u}) (M : Type u) :
+    Discrete.functor (fun _ : M ↦ ofHom (𝟙 S)) ⋙ toSheaf S ≅
+      Discrete.functor (fun _ : M ↦ PUnit.{u + 1}) ⋙
+        constantSheaf (Scheme.smallEtaleTopology S) (Type u) :=
+  NatIso.ofComponents (fun _ ↦ toSheafOfHomIdIso S) fun {x y} f ↦ by
+    cases x; cases y
+    obtain ⟨rfl⟩ := Discrete.eq_of_hom f
+    simp
+
+private noncomputable def isColimitToSheafTrivialCover (S : Scheme.{u}) (M : Type u) [Finite M] :
+    IsColimit ((toSheaf S).mapCocone (Cofan.mk (trivialCover S M) (trivialCover.ι S M))) :=
+  haveI : Fintype M := Fintype.ofFinite M
+  isColimitOfPreserves (toSheaf S) (trivialCover.isColimit S M)
+
+private noncomputable def isColimitConstantSheafCofan (S : Scheme.{u}) (M : Type u) [Finite M] :
+    IsColimit ((constantSheaf (Scheme.smallEtaleTopology S) (Type u)).mapCocone
+      (Cofan.mk M (fun m ↦ TypeCat.ofHom (fun _ : PUnit.{u + 1} ↦ m)))) :=
   haveI : Fintype M := Fintype.ofFinite M
   have := hasColimitsOfShape_of_hasFiniteColimits
     (C := Sheaf (Scheme.smallEtaleTopology S) (Type u)) (Discrete M)
   have := (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u)
       (Scheme.Etale.mkIdTerminal S)).isLeftAdjoint
-  PreservesCoproduct.iso (toSheaf S) (fun _ : M ↦ ofHom (𝟙 S)) ≪≫
-    Sigma.mapIso (fun _ ↦ toSheafOfHomIdIso S) ≪≫
-    (PreservesCoproduct.iso (constantSheaf (Scheme.smallEtaleTopology S) (Type u)) _).symm ≪≫
-    (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).mapIso
-      (Types.coproductIso _ ≪≫ Equiv.toIso (Equiv.sigmaPUnit M))
+  isColimitOfPreserves (constantSheaf (Scheme.smallEtaleTopology S) (Type u))
+    (isColimitPUnitCofan M)
+
+/-- The sheaf of sections of `trivialCover S M` is the constant étale sheaf with value `M`. -/
+noncomputable def toSheafTrivialCoverIso (S : Scheme.{u}) (M : Type u) [Finite M] :
+    (toSheaf S).obj (trivialCover S M) ≅
+      (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).obj M :=
+  IsColimit.coconePointsIsoOfNatIso
+    (isColimitToSheafTrivialCover S M)
+    (isColimitConstantSheafCofan S M)
+    (trivialCoverToSheafNatIso S M)
+
+/-- Under `toSheafTrivialCoverIso`, the `m`-th summand inclusion `trivialCover.ι S M m`
+corresponds to the constant-sheaf map induced by `PUnit ↦ M` picking `m`. -/
+@[reassoc (attr := simp)]
+theorem toSheaf_map_trivialCover_ι_comp_toSheafTrivialCoverIso_hom
+    (S : Scheme.{u}) (M : Type u) [Finite M] (m : M) :
+    (toSheaf S).map (trivialCover.ι S M m) ≫ (toSheafTrivialCoverIso S M).hom =
+      (toSheafOfHomIdIso S).hom ≫
+        (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).map
+          (TypeCat.ofHom fun _ : PUnit.{u + 1} ↦ m) :=
+  IsColimit.comp_coconePointsIsoOfNatIso_hom
+    (isColimitToSheafTrivialCover S M)
+    (isColimitConstantSheafCofan S M)
+    (trivialCoverToSheafNatIso S M) ⟨m⟩
+
+/-- Under `(toSheafTrivialCoverIso S M).inv`, the constant-sheaf map picking `m` corresponds to the
+`m`-th summand inclusion `trivialCover.ι S M m`. -/
+@[reassoc (attr := simp)]
+theorem constantSheaf_map_comp_toSheafTrivialCoverIso_inv
+    (S : Scheme.{u}) (M : Type u) [Finite M] (m : M) :
+    (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).map
+        (TypeCat.ofHom fun _ : PUnit.{u + 1} ↦ m) ≫ (toSheafTrivialCoverIso S M).inv =
+      (toSheafOfHomIdIso S).inv ≫ (toSheaf S).map (trivialCover.ι S M m) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    toSheaf_map_trivialCover_ι_comp_toSheafTrivialCoverIso_hom, Iso.inv_hom_id_assoc]
 
 end TauCeti.FiniteEtaleScheme

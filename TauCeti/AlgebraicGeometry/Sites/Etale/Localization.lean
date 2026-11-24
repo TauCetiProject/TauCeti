@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.LocalProperties
+import TauCeti.AlgebraicGeometry.Sites.Etale.Over
 
 /-!
 # Localization of the small étale site
@@ -134,8 +135,7 @@ generates a covering sieve of every object, if and only if every point of `S` li
 one of them. -/
 theorem coversTop_smallEtaleTopology_iff {ι : Type*} (U : ι → S.Etale) :
     (smallEtaleTopology S).CoversTop U ↔ ∀ s : S, ∃ i, ∃ u : (U i).left, (U i).hom u = s := by
-  have hT : IsTerminal (Etale.mk (𝟙 S)) :=
-    IsTerminal.isTerminalOfObj (Etale.forget S) _ Over.mkIdTerminal
+  have hT : IsTerminal (Etale.mk (𝟙 S)) := Etale.mkIdTerminal S
   -- The morphism from an étale `S`-scheme to the terminal object is its structure morphism.
   have h (i : ι) : (hT.from (U i)).left = (U i).hom :=
     (Category.comp_id _).symm.trans (MorphismProperty.Over.w _)
