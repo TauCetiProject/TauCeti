@@ -78,7 +78,7 @@ theorem rotateField_mem_sobolevFields_natCast (u : Circle) {k : ℕ}
   have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ k 2 := by
     simpa only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       rotation_apply] using
-      comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num)
+      comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
         (rotation u).toContinuousLinearEquiv (mem_sobolevFields.1 hy j)
   refine mem_sobolevFields.2 fun i ↦ ?_
   fin_cases i

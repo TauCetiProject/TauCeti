@@ -55,7 +55,8 @@ theorem dilateField_mem_sobolevFields (ht : t ≠ 0) {s : ℝ}
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) :
     dilateField t y ∈ sobolevFields s := by
   have h (j : Fin 4) : (fun z ↦ y (t • z) j) ∈ realSobolevFunctions ℂ s 2 :=
-    comp_smul_mem_realSobolevFunctions (by norm_num) (by norm_num) ht (mem_sobolevFields.1 hy j)
+    comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
+      (.smulLeft (Units.mk0 t ht)) (mem_sobolevFields.1 hy j)
   refine mem_sobolevFields.2 fun i ↦ ?_
   fin_cases i
   · simpa [dilateField_apply, Pi.smul_def] using Submodule.smul_mem _ t (h 0)
@@ -147,8 +148,10 @@ theorem comp_smul_mem_sobolevGaugeGroup (ht : t ≠ 0) {s : ℝ} {hs : 1 < s} {u
     (hu : u ∈ sobolevGaugeGroup hs) : (fun z ↦ u (t • z)) ∈ sobolevGaugeGroup hs := by
   obtain ⟨hc, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
   exact (mem_sobolevGaugeGroup hs _).2 ⟨hc.comp (continuous_const_smul t),
-    comp_smul_mem_realSobolevFunctions (by norm_num) (by norm_num) ht h₁,
-    comp_smul_mem_realSobolevFunctions (by norm_num) (by norm_num) ht h₂⟩
+    comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
+      (.smulLeft (Units.mk0 t ht)) h₁,
+    comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
+      (.smulLeft (Units.mk0 t ht)) h₂⟩
 
 /-- A gauge lies in the Sobolev gauge group `G_s`, `s > 1`, exactly when its pullback by a nonzero
 dilation does. -/
