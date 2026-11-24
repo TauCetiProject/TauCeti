@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Divisor.Family
+public import TauCeti.Analysis.PDE.Vortex.Divisor.JointSmooth
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.PDE.Vortex.Reduced.HigherSmoothness
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
@@ -65,9 +66,9 @@ moduli space.
 
 ## Main definitions
 
-* `TauCeti.Vortex.normalizedVortex c`: the normalized vortex `g_c · x_c` with divisor
-  coefficients `c`.
-* `TauCeti.Vortex.SobolevFieldSpace.normalizedVortex`: the same field as a point of `A_m^s`.
+* `TauCeti.Vortex.SobolevFieldSpace.normalizedVortex`: the normalized vortex
+  `TauCeti.Vortex.normalizedVortex c = g_c · x_c` (defined, with its joint smoothness in `(c, z)`,
+  in `Divisor/JointSmooth.lean`) as a point of `A_m^s`.
 
 ## Main results
 
@@ -101,27 +102,6 @@ open TauCeti.Polynomial
 
 variable {m : ℕ}
 
-/-- **The normalized plane vortex** with divisor coefficients `c ∈ ℂᵐ`: Taubes's vortex
-`TauCeti.Vortex.polynomialVortex` of the monic polynomial `P_c = monicOfCoeff c`, followed by its
-end-normalizing gauge `TauCeti.Vortex.polynomialGauge c`, so that outside a disc its section is a
-positive multiple of the winding phase `(z / |z|)ᵐ`. -/
-def normalizedVortex (c : Fin m → ℂ) : ℂ → EuclideanSpace ℝ (Fin 4) :=
-  gaugeTransform (polynomialGauge c) (polynomialVortex (monicOfCoeff c))
-
-theorem normalizedVortex_def (c : Fin m → ℂ) :
-    normalizedVortex c = gaugeTransform (polynomialGauge c) (polynomialVortex (monicOfCoeff c)) :=
-  (rfl)
-
-/-- The gauge `polynomialGauge c`, as a complex-valued function, is smooth. -/
-private theorem contDiff_polynomialGauge_right (c : Fin m → ℂ) :
-    ContDiff ℝ ∞ fun z ↦ (polynomialGauge c z : ℂ) :=
-  contDiff_polynomialGauge.comp (contDiff_const.prodMk contDiff_id)
-
-/-- The normalized vortex is smooth. -/
-theorem contDiff_normalizedVortex (c : Fin m → ℂ) : ContDiff ℝ ∞ (normalizedVortex c) :=
-  contDiff_gaugeTransform (by simpa using contDiff_polynomialGauge_right c)
-    (contDiff_polynomialVortex _)
-
 /-- **The normalized vortex lies in every `A_m^s`.** -/
 theorem normalizedVortex_mem_framedFieldSpace (hm : 0 < m) (f : ContDiffBump (0 : ℝ))
     (c : Fin m → ℂ) (s : ℝ) : normalizedVortex c ∈ framedFieldSpace f m s := by
@@ -129,6 +109,7 @@ theorem normalizedVortex_mem_framedFieldSpace (hm : 0 < m) (f : ContDiffBump (0 
   have hd : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
   have hframe := tendsto_sectionValue_polynomialVortex hP hd
   rw [natDegree_monicOfCoeff] at hframe
+  rw [normalizedVortex_def]
   exact (gaugeTransform_polynomialGauge_mem_framedFieldSpace f (contDiff_polynomialVortex _)
     (equation_polynomialVortex hP hd) hframe (ρ := fun z ↦
       Real.exp (backgroundAmplitude (monicOfCoeff c).eval z + reducedSolution (monicOfCoeff c) z))
@@ -161,7 +142,7 @@ private theorem normalizedVortex_apply_zero (c : Fin m → ℂ) (z : ℂ) :
     normalizedVortex c z 0 = -(bgConn c I z + fderiv ℝ (redSol c) z I) := by
   have hu := ((contDiff_bgAmp c).differentiable (by simp)) z
   have hw := ((contDiff_reducedSolution (monicOfCoeff c)).differentiable (by simp)) z
-  simp only [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgConn,
+  simp only [normalizedVortex_def, gaugeTransform_apply, polynomialVortex_def, bgConn,
     Matrix.cons_val_zero, amplitudeField_apply_zero, fderiv_fun_add hu hw, add_apply, I_mul_I,
     map_neg]
   ring
@@ -170,7 +151,7 @@ private theorem normalizedVortex_apply_one (c : Fin m → ℂ) (z : ℂ) :
     normalizedVortex c z 1 = bgConn c 1 z + fderiv ℝ (redSol c) z 1 := by
   have hu := ((contDiff_bgAmp c).differentiable (by simp)) z
   have hw := ((contDiff_reducedSolution (monicOfCoeff c)).differentiable (by simp)) z
-  simp only [normalizedVortex, polynomialVortex_def, gaugeTransform_apply,
+  simp only [normalizedVortex_def, polynomialVortex_def, gaugeTransform_apply,
     amplitudeField_apply_one, fderiv_fun_add hu hw, add_apply, gaugeForm_apply, Matrix.cons_val_one,
     Matrix.cons_val_zero, bgConn, mul_one]
   ring
@@ -552,21 +533,6 @@ private theorem exists_bound_iteratedFDeriv_weight (hm : 0 < m) {c₀ : Fin m �
 
 /-! ### Joint smoothness of the background field -/
 
-private theorem contDiff_eval_monicOfCoeff :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ (monicOfCoeff p.1).eval p.2 := by
-  simp only [eval_monicOfCoeff]
-  have h : ContDiff ℂ ∞ fun p : (Fin m → ℂ) × ℂ ↦ p.2 ^ m + ∑ i : Fin m, p.1 i * p.2 ^ (i : ℕ) :=
-    (contDiff_snd.pow m).add (ContDiff.sum fun i _ ↦
-      (contDiff_pi.1 contDiff_fst i).mul (contDiff_snd.pow _))
-  exact h.restrict_scalars ℝ
-
-private theorem contDiff_bgAmp_uncurry :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgAmp p.1 p.2 := by
-  have h : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ 1 + ‖(monicOfCoeff p.1).eval p.2‖ ^ 2 :=
-    contDiff_const.add (contDiff_eval_monicOfCoeff.norm_sq ℝ)
-  simpa only [bgAmp, backgroundAmplitude_apply] using
-    (h.log fun p ↦ by positivity).neg.div_const 2
-
 private theorem contDiff_gaugeForm_uncurry (v : ℂ) :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ gaugeForm (polynomialGauge p.1) p.2 v := by
   simp only [gaugeForm_apply]
@@ -578,13 +544,18 @@ private theorem contDiff_gaugeForm_uncurry (v : ℂ) :
 private theorem contDiff_bgConn_uncurry (v : ℂ) :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgConn p.1 v p.2 :=
   (ContDiff.fderiv_apply (f := fun p : (Fin m → ℂ) × ℂ ↦ bgAmp p.1)
-    (contDiff_bgAmp_uncurry.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd
-    contDiff_const (by simp)).sub (contDiff_gaugeForm_uncurry (I * v))
+    ((contDiff_parametric_backgroundAmplitude (n := ∞) (f := fun c ↦ (monicOfCoeff c).eval)
+      ((contDiff_eval_monicOfCoeff contDiff_fst contDiff_snd).restrict_scalars ℝ)).comp
+      (contDiff_fst.fst.prodMk contDiff_snd))
+    contDiff_snd contDiff_const (by simp)).sub (contDiff_gaugeForm_uncurry (I * v))
 
 private theorem contDiff_bgSection_uncurry :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgSection p.1 p.2 :=
-  (contDiff_polynomialGauge.mul ((ofRealCLM.contDiff.comp
-    (Real.contDiff_exp.comp contDiff_bgAmp_uncurry)).mul contDiff_eval_monicOfCoeff)).div_const 2
+    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgSection p.1 p.2 := by
+  have hP : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ (monicOfCoeff p.1).eval p.2 :=
+    (contDiff_eval_monicOfCoeff contDiff_fst contDiff_snd).restrict_scalars ℝ
+  exact (contDiff_polynomialGauge.mul ((ofRealCLM.contDiff.comp (Real.contDiff_exp.comp
+    (contDiff_parametric_backgroundAmplitude (f := fun c ↦ (monicOfCoeff c).eval) hP))).mul
+    hP)).div_const 2
 
 /-! ### The logarithmic ratio as a smooth family in `H^(k+1)` -/
 
@@ -743,13 +714,8 @@ private theorem IsSmoothAt.fderiv_apply (hF : IsSmoothAt (s + 1) (by linarith) c
     (hF1 : ∀ᶠ c in 𝓝 c₀, ContDiff ℝ 1 (F c)) (v : ℂ) :
     IsSmoothAt s hs c₀ fun c z ↦ fderiv ℝ (F c) z v := by
   refine (IsSmoothFamilyAt.lineDeriv (hs := hs) ENNReal.one_lt_two ENNReal.ofNat_ne_top hF
-    (hF1.mono fun c h ↦ ofRealCLM.contDiff.comp h) v).congr ?_
-  filter_upwards [hF1] with c h
-  funext z
-  -- The derivative of the complexification `z ↦ (F c z : ℂ)` is that of `F c`, complexified.
-  rw [show (fun z ↦ (F c z : ℂ)) = ofRealCLM ∘ F c from rfl,
-    fderiv_comp z ofRealCLM.differentiableAt (h.differentiable one_ne_zero z),
-    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, ofRealCLM_apply]
+    (hF1.mono fun c h ↦ ofRealCLM.contDiff.comp h) v).congr
+    (.of_forall fun c ↦ funext fun z ↦ TauCeti.fderiv_ofReal_comp_apply (F c) z v)
 
 end IsSmoothAt
 

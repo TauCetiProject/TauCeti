@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
@@ -338,10 +339,8 @@ theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1
     ⇑(inclusionLp hs (lineDerivCLM hp hp_top v u)) =ᵐ[volume] fun x ↦ (fderiv ℝ f x v : ℂ) := by
   -- The complexification `x ↦ (f x : ℂ)` is `C¹`, with derivative `x ↦ (Df(x) v : ℂ)`.
   refine (coeFn_inclusionLp_lineDerivCLM_ae_eq_fderiv hp hp_top hs
-    (Complex.ofRealCLM.contDiff.comp hf) hu v).trans (.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [fderiv_comp x Complex.ofRealCLM.differentiableAt (hf.differentiable one_ne_zero x),
-    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply]
+    (Complex.ofRealCLM.contDiff.comp hf) hu v).trans
+    (.of_forall fun x ↦ TauCeti.fderiv_ofReal_comp_apply f x v)
 
 /-- **The classical Laplacian of real elements of `H^{s+2}`.** For `s ≥ 0`, if the `L²` function
 of `u ∈ H^{s+2}(E)` is almost everywhere a real `C²` function `f`, then the `L²` function of

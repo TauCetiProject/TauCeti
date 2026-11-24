@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothFamily
 
@@ -24,8 +25,9 @@ family of plane vortices over a window of divisors, enter Sobolev-space argument
 
 The proof is by induction on the integer order. In `L²` the family factors through the bounded
 continuous functions: `c ↦ F c` is a superposition `f ↦ G ∘ f` applied to the affine family
-`c ↦ (x ↦ (c, ρ x))`, where `ρ` is the radial retraction onto the ball, and superposition operators
-are smooth for the sup norm (`BoundedContinuousFunction.exists_contDiff_apply_eq`).
+`c ↦ (x ↦ (c, ρ x))`, where `ρ` is the radial retraction onto the ball
+(`TauCeti.radialRetraction`), and superposition operators are smooth for the sup norm
+(`BoundedContinuousFunction.exists_contDiff_apply_eq`).
 Multiplication by the indicator of the ball, an element of `L²`, is a bounded operator from the
 bounded continuous functions to `L²` (`BoundedContinuousFunction.mulLpL`). The
 derivatives `x ↦ ∂_v F c x` form a family of the same kind, so a family that is smooth in `H^k`
@@ -42,39 +44,6 @@ open scoped ContDiff BesselPotentialSpace BoundedContinuousFunction Topology Lin
 
 namespace BesselPotentialSpace
 
-/-! ### The radial retraction onto a ball -/
-
-section Retract
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The radial retraction `x ↦ (R / max R ‖x‖) • x` onto the closed ball of radius `R`. -/
-private def retract (R : ℝ) (x : E) : E :=
-  (R * (max R ‖x‖)⁻¹) • x
-
-private theorem continuous_retract {R : ℝ} (hR : 0 < R) : Continuous (retract (E := E) R) :=
-  (continuous_const.mul ((continuous_const.max continuous_norm).inv₀ fun _ ↦
-    (hR.trans_le (le_max_left _ _)).ne')).smul continuous_id
-
-private theorem norm_retract_le {R : ℝ} (hR : 0 < R) (x : E) : ‖retract R x‖ ≤ R := by
-  have hm : 0 < max R ‖x‖ := hR.trans_le (le_max_left _ _)
-  rw [retract, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity), mul_assoc]
-  calc R * ((max R ‖x‖)⁻¹ * ‖x‖) ≤ R * 1 := by
-        gcongr
-        exact inv_mul_le_one_of_le₀ (le_max_right _ _) hm.le
-    _ = R := mul_one R
-
-/-- A function vanishing outside the ball of radius `R` does not see the retraction. -/
-private theorem apply_retract {R : ℝ} (hR : 0 < R) {f : E → ℂ} (hf : ∀ x, R ≤ ‖x‖ → f x = 0)
-    (x : E) : f (retract R x) = f x := by
-  rcases le_or_gt ‖x‖ R with hx | hx
-  · rw [retract, max_eq_left hx, mul_inv_cancel₀ hR.ne', one_smul]
-  · rw [hf x hx.le, hf]
-    rw [retract, max_eq_right hx.le, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), mul_assoc, inv_mul_cancel₀ (hR.trans hx).ne', mul_one]
-
-end Retract
-
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
   {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
@@ -87,7 +56,8 @@ private theorem isSmoothFamilyAt_zero_of_forall_le_norm {F : X → E → ℂ}
   set R' := max R 1
   have hR' : 0 < R' := zero_lt_one.trans_le (le_max_right _ _)
   obtain ⟨Ψ, hΨc, hΨ⟩ := BoundedContinuousFunction.exists_contDiff_apply_eq hF
-    (continuous_retract hR') (norm_retract_le hR')
+    (TauCeti.lipschitzWith_radialRetraction hR'.le).continuous
+    fun x ↦ (TauCeti.norm_radialRetraction hR'.le x).trans_le (min_le_right _ _)
   -- Multiplication by the indicator of the ball, from the bounded continuous functions to `L²`.
   have hB : volume (closedBall (0 : E) R') ≠ ⊤ := (isCompact_closedBall _ _).measure_lt_top.ne
   set M : (E →ᵇ ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure E) :=
@@ -102,7 +72,7 @@ private theorem isSmoothFamilyAt_zero_of_forall_le_norm {F : X → E → ℂ}
   rw [ContinuousLinearMap.flip_apply, h₁, h₂]
   by_cases hxB : x ∈ closedBall (0 : E) R'
   · rw [indicator_of_mem hxB, smul_eq_mul, mul_one, hΨ, Function.uncurry_apply_pair,
-      apply_retract hR' fun y hy ↦ hR c y ((le_max_left _ _).trans hy)]
+      TauCeti.radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hxB)]
   · have hxR : R' < ‖x‖ := by simpa using hxB
     rw [indicator_of_notMem hxB, smul_zero, hR c x ((le_max_left _ _).trans hxR.le)]
 
