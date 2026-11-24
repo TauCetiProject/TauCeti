@@ -34,7 +34,8 @@ at most that of `a`
   (`TauCeti.SmoothForm.integral_codifferential_eq_zero`).
 * **Existence and uniqueness**: on a closed connected manifold, `d*a` is therefore a smooth
   function of integral zero, so the equation `Δf = d*df = d*a` has a unique smooth solution `f`
-  of integral zero by the smooth Poisson equivalence (`TauCeti.Manifold.negLaplaceBeltramiEquiv`),
+  of integral zero by the smooth Poisson solver
+  (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`),
   yielding both existence (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`) and
   uniqueness (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`) of `f` with
   `∫ f = 0` and `d*(a - df) = 0`.
@@ -110,6 +111,29 @@ end Measure
 
 /-! ### Existence and uniqueness on a closed connected manifold -/
 
+/-- Evaluating `d*df` on a smooth `0`-form `f` gives `-Δf`. -/
+private theorem codifferential_mextDerivₗ_apply_zero (hkl : 0 + 1 + l = m)
+    (f : SmoothForm I M ℝ 0) (x : M) :
+    (codifferential o hkl (mextDerivₗ I 0 f)).val x 0 =
+      -Manifold.laplaceBeltrami I (fun y ↦ f.val y 0) x := by
+  have h := congrArg (fun φ : RoughForm I M ℝ 0 ↦ φ x 0)
+    (hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami o (show 0 + (l + 1) = m by omega) f)
+  simpa only [hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl,
+    RoughForm.ofFunction_apply, Pi.neg_apply] using h
+
+/-- The Coulomb gauge condition `d*(a - df) = 0` is equivalent to the pointwise Poisson equation
+`-Δf = d*a`. -/
+private theorem codifferential_sub_mextDerivₗ_eq_zero_iff (hkl : 0 + 1 + l = m)
+    (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
+    codifferential o hkl (a - mextDerivₗ I 0 f) = 0 ↔
+      ∀ x, -Manifold.laplaceBeltrami I (fun y ↦ f.val y 0) x =
+        (codifferential o hkl a).val x 0 := by
+  rw [map_sub, sub_eq_zero, eq_comm]
+  refine ⟨fun h x ↦ ?_, fun h ↦ Subtype.ext (funext fun x ↦ ?_)⟩
+  · rw [← codifferential_mextDerivₗ_apply_zero o hkl f x, h]
+  · ext v
+    rw [Subsingleton.elim v 0, codifferential_mextDerivₗ_apply_zero o hkl f x, h x]
+
 section Closed
 
 variable [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M]
@@ -124,39 +148,23 @@ theorem existsUnique_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace 
     ∃! f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
       codifferential o hkl (a - mextDerivₗ I 0 f) = 0 := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  let f₁ := Manifold.meanZeroSmoothFunctions.mk
-    (contMDiff_apply_zero (codifferential o hkl a))
-    (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
-  let u := (Manifold.negLaplaceBeltramiEquiv I M).symm f₁
-  refine ⟨ofFunction u.val, ⟨?_, ?_⟩, fun g ⟨hg₀, hg⟩ ↦ ?_⟩
-  · simpa only [ofFunction_apply_zero] using Manifold.integral_coe_meanZeroSmoothFunctions_eq_zero u
-  · -- `d*df = Δf = -div grad u = d*a`.
-    have hΔ : codifferential o hkl (mextDerivₗ I 0 (ofFunction u.val)) =
-        codifferential o hkl a := by
-      rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl]
-      apply Subtype.ext
-      rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami, ofFunction_apply_zero,
-        RoughForm.eq_ofFunction (codifferential o hkl a).val]
-      congr 1
-      funext x
-      exact (Manifold.neg_laplaceBeltrami_negLaplaceBeltramiEquiv_symm f₁ x).trans
-        (congrFun (Manifold.meanZeroSmoothFunctions.coe_mk _ _) x)
-    rw [map_sub, hΔ, sub_self]
-  · have hgΔ : codifferential o hkl (mextDerivₗ I 0 g) = codifferential o hkl a :=
-      eq_comm.1 (sub_eq_zero.1 (by rwa [← map_sub]))
-    rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl] at hgΔ
-    have hg_raw : (hodgeLaplacian o (show 0 + (l + 1) = m by omega) g : RoughForm I M ℝ 0) =
-        (codifferential o hkl a).val := congrArg Subtype.val hgΔ
-    rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami] at hg_raw
-    let g₁ := Manifold.meanZeroSmoothFunctions.mk (contMDiff_apply_zero g) hg₀
-    have hgu : g₁ = u := Manifold.eq_negLaplaceBeltramiEquiv_symm_iff.2 fun x ↦ by
-      simpa only [g₁, f₁, Manifold.meanZeroSmoothFunctions.coe_mk, RoughForm.ofFunction_apply,
-        Pi.neg_apply] using congrArg (fun φ : RoughForm I M ℝ 0 ↦ φ x 0) hg_raw
+  obtain ⟨u, ⟨hu, hu0, huΔ⟩, huniq⟩ :=
+    Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
+      (contMDiff_apply_zero (codifferential o hkl a))
+      (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
+  let u₀ : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
+  have hu₀ : (fun x ↦ (ofFunction u₀).val x 0) = u := ofFunction_apply_zero u₀
+  refine ⟨ofFunction u₀, ⟨?_, ?_⟩, fun g ⟨hg₀, hg⟩ ↦ ?_⟩
+  · rw [hu₀]
+    exact hu0
+  · rw [codifferential_sub_mextDerivₗ_eq_zero_iff, hu₀]
+    exact huΔ
+  · have hgu : (fun x ↦ g.val x 0) = u :=
+      huniq _ ⟨contMDiff_apply_zero g, hg₀,
+        (codifferential_sub_mextDerivₗ_eq_zero_iff o hkl a g).1 hg⟩
     refine Subtype.ext (funext fun x ↦ ?_)
     ext v
-    rw [Subsingleton.elim v 0, congrFun (ofFunction_apply_zero u.val) x]
-    simpa only [g₁, Manifold.meanZeroSmoothFunctions.coe_mk] using
-      congrArg (fun h ↦ h.val x) hgu
+    rw [Subsingleton.elim v 0, congrFun hu₀ x, congrFun hgu x]
 
 /-- **The global Coulomb gauge for one-forms**: on a closed connected oriented Riemannian manifold
 of positive dimension, every smooth one-form `a` is `df` plus a coclosed form, `d*(a - df) = 0`,
