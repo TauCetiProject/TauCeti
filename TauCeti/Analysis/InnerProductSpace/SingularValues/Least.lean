@@ -34,9 +34,10 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.minimalStretch`: the minimal stretch `ℓ(A) = σₙ(A)`.
 * `LinearMap.minimalStretch_mul_norm_le_norm_apply`: `ℓ(A) ‖v‖ ≤ ‖A v‖` for every `v`.
 * `LinearMap.le_minimalStretch_iff`: `c ≤ ℓ(A)` if and only if `c ‖v‖ ≤ ‖A v‖` for every `v`.
-* `LinearMap.isLeast_minimalStretch`: `ℓ(A)` is the least value of `‖A v‖` on the unit sphere,
-  attained at the last right singular vector
+* `LinearMap.exists_mem_sphere_norm_apply_eq_minimalStretch`: on a nonzero space, `ℓ(A)` is
+  attained at a unit vector, the last right singular vector
   (`LinearMap.norm_apply_rightSingularBasis_eq_minimalStretch`).
+* `LinearMap.isLeast_minimalStretch`: `ℓ(A)` is the least value of `‖A v‖` on the unit sphere.
 * `LinearMap.minimalStretch_le_norm`, `LinearMap.minimalStretch_eq_norm_iff`: `ℓ(A) ≤ ‖A‖`, with
   equality if and only if `A = 0` or `A` is conformal.
 * `LinearMap.minimalStretch_pos_iff`: `0 < ℓ(A)` if and only if `A` is injective.
@@ -44,9 +45,9 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.minimalStretch_mul_le_minimalStretch_comp`: `ℓ(B) ℓ(A) ≤ ℓ(B ∘ A)`.
 * `LinearMap.minimalStretch_pow_le_normDet`: `ℓ(A)ⁿ ≤ normDet(A)`; the upper bound
   `normDet(A) ≤ ‖A‖ⁿ` is `ContinuousLinearMap.normDet_le_norm_pow`.
-* `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometryEquiv_comp`,
+* `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometry_comp`,
   `LinearMap.minimalStretch_comp_linearIsometryEquiv`: `ℓ(c A) = ‖c‖ ℓ(A)`, and `ℓ` is unchanged
-  by isometric isomorphisms on either side.
+  by linear isometries on the left and isometric isomorphisms on the right.
 * `LinearMap.lipschitzWith_minimalStretch`: `ℓ` is `1`-Lipschitz for the operator norm, by
   Weyl's perturbation bound `LinearMap.abs_singularValues_sub_singularValues_le`; hence it is
   continuous and Borel measurable.
@@ -107,24 +108,29 @@ theorem norm_apply_rightSingularBasis_eq_minimalStretch (A : E →ₗ[𝕜] F)
 theorem minimalStretch_mul_norm_le_norm_apply (A : E →ₗ[𝕜] F) (v : E) :
     A.minimalStretch * ‖v‖ ≤ ‖A v‖ :=
   A.singularValues_mul_norm_le_norm_apply <|
-    A.rightSingularBasis.mem_spanIndices_iff.mpr fun i hi ↦ absurd (by simp; omega) hi
+    A.rightSingularBasis.mem_spanIndices_iff.mpr fun i hi ↦
+      absurd (Nat.le_sub_one_of_lt i.isLt) hi
+
+/-- On a nonzero space, the minimal stretch is attained at a unit vector, namely the last right
+singular vector. -/
+theorem exists_mem_sphere_norm_apply_eq_minimalStretch [Nontrivial E] (A : E →ₗ[𝕜] F) :
+    ∃ v ∈ Metric.sphere (0 : E) 1, ‖A v‖ = A.minimalStretch :=
+  ⟨A.rightSingularBasis ⟨_, Nat.sub_one_lt finrank_pos.ne'⟩, by simp,
+    A.norm_apply_rightSingularBasis_eq_minimalStretch rfl⟩
 
 /-- On a nonzero space, `c ≤ ℓ(A)` exactly when `A` stretches every vector by at least `c`. -/
 theorem le_minimalStretch_iff [Nontrivial E] (A : E →ₗ[𝕜] F) {c : ℝ} :
     c ≤ A.minimalStretch ↔ ∀ v, c * ‖v‖ ≤ ‖A v‖ := by
   refine ⟨fun h v ↦ (mul_le_mul_of_nonneg_right h (norm_nonneg v)).trans
     (A.minimalStretch_mul_norm_le_norm_apply v), fun h ↦ ?_⟩
-  have hn : finrank 𝕜 E - 1 < finrank 𝕜 E := Nat.sub_one_lt finrank_pos.ne'
-  simpa [A.norm_apply_rightSingularBasis_eq_minimalStretch (i := ⟨_, hn⟩) rfl] using
-    h (A.rightSingularBasis ⟨_, hn⟩)
+  obtain ⟨v, hv, hAv⟩ := A.exists_mem_sphere_norm_apply_eq_minimalStretch
+  simpa [mem_sphere_zero_iff_norm.mp hv, hAv] using h v
 
 /-- On a nonzero space, the minimal stretch is the least value of `‖A v‖` over unit vectors `v`;
 it is attained at the last right singular vector. -/
 theorem isLeast_minimalStretch [Nontrivial E] (A : E →ₗ[𝕜] F) :
     IsLeast ((fun v ↦ ‖A v‖) '' Metric.sphere 0 1) A.minimalStretch := by
-  have hn : finrank 𝕜 E - 1 < finrank 𝕜 E := Nat.sub_one_lt finrank_pos.ne'
-  refine ⟨⟨A.rightSingularBasis ⟨_, hn⟩, by simp,
-    A.norm_apply_rightSingularBasis_eq_minimalStretch rfl⟩, ?_⟩
+  refine ⟨A.exists_mem_sphere_norm_apply_eq_minimalStretch, ?_⟩
   rintro _ ⟨v, hv, rfl⟩
   simpa [mem_sphere_zero_iff_norm.mp hv] using A.minimalStretch_mul_norm_le_norm_apply v
 
@@ -151,9 +157,11 @@ theorem minimalStretch_eq_norm_iff (A : E →ₗ[𝕜] F) :
 /-- On a nonzero space, the minimal stretch is positive exactly when `A` is injective. -/
 theorem minimalStretch_pos_iff [Nontrivial E] (A : E →ₗ[𝕜] F) :
     0 < A.minimalStretch ↔ Function.Injective A := by
-  rw [injective_iff_forall_lt_finrank_singularValues_pos]
-  exact ⟨fun h i hi ↦ h.trans_le (A.minimalStretch_le_singularValues hi),
-    fun h ↦ h _ (Nat.sub_one_lt finrank_pos.ne')⟩
+  refine ⟨fun h ↦ A.injective_iff_forall_lt_finrank_singularValues_pos.mpr fun i hi ↦
+    h.trans_le (A.minimalStretch_le_singularValues hi), fun h ↦ ?_⟩
+  obtain ⟨v, hv, hAv⟩ := A.exists_mem_sphere_norm_apply_eq_minimalStretch
+  exact hAv ▸ norm_pos_iff.mpr
+    ((map_ne_zero_iff A h).mpr (ne_zero_of_mem_sphere one_ne_zero ⟨v, hv⟩))
 
 /-- On a nonzero space, the minimal stretch of a linear equivalence is the reciprocal of the
 operator norm of its inverse: `ℓ(A) ‖A⁻¹‖ = 1`. -/
@@ -168,7 +176,7 @@ theorem minimalStretch_mul_norm_symm [Nontrivial E] (A : E ≃ₗ[𝕜] F) :
     rw [inv_mul_eq_div, le_div_iff₀' hℓ]
     simpa using (A : E →ₗ[𝕜] F).minimalStretch_mul_norm_le_norm_apply (A.symm y)
   · -- A unit vector `v` with `‖A v‖ = ℓ` gives `1 = ‖A⁻¹ (A v)‖ ≤ ‖A⁻¹‖ ℓ`.
-    obtain ⟨⟨v, hv, hAv⟩, -⟩ := (A : E →ₗ[𝕜] F).isLeast_minimalStretch
+    obtain ⟨v, hv, hAv⟩ := (A : E →ₗ[𝕜] F).exists_mem_sphere_norm_apply_eq_minimalStretch
     have h := (toContinuousLinearMap (A.symm : F →ₗ[𝕜] E)).le_opNorm (A v)
     simp only [coe_toContinuousLinearMap', LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
       mem_sphere_zero_iff_norm.mp hv] at h hAv
@@ -212,11 +220,17 @@ theorem minimalStretch_smul (c : 𝕜) (A : E →ₗ[𝕜] F) :
 theorem minimalStretch_neg (A : E →ₗ[𝕜] F) : (-A).minimalStretch = A.minimalStretch := by
   rw [← neg_one_smul 𝕜 A, minimalStretch_smul, norm_neg, norm_one, one_mul]
 
+/-- Composing on the left with a linear isometry leaves the minimal stretch unchanged. -/
+@[simp]
+theorem minimalStretch_linearIsometry_comp (W : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    (W.toLinearMap ∘ₗ A).minimalStretch = A.minimalStretch := by
+  simp [minimalStretch_def]
+
 /-- Composing on the left with an isometric isomorphism leaves the minimal stretch unchanged. -/
 @[simp]
 theorem minimalStretch_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
-    ((U : F →ₗ[𝕜] G) ∘ₗ A).minimalStretch = A.minimalStretch := by
-  simp [minimalStretch_def]
+    ((U : F →ₗ[𝕜] G) ∘ₗ A).minimalStretch = A.minimalStretch :=
+  minimalStretch_linearIsometry_comp U.toLinearIsometry A
 
 /-- Composing on the right with an isometric isomorphism leaves the minimal stretch unchanged. -/
 @[simp]
