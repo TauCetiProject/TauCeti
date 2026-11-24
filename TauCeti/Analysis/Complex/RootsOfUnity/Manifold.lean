@@ -16,6 +16,7 @@ public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The rotated disc as a complex manifold
@@ -85,6 +86,12 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(ℂ) n (rootsOfUnity m
 /-- The inclusion of the disc of radius `r` into `ℂ` is `C^n`; it is holomorphic. -/
 theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
   contMDiff_subtypeVal (U := opens m r)
+
+/-- In the ambient complex coordinate, the derivative of the disc inclusion is the identity. -/
+@[simp]
+theorem mfderiv_val_apply (z : rootsOfUnityBall m r) (w : ℂ) :
+    mfderiv 𝓘(ℂ) 𝓘(ℂ) ((↑) : rootsOfUnityBall m r → ℂ) z w = w := by
+  exact Manifold.mfderiv_subtype_val_apply (I := 𝓘(ℂ)) (U := opens m r) z w
 
 /-- The charts of the disc are restrictions of the identity chart of `ℂ`: the inverse of a chart
 sends each point of its target to that point of the disc. -/
