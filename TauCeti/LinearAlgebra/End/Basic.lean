@@ -45,6 +45,9 @@ as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
 (`Submodule.le_comap_of_fixed`), and a submodule invariant under two endomorphisms is invariant
 under their difference (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
+
+A linear map intertwining two endomorphisms intertwines all of their powers
+(`Module.End.comp_pow_of_comp`).
 -/
 
 public section
@@ -171,6 +174,15 @@ theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid 
     [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) {k : ℕ}
     (hk : a ^ k = 1) : S ^ k = 1 :=
   LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
+
+/-- A linear map intertwining two endomorphisms intertwines all of their powers. -/
+theorem comp_pow_of_comp {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {f : Module.End R M} {f' : Module.End R N}
+    {g : M →ₗ[R] N} (hg : g ∘ₗ f = f' ∘ₗ g) (k : ℕ) :
+    g ∘ₗ (f ^ k) = (f' ^ k) ∘ₗ g := by
+  have hsc : Function.Semiconj g f f' := fun x ↦ LinearMap.congr_fun hg x
+  ext x
+  simpa only [LinearMap.comp_apply, pow_apply_eq_iterate] using hsc.iterate_right k x
 
 end Module.End
 

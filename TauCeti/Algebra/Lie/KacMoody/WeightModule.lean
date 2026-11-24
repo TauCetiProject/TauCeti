@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.RootLattice
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
@@ -38,7 +39,8 @@ eigenvalue functions have trivial joint eigenspaces (`TauCeti.iSup_dual_eq_iSup`
 with the weight spaces, over an arbitrary base field.
 
 Category `O` (`IsCategoryO R M`) refines `IsWeightModule R M` by requiring finite-dimensional weight
-spaces and a finite set `S` of weights whose downward cones `λ - Q₊` cover all weights of `M`. Both
+spaces and a finite set `S` of elements of `Dual K H` (which may lie outside the weight support of
+`M`) whose downward cones `λ - Q₊` cover all weights of `M`. Both
 `IsWeightModule` and `IsCategoryO` are closed under submodules, quotients, binary products, and
 direct sums (finite direct sums for `IsCategoryO`). Over a field of characteristic zero, the height
 homomorphism `CartanRealization.height` bounds upward chains in `⋃_{λ ∈ S} (λ - Q₊)`, so every
@@ -174,12 +176,6 @@ theorem commute_cartanAction (x y : H) :
     Commute (cartanAction R M x) (cartanAction R M y) := by
   rw [commute_iff_eq, ← sub_eq_zero, ← Ring.lie_def]; exact lie_cartanAction_cartanAction R M x y
 
-private theorem end_apply_comp_of_lie {K' M' : Type*} [Ring K'] [AddCommGroup M'] [Module K' M']
-    {u v w : Module.End K' M'} (h : ⁅u, v⁆ = w) (m : M') : u (v m) = v (u m) + w m := by
-  have h' := LinearMap.congr_fun h m
-  rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
-    sub_eq_iff_eq_add, add_comm] at h'; exact h'
-
 @[simp]
 theorem lie_cartanAction_positiveAction (x : H) (j : I) :
     ⁅cartanAction R M x, positiveAction R M j⁆ = R.root j x • positiveAction R M j :=
@@ -188,7 +184,8 @@ theorem lie_cartanAction_positiveAction (x : H) (j : I) :
 theorem cartanAction_positiveAction_apply (x : H) (j : I) (m : M) :
     cartanAction R M x (positiveAction R M j m) =
       positiveAction R M j (cartanAction R M x m) + R.root j x • positiveAction R M j m := by
-  rw [end_apply_comp_of_lie (lie_cartanAction_positiveAction R M x j) m, LinearMap.smul_apply]
+  rw [Module.End.apply_apply_eq_add_commutator, lie_cartanAction_positiveAction,
+    LinearMap.smul_apply]
 
 @[simp]
 theorem lie_cartanAction_negativeAction (x : H) (j : I) :
@@ -198,8 +195,8 @@ theorem lie_cartanAction_negativeAction (x : H) (j : I) :
 theorem cartanAction_negativeAction_apply (x : H) (j : I) (m : M) :
     cartanAction R M x (negativeAction R M j m) =
       negativeAction R M j (cartanAction R M x m) - R.root j x • negativeAction R M j m := by
-  rw [end_apply_comp_of_lie (lie_cartanAction_negativeAction R M x j) m, LinearMap.neg_apply,
-    LinearMap.smul_apply, sub_eq_add_neg]
+  rw [Module.End.apply_apply_eq_add_commutator, lie_cartanAction_negativeAction,
+    LinearMap.neg_apply, LinearMap.smul_apply, sub_eq_add_neg]
 
 @[simp]
 theorem lie_positiveAction_negativeAction_self (i : I) :
@@ -208,8 +205,8 @@ theorem lie_positiveAction_negativeAction_self (i : I) :
 
 theorem positiveAction_negativeAction_self_apply (i : I) (m : M) :
     positiveAction R M i (negativeAction R M i m) =
-      negativeAction R M i (positiveAction R M i m) + cartanAction R M (R.coroot i) m :=
-  end_apply_comp_of_lie (lie_positiveAction_negativeAction_self R M i) m
+      negativeAction R M i (positiveAction R M i m) + cartanAction R M (R.coroot i) m := by
+  rw [Module.End.apply_apply_eq_add_commutator, lie_positiveAction_negativeAction_self]
 
 @[simp]
 theorem lie_positiveAction_negativeAction_of_ne {i j : I} (hij : i ≠ j) :
@@ -742,7 +739,8 @@ structure IsCategoryO (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
   isWeightModule : IsWeightModule R M
   /-- Every weight space of `M` is finite-dimensional over `K`. -/
   finiteDimensional_weightSpace : ∀ μ : Dual K H, FiniteDimensional K (weightSpace R M μ)
-  /-- Finitely many weights bound all weights of `M` in `CartanRealization.RootLE`. -/
+  /-- Finitely many elements of `Dual K H` (which may lie outside the weight support of `M`)
+  bound all weights of `M` in `CartanRealization.RootLE`. -/
   exists_finset_rootLE :
     ∃ S : Finset (Dual K H), ∀ μ : Dual K H, weightSpace R M μ ≠ ⊥ → ∃ lam ∈ S, R.RootLE μ lam
 

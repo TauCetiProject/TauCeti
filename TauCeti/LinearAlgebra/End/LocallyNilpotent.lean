@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
@@ -362,30 +363,16 @@ theorem iSup_wordKer_eq_top_of_injective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ
   obtain ⟨d, hd⟩ := hf' (g x)
   exact ⟨d, comap_wordKer_of_injective hg hinj d ▸ hd⟩
 
-private theorem comp_pow_of_comp {A B : Type*} [AddCommMonoid A] [Module R A]
-    [AddCommMonoid B] [Module R B] {eA : Module.End R A} {eB : Module.End R B}
-    {φ : A →ₗ[R] B} (hφ : φ ∘ₗ eA = eB ∘ₗ φ) (k : ℕ) :
-    φ ∘ₗ (eA ^ k) = (eB ^ k) ∘ₗ φ := by
-  induction k with
-  | zero => simp [Module.End.one_eq_id]
-  | succ k ih =>
-    rw [pow_succ', pow_succ', Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-      ← LinearMap.comp_assoc, hφ, LinearMap.comp_assoc, ih, ← LinearMap.comp_assoc]
-
 /-- Local nilpotence passes to submodules: an endomorphism intertwined by an injective linear map
 with a locally nilpotent endomorphism is locally nilpotent. -/
 theorem exists_pow_apply_eq_zero_of_injective {f : Module.End R M} {f' : Module.End R N}
     {g : M →ₗ[R] N} (hg : g ∘ₗ f = f' ∘ₗ g) (hinj : Function.Injective g)
     (hf' : ∀ y : N, ∃ d : ℕ, (f' ^ d) y = 0) (x : M) :
     ∃ d : ℕ, (f ^ d) x = 0 := by
-  have htop : (⨆ d, wordKer (fun _ : Unit ↦ f) d) = ⊤ := by
-    refine iSup_wordKer_eq_top_of_injective (fun _ ↦ hg) hinj ?_
-    rw [iSup_wordKer_eq_top_iff]
-    intro y
-    obtain ⟨d, hd⟩ := hf' y
-    exact ⟨d, by simpa [wordKer_const] using hd⟩
-  obtain ⟨d, hd⟩ := (iSup_wordKer_eq_top_iff _).mp htop x
-  exact ⟨d, by simpa [wordKer_const] using hd⟩
+  obtain ⟨d, hd⟩ := hf' (g x)
+  have hpow := LinearMap.congr_fun (comp_pow_of_comp hg d) x
+  simp only [LinearMap.comp_apply] at hpow
+  exact ⟨d, hinj (by rw [hpow, hd, map_zero])⟩
 
 /-- Local nilpotence passes to quotients: an endomorphism intertwined by a surjective linear map
 from a locally nilpotent endomorphism is locally nilpotent. -/
@@ -393,14 +380,11 @@ theorem exists_pow_apply_eq_zero_of_surjective {f : Module.End R M} {f' : Module
     {g : M →ₗ[R] N} (hg : g ∘ₗ f = f' ∘ₗ g) (hsurj : Function.Surjective g)
     (hf : ∀ x : M, ∃ d : ℕ, (f ^ d) x = 0) (y : N) :
     ∃ d : ℕ, (f' ^ d) y = 0 := by
-  have htop : (⨆ d, wordKer (fun _ : Unit ↦ f') d) = ⊤ := by
-    refine iSup_wordKer_eq_top_of_surjective (fun _ ↦ hg) hsurj ?_
-    rw [iSup_wordKer_eq_top_iff]
-    intro x
-    obtain ⟨d, hd⟩ := hf x
-    exact ⟨d, by simpa [wordKer_const] using hd⟩
-  obtain ⟨d, hd⟩ := (iSup_wordKer_eq_top_iff _).mp htop y
-  exact ⟨d, by simpa [wordKer_const] using hd⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨d, hd⟩ := hf x
+  have hpow := LinearMap.congr_fun (comp_pow_of_comp hg d) x
+  simp only [LinearMap.comp_apply] at hpow
+  exact ⟨d, by rw [← hpow, hd, map_zero]⟩
 
 /-- Local nilpotence passes to products: an endomorphism of `M × N` intertwined by the two
 projections with locally nilpotent endomorphisms on `M` and `N` is locally nilpotent. -/

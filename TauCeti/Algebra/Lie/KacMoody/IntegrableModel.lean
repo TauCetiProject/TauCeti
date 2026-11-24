@@ -225,9 +225,10 @@ variable [Unique I]
 /-- **The standard `(n + 1)`-dimensional rank-one Kac–Moody module `L(λ)`** for a single-node
 index type `[Unique I]` with `A default default = 2` and `lam (R.coroot default) = n`. Over a
 field of characteristic zero (`[CharZero K]`), it equips `TauCeti.Sl2Std K n` with the action of
-`Enveloping R` for an arbitrary realization `H` of `A` (including realizations with central or
-scaling directions), extending `Sl2Std.diag K n` from `R.coroot default` to all of `H` via `lam`,
-yielding a simple module in `IsIntegrableO R`. -/
+`Enveloping R` for an arbitrary realization `H` of `A` (where any extra Cartan directions in
+`ker (R.root default)` are central and act via the scalar functional `lam`), extending
+`Sl2Std.diag K n` from `R.coroot default` to all of `H` via `lam`, yielding a simple module in
+`IsIntegrableO R`. -/
 def RankOneModule (_R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
     (_hA : A default default = 2) (_lam : Dual K H) (n : ℕ)
     (_hlam : _lam (_R.coroot default) = n) : Type _ :=
@@ -422,15 +423,14 @@ theorem basis_mem_weightSpace (i : I) (k : Fin (n + 1)) :
   have h2 : (2⁻¹ : K) * 2 = 1 := inv_mul_cancel₀ two_ne_zero
   linear_combination ((n : K) * R.root default x - 2 * (k : K) * R.root default x) * h2
 
-include hA in
+omit [Unique I] in
 private theorem sub_nsmul_root_injective (i : I) :
     Function.Injective (fun k : Fin (n + 1) ↦ lam - (k : ℕ) • R.root i) := by
-  rw [Unique.eq_default i]
   intro k₁ k₂ hk
-  have hsub : (k₁ : ℕ) • R.root default = (k₂ : ℕ) • R.root default := sub_right_inj.mp hk
-  have hev := congrArg (fun φ : Dual K H ↦ φ (R.coroot default)) hsub
-  simp only [LinearMap.smul_apply, R.root_coroot_eq_two hA, nsmul_eq_mul] at hev
-  exact Fin.ext (Nat.cast_injective (mul_right_cancel₀ (two_ne_zero (α := K)) hev))
+  have hsub : ((k₁ : ℕ) : K) • R.root i = ((k₂ : ℕ) : K) • R.root i := by
+    simpa only [Nat.cast_smul_eq_nsmul K] using sub_right_inj.mp hk
+  exact Fin.ext
+    (Nat.cast_injective (smul_left_injective K (R.root_linearIndependent.ne_zero i) hsub))
 
 /-- Each weight space `lam - k • αᵢ` of `RankOneModule` is the line spanned by `basis k`. -/
 theorem weightSpace_sub_nsmul_root (i : I) (k : Fin (n + 1)) :
@@ -441,7 +441,7 @@ theorem weightSpace_sub_nsmul_root (i : I) (k : Fin (n + 1)) :
     (w := fun j : Fin (n + 1) ↦ lam - (j : ℕ) • R.root i)
     (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr
       (basis_mem_weightSpace R hA lam n hlam i j))
-    (basis R hA lam n hlam).iSup_span_singleton_eq_top (sub_nsmul_root_injective R hA lam n i) k
+    (basis R hA lam n hlam).iSup_span_singleton_eq_top (sub_nsmul_root_injective R lam n i) k
 
 /-- Every weight space `lam - k • αᵢ` of `RankOneModule` is one-dimensional. -/
 @[simp]

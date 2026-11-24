@@ -632,16 +632,6 @@ private theorem exp_neg_negativeAction_comp_step [Module ℚ M] {i : I} (hA : A 
   rw [Module.End.locallyNilpotentExp_apply_of_lie_lie_lie_eq_zero (-negativeAction R M i) hneg
       hd₃ m, hhalf, hd₁, hop]
 
-omit [CharZero K] in
-private theorem comp_three_conj {a b c x₀ x₁ x₂ x₃ : Module.End K M}
-    (h₁ : c ∘ₗ x₀ = x₁ ∘ₗ c) (h₂ : b ∘ₗ x₁ = x₂ ∘ₗ b) (h₃ : a ∘ₗ x₂ = x₃ ∘ₗ a) :
-    (a ∘ₗ b ∘ₗ c) ∘ₗ x₀ = x₃ ∘ₗ (a ∘ₗ b ∘ₗ c) := by
-  calc (a ∘ₗ b ∘ₗ c) ∘ₗ x₀
-      = a ∘ₗ b ∘ₗ (c ∘ₗ x₀) := by simp only [LinearMap.comp_assoc]
-    _ = a ∘ₗ (b ∘ₗ x₁) ∘ₗ c := by rw [h₁]; simp only [LinearMap.comp_assoc]
-    _ = (a ∘ₗ x₂) ∘ₗ b ∘ₗ c := by rw [h₂]; simp only [LinearMap.comp_assoc]
-    _ = x₃ ∘ₗ (a ∘ₗ b ∘ₗ c) := by rw [h₃]; simp only [LinearMap.comp_assoc]
-
 /-- **Conjugating the Cartan action by `simpleWeylIntertwiner`.** When `A i i = 2`,
 `cartanAction R M x (simpleWeylIntertwiner he hf m) =
   simpleWeylIntertwiner he hf (cartanAction R M (x - R.root i x • R.coroot i) m)`. -/
@@ -676,8 +666,20 @@ theorem cartanAction_simpleWeylIntertwiner_apply {i : I}
   have hcomp :
       (simpleWeylIntertwiner he hf : Module.End K M) ∘ₗ
           cartanAction R M (Module.reflection hrc x) =
-        cartanAction R M x ∘ₗ (simpleWeylIntertwiner he hf : Module.End K M) :=
-    hsw ▸ comp_three_conj hstep1 hstep2 hstep3
+        cartanAction R M x ∘ₗ (simpleWeylIntertwiner he hf : Module.End K M) := by
+    have hs1 : Function.Semiconj eExp (cartanAction R M (Module.reflection hrc x))
+        (cartanAction R M (Module.reflection hrc x) + R.root i x • positiveAction R M i) :=
+      fun v ↦ LinearMap.congr_fun hstep1 v
+    have hs2 : Function.Semiconj fExp
+        (cartanAction R M (Module.reflection hrc x) + R.root i x • positiveAction R M i)
+        (cartanAction R M x + R.root i x • positiveAction R M i) :=
+      fun v ↦ LinearMap.congr_fun hstep2 v
+    have hs3 : Function.Semiconj eExp
+        (cartanAction R M x + R.root i x • positiveAction R M i) (cartanAction R M x) :=
+      fun v ↦ LinearMap.congr_fun hstep3 v
+    rw [hsw]
+    ext v
+    exact ((hs1.trans hs2).trans hs3) v
   rw [← Module.reflection_apply x hrc]
   exact (LinearMap.congr_fun hcomp m).symm
 
