@@ -38,7 +38,7 @@ variable {X : Scheme.{u}}
 /-- A section over `U` whose restriction to every affine open inside `U` is a nonzerodivisor
 restricts to a nonzerodivisor on every open subset `V ⊆ U`, affine or not. -/
 theorem _root_.AlgebraicGeometry.Scheme.isSMulRegular_map_of_forall_affineOpens {U V : X.Opens}
-    (hVU : V ≤ U) {a : Γ(X, U)} (ha : ∀ (W : X.affineOpens) (hWU : W.1 ≤ U),
+    (hVU : V ≤ U) {a : Γ(X, U)} (ha : ∀ (W : X.affineOpens) (hWU : W.val ≤ U),
       IsSMulRegular Γ(X, W) (X.presheaf.map (homOfLE hWU).op a)) :
     IsSMulRegular Γ(X, V) (X.presheaf.map (homOfLE hVU).op a) := by
   intro t₁ t₂ h
@@ -70,24 +70,24 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.isSMulRegular_map {U V : X.Opens}
   Scheme.isSMulRegular_map_of_forall_affineOpens hVU fun W hWU ↦ by
     -- The restriction `Γ(X, U) ⟶ Γ(X, W)` between affine opens is flat, so `a` stays regular on
     -- `W`.
-    have hWU' : W.1 ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U := hWU
+    have hWU' : W.val ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U := hWU
     have hres : (𝟙 X : X ⟶ X).appLE U W hWU' a = X.presheaf.map (homOfLE hWU).op a := by
       -- `appLE` of the identity is the restriction along `W ≤ 𝟙 X ⁻¹ᵁ U`, and `𝟙 X ⁻¹ᵁ U = U`
       -- holds by definition.
       rfl
-    simpa only [hres] using (𝟙 X : X ⟶ X).isSMulRegular_appLE hU W.2 hWU' ha
+    simpa only [hres] using (𝟙 X : X ⟶ X).isSMulRegular_appLE hU W.property hWU' ha
 
 /-- Along a flat morphism to an affine scheme, the pullback of a nonzerodivisor restricts to a
 nonzerodivisor on every affine open of the source. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isSMulRegular_map_appTop {Y : Scheme.{u}} [IsAffine Y]
     (f : X ⟶ Y) [Flat f] {b : Γ(Y, ⊤)} (hb : IsSMulRegular Γ(Y, ⊤) b) (U : X.affineOpens) :
-    IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op (f.appTop b)) := by
-  have hres : f.appLE ⊤ U.1 le_top b =
-      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op (f.appTop b) := by
+    IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op (f.appTop b)) := by
+  have hres : f.appLE ⊤ U.val le_top b =
+      X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op (f.appTop b) := by
     -- `appLE` is `app` followed by restriction, `appTop` is `app ⊤`, and `f ⁻¹ᵁ ⊤ = ⊤` holds by
     -- definition.
     rfl
-  simpa only [hres] using f.isSMulRegular_appLE (isAffineOpen_top Y) U.2 le_top hb
+  simpa only [hres] using f.isSMulRegular_appLE (isAffineOpen_top Y) U.property le_top hb
 
 /-- A nonzerodivisor `π` of a ring `R` is a nonzerodivisor among the global functions on
 `Spec R`. -/
@@ -106,7 +106,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isTorsionFree_appTop {R : Type u} [C
   refine ⟨fun r hr c₁ c₂ hc ↦ ?_⟩
   -- The image of `r` is a nonzerodivisor on every affine open of `X`, hence on `X` itself.
   refine Scheme.isSMulRegular_map_of_forall_affineOpens le_rfl
-    (fun W _ ↦ f.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hr.1) W) ?_
+    (fun W _ ↦ f.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hr.left) W) ?_
   simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hc
 
 end TauCeti

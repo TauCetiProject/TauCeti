@@ -138,7 +138,7 @@ include hexp
 the structure theorem. -/
 theorem center_pow_card (z : Subalgebra.center K (MonoidAlgebra K G)) :
     z ^ Fintype.card K = z :=
-  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hexp z.2)
+  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hexp z.property)
 
 /-- The centre of `K[G]` is reduced. -/
 theorem isReduced_center : IsReduced (Subalgebra.center K (MonoidAlgebra K G)) :=

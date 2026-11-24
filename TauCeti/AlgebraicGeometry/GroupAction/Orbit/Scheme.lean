@@ -12,13 +12,13 @@ public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.LocallyClosed
 /-!
 # Scheme models of locally closed orbits
 
-For a finite-type group scheme acting on a finite-type scheme over an algebraically
-closed field, use the scheme-theoretic image of the orbit morphism inside the
-coborder of its image. This gives a locally closed immersion with exactly the geometric
-orbit as its image and a surjective factorization of the orbit morphism. If the group
-is reduced, this orbit scheme is reduced, even when the ambient scheme is not.
-Translation by rational group points restricts to automorphisms of the orbit scheme,
-transitive on its closed points.
+For a finite-type group scheme acting on a finite-type scheme over a field, use the
+scheme-theoretic image of the orbit morphism inside the coborder of its image. This gives a
+locally closed immersion with exactly the geometric orbit as its image and a surjective
+factorization of the orbit morphism. If the group is reduced, this orbit scheme is reduced, even
+when the ambient scheme is not. Translation by rational group points restricts to automorphisms
+of the orbit scheme, which act transitively on its closed points when the ground field is
+algebraically closed.
 
 This construction uses `Scheme.Hom.locallyClosedImage` and the lifting property of
 immersions after surjective, scheme-theoretically dominant morphisms, paralleling
@@ -40,7 +40,7 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
@@ -206,8 +206,9 @@ theorem orbitTranslation_inv_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
   rw [orbitToBase_def]
   exact liftTranslation_inv_toBase _ _ _ g
 
-/-- Rational group points act transitively on the closed points of the orbit scheme. -/
-theorem exists_orbitTranslation_eq {y z : orbitScheme G x}
+/-- Over an algebraically closed field, rational group points act transitively on the closed
+points of the orbit scheme. -/
+theorem exists_orbitTranslation_eq [IsAlgClosed k] {y z : orbitScheme G x}
     (hy : y ∈ closedPoints _) (hz : z ∈ closedPoints _) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitTranslation G x g).hom y = z := by
   exact exists_eq_of_equivariant_of_range_subset_orbit G x (orbitι G x)

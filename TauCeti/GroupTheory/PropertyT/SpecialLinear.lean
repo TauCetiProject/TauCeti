@@ -88,8 +88,7 @@ Let `P` be the spectral projection-valued measure of `ρ|_{ℤ²}` on the compac
   `TauCeti.relativePropertyT_inl_of_not_amenable`, and
   `TauCeti.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact Følner-set and
   amenability characterizations for subgroups `G ≤ SL(2, ℤ)`.
-* `TauCeti.not_amenable_slTwoZ` and `TauCeti.relativePropertyT_inl_slTwo`: nonamenability of
-  `SL(2, ℤ)` and the Kazhdan–Margulis theorem for `(ℤ² ⋊ SL(2, ℤ), ℤ²)`.
+* `TauCeti.relativePropertyT_inl_slTwo`: the Kazhdan–Margulis theorem for `(ℤ² ⋊ SL(2, ℤ), ℤ²)`.
 * `TauCeti.not_hasHaagerupProperty_semidirectProduct_of_not_amenable` and
   `TauCeti.not_hasHaagerupProperty_semidirectProduct_slTwo`: failure of the Haagerup property for
   `ℤ² ⋊ G` (for nonamenable `G ≤ SL(2, ℤ)`) and `ℤ² ⋊ SL(2, ℤ)`.
@@ -126,12 +125,12 @@ def torusAngle (x : AddCircle (1 : ℝ)) : ℝ :=
   (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x : ℝ)
 
 theorem measurable_torusAngle : Measurable torusAngle :=
-  measurable_subtype_coe.comp (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2)).measurable
+  measurable_subtypeVal.comp (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2)).measurable
 
 theorem torusAngle_mem_Ico (x : AddCircle (1 : ℝ)) :
     torusAngle x ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
   unfold torusAngle
-  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).2
+  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).property
   exact ⟨hx.1, by linarith [hx.2]⟩
 
 theorem abs_torusAngle_le (x : AddCircle (1 : ℝ)) : |torusAngle x| ≤ 1 / 2 := by
@@ -254,7 +253,7 @@ theorem exists_pos_le_norm_toCircle_sub_one_sq {δ : ℝ} (hδ : 0 < δ) (hδ2 :
   have hK_nonempty : K.Nonempty := ⟨δ, Or.inr ⟨le_rfl, hδ2⟩⟩
   let φ : ℝ → ℝ := fun t ↦ ‖(AddCircle.toCircle (t : AddCircle (1 : ℝ)) : ℂ) - 1‖ ^ 2
   have hcont : Continuous φ :=
-    (((continuous_subtype_val.comp
+    (((continuous_subtypeVal.comp
       (AddCircle.continuous_toCircle.comp (AddCircle.continuous_mk' (1 : ℝ)))).sub
         continuous_const).norm).pow 2
   obtain ⟨t₀, ht₀K, ht₀min⟩ := hK_compact.exists_isMinOn hK_nonempty hcont.continuousOn
@@ -816,16 +815,12 @@ theorem relativePropertyT_inl_iff_not_amenable.{u} (G : Subgroup SL(2, ℤ)) :
       ¬ Amenable G :=
   relativePropertyT_inl_iff_not_amenable_of_injective G.subtype_injective
 
-/-- The modular group `SL(2, ℤ)` is not amenable. -/
-theorem not_amenable_slTwoZ : ¬ Amenable SL(2, ℤ) :=
-  not_amenable_slTwo
-
 /-- **Kazhdan–Margulis theorem**: the pair `(ℤ² ⋊ SL(2, ℤ), ℤ²)` has relative property (T) in
 every Hilbert-space universe `u`. -/
 theorem relativePropertyT_inl_slTwo.{u} :
     (SemidirectProduct.inl (G := SL(2, ℤ)) (φ := slTwoAction)).range.RelativePropertyT.{u} :=
   relativePropertyT_inl_of_injective_of_not_amenable (ι := MonoidHom.id SL(2, ℤ))
-    Function.injective_id not_amenable_slTwoZ
+    Function.injective_id not_amenable_slTwo
 
 /-- For every nonamenable subgroup `G ≤ SL(2, ℤ)`, the semidirect product `ℤ² ⋊ G` does not have
 the Haagerup property. -/

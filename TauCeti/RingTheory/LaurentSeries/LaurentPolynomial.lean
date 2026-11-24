@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Convergence
+import TauCeti.RingTheory.HahnSeries.Addition
 
 /-!
 # Laurent polynomials as Laurent series
@@ -54,6 +56,9 @@ polynomials.
 * `LaurentSeries.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
 * `TauCeti.LaurentSeries.continuousLinearMap_ext_single`: continuous linear maps into a Hausdorff
   module are determined by their values on monomials.
+* `TauCeti.LaurentSeries.algHom_eq_of_continuous_of_single_one_eq`,
+  `TauCeti.LaurentSeries.continuousAlgHom_ext_single_one`: continuous `K`-algebra homomorphisms
+  into a Hausdorff `K`-algebra are determined by their value on `X = single 1 1`.
 -/
 
 public section
@@ -338,11 +343,47 @@ theorem continuousLinearMap_ext_single {K M : Type*} [Field K] [AddCommMonoid M]
   | add p q hp hq => simp only [Function.comp_apply, map_add] at *; rw [hp, hq]
   | C_mul_T n r =>
     have hs : (single n r : K⸨X⸩) = r • single n 1 := by
-      -- The linear-map apply lemma retains the additive-hom wrapper; unfold just that wrapper
-      -- to express its scalar-linearity law in terms of single.
-      simpa [HahnSeries.single.addMonoidHom] using
-        map_smul (HahnSeries.single.linearMap n) r (1 : K)
+      simpa only [smul_eq_mul, mul_one] using TauCeti.hahnSeries_single_smul n r (1 : K)
     simp only [Function.comp_apply, ← LaurentPolynomial.single_eq_C_mul_T,
       LaurentPolynomial.toLaurentSeries_single, hs, map_smul, h]
+
+/-- Two continuous `K`-algebra homomorphisms from `K⸨X⸩` to a Hausdorff topological `K`-algebra
+that agree on `X = single 1 1` are equal. -/
+theorem algHom_eq_of_continuous_of_single_one_eq {K A : Type*} [Field K] [Semiring A]
+    [Algebra K A] [TopologicalSpace A] [T2Space A] {φ₁ φ₂ : K⸨X⸩ →ₐ[K] A}
+    (h₁ : Continuous φ₁) (h₂ : Continuous φ₂)
+    (hX : φ₁ (single 1 1) = φ₂ (single 1 1)) : φ₁ = φ₂ := by
+  let u : K⸨X⸩ˣ := ⟨single 1 1, single (-1) 1, by simp, by simp⟩
+  have hu_zpow (k : ℤ) : ((u ^ k : K⸨X⸩ˣ) : K⸨X⸩) = single k 1 := by
+    cases k with
+    | ofNat n =>
+      rw [Int.ofNat_eq_natCast, zpow_natCast, Units.val_pow_eq_pow_val]
+      simp [u, single_pow]
+    | negSucc n =>
+      rw [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val]
+      simp [u, single_pow, Int.negSucc_eq]
+  have hu_eq : Units.map φ₁.toMonoidHom u = Units.map φ₂.toMonoidHom u := Units.ext hX
+  apply DFunLike.ext'
+  refine LaurentPolynomial.denseRange_toLaurentSeries.equalizer h₁ h₂ (funext fun p ↦ ?_)
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq =>
+    simp only [Function.comp_apply, map_add] at hp hq ⊢
+    rw [hp, hq]
+  | C_mul_T k c =>
+    have hk : φ₁ (single k 1) = φ₂ (single k 1) := by
+      have hzk := congrArg (fun v : Aˣ ↦ (v : A)) (congrArg (· ^ k) hu_eq)
+      simpa [← map_zpow, hu_zpow] using hzk
+    simp only [Function.comp_apply, map_mul, LaurentPolynomial.toLaurentSeries_C,
+      LaurentPolynomial.toLaurentSeries_T, ← _root_.LaurentSeries.algebraMap_apply,
+      AlgHom.commutes, hk]
+
+/-- Continuous `K`-algebra homomorphisms from `K⸨X⸩` to a Hausdorff topological `K`-algebra are
+determined by their value on `X = single 1 1`. -/
+@[ext]
+theorem continuousAlgHom_ext_single_one {K A : Type*} [Field K] [Semiring A]
+    [Algebra K A] [TopologicalSpace A] [T2Space A] {φ₁ φ₂ : K⸨X⸩ →A[K] A}
+    (hX : φ₁ (single 1 1) = φ₂ (single 1 1)) : φ₁ = φ₂ :=
+  DFunLike.ext _ _ fun x ↦
+    AlgHom.congr_fun (algHom_eq_of_continuous_of_single_one_eq φ₁.continuous φ₂.continuous hX) x
 
 end TauCeti.LaurentSeries

@@ -139,7 +139,7 @@ theorem faceChart_source : (faceChart he i hs).source =
   -- Every point of the face section lies over the source of `e`.
   intro _ _
   rw [mem_preimage, faceCoordChart, OpenPartialHomeomorph.subtypeCoord_source, mem_preimage]
-  exact (fun p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} ↦ p.2.1) _
+  exact (fun p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} ↦ p.property.1) _
 
 /-- The target of a face chart is the preimage of the target of the chart of `M` under the
 inclusion of the quadrant onto the face `z i = 0`. -/
@@ -315,7 +315,7 @@ private theorem contDiffOn_faceChart_symm_trans [IsManifold (𝓡c (m + 1)) n M]
     rw [mem_preimage, modelWithCornersEuclideanQuadrant_apply,
       modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam,
       OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]
-    exact ⟨hq, by rw [mem_preimage, ← hp']; exact p'.2.1⟩
+    exact ⟨hq, by rw [mem_preimage, ← hp']; exact p'.property.1⟩
   · rintro _ ⟨hy, q, rfl⟩
     rw [mem_preimage, (𝓡c m).left_inv] at hy
     obtain ⟨p', -, hp', hq⟩ := key q hy
@@ -345,7 +345,7 @@ theorem contMDiff_point [IsManifold (𝓡c (m + 1)) n M] :
   have hbe : b.point ∈ e.source := by
     obtain ⟨p, hp⟩ := faceChart_source (hs := hs) ▸ hb
     rw [← hp, point_faceSection]
-    exact p.2.1
+    exact p.property.1
   rw [contMDiffAt_iff_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (chart_mem_atlas (EuclideanQuadrant m) b))
     (IsManifold.subset_maximalAtlas he) (mem_chart_source (EuclideanQuadrant m) b) hbe, hc]

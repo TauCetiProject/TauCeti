@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.RecoveredSubgroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Regular
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Unpointed
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Subgroups parametrise the pointed connected covers bijectively

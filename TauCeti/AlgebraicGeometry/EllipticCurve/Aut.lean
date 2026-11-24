@@ -262,7 +262,7 @@ instance finite_autGroup [E.IsElliptic] : Finite E.autGroup := by
   have hR : R.Finite := hV.biUnion fun v _ ↦ finite_setOf_r _ _ _ _ _
   have hS : S.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
   have hT : T.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
-  let f : E.autGroup → A × A × A × A := fun C ↦ ((C.1.u⁻¹ : Aˣ), C.1.r, C.1.s, C.1.t)
+  let f : E.autGroup → A × A × A × A := fun C ↦ ((C.val.u⁻¹ : Aˣ), C.val.r, C.val.s, C.val.t)
   have hf : Function.Injective f := fun C D h ↦ by
     simp only [f, Prod.mk.injEq] at h
     exact Subtype.ext (VariableChange.ext (inv_injective (Units.ext h.1)) h.2.1 h.2.2.1 h.2.2.2)
@@ -307,7 +307,7 @@ noncomputable def autGroupMulEquiv [E.IsElliptic] (hj₀ : E.j ≠ 0) (hj₁₇�
   let g : E.autGroup := ⟨E.negVariableChange, E.negVariableChange_smul_self⟩
   have hg : g ≠ 1 := fun h ↦ E.negVariableChange_ne_one (congrArg Subtype.val h)
   have key : ∀ C : E.autGroup, C = 1 ∨ C = g := fun C ↦
-    (E.eq_one_or_eq_negVariableChange_of_smul_eq hj₀ hj₁₇₂₈ C.2).imp Subtype.ext Subtype.ext
+    (E.eq_one_or_eq_negVariableChange_of_smul_eq hj₀ hj₁₇₂₈ C.property).imp Subtype.ext Subtype.ext
   (zmodMulEquivOfGenerator (g := g) (fun x ↦ by rcases key x with h | h <;> subst h <;> simp)
     ((Nat.card_eq_two_iff' 1).mpr ⟨g, hg, fun y hy ↦ (key y).resolve_left hy⟩)).symm
 

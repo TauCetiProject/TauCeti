@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit
+import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 
 /-!
 # Čech cohomology of families refined by a system, and cofinal systems
@@ -39,6 +40,9 @@ compatibly with these maps.
   member of the system refining the family and any refinement.
 * `TauCeti.CategoryTheory.cechComplexHomologyMap_comp_toCechCohomology`: `toCechCohomology` is
   natural in morphisms of families.
+* `TauCeti.CategoryTheory.isIso_cechCohomologyι_app`: if every refinement of a member by a later
+  member induces an isomorphism on the Čech cohomology of `P`, the structure map of that member is
+  an isomorphism at `P`.
 * `TauCeti.CategoryTheory.toCechCohomology_comp_cechCohomologyComparison`: the comparison maps are
   compatible with `toCechCohomology`.
 
@@ -117,6 +121,40 @@ theorem cechComplexHomologyMap_comp_toCechCohomology {U V : FormalCoproduct.{w} 
   rw [toCechCohomology_eq A E hE n V j ψ, toCechCohomology_eq A E hE n U j (ψ ≫ φ),
     cechComplexHomologyMap_comp]
   exact (Category.assoc _ _ _).symm
+
+/-- The component at a presheaf `P` of `cechComplexHomologyMap_comp_toCechCohomology`: the map on
+Čech cohomology of `P` induced by `φ`, followed by the structure map of `V`, is the structure map
+of `U`. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_toCechCohomology_app {U V : FormalCoproduct.{w} C}
+    (φ : V ⟶ U) (hV : ∃ j, Nonempty (E j ⟶ V)) (P : Cᵒᵖ ⥤ A) :
+    HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫
+        (toCechCohomology A E hE n V hV).app P =
+      (toCechCohomology A E hE n U (hV.imp fun _ ⟨ψ⟩ ↦ ⟨ψ ≫ φ⟩)).app P := by
+  rw [← cechComplexHomologyMap_app]
+  -- the source of `(toCechCohomology A E hE n V hV).app P` is the homology of the Čech complex only
+  -- after unfolding `Functor.comp_obj`, so `rw` cannot fold the composite and the steps are
+  -- combined as terms
+  exact (NatTrans.comp_app _ _ P).symm.trans
+    (NatTrans.congr_app (cechComplexHomologyMap_comp_toCechCohomology A E hE n φ hV) P)
+
+/-- **A system that is constant from one member on.** If every refinement of the member `E j₀` by
+a later member induces an isomorphism on the degree `n` Čech cohomology of `P`, the structure map
+of `E j₀` is an isomorphism at `P`. -/
+theorem isIso_cechCohomologyι_app (P : Cᵒᵖ ⥤ A) (j₀ : J)
+    (h : ∀ j, j₀ ≤ j → ∀ φ : E j ⟶ E j₀,
+      IsIso (HomologicalComplex.homologyMap (cechComplexMap P φ) n)) :
+    IsIso ((cechCohomologyι E hE n j₀).app P) := by
+  have : Nonempty J := ⟨j₀⟩
+  -- the transition maps of the diagram of Čech cohomologies of `P` are the maps induced by
+  -- refinements, so the diagram is constant from `j₀` on
+  have hc : ((cechCohomologyDiagram A E hE n).flip.obj P).IsEventuallyConstantFrom j₀ :=
+    fun j f ↦ by
+      rw [Functor.flip_obj_map, cechCohomologyDiagram_map A E hE n f (hE (leOfHom f)).some,
+        cechComplexHomologyMap_app]
+      exact h j (leOfHom f) _
+  rw [cechCohomologyι_app]
+  exact hc.isIso_ι_of_isColimit (colimit.isColimit _)
 
 /-! ### Comparison of mutually cofinal systems -/
 

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Kimi K3
+Authors: Kimi K3, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -14,7 +14,8 @@ For a family of submodules with a direct-sum decomposition, `TauCeti.homogeneous
 projection `M →ₗ[R] ℳ η` onto the `η`-th homogeneous piece, and `TauCeti.homogeneousComponent`
 composes it with the submodule inclusion to give an endomorphism of the ambient module. These
 projections are idempotent and pairwise orthogonal, acting as the identity on their own piece and as
-zero on every other piece. We also record the subtype-valued evaluations
+zero on every other piece. A homogeneous substructure not contained in an additive submonoid
+contains a homogeneous element outside that submonoid. We also record the subtype-valued evaluations
 `TauCeti.decompose_apply_of_mem_same` and `TauCeti.decompose_apply_of_mem_ne` of
 `DirectSum.decompose` for any `AddSubmonoidClass` decomposition.
 
@@ -126,3 +127,18 @@ theorem homogeneousComponent_comp_of_ne {i j : ι} (h : i ≠ j) :
   exact homogeneousComponent_apply_of_mem_ne ℳ (homogeneousComponent_mem ℳ j a) (Ne.symm h)
 
 end TauCeti
+
+/-- A homogeneous substructure not contained in an additive submonoid has a homogeneous
+witness outside it. The left substructure need not be closed under addition. -/
+theorem DirectSum.SetLike.IsHomogeneous.exists_mem_notMem_of_not_subset
+    {ι M σ P Q : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] {ℳ : ι → σ} [DirectSum.Decomposition ℳ]
+    [SetLike P M] [SetLike Q M] [AddSubmonoidClass Q M]
+    {p : P} (hp : DirectSum.SetLike.IsHomogeneous ℳ p) {q : Q}
+    (h : ¬ (p : Set M) ⊆ q) : ∃ i, ∃ x ∈ ℳ i, x ∈ p ∧ x ∉ q := by
+  classical
+  obtain ⟨x, hxp, hxq⟩ := Set.not_subset.mp h
+  by_contra! hsep
+  apply hxq
+  rw [← DirectSum.sum_support_decompose ℳ x]
+  exact sum_mem fun i _ ↦ hsep i _ (SetLike.coe_mem _) (hp i hxp)

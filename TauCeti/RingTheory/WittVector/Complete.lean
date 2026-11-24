@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.Topology.Algebra.Valued.NormedValued
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # `(p, [ϖ])`-adic completeness of Witt vectors of a perfect ring
@@ -33,6 +34,8 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
   every `i < n` lies in `(p, [ϖ]) ^ n`.
 * `WittVector.mem_span_p_teichmuller_iff`: if `R` is perfect, a Witt vector lies in `(p, [ϖ])`
   exactly when `ϖ` divides its zeroth coordinate.
+* `WittVector.teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow`: if `R` is perfect and
+  `ϖ ^ p ^ k` divides `a - b`, then `[a] - [b]` lies in `(p, [ϖ]) ^ (k + 1)`.
 * `WittVector.ker_mk_comp_constantCoeff`: if `R` is perfect, the zeroth coordinate followed by
   reduction modulo `ϖ` has kernel `(p, [ϖ])`.
 * `WittVector.span_p_teichmuller_eq_top_iff`: if `R` has characteristic `p`, the ideal `(p, [ϖ])`
@@ -167,6 +170,31 @@ theorem mem_span_p_teichmuller_iff {ϖ : R} {x : 𝕎 R} :
   · have := mem_map_of_mem (constantCoeff : 𝕎 R →+* R) hx
     simpa [map_span, Set.image_pair, span_insert_zero, mem_span_singleton] using this
   · simpa using mem_span_p_teichmuller_pow_of_pow_dvd_coeff (n := 1) (by simpa using hx)
+
+/-- **Teichmüller representatives of `ϖ ^ p ^ k`-adically close elements are
+`(p, [ϖ]) ^ (k + 1)`-adically close.** If `R` is perfect of characteristic `p` and `ϖ ^ p ^ k`
+divides `a - b`, then `[a] - [b]` lies in `(p, [ϖ]) ^ (k + 1)`: the `p ^ k`-th roots of `a` and
+`b` are congruent modulo `ϖ`, so their Teichmüller representatives are congruent modulo
+`(p, [ϖ])`, and raising to the `p ^ k`-th power gains a factor of `(p, [ϖ])` each time. -/
+theorem teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow {ϖ a b : R} {k : ℕ}
+    (h : ϖ ^ p ^ k ∣ a - b) :
+    teichmuller p a - teichmuller p b ∈ span {(p : 𝕎 R), teichmuller p ϖ} ^ (k + 1) := by
+  obtain ⟨c, hc⟩ := h
+  set e := iterateFrobeniusEquiv R p k
+  -- The `p ^ k`-th roots of `a` and `b` differ by `ϖ` times the `p ^ k`-th root of `c`.
+  have hroot : e.symm a - e.symm b = ϖ * e.symm c :=
+    e.injective <| by
+      simp only [map_sub, map_mul, e.apply_symm_apply, hc, e, iterateFrobeniusEquiv_def]
+  have hmem : teichmuller p (e.symm a) - teichmuller p (e.symm b) ∈
+      span {(p : 𝕎 R), teichmuller p ϖ} :=
+    mem_span_p_teichmuller_iff.mpr ⟨e.symm c, by
+      rw [← hroot, ← constantCoeff_apply, map_sub, constantCoeff_apply, constantCoeff_apply,
+        teichmuller_coeff_zero, teichmuller_coeff_zero]⟩
+  have hpow := Ideal.pow_pow_sub_pow_pow_mem_pow_succ (n := p) (subset_span (by simp)) hmem k
+  -- The `p ^ k`-th powers of the `p ^ k`-th roots are `a` and `b` again.
+  have hpk (x : R) : e.symm x ^ p ^ k = x := by
+    rw [← iterateFrobeniusEquiv_def, e.apply_symm_apply]
+  simpa only [← map_pow, hpk] using hpow
 
 /-- If `R` is perfect of characteristic `p`, the zeroth Witt coordinate followed by reduction
 modulo `ϖ` has kernel `(p, [ϖ])`. -/

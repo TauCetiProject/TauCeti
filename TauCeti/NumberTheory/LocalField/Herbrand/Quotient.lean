@@ -70,26 +70,19 @@ theorem lowerIndex_mul_restrictScalars_of_forall_le (σ : M ≃ₐ[K] M)
     lowerIndex 𝒪[M] (σ * τ.restrictScalars K) =
       min (lowerIndex 𝒪[M] τ) (lowerIndex 𝒪[M] σ) := by
   rw [← lowerIndex_restrictScalars (K := K) τ]
-  set τ' := τ.restrictScalars K
-  -- `i(σ τ) ≥ min (i(σ), i(τ))`, and `i(τ) = i(σ⁻¹ (σ τ)) ≥ min (i(σ), i(σ τ)) = i(σ τ)`.
-  have h₁ := TauCeti.IsLocalRing.min_le_lowerIndex_mul (S := 𝒪[M]) σ τ'
-  have h₂ := TauCeti.IsLocalRing.min_le_lowerIndex_mul (S := 𝒪[M]) σ⁻¹ (σ * τ')
-  rw [inv_mul_cancel_left, TauCeti.IsLocalRing.lowerIndex_inv, min_eq_right (hσ τ)] at h₂
-  exact le_antisymm (le_min h₂ (hσ τ)) (by rw [min_comm]; exact h₁)
+  exact TauCeti.IsLocalRing.lowerIndex_mul_eq_min_of_le (hσ τ)
 
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-  [Module.Finite K L] [Normal K L] [ValuativeExtension L M] [IsGalois L M] in
+  [Module.Finite K L] [Normal K L] [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
 /-- Every coset `σ H` contains an element of largest lower index. -/
 theorem exists_forall_lowerIndex_mul_restrictScalars_le (σ : M ≃ₐ[K] M) :
     ∃ τ₀ : M ≃ₐ[L] M, ∀ τ : M ≃ₐ[L] M,
       lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K * τ.restrictScalars K) ≤
         lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K) := by
-  obtain ⟨τ₀, -, hτ₀⟩ := Finset.exists_max_image (Finset.univ : Finset (M ≃ₐ[L] M))
-    (fun τ ↦ lowerIndex 𝒪[M] (σ * τ.restrictScalars K)) Finset.univ_nonempty
+  obtain ⟨_, ⟨τ₀, rfl⟩, hτ₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le
+    (S := 𝒪[M]) (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range σ
   refine ⟨τ₀, fun τ ↦ ?_⟩
-  have := hτ₀ (τ₀ * τ) (Finset.mem_univ _)
-  rwa [← AlgEquiv.restrictScalarsHom_apply K (τ₀ * τ), map_mul, AlgEquiv.restrictScalarsHom_apply,
-    AlgEquiv.restrictScalarsHom_apply, ← mul_assoc] at this
+  simpa only [AlgEquiv.restrictScalarsHom_apply] using hτ₀ _ ⟨τ, rfl⟩
 
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. If `σ` has the
 largest lower index in its coset `σ H`, and `i_G(σ) = j` is finite, then

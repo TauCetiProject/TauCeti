@@ -48,7 +48,7 @@ theorem map_mem_baseChange_of_map_mem (hd : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p 
   obtain ⟨x, rfl⟩ := Submodule.toBaseChange_surjective' _ _ hx
   clear hx
   induction x with
-  | tmul s a => simpa using Submodule.tmul_mem_baseChange_of_mem s (hd a.2)
+  | tmul s a => simpa using Submodule.tmul_mem_baseChange_of_mem s (hd a.property)
   | add x y hx hy => simpa using add_mem hx hy
 
 /-- The base change `1 ⊗ d` of a linear map `d` satisfying the graded Leibniz rule on a

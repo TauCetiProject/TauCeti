@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Linear
+public import Mathlib.Data.Finset.Defs
+public import TauCeti.GroupTheory.FreeGroup.ConjugateBasis
+import Mathlib.Basic.Countable.Defs
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
@@ -17,7 +19,7 @@ survives simultaneously under a single homomorphism to `FreeGroup (Fin 2)`.
 The finitely many elements lie in a free factor `FreeGroup β` of countable rank, and a retraction
 of `FreeGroup ι` onto `FreeGroup β` fixes them (`FreeGroup.exists_countable_retraction`), so it
 keeps them nontrivial. Then `FreeGroup β` embeds in `FreeGroup (Fin 2)` by
-`TauCeti.injective_freeGroup_lift_conj_zpow_of`.
+`FreeGroup.injective_lift_conj_zpow_of_ne`.
 
 This shows that the choice of free target in the definitions of residually free and fully
 residually free groups is immaterial: the free group of rank two always suffices.
@@ -52,7 +54,7 @@ theorem exists_monoidHom_fin_two_forall_ne_one (s : Finset (FreeGroup ι))
   refine ⟨(lift fun i : β => of (1 : Fin 2) ^ (k i : ℤ) * of 0 * (of 1 ^ (k i : ℤ))⁻¹).comp r,
     fun x hx hφ => hs x hx ?_⟩
   have hrx : r x = 1 := (map_eq_one_iff _
-    (TauCeti.injective_freeGroup_lift_conj_zpow_of (Nat.cast_injective.comp hk))).1 hφ
+    (injective_lift_conj_zpow_of_ne Fin.zero_ne_one (Nat.cast_injective.comp hk))).1 hφ
   have hx' : map ((↑) : β → ι) (r x) = x := hr ⟨x, hx⟩
   rw [← hx', hrx, _root_.map_one]
 

@@ -44,6 +44,8 @@ spaces and lens spaces, product metrics on Dold manifolds `(Sᵃ × ℂPᵇ) / C
   properly discontinuous group action is compatible with the orbit projection.
 * `Bundle.ContMDiffRiemannianMetric.quotient`: a metric invariant under a free, properly
   discontinuous smooth group action descends to the orbit space.
+* `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_quotient`: the orbit projection is a
+  local Riemannian isometry onto the orbit space with this metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback_eq_iff_eq_quotient`: the metric on the orbit space is
   the unique metric whose pullback along the orbit projection is the invariant metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_quotient`: the metric on the orbit space has the
@@ -269,6 +271,15 @@ theorem quotient_inner_mfderiv (x : M) (v w : TangentSpace I x) :
         (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x w) =
       g.inner x v w :=
   g.descend_inner_mfderiv _ _ _ x v w
+
+/-- With `g` installed on `M` and the metric on the orbit space descended from it, the orbit
+projection is a local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_quotient :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    letI : RiemannianBundle (fun x : MulAction.orbitRel.Quotient G M ↦ TangentSpace I x) :=
+      ⟨(g.quotient hg).toRiemannianMetric⟩
+    TauCeti.IsLocalRiemannianIsometry I I (Quotient.mk (MulAction.orbitRel G M)) :=
+  g.isLocalRiemannianIsometry_descend _ _ _
 
 variable [FiniteDimensional ℝ E]
 

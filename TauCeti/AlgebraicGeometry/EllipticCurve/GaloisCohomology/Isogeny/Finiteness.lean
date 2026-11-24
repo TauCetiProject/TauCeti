@@ -61,7 +61,7 @@ theorem Hom.finite_kerCoeff (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0)
     (fun h ↦ hf ((Hom.map_eq_zero_iff f (algebraMap K (SeparableClosure K))).1 h))
   let ι : f.KerCoeff → f.mapSeparableClosure.pointMapHom.ker := fun P ↦
     ⟨W₁.pointCoeffEquiv.symm P, by
-      have hP := P.2
+      have hP := P.property
       rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass] at hP
       rw [AddMonoidHom.mem_ker, Hom.pointMapHom_apply,
         ← Hom.pointCoeffEquiv_symm_pointCoeffMap, hP, map_zero]⟩

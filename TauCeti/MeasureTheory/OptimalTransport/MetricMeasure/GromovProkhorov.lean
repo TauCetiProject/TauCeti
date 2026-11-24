@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 public import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 public import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.TransportationDistance
@@ -72,9 +71,9 @@ it never meets the topology of the disjoint union.
 ## References
 
 * A. Greven, P. Pfaffelhuber and A. Winter, *Convergence in distribution of random metric measure
-  spaces (Λ-coalescent measure trees)*, Probab. Theory Related Fields 145 (2009), 285--322, §2, for
-  the Gromov–Prokhorov metric as an infimum of Prokhorov distances over common isometric
-  embeddings.
+  spaces (Λ-coalescent measure trees)*, Probab. Theory Related Fields 145 (2009), 285--322, §5,
+  Definition 5.1 and Remark 5.2(ii), for the Gromov–Prokhorov metric as an infimum of Prokhorov
+  distances over common isometric embeddings.
 * V. Strassen, *The existence of probability measures with given marginals*, Ann. Math. Statist.
   36 (1965), 423--439, for the comparison of the Prokhorov distance with couplings.
 * A. L. Gibbs and F. E. Su, *On choosing and bounding probability metrics*, Int. Stat. Rev. 70

@@ -241,7 +241,7 @@ instance finiteDimensional_kummerField
   have hle : kummerField E n Δ ≤ adjoin K S := by
     refine kummerField_le_iff.2 fun a ha x hx ↦ ?_
     obtain ⟨h, hh⟩ := QuotientGroup.mk_out_eq_mul (P.subgroupOf Δ) ⟨a, ha⟩
-    obtain ⟨c, hc⟩ := Subgroup.mem_subgroupOf.1 h.2
+    obtain ⟨c, hc⟩ := Subgroup.mem_subgroupOf.1 h.property
     -- `x * c` is a root of `Xⁿ - b` for the representative `b = a * cⁿ` of the class of `a`.
     have hxc : x * algebraMap K E c ∈ S := Set.mem_iUnion.2 ⟨_, by
       rw [mem_rootSet_X_pow_sub_C (NeZero.ne n), hh, mul_pow, hx]
@@ -277,7 +277,7 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
     rw [IntermediateField.minpoly_eq]
     refine splits_of_mem_adjoin K E (S := {x : E | ∃ a ∈ Δ, x ^ n = algebraMap K E a})
       (fun x ⟨a, ha, hx⟩ ↦ ⟨⟨_, monic_X_pow_sub_C (a : K) (NeZero.ne n), by
-        rw [eval₂_sub, eval₂_X_pow, eval₂_C, hx, sub_self]⟩, ?_⟩) y.2
+        rw [eval₂_sub, eval₂_X_pow, eval₂_C, hx, sub_self]⟩, ?_⟩) y.property
     refine Splits.of_dvd ?_ (Polynomial.map_ne_zero (X_pow_sub_C_ne_zero (NeZero.pos n) _))
       (Polynomial.map_dvd _ (hdvd hx))
     simpa using X_pow_sub_C_splits_of_isPrimitiveRoot
@@ -401,7 +401,7 @@ the image of `Δ` in `Kˣ ⧸ (Kˣ)ⁿ`, as soon as this index is finite. -/
 theorem finrank_kummerField [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
     (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) :
     finrank K (kummerField E n Δ) = (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ := by
-  choose r hr using fun a : Δ ↦ exists_pow_eq_kummerField hroots a a.2
+  choose r hr using fun a : Δ ↦ exists_pow_eq_kummerField hroots a a.property
   rw [← IsGalois.card_aut_eq_finrank]
   exact le_antisymm (natCard_algEquiv_kummerField_le hr)
     (relIndex_le_natCard_algEquiv_kummerField hr)
@@ -431,7 +431,7 @@ theorem finrank_kummerField_le_relIndex_mul_finrank
   have hle : kummerField E n (D ⊓ Δ) ≤ L := by
     refine kummerField_le_iff.2 fun a ha x hx ↦ ?_
     obtain ⟨b, hb⟩ := ha.1
-    refine (L.exists_mem_pow_eq_iff_of_pow_eq hx).1 ⟨((b : L) : E), (b : L).2, ?_⟩
+    refine (L.exists_mem_pow_eq_iff_of_pow_eq hx).1 ⟨((b : L) : E), (b : L).property, ?_⟩
     simpa using congrArg (fun y : Lˣ ↦ ((y : L) : E)) hb
   calc finrank K (kummerField E n Δ) = P.relIndex (D ⊓ Δ) * D.relIndex Δ := by
         rw [finrank_kummerField hroots, hidx]

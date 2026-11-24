@@ -178,7 +178,7 @@ read in the ambient representation, is the ambient action on the value. -/
 @[simp]
 theorem coe_toQuiverRep_map_apply (N : QuiverSubrep M) {a b : Q} (p : Quiver.Path a b)
     (x : N.toSubmodule a) :
-    (N.toQuiverRep.map p x).1 = M.map p (x : M.obj a) :=
+    (N.toQuiverRep.map p x).val = M.map p (x : M.obj a) :=
   (rfl)
 
 instance mono_ι (N : QuiverSubrep M) : Mono N.ι := by
@@ -221,7 +221,7 @@ theorem isIso_ι_iff (N : QuiverSubrep M) : IsIso N.ι ↔ N = ⊤ := by
       rwa [ConcreteCategory.isIso_iff_bijective] at this
     refine Submodule.eq_top_iff'.2 fun y ↦ ?_
     obtain ⟨x, hx⟩ := hb.2 y
-    exact hx ▸ x.2
+    exact hx ▸ x.property
   · intro h
     have ht : ∀ a : Q, N.toSubmodule a = ⊤ := fun a ↦ by rw [h, toSubmodule_top]
     intro a
