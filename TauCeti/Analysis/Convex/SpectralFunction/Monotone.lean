@@ -28,7 +28,8 @@ closed, the spectral function `T ↦ f(λ(T))` is monotone, and it is strictly m
 partial derivatives of `f` are positive: if `λ(S) = λ(T)`, then `T - S ≥ 0` has trace zero, so
 `S = T` (`LinearMap.IsSymmetric.eq_of_re_inner_le_of_eigenvalues_eq`).
 
-Convexity of `Γ` is not used, and `Γ` need not be symmetric for these statements.
+Convexity of `Γ` is not used, and `Γ` need not be symmetric for these statements. The results on
+`ℝⁿ` are stated for `ι → ℝ` with `ι` finite; upward closure holds for any index type `ι`.
 
 ## Main results
 
@@ -56,31 +57,31 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-variable {n : ℕ} {Γ : Set (Fin n → ℝ)} {f : (Fin n → ℝ) → ℝ} {μ ν : Fin n → ℝ}
+variable {ι : Type*} {Γ : Set (ι → ℝ)} {f : (ι → ℝ) → ℝ} {μ ν : ι → ℝ}
 
-/-- **Upward closure.** If `Γ ⊆ ℝⁿ` is open and adding a vector with positive coordinates to a
+/-- **Upward closure.** If `Γ ⊆ ℝ^ι` is open and adding a vector with positive coordinates to a
 point of `Γ` stays in `Γ`, then `Γ` is upward closed for the componentwise order. -/
 theorem mem_of_le_of_forall_add_mem (hΓo : IsOpen Γ)
-    (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
+    (hΓ : ∀ μ ∈ Γ, ∀ d : ι → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
     ν ∈ Γ := by
   -- Move down from `μ` by a small multiple of `(1, …, 1)`, staying in `Γ`, and then up to `ν`.
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΓo μ hμ
-  have hmem : μ - (fun _ ↦ ε / 2) ∈ Γ := by
-    refine hball (mem_ball_iff_norm.mpr ?_)
-    rw [sub_sub_cancel_left, norm_neg]
-    refine (pi_norm_const_le (ε / 2)).trans_lt ?_
-    rw [Real.norm_of_nonneg (by positivity)]
-    linarith
-  have h := hΓ _ hmem (ν - μ + (fun _ ↦ ε / 2)) fun i ↦ by
+  have hc : Continuous fun t : ℝ ↦ μ - fun _ : ι ↦ t :=
+    continuous_const.sub (continuous_pi fun _ ↦ continuous_id)
+  have hev : ∀ᶠ t in nhdsWithin (0 : ℝ) (Ioi 0), μ - (fun _ ↦ t) ∈ Γ :=
+    nhdsWithin_le_nhds (hc.continuousAt.preimage_mem_nhds (by
+      rw [show (μ - fun _ : ι ↦ (0 : ℝ)) = μ from sub_zero μ]
+      exact hΓo.mem_nhds hμ))
+  obtain ⟨t, hmem, ht⟩ := (hev.and self_mem_nhdsWithin).exists
+  have h := hΓ _ hmem (ν - μ + (fun _ ↦ t)) fun i ↦ by
     have := hle i
     simp only [Pi.add_apply, Pi.sub_apply]
-    linarith
+    linarith [mem_Ioi.mp ht]
   rwa [sub_add_add_cancel, add_sub_cancel] at h
 
 /-- **Mean value theorem along a segment.** For `μ ∈ Γ` and `ν ≥ μ`, the segment from `μ` to `ν`
 lies in `Γ`, and `f ν - f μ = Σ_i (ν i - μ i) ∂_i f(z)` for some `z ∈ Γ`. -/
-private theorem exists_mem_sub_eq_sum_fderiv_single (hΓo : IsOpen Γ)
-    (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
+private theorem exists_mem_sub_eq_sum_fderiv_single [Fintype ι] [DecidableEq ι] (hΓo : IsOpen Γ)
+    (hΓ : ∀ μ ∈ Γ, ∀ d : ι → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
     (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
     ∃ z ∈ Γ, f ν - f μ = ∑ i, (ν i - μ i) * fderiv ℝ f z (Pi.single i 1) := by
   have hsub : segment ℝ μ ν ⊆ Γ := by
@@ -97,16 +98,17 @@ private theorem exists_mem_sub_eq_sum_fderiv_single (hΓo : IsOpen Γ)
   refine ⟨z, hsub hz, h.trans ?_⟩
   rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
   simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
-    show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
+    show ∀ i : ι, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
       fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
 
 /-- **Monotonicity of `f`.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let `f` be
 differentiable on `Γ` with nonnegative partial derivatives there. Then `f μ ≤ f ν` whenever
 `μ ∈ Γ` and `μ ≤ ν`. -/
-theorem le_of_le_of_forall_fderiv_single_nonneg (hΓo : IsOpen Γ)
-    (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
+theorem le_of_le_of_forall_fderiv_single_nonneg [Finite ι] [DecidableEq ι] (hΓo : IsOpen Γ)
+    (hΓ : ∀ μ ∈ Γ, ∀ d : ι → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
     (hf' : ∀ μ ∈ Γ, ∀ i, 0 ≤ fderiv ℝ f μ (Pi.single i 1)) (hμ : μ ∈ Γ) (hle : μ ≤ ν) :
     f μ ≤ f ν := by
+  have := Fintype.ofFinite ι
   obtain ⟨z, hz, h⟩ := exists_mem_sub_eq_sum_fderiv_single hΓo hΓ hf hμ hle
   rw [← sub_nonneg, h]
   exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i)) (hf' z hz i)
@@ -114,10 +116,11 @@ theorem le_of_le_of_forall_fderiv_single_nonneg (hΓo : IsOpen Γ)
 /-- **Strict monotonicity of `f`.** Let `Γ ⊆ ℝⁿ` be open with `Γ + Γ_n ⊆ Γ`, and let `f` be
 differentiable on `Γ` with positive partial derivatives there. Then `f μ < f ν` whenever `μ ∈ Γ`,
 `μ ≤ ν` and `μ ≠ ν`. -/
-theorem lt_of_le_of_ne_of_forall_fderiv_single_pos (hΓo : IsOpen Γ)
-    (hΓ : ∀ μ ∈ Γ, ∀ d : Fin n → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
+theorem lt_of_le_of_ne_of_forall_fderiv_single_pos [Finite ι] [DecidableEq ι] (hΓo : IsOpen Γ)
+    (hΓ : ∀ μ ∈ Γ, ∀ d : ι → ℝ, (∀ i, 0 < d i) → μ + d ∈ Γ) (hf : DifferentiableOn ℝ f Γ)
     (hf' : ∀ μ ∈ Γ, ∀ i, 0 < fderiv ℝ f μ (Pi.single i 1)) (hμ : μ ∈ Γ) (hle : μ ≤ ν)
     (hne : μ ≠ ν) : f μ < f ν := by
+  have := Fintype.ofFinite ι
   obtain ⟨j, hj⟩ : ∃ j, μ j ≠ ν j := Function.ne_iff.mp hne
   obtain ⟨z, hz, h⟩ := exists_mem_sub_eq_sum_fderiv_single hΓo hΓ hf hμ hle
   rw [← sub_pos, h]
