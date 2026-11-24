@@ -26,11 +26,11 @@ element with `tr (E a * y) = δ⁻¹ * tr (a * ι y)` for all `y`, so for `δ �
 normalized traces `δ⁻ⁿ tr`. It is a `Q_(n+1)`-bimodule map, and for `δ ≠ 0` it retracts the strand
 inclusion. On the tower normal form it is the scaled closure of the last strand:
 
-`E (ι a) = a`, `E (ι a * e * ι b) = δ⁻¹ • (a * b)`,
+`E (ι a * e * ι b) = δ⁻¹ • (a * b)`, and for `δ ≠ 0` also `E (ι a) = a`,
 
 where `e` is the last generator, and for `δ ≠ 0` these two identities determine `E`. In
 particular `E (δ⁻¹ • e) = δ⁻² • 1`, Jones's relation for the projection of the basic construction.
-The expectation also computes the sandwich of the tower normal form: one level up,
+For `δ ≠ 0` the expectation also computes the sandwich of the tower normal form: one level up,
 `e * ι x * e = δ • ι (ι (E x)) * e`, the relation `p x p = E (x) p` of the basic construction for
 the Jones projection `p = δ⁻¹ • e`. At a self-adjoint loop parameter, the expectations commute
 with the analytic adjoint. No positivity is assumed; at the admissible loop parameters these are
@@ -52,10 +52,10 @@ the expectations of the positive Jones quotients.
   expectation retracts the strand inclusion.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientExpectation_mk_strandIncl_mul_e_last_mul`: the
   expectation closes the last strand, with the factor `δ⁻¹`.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_quotientExpectation`: the closure identities on the
-  tower normal form determine the expectation.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.mk_e_last_mul_quotientStrandIncl_mul_mk_e_last`: the
-  basic construction relation `e * ι x * e = δ • ι (ι (E x)) * e`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_quotientExpectation`: for `δ ≠ 0`, the closure
+  identities on the tower normal form determine the expectation.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.mk_e_last_mul_quotientStrandIncl_mul_mk_e_last`: for
+  `δ ≠ 0`, the basic construction relation `e * ι x * e = δ • ι (ι (E x)) * e`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientExpectation_star`: the expectations commute with
   the analytic adjoint.
 
