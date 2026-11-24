@@ -13,6 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 import TauCeti.AlgebraicGeometry.Fibers.Dimension
 import TauCeti.AlgebraicGeometry.Morphisms.Generalizing.Dimension
+import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.Topology.KrullDimension.Basic
 
@@ -190,28 +191,6 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq
     exact congrArg Ideal.height (Ideal.map_comap_of_surjective _ Ideal.Quotient.mk_surjective _)
   rw [← h₁, hB, WithBot.coe_add, h₂, h₃]
 
-/-- Cancellation of dimensions in `WithBot ℕ∞`: if `n + d = N = n' + d'` with `d' ≤ d` and `N`
-finite and nonnegative, then `n ≤ n'`. This compares orbit dimensions through the stabilizer
-dimensions of `topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_eq`. -/
-private theorem natCast_le_natCast_of_add_eq_of_le {n n' : ℕ} {d d' N : WithBot ℕ∞}
-    (h : (n : WithBot ℕ∞) + d = N) (h' : (n' : WithBot ℕ∞) + d' = N) (hle : d' ≤ d)
-    (hbot : 0 ≤ N) (htop : N < ⊤) : (n : WithBot ℕ∞) ≤ n' := by
-  subst h
-  induction d using WithBot.recBotCoe with
-  | bot => simp at hbot
-  | coe d =>
-  induction d using ENat.recTopCoe with
-  | top => simp at htop
-  | coe d =>
-  induction d' using WithBot.recBotCoe with
-  | bot => norm_cast at h'
-  | coe d' =>
-  induction d' using ENat.recTopCoe with
-  | top => norm_cast at h'
-  | coe d' =>
-  norm_cast at h' hle ⊢
-  omega
-
 /-- **Closed-orbit lemma, stabilizer form.** Let `Z` be a closed subset of projective space
 containing the orbit of `[m]`, and let `D` cut out the stabilizer of `[m]`. If the stabilizer of
 every line in `Z` is cut out by a closed subgroup of dimension at most `dim D`, then the orbit of
@@ -247,7 +226,7 @@ theorem isClosed_range_projectiveOrbitMap_of_forall_mem_ringKrullDim_le
   rw [hn'] at h' ⊢
   -- The group has finite nonnegative dimension, so the stabilizer dimensions cancel.
   have := Bialgebra.nontrivial k (A := H)
-  exact natCast_le_natCast_of_add_eq_of_le h h' hle ringKrullDim_nonneg_of_nontrivial
+  exact ENat.WithBot.natCast_le_natCast_of_add_eq_of_le h h' hle ringKrullDim_nonneg_of_nontrivial
     (ringKrullDim_lt_top_of_finiteType k H)
 
 end TauCeti.Comodule
