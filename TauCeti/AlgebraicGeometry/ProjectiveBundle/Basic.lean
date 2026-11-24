@@ -97,8 +97,7 @@ rewrite it. -/
 @[expose]
 def twistingSheaf (m : ℤ) : InvertibleSheaf (projectiveBundle S E) :=
   ⟨((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjTwistingSheaf m,
-    ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.isInvertible_relativeProjTwistingSheaf
-      (isGeneratedInDegreeOne_gradedSymmetricAlgebra _) m⟩
+    isInvertible_relativeProjTwistingSheaf_gradedSymmetricAlgebra _ m⟩
 
 /-- The underlying module of the twisting sheaf `𝒪(m)` of `P(E)` is the twisting sheaf of the
 relative `Proj` of `Sym E`. -/
