@@ -127,8 +127,17 @@ theorem baseChangeCoordinateHopfAlgebraIso_hom_naturality
         (baseChangeCoordinateHopfAlgebraIso k K H).hom =
       (baseChangeCoordinateHopfAlgebraIso k K G).hom ≫ (coordinateMap K f).hom := by
   ext x : 2
-  exact (DFunLike.congr_fun
-    (MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv k K f.hom.hom) x).symm
+  -- Expose the underlying bialgebra maps: the composites, `baseChangeMap`, the coordinate maps
+  -- (through the `toBialgHom` abbreviation) and the two comparison isomorphisms.
+  rw [_root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp,
+    CommHopfAlgCat.hom_baseChangeMap, ← FiniteTypeCommHopfAlgCat.toBialgHom,
+    ← FiniteTypeCommHopfAlgCat.toBialgHom, toBialgHom_coordinateMap, toBialgHom_coordinateMap,
+    BialgHom.comp_apply, BialgHom.comp_apply, baseChangeCoordinateHopfAlgebraIso_hom_apply,
+    baseChangeCoordinateHopfAlgebraIso_hom_apply]
+  have h := DFunLike.congr_fun
+    (MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv k K f.hom.hom) x
+  simp only [BialgHom.comp_apply, BialgEquiv.coe_toBialgHom] at h
+  exact h.symm
 
 /-- The `A`-points of the base change `K ⊗[k] k[G]` of the diagonalizable group `D(G)` are
 the character group `G →* Aˣ`.
