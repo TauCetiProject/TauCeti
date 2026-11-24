@@ -571,50 +571,28 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
     (hg : g ∈ binaryOctahedralSubgroup) : g ^ 8 = 1 ∨ g ^ 6 = 1 := by
   obtain ⟨q, hgq, hr⟩ := exists_toComplexMatrix_of_mem_binaryOctahedralSubgroup hg
   set M : Matrix (Fin 2) (Fin 2) ℂ := (g : Matrix (Fin 2) (Fin 2) ℂ) with hM
-  set t : ℂ := ((2 * q.re : ℝ) : ℂ)
   have hdet : M.det = 1 := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
-  have htr : M.trace = t := by rw [hgq, Quaternion.trace_toComplexMatrix]
-  have hrec (n : ℕ) : M ^ (n + 2) = t • M ^ (n + 1) - M ^ n := by
-    rw [Matrix.pow_add_two_fin_two, htr, hdet, one_smul]
-  have hM2 : M ^ 2 = t • M - 1 := by simpa using hrec 0
-  have hM3 : M ^ 3 = (t ^ 2 - 1) • M - t • 1 := by
-    calc M ^ 3 = t • M ^ 2 - M ^ 1 := hrec 1
-      _ = t • (t • M - 1) - M := by rw [hM2, pow_one]
-      _ = (t ^ 2 - 1) • M - t • 1 := by
-          rw [smul_sub, smul_smul, ← sq, sub_smul, one_smul]
-          abel
+  have htr : M.trace = ((2 * q.re : ℝ) : ℂ) := by rw [hgq, Quaternion.trace_toComplexMatrix]
   have hpow (n : ℕ) (hMn : M ^ n = 1) : g ^ n = 1 :=
     Subtype.ext (by rw [SubmonoidClass.coe_pow, OneMemClass.coe_one, ← hM, hMn])
+  -- The first three trace values determine finite order for any `2 × 2` matrix of determinant `1`.
   rcases hr with hr | hr | hr | hr
   · refine Or.inl (hpow 8 ?_)
-    have ht : t = 0 := by
-      dsimp [t]
-      rw [sq_eq_zero_iff.mp hr, Complex.ofReal_zero]
-    have hM2' : M ^ 2 = -1 := by simpa [ht] using hM2
-    calc M ^ 8 = (M ^ 2) ^ 4 := by rw [← pow_mul]
-      _ = (-1 : Matrix (Fin 2) (Fin 2) ℂ) ^ 4 := by rw [hM2']
-      _ = 1 := by norm_num
+    have htr0 : M.trace = 0 := by rw [htr, sq_eq_zero_iff.mp hr, Complex.ofReal_zero]
+    rw [show 8 = 2 * 4 by rfl, pow_mul,
+      Matrix.sq_eq_neg_one_of_det_eq_one_of_trace_eq_zero_fin_two hdet htr0]
+    norm_num
   · refine Or.inr (hpow 6 ?_)
-    have ht2 : t ^ 2 = 1 := by dsimp [t]; exact_mod_cast hr
-    have hM3' : M ^ 3 = -(t • 1) := by simpa [ht2] using hM3
-    calc M ^ 6 = (M ^ 3) ^ 2 := by rw [← pow_mul]
-      _ = (-(t • (1 : Matrix (Fin 2) (Fin 2) ℂ))) ^ 2 := by rw [hM3']
-      _ = t ^ 2 • (1 : Matrix (Fin 2) (Fin 2) ℂ) := by
-          rw [neg_sq, sq, smul_mul_smul_comm, mul_one, ← sq]
-      _ = 1 := by rw [ht2, one_smul]
+    have htr1 : M.trace ^ 2 = 1 := by rw [htr]; exact_mod_cast hr
+    exact Matrix.pow_six_eq_one_of_det_eq_one_of_trace_sq_eq_one_fin_two hdet htr1
   · refine Or.inl (hpow 8 ?_)
-    have ht2 : t ^ 2 = 2 := by dsimp [t]; exact_mod_cast hr
-    have hM3' : M ^ 3 = M - t • 1 := by
-      rw [hM3, ht2, show (2 : ℂ) - 1 = 1 by norm_num, one_smul]
-    have hM4 : M ^ 4 = -1 := by
-      have h2 := hrec 2
-      rw [hM3', hM2, smul_sub, smul_smul, ← sq, ht2, two_smul] at h2
-      rw [h2]
-      abel
-    calc M ^ 8 = (M ^ 4) ^ 2 := by rw [← pow_mul]
-      _ = (-1 : Matrix (Fin 2) (Fin 2) ℂ) ^ 2 := by rw [hM4]
-      _ = 1 := neg_one_sq
-  · refine Or.inl (hpow 8 ?_)
+    have htr2 : M.trace ^ 2 = 2 := by rw [htr]; exact_mod_cast hr
+    rw [show 8 = 4 * 2 by rfl, pow_mul,
+      Matrix.pow_four_eq_neg_one_of_det_eq_one_of_trace_sq_eq_two_fin_two hdet htr2, neg_one_sq]
+  · -- Trace `±2` forces finite order only because `g ∈ SU(2)` is unitary (general `SL(2, ℂ)`
+    -- elements of trace `±2` can be unipotent): `normSq q = 1` and `(2 * q.re)² = 4` force
+    -- `q = ±1`.
+    refine Or.inl (hpow 8 ?_)
     have hnorm : normSq q = 1 :=
       normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hgq ▸ g.property)
     rw [normSq_def'] at hnorm
@@ -622,10 +600,8 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
     have hqre : q = q.re := by ext <;> simp [him.1, him.2.1, him.2.2]
     have hqsq : q ^ 2 = 1 := by
       rw [Quaternion.sq_eq_normSq.mpr hqre, normSq_def', hnorm, Quaternion.coe_one]
-    have hM2' : M ^ 2 = 1 := by
-      rw [hgq, ← map_pow, hqsq, map_one]
-    calc M ^ 8 = (M ^ 2) ^ 4 := by rw [← pow_mul]
-      _ = 1 := by rw [hM2', one_pow]
+    have hM2 : M ^ 2 = 1 := by rw [hgq, ← map_pow, hqsq, map_one]
+    rw [show 8 = 2 * 4 by rfl, pow_mul, hM2, one_pow]
 
 /-- **The binary octahedral subgroup is not cyclic**: it has order `48`, while every element has
 order dividing `8` or `6`. -/
