@@ -72,6 +72,33 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 `TauCeti.IsContMDiffDistribution.annihilatorFiberBundle` at smoothness `∞`. -/
 local instance : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
 
+/-- **Dilations in contact-form trivializations.** If `c α_x = a β_x` at the point `x` with
+`a > 0`, then multiplying the covector `κ_α (t, x) = eᵗ α_x` by `c` gives the covector
+`κ_β (t + log a, x) = e^(t + log a) β_x`. -/
+theorem vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_smul_eq
+    {β : SmoothForm I M ℝ 1} (hβ : β.kerDistribution = ξ) {c a : ℝ} (hc : c ≠ 0) (ha : 0 < a)
+    (p : ℝ × M) (h : c • α.val p.2 = a • β.val p.2) :
+    letI := hD.annihilatorFiberBundle hk
+    haveI := hD.annihilatorVectorBundle hk
+    vectorBundleScalarDiffeomorph (I := I) (F := Fin 1 → ℝ)
+        (V := fun x : M ↦ annihilatorSpace I ξ x) (fun _ ↦ c) (contMDiff_const (n := ∞))
+        (fun _ ↦ hc) (α.symplectizationToAnnihilator hα p) =
+      β.symplectizationToAnnihilator hβ (p.1 + Real.log a, p.2) :=
+  letI := hD.annihilatorFiberBundle hk
+  haveI := hD.annihilatorVectorBundle hk
+  by
+  rw [vectorBundleScalarDiffeomorph_apply]
+  refine totalSpace_annihilatorSpace_ext (by simp) fun v ↦ ?_
+  -- Both covectors lie over `p.2`, so `v` is a tangent vector at `p.2`.
+  have key (w : TangentSpace I p.2) :
+      c * (Real.exp p.1 * α.val p.2 ![w]) = Real.exp (p.1 + Real.log a) * β.val p.2 ![w] := by
+    have hw : c * α.val p.2 ![w] = a * β.val p.2 ![w] := by
+      simpa using congrArg (fun φ ↦ φ ![w]) h
+    rw [Real.exp_add, Real.exp_log ha, mul_left_comm, hw]
+    ring
+  exact ((congrArg (c * ·) (symplectizationToAnnihilator_snd_apply hα p v)).trans (key v)).trans
+    (symplectizationToAnnihilator_snd_apply hβ (p.1 + Real.log a, p.2) v).symm
+
 /-- **Positive dilations are translations of the trivialized symplectization.** For `c > 0`,
 multiplying the covector `κ_α (t, x) = eᵗ α_x` by `c` gives `κ_α (t + log c, x)`. -/
 theorem vectorBundleScalarDiffeomorph_symplectizationToAnnihilator {c : ℝ} (hc : 0 < c)
@@ -82,18 +109,7 @@ theorem vectorBundleScalarDiffeomorph_symplectizationToAnnihilator {c : ℝ} (hc
         (V := fun x : M ↦ annihilatorSpace I ξ x) (fun _ ↦ c) (contMDiff_const (n := ∞))
         (fun _ ↦ hc.ne') (α.symplectizationToAnnihilator hα p) =
       α.symplectizationToAnnihilator hα (p.1 + Real.log c, p.2) :=
-  letI := hD.annihilatorFiberBundle hk
-  haveI := hD.annihilatorVectorBundle hk
-  by
-  rw [vectorBundleScalarDiffeomorph_apply]
-  refine totalSpace_annihilatorSpace_ext (by simp) fun v ↦ ?_
-  -- Both covectors lie over `p.2`, so `v` is a tangent vector at `p.2`.
-  have key (w : TangentSpace I p.2) :
-      c * (Real.exp p.1 * α.val p.2 ![w]) = Real.exp (p.1 + Real.log c) * α.val p.2 ![w] := by
-    rw [Real.exp_add, Real.exp_log hc]
-    ring
-  exact ((congrArg (c * ·) (symplectizationToAnnihilator_snd_apply hα p v)).trans (key v)).trans
-    (symplectizationToAnnihilator_snd_apply hα (p.1 + Real.log c, p.2) v).symm
+  vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_smul_eq hα hD hk hα hc.ne' hc p rfl
 
 /-- **Negative dilations exchange the two halves of the trivialized symplectization.** For `c < 0`,
 multiplying the covector `κ_α (t, x) = eᵗ α_x` by `c` gives the covector
@@ -107,21 +123,8 @@ theorem vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_neg {c : �
         (fun _ ↦ hc.ne) (α.symplectizationToAnnihilator hα p) =
       (-α).symplectizationToAnnihilator (kerDistribution_neg.trans hα)
         (p.1 + Real.log (-c), p.2) :=
-  letI := hD.annihilatorFiberBundle hk
-  haveI := hD.annihilatorVectorBundle hk
-  by
-  rw [vectorBundleScalarDiffeomorph_apply]
-  refine totalSpace_annihilatorSpace_ext (by simp) fun v ↦ ?_
-  -- Both covectors lie over `p.2`, so `v` is a tangent vector at `p.2`.
-  have key (w : TangentSpace I p.2) :
-      c * (Real.exp p.1 * α.val p.2 ![w]) =
-        Real.exp (p.1 + Real.log (-c)) * (-α).val p.2 ![w] := by
-    rw [Real.exp_add, Real.exp_log (neg_pos.2 hc), NegMemClass.coe_neg, Pi.neg_apply,
-      ContinuousAlternatingMap.neg_apply]
-    ring
-  exact ((congrArg (c * ·) (symplectizationToAnnihilator_snd_apply hα p v)).trans (key v)).trans
-    (symplectizationToAnnihilator_snd_apply (α := -α) (kerDistribution_neg.trans hα)
-      (p.1 + Real.log (-c), p.2) v).symm
+  vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_smul_eq hα hD hk
+    (kerDistribution_neg.trans hα) hc.ne (neg_pos.2 hc) p (by simp)
 
 end SmoothForm
 
