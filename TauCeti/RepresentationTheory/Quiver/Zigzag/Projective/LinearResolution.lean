@@ -188,7 +188,7 @@ private theorem bijective_zigzagVolumeSMulPiece (hns : ∀ i : V, ∃ j, G.Adj i
     (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V) :
     Function.Bijective (zigzagVolumeSMulPiece (P := P) u n) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx => Subtype.ext
-    (eq_zero_of_zigzagVolume_smul_eq_zero hns hP x.2
+    (eq_zero_of_zigzagVolume_smul_eq_zero hns hP x.property
     (by rw [← coe_zigzagVolumeSMulPiece_apply, hx, ZeroMemClass.coe_zero])), ?_⟩
   rintro ⟨z, hz⟩
   rw [GradedModuleCat.mem_smul_grading_piece_iff (isIdempotentElem_zigzagVertexIdempotent k G _)
@@ -243,7 +243,7 @@ section Arrow
 
 /-- The dart `w → u` from a neighbour `w` of `u`. -/
 private def inDart (u : V) (w : G.neighborSet u) : G.Dart :=
-  ⟨(w, u), ((G.mem_neighborSet u w).1 w.2).symm⟩
+  ⟨(w, u), ((G.mem_neighborSet u w).1 w.property).symm⟩
 
 private theorem ofArrow_inDart_smul_mem [Finite V]
     {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)} {u : V} (w : G.neighborSet u) {p : ℤ}
@@ -274,7 +274,7 @@ private noncomputable def zigzagArrowSumPiece (u : V) (p : ℤ) :
         (zigzagVertexIdempotent k G w • P.grading.piece p).subtype ∘ₗ LinearMap.proj w)
     fun f => by
       rw [LinearMap.sum_apply]
-      exact Submodule.sum_mem _ fun w _ => ofArrow_inDart_smul_mem w (f w).2
+      exact Submodule.sum_mem _ fun w _ => ofArrow_inDart_smul_mem w (f w).property
 
 private theorem coe_zigzagArrowSumPiece_apply (u : V) (p : ℤ)
     (f : ∀ w : G.neighborSet u, ↥(zigzagVertexIdempotent k G w • P.grading.piece p)) :
@@ -300,7 +300,7 @@ private theorem injective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j
   · have hvol := zigzagMk_ofArrow_mul_ofArrow_symm k G (inDart u w₀).symm
     rw [SimpleGraph.Dart.symm_symm] at hvol
     rw [hvol] at hf'
-    exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).2 hf'
+    exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).property hf'
   · have hne : inDart u w ≠ (inDart u w₀).symm.symm := by
       rw [SimpleGraph.Dart.symm_symm]
       intro h

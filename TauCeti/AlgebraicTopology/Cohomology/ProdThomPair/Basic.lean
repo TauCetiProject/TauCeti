@@ -38,14 +38,18 @@ Mayer–Vietoris over unions of trivializing open sets: the vanishing below the 
 restriction to the two pieces injective in degree `r`, and the determination by fibres makes local
 Thom classes agree on overlaps.
 
+In every degree, the absolute cohomology of `B × F` is pulled back from `B` when `F` is
+contractible (`TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`), and pulling back from
+`B` to `B × (F ∖ {0})` is injective when `F` is nonzero
+(`TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`). These two facts locate the
+image of the restriction `Hᵐ(B × F) ⟶ Hᵐ(B × (F ∖ {0}))` in the long exact sequence of the pair,
+from which the relative cohomology of the pair in degrees at least the rank is computed
+(`TauCeti.bijective_singularCohomologyδ_prodThomPair_comp_inr`,
+`TauCeti.prodThomPairSingularCohomologySphereEquiv`,
+`TauCeti.prodThomPairSingularCohomologyLineEquiv`).
+
 ## Main definitions and results
 
-* `TauCeti.isIso_singularCohomologyMap_prodThomPairProj`: for contractible `F`, pulling back along
-  `B × F → B` is an isomorphism on singular cohomology in every degree.
-* `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`,
-  `TauCeti.singularCohomologyπ_prodThomPair_eq_zero`,
-  `TauCeti.bijective_singularCohomologyδ_comp_inr_of_prodThomPair`: rank-independent section and
-  long-exact-sequence lemmas for `[ContractibleSpace F] [Nontrivial F]`.
 * `TauCeti.isZero_singularCohomology_prodThomPair`: `Hⁿ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularCohomologyEquiv`: `Hʳ(B × F, B × (F ∖ {0}); R, M) ≃ₗ[k]
@@ -53,6 +57,11 @@ Thom classes agree on overlaps.
   `TauCeti.prodThomPairSingularCohomologyEquiv_naturality`.
 * `TauCeti.singularCohomology_prodThomPair_ext`: classes in degree `dim F` agreeing on every fibre
   are equal.
+* `TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`,
+  `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`: the absolute cohomology of
+  `B × F` and of `B × (F ∖ {0})` compared with that of `B`.
+* `TauCeti.bijective_singularCohomologyδ_prodThomPair_comp_inr`: the connecting morphism of the
+  pair is bijective on a complement of the classes pulled back from `B`.
 
 ## References
 
@@ -68,108 +77,9 @@ noncomputable section
 
 open CategoryTheory Limits Module AlgebraicTopology
 
-universe w v u
+universe w
 
 namespace TauCeti
-
-/-- Pulling back along the projection `B × F → B` of a product bundle with contractible fibre
-induces isomorphisms on singular cohomology in every degree. -/
-instance isIso_singularCohomologyMap_prodThomPairProj
-    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-    (k : Type*) [Ring k] [Linear k C] (M : C) (B : Type w) [TopologicalSpace B]
-    {F : Type w} [TopologicalSpace F] [Zero F] [ContractibleSpace F] (m : ℕ) :
-    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-      (prodThomPairProj B F) m) := by
-  have hproj : prodThomPairProj B F = TopCat.ofHom ContinuousMap.fst :=
-    TopCat.ext fun p ↦ prodThomPairProj_apply F p
-  rw [hproj, ← ContinuousMap.HomotopyEquiv.prodContractible_toFun (X := B) (Y := F)]
-  exact (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap R k M m
-
-section RankIndependent
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
-  {k : Type*} [Ring k] [Linear k C] (R M : C)
-
-/-- Pulling back along the punctured projection `B × (F ∖ {0}) → B` is injective whenever `F` is
-nontrivial, since any nonzero vector `v : F` gives a continuous section `b ↦ (b, v)`. -/
-theorem injective_singularCohomologyMap_prodThomPairPuncturedProj
-    (B : Type w) [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [Nontrivial F] (m : ℕ) :
-    Function.Injective (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-      (prodThomPairPuncturedProj B F) m) := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
-    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
-
-/-- When `F` is contractible and nontrivial, the map
-`Hᵐ(B × F, B × (F ∖ {0})) → Hᵐ(B × F)` from relative to absolute singular cohomology vanishes in
-every degree `m`. -/
-@[simp]
-theorem singularCohomologyπ_prodThomPair_eq_zero
-    (B : Type w) [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [ContractibleSpace F] [Nontrivial F] (m : ℕ)
-    (z : (prodThomPair B F).singularCohomology R k M m) :
-    (prodThomPair B F).singularCohomologyπ R k M m z = 0 := by
-  let P := prodThomPair B F
-  let b := inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-    (prodThomPairProj B F) m) (P.singularCohomologyπ R k M m z)
-  have hb : TopCat.singularCohomologyMap (prodThomPairProj B F) m b =
-      P.singularCohomologyπ R k M m z := by
-    rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-  have h0 := ConcreteCategory.congr_hom
-    (P.singularCohomologyπ_comp_singularCohomologyMap R k M m) z
-  rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h0
-  rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj R M B m
-    (h0.trans (map_zero _).symm), map_zero]
-
-/-- Given a decomposition `D : H^q(B) × Hⁿ(B) ≃ₗ[k] H^q(B × (F ∖ {0}))` whose first summand is
-pullback along `B × F → B` followed by restriction to `B × (F ∖ {0})`, the composite
-`c ↦ δ (D (0, c))` is bijective `Hⁿ(B) → Hᵐ(B × F, B × (F ∖ {0}))` whenever `F` is contractible and
-nontrivial and `q + 1 = m`. -/
-theorem bijective_singularCohomologyδ_comp_inr_of_prodThomPair
-    {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
-    [ContractibleSpace F] [Nontrivial F] {n q m : ℕ} (hqm : q + 1 = m)
-    (D : ((TopCat.of B).singularCohomology R k M q ×
-      (TopCat.of B).singularCohomology R k M n) ≃ₗ[k]
-      (prodThomPair B F).snd.singularCohomology R k M q)
-    (hD : ∀ b, D (b, 0) = TopCat.singularCohomologyMap (prodThomPair B F).map q
-      (TopCat.singularCohomologyMap (prodThomPairProj B F) q b)) :
-    Function.Bijective
-      (((prodThomPair B F).singularCohomologyδ R k M q m hqm).hom ∘ₗ
-        D.toLinearMap ∘ₗ LinearMap.inr k _ _) := by
-  let P := prodThomPair B F
-  let f := (P.singularCohomologyδ R k M q m hqm).hom ∘ₗ D.toLinearMap ∘ₗ LinearMap.inr k _ _
-  have hf (c) : f c = P.singularCohomologyδ R k M q m hqm (D (0, c)) := rfl
-  refine ⟨(injective_iff_map_eq_zero f).2 fun c hc ↦ ?_, fun z ↦ ?_⟩
-  · rw [hf] at hc
-    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_subspace R k M q m hqm) _ hc
-    let b := inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-      (prodThomPairProj B F) q) y
-    have hb : TopCat.singularCohomologyMap (prodThomPairProj B F) q b = y := by
-      rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-    rw [← hb, ← hD b] at hy
-    exact congrArg Prod.snd (D.injective hy).symm
-  · obtain ⟨x, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1
-      (P.singularCohomology_exact_relative R k M q m hqm) z
-      (singularCohomologyπ_prodThomPair_eq_zero R M B m z)
-    obtain ⟨⟨b', c⟩, rfl⟩ := D.surjective x
-    have hδ0 : P.singularCohomologyδ R k M q m hqm (D (b', 0)) = 0 := by
-      rw [hD b', ← ConcreteCategory.comp_apply,
-        P.singularCohomologyMap_comp_singularCohomologyδ R k M q m hqm]
-      simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-    have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
-    refine ⟨c, ?_⟩
-    rw [hf, hbc, map_add, map_add, hδ0, zero_add]
-
-end RankIndependent
 
 variable {k : Type*} [CommRing k] (R M : ModuleCat.{w} k) [Module.Projective k R]
   (B : Type w) [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']
@@ -251,5 +161,88 @@ theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
   refine (singularKronecker_prodThomPair_bijective R M B F le_rfl).1
     (singularHomology_prodThomPair_hom_ext fun b ↦ ?_)
   rw [← TopPair.singularKronecker_naturality, ← TopPair.singularKronecker_naturality, h b]
+
+section Projection
+
+variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
+  {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
+
+open MonoidalCategory
+
+/-- Every class of `Hᵐ(B × F; M)` is pulled back from the base when `F` is contractible. -/
+theorem exists_singularCohomologyMap_prodThomPairProj_eq [ContractibleSpace F] (m : ℕ)
+    (y : (prodThomPair B F).fst.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    ∃ b, TopCat.singularCohomologyMap (prodThomPairProj B F) m b = y := by
+  have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
+    (𝟙_ (ModuleCat.{w} k)) k M m
+  rw [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
+  have hproj : TopCat.ofHom ContinuousMap.fst = prodThomPairProj B F :=
+    TopCat.ext fun p ↦ (prodThomPairProj_apply F p).symm
+  have : IsIso (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k) (M := M)
+    (prodThomPairProj B F) m) := hproj ▸ this
+  exact (ConcreteCategory.bijective_of_isIso _).2 y
+
+/-- Pulling back along the projection `B × (F ∖ {0}) → B` is injective when `F` has a nonzero
+vector `v`, since the projection then has the section `b ↦ (b, v)`. -/
+theorem injective_singularCohomologyMap_prodThomPairPuncturedProj {v : F} (hv : v ≠ 0) (m : ℕ) :
+    Function.Injective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+      (M := M) (prodThomPairPuncturedProj B F) m) := by
+  refine Function.LeftInverse.injective
+    (g := TopCat.singularCohomologyMap (prodThomPairPuncturedSection B v hv) m) fun b ↦ ?_
+  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
+    prodThomPairPuncturedSection_comp_prodThomPairPuncturedProj,
+    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+
+/-- **The connecting morphism of the Thom pair of a product bundle on a complement of the
+pulled-back classes.** Let `F` be contractible with a nonzero vector `v`, and let
+`D : Hʳ(B; M) × N ≃ₗ[k] Hʳ(B × (F ∖ {0}); M)` send each `(b, 0)` to the restriction of the
+pullback of `b` to `B × F`. Then `c ↦ δ (D (0, c))` is a bijection from `N` onto
+`Hᵐ(B × F, B × (F ∖ {0}); M)`, `m = r + 1`. Indeed, in the long exact sequence of the pair the
+restriction `Hʳ(B × F; M) ⟶ Hʳ(B × (F ∖ {0}); M)` has image the classes `D (b, 0)`, and the
+restriction `Hᵐ(B × F; M) ⟶ Hᵐ(B × (F ∖ {0}); M)` is injective. -/
+theorem bijective_singularCohomologyδ_prodThomPair_comp_inr [ContractibleSpace F] {v : F}
+    (hv : v ≠ 0) {N : Type*} [AddCommGroup N] [Module k N] (r m : ℕ) (h : r + 1 = m)
+    (D : ((TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M r × N) ≃ₗ[k]
+      (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M r)
+    (hD : ∀ b, D (b, 0) = TopCat.singularCohomologyMap (prodThomPair B F).map r
+      (TopCat.singularCohomologyMap (prodThomPairProj B F) r b)) :
+    Function.Bijective
+      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M r m h).hom ∘ₗ
+        D.toLinearMap ∘ₗ LinearMap.inr k _ N) := by
+  let P := prodThomPair B F
+  refine ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦ ?_, fun z ↦ ?_⟩
+  · -- If `δ (D (0, c)) = 0`, then `D (0, c)` is restricted from `B × F`, where every class is
+    -- pulled back from `B`, so `D (0, c) = D (b, 0)` for some `b`.
+    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).1
+      (P.singularCohomology_exact_subspace (𝟙_ (ModuleCat.{w} k)) k M r m h) (D (0, c)) hc
+    obtain ⟨b, rfl⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _ y
+    rw [← hD] at hy
+    exact congrArg Prod.snd (D.injective hy).symm
+  · -- The class `z` maps to a class of `B × F` pulled back from `B` whose restriction to
+    -- `B × (F ∖ {0})` vanishes; since `π^*` is injective, `z` maps to zero, so
+    -- `z = δ (D (b, c))` by exactness, and `δ (D (b, 0)) = 0`.
+    obtain ⟨b, hb⟩ := exists_singularCohomologyMap_prodThomPairProj_eq M _
+      (P.singularCohomologyπ _ k M _ z)
+    have hπ : P.singularCohomologyπ _ k M _ z = 0 := by
+      have h0 := ConcreteCategory.congr_hom
+        (P.singularCohomologyπ_comp_singularCohomologyMap (𝟙_ (ModuleCat.{w} k)) k M m) z
+      rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
+        ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
+      rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj M hv _
+        (h0.trans (map_zero _).symm), map_zero]
+    obtain ⟨x, rfl⟩ : ∃ x, (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M r m h) x = z :=
+      (ShortComplex.moduleCat_exact_iff _).1
+        (P.singularCohomology_exact_relative (𝟙_ (ModuleCat.{w} k)) k M r m h) z hπ
+    obtain ⟨⟨b', c⟩, rfl⟩ := D.surjective x
+    refine ⟨c, ?_⟩
+    have hδ : (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M r m h) (D (b', 0)) = 0 := by
+      rw [hD, ← ConcreteCategory.comp_apply,
+        P.singularCohomologyMap_comp_singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M r m h]
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+    have hbc : ((b', c) : _ × _) = (b', 0) + (0, c) := by simp
+    simp only [LinearMap.comp_apply, LinearMap.inr_apply, LinearEquiv.coe_coe]
+    rw [hbc, map_add, map_add, hδ, zero_add]
+
+end Projection
 
 end TauCeti

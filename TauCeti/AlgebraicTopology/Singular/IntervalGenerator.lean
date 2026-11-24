@@ -30,7 +30,7 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
 * `TauCeti.cubeSimplex`, `TauCeti.cubeRelClass`: the standard `1`-simplex of `I¹` and its class in
   `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
 * `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of reduced `H₀(S⁰)` is
-  `[-e₀] - [e₀]` on `TopCat.sphere 0`.
+  `[-e₀] - [e₀]` (`TauCeti.sphereMinus` and `TauCeti.spherePlus`) on `TopCat.sphere 0`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
   `-cubeRelClass R`.
 -/
@@ -148,7 +148,7 @@ lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
         (reducedSingularHomologyFunctor R 0).map
           (TopCat.ofHom (diskBoundaryHomeomorph.{w} 1).toHomotopyEquiv.invFun) := by
     apply Iso.inv_ext
-    rw [reducedSingularHomologyTopCatSphereIso_hom, ← sphereZeroBasis_def]
+    rw [reducedSingularHomologyTopCatSphereIso_hom]
     exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Iso.hom_inv_id_assoc _ _)).trans
       ((Functor.map_comp _ _ _).symm.trans
         ((congrArg _ hid).trans (CategoryTheory.Functor.map_id _ _))))
@@ -169,13 +169,15 @@ lemma diskBoundaryPairToCube_snd_spherePlus :
     TopPair.Hom.snd (diskBoundaryPairToCube.{w} 1) spherePlus = cubeEnd 1 (Or.inr rfl) := by
   refine Subtype.ext (ULift.ext
     ((diskBoundaryPairToCube_snd_apply_down (n := 1) spherePlus).trans ?_))
-  exact diskHomeomorphCube_one_of_pos _ ⟨_, rfl⟩ (by rw [spherePlus_coord]; norm_num)
+  rw [diskHomeomorphCube_one_of_pos _ ⟨_, rfl⟩ (by rw [spherePlus_coord]; norm_num)]
+  rfl
 
 lemma diskBoundaryPairToCube_snd_sphereMinus :
     TopPair.Hom.snd (diskBoundaryPairToCube.{w} 1) sphereMinus = cubeEnd 0 (Or.inl rfl) := by
   refine Subtype.ext (ULift.ext
     ((diskBoundaryPairToCube_snd_apply_down (n := 1) sphereMinus).trans ?_))
-  exact diskHomeomorphCube_one_of_neg _ ⟨_, rfl⟩ (by rw [sphereMinus_coord]; norm_num)
+  rw [diskHomeomorphCube_one_of_neg _ ⟨_, rfl⟩ (by rw [sphereMinus_coord]; norm_num)]
+  rfl
 
 end Sphere
 

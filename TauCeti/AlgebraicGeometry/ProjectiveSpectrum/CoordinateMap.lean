@@ -53,7 +53,7 @@ theorem fromOfGlobalSections_map (F : 𝒜 →+*ᵍ ℬ)
   -- The cover stores its opens behind a sealed construction. Present its inclusion
   -- explicitly so chart restriction lemmas can rewrite the goal.
   change (X.basicOpen (f (F s))).ι ≫ _ = (X.basicOpen (f (F s))).ι ≫ _
-  have hleft := fromOfGlobalSections_resLE ℬ f hf hn (F.2 hs)
+  have hleft := fromOfGlobalSections_resLE ℬ f hf hn (F.map_mem hs)
   have hright := fromOfGlobalSections_resLE 𝒜 (f.comp F.toRingHom) hcomp hn hs
   have hleft' := congrArg (fun e ↦ e ≫ (basicOpen ℬ (F s)).ι ≫ map F hF) hleft
   have hright' := congrArg (fun e ↦ e ≫ (basicOpen 𝒜 s).ι) hright

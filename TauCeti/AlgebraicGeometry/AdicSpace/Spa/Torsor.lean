@@ -117,9 +117,9 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
       comap (MulSemiringAction.toRingHom G B g) y ∈ spa T.plus := by
     rw [hT] at hy ⊢
     exact (MulSemiringAction.toAlgHom A B g).comap_mem_spa_integralClosure hy
-  let σ (g : G) : spa T.plus → spa T.plus := fun y ↦ ⟨_, hmem g y.2⟩
+  let σ (g : G) : spa T.plus → spa T.plus := fun y ↦ ⟨_, hmem g y.property⟩
   have hσ (g : G) : Continuous (σ g) :=
-    ((continuous_comap _).comp continuous_subtype_val).subtype_mk _
+    ((continuous_comap _).comp continuous_subtypeVal).subtype_mk _
   have hinv (g : G) (y : Spv B) :
       comap (MulSemiringAction.toRingHom G B g⁻¹) (comap (MulSemiringAction.toRingHom G B g) y) =
         y := by
@@ -139,10 +139,10 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
     obtain ⟨g, hg⟩ := (spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor (G := G) hφ).mp huy
     refine ⟨g, ?_⟩
     convert hu using 1
-    exact Subtype.ext <| by simpa [σ, hg] using hinv g⁻¹ u.1
+    exact Subtype.ext <| by simpa [σ, hg] using hinv g⁻¹ u.val
   · rintro ⟨g, hg⟩
     refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor (G := G) hφ).mpr
-      ⟨g, (hinv g y.1).symm⟩⟩
+      ⟨g, (hinv g y.val).symm⟩⟩
 
 /-- **The base is the `G`-quotient of the adic spectrum of a finite étale torsor.** If `B` is a
 finite étale `G`-torsor over a Tate ring `A`, carries its natural topology and has plus ring the
