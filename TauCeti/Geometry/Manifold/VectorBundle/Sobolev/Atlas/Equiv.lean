@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Measure
@@ -40,7 +40,7 @@ the section of `w`.
 For surfaces, `M` modelled on `ℂ` with the Lebesgue measure, and a `Cⁿ` bundle, `n ≠ 0`, the
 transfer property holds at every order `k ≤ n`
 (`TauCeti.SobolevSection.transfersTo`), by the localization of Sobolev sections in arbitrary charts
-and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`. For a smooth
+and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic`. For a smooth
 (`C^∞`) bundle over a smooth Hausdorff manifold modelled on any finite-dimensional real inner
 product space, the transfer property holds between any two finite bundle atlases, for every order
 `k` and every `1 ≤ p ≤ ∞` (`TauCeti.SobolevSection.transfersTo_of_contMDiffVectorBundle`, in

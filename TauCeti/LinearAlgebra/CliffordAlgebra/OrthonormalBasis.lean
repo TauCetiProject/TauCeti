@@ -37,6 +37,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `OrthonormalBasis.map_ι_apply_map_ι_apply`, `OrthonormalBasis.map_ι_apply_map_ι_apply_comm`: in
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
+* `OrthonormalBasis.map_ι_eq_sum`, `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)`,
+  in any real algebra receiving the Clifford algebra and applied in a Clifford module.
 * `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
@@ -92,6 +94,25 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
   simp only [List.map_map, List.mem_map, Function.comp_apply] at hx
   obtain ⟨i, -, rfl⟩ := hx
   simp [hQ, b.orthonormal.1 i]
+
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, in any real algebra receiving the
+Clifford algebra: `ρ (c(v)) = ∑ᵢ ⟪bᵢ, v⟫ ρ (c(bᵢ))`. -/
+theorem map_ι_eq_sum {A : Type*} [Semiring A] [Algebra ℝ A] (ρ : CliffordAlgebra Q →ₐ[ℝ] A)
+    (v : V) : ρ (CliffordAlgebra.ι Q v) = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) := by
+  conv_lhs => rw [← b.sum_repr' v]
+  simp only [map_sum, map_smul]
+
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, applied to a vector of a Clifford
+module over any scalars `S` compatible with the real scalars:
+`c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ` (`OrthonormalBasis.map_ι_eq_sum` evaluated at `ψ`). -/
+theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGroup W] [Module S W]
+    [Module ℝ W] [SMulCommClass S ℝ W] [IsScalarTower ℝ S W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S W) (v : V) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
+  rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply]
 
 section Module
 

@@ -96,8 +96,9 @@ finitely many vectors.
   `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
-  `TauCeti.ContinuousRep.det_baseChange_apply`: on finite free carriers the characteristic
-  polynomial and the determinant of `g` on a base change are the images of those of `ρ g`.
+  `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
+  characteristic polynomial and the determinant of `g` on a base change are the images of those
+  of `ρ g`.
 * `TauCeti.ContinuousRep.baseChangeTransIso_trans_baseChangeTransIso`: the two identifications
   of a threefold scalar extension `A → B → C → D` with the extension along `A → D` agree.
 
@@ -216,6 +217,10 @@ theorem toRepresentation_trivial :
 @[simp]
 theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
   (rfl)
+
+/-- Every element of `Γ` acts as the identity operator in the trivial representation. -/
+theorem trivial_apply_eq_id (g : Γ) : trivial Γ A M g = LinearMap.id :=
+  Representation.isTrivial_def (Representation.trivial A Γ M) g
 
 /-- **Finite image.** A continuous representation on a finite carrier takes only finitely many
 values. -/
@@ -1047,7 +1052,7 @@ theorem charpoly_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
 
 /-- **The determinant of a base change.** The element `g` acts on `ρ.baseChange B` with
 determinant the image in `B` of that of `ρ g`. -/
-theorem det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
+theorem linearMap_det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     LinearMap.det (ρ.baseChange B g) = algebraMap A B (LinearMap.det (ρ g)) := by
   rw [baseChange_apply, LinearMap.det_baseChange]
 
