@@ -259,21 +259,12 @@ theorem finite_coker_torsionByMap :
   have hcomp : torsionByMap r φ = f₂ ∘ₗ f₁ := by
     rw [← torsionByMap_comp, LinearMap.subtype_comp_rangeRestrict]
   have : Finite (torsionBy R (LinearMap.range φ) r ⧸ LinearMap.range f₁) := by
-    let δ := torsionByδ r φ.exact_subtype_rangeRestrict (LinearMap.ker φ).injective_subtype
-      φ.surjective_rangeRestrict
     have : Finite (QuotSMulTop r (LinearMap.ker φ)) := Finite.of_surjective _ (mkQ_surjective _)
-    have hker : LinearMap.ker δ = LinearMap.range f₁ :=
-      (exact_torsionByMap_torsionByδ (r := r) φ.exact_subtype_rangeRestrict
-        (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict).linearMap_ker_eq
-    exact Finite.of_equiv _
-      (Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ δ.quotKerEquivRange).symm.toEquiv
-  have : Finite (torsionBy R N r ⧸ LinearMap.range f₂) := by
-    let g := torsionByMap r (LinearMap.range φ).mkQ
-    have hker : LinearMap.ker g = LinearMap.range f₂ :=
-      (exact_torsionByMap (r := r) (LinearMap.exact_subtype_mkQ (LinearMap.range φ))
-        (LinearMap.range φ).injective_subtype).linearMap_ker_eq
-    exact Finite.of_equiv _
-      (Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ g.quotKerEquivRange).symm.toEquiv
+    exact (exact_torsionByMap_torsionByδ (r := r) φ.exact_subtype_rangeRestrict
+      (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict).finite_quotient_range
+  have : Finite (torsionBy R N r ⧸ LinearMap.range f₂) :=
+    (exact_torsionByMap (r := r) (LinearMap.exact_subtype_mkQ (LinearMap.range φ))
+      (LinearMap.range φ).injective_subtype).finite_quotient_range
   rw [hcomp]
   exact (LinearMap.exact_cokerToCokerComp_factor f₁ f₂).finite
 

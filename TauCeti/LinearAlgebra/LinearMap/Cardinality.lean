@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Submodule.Ker
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.GroupTheory.Index
 
@@ -20,12 +21,26 @@ range or the kernel is.
 This is a counting step of an exact-sequence argument, where a term is compared with the image of
 the map leaving it and the image of the map entering it. The companion step, comparing the ranges
 of maps intertwined by a surjection on the source and an injection on the target, does not use
-linearity and is `Nat.card_range_eq_card_range_of_comp_eq`.
+linearity and is `Nat.card_range_eq_card_range_of_comp_eq`. Restricting a semilinear map with
+finite kernel to invariant submodules preserves finiteness of the kernel
+(`LinearMap.finite_ker_restrict`).
 -/
 
 public section
 
 namespace LinearMap
+
+/-- Restricting a semilinear map with finite kernel to invariant submodules gives a map with
+finite kernel. -/
+theorem finite_ker_restrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂] {τ₁₂ : R →+* R₂}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
+    {p : Submodule R M} {q : Submodule R₂ M₂} (f : M →ₛₗ[τ₁₂] M₂)
+    (hf : ∀ x ∈ p, f x ∈ q) [Finite (ker f)] :
+    Finite (ker (f.restrict hf)) := by
+  have hfin : (ker f : Set M).Finite := by
+    rwa [← Set.finite_coe_iff, SetLike.coe_sort_coe]
+  rw [← SetLike.coe_sort_coe, Set.finite_coe_iff, ker_restrict, Submodule.comap_coe]
+  exact hfin.preimage p.subtype_injective.injOn
 
 variable {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂] {τ₁₂ : R →+* R₂} [RingHomSurjective τ₁₂]
   [AddCommGroup M] [Module R M] [AddCommGroup M₂] [Module R₂ M₂]

@@ -12,8 +12,9 @@ public import TauCeti.RingTheory.Iwasawa.EulerQuotient
 
 import TauCeti.Algebra.Module.Submodule.Pointwise
 import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Submodule.Prod
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Iwasawa.Cyclotomic.Growth
+import TauCeti.RingTheory.Iwasawa.Cyclotomic.Growth.Basic
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Norm.Cokernel
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
@@ -341,18 +342,11 @@ private theorem finite_smul_deltaSubmodule_elementary_iff {p : ℕ} (hp : p.Prim
         F j ∣ (Polynomial.cyclotomic (p ^ k) O).comp (Polynomial.X + 1) → F j ∣ g := by
   have : Infinite O := TauCeti.IsDiscreteValuationRing.infinite
   dsimp only [Elementary]
-  rw [deltaSubmodule_prod, deltaSubmodule_prod, deltaSubmodule_pi, deltaSubmodule_pi,
-    deltaSubmodule_pi, Submodule.smul_prod, Submodule.smul_prod, Submodule.smul_pi_univ,
-    Submodule.smul_pi_univ, Submodule.smul_pi_univ,
-    Equiv.finite_iff (Submodule.prodEquiv _ _).toEquiv, Prod.finite_iff,
-    Equiv.finite_iff (Submodule.prodEquiv _ _).toEquiv, Prod.finite_iff,
-    Submodule.finite_pi_univ_iff, Submodule.finite_pi_univ_iff, Submodule.finite_pi_univ_iff]
-  have hvert : ∀ i : Fin a, Finite ↥((g : O⟦X⟧) •
-      deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)})) := fun i ↦ by
-    rw [deltaSubmodule_quotient_span_C_pow_eq_bot hϖ.prime hp.ne_zero (m i), Submodule.smul_bot']
-    infer_instance
-  simp_rw [finite_smul_deltaSubmodule_quotient_span_pow_iff hp hp0 (hF _) (hirr _).prime (hn _)]
-  exact ⟨fun h ↦ h.2.2, fun h ↦ ⟨fun i ↦ i.elim0, hvert, h⟩⟩
+  simp only [deltaSubmodule_prod, deltaSubmodule_pi, Submodule.smul_prod, Submodule.smul_pi_univ,
+    Submodule.finite_prod_iff, Submodule.finite_pi_univ_iff,
+    deltaSubmodule_quotient_span_C_pow_eq_bot hϖ.prime hp.ne_zero, Submodule.smul_bot',
+    finite_smul_deltaSubmodule_quotient_span_pow_iff hp hp0 (hF _) (hirr _).prime (hn _)]
+  exact ⟨fun h ↦ h.2.2, fun h ↦ ⟨fun i ↦ i.elim0, fun _ ↦ inferInstance, h⟩⟩
 
 /-- **The cyclotomic cutoff criterion** (adapted from the cutoff `d(M)` in
 Neukirch–Schmidt–Wingberg, Proposition 5.3.17, over `ℤ_p`). Let `O` be a complete discrete

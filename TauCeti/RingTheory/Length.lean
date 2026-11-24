@@ -712,13 +712,16 @@ theorem natCard_eq_natCard_residueField_pow_length {R M : Type*} [CommRing R] [I
   | of_subsingleton => simp
   | @of_simple_quotient M _ _ N _ hN ih =>
     obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R (M ⧸ N)›
-    rw [IsLocalRing.eq_maximalIdeal hI] at e
+    rw [IsLocalRing.eq_maximalIdeal hI, ← IsLocalRing.ker_residue] at e
+    have hcard : Nat.card (M ⧸ N) = Nat.card (IsLocalRing.ResidueField R) :=
+      Nat.card_congr <| e.toEquiv.trans
+        (RingHom.quotientKerEquivOfSurjective IsLocalRing.residue_surjective).toEquiv
     have hlen : Module.length R M = Module.length R N + 1 := by
       rw [Module.length_eq_add_of_exact N.subtype N.mkQ N.subtype_injective N.mkQ_surjective
           (LinearMap.exact_subtype_mkQ N),
         Module.length_eq_one R (M ⧸ N)]
-    rw [N.card_eq_card_quotient_mul_card, ih, Nat.card_congr e.toEquiv, hlen,
+    rw [N.card_eq_card_quotient_mul_card, ih, hcard, hlen,
       ENat.toNat_add (Module.length_ne_top_iff.mpr hN) (by simp), ENat.toNat_one, pow_succ,
-      IsLocalRing.ResidueField, mul_comm]
+      mul_comm]
 
 end IsFiniteLength
