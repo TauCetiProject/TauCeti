@@ -48,8 +48,8 @@ with Macdonald's function `K_ν(z)`, which is holomorphic on the plane cut along
 
 ## Main results
 
-* `Complex.positiveAxisBesselK_integral_convergent`, `Complex.positiveAxisBesselK_of_nonpos`: the
-  defining integral converges absolutely for `c > 0`, and `K_ν(c) = 0` for `c ≤ 0`.
+* `Complex.integrableOn_positiveAxisBesselK_integrand`, `Complex.positiveAxisBesselK_of_nonpos`:
+  the defining integral converges absolutely for `c > 0`, and `K_ν(c) = 0` for `c ≤ 0`.
 * `Complex.positiveAxisBesselK_eq_mellin`, `Complex.positiveAxisBesselK_eq_integral`,
   `Complex.positiveAxisBesselK_eq_integral_cosh`: the Mellin form, the full-line form
   `½ ∫_ℝ e^{ν t} e^{−c cosh t} dt` and the cosh form (DLMF 10.32.9).
@@ -60,7 +60,7 @@ with Macdonald's function `K_ν(z)`, which is holomorphic on the plane cut along
 * `Complex.norm_positiveAxisBesselK_le`: `|K_ν(c)| ≤ K_{Re ν}(c)`.
 * `Complex.norm_positiveAxisBesselK_le_sqrt_mul_exp`,
   `Complex.norm_positiveAxisBesselK_le_rpow_mul_exp`, `Complex.exists_norm_positiveAxisBesselK_le`:
-  the decay `|K_ν(x)| ≤ C x^{−1/2} e^{−x}` for `x ≥ 1`, uniformly for `ν` in a bounded set.
+  the decay `|K_ν(x)| ≤ C x^{−1/2} e^{−x}` for `x ≥ 1`, uniformly for `ν` with bounded real part.
 * `Complex.positiveAxisBesselK_one_half`: `K_{1/2}(c) = (π / (2c))^{1/2} e^{−c}` (DLMF 10.39.2).
 * `Complex.differentiable_positiveAxisBesselK`, `Complex.hasDerivAt_positiveAxisBesselK`,
   `Complex.iteratedDeriv_positiveAxisBesselK`: `ν ↦ K_ν(c)` is entire, and its `j`-th
@@ -118,7 +118,7 @@ theorem positiveAxisBesselK_eq_mellin (ν : ℂ) (c : ℝ) :
   exact setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ integrand_eq_cpow_smul ν c hu
 
 /-- For `c > 0` the integral defining `K_ν(c)` converges absolutely. -/
-theorem positiveAxisBesselK_integral_convergent (ν : ℂ) {c : ℝ} (hc : 0 < c) :
+theorem integrableOn_positiveAxisBesselK_integrand (ν : ℂ) {c : ℝ} (hc : 0 < c) :
     IntegrableOn (fun u : ℝ ↦
       cexp (-(c : ℂ) * ((u : ℂ) + (u : ℂ)⁻¹) / 2) * cexp (ν * (Real.log u : ℂ)) / (u : ℂ))
       (Ioi 0) :=
@@ -289,9 +289,9 @@ theorem norm_positiveAxisBesselK_le_rpow_mul_exp (ν : ℂ) {x : ℝ} (hx : 1 �
         ring
     _ ≤ _ := by gcongr
 
-/-- **Uniform decay of the kernel.** For `ν` in a bounded set there is `C` with
-`|K_ν(x)| ≤ C x^{−1/2} e^{−x}` for all `x ≥ 1`. -/
-theorem exists_norm_positiveAxisBesselK_le {s : Set ℂ} (hs : Bornology.IsBounded s) :
+/-- **Uniform decay of the kernel.** For `ν` in a set with bounded real parts, such as a
+vertical strip, there is `C` with `|K_ν(x)| ≤ C x^{−1/2} e^{−x}` for all `x ≥ 1`. -/
+theorem exists_norm_positiveAxisBesselK_le {s : Set ℂ} (hs : Bornology.IsBounded (re '' s)) :
     ∃ C, ∀ ν ∈ s, ∀ x : ℝ, 1 ≤ x →
       ‖positiveAxisBesselK ν x‖ ≤ C * x ^ (-(1 / 2) : ℝ) * Real.exp (-x) := by
   obtain ⟨R, hR⟩ := hs.exists_norm_le
@@ -299,7 +299,7 @@ theorem exists_norm_positiveAxisBesselK_le {s : Set ℂ} (hs : Bornology.IsBound
     (norm_positiveAxisBesselK_le_rpow_mul_exp ν hx).trans ?_⟩
   have h : ν.re ^ 2 ≤ R ^ 2 := by
     rw [← sq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg _) ((abs_re_le_norm ν).trans (hR ν hν)) 2
+    exact pow_le_pow_left₀ (abs_nonneg _) (hR _ (mem_image_of_mem re hν)) 2
   gcongr
 
 /-- `∫_ℝ cosh(t / 2) e^{−c cosh t} dt = 2 (π / (2c))^{1/2} e^{−c}`, by the substitution
