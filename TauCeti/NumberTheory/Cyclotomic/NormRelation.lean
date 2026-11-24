@@ -11,7 +11,6 @@ public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.Cyclotomic.Aut
-import TauCeti.NumberTheory.Cyclotomic.Basic
 import TauCeti.NumberTheory.Cyclotomic.DistributionRelation
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
