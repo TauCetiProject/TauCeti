@@ -30,6 +30,11 @@ Taking for `M` the residue field of a local ring `A` gives `A[z] ⧸ (z², 𝔪z
 `A`-algebra with the dimension of `A` and of depth zero, which is not flat over `A` unless `A` is
 a field (`TrivSqZeroExt.depth_eq_zero`, `TrivSqZeroExt.not_flat`).
 
+## Main definitions
+
+* `TrivSqZeroExt.linearEquivProd`: the canonical `R`-linear equivalence
+  `TrivSqZeroExt R M ≃ₗ[R] R × M` given by `(fst, snd)`.
+
 ## Main results
 
 * `TrivSqZeroExt.isLocalRing`: the trivial square-zero extension of a local ring is local.
@@ -48,19 +53,41 @@ section Semiring
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
+/-- The canonical `R`-linear equivalence identifying `TrivSqZeroExt R M` with `R × M` via
+`fst` and `snd`. -/
+def linearEquivProd (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] :
+    TrivSqZeroExt R M ≃ₗ[R] R × M where
+  toFun x := (x.fst, x.snd)
+  invFun y := inl y.1 + inr y.2
+  map_add' x₁ x₂ := by simp
+  map_smul' r x := by simp
+  left_inv x := inl_fst_add_inr_snd_eq x
+  right_inv y := by ext <;> simp
+
+/-- Applying `TrivSqZeroExt.linearEquivProd` returns `(x.fst, x.snd)`. -/
+@[simp]
+theorem linearEquivProd_apply (x : TrivSqZeroExt R M) :
+    linearEquivProd R M x = (x.fst, x.snd) :=
+  (rfl)
+
+/-- The inverse of `TrivSqZeroExt.linearEquivProd` sends `(r, m)` to `inl r + inr m`. -/
+@[simp]
+theorem linearEquivProd_symm_apply (y : R × M) :
+    (linearEquivProd R M).symm y = inl y.1 + inr y.2 :=
+  (rfl)
+
 /-- The trivial square-zero extension by a finite module is a finite module. -/
 instance [Module.Finite R M] : Module.Finite R (TrivSqZeroExt R M) :=
-  inferInstanceAs (Module.Finite R (R × M))
+  Module.Finite.equiv (linearEquivProd R M).symm
 
 /-- The trivial square-zero extension by a free module is a free module. -/
 instance [Module.Free R M] : Module.Free R (TrivSqZeroExt R M) :=
-  inferInstanceAs (Module.Free R (R × M))
+  Module.Free.of_equiv (linearEquivProd R M).symm
 
 /-- The trivial square-zero extension by a free module of finite rank `n` has rank `n + 1`. -/
 theorem finrank_eq_finrank_add_one [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
     Module.finrank R (TrivSqZeroExt R M) = Module.finrank R M + 1 := by
-  have e : TrivSqZeroExt R M ≃ₗ[R] R × M := LinearEquiv.refl R (R × M)
-  rw [e.finrank_eq, Module.finrank_prod, Module.finrank_self, add_comm]
+  rw [(linearEquivProd R M).finrank_eq, Module.finrank_prod, Module.finrank_self, add_comm]
 
 end Semiring
 

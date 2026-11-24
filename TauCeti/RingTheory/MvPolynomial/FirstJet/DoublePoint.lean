@@ -180,8 +180,8 @@ theorem doublePointQuotientEquiv_comp_equiv [Finite σ] [Finite ι] [Finite κ]
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [congrFun (doublePointQuotientEquiv_mk (P := P ∘ e)
     (fun _ _ h ↦ hP (e.injective.ne h)) f) j,
-    Ideal.quotientEquivAlgOfEq_mk, congrFun (doublePointQuotientEquiv_mk hP f) (e j)]
-  rfl
+    Ideal.quotientEquivAlgOfEq_mk, congrFun (doublePointQuotientEquiv_mk hP f) (e j),
+    Function.comp_apply]
 
 /-- **Simultaneous first-jet interpolation.** At finitely many points in finitely many variables
 over a commutative ring whose evaluation ideals are pairwise comaximal, any values and gradients are
