@@ -22,7 +22,8 @@ with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
 `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that bound, that
 `1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
-modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
+modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that
+`t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)` has slope at most `|δ|`, that `c √u` tends
 to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. It describes
@@ -45,6 +46,8 @@ records the Gaussian normalization `√(4/π) = 2/√π`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
+* `Real.contDiff_sqrt_one_add_sq`: `t ↦ √(1 + t²)` is smooth.
+* `Real.abs_deriv_mul_sqrt_one_add_sq_le`: the slope of `t ↦ δ √(1 + t²)` is at most `|δ|`.
 * `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
 * `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
@@ -253,6 +256,22 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
     show (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) = (a - b) * (a + b) by
       linear_combination hA - hB, abs_mul]
   exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
+
+/-- The function `t ↦ √(1 + t²)` is smooth. -/
+theorem contDiff_sqrt_one_add_sq {n : WithTop ℕ∞} : ContDiff ℝ n fun t : ℝ ↦ √(1 + t ^ 2) :=
+  (contDiff_const.add (contDiff_id.pow 2)).sqrt fun t ↦ by positivity
+
+/-- The slope of `t ↦ δ √(1 + t²)` has absolute value at most `|δ|`, since `t ↦ √(1 + t²)` is
+`1`-Lipschitz. For small `|δ|` this makes `e^{δ √(1 + t²)}` an admissible weight, comparable to
+`e^{δ |t|}`, in weighted estimates that require a bounded slope. -/
+theorem abs_deriv_mul_sqrt_one_add_sq_le (δ t : ℝ) :
+    |deriv (fun t ↦ δ * √(1 + t ^ 2)) t| ≤ |δ| := by
+  have h : LipschitzWith ‖δ‖₊ fun t : ℝ ↦ δ * √(1 + t ^ 2) :=
+    LipschitzWith.of_dist_le_mul fun a b ↦ by
+      rw [dist_eq, dist_eq, ← mul_sub, abs_mul, coe_nnNorm, norm_eq_abs]
+      exact mul_le_mul_of_nonneg_left (abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub a b)
+        (abs_nonneg δ)
+  simpa using norm_deriv_le_of_lipschitz (x₀ := t) h
 
 /-- For every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`. -/
 theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
