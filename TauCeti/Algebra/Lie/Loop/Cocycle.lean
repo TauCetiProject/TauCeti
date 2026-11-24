@@ -73,8 +73,9 @@ class of the Killing form.
   first argument is a constant loop.
 * `TauCeti.LieAlgebra.LoopAlgebra.single_add_tmul_mem_span_lie`: for a perfect Lie algebra, every
   mode `x_{a + b}` is a linear combination of brackets `⁅y_a, z_b⁆`.
-* `TauCeti.LieAlgebra.LoopAlgebra.twoCochainOfBilinear_smul` and
-  `TauCeti.LieAlgebra.LoopAlgebra.twoCocycleOfBilinear_smul`: rescaling the form rescales the
+* `TauCeti.LieAlgebra.LoopAlgebra.twoCochainOfBilinear_smul`,
+  `TauCeti.LieAlgebra.LoopAlgebra.twoCocycleOfBilinear_smul`, and
+  `TauCeti.LieAlgebra.LoopAlgebra.twoCocycleOfBilinear_eq_smul`: rescaling the form rescales the
   residue 2-cochain and 2-cocycle.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_twoCocycleOfBilinear_iff`: **for a perfect Lie algebra,
   a 2-cocycle is a residue cocycle if and only if it vanishes on constant loops**.
@@ -193,6 +194,16 @@ theorem twoCocycleOfBilinear_smul {K A L : Type*} [CommRing K] [CommRing A] [Has
     twoCocycleOfBilinear K A L (t • Ψ) htΨ htΨs =
       t • twoCocycleOfBilinear K A L Ψ hΨ hΨs :=
   Subtype.ext (twoCochainOfBilinear_smul t hΨs htΨs)
+
+/-- If `Ψ = t • Φ`, then the residue 2-cocycle of `Ψ` equals `t` times that of `Φ`. -/
+theorem twoCocycleOfBilinear_eq_smul {K A L : Type*} [CommRing K] [CommRing A] [HasUniqueDiv K]
+    [Algebra A K] [LieRing L] [LieAlgebra K L] {t : K} {Φ Ψ : LinearMap.BilinForm K L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) (h : Ψ = t • Φ) :
+    twoCocycleOfBilinear K A L Ψ hΨ hΨs =
+      t • twoCocycleOfBilinear K A L Φ hΦ hΦs := by
+  subst h
+  exact twoCocycleOfBilinear_smul t hΦ hΨ hΦs hΨs
 
 section ResiduePairingConstant
 

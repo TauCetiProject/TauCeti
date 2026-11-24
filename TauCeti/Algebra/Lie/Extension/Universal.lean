@@ -193,14 +193,6 @@ private theorem mem_ker_proj_comp_iff
     rwa [← proj_apply], Prod.mk_zero_zero, of_zero c₀, zero_add] at hd
   exact hd
 
-/-- Quotients of perfect Lie algebras remain perfect. -/
-private theorem derivedSeries_quotient_eq_top
-    {K G : Type*} [CommRing K] [LieRing G] [LieAlgebra K G]
-    (hperf : derivedSeries K G 1 = ⊤) (J : LieIdeal K G) :
-    derivedSeries K (G ⧸ J) 1 = ⊤ := by
-  rw [← LieIdeal.derivedSeries_map_eq 1 J.surjective_mkQ, hperf, ← J.mkQ.idealRange_eq_map,
-    J.mkQ.idealRange_eq_top_of_surjective J.surjective_mkQ]
-
 /-- In `G ⧸ ⁅⊤, f.ker⁆`, the kernel of the induced map to `L₀` is central. -/
 private theorem quotient_ker_liftQ_central
     {K L₀ G : Type*} [Field K] [LieRing L₀] [LieAlgebra K L₀] [LieRing G] [LieAlgebra K G]
@@ -279,7 +271,7 @@ theorem lie_top_ker_eq_ker_of_surjective
   have hπQ_surj : Function.Surjective πQ := fun p ↦
     let ⟨y, hy⟩ := ((proj_surjective c₀).comp hf) p; ⟨q y, (hπQ_q y).trans hy⟩
   let Z : LieIdeal K (G ⧸ J) := LieIdeal.map q I
-  have hQ_perf : derivedSeries K (G ⧸ J) 1 = ⊤ := derivedSeries_quotient_eq_top hperf J
+  have hQ_perf : derivedSeries K (G ⧸ J) 1 = ⊤ := J.derivedSeries_quotient_eq_top hperf
   have hZ_le : Z ≤ πQ.ker := fun z hz ↦ by
     obtain ⟨⟨x, hxI⟩, rfl⟩ := LieIdeal.mem_map_of_surjective J.surjective_mkQ hz
     rw [LieHom.mem_ker, hπQ_q]; exact hI_le_ker hxI

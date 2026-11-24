@@ -22,7 +22,9 @@ A permutation `σ` of the index set of a square matrix `M` *preserves* `M` when
 and packages them as the subgroup `TauCeti.matrixSymmetryGroup` of `Equiv.Perm`. It also reads
 off the entries of a reindexed matrix: `A.reindex eₘ eₙ = A'` gives `A' (eₘ a) (eₙ b) = A a b`
 (`Matrix.apply_apply_of_reindex_eq`), and shows that the `n × m` matrix of an injection
-`f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`).
+`f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`). It also
+gives the corank-one left-kernel criterion `Matrix.vecMul_eq_zero_iff_of_null` for a matrix
+indexed by `Option α` whose `some × some` submatrix has trivial left kernel.
 
 For the Cartan matrix of a Dynkin diagram these permutations are the diagram symmetries.
 
@@ -88,5 +90,27 @@ theorem submatrix_one_mul_submatrix_one {m n α : Type*} [Fintype n] [DecidableE
     [DecidableEq n] [NonAssocSemiring α] (f : m ↪ n) :
     (1 : Matrix n n α).submatrix f id * (1 : Matrix n n α).submatrix id f = 1 := by
   rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one_embedding]
+
+/-- A left null vector `v` of an `Option α`-indexed matrix `A` is `v none • n` whenever `n` is a
+left null vector with `n none = 1` and `A.submatrix some some` has trivial left kernel. -/
+theorem vecMul_eq_zero_iff_of_null {α R : Type*} [Fintype α] [Ring R]
+    {A : Matrix (Option α) (Option α) R} {n v : Option α → R}
+    (hsub : ∀ u : α → R, u ᵥ* A.submatrix some some = 0 → u = 0)
+    (hn0 : n none = 1) (hnA : n ᵥ* A = 0) :
+    v ᵥ* A = 0 ↔ v = v none • n := by
+  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [hv, smul_vecMul, hnA, smul_zero]⟩
+  set w := v - v none • n with hw
+  have hw0 : w none = 0 := by simp [hw, hn0]
+  have hwA : w ᵥ* A = 0 := by rw [hw, sub_vecMul, smul_vecMul, hnA, hv, smul_zero, sub_zero]
+  have hfin : (w ∘ some) ᵥ* A.submatrix some some = 0 := by
+    ext j
+    have := congrFun hwA (some j)
+    simpa [vecMul, dotProduct, Fintype.sum_option, hw0] using this
+  have hsome := hsub _ hfin
+  rw [← sub_eq_zero]
+  ext k
+  rcases k with _ | i
+  · exact hw0
+  · exact congrFun hsome i
 
 end Matrix
