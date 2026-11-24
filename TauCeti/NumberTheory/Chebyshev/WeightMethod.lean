@@ -49,6 +49,9 @@ known.
   `ψ(x) ≤ (6a / 5) x + (log (x / 5) / log 6) (5 log x − 5)` for `x ≥ 30`.
 * `Chebyshev.psi_le_mul_of_forall_psi_le_mul`: if `ψ(y) ≤ 1.11 y` for `0 < y ≤ 11723`, then
   `ψ(x) ≤ 1.11 x` for every `x > 0`.
+* `Chebyshev.WeightRange`: the finite-range hypothesis, the conjunction of the two hypotheses
+  above, with the two upper bounds `Chebyshev.WeightRange.psi_le` and
+  `Chebyshev.WeightRange.psi_le_mul` under it.
 
 The two finite ranges are computations on the values of `ψ` (the largest value of `ψ(y) / y` is
 `ψ(19) / 19 = 1.0139…` on `(0, 30]` and `ψ(113) / 113 = 1.0388…` on `(0, 11723]`); they are
@@ -351,5 +354,25 @@ theorem psi_le_mul_of_forall_psi_le_mul (h : ∀ y, 0 < y → y ≤ 11723 → ψ
     have := mul_le_mul_of_nonneg_right ha.le hx.le
     -- The constants have no slack: `1.11 / 6 + 0.9213 + 0.0037 = 1.11` exactly.
     linarith
+
+/-- Chebyshev's finite-range hypothesis: `ψ(y) ≤ 1.015 y` for `0 < y ≤ 30` and `ψ(y) ≤ 1.11 y` for
+`0 < y ≤ 11723`. These are computations on the values of `ψ` (the largest values of `ψ(y) / y` on
+the two ranges are `ψ(19) / 19 = 1.0139…` and `ψ(113) / 113 = 1.0388…`); they start the iterations
+of `Chebyshev.WeightRange.psi_le` and `Chebyshev.WeightRange.psi_le_mul`. -/
+structure WeightRange : Prop where
+  /-- `ψ(y) ≤ 1.015 y` for `0 < y ≤ 30`. -/
+  psi_le_of_le_thirty : ∀ y, 0 < y → y ≤ 30 → ψ y ≤ 1.015 * y
+  /-- `ψ(y) ≤ 1.11 y` for `0 < y ≤ 11723`. -/
+  psi_le_of_le_11723 : ∀ y, 0 < y → y ≤ 11723 → ψ y ≤ 1.11 * y
+
+/-- Under Chebyshev's finite-range hypothesis,
+`ψ(x) ≤ (6a / 5) x + (log (x / 5) / log 6) (5 log x − 5)` for every `x ≥ 30`. -/
+theorem WeightRange.psi_le (h : WeightRange) {x : ℝ} (hx : 30 ≤ x) :
+    ψ x ≤ 6 * weightConstant / 5 * x + log (x / 5) / log 6 * (5 * log x - 5) :=
+  psi_le_of_forall_psi_le_mul h.psi_le_of_le_thirty hx
+
+/-- Under Chebyshev's finite-range hypothesis, `ψ(x) ≤ 1.11 x` for every `x > 0`. -/
+theorem WeightRange.psi_le_mul (h : WeightRange) {x : ℝ} (hx : 0 < x) : ψ x ≤ 1.11 * x :=
+  psi_le_mul_of_forall_psi_le_mul h.psi_le_of_le_11723 hx
 
 end Chebyshev
