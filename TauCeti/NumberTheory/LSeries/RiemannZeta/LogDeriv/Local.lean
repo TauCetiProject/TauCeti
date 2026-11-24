@@ -88,10 +88,13 @@ theorem finsum_subtype_riemannZeta_eq_finsum_divisor (s₀ s : ℂ) (r' : ℝ) :
       rw [(hF ρ trivial).divisor_apply_eq_zero hne, Int.cast_zero, zero_div]
     · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hmem, Int.cast_zero, zero_div]
 
-/-- The centre lower bound `‖(s₀ - 1) ζ(s₀)‖ ≥ (σ₀ - 1) exp(-Re ζ(σ₀))` for `σ₀ = Re s₀ > 1`,
-from `DirichletCharacter.exp_neg_re_riemannZeta_le_norm_LFunction`. -/
-private theorem sub_one_mul_exp_neg_le_norm_LFunctionTrivChar₁_one {s₀ : ℂ} (hs₀ : 1 < s₀.re) :
+/-- The centre lower bound `‖(s₀ - 1) ζ(s₀)‖ ≥ (σ₀ - 1) exp(-Re ζ(σ₀))` for `σ₀ = Re s₀`. For
+`σ₀ > 1` it comes from `DirichletCharacter.exp_neg_re_riemannZeta_le_norm_LFunction`; for `σ₀ ≤ 1`
+the left side is not positive. -/
+private theorem sub_one_mul_exp_neg_le_norm_LFunctionTrivChar₁_one (s₀ : ℂ) :
     (s₀.re - 1) * Real.exp (-(riemannZeta s₀.re).re) ≤ ‖LFunctionTrivChar₁ 1 s₀‖ := by
+  rcases le_or_gt s₀.re 1 with h | hs₀
+  · exact (mul_nonpos_of_nonpos_of_nonneg (by linarith) (Real.exp_pos _).le).trans (norm_nonneg _)
   have hs₀1 : s₀ ≠ 1 := fun h ↦ by simp [h] at hs₀
   rw [LFunctionTrivChar₁_one_apply_of_ne_one hs₀1, norm_mul]
   gcongr
@@ -127,8 +130,7 @@ theorem riemannZeta_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hr :
   have ht : 2 ≤ t := by simp [t]
   set M := K * t ^ B / c₀ with hMdef
   have hcentre : c₀ ≤ ‖LFunctionTrivChar₁ 1 s₀‖ := by
-    simpa [c₀, hs₀] using
-      sub_one_mul_exp_neg_le_norm_LFunctionTrivChar₁_one (s₀ := s₀) (by linarith)
+    simpa [c₀, hs₀] using sub_one_mul_exp_neg_le_norm_LFunctionTrivChar₁_one s₀
   have hsphere (w : ℂ) (hw : w ∈ sphere s₀ (r' + 1)) :
       ‖LFunctionTrivChar₁ 1 w‖ ≤ M * ‖LFunctionTrivChar₁ 1 s₀‖ := by
     refine (hdisc s₀ w hs₀ (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)).trans ?_
