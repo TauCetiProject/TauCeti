@@ -50,8 +50,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_one`, `ofMatrix_mul`,
   `ofMatrix_conjTranspose`, `conjTranspose_mul_self_eq_zero`, `self_mul_conjTranspose_eq_zero`,
-  `mem_unitary_iff_ofMatrix_symm`, `isStarProjection_ofMatrix_symm_iff`, and `continuous_map`
-  handle the remaining operations, transport, continuity, and proper-star cancellation.
+  `mem_unitary_iff_ofMatrix_symm`, `isStarProjection_ofMatrix_symm_iff`,
+  `IsStarProjection.conjTranspose_eq`, `IsStarProjection.conjTranspose_mul_of_mul_eq`,
+  `IsStarProjection.mul_conjTranspose_of_mul_eq`, and `continuous_map` handle the remaining
+  operations, transport, continuity, and proper-star cancellation.
 * `CStarMatrix.mapₙₐ`, `CStarMatrix.mapₙₐ_id`, `CStarMatrix.mapₙₐ_comp`, `CStarMatrix.mapₐ`,
   `CStarMatrix.mapₐ_id`, `CStarMatrix.mapₐ_comp`: functorial non-unital and unital entrywise
   matrix amplifications.
@@ -430,6 +432,26 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
     M.conjTranspose.conjTranspose = M := by
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
+
+/-- A star projection C⋆-matrix equals its conjugate transpose. -/
+theorem _root_.IsStarProjection.conjTranspose_eq [Fintype n] [Mul A] [AddCommMonoid A] [Star A]
+    {p : CStarMatrix n n A} (hp : IsStarProjection p) :
+    p.conjTranspose = p := by
+  rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+
+/-- If `p * x = x` for a star projection C⋆-matrix `p`, then `xᴴ * p = xᴴ`. -/
+theorem _root_.IsStarProjection.conjTranspose_mul_of_mul_eq {m : Type*} [Fintype m]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {p : CStarMatrix m m A} (hp : IsStarProjection p)
+    {x : CStarMatrix m n A} (hpx : p * x = x) :
+    x.conjTranspose * p = x.conjTranspose := by
+  simpa only [conjTranspose_mul, hp.conjTranspose_eq] using congrArg conjTranspose hpx
+
+/-- If `x * p = x` for a star projection C⋆-matrix `p`, then `p * xᴴ = xᴴ`. -/
+theorem _root_.IsStarProjection.mul_conjTranspose_of_mul_eq {m : Type*} [Fintype n]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {p : CStarMatrix n n A} (hp : IsStarProjection p)
+    {x : CStarMatrix m n A} (hxp : x * p = x) :
+    p * x.conjTranspose = x.conjTranspose := by
+  simpa only [conjTranspose_mul, hp.conjTranspose_eq] using congrArg conjTranspose hxp
 
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/

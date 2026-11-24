@@ -485,13 +485,13 @@ variable [CStarAlgebra A]
 `CStarMatrix (n ⊕ n) (n ⊕ n) A` is continuous. -/
 theorem continuous_blockRotation : Continuous (blockRotation (n := n) (A := A)) := by
   rw [continuous_induced_rng]
-  have h : (fun θ : ℝ => (blockRotation (n := n) (A := A) θ : CStarMatrix (n ⊕ n) (n ⊕ n) A)) =
+  have h : Subtype.val ∘ blockRotation (n := n) (A := A) =
       fun θ => ofMatrixL (Matrix.fromBlocks (Real.cos θ • (1 : Matrix n n A))
         (-(Real.sin θ • 1)) (Real.sin θ • 1) (Real.cos θ • 1)) := by
     funext θ
     apply ofMatrix.symm.injective
-    simp [coe_blockRotation, ← ofMatrix_eq_ofMatrixL]
-  rw [show Subtype.val ∘ blockRotation (n := n) (A := A) = _ from h]
+    simp [Function.comp_apply, coe_blockRotation, ← ofMatrix_eq_ofMatrixL]
+  rw [h]
   exact ofMatrixL.continuous.comp
     (Continuous.matrix_fromBlocks (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop))
 

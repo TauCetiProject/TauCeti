@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Exponential
+public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Algebra.Star.StarProjection
@@ -21,8 +22,10 @@ self-adjoint element of `A`. The adjoint of the unitary `selfAdjoint.expUnitary 
 
 Using `IsIdempotentElem.exp_smul` from `TauCeti.Analysis.Normed.Algebra.Exponential`, we evaluate
 the exponential unitary of a real multiple of a star projection
-(`IsStarProjection.coe_expUnitary_smul`, `.coe_expUnitary_pi_smul`) and express every self-adjoint
-unitary as an exponential unitary (`Unitary.expUnitary_pi_half_one_sub`).
+(`IsStarProjection.coe_expUnitary_smul`, `.coe_expUnitary_pi_smul`), express every self-adjoint
+unitary as an exponential unitary (`Unitary.expUnitary_pi_half_one_sub`), and connect every
+self-adjoint unitary in a unital C⋆-algebra to `1` by an explicit exponential path
+(`Unitary.expUnitaryPathOfIsSelfAdjoint`, `Unitary.joined_one_of_isSelfAdjoint`).
 
 ## Main declarations
 
@@ -30,6 +33,9 @@ unitary as an exponential unitary (`Unitary.expUnitary_pi_half_one_sub`).
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: evaluating
   `expUnitary` on a real multiple of a star projection.
 * `Unitary.expUnitary_pi_half_one_sub`: expressing a self-adjoint unitary as `expUnitary`.
+* `Unitary.expUnitaryPathOfIsSelfAdjoint`, `Unitary.coe_expUnitaryPathOfIsSelfAdjoint_apply`,
+  `Unitary.joined_one_of_isSelfAdjoint`: explicit exponential path from `1` to a self-adjoint
+  unitary in a unital C⋆-algebra.
 
 ## References
 
@@ -41,7 +47,7 @@ public section
 
 noncomputable section
 
-open scoped Nat Real
+open scoped Nat Real unitInterval
 
 namespace selfAdjoint
 
@@ -91,3 +97,55 @@ theorem Unitary.expUnitary_pi_half_one_sub {A : Type*} [NormedRing A] [NormedAlg
   apply Subtype.ext
   rw [(IsStarProjection.half_one_sub_of_mul_self_eq_one hu2 hu).coe_expUnitary_pi_smul, smul_smul]
   norm_num
+
+/-- Explicit continuous exponential path in `unitary A` from `1` to a self-adjoint unitary `u`. -/
+def Unitary.expUnitaryPathOfIsSelfAdjoint {A : Type*} [CStarAlgebra A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) :
+    Path (1 : unitary A) u :=
+  (selfAdjoint.expUnitaryPathToOne
+    ⟨(π : ℂ) • ((2 : ℂ)⁻¹ • (1 - (u : A))),
+      IsSelfAdjoint.smul (Complex.conj_ofReal π)
+        (IsSelfAdjoint.smul (by simp : IsSelfAdjoint ((2 : ℂ)⁻¹))
+          ((IsSelfAdjoint.one A).sub hu))⟩).cast rfl
+    (Unitary.expUnitary_pi_half_one_sub u hu).symm
+
+/-- Pointwise exponential formula for `Unitary.expUnitaryPathOfIsSelfAdjoint`. -/
+@[simp]
+theorem Unitary.expUnitaryPathOfIsSelfAdjoint_apply {A : Type*} [CStarAlgebra A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) (t : I) :
+    Unitary.expUnitaryPathOfIsSelfAdjoint u hu t =
+      selfAdjoint.expUnitary ((t : ℝ) •
+        ⟨(π : ℂ) • ((2 : ℂ)⁻¹ • (1 - (u : A))),
+          IsSelfAdjoint.smul (Complex.conj_ofReal π)
+            (IsSelfAdjoint.smul (by simp : IsSelfAdjoint ((2 : ℂ)⁻¹))
+              ((IsSelfAdjoint.one A).sub hu))⟩) :=
+  (rfl)
+
+/-- Closed-form formula for `Unitary.expUnitaryPathOfIsSelfAdjoint` at parameter `t : I`. -/
+theorem Unitary.coe_expUnitaryPathOfIsSelfAdjoint_apply {A : Type*} [CStarAlgebra A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) (t : I) :
+    ((Unitary.expUnitaryPathOfIsSelfAdjoint u hu t : unitary A) : A) =
+      1 + (Complex.exp (Complex.I * (((t : ℝ) * π : ℝ) : ℂ)) - 1) •
+        ((2 : ℂ)⁻¹ • (1 - (u : A))) := by
+  have hu_sq : (u : A) * (u : A) = 1 := by
+    simpa [hu.star_eq] using Unitary.coe_star_mul_self u
+  let r : A := (2 : ℂ)⁻¹ • (1 - (u : A))
+  have hr : IsStarProjection r := IsStarProjection.half_one_sub_of_mul_self_eq_one hu_sq hu
+  let a : selfAdjoint A :=
+    ⟨(π : ℂ) • r, IsSelfAdjoint.smul (Complex.conj_ofReal π) hr.isSelfAdjoint⟩
+  rw [Unitary.expUnitaryPathOfIsSelfAdjoint_apply]
+  have hsub : (t : ℝ) • a =
+      ⟨(((t : ℝ) * π : ℝ) : ℂ) • r,
+        IsSelfAdjoint.smul (Complex.conj_ofReal ((t : ℝ) * π)) hr.isSelfAdjoint⟩ := by
+    refine Subtype.ext ?_
+    rw [selfAdjoint.val_smul]
+    simp only [a, ← smul_assoc, Complex.real_smul, Complex.ofReal_mul]
+  have hexp := congrArg (fun x : selfAdjoint A => ((selfAdjoint.expUnitary x : unitary A) : A))
+    hsub
+  rw [hr.coe_expUnitary_smul ((t : ℝ) * π)] at hexp
+  simpa only [r, a] using hexp
+
+/-- Every self-adjoint unitary in a unital C⋆-algebra lies in the identity path component. -/
+theorem Unitary.joined_one_of_isSelfAdjoint {A : Type*} [CStarAlgebra A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
+  ⟨Unitary.expUnitaryPathOfIsSelfAdjoint u hu⟩

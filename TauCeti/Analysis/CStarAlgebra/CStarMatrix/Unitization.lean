@@ -25,6 +25,9 @@ norm-continuous path of star projections in `CStarMatrix k k A`.
   is the entrywise image of its `A`-part.
 * `CStarMatrix.map_fstHom_map_inr`: the scalar part of a matrix embedded via `Unitization.inr`
   vanishes.
+* `CStarMatrix.map_inr_map_snd_of_mul_map_inr_eq`, `CStarMatrix.map_inr_map_snd_of_map_inr_mul_eq`,
+  `CStarMatrix.map_inr_map_snd_mul_map_inr_mul`: matrices over `A⁺¹` fixed on the right or left
+  by, or sandwiched around, an entrywise `Unitization.inr` image descend to `A`.
 * `CStarMatrix.exists_path_isStarProjection_of_unitization_unitary_conj`: a unitary path in
   `CStarMatrix k k A⁺¹` joining `1` to a conjugator of `P.map inr` into `Q.map inr` descends to a
   path of star projections from `P` to `Q`.
@@ -61,6 +64,41 @@ theorem map_fstHom_map_inr {m n A : Type*} [NonUnitalSemiring A] [Module ℂ A]
     (M.map (Unitization.inr : A → A⁺¹)).map (Unitization.fstHom ℂ A) = 0 :=
   CStarMatrix.ext fun _ _ => by simp
 
+/-- A matrix over `A⁺¹` fixed on the right by an entrywise `Unitization.inr` image is the
+entrywise `inr` image of its `A`-component. -/
+theorem map_inr_map_snd_of_mul_map_inr_eq {m n A : Type*} [Fintype n] [NonUnitalSemiring A]
+    [Module ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+    {M : CStarMatrix m n A⁺¹} {P : CStarMatrix n n A}
+    (hM : M * P.map (Unitization.inr : A → A⁺¹) = M) :
+    (M.map (fun x : A⁺¹ => x.snd)).map (Unitization.inr : A → A⁺¹) = M := by
+  refine map_inr_map_snd_of_map_fstHom_eq_zero ?_
+  rw [← hM, CStarMatrix.map_mul (Unitization.fstHom ℂ A), map_fstHom_map_inr,
+    CStarMatrix.mul_zero]
+
+/-- A matrix over `A⁺¹` fixed on the left by an entrywise `Unitization.inr` image is the
+entrywise `inr` image of its `A`-component. -/
+theorem map_inr_map_snd_of_map_inr_mul_eq {m n A : Type*} [Fintype m] [NonUnitalSemiring A]
+    [Module ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+    {P : CStarMatrix m m A} {M : CStarMatrix m n A⁺¹}
+    (hM : P.map (Unitization.inr : A → A⁺¹) * M = M) :
+    (M.map (fun x : A⁺¹ => x.snd)).map (Unitization.inr : A → A⁺¹) = M := by
+  refine map_inr_map_snd_of_map_fstHom_eq_zero ?_
+  rw [← hM, CStarMatrix.map_mul (Unitization.fstHom ℂ A), map_fstHom_map_inr,
+    CStarMatrix.zero_mul]
+
+/-- Multiplying an entrywise `Unitization.inr` image on both sides in `CStarMatrix` yields a
+matrix equal to the entrywise `inr` image of its `A`-component. -/
+theorem map_inr_map_snd_mul_map_inr_mul {l m n k A : Type*} [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [Module ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+    (a : CStarMatrix l m A⁺¹) (P : CStarMatrix m n A) (b : CStarMatrix n k A⁺¹) :
+    ((a * P.map (Unitization.inr : A → A⁺¹) * b).map (fun x : A⁺¹ => x.snd)).map
+        (Unitization.inr : A → A⁺¹) =
+      a * P.map (Unitization.inr : A → A⁺¹) * b := by
+  refine map_inr_map_snd_of_map_fstHom_eq_zero ?_
+  rw [CStarMatrix.map_mul (Unitization.fstHom ℂ A),
+    CStarMatrix.map_mul (Unitization.fstHom ℂ A), map_fstHom_map_inr, CStarMatrix.mul_zero,
+    CStarMatrix.zero_mul]
+
 /-- Conjugation by a unitary path in `CStarMatrix k k A⁺¹` joining `1` to a conjugator of
 `P.map inr` to `Q.map inr` yields a norm-continuous path of star projections from `P` to `Q` in
 `CStarMatrix k k A`. -/
@@ -77,18 +115,14 @@ theorem exists_path_isStarProjection_of_unitization_unitary_conj {k A : Type*} [
   let : StarOrderedRing A⁺¹ := CStarAlgebra.spectralOrderedRing A⁺¹
   let ι : A →⋆ₙₐ[ℂ] A⁺¹ := Unitization.inrNonUnitalStarAlgHom ℂ A
   obtain ⟨δ⟩ := hjoin
-  have hfst (t : I) :
-      ((δ t : CStarMatrix k k A⁺¹) * P.map ι * star (δ t : CStarMatrix k k A⁺¹)).map
-        (Unitization.fstHom ℂ A) = 0 := by
-    rw [CStarMatrix.map_mul (Unitization.fstHom ℂ A), CStarMatrix.map_mul (Unitization.fstHom ℂ A),
-      map_inrNonUnitalStarAlgHom, map_fstHom_map_inr P, mul_zero, zero_mul]
   let f : I → CStarMatrix k k A := fun t =>
     ((δ t : CStarMatrix k k A⁺¹) * P.map ι * star (δ t : CStarMatrix k k A⁺¹)).map
       (fun x : A⁺¹ => x.snd)
   have hf_inr (t : I) : CStarMatrix.mapₙₐ (n := k) ι (f t) =
       (δ t : CStarMatrix k k A⁺¹) * P.map ι * star (δ t : CStarMatrix k k A⁺¹) := by
     rw [CStarMatrix.mapₙₐ_apply, CStarMatrix.mapₗ_apply, map_inrNonUnitalStarAlgHom]
-    exact map_inr_map_snd_of_map_fstHom_eq_zero (hfst t)
+    exact map_inr_map_snd_mul_map_inr_mul (δ t : CStarMatrix k k A⁺¹) P
+      (star (δ t : CStarMatrix k k A⁺¹))
   have hf_cont : Continuous f := by
     have hδ : Continuous (fun t : I => ((δ t : unitary (CStarMatrix k k A⁺¹)) :
         CStarMatrix k k A⁺¹)) := continuous_subtypeVal.comp δ.continuous

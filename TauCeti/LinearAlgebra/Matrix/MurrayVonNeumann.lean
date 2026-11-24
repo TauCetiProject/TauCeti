@@ -313,6 +313,18 @@ theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq_suppor
   · rw [← hvp, ← Matrix.mul_assoc, hv]
   · rw [← hvq, hv]
 
+private lemma conjTranspose_mul_eq_of_isStarProjection {m n R : Type*} [Fintype m]
+    [NonUnitalSemiring R] [StarRing R] {p : Matrix m m R} (hp : IsStarProjection p)
+    {x : Matrix m n R} (hpx : p * x = x) : xᴴ * p = xᴴ := by
+  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
+    congr_arg conjTranspose hpx
+
+private lemma mul_conjTranspose_eq_of_isStarProjection {m n R : Type*} [Fintype n]
+    [NonUnitalSemiring R] [StarRing R] {p : Matrix n n R} (hp : IsStarProjection p)
+    {x : Matrix m n R} (hxp : x * p = x) : p * xᴴ = xᴴ := by
+  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
+    congr_arg conjTranspose hxp
+
 /-- **Orthogonal sums.** Murray–von Neumann equivalence is compatible with sums of orthogonal star
 projections. -/
 theorem IsMurrayVonNeumannEquivalent.add {p₁ p₂ : Matrix m m R} {q₁ q₂ : Matrix n n R}
@@ -325,12 +337,8 @@ theorem IsMurrayVonNeumannEquivalent.add {p₁ p₂ : Matrix m m R} {q₁ q₂ :
   have hq₂ := h₂.isStarProjection_right
   obtain ⟨v₁, hv₁, hw₁, hv₁p, hq₁v₁⟩ := h₁.exists_mul_conjTranspose_mul_self_eq_support
   obtain ⟨v₂, hv₂, hw₂, hv₂p, hq₂v₂⟩ := h₂.exists_mul_conjTranspose_mul_self_eq_support
-  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := by
-    simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hq₁.isSelfAdjoint.star_eq] using
-      congr_arg conjTranspose hq₁v₁
-  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := by
-    simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp₂.isSelfAdjoint.star_eq] using
-      congr_arg conjTranspose hv₂p
+  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := conjTranspose_mul_eq_of_isStarProjection hq₁ hq₁v₁
+  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := mul_conjTranspose_eq_of_isStarProjection hp₂ hv₂p
   have h12 : v₁ᴴ * v₂ = 0 := by
     rw [← hv₁q₁, ← hq₂v₂, Matrix.mul_assoc, ← Matrix.mul_assoc q₁ q₂, hq,
       Matrix.zero_mul, Matrix.mul_zero]
@@ -431,9 +439,7 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
   have hp := h.isStarProjection_left
   have hq := h.isStarProjection_right
   obtain ⟨v, hvp, hvq, hbe, -⟩ := h.exists_mul_conjTranspose_mul_self_eq_support
-  have hea : p * vᴴ = vᴴ := by
-    simpa [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
-      congr_arg conjTranspose hbe
+  have hea : p * vᴴ = vᴴ := mul_conjTranspose_eq_of_isStarProjection hp hbe
   have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) :=
     (IsHermitian.fromBlocks (isHermitian_one.sub hp.isSelfAdjoint.isHermitian)
       (conjTranspose_conjTranspose v)

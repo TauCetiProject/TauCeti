@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
 
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Projections in the unitization
@@ -19,21 +20,11 @@ Algebraic behavior of star projections under unitary conjugation in the unitizat
 
 ## Main declarations
 
-* `Unitization.inr_snd_mul_inr_mul`: multiplying an embedded element `(p : Unitization R A)` on both
-  sides yields an element with zero scalar part, equal to the embedding of its `A`-component.
 * `IsStarProjection.isStarProjection_unitization_conj_snd`: conjugating a star projection `p : A`
   by a unitary of `Unitization R A` has `A`-component that is a star projection in `A`.
 -/
 
 public section
-
-/-- Multiplying an embedded element `(p : Unitization R A)` on both sides in `Unitization R A`
-produces an element with zero scalar part, equal to the embedding of its `A`-component. -/
-theorem Unitization.inr_snd_mul_inr_mul {R A : Type*} [MulZeroClass R] [Add A] [Mul A] [SMul R A]
-    (a : Unitization R A) (p : A) (b : Unitization R A) :
-    (((a * (p : Unitization R A) * b).snd : A) : Unitization R A) =
-      a * (p : Unitization R A) * b :=
-  Unitization.ext (by simp) rfl
 
 /-- Conjugating a star projection `p : A` by a unitary of `Unitization R A` yields an element
 whose `A`-component is a star projection in `A`. -/
