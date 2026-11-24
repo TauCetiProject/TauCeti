@@ -274,7 +274,7 @@ private theorem freeLocus_mem_nhds_bot_mvPolynomial [IsDomain A] {σ : Type*} [F
   let q := ((LinearMap.range V.mulVecLin).liftQ π hle).restrictScalars A
   refine Filter.mem_of_superset (freeLocus_cokernel_mem_nhds_bot V) fun p hp ↦
     mem_freeLocus_of_surjective_of_ker_le_torsion q ?_ ?_ hp
-  · change Function.Surjective ((LinearMap.range V.mulVecLin).liftQ π hle)
+  · simp only [q, LinearMap.coe_restrictScalars]
     rw [← LinearMap.range_eq_top, Submodule.range_liftQ, LinearMap.range_eq_top]
     exact hπ
   · intro y hy
