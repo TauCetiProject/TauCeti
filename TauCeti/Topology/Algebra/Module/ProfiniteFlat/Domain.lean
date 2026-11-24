@@ -46,11 +46,10 @@ theorem exists_open_submodule_ker_of_mul {I : Ideal O} {ϖ : O} (hϖ : ϖ ≠ 0)
   have hI_ker : I • (⊤ : Submodule O M) ≤ LinearMap.ker φ := Submodule.smul_le.mpr fun r hr m _ ↦
     by rw [LinearMap.mem_ker, map_smul, Algebra.smul_def, Ideal.Quotient.algebraMap_eq,
       Ideal.Quotient.eq_zero_iff_mem.mpr hr, zero_mul]
-  refine ⟨(V₀ ⊓ LinearMap.ker φ) ⊔ (J₂ • (⊤ : Submodule O M)), AddSubgroup.isOpen_mono
-    (H₁ := (V₀ ⊓ LinearMap.ker φ).toAddSubgroup)
-    (H₂ := ((V₀ ⊓ LinearMap.ker φ) ⊔ (J₂ • (⊤ : Submodule O M))).toAddSubgroup)
-    (fun _ hx ↦ Submodule.mem_sup_left hx) (hV₀_open.inter hker), le_sup_right, sup_le inf_le_right
-    ((Submodule.smul_mono_left Ideal.mul_le_right).trans hI_ker), fun {m} hm ↦ ?_⟩
+  refine ⟨(V₀ ⊓ LinearMap.ker φ) ⊔ (J₂ • (⊤ : Submodule O M)),
+    Submodule.isOpen_mono (fun _ hx ↦ Submodule.mem_sup_left hx) (hV₀_open.inter hker),
+    le_sup_right, sup_le inf_le_right
+      ((Submodule.smul_mono_left Ideal.mul_le_right).trans hI_ker), fun {m} hm ↦ ?_⟩
   obtain ⟨v₁, hv₁, y, hy, heq⟩ := Submodule.mem_sup.mp hm
   have hy' : y ∈ Ideal.span ({ϖ} : Set O) • (I • (⊤ : Submodule O M)) := by
     simpa [J₂, mul_smul] using hy

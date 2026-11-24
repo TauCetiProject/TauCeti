@@ -44,7 +44,7 @@ theorem factor_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
     Submodule.factor h₂ (Submodule.quotEquivOfEq p₁ p₂ hp x) =
       Submodule.quotEquivOfEq q₁ q₂ hq (Submodule.factor h₁ x) := by
   obtain ⟨m, rfl⟩ := p₁.mkQ_surjective x
-  rfl
+  simp [Submodule.quotEquivOfEq_mk]
 
 /-- The quotient by a submodule is torsion-free if and only if the submodule contains every
 element of which it contains a multiple by a regular scalar. Over a domain the regular scalars

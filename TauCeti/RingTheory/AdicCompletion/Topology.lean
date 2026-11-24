@@ -179,7 +179,7 @@ theorem eq_liftIdealTower {F : M →L[R] R}
     F = hI.liftIdealTower ha hK g hopen hcomp := by
   ext m
   exact congr_fun (IsHausdorff.StrictMono.funext' I ha fun n x ↦ by
-    rw [← Submodule.quotEquivOfEq_ideal_mk (hK n), ← Submodule.quotEquivOfEq_ideal_mk (hK n),
+    rw [← Ideal.quotEquivOfEq_mk (hK n), ← Ideal.quotEquivOfEq_mk (hK n),
       hF n x, mk_liftIdealTower]) m
 
 end LiftIdealTower

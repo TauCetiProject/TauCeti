@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.PrincipalIdealRing
 public import TauCeti.Topology.Algebra.Ring.Compact
+import TauCeti.RingTheory.Ideal.Operations.Pi
 import TauCeti.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.Ideal.Quotient.Pi
 import TauCeti.Topology.Algebra.Module.Compact.LocalRing
 import TauCeti.Topology.Algebra.Module.LinearTopology.CompactVectorSpace
 import TauCeti.Topology.Algebra.Module.Nakayama
@@ -87,7 +87,8 @@ theorem exists_continuousLinearMap_mk_maximalIdeal_eq (φ₀ : M →L[O] (O ⧸ 
   -- `tower 0` is definitionally the base step of the `Nat.rec` tower.
   have htower0 : (tower 0).val = e₀.toLinearMap ∘ₗ φ₀.toLinearMap := rfl
   refine ⟨F, fun m ↦ e₀.injective ?_⟩
-  rw [Submodule.quotEquivOfEq_ideal_mk, hadic.mk_liftIdealTower _ hK _ _ _ 0 m, htower0]
+  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk,
+    hadic.mk_liftIdealTower _ hK _ _ _ 0 m, htower0]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
 
 /-- **Existence of a pseudobasis.** Every profinite flat module `M : Type v` over a compact
@@ -111,17 +112,32 @@ theorem exists_pseudobasis : ∃ I : Type v, Nonempty (M ≃L[O] (I → O)) := b
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   let Φbar := Submodule.mapQ ((maximalIdeal O) • ⊤) ((maximalIdeal O) • ⊤) Φ.toLinearMap
     (Submodule.smul_top_le_comap_smul_top (maximalIdeal O) Φ.toLinearMap)
-  have hπΦ (y₀ : M₀) : (maximalIdeal O).quotPiSMulTopToPiQuot I (Φbar y₀) = e₀ y₀ := by
-    obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ y₀; ext i; simp [Φbar, Φ, hF i m, φ₀]
+  have hpi : (maximalIdeal O) • (⊤ : Submodule O (I → O)) =
+      (Ideal.pi fun _ : I ↦ maximalIdeal O).restrictScalars O := by
+    rw [((isNoetherianRing_iff_ideal_fg O).mp inferInstance
+      (maximalIdeal O)).smul_top_pi_self_eq_pi]
+    ext; simp [Ideal.mem_pi]
+  let ePi : ((I → O) ⧸ ((maximalIdeal O) • (⊤ : Submodule O (I → O)))) ≃
+      (I → O ⧸ maximalIdeal O) :=
+    (Submodule.quotEquivOfEq _ _ hpi).toEquiv.trans
+      (Ideal.piQuotEquiv I (I := maximalIdeal O)).toEquiv
+  have hπΦ (y₀ : M₀) : ePi (Φbar y₀) = e₀ y₀ := by
+    obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ y₀
+    ext i
+    change (Ideal.piQuotEquiv I (I := maximalIdeal O))
+      (Submodule.quotEquivOfEq _ _ hpi (Submodule.Quotient.mk (Φ m))) i = _
+    rw [Submodule.quotEquivOfEq_mk]
+    change Ideal.Quotient.mk (maximalIdeal O) (F i m) = _
+    simpa [φ₀] using hF i m
+  have hbij : Function.Bijective Φbar := by
+    have hΦbar : (Φbar : M₀ → _) = ePi.symm ∘ e₀ :=
+      funext fun y₀ ↦ ePi.eq_symm_apply.mpr (hπΦ y₀)
+    exact hΦbar ▸ ePi.symm.bijective.comp e₀.bijective
   refine ⟨I, ⟨hM.toIsCompactModule.continuousLinearEquivOfBijectiveMapQ
     (pi_self_of_isDiscreteValuationRing O I).toIsCompactModule hϖ.maximalIdeal_eq
     ((IsLocalRing.isAdic_maximalIdeal O).isTopologicallyNilpotent_of_mem
       (hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ))
-    (smul_right_injective (I → O) hϖ.ne_zero) Φ ⟨fun y₁ y₂ hy ↦ e₀.injective ((hπΦ y₁).symm.trans
-      ((congr_arg ((maximalIdeal O).quotPiSMulTopToPiQuot I) hy).trans (hπΦ y₂))), fun z ↦ ?_⟩⟩⟩
-  obtain ⟨y₀, hy₀⟩ := e₀.surjective ((maximalIdeal O).quotPiSMulTopToPiQuot I z)
-  exact ⟨y₀, ((isNoetherianRing_iff_ideal_fg O).mp inferInstance
-    (maximalIdeal O)).quotPiSMulTopToPiQuot_injective I ((hπΦ y₀).trans hy₀)⟩
+    (smul_right_injective (I → O) hϖ.ne_zero) Φ hbij⟩⟩
 
 end Pseudobasis
 

@@ -31,8 +31,8 @@ variable {O M : Type*} [CommRing O] [IsDomain O] [IsPrincipalIdealRing O]
   (hM : IsProfiniteFlat O M)
 
 include hM in
-/-- One-step lifting of continuous `O`-linear functionals along `(ϖ) * I → I` over a compact
-principal ideal domain `O`. -/
+/-- One-step lifting of `O`-linear maps `M →ₗ[O] O ⧸ I` with open kernel (for `I ≠ ⊥`) along
+`(ϖ) * I → I` over a compact principal ideal domain `O`. -/
 theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
     (φ : M →ₗ[O] O ⧸ I) (hker : IsOpen (LinearMap.ker φ : Set M)) :
     ∃ φ' : M →ₗ[O] O ⧸ (Ideal.span {ϖ} * I), IsOpen (LinearMap.ker φ' : Set M) ∧
@@ -64,8 +64,7 @@ theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
   obtain ⟨ψ, hψ⟩ := (Module.Baer.quotient_self hJ₂_ne).extension_property _
     (LinearMap.range μ).injective_subtype ψ₀
   let φ' : M →ₗ[O] (O ⧸ J₂) := (ψ.restrictScalars O).comp V.mkQ
-  refine ⟨φ', AddSubgroup.isOpen_mono (H₁ := V.toAddSubgroup)
-    (H₂ := (LinearMap.ker φ').toAddSubgroup)
+  refine ⟨φ', Submodule.isOpen_mono
     (fun m hm ↦ by simp [φ', (Submodule.Quotient.mk_eq_zero V).mpr hm]) hV_open, fun m ↦ ?_⟩
   apply Ideal.Quotient.mulLeft_injective le_rfl le_rfl (mul_right_injective₀ hϖ)
   rw [Ideal.Quotient.mulLeft_factor, ← map_smul]
@@ -75,8 +74,8 @@ theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
     _ = Ideal.Quotient.mulLeft ϖ le_rfl (φ m) := by simp [ψ₀, βbar, β]
 
 include hM in
-/-- One-step lifting of continuous `O`-linear functionals along `(ϖ ^ (n + 2)) → (ϖ ^ (n + 1))`
-over a compact principal ideal domain `O`. -/
+/-- One-step lifting of `O`-linear maps `M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}` with open kernel
+along `(ϖ ^ (n + 2)) → (ϖ ^ (n + 1))` over a compact principal ideal domain `O`. -/
 theorem exists_lift_span_pow_succ {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
     (φ : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}) (hker : IsOpen (LinearMap.ker φ : Set M)) :
     ∃ φ' : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 2)}, IsOpen (LinearMap.ker φ' : Set M) ∧
@@ -93,7 +92,9 @@ theorem exists_lift_span_pow_succ {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
   · rw [LinearMap.ker_comp_of_ker_eq_bot φ₀ (LinearEquiv.ker e)]
     exact hopen
   · obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (φ₀ m)
-    simpa [e, ← hr] using hcomp m
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hr, e]
+    rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
+    simpa [← hr] using hcomp m
 
 end PrincipalIdealRing
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.RingTheory.Coherent.Basic
 public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RingTheory.Flat.Pi
@@ -16,10 +17,11 @@ import TauCeti.RingTheory.Flat.Pi
 
 A topological module `M` over a commutative topological ring `R` is *profinite flat*
 (`TauCeti.IsProfiniteFlat`) if it is a compact module (`TauCeti.IsCompactModule R M`) and
-algebraically flat over `R` (`Module.Flat R M`). Over a Dedekind domain, profinite flatness is
-equivalent to `IsCompactModule` plus torsion-freeness
+algebraically flat over `R` (`Module.Flat R M`). Over a coherent ring, profinite flatness passes to
+arbitrary products (`TauCeti.IsProfiniteFlat.pi`, `TauCeti.IsProfiniteFlat.pi_self`). Over a
+Dedekind domain, profinite flatness is equivalent to `IsCompactModule` plus torsion-freeness
 (`TauCeti.isProfiniteFlat_iff_isCompactModule_and_isTorsionFree`) and passes to closed submodules
-and arbitrary products (`TauCeti.IsProfiniteFlat.submodule`, `TauCeti.IsProfiniteFlat.pi`).
+(`TauCeti.IsProfiniteFlat.submodule`).
 
 ## References
 
@@ -100,6 +102,23 @@ theorem of_continuousLinearEquiv {N : Type*} [AddCommGroup N] [Module R N] [Topo
 
 end CommRing
 
+section CoherentRing
+
+variable {R : Type*} [CommRing R] [TauCeti.IsCoherentRing R] [TopologicalSpace R]
+
+/-- Over a coherent ring, an arbitrary product of profinite flat modules is profinite flat. -/
+theorem pi {ι : Type*} {P : ι → Type*} [∀ i, AddCommGroup (P i)] [∀ i, Module R (P i)]
+    [∀ i, TopologicalSpace (P i)] (hP : ∀ i, IsProfiniteFlat R (P i)) :
+    IsProfiniteFlat R (∀ i, P i) :=
+  have := fun i ↦ (hP i).flat
+  ⟨IsCompactModule.pi fun i ↦ (hP i).toIsCompactModule, inferInstance⟩
+
+/-- Over a compact totally disconnected coherent ring, every product `I → R` is profinite flat. -/
+theorem pi_self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] (I : Type*) :
+    IsProfiniteFlat R (I → R) := pi fun _ : I ↦ self
+
+end CoherentRing
+
 section DedekindDomain
 
 variable {R M : Type*} [CommRing R] [IsDedekindDomain R] [TopologicalSpace R]
@@ -115,17 +134,6 @@ theorem _root_.TauCeti.isProfiniteFlat_iff_isCompactModule_and_isTorsionFree :
 theorem submodule (hM : IsProfiniteFlat R M) (N : Submodule R M) (hN : IsClosed (N : Set M)) :
     IsProfiniteFlat R N :=
   have := hM.isTorsionFree; ⟨hM.toIsCompactModule.submodule N hN, inferInstance⟩
-
-/-- Over a Dedekind domain, an arbitrary product of profinite flat modules is profinite flat. -/
-theorem pi {ι : Type*} {P : ι → Type*} [∀ i, AddCommGroup (P i)] [∀ i, Module R (P i)]
-    [∀ i, TopologicalSpace (P i)] (hP : ∀ i, IsProfiniteFlat R (P i)) :
-    IsProfiniteFlat R (∀ i, P i) :=
-  have := fun i ↦ (hP i).isTorsionFree
-  ⟨IsCompactModule.pi fun i ↦ (hP i).toIsCompactModule, inferInstance⟩
-
-/-- Over a compact totally disconnected Dedekind domain, every product `I → R` is profinite flat. -/
-theorem pi_self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] (I : Type*) :
-    IsProfiniteFlat R (I → R) := pi fun _ : I ↦ self
 
 end DedekindDomain
 

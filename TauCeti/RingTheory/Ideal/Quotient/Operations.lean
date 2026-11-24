@@ -52,8 +52,7 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
 
-`Submodule.quotEquivOfEq_ideal_mk` transports ideal quotient constructors across ideal
-equalities. For `Ideal.span {a} * I ≤ J`, `Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)`
+For `Ideal.span {a} * I ≤ J`, `Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)`
 is multiplication by `a`, compatible with `Ideal.Quotient.factor` and injective when
 `J ≤ Ideal.span {a} * I` and `a` is left-regular.
 -/
@@ -243,17 +242,6 @@ theorem mk_span_singleton_one_sub_self {R : Type*} [CommRing R] (e : R) :
   exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
 
 end TauCeti.Ideal.Quotient
-
-namespace Submodule
-
-/-- `Submodule.quotEquivOfEq` transports `Ideal.Quotient.mk I x` to `Ideal.Quotient.mk J x`. -/
-@[simp, grind =]
-theorem quotEquivOfEq_ideal_mk {R : Type*} [Ring R] {I J : Ideal R} [I.IsTwoSided]
-    [J.IsTwoSided] (h : I = J) (x : R) :
-    Submodule.quotEquivOfEq I J h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk J x := by
-  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
-
-end Submodule
 
 namespace Ideal.Quotient
 
