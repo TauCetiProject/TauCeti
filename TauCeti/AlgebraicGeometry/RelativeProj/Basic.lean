@@ -247,6 +247,14 @@ theorem relativeProjCover_X (U : X.AffineZariskiSite) :
     A.relativeProjCover.X U = Proj (A.gradedSectionsGrading U.toOpens) :=
   (rfl)
 
+/-- The charts of the relative `Proj` are compatible with the transition maps of its gluing
+datum. -/
+@[reassoc]
+theorem relativeProjGluingData_functor_map_comp_relativeProjCover_f
+    {U V : X.AffineZariskiSite} (i : U ⟶ V) :
+    A.relativeProjGluingData.functor.map i ≫ A.relativeProjCover.f V = A.relativeProjCover.f U :=
+  colimit.w _ _
+
 /-- Over an affine open `U`, the structure morphism of the relative `Proj` is the coefficient
 projection `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Spec Γ(X, U)` followed by the chart `Spec Γ(X, U) ⟶ X`. -/
 @[reassoc]

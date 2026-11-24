@@ -151,11 +151,10 @@ private theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativePr
       Proj.map (pullbackGradedSectionsGradedHom g A hV)
           (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV U.property V.property) ≫
         A.obj.relativeProjCover.f U := by
-  have hw : A.obj.relativeProjGluingData.functor.map (homOfLE hUU') ≫
-      A.obj.relativeProjCover.f U' = A.obj.relativeProjCover.f U := Limits.colimit.w _ _
   exact (relativeProjGluingData_functor_map_comp_proj_map_assoc A g U'.property _ hV' _).trans
     ((proj_map_comp_relativeProjGluingData_functor_map_assoc A g (homOfLE hUU')
-      V.property hV _).symm.trans (congrArg (_ ≫ ·) hw))
+      V.property hV _).symm.trans (congrArg (_ ≫ ·)
+        (A.obj.relativeProjGluingData_functor_map_comp_relativeProjCover_f (homOfLE hUU'))))
 
 private noncomputable def relativeProjPullbackCover :
     ((pullback g).obj A).obj.relativeProj.OpenCover :=
@@ -186,13 +185,16 @@ private theorem exists_relativeProjPullbackCover_refinement
           (homOfLE (leOfHom hki).1))
         (((pullback g).obj A).obj.relativeProjGluingData.functor.map
           (homOfLE (leOfHom hkj).1))
-        ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) y = x := by
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm)
+        y = x := by
   obtain ⟨k, hki, hkj, y, rfl⟩ : ∃ (k : X.AffineZariskiSite)
       (hki : k ⟶ i.val.1) (hkj : k ⟶ j.val.1)
       (y : ((pullback g).obj A).obj.relativeProjCover.X k),
       Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map hki)
         (((pullback g).obj A).obj.relativeProjGluingData.functor.map hkj)
-        ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) y = x :=
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) y = x :=
     Scheme.Cover.LocallyDirected.directed
       (𝒰 := ((pullback g).obj A).obj.relativeProjGluingData.cover) (i := i.val.1) (j := j.val.1) x
   have hk : ((pullback g).obj A).obj.relativeProjCover.f k y ∈
@@ -209,32 +211,35 @@ private theorem exists_relativeProjPullbackCover_refinement
   refine ⟨l, homOfLE hli, homOfLE hlj, z, ?_⟩
   obtain rfl : ((pullback g).obj A).obj.relativeProjGluingData.functor.map hlk z = y :=
     (((pullback g).obj A).obj.relativeProjCover.f k).isOpenEmbedding.injective (by
-      have hw : ((pullback g).obj A).obj.relativeProjGluingData.functor.map hlk ≫
-          ((pullback g).obj A).obj.relativeProjCover.f k =
-            ((pullback g).obj A).obj.relativeProjCover.f l.val.1 :=
-        Limits.colimit.w _ _
-      rw [← hz, ← hw]
+      rw [← hz,
+        ← ((pullback g).obj A).obj.relativeProjGluingData_functor_map_comp_relativeProjCover_f hlk]
       exact (Scheme.Hom.comp_apply _ _ _).symm)
   -- the lift at the refined pair is the lift at `k` precomposed with the transition map
-  have hlift : Limits.pullback.lift
-      (((pullback g).obj A).obj.relativeProjGluingData.functor.map (hlk ≫ hki))
-      (((pullback g).obj A).obj.relativeProjGluingData.functor.map (hlk ≫ hkj))
-      ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) =
-        ((pullback g).obj A).obj.relativeProjGluingData.functor.map hlk ≫
-          Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map hki)
-            (((pullback g).obj A).obj.relativeProjGluingData.functor.map hkj)
-            ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) := by
-    refine Limits.pullback.hom_ext ?_ ?_ <;>
-      simp only [Limits.pullback.lift_fst, Limits.pullback.lift_snd, Category.assoc,
-        Functor.map_comp]
-  exact (congrArg (fun f ↦ f z) hlift).trans (Scheme.Hom.comp_apply _ _ z)
+  have hlift {a b c d : X.AffineZariskiSite} (f : a ⟶ b) (p : b ⟶ c) (q : b ⟶ d) :
+      Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map (f ≫ p))
+        (((pullback g).obj A).obj.relativeProjGluingData.functor.map (f ≫ q))
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) =
+        ((pullback g).obj A).obj.relativeProjGluingData.functor.map f ≫
+          Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map p)
+            (((pullback g).obj A).obj.relativeProjGluingData.functor.map q)
+            ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+              (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) := by
+    -- the charts `relativeProjCover.X` are the objects of the gluing diagram only up to unfolding,
+    -- so `Limits.pullback.lift_fst` is applied as a term rather than rewritten
+    refine Limits.pullback.hom_ext ?_ ?_
+    · exact (Limits.pullback.lift_fst _ _ _).trans <| (Functor.map_comp _ _ _).trans <|
+        (congrArg (_ ≫ ·) (Limits.pullback.lift_fst _ _ _).symm).trans (Category.assoc _ _ _).symm
+    · exact (Limits.pullback.lift_snd _ _ _).trans <| (Functor.map_comp _ _ _).trans <|
+        (congrArg (_ ≫ ·) (Limits.pullback.lift_snd _ _ _).symm).trans (Category.assoc _ _ _).symm
+  exact (congrArg (fun f ↦ f z) (hlift hlk hki hkj)).trans (Scheme.Hom.comp_apply _ _ z)
 
 private noncomputable instance : (relativeProjPullbackCover A g).LocallyDirected where
   trans {i j} hij := ((pullback g).obj A).obj.relativeProjGluingData.functor.map
     (homOfLE (leOfHom hij).1)
   trans_id i := CategoryTheory.Functor.map_id _ _
   trans_comp hij hjk := CategoryTheory.Functor.map_comp _ _ _
-  w hij := Limits.colimit.w _ _
+  w hij := CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _
   directed x := by exact exists_relativeProjPullbackCover_refinement A g x
   property_trans hij := by
     -- the transition maps of the cover are by definition those of the relative `Proj` of `g^* A`;
