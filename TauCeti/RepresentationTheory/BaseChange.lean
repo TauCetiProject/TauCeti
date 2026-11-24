@@ -146,7 +146,7 @@ theorem baseChange_comp {H : Type*} [Monoid H]
 theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
     (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
   rw [MonoidHom.mem_ker] at hg ⊢
-  rw [baseChange_apply, hg, Module.End.one_eq_id, LinearMap.baseChange_id, Module.End.one_eq_id]
+  simp [baseChange_apply, hg, Module.End.one_eq_id]
 
 end BaseChange
 

@@ -164,7 +164,7 @@ end Predicates
 
 section Character
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [ContinuousMul A]
+variable {A : Type*} [CommSemiring A] [TopologicalSpace A] [ContinuousMul A]
 
 /-- The line of a continuous character is unramified exactly when the character is trivial on
 inertia. -/
@@ -185,8 +185,8 @@ end Character
 
 section BaseChange
 
-variable {A M : Type*} [CommRing A] [TopologicalSpace A] [AddCommGroup M] [Module A M]
-  [TopologicalSpace M] [IsModuleTopology A M] (B : Type*) [CommRing B] [TopologicalSpace B]
+variable {A M : Type*} [CommSemiring A] [TopologicalSpace A] [AddCommMonoid M] [Module A M]
+  [TopologicalSpace M] [IsModuleTopology A M] (B : Type*) [Ring B] [TopologicalSpace B]
   [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)]
   [IsModuleTopology B (B ⊗[A] M)] {ρ : ContinuousRep (Field.absoluteGaloisGroup K) A M}
 
@@ -297,8 +297,8 @@ theorem coeff_zero_frobCharpoly :
   nontriviality A
   let b := Module.Free.chooseBasis A M
   rw [frobCharpoly_def, ← LinearMap.charpoly_toMatrix _ b, ← LinearMap.det_toMatrix b,
-    Matrix.det_eq_sign_charpoly_coeff, Module.finrank_eq_card_chooseBasisIndex, ← mul_assoc,
-    ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
+    Matrix.det_eq_sign_charpoly_coeff]
+  simp [Module.finrank_eq_card_chooseBasisIndex, ← mul_assoc, ← pow_add]
 
 /-- The geometric Frobenius polynomial is the signed reverse of the arithmetic one:
 `det(X - ρ(Φ⁻¹)) = (-1)^n det ρ(Φ⁻¹) · X^n det(X⁻¹ - ρ(Φ))`. -/
