@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Invariants
 import TauCeti.LinearAlgebra.Trace.Exact
 
 /-!
@@ -28,6 +29,7 @@ Over a field, with `V` finite-dimensional, the trace of `ρ g` splits along this
 ## Main results
 
 * `Representation.mem_charSpace`: membership is the equation `ρ g v = c g • v` for every `g`.
+* `Representation.charSpace_one`: for a group `G`, the trivial character cuts out the invariants.
 * `Representation.charSpace_le_comap`: `ρ.charSpace c` is `G`-stable.
 * `Representation.trace_eq_finrank_charSpace_mul_add`: the splitting of the trace.
 -/
@@ -48,6 +50,14 @@ def charSpace (ρ : Representation k G V) (c : G →* k) : Submodule k V :=
 theorem mem_charSpace {ρ : Representation k G V} {c : G →* k} {v : V} :
     v ∈ ρ.charSpace c ↔ ∀ g, ρ g v = c g • v := by
   simp [charSpace]
+
+/-- For a group, the subspace on which `ρ` acts through the trivial character is the subspace of
+invariants. -/
+@[simp]
+theorem charSpace_one {G : Type*} [Group G] (ρ : Representation k G V) :
+    ρ.charSpace 1 = ρ.invariants := by
+  ext
+  simp
 
 /-- The subspace on which `ρ` acts through a character is `G`-stable. -/
 theorem charSpace_le_comap (ρ : Representation k G V) (c : G →* k) (h : G) :

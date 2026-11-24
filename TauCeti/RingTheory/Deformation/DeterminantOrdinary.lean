@@ -153,24 +153,9 @@ theorem hasOrderedTriangularization_conj_iff {ρ : G →* GL (Fin n) A} {χ : Fi
   ⟨fun h ↦ by convert h.conj B⁻¹; exact MonoidHom.ext fun g ↦ by simp [mul_assoc],
     fun h ↦ h.conj B⟩
 
-/-- A ring homomorphism `φ` sending each `c i • 1` to `d i • 1` sends the ordered product
-`(M₀ - c₀ • 1) * ⋯ * (M_{m-1} - c_{m-1} • 1)` to
-`(φ M₀ - d₀ • 1) * ⋯ * (φ M_{m-1} - d_{m-1} • 1)`. -/
-private theorem map_list_prod_ofFn_sub_smul_one {R S B C Φ : Type*} [Ring R] [Ring S] [SMul B R]
-    [SMul C S] [FunLike Φ R S] [RingHomClass Φ R S] (φ : Φ) {m : ℕ} (M : Fin m → R)
-    {c : Fin m → B} {d : Fin m → C} (hφ : ∀ i, φ (c i • 1) = d i • 1) :
-    φ (List.ofFn fun i ↦ M i - c i • 1).prod = (List.ofFn fun i ↦ φ (M i) - d i • 1).prod := by
-  simp only [map_list_prod, List.map_ofFn, Function.comp_def, map_sub, hφ]
-
 section Map
 
 variable {A' : Type*} [CommRing A']
-
-/-- `f.mapMatrix` sends the scalar matrix `a • 1` to `f a • 1`. -/
-private theorem mapMatrix_smul_one (f : A →+* A') (a : A) :
-    f.mapMatrix (a • (1 : Matrix (Fin n) (Fin n) A)) = f a • 1 := by
-  rw [f.mapMatrix_apply, Matrix.map_smul' _ _ _ (map_mul f),
-    Matrix.map_one _ (map_zero f) (map_one f)]
 
 /-- The determinant-ordinary equations are preserved by a change of coefficients along
 `f : A →+* A'`. -/
@@ -181,7 +166,7 @@ theorem IsDetOrdinary.map {ρ : G →* GL (Fin n) A} {χ : Fin n → G →* Aˣ}
   refine ⟨fun g ↦ ?_, fun g ↦ ?_⟩
   · simp [charpoly_map, h.charpoly_eq g, Polynomial.map_prod]
   · have := congrArg f.mapMatrix (h.list_prod_eq_zero g)
-    rw [map_list_prod_ofFn_sub_smul_one f.mapMatrix _ fun i ↦ mapMatrix_smul_one f _,
+    rw [map_list_prod_ofFn_sub_smul_one (f.mapMatrix (m := Fin n)) _ fun i ↦ f.mapMatrix_smul_one _,
       map_zero] at this
     simpa using this
 
@@ -197,7 +182,7 @@ theorem isDetOrdinary_map_iff {ρ : G →* GL (Fin n) A} {χ : Fin n → G →* 
   · -- `Matrix.map_injective` leaves `fun M ↦ M.map f` unapplied; rewrite it as `f.mapMatrix`
     beta_reduce
     rw [← f.mapMatrix_apply, ← f.mapMatrix_apply, map_zero,
-      map_list_prod_ofFn_sub_smul_one f.mapMatrix _ fun i ↦ mapMatrix_smul_one f _]
+      map_list_prod_ofFn_sub_smul_one (f.mapMatrix (m := Fin n)) _ fun i ↦ f.mapMatrix_smul_one _]
     simpa using h.list_prod_eq_zero g
 
 /-- Ordered triangularizations are preserved by a change of coefficients along `f : A →+* A'`. -/
@@ -383,8 +368,8 @@ private theorem hasOrderedTriangularization_of_basis {ρ : G →* GL (Fin n) F}
       val_inv_unitOfInvertible, val_unitOfInvertible,
       invOf_eq_right_inv (e.toMatrix_mul_toMatrix_flip b)]
   rw [hconj]
-  exact ⟨b.toMatrix_isUpperTriangular_of_sub_smul_mem_flag (hb g),
-    b.toMatrix_apply_self_of_sub_smul_mem_flag (hb g)⟩
+  exact ⟨b.linearMap_toMatrix_isUpperTriangular_of_sub_smul_mem_flag (hb g),
+    b.linearMap_toMatrix_apply_self_of_sub_smul_mem_flag (hb g)⟩
 
 /-- **Determinant-ordinary equations give an ordered flag.** Over a field, if `ρ` satisfies the
 determinant-ordinary equations for pairwise distinct characters `χ₀, …, χ_{n-1}`, then a single

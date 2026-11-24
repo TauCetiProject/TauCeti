@@ -35,10 +35,10 @@ basis vectors has an upper-triangular matrix in `b` with diagonal `c`.
   positive diagonal coefficients has positive determinant.
 * `Module.Basis.det_pos_of_sub_smul_mem_span_image_fst_lt`: the same for a family indexed by a
   product `ι × κ`, triangular with respect to the order on the first factor only.
-* `Module.Basis.toMatrix_isUpperTriangular_of_sub_smul_mem_flag` and
-  `Module.Basis.toMatrix_apply_self_of_sub_smul_mem_flag`: an endomorphism that is triangular with
-  respect to the flag of a basis has an upper-triangular matrix in that basis, with the given
-  diagonal.
+* `Module.Basis.linearMap_toMatrix_isUpperTriangular_of_sub_smul_mem_flag` and
+  `Module.Basis.linearMap_toMatrix_apply_self_of_sub_smul_mem_flag`: an endomorphism that is
+  triangular with respect to the flag of a basis has an upper-triangular matrix in that basis,
+  with the given diagonal.
 -/
 
 public section
@@ -133,7 +133,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
 
 /-- On and below the diagonal, the matrix of an endomorphism `f` that is triangular with respect to
 the flag of `b`, with diagonal coefficients `c`, is that of `j ↦ c j • b j`. -/
-private theorem toMatrix_apply_of_sub_smul_mem_flag
+private theorem linearMap_toMatrix_apply_of_sub_smul_mem_flag
     (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) {i j : Fin n} (hji : j ≤ i) :
     LinearMap.toMatrix b b f i j = c j * Finsupp.single j 1 i := by
   -- `b.flag j.castSucc` is the span of the `b k` with `k < j`
@@ -144,19 +144,20 @@ private theorem toMatrix_apply_of_sub_smul_mem_flag
 
 /-- The matrix of an endomorphism `f` in a basis `b` is upper triangular when each `f (b j)` is a
 multiple of `b j` modulo the span `b.flag j.castSucc` of the earlier basis vectors. -/
-theorem toMatrix_isUpperTriangular_of_sub_smul_mem_flag
+theorem linearMap_toMatrix_isUpperTriangular_of_sub_smul_mem_flag
     (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) :
     (LinearMap.toMatrix b b f).IsUpperTriangular := by
   -- `IsUpperTriangular` is `BlockTriangular · id`, so its hypothesis `id j < id i` is `j < i`
   intro i j (hji : j < i)
-  rw [toMatrix_apply_of_sub_smul_mem_flag b h hji.le, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+  rw [linearMap_toMatrix_apply_of_sub_smul_mem_flag b h hji.le, Finsupp.single_eq_of_ne hji.ne',
+    mul_zero]
 
 /-- The diagonal of the matrix of an endomorphism `f` in a basis `b` is `c` when each
 `f (b j) - c j • b j` lies in the span `b.flag j.castSucc` of the earlier basis vectors. -/
-theorem toMatrix_apply_self_of_sub_smul_mem_flag
+theorem linearMap_toMatrix_apply_self_of_sub_smul_mem_flag
     (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) (i : Fin n) :
     LinearMap.toMatrix b b f i i = c i := by
-  rw [toMatrix_apply_of_sub_smul_mem_flag b h le_rfl, Finsupp.single_eq_same, mul_one]
+  rw [linearMap_toMatrix_apply_of_sub_smul_mem_flag b h le_rfl, Finsupp.single_eq_same, mul_one]
 
 end Flag
 
