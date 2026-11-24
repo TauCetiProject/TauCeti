@@ -206,7 +206,6 @@ theorem homEquiv_apply_symm_homEquiv (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y
   simp [h, homEquiv_homOfEq, inverseHomEquiv_apply]
 
 /-- The equivalence of all arrow identities, including their endpoints. -/
-@[expose]
 def totalHomEquiv (e : N ≃ₙ N') : (Σ x y, N.Hom x y) ≃ (Σ x y, N'.Hom x y) :=
   Equiv.sigmaCongr e.vertexEquiv fun x ↦ Equiv.sigmaCongr e.vertexEquiv (e.homEquiv x)
 
@@ -215,6 +214,17 @@ def totalHomEquiv (e : N ≃ₙ N') : (Σ x y, N.Hom x y) ≃ (Σ x y, N'.Hom x 
 theorem totalHomEquiv_apply (e : N ≃ₙ N') (a : Σ x y, N.Hom x y) :
     e.totalHomEquiv a = ⟨e.vertexEquiv a.1, e.vertexEquiv a.2.1, e.homEquiv _ _ a.2.2⟩ :=
   (rfl)
+
+/-- A total-arrow equivalence agreeing with vertex and arrow transport is the canonical total-arrow
+equivalence of the network isomorphism. -/
+theorem eq_totalHomEquiv_of_apply (e : N ≃ₙ N')
+    (F : (Σ x y, N.Hom x y) ≃ (Σ x y, N'.Hom x y))
+    (hF : ∀ x y (a : N.Hom x y),
+      F ⟨x, y, a⟩ = ⟨e.vertexEquiv x, e.vertexEquiv y, e.homEquiv x y a⟩) :
+    F = e.totalHomEquiv := by
+  apply Equiv.ext
+  rintro ⟨x, y, a⟩
+  exact (hF x y a).trans (e.totalHomEquiv_apply ⟨x, y, a⟩).symm
 
 /-- Inverting a network isomorphism inverts its total arrow equivalence. -/
 @[simp]
@@ -471,11 +481,44 @@ theorem isCirculation_assignmentEquiv_iff [Fintype V] [Fintype W]
     rw [e.excessAt_assignmentEquiv f x, hf x]
 
 /-- A network isomorphism as a prefunctor between its explicit arrow families. -/
-@[expose]
 def toPrefunctor (e : N ≃ₙ N') :
     @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) :=
   @Prefunctor.mk V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.vertexEquiv
     (fun {x y} a ↦ e.homEquiv x y a)
+
+/-- The induced prefunctor acts on vertices by the vertex equivalence. -/
+@[simp]
+theorem toPrefunctor_obj (e : N ≃ₙ N') (x : V) :
+    @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x =
+      e.vertexEquiv x :=
+  (rfl)
+
+/-- The induced prefunctor acts on arrows by the corresponding arrow equivalence. -/
+@[simp]
+theorem toPrefunctor_map (e : N ≃ₙ N') {x y : V} (a : N.Hom x y) :
+    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _
+      (@Prefunctor.map V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y a)
+      (e.toPrefunctor_obj x) (e.toPrefunctor_obj y) = e.homEquiv x y a := by
+  simp only [toPrefunctor, Quiver.homOfEq_rfl]
+
+/-- A prefunctor agreeing with the vertex and arrow transport of a network isomorphism is the
+prefunctor induced by that isomorphism. -/
+theorem eq_toPrefunctor_of_obj_map (e : N ≃ₙ N')
+    (F : @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom))
+    (h_obj : ∀ x,
+      @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x = e.vertexEquiv x)
+    (h_map : ∀ {x y} (a : N.Hom x y),
+      @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _
+        (@Prefunctor.map V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x y a)
+        (h_obj x) (h_obj y) = e.homEquiv x y a) : F = e.toPrefunctor := by
+  obtain ⟨F_obj, F_map⟩ := F
+  simp only [Prefunctor.mk_obj] at h_obj h_map
+  obtain rfl : F_obj = e.vertexEquiv := funext h_obj
+  simp only [Quiver.homOfEq_rfl] at h_map
+  unfold toPrefunctor
+  congr
+  funext x y a
+  exact h_map a
 
 /-- The identity network isomorphism induces the identity prefunctor. -/
 @[simp]
@@ -492,10 +535,30 @@ theorem toPrefunctor_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ 
   rfl
 
 /-- Transport a directed path along a network isomorphism. -/
-@[expose]
 def mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     ArrowWalk N'.Hom (e.vertexEquiv x) (e.vertexEquiv y) :=
   @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p
+
+/-- Path transport is the path map of the induced prefunctor. -/
+theorem mapPath_eq_toPrefunctor_mapPath (e : N ≃ₙ N') {x y : V}
+    (p : ArrowWalk N.Hom x y) :
+    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (e.toPrefunctor_obj x) (e.toPrefunctor_obj y)
+      (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p) =
+        e.mapPath p := by
+  simp only [mapPath, toPrefunctor, Quiver.Path.cast_rfl_rfl]
+
+/-- A prefunctor equal to the one induced by a network isomorphism has the same path map, after
+transporting its endpoints. -/
+theorem cast_mapPath_eq_of_eq_toPrefunctor (e : N ≃ₙ N')
+    (F : @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom))
+    (h_obj : ∀ x,
+      @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x = e.vertexEquiv x)
+    (hF : F = e.toPrefunctor)
+    {x y : V} (p : ArrowWalk N.Hom x y) :
+    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (h_obj x) (h_obj y)
+      (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x y p) = e.mapPath p := by
+  subst F
+  exact e.mapPath_eq_toPrefunctor_mapPath p
 
 /-- Path transport preserves the empty path. -/
 @[simp]
