@@ -239,6 +239,13 @@ theorem coe_map (f : R →+* S) (M : GLSymplectic l R) :
       Matrix.GeneralLinearGroup.map f (M : GL (l ⊕ l) R) := by
   simp [map]
 
+/-- The underlying matrix of the induced morphism is the entrywise image. -/
+theorem coe_coe_map (f : R →+* S) (M : GLSymplectic l R) :
+    (((map l f M : GLSymplectic l S) : GL (l ⊕ l) S) : Matrix (l ⊕ l) (l ⊕ l) S) =
+      ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f := by
+  ext i j
+  simp [Matrix.GeneralLinearGroup.map_apply]
+
 /-- The map induced by the identity ring morphism is the identity. -/
 @[simp]
 theorem map_id : map l (RingHom.id R) = MonoidHom.id (GLSymplectic l R) := by
