@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
 public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Signs of trajectories of the reversed pseudo-gradient
@@ -63,8 +64,21 @@ orientations of `T_y M` are the orientation of `M`, `ε = 1`, and
 trajectories, the signed count of the trajectories of `-X` from `q` to `p` is
 `-(-1) ^ (ind_f q * ind_{-f} p)` times that of the trajectories of `X` from `p` to `q`
 (`TauCeti.IsAdaptedPseudoGradient.neg_signedTrajectoryCount_of_orientationAt`): the signed counts
-of `-f` are those of `f`, transposed, up to these signs. Assembling them into `signedMorseBoundary`
-for `-f`, with matching `MorseOrientation` data, is not done here.
+of `-f` are those of `f`, transposed, up to these signs.
+
+**One convention at every critical point.** The orientations above follow different conventions at
+`p` and at `q`. Orientation data choose one orientation per critical point, so to assemble the
+signed counts into Morse boundaries the same convention is needed at both ends: `op` followed by
+`op'` orients `M` at `p`, and `oq` followed by `oq'` orients `M` at `q`. At `q` the two orders of
+the factors differ by `(-1) ^ (ind_f q * ind_{-f} q)`
+(`TauCeti.IsAdaptedPseudoGradient.stableNormalOrientation_self`), and then
+
+`sign_{-X}(y) = (-1) ^ ind_f p * sign_X(y)`
+
+(`TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign_of_unstableFrameOrientation`,
+`TauCeti.IsAdaptedPseudoGradient.neg_signedTrajectoryCount_of_unstableFrameOrientation`). The
+assembly into the integral Morse boundary of `-f` is
+`TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation`.
 
 ## Main results
 
@@ -74,6 +88,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `neg_trajectorySign_of_orientationAt`: the sign rule on an oriented manifold, with `ε = 1`.
 * `neg_signedTrajectoryCount_of_orientationAt`: the signed counts of `-X` are those of `X`,
   transposed, up to the signs `-(-1) ^ (ind_f q * ind_{-f} p)`.
+* `neg_trajectorySign_of_unstableFrameOrientation`,
+  `neg_signedTrajectoryCount_of_unstableFrameOrientation`: with one convention at every critical
+  point, the signs and signed counts of `-X` are those of `X` times `(-1) ^ ind_f p`.
 
 ## References
 
@@ -234,6 +251,97 @@ theorem neg_signedTrajectoryCount_of_orientationAt (hMS : hX.IsMorseSmale)
     ⟨(hX.mem_morseTrajectorySlice.1 hy).1, (hX.mem_morseTrajectorySlice.1 hy).2.1⟩
 
 end OrientedSignRule
+
+/-! ### The sign rule for one convention at every critical point -/
+
+section UnstableFrameSignRule
+
+variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
+  {φq : MorseChart E f q}
+  (hφp : ∀ y ∈ φp.toChart.source,
+    φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
+      fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+  (hφq : ∀ y ∈ φq.toChart.source,
+    φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
+      fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+  (hf : IsMorse 𝓘(ℝ, E) f) (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
+  (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
+  (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+  (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+  (op' : Orientation ℝ ({i // (φp.neg hp).weight i < 0} → ℝ)
+    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
+  (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+  (oq' : Orientation ℝ ({i // (φq.neg hq).weight i < 0} → ℝ)
+    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
+  -- At both `p` and `q`, the unstable orientation followed by the stable one orients `M`.
+  (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+    (unstableFrameOrientation hφp hf hp op op' (hX.mem_unstableSet_self hp.mem_criticalPoints)) =
+    oM.orientationAt p)
+  (hoq : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+    (unstableFrameOrientation hφq hf hq oq oq' (hX.mem_unstableSet_self hq.mem_criticalPoints)) =
+    oM.orientationAt q)
+
+include hop hoq
+
+open scoped Classical in
+/-- **The sign rule for the reversed pseudo-gradient, with one convention at every critical
+point.** Let `oM` orient `M`, and choose the orientations so that at both `p` and `q` the
+orientation of the unstable manifold of `X` followed by that of the stable manifold orients `M`.
+Then every trajectory from `p` to `q` counts for `-f` with the sign `(-1) ^ ind_f p` times its sign
+for `f`.
+
+Unlike `neg_trajectorySign_of_orientationAt`, which asks for the opposite order of the factors at
+`q`, this convention can be imposed at all critical points at once, as orientation data for `f`
+and for `-f` require. At `q` the two orders differ by `(-1) ^ (ind_f q * ind_{-f} q)`
+(`stableNormalOrientation_self`), which turns the sign `-(-1) ^ (ind_f q * ind_{-f} p)` of that
+rule into `(-1) ^ ind_f p`. -/
+theorem neg_trajectorySign_of_unstableFrameOrientation (hMS : hX.IsMorseSmale)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
+      (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * hX.trajectorySign φp φq op oq hpq y := by
+  have hP := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  -- Along `W^u(p)`, the frame orientation at `y` is that of `M`.
+  have hPy := (reindex_unstableFrameOrientation_eq_orientationAt_iff hφp hf hp oM _ op op' hy.1
+    (hX.mem_unstableSet_self hp.mem_criticalPoints)).2 hop
+  -- Along `W^s(q)`, the frame orientation at `y` is `(-1) ^ k` times that of `M`.
+  have hSy := reindex_stableNormalOrientation_eq_neg_one_pow_smul hφq hf hq oM oq oq' hoq hy.2
+  set k := manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) q
+  -- Hence the two orientations of `T_y M` compared by the sign rule differ by `(-1) ^ k`.
+  have hε : (if Orientation.reindex ℝ (TangentSpace 𝓘(ℝ, E) y) (finCongr (by
+          rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
+        (stableNormalOrientation hφq hf hq oq' oq hy.2) =
+        unstableFrameOrientation hφp hf hp op op' hy.1 then (1 : ℤ) else -1) = (-1) ^ k := by
+    rw [← (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans hP))).injective.eq_iff,
+      Orientation.reindex_finCongr_reindex_finCongr, hPy, hSy]
+    exact Module.Ray.ite_neg_one_pow_smul_eq_self _ k
+  have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q = manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 :=
+    hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq
+  rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy op op' oq oq', hε]
+  congr 1
+  -- The exponents add up to `ind_f q` modulo two, since `ind_{-f} q = ind_{-f} p + 1`.
+  rcases neg_one_pow_eq_or ℤ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p)
+    with h | h <;> simp [k, hq', hpq, mul_add, pow_add, h]
+
+/-- **Signed counts for the reversed pseudo-gradient, with one convention at every critical
+point.** With the orientations of `neg_trajectorySign_of_unstableFrameOrientation`, the signed
+count of the trajectories of `-X` from `q` to `p` is `(-1) ^ ind_f p` times the signed count of the
+trajectories of `X` from `p` to `q`. -/
+theorem neg_signedTrajectoryCount_of_unstableFrameOrientation (hMS : hX.IsMorseSmale)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    (hX.neg hf).signedTrajectoryCount (φq.neg hq) (φp.neg hp) oq' op'
+        (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) =
+      (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p * hX.signedTrajectoryCount φp φq op oq hpq := by
+  rw [signedTrajectoryCount_def, signedTrajectoryCount_def, hX.neg_morseTrajectorySlice hf,
+    mul_finsum_mem]
+  refine finsum_mem_congr rfl fun y hy ↦ ?_
+  exact neg_trajectorySign_of_unstableFrameOrientation hφp hφq hf hp hq oM op op' oq oq' hop hoq
+    hMS hpq ⟨(hX.mem_morseTrajectorySlice.1 hy).1, (hX.mem_morseTrajectorySlice.1 hy).2.1⟩
+
+end UnstableFrameSignRule
 
 end IsAdaptedPseudoGradient
 

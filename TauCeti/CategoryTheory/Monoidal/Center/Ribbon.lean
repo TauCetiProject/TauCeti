@@ -7,8 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Abelian
 public import TauCeti.CategoryTheory.Monoidal.Center.Pivotal
-public import TauCeti.CategoryTheory.Monoidal.Center.Simple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Ribbon.OfSpherical
+public import TauCeti.CategoryTheory.Preadditive.Schur
 
 /-!
 # The centre of a spherical category is ribbon
@@ -31,16 +31,17 @@ pivotal structures and are stated with them in `Center/Rigid.lean` and
 `Center/Pivotal.lean`.
 
 When `C` is spherical, so is its centre (`CategoryTheory.Center.sphericalCategory`). If moreover
-the centre is a split finite semisimple category with simple unit, sphericity makes the induced
-twist ribbon (Müger). The semisimplicity of the centre is a hypothesis here: it does not follow
-from that of `C` alone (for a fusion category it also needs the global dimension of `C` to be
-nonzero), and it cannot simply be dropped, since in a non-semisimple braided category a spherical
-pivotal structure need not induce a ribbon twist.
+the centre is a finite semisimple category over an algebraically closed field whose simple objects
+have finite-dimensional endomorphisms, sphericity makes the induced twist ribbon (Müger). The unit
+of the centre need not be simple. The semisimplicity of the centre is a hypothesis here: it does
+not follow from that of `C` alone (for a fusion category it also needs the global dimension of `C`
+to be nonzero), and it cannot simply be dropped, since in a non-semisimple braided category a
+spherical pivotal structure need not induce a ribbon twist.
 
 ## Main declarations
 
 * `CategoryTheory.Center.ribbonCategory_of_sphericalCategory`: the twist induced on the centre of
-  a spherical category is ribbon, when the centre is split finite semisimple with simple unit.
+  a spherical category is ribbon, when the centre is split finite semisimple.
 
 ## References
 
@@ -64,24 +65,23 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [P
 
 variable (k : Type*) [Field k] [IsAlgClosed k] [SphericalCategory C] [Abelian C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-  [IsFiniteSemisimpleCategory (Center C)] [Simple (𝟙_ (Center C))]
+  [IsFiniteSemisimpleCategory (Center C)]
   [hfin : ∀ (X : Center C) [Simple X], FiniteDimensional k (X ⟶ X)]
 
 include hfin
 
 /-- **The centre of a spherical category is ribbon** (Müger). For a spherical category `C` whose
-centre is a split finite semisimple category with simple unit, the twist induced on `Center C` by
+centre is a split finite semisimple category, the twist induced on `Center C` by
 its braiding and its pivotal structure is ribbon. The twist is the one built from the pivotal
 structure induced from `C`, not an arbitrary twist of the centre, and the abelian, linear, rigid
 and pivotal structures of the centre are the canonical ones.
 
-The simple unit of the centre and the finite-dimensionality of the endomorphisms of its simple
-objects are found by instance search when `C` has a simple unit and finite-dimensional
-endomorphism spaces (`CategoryTheory.Center.instSimpleUnit`,
-`CategoryTheory.Center.instFiniteDimensionalHom`). -/
+The finite-dimensionality of the endomorphisms of the simple objects of the centre is found by
+instance search when `C` has finite-dimensional morphism spaces
+(`CategoryTheory.Center.instFiniteDimensionalHom`). -/
 theorem ribbonCategory_of_sphericalCategory :
     letI := balancedOfBraidedPivotal (Center C)
     RibbonCategory (Center C) :=
-  TauCeti.ribbonCategory_of_sphericalCategory (hfin := hfin) k
+  TauCeti.ribbonCategory_of_sphericalCategory fun S _ ↦ (bijective_algebraMap_end_of_simple k S).2
 
 end CategoryTheory.Center

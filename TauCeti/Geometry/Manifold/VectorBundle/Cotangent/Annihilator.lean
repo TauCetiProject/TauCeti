@@ -47,7 +47,10 @@ dimension `k + r` form a `C^n` vector subbundle of rank `r` of the cotangent bun
   `TauCeti.IsContMDiffDistribution.annihilatorVectorBundle`,
   `TauCeti.IsContMDiffDistribution.annihilatorContMDiffVectorBundle`), and their inclusion
   `TauCeti.CotangentBundle.annihilatorInclusion` into `T*M` is a `C^n` smooth embedding
-  (`TauCeti.IsContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion`).
+  (`TauCeti.IsContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion`). In particular a
+  covector field with values in the annihilators is a continuous section of `D⁰` exactly when it
+  is a continuous section of `T*M`
+  (`TauCeti.CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff`).
 
 Along the zero section, the differential of the inclusion is the identity in the splitting of
 tangent spaces at zero vectors into base and fibre (`TauCeti.Bundle.zeroSectionTangentEquiv`): a
@@ -188,6 +191,15 @@ theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) 
   injective_totalSpace_subbundle (E →L[𝕜] 𝕜) P (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
     (annihilatorSpace I D)
 
+variable {I D P} in
+/-- Two covectors annihilating `D` are equal if they have the same base point and take the same
+values. -/
+theorem totalSpace_annihilatorSpace_ext {z w : TotalSpace P fun x ↦ annihilatorSpace I D x}
+    (hproj : z.proj = w.proj)
+    (h : ∀ v : TangentSpace I z.proj, (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) v =
+      (w.snd : TangentSpace I w.proj →L[𝕜] 𝕜) v) : z = w :=
+  annihilatorInclusion_injective I D P (CotangentBundle.ext hproj h)
+
 variable [IsManifold I 1 M]
 
 /-- The total space of the annihilators of `D` carries the subspace topology
@@ -201,6 +213,16 @@ instance instTopologicalSpaceTotalSpaceAnnihilatorSpace :
 theorem isEmbedding_annihilatorInclusion : IsEmbedding (annihilatorInclusion I D P) :=
   isEmbedding_totalSpace_subbundle (E →L[𝕜] 𝕜) P
     (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (annihilatorSpace I D)
+
+variable {I D P} in
+/-- A covector field with values in the annihilators of `D` is a continuous section of the
+annihilator bundle `D⁰` exactly when it is a continuous section of `T*M`. -/
+theorem continuous_totalSpaceMk_annihilatorSpace_iff {σ : Π x : M, annihilatorSpace I D x} :
+    Continuous (fun x ↦ TotalSpace.mk' P (E := fun x ↦ annihilatorSpace I D x) x (σ x)) ↔
+      Continuous fun x ↦ TotalSpace.mk' (E →L[𝕜] 𝕜)
+        (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x (σ x : TangentSpace I x →L[𝕜] 𝕜) := by
+  rw [(isEmbedding_annihilatorInclusion I D P).continuous_iff]
+  simp only [comp_def, annihilatorInclusion_mk']
 
 end Inclusion
 

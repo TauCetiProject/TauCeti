@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 -- Proof-only: regularity of local rings and codimension bounds.
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 

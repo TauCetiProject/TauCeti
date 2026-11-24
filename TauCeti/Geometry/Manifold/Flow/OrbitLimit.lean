@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.LocallyEquiconnected
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import TauCeti.Topology.Compactness.Compact
-public import TauCeti.Topology.ContinuousMap.CompactConvergence
+public import TauCeti.Topology.ContinuousMap.CompactConvergence.Group
 public import TauCeti.Topology.Homotopy.Homotopic.With
 public import TauCeti.Topology.Homotopy.LocallyEquiconnected.MappingSpace
 import TauCeti.Topology.Separation.InvFunOn

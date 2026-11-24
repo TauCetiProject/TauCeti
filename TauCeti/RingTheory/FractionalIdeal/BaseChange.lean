@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.FractionalIdeal.Basic
 public import Mathlib.RingTheory.IsTensorProduct
 
 import Mathlib.RingTheory.Localization.BaseChange
-import TauCeti.Algebra.Module.Lattice
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # A nonzero fractional ideal is a lattice in the fraction field
@@ -33,7 +33,7 @@ the fraction field: `K ⊗[R] I ≅ K`. -/
 theorem isBaseChange_subtype {I : FractionalIdeal R⁰ K} (hI : I ≠ 0) :
     IsBaseChange K (I : Submodule R K).subtype := by
   refine (isLocalizedModule_iff_isBaseChange R⁰ K _).mp
-    (Submodule.IsLattice.isLocalizedModule_subtype K _ ?_)
+    ((I : Submodule R K).isLocalizedModule_subtype_of_span_eq_top (F := K) R⁰ ?_)
   obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (coeToSubmodule_ne_bot.mpr hI)
   refine eq_top_iff.mpr fun y _ ↦ ?_

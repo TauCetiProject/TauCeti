@@ -220,7 +220,7 @@ theorem mem_baseSet_doubleAlong {y z : DoubleAlong A} :
 /-- The double restricted to the first sheet is the original core, by the identity in
 coordinates. -/
 noncomputable def doubleAlongInlIso : (C.doubleAlong hC).pullback (DoubleAlong.inl A) ≅ C :=
-  constIso (fun i => by
+  constIso (fun i => Eq.subset <| by
       ext x
       simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_pullback,
         localTriv_baseSet_doubleAlong, mem_preimage, DoubleAlong.fold_inl])
@@ -237,7 +237,7 @@ noncomputable def doubleAlongInlIso : (C.doubleAlong hC).pullback (DoubleAlong.i
 coordinates. -/
 noncomputable def doubleAlongInrIso :
     (C.doubleAlong hC).pullback (DoubleAlong.inr A) ≅ (conjugate X).obj C :=
-  constIso (fun i => by
+  constIso (fun i => Eq.subset <| by
       ext x
       simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_pullback,
         localTriv_baseSet_doubleAlong, localTriv_baseSet_conjugate_obj, mem_preimage,
@@ -382,7 +382,7 @@ identification the lifted swap `doubleAlongSwap` is `(z, v) ↦ (swap z, conj v)
 (`doubleAlongSwap_mk`). -/
 noncomputable def doubleAlongTrivialIso (n : ℕ) :
     (trivial ℂ X n).doubleAlong (isRealAlong_trivial n A) ≅ trivial ℂ (DoubleAlong A) n :=
-  constIso (fun _ => Set.preimage_univ) (ContinuousLinearEquiv.refl ℂ (Fin n → ℂ))
+  constIso (fun _ => Set.preimage_univ.le) (ContinuousLinearEquiv.refl ℂ (Fin n → ℂ))
     fun i j y _ _ => by
     -- State the identity on standard coordinates to fix the inherited fibre instances.
     have h : (ContinuousLinearMap.id ℂ (Fin n → ℂ)).comp

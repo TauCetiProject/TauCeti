@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -36,6 +40,13 @@ four, any unit vector extends to an oriented unitary orthonormal frame for a com
 form
 (`exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`).
 
+In dimension four, an adapted orthonormal basis can also be chosen to depend continuously on the
+complex structure. For an orthogonal complex structure `K`, a unit vector `a` and a vector `c`
+outside the complex line spanned by `a` and `K a`, the vectors `(a, K a, u, K u)`, with `u` the
+normalized component of `c` orthogonal to `a` and `K a`, form an orthonormal basis adapted to `K`.
+The orthogonal transformation carrying a fixed basis adapted to `J₀` to it depends continuously on
+`K` while `c` stays outside that complex line.
+
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.exists_linearIsometryEquiv_euclideanSpace`: an orthogonal almost
@@ -44,16 +55,34 @@ form
   metric `ω(·, J ·)` is the inner product is the imaginary part of the Hermitian product.
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
   exist in every even dimension `2 * n`.
+* `TauCeti.AlmostComplexStructure.exists_orthonormal_forall_inner_apply_eq_zero`: up to half the
+  dimension, there are families of `r` vectors orthonormal for the Hermitian metric of `J`.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
   structures exist in even dimension.
 * `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
   orthonormal basis in dimension `2 * n` induces the symplectic orientation of `ω(v, w) = ⟪J v, w⟫`.
+* `TauCeti.AlmostComplexStructure.orthonormal_of_norm_eq_one_of_inner_eq_zero`: unit vectors
+  `ξ`, `η` with `η` orthogonal to `ξ` and `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
   existence of oriented unitary frames and completion of a unit vector in dimension four.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
   an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+* `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
+  an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
+  `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
+  normalized residual of `c`, form an orthonormal basis.
+* `OrthonormalBasis.apply_unitaryToAdaptedFourBasis_apply`,
+  `OrthonormalBasis.continuousOn_unitaryToAdaptedFourBasis`: the orthogonal transformation
+  carrying a basis adapted to `J₀` to the basis `(a, K a, u, K u)` intertwines `J₀` with `K`, and
+  depends continuously on `K`.
+* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasis`: for an orthonormal basis with
+  `e (2k + 1) = J (e (2k))`, the vectors `e (2k)` form a basis of the complex vector space
+  `(V, J)`, with coordinates `⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫`.
+* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour`: its case of an orthonormal
+  four-frame with `J e₀ = e₁` and `J e₂ = e₃`, the basis `(e₀, e₂)` with coordinates
+  `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫`.
 
 ## References
 
@@ -121,6 +150,19 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
   rw [hsingle]
   exact hΦ _
 
+/-- Up to half the dimension, there are families of `r` vectors that are orthonormal for the
+Hermitian metric of an orthogonal almost complex structure `J`: `u` is orthonormal and
+`⟪J uᵢ, uⱼ⟫ = 0` for all `i` and `j`. -/
+theorem exists_orthonormal_forall_inner_apply_eq_zero {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) :
+    ∃ u : Fin r → V, Orthonormal ℝ u ∧ ∀ i j, ⟪J (u i), u j⟫ = 0 := by
+  obtain ⟨n, hn⟩ := J.even_finrank_real
+  obtain ⟨b, hb⟩ := exists_adapted_orthonormalBasis J (norm_apply hJ) n (by omega)
+  refine ⟨fun i ↦ b ⟨2 * i, by omega⟩, ?_, fun i j ↦ ?_⟩
+  · exact b.orthonormal.comp _ fun i j h ↦ Fin.ext (by simpa using congrArg Fin.val h)
+  · rw [← hb ⟨i, by omega⟩]
+    exact b.orthonormal.2 (by simp [Fin.ext_iff]; omega)
+
 /-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
 including the zero structure in dimension zero. -/
 theorem exists_forall_norm_apply_eq (hV : Even (finrank ℝ V)) :
@@ -176,6 +218,164 @@ theorem toBasis_orientation_eq_symplecticForm_orientation {n : ℕ} {ω : Symple
 
 end EvenDimension
 
+section OrthonormalFour
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- For an orthogonal almost complex structure `J`, unit vectors `ξ` and `η` with `η` orthogonal
+to `ξ` and to `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`. -/
+theorem orthonormal_of_norm_eq_one_of_inner_eq_zero {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ η : V} (hξ : ‖ξ‖ = 1) (hη : ‖η‖ = 1)
+    (hξη : ⟪ξ, η⟫ = 0) (hJξη : ⟪J ξ, η⟫ = 0) :
+    Orthonormal ℝ ![ξ, J ξ, η, J η] := by
+  have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
+    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
+  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
+  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
+  refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
+  have hξJ := J.inner_self_apply hJ ξ
+  have hηJη := J.inner_self_apply hJ η
+  fin_cases i <;> fin_cases j <;> dsimp only <;> first
+    | exact absurd rfl hij
+    | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
+    | (rw [real_inner_comm]; first
+        | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
+
+end OrthonormalFour
+
+end TauCeti.AlmostComplexStructure
+
+/-! ### Adapted orthonormal bases depending continuously on the complex structure -/
+
+namespace ContinuousLinearMap
+
+open Module
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The component of `c` orthogonal to `a` and `K a`, `c - ⟪a, c⟫ • a - ⟪K a, c⟫ • K a`. For an
+orthogonal complex structure `K` and a unit vector `a`, the vectors `a` and `K a` are orthonormal
+and span the complex line of `a`. -/
+def complexLineResidual (K : V →L[ℝ] V) (a c : V) : V :=
+  c - ⟪a, c⟫ • a - ⟪K a, c⟫ • K a
+
+theorem complexLineResidual_def (K : V →L[ℝ] V) (a c : V) :
+    K.complexLineResidual a c = c - ⟪a, c⟫ • a - ⟪K a, c⟫ • K a :=
+  (rfl)
+
+/-- The residual is orthogonal to `a`, for a unit vector `a` orthogonal to `K a`. -/
+theorem inner_complexLineResidual {K : V →L[ℝ] V} {a : V} (ha : ‖a‖ = 1) (haK : ⟪a, K a⟫ = 0)
+    (c : V) : ⟪a, K.complexLineResidual a c⟫ = 0 := by
+  simp only [complexLineResidual, inner_sub_right, inner_smul_right, real_inner_self_eq_norm_sq, ha,
+    haK]
+  ring
+
+/-- The residual is orthogonal to `K a`, for a unit vector `K a` orthogonal to `a`. -/
+theorem inner_apply_complexLineResidual {K : V →L[ℝ] V} {a : V} (hKa : ‖K a‖ = 1)
+    (haK : ⟪a, K a⟫ = 0) (c : V) : ⟪K a, K.complexLineResidual a c⟫ = 0 := by
+  simp only [complexLineResidual, inner_sub_right, inner_smul_right, real_inner_self_eq_norm_sq,
+    hKa, real_inner_comm a (K a), haK]
+  ring
+
+/-- The residual depends continuously on `K`. -/
+theorem continuous_complexLineResidual (a c : V) :
+    Continuous fun K : V →L[ℝ] V ↦ K.complexLineResidual a c := by
+  unfold complexLineResidual
+  fun_prop
+
+/-- In dimension greater than two, some vector of a basis lies outside the span of `a` and `K a`:
+its residual is nonzero. -/
+theorem exists_complexLineResidual_ne_zero [FiniteDimensional ℝ V] (hV : 2 < finrank ℝ V)
+    (K : V →L[ℝ] V) (a : V) {ι : Type*} (b : Basis ι ℝ V) :
+    ∃ i, K.complexLineResidual a (b i) ≠ 0 := by
+  by_contra! h
+  have hle : (⊤ : Submodule ℝ V) ≤ Submodule.span ℝ (Set.range ![a, K a]) := by
+    rw [← b.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    have hi : b i = ⟪a, b i⟫ • a + ⟪K a, b i⟫ • K a := by
+      have h' := h i
+      rwa [complexLineResidual, sub_sub, sub_eq_zero] at h'
+    rw [hi]
+    exact add_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨1, rfl⟩))
+  have h2 := (Submodule.finrank_mono hle).trans (finrank_range_le_card _)
+  rw [finrank_top, Fintype.card_fin] at h2
+  omega
+
+/-- The vectors `(a, K a, u, K u)`, where `u` is the normalized residual of `c`, the normalized
+component of `c` orthogonal to `a` and `K a`. -/
+noncomputable def adaptedFourFrame (K : V →L[ℝ] V) (a c : V) : Fin 4 → V :=
+  ![a, K a, ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c,
+    K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c)]
+
+theorem adaptedFourFrame_def (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c = ![a, K a, ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c,
+      K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c)] :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_zero (K : V →L[ℝ] V) (a c : V) : K.adaptedFourFrame a c 0 = a :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_one (K : V →L[ℝ] V) (a c : V) : K.adaptedFourFrame a c 1 = K a :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_two (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c 2 = ‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c :=
+  (rfl)
+
+@[simp]
+theorem adaptedFourFrame_three (K : V →L[ℝ] V) (a c : V) :
+    K.adaptedFourFrame a c 3 = K (‖K.complexLineResidual a c‖⁻¹ • K.complexLineResidual a c) :=
+  (rfl)
+
+/-- For an orthogonal complex structure `K`, a unit vector `a` and a vector `c` outside the complex
+line of `a`, the vectors `(a, K a, u, K u)` are orthonormal. -/
+theorem orthonormal_adaptedFourFrame {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
+    (hK₂ : ∀ v, K (K v) = -v) {a c : V} (ha : ‖a‖ = 1) (hr : K.complexLineResidual a c ≠ 0) :
+    Orthonormal ℝ (K.adaptedFourFrame a c) := by
+  let J : TauCeti.AlmostComplexStructure V :=
+    ⟨K.toLinearMap, LinearMap.ext fun v ↦ by simpa using hK₂ v⟩
+  -- `J` is built from `K.toLinearMap`, so `J v` unfolds to `K v`: `hK` says `J` is orthogonal and
+  -- the family `(a, J a, u, J u)` below is `K.adaptedFourFrame a c`.
+  have hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫ := hK
+  have haK : ⟪a, K a⟫ = 0 := J.inner_self_apply hJ a
+  have hKa : ‖K a‖ = 1 := (J.norm_apply hJ a).trans ha
+  exact TauCeti.AlmostComplexStructure.orthonormal_of_norm_eq_one_of_inner_eq_zero hJ ha
+    (norm_smul_inv_norm hr) (by rw [inner_smul_right, inner_complexLineResidual ha haK, mul_zero])
+    (by
+      rw [inner_smul_right]
+      exact mul_eq_zero_of_right _ (inner_apply_complexLineResidual hKa haK c))
+
+variable [Fact (finrank ℝ V = 4)]
+
+/-- The orthonormal basis `(a, K a, u, K u)` of a four-dimensional space adapted to an orthogonal
+complex structure `K`, for a unit vector `a` and a vector `c` outside the complex line of `a`, where
+`u` is the normalized residual of `c`. -/
+noncomputable def adaptedFourBasis (K : V →L[ℝ] V) (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
+    (hK₂ : ∀ v, K (K v) = -v) {a c : V} (ha : ‖a‖ = 1) (hr : K.complexLineResidual a c ≠ 0) :
+    OrthonormalBasis (Fin 4) ℝ V :=
+  (basisOfOrthonormalOfCardEqFinrank (orthonormal_adaptedFourFrame hK hK₂ ha hr)
+    ((Fintype.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm)).toOrthonormalBasis
+    (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact orthonormal_adaptedFourFrame hK hK₂ ha hr)
+
+/-- The vectors of `adaptedFourBasis` are `(a, K a, u, K u)`. -/
+@[simp]
+theorem coe_adaptedFourBasis {K : V →L[ℝ] V} (hK : ∀ v w, ⟪K v, K w⟫ = ⟪v, w⟫)
+    (hK₂ : ∀ v, K (K v) = -v) {a c : V} (ha : ‖a‖ = 1) (hr : K.complexLineResidual a c ≠ 0) :
+    (K.adaptedFourBasis hK hK₂ ha hr : Fin 4 → V) = K.adaptedFourFrame a c := by
+  rw [adaptedFourBasis, Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
+
+end ContinuousLinearMap
+
+namespace TauCeti.AlmostComplexStructure
+
+open Module
+open scoped RealInnerProductSpace
+
 section DimensionFour
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
@@ -202,34 +402,23 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ : V} (hξ : ‖ξ‖ = 1) :
     ∃ e : OrthonormalBasis (Fin 4) ℝ V, e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
   classical
-  have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
-    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
   obtain ⟨η, hη_norm, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
     ({ξ, J ξ} : Finset V) (by
       rw [Fact.out (p := finrank ℝ V = 4)]
       exact Finset.card_le_two.trans_lt (by norm_num))
-  have hξη : ⟪ξ, η⟫ = 0 := hηK ξ (by simp)
-  have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
-  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
-  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
-  have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
-    have hξJ := hself ξ
-    have hηJη := hself η
-    fin_cases i <;> fin_cases j <;> dsimp only <;> first
-      | exact absurd rfl hij
-      | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
-      | (rw [real_inner_comm]; first
-          | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
-  have hcard : Fintype.card (Fin 4) = finrank ℝ V :=
-    (Fintype.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm
-  let e : OrthonormalBasis (Fin 4) ℝ V :=
-    (basisOfOrthonormalOfCardEqFinrank hon₄ hcard).toOrthonormalBasis
-      (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have he_coe : (e : Fin 4 → V) = ![ξ, J ξ, η, J η] := by
-    rw [Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
-  exact ⟨e, congrFun he_coe 0, by simp [he_coe], by simp [he_coe]⟩
+  -- `J` as a continuous linear map: `K v` unfolds to `J v`, so `hJ` and `J.apply_apply` apply to
+  -- `K`. Since `η` is a unit vector orthogonal to `ξ` and `J ξ`, it is its own residual.
+  let K : V →L[ℝ] V := LinearMap.toContinuousLinearMap J.toLinearMap
+  have hr : K.complexLineResidual ξ η = η := by
+    simp [ContinuousLinearMap.complexLineResidual_def, K, hηK ξ (by simp), hηK (J ξ) (by simp)]
+  have hr₀ : K.complexLineResidual ξ η ≠ 0 := by
+    rw [hr, ← norm_ne_zero_iff, hη_norm]
+    exact one_ne_zero
+  have he := K.coe_adaptedFourBasis hJ J.apply_apply hξ hr₀
+  refine ⟨K.adaptedFourBasis hJ J.apply_apply hξ hr₀, ?_, ?_, ?_⟩
+  · simp [he]
+  · simp [he, K]
+  · simp [he, hr, hη_norm, K]
 
 /-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
 an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/
@@ -263,6 +452,148 @@ theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientatio
   exact ⟨e, he, h₀, h₂⟩
 
 end DimensionFour
+
+section ComplexBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {J : AlmostComplexStructure V} {n : ℕ} {e : OrthonormalBasis (Fin (2 * n)) ℝ V}
+
+/-- The even vectors `e (2k)` of an orthonormal basis adapted to `J`, `e (2k + 1) = J (e (2k))`,
+span the complex vector space `(V, J)`. -/
+private theorem top_le_span_apply_two_mul
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
+    letI := J.complexModule
+    ⊤ ≤ Submodule.span ℂ (Set.range fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩) := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  set S := Submodule.span ℂ (Set.range fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩)
+  have hS (i : Fin (2 * n)) : e i ∈ S := by
+    obtain ⟨k, rfl | rfl⟩ : ∃ k : Fin n,
+        i = ⟨2 * k.val, by omega⟩ ∨ i = ⟨2 * k.val + 1, by omega⟩ :=
+      ⟨⟨i.val / 2, by omega⟩, by simp only [Fin.ext_iff]; omega⟩
+    · exact Submodule.subset_span ⟨k, rfl⟩
+    · rw [hb k, ← J.complexModule_I_smul]
+      exact S.smul_mem _ (Submodule.subset_span ⟨k, rfl⟩)
+  intro x _
+  rw [← e.sum_repr' x]
+  exact S.sum_mem fun i _ ↦ S.smul_of_tower_mem _ (hS i)
+
+/-- The even vectors `e (2k)` of an orthonormal basis adapted to `J` are linearly independent over
+`ℂ` in `(V, J)`: they span it, and there are `n = dim_ℂ (V, J)` of them. -/
+private theorem linearIndependent_apply_two_mul
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
+    letI := J.complexModule
+    LinearIndependent ℂ fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩ := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  have : FiniteDimensional ℝ V := Module.Finite.of_basis e.toBasis
+  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  refine linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_apply_two_mul hb) ?_
+  have h := Module.finrank_mul_finrank ℝ ℂ V
+  rw [Complex.finrank_real_complex, Module.finrank_eq_card_basis e.toBasis] at h
+  simp only [Fintype.card_fin] at h ⊢
+  omega
+
+/-- **The complex basis of an adapted orthonormal basis.** If `e` is an orthonormal basis with
+`e (2k + 1) = J (e (2k))` for every `k`, as produced by `exists_adapted_orthonormalBasis`, then the
+vectors `e (2k)` form a basis of the complex vector space `(V, J)`. The `k`-th coordinate of `x` in
+it is `⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫` (`basisOfOrthonormalBasis_repr_apply`). -/
+noncomputable def basisOfOrthonormalBasis
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
+    letI := J.complexModule
+    Basis (Fin n) ℂ V :=
+  letI := J.complexModule
+  Basis.mk (linearIndependent_apply_two_mul hb) (top_le_span_apply_two_mul hb)
+
+/-- The `k`-th vector of the complex basis of an adapted orthonormal basis `e` is `e (2k)`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_apply
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) (k : Fin n) :
+    letI := J.complexModule
+    basisOfOrthonormalBasis hb k = e ⟨2 * k.val, by omega⟩ := by
+  simp [basisOfOrthonormalBasis]
+
+/-- The `k`-th coordinate of `x` in the complex basis of an adapted orthonormal basis `e` is
+`⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_repr_apply
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) (x : V)
+    (k : Fin n) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasis hb).repr x k =
+      (⟪e ⟨2 * k.val, by omega⟩, x⟫ : ℂ) + Complex.I * ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ := by
+  let := J.complexModule
+  have hx := (basisOfOrthonormalBasis hb).sum_repr x
+  have ho (i j : Fin (2 * n)) : ⟪e i, e j⟫ = if i = j then 1 else 0 :=
+    orthonormal_iff_ite.1 e.orthonormal i j
+  -- Pairing `x = ∑ⱼ cⱼ • e (2j)` with `e (2k)` and `e (2k + 1)` reads off `c k`.
+  have hpair (j : Fin n) :
+      ((⟨2 * k.val, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val, by omega⟩ ↔ k = j) ∧
+        ((⟨2 * k.val, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ False) ∧
+        ((⟨2 * k.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val, by omega⟩ ↔ False) ∧
+        ((⟨2 * k.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ k = j) := by
+    simp only [Fin.ext_iff, iff_false]
+    omega
+  obtain ⟨hre, him⟩ : ⟪e ⟨2 * k.val, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).re ∧
+      ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).im := by
+    constructor <;> (conv_lhs => rw [← hx]) <;>
+      simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
+        hpair]
+  rw [hre, him, mul_comm]
+  exact (Complex.re_add_im _).symm
+
+section FinFour
+
+variable {e : OrthonormalBasis (Fin 4) ℝ V}
+
+/-- **The complex basis of a unitary four-frame.** If `e` is an orthonormal basis with `J e₀ = e₁`
+and `J e₂ = e₃`, then `e₀, e₂` is a basis of the complex vector space `(V, J)`: the case `n = 2` of
+`basisOfOrthonormalBasis`, for frames indexed by `Fin 4`. The coordinates of `x` in it are
+`z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫` and `z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`
+(`basisOfOrthonormalBasisFinFour_repr_apply_zero`, `basisOfOrthonormalBasisFinFour_repr_apply_one`).
+-/
+noncomputable def basisOfOrthonormalBasisFinFour (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    Basis (Fin 2) ℂ V :=
+  basisOfOrthonormalBasis (n := 2) (e := e) fun k ↦ by
+    fin_cases k
+    exacts [h₀.symm, h₂.symm]
+
+/-- The first vector of the basis `(e₀, e₂)` of `(V, J)` is `e₀`. -/
+@[simp]
+theorem basisOfOrthonormalBasisFinFour_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    basisOfOrthonormalBasisFinFour h₀ h₂ 0 = e 0 :=
+  basisOfOrthonormalBasis_apply _ 0
+
+/-- The second vector of the basis `(e₀, e₂)` of `(V, J)` is `e₂`. -/
+@[simp]
+theorem basisOfOrthonormalBasisFinFour_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    basisOfOrthonormalBasisFinFour h₀ h₂ 1 = e 2 :=
+  basisOfOrthonormalBasis_apply _ 1
+
+/-- The first coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
+`z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasisFinFour_repr_apply_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (x : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ :=
+  basisOfOrthonormalBasis_repr_apply _ x 0
+
+/-- The second coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
+`z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasisFinFour_repr_apply_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (x : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
+  basisOfOrthonormalBasis_repr_apply _ x 1
+
+end FinFour
+
+end ComplexBasis
 
 end TauCeti.AlmostComplexStructure
 
@@ -305,5 +636,104 @@ theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ 
     intro i
     fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
   exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+section UnitaryToAdaptedFourBasis
+
+open Module
+open scoped RealInnerProductSpace
+
+variable [Fact (finrank ℝ V = 4)] [CompleteSpace V]
+
+open scoped Classical in
+/-- The orthogonal transformation of `V` carrying the orthonormal basis `β` to the basis
+`(a, K a, u, K u)` adapted to `K` (`ContinuousLinearMap.adaptedFourBasis`), where `a = β 0` and `u`
+is the normalized residual of `c`, when `K` is a complex structure and `c` lies outside the complex
+line of `a`; and `1` otherwise. -/
+noncomputable def unitaryToAdaptedFourBasis (β : OrthonormalBasis (Fin 4) ℝ V) (c : V)
+    (K : unitary (V →L[ℝ] V)) : unitary (V →L[ℝ] V) :=
+  if h : (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
+      (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0 then
+    Unitary.linearIsometryEquiv.symm (β.equiv ((K : V →L[ℝ] V).adaptedFourBasis
+      (Unitary.inner_map_map K) h.1 (β.orthonormal.1 0) h.2) (Equiv.refl _))
+  else 1
+
+variable {β : OrthonormalBasis (Fin 4) ℝ V} {c : V} {K : unitary (V →L[ℝ] V)}
+
+/-- When `K` is a complex structure and `c` lies outside the complex line of `β 0`,
+`unitaryToAdaptedFourBasis` carries `β i` to the `i`-th adapted vector. -/
+theorem unitaryToAdaptedFourBasis_apply_basis (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
+    (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (i : Fin 4) :
+    (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) (β i) =
+      (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i := by
+  rw [unitaryToAdaptedFourBasis, dite_eq_left ⟨hK₂, hr⟩]
+  simp
+
+private theorem unitaryToAdaptedFourBasis_apply_eq_sum
+    (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
+    (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (v : V) :
+    (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) v =
+      ∑ i, ⟪β i, v⟫ • (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i := by
+  conv_lhs => rw [← β.sum_repr' v]
+  simp [map_sum, map_smul, unitaryToAdaptedFourBasis_apply_basis hK₂ hr]
+
+/-- `unitaryToAdaptedFourBasis` intertwines `J₀` with `K`, when `β` is adapted to `J₀`:
+`β 1 = J₀ (β 0)` and `β 3 = J₀ (β 2)`. -/
+theorem apply_unitaryToAdaptedFourBasis_apply {J₀ : V →L[ℝ] V} (hJ₀ : ∀ v, J₀ (J₀ v) = -v)
+    (hβ₁ : β 1 = J₀ (β 0)) (hβ₃ : β 3 = J₀ (β 2))
+    (hK₂ : ∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v)
+    (hr : (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0) (v : V) :
+    (K : V →L[ℝ] V) ((β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) v) =
+      (β.unitaryToAdaptedFourBasis c K : V →L[ℝ] V) (J₀ v) := by
+  have hΦ := unitaryToAdaptedFourBasis_apply_basis hK₂ hr
+  set Φ : V →L[ℝ] V := ((β.unitaryToAdaptedFourBasis c K : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+  have key : (((K : V →L[ℝ] V) ∘L Φ : V →L[ℝ] V) : V →ₗ[ℝ] V) =
+      ((Φ ∘L J₀ : V →L[ℝ] V) : V →ₗ[ℝ] V) := by
+    refine β.toBasis.ext fun i ↦ ?_
+    simp only [OrthonormalBasis.coe_toBasis, ContinuousLinearMap.coe_comp,
+      ContinuousLinearMap.coe_coe, Function.comp_apply]
+    fin_cases i <;> dsimp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
+    · simp [hΦ, ← hβ₁]
+    · rw [hΦ 1, hβ₁, hJ₀, map_neg, hΦ 0]
+      simp [hK₂]
+    · simp [hΦ, ← hβ₃]
+    · rw [hΦ 3, hβ₃, hJ₀, map_neg, hΦ 2]
+      simp [hK₂]
+  exact LinearMap.congr_fun key v
+
+variable (β c) in
+/-- `unitaryToAdaptedFourBasis` depends continuously on the complex structure `K`, while `c` stays
+outside the complex line of `β 0`. -/
+theorem continuousOn_unitaryToAdaptedFourBasis :
+    ContinuousOn (β.unitaryToAdaptedFourBasis c)
+      {K | (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
+        (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} := by
+  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+  refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (continuousOn_clm_apply.2 fun v ↦ ?_)
+  have hK : Continuous fun K : unitary (V →L[ℝ] V) ↦ (K : V →L[ℝ] V) := continuous_subtypeVal
+  have hres : Continuous fun K : unitary (V →L[ℝ] V) ↦
+      (K : V →L[ℝ] V).complexLineResidual (β 0) c :=
+    (ContinuousLinearMap.continuous_complexLineResidual _ _).comp hK
+  have hunit : ContinuousOn (fun K : unitary (V →L[ℝ] V) ↦
+      ‖(K : V →L[ℝ] V).complexLineResidual (β 0) c‖⁻¹ •
+        (K : V →L[ℝ] V).complexLineResidual (β 0) c)
+      {K | (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} :=
+    (hres.norm.continuousOn.inv₀ fun _ hK ↦ norm_ne_zero_iff.2 hK).smul hres.continuousOn
+  have hvec (i : Fin 4) : ContinuousOn
+      (fun K : unitary (V →L[ℝ] V) ↦ (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i)
+      {K | (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
+        (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} := by
+    fin_cases i
+    · exact continuousOn_const
+    · exact (hK.clm_apply continuous_const).continuousOn
+    · exact hunit.mono fun _ hK ↦ hK.2
+    · exact hK.continuousOn.clm_apply (hunit.mono fun _ hK ↦ hK.2)
+  have hsum : ContinuousOn (fun K : unitary (V →L[ℝ] V) ↦
+      ∑ i, ⟪β i, v⟫ • (K : V →L[ℝ] V).adaptedFourFrame (β 0) c i)
+      {K | (∀ v, (K : V →L[ℝ] V) ((K : V →L[ℝ] V) v) = -v) ∧
+        (K : V →L[ℝ] V).complexLineResidual (β 0) c ≠ 0} :=
+    continuousOn_finsetSum Finset.univ fun i _ ↦ continuousOn_const.smul (hvec i)
+  exact hsum.congr fun K hK ↦ unitaryToAdaptedFourBasis_apply_eq_sum hK.1 hK.2 v
+
+end UnitaryToAdaptedFourBasis
 
 end OrthonormalBasis
