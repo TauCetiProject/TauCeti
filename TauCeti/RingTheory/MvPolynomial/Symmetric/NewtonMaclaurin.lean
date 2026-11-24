@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
@@ -28,19 +27,19 @@ corresponding elementary symmetric mean, so that `S_0 = 1`, `S_1` is the arithme
   (`Multiset.esymm_div_choose_mul_esymm_div_choose_le_sq`). No sign condition is needed. For
   `k + 2 > n` the left side vanishes.
 * **Maclaurin's inequalities** `S_l^k ≤ S_k^l` for `k ≤ l`, when `σ_1, …, σ_l > 0`
-  (`Multiset.esymm_div_choose_pow_le_pow`), and over `ℝ` in the equivalent root form
-  `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l` (`Multiset.esymm_div_choose_rpow_le_rpow`). For the
-  vector of values of `s` this positivity hypothesis says that the vector lies in the cone
-  `Γ_l = {λ | σ_1(λ) > 0, …, σ_l(λ) > 0}` of the theory of Hessian equations, on which
-  `S_1, …, S_l` are positive (`Multiset.esymm_div_choose_pos`). Off this cone Maclaurin's
-  inequalities fail: for `s = {-1, -1, -1}`, `S_1 = -1 < 1 = S_2^{1/2}`.
-* Maclaurin's inequalities for nonnegative reals
-  (`Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`): the closed nonnegative orthant lies in
-  the closure of the cone, and on its boundary part `σ_l` vanishes.
+  (`Multiset.esymm_div_choose_pow_le_pow`). For the vector of values of `s` this positivity
+  hypothesis says that the vector lies in the cone `Γ_l = {λ | σ_1(λ) > 0, …, σ_l(λ) > 0}` of the
+  theory of Hessian equations, on which `S_1, …, S_l` are positive
+  (`Multiset.esymm_div_choose_pos`). Off this cone Maclaurin's inequalities fail: for
+  `s = {-1, -1, -1}`, `S_1 = -1 < 1 = S_2^{1/2}`.
+
+Over `ℝ`, the equivalent root form `S_l^{1/l} ≤ S_k^{1/k}` and the case of nonnegative reals are
+in `TauCeti.Analysis.MeanInequalities` (`Multiset.esymm_div_choose_rpow_le_rpow` and
+`Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`).
 
 Through `MvPolynomial.aeval_esymm_eq_multiset_esymm`, these apply to the values
-`MvPolynomial.eval μ (MvPolynomial.esymm σ ℝ k)` of the elementary symmetric polynomials at a
-vector `μ : σ → ℝ`, with `s = Finset.univ.val.map μ`.
+`MvPolynomial.eval μ (MvPolynomial.esymm σ K k)` of the elementary symmetric polynomials at a
+vector `μ : σ → K`, with `s = Finset.univ.val.map μ`.
 
 The proof of Newton's inequalities is the classical one through Rolle's theorem. Both sides are
 rational expressions in the elements of `s`, so mapping `s` along an order embedding into a real
@@ -260,41 +259,5 @@ theorem esymm_div_choose_pow_le_pow {k l : ℕ} (hkl : k ≤ l)
       _ = (S k ^ (l + 1)) ^ l := by ring
 
 end OrderedField
-
-variable (s : Multiset ℝ)
-
-/-- **Maclaurin's inequalities**: if `σ_1(s), …, σ_l(s) > 0`, then the elementary symmetric means
-`S_j = σ_j(s) / binom(card s, j)` satisfy `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. -/
-theorem esymm_div_choose_rpow_le_rpow {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
-    (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) :
-    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
-      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
-  have hk₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := k) hkl)
-  have hl₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := l) le_rfl)
-  have hpow := s.esymm_div_choose_pow_le_pow hkl hpos
-  have hlR : (0 : ℝ) < l := by exact_mod_cast hk.trans hkl
-  -- Take the `(k l)`-th root of `S_l^k ≤ S_k^l`.
-  have hroot := Real.rpow_le_rpow (by positivity) hpow (by positivity : 0 ≤ 1 / ((k : ℝ) * l))
-  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul hl₀.le,
-    ← Real.rpow_mul hk₀.le] at hroot
-  convert hroot using 2 <;> field_simp
-
-/-- **Maclaurin's inequalities** for nonnegative reals: if every element of `s` is nonnegative,
-then the elementary symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy
-`S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. At `k = 1` and `l = card s` this is the inequality of
-arithmetic and geometric means. -/
-theorem esymm_div_choose_rpow_le_rpow_of_nonneg {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
-    (hs : ∀ a ∈ s, 0 ≤ a) :
-    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
-      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
-  by_cases hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j
-  · exact s.esymm_div_choose_rpow_le_rpow hk hkl hpos
-  push Not at hpos
-  obtain ⟨j, hj, hj₀⟩ := hpos
-  have hl : s.esymm l = 0 :=
-    esymm_eq_zero_of_le hs (hj₀.antisymm (esymm_nonneg hs j)) (Finset.mem_Icc.mp hj).2
-  have hlR : (1 / (l : ℝ)) ≠ 0 := one_div_ne_zero (by have := hk.trans hkl; positivity)
-  rw [hl, zero_div, Real.zero_rpow hlR]
-  exact Real.rpow_nonneg (div_nonneg (esymm_nonneg hs k) (Nat.cast_nonneg _)) _
 
 end Multiset
