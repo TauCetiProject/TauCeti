@@ -9,10 +9,10 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.RingTheory.WittVector.Compare
 public import Mathlib.RingTheory.WittVector.DiscreteValuationRing
 public import Mathlib.RingTheory.WittVector.Domain
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
+public import TauCeti.RingTheory.WittVector.PadicInt
 
 /-!
 # Good reduction over the unramified Witt ring
@@ -38,8 +38,6 @@ exists after a ramified extension of `ℚₚ` does not qualify.
   `f : X ⟶ Spec ℚ` to `Frac W` is the generic fibre of a smooth proper `W`-scheme.
 * `TauCeti.AlgebraicGeometry.HasEverywhereWittGoodReduction f`: Witt good reduction at every
   prime.
-* `TauCeti.AlgebraicGeometry.padicIntToWitt`: the injective ring map `ℤₚ → W`, so that `W` has
-  characteristic zero.
 
 ## Main results
 
@@ -191,23 +189,6 @@ theorem HasWittGoodReductionAt.of_isPullback {R L : Type} [CommRing R] [CommRing
   · rwa [CommRingCat.ofHom_comp, Spec.map_comp]
   · exact IsPullback.of_right (by simpa using hYK) (by simp [b]) (.of_hasPullback _ _)
 
-variable (p) in
-/-- The ring map `ℤₚ ≅ W(𝔽ₚ) → W` to the ring `W` of Witt vectors of an algebraic closure of
-`𝔽ₚ`, induced on Witt vectors by the inclusion of `𝔽ₚ` into its algebraic closure. -/
-noncomputable def padicIntToWitt : ℤ_[p] →+* WittVector p (AlgebraicClosure (ZMod p)) :=
-  (WittVector.map (algebraMap (ZMod p) _)).comp (WittVector.equiv p).symm.toRingHom
-
-variable (p) in
-/-- The ring map `ℤₚ → W` to the Witt vectors of an algebraic closure of `𝔽ₚ` is injective. -/
-theorem padicIntToWitt_injective : Function.Injective (padicIntToWitt p) :=
-  (WittVector.map_injective _ (algebraMap (ZMod p) _).injective).comp
-    (WittVector.equiv p).symm.injective
-
-/-- The ring of Witt vectors of an algebraic closure of `𝔽ₚ` has characteristic zero, since
-`ℤₚ` injects into it. -/
-instance : CharZero (WittVector p (AlgebraicClosure (ZMod p))) :=
-  charZero_of_injective_ringHom (padicIntToWitt_injective p)
-
 /-- **A smooth proper `ℤₚ`-model gives Witt good reduction at `p`.** If `X ×_ℚ ℚₚ` is the generic
 fibre of a smooth proper scheme `g : Y ⟶ Spec ℤₚ`, then `X` has Witt good reduction at `p`: the
 base change of `Y` along `ℤₚ = W(𝔽ₚ) → W` is a model over the ring `W` of Witt vectors of an
@@ -219,9 +200,11 @@ theorem HasWittGoodReductionAt.of_padicInt {Y XL : Scheme.{0}} (g : Y ⟶ Spec (
     HasWittGoodReductionAt f p := by
   -- `ℤₚ → W` is injective, so it extends to the fraction fields
   have hj : Function.Injective ((algebraMap _
-      (FractionRing (WittVector p (AlgebraicClosure (ZMod p))))).comp (padicIntToWitt p)) :=
-    (IsFractionRing.injective _ _).comp (padicIntToWitt_injective p)
-  exact .of_isPullback _ _ (padicIntToWitt p) (IsFractionRing.lift hj)
+      (FractionRing (WittVector p (AlgebraicClosure (ZMod p))))).comp
+        (WittVector.padicIntToWitt p (AlgebraicClosure (ZMod p)))) :=
+    (IsFractionRing.injective _ _).comp
+      (WittVector.padicIntToWitt_injective p (AlgebraicClosure (ZMod p)))
+  exact .of_isPullback _ _ (WittVector.padicIntToWitt p _) (IsFractionRing.lift hj)
     (IsLocalization.lift_comp _) g h φ s hX hY
 
 /-- **The generic fibre of a smooth proper `ℤ`-scheme has everywhere Witt good reduction.** If `X`
