@@ -124,25 +124,9 @@ theorem rieszColemanProjection_one (u : C₀(I, R) →L[R] C₀(I, R)) :
 @[simp]
 theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]} (c : Rˣ) :
     u.rieszColemanProjection (c • Q) = u.rieszColemanProjection Q := by
-  have hdeg : (c • Q).natDegree = Q.natDegree :=
-    Polynomial.natDegree_smul_of_smul_regular Q (IsSMulRegular.all _)
-  have hlc : (c • Q).leadingCoeff = (c : R) * Q.leadingCoeff := by
-    rw [Polynomial.leadingCoeff_smul_of_smul_regular Q (IsSMulRegular.all _), Units.smul_def,
-      smul_eq_mul]
-  have hinv : Ring.inverse (c • Q).leadingCoeff = (↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff := by
-    rw [hlc, Ring.inverse_mul (Or.inl c.isUnit), Ring.inverse_unit, mul_comm]
-  have hrev : (c • Q).reverse = Polynomial.C (c : R) * Q.reverse := by
-    rw [Polynomial.reverse_units_smul, Units.smul_def, Polynomial.smul_eq_C_mul]
-  have hB : Polynomial.C (Ring.inverse (c • Q).leadingCoeff) * (c • Q).reverse =
-      Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse := by
-    rw [hinv, hrev, map_mul]
-    calc Polynomial.C (↑c⁻¹ : R) * Polynomial.C (Ring.inverse Q.leadingCoeff) *
-          (Polynomial.C (c : R) * Q.reverse)
-        = (Polynomial.C (↑c⁻¹ : R) * Polynomial.C (c : R)) *
-            (Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse) := by ring
-      _ = Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse := by
-          rw [← map_mul, Units.inv_mul, map_one, one_mul]
-  rw [rieszColemanProjection_def, rieszColemanProjection_def, hdeg, hB]
+  rw [rieszColemanProjection_def, rieszColemanProjection_def,
+    Polynomial.natDegree_smul_of_smul_regular Q (IsSMulRegular.all _),
+    Polynomial.C_ringInverse_leadingCoeff_mul_reverse_units_smul c Q]
 
 end Defs
 
@@ -538,8 +522,7 @@ theorem IsRowCompact.rankAtStalk_ker_aeval_reverse {u : C₀(I, R) →L[R] C₀(
     Module.rankAtStalk (R := R) (Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)).ker p =
       Q.natDegree := by
   have hE := hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.rankAtStalk_range hu hQ hS hQS hcop p
 
 end Decomposition
@@ -580,8 +563,7 @@ theorem IsRowCompact.finrank_ker_aeval_reverse {u : C₀(I, K) →L[K] C₀(I, K
   have hQ : IsUnit Q.leadingCoeff :=
     IsUnit.mk0 _ (leadingCoeff_ne_zero.mpr fun h ↦ by simp [h] at hQ0_mul)
   have hE := hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.finrank_range hu hS hQS hcop
 
 end Field
@@ -608,33 +590,29 @@ theorem IsRowCompact.rieszColemanProjection_mapCoeffs [IsUltrametricDist R]
       (u.rieszColemanProjection Q).mapCoeffs f hf := by
   rcases subsingleton_or_nontrivial S with hS | hS
   · ext x i; exact Subsingleton.elim _ _
-  obtain ⟨c, Q', S'', hS'', rfl, hQ'0, -, hQ'lc, hH', hcop'⟩ :=
+  obtain ⟨c, -, S'', hS'', rfl, hQ'0, hQ'deg, hQ'lc, hH', hcop'⟩ :=
     exists_normalized_factorization hQ hS' hQS' hcop
-  have hc : Ring.inverse (c⁻¹ • Q).leadingCoeff * (c⁻¹ • Q).leadingCoeff = 1 :=
-    Ring.inverse_mul_cancel _ hQ'lc
-  have hdeg : ((c⁻¹ • Q).map f).natDegree = (c⁻¹ • Q).natDegree :=
-    natDegree_map_of_leadingCoeff_ne_zero f (hQ'lc.map f).ne_zero
-  have hlc : ((c⁻¹ • Q).map f).leadingCoeff = f (c⁻¹ • Q).leadingCoeff :=
-    leadingCoeff_map_of_leadingCoeff_ne_zero f (hQ'lc.map f).ne_zero
-  have hBmap : 1 - Polynomial.C (Ring.inverse ((c⁻¹ • Q).map f).leadingCoeff) *
-        ((c⁻¹ • Q).map f).reverse =
-      (1 - Polynomial.C (Ring.inverse (c⁻¹ • Q).leadingCoeff) * (c⁻¹ • Q).reverse).map f := by
-    rw [hlc, ← hQ'lc.map_ringInverse f, reverse_map_of_isUnit_leadingCoeff hQ'lc f]
+  have hc : Ring.inverse Q.leadingCoeff * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
+  have hdeg : (Q.map f).natDegree = Q.natDegree :=
+    natDegree_map_of_leadingCoeff_ne_zero f (hQ.map f).ne_zero
+  have hlc : (Q.map f).leadingCoeff = f Q.leadingCoeff :=
+    leadingCoeff_map_of_leadingCoeff_ne_zero f (hQ.map f).ne_zero
+  have hBmap : 1 - Polynomial.C (Ring.inverse (Q.map f).leadingCoeff) * (Q.map f).reverse =
+      (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse).map f := by
+    rw [hlc, ← hQ.map_ringInverse f, reverse_map_of_isUnit_leadingCoeff hQ f]
     simp [Polynomial.map_sub, Polynomial.map_mul]
   have hv :
       (Polynomial.aeval u
-        (1 - Polynomial.C (Ring.inverse (c⁻¹ • Q).leadingCoeff) *
-          (c⁻¹ • Q).reverse)).IsRowCompact :=
+        (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse)).IsRowCompact :=
     hu.aeval (coeff_zero_one_sub_C_mul_reverse hc)
-  have hv_good :=
-    isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hu hQ'0 hQ'lc hS'' hH' hcop'
-  have hmap_smul : ((c⁻¹ • Q).map f) = Units.map (f : R →* S) c⁻¹ • Q.map f := by
-    ext n; simp [Units.smul_def, Polynomial.smul_eq_C_mul]
-  rw [← rieszColemanProjection_units_smul u c⁻¹,
-    ← rieszColemanProjection_units_smul (u.mapCoeffs f hf) (Units.map (f : R →* S) c⁻¹),
-    ← hmap_smul, rieszColemanProjection_def, rieszColemanProjection_def, hdeg, hBmap,
-    aeval_mapCoeffs, ← map_one f,
-    hv.rieszProjection_mapCoeffs f hf hv_good.isUnit_evalAt_hasseDeriv]
+  have hv_good :
+      (Polynomial.aeval u
+        (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse)).matrixCoeff
+        |>.charPowerSeries.IsGoodZero 1 Q.natDegree := by
+    rw [← Polynomial.C_ringInverse_leadingCoeff_mul_reverse_units_smul c⁻¹ Q, ← hQ'deg]
+    exact isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hu hQ'0 hQ'lc hS'' hH' hcop'
+  rw [rieszColemanProjection_def, rieszColemanProjection_def, hdeg, hBmap, aeval_mapCoeffs,
+    ← map_one f, hv.rieszProjection_mapCoeffs f hf hv_good.isUnit_evalAt_hasseDeriv]
 
 end BaseChange
 

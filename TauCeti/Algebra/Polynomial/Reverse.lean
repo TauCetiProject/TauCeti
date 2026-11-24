@@ -226,6 +226,20 @@ theorem reverse_units_smul [Semiring R] (c : Rˣ) (p : R[X]) :
   rw [reverse, reverse, natDegree_smul_of_smul_regular p (IsSMulRegular.all c),
     Units.smul_def, Units.smul_def, smul_eq_C_mul, smul_eq_C_mul, reflect_C_mul]
 
+/-- Normalizing a polynomial by a unit of the coefficient ring leaves
+`C (Ring.inverse p.leadingCoeff) * p.reverse` unchanged. -/
+theorem C_ringInverse_leadingCoeff_mul_reverse_units_smul [CommSemiring R] (c : Rˣ) (p : R[X]) :
+    C (Ring.inverse (c • p).leadingCoeff) * (c • p).reverse =
+      C (Ring.inverse p.leadingCoeff) * p.reverse := by
+  have hlc : (c • p).leadingCoeff = (c : R) * p.leadingCoeff := by
+    rw [leadingCoeff_smul_of_smul_regular p (IsSMulRegular.all _), Units.smul_def, smul_eq_mul]
+  have hinv : Ring.inverse (c • p).leadingCoeff = (↑c⁻¹ : R) * Ring.inverse p.leadingCoeff := by
+    rw [hlc, Ring.inverse_mul (Or.inl c.isUnit), Ring.inverse_unit, mul_comm]
+  have hrev : (c • p).reverse = C (c : R) * p.reverse := by
+    rw [reverse_units_smul, Units.smul_def, smul_eq_C_mul]
+  rw [hinv, hrev, map_mul, mul_assoc, mul_left_comm (C (Ring.inverse p.leadingCoeff)), ← mul_assoc,
+    ← map_mul, Units.inv_mul, map_one, one_mul]
+
 /-- The reversal of `1` is `1`. -/
 @[simp]
 theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by

@@ -95,12 +95,13 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
-* `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
+* `TauCeti.PowerSeries.dvd_of_coe_eq_coe_mul_entire`,
+  `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
   `TauCeti.PowerSeries.coe_subring_dvd_iff`, and
-  `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: left cancellation of polynomials with
-  invertible leading coefficient against entire series, equivalence of polynomial divisibility with
-  divisibility in entire series, and equality of polynomials of bounded degree agreeing at a
-  left-regular coefficient.
+  `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: recovering polynomial divisibility from
+  an entire quotient witness, left cancellation of polynomials with invertible leading coefficient
+  against entire series, equivalence of polynomial divisibility with divisibility in entire
+  series, and equality of polynomials of bounded degree agreeing at a left-regular coefficient.
 
 ## References
 
@@ -794,7 +795,7 @@ omit [CompleteSpace R] in
 /-- If a polynomial with invertible leading coefficient divides another polynomial in the ring of
 entire power series, then it divides it in the polynomial ring. Completeness of `R` is not
 needed. -/
-private theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
+theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
     (hp : IsUnit p.leadingCoeff) (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) :
     p ∣ g := by
   have : Nontrivial R := NormOneClass.nontrivial

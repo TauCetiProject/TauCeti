@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
 import Mathlib.Algebra.Polynomial.Div
 import TauCeti.LinearAlgebra.End.Split
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Intertwining linear maps
@@ -167,13 +168,6 @@ variable {R M N : Type*} [CommSemiring R]
   [ContinuousConstSMul R M]
   [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
   [ContinuousConstSMul R N]
-
-omit [IsTopologicalAddGroup M] [ContinuousConstSMul R M] [IsTopologicalAddGroup N]
-  [ContinuousConstSMul R N] in
-private theorem toLinearMap_comp_eq_id {i : M →L[R] N} {r : N →L[R] M}
-    (hri : r.comp i = .id R M) :
-    r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
-  rw [← toLinearMap_comp, hri, coe_id]
 
 /-- Along a continuous linear retract `r ∘ i = id`, if a polynomial `P` has invertible constant
 coefficient, then `r` and `i` identify `ker P(i ∘ u ∘ r)` with `ker P(u)` as topological

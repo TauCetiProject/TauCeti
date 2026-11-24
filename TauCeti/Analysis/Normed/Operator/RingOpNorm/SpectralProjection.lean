@@ -53,8 +53,11 @@ properties depend only on this structure:
 
 * `ContinuousLinearMap.IsSpectralProjection.range_eq_ker`,
   `ContinuousLinearMap.IsSpectralProjection.range_pow_eq_ker`,
-  `ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_pow`: stabilised kernel–range
-  topological splitting.
+  `ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_pow`,
+  `ContinuousLinearMap.IsSpectralProjection.range_eq_ker_spectral`,
+  `ContinuousLinearMap.IsSpectralProjection.range_spectral_eq_ker`,
+  `ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_spectral`: stabilised kernel–range
+  topological splitting (including order-one forms directly in terms of `C`).
 * `ContinuousLinearMap.IsSpectralProjection.unique`: uniqueness of spectral projections.
 * `ContinuousLinearMap.IsSpectralProjection.semiconj`,
   `ContinuousLinearMap.IsSpectralProjection.semiconj_inverse`,
@@ -163,9 +166,7 @@ theorem units_smul_spectral_iff (c : Rˣ) :
 /-- A spectral projection commutes with its spectral operator `C`. -/
 theorem commute_spectral (hE : IsSpectralProjection u C h E) : Commute C E := by
   obtain ⟨w, hw₁, hw₂, -, -, -⟩ := hE.exists_inverse
-  have hCw : Commute C w := hw₁.trans hw₂.symm
-  have h1 : Commute C (1 - E) := hw₂ ▸ hCw.mul_right (Commute.refl C)
-  simpa using (Commute.one_right C).sub_right (R := M →L[R] M) h1
+  exact Commute.of_mul_eq_one_sub hw₁ hw₂
 
 /-- `E * C ^ h = 0`, matching `pow_mul_eq_zero` by commutativity. -/
 theorem mul_pow_eq_zero (hE : IsSpectralProjection u C h E) : E * C ^ h = 0 :=
@@ -323,6 +324,29 @@ theorem isTopCompl_ker_range_pow (hE : IsSpectralProjection u C h E) (hn : h ≤
       (LinearMap.range ((C ^ n : M →L[R] M) : M →ₗ[R] M)) := by
   rw [← (hE.of_le hn).range_eq_ker, hE.range_pow_eq_ker hn]
   exact ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
+
+/-- For an order-one spectral projection, `C * E = 0`. -/
+theorem spectral_mul_eq_zero (hE : IsSpectralProjection u C 1 E) : C * E = 0 := by
+  simpa only [pow_one] using hE.pow_mul_eq_zero
+
+/-- For an order-one spectral projection, `E * C = 0`. -/
+theorem mul_spectral_eq_zero (hE : IsSpectralProjection u C 1 E) : E * C = 0 := by
+  simpa only [pow_one] using hE.mul_pow_eq_zero
+
+/-- **The range of an order-one spectral projection is `ker C`.** -/
+theorem range_eq_ker_spectral (hE : IsSpectralProjection u C 1 E) :
+    LinearMap.range (E : M →ₗ[R] M) = LinearMap.ker (C : M →ₗ[R] M) := by
+  simpa only [pow_one] using hE.range_eq_ker
+
+/-- **The range of `C` for an order-one spectral projection is `ker E`.** -/
+theorem range_spectral_eq_ker (hE : IsSpectralProjection u C 1 E) :
+    LinearMap.range (C : M →ₗ[R] M) = LinearMap.ker (E : M →ₗ[R] M) := by
+  simpa only [pow_one] using hE.range_pow_eq_ker le_rfl
+
+/-- **`ker C` and `range C` are topological complements** for an order-one spectral projection. -/
+theorem isTopCompl_ker_range_spectral (hE : IsSpectralProjection u C 1 E) :
+    (LinearMap.ker (C : M →ₗ[R] M)).IsTopCompl (LinearMap.range (C : M →ₗ[R] M)) := by
+  simpa only [pow_one] using hE.isTopCompl_ker_range_pow le_rfl
 
 /-- Every stabilised range of `C` is closed whenever `M` is `T₁` (in particular, normed). -/
 theorem isClosed_range_pow [T1Space M] (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :

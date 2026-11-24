@@ -32,9 +32,9 @@ decomposition
 
   `M = ker Q*(u) ⊕ range Q*(u)`
 
-into `u`-stable submodules (`ContinuousLinearMap.IsSpectralProjection.range_eq_ker`,
-`ContinuousLinearMap.IsSpectralProjection.range_pow_eq_ker`,
-`ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_pow`), on which
+into `u`-stable submodules (`ContinuousLinearMap.IsSpectralProjection.range_eq_ker_spectral`,
+`ContinuousLinearMap.IsSpectralProjection.range_spectral_eq_ker`,
+`ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_spectral`), on which
 `Q*(u)` vanishes on the first summand and restricts to a continuous linear automorphism of the
 second (`ContinuousLinearMap.IsSpectralProjection.equivKer`). Such a projection is unique
 (`ContinuousLinearMap.IsSpectralProjection.unique`); for `Q = 1` it is zero
@@ -238,9 +238,8 @@ theorem range_le_range_of_dvd {Q' : R[X]} {E' : M →L[R] M} (hE : IsRieszColema
     (hE' : IsRieszColemanProjection u Q' E') (hQ : IsUnit Q.leadingCoeff) (hQQ' : Q ∣ Q') :
     LinearMap.range (E : M →ₗ[R] M) ≤ LinearMap.range (E' : M →ₗ[R] M) := by
   obtain ⟨A, rfl⟩ := hQQ'
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  have hker' := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE').range_eq_ker
-  rw [hker, hker']
+  rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral,
+    (isRieszColemanProjection_def.mp hE').range_eq_ker_spectral]
   rcases eq_or_ne A 0 with rfl | hA
   · simp
   rw [reverse_mul (by rwa [Ne, hQ.mul_right_eq_zero, leadingCoeff_eq_zero]), toLinearMap_aeval,
@@ -254,8 +253,7 @@ theorem mul_smul_aeval_divX_reverse_mul (hE : IsRieszColemanProjection u Q E)
     u * ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E) = E := by
   -- Evaluating `X * Q*.divX + C (Q*(0)) = Q*` at `u` and right-multiplying by `E` kills the RHS.
   have hdiv : Polynomial.aeval u (X * Q.reverse.divX + C (Q.reverse.coeff 0)) * E = 0 := by
-    rw [X_mul_divX_add]
-    simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).pow_mul_eq_zero
+    rw [X_mul_divX_add, (isRieszColemanProjection_def.mp hE).spectral_mul_eq_zero]
   rw [map_add, map_mul, aeval_X, aeval_C, coeff_zero_reverse, Algebra.algebraMap_eq_smul_one,
     add_mul, smul_mul_assoc, one_mul, add_eq_zero_iff_eq_neg] at hdiv
   calc u * ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E)
@@ -501,8 +499,7 @@ theorem finite_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E) (hQ : IsU
     Module.Finite R
       (LinearMap.ker ((Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)) :
         C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.finite_range hQ hu
 
 /-- When `Q.leadingCoeff` is a unit, `ker Q*(u)` is projective over `R`. -/
@@ -511,8 +508,7 @@ theorem projective_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E)
     Module.Projective R
       (LinearMap.ker ((Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)) :
         C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.projective_range hQ hu
 
 end IsRieszColemanProjection

@@ -56,10 +56,8 @@ theorem comp_comp_subtypeL_eq_restrict {R₁ R₂ M₁ M₂ : Type*} [Semiring R
     (hs : ∀ x ∈ S₁, u x ∈ S₂) {r : M₂ →L[R₂] S₂}
     (hri : r.comp S₂.subtypeL = .id R₂ S₂) :
     r.comp (u.comp S₁.subtypeL) = u.restrict hs := by
-  ext1 x
-  have hfix : r (S₂.subtypeL (u.restrict hs x)) = u.restrict hs x := by
-    simpa only [comp_apply, id_apply] using DFunLike.congr_fun hri (u.restrict hs x)
-  simpa only [comp_apply, Submodule.subtypeL_apply, restrict_apply] using hfix
+  change r.comp (u.domRestrict S₁) = u.restrict hs
+  rw [← subtypeL_comp_restrict hs, ← comp_assoc, hri, id_comp]
 
 section Tower
 

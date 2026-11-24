@@ -38,11 +38,8 @@ transporting the Fredholm factors `H_(uE) = Q`, `H_(u(1-E)) = S`, `H_(u|_{range 
 
 ## Main results
 
-* `ContinuousLinearMap.IsRieszColemanProjection.isPrCompact`,
-  `ContinuousLinearMap.IsRieszColemanProjection.isPrCompact_restrict_range`, and
-  `ContinuousLinearMap.IsRieszColemanProjection.isPrCompact_restrict_ker`: when `Q.leadingCoeff`
-  is a unit, Riesz–Coleman projections of `(Pr)`-compact operators are `(Pr)`-compact, and
-  restrictions to `range E` and `ker E` are `(Pr)`-compact.
+* `ContinuousLinearMap.IsRieszColemanProjection.isPrCompact`: when `Q.leadingCoeff` is a unit,
+  Riesz–Coleman projections of `(Pr)`-compact operators are `(Pr)`-compact.
 * `ContinuousLinearMap.IsRieszColemanProjection.finite_range_of_isPrCompact`,
   `ContinuousLinearMap.IsRieszColemanProjection.projective_range_of_isPrCompact`,
   `ContinuousLinearMap.IsRieszColemanProjection.finite_ker_aeval_reverse_of_isPrCompact`, and
@@ -96,28 +93,6 @@ theorem IsRieszColemanProjection.isPrCompact (hE : IsRieszColemanProjection u Q 
   rw [← hE.mul_smul_aeval_divX_reverse_mul hQ]
   simpa only [mul_def] using hu.comp_clm _ hu.hasPr_source
 
-/-- On a module with property `(Pr)`, the restriction of a `(Pr)`-compact endomorphism `u` to the
-range of a Riesz–Coleman projection is `(Pr)`-compact. -/
-theorem IsRieszColemanProjection.isPrCompact_restrict_range
-    (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact) :
-    (u.restrict fun _ hx ↦
-      (isRieszColemanProjection_def.mp hE).mapsTo_range hx).IsPrCompact :=
-  have htop := ContinuousLinearMap.IsIdempotentElem.isTopCompl
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem
-  hu.restrict_of_retract _ (r := E.range.projectionOntoL E.ker htop)
-    (ext fun x ↦ by simp)
-
-/-- On a module with property `(Pr)`, the restriction of a `(Pr)`-compact endomorphism `u` to the
-kernel of a Riesz–Coleman projection is `(Pr)`-compact. -/
-theorem IsRieszColemanProjection.isPrCompact_restrict_ker
-    (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact) :
-    (u.restrict fun _ hx ↦
-      (isRieszColemanProjection_def.mp hE).mapsTo_ker hx).IsPrCompact :=
-  have htop := (ContinuousLinearMap.IsIdempotentElem.isTopCompl
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem).symm
-  hu.restrict_of_retract _ (r := E.ker.projectionOntoL E.range htop)
-    (ext fun x ↦ by simp)
-
 variable [CompleteSpace R]
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, the range of a Riesz–Coleman
@@ -141,8 +116,7 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is finitely generated. -
 theorem IsRieszColemanProjection.finite_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.finite_range_of_isPrCompact hQ hu
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
@@ -150,8 +124,7 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is projective over the c
 theorem IsRieszColemanProjection.projective_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [← hker]
+  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hE.projective_range_of_isPrCompact hQ hu
 
 end Compact
@@ -259,8 +232,7 @@ theorem rankAtStalk_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R�
       IsEntire.subring R) ⟨S, IsEntire.mem_subring.mpr hS⟩)
     (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = Q.natDegree := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [hker]
+  rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hu.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
 
 /-- **Fredholm factor on the finite Riesz–Coleman summand on a module with property `(Pr)`.** For a
@@ -427,8 +399,7 @@ theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M
     (hcop : IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
       IsEntire.subring K) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K E.range = Q.natDegree := by
-  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
-  rw [hker]
+  rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
   exact hu.finrank_ker_aeval_reverse hS hQS hcop
 
 end FieldRange
