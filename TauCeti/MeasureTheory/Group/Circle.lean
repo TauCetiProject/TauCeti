@@ -31,6 +31,7 @@ on `AddCircle (2π)` under `AddCircle.homeomorphCircle'`, of total mass `2π`.
 * `TauCeti.integral_circleDensityMeasure`: for a nonnegative measurable density, integration
   against the weighted measure is a circle average.
 * `TauCeti.circleArcLength`: the arclength measure `dθ` on `Circle`, of total mass `2π`.
+* `TauCeti.circleArcLength_univ`: the arclength measure has total mass `2π`, so it is finite.
 * `TauCeti.circleAverage_sub_zpow`: the circle average of `(z - c) ^ n` is `1` for `n = 0` and
   `0` otherwise, the orthogonality relation of the characters of the circle.
 -/
@@ -126,6 +127,15 @@ theorem circleArcLength_def :
     circleArcLength =
       Measure.map AddCircle.homeomorphCircle' (volume : Measure (AddCircle (2 * π))) :=
   (rfl)
+
+/-- The arclength measure on `Circle` has total mass `2π`. -/
+@[simp]
+theorem circleArcLength_univ : circleArcLength univ = ENNReal.ofReal (2 * π) := by
+  rw [circleArcLength, Measure.map_apply AddCircle.homeomorphCircle'.continuous.measurable
+    MeasurableSet.univ, preimage_univ, AddCircle.measure_univ]
+
+instance isFiniteMeasure_circleArcLength : IsFiniteMeasure circleArcLength :=
+  ⟨circleArcLength_univ ▸ ENNReal.ofReal_lt_top⟩
 
 /-- **Orthogonality of the characters of the circle.** The normalized circle average of an
 integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/

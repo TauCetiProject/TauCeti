@@ -382,10 +382,11 @@ theorem wedgeSector_eq_iff {α ψ : ℝ} {p : ℂ} {u : Circle} {t : ℝ} {k : �
   rw [wedgeSector, Int.floor_eq_iff, le_div_iff₀ hα, div_lt_iff₀ hα, mem_Ico]
 
 /-- **The billiard trajectory in the wedge**, by unfolding: the point `p + t · u` of the unfolded
-line, folded onto the wedge by the fold of its sector. It is the billiard trajectory when `ψ` is a
-polar angle of `p` and the line avoids the vertex (`continuous_wedgeTrajectory`,
-`wedgeTrajectory_eq_add_smul`, `wedgeDirection_eq_directionReflection`); otherwise it is just this
-formula. -/
+line, folded onto the wedge by the fold of its sector. When `ψ ∈ [0, α)` is a
+polar angle of `p` and the line avoids the vertex, it is the billiard trajectory of `(p, u)`
+(`wedgeTrajectory_zero`, `continuous_wedgeTrajectory`, `wedgeTrajectory_eq_add_smul`,
+`wedgeDirection_eq_directionReflection`); for another polar angle `ψ` it is the billiard trajectory
+of the folded state, and otherwise it is just this formula. -/
 def wedgeTrajectory (α ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) : ℂ :=
   sectorFold α (wedgeSector α ψ p u t) (p + t * u)
 
