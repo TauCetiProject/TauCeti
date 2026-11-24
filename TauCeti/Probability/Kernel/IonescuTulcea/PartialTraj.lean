@@ -25,6 +25,8 @@ This file records how the law of the state at a fixed time behaves under Mathlib
   up to time `b` has the same law as the state at time `t` of a trajectory up to time `t`.
 * `ProbabilityTheory.Kernel.partialTraj_map_pathEval_left`: started at a path `y` up to time
   `a ≤ b`, the state at time `a` is `y a`.
+* `ProbabilityTheory.Kernel.partialTraj_succ_map_pathEval`: started at a path up to time `n`, the
+  state at time `n + 1` has law `κ n`.
 -/
 
 public section
@@ -35,7 +37,7 @@ namespace TauCeti.Probability
 
 /-- Evaluation at time `i ≤ n` of a path indexed by the times `Finset.Iic n`. The state spaces
 `X j` may depend on the time `j`. -/
-@[expose] def pathEval {n : ℕ} {X : Iic n → Type*} (i : ℕ) (hi : i ≤ n) (x : Π j, X j) :
+def pathEval {n : ℕ} {X : Iic n → Type*} (i : ℕ) (hi : i ≤ n) (x : Π j, X j) :
     X ⟨i, mem_Iic.2 hi⟩ :=
   x ⟨i, mem_Iic.2 hi⟩
 
@@ -73,5 +75,12 @@ theorem partialTraj_map_pathEval_left {a b : ℕ} (hab : a ≤ b) :
     (partialTraj κ a b).map (pathEval a hab) =
       deterministic (pathEval a le_rfl) (measurable_pathEval a le_rfl) := by
   rw [partialTraj_map_pathEval, partialTraj_self, id_map]
+
+/-- One step of the trajectory: started at a path up to time `n`, the state at time `n + 1` has
+law `κ n`. This is Mathlib's `ProbabilityTheory.Kernel.map_partialTraj_succ_self`, with its
+evaluation map written as `pathEval`. -/
+theorem partialTraj_succ_map_pathEval (n : ℕ) :
+    (partialTraj κ n (n + 1)).map (pathEval (n + 1) le_rfl) = κ n :=
+  map_partialTraj_succ_self n
 
 end ProbabilityTheory.Kernel

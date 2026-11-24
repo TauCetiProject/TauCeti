@@ -207,12 +207,9 @@ private theorem partialTraj_forwardStep_map_eval {β : ℕ → ℝ}
     rw [Kernel.partialTraj_self, Kernel.id_map, alphaBar_zero, noiseKernel_one, Kernel.id_comap]
   | succ t ih =>
     have hb := hβ (t + 1) (by lia)
-    -- Mathlib's `map_partialTraj_succ_self`, with its evaluation map written as `pathEval`.
-    have hstep : (Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) t
-        (t + 1)).map (pathEval (t + 1) le_rfl) = forwardStep β t :=
-      Kernel.map_partialTraj_succ_self t
     -- One more step composes the last noising kernel with the `t`-step kernel.
-    rw [Kernel.partialTraj_succ_eq_comp (Nat.zero_le t), Kernel.map_comp, hstep, forwardStep_def,
+    rw [Kernel.partialTraj_succ_eq_comp (Nat.zero_le t), Kernel.map_comp,
+      Kernel.partialTraj_succ_map_pathEval, forwardStep_def,
       ← Kernel.comp_map _ _ (by fun_prop), ih,
       ← Kernel.comp_deterministic_eq_comap, ← Kernel.comp_deterministic_eq_comap,
       ← Kernel.comp_assoc,
@@ -229,8 +226,7 @@ private theorem forwardPath_map_eq_bind (μ₀ : Measure (EuclideanSpace ℝ ι)
     (forwardPath μ₀ β T).map f = κ ∘ₘ μ₀ := by
   rw [forwardPath_def, Measure.map_comp _ _ hf, hκ, Kernel.coe_comap,
     Measure.bind_map (by fun_prop) (by fun_prop)]
-  -- The constant path at `x` evaluates to `x` at time `0`, by unfolding `pathEval`.
-  rfl
+  simp only [Function.comp_apply, pathEval_apply]
 
 /-- For every sequence `β`, the forward path law starts from the initial law `μ₀`. -/
 @[simp]
