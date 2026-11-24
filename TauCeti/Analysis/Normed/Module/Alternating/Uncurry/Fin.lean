@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.GroupTheory.Perm.Basic
+public import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 
 /-!
 # Alternatization and interior products
@@ -33,6 +34,9 @@ be combined with other permutation sums, such as those defining wedge products.
   and subtraction, complementing Mathlib's `alternatizeUncurryFin_add`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating contractions with
+  `A v` gives the derivative at the identity, in the direction `A`, of pullback of alternating
+  maps, over any nontrivially normed field.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
@@ -156,5 +160,18 @@ theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
   rw [comp_add, alternatizeUncurryFin_add] at hsymm
   rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
     hS]
+
+/-- Alternating the contractions `v ↦ ι_{A v} ω` gives the derivation of `A` on `ω`: the
+derivative at the identity, in the direction `A`, of pullback of alternating maps. -/
+theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (n + 1)]→L[𝕜] F) (A : E →L[𝕜] E) :
+    alternatizeUncurryFin (ω.curryLeft ∘L A) = ω.fderivCompContinuousLinearMap (.id 𝕜 E) A := by
+  ext v
+  have h := congrArg (fun f ↦ f v) (AlternatingMap.alternatizeUncurryFin_curryLeft_comp
+    ω.toAlternatingMap A.toLinearMap)
+  simp only [AlternatingMap.alternatizeUncurryFin_apply, LinearMap.alternatingDerivation_apply] at h
+  rw [alternatizeUncurryFin_apply, fderivCompContinuousLinearMap_apply]
+  refine h.trans (Finset.sum_congr rfl fun i _ ↦ congrArg ω (funext fun j ↦ ?_))
+  simpa using (Function.apply_update (fun j (L : E →L[𝕜] E) ↦ L (v j))
+    (fun _ ↦ ContinuousLinearMap.id 𝕜 E) i A j).symm
 
 end ContinuousAlternatingMap

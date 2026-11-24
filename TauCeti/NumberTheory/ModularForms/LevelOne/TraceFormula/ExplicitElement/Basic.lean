@@ -43,10 +43,14 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
 * `TauCeti.PopaZagier.finite_support_weight_traceDetFiber`: in particular only finitely many
   matrices of a given trace and determinant have nonzero weight.
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_det_nonpos`: the weights of the
+  matrices of a given trace and nonpositive determinant sum to zero.
 * `TauCeti.PopaZagier.abs_le_of_weightᵢ_ne_zero`: the same bound for a matrix of nonzero weight
   in any one of the four sums `T₁`, ..., `T₄`.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
   `c = 0 < a`, the matrix `-M` has weight zero, so `simp` computes coefficients as `weight M / 12`.
+* `TauCeti.PopaZagier.weight_upperTriangular`, `TauCeti.PopaZagier.sum_Ico_weight_upperTriangular`:
+  the weight of an upper-triangular matrix `(a b; 0 d)` with `0 < a` and its sum over `0 ≤ b < d`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
 * `TauCeti.PopaZagier.weight_smul`: the weight of eq. (15) is invariant under positive scaling.
 * `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
@@ -340,6 +344,16 @@ theorem finite_support_weight_traceDetFiber (t n : ℤ) :
   have := abs_le_of_weight_ne_zero hM i j
   rwa [(mem_traceDetFiber.mp M.property).2] at this
 
+/-- The weights of the matrices of trace `t` and determinant `n ≤ 0` sum to zero: every matrix of
+nonzero weight has positive determinant (`det_pos_of_weight_ne_zero`). -/
+theorem finsum_weight_traceDetFiber_eq_zero_of_det_nonpos {t n : ℤ} (hn : n ≤ 0) :
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
+  finsum_eq_zero_of_forall_eq_zero fun M ↦ by
+    by_contra h
+    have := det_pos_of_weight_ne_zero h
+    rw [(mem_traceDetFiber.mp M.property).2] at this
+    omega
+
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
     0 < M 1 0 ∨ M 1 0 = 0 ∧ 0 < M 0 0 := by
@@ -355,6 +369,57 @@ theorem weight_neg_eq_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (hM : 0 < M 1 0 ∨ 
   have := pos_or_eq_zero_and_pos_of_weight_ne_zero h
   simp only [Matrix.neg_apply] at this
   lia
+
+/-- The unnormalised Popa–Zagier weight of an upper-triangular matrix `(a b; 0 d)` with `0 < a`.
+The four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
+the explicit Hecke element. -/
+theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) :
+    weight !![a, b; 0, d] =
+      if 0 < b ∧ b < d - a then 12
+      else if a = d ∧ b = 0 then 2
+      else if 0 ≤ b ∧ b ≤ d - a then 6 else 0 := by
+  rw [weight]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, Fin.isValue]
+  grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
+
+/-- For `a > 0`, summing the Popa–Zagier weights of the upper-triangular matrices `(a b; 0 d)` over
+`0 ≤ b < d` gives `12 (d - a)` when `a < d`, `2` when `a = d`, and `0` when `d < a`. -/
+theorem sum_Ico_weight_upperTriangular (a d : ℤ) (ha : 0 < a) :
+    ∑ b ∈ Finset.Ico 0 d, weight !![a, b; 0, d] =
+      if a < d then 12 * (d - a) else if a = d then 2 else 0 := by
+  rcases lt_trichotomy a d with had | rfl | hda
+  · simp only [had, ↓reduceIte]
+    have hsub : Finset.Icc 0 (d - a) ⊆ Finset.Ico 0 d := fun b hb ↦ by
+      rw [Finset.mem_Icc] at hb
+      exact Finset.mem_Ico.mpr ⟨hb.1, by omega⟩
+    rw [← Finset.sum_subset hsub]
+    · have key : ∀ b ∈ Finset.Icc 0 (d - a), weight !![a, b; 0, d] =
+          12 - (if b = 0 then 6 else 0) - (if b = d - a then 6 else 0) := fun b hb ↦ by
+        rw [Finset.mem_Icc] at hb
+        rw [weight_upperTriangular _ _ _ ha]
+        split_ifs <;> omega
+      rw [Finset.sum_congr rfl key, Finset.sum_sub_distrib, Finset.sum_sub_distrib,
+        Finset.sum_ite_eq', Finset.sum_ite_eq', Finset.sum_const, Int.card_Icc]
+      simp only [Finset.mem_Icc, le_refl, sub_nonneg.mpr had.le, and_self, ite_true, nsmul_eq_mul]
+      rw [Int.toNat_of_nonneg (by omega)]
+      ring
+    · intro b _ hb
+      rw [Finset.mem_Icc] at hb
+      rw [weight_upperTriangular _ _ _ ha]
+      split_ifs <;> omega
+  · simp only [lt_irrefl, ↓reduceIte]
+    rw [Finset.sum_eq_single 0]
+    · rw [weight_upperTriangular _ _ _ ha]
+      simp
+    · intro b _ hb0
+      rw [weight_upperTriangular _ _ _ ha]
+      split_ifs <;> omega
+    · simp [ha]
+  · simp only [hda.not_gt, hda.ne', ↓reduceIte]
+    refine Finset.sum_eq_zero fun b _ ↦ ?_
+    rw [weight_upperTriangular _ _ _ ha]
+    split_ifs <;> omega
 
 end PopaZagier
 

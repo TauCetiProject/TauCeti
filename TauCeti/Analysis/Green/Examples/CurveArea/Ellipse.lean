@@ -18,7 +18,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 # Signed ellipse area
 
 The ellipse `(a cos t,b sin t)` has signed-area circulation `πab`. Nonzero axes identify it
-with the invertible affine image of the unit circle, whose determinant is `ab`.
+with the invertible affine image of the unit circle, whose determinant is `ab`. Its trace is a
+circle exactly when the axes have equal length, `|a| = |b|`.
 
 Its length over one traversal, as metric total variation, is the integral of its speed, and
 exchanging the axes preserves the speed after reversing the angle about `π / 4`.
@@ -124,6 +125,14 @@ theorem ellipseLinearMap_I (a b : ℝ) :
     Matrix.cons_val_zero] using
     Complex.basisOneI.constr_basis ℝ ![(a : ℂ), (b : ℂ) * Complex.I] 1
 
+/-- The coordinate formula for the diagonal axis map. -/
+theorem ellipseLinearMap_apply (a b : ℝ) (z : ℂ) :
+    ellipseLinearMap a b z = (a * z.re : ℝ) + (b * z.im : ℝ) * Complex.I := by
+  rw [LinearMap.apply_eq_re_smul_one_add_im_smul_I, ellipseLinearMap_one, ellipseLinearMap_I]
+  simp only [Complex.real_smul]
+  push_cast
+  ring
+
 /-- The diagonal axis map has determinant `ab`. -/
 theorem det_ellipseLinearMap (a b : ℝ) : (ellipseLinearMap a b).det = a * b := by
   rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
@@ -161,19 +170,20 @@ theorem ellipseCoordinates_I (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
   simpa only [ellipseLinearMap_I, LinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_toLinearEquiv] using h
 
+/-- The coordinate formula for the ellipse coordinates. -/
+theorem ellipseCoordinates_apply (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) (z : ℂ) :
+    ellipseCoordinates a b ha hb z = (a * z.re : ℝ) + (b * z.im : ℝ) * Complex.I := by
+  have h := congrArg (fun L : ℂ →ₗ[ℝ] ℂ ↦ L z) (ellipseCoordinates_toLinearMap a b ha hb)
+  simpa only [ellipseLinearMap_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv] using h
+
 /-- The ellipse is the actual invertible affine image of the unit-circle parameterization. -/
 theorem ellipse_eq_affine_circle (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
     ellipse a b = affineMap (ellipseCoordinates a b ha hb) 0 ∘ circleMap 0 1 := by
   ext t
-  let A := ellipseCoordinates a b ha hb
-  have he (z : ℂ) : A z = z.re • A 1 + z.im • A Complex.I :=
-    LinearMap.apply_eq_re_smul_one_add_im_smul_I A.toLinearEquiv.toLinearMap z
   simp only [Function.comp_apply, affineMap_apply, add_zero, ContinuousLinearEquiv.coe_coe]
-  rw [he, ellipseCoordinates_one, ellipseCoordinates_I, circleMap_zero_re, circleMap_zero_im,
-    ellipse_apply]
-  simp only [Complex.real_smul]
-  push_cast
-  ring
+  rw [ellipseCoordinates_apply, circleMap_zero_re, circleMap_zero_im, ellipse_apply]
+  simp only [one_mul]
 
 /-- The ellipse trace is exactly the image of the unit sphere under its axis coordinates. -/
 theorem image_ellipse_uIcc (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
@@ -181,6 +191,53 @@ theorem image_ellipse_uIcc (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
       ellipseCoordinates a b ha hb '' sphere (0 : ℂ) 1 := by
   rw [ellipse_eq_affine_circle a b ha hb, image_comp, Complex.image_circleMap_uIcc]
   simp only [abs_one, affineMap_apply, add_zero, ContinuousLinearEquiv.coe_coe]
+
+/-- The ellipse coordinates scale every norm by `|a|` when the axes have equal length. -/
+theorem norm_ellipseCoordinates_of_abs_eq_abs {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
+    (hab : |a| = |b|) (z : ℂ) : ‖ellipseCoordinates a b ha hb z‖ = |a| * ‖z‖ := by
+  have hsq : b ^ 2 = a ^ 2 := (sq_eq_sq_iff_abs_eq_abs b a).2 hab.symm
+  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow, sq_abs, ellipseCoordinates_apply,
+    Complex.sq_norm, Complex.sq_norm, Complex.normSq_add_mul_I, Complex.normSq_apply]
+  linear_combination z.im ^ 2 * hsq
+
+/-- **The circular ellipses.** The trace of an ellipse with nonzero axes `a` and `b` is a circle
+of positive radius exactly when `|a| = |b|`. -/
+theorem exists_image_ellipse_uIcc_eq_sphere_iff {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (∃ c : ℂ, ∃ r : ℝ, 0 < r ∧ ellipse a b '' uIcc 0 (2 * Real.pi) = sphere c r) ↔
+      |a| = |b| := by
+  set A := ellipseCoordinates a b ha hb
+  rw [image_ellipse_uIcc a b ha hb]
+  constructor
+  · rintro ⟨c, r, -, h⟩
+    -- The four vertices `±a` and `±b i` lie on the circle, which forces `c = 0` and `a² = r² = b²`.
+    have hmem (z : ℂ) (hz : ‖z‖ = 1) : (a * z.re - c.re) ^ 2 + (b * z.im - c.im) ^ 2 = r ^ 2 := by
+      have : A z ∈ sphere c r := h ▸ mem_image_of_mem A (mem_sphere_zero_iff_norm.2 hz)
+      rw [← mem_sphere_iff_norm.1 this, Complex.sq_norm, Complex.normSq_apply,
+        ellipseCoordinates_apply, ← Complex.mk_eq_add_mul_I, Complex.sub_re, Complex.sub_im]
+      ring
+    have h₁ := hmem 1 (by simp)
+    have h₂ := hmem (-1) (by simp)
+    have h₃ := hmem Complex.I (by simp)
+    have h₄ := hmem (-Complex.I) (by simp)
+    norm_num at h₁ h₂ h₃ h₄
+    have hre : c.re = 0 := by
+      have : a * c.re = 0 := by linarith
+      simpa [ha] using this
+    have him : c.im = 0 := by
+      have : b * c.im = 0 := by linarith
+      simpa [hb] using this
+    rw [hre, him] at h₁ h₃
+    exact (sq_eq_sq_iff_abs_eq_abs a b).1 (by linarith)
+  · intro hab
+    refine ⟨0, |a|, abs_pos.2 ha, Set.ext fun y ↦ ⟨?_, fun hy ↦ ?_⟩⟩
+    · rintro ⟨z, hz, rfl⟩
+      rw [mem_sphere_zero_iff_norm] at hz ⊢
+      rw [norm_ellipseCoordinates_of_abs_eq_abs ha hb hab, hz, mul_one]
+    · refine ⟨A.symm y, ?_, A.apply_symm_apply y⟩
+      rw [mem_sphere_zero_iff_norm] at hy ⊢
+      have := norm_ellipseCoordinates_of_abs_eq_abs ha hb hab (A.symm y)
+      rw [A.apply_symm_apply, hy] at this
+      exact (mul_eq_left₀ (abs_ne_zero.2 ha)).1 this.symm
 
 /-- Positive axes have winding number one at the center, by actual AC proximity to a circle. -/
 theorem windingNumber_ellipse_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :

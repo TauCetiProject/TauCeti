@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -62,6 +63,8 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 * `TauCeti.continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq`: such integrals are
   continuous in `(h, j)` for continuous weights.
+* `TauCeti.mem_sphericalPendulumTurningPointDomain_of_le_one`: the circles of radius `r ≤ 1` about
+  the focus–focus value `(1, 0)` run above the curve of relative equilibria off the axis `j = 0`.
 
 ## References
 
@@ -95,6 +98,23 @@ theorem mem_sphericalPendulumTurningPointDomain_of_sq_lt {h j : ℝ} (hj : j ≠
     rw [sphericalPendulumEffectivePotential_def,
       show j ^ 2 / (2 * (1 - (0 : ℝ) ^ 2)) + 0 = j ^ 2 / 2 by ring]
     linarith⟩
+
+open Real in
+/-- The counterclockwise circles of radius `0 < r ≤ 1` about the focus–focus value `(1, 0)` run
+above the curve of relative equilibria off the axis `j = 0`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_le_one {r t : ℝ} (hr : 0 < r) (hr₂ : r ≤ 1)
+    (ht : sin t ≠ 0) : (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain := by
+  refine mem_sphericalPendulumTurningPointDomain_of_sq_lt (mul_ne_zero hr.ne' ht) ?_
+  -- `2 (1 + r cos t) - r² sin² t = (1 + r cos t)² + 1 - r²`, and `cos t > -1` off the axis.
+  have hc : 0 < 1 + cos t := by
+    rcases (neg_one_le_cos t).lt_or_eq with hc | hc
+    · linarith
+    · exact absurd (by linear_combination sin_sq_add_cos_sq t + (cos t - 1) * hc)
+        (pow_ne_zero 2 ht)
+  have hrc : 0 < r * (1 + cos t) := mul_pos hr hc
+  have key : 2 * (1 + r * cos t) - (r * sin t) ^ 2 = (1 + r * cos t) ^ 2 + (1 - r ^ 2) := by
+    linear_combination -r ^ 2 * sin_sq_add_cos_sq t
+  nlinarith [mul_pos hrc (by linarith : 0 < 2 - r + r * cos t)]
 
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
 momentum `j`: the infimum of the heights `q₃` of the points of the fibre `F⁻¹(h, j)` of the
