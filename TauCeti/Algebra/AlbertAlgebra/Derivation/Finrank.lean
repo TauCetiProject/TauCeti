@@ -329,7 +329,7 @@ variable (R) in
 skew action `f₀` on the slot `0`. -/
 private noncomputable def kernelCoord :
     LinearMap.ker (frameMap R) →ₗ[R] ({p : Fin 8 × Fin 8 // p.1 < p.2} → R) where
-  toFun D p := β (slotMap D.1 0 (octonionBasis R p.1.1)) (octonionBasis R p.1.2)
+  toFun D p := β (slotMap D.val 0 (octonionBasis R p.val.1)) (octonionBasis R p.val.2)
   map_add' D E := by
     ext p
     simp [slotMap]
@@ -339,26 +339,26 @@ private noncomputable def kernelCoord :
 
 private theorem kernelCoord_apply (D : LinearMap.ker (frameMap R))
     (p : {p : Fin 8 × Fin 8 // p.1 < p.2}) :
-    kernelCoord R D p = β (slotMap D.1 0 (octonionBasis R p.1.1)) (octonionBasis R p.1.2) :=
+    kernelCoord R D p = β (slotMap D.val 0 (octonionBasis R p.val.1)) (octonionBasis R p.val.2) :=
   (rfl)
 
 private theorem kernelCoord_injective : Function.Injective (kernelCoord R) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro D hD
-  have hframe : frameMap R D.1 = 0 := LinearMap.mem_ker.mp D.2
+  have hframe : frameMap R D.val = 0 := LinearMap.mem_ker.mp D.property
   set e := octonionBasis R
   have hsymm (x y : Octonion R) : β x y = β y x := QuadraticMap.associated_isSymm R _ x y
-  have hpq (p q : Fin 8) : β (slotMap D.1 0 (e p)) (e q) = 0 := by
+  have hpq (p q : Fin 8) : β (slotMap D.val 0 (e p)) (e q) = 0 := by
     rcases lt_trichotomy p q with hlt | rfl | hlt
     · exact congrFun hD ⟨(p, q), hlt⟩
     · have h := slotMap_skew hframe 0 (e p) (e p)
       rw [hsymm (e p), ← two_mul] at h
       simpa [← mul_assoc] using congrArg (⅟(2 : R) * ·) h
     · have h := slotMap_skew hframe 0 (e q) (e p)
-      have hqp : β (slotMap D.1 0 (e q)) (e p) = 0 := congrFun hD ⟨(q, p), hlt⟩
+      have hqp : β (slotMap D.val 0 (e q)) (e p) = 0 := congrFun hD ⟨(q, p), hlt⟩
       rwa [hqp, zero_add, hsymm] at h
-  have hlin (p : Fin 8) : β (slotMap D.1 0 (e p)) = 0 := e.ext fun q => by simpa using hpq p q
-  have hf : slotMap D.1 0 = 0 := e.ext fun p => by
+  have hlin (p : Fin 8) : β (slotMap D.val 0 (e p)) = 0 := e.ext fun q => by simpa using hpq p q
+  have hf : slotMap D.val 0 = 0 := e.ext fun p => by
     rw [LinearMap.zero_apply]
     exact Octonion.nondegenerate_associated_normQuadraticForm.1 _ fun y => by
       rw [hlin p, LinearMap.zero_apply]

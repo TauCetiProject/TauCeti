@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -16,7 +16,7 @@ On a nontrivial finite-dimensional real normed space `E` carrying a Borel additi
 the singular radial kernel `x ↦ ‖x‖⁻¹` belongs to `TauCeti.MemLpLoc p U` on a neighbourhood `U`
 of the origin if and only if `p < Module.finrank ℝ E` (`TauCeti.memLpLoc_norm_inv_iff_lt_finrank`).
 
-This characterization is kept apart from `TauCeti/MeasureTheory/Function/MemLpLoc/Basic.lean`
+This characterization is kept apart from `TauCeti/MeasureTheory/Function/MemLpLoc.lean`
 because its proof uses the radial integral bounds in `TauCeti.MeasureTheory.Integral.NormRpow`.
 -/
 
@@ -30,10 +30,12 @@ namespace TauCeti
 /-- On a nontrivial finite-dimensional real normed space, `x ↦ ‖x‖⁻¹` belongs to `MemLpLoc p U` on
 a neighbourhood `U` of the origin if and only if `p < Module.finrank ℝ E`. -/
 theorem memLpLoc_norm_inv_iff_lt_finrank {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [Nontrivial E] [MeasureSpace E] [BorelSpace E]
-    [(volume : Measure E).IsAddHaarMeasure] {p : ℝ≥0∞} {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
-    MemLpLoc p U (fun x : E => ‖x‖⁻¹) ↔ p < Module.finrank ℝ E := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK => hK.memLp_norm_inv_restrict h⟩
+    [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {U : Set E}
+    (hU : U ∈ 𝓝 (0 : E)) :
+    MemLpLoc p U (fun x : E => ‖x‖⁻¹) μ ↔ p < Module.finrank ℝ E := by
+  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
+    hK.isBounded.memLp_norm_inv_restrict h⟩
   by_contra! hp
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact not_memLp_norm_inv_closedBall hε hp (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))

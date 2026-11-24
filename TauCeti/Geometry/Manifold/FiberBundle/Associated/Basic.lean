@@ -144,7 +144,7 @@ theorem contMDiff_totalSpaceMk_mk [ContMDiffSMul IG IF n G F] :
     ContMDiff ((IB.prod IG).prod IF) (IB.prod IF) n fun x : ManifoldTotalSpace G P × F ↦
       ManifoldTotalSpace.homeomorph F (AssociatedBundle G P F)
         ⟨((ManifoldTotalSpace.homeomorph G P).symm x.1).proj,
-          mk G ((ManifoldTotalSpace.homeomorph G P).symm x.1).2 x.2⟩ :=
+          mk G ((ManifoldTotalSpace.homeomorph G P).symm x.1).snd x.2⟩ :=
   ContMDiff.totalSpaceMk_associatedBundleMk
     (contMDiff_fst.congr fun x ↦ by rw [TotalSpace.eta, Homeomorph.apply_symm_apply])
     contMDiff_snd

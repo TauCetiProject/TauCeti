@@ -14,7 +14,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 The planar local Sobolev classes `TauCeti.MemWkpLoc p U k` have the sheaf property:
 membership can be checked near each point, and membership on every member of an open cover
 gives membership on the union (the corresponding locality results for `TauCeti.MemLpLoc` live in
-`TauCeti.MeasureTheory.Function.MemLpLoc.Basic`). Concretely, for an arbitrary set `U ⊆ ℂ`, a
+`TauCeti.MeasureTheory.Function.MemLpLoc`). Concretely, for an arbitrary set `U ⊆ ℂ`, a
 function lies in the class on `U` exactly when every point of `U` has a neighbourhood within `U` on
 which it lies in the class. The set `U` need not be open: for a set reaching the real axis, such as
 a relatively open subset of the closed upper half-plane, the neighbourhoods are relative ones and
@@ -37,7 +37,7 @@ derivative to supply the completeness that the weak-derivative predicate demands
 ## Implementation notes
 
 Order-zero locality (`TauCeti.memLpLoc_iff_forall_inter`, in
-`TauCeti.MeasureTheory.Function.MemLpLoc.Basic`) handles the base case. At positive order the local
+`TauCeti.MeasureTheory.Function.MemLpLoc`) handles the base case. At positive order the local
 weak derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`, which
 is covered by the interiors of the sets `U ∩ O i`. The glued field is only determined almost
 everywhere on that interior, and the class on `U` also bounds it on the part of `U` outside its
@@ -118,7 +118,7 @@ theorem memWkpLoc_iff_locally [CompleteSpace F] {k : ℕ} :
     MemWkpLoc p U k f ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemWkpLoc p V k f := by
   refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩, fun h => ?_⟩
   have hO : ∀ x : U, ∃ O : Opens ℂ, (x : ℂ) ∈ O ∧ MemWkpLoc p (U ∩ O) k f := fun x => by
-    obtain ⟨V, hV, hfV⟩ := h x x.2
+    obtain ⟨V, hV, hfV⟩ := h x x.property
     obtain ⟨O, hO, hxO, hOV⟩ := mem_nhdsWithin.1 hV
     exact ⟨⟨O, hO⟩, hxO, hfV.mono fun z hz => hOV ⟨hz.2, hz.1⟩⟩
   choose O hxO hfO using hO

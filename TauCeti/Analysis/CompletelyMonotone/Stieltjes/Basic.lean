@@ -112,7 +112,7 @@ theorem integrable_stieltjesWeight_of_integrable_div {μ : Measure ℝ≥0} {t :
     have hM2 : 1 ≤ max 1 t⁻¹ * t := by
       calc (1 : ℝ) = t⁻¹ * t := (inv_mul_cancel₀ ht.ne').symm
         _ ≤ max 1 t⁻¹ * t := by gcongr; exact le_max_right _ _
-    have hx : (0 : ℝ) ≤ x := x.2
+    have hx : (0 : ℝ) ≤ x := x.property
     rw [stieltjesWeight_apply, Real.norm_of_nonneg (by positivity), ← sub_nonneg]
     have : max 1 t⁻¹ * (t / (t + x)) - (1 + (x : ℝ))⁻¹ =
         (max 1 t⁻¹ * t * (1 + x) - (t + x)) / ((t + x) * (1 + x)) := by

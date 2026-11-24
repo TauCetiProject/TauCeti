@@ -52,7 +52,8 @@ variable (f : Γ.Hom Δ)
 /-- If the chosen darts of the source are exactly the darts sent to chosen darts of the target,
 pushing forward the chain of a dart gives the chain of its image. -/
 theorem mapDomain_dartChain (hf : ∀ e, f.mapE e ∈ O' ↔ e ∈ O) (e : Γ.E) :
-    Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.1, (hf d.1).2 d.2⟩ : O')) (Γ.dartChain O R e) =
+    Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.val, (hf d.val).2 d.property⟩ : O'))
+        (Γ.dartChain O R e) =
       Δ.dartChain O' R (f.mapE e) := by
   rw [dartChain_eq_subtypeDomain, dartChain_eq_subtypeDomain]
   exact (Finsupp.mapDomain_subtypeDomain hf _).trans (by simp [Finsupp.mapDomain_sub])
@@ -60,7 +61,8 @@ theorem mapDomain_dartChain (hf : ∀ e, f.mapE e ∈ O' ↔ e ∈ O) (e : Γ.E)
 /-- If the chosen darts of the source are exactly the darts sent to chosen darts of the target,
 pushing forward the chain of a path gives the chain of its image. -/
 theorem mapDomain_chain (hf : ∀ e, f.mapE e ∈ O' ↔ e ∈ O) {a b : Γ.V} (p : Γ.Path a b) :
-    Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.1, (hf d.1).2 d.2⟩ : O')) (Path.chain Γ O R p) =
+    Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.val, (hf d.val).2 d.property⟩ : O'))
+        (Path.chain Γ O R p) =
       Path.chain Δ O' R (f.toPrefunctor.mapPath p) := by
   induction p with
   | nil => simp
@@ -80,7 +82,8 @@ of the image of a reduced closed path is the pushforward of its cycle class. -/
 theorem coe_cycleClass_map (f : Γ.Hom Δ) (hO : Γ.IsOrientation O) (hO' : Δ.IsOrientation O')
     (hf : Set.MapsTo f.mapE O O') (h : f.mapV v = w) (g : PathGroup Γ v) :
     ((cycleClass hO' R (map f h g)).toAdd : O' →₀ R) =
-      Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.1, hf d.2⟩ : O')) (cycleClass hO R g).toAdd := by
+      Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.val, hf d.property⟩ : O')) (cycleClass hO R g).toAdd
+          := by
   -- Substitute `w` by the endpoint of the image path, so that the transport disappears.
   have h' : f.toPrefunctor.obj v = w := h
   subst h'
@@ -100,7 +103,7 @@ theorem coe_abelianizationEquivCycle_map (T : Γ.SpanningTree) (T' : Δ.Spanning
     (x : Additive (Group.Abelianization (PathGroup Γ v))) :
     (T'.abelianizationEquivCycle w hO'
         ((Group.Abelianization.map (PathGroup.map f h)).toAdditive x) : O' →₀ ℤ) =
-      Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.1, hf d.2⟩ : O'))
+      Finsupp.mapDomain (fun d : O ↦ (⟨f.mapE d.val, hf d.property⟩ : O'))
         (T.abelianizationEquivCycle v hO x : O →₀ ℤ) := by
   -- Every element of the abelianization is the class of a reduced closed path.
   obtain ⟨y, rfl⟩ := Additive.ofMul.surjective x

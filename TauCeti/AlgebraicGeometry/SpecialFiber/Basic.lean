@@ -26,7 +26,17 @@ valuation ring, is its generic point or its closed point, which coincide when th
 `TauCeti.AlgebraicGeometry.Fibers`, a property of morphisms invariant under isomorphism therefore
 holds on every fibre of a scheme over such a ring exactly when it holds on the generic and the
 special fibre (`TauCeti.forall_fiberToSpecResidueField_iff`). This turns
-fibrewise criteria, such as the one for nodal curves, into conditions on these two fibres.
+fibrewise criteria, such as the one for nodal curves, into conditions on these two fibres. The same
+dichotomy identifies the image of `genericFiberι` over a non-field base with the complement of the
+special fibre (`TauCeti.range_genericFiberι_eq_setOf_ne_closedPoint`,
+`TauCeti.range_genericFiberι_of_isDiscreteValuationRing`), showing that any point outside the
+special fibre witnesses nonemptiness of the generic fibre
+(`AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint`).
+
+For a local homomorphism `φ : R →+* R'` of local rings, the residue field map makes the square of
+spectra `Spec κ(R') ⟶ Spec R' ⟶ Spec R = Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R` commute
+(`TauCeti.specMap_residue_comp_specMap`), so the special fibre over `R'` lies over the special fibre
+over `R`.
 -/
 
 public section
@@ -198,5 +208,50 @@ theorem forall_fiberToSpecResidueField_iff (P : MorphismProperty Scheme.{u}) [P.
   exacts [genericPoint_eq_bot_of_affine R ▸ hη.mpr hg, hs.mpr hc]
 
 end DimensionLEOne
+
+/-- **The generic fibre is the complement of the special fibre.** Over a non-field local domain `R`
+of dimension at most one with fraction ring `K`, `Set.range (genericFiberι R K toBase)` is the
+complement of the special fibre. -/
+theorem range_genericFiberι_eq_setOf_ne_closedPoint (R K : Type u) [CommRing R] [IsDomain R]
+    [IsLocalRing R] [Ring.DimensionLEOne R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+    (hR : maximalIdeal R ≠ ⊥) {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = {x : X | toBase x ≠ closedPoint R} := by
+  rw [range_genericFiberι]; ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, genericPoint_eq_bot_of_affine]
+  exact ⟨fun h hc ↦ hR (congrArg PrimeSpectrum.asIdeal (h.symm.trans hc)).symm, fun h ↦
+    (IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top (toBase x)).resolve_right h⟩
+
+/-- Over a DVR `R` with fraction ring `K`, the range of `genericFiberι` is the complement of the
+special fibre. -/
+theorem range_genericFiberι_of_isDiscreteValuationRing (R K : Type u) [CommRing R] [IsDomain R]
+    [IsDiscreteValuationRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = {x : X | toBase x ≠ closedPoint R} :=
+  range_genericFiberι_eq_setOf_ne_closedPoint R K (IsDiscreteValuationRing.not_a_field R) toBase
+
+/-- If a scheme over a local domain `R` of dimension at most one has a point outside the special
+fibre, then its generic fibre `X_K` over a fraction ring `K` of `R` is nonempty. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint
+    {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R] [IsDomain R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+    (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+    {x : X} (hx : toBase x ≠ closedPoint R) : Nonempty (genericFiber R K toBase).left := by
+  obtain ⟨y, -⟩ : x ∈ Set.range (genericFiberι R K toBase) := by
+    rw [range_genericFiberι, Set.mem_preimage, Set.mem_singleton_iff,
+      genericPoint_eq_bot_of_affine]
+    exact (IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top (toBase x)).resolve_right hx
+  exact ⟨y⟩
+
+/-- For a local homomorphism `φ : R →+* R'` of local rings, `Spec κ(R') ⟶ Spec R' ⟶ Spec R` is
+`Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R`: the special fibre over `R'` lies over the special fibre over
+`R`. -/
+@[reassoc]
+theorem specMap_residue_comp_specMap {R R' : Type u} [CommRing R] [CommRing R'] [IsLocalRing R]
+    [IsLocalRing R'] (φ : R →+* R') [IsLocalHom φ] :
+    Spec.map (CommRingCat.ofHom (residue R')) ≫ Spec.map (CommRingCat.ofHom φ) =
+      Spec.map (CommRingCat.ofHom (ResidueField.map φ)) ≫
+        Spec.map (CommRingCat.ofHom (residue R)) := by
+  rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    ResidueField.map_comp_residue]
 
 end TauCeti

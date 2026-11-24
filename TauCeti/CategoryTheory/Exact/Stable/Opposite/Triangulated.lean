@@ -74,38 +74,38 @@ private noncomputable def mapStableConflationTriangleOpIso
   let hS_op : E.op.Conflation S.op := (E.op_conflation_op_iff S).mpr hS
   rw [hE.op.stableConflationTriangle_eq_mk S.op hS_op, hE.stableConflationTriangle_eq_mk S hS]
   have hX₁' : (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₃) =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₁)) =
       Opposite.op (E.projectiveStableFunctor.obj S.X₁) :=
     E.projectiveStableOpFunctor_obj hE.projective_iff_injective (Opposite.op S.X₁)
   have hX₂' : (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₂) =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₂)) =
       Opposite.op (E.projectiveStableFunctor.obj S.X₂) :=
     E.projectiveStableOpFunctor_obj hE.projective_iff_injective (Opposite.op S.X₂)
   have hX₃' : (E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₁) =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₃)) =
       Opposite.op (E.projectiveStableFunctor.obj S.X₃) :=
     E.projectiveStableOpFunctor_obj hE.projective_iff_injective (Opposite.op S.X₃)
   have hX₁ : ((E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₃)).unop =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₁))).unop =
       E.projectiveStableFunctor.obj S.X₁ :=
     congrArg Opposite.unop hX₁'
   have hX₂ : ((E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₂)).unop =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₂))).unop =
       E.projectiveStableFunctor.obj S.X₂ :=
     congrArg Opposite.unop hX₂'
   have hX₃ : ((E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-      (E.op.projectiveStableFunctor.obj S.op.X₁)).unop =
+      (E.op.projectiveStableFunctor.obj (Opposite.op S.X₃))).unop =
       E.projectiveStableFunctor.obj S.X₃ :=
     congrArg Opposite.unop hX₃'
   refine Triangle.isoMk _ _ (eqToIso hX₁) (eqToIso hX₂) (eqToIso hX₃) ?_ ?_ ?_
   · dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse, Functor.mapTriangle]
-    rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.op.g]
+    rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.f.op]
     simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, Category.assoc,
       eqToHom_trans]
     dsimp [ShortComplex.op]
     simp
   · dsimp [triangleOpEquivalence, TriangleOpEquivalence.inverse, Functor.mapTriangle]
-    rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.op.f]
+    rw [E.projectiveStableOpFunctor_map hE.projective_iff_injective S.g.op]
     simp only [unop_comp, Quiver.Hom.unop_op, eqToHom_unop, Category.assoc,
       eqToHom_trans]
     dsimp [ShortComplex.op]
@@ -124,9 +124,10 @@ private noncomputable def mapStableConflationTriangleOpIso
         (E.projectiveStableOpFunctor hE.projective_iff_injective).map
             (E.op.projectiveStableFunctor.map (hE.op.connectingMap hS_op)) ≫
           (E.projectiveStableOpFunctor hE.projective_iff_injective).map
-            (eqToHom (hE.op.stableSuspension_obj_projectiveStableFunctor_obj S.op.X₁).symm) ≫
+            (eqToHom
+              (hE.op.stableSuspension_obj_projectiveStableFunctor_obj (Opposite.op S.X₃)).symm) ≫
           hE.stableSuspensionCompProjectiveStableOpFunctorIso.hom.app
-            (E.op.projectiveStableFunctor.obj S.op.X₁) =
+            (E.op.projectiveStableFunctor.obj (Opposite.op S.X₃)) =
         eqToHom hX₁' ≫
           (hE.stableConnectingMapOp hS).op ≫
           hE.enoughProjectives.stableLoop.op.map (eqToHom hX₃'.symm) :=
@@ -139,7 +140,7 @@ private noncomputable def mapStableConflationTriangleOpIso
     -- Expand the opposite-shift unit and cancel the bridge to the original shift.
     rw [opShiftFunctorEquivalence_unitIso_inv_app
       ((E.projectiveStableOpFunctor hE.projective_iff_injective).obj
-        (E.op.projectiveStableFunctor.obj S.op.X₁)) 1 (-1) (by simp)]
+        (E.op.projectiveStableFunctor.obj (Opposite.op S.X₃))) 1 (-1) (by simp)]
     simp only [unop_comp, Quiver.Hom.unop_op, Functor.op_map, eqToHom_unop,
       Functor.map_comp, Category.assoc]
     rw [← Functor.map_comp_assoc _

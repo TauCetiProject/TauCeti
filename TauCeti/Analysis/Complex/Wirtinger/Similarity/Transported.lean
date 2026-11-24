@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Local.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
-import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 

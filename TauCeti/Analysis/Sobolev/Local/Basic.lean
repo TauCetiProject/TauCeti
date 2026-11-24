@@ -5,21 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
-# Planar vector-valued local Sobolev classes
+# Local vector-valued Sobolev classes on planar domains
 
 `TauCeti.MemWkpLoc p U k f` requires iterated weak derivatives through order `k` on
-`interior U ⊆ ℂ`, with `Lᵖ` bounds (`TauCeti.MemLpLoc`, defined in
-`TauCeti.MeasureTheory.Function.MemLpLoc.Basic`) on every compact subset of `U` itself (the
-first-order local Sobolev class on open subsets of arbitrary real normed spaces is in
-`TauCeti.Analysis.Sobolev.Local.FirstOrder`). For half-discs these
+`interior U`, with `Lᵖ` bounds on every compact subset of `U` itself, in the sense of the local
+`Lᵖ` class `TauCeti.MemLpLoc` for Lebesgue measure on the plane. For half-discs these
 bounds reach the real axis, while test functions stay in the interior. On open sets this is
 the usual local Sobolev class. Derivatives take values in iterated continuous linear maps,
 rather than scalar jets.
@@ -31,18 +31,19 @@ off the subset), linearity, continuous-linear composition, pairing, pointwise pr
 operator fields, decreasing the integrability exponent, and decreasing the derivative order.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
 and smooth maps on the whole plane are in every class on every set.
-Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
-`u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
+Conversely, let `U` agree almost everywhere with its interior, as open sets and half-discs do.
+If `g` is `Cᵏ` on the interior of `U` and agrees almost everywhere on `U` with
+`u ∈ MemWkpLoc p U (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
-`iteratedFDeriv ℝ k g ∈ MemWkpLoc p Ω m` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`).
+`iteratedFDeriv ℝ k g ∈ MemWkpLoc p U m` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`).
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), and since the real axis is null, local
 `Lᵖ` membership there is detected on the upper halves `W ∩ {0 < im}`
 (`TopologicalSpace.Opens.upperHalf`) of the open `W` with compact closure inside `Ω`
 (`TauCeti.memLpLoc_inter_setOf_im_nonneg_iff`). No boundary trace is asserted here;
-extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`.
-Every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in `MemWkpLoc p Ω k`; at order
-one, it is locally `Lᵖ`.
+extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
+domains, every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in
+`MemWkpLoc p Ω k`; at order one, it is locally `Lᵖ`.
 `TauCeti.WeakDerivChainLe` compares the `Lᵖ` norms of two maps and, recursively, of every pair of
 their weak derivatives through a given order.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
@@ -59,7 +60,6 @@ weak-derivative result it uses.
 public noncomputable section
 
 open MeasureTheory TopologicalSpace
-open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -396,25 +396,34 @@ end WeakDerivChainLe
 
 variable {m : ℕ} {u : ℂ → F}
 
-/-- **The derivative of a `C¹` representative is a weak derivative.** If `g` is `C¹` on `Ω` and
-agrees almost everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + 1)`, then `fderiv ℝ g` is a weak
-derivative of `u` on `Ω` and lies in `MemWkpLoc p Ω k`. By uniqueness of weak derivatives
-(`TauCeti.HasWeakFDerivOn.ae_eq`), every weak derivative of `u` on `Ω` agrees with `fderiv ℝ g`
-almost everywhere on `Ω`. -/
-theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p Ω (k + 1) u)
-    (hg : ContDiffOn ℝ 1 g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
-    HasWeakFDerivOn volume Ω u (fderiv ℝ g) ∧ MemWkpLoc p Ω k (fderiv ℝ g) := by
+/-- **The derivative of a `C¹` representative is a weak derivative.** Let `U` agree almost
+everywhere with its interior, as an open set does and as a half-disc `Ω ∩ {0 ≤ im}` does
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `C¹` on the interior of `U` and
+agrees almost everywhere on `U` with `u ∈ MemWkpLoc p U (k + 1)`, then `fderiv ℝ g` is a weak
+derivative of `u` on the interior of `U` and lies in `MemWkpLoc p U k`. By uniqueness of weak
+derivatives (`TauCeti.HasWeakFDerivOn.ae_eq`), every weak derivative of `u` on the interior of `U`
+agrees with `fderiv ℝ g` almost everywhere on `U`. -/
+theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p U (k + 1) u)
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hg : ContDiffOn ℝ 1 g (Opens.interior U))
+    (hug : u =ᵐ[volume.restrict U] g) :
+    HasWeakFDerivOn volume (Opens.interior U) u (fderiv ℝ g) ∧ MemWkpLoc p U k (fderiv ℝ g) := by
   have := hu.completeSpace
-  have hg' : HasWeakFDerivOn volume Ω g (fderiv ℝ g) := hg.hasWeakFDerivOn_fderiv
-  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv_of_isOpen
-  exact ⟨hg'.congr_ae hug.symm, hDk.congr_ae ((hD.congr_ae hug).ae_eq hg')⟩
+  rw [Measure.restrict_congr_set hU] at hug
+  have hg' : HasWeakFDerivOn volume (Opens.interior U) g (fderiv ℝ g) := hg.hasWeakFDerivOn_fderiv
+  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv
+  refine ⟨hg'.congr_ae hug.symm, hDk.congr_ae ?_⟩
+  rw [Measure.restrict_congr_set hU]
+  exact (hD.congr_ae hug).ae_eq hg'
 
-/-- **Iterated derivatives of a `Cᵏ` representative.** If `g` is `Cᵏ` on `Ω` and agrees almost
-everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + m)`, then `iteratedFDeriv ℝ k g` lies in
-`MemWkpLoc p Ω m`. No restriction on `p` is needed. -/
-theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p Ω (k + m) u)
-    (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
-    MemWkpLoc p Ω m (iteratedFDeriv ℝ k g) := by
+/-- **Iterated derivatives of a `Cᵏ` representative.** Let `U` agree almost everywhere with its
+interior, as an open set does and as a half-disc `Ω ∩ {0 ≤ im}` does
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). If `g` is `Cᵏ` on the interior of `U` and agrees
+almost everywhere on `U` with `u ∈ MemWkpLoc p U (k + m)`, then `iteratedFDeriv ℝ k g` lies in
+`MemWkpLoc p U m`. No restriction on `p` is needed. -/
+theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p U (k + m) u)
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) (hg : ContDiffOn ℝ k g (Opens.interior U))
+    (hug : u =ᵐ[volume.restrict U] g) :
+    MemWkpLoc p U m (iteratedFDeriv ℝ k g) := by
   induction k generalizing F with
   | zero =>
     rw [iteratedFDeriv_zero_eq_comp]
@@ -422,9 +431,10 @@ theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p Ω (k + m) u)
       ((Nat.zero_add m ▸ hu).congr_ae hug)
   | succ k ih =>
     rw [Nat.add_right_comm] at hu
-    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn
+    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn hU
       (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
-    have hgk : ContDiffOn ℝ k (fderiv ℝ g) Ω := hg.fderiv_of_isOpen Ω.isOpen (by push_cast; rfl)
+    have hgk : ContDiffOn ℝ k (fderiv ℝ g) (Opens.interior U) :=
+      hg.fderiv_of_isOpen isOpen_interior (by push_cast; rfl)
     have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
     have heq : iteratedFDeriv ℝ (k + 1) g =
         fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm

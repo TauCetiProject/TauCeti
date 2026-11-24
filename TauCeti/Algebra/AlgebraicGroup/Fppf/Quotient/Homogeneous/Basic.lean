@@ -22,7 +22,11 @@ that are invariant under right multiplication by `N`. Such a map descends to an 
 The construction admits nonreduced groups and value algebras, over any commutative base
 ring. It supplies the quotient sheaf whose representability as a homogeneous space can
 subsequently be proved. Sheafification is essential: a section of `G/N` need only lift
-to `G` locally in the fppf topology.
+to `G` locally in the fppf topology, so identities between sections of an fppf sheaf can be
+checked after the changes of value algebra along which a section becomes a coset. It does not
+identify distinct cosets, however: membership in `N` is fppf local, so the coset presheaf is
+separated, and two `A`-points of `G` have the same image in `(G/N)(A)` exactly when they differ
+by an `A`-point of `N`.
 
 Ground-ring-valued group points give natural left-translation automorphisms of both the
 coset presheaf and its sheafification. The quotient projection intertwines left multiplication
@@ -282,6 +286,20 @@ theorem fppfHomogeneousQuotientProjection_app_apply
         (homogeneousQuotientPresheafMk H I A g) :=
   (rfl)
 
+/-- Moving the image of a ground-ring point `g` of `G` along a change of value algebra out of the
+base object gives the image of the extension of `g`. -/
+theorem fppfHomogeneousQuotient_map_projection_app_of_base {A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ}
+    (f : op (op (CommAlgCat.of R R)) ⟶ A)
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (fppfHomogeneousQuotient H I).obj.map f
+        ((fppfHomogeneousQuotientProjection H I).app (op (op (CommAlgCat.of R R)))
+          (ULift.up g)) =
+      (fppfHomogeneousQuotientProjection H I).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g)) := by
+  rw [← HopfAlgebra.mapPoints_extendPoint f.unop.unop, HopfAlgebra.extendPoint_self]
+  exact (congrArg (fun t ↦ t (ULift.up g))
+    ((fppfHomogeneousQuotientProjection H I).naturality f)).symm
+
 /-- Every section of the homogeneous quotient lifts fppf locally to a group point. -/
 instance fppfHomogeneousQuotientProjection_isLocallySurjective :
     Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
@@ -296,6 +314,59 @@ instance fppfHomogeneousQuotientProjection_isLocallySurjective :
   exact Presheaf.isLocallySurjective_comp (CommAlgCat.fppfTopology R)
     (homogeneousQuotientPresheafProjection H I)
     (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I))
+
+/-- **Sections are determined on cosets.** Let `z` be an `A`-point of `G/N`. Two `A`-points of
+an fppf sheaf `F` are equal as soon as they agree after every change of value algebra `A ⟶ B`
+along which `z` becomes the image of a `B`-point of `G`. Such changes of algebra cover `A`,
+because `G ⟶ G/N` is locally surjective. -/
+theorem eq_of_forall_fppfHomogeneousQuotient_map_eq_projection
+    (F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1))) {A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ}
+    (z : (fppfHomogeneousQuotient H I).obj.obj A) {t₁ t₂ : F.obj.obj A}
+    (h : ∀ (B : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (f : A ⟶ B)
+      (g : HopfAlgebra.points (R := R) (H := H) B.unop.unop),
+      (fppfHomogeneousQuotient H I).obj.map f z =
+          (fppfHomogeneousQuotientProjection H I).app B (ULift.up g) →
+        F.obj.map f t₁ = F.obj.map f t₂) :
+    t₁ = t₂ := by
+  have hS := Presheaf.imageSieve_mem (CommAlgCat.fppfTopology R)
+    (fppfHomogeneousQuotientProjection H I) z
+  refine (((isSheaf_iff_isSheaf_of_type _ _).mp F.property).isSeparated _ hS).ext ?_
+  rintro B f ⟨⟨g⟩, hg⟩
+  exact h _ f.op g hg.symm
+
+/-- The coset presheaf is separated for the fppf topology: two cosets agreeing on an fppf
+covering are equal. -/
+theorem homogeneousQuotientPresheaf_isSeparated :
+    Presieve.IsSeparated (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) := by
+  intro X S hS x q₁ q₂ h₁ h₂
+  induction q₁ using homogeneousQuotientPresheaf_induction_on H I with | h g₁ =>
+  induction q₂ using homogeneousQuotientPresheaf_induction_on H I with | h g₂ =>
+  rw [← homogeneousQuotientPresheafProjection_app_apply,
+    ← homogeneousQuotientPresheafProjection_app_apply,
+    homogeneousQuotientPresheafProjection_eq_iff]
+  refine mem_quotientPointsSubgroup_of_mem_fppfTopology H I S hS _ fun Y f hf ↦ ?_
+  have h := (h₁ f hf).trans (h₂ f hf).symm
+  rw [homogeneousQuotientPresheaf_map_mk, homogeneousQuotientPresheaf_map_mk,
+    ← homogeneousQuotientPresheafProjection_app_apply,
+    ← homogeneousQuotientPresheafProjection_app_apply,
+    homogeneousQuotientPresheafProjection_eq_iff] at h
+  simpa only [Quiver.Hom.unop_op, map_mul, map_inv] using h
+
+/-- **Fibres of the quotient projection.** Over every value algebra `A`, two `A`-points of `G`
+have the same image in `G/N` exactly when they differ on the right by an `A`-point of `N`. -/
+theorem fppfHomogeneousQuotientProjection_app_eq_iff
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (g g' : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (fppfHomogeneousQuotientProjection H I).app A (ULift.up g) =
+        (fppfHomogeneousQuotientProjection H I).app A (ULift.up g') ↔
+      g⁻¹ * g' ∈ quotientPointsSubgroup H I A.unop.unop := by
+  rw [fppfHomogeneousQuotientProjection_def]
+  simp only [NatTrans.comp_app, eqToHom_app, ConcreteCategory.comp_apply]
+  -- Sheafification is injective on sections of the separated coset presheaf.
+  rw [(ConcreteCategory.bijective_of_isIso _).injective.eq_iff,
+    ((Presheaf.isLocallyInjective_iff_injective_of_separated _ _
+      (homogeneousQuotientPresheaf_isSeparated H I)).mp inferInstance A).eq_iff]
+  exact homogeneousQuotientPresheafProjection_eq_iff H I A g g'
 
 /-- Maps from `G/N` to any fppf sheaf are exactly natural maps from `G` invariant under
 right multiplication by the closed subgroup `N`, over all value algebras. -/

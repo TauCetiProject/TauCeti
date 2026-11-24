@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.LieGeneration
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 import TauCeti.Algebra.Lie.Sl2.WeightString
 import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
@@ -154,6 +155,18 @@ theorem pinnedLieEquiv_lieBasis_f (ht : (DynkinType.A r).Valid) (i : Fin r) :
   exact (congrArg (serreLift (isSerreSystem_pinned r))
     ((DynkinType.A r).serreLiftEquiv_symm_lieBasis_f ht i)).trans
       (serreLift_serreF (isSerreSystem_pinned r) i)
+
+/-- The pinned equivalence sends each signed simple-root generator to the adjacent matrix unit
+with the same number. -/
+@[simp]
+theorem pinnedLieEquiv_lieBasis_rootGenerator (ht : (DynkinType.A r).Valid)
+    (k : Fin (DynkinType.A r).rank ⊕ Fin (DynkinType.A r).rank) :
+    pinnedLieEquiv r ht (((DynkinType.A r).lieBasis ht).rootGenerator k) = rootGenerator r k := by
+  cases k with
+  | inl i => exact (congrArg (pinnedLieEquiv r ht)
+      (LieAlgebra.Basis.rootGenerator_inl _ i)).trans (pinnedLieEquiv_lieBasis_e r ht i)
+  | inr i => exact (congrArg (pinnedLieEquiv r ht)
+      (LieAlgebra.Basis.rootGenerator_inr _ i)).trans (pinnedLieEquiv_lieBasis_f r ht i)
 
 /-- The inverse equivalence sends standard diagonal differences to the pinned Cartan generators. -/
 @[simp]

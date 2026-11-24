@@ -148,7 +148,7 @@ theorem not_hasWeakFDerivOn_indicator_pos {E : Type*} [NormedAddCommGroup E] [No
   have : (volume : Measure (ℝ × EuclideanSpace ℝ (Fin d))).IsAddHaarMeasure :=
     Measure.prod.instIsAddHaarMeasure volume volume
   have hℓe : ∀ q, ℓ (e q) = q.1 := fun q => by
-    have hy0 : ℓ (eK.symm q.2 : E) = 0 := (eK.symm q.2).2
+    have hy0 : ℓ (eK.symm q.2 : E) = 0 := (eK.symm q.2).property
     simp [e, s, hℓw, hy0]
   let y₀ : EuclideanSpace ℝ (Fin d) := eK ⟨x₀, hx₀0⟩
   have he0 : e (0, y₀) = x₀ := by simp [e, s, y₀]

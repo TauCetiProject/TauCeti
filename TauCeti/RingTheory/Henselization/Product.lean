@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Henselization.Map
 public import TauCeti.RingTheory.Henselian.Idempotent
 public import TauCeti.RingTheory.Henselian.Quotient
+import TauCeti.RingTheory.Idempotents.Jacobson
 
 /-!
 # Henselization along disjoint closed subsets
@@ -86,7 +87,8 @@ private theorem exists_coprime_idempotents [Fintype ι] (hI : Pairwise (IsCoprim
     dsimp only [E] at h
     rw [coprimeResidueEquiv_mk] at h
     exact h.symm.trans ((hcoord i i).trans (Pi.single_eq_same i 1))
-  apply Ideal.injOn_quotient_mk_isIdempotentElem (extended_le_jacobson (I i))
+  apply Ideal.injOn_quotient_mk_isIdempotentElem
+    ((extended_le_jacobson (I i)).trans_eq Ideal.jacobson_bot)
     ((he.idem i).map (toFactor I i)) .one
   have hmem : toFactor I i (e i) - algebraMap R _ r ∈ extended (I i) := by
     simpa only [map_sub, AlgHom.commutes] using

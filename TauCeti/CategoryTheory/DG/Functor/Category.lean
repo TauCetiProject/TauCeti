@@ -241,9 +241,9 @@ private noncomputable def dNat (F G : DGFunctor R C D) (n m : ℤ) :
 
 private theorem dNat_apply (F G : DGFunctor R C D) (n m : ℤ) (η : natTransSubmodule F G n)
     (X : C) :
-    (dNat R F G n m η).1 X =
+    (dNat R F G n m η).val X =
       ((dgHomComplex R (F.toEnrichedFunctor.obj X) (G.toEnrichedFunctor.obj X)).d n m).hom
-        (η.1 X) :=
+        (η.val X) :=
   (rfl)
 
 private theorem dNat_eq_zero (F G : DGFunctor R C D) {n m : ℤ}
@@ -271,7 +271,8 @@ private noncomputable def homComplex (F G : DGFunctor R C D) :
 /-- Composition of natural families, objectwise. -/
 private noncomputable def comp {F G H : DGFunctor R C D} (p q n : ℤ) (h : p + q = n) :
     natTransSubmodule F G p →ₗ[R] natTransSubmodule G H q →ₗ[R] natTransSubmodule F H n :=
-  LinearMap.mk₂ R (fun η θ ↦ ⟨fun X ↦ dgComp R (η.1 X) (θ.1 X) h, η.2.dgComp θ.2 h⟩)
+  LinearMap.mk₂ R (fun η θ ↦ ⟨fun X ↦ dgComp R (η.val X) (θ.val X) h,
+      η.property.dgComp θ.property h⟩)
     (fun η η' θ ↦ by ext X; simp)
     (fun r η θ ↦ by ext X; simp)
     (fun η θ θ' ↦ by ext X; simp)
@@ -283,11 +284,11 @@ noncomputable def homComplexData : DGCategoryData R (DGFunctor R C D) where
   hom := homComplex R
   comp := comp R
   id F := ⟨fun X ↦ dgId R (F.toEnrichedFunctor.obj X), isNatural_dgId F⟩
-  d_comp h η θ := Subtype.ext <| funext fun X ↦ dgDifferential_dgComp R (η.1 X) (θ.1 X) h
+  d_comp h η θ := Subtype.ext <| funext fun X ↦ dgDifferential_dgComp R (η.val X) (θ.val X) h
   comp_assoc hpq hqr h η θ κ := Subtype.ext <| funext fun X ↦
-    dgComp_assoc R (η.1 X) (θ.1 X) (κ.1 X) hpq hqr h
-  id_comp θ := Subtype.ext <| funext fun X ↦ dgId_dgComp R (θ.1 X)
-  comp_id η := Subtype.ext <| funext fun X ↦ dgComp_dgId R (η.1 X)
+    dgComp_assoc R (η.val X) (θ.val X) (κ.val X) hpq hqr h
+  id_comp θ := Subtype.ext <| funext fun X ↦ dgId_dgComp R (θ.val X)
+  comp_id η := Subtype.ext <| funext fun X ↦ dgComp_dgId R (η.val X)
 
 /-- **DG functors `C ⥤ D` form a differential graded category**, whose morphisms of degree `n`
 are the natural families of degree `n`. -/
@@ -309,7 +310,7 @@ noncomputable def dgApp {F G : DGFunctor R C D} (n : ℤ) (X : C) :
 
 /-- The components of a morphism of DG functors are its underlying natural family. -/
 theorem dgApp_apply {F G : DGFunctor R C D} {n : ℤ} (η : DGHom R n F G) (X : C) :
-    dgApp R n X η = (dgHomEquiv R F G n η).1 X :=
+    dgApp R n X η = (dgHomEquiv R F G n η).val X :=
   (rfl)
 
 /-- The components of the morphism determined by a natural family are the members of the
@@ -317,13 +318,13 @@ family. -/
 @[simp]
 theorem dgApp_dgHomEquiv_symm_apply {F G : DGFunctor R C D} {n : ℤ}
     (η : natTransSubmodule F G n) (X : C) :
-    dgApp R n X ((dgHomEquiv R F G n).symm η) = η.1 X :=
+    dgApp R n X ((dgHomEquiv R F G n).symm η) = η.val X :=
   (rfl)
 
 /-- The components of a morphism of DG functors form a natural family. -/
 theorem isNatural_dgApp {F G : DGFunctor R C D} {n : ℤ} (η : DGHom R n F G) :
     IsNatural fun X ↦ dgApp R n X η :=
-  (dgHomEquiv R F G n η).2
+  (dgHomEquiv R F G n η).property
 
 /-- **Naturality of a morphism of DG functors**: for `f : X ⟶ Y` of degree `p` and `η : F ⟶ G`
 of degree `n`, `F f ≫ η Y = (-1) ^ (p * n) • (η X ≫ G f)`. -/
@@ -415,20 +416,20 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
         exact (mem_dgCycles R).mp (dgClosedHom_mem_dgCycles R _))⟩
   invFun η :=
     { app X := ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
-        (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X))
+        (dgClosedHomOf R (dgApp R 0 X η.val) (dgApp_mem_dgCycles R η.property X))
       naturality X Y := by
         apply (unitGradedNaturality_iff F.toEnrichedFunctor G.toEnrichedFunctor X Y _ _).mpr
         ext p f
         have hl := eHomWhiskerLeft_f_apply R _
-          (dgClosedHomOf R (dgApp R 0 Y η.1) (dgApp_mem_dgCycles R η.2 Y)) p
+          (dgClosedHomOf R (dgApp R 0 Y η.val) (dgApp_mem_dgCycles R η.property Y)) p
           (((F.toEnrichedFunctor.map X Y).f p).hom f)
         have hr := eHomWhiskerRight_f_apply R
-          (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X)) _ p
+          (dgClosedHomOf R (dgApp R 0 X η.val) (dgApp_mem_dgCycles R η.property X)) _ p
           (((G.toEnrichedFunctor.map X Y).f p).hom f)
         rw [dgClosedHom_dgClosedHomOf] at hl hr
         refine hl.trans (Eq.trans ?_ hr.symm)
         rw [← EnrichedFunctor.dgMap_apply, ← EnrichedFunctor.dgMap_apply,
-          dgComp_dgMap_dgApp R η.1 f (add_zero p) (zero_add p), mul_zero, Int.negOnePow_zero,
+          dgComp_dgMap_dgApp R η.val f (add_zero p) (zero_add p), mul_zero, Int.negOnePow_zero,
           one_smul] }
   left_inv α := GradedNatTrans.ext <| funext fun X ↦ by
     -- Reducing the equivalence application and its subtype coercions exposes the two canonical
@@ -442,10 +443,10 @@ noncomputable def homEquivDGCycles : (F ⟶ G) ≃ dgCycles R F G where
     -- Componentwise extensionality reduces the equivalence wrappers to the reverse round trip:
     -- first `homTo`/`homOf`, then `dgClosedHomOf`/`dgClosedHom`.
     change dgClosedHom R (ForgetEnrichment.homOf _
-      (ForgetEnrichment.homTo _ (dgClosedHomOf R (dgApp R 0 X η.1) _))) = dgApp R 0 X η.1
+      (ForgetEnrichment.homTo _ (dgClosedHomOf R (dgApp R 0 X η.val) _))) = dgApp R 0 X η.val
     exact (congrArg (dgClosedHom R)
-      (ForgetEnrichment.homOf_homTo _ (dgClosedHomOf R (dgApp R 0 X η.1)
-        (dgApp_mem_dgCycles R η.2 X)))).trans
+      (ForgetEnrichment.homOf_homTo _ (dgClosedHomOf R (dgApp R 0 X η.val)
+        (dgApp_mem_dgCycles R η.property X)))).trans
           (dgClosedHom_dgClosedHomOf R _ _)
 
 variable {F G}
@@ -464,7 +465,7 @@ components of `η`, regarded as maps from the tensor unit. -/
 theorem homEquivDGCycles_symm_app (η : dgCycles R F G) (X : C) :
     ((homEquivDGCycles R F G).symm η).app X =
       ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ)
-        (dgClosedHomOf R (dgApp R 0 X η.1) (dgApp_mem_dgCycles R η.2 X)) :=
+        (dgClosedHomOf R (dgApp R 0 X η.val) (dgApp_mem_dgCycles R η.property X)) :=
   (rfl)
 
 /-- The identity DG natural transformation is the identity of the DG category of DG

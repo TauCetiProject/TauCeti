@@ -9,19 +9,20 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
-import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Coordinates of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
 only if all its coordinates in a finite basis are (the local `Lᵖ` criterion
-`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc.Basic`). These
+`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc`). These
 criteria allow scalar local estimates to be applied to vector-valued maps without choosing
 compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
+Conversely, real functions in a local Sobolev class, one for each vector of a finite basis,
+are the coordinates of a single map in that class (`Module.Basis.exists_memWkpLoc_repr_eq`).
 
 For maps on `ℂ`, a weak derivative `D` is likewise tested through its two partial derivatives
 `z ↦ D z 1` and `z ↦ D z I`: `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` characterises
@@ -67,6 +68,16 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
       intro i _
       exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
+
+/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
+are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → ℂ → ℝ}
+    (hv : ∀ i, MemWkpLoc p U k (v i)) :
+    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+  have := Fintype.ofFinite ι
+  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
+    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
 
 end Module.Basis
 

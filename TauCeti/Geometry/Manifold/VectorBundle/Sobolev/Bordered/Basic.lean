@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Analysis.Sobolev.Wkp.Classical
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Sobolev spaces of sections over surfaces with boundary
@@ -295,6 +294,15 @@ def ofContMDiffSection :
     { toFun := fun s ↦ s, map_add' := ContMDiffSection.coe_add,
       map_smul' := ContMDiffSection.coe_smul }
     (exists_value_ae_eq_halfCoord A p k)
+
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.halfCoord i s`, almost everywhere on the interior of the image of the chart. -/
+theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
+    (i : Fin A.n) :
+    A.halfSectionChartData.chartValueL volume p k i (ofContMDiffSection A p k s)
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
+  (A.halfSectionChartData.chartValueL_ofComponents_ae volume p k _ _ s i).trans
+    (A.halfSectionChartData_coord_ae_eq i s)
 
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.halfImage i` of the classical

@@ -31,7 +31,7 @@ an injective immersion, and so does every stage of the straight-line motion
 * `ContDiff.exists_forall_smul_sub_ne_and_fderiv_ne`: a vector which is neither on a secant line
   nor a tangent vector of a `C²` map, when `2 * dim E + 1 < dim F`.
 * `ContDiff.exists_forall_sub_eq_smul_and_deriv_ne`: the curve case, for an injective `C²`
-  immersion of the line in dimension at least four.
+  immersion of the line in a finite-dimensional space of dimension at least four.
 
 ## References
 
@@ -44,16 +44,20 @@ public section
 
 open Function MeasureTheory Module Set
 
+section General
+
 variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **A direction avoiding the secants and tangents.** For a `C²` map `f : E → F` between
-finite-dimensional real normed spaces with `2 * dim E + 1 < dim F`, some vector `v` lies on no
-line spanned by a secant `f x - f y`, and is no tangent vector `Df(x) w`. In particular `v ≠ 0`. -/
+finite-dimensional real normed spaces with `2 * dim E + 1 < dim F` (which forces `F` to be
+finite-dimensional), some vector `v` lies on no line spanned by a secant `f x - f y`, and is no
+tangent vector `Df(x) w`. In particular `v ≠ 0`. -/
 theorem ContDiff.exists_forall_smul_sub_ne_and_fderiv_ne {f : E → F} (hf : ContDiff ℝ 2 f)
     (hEF : 2 * finrank ℝ E + 1 < finrank ℝ F) :
     ∃ v : F, (∀ x y (c : ℝ), c • (f x - f y) ≠ v) ∧ ∀ x w, fderiv ℝ f x w ≠ v := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   let : MeasurableSpace F := borel F
   have : BorelSpace F := ⟨rfl⟩
   let μ : Measure F := Measure.addHaar
@@ -80,10 +84,13 @@ theorem ContDiff.exists_forall_smul_sub_ne_and_fderiv_ne {f : E → F} (hf : Con
   simp only [mem_compl_iff, mem_union, mem_range, not_or, not_exists, Prod.forall] at hv
   exact ⟨v, fun x y c => hv.1 x y c, fun x w => hv.2 x w⟩
 
-/-- **The projection direction for an arc.** An injective `C²` immersion `γ` of the line in a real
-normed space of dimension at least four has a nonzero direction `d` such that no secant
-`γ s - γ s'` with `s ≠ s'` and no velocity `γ' s` is a multiple of `d`. -/
-theorem ContDiff.exists_forall_sub_eq_smul_and_deriv_ne {γ : ℝ → F} (hγ : ContDiff ℝ 2 γ)
+end General
+
+/-- **The projection direction for an arc.** An injective `C²` immersion `γ` of the line in a
+finite-dimensional real normed space of dimension at least four has a nonzero direction `d` such
+that no secant `γ s - γ s'` with `s ≠ s'` and no velocity `γ' s` is a multiple of `d`. -/
+theorem ContDiff.exists_forall_sub_eq_smul_and_deriv_ne {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {γ : ℝ → F} (hγ : ContDiff ℝ 2 γ)
     (hF : 4 ≤ finrank ℝ F) (hinj : Injective γ) (hγ' : ∀ s, deriv γ s ≠ 0) :
     ∃ d : F, d ≠ 0 ∧ (∀ s s' (c : ℝ), γ s - γ s' = c • d → s = s') ∧
       ∀ s (c : ℝ), deriv γ s ≠ c • d := by

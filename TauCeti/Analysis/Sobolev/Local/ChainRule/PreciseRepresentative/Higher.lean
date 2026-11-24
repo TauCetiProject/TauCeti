@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.PreciseRepresentative
-import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Composition of `W^{k+1,p}_loc` maps for `p > 2` without a continuity hypothesis

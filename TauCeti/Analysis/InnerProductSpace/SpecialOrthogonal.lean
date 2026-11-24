@@ -23,7 +23,10 @@ An orthogonal transformation of a real inner product space has determinant `1` o
 (`Unitary.det_eq_one_or_eq_neg_one`; in infinite dimension every determinant is `1`), so it is
 special orthogonal exactly when its determinant is positive
 (`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when its
-determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). In positive
+determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). Because the
+determinant is continuous in the operator-norm topology, the special orthogonal group is open,
+closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogonalGroup`,
+`TauCeti.isClosed_specialOrthogonalGroup`, `TauCeti.isClopen_specialOrthogonalGroup`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
 (`Unitary.exists_det_eq_neg_one`).
 -/
@@ -92,5 +95,30 @@ theorem notMem_specialOrthogonalGroup_iff_det_neg {g : unitary (V →L[ℝ] V)} 
     g ∉ specialOrthogonalGroup V ↔ (g : V →L[ℝ] V).det < 0 := by
   rw [mem_specialOrthogonalGroup_iff_det_pos, not_lt]
   rcases Unitary.det_eq_one_or_eq_neg_one g with h | h <;> rw [h] <;> norm_num
+
+/-- The special orthogonal group is open in the orthogonal group `unitary (V →L[ℝ] V)`. In
+infinite dimension it is the whole group. -/
+theorem isOpen_specialOrthogonalGroup :
+    IsOpen (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) := by
+  have : (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) =
+      {g : unitary (V →L[ℝ] V) | (0 : ℝ) < (g : V →L[ℝ] V).det} :=
+    Set.ext fun _ ↦ mem_specialOrthogonalGroup_iff_det_pos
+  rw [this]
+  exact isOpen_lt continuous_const (ContinuousLinearMap.continuous_det.comp continuous_subtypeVal)
+
+/-- The special orthogonal group is closed in the orthogonal group `unitary (V →L[ℝ] V)`. -/
+theorem isClosed_specialOrthogonalGroup :
+    IsClosed (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) := by
+  have : (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) =
+      {g : unitary (V →L[ℝ] V) | (g : V →L[ℝ] V).det = 1} :=
+    Set.ext fun _ ↦ mem_specialOrthogonalGroup_iff
+  rw [this]
+  exact isClosed_eq (ContinuousLinearMap.continuous_det.comp continuous_subtypeVal)
+    continuous_const
+
+/-- The special orthogonal group is clopen in the orthogonal group `unitary (V →L[ℝ] V)`. -/
+theorem isClopen_specialOrthogonalGroup :
+    IsClopen (specialOrthogonalGroup V : Set (unitary (V →L[ℝ] V))) :=
+  ⟨isClosed_specialOrthogonalGroup, isOpen_specialOrthogonalGroup⟩
 
 end TauCeti
