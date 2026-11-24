@@ -30,17 +30,13 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
 (`TauCeti.RingTheory.PowerSeries.Hensel`).
 
 It also exposes `Polynomial.evalDegreeLT R n`, the `R`-submodule of functions `R → R` obtained by
-evaluating polynomials of degree `< n`, together with coordinate-slice degree preservation under
-fixing a coordinate (`TauCeti.exists_degree_lt_and_update_eq_eval` and
-`TauCeti.exists_natDegree_le_and_update_eq_eval`).
+evaluating polynomials of degree `< n`.
 
 ## Main results
 
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
 * `Polynomial.evalDegreeLT`, `Polynomial.evalDegreeLT_def`, `Polynomial.mem_evalDegreeLT`: the
   `R`-submodule of functions `R → R` represented by polynomials of degree `< n`.
-* `TauCeti.exists_degree_lt_and_update_eq_eval`, `TauCeti.exists_natDegree_le_and_update_eq_eval`:
-  fixing one coordinate preserves coordinate-slice polynomial degree bounds.
 * `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
   `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
@@ -56,9 +52,9 @@ fixing a coordinate (`TauCeti.exists_degree_lt_and_update_eq_eval` and
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
 rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff`,
-`mem_degreeLT_succ_iff_natDegree_le`, `evalDegreeLT`, and the coordinate-slice update lemmas need
-only a semiring, `finrank_degreeLT` a semiring with the strong rank condition, and
-`Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
+`mem_degreeLT_succ_iff_natDegree_le`, and `evalDegreeLT` need only a semiring,
+`finrank_degreeLT` a semiring with the strong rank condition, and `Monic.sub_mem_degreeLT` and
+`divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -97,52 +93,6 @@ theorem mem_evalDegreeLT {n : ℕ} {f : R → R} :
     f ∈ evalDegreeLT R n ↔ ∃ Q : R[X], Q.degree < n ∧ ∀ w, f w = Q.eval w := by
   simp only [evalDegreeLT, Submodule.mem_map, mem_degreeLT, funext_iff, evalLinearMap_apply]
   refine exists_congr fun Q ↦ and_congr_right fun _ ↦ forall_congr' fun _ ↦ eq_comm
-
-end Semiring
-
-end Polynomial
-
-namespace TauCeti
-
-open Polynomial
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a strict polynomial degree bound `< d` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_degree_lt_and_update_eq_eval {ι R : Type*} [DecidableEq ι] [Semiring R]
-    {f : (ι → R) → R} (i j : ι) (ζ : R) {d : WithBot ℕ}
-    (hf : ∀ y, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f (Function.update y j w) = Q.eval w)
-    (z : ι → R) :
-    ∃ Q : R[X], Q.degree < d ∧
-      ∀ w, f (Function.update (Function.update z j w) i ζ) = Q.eval w := by
-  by_cases hij : j = i
-  · subst hij
-    obtain ⟨Q, hQdeg, hQ⟩ := hf z
-    refine ⟨C (Q.eval ζ), ?_, fun w ↦ by simp [hQ ζ]⟩
-    rcases eq_or_ne Q 0 with rfl | hQ0
-    · simpa using hQdeg
-    · exact degree_C_le.trans_lt ((zero_le_degree_iff.mpr hQ0).trans_lt hQdeg)
-  · obtain ⟨Q, hQdeg, hQ⟩ := hf (Function.update z i ζ)
-    exact ⟨Q, hQdeg, fun w ↦ by rw [Function.update_comm hij, hQ]⟩
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a polynomial degree bound `≤ e` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_natDegree_le_and_update_eq_eval {ι R : Type*} [DecidableEq ι] [Semiring R]
-    {f : (ι → R) → R} (i j : ι) (ζ : R) {e : ℕ}
-    (hf : ∀ y, ∃ Q : R[X], Q.natDegree ≤ e ∧ ∀ w, f (Function.update y j w) = Q.eval w)
-    (z : ι → R) :
-    ∃ Q : R[X], Q.natDegree ≤ e ∧
-      ∀ w, f (Function.update (Function.update z j w) i ζ) = Q.eval w := by
-  simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
-    exists_degree_lt_and_update_eq_eval i j ζ (d := Order.succ (e : WithBot ℕ))
-      (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hf y) z
-
-end TauCeti
-
-namespace Polynomial
-
-section Semiring
-
-variable {R : Type*} [Semiring R] {g q : R[X]}
 
 /-- Membership in `R[X]_(n + 1)` is the bound `natDegree ≤ n`. -/
 theorem mem_degreeLT_succ_iff_natDegree_le {n : ℕ} {p : R[X]} :
