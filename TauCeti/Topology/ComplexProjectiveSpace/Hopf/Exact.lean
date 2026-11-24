@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact

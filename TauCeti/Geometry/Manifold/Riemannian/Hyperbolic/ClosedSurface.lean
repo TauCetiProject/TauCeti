@@ -38,10 +38,9 @@ minimization of the Liouville energy on `H¹(M)` produces a weak solution `w ∈
 `Δ⁺w + K + e^(2w) = 0`
 (`TauCeti.Manifold.SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul`). By
 Trudinger's exponential integrability (`TauCeti.Manifold.SobolevH1.memLp_exp_mul`), `e^(2w)` lies
-in `L²(M)`, so De Giorgi regularity
-(`TauCeti.Manifold.SobolevH1.exists_continuous_ae_eq_of_dirichletForm_eq`) makes `w` continuous and
-the semilinear bootstrap (`TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`)
-upgrades it to a smooth classical solution. The comparison principle makes it unique
+in `L²(M)`, so semilinear elliptic regularity
+(`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq_semilinear`)
+turns `w` into a smooth classical solution. The comparison principle makes it unique
 (`TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero`).
 Conversely, conformal invariance of total curvature implies `∫ Scal^g dV_g < 0` whenever a nonempty
 closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV_g`.
@@ -64,6 +63,9 @@ closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV
   are equal.
 * `TauCeti.HyperbolicMetric.hypVolumeOfMetric_eq_of_metric_eq_rescale`: a hyperbolic metric
   conformal to `g` has area `-∫ K dV_g`.
+* `TauCeti.isHyperbolic_iff_exists_integral_scalarCurvature_neg`: a nonempty closed connected
+  surface is hyperbolic if and only if it admits a smooth Riemannian metric of negative total
+  scalar curvature.
 
 ## References
 
@@ -116,11 +118,12 @@ private theorem exists_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero
   have hKLp_neg : ∫ x, KLp x ∂riemannianVolume I M < 0 := by rwa [integral_congr_ae hKLp_ae]
   obtain ⟨w, hw⟩ := SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul
     hE KLp hKLp_neg
-  -- By Trudinger's inequality, `-(K + e^(2w))` lies in `L²(M)`, so De Giorgi gives continuity.
-  let f₀ : M → ℝ := fun x ↦ -(K x + Real.exp (2 * SobolevH1.toLp w x))
+  -- By Trudinger's inequality, `(-1) * e^(2w) + (-K)` lies in `L²(M)`, so semilinear regularity
+  -- produces a smooth classical solution.
+  let f₀ : M → ℝ := fun x ↦ (-1 : ℝ) * Real.exp (2 * SobolevH1.toLp w x) + -K x
   have hf₀_memLp : MemLp f₀ (2 : ℝ≥0) (riemannianVolume I M) :=
-    (((Lp.memLp KLp).ae_eq hKLp_ae).add
-      (SobolevH1.memLp_exp_mul hE w 2 (p := (2 : ℝ≥0)) ENNReal.coe_ne_top)).neg
+    ((SobolevH1.memLp_exp_mul hE w 2 (p := (2 : ℝ≥0)) ENNReal.coe_ne_top).const_mul _).add
+      ((Lp.memLp KLp).ae_eq hKLp_ae).neg
   have hw_f₀ : ∀ ψ : C^∞⟮I, M; ℝ⟯,
       SobolevH1.dirichletForm w (SobolevH1.ofSmooth ψ) =
         ∫ x, f₀ x * ψ x ∂riemannianVolume I M := fun ψ ↦ by
@@ -129,22 +132,12 @@ private theorem exists_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero
     filter_upwards [hKLp_ae, SobolevH1.toLp_ofSmooth_ae_eq ψ] with x hxK hxψ
     dsimp only [f₀]
     rw [hxK, hxψ]
-  obtain ⟨φ, hφ_cont, hwφ⟩ := SobolevH1.exists_continuous_ae_eq_of_dirichletForm_eq
-    (r := 2) le_rfl (by rw [hE]; norm_num) hf₀_memLp hw_f₀
-  -- Rewrite the weak right-hand side in terms of `φ` and bootstrap to `C^∞`.
-  have hw_semi : ∀ ψ : C^∞⟮I, M; ℝ⟯,
-      SobolevH1.dirichletForm w (SobolevH1.ofSmooth ψ) =
-        ∫ x, ((-1 : ℝ) * Real.exp (2 * φ x) + -K x) * ψ x ∂riemannianVolume I M := fun ψ ↦ by
-    rw [hw_f₀]
-    refine integral_congr_ae ?_
-    filter_upwards [hwφ] with x hx
-    dsimp only [f₀]
-    rw [hx]
     ring
-  obtain ⟨hφ_smooth, hΔ⟩ := SobolevH1.contMDiff_of_dirichletForm_eq_semilinear
-    (Φ := fun t ↦ Real.exp (2 * t)) (by omega) contMDiff_const hK.neg (by fun_prop)
-    hφ_cont hwφ hw_semi
-  exact ⟨φ, hφ_smooth, fun x ↦ by linarith [hΔ x]⟩
+  obtain ⟨φ, _, hΔ⟩ :=
+    SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq_semilinear
+      (Φ := fun t ↦ Real.exp (2 * t)) (by omega) contMDiff_const hK.neg (by fun_prop)
+      hf₀_memLp hw_f₀
+  exact ⟨φ, φ.contMDiff, fun x ↦ by linarith [hΔ x]⟩
 
 /-- **Smooth solvability and uniqueness of the constant negative curvature equation on a closed
 surface.** On a closed connected smooth Riemannian surface, for every smooth function `K : M → ℝ`
@@ -296,3 +289,22 @@ theorem exists_hyperbolicMetric_mem_conformalClass_iff [I.Boundaryless] [Nonempt
     (c := -2) (by norm_num) (hGf ▸ G.scalarCurvature_metric_of_finrank_eq_two hE)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+/-- **Total-curvature characterization of hyperbolic closed surfaces.** A nonempty closed connected
+surface is hyperbolic if and only if it admits a smooth Riemannian metric of negative total scalar
+curvature. -/
+theorem isHyperbolic_iff_exists_integral_scalarCurvature_neg [I.Boundaryless] [Nonempty M]
+    (hE : finrank ℝ E = 2) :
+    IsHyperbolic (I := I) (M := M) ↔
+      ∃ g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x),
+        ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0 := by
+  rw [isHyperbolic_iff]
+  exact ⟨fun ⟨G⟩ ↦
+    ⟨G.metric, (G.metric.exists_hyperbolicMetric_mem_conformalClass_iff hE).1
+      ⟨G, G.metric.self_mem_conformalClass⟩⟩,
+    fun ⟨g, hK⟩ ↦ let ⟨G, _⟩ := (g.existsUnique_hyperbolicMetric_mem_conformalClass hE hK).exists
+      ⟨G⟩⟩
+
+end TauCeti

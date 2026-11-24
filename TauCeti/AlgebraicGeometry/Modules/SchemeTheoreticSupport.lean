@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Stalk
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!

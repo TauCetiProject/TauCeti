@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
-import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
-import TauCeti.Probability.RandomMatrix.Centering
-import TauCeti.Probability.RandomMatrix.Diagonal
+import TauCeti.Probability.StrongLaw
+import TauCeti.Probability.RandomMatrix.Wigner.Centering.SpectralMeasure
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
@@ -46,23 +47,22 @@ private theorem norm_wignerMatrix_sub_div_sqrt_le
     (ζ : StrictUpper → Ω → ℂ) (n : ℕ) (ω : Ω) :
     ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω -
       wignerMatrix ζ (fun _ _ ↦ 0) (n + 1) ω‖ / Real.sqrt (n + 1) ≤
-      Real.sqrt ((∑ i : StrictUpperFin (n + 1),
-        ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2) /
+      Real.sqrt ((∑ i : FinStrictUpper (n + 1),
+        ‖ξ i.toStrictUpper ω - ζ i.toStrictUpper ω‖ ^ 2) /
         ((n + 1).choose 2 : ℝ)) := by
   apply Real.le_sqrt_of_sq_le
-  rw [div_pow, Real.sq_sqrt (by positivity), norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin]
+  rw [div_pow, Real.sq_sqrt (by positivity), norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
   cases n with
   | zero =>
-    have : IsEmpty (StrictUpperFin 1) := ⟨fun i ↦
-      (Nat.not_lt_zero _) (i.prop.trans_le (Nat.le_of_lt_succ i.val.2.isLt))⟩
+    have : IsEmpty (FinStrictUpper 1) := ⟨fun i ↦ i.prop.ne (Subsingleton.elim _ _)⟩
     simp
   | succ n =>
     have hs : 0 < (((n + 1 + 1).choose 2 : ℕ) : ℝ) := by
       exact_mod_cast (Nat.choose_pos (by omega : 2 ≤ n + 1 + 1))
     have hn : 0 < (n + 1 + 1 : ℝ) := by positivity
     simp only [Nat.cast_add, Nat.cast_one]
-    rw [div_le_div_iff₀ hn hs, mul_right_comm, mul_comm (∑ i : StrictUpperFin (n + 1 + 1),
-      ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2)]
+    rw [div_le_div_iff₀ hn hs, mul_right_comm, mul_comm (∑ i : FinStrictUpper (n + 1 + 1),
+      ‖ξ i.toStrictUpper ω - ζ i.toStrictUpper ω‖ ^ 2)]
     apply mul_le_mul_of_nonneg_right _ (by positivity)
     rw [Nat.cast_choose_two]
     simp only [Nat.cast_add, Nat.cast_one]
@@ -78,8 +78,8 @@ private theorem ae_tendsto_wigner_approximation_error
     (hξ : MemLp (ξ e₀) 2 P) {g : ℂ → ℂ} (hg : Measurable g)
     {b : ℝ≥0} (hb : ∀ x, ‖g x‖ ≤ b) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
-      Real.sqrt ((∑ i : StrictUpperFin (n + 1),
-        ‖ξ (wignerUpperIndex i) ω - g (ξ (wignerUpperIndex i) ω)‖ ^ 2) /
+      Real.sqrt ((∑ i : FinStrictUpper (n + 1),
+        ‖ξ i.toStrictUpper ω - g (ξ i.toStrictUpper ω)‖ ^ 2) /
         ((n + 1).choose 2 : ℝ))) atTop (𝓝 (Real.sqrt (∫ ω, ‖ξ e₀ ω - g (ξ e₀ ω)‖ ^ 2 ∂P))) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let f := fun x : ℂ ↦ ‖x - g x‖ ^ 2
@@ -89,8 +89,9 @@ private theorem ae_tendsto_wigner_approximation_error
       (.of_forall fun ω ↦ by simpa only [Real.norm_of_nonneg b.coe_nonneg] using hb (ξ e₀ ω))
   have hint : Integrable (fun ω ↦ f (ξ e₀ ω)) P :=
     (hξ.sub hg₂).integrable_norm_pow'
-  filter_upwards [ae_tendsto_sum_strictUpperFin_div (X := fun i ω ↦ f (ξ i ω)) hint
+  filter_upwards [ae_tendsto_inv_smul_sum_finStrictUpper (X := fun i ω ↦ f (ξ i ω)) hint
     (fun _ _ hij ↦ (hind.indepFun hij).comp hf hf) (fun i ↦ (hid i).comp hf)] with ω hω
+  simp only [smul_eq_mul, inv_mul_eq_div] at hω
   exact (hω.comp (tendsto_add_atTop_nat 1)).sqrt
 
 private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded
@@ -240,12 +241,9 @@ theorem wigner_semicircle_ae (η : ℕ → Ω → ℝ)
       (𝓝 (⟨semicircleReal 0 1, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let c := ∫ ω, ξ e₀ ω ∂P
-  have hint : Integrable (fun ω ↦ ‖ξ e₀ ω - c‖ ^ 2) P := by
-    by_contra h
-    exact zero_ne_one ((integral_undef h).symm.trans hv)
   have hξc : MemLp (fun ω ↦ ξ e₀ ω - c) 2 P :=
-    (memLp_two_iff_integrable_sq_norm
-      ((hid e₀).aemeasurable_fst.sub_const c).aestronglyMeasurable).2 hint
+    ((hid e₀).aemeasurable_fst.sub_const c).aestronglyMeasurable
+      |>.memLp_two_of_integral_norm_sq_ne_zero (hv.trans_ne one_ne_zero)
   have hξ : MemLp (ξ e₀) 2 P :=
     (hξc.add (memLp_const c)).ae_eq (.of_forall fun ω ↦ sub_add_cancel (ξ e₀ ω) c)
   have hcentred : ∫ ω, (ξ e₀ ω - c) ∂P = 0 := by

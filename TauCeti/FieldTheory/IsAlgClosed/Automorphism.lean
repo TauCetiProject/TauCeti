@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsAlgClosed.Classification
+public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import Mathlib.FieldTheory.IsSepClosed
 
 /-!
@@ -135,10 +136,9 @@ automorphisms of `Ω` over `R`. -/
 theorem exists_algEquiv_apply_eq_add_one {x : Ω} (hx : Transcendental R x) :
     ∃ τ : Ω ≃ₐ[R] Ω, τ x = x + 1 := by
   classical
-  -- Extend `{x}` to a transcendence basis `s`, and translate the variable at `x`.
-  obtain ⟨s, hxs, hs⟩ := exists_isTranscendenceBasis_superset (s := {x})
-    ((algebraicIndependent_singleton_iff ⟨x, Set.mem_singleton x⟩).2 hx)
-  let i : s := ⟨x, hxs (Set.mem_singleton x)⟩
+  -- Take a transcendence basis `s` containing `x`, and translate the variable at `x`.
+  obtain ⟨s, hxs, hs⟩ := hx.exists_isTranscendenceBasis_mem
+  let i : s := ⟨x, hxs⟩
   let φ : MvPolynomial s R ≃ₐ[R] MvPolynomial s R :=
     AlgEquiv.ofAlgHom (MvPolynomial.aeval (Function.update X i (X i + 1)))
       (MvPolynomial.aeval (Function.update X i (X i - 1)))
