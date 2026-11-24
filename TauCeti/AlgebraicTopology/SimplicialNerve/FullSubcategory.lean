@@ -116,6 +116,21 @@ private lemma surjective_simplicialNerveMapToFullSubcategory_app (F : EnrichedFu
     Function.Surjective ((simplicialNerveMapToFullSubcategory F P hP).app n) :=
   fun G ↦ ⟨liftSimplicialNerve F P hP G, liftSimplicialNerve_rightInverse F P hP n G⟩
 
+private lemma injective_simplicialNerveMapToFullSubcategory_app (F : EnrichedFunctor SSet.{v} C D)
+    (hobj : Function.Injective F.obj) [∀ a b : C, IsIso (F.map a b)]
+    (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
+    (n : SimplexCategoryᵒᵖ) :
+    Function.Injective ((simplicialNerveMapToFullSubcategory F P hP).app n) := by
+  have hL (H : (SimplicialNerve C).obj n) :
+      liftSimplicialNerve F P hP ((simplicialNerveMapToFullSubcategory F P hP).app n H) = H := by
+    refine (EnrichedFunctor.lift_unique H (fun k ↦ hobj ?_)
+      (simplicialNerveMapToFullSubcategory_app_val F P hP n H).symm).symm
+    rw [Classical.choose_spec (exists_obj_eq F P hP _ k),
+      simplicialNerveMapToFullSubcategory_app_val]
+    exact (EnrichedFunctor.comp_obj SSet H F k).symm
+  intro H₁ H₂ hH
+  rw [← hL H₁, ← hL H₂, hH]
+
 /-- An object-injective simplicial functor inducing isomorphisms on all mapping simplicial sets
 identifies `SimplicialNerve C` with the full enhanced subcategory of `SimplicialNerve D` spanned by
 its object image. -/
@@ -126,14 +141,10 @@ noncomputable def fullSubcategoryIso (F : EnrichedFunctor SSet.{v} C D)
       ((SimplicialNerve D).fullEnhancedSubcategory fun x ↦ P (vertexEquiv D x) :
         SSet.{max u v}) :=
   haveI : ∀ n : SimplexCategoryᵒᵖ,
-      IsIso ((simplicialNerveMapToFullSubcategory F P hP).app n) := fun n ↦ by
-    rw [isIso_iff_bijective, Function.bijective_iff_has_inverse]
-    refine ⟨liftSimplicialNerve F P hP, fun H ↦ ?_, liftSimplicialNerve_rightInverse F P hP n⟩
-    refine (EnrichedFunctor.lift_unique H (fun k ↦ hobj ?_)
-      (simplicialNerveMapToFullSubcategory_app_val F P hP n H).symm).symm
-    rw [Classical.choose_spec (exists_obj_eq F P hP _ k),
-      simplicialNerveMapToFullSubcategory_app_val]
-    exact (EnrichedFunctor.comp_obj SSet H F k).symm
+      IsIso ((simplicialNerveMapToFullSubcategory F P hP).app n) := fun n ↦
+    (isIso_iff_bijective _).2
+      ⟨injective_simplicialNerveMapToFullSubcategory_app F hobj P hP n,
+       surjective_simplicialNerveMapToFullSubcategory_app F P hP n⟩
   haveI : IsIso (simplicialNerveMapToFullSubcategory F P hP) :=
     NatIso.isIso_of_isIso_app _
   asIso (simplicialNerveMapToFullSubcategory F P hP)

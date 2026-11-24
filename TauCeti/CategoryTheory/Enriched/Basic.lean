@@ -142,10 +142,25 @@ lemma lift_unique {F : EnrichedFunctor V C D} [∀ a b : C, IsIso (F.map a b)]
     H = lift F G obj hobj := by
   subst hH_comp
   refine EnrichedFunctor.ext V hH_obj fun i j ↦ ?_
-  dsimp only [lift, EnrichedFunctor.comp]
-  rw [← cancel_mono (F.map (obj i) (obj j))]
-  simp only [Category.assoc, IsIso.inv_hom_id, Category.comp_id]
-  rw [← F.map_comp_eqToHom (hH_obj i) (hH_obj j)]
+  rw [← cancel_mono (F.map ((lift F (H.comp V F) obj hobj).obj i)
+      ((lift F (H.comp V F) obj hobj).obj j)),
+    lift_map, EnrichedFunctor.comp_map]
+  -- `EnrichedFunctor.comp` and `lift` are semireducible, so `(H.comp V F).obj` and
+  -- `(lift F _ obj hobj).obj` in the `eqToHom` endpoints do not unify with `F.obj (H.obj _)` and
+  -- `obj _` at `reducible` transparency.
+  change (H.map i j ≫ eqToHom (by rw [hH_obj i, hH_obj j, lift_obj, lift_obj])) ≫
+      F.map ((lift F (H.comp V F) obj hobj).obj i) ((lift F (H.comp V F) obj hobj).obj j) =
+    ((H.map i j ≫ F.map (H.obj i) (H.obj j)) ≫
+      eqToHom (by simp only [EnrichedFunctor.comp_obj, hobj]) ≫
+      inv (F.map (obj i) (obj j)) ≫ eqToHom (by rw [lift_obj, lift_obj])) ≫
+      F.map ((lift F (H.comp V F) obj hobj).obj i) ((lift F (H.comp V F) obj hobj).obj j)
+  simp only [Category.assoc,
+    ← F.map_comp_eqToHom (lift_obj F (H.comp V F) obj hobj i).symm
+      (lift_obj F (H.comp V F) obj hobj j).symm,
+    IsIso.inv_hom_id_assoc,
+    ← F.map_comp_eqToHom ((hH_obj i).trans (lift_obj F (H.comp V F) obj hobj i).symm)
+      ((hH_obj j).trans (lift_obj F (H.comp V F) obj hobj j).symm),
+    eqToHom_trans]
 
 end EnrichedFunctor
 
