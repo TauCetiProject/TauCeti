@@ -243,7 +243,7 @@ private theorem tendsto_apply_tsum [MeasurableSpace E] [BorelSpace E] [Measurabl
         rw [mem_closedBall, dist_zero_right] at this
         linarith
       have h := hχ p.fst (subset_tsupport _ hp'.1) p.snd hy
-      exact (toLp_ofLp 2 p) ▸ h
+      rwa [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp] at h
     · rw [hfun, Real.fourier_prod_mul (fun x ↦ (ψ x : ℂ)) (fun y ↦ (ρ i y : ℂ)), mul_assoc a]
   -- The factors `𝓕 (ρ i) (m.snd)` are bounded by `M` and tend to one.
   have hlim (b : D) : Tendsto (fun i ↦ 𝓕 (fun y ↦ (ρ i y : ℂ)) b) l (𝓝 1) :=
@@ -271,7 +271,8 @@ private theorem isMicrolocallySmoothAt_of_fst_eq_zero (T : 𝓓'(W, ℂ)) {x : E
     (h : ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
     {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) (hζ : ζ.fst = 0) :
     T.IsMicrolocallySmoothAt (toLp 2 (x, 0)) ζ := by
-  have hζeq : toLp 2 ((0 : E), ζ.snd) = ζ := by rw [← hζ]; exact toLp_ofLp 2 ζ
+  have hζeq : toLp 2 ((0 : E), ζ.snd) = ζ := by
+    rw [← hζ, ← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
   have hsnd : ζ.snd ≠ 0 := fun h0 ↦ hζ0 (by rw [← hζeq, h0, Prod.mk_zero_zero, toLp_zero])
   by_contra hns
   have hmem := mem_waveFrontSet_iff.2 ⟨hx, hζ0, hns⟩
@@ -797,8 +798,8 @@ private theorem isMicrolocallySmoothAt_of_fst_eq_smul (T : 𝓓'(W, ℂ)) {x₀ 
     exact isMicrolocallySmoothAt_of_fst_eq_zero T hx₀ h hζ0 hsζ.symm
   · -- `ζ = s (ξ₀, s⁻¹ ζ.snd)` with `s > 0`, and microlocal smoothness is conic.
     have hζs : s • toLp 2 (ξ₀, s⁻¹ • ζ.snd) = ζ := by
-      rw [← toLp_smul, Prod.smul_mk, smul_smul, mul_inv_cancel₀ hs.ne', one_smul, hsζ]
-      exact toLp_ofLp 2 ζ
+      rw [← toLp_smul, Prod.smul_mk, smul_smul, mul_inv_cancel₀ hs.ne', one_smul, hsζ, ← ofLp_fst,
+        ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
     rw [← hζs, isMicrolocallySmoothAt_smul_iff hs]
     exact hT _
 
