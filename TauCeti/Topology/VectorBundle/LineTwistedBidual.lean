@@ -94,8 +94,9 @@ theorem bundleLineTwistedBidual_inCoordinates (a : M) {x : M}
       (fun y ↦ (V y →L[𝕜] D y) →L[𝕜] D y) a x a x (bundleLineTwistedBidual (F := F) V D x) =
       NormedSpace.inclusionInDoubleDual 𝕜 F := by
   ext v φ
-  have hx : x ∈ (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] D y) a).baseSet :=
-    ⟨hxV, hxD⟩
+  have hx : x ∈ (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] D y) a).baseSet := by
+    rw [hom_trivializationAt_baseSet]
+    exact ⟨hxV, hxD⟩
   -- The inverse chart of `Hom(V, D)` conjugates by the charts of `V` and `D`.
   have hsymm : (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] D y) a).symmL 𝕜 x φ =
       ((trivializationAt 𝕜 D a).symmL 𝕜 x).comp

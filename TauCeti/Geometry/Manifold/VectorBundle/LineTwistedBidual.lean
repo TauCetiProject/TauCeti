@@ -75,7 +75,8 @@ theorem contMDiff_bundleLineTwistedBidual :
   let : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 F)) := inferInstance
   exact contMDiff_hom_bundle_of_inCoordinates_eq_const
     (c := fun _ ↦ NormedSpace.inclusionInDoubleDual 𝕜 F)
-    (fun a _ hxV hx ↦ bundleLineTwistedBidual_inCoordinates V D a hxV hx.2)
+    fun a _ hxV hx ↦ bundleLineTwistedBidual_inCoordinates V D a hxV
+      (by rw [hom_trivializationAt_baseSet] at hx; exact hx.2)
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
 
