@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -52,6 +53,10 @@ fundamental-theorem results to curves.
   with base point in the integrability interval are absolutely continuous in any real normed space.
 * `IntervalIntegrable.integral_mul_pow_integral`: for a real `g` with primitive `G` based at `c`,
   `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`.
+* `TauCeti.abs_integral_norm_mul_abs_pow`: with `Λ s = ∫ r in t₀..s, ‖M r‖`,
+  `|∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n| = |Λ t| ^ (n + 1) / (n + 1)`, and
+  `TauCeti.norm_integral_le_abs_integral_norm_pow_div_factorial_mul`, the resulting inductive step
+  of factorial bounds on iterated integrals.
 -/
 
 public section
@@ -299,6 +304,61 @@ theorem IntervalIntegrable.integral_mul_pow_integral {g : ℝ → ℝ} {c d : �
   simp only [G, intervalIntegral.integral_same, zero_pow k.succ_ne_zero, sub_zero] at h
   rw [← h]
   field_simp
+
+namespace TauCeti
+
+open intervalIntegral
+open scoped Nat
+
+/-- With `Λ s = ∫ r in t₀..s, ‖M r‖` for a function `M` into a normed group, the integral of
+`‖M‖ |Λ| ^ n` from `t₀` to `t` is `|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
+theorem abs_integral_norm_mul_abs_pow {G : Type*} [NormedAddCommGroup G] {M : ℝ → G} {t₀ t : ℝ}
+    (hM : IntervalIntegrable (fun s ↦ ‖M s‖) volume t₀ t) (n : ℕ) :
+    |∫ s in t₀..t, ‖M s‖ * |∫ r in t₀..s, ‖M r‖| ^ n| =
+      |∫ s in t₀..t, ‖M s‖| ^ (n + 1) / (n + 1) := by
+  set Λ : ℝ → ℝ := fun s ↦ ∫ r in t₀..s, ‖M r‖
+  -- `Λ` has a constant sign `σ` between `t₀` and `t`.
+  obtain ⟨σ, hσ, hΛ⟩ : ∃ σ : ℝ, |σ| = 1 ∧ ∀ s ∈ uIcc t₀ t, |Λ s| = σ * Λ s := by
+    rcases le_total t₀ t with h | h
+    · refine ⟨1, abs_one, fun s hs ↦ ?_⟩
+      rw [uIcc_of_le h] at hs
+      rw [one_mul, abs_of_nonneg (integral_nonneg hs.1 fun _ _ ↦ norm_nonneg _)]
+    · refine ⟨-1, by simp, fun s hs ↦ ?_⟩
+      rw [uIcc_of_ge h] at hs
+      rw [neg_one_mul, abs_of_nonpos]
+      simp only [Λ]
+      rw [integral_symm, neg_nonpos]
+      exact integral_nonneg hs.2 fun _ _ ↦ norm_nonneg _
+  have h : ∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n = σ ^ n * ∫ s in t₀..t, ‖M s‖ * Λ s ^ n := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine integral_congr fun s hs ↦ ?_
+    simp only [hΛ s hs, mul_pow]
+    ring
+  rw [h, hM.integral_mul_pow_integral]
+  simp [abs_mul, abs_div, abs_pow, hσ, abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
+
+/-- **The inductive step of a factorial bound.** With `Λ r = ∫ u in t₀..r, ‖M u‖` for a function
+`M` into a normed group, if `‖f r‖ ≤ ‖M r‖ * (|Λ r| ^ n / n! * K)` for almost every `r` between
+`t₀` and `t`, with `0 ≤ K`, then `‖∫ r in t₀..t, f r‖ ≤ |Λ t| ^ (n + 1) / (n + 1)! * K`. -/
+theorem norm_integral_le_abs_integral_norm_pow_div_factorial_mul {F G : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] {f : ℝ → F} {M : ℝ → G}
+    {t₀ t K : ℝ} (hK : 0 ≤ K) (hM : IntervalIntegrable (fun s ↦ ‖M s‖) volume t₀ t) {n : ℕ}
+    (hf : ∀ᵐ r ∂volume.restrict (uIoc t₀ t),
+      ‖f r‖ ≤ ‖M r‖ * (|∫ u in t₀..r, ‖M u‖| ^ n / n ! * K)) :
+    ‖∫ r in t₀..t, f r‖ ≤ |∫ r in t₀..t, ‖M r‖| ^ (n + 1) / (n + 1)! * K := by
+  refine (norm_integral_le_abs_of_norm_le hf (hM.mul_continuousOn
+    ((((continuousOn_primitive_interval' hM left_mem_uIcc).abs.pow n).div_const _).mul
+      continuousOn_const))).trans_eq ?_
+  have : (fun s ↦ ‖M s‖ * (|∫ r in t₀..s, ‖M r‖| ^ n / n ! * K)) =
+      fun s ↦ K / n ! * (‖M s‖ * |∫ r in t₀..s, ‖M r‖| ^ n) := by
+    ext s
+    ring
+  rw [this, intervalIntegral.integral_const_mul, abs_mul, abs_of_nonneg (by positivity),
+    abs_integral_norm_mul_abs_pow hM, Nat.factorial_succ]
+  push_cast
+  field_simp
+
+end TauCeti
 
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/

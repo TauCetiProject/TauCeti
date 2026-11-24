@@ -16,7 +16,6 @@ import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
-import TauCeti.Geometry.Manifold.SmoothSingular.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 import TauCeti.Geometry.Manifold.Topology
@@ -142,9 +141,9 @@ private lemma quasiIso_iff_of_opens_subset {S U : Opens M} (hU : (U : Set M) ⊆
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact (contMDiff_subtypeVal (I := I) (U := S)).comp
       (contMDiff_subtypeVal (I := I) (U := V))
-  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
+  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hf hg contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl),
-    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hg hf
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hg hf contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl)⟩
 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
@@ -243,8 +242,8 @@ instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι (R : C) :
   have hf : ContMDiff I I ∞ f := by
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact contMDiff_id (I := I)
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R
-    hf (contMDiff_subtypeVal (I := I) (U := ⊤))
+  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R
+    hf (contMDiff_subtypeVal (I := I) (U := ⊤)) contMDiff_snd
     (fun _ ↦ rfl) (fun _ ↦ rfl)
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens R ⊤)
 
