@@ -13,7 +13,6 @@ public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
-public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Module
@@ -36,11 +35,6 @@ matrix induces a map of tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 The upper-right block projection and the matching insertion are continuous linear maps over
 any semiring and topological module, with arbitrary row and column index types. Their application
 lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_apply`.
-
-For finite `m` and `n` and an `R`-module `M` with its module topology, the entrywise topology on
-`Matrix m n M` is its `R`-module topology (`Matrix.instIsModuleTopology`), as it is for the
-product `m → n → M` that matrices unfold to. Over a topological semiring `R` this covers
-`Matrix m n R`.
 
 ## Main definitions
 
@@ -231,19 +225,6 @@ theorem continuousOn_mulVecCLM {X : Type*} [TopologicalSpace X] {s : Set X}
 end NormedField
 
 end MulVecCLM
-
-section ModuleTopology
-
-variable {m n R M : Type*} [Finite m] [Finite n] [Semiring R] [TopologicalSpace R]
-  [AddCommMonoid M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
-
-/-- The entrywise topology on matrices with finitely many rows and columns, and entries in a module
-with its module topology, is the module topology. A matrix is a function `m → n → M`, so this is
-Mathlib's instance for finite products. -/
-instance instIsModuleTopology : IsModuleTopology R (Matrix m n M) :=
-  inferInstanceAs (IsModuleTopology R (m → n → M))
-
-end ModuleTopology
 
 end Matrix
 

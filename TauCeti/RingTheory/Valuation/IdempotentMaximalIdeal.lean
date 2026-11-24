@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.IdempotentFG
-public import Mathlib.RingTheory.Valuation.ValuationSubring
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+public import Mathlib.RingTheory.Valuation.ValuationRing
+
+import Mathlib.RingTheory.Nakayama
 
 /-!
 # Idempotent maximal ideals of valuation rings
 
-The maximal ideal of a valuation domain is idempotent if it is not finitely generated.
+The maximal ideal of a valuation ring is idempotent if it is not finitely generated.
 Conversely, a nonzero idempotent maximal ideal cannot be finitely generated. This is the
 algebraic input for almost mathematics over nondiscrete valuation rings; no rank or
 completeness assumption is needed.
 
-For a valuation on an algebraically closed field the maximal ideal is always idempotent:
-every element has a square root in the maximal ideal. A nontrivial valuation therefore
-provides a non-finitely-generated maximal ideal.
+Both results are stated for a nontrivial commutative ring in which any two elements are comparable
+by divisibility (a `PreValuationRing`); valuation domains are the main example. They need no domain
+assumption, so they also cover such rings with zero divisors.
 
 ## References
 
@@ -33,61 +34,35 @@ open IsLocalRing
 
 namespace TauCeti.ValuationRing
 
-variable {V : Type*} [CommRing V] [IsDomain V] [ValuationRing V]
+variable {V : Type*} [CommRing V] [Nontrivial V] [PreValuationRing V]
 
-/-- The maximal ideal of a valuation domain is idempotent when it is not finitely generated. -/
+/-- The maximal ideal of a nontrivial commutative ring in which any two elements are comparable by
+divisibility, such as a valuation ring, is idempotent when it is not finitely generated. -/
 theorem isIdempotentElem_maximalIdeal_of_not_fg (hfg : ¬ (maximalIdeal V).FG) :
     IsIdempotentElem (maximalIdeal V) := by
   apply le_antisymm Ideal.mul_le_left
   intro x hx
-  have hex : ∃ y ∈ maximalIdeal V, ¬ x ∣ y := by
+  -- Some `y ∈ m` is not a multiple of `x`, since otherwise `m = (x)` would be finitely generated.
+  obtain ⟨y, hy, hxy⟩ : ∃ y ∈ maximalIdeal V, ¬ x ∣ y := by
     by_contra! h
-    apply hfg
-    have heq : maximalIdeal V = Ideal.span {x} := by
-      apply le_antisymm
-      · exact fun y hy ↦ Ideal.mem_span_singleton.mpr (h y hy)
-      · exact Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hx)
-    rw [heq]
-    exact Submodule.fg_span_singleton x
-  obtain ⟨y, hy, hxy⟩ := hex
+    have heq : Ideal.span {x} = maximalIdeal V := le_antisymm
+      ((Ideal.span_singleton_le_iff_mem _).mpr hx) fun y hy ↦ Ideal.mem_span_singleton.mpr (h y hy)
+    exact hfg (heq ▸ Submodule.fg_span_singleton x)
   obtain ⟨z, rfl⟩ := (_root_.ValuationRing.dvd_total x y).resolve_left hxy
+  -- The cofactor `z` is not a unit, since otherwise `x = y * z` would divide `y`.
   have hz : z ∈ maximalIdeal V := by
-    rw [mem_maximalIdeal, mem_nonunits_iff]
-    intro hu
-    apply hxy
-    obtain ⟨w, hw⟩ := hu.exists_right_inv
-    exact ⟨w, by simp [mul_assoc, hw]⟩
+    by_contra hz
+    exact hxy ((notMem_maximalIdeal.mp hz).mul_right_dvd.mpr dvd_rfl)
   exact Ideal.mul_mem_mul hy hz
 
-/-- A nonzero maximal ideal of a valuation domain is idempotent exactly when it is not
-finitely generated. The nonzero assumption excludes the maximal ideal of a field. -/
+/-- A nonzero maximal ideal of a nontrivial commutative ring in which any two elements are
+comparable by divisibility, such as a valuation ring, is idempotent exactly when it is not finitely
+generated. The nonzero assumption excludes the maximal ideal of a field. -/
 theorem isIdempotentElem_maximalIdeal_iff (hne : maximalIdeal V ≠ ⊥) :
     IsIdempotentElem (maximalIdeal V) ↔ ¬ (maximalIdeal V).FG := by
-  refine ⟨fun hi hfg ↦ ?_, isIdempotentElem_maximalIdeal_of_not_fg⟩
-  exact ((maximalIdeal V).isIdempotentElem_iff_eq_bot_or_top hfg).mp hi |>.elim hne
-    (maximalIdeal.isMaximal V).ne_top
+  refine ⟨fun hi hfg ↦ hne ?_, isIdempotentElem_maximalIdeal_of_not_fg⟩
+  -- Nakayama's lemma: a finitely generated `m` with `m = m • m` vanishes.
+  exact Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ hfg (by rw [smul_eq_mul, hi.eq])
+    (ringJacobson_eq_maximalIdeal V).ge
 
 end TauCeti.ValuationRing
-
-namespace Valuation
-
-variable {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀]
-
-/-- The maximal ideal of a valuation ring of an algebraically closed field is idempotent,
-including for the trivial valuation. -/
-theorem isIdempotentElem_maximalIdeal_of_isAlgClosed (v : Valuation K Γ₀) [IsAlgClosed K] :
-    IsIdempotentElem (maximalIdeal v.valuationSubring) := by
-  apply le_antisymm Ideal.mul_le_left
-  intro x hx
-  obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (x : K) (by decide : 0 < 2)
-  have hyv : v y < 1 := by
-    have hxv := (v.mem_maximalIdeal_iff).mp hx
-    rw [← hy, map_pow] at hxv
-    exact lt_of_not_ge fun h ↦ hxv.not_ge (one_le_pow₀ h)
-  let z : v.valuationSubring := ⟨y, hyv.le⟩
-  have hz : z ∈ maximalIdeal v.valuationSubring := v.mem_maximalIdeal_iff.mpr hyv
-  have heq : x = z * z := Subtype.ext (by simpa [pow_two] using hy.symm)
-  rw [heq]
-  exact Ideal.mul_mem_mul hz hz
-
-end Valuation

@@ -15,7 +15,6 @@ import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Hyperbolic
 import TauCeti.LinearAlgebra.Basis.RangeSpan
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 import TauCeti.NumberTheory.Padics.RatCast
-import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
 # Integral orthogonal subgroups in a basis

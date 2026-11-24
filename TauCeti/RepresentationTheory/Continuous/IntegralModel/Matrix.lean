@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lattice
+public import TauCeti.Algebra.Module.Lattice
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.RepresentationTheory.Continuous.IntegralModel.Basic
 
 /-!
@@ -16,7 +17,7 @@ Let `ρ` be a jointly continuous representation (`TauCeti.ContinuousRep`) of a t
 (`TauCeti.GaloisLattice.IntegralModel`): a `Γ`-stable full `O`-lattice in `V`. Every `ρ g` then
 lies in the stabilizer of `Λ` in `V ≃ₗ[E] V` (`TauCeti.GaloisLattice.IntegralModel.toStabilizer`),
 and an `O`-basis `b` of `Λ` of size `n` identifies this stabilizer with `GL_n(O)`
-(`Module.Basis.stabilizerEquivGL`). The composite is the matrix form
+(`Module.Basis.stabilizerMulEquivGL`). The composite is the matrix form
 `TauCeti.GaloisLattice.IntegralModel.toGL Λ b : Γ →* GL ι O` of `ρ`: the matrix of `ρ g` in the
 basis `b`, which is also a basis of `V` over `E`, has entries in `O`, as has its inverse.
 
@@ -79,11 +80,11 @@ theorem coe_toStabilizer_apply (Λ : IntegralModel O ρ) (g : Γ) (x : V) :
     (Λ.toStabilizer g : V ≃ₗ[E] V) x = ρ g x :=
   (rfl)
 
-/-- Restricting `ρ g` from the stabilizer to the lattice gives the restricted action. -/
+/-- Restricting `ρ g` from the stabilizer to a free lattice gives the restricted action. -/
 @[simp]
-theorem restrictStabilizer_toStabilizer (Λ : IntegralModel O ρ) (g : Γ) :
-    (LinearEquiv.restrictStabilizer (K := E) Λ.lattice (Λ.toStabilizer g) :
-      Λ.lattice →ₗ[O] Λ.lattice) =
+theorem stabilizerMulEquiv_toStabilizer (Λ : IntegralModel O ρ) [Module.Free O Λ.lattice]
+    (g : Γ) :
+    (Λ.lattice.stabilizerMulEquiv E (Λ.toStabilizer g) : Λ.lattice →ₗ[O] Λ.lattice) =
       Λ.toContinuousRep g :=
   LinearMap.ext fun _ => Subtype.ext (by simp)
 
@@ -92,25 +93,22 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- **The matrix form of an integral model.** In an `O`-basis `b` of the lattice of `Λ`, `ρ` is
 a homomorphism `Γ →* GL ι O`, sending `g` to the matrix of `ρ g` restricted to the lattice. -/
 noncomputable def toGL (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) : Γ →* GL ι O :=
-  (b.stabilizerEquivGL (K := E)).toMonoidHom.comp Λ.toStabilizer
+  (b.stabilizerMulEquivGL E).toMonoidHom.comp Λ.toStabilizer
 
 /-- The matrix form sends `g` to the matrix in `b` of the action of `g` on the lattice. -/
 @[simp]
 theorem coe_toGL_apply (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
     (Λ.toGL b g : Matrix ι ι O) = LinearMap.toMatrix b b (Λ.toContinuousRep g) := by
-  rw [toGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Basis.coe_stabilizerEquivGL_apply,
-    restrictStabilizer_toStabilizer]
+  have := Module.Free.of_basis b
+  simp [toGL]
 
 /-- The entries of the matrix form, read in `E`, are those of the matrix of `ρ g` in the
 extended basis of `V`. -/
 theorem toGL_apply_map (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
     (Λ.toGL b g : Matrix ι ι O).map (algebraMap O E) =
       LinearMap.toMatrix (b.extendOfIsFullLattice E) (b.extendOfIsFullLattice E) (ρ g) := by
-  ext i j
-  rw [Matrix.map_apply, ← Matrix.GeneralLinearGroup.map_apply, toGL, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, Basis.map_stabilizerEquivGL, Basis.coe_toGL]
-  exact congrArg (fun f => LinearMap.toMatrix _ _ f i j)
-    (LinearMap.ext (coe_toStabilizer_apply Λ g))
+  rw [toGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Basis.map_stabilizerMulEquivGL_apply]
+  exact congrArg (LinearMap.toMatrix _ _) (LinearMap.ext (coe_toStabilizer_apply Λ g))
 
 /-- **The matrix form of an integral model is continuous.** If `O` is a topological ring and the
 lattice of `Λ` carries its `O`-module topology, as it does over the valuation ring of a field with

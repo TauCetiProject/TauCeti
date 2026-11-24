@@ -5,10 +5,18 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
+public import Mathlib.Geometry.Manifold.ContMDiff.Defs
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Geometry.Manifold.ExtChartAt
+import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Tactic
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Closed coordinate balls
@@ -20,7 +28,9 @@ strict inequality places a point in its interior. No smoothness or Riemannian me
 Maps into a compact set `K` of a manifold that converge locally uniformly after composing with a
 continuous map `e` injective on `K` (for instance an embedding into a vector space) can be read in
 a chart: near a point whose limit value lies in the chart source, the limit and the tail of the
-sequence take values in a closed coordinate ball inside the chart target.
+sequence take values in a closed coordinate ball inside the chart target. If moreover the maps are
+differentiable, the limit is `C¹` and the derivatives of the coordinate expressions converge, the
+coordinate expressions converge uniformly near that point together with their derivatives.
 
 ## Main results
 
@@ -28,6 +38,9 @@ sequence take values in a closed coordinate ball inside the chart target.
 * `IsCompact.exists_closedBall_forall_mem_extChartAt_source`: maps into a compact set converging
   locally uniformly through a continuous injection are eventually in a closed coordinate ball
   near each point.
+* `IsCompact.exists_closedBall_tendstoUniformlyOn_extChartAt_comp`: for such maps converging in
+  `C¹` in a chart, the coordinate expressions converge uniformly with their derivatives on a closed
+  ball near each point.
 
 ## References
 
@@ -140,5 +153,88 @@ theorem _root_.IsCompact.exists_closedBall_forall_mem_extChartAt_source {K : Set
   have h₂ := mem_ball.1 (hcl hz).2
   simp only [Function.comp_apply] at h₁ h₂
   linarith
+
+end TauCeti
+
+namespace TauCeti
+
+open Filter Function
+
+variable {E H M G F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [I.Boundaryless] [NormedAddCommGroup G] [NormedSpace ℝ G] [ProperSpace G] [MetricSpace F]
+
+/-- **The coordinate expressions converge in `C¹` near a point.** Let `uₙ` and `v` map an open set
+`S` of a proper normed space into a compact set `K` of a manifold, with `uₙ → v` locally uniformly
+through a map `e` continuous and injective on `K`. Let the `uₙ` be differentiable and `v` be `C¹`,
+and let the derivatives of the coordinate expressions in the chart at `v y`, for some `y ∈ S`,
+converge locally uniformly where `v` lies in the chart source. Then on a closed disc
+`closedBall y r ⊆ S` the limit and the tail `u (n + N)` take values in the source of the chart at
+`v y`, and the coordinate expressions of the tail converge uniformly to that of `v`, together with
+their derivatives. -/
+theorem _root_.IsCompact.exists_closedBall_tendstoUniformlyOn_extChartAt_comp {K : Set M}
+    {e : M → F} (hK : IsCompact K) (he : ContinuousOn e K) (he_inj : InjOn e K) {S : Set G}
+    (hS : IsOpen S) {u : ℕ → G → M} {v : G → M} (hu : ∀ n, MDifferentiableOn 𝓘(ℝ, G) I (u n) S)
+    (huK : ∀ n, MapsTo (u n) S K) (hv : ContMDiffOn 𝓘(ℝ, G) I 1 v S) (hvK : MapsTo v S K)
+    (hconv : TendstoLocallyUniformlyOn (fun n ↦ e ∘ u n) (e ∘ v) atTop S) {y : G} (hy : y ∈ S)
+    (hdconv : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I (v y) ∘ u n))
+      (fderiv ℝ (extChartAt I (v y) ∘ v)) atTop (S ∩ v ⁻¹' (extChartAt I (v y)).source)) :
+    ∃ r > 0, ∃ N, closedBall y r ⊆ S ∧
+      (∀ z ∈ closedBall y r, v z ∈ (extChartAt I (v y)).source ∧
+        ∀ n, u (n + N) z ∈ (extChartAt I (v y)).source) ∧
+      ContinuousOn (fun z ↦ (z, (extChartAt I (v y) ∘ v) z,
+        fderiv ℝ (extChartAt I (v y) ∘ v) z)) (closedBall y r) ∧
+      TendstoUniformlyOn (fun n ↦ extChartAt I (v y) ∘ u (n + N)) (extChartAt I (v y) ∘ v)
+        atTop (closedBall y r) ∧
+      TendstoUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I (v y) ∘ u (n + N)))
+        (fderiv ℝ (extChartAt I (v y) ∘ v)) atTop (closedBall y r) := by
+  set χ := extChartAt I (v y)
+  -- On a disc `B` about `y`, the limit and the tail `u (n + N)` take values in the chart at `v y`.
+  obtain ⟨κ, -, -, r, hr, hcl, N, hN⟩ := hK.exists_closedBall_forall_mem_extChartAt_source he
+    he_inj hS huK hv.continuousOn hvK hconv hy (mem_extChartAt_source (I := I) (v y))
+  have hBS : ball y r ⊆ S := ball_subset_closedBall.trans hcl
+  have hvB {z : G} (hz : z ∈ ball y r) : v z ∈ χ.source :=
+    (hN z (ball_subset_closedBall hz)).1.1
+  have huB (n : ℕ) {z : G} (hz : z ∈ ball y r) : u (n + N) z ∈ χ.source :=
+    ((hN z (ball_subset_closedBall hz)).2 (n + N) (Nat.le_add_left N n)).1
+  have hχv : ContDiffOn ℝ 1 (χ ∘ v) (ball y r) :=
+    contMDiffOn_iff_contDiffOn.1 <| contMDiffOn_extChartAt.comp (hv.mono hBS) fun z hz ↦ by
+      rw [mem_preimage, ← extChartAt_source I]
+      exact hvB hz
+  have hχu (n : ℕ) {z : G} (hz : z ∈ ball y r) : DifferentiableAt ℝ (χ ∘ u (n + N)) z :=
+    mdifferentiableAt_iff_differentiableAt.1 <|
+      (mdifferentiableAt_extChartAt (by rw [← extChartAt_source I]; exact huB n hz)).comp z
+        ((hu (n + N) z (hBS hz)).mdifferentiableAt (hS.mem_nhds (hBS hz)))
+  -- The derivatives converge uniformly on the closed disc of radius `r / 2`.
+  have hsub : closedBall y (r / 2) ⊆ ball y r := closedBall_subset_ball (half_lt_self hr)
+  have hd : TendstoUniformlyOn (fun n ↦ fderiv ℝ (χ ∘ u (n + N))) (fderiv ℝ (χ ∘ v)) atTop
+      (closedBall y (r / 2)) := by
+    have h := (tendstoLocallyUniformlyOn_iff_forall_isCompact
+      (hv.continuousOn.isOpen_inter_preimage hS (isOpen_extChartAt_source (v y)))).1
+      hdconv _ (fun z hz ↦ ⟨hBS (hsub hz), hvB (hsub hz)⟩) (isCompact_closedBall _ _)
+    rw [← map_add_atTop_eq_nat N] at h
+    exact TauCeti.tendstoUniformlyOn_map_iff.1 h
+  -- The maps converge pointwise in `M`, as `e` is a homeomorphism from `K` onto its image.
+  have hpt {z : G} (hz : z ∈ S) : Tendsto (fun n ↦ u n z) atTop (𝓝 (v z)) :=
+    hK.tendsto_nhds_of_tendsto_comp he he_inj (.of_forall fun n ↦ huK n hz) (hvK hz)
+      (hconv.tendsto_at hz)
+  -- The coordinate expressions converge pointwise, hence uniformly on the disc of radius `r / 2`.
+  have hptB {z : G} (hz : z ∈ ball y r) :
+      Tendsto (fun n ↦ (χ ∘ u (n + N)) z) atTop (𝓝 ((χ ∘ v) z)) :=
+    (continuousAt_extChartAt' (hvB hz)).tendsto.comp
+      ((hpt (hBS hz)).comp (tendsto_add_atTop_nat N))
+  have hc : TendstoUniformlyOn (fun n ↦ χ ∘ u (n + N)) (χ ∘ v) atTop (ball y (r / 2)) :=
+    (uniformCauchySeqOn_ball_of_fderiv (hd.mono ball_subset_closedBall).uniformCauchySeqOn
+      (fun n z hz ↦ (hχu n (ball_subset_ball (half_le_self hr.le) hz)).hasFDerivAt)
+      (hptB (mem_ball_self hr)).cauchy_map).tendstoUniformlyOn_of_tendsto
+      fun z hz ↦ hptB (ball_subset_ball (half_le_self hr.le) hz)
+  have hC : closedBall y (r / 4) ⊆ ball y (r / 2) := closedBall_subset_ball (by linarith)
+  refine ⟨r / 4, by positivity, N, (hC.trans (ball_subset_ball (half_le_self hr.le))).trans hBS,
+    fun z hz ↦ ⟨hvB (hsub (closedBall_subset_closedBall (by linarith) hz)),
+      fun n ↦ huB n (hsub (closedBall_subset_closedBall (by linarith) hz))⟩,
+    (continuousOn_id.prodMk (hχv.continuousOn.prodMk
+      (hχv.continuousOn_fderiv_of_isOpen isOpen_ball le_rfl))).mono
+      (hC.trans (ball_subset_ball (half_le_self hr.le))),
+    hc.mono hC, hd.mono (hC.trans ball_subset_closedBall)⟩
 
 end TauCeti

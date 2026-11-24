@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import Mathlib.Topology.Algebra.Star.Unitary
-import TauCeti.Topology.Algebra.Module.Matrix
 import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Closed
 
 /-!
