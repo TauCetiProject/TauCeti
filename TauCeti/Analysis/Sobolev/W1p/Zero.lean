@@ -356,7 +356,7 @@ end Exponent
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
 
-The two instances below are `local`, so they take part in instance search only in a file that
+The instances below are `local`, so they take part in instance search only in a file that
 registers them with `attribute [local instance]`. -/
 
 /-- Shortcut instance for the normed group structure of `W^{1,p}_0(Ω)`, the separated form of
@@ -371,5 +371,15 @@ jet space through the two nested closed subspaces. A file that applies abstract 
 results to `W^{1,2}_0(Ω)` registers it together with `W1p0.instNormedAddCommGroup`. -/
 noncomputable local instance W1p0.instInnerProductSpace :
     InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+
+/-- Shortcut for the canonical normed group structure on the Sobolev dual. Register this
+locally when operator-norm synthesis would otherwise expand the nested Sobolev subtypes. -/
+noncomputable local instance W1p0.instStrongDualNormedAddCommGroup :
+    NormedAddCommGroup (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
+
+/-- Shortcut for the canonical real normed space structure on the Sobolev dual. Use together
+with `W1p0.instStrongDualNormedAddCommGroup` in files applying operator-norm lemmas. -/
+noncomputable local instance W1p0.instStrongDualNormedSpace :
+    NormedSpace ℝ (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
 
 end TauCeti
