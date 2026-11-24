@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Kaplansky
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.LocallyConvex.StrongOperatorTopology
-public import TauCeti.Analysis.Normed.Algebra.StarSubalgebra
+public import TauCeti.Analysis.Normed.Module.Ball.SelfAdjoint
 public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification

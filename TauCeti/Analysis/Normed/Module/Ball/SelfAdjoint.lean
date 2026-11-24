@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Subalgebra
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 
 import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
-# Self-adjoint elements of a ball in the closure of a star subalgebra
+# Self-adjoint elements of a ball in the closure of a star-closed submodule
 
 In a normed space over `ℝ` or `ℂ` with a continuous involution, the self-adjoint elements of norm
 at most `r` of the norm closure of a star-closed submodule `s`, such as a star subalgebra, are
