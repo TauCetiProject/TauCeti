@@ -9,8 +9,9 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.Distribution.Mass.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
-import TauCeti.Analysis.Distribution.Mass.PolarDensity
+import TauCeti.Analysis.Distribution.Mass.Polar.Density
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.Topology.Instances.ENNReal
@@ -85,11 +86,24 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [FiniteDimensional ℝ F] {Ω : Opens E} {n : ℕ∞}
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ] {T : 𝓕}
 
-section Smooth
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- The preimage in `Ω` of a compact subset `K ⊆ Ω` of `E` is compact and measurable. -/
+private theorem isCompact_measurableSet_preimage_coe {K : Set E} (hK : IsCompact K)
+    (hKΩ : K ⊆ Ω) : IsCompact ((↑) ⁻¹' K : Set Ω) ∧ MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
+  ⟨Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ),
+    (hK.isClosed.preimage continuous_subtypeVal).measurableSet⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F] in
-private theorem coe_monoCLM (ψ : 𝓓(Ω, F)) : ⇑(monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ := by
-  simp [monoCLM_apply]
+omit [BorelSpace E] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] in
+/-- A field of norm at most one almost everywhere for a measure finite on compact sets is locally
+integrable. -/
+private theorem locallyIntegrable_of_ae_norm_le_one {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
+    {g : Ω → F} (hg : AEStronglyMeasurable g μ) (h1 : ∀ᵐ x ∂μ, ‖g x‖ ≤ 1) :
+    LocallyIntegrable g μ := by
+  have := Ω.isOpen.locallyCompactSpace
+  exact locallyIntegrable_iff.2 fun K hK =>
+    Measure.integrableOn_of_bounded hK.measure_lt_top.ne hg (M := 1) (ae_restrict_of_ae h1)
+
+section Smooth
 
 omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F] in
 /-- The restriction of `T` to smooth tests, a continuous linear map when `T` has locally finite
@@ -104,6 +118,30 @@ private theorem smoothRestrict_apply (hT : HasLocallyFiniteMass T) (ψ : 𝓓(Ω
     smoothRestrict T hT ψ = T (monoCLM ℝ ψ) :=
   rfl
 
+/-- A test `φ` of class `C^n` is approximated by smooth tests in a compact set of finite local
+mass: there is a compact `K ⊆ Ω` with `localMass T K` finite and compact, measurable preimage in
+`Ω`, and for every `ε > 0` a smooth test `ψ` such that `φ - ψ` is supported in `K` and bounded by
+`ε`, so that `‖T (φ - ψ)‖ₑ ≤ localMass T K * ε`. -/
+private theorem exists_isCompact_localMass_ne_top_approx (hT : HasLocallyFiniteMass T)
+    (φ : 𝓓^{n}(Ω, F)) :
+    ∃ K : Set E, localMass T K ≠ ⊤ ∧ IsCompact ((↑) ⁻¹' K : Set Ω) ∧
+      MeasurableSet ((↑) ⁻¹' K : Set Ω) ∧ ∀ ε : ℝ, 0 < ε → ∃ ψ : 𝓓(Ω, F),
+        tsupport (⇑φ - ⇑ψ) ⊆ K ∧ (∀ x, ‖φ x - ψ x‖ ≤ ε) ∧
+          ‖T (φ - monoCLM ℝ ψ)‖ₑ ≤ localMass T K * ENNReal.ofReal ε := by
+  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
+  obtain ⟨hKc, hKm⟩ := isCompact_measurableSet_preimage_coe hK hKΩ
+  refine ⟨K, (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ, hKc, hKm,
+    fun ε hε => ?_⟩
+  obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
+  have hsub : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
+  have hε' (x : E) : ‖φ x - ψ x‖ ≤ ε := by
+    rw [← dist_eq_norm_sub']
+    exact hψφ x
+  refine ⟨ψ, hsub, hε', enorm_apply_le_localMass_mul_of_forall_enorm_le T
+    (by simpa [coe_monoCLM_of_le le_top le_rfl] using hsub) fun x => ?_⟩
+  rw [← ofReal_norm]
+  simpa [coe_monoCLM_of_le le_top le_rfl] using ENNReal.ofReal_le_ofReal (hε' x)
+
 /-- The restriction of `T` to smooth tests has the same mass measure as `T`. -/
 private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
     massMeasure (smoothRestrict T hT) = massMeasure T := by
@@ -111,34 +149,22 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
   set T' := smoothRestrict T hT
   refine le_antisymm (massMeasure_le_of_enorm_apply_le _ fun ψ => ?_)
     (massMeasure_le_of_enorm_apply_le _ fun φ => ?_)
-  · simpa [T', smoothRestrict_apply, coe_monoCLM] using
+  · simpa [T', smoothRestrict_apply, coe_monoCLM_of_le le_top le_rfl] using
       enorm_apply_le_lintegral_massMeasure hT (monoCLM ℝ ψ)
   -- Approximate `φ` by smooth tests `ψ` supported in a compact `K`.
-  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
-  have hKT : localMass T K ≠ ⊤ := (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ
-  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
-    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
+  obtain ⟨K, hKT, hKc, hKm, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
   have hKT' : massMeasure T' ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
   refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT', hKT⟩)
     fun ε hε => ?_
-  obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
-  have hsub' : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
-  have hsub : tsupport (φ - monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) ⊆ K := by
-    simpa [coe_monoCLM] using hsub'
+  obtain ⟨ψ, hsub', hψφ, hTψ⟩ := happrox ε hε
   have hφm : Measurable fun x : Ω => ‖φ x‖ₑ :=
     (φ.continuous.comp continuous_subtypeVal).eNorm.measurable
   calc ‖T φ‖ₑ = ‖T' ψ + T (φ - monoCLM ℝ ψ)‖ₑ := by simp [T', smoothRestrict_apply]
     _ ≤ ‖T' ψ‖ₑ + ‖T (φ - monoCLM ℝ ψ)‖ₑ := eNorm_add_le _ _
     _ ≤ ∫⁻ x, ‖φ x‖ₑ + ‖ψ x - φ x‖ₑ ∂massMeasure T' + localMass T K * ENNReal.ofReal ε := by
-        gcongr
-        · refine (enorm_apply_le_lintegral_massMeasure hT.comp_monoCLM ψ).trans
-            (lintegral_mono fun x => ?_)
-          simpa using eNorm_add_le (φ x) (ψ x - φ x)
-        · refine enorm_apply_le_localMass_mul_of_forall_enorm_le T hsub fun x => ?_
-          rw [← ofReal_norm]
-          simpa [coe_monoCLM, dist_eq_norm_sub'] using ENNReal.ofReal_le_ofReal (hψφ x)
+        refine add_le_add ((enorm_apply_le_lintegral_massMeasure hT.comp_monoCLM ψ).trans
+          (lintegral_mono fun x => ?_)) hTψ
+        simpa using eNorm_add_le (φ x) (ψ x - φ x)
     _ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T' + ENNReal.ofReal ε * massMeasure T' ((↑) ⁻¹' K) +
           localMass T K * ENNReal.ofReal ε := by
         rw [lintegral_add_left hφm]
@@ -148,7 +174,7 @@ private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
         · rw [Function.mem_support] at hx ⊢
           rw [Pi.sub_apply, ← neg_sub, neg_ne_zero]
           exact hx
-        · rw [← dist_eq_norm_sub]
+        · rw [norm_sub_rev]
           exact hψφ x
     _ = _ := by ring
 
@@ -167,24 +193,17 @@ private theorem apply_eq_integral_polarDensity_smoothRestrict (hT : HasLocallyFi
   have hrep (ψ : 𝓓(Ω, F)) : T (monoCLM ℝ ψ) = ∫ x, τ x (ψ x) ∂massMeasure T := by
     rw [← smoothRestrict_apply hT, apply_eq_integral_polarDensity hT',
       massMeasure_smoothRestrict hT]
-  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
-  have hKT : localMass T K ≠ ⊤ := (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ
-  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
-    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
+  obtain ⟨K, hKT, hKc, hKm, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
   have hKμ : massMeasure T ((↑) ⁻¹' K) ≠ ⊤ := hKc.measure_lt_top.ne
   rw [← sub_eq_zero, ← eNorm_eq_zero, ← nonpos_iff_eq_zero]
   refine ENNReal.le_of_forall_pos_le_add_ofReal_mul (ENNReal.add_ne_top.2 ⟨hKT, hKμ⟩)
     fun ε hε => ?_
-  obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
+  obtain ⟨ψ, hsub, hψφ, hTfε⟩ := happrox ε hε
   set f : 𝓓^{n}(Ω, F) := φ - monoCLM ℝ ψ
   have hf (x : E) : f x = φ x - ψ x := by simp [f]
-  have hfK : tsupport f ⊆ K := by
-    have h : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
-    simpa [f, coe_monoCLM] using h
+  have hfK : tsupport f ⊆ K := by simpa [f, coe_monoCLM_of_le le_top le_rfl] using hsub
   have hfε (x : E) : ‖f x‖ ≤ ε := by
-    rw [hf, ← dist_eq_norm_sub']
+    rw [hf]
     exact hψφ x
   have hTf : T f = T φ - ∫ x, τ x (ψ x) ∂massMeasure T := by rw [map_sub, hrep]
   have hIf : ∫ x, τ x (f x) ∂massMeasure T =
@@ -201,16 +220,12 @@ private theorem apply_eq_integral_polarDensity_smoothRestrict (hT : HasLocallyFi
   calc ‖T f - ∫ x, τ x (f x) ∂massMeasure T‖ₑ
       ≤ ‖T f‖ₑ + ‖∫ x, τ x (f x) ∂massMeasure T‖ₑ := eNorm_sub_le
     _ ≤ localMass T K * ENNReal.ofReal ε + ENNReal.ofReal ε * massMeasure T ((↑) ⁻¹' K) := by
-        gcongr
-        · refine enorm_apply_le_localMass_mul_of_forall_enorm_le T hfK fun x => ?_
-          rw [← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal (hfε x)
-        · refine (eNorm_integral_le_lintegral_eNorm _).trans <|
-            (lintegral_mono_ae ?_).trans (lintegral_enorm_le_ofReal_mul_measure _
-              (f := fun x : Ω => f x) hKm (fun x hx => hfK (subset_tsupport _ hx)) fun x => hfε x)
-          filter_upwards [hτ1] with x hx
-          rw [← ofReal_norm, ← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal (((τ x).le_opNorm _).trans (by rw [hx, one_mul]))
+        refine add_le_add hTfε <| (eNorm_integral_le_lintegral_eNorm _).trans <|
+          (lintegral_mono_ae ?_).trans (lintegral_enorm_le_ofReal_mul_measure _
+            (f := fun x : Ω => f x) hKm (fun x hx => hfK (subset_tsupport _ hx)) fun x => hfε x)
+        filter_upwards [hτ1] with x hx
+        rw [← ofReal_norm, ← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (((τ x).le_opNorm _).trans (by rw [hx, one_mul]))
     _ = _ := by ring
 
 private theorem exists_polarVector (hT : HasLocallyFiniteMass T) :
@@ -288,11 +303,9 @@ theorem ae_norm_polarVector_eq_one : ∀ᵐ x ∂massMeasure T, ‖polarVector T
 
 /-- The polar vector field is locally integrable with respect to the mass measure. -/
 theorem locallyIntegrable_polarVector :
-    LocallyIntegrable (polarVector T) (massMeasure T) := by
-  have := Ω.isOpen.locallyCompactSpace
-  exact locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded
-    hK.measure_lt_top.ne stronglyMeasurable_polarVector.aestronglyMeasurable (M := 1)
-    (ae_restrict_of_ae (ae_norm_polarVector_eq_one.mono fun x hx => hx.le))
+    LocallyIntegrable (polarVector T) (massMeasure T) :=
+  locallyIntegrable_of_ae_norm_le_one stronglyMeasurable_polarVector.aestronglyMeasurable
+    (ae_norm_polarVector_eq_one.mono fun _ hx => hx.le)
 
 /-- **Uniqueness of the polar vector field.** A locally integrable vector field `η` with
 `T φ = ∫ ⟪η x, φ x⟫ d‖T‖` for every test `φ` agrees with the polar vector field of `T` at
@@ -309,7 +322,7 @@ theorem ae_eq_polarVector {η : Ω → F} (hη : LocallyIntegrable η (massMeasu
     rw [integral_sub (integrable_inner_subtype φ hη) (integrable_inner_subtype φ hpv)]
     have h₁ := h (monoCLM ℝ φ)
     have h₂ := apply_eq_integral_inner_polarVector hT (monoCLM ℝ φ)
-    simp only [coe_monoCLM, real_inner_comm (φ _)] at h₁ h₂ ⊢
+    simp only [coe_monoCLM_of_le le_top le_rfl, real_inner_comm (φ _)] at h₁ h₂ ⊢
     rw [← h₁, ← h₂, sub_self]] with x hx
   simpa [sub_eq_zero] using hx
 
@@ -330,6 +343,16 @@ private theorem enorm_apply_le_lintegral_of_apply_eq_integral_inner
   rw [← ofReal_norm, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans (by rw [hx, one_mul]))
 
+omit [FiniteDimensional ℝ F] in
+/-- A map represented against a measure `μ` finite on compact sets by a field of norm one at
+`μ`-almost every point has mass measure at most `μ`. -/
+private theorem massMeasure_le_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
+    (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
+    massMeasure T ≤ μ := by
+  have := Ω.isOpen.locallyCompactSpace
+  exact massMeasure_le_of_enorm_apply_le μ
+    (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h)
+
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- A map represented against a measure `μ` finite on compact sets by a field of norm one at
 `μ`-almost every point has locally finite mass. -/
@@ -337,10 +360,7 @@ private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasure
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
     HasLocallyFiniteMass T := by
   refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ => ?_
-  have hKc : IsCompact ((↑) ⁻¹' K : Set Ω) :=
-    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-  have hKm : MeasurableSet ((↑) ⁻¹' K : Set Ω) :=
-    (hK.isClosed.preimage continuous_subtypeVal).measurableSet
+  obtain ⟨hKc, hKm⟩ := isCompact_measurableSet_preimage_coe hK hKΩ
   refine ne_top_of_le_ne_top (hKc.measure_lt_top (μ := μ)).ne
     (localMass_le_iff.2 fun φ hφK hφ => ?_)
   simpa using (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h φ).trans
@@ -356,11 +376,10 @@ private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts
     η =ᵐ[μ] fun x => ((massMeasure T).rnDeriv μ x).toReal • polarVector T x := by
   have := Ω.isOpen.locallyCompactSpace
   have hT := hasLocallyFiniteMass_of_apply_eq_integral_inner hη1 h
-  have hac : massMeasure T ≪ μ := Measure.absolutelyContinuous_of_le
-    (massMeasure_le_of_enorm_apply_le μ (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h))
-  have hηl : LocallyIntegrable η μ := locallyIntegrable_iff.2 fun K hK =>
-    Measure.integrableOn_of_bounded hK.measure_lt_top.ne hηm (M := 1)
-      (ae_restrict_of_ae (hη1.mono fun x hx => hx.le))
+  have hac : massMeasure T ≪ μ :=
+    Measure.absolutelyContinuous_of_le (massMeasure_le_of_apply_eq_integral_inner hη1 h)
+  have hηl : LocallyIntegrable η μ :=
+    locallyIntegrable_of_ae_norm_le_one hηm (hη1.mono fun _ hx => hx.le)
   have hρl : LocallyIntegrable
       (fun x => ((massMeasure T).rnDeriv μ x).toReal • polarVector T x) μ :=
     locallyIntegrable_iff.2 fun K hK => by
@@ -376,7 +395,7 @@ private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts
       sub_eq_zero]
     calc ∫ x, ⟪φ x, η x⟫ ∂μ = T (monoCLM ℝ φ) := by simp [h, real_inner_comm]
       _ = ∫ x, ⟪polarVector T x, φ x⟫ ∂massMeasure T := by
-          rw [apply_eq_integral_inner_polarVector hT, coe_monoCLM]
+          rw [apply_eq_integral_inner_polarVector hT, coe_monoCLM_of_le le_top le_rfl]
       _ = ∫ x, ((massMeasure T).rnDeriv μ x).toReal • ⟪polarVector T x, φ x⟫ ∂μ :=
           (integral_rnDeriv_smul hac).symm
       _ = _ := by simp [inner_smul_right, real_inner_comm]] with x hx
@@ -391,8 +410,8 @@ theorem massMeasure_eq_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     (hηm : AEStronglyMeasurable η μ) (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1)
     (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) : massMeasure T = μ := by
   have := Ω.isOpen.locallyCompactSpace
-  have hac : massMeasure T ≪ μ := Measure.absolutelyContinuous_of_le
-    (massMeasure_le_of_enorm_apply_le μ (enorm_apply_le_lintegral_of_apply_eq_integral_inner hη1 h))
+  have hac : massMeasure T ≪ μ :=
+    Measure.absolutelyContinuous_of_le (massMeasure_le_of_apply_eq_integral_inner hη1 h)
   set ρ := (massMeasure T).rnDeriv μ
   -- `‖η‖ = ρ ‖η_T‖` with `‖η‖ = 1` and `‖η_T‖ = 1`, so integrating over `A` gives `μ A = ‖T‖ A`.
   have hη'e : ∀ᵐ x ∂massMeasure T, ‖polarVector T x‖ₑ = 1 :=

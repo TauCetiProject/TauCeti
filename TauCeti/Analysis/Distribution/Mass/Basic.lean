@@ -382,9 +382,8 @@ The testing set `U` need not be open or measurable. -/
 theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :
     localMass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) U =
       localMass f (U ∩ (Ω' : Set E)) := by
-  have hcoe (ψ : 𝓓^{n}(Ω', F)) :
-      ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ := by
-    simp [TestFunction.monoCLM_apply, h]
+  have hcoe (ψ : 𝓓^{n}(Ω', F)) : ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ :=
+    TestFunction.coe_monoCLM_of_le le_rfl h ψ
   refine le_antisymm (localMass_le_iff.2 fun ψ hψU hψ => ?_)
     (localMass_le_iff.2 fun φ hφU hφ => ?_)
   · exact enorm_le_localMass (f := f)
