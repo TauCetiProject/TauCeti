@@ -111,23 +111,6 @@ private theorem exists_concat_path_of_eq {k₁ k₂ : ℕ} (w₁ : Fin k₁ → 
       · exact ⟨(i - a₀).val, by omega, by simpa only [hhit] using hstep₁ (i - a₀).isLt⟩
       · exact ⟨k₁ + 1 + (j - b₀).val, by omega, by simpa only [hhit] using hstep₂ (j - b₀).val⟩
 
-private theorem two_le_card_sum_edge_fiber_of_no_singleton_edge {k₁ k₂ : ℕ}
-    (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α)
-    (h : ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t' =
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t)
-    (e : Sym2 α)
-    (he : e ∈ univ.image (Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-      (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))))) :
-    2 ≤ #{t : Fin k₁ ⊕ Fin k₂ |
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t = e} := by
-  obtain ⟨t, -, rfl⟩ := mem_image.mp he
-  obtain ⟨t', htt', ht'⟩ := h t
-  exact one_lt_card.mpr ⟨t, by simp, t', mem_filter.mpr ⟨mem_univ _, ht'⟩, htt'.symm⟩
-
 /-- A pair of cyclic words with no singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`
 traverses at most `(k₁ + k₂) / 2` distinct unordered edges in total. Loops count as edges. -/
 theorem two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge {k₁ k₂ : ℕ}
@@ -141,7 +124,7 @@ theorem two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge {k₁ k₂ : ℕ}
       (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))))) ≤ k₁ + k₂ := by
   simpa only [card_univ, Fintype.card_sum, Fintype.card_fin] using
     mul_card_image_le_card (univ : Finset (Fin k₁ ⊕ Fin k₂)) 2
-      (two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h)
+      (two_le_card_filter_eq_of_no_singleton_fiber h)
 
 /-- **Connected two-trace vertex bound.** If two cyclic words `w₁` and `w₂` of lengths `k₁` and
 `k₂` share at least one unordered cyclic edge and have no singleton unordered cyclic edge across
@@ -200,7 +183,7 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
   have herase : 2 * (#E - 1) ≤ ∑ e ∈ E.erase e₀, #{t | stepEdge t = e} := by
     simpa only [sum_const, smul_eq_mul, card_erase_of_mem he₀E, mul_comm] using
       sum_le_sum (s := E.erase e₀) fun e he ↦
-        two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h e (mem_of_mem_erase he)
+        two_le_card_filter_eq_of_no_singleton_fiber h e (mem_of_mem_erase he)
   omega
 
 /-- Over a finite alphabet `β`, at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)`
