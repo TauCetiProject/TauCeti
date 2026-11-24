@@ -114,4 +114,10 @@ theorem lieExpContinuousAddEquiv_symm_apply (X : LeftInvariantDerivation I G) :
     (lieExpContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul (lieExp X)) = X := by
   rw [← lieExpContinuousAddEquiv_apply, ContinuousAddEquiv.symm_apply_apply]
 
+@[simp]
+theorem lieExp_lieExpContinuousAddEquiv_symm_apply (g : Additive G) :
+    lieExp ((lieExpContinuousAddEquiv (I := I) (G := G)).symm g) = Additive.toMul g :=
+  congrArg Additive.toMul
+    ((lieExpContinuousAddEquiv_apply _).symm.trans (ContinuousAddEquiv.apply_symm_apply _ g))
+
 end TauCeti
