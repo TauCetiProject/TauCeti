@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.RestrictScalars
 public import Mathlib.Algebra.Lie.Classical
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.Algebra.Lie.Sl2.Killing
+import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 
 /-!
 # The Cartan involution `X ↦ -X*` of `𝔰𝔩₂(ℂ)` viewed as real
@@ -29,17 +30,13 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- Minus the conjugate transpose of a trace-zero matrix has trace zero. -/
-private theorem neg_conjTranspose_mem_sl (X : SpecialLinear.sl (Fin 2) ℂ) :
-    -(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ ∈ SpecialLinear.sl (Fin 2) ℂ := by
-  have h : (X : Matrix (Fin 2) (Fin 2) ℂ).trace = 0 := LinearMap.mem_ker.1 X.property
-  exact LinearMap.mem_ker.2 (by simp [trace_conjTranspose, h])
-
 /-- The involution `X ↦ -X*` of `𝔰𝔩₂(ℂ)`, as an automorphism of real Lie algebras. -/
 noncomputable def slFinTwoNegConjTranspose :
     SpecialLinear.sl (Fin 2) ℂ ≃ₗ⁅ℝ⁆ SpecialLinear.sl (Fin 2) ℂ where
-  toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, neg_conjTranspose_mem_sl X⟩
-  invFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, neg_conjTranspose_mem_sl X⟩
+  toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ,
+    neg_mem (SpecialLinear.conjTranspose_mem_sl X.property)⟩
+  invFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ,
+    neg_mem (SpecialLinear.conjTranspose_mem_sl X.property)⟩
   map_add' X Y := Subtype.ext (by simp [add_comm])
   map_smul' r X := Subtype.ext (by simp [conjTranspose_smul])
   map_lie' {X Y} := Subtype.ext (by simp [Ring.lie_def, conjTranspose_mul])
