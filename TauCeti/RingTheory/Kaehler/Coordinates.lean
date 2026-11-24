@@ -7,15 +7,17 @@ module
 
 public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.RingTheory.Kaehler.Conormal
-public import TauCeti.RingTheory.Kaehler.DualDerivation
+
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Coordinates from a free quotient of the Kähler differentials
 
 Let `k` be a commutative ring and `R` a `k`-algebra. Elements `x₁, …, x_d ∈ R` and `k`-derivations
 `δ₁, …, δ_d` of `R` are *dual* when `δᵢ xⱼ` is `1` for `i = j` and `0` otherwise. Dual elements
-split the module of differentials as `Ω[R⁄k] = (⊕ⱼ R·dxⱼ) ⊕ ⋂ᵢ ker δᵢ`
-(`KaehlerDifferential.isCompl_span_D_iInf_ker_liftKaehlerDifferential`).
+split the module of differentials as `Ω[R⁄k] = (⊕ⱼ R·dxⱼ) ⊕ ⋂ᵢ ker δᵢ`, where `δᵢ` is read as the
+`R`-linear form `Ω[R⁄k] → R` it induces: the `dxⱼ` and these forms are biorthogonal
+(`Submodule.isCompl_span_range_iInf_ker_of_apply_eq_ite`).
 
 Over a local ring `(R, 𝔪, κ)` every surjection `q : Ω[R⁄k] → Rᵈ` arises in this way. The elements
 `q(dr)` generate `Rᵈ`, so by Nakayama's lemma some `q(dx₁), …, q(dx_d)` form a basis of `Rᵈ`; the
@@ -114,7 +116,8 @@ theorem exists_coordinates_of_span_D_image_sup_eq_top {s : Set R}
   refine ⟨fun j ↦ a ((b.indexEquiv (Pi.basisFun R ι)).symm j),
     fun i ↦ (LinearMap.proj i ∘ₗ Λ).compDer (D k R), fun j ↦ Subtype.prop _, hδ, hker, ?_⟩
   rw [hker]
-  exact isCompl_span_D_iInf_ker_liftKaehlerDifferential hδ
+  exact isCompl_span_range_iInf_ker_of_apply_eq_ite fun i j ↦ by
+    rw [Derivation.liftKaehlerDifferential_comp_D, hδ]
 
 /-- **Coordinates from a free quotient of the differentials.** Let `R` be a local `k`-algebra and
 `q : Ω[R⁄k] → (ι → R)` a surjection onto a free module of finite rank. Then there are `xⱼ ∈ R` and
