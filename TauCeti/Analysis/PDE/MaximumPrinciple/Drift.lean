@@ -771,7 +771,7 @@ nonnegative `φ ∈ H¹₀(Ω)`. For `u ∈ H¹(Ω)` and a level `l ≥ 0` with 
 testing `-∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u` against `v` bounds the energy of `v` for the
 operator `-∂ᵢ(aⁱʲ ∂ⱼ·) + (b - e)ⁱ ∂ᵢ` with no mass:
 `a_{b - e, 0}(v, v) ≤ a_{b, c}(u, v) + ∫ u ⟪e, ∇v⟫`. `Ω` need not have finite measure. -/
-private theorem energyFormH1_sub_zero_posPartAbove_self_le
+theorem energyFormH1_sub_zero_posPartAbove_self_le
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoeff' : MemLp (fun x ↦ energyIntegrand (a x) ((b - e) x)
       ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Omega))
