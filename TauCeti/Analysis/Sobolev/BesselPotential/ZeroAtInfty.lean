@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
-import TauCeti.Analysis.Sobolev.BesselPotential.Operator
+public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
 import TauCeti.Analysis.Calculus.ContDiff.OperatorFamily
@@ -162,6 +162,16 @@ theorem toZeroAtInfty_injective :
   filter_upwards [coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u,
     coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 v] with x hu hv
   rw [hu, hv, huv]
+
+/-- The Sobolev embedding of the element of `H^s(E)` of a continuous real Sobolev function `f` is
+`f` itself. -/
+theorem coe_toZeroAtInfty_ofRealSobolevFunction {h0 : 0 ≤ s} {f : E → ℝ}
+    {hf : f ∈ realSobolevFunctions E s 2} (hfc : Continuous f) :
+    ⇑(toZeroAtInfty hs (ofRealSobolevFunction h0 hf)) = fun x ↦ (f x : ℂ) :=
+  (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs _).continuous
+    (Complex.continuous_ofReal.comp hfc)).1 <|
+      (coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 _).symm.trans
+        (coeFn_inclusionLp_ofRealSobolevFunction h0 hf)
 
 /-- On Schwartz functions the Sobolev embedding is the inclusion `𝓢(E, F) ⊆ C₀(E, F)`. -/
 @[simp]

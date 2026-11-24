@@ -62,36 +62,23 @@ namespace TauCeti.Vortex
 
 variable {m : ℕ}
 
-/-- The Sobolev embedding of the reduced solution, as an element of `H^s(ℂ)`, is the reduced
-solution itself. -/
-private theorem toZeroAtInfty_ofRealSobolevFunction_reducedSolution {s : ℝ} (hs : 1 < s)
-    (c : Fin m → ℂ) :
-    ⇑(toZeroAtInfty (finrank_real_complex_lt_two_mul hs) (ofRealSobolevFunction (by linarith)
-        (reducedSolution_mem_realSobolevFunctions (monicOfCoeff c) s))) =
-      fun z ↦ (reducedSolution (monicOfCoeff c) z : ℂ) := by
-  refine (Continuous.ae_eq_iff_eq volume (toZeroAtInfty _ _).continuous
-    (continuous_ofReal.comp (contDiff_reducedSolution _).continuous)).1 ?_
-  exact (coeFn_inclusionLp_ae_eq_toZeroAtInfty _ _).symm.trans
-    (coeFn_inclusionLp_ofRealSobolevFunction _ _)
-
 /-- **The reduced solution is jointly smooth in the divisor and the point.** The solution `w_c` of
 the reduced equation for the monic polynomial `P_c` with lower coefficients `c` satisfies:
 `(c, z) ↦ w_c(z)` is `C^∞`. -/
 theorem contDiff_reducedSolution_monicOfCoeff :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ reducedSolution (monicOfCoeff p.1) p.2 := by
   refine contDiff_infty.2 fun n ↦ ?_
-  have hs : (1 : ℝ) < n + 2 := by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
   have hn : (finrank ℝ ℂ : ℝ) + 2 * n < 2 * (n + 2) := by
     rw [Complex.finrank_real_complex]
     push_cast
     linarith
   have h := ContDiff.toZeroAtInfty_apply hn
-    (((contDiff_ofRealSobolevFunction_reducedSolution (m := m) (by linarith)).of_le
+    (((contDiff_ofRealSobolevFunction_reducedSolution (m := m) (by positivity)).of_le
       (by exact_mod_cast le_top)).comp contDiff_fst) contDiff_snd
   convert reCLM.contDiff.comp h using 1
   ext p
   simp only [Function.comp_apply, reCLM_apply]
-  rw [toZeroAtInfty_ofRealSobolevFunction_reducedSolution hs p.1, ofReal_re]
+  rw [coe_toZeroAtInfty_ofRealSobolevFunction (contDiff_reducedSolution _).continuous, ofReal_re]
 
 /-- **The plane vortices are jointly smooth in the divisor and the point.** The vortex field
 `x_c` with zero divisor `P_c` (`TauCeti.Vortex.polynomialVortex`) satisfies: `(c, z) ↦ x_c(z)` is
