@@ -64,7 +64,7 @@ connected, the quotient graph is `Γ`.
   `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
   conjugates of the vertex groups and of the edge group images.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex_eq_bot`,
-  `TauCeti.GraphOfGroups.stabilizer_dart_eq_bot_of_subsingleton`: trivial vertex groups give
+  `TauCeti.GraphOfGroups.stabilizer_bassSerreTree_dart_eq_bot`: trivial vertex groups give
   trivial vertex stabilizers, and trivial edge groups give trivial dart stabilizers.
 * `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
   `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
@@ -610,7 +610,7 @@ theorem stabilizer_bassSerreVertex_eq_bot {b : Γ.V} [Subsingleton (𝔸.vertexG
 
 /-- When every edge group is trivial, for instance for a free product, every dart of the
 Bass–Serre tree has trivial stabilizer. -/
-theorem stabilizer_dart_eq_bot_of_subsingleton [∀ z, Subsingleton (𝔸.edgeGroup z)]
+theorem stabilizer_bassSerreTree_dart_eq_bot [∀ z, Subsingleton (𝔸.edgeGroup z)]
     (d : (bassSerreTree 𝔸 a).E) : stabilizer (π₁ 𝔸 a) d = ⊥ := by
   obtain ⟨b, c, p, e, rfl⟩ := bassSerreDart_surjective d
   rw [stabilizer_bassSerreDart, MonoidHom.range_eq_bot_iff.2 (Subsingleton.elim _ _),

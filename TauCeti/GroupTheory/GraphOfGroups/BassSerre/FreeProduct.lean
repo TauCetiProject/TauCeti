@@ -80,7 +80,7 @@ theorem exists_gTree_coprodI :
   refine ⟨X.comap e.toMonoidHom, fun i => bassSerreVertex (s i), fun d => ?_, fun i => ?_,
     fun y => ?_, fun i i' g h => ?_⟩
   · exact (GTree.stabilizer_comap_dart X e.toMonoidHom d).trans
-      (hbot _ (stabilizer_dart_eq_bot_of_subsingleton _))
+      (hbot _ (stabilizer_bassSerreTree_dart_eq_bot _))
   · refine (GTree.stabilizer_comap_vertex X e.toMonoidHom _).trans ?_
     ext g
     rw [stabilizer_bassSerreVertex, Subgroup.mem_comap, MonoidHom.mem_range, MonoidHom.mem_range]
