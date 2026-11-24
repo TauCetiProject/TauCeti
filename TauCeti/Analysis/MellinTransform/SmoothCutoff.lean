@@ -22,7 +22,9 @@ Mellin convolution with them is an approximate identity for `dx/x`: for `ν ≥ 
 `dx/x`-mass `1` vanishing there off a compact interval `[a, b] ⊂ (0, ∞)`, the convolution with
 `f` tends to `f x` at every `x > 0` where `f` is continuous (for `f` a.e. strongly measurable on
 `(0, ∞)`), uniformly on compact subsets of `(0, ∞)` when `f` is continuous there. Both follow from
-the bound `‖(ν_ε ⋆ f)(x) - f(x)‖ ≤ sup_{y ∈ [a^ε, b^ε]} ‖f(x/y) - f(x)‖`.
+the bound `‖(ν_ε ⋆ f)(x) - f(x)‖ ≤ sup_{|log y| < R} ‖f(x/y) - f(x)‖` for
+`ε max(|log a|, |log b|) < R`, which is Mathlib's `MeasureTheory.dist_convolution_le` in the
+coordinates `x = e^{-u}`.
 
 The *smoothed cutoff* `χ_ε(x) = ∫_{(x,∞)} ν_ε(z) dz/z` (for `x > 0`, and `0` for `x ≤ 0`) is
 the Mellin convolution of the sharp cutoff `1_(0,1]` with `ν_ε`. For a bump `ν` (in particular
@@ -226,15 +228,6 @@ theorem norm_mellin_sub_one_le (hν0 : ∀ x > 0, 0 ≤ ν x)
 
 /-! ### The approximate identity for `dx/x` -/
 
-/-- A function of `dx/x`-mass `1` vanishing on `(0, ∞)` off `[a, b]` has `0 < b`. -/
-private lemma pos_of_support_inter_Ioi_subset_Icc {a b : ℝ}
-    (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hνm : ∫ x in Ioi 0, ν x / x = 1) : 0 < b := by
-  by_contra hb
-  refine one_ne_zero (hνm.symm.trans (setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_))
-  have hνx : ν x = 0 := Function.notMem_support.mp fun h ↦
-    (not_lt.mp hb).not_gt ((hx : 0 < x).trans_le (hνs ⟨h, hx⟩).2)
-  rw [hνx, zero_div]
-
 /-- In logarithmic coordinates the spike keeps the `dx/x`-mass of `ν`. -/
 private lemma integral_deltaSpike_exp_neg (ν : ℝ → ℝ) (hε : 0 < ε) :
     ∫ v, deltaSpike ν ε (Real.exp (-v)) = ∫ x in Ioi 0, ν x / x := by
@@ -243,77 +236,56 @@ private lemma integral_deltaSpike_exp_neg (ν : ℝ → ℝ) (hε : 0 < ε) :
   simp only [neg_zero, zero_mul, Complex.exp_zero, one_smul, integral_complex_ofReal] at h
   exact_mod_cast h.symm
 
-/-- If `ν ≥ 0` on `(0, ∞)` vanishes there off `[a, b]` (`0 ≤ a`) and has `dx/x`-mass `1`, `ε > 0`,
-`x > 0`, `f` is a.e. strongly measurable on `(0, ∞)`, and `‖f (x / y) - f x‖ ≤ M` for every `y`
-in the support interval `[a^ε, b^ε]` of the spike, then the Mellin convolution of the spike with
-`f` is within `M` of `f x` at `x`. -/
-theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 ≤ a) (hν0 : ∀ x > 0, 0 ≤ ν x)
+/-- If `ν ≥ 0` on `(0, ∞)` vanishes there off `[a, b]` (`0 < a`) and has `dx/x`-mass `1`, `ε > 0`,
+`x > 0`, `f` is a.e. strongly measurable on `(0, ∞)`, `ε * max |log a| |log b| < R` (so that the
+spike is supported where `|log y| < R`), and `‖f (x / y) - f x‖ ≤ M` whenever `|log y| < R`, then
+the Mellin convolution of the spike with `f` is within `M` of `f x` at `x`. This is Mathlib's
+`MeasureTheory.dist_convolution_le` in the coordinates `x = e^{-u}`. -/
+theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 < a) (hν0 : ∀ x > 0, 0 ≤ ν x)
     (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hνm : ∫ x in Ioi 0, ν x / x = 1) {f : ℝ → ℂ}
-    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) {M : ℝ} (hε : 0 < ε) (hx : 0 < x)
-    (hbd : ∀ y ∈ Icc (a ^ ε) (b ^ ε), ‖f (x / y) - f x‖ ≤ M) :
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) {R M : ℝ} (hε : 0 < ε) (hx : 0 < x)
+    (hR : ε * max |Real.log a| |Real.log b| < R)
+    (hbd : ∀ y > 0, |Real.log y| < R → ‖f (x / y) - f x‖ ≤ M) :
     ‖mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x‖ ≤ M := by
-  -- In coordinates `x = e^{-u}` this is a convolution with the probability density `φ`.
   set u := -Real.log x
   have hxu : Real.exp (-u) = x := by rw [neg_neg, Real.exp_log hx]
-  set φ : ℝ → ℂ := fun v ↦ (deltaSpike ν ε (Real.exp (-v)) : ℂ)
+  set φ : ℝ → ℝ := fun v ↦ deltaSpike ν ε (Real.exp (-v))
   set g : ℝ → ℂ := fun v ↦ f (Real.exp (-v))
-  set S : Set ℝ := (fun v ↦ Real.exp (-v)) ⁻¹' Icc (a ^ ε) (b ^ ε)
-  have hm : ∫ v, deltaSpike ν ε (Real.exp (-v)) = 1 :=
-    (integral_deltaSpike_exp_neg ν hε).trans hνm
-  have hφ1 : ∫ v, φ v = 1 := by rw [integral_complex_ofReal, hm, ofReal_one]
-  have hφi : Integrable φ := Integrable.of_integral_ne_zero (hφ1 ▸ one_ne_zero)
-  have hφS : Function.support φ ⊆ S := fun v hv ↦
-    support_deltaSpike_subset ha hνs hε (by simpa [φ] using hv)
+  -- The spike in logarithmic coordinates is supported in the ball of radius `R` around `0`.
+  have hφR : Function.support φ ⊆ Metric.ball 0 R := by
+    intro v hv
+    replace hv : deltaSpike ν ε (Real.exp (-v)) ≠ 0 := hv
+    rw [deltaSpike_of_pos (Real.exp_pos _), ← Real.exp_mul] at hv
+    obtain ⟨h1, h2⟩ := hνs ⟨right_ne_zero_of_mul hv, Real.exp_pos _⟩
+    have h1' := Real.log_le_log ha h1
+    have h2' := Real.log_le_log (Real.exp_pos _) h2
+    rw [Real.log_exp] at h1' h2'
+    have ht : |-v * ε⁻¹| ≤ max |Real.log a| |Real.log b| :=
+      abs_le.mpr ⟨by linarith [neg_abs_le (Real.log a), le_max_left |Real.log a| |Real.log b|],
+        by linarith [le_abs_self (Real.log b), le_max_right |Real.log a| |Real.log b|]⟩
+    rw [abs_mul, abs_neg, abs_inv, abs_of_pos hε, ← div_eq_mul_inv, div_le_iff₀ hε] at ht
+    rw [mem_ball_zero_iff, Real.norm_eq_abs]
+    linarith
   have hgm : AEStronglyMeasurable g volume :=
     (hf.comp_quasiMeasurePreserving quasiMeasurePreserving_exp).comp_quasiMeasurePreserving
       (Measure.measurePreserving_neg volume).quasiMeasurePreserving
-  have hgS {v : ℝ} : g (u - v) = f (x / Real.exp (-v)) := by
-    simp only [g, ← hxu, ← Real.exp_sub]
-    ring_nf
-  have hconv : ConvolutionExistsAt φ g u (ContinuousLinearMap.mul ℝ ℂ) volume := by
-    refine BddAbove.convolutionExistsAt (s := S) _ ⟨‖f x‖ + M, ?_⟩
-      (measurableSet_Icc.preimage (by fun_prop)) (fun v hv ↦ hφS fun h ↦ hv (by simp [h]))
-      hφi.integrableOn hgm
-    rintro _ ⟨w, hw, rfl⟩
-    have h := hbd (Real.exp (-(u - w))) hw
-    rw [← hgS, sub_sub_cancel] at h
-    exact norm_le_norm_add_const_of_dist_le (by rwa [dist_eq_norm])
-  -- Subtract `f x = ∫ φ v * f x` and bound the integrand pointwise by `‖φ v‖ * M`.
-  have hsub : mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x =
-      ∫ v, φ v * (g (u - v) - f x) := by
-    rw [← hxu, mellinConv_exp_neg_eq_convolution, hxu, convolution_def]
-    conv_lhs => rhs; rw [← one_mul (f x), ← hφ1, ← integral_mul_const]
-    rw [← integral_sub hconv.integrable (hφi.mul_const _)]
-    simp [mul_sub]
-  have hnorm : ∫ v, ‖φ v‖ = 1 := by
-    have hφr : ∀ v, ‖φ v‖ = deltaSpike ν ε (Real.exp (-v)) := fun v ↦ by
-      simp [φ, abs_of_nonneg (deltaSpike_nonneg hν0 hε.le _)]
-    simp_rw [hφr]
-    exact hm
-  rw [hsub]
-  calc ‖∫ v, φ v * (g (u - v) - f x)‖ ≤ ∫ v, ‖φ v‖ * M := by
-        refine norm_integral_le_of_norm_le (hφi.norm.mul_const M)
-          (Eventually.of_forall fun v ↦ ?_)
-        rw [norm_mul]
-        by_cases hv : φ v = 0
-        · simp [hv]
-        refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-        rw [hgS]
-        exact hbd _ (hφS hv)
-    _ = M := by rw [integral_mul_const, hnorm, one_mul]
-
-/-- For `0 < a` and `0 < b`, the interval `[a^ε, b^ε]` lies in any given neighbourhood
-`(1 - δ, 1 + δ)` of `1` for all small enough `ε > 0`. -/
-private lemma eventually_Icc_rpow_subset_ball {a b δ : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hδ : 0 < δ) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), Icc (a ^ ε) (b ^ ε) ⊆ Metric.ball 1 δ := by
-  have h {c : ℝ} (hc : 0 < c) : Tendsto (fun ε : ℝ ↦ c ^ ε) (𝓝[>] 0) (𝓝 1) := by
-    have h := (Real.continuousAt_const_rpow (b := 0) hc.ne').tendsto.mono_left
-      (nhdsWithin_le_nhds (s := Ioi 0))
-    rwa [Real.rpow_zero] at h
-  filter_upwards [(h ha).eventually (Ioi_mem_nhds (by linarith : 1 - δ < 1)),
-    (h hb).eventually (Iio_mem_nhds (by linarith : (1 : ℝ) < 1 + δ))] with ε h1 h2 y hy
-  rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
-  exact ⟨by linarith [hy.2, mem_Iio.mp h2], by linarith [hy.1, mem_Ioi.mp h1]⟩
+  have hM : 0 ≤ M := by
+    have hR0 : 0 < R := (mul_nonneg hε.le ((abs_nonneg _).trans (le_max_left _ _))).trans_lt hR
+    have h := hbd 1 one_pos (by rwa [Real.log_one, abs_zero])
+    rwa [div_one, sub_self, norm_zero] at h
+  -- On the ball, `g w = f (x / y)` with `log y = w - u`.
+  have hg : ∀ w ∈ Metric.ball u R, dist (g w) (f x) ≤ M := fun w hw ↦ by
+    have h := hbd (Real.exp (w - u)) (Real.exp_pos _)
+      (by rwa [Real.log_exp, ← Real.dist_eq])
+    rw [show x / Real.exp (w - u) = Real.exp (-w) by rw [← hxu, ← Real.exp_sub]; ring_nf] at h
+    rw [dist_eq_norm]
+    exact h
+  have hconv := dist_convolution_le (μ := volume) hM hφR (fun v ↦ deltaSpike_nonneg hν0 hε.le _)
+    ((integral_deltaSpike_exp_neg ν hε).trans hνm) hgm hg
+  rw [← dist_eq_norm, ← hxu, mellinConv_exp_neg_eq_convolution, hxu]
+  convert hconv using 2
+  simp only [convolution_def, ContinuousLinearMap.mul_apply', ContinuousLinearMap.lsmul_apply,
+    Complex.real_smul, φ, g]
 
 /-- **Approximate identity for `dx/x`, pointwise.** If `ν ≥ 0` on `(0, ∞)` vanishes there off
 `[a, b]` (`0 < a`) and has `dx/x`-mass `1`, and `f` is a.e. strongly measurable on `(0, ∞)` and
@@ -324,18 +296,24 @@ theorem tendsto_mellinConv_deltaSpike {a b : ℝ} (ha : 0 < a) (hν0 : ∀ x > 0
     (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) (hx : 0 < x)
     (hcont : ContinuousAt f x) :
     Tendsto (fun ε ↦ mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x) (𝓝[>] 0) (𝓝 (f x)) := by
-  have hc : ContinuousAt (fun y ↦ f (x / y)) 1 := by
-    have h : ContinuousAt f (x / 1) := by rwa [div_one]
-    exact h.comp (continuousAt_const.div continuousAt_id one_ne_zero)
+  have hc : ContinuousAt (fun t ↦ f (x / Real.exp t)) 0 := by
+    have h : ContinuousAt f (x / Real.exp 0) := by rwa [Real.exp_zero, div_one]
+    have hdiv : ContinuousAt (fun t : ℝ ↦ x / Real.exp t) 0 :=
+      continuousAt_const.div Real.continuous_exp.continuousAt (Real.exp_ne_zero 0)
+    exact h.comp_of_eq hdiv rfl
   rw [Metric.tendsto_nhds]
   intro η hη
-  obtain ⟨δ, hδ, hδf⟩ := Metric.continuousAt_iff.mp hc (η / 2) (half_pos hη)
-  filter_upwards [self_mem_nhdsWithin, eventually_Icc_rpow_subset_ball ha
-    (pos_of_support_inter_Ioi_subset_Icc hνs hνm) hδ] with ε hε hsub
+  have hev {r : ℝ} (hr : 0 < r) :
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ε * max |Real.log a| |Real.log b| < r :=
+    (((continuous_id.mul (continuous_const (y := max |Real.log a| |Real.log b|))).tendsto' 0 0
+      (zero_mul _)).mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hr)
+  obtain ⟨R, hR, hRf⟩ := Metric.continuousAt_iff.mp hc (η / 2) (half_pos hη)
+  filter_upwards [self_mem_nhdsWithin, hev hR] with ε hε hεR
   rw [dist_eq_norm]
-  refine (norm_mellinConv_deltaSpike_sub_le ha.le hν0 hνs hνm hf hε hx fun y hy ↦ ?_).trans_lt
+  refine (norm_mellinConv_deltaSpike_sub_le ha hν0 hνs hνm hf hε hx hεR fun y hy hyR ↦ ?_).trans_lt
     (half_lt_self hη)
-  simpa [dist_eq_norm] using (hδf (hsub hy)).le
+  have h := (hRf (by rwa [Real.dist_eq, sub_zero])).le
+  rwa [Real.exp_log hy, Real.exp_zero, div_one, dist_eq_norm] at h
 
 /-- **Approximate identity for `dx/x`, uniformly on compact sets.** If `ν ≥ 0` on `(0, ∞)`
 vanishes there off `[a, b]` (`0 < a`) and has `dx/x`-mass `1`, and `f` is continuous on `(0, ∞)`,
@@ -347,29 +325,28 @@ theorem tendstoUniformlyOn_mellinConv_deltaSpike {a b : ℝ} (ha : 0 < a)
     (hK : IsCompact K) (hK0 : K ⊆ Ioi 0) :
     TendstoUniformlyOn (fun ε x ↦ mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x) f
       (𝓝[>] 0) K := by
-  -- `(x, y) ↦ f (x / y)` is uniformly continuous on the compact set `K × [1/2, 2]`.
-  have hI : ∀ y ∈ Icc (1 / 2 : ℝ) 2, 0 < y := fun y hy ↦ lt_of_lt_of_le (by norm_num) hy.1
-  have hF : ContinuousOn (fun p : ℝ × ℝ ↦ f (p.1 / p.2)) (K ×ˢ Icc (1 / 2) 2) :=
-    hf.comp (continuousOn_fst.div continuousOn_snd fun p hp ↦ (hI _ hp.2).ne')
-      fun p hp ↦ div_pos (hK0 hp.1) (hI _ hp.2)
+  -- `(x, t) ↦ f (x / e^t)` is uniformly continuous on the compact set `K × [-1, 1]`.
+  have hF : ContinuousOn (fun p : ℝ × ℝ ↦ f (p.1 / Real.exp p.2)) (K ×ˢ Icc (-1) 1) :=
+    hf.comp (continuousOn_fst.div (Real.continuous_exp.comp_continuousOn continuousOn_snd)
+      fun _ _ ↦ Real.exp_ne_zero _) fun p hp ↦ div_pos (hK0 hp.1) (Real.exp_pos _)
   rw [Metric.tendstoUniformlyOn_iff]
   intro η hη
   obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuousOn_iff.mp
     ((hK.prod isCompact_Icc).uniformContinuousOn_of_continuous hF) (η / 2) (half_pos hη)
-  filter_upwards [self_mem_nhdsWithin, eventually_Icc_rpow_subset_ball ha
-    (pos_of_support_inter_Ioi_subset_Icc hνs hνm) (lt_min hδ (by norm_num : (0 : ℝ) < 1 / 2))]
-    with ε hε hsub x hxK
+  have hev {r : ℝ} (hr : 0 < r) :
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ε * max |Real.log a| |Real.log b| < r :=
+    (((continuous_id.mul (continuous_const (y := max |Real.log a| |Real.log b|))).tendsto' 0 0
+      (zero_mul _)).mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hr)
+  filter_upwards [self_mem_nhdsWithin, hev (lt_min hδ one_pos)] with ε hε hεR x hxK
   rw [dist_comm, dist_eq_norm]
-  refine (norm_mellinConv_deltaSpike_sub_le ha.le hν0 hνs hνm
-    (hf.aestronglyMeasurable measurableSet_Ioi) hε (hK0 hxK) fun y hy ↦ ?_).trans_lt
+  refine (norm_mellinConv_deltaSpike_sub_le ha hν0 hνs hνm
+    (hf.aestronglyMeasurable measurableSet_Ioi) hε (hK0 hxK) hεR fun y hy hyR ↦ ?_).trans_lt
     (half_lt_self hη)
-  have hy1 : dist y 1 < min δ (1 / 2) := hsub hy
-  have hyI : y ∈ Icc (1 / 2 : ℝ) 2 := by
-    rw [Real.dist_eq, abs_lt] at hy1
-    constructor <;> linarith [min_le_right δ (1 / 2)]
-  have h := hδf (x, y) ⟨hxK, hyI⟩ (x, 1) ⟨hxK, by norm_num⟩
-    (by simpa [Prod.dist_eq] using hy1.trans_le (min_le_left _ _))
-  simpa [dist_eq_norm] using h.le
+  have hyI : Real.log y ∈ Icc (-1 : ℝ) 1 :=
+    abs_le.mp (hyR.trans_le (min_le_right _ _)).le
+  have h := hδf (x, Real.log y) ⟨hxK, hyI⟩ (x, 0) ⟨hxK, by norm_num⟩
+    (by simpa [Prod.dist_eq] using hyR.trans_le (min_le_left _ _))
+  simpa [Real.exp_log hy, dist_eq_norm] using h.le
 
 /-! ### Smoothed cutoffs -/
 
