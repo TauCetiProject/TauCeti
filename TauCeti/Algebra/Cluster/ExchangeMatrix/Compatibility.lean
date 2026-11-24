@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
-public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Standard
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Rank
@@ -151,18 +150,16 @@ variable {K : Type*} [DecidableEq K] (B : ExchangeMatrix (Function.Embedding.ref
 
 /-- The principal extension of a square exchange matrix, obtained by appending an identity
 block of frozen rows. -/
-def principalExtension : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ K) where
-  matrix := fromRows B.matrix 1
-  symmetrizer := B.symmetrizer
-  isSkewSymmetrizer := B.isSkewSymmetrizer
+def principalExtension : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ K) :=
+  (standardPartsEquiv K K).symm (B, 1)
 
 @[simp]
-theorem principalExtension_matrix : B.principalExtension.matrix = fromRows B.matrix 1 :=
-  (rfl)
+theorem principalExtension_matrix : B.principalExtension.matrix = fromRows B.matrix 1 := by
+  simp only [principalExtension, standardPartsEquiv_symm_matrix]
 
 @[simp]
-theorem principalExtension_symmetrizer : B.principalExtension.symmetrizer = B.symmetrizer :=
-  (rfl)
+theorem principalExtension_symmetrizer : B.principalExtension.symmetrizer = B.symmetrizer := by
+  simp only [principalExtension, standardPartsEquiv_symm_symmetrizer]
 
 /-- The mutable block of the principal extension is the original exchange matrix. -/
 @[simp]
