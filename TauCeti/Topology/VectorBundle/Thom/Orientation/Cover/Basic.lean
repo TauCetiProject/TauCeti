@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv
 public import TauCeti.Topology.VectorBundle.Orientation.Proper
 public import TauCeti.Topology.VectorBundle.Orientation.Tautological
@@ -48,7 +49,12 @@ coefficients (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEqui
   `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
 * `TauCeti.VectorBundleOrientationCover.coverThomPairMap`: the map of Thom pairs from the pull-back
   bundle to `E`, with `deckThomPairMap_comp_coverThomPairMap` (the lifted deck involution covers
-  the identity of the Thom pair of `E`).
+  the identity of the Thom pair of `E`) and `coverThomPairMap_eq_pullbackThomPairMap` (it is
+  `TauCeti.pullbackThomPairMap`).
+* `TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deckThomPairMap_fst`: `-1 ∈ ℤˣ` acts on the
+  Thom pair of the pull-back bundle by the lifted deck involution, and
+  `isQuotientCoveringMap_coverThomPairMap_fst`, `isQuotientCoveringMap_coverThomPairMap_snd`:
+  `coverThomPairMap` is the quotient covering map of this action on both spaces.
 * `TauCeti.VectorBundleOrientationCover.singularCohomologyMap_deckThomPairMap_thomClassOfModel`:
   it negates the Thom class of the tautological orientation.
 * `TauCeti.VectorBundleOrientationCover.singularHomologyMap_deckThomPairMap_comp_homologyThomMap`
@@ -200,6 +206,14 @@ theorem coverThomPairMap_fst_apply
     (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
     TopPair.Hom.fst (coverThomPairMap F E ι) v = Pullback.lift _ v :=
   pullbackThomPairMap_fst_apply F E _ v
+
+variable (F E ι) in
+/-- The map of Thom pairs of the orientation cover is `TauCeti.pullbackThomPairMap`, whose Thom pair
+reads the zeros of the fibres of the pull-back through `TauCeti.pullbackFiberZero` instead. -/
+theorem coverThomPairMap_eq_pullbackThomPairMap :
+    coverThomPairMap F E ι = pullbackThomPairMap F E projection :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
+    (coverThomPairMap_fst_apply v).trans (pullbackThomPairMap_fst_apply F E _ v).symm)
 
 /-- A vector `v` of `E'` lies over the point `v.proj` of the orientation cover, which lies over the
 image of `v` in the base. -/
@@ -394,5 +408,71 @@ theorem coe_homologyThomMapDeckEquiv_apply
   (rfl)
 
 end CommRing
+
+section UnitsAction
+
+/-! ### The action of `ℤˣ` on the Thom pair of the pull-back -/
+
+/-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the pull-back
+of `E` to the orientation cover. -/
+local instance : MulAction ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst :=
+  thomPairFstMulAction
+
+/-- The action `thomPairSndMulAction` of `ℤˣ` on the nonzero vectors of the Thom pair of the
+pull-back of `E` to the orientation cover. -/
+local instance : MulAction ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
+  thomPairSndMulAction
+
+/-- The action of `ℤˣ` on the total space of the Thom pair of the pull-back is continuous
+(`continuousConstSMul_thomPairFst`). -/
+local instance : ContinuousConstSMul ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst :=
+  continuousConstSMul_thomPairFst
+
+omit [Fintype ι] [FiniteDimensional ℝ F] in
+/-- The unit `-1` acts on the total space of the Thom pair of the pull-back of `E` to the
+orientation cover by the lifted deck involution `deckThomPairMap`. -/
+theorem neg_one_smul_eq_deckThomPairMap_fst
+    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
+    (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v := by
+  refine Eq.trans ?_ (deckThomPairMap_fst_apply v).symm
+  exact TotalSpace.ext ((proj_smul_totalSpace (-1) v).trans
+    ((neg_one_smul_eq_deck v.proj).trans (deck_apply v.proj))) HEq.rfl
+
+omit [Fintype ι] [FiniteDimensional ℝ F] in
+/-- The action of `-1` on the total space of the Thom pair of the pull-back of `E` to the
+orientation cover, as a morphism of topological spaces, is the lifted deck involution. -/
+theorem ofHom_neg_one_smul_eq_deckThomPairMap_fst :
+    TopCat.ofHom ⟨((-1 : ℤˣ) • · :
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst →
+          (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst),
+        continuous_const_smul _⟩ =
+      TopPair.Hom.fst (deckThomPairMap F E ι) :=
+  TopCat.ext neg_one_smul_eq_deckThomPairMap_fst
+
+include hι
+
+variable (F E ι) in
+/-- The map of total spaces of `(E', E'₀) ⟶ (E, E₀)` is the quotient covering map of the action
+`thomPairFstMulAction` of `ℤˣ`: `isQuotientCoveringMap_pullbackThomPairMap_fst`, restated for
+`coverThomPairMap`, whose Thom pair reads the zeros of the fibres through their module
+structure. -/
+theorem isQuotientCoveringMap_coverThomPairMap_fst :
+    IsQuotientCoveringMap (TopPair.Hom.fst (coverThomPairMap F E ι)) ℤˣ := by
+  rw [coverThomPairMap_eq_pullbackThomPairMap]
+  exact isQuotientCoveringMap_pullbackThomPairMap_fst hι
+
+variable (F E ι) in
+/-- The map of nonzero vectors of `(E', E'₀) ⟶ (E, E₀)` is the quotient covering map of the action
+`thomPairSndMulAction` of `ℤˣ`: `isQuotientCoveringMap_pullbackThomPairMap_snd`, restated for
+`coverThomPairMap`. -/
+theorem isQuotientCoveringMap_coverThomPairMap_snd :
+    IsQuotientCoveringMap (TopPair.Hom.snd (coverThomPairMap F E ι)) ℤˣ := by
+  rw [coverThomPairMap_eq_pullbackThomPairMap]
+  exact isQuotientCoveringMap_pullbackThomPairMap_snd hι
+
+end UnitsAction
 
 end TauCeti.VectorBundleOrientationCover
