@@ -101,7 +101,7 @@ theorem quotientSheaf.condition :
       Scheme.fppfTopology.uliftYoneda.map s ≫ quotientSheaf.π s t := by
   ext1
   simp only [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom]
-  exact (reassoc_of% (quotientPresheaf.uliftπ_condition.{u + 1} s t)) _
+  exact quotientPresheaf.uliftπ_condition_assoc.{u + 1} s t _
 
 variable {s t}
 

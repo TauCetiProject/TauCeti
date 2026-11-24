@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
+public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Equalizers
+public import Mathlib.CategoryTheory.Limits.Preserves.Ulift
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import Mathlib.Logic.Function.Coequalizer
 public import TauCeti.CategoryTheory.EquivalenceRelation
@@ -125,6 +128,7 @@ theorem quotientPresheaf.π_app_eq_iff {T : Cᵒᵖ}
 
 variable (s t) in
 /-- The projection onto the presheaf quotient coequalises `h_R ⇉ h_U`. -/
+@[reassoc]
 theorem quotientPresheaf.condition :
     yoneda.map t ≫ quotientPresheaf.π s t = yoneda.map s ≫ quotientPresheaf.π s t := by
   ext T r
@@ -148,6 +152,14 @@ natural transformation. -/
 theorem quotientPresheaf.π_desc {P : Cᵒᵖ ⥤ Type v} (φ : yoneda.obj U ⟶ P)
     (hφ : yoneda.map t ≫ φ = yoneda.map s ≫ φ) :
     quotientPresheaf.π s t ≫ quotientPresheaf.desc φ hφ = φ :=
+  (rfl)
+
+/-- The component of `quotientPresheaf.desc φ hφ` at `T` sends the class of a `T`-point `a` of
+`U` to `φ.app T a`. -/
+@[simp]
+theorem quotientPresheaf.desc_app_apply {P : Cᵒᵖ ⥤ Type v} (φ : yoneda.obj U ⟶ P)
+    (hφ : yoneda.map t ≫ φ = yoneda.map s ≫ φ) (T : Cᵒᵖ) (a : unop T ⟶ U) :
+    (quotientPresheaf.desc φ hφ).app T ((quotientPresheaf.π s t).app T a) = φ.app T a :=
   (rfl)
 
 variable (s t) in
@@ -182,11 +194,11 @@ theorem quotientPresheaf.isKernelPair_π (h : IsEquivalenceRelation t s) :
 
 variable (s t)
 
-/-- The projection from the universe-lifted `h_U` onto the universe-lifted presheaf quotient. -/
+/-- The projection from the universe-lifted `h_U` onto the universe-lifted presheaf quotient: the
+projection `quotientPresheaf.π s t` whiskered by `uliftFunctor`. -/
 noncomputable def quotientPresheaf.uliftπ :
-    uliftYoneda.{w}.obj U ⟶ quotientPresheaf s t ⋙ uliftFunctor.{w} where
-  app T := TypeCat.ofHom fun a ↦ ULift.up ((quotientPresheaf.π s t).app T a.down)
-  naturality _ _ _ := rfl
+    uliftYoneda.{w}.obj U ⟶ quotientPresheaf s t ⋙ uliftFunctor.{w} :=
+  Functor.whiskerRight (quotientPresheaf.π s t) uliftFunctor.{w}
 
 /-- The projection onto the universe-lifted presheaf quotient sends a lifted `T`-point of `U` to
 its lifted class. -/
@@ -198,11 +210,20 @@ theorem quotientPresheaf.uliftπ_app (T : Cᵒᵖ) (a : ULift.{w} (unop T ⟶ U)
   (rfl)
 
 /-- The projection onto the universe-lifted presheaf quotient coequalises `h_R ⇉ h_U`. -/
+@[reassoc]
 theorem quotientPresheaf.uliftπ_condition :
     uliftYoneda.{w}.map t ≫ quotientPresheaf.uliftπ s t =
-      uliftYoneda.{w}.map s ≫ quotientPresheaf.uliftπ s t := by
-  ext T ⟨r⟩
-  exact congrArg ULift.up (Function.Coequalizer.condition _ _ r)
+      uliftYoneda.{w}.map s ≫ quotientPresheaf.uliftπ s t :=
+  congrArg (Functor.whiskerRight · uliftFunctor.{w}) (quotientPresheaf.condition s t)
+
+/-- The universe-lifted presheaf quotient is the coequaliser of the universe-lifted
+`h_R ⇉ h_U` in presheaves: the image of `quotientPresheaf.isColimit` under whiskering by
+`uliftFunctor`, which preserves colimits. -/
+noncomputable def quotientPresheaf.isColimitUliftπ :
+    IsColimit (Cofork.ofπ (quotientPresheaf.uliftπ.{w} s t)
+      (quotientPresheaf.uliftπ_condition.{w} s t)) :=
+  isColimitCoforkMapOfIsColimit ((Functor.whiskeringRight Cᵒᵖ _ _).obj uliftFunctor.{w, v}) _
+    (quotientPresheaf.isColimit s t)
 
 variable {s t}
 
@@ -211,16 +232,17 @@ out of the universe-lifted `h_U` which agrees on `t r` and `s r` for every point
 noncomputable def quotientPresheaf.uliftDesc {P : Cᵒᵖ ⥤ Type (max v w)}
     (φ : uliftYoneda.{w}.obj U ⟶ P)
     (hφ : uliftYoneda.{w}.map t ≫ φ = uliftYoneda.{w}.map s ≫ φ) :
-    quotientPresheaf s t ⋙ uliftFunctor.{w} ⟶ P where
-  app T := TypeCat.ofHom fun x ↦
-    Function.Coequalizer.desc (fun r : unop T ⟶ R ↦ r ≫ t) (fun r ↦ r ≫ s)
-    (fun a ↦ φ.app T (ULift.up a))
-    (funext fun r ↦ ConcreteCategory.congr_hom (NatTrans.congr_app hφ T)
-      (ULift.up r : ULift.{w} (unop T ⟶ R))) x.down
-  naturality T T' f := by
-    ext ⟨x⟩
-    induction x using Quot.ind
-    exact ConcreteCategory.congr_hom (φ.naturality f) _
+    quotientPresheaf s t ⋙ uliftFunctor.{w} ⟶ P :=
+  (quotientPresheaf.isColimitUliftπ s t).desc (Cofork.ofπ φ hφ)
+
+/-- The factorisation through the universe-lifted presheaf quotient, composed with the
+projection, is the original natural transformation. -/
+@[reassoc (attr := simp)]
+theorem quotientPresheaf.uliftπ_uliftDesc {P : Cᵒᵖ ⥤ Type (max v w)}
+    (φ : uliftYoneda.{w}.obj U ⟶ P)
+    (hφ : uliftYoneda.{w}.map t ≫ φ = uliftYoneda.{w}.map s ≫ φ) :
+    quotientPresheaf.uliftπ s t ≫ quotientPresheaf.uliftDesc φ hφ = φ :=
+  (quotientPresheaf.isColimitUliftπ s t).fac _ .one
 
 /-- The component of `quotientPresheaf.uliftDesc φ hφ` at `T` descends `φ.app T` along the
 pointwise coequaliser. -/
@@ -232,52 +254,25 @@ theorem quotientPresheaf.uliftDesc_app_apply {P : Cᵒᵖ ⥤ Type (max v w)}
     ConcreteCategory.hom (X := ULift.{w} ((quotientPresheaf s t).obj T)) (Y := P.obj T)
       ((quotientPresheaf.uliftDesc φ hφ).app T) (ULift.up ((quotientPresheaf.π s t).app T a)) =
       φ.app T (ULift.up a) :=
-  (rfl)
-
-/-- The factorisation through the universe-lifted presheaf quotient, composed with the
-projection, is the original natural transformation. -/
-@[reassoc (attr := simp)]
-theorem quotientPresheaf.uliftπ_uliftDesc {P : Cᵒᵖ ⥤ Type (max v w)}
-    (φ : uliftYoneda.{w}.obj U ⟶ P)
-    (hφ : uliftYoneda.{w}.map t ≫ φ = uliftYoneda.{w}.map s ≫ φ) :
-    quotientPresheaf.uliftπ s t ≫ quotientPresheaf.uliftDesc φ hφ = φ :=
-  (rfl)
+  ConcreteCategory.congr_hom
+    (NatTrans.congr_app (quotientPresheaf.uliftπ_uliftDesc φ hφ) T)
+    (ULift.up a : ULift.{w} (unop T ⟶ U))
 
 variable (s t) in
 /-- Morphisms out of the universe-lifted presheaf quotient agree when they agree after the
 projection. -/
 theorem quotientPresheaf.uliftπ_hom_ext {P : Cᵒᵖ ⥤ Type (max v w)}
     {f g : quotientPresheaf s t ⋙ uliftFunctor.{w} ⟶ P}
-    (hfg : quotientPresheaf.uliftπ s t ≫ f = quotientPresheaf.uliftπ s t ≫ g) : f = g := by
-  ext T ⟨x⟩
-  induction x using Quot.ind
-  exact ConcreteCategory.congr_hom (NatTrans.congr_app hfg T) _
-
-variable (s t) in
-/-- The universe-lifted presheaf quotient is the coequaliser of the universe-lifted
-`h_R ⇉ h_U` in presheaves. -/
-noncomputable def quotientPresheaf.isColimitUliftπ :
-    IsColimit (Cofork.ofπ (quotientPresheaf.uliftπ.{w} s t)
-      (quotientPresheaf.uliftπ_condition.{w} s t)) :=
-  Cofork.IsColimit.mk' _ fun c ↦ ⟨quotientPresheaf.uliftDesc c.π c.condition,
-    quotientPresheaf.uliftπ_uliftDesc _ _,
-    fun hm ↦ quotientPresheaf.uliftπ_hom_ext s t (by simpa using hm)⟩
+    (hfg : quotientPresheaf.uliftπ s t ≫ f = quotientPresheaf.uliftπ s t ≫ g) : f = g :=
+  Cofork.IsColimit.hom_ext (quotientPresheaf.isColimitUliftπ s t) hfg
 
 /-- For an equivalence relation `(t, s)`, the universe-lifted `h_R ⇉ h_U` is the kernel pair of
-the projection onto the universe-lifted presheaf quotient. -/
+the projection onto the universe-lifted presheaf quotient: the image of
+`quotientPresheaf.isKernelPair_π` under whiskering by `uliftFunctor`, which preserves limits. -/
 theorem quotientPresheaf.isKernelPair_uliftπ (h : IsEquivalenceRelation t s) :
     IsKernelPair (quotientPresheaf.uliftπ.{w} s t) (uliftYoneda.{w}.map t)
-      (uliftYoneda.{w}.map s) := by
-  have w := quotientPresheaf.uliftπ_condition.{w} s t
-  refine ⟨⟨w⟩, ⟨evaluationJointlyReflectsLimits _ fun T ↦
-    (isLimitMapConePullbackConeEquiv _ w).symm ?_⟩⟩
-  refine IsPullback.isLimit ((Types.isPullback_iff _ _ _ _).2 ⟨?_, ?_, ?_⟩)
-  · exact NatTrans.congr_app w T
-  · rintro ⟨r⟩ ⟨r'⟩ ⟨ht, hs⟩
-    exact congrArg ULift.up (h.hom_ext (congrArg ULift.down ht) (congrArg ULift.down hs))
-  · rintro ⟨a⟩ ⟨b⟩ hab
-    obtain ⟨r, ht, hs⟩ := (quotientPresheaf.π_app_eq_iff (h.equivalence_ofPairHom _) a b).1
-      (congrArg ULift.down hab)
-    exact ⟨ULift.up r, congrArg ULift.up ht, congrArg ULift.up hs⟩
+      (uliftYoneda.{w}.map s) :=
+  ((Functor.whiskeringRight Cᵒᵖ _ _).obj uliftFunctor.{w, v}).map_isPullback
+    (quotientPresheaf.isKernelPair_π h)
 
 end TauCeti.CategoryTheory
