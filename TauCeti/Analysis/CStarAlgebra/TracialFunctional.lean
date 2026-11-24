@@ -32,7 +32,8 @@ positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive
 ## Main declarations
 
 * `TauCeti.PositiveTracialFunctional`: positive tracial functionals, with their `FunLike`,
-  `LinearMapClass` and `OrderHomClass` instances, and `PositiveTracialFunctional.map_mul_comm`.
+  `LinearMapClass` and `OrderHomClass` instances, the zero functional, and
+  `PositiveTracialFunctional.map_mul_comm`.
 * `TauCeti.PositiveTracialFunctional.toPositiveContinuousLinearMap`: the functional is bounded,
   with `PositiveTracialFunctional.norm_apply_le`.
 * `TauCeti.PositiveTracialFunctional.comp`: pullback along a star homomorphism, with
@@ -42,8 +43,8 @@ positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive
   takes the value `1` at `1`, `isTracialState_iff_map_one`. Tracial states pull back to tracial
   states along unital star homomorphisms, `isTracialState_comp`, and are bounded by `1`,
   `norm_apply_le_of_isTracialState`.
-* `TauCeti.PositiveTracialFunctional.ofIsTracialState`: a tracial state as a positive tracial
-  functional.
+* `TauCeti.PositiveTracialFunctional.ofMapMulComm`: a tracial bounded positive functional, in
+  particular a tracial state, as a positive tracial functional.
 * `TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`: the pullback of the tracial state
   `(a, b) ↦ b` of `ℂ × ℂ` along `λ ↦ (λ, 0)` is zero, a positive tracial functional that is not
   a state.
@@ -91,6 +92,13 @@ instance instLinearMapClass : LinearMapClass (PositiveTracialFunctional A) ℂ A
 
 instance instOrderHomClass : OrderHomClass (PositiveTracialFunctional A) A ℂ where
   map_rel τ := fun {_ _} h => τ.toPositiveLinearMap.monotone h
+
+/-- The zero functional is a positive tracial functional. Its evaluation lemmas are the generic
+`zero_apply` and `coe_zero`, through the `IsZeroApply` instance. -/
+instance instZero : Zero (PositiveTracialFunctional A) where
+  zero := ⟨0, fun _ _ => by simp⟩
+
+instance instIsZeroApply : IsZeroApply (PositiveTracialFunctional A) where
 
 /-- Positive tracial functionals are determined by their values. -/
 @[ext]
@@ -168,20 +176,23 @@ theorem norm_apply_le_of_isTracialState {τ : PositiveTracialFunctional A}
     (hτ : τ.toPositiveContinuousLinearMap.IsTracialState) (a : A) : ‖τ a‖ ≤ ‖a‖ := by
   simpa [hτ.norm_eq_one] using τ.norm_apply_le a
 
-/-- A tracial state as a positive tracial functional. -/
-def ofIsTracialState (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) : PositiveTracialFunctional A where
+/-- A tracial bounded positive functional as a positive tracial functional. A tracial state `ω`
+gives `ofMapMulComm ω hω.map_mul_comm`. -/
+def ofMapMulComm (ω : A →P[ℂ] ℂ) (h : ∀ a b, ω (a * b) = ω (b * a)) :
+    PositiveTracialFunctional A where
   toPositiveLinearMap := ω.toPositiveLinearMap
   map_mul_comm' a b := by
-    simpa only [PositiveContinuousLinearMap.coe_toPositiveLinearMap] using hω.map_mul_comm a b
+    simpa only [PositiveContinuousLinearMap.coe_toPositiveLinearMap] using h a b
 
 @[simp]
-theorem ofIsTracialState_apply (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) (a : A) :
-    ofIsTracialState ω hω a = ω a :=
+theorem ofMapMulComm_apply (ω : A →P[ℂ] ℂ) (h : ∀ a b, ω (a * b) = ω (b * a)) (a : A) :
+    ofMapMulComm ω h a = ω a :=
   (rfl)
 
 @[simp]
-theorem toPositiveContinuousLinearMap_ofIsTracialState (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) :
-    (ofIsTracialState ω hω).toPositiveContinuousLinearMap = ω := by
+theorem toPositiveContinuousLinearMap_ofMapMulComm (ω : A →P[ℂ] ℂ)
+    (h : ∀ a b, ω (a * b) = ω (b * a)) :
+    (ofMapMulComm ω h).toPositiveContinuousLinearMap = ω := by
   ext a
   simp
 
@@ -235,8 +246,9 @@ theorem isTracialState_sndTracialFunctional :
   simp [isTracialState_iff_map_one]
 
 /-- The pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is zero. -/
-theorem sndTracialFunctional_comp_inl_apply (z : ℂ) :
-    sndTracialFunctional.comp (NonUnitalStarAlgHom.inl ℂ ℂ ℂ) z = 0 := by
+theorem sndTracialFunctional_comp_inl :
+    sndTracialFunctional.comp (NonUnitalStarAlgHom.inl ℂ ℂ ℂ) = 0 := by
+  ext z
   simp
 
 /-- A pullback of a tracial state along a nonunital star homomorphism need not be a state: the
@@ -245,7 +257,7 @@ pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is the zero functional. So the
 theorem not_isTracialState_sndTracialFunctional_comp_inl :
     ¬ (sndTracialFunctional.comp
       (NonUnitalStarAlgHom.inl ℂ ℂ ℂ)).toPositiveContinuousLinearMap.IsTracialState := by
-  rw [isTracialState_iff_map_one, sndTracialFunctional_comp_inl_apply]
+  rw [sndTracialFunctional_comp_inl, isTracialState_iff_map_one, zero_apply]
   exact zero_ne_one
 
 end Example
