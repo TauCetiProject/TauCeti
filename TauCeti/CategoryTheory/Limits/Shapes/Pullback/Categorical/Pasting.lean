@@ -65,6 +65,11 @@ def pullbackRightPullbackFstEquiv : F' ⊡ (π₁ F G) ≌ (F' ⋙ F) ⊡ G wher
         { fst := f.fst
           snd := ⟨F'.map f.fst, f.snd, f.w⟩
           w := (Category.comp_id _).trans (Category.id_comp _).symm } }
+  -- As in `functor.map.w`, the structure isomorphisms below compose `x.iso`, which ends in
+  -- `(π₁ F G).obj x.snd`, with isomorphisms out of `x.snd.fst`; the composites typecheck only
+  -- after unfolding `π₁`. So `simp` cannot rewrite them (even `Iso.trans_hom` does not fire, and
+  -- `simp` leaves `F.map x.iso.inv ≫ (F.mapIso x.iso ≪≫ x.snd.iso).hom = x.snd.iso.hom` open),
+  -- and the identity cancellations are glued by unification instead.
   unitIso := NatIso.ofComponents
     (fun x ↦ mkIso (Iso.refl _) (mkIso x.iso.symm (Iso.refl _)
       ((F.map_comp_assoc x.iso.inv x.iso.hom x.snd.iso.hom).symm.trans (by

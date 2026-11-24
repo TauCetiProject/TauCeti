@@ -39,7 +39,7 @@ stacks in groupoids (`StackInGroupoids.Hom`) are a special case.
   spaces.
 * `TauCeti.AlgebraicGeometry.IsRepresentableBySpaces.of_isEquivalence`: a morphism whose
   components are equivalences, in particular an identity, is representable by algebraic spaces.
-* `TauCeti.AlgebraicGeometry.IsRepresentableBySpaces.twoFiberProduct_fst`: representability by
+* `TauCeti.AlgebraicGeometry.IsRepresentableBySpaces.baseChange`: representability by
   algebraic spaces is stable under base change.
 
 ## References
@@ -68,11 +68,22 @@ def IsRepresentableBySpace (P : SchPseudofunctor.{u}) : Prop :=
     (φ : (StackInGroupoids.ofSheaf F).toSchPseudofunctor ⟶ P),
     Spaces.IsAlgebraicSpace F.obj ∧ ∀ S, (φ.app S).toFunctor.IsEquivalence
 
+/-- Unfolding `IsRepresentableBySpace`: the witnessing algebraic space `F` and strong
+transformation `ofSheaf F ⟶ P` with equivalence components. -/
+lemma isRepresentableBySpace_iff (P : SchPseudofunctor.{u}) :
+    IsRepresentableBySpace P ↔
+      ∃ (F : Sheaf Scheme.fppfTopology.{u} (Type u))
+        (φ : (StackInGroupoids.ofSheaf F).toSchPseudofunctor ⟶ P),
+        Spaces.IsAlgebraicSpace F.obj ∧ ∀ S, (φ.app S).toFunctor.IsEquivalence :=
+  Iff.rfl
+
 /-- The stack in setoids of an algebraic space is representable by an algebraic space. -/
 lemma isRepresentableBySpace_ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u))
     (hF : Spaces.IsAlgebraicSpace F.obj) :
     IsRepresentableBySpace (StackInGroupoids.ofSheaf F).toSchPseudofunctor :=
-  ⟨F, 𝟙 _, hF, fun _ ↦ inferInstanceAs (Functor.id _).IsEquivalence⟩
+  ⟨F, 𝟙 _, hF, fun _ ↦ by
+    rw [Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor]
+    infer_instance⟩
 
 /-- The stack of a scheme is representable by an algebraic space. -/
 lemma isRepresentableBySpace_ofScheme (T : Scheme.{u}) :
@@ -85,9 +96,10 @@ lemma IsRepresentableBySpace.of_isEquivalence {P Q : SchPseudofunctor.{u}} (ψ :
     [∀ S, (ψ.app S).toFunctor.IsEquivalence] (hP : IsRepresentableBySpace P) :
     IsRepresentableBySpace Q := by
   obtain ⟨F, φ, hF, hφ⟩ := hP
-  exact ⟨F, φ ≫ ψ, hF, fun S ↦
-    have := hφ S
-    inferInstanceAs ((φ.app S).toFunctor ⋙ (ψ.app S).toFunctor).IsEquivalence⟩
+  refine ⟨F, φ ≫ ψ, hF, fun S ↦ ?_⟩
+  have := hφ S
+  rw [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor]
+  infer_instance
 
 /-- Being representable by an algebraic space is invariant under strong transformations whose
 components are equivalences. -/
@@ -98,8 +110,8 @@ lemma isRepresentableBySpace_iff_of_isEquivalence {P Q : SchPseudofunctor.{u}} (
   -- The inverse of `ψ` has the chosen quasi-inverses of the components of `ψ` as components.
   have (S : LocallyDiscrete Scheme.{u}ᵒᵖ) :
       (ψ.equivalenceOfIsEquivalence.inv.app S).toFunctor.IsEquivalence := by
-    rw [Pseudofunctor.StrongTrans.equivalenceOfIsEquivalence_inv_app]
-    exact inferInstanceAs (ψ.app S).toFunctor.inv.IsEquivalence
+    rw [Pseudofunctor.StrongTrans.equivalenceOfIsEquivalence_inv_app, Functor.toCatHom_toFunctor]
+    infer_instance
   exact hQ.of_isEquivalence ψ.equivalenceOfIsEquivalence.inv
 
 /-- A morphism `f : X ⟶ Y` of pseudofunctors on schemes is *representable by algebraic spaces* if
@@ -128,11 +140,10 @@ lemma of_isEquivalence {X Y : SchPseudofunctor.{u}} (f : X ⟶ Y)
     (isRepresentableBySpace_ofScheme T)
 
 /-- The identity of a pseudofunctor on schemes is representable by algebraic spaces. -/
-lemma id (X : SchPseudofunctor.{u}) :
-    IsRepresentableBySpaces (Pseudofunctor.StrongTrans.id X) :=
-  have (S : LocallyDiscrete Scheme.{u}ᵒᵖ) :
-      ((Pseudofunctor.StrongTrans.id X).app S).toFunctor.IsEquivalence :=
-    inferInstanceAs (Functor.id _).IsEquivalence
+lemma id (X : SchPseudofunctor.{u}) : IsRepresentableBySpaces (𝟙 X) :=
+  have (S : LocallyDiscrete Scheme.{u}ᵒᵖ) : ((𝟙 X : X ⟶ X).app S).toFunctor.IsEquivalence := by
+    rw [Pseudofunctor.StrongTrans.categoryStruct_id_app, Cat.Hom.id_toFunctor]
+    infer_instance
   of_isEquivalence _
 
 /-- Representability by algebraic spaces is stable under base change: if `f : X ⟶ Y` is
@@ -140,7 +151,7 @@ representable by algebraic spaces, so is the projection `Y' ×_Y X ⟶ Y'` of it
 with any `g : Y' ⟶ Y` (Stacks, Lemma 94.9.7 (0300)). The 2-fiber product of `y : h_T ⟶ Y'` with
 the projection is that of `y ≫ g` with `f`, by the pasting law. -/
 @[stacks 0300]
-lemma twoFiberProduct_fst {X Y Y' : SchPseudofunctor.{u}} {f : X ⟶ Y}
+lemma baseChange {X Y Y' : SchPseudofunctor.{u}} {f : X ⟶ Y}
     (hf : IsRepresentableBySpaces f) (g : Y' ⟶ Y) :
     IsRepresentableBySpaces (twoFiberProduct.fst.{u + 1, u} g f) := fun _ y ↦
   (isRepresentableBySpace_iff_of_isEquivalence
