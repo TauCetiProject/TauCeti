@@ -120,13 +120,12 @@ theorem re_sub_one_div_le_norm_LFunctionTrivChar₁_one {s₀ : ℂ} (hs₀ : 1 
 
 /-- On the closed discs of a fixed radius `R` centred on a vertical line `Re s₀ = σ₀`,
 `‖(s - 1) ζ(s)‖ ≤ K (|Im s₀| + 2) ^ B` with `K > 0` and `B` independent of `s₀`. -/
-theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ : ℝ) {R : ℝ}
-    (hR : 0 ≤ R) :
+theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ R : ℝ) :
     ∃ K B : ℝ, 0 < K ∧ ∀ s₀ w : ℂ, s₀.re = σ₀ → ‖w - s₀‖ ≤ R →
       ‖LFunctionTrivChar₁ 1 w‖ ≤ K * (|s₀.im| + 2) ^ B := by
   obtain ⟨C, B, hC⟩ := exists_norm_LFunctionTrivChar₁_one_le_rpow (σ₀ - R) (σ₀ + R)
-  refine ⟨max C 1 * (R + 1) ^ max B 0, max B 0,
-    mul_pos (lt_max_of_lt_right one_pos) (Real.rpow_pos_of_pos (by linarith) _),
+  refine ⟨max C 1 * (|R| + 1) ^ max B 0, max B 0,
+    mul_pos (lt_max_of_lt_right one_pos) (Real.rpow_pos_of_pos (by positivity) _),
     fun s₀ w hs₀ hw ↦ ?_⟩
   have hre := abs_re_le_norm (w - s₀)
   rw [sub_re, hs₀, abs_le] at hre
@@ -137,10 +136,10 @@ theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ : ℝ
         · exact le_max_left _ _
         · linarith [abs_nonneg w.im]
         · exact le_max_left _ _
-    _ ≤ max C 1 * ((R + 1) * (|s₀.im| + 2)) ^ max B 0 := by
+    _ ≤ max C 1 * ((|R| + 1) * (|s₀.im| + 2)) ^ max B 0 := by
         gcongr
-        nlinarith [abs_nonneg s₀.im]
-    _ = _ := by rw [Real.mul_rpow (by linarith) (by positivity), mul_assoc]
+        nlinarith [abs_nonneg s₀.im, le_abs_self R, abs_nonneg R]
+    _ = _ := by rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
 
 /-- **The local expansion of `ζ′/ζ`.** For real `σ₀ > 1` and radii `0 < r < r'` there is a
 constant `C` such that for every `s₀` with `Re s₀ = σ₀` and every `s ≠ 1` with `‖s - s₀‖ ≤ r` and
@@ -154,7 +153,7 @@ theorem riemannZeta_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hr :
         C * Real.log (|s₀.im| + 2) := by
   have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
   obtain ⟨K, B, hK, hdisc⟩ :=
-    exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le σ₀ (by linarith : 0 ≤ r' + 1)
+    exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le σ₀ (r' + 1)
   set c₀ := (σ₀ - 1) / (riemannZeta σ₀).re
   have hc₀ : 0 < c₀ := div_pos (by linarith) (riemannZeta_re_pos_of_one_lt hσ₀)
   have hlog : 0 < Real.log ((r' + 1) / r') :=
