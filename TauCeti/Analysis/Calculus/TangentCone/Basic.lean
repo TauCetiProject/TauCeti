@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
 import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
 # Tangent cones of linear subspaces and of curves
@@ -21,9 +22,9 @@ Basic facts about Mathlib's tangent cone `tangentConeAt` in topological modules.
 The subspace calculation lets flattening charts identify their model subspaces with intrinsic
 tangent spaces, while the curve lemma places velocities of invariant flows in the tangent cones
 of their invariant sets. Polyhedral cones cut out by independent linear coordinates, and their
-faces inside the subspaces they span, determine derivatives at their vertex, so that corner charts
-can test germs on a face. Differentials carry positive tangent cones into positive tangent cones,
-which lets chart transitions of a manifold with corners compare the corners of the model.
+faces inside the kernels of the coordinates defining them, determine derivatives, so that corner
+charts can test germs on a face. Differentials carry positive tangent cones into positive tangent
+cones, which lets chart transitions of a manifold with corners compare the corners of the model.
 
 ## Main results
 
@@ -32,8 +33,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_preimage_Ici_of_surjective`: so is its preimage under a surjective
-  continuous linear map, and `TauCeti.uniqueDiffWithinAt_ker_setOf_nonneg`: a face of such a cone
-  has unique derivatives at `0` within the kernel of the coordinates defining the face.
+  continuous linear map, and `TauCeti.uniqueDiffOn_ker_setOf_nonneg`: a face of such a cone has
+  unique derivatives within the kernel of the coordinates defining the face.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
@@ -129,13 +130,13 @@ theorem TauCeti.uniqueDiffOn_preimage_Ici_of_surjective {E ι : Type*} [NormedAd
 
 /-- Let `q` be a surjective continuous linear map to finitely many real coordinates and `t` a set
 of these coordinates. In the kernel of the coordinates in `t`, the cone on which every coordinate
-of `q` is nonnegative has unique derivatives at `0`. This cone is the face of `q ⁻¹' Ici 0` on which
-the coordinates in `t` vanish. -/
-theorem TauCeti.uniqueDiffWithinAt_ker_setOf_nonneg {E ι : Type*} [NormedAddCommGroup E]
+of `q` is nonnegative has unique derivatives, including at its vertex `0`. This cone is the face of
+`q ⁻¹' Ici 0` on which the coordinates in `t` vanish. -/
+theorem TauCeti.uniqueDiffOn_ker_setOf_nonneg {E ι : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [Finite ι] {q : E →L[ℝ] ι → ℝ} (hq : Function.Surjective q) (t : Set ι) :
-    UniqueDiffWithinAt ℝ
+    UniqueDiffOn ℝ
       {v : (ContinuousLinearMap.pi fun i : t ↦ (ContinuousLinearMap.proj (i : ι)).comp q).ker |
-        ∀ i, 0 ≤ q v i} 0 := by
+        ∀ i, 0 ≤ q v i} := by
   classical
   let qt := ContinuousLinearMap.pi fun i : t ↦ (ContinuousLinearMap.proj (i : ι)).comp q
   -- The coordinates off `t`, restricted to the kernel, are still surjective.
@@ -143,13 +144,15 @@ theorem TauCeti.uniqueDiffWithinAt_ker_setOf_nonneg {E ι : Type*} [NormedAddCom
     ((ContinuousLinearMap.proj (i : ι)).comp q).comp qt.ker.subtypeL
   have hq' : Function.Surjective q' := fun u ↦ by
     obtain ⟨w, hw⟩ := hq fun i ↦ if h : i ∈ t then 0 else u ⟨i, h⟩
-    exact ⟨⟨w, funext fun i ↦ by simp [qt, hw]⟩, funext fun i ↦ by simp [q', hw, i.property]⟩
-  convert uniqueDiffOn_preimage_Ici_of_surjective hq' 0 0 (by simp) using 1
+    refine ⟨⟨w, ContinuousLinearMap.mem_ker_pi_proj_comp.mpr fun i hi ↦ by simp [hw, hi]⟩, ?_⟩
+    funext i
+    simp [q', hw, i.property]
+  convert uniqueDiffOn_preimage_Ici_of_surjective hq' 0 using 1
   -- On the kernel the coordinates in `t` vanish, so only the others constrain the cone.
   ext v
   refine ⟨fun h i ↦ h i, fun h i ↦ ?_⟩
   by_cases hi : i ∈ t
-  · exact (congrFun (LinearMap.mem_ker.mp v.property) ⟨i, hi⟩).ge
+  · exact (ContinuousLinearMap.mem_ker_pi_proj_comp.mp v.property i hi).ge
   · exact h ⟨i, hi⟩
 
 /-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/

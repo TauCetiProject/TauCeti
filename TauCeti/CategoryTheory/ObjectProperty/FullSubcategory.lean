@@ -24,7 +24,9 @@ The construction uses Mathlib's `ObjectProperty.lift` and `ObjectProperty.ιOfLE
 The file also records `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full
 subcategory, followed by the inclusion, is the original functor; and
 `CategoryTheory.ObjectProperty.map_hom_of_comp_ι_eq`: a functor `G` with `G ⋙ P.ι = F` acts on
-morphisms as `F`, up to the identifications of the underlying objects.
+morphisms as `F`, up to the identifications of the underlying objects. A full subcategory of a
+groupoid is a groupoid (`CategoryTheory.ObjectProperty.FullSubcategory.groupoid`), with the ambient
+inverses.
 -/
 
 public section
@@ -36,6 +38,11 @@ variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
 /-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
 instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
   isGroupoid_of_reflects_iso P.ι
+
+/-- A full subcategory of a groupoid is a groupoid, whose inverses are the ambient inverses. -/
+instance FullSubcategory.groupoid {G : Type*} [Groupoid G] (R : ObjectProperty G) :
+    Groupoid R.FullSubcategory :=
+  inferInstanceAs (Groupoid (InducedCategory G FullSubcategory.obj))
 
 /-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
 functor. This is the equality form of Mathlib's isomorphism

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!
 # Continuous linear maps on products and Pi types
@@ -17,11 +17,15 @@ This file collects supplementary results about continuous linear maps on indexed
 * `ContinuousLinearMap.eq_smul_id_of_unique`: every continuous linear endomorphism of a
   one-coordinate space `ι → R` over a topological commutative semiring `R` with continuous scalar
   multiplication is a scalar multiple of the identity.
+* `ContinuousLinearMap.mem_ker_pi_proj_comp`: a vector lies in the kernel of the coordinates of
+  `q` labelled by a set `t` exactly when these coordinates of `q` vanish at it.
 -/
 
 public section
 
 namespace ContinuousLinearMap
+
+section CommSemiring
 
 variable {R : Type*} [CommSemiring R] [TopologicalSpace R]
 
@@ -36,5 +40,21 @@ theorem eq_smul_id_of_unique {ι : Type*} [Unique ι] [ContinuousConstSMul R R]
     simp [Unique.eq_default j]
   conv_lhs => rw [hv]
   simp [Unique.eq_default i, mul_comm]
+
+end CommSemiring
+
+section Pi
+
+variable {R M ι : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  {φ : ι → Type*} [∀ i, TopologicalSpace (φ i)] [∀ i, AddCommMonoid (φ i)] [∀ i, Module R (φ i)]
+
+/-- A vector lies in the kernel of the coordinates of `q` labelled by a set `t` exactly when
+these coordinates of `q` vanish at it. -/
+theorem mem_ker_pi_proj_comp {q : M →L[R] ∀ i, φ i} {t : Set ι} {v : M} :
+    v ∈ (pi fun i : t ↦ (proj (i : ι)).comp q).ker ↔ ∀ i ∈ t, q v i = 0 := by
+  rw [LinearMap.mem_ker, funext_iff, Subtype.forall]
+  simp only [coe_coe, pi_apply, comp_apply, proj_apply, Pi.zero_apply]
+
+end Pi
 
 end ContinuousLinearMap

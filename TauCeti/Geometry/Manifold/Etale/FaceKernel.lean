@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Etale.Basic
+public import TauCeti.Topology.CategoryTheory.Groupoid.Constructions
 public import TauCeti.Topology.CategoryTheory.Groupoid.CornerDomain
 public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
@@ -27,8 +28,10 @@ germ on the face, exactly when it is ineffective in `C`
 (`TauCeti.mem_ineffectiveArrows_cornerFace_iff`). So the isotropy arrows at `x` forming the
 ineffective kernel of a labelled face, or of a labelled intersection of faces, through `x` are
 exactly those of the ambient ineffective kernel `TauCeti.ineffectiveKernel`, including at corners
-where further labels are active. In particular the kernel order seen from every face through `x`
-is the ambient one.
+where further labels are active: the full inclusion of the face carries its ineffective kernel
+onto the ambient one (`TauCeti.map_autMulEquivOfFullyFaithful_ineffectiveKernel_cornerFace`). In
+particular the kernel order seen from every face through `x` is the ambient one
+(`TauCeti.card_ineffectiveKernel_cornerFace`).
 
 The proof reads the isotropy action at `x` in a retained-arrow local chart
 (`TauCeti.exists_contMDiff_isotropy_action_of_proper_source_target`) and applies the
@@ -126,5 +129,47 @@ theorem mem_ineffectiveArrows_cornerFace_iff
   rw [mem_ineffectiveArrows_iff, ← hτ, ← (hopen gA).map_nhds_eq, eventually_map]
   filter_upwards [hgerm] with y hy
   exact (hl gA y).trans ((congrArg Subtype.val hy).symm.trans (hr gA y).symm)
+
+/-- **Faces have the ambient ineffective kernel.** In a proper étale topological groupoid with
+Hausdorff arrow space, boundaryless object charts over a real Banach space, and `C^n` source and
+target local diffeomorphisms (`1 ≤ n`), let `ρ` be finitely many arrow-invariant functions. At an
+object `x` of the labelled face of `s`, where each `ρ i` is `C¹` and the differentials of the
+active labels are linearly independent, the full inclusion of the face identifies its ineffective
+kernel at `x` with the ambient ineffective kernel at `x`. The face source is a local homeomorphism
+by `TauCeti.isLocalHomeomorph_source_fullSubcategory_of_isClosedUnderIsomorphisms`. -/
+theorem map_autMulEquivOfFullyFaithful_ineffectiveKernel_cornerFace [IsTopologicalGroupoid C]
+    (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
+    (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
+    (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) (hn : 1 ≤ n)
+    (hρinv : ∀ i ⦃y z : C⦄, (y ≅ z) → ρ i y = ρ i z) {s : Set ι}
+    (hsF : IsLocalHomeomorph
+      (Quiver.Total.left : Quiver.Total (cornerFace ρ s).FullSubcategory → _))
+    {x : C} (hx : cornerFace ρ s x) (hρ : ∀ i, ContMDiffAt I 𝓘(ℝ) 1 (ρ i) x)
+    (hlin : LinearIndependent ℝ fun i : {i // ρ i x = 0} ↦ mvfderiv I (ρ i) x) :
+    (ineffectiveKernel hsF ⟨x, hx⟩).map
+        ((cornerFace ρ s).fullyFaithfulι.autMulEquivOfFullyFaithful ⟨x, hx⟩).toMonoidHom =
+      ineffectiveKernel hs.isLocalHomeomorph x := by
+  ext g
+  rw [Subgroup.mem_map_equiv, mem_ineffectiveKernel, mem_ineffectiveKernel]
+  exact mem_ineffectiveArrows_cornerFace_iff hp hs ht IsTopologicalGroupoid.continuous_unit
+    IsTopologicalGroupoid.continuous_comp hn hρinv hx hρ hlin g.asIso.hom
+
+/-- **Faces have the ambient kernel order.** Under the hypotheses of
+`TauCeti.map_autMulEquivOfFullyFaithful_ineffectiveKernel_cornerFace`, the ineffective kernel of
+the labelled face at `x` has the order of the ambient ineffective kernel at `x`. -/
+theorem card_ineffectiveKernel_cornerFace [IsTopologicalGroupoid C]
+    (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
+    (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
+    (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) (hn : 1 ≤ n)
+    (hρinv : ∀ i ⦃y z : C⦄, (y ≅ z) → ρ i y = ρ i z) {s : Set ι}
+    (hsF : IsLocalHomeomorph
+      (Quiver.Total.left : Quiver.Total (cornerFace ρ s).FullSubcategory → _))
+    {x : C} (hx : cornerFace ρ s x) (hρ : ∀ i, ContMDiffAt I 𝓘(ℝ) 1 (ρ i) x)
+    (hlin : LinearIndependent ℝ fun i : {i // ρ i x = 0} ↦ mvfderiv I (ρ i) x) :
+    Nat.card (ineffectiveKernel hsF ⟨x, hx⟩) =
+      Nat.card (ineffectiveKernel hs.isLocalHomeomorph x) := by
+  rw [← map_autMulEquivOfFullyFaithful_ineffectiveKernel_cornerFace hp hs ht hn hρinv hsF hx hρ
+    hlin]
+  exact (Subgroup.card_map_of_injective (MulEquiv.injective _)).symm
 
 end TauCeti

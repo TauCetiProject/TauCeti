@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -19,13 +18,13 @@ with a projection onto some of its coordinates therefore gives local equations w
 is surjective.
 
 Conversely, finitely many scalar functions with linearly independent differentials at a point
-keep a surjective joint differential when read through a local diffeomorphism from the model
-space, such as the inverse of a smooth chart.
+keep a surjective joint differential when read through a differentiable map from a normed space
+with surjective differential, such as the inverse of a chart differentiable in both directions.
 -/
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -56,18 +55,23 @@ theorem mvfderiv_comp_surjective {f : M → F} {x : M}
   exact fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
 
 /-- Finitely many scalar functions with linearly independent differentials at `φ v`, read through a
-local diffeomorphism `φ` at `v` from the model space, have a surjective joint derivative at `v`. -/
-theorem _root_.IsLocalDiffeomorphAt.surjective_fderiv_pi_comp {ι : Type*} [Finite ι]
-    {n : WithTop ℕ∞} {φ : E → M} {v : E} (hφ : IsLocalDiffeomorphAt 𝓘(𝕜, E) I n φ v)
-    (hn : n ≠ 0) {ρ : ι → M → 𝕜} (hρ : ∀ i, MDifferentiableAt I 𝓘(𝕜) (ρ i) (φ v))
+map `φ` from a normed space which is differentiable at `v` with surjective differential, have a
+surjective joint derivative at `v`. -/
+theorem _root_.MDifferentiableAt.surjective_fderiv_pi_comp {ι : Type*} [Finite ι] {φ : F → M}
+    {v : F} (hφ : MDifferentiableAt 𝓘(𝕜, F) I φ v)
+    (hφs : Function.Surjective (mfderiv 𝓘(𝕜, F) I φ v)) {ρ : ι → M → 𝕜}
     (hlin : LinearIndependent 𝕜 fun i ↦ mvfderiv I (ρ i) (φ v)) :
     Function.Surjective (fderiv 𝕜 (fun w i ↦ ρ i (φ w)) v) := by
   let : Fintype ι := Fintype.ofFinite ι
   let ℓ : ι → E →L[𝕜] 𝕜 := fun i ↦ mvfderiv I (ρ i) (φ v)
-  let D : E →L[𝕜] E := mfderiv 𝓘(𝕜, E) I φ v
+  -- Each `ρ i` is differentiable at `φ v`, since otherwise its differential would vanish.
+  have hρ (i : ι) : MDifferentiableAt I 𝓘(𝕜) (ρ i) (φ v) := by
+    by_contra h
+    exact hlin.ne_zero i (by simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt h])
+  let D : F →L[𝕜] E := mfderiv 𝓘(𝕜, F) I φ v
   have hd : HasFDerivAt (fun w i ↦ ρ i (φ w)) ((ContinuousLinearMap.pi ℓ).comp D) v := by
     refine hasFDerivAt_pi'.mpr fun i ↦ ?_
-    have h := HasMFDerivAt.comp v (hρ i).hasMFDerivAt (hφ.mdifferentiableAt hn).hasMFDerivAt
+    have h := HasMFDerivAt.comp v (hρ i).hasMFDerivAt hφ.hasMFDerivAt
     exact hasMFDerivAt_iff_hasFDerivAt.mp h
   rw [hd.fderiv]
   have hpi : Function.Surjective (ContinuousLinearMap.pi ℓ) := by
@@ -77,28 +81,25 @@ theorem _root_.IsLocalDiffeomorphAt.surjective_fderiv_pi_comp {ι : Type*} [Fini
     intro w
     obtain ⟨u, hu⟩ := LinearIndependent.pi_surjective hlin' w
     exact ⟨u, by simpa only [← ContinuousLinearMap.coe_pi, ContinuousLinearMap.coe_coe] using hu⟩
-  -- The differential of a local diffeomorphism is invertible, hence surjective.
-  obtain ⟨L, hL⟩ := hφ.isInvertible_mfderiv hn
-  refine hpi.comp fun w ↦ ?_
-  obtain ⟨u, hu⟩ := L.surjective w
-  exact ⟨u, (congrArg (fun f : E →L[𝕜] E ↦ f u) hL).symm.trans hu⟩
+  exact hpi.comp hφs
 
 /-- Finitely many scalar functions with linearly independent differentials at `e.symm v`, read
-in a chart `e` which is `C^n` in both directions, `n ≠ 0`, have a surjective joint derivative
-at `v`. -/
+in a chart `e` which is differentiable at `e.symm v` and whose inverse is differentiable at `v`,
+have a surjective joint derivative at `v`. -/
 theorem _root_.OpenPartialHomeomorph.surjective_fderiv_pi_comp_symm {ι : Type*} [Finite ι]
-    {n : WithTop ℕ∞} (e : OpenPartialHomeomorph M E) (hes : ContMDiffOn I 𝓘(𝕜, E) n e e.source)
-    (het : ContMDiffOn 𝓘(𝕜, E) I n e.symm e.target) (hn : n ≠ 0) {v : E} (hv : v ∈ e.target)
-    {ρ : ι → M → 𝕜} (hρ : ∀ i, MDifferentiableAt I 𝓘(𝕜) (ρ i) (e.symm v))
+    (e : OpenPartialHomeomorph M E) {v : E} (hv : v ∈ e.target)
+    (he : MDifferentiableAt I 𝓘(𝕜, E) e (e.symm v))
+    (hes : MDifferentiableAt 𝓘(𝕜, E) I e.symm v) {ρ : ι → M → 𝕜}
     (hlin : LinearIndependent 𝕜 fun i ↦ mvfderiv I (ρ i) (e.symm v)) :
     Function.Surjective (fderiv 𝕜 (fun w i ↦ ρ i (e.symm w)) v) := by
-  let Φ : PartialDiffeomorph 𝓘(𝕜, E) I E M n :=
-    { e.symm.toPartialEquiv with
-      open_source := e.open_target
-      open_target := e.open_source
-      contMDiffOn_toFun := het
-      contMDiffOn_invFun := hes }
-  exact IsLocalDiffeomorphAt.surjective_fderiv_pi_comp (φ := e.symm)
-    (PartialDiffeomorph.isLocalDiffeomorphAt 𝓘(𝕜, E) I n Φ hv) hn hρ hlin
+  refine hes.surjective_fderiv_pi_comp (fun w ↦ ⟨mfderiv I 𝓘(𝕜, E) e (e.symm v) w, ?_⟩) hlin
+  -- Near `e.symm v` the composite `e.symm ∘ e` is the identity, so `mfderiv e` is a right
+  -- inverse of `mfderiv e.symm`.
+  have hid : (e.symm ∘ e) =ᶠ[𝓝 (e.symm v)] id :=
+    Filter.mem_of_superset (e.open_source.mem_nhds (e.map_target hv)) fun _ hy ↦ e.left_inv hy
+  rw [← mfderiv_comp_apply_of_eq (e.symm v) hes he (e.right_inv hv), hid.mfderiv_eq, mfderiv_id]
+  -- What remains is `tangentSpaceCast` between tangent spaces of `M`, all equal to `E`, which is
+  -- the identity by definition.
+  rfl
 
 end TauCeti
