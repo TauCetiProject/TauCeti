@@ -30,6 +30,8 @@ localization at every generator is zero. This identifies modules supported on th
 
 * `Submonoid.isTorsion'_iff_subsingleton_tensorProduct`: `M` is `S`-torsion if and only if
   `A ⊗[R] M` is trivial, for a localization `A` of `R` at `S`.
+* `IsLocalization.algebraMap_eq_zero_iff_mem_torsion'`: an element of `R` dies in a localization
+  at `S` exactly when it is `S`-torsion.
 * `TauCeti.Module.isTorsion_iff_subsingleton_tensorProduct`: `M` is torsion if and only if
   `K ⊗[R] M` is trivial, for the total ring of fractions `K` of `R`.
 * `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if
@@ -60,6 +62,12 @@ theorem isTorsion'_iff_subsingleton_tensorProduct :
   simp [Module.IsTorsion']
 
 end Submonoid
+
+/-- An element dies in a localization at a submonoid `S` exactly when it is `S`-torsion. -/
+theorem IsLocalization.algebraMap_eq_zero_iff_mem_torsion' {R A : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] (S : Submonoid R) [IsLocalization S A] (r : R) :
+    algebraMap R A r = 0 ↔ r ∈ Submodule.torsion' R R S := by
+  simp [IsLocalization.map_eq_zero_iff S, Submodule.mem_torsion'_iff]
 
 namespace TauCeti
 

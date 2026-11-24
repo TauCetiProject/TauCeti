@@ -62,6 +62,10 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
+* `RingHom.mapsTo_torsion'_powers`: a ring map `φ` sends `f`-power torsion to `φ f`-power
+  torsion.
+* `IsSMulRegular.torsion'_powers_eq_bot`: a module on which `a` acts injectively has no `a`-power
+  torsion.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
 * `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
@@ -346,6 +350,23 @@ theorem isTorsion'_iff {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMo
     simpa [Submonoid.smul_def] using congrArg e.symm ha⟩
 
 end LinearEquiv
+
+/-- A ring map sends `f`-power torsion elements of `R` to `φ f`-power torsion elements of `A`. -/
+theorem RingHom.mapsTo_torsion'_powers {R A : Type*} [CommSemiring R] [CommSemiring A]
+    (φ : R →+* A) (f : R) :
+    Set.MapsTo φ (Submodule.torsion' R R (Submonoid.powers f))
+      (Submodule.torsion' A A (Submonoid.powers (φ f))) := by
+  rintro x ⟨⟨_, k, rfl⟩, hk⟩
+  refine ⟨⟨_, k, rfl⟩, ?_⟩
+  simpa [Submonoid.smul_def] using congr(φ $hk)
+
+/-- If scalar multiplication by `a` is injective on `M`, then `M` has no `a`-power torsion. -/
+theorem IsSMulRegular.torsion'_powers_eq_bot {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {a : R} (ha : IsSMulRegular M a) :
+    Submodule.torsion' R M (Submonoid.powers a) = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr ?_
+  rintro x ⟨⟨_, k, rfl⟩, hk⟩
+  exact ha.pow k (by simpa [Submonoid.smul_def] using hk)
 
 namespace Submodule
 
