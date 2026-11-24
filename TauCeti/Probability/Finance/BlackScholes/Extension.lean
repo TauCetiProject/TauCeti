@@ -313,7 +313,7 @@ theorem callValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     filter_upwards [Iio_mem_nhds ht] with u hu
     exact callValue_of_pos hs (sub_pos.2 hu)
   rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, callValue_of_pos hs hτ]
-  exact callPrice_pde hs hK ht
+  simpa only [residual_def] using callPrice_pde hs hK ht
 
 /-- **The Black–Scholes equation for the extended put.** In calendar time `t < T` and at spot
 `s > 0`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
@@ -332,6 +332,6 @@ theorem putValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     filter_upwards [Iio_mem_nhds ht] with u hu
     exact putValue_of_pos hs (sub_pos.2 hu)
   rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, putValue_of_pos hs hτ]
-  exact putPrice_pde hs hK ht
+  simpa only [residual_def] using putPrice_pde hs hK ht
 
 end TauCeti.BlackScholes

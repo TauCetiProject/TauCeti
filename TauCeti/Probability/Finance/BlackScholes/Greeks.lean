@@ -35,10 +35,11 @@ In calendar time `t = T - τ` both `V(s, t) = C(s, T - t)` and `V(s, t) = P(s, T
 
 `∂V/∂t + σ² s² / 2 ∂²V/∂s² + r (s ∂V/∂s - V) = 0`
 
-for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
-`TauCeti.BlackScholes.putPrice_pde`). The formulas for the derivatives need `σ ≠ 0` and the signs
-of gamma need `σ > 0`. The equation holds for every `σ`: at `σ = 0` the closed-form formulas
-reduce, through Lean's convention `x / 0 = 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
+for `s > 0` and `t < T`: the Black–Scholes residual `TauCeti.BlackScholes.residual` vanishes
+(`TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde`). The formulas for
+the derivatives need `σ ≠ 0` and the signs of gamma need `σ > 0`. The equation holds for every
+`σ`: at `σ = 0` the closed-form formulas reduce, through Lean's convention `x / 0 = 0`, to
+`(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
 (`TauCeti.BlackScholes.callPrice_volatility_zero`, `TauCeti.BlackScholes.putPrice_volatility_zero`),
 which satisfy `∂V/∂t + r (s ∂V/∂s - V) = 0`.
 
@@ -52,6 +53,7 @@ which satisfy `∂V/∂t + r (s ∂V/∂s - V) = 0`.
 * The corresponding `putPrice` statements.
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
   on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
+* `TauCeti.BlackScholes.residual` — the Black–Scholes residual.
 * `TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde` — the Black–Scholes
   equation.
 
@@ -302,13 +304,29 @@ theorem deriv_putPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
 
 /-! ### The Black–Scholes equation -/
 
+/-- The residual of the Black–Scholes equation
+
+`∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C)`
+
+at spot `s` and calendar time `t`, for a spot-first price `C(s, t)`, short rate `r` and
+volatility `σ`. -/
+def residual (r σ : ℝ) (C : ℝ → ℝ → ℝ) (s t : ℝ) : ℝ :=
+  deriv (fun u => C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => C x t) s +
+    r * (s * deriv (fun x => C x t) s - C s t)
+
+/-- Unfold the Black–Scholes residual. -/
+theorem residual_def (r σ : ℝ) (C : ℝ → ℝ → ℝ) (s t : ℝ) :
+    residual r σ C s t =
+      deriv (fun u => C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => C x t) s +
+        r * (s * deriv (fun x => C x t) s - C s t) :=
+  (rfl)
+
 /-- **The Black–Scholes equation for the call.** In calendar time `t < T`, the call price
 `C(s, t) = callPrice s r σ K (T - t)` satisfies
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0` at every spot `s > 0`. -/
 theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => callPrice s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callPrice x r σ K (T - t)) s +
-      r * (s * deriv (fun x => callPrice x r σ K (T - t)) s - callPrice s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => callPrice x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   by_cases hσ : σ = 0
   · -- At `σ = 0` the closed form is `(s - K e^{-rτ}) / 2` (by `x / 0 = 0`), which solves
     -- `∂C/∂t + r (s ∂C/∂s - C) = 0`.
@@ -335,9 +353,8 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
 `P(s, t) = putPrice s r σ K (T - t)` satisfies
 `∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0` at every spot `s > 0`. -/
 theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => putPrice s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putPrice x r σ K (T - t)) s +
-      r * (s * deriv (fun x => putPrice x r σ K (T - t)) s - putPrice s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => putPrice x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   by_cases hσ : σ = 0
   · -- At `σ = 0` the closed form is `(K e^{-rτ} - s) / 2` (by `x / 0 = 0`), which solves
     -- `∂P/∂t + r (s ∂P/∂s - P) = 0`.

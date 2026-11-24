@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.Probability.Finance.BlackScholes.Basic
+public import TauCeti.Probability.Finance.BlackScholes.Greeks
 public import TauCeti.Probability.Finance.MarketImpact.Clearing
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -34,8 +34,8 @@ Black–Scholes coefficient `σ x`. The second derivative `ψ''`, which enters t
 
 Replicating a claim of price `C(x, t)` in this market leads to the Black–Scholes equation with
 `σ_fb` in place of `σ x`. Its residual is `TauCeti.Finance.linearFeedbackResidual`; with no
-program trading it is the Black–Scholes residual `TauCeti.Finance.blackScholesResidual`
-(`TauCeti.Finance.linearFeedbackResidual_zero`), whose unfolded form the call price solves
+program trading it is the Black–Scholes residual `TauCeti.BlackScholes.residual`
+(`TauCeti.Finance.linearFeedbackResidual_zero`), which vanishes for the call price
 (`TauCeti.BlackScholes.callPrice_pde`). For a single hedged claim, `H = ρ C_x`, so
 `k = ρ C_xx` and the diffusion term `σ_fb² C_xx / 2` is a nonlinear function of the gamma
 `Γ = C_xx`. Its derivative in `Γ` is
@@ -240,6 +240,18 @@ theorem clearingMap_linearEquilibriumPrice (hd₀ : 0 < d₀) (hy : 0 < y) :
   clearingMap_invFunOn hH hmargin hzero hδ (mul_pos hd₀ (Real.rpow_pos_of_pos hy γ))
 
 /-- Under a strictly positive clearing-derivative margin and the zero limit at zero price, the
+equilibrium price `ψ` has derivative `ψ'(y) = v(ψ(y)) / y` at every positive income `y`,
+where `v(x) = γ x (1 - H(x)) / (1 - H(x) - x H'(x))`, for `d₀ > 0`. -/
+theorem hasDerivAt_linearEquilibriumPrice_of_margin (hd₀ : 0 < d₀) (hy : 0 < y) :
+    HasDerivAt (linearEquilibriumPrice H d₀ γ)
+      (linearFeedbackVolatility γ (linearEquilibriumPrice H d₀ γ y)
+        (H (linearEquilibriumPrice H d₀ γ y))
+        (deriv H (linearEquilibriumPrice H d₀ γ y)) / y) y :=
+  hasDerivAt_linearEquilibriumPrice hH (fun x hx ↦ hδ.trans_le (hmargin x hx)) hy
+    (linearEquilibriumPrice_pos hH hmargin hzero hδ hd₀ hy)
+    (clearingMap_linearEquilibriumPrice hH hmargin hzero hδ hd₀ hy)
+
+/-- Under a strictly positive clearing-derivative margin and the zero limit at zero price, the
 derivative of the equilibrium price `ψ` is `ψ'(y) = v(ψ(y)) / y` at every positive income `y`,
 where `v(x) = γ x (1 - H(x)) / (1 - H(x) - x H'(x))`, for `d₀ > 0`. -/
 theorem deriv_linearEquilibriumPrice (hd₀ : 0 < d₀) (hy : 0 < y) :
@@ -247,9 +259,7 @@ theorem deriv_linearEquilibriumPrice (hd₀ : 0 < d₀) (hy : 0 < y) :
       linearFeedbackVolatility γ (linearEquilibriumPrice H d₀ γ y)
         (H (linearEquilibriumPrice H d₀ γ y))
         (deriv H (linearEquilibriumPrice H d₀ γ y)) / y :=
-  (hasDerivAt_linearEquilibriumPrice hH (fun x hx ↦ hδ.trans_le (hmargin x hx)) hy
-    (linearEquilibriumPrice_pos hH hmargin hzero hδ hd₀ hy)
-    (clearingMap_linearEquilibriumPrice hH hmargin hzero hδ hd₀ hy)).deriv
+  (hasDerivAt_linearEquilibriumPrice_of_margin hH hmargin hzero hδ hd₀ hy).deriv
 
 /-- **Second derivative of the equilibrium price.** Under a strictly positive clearing-derivative
 margin and the zero limit at zero price, let `v(x) = γ x (1 - H(x)) / (1 - H(x) - x H'(x))`
@@ -264,10 +274,7 @@ theorem hasDerivAt_deriv_linearEquilibriumPrice {v' : ℝ} (hd₀ : 0 < d₀) (h
         linearFeedbackVolatility γ (linearEquilibriumPrice H d₀ γ y)
           (H (linearEquilibriumPrice H d₀ γ y)) (deriv H (linearEquilibriumPrice H d₀ γ y))) /
         y ^ 2) y := by
-  have hpos : ∀ x, 0 < x → 0 < 1 - H x - x * deriv H x := fun x hx ↦ hδ.trans_le (hmargin x hx)
-  have hψ := hasDerivAt_linearEquilibriumPrice hH hpos hy
-    (linearEquilibriumPrice_pos (γ := γ) hH hmargin hzero hδ hd₀ hy)
-    (clearingMap_linearEquilibriumPrice hH hmargin hzero hδ hd₀ hy)
+  have hψ := hasDerivAt_linearEquilibriumPrice_of_margin (γ := γ) hH hmargin hzero hδ hd₀ hy
   have hq := (hv.comp y hψ).div (hasDerivAt_id y) hy.ne'
   refine (hq.congr_of_eventuallyEq ?_).congr_deriv ?_
   · filter_upwards [Ioi_mem_nhds hy] with y' hy'
@@ -278,22 +285,6 @@ theorem hasDerivAt_deriv_linearEquilibriumPrice {v' : ℝ} (hd₀ : 0 < d₀) (h
 end Margin
 
 /-! ### The feedback pricing equation -/
-
-/-- The residual of the Black–Scholes equation
-
-`C_t + σ² x² C_xx / 2 + r (x C_x - C)`
-
-for a spot-first price `C(x, t)`, short rate `r` and volatility `σ`. -/
-def blackScholesResidual (r σ : ℝ) (C : ℝ → ℝ → ℝ) (x t : ℝ) : ℝ :=
-  deriv (fun u ↦ C x u) t + σ ^ 2 * x ^ 2 / 2 * deriv (deriv fun z ↦ C z t) x +
-    r * (x * deriv (fun z ↦ C z t) x - C x t)
-
-/-- Unfold the Black–Scholes residual. -/
-theorem blackScholesResidual_def (r σ : ℝ) (C : ℝ → ℝ → ℝ) (x t : ℝ) :
-    blackScholesResidual r σ C x t =
-      deriv (fun u ↦ C x u) t + σ ^ 2 * x ^ 2 / 2 * deriv (deriv fun z ↦ C z t) x +
-        r * (x * deriv (fun z ↦ C z t) x - C x t) :=
-  (rfl)
 
 /-- The residual of the feedback pricing equation
 
@@ -320,8 +311,8 @@ theorem linearFeedbackResidual_def (r σ : ℝ) (H C : ℝ → ℝ → ℝ) (x t
 /-- Without program trading the feedback pricing residual is the Black–Scholes residual. -/
 @[simp]
 theorem linearFeedbackResidual_zero (r σ : ℝ) (C : ℝ → ℝ → ℝ) (x t : ℝ) :
-    linearFeedbackResidual r σ (fun _ _ ↦ 0) C x t = blackScholesResidual r σ C x t := by
-  simp [linearFeedbackResidual_def, blackScholesResidual_def, mul_pow]
+    linearFeedbackResidual r σ (fun _ _ ↦ 0) C x t = BlackScholes.residual r σ C x t := by
+  simp [linearFeedbackResidual_def, BlackScholes.residual_def, mul_pow]
 
 /-- For a single claim hedged with `H = ρ C_x`, the feedback pricing residual is
 
