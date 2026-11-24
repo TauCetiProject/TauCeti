@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.BaseChange
+public import TauCeti.AlgebraicGeometry.Birational.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.FlatBaseChange
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 
 /-!
@@ -18,16 +19,17 @@ projections `πX : X' ⟶ X` and `πY : Y' ⟶ Y`, and an `S`-partial map `f : X
 Its base change `f' = AlgebraicGeometry.Scheme.PartialMap.baseChange`, defined on `V' = πX⁻¹(V)`,
 is the base change of the morphism `f_V : V ⟶ Y` along `πY`: the square with `πX ∣_ V`, `f'_{V'}`,
 `f_V` and `πY` is cartesian. This file draws two consequences, which for a field extension
-`K'/K` are the clauses "`f_{K'}` is dominant when `f` is" and "`Γ_{f_{K'}} = (Γ_f)_{K'}`" of
-DynamicalDegreesOfRationalMaps §1.4.
+`K'/K` say that `f_{K'}` is dominant when `f` is, and that `Γ_{f_{K'}} = (Γ_f)_{K'}`.
 
 * *Dominance.* When `p` is universally open (for instance `Spec K' ⟶ Spec K`), `πY` is an open map
-  and the base change of the dominant `f_V` is dominant. Through the characterization of the base
-  change (`AlgebraicGeometry.Scheme.RationalMap.existsUnique_compHom_eq_comp`), every `S'`-rational
-  map `f'` with `πY ∘ f' = f ∘ πX` is then dominant.
+  and the base change of the dominant `f_V` is dominant
+  (`AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap`). Through the characterization of the
+  base change (`AlgebraicGeometry.Scheme.RationalMap.existsUnique_compHom_eq_comp`), every
+  `S'`-rational map `f'` with `πY ∘ f' = f ∘ πX` is then dominant.
 * *Graph.* The relative graph `γ_f = (ι_V, f_V) : V ⟶ X ×_S Y`
   (`TauCeti.AlgebraicGeometry.opensGraph`) base changes to `γ_{f'} : V' ⟶ X' ×_{S'} Y'` along the
-  natural map `X' ×_{S'} Y' ⟶ X ×_S Y`, which is itself a base change of `p`. When `p` is flat and
+  natural map `X' ×_{S'} Y' ⟶ X ×_S Y`, which is itself a base change of `πX`
+  (`CategoryTheory.IsPullback.pullback_map_fst`), hence of `p`. When `p` is flat and
   `γ_f` is quasi-compact, flat base change of scheme-theoretic images
   (`AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_of_flat`) shows that the ideal sheaf of
   the graph closure of `f'` is the pullback of that of `f`: `Γ_{f'} = (Γ_f)_{S'}` as closed
@@ -35,15 +37,11 @@ DynamicalDegreesOfRationalMaps §1.4.
 
 ## Main results
 
-* `AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap`: base change of a dominant morphism
-  along an open map is dominant, for any cartesian square.
 * `AlgebraicGeometry.Scheme.PartialMap.isPullback_baseChange`: the base change of a partial map is
   a base change of its representative.
 * `AlgebraicGeometry.Scheme.PartialMap.isDominant_baseChange_hom` and
   `AlgebraicGeometry.Scheme.RationalMap.isDominant_of_compHom_eq_comp`: dominance of the base change
   along a universally open morphism.
-* `AlgebraicGeometry.Scheme.isPullback_pullbackMap_fst`: `X' ×_{S'} Y' ⟶ X ×_S Y` is the base change
-  of `πX` along the first projection.
 * `AlgebraicGeometry.Scheme.PartialMap.isPullback_opensGraph_baseChange` and
   `AlgebraicGeometry.Scheme.PartialMap.ker_opensGraph_baseChange`: the graph of the base change is
   the base change of the graph, and so is its graph closure, along a flat `p`.
@@ -56,17 +54,6 @@ open CategoryTheory Limits TauCeti.AlgebraicGeometry
 universe u
 
 namespace AlgebraicGeometry
-
-/-- Base change of a dominant morphism along a morphism whose underlying map is open is dominant,
-for any cartesian square. -/
-theorem IsDominant.of_isPullback_of_isOpenMap {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
-    {f : X ⟶ S} {g : Y ⟶ S} (H : IsPullback fst snd f g) [IsDominant f] (hg : IsOpenMap g) :
-    IsDominant snd := by
-  rw [← H.isoPullback_hom_snd]
-  have : IsDominant (pullback.snd f g) := by
-    rw [isDominant_iff, DenseRange, Scheme.Pullback.range_snd]
-    exact f.denseRange.preimage hg
-  infer_instance
 
 namespace Scheme
 
@@ -115,14 +102,6 @@ theorem RationalMap.isDominant_of_compHom_eq_comp [PreirreducibleSpace X'] [None
     (hf'.trans (g.baseChange_toRationalMap_compHom hY πX sX' hX.w hd).symm)]
   infer_instance
 
-/-- The natural map `X' ×_{S'} Y' ⟶ X ×_S Y` for `X' = X ×_S S'` and `Y' = Y ×_S S'` is the base
-change of `πX : X' ⟶ X` along the first projection `X ×_S Y ⟶ X`. -/
-theorem isPullback_pullbackMap_fst :
-    IsPullback (pullback.map sX' sY' sX sY πX πY p hX.w.symm hY.w.symm)
-      (pullback.fst sX' sY') (pullback.fst sX sY) πX := by
-  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback sX sY).flip
-  simpa [← hX.w] using (IsPullback.of_hasPullback sX' sY').flip.paste_horiz hY
-
 section Graph
 
 variable (f : X.PartialMap Y) [f.IsOver sX sY] (hd : Dense (πX ⁻¹ᵁ f.domain : Set X'))
@@ -136,21 +115,14 @@ theorem PartialMap.isPullback_opensGraph_baseChange :
         (f.baseChange_hom_snd hY πX sX' hX.w hd))
       (opensGraph sX sY f.domain f.hom (f.over sX sY))
       (pullback.map sX' sY' sX sY πX πY p hX.w.symm hY.w.symm) := by
-  have h₁ : opensGraph sX' sY' (πX ⁻¹ᵁ f.domain) (f.baseChange hY πX sX' hX.w hd).hom
-      (f.baseChange_hom_snd hY πX sX' hX.w hd) ≫ pullback.fst sX' sY' = (πX ⁻¹ᵁ f.domain).ι :=
-    opensGraph_fst ..
-  have h₂ : opensGraph sX' sY' (πX ⁻¹ᵁ f.domain) (f.baseChange hY πX sX' hX.w hd).hom
-      (f.baseChange_hom_snd hY πX sX' hX.w hd) ≫ pullback.snd sX' sY' =
-        (f.baseChange hY πX sX' hX.w hd).hom :=
-    opensGraph_snd ..
-  refine IsPullback.of_bot ?_ ?_ (isPullback_pullbackMap_fst hX hY)
-  · rw [opensGraph_fst, h₁]
-    exact isPullback_morphismRestrict πX f.domain
+  refine IsPullback.of_bot ?_ ?_ (hY.flip.pullback_map_fst hX.w.symm)
+  · rw [opensGraph_fst]
+    convert isPullback_morphismRestrict πX f.domain using 1
+    exact opensGraph_fst ..
   · apply pullback.hom_ext
-    · simp only [Category.assoc, opensGraph_fst, pullback.lift_fst, reassoc_of% h₁,
-        morphismRestrict_ι]
-    · simp only [Category.assoc, opensGraph_snd, pullback.lift_snd, reassoc_of% h₂]
-      exact (f.baseChange_hom_fst hY πX sX' hX.w hd).symm
+    · simpa using (opensGraph_fst_assoc ..).symm
+    · simp only [Category.assoc, opensGraph_snd, pullback.lift_snd]
+      exact ((opensGraph_snd_assoc ..).trans (f.baseChange_hom_fst hY πX sX' hX.w hd)).symm
 
 /-- **The graph closure of the base change is the base change of the graph closure.** Along a
 flat `p : S' ⟶ S` (for instance a field extension), when the graph `γ_f` is quasi-compact (for
@@ -165,7 +137,7 @@ theorem PartialMap.ker_opensGraph_baseChange [Flat p]
         (pullback.map sX' sY' sX sY πX πY p hX.w.symm hY.w.symm) := by
   have : Flat πX := MorphismProperty.of_isPullback hX.flip inferInstance
   have : Flat (pullback.map sX' sY' sX sY πX πY p hX.w.symm hY.w.symm) :=
-    MorphismProperty.of_isPullback (isPullback_pullbackMap_fst hX hY).flip inferInstance
+    MorphismProperty.of_isPullback (hY.flip.pullback_map_fst hX.w.symm).flip inferInstance
   exact Hom.ker_eq_comap_of_isPullback_of_flat _ (f.isPullback_opensGraph_baseChange hX hY hd)
 
 end Graph
