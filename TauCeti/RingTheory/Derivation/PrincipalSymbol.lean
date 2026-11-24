@@ -794,18 +794,13 @@ point is an alternating sum of its values on the diagonal, and `m!` is invertibl
 theorem pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero
     (D : differentialOperators 𝕜 A A A m) :
     pointCommutatorSymbol φ hJ e D = 0 ↔ ∀ v, pointPrincipalSymbol φ hJ e D v = 0 := by
-  refine ⟨fun h v ↦ by simp [pointPrincipalSymbol_def, h], fun h ↦ MultilinearMap.ext fun v ↦ ?_⟩
-  have hdiag (w : V) : pointCommutatorSymbol φ hJ e D (fun _ ↦ w) = 0 := by
-    simpa [pointPrincipalSymbol_def, mul_invOf_cancel_left] using
-      congrArg ((m.factorial : 𝕜) * ·) (h w)
-  -- Polarization: `m! • σ v` is an alternating sum of diagonal values of `σ`, which vanish.
-  have hpol := (pointCommutatorSymbol φ hJ e D).sum_neg_one_pow_card_smul_apply_sum_compl v
-  have hperm : ∑ σ : Equiv.Perm (Fin m), pointCommutatorSymbol φ hJ e D (fun i ↦ v (σ i)) =
-      ∑ _σ : Equiv.Perm (Fin m), pointCommutatorSymbol φ hJ e D v :=
-    Finset.sum_congr rfl fun σ _ ↦ pointCommutatorSymbol_comp_perm e D v σ
-  simp only [hdiag, smul_zero, Finset.sum_const_zero, hperm, Finset.sum_const, Finset.card_univ,
-    Fintype.card_perm, Fintype.card_fin, nsmul_eq_mul] at hpol
-  simpa [invOf_mul_cancel_left] using congrArg (⅟(m.factorial : 𝕜) * ·) hpol.symm
+  refine ⟨fun h v ↦ by simp [pointPrincipalSymbol_def, h], fun h ↦ ?_⟩
+  have : Invertible ((Fintype.card (Fin m)).factorial : 𝕜) := by
+    rw [Fintype.card_fin]; infer_instance
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero_of_invertible
+    (pointCommutatorSymbol_comp_perm e D) fun w ↦ ?_
+  simpa [pointPrincipalSymbol_def, mul_invOf_cancel_left] using
+    congrArg ((m.factorial : 𝕜) * ·) (h w)
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the point principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
