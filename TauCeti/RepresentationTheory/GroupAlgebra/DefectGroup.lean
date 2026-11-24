@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Sylow
 public import Mathlib.Order.Minimal
 public import TauCeti.RepresentationTheory.GroupAlgebra.BrauerProjection
-import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.PGroup
 
 /-!
