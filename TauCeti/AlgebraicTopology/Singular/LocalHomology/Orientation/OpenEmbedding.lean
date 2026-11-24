@@ -78,10 +78,9 @@ in degree `d` with those of `N` at `j x`, through the isomorphism of integral lo
 induced by `j`. -/
 def localOrientationEquiv (hj : IsOpenEmbedding j) (x : M) (d : ℕ) :
     LocalOrientation M x d ≃ LocalOrientation N (j x) d :=
-  let e := localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d
-  e.toLinearEquiv.toEquiv.subtypeEquiv fun z ↦
-    ⟨fun hz ↦ hz.map e, fun hz ↦ (e.hom_inv_id_apply z) ▸ hz.map e.symm⟩
+  LocalOrientation.equivOfIso
+    (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      hj x d)
 
 /-- On local homology classes, the correspondence of local orientations is the map induced by
 `j`. -/
@@ -91,7 +90,7 @@ lemma coe_localOrientationEquiv (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     (hj.localOrientationEquiv x d z).val =
       (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).hom z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso _ z
 
 /-- The inverse correspondence acts on local homology classes by the inverse isomorphism. -/
 @[simp]
@@ -100,7 +99,7 @@ lemma coe_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     ((hj.localOrientationEquiv x d).symm z).val =
       (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso_symm _ z
 
 /-- The map of local homology induced by `j` carries the local orientation at `x` corresponding
 to a local orientation `z` at `j x` back to `z`. -/
@@ -118,8 +117,7 @@ lemma localOrientationEquiv_neg (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     (z : LocalOrientation M x d) :
     hj.localOrientationEquiv x d (-z) =
       -hj.localOrientationEquiv x d z :=
-  Subtype.ext ((localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).hom.hom.map_neg z.val)
+  LocalOrientation.equivOfIso_neg _ z
 
 /-- The identity identifies the local orientations at `x` with themselves. -/
 @[simp]

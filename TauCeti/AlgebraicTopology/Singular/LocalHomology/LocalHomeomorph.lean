@@ -78,6 +78,23 @@ private def isoOfOpen {S : Set M} (hS : IsOpen S)
   (localHomologyIsoOfIsOpenEmbedding R hS.isOpenEmbedding_subtypeVal ⟨x, hx⟩ k).symm ≪≫
     localHomologyIsoOfIsOpenEmbedding R hπS ⟨x, hx⟩ k
 
+/-- Through the open set `j⁻¹(S)`, which `j` embeds into `S`, the isomorphism of local homology of
+an open embedding `ρ ∘ j` factors through the isomorphism of `ρ` on `S`. -/
+private theorem localHomologyIsoOfIsOpenEmbedding_eq_symm_trans_trans [T1Space W] {X : Type w}
+    [TopologicalSpace X] [T1Space X] {ρ : M → X} {S : Set M}
+    (hρS : IsOpenEmbedding (ρ ∘ (Subtype.val : S → M))) {j : W → M}
+    (hρj : IsOpenEmbedding (ρ ∘ j)) (hi : IsOpenEmbedding (Subtype.val : j ⁻¹' S → W))
+    (hj' : IsOpenEmbedding fun z : j ⁻¹' S ↦ (⟨j z, z.property⟩ : S)) {w : W} (hw : j w ∈ S)
+    (k : ℕ) :
+    localHomologyIsoOfIsOpenEmbedding R hρj w k =
+      (localHomologyIsoOfIsOpenEmbedding R hi ⟨w, hw⟩ k).symm ≪≫
+        localHomologyIsoOfIsOpenEmbedding R hj' ⟨w, hw⟩ k ≪≫
+          localHomologyIsoOfIsOpenEmbedding R hρS ⟨j w, hw⟩ k := by
+  -- Both sides are the isomorphism of `ρ ∘ j` restricted to `j⁻¹(S)`, as a map `j⁻¹(S) → X`.
+  ext : 1
+  rw [Iso.trans_hom, Iso.symm_hom, Iso.eq_inv_comp, ← Iso.trans_hom,
+    localHomologyIsoOfIsOpenEmbedding_trans, localHomologyIsoOfIsOpenEmbedding_trans]
+
 /-- Read through an open set `S` on which `π` is an open embedding, the isomorphism of local
 homology induced by `π` restricts along every open embedding `j` with `π ∘ j` an open embedding:
 the isomorphism of `j` followed by it is the isomorphism of `π ∘ j`. -/
@@ -88,30 +105,18 @@ private theorem localHomologyIsoOfIsOpenEmbedding_trans_isoOfOpen {S : Set M} (h
       localHomologyIsoOfIsOpenEmbedding R hπj w k := by
   have := hj.isEmbedding.t1Space
   -- Compare on the open set `j⁻¹(S)`, which `j` embeds into `S`.
-  have hW' : IsOpen (j ⁻¹' S) := hS.preimage hj.continuous
-  have hi : IsOpenEmbedding (Subtype.val : j ⁻¹' S → W) := hW'.isOpenEmbedding_subtypeVal
-  let j' : j ⁻¹' S → S := fun z ↦ ⟨j z, z.property⟩
-  have hj' : IsOpenEmbedding j' :=
-    (IsOpenEmbedding.of_comp_iff j' hS.isOpenEmbedding_subtypeVal).1 (hj.comp hi)
-  -- Through `j⁻¹(S)`, the isomorphisms of `j` and of `π ∘ j` factor through `S`.
+  have hi : IsOpenEmbedding (Subtype.val : j ⁻¹' S → W) :=
+    (hS.preimage hj.continuous).isOpenEmbedding_subtypeVal
+  have hj' : IsOpenEmbedding fun z : j ⁻¹' S ↦ (⟨j z, z.property⟩ : S) :=
+    (IsOpenEmbedding.of_comp_iff _ hS.isOpenEmbedding_subtypeVal).1 (hj.comp hi)
+  -- Through `j⁻¹(S)`, the isomorphisms of `j = id ∘ j` and of `π ∘ j` factor through `S`.
   have e₁ : localHomologyIsoOfIsOpenEmbedding R hj w k =
       (localHomologyIsoOfIsOpenEmbedding R hi ⟨w, hw⟩ k).symm ≪≫
         localHomologyIsoOfIsOpenEmbedding R hj' ⟨w, hw⟩ k ≪≫
-          localHomologyIsoOfIsOpenEmbedding R hS.isOpenEmbedding_subtypeVal ⟨j w, hw⟩ k := by
-    ext : 1
-    rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Iso.eq_inv_comp]
-    exact (congrArg Iso.hom (localHomologyIsoOfIsOpenEmbedding_trans R hi hj ⟨w, hw⟩ k)).trans
-      (congrArg Iso.hom (localHomologyIsoOfIsOpenEmbedding_trans R hj'
-        hS.isOpenEmbedding_subtypeVal ⟨w, hw⟩ k)).symm
-  have e₂ : localHomologyIsoOfIsOpenEmbedding R hπj w k =
-      (localHomologyIsoOfIsOpenEmbedding R hi ⟨w, hw⟩ k).symm ≪≫
-        localHomologyIsoOfIsOpenEmbedding R hj' ⟨w, hw⟩ k ≪≫
-          localHomologyIsoOfIsOpenEmbedding R hπS ⟨j w, hw⟩ k := by
-    ext : 1
-    rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Iso.eq_inv_comp]
-    exact (congrArg Iso.hom (localHomologyIsoOfIsOpenEmbedding_trans R hi hπj ⟨w, hw⟩ k)).trans
-      (congrArg Iso.hom (localHomologyIsoOfIsOpenEmbedding_trans R hj' hπS ⟨w, hw⟩ k)).symm
-  rw [e₁, e₂, isoOfOpen]
+          localHomologyIsoOfIsOpenEmbedding R hS.isOpenEmbedding_subtypeVal ⟨j w, hw⟩ k :=
+    localHomologyIsoOfIsOpenEmbedding_eq_symm_trans_trans R (ρ := id)
+      hS.isOpenEmbedding_subtypeVal hj hi hj' hw k
+  rw [e₁, localHomologyIsoOfIsOpenEmbedding_eq_symm_trans_trans R hπS hπj hi hj' hw k, isoOfOpen]
   simp only [Iso.trans_assoc, Iso.self_symm_id_assoc]
 
 /-- **The local homology isomorphism of a local homeomorphism.** A local homeomorphism
@@ -217,9 +222,11 @@ private lemma localHomologyTransport_map_subtypeVal (hπ : IsLocalHomeomorph π)
     localHomologyIsoOfIsLocalHomeomorph_eq_symm_trans R hπ S.isOpen hπS c.as.property k
   have hF : (FundamentalGroupoid.map ⟨π, hπ.continuous⟩).map
       ((FundamentalGroupoid.map ⟨Subtype.val, continuous_subtypeVal⟩).map f) =
-        (FundamentalGroupoid.map ⟨π ∘ Subtype.val, hπS.continuous⟩).map f := by
-    induction f using Path.Homotopic.Quotient.ind
-    rfl
+        (FundamentalGroupoid.map ⟨π ∘ Subtype.val, hπS.continuous⟩).map f :=
+    -- Functoriality of `FundamentalGroupoid.map`; the composite of the two continuous maps is
+    -- `π ∘ Subtype.val` by definition.
+    eq_of_heq (Functor.hcongr_hom (FundamentalGroupoid.map_comp ⟨π, hπ.continuous⟩
+      ⟨Subtype.val, continuous_subtypeVal⟩) f).symm
   rw [hI, hI, hF]
   -- Move the transport of `M` to `S` by `hM`, insert the isomorphism of `π` on `S` at the end,
   -- and move the transport of `S` to `N` by `hN`. The objects of these composites agree with
@@ -260,9 +267,9 @@ theorem localHomologyTransport_comp_localHomologyIsoOfIsLocalHomeomorph_hom
       localHomologyTransport R N E k ((FundamentalGroupoid.map ⟨π, hπ.continuous⟩).map f) ≫
         (isoAt R hπ k y).inv :=
     eq_of_heq (CategoryTheory.Functor.hcongr_hom key f)
-  rw [h]
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    ((congrArg (_ ≫ ·) (Iso.inv_hom_id (isoAt R hπ k y))).trans (Category.comp_id _))))
+  -- Move the isomorphism at `y` across. `simp` cannot cancel it after `rw [h]`: the objects of
+  -- `isoAt` agree with those of the goal only up to unfolding `FundamentalGroupoid.map`.
+  exact (Iso.eq_comp_inv (isoAt R hπ k y)).1 (h.trans (Category.assoc _ _ _).symm)
 
 end Transport
 

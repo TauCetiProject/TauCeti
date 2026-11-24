@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalHomeomorph
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Transport
 
 /-!
@@ -29,6 +30,10 @@ local orientations in the base, as for the orientation double cover of a manifol
 
 ## Main results
 
+* `IsLocalHomeomorph.localOrientationEquiv_trans`: the correspondence restricted along an open
+  embedding.
+* `IsLocalHomeomorph.localOrientationEquiv_eq_localOrientationEquiv`: for an open embedding it is
+  the correspondence of local orientations by excision.
 * `IsLocalHomeomorph.localOrientationEquiv_localOrientationTransport`: the correspondence
   intertwines the transport of local orientations along path classes.
 
@@ -42,7 +47,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory TauCeti
+open CategoryTheory Topology TauCeti
 
 universe w
 
@@ -56,10 +61,9 @@ variable {M N : Type w} [TopologicalSpace M] [TopologicalSpace N] [T1Space M] [T
 induced by `π`. -/
 def localOrientationEquiv (hπ : IsLocalHomeomorph π) (x : M) (d : ℕ) :
     LocalOrientation M x d ≃ LocalOrientation N (π x) d :=
-  let e := localHomologyIsoOfIsLocalHomeomorph (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hπ x d
-  e.toLinearEquiv.toEquiv.subtypeEquiv fun z ↦
-    ⟨fun hz ↦ hz.map e, fun hz ↦ (e.hom_inv_id_apply z) ▸ hz.map e.symm⟩
+  LocalOrientation.equivOfIso
+    (localHomologyIsoOfIsLocalHomeomorph (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      hπ x d)
 
 /-- On local homology classes, the correspondence of local orientations is the local homology
 isomorphism of `π`. -/
@@ -69,7 +73,7 @@ lemma coe_localOrientationEquiv (hπ : IsLocalHomeomorph π) (x : M) {d : ℕ}
     (hπ.localOrientationEquiv x d z).val =
       (localHomologyIsoOfIsLocalHomeomorph (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hπ x d).hom z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso _ z
 
 /-- The inverse correspondence acts on local homology classes by the inverse isomorphism. -/
 @[simp]
@@ -78,15 +82,36 @@ lemma coe_localOrientationEquiv_symm (hπ : IsLocalHomeomorph π) (x : M) {d : �
     ((hπ.localOrientationEquiv x d).symm z).val =
       (localHomologyIsoOfIsLocalHomeomorph (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hπ x d).inv z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso_symm _ z
 
 /-- The correspondence of local orientations commutes with reversal. -/
 @[simp]
 lemma localOrientationEquiv_neg (hπ : IsLocalHomeomorph π) (x : M) {d : ℕ}
     (z : LocalOrientation M x d) :
     hπ.localOrientationEquiv x d (-z) = -hπ.localOrientationEquiv x d z :=
-  Subtype.ext ((localHomologyIsoOfIsLocalHomeomorph (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hπ x d).hom.hom.map_neg z.val)
+  LocalOrientation.equivOfIso_neg _ z
+
+/-- **The correspondence of local orientations along an open embedding.** For an open embedding
+`j : W → M` such that `π ∘ j` is an open embedding, the correspondence of local orientations of
+`j` at `w`, followed by that of `π` at `j w`, is the correspondence of `π ∘ j` at `w`. -/
+@[simp]
+lemma localOrientationEquiv_trans (hπ : IsLocalHomeomorph π) {W : Type w} [TopologicalSpace W]
+    {j : W → M} (hj : IsOpenEmbedding j) (hπj : IsOpenEmbedding (π ∘ j)) (w : W) (d : ℕ) :
+    (hj.localOrientationEquiv w d).trans (hπ.localOrientationEquiv (j w) d) =
+      hπj.localOrientationEquiv w d :=
+  Equiv.ext fun z ↦ Subtype.ext <| by
+    rw [Equiv.trans_apply, coe_localOrientationEquiv, IsOpenEmbedding.coe_localOrientationEquiv,
+      IsOpenEmbedding.coe_localOrientationEquiv, ← ConcreteCategory.comp_apply, ← Iso.trans_hom,
+      localHomologyIsoOfIsOpenEmbedding_trans_localHomologyIsoOfIsLocalHomeomorph]
+
+/-- For an open embedding, the correspondence of local orientations of `π` as a local
+homeomorphism is its correspondence as an open embedding. -/
+lemma localOrientationEquiv_eq_localOrientationEquiv (hπ : IsLocalHomeomorph π)
+    (hπ' : IsOpenEmbedding π) (x : M) (d : ℕ) :
+    hπ.localOrientationEquiv x d = hπ'.localOrientationEquiv x d :=
+  Equiv.ext fun z ↦ Subtype.ext <| by
+    rw [coe_localOrientationEquiv, IsOpenEmbedding.coe_localOrientationEquiv,
+      localHomologyIsoOfIsLocalHomeomorph_eq_localHomologyIsoOfIsOpenEmbedding _ hπ hπ']
 
 variable [T2Space M] [T2Space N] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [ChartedSpace E M] [ChartedSpace E N]

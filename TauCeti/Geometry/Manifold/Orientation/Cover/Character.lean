@@ -113,35 +113,35 @@ private theorem coverLocalOrientation_neg (p : OrientationCover 𝓘(ℝ, E) M) 
   have hπj : Topology.IsOpenEmbedding (VectorBundleOrientationCover.proj ∘ j) := hπS
   let w : e.source := ⟨p, hp⟩
   -- The local orientation of `S` at `w` corresponding to the canonical one of the cover at `p`.
-  let z := ((hS.localOrientationEquiv w (n + 1)).symm (homologicalOrientation hE p)).val
+  let o := (hS.localOrientationEquiv w (n + 1)).symm (homologicalOrientation hE p)
   -- The deck involution carries it to minus the canonical local orientation at the other point.
-  have hdeck : (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{0} ℤ)
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) hj w (n + 1)).hom z =
-        -(homologicalOrientation hE ⟨p.proj, -p.orientation⟩).val := by
+  have hdeck : hj.localOrientationEquiv w (n + 1) o =
+      -homologicalOrientation hE ⟨p.proj, -p.orientation⟩ := by
     have h := (homologicalOrientation hE).localHomologyMap_restrict_localOrientationEquiv_symm
       (homologicalOrientation hE) τ (VectorBundleOrientationCover.deck_apply p) e.open_source hp
       (fun z' _ h ↦ τ.injective (h.trans (VectorBundleOrientationCover.deck_apply p).symm))
     rw [localIndex_deck, neg_one_zsmul] at h
-    refine Eq.trans ?_ h
-    rw [localHomologyIsoOfIsOpenEmbedding_hom]
-    -- The two maps of local homology are induced by the same continuous map.
-    simp only [hjdeck]
+    apply Subtype.ext
+    -- The map of local homology of `j` is the one of the deck involution restricted to `S`.
+    rw [Topology.IsOpenEmbedding.coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_hom,
+      localHomologyMap_congr _ hjdeck]
+    exact h
+  -- Read in `M`, the canonical local orientation at `p` is `o` pushed forward by the projection,
+  -- and the one at the other point is `-o` pushed forward by the deck involution followed by the
+  -- projection.
+  have h₁ : coverLocalOrientation hE p = hπS.localOrientationEquiv w (n + 1) o :=
+    (congrArg (hπ.localOrientationEquiv p (n + 1))
+      ((hS.localOrientationEquiv w (n + 1)).apply_symm_apply _)).symm.trans
+      (DFunLike.congr_fun (hπ.localOrientationEquiv_trans hS hπS w (n + 1)) o)
+  have h₂ : coverLocalOrientation hE ⟨p.proj, -p.orientation⟩ =
+      -hπj.localOrientationEquiv w (n + 1) o := by
+    rw [← hπ.localOrientationEquiv_trans hj hπj, Equiv.trans_apply, hdeck,
+      IsLocalHomeomorph.localOrientationEquiv_neg, neg_neg]
+    -- The point `j w` is `⟨p.proj, -p.orientation⟩` by definition.
     rfl
-  -- Read in `M`, both sides are the local orientation of `S` at `w` pushed forward by the
-  -- projection, which agrees with the deck involution followed by the projection.
-  have hj' := localHomologyIsoOfIsOpenEmbedding_trans_localHomologyIsoOfIsLocalHomeomorph
-    (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) hπ hj hπj w (n + 1)
-  have hS' := localHomologyIsoOfIsOpenEmbedding_trans_localHomologyIsoOfIsLocalHomeomorph
-    (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) hπ hS hπS w (n + 1)
-  apply neg_eq_iff_eq_neg.1
-  apply Subtype.ext
-  rw [LocalOrientation.coe_neg, coverLocalOrientation, coverLocalOrientation,
-    IsLocalHomeomorph.coe_localOrientationEquiv, IsLocalHomeomorph.coe_localOrientationEquiv,
-    ← map_neg, ← hdeck, ← ConcreteCategory.comp_apply, ← Iso.trans_hom, hj',
-    ← hS.localHomologyMap_localOrientationEquiv_symm w (homologicalOrientation hE p)
-      (by rw [← Set.image_singleton, hS.injective.preimage_image]),
-    ← localHomologyIsoOfIsOpenEmbedding_hom (ModuleCat.of ℤ (ULift.{0} ℤ)) hS w (n + 1),
-    ← ConcreteCategory.comp_apply, ← Iso.trans_hom, hS']
+  -- The deck involution lies over the identity, so `π ∘ j` is the projection on `S`, and the
+  -- two correspondences agree by definition.
+  rw [h₁, h₂]
 
 /-- **Transport of the local orientations read from the cover.** Along a path `δ` in the
 orientation cover, transport in `M` along the projection of `δ` carries the local orientation read
