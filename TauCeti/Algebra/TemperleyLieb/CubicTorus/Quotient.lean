@@ -61,9 +61,7 @@ theorem map_star_mul_self_eq_zero_iff_cubicHom_eq_zero
   rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul,
     Subalgebra.coe_mul, coe_cubicHom_star, mul_eq_zero,
     or_iff_right (pow_ne_zero m sqrt_three_ne_zero),
-    cubicScalarCoefficient_eq_scalarTrace,
-    TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_eq_zero_iff
-      (cubicFactor_inv_self (m - 1)), ZeroMemClass.coe_eq_zero]
+    cubicScalarCoefficient_cubicAdjoint_mul_self_eq_zero_iff, ZeroMemClass.coe_eq_zero]
 
 /-- **The trace radical at `δ = √3` is the kernel of `cubicHom`.** -/
 theorem traceRadical_eq_ker_cubicHom

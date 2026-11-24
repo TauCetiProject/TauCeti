@@ -195,8 +195,9 @@ theorem cubicFixedIncl_injective (N : ℕ) : Function.Injective (cubicFixedIncl 
 @[simp]
 theorem cubicAdjoint_cubicIncl (N : ℕ) (x : CubicTorus N) :
     cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) := by
-  rw [cubicIncl_eq_mapDomain]
-  exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
+  rw [cubicIncl_eq_mapDomain, cubicAdjoint_eq_conjReverse, cubicAdjoint_eq_conjReverse]
+  exact TwistedMonoidAlgebra.conjReverse_mapDomain
+    (cubicExtendHom N) (cubicFactor_cubicExtendHom N) x
 
 @[simp]
 theorem cubicFixedAdjoint_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :

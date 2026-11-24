@@ -515,13 +515,28 @@ theorem cubicProjection_mem_cubicFixed (j : Fin N) : cubicProjection N j ∈ cub
 
 /-- **The conjugate-linear adjoint** `†` on `CubicTorus N`, sending `∑ z_a • W(a)` to
 `∑ star z_a • W(-a)`. -/
-noncomputable abbrev cubicAdjoint (N : ℕ) : CubicTorus N →ₗ⋆[ℂ] CubicTorus N :=
+noncomputable def cubicAdjoint (N : ℕ) : CubicTorus N →ₗ⋆[ℂ] CubicTorus N :=
   TwistedMonoidAlgebra.conjReverse ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
+
+theorem cubicAdjoint_eq_conjReverse (N : ℕ) :
+    cubicAdjoint N =
+      TwistedMonoidAlgebra.conjReverse ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N) :=
+  (rfl)
+
+@[simp]
+theorem cubicAdjoint_one (N : ℕ) : cubicAdjoint N 1 = 1 := by
+  rw [cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_one]
+
+@[simp]
+theorem cubicAdjoint_cubicAdjoint (N : ℕ) (x : CubicTorus N) :
+    cubicAdjoint N (cubicAdjoint N x) = x := by
+  rw [cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_conjReverse]
 
 @[simp]
 theorem cubicAdjoint_weyl (N : ℕ) (a : Fin N → ZMod 3) :
     cubicAdjoint N (weyl N a) = weyl N (-a) := by
-  rw [weyl_def, cubicAdjoint, TwistedMonoidAlgebra.conjReverse_of, ← ofAdd_neg, ← weyl_def]
+  rw [weyl_def, cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_of,
+    ← ofAdd_neg, ← weyl_def]
 
 theorem cubicAdjoint_mul (N : ℕ) (x y : CubicTorus N) :
     cubicAdjoint N (x * y) = cubicAdjoint N y * cubicAdjoint N x :=
@@ -539,12 +554,38 @@ theorem cubicAdjoint_cubicProjection (N : ℕ) (j : Fin N) :
   have hsq : cubicAdjoint N (cubicSite N j ^ 2) = cubicSite N j := by
     rw [sq, cubicAdjoint_mul, cubicAdjoint_cubicSite, ← sq, ← pow_mul, cubicSite_pow_four]
   rw [cubicProjection_def, map_smulₛₗ, starRingEnd_apply, star_inv₀, star_ofNat, map_add, map_add,
-    TwistedMonoidAlgebra.conjReverse_one, cubicAdjoint_cubicSite, hsq, add_right_comm]
+    cubicAdjoint_one, cubicAdjoint_cubicSite, hsq, add_right_comm]
 
 theorem cubicAdjoint_cubicInversion (N : ℕ) (x : CubicTorus N) :
     cubicAdjoint N (cubicInversion N x) = cubicInversion N (cubicAdjoint N x) := by
-  rw [cubicInversion_eq_mapDomain]
+  rw [cubicInversion_eq_mapDomain, cubicAdjoint_eq_conjReverse]
   exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
+
+@[simp]
+theorem cubicScalarCoefficient_cubicAdjoint (N : ℕ) (x : CubicTorus N) :
+    cubicScalarCoefficient N (cubicAdjoint N x) = star (cubicScalarCoefficient N x) := by
+  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse,
+    TwistedMonoidAlgebra.scalarTrace_conjReverse]
+
+section Order
+
+open scoped ComplexOrder
+
+/-- **Positivity** of `cubicScalarCoefficient N (cubicAdjoint N x * x)`. -/
+theorem cubicScalarCoefficient_cubicAdjoint_mul_self_nonneg (N : ℕ) (x : CubicTorus N) :
+    0 ≤ cubicScalarCoefficient N (cubicAdjoint N x * x) := by
+  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse]
+  exact TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_nonneg (cubicFactor_inv_self N) x
+
+/-- **Faithfulness** of `cubicScalarCoefficient N (cubicAdjoint N x * x)`. -/
+@[simp]
+theorem cubicScalarCoefficient_cubicAdjoint_mul_self_eq_zero_iff (N : ℕ) (x : CubicTorus N) :
+    cubicScalarCoefficient N (cubicAdjoint N x * x) = 0 ↔ x = 0 := by
+  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse]
+  exact TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_eq_zero_iff
+    (cubicFactor_inv_self N) x
+
+end Order
 
 theorem cubicAdjoint_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
     cubicAdjoint N x ∈ cubicFixed N := by
@@ -564,7 +605,7 @@ theorem coe_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
 theorem cubicFixedAdjoint_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
     cubicFixedAdjoint N (cubicFixedAdjoint N x) = x :=
   Subtype.ext (by
-    rw [coe_cubicFixedAdjoint, coe_cubicFixedAdjoint, TwistedMonoidAlgebra.conjReverse_conjReverse])
+    rw [coe_cubicFixedAdjoint, coe_cubicFixedAdjoint, cubicAdjoint_cubicAdjoint])
 
 theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     cubicFixedAdjoint N (x * y) = cubicFixedAdjoint N y * cubicFixedAdjoint N x :=
