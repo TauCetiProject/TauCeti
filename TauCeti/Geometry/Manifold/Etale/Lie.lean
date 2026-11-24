@@ -14,9 +14,9 @@ import TauCeti.Topology.SeparatedMap
 /-!
 # Étale topological groupoids as Lie groupoids
 
-On finite-dimensional real manifolds, smooth local diffeomorphisms for the two endpoint maps
-suffice to give a topological groupoid its Lie groupoid structure. The smoothness of composition
-is checked on the transverse fibre-product atlas using source as a local coordinate.
+For a topological groupoid on finite-dimensional real manifolds with boundaryless models,
+Hausdorff objects and second-countable total arrows, locally diffeomorphic source and target
+give a Lie groupoid structure on the given atlases.
 -/
 
 public section
