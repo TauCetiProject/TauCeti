@@ -18,7 +18,8 @@ commutative square of the underlying (semi)linear maps. This lets results about 
 of linear maps, such as the module snake lemma, be applied to continuous linear maps.
 
 Precomposing with a continuous linear equivalence does not change whether a continuous linear map
-vanishes.
+vanishes. A continuous semilinear map whose scalar ring homomorphism is surjective vanishes exactly
+when the submodule range of its underlying semilinear map is trivial.
 
 A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
 coordinate vectors `Pi.single k 1`.
@@ -33,6 +34,9 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   commutes after coercion to semilinear maps.
 * `ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff`: `L ∘ e = 0` exactly when `L = 0`,
   for a continuous semilinear equivalence `e`.
+* `ContinuousLinearMap.range_toLinearMap_eq_bot`: for a surjective scalar ring homomorphism, a
+  continuous semilinear map is zero exactly when the submodule range of its underlying semilinear
+  map is `⊥`.
 * `ContinuousLinearMap.surjective_iff_ne_zero`: a continuous linear functional is surjective
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
@@ -69,6 +73,14 @@ theorem comp_continuousLinearEquiv_eq_zero_iff {σ₂₁ : R₂ →+* R₁} [Rin
     (e : M₁ ≃SL[σ₁₂] M₂) : L.comp (e : M₁ →SL[σ₁₂] M₂) = 0 ↔ L = 0 := by
   refine ⟨fun h ↦ ext fun v ↦ ?_, fun h ↦ by rw [h, zero_comp]⟩
   simpa using congr($h (e.symm v))
+
+/-- A continuous semilinear map `f`, along a surjective scalar ring homomorphism `σ₁₂`, is the
+zero map exactly when the submodule range of its underlying semilinear map is `⊥`. Surjectivity of
+`σ₁₂` is what makes `LinearMap.range` a submodule of the target. -/
+@[simp]
+theorem range_toLinearMap_eq_bot [RingHomSurjective σ₁₂] {f : M₁ →SL[σ₁₂] M₂} :
+    (f : M₁ →ₛₗ[σ₁₂] M₂).range = ⊥ ↔ f = 0 := by
+  rw [LinearMap.range_eq_bot, ← toLinearMap_zero, coe_inj]
 
 /-- A continuous linear functional with values in a division semiring is surjective exactly when
 it is nonzero. -/

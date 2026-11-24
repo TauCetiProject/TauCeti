@@ -37,7 +37,8 @@ of the Thom pair vanishes below the rank (`TauCeti.isZero_twistedHomology_thomPa
 on homology identifies `Hʳ(E, E₀; π^*o(E), M)` with `Hom(Hᵣ(E, E₀; π^*o(E)), M)` for every module of
 values `M` (`TauCeti.thomPairTwistedCohomologyFinrankEquiv`); the fibres of `π^*o(E)` are free of
 rank one, hence projective. Over a compact base `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)`, sending fibre
-classes to classes of points (`TauCeti.thomPairTwistedHomologyFinrankIso`). So a class of
+classes to classes of points (`TauCeti.thomPairTwistedHomologyFinrankIso`), so morphisms out of
+it are determined by the fibre classes (`TauCeti.thomPairTwistedHomology_hom_ext`). So a class of
 `Hʳ(E, E₀; π^*o(E), M)` is determined by its values on the fibre classes
 (`TauCeti.twistedCohomology_thomPair_ext`), and `U` is the class whose evaluation is this
 isomorphism followed by the augmentation `H₀(B; R) ⟶ R`.
@@ -103,17 +104,9 @@ theorem twistedCohomology_thomPair_ext {M : ModuleCat.{w} R}
           (thomPairSignFiberClass F E R hι ω b) =
         ((thomPair F E).twistedKronecker (thomPairSignLocalSystem F E R hι) k (finrank ℝ F) v).hom
           (thomPairSignFiberClass F E R hι ω b)) :
-    u = v := by
-  apply (twistedKronecker_bijective_thomPair F E (thomPairSignLocalSystem F E R hι) k M).injective
-  rw [← cancel_epi (thomPairTwistedHomologyFinrankIso F E R hι ω).inv]
-  refine singularHomology₀_hom_ext _ fun b ↦ ModuleCat.hom_ext <| LinearMap.ext_ring ?_
-  -- On the class of the point `b`, both sides evaluate on the fibre class over `b`.
-  have hb : (thomPairTwistedHomologyFinrankIso F E R hι ω).inv
-      (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
-        thomPairSignFiberClass F E R hι ω b := by
-    rw [← thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass (E := E) (R := R) hι ω b,
-      Iso.hom_inv_id_apply]
-  simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, hb] using h b
+    u = v :=
+  (twistedKronecker_bijective_thomPair F E (thomPairSignLocalSystem F E R hι) k M).injective
+    (thomPairTwistedHomology_hom_ext hι ω h)
 
 end Ext
 

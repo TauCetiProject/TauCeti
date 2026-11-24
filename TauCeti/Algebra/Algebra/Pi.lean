@@ -61,6 +61,10 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
 A standard basis vector of `ι → A` has its coordinates in the base ring: it is the image of the
 standard basis vector of `ι → R` under `algebraMap R A` (`Pi.single_one_eq_algebraMap_comp`).
 
+The linear map `Pi.algebraMap ι R S : (ι → R) →ₗ[R] (ι → S)` applies `algebraMap R S` to each
+coordinate (`TauCeti.piAlgebraMap_apply`). Mathlib's `Pi.algebraMap_apply` is instead about the
+algebra map `R → (ι → A)` of the product algebra.
+
 ## Main definitions
 
 * `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
@@ -291,6 +295,18 @@ theorem eq_of_pi_bijective {χ : ι → C →ₐ[R] R} {ψ : κ → D →ₐ[R] 
 end Algebra.TensorProduct
 
 namespace TauCeti
+
+section PiAlgebraMap
+
+variable {κ R : Type*} (S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- `Pi.algebraMap` applies `algebraMap` coordinatewise. -/
+@[simp]
+theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
+    Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
+  rfl
+
+end PiAlgebraMap
 
 variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
   [Module.Finite K A]

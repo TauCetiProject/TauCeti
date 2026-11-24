@@ -51,8 +51,7 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
   filter_upwards [hrel, hroots] with x hx hxroots i hi
   rw [← count_roots, ← count_roots, hxroots, hroots₀,
     Multiset.count_map, Multiset.count_map]
-  congr 1
-  exact Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj)
+  exact congrArg _ (Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj))
 
 end TauCeti
 
@@ -80,10 +79,10 @@ theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] (f : R[X]) {q
 
 /-- Over a domain, the root multiplicities of `f` at its distinct roots add up to the number of
 roots of `f` counted with multiplicity. -/
+@[simp]
 theorem sum_rootMultiplicity_roots_toFinset_eq_card_roots [DecidableEq R] (f : R[X]) :
     ∑ a ∈ f.roots.toFinset, f.rootMultiplicity a = f.roots.card := by
-  rw [← Multiset.toFinset_sum_count_eq]
-  exact Finset.sum_congr rfl fun a _ ↦ (count_roots f).symm
+  simpa only [count_roots] using Multiset.toFinset_sum_count_eq f.roots
 
 /-- Over a domain, the sum of root multiplicities of a polynomial `f` across any finite set of
 points is at most `f.natDegree` (also when `f = 0`, where every multiplicity vanishes). -/
@@ -104,13 +103,6 @@ theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {
     (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
   rw [mul_comm, ← smul_eq_mul]
   exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
-
-/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
-`r i`. -/
-theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l ≠ 0)
-    (r : ι → R) (z : R) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
-  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
-  simp [sub_eq_zero, eq_comm]
 
 /-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
 at least `k` times in `E`. -/
