@@ -14,12 +14,15 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 Mathlib gives its functoriality (`map_id`, `map_comp`, `map_comp_apply`) but says nothing about
 injectivity or negation, nor about how the map interacts with the positive-determinant subgroup,
 all of which a construction transporting a group of matrices along a change of scalars needs.
+It also says nothing about lifting a representation with integral matrices to `GL n R`.
 
 ## Main results
 
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
+* `Matrix.GeneralLinearGroup.exists_map_comp_eq`: a homomorphism into `GL n S` whose matrices
+  have entries in the image of an injective ring hom `f : R →+* S` lifts to `GL n R`.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
@@ -46,6 +49,21 @@ protected theorem map_neg (f : R →+* S) (g : GL n R) :
     Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
   ext i j
   simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- **Lifting a representation along an injective change of scalars.** If every matrix of
+`ρ : G →* GL n S` has entries in the image of an injective ring hom `f : R →+* S`, then `ρ` is the
+composite of a homomorphism `G →* GL n R` with `Matrix.GeneralLinearGroup.map f`. -/
+theorem exists_map_comp_eq {G : Type*} [Group G] {f : R →+* S} (hf : Function.Injective f)
+    (ρ : G →* GL n S) (hρ : ∀ g i j, ∃ x : R, f x = (ρ g : Matrix n n S) i j) :
+    ∃ ρR : G →* GL n R, (Matrix.GeneralLinearGroup.map f).comp ρR = ρ := by
+  choose x hx using hρ
+  have hf' : Function.Injective f.mapMatrix := Matrix.map_injective (n := n) (m := n) hf
+  have hfx (g : G) : f.mapMatrix (Matrix.of (x g)) = ρ g := by ext i j; exact hx g i j
+  let ρ' : G →* Matrix n n R :=
+    { toFun g := Matrix.of (x g)
+      map_one' := hf' (by rw [hfx, map_one, map_one, Units.val_one])
+      map_mul' g h := hf' (by rw [map_mul, hfx, hfx, hfx, map_mul, Units.val_mul]) }
+  exact ⟨ρ'.toHomUnits, MonoidHom.ext fun g => Units.ext <| hfx g⟩
 
 section StrictOrdered
 

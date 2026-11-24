@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Order.Compact
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Henselian
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LineHyperplane
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Ribet's lemma: lattices with nonsplit reduction
@@ -118,115 +119,7 @@ private theorem exists_diagonal_entries (N : G →* (Matrix (Fin 2) (Fin 2) K)ˣ
   · rw [map_sub, hx, ht]; ring
   · rw [map_sub, hxr, ht']; ring
 
-/-- If `ρ` has no stable line, then in any basis some matrix `ρ g` has a nonzero upper
-right entry. -/
-private theorem exists_conj_apply_zero_one_ne_zero (ρ : G →* (Matrix (Fin 2) (Fin 2) K)ˣ)
-    (hirr : ∀ W : Submodule K (Fin 2 → K),
-      (∀ g, ∀ x ∈ W, (ρ g : Matrix (Fin 2) (Fin 2) K) *ᵥ x ∈ W) → W = ⊥ ∨ W = ⊤)
-    (Q : (Matrix (Fin 2) (Fin 2) K)ˣ) :
-    ∃ g, ((↑Q⁻¹ : Matrix (Fin 2) (Fin 2) K) * ρ g * Q) 0 1 ≠ 0 := by
-  by_contra! h
-  have hQQ (x : Fin 2 → K) :
-      (↑Q⁻¹ : Matrix (Fin 2) (Fin 2) K) *ᵥ ((Q : Matrix (Fin 2) (Fin 2) K) *ᵥ x) = x := by
-    rw [mulVec_mulVec, Units.inv_mul, one_mulVec]
-  set w := (Q : Matrix (Fin 2) (Fin 2) K) *ᵥ Pi.single 1 1 with hw_def
-  have hw (g : G) : (ρ g : Matrix (Fin 2) (Fin 2) K) *ᵥ w =
-      ((↑Q⁻¹ : Matrix (Fin 2) (Fin 2) K) * ρ g * Q) 1 1 • w := by
-    set N : Matrix (Fin 2) (Fin 2) K := (↑Q⁻¹ : Matrix (Fin 2) (Fin 2) K) * ρ g * Q with hN_def
-    have hN : (ρ g : Matrix (Fin 2) (Fin 2) K) * Q = Q * N := by
-      rw [hN_def, ← Matrix.mul_assoc, ← Matrix.mul_assoc, Units.mul_inv, Matrix.one_mul]
-    have h01 : N 0 1 = 0 := h g
-    have hcol : N *ᵥ Pi.single 1 1 = N 1 1 • Pi.single 1 1 := by
-      ext i
-      fin_cases i <;> simp [h01]
-    rw [hw_def, mulVec_mulVec, hN, ← mulVec_mulVec, hcol, mulVec_smul]
-  have hstab (g : G) (x : Fin 2 → K) (hx : x ∈ K ∙ w) :
-      (ρ g : Matrix (Fin 2) (Fin 2) K) *ᵥ x ∈ K ∙ w := by
-    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
-    rw [mulVec_smul, hw, smul_smul]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w)
-  rcases hirr (K ∙ w) hstab with h0 | h1
-  · have := congrFun (hQQ (Pi.single 1 1)) 1
-    rw [← hw_def, Submodule.span_singleton_eq_bot.mp h0, mulVec_zero] at this
-    simp at this
-  · obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp
-      (h1 ▸ Submodule.mem_top : (Q : Matrix (Fin 2) (Fin 2) K) *ᵥ Pi.single 0 1 ∈ K ∙ w)
-    have := congrFun (congrArg ((↑Q⁻¹ : Matrix (Fin 2) (Fin 2) K) *ᵥ ·) hr) 0
-    simp only [hw_def, mulVec_smul, hQQ] at this
-    simp at this
-
 variable [FaithfulSMul A K]
-
-/-- A `2 × 2` matrix whose characteristic polynomial is integral with residually distinct roots
-`u ≠ v` is conjugate to a diagonal matrix whose entries are integral, with residues `u` and `v`. -/
-private theorem exists_conj_eq_diagonal [HenselianRing A (maximalIdeal A)]
-    {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]} {u v : ResidueField A} (huv : u ≠ v)
-    (hP : P.map (algebraMap A K) = M.charpoly)
-    (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
-    ∃ (Q : (Matrix (Fin 2) (Fin 2) K)ˣ) (α β : A),
-      ((Q⁻¹ : (Matrix (Fin 2) (Fin 2) K)ˣ) : Matrix (Fin 2) (Fin 2) K) * M * Q =
-        diagonal ![algebraMap A K α, algebraMap A K β] ∧
-      residue A α = u ∧ residue A β = v := by
-  have hinj := FaithfulSMul.algebraMap_injective A K
-  have hmon : P.Monic := monic_of_injective hinj (hP ▸ charpoly_monic M)
-  -- Hensel's lemma lifts the residually simple roots `u` and `v` of `P`.
-  have hroot {u v : ResidueField A} (huv : u ≠ v)
-      (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
-      ∃ α : A, P.IsRoot α ∧ residue A α = u := by
-    obtain ⟨a₀, rfl⟩ := residue_surjective u
-    obtain ⟨α, hα, hα'⟩ := HenselianRing.is_henselian P hmon a₀
-      (by rw [← residue_eq_zero_iff, ← eval_map_apply, hPr]; simp)
-      (by
-        -- `Ideal.Quotient.mk (maximalIdeal A)` is `residue A` by definition
-        change IsUnit (residue A _)
-        rw [← eval_map_apply, ← derivative_map, hPr]
-        simpa [derivative_mul, sub_eq_zero] using huv)
-    exact ⟨α, hα, by rwa [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]⟩
-  obtain ⟨α, hα, hαu⟩ := hroot huv hPr
-  obtain ⟨β, hβ, hβv⟩ := hroot huv.symm (by rw [hPr, mul_comm])
-  have heig (γ : A) (hγ : P.IsRoot γ) :
-      ∃ w, Module.End.HasEigenvector (toLin' M) (algebraMap A K γ) w :=
-    ((Module.End.hasEigenvalue_iff_isRoot_charpoly _ _).mpr (by
-      rw [IsRoot, Matrix.charpoly_toLin', ← hP, eval_map_apply, hγ.eq_zero, map_zero])
-      ).exists_hasEigenvector
-  obtain ⟨w₁, hw₁⟩ := heig α hα
-  obtain ⟨w₂, hw₂⟩ := heig β hβ
-  have hMw₁ : M *ᵥ w₁ = algebraMap A K α • w₁ := hw₁.apply_eq_smul
-  have hMw₂ : M *ᵥ w₂ = algebraMap A K β • w₂ := hw₂.apply_eq_smul
-  have hαβ : algebraMap A K α ≠ algebraMap A K β := fun h => huv (by rw [← hαu, ← hβv, hinj h])
-  set Q₀ : Matrix (Fin 2) (Fin 2) K := Matrix.of fun i j => ![w₁, w₂] j i
-  have hli : LinearIndependent K Q₀.col := by
-    rw [show Q₀.col = ![w₁, w₂] by ext j i; fin_cases j <;> rfl]
-    refine Module.End.eigenvectors_linearIndependent' (toLin' M)
-      ![algebraMap A K α, algebraMap A K β] ?_ _ (Fin.forall_fin_two.mpr ⟨hw₁, hw₂⟩)
-    intro i j hij
-    fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
-  have hQ : IsUnit Q₀ := linearIndependent_col_iff_isUnit.mp hli
-  refine ⟨hQ.unit, α, β, ?_, hαu, hβv⟩
-  have hMQ : M * Q₀ = Q₀ * diagonal ![algebraMap A K α, algebraMap A K β] := by
-    ext i j
-    rw [Matrix.mul_apply, Matrix.mul_diagonal, Fin.sum_univ_two]
-    fin_cases j
-    · simpa [Q₀, mulVec, dotProduct, Fin.sum_univ_two, mul_comm] using congrFun hMw₁ i
-    · simpa [Q₀, mulVec, dotProduct, Fin.sum_univ_two, mul_comm] using congrFun hMw₂ i
-  rw [Matrix.mul_assoc, hQ.unit_spec, hMQ, ← Matrix.mul_assoc, hQ.val_inv_mul, Matrix.one_mul]
-
-omit [IsLocalRing A] in
-/-- A homomorphism to `GL₂(K)` whose matrices have integral entries lifts to `GL₂(A)`. -/
-private theorem exists_lift_mapMatrix (N : G →* (Matrix (Fin 2) (Fin 2) K)ˣ)
-    (hN : ∀ g i j, ∃ x : A, algebraMap A K x = (N g : Matrix (Fin 2) (Fin 2) K) i j) :
-    ∃ ρA : G →* (Matrix (Fin 2) (Fin 2) A)ˣ, ∀ g i j,
-      algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
-        (N g : Matrix (Fin 2) (Fin 2) K) i j := by
-  choose x hx using hN
-  let f : Matrix (Fin 2) (Fin 2) A →+* Matrix (Fin 2) (Fin 2) K := (algebraMap A K).mapMatrix
-  have hf : Function.Injective f := Matrix.map_injective (FaithfulSMul.algebraMap_injective A K)
-  have hfx (g : G) : f (Matrix.of (x g)) = N g := by ext i j; exact hx g i j
-  let ρ' : G →* Matrix (Fin 2) (Fin 2) A :=
-    { toFun g := Matrix.of (x g)
-      map_one' := hf (by rw [hfx, map_one, map_one, Units.val_one])
-      map_mul' g h := hf (by rw [map_mul, hfx, hfx, hfx, map_mul, Units.val_mul]) }
-  exact ⟨ρ'.toHomUnits, hx⟩
 
 /-- Conjugating by `diag(1, c⁻¹)` multiplies the upper right entry of a `2 × 2` matrix by `c⁻¹`
 and the lower left entry by `c`. -/
@@ -276,20 +169,23 @@ private theorem exists_conj_lift_nonsplit
   set N' := (MulAut.conj D⁻¹).toMonoidHom.comp N
   have hN' (g : G) : (N' g : Matrix (Fin 2) (Fin 2) K) =
       (↑D⁻¹ : Matrix (Fin 2) (Fin 2) K) * N g * D := by
-    simp only [N', MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, inv_inv,
-      Units.val_mul]
+    simp [N']
   have hint (g : G) (i j : Fin 2) :
       ∃ z : A, algebraMap A K z = (N' g : Matrix (Fin 2) (Fin 2) K) i j := by
     rw [hN', hD]
-    fin_cases i <;> fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, of_apply,
-      cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.mk_one, of_apply, cons_val_zero, cons_val_one]
     · exact ⟨x g, hx g⟩
     · refine hA _ ?_
       rw [norm_mul, norm_inv]
       exact mul_inv_le_one_of_le₀ (hg₁ g) (norm_nonneg _)
     · exact ⟨x (g₁ * g) - x g₁ * x g, (hbc g₁ g).symm⟩
     · exact ⟨y g, hy g⟩
-  obtain ⟨ρA, hρA⟩ := exists_lift_mapMatrix N' hint
+  obtain ⟨ρA, hρA⟩ := Matrix.GeneralLinearGroup.exists_map_comp_eq hinj N' hint
+  replace hρA (g : G) (i j : Fin 2) :
+      algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
+        (N' g : Matrix (Fin 2) (Fin 2) K) i j := by
+    rw [← hρA, MonoidHom.comp_apply, Matrix.GeneralLinearGroup.map_apply]
   have hρA' (g : G) (i j : Fin 2) : algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
       !![(N g : Matrix (Fin 2) (Fin 2) K) 0 0, (N g : Matrix (Fin 2) (Fin 2) K) 0 1 * b₁⁻¹;
         b₁ * (N g : Matrix (Fin 2) (Fin 2) K) 1 0, (N g : Matrix (Fin 2) (Fin 2) K) 1 1] i j := by
@@ -336,12 +232,11 @@ private theorem exists_conj_nonsplit [HenselianRing A (maximalIdeal A)]
     by_contra! h
     exact hdistinct (MonoidHom.ext fun g => Units.ext (h g))
   -- Diagonalize `ρ g₀`, whose eigenvalues are integral and residually distinct.
-  obtain ⟨Q₀, α, β, hQ₀, hα, hβ⟩ := exists_conj_eq_diagonal hg₀ (hP g₀) (hPr g₀)
+  obtain ⟨Q₀, α, β, hQ₀, hα, hβ⟩ := exists_conj_eq_diagonal_of_henselian hg₀ (hP g₀) (hPr g₀)
   set N₀ : G →* (Matrix (Fin 2) (Fin 2) K)ˣ := (MulAut.conj Q₀⁻¹).toMonoidHom.comp ρ
   have hN₀ (g : G) : (N₀ g : Matrix (Fin 2) (Fin 2) K) =
       (↑Q₀⁻¹ : Matrix (Fin 2) (Fin 2) K) * ρ g * Q₀ := by
-    simp only [N₀, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, inv_inv,
-      Units.val_mul]
+    simp [N₀]
   have htr (g : G) : ∃ t : A, algebraMap A K t = (N₀ g : Matrix (Fin 2) (Fin 2) K).trace ∧
       residue A t = χ g + ψ g := by
     rw [hN₀, trace_mul_cycle, Units.mul_inv, Matrix.one_mul]
@@ -349,13 +244,18 @@ private theorem exists_conj_nonsplit [HenselianRing A (maximalIdeal A)]
   choose x y hx hy hxr hyr using
     exists_diagonal_entries N₀ χ ψ htr (hN₀ g₀ ▸ hQ₀) hα hβ hg₀
   -- Choose `g₁` maximizing the norm of the upper right entry; it is nonzero by irreducibility.
-  obtain ⟨g', hg'⟩ := exists_conj_apply_zero_one_ne_zero ρ hirr Q₀
+  obtain ⟨g', hg'⟩ : ∃ g, (N₀ g : Matrix (Fin 2) (Fin 2) K) 0 1 ≠ 0 := by
+    obtain ⟨g, hg⟩ := exists_conj_notMem_lineStabilizer ρ hirr Q₀ 1
+    refine ⟨g, fun h0 => hg (mem_lineStabilizer_iff.mpr fun j hj => ?_)⟩
+    fin_cases j
+    · simpa [hN₀] using h0
+    · exact absurd rfl hj
   have hcont : Continuous fun g => ‖(N₀ g : Matrix (Fin 2) (Fin 2) K) 0 1‖ := by
     simp only [hN₀]
     exact ((continuous_const.matrix_mul hρ).matrix_mul continuous_const).matrix_elem 0 1 |>.norm
   obtain ⟨g₁, -, hg₁⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hcont.continuousOn
   have hb₁ : (N₀ g₁ : Matrix (Fin 2) (Fin 2) K) 0 1 ≠ 0 := norm_pos_iff.mp <|
-    (norm_pos_iff.mpr (by rwa [← hN₀] at hg')).trans_le (hg₁ (Set.mem_univ g'))
+    (norm_pos_iff.mpr hg').trans_le (hg₁ (Set.mem_univ g'))
   obtain ⟨D, ρA, hρA, hres, hns⟩ := exists_conj_lift_nonsplit hA N₀ χ ψ hx hy hxr hyr hg₀
     (by rw [hN₀, hQ₀]; simp) hb₁ fun g => hg₁ (Set.mem_univ g)
   refine ⟨Q₀ * D, ρA, fun g i j => ?_, hres, hns⟩
