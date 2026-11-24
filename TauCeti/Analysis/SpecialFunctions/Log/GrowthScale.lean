@@ -62,7 +62,7 @@ theorem log_mul_two_mul_add_le {q r c : ℝ} (hq : 1 ≤ q) (hr : 0 ≤ r) (hc :
         mul_le_mul_of_nonneg_left (by nlinarith) (zero_le_one.trans hq)
       _ ≤ q ^ 2 * (r + c) ^ 2 := mul_le_mul_of_nonneg_right (by nlinarith) (sq_nonneg _)
       _ = (q * (r + c)) ^ 2 := (mul_pow _ _ _).symm
-  exact (log_le_log (by positivity) hsq).trans_eq (by rw [log_pow]; push_cast; rfl)
+  exact (log_le_log (by positivity) hsq).trans_eq (by rw [log_pow, Nat.cast_ofNat])
 
 /-- For `t ≥ 1` and any real exponent `p`, replacing `log t` by `log (1 + t)` changes `p * log t`
 by at most `|p| * log 2`. -/

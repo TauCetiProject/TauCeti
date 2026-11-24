@@ -15,7 +15,6 @@ import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.CanonicalFactor
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.JensenFormula
-import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Analysis.RCLike.Basic
 
@@ -55,8 +54,8 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
 * `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le` and
   `TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I`: the uniform disc form
   and its horizontal-strip specialization converting a centre lower bound `b ≤ ‖f z₀‖` and sphere
-  bound `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an `O(log K)` bound with constant depending only on
-  `(R, b, c, K₀)`.
+  bound `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an upper bound `A * log K` for the retained-zero sum,
+  with `A` depending only on `(R, b, c, K₀)`.
 * `TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul`: local-to-global single-zero extension
   combining a local retained-zero bound with a half-plane bound.
 
@@ -385,19 +384,18 @@ theorem sub_inv_re_le_divisor_mul {U : Set ℂ} (hf : AnalyticOnNhd ℂ f U) (hU
 
 /-- Converts a norm bound on `logDeriv f z - ∑ᶠ ρ, divisor f U ρ / (z - ρ)` into a real-part
 upper bound retaining the divisor-weighted zero terms over any finite set `S : Finset ℂ`, provided
-`f` is analytic on the compact set `U` and every omitted zero `ρ ∈ U \ S` satisfies
-`ρ.re ≤ z.re`. -/
+`f` is analytic on `U`, its divisor on `U` has finite support, and every omitted zero
+`ρ ∈ U \ S` satisfies `ρ.re ≤ z.re`. -/
 theorem neg_re_logDeriv_add_sum_divisor_le_of_norm_le
     {f : ℂ → ℂ} {U : Set ℂ} {z : ℂ} {B : ℝ}
-    (hf : AnalyticOnNhd ℂ f U) (hU : IsCompact U) (S : Finset ℂ)
+    (hf : AnalyticOnNhd ℂ f U) (hfin : (MeromorphicOn.divisor f U).support.Finite) (S : Finset ℂ)
     (hre : ∀ ρ ∈ U, ρ ∉ S → f ρ = 0 → ρ.re ≤ z.re)
     (hmain : ‖logDeriv f z - ∑ᶠ ρ, (MeromorphicOn.divisor f U ρ : ℂ) / (z - ρ)‖ ≤ B) :
     -(logDeriv f z).re +
         ∑ ρ ∈ S, (MeromorphicOn.divisor f U ρ : ℝ) * ((z - ρ)⁻¹).re ≤ B := by
   classical
-  let D := MeromorphicOn.divisor f U
+  set D := MeromorphicOn.divisor f U
   let g : ℂ → ℝ := fun ρ ↦ (D ρ : ℝ) * ((z - ρ)⁻¹).re
-  have hfin : D.support.Finite := D.finiteSupport hU
   have hfin_D : (fun ρ ↦ (D ρ : ℂ) / (z - ρ)).support.Finite :=
     hfin.subset fun ρ hρ h0 ↦ hρ (by simp [h0])
   have hfin_g : g.support.Finite :=
@@ -440,7 +438,7 @@ theorem neg_re_logDeriv_add_sum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBall
   have _ : 0 < r := (norm_nonneg _).trans_lt hz
   AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le_of_norm_le
     (hf.mono (closedBall_subset_closedBall (by linarith)))
-    (isCompact_closedBall _ _) S hre
+    ((divisor f _).finiteSupport (isCompact_closedBall _ _)) S hre
     (hf.norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le hrR hM hz hfz)
 
 /-- **Retained-zero real-part form of Landau's lemma** in the classical normalization. Let `f` be
@@ -460,7 +458,7 @@ theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (close
   have hRpos : 0 < R := lt_of_le_of_ne (by linarith [norm_nonneg (z - z₀)]) hR.symm
   AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le_of_norm_le
     (hf.mono (closedBall_subset_closedBall (by linarith)))
-    (isCompact_closedBall _ _) S hre
+    ((divisor f _).finiteSupport (isCompact_closedBall _ _)) S hre
     (hf.norm_logDeriv_sub_finsum_divisor_half_le hRpos hM hz hfz)
 
 /-- Retaining a single zero `ρ` on the horizontal line `Im = ρ.im` inside a divisor-sum upper
@@ -540,17 +538,24 @@ theorem exists_neg_re_logDeriv_add_sum_divisor_half_le
     (by positivity : (0 : ℝ) ≤ 48 / R)
   linarith
 
-/-- **Horizontal-strip specialization of Landau's retained-zero inequality.** Fixes a base real
-coordinate `x₀`, radius `R > 0`, centre lower bound `b > 0`, growth factor `c`, and base
-`K₀ > 1`, yielding `A > 0` for evaluations at `σ + t * I` (`x₀ - R / 4 ≤ σ ≤ x₀`) and supplying
-the disc bounds `x₀ - R ≤ w.re` and `‖w‖ ≤ |x₀| + |t| + R` on `sphere (x₀ + t * I) R`. -/
+/-- **Horizontal-strip specialization of Landau's retained-zero inequality.** Fix a real
+coordinate `x₀`, a radius `R > 0`, a centre lower bound `b > 0`, a growth factor `c`, a base
+`K₀ > 1`, and a norm slack `a ≥ |x₀| + R`. There is a constant `A > 0` such that for every `t`,
+every `f` analytic on `closedBall (x₀ + t * I) R` with `b ≤ ‖f (x₀ + t * I)‖` and
+`‖f w‖ ≤ c * K` (`K₀ ≤ K`) at every `w ∈ sphere (x₀ + t * I) R` with `x₀ - R ≤ w.re` and
+`‖w‖ ≤ |t| + a`, at every `σ` with `x₀ - R / 4 ≤ σ ≤ x₀` and `f (σ + t * I) ≠ 0`, and for every
+finite set `S : Finset ℂ` such that every omitted zero `ρ ∈ closedBall (x₀ + t * I) (R / 2)`
+(`ρ ∉ S`) satisfies `ρ.re ≤ σ`,
+`-(logDeriv f (σ + t * I)).re +
+  ∑ ρ ∈ S, (divisor f (closedBall (x₀ + t * I) (R / 2)) ρ : ℝ) * ((σ + t * I - ρ)⁻¹).re ≤
+  A * Real.log K`. -/
 theorem exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
-    {x₀ R b c K₀ : ℝ} (hR : 0 < R) (hb : 0 < b) (hK₀ : 1 < K₀) :
+    {x₀ R b c K₀ a : ℝ} (hR : 0 < R) (hb : 0 < b) (hK₀ : 1 < K₀) (ha : |x₀| + R ≤ a) :
     ∃ A : ℝ, 0 < A ∧ ∀ {f : ℂ → ℂ} {σ t K : ℝ},
       AnalyticOnNhd ℂ f (closedBall ((x₀ : ℂ) + t * Complex.I) R) →
       b ≤ ‖f ((x₀ : ℂ) + t * Complex.I)‖ →
       (∀ w ∈ sphere ((x₀ : ℂ) + t * Complex.I) R,
-        x₀ - R ≤ w.re → ‖w‖ ≤ |x₀| + |t| + R → ‖f w‖ ≤ c * K) →
+        x₀ - R ≤ w.re → ‖w‖ ≤ |t| + a → ‖f w‖ ≤ c * K) →
       x₀ - R / 4 ≤ σ → σ ≤ x₀ →
       f ((σ : ℂ) + t * Complex.I) ≠ 0 →
       ∀ S : Finset ℂ,
@@ -568,7 +573,7 @@ theorem exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
       simpa using RCLike.abs_re_sub_le_of_mem_closedBall hwcb
     have hwn : ‖w‖ ≤ |x₀| + |t| + R := by
       simpa using RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall hwcb
-    exact hM₀ w hw (by linarith [(abs_le.mp hre_diff).1]) hwn
+    exact hM₀ w hw (by linarith [(abs_le.mp hre_diff).1]) (by linarith)
   have hz : ‖((σ : ℂ) + t * Complex.I) - ((x₀ : ℂ) + t * Complex.I)‖ ≤ R / 4 := by
     rw [← dist_eq_norm, Complex.dist_of_im_eq (by simp), Real.dist_eq]
     simpa [abs_le] using ⟨by linarith, by linarith⟩

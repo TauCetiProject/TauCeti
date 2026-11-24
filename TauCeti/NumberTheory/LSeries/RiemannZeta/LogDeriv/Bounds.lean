@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.GroupWithZero.Basic
@@ -15,6 +14,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # Landau upper bounds for the logarithmic derivative of the Riemann zeta function
@@ -22,9 +22,10 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 For `1 ≤ |Im s|` and `1 ≤ Re s ≤ 9 / 8`, the Euler–Maclaurin bound
 `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s` (`TauCeti.norm_riemannZeta_le_of_re_pos`) controls
 `ζ` on the disc of radius `1 / 2` centred at `9 / 8 + i t`, away from its pole at `s = 1`. Landau's
-local logarithmic-derivative lemma then gives an `O(log (|t| + 3))` upper bound for `-Re (ζ′/ζ)`
-while retaining divisor-weighted zero terms over any finite set `S` (only zeros in
-`S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)` contribute).
+local logarithmic-derivative lemma then gives an upper bound `A * log (|t| + 3)` for
+`-Re (ζ′/ζ)`, with an absolute constant `A > 0`, while retaining divisor-weighted zero terms
+over any finite set `S` (only zeros in `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)`
+contribute).
 
 Extending past `Re s = 9 / 8` via the Dirichlet series at `9 / 8` drops the retained-zero sum and
 bounds only `-Re (ζ′/ζ)` across `1 ≤ Re s` (`1 ≤ |Im s|`). Absorbing the single-zero reciprocal
@@ -39,8 +40,9 @@ and `Im s ≠ 0`.
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sum_le`: retained-zero Landau upper bound for
   `-Re (ζ′/ζ)` on `1 ≤ Re s ≤ 9 / 8`, `1 ≤ |Im s|`, retaining zeros in
   `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)`.
-* `TauCeti.exists_neg_re_logDeriv_riemannZeta_le`: `-Re (ζ′/ζ(s)) ≪ log (|Im s| + 3)` uniformly
-  for `1 ≤ Re s` and `1 ≤ |Im s|`, with no retained-zero sum.
+* `TauCeti.exists_neg_re_logDeriv_riemannZeta_le`: the signed upper bound
+  `-Re (ζ′/ζ(s)) ≤ A * log (|Im s| + 3)` with an absolute constant `A > 0`, uniformly for
+  `1 ≤ Re s` and `1 ≤ |Im s|`, with no retained-zero sum.
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le`: uniform single-zero bound for
   `-Re (ζ′/ζ(σ + ρ.im * I)) + (σ - ρ.re)⁻¹` for all `1 ≤ σ` and every zero `ρ` with `1 ≤ |ρ.im|`.
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_le_inv_add_mul_log_of_im_ne_zero`:
@@ -73,24 +75,21 @@ theorem exists_neg_re_logDeriv_riemannZeta_add_sum_le :
   obtain ⟨A, hA, hLandau⟩ :=
     TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
       (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
-      (c := 3) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
+      (c := 3) (K₀ := 3) (a := 3) (by norm_num) (Real.exp_pos _) (by norm_num) (by norm_num)
   refine ⟨A, hA, fun {σ t} hσ1 hσ2 ht S ↦ ?_⟩
   have him_ge {w : ℂ} (hw : w ∈ closedBall ((9 / 8 : ℝ) + t * I) (1 / 2)) : 1 / 2 ≤ |w.im| := by
     have him_diff : |w.im - t| ≤ 1 / 2 := by
       simpa using RCLike.abs_im_sub_le_of_mem_closedBall hw
     cases abs_cases t <;> cases abs_cases w.im <;> linarith [abs_le.mp him_diff]
   have hf : AnalyticOnNhd ℂ riemannZeta (closedBall ((9 / 8 : ℝ) + t * I) (1 / 2)) :=
-    analyticOn_riemannZeta.mono fun w hw h1 ↦ by
-      have := him_ge hw
-      subst h1; norm_num at this
+    analyticOnNhd_riemannZeta_closedBall (by simp; linarith)
   have hb₀ : Real.exp (-(riemannZeta (9 / 8 : ℝ)).re) ≤ ‖riemannZeta ((9 / 8 : ℝ) + t * I)‖ := by
     simpa [LFunction_modOne_eq] using
       (1 : DirichletCharacter ℂ 1).exp_neg_re_riemannZeta_le_norm_LFunction
         (s := (9 / 8 : ℝ) + t * I) (by simp; norm_num)
   refine hLandau hf hb₀ (fun w hw hwre hwn ↦ ?_) (by linarith) hσ2
     (riemannZeta_ne_zero_of_one_le_re (by simp [hσ1])) S
-    (fun ρ _ _ h0 ↦ (not_le.mp fun h1 ↦ riemannZeta_ne_zero_of_one_le_re h1 h0).le.trans
-      (by simp [hσ1]))
+    (fun ρ _ _ h0 ↦ (re_lt_one_of_riemannZeta_eq_zero h0).le.trans (by simp [hσ1]))
     (by linarith [abs_nonneg t])
   have hw_im : 1 / 2 ≤ |w.im| := him_ge (sphere_subset_closedBall hw)
   have hinv : ‖w - 1‖⁻¹ ≤ 2 := by
@@ -99,10 +98,7 @@ theorem exists_neg_re_logDeriv_riemannZeta_add_sum_le :
       _ ≤ |w.im| := hw_im
       _ = |(w - 1).im| := by simp
       _ ≤ ‖w - 1‖ := abs_im_le_norm _
-  have hwre' : 5 / 8 ≤ w.re := by linarith
-  have hwn' : ‖w‖ ≤ |t| + 3 := by
-    rw [abs_of_pos (by norm_num : (0 : ℝ) < 9 / 8)] at hwn
-    linarith
+  norm_num at hwre
   calc ‖riemannZeta w‖ ≤ ‖w - 1‖⁻¹ + 1 + ‖w‖ / w.re :=
       TauCeti.norm_riemannZeta_le_of_re_pos (by linarith)
     _ ≤ 2 + 1 + (|t| + 3) / (5 / 8) := by gcongr
@@ -136,26 +132,18 @@ theorem exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le :
   obtain ⟨A₁, hA₁, hsum⟩ := exists_neg_re_logDeriv_riemannZeta_add_sum_le
   obtain ⟨A₂, _, hle⟩ := exists_neg_re_logDeriv_riemannZeta_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
-  refine ⟨max A₁ (A₂ + 8 / Real.log 3), lt_max_of_lt_left hA₁,
+  refine ⟨max A₁ (A₂ + (1 / 8)⁻¹ / Real.log 3), lt_max_of_lt_left hA₁,
     fun {σ ρ} hσ1 ht hζ0 ↦ ?_⟩
-  have hρ_lt1 : ρ.re < 1 :=
-    by_contra fun h ↦ riemannZeta_ne_zero_of_one_le_re (not_lt.mp h) hζ0
-  have hf : AnalyticOnNhd ℂ riemannZeta
-      (closedBall ((9 / 8 : ℝ) + ρ.im * I) ((1 / 2 : ℝ) / 2)) :=
-    analyticOn_riemannZeta.mono fun w hw h1 ↦ by
-      subst h1
-      have him : |ρ.im| ≤ (1 / 2 : ℝ) / 2 := by
-        simpa using RCLike.abs_im_sub_le_of_mem_closedBall hw
-      linarith
-  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
+  exact TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
     (f := riemannZeta) (ρ := ρ) (σ₁ := 1) (σ₀ := 9 / 8) (σ := σ) (r := (1 / 2 : ℝ) / 2)
     (d := 1 / 8) (A₁ := A₁) (A₂ := A₂) (L₀ := Real.log 3) (L := Real.log (|ρ.im| + 3))
     hσ1 (by norm_num) (by norm_num) (by norm_num) hlog3
     (Real.log_le_log (by norm_num) (by linarith [abs_nonneg ρ.im]))
-    hf (riemannZeta_ne_zero_of_one_le_re (by simp; norm_num)) hζ0 hρ_lt1.le
+    (analyticOnNhd_riemannZeta_closedBall (by simp; linarith))
+    (riemannZeta_ne_zero_of_one_le_re (by simp; norm_num)) hζ0
+    (re_lt_one_of_riemannZeta_eq_zero hζ0).le
     (fun hσ9 ↦ hsum hσ1 hσ9 ht {ρ})
     (by simpa using hle (s := σ + ρ.im * I) (by simp [hσ1]) (by simpa using ht))
-  simpa [show (1 / 8 : ℝ)⁻¹ = 8 by norm_num] using hbound
 
 /-- **Upper bound for `-Re (ζ′/ζ)` across the closed half-plane `1 ≤ Re s` off the real axis.**
 There is an absolute constant `B > 0` such that

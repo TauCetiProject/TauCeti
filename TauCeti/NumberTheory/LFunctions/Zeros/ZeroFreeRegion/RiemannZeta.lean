@@ -11,6 +11,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The classical zero-free region for the Riemann zeta function
@@ -67,13 +68,12 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
   set L : ℝ := Real.log (|s.im| + 3)
   have hlog_ge : Real.log 3 ≤ L := Real.log_le_log (by norm_num) (by linarith [abs_nonneg s.im])
   set δ : ℝ := 1 - s.re
-  have hδ0 : 0 < δ := sub_pos.2 <|
-    by_contra fun h ↦ riemannZeta_ne_zero_of_one_le_re (not_lt.mp h) hζ0
+  have hδ0 : 0 < δ := sub_pos.2 (TauCeti.re_lt_one_of_riemannZeta_eq_zero hζ0)
   obtain ⟨hδ_32, hlt⟩ := hcutoff hδ0 hlog_ge (by linarith)
   set σ : ℝ := 1 + 4 * δ
   have hpole : -(logDeriv riemannZeta σ).re ≤ (4 * δ)⁻¹ + C₁ * L := by
-    rw [show (σ : ℂ) = 1 + ((4 * δ : ℝ) : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
-    exact hpole0 (by positivity) (by linarith) hlog_ge
+    simpa only [σ, ofReal_add, ofReal_one] using
+      hpole0 (η := 4 * δ) (by positivity) (by linarith) hlog_ge
   have hzero_t : -(logDeriv riemannZeta (σ + s.im * I)).re + (5 * δ)⁻¹ ≤ A₂ * L := by
     have hsub : σ - s.re = 5 * δ := by simp only [σ, δ]; ring
     simpa [hsub] using hret (σ := σ) (ρ := s) (by linarith) ht hζ0

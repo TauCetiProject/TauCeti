@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
-import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
 # Logarithmic derivatives under level change for Dirichlet `L`-functions

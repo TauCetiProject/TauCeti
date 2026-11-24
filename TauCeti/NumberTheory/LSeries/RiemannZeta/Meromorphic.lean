@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -17,7 +18,10 @@ decomposes away from `1` as `(s - 1)⁻¹ + riemannZeta₀ s` with `riemannZeta�
 (`riemannZeta_eq_inv_sub_add`, `differentiable_riemannZeta₀`). Consequently `riemannZeta` is
 meromorphic on `ℂ`. Its residue at `s = 1` (`riemannZeta_residue_one`) reads off its simple pole
 of order `-1` at `s = 1`, and analyticity away from `1` together with `riemannZeta_one_ne_zero`
-characterizes positive meromorphic order by `riemannZeta s = 0`.
+characterizes positive meromorphic order by `riemannZeta s = 0`. Every closed disc whose radius
+is less than the distance `|Im c|` from its centre `c` to the real axis avoids the pole, so
+`riemannZeta` is analytic on it, and nonvanishing on `1 ≤ Re s`
+(`riemannZeta_ne_zero_of_one_le_re`) puts every zero in `Re s < 1`.
 
 ## Main results
 
@@ -25,6 +29,19 @@ characterizes positive meromorphic order by `riemannZeta s = 0`.
 * `TauCeti.meromorphicOrderAt_riemannZeta_one`: `meromorphicOrderAt riemannZeta 1 = -1`.
 * `TauCeti.meromorphicOrderAt_riemannZeta_pos_iff`:
   `0 < meromorphicOrderAt riemannZeta s ↔ riemannZeta s = 0`.
+* `TauCeti.analyticOnNhd_riemannZeta_closedBall`: analyticity on `closedBall c r` for
+  `r < |Im c|`.
+* `TauCeti.re_lt_one_of_riemannZeta_eq_zero`: every zero of `riemannZeta` has `Re s < 1`.
+
+## References
+
+* David Loeffler and Terence Tao, `riemannZeta_eq_inv_sub_add`, `differentiable_riemannZeta₀`
+  and `riemannZeta_one_ne_zero` in `Mathlib.NumberTheory.Harmonic.ZetaAsymp`, for the
+  decomposition `riemannZeta s = (s - 1)⁻¹ + riemannZeta₀ s` with entire remainder.
+* David Loeffler, `analyticOn_riemannZeta` and the residue `riemannZeta_residue_one` in
+  `Mathlib.NumberTheory.LSeries.RiemannZeta`.
+* Michael Stoll, David Loeffler, and Terence Tao, `riemannZeta_ne_zero_of_one_le_re` in
+  `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 -/
 
 public section
@@ -62,5 +79,19 @@ theorem meromorphicOrderAt_riemannZeta_pos_iff {s : ℂ} :
   rcases eq_or_ne s 1 with rfl | hs
   · simp [meromorphicOrderAt_riemannZeta_one, riemannZeta_one_ne_zero]
   · exact (analyticOn_riemannZeta s hs).meromorphicOrderAt_pos_iff_eq_zero
+
+/-- The Riemann zeta function is analytic on every closed disc `closedBall c r` with
+`r < |c.im|`, since such a disc does not contain the pole `1`. -/
+theorem analyticOnNhd_riemannZeta_closedBall {c : ℂ} {r : ℝ} (hr : r < |c.im|) :
+    AnalyticOnNhd ℂ riemannZeta (Metric.closedBall c r) :=
+  analyticOn_riemannZeta.mono fun w hw h1 ↦ by
+    subst h1
+    have him : |c.im| ≤ ‖1 - c‖ := by simpa using abs_im_le_norm (1 - c)
+    have hdist : ‖1 - c‖ ≤ r := by simpa [dist_eq_norm] using Metric.mem_closedBall.1 hw
+    linarith
+
+/-- Every zero of the Riemann zeta function lies in the open half-plane `Re s < 1`. -/
+theorem re_lt_one_of_riemannZeta_eq_zero {s : ℂ} (h : riemannZeta s = 0) : s.re < 1 :=
+  not_le.mp fun hs ↦ riemannZeta_ne_zero_of_one_le_re hs h
 
 end TauCeti

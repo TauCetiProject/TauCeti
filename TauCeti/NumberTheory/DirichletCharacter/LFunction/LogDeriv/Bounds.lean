@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.Complex.LocalLogDeriv
@@ -19,7 +18,8 @@ import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 
 For a modulus `q ≥ 1` and a nonprincipal Dirichlet character `χ ≠ 1` modulo `q`, Landau's local
 logarithmic-derivative lemma applied on the disc of radius `1 / 2` centred at `9 / 8 + i t` gives
-the uniform bound `-(logDeriv χ.LFunction s).re ≪ log (q * (|Im s| + 3))`:
+the uniform signed upper bound `-(logDeriv χ.LFunction s).re ≤ A * log (q * (|Im s| + 3))` with an
+absolute constant `A > 0`:
 
 * For `1 ≤ σ ≤ 9 / 8`, `TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le` bounds
   `-(logDeriv χ.LFunction (σ + t * I)).re` while retaining the divisor-weighted zero terms over
@@ -70,7 +70,7 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
   obtain ⟨A, hA, hLandau⟩ :=
     TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
       (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
-      (c := 2) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
+      (c := 2) (K₀ := 3) (a := 3) (by norm_num) (Real.exp_pos _) (by norm_num) (by norm_num)
   refine ⟨A, hA, fun {q} _ χ hχ {σ t} hσ1 hσ2 S ↦ ?_⟩
   have hf : AnalyticOnNhd ℂ χ.LFunction
       (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) (1 / 2)) :=
@@ -84,10 +84,7 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
     (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp [hσ1])) S
     (fun ρ _ _ h0 ↦ (χ.re_lt_one_of_LFunction_eq_zero (.inr hχ) h0).le.trans (by simp [hσ1]))
     (by nlinarith [abs_nonneg t])
-  have hwre' : 5 / 8 ≤ w.re := by linarith
-  have hwn' : ‖w‖ ≤ |t| + 3 := by
-    rw [abs_of_pos (by norm_num : (0 : ℝ) < 9 / 8)] at hwn
-    linarith
+  norm_num at hwre
   calc ‖χ.LFunction w‖ ≤ (q : ℝ) * ‖w‖ / w.re :=
       χ.norm_LFunction_le_level_mul_norm_div_re hχ (by linarith)
     _ ≤ (q : ℝ) * (|t| + 3) / (5 / 8) := by gcongr
@@ -125,11 +122,11 @@ theorem exists_neg_re_logDeriv_LFunction_add_sub_inv_le :
   obtain ⟨A₁, hA₁, hsum⟩ := exists_neg_re_logDeriv_LFunction_add_sum_le
   obtain ⟨A₂, _, hle⟩ := exists_neg_re_logDeriv_LFunction_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
-  refine ⟨max A₁ (A₂ + 8 / Real.log 3), lt_max_of_lt_left hA₁,
+  refine ⟨max A₁ (A₂ + (1 / 8)⁻¹ / Real.log 3), lt_max_of_lt_left hA₁,
     fun {q} _ χ hχ {σ ρ} hσ1 hL0 ↦ ?_⟩
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
   have hρ_lt1 : ρ.re < 1 := χ.re_lt_one_of_LFunction_eq_zero (.inr hχ) hL0
-  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
+  exact TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul
     (f := χ.LFunction) (ρ := ρ) (σ₁ := 1) (σ₀ := 9 / 8) (σ := σ) (r := (1 / 2 : ℝ) / 2)
     (d := 1 / 8) (A₁ := A₁) (A₂ := A₂) (L₀ := Real.log 3) (L := Real.log (q * (|ρ.im| + 3)))
     hσ1 (by norm_num) (by norm_num) (by norm_num) hlog3
@@ -138,6 +135,5 @@ theorem exists_neg_re_logDeriv_LFunction_add_sub_inv_le :
     (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp; norm_num)) hL0 hρ_lt1.le
     (fun hσ9 ↦ hsum χ hχ hσ1 hσ9 {ρ})
     (by simpa using hle χ hχ (s := σ + ρ.im * Complex.I) (by simp [hσ1]))
-  simpa [show (1 / 8 : ℝ)⁻¹ = 8 by norm_num] using hbound
 
 end TauCeti

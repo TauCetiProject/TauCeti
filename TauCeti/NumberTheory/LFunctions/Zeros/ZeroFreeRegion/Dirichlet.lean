@@ -11,7 +11,6 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
@@ -37,12 +36,12 @@ level-one character (`riemannZeta`) to any principal character modulo `q` on `Re
 
 For nonprincipal `χ`, Landau's lemma
 (`TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le` in
-`TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Bounds`) bounds `-Re (L′/L)` up to
-`O(log (q (|t| + 3)))` on `1 ≤ σ ≤ 9 / 8` while retaining zeros in
-`S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)` (while the Dirichlet series at `9 / 8` yields the
-half-plane bound `TauCeti.exists_neg_re_logDeriv_LFunction_le` for `1 ≤ Re s` without the sum, and
-`TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` provides the uniform single-zero bound for
-all `1 ≤ σ`):
+`TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Bounds`) bounds `-Re (L′/L)` above by
+`A log (q (|t| + 3))`, with an absolute constant `A > 0`, on `1 ≤ σ ≤ 9 / 8` while retaining
+zeros in `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)` (while the Dirichlet series at `9 / 8`
+yields the half-plane bound `TauCeti.exists_neg_re_logDeriv_LFunction_le` for `1 ≤ Re s` without
+the sum, and `TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` provides the uniform
+single-zero bound for all `1 ≤ σ`):
 * When `χ ^ 2 ≠ 1`, or when `χ ^ 2 = 1` and `|Im ρ| ≥ 6 (1 - Re ρ)`, the `3–4–1` inequality at
   `σ = 1 + 4 (1 - Re ρ)` rules out any zero in the region (using the `(4 |γ|)⁻¹` bound for the
   pole of `L′/L(σ + 2 i γ, 1_q)` when `χ ^ 2 = 1`).
@@ -177,8 +176,8 @@ private theorem exists_not_pos_meromorphicOrderAt_of_sq_ne_one_or_im_ge :
   set η : ℝ := 4 * δ
   set σ : ℝ := 1 + η
   have hpole : -(logDeriv riemannZeta σ).re ≤ η⁻¹ + C₁ * L := by
-    rw [show (σ : ℂ) = 1 + (η : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
-    exact hpole0 (by positivity) (by linarith) hlog_ge
+    simpa only [σ, ofReal_add, ofReal_one] using
+      hpole0 (η := η) (by positivity) (by linarith) hlog_ge
   have hzero_γ : -(logDeriv χ.LFunction (σ + γ * I)).re + (5 * δ)⁻¹ ≤ A * L := by
     have hsub : σ - ρ.re = 5 * δ := by simp only [σ, η, δ]; ring
     simpa [hsub] using hret χ hχ (σ := σ) (by linarith) hL0
@@ -255,8 +254,7 @@ private theorem exists_sub_inv_mul_inv_le_of_neg_re_logDeriv_LFunction_add_le (A
   refine ⟨C₁ + A, by positivity, fun {q} _ χ {δ k w L} hδ0 hk0 hk1 hlog_ge hL ↦ ?_⟩
   set σ : ℝ := 1 + k * δ
   have hpole : -(logDeriv riemannZeta σ).re ≤ (k * δ)⁻¹ + C₁ * L := by
-    rw [show (σ : ℂ) = 1 + ((k * δ : ℝ) : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
-    exact hpole0 (by positivity) hk1 hlog_ge
+    simpa only [σ, ofReal_add, ofReal_one] using hpole0 (η := k * δ) (by positivity) hk1 hlog_ge
   have h1χ := χ.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos
     (s := σ) (by simp only [ofReal_re, σ]; linarith [mul_pos hk0 hδ0])
   simp only [ofReal_re] at h1χ
