@@ -74,7 +74,7 @@ has nonzero valuation. -/
 @[simp]
 theorem mem_puncturedDisc (v : closedPolydisc 1 A) :
     v ∈ puncturedDisc A ↔ ¬ v.val.toValuativeRel.vle T 0 := by
-  obtain ⟨hv, hT⟩ := (mem_closedDisc_iff _ _ _ _).mp (val_mem_closedDisc_one v)
+  obtain ⟨hv, hT⟩ := (mem_closedDisc_iff _ _ _ _).mp (val_mem_closedDisc_one v 0)
   simp [puncturedDisc_eq_val_preimage_puncturedClosedDisc, hv, hT]
 
 /-- The annulus `|c|^(n+1) ≤ |T| ≠ 0` in the closed unit disc: the trace of the closed annulus
@@ -95,7 +95,7 @@ theorem puncturedDiscAnnulus_eq_val_preimage_closedAnnulus (c : A) (n : ℕ) :
 theorem mem_puncturedDiscAnnulus (c : A) (n : ℕ) (v : closedPolydisc 1 A) :
     v ∈ puncturedDiscAnnulus c n ↔
       v.val.toValuativeRel.vle (C (c ^ (n + 1))) T ∧ ¬ v.val.toValuativeRel.vle T 0 := by
-  obtain ⟨hv, hT⟩ := (mem_closedDisc_iff _ _ _ _).mp (val_mem_closedDisc_one v)
+  obtain ⟨hv, hT⟩ := (mem_closedDisc_iff _ _ _ _).mp (val_mem_closedDisc_one v 0)
   simp [puncturedDiscAnnulus_eq_val_preimage_closedAnnulus, hv, hT]
 
 /-- Every exhaustion annulus is open in the closed unit disc. -/
@@ -116,7 +116,7 @@ theorem puncturedDiscAnnulus_eq_rationalSubset (c : A) (n : ℕ) :
   classical
   ext v
   simp [mem_puncturedDiscAnnulus, mem_rationalSubset_iff,
-    closedDisc_subset_spa _ _ _ (val_mem_closedDisc_one v)]
+    closedDisc_subset_spa _ _ _ (val_mem_closedDisc_one v 0)]
 
 /-- Annuli with a unit radius parameter are quasi-compact rational opens. -/
 theorem isCompact_puncturedDiscAnnulus [IsHuberRing A] {c : A} (hc : IsUnit c) (n : ℕ) :

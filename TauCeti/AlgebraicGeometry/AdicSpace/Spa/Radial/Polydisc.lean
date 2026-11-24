@@ -16,8 +16,8 @@ This file specializes the radial regions of `TauCeti.AlgebraicGeometry.AdicSpace
 to the closed polydisc `Spa (A⟨T₁, …, Tₖ⟩, A⟨T₁, …, Tₖ⟩°)`, with a coordinate `Tᵢ` and constant
 radii.
 
-* `TauCeti.ValuationSpectrum.val_mem_closedDisc_one`: every point of the closed unit disc lies in
-  the closed disc `|T| ≤ 1`, since the coordinate is power-bounded.
+* `TauCeti.ValuationSpectrum.val_mem_closedDisc_one`: every point of the closed polydisc lies in
+  the closed disc `|Tᵢ| ≤ 1` of each coordinate, since the coordinate is power-bounded.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedDisc_iff`: the classical point at a
   power-bounded tuple `c` over a base point `x` lies in the closed disc `|Tᵢ| ≤ |b|` exactly when
   `x` compares `cᵢ` with `b` in the same way. The radius `b` is an arbitrary constant; for
@@ -38,16 +38,16 @@ section TopologicalRing
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
 
-/-- Every point of the closed unit disc lies in the closed disc `|T| ≤ 1`: the coordinate is
-power-bounded. -/
-theorem val_mem_closedDisc_one (v : closedPolydisc 1 A) :
+/-- Every point of the closed polydisc lies in the closed disc `|Tᵢ| ≤ 1` of each coordinate:
+the coordinate is power-bounded. -/
+theorem val_mem_closedDisc_one {k : ℕ} (v : closedPolydisc k A) (i : Fin k) :
     v.val ∈ closedDisc
-      (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
+      (powerBoundedSubring (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
         isWeightFamily_one_weight))
-      (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0) 1 :=
-  (mem_closedDisc_iff _ _ _ _).mpr ⟨closedPolydisc_def 1 A ▸ v.property,
-    ((mem_closedPolydisc_iff 1 A v.val).mp v.property).2 _
-      (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0))⟩
+      (weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i) 1 :=
+  (mem_closedDisc_iff _ _ _ _).mpr ⟨closedPolydisc_def k A ▸ v.property,
+    ((mem_closedPolydisc_iff k A v.val).mp v.property).2 _
+      (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight i))⟩
 
 end TopologicalRing
 
