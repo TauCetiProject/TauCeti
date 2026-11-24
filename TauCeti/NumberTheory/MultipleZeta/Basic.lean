@@ -77,6 +77,15 @@ def PositiveIndex (k : List ℕ) : Prop := ∀ n ∈ k, 0 < n
 largest summation variable, is at least `2`. -/
 def Admissible (k : List ℕ) : Prop := PositiveIndex k ∧ ∀ n ∈ k.head?, 2 ≤ n
 
+theorem positiveIndex_iff {k : List ℕ} : PositiveIndex k ↔ ∀ n ∈ k, 0 < n :=
+  Iff.rfl
+
+theorem PositiveIndex.pos {k : List ℕ} (hk : PositiveIndex k) {n : ℕ} (h : n ∈ k) : 0 < n :=
+  hk n h
+
+theorem admissible_iff {k : List ℕ} : Admissible k ↔ PositiveIndex k ∧ ∀ n ∈ k.head?, 2 ≤ n :=
+  Iff.rfl
+
 @[simp]
 theorem positiveIndex_nil : PositiveIndex [] := by
   simp [PositiveIndex]
@@ -127,6 +136,15 @@ def term (k : List ℕ) (n : Fin k.length → ℕ) : ℝ := ∏ i, ((n i : ℝ) 
 
 theorem term_def (k : List ℕ) (n : Fin k.length → ℕ) : term k n = ∏ i, ((n i : ℝ) ^ k[i])⁻¹ :=
   (rfl)
+
+@[simp]
+theorem term_nil (n : Fin ([] : List ℕ).length → ℕ) : term [] n = 1 :=
+  Fin.prod_univ_zero _
+
+/-- The term of `a :: k` splits off the factor of the largest summation variable. -/
+theorem term_cons (a : ℕ) (k : List ℕ) (n : Fin (a :: k).length → ℕ) :
+    term (a :: k) n = ((n 0 : ℝ) ^ a)⁻¹ * term k (Fin.tail n) :=
+  Fin.prod_univ_succ (n := k.length) _
 
 theorem term_nonneg (k : List ℕ) (n : Fin k.length → ℕ) : 0 ≤ term k n := by
   unfold term
@@ -224,9 +242,8 @@ private theorem not_summable_term_cons_one (k : List ℕ) :
     have : (0 : ℝ) < ((k.length - i : ℕ) : ℝ) := by exact_mod_cast (by omega)
     positivity
   have hterm : ∀ N, term (1 :: k) (t N) = C * ((N + r : ℕ) : ℝ)⁻¹ := fun N ↦ by
-    rw [term_def]
-    refine (Fin.prod_univ_succ (n := k.length) _).trans ?_
-    simp [t, r, C, mul_comm]
+    rw [term_cons, term_def]
+    simp [t, r, C, Fin.tail, mul_comm]
   have := (h.comp_injective ht).mul_left C⁻¹
   simp only [Function.comp_def, hterm, ← mul_assoc, inv_mul_cancel₀ hC.ne', one_mul] at this
   exact Real.not_summable_natCast_inv ((summable_nat_add_iff r).mp this)
@@ -260,7 +277,7 @@ theorem multipleZeta_pos {k : List ℕ} (hk : Admissible k) : 0 < multipleZeta k
 @[simp]
 theorem multipleZeta_nil : multipleZeta [] = 1 := by
   rw [multipleZeta_eq_tsum, tsum_eq_single ⟨finZeroElim, fun i ↦ i.elim0, fun i ↦ i.elim0⟩]
-  · simp [term_def]
+  · exact term_nil _
   · exact fun n hn ↦ (hn (Subtype.ext (funext fun i ↦ i.elim0))).elim
 
 /-- In depth one the multiple zeta value is the sum `ζ([n]) = ∑_{m ≥ 0} (m + 1)^(-n)` over all
