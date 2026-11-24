@@ -234,10 +234,11 @@ theorem depressedDiscr_prime [IsDomain R] (h2 : (2 : R) ≠ 0) (hm : IsUnit (m :
     exact monic_freeMonic R m
   have hTdeg : T.natDegree = m := by rw [natDegree_taylor, hFdeg]
   have hTnext : T.nextCoeff = 0 := by
+    have hu : (m : MvPolynomial (Fin m) R) * MvPolynomial.C (↑hm.unit⁻¹ : R) = 1 := by
+      rw [← map_natCast MvPolynomial.C, ← map_mul, hm.mul_val_inv, map_one]
     rw [nextCoeff_taylor, (monic_freeMonic R m).leadingCoeff, hFdeg,
       nextCoeff_of_natDegree_pos (by omega), hFdeg, coeff_freeMonic, dite_eq_left (by omega)]
-    rw [mul_one, mul_neg, ← mul_assoc, ← map_natCast MvPolynomial.C, ← map_mul,
-      IsUnit.mul_val_inv, map_one, one_mul, add_neg_cancel]
+    linear_combination (-MvPolynomial.X ⟨m - 1, by omega⟩) * hu
   -- `ψ` substitutes the coefficients of `T`, and `ε` sets `c` to zero.
   let ψ : MvPolynomial (Fin (m - 1)) R →ₐ[R] MvPolynomial (Fin m) R :=
     MvPolynomial.aeval fun j ↦ T.coeff (m - 2 - j)

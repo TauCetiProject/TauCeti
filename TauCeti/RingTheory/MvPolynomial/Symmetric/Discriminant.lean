@@ -34,7 +34,6 @@ itself symmetric, and `δ ^ 2` is not prime among symmetric polynomials.
 
 ## Main results
 
-* `MvPolynomial.rename_vandermonde`: `rename e δ = sign e • δ`.
 * `MvPolynomial.isSymmetric_vandermonde_sq`: `δ ^ 2` is symmetric.
 * `MvPolynomial.vandermonde_dvd_of_forall_dvd`: `δ` divides every polynomial divisible by each
   difference `X j - X i`.
@@ -52,13 +51,6 @@ namespace MvPolynomial
 
 variable {R : Type*} [CommRing R] {n : ℕ}
 
-/-- **The Vandermonde product is antisymmetric**: renaming the variables along a permutation `e`
-multiplies `∏_{i < j} (X j - X i)` by the sign of `e`. -/
-theorem rename_vandermonde (e : Perm (Fin n)) :
-    rename e (∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R)) =
-      Perm.sign e • ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i) := by
-  rw [← TauCeti.alternant_fin_val_eq_vandermonde, TauCeti.rename_alternant]
-
 /-- The square of the Vandermonde product is a symmetric polynomial. -/
 theorem isSymmetric_vandermonde_sq :
     ((∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i)) ^ 2 : MvPolynomial (Fin n) R).IsSymmetric := by
@@ -66,11 +58,6 @@ theorem isSymmetric_vandermonde_sq :
   rw [map_pow, rename_vandermonde, smul_pow, Int.units_sq, one_smul]
 
 variable [IsDomain R]
-
-private theorem vandermonde_ne_zero :
-    ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R) ≠ 0 := by
-  rw [← Matrix.det_vandermonde]
-  exact Matrix.det_vandermonde_ne_zero_iff.2 X_injective
 
 /-- Over a domain, a polynomial divisible by each difference `X j - X i` of two variables is
 divisible by their product, the Vandermonde product. -/
