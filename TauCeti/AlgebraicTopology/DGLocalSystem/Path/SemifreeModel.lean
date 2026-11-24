@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Filtration
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.PositiveCell
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.ZeroCell
@@ -263,10 +264,11 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
     refine ⟨q.toNat + 1, monotone_pathFromChainSkeleton b C H R ?_ hq⟩
     push_cast
     lia
-  obtain ⟨u', w', hu', huw'⟩ := exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported m.m
-    Sigma.fst hFmono hFex (fun k f w hf hDf hfw hw ↦ by
-      obtain ⟨f', w', -, -, hf', hfw'⟩ := hK k f w hf hDf hfw hw
-      exact ⟨f', w', hf', hfw'⟩) hu huw
+  obtain ⟨k, hk⟩ := hFex w
+  obtain ⟨u', w', -, hu', huw'⟩ := exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported
+    m.m Sigma.fst hFmono (fun k f w hf hDf hfw hw ↦ by
+      obtain ⟨f', w', -, hw', hf', hfw'⟩ := hK k f w hf hDf hfw hw
+      exact ⟨f', w', hw', hf', hfw'⟩) hu huw (Submodule.mem_iSup_of_mem k hk)
   exact ⟨u', w', hu', huw'⟩
 
 variable (H R) in
