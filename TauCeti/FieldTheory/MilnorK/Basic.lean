@@ -10,18 +10,20 @@ public import Mathlib.GroupTheory.Perm.Sign
 public import TauCeti.RingTheory.MilnorK.Basic
 import TauCeti.Data.List.OfFn
 import TauCeti.FieldTheory.MilnorK.SteinbergPairing
-import TauCeti.RingTheory.MilnorK.Grading
 
 /-!
 # Field identities and finite-field vanishing for Milnor K-theory
 
-This file complements `TauCeti.RingTheory.MilnorK.Basic` and
-`TauCeti.RingTheory.MilnorK.Grading` by proving general graded-commutativity and permutation-sign
-rules for `TauCeti.MilnorK` over fields, repeated-entry torsion and characteristic-`2` vanishing,
-and vanishing in degrees at least two over finite fields.
+This file complements `TauCeti.RingTheory.MilnorK.Basic` by proving field-specific sign,
+graded-commutativity, and permutation-sign rules for `TauCeti.MilnorK` over fields, repeated-entry
+torsion and characteristic-`2` vanishing, and vanishing in degrees at least two over finite fields.
 
 ## Main results
 
+* `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
+  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`:
+  `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries negates a
+  symbol.
 * `TauCeti.MilnorK.mul_comm_of_mem_degree`: graded commutativity over a field.
 * `TauCeti.MilnorK.symbol_ofFn_comp_swap`: transposing two symbol entries negates the symbol.
 * `TauCeti.MilnorK.symbol_ofFn_comp_perm`: permuting symbol entries multiplies by the sign.
@@ -33,7 +35,8 @@ and vanishing in degrees at least two over finite fields.
 
 ## References
 
-* C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, §III.7.1, Example III.7.2(a).
+* C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, §III.7.1, Example III.7.2(a),
+  Example III.7.2(c).
 -/
 
 public section
@@ -46,13 +49,33 @@ section FieldIdentities
 
 variable {F : Type*} [Field F]
 
+/-- Over a field, `{a, -a} = 0` for every unit `a`. -/
+@[simp]
+theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
+  isSteinbergPairing_ofUnit_mul.map_neg_self a
+
+/-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
+theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_ofUnit_mul.map_anticomm a b
+
+/-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
+`{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
+theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
+  isSteinbergPairing_ofUnit_mul.map_self a
+
+/-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
+theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
+    symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) := by
+  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm b a, neg_mul,
+    mul_neg]
+
 /-- Over a field, `2 • (ofUnit a * ofUnit a) = 0`. -/
 theorem two_nsmul_ofUnit_mul_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
   isSteinbergPairing_ofUnit_mul.two_nsmul_map_self a
 
 /-- In characteristic `2`, `ofUnit a * ofUnit a = 0`. -/
-theorem ofUnit_mul_self_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * ofUnit a = 0 :=
-  isSteinbergPairing_ofUnit_mul.map_self_of_charTwo a
+theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * ofUnit a = 0 :=
+  isSteinbergPairing_ofUnit_mul.map_self_eq_zero_of_charTwo a
 
 /-- A consecutive repeated entry `a, a` may be replaced by `a, -1`. -/
 theorem symbol_repeat_adjacent (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
@@ -68,10 +91,10 @@ theorem two_nsmul_symbol_repeat_adjacent (l₁ : List Fˣ) (a : Fˣ) (l₂ : Lis
     two_nsmul_ofUnit_mul_self a, zero_mul, mul_zero]
 
 /-- In characteristic `2`, any symbol with a consecutive repeated entry vanishes. -/
-theorem symbol_repeat_adjacent_of_charTwo [CharP F 2] (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
-    symbol (l₁ ++ a :: a :: l₂) = 0 := by
+theorem symbol_repeat_adjacent_eq_zero_of_charTwo [CharP F 2] (l₁ : List Fˣ) (a : Fˣ)
+    (l₂ : List Fˣ) : symbol (l₁ ++ a :: a :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a)]
-  rw [ofUnit_mul_self_of_charTwo a, zero_mul, mul_zero]
+  rw [ofUnit_mul_self_eq_zero_of_charTwo a, zero_mul, mul_zero]
 
 /-- Moving a degree-one class past a length-`n` symbol multiplies by `(-1) ^ n`. -/
 theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
@@ -109,15 +132,23 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
   rintro _ ⟨l₂, rfl, rfl⟩
   exact symbol_mul_symbol l₁ l₂
 
+private theorem symbol_append_cons_append_cons (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ)
+    (l₃ : List Fˣ) :
+    symbol (l₁ ++ a :: l₂ ++ b :: l₃) =
+      symbol l₁ * (ofUnit a * symbol l₂ * ofUnit b) * symbol l₃ := by
+  simp only [symbol_append, symbol_cons, mul_assoc]
+
+private theorem ofUnit_mul_symbol_mul_ofUnit (a b : Fˣ) (l : List Fˣ) :
+    ofUnit a * symbol l * ofUnit b =
+      ((-1 : ℤ) ^ l.length) • (symbol l * (ofUnit a * ofUnit b)) := by
+  rw [ofUnit_mul_symbol, smul_mul_assoc, mul_assoc]
+
 private theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: l₂ ++ b :: l₃) = -symbol (l₁ ++ b :: l₂ ++ a :: l₃) := by
-  have hba : ofUnit b * symbol l₂ * ofUnit a = -(ofUnit a * symbol l₂ * ofUnit b) := by
-    rw [ofUnit_mul_symbol, smul_mul_assoc, mul_assoc, ofUnit_mul_ofUnit_comm b a,
-      mul_neg (symbol l₂), smul_neg, ← mul_assoc (symbol l₂), ← smul_mul_assoc, ← ofUnit_mul_symbol]
-  simp only [symbol_append, symbol_cons, mul_assoc]
-  rw [← mul_assoc (ofUnit a), ← mul_assoc (ofUnit a * symbol l₂), ← mul_assoc (ofUnit b),
-    ← mul_assoc (ofUnit b * symbol l₂), ← neg_eq_iff_eq_neg.mpr hba,
-    neg_mul (ofUnit b * symbol l₂ * ofUnit a), mul_neg (symbol l₁)]
+  rw [symbol_append_cons_append_cons, symbol_append_cons_append_cons,
+    ofUnit_mul_symbol_mul_ofUnit a b l₂, ofUnit_mul_symbol_mul_ofUnit b a l₂,
+    ofUnit_mul_ofUnit_comm a b]
+  simp only [mul_neg, smul_neg, neg_mul]
 
 /-- Applying a transposition to the entries of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (a : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
@@ -159,10 +190,9 @@ theorem symbol_ofFn_eq_zero_of_charTwo_of_eq [CharP F 2] {n : ℕ} {a : Fin n �
     symbol (List.ofFn a) = 0 := by
   wlog hlt : i.val < j.val generalizing i j
   · exact this hij.symm ha.symm (lt_of_le_of_ne (not_lt.mp hlt) (Fin.val_ne_of_ne hij).symm)
-  rw [List.ofFn_eq_take_cons_of_lt a hlt, ha]
-  simp only [symbol_append, symbol_cons, mul_assoc]
-  rw [← mul_assoc (ofUnit (a j)), ofUnit_mul_symbol, smul_mul_assoc, mul_assoc (symbol _),
-    ← mul_assoc (ofUnit (a j)), ofUnit_mul_self_of_charTwo, zero_mul, mul_zero, smul_zero, mul_zero]
+  rw [List.ofFn_eq_take_cons_of_lt a hlt, ha, symbol_append_cons_append_cons,
+    ofUnit_mul_symbol_mul_ofUnit, ofUnit_mul_self_eq_zero_of_charTwo, mul_zero, smul_zero,
+    mul_zero, zero_mul]
 
 end FieldIdentities
 

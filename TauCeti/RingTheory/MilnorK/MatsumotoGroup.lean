@@ -26,7 +26,8 @@ This file develops the commutative-semiring presentation:
   `TauCeti.MatsumotoGroup.liftPairing`, `TauCeti.MatsumotoGroup.liftEquiv`);
 * functoriality under ring homomorphisms (`TauCeti.MatsumotoGroup.map`).
 
-Field-specific identities and finite-field vanishing live in `TauCeti.FieldTheory.MatsumotoGroup`.
+Field-specific identities and finite-field vanishing live in
+`TauCeti.FieldTheory.MilnorK.MatsumotoGroup`.
 
 ## Main definitions
 
@@ -236,6 +237,19 @@ def liftEquiv {A : Type*} [AddCommGroup A] :
   left_inv _ := linearMap_ext fun a b ↦ liftPairing_symbol _ _ a b
   right_inv c := Subtype.ext <| funext fun a ↦ funext fun b ↦
     liftPairing_symbol c.val c.property a b
+
+/-- Evaluating `liftEquiv f` on a pair of units applies `f` to their Steinberg symbol. -/
+@[simp]
+theorem liftEquiv_apply_coe {A : Type*} [AddCommGroup A] (f : MatsumotoGroup R →ₗ[ℤ] A)
+    (a b : Rˣ) : (liftEquiv f : Rˣ → Rˣ → A) a b = f (symbol a b) := by
+  dsimp [liftEquiv]
+
+/-- Applying `(liftEquiv).symm` to a Steinberg pairing recovers `liftPairing`. -/
+@[simp]
+theorem liftEquiv_symm_apply {A : Type*} [AddCommGroup A]
+    (c : {c : Rˣ → Rˣ → A // IsSteinbergPairing c}) :
+    (liftEquiv (R := R) (A := A)).symm c = liftPairing c.val c.property := by
+  dsimp [liftEquiv]
 
 end CommSemiring
 

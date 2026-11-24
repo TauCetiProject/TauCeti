@@ -71,12 +71,12 @@ theorem map_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a a = c a (-1 : Fˣ) 
 
 /-- Over a field, every Steinberg pairing is skew-symmetric: `c a b = -c b a`. -/
 theorem map_anticomm (hc : IsSteinbergPairing c) (a b : Fˣ) : c a b = -c b a := by
-  have hab : c (a * b) (-(a * b)) = 0 := hc.map_neg_self (a * b)
-  rw [show -(a * b) = (-a) * b by ext; simp, hc.map_mul_left, hc.map_mul_right,
-    hc.map_mul_right, hc.map_neg_self, zero_add, show -a = (-1 : Fˣ) * a by ext; simp,
-    hc.map_mul_right, hc.map_self b,
-    add_right_comm (c b (-1 : Fˣ)) (c b a) (c b (-1 : Fˣ)),
-    hc.map_neg_one_right_add_self_eq_zero b, zero_add] at hab
+  have ha : c a (-(a * b)) = c a b := by
+    rw [show -(a * b) = (-a) * b by ext; simp, hc.map_mul_right, hc.map_neg_self, zero_add]
+  have hb : c b (-(a * b)) = c b a := by
+    rw [show -(a * b) = a * (-b) by ext; simp, hc.map_mul_right, hc.map_neg_self, add_zero]
+  have hab : c a b + c b a = 0 := by
+    rw [← ha, ← hb, ← hc.map_mul_left, hc.map_neg_self]
   exact eq_neg_of_add_eq_zero_left hab
 
 /-- Over a field, diagonal values `c a a` are 2-torsion. -/
@@ -88,7 +88,8 @@ theorem two_zsmul_map_self (hc : IsSteinbergPairing c) (a : Fˣ) : (2 : ℤ) •
   simpa only [Nat.cast_ofNat] using (natCast_zsmul (c a a) 2).trans (hc.two_nsmul_map_self a)
 
 /-- In characteristic `2`, diagonal values of a Steinberg pairing vanish. -/
-theorem map_self_of_charTwo [CharP F 2] (hc : IsSteinbergPairing c) (a : Fˣ) : c a a = 0 := by
+theorem map_self_eq_zero_of_charTwo [CharP F 2] (hc : IsSteinbergPairing c) (a : Fˣ) :
+    c a a = 0 := by
   rw [hc.map_self, show (-1 : Fˣ) = 1 by ext; exact CharTwo.neg_eq 1, hc.map_one_right]
 
 /-! ### Finite-field vanishing -/
@@ -122,7 +123,7 @@ theorem eq_zero_of_finite [Finite F] (hc : IsSteinbergPairing c) (a b : Fˣ) : c
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Fˣ)
   by_cases hF : ringChar F = 2
   · have : CharP F 2 := hF ▸ ringChar.charP F
-    exact hc.eq_zero_of_generator_map_self_eq_zero hg (hc.map_self_of_charTwo g) a b
+    exact hc.eq_zero_of_generator_map_self_eq_zero hg (hc.map_self_eq_zero_of_charTwo g) a b
   · obtain ⟨x, hx, hx'⟩ := FiniteField.exists_not_isSquare_and_not_isSquare_one_sub hF
     have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
     have hx1 : 1 - x ≠ 0 := by intro h; rw [h] at hx'; exact hx' IsSquare.zero
