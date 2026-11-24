@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import TauCeti.Analysis.Analytic.Inverse
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
@@ -42,6 +43,9 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   formula `(z, ψ (z, w))` for the inverse chart on its target.
 * `HasStrictFDerivAt.eventually_apply_eq_iff_jointImplicitFunctionOfProdDomain`: near
   `(u, f u)`, `f (z, v) = w ↔ ψ (z, w) = v`.
+* `HasStrictFDerivAt.exists_nhds_bijOn_jointImplicitFunctionOfProdDomain`: given `S ∈ 𝓝 u`,
+  provides neighbourhoods `U ∈ 𝓝 u` (`U ⊆ S`) and `V ∈ 𝓝 (u.1, f u)` where `(z, v) ↦ (z, f (z, v))`
+  and `(z, w) ↦ (z, ψ (z, w))` are mutually inverse bijections.
 * `HasStrictFDerivAt.eventuallyEq_jointImplicitFunctionOfProdDomain` and
   `HasStrictFDerivAt.eventuallyEq_jointImplicitFunctionOfProdDomain_of_continuousAt`: local
   uniqueness of `ψ`, from a left-inverse identity, or from a right-inverse identity together with
@@ -279,6 +283,62 @@ theorem analyticAt_jointImplicitFunctionOfProdDomain (dfu : HasStrictFDerivAt f 
   rw [prodFun_pt_implicitFunctionDataOfProdDomain] at h
   rw [jointImplicitFunctionOfProdDomain_eq_comp]
   exact analyticAt_snd.comp (h.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl)
+
+/-- For any neighbourhood `S ∈ 𝓝 u`, there exist neighbourhoods `U ∈ 𝓝 u` with `U ⊆ S` and
+`V ∈ 𝓝 (u.1, f u)` on which `q ↦ (q.1, f q)` and `p ↦ (p.1, ψ p)` (where `ψ` is the joint
+implicit function) map into each other (`Set.MapsTo`), are mutually inverse (`Set.InvOn`), and
+form a bijection (`Set.BijOn`). -/
+theorem exists_nhds_bijOn_jointImplicitFunctionOfProdDomain
+    (dfu : HasStrictFDerivAt f f'u u) (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible)
+    {S : Set (E₁ × E₂)} (hS : S ∈ 𝓝 u) :
+    ∃ U ∈ 𝓝 u, ∃ V ∈ 𝓝 (u.1, f u), U ⊆ S ∧
+      Set.MapsTo (fun q : E₁ × E₂ ↦ (q.1, f q)) U V ∧
+      Set.MapsTo (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p)) V U ∧
+      Set.InvOn (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p))
+        (fun q : E₁ × E₂ ↦ (q.1, f q)) U V ∧
+      Set.BijOn (fun q : E₁ × E₂ ↦ (q.1, f q)) U V := by
+  set D := dfu.implicitFunctionDataOfProdDomain if₂u
+  set ψ : E₁ × F → E₂ := dfu.jointImplicitFunctionOfProdDomain if₂u
+  obtain ⟨S₀, hS₀_sub, hS₀_open, huS₀⟩ := _root_.mem_nhds_iff.1 hS
+  set e₀ : OpenPartialHomeomorph (E₁ × E₂) (E₁ × F) :=
+    D.toOpenPartialHomeomorph.transHomeomorph (Homeomorph.prodComm F E₁)
+  set e : OpenPartialHomeomorph (E₁ × E₂) (E₁ × F) := e₀.restrOpen S₀ hS₀_open
+  have he_coe : ⇑e = fun q : E₁ × E₂ ↦ (q.1, f q) := by
+    ext q <;> simp [e, OpenPartialHomeomorph.coe_restrOpen, e₀,
+      OpenPartialHomeomorph.transHomeomorph_apply, D]
+  have he_src : e.source = D.toOpenPartialHomeomorph.source ∩ S₀ := by
+    rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.transHomeomorph_source]
+  have he_tgt_sub : e.target ⊆ e₀.target := fun y hy ↦ by
+    have hsrc : e₀.symm y ∈ e₀.source := by
+      have hmem := e.map_target hy
+      rw [he_src] at hmem
+      simpa [e, OpenPartialHomeomorph.coe_restrOpen_symm,
+        e₀, OpenPartialHomeomorph.transHomeomorph_source] using hmem.1
+    simpa [e, OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.coe_restrOpen_symm]
+      using (e.right_inv hy) ▸ e₀.map_source hsrc
+  have he_symm : Set.EqOn e.symm (fun p : E₁ × F ↦ (p.1, ψ p)) e.target := fun p hp ↦ by
+    have hp₀ : p.swap ∈ D.toOpenPartialHomeomorph.target := by
+      simpa [e₀, OpenPartialHomeomorph.transHomeomorph_target] using he_tgt_sub hp
+    rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.transHomeomorph_symm_apply]
+    simpa [ψ, D] using dfu.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain if₂u hp₀
+  have hu_src : u ∈ e.source :=
+    he_src ▸ ⟨by simpa [D] using D.pt_mem_toOpenPartialHomeomorph_source, huS₀⟩
+  have hU_sub : e.source ⊆ S := fun q hq ↦ hS₀_sub (he_src ▸ hq).2
+  have hU_mem : e.source ∈ 𝓝 u := e.open_source.mem_nhds hu_src
+  have hV_mem : e.target ∈ 𝓝 (u.1, f u) :=
+    e.open_target.mem_nhds (by simpa [he_coe] using e.map_source hu_src)
+  have hU_maps : Set.MapsTo (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source e.target := he_coe ▸ e.mapsTo
+  have hV_maps : Set.MapsTo (fun p : E₁ × F ↦ (p.1, ψ p)) e.target e.source :=
+    he_symm.mapsTo_iff.1 e.mapsTo_symm
+  have hinv_UV : Set.InvOn (fun p : E₁ × F ↦ (p.1, ψ p)) (fun q : E₁ × E₂ ↦ (q.1, f q))
+      e.source e.target := by
+    have hleft : Set.LeftInvOn e.symm (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source := by
+      simpa [he_coe] using e.leftInvOn
+    have hright : Set.RightInvOn e.symm (fun q : E₁ × E₂ ↦ (q.1, f q)) e.target := by
+      simpa [he_coe] using e.rightInvOn
+    exact ⟨hleft.congr_left hU_maps he_symm, hright.congr_left he_symm⟩
+  have hbij : Set.BijOn (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source e.target := he_coe ▸ e.bijOn
+  exact ⟨e.source, hU_mem, e.target, hV_mem, hU_sub, hU_maps, hV_maps, hinv_UV, hbij⟩
 
 end HasStrictFDerivAt
 
