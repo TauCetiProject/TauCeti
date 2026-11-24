@@ -82,7 +82,7 @@ interior: it is compact, and open since the topology of `K` is valuative. Mathli
 mass one. -/
 noncomputable def integerPositiveCompacts : PositiveCompacts K where
   carrier := 𝒪[K]
-  isCompact' := isCompact_integer K
+  isCompact' := IsNonarchimedeanLocalField.isCompact_closedBall K 1
   interior_nonempty' := ⟨0, by
     rw [Valuation.isOpen_integer.interior_eq]
     exact zero_mem 𝒪[K]⟩
@@ -218,11 +218,12 @@ theorem addHaar_setOf_valuation_eq_one :
   have hsub : (ϖ : K) • (𝒪[K] : Set K) ⊆ 𝒪[K] := by
     rintro _ ⟨y, hy, rfl⟩
     exact mul_mem ϖ.property hy
-  have hcpt := (isCompact_integer K).smul (ϖ : K)
+  have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
+  have hcpt := hO.smul (ϖ : K)
   rw [hϖ.setOf_valuation_eq_one_eq_sdiff, measure_sdiff hsub
     hcpt.isClosed.measurableSet.nullMeasurableSet hcpt.measure_lt_top.ne,
     measure_smul_integer_of_irreducible μ hϖ,
-    ENNReal.sub_mul fun _ _ ↦ (isCompact_integer K).measure_lt_top.ne, one_mul]
+    ENNReal.sub_mul fun _ _ ↦ hO.measure_lt_top.ne, one_mul]
 
 end Measure
 
