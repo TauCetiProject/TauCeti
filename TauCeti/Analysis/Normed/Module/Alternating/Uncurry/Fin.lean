@@ -171,8 +171,7 @@ theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (n + 1)]→L[𝕜]
   simp only [AlternatingMap.alternatizeUncurryFin_apply, LinearMap.alternatingDerivation_apply] at h
   rw [alternatizeUncurryFin_apply, fderivCompContinuousLinearMap_apply]
   refine h.trans (Finset.sum_congr rfl fun i _ ↦ congrArg ω (funext fun j ↦ ?_))
-  rcases eq_or_ne j i with rfl | hj
-  · simp
-  · simp [Function.update_of_ne hj]
+  simpa using (Function.apply_update (fun j (L : E →L[𝕜] E) ↦ L (v j))
+    (fun _ ↦ ContinuousLinearMap.id 𝕜 E) i A j).symm
 
 end ContinuousAlternatingMap

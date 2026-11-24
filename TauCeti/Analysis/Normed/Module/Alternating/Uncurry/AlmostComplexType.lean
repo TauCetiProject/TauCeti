@@ -93,9 +93,8 @@ theorem alternatingDerivation_eq_fderivCompContinuousLinearMap (J : E →L[ℝ] 
   rw [ContinuousLinearMap.alternatingDerivation_apply,
     ContinuousAlternatingMap.fderivCompContinuousLinearMap_apply]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg φ (funext fun j ↦ ?_)
-  rcases eq_or_ne j i with rfl | hj
-  · simp
-  · simp [Function.update_of_ne hj]
+  simpa using (Function.apply_update (fun j (L : E →L[ℝ] E) ↦ L (v j))
+    (fun _ ↦ ContinuousLinearMap.id ℝ E) i J j).symm
 
 /-- Alternation intertwines the derivation induced by `J` on `(k+1)`-forms with the derivation
 `θ ↦ θ ∘ J + J.alternatingDerivation ∘ θ` of families of `k`-forms, where `θ'` is any family
@@ -463,6 +462,16 @@ section Contraction
 
 variable {J : E →L[ℝ] E} {p q : ℕ} {ω : E [⋀^Fin (k + 1)]→L[ℝ] F}
 
+/-- Alternating the interior products `v ↦ ι_v ω + c • ι_{J v} ω` of a form `ω` of type `(p,q)`
+multiplies `ω` by `(k + 1) + c * ((p - q) * I)`. -/
+private theorem IsOfType.alternatizeUncurryFin_curryLeft_add_smul_comp (h : ω.IsOfType J p q)
+    (c : ℂ) : alternatizeUncurryFin (ω.curryLeft + c • ω.curryLeft ∘L J) =
+      (((k + 1 : ℕ) : ℂ) + c * (((p : ℂ) - q) * I)) • ω := by
+  rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
+    alternatizeUncurryFin_curryLeft_comp,
+    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
+    h.alternatingDerivation_eq, smul_smul, ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
+
 /-- **The Euler identity for the `(1,0)`-contraction.** Alternating the interior products
 `v ↦ ι_v ω - I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 p • ω`. For an almost complex
 structure `J² = -1`, this inserts `2 v^(1,0)` in the complex-multilinear extension to
@@ -470,11 +479,8 @@ the complexification of the underlying real space. In complex coordinates
 `z_j` this is the identity `∑ j, dz_j ∧ ι_(∂/∂z_j) ω = p • ω`. -/
 theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft - I • ω.curryLeft ∘L J) = (2 * p : ℂ) • ω := by
-  rw [alternatizeUncurryFin_sub, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    alternatizeUncurryFin_curryLeft_comp,
-    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
-    h.alternatingDerivation_eq, smul_smul,
-    ← Nat.cast_smul_eq_nsmul ℂ, ← sub_smul]
+  rw [show ω.curryLeft - I • ω.curryLeft ∘L J = ω.curryLeft + (-I) • ω.curryLeft ∘L J by module,
+    h.alternatizeUncurryFin_curryLeft_add_smul_comp]
   congr 1
   have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
   linear_combination hk - (p - q : ℂ) * I_sq
@@ -483,11 +489,7 @@ theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfTyp
 `v ↦ ι_v ω + I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 q • ω`. -/
 theorem IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp (h : ω.IsOfType J p q) :
     alternatizeUncurryFin (ω.curryLeft + I • ω.curryLeft ∘L J) = (2 * q : ℂ) • ω := by
-  rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
-    alternatizeUncurryFin_curryLeft_comp,
-    ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap,
-    h.alternatingDerivation_eq, smul_smul,
-    ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
+  rw [h.alternatizeUncurryFin_curryLeft_add_smul_comp]
   congr 1
   have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
   linear_combination hk + (p - q : ℂ) * I_sq

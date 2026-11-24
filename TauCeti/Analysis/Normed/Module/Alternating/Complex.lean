@@ -82,6 +82,12 @@ theorem holCurry_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
   rw [← holCurryAux_apply]
   exact congrFun (ContinuousLinearMap.coe_complexOfMapISmul (holCurryAux v) _) φ
 
+/-- Evaluation of the holomorphic contraction on a tuple of vectors. -/
+@[simp]
+theorem holCurry_apply_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) (w : Fin k → E) :
+    holCurry v φ w = φ (Matrix.vecCons v w) - I • φ (Matrix.vecCons (I • v) w) := by
+  simp [holCurry_apply]
+
 /-- Holomorphic contraction anticommutes with alternation of a conjugate-linear family. -/
 theorem alternatizeUncurryFin_holCurry_comp
     (L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F)

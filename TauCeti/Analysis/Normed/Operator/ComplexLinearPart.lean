@@ -84,8 +84,9 @@ symplectic map is moved into place by complex-linear automorphisms in
 * `ContinuousLinearMap.complexAntilinearPartL`: the complex-antilinear part as a continuous
   real-linear operator on real-linear maps, for arbitrary compatible real structures, with
   `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`,
-  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff` and the postcomposition rule
-  `ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp`.
+  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff` and the postcomposition and
+  precomposition rules `ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp` and
+  `ContinuousLinearMap.complexAntilinearPartL_comp_restrictScalars`.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
@@ -534,6 +535,15 @@ theorem complexAntilinearPartL_restrictScalars (f : E →L[ℂ] F) :
 theorem complexAntilinearPartL_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E →L[ℝ] F) :
     complexAntilinearPartL ((f.restrictScalars ℝ).comp Ψ) =
       (f.restrictScalars ℝ).comp (complexAntilinearPartL Ψ) := by
+  ext v
+  simp [map_smul]
+
+/-- Precomposing with a complex-linear operator commutes with
+`ContinuousLinearMap.complexAntilinearPartL`. -/
+@[simp]
+theorem complexAntilinearPartL_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[ℂ] F) :
+    complexAntilinearPartL (Ψ.comp (f.restrictScalars ℝ)) =
+      (complexAntilinearPartL Ψ).comp (f.restrictScalars ℝ) := by
   ext v
   simp [map_smul]
 
