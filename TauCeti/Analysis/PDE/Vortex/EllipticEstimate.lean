@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -504,9 +505,8 @@ theorem exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le (k : ℕ
 
 /-- The entries of `-(expWeightCoeff c)ᵀ` have bounded derivatives through every order `k`. -/
 private theorem exists_norm_iteratedFDeriv_neg_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
-    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c i j z) z‖ ≤ M :=
-  (exists_forall_norm_iteratedFDeriv_expWeightCoeff_le_and_neg_le c k).imp fun _ hM ↦
-    ⟨hM.1, fun n hn z ↦ (hM.2 i j n hn z).2⟩
+    ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c i j z) z‖ ≤ M := by
+  simpa using exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
 
 /-- **The weighted Sobolev estimate for the adjoint of the right inverse from a weighted `L²`
 bound.** Let `x` be a smooth field whose coordinates have bounded derivatives through order `k`,

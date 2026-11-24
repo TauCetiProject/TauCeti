@@ -15,9 +15,6 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
-import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Real
-import TauCeti.Analysis.Sobolev.Wkp.Density
-import TauCeti.Analysis.Sobolev.Wkp.Multiplication
 
 /-!
 # Multiplication by functions with bounded derivatives on `H^s` for every real `s`
@@ -41,15 +38,6 @@ most `⌈|s|⌉`, `TemperedDistribution.mulLeftCLM A` preserves `H^s`
 multiplication by `A` when `A` has temperate growth, and a junk value otherwise (see
 `TemperedDistribution.mulLeftCLM`). These are the estimates that make localization by cutoff
 functions and changes of frame bounded on the Sobolev scale of a vector bundle.
-
-The closed graph theorem says nothing about how the norm of multiplication by `g` depends on
-`g`. At integer orders `k ≥ 0` and on the real elements of `H^k(E)`, an explicit bound is
-available: if the derivatives of a smooth real `ψ` through order `k` are bounded by `M`, then
-multiplication by `ψ` has norm at most `C M`, with `C` depending only on `E` and `k`
-(`BesselPotentialSpace.exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le`). It comes from
-the bound `2^(k+1) M` on the weak-derivative space `W^{k,2}(E)`, which is identified with the real
-elements of `H^k(E)` as a Banach space. Such a bound is what makes elliptic estimates uniform over
-families of coefficients.
 
 ## The argument
 
@@ -77,10 +65,6 @@ families of coefficients.
   `C^{⌈|s|⌉}` with bounded derivatives up to order `⌈|s|⌉`, if `f ∈ H^s` then
   `TemperedDistribution.mulLeftCLM A f ∈ H^s`, for every real `s` (multiplication by `A` when `A`
   has temperate growth, and a junk value otherwise).
-* `BesselPotentialSpace.exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le`: on the real
-  elements of `H^k(E)`, `k ≥ 0` an integer, multiplication by a smooth real function whose
-  derivatives through order `k` are bounded by `M` has norm at most `C M`, with `C` depending only
-  on `E` and `k`.
 
 ## References
 
@@ -235,74 +219,3 @@ theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimension
       (ℓ.exists_bound_iteratedFDeriv_comp_left hA hbd)
 
 end TemperedDistribution
-
-/-! ### An explicit bound at integer orders -/
-
-namespace BesselPotentialSpace
-
-open TauCeti
-open scoped ContDiff
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- **Multipliers with bounded derivatives on real elements of `H^k`, with an explicit bound.**
-For every integer order `k ≥ 0` there is a constant `C`, depending only on `E` and `k`, with the
-following property. Let `ψ` be a smooth real function whose derivatives through order `k` are
-bounded by `M`, and let `u ∈ H^k(E)` be represented by a real function `g`. Then `ψ g` is
-represented by an element `w ∈ H^k(E)` with `‖w‖ ≤ C M ‖u‖`.
-
-The constant does not depend on `ψ`, only on the bound `M`. The proof passes through the
-weak-derivative space `W^{k,2}(E)`, identified with the real elements of `H^k(E)` by
-`TauCeti.Wkp.toRealSubmodule`, on which multiplication by `ψ` has norm at most `2^(k+1) M`
-(`TauCeti.Wkp0.norm_contDiffSMulL_le`). -/
-theorem exists_forall_exists_inclusionLp_ae_eq_mul_and_norm_le (k : ℕ) :
-    ∃ C ≥ 0, ∀ (ψ : E → ℝ), ContDiff ℝ ∞ ψ → ∀ M : ℝ,
-      (∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M) →
-      ∀ (u : H^{(k : ℝ)}(E)) (g : E → ℝ),
-        ⇑(inclusionLp (Nat.cast_nonneg k) u) =ᵐ[volume] (fun x ↦ (g x : ℂ)) →
-        ∃ w : H^{(k : ℝ)}(E),
-          ⇑(inclusionLp (Nat.cast_nonneg k) w) =ᵐ[volume] (fun x ↦ ((ψ x * g x : ℝ) : ℂ)) ∧
-          ‖w‖ ≤ C * M * ‖u‖ := by
-  set e := Wkp.toRealSubmodule (E := E) k
-  refine ⟨‖e.toContinuousLinearMap‖ * 2 ^ (k + 1) *
-    ‖e.symm.toContinuousLinearMap‖, by positivity,
-    fun ψ hψ M hbound u g hu ↦ ?_⟩
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (Nat.zero_le k) 0)
-  have hF : u ∈ realSubmodule E (Nat.cast_nonneg k) :=
-    (mem_realSubmodule_iff _).2 (hu.mono fun x hx ↦ by rw [hx, Complex.ofReal_im])
-  set F : realSubmodule E (Nat.cast_nonneg k) := ⟨u, hF⟩ with hFu
-  have hw₀ : e.symm F ∈ wkp0Submodule (volume : Measure E) ⊤ 2 k := by
-    rw [wkp0Submodule_top_eq_top (p := 2) ENNReal.ofNat_ne_top]
-    trivial
-  set v₀ := Wkp0.contDiffSMulL k hψ ⟨e.symm F, hw₀⟩
-  refine ⟨(e v₀ : H^{(k : ℝ)}(E)), ?_, ?_⟩
-  · -- The `L²` function of `e v₀` is the value of `v₀`, which is `ψ` times the value of
-    -- `e.symm F`, the real part of the `L²` function `g` of `u`.
-    have hv := Wkp0.value_contDiffSMulL_ae (mu := (volume : Measure E)) (Omega := ⊤)
-      (p := 2) k hψ (fun j hj x _ ↦ hbound j hj x) ⟨e.symm F, hw₀⟩
-    have hv' := (ae_restrict_iff' (⊤ : TopologicalSpace.Opens E).isOpen.measurableSet).mp hv
-    filter_upwards [Wkp.coeFn_inclusionLp_toRealSubmodule k v₀.val, hv',
-      Wkp.value_toRealSubmodule_symm k F, hu] with x h₁ h₂ h₃ h₄
-    rw [h₁, h₂ (Set.mem_univ x)]
-    rw [h₃, hFu, Submodule.coe_mk u hF, h₄, Complex.ofReal_re]
-  · calc ‖(e v₀ : H^{(k : ℝ)}(E))‖
-        = ‖e v₀‖ := Submodule.norm_coe _
-      _ ≤ ‖e.toContinuousLinearMap‖ * ‖v₀.val‖ :=
-          e.toContinuousLinearMap.le_opNorm v₀.val
-      _ ≤ ‖e.toContinuousLinearMap‖ *
-            (2 ^ (k + 1) * M * ‖e.symm F‖) := by
-          gcongr
-          exact ((Wkp0.contDiffSMulL k hψ).le_opNorm _).trans (mul_le_mul
-            (Wkp0.norm_contDiffSMulL_le k hψ hM fun j hj x _ ↦ hbound j hj x) le_rfl
-            (norm_nonneg _) (by positivity))
-      _ ≤ ‖e.toContinuousLinearMap‖ *
-            (2 ^ (k + 1) * M *
-              (‖e.symm.toContinuousLinearMap‖ * ‖F‖)) := by
-          gcongr
-          exact e.symm.toContinuousLinearMap.le_opNorm F
-      _ = _ := by
-          rw [← Submodule.norm_coe, hFu, Submodule.coe_mk u hF]
-          ring
-
-end BesselPotentialSpace
