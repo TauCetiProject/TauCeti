@@ -114,7 +114,10 @@ theorem one_add_single_neg_one_mul_stickelberger (hm : 2 ≤ m) :
     have := ZMod.val_lt ((b⁻¹ : (ZMod m)ˣ) : ZMod m)
     omega
   have hm : (m : ℚ) ≠ 0 := by exact_mod_cast NeZero.ne m
-  simp [add_mul, coeff_single_mul_apply, coeff_sum, Finsupp.single_apply, -ZMod.natCast_val]
+  simp only [add_mul, one_mul, coeff_add, Finsupp.coe_add, Pi.add_apply, coeff_stickelberger,
+    coeff_single_mul_apply, inv_neg, inv_one, neg_mul, Units.val_neg, coeff_sum, coeff_single,
+    Finsupp.coe_finsetSum, Finset.sum_apply, Finsupp.single_apply, Finset.sum_ite_eq',
+    Finset.mem_univ, ↓reduceIte]
   field_simp
   exact_mod_cast hb
 
@@ -337,8 +340,10 @@ theorem mapRingHom_smoothedStickelberger {b : ℕ} (hb : b.Coprime m) :
   have hdiv : ((b * v / m : ℕ) : ℚ) * m + ((v * b % m : ℕ) : ℚ) = b * v := by
     exact_mod_cast (by rw [mul_comm v b, mul_comm _ m]; exact Nat.div_add_mod _ _)
   have hm : (m : ℚ) ≠ 0 := by exact_mod_cast NeZero.ne m
-  simp [sub_mul, coeff_natCast_mul, coeff_single_mul_apply, ZMod.val_mul, -ZMod.natCast_val,
-    -Int.natCast_ediv]
+  simp only [coeff_mapRingHom, coeff_smoothedStickelberger, map_natCast, sub_mul, coeff_sub,
+    Finsupp.coe_sub, Pi.sub_apply, coeff_natCast_mul, coeff_stickelberger, coeff_single_mul_apply,
+    mul_inv_rev, inv_inv, Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast,
+    Nat.mul_mod_mod, one_mul]
   field_simp
   linarith
 
