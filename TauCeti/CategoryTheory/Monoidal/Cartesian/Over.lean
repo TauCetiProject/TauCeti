@@ -101,9 +101,10 @@ theorem homMk_mul_left_comp_of_mul_left_comp [MonObj G] [MonObj G']
   simp only [Over.homMk_left, Hom.mul_def, Over.comp_left, Over.lift_left]
   exact mul_left_comp_of_mul_left_comp w hμ a b
 
-/-- **A multiplicative morphism of group objects preserves the identity.** If `g : G' ⟶ G` lies
-over `f : S' ⟶ S` and is compatible with multiplication, then it carries the identity section of
-`G'` to the base change along `f` of that of `G`. -/
+/-- **A multiplicative morphism from a monoid object to a group object preserves the identity.**
+If `g : G' ⟶ G` lies over `f : S' ⟶ S`, where `G'` is a monoid object and `G` a group object, and
+`g` is compatible with multiplication, then it carries the identity section of `G'` to the base
+change along `f` of that of `G`. -/
 theorem one_left_comp_of_mul_left_comp [GrpObj G] [MonObj G']
     (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left) :
     η[G'].left ≫ g = f ≫ η[G].left := by
