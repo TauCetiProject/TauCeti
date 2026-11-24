@@ -7,9 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Dual
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Matrix.Range
 import TauCeti.LinearAlgebra.Matrix.Rank
 
@@ -97,11 +97,11 @@ theorem IsSymm.rank_fromBlocks_mulVec [DecidableEq K] (hS : S.IsSymm) (x : n →
   have hmap : (LinearMap.ker B.mulVecLin).map (Φ : (n ⊕ Unit → K) →ₗ[K] (n → K) × K) =
       (LinearMap.ker S.mulVecLin).prod (LinearMap.ker (c • LinearMap.id)) := by
     ext ⟨y, t⟩
-    rw [Submodule.mem_map_equiv, Submodule.mem_prod, LinearMap.mem_ker, LinearMap.mem_ker,
-      LinearMap.mem_ker, mulVecLin_apply, mulVecLin_apply,
-      fromBlocks_replicateCol_replicateRow_mulVec]
-    simp only [Φ, LinearEquiv.coe_symm_mk', Sum.elim_comp_inl, Sum.elim_inr]
-    rw [mulVec_sub, mulVec_smul, sub_add_cancel, ← Sum.elim_zero_zero, Sum.elim_eq_iff]
+    rw [Submodule.mem_map_equiv]
+    simp only [Submodule.mem_prod, LinearMap.mem_ker, mulVecLin_apply, B,
+      fromBlocks_replicateCol_replicateRow_mulVec, Φ, LinearEquiv.coe_symm_mk', Sum.elim_comp_inl,
+      Sum.elim_inr, mulVec_sub, mulVec_smul, sub_add_cancel]
+    rw [← Sum.elim_zero_zero, Sum.elim_eq_iff]
     refine and_congr_right fun hy => ?_
     rw [dotProduct_sub, dotProduct_smul, dotProduct_comm, ← hS.dotProduct_mulVec_comm, hy,
       dotProduct_zero, funext_iff]
@@ -131,36 +131,37 @@ theorem IsSymm.rank_fromBlocks_of_notMem_range (hS : S.IsSymm) {v : n → K}
   classical
   set B := Matrix.fromBlocks S (replicateCol Unit v) (replicateRow Unit v) (of fun _ _ => a)
   set φ := dotProductEquiv K n v
-  let Φ := (LinearEquiv.sumArrowLequivProdArrow n Unit K K).trans
-    ((LinearEquiv.refl K (n → K)).prodCongr (LinearEquiv.funUnique Unit K K))
+  let Φ : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K :=
+    { toFun w := (w ∘ Sum.inl, w (Sum.inr ()))
+      invFun p := Sum.elim p.1 fun _ => p.2
+      map_add' w w' := by ext <;> simp
+      map_smul' r w := by ext <;> simp
+      left_inv w := by ext (_ | _) <;> simp
+      right_inv p := by ext <;> simp }
   -- A kernel vector of `B` has vanishing last coordinate, since `v` is not in the range of `S`.
   have hmap : (LinearMap.ker B.mulVecLin).map (Φ : (n ⊕ Unit → K) →ₗ[K] (n → K) × K) =
-      (LinearMap.ker S.mulVecLin ⊓ LinearMap.ker φ).prod ⊥ := by
+      (LinearMap.ker φ ⊓ LinearMap.ker S.mulVecLin).prod ⊥ := by
     ext ⟨y, t⟩
-    have hΦ : Φ.symm (y, t) = Sum.elim y fun _ => t := by ext (i | i) <;> rfl
-    rw [Submodule.mem_map_equiv, hΦ, Submodule.mem_prod, LinearMap.mem_ker, mulVecLin_apply,
-      fromBlocks_replicateCol_replicateRow_mulVec, Sum.elim_comp_inl, Sum.elim_inr,
-      ← Sum.elim_zero_zero, Sum.elim_eq_iff, Submodule.mem_inf, LinearMap.mem_ker,
-      LinearMap.mem_ker, mulVecLin_apply, Submodule.mem_bot, dotProductEquiv_apply_apply]
-    refine ⟨fun ⟨h₁, h₂⟩ => ?_, fun ⟨⟨h₁, h₂⟩, ht⟩ => ?_⟩
+    rw [Submodule.mem_map_equiv]
+    simp only [Submodule.mem_prod, Submodule.mem_inf, Submodule.mem_bot,
+      LinearMap.mem_ker, mulVecLin_apply, B, fromBlocks_replicateCol_replicateRow_mulVec, Φ, φ,
+      LinearEquiv.coe_symm_mk', Sum.elim_comp_inl, Sum.elim_inr, dotProductEquiv_apply_apply,
+      funext_iff, Sum.forall, Sum.elim_inl, Pi.zero_apply, forall_const]
+    refine ⟨fun ⟨h₁, h₂⟩ => ?_, fun ⟨_, ht⟩ => ?_⟩
     · obtain rfl : t = 0 := by
         by_contra ht
-        refine hv ⟨-t⁻¹ • y, ?_⟩
-        rw [mulVecLin_apply, mulVec_smul, eq_add_neg_of_add_eq h₁]
-        simp [smul_smul, ht]
-      simpa using And.intro h₁ (congrFun h₂ ())
+        refine hv ⟨-t⁻¹ • y, funext fun i => ?_⟩
+        rw [mulVecLin_apply, mulVec_smul, Pi.smul_apply, eq_add_neg_of_add_eq (h₁ i)]
+        simp [ht]
+      simp_all
     · subst ht
-      exact ⟨by simpa using h₁, funext fun _ => by simpa using h₂⟩
+      simp_all
   -- The dot product with `v` is a nonzero functional on `ker S`, so it cuts out a hyperplane.
   obtain ⟨z, hz, hvz⟩ : ∃ z ∈ LinearMap.ker S.mulVecLin, v ⬝ᵥ z ≠ 0 := by
     by_contra! h
     exact hv ((hS.mem_range_mulVecLin_iff v).mpr h)
-  have hψ : φ ∘ₗ (LinearMap.ker S.mulVecLin).subtype ≠ 0 :=
-    fun h => hvz (by simpa [φ] using LinearMap.congr_fun h ⟨z, hz⟩)
-  have hcodim := Module.Dual.finrank_ker_add_one_of_ne_zero hψ
-  rw [LinearMap.ker_comp, ← top_inf_eq (Submodule.comap _ _),
-    ← Submodule.comap_subtype_self (LinearMap.ker S.mulVecLin), ← Submodule.comap_inf,
-    (Submodule.comapSubtypeEquivOfLe inf_le_left).finrank_eq] at hcodim
+  have hcodim := Module.Dual.finrank_ker_inf_add_one (f := φ) fun h =>
+    hvz (by simpa [φ] using h hz)
   have hker := (Φ.ofSubmodules _ _ hmap).finrank_eq
   rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_bot, add_zero] at hker
   have h1 := rank_add_finrank_ker_sum_unit B

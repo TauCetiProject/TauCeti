@@ -13,6 +13,8 @@ import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.Symmetric.BorderRank
 
 /-!
@@ -37,9 +39,10 @@ recurrence and the same initial row, so `N(s, k) = P(s, k)` for all `s` and `k`.
   giving each rank.
 * `Matrix.natCard_isSymm_rank_sum_unit` and `Matrix.natCard_isSymm_rank_succ`: the recurrence for
   the number of symmetric matrices of each rank.
-* `Matrix.symmetricRankProduct_succ_eq_sum`: MacWilliams's product satisfies the same recurrence.
+* `TauCeti.prod_mul_prod_pow_sub_one_succ_eq_sum`: MacWilliams's product satisfies the same
+  recurrence.
 * `Matrix.natCard_isSymm_rank_eq_prod`: **MacWilliams's formula** for the number of symmetric
-  `s × s` matrices of rank `k`.
+  `ι × ι` matrices of rank `k`, for any finite index type `ι`.
 
 ## References
 
@@ -126,24 +129,6 @@ section Count
 
 variable (F : Type*) [Field F]
 
-/-- A symmetric matrix on `ι ⊕ Unit` is a symmetric matrix on `ι` bordered by a column, its
-transpose and a corner. -/
-private def isSymmSumUnitEquiv (ι : Type*) :
-    {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) F // M.IsSymm} ≃
-      {S : Matrix ι ι F // S.IsSymm} × (ι → F) × F where
-  toFun M := (⟨M.val.toBlocks₁₁,
-    (isSymm_fromBlocks_iff.mp (M.val.fromBlocks_toBlocks ▸ M.property)).left⟩,
-    fun i => M.val (.inl i) (.inr ()), M.val (.inr ()) (.inr ()))
-  invFun p := ⟨Matrix.fromBlocks p.1.val (replicateCol Unit p.2.1) (replicateRow Unit p.2.1)
-    (of fun _ _ => p.2.2), p.1.property.fromBlocks (by simp) (by ext; simp)⟩
-  left_inv M := by
-    ext (i | i) (j | _)
-    · simp [toBlocks₁₁]
-    · simp
-    · simpa using (M.property.apply _ _).symm
-    · simp
-  right_inv p := by ext <;> simp [toBlocks₁₁]
-
 variable [Finite F]
 
 /-- **The symmetric rank count recurrence.** Group the symmetric matrices on `ι ⊕ Unit` of rank
@@ -169,7 +154,7 @@ theorem natCard_isSymm_rank_sum_unit (ι : Type*) [Fintype ι] (k : ℕ) :
   have e₂ : {M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) F // M.IsSymm} // M.val.rank = k} ≃
       {p : {S : Matrix ι ι F // S.IsSymm} × (ι → F) × F // P p.1 p.2} :=
     ((isSymmSumUnitEquiv F ι).symm.subtypeEquiv (p := fun p => P p.1 p.2)
-      (q := fun M => M.val.rank = k) fun _ => Iff.rfl).symm
+      (q := fun M => M.val.rank = k) fun _ => by rw [coe_isSymmSumUnitEquiv_symm_apply]).symm
   set c : ℕ → ℕ := fun r => if k = r then Nat.card F ^ r
     else if k = r + 1 then (Nat.card F - 1) * Nat.card F ^ r
     else if k = r + 2 then Nat.card F ^ (Fintype.card ι + 1) - Nat.card F ^ (r + 1) else 0
@@ -209,19 +194,13 @@ theorem natCard_isSymm_rank_succ (n k : ℕ) :
 
 end Count
 
-section Product
+end Matrix
 
-/-- A sum over `r ≤ n` of terms supported on `r + d = k` picks out `r = k - d`, provided the
-summand vanishes beyond `n`. -/
-private theorem sum_range_ite_add_eq {M : Type*} [AddCommMonoid M] (n d k : ℕ) (f : ℕ → M)
-    (hf : ∀ t, n < t → f t = 0) :
-    ∑ r ∈ range (n + 1), (if k = r + d then f r else 0) = if d ≤ k then f (k - d) else 0 := by
-  split_ifs with hdk
-  · simp_rw [show ∀ r, (k = r + d) ↔ (k - d = r) by omega, sum_ite_eq, mem_range]
-    split_ifs with h
-    · rfl
-    · exact (hf _ (by omega)).symm
-  · exact sum_eq_zero fun r _ => ite_eq_right_iff.mpr fun h => absurd h (by omega)
+namespace TauCeti
+
+open Finset
+
+section Product
 
 /-- Evaluate a sum against the border coefficients, for a sequence vanishing beyond `n`. -/
 private theorem sum_mul_borderCoeff (q n k : ℕ) (g : ℕ → ℚ) (hg : ∀ t, n < t → g t = 0) :
@@ -295,7 +274,8 @@ private theorem symmRankProd_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : ℕ) :
   · simp [symmRankProd]
   · simp only [symmRankProd]
     push_cast [Nat.one_le_of_lt hq]
-    simp
+    simp only [prod_range_zero, prod_range_one, one_mul, pow_zero, pow_one, mul_one, add_zero,
+      Nat.sub_zero]
     ring
   simp only [show j + 1 + 1 - 1 = j + 1 by omega, show j + 1 + 1 - 2 = j by omega,
     le_add_iff_nonneg_left, zero_le, ↓reduceIte]
@@ -319,7 +299,7 @@ private theorem symmRankProd_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : ℕ) :
 `P(s, t) = ∏_{i=1}^{⌊t/2⌋} q^(2i) / (q^(2i) - 1) · ∏_{i=0}^{t-1} (q^(s-i) - 1)` satisfies
 `P(n + 1, k) = ∑_{r ≤ n} P(n, r) c(n, r, k)` with the coefficients `c(n, r, k)` of
 `Matrix.natCard_isSymm_rank_succ`. It need not be a prime power. -/
-theorem symmetricRankProduct_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : ℕ) :
+theorem prod_mul_prod_pow_sub_one_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : ℕ) :
     let P : ℕ → ℕ → ℚ := fun s t =>
       (∏ i ∈ range (t / 2), (q : ℚ) ^ (2 * (i + 1)) / ((q : ℚ) ^ (2 * (i + 1)) - 1)) *
         ∏ i ∈ range t, ((q : ℚ) ^ (s - i) - 1)
@@ -330,11 +310,14 @@ theorem symmetricRankProduct_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : ℕ) :
 
 end Product
 
-/-- **MacWilliams's formula.** Over a finite field with `q` elements, the number of symmetric
-`s × s` matrices of rank `k` is
-`∏_{i=1}^{⌊k/2⌋} q^(2i) / (q^(2i) - 1) · ∏_{i=0}^{k-1} (q^(s-i) - 1)`.
-For `k > s` both sides vanish. -/
-theorem natCard_isSymm_rank_eq_prod (F : Type*) [Field F] [Finite F] (s k : ℕ) :
+end TauCeti
+
+namespace Matrix
+
+open Finset
+
+/-- MacWilliams's formula for `s × s` matrices, by induction on `s`. -/
+private theorem natCard_isSymm_rank_eq_prod_fin (F : Type*) [Field F] [Finite F] (s k : ℕ) :
     (Nat.card {M : Matrix (Fin s) (Fin s) F // M.IsSymm ∧ M.rank = k} : ℚ) =
       (∏ i ∈ range (k / 2), (Nat.card F : ℚ) ^ (2 * (i + 1)) /
         ((Nat.card F : ℚ) ^ (2 * (i + 1)) - 1)) *
@@ -353,6 +336,20 @@ theorem natCard_isSymm_rank_eq_prod (F : Type*) [Field F] [Finite F] (s k : ℕ)
   | succ s ih =>
     rw [natCard_isSymm_rank_succ, Nat.cast_sum]
     simp_rw [Nat.cast_mul, ih]
-    exact (symmetricRankProduct_succ_eq_sum Finite.one_lt_card s k).symm
+    exact (TauCeti.prod_mul_prod_pow_sub_one_succ_eq_sum Finite.one_lt_card s k).symm
+
+/-- **MacWilliams's formula.** Over a finite field with `q` elements, the number of symmetric
+`ι × ι` matrices of rank `k`, where `ι` has `s` elements, is
+`∏_{i=1}^{⌊k/2⌋} q^(2i) / (q^(2i) - 1) · ∏_{i=0}^{k-1} (q^(s-i) - 1)`.
+For `k > s` both sides vanish. -/
+theorem natCard_isSymm_rank_eq_prod (F ι : Type*) [Field F] [Finite F] [Fintype ι] (k : ℕ) :
+    (Nat.card {M : Matrix ι ι F // M.IsSymm ∧ M.rank = k} : ℚ) =
+      (∏ i ∈ range (k / 2), (Nat.card F : ℚ) ^ (2 * (i + 1)) /
+        ((Nat.card F : ℚ) ^ (2 * (i + 1)) - 1)) *
+        ∏ i ∈ range k, ((Nat.card F : ℚ) ^ (Fintype.card ι - i) - 1) := by
+  rw [← natCard_isSymm_rank_eq_prod_fin]
+  let e := Fintype.equivFin ι
+  exact congrArg _ <| Nat.card_congr <| (reindex e e).subtypeEquiv fun M => by
+    rw [isSymm_reindex_iff, rank_reindex]
 
 end Matrix
