@@ -125,37 +125,6 @@ theorem measurableSet_setOf_comap_isoSetoid_of_internalScottRank_le [Countable V
   measurableSet_setOf_comap_isoSetoid_of_selfStabilizationOrdinal_le hβ fun c hc =>
     (@selfStabilizationOrdinal_le_internalScottRank L _ V c.toStructure).trans (hK c hc)
 
-/-- **Borel isomorphism under bounded Scott height.** In a vocabulary with countably many relation
-symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K` of
-configurations whose decoded structures have Scott height at most `β < ω₁` is Borel. -/
-theorem measurableSet_iso_inter_of_scottHeight_le [Countable V] [∀ n, Countable (L.Relations n)]
-    {K : Set (RelationalConfiguration L V)} (hK : MeasurableSet K) {β : Ordinal.{w}}
-    (hβ : β < ω₁) (hKβ : ∀ c ∈ K, @scottHeight L _ V c.toStructure ≤ β) :
-    MeasurableSet
-      ({p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
-        K ×ˢ K) := by
-  -- On `K`, isomorphism is back-and-forth equivalence at level `β`.
-  have heq : {p : RelationalConfiguration L V × RelationalConfiguration L V |
-      isoSetoid L V p.1 p.2} ∩ K ×ˢ K = {p | bfEquivSetoid L V β p.1 p.2} ∩ K ×ˢ K := by
-    ext p
-    exact and_congr_left fun hp => isoSetoid_iff_bfEquivSetoid_of_scottHeight_le (hKβ _ hp.1)
-  rw [heq]
-  exact (measurableSet_setOf_bfEquivSetoid hβ).inter (hK.prod hK)
-
-/-- **Borel isomorphism under bounded internal stabilization.** In a vocabulary with countably many
-relation symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K`
-of configurations whose decoded structures have internal stabilization ordinal at most `β < ω₁`
-is Borel. -/
-theorem measurableSet_iso_inter_of_selfStabilizationOrdinal_le [Countable V]
-    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)}
-    (hK : MeasurableSet K) {β : Ordinal.{w}} (hβ : β < ω₁)
-    (hKβ : ∀ c ∈ K, @selfStabilizationOrdinal L _ V c.toStructure ≤ β) :
-    MeasurableSet
-      ({p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
-        K ×ˢ K) := by
-  obtain ⟨hβω, hKβω⟩ := scottHeight_le_add_omega0_of_selfStabilizationOrdinal_le hβ hKβ
-  exact measurableSet_iso_inter_of_scottHeight_le hK hβω hKβω
-
 /-! ### Borel isomorphism is decided at one countable level -/
 
 /-- If `K` is an analytic set of configurations on which isomorphism is Borel, then isomorphism on
@@ -194,6 +163,34 @@ theorem measurableSet_iso_inter_iff_exists_bfLevel [Countable V]
   refine ⟨exists_bfLevel_of_measurableSet_iso_inter hK.analyticSet, fun ⟨β, hβ, heq⟩ => ?_⟩
   rw [heq]
   exact (measurableSet_setOf_bfEquivSetoid hβ).inter (hK.prod hK)
+
+/-! ### Isomorphism on Borel classes of bounded Scott height -/
+
+/-- **Borel isomorphism under bounded Scott height.** In a vocabulary with countably many relation
+symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K` of
+configurations whose decoded structures have Scott height at most `β < ω₁` is Borel. -/
+theorem measurableSet_iso_inter_of_scottHeight_le [Countable V] [∀ n, Countable (L.Relations n)]
+    {K : Set (RelationalConfiguration L V)} (hK : MeasurableSet K) {β : Ordinal.{w}}
+    (hβ : β < ω₁) (hKβ : ∀ c ∈ K, @scottHeight L _ V c.toStructure ≤ β) :
+    MeasurableSet
+      ({p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
+        K ×ˢ K) :=
+  (measurableSet_iso_inter_iff_exists_bfLevel hK).2
+    ⟨β, hβ, iso_inter_eq_bfEquivSetoid_inter_of_scottHeight_le hKβ⟩
+
+/-- **Borel isomorphism under bounded internal stabilization.** In a vocabulary with countably many
+relation symbols of each arity, on a countable carrier, isomorphism restricted to a Borel set `K`
+of configurations whose decoded structures have internal stabilization ordinal at most `β < ω₁`
+is Borel. -/
+theorem measurableSet_iso_inter_of_selfStabilizationOrdinal_le [Countable V]
+    [∀ n, Countable (L.Relations n)] {K : Set (RelationalConfiguration L V)}
+    (hK : MeasurableSet K) {β : Ordinal.{w}} (hβ : β < ω₁)
+    (hKβ : ∀ c ∈ K, @selfStabilizationOrdinal L _ V c.toStructure ≤ β) :
+    MeasurableSet
+      ({p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
+        K ×ˢ K) := by
+  obtain ⟨hβω, hKβω⟩ := scottHeight_le_add_omega0_of_selfStabilizationOrdinal_le hβ hKβ
+  exact measurableSet_iso_inter_of_scottHeight_le hK hβω hKβω
 
 /-! ### Borel strata of the internal stabilization ordinal -/
 

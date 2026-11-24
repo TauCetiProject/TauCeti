@@ -23,6 +23,8 @@ countability of the language is involved.
   level `β`.
 * `TauCeti.RelationalConfiguration.comap_isoSetoid_eq_bfEquivSetoid_of_scottHeight_le`: on a set
   of Scott height at most `β`, isomorphism is back-and-forth equivalence at level `β`.
+* `TauCeti.RelationalConfiguration.iso_inter_eq_bfEquivSetoid_inter_of_scottHeight_le`: the same
+  for the pairs of such a set, in the ambient square.
 -/
 
 public section
@@ -53,5 +55,16 @@ theorem comap_isoSetoid_eq_bfEquivSetoid_of_scottHeight_le
       (bfEquivSetoid L V β).comap (Subtype.val : K → _) := by
   ext c d
   exact isoSetoid_iff_bfEquivSetoid_of_scottHeight_le (hK c c.property)
+
+/-- On a set `K` of configurations whose decoded structures have Scott height at most `β`, the
+isomorphic pairs of `K` are the pairs of `K` that are back-and-forth equivalent at level `β`. -/
+theorem iso_inter_eq_bfEquivSetoid_inter_of_scottHeight_le
+    {K : Set (RelationalConfiguration L V)} {β : Ordinal.{w}}
+    (hK : ∀ c ∈ K, @scottHeight L _ V c.toStructure ≤ β) :
+    {p : RelationalConfiguration L V × RelationalConfiguration L V | isoSetoid L V p.1 p.2} ∩
+        K ×ˢ K =
+      {p | bfEquivSetoid L V β p.1 p.2} ∩ K ×ˢ K := by
+  ext p
+  exact and_congr_left fun hp => isoSetoid_iff_bfEquivSetoid_of_scottHeight_le (hK _ hp.1)
 
 end TauCeti.RelationalConfiguration
