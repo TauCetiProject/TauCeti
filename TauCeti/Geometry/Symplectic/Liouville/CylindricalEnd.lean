@@ -33,6 +33,8 @@ The identity `dr(Z) = r` is the infinitesimal form of `r(ψ_s x) = e^s r(x)`.
   smooth outside the Liouville domain.
 * `TauCeti.IsLiouvilleCompletion.mvfderiv_liouvilleRadialCoordinate_apply`: the Liouville field
   differentiates the radial coordinate to itself outside the Liouville domain, `dr(Z) = r`.
+* `TauCeti.IsLiouvilleCompletion.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: more generally,
+  the Liouville field differentiates to itself every function that the flow rescales by `e^s`.
 
 ## References
 
@@ -111,6 +113,21 @@ theorem contMDiffOn_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
     ContMDiffOn I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) Wᶜ :=
   fun _ hx ↦ (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).contMDiffWithinAt
 
+omit [FiniteDimensional ℝ E] in
+/-- **A function rescaled by the Liouville flow is differentiated to itself by the Liouville
+field.** If `F` is differentiable at `x` and `F(ψ_s x) = e^s F(x)` for `s` near `0`, then
+`dF(Z) = F` at `x`. -/
+theorem mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) {F : M → ℝ}
+    (hF : MDifferentiableAt I 𝓘(ℝ) F x)
+    (heq : (F ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0] fun s ↦ Real.exp s * F x) :
+    mvfderiv I F x (Z x) = F x := by
+  have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) (by rwa [flowOf_zero Z])
+  rw [flowOf_zero Z] at hcurve
+  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
+  simpa using (Real.hasDerivAt_exp 0).mul_const (F x)
+
 /-- **The Liouville field is `r ∂_r` on the cylindrical end.** Outside the Liouville domain, the
 Liouville field differentiates the radial coordinate to itself, `dr(Z) = r`. -/
 theorem mvfderiv_liouvilleRadialCoordinate_apply (h : IsLiouvilleCompletion ω α W)
@@ -119,20 +136,12 @@ theorem mvfderiv_liouvilleRadialCoordinate_apply (h : IsLiouvilleCompletion ω �
   -- Along the trajectory `x = ψ_t(y)` from the boundary, `r(ψ_s x) = e^{s + t} = e^s r(x)` for
   -- `s > -t`, a neighbourhood of `0`.
   obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
-  have hr : MDifferentiableAt I 𝓘(ℝ) (liouvilleRadialCoordinate Z W) (flowOf Z 0 x) := by
-    rw [flowOf_zero Z]
-    exact (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)
-  have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
-    ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hr
-  rw [flowOf_zero Z] at hcurve
-  have heq : (liouvilleRadialCoordinate Z W ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0]
-      fun s ↦ Real.exp s * liouvilleRadialCoordinate Z W x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
-    rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
-      h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
-      h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
-  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
-  simpa using (Real.hasDerivAt_exp 0).mul_const (liouvilleRadialCoordinate Z W x)
+  refine h.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq hZ
+    ((h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)) ?_
+  filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
+  rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
+    h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
+    h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
 
 end IsLiouvilleCompletion
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Liouville.ClosedCharacteristic
 public import TauCeti.Geometry.Symplectic.Liouville.Graph.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Retraction
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # The domain bounded by a Liouville graph
@@ -41,7 +42,9 @@ end in the Liouville graph `y ↦ ψ_{log f(y)}(y)` of `f` over `∂W` (`TauCeti
   (`TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleGraphFunction_le`), and the deformation
   retraction onto `W` does not increase `F`
   (`TauCeti.IsLiouvilleCompletion.liouvilleGraphFunction_liouvilleRetractionHomotopy_le`), so it
-  restricts to a deformation retraction of `{F ≤ 1}` and of `{F < 1}` onto `W`;
+  restricts to a deformation retraction of `{F ≤ 1}` and of `{F < 1}` onto `W`
+  (`TauCeti.IsLiouvilleCompletion.liouvilleGraphSublevelHomotopy`,
+  `TauCeti.IsLiouvilleCompletion.liouvilleGraphStrictSublevelHomotopy`);
 * when `f` is moreover smooth along `∂W`, the sublevel set `{F ≤ 1}` is a Liouville domain for
   the same form and primitive
   (`TauCeti.IsLiouvilleCompletion.isLiouvilleDomain_setOf_liouvilleGraphFunction_le`);
@@ -62,6 +65,9 @@ Reeb orbits of `f α|∂W`, which that proof also uses, is not part of this file
 ## Main definitions
 
 * `TauCeti.liouvilleGraphFunction Z W f`: the function `x ↦ r(x) / f(π(x))`.
+* `TauCeti.IsLiouvilleCompletion.liouvilleGraphSublevelHomotopy`,
+  `TauCeti.IsLiouvilleCompletion.liouvilleGraphStrictSublevelHomotopy`: the deformation
+  retractions of the sublevel sets `{F ≤ c}` and `{F < c}`.
 
 ## Main results
 
@@ -159,9 +165,8 @@ theorem contMDiffAt_liouvilleGraphFunction {n : ℕ∞} (hx : x ∉ W)
     (hf : ContMDiffAt I 𝓘(ℝ) n f (liouvilleRetraction Z W x))
     (hf₀ : f (liouvilleRetraction Z W x) ≠ 0) :
     ContMDiffAt I 𝓘(ℝ) n (liouvilleGraphFunction Z W f) x :=
-  (contDiffAt_fst.div contDiffAt_snd hf₀).contMDiffAt.comp x
-    (((h.contMDiffAt_liouvilleRadialCoordinate hZ hx).of_le (by exact_mod_cast le_top)).prodMk_space
-      (hf.comp x ((h.contMDiffAt_liouvilleRetraction hZ hx).of_le (by exact_mod_cast le_top))))
+  ((h.contMDiffAt_liouvilleRadialCoordinate hZ hx).of_le (by exact_mod_cast le_top)).div₀
+    (hf.comp x ((h.contMDiffAt_liouvilleRetraction hZ hx).of_le (by exact_mod_cast le_top))) hf₀
 
 /-- The Liouville graph function is differentiable at every point outside the Liouville domain
 whose retraction is a point where `f` is differentiable and nonzero. -/
@@ -191,24 +196,15 @@ theorem mvfderiv_liouvilleGraphFunction_apply (hx : x ∉ W)
       exact hFx (h.mdifferentiableAt_liouvilleGraphFunction hZ hx hf hf₀)
     rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_zero_of_not_mdifferentiableAt hFx,
       liouvilleGraphFunction_apply, hf₀, div_zero]
-    rfl
+    exact zero_apply (Z x)
   -- Along the trajectory through `x`, `F(ψ_s x) = e^s F(x)` for `s > -log r(x)`, a neighbourhood
   -- of `0`.
-  have hF : MDifferentiableAt I 𝓘(ℝ) (liouvilleGraphFunction Z W f) (flowOf Z 0 x) := by
-    rwa [flowOf_zero Z]
-  have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
-    ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hF
-  rw [flowOf_zero Z] at hcurve
-  have hx' : x ∉ interior W := fun hi ↦ hx (interior_subset hi)
   have hτ : 0 < Real.log (liouvilleRadialCoordinate Z W x) :=
     Real.log_pos ((h.one_lt_liouvilleRadialCoordinate_iff hZ).2 hx)
-  have heq : (liouvilleGraphFunction Z W f ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0]
-      fun s ↦ Real.exp s * liouvilleGraphFunction Z W f x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 hτ)] with s hs
-    exact h.liouvilleGraphFunction_flowOf_of_notMem_interior hZ hx'
-      (by linarith [mem_Ioi.1 hs])
-  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
-  simpa using (Real.hasDerivAt_exp 0).mul_const (liouvilleGraphFunction Z W f x)
+  refine h.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq hZ hFx ?_
+  filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 hτ)] with s hs
+  exact h.liouvilleGraphFunction_flowOf_of_notMem_interior hZ (fun hi ↦ hx (interior_subset hi))
+    (by linarith [mem_Ioi.1 hs])
 
 /-- **The sublevel sets of a Liouville graph function are compact**, when `f` is continuous and
 positive on the Liouville domain: they lie in sublevel sets of the radial coordinate. -/
@@ -243,6 +239,28 @@ theorem liouvilleGraphFunction_liouvilleRetractionHomotopy_le (hf₀ : ∀ x ∈
   exact mul_le_of_le_one_left (Real.log_nonneg (one_le_liouvilleRadialCoordinate Z W p.2))
     (sub_le_self _ (unitInterval.nonneg p.1))
 
+/-- **The deformation retraction of a sublevel set of a Liouville graph function.** When `f` is
+nonnegative on the Liouville domain `W`, the Liouville deformation retraction maps the sublevel set
+`{F ≤ c}` into itself, and restricts there to a homotopy from the identity to the Liouville
+retraction, relative to the points of `W`. -/
+noncomputable def liouvilleGraphSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ) :
+    ContinuousMap.HomotopyRel (ContinuousMap.id {x | liouvilleGraphFunction Z W f x ≤ c})
+      (h.liouvilleRetractionRestrict hZ fun s x hx ↦
+        (h.liouvilleGraphFunction_liouvilleRetractionHomotopy_le hZ hf₀ (s, x)).trans hx)
+      {x | (x : M) ∈ W} :=
+  h.liouvilleRetractionHomotopyRestrict hZ _
+
+/-- **The deformation retraction of a strict sublevel set of a Liouville graph function.** When `f`
+is nonnegative on the Liouville domain `W`, the Liouville deformation retraction maps the strict
+sublevel set `{F < c}` into itself, and restricts there to a homotopy from the identity to the
+Liouville retraction, relative to the points of `W`. -/
+noncomputable def liouvilleGraphStrictSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ) :
+    ContinuousMap.HomotopyRel (ContinuousMap.id {x | liouvilleGraphFunction Z W f x < c})
+      (h.liouvilleRetractionRestrict hZ fun s x hx ↦
+        (h.liouvilleGraphFunction_liouvilleRetractionHomotopy_le hZ hf₀ (s, x)).trans_lt hx)
+      {x | (x : M) ∈ W} :=
+  h.liouvilleRetractionHomotopyRestrict hZ _
+
 end GraphFunction
 
 /-! ### The domain bounded by a Liouville graph -/
@@ -258,6 +276,26 @@ private theorem liouvilleGraphFunction_lt_one_of_mem (hf1 : ∀ x ∈ W, 1 < f x
   rw [h.liouvilleGraphFunction_of_mem hZ hx]
   exact inv_lt_one_of_one_lt₀ (hf1 x hx)
 
+/-- If `f > 1` on the Liouville domain, a point of the level `1` of the Liouville graph function
+lies outside the Liouville domain. -/
+private theorem notMem_of_liouvilleGraphFunction_eq_one (hf1 : ∀ x ∈ W, 1 < f x)
+    (hx : liouvilleGraphFunction Z W f x = 1) : x ∉ W :=
+  fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW).ne hx
+
+/-- If `f > 1` on the Liouville domain, a point of the level `1` of the Liouville graph function
+retracts to the boundary of the Liouville domain. -/
+private theorem liouvilleRetraction_mem_frontier_of_liouvilleGraphFunction_eq_one
+    (hf1 : ∀ x ∈ W, 1 < f x) (hx : liouvilleGraphFunction Z W f x = 1) :
+    liouvilleRetraction Z W x ∈ frontier W :=
+  h.liouvilleRetraction_mem_frontier hZ fun hi ↦
+    h.notMem_of_liouvilleGraphFunction_eq_one hZ hf1 hx (interior_subset hi)
+
+/-- If `f` is continuous on the Liouville domain and greater than `1` there, the Liouville graph
+function is continuous. -/
+private theorem continuous_liouvilleGraphFunction_of_one_lt (hf : ContinuousOn f W)
+    (hf1 : ∀ x ∈ W, 1 < f x) : Continuous (liouvilleGraphFunction Z W f) :=
+  h.continuous_liouvilleGraphFunction hZ hf fun x hx ↦ (zero_lt_one.trans (hf1 x hx)).ne'
+
 /-- **The level `1` of a Liouville graph function is the Liouville graph.** If `f > 1` on the
 Liouville domain `W`, the points where the Liouville graph function of `f` equals `1` are exactly
 the points `ψ_{log f(y)}(y)` of the Liouville graph of `f` over the boundary of `W`. -/
@@ -266,8 +304,7 @@ theorem setOf_liouvilleGraphFunction_eq_one (hf1 : ∀ x ∈ W, 1 < f x) :
   refine Subset.antisymm (fun x (hx : _ = 1) ↦ ?_) ?_
   · -- The point lies outside `W`, on the trajectory of `y = π(x)` at the time `log r(x)`, and
     -- `r(x) = f(y)`.
-    have hxW : x ∉ W := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW).ne hx
-    have hπ := h.liouvilleRetraction_mem_frontier hZ fun hi ↦ hxW (interior_subset hi)
+    have hπ := h.liouvilleRetraction_mem_frontier_of_liouvilleGraphFunction_eq_one hZ hf1 hx
     have hf₀ := zero_lt_one.trans (hf1 _ (h.isClosed.frontier_subset hπ))
     rw [liouvilleGraphFunction_apply, div_eq_one_iff_eq hf₀.ne'] at hx
     refine ⟨liouvilleRetraction Z W x, hπ, ?_⟩
@@ -286,11 +323,10 @@ theorem frontier_setOf_liouvilleGraphFunction_le (hf : ContinuousOn f W)
     (hf1 : ∀ x ∈ W, 1 < f x) :
     frontier {x | liouvilleGraphFunction Z W f x ≤ 1} = liouvilleGraph Z id f '' frontier W := by
   rw [← h.setOf_liouvilleGraphFunction_eq_one hZ hf1]
-  refine (frontier_le_subset_eq (h.continuous_liouvilleGraphFunction hZ hf
-    fun x hx ↦ (zero_lt_one.trans (hf1 x hx)).ne') continuous_const).antisymm
-    fun x (hx : _ = 1) ↦ ?_
+  refine (frontier_le_subset_eq (h.continuous_liouvilleGraphFunction_of_one_lt hZ hf hf1)
+    continuous_const).antisymm fun x (hx : _ = 1) ↦ ?_
   -- Flowing `x` forward for a small time `t > 0` gives `F = e^t > 1`.
-  have hxW : x ∉ W := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW).ne hx
+  have hxW := h.notMem_of_liouvilleGraphFunction_eq_one hZ hf1 hx
   have h0 := Real.log_nonneg (one_le_liouvilleRadialCoordinate Z W x)
   obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   have hcont : Continuous fun t ↦ flowOf Z t x := by
@@ -299,8 +335,7 @@ theorem frontier_setOf_liouvilleGraphFunction_le (hf : ContinuousOn f W)
   have htend : Tendsto (fun t ↦ flowOf Z t x) (𝓝[>] 0) (𝓝 x) := by
     simpa [flowOf_zero Z] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   rw [frontier_eq_closure_inter_closure]
-  refine ⟨subset_closure (show x ∈ {x | liouvilleGraphFunction Z W f x ≤ 1} from hx.le),
-    mem_closure_of_tendsto htend ?_⟩
+  refine ⟨subset_closure (mem_ofPred_eq ▸ hx.le), mem_closure_of_tendsto htend ?_⟩
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   rw [mem_compl_iff, mem_ofPred_eq, not_le,
     h.liouvilleGraphFunction_flowOf_of_notMem_interior hZ (fun hi ↦ hxW (interior_subset hi))
@@ -324,8 +359,7 @@ theorem interior_setOf_liouvilleGraphFunction_le (hf : ContinuousOn f W)
 theorem subset_interior_setOf_liouvilleGraphFunction_le (hf : ContinuousOn f W)
     (hf1 : ∀ x ∈ W, 1 < f x) : W ⊆ interior {x | liouvilleGraphFunction Z W f x ≤ 1} :=
   fun _ hx ↦ interior_maximal (fun _ hy ↦ le_of_lt hy)
-    (isOpen_lt (h.continuous_liouvilleGraphFunction hZ hf
-      fun x hx ↦ (zero_lt_one.trans (hf1 x hx)).ne') continuous_const)
+    (isOpen_lt (h.continuous_liouvilleGraphFunction_of_one_lt hZ hf hf1) continuous_const)
     (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hx)
 
 /-- **The domain bounded by a Liouville graph is a Liouville domain.** Let `M` be a completion of
@@ -336,17 +370,18 @@ form and primitive. -/
 theorem isLiouvilleDomain_setOf_liouvilleGraphFunction_le (hf : ContinuousOn f W)
     (hfs : ∀ y ∈ frontier W, ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f y) (hf1 : ∀ x ∈ W, 1 < f x) :
     IsLiouvilleDomain ω α {x | liouvilleGraphFunction Z W f x ≤ 1} := by
+  have hf₀ (x : M) (hx : x ∈ W) : 0 < f x := zero_lt_one.trans (hf1 x hx)
   refine ⟨h.isNondegenerate, h.mextDeriv_eq,
-    h.isCompact_setOf_liouvilleGraphFunction_le hZ hf (fun x hx ↦ zero_lt_one.trans (hf1 x hx)) 1,
+    h.isCompact_setOf_liouvilleGraphFunction_le hZ hf hf₀ 1,
     by simp [ModelWithCorners.interior_eq_univ], Z, h.contMDiff_of_interior_eq hZ, hZ,
-    liouvilleGraphFunction Z W f, 1, h.continuous_liouvilleGraphFunction hZ hf
-      fun x hx ↦ (zero_lt_one.trans (hf1 x hx)).ne', rfl, fun x hx ↦ ?_⟩
+    liouvilleGraphFunction Z W f, 1, h.continuous_liouvilleGraphFunction_of_one_lt hZ hf hf1, rfl,
+    fun x hx ↦ ?_⟩
   -- On the level `1`, which lies outside `W`, the graph function is as smooth as `f` is along
   -- the boundary, and `dF(Z) = F = 1`.
-  have hxW : x ∉ W := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW).ne hx
-  have hπ := h.liouvilleRetraction_mem_frontier hZ fun hi ↦ hxW (interior_subset hi)
+  have hxW := h.notMem_of_liouvilleGraphFunction_eq_one hZ hf1 hx
+  have hπ := h.liouvilleRetraction_mem_frontier_of_liouvilleGraphFunction_eq_one hZ hf1 hx
   refine ⟨h.contMDiffAt_liouvilleGraphFunction hZ hxW (hfs _ hπ)
-      (zero_lt_one.trans (hf1 _ (h.isClosed.frontier_subset hπ))).ne', ?_⟩
+      (hf₀ _ (h.isClosed.frontier_subset hπ)).ne', ?_⟩
   rw [h.mvfderiv_liouvilleGraphFunction_apply hZ hxW
     ((hfs _ hπ).mdifferentiableAt (by simp)), hx]
   exact zero_lt_one
@@ -365,10 +400,11 @@ theorem exists_hasContractibleClosedCharacteristic_log_liouvilleGraphFunction
     ∃ t, ω.HasContractibleClosedCharacteristic (flowOf Z t '' U)
       (fun x ↦ Real.log (liouvilleGraphFunction Z W f x)) 0 := by
   -- On the compact set `W`, `log f ≥ ε` for some `ε > 0`, so `log F ≤ -ε` there.
+  have hf₀ (x : M) (hx : x ∈ W) : 0 < f x := zero_lt_one.trans (hf1 x hx)
   obtain ⟨ε, hε, hεf⟩ := h.isCompact.exists_forall_le'
-    (hf.log fun x hx ↦ (zero_lt_one.trans (hf1 x hx)).ne') fun x hx ↦ Real.log_pos (hf1 x hx)
+    (hf.log fun x hx ↦ (hf₀ x hx).ne') fun x hx ↦ Real.log_pos (hf1 x hx)
   have hπW (x : M) := h.liouvilleRetraction_mem hZ x
-  have hfπ (x : M) : 0 < f (liouvilleRetraction Z W x) := zero_lt_one.trans (hf1 _ (hπW x))
+  have hfπ (x : M) : 0 < f (liouvilleRetraction Z W x) := hf₀ _ (hπW x)
   have hFpos (x : M) : 0 < liouvilleGraphFunction Z W f x :=
     div_pos (liouvilleRadialCoordinate_pos Z W x) (hfπ x)
   have hlog (x : M) : Real.log (liouvilleGraphFunction Z W f x) =
