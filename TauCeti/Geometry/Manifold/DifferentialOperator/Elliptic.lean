@@ -312,11 +312,7 @@ theorem IsSectionEllipticAt.restrictSectionDifferentialOperators {y : U}
     IsSectionEllipticAt (U.restrictSectionDifferentialOperators m P) y := by
   intro hy ξ hξ
   have hy' : I.IsInteriorPoint (y : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hy
-  set ι := Manifold.tangentSpaceOpenEquiv (I := I) y
-  have hη : ξ = (ξ.comp (ι.symm : TangentSpace I (y : M) →L[ℝ] TangentSpace I y)).comp
-      ι.toContinuousLinearMap := by
-    ext v
-    simp
+  have hη := (Manifold.comp_tangentSpaceOpenEquiv_symm_comp (I := I) y ξ).symm
   rw [hη, sectionPrincipalSymbol_restrictSectionDifferentialOperators hy']
   refine hP.sectionPrincipalSymbol_bijective hy' fun h ↦ hξ ?_
   rw [hη, h, ContinuousLinearMap.zero_comp]

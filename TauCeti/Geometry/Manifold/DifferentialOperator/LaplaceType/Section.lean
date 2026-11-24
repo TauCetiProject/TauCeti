@@ -160,16 +160,9 @@ theorem IsSectionLaplaceType.restrictSectionDifferentialOperators (hP : IsSectio
   have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
   -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
   -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
-  have hξ : ξ = (ξ.comp ((Manifold.tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
-      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
-      (Manifold.tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_coe, ← Manifold.coe_tangentSpaceOpenLinearIsometryEquiv,
-      LinearIsometryEquiv.symm_apply_apply]
-  conv_lhs => rw [hξ]
+  conv_lhs => rw [← Manifold.comp_tangentSpaceOpenEquiv_symm_comp x ξ]
   rw [sectionPrincipalSymbol_restrictSectionDifferentialOperators hx',
-    hP.sectionPrincipalSymbol_eq hx', ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+    hP.sectionPrincipalSymbol_eq hx', Manifold.opNorm_comp_tangentSpaceOpenEquiv_symm]
   -- The identity of the fibre of `V` over `x` is that of the fibre of `V|_U`.
   rfl
 
