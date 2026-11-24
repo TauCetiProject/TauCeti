@@ -57,7 +57,8 @@ becomes a series of cotangents,
 Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`;
 this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²` and `℘'(c z)` by `c⁻³`, and
 every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane. For `c Λ ⊆ Λ'`
-the index `[Λ' : c Λ]` is the determinant of `c` in the two lattice bases, so it is finite.
+the index `[Λ' : c Λ]` is the absolute value of the determinant of `c` in the two lattice bases,
+so it is finite.
 
 ## Main definitions
 
