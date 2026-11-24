@@ -45,7 +45,10 @@ over arbitrary `X`-schemes are not treated here.
   part over the affine open `U`.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianCocone E k` and
   `AlgebraicGeometry.Scheme.Modules.isColimitGrassmannianCocone E k`: the relative Grassmannian as
-  the colimit of the `G(k, Γ(E, U))`.
+  the colimit of the `G(k, Γ(E, U))`, with `grassmannian_hom_ext`, `grassmannianDesc` and
+  `grassmannianι_grassmannianDesc` stated directly for `grassmannian E k` and `grassmannianι`.
+* `AlgebraicGeometry.Scheme.Modules.grassmannianOpenCover E k`: the open cover of the relative
+  Grassmannian by the `G(k, Γ(E, U))`.
 
 ## Main results
 
@@ -118,6 +121,25 @@ theorem grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val) :
         fun _ ↦ rfl).grassmannianSchemeHom k :=
   (rfl)
 
+open Module.Grassmannian TensorProduct in
+/-- **`grassmannianChartMap` on points.** For affine opens `V ≤ U` and a `Γ(X, V)`-algebra `A`, the
+point of `G(k, Γ(E, V))` classifying `N` followed by `grassmannianChartMap` is the point of
+`G(k, Γ(E, U))` classifying the image of `N` under `A ⊗[Γ(X, V)] Γ(E, V) ≃ A ⊗[Γ(X, U)] Γ(E, U)`. -/
+theorem toSchemeHom_comp_grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.val)
+    {A : Type u} [CommRing A] [Algebra Γ(X, V.val) A] [Algebra Γ(X, U.val) A] :
+    letI := restrictionAlgebra h
+    letI := restrictionModule E h
+    haveI := isScalarTower_restriction E h
+    ∀ [IsScalarTower Γ(X, U.val) Γ(X, V.val) A] (N : G(k, A ⊗[Γ(X, V.val)] Γ(E, V.val); A)),
+      toSchemeHom N ≫ grassmannianChartMap E k h =
+        toSchemeHom ((E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
+          fun _ ↦ rfl).grassmannianEquiv A N) := by
+  intro _ N
+  let _ := restrictionAlgebra h
+  let _ := restrictionModule E h
+  have _ := isScalarTower_restriction E h
+  rw [grassmannianChartMap_eq, IsBaseChange.toSchemeHom_comp_grassmannianSchemeHom]
+
 /-- `grassmannianChartMap` lies over the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
 @[reassoc (attr := simp)]
 theorem grassmannianChartMap_toSpec {U V : X.affineOpens} (h : V.val ≤ U.val) :
@@ -173,8 +195,8 @@ theorem grassmannianChartMap_comp {U V W : X.affineOpens} (hWV : W.val ≤ V.val
   -- restriction of functions from `U` to `W` factors through `V`
   have hres (r : Γ(X, U.val)) :
       X.presheaf.map (homOfLE hWV).op (X.presheaf.map (homOfLE hVU).op r) =
-        X.presheaf.map (homOfLE (hWV.trans hVU)).op r := by
-    rw [← CommRingCat.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+        X.presheaf.map (homOfLE (hWV.trans hVU)).op r :=
+    DFunLike.congr_fun (Scheme.presheaf_map_homOfLE_comp hWV hVU) r
   have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(X, W.val) := .of_algebraMap_eq fun r ↦ by
     rw [algebraMap_restrictionAlgebra hVU, algebraMap_restrictionAlgebra hWV,
       algebraMap_restrictionAlgebra (hWV.trans hVU), hres]
@@ -237,7 +259,10 @@ private lemma grassmannianChartMap_toSpec_isoSpec_inv {U V : X.affineOpens} (h :
 
 -- The relative gluing datum of the Grassmannian: the Grassmannians `G(k, Γ(E, U))` over the
 -- affine opens `U ≅ Spec Γ(X, U)` of `X`, with the comparison morphisms for `V ≤ U`, which identify
--- `G(k, Γ(E, V))` with the part of `G(k, Γ(E, U))` over `V`.
+-- `G(k, Γ(E, V))` with the part of `G(k, Γ(E, U))` over `V`. In `naturality` and `equifibered`,
+-- the functor `X.directedAffineCover.functorOfLocallyDirected` sends `V ≤ U` to `X.homOfLE`
+-- between the affine opens and `grassmannianFunctor` sends it to `grassmannianChartMap`, both by
+-- definition, so the stated squares are the required ones.
 private noncomputable def grassmannianGluingData : X.directedAffineCover.RelativeGluingData where
   functor := grassmannianFunctor E k
   natTrans :=
@@ -247,6 +272,24 @@ private noncomputable def grassmannianGluingData : X.directedAffineCover.Relativ
   equifibered V U h :=
     (isPullback_grassmannianChartMap E k (leOfHom h)).paste_vert
       (IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv U.property V.property (leOfHom h))
+
+-- The functor of the gluing datum sends `V ≤ U` to `grassmannianChartMap`, by definition of
+-- `grassmannianFunctor`.
+private lemma grassmannianGluingData_functor_map {U V : X.affineOpens} (h : V.val ≤ U.val) :
+    (grassmannianGluingData E k).functor.map (homOfLE h) = grassmannianChartMap E k h :=
+  rfl
+
+-- The structure morphisms of the gluing datum are `G(k, Γ(E, U)) ⟶ Spec Γ(X, U) ≅ U`, by
+-- definition.
+private lemma grassmannianGluingData_natTrans_app (U : X.affineOpens) :
+    (grassmannianGluingData E k).natTrans.app U =
+      Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.isoSpec.inv :=
+  rfl
+
+-- The directed affine cover of `X` maps the affine open `U` to `X` by its inclusion, by
+-- definition of `Scheme.directedAffineCover`.
+private lemma directedAffineCover_f (U : X.affineOpens) : X.directedAffineCover.f U = U.val.ι :=
+  rfl
 
 /-- The **relative Grassmannian** of a quasi-coherent `𝒪_X`-module `E`: the scheme over `X` glued
 from the Grassmannians `G(k, Γ(E, U))` over the affine opens `U ≅ Spec Γ(X, U)` of `X`. Its part
@@ -271,14 +314,27 @@ structure morphism of `G(k, Γ(E, U))` followed by `Spec Γ(X, U) ≅ U ⟶ X`. 
 theorem grassmannianι_toBase (U : X.affineOpens) :
     grassmannianι E k U ≫ grassmannianToBase E k =
       Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.fromSpec := by
-  exact ((grassmannianGluingData E k).ι_toBase U).trans (Category.assoc _ _ _)
+  have h := (grassmannianGluingData E k).ι_toBase U
+  rw [grassmannianGluingData_natTrans_app, directedAffineCover_f] at h
+  have h' : (Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.isoSpec.inv) ≫
+      U.val.ι = Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.fromSpec :=
+    (Category.assoc _ _ _).trans (congrArg _ (IsAffineOpen.isoSpec_inv_ι U.property))
+  exact h.trans h'
 
 /-- For affine opens `V ≤ U`, the inclusion of the part over `V` factors through the inclusion of
 the part over `U`. -/
 @[reassoc (attr := simp)]
 theorem grassmannianChartMap_grassmannianι {U V : X.affineOpens} (h : V.val ≤ U.val) :
-    grassmannianChartMap E k h ≫ grassmannianι E k U = grassmannianι E k V :=
-  colimit.w (grassmannianGluingData E k).functor (homOfLE h)
+    grassmannianChartMap E k h ≫ grassmannianι E k U = grassmannianι E k V := by
+  rw [← grassmannianGluingData_functor_map, grassmannianι, grassmannianι]
+  exact colimit.w (grassmannianGluingData E k).functor (homOfLE h)
+
+/-- **Extensionality for the relative Grassmannian.** Two morphisms out of the relative
+Grassmannian are equal if they agree on the part `G(k, Γ(E, U))` over every affine open `U`. -/
+@[ext]
+theorem grassmannian_hom_ext {Y : Scheme.{u}} {f g : grassmannian E k ⟶ Y}
+    (h : ∀ U : X.affineOpens, grassmannianι E k U ≫ f = grassmannianι E k U ≫ g) : f = g :=
+  colimit.hom_ext h
 
 /-- The relative Grassmannian as the colimit of the Grassmannians `G(k, Γ(E, U))` over the affine
 opens `U` of `X`: the colimit cocone of `grassmannianFunctor`, with vertex `grassmannian E k`
@@ -291,6 +347,32 @@ noncomputable def grassmannianCocone : Cocone (grassmannianFunctor E k) :=
 determined by, and can be assembled from, compatible morphisms out of the `G(k, Γ(E, U))`. -/
 noncomputable def isColimitGrassmannianCocone : IsColimit (grassmannianCocone E k) :=
   colimit.isColimit (grassmannianGluingData E k).functor
+
+/-- **The universal property of the relative Grassmannian.** Morphisms out of the
+`G(k, Γ(E, U))`, for `U` ranging over the affine opens of `X`, compatible with the comparison
+morphisms `grassmannianChartMap`, glue to a morphism out of the relative Grassmannian
+(`AlgebraicGeometry.Scheme.Modules.grassmannianι_grassmannianDesc`). -/
+noncomputable def grassmannianDesc {Y : Scheme.{u}}
+    (f : ∀ U : X.affineOpens, grassmannianChart E k U ⟶ Y)
+    (hf : ∀ {U V : X.affineOpens} (h : V.val ≤ U.val), grassmannianChartMap E k h ≫ f U = f V) :
+    grassmannian E k ⟶ Y :=
+  (isColimitGrassmannianCocone E k).desc
+    { pt := Y
+      ι :=
+        { app := f
+          -- `grassmannianFunctor` sends `h : V ⟶ U` to `grassmannianChartMap`, by definition
+          naturality := fun _ U h ↦
+            (congrArg (· ≫ f U) (grassmannianGluingData_functor_map E k (leOfHom h))).trans
+              ((hf (leOfHom h)).trans (Category.comp_id _).symm) } }
+
+/-- `grassmannianDesc` restricts to the given morphism on the part over each affine open. -/
+@[reassoc (attr := simp)]
+theorem grassmannianι_grassmannianDesc {Y : Scheme.{u}}
+    (f : ∀ U : X.affineOpens, grassmannianChart E k U ⟶ Y)
+    (hf : ∀ {U V : X.affineOpens} (h : V.val ≤ U.val), grassmannianChartMap E k h ≫ f U = f V)
+    (U : X.affineOpens) : grassmannianι E k U ≫ grassmannianDesc E k f hf = f U :=
+  -- the legs of `grassmannianCocone` are the `grassmannianι`, by definition
+  (isColimitGrassmannianCocone E k).fac _ U
 
 /-- The vertex of `grassmannianCocone` is the relative Grassmannian. -/
 theorem grassmannianCocone_pt : (grassmannianCocone E k).pt = grassmannian E k :=
@@ -311,8 +393,9 @@ the relative Grassmannian over `U` is `G(k, Γ(E, U))`: the square formed by the
 `U ≅ Spec Γ(X, U)` and the structure morphisms is a pullback square. -/
 theorem isPullback_grassmannianι (U : X.affineOpens) :
     IsPullback (Module.Grassmannian.toSpec Γ(X, U.val) Γ(E, U.val) k ≫ U.property.isoSpec.inv)
-      (grassmannianι E k U) U.val.ι (grassmannianToBase E k) :=
-  (grassmannianGluingData E k).isPullback_natTrans_ι_toBase U
+      (grassmannianι E k U) U.val.ι (grassmannianToBase E k) := by
+  rw [← grassmannianGluingData_natTrans_app, ← directedAffineCover_f]
+  exact (grassmannianGluingData E k).isPullback_natTrans_ι_toBase U
 
 /-- The inclusion `grassmannianι E k U` of the part of the relative Grassmannian over an affine
 open `U` is an open immersion, as the base change of the open immersion `U ⟶ X`. -/
@@ -329,5 +412,29 @@ theorem isPullback_grassmannianι_fromSpec (U : X.affineOpens) :
     (by simp) (by simp)
     (by rw [Iso.refl_hom, Category.comp_id]; exact (IsAffineOpen.isoSpec_hom_fromSpec _).symm)
     (by simp)
+
+/-- Every point of the relative Grassmannian lies in the part over some affine open. -/
+theorem exists_grassmannianι_eq (x : grassmannian E k) :
+    ∃ (U : X.affineOpens) (y : grassmannianChart E k U), grassmannianι E k U y = x :=
+  (grassmannianGluingData E k).cover.exists_eq x
+
+/-- The open cover of the relative Grassmannian by its parts `G(k, Γ(E, U))` over the affine opens
+`U` of `X`, with maps `grassmannianι`. -/
+@[expose]
+noncomputable def grassmannianOpenCover : (grassmannian E k).OpenCover :=
+  .mkOfCovers X.affineOpens (grassmannianChart E k) (grassmannianι E k)
+    (exists_grassmannianι_eq E k)
+
+/-- The parts of `grassmannianOpenCover` are the `G(k, Γ(E, U))`. -/
+@[simp]
+theorem grassmannianOpenCover_X (U : X.affineOpens) :
+    (grassmannianOpenCover E k).X U = grassmannianChart E k U :=
+  rfl
+
+/-- The maps of `grassmannianOpenCover` are the inclusions `grassmannianι`. -/
+@[simp]
+theorem grassmannianOpenCover_f (U : X.affineOpens) :
+    (grassmannianOpenCover E k).f U = grassmannianι E k U :=
+  rfl
 
 end AlgebraicGeometry.Scheme.Modules

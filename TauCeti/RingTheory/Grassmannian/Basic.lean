@@ -402,7 +402,10 @@ theorem baseChangeEquiv_eq_grassmannianEquiv (N : G(k, A ⊗[R'] (R' ⊗[R] M); 
   refine LinearMap.ext fun x ↦ ?_
   induction x using (TensorProduct.isBaseChange R M R').tensorProduct_induction A with
   | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a m => simpa using ((TensorProduct.isBaseChange R M R').cancelBaseChange_tmul A a m).symm
+  | tmul a m =>
+    rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      (TensorProduct.isBaseChange R M R').cancelBaseChange_tmul A a m]
+    simp
 
 /-- **Naturality of `baseChangeEquiv`.** Base change of points along an `R'`-algebra map
 `f : A → B` corresponds to base change along `f` as an `R`-algebra map. -/
