@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 public import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import TauCeti.Analysis.Convex.SecantEstimate
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # Separation bounds for embedded smooth simplices
@@ -54,13 +54,13 @@ theorem exists_antilipschitzWith
     (Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights (R := ℝ) σ).continuous
   have hFinj : InjOn F S := by
     intro u hu v hv huv
-    have hScoords : S = range (fun x : StandardSimplex σ => fun a : σ => x.1 a) :=
+    have hScoords : S = range (fun x : StandardSimplex σ => fun a : σ => x.val a) :=
       (Finset.range_standardSimplex_coordinates σ).symm
     rw [hScoords] at hu hv
     obtain ⟨x, rfl⟩ := hu
     obtain ⟨y, rfl⟩ := hv
     rw [hFg, hFg] at huv
-    exact congrArg (fun x : StandardSimplex σ => fun a : σ => x.1 a) (hg huv)
+    exact congrArg (fun x : StandardSimplex σ => fun a : σ => x.val a) (hg huv)
   obtain ⟨c, hc, hbound⟩ := hS.exists_pos_mul_sum_abs_le_norm hFc hinj
   have hbound' : ∀ x ∈ S, ∀ y ∈ S, ∀ z ∈ S, c * ‖y - z‖ ≤ ‖F' x (y - z)‖ := by
     intro x hx y hy z hz

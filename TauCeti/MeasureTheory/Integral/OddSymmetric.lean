@@ -10,23 +10,30 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 
 /-!
-# Integrals of odd functions over symmetric domains
+# Integrals of odd and even functions over symmetric domains
 
 An odd integrand into a real normed space integrates to zero over an interval `[-R, R]`
 symmetric about the origin, and more generally against any measure invariant under negation.
-In particular a law invariant under negation has mean zero.
+In particular a law invariant under negation has mean zero. An even integrand integrates over
+`[-R, R]` to twice its integral from `0` to `R`.
 
-No integrability hypothesis is needed. The substitution `t ↦ -t` carries `[-R, R]` to itself, so
-`intervalIntegral.integral_comp_neg` identifies the integral with the integral of `t ↦ g (-t)`;
-oddness turns that into the negative of the original, and in a real vector space an element equal
-to its own negative is zero. In particular the statement is also true (vacuously, both sides being
-`0`) when `g` fails to be integrable.
+No integrability hypothesis is needed. The substitution `t ↦ -t` is used in two ways
+(`intervalIntegral.integral_comp_neg`). On `[-R, R]`, which it carries to itself, it identifies the
+integral of `g` with that of `t ↦ g (-t)`; for odd `g` this is the negative of the original
+integral, and in a real vector space an element equal to its own negative is zero. On `0..R` it
+carries the interval to `(-R)..0`, so for even `g` the integrals over `(-R)..0` and `0..R` agree:
+this is the reflection `∫ t in 0..-R, g t = -∫ t in 0..R, g t`, and splitting `[-R, R]` at `0`
+gives the doubling formula. When `g` fails to be integrable, both sides of each statement are `0`.
 
 ## Main results
 
 * `intervalIntegral.integral_eq_zero_of_odd` — `∫ t in -R..R, g t = 0` for odd `g`.
-* `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for odd `g` and a measure `μ`
-  invariant under negation.
+* `intervalIntegral.integral_eq_two_smul_of_even` — `∫ t in -R..R, g t = 2 • ∫ t in 0..R, g t` for
+  even `g`.
+* `intervalIntegral.integral_zero_neg_of_even` — `∫ t in 0..-R, g t = -∫ t in 0..R, g t` for even
+  `g`.
+* `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for almost-everywhere odd `g`
+  and a measure `μ` invariant under negation.
 -/
 
 public section
@@ -51,19 +58,49 @@ theorem integral_eq_zero_of_odd {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     abel
   simpa using htwo
 
+/-- The integral from `0` to `-R` of an even integrand is the negative of its integral from `0`
+to `R`. No integrability hypothesis is needed. -/
+theorem integral_zero_neg_of_even {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g : ℝ → E} (heven : Function.Even g) (R : ℝ) :
+    ∫ t in (0 : ℝ)..-R, g t = -∫ t in (0 : ℝ)..R, g t := by
+  have h := intervalIntegral.integral_comp_neg (a := 0) (b := R) g
+  simp only [heven _, neg_zero] at h
+  rw [h, intervalIntegral.integral_symm]
+
+open MeasureTheory Set in
+/-- **An even integrand integrates over `[-R, R]` to twice its integral from `0` to `R`.** Here
+`R : ℝ` is arbitrary, and no integrability hypothesis is needed: since `uIcc 0 R ⊆ uIcc (-R) R`,
+if `g` is not interval integrable from `0` to `R` then it is not interval integrable from `-R` to
+`R`, and both sides are `0`. -/
+theorem integral_eq_two_smul_of_even {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g : ℝ → E} (heven : Function.Even g) (R : ℝ) :
+    ∫ t in (-R)..R, g t = (2 : ℝ) • ∫ t in (0 : ℝ)..R, g t := by
+  by_cases hg : IntervalIntegrable g volume 0 R
+  · have h1 : IntervalIntegrable g volume (-R) 0 := by
+      have := (hg.comp_sub_left 0).symm
+      simpa [heven _] using this
+    rw [← intervalIntegral.integral_add_adjacent_intervals h1 hg,
+      intervalIntegral.integral_symm 0 (-R), integral_zero_neg_of_even heven, neg_neg, two_smul]
+  · rw [intervalIntegral.integral_undef hg, smul_zero]
+    refine intervalIntegral.integral_undef fun h ↦ hg (h.mono_set (uIcc_subset_uIcc
+      (mem_uIcc.2 ?_) right_mem_uIcc))
+    rcases le_total 0 R with hR | hR
+    · exact Or.inl ⟨by linarith, hR⟩
+    · exact Or.inr ⟨hR, by linarith⟩
+
 end intervalIntegral
 
 namespace MeasureTheory
 
-/-- **An odd integrand integrates to zero against a measure invariant under negation.** No
-integrability hypothesis is needed: the substitution `x ↦ -x` preserves the measure, so the
-integral equals its own negative. -/
-theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableNeg G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] {g : G → E}
-    (hodd : Function.Odd g) : ∫ x, g x ∂μ = 0 := by
-  have hfun : (fun x ↦ g (-x)) = fun x ↦ -g x := funext hodd
-  have h := integral_neg_eq_self g μ
-  rw [hfun, integral_neg] at h
+/-- **An almost-everywhere odd integrand integrates to zero against a measure invariant under
+negation.** No integrability hypothesis is needed: the substitution `x ↦ -x` preserves the
+measure, so the integral equals its own negative. Pointwise oddness gives the hypothesis via
+`Filter.Eventually.of_forall`. -/
+theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
+    [MeasurableNeg G] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant]
+    {g : G → E} (hodd : ∀ᵐ x ∂μ, g (-x) = -g x) : ∫ x, g x ∂μ = 0 := by
+  have h := (Measure.measurePreserving_neg μ).integral_comp measurableEmbedding_neg g
+  rw [integral_congr_ae hodd, integral_neg] at h
   rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
   exact (smul_eq_zero.1 h).resolve_left two_ne_zero
 

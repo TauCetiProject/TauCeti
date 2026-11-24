@@ -43,32 +43,21 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*} {K : AbstractSimplicialComplex ι}
   {P X : Type*} [TopologicalSpace P] [TopologicalSpace X]
 
-/-- The closed simplices present the weak realization as a quotient of their disjoint union. -/
-theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
-    IsQuotientMap (fun p : Σ σ : Face K, StandardSimplex σ.1 => faceInclusion K p.1 p.2) := by
-  apply isQuotientMap_iff_isClosed.mpr
-  refine ⟨?_, fun s => ?_⟩
-  · intro x
-    exact ⟨⟨carrier K x, ⟨x.1, mem_convexHull_carrier K x⟩⟩,
-      Subtype.ext (faceInclusion_val _ _ _)⟩
-  · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
-    rfl
-
 /-- Joint continuity with a locally compact parameter can be checked on closed simplex
 cylinders. Neither the realization nor the vertex type needs to be locally compact or finite. -/
 theorem continuous_prod_iff_faceInclusion [LocallyCompactSpace P]
     {f : P × Realization K → X} :
     Continuous f ↔ ∀ σ : Face K,
-      Continuous (fun p : P × StandardSimplex σ.1 => f (p.1, faceInclusion K σ p.2)) := by
+      Continuous (fun p : P × StandardSimplex σ.val => f (p.1, faceInclusion K σ p.2)) := by
   constructor
   · intro hf σ
     exact hf.comp (continuous_id.prodMap (continuous_faceInclusion K σ))
   · intro hf
     apply (isQuotientMap_sigma_faceInclusion K).continuous_lift_prod_right
     -- Swap the factors and distribute the simplex sum to apply the sum continuity criterion.
-    let e := Homeomorph.sigmaProdDistrib (X := fun σ : Face K => StandardSimplex σ.1)
+    let e := Homeomorph.sigmaProdDistrib (X := fun σ : Face K => StandardSimplex σ.val)
       (Y := P)
-    have hc : Continuous (fun p : Σ σ : Face K, StandardSimplex σ.1 × P =>
+    have hc : Continuous (fun p : Σ σ : Face K, StandardSimplex σ.val × P =>
         f (p.2.2, faceInclusion K p.1 p.2.1)) :=
       continuous_sigma fun σ => (hf σ).comp continuous_swap
     exact hc.comp (e.continuous.comp continuous_swap)
@@ -77,29 +66,30 @@ theorem continuous_prod_iff_faceInclusion [LocallyCompactSpace P]
 when the precomplex has no faces or omits ambient vertices. -/
 theorem isQuotientMap_sigma_subtype_faceInclusion {L : PreAbstractSimplicialComplex ι}
     (hL : L ≤ K.toPreAbstractSimplicialComplex) :
-    IsQuotientMap (fun p : Σ σ : L.faces, StandardSimplex σ.1 =>
-      (⟨faceInclusion K ⟨p.1.1, hL p.1.2⟩ p.2,
-        support_faceInclusion_mem hL p.1.2 p.2⟩ : {x : Realization K // x.1.support ∈ L})) := by
+    IsQuotientMap (fun p : Σ σ : L.faces, StandardSimplex σ.val =>
+      (⟨faceInclusion K ⟨p.1.val, hL p.1.property⟩ p.2,
+        support_faceInclusion_mem hL p.1.property p.2⟩ : {x : Realization K // x.val.support ∈ L}))
+            := by
   apply isQuotientMap_iff_isClosed.mpr
   refine ⟨?_, fun s => ?_⟩
   · intro x
-    exact ⟨⟨⟨x.1.1.support, x.2⟩, ⟨x.1.1, by
-      simpa only [carrier_val] using mem_convexHull_carrier K x.1⟩⟩,
-      Subtype.ext (Subtype.ext (faceInclusion_val _ _ _))⟩
+    exact ⟨⟨⟨x.val.val.support, x.property⟩, ⟨x.val.val,
+      Realization.mem_convexHull_of_support_subset K x.val subset_rfl⟩⟩,
+      Subtype.ext (faceInclusion_mk_val _ _ _ _)⟩
   · constructor
     · intro hs
       apply isClosed_sigma_iff.mpr
       intro σ
-      have hcont : Continuous (fun x : StandardSimplex σ.1 =>
-          (⟨faceInclusion K ⟨σ.1, hL σ.2⟩ x, support_faceInclusion_mem hL σ.2 x⟩ :
-            {x : Realization K // x.1.support ∈ L})) :=
-        (continuous_faceInclusion K ⟨σ.1, hL σ.2⟩).subtype_mk _
+      have hcont : Continuous (fun x : StandardSimplex σ.val =>
+          (⟨faceInclusion K ⟨σ.val, hL σ.property⟩ x, support_faceInclusion_mem hL σ.property x⟩ :
+            {x : Realization K // x.val.support ∈ L})) :=
+        (continuous_faceInclusion K ⟨σ.val, hL σ.property⟩).subtype_mk _
       exact hs.preimage hcont
     · intro hs
       rw [(isClosed_setOf_support_mem hL).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed]
       apply isClosed_of_faceInclusion hL
       · rintro x ⟨y, _, rfl⟩
-        exact y.2
+        exact y.property
       · intro σ hσ
         convert (isClosed_sigma_iff.mp hs) ⟨σ, hσ⟩ using 1
         ext x
@@ -116,7 +106,7 @@ theorem isQuotientMap_sigma_subtype_faceInclusion {L : PreAbstractSimplicialComp
 with a locally compact parameter space and the ambient weak subspace topology. -/
 theorem continuous_prod_subtype_iff_faceInclusion [LocallyCompactSpace P]
     {L : PreAbstractSimplicialComplex ι} (hL : L ≤ K.toPreAbstractSimplicialComplex)
-    {f : P × {x : Realization K // x.1.support ∈ L} → X} :
+    {f : P × {x : Realization K // x.val.support ∈ L} → X} :
     Continuous f ↔ ∀ (σ : Finset ι) (hσ : σ ∈ L),
       Continuous (fun p : P × StandardSimplex σ =>
         f (p.1, ⟨faceInclusion K ⟨σ, hL hσ⟩ p.2,
@@ -128,12 +118,12 @@ theorem continuous_prod_subtype_iff_faceInclusion [LocallyCompactSpace P]
         (support_faceInclusion_mem hL hσ)))
   · intro hf
     apply (isQuotientMap_sigma_subtype_faceInclusion hL).continuous_lift_prod_right
-    let e := Homeomorph.sigmaProdDistrib (X := fun σ : L.faces => StandardSimplex σ.1)
+    let e := Homeomorph.sigmaProdDistrib (X := fun σ : L.faces => StandardSimplex σ.val)
       (Y := P)
-    have hc : Continuous (fun p : Σ σ : L.faces, StandardSimplex σ.1 × P =>
-        f (p.2.2, ⟨faceInclusion K ⟨p.1.1, hL p.1.2⟩ p.2.1,
-          support_faceInclusion_mem hL p.1.2 p.2.1⟩)) :=
-      continuous_sigma fun σ => (hf σ.1 σ.2).comp continuous_swap
+    have hc : Continuous (fun p : Σ σ : L.faces, StandardSimplex σ.val × P =>
+        f (p.2.2, ⟨faceInclusion K ⟨p.1.val, hL p.1.property⟩ p.2.1,
+          support_faceInclusion_mem hL p.1.property p.2.1⟩)) :=
+      continuous_sigma fun σ => (hf σ.val σ.property).comp continuous_swap
     exact hc.comp (e.continuous.comp continuous_swap)
 
 /-- Joint continuity on an open subset of a weak realization, with a locally compact parameter,
@@ -143,7 +133,7 @@ theorem continuous_prod_subtype_iff_faceInclusion_of_isOpen [LocallyCompactSpace
     {U : Set (Realization K)} (hU : IsOpen U) {f : P × U → X} :
     Continuous f ↔ ∀ σ : Face K,
       Continuous (fun p : P × (faceInclusion K σ ⁻¹' U) =>
-        f (p.1, ⟨faceInclusion K σ p.2, p.2.2⟩)) := by
+        f (p.1, ⟨faceInclusion K σ p.2, p.2.property⟩)) := by
   constructor
   · intro hf σ
     exact hf.comp (continuous_id.prodMap (continuous_faceInclusion K σ).restrictPreimage)
@@ -155,7 +145,7 @@ theorem continuous_prod_subtype_iff_faceInclusion_of_isOpen [LocallyCompactSpace
     intro σ
     -- On each cylinder, the trace of the image is the image of an open subset of an open piece.
     have he : IsOpenEmbedding
-        (Prod.map id Subtype.val : P × (faceInclusion K σ ⁻¹' U) → P × StandardSimplex σ.1) :=
+        (Prod.map id Subtype.val : P × (faceInclusion K σ ⁻¹' U) → P × StandardSimplex σ.val) :=
       IsOpenEmbedding.id.prodMap
         (hU.preimage (continuous_faceInclusion K σ)).isOpenEmbedding_subtypeVal
     convert isOpen_iff_continuous_mem.mp (he.isOpenMap _ ((hf σ).isOpen_preimage V hV)) using 1
@@ -165,24 +155,24 @@ theorem continuous_prod_subtype_iff_faceInclusion_of_isOpen [LocallyCompactSpace
     · rintro ⟨q, y, hy, rfl, hyx⟩
       have hx : x ∈ faceInclusion K σ ⁻¹' U := by
         rw [mem_preimage, ← hyx]
-        exact y.2
+        exact y.property
       have hxy : (⟨faceInclusion K σ x, hx⟩ : U) = y := Subtype.ext hyx.symm
       exact ⟨q, ⟨x, hx⟩, by rwa [hxy], rfl, rfl⟩
     · rintro ⟨q, y, hy, rfl, rfl⟩
-      exact ⟨q, ⟨faceInclusion K σ y, y.2⟩, hy, rfl, rfl⟩
+      exact ⟨q, ⟨faceInclusion K σ y, y.property⟩, hy, rfl, rfl⟩
 
 variable (K) {f₀ f₁ : C(Realization K, X)}
   (H : ∀ σ : Face K,
     (f₀.comp ⟨faceInclusion K σ, continuous_faceInclusion K σ⟩).Homotopy
       (f₁.comp ⟨faceInclusion K σ, continuous_faceInclusion K σ⟩))
-  (hH : ∀ (σ τ : Face K) (x : StandardSimplex σ.1) (y : StandardSimplex τ.1),
+  (hH : ∀ (σ τ : Face K) (x : StandardSimplex σ.val) (y : StandardSimplex τ.val),
     faceInclusion K σ x = faceInclusion K τ y →
       ∀ t : unitInterval, H σ (t, x) = H τ (t, y))
 
 /-- Glue homotopies on all closed simplices, provided they agree wherever their face maps
 have the same image. The endpoint maps are the given global continuous maps. -/
 def homotopyOfFaces : f₀.Homotopy f₁ where
-  toFun p := H (carrier K p.2) (p.1, ⟨p.2.1, mem_convexHull_carrier K p.2⟩)
+  toFun p := H (carrier K p.2) (p.1, ⟨p.2.val, mem_convexHull_carrier K p.2⟩)
   continuous_toFun := by
     apply continuous_prod_iff_faceInclusion.mpr
     intro σ
@@ -192,15 +182,15 @@ def homotopyOfFaces : f₀.Homotopy f₁ where
         (Subtype.ext (by simp only [faceInclusion_val])) p.1
   map_zero_left x := by
     simp only [ContinuousMap.Homotopy.apply_zero, ContinuousMap.comp_apply]
-    exact congrArg f₀ (Subtype.ext (faceInclusion_val _ _ _))
+    exact congrArg f₀ (faceInclusion_mk_val _ _ _ _)
   map_one_left x := by
     simp only [ContinuousMap.Homotopy.apply_one, ContinuousMap.comp_apply]
-    exact congrArg f₁ (Subtype.ext (faceInclusion_val _ _ _))
+    exact congrArg f₁ (faceInclusion_mk_val _ _ _ _)
 
 /-- The glued homotopy agrees with the specified homotopy on every closed simplex. -/
 @[simp]
 theorem homotopyOfFaces_apply_faceInclusion
-    (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.1) :
+    (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.val) :
     homotopyOfFaces K H hH (t, faceInclusion K σ x) = H σ (t, x) := by
   exact hH (carrier K (faceInclusion K σ x)) σ
     ⟨_, mem_convexHull_carrier K _⟩ x
@@ -208,16 +198,15 @@ theorem homotopyOfFaces_apply_faceInclusion
 
 /-- A homotopy with the given restrictions on all closed simplices is the glued homotopy. -/
 theorem homotopyOfFaces_unique (G : f₀.Homotopy f₁)
-    (hG : ∀ (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.1),
+    (hG : ∀ (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.val),
       G (t, faceInclusion K σ x) = H σ (t, x)) : G = homotopyOfFaces K H hH := by
   ext ⟨t, x⟩
-  have hx : faceInclusion K (carrier K x) ⟨x.1, mem_convexHull_carrier K x⟩ = x :=
-    Subtype.ext (faceInclusion_val _ _ _)
+  have hx := faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
   rw [← hx, homotopyOfFaces_apply_faceInclusion]
   exact hG _ _ _
 
 variable {S : Set (Realization K)}
-  (hfix : ∀ (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.1),
+  (hfix : ∀ (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.val),
     faceInclusion K σ x ∈ S → H σ (t, x) = f₀ (faceInclusion K σ x))
 
 /-- Glue simplex homotopies which fix the traces of `S` to a homotopy relative to `S`.
@@ -226,8 +215,7 @@ def homotopyRelOfFaces : f₀.HomotopyRel f₁ S where
   toHomotopy := homotopyOfFaces K H hH
   prop' t x hx := by
     have hfixed : homotopyOfFaces K H hH (t, x) = f₀ x := by
-      have he : faceInclusion K (carrier K x) ⟨x.1, mem_convexHull_carrier K x⟩ = x :=
-        Subtype.ext (faceInclusion_val _ _ _)
+      have he := faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
       rw [← he, homotopyOfFaces_apply_faceInclusion]
       exact hfix _ _ _ (he.symm ▸ hx)
     exact hfixed
@@ -235,7 +223,7 @@ def homotopyRelOfFaces : f₀.HomotopyRel f₁ S where
 /-- The relative glued homotopy agrees with the specified homotopy on each closed simplex. -/
 @[simp]
 theorem homotopyRelOfFaces_apply_faceInclusion
-    (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.1) :
+    (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.val) :
     homotopyRelOfFaces K H hH hfix (t, faceInclusion K σ x) = H σ (t, x) :=
   homotopyOfFaces_apply_faceInclusion K H hH σ t x
 

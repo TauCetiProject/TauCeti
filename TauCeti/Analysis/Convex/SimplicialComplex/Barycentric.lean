@@ -68,36 +68,37 @@ theorem exists_subdivision_centroid_mem (K : SimplicialComplex ℝ E)
           intrinsicInterior ℝ (convexHull ℝ (s : Set E))) ∧
       LocallyFinite fun t : L.faces => convexHull ℝ (t : Set E) := by
   classical
-  have hc : ∀ s : K.faces, s.1.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) := by
+  have hc : ∀ s : K.faces, s.val.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E))
+      := by
     intro s
-    have : Nonempty s.1 := (K.nonempty_of_mem_faces s.2).coe_sort
+    have : Nonempty s.val := (K.nonempty_of_mem_faces s.property).coe_sort
     -- the centroid of `s` is that of the affinely independent inclusion `s → E`
     rw [← Finset.centroid_univ, ← Finset.setOfPred_mem, ← Subtype.range_coe_subtype]
-    exact (K.indep s.2).centroid_mem_intrinsicInterior_convexHull
+    exact (K.indep s.property).centroid_mem_intrinsicInterior_convexHull
   -- a point of the frontier of a simplex lies in the open simplex of a proper face
   have hfr : ∀ s : K.faces, intrinsicFrontier ℝ (convexHull ℝ (s : Set E)) ⊆
       ⋃ (t : K.faces) (_ : t ≠ s ∧ convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E)),
         convexHull ℝ (t : Set E) := by
     intro s x hx
-    obtain ⟨t, ht, h⟩ := mem_iUnion₂.1 (intrinsicFrontier_convexHull_subset_iUnion s.2 hx)
+    obtain ⟨t, ht, h⟩ := mem_iUnion₂.1 (intrinsicFrontier_convexHull_subset_iUnion s.property hx)
     obtain ⟨⟨hne, hsub⟩, hxt⟩ := mem_iUnion.1 h
     exact mem_iUnion₂.2 ⟨⟨t, ht⟩, ⟨fun h => hne (congrArg Subtype.val h), hsub⟩, hxt⟩
   have hri : Pairwise fun s t : K.faces =>
       Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E)))
         (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := fun s t hst =>
     Set.disjoint_left.2 fun _ hxs hxt =>
-      hst (Subtype.ext (eq_of_mem_intrinsicInterior s.2 t.2 hxs hxt))
+      hst (Subtype.ext (eq_of_mem_intrinsicInterior s.property t.property hxs hxt))
   obtain ⟨L, hLs, hLP, hLf, hLlf⟩ :=
     exists_subdivision (fun s : K.faces => convexHull ℝ (s : Set E))
-    (fun s => s.1.finite_toSet.isCompact_convexHull ℝ) (fun _ => convex_convexHull ℝ _)
-    (fun s => s.1.centroid ℝ id) hc hK hri hfr
+    (fun s => s.val.finite_toSet.isCompact_convexHull ℝ) (fun _ => convex_convexHull ℝ _)
+    (fun s => s.val.centroid ℝ id) hc hK hri hfr
   refine ⟨L, ?_, fun s hs => hLP ⟨s, hs⟩, fun t ht => ?_, hLlf⟩
   · rw [hLs]
     ext x
     rw [mem_space_iff, mem_iUnion]
-    exact ⟨fun ⟨s, hx⟩ => ⟨s.1, s.2, hx⟩, fun ⟨s, hs, hx⟩ => ⟨⟨s, hs⟩, hx⟩⟩
+    exact ⟨fun ⟨s, hx⟩ => ⟨s.val, s.property, hx⟩, fun ⟨s, hs, hx⟩ => ⟨⟨s, hs⟩, hx⟩⟩
   · obtain ⟨s, hst, hts⟩ := hLf t ht
-    exact ⟨s, s.2, hst, TauCeti.intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty
+    exact ⟨s, s.property, hst, TauCeti.intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty
       (convex_convexHull ℝ _) (convexHull_min hts (convex_convexHull ℝ _))
       ⟨_, subset_convexHull ℝ _ hst, hc s⟩⟩
 

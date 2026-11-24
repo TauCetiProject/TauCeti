@@ -28,6 +28,11 @@ This is the scheme form of `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorPro
 through `TauCeti.FiniteEtaleScheme.spec` and Mathlib's affine pullback comparison. Two finite étale
 schemes split over a common finite Galois extension, one splitting their disjoint union.
 
+A splitting persists under every base change of the field by the general affine pullback lemma
+(`CategoryTheory.IsPullback.exists_split`), since
+`F ⊗[L] (Fin n → L) ≃ Fin n → F`. This theorem applies to any finite index type and any
+commutative base rings, and records compatibility with both pullback projections.
+
 Once a finite étale scheme `S` and an `S`-scheme `E` of constant rank `d` are both
 split over the base field, `E` is `d` copies of `S`
 (`AlgebraicGeometry.Scheme.Hom.exists_split_of_finrank_eq`): the rational points of `E` above

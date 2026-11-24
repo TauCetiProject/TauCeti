@@ -5,25 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 /-!
-# Line-bundle degree under extension of the base field
+# Line-bundle Euler characteristics and degree under extension of the base field
 
-The Euler-characteristic degree of a line bundle is unchanged by extension of the ground field
-when the source is quasi-compact and quasi-separated, for instance separated of finite type over
-the field, and in particular proper. The line bundle after base change is its actual pullback. No
-smoothness, rational point or geometric connectedness is needed, so the result applies to nodal
-and to reducible proper curves.
+The truncated Euler characteristics and the Euler-characteristic degree of a line bundle are
+unchanged by extension of the ground field when the source is quasi-compact and quasi-separated,
+for instance separated of finite type over the field, and in particular proper. The line bundle
+after base change is its actual pullback. No smoothness, rational point or geometric connectedness
+is needed, so the result applies to nodal and to reducible proper curves.
 
-Both coefficient cohomology dimensions and both structure-sheaf dimensions are preserved by
-field extension, by flat base change of cohomology
-(`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). This makes degree,
-and hence the subgroup of degree-zero line-bundle classes, compatible with extension of the base
-field. The trivial extension shows that pullback along an isomorphism of schemes over the field
-preserves degree (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`).
+The truncated Euler characteristic uses `Module.finrank`, so infinite-dimensional cohomology
+contributes zero. The `Module.finrank` values of coefficient and structure-sheaf cohomology in
+every degree are preserved by field extension, by flat base change of cohomology
+(`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). In particular,
+pullback preserves and reflects having Euler-characteristic degree zero under extension of the base
+field. Pullback along an isomorphism of schemes over the field preserves degree on every scheme,
+with no quasi-compactness or quasi-separation hypothesis
+(`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback_of_isIso`).
 
 ## References
 
@@ -45,6 +48,46 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
   (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
     (Spec.map (CommRingCat.ofHom (algebraMap k K))))
 
+namespace LineBundleClass
+
+include H in
+/-- Extension of the ground field preserves every truncated Euler characteristic of a
+line-bundle class on a quasi-compact quasi-separated scheme. The truncated Euler characteristic
+uses `Module.finrank`, so infinite-dimensional cohomology contributes zero. -/
+theorem eulerCharBelow_pullback [CompactSpace X] [QuasiSeparatedSpace X]
+    (a : LineBundleClass X) (n : ℕ) :
+    eulerCharBelow K (pullback g a) n = eulerCharBelow k a n := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [pullback_mk, eulerCharBelow_mk, eulerCharBelow_mk,
+    InvertibleSheaf.pullback_obj_obj, eulerCharBelow_pullback_eq_of_isPullback H]
+
+include H in
+/-- Pullback under a field extension preserves the Euler-characteristic degree of a
+line-bundle class on a quasi-compact quasi-separated scheme, for instance a proper scheme
+over `k`. -/
+theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
+    (a : LineBundleClass X) :
+    eulerDegree K (pullback g a) = eulerDegree k a := by
+  rw [eulerDegree_eq_eulerCharBelow_sub, eulerDegree_eq_eulerCharBelow_sub,
+    ← pullback_one g, eulerCharBelow_pullback H, eulerCharBelow_pullback H]
+
+omit [Y.Over (Spec (.of K))] in
+/-- Pullback along an isomorphism of schemes over `k` preserves the Euler-characteristic degree
+of a line-bundle class. Unlike `eulerDegree_pullback`, this needs no quasi-compactness or
+quasi-separation: along an isomorphism, cohomology is compared directly
+(`AlgebraicGeometry.Scheme.Hom.eulerCharBelow_pullback_of_isIso`). -/
+theorem eulerDegree_pullback_of_isIso [Y.Over (Spec (.of k))] (e : Y ⟶ X) [IsIso e]
+    (he : e ≫ (X ↘ Spec (.of k)) = Y ↘ Spec (.of k)) (a : LineBundleClass X) :
+    eulerDegree k (pullback e a) = eulerDegree k a := by
+  have : e.IsOver (Spec (.of k)) := ⟨he⟩
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [pullback_mk, eulerDegree_mk, eulerDegree_mk, InvertibleSheaf.eulerDegree_def,
+    InvertibleSheaf.eulerDegree_def, InvertibleSheaf.pullback_obj_obj,
+    ← Scheme.Modules.eulerCharBelow_congr k (InvertibleSheaf.pullbackTrivialObjIso e),
+    Scheme.Hom.eulerCharBelow_pullback_of_isIso, Scheme.Hom.eulerCharBelow_pullback_of_isIso]
+
+end LineBundleClass
+
 namespace InvertibleSheaf
 
 include H in
@@ -54,43 +97,10 @@ not be smooth, irreducible or geometrically connected, nor have a rational point
 theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
     (L : InvertibleSheaf X) :
     ((pullback g).obj L).eulerDegree K = L.eulerDegree k := by
-  let e : (Scheme.Modules.pullback g).obj (trivial X).obj ≅ (trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (trivialObjIsoUnit Y).symm
-  rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub, pullback_obj_obj,
-    ← Scheme.Modules.finrank_cohomology_congr K e 0,
-    ← Scheme.Modules.finrank_cohomology_congr K e 1]
-  simp only [finrank_cohomology_pullback_eq_of_isPullback H]
+  simpa only [LineBundleClass.pullback_mk, LineBundleClass.eulerDegree_mk] using
+    LineBundleClass.eulerDegree_pullback H (LineBundleClass.mk L)
 
 end InvertibleSheaf
-
-namespace LineBundleClass
-
-include H in
-/-- Pullback under a field extension preserves the Euler-characteristic degree of a
-line-bundle class on a quasi-compact quasi-separated scheme, for instance a proper scheme
-over `k`. -/
-theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
-    (a : LineBundleClass X) :
-    eulerDegree K (pullback g a) = eulerDegree k a := by
-  obtain ⟨L, rfl⟩ := mk_surjective a
-  rw [pullback_mk, eulerDegree_mk, eulerDegree_mk, InvertibleSheaf.eulerDegree_pullback H]
-
-omit [Y.Over (Spec (.of K))] in
-/-- Pullback along an isomorphism of schemes over `k` preserves the Euler-characteristic degree
-of a line-bundle class on a quasi-compact quasi-separated scheme. This is the case of the
-trivial field extension in `eulerDegree_pullback`. -/
-theorem eulerDegree_pullback_of_isIso [Y.Over (Spec (.of k))] [CompactSpace X]
-    [QuasiSeparatedSpace X] (e : Y ⟶ X) [IsIso e]
-    (he : e ≫ (X ↘ Spec (.of k)) = Y ↘ Spec (.of k)) (a : LineBundleClass X) :
-    eulerDegree k (pullback e a) = eulerDegree k a := by
-  -- `e` is a pullback square along `Spec.map (algebraMap k k) = 𝟙 _`.
-  have hid : Spec.map (CommRingCat.ofHom (algebraMap k k)) = 𝟙 _ := by
-    rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
-  have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap k k))) := hid ▸ inferInstance
-  exact eulerDegree_pullback (.of_horiz_isIso ⟨by rw [hid, Category.comp_id, he]⟩) a
-
-end LineBundleClass
 
 end
 

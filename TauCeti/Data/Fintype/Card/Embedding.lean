@@ -51,6 +51,8 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
 * `Nat.card_embedding_mem_eq_prod_of_injective`: for distinct disjoint cells, the count is the
   product of the cell sizes.
 * `Nat.card_embedding_mem_le_prod`: the count never exceeds the product of the cell sizes.
+* `TauCeti.natCard_embedding_map_univ_eq_factorial`: an `n`-element type maps onto a prescribed
+  `n`-element finset by exactly `n!` embeddings.
 * `Function.Embedding.natCard_embedding_comp_eq_le`: at most `card V ^ (card β - card α)`
   embeddings `f : β ↪ V` satisfy `f ∘ e = x`.
 * `Finset.natCard_embedding_exists_comp_mem_le`: at most
@@ -96,7 +98,7 @@ variable {ι V : Type*} {c : ι → Finset V} {s : Finset (Finset V)}
 
 /-- The value of a family of cellwise embeddings at an index only depends on its cell. -/
 private theorem embeddingMemEquivPi_aux (hs : ∀ i, c i ∈ s)
-    (g : (A : s) → ({i // c i = A.1} ↪ A.1)) (A : s) (i : ι) (hi : c i = A.1) :
+    (g : (A : s) → ({i // c i = A.val} ↪ A.val)) (A : s) (i : ι) (hi : c i = A.val) :
     (g ⟨c i, hs i⟩ ⟨i, rfl⟩ : V) = g A ⟨i, hi⟩ := by
   obtain ⟨A, hA⟩ := A
   obtain rfl : c i = A := hi
@@ -104,13 +106,15 @@ private theorem embeddingMemEquivPi_aux (hs : ∀ i, c i ∈ s)
 
 /-- Gluing a family of cellwise embeddings into disjoint cells gives an injective map. -/
 private theorem embeddingMemEquivPi_injective (hs : ∀ i, c i ∈ s)
-    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.1} ↪ A.1)) :
+    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.val} ↪ A.val))
+        :
     Injective fun i ↦ (g ⟨c i, hs i⟩ ⟨i, rfl⟩ : V) := by
   intro i j hij
   beta_reduce at hij
   -- A common value forces a common cell, inside which `g` is injective.
   have hc : c j = c i :=
-    hdisj.elim_finset (hs j) (hs i) _ (g ⟨c j, hs j⟩ ⟨j, rfl⟩).2 (hij ▸ (g ⟨c i, hs i⟩ ⟨i, rfl⟩).2)
+    hdisj.elim_finset (hs j) (hs i) _ (g ⟨c j, hs j⟩ ⟨j, rfl⟩).property (hij ▸ (g ⟨c i, hs i⟩ ⟨i,
+        rfl⟩).property)
   have h := embeddingMemEquivPi_aux hs g ⟨c i, hs i⟩ j hc
   rw [← hij] at h
   exact congrArg Subtype.val (Subtype.ext_iff.2 h |> (g _).injective)
@@ -120,25 +124,26 @@ variable (c) in
 disjoint family `s`, an embedding `f : ι ↪ V` with `f i ∈ c i` for all `i` is the same as a
 family, indexed by the cells `A ∈ s`, of embeddings of the indices assigned to `A` into `A`. -/
 def embeddingMemEquivPi (hs : ∀ i, c i ∈ s) (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) :
-    {f : ι ↪ V // ∀ i, f i ∈ c i} ≃ ((A : s) → ({i // c i = A.1} ↪ A.1)) where
-  toFun f _ := ⟨fun x ↦ ⟨f.1 x.1, Eq.subst (motive := (f.1 x.1 ∈ ·)) x.2 (f.2 x.1)⟩,
-    fun _ _ h ↦ Subtype.ext (f.1.injective (congrArg Subtype.val h))⟩
+    {f : ι ↪ V // ∀ i, f i ∈ c i} ≃ ((A : s) → ({i // c i = A.val} ↪ A.val)) where
+  toFun f _ := ⟨fun x ↦ ⟨f.val x.val, Eq.subst (motive := (f.val x.val ∈ ·)) x.property
+      (f.property x.val)⟩,
+    fun _ _ h ↦ Subtype.ext (f.val.injective (congrArg Subtype.val h))⟩
   invFun g := ⟨⟨fun i ↦ g ⟨c i, hs i⟩ ⟨i, rfl⟩, embeddingMemEquivPi_injective hs hdisj g⟩,
-    fun i ↦ (g ⟨c i, hs i⟩ ⟨i, rfl⟩).2⟩
+    fun i ↦ (g ⟨c i, hs i⟩ ⟨i, rfl⟩).property⟩
   left_inv _ := rfl
   right_inv g := funext fun A ↦ Embedding.ext fun x ↦
-    Subtype.ext (embeddingMemEquivPi_aux hs g A x.1 x.2)
+    Subtype.ext (embeddingMemEquivPi_aux hs g A x.val x.property)
 
 @[simp]
 theorem embeddingMemEquivPi_apply_apply_coe (hs : ∀ i, c i ∈ s)
     (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (f : {f : ι ↪ V // ∀ i, f i ∈ c i}) (A : s)
-    (x : {i // c i = A.1}) : (embeddingMemEquivPi c hs hdisj f A x : V) = f.1 x.1 :=
+    (x : {i // c i = A.val}) : (embeddingMemEquivPi c hs hdisj f A x : V) = f.val x.val :=
   (rfl)
 
 @[simp]
 theorem embeddingMemEquivPi_symm_apply_coe_apply (hs : ∀ i, c i ∈ s)
-    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.1} ↪ A.1))
-    (i : ι) : ((embeddingMemEquivPi c hs hdisj).symm g).1 i = g ⟨c i, hs i⟩ ⟨i, rfl⟩ :=
+    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.val} ↪ A.val))
+    (i : ι) : ((embeddingMemEquivPi c hs hdisj).symm g).val i = g ⟨c i, hs i⟩ ⟨i, rfl⟩ :=
   (rfl)
 
 end Equiv
@@ -183,10 +188,30 @@ theorem card_embedding_mem_le_prod [Fintype ι] (c : ι → Finset V) :
     Nat.card {f : ι ↪ V // ∀ i, f i ∈ c i} ≤ ∏ i, #(c i) := by
   classical
   rw [← Fintype.card_piFinset, ← Fintype.card_coe, ← Nat.card_eq_fintype_card]
-  exact Nat.card_le_card_of_injective (fun f ↦ ⟨f.1, Fintype.mem_piFinset.2 f.2⟩) fun f g h ↦
+  exact Nat.card_le_card_of_injective (fun f ↦ ⟨f.val, Fintype.mem_piFinset.2 f.property⟩) fun f g h
+      ↦
     Subtype.ext (Embedding.ext (congrFun (congrArg Subtype.val h)))
 
 end Nat
+
+namespace TauCeti
+
+/-- An `n`-element type maps onto a prescribed `n`-element finset by exactly `n!` embeddings. -/
+theorem natCard_embedding_map_univ_eq_factorial {α β : Type*} [Fintype α] {t : Finset β}
+    (ht : #t = Fintype.card α) :
+    Nat.card {f : α ↪ β // univ.map f = t} = (Fintype.card α).factorial := by
+  classical
+  -- An embedding maps the elements of `α` onto `t` exactly when it maps them into `t`.
+  have h (f : α ↪ β) : univ.map f = t ↔ ∀ a, f a ∈ t :=
+    ⟨fun hf a ↦ hf ▸ mem_map_of_mem f (mem_univ a), fun hf ↦ eq_of_subset_of_card_le
+      (fun x hx ↦ by obtain ⟨a, -, rfl⟩ := mem_map.1 hx; exact hf a)
+      (by rw [card_map, card_univ, ht])⟩
+  -- These are the embeddings of `α` into `t`.
+  rw [Nat.card_congr ((Equiv.subtypeEquivRight h).trans (Equiv.codRestrict α (t : Set β))),
+    Nat.card_eq_fintype_card, Fintype.card_embedding_eq]
+  simp [ht, Nat.descFactorial_self]
+
+end TauCeti
 
 namespace Function.Embedding
 
@@ -200,12 +225,12 @@ theorem natCard_embedding_comp_eq_le {α β : Type*} [Fintype α] [Fintype β] [
     Nat.card {f : β ↪ V // ⇑f ∘ e = x} ≤ Fintype.card V ^ (Fintype.card β - Fintype.card α) := by
   classical
   let s : Finset β := univ.map e
-  have hcode : Injective fun (f : {f : β ↪ V // ⇑f ∘ e = x}) (b : ↥sᶜ) ↦ f.1 b := by
+  have hcode : Injective fun (f : {f : β ↪ V // ⇑f ∘ e = x}) (b : ↥sᶜ) ↦ f.val b := by
     intro f g h
     refine Subtype.ext (Embedding.ext fun b ↦ ?_)
     by_cases hb : b ∈ s
     · obtain ⟨a, -, rfl⟩ := mem_map.1 hb
-      exact (congrFun f.2 a).trans (congrFun g.2 a).symm
+      exact (congrFun f.property a).trans (congrFun g.property a).symm
     · exact congrFun h ⟨b, mem_compl.2 hb⟩
   refine (Nat.card_le_card_of_injective _ hcode).trans_eq ?_
   rw [Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_coe, card_compl, card_map,
@@ -228,7 +253,7 @@ theorem natCard_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOr
   classical
   -- Every increasing `m`-tuple is the increasing enumeration of its range, an `m`-subset.
   let U : Finset (β ↪ V) := (univ.powersetCard m).attach.biUnion fun s ↦ T.biUnion fun x ↦
-    {f | ⇑f ∘ s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2 = x}
+    {f | ⇑f ∘ s.val.orderEmbOfFin (mem_powersetCard.1 s.property).2 = x}
   have hU (f : β ↪ V) (hf : ∃ g : Fin m ↪o β, ⇑f ∘ g ∈ T) : f ∈ U := by
     obtain ⟨g, hg⟩ := hf
     have hcard : #(univ.map g.toEmbedding) = m := by simp
@@ -244,7 +269,8 @@ theorem natCard_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOr
         sum_le_sum fun x _ ↦ ?_
       rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
       simpa using
-        (s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2).toEmbedding.natCard_embedding_comp_eq_le x
+        (s.val.orderEmbOfFin
+            (mem_powersetCard.1 s.property).2).toEmbedding.natCard_embedding_comp_eq_le x
     _ = (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
       simp [card_powersetCard, mul_assoc]
 
@@ -253,7 +279,7 @@ coordinate. This is the singleton-tuple case of `natCard_embedding_exists_comp_m
 the subtype form used for ordered injective tuples. -/
 theorem card_filter_injective_exists_mem_le [Fintype V] [DecidableEq V] {n : ℕ}
     (B : Finset V) :
-    #{x : {x : Fin n → V // Injective x} | ∃ i, x.1 i ∈ B} ≤
+    #{x : {x : Fin n → V // Injective x} | ∃ i, x.val i ∈ B} ≤
       n * #B * Fintype.card V ^ (n - 1) := by
   classical
   let T : Finset (Fin 1 → V) := B.image fun v _ ↦ v
@@ -270,7 +296,7 @@ theorem card_filter_injective_exists_mem_le [Fintype V] [DecidableEq V] {n : ℕ
         intro a b hab
         exact (lt_irrefl a (Subsingleton.elim b a ▸ hab)).elim)
       exact ⟨g, mem_image.2 ⟨f i, hi, rfl⟩⟩
-  let e : {x : {x : Fin n → V // Injective x} // ∃ i, x.1 i ∈ B} ≃
+  let e : {x : {x : Fin n → V // Injective x} // ∃ i, x.val i ∈ B} ≃
       {f : Fin n ↪ V // ∃ g : Fin 1 ↪o Fin n, ⇑f ∘ g ∈ T} :=
     (Equiv.subtypeInjectiveEquivEmbedding (Fin n) V).subtypeEquiv fun x ↦
       (hhit ((Equiv.subtypeInjectiveEquivEmbedding (Fin n) V) x)).symm
