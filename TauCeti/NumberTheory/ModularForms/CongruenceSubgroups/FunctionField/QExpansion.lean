@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Fricke
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.QExpansion
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
@@ -19,6 +21,12 @@ field, and the remaining factor `E₄ E₆ / Δ` has rational coefficients.
 
 This supplies arithmetic generators for the complex function field of `X(N)`. The coefficient
 condition is proved for every positive level, including level two.
+
+We also prove the generator formula needed to construct the diagonal action of `diag(1, d)` on
+`F_N`, at the level of Laurent expansions: a coefficient map `ζ_N ↦ ζ_N^d` sends the Laurent
+expansion of the Fricke function indexed by `(a, b)` to that indexed by `(a, d b)`. This is an
+identity of expansions, not yet an action on the field. The coefficient map need not be
+continuous, since the constant coefficient of the division value is a finite Bernoulli sum.
 
 ## References
 
@@ -145,5 +153,50 @@ theorem frickeMeromorphicFunction_mem_modularFunctionField (a : Fin 2 → ZMod N
     frickeMeromorphicFunction a ∈ modularFunctionField N := by
   rw [modularFunctionField_def]
   exact frickeMeromorphicFunction_mem_coeffSubfield (fun _ hζ ↦ Subfield.subset_closure hζ) a
+
+
+/-- **Generator formula for the diagonal action.** Applying a coefficient map `ζ_N ↦ ζ_N^d`
+coefficientwise to the Laurent expansion of a Fricke function gives the expansion with its second
+residue coordinate multiplied by `d`. Here `ζ_N = ZMod.stdAddChar 1`, and the coefficient map is
+an arbitrary complex field embedding with that value. -/
+theorem map_laurentQExpansion_frickeMeromorphicFunction {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
+    (a : Fin 2 → ZMod N) :
+    HahnSeries.mapRingHom σ
+      (laurentQExpansion (cuspDatumInftyGamma N) (frickeMeromorphicFunction a)) =
+      laurentQExpansion (cuspDatumInftyGamma N)
+        (frickeMeromorphicFunction ![a 0, (d : ZMod N) * a 1]) := by
+  -- coefficientwise identities of power series lift to their Laurent series
+  have hlift {c : ℂ} {f g : PowerSeries ℂ} (h : ∀ n, σ (c * f.coeff n) = c * g.coeff n) :
+      HahnSeries.mapRingHom σ (c • (f : LaurentSeries ℂ)) = c • (g : LaurentSeries ℂ) := by
+    ext j
+    simp only [HahnSeries.coeff_mapRingHom, HahnSeries.coeff_smul, PowerSeries.coeff_coe,
+      smul_eq_mul]
+    split_ifs
+    · simp
+    · exact h _
+  have hfix {f : PowerSeries ℂ} (h : ∀ n, σ (f.coeff n) = f.coeff n) :
+      HahnSeries.mapRingHom σ (f : LaurentSeries ℂ) = f := by
+    simpa only [one_smul] using hlift (c := 1) (f := f) (g := f) (by simpa only [one_mul] using h)
+  have hE {k : ℕ} (hk : 3 ≤ k) :
+      HahnSeries.mapRingHom σ (qExpansion N (ModularForm.E hk) : LaurentSeries ℂ) =
+        (qExpansion N (ModularForm.E hk) : LaurentSeries ℂ) :=
+    hfix fun n ↦ (RingHom.mem_eqLocusField.mp (ModularForm.qExpansion_natCast_E_coeff_mem
+      (N := N) (K := σ.eqLocusField (RingHom.id ℂ)) hk n)).trans (RingHom.id_apply _)
+  have hΔ : HahnSeries.mapRingHom σ
+      (qExpansion N _root_.ModularForm.discriminant : LaurentSeries ℂ) =
+        (qExpansion N _root_.ModularForm.discriminant : LaurentSeries ℂ) :=
+    hfix fun n ↦ (RingHom.mem_eqLocus.mp (ModularForm.qExpansion_natCast_discriminant_coeff_mem
+      (N := N) (R := σ.eqLocus (RingHom.id ℂ)) n)).trans (RingHom.id_apply _)
+  have hG := hlift (c := ((2 * π * I : ℂ) ^ 2)⁻¹)
+    (f := qExpansion N (EisensteinSeries.weightedG2MF (Pi.single a (1 : ℂ))))
+    (g := qExpansion N (EisensteinSeries.weightedG2MF
+      (Pi.single ![a 0, (d : ZMod N) * a 1] (1 : ℂ)))) fun n ↦ by
+    simpa only [div_eq_mul_inv, mul_comm] using
+      EisensteinSeries.map_qExpansion_weightedG2MF_single_coeff_div
+        (ZMod.map_stdAddChar_of_map_stdAddChar_one hσ) a n
+  rw [laurentQExpansion_frickeMeromorphicFunction,
+    laurentQExpansion_frickeMeromorphicFunction, map_mul, map_div₀, map_mul,
+    hE, hE, hΔ, hG]
 
 end TauCeti
