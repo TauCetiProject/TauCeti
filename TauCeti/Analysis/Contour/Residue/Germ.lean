@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # Residues on meromorphic germs
@@ -36,7 +37,7 @@ def residue (a : ℂ) : meromorphicGerms ℂ a →ₗ[ℂ] ℂ where
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     obtain ⟨g, hg, rfl⟩ := exists_mk ψ
     rw [← mk_add hf hg, coe_mk, coe_mk, coe_mk]
-    exact Contour.residue_add hf hg
+    exact Contour.residue_add hf.eventually_differentiableAt hg.eventually_differentiableAt
   map_smul' c φ := by
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     rw [← mk_smul c hf, coe_mk, coe_mk]
@@ -94,6 +95,6 @@ theorem residue_eq_zero_iff_of_mem_orderGE_neg_one (φ : meromorphicGerms ℂ a)
       rw [ho] at hpos
       have hj : 0 < 1 + j := by exact_mod_cast hpos
       exact_mod_cast (by omega : 0 ≤ j)
-  · exact Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg
+  · exact Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hf
 
 end TauCeti.meromorphicGerms

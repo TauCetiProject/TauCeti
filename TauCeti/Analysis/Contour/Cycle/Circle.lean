@@ -31,6 +31,8 @@ such as Banach-algebra resolvents.
 * `TauCeti.Contour.Cycle.trace_circleCycle`: its trace is the sphere.
 * `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_one_of_dist_lt`,
   `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist`: its winding numbers.
+* `TauCeti.Contour.Cycle.windingNumber_sum_zsmul_circleCycle`: the winding number of an integer
+  combination of circles of radius `r` about centres more than `r` apart, at one of the centres.
 -/
 
 public section
@@ -96,6 +98,18 @@ theorem windingNumber_circleCycle_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR :
     (hw : R < dist w c) : windingNumber w (circleCycle c R) = 0 := by
   rw [circleCycle, circleCurve, windingNumber_of_raw,
     Contour.windingNumber_circleMap_eq_zero_of_lt_dist hR hw]
+
+/-- The winding number of `∑_{s ∈ T} n s • C(s, r)` about a point `z ∈ T` is `n z` when the points
+of `T` are more than `r` apart: only the circle about `z` winds around it. -/
+theorem windingNumber_sum_zsmul_circleCycle {T : Finset ℂ} {n : ℂ → ℤ} {r : ℝ} (hr : 0 < r)
+    (hsep : ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → r < dist w w') {z : ℂ} (hz : z ∈ T) :
+    windingNumber z (∑ s ∈ T, n s • circleCycle s r) = n z := by
+  rw [map_sum, Finset.sum_eq_single z (fun s hs hsz ↦ by
+      rw [map_zsmul, windingNumber_circleCycle_eq_zero_of_lt_dist hr.le
+        (hsep z hz s hs (Ne.symm hsz)), smul_zero])
+      (fun h ↦ absurd hz h)]
+  rw [map_zsmul, windingNumber_circleCycle_eq_one_of_dist_lt (by simpa using hr)]
+  simp
 
 end Cycle
 

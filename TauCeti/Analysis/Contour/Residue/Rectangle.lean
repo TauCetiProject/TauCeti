@@ -17,9 +17,9 @@ import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 For a closed axis-parallel rectangle `R = Complex.Rectangle z w` with `z` its lower left corner,
 a finite set `P` in its open interior `(z.re, w.re) ×ℂ (z.im, w.im)`, and a function `f : ℂ → ℂ`
-continuous on `R \ P`, complex differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, and
-meromorphic at each point of `P`, the contour integral of `f` along the counterclockwise boundary
-`Complex.rectBoundary z w` is `2πi` times the sum of the residues of `f` at `P`:
+continuous on `R \ P` and complex differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, the
+contour integral of `f` along the counterclockwise boundary `Complex.rectBoundary z w` is `2πi`
+times the sum of the residues of `f` at `P`:
 
 `∫ t in 0..4, γ' t • f (γ t) = 2πi · ∑_{p ∈ P} Res_p f`.
 
@@ -65,17 +65,15 @@ namespace TauCeti.Contour
 
 /-- **The rectangle residue theorem in four-edge form.** Let `σ₁ ≤ σ₂`, `t₁ ≤ t₂`, `P` a finite
 subset of the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`, and `f : ℂ → ℂ` continuous on the closed
-rectangle minus `P`, complex differentiable on the open rectangle minus `P`, and meromorphic at
-each point of `P`. Then Mathlib's counterclockwise four-edge boundary integral equals
-`2πi · ∑ p ∈ P, residue f p`.
+rectangle minus `P` and complex differentiable on the open rectangle minus `P`. Then Mathlib's
+counterclockwise four-edge boundary integral equals `2πi · ∑ p ∈ P, residue f p`.
 
-No open neighbourhood of the closed rectangle is required, and poles in `P` may have arbitrary
-order (or be removable). -/
+No open neighbourhood of the closed rectangle is required, and the points of `P` may be
+singularities of any kind: removable, poles or essential. -/
 theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
-    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
+    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P)) :
     (∫ x : ℝ in σ₁..σ₂, f (x + t₁ * I)) - (∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) +
         I * (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) - I * (∫ y : ℝ in t₁..t₂, f (σ₁ + y * I)) =
       2 * π * I * ∑ p ∈ P, residue f p := by
@@ -89,25 +87,24 @@ theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (h
   simp only [smul_eq_mul] at hcirc
   rw [hcirc, Finset.mul_sum]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
-  refine circleIntegral_eq_residue (mem_ball_self hr) (hmer p hp) fun z hz hzp ↦ ?_
+  refine circleIntegral_eq_residue (mem_ball_self hr) fun z hz hzp ↦ ?_
   have hzUP : z ∈ U \ P := ⟨hP_ball p hp hz, fun hzP ↦
     disjoint_left.1 (hdisj hp hzP hzp.symm) hz (mem_closedBall_self hr.le)⟩
   exact hd.analyticAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds hzUP)
 
 /-- **The classical residue theorem on a rectangle.** Let `z` be the lower left corner of the
 closed rectangle `Rectangle z w`, and let `P` be a finite subset of the open rectangle
-`(z.re, w.re) ×ℂ (z.im, w.im)`. If `f : ℂ → ℂ` is continuous on `Rectangle z w \ P`, complex
-differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, and meromorphic at each point of `P`, then
-the contour integral of `f` along `rectBoundary z w` equals `2πi · ∑ p ∈ P, residue f p`.
+`(z.re, w.re) ×ℂ (z.im, w.im)`. If `f : ℂ → ℂ` is continuous on `Rectangle z w \ P` and complex
+differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, then the contour integral of `f` along
+`rectBoundary z w` equals `2πi · ∑ p ∈ P, residue f p`.
 
-No open neighbourhood of the closed rectangle is required, and poles in `P` may have arbitrary
-order (or be removable). -/
+No open neighbourhood of the closed rectangle is required, and the points of `P` may be
+singularities of any kind: removable, poles or essential. -/
 theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {P : Finset ℂ} {z w : ℂ}
     (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
     (hP : ∀ p ∈ P, p ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im)
     (hc : ContinuousOn f (Rectangle z w \ P))
-    (hd : DifferentiableOn ℂ f (Ioo z.re w.re ×ℂ Ioo z.im w.im \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
+    (hd : DifferentiableOn ℂ f (Ioo z.re w.re ×ℂ Ioo z.im w.im \ P)) :
     ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • f (rectBoundary z w t) =
       2 * π * I * ∑ p ∈ P, residue f p := by
   have hrect : Rectangle z w = Icc z.re w.re ×ℂ Icc z.im w.im := by
@@ -116,7 +113,7 @@ theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {P : Finset ℂ} 
     hc.mono (frontier_rectangle_subset_sdiff fun p hp ↦ hP p (Finset.mem_coe.1 hp))
   rw [integral_rectBoundary hfr]
   simp only [smul_eq_mul]
-  exact rectangle_boundary_integral_eq_residues hre him hP (hrect ▸ hc) hd hmer
+  exact rectangle_boundary_integral_eq_residues hre him hP (hrect ▸ hc) hd
 
 /-- **Finite-height U-shaped contour identity.** Under the hypotheses of
 `rectangle_boundary_integral_eq_residues` (with no integrability hypothesis), the right vertical
@@ -126,13 +123,12 @@ theorem intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue {σ₁ �
     (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
-    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
+    (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P)) :
     (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) =
       (∫ y : ℝ in t₁..t₂, f (σ₁ + y * I)) +
       ((∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) - (∫ x : ℝ in σ₁..σ₂, f (x + t₁ * I))) / I +
       2 * π * ∑ p ∈ P, residue f p := by
-  have hrect := rectangle_boundary_integral_eq_residues hσ ht hP hc hd hmer
+  have hrect := rectangle_boundary_integral_eq_residues hσ ht hP hc hd
   have hI : (I : ℂ) ≠ 0 := I_ne_zero
   apply mul_left_cancel₀ hI
   rw [mul_add, mul_add, mul_div_cancel₀ _ hI]
@@ -148,7 +144,6 @@ theorem integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue {σ₁ σ₂ t�
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
     (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p)
     (hint : Integrable (fun y : ℝ ↦ f (σ₂ + y * I))) :
     ∫ y : ℝ, f (σ₂ + y * I) =
       (∫ y in (Icc t₁ t₂)ᶜ, f (σ₂ + y * I)) +
@@ -157,7 +152,7 @@ theorem integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue {σ₁ σ₂ t�
       2 * π * ∑ p ∈ P, residue f p := by
   rw [← integral_add_compl measurableSet_Icc hint, integral_Icc_eq_integral_Ioc,
     ← intervalIntegral.integral_of_le ht,
-    intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ ht hP hc hd hmer]
+    intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ ht hP hc hd]
   ring
 
 /-- **Symmetric U-shaped contour shift on an infinite vertical line.** Specialization of
@@ -169,7 +164,6 @@ theorem integral_vertical_eq_uShaped_symm_add_two_pi_mul_sum_residue {σ₁ σ�
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo (-T) T) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc (-T) T \ P))
     (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo (-T) T \ P))
-    (hmer : ∀ p ∈ P, MeromorphicAt f p)
     (hint : Integrable (fun y : ℝ ↦ f (σ₂ + y * I))) :
     ∫ y : ℝ, f (σ₂ + y * I) =
       (∫ y in {y : ℝ | T < |y|}, f (σ₂ + y * I)) +
@@ -184,6 +178,6 @@ theorem integral_vertical_eq_uShaped_symm_add_two_pi_mul_sum_residue {σ₁ σ�
     refine intervalIntegral.integral_congr fun x _ ↦ ?_
     simp [sub_eq_add_neg]
   simpa only [hset, hbot] using
-    integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ (by linarith) hP hc hd hmer hint
+    integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ (by linarith) hP hc hd hint
 
 end TauCeti.Contour

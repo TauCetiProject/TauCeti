@@ -319,7 +319,6 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
   have hshift := TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue _ hle P hP
     (fun t ht ↦ (hF ht.1.1 ht.1.2 ht.2).continuousAt.continuousWithinAt)
     (fun t ht ↦ (hF ht.1.1.le ht.1.2.le ht.2).differentiableWithinAt)
-    (fun p _ ↦ meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z p)
     (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₂ hb₂
       fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
     (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₁ hb₁

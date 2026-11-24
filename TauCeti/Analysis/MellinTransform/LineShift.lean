@@ -43,19 +43,20 @@ namespace TauCeti
 
 /-- **DLMF 2.5.6: shifting the line of Mellin inversion.** Let `G` be continuous on the closed
 strip `d ≤ Re z ≤ c` except at a finite set `P` of points of the open strip, complex differentiable
-on the open strip `d < Re z < c` off `P`, meromorphic at each point of `P`, integrable on both
-lines, and with `G(σ + iT) → 0` as `|T| → ∞` uniformly for `σ ∈ [d, c]`. Then for `x > 0`,
+on the open strip `d < Re z < c` off `P`, integrable on both lines, and with `G(σ + iT) → 0` as
+`|T| → ∞` uniformly for `σ ∈ [d, c]`. Then for `x > 0`,
 `mellinInv c G x = ∑_{p ∈ P} Res(x^{-·} G, p) + mellinInv d G x`. -/
-theorem mellinInv_eq_sum_residue_add {G : ℂ → ℂ} {c d x : ℝ} (hdc : d ≤ c) (hx : 0 < x)
+theorem mellinInv_eq_sum_residue_add {G : ℂ → ℂ} {c d x : ℝ} (hdc : d ≤ c) (hx : 0 ≤ x)
     (P : Finset ℂ) (hP : ∀ p ∈ P, d < p.re ∧ p.re < c)
     (hGc : ContinuousOn G ({z : ℂ | d ≤ z.re ∧ z.re ≤ c} \ (P : Set ℂ)))
     (hGd : DifferentiableOn ℂ G ({z : ℂ | d < z.re ∧ z.re < c} \ (P : Set ℂ)))
-    (hm : ∀ p ∈ P, MeromorphicAt G p)
     (hc : Integrable fun y : ℝ => G (c + y * I)) (hd : Integrable fun y : ℝ => G (d + y * I))
     (hdecay : Tendsto (fun q : ℝ × ℝ => G (q.2 + q.1 * I)) (cocompact ℝ ×ˢ 𝓟 (Icc d c))
       (𝓝 0)) :
     mellinInv c G x =
       ∑ p ∈ P, Contour.residue (fun z => (x : ℂ) ^ (-z) * G z) p + mellinInv d G x := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
   set F : ℂ → ℂ := fun z => (x : ℂ) ^ (-z) * G z with hFdef
   have hpow (z : ℂ) : AnalyticAt ℂ (fun z : ℂ => (x : ℂ) ^ (-z)) z :=
     analyticAt_const.cpow analyticAt_id.neg (ofReal_mem_slitPlane.mpr hx)
@@ -65,7 +66,6 @@ theorem mellinInv_eq_sum_residue_add {G : ℂ → ℂ} {c d x : ℝ} (hdc : d �
     (hpow z).continuousAt.continuousWithinAt.mul (hGc z hz)
   have hFd : DifferentiableOn ℂ F ({z : ℂ | d < z.re ∧ z.re < c} \ (P : Set ℂ)) := fun z hz =>
     (hpow z).differentiableAt.differentiableWithinAt.mul (hGd z hz)
-  have hmF : ∀ p ∈ P, MeromorphicAt F p := fun p hp => (hpow p).meromorphicAt.mul (hm p hp)
   have hline {σ : ℝ} (hσ : Integrable fun y : ℝ => G (σ + y * I)) :
       Integrable fun y : ℝ => F (σ + y * I) := by
     simpa [F, smul_eq_mul] using Complex.VerticalIntegrable.integrable_cpow_smul hσ hx
@@ -84,7 +84,7 @@ theorem mellinInv_eq_sum_residue_add {G : ℂ → ℂ} {c d x : ℝ} (hdc : d �
     exact mul_le_mul_of_nonneg_right (hX σ hσ) (norm_nonneg _)
   have hhor := Contour.tendsto_intervalIntegral_horizontal (by rwa [uIcc_of_le hdc])
   have hshift := Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue F hdc P hP hFc hFd
-    hmF (hline hc) (hline hd) (hhor.mono_left atTop_le_cocompact)
+    (hline hc) (hline hd) (hhor.mono_left atTop_le_cocompact)
     (hhor.mono_left atBot_le_cocompact)
   simp only [hFdef] at hshift
   have e : ((1 / (2 * π) : ℝ) : ℂ) * (2 * π) = 1 := by

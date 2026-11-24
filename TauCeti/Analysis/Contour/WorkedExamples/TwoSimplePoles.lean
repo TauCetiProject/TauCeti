@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Curve.Circle.PrincipalPart
 public import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # A circle integral with two simple poles
@@ -31,6 +32,8 @@ public section
 noncomputable section
 
 open Metric
+
+open scoped Topology
 
 namespace TauCeti.Contour
 
@@ -66,7 +69,10 @@ the other principal part vanishes or is designated at a distinct point. -/
 @[simp]
 theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : B = 0 ∨ s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₁ = A := by
-  rw [twoPrincipalParts_eq, ← Pi.add_def, residue_add (by fun_prop) (by fun_prop),
+  rw [twoPrincipalParts_eq, ← Pi.add_def,
+    residue_add
+      (by fun_prop : MeromorphicAt (fun z ↦ A * (z - s₁)⁻¹) s₁).eventually_differentiableAt
+      (by fun_prop : MeromorphicAt (fun z ↦ B * (z - s₂)⁻¹) s₁).eventually_differentiableAt,
     residue_const_mul_sub_inv, residue_eq_zero_of_analyticAt (analyticAt_const_mul_sub_inv h),
     add_zero]
 
@@ -75,7 +81,10 @@ the other principal part vanishes or is designated at a distinct point. -/
 @[simp]
 theorem residue_twoPrincipalParts_right {A B s₁ s₂ : ℂ} (h : A = 0 ∨ s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₂ = B := by
-  rw [twoPrincipalParts_eq, ← Pi.add_def, residue_add (by fun_prop) (by fun_prop),
+  rw [twoPrincipalParts_eq, ← Pi.add_def,
+    residue_add
+      (by fun_prop : MeromorphicAt (fun z ↦ A * (z - s₁)⁻¹) s₂).eventually_differentiableAt
+      (by fun_prop : MeromorphicAt (fun z ↦ B * (z - s₂)⁻¹) s₂).eventually_differentiableAt,
     residue_const_mul_sub_inv,
     residue_eq_zero_of_analyticAt (analyticAt_const_mul_sub_inv (h.imp_right Ne.symm)), zero_add]
 

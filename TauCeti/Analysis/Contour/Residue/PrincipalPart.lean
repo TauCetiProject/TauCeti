@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
 import TauCeti.Analysis.Contour.Residue.Theorem
@@ -97,7 +96,7 @@ theorem coeff_principalPart_succ_eq_circleIntegral {φ : meromorphicGerms ℂ a}
   have han {z : ℂ} (hz : z ∈ Metric.closedBall a ρ) (hza : z ≠ a) :
       AnalyticAt ℂ (fun z ↦ (z - a) ^ k * f z) z :=
     hεF ((Metric.mem_closedBall.1 hz).trans_lt hρε) hza
-  rw [Contour.circleIntegral_eq_residue (Metric.mem_ball_self hρ) hF fun _ ↦ han, ← mul_assoc,
+  rw [Contour.circleIntegral_eq_residue (Metric.mem_ball_self hρ) fun _ ↦ han, ← mul_assoc,
     inv_mul_cancel₀ two_pi_I_ne_zero, one_mul, coeff_principalPart_succ_eq_residue hφ k]
 
 end TauCeti.meromorphicGerms

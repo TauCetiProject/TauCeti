@@ -190,9 +190,7 @@ private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : 
       (fun k hk h ↦ hzS (Finset.mem_union_left _ (Finset.mem_image.mpr
         ⟨k, Finset.mem_range.mpr hk, h.symm⟩)))
       (fun k hk h ↦ hzS (Finset.mem_union_right _ (Finset.mem_image.mpr
-        ⟨k, Finset.mem_range.mpr hk, h.symm⟩))))
-    (fun z _ ↦ (Meromorphic.Gamma z).mul ((Meromorphic.Gamma _).comp_analyticAt
-      (g := fun w : ℂ ↦ w + p) (by fun_prop))) ?_
+        ⟨k, Finset.mem_range.mpr hk, h.symm⟩)))) ?_
     (verticalIntegrable_Gamma_mul_Gamma_add
       (Real.sub_natCast_ne_neg_natCast hδ0 (by linarith) N)
       (fun n ↦ by

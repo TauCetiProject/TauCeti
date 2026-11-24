@@ -232,7 +232,7 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
             norm_pair_le_of_one_half_le_re χ ψ (s := σ + t * I + β) (by simp; linarith) hs1)
   have hshift := TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
     (f := f) (S := {0, 1 - (β : ℂ)}) (σ₀ := 1 / 2 - β) (σ₁ := 2 - β) (by linarith) hx.le
-    hanal (fun s _ ↦ meromorphicAt_Gamma_mul_pair χ ψ β s)
+    hanal
     (fun s hs ↦ by
       rcases Finset.mem_insert.mp hs with rfl | hs'
       · simp; constructor <;> linarith

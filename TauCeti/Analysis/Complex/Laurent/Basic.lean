@@ -65,6 +65,18 @@ theorem circleLaurentCoeff_natCast (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℕ)
     show -(n : ℤ) - 1 = -((n + 1 : ℕ) : ℤ) by omega,
     zpow_neg, zpow_natCast, pow_succ, mul_inv, inv_pow]
 
+/-- On a closed disc on which `g` is complex differentiable, the nonnegative circle Laurent
+coefficients of `g` are its Taylor coefficients at the centre. -/
+theorem _root_.DifferentiableOn.circleLaurentCoeff_natCast_eq_iteratedDeriv [CompleteSpace E]
+    {g : ℂ → E} {c : ℂ} {R : ℝ} (hg : DifferentiableOn ℂ g (closedBall c R)) (hR : 0 < R)
+    (n : ℕ) : circleLaurentCoeff g c R n = (n.factorial : ℂ)⁻¹ • iteratedDeriv n g c := by
+  lift R to NNReal using hR.le
+  rw [circleLaurentCoeff_natCast, iteratedDeriv_eq_iteratedFDeriv,
+    ← (hg.hasFPowerSeriesOnBall (by exact_mod_cast hR)).factorial_smul 1 n,
+    ← Nat.cast_smul_eq_nsmul ℂ, smul_smul,
+    inv_mul_cancel₀ (by exact_mod_cast n.factorial_ne_zero), one_smul]
+  rfl
+
 /-- Coefficient extraction depends only on the values on the integrating circle. -/
 theorem circleLaurentCoeff_congr {f g : ℂ → E} {c : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hfg : EqOn f g (sphere c R)) (n : ℤ) :

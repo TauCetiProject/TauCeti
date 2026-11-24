@@ -5,10 +5,13 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.Contour.Residue.Basic
 import TauCeti.Analysis.Contour.Cauchy.Goursat
+import TauCeti.Analysis.Contour.Residue.Cycle
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
 import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # The classical residue theorem on a circle
@@ -32,8 +35,8 @@ stated up to that normal form.
   meromorphic order to lie in `S`; a direct corollary since residues at non-poles vanish.
 * `TauCeti.Contour.circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg` — a single pole `z₀`
   inside the circle: `∮_{C(c,R)} f = 2πi · residue f z₀`;
-  `TauCeti.Contour.circleIntegral_eq_residue` is the form asking `f` to be holomorphic away
-  from `z₀`.
+  `TauCeti.Contour.circleIntegral_eq_residue` is the form asking only that `f` be holomorphic at
+  the other points of the closed disc, `z₀` being an isolated singularity of any kind.
 
 This is the special case of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3) for a
 round circle.
@@ -205,7 +208,8 @@ private lemma circleIntegral_eq_residueSum_of_sub {c : ℂ} {R : ℝ} (S : Finse
       funext z
       simp
     conv_lhs => rw [← hfun]
-    exact residue_add (hG_mero s (hmem_cb s hs)) (hP_mero s (hmem_cb s hs))
+    exact residue_add (hG_mero s (hmem_cb s hs)).eventually_differentiableAt
+      (hP_mero s (hmem_cb s hs)).eventually_differentiableAt
   rw [hint, hG, hP, hres_add]
   ring
 
@@ -304,7 +308,8 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
         · exact (hF_off z hz hzS).meromorphicOrderAt_nonneg
       rw [circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR.le hF_mero hnonneg,
         Finset.sum_eq_zero fun s hs ↦
-          residue_eq_zero_of_meromorphicOrderAt_nonneg (hnonneg s (hmem_cb s hs))]
+          residue_eq_zero_of_meromorphicOrderAt_nonneg (hF_mero s (hmem_cb s hs))
+            (hnonneg s (hmem_cb s hs))]
       ring
 
 /-- **The classical residue theorem on a circle** (sharp support form). If `f` is meromorphic on the
@@ -371,14 +376,30 @@ theorem circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg {f : ℂ → ℂ}
   by_contra hzz₀
   exact (hord z hz (by simpa using hzz₀)).not_gt hneg
 
-/-- **The residue theorem for a single pole on a circle**, holomorphic form. If `f` is meromorphic
-at a point `z₀` of the open disc of radius `R` about `c` and holomorphic at every other point of
-the closed disc, then `∮_{|z - c| = R} f dz = 2πi · Res_{z₀} f`. -/
+/-- **The residue theorem for a single singularity on a circle**, holomorphic form. If `f` is
+holomorphic at every point of the closed disc of radius `R` about `c` other than a point `z₀` of
+the open disc, then `∮_{|z - c| = R} f dz = 2πi · Res_{z₀} f`. The singularity at `z₀` may be of any
+kind: removable, a pole or essential. -/
 theorem circleIntegral_eq_residue {f : ℂ → ℂ} {c z₀ : ℂ} {R : ℝ} (hz₀ : z₀ ∈ ball c R)
-    (hf : MeromorphicAt f z₀) (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z) :
-    circleIntegral f c R = 2 * π * I * residue f z₀ :=
-  circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg hz₀
-    (fun z hz ↦ if hzz₀ : z = z₀ then hzz₀ ▸ hf else (hfa z hz hzz₀).meromorphicAt)
-    fun z hz hzz₀ ↦ (hfa z hz hzz₀).meromorphicOrderAt_nonneg
+    (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z) :
+    circleIntegral f c R = 2 * π * I * residue f z₀ := by
+  have hR : 0 < R := pos_of_mem_ball hz₀
+  -- Off `z₀`, `f` is holomorphic on the open set of points of the open disc or of analyticity.
+  have hU : IsOpen (ball c R ∪ {z | AnalyticAt ℂ f z}) := isOpen_ball.union (isOpen_analyticAt ℂ f)
+  have hsph : ∀ θ, circleMap c R θ ∈ closedBall c R ∧ circleMap c R θ ≠ z₀ := fun θ ↦
+    ⟨sphere_subset_closedBall (circleMap_mem_sphere c hR.le θ), circleMap_ne_mem_ball hz₀ θ⟩
+  have hres := classicalResidueTheorem_nullHomologous (S := {z₀}) hU
+    (fun z hz ↦ hz.1.elim (fun hzb ↦ (hfa z (ball_subset_closedBall hzb)
+      (by simpa using hz.2)).differentiableAt.differentiableWithinAt)
+        fun hza ↦ hza.differentiableAt.differentiableWithinAt)
+    (absolutelyContinuousOnInterval_circleMap c R 0 (2 * π))
+    (fun θ _ ↦ Or.inr (hfa _ (hsph θ).1 (hsph θ).2)) (periodic_circleMap c R).eq.symm
+    (fun θ _ h ↦ (hsph θ).2 (by simpa using h))
+    (isNullHomologous_iff.mpr fun w hw ↦ windingNumber_circleMap_eq_zero_of_lt_dist hR.le <|
+      lt_of_le_of_ne (not_lt.1 fun h ↦ hw (Or.inl h)) fun h ↦ hw (Or.inr (hfa w
+        (mem_closedBall.2 h.ge) fun hw₀ ↦ (mem_ball.1 hz₀).ne (hw₀ ▸ h.symm))))
+  rw [Finset.sum_singleton, windingNumber_circleMap_eq_one_of_dist_lt hz₀, one_smul,
+    smul_eq_mul] at hres
+  exact hres
 
 end TauCeti.Contour

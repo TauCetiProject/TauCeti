@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # Residues of pulled-back `1`-forms
@@ -61,7 +62,9 @@ theorem residue_pullback {f : X → Y} {x : X} (hω : ω.MeromorphicAt (f x))
   have hcx := (chartAt ℂ x).left_inv (mem_chart_source ℂ x)
   have h := Contour.residue_comp_mul_deriv_eq_analyticOrderNatAt_mul
     (f := ω.coeff (chartAt ℂ (f x))) (φ := (chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
-    (p := chartAt ℂ x x) (by simpa only [comp_apply, hcx] using (meromorphicAt_def ω (f x)).1 hω)
+    (p := chartAt ℂ x x) (by
+      simpa only [comp_apply, hcx] using
+        ((meromorphicAt_def ω (f x)).1 hω).eventually_differentiableAt)
     (analyticAt_chartAt_comp_comp_chartAt_symm hf)
   simp only [comp_apply, hcx] at h
   rw [residue_def, Contour.residue_congr_nhdsNE

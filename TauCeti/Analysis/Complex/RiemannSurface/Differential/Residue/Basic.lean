@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Divisor
 public import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # The residue of a meromorphic `1`-form
@@ -52,8 +52,9 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] {ω η : OneForm 
 
 /-- The **residue** of a `1`-form `ω` at `x`: the residue of its coefficient in the preferred chart
 at `x`, at the coordinate of `x`. Any chart of the maximal atlas at `x` gives the same value
-(`TauCeti.RiemannSurface.OneForm.residue_eq_of_mem_maximalAtlas`). It is the junk value `0` if `ω`
-is not meromorphic at `x`. -/
+(`TauCeti.RiemannSurface.OneForm.residue_eq_of_mem_maximalAtlas`). It is defined at every isolated
+singularity of `ω`, and is the junk value `0` where the coefficient is not differentiable on any
+punctured neighbourhood of the coordinate of `x`. -/
 def residue (ω : OneForm X) (x : X) : ℂ :=
   Contour.residue (ω.coeff (chartAt ℂ x)) (chartAt ℂ x x)
 
@@ -65,30 +66,31 @@ theorem residue_def (ω : OneForm X) (x : X) :
 theorem residue_congr (h : ∀ᶠ y in 𝓝[≠] x, ω y = η y) : ω.residue x = η.residue x :=
   Contour.residue_congr_nhdsNE (coeff_chartAt_eventuallyEq h)
 
-/-- A `1`-form which is not meromorphic at `x` has residue the junk value `0`. -/
+/-- A `1`-form meromorphic of nonnegative order at `x` has residue `0`. -/
 @[simp]
-theorem residue_of_not_meromorphicAt (h : ¬ ω.MeromorphicAt x) : ω.residue x = 0 :=
-  Contour.residue_of_not_meromorphicAt ((meromorphicAt_def ω x).not.1 h)
-
-/-- A `1`-form of nonnegative order at `x` has residue `0`. -/
-@[simp]
-theorem residue_eq_zero_of_order_nonneg (h : 0 ≤ ω.order x) : ω.residue x = 0 :=
-  Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg ((order_def ω x) ▸ h)
+theorem residue_eq_zero_of_order_nonneg (hω : ω.MeromorphicAt x) (h : 0 ≤ ω.order x) :
+    ω.residue x = 0 :=
+  Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg ((meromorphicAt_def ω x).1 hω)
+    ((order_def ω x) ▸ h)
 
 /-- A `1`-form holomorphic at `x` has residue `0`. -/
 @[simp]
 theorem HolomorphicAt.residue_eq_zero (h : ω.HolomorphicAt x) : ω.residue x = 0 :=
-  residue_eq_zero_of_order_nonneg h.order_nonneg
+  residue_eq_zero_of_order_nonneg h.meromorphicAt h.order_nonneg
 
 theorem residue_zero (x : X) : (0 : OneForm X).residue x = 0 :=
   (holomorphicAt_zero x).residue_eq_zero
 
-/-- The residue is additive on `1`-forms meromorphic at `x`. -/
+/-- The residue is additive on `1`-forms whose coefficients in the preferred chart at `x` are
+complex differentiable on a punctured neighbourhood of `chartAt ℂ x x`, as those of `1`-forms
+meromorphic at `x` are. -/
 @[simp]
-theorem residue_add (hω : ω.MeromorphicAt x) (hη : η.MeromorphicAt x) :
+theorem residue_add
+    (hω : ∀ᶠ z in 𝓝[≠] chartAt ℂ x x, DifferentiableAt ℂ (ω.coeff (chartAt ℂ x)) z)
+    (hη : ∀ᶠ z in 𝓝[≠] chartAt ℂ x x, DifferentiableAt ℂ (η.coeff (chartAt ℂ x)) z) :
     (ω + η).residue x = ω.residue x + η.residue x := by
   rw [residue_def, coeff_add]
-  exact Contour.residue_add ((meromorphicAt_def ω x).1 hω) ((meromorphicAt_def η x).1 hη)
+  exact Contour.residue_add hω hη
 
 /-- The residue is homogeneous. -/
 @[simp]
@@ -101,12 +103,16 @@ theorem residue_const_smul (c : ℂ) (ω : OneForm X) (x : X) :
 theorem residue_neg (ω : OneForm X) (x : X) : (-ω).residue x = -ω.residue x := by
   rw [← neg_one_smul ℂ ω, residue_const_smul, neg_one_mul]
 
-/-- The residue is subtractive on `1`-forms meromorphic at `x`. -/
+/-- The residue is subtractive on `1`-forms whose coefficients in the preferred chart at `x` are
+complex differentiable on a punctured neighbourhood of `chartAt ℂ x x`, as those of `1`-forms
+meromorphic at `x` are. -/
 @[simp]
-theorem residue_sub (hω : ω.MeromorphicAt x) (hη : η.MeromorphicAt x) :
+theorem residue_sub
+    (hω : ∀ᶠ z in 𝓝[≠] chartAt ℂ x x, DifferentiableAt ℂ (ω.coeff (chartAt ℂ x)) z)
+    (hη : ∀ᶠ z in 𝓝[≠] chartAt ℂ x x, DifferentiableAt ℂ (η.coeff (chartAt ℂ x)) z) :
     (ω - η).residue x = ω.residue x - η.residue x := by
   rw [residue_def, coeff_sub]
-  exact Contour.residue_sub ((meromorphicAt_def ω x).1 hω) ((meromorphicAt_def η x).1 hη)
+  exact Contour.residue_sub hω hη
 
 variable [IsManifold 𝓘(ℂ) 1 X]
 
@@ -128,7 +134,7 @@ finitely many points: a nonzero residue forces a pole. -/
 theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
     (support ω.residue).Finite :=
   (finite_support_untop₀_order hω).subset fun _ hy h0 ↦
-    hy (residue_eq_zero_of_order_nonneg (WithTop.untop₀_nonneg.1 h0.ge))
+    hy (residue_eq_zero_of_order_nonneg (hω _) (WithTop.untop₀_nonneg.1 h0.ge))
 
 section Compact
 
@@ -137,7 +143,7 @@ variable [CompactSpace X]
 /-- Off the support of its divisor, a `1`-form meromorphic everywhere has residue `0`. -/
 theorem residue_eq_zero_of_notMem_support (hω : ∀ x, ω.MeromorphicAt x)
     (hx : x ∉ ω.divisor.support) : ω.residue x = 0 :=
-  residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hω hx)
+  residue_eq_zero_of_order_nonneg (hω x) (order_nonneg_of_notMem_support hω hx)
 
 /-- The sum of the residues over the support of the divisor equals the sum over any finite set
 containing that support. -/
@@ -156,7 +162,9 @@ theorem residue_mvfderiv (hf : RiemannSurface.MeromorphicAt f x) :
     residue (mvfderiv 𝓘(ℂ) f) x = 0 := by
   rw [residue_def, Contour.residue_congr_nhdsNE
     (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds)]
-  exact Contour.residue_deriv_eq_zero ((RiemannSurface.meromorphicAt_def f x).1 hf)
+  exact Contour.residue_deriv_eq_zero
+    (((RiemannSurface.meromorphicAt_def f x).1 hf).eventually_analyticAt.mono
+      fun _ h ↦ h.differentiableAt)
 
 /-- **The residue of `df / f` is the order of `f`.** For a function `f` meromorphic at `x` of
 finite order `n`, the logarithmic differential `f⁻¹ df` has residue `n` at `x`. -/

@@ -28,7 +28,10 @@ the residues of `ω` add up to zero (`TauCeti.RiemannSurface.OneForm.sum_residue
 
 Equivalently, the sum of the residues over any finite set containing the points of nonzero residue
 vanishes (`TauCeti.RiemannSurface.OneForm.sum_residue_eq_zero_of_support_subset`), and so does the
-`finsum` of the residues (`TauCeti.RiemannSurface.OneForm.finsum_residue_eq_zero`).
+`finsum` of the residues (`TauCeti.RiemannSurface.OneForm.finsum_residue_eq_zero`). More generally,
+for a `1`-form holomorphic outside a finite set `s`, whose points may be essential singularities,
+the residues over `s` add up to zero
+(`TauCeti.RiemannSurface.OneForm.sum_residue_eq_zero_of_forall_notMem`).
 
 The proof is Forster's (Theorem 10.21), by Stokes' theorem. The points where `ω` is not holomorphic
 form a finite set (`TauCeti.RiemannSurface.OneForm.finite_setOf_not_holomorphicAt`). Around each
@@ -168,7 +171,7 @@ theorem indicator_inChartAt_smul_mapCoeff_mextDeriv (L : ℂ →L[ℝ] ℝ)
       simp
     · rw [indicator_of_notMem hzc]
 
-variable [CompactSpace X] [IsManifold 𝓘(ℝ, ℂ) (⊤ : ℕ∞) X]
+variable [CompactSpace X]
 
 /-- **The contribution of one pole.** Let `ψ` be a smooth cutoff, vanishing near the points where
 `ω` is not holomorphic and equal to `1 - χ` on a coordinate disc of radius `R` about `p`, and let
@@ -176,19 +179,29 @@ variable [CompactSpace X] [IsManifold 𝓘(ℝ, ℂ) (⊤ : ℕ∞) X]
 integral of `θ · L(d(ψ ω))` is `L (2πi · Res_p ω)`, for every real-linear functional `L`. -/
 theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
     {χ θ : ContDiffBump (chartAt ℂ p p)}
-    (hsub : closedBall (chartAt ℂ p p) R ⊆ (chartAt ℂ p).target) (hω : ω.MeromorphicAt p)
+    (hsub : closedBall (chartAt ℂ p p) R ⊆ (chartAt ℂ p).target)
     (hhol : ∀ y ∈ (chartAt ℂ p).source, chartAt ℂ p y ∈ closedBall (chartAt ℂ p p) R → y ≠ p →
       ω.HolomorphicAt y)
     (hχθ : χ.rOut ≤ θ.rIn) (hθR : θ.rOut ≤ R)
     {ψ : X → ℝ} (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) (⊤ : ℕ∞) ψ) (hψω : ∀ x ∈ tsupport ψ, ω.HolomorphicAt x)
     (hψχ : ∀ z ∈ ball (chartAt ℂ p p) R, ψ ((chartAt ℂ p).symm z) = 1 - χ z)
-    {θX : X → ℝ} (hθX : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) (⊤ : ℕ∞) θX)
-    (hθXs : tsupport θX ⊆ (chartAt ℂ p).source)
+    {θX : X → ℝ} (hθXs : tsupport θX ⊆ (chartAt ℂ p).source)
     (hθXθ : ∀ z ∈ (chartAt ℂ p).target, θX ((chartAt ℂ p).symm z) = θ z) :
     integralTopForm ((complexManifoldOrientation ℂ X).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       (fun x ↦ θX x • RoughForm.mapCoeff L (mextDeriv fun x ↦ ψ x • ω.toRoughForm x) x) =
       L (2 * π * I * ω.residue p) := by
+  have : IsManifold 𝓘(ℝ, ℂ) (⊤ : ℕ∞) X := IsManifold.restrictScalars_of_ne_zero _ one_ne_zero ‹_›
+  -- On the chart's source, which contains its support, `θX` is `θ` read in the chart at `p`.
+  have hθX : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) (⊤ : ℕ∞) θX := by
+    refine contMDiff_of_tsupport fun x hx ↦ ?_
+    have hx' : x ∈ (chartAt ℂ p).source := hθXs hx
+    refine ContMDiffAt.congr_of_eventuallyEq
+      (θ.contDiffAt.contMDiffAt.comp _ (contMDiffAt_extChartAt' hx')) ?_
+    filter_upwards [(chartAt ℂ p).open_source.mem_nhds hx'] with y hy
+    have h := hθXθ _ ((chartAt ℂ p).map_source hy)
+    rw [(chartAt ℂ p).left_inv hy] at h
+    simpa using h
   have hR : 0 < R := θ.rOut_pos.trans_le hθR
   have hα : IsSmoothForm 𝓘(ℝ, ℂ) (⊤ : ℕ∞) fun x ↦ ψ x • ω.toRoughForm x :=
     isSmoothForm_smul_toRoughForm hψ hψω
@@ -202,7 +215,7 @@ theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
     integral_indicator measurableSet_closedBall,
     L.integral_comp_comm (integrableOn_extDeriv_one_sub_mul_coeff (χ := χ) hsub hhol),
     integral_extDeriv_one_sub_mul_coeff_smul_dzForm_eq_residue (chart_mem_maximalAtlas p)
-      (mem_chart_source ℂ p) (mem_ball_self hR) hsub hω hhol (fun z _ ↦ χ.contDiffAt)
+      (mem_chart_source ℂ p) (mem_ball_self hR) hsub hhol (fun z _ ↦ χ.contDiffAt)
       χ.eventuallyEq_one fun z hz ↦ χ.zero_of_le_dist ?_]
   rw [mem_sphere.1 hz]
   exact hχθ.trans (θ.rIn_lt_rOut.le.trans hθR)
@@ -382,11 +395,27 @@ end PoleDiscs
 
 end Cutoff
 
-/-! ### The residue theorem -/
+end TauCeti.RiemannSurface.OneForm
 
-/-- **The residue theorem**, for a finite set `s` outside which `ω` is holomorphic. -/
-theorem sum_residue_eq_zero_of_forall_notMem [CompactSpace X] [T2Space X]
-    (hω : ∀ x, ω.MeromorphicAt x) (s : Finset X) (hs : ∀ x ∉ s, ω.HolomorphicAt x) :
+end
+
+public noncomputable section
+
+open Complex Filter Function Set
+open scoped Manifold
+
+namespace TauCeti.RiemannSurface.OneForm
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  {ω : OneForm X}
+
+variable [CompactSpace X] [T2Space X]
+
+open IsManifold MeasureTheory Metric in
+open scoped Real Topology TauCeti.ComplexManifold in
+/-- **The residue theorem**, for a finite set `s` outside which `ω` is holomorphic. The points of
+`s` may be singularities of `ω` of any kind: removable, poles or essential. -/
+theorem sum_residue_eq_zero_of_forall_notMem (s : Finset X) (hs : ∀ x ∉ s, ω.HolomorphicAt x) :
     ∑ x ∈ s, ω.residue x = 0 := by
   have : IsManifold 𝓘(ℝ, ℂ) (⊤ : ℕ∞) X := IsManifold.restrictScalars_of_ne_zero _ one_ne_zero ‹_›
   obtain ⟨d⟩ := PoleDiscs.nonempty (X := X) s
@@ -407,31 +436,15 @@ theorem sum_residue_eq_zero_of_forall_notMem [CompactSpace X] [T2Space X]
     rw [Finset.mul_sum, map_sum, ← hStokes]
     refine Finset.sum_congr rfl fun p hp ↦ (integralTopForm_smul_mapCoeff_mextDeriv_eq L
       (χ := (d.χ p).toContDiffBump) (θ := (d.θ p).toContDiffBump)
-      (d.closedBall_subset_target p) (hω p) (fun y hy hyR hyp ↦
+      (d.closedBall_subset_target p) (fun y hy hyR hyp ↦
         d.holomorphicAt_of_mem_disc hs hp hy hyR hyp) ((d.χ_rOut p).trans (d.θ_rIn p).symm).le
       (d.θ_rOut p).le d.contMDiff_ψ
       (fun _ ↦ d.holomorphicAt_of_mem_tsupport_ψ hs) (fun z hz ↦ d.ψ_symm_eq hp hz)
-      (d.θ p).contMDiff (d.θ p).tsupport_subset_chartAt_source
+      (d.θ p).tsupport_subset_chartAt_source
       fun z hz ↦ (d.θ p).apply_chartAt_symm hz).symm
   have h0 : 2 * π * I * ∑ p ∈ s, ω.residue p = 0 :=
     Complex.ext (by simpa using key reCLM) (by simpa using key imCLM)
   exact (mul_eq_zero.1 h0).resolve_left (by simp [Real.pi_ne_zero, I_ne_zero])
-
-end TauCeti.RiemannSurface.OneForm
-
-end
-
-public noncomputable section
-
-open Complex Filter Function Set
-open scoped Manifold
-
-namespace TauCeti.RiemannSurface.OneForm
-
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
-  {ω : OneForm X}
-
-variable [CompactSpace X] [T2Space X]
 
 /-- **The residue theorem on a compact Riemann surface** (Forster, Theorem 10.21). The sum of the
 residues of a `1`-form meromorphic everywhere over any finite set containing the points of nonzero
@@ -444,7 +457,7 @@ theorem sum_residue_eq_zero_of_support_subset (hω : ∀ x, ω.MeromorphicAt x) 
       notMem_support.1 fun h ↦ hx (hs h),
     ← Finset.sum_subset (Finset.subset_union_right (s₁ := s)) fun x _ hx ↦
       HolomorphicAt.residue_eq_zero (by simpa [t] using hx)]
-  exact sum_residue_eq_zero_of_forall_notMem hω t fun x hx ↦ by simpa [t] using hx
+  exact sum_residue_eq_zero_of_forall_notMem t fun x hx ↦ by simpa [t] using hx
 
 /-- **The residue theorem on a compact Riemann surface** (Forster, Theorem 10.21). The residues of
 a `1`-form meromorphic everywhere add up to zero. A `1`-form that is not meromorphic everywhere has
