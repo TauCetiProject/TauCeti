@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
 public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Metric
-public import TauCeti.Topology.VectorBundle.Determinant
+public import TauCeti.Topology.VectorBundle.Associated.Determinant
 
 /-!
 # Spinor bundles and the determinant line of a principal Spinᶜ(4)-bundle
@@ -44,8 +44,12 @@ with the representation therefore descends to the fibers:
   with values in `L_x`, which reads `[p, v 0], [p, v 1] ↦ [p, η v]` in every frame
   (`Orientation.alternatingMap_spinorBundle_mk`).
   For `η ≠ 0` it induces, for each `x`, a linear isomorphism `det W^ε_x ≃ L_x` from the fiber of
-  the determinant line bundle `TauCeti.DetBundle` of `W^ε` (`Orientation.spinorDetEquiv`). That
-  these isomorphisms form a continuous or smooth bundle isomorphism is not established here.
+  the determinant line bundle `TauCeti.DetBundle` of `W^ε` (`Orientation.spinorDetEquiv`). These
+  isomorphisms form an isomorphism of topological line bundles `det W^ε ≃ L`
+  (`Orientation.spinorDetHomeomorph`), a homeomorphism of total spaces that is linear on each
+  fiber, by the descent of determinant maps to associated bundles
+  (`TauCeti.AssociatedBundle.detHomeomorph`). That it is smooth, or unitary for the descended
+  metrics, is not established here.
 * When the Clifford generators act skew-adjointly, `Spinᶜ(4)` acts isometrically on `W^ε`
   (`Orientation.SpinCHalfSpinor.isIsometricSMul`). Given this, the fibers of the spinor bundle
   carry the Hermitian inner product of the associated bundle
@@ -152,30 +156,22 @@ theorem alternatingMap_spinorBundle_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ
 alternating form `η` on the model half-spinors induces, for each `x`, a linear isomorphism from
 the fiber `det W^ε_x = ⋀² W^ε_x` of the determinant line bundle `TauCeti.DetBundle` of `W^ε` onto
 the fiber `L_x` of the determinant line bundle, sending `[p, v 0] ∧ [p, v 1]` to `[p, η v]` in
-every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). It is the linear map induced on
-`⋀² W^ε_x` by the descended pairing `TauCeti.AssociatedBundle.alternatingMap`
-(`Orientation.spinorDetEquiv_apply`), bijective by
-`TauCeti.exteriorPower.alternatingMapLinearEquiv_bijective`. -/
+every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). It is the determinant map
+`TauCeti.AssociatedBundle.detMap` of `η` (`Orientation.spinorDetEquiv_apply`), bijective by
+`TauCeti.AssociatedBundle.detMap_bijective`. -/
 def spinorDetEquiv (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (x : B) :
     DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x ≃ₗ[ℂ]
       spinCGroup.detLineBundle 4 hpos P x :=
-  DetBundle.linearEquiv ℂ _ _ x ≪≫ₗ LinearEquiv.ofEq _ _ (congrArg (⋀[ℂ]^· _) h₂) ≪≫ₗ
-    LinearEquiv.ofBijective
-      (exteriorPower.alternatingMapLinearEquiv (AssociatedBundle.alternatingMap SpinC P η x))
-      (TauCeti.exteriorPower.alternatingMapLinearEquiv_bijective
-        ((AssociatedBundle.finrank_eq ℂ SpinC _ P x).trans h₂)
-        (spinCGroup.finrank_detLineBundle 4 hpos P x)
-        ((AssociatedBundle.alternatingMap_eq_zero_iff x).not.2 hη))
+  LinearEquiv.ofBijective (AssociatedBundle.detMap SpinC P h₂ η x)
+    (AssociatedBundle.detMap_bijective h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos) hη x)
 
-/-- `spinorDetEquiv` is the linear map induced on `⋀² W^ε_x` by the descended pairing. -/
+/-- `spinorDetEquiv` is the determinant map of `η`. -/
 theorem spinorDetEquiv_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (x : B) (w : DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x) :
-    o.spinorDetEquiv hQ b ρ ε P h₂ η hη x w =
-      exteriorPower.alternatingMapLinearEquiv (AssociatedBundle.alternatingMap SpinC P η x)
-        (LinearEquiv.ofEq _ _ (congrArg (⋀[ℂ]^· _) h₂) (DetBundle.linearEquiv ℂ _ _ x w)) :=
+    o.spinorDetEquiv hQ b ρ ε P h₂ η hη x w = AssociatedBundle.detMap SpinC P h₂ η x w :=
   (rfl)
 
 /-- **The determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
@@ -187,15 +183,9 @@ theorem spinorDetEquiv_ιMulti_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ
     o.spinorDetEquiv hQ b ρ ε P h₂ η hη x
         (exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
           AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i))) =
-      AssociatedBundle.mk SpinC p (η v) := by
-  -- The statement uses the raw `ιMulti` element: `DetBundle.linearEquiv_symm_apply` simplifies
-  -- `(DetBundle.linearEquiv ℂ _ _ x).symm w` to `w`. The proof passes through that form instead.
-  refine (spinorDetEquiv_apply o hQ b ρ ε P h₂ η hη x ((DetBundle.linearEquiv ℂ _ _ x).symm
-    (exteriorPower.ιMulti ℂ _ fun i ↦ AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i))))).trans ?_
-  rw [LinearEquiv.apply_symm_apply, exteriorPower.ofEq_ιMulti h₂,
-    exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-  simpa only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self] using
-    alternatingMap_spinorBundle_mk o hQ b ρ ε P h₂ η p v
+      AssociatedBundle.mk SpinC p (η v) :=
+  AssociatedBundle.detMap_ιMulti_mk h₂ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
+    p v
 
 /-- **The inverse determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
 the inverse of `spinorDetEquiv` sends `[p, η v]` to `[p, v 0] ∧ [p, v 1]`. -/
@@ -207,6 +197,35 @@ theorem spinorDetEquiv_symm_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε
       exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
         AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i)) :=
   (LinearEquiv.symm_apply_eq _).2 (spinorDetEquiv_ιMulti_mk o hQ b ρ ε P h₂ η hη p v).symm
+
+/-- **The determinant line of the spinor bundle as a line bundle.** If `W^ε` has complex dimension
+two, a nonzero alternating form `η` on the model half-spinors induces an isomorphism of
+topological complex line bundles `det W^ε ≃ L` from the determinant line bundle
+`TauCeti.DetBundle` of the spinor bundle `W^ε` to the determinant line `L` of the principal
+`Spinᶜ(4)`-bundle `P`: a homeomorphism of total spaces over the identity of the base, given on
+each fiber by `Orientation.spinorDetEquiv` (`Orientation.spinorDetHomeomorph_apply`). -/
+def spinorDetHomeomorph (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0) :
+    TotalSpace ℂ (DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P)) ≃ₜ
+      TotalSpace (spinCGroup.DetFiber 4 hpos) (spinCGroup.detLineBundle 4 hpos P) :=
+  AssociatedBundle.detHomeomorph SpinC P h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos)
+    (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η) hη
+
+@[simp]
+theorem spinorDetHomeomorph_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (w : TotalSpace ℂ (DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P))) :
+    o.spinorDetHomeomorph hQ b ρ ε P h₂ η hη w =
+      ⟨w.proj, o.spinorDetEquiv hQ b ρ ε P h₂ η hη w.proj w.snd⟩ :=
+  AssociatedBundle.detHomeomorph_apply _ _ _ _ w
+
+@[simp]
+theorem spinorDetHomeomorph_symm_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (z : TotalSpace (spinCGroup.DetFiber 4 hpos) (spinCGroup.detLineBundle 4 hpos P)) :
+    (o.spinorDetHomeomorph hQ b ρ ε P h₂ η hη).symm z =
+      ⟨z.proj, (o.spinorDetEquiv hQ b ρ ε P h₂ η hη z.proj).symm z.snd⟩ :=
+  AssociatedBundle.detHomeomorph_symm_apply _ _ _ _ z
 
 end Normed
 
