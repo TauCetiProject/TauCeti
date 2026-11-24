@@ -14,7 +14,7 @@ import TauCeti.Topology.MetricSpace.EBall
 The circle integral defining a Laurent coefficient is independent of its positive radius
 provided the function is continuous on the intervening closed annulus and complex
 differentiable outside a countable exceptional set in its open interior.
-Neither result assumes that the function extends across the center: isolated essential
+This result does not assume that the function extends across the center: isolated essential
 singularities are allowed. When `f` is complex-differentiable on a circle with circle-integrable
 derivative, integrating around the circle also expresses the Laurent coefficients of `deriv f` in
 terms of those of `f` (`circleLaurentCoeff_deriv_of_differentiableAt`, `circleLaurentCoeff_deriv`).

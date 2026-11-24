@@ -136,7 +136,7 @@ theorem _root_.IsOpen.exists_gt_closedBall_subset {x : Y} {r : ℝ} {U : Set Y} 
   have hcomp : IsCompact K := (isCompact_closedBall x (r + 1)).diff hU
   obtain ⟨y, hyK, hymin⟩ :=
     hcomp.exists_isMinOn hK (continuous_id.dist continuous_const).continuousOn
-  have hlt : r < dist y x := not_le.1 fun hle ↦ hyK.2 (hsub hle)
+  have hlt : r < dist y x := not_le.1 fun hle ↦ hyK.2 (hsub (mem_closedBall.2 hle))
   refine ⟨min (r + 1) ((r + dist y x) / 2), lt_min (by linarith) (by linarith), fun z hz ↦ ?_⟩
   by_contra hzU
   have hzK : z ∈ K := ⟨closedBall_subset_closedBall (min_le_left _ _) hz, hzU⟩
@@ -157,7 +157,8 @@ theorem _root_.Disjoint.exists_gt_closedBall {x y : Y} {r : ℝ}
     (continuous_id.dist continuous_const).max (continuous_id.dist continuous_const)
   obtain ⟨z₀, _, hz₀min⟩ := hcomp.exists_isMinOn hK hcont.continuousOn
   have hlt : r < max (dist z₀ x) (dist z₀ y) := not_le.1 fun hle ↦
-    Set.disjoint_left.1 hdisj ((le_max_left _ _).trans hle) ((le_max_right _ _).trans hle)
+    Set.disjoint_left.1 hdisj (mem_closedBall.2 ((le_max_left _ _).trans hle))
+      (mem_closedBall.2 ((le_max_right _ _).trans hle))
   refine ⟨min (r + 1) ((r + max (dist z₀ x) (dist z₀ y)) / 2), lt_min (by linarith) (by linarith),
     Set.disjoint_left.2 fun z hzx hzy ↦ ?_⟩
   have hzK : z ∈ K :=

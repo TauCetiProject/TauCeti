@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.MellinInversion
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic

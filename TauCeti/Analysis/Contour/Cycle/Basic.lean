@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
 public import TauCeti.Analysis.Contour.Curve.Integrability
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Cycles of piecewise-`C¹` curves
@@ -33,6 +34,8 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle` — the free abelian group on such curves.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
+* `TauCeti.Contour.Cycle.integral_of_not_completeSpace`: in an incomplete codomain every integral
+  over a cycle is `0`.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
@@ -352,6 +355,12 @@ theorem integral_eq_sum_support {E : Type*} [NormedAddCommGroup E] [NormedSpace 
       FreeAddCommGroup.coeff γ C • (∫ t in γ.a..γ.b, deriv γ t • f (γ t)) := by
   conv_lhs => rw [FreeAddCommGroup.eq_sum_support_coeff_smul_of C]
   simp only [map_sum, map_zsmul, integral_of]
+
+/-- In an incomplete codomain every integral over a cycle is `0`. -/
+theorem integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (hE : ¬CompleteSpace E) (f : ℂ → E) (C : Cycle) : integral f C = 0 := by
+  simp only [integral_eq_sum_support, _root_.intervalIntegral.integral_of_not_completeSpace hE,
+    smul_zero, Finset.sum_const_zero]
 
 /-- Along every curve in the support of a cycle, the contour integrand of a function continuous on
 the trace of the cycle is interval-integrable. -/

@@ -12,8 +12,9 @@ import TauCeti.Topology.MetricSpace.SeparatedBalls
 /-!
 # Finite-disc Cauchy singularity subtraction
 
-For finitely many isolated singularities `P` inside pairwise disjoint closed discs
-`Metric.closedBall ρ r` (`r > 0`) in the interior of a region `D`, subtracting the corresponding
+Let `f` take values in a complete complex normed space `E`. For finitely many isolated
+singularities `P` inside pairwise disjoint closed discs `Metric.closedBall ρ r` (`r > 0`) in the
+interior of a region `D`, subtracting the corresponding
 exterior Cauchy integrals `z ↦ (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` removes every
 singularity without assuming an open neighbourhood of `D` or meromorphy at `P`: if `f` is
 continuous on `D \ P` and complex differentiable on `interior D \ P`, the subtracted function
@@ -31,7 +32,7 @@ annulus.
 * `TauCeti.Contour.differentiableAt_sum_exteriorCauchy`: complex differentiability of sums of
   exterior Cauchy integrals outside their enclosing closed discs.
 * `TauCeti.Contour.exists_continuousOn_differentiableOn_sub_sum_circleIntegral`: finite-disc
-  singularity removal for arbitrary complex normed-space-valued functions.
+  singularity removal for functions valued in a complete complex normed space.
 
 ## References
 
@@ -86,6 +87,19 @@ private theorem gluedRegular_eq_out {f : ℂ → E} {P : Finset ℂ} {r r' : ℝ
   classical
   have hneg : ¬ ∃ ρ ∈ P, z ∈ closedBall ρ r := by push Not; exact hz
   simp only [gluedRegular, hneg, ↓reduceDIte]
+
+omit [CompleteSpace E] in
+/-- Near a point outside all closed discs `closedBall ρ r` (`ρ ∈ P`), `gluedRegular` agrees with
+`f - ∑ ρ ∈ P, (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w`. -/
+private theorem gluedRegular_eventuallyEq_out {f : ℂ → E} {P : Finset ℂ} {r r' : ℝ} {z : ℂ}
+    (hz : ∀ ρ ∈ P, z ∉ closedBall ρ r) :
+    gluedRegular f P r r' =ᶠ[𝓝 z]
+      fun s ↦ f s - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w := by
+  have hopen : IsOpen (⋃ ρ ∈ P, closedBall ρ r)ᶜ :=
+    (P.finite_toSet.isClosed_biUnion fun _ _ ↦ isClosed_closedBall).isOpen_compl
+  refine Filter.eventuallyEq_of_mem (hopen.mem_nhds (by simpa using hz)) fun w hw ↦ ?_
+  simp only [mem_compl_iff, mem_iUnion, not_exists] at hw
+  exact gluedRegular_eq_out hw
 
 /-- On each open ball `ball ρ r'` (`ρ ∈ P`), `gluedRegular` agrees with the holomorphic formula
 `(2πi)⁻¹ • ∮ w in C(ρ, r'), (w - z)⁻¹ • f w -
@@ -160,32 +174,23 @@ private theorem continuousOn_gluedRegular {D : Set ℂ} {r r' : ℝ} (hr : 0 < r
     {f : ℂ → E} (hc : ContinuousOn f (D \ P))
     (hd : DifferentiableOn ℂ f (interior D \ P)) :
     ContinuousOn (gluedRegular f P r r') D := by
-  have hopen_out : IsOpen (⋃ ρ ∈ P, closedBall ρ r)ᶜ :=
-    (P.finite_toSet.isClosed_biUnion fun _ _ ↦ isClosed_closedBall).isOpen_compl
   intro z hz
   by_cases hex : ∃ ρ ∈ P, z ∈ closedBall ρ r
   · obtain ⟨ρ, hρ, hzr⟩ := hex
     exact (differentiableAt_gluedRegular_of_mem_ball hr hrr' isOpen_interior hP' hdisj' hd hρ
       (closedBall_subset_ball hrr' hzr)).continuousAt.continuousWithinAt
   · push Not at hex
-    have hmem : z ∈ (⋃ ρ ∈ P, closedBall ρ r)ᶜ := by simpa using hex
-    have hsub : D ∩ (⋃ ρ ∈ P, closedBall ρ r)ᶜ ⊆ D \ P := fun w hw ↦
-      ⟨hw.1, fun hwP ↦ by
-        have := hw.2; simp only [mem_compl_iff, mem_iUnion] at this
-        exact this ⟨w, hwP, mem_closedBall_self hr.le⟩⟩
-    have hsum_diff : DifferentiableAt ℂ
-        (fun s ↦ ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z :=
-      differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn Subset.rfl hex
+    have hzP : z ∉ (P : Set ℂ) := fun hzP ↦ hex z hzP (mem_closedBall_self hr.le)
+    have hDP : D \ P ∈ 𝓝[D] z :=
+      mem_nhdsWithin.2 ⟨(P : Set ℂ)ᶜ, P.finite_toSet.isClosed.isOpen_compl, hzP,
+        fun w hw ↦ ⟨hw.2, hw.1⟩⟩
     have hloc : ContinuousWithinAt
         (fun s ↦ f s - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) D z :=
-      (hc.continuousWithinAt (hsub ⟨hz, hmem⟩) |>.mono_of_mem_nhdsWithin
-        (mem_of_superset (inter_mem_nhdsWithin D (hopen_out.mem_nhds hmem)) hsub)).sub
-        hsum_diff.continuousAt.continuousWithinAt
-    exact hloc.congr_of_eventuallyEq
-      (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (hopen_out.mem_nhds hmem)) fun w hw ↦ by
-        simp only [mem_compl_iff, mem_iUnion, not_exists] at hw
-        exact gluedRegular_eq_out hw)
-      (gluedRegular_eq_out hex)
+      ((hc.continuousWithinAt ⟨hz, hzP⟩).mono_of_mem_nhdsWithin hDP).sub
+        (differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn Subset.rfl
+          hex).continuousAt.continuousWithinAt
+    have heq := gluedRegular_eventuallyEq_out (f := f) (r' := r') hex
+    exact hloc.congr_of_eventuallyEq (nhdsWithin_le_nhds heq) heq.eq_of_nhds
 
 /-- `gluedRegular` is complex differentiable on `interior D`. -/
 private theorem differentiableOn_gluedRegular {D : Set ℂ} {r r' : ℝ}
@@ -194,31 +199,26 @@ private theorem differentiableOn_gluedRegular {D : Set ℂ} {r r' : ℝ}
     (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
     {f : ℂ → E} (hd : DifferentiableOn ℂ f (interior D \ P)) :
     DifferentiableOn ℂ (gluedRegular f P r r') (interior D) := by
-  have hopen_out : IsOpen (⋃ ρ ∈ P, closedBall ρ r)ᶜ :=
-    (P.finite_toSet.isClosed_biUnion fun _ _ ↦ isClosed_closedBall).isOpen_compl
   intro z hz
   by_cases hex : ∃ ρ ∈ P, z ∈ closedBall ρ r
   · obtain ⟨ρ, hρ, hzr⟩ := hex
     exact (differentiableAt_gluedRegular_of_mem_ball hr hrr' isOpen_interior hP' hdisj' hd hρ
       (closedBall_subset_ball hrr' hzr)).differentiableWithinAt
   · push Not at hex
-    have hmem : z ∈ (⋃ ρ ∈ P, closedBall ρ r)ᶜ := by simpa using hex
     have hloc : DifferentiableAt ℂ
         (fun s ↦ f s - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z :=
       (hd.differentiableAt ((isOpen_interior.sdiff P.finite_toSet.isClosed).mem_nhds
         ⟨hz, fun hzP ↦ hex z hzP (mem_closedBall_self hr.le)⟩)).sub
         (differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn Subset.rfl hex)
-    exact (hloc.congr_of_eventuallyEq <|
-      Filter.eventuallyEq_of_mem (hopen_out.mem_nhds hmem) fun w hw ↦ by
-        simp only [mem_compl_iff, mem_iUnion, not_exists] at hw
-        exact gluedRegular_eq_out hw).differentiableWithinAt
+    exact (hloc.congr_of_eventuallyEq
+      (gluedRegular_eventuallyEq_out (r' := r') hex)).differentiableWithinAt
 
-/-- **Finite-disc singularity removal.** Let `D : Set ℂ`, `r > 0`, and `P` a finite set whose
-closed discs `closedBall ρ r` are pairwise disjoint and contained in `interior D`. If `f : ℂ → E`
-is continuous on `D \ P` and complex differentiable on `interior D \ P`, then subtracting the
-exterior Cauchy integrals `(2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` (`ρ ∈ P`) extends to a
-function continuous on `D` and complex differentiable on `interior D` that agrees with
-`f z - ∑ ρ ∈ P, (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` outside `⋃ ρ ∈ P, closedBall ρ r`.
+/-- **Finite-disc singularity removal.** Let `E` be a complete complex normed space, `D : Set ℂ`,
+`r > 0`, and `P` a finite set whose closed discs `closedBall ρ r` are pairwise disjoint and
+contained in `interior D`. If `f : ℂ → E` is continuous on `D \ P` and complex differentiable on
+`interior D \ P`, then there is a function `g` continuous on `D` and complex differentiable on
+`interior D` that agrees with `f z - ∑ ρ ∈ P, (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w` outside
+`⋃ ρ ∈ P, closedBall ρ r`.
 
 No open neighbourhood of `D` and no meromorphy at `P` are assumed, so points of `P` may be
 essential singularities. -/

@@ -83,9 +83,7 @@ theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (h
   obtain ⟨r, hr, hP_ball, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist
     (T := P) (U := fun _ ↦ U) (fun p hp ↦ hU.mem_nhds (hP p hp))
   have hdisj : (P : Set ℂ).Pairwise fun p q ↦ Disjoint (closedBall p r) (closedBall q r) :=
-    fun p hp q hq hne ↦ disjoint_left.2 fun z hzp hzq ↦ by
-      linarith [hsep p hp q hq hne, dist_triangle_left p q z, mem_closedBall.1 hzp,
-        mem_closedBall.1 hzq]
+    fun p hp q hq hne ↦ closedBall_disjoint_closedBall (by linarith [hsep p hp q hq hne])
   have hcirc := rectangle_boundary_integral_eq_sum_circleIntegral hσ ht hr hP_ball hdisj hc hd
   simp only [smul_eq_mul] at hcirc
   rw [hcirc, Finset.mul_sum]
@@ -114,9 +112,7 @@ theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {P : Finset ℂ} 
   have hrect : Rectangle z w = Icc z.re w.re ×ℂ Icc z.im w.im := by
     rw [Rectangle, uIcc_of_le hre, uIcc_of_le him]
   have hfr : ContinuousOn f (frontier (Rectangle z w)) :=
-    hc.mono fun x hx ↦ ⟨(isClosed_rectangle z w).frontier_subset hx, fun hxP ↦
-      disjoint_left.1 disjoint_interior_frontier
-        (by rw [interior_rectangle hre him]; exact hP x hxP) hx⟩
+    hc.mono (frontier_rectangle_subset_sdiff fun p hp ↦ hP p (Finset.mem_coe.1 hp))
   rw [integral_rectBoundary hfr]
   simp only [smul_eq_mul]
   exact rectangle_boundary_integral_eq_residues hre him hP (hrect ▸ hc) hd hmer

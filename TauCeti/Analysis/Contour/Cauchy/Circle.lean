@@ -51,9 +51,10 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-/-- The circle integral of the divided difference `dslope f w` around a circle avoiding `w` is
-the difference of the Cauchy integral of `f` and the circle integral of `(z - w)⁻¹` times `f w`.
-Only integrability of `f` on the circle is needed. -/
+/-- For `f` valued in a complete complex normed space, a radius `ρ ≥ 0`, a point `w` off
+`sphere c ρ`, and `f` circle integrable on `C(c, ρ)`, the circle integral of the divided difference
+`dslope f w` is the difference of the Cauchy integral `∮ z in C(c, ρ), (z - w)⁻¹ • f z` and
+`(∮ z in C(c, ρ), (z - w)⁻¹) • f w`. -/
 theorem circleIntegral_dslope_eq {f : ℂ → E} {c w : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ)
     (hf : CircleIntegrable f c ρ) (hw : w ∉ sphere c ρ) :
     (∮ z in C(c, ρ), dslope f w z) =
@@ -167,8 +168,10 @@ theorem differentiableAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z :
 
 /-- **Annulus subtraction formula.** On the open annulus `ball c R \ closedBall c r` (`0 < r`), if
 `f` is continuous on `closedBall c R \ ball c r` and complex differentiable outside a countable
-set `s` in `ball c R \ closedBall c r`, then subtracting the exterior Cauchy integral over `C(c, r)`
-leaves the interior Cauchy integral over `C(c, R)`, even at points of `s`. -/
+set `s` in `ball c R \ closedBall c r`, then subtracting from `f w` the exterior Cauchy integral
+over `C(c, r)` normalized by `(2πi)⁻¹`, `(2πi)⁻¹ • ∮ z in C(c, r), (w - z)⁻¹ • f z`, leaves the
+interior Cauchy integral over `C(c, R)` with the same normalization,
+`(2πi)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • f z`, even at points `w` of `s`. -/
 theorem sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq
     {f : ℂ → E} {c w : ℂ} {r R : ℝ} (hr : 0 < r)
     {s : Set ℂ} (hs : s.Countable) (hw : w ∈ ball c R \ closedBall c r)

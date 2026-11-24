@@ -26,7 +26,8 @@ This is the line shift behind DLMF 2.5.6–2.5.7 and behind the evaluation of Me
 integrals by residues. The proof applies Tau Ceti's rectangle residue theorem
 `TauCeti.Contour.rectangle_boundary_integral_eq_residues` to `[d, c] × [-T, T]`, which winds once
 around every pole, and lets `T → ∞`. The line integrals use `dy`, so the factor `i` of `dt = i dy`
-cancels against the `2πi` of the residue theorem.
+cancels against the `2πi` of the residue theorem. The horizontal connectors vanish when the
+integrand decays uniformly on the strip (`TauCeti.Contour.tendsto_intervalIntegral_horizontal`).
 
 ## Main results
 
@@ -35,8 +36,6 @@ cancels against the `2πi` of the residue theorem.
   `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_norm_le`: its norm-bound
   corollary, and `TauCeti.Contour.tendsto_intervalIntegral_vertical_sub`: its symmetric-limit form,
   which needs no integrability on the two lines.
-* `TauCeti.Contour.tendsto_intervalIntegral_horizontal`: the horizontal connectors vanish when the
-  integrand decays uniformly on the strip.
 * `TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_range_residue`: its iteration across
   finitely many lines with one singularity between consecutive lines, and
   `TauCeti.Contour.tendsto_sum_range_residue`, `TauCeti.Contour.hasSum_residue`: the resulting
@@ -54,14 +53,6 @@ open Complex Set Filter MeasureTheory
 open scoped Topology Real Interval
 
 namespace TauCeti.Contour
-
-/-- If `H(σ + iT) → 0` as `T` tends along `l`, uniformly for `σ` between `d` and `c`, then the
-horizontal connector `∫_d^c H(σ + iT) dσ` tends to `0` along `l`. -/
-theorem tendsto_intervalIntegral_horizontal {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : ℂ → E} {c d : ℝ} {l : Filter ℝ}
-    (h : Tendsto (fun q : ℝ × ℝ => H (q.2 + q.1 * I)) (l ×ˢ 𝓟 (uIcc d c)) (𝓝 0)) :
-    Tendsto (fun T : ℝ => ∫ σ in d..c, H (σ + T * I)) l (𝓝 0) :=
-  TendstoUniformlyOn.tendsto_intervalIntegral_nhds_zero (tendsto_prod_principal_iff.mp h)
 
 /-- **The symmetric line shift.** Let `F` be continuous on the closed strip `d ≤ Re t ≤ c` except
 at a finite set `P` of points of the open strip, complex differentiable on the open strip
