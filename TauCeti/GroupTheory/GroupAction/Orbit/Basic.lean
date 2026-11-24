@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
 
 /-!
@@ -36,6 +37,8 @@ ambient elements without packing subgroup-membership proofs into the witness lis
   of `a` whose fiber lies in `s`, together with a witness set `W ⊆ H` covering `s`.
 * `MulAction.orbit_eq_of_invariant_list`: specialization of `MulAction.orbit_eq_of_invariant` to an
   explicit witness list `ws : List G`.
+* `MulAction.minimalPeriod_conj_smul`: minimal periods of actions are invariant under
+  simultaneous conjugation of the acting element and translation of the basepoint.
 -/
 
 public section
@@ -90,5 +93,17 @@ theorem orbit_eq_of_invariant_list {G α S : Type*} {β : Sort*} [SetLike S G] [
   orbit_eq_of_invariant f {g | g ∈ ws} hf hs hws fun x hx ↦ by
     obtain ⟨g, hg, rfl⟩ := List.mem_map.mp (hcov x hx)
     exact ⟨g, hg, rfl⟩
+
+/-- **Conjugation invariance of minimal period.** Conjugating an acting group element by `c`
+and translating the point by `c` preserves the minimal period of the action. -/
+theorem minimalPeriod_conj_smul {G α : Type*} [Group G] [MulAction G α] (g c : G) (x : α) :
+    Function.minimalPeriod ((c * g * c⁻¹) • ·) (c • x) = Function.minimalPeriod (g • ·) x := by
+  have hsc : Function.Semiconj (c • ·) (g • ·) ((c * g * c⁻¹) • ·) := fun y : α ↦ calc
+    c • (g • y) = (c * g) • y := (mul_smul c g y).symm
+    _ = ((c * g * c⁻¹) * c) • y := by rw [inv_mul_cancel_right]
+    _ = (c * g * c⁻¹) • (c • y) := mul_smul (c * g * c⁻¹) c y
+  refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
+  simp only [Function.IsPeriodicPt, Function.IsFixedPt, ← (hsc.iterate_right n).eq]
+  exact (MulAction.injective c).eq_iff
 
 end MulAction

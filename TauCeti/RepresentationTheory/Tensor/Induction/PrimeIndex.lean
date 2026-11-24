@@ -8,9 +8,9 @@ module
 public import Mathlib.Data.Nat.Prime.Defs
 public import TauCeti.RepresentationTheory.Tensor.Induction.Trace
 
-import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.GroupTheory.GroupAction.Orbit.Card
+import TauCeti.GroupTheory.QuotientGroup.Index
+import TauCeti.RepresentationTheory.Character.Basic
 
 /-!
 # Tensor induction in prime index
@@ -51,36 +51,6 @@ open scoped TensorProduct
 
 namespace Subgroup
 
-private theorem zpow_quotient_prime_orderOf {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
-    {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) :
-    orderOf (QuotientGroup.mk x : G ⧸ H) = l := by
-  have hne : (QuotientGroup.mk x : G ⧸ H) ≠ 1 := by
-    simpa [QuotientGroup.eq_one_iff] using hx
-  have hdvd : orderOf (QuotientGroup.mk x : G ⧸ H) ∣ l := by
-    rw [← hH, Subgroup.index_eq_card]
-    exact _root_.orderOf_dvd_natCard (QuotientGroup.mk x : G ⧸ H)
-  exact (hl.eq_one_or_self_of_dvd _ hdvd).resolve_left (orderOf_eq_one_iff.not.mpr hne)
-
-private noncomputable def quotientPrimeEquiv {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
-    [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) :
-    Fin l ≃ G ⧸ H :=
-  let := H.fintypeQuotientOfFiniteIndex
-  have hord : orderOf (QuotientGroup.mk x : G ⧸ H)⁻¹ = l := by
-    rw [orderOf_inv]
-    exact zpow_quotient_prime_orderOf H hl hH hx
-  have hinj : Function.Injective (fun i : Fin l ↦ (QuotientGroup.mk x : G ⧸ H)⁻¹ ^ (i : ℕ)) :=
-    fun _ _ hij ↦ Fin.ext (pow_injOn_Iio_orderOf (hord.symm ▸ Fin.isLt _)
-      (hord.symm ▸ Fin.isLt _) hij)
-  have hcard : Fintype.card (Fin l) = Fintype.card (G ⧸ H) := by
-    rw [Fintype.card_fin, ← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hH]
-  Equiv.ofBijective _ ((Fintype.bijective_iff_injective_and_card _).mpr ⟨hinj, hcard⟩)
-
-private theorem quotientPrimeEquiv_apply {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
-    [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) (i : Fin l) :
-    quotientPrimeEquiv H hl hH hx i = QuotientGroup.mk ((x ^ (i : ℕ))⁻¹) := by
-  have hdef : quotientPrimeEquiv H hl hH hx i = (QuotientGroup.mk x : G ⧸ H)⁻¹ ^ (i : ℕ) := rfl
-  rw [hdef, inv_pow, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_inv]
-
 /-- **Prime-index normal evaluation on `H`.** For a normal subgroup `H ≤ G` of prime index `l`,
 any `x ∉ H`, and any `H`-conjugation-invariant function `f : H → R`, `H.tensorIndClassFun f h`
 equals `∏ i : Fin l, f (MulAut.conjNormal (x ^ (i : ℕ)) h)` for every `h : H`. -/
@@ -117,17 +87,16 @@ theorem tensorIndClassFun_apply_of_notMem_of_index_prime {R G : Type*} [CommMono
   let := H.fintypeQuotientOfFiniteIndex
   let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ H))
   let q₁ : G ⧸ H := QuotientGroup.mk 1
-  have hpow : ∀ n : ℕ, (g • ·)^[n] q₁ = QuotientGroup.mk (g ^ n) := fun n ↦ by
-    induction n with
-    | zero => simp [q₁]
-    | succ n ih => rw [Function.iterate_succ_apply', ih, pow_succ']; rfl
   have hl_fix : (g • ·)^[l] q₁ = q₁ := by
-    rw [hpow l, ← hh]
+    rw [smul_iterate_apply]
+    have hmk : g ^ l • q₁ = QuotientGroup.mk (g ^ l) := by simp [q₁]
+    rw [hmk, ← hh]
     exact Quotient.sound' (QuotientGroup.leftRel_apply.mpr (by simp))
   have hper_ne_one : Function.minimalPeriod (g • ·) q₁ ≠ 1 := fun h1 ↦ hg <| by
     have hfix := h1 ▸ Function.isPeriodicPt_minimalPeriod (g • ·) q₁
-    have hg1 : g • q₁ = QuotientGroup.mk g := by simpa using hpow 1
-    rw [Function.IsPeriodicPt, Function.IsFixedPt, Function.iterate_one, hg1] at hfix
+    rw [Function.IsPeriodicPt, Function.IsFixedPt, Function.iterate_one] at hfix
+    have hg1 : g • q₁ = QuotientGroup.mk g := by simp [q₁]
+    rw [hg1] at hfix
     have hinv : g⁻¹ ∈ H := by
       simpa using QuotientGroup.leftRel_apply.mp (Quotient.exact' hfix)
     exact H.inv_mem_iff.mp hinv
@@ -155,12 +124,6 @@ theorem tensorIndClassFun_apply_of_notMem_of_index_prime {R G : Type*} [CommMono
   ext
   simp [hper1, hh]
 
-private theorem trace_rep_conj_invariant' {R U M : Type*} [CommSemiring R] [Group U]
-    [AddCommMonoid M] [Module R M] (ρ : Representation R U M) (u v : U) :
-    LinearMap.trace R M (ρ (v * u * v⁻¹)) = LinearMap.trace R M (ρ u) := by
-  rw [map_mul ρ, map_mul ρ, LinearMap.trace_mul_comm, ← mul_assoc, ← map_mul ρ, inv_mul_cancel,
-    map_one, one_mul]
-
 /-- **Trace of a tensor-induced representation on `H` in prime index.** For a normal subgroup
 `H ≤ G` of prime index `l`, `x ∉ H`, any left transversal `s`, and any representation `ρ` of `H`
 on a free `R`-module `M`, the trace at `h : H` is the product of the traces of `ρ` at the
@@ -174,7 +137,7 @@ theorem trace_tensorInducedRepresentation_of_mem_of_index_prime {R G M : Type*}
       ∏ i : Fin l, LinearMap.trace R M (ρ (MulAut.conjNormal (x ^ (i : ℕ)) h)) := by
   have : H.FiniteIndex := ⟨hH ▸ hl.ne_zero⟩
   rw [trace_tensorInducedRepresentation,
-    tensorIndClassFun_apply_of_mem_of_index_prime H hl hH hx (trace_rep_conj_invariant' ρ) h]
+    tensorIndClassFun_apply_of_mem_of_index_prime H hl hH hx (fun u v ↦ ρ.trace_conj u v) h]
 
 /-- **Trace of a tensor-induced representation outside `H` in prime index.** For any subgroup
 `H ≤ G` of prime index `l`, any left transversal `s`, and any representation `ρ` of `H` on a free
@@ -188,6 +151,6 @@ theorem trace_tensorInducedRepresentation_of_notMem_of_index_prime {R G M : Type
       LinearMap.trace R M (ρ h) := by
   have : H.FiniteIndex := ⟨hH ▸ hl.ne_zero⟩
   rw [trace_tensorInducedRepresentation,
-    tensorIndClassFun_apply_of_notMem_of_index_prime H hl hH (trace_rep_conj_invariant' ρ) hg hh]
+    tensorIndClassFun_apply_of_notMem_of_index_prime H hl hH (fun u v ↦ ρ.trace_conj u v) hg hh]
 
 end Subgroup

@@ -69,6 +69,9 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `MulAction.stabilizer_finset_finiteIndex`, `MulAction.stabilizer_smul_finset`,
+  `MulAction.stabilizer_smul_compl`: the setwise stabilizer of a finset in a finite type has
+  finite index and agrees with the pointwise action stabilizers on the finset and its complement.
 * `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
@@ -614,5 +617,32 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
     infer_instance
 
 end MonoidHom
+
+namespace MulAction
+
+open scoped Pointwise
+
+/-- The setwise stabilizer of any finset under a group action on a finite type has finite index. -/
+theorem stabilizer_finset_finiteIndex {G α : Type*} [Group G] [MulAction G α] [Finite α]
+    [DecidableEq α] (S : Finset α) : (stabilizer G S).FiniteIndex := by
+  let := Fintype.ofFinite α
+  have : Finite (orbit G S) := Subtype.finite
+  have : Finite (G ⧸ stabilizer G S) :=
+    Finite.of_equiv (orbit G S) (orbitEquivQuotientStabilizer G S)
+  exact Subgroup.finiteIndex_of_finite_quotient
+
+/-- Elementwise membership in the stabilizer of a finset `S`. -/
+theorem stabilizer_smul_finset {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
+    (S : Finset α) (x : stabilizer G S) : (x : G) • S = S :=
+  x.property
+
+/-- Every element stabilizing `S` also stabilizes its complement `Sᶜ`. -/
+theorem stabilizer_smul_compl {G α : Type*} [Group G] [MulAction G α] [Fintype α] [DecidableEq α]
+    (S : Finset α) (x : stabilizer G S) : (x : G) • Sᶜ = Sᶜ := by
+  refine Finset.coe_injective ?_
+  simp only [Finset.coe_smul_finset, Finset.coe_compl, Set.smul_set_compl]
+  rw [← Finset.coe_smul_finset, stabilizer_smul_finset S x]
+
+end MulAction
 
 end

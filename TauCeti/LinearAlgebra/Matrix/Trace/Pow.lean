@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Entries and traces of matrix powers as sums over walks
@@ -32,6 +33,8 @@ indexed by closed walks, which are then analysed combinatorially.
 * `Matrix.trace_mul_pow_eq_sum_prod`: the analogous expansion for a rectangular product.
 * `Matrix.trace_mul_conjTranspose_pow_eq_sum_prod`: the trace of `(X * Xᴴ) ^ k` for a rectangular
   matrix `X`, `k ≠ 0`, as a sum over closed walks alternating between row and column indices.
+* `Matrix.list_ofFn_prod_apply`, `Matrix.trace_list_ofFn_prod`: entries and trace of a product of
+  indexed matrices along `List.ofFn` as sums over walks and closed cyclic walks.
 
 ## References
 
@@ -93,5 +96,47 @@ theorem trace_mul_conjTranspose_pow_eq_sum_prod [Star R] {κ : Type*} [Fintype �
     ((X * Xᴴ) ^ k).trace = ∑ u : Fin k → ι, ∑ v : Fin k → κ,
       ∏ t, X (u t) (v t) * star (X (u (finRotate k t)) (v t)) := by
   simpa only [conjTranspose_apply] using trace_mul_pow_eq_sum_prod X Xᴴ hk
+
+/-- Entries of a product of `k + 1` matrices as sums over intermediate index paths. -/
+theorem list_ofFn_prod_apply {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommSemiring R]
+    {k : ℕ} (A : Fin (k + 1) → Matrix κ κ R) (i j : κ) :
+    (List.ofFn A).prod i j =
+      ∑ d : Fin k → κ,
+        ∏ t : Fin (k + 1),
+          A t (@Fin.cons k (fun _ ↦ κ) i d t) (@Fin.snoc k (fun _ ↦ κ) d j t) := by
+  induction k generalizing i with
+  | zero =>
+    rw [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
+      Fintype.sum_unique, Fin.prod_univ_one, Fin.cons_zero,
+      show (0 : Fin 1) = Fin.last 0 from Fin.last_zero.symm, Fin.snoc_last]
+  | succ k ih =>
+    rw [List.ofFn_succ, List.prod_cons, Matrix.mul_apply]
+    have hsum :
+        (∑ x : κ, A 0 i x * (List.ofFn fun s : Fin (k + 1) ↦ A s.succ).prod x j) =
+          ∑ x : κ, A 0 i x * ∑ d : Fin k → κ,
+            ∏ t : Fin (k + 1),
+              A t.succ (@Fin.cons k (fun _ ↦ κ) x d t) (@Fin.snoc k (fun _ ↦ κ) d j t) :=
+      Finset.sum_congr rfl fun x _ ↦ by rw [ih (fun s ↦ A s.succ) x]
+    rw [hsum]
+    simp_rw [Finset.mul_sum]
+    rw [← (Fin.consEquiv fun _ : Fin (k + 1) ↦ κ).sum_comp, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun d _ ↦ ?_
+    rw [Fin.consEquiv_apply, ← Fin.cons_snoc_eq_snoc_cons, Fin.prod_univ_succ (n := k + 1)]
+    simp
+
+/-- The trace of a product of `k` matrices (`k ≠ 0`) as a cyclic path sum. -/
+theorem trace_list_ofFn_prod {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommSemiring R]
+    {k : ℕ} [NeZero k] (A : Fin k → Matrix κ κ R) :
+    (List.ofFn A).prod.trace =
+      ∑ c : Fin k → κ, ∏ t : Fin k, A t (c t) (c (finRotate k t)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne k)
+  simp only [Matrix.trace, Matrix.diag]
+  simp_rw [list_ofFn_prod_apply A _ _]
+  rw [← (Fin.consEquiv fun _ : Fin (m + 1) ↦ κ).sum_comp, Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun d _ ↦
+    Finset.prod_congr rfl fun t _ ↦ ?_
+  rw [Fin.consEquiv_apply]
+  refine congrArg (A t (@Fin.cons m (fun _ ↦ κ) i d t)) ?_
+  refine Fin.lastCases ?_ (fun s ↦ ?_) t <;> simp
 
 end Matrix

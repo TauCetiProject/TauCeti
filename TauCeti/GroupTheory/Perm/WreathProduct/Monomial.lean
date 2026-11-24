@@ -153,4 +153,74 @@ theorem monomialFinHom_injective (s : U.LeftTransversal)
 
 end FiniteCoordinates
 
+/-- The right projection of the monomial homomorphism is the permutation representation of `G` on
+`G ⧸ U`. -/
+@[simp]
+theorem rightHom_comp_monomialHom (s : U.LeftTransversal) :
+    (SemidirectProduct.rightHom : WreathProduct U (G ⧸ U) →* Equiv.Perm (G ⧸ U)).comp
+        (monomialHom U s) = MulAction.toPermHom G (G ⧸ U) :=
+  MonoidHom.ext fun g ↦ Equiv.Perm.ext (monomialHom_right U s g)
+
+/-- Integer powers of `(U.monomialHom s g).right` act on `G ⧸ U` as powers of `g`. -/
+@[simp]
+theorem monomialHom_right_zpow (s : U.LeftTransversal) (g : G) (k : ℤ) (x : G ⧸ U) :
+    ((monomialHom U s g).right ^ k) x = g ^ k • x := by
+  have h := DFunLike.congr_fun
+    (congrArg (fun φ : G →* Equiv.Perm (G ⧸ U) ↦ φ g ^ k) (rightHom_comp_monomialHom U s)) x
+  rw [MonoidHom.comp_apply, SemidirectProduct.rightHom_eq_right] at h
+  rw [h, ← map_zpow, MulAction.toPermHom_apply, MulAction.toPerm_apply]
+
+/-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`. -/
+theorem lWord_list_ofFn_prod (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ) :
+    (List.ofFn fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • q) g).prod =
+      (t q)⁻¹ * g ^ n * t ((g⁻¹ ^ n) • q) := by
+  induction n generalizing q with
+  | zero => simp
+  | succ n ih =>
+    rw [List.ofFn_succ, List.prod_cons]
+    have hshift :
+        (fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k.succ : ℕ)) • q) g) =
+          fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • (g⁻¹ • q)) g := by
+      funext k
+      simp [pow_succ, mul_smul]
+    rw [hshift, ih (g⁻¹ • q), Fin.val_zero, pow_zero, one_smul, TauCeti.lWord_def]
+    simp only [pow_succ, mul_smul, mul_assoc]
+    group
+
+/-- **Orbit monodromy of the monomial homomorphism.** The product of the base coordinates of
+`U.monomialHom s g` along a `⟨(U.monomialHom s g).right⟩`-orbit on `G ⧸ U` equals the coset
+monodromy element in `U`. -/
+theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U)
+    (hper : (g ^ Function.minimalPeriod (g • ·) q) • q = q) :
+    (List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
+        (monomialHom U s g).left (((monomialHom U s g).right⁻¹ ^ (t : ℕ)) q)).prod =
+      ⟨(leftTransversalRep U s q)⁻¹ * g ^ Function.minimalPeriod (g • ·) q *
+          leftTransversalRep U s q, by
+        have hmk : (QuotientGroup.mk (g ^ Function.minimalPeriod (g • ·) q *
+            leftTransversalRep U s q) : G ⧸ U) =
+            g ^ Function.minimalPeriod (g • ·) q •
+              (QuotientGroup.mk (leftTransversalRep U s q) : G ⧸ U) :=
+          rfl
+        rw [mul_assoc, ← QuotientGroup.eq, leftTransversalRep_mk, hmk, leftTransversalRep_mk,
+          hper]⟩ := by
+  apply Subtype.ext
+  have hval :
+      ((List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
+          (monomialHom U s g).left (((monomialHom U s g).right⁻¹ ^ (t : ℕ)) q)).prod : G) =
+        (List.ofFn fun k : Fin (Function.minimalPeriod (g • ·) q) ↦
+          TauCeti.lWord U (leftTransversalRep U s) ((g⁻¹ ^ (k : ℕ)) • q) g).prod := by
+    rw [SubmonoidClass.coe_list_prod]
+    refine congrArg List.prod (List.ext_getElem (by simp) fun i _ _ ↦ ?_)
+    have hinv : ((monomialHom U s g).right⁻¹ ^ (i : ℕ)) q = (g⁻¹ ^ (i : ℕ)) • q := by
+      have h1 : (monomialHom U s g).right⁻¹ = (monomialHom U s g⁻¹).right := by
+        rw [← SemidirectProduct.inv_right, ← map_inv (monomialHom U s)]
+      rw [h1, ← zpow_natCast, monomialHom_right_zpow, zpow_natCast]
+    simp only [List.getElem_map, List.getElem_ofFn]
+    rw [monomialHom_left, hinv]
+  rw [hval, lWord_list_ofFn_prod]
+  have hinv_per : (g⁻¹ ^ Function.minimalPeriod (g • ·) q) • q = q := by
+    rw [inv_pow]
+    exact inv_smul_eq_iff.mpr hper.symm
+  rw [hinv_per]
+
 end Subgroup
