@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.MellinTransform.Convolution
-public import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.MellinTransform.Beta
+import TauCeti.Analysis.MellinTransform.Convolution
+import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 
 /-!
 # The Mellin transform of Euler's integral along the negative real axis
@@ -19,12 +21,13 @@ transform at `s`, and
 `∫₀^∞ x^{s - 1} E(a, b, c, -x) dx = Γ(s) Γ(a - s) Γ(b - s) / (Γ(a) Γ(b) Γ(c - s))`.
 
 Euler's integral represents the regularized Gauss function `𝐅(a, b; c; ·)` in this parameter
-range (DLMF 15.6.1), so this is DLMF 15.14.1 there. The proof writes `x ↦ E(a, b, c, -x)` as the
-Mellin convolution `x ↦ ∫₀^∞ f(t) h(x t) dt` of the Beta weight
-`f(t) = t^{b - 1} (1 - t)^{c - b - 1}` on `(0, 1]` with `h(u) = (1 + u)^{-a}`, and applies
-`TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `h` at `s` is the Beta integral
-of the second kind `Complex.hasMellin_one_add_cpow_neg` (DLMF 5.12.3), and that of `f` at `1 - s`
-is the Beta integral `B(b - s, c - b)`.
+range (DLMF 15.6.1), so this is DLMF 15.14.1 there. The proof writes `E(a, b, c, -x)` as
+`(Γ(b) Γ(c - b))⁻¹` times the Mellin convolution `∫₀^∞ f(t) h(x t) dt` of the Beta weight
+`f(t) = t^{b - 1} (1 - t)^{c - b - 1}` on `(0, 1]`, extended by zero to `(1, ∞)`, with
+`h(u) = (1 + u)^{-a}`, and applies `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform
+of `h` at `s` is the Beta integral of the second kind `Complex.hasMellin_one_add_cpow_neg`
+(DLMF 5.12.3), and that of `f` at `1 - s` is the Beta integral `B(b - s, c - b)` by
+`Complex.hasMellin_indicator_cpow_mul_one_sub_cpow`.
 
 ## Main results
 
@@ -42,34 +45,6 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- The Beta weight of Euler's integral, extended by zero outside `(0, 1]`, has Mellin transform
-`B(b - s, c - b)` at `1 - s` when `Re s < Re b < Re c`. -/
-private lemma hasMellin_indicator_cpow_mul_one_sub_cpow {b c s : ℂ} (hsb : s.re < b.re)
-    (hbc : b.re < c.re) :
-    HasMellin
-      ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) (1 - s)
-      (betaIntegral (b - s) (c - b)) := by
-  have hbeta := betaIntegral_convergent (u := b - s) (v := c - b) (by simpa using hsb)
-    (by simpa using hbc)
-  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hbeta
-  -- multiplying by `t^{-s}` shifts the first parameter of the Beta weight
-  have heq : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (1 - s - 1) •
-        (Ioc 0 1).indicator (fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) t)
-      ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ (b - s - 1) * (1 - (t : ℂ)) ^ (c - b - 1))
-      (Ioi 0) := by
-    intro t ht
-    dsimp only
-    by_cases h : t ∈ Ioc 0 1
-    · rw [indicator_of_mem h, indicator_of_mem h, smul_eq_mul,
-        show b - s - 1 = 1 - s - 1 + (b - 1) by ring,
-        cpow_add _ _ (ofReal_ne_zero.mpr (ne_of_gt ht)), mul_assoc]
-    · rw [indicator_of_notMem h, indicator_of_notMem h, smul_zero]
-  refine ⟨(integrableOn_congr_fun heq measurableSet_Ioi).mpr
-    ((integrable_indicator_iff measurableSet_Ioc).mpr hbeta).integrableOn, ?_⟩
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi heq,
-    setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self,
-    ← intervalIntegral.integral_of_le zero_le_one, betaIntegral]
-
 /-- **The Mellin transform of Euler's integral along the negative real axis** (DLMF 15.14.1 for
 `𝐅(a, b; c; ·)` represented by Euler's integral). For `0 < Re s < min(Re a, Re b)` and
 `Re b < Re c`, the Mellin transform of `x ↦ E(a, b, c, -x)` converges at `s` and equals
@@ -80,7 +55,9 @@ theorem hasMellin_eulerIntegral_neg {a b c s : ℂ} (hs : 0 < s.re) (hsa : s.re 
       (Gamma s * Gamma (a - s) * Gamma (b - s) / (Gamma a * Gamma b * Gamma (c - s))) := by
   have hbs : 0 < (b - s).re := by simpa using hsb
   have hcb : 0 < (c - b).re := by simpa using hbc
-  have hf := hasMellin_indicator_cpow_mul_one_sub_cpow hsb hbc
+  have hf := hasMellin_indicator_cpow_mul_one_sub_cpow (s := 1 - s) (a := b - 1) (b := c - b - 1)
+    (by simpa using hsb) (by simp only [sub_re, one_re]; linarith)
+  rw [show 1 - s + (b - 1) = b - s by ring, show c - b - 1 + 1 = c - b by ring] at hf
   have hh := hasMellin_one_add_cpow_neg hs hsa
   -- Euler's integral at `-x` is a Mellin convolution of its Beta weight with `(1 + u)^{-a}`
   have heuler : (fun x : ℝ ↦ eulerIntegral a b c (-x)) = fun x : ℝ ↦
