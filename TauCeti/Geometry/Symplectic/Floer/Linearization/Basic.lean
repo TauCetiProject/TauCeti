@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -401,33 +402,10 @@ theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
     (hf₁ : |f z| ≤ 1) {M B : ℝ} (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
     ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
       2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖ξ z‖ ^ 2 := by
-  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
-  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ ≤ M * ‖ξ z‖ := by
-    rw [norm_smul]
-    gcongr
-    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
-  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ ≤ M * (B * ‖ξ z‖) := by
-    rw [norm_smul]
-    gcongr
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
-  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
-  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
-    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
-    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
-      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
-    nlinarith
-  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
-        gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
-          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ]
+  refine norm_smul_add_smul_add_smul_sq_le hf₁ ?_ ?_ ((le_opNorm _ _).trans (by gcongr)) <;>
+  · rw [← Real.norm_eq_abs]
+    exact (le_opNorm _ _).trans (by simp [stdComplexLineReal, stdComplexLineImag, hM])
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`

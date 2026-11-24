@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Compactness.Normed
 
@@ -60,6 +61,12 @@ orbits. It is the estimate of `TauCeti.Geometry.Symplectic.Floer.SemiFredholm` f
   `u` need only be `C¹` far out, so the reflected coefficients are evaluated at the reflected
   point pushed into that region, which makes them continuous on the whole cylinder. This is the
   form of the estimate that applies to the ends of a punctured domain such as the pair of pants.
+* **Compact parts of the domain.** On a compact set `K` where `J` is compatible along `u`, the
+  reflected operator is a Cauchy–Riemann operator with a compatible structure on the reflected set,
+  so the `L²` estimate of such operators
+  (`exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset`) bounds the derivatives of
+  covector fields supported in `K` by `D_u^* η` and `η` there, with no nondegeneracy hypothesis.
+  This is the estimate on the compact core of a punctured domain.
 
 ## Main results
 
@@ -74,6 +81,9 @@ In the namespace `TauCeti.SymplecticForm`:
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint`: the estimate on the
   end at `+∞` of a map asymptotic there to a nondegenerate orbit, for covector fields supported far
   out on that end, for the datum `K = H_t dt`.
+* `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint_of_subset`:
+  the `L²` estimate `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)` for covector fields
+  supported in a compact set `K`.
 
 The Sobolev completion of `D_u^*`, the regularity of weak `L²` cokernel elements and the Fredholm
 property are not treated here.
@@ -364,12 +374,50 @@ end EndLoop
 
 /-! ### Transferring the estimate through `ω` and the reflection -/
 
+/-- The reflection `ρ` preserves integrals: `∫_{ρ⁻¹ K} g ∘ ρ = ∫_K g`. -/
+private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (K : Set (ℝ × ℝ)) :
+    ∫ w in reflectL ⁻¹' K, g (reflectL w) = ∫ z in K, g z := by
+  have hr : (reflectL : ℝ × ℝ → ℝ × ℝ) = Prod.map Neg.neg id :=
+    funext fun z ↦ by rw [reflectL_apply, Prod.map_apply', id_eq]
+  rw [hr]
+  exact setIntegral_preimage_prodMap_neg_id g K
+
 /-- The reflection `ρ` carries `[-b, -a] × [0, 1]` onto `[a, b] × [0, 1]`, preserving
 integrals. -/
 private theorem setIntegral_comp_reflectL (g : ℝ × ℝ → ℝ) (a b : ℝ) :
     ∫ z in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1, g (reflectL z) =
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, g z := by
   simpa [reflectL_apply] using (setIntegral_Icc_neg_prod_eq g (-b) (-a) (Icc 0 1)).symm
+
+/-- The reflection `ρ` preserves compactness of preimages. -/
+private theorem isCompact_preimage_reflectL {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
+    IsCompact (reflectL ⁻¹' K) := by
+  -- `ρ` is an involution, so the preimage is the image `ρ K`.
+  have h : Function.LeftInverse reflectL reflectL := fun z ↦ by simp [reflectL_apply]
+  rw [← image_eq_preimage_of_inverse h h]
+  exact hK.image reflectL.continuous
+
+
+/-- `‖φ‖² ≤ ‖ω♭‖² ‖ω♭⁻¹ φ‖²`. -/
+private theorem norm_sq_le_norm_flatEquiv_sq_mul (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
+    ‖φ‖ ^ 2 ≤ ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
+  rw [← mul_pow]
+  refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
+  simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
+
+/-- Pointwise, the derivative part of the `W^{1,2}` density of a covector field `η` at `ρ w` is
+at most `‖ω♭‖²` times that of the reflected vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ` at `w`. -/
+private theorem norm_fderiv_reflectL_sq_le (ω : SymplecticForm V) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    {w : ℝ × ℝ} (hη : DifferentiableAt ℝ η (reflectL w)) :
+    ‖fderiv ℝ η (reflectL w) stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η (reflectL w) stdComplexLineImag‖ ^ 2 ≤
+      ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 *
+        (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineImag‖ ^ 2) := by
+  rw [(hasFDerivAt_flatEquiv_symm_comp_reflectL ω hη).fderiv]
+  simp only [ContinuousLinearMap.comp_apply, reflectL_stdComplexLineReal,
+    reflectL_stdComplexLineImag, map_neg, norm_neg, mul_add]
+  gcongr <;> exact norm_sq_le_norm_flatEquiv_sq_mul ω _
 
 /-- Pointwise, the `W^{1,2}` density of a covector field `η` at `ρ w` is at most `‖ω♭‖²` times
 that of the reflected vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ` at `w`. -/
@@ -381,15 +429,9 @@ private theorem sobolev_reflectL_le (ω : SymplecticForm V) {η : ℝ × ℝ →
         (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineImag‖ ^ 2 +
           ‖ω.flatEquiv.symm (η (reflectL w))‖ ^ 2) := by
-  set c := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
-  have hb (φ : V →L[ℝ] ℝ) : ‖φ‖ ^ 2 ≤ c ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
-    rw [← mul_pow]
-    refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-    simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
-  rw [(hasFDerivAt_flatEquiv_symm_comp_reflectL ω (hη (reflectL w))).fderiv]
-  simp only [ContinuousLinearMap.comp_apply, reflectL_stdComplexLineReal,
-    reflectL_stdComplexLineImag, map_neg, norm_neg, mul_add]
-  gcongr <;> exact hb _
+  rw [mul_add]
+  exact add_le_add (norm_fderiv_reflectL_sq_le ω (hη _))
+    (norm_sq_le_norm_flatEquiv_sq_mul ω _)
 
 /-- `‖ω♭⁻¹ φ‖² ≤ ‖ω♭⁻¹‖² ‖φ‖²`. -/
 private theorem norm_flatEquiv_symm_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
@@ -479,6 +521,131 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
       rw [integral_const_mul, integral_const_mul,
         setIntegral_comp_reflectL (fun z ↦ ‖D η z‖ ^ 2) a b, hTr]
       ring
+
+/-! ### The estimate on compact parts of the domain -/
+
+/-- **Transferring the `L²` estimate on a compact set.** Let `P ζ = ∂s ζ + Jr ∂t ζ + T ζ` satisfy
+the `L²` estimate on vector fields supported in `ρ⁻¹ K`, for a compact set `K`, and let `D` be an
+operator on covector fields such that, for every `C²` field `η`, `D η` is continuous on `K` and
+`D η (ρ w) = ω♭ (P ζ w)` for `w ∈ ρ⁻¹ K`, for the reflected vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ`.
+Then `D` satisfies the `L²` estimate on covector fields supported in `K`. -/
+private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_flatEquiv_reflectL
+    (ω : SymplecticForm V) {K : Set (ℝ × ℝ)} (hK : IsCompact K)
+    {Jr : ℝ × ℝ → AlmostComplexStructure V} {T : ℝ × ℝ → V →L[ℝ] V}
+    {D : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ × ℝ → V →L[ℝ] ℝ}
+    (hDc : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ContinuousOn (D η) K)
+    (hD : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ∀ w ∈ reflectL ⁻¹' K,
+      D η (reflectL w) = ω.flatEquiv
+        (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineReal +
+          Jr w (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineImag) +
+          T w (ω.flatEquiv.symm (η (reflectL w)))))
+    {C : ℝ} (hC : 0 ≤ C)
+    (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → tsupport ξ ⊆ reflectL ⁻¹' K →
+      ∫ z in reflectL ⁻¹' K, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
+        C * ∫ z in reflectL ⁻¹' K, (‖fderiv ℝ ξ z stdComplexLineReal +
+          Jr z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2)) :
+    ∃ C', 0 ≤ C' ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
+      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+        C' * ∫ z in K, (‖D η z‖ ^ 2 + ‖η z‖ ^ 2) := by
+  set K' := reflectL ⁻¹' K
+  have hK' : IsCompact K' := isCompact_preimage_reflectL hK
+  set c₁ := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
+  set c₂ := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
+  refine ⟨c₁ ^ 2 * C * c₂ ^ 2, by positivity, fun η hη hηK ↦ ?_⟩
+  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η (reflectL w))
+  have hζ : ContDiff ℝ 2 ζ := ω.flatEquiv.symm.contDiff.comp (hη.comp reflectL.contDiff)
+  have hζK : tsupport ζ ⊆ K' :=
+    (tsupport_comp_subset (g := ω.flatEquiv.symm) (map_zero _) _).trans
+      ((tsupport_comp_subset_preimage η reflectL.continuous).trans (preimage_mono hηK))
+  have hmono {f g : ℝ × ℝ → ℝ} (hf : ∀ w, 0 ≤ f w) (hg : IntegrableOn g K')
+      (hfg : ∀ w ∈ K', f w ≤ g w) : ∫ w in K', f w ≤ ∫ w in K', g w :=
+    integral_mono_of_nonneg (.of_forall hf) hg.integrable
+      ((ae_restrict_iff' hK'.measurableSet).2 (.of_forall hfg))
+  have hDρ := ((hDc hη).comp reflectL.continuous.continuousOn
+    (fun _ hw ↦ hw : MapsTo reflectL K' K)).norm.pow 2
+  have hηρ := ((hη.continuous.comp reflectL.continuous).norm.pow 2).continuousOn (s := K')
+  have := hζ.continuous_fderiv two_ne_zero
+  calc _ = ∫ w in K', (‖fderiv ℝ η (reflectL w) stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ η (reflectL w) stdComplexLineImag‖ ^ 2) :=
+        (setIntegral_preimage_reflectL (fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) K).symm
+    _ ≤ ∫ w in K', c₁ ^ 2 * (‖fderiv ℝ ζ w stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ζ w stdComplexLineImag‖ ^ 2) :=
+        hmono (fun w ↦ by positivity)
+          ((by fun_prop : Continuous _).continuousOn.integrableOn_compact hK')
+          fun w _ ↦ norm_fderiv_reflectL_sq_le ω (hη.differentiable two_ne_zero _)
+    _ ≤ c₁ ^ 2 * (C * ∫ w in K', (‖fderiv ℝ ζ w stdComplexLineReal +
+          Jr w (fderiv ℝ ζ w stdComplexLineImag) + T w (ζ w)‖ ^ 2 + ‖ζ w‖ ^ 2)) := by
+        rw [integral_const_mul]
+        exact mul_le_mul_of_nonneg_left (hest hζ hζK) (sq_nonneg _)
+    _ ≤ c₁ ^ 2 * (C * ∫ w in K', c₂ ^ 2 * (‖D η (reflectL w)‖ ^ 2 + ‖η (reflectL w)‖ ^ 2)) := by
+        refine mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (hmono (fun w ↦ by positivity)
+          ((continuousOn_const.mul (hDρ.add hηρ)).integrableOn_compact hK') fun w hw ↦ ?_) hC)
+          (sq_nonneg _)
+        rw [mul_add, ← ContinuousLinearEquiv.symm_apply_apply ω.flatEquiv (_ + _), ← hD hη w hw]
+        exact add_le_add (ω.norm_flatEquiv_symm_sq_le _) (ω.norm_flatEquiv_symm_sq_le _)
+    _ = _ := by
+        rw [integral_const_mul,
+          setIntegral_preimage_reflectL (fun z ↦ ‖D η z‖ ^ 2 + ‖η z‖ ^ 2) K]
+        ring
+
+/-- **The `L²` estimate of the formal adjoint on compactly supported covector fields.** Let
+`K ⊆ ℝ × ℝ` be compact, and suppose that at every `z ∈ K` the structure `J(z, u z)` is
+`ω`-compatible, `J` is `C¹` and the Hamiltonians `Ks`, `Kt` are `C²` at `(z, u z)`, and `u` is
+`C¹` at `z`. Then there is a constant `C ≥ 0` such that every `C²` covector field `η` with support
+in `K` satisfies `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)` for the formal adjoint
+`D_u^*` of the linearized Floer operator. This is the adjoint counterpart of
+`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset`,
+and like it needs no nondegeneracy and no Floer equation. -/
+theorem
+  exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint_of_subset
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hc : ∀ z ∈ K, ω.Compatible (J z (u z))) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
+      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+        C * ∫ z in K, (‖ω.floerLinearizationAdjoint
+            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 +
+          ‖η z‖ ^ 2) := by
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
+  have hJu (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 (fun w ↦ J' w (u w)) z :=
+    (hJ z hz).comp (f := fun w ↦ (w, u w)) z (contDiffAt_id.prodMk (hu z hz))
+  -- The coefficients of the reflected adjoint `∂s + J(ρ w) ∂t + T` are continuous on `ρ⁻¹ K`.
+  have hmaps : MapsTo reflectL (reflectL ⁻¹' K) K := fun _ hw ↦ hw
+  have hJc : ContinuousOn
+      (fun w ↦ (J (reflectL w) (u (reflectL w))).toLinearMap.toContinuousLinearMap)
+      (reflectL ⁻¹' K) :=
+    ContinuousOn.comp (g := fun z ↦ J' z (u z))
+      (fun z hz ↦ (hJu z hz).continuousAt.continuousWithinAt) reflectL.continuous.continuousOn
+      hmaps
+  set T : ℝ × ℝ → V →L[ℝ] V := fun w ↦ -ω.leftAdjointL
+    (fderiv ℝ (fun w ↦ J' w (u w)) (reflectL w) stdComplexLineImag -
+      ω.floerLinearizationCoeff J' Ks Kt u (reflectL w))
+  have hT : ContinuousOn T (reflectL ⁻¹' K) := by
+    have hA : ContinuousOn (fun z ↦ fderiv ℝ (fun w ↦ J' w (u w)) z stdComplexLineImag -
+        ω.floerLinearizationCoeff J' Ks Kt u z) K :=
+      ContinuousOn.sub (fun z hz ↦ (((hJu z hz).continuousAt_fderiv one_ne_zero).clm_apply
+        continuousAt_const).continuousWithinAt)
+        (ω.continuousOn_floerLinearizationCoeff (J := J') hJ hKs hKt hu)
+    exact (ω.leftAdjointL.continuous.comp_continuousOn
+      (hA.comp reflectL.continuous.continuousOn hmaps)).neg
+  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
+  obtain ⟨C, hC, hest⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset
+    (μ := volume) (isCompact_preimage_reflectL hK) (fun w hw ↦ hc _ hw) hJc hT
+  refine exists_forall_setIntegral_norm_fderiv_sq_le_of_flatEquiv_reflectL ω hK
+    (fun η hη z hz ↦ (continuousAt_floerLinearizationAdjoint (J := J') (hJ z hz) (hKs z hz)
+      (hKt z hz) (hu z hz) (hη.of_le one_le_two).contDiffAt).continuousWithinAt)
+    (fun η hη w hw ↦ ?_) hC hest
+  rw [floerLinearizationAdjoint_reflectL_eq ω (hη.differentiable two_ne_zero _)
+    ((hJu _ hw).differentiableAt one_ne_zero) (hc _ hw).invariant]
+  simp only [T, J', neg_apply, sub_eq_add_neg]
 
 /-! ### The coefficients of the reflected adjoint at the ends -/
 

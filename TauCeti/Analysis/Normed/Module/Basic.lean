@@ -41,6 +41,9 @@ normed spaces:
   `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.norm_smul_add_smul_sq_le`: the Cauchy–Schwarz bound
   `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)` for real scalars.
+* `TauCeti.norm_smul_add_smul_add_smul_sq_le`: if `|c| ≤ 1`, `|a|, |b| ≤ M` and
+  `‖y‖ ≤ B ‖x‖`, then `‖c • A + a • x + b • y‖² ≤ 2 ‖A‖² + 2 (M (1 + B))² ‖x‖²`, the pointwise
+  algebra of a first-order operator on a cut-off field.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
 * `TauCeti.norm_smul_le_mul_norm_of_support_subset`: a multiplier bounded by `K` on a set
@@ -179,6 +182,30 @@ theorem norm_smul_add_smul_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedS
   have hab : (|a| * ‖v‖ + |b| * ‖w‖) ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖w‖ ^ 2) := by
     nlinarith [sq_nonneg (|a| * ‖w‖ - |b| * ‖v‖), sq_abs a, sq_abs b]
   exact (pow_le_pow_left₀ (norm_nonneg _) h 2).trans hab
+
+/-- **The algebra of a cutoff, pointwise.** If `|c| ≤ 1`, `|a|, |b| ≤ M` and `‖y‖ ≤ B ‖x‖`, then
+`‖c • A + a • x + b • y‖² ≤ 2 ‖A‖² + 2 (M (1 + B))² ‖x‖²`. With `c` the value of a cutoff and `a`,
+`b` its partial derivatives, this bounds a first-order operator on a cut-off field. -/
+theorem norm_smul_add_smul_add_smul_sq_le {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {c a b M B : ℝ} {A x y : E} (hc : |c| ≤ 1) (ha : |a| ≤ M) (hb : |b| ≤ M)
+    (hy : ‖y‖ ≤ B * ‖x‖) :
+    ‖c • A + a • x + b • y‖ ^ 2 ≤ 2 * ‖A‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖x‖ ^ 2 := by
+  have hM₀ : 0 ≤ M := (abs_nonneg _).trans ha
+  have h₁ : ‖a • x‖ ≤ M * ‖x‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    gcongr
+  have h₂ : ‖b • y‖ ≤ M * (B * ‖x‖) := by
+    rw [norm_smul, Real.norm_eq_abs]
+    gcongr
+  have h₀ : ‖c • A‖ ≤ ‖A‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hc
+  have hsum : ‖c • A + a • x + b • y‖ ≤ ‖A‖ + M * (1 + B) * ‖x‖ := by
+    have := norm_add_le (c • A) (a • x)
+    refine (norm_add_le _ _).trans ?_
+    nlinarith
+  calc _ ≤ (‖A‖ + M * (1 + B) * ‖x‖) ^ 2 := by gcongr
+    _ ≤ _ := by nlinarith [sq_nonneg (‖A‖ - M * (1 + B) * ‖x‖), mul_pow (M * (1 + B)) ‖x‖ 2]
 
 /-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
 real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits
