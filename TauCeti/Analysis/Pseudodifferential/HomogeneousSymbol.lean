@@ -45,6 +45,8 @@ The file develops:
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
   of the frequency, as for first-order operators with constant coefficients;
+* the degree-zero symbol `HomogeneousSymbol.ofPositiveBranch` on the real frequency line, with a
+  smooth operator-valued coefficient on the positive ray and zero elsewhere;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions, and the linear change
   of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
@@ -100,6 +102,10 @@ directions `u` and `l` frequency directions `w` is the iterated derivative evalu
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, (1.17).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 * R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2.
+* The positive-branch construction adapts the half-line argument in `PeriodicFourierSymbol.lean`
+  and `CircleFourierPseudodifferential.lean` in the Lean-Atiyah-Singer formalization by Alpha
+  Squared Labs and Codex.
+  [Lean-Atiyah-Singer](https://github.com/alpha-squared-labs/Lean-Atiyah-Singer)
 -/
 
 public section
@@ -527,6 +533,31 @@ def ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) : HomogeneousSymbol X E V W 1 whe
 @[simp]
 theorem coefficient_ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) (p : X × E) :
     (ofLinear X L).coefficient p = L p.2 :=
+  (rfl)
+
+/-- The degree-zero homogeneous symbol on the real frequency line that equals `g x` at positive
+frequencies and vanishes at nonpositive frequencies. -/
+noncomputable def ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) :
+    HomogeneousSymbol X ℝ V W 0 where
+  coefficient p := if 0 < p.2 then g p.1 else 0
+  zero_covector _ := by simp
+  contDiffOn_coefficient := by
+    intro p hp
+    have hξ : p.2 ≠ 0 := hp
+    apply ContDiffAt.contDiffWithinAt
+    rcases hξ.lt_or_gt with hneg | hpos
+    · apply (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq
+      filter_upwards [continuous_snd.continuousAt (Iio_mem_nhds hneg)] with q hq
+      exact ite_eq_right (not_lt_of_ge (le_of_lt hq))
+    · apply (hg.comp contDiff_fst).contDiffAt.congr_of_eventuallyEq
+      filter_upwards [continuous_snd.continuousAt (Ioi_mem_nhds hpos)] with q hq
+      exact ite_eq_left hq
+  homogeneous _ _ _ ht := by simp [smul_eq_mul, mul_pos_iff_of_pos_left ht]
+
+/-- The coefficient of a positive-branch symbol at an arbitrary position and frequency. -/
+@[simp]
+theorem coefficient_ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) (p : X × ℝ) :
+    (ofPositiveBranch g hg).coefficient p = if 0 < p.2 then g p.1 else 0 :=
   (rfl)
 
 /-! ### Pullback in the position -/
