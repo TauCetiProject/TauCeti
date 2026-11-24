@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Square
+import TauCeti.Data.Set.Card
 
 /-!
 # The square of the integral Morse boundary counts broken trajectories with signs
@@ -166,42 +167,32 @@ theorem signedMorseBoundary_signedMorseBoundary_single_apply {R : Type*} [Ring R
     (p r : criticalPoints 𝓘(ℝ, E) f) :
     hX.signedMorseBoundary 𝔬 hf R (hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p 1)) r =
       ((∑ᶠ x ∈ hX.morseBrokenTrajectorySet p r, hX.brokenTrajectorySign 𝔬 p r x : ℤ) : R) := by
-  classical
   have := hf.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
-  have hfin := h.finite_morseBrokenTrajectorySet hf p r
-  -- Sort the broken trajectories by their intermediate critical point `q`.
-  rw [signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
-    finsum_mem_eq_finite_toFinset_sum _ hfin, ← Finset.sum_fiberwise _ Prod.fst, Int.cast_sum]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [signedMorseBoundary_single_apply, one_mul, ← Int.cast_mul]
+  rw [signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
+  simp_rw [signedMorseBoundary_single_apply, one_mul, ← Int.cast_mul, ← Int.cast_sum]
   congr 1
-  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1
-  · -- The fiber over `q` is a copy of the pairs of trajectories through `q`, and the signed
-    -- counts through `q` multiply to the sum of the products of their signs.
-    have hfin₁ := h.finite_morseTrajectorySlice hf hind.1
-    have hfin₂ := h.finite_morseTrajectorySlice hf hind.2
-    rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hind.1,
-      signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hind.2, signedTrajectoryCount_def,
-      signedTrajectoryCount_def, finsum_mem_eq_finite_toFinset_sum _ hfin₁,
-      finsum_mem_eq_finite_toFinset_sum _ hfin₂, Finset.sum_mul_sum, ← Finset.sum_product']
-    refine Finset.sum_nbij' (fun z ↦ (q, z)) (fun x ↦ x.2) (fun z hz ↦ ?_) (fun x hx ↦ ?_)
-      (fun _ _ ↦ rfl) (fun x hx ↦ ?_) fun _ _ ↦ ?_
-    · rw [Finset.mem_product, Finite.mem_toFinset, Finite.mem_toFinset] at hz
-      simpa [Finset.mem_filter, Finite.mem_toFinset, hind] using hz
-    · rw [Finset.mem_filter, Finite.mem_toFinset, mem_morseBrokenTrajectorySet] at hx
-      obtain ⟨⟨-, -, hz₁, hz₂⟩, rfl⟩ := hx
-      exact Finset.mem_product.2 ⟨hfin₁.mem_toFinset.2 hz₁, hfin₂.mem_toFinset.2 hz₂⟩
-    · rw [Finset.mem_filter] at hx
-      exact Prod.ext hx.2.symm rfl
-    · exact (brokenTrajectorySign_of_morseIndex_eq_add_one (x := (q, _)) hind.1 hind.2).symm
-  · -- Away from the intermediate index, both sides vanish.
-    rw [Finset.sum_eq_zero fun x hx ↦ brokenTrajectorySign_of_not_morseIndex_eq_add_one
-      ((Finset.mem_filter.1 hx).2 ▸ hind)]
-    rcases not_and_or.1 hind with hpq | hqr
-    · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpq, zero_mul]
-    · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hqr, mul_zero]
+  -- Sort the broken trajectories by their intermediate critical point `q`: the sign splits as the
+  -- product of the signs of the trajectories from `p` to `q` and from `q` to `r`.
+  rw [← finsum_mem_setOf_and_and_mem_and_mem
+    (P := fun q : criticalPoints 𝓘(ℝ, E) f ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (Q := fun q ↦ manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (A := (hX.morseTrajectorySlice p ·)) (B := (hX.morseTrajectorySlice · r))
+    (g := fun q z ↦ if hpq : _ then hX.trajectorySign (𝔬.chart p) (𝔬.chart q)
+      (𝔬.orientation p) (𝔬.orientation q) hpq z else 0)
+    (k := fun q z ↦ if hqr : _ then hX.trajectorySign (𝔬.chart q) (𝔬.chart r)
+      (𝔬.orientation q) (𝔬.orientation r) hqr z else 0)
+    (fun _ ↦ h.finite_morseTrajectorySlice hf) (fun _ ↦ h.finite_morseTrajectorySlice hf)
+    (fun q hpq ↦ ?_) (fun _ ↦ signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one)
+    (fun q hqr ↦ ?_) (fun _ ↦ signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one)]
+  · refine finsum_mem_congr (Set.ext fun _ ↦ hX.mem_morseBrokenTrajectorySet.symm) fun x hx ↦ ?_
+    obtain ⟨hpq, hqr, -⟩ := hX.mem_morseBrokenTrajectorySet.1 hx
+    rw [brokenTrajectorySign_of_morseIndex_eq_add_one hpq hqr, dite_eq_left hpq, dite_eq_left hqr]
+  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def]
+    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpq]
+  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hqr, signedTrajectoryCount_def]
+    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hqr]
 
 include h in
 /-- **`∂² = 0` reduces to signed counts of broken trajectories.** The Morse boundary with
