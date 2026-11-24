@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.FieldSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
+public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.RingTheory.Etale.Field
 
 /-!
@@ -29,8 +30,9 @@ in `X` (`TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`). In particular its 
 When `Ω` is finite over `K`, as `ℂ` is over `ℝ`, the geometric point `Spec Ω ⟶ Spec K` is
 surjective and étale, so the sheaf of a finitely generated module over a Noetherian ring is finite
 lisse (`TauCeti.FiniteEtaleScheme.isFiniteLisse_galoisModuleSheaf`). The constant sheaf on a
-module `N` maps to a sheaf exactly as `N` maps to its sections over the terminal object `Spec K`,
-so if `M ≠ 0` has no nonzero invariants, the sheaf is not constant
+module `N` maps to a sheaf exactly as `N` maps to its sections over the terminal object `Spec K`
+(`CategoryTheory.Sheaf.isZero_of_isConstant`), so if `M ≠ 0` has no nonzero invariants, the sheaf
+is not constant
 (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`).
 
 ## Main definitions
@@ -224,18 +226,12 @@ theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
     ¬ (galoisModuleSheaf K Ω ρ).IsConstant (Scheme.smallEtaleTopology (Spec (.of K))) := by
   -- A constant such sheaf is zero, since its sections over the terminal object `Spec K` vanish;
   -- but it has a nonzero section over the finite étale `K`-scheme of the regular Galois set.
-  rintro ⟨N, ⟨e⟩⟩
-  let F := galoisModuleSheaf K Ω ρ
+  intro _
   have hT : IsTerminal ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))) :=
     (Scheme.Etale.mkIdTerminal _).ofIso (toEtaleObjOfHomIso _ (𝟙 _)).symm
-  have hΓ := subsingleton_galoisModuleSheaf_obj_ofHom_id ρ hρ
-  -- Morphisms from the constant sheaf on `N` correspond to maps from `N` to the zero module.
-  have hF : Subsingleton (F ⟶ F) := ⟨fun a b ↦ by
-    have h := ((constantSheafAdj _ (ModuleCat.{u} Λ) hT).homEquiv N F).injective
-      (a₁ := e.hom ≫ a) (a₂ := e.hom ≫ b)
-      (ModuleCat.hom_ext (LinearMap.ext fun _ ↦ hΓ.elim _ _))
-    simpa using congr(e.inv ≫ $h)⟩
-  have hz : IsZero F := (IsZero.iff_id_eq_zero F).2 (Subsingleton.elim _ _)
+  have := subsingleton_galoisModuleSheaf_obj_ofHom_id ρ hρ
+  have hz := Sheaf.isZero_of_isConstant _ hT (galoisModuleSheaf K Ω ρ)
+    (ModuleCat.isZero_of_subsingleton _)
   obtain ⟨a, b, hab⟩ :=
     (nontrivial_galoisModuleSheaf_obj_regular (K := K) (Ω := Ω) ρ).exists_pair_ne
   exact hab (@Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero
