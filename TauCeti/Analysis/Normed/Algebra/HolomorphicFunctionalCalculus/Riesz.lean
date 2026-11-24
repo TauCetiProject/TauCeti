@@ -237,9 +237,9 @@ theorem rieszIdempotent_eq_one_iff (a : A) (K : Clopens (spectrum ℂ a)) :
 theorem rieszIdempotent_injective (a : A) : Injective (rieszIdempotent a) := by
   have hle {K L : Clopens (spectrum ℂ a)} (h : rieszIdempotent a K = rieszIdempotent a L) :
       K ≤ L := by
-    rw [← disjoint_compl_right_iff, disjoint_iff, ← rieszIdempotent_eq_zero_iff,
-      rieszIdempotent_inf, rieszIdempotent_compl, mul_sub, mul_one, h,
-      (isIdempotentElem_rieszIdempotent a L).eq, sub_self]
+    rw [← disjoint_compl_right_iff, disjoint_iff, ← rieszIdempotent_eq_zero_iff]
+    simp only [rieszIdempotent_inf, rieszIdempotent_compl, h,
+      (isIdempotentElem_rieszIdempotent a L).mul_one_sub_self]
   exact fun K L h ↦ le_antisymm (hle h) (hle h.symm)
 
 @[simp]
