@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import TauCeti.Geometry.Lie.TestFunction.ApproximateIdentity
-import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 import Mathlib.MeasureTheory.Group.Integral
+import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 
 /-!
 # Test functions acting on a representation of a Lie group
@@ -19,14 +19,14 @@ A test function `a ∈ C_c^∞(G)` acts on `V` by the **integrated operator**
 
 `π(a) v = ∫ y, a y • π y v ∂μ`,
 
-a bounded operator, linear in `a`. By the Banach–Steinhaus theorem the operators `π y` are
-uniformly bounded on the compact support of `a`, which bounds `π(a)`. For a left-invariant measure
-`π g ∘ π(a) = π(L_g a)`, where `L_g a = a (g⁻¹ * ·)` is left translation, and along the smooth
-approximate identities `u_U` of `TauCeti/Geometry/Lie/TestFunction/ApproximateIdentity.lean`,
-`π(u_U) v → v` for every `v`.
+a bounded operator, linear in `a`. By `ContRepresentation.exists_norm_le_of_isCompact` (the
+Banach–Steinhaus theorem) the operators `π y` are uniformly bounded on the compact support of `a`,
+which bounds `π(a)`. For a left-invariant measure `π g ∘ π(a) = π(L_g a)`, where
+`L_g a = a (g⁻¹ * ·)` is left translation, and along the smooth approximate identities `u_U` of
+`TauCeti/Geometry/Lie/TestFunction/ApproximateIdentity.lean`, `π(u_U) v → v` for every `v`.
 
-This is the operator of Gårding's smoothing argument; that each `π(a) v` is a smooth vector, and
-hence that the smooth vectors are dense, is the next step.
+This is the operator of Gårding's smoothing argument, which shows that each `π(a) v` is a smooth
+vector and hence that the smooth vectors are dense.
 
 ## Main definitions
 
@@ -35,8 +35,6 @@ hence that the smooth vectors are dense, is the next step.
 
 ## Main results
 
-* `ContRepresentation.exists_norm_le_of_isCompact`: the operators of a strongly continuous
-  representation on a Banach space are uniformly bounded on compact sets.
 * `ContRepresentation.lieIntegratedOperator_apply`: `π(a) v = ∫ y, a y • π y v ∂μ`.
 * `ContRepresentation.norm_lieIntegratedOperator_le`: `‖π(a)‖ ≤ C * ∫ ‖a‖ dμ` when `‖π y‖ ≤ C`
   on the support of `a`.
@@ -58,22 +56,6 @@ open Filter MeasureTheory Set Topology TopologicalSpace TauCeti
 open scoped ContDiff Manifold
 
 namespace ContRepresentation
-
-section Bound
-
-variable {G V : Type*} [Monoid G] [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [CompleteSpace V] {π : ContRepresentation ℂ G V}
-
-/-- **Local uniform boundedness.** The operators of a strongly continuous representation on a
-Banach space are uniformly bounded on every compact set, by the Banach–Steinhaus theorem. -/
-theorem exists_norm_le_of_isCompact (hπ : ∀ v, Continuous fun g ↦ π g v) {K : Set G}
-    (hK : IsCompact K) : ∃ C, ∀ y ∈ K, ‖(π y : V →L[ℂ] V)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := banach_steinhaus (g := fun y : K ↦ (π y : V →L[ℂ] V)) fun v ↦ by
-    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hπ v).continuousOn
-    exact ⟨C, fun y ↦ hC y y.property⟩
-  exact ⟨C, fun y hy ↦ hC ⟨y, hy⟩⟩
-
-end Bound
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -99,6 +81,11 @@ private def lieIntegratedOperatorₗ (a : LieTestFunction I G) : V →ₗ[ℂ] V
   map_smul' c v := by
     simp only [map_smul, RingHom.id_apply, smul_comm (a _) c]
     exact integral_smul c _
+
+/-- Evaluation of `lieIntegratedOperatorₗ`. -/
+private theorem lieIntegratedOperatorₗ_apply (a : LieTestFunction I G) (v : V) :
+    lieIntegratedOperatorₗ π hπ μ a v = ∫ y, a y • π y v ∂μ :=
+  (rfl)
 
 /-- The bound `‖∫ y, a y • π y v ∂μ‖ ≤ C * (∫ ‖a‖ dμ) * ‖v‖` when `‖π y‖ ≤ C` on a set containing
 the support of `a`. -/
@@ -127,14 +114,14 @@ def lieIntegratedOperator : LieTestFunction I G →ₗ[ℂ] V →L[ℂ] V where
       norm_integral_lieTestFunction_smul_le π μ a subset_rfl hC⟩
   map_add' a b := by
     ext v
-    change ∫ y, (a y + b y) • π y v ∂μ = ∫ y, a y • π y v ∂μ + ∫ y, b y • π y v ∂μ
-    simp only [add_smul]
+    simp only [LinearMap.mkContinuousOfExistsBound_apply, lieIntegratedOperatorₗ_apply,
+      IsAddApply.add_apply, add_smul]
     exact integral_add (integrable_lieTestFunction_smul π hπ μ a v)
       (integrable_lieTestFunction_smul π hπ μ b v)
   map_smul' c a := by
     ext v
-    change ∫ y, (c * a y) • π y v ∂μ = c • ∫ y, a y • π y v ∂μ
-    simp only [mul_smul]
+    simp only [LinearMap.mkContinuousOfExistsBound_apply, lieIntegratedOperatorₗ_apply,
+      IsSMulApply.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
     exact integral_smul c _
 
 /-- The integrated operator is integration of the orbit against the test function. -/
