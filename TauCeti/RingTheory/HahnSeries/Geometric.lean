@@ -57,25 +57,19 @@ noncomputable def ofPowerSeriesSingle (hg : 0 < g) : PowerSeries R →+* R⟦Γ�
   (embDomainRingHom (multiplesHom Γ g) (strictMono_multiplesHom hg).injective
     fun _ _ ↦ (strictMono_multiplesHom hg).le_iff_le).comp toPowerSeries.symm.toRingHom
 
-/-- `ofPowerSeriesSingle R hg f` is the embedding along `n ↦ n • g` of `f` as a Hahn series. -/
-private theorem ofPowerSeriesSingle_apply (hg : 0 < g) (f : PowerSeries R) :
-    ofPowerSeriesSingle R hg f =
-      embDomain ⟨⟨multiplesHom Γ g, (strictMono_multiplesHom hg).injective⟩,
-        (strictMono_multiplesHom hg).le_iff_le⟩ (toPowerSeries.symm f) :=
-  (rfl)
-
 /-- The coefficient of `ofPowerSeriesSingle R hg f` at `n • g` is the `n`-th coefficient
 of `f`. -/
 @[simp]
 theorem coeff_ofPowerSeriesSingle_nsmul (hg : 0 < g) (f : PowerSeries R) (n : ℕ) :
     (ofPowerSeriesSingle R hg f).coeff (n • g) = PowerSeries.coeff n f := by
-  rw [ofPowerSeriesSingle_apply, ← multiplesHom_apply, embDomain_mk_coeff,
-    coeff_toPowerSeries_symm]
+  rw [ofPowerSeriesSingle, RingHom.comp_apply, embDomainRingHom_apply, ← multiplesHom_apply,
+    embDomain_mk_coeff]
+  simp
 
 /-- `ofPowerSeriesSingle R hg f` vanishes away from the multiples of `g`. -/
 theorem coeff_ofPowerSeriesSingle_of_forall_ne (hg : 0 < g) (f : PowerSeries R) {a : Γ}
     (ha : ∀ n : ℕ, n • g ≠ a) : (ofPowerSeriesSingle R hg f).coeff a = 0 := by
-  rw [ofPowerSeriesSingle_apply]
+  rw [ofPowerSeriesSingle, RingHom.comp_apply, embDomainRingHom_apply]
   exact embDomain_of_notMem_range fun ⟨n, hn⟩ ↦ ha n hn
 
 /-- Substituting `t ^ g` for `X` is injective. -/
@@ -92,8 +86,7 @@ theorem ofPowerSeriesSingle_X (hg : 0 < g) :
   have hX : toPowerSeries.symm (PowerSeries.X : PowerSeries R) = single 1 1 := by
     ext n
     simp [PowerSeries.coeff_X, coeff_single]
-  rw [ofPowerSeriesSingle_apply, hX, embDomain_single]
-  simp only [RelEmbedding.coe_mk, Function.Embedding.coeFn_mk, multiplesHom_apply, one_nsmul]
+  simp [ofPowerSeriesSingle, hX, embDomain_single]
 
 /-- `ofPowerSeriesSingle R hg` sends constants to constants. -/
 @[simp]
@@ -102,8 +95,7 @@ theorem ofPowerSeriesSingle_C (hg : 0 < g) (r : R) :
   have hC : toPowerSeries.symm (PowerSeries.C r) = C r := by
     ext n
     simp [PowerSeries.coeff_C, coeff_single]
-  rw [ofPowerSeriesSingle, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, hC,
-    embDomainRingHom_C]
+  simp [ofPowerSeriesSingle, hC]
 
 end Semiring
 
@@ -116,12 +108,9 @@ variable [CommRing R]
 theorem one_sub_single_mul_ofPowerSeriesSingle_mk_pow (hg : 0 < g) (r : R) :
     (1 - single g r) * ofPowerSeriesSingle R hg (PowerSeries.mk fun n ↦ r ^ n) = 1 := by
   have h := congrArg (PowerSeries.rescale r) (PowerSeries.mk_one_mul_one_sub_eq_one R)
-  rw [map_mul, map_sub, map_one, PowerSeries.rescale_X, PowerSeries.rescale_mk] at h
-  simp only [Pi.one_apply, mul_one] at h
-  have h' := congrArg (ofPowerSeriesSingle R hg) h
-  rw [map_mul, map_sub, map_one, map_mul, ofPowerSeriesSingle_C, ofPowerSeriesSingle_X,
-    C_apply, single_mul_single, zero_add, mul_one, mul_comm] at h'
-  exact h'
+  simp only [map_mul, map_sub, map_one, PowerSeries.rescale_X, PowerSeries.rescale_mk,
+    Pi.one_apply, mul_one] at h
+  simpa [single_mul_single, mul_comm] using congrArg (ofPowerSeriesSingle R hg) h
 
 /-- For `0 < g`, the series `1 - r t ^ g` is a unit, with inverse `∑ₙ rⁿ t ^ (n • g)`. -/
 theorem isUnit_one_sub_single (hg : 0 < g) (r : R) : IsUnit (1 - single g r) :=

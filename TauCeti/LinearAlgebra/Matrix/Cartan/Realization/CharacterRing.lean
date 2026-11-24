@@ -107,8 +107,8 @@ variable (R)
 /-- For a finite index set the positive root cone is finitely generated, so every function on
 weights supported in finitely many cones `λ - Q₊` is a character (`HahnSeries.ofConeBounded`). -/
 instance isAddFG_posRootCone [Finite I] : IsAddFG R.posRootCone.toAddSubmonoid := by
-  rw [AddSubmonoid.isAddFG_iff_finite, posRootCone_def]
-  exact ⟨Set.range R.root, Set.finite_range _, (Submodule.span_nat_eq_addSubmonoidClosure _).symm⟩
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
 
 /-! ### Formal exponentials -/
 
@@ -243,8 +243,8 @@ theorem coe_mem_posRootCone_iff {φ : L.weightLattice} :
 every function on `P` supported in finitely many cones `λ - Q₊` is a character supported on the
 weight lattice (`HahnSeries.ofConeBounded`). -/
 instance isAddFG_posRootCone [Finite I] : IsAddFG L.posRootCone.toAddSubmonoid := by
-  rw [AddSubmonoid.isAddFG_iff_finite, posRootCone_def]
-  exact ⟨Set.range L.root, Set.finite_range _, (Submodule.span_nat_eq_addSubmonoidClosure _).symm⟩
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
 
 /-- The exponents of characters supported on the weight lattice: the weights in `P`, ordered by
 `μ ≤ ν ↔ μ - ν ∈ Q₊`. -/
@@ -273,6 +273,11 @@ theorem toCharacterExponent_toConeExponent (φ : L.weightLattice) :
 theorem toCharacterExponent_injective : Function.Injective L.toCharacterExponent :=
   map_injective Subtype.val_injective
 
+/-- An exponent in `P` is sent to the weight `μ` exactly when its underlying weight is `μ`. -/
+theorem toCharacterExponent_eq_toConeExponent_iff {x : L.CharacterExponent} {μ : Dual ℚ H} :
+    L.toCharacterExponent x = toConeExponent μ ↔ (x.ofConeExponent : Dual ℚ H) = μ := by
+  rw [ConeExponent.ext_iff, ofConeExponent_toCharacterExponent, ofConeExponent_toConeExponent]
+
 theorem toCharacterExponent_le_toCharacterExponent_iff {x y : L.CharacterExponent} :
     L.toCharacterExponent x ≤ L.toCharacterExponent y ↔ x ≤ y :=
   map_le_map_iff fun _ ↦ L.coe_mem_posRootCone_iff
@@ -289,32 +294,33 @@ noncomputable def toCharacterRing : L.CharacterRing S →+* R.CharacterRing S :=
 @[simp]
 theorem coeff_toCharacterRing_coe (f : L.CharacterRing S) (φ : L.weightLattice) :
     (L.toCharacterRing S f).coeff (toConeExponent (φ : Dual ℚ H)) = f.coeff (toConeExponent φ) := by
-  rw [← toCharacterExponent_toConeExponent]
+  rw [toCharacterRing, HahnSeries.embDomainRingHom_apply, ← toCharacterExponent_toConeExponent]
   exact HahnSeries.embDomain_coeff
 
 /-- Extension by zero vanishes at the weights outside `P`. -/
 theorem coeff_toCharacterRing_of_notMem (f : L.CharacterRing S) {μ : Dual ℚ H}
     (hμ : μ ∉ L.weightLattice) : (L.toCharacterRing S f).coeff (toConeExponent μ) = 0 := by
+  rw [toCharacterRing, HahnSeries.embDomainRingHom_apply]
   refine HahnSeries.embDomain_of_notMem_range ?_
   rintro ⟨x, hx⟩
-  have hx' : (x.ofConeExponent : Dual ℚ H) = μ := by
-    simpa using congrArg ofConeExponent hx
-  exact hμ (hx' ▸ x.ofConeExponent.property)
+  exact hμ (L.toCharacterExponent_eq_toConeExponent_iff.mp hx ▸ x.ofConeExponent.property)
 
 /-- Extension by zero is injective. -/
-theorem toCharacterRing_injective : Function.Injective (L.toCharacterRing S) :=
-  HahnSeries.embDomain_injective
+theorem toCharacterRing_injective : Function.Injective (L.toCharacterRing S) := by
+  intro f g h
+  rw [toCharacterRing, HahnSeries.embDomainRingHom_apply, HahnSeries.embDomainRingHom_apply] at h
+  exact HahnSeries.embDomain_injective h
 
 /-- A character of the realization is the extension by zero of a character supported on the
 weight lattice exactly when its support lies in `P`. -/
 theorem mem_range_toCharacterRing_iff (g : R.CharacterRing S) :
     g ∈ Set.range (L.toCharacterRing S) ↔
       ∀ μ : Dual ℚ H, g.coeff (toConeExponent μ) ≠ 0 → μ ∈ L.weightLattice := by
-  refine HahnSeries.mem_range_embDomain_iff.trans ⟨fun h μ hμ ↦ ?_, fun h x hx ↦ ?_⟩
+  simp only [Set.mem_range, toCharacterRing, HahnSeries.embDomainRingHom_apply]
+  rw [← Set.mem_range, HahnSeries.mem_range_embDomain_iff]
+  refine ⟨fun h μ hμ ↦ ?_, fun h x hx ↦ ?_⟩
   · obtain ⟨y, hy⟩ := h hμ
-    have hy' : (y.ofConeExponent : Dual ℚ H) = μ := by
-      simpa using congrArg ofConeExponent hy
-    exact hy' ▸ y.ofConeExponent.property
+    exact L.toCharacterExponent_eq_toConeExponent_iff.mp hy ▸ y.ofConeExponent.property
   · refine ⟨toConeExponent ⟨x.ofConeExponent, h _ hx⟩, ?_⟩
     exact (L.toCharacterExponent_toConeExponent _).trans (toConeExponent_ofConeExponent x)
 
@@ -323,7 +329,7 @@ theorem mem_range_toCharacterRing_iff (g : R.CharacterRing S) :
 theorem toCharacterRing_single (φ : L.weightLattice) (r : S) :
     L.toCharacterRing S (HahnSeries.single (toConeExponent φ) r) =
       HahnSeries.single (toConeExponent (φ : Dual ℚ H)) r := by
-  rw [← toCharacterExponent_toConeExponent]
+  rw [toCharacterRing, HahnSeries.embDomainRingHom_apply, ← toCharacterExponent_toConeExponent]
   exact HahnSeries.embDomain_single
 
 end CoweightLattice

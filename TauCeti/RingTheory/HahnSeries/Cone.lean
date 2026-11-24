@@ -71,8 +71,9 @@ namespace TauCeti
 variable {M : Type*} [AddCommGroup M] {C : AddSubmonoid M}
 
 /-- The exponents of series supported in finitely many translated negative cones `λ - C`: a copy
-of `M`, ordered by `μ ≤ ν ↔ μ - ν ∈ C`. With this order `λ - C` is the interval `Ici λ`, and
-Hahn series over `TauCeti.ConeExponent hC` are the cone-supported series. -/
+of `M`, ordered by `μ ≤ ν ↔ μ - ν ∈ C`. With this order `λ - C` is the interval `Ici λ`. Every
+Hahn series over `TauCeti.ConeExponent hC` is cone-supported, and when `C` is finitely generated,
+Hahn series over `TauCeti.ConeExponent hC` are exactly the cone-supported series. -/
 structure ConeExponent (hC : C.IsPointed) where
   /-- The exponent attached to an element of `M`. -/
   toConeExponent ::
