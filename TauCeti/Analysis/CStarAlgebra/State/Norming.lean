@@ -109,16 +109,12 @@ theorem closedConvexHull_eq_stateSpace_iff {S : Set (WeakDual ℂ A)} (hS : S �
   refine le_antisymm ?_ (ciSup_le fun σ => norm_apply_le_of_mem_stateSpace (hS σ.2) a)
   -- the functionals `ψ` with `‖ψ a‖ ≤ ⨆ σ : S, ‖σ a‖` form a closed convex set containing `S`
   set M := ⨆ σ : S, ‖(σ : WeakDual ℂ A) a‖
-  set T : Set (WeakDual ℂ A) := {ψ | ‖ψ a‖ ≤ M}
-  have hT : stateSpace A ⊆ T := by
-    refine h ▸ closedConvexHull_min (fun σ hσ => le_ciSup hbdd ⟨σ, hσ⟩) ?_
-      (isClosed_le (continuous_norm.comp (eval_continuous a)) continuous_const)
-    intro ψ₁ h₁ ψ₂ h₂ s t hs ht hst
-    calc ‖(s • ψ₁ + t • ψ₂) a‖ ≤ s * ‖ψ₁ a‖ + t * ‖ψ₂ a‖ := by
-          simpa [real_smul_apply, abs_of_nonneg hs, abs_of_nonneg ht] using
-            norm_add_le (s • ψ₁ a) (t • ψ₂ a)
-      _ ≤ s * M + t * M := by gcongr; exacts [h₁, h₂]
-      _ = M := by rw [← add_mul, hst, one_mul]
+  set T : Set (WeakDual ℂ A) := (fun ψ : WeakDual ℂ A => ψ a) ⁻¹' Metric.closedBall 0 M
+  have hT : stateSpace A ⊆ T :=
+    h ▸ closedConvexHull_min
+      (fun σ hσ => mem_closedBall_zero_iff.2 (le_ciSup hbdd ⟨σ, hσ⟩))
+      ((convex_closedBall (0 : ℂ) M).is_linear_preimage ⟨fun _ _ => rfl, fun _ _ => rfl⟩)
+      (Metric.isClosed_closedBall.preimage (eval_continuous a))
   -- a state attaining `‖a‖` lies in `T`
   have := nontrivial_of_mem_stateSpace (hS hS0.some.2)
   have := ha.isStarNormal
