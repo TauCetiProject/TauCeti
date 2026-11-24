@@ -218,14 +218,15 @@ theorem exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity
           fun z ↦ Real.exp (-(c * ‖z‖))) ∧
       IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   obtain ⟨y, hy, hsol, hfr, hD⟩ := exists_contDiff_equation_eq_zero_isZeroMultiplicity D
-  let y' : framedVortexSubMulAction 1 m :=
-    ⟨y, mem_framedVortexSubMulAction.2 ⟨hy, by simpa using hsol, hfr⟩⟩
   obtain ⟨u, hphase, hmem, hdecay⟩ :=
     exists_framedGaugeGroup_smul_mem_framedFieldSpace hy hsol hfr
-  obtain ⟨huyc, huysol, -⟩ := mem_framedVortexSubMulAction.1 (u • y').property
-  rw [SubMulAction.val_smul] at huyc huysol
-  exact ⟨u • y, huyc, by simpa using huysol, hphase, hmem, hdecay,
-    isZeroMultiplicity_sectionValue_framedGaugeGroup_smul hD u⟩
+  have huc := ((mem_framedGaugeGroup _).1 u.property).1
+  refine ⟨u • y, contDiff_gaugeTransform (by simpa using huc) hy, fun z ↦ ?_, hphase, hmem,
+    hdecay, isZeroMultiplicity_sectionValue_framedGaugeGroup_smul hD u⟩
+  rw [framedGaugeGroup_smul, equation_gaugeTransform_eq_zero_iff
+    ((huc.of_le (by norm_cast)).contDiffAt)
+    fun i ↦ ((contDiff_euclidean.1 hy i).differentiable (by simp)).differentiableAt]
+  exact hsol z
 
 /-! ### The Sobolev moduli of framed vortices -/
 

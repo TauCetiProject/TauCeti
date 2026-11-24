@@ -65,6 +65,24 @@ public section
 
 namespace TauCeti.Vortex
 
+section
+
+variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
+
+/-- A vortex of `sobolevVortexSubMulAction` is continuous. -/
+theorem continuous_sobolevVortexSubMulAction
+    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
+    Continuous (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
+  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous
+
+/-- A vortex of `sobolevVortexSubMulAction` solves the vortex equation everywhere. -/
+theorem equation_sobolevVortexSubMulAction_eq_zero
+    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) (z : ℂ) :
+    equation (y : ℂ → EuclideanSpace ℝ (Fin 4)) z = 0 :=
+  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2 z
+
+end
+
 namespace SobolevFieldSpace
 
 open Filter Topology
@@ -118,9 +136,8 @@ private noncomputable def continuousVortexEquivSobolevVortex (hk : 3 < k) :
       sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk where
   toFun x := ⟨x.val.toFramedFieldSpace, mem_sobolevVortexSubMulAction.2
     (toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero hk x.property)⟩
-  invFun y := ⟨⟨y.val, y.val.property,
-      (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous⟩,
-    (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2⟩
+  invFun y := ⟨⟨y.val, y.val.property, continuous_sobolevVortexSubMulAction y⟩,
+    equation_sobolevVortexSubMulAction_eq_zero y⟩
   left_inv _ := Subtype.ext (ext rfl)
   right_inv _ := Subtype.ext (Subtype.ext rfl)
 
@@ -134,9 +151,8 @@ private theorem continuousVortexEquivSobolevVortex_apply (hk : 3 < k)
 private theorem continuousVortexEquivSobolevVortex_symm_apply (hk : 3 < k)
     (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
     (continuousVortexEquivSobolevVortex hk).symm y =
-      ⟨⟨y.val, y.val.property,
-          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous⟩,
-        (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2⟩ :=
+      ⟨⟨y.val, y.val.property, continuous_sobolevVortexSubMulAction y⟩,
+        equation_sobolevVortexSubMulAction_eq_zero y⟩ :=
   rfl
 
 private theorem mem_sobolevVortexContinuousSubMulAction (hk : 3 < k)
@@ -170,14 +186,9 @@ noncomputable def vortexModuliEquivSobolevVortexModuli (hk : 3 < k) :
 theorem vortexModuliEquivSobolevVortexModuli_symm_mk (hk : 3 < k)
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
     (vortexModuliEquivSobolevVortexModuli hk).symm (Quotient.mk'' x) =
-      ⟨Quotient.mk _ ⟨x.val, x.val.property,
-          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).1.continuous⟩,
-        mk_mem_vortexModuli
-          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).2⟩ := by
-  rw [vortexModuliEquivSobolevVortexModuli, Equiv.symm_trans_apply,
-    MulAction.orbitRelQuotientCongr_symm_mk, Quotient.mk''_eq_mk,
-    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk,
-    continuousVortexEquivSobolevVortex_symm_apply]
+      ⟨Quotient.mk _ ⟨x.val, x.val.property, continuous_sobolevVortexSubMulAction x⟩,
+        mk_mem_vortexModuli (equation_sobolevVortexSubMulAction_eq_zero x)⟩ := by
+  simp [vortexModuliEquivSobolevVortexModuli, continuousVortexEquivSobolevVortex_symm_apply]
 
 /-- `vortexModuliEquivSobolevVortexModuli` sends the orbit of a continuous vortex `x` of `A_m^k` to
 its `sobolevGaugeGroup`-orbit in `sobolevVortexSubMulAction`. -/
@@ -189,9 +200,7 @@ theorem vortexModuliEquivSobolevVortexModuli_mk (hk : 3 < k) {x : SobolevFieldSp
       Quotient.mk'' ⟨x.toFramedFieldSpace,
         mem_sobolevVortexSubMulAction.2
           (toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero hk hx)⟩ := by
-  rw [vortexModuliEquivSobolevVortexModuli, Equiv.trans_apply,
-    Equiv.subtypeQuotientEquivQuotientSubtype_mk, ← Quotient.mk''_eq_mk,
-    MulAction.orbitRelQuotientCongr_mk, continuousVortexEquivSobolevVortex_apply]
+  simp [vortexModuliEquivSobolevVortexModuli, continuousVortexEquivSobolevVortex_apply]
 
 /-- **The divisor bijection on `vortexModuli`.** For `k ≥ 4`, the zero divisor identifies the
 Sobolev vortex moduli space `vortexModuli f m hs ⊆ A_m^k / G_(k+1)` bijectively with
@@ -207,8 +216,7 @@ theorem vortexModuliEquiv_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
       sobolevVortexDivisor
         ⟨x.toFramedFieldSpace,
           toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero hk hx⟩ := by
-  rw [vortexModuliEquiv, Equiv.trans_apply, vortexModuliEquivSobolevVortexModuli_mk hk hx,
-    sobolevVortexModuliEquiv_apply, sobolevVortexModuliDivisor_mk]
+  simp [vortexModuliEquiv, hx]
 
 /-- The section of a continuous vortex of `A_m^k`, `k ≥ 4`, has zero multiplicities given by
 `vortexModuliEquiv` of its orbit. -/
