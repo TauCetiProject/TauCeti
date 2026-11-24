@@ -67,6 +67,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra K
 
 /-! ### Central characters -/
 
+variable {Z} in
 /-- The **central character of weight `(ζ, λ)`** of `Z(U(Z × S))`, for `ζ ∈ Z^*` and `λ ∈ H^*`:
 through the centre comparison `Z(U(Z × S)) ≃ Sym(Z) ⊗ Z(U(S))`, evaluation at `ζ` on `Sym(Z)`
 times the central character `χ_λ` of the Verma module `M(λ)` on `Z(U(S))`. -/
@@ -81,7 +82,7 @@ central element of `U(S)`. -/
 @[simp]
 theorem productCentralCharacter_productCenterEquiv_symm_tmul (ζ : Module.Dual K Z)
     (lam : Module.Dual K H) (a : _root_.SymmetricAlgebra K Z) (c : Subalgebra.center K (U S)) :
-    productCentralCharacter Z b ζ lam ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c)) =
+    productCentralCharacter b ζ lam ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c)) =
       _root_.SymmetricAlgebra.lift ζ a * vermaCentralCharacter b lam c := by
   simp [productCentralCharacter]
 
@@ -167,6 +168,8 @@ theorem productHarishChandraIso_trans_congr_dotInvariantsEquivLinearInvariants :
         (Algebra.TensorProduct.congr AlgEquiv.refl (dotInvariantsEquivLinearInvariants b)) =
       productHarishChandraLinearIso Z b := by
   rw [productHarishChandraLinearIso, ← harishChandraIso_trans_dotInvariantsEquivLinearInvariants]
+  -- Mathlib has no `AlgEquiv.trans_assoc` or `AlgEquiv.refl_trans`: associativity of
+  -- `AlgEquiv.trans` and `AlgEquiv.refl.trans AlgEquiv.refl = AlgEquiv.refl` close by defeq here.
   exact congrArg (productCenterEquiv K Z S).trans
     (Algebra.TensorProduct.congr_trans .refl .refl (harishChandraIso b) _).symm
 
@@ -176,7 +179,7 @@ variable {Z b}
 `(ζ, λ)` is evaluation of the Harish-Chandra image at `(ζ, λ)`. -/
 theorem productCentralCharacter_eq_lift_productHarishChandraIso (ζ : Module.Dual K Z)
     (lam : Module.Dual K H) (z : Subalgebra.center K (U (Z × S))) :
-    productCentralCharacter Z b ζ lam z =
+    productCentralCharacter b ζ lam z =
       Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
         ((_root_.SymmetricAlgebra.lift lam).comp (dotInvariants b).val) (fun _ _ ↦ .all _ _)
         (productHarishChandraIso Z b z) := by
@@ -189,7 +192,7 @@ theorem productCentralCharacter_eq_lift_productHarishChandraIso (ζ : Module.Dua
 weight `(ζ, λ - ρ)` is evaluation of the linear Harish-Chandra image at `(ζ, λ)`. -/
 theorem productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso (ζ : Module.Dual K Z)
     (lam : Module.Dual K H) (z : Subalgebra.center K (U (Z × S))) :
-    productCentralCharacter Z b ζ (lam - weylVector (IsKilling.rootSystem H) b) z =
+    productCentralCharacter b ζ (lam - weylVector (IsKilling.rootSystem H) b) z =
       Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
         ((_root_.SymmetricAlgebra.lift lam).comp (linearInvariants H).val) (fun _ _ ↦ .all _ _)
         (productHarishChandraLinearIso Z b z) := by
@@ -201,7 +204,7 @@ theorem productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso (ζ : 
 /-- **Harish-Chandra's theorem on central characters for `Z × S`.** The central characters of
 weights `(ζ, λ)` and `(ζ', μ)` agree exactly when `ζ = ζ'` and `μ` lies in the dot orbit of `λ`. -/
 theorem productCentralCharacter_eq_iff {ζ ζ' : Module.Dual K Z} {lam mu : Module.Dual K H} :
-    productCentralCharacter Z b ζ lam = productCentralCharacter Z b ζ' mu ↔
+    productCentralCharacter b ζ lam = productCentralCharacter b ζ' mu ↔
       ζ = ζ' ∧ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu := by
   refine ⟨fun h ↦ ⟨LinearMap.ext fun x ↦ ?_, (vermaCentralCharacter_eq_iff b).mp ?_⟩, ?_⟩
   · have := congr($h ((productCenterEquiv K Z S).symm (_root_.SymmetricAlgebra.ι K Z x ⊗ₜ 1)))
