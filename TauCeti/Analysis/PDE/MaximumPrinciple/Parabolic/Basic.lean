@@ -49,9 +49,10 @@ differentiable in time), together with continuity on the closed cylinder `[0, T]
   arbitrary closed time interval.
 * `TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary`: the perturbation argument,
   for any operator for which `∂ₜu ≤ 0` at a spatial local maximum above the bound.
-* `TauCeti.le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary`: the same argument for
-  a time-dependent bound `φ`, when `∂ₜu - φ' ≤ L (u - φ)` at spatial local maxima above `φ`; this
-  is the form used for comparison with an ODE `φ' = F(t, φ)`.
+* `TauCeti.le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary`: comparison on an
+  arbitrary closed time interval with a time-dependent bound `φ`, when `∂ₜu - φ' ≤ L (u - φ)` at
+  spatial local maxima above `φ`; this is the form used for comparison with an ODE
+  `φ' = F(t, φ)`.
 * `TauCeti.le_of_continuousOn_of_forall_mem_Ico_le`: continuity carries a bound below the top of
   the cylinder to the top.
 * `TauCeti.le_of_deriv_le_laplacian_add_fderiv_le_parabolicBoundary`: the **weak maximum
@@ -162,52 +163,6 @@ theorem le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary (hK : IsCompact K)
     Filter.mem_of_superset (Icc_mem_nhdsLE hpos) fun s hs ↦ hmax' ⟨hs.1, hs.2.trans ht₀.2⟩ hx₀
   linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt,
     hloc ht₀T hint hlocmax (by nlinarith)]
-
-/-- **Comparison with a time-dependent bound, from the growth of `u` at spatial maxima.**
-
-Let `K` be compact, let `u` be continuous on the closed cylinder `[0, T] × K` and differentiable
-in time on the open cylinder `(0, T) × interior K`, and let `φ` be continuous on `[0, T]` and
-differentiable on `(0, T)`. Suppose that `∂ₜu - φ' ≤ L (u - φ)` at every point `(t, x)` of the
-open cylinder at which `x` is a spatial local maximum of `u t` and `u t x > φ t`. If `u ≤ φ` on
-the parabolic boundary, then `u ≤ φ` on all of `[0, T] × K`.
-
-This is the form taken by comparison with a solution `φ` of an ODE `φ' ≥ F(t, φ)` when the
-reaction `F(t, ·)` is Lipschitz from above with constant `L`. -/
-theorem le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary (hK : IsCompact K)
-    {φ : ℝ → ℝ} {L : ℝ} (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
-    (hφc : ContinuousOn φ (Icc 0 T))
-    (hdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
-      DifferentiableAt ℝ (fun s ↦ u s x) t)
-    (hφd : ∀ ⦃t⦄, t ∈ Ioo 0 T → DifferentiableAt ℝ φ t)
-    (hloc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → IsLocalMax (u t) x → φ t < u t x →
-      deriv (fun s ↦ u s x) t - deriv φ t ≤ L * (u t x - φ t))
-    (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ φ 0)
-    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ φ t) :
-    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ φ t := by
-  -- Apply the constant-bound argument to `w = e^{-Lt} (u - φ)` with the bound `0`.
-  have hexp (s : ℝ) : HasDerivAt (fun r ↦ Real.exp (-L * r)) (Real.exp (-L * s) * -L) s := by
-    simpa using ((hasDerivAt_id s).const_mul (-L)).exp
-  have hw := le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary
-    (u := fun s y ↦ Real.exp (-L * s) * (u s y - φ s)) (m := 0) hK
-    ((Real.continuous_exp.comp (continuous_const.mul continuous_fst)).continuousOn.mul
-      (hcont.sub (hφc.comp continuousOn_fst fun _ hp ↦ hp.1)))
-    (fun t ht x hx ↦ (hexp t).differentiableAt.fun_mul ((hdiff ht hx).fun_sub (hφd ht)))
-    (fun t ht x hx hmax hpos ↦ by
-      have he := Real.exp_pos (-L * t)
-      have hlt : φ t < u t x := sub_pos.mp (pos_of_mul_pos_right hpos he.le)
-      -- A spatial local maximum of `w t` is one of `u t`, since `w t` is an increasing affine
-      -- function of `u t`.
-      have hmax' : IsLocalMax (u t) x := by
-        filter_upwards [hmax] with y hy
-        exact sub_le_sub_iff_right _ |>.mp (le_of_mul_le_mul_left hy he)
-      rw [((hexp t).fun_mul ((hdiff ht hx).hasDerivAt.fun_sub (hφd ht).hasDerivAt)).deriv]
-      have := hloc ht hx hmax' hlt
-      nlinarith)
-    (fun x hx ↦ by simpa using hinit hx)
-    (fun t ht x hx ↦ mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
-      (sub_nonpos.mpr (hlat ht hx)))
-  intro t ht x hx
-  exact sub_nonpos.mp (nonpos_of_mul_nonpos_right (hw ht hx) (Real.exp_pos _))
 
 end Cylinder
 
@@ -430,6 +385,55 @@ theorem le_of_hasDerivAt_nonpos_of_isLocalMax_Icc
   intro t ht x hx
   have ht' : t - a ∈ Icc 0 (b - a) := by constructor <;> linarith [ht.1, ht.2]
   simpa only [add_sub_cancel] using h ht' hx
+
+/-- **Comparison with a time-dependent bound, from the growth of `u` at spatial maxima.**
+
+Let `K` be compact, let `u` be continuous on the closed cylinder `[a, b] × K` and differentiable
+in time on the open cylinder `(a, b) × interior K`, and let `φ` be continuous on `[a, b]` and
+differentiable on `(a, b)`. Suppose that `∂ₜu - φ' ≤ L (u - φ)` at every point `(t, x)` of the
+open cylinder at which `x` is a spatial local maximum of `u t` and `u t x > φ t`. If `u ≤ φ` on
+the parabolic boundary, then `u ≤ φ` on all of `[a, b] × K`.
+
+This is the form taken by comparison with a solution `φ` of an ODE `φ' ≥ F(t, φ)` when the
+reaction `F(t, ·)` is Lipschitz from above with constant `L`. -/
+theorem le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary
+    {X : Type*} [TopologicalSpace X] {K : Set X} (hK : IsCompact K)
+    {a b : ℝ} {u : ℝ → X → ℝ} {φ : ℝ → ℝ} {L : ℝ}
+    (hcont : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ K))
+    (hφc : ContinuousOn φ (Icc a b))
+    (hdiff : ∀ ⦃t⦄, t ∈ Ioo a b → ∀ ⦃x⦄, x ∈ interior K →
+      DifferentiableAt ℝ (fun s ↦ u s x) t)
+    (hφd : ∀ ⦃t⦄, t ∈ Ioo a b → DifferentiableAt ℝ φ t)
+    (hloc : ∀ ⦃t⦄, t ∈ Ioo a b → ∀ ⦃x⦄, x ∈ interior K → IsLocalMax (u t) x → φ t < u t x →
+      deriv (fun s ↦ u s x) t - deriv φ t ≤ L * (u t x - φ t))
+    (hinit : ∀ ⦃x⦄, x ∈ K → u a x ≤ φ a)
+    (hlat : ∀ ⦃t⦄, t ∈ Icc a b → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ φ t) :
+    ∀ ⦃t⦄, t ∈ Icc a b → ∀ ⦃x⦄, x ∈ K → u t x ≤ φ t := by
+  -- Apply the constant-bound comparison to `w = e^{-Lt} (u - φ)` with the bound `0`.
+  have hexp (s : ℝ) : HasDerivAt (fun r ↦ Real.exp (-L * r)) (Real.exp (-L * s) * -L) s := by
+    simpa using ((hasDerivAt_id s).const_mul (-L)).exp
+  have hw := le_of_hasDerivAt_nonpos_of_isLocalMax_Icc hK
+    (u := fun s y ↦ Real.exp (-L * s) * (u s y - φ s))
+    (v := fun s y ↦ Real.exp (-L * s) * -L * (u s y - φ s) +
+      Real.exp (-L * s) * (deriv (fun r ↦ u r y) s - deriv φ s))
+    ((Real.continuous_exp.comp (continuous_const.mul continuous_fst)).continuousOn.mul
+      (hcont.sub (hφc.comp continuousOn_fst fun _ hp ↦ hp.1)))
+    (fun t ht x hx ↦ (hexp t).mul ((hdiff ht hx).hasDerivAt.sub (hφd ht).hasDerivAt))
+    (fun t ht x hx hmax hpos ↦ by
+      have he := Real.exp_pos (-L * t)
+      have hlt : φ t < u t x := sub_pos.mp (pos_of_mul_pos_right hpos he.le)
+      -- A spatial local maximum of `w t` is one of `u t`, since `w t` is an increasing affine
+      -- function of `u t`.
+      have hmax' : IsLocalMax (u t) x := by
+        filter_upwards [hmax] with y hy
+        exact sub_le_sub_iff_right _ |>.mp (le_of_mul_le_mul_left hy he)
+      have := mul_nonpos_of_nonneg_of_nonpos he.le (sub_nonpos.mpr (hloc ht hx hmax' hlt))
+      linarith)
+    (fun x hx ↦ mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le (sub_nonpos.mpr (hinit hx)))
+    (fun t ht x hx ↦ mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
+      (sub_nonpos.mpr (hlat ht hx)))
+  intro t ht x hx
+  exact sub_nonpos.mp (nonpos_of_mul_nonpos_right (hw t ht x hx) (Real.exp_pos _))
 
 end TauCeti
 
