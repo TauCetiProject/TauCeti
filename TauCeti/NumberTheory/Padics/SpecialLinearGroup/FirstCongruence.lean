@@ -23,10 +23,10 @@ and its microlocalisation appear in Ardakov–Wadsley's semisimplicity theorem f
 finite-dimensional Iwasawa modules and in Fu's injectivity theorem for central specialisations;
 there the group `G = G₁^m` is the product of `m` copies of it.
 
-This file sets up these groups as compact open normal subgroups of `SL_n(ℤ_p)` and of
-`SL_n(ℤ_p)^ι`, and computes their indices: reduction modulo `p` is surjective on `SL_n`, since
-`ℤ_p` is local, so `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`, which is `p(p² - 1)` for `n = 2`. As compact
-topological groups, `G₁` and `G₁^ι` are the groups whose completed group algebras
+This file sets up these groups as compact open normal subgroups of `SL_n(ℤ_p)` and, for finite
+`ι`, of `SL_n(ℤ_p)^ι`, and computes their indices: reduction modulo `p` is surjective on `SL_n`,
+since `ℤ_p` is local, so `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`, which is `p(p² - 1)` for `n = 2`. As
+compact topological groups, `G₁` and `G₁^ι` are the groups whose completed group algebras
 `TauCeti.completedGroupAlgebra ℤ_[p] G₁` are the Iwasawa algebras above.
 
 ## Main definitions
@@ -54,7 +54,7 @@ topological groups, `G₁` and `G₁^ι` are the groups whose completed group al
   `TauCeti.isClosed_firstCongruenceProduct`, `TauCeti.index_firstCongruenceProduct` and the
   compactness and normality instances.
 * `TauCeti.neg_one_mem_firstCongruenceSubgroup_iff`: `-1 ∈ G₁ ≤ SL₂(ℤ_p)` exactly when `p = 2`;
-  so for `p = 2` the group `G₁` has an element of order two and is not uniform.
+  so for `p = 2` the group `G₁` has an element of order two.
 
 ## References
 
