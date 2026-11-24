@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Isomorphic divisor sheaves come from linearly equivalent divisors
@@ -137,7 +138,7 @@ theorem IsLocallyPrincipal.exists_rationalFunctionsMul_eq {D : SchemeWeilDivisor
   · refine (Scheme.rationalFunctionsEquiv U).injective ?_
     rw [Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app]
     exact rationalFunctionsEquiv_app_eq_mul hU₀ hfK hιs₀ s
-  · have := Scheme.subsingleton_rationalFunctions U (Scheme.eq_bot_of_not_nonempty hU)
+  · have := Scheme.subsingleton_rationalFunctions U (Opens.eq_bot_of_not_nonempty hU)
     exact Subsingleton.elim _ _
 
 /-- A local equation near the generic point exhibits a section of `𝒪_X(D)` which is a nonzero
@@ -160,7 +161,7 @@ private lemma eq_one_of_sheafι_comp_eq {D : SchemeWeilDivisor X} (hD : IsLocall
   obtain ⟨U, s, hs⟩ := hD.exists_sheafι_app_ne_zero
   have hU : Nonempty U := by
     by_contra hU
-    have := Scheme.subsingleton_rationalFunctions U (Scheme.eq_bot_of_not_nonempty hU)
+    have := Scheme.subsingleton_rationalFunctions U (Opens.eq_bot_of_not_nonempty hU)
     exact hs (Subsingleton.elim _ _)
   have hne : Scheme.rationalFunctionsEquiv U (Scheme.Modules.Hom.app (sheafι D) U s) ≠ 0 := by
     simpa using hs

@@ -17,8 +17,7 @@ This file records general-purpose facts about open subsets of schemes.
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.instNonemptyTop` states that the whole space is a nonempty open
-  subset of any nonempty scheme, and `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_not_nonempty`
-  that an open subset with no points is empty.
+  subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
@@ -421,10 +420,6 @@ public instance instNonemptyTop {X : Scheme.{u}} [Nonempty X] :
     Nonempty ((⊤ : X.Opens) : Type u) :=
   let ⟨x⟩ := ‹Nonempty X›
   ⟨⟨x, trivial⟩⟩
-
-/-- An open subset of a scheme with no points is the empty open subset. -/
-public lemma eq_bot_of_not_nonempty {X : Scheme.{u}} {U : X.Opens} (h : ¬ Nonempty U) : U = ⊥ :=
-  (Opens.not_nonempty_iff_eq_bot U).mp fun hne ↦ h (Set.nonempty_coe_sort.mpr hne)
 
 /-- Let `𝒰` be an open cover of `X`. A subset `U` of `X` is dense if its preimage in every chart
 of `𝒰` contains a dense subset. -/

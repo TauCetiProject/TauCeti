@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.WeilRegularity
 public import TauCeti.AlgebraicGeometry.LineBundle.SerreDuality
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The differential line bundle and canonical divisors
@@ -152,7 +153,7 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
     · rintro ⟨a, ha⟩
       refine ⟨a, (Scheme.rationalFunctionsEquiv U).injective ?_⟩
       rw [differentialCoordinateHom_app, ha, LinearEquiv.apply_symm_apply]
-  · have hbot : U = ⊥ := Scheme.eq_bot_of_not_nonempty hU
+  · have hbot : U = ⊥ := TopologicalSpace.Opens.eq_bot_of_not_nonempty hU
     have := Scheme.subsingleton_rationalFunctions U hbot
     simp only [SchemeWeilDivisor.sections_eq_top_of_eq_bot K hbot, Submodule.mem_top,
       iff_true]
@@ -235,7 +236,8 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
       Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app, map_smul,
       Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D, smul_eq_mul]
     exact mul_comm _ _
-  · exact (Scheme.subsingleton_rationalFunctions U (Scheme.eq_bot_of_not_nonempty hU)).elim _ _
+  · exact (Scheme.subsingleton_rationalFunctions U
+      (TopologicalSpace.Opens.eq_bot_of_not_nonempty hU)).elim _ _
 
 end ChangeOfSeparatingFunction
 
