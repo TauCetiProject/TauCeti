@@ -227,10 +227,6 @@ private theorem coeff_mapRingHom_mul_stickelberger (x : MonoidAlgebra ℤ (ZMod 
 exactly when `∑ nₐ a = 0` in `ZMod m`. -/
 theorem mem_stickelbergerDenominatorIdeal_iff_sum_eq_zero {x : MonoidAlgebra ℤ (ZMod m)ˣ} :
     x ∈ stickelbergerDenominatorIdeal m ↔ ∑ a : (ZMod m)ˣ, (x.coeff a : ZMod m) * a = 0 := by
-  have hrange (z : MonoidAlgebra ℚ (ZMod m)ˣ) :
-      (∃ y, mapRingHom _ (Int.castRingHom ℚ) y = z) ↔ ∀ b, ∃ n : ℤ, (n : ℚ) = z.coeff b := by
-    have := Set.ext_iff.mp (range_map (M := (ZMod m)ˣ) (Int.castRingHom ℚ : ℤ →+ ℚ)) z
-    simpa [coe_mapRingHom] using this
   have key (b : (ZMod m)ˣ) :
       ((∑ a : (ZMod m)ˣ, x.coeff a * (((b⁻¹ * a : (ZMod m)ˣ) : ZMod m).val : ℤ) : ℤ) : ZMod m) =
         (b⁻¹ : (ZMod m)ˣ) * ∑ a : (ZMod m)ˣ, (x.coeff a : ZMod m) * a := by
@@ -241,8 +237,8 @@ theorem mem_stickelbergerDenominatorIdeal_iff_sum_eq_zero {x : MonoidAlgebra ℤ
     rw [ZMod.intCast_zmod_eq_zero_iff_dvd, ← Rat.den_div_intCast_eq_one_iff z m
       (by exact_mod_cast NeZero.ne m), Int.cast_natCast, Rat.den_eq_one_iff]
     exact ⟨fun ⟨n, hn⟩ ↦ by rw [← hn, Rat.num_intCast], fun h ↦ ⟨_, h⟩⟩
-  rw [mem_stickelbergerDenominatorIdeal_iff, hrange]
-  simp only [coeff_mapRingHom_mul_stickelberger, hint, key,
+  rw [mem_stickelbergerDenominatorIdeal_iff, ← Set.mem_range, mem_range_mapRingHom_iff]
+  simp only [Set.mem_range, eq_intCast, coeff_mapRingHom_mul_stickelberger, hint, key,
     Units.mul_right_eq_zero]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
 
@@ -280,17 +276,16 @@ theorem stickelbergerDenominatorIdeal_eq_span :
       congr
       ext
       simp
-    have hgm : g ⟨1 + m, Nat.coprime_add_self_left.mpr (Nat.coprime_one_left m)⟩ =
-        -(m : MonoidAlgebra ℤ (ZMod m)ˣ) := by
-      have : ZMod.unitOfCoprime (1 + m) (Nat.coprime_add_self_left.mpr (Nat.coprime_one_left m)) =
-          1 := by
+    have h1m : (1 + m).Coprime m := Nat.coprime_add_self_left.mpr (Nat.coprime_one_left m)
+    have hgm : g ⟨1 + m, h1m⟩ = -(m : MonoidAlgebra ℤ (ZMod m)ˣ) := by
+      have : ZMod.unitOfCoprime (1 + m) h1m = 1 := by
         ext
         simp
       simp only [hg, this, ← one_def]
       push_cast
       ring
     have hx' : x = ∑ a : (ZMod m)ˣ, x.coeff a • g ⟨_, ZMod.val_coe_unit_coprime a⟩ -
-        k • g ⟨1 + m, Nat.coprime_add_self_left.mpr (Nat.coprime_one_left m)⟩ := by
+        k • g ⟨1 + m, h1m⟩ := by
       have hsum : ∑ a : (ZMod m)ˣ, x.coeff a • (single a 1 -
           (((a : ZMod m).val : ℕ) : MonoidAlgebra ℤ (ZMod m)ˣ)) =
             x - ((m * k : ℤ) : MonoidAlgebra ℤ (ZMod m)ˣ) := by

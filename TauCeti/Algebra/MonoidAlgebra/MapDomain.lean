@@ -47,6 +47,9 @@ along an injective ring homomorphism `f : R →+* S` is injective.
   `AddMonoidAlgebra.mapDomainRingEquiv_eq_mapDomain`.
 * `MonoidAlgebra.mapRingHom_injective`: mapping the coefficients along an injective ring
   homomorphism is injective, with additive form `AddMonoidAlgebra.mapRingHom_injective`.
+* `MonoidAlgebra.mem_range_mapRingHom_iff`: an element lies in the range of the map of
+  coefficients along `f` exactly when each of its coefficients lies in the range of `f`, with
+  additive form `AddMonoidAlgebra.mem_range_mapRingHom_iff`.
 * `MonoidAlgebra.coeff_mul_mapDomainRingEquiv_inv_one`: for a commutative group `G`, the
   coefficient of the identity in `x * σ x` is the sum of the squares of the coefficients of `x`,
   where `σ` is the involution of `R[G]` induced by inversion.
@@ -153,8 +156,19 @@ theorem mapDomainRingEquiv_eq_mapDomain [Monoid M] [Monoid N] (e : M ≃* N)
 @[to_additive (dont_translate := R S)
 /-- Mapping the coefficients along an injective ring homomorphism is injective. -/]
 theorem mapRingHom_injective [Monoid M] {S : Type*} [Semiring S] {f : R →+* S}
-    (hf : Function.Injective f) : Function.Injective (mapRingHom M f) :=
-  map_injective (f : R →+ S) hf
+    (hf : Function.Injective f) : Function.Injective (mapRingHom M f) := by
+  rw [coe_mapRingHom]
+  exact map_injective _ hf
+
+/-- An element lies in the range of the map of coefficients along a ring homomorphism `f` exactly
+when each of its coefficients lies in the range of `f`. -/
+@[to_additive (dont_translate := R S)
+/-- An element lies in the range of the map of coefficients along a ring homomorphism `f` exactly
+when each of its coefficients lies in the range of `f`. -/]
+theorem mem_range_mapRingHom_iff [Monoid M] {S : Type*} [Semiring S] {f : R →+* S}
+    {x : MonoidAlgebra S M} : x ∈ Set.range (mapRingHom M f) ↔ ∀ m, x.coeff m ∈ Set.range f := by
+  rw [coe_mapRingHom, range_map]
+  simp
 
 section Group
 
