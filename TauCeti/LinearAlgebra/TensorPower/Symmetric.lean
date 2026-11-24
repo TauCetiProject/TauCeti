@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
+public import TauCeti.LinearAlgebra.TensorPower.Basic
 
 /-!
 # Symmetric tensors
@@ -30,6 +30,13 @@ by words `w : Fin n → κ`, and a tensor is symmetric exactly when its coordina
 reindexing the words (`TensorPower.mem_symmetricTensors_iff_repr`). This rests on
 `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its coordinates.
 
+Applying a linear map `f : M →ₗ[R] N` to every factor commutes with permuting the factors, so it
+restricts to a linear map `TensorPower.symmetricTensorsMap n f` between the symmetric tensors; this
+is functorial in `f` and sends the diagonal tensor `v ⊗ ⋯ ⊗ v` to `f v ⊗ ⋯ ⊗ f v`. In degrees `0`
+and `1` every tensor is symmetric: the degree-zero map is the identity of `R` (for every `f`,
+including `f = 0`) and the degree-one map is `f` itself, while in every positive degree the zero
+map induces the zero map.
+
 ## Main declarations
 
 * `TensorPower.symmetricTensors R M n`: the submodule of symmetric tensors, with membership
@@ -37,6 +44,18 @@ reindexing the words (`TensorPower.mem_symmetricTensors_iff_repr`). This rests o
 * `TensorPower.tprod_const_mem_symmetricTensors`: the tensor `m ⊗ ⋯ ⊗ m` is symmetric.
 * `TensorPower.mem_symmetricTensors_iff_repr`: symmetric tensors are those whose coordinates in a
   product basis are invariant under permutations of the words.
+* `TensorPower.symmetricTensors_eq_top_of_le_one`: in degrees `0` and `1` every tensor is
+  symmetric.
+* `TensorPower.symmetricTensorsMap n f`: the map induced on symmetric tensors by a linear map `f`,
+  with `TensorPower.symmetricTensorsMap_id` and `TensorPower.symmetricTensorsMap_comp`.
+* `TensorPower.symmetricTensorsMap_zero`: in every positive degree the zero map induces the zero
+  map. In degrees `0` and `1`, `TensorPower.coe_symmetricTensorsMap_apply` reduces the induced map
+  to the tensor-power map, which `TensorPower.algebraMap₀_symm_map` and
+  `TensorPower.oneEquiv_map` identify with the identity of `R` and with `f`.
+
+## References
+
+* [N. Roby, *Lois polynômes et lois formelles en théorie des modules* (1963), III §5][Roby-1963]
 -/
 
 public section
@@ -78,5 +97,68 @@ theorem mem_symmetricTensors_iff_repr {κ : Type*} (b : Basis κ R M) {t : ⨂[R
   · rw [← Basis.piTensorProduct_repr_reindex, h σ]
   · ext w
     rw [Basis.piTensorProduct_repr_reindex, h]
+
+variable (R M) in
+/-- In degrees `0` and `1` there is only the identity permutation, so every tensor is
+symmetric. -/
+theorem symmetricTensors_eq_top_of_le_one (hn : n ≤ 1) : symmetricTensors R M n = ⊤ := by
+  have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr hn
+  refine eq_top_iff.mpr fun t _ ↦ mem_symmetricTensors.mpr fun σ ↦ ?_
+  rw [Subsingleton.elim σ (Equiv.refl _), reindex_refl, LinearEquiv.refl_apply]
+
+/-! ### Functoriality -/
+
+variable {N P : Type*} [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+
+/-- Applying a linear map to every factor of a symmetric tensor gives a symmetric tensor, since it
+commutes with permuting the factors. -/
+theorem map_mem_symmetricTensors (f : M →ₗ[R] N) {t : ⨂[R]^n M}
+    (ht : t ∈ symmetricTensors R M n) :
+    PiTensorProduct.map (fun _ ↦ f) t ∈ symmetricTensors R N n := by
+  rw [mem_symmetricTensors] at ht ⊢
+  intro σ
+  rw [← map_reindex (fun _ : Fin n ↦ f) σ t, ht σ]
+
+variable (n) in
+/-- The linear map between the symmetric tensors of degree `n` induced by a linear map `f`, which
+applies `f` to every factor. -/
+def symmetricTensorsMap (f : M →ₗ[R] N) :
+    symmetricTensors R M n →ₗ[R] symmetricTensors R N n :=
+  (PiTensorProduct.map fun _ ↦ f).restrict fun _ ↦ map_mem_symmetricTensors f
+
+/-- The induced map applies `f` to every factor. -/
+@[simp]
+theorem coe_symmetricTensorsMap_apply (f : M →ₗ[R] N) (t : symmetricTensors R M n) :
+    (symmetricTensorsMap n f t : ⨂[R]^n N) = PiTensorProduct.map (fun _ ↦ f) t :=
+  (rfl)
+
+/-- The induced map sends the diagonal tensor `v ⊗ ⋯ ⊗ v` to `f v ⊗ ⋯ ⊗ f v`. -/
+@[simp]
+theorem symmetricTensorsMap_mk_tprod_const (f : M →ₗ[R] N) (v : M) :
+    symmetricTensorsMap n f ⟨tprod R fun _ ↦ v, tprod_const_mem_symmetricTensors v⟩ =
+      ⟨tprod R fun _ ↦ f v, tprod_const_mem_symmetricTensors (f v)⟩ :=
+  Subtype.ext <| by simp
+
+/-- The identity map induces the identity on symmetric tensors. -/
+@[simp]
+theorem symmetricTensorsMap_id :
+    symmetricTensorsMap n (LinearMap.id : M →ₗ[R] M) = LinearMap.id :=
+  LinearMap.ext fun t ↦ Subtype.ext <| by simp [PiTensorProduct.map_id]
+
+/-- The map induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem symmetricTensorsMap_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
+    symmetricTensorsMap n (g ∘ₗ f) = symmetricTensorsMap n g ∘ₗ symmetricTensorsMap n f := by
+  simp only [symmetricTensorsMap, PiTensorProduct.map_comp]
+  exact LinearMap.restrict_comp _ _
+
+/-- In every positive degree the zero map induces the zero map. -/
+@[simp]
+theorem symmetricTensorsMap_zero (hn : n ≠ 0) :
+    symmetricTensorsMap n (0 : M →ₗ[R] N) = 0 := by
+  obtain ⟨k⟩ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
+  refine LinearMap.ext fun t ↦ Subtype.ext ?_
+  simp [TauCeti.PiTensorProduct.map_eq_zero_of_eq_zero (fun _ : Fin n ↦ (0 : M →ₗ[R] N)) (k := k)
+    rfl]
 
 end TensorPower

@@ -32,6 +32,7 @@ goes to `e ⊗ f + f ⊗ e`, with no factor `1/2`.
 * `DividedPowerAlgebra.toTensorPower_mem_symmetricTensors`: its values are symmetric tensors.
 * `DividedPowerAlgebra.symmetricTensorMap R M d`: the corestriction
   `Γ^d_R(M) → TensorPower.symmetricTensors R M d`.
+* `DividedPowerAlgebra.symmetricTensorsMap_comp_symmetricTensorMap`: it is natural in `M`.
 * `DividedPowerAlgebra.symmetricTensorMap_bijective`: for a free module it is bijective, and
   `DividedPowerAlgebra.symmetricTensorEquiv R M d` is the resulting linear equivalence.
 
@@ -104,6 +105,16 @@ def symmetricTensorMap (d : ℕ) :
 theorem coe_symmetricTensorMap_apply (d : ℕ) (x : homogeneousSubmodule (R := R) (M := M) d) :
     (symmetricTensorMap R M d x : ⨂[R]^d M) = toTensorPower d x :=
   (rfl)
+
+/-- Roby's map to the symmetric tensors is natural: for a linear map `f : M →ₗ[R] N`, applying it
+and then the map induced by `f` on symmetric tensors equals applying `Γ^d(f)` and then Roby's map
+for `N`. -/
+theorem symmetricTensorsMap_comp_symmetricTensorMap {N : Type*} [AddCommMonoid N] [Module R N]
+    (d : ℕ) (f : M →ₗ[R] N) :
+    TensorPower.symmetricTensorsMap d f ∘ₗ symmetricTensorMap R M d =
+      symmetricTensorMap R N d ∘ₗ mapHomogeneousSubmodule f d :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by
+    simpa using (LinearMap.congr_fun (toTensorPower_comp_mapHomogeneousSubmodule d f) x).symm
 
 /-! ### Free modules -/
 
