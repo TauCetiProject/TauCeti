@@ -29,7 +29,8 @@ nonzero section over the regular `G`-set (`ContAction.nontrivial_modulePresheaf_
 
 * `ContAction.equivariantMaps ρ S`: the `Λ`-module of `G`-maps from `S` to `M`.
 * `ContAction.modulePresheaf ρ`: the presheaf of these modules on finite continuous `G`-sets, with
-  sections `ContAction.modulePresheafObjEquiv`.
+  sections `ContAction.modulePresheafObjEquiv`, determined by their values
+  (`ContAction.modulePresheafObj_ext`).
 * `ContAction.modulePresheafObjEquivInvariants`: sections over a terminal `G`-set are invariants.
 
 ## Main results
@@ -88,6 +89,13 @@ theorem modulePresheafObjEquiv_map_apply {S T : ContAction FintypeCat.{u} G} (f 
     (modulePresheafObjEquiv ρ T ((modulePresheaf ρ).map f.op φ)).val t =
       (modulePresheafObjEquiv ρ S φ).val ((fiberFunctor G).map f t) :=
   (rfl)
+
+/-- Sections of `modulePresheaf ρ` are determined by their values. -/
+theorem modulePresheafObj_ext {S : ContAction FintypeCat.{u} G}
+    {φ ψ : (modulePresheaf ρ).obj (op S)}
+    (h : ∀ s, (modulePresheafObjEquiv ρ S φ).val s = (modulePresheafObjEquiv ρ S ψ).val s) :
+    φ = ψ :=
+  (modulePresheafObjEquiv ρ S).injective (Subtype.ext (funext h))
 
 /-- The underlying presheaf of sets of `modulePresheaf ρ` is the presheaf of `G`-maps into the
 underlying `G`-set of `ρ`. -/
