@@ -44,8 +44,8 @@ example (L : Type*) [CommRing L] [Algebra (ZMod 2) L] :
   have h2 : (2 : L) = 0 := by
     have h := congrArg (algebraMap (ZMod 2) L) (show (2 : ZMod 2) = 0 by decide)
     rwa [map_ofNat, map_zero] at h
-  simp only [extendScalars_binaryQuadraticForm, map_one, binaryQuadraticForm_apply]
-  simp
+  simp only [extendScalars_binaryQuadraticForm, map_one, binaryQuadraticForm_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, one_pow, mul_one]
   linear_combination h2
 
 /-- Over `𝔽₄ = 𝔽₂[ω] / (ω² + ω + 1)`, the extension of `[1, 1]` is isotropic, at `(ω, 1)`:
@@ -61,8 +61,9 @@ example :
   simp only [eval₂_add, eval₂_X_pow, eval₂_X, eval₂_one] at hω
   intro h
   have h0 := congrFun (h ![AdjoinRoot.root _, 1] (by
-    simp only [extendScalars_binaryQuadraticForm, map_one, binaryQuadraticForm_apply]
-    simp
+    simp only [extendScalars_binaryQuadraticForm, map_one, binaryQuadraticForm_apply,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, one_mul, mul_one,
+      one_pow]
     linear_combination hω)) 1
   simp at h0
 
