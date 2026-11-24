@@ -53,8 +53,10 @@ identity theorem (`TauCeti.RiemannSurface.not_eventuallyConst_of_ne` in
 
 ## Main declarations
 
-* `TauCeti.RiemannSurface.finite_preimage_singleton_of_isCompact`: compact fibres are finite, and
-  `TauCeti.RiemannSurface.finite_preimage_singleton`: fibre finiteness over a compact source.
+* `TauCeti.RiemannSurface.finite_preimage_singleton_of_isCompact`: a compact fibre near whose
+  points the map is holomorphic and nonconstant is finite, and
+  `TauCeti.RiemannSurface.finite_preimage_singleton`: a holomorphic map from a compact surface
+  which is constant near no point has finite fibres.
 * `TauCeti.RiemannSurface.fiberMultiplicitySum`: the fibre sum of local multiplicities, and
   `TauCeti.RiemannSurface.eventually_fiberMultiplicitySum_eq`, its local constancy.
 * `TauCeti.RiemannSurface.degree`: the degree, with
