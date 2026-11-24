@@ -44,8 +44,9 @@ first two terms of the series one gets
 ## Main declarations
 
 * `TauCeti.Real.li`: the unoffset logarithmic integral, with defining equation `li_def`.
-* `TauCeti.Real.liSeries`: its entire part `∑_{n ≥ 1} yⁿ / (n · n!)`, with
-  `TauCeti.Real.li_eq_add_liSeries`, the summability `TauCeti.Real.summable_liSeries`, the
+* `TauCeti.Real.liSeries`: its entire part `∑_{n ≥ 1} yⁿ / (n · n!)`, with defining equation
+  `TauCeti.Real.liSeries_def`, `TauCeti.Real.li_eq_add_liSeries`, the summability
+  `TauCeti.Real.summable_liSeries` and `TauCeti.Real.hasSum_liSeries`, the
   partial-sum lower bound `TauCeti.Real.sum_range_le_liSeries` for `y ≥ 0`, and the derivative
   `TauCeti.Real.hasDerivAt_liSeries`, which is `(e^y - 1) / y` for `y ≠ 0`
   (`TauCeti.Real.hasDerivAt_liSeries_of_ne_zero`) and `1` at `0`
@@ -103,6 +104,10 @@ theorem li_def (x : ℝ) :
 noncomputable def liSeries (y : ℝ) : ℝ :=
   ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
 
+/-- Defining equation of `TauCeti.Real.liSeries`. -/
+theorem liSeries_def (y : ℝ) :
+    liSeries y = ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := (rfl)
+
 /-- `li x = γ + log |log x| + liSeries (log x)`. -/
 theorem li_eq_add_liSeries (x : ℝ) :
     li x = eulerMascheroniConstant + log (log x) + liSeries (log x) := (rfl)
@@ -116,6 +121,11 @@ theorem summable_liSeries (y : ℝ) :
   have hf : (0 : ℝ) < (n + 1)! := mod_cast (n + 1).factorial_pos
   rw [norm_div, norm_pow, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
   exact div_le_div_of_nonneg_left (by positivity) hf (le_mul_of_one_le_left hf.le (by simp))
+
+/-- The series `∑_{n ≥ 1} yⁿ / (n · n!)` sums to `liSeries y`. -/
+theorem hasSum_liSeries (y : ℝ) :
+    HasSum (fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) (liSeries y) :=
+  (summable_liSeries y).hasSum
 
 /-- The termwise derivative `∑_{n ≥ 0} yⁿ / (n + 1)!` of `liSeries`. -/
 theorem hasDerivAt_liSeries (y : ℝ) :
