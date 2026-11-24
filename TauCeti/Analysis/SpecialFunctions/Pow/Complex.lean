@@ -12,6 +12,7 @@ import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
@@ -73,6 +74,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
+  the quotient lies in the slit plane.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -117,6 +120,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
   for `|θ| < π` and `0 ≤ r`.
+
+The derivative `TauCeti.hasDerivAt_sub_div_sub_cpow` is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Hypergeometric/Riemann.lean`.
 -/
 
 public section
@@ -356,6 +362,28 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
+
+/-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
+lies in the slit plane is the power times its logarithmic derivative
+`a ((z - α)⁻¹ - (z - γ)⁻¹)`. -/
+theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) ∈ slitPlane) :
+    HasDerivAt (fun w ↦ ((w - α) / (w - γ)) ^ a)
+      (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
+  have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
+  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp hq
+  -- The quotient is the fractional-linear map with `k = m = 1`, `l = -α`, `n = -γ`.
+  have hfun : (fun w : ℂ ↦ (1 * w + -α) / (1 * w + -γ)) = fun w ↦ (w - α) / (w - γ) := by
+    funext w
+    ring
+  have hd := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -α) (m := 1) (n := -γ) (z := z)
+    (by rwa [one_mul, ← sub_eq_add_neg])
+  rw [hfun] at hd
+  have hd' : HasDerivAt (fun w ↦ (w - α) / (w - γ)) ((α - γ) / (z - γ) ^ 2) z :=
+    hd.congr_deriv (by ring)
+  refine (hd'.cpow_const h).congr_deriv ?_
+  rw [cpow_sub _ _ hq, cpow_one]
+  field_simp
+  ring
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
