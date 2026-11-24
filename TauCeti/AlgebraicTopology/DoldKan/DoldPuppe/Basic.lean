@@ -25,7 +25,7 @@ homotopies, and `alternatingFaceMapComplex` returns to chain homotopies, `F.dold
 preserves chain homotopies and chain homotopy equivalences with no additivity or projectivity
 hypotheses. The projective resolution-independence theorem
 `CategoryTheory.Functor.quasiIso_doldPuppeFunctor_map_of_projective` lives in
-`TauCeti.AlgebraicTopology.DoldKan.Projective`.
+`TauCeti.AlgebraicTopology.DoldKan.DoldPuppe.Projective`.
 
 ## Main definitions and results
 
@@ -407,11 +407,10 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom [HasZeroObject D]
         AlgebraicTopology.AlternatingFaceMapComplex.ε.app
           (SimplicialObject.Augmented.const.obj B) := by
   dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans,
-    HomotopyEquiv.ofIso, Functor.doldPuppeFunctor, doldPuppe, SimplicialObject.whiskering,
-    SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv,
-    AlgebraicTopology.alternatingFaceMapComplex, SimplicialObject.Augmented.drop,
-    SimplicialObject.Augmented.const]
-  simp
+    HomotopyEquiv.ofIso]
+  rw [Functor.mapIso_hom, Iso.app_hom,
+    SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_hom]
+  rfl
 
 @[simp]
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv [HasZeroObject D]

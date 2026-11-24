@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialObject.Homotopy
 
@@ -26,8 +25,7 @@ combinatorial simplicial homotopy equivalences to chain homotopy equivalences:
   The morphisms are arbitrary, so the target may be, for instance, a relative quotient complex
   that carries no simplicial structure;
 * `CategoryTheory.SimplicialObject.HomotopyEquiv.toChainHomotopyEquiv`: a combinatorial simplicial
-  homotopy equivalence induces a chain homotopy equivalence (and, when homology exists, a
-  quasi-isomorphism) on alternating face map complexes.
+  homotopy equivalence induces a chain homotopy equivalence on alternating face map complexes.
 -/
 
 @[expose] public section
@@ -103,28 +101,6 @@ lemma toChainHomotopyEquiv_hom (e : HomotopyEquiv X Y) :
 lemma toChainHomotopyEquiv_inv (e : HomotopyEquiv X Y) :
     e.toChainHomotopyEquiv.inv = (alternatingFaceMapComplex C).map e.inv :=
   (rfl)
-
-/-- The forward map of a combinatorial simplicial homotopy equivalence induces a chain homotopy
-equivalence on alternating face map complexes. -/
-lemma homotopyEquivalences_alternatingFaceMapComplex_map (e : HomotopyEquiv X Y) :
-    HomologicalComplex.homotopyEquivalences C (.down ℕ)
-      ((alternatingFaceMapComplex C).map e.hom) :=
-  ⟨e.toChainHomotopyEquiv, rfl⟩
-
-/-- When `C` has homology, the forward map of a combinatorial simplicial homotopy equivalence
-induces a quasi-isomorphism on alternating face map complexes. -/
-lemma quasiIso_alternatingFaceMapComplex_map [CategoryWithHomology C] (e : HomotopyEquiv X Y) :
-    QuasiIso ((alternatingFaceMapComplex C).map e.hom) := by
-  rw [← e.toChainHomotopyEquiv_hom]
-  infer_instance
-
-/-- When `C` has homology, the backward map of a combinatorial simplicial homotopy equivalence
-induces a quasi-isomorphism on alternating face map complexes. -/
-lemma quasiIso_alternatingFaceMapComplex_map_inv [CategoryWithHomology C]
-    (e : HomotopyEquiv X Y) :
-    QuasiIso ((alternatingFaceMapComplex C).map e.inv) := by
-  rw [← e.symm_hom]
-  exact e.symm.quasiIso_alternatingFaceMapComplex_map
 
 end CategoryTheory.SimplicialObject.HomotopyEquiv
 

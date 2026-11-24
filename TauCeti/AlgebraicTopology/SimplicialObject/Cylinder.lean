@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplexCategory.ToMkOne
 public import Mathlib.AlgebraicTopology.SimplicialObject.Homotopy
 public import Mathlib.CategoryTheory.Limits.Shapes.FiniteProducts
-import TauCeti.AlgebraicTopology.SimplexCategory.ToMkOne
+public import TauCeti.AlgebraicTopology.SimplexCategory.ToMkOne
 import Mathlib.AlgebraicTopology.SimplexCategory.MorphismProperty
+import TauCeti.AlgebraicTopology.SimplicialObject.Basic
 
 /-!
 # The cylinder functor on simplicial objects
@@ -278,12 +278,6 @@ private def toCylinderHomTerm {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Ho
   Fin.cases (g.app (op ⦋n⦌)) (fun j ↦ H.h j ≫ Y.δ j.succ) k
 
 omit [HasFiniteCoproducts C] in
-private lemma δ_succ_comp_δ_succ {Y : SimplicialObject C} {n : ℕ} {i : Fin (n + 2)}
-    {j : Fin (n + 1)} (h : j.succ ≤ i) :
-    Y.δ i.succ ≫ Y.δ j.succ = Y.δ j.castSucc.succ ≫ Y.δ i := by
-  simpa [Fin.castSucc_succ] using Y.δ_comp_δ h
-
-omit [HasFiniteCoproducts C] in
 /-- Case `k ≤ i.castSucc` of `toCylinderHomTerm_δ`: `k = 0` uses naturality of `g`, and
 `k = j.succ` reduces to the simplicial homotopy relation `h_castSucc_comp_δ_succ_of_lt`. -/
 private lemma toCylinderHomTerm_δ_of_le {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g)
@@ -312,7 +306,7 @@ private lemma toCylinderHomTerm_δ_of_le {X Y : SimplicialObject C} {f g : X ⟶
     rw [hk_pred]
     simp only [toCylinderHomTerm, Fin.cases_succ]
     rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt i j' hj'_lt_i, ← hj',
-      Category.assoc, δ_succ_comp_δ_succ hij, ← Category.assoc, hj']
+      Category.assoc, Y.δ_succ_comp_δ_succ hij, ← Category.assoc, hj']
 
 omit [HasFiniteCoproducts C] in
 /-- Subcase `k = 1` (`j = 0`) of `toCylinderHomTerm_δ` when `i.castSucc < k`, forcing `i = 0`. -/
@@ -351,9 +345,9 @@ private lemma toCylinderHomTerm_δ_succ_succ {X Y : SimplicialObject C} {f g : X
       simp only [Fin.val_succ]; omega)
     subst hij
     rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt j'.succ j' Fin.castSucc_lt_succ,
-      Category.assoc, δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl,
+      Category.assoc, Y.δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl,
       ← Category.assoc, ← H.h_succ_comp_δ_castSucc_succ,
-      Category.assoc, (δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl).symm,
+      Category.assoc, (Y.δ_succ_comp_δ_succ (i := j'.succ) (j := j') le_rfl).symm,
       ← Category.assoc]
 
 omit [HasFiniteCoproducts C] in
@@ -465,6 +459,17 @@ lemma cylinderι_toMk₁_succ_comp_toCylinderHom_app {X Y : SimplicialObject C} 
       H.h j ≫ Y.δ j.succ := by
   simp [toCylinderHom, toCylinderHomApp, ← SimplexCategory.toMk₁Equiv_apply, toCylinderHomTerm]
 
+/-- Evaluating `H.toCylinderHom` on the constant-`1` summand `SimplexCategory.const m.unop ⦋1⦌ 1`
+recovers `g.app m`. -/
+@[reassoc (attr := simp)]
+lemma cylinderι_const_one_comp_toCylinderHom_app {X Y : SimplicialObject C} {f g : X ⟶ Y}
+    (H : Homotopy f g) (m : SimplexCategoryᵒᵖ) :
+    cylinderι X (SimplexCategory.const m.unop ⦋1⦌ 1) ≫ H.toCylinderHom.app m = g.app m := by
+  obtain ⟨m⟩ := m
+  induction m using SimplexCategory.rec with | _ n
+  simp only [toCylinderHom, toCylinderHomApp, cylinderι_desc, ← SimplexCategory.toMk₁_zero n,
+    ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply, toCylinderHomTerm, Fin.cases_zero]
+
 /-- Restricting `H.toCylinderHom` along the `0`-end inclusion recovers `f`. -/
 @[reassoc (attr := simp)]
 lemma cylinderι₀_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) :
@@ -482,11 +487,7 @@ lemma cylinderι₀_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y
 lemma cylinderι₁_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) :
     (cylinderι₁ C).app X ≫ H.toCylinderHom = g := by
   ext Δ
-  obtain ⟨Δ⟩ := Δ
-  induction Δ using SimplexCategory.rec with | _ n
-  simp only [NatTrans.comp_app, cylinderι₁_app_app, toCylinderHom, toCylinderHomApp,
-    cylinderι_desc, ← SimplexCategory.toMk₁_zero n, ← SimplexCategory.toMk₁Equiv_apply,
-    Equiv.symm_apply_apply, toCylinderHomTerm, Fin.cases_zero]
+  simp
 
 /-- Extracting the homotopy of `H.toCylinderHom` recovers `H`. -/
 @[simp]

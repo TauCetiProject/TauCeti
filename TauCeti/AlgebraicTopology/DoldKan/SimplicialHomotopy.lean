@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
+public import TauCeti.AlgebraicTopology.DoldKan.Normalized
 public import TauCeti.AlgebraicTopology.DoldKan.Retract
 public import TauCeti.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialObject.Cylinder
@@ -132,6 +134,9 @@ open Idempotents.DoldKan
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
   [IsIdempotentComplete C]
 
+private def fullyFaithfulN : (N (C := C)).FullyFaithful :=
+  (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+
 namespace Homotopy
 
 /-- In an idempotent-complete preadditive category with finite coproducts, any chain homotopy
@@ -141,14 +146,12 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
     Homotopy f g := by
-  -- `Idempotents.DoldKan.equivalence_functor` gives `equivalence.functor = N` definitionally.
-  let hN : (N (C := C)).FullyFaithful := (equivalence (C := C)).fullyFaithfulFunctor
   let Ψ : N.obj ((cylinder C).obj X) ⟶ N.obj Y :=
     inclusionN.app ((cylinder C).obj X) ≫ cylinderChainMap H ≫ PInftyToN.app Y
-  let Φ : (cylinder C).obj X ⟶ Y := hN.preimage Ψ
-  have hΦ : N.map Φ = Ψ := hN.map_preimage Ψ
+  let Φ : (cylinder C).obj X ⟶ Y := fullyFaithfulN.preimage Ψ
+  have hΦ : N.map Φ = Ψ := fullyFaithfulN.map_preimage Ψ
   refine ofCylinderHom Φ ?_ ?_ <;>
-    · apply hN.map_injective
+    · apply fullyFaithfulN.map_injective
       rw [Functor.map_comp, hΦ]
       dsimp [Ψ]
       rw [inclusionN.naturality_assoc]
@@ -236,11 +239,9 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     HomotopyEquiv X Y := by
-  -- `Idempotents.DoldKan.equivalence_functor` gives `equivalence.functor = N` definitionally.
-  let hN : (N (C := C)).FullyFaithful := (equivalence (C := C)).fullyFaithfulFunctor
   let gN : N.obj Y ⟶ N.obj X := inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X
-  let g : Y ⟶ X := hN.preimage gN
-  have hg : N.map g = gN := hN.map_preimage gN
+  let g : Y ⟶ X := fullyFaithfulN.preimage gN
+  have hg : N.map g = gN := fullyFaithfulN.map_preimage gN
   refine
     { hom := f
       inv := g
@@ -272,7 +273,7 @@ theorem homotopyEquivalences_alternatingFaceMapComplex_map_iff
     HomologicalComplex.homotopyEquivalences C (.down ℕ) ((alternatingFaceMapComplex C).map f) ↔
       ∃ e : HomotopyEquiv X Y, e.hom = f :=
   ⟨fun ⟨e, he⟩ ↦ ⟨HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv f e he, rfl⟩,
-    fun ⟨e, h⟩ ↦ h ▸ e.homotopyEquivalences_alternatingFaceMapComplex_map⟩
+    fun ⟨e, h⟩ ↦ h ▸ by simpa using e.toChainHomotopyEquiv.homotopyEquivalences_hom⟩
 
 /-- A morphism `f : X ⟶ Y` of simplicial objects in an idempotent-complete preadditive category
 with finite coproducts and homology induces a quasi-isomorphism on normalized chains

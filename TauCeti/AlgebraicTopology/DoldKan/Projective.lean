@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
-public import TauCeti.AlgebraicTopology.DoldKan.DoldPuppe
+public import TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy
 import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Projectivity across Dold–Kan and weak equivalences under non-additive functors
 
-Building on `TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy` and the general Dold–Puppe
-functor in `TauCeti.AlgebraicTopology.DoldKan.DoldPuppe`, this file develops the projectivity layer
-of Albrecht Dold and Dieter Puppe's theory of derived non-additive functors. Because levelwise
-postcomposition `(SimplicialObject.whiskering C D).obj F` by *any* functor `F : C ⥤ D` preserves
-simplicial homotopies—even when `F` is non-additive—it sends weak equivalences between degreewise
-projective simplicial objects to chain homotopy equivalences and hence to quasi-isomorphisms.
+Building on `TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy`, this file develops the
+projectivity layer of Albrecht Dold and Dieter Puppe's theory of derived non-additive functors.
+Because levelwise postcomposition `(SimplicialObject.whiskering C D).obj F` by *any* functor
+`F : C ⥤ D` preserves simplicial homotopies—even when `F` is non-additive—it sends weak
+equivalences between degreewise projective simplicial objects to chain homotopy equivalences and
+hence to quasi-isomorphisms.
 
 ## Main definitions and results
 
@@ -33,8 +33,6 @@ projective simplicial objects to chain homotopy equivalences and hence to quasi-
   `SimplicialObject.quasiIso_whiskering_isProjective`: arbitrary (possibly non-additive) functors
   (including functors defined only on a full subcategory such as `(isProjective C).FullSubcategory`)
   preserve weak equivalences between degreewise projective simplicial objects.
-* `Functor.quasiIso_doldPuppeFunctor_map_of_projective`: resolution independence of the Dold–Puppe
-  functor on degreewise projective chain complexes.
 
 ## References
 
@@ -191,7 +189,7 @@ theorem homotopyEquivalences_alternatingFaceMapComplex_whiskering_map_of_project
       ((alternatingFaceMapComplex D).map (((whiskering C D).obj F).map f)) := by
   obtain ⟨e, he⟩ := exists_homotopyEquiv_whiskering_map_of_projective F f
   rw [← he]
-  exact e.homotopyEquivalences_alternatingFaceMapComplex_map
+  simpa using e.toChainHomotopyEquiv.homotopyEquivalences_hom
 
 /-- **Non-additive functors preserve weak equivalences of projective simplicial objects**
 (Dold–Puppe, §§4.4–4.7): for *any* functor `F : C ⥤ D` (without any additivity assumption on `F`)
@@ -243,7 +241,7 @@ theorem quasiIso_whiskering_of_fullyFaithful_projective
     rw [Functor.whiskeringRight_obj_map, HomotopyEquiv.whiskerRight_ofFullyFaithful_hom,
       homotopyEquivOfQuasiIso_hom]
   rw [← he, ← e.whiskerRight_hom F]
-  exact (e.whiskerRight F).quasiIso_alternatingFaceMapComplex_map
+  simpa using (e.whiskerRight F).toChainHomotopyEquiv.quasiIso_hom
 
 /-- Specialization of `quasiIso_whiskering_of_fullyFaithful_projective` to functors
 `F : (isProjective C).FullSubcategory ⥤ D` defined only on the full subcategory of projective
@@ -263,28 +261,3 @@ theorem quasiIso_whiskering_isProjective
 end WhiskeringProjective
 
 end CategoryTheory.SimplicialObject
-
-namespace CategoryTheory
-
-section AbelianDoldPuppe
-
-variable {C : Type u} [Category.{v} C] [Abelian C]
-variable {D : Type u'} [Category.{v'} D] [Preadditive D] [CategoryWithHomology D]
-
-/-- **Resolution independence of the Dold–Puppe construction**: in an abelian category `C`, if
-`P` and `Q` are degreewise projective chain complexes and `f : P ⟶ Q` is a quasi-isomorphism, then
-for *any* functor `F : C ⥤ D` (not necessarily additive), `F.doldPuppeFunctor.map f` is a
-quasi-isomorphism. -/
-theorem Functor.quasiIso_doldPuppeFunctor_map_of_projective (F : C ⥤ D)
-    {P Q : ChainComplex C ℕ} [∀ n, Projective (P.X n)] [∀ n, Projective (Q.X n)]
-    (f : P ⟶ Q) [hf : QuasiIso f] :
-    QuasiIso (F.doldPuppeFunctor.map f) := by
-  rw [ChainComplex.quasiIso_iff_of_projective] at hf
-  obtain ⟨e, rfl⟩ := hf
-  rw [← F.doldPuppeMapHomotopyEquiv_hom e]
-  exact homotopyEquivalences_le_quasiIso D (.down ℕ) _
-    (F.doldPuppeMapHomotopyEquiv e).homotopyEquivalences_hom
-
-end AbelianDoldPuppe
-
-end CategoryTheory

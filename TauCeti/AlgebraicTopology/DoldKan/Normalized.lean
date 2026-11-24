@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.Normalized
-public import Mathlib.AlgebraicTopology.DoldKan.Degeneracies
+public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
 
 /-!
 # Chain maps out of the normalized Moore complex
@@ -20,10 +19,12 @@ projection `PInftyToNormalizedMooreComplex X`, and restrict along the inclusion
 practice, for instance through the free simplicial objects on standard simplices, whose
 alternating face map complexes have the simplices as a basis.
 
-## Main definitions
+## Main definitions and results
 
 * `AlgebraicTopology.DoldKan.normalizedMooreComplexHomEquiv`: chain maps `N[X] ⟶ L` are the chain
   maps `K[X] ⟶ L` vanishing on degeneracies.
+* `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`: `Abelian.DoldKan.N` equals
+  `AlgebraicTopology.normalizedMooreComplex A`.
 -/
 
 public section
@@ -87,3 +88,13 @@ lemma normalizedMooreComplexHomEquiv_naturality {X Y : SimplicialObject A} (g : 
     (Category.assoc _ _ _)
 
 end AlgebraicTopology.DoldKan
+
+namespace CategoryTheory.Abelian.DoldKan
+
+/-- The abelian Dold–Kan functor `Abelian.DoldKan.N` is
+`AlgebraicTopology.normalizedMooreComplex A`. -/
+lemma N_eq_normalizedMooreComplex {A : Type*} [Category* A] [Abelian A] :
+    (N : SimplicialObject A ⥤ ChainComplex A ℕ) = AlgebraicTopology.normalizedMooreComplex A :=
+  rfl
+
+end CategoryTheory.Abelian.DoldKan

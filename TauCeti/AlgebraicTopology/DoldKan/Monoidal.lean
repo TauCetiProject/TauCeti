@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.EquivalencePseudoabelian
 public import TauCeti.AlgebraicTopology.DoldKan.Retract
 public import TauCeti.AlgebraicTopology.SimplicialObject.AlexanderWhitney
 public import TauCeti.CategoryTheory.Monoidal.Functor

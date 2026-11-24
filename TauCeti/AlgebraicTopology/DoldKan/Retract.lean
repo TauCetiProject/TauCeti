@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
 public import Mathlib.AlgebraicTopology.DoldKan.EquivalencePseudoabelian
-public import Mathlib.AlgebraicTopology.DoldKan.HomotopyEquivalence
 
 /-!
 # Normalized chains as a retract of the alternating face map complex
@@ -19,9 +17,8 @@ the idempotent `PInfty`.
 
 This file defines the natural inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN`, the
 projection `CategoryTheory.Idempotents.DoldKan.PInftyToN`, the bundled retract
-`CategoryTheory.Idempotents.DoldKan.retractN`, the resulting chain homotopy equivalence
-`CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`, and the abelian
-identification `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`.
+`CategoryTheory.Idempotents.DoldKan.retractN`, and the resulting chain homotopy equivalence
+`CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`.
 
 ## Main definitions and results
 
@@ -33,8 +30,6 @@ identification `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`.
   factorization of `N.map f` and `PInfty ≫ K.map f`.
 * `CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy
   equivalence `N.obj X ≃ K[X]`.
-* `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`: `Abelian.DoldKan.N` equals
-  `normalizedMooreComplex A`.
 -/
 
 public noncomputable section
@@ -196,13 +191,3 @@ lemma homotopyEquivNAlternatingFaceMapComplex_inv (X : SimplicialObject C) :
     (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X := (rfl)
 
 end CategoryTheory.Idempotents.DoldKan
-
-namespace CategoryTheory.Abelian.DoldKan
-
-/-- The abelian Dold–Kan functor `Abelian.DoldKan.N` is
-`AlgebraicTopology.normalizedMooreComplex A`. -/
-lemma N_eq_normalizedMooreComplex {A : Type u} [Category.{v} A] [Abelian A] :
-    (N : SimplicialObject A ⥤ ChainComplex A ℕ) = AlgebraicTopology.normalizedMooreComplex A :=
-  rfl
-
-end CategoryTheory.Abelian.DoldKan
