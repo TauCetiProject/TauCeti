@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
 public import TauCeti.RepresentationTheory.LSPath.Realization.Basic
 
-import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
+import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
@@ -141,12 +141,11 @@ section Rational
 /-- The canonical rational realization `LSPath.toRatPLPath` is injective for any dominant shape. -/
 theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
     Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
-  have := P.finite_weylGroup_of_base b
   intro π₁ π₂ h
   simp only [toRatPLPath_def] at h
-  exact toPLPath_injective hlam (P.tensorProduct_mk_injective ℚ).injOn (by
-    simpa only [LinearMap.toAddMonoidHom_coe] using
-      P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam) h
+  exact toPLPath_injective_of_compatible hlam
+    (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
+    (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)) h
 
 end Rational
 

@@ -71,9 +71,10 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
   have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) :=
     Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i) x
   have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.property, Int.cast_zero]
-  have hS : (Set.range fun w : P.weylGroup ↦ f₀ (w • lam)).Pairwise fun u v ↦ ¬ SameRay ℚ u v := by
-    simpa only [f₀, LinearMap.toAddMonoidHom_coe] using
-      P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam
+  have hS : (Set.range fun w : P.weylGroup ↦ f₀ (w • lam)).Pairwise fun u v ↦ ¬ SameRay ℚ u v :=
+    P.pairwise_not_sameRay_image_orbit_of_compatible b
+      (F := fun j ↦ Module.Dual.baseChange ℚ (P.coroot' j))
+      (fun j ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' j)) lam
   apply Option.map_injective (toRatPLPath_injective hlam')
   rw [show (toRatPLPath (P := P) (b := b) (lam := lam + χ)) = _ from funext toRatPLPath_def,
     ← lower_toPLPath hlam' f₀ i F₀ hF₀]
