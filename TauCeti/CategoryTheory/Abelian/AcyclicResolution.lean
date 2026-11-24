@@ -276,6 +276,19 @@ namespace CategoryTheory.Functor
 
 open CochainComplex
 
+section Augmentation
+
+variable {C : Type u₁} [Category.{v₁} C] [HasZeroMorphisms C] [HasZeroObject C] {D : Type u₂}
+  [Category.{v₂} D] [HasZeroMorphisms D] (F : C ⥤ D) [F.PreservesZeroMorphisms]
+
+/-- For a coaugmented cochain complex `ι : X[0] ⟶ K`, `F` applied to the augmentation `X ⟶ K⁰`
+composes to zero with the differential `F(K⁰) ⟶ F(K¹)`, so it is a degree-`0` cycle of `F(K)`. -/
+lemma map_fromSingle₀Equiv_comp_d {X : C} {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) :
+    F.map (K.fromSingle₀Equiv X ι).val ≫ ((F.mapHomologicalComplex _).obj K).d 0 1 = 0 := by
+  rw [mapHomologicalComplex_obj_d, ← F.map_comp, (K.fromSingle₀Equiv X ι).property, F.map_zero]
+
+end Augmentation
+
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
   [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
   [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
@@ -330,9 +343,7 @@ augmentation `X ⟶ K⁰` of the resolution. -/
 lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
     F.toRightDerivedZero.app X ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK 0).hom =
       ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (K.fromSingle₀Equiv X ι).val) 1
-        (by simp) (by
-          rw [Functor.mapHomologicalComplex_obj_d, ← F.map_comp, (K.fromSingle₀Equiv X ι).property,
-            F.map_zero]) ≫
+        (by simp) (F.map_fromSingle₀Equiv_comp_d ι) ≫
         ((F.mapHomologicalComplex _).obj K).homologyπ 0 := by
   let I := injectiveResolution X
   let φ := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
