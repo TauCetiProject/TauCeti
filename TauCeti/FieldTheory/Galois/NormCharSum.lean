@@ -52,8 +52,9 @@ The basic properties are:
 * `TauCeti.charSumNorm_mem_charEigenspace`,
   `TauCeti.baseChange_ofMulDistribMulAction_apply_charSumNorm`: `ξ_χ(z)` is a `χ`-eigenvector of
   the Galois action.
-* `TauCeti.charSumNorm_mul`, `TauCeti.charSumNorm_one`: `ξ_χ(z w) = ξ_χ(z) + ξ_χ(w)` and
-  `ξ_χ(1) = 0`.
+* `TauCeti.charSumNorm_mul`, `TauCeti.charSumNorm_one`, `TauCeti.charSumNorm_inv`,
+  `TauCeti.charSumNorm_div`: `ξ_χ(z w) = ξ_χ(z) + ξ_χ(w)`, `ξ_χ(1) = 0`, `ξ_χ(z⁻¹) = -ξ_χ(z)` and
+  `ξ_χ(z / w) = ξ_χ(z) - ξ_χ(w)`.
 * `TauCeti.charSumNorm_eq_zero`, `TauCeti.charSumNorm_neg`,
   `TauCeti.charSumNorm_units_map_algebraMap_mul`: for a nontrivial character with values in a
   domain, `ξ_χ` vanishes when the norm is Galois invariant, and so is unchanged by the sign and by
@@ -123,15 +124,24 @@ theorem charSumNorm_mul (z w : Mˣ) :
 theorem charSumNorm_one : charSumNorm χ (1 : Mˣ) = 0 := by
   simp [charSumNorm_def]
 
+/-- `ξ_χ(z⁻¹) = -ξ_χ(z)`. -/
+@[simp]
+theorem charSumNorm_inv (z : Mˣ) : charSumNorm χ z⁻¹ = -charSumNorm χ z :=
+  eq_neg_of_add_eq_zero_left (by rw [← charSumNorm_mul, inv_mul_cancel, charSumNorm_one])
+
+/-- `ξ_χ(z / w) = ξ_χ(z) - ξ_χ(w)`. -/
+@[simp]
+theorem charSumNorm_div (z w : Mˣ) :
+    charSumNorm χ (z / w) = charSumNorm χ z - charSumNorm χ w := by
+  rw [div_eq_mul_inv, charSumNorm_mul, charSumNorm_inv, sub_eq_add_neg]
+
 /-- **`ξ_χ` vanishes on elements whose norm is fixed by the Galois group**, when `χ` is
 nontrivial with values in a domain: the nontrivial character sum kills `Gal(L/F)`-invariant
 vectors. -/
 theorem charSumNorm_eq_zero [IsDomain O] (hχ : χ ≠ 1) {w : Mˣ}
     (hw : ∀ σ : L ≃ₐ[F] L, σ • Units.map (Algebra.norm L) w = Units.map (Algebra.norm L) w) :
     charSumNorm χ w = 0 :=
-  charSum_apply_eq_zero_of_mem_invariants _ χ hχ fun σ ↦ by
-    rw [baseChange_apply, LinearMap.baseChange_tmul, ofMulDistribMulAction_apply_apply,
-      toMul_ofMul, hw]
+  charSum_apply_eq_zero_of_mem_invariants _ χ hχ fun σ ↦ by simp [hw]
 
 /-- **The sign does not change `ξ_χ`** when `χ` is nontrivial with values in a domain:
 `ξ_χ(-z) = ξ_χ(z)`. So the normalizations `1 - ζ` and `ζ - 1` of the cyclotomic numbers give the
@@ -181,11 +191,12 @@ theorem baseChange_units_map_charSumNorm (z : Mˣ) :
     simp only [Units.coe_map, AlgEquiv.smul_units_def, Units.coe_prod]
     exact (MonoidHom.prod_fiber_apply_eq_algebraMap_norm _
       (fun δ x ↦ AlgEquiv.restrictNormal_commutes δ L x) σ (z : M)).symm
-  rw [map_smul, LinearMap.baseChange_tmul, AddMonoidHom.coe_toIntLinearMap,
-    MonoidHom.toAdditive_apply_apply, toMul_ofMul, h, ofMul_prod, tmul_sum, Finset.smul_sum]
+  simp only [map_smul, LinearMap.baseChange_tmul, AddMonoidHom.coe_toIntLinearMap,
+    MonoidHom.toAdditive_apply_apply, toMul_ofMul]
+  rw [h]
+  simp only [ofMul_prod, tmul_sum, Finset.smul_sum]
   refine Finset.sum_congr rfl fun δ hδ ↦ ?_
-  rw [MonoidHom.comp_apply, (Finset.mem_filter.1 hδ).2]
-  simp
+  simp [(Finset.mem_filter.1 hδ).2]
 
 /-- **Rubin's product description of `ξ_χ(z)`**: its image in `O ⊗ Mˣ` is
 `∑_{δ ∈ Gal(M/F)} χ(δ|_L)⁻¹ ⊗ δ z`, multiplicatively `∏_δ (δ z)^{χ⁻¹(δ|_L)}`. -/
