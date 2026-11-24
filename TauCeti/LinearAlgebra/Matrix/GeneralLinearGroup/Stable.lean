@@ -683,6 +683,23 @@ theorem map_injective {f : A →+* B} (hf : Function.Injective f) : Function.Inj
     (Units.map_injective (Matrix.map_injective hf)).eq_iff' (map_one _)] at hx
   rw [hx, map_one]
 
+/-- An element of `GL_∞(A × B)` is determined by its images in `GL_∞(A)` and `GL_∞(B)`: the
+homomorphisms induced by the two projections are jointly injective. -/
+theorem ker_map_fst_inf_ker_map_snd :
+    (map (RingHom.fst A B)).ker ⊓ (map (RingHom.snd A B)).ker = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  obtain ⟨n, u, rfl⟩ := exists_of x
+  obtain ⟨h₁, h₂⟩ := Subgroup.mem_inf.1 hx
+  rw [MonoidHom.mem_ker, map_of, (of_injective n).eq_iff' (map_one _)] at h₁ h₂
+  have hu : u = 1 := by
+    ext i j : 2
+    refine Prod.ext ?_ ?_
+    · simpa [Matrix.one_apply, apply_ite] using
+        congrArg (fun v : GL (Fin n) A ↦ (v : Matrix (Fin n) (Fin n) A) i j) h₁
+    · simpa [Matrix.one_apply, apply_ite] using
+        congrArg (fun v : GL (Fin n) B ↦ (v : Matrix (Fin n) (Fin n) B) i j) h₂
+  rw [hu, map_one]
+
 /-- The induced homomorphism of stable general linear groups carries stably elementary matrices
 to stably elementary matrices. -/
 theorem map_elementarySubgroup_le (f : A →+* B) :
