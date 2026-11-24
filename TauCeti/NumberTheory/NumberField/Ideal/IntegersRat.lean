@@ -58,7 +58,8 @@ at its primes.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for an ideal `Q` lying over an ideal `p` of
   `ℤ`, the primes above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
-  the rational prime it corresponds to; `Rat.HeightOneSpectrum.exists_absNorm_eq` and
+  the rational prime it corresponds to, so it is prime
+  (`Rat.HeightOneSpectrum.prime_absNorm_asIdeal`); `Rat.HeightOneSpectrum.exists_absNorm_eq` and
   `Rat.HeightOneSpectrum.absNorm_asIdeal_injective` show every rational prime arises uniquely.
 * `TauCeti.tsum_heightOneSpectrum_rat_eq_tsum_primes`: an unconditional series over the
   height-one primes of `𝓞 ℚ` depending only on the absolute norm equals the corresponding series
@@ -197,6 +198,11 @@ theorem absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
     ← span_natGenerator, Ideal.absNorm_span_singleton]
   simp
 
+/-- The absolute norm of a height-one prime of `𝓞 ℚ` is a prime number. -/
+theorem prime_absNorm_asIdeal (v : HeightOneSpectrum (𝓞 ℚ)) :
+    (Ideal.absNorm v.asIdeal).Prime := by
+  simpa [absNorm_asIdeal] using prime_natGenerator v
+
 /-- A natural number belongs to a rational prime ideal exactly when its norm divides it. -/
 @[simp]
 theorem natCast_mem_iff_absNorm_asIdeal_dvd (v : HeightOneSpectrum (𝓞 ℚ)) {n : ℕ} :
@@ -223,8 +229,7 @@ theorem liesOver_span_absNorm (v : HeightOneSpectrum (𝓞 ℚ)) {S : Type*} [Co
   have hpQ : ((Ideal.absNorm v.asIdeal : ℕ) : S) ∈ Q := by
     simpa using (Ideal.mem_of_liesOver Q v.asIdeal _).mp
       ((natCast_mem_iff_absNorm_asIdeal_dvd v).mpr dvd_rfl)
-  have : Fact (Ideal.absNorm v.asIdeal).Prime := ⟨by
-    simpa [absNorm_asIdeal] using prime_natGenerator v⟩
+  have : Fact (Ideal.absNorm v.asIdeal).Prime := ⟨prime_absNorm_asIdeal v⟩
   have hne : Ideal.under ℤ Q ≠ ⊤ := by
     rw [← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, ← Q.over_def v.asIdeal]
     exact Ideal.comap_ne_top _ v.isPrime.ne_top

@@ -60,8 +60,7 @@ private theorem jacobiSym_eq_iff (𝔭 : HeightOneSpectrum (𝓞 ℚ)) {a : ℤ}
     jacobiSym a (Ideal.absNorm 𝔭.asIdeal) = e ↔
       additiveIntUnitsAddEquiv (Additive.ofMul e) =
         if jacobiSym a (Ideal.absNorm 𝔭.asIdeal) = 1 then 0 else 1 := by
-  have : Fact (Ideal.absNorm 𝔭.asIdeal).Prime :=
-    ⟨by simpa using Rat.HeightOneSpectrum.prime_natGenerator 𝔭⟩
+  have : Fact (Ideal.absNorm 𝔭.asIdeal).Prime := ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭⟩
   rw [← jacobiSym.legendreSym.to_jacobiSym]
   have hl := legendreSym.eq_one_or_neg_one (Ideal.absNorm 𝔭.asIdeal) (a := a) (by
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
@@ -126,6 +125,7 @@ theorem hasDirichletDensity_setOf_jacobiSym_eq (d : ι → ℤ)
       (ConjClasses.mk σ) ↔ ∀ i, jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = ε i :=
     (NumberField.mem_frobeniusPrimeSet_iff_signPattern hroot σ h2 hd hur).trans
       (forall_congr' fun i ↦ by rw [hσ]; exact (jacobiSym_eq_iff 𝔭 (hd i) (ε i)).symm)
+  rw [Set.mem_symmDiff] at h𝔭
   rcases h𝔭 with ⟨hmem, hnot⟩ | ⟨hmem, hnot⟩
   · exact hnot (hiff.mpr hmem)
   · exact hnot (hiff.mp hmem)

@@ -206,7 +206,7 @@ theorem mem_frobeniusPrimeSet_iff_signPattern
       ∀ i, signPattern root σ i =
         if jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = 1 then 0 else 1 := by
   set p := Ideal.absNorm 𝔭.asIdeal
-  have : Fact p.Prime := ⟨by simpa [p] using Rat.HeightOneSpectrum.prime_natGenerator 𝔭⟩
+  have : Fact p.Prime := ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭⟩
   have hodd : p ≠ 2 := fun h ↦
     h2 ((Rat.HeightOneSpectrum.intCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mpr
       (by exact_mod_cast (show p ∣ 2 from h ▸ dvd_rfl)))
@@ -222,10 +222,8 @@ theorem mem_frobeniusPrimeSet_iff_signPattern
   have hroot' : ∀ i, root i ^ 2 = algebraMap ℚ L (d i) := root_sq_algebraMap_rat hroot
   rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭.asIdeal hur Q τ hτ, ConjClasses.mk_eq_mk_iff_isConj,
     aut_isConj_iff_eq hroot']
-  have : 𝔭.asIdeal.LiesOver 𝔭.asIdeal := ⟨by simp [Ideal.under_def]⟩
-  have : 𝔭.asIdeal.LiesOver (Ideal.span {(p : ℤ)}) :=
-    Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 𝔭.asIdeal
-  have : Q.LiesOver (Ideal.span {(p : ℤ)}) := Ideal.LiesOver.trans Q 𝔭.asIdeal _
+  have : Q.LiesOver (Ideal.span {(p : ℤ)}) := Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q
+  have : 𝔭.asIdeal.LiesOver (Ideal.span {(p : ℤ)}) := Ideal.LiesOver.tower_bot Q 𝔭.asIdeal _
   have hτℤ : IsArithFrobAt ℤ τ Q := isArithFrobAt_int_of_absNorm_eq 𝔭.asIdeal rfl Q hτ
   have hsign := signPattern_frobenius hroot p hodd hcop Q hτℤ
   -- An automorphism is determined by its sign pattern.
