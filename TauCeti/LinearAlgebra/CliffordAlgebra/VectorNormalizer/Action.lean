@@ -21,6 +21,7 @@ form a group homomorphism `CliffordAlgebra.vectorNormalizerAction`.
 
 * `CliffordAlgebra.vectorNormalizerAction`: the vector action `vectorNormalizer Q →* M ≃ₗ[R] M`.
 * `CliffordAlgebra.ι_vectorNormalizerAction_apply`: `ι (ρ(g) v) = α(g) ι(v) g⁻¹`.
+* `CliffordAlgebra.vectorNormalizerAction_map_app`: `ρ(g)` preserves `Q`.
 -/
 
 public section
@@ -76,5 +77,31 @@ theorem ι_vectorNormalizerAction_apply (x : vectorNormalizer Q) (m : M) :
   rw [vectorNormalizerAction, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, MonoidHom.coe_toHomUnits]
   exact ι_twistedVectorMap x.property m
+
+/-- **The vector normalizer acts by isometries**: `Q (ρ(g) v) = Q v`. -/
+theorem vectorNormalizerAction_map_app (x : vectorNormalizer Q) (m : M) :
+    Q (vectorNormalizerAction Q x m) = Q m := by
+  apply algebraMap_injective_of_free Q
+  obtain ⟨u, hu⟩ := x
+  have hv := ι_vectorNormalizerAction_apply ⟨u, hu⟩ m
+  -- the grade involution of `ι (ρ(g) v) = α(g) ι(v) g⁻¹` is `ι (ρ(g) v) = g ι(v) α(g⁻¹)`
+  have hv' : ι Q (vectorNormalizerAction Q ⟨u, hu⟩ m) =
+      u * ι Q m * involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+    simpa only [involute_ι, map_mul, involute_involute, mul_neg, neg_mul, neg_inj] using
+      congrArg involute hv
+  have hhg : involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+      involute (u : CliffordAlgebra Q) = 1 := by
+    rw [← map_mul, Units.inv_mul, map_one]
+  rw [← ι_sq_scalar]
+  nth_rewrite 1 [hv']
+  rw [hv]
+  calc _ = u * ι Q m * (involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+        involute (u : CliffordAlgebra Q)) * ι Q m * ((u⁻¹ : (CliffordAlgebra Q)ˣ) :
+          CliffordAlgebra Q) := by
+        simp only [mul_assoc]
+    _ = u * (ι Q m * ι Q m) * ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+        rw [hhg, mul_one, mul_assoc (u : CliffordAlgebra Q)]
+    _ = algebraMap R _ (Q m) := by
+        rw [ι_sq_scalar, ← Algebra.commutes, mul_assoc, Units.mul_inv, mul_one]
 
 end CliffordAlgebra

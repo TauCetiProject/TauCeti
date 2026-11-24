@@ -429,28 +429,13 @@ section Free
 
 variable [Module.Free R M]
 
-/-- **Elements of the Clifford group act by isometries.** -/
-theorem vectorNormalizerAction_map_app {x : vectorNormalizer Q}
-    (hx : (x : (CliffordAlgebra Q)ˣ) ∈ gpinGroup Q) (m : M) :
-    Q (vectorNormalizerAction Q x m) = Q m := by
-  apply algebraMap_injective_of_free Q
-  obtain ⟨s, hs, hinv⟩ := (mem_gpinGroup_iff.mp hx).2.exists_involute_eq_smul
-  set g : CliffordAlgebra Q := ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
-  set h : CliffordAlgebra Q := (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
-    CliffordAlgebra Q)
-  have hhg : h * g = 1 := Units.inv_mul _
-  rw [← ι_sq_scalar, ι_vectorNormalizerAction_apply, hinv]
-  simp only [smul_mul_assoc, mul_smul_comm, smul_smul, hs, one_smul, mul_assoc]
-  rw [← mul_assoc h g, hhg, one_mul, ← mul_assoc (ι Q m) (ι Q m), ι_sq_scalar,
-    Algebra.commutes, ← mul_assoc, Units.mul_inv, one_mul]
-
 variable (Q) in
 /-- **The vector action** `ρ : GPin(Q) → O(Q)` of the Clifford group of a quadratic form on a free
 module, in every characteristic: `ι (ρ(g) v) = α(g) ι(v) g⁻¹`. -/
 noncomputable def gpinToOrthogonal : gpinGroup Q →* TauCeti.QuadraticMap.orthogonalGroup Q :=
   ((vectorNormalizerAction Q).comp
-    (Subgroup.inclusion (gpinGroup_le_vectorNormalizer Q))).codRestrict _ fun x =>
-      TauCeti.QuadraticMap.mem_orthogonalGroup_iff.mpr (vectorNormalizerAction_map_app x.property)
+    (Subgroup.inclusion (gpinGroup_le_vectorNormalizer Q))).codRestrict _ fun _ =>
+      TauCeti.QuadraticMap.mem_orthogonalGroup_iff.mpr (vectorNormalizerAction_map_app _)
 
 /-- The vector action of the Clifford group is twisted conjugation. -/
 @[simp]
