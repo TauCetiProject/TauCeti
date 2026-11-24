@@ -270,11 +270,12 @@ theorem aeval_fieldMap_star [StarRing R] [StarRing A] [StarModule R A]
     (p : PolynomialJet R ι α) :
     aeval (Sum.elim x fun aI ↦ u aI.1 aI.2) (fieldMap c p) =
       star (aeval (Sum.elim x fun aI ↦ u aI.1 aI.2) p) := by
-  have hx' : (starRingEnd A) ∘ x = x := funext hx
+  have hx' : (starRingEnd A) ∘ x = x := funext fun j ↦ (starRingEnd_apply _).trans (hx j)
   have h := aeval_fieldMap c (starRingEnd A)
     (fun r ↦ by rw [starRingEnd_apply, starRingEnd_apply, algebraMap_star_comm]) x u u
     (fun a I ↦ (hu a I).trans (starRingEnd_apply _).symm) p
-  rwa [hx'] at h
+  rw [hx', starRingEnd_apply] at h
+  exact h
 
 /-- On a real field configuration, an expression fixed by the conjugation evaluates to a
 self-adjoint value. -/
