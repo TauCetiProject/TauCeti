@@ -57,9 +57,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Unique ι]
 
 /-- Canonical equivalence between `ι`-indexed orientations of `FredholmDetLine ℝ E F T` and rays in
-`(T.1 : E →ₗ[ℝ] F).detLine`. -/
+`(T.val : E →ₗ[ℝ] F).detLine`. -/
 def orientationEquivRay (T : {T : E →L[ℝ] F // T.IsFredholm}) :
-    Orientation ℝ (FredholmDetLine ℝ E F T) ι ≃ Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine :=
+    Orientation ℝ (FredholmDetLine ℝ E F T) ι ≃ Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine :=
   (Orientation.equivRay (ι := ι) finrank_eq_one).trans (Module.Ray.map (linearEquiv T))
 
 theorem orientationEquivRay_def (T : {T : E →L[ℝ] F // T.IsFredholm}) :
@@ -72,12 +72,12 @@ theorem orientationEquivRay_neg (T : {T : E →L[ℝ] F // T.IsFredholm})
     orientationEquivRay (ι := ι) T (-o) = -orientationEquivRay (ι := ι) T o := by
   rw [orientationEquivRay_def, Equiv.trans_apply, Equiv.trans_apply, Orientation.equivRay_neg]
   -- Supply `TensorProduct.addCommGroup` directly so search does not traverse the nested `detLine`.
-  exact @Module.Ray.map_neg ℝ _ _ _ _ (T.1 : E →ₗ[ℝ] F).detLine _ TensorProduct.addCommGroup _ _
+  exact @Module.Ray.map_neg ℝ _ _ _ _ (T.val : E →ₗ[ℝ] F).detLine _ TensorProduct.addCommGroup _ _
     (linearEquiv T) _
 
 @[simp]
 theorem orientationEquivRay_symm_neg (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     (orientationEquivRay (ι := ι) T).symm (-r) = -(orientationEquivRay (ι := ι) T).symm r :=
   (orientationEquivRay (ι := ι) T).injective <| by
     rw [Equiv.apply_symm_apply, orientationEquivRay_neg, Equiv.apply_symm_apply]
@@ -88,13 +88,13 @@ theorem orientationEquivRay_units_smul (T : {T : E →L[ℝ] F // T.IsFredholm})
     orientationEquivRay (ι := ι) T (u • o) = u • orientationEquivRay (ι := ι) T o := by
   rcases lt_or_gt_of_ne u.ne_zero with hu | hu
   · rw [Module.Ray.units_smul_of_neg u hu, orientationEquivRay_neg]
-    exact (@Module.Ray.units_smul_of_neg ℝ _ _ _ (T.1 : E →ₗ[ℝ] F).detLine
+    exact (@Module.Ray.units_smul_of_neg ℝ _ _ _ (T.val : E →ₗ[ℝ] F).detLine
       TensorProduct.addCommGroup _ u hu _).symm
   · rw [Module.Ray.units_smul_of_pos u hu, Module.Ray.units_smul_of_pos u hu]
 
 @[simp]
 theorem orientationEquivRay_symm_units_smul (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (u : ℝˣ) (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (u : ℝˣ) (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     (orientationEquivRay (ι := ι) T).symm (u • r) = u • (orientationEquivRay (ι := ι) T).symm r :=
   (orientationEquivRay (ι := ι) T).injective <| by
     rw [Equiv.apply_symm_apply, orientationEquivRay_units_smul, Equiv.apply_symm_apply]
@@ -111,7 +111,7 @@ theorem orientationEquivRay_reindex {ι' : Type*} [Unique ι']
 @[simp]
 theorem reindex_orientationEquivRay_symm {ι' : Type*} [Unique ι']
     (T : {T : E →L[ℝ] F // T.IsFredholm}) (σ : ι ≃ ι')
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     Orientation.reindex ℝ (FredholmDetLine ℝ E F T) σ ((orientationEquivRay (ι := ι) T).symm r) =
       (orientationEquivRay (ι := ι') T).symm r :=
   (orientationEquivRay (ι := ι') T).injective <| by
@@ -131,32 +131,32 @@ theorem orientationEquivRay_basis_orientation [Fintype ι] [DecidableEq ι]
 variable (ι) in
 /-- Point of the orientation double cover of `FredholmDetLine ℝ E F` over `T` determined by `r`. -/
 def orientationCoverMk (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι :=
   ⟨T, (orientationEquivRay (ι := ι) T).symm r⟩
 
 theorem orientationCoverMk_def (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     orientationCoverMk ι T r = ⟨T, (orientationEquivRay (ι := ι) T).symm r⟩ := (rfl)
 
 @[simp]
 theorem proj_orientationCoverMk (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) : (orientationCoverMk ι T r).proj = T := (rfl)
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) : (orientationCoverMk ι T r).proj = T := (rfl)
 
 @[simp]
 theorem orientationCoverMk_inj {T : {T : E →L[ℝ] F // T.IsFredholm}}
-    {r₁ r₂ : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine} :
+    {r₁ r₂ : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine} :
     orientationCoverMk ι T r₁ = orientationCoverMk ι T r₂ ↔ r₁ = r₂ := by
   rw [orientationCoverMk_def, orientationCoverMk_def, VectorBundleOrientationCover.mk_eq_mk_iff,
     Equiv.apply_eq_iff_eq]
 
 variable (ι) in
 /-- Canonical equivalence between the fibre of the orientation double cover over `T` and
-`Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine`. -/
+`Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine`. -/
 def orientationCoverFiberEquiv (T : {T : E →L[ℝ] F // T.IsFredholm}) :
     ((VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) ≃
-      Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine :=
+      Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine :=
   (VectorBundleOrientationCover.fiberEquiv T).trans (orientationEquivRay (ι := ι) T)
 
 theorem orientationCoverFiberEquiv_def (T : {T : E →L[ℝ] F // T.IsFredholm}) :
@@ -184,38 +184,42 @@ theorem orientationCoverFiberEquiv_apply_mk' (T : {T : E →L[ℝ] F // T.IsFred
 
 @[simp]
 theorem orientationCoverFiberEquiv_symm_apply (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     (orientationCoverFiberEquiv ι T).symm r =
       ⟨orientationCoverMk ι T r, proj_orientationCoverMk T r⟩ := by
   simp [orientationCoverFiberEquiv_def, orientationCoverMk_def]
 
 @[simp]
 theorem orientationCoverFiberEquiv_mk (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine)
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine)
     {h : orientationCoverMk ι T r ∈ VectorBundleOrientationCover.proj ⁻¹' {T}} :
     orientationCoverFiberEquiv ι T ⟨orientationCoverMk ι T r, h⟩ = r := by
-  rw [show (⟨_, h⟩ : (VectorBundleOrientationCover.proj :
+  have hsub : (⟨orientationCoverMk ι T r, h⟩ :
+      (VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) =
-      (orientationCoverFiberEquiv ι T).symm r from
-    Subtype.ext (by rw [orientationCoverFiberEquiv_symm_apply]), Equiv.apply_symm_apply]
+      (orientationCoverFiberEquiv ι T).symm r :=
+    Subtype.ext (by rw [orientationCoverFiberEquiv_symm_apply])
+  rw [hsub, Equiv.apply_symm_apply]
 
 @[simp]
 theorem orientationCoverFiberEquiv_mk' (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) {h : (orientationCoverMk ι T r).proj = T} :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) {h : (orientationCoverMk ι T r).proj = T} :
     orientationCoverFiberEquiv ι T
       (⟨orientationCoverMk ι T r, h⟩ : (VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) = r := by
-  rw [show (⟨_, h⟩ : (VectorBundleOrientationCover.proj :
+  have hsub : (⟨orientationCoverMk ι T r, h⟩ :
+      (VectorBundleOrientationCover.proj :
         VectorBundleOrientationCover ℝ (FredholmDetLine ℝ E F) ι → _) ⁻¹' {T}) =
-      (orientationCoverFiberEquiv ι T).symm r from
-    Subtype.ext (by rw [orientationCoverFiberEquiv_symm_apply]), Equiv.apply_symm_apply]
+      (orientationCoverFiberEquiv ι T).symm r :=
+    Subtype.ext (by rw [orientationCoverFiberEquiv_symm_apply])
+  rw [hsub, Equiv.apply_symm_apply]
 
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- The deck involution of the orientation double cover negates the determinant-line ray. -/
 @[simp]
 theorem deck_orientationCoverMk (T : {T : E →L[ℝ] F // T.IsFredholm})
-    (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+    (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
     VectorBundleOrientationCover.deck (orientationCoverMk ι T r) =
       orientationCoverMk ι T (-r) := by
   rw [orientationCoverMk_def, orientationCoverMk_def, VectorBundleOrientationCover.deck_apply]
@@ -237,25 +241,25 @@ variable {n m : ℕ} (D₂ : (Fin n → ℝ) →L[ℝ] F) (q : E × (Fin n → �
 /-- Two determinant-line rays over operators in the base set of `trivialization D₂ q` are read as
 the same orientation of `ℝ` if and only if `detLineChartEquiv` maps them to the same ray. -/
 theorem mapOrientation_trivialization_eq_iff (T₁ T₂ : {T : E →L[ℝ] F // T.IsFredholm})
-    (h₁ : ((T₁.1.coprod D₂).prod q).IsInvertible) (h₂ : ((T₂.1.coprod D₂).prod q).IsInvertible)
-    (r₁ : Module.Ray ℝ (T₁.1 : E →ₗ[ℝ] F).detLine)
-    (r₂ : Module.Ray ℝ (T₂.1 : E →ₗ[ℝ] F).detLine) :
+    (h₁ : ((T₁.val.coprod D₂).prod q).IsInvertible) (h₂ : ((T₂.val.coprod D₂).prod q).IsInvertible)
+    (r₁ : Module.Ray ℝ (T₁.val : E →ₗ[ℝ] F).detLine)
+    (r₂ : Module.Ray ℝ (T₂.val : E →ₗ[ℝ] F).detLine) :
     (trivialization D₂ q).mapOrientation ι ((mem_trivialization_baseSet_iff D₂ q).2 h₁)
         ((orientationEquivRay (ι := ι) T₁).symm r₁) =
       (trivialization D₂ q).mapOrientation ι ((mem_trivialization_baseSet_iff D₂ q).2 h₂)
         ((orientationEquivRay (ι := ι) T₂).symm r₂) ↔
-      Module.Ray.map (detLineChartEquiv T₁.1 D₂ q h₁) r₁ =
-        Module.Ray.map (detLineChartEquiv T₂.1 D₂ q h₂) r₂ := by
+      Module.Ray.map (detLineChartEquiv T₁.val D₂ q h₁) r₁ =
+        Module.Ray.map (detLineChartEquiv T₂.val D₂ q h₂) r₂ := by
   let L : (detLine ℝ (Fin m → ℝ) ⊗[ℝ] Dual ℝ (detLine ℝ (Fin n → ℝ))) ≃ₗ[ℝ] ℝ :=
     LinearEquiv.ofFinrankEq _ _ (by
       rw [Module.finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
         TauCeti.finrank_detLine, Module.finrank_self])
-  have hcoord (T : {T : E →L[ℝ] F // T.IsFredholm}) (h : ((T.1.coprod D₂).prod q).IsInvertible)
-      (r : Module.Ray ℝ (T.1 : E →ₗ[ℝ] F).detLine) :
+  have hcoord (T : {T : E →L[ℝ] F // T.IsFredholm}) (h : ((T.val.coprod D₂).prod q).IsInvertible)
+      (r : Module.Ray ℝ (T.val : E →ₗ[ℝ] F).detLine) :
       (trivialization D₂ q).mapOrientation ι ((mem_trivialization_baseSet_iff D₂ q).2 h)
           ((orientationEquivRay (ι := ι) T).symm r) =
         Orientation.ringRayEquiv ι (Module.Ray.map L (Module.Ray.map
-          (detLineChartEquiv T.1 D₂ q h) r)) := by
+          (detLineChartEquiv T.val D₂ q h) r)) := by
     induction r using Module.Ray.ind with | h v hv =>
     refine ((trivialization D₂ q).mapOrientation_apply _ _).trans ?_
     rw [linearEquivAt_trivialization D₂ q h]
@@ -274,14 +278,14 @@ theorem mapOrientation_trivialization_eq_iff (T₁ T₂ : {T : E →L[ℝ] F // 
 /-- Specialization of `mapOrientation_trivialization_eq_iff` to rays of nonzero vectors. -/
 theorem mapOrientation_trivialization_rayOfNeZero_eq_iff
     (T₁ T₂ : {T : E →L[ℝ] F // T.IsFredholm})
-    (h₁ : ((T₁.1.coprod D₂).prod q).IsInvertible) (h₂ : ((T₂.1.coprod D₂).prod q).IsInvertible)
-    {v₁ : (T₁.1 : E →ₗ[ℝ] F).detLine} (hv₁ : v₁ ≠ 0)
-    {v₂ : (T₂.1 : E →ₗ[ℝ] F).detLine} (hv₂ : v₂ ≠ 0) :
+    (h₁ : ((T₁.val.coprod D₂).prod q).IsInvertible) (h₂ : ((T₂.val.coprod D₂).prod q).IsInvertible)
+    {v₁ : (T₁.val : E →ₗ[ℝ] F).detLine} (hv₁ : v₁ ≠ 0)
+    {v₂ : (T₂.val : E →ₗ[ℝ] F).detLine} (hv₂ : v₂ ≠ 0) :
     (trivialization D₂ q).mapOrientation ι ((mem_trivialization_baseSet_iff D₂ q).2 h₁)
         ((orientationEquivRay (ι := ι) T₁).symm (rayOfNeZero ℝ v₁ hv₁)) =
       (trivialization D₂ q).mapOrientation ι ((mem_trivialization_baseSet_iff D₂ q).2 h₂)
         ((orientationEquivRay (ι := ι) T₂).symm (rayOfNeZero ℝ v₂ hv₂)) ↔
-      SameRay ℝ (detLineChartEquiv T₁.1 D₂ q h₁ v₁) (detLineChartEquiv T₂.1 D₂ q h₂ v₂) :=
+      SameRay ℝ (detLineChartEquiv T₁.val D₂ q h₁ v₁) (detLineChartEquiv T₂.val D₂ q h₂ v₂) :=
   (mapOrientation_trivialization_eq_iff D₂ q T₁ T₂ h₁ h₂ _ _).trans (ray_eq_iff _ _)
 
 end Trivialization
@@ -300,37 +304,39 @@ theorem IsDetLineCoherentOn.continuous_orientationCoverMk {T : X → E →L[ℝ]
     {v : ∀ x, (T x : E →ₗ[ℝ] F).detLine} {s : Set X} (hv : IsDetLineCoherentOn T v s)
     (hT : ContinuousOn T s) (hF : ∀ x ∈ s, (T x).IsFredholm) :
     Continuous fun x : s ↦ FredholmDetLine.orientationCoverMk ι
-      ⟨T x.1, hF x.1 x.2⟩ (rayOfNeZero ℝ (v x.1) (hv.ne_zero x.2)) := by
+      ⟨T x.val, hF x.val x.property⟩ (rayOfNeZero ℝ (v x.val) (hv.ne_zero x.property)) := by
   let : Fintype ι := Fintype.ofFinite ι
   have hcard : Fintype.card ι = finrank ℝ ℝ :=
     Fintype.card_unique.trans (Module.finrank_self ℝ).symm
-  let f : s → {T : E →L[ℝ] F // T.IsFredholm} := fun x ↦ ⟨T x.1, hF x.1 x.2⟩
+  let f : s → {T : E →L[ℝ] F // T.IsFredholm} := fun x ↦ ⟨T x.val, hF x.val x.property⟩
   have hf : Continuous f := (continuousOn_iff_continuous_domRestrict.1 hT).subtype_mk _
   refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
   -- Read `v` in an atlas kernel chart around `f x₀`; coherence keeps the sheet constant locally.
-  obtain ⟨n, m, D₂, q, hx₀⟩ := (f x₀).2.exists_isInvertible_prod_coprod
+  obtain ⟨n, m, D₂, q, hx₀⟩ := (f x₀).property.exists_isInvertible_prod_coprod
   have hx₀e : f x₀ ∈ (FredholmDetLine.trivialization D₂ q).baseSet :=
     (FredholmDetLine.mem_trivialization_baseSet_iff D₂ q).2 hx₀
   let o₀ := (FredholmDetLine.trivialization D₂ q).mapOrientation ι hx₀e
     ((FredholmDetLine.orientationEquivRay (ι := ι) (f x₀)).symm
-      (rayOfNeZero ℝ (v x₀.1) (hv.ne_zero x₀.2)))
-  have htend : Tendsto (Subtype.val : s → X) (𝓝 x₀) (𝓝[s] x₀.1) :=
+      (rayOfNeZero ℝ (v x₀.val) (hv.ne_zero x₀.property)))
+  have htend : Tendsto (Subtype.val : s → X) (𝓝 x₀) (𝓝[s] x₀.val) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      continuous_subtype_val.continuousAt (Eventually.of_forall fun y ↦ y.2)
+      continuous_subtypeVal.continuousAt (Eventually.of_forall fun y ↦ y.property)
   obtain ⟨W, hWsub, hWopen, hx₀W⟩ := mem_nhds_iff.1 ((htend.eventually
-    ((isDetLineCoherentOn_iff.1 hv x₀.1 x₀.2).eventually_sameRay (hT x₀.1 x₀.2) hx₀)).and
+    ((isDetLineCoherentOn_iff.1 hv x₀.val x₀.property).eventually_sameRay
+      (hT x₀.val x₀.property) hx₀)).and
     (((FredholmDetLine.trivialization D₂ q).open_baseSet.preimage hf).mem_nhds hx₀e))
   have hgW : ContinuousOn (fun x : s ↦ FredholmDetLine.orientationCoverMk ι (f x)
-      (rayOfNeZero ℝ (v x.1) (hv.ne_zero x.2))) W := by
+      (rayOfNeZero ℝ (v x.val) (hv.ne_zero x.property))) W := by
     rw [continuousOn_iff_continuous_domRestrict]
     refine ((VectorBundleOrientationCover.continuous_mk_mapOrientation_symm hcard
       (FredholmDetLine.trivialization D₂ q) o₀).comp
-      ((hf.comp continuous_subtype_val).subtype_mk fun w : W ↦ (hWsub w.2).2)).congr fun w ↦ ?_
-    obtain ⟨⟨hy', hsr⟩, hwU⟩ := hWsub w.2
-    exact congrArg (VectorBundleOrientationCover.mk (f w.1))
+      ((hf.comp continuous_subtypeVal).subtype_mk fun w : W ↦ (hWsub w.property).2)).congr
+        fun w ↦ ?_
+    obtain ⟨⟨hy', hsr⟩, hwU⟩ := hWsub w.property
+    exact congrArg (VectorBundleOrientationCover.mk (f w.val))
       ((Equiv.symm_apply_eq ((FredholmDetLine.trivialization D₂ q).mapOrientation ι hwU)).2
-        (((FredholmDetLine.mapOrientation_trivialization_rayOfNeZero_eq_iff D₂ q (f w.1) (f x₀)
-          hy' hx₀ (hv.ne_zero w.1.2) (hv.ne_zero x₀.2)).2 hsr).symm))
+        (((FredholmDetLine.mapOrientation_trivialization_rayOfNeZero_eq_iff D₂ q (f w.val) (f x₀)
+          hy' hx₀ (hv.ne_zero w.val.property) (hv.ne_zero x₀.property)).2 hsr).symm))
   exact hgW.continuousAt (hWopen.mem_nhds hx₀W)
 
 /-- Conversely, a nowhere-zero determinant-line family `v` over `s` whose lift into
@@ -339,12 +345,12 @@ theorem isDetLineCoherentOn_of_continuous_orientationCoverMk {T : X → E →L[�
     {v : ∀ x, (T x : E →ₗ[ℝ] F).detLine} {s : Set X} (hT : ContinuousOn T s)
     (hF : ∀ x ∈ s, (T x).IsFredholm) (hv0 : ∀ x ∈ s, v x ≠ 0)
     (hg : Continuous fun x : s ↦ FredholmDetLine.orientationCoverMk ι
-      ⟨T x.1, hF x.1 x.2⟩ (rayOfNeZero ℝ (v x.1) (hv0 x.1 x.2))) :
+      ⟨T x.val, hF x.val x.property⟩ (rayOfNeZero ℝ (v x.val) (hv0 x.val x.property))) :
     IsDetLineCoherentOn T v s := by
   let : Fintype ι := Fintype.ofFinite ι
   have hcard : Fintype.card ι = finrank ℝ ℝ :=
     Fintype.card_unique.trans (Module.finrank_self ℝ).symm
-  let f : s → {T : E →L[ℝ] F // T.IsFredholm} := fun x ↦ ⟨T x.1, hF x.1 x.2⟩
+  let f : s → {T : E →L[ℝ] F // T.IsFredholm} := fun x ↦ ⟨T x.val, hF x.val x.property⟩
   rw [isDetLineCoherentOn_iff]
   intro x₀ hx₀s
   let p₀ : s := ⟨x₀, hx₀s⟩
@@ -362,8 +368,8 @@ theorem isDetLineCoherentOn_of_continuous_orientationCoverMk {T : X → E →L[�
   refine isDetLineCoherentWithinAt_of_eventually_sameRay (hT x₀ hx₀s) (hF x₀ hx₀s) (hv0 x₀ hx₀s)
     hx₀ ?_
   filter_upwards [nhdsWithin_le_nhds hV, self_mem_nhdsWithin] with y hyV hys
-  obtain ⟨hye, hyo⟩ := VectorBundleOrientationCover.mem_sheet_iff.1
-    (hVs (show (⟨y, hys⟩ : s) ∈ Subtype.val ⁻¹' V from hyV))
+  have hy_mem : (⟨y, hys⟩ : s) ∈ Subtype.val ⁻¹' V := hyV
+  obtain ⟨hye, hyo⟩ := VectorBundleOrientationCover.mem_sheet_iff.1 (hVs hy_mem)
   have hy' := (FredholmDetLine.mem_trivialization_baseSet_iff D₂ q).1 hye
   exact ⟨hy', (FredholmDetLine.mapOrientation_trivialization_rayOfNeZero_eq_iff D₂ q
     (f ⟨y, hys⟩) (f p₀) hy' hx₀ (hv0 y hys) (hv0 x₀ hx₀s)).1 hyo⟩
@@ -376,7 +382,7 @@ theorem isDetLineCoherentOn_iff_continuous_orientationCoverMk {T : X → E →L[
     (hF : ∀ x ∈ s, (T x).IsFredholm) :
     IsDetLineCoherentOn T v s ↔ ∃ hv : ∀ x ∈ s, v x ≠ 0,
       Continuous fun x : s ↦ FredholmDetLine.orientationCoverMk ι
-        ⟨T x.1, hF x.1 x.2⟩ (rayOfNeZero ℝ (v x.1) (hv x.1 x.2)) :=
+        ⟨T x.val, hF x.val x.property⟩ (rayOfNeZero ℝ (v x.val) (hv x.val x.property)) :=
   ⟨fun hv ↦ ⟨fun _ hx ↦ hv.ne_zero hx, hv.continuous_orientationCoverMk hT hF⟩,
     fun ⟨hv, hg⟩ ↦ isDetLineCoherentOn_of_continuous_orientationCoverMk hT hF hv hg⟩
 
@@ -386,29 +392,32 @@ variable (ι) in
 vectors are coherent on `univ`. -/
 def FredholmDetLine.pullbackOrientationEquiv (f : C(X, {T : E →L[ℝ] F // T.IsFredholm})) :
     VectorBundleOrientation ℝ ((⇑f) *ᵖ (FredholmDetLine ℝ E F)) ι ≃
-      {r : ∀ x, Module.Ray ℝ ((f x).1 : E →ₗ[ℝ] F).detLine //
-        IsDetLineCoherentOn (fun x ↦ (f x).1) (fun x ↦ (r x).someVector) univ} where
+      {r : ∀ x, Module.Ray ℝ ((f x).val : E →ₗ[ℝ] F).detLine //
+        IsDetLineCoherentOn (fun x ↦ (f x).val) (fun x ↦ (r x).someVector) univ} where
   toFun o := ⟨fun x ↦ FredholmDetLine.orientationEquivRay (ι := ι) (f x) (o x), by
     let : Fintype ι := Fintype.ofFinite ι
     have hcard : Fintype.card ι = finrank ℝ ℝ :=
       Fintype.card_unique.trans (Module.finrank_self ℝ).symm
-    have hT : ContinuousOn (fun x ↦ (f x).1) univ :=
-      (continuous_subtype_val.comp f.continuous).continuousOn
-    rw [isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := ι) hT (fun x _ ↦ (f x).2)]
+    have hT : ContinuousOn (fun x ↦ (f x).val) univ :=
+      (continuous_subtypeVal.comp f.continuous).continuousOn
+    rw [isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := ι) hT
+      (fun x _ ↦ (f x).property)]
     refine ⟨fun _ _ ↦ (_ : Module.Ray ℝ _).someVector_ne_zero,
-      ((o.continuous_mk_cover_pullback f hcard).comp continuous_subtype_val).congr fun x ↦ ?_⟩
-    refine congrArg (VectorBundleOrientationCover.mk (f x.1)) ?_
+      ((o.continuous_mk_cover_pullback f hcard).comp continuous_subtypeVal).congr fun x ↦ ?_⟩
+    refine congrArg (VectorBundleOrientationCover.mk (f x.val)) ?_
     rw [Module.Ray.someVector_ray]
-    exact ((FredholmDetLine.orientationEquivRay (ι := ι) (f x.1)).symm_apply_apply (o x.1)).symm⟩
+    exact ((FredholmDetLine.orientationEquivRay (ι := ι) (f x.val)).symm_apply_apply
+      (o x.val)).symm⟩
   invFun r := VectorBundleOrientation.ofContinuousPullback f
-    (fun x ↦ (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm (r.1 x)) (by
-      have hT : ContinuousOn (fun x ↦ (f x).1) univ :=
-        (continuous_subtype_val.comp f.continuous).continuousOn
+    (fun x ↦ (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm (r.val x)) (by
+      have hT : ContinuousOn (fun x ↦ (f x).val) univ :=
+        (continuous_subtypeVal.comp f.continuous).continuousOn
       obtain ⟨hv, hg⟩ := (isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := ι) hT
-        (fun x _ ↦ (f x).2)).1 r.2
+        (fun x _ ↦ (f x).property)).1 r.property
       refine (hg.comp (continuous_id.subtype_mk fun _ ↦ mem_univ _)).congr fun x ↦ ?_
       exact congrArg (VectorBundleOrientationCover.mk (f x))
-        (congrArg (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm (r.1 x).someVector_ray))
+        (congrArg (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm
+          (r.val x).someVector_ray))
   left_inv o := by
     ext x
     simp only [VectorBundleOrientation.ofContinuousPullback_apply]
@@ -416,22 +425,22 @@ def FredholmDetLine.pullbackOrientationEquiv (f : C(X, {T : E →L[ℝ] F // T.I
   right_inv r := by
     ext x
     simp only [VectorBundleOrientation.ofContinuousPullback_apply]
-    exact (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).apply_symm_apply (r.1 x)
+    exact (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).apply_symm_apply (r.val x)
 
 @[simp]
 theorem FredholmDetLine.pullbackOrientationEquiv_apply
     (f : C(X, {T : E →L[ℝ] F // T.IsFredholm}))
     (o : VectorBundleOrientation ℝ ((⇑f) *ᵖ (FredholmDetLine ℝ E F)) ι) (x : X) :
-    (FredholmDetLine.pullbackOrientationEquiv ι f o).1 x =
+    (FredholmDetLine.pullbackOrientationEquiv ι f o).val x =
       FredholmDetLine.orientationEquivRay (ι := ι) (f x) (o x) := (rfl)
 
 @[simp]
 theorem FredholmDetLine.pullbackOrientationEquiv_symm_apply
     (f : C(X, {T : E →L[ℝ] F // T.IsFredholm}))
-    (r : {r : ∀ x, Module.Ray ℝ ((f x).1 : E →ₗ[ℝ] F).detLine //
-      IsDetLineCoherentOn (fun x ↦ (f x).1) (fun x ↦ (r x).someVector) univ}) (x : X) :
+    (r : {r : ∀ x, Module.Ray ℝ ((f x).val : E →ₗ[ℝ] F).detLine //
+      IsDetLineCoherentOn (fun x ↦ (f x).val) (fun x ↦ (r x).someVector) univ}) (x : X) :
     (FredholmDetLine.pullbackOrientationEquiv ι f).symm r x =
-      (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm (r.1 x) :=
+      (FredholmDetLine.orientationEquivRay (ι := ι) (f x)).symm (r.val x) :=
   VectorBundleOrientation.ofContinuousPullback_apply f _ _ x
 
 end CoherenceEquivalence
@@ -450,21 +459,22 @@ theorem exists_isDetLineCoherentOn_of_simplyConnectedSpace [TopologicalSpace X] 
     {v₀ : (T x₀ : E →ₗ[ℝ] F).detLine} (hv₀ : v₀ ≠ 0) :
     ∃ v : ∀ x, (T x : E →ₗ[ℝ] F).detLine, v x₀ = v₀ ∧ IsDetLineCoherentOn T v s := by
   let f : C(s, {T : E →L[ℝ] F // T.IsFredholm}) :=
-    ⟨fun x ↦ ⟨T x.1, hF x.1 x.2⟩, (continuousOn_iff_continuous_domRestrict.1 hT).subtype_mk _⟩
+    ⟨fun x ↦ ⟨T x.val, hF x.val x.property⟩,
+      (continuousOn_iff_continuous_domRestrict.1 hT).subtype_mk _⟩
   let p₀ := FredholmDetLine.orientationCoverMk (Fin 1) (f ⟨x₀, hx₀⟩) (rayOfNeZero ℝ v₀ hv₀)
   obtain ⟨L, ⟨hL₀, hLproj⟩, -⟩ :=
     (FredholmDetLine.isCoveringMap_orientationCover_proj (E := E) (F := F)
       (ι := Fin 1)).existsUnique_continuousMap_lifts f ⟨x₀, hx₀⟩ p₀ rfl
-  let r (x : s) : Module.Ray ℝ (T x.1 : E →ₗ[ℝ] F).detLine :=
+  let r (x : s) : Module.Ray ℝ (T x.val : E →ₗ[ℝ] F).detLine :=
     FredholmDetLine.orientationCoverFiberEquiv (Fin 1) (f x) ⟨L x, congrFun hLproj x⟩
   classical
   let w : ∀ x, (T x : E →ₗ[ℝ] F).detLine := fun x ↦
     if hx : x ∈ s then (r ⟨x, hx⟩).someVector else 0
   have hw_ne (x : X) (hx : x ∈ s) : w x ≠ 0 := by
     simpa only [w, dite_eq_left hx] using (r ⟨x, hx⟩).someVector_ne_zero
-  have hr (x : s) : rayOfNeZero ℝ (w x.1) (hw_ne x.1 x.2) = r x := by
+  have hr (x : s) : rayOfNeZero ℝ (w x.val) (hw_ne x.val x.property) = r x := by
     rw [← (r x).someVector_ray, ray_eq_iff]
-    simpa only [w, dite_eq_left x.2, Subtype.coe_eta] using SameRay.rfl
+    simpa only [w, dite_eq_left x.property, Subtype.coe_eta] using SameRay.rfl
   have hw_coh : IsDetLineCoherentOn T w s :=
     (isDetLineCoherentOn_iff_continuous_orientationCoverMk (ι := Fin 1) hT hF).2
       ⟨hw_ne, L.continuous.congr fun x ↦ by

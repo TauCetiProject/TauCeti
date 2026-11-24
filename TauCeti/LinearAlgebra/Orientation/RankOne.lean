@@ -94,10 +94,11 @@ singleton basis of `R`. -/
 theorem ringRayEquiv_rayOfNeZero_one [Fintype ι] [DecidableEq ι] :
     ringRayEquiv ι (rayOfNeZero R (1 : R) one_ne_zero) = (Basis.singleton ι R).orientation := by
   apply (ringRayEquiv ι).symm.injective
+  have h1 : (fun _ : ι ↦ (1 : R)) = ⇑(Basis.singleton ι R) :=
+    funext fun i ↦ (Basis.singleton_apply ι R i).symm
   rw [Equiv.symm_apply_apply, Basis.orientation, ringRayEquiv_symm_apply]
   congr 1
-  rw [show (fun _ : ι ↦ (1 : R)) = ⇑(Basis.singleton ι R) from
-    funext fun i ↦ (Basis.singleton_apply ι R i).symm, Basis.det_self]
+  rw [h1, Basis.det_self]
 
 end Ring
 
@@ -105,12 +106,6 @@ section Field
 
 variable {R M N ι ι' : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Unique ι]
-
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-private theorem apply_const_smul (ω : M [⋀^ι]→ₗ[R] R) (r : R) (x : M) :
-    ω (fun _ ↦ r • x) = r * ω (fun _ ↦ x) := by
-  rw [← AlternatingMap.ofSubsingletonₗ_symm_apply_apply R M R R default ω (r • x), map_smul,
-    AlternatingMap.ofSubsingletonₗ_symm_apply_apply, smul_eq_mul]
 
 /-- The canonical equivalence between `ι`-indexed orientations of a one-dimensional vector space `M`
 and rays in `M` when `[Unique ι]`, pairing a nonzero form `ω` with a nonzero vector `v` iff
@@ -120,14 +115,21 @@ def equivRay (hM : finrank R M = 1) : Orientation R M ι ≃ Module.Ray R M :=
   let e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
   (Orientation.map ι e).trans ((ringRayEquiv ι).symm.trans (Module.Ray.map e.symm))
 
+theorem equivRay_def (hM : finrank R M = 1) :
+    haveI : FiniteDimensional R M := Module.finite_of_finrank_eq_succ hM
+    let e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
+    equivRay (ι := ι) hM =
+      (Orientation.map ι e).trans ((ringRayEquiv ι).symm.trans (Module.Ray.map e.symm)) :=
+  (rfl)
+
 /-- **Pairing characterization of `Orientation.equivRay`.** The orientation of a nonzero alternating
 form `ω` corresponds to the ray of a nonzero vector `v` iff `0 < ω (fun _ ↦ v)`. -/
 theorem equivRay_rayOfNeZero_eq_iff (hM : finrank R M = 1) {ω : M [⋀^ι]→ₗ[R] R} (hω : ω ≠ 0)
     {v : M} (hv : v ≠ 0) :
     equivRay hM (rayOfNeZero R ω hω) = rayOfNeZero R v hv ↔ 0 < ω (fun _ ↦ v) := by
   have : FiniteDimensional R M := Module.finite_of_finrank_eq_succ hM
-  set e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
-  set a : R := ω (fun _ ↦ e.symm 1)
+  let e : M ≃ₗ[R] R := LinearEquiv.ofFinrankEq M R (hM.trans (Module.finrank_self R).symm)
+  let a : R := ω (fun _ ↦ e.symm 1)
   have hωe : (ω.compLinearMap e.symm.toLinearMap) (fun _ ↦ (1 : R)) = a :=
     AlternatingMap.compLinearMap_apply ω e.symm.toLinearMap (fun _ ↦ (1 : R))
   have ha : a ≠ 0 := hωe ▸ AlternatingMap.apply_const_one_ne_zero
@@ -136,12 +138,12 @@ theorem equivRay_rayOfNeZero_eq_iff (hM : finrank R M = 1) {ω : M [⋀^ι]→�
   have hφv : ω (fun _ ↦ v) = a * e v := by
     have hv' : v = e v • e.symm 1 := by
       conv_lhs => rw [← e.symm_apply_apply v, ← mul_one (e v), ← smul_eq_mul, map_smul]
-    conv_lhs => rw [hv', apply_const_smul, mul_comm]
-  change Module.Ray.map e.symm ((ringRayEquiv ι).symm (Orientation.map ι e (rayOfNeZero R ω hω))) =
-      rayOfNeZero R v hv ↔ _
-  rw [Orientation.map_apply, ringRayEquiv_symm_apply, Module.Ray.map_apply, ray_eq_iff,
-    ← SameRay.sameRay_map_iff e, LinearEquiv.apply_symm_apply, hωe, hφv]
-  conv_lhs => rw [show a = (a / e v) • e v by rw [smul_eq_mul, div_mul_cancel₀ a hb]]
+    conv_lhs => rw [hv', AlternatingMap.apply_const_smul, smul_eq_mul, mul_comm]
+  have ha_div : a = (a / e v) • e v := by rw [smul_eq_mul, div_mul_cancel₀ a hb]
+  rw [equivRay_def, Equiv.trans_apply, Equiv.trans_apply, Orientation.map_apply,
+    ringRayEquiv_symm_apply, Module.Ray.map_apply, ray_eq_iff, ← SameRay.sameRay_map_iff e,
+    LinearEquiv.apply_symm_apply, hωe, hφv]
+  conv_lhs => rw [ha_div]
   exact (sameRay_smul_left_iff_of_ne hb (div_ne_zero ha hb)).trans
     (div_pos_iff.trans mul_pos_iff.symm)
 
@@ -208,9 +210,9 @@ theorem reindex_equivRay_symm [Unique ι'] (hM : finrank R M = 1) (σ : ι ≃ �
 theorem equivRay_basis_orientation [Fintype ι] [DecidableEq ι] (b : Basis ι R M) :
     equivRay (by rw [finrank_eq_card_basis b, Fintype.card_unique]) b.orientation =
       rayOfNeZero R (b default) (b.ne_zero default) := by
-  rw [Basis.orientation, equivRay_rayOfNeZero_eq_iff,
-    show (fun _ : ι ↦ b default) = ⇑b from funext fun i ↦ congrArg b (Unique.eq_default i).symm,
-    b.det_self]
+  have hb_eq : (fun _ : ι ↦ b default) = ⇑b :=
+    funext fun i ↦ congrArg b (Unique.eq_default i).symm
+  rw [Basis.orientation, equivRay_rayOfNeZero_eq_iff, hb_eq, b.det_self]
   exact zero_lt_one
 
 /-- On the ground field `R`, `Orientation.equivRay` agrees with `(Orientation.ringRayEquiv ι).symm`.
@@ -218,9 +220,9 @@ theorem equivRay_basis_orientation [Fintype ι] [DecidableEq ι] (b : Basis ι R
 theorem equivRay_self : equivRay (ι := ι) (Module.finrank_self R) = (ringRayEquiv ι).symm := by
   ext o
   induction o using Module.Ray.ind with | h ω hω =>
-  rw [ringRayEquiv_symm_apply, equivRay_rayOfNeZero_eq_iff,
-    show ω (fun _ ↦ ω (fun _ ↦ 1)) = ω (fun _ ↦ 1) * ω (fun _ ↦ 1) by
-      simpa [smul_eq_mul] using apply_const_smul (ι := ι) ω (ω fun _ ↦ 1) 1]
+  have hω1 : ω (fun _ ↦ ω (fun _ ↦ 1)) = ω (fun _ ↦ 1) * ω (fun _ ↦ 1) := by
+    simpa [smul_eq_mul] using AlternatingMap.apply_const_smul (ι := ι) ω (ω fun _ ↦ 1) 1
+  rw [ringRayEquiv_symm_apply, equivRay_rayOfNeZero_eq_iff, hω1]
   exact mul_self_pos.2 (AlternatingMap.apply_const_one_ne_zero hω)
 
 end Field

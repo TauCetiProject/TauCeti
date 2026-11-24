@@ -116,7 +116,7 @@ private theorem angle_mul_exp {r : ℝ} (hr : 0 < r) (x : ℝ) :
     angle F (r * exp (x * I)) = weight r * (F x - x) := by
   have hnorm : ‖(r : ℂ) * exp (x * I)‖ = r := by
     rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_of_nonneg hr.le]
-  rw [angle, hnorm, arg_real_mul _ hr, arg_exp_mul_I, ← self_sub_toIocDiv_zsmul]
+  rw [angle, hnorm, arg_ofReal_mul hr, arg_exp_mul_I, ← self_sub_toIocDiv_zsmul]
   exact congrArg (weight r * ·) ((AddCircle.periodic_sub_of_lift hper).sub_zsmul_eq _)
 
 /-- The plane map on the circle of radius `r` is the circle map with lift

@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Lie.SkewAdjoint
 public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CliffordExteriorSquare
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.SkewAdjoint
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # The quadratic realization of a skew-adjoint Lie algebra
@@ -23,6 +25,10 @@ canonical bivector action rather than from a basis-dependent inverse.
 
 * `CliffordAlgebra.soEquivQuadratic`: the quadratic realization Lie equivalence.
 * `CliffordAlgebra.soEquivQuadratic_lie_ι`: its defining generator-action equation.
+* `CliffordAlgebra.coe_soEquivQuadratic_symm_bivector_apply`: the inverse sends the bivector of `a`
+  and `b` to the infinitesimal rotation `x ↦ polar Q b x • a - polar Q a x • b`.
+* `CliffordAlgebra.soEquivQuadratic_skewAdjointLieSubalgebraCongr`: the realization is natural
+  for isometric equivalences.
 * `CliffordAlgebra.skewAdjointMatricesEquivQuadratic`: the same realization transported through a
   basis whose Gram matrix is specified.
 * `CliffordAlgebra.quadraticLieSubalgebra_ext`: quadratic elements are
@@ -182,6 +188,18 @@ theorem soEquivQuadratic_lie_ι (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
       CliffordAlgebra Q), ι Q x⁆ = _
   exact soToQuadraticLinearEquiv_lie_ι Q hQ f x
 
+/-- **The skew-adjoint endomorphism of a Clifford bivector.** The quadratic realization identifies
+the bivector of `a` and `b` with the infinitesimal rotation
+`x ↦ polar Q b x • a - polar Q a x • b`. -/
+@[simp]
+theorem coe_soEquivQuadratic_symm_bivector_apply (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (a b x : V) :
+    (((soEquivQuadratic Q hQ).symm ⟨bivector Q a b, bivector_mem_quadraticLieSubalgebra Q a b⟩ :
+        skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) : Module.End K V) x =
+      QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b := by
+  apply ι_injective Q
+  rw [← soEquivQuadratic_lie_ι Q hQ, LieEquiv.apply_symm_apply, bivector_lie_ι]
+
 /-- A basis transports the matrices skew-adjoint for the Gram matrix of a nondegenerate quadratic
 form to the quadratic elements of its Clifford algebra. -/
 noncomputable def skewAdjointMatricesEquivQuadratic {n : Type w} [Fintype n] [DecidableEq n]
@@ -249,5 +267,23 @@ theorem quadraticLieSubalgebra_eq_bivector_of_lie_ι (Q : QuadraticForm K V) (hQ
     simp
   rw [hlin]
   simp
+
+/-- **Naturality of the quadratic realization under isometries.** Conjugating a skew-adjoint
+endomorphism by an isometric equivalence and then realizing it in the Clifford algebra of the
+target gives the transport of its realization in the Clifford algebra of the source. The target
+is finite-dimensional through `e`. -/
+theorem soEquivQuadratic_skewAdjointLieSubalgebraCongr {V₂ : Type*} [AddCommGroup V₂]
+    [Module K V₂] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K V₂}
+    (hQ₁ : Q₁.Nondegenerate) (hQ₂ : Q₂.Nondegenerate) (e : Q₁.IsometryEquiv Q₂)
+    (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q₁)) :
+    haveI := e.toLinearEquiv.finiteDimensional
+    soEquivQuadratic Q₂ hQ₂ (e.skewAdjointLieSubalgebraCongr f) =
+      quadraticLieSubalgebraCongr e (soEquivQuadratic Q₁ hQ₁ f) := by
+  have := e.toLinearEquiv.finiteDimensional
+  apply quadraticLieSubalgebra_ext Q₂ hQ₂
+  intro x
+  rw [← e.apply_symm_apply x, soEquivQuadratic_lie_ι, lie_quadraticLieSubalgebraCongr_ι,
+    soEquivQuadratic_lie_ι, map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply,
+    QuadraticMap.IsometryEquiv.coe_skewAdjointLieSubalgebraCongr_apply, e.symm_apply_apply]
 
 end CliffordAlgebra

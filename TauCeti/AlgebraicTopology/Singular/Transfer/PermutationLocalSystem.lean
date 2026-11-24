@@ -32,7 +32,15 @@ coefficient systems between the permutation local system and the constant system
   sheets (`IsCoveringMap.singularChainComplexPermutationIso_hom_comp_augmentation`);
 * when the fibres are finite, the transfer `C(B; R) ⟶ C(E; R)` is induced by the map sending `r`
   to the sum of all sheets with coefficient `r`
-  (`IsCoveringMap.transfer_comp_singularChainComplexPermutationIso_inv`).
+  (`IsCoveringMap.transfer_comp_singularChainComplexPermutationIso_inv`);
+* for a continuous map `σ : E → E` over the base, `σ_* : C(E; R) ⟶ C(E; R)` is induced by the
+  endomorphism moving each sheet by `σ`
+  (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom`);
+* for a continuous section `s` of `p`, `s_* : C(B; R) ⟶ C(E; R)` is induced by the morphism from
+  the constant system sending `r` to `r • s x`
+  (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section`;
+  on homology, read back on `E`,
+  `IsCoveringMap.permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv`).
 
 These descriptions do not need the covering to be regular, so they describe the transfer of an
 arbitrary finite covering through its permutation local system.
@@ -85,14 +93,14 @@ private def liftSimplex (σ : (TopCat.toSSet.obj B).obj n)
   ((hp.bijOn_simplexMap_apply σ (SimplexCategory.toTopInitialVertex n.unop)).equiv _).symm e
 
 private lemma liftSimplex_initialSheet (τ : (TopCat.toSSet.obj E).obj n) :
-    (liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ)).1 = τ :=
+    (liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ)).val = τ :=
   -- Evaluating the lift `τ` at the initial vertex gives, by definition, its initial sheet.
   congrArg Subtype.val ((Equiv.symm_apply_eq _).2 rfl :
     liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ) = ⟨τ, rfl⟩)
 
 private lemma simplexMap_liftSimplex (σ : (TopCat.toSSet.obj B).obj n)
     (e : p ⁻¹' {(initialVertex σ).as}) :
-    simplexMap (liftSimplex hp σ e).1
+    simplexMap (liftSimplex hp σ e).val
         (SimplexCategory.toTopInitialVertex n.unop) = e :=
   congrArg Subtype.val (Equiv.apply_symm_apply
     ((hp.bijOn_simplexMap_apply σ (SimplexCategory.toTopInitialVertex n.unop)).equiv _) e)
@@ -144,12 +152,12 @@ private def liftSum {k : ℕ} (σ : (TopCat.toSSet.obj B) _⦋k⦌) :
     (hp.permutationLocalSystem R).obj (initialVertex σ) ⟶
       ((TopCat.toSSet.obj E).chainComplex (ModuleCat.of R R)).X k :=
   ModuleCat.ofHom <| Finsupp.linearCombination R fun e ↦
-    ((TopCat.toSSet.obj E).ιChainComplex (R := ModuleCat.of R R) (liftSimplex hp σ e).1).hom 1
+    ((TopCat.toSSet.obj E).ιChainComplex (R := ModuleCat.of R R) (liftSimplex hp σ e).val).hom 1
 
 private lemma single_liftSum {k : ℕ} (σ : (TopCat.toSSet.obj B) _⦋k⦌)
     (e : p ⁻¹' {(initialVertex σ).as}) :
     hp.permutationLocalSystemSingle R _ e ≫ liftSum hp R σ =
-      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).1 := by
+      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).val := by
   ext : 1
   -- Both sides are linear maps out of `R`, the left one `r ↦ linearCombination (single e r)`.
   exact LinearMap.ext_ring <|
@@ -177,7 +185,7 @@ private lemma single_ιTwistedChainComplex_singularChainComplexPermutationInvX {
     hp.permutationLocalSystemSingle R _ e ≫
         ιTwistedChainComplex (hp.permutationLocalSystem R) k σ ≫
           singularChainComplexPermutationInvX hp R k =
-      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).1 := by
+      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).val := by
   have h : ιTwistedChainComplex (hp.permutationLocalSystem R) k σ ≫
       singularChainComplexPermutationInvX hp R k = liftSum hp R σ :=
     Cofan.IsColimit.fac (isColimitTwistedChainComplexXCofan (hp.permutationLocalSystem R) k) _ σ
@@ -196,7 +204,7 @@ private def singularChainComplexPermutationIsoX (k : ℕ) :
   inv_hom_id := twistedChainComplex_hom_ext _ fun σ ↦ hp.permutationLocalSystem_hom_ext R fun e ↦ by
     rw [single_ιTwistedChainComplex_singularChainComplexPermutationInvX_assoc,
       ιChainComplex_singularChainComplexPermutationHomX, Category.comp_id]
-    exact single_initialSheet_ιTwistedChainComplex hp R (liftSimplex hp σ e).2
+    exact single_initialSheet_ιTwistedChainComplex hp R (liftSimplex hp σ e).property
       (simplexMap_liftSimplex hp σ e)
 
 /-- **Singular chains of a covering space as twisted chains of the base**: the singular chain
@@ -284,10 +292,10 @@ theorem transfer_comp_singularChainComplexPermutationIso_inv (hfin : ∀ b, Fini
       hp.permutationLocalSystemTransfer_app R hfin]
     refine (Preadditive.sum_comp _ _ _).trans ?_
     -- The sheets over the initial vertex of `σ` correspond to the lifts of `σ`.
-    refine Finset.sum_bij (fun e _ ↦ (liftSimplex hp σ e).1) (fun e _ ↦ ?_)
+    refine Finset.sum_bij (fun e _ ↦ (liftSimplex hp σ e).val) (fun e _ ↦ ?_)
       (fun e₁ _ e₂ _ h ↦ ?_) (fun τ hτ ↦ ?_)
       fun e _ ↦ single_ιTwistedChainComplex_singularChainComplexPermutationInvX hp R σ e
-    · exact (Set.Finite.mem_toFinset _).2 (liftSimplex hp σ e).2
+    · exact (Set.Finite.mem_toFinset _).2 (liftSimplex hp σ e).property
     · exact (Equiv.injective _) (Subtype.ext h)
     · refine ⟨_, Finset.mem_univ _, congrArg Subtype.val
         (((hp.bijOn_simplexMap_apply σ _).equiv _).symm_apply_apply ⟨τ, ?_⟩)⟩
@@ -345,5 +353,114 @@ theorem transfer_comp_singularHomologyPermutationIso_inv (hfin : ∀ b, Finite �
   simp only [HomologicalComplex.homologyMap_comp] at h
   rw [singularHomologyPermutationIso_inv, twistedHomologyConstantIso_inv]
   exact h
+
+section FiberMap
+
+variable (σ : C(E, E)) (hσ : ⇑p ∘ ⇑σ = ⇑p)
+
+/-- **The map of chains induced by a map over the base, as a coefficient map**: under the
+comparison of singular chains of `E` with chains of `B` twisted by the permutation local system,
+`σ_* : C(E; R) ⟶ C(E; R)` is induced by the endomorphism moving the sheets by `σ`. -/
+theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom :
+    SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom σ)) (ModuleCat.of R R) ≫
+        (hp.singularChainComplexPermutationIso R).hom =
+      (hp.singularChainComplexPermutationIso R).hom ≫
+        twistedChainComplexCoefficientMap (hp.permutationLocalSystemFiberMap R σ hσ) := by
+  have hσp : TopCat.ofHom σ ≫ p = p := TopCat.hom_ext (ContinuousMap.ext (congrFun hσ))
+  refine HomologicalComplex.hom_ext _ _ fun k ↦ SSet.chainComplex_hom_ext fun τ ↦ ?_
+  simp only [HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
+    ιChainComplex_singularChainComplexPermutationIso_hom_f,
+    ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc,
+    ιTwistedChainComplex_twistedChainComplexCoefficientMap_f,
+    permutationLocalSystemSingle_fiberMap_app_assoc]
+  -- Moving `τ` by `σ` does not change `p ∘ τ`, and moves its initial sheet by `σ`.
+  exact single_initialSheet_ιTwistedChainComplex hp R
+    (by conv_rhs => rw [← hσp]
+        rw [Functor.map_comp, NatTrans.comp_app, ConcreteCategory.comp_apply])
+    ((DFunLike.congr_fun (TauCeti.TopCat.simplexMap_app _ τ) _).trans
+      (Function.fiberMap_apply_coe σ hσ _ (initialSheet τ)).symm)
+
+/-- **The map on homology induced by a map over the base, as a coefficient map**: under the
+comparison of singular homology of `E` with homology of `B` twisted by the permutation local
+system, `σ_*` is induced by the endomorphism moving the sheets by `σ`. -/
+@[reassoc]
+theorem homologyMap_comp_singularHomologyPermutationIso_hom (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) (ModuleCat.of R R) k ≫
+        (hp.singularHomologyPermutationIso R k).hom =
+      (hp.singularHomologyPermutationIso R k).hom ≫
+        twistedHomologyCoefficientMap (hp.permutationLocalSystemFiberMap R σ hσ) k := by
+  rw [singularHomologyPermutationIso_hom, ← HomologicalComplex.homologyMap_comp,
+    ← HomologicalComplex.homologyMap_comp,
+    chainComplexMap_comp_singularChainComplexPermutationIso_hom]
+
+end FiberMap
+
+section Section
+
+variable (s : C(B, E)) (hs : ∀ b, s b ∈ p ⁻¹' {b})
+
+/-- **The map of chains induced by a section, as a coefficient map**: under the comparison of
+singular chains of `E` with chains of `B` twisted by the permutation local system,
+`s_* : C(B; R) ⟶ C(E; R)` for a continuous section `s` of `p` is induced by the morphism from the
+constant system sending `r` to `r • s x`. The simplex `s ∘ σ` lies over `σ` and passes through the
+sheet `s x` over the initial vertex `x` of `σ`. -/
+theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section :
+    SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom s)) (ModuleCat.of R R) ≫
+        (hp.singularChainComplexPermutationIso R).hom =
+      (twistedChainComplexConstantIso B (ModuleCat.of R R)).inv ≫
+        twistedChainComplexCoefficientMap (hp.permutationLocalSystemSection R s hs) := by
+  have hsp : TopCat.ofHom s ≫ p = 𝟙 B := TopCat.hom_ext (ContinuousMap.ext hs)
+  refine HomologicalComplex.hom_ext _ _ fun k ↦ SSet.chainComplex_hom_ext fun σ ↦ ?_
+  have hconst : (TopCat.toSSet.obj B).ιChainComplex σ ≫
+      (twistedChainComplexConstantIso B (ModuleCat.of R R)).inv.f k =
+        ιTwistedChainComplex ((constantFunctor B).obj (ModuleCat.of R R)) k σ :=
+    ι_twistedChainComplexConstantIso_inv_f B _ k σ
+  simp only [HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
+    ιChainComplex_singularChainComplexPermutationIso_hom_f]
+  -- `s ∘ σ` lies over `σ`, and its initial sheet is the value of `s` at the initial vertex.
+  refine (single_initialSheet_ιTwistedChainComplex hp R (σ := σ)
+    (e := ⟨s (initialVertex σ).as, hs _⟩) ?_ rfl).trans ?_
+  · rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, ← Functor.map_comp, hsp,
+      CategoryTheory.Functor.map_id, NatTrans.id_app, ConcreteCategory.id_apply]
+  rw [← permutationLocalSystemSection_app]
+  -- The summand inclusion of the constant system is only definitionally the degree-`k` term of
+  -- the singular chain complex, so `rw` cannot match the right-hand side; it is reassociated up
+  -- to that identification.
+  exact (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f _ k σ).symm.trans
+    ((congrArg (· ≫ _) hconst.symm).trans (Category.assoc _ _ _))
+
+/-- **The map on homology induced by a section, as a coefficient map**: under the comparison of
+singular homology of `E` with homology of `B` twisted by the permutation local system,
+`s_* : H(B; R) ⟶ H(E; R)` for a continuous section `s` of `p` is induced by the morphism from the
+constant system sending `r` to `r • s x`. -/
+@[reassoc]
+theorem homologyMap_comp_singularHomologyPermutationIso_hom_of_section (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) (ModuleCat.of R R) k ≫
+        (hp.singularHomologyPermutationIso R k).hom =
+      (twistedHomologyConstantIso B (ModuleCat.of R R) k).inv ≫
+        twistedHomologyCoefficientMap (hp.permutationLocalSystemSection R s hs) k := by
+  have h := congrArg (HomologicalComplex.homologyMap · k)
+    (hp.chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section R s hs)
+  rw [HomologicalComplex.homologyMap_comp] at h
+  rw [singularHomologyPermutationIso_hom, twistedHomologyConstantIso_inv]
+  -- The constant comparison is only definitionally a map out of the singular chain complex, so
+  -- its composite with the coefficient map is split by `homologyMap_comp` up to that identity.
+  exact h.trans (HomologicalComplex.homologyMap_comp _ _ k)
+
+/-- **The map on homology induced by a section, from the coefficient map**: the morphism from the
+constant system sending `r` to `r • s x`, read on `E` through the comparison of singular homology
+of `E` with homology of `B` twisted by the permutation local system, is
+`s_* : H(B; R) ⟶ H(E; R)`. -/
+theorem permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv (k : ℕ) :
+    (twistedHomologyConstantIso B (ModuleCat.of R R) k).inv ≫
+        twistedHomologyCoefficientMap (hp.permutationLocalSystemSection R s hs) k ≫
+          (hp.singularHomologyPermutationIso R k).inv =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) (ModuleCat.of R R) k := by
+  -- The constant comparison is only definitionally a map out of singular homology, so `rw`
+  -- cannot match the composite; it is reassociated up to that identification.
+  exact (Category.assoc _ _ _).symm.trans ((Iso.comp_inv_eq _).2
+    (hp.homologyMap_comp_singularHomologyPermutationIso_hom_of_section R s hs k).symm)
+
+end Section
 
 end IsCoveringMap

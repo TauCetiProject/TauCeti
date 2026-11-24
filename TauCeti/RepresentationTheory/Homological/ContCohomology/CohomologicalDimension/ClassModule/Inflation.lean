@@ -150,7 +150,7 @@ theorem abelianizationProPTransferLe_smul [V.Normal] [W.Normal] (q : G ⧸ V)
       exact ⟨fun h ↦ by simpa [mul_assoc] using ‹V.Normal›.conj_mem _ h g,
         fun h ↦ by simpa using ‹V.Normal›.conj_mem _ h g⁻¹⟩
     have hφ : ∀ v : V.subgroupOf W, φ ⟨(MulAut.conjNormal g : W ≃* W) v,
-        he.le (Subgroup.mem_map_of_mem _ v.2)⟩ = ψ v := by
+        he.le (Subgroup.mem_map_of_mem _ v.property)⟩ = ψ v := by
       intro v
       simp only [φ, ψ, MonoidHom.comp_apply, MulDistribMulAction.toMonoidHom_apply,
         abelianizationProPMk_conj]
@@ -225,7 +225,7 @@ theorem abelianizationProPTransferLe_mk_inclusion [V.Normal] (v : V) :
     abelianizationProPTransferLe p hVW hV (abelianizationProPMk p G W (Subgroup.inclusion hVW v)) =
       ∏ s : W.map (QuotientGroup.mk' V), (s : G ⧸ V) • abelianizationProPMk p G V v := by
   let := Fintype.ofFinite (W.map (QuotientGroup.mk' V))
-  have hv : Subgroup.inclusion hVW v ∈ V.subgroupOf W := v.2
+  have hv : Subgroup.inclusion hVW v ∈ V.subgroupOf W := v.property
   -- The inclusion and the corresponding element of `V.subgroupOf W` have definitionally equal
   -- carriers; there is no separate inclusion map between these two presentations to rewrite.
   have hinclusion : Subgroup.inclusion hVW v =
@@ -324,7 +324,7 @@ private noncomputable def transferLeFixedPointsEquiv (hp : p.Prime)
       fun y ↦ by
         obtain ⟨x, hx⟩ := (abelianizationProPTransferLe_range p hVW hV hp h).ge
           ((FixedPoints.mem_subgroup _ _ _).2 fun n ↦
-            congrArg Additive.toMul ((FixedPoints.mem_addSubgroup _ _ _).1 y.2 n))
+            congrArg Additive.toMul ((FixedPoints.mem_addSubgroup _ _ _).1 y.property n))
         exact ⟨Additive.ofMul x, Subtype.ext (congrArg Additive.ofMul hx)⟩⟩
 
 omit [W.Normal] in
@@ -382,7 +382,7 @@ private theorem continuousSMul_quotient_fixedPoints :
   | H γ =>
     refine Topology.IsInducing.subtypeVal.continuous_iff.2 ?_
     simp_rw [Function.comp_def, coe_quotient_smul_fixedPoints_addSubgroup]
-    exact (continuous_const_smul γ).comp continuous_subtype_val
+    exact (continuous_const_smul γ).comp continuous_subtypeVal
 
 /-- Under `scd_p G ≤ 2`, `abelianizationProPInfl1` is inflation from
 `(G ⧸ V) ⧸ W.map (mk' V) ≅ G ⧸ W` with the invariants as coefficients, after the isomorphism

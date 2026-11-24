@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.LinearAlgebra.Ray
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
-# Covering-monodromy orientation transport, orientation character, and orientability from `π₁`
+# Covering-monodromy orientation transport and orientability from the fundamental group
 
 For a real vector bundle `E → B` of rank `Fintype.card ι = finrank ℝ F`, conjugating
 `TauCeti.coveringFiberEquiv` of `TauCeti.VectorBundleOrientationCover.isCoveringMap_proj` by
@@ -21,11 +21,16 @@ classes (`TauCeti.VectorBundleOrientationCover.quotientTransport`) and paths
 (`TauCeti.VectorBundleOrientationCover.pathTransport`), commuting with negation via deck
 intertwining (`TauCeti.VectorBundleOrientationCover.quotientTransport_neg`). When `F` is
 finite-dimensional, every loop homotopy class at `b₀` either fixes or reverses all fibre
-orientations (`TauCeti.VectorBundleOrientationCover.quotientTransport_eq_self_or_eq_neg`), defining
-`TauCeti.VectorBundleOrientationCover.orientationCharacter : FundamentalGroup B b₀ →* ℤˣ`. Over a
-connected, locally path-connected base, `E` is orientable if `π₁(B, b)` has no index-two subgroup
-(`TauCeti.VectorBundleOrientation.nonempty_of_forall_index_ne_two`), and in particular when `B` is
-simply connected (`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`).
+orientations (`TauCeti.VectorBundleOrientationCover.quotientTransport_eq_self_or_eq_neg`).
+
+A finite-dimensional real vector bundle over a connected, locally path-connected base is
+orientable if the fundamental group of the base has no subgroup of index two
+(`TauCeti.VectorBundleOrientation.nonempty_of_forall_index_ne_two`). Otherwise the orientation
+double cover is path-connected
+(`TauCeti.VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty`), and the image of its
+fundamental group has index equal to the number of sheets, namely two. In particular, every such
+bundle over a simply connected base is orientable
+(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`).
 
 ## References
 
@@ -42,18 +47,6 @@ noncomputable section
 open Bundle Module
 
 namespace TauCeti.VectorBundleOrientationCover
-
-private theorem intUnits_smul_eq_ite {M ι : Type*} [AddCommMonoid M] [Module ℝ M]
-    (u : ℤˣ) (o : Orientation ℝ M ι) :
-    (Units.map (Int.castRingHom ℝ).toMonoidHom u) • o = if u = 1 then o else -o := by
-  rcases Int.units_eq_one_or u with rfl | rfl <;> simp [Module.Ray.neg_units_smul]
-
-private theorem intUnits_smul_injective {M ι : Type*} [AddCommMonoid M] [Module ℝ M]
-    (o : Orientation ℝ M ι) :
-    Function.Injective (fun u : ℤˣ ↦ (Units.map (Int.castRingHom ℝ).toMonoidHom u) • o) := by
-  intro u v huv; dsimp only at huv; rw [intUnits_smul_eq_ite, intUnits_smul_eq_ite] at huv
-  rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
-    simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
 
 section Monodromy
 
@@ -113,7 +106,8 @@ theorem quotientTransport_neg (hι : Fintype.card ι = finrank ℝ F) {b₀ b₁
   have hb₀ : Function.fiberMap d proj_comp_deck b₀ ⟨⟨b₀, o⟩, rfl⟩ = ⟨⟨b₀, -o⟩, rfl⟩ :=
     Subtype.ext <| by rw [Function.fiberMap_apply_coe, ContinuousMap.coe_ofClass, deck_apply]
   have hb₁ : Function.fiberMap d proj_comp_deck b₁ (hp.monodromy γ ⟨⟨b₀, o⟩, rfl⟩) =
-      ⟨deck (hp.monodromy γ ⟨⟨b₀, o⟩, rfl⟩).1, (proj_deck _).trans (hp.monodromy γ _).2⟩ :=
+      ⟨deck (hp.monodromy γ ⟨⟨b₀, o⟩, rfl⟩).val,
+        (proj_deck _).trans (hp.monodromy γ _).property⟩ :=
     Subtype.ext <| by rw [Function.fiberMap_apply_coe, ContinuousMap.coe_ofClass]
   rw [quotientTransport_apply, quotientTransport_apply, ← hb₀, ← hcomm, hb₁, fiberEquiv_deck]
 
@@ -165,14 +159,6 @@ theorem pathTransport_units_smul (hι : Fintype.card ι = finrank ℝ F) {b₀ b
     pathTransport (F := F) (E := E) hι γ (u • o) = u • pathTransport (F := F) (E := E) hι γ o :=
   quotientTransport_units_smul hι (.mk γ) u o
 
-private def loopSign (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : Path.Homotopic.Quotient b₀ b₀) : ℤˣ :=
-  open Classical in if quotientTransport (F := F) (E := E) hι γ = Equiv.refl _ then 1 else -1
-
-private theorem loopSign_refl (hι : Fintype.card ι = finrank ℝ F) (b₀ : B) :
-    loopSign (F := F) (E := E) hι (.refl b₀) = 1 := by
-  classical unfold loopSign; rw [quotientTransport_refl, ite_eq_left rfl]
-
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ F]
@@ -192,75 +178,6 @@ theorem quotientTransport_eq_self_or_eq_neg (hι : Fintype.card ι = finrank ℝ
     (fun h₀ o ↦ (hor o).elim (fun h ↦ by rw [h, h₀]) (fun h ↦ by rw [h, quotientTransport_neg, h₀]))
     (fun h₀ o ↦ (hor o).elim (fun h ↦ by rw [h, h₀]) (fun h ↦ by rw [h, quotientTransport_neg, h₀]))
 
-private theorem loopSign_smul (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : Path.Homotopic.Quotient b₀ b₀) (o : Orientation ℝ (E b₀) ι) :
-    quotientTransport (F := F) (E := E) hι γ o =
-      (Units.map (Int.castRingHom ℝ).toMonoidHom (loopSign (F := F) (E := E) hι γ)) • o := by
-  classical
-  rw [intUnits_smul_eq_ite]; unfold loopSign; split_ifs with h₁ h₂ h₂
-  · rw [h₁, Equiv.refl_apply]
-  · exact absurd rfl h₂
-  · exact absurd h₂ (by decide)
-  · exact (quotientTransport_eq_self_or_eq_neg (F := F) (E := E) hι γ).resolve_left
-      (fun h ↦ h₁ (Equiv.ext h)) o
-
-private theorem loopSign_trans (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ₁ γ₂ : Path.Homotopic.Quotient b₀ b₀) :
-    loopSign (F := F) (E := E) hι (γ₁.trans γ₂) =
-      loopSign (F := F) (E := E) hι γ₂ * loopSign (F := F) (E := E) hι γ₁ := by
-  obtain ⟨p₀, hp₀⟩ := surjective_proj (F := F) (E := E) hι b₀
-  refine intUnits_smul_injective (fiberEquiv b₀ ⟨p₀, hp₀⟩) ?_
-  dsimp only
-  rw [← loopSign_smul hι (γ₁.trans γ₂), quotientTransport_trans, Equiv.trans_apply,
-    loopSign_smul hι γ₁, quotientTransport_units_smul, loopSign_smul hι γ₂, map_mul, ← mul_smul,
-    mul_comm]
-
-/-- **Orientation character of a real vector bundle.** Homomorphism `FundamentalGroup B b₀ →* ℤˣ`
-taking `1` on orientation-preserving loop classes and `-1` on orientation-reversing ones. -/
-def orientationCharacter (hι : Fintype.card ι = finrank ℝ F) (b₀ : B) :
-    FundamentalGroup B b₀ →* ℤˣ where
-  toFun γ := loopSign (F := F) (E := E) hι γ.toPath
-  map_one' := loopSign_refl hι b₀
-  map_mul' p q := loopSign_trans hι q.toPath p.toPath
-
-theorem quotientTransport_toPath_eq_smul (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : FundamentalGroup B b₀) (o : Orientation ℝ (E b₀) ι) :
-    quotientTransport (F := F) (E := E) hι γ.toPath o =
-      (Units.map (Int.castRingHom ℝ).toMonoidHom
-        (orientationCharacter (F := F) (E := E) hι b₀ γ)) • o :=
-  loopSign_smul hι γ.toPath o
-
-theorem orientationCharacter_eq_one_iff_apply (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : FundamentalGroup B b₀) (o : Orientation ℝ (E b₀) ι) :
-    orientationCharacter (F := F) (E := E) hι b₀ γ = 1 ↔
-      quotientTransport (F := F) (E := E) hι γ.toPath o = o := by
-  rw [quotientTransport_toPath_eq_smul]
-  exact ⟨fun h ↦ by rw [h, map_one, one_smul], fun h ↦ intUnits_smul_injective o (by simpa using h)⟩
-
-theorem orientationCharacter_eq_neg_one_iff_apply (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : FundamentalGroup B b₀) (o : Orientation ℝ (E b₀) ι) :
-    orientationCharacter (F := F) (E := E) hι b₀ γ = -1 ↔
-      quotientTransport (F := F) (E := E) hι γ.toPath o = -o := by
-  rw [quotientTransport_toPath_eq_smul]
-  exact ⟨fun h ↦ by simp [h, Module.Ray.neg_units_smul],
-    fun h ↦ intUnits_smul_injective o (by simpa [Module.Ray.neg_units_smul] using h)⟩
-
-theorem orientationCharacter_eq_one_iff (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : FundamentalGroup B b₀) :
-    orientationCharacter (F := F) (E := E) hι b₀ γ = 1 ↔
-      quotientTransport (F := F) (E := E) hι γ.toPath = Equiv.refl _ := by
-  obtain ⟨p₀, hp₀⟩ := surjective_proj (F := F) (E := E) hι b₀
-  exact ⟨fun h ↦ Equiv.ext fun o ↦ (orientationCharacter_eq_one_iff_apply hι γ o).1 h, fun h ↦
-    (orientationCharacter_eq_one_iff_apply hι γ (fiberEquiv b₀ ⟨p₀, hp₀⟩)).2 (by rw [h]; rfl)⟩
-
-theorem orientationCharacter_eq_neg_one_iff (hι : Fintype.card ι = finrank ℝ F) {b₀ : B}
-    (γ : FundamentalGroup B b₀) :
-    orientationCharacter (F := F) (E := E) hι b₀ γ = -1 ↔
-      ∀ o, quotientTransport (F := F) (E := E) hι γ.toPath o = -o := by
-  obtain ⟨p₀, hp₀⟩ := surjective_proj (F := F) (E := E) hι b₀
-  exact ⟨fun h o ↦ (orientationCharacter_eq_neg_one_iff_apply hι γ o).1 h,
-    fun h ↦ (orientationCharacter_eq_neg_one_iff_apply hι γ (fiberEquiv b₀ ⟨p₀, hp₀⟩)).2 (h _)⟩
-
 end FiniteDimensional
 
 end Monodromy
@@ -275,20 +192,29 @@ variable {B : Type*} [TopologicalSpace B] [LocallyPathConnectedSpace B]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   [VectorBundle ℝ F E] {ι : Type*} [Fintype ι]
 
+/-- The orientation double cover of a non-orientable real vector bundle over a connected, locally
+path-connected base is path connected, provided `ι` has cardinality the rank of the bundle. -/
+theorem _root_.TauCeti.VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty [ConnectedSpace B]
+    (hι : Fintype.card ι = finrank ℝ F) [IsEmpty (VectorBundleOrientation F E ι)] :
+    PathConnectedSpace (VectorBundleOrientationCover F E ι) := by
+  have : ConnectedSpace (VectorBundleOrientationCover F E ι) := by
+    by_contra hc
+    obtain ⟨o⟩ := (nonempty_iff_not_connectedSpace hι).2 hc
+    exact isEmptyElim o
+  have : LocallyPathConnectedSpace (VectorBundleOrientationCover F E ι) :=
+    (VectorBundleOrientationCover.isCoveringMap_proj hι).isLocalHomeomorph.locallyPathConnectedSpace
+  exact PathConnectedSpace.of_locallyPathConnectedSpace
+
 /-- A real vector bundle over a connected, locally path-connected base whose fundamental group
 has no subgroup of index two is orientable, provided `ι` has cardinality the rank of the bundle. -/
 theorem nonempty_of_forall_index_ne_two [ConnectedSpace B]
     (hι : Fintype.card ι = finrank ℝ F) (b : B)
     (hπ : ∀ G : Subgroup (FundamentalGroup B b), G.index ≠ 2) :
     Nonempty (VectorBundleOrientation F E ι) := by
-  apply (nonempty_iff_not_connectedSpace hι).mpr
-  intro hc
-  have : ConnectedSpace (VectorBundleOrientationCover F E ι) := hc
+  by_contra hno
+  have := not_nonempty_iff.1 hno
+  have := VectorBundleOrientationCover.pathConnectedSpace_of_isEmpty (F := F) (E := E) hι
   have hp := VectorBundleOrientationCover.isCoveringMap_proj (F := F) (E := E) hι
-  have : LocallyPathConnectedSpace (VectorBundleOrientationCover F E ι) :=
-    hp.isLocalHomeomorph.locallyPathConnectedSpace
-  have : PathConnectedSpace (VectorBundleOrientationCover F E ι) :=
-    PathConnectedSpace.of_locallyPathConnectedSpace
   obtain ⟨p, hp₀⟩ := VectorBundleOrientationCover.surjective_proj (F := F) (E := E) hι b
   have hcard := hp.card_fiber_eq_index ⟨p, hp₀⟩
   rw [Nat.card_coe_set_eq, VectorBundleOrientationCover.ncard_fiber hι] at hcard

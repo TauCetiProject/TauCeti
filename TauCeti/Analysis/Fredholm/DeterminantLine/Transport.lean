@@ -34,7 +34,9 @@ rescaling by positive functions, that is, a continuous orientation of the determ
 of the same transition at `x₀`, with a coefficient which depends continuously on `x` and equals `1`
 at `x₀`, hence is positive nearby (`ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`).
 So the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
-(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`).
+(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`), and conversely, when `T x₀` is Fredholm,
+coherence may be checked in any kernel chart valid at `x₀`
+(`TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`).
 
 * **Uniqueness.** Two coherent families on a preconnected set that lie on the same ray at one point
   lie on the same ray everywhere (`TauCeti.IsDetLineCoherentOn.sameRay`). The set where they agree
@@ -65,6 +67,19 @@ reference operator, for instance the complex orientation of a complex-linear ope
 (`TauCeti.IsComplexPositiveTMulDual`), is transported along a path of Fredholm operators to the
 operator of interest.
 
+**Invertible operators.** The determinant line of an invertible operator is identified with the
+scalars (`LinearMap.detLineEquivOfBijective`), and the element `1` orients it. These orientations
+are coherent over any set of invertible operators
+(`TauCeti.isDetLineCoherentOn_of_isInvertible`): the kernel chart with zero stabilization and
+coordinate spaces is valid at each of them and reads every such element `1` as the same vector. So
+along a path of invertible operators, orientation transport carries the orientation given by
+invertibility to the orientation given by invertibility
+(`TauCeti.detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one`). At a
+complex-linear invertible operator this orientation is the complex orientation
+(`LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`), so the complex orientation
+transported along an invertible homotopy from a complex-linear operator is the orientation given
+by invertibility: the determinant sign of the endpoint is positive.
+
 ## Main definitions
 
 * `TauCeti.IsDetLineCoherentWithinAt T v s x₀`: the family `v` of elements of the determinant
@@ -77,15 +92,25 @@ operator of interest.
 
 ## Main results
 
-* `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`,
-  `TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`: coherence holds in every kernel chart
-  as soon as it holds in one.
+* `TauCeti.eventually_sameRay_detLineChartEquiv_of_eventually_sameRay`: readings on the same ray
+  in one kernel chart valid at `x₀` are on the same ray in every other.
+* `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart,
+  and conversely `TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`: at a Fredholm
+  operator, coherence can be checked in any one kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
 * `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family with constant reading in a
   kernel chart is coherent.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
   families.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_of_mul_pos`,
+  `TauCeti.detLineOrientationTransport_rayOfNeZero_of_mul_neg`: if a coherent family is
+  `c_a • g_a` at `a` and `c_b • g_b` at `b`, transport carries the orientation of `g_a` to that of
+  `g_b` or to its opposite, according to the sign of `c_a * c_b`.
+* `TauCeti.isDetLineCoherentOn_of_isInvertible`: the orientations given by invertibility are
+  coherent.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one`: transport
+  along a path of invertible operators preserves the orientation given by invertibility.
 * `TauCeti.detLineOrientationTransport_self`, `TauCeti.detLineOrientationTransport_symm`,
   `TauCeti.detLineOrientationTransport_trans`, `TauCeti.detLineOrientationTransport_neg`,
   `TauCeti.detLineOrientationTransport_const`, `TauCeti.detLineOrientationTransport_congr`,
@@ -210,13 +235,13 @@ theorem IsDetLineCoherentOn.congr_sameRay (hv : IsDetLineCoherentOn T v s)
         fun y hy ↦ ⟨fun hv0 ↦ absurd hv0 (hv.ne_zero hy), hvw y hy⟩
 
 /-- Transporting a coherent family along operator equalities `T₀ x = T₁ x` near `x₀` within `s`
-via `LinearMap.detLineOfEq` preserves coherence within `s` at `x₀`. -/
+via `LinearMap.detLineCongrOfEq` preserves coherence within `s` at `x₀`. -/
 theorem IsDetLineCoherentWithinAt.congr_eq {T₀ T₁ : X → E →L[ℝ] F}
     {v : ∀ x, (T₀ x : E →ₗ[ℝ] F).detLine} {w : ∀ x, (T₁ x : E →ₗ[ℝ] F).detLine}
     (hv : IsDetLineCoherentWithinAt T₀ v s x₀) (hx₀ : T₀ x₀ = T₁ x₀)
-    (hw₀ : w x₀ = LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap hx₀) (v x₀))
+    (hw₀ : w x₀ = LinearMap.detLineCongrOfEq (congrArg ContinuousLinearMap.toLinearMap hx₀) (v x₀))
     (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ h : T₀ x = T₁ x,
-      w x = LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap h) (v x)) :
+      w x = LinearMap.detLineCongrOfEq (congrArg ContinuousLinearMap.toLinearMap h) (v x)) :
     IsDetLineCoherentWithinAt T₁ w s x₀ := by
   obtain ⟨hv₀, S, hS, G, hG, q, h₀, hvev⟩ := isDetLineCoherentWithinAt_iff.1 hv
   have h₁ : (((T₁ x₀).coprod S.subtypeL).prod q).IsInvertible := hx₀ ▸ h₀
@@ -224,16 +249,17 @@ theorem IsDetLineCoherentWithinAt.congr_eq {T₀ T₁ : X → E →L[ℝ] F}
     ⟨hw₀ ▸ (LinearEquiv.map_ne_zero_iff _).2 hv₀, S, hS, G, hG, q, h₁, ?_⟩
   filter_upwards [hvev, hev] with x ⟨hxinv, hsr⟩ ⟨hTx, hwx⟩
   refine ⟨hTx ▸ hxinv, ?_⟩
-  rwa [hwx, hw₀, detLineChartEquiv_detLineOfEq hTx S.subtypeL q hxinv _,
-    detLineChartEquiv_detLineOfEq hx₀ S.subtypeL q h₀ h₁]
+  rwa [hwx, hw₀, detLineChartEquiv_detLineCongrOfEq hTx S.subtypeL q hxinv _,
+    detLineChartEquiv_detLineCongrOfEq hx₀ S.subtypeL q h₀ h₁]
 
 /-- Transporting a coherent family along pointwise operator equalities `T₀ x = T₁ x` on `s` via
-`LinearMap.detLineOfEq` preserves coherence on `s`. -/
+`LinearMap.detLineCongrOfEq` preserves coherence on `s`. -/
 theorem IsDetLineCoherentOn.congr_eq {T₀ T₁ : X → E →L[ℝ] F}
     {v : ∀ x, (T₀ x : E →ₗ[ℝ] F).detLine} {w : ∀ x, (T₁ x : E →ₗ[ℝ] F).detLine}
     (hv : IsDetLineCoherentOn T₀ v s) (hT : ∀ x ∈ s, T₀ x = T₁ x)
     (hw : ∀ x (hx : x ∈ s),
-      w x = LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap (hT x hx)) (v x)) :
+      w x = LinearMap.detLineCongrOfEq
+        (congrArg ContinuousLinearMap.toLinearMap (hT x hx)) (v x)) :
     IsDetLineCoherentOn T₁ w s :=
   fun x₀ hx₀ ↦ (hv x₀ hx₀).congr_eq (hT x₀ hx₀) (hw x₀ hx₀)
     (Filter.mem_of_superset self_mem_nhdsWithin fun x hxs ↦ ⟨hT x hxs, hw x hxs⟩)
@@ -278,30 +304,35 @@ theorem IsDetLineCoherentOn.comp {Y : Type*} [TopologicalSpace Y] {f : Y → X} 
 
 variable [CompleteSpace E]
 
-private theorem eventually_sameRay_detLineChartEquiv_of_eventually_sameRay
-    (hT : ContinuousWithinAt T s x₀)
-    {Λ₁ G₁ Λ₂ G₂ : Type*} [NormedAddCommGroup Λ₁] [NormedSpace ℝ Λ₁] [FiniteDimensional ℝ Λ₁]
-    [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [FiniteDimensional ℝ G₁]
-    [NormedAddCommGroup Λ₂] [NormedSpace ℝ Λ₂] [FiniteDimensional ℝ Λ₂]
-    [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
-    {D₁ : Λ₁ →L[ℝ] F} {q₁ : E × Λ₁ →L[ℝ] G₁} {D₂ : Λ₂ →L[ℝ] F} {q₂ : E × Λ₂ →L[ℝ] G₂}
-    (h₁ : (((T x₀).coprod D₁).prod q₁).IsInvertible)
-    (h₂ : (((T x₀).coprod D₂).prod q₂).IsInvertible)
-    (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ hx : (((T x).coprod D₁).prod q₁).IsInvertible,
-      SameRay ℝ (detLineChartEquiv (T x) D₁ q₁ hx (v x))
-        (detLineChartEquiv (T x₀) D₁ q₁ h₁ (v x₀))) :
-    ∀ᶠ x in 𝓝[s] x₀, ∃ hx : (((T x).coprod D₂).prod q₂).IsInvertible,
-      SameRay ℝ (detLineChartEquiv (T x) D₂ q₂ hx (v x))
-        (detLineChartEquiv (T x₀) D₂ q₂ h₂ (v x₀)) := by
-  filter_upwards [hev, hT.tendsto.eventually (eventually_detLineChartEquiv_symm_eq_smul h₂ h₁)]
-    with x ⟨_, hsr⟩ ⟨hx, _, c, hc, hcu⟩
-  refine ⟨hx, ?_⟩
+/-- **Changing the kernel chart in which a family is read.** Let `(D₂, q)` and `(D₂', q')` be kernel
+charts valid at `T x₀`, for a family `T` continuous within `s` at `x₀`. If the chart `(D₂', q')`
+reads `v x`, for `x ∈ s` near `x₀`, as a nonnegative multiple of its reading of `v x₀`, then so
+does the chart `(D₂, q)`. -/
+theorem eventually_sameRay_detLineChartEquiv_of_eventually_sameRay
+    (hT : ContinuousWithinAt T s x₀) {Λ G Λ' G' : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] [NormedAddCommGroup Λ'] [NormedSpace ℝ Λ'] [FiniteDimensional ℝ Λ']
+    [NormedAddCommGroup G'] [NormedSpace ℝ G'] [FiniteDimensional ℝ G'] {D₂ : Λ →L[ℝ] F}
+    {q : E × Λ →L[ℝ] G} {D₂' : Λ' →L[ℝ] F} {q' : E × Λ' →L[ℝ] G'}
+    (h₀ : (((T x₀).coprod D₂).prod q).IsInvertible)
+    (h₀' : (((T x₀).coprod D₂').prod q').IsInvertible)
+    (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂').prod q').IsInvertible,
+      SameRay ℝ (detLineChartEquiv (T x) D₂' q' h (v x))
+        (detLineChartEquiv (T x₀) D₂' q' h₀' (v x₀))) :
+    ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x))
+        (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀)) := by
+  filter_upwards [hev, hT.tendsto.eventually (eventually_detLineChartEquiv_symm_eq_smul h₀ h₀')]
+    with x hx hcx
+  obtain ⟨h₁x, hsr⟩ := hx
+  obtain ⟨h, h', c, hc, hcu⟩ := hcx
+  refine ⟨h, ?_⟩
   -- Map the readings in the first chart to the second chart by the transition at `x₀`; at `x` the
   -- transition is `c` times that one.
-  have hmap := (hsr.map ((detLineChartEquiv (T x₀) D₁ q₁ h₁).symm.trans
-    (detLineChartEquiv (T x₀) D₂ q₂ h₂)).toLinearMap).pos_smul_left hc
+  have := (hsr.map ((detLineChartEquiv (T x₀) D₂' q' h₀').symm.trans
+    (detLineChartEquiv (T x₀) D₂ q h₀)).toLinearMap).pos_smul_left hc
   simpa only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hcu]
-    using hmap
+    using this
 
 /-- **Coherence holds in every kernel chart.** If `v` is coherent within `s` at `x₀` for a
 family continuous within `s` at `x₀`, then every kernel chart valid at `x₀` reads `v x`, for `x ∈ s`
@@ -315,7 +346,23 @@ theorem IsDetLineCoherentWithinAt.eventually_sameRay (hT : ContinuousWithinAt T 
       SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x))
         (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀)) := by
   obtain ⟨-, S, hS, G₁, hG₁, q₁, h₁, hev⟩ := hv
-  exact eventually_sameRay_detLineChartEquiv_of_eventually_sameRay hT h₁ h₀ hev
+  exact eventually_sameRay_detLineChartEquiv_of_eventually_sameRay hT h₀ h₁ hev
+
+variable [CompleteSpace F] in
+/-- **Coherence can be tested in any kernel chart.** A family `v` which is nonzero at `x₀` and
+which some kernel chart valid at the Fredholm operator `T x₀` reads, near `x₀`, as nonnegative
+multiples of its reading of `v x₀`, is coherent within `s` at `x₀`. -/
+theorem isDetLineCoherentWithinAt_of_eventually_sameRay (hT : ContinuousWithinAt T s x₀)
+    (hF : IsFredholm (T x₀)) (hv : v x₀ ≠ 0) {Λ G : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G}
+    (h₀ : (((T x₀).coprod D₂).prod q).IsInvertible)
+    (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x)) (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀))) :
+    IsDetLineCoherentWithinAt T v s x₀ := by
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := hF.exists_isOpen_kernelChart
+  exact isDetLineCoherentWithinAt_iff.2 ⟨hv, S, hS, G₁, hG₁, q₁, hinv _ hxU,
+    eventually_sameRay_detLineChartEquiv_of_eventually_sameRay hT (hinv _ hxU) h₀ hev⟩
 
 /-- **Uniqueness of coherent families.** Two coherent families on a preconnected set which lie on
 the same ray at one point lie on the same ray at every point. -/
@@ -346,23 +393,6 @@ theorem IsDetLineCoherentOn.sameRay (hT : ContinuousOn T s) (hs : IsPreconnected
   exact ⟨key.symm, key⟩
 
 variable [CompleteSpace F]
-
-/-- **Converse to `IsDetLineCoherentWithinAt.eventually_sameRay`.** For a family `T` continuous
-within `s` at a Fredholm operator `T x₀`, if `v x₀ ≠ 0` and some kernel chart `(D₂, q)` with
-finite-dimensional models reads `v x`, for `x ∈ s` near `x₀`, on the same ray as `v x₀`, then `v`
-is coherent within `s` at `x₀`. -/
-theorem isDetLineCoherentWithinAt_of_eventually_sameRay (hT : ContinuousWithinAt T s x₀)
-    (hF : IsFredholm (T x₀)) (hv₀ : v x₀ ≠ 0) {Λ G : Type*} [NormedAddCommGroup Λ]
-    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G}
-    (h₀ : (((T x₀).coprod D₂).prod q).IsInvertible)
-    (hev : ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
-      SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x))
-        (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀))) :
-    IsDetLineCoherentWithinAt T v s x₀ := by
-  obtain ⟨S, hS, G₁, hG₁, q₁, U₁, -, hx₀U₁, hinv₁⟩ := hF.exists_isOpen_kernelChart
-  exact ⟨hv₀, S, hS, G₁, hG₁, q₁, hinv₁ _ hx₀U₁,
-    eventually_sameRay_detLineChartEquiv_of_eventually_sameRay hT h₀ (hinv₁ _ hx₀U₁) hev⟩
 
 /-- A family which is a fixed nonzero element of the determinant line of a fixed Fredholm operator
 is coherent. -/
@@ -542,12 +572,13 @@ noncomputable def detLineOrientationTransport (a b : ℝ) (hT : ContinuousOn T (
     (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) :
     Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine → Module.Ray ℝ (T b : E →ₗ[ℝ] F).detLine :=
   Quotient.lift (s := RayVector.Setoid ℝ _)
-    (fun u ↦ rayOfNeZero ℝ ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose b)
-      ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec.2.ne_zero
+    (fun u ↦ rayOfNeZero ℝ ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose
+        b)
+      ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose_spec.2.ne_zero
         right_mem_uIcc))
     fun u u' (h : SameRay ℝ (u : (T a : E →ₗ[ℝ] F).detLine) u') ↦ by
-      have hu := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec
-      have hu' := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u'.2).choose_spec
+      have hu := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose_spec
+      have hu' := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u'.property).choose_spec
       exact (ray_eq_iff _ _).2 (hu.2.sameRay hT isPreconnected_uIcc hu'.2 left_mem_uIcc
         right_mem_uIcc (by rwa [hu.1, hu'.1]))
 
@@ -562,6 +593,42 @@ theorem detLineOrientationTransport_rayOfNeZero (hT : ContinuousOn T (uIcc a b))
     (hv.ne_zero left_mem_uIcc)).choose_spec
   exact (ray_eq_iff _ _).2 (hex.2.sameRay hT isPreconnected_uIcc hv left_mem_uIcc right_mem_uIcc
     (by rw [hex.1]))
+
+/-- **Transport between multiples of a coherent family, with the same sign.** If a coherent family
+`v` on `[[a, b]]` is `c_a • g_a` at `a` and `c_b • g_b` at `b` with `c_a * c_b > 0`, orientation
+transport carries the orientation of `g_a` to that of `g_b`. -/
+theorem detLineOrientationTransport_rayOfNeZero_of_mul_pos
+    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
+    {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine} (hv : IsDetLineCoherentOn T v (uIcc a b)) {ca cb : ℝ}
+    {ga : (T a : E →ₗ[ℝ] F).detLine} {gb : (T b : E →ₗ[ℝ] F).detLine} (hva : v a = ca • ga)
+    (hvb : v b = cb • gb) (hga : ga ≠ 0) (hgb : gb ≠ 0) (h : 0 < ca * cb) :
+    detLineOrientationTransport a b hT hF (rayOfNeZero ℝ ga hga) = rayOfNeZero ℝ gb hgb := by
+  have hca : ca ≠ 0 := left_ne_zero_of_mul h.ne'
+  -- Scaling `v` by `c_a` gives `c_a ^ 2 • g_a` at `a`, on the ray of `g_a`, and
+  -- `(c_a * c_b) • g_b` at `b`, on the ray of `g_b`.
+  have key := detLineOrientationTransport_rayOfNeZero hT hF (hv.smul hca)
+  refine (congrArg _ ((ray_eq_iff _ _).2 ?_)).trans (key.trans ((ray_eq_iff _ _).2 ?_))
+  · rw [hva, smul_smul]
+    exact SameRay.sameRay_pos_smul_right _ (mul_self_pos.2 hca)
+  · rw [hvb, smul_smul]
+    exact SameRay.sameRay_pos_smul_left _ h
+
+/-- **Transport between multiples of a coherent family, with opposite signs.** If a coherent
+family `v` on `[[a, b]]` is `c_a • g_a` at `a` and `c_b • g_b` at `b` with `c_a * c_b < 0`,
+orientation transport carries the orientation of `g_a` to the opposite of that of `g_b`. -/
+theorem detLineOrientationTransport_rayOfNeZero_of_mul_neg
+    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
+    {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine} (hv : IsDetLineCoherentOn T v (uIcc a b)) {ca cb : ℝ}
+    {ga : (T a : E →ₗ[ℝ] F).detLine} {gb : (T b : E →ₗ[ℝ] F).detLine} (hva : v a = ca • ga)
+    (hvb : v b = cb • gb) (hga : ga ≠ 0) (hgb : gb ≠ 0) (h : ca * cb < 0) :
+    detLineOrientationTransport a b hT hF (rayOfNeZero ℝ ga hga) = -rayOfNeZero ℝ gb hgb := by
+  -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
+  -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
+  let : AddCommGroup (T b : E →ₗ[ℝ] F).detLine := TensorProduct.addCommGroup
+  -- `v b = (-c_b) • (-g_b)` with `c_a * (-c_b) > 0`.
+  exact (detLineOrientationTransport_rayOfNeZero_of_mul_pos hT hF hv hva
+    (by rw [hvb, neg_smul_neg]) hga (neg_ne_zero.2 hgb) (by rwa [mul_neg, neg_pos])).trans
+    (neg_rayOfNeZero ℝ _ hgb).symm
 
 /-- Orientation transport from a point to itself is the identity. -/
 @[simp]
@@ -636,24 +703,24 @@ theorem detLineOrientationTransport_const {T₀ : E →L[ℝ] F} (hT₀ : IsFred
     (isDetLineCoherentOn_const hT₀ hv₀ _)
 
 /-- **Congruence of orientation transport.** Two Fredholm families agreeing on `[[a, b]]` induce the
-same orientation transport, intertwined by `LinearMap.detLineOfEq` at the endpoints. -/
+same orientation transport, intertwined by `LinearMap.detLineCongrOfEq` at the endpoints. -/
 theorem detLineOrientationTransport_congr {T₀ T₁ : ℝ → E →L[ℝ] F} {a b : ℝ}
     (hT₀ : ContinuousOn T₀ (uIcc a b)) (hT₁ : ContinuousOn T₁ (uIcc a b))
     (hF₀ : ∀ t ∈ uIcc a b, (T₀ t).IsFredholm) (hF₁ : ∀ t ∈ uIcc a b, (T₁ t).IsFredholm)
     (hTU : ∀ t ∈ uIcc a b, T₀ t = T₁ t) (o : Module.Ray ℝ (T₀ a : E →ₗ[ℝ] F).detLine) :
     detLineOrientationTransport a b hT₁ hF₁
-        (Module.Ray.map (LinearMap.detLineOfEq
+        (Module.Ray.map (LinearMap.detLineCongrOfEq
           (congrArg ContinuousLinearMap.toLinearMap (hTU a left_mem_uIcc))) o) =
-      Module.Ray.map (LinearMap.detLineOfEq
+      Module.Ray.map (LinearMap.detLineCongrOfEq
           (congrArg ContinuousLinearMap.toLinearMap (hTU b right_mem_uIcc)))
         (detLineOrientationTransport a b hT₀ hF₀ o) := by
   induction o using Module.Ray.ind with | h v₀ hv₀ =>
   obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT₀ hF₀ left_mem_uIcc hv₀
   classical
   let w : ∀ t, (T₁ t : E →ₗ[ℝ] F).detLine := fun t ↦ if ht : t ∈ uIcc a b then
-    LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap (hTU t ht)) (v t) else 0
+    LinearMap.detLineCongrOfEq (congrArg ContinuousLinearMap.toLinearMap (hTU t ht)) (v t) else 0
   have hw_coh : IsDetLineCoherentOn T₁ w (uIcc a b) := hv.congr_eq hTU fun _ ht ↦ dite_eq_left ht
-  have hwa : Module.Ray.map (LinearMap.detLineOfEq
+  have hwa : Module.Ray.map (LinearMap.detLineCongrOfEq
       (congrArg ContinuousLinearMap.toLinearMap (hTU a left_mem_uIcc))) (rayOfNeZero ℝ (v a) hv₀) =
         rayOfNeZero ℝ (w a) (hw_coh.ne_zero left_mem_uIcc) := by
     rw [Module.Ray.map_apply, ray_eq_iff]
@@ -679,10 +746,11 @@ theorem detLineOrientationTransport_comp {T : ℝ → E →L[ℝ] F} {φ : ℝ �
   have hTK : ContinuousOn T (Icc (sInf K) (sSup K)) := by
     rw [← hKIcc, continuousOn_iff_continuous_domRestrict]
     have : CompactSpace (uIcc a' b') := isCompact_iff_compactSpace.1 isCompact_uIcc
-    let q : uIcc a' b' → K := fun x ↦ ⟨φ x.1, mem_image_of_mem φ x.2⟩
+    let q : uIcc a' b' → K := fun x ↦ ⟨φ x.val, mem_image_of_mem φ x.property⟩
     have hq := Topology.IsQuotientMap.of_surjective_continuous
       (f := q) (fun ⟨_, t, ht, hφt⟩ ↦ ⟨⟨t, ht⟩, Subtype.ext hφt⟩)
-      ((continuousOn_iff_continuous_domRestrict.1 hφ).subtype_mk fun x ↦ mem_image_of_mem φ x.2)
+      ((continuousOn_iff_continuous_domRestrict.1 hφ).subtype_mk fun x ↦
+        mem_image_of_mem φ x.property)
     have hcomp : K.domRestrict T ∘ q = (uIcc a' b').domRestrict (T ∘ φ) :=
       funext fun x ↦ by simp [q]
     exact hq.continuous_iff.2 (hcomp.symm ▸ continuousOn_iff_continuous_domRestrict.1 hTφ)
@@ -695,5 +763,58 @@ theorem detLineOrientationTransport_comp {T : ℝ → E →L[ℝ] F} {φ : ℝ �
       (hv.mono (ordConnected_Icc.uIcc_subset (hmaps left_mem_uIcc) (hmaps right_mem_uIcc)))]
 
 end Transport
+
+section Invertible
+
+/-! ### Invertible operators -/
+
+/-- **The invertibility orientation is coherent.** The determinant line of an invertible operator
+`T x` is identified with `ℝ` by `LinearMap.detLineEquivOfBijective`. A family `v` of elements of
+the determinant lines which is positive under these identifications over a set `s` of parameters
+with invertible operators is coherent on `s`. No continuity of `T` is needed: the zero kernel chart
+(`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) is valid at every invertible
+operator and reads every such determinant line through its identification with `ℝ`, times the same
+vector (`ContinuousLinearMap.detLineChartEquiv_eq_detLineEquivOfBijective_smul`). -/
+theorem isDetLineCoherentOn_of_isInvertible {T : X → E →L[ℝ] F}
+    {v : ∀ x, (T x : E →ₗ[ℝ] F).detLine} {s : Set X} (hT : ∀ x ∈ s, (T x).IsInvertible)
+    (hv : ∀ x (hx : x ∈ s), 0 < LinearMap.detLineEquivOfBijective (hT x hx).bijective (v x)) :
+    IsDetLineCoherentOn T v s := by
+  let S : Submodule ℝ F := ⊥
+  let G : Submodule ℝ (E × S) := ⊥
+  intro x₀ hx₀
+  refine ⟨fun h ↦ (hv x₀ hx₀).ne' (by rw [h, LinearEquiv.map_zero]), S, inferInstance, G,
+    inferInstance, 0, (hT x₀ hx₀).prod_coprod_of_subsingleton,
+    eventually_nhdsWithin_of_forall fun x hx ↦ ⟨(hT x hx).prod_coprod_of_subsingleton, ?_⟩⟩
+  -- In the zero kernel chart, `v x` is read as a positive multiple of one fixed vector.
+  rw [detLineChartEquiv_eq_detLineEquivOfBijective_smul _ (hT x hx).bijective,
+    detLineChartEquiv_eq_detLineEquivOfBijective_smul _ (hT x₀ hx₀).bijective]
+  exact sameRay_smul_smul_of_mul_nonneg (M := detLine ℝ G ⊗[ℝ] Dual ℝ (detLine ℝ S))
+    (mul_pos (hv x hx) (hv x₀ hx₀)).le
+
+variable [CompleteSpace E] [CompleteSpace F] {T : ℝ → E →L[ℝ] F} {a b : ℝ}
+
+/-- **Transport along invertible operators.** Along a path of invertible operators, orientation
+transport carries the orientation of the determinant line given by invertibility, that of the
+element `1` under `LinearMap.detLineEquivOfBijective`, to the orientation given by invertibility.
+Combined with the complex positivity of that element at a complex-linear invertible operator
+(`LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`), this says that the
+complex orientation transported along an invertible homotopy from a complex-linear operator is
+the orientation given by invertibility. -/
+theorem detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one
+    (hT : ContinuousOn T (uIcc a b)) (hinv : ∀ t ∈ uIcc a b, (T t).IsInvertible) :
+    detLineOrientationTransport a b hT (fun t ht ↦ (hinv t ht).isFredholm)
+        (rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
+          (hinv a left_mem_uIcc).bijective).symm 1) (by simp)) =
+      rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
+        (hinv b right_mem_uIcc).bijective).symm 1) (by simp) := by
+  classical
+  let v (t : ℝ) : (T t : E →ₗ[ℝ] F).detLine :=
+    if ht : (T t).IsInvertible then (LinearMap.detLineEquivOfBijective ht.bijective).symm 1 else 0
+  have hv : IsDetLineCoherentOn T v (uIcc a b) :=
+    isDetLineCoherentOn_of_isInvertible hinv fun t ht ↦ by simp [v, hinv t ht]
+  convert detLineOrientationTransport_rayOfNeZero hT (fun t ht ↦ (hinv t ht).isFredholm) hv <;>
+    simp [v, hinv a left_mem_uIcc, hinv b right_mem_uIcc]
+
+end Invertible
 
 end TauCeti

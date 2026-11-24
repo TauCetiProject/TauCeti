@@ -105,7 +105,7 @@ noncomputable def kostantSubsystemUpperUnitriangular (A : Type v) [CommRing A] :
       (kostantSubsystemSubgroup e h ρ M hM hnil S (CommAlgCat.of ℤ A)).subtype).codRestrict
     (upperUnitriangularGroup η A) fun g ↦
       map_kostantSubsystemSubgroup_le_upperUnitriangular
-        e h ρ M hM hnil b wt α S hwt hα hpos A ⟨g, g.2, rfl⟩)
+        e h ρ M hM hnil b wt α S hwt hα hpos A ⟨g, g.property, rfl⟩)
 
 /-- Forgetting the upper-unitriangular codomain recovers the matrix of the subsystem element in
 the ordered weight basis. -/

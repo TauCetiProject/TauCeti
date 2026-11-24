@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Alternating.Basic
 For a subsingleton index type `ι` and `i : ι`, `AlternatingMap.ofSubsingleton` identifies linear
 maps `M →ₗ[R] N` with alternating maps `M [⋀^ι]→ₗ[R] N`. This file upgrades that bijection to an
 `S`-linear equivalence `AlternatingMap.ofSubsingletonₗ` for any commuting scalar action of `S` on
-`N`, matching `MultilinearMap.ofSubsingletonₗ`, and shows that over a nonempty subsingleton index
+`N`, matching `MultilinearMap.ofSubsingletonₗ`, records scalar linearity on constant tuples
+(`AlternatingMap.apply_const_smul`), and shows that over a nonempty subsingleton index
 type an alternating map `ω : R [⋀^ι]→ₗ[R] N` vanishes iff `ω (fun _ ↦ 1) = 0`
 (`AlternatingMap.apply_const_one_eq_zero`, `AlternatingMap.apply_const_one_ne_zero`).
 -/
@@ -53,6 +54,13 @@ end OfSubsingleton
 section ConstOne
 
 variable {R N ι : Type*} [Semiring R] [AddCommMonoid N] [Module R N] [Subsingleton ι] [Nonempty ι]
+
+/-- An alternating map of degree one commutes with scalar multiplication on constant tuples. -/
+theorem apply_const_smul {M : Type*} [AddCommMonoid M] [Module R M]
+    (ω : M [⋀^ι]→ₗ[R] N) (r : R) (x : M) : ω (fun _ ↦ r • x) = r • ω (fun _ ↦ x) := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  rw [← ofSubsingletonₗ_symm_apply_apply R M N ℕ i ω (r • x), map_smul,
+    ofSubsingletonₗ_symm_apply_apply]
 
 /-- An alternating map of degree one on `R` vanishes on the constant tuple `1` iff it is zero. -/
 @[simp]
