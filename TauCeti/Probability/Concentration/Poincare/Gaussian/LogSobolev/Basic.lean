@@ -127,8 +127,7 @@ theorem hasSubgaussianMGF_stdGaussian_sub_integral_of_lipschitzWith
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂stdGaussian E) (K ^ 2) (stdGaussian E) := by
-  simpa only [one_mul] using
-    (logSobolevInequality_stdGaussian E).hasSubgaussianMGF_sub_integral_of_lipschitzWith (C := 1) hf
+  simpa using (logSobolevInequality_stdGaussian E).hasSubgaussianMGF_of_lipschitzWith hf
 
 /-- **Gaussian Lipschitz concentration**: for any `K`-Lipschitz function `f : E → ℝ` on a
 finite-dimensional real inner product space and `0 ≤ t`,
@@ -139,8 +138,7 @@ theorem measureReal_stdGaussian_abs_sub_integral_ge_le_of_lipschitzWith
     {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
     (stdGaussian E).real {x | t ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
       2 * Real.exp (-t ^ 2 / (2 * (K : ℝ) ^ 2)) := by
-  simpa only [NNReal.coe_one, mul_one] using
-    (logSobolevInequality_stdGaussian E).measureReal_abs_sub_integral_ge_le_of_lipschitzWith
-      (C := 1) hf ht
+  simpa only [one_mul] using
+    (logSobolevInequality_stdGaussian E).measureReal_abs_sub_integral_ge_le_of_lipschitzWith hf ht
 
 end TauCeti.Probability

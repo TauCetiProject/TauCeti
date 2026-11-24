@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.Calculus.ContDiff.Scaling
 import TauCeti.Analysis.Sobolev.SmoothCutoff
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Probability.Moments.Variance

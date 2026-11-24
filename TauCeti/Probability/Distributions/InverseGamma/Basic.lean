@@ -34,7 +34,8 @@ map.
   the law and its density;
 * `inverseGammaMeasure_eq_withDensity`, `hasPDF_of_hasLaw_inverseGammaMeasure`, and
   `rnDeriv_inverseGammaMeasure` identify the density;
-* `inverseGammaMeasure_map_const_mul` multiplies the scale under positive scaling;
+* `inverseGammaMeasure_map_const_mul` and `ProbabilityTheory.HasLaw.const_mul_inverseGammaMeasure`
+  multiply the scale under positive scaling at the measure and random-variable levels;
 * `measurable_inverseGammaMeasure` makes the parameterized family available to kernels.
 
 ## References
@@ -331,3 +332,18 @@ theorem measurable_inverseGammaMeasure :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- Multiplying an inverse-gamma random variable by a positive constant multiplies its scale,
+including for the invalid zero-measure branches. -/
+theorem HasLaw.const_mul_inverseGammaMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {a r : ℝ} (hX : HasLaw X (inverseGammaMeasure a r) P)
+    {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ b * X ω) (inverseGammaMeasure a (b * r)) P := by
+  rw [← inverseGammaMeasure_map_const_mul hb]
+  exact (hasLaw_map (measurable_const_mul b).aemeasurable).fun_comp hX
+
+end ProbabilityTheory

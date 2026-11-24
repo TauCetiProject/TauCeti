@@ -88,14 +88,14 @@ abbrev Block (j : Fin 3) := {a : Fin 24 // d4TripledSummand a = j}
 
 /-- The position of a coordinate inside one of the three consecutive eight-coordinate blocks. -/
 def blockLocalIndexEquiv (j : Fin 3) : Block j ≃ Fin 8 where
-  toFun a := ⟨a.1.val % 8, Nat.mod_lt _ (by omega)⟩
+  toFun a := ⟨a.val.val % 8, Nat.mod_lt _ (by omega)⟩
   invFun i := ⟨⟨8 * j.val + i.val, by omega⟩, by
     fin_cases j <;> fin_cases i <;> decide +kernel⟩
   left_inv a := by
     apply Subtype.ext
     apply Fin.ext
     simp only
-    have ha := a.2
+    have ha := a.property
     simp only [d4TripledSummand] at ha
     omega
   right_inv i := by
@@ -105,13 +105,13 @@ def blockLocalIndexEquiv (j : Fin 3) : Block j ≃ Fin 8 where
 /-- The local coordinate of a block index is its table index modulo eight. -/
 @[simp]
 theorem blockLocalIndexEquiv_apply_val (j : Fin 3) (a : Block j) :
-    (blockLocalIndexEquiv j a).val = a.1.val % 8 :=
+    (blockLocalIndexEquiv j a).val = a.val.val % 8 :=
   by simp [blockLocalIndexEquiv]
 
 /-- The table index at local position `i` in block `j` is `8 * j + i`. -/
 @[simp]
 theorem blockLocalIndexEquiv_symm_val (j : Fin 3) (i : Fin 8) :
-    ((blockLocalIndexEquiv j).symm i).1.val = 8 * j.val + i.val :=
+    ((blockLocalIndexEquiv j).symm i).val.val = 8 * j.val + i.val :=
   by simp [blockLocalIndexEquiv]
 
 /-- Triality restricted to an equivalence from one eight-dimensional block to the next. -/
@@ -123,7 +123,7 @@ abbrev blockIndexEquiv (j : Fin 3) : Block j ≃ Block (finRotate 3 j) :=
 /-- The underlying table index of the restricted block equivalence is the triality index. -/
 @[simp]
 theorem coe_blockIndexEquiv (j : Fin 3) (a : Block j) :
-    (blockIndexEquiv j a).val = d4TripledTrialityPerm a.1 :=
+    (blockIndexEquiv j a).val = d4TripledTrialityPerm a.val :=
   rfl
 
 /-- The coordinate equivalence induced by triality from one block to the next. -/
@@ -153,20 +153,20 @@ entry. -/
 @[simp]
 theorem blockRaisingMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockRaisingMatrix R j i a b = (raisingMatrix i a.1 b.1 : R) := (rfl)
+    blockRaisingMatrix R j i a b = (raisingMatrix i a.val b.val : R) := (rfl)
 
 /-- An entry of a restricted negative generator is the cast of the corresponding full-table
 entry. -/
 @[simp]
 theorem blockLoweringMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockLoweringMatrix R j i a b = (loweringMatrix i a.1 b.1 : R) := (rfl)
+    blockLoweringMatrix R j i a b = (loweringMatrix i a.val b.val : R) := (rfl)
 
 /-- An entry of a restricted Cartan generator is the cast of the corresponding full-table entry. -/
 @[simp]
 theorem blockCartanGeneratorMatrix_apply (R : Type u) [Ring R]
     (j : Fin 3) (i : Fin 4) (a b : Block j) :
-    blockCartanGeneratorMatrix R j i a b = (cartanGeneratorMatrix i a.1 b.1 : R) := (rfl)
+    blockCartanGeneratorMatrix R j i a b = (cartanGeneratorMatrix i a.val b.val : R) := (rfl)
 
 /-- Triality intertwines the positive generator matrices on consecutive blocks, entrywise. -/
 theorem blockRaisingMatrix_triality (R : Type u) [Ring R]
@@ -174,7 +174,7 @@ theorem blockRaisingMatrix_triality (R : Type u) [Ring R]
     blockRaisingMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockRaisingMatrix R j i a b := by
-  exact congrArg (Int.castRingHom R) (raisingMatrix_trialityPerm i a.1 b.1)
+  exact congrArg (Int.castRingHom R) (raisingMatrix_trialityPerm i a.val b.val)
 
 /-- Triality intertwines the negative generator matrices on consecutive blocks, entrywise. -/
 theorem blockLoweringMatrix_triality (R : Type u) [Ring R]
@@ -182,7 +182,7 @@ theorem blockLoweringMatrix_triality (R : Type u) [Ring R]
     blockLoweringMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockLoweringMatrix R j i a b := by
-  exact congrArg (Int.castRingHom R) (loweringMatrix_trialityPerm i a.1 b.1)
+  exact congrArg (Int.castRingHom R) (loweringMatrix_trialityPerm i a.val b.val)
 
 /-- Triality intertwines the Cartan-generator matrices on consecutive blocks, entrywise. -/
 theorem blockCartanGeneratorMatrix_triality (R : Type u) [Ring R]
@@ -190,7 +190,7 @@ theorem blockCartanGeneratorMatrix_triality (R : Type u) [Ring R]
     blockCartanGeneratorMatrix R (finRotate 3 j) (trialityPermD4 i)
         (blockIndexEquiv j a) (blockIndexEquiv j b) =
       blockCartanGeneratorMatrix R j i a b := by
-  exact congrArg (Int.castRingHom R) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+  exact congrArg (Int.castRingHom R) (cartanGeneratorMatrix_trialityPerm i a.val b.val)
 
 /-- The restricted triality equivalence intertwines every positive generator action with the
 generator at the triality image of its node. -/
@@ -246,19 +246,19 @@ noncomputable def d4BlockTwoToZeroIndexEquiv : Block 2 ≃ Block 0 :=
 /-- The table coordinate underlying triality from block zero to block one. -/
 @[simp]
 theorem coe_d4BlockZeroToOneIndexEquiv (a : Block 0) :
-    (d4BlockZeroToOneIndexEquiv a).1 = d4TripledTrialityPerm a.1 := by
+    (d4BlockZeroToOneIndexEquiv a).val = d4TripledTrialityPerm a.val := by
   simp [d4BlockZeroToOneIndexEquiv]
 
 /-- The table coordinate underlying triality from block one to block two. -/
 @[simp]
 theorem coe_d4BlockOneToTwoIndexEquiv (a : Block 1) :
-    (d4BlockOneToTwoIndexEquiv a).1 = d4TripledTrialityPerm a.1 := by
+    (d4BlockOneToTwoIndexEquiv a).val = d4TripledTrialityPerm a.val := by
   simp [d4BlockOneToTwoIndexEquiv]
 
 /-- The table coordinate underlying triality from block two to block zero. -/
 @[simp]
 theorem coe_d4BlockTwoToZeroIndexEquiv (a : Block 2) :
-    (d4BlockTwoToZeroIndexEquiv a).1 = d4TripledTrialityPerm a.1 := by
+    (d4BlockTwoToZeroIndexEquiv a).val = d4TripledTrialityPerm a.val := by
   simp [d4BlockTwoToZeroIndexEquiv]
 
 section Semiring
@@ -347,115 +347,111 @@ theorem blockCartanGeneratorMatrix_eq_submatrixQ (j : Fin 3) (i : Fin 4) :
 
 /-! ## Concrete generator transports -/
 
+/-- A block equivalence lying over triality transports the restriction to a block of an integral
+matrix `M₀` to that of an integral matrix `N₀` whose triality conjugate is `M₀`, over any ring. -/
+private theorem piCongrLeft'_triality_mulVec {R : Type*} [Ring R] {j k : Fin 3}
+    (e : Block j ≃ Block k) (he : ∀ a, (e a).val = d4TripledTrialityPerm a.val)
+    {M₀ N₀ : Matrix (Fin 24) (Fin 24) ℤ}
+    (hMN : ∀ a b, N₀ (d4TripledTrialityPerm a) (d4TripledTrialityPerm b) = M₀ a b)
+    {M : Matrix (Block j) (Block j) R} {N : Matrix (Block k) (Block k) R}
+    (hM : (M₀.map (Int.castRingHom R)).submatrix Subtype.val Subtype.val = M)
+    (hN : (N₀.map (Int.castRingHom R)).submatrix Subtype.val Subtype.val = N) (v : Block j → R) :
+    LinearEquiv.piCongrLeft' R (fun _ => R) e (M *ᵥ v) =
+      N *ᵥ LinearEquiv.piCongrLeft' R (fun _ => R) e v := by
+  rw [← hM, ← hN]
+  apply LinearEquiv.piCongrLeft'_mulVec e
+  intro a b
+  simp only [Matrix.submatrix_apply, Matrix.map_apply, he]
+  exact congrArg (Int.castRingHom R) (hMN a.val b.val)
+
 /-- Triality from block zero to block one intertwines the rational positive generators. -/
 theorem d4BlockZeroToOneEquiv_raising_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockZeroToOneIndexEquiv coe_d4BlockZeroToOneIndexEquiv
+    (raisingMatrix_trialityPerm i) (blockRaisingMatrix_eq_submatrixQ 0 i)
+    (blockRaisingMatrix_eq_submatrixQ 1 (trialityPermD4 i)) v
 
 /-- Triality from block one to block two intertwines the rational positive generators. -/
 theorem d4BlockOneToTwoEquiv_raising_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockOneToTwoIndexEquiv coe_d4BlockOneToTwoIndexEquiv
+    (raisingMatrix_trialityPerm i) (blockRaisingMatrix_eq_submatrixQ 1 i)
+    (blockRaisingMatrix_eq_submatrixQ 2 (trialityPermD4 i)) v
 
 /-- Triality from block two to block zero intertwines the rational positive generators. -/
 theorem d4BlockTwoToZeroEquiv_raising_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockTwoToZeroIndexEquiv coe_d4BlockTwoToZeroIndexEquiv
+    (raisingMatrix_trialityPerm i) (blockRaisingMatrix_eq_submatrixQ 2 i)
+    (blockRaisingMatrix_eq_submatrixQ 0 (trialityPermD4 i)) v
 
 /-- Triality from block zero to block one intertwines the rational negative generators. -/
 theorem d4BlockZeroToOneEquiv_lowering_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockZeroToOneIndexEquiv coe_d4BlockZeroToOneIndexEquiv
+    (loweringMatrix_trialityPerm i) (blockLoweringMatrix_eq_submatrixQ 0 i)
+    (blockLoweringMatrix_eq_submatrixQ 1 (trialityPermD4 i)) v
 
 /-- Triality from block one to block two intertwines the rational negative generators. -/
 theorem d4BlockOneToTwoEquiv_lowering_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockOneToTwoIndexEquiv coe_d4BlockOneToTwoIndexEquiv
+    (loweringMatrix_trialityPerm i) (blockLoweringMatrix_eq_submatrixQ 1 i)
+    (blockLoweringMatrix_eq_submatrixQ 2 (trialityPermD4 i)) v
 
 /-- Triality from block two to block zero intertwines the rational negative generators. -/
 theorem d4BlockTwoToZeroEquiv_lowering_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockTwoToZeroIndexEquiv coe_d4BlockTwoToZeroIndexEquiv
+    (loweringMatrix_trialityPerm i) (blockLoweringMatrix_eq_submatrixQ 2 i)
+    (blockLoweringMatrix_eq_submatrixQ 0 (trialityPermD4 i)) v
 
 /-- Triality from block zero to block one intertwines the rational Cartan generators. -/
 theorem d4BlockZeroToOneEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockZeroToOneIndexEquiv coe_d4BlockZeroToOneIndexEquiv
+    (cartanGeneratorMatrix_trialityPerm i) (blockCartanGeneratorMatrix_eq_submatrixQ 0 i)
+    (blockCartanGeneratorMatrix_eq_submatrixQ 1 (trialityPermD4 i)) v
 
 /-- Triality from block one to block two intertwines the rational Cartan generators. -/
 theorem d4BlockOneToTwoEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockOneToTwoIndexEquiv coe_d4BlockOneToTwoIndexEquiv
+    (cartanGeneratorMatrix_trialityPerm i) (blockCartanGeneratorMatrix_eq_submatrixQ 1 i)
+    (blockCartanGeneratorMatrix_eq_submatrixQ 2 (trialityPermD4 i)) v
 
 /-- Triality from block two to block zero intertwines the rational Cartan generators. -/
 theorem d4BlockTwoToZeroEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_triality_mulVec d4BlockTwoToZeroIndexEquiv coe_d4BlockTwoToZeroIndexEquiv
+    (cartanGeneratorMatrix_trialityPerm i) (blockCartanGeneratorMatrix_eq_submatrixQ 2 i)
+    (blockCartanGeneratorMatrix_eq_submatrixQ 0 (trialityPermD4 i)) v
 
 end TauCeti.D4Tripled

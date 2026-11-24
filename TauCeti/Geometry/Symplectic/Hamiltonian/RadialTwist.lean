@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Complex.Line
+public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -48,6 +50,11 @@ corresponding term (`TauCeti.sum_radialHamiltonian_eventuallyEq`). Its flow ther
 of these discs as the corresponding term does (`TauCeti.hamiltonianFlow_sum_radialHamiltonian`)
 and fixes every point outside them (`TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`).
 
+For every `R > 0` and angle `θ`, `TauCeti.exists_diffeomorph_eventuallyEq_rotation` gives a smooth
+diffeomorphism of `ℂ` preserving the area form and the norm, equal to the rotation by `θ` near `0`
+and to the identity outside the disc of radius `R`; in this form it can be transported through
+Darboux charts.
+
 This is the local mechanism for perturbing an area-preserving map of a surface so as to change
 the linearized return map of a periodic orbit by a rotation, independently for finitely many
 orbits. If `p` is a periodic point of `φ` of period `k` and the twist is supported in a disc about
@@ -76,6 +83,9 @@ orbits. If `p` is a periodic point of `φ` of period `k` and the twist is suppor
 * `TauCeti.hamiltonianFlow_sum_radialHamiltonian` and
   `TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`: the flow of a sum of radial twists with
   disjoint supports.
+* `TauCeti.exists_diffeomorph_eventuallyEq_rotation`: a smooth diffeomorphism of `ℂ` preserving
+  the area form, rotating a neighbourhood of `0` by a prescribed angle and fixing every point
+  outside a prescribed disc.
 
 ## References
 
@@ -348,14 +358,13 @@ theorem hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id {K : NNReal}
       fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
     (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0) {w : ℂ} (hw : ∀ j ∈ s, R < ‖w - p j‖ ^ 2)
     (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t =ᶠ[𝓝 w] id := by
-  -- The sum vanishes near `w`, so every point near `w` is a critical point.
+  -- The sum vanishes near `w`, so `w` is outside its support.
   have h : (fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w) =ᶠ[𝓝 w] fun _ ↦ 0 := by
     filter_upwards [(Filter.eventually_all_finset s).2 fun j hj ↦
       radialHamiltonian_eventuallyEq_zero (hGR j hj) (hw j hj)] with z hz
     exact Finset.sum_eq_zero hz
-  filter_upwards [h.eventuallyEq_nhds] with z hz
-  refine (stdComplexSymplecticForm.forall_hamiltonianFlow_apply_eq_self_iff _ hX z).2 ?_ t
-  rw [hz.fderiv_eq, fderiv_const_apply]
+  exact stdComplexSymplecticForm.hamiltonianFlow_eventuallyEq_id_of_notMem_tsupport _ hX
+    (notMem_tsupport_iff_eventuallyEq.2 h) t
 
 /-- **A sum of radial twists fixes the points outside their discs.** If the profiles vanish on
 `[R, ∞)`, every point at distance more than `√R` from all the centres is fixed by the flow of the
@@ -368,5 +377,68 @@ theorem hamiltonianFlow_sum_radialHamiltonian_eq_self {K : NNReal}
   (hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX hGR hw t).eq_of_nhds
 
 end Sum
+
+/-! ### The radial twist as a diffeomorphism -/
+
+section Diffeomorph
+
+open scoped Manifold
+
+/-- **A compactly supported area-preserving rotation of the plane.** For every radius `R > 0` and
+every angle `θ` there is a smooth diffeomorphism `ψ` of `ℂ` which preserves the standard area form,
+preserves the norm, is the identity outside the open disc of radius `R` about `0`, and agrees near
+`0` with the rotation by `θ`, so that its derivative at `0` is multiplication by `exp (i θ)`. -/
+theorem exists_diffeomorph_eventuallyEq_rotation {R : ℝ} (hR : 0 < R) (θ : ℝ) :
+    ∃ ψ : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ,
+      (∀ x u v, stdComplexSymplecticForm (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) =
+        stdComplexSymplecticForm u v) ∧
+      (∀ w, ‖ψ w‖ = ‖w‖) ∧ (∀ w, R ≤ ‖w‖ → ψ w = w) ∧
+      ⇑ψ =ᶠ[𝓝 0] fun w ↦ exp (I * θ) * w := by
+  obtain ⟨k, hk, -, hk_large, hk_deriv⟩ :=
+    exists_contDiff_cutoff_id (r := R ^ 2 / 4) (R := R ^ 2 / 2) (by nlinarith)
+  -- `ψ` is the time-one map of the radial twist with profile `G`, with inverse the time `-1` map.
+  set G : ℝ → ℝ := fun s ↦ θ * k s
+  have hG : ContDiff ℝ ∞ G := contDiff_const.mul hk
+  have hGR : ∀ s, R ^ 2 / 2 ≤ s → G s = 0 := fun s hs ↦ by
+    simp [G, hk_large s (hs.trans (le_abs_self s))]
+  obtain ⟨K, hX⟩ := exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian
+    (hG.of_le (by simp)) hGR 0
+  -- The time-`t` map of the twist is `w ↦ exp (i t G'(‖w‖²)) w`.
+  set τ : ℝ → ℂ → ℂ := fun t w ↦ exp (I * ↑(t * deriv G (‖w‖ ^ 2))) * w
+  have hflow (t : ℝ) :
+      stdComplexSymplecticForm.hamiltonianFlow (radialHamiltonian G 0) hX t = τ t := by
+    funext w
+    simpa [τ] using hamiltonianFlow_radialHamiltonian hX
+      ((hG.differentiable (by simp)) (‖w - 0‖ ^ 2)) t
+  have hnorm (t : ℝ) (w : ℂ) : ‖τ t w‖ = ‖w‖ := by
+    simp only [τ, norm_mul, norm_exp_I_mul_ofReal, one_mul]
+  have hinv (t : ℝ) (w : ℂ) : τ (-t) (τ t w) = w := by
+    simp only [τ, hnorm, ← mul_assoc, ← Complex.exp_add]
+    rw [show I * ↑(-t * deriv G (‖w‖ ^ 2)) + I * ↑(t * deriv G (‖w‖ ^ 2)) = 0 by
+      push_cast; ring, Complex.exp_zero, one_mul]
+  have hsmooth (t : ℝ) : ContDiff ℝ ∞ (τ t) := by
+    have hG' : ContDiff ℝ ∞ (deriv G) := (contDiff_infty_iff_deriv.1 hG).2
+    exact ((contDiff_const.mul (ofRealCLM.contDiff.comp (contDiff_const.mul
+      (hG'.comp (contDiff_norm_sq ℝ))))).cexp).mul contDiff_id
+  let ψ : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ :=
+    ⟨⟨τ 1, τ (-1), hinv 1, fun w ↦ by simpa using hinv (-1) w⟩, (hsmooth 1).contMDiff,
+      (hsmooth (-1)).contMDiff⟩
+  have hψ : ⇑ψ = τ 1 := rfl
+  refine ⟨ψ, fun x u v ↦ ?_, hnorm 1, fun w hw ↦ ?_, ?_⟩
+  · rw [hψ, ← hflow 1]
+    exact stdComplexSymplecticForm.apply_fderiv_hamiltonianFlow _ hX
+      ((contDiff_radialHamiltonian hG 0).of_le (by simp)) 1 x u v
+  · rw [hψ, ← hflow 1]
+    refine hamiltonianFlow_radialHamiltonian_eq_self_of_lt hX hGR ?_ 1
+    rw [sub_zero]
+    nlinarith [pow_pos hR 2]
+  · rw [hψ, ← hflow 1]
+    have hG0 : ∀ᶠ s in 𝓝 0, HasDerivAt G θ s := by
+      filter_upwards [Ioo_mem_nhds (show -(R ^ 2 / 4) < (0 : ℝ) by
+        have := pow_pos hR 2; linarith) (show (0 : ℝ) < R ^ 2 / 4 by positivity)] with s hs
+      simpa [G] using (hk_deriv s (abs_lt.2 hs)).const_mul θ
+    simpa using hamiltonianFlow_radialHamiltonian_eventuallyEq hX hG0 1
+
+end Diffeomorph
 
 end TauCeti

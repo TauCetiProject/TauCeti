@@ -63,7 +63,7 @@ theorem pairwiseDisjoint_piFinset_parts :
   intro φ _ ψ _ hφψ
   obtain ⟨i, hi⟩ := ne_iff.1 hφψ
   exact Fintype.piFinset_disjoint_of_disjoint _ _
-    (P.disjoint (φ i).2 (ψ i).2 (Subtype.coe_ne_coe.2 hi))
+    (P.disjoint (φ i).property (ψ i).property (Subtype.coe_ne_coe.2 hi))
 
 /-- The boxes of all cell assignments cover the maps `ι → s`. -/
 theorem biUnion_piFinset_parts :
@@ -71,7 +71,7 @@ theorem biUnion_piFinset_parts :
       Fintype.piFinset fun _ : ι ↦ s := by
   ext g
   simp only [mem_biUnion, mem_univ, true_and, Fintype.mem_piFinset]
-  exact ⟨fun ⟨φ, hφ⟩ i ↦ P.le (φ i).2 (hφ i),
+  exact ⟨fun ⟨φ, hφ⟩ i ↦ P.le (φ i).property (hφ i),
     fun hg ↦ ⟨fun i ↦ ⟨P.part (g i), P.part_mem.2 (hg i)⟩, fun i ↦ P.mem_part (hg i)⟩⟩
 
 /-- A sum over the maps `ι → s` splits along cell assignments. -/
@@ -91,12 +91,12 @@ theorem injective_of_mem_piFinset_parts {φ : ι → P.parts} (hφ : Injective �
     (hg : g ∈ Fintype.piFinset fun i ↦ (φ i : Finset α)) : Injective g := by
   intro i j hij
   rw [Fintype.mem_piFinset] at hg
-  exact hφ <| Subtype.ext <| P.eq_of_mem_parts (φ i).2 (φ j).2 (hg i) (hij ▸ hg j)
+  exact hφ <| Subtype.ext <| P.eq_of_mem_parts (φ i).property (φ j).property (hg i) (hij ▸ hg j)
 
 /-- On the box of a cell assignment `φ`, the cell assignment of each map is `φ`. -/
 theorem part_eq_of_mem_piFinset_parts {φ : ι → P.parts} {g : ι → α}
     (hg : g ∈ Fintype.piFinset fun i ↦ (φ i : Finset α)) (i : ι) : P.part (g i) = φ i :=
-  P.part_eq_of_mem (φ i).2 (Fintype.mem_piFinset.1 hg i)
+  P.part_eq_of_mem (φ i).property (Fintype.mem_piFinset.1 hg i)
 
 /-- A map `y` lies in the box of parts through a map `x : ι → s` exactly when `y` has the same
 cell assignment as `x`. -/

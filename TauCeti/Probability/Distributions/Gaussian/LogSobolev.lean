@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.Entropy.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
-import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
+import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basic
 import TauCeti.Probability.Distributions.Gaussian.Symmetry
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ParametricIntegral

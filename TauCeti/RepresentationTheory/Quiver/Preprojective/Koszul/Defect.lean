@@ -358,7 +358,7 @@ theorem finrank_ker_preprojectiveKoszulLeft [FiniteDimensional k Π] (v : Q) :
       ((x : preprojectiveRightProjective k (Symmetrify.of.obj v)) : Π)) h)).2 fun x => ?_
   obtain ⟨t, ht⟩ := hz x (by
     rw [doubledVertexIdempotent_def]
-    exact (mem_preprojectiveRightProjective_iff k _ _).1 x.1.2) ((hmem _).1 x.2)
+    exact (mem_preprojectiveRightProjective_iff k _ _).1 x.val.property) ((hmem _).1 x.property)
   exact ⟨t, by ext; simp [y', ht]⟩
 
 /-- **The graded pieces of the left Koszul kernel**: for a finite-dimensional preprojective
@@ -389,7 +389,7 @@ theorem exists_forall_finrank_preprojectiveCorner_inf_iInf_ker_eq [DecidableEq Q
     refine (finrank_eq_one_iff' (K := k)).2 ⟨⟨y, Submodule.mem_inf.2 ⟨hy, (Submodule.mem_iInf _).2
       fun w => (Submodule.mem_iInf _).2 fun b => LinearMap.mem_ker.2 (hyb w b)⟩⟩,
       fun h => hy0 (congrArg Subtype.val h), fun x => ?_⟩
-    obtain ⟨t, ht⟩ := hK x.2
+    obtain ⟨t, ht⟩ := hK x.property
     exact ⟨t, Subtype.ext ht.symm⟩
   · -- A nonzero multiple of `y` lies only in the graded corner `e_v Π_n e_u`.
     rw [Submodule.finrank_eq_zero, Submodule.eq_bot_iff]
