@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.LinearAlgebra.QuadraticForm.Dual
+import TauCeti.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 
 /-!
 # Simple systems of a finite root pairing over an ordered field
@@ -139,6 +140,16 @@ private lemma apply_pos_of_mem_hull {S : Set ι} (hS : S ⊆ P.positiveSystem f)
   (nonneg_and_eq_zero_of_mem_hull hS hx).1.lt_of_ne
     fun h => hx₀ ((nonneg_and_eq_zero_of_mem_hull hS hx).2 h.symm)
 
+/-- The cone spanned by roots on which `f` is positive is salient: if two of its vectors add up
+to zero, they vanish. -/
+private lemma eq_zero_of_add_eq_zero_of_mem_hull {S : Set ι} (hS : S ⊆ P.positiveSystem f)
+    {x y : M} (hx : x ∈ PointedCone.hull R (P.root '' S))
+    (hy : y ∈ PointedCone.hull R (P.root '' S)) (h : x + y = 0) : x = 0 := by
+  have h₁ := nonneg_and_eq_zero_of_mem_hull hS hx
+  have h₂ := nonneg_and_eq_zero_of_mem_hull hS hy
+  have hf : f x + f y = 0 := by rw [← map_add, h, map_zero]
+  exact h₁.2 (by linarith [h₁.1, h₂.1])
+
 /-- The cone of a set of roots lies in the cone of a root together with the other roots of the
 set. -/
 private lemma hull_root_image_le_hull_insert (T : Set ι) (i : ι) :
@@ -150,27 +161,10 @@ private lemma hull_root_image_le_hull_insert (T : Set ι) (i : ι) :
   · exact hki ▸ mem_insert _ _
   · exact mem_insert_of_mem _ ⟨k, ⟨hk, hki⟩, rfl⟩
 
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-/-- A member of a linearly independent set of roots is not in the span of the others. -/
-private lemma root_notMem_span_image_sdiff {S : Set ι} (hli : LinearIndepOn R P.root S)
-    (hi : i ∈ S) : P.root i ∉ span R (P.root '' (S \ {i})) := by
-  have hli' : LinearIndepOn R P.root (insert i (S \ {i})) := by
-    rwa [insert_sdiff_singleton, insert_eq_of_mem hi]
-  exact ((linearIndepOn_insert (by simp)).mp hli').2
-
 /-- The negative of a root is positive exactly when the root is negative. -/
 lemma reflectionPerm_self_mem_positiveSystem_iff :
     P.reflectionPerm i i ∈ P.positiveSystem f ↔ f (P.root i) < 0 := by
   simp [root_reflectionPerm, reflection_apply_self]
-
-/-- The positive form detects the sign of the pairing. -/
-private lemma rootForm_root_root_le_zero_iff [Fintype ι] :
-    P.RootForm (P.root i) (P.root j) ≤ 0 ↔ P.pairing i j ≤ 0 := by
-  have h₁ := P.algebraMap_posRootForm_posForm R (P.rootSpanMem R i) (P.rootSpanMem R j)
-  have h₂ := P.algebraMap_pairingIn R i j
-  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h₁ h₂
-  rw [← h₁, ← h₂]
-  exact (P.posRootForm R).posForm_apply_root_root_le_zero_iff i j
 
 variable [P.IsReduced]
 
@@ -214,11 +208,8 @@ private lemma root_mem_hull_sdiff_singleton {T : Set ι} (hT : T ⊆ P.positiveS
       obtain ⟨b, hb, u, hu, rfl, hu₀⟩ := hx
       obtain ⟨b', hb', u', hu', rfl, hu₀'⟩ := hy
       refine ⟨b + b', add_nonneg hb hb', u + u', add_mem hu hu', by module, fun h => ?_⟩
-      have h₁ := nonneg_and_eq_zero_of_mem_hull hD hu
-      have h₂ := nonneg_and_eq_zero_of_mem_hull hD hu'
-      have hfu : f u + f u' = 0 := by rw [← map_add, h, map_zero]
-      rw [hu₀ (h₁.2 (by linarith [h₁.1, h₂.1])), hu₀' (h₂.2 (by linarith [h₁.1, h₂.1])),
-        add_zero]
+      rw [hu₀ (eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' h),
+        hu₀' (eq_zero_of_add_eq_zero_of_mem_hull hD hu' hu (by rwa [add_comm])), add_zero]
     | smul c x _ hx =>
       obtain ⟨b, hb, u, hu, rfl, hu₀⟩ := hx
       obtain ⟨c, hc⟩ := c
@@ -246,7 +237,7 @@ theorem eq_simpleSystem_of_linearIndepOn {S : Set ι} (hS : S ⊆ P.positiveSyst
     (hspan : ∀ j ∈ P.positiveSystem f, P.root j ∈ PointedCone.hull R (P.root '' S)) :
     S = P.simpleSystem f := by
   refine Subset.antisymm (fun k hk => ⟨hS hk, fun hmem => ?_⟩) fun k hk => ?_
-  · exact root_notMem_span_image_sdiff hli hk
+  · exact linearIndepOn_iff_notMem_span.mp hli k hk
       (PointedCone.hull_le_span R _ (root_mem_hull_sdiff_singleton hS hspan (hS hk) hmem))
   · by_contra hkS
     refine hk.2 (span_mono (image_mono ?_) (hspan k hk.1))
@@ -379,15 +370,12 @@ theorem reflectionPerm_mem_positiveSystem (hf : ∀ k, f (P.root k) ≠ 0)
     linear_combination (norm := module) -hju - hku
   have hc : P.pairing j i - a - a' = 0 := by
     by_contra hc
-    refine root_notMem_span_image_sdiff (linearIndepOn_root_simpleSystem hf) hi ?_
+    refine linearIndepOn_iff_notMem_span.mp (linearIndepOn_root_simpleSystem hf) i hi ?_
     have := add_mem (PointedCone.mem_ofSubmodule_iff.mp (PointedCone.hull_le_span R _ hu))
       (PointedCone.mem_ofSubmodule_iff.mp (PointedCone.hull_le_span R _ hu'))
     rwa [hsum, Submodule.smul_mem_iff _ hc] at this
   rw [hc, zero_smul] at hsum
-  have h₁ := nonneg_and_eq_zero_of_mem_hull hD hu
-  have h₂ := nonneg_and_eq_zero_of_mem_hull hD hu'
-  have hfu : f u + f u' = 0 := by rw [← map_add, hsum, map_zero]
-  have hu0 : u = 0 := h₁.2 (by linarith [h₁.1, h₂.1])
+  have hu0 : u = 0 := eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' hsum
   exact root_ne_smul_root_of_mem_positiveSystem hi.1 hj hji a (by rw [hju, hu0, add_zero])
 
 /-- Every positive root has positive pairing with some simple root. -/
@@ -401,7 +389,7 @@ private lemma exists_mem_simpleSystem_pairing_pos (hj : j ∈ P.positiveSystem f
     induction hx using Submodule.span_induction with
     | mem x hx =>
       obtain ⟨i, hi, rfl⟩ := hx
-      exact rootForm_root_root_le_zero_iff.mpr (h i hi)
+      exact (P.rootForm_root_root_le_zero_iff).mpr (h i hi)
     | zero => simp
     | add x y _ _ hx hy => simpa using add_nonpos hx hy
     | smul c x _ hx =>
