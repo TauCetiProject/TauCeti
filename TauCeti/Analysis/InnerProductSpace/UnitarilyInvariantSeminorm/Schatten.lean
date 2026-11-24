@@ -153,6 +153,13 @@ theorem schatten_apply_adjoint (A : E →ₗ[𝕜] F) :
     schatten 𝕜 F E p (LinearMap.adjoint A) = schatten 𝕜 E F p A := by
   rw [← compAdjoint_apply, compAdjoint_schatten]
 
+/-- The Schatten seminorm of a rectangular map `A : E →ₗ[𝕜] F` is that of its modulus
+`|A| = √(A† A)`, an endomorphism of the source: `‖|A|‖_p = ‖A‖_p`. -/
+@[simp]
+theorem schatten_apply_operatorAbs (A : E →ₗ[𝕜] F) :
+    schatten 𝕜 E E p A.operatorAbs = schatten 𝕜 E F p A := by
+  rw [schatten_apply, schatten_apply, LinearMap.singularValues_operatorAbs]
+
 /-- **Ideal inequality, left factor.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
 operator norm at most `c`), then `‖C A‖_p ≤ c * ‖A‖_p`. The factor `C : F →ₗ[𝕜] G` may change the
 target space. -/

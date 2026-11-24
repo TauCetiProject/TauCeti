@@ -16,7 +16,8 @@ Mathlib’s Gaussian probability density and records that its total mass is one.
 
 This file also records the complex Gaussian estimates needed to differentiate integrals against
 the translated kernel `z ↦ exp (-(c (t - z))²)` under the integral sign: a Gaussian bound in `t`,
-uniform for `z` in a ball, and the complex derivative in `z`.
+uniform for `z` in a ball. The complex derivative in `z` is the case `a = -c²`, `b = t` of
+`Complex.hasDerivAt_cexp_mul_sub_sq` in `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main definitions
 
@@ -29,8 +30,6 @@ uniform for `z` in a ball, and the complex derivative in `z`.
 * `Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
 * `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
-* `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
-  `z ↦ exp (-(c (t - z))²)`.
 -/
 
 public section
@@ -81,13 +80,5 @@ theorem norm_cexp_neg_mul_sub_sq_le (c t : ℝ) {z : ℂ} {D : ℝ} (hz : ‖z�
   simp only [sq, neg_re, mul_re, mul_im, sub_re, sub_im, ofReal_re, ofReal_im] at hz' ⊢
   nlinarith [mul_nonneg (sq_nonneg c) (sq_nonneg (t - 2 * z.re)), mul_le_mul_of_nonneg_left hz'
     (sq_nonneg c)]
-
-/-- The complex derivative of the translated Gaussian `z ↦ exp (-(c (t - z))²)`. -/
-theorem hasDerivAt_cexp_neg_mul_sub_sq (c t : ℝ) (z : ℂ) :
-    HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
-      (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-  have h := (((hasDerivAt_id' z).const_sub (t : ℂ)).const_mul (c : ℂ)).fun_pow 2 |>.fun_neg.cexp
-  convert h using 1
-  ring
 
 end Complex

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
@@ -13,6 +14,8 @@ public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 public import TauCeti.RingTheory.TraceFunctional.Radical
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Analysis.InnerProductSpace.StarOrder
 
 /-!
 # The trace kernel and faithful quotient descent of a tracial positive functional
@@ -401,6 +404,12 @@ end LiftOfSurjective
 section GNSRangeAndQuotient
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- The closed C⋆-subalgebra image `f.gnsNonUnitalStarAlgHom.range` inherits `StarOrderedRing` from
+`f.GNS →L[ℂ] f.GNS`. -/
+instance _root_.PositiveLinearMap.instStarOrderedRingRangeGNSNonUnitalStarAlgHom (f : A →ₚ[ℂ] ℂ) :
+    StarOrderedRing f.gnsNonUnitalStarAlgHom.range :=
+  Subtype.starOrderedRing (𝕜 := ℂ) f.gnsNonUnitalStarAlgHom.range
 
 /-- **The faithful descended trace on the GNS image `π_τ(A)`.** For a tracial positive continuous
 linear functional `τ : A →P[ℂ] ℂ`, `τ.gnsRangeTrace hτ` is the positive continuous linear

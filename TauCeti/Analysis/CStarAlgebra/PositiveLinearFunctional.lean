@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -32,7 +33,10 @@ along any star homomorphism that preserves `1` also preserves the norm
 The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
 `PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
 at every `a` with `ω (star a * a) = 0`
-(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`).
+(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`). More generally, by the
+Cauchy–Schwarz inequality a positive linear functional `f` vanishing at `b⋆ b` kills every product
+`a b` (`PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero`), and one vanishing at `b b⋆`
+kills every product `b a` (`PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`).
 
 Conversely, any positive functional `ω : A →P[ℂ] ℂ` vanishing on the kernel of a surjective star
 homomorphism `f : A → B` lifts uniquely (`PositiveContinuousLinearMap.eq_liftOfSurjective_iff`) to
@@ -181,6 +185,30 @@ theorem opNorm_comp_ofClass {A B F : Type*}
 end Unital
 
 end PositiveContinuousLinearMap
+
+namespace PositiveLinearMap
+
+variable {A F : Type*} [NonUnitalRing A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
+  [Module ℂ A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_star_mul_eq_zero (f : F) {b : A} (hb : f (star b * b) = 0)
+    (a : A) : f (a * b) = 0 := by
+  have h := norm_map_star_mul_le f (star a) b
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  exact h
+
+/-- A positive linear functional that vanishes at `b b⋆` kills every product `b * a`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * star b) = 0)
+    (a : A) : f (b * a) = 0 := by
+  have h := norm_map_mul_star_le f b (star a)
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
+  exact h
+
+end PositiveLinearMap
 
 namespace WeakDual
 

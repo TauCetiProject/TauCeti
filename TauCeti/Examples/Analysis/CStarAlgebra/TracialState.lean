@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 import Mathlib.Analysis.CStarAlgebra.Classes
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
 # Concrete examples and counterexamples for tracial states and trace kernels
@@ -131,13 +130,13 @@ theorem traceKernel_midpointState :
 /-! ### Noncommutative `2 × 2` matrix algebra `CStarMatrix (Fin 2) (Fin 2) ℂ` -/
 
 /-- Matrix unit `e₀₀ = [[1, 0], [0, 0]]` in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-def e00 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.ofMatrix !![1, 0; 0, 0]
+abbrev e00 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.matrixUnit 0 0
 
 /-- Off-diagonal matrix unit `e₀₁ = [[0, 1], [0, 0]]` in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-def e01 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.ofMatrix !![0, 1; 0, 0]
+abbrev e01 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.matrixUnit 0 1
 
 /-- Off-diagonal matrix unit `e₁₀ = [[0, 0], [1, 0]]` in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-def e10 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.ofMatrix !![0, 0; 1, 0]
+abbrev e10 : CStarMatrix (Fin 2) (Fin 2) ℂ := CStarMatrix.matrixUnit 1 0
 
 /-- Diagonal entry functional `M ↦ M i i` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 def diagFunctional (i : Fin 2) : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
@@ -179,7 +178,7 @@ theorem cornerState_mem_stateSpace :
 theorem not_isTracialState_cornerState : ¬ cornerState.IsTracialState := by
   intro h
   have hcomm := h.map_mul_comm e01 e10
-  norm_num [e01, e10, diagFunctional_apply, CStarMatrix.mul_apply, Fin.sum_univ_two] at hcomm
+  simp at hcomm
 
 /-- On `CStarMatrix (Fin 2) (Fin 2) ℂ`, the tracial state space is a strict subset of the state
 space. -/
@@ -197,11 +196,7 @@ theorem tracialStates_ne_stateSpace :
 right multiplication: `e01` lies in it, while `e01 * e10 = e00` does not. -/
 theorem not_right_ideal_null_cornerState :
     cornerState (star e01 * e01) = 0 ∧ cornerState (star (e01 * e10) * (e01 * e10)) ≠ 0 := by
-  constructor
-  · norm_num [e01, diagFunctional_apply, CStarMatrix.mul_apply, CStarMatrix.star_apply,
-      Fin.sum_univ_two]
-  · norm_num [e01, e10, diagFunctional_apply, CStarMatrix.mul_apply, CStarMatrix.star_apply,
-      Fin.sum_univ_two]
+  simp
 
 /-- The unnormalized matrix trace `M ↦ M 0 0 + M 1 1` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 def rawTrace₂ : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
@@ -253,15 +248,7 @@ theorem traceKernel_normalizedTraceMap_fin2 :
 theorem ker_normalizedTraceMap_fin2_not_mul_closed :
     e01 ∈ LinearMap.ker (CStarMatrix.normalizedTraceMap (Fin 2)).toLinearMap ∧
       e01 * e10 ∉ LinearMap.ker (CStarMatrix.normalizedTraceMap (Fin 2)).toLinearMap := by
-  constructor
-  · rw [LinearMap.mem_ker, PositiveLinearMap.coe_toLinearMap,
-      PositiveContinuousLinearMap.coe_toPositiveLinearMap, CStarMatrix.normalizedTraceMap_apply,
-      CStarMatrix.normalizedTrace_eq_sum]
-    norm_num [e01, Fin.sum_univ_two]
-  · rw [LinearMap.mem_ker, PositiveLinearMap.coe_toLinearMap,
-      PositiveContinuousLinearMap.coe_toPositiveLinearMap, CStarMatrix.normalizedTraceMap_apply,
-      CStarMatrix.normalizedTrace_eq_sum]
-    norm_num [e01, e10, CStarMatrix.mul_apply, Fin.sum_univ_two]
+  simp
 
 /-- Nonunital corner `⋆`-homomorphism `z ↦ z • e₀₀` from `ℂ` into
 `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
@@ -270,14 +257,8 @@ def cornerHom : ℂ →⋆ₙₐ[ℂ] CStarMatrix (Fin 2) (Fin 2) ℂ where
   map_smul' c z := by simp [mul_smul]
   map_zero' := zero_smul _ _
   map_add' z w := add_smul z w e00
-  map_mul' z w := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [e00, CStarMatrix.mul_apply, Fin.sum_univ_two]
-  map_star' z := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [e00, CStarMatrix.star_apply]
+  map_mul' z w := by simp [smul_smul, mul_comm]
+  map_star' z := by simp [star_smul]
 
 /-- Pulling `CStarMatrix.normalizedTraceMap (Fin 2)` back along the nonunital corner embedding
 `cornerHom` yields the half-norm functional `z ↦ z / 2`, which is tracial and positive but not a
@@ -288,7 +269,7 @@ theorem not_isTracialState_comp_cornerHom :
   have h1 := h.map_one
   have heval :
       ((CStarMatrix.normalizedTraceMap (Fin 2)).comp (.ofClass cornerHom)) 1 = (2 : ℂ)⁻¹ := by
-    simp [cornerHom, e00, CStarMatrix.normalizedTrace_eq_sum, Fin.sum_univ_two]
+    simp [cornerHom]
   rw [heval] at h1
   norm_num at h1
 
