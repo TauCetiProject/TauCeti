@@ -35,7 +35,8 @@ This file records general-purpose facts about open subsets of schemes.
   endomorphism equal to the identity.
 * `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
   preimage under `f'` of an open of the base lying over `W` lies in the preimage under `g'` of
-  `f⁻¹ W`.
+  `f⁻¹ W`; `AlgebraicGeometry.Scheme.Hom.preimage_eq_of_comp_eq` identifies the preimages of an
+  open along the two sides of the square.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -171,6 +172,12 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
   refine (inf_eq_right.mpr ?_).symm
   rw [← Scheme.Hom.comp_preimage, hw, Scheme.Hom.comp_preimage]
   exact f'.preimage_mono h
+
+/-- In a commutative square `g' ≫ f = f' ≫ g`, preimages of opens along its two sides agree. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_of_comp_eq {X' Y Y' : Scheme.{u}}
+    {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X} (h : g' ≫ f = f' ≫ g)
+    (V : Y.Opens) : f' ⁻¹ᵁ g ⁻¹ᵁ V = g' ⁻¹ᵁ f ⁻¹ᵁ V :=
+  (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ V) h).symm
 
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
