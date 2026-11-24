@@ -255,8 +255,9 @@ theorem homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range {j : ℤ}
         (∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ k u) =
       homogeneousLittlewoodPaleyBlock F φ j u := by
   have hN : (0 : ℝ) < 2 ^ N := by positivity
-  rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range,
-    homogeneousLittlewoodPaleyBlock_apply, homogeneousLittlewoodPaleyBlock_apply,
+  rw [← _root_.sum_apply, ← littlewoodPaleyLowPass_def,
+    littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, homogeneousLittlewoodPaleyBlock_apply,
+    homogeneousLittlewoodPaleyBlock_apply,
     ← φ.coe_lowPassSchwartz hN.ne', fourierMultiplierCLM_fourierMultiplierCLM_apply
       (φ.lowPassSchwartz hN.ne').hasTemperateGrowth (φ.hasTemperateGrowth_ofReal_littlewoodPaley j),
     mul_comm, φ.mul_lowPassSchwartz_of_support_subset hN]

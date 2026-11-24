@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
@@ -41,8 +42,10 @@ derivative `2 • reactionBilinear V r`, explicit dimensional operator-norm boun
 `‖reactionTensor r‖ ≤ 5 * (finrank ℝ V) ^ 2 * ‖r‖ ^ 2`, and explicit radius-linear Lipschitz bounds
 on bounded sets.
 
-For algebraic curvature tensors, first Bianchi cancellation implies that `reactionTensor` and
-`reactionBilinear V` preserve all four algebraic curvature symmetries
+`reactionBilinear V` preserves pair antisymmetry and pair interchange
+(`TauCeti.FourTensor.IsBivectorSymmetric.reactionBilinear`). For algebraic curvature tensors,
+first Bianchi cancellation implies that `reactionTensor` and `reactionBilinear V` also preserve the
+first Bianchi identity, hence all four algebraic curvature symmetries
 (`TauCeti.FourTensor.IsAlgebraicCurvature.reactionTensor`, `TauCeti.FourTensor.reactionTensor_mem`),
 and simplifies the Ricci and scalar contractions of `Q(r)` to
 `Ric(Q(r))(u, v) = 2 ∑_pq Ric(r)(b p, b q) r(b p, u, b q, v)` and
@@ -70,6 +73,8 @@ curvature tensor of `S^k × ℝ^(n - k)` obtained by pulling back the constant-c
 
 * `TauCeti.FourTensor.reactionTensor_apply_orthonormalBasis`: basis independence of `reactionTensor`
   across all orthonormal bases of `V`.
+* `TauCeti.FourTensor.IsBivectorSymmetric.reactionBilinear`: `reactionBilinear V` preserves
+  bivector-symmetric four-tensors.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.reactionTensor` and
   `TauCeti.FourTensor.reactionTensor_mem`: `reactionTensor` maps `algebraicCurvatureSubmodule V` to
   itself.
@@ -697,6 +702,31 @@ section AlgebraicCurvature
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- The reaction bilinear map preserves bivector-symmetric four-tensors: if `r` and `s` are
+antisymmetric in each pair and symmetric under interchanging the pairs, so is `Q(r, s)`. -/
+theorem IsBivectorSymmetric.reactionBilinear {r s : FourTensor V} (hr : IsBivectorSymmetric r)
+    (hs : IsBivectorSymmetric s) : IsBivectorSymmetric (FourTensor.reactionBilinear V r s) := by
+  let b := stdOrthonormalBasis ℝ V
+  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
+    simp only [reactionBilinear_apply_orthonormalBasis b]
+  · simp only [hr.antisymm_first v u, hs.antisymm_first v u, neg_mul, Finset.sum_neg_distrib,
+      mul_comm (s _) (r _)]
+    ring
+  · simp only [hr.antisymm_first w z, hs.antisymm_first w z, mul_neg, Finset.sum_neg_distrib,
+      mul_comm (s _) (r _)]
+    ring
+  · simp only [hr.swap_pairs z _ u _, hs.swap_pairs w _ v _, hr.swap_pairs w _ v _,
+      hs.swap_pairs z _ u _, hr.swap_pairs z _ v _, hs.swap_pairs w _ u _, hr.swap_pairs w _ u _,
+      hs.swap_pairs z _ v _]
+    have hc (f : Fin (Module.finrank ℝ V) → Fin (Module.finrank ℝ V) → ℝ) :
+        ∑ p, ∑ q, f q p = ∑ p, ∑ q, f p q := Finset.sum_comm
+    rw [hc fun p q ↦ r ![u, b p, z, b q] * s ![v, b p, w, b q],
+      hc fun p q ↦ s ![u, b p, z, b q] * r ![v, b p, w, b q],
+      hc fun p q ↦ r ![v, b p, z, b q] * s ![u, b p, w, b q],
+      hc fun p q ↦ s ![v, b p, z, b q] * r ![u, b p, w, b q]]
+    simp only [mul_comm (s _) (r _)]
+    ring
+
 private def reactionS₁ (r : FourTensor V) (u v z w : V) : ℝ :=
   let b := stdOrthonormalBasis ℝ V
   ∑ p, ∑ q, r ![u, v, b p, b q] * r ![z, w, b p, b q]
@@ -745,31 +775,13 @@ private theorem two_mul_reactionS₂_sub_eq_neg_reactionS₁ {r : FourTensor V}
 `reactionTensor` preserves pair antisymmetry, pair interchange, and the first Bianchi identity. -/
 theorem IsAlgebraicCurvature.reactionTensor {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     IsAlgebraicCurvature (FourTensor.reactionTensor r) := by
-  have hS₁_first (u v z w : V) : reactionS₁ r v u z w = -reactionS₁ r u v z w := by
-    simp only [reactionS₁, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-      rw [hr.antisymm_first v u]; ring
-  have hS₁_last (u v z w : V) : reactionS₁ r u v w z = -reactionS₁ r u v z w := by
-    simp only [reactionS₁, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-      rw [hr.antisymm_first w z]; ring
-  have hS₂_first (u v z w : V) : reactionS₂ r v u z w = reactionS₂ r u v w z :=
-    Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
-  have hS₁_swap (u v z w : V) : reactionS₁ r z w u v = reactionS₁ r u v z w :=
-    Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
-  have hS₂_swap (u v z w : V) : reactionS₂ r z w u v = reactionS₂ r u v z w := by
-    simp only [reactionS₂]
-    conv_lhs => rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ by
-      rw [hr.swap_pairs z _ u _, hr.swap_pairs w _ v _]
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
-    simp only [reactionTensor_eq_S₁_S₂]
-  · rw [hS₁_first v u, hS₂_first v u z w, hS₂_first v u w z]; ring
-  · rw [hS₁_last]; ring
-  · rw [hS₁_swap u v z w, hS₂_swap u v z w, hS₂_swap v u z w, hS₂_first u v z w]
-  · linear_combination two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr u v z w +
-      two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr v z u w +
-      two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr z u v w
+  have h := reactionBilinear_self r ▸
+    hr.isBivectorSymmetric.reactionBilinear hr.isBivectorSymmetric
+  refine ⟨h.antisymm_first, h.antisymm_last, h.swap_pairs, fun u v z w ↦ ?_⟩
+  simp only [reactionTensor_eq_S₁_S₂]
+  linear_combination two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr u v z w +
+    two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr v z u w +
+    two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr z u v w
 
 /-- `reactionTensor` maps `algebraicCurvatureSubmodule V` into itself. -/
 theorem reactionTensor_mem (r : FourTensor V) (hr : r ∈ algebraicCurvatureSubmodule V) :
