@@ -209,8 +209,8 @@ theorem cylindricalWeight_add_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {
     (hv : 4 ≤ ‖Complex.equivRealProdCLM.symm v‖) :
     cylindricalWeight (v + (c, 0)) ≤ 8 * cylindricalWeight v := by
   set w := Complex.equivRealProdCLM.symm v
-  have hw : Complex.equivRealProdCLM.symm (v + (c, 0)) = w + c := by
-    simp [w, Complex.equivRealProdCLM_symm_apply, Complex.ext_iff]
+  have hw : Complex.equivRealProdCLM.symm (v + (c, 0)) = w + c :=
+    TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero v c
   have hc : ‖(c : ℂ)‖ ≤ 1 := by
     rw [Complex.norm_real, Real.norm_eq_abs, abs_le]
     constructor <;> linarith

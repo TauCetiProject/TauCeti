@@ -55,9 +55,9 @@ on a truncation `S_T`, is controlled by the `L²` norms of `D_u ξ` on `S` and o
 
 In the namespace `TauCeti.SymplecticForm`:
 
-* the end estimate on an output end recentred at `c`,
-  `exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentred`;
-* `exists_forall_le_mul_integral_floerLinearization_add_of_recentred`: the semi-Fredholm estimate
+* the end estimate on an output end recentred at `c`:
+  `exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentered`
+* `exists_forall_le_mul_integral_floerLinearization_add_of_recentered`: the semi-Fredholm estimate
   for data which far out are the pair-of-pants datum on the input ends and its translate by `c` on
   the output end;
 * `exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_add`: the semi-Fredholm
@@ -82,88 +82,35 @@ open Set Function Filter MeasureTheory Real TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology ENNReal NNReal Manifold
 
+/-- Lebesgue measure on the plane is invariant under translations. -/
+private local instance : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
+  rw [Measure.volume_eq_prod]
+  infer_instance
+
 namespace TauCeti
 
 namespace Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {c : ℝ}
 
-/-- Translating by `c ∈ [0, 1]` moves a point of the plane by at most `1`. -/
-private theorem abs_norm_add_sub_norm_le (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (v : ℝ × ℝ) :
-    |‖Complex.equivRealProdCLM.symm (v + (c, 0))‖ - ‖Complex.equivRealProdCLM.symm v‖| ≤ 1 := by
-  have h : Complex.equivRealProdCLM.symm (v + (c, 0)) = Complex.equivRealProdCLM.symm v + c := by
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.ext_iff]
-  rw [h]
-  refine (abs_norm_sub_norm_le _ _).trans ?_
-  rw [add_sub_cancel_left, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hc₀]
-  exact hc₁
+/-- A point of the support of the translate `w ↦ ξ (w + a)` is moved into the support of `ξ` by
+the translation. -/
+private theorem mem_tsupport_comp_add_iff {α : Type*} [Zero α] {ξ : ℝ × ℝ → α} {a v : ℝ × ℝ} :
+    v ∈ tsupport (fun z ↦ ξ (z + a)) ↔ v + a ∈ tsupport ξ :=
+  Set.ext_iff.1 (tsupport_comp_eq_preimage ξ (Homeomorph.addRight a)) v
 
-/-- A point at distance at least `2` from `0` lies in `S`. -/
-private theorem mem_thricePuncturedSphereReal_of_two_le_norm {z : ℝ × ℝ}
-    (hz : 2 ≤ ‖Complex.equivRealProdCLM.symm z‖) : z ∈ thricePuncturedSphereReal := by
-  refine mem_thricePuncturedSphereReal_iff.2 ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
-  · rw [h0, norm_zero] at hz
-    linarith
-  · rw [h1, norm_one] at hz
-    linarith
-
-/-- A point at distance more than `2` from `0` lies in the image of the band `(0, ∞) × [0, 1)`
-under the positive end chart of the output end. -/
-private theorem mem_image_positiveEndChart_inf_of_two_lt_norm {v : ℝ × ℝ}
-    (hv : 2 < ‖Complex.equivRealProdCLM.symm v‖) :
-    v ∈ positiveEndChart inf '' (Ioi 0 ×ˢ Ico 0 1) := by
-  have hv0 : Complex.equivRealProdCLM.symm v ≠ inf.endCenter := by
-    rw [endCenter_inf]
-    exact norm_pos_iff.1 (by linarith)
-  refine ⟨endBandCoord inf v, ⟨?_, (endBandCoord_mem inf v).2⟩,
-    positiveEndChart_endBandCoord inf hv0⟩
-  rw [endBandCoord_apply, mem_Ioi, fst_positiveEndCoord, endSign_inf, neg_one_mul,
-    lt_neg_re_endCoord_inf_iff (by rwa [endCenter_inf] at hv0), mul_zero, Real.exp_zero, mul_one]
-  exact hv
-
-/-- Beyond the height `1` of the output end, points are at distance more than `8` from `0`. -/
-private theorem eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf {z : ℝ × ℝ}
-    (hz : 1 < (positiveEndCoord inf z).1) : 8 < ‖Complex.equivRealProdCLM.symm z‖ := by
-  rw [fst_positiveEndCoord, endSign_inf, neg_one_mul] at hz
-  have hz0 : Complex.equivRealProdCLM.symm z ≠ 0 := by
-    intro h
-    rw [h, ← endCenter_inf, re_endCoord_endCenter] at hz
-    linarith
-  have h := (lt_neg_re_endCoord_inf_iff hz0).1 hz
-  rw [mul_one] at h
-  linarith [fourteen_le_two_mul_exp_two_pi]
-
-/-- Far out on an input end, every member of the input-exchange family with `0 ≤ c ≤ 1` is the
-pair-of-pants datum. -/
-private theorem exchangePerturbation_eq_of_pos_fst_positiveEndCoord {M : Type*}
-    {H : Puncture → ℝ → M → ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {q : Puncture} (hq : q ≠ inf)
-    {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord q z).1) (x : M) :
-    exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x =
-      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
-  rw [fst_positiveEndCoord, endSign_eq_one hq, one_mul] at hz
-  have hlt : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ < 1 / 2 :=
-    not_le.1 fun h ↦ by linarith [re_endCoord_nonpos_of_le_norm_sub_endCenter hq h]
-  have h := norm_add_le (Complex.equivRealProdCLM.symm z - q.endCenter) q.endCenter
-  rw [sub_add_cancel] at h
-  exact exchangePerturbation_of_norm_le hc₀ hc₁ (by linarith [norm_endCenter_le_one q]) x
-
-/-- Beyond the height `1` of the output end, the member `c ∈ [0, 1]` of the input-exchange family
-at `w + c` is the pair-of-pants datum at `w`. -/
-private theorem exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord {M : Type*}
-    {H : Puncture → ℝ → M → ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℝ × ℝ}
-    (hz : 1 < (positiveEndCoord inf z).1) (x : M) :
-    exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x =
-      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
-  have he : Complex.equivRealProdCLM.symm (z + (c, 0)) = Complex.equivRealProdCLM.symm z + c := by
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.ext_iff]
-  rw [he, exchangePerturbation_add hc₀ hc₁
-    (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
-
-/-- Beyond the height `1` of the output end, the diffeomorphism `Φ_c` of `S` is the translation by
-`c` near every point. -/
-private theorem exchangeMap_eventuallyEq_add_of_one_lt {z : ℝ × ℝ}
-    (hz : 1 < (positiveEndCoord inf z).1) : exchangeMap c =ᶠ[𝓝 z] (· + (c, 0)) :=
-  exchangeMap_eventuallyEq_add (eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz)
+/-- If the support of `ξ` lies at distance at least `r` from `0`, then the support of its translate
+`w ↦ ξ (w + c)` by `c ∈ [0, 1]` lies at distance at least `r - 1`. -/
+private theorem sub_one_le_norm_of_mem_tsupport_comp_add (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {α : Type*} [Zero α] {ξ : ℝ × ℝ → α} {r : ℝ}
+    (hξR : ∀ z ∈ tsupport ξ, r ≤ ‖Complex.equivRealProdCLM.symm z‖)
+    {v : ℝ × ℝ} (hv : v ∈ tsupport fun z ↦ ξ (z + (c, 0))) :
+    r - 1 ≤ ‖Complex.equivRealProdCLM.symm v‖ := by
+  have h := hξR _ (mem_tsupport_comp_add_iff.1 hv)
+  rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero] at h
+  have := norm_add_le (Complex.equivRealProdCLM.symm v) (c : ℂ)
+  rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
+  linarith
 
 /-- Beyond the height `1`, a map composed with `Φ_c` and read in the positive end chart `φ'_∞` is
 the map read in the end chart `c + φ'_∞` recentred at `c`, near every point. -/
@@ -215,12 +162,9 @@ private theorem lintegral_le_mul_setLIntegral_image_positiveEndChart_inf_add (hc
     have hd : fderiv ℝ η w = 0 :=
       Function.notMem_support.1 fun h ↦ hw (support_fderiv_subset ℝ h)
     simp [W, image_eq_zero_of_notMem_tsupport hw, hd]
-  have hts : tsupport (fun z ↦ ξ (z + a)) = (· + a) ⁻¹' tsupport ξ :=
-    tsupport_comp_eq_preimage ξ (Homeomorph.addRight a)
   have hR (v : ℝ × ℝ) (hv : v ∈ tsupport fun z ↦ ξ (z + a)) :
       4 ≤ ‖Complex.equivRealProdCLM.symm v‖ := by
-    rw [hts] at hv
-    linarith [hξR _ hv, (abs_le.1 (abs_norm_add_sub_norm_le hc₀ hc₁ v)).2]
+    linarith [sub_one_le_norm_of_mem_tsupport_comp_add hc₀ hc₁ hξR hv]
   -- Translating by `a` costs a factor `8` in the weight, and nothing in the derivatives.
   have htr (v : ℝ × ℝ) : W ξ (v + a) ≤ 8 * W (fun z ↦ ξ (z + a)) v := by
     by_cases hv : v ∈ tsupport fun z ↦ ξ (z + a)
@@ -231,15 +175,12 @@ private theorem lintegral_le_mul_setLIntegral_image_positiveEndChart_inf_add (hc
       have := cylindricalWeight_nonneg v
       nlinarith [mul_le_mul_of_nonneg_right hρ (sq_nonneg ‖ξ (v + a)‖),
         sq_nonneg ‖fderiv ℝ ξ (v + a) (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ (v + a) (0, 1)‖]
-    · rw [hW0 (show v + a ∉ tsupport ξ by rwa [hts] at hv)]
+    · rw [hW0 (mt mem_tsupport_comp_add_iff.2 hv)]
       exact bot_le
   have hsupp : Function.support (W fun z ↦ ξ (z + a)) ⊆
       positiveEndChart inf '' (Ioi 0 ×ˢ Ico 0 1) :=
     fun v hv ↦ mem_image_positiveEndChart_inf_of_two_lt_norm
       (by linarith [hR v (by_contra fun h ↦ hv (hW0 h))])
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
   calc ∫⁻ w, W ξ w = ∫⁻ v, W ξ (v + a) := (lintegral_add_right_eq_self (W ξ) a).symm
     _ ≤ ∫⁻ v, 8 * W (fun z ↦ ξ (z + a)) v := lintegral_mono htr
     _ = _ := by
@@ -259,12 +200,14 @@ theorem setIntegral_sobolevDensity_comp_positiveEndChart_inf_le (hc₀ : 0 ≤ c
         sobolevDensity ((fun z ↦ ξ (z + (c, 0))) ∘ positiveEndChart inf) ζ := by
   set ξ' : ℝ × ℝ → V := fun z ↦ ξ (z + (c, 0))
   have hξ' : ContDiff ℝ 1 ξ' := hξ.comp (contDiff_id.add contDiff_const)
-  have hts : tsupport ξ' = (· + (c, 0)) ⁻¹' tsupport ξ :=
-    tsupport_comp_eq_preimage ξ (Homeomorph.addRight (c, 0))
-  have hξ'S : tsupport ξ' ⊆ thricePuncturedSphereReal := fun v hv ↦ by
-    rw [hts] at hv
-    exact mem_thricePuncturedSphereReal_of_two_le_norm
-      (by linarith [hξR _ hv, (abs_le.1 (abs_norm_add_sub_norm_le hc₀ hc₁ v)).2])
+  have hξ'S : tsupport ξ' ⊆ thricePuncturedSphereReal := fun v hv ↦
+    mem_thricePuncturedSphereReal_of_two_le_norm
+      (by linarith [sub_one_le_norm_of_mem_tsupport_comp_add hc₀ hc₁ hξR hv])
+  have h320 : (2 : ℝ≥0∞) * (8 * ENNReal.ofReal (20 * π ^ 2)) = ENNReal.ofReal (320 * π ^ 2) := by
+    rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_ofNat 8, ← ENNReal.ofReal_mul (by norm_num),
+      ← ENNReal.ofReal_mul (by norm_num)]
+    congr 1
+    ring
   rw [← ENNReal.ofReal_le_ofReal_iff (mul_nonneg (by positivity) (setIntegral_nonneg
       (measurableSet_Ioi.prod measurableSet_Icc) fun ζ _ ↦ sobolevDensity_nonneg _ ζ)),
     ofReal_setIntegral_sobolevDensity_comp_positiveEndChart inf hξ hξc fun z hz ↦
@@ -291,10 +234,8 @@ theorem setIntegral_sobolevDensity_comp_positiveEndChart_inf_le (hc₀ : 0 ≤ c
         exact lintegral_image_positiveEndChart_le inf measurableSet_Ioi (fun s hs ↦ le_of_lt hs)
           fun ζ _ ↦ (hξ'.differentiable one_ne_zero) _
     _ = _ := by
-        rw [← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_ofNat 8,
-          ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_mul (by norm_num)]
-        norm_num
-        ring_nf
+        rw [← h320]
+        ring
 
 end Floer
 
@@ -417,8 +358,6 @@ private theorem integral_norm_floerLinearization_comp_exchangeMap_sq (ω : Sympl
         (u ∘ exchangeMap c) (fun z ↦ ξ (z + (c, 0))) z‖ ^ 2 =
       ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
         Ks Kt u ξ z‖ ^ 2 := by
-  have hts : tsupport (fun z ↦ ξ (z + (c, 0))) = (· + (c, 0)) ⁻¹' tsupport ξ :=
-    tsupport_comp_eq_preimage ξ (Homeomorph.addRight (c, 0))
   have hD (z : ℝ × ℝ) : ω.floerLinearization
       (fun w y ↦ (J (exchangeMap c w) y).toLinearMap.toContinuousLinearMap)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -434,11 +373,7 @@ private theorem integral_norm_floerLinearization_comp_exchangeMap_sq (ω : Sympl
       rw [← ω.floerLinearization_comp_add_right]
       simp only [floerLinearization_def, hu₁.fderiv_eq, hu₁.eq_of_nhds, hΦz.eq_of_nhds, hKs, hKt]
     · rw [ω.floerLinearization_of_notMem_tsupport _ _ _ _ hz,
-        ω.floerLinearization_of_notMem_tsupport _ _ _ _ (show z + (c, 0) ∉ tsupport ξ by
-          rwa [hts] at hz)]
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
+        ω.floerLinearization_of_notMem_tsupport _ _ _ _ (mt mem_tsupport_comp_add_iff.2 hz)]
   simp_rw [hD]
   exact integral_add_right_eq_self (fun z ↦ ‖ω.floerLinearization
     (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) (c, 0)
@@ -460,7 +395,7 @@ for the linearized Floer operator `D_u` of the data `(J, K_s, K_t)`, with the en
 standard positive end chart `φ'_∞`. The members of the input-exchange family
 `TauCeti.Floer.exchangePerturbation` are such data. -/
 theorem
-    exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentred
+    exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentered
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {L : ℝ≥0}
     (hX : LipschitzWith L (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H inf)))
@@ -507,20 +442,13 @@ theorem
   have hnorm (z : ℝ × ℝ) (hz : z ∈ tsupport ξ) :
       2 * Real.exp (2 * π * (R₃ + 1)) < ‖Complex.equivRealProdCLM.symm z‖ := by
     obtain ⟨hzS, hzR⟩ := hξR hz
-    have hz0 : Complex.equivRealProdCLM.symm z ≠ 0 := (mem_thricePuncturedSphereReal_iff.1 hzS).1
-    rw [fst_positiveEndCoord, endSign_inf, neg_one_mul] at hzR
-    exact (lt_neg_re_endCoord_inf_iff hz0).1 hzR
+    exact (lt_fst_positiveEndCoord_inf_iff (mem_thricePuncturedSphereReal_iff.1 hzS).1).1 hzR
   have hfar (v : ℝ × ℝ) (hv : v ∈ tsupport fun z ↦ ξ (z + (c, 0))) :
       v ∈ thricePuncturedSphereReal ∧ R₃ < (positiveEndCoord inf v).1 := by
-    have hts : tsupport (fun z ↦ ξ (z + (c, 0))) = (· + (c, 0)) ⁻¹' tsupport ξ :=
-      tsupport_comp_eq_preimage ξ (Homeomorph.addRight (c, 0))
-    rw [hts] at hv
     have hv' : 2 * Real.exp (2 * π * R₃) < ‖Complex.equivRealProdCLM.symm v‖ := by
-      linarith [hnorm _ hv, (abs_le.1 (abs_norm_add_sub_norm_le hc₀ hc₁ v)).2]
-    have hv0 : Complex.equivRealProdCLM.symm v ≠ 0 := norm_pos_iff.1 (by linarith)
-    refine ⟨mem_thricePuncturedSphereReal_of_two_le_norm (by linarith), ?_⟩
-    rw [fst_positiveEndCoord, endSign_inf, neg_one_mul]
-    exact (lt_neg_re_endCoord_inf_iff hv0).2 hv'
+      linarith [sub_one_le_norm_of_mem_tsupport_comp_add hc₀ hc₁ (fun z hz ↦ (hnorm z hz).le) hv]
+    exact ⟨mem_thricePuncturedSphereReal_of_two_le_norm (by linarith),
+      (lt_fst_positiveEndCoord_inf_iff (norm_pos_iff.1 (by linarith))).2 hv'⟩
   have hest' := hest (ξ := fun z ↦ ξ (z + (c, 0))) (hξ.comp (contDiff_id.add contDiff_const))
     (hξc.comp_homeomorph (Homeomorph.addRight (c, 0))) fun v hv ↦
       ⟨(hfar v hv).1, (le_max_left _ _).trans_lt (hfar v hv).2⟩
@@ -554,7 +482,7 @@ the standard positive end charts `φ'_q`. For `c = 0` these are the data of
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`; the
 members of the input-exchange family are such data for every `c ∈ [0, 1]`
 (`exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_add`). -/
-theorem exists_forall_le_mul_integral_floerLinearization_add_of_recentred
+theorem exists_forall_le_mul_integral_floerLinearization_add_of_recentered
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
     {L : Puncture → ℝ≥0}
@@ -612,7 +540,7 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_recentred
   -- The end estimates: on the input ends that of the pair of pants, on the output end that of
   -- the recentred end.
   have hinf :=
-    exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentred
+    exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_recentered
       ω hH hHs hc₀ hc₁ (hX inf) (hx inf) (hnd inf) (hJe inf) (hJex inf) hJeq_inf hK_inf hJ hu
       hF_inf hux_inf hδ_inf
   have hend (q : Puncture) : ∃ C R : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
@@ -722,7 +650,7 @@ theorem exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_ad
           fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
     have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ (h1 hz)
     exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
-  exact ω.exists_forall_le_mul_integral_floerLinearization_add_of_recentred hH hHs hc₀ hc₁ hX hx
+  exact ω.exists_forall_le_mul_integral_floerLinearization_add_of_recentered hH hHs hc₀ hc₁ hX hx
     hnd hJe hJex (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
     (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ)) hK hK_inf hJ
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
