@@ -131,20 +131,25 @@ private theorem exists_norm_three_Gamma_le {a b : ℂ} {σ : ℝ}
   congr 2
   ring
 
+/-- Continuity in `y` of `Γ(a + (σ + i y))` along a pole-free vertical line. -/
+private theorem continuous_Gamma_add_contour {a : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (a + ((σ : ℂ) + y * I)) := by
+  simpa only [← add_assoc] using continuous_Gamma_add_mul_I (w := a + σ) (by simpa using ha)
+
+/-- Continuity in `y` of `Γ(-(σ + i y))` along a pole-free vertical line. -/
+private theorem continuous_Gamma_neg_contour {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ n) :
+    Continuous fun y : ℝ ↦ Gamma (-((σ : ℂ) + y * I)) := by
+  convert continuous_Gamma_sub_mul_I (w := -σ) (fun n hn ↦ hσ n (by simp at hn; linarith))
+    using 3 with y
+  ring
+
 /-- Continuity in `y` of the three-Gamma factor `Γ(a + s) Γ(b + s) Γ(-s)` in DLMF 15.6.6. -/
 private theorem continuous_three_Gamma {a b : ℂ} {σ : ℝ}
     (ha : ∀ n : ℕ, a.re + σ ≠ -n) (hb : ∀ n : ℕ, b.re + σ ≠ -n) (hσ : ∀ n : ℕ, σ ≠ n) :
     Continuous fun y : ℝ ↦
-      Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) * Gamma (-(σ + y * I)) := by
-  have hGa : Continuous fun y : ℝ ↦ Gamma (a + (σ + y * I)) := by
-    simpa only [← add_assoc] using continuous_Gamma_add_mul_I (w := a + σ) (by simpa using ha)
-  have hGb : Continuous fun y : ℝ ↦ Gamma (b + (σ + y * I)) := by
-    simpa only [← add_assoc] using continuous_Gamma_add_mul_I (w := b + σ) (by simpa using hb)
-  have hGs : Continuous fun y : ℝ ↦ Gamma (-(σ + y * I)) := by
-    convert continuous_Gamma_sub_mul_I (w := -σ) (fun n hn ↦ hσ n (by simp at hn; linarith))
-      using 3 with y
-    ring
-  exact (hGa.mul hGb).mul hGs
+      Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) * Gamma (-(σ + y * I)) :=
+  ((continuous_Gamma_add_contour ha).mul (continuous_Gamma_add_contour hb)).mul
+    (continuous_Gamma_neg_contour hσ)
 
 /-- Continuity in `y` of the integrand of the Mellin–Barnes representation 15.6.6. -/
 private theorem continuous_mellinBarnesIntegrand {a b : ℂ} (c z : ℂ) (hz : -z ∈ slitPlane)
@@ -398,16 +403,10 @@ private theorem integrable_beta_mul_mellinBarnes {a w : ℂ} {σ u₀ v₀ : ℝ
     Integrable (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) *
         (Gamma (a + (σ + p.2 * I)) * Gamma (-(σ + p.2 * I)) * w ^ ((σ : ℂ) + p.2 * I)))
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
-  have hG1 : Continuous fun y : ℝ ↦ Gamma (a + ((σ : ℂ) + y * I)) := by
-    have harg (y : ℝ) : a + ((σ : ℂ) + y * I) = (a + σ) + y * I := by ring
-    simpa only [harg] using
-      continuous_Gamma_add_mul_I (w := a + σ) (by simpa [add_re] using haσ_ne)
-  have hG2 : Continuous fun y : ℝ ↦ Gamma (-((σ : ℂ) + y * I)) := by
-    have harg (y : ℝ) : -((σ : ℂ) + y * I) = ((-σ : ℝ) : ℂ) - y * I := by push_cast; ring
-    simpa only [harg] using
-      continuous_Gamma_sub_mul_I (w := (-σ : ℝ)) (by simpa using hσ_ne)
   exact integrable_beta_mul_profile hu_cont hv_cont hu_re hv_re hu₀ hv₀
-    ((hG1.mul hG2).mul (continuous_const.cpow (by fun_prop) (fun _ ↦ hw)))
+    (((continuous_Gamma_add_contour haσ_ne).mul
+      (continuous_Gamma_neg_contour (by simpa using hσ_ne))).mul
+      (continuous_const.cpow (by fun_prop) (fun _ ↦ hw)))
     (integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ_ne haσ_ne hw)
 
 /-- Shared Fubini swap and inner Beta evaluation for Euler–Mellin–Barnes identities: if on `(0, 1)`
