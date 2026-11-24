@@ -31,7 +31,7 @@ module it is degree zero and the trace is zero.
 
 ## Main results
 
-* `ExteriorAlgebra.derivationOfEnd_coe`: on `⋀[K]^d V` the derivation of the exterior algebra
+* `ExteriorAlgebra.derivationOfEnd_apply_coe`: on `⋀[K]^d V` the derivation of the exterior algebra
   induced by `f` is `exteriorPower.lieMap d f`.
 * `exteriorPower.lieMap_apply_ιMulti`: the action on a decomposable wedge is the sum of the terms
   obtained by applying the endomorphism to one factor.
@@ -67,7 +67,8 @@ noncomputable def lieMap (d : ℕ) :
 
 /-- **On an exterior power, the derivation induced by `f` is the infinitesimal action**
 `exteriorPower.lieMap d f`. -/
-theorem _root_.ExteriorAlgebra.derivationOfEnd_coe (f : Module.End K V) {d : ℕ} (x : ⋀[K]^d V) :
+theorem _root_.ExteriorAlgebra.derivationOfEnd_apply_coe (f : Module.End K V) {d : ℕ}
+    (x : ⋀[K]^d V) :
     (ExteriorAlgebra.derivationOfEnd K V f : Module.End K (ExteriorAlgebra K V)) x =
       lieMap d f x := by
   rfl
@@ -78,7 +79,7 @@ theorem lieMap_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     lieMap d f (ιMulti K d v) =
       ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) :=
   Subtype.ext <| by
-    simp [← ExteriorAlgebra.derivationOfEnd_coe, ExteriorAlgebra.derivationOfEnd_ιMulti]
+    simp [← ExteriorAlgebra.derivationOfEnd_apply_coe, ExteriorAlgebra.derivationOfEnd_ιMulti]
 
 /-- On two-vectors an endomorphism acts by the derivation rule `f (u ∧ w) = f u ∧ w + u ∧ f w`. -/
 theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
@@ -92,7 +93,7 @@ theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[
     lieMap (k + l) f (wedge K V k l x y) =
       wedge K V k l (lieMap k f x) y + wedge K V k l x (lieMap l f y) :=
   Subtype.ext <| by
-    simp only [← ExteriorAlgebra.derivationOfEnd_coe, coe_wedge, Submodule.coe_add,
+    simp only [← ExteriorAlgebra.derivationOfEnd_apply_coe, coe_wedge, Submodule.coe_add,
       TauCeti.derivationLieAlgebra.leibniz]
 
 /-- An endomorphism of a free module acts in degree `Module.finrank K V` by multiplication by its
