@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
@@ -53,7 +53,9 @@ smaller: over `𝔽₂` with `q = x²` the polar form is zero while `O(q)` is `�
 * `TauCeti.QuadraticOrthogonal.groupScheme` and `TauCeti.QuadraticOrthogonal.inclusion`: the
   orthogonal group scheme and its closed immersion into `GLₙ`.
 * `TauCeti.QuadraticOrthogonal.pointsSubgroup` and `TauCeti.QuadraticOrthogonal.pointsMulEquiv`:
-  the points of `O(q)` are the invertible matrices preserving `q_A`.
+  the points of `O(q)` are the invertible matrices preserving `q_A`; by
+  `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` these are the matrices
+  cut out by the defining Hopf ideal.
 * `TauCeti.QuadraticOrthogonal.pointsMulEquivOrthogonalGroup`: the points of `O(q)` are
   `TauCeti.QuadraticMap.orthogonalGroup (baseChangeForm q A)`.
 
@@ -421,19 +423,11 @@ section Points
 variable (A : Type w) [CommRing A] [Algebra R A]
 
 /-- **The group `O(q)(A)`**: invertible matrices `g` with `q_A(g x) = q_A(x)` for every
-`x ∈ Aⁿ`. -/
-def pointsSubgroup : Subgroup (GL (Fin n) A) where
-  carrier := {g | ∀ x, baseChangeForm q A ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) =
-    baseChangeForm q A x}
-  one_mem' x := by simp
-  mul_mem' {g h} hg hh x := by
-    simp only [Set.mem_ofPred_eq, Units.val_mul, ← Matrix.mulVec_mulVec] at hg hh ⊢
-    rw [hg, hh]
-  inv_mem' {g} hg x := by
-    simp only [Set.mem_ofPred_eq] at hg ⊢
-    have h := hg (((g⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *ᵥ x)
-    rwa [Matrix.mulVec_mulVec, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.one_mulVec, eq_comm] at h
+`x ∈ Aⁿ`, the preimage of `TauCeti.QuadraticMap.orthogonalGroup (baseChangeForm q A)` under the
+standard-basis identification of invertible matrices with linear automorphisms of `Aⁿ`. -/
+noncomputable def pointsSubgroup : Subgroup (GL (Fin n) A) :=
+  (QuadraticMap.orthogonalGroup (baseChangeForm q A)).comap
+    (Pi.basisFun A (Fin n)).toGL.symm.toMonoidHom
 
 variable {R n q A}
 
@@ -441,8 +435,9 @@ variable {R n q A}
 @[simp]
 theorem mem_pointsSubgroup_iff (g : GL (Fin n) A) :
     g ∈ pointsSubgroup R n q A ↔
-      ∀ x, baseChangeForm q A ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) = baseChangeForm q A x :=
-  Iff.rfl
+      ∀ x, baseChangeForm q A ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) = baseChangeForm q A x := by
+  rw [pointsSubgroup, Subgroup.mem_comap, QuadraticMap.mem_orthogonalGroup_iff]
+  simp only [MulEquiv.coe_toMonoidHom, Pi.basisFun_toGL_symm_apply]
 
 /-- A matrix preserves `q_A` exactly when `gᵀ M g - M` is alternating. -/
 theorem mem_pointsSubgroup_iff_isAltMod (g : GL (Fin n) A) :
@@ -457,39 +452,27 @@ theorem mem_pointsSubgroup_iff_isAltMod (g : GL (Fin n) A) :
 
 variable (R n q A)
 
-/-- **The ambient membership criterion**: an ambient point of `GLₙ` belongs to the subgroup cut
-out by the Hopf ideal of `O(q)` exactly when its matrix preserves `q_A`. -/
-theorem mem_definingPointsSubgroup_iff
-    (g : HopfAlgebra.points (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup
-        (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n q)
-        (CommAlgCat.of R A) ↔
-      GeneralLinear.pointsMulEquiv n g ∈ pointsSubgroup R n q A := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_pointsSubgroup_iff_isAltMod,
-    GeneralLinear.pointsMulEquiv_apply,
+/-- **The ambient membership criterion**: the subgroup of `GLₙ(A)` cut out by the Hopf ideal of
+`O(q)` is `O(q)(A)`. -/
+theorem hopfIdealPointsSubgroup_definingHopfIdeal :
+    GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n q) A =
+      pointsSubgroup R n q A := by
+  ext g
+  obtain ⟨p, rfl⟩ := (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).surjective g
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, MulEquiv.symm_apply_apply,
+    mem_pointsSubgroup_iff_isAltMod, GeneralLinear.pointsMulEquiv_apply,
     ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, ← relationMatrix_map,
     ← definingHopfIdeal_toIdeal_le_ker_iff]
   exact ⟨fun h x hx => h x (HopfIdeal.mem_toIdeal.mp hx), fun h x hx => h hx⟩
-
-/-- The subgroup of ambient points cut out by the Hopf ideal of `O(q)` is `O(q)(A)`. -/
-private theorem map_definingPointsSubgroup :
-    (CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n q) (CommAlgCat.of R A)).map
-        (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).toMonoidHom =
-      pointsSubgroup R n q A := by
-  ext g
-  rw [Subgroup.mem_map_equiv, mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply]
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `O(q)` is `O(q)(A)`. -/
 noncomputable def pointsMulEquiv :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A) ≃*
       pointsSubgroup R n q A :=
-  ((CommHopfAlgCat.quotientPointsSubgroupNatIso (GeneralLinear.coordinateHopfAlgebra R n)
-      (definingHopfIdeal R n q)).app (CommAlgCat.of R A)).groupIsoToMulEquiv.trans
-    (((GeneralLinear.pointsMulEquiv n).subgroupMap _).trans
-      (MulEquiv.subgroupCongr (map_definingPointsSubgroup R n q A)))
+  (GeneralLinear.hopfIdealPointsSubgroupMulEquiv n (definingHopfIdeal R n q)
+      (CommAlgCat.of R A)).trans
+    (MulEquiv.subgroupCongr (hopfIdealPointsSubgroup_definingHopfIdeal R n q A))
 
 /-- Under the points identifications, the quotient-point inclusion is the inclusion of `O(q)(A)`
 into `GLₙ(A)`. -/
@@ -498,42 +481,23 @@ theorem pointsMulEquiv_coe
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R n)
           (definingHopfIdeal R n q) (CommAlgCat.of R A) f) =
-      (pointsMulEquiv R n q A f : GL (Fin n) A) := by
-  have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n q) (CommAlgCat.of R A) f
-  exact congrArg (GeneralLinear.pointsMulEquiv n) (congrArg Subtype.val hcomponent).symm
+      (pointsMulEquiv R n q A f : GL (Fin n) A) :=
+  (GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply n (definingHopfIdeal R n q)
+    (CommAlgCat.of R A) f).symm
 
 /-! ### Comparison with the orthogonal group of `q_A` -/
 
-/-- Invertible matrices are linear automorphisms of `Aⁿ`, acting on column vectors. -/
-noncomputable def toLinearEquiv : GL (Fin n) A ≃* ((Fin n → A) ≃ₗ[A] (Fin n → A)) :=
-  Matrix.GeneralLinearGroup.toLin.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv _ _)
-
-variable {n A} in
-/-- The linear automorphism of an invertible matrix is matrix-vector multiplication. -/
-@[simp]
-theorem toLinearEquiv_apply (g : GL (Fin n) A) (x : Fin n → A) :
-    toLinearEquiv n A g x = (g : Matrix (Fin n) (Fin n) A) *ᵥ x := by
-  simp [toLinearEquiv, Matrix.GeneralLinearGroup.toLin]
-
-/-- `O(q)(A)` corresponds to the orthogonal group of `q_A` under the linear automorphisms of
-invertible matrices. -/
-theorem map_pointsSubgroup_toLinearEquiv :
-    (pointsSubgroup R n q A).map (toLinearEquiv n A).toMonoidHom =
-      QuadraticMap.orthogonalGroup (baseChangeForm q A) := by
-  ext f
-  rw [Subgroup.mem_map_equiv, mem_pointsSubgroup_iff, QuadraticMap.mem_orthogonalGroup_iff]
-  refine forall_congr' fun x => ?_
-  rw [← toLinearEquiv_apply, MulEquiv.apply_symm_apply]
-
 /-- **The points of `O(q)` are the orthogonal group of `q_A`**: the group of algebra-valued
 points of the coordinate Hopf algebra of `O(q)` is
-`TauCeti.QuadraticMap.orthogonalGroup (baseChangeForm q A)`. -/
+`TauCeti.QuadraticMap.orthogonalGroup (baseChangeForm q A)`, through the standard-basis
+identification of invertible matrices with linear automorphisms of `Aⁿ`. -/
 noncomputable def pointsMulEquivOrthogonalGroup :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A) ≃*
       QuadraticMap.orthogonalGroup (baseChangeForm q A) :=
-  (pointsMulEquiv R n q A).trans (((toLinearEquiv n A).subgroupMap _).trans
-    (MulEquiv.subgroupCongr (map_pointsSubgroup_toLinearEquiv R n q A)))
+  (pointsMulEquiv R n q A).trans
+    (((Pi.basisFun A (Fin n)).toGL.symm.subgroupMap _).trans
+      (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective
+        (Pi.basisFun A (Fin n)).toGL.symm.surjective _)))
 
 end Points
 

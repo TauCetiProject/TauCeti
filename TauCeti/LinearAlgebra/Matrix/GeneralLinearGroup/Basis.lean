@@ -29,13 +29,15 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
 * `Module.Basis.finTwoProd_toGL_symm_apply`: in the standard basis of `R × R`, an invertible
   `2 × 2` matrix acts by multiplication of column vectors.
+* `Pi.basisFun_toGL_symm_apply`: in the standard basis of `ι → R`, an invertible matrix acts by
+  multiplication of column vectors.
 * `Module.Basis.fin_two_basis_generators`: an invertible two-by-two change of basis has
   nonzero first generator and generates the whole module.
 -/
 
 public section
 
-open scoped MatrixGroups
+open scoped Matrix MatrixGroups
 
 namespace Module.Basis
 
@@ -95,6 +97,15 @@ theorem finTwoProd_toGL_symm_apply {R : Type*} [CommRing R] (g : GL (Fin 2) R) (
   rw [MulEquiv.symm_apply_apply, hxy, map_add, map_smul, map_smul]
   ext <;> simp [LinearMap.toMatrix_apply, mul_comm]
 
+/-- In the standard basis of `ι → k`, the linear automorphism of an invertible matrix `g` is
+multiplication of column vectors by `g`. -/
+@[simp]
+theorem _root_.Pi.basisFun_toGL_symm_apply (g : GL ι k) (x : ι → k) :
+    (Pi.basisFun k ι).toGL.symm g x = (g : Matrix ι ι k) *ᵥ x := by
+  obtain ⟨f, rfl⟩ := (Pi.basisFun k ι).toGL.surjective g
+  rw [MulEquiv.symm_apply_apply, coe_toGL, LinearMap.toMatrix_eq_toMatrix',
+    LinearMap.toMatrix'_mulVec]
+  rfl
 
 /-- An invertible change of a two-element basis has nonzero first generator and
 still generates every element over the coefficient ring. -/
