@@ -75,7 +75,7 @@ theorem le_norm_smul_one (f : Lp ℝ ∞ μ) : f ≤ ‖f‖ • 1 := by
 /-- A nonnegative real `L∞` class `f` lies within `‖f‖` of `‖f‖` times the constant one. -/
 theorem norm_norm_smul_one_sub_le_of_nonneg {f : Lp ℝ ∞ μ} (hf : 0 ≤ f) :
     ‖‖f‖ • 1 - f‖ ≤ ‖f‖ := by
-  refine Lp.norm_top_le_of_ae_bound (norm_nonneg f) ?_
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg f) ?_
   filter_upwards [Lp.coeFn_sub (‖f‖ • 1) f, Lp.coeFn_smul ‖f‖ (1 : Lp ℝ ∞ μ),
     coeFn_one (E := ℝ) (μ := μ), (Lp.coeFn_nonneg f).2 hf, Lp.ae_norm_le_norm_top f]
     with x hsub hsmul h1 h0 hx

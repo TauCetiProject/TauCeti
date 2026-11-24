@@ -44,6 +44,9 @@ and `b` have a common refinement, and `G'` acts simply transitively on these cla
   `NonabelianH1.pullback_map` and `NonabelianH1.map_pullback` with `NonabelianH1.map`, and
   `NonabelianH1.pullback_eq_map`: along the identity functor, the pullback is `NonabelianH1.map`,
   so that `NonabelianH1.pullback_id` holds.
+* `CategoryTheory.Sheaf.NonabelianH1.pullback_connecting_of_comp_eq`: the pullback of the torsor
+  of lifts of a global section, for a morphism of group extensions to the pushforward of an
+  extension on `D`, is the torsor of lifts of the corresponding global section.
 
 ## References
 
@@ -527,6 +530,77 @@ end Construction
 
 end Torsor
 
+namespace IsGroupExtension
+
+section Pushforward
+
+variable {u : C ⥤ D} [u.IsContinuous J K] {A B Q : Sheaf J GrpCat.{w}} {i : A ⟶ B} {π : B ⟶ Q}
+  (hE : IsGroupExtension i π) (q : (Q.obj ⋙ forget GrpCat).sections)
+  {A' B' Q' : Sheaf K GrpCat.{w}} {i' : A' ⟶ B'} {π' : B' ⟶ Q'} (hE' : IsGroupExtension i' π')
+  (β : B ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj B')
+  (γ : Q ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj Q')
+  (hγ : β ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map π' = π ≫ γ)
+  (q' : (Q'.obj ⋙ forget GrpCat).sections)
+  (hq : ∀ U, γ.hom.app U (q.val U) = q'.val (u.op.obj U))
+
+include hγ hq in
+/-- Applying `β` to a local lift of `q` over `U` gives a local lift of `q'` over `u(U)`. -/
+private lemma app_liftsObjEquiv_val (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+    π'.hom.app (u.op.obj U) (β.hom.app U (hE.liftsObjEquiv q U b).val) = q'.val (u.op.obj U) := by
+  have := ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
+    (hE.liftsObjEquiv q U b).val
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply, (hE.liftsObjEquiv q U b).property, hq] at this
+  exact this
+
+include β γ hγ hq in
+/-- The variant of `IsGroupExtension.liftsMap` for an extension on `D` pushed forward along `u`:
+a commuting square from the projection of `hE` to the pushforward of the projection of `hE'` sends
+local lifts of `q` over `U` to local lifts of `q'` over `u(U)`, by applying `β`. The pushforward of
+`hE'` need not be a group extension. -/
+def liftsPushforwardMap :
+    (hE.lifts q).sheaf ⟶ (u.sheafPushforwardContinuous (Type w) J K).obj (hE'.lifts q').sheaf :=
+  ObjectProperty.homMk
+    { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' (u.op.obj U)).symm
+        ⟨_, hE.app_liftsObjEquiv_val q β γ hγ q' hq U b⟩
+      naturality U V f := by
+        ext b
+        refine (hE'.liftsObjEquiv q' _).injective (Subtype.ext ?_)
+        -- Both sides are `β` applied to the restriction of the lift `b`.
+        refine (congrArg Subtype.val (Equiv.apply_symm_apply _ _)).trans ?_
+        refine (congrArg (β.hom.app V) (hE.liftsObjEquiv_map q f b)).trans
+          ((NatTrans.naturality_apply β.hom f _).trans ?_)
+        exact ((hE'.liftsObjEquiv_map q' (u.map f.unop).op _).trans
+          (congrArg _ (congrArg Subtype.val (Equiv.apply_symm_apply _
+            ⟨_, hE.app_liftsObjEquiv_val q β γ hγ q' hq U b⟩)))).symm }
+
+/-- On local lifts, `liftsPushforwardMap` applies `β` to the underlying section. -/
+@[simp]
+lemma liftsObjEquiv_liftsPushforwardMap_hom_app (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE'.liftsObjEquiv q' (op (u.obj U.unop))
+        ((hE.liftsPushforwardMap q hE' β γ hγ q' hq).hom.app U b)).val =
+      β.hom.app U (hE.liftsObjEquiv q U b).val :=
+  congrArg Subtype.val (Equiv.apply_symm_apply _ _)
+
+/-- If the square on kernels also commutes, `liftsPushforwardMap` is equivariant for the
+corresponding map `α` of kernels. -/
+lemma liftsPushforwardMap_smul (α : A ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj A')
+    (hα : i ≫ β = α ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map i')
+    (U : Cᵒᵖ) (a : A.obj.obj U) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE.liftsPushforwardMap q hE' β γ hγ q' hq).hom.app U (a • b) =
+      α.hom.app U a • (hE.liftsPushforwardMap q hE' β γ hγ q' hq).hom.app U b := by
+  refine (hE'.liftsObjEquiv q' (op (u.obj U.unop))).injective (Subtype.ext ?_)
+  have := ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hα) U) a
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply] at this
+  rw [liftsObjEquiv_liftsPushforwardMap_hom_app, liftsObjEquiv_smul, map_mul, this,
+    ← liftsObjEquiv_liftsPushforwardMap_hom_app]
+  exact (hE'.liftsObjEquiv_smul q' (α.hom.app U a) _).symm
+
+end Pushforward
+
+end IsGroupExtension
+
 namespace NonabelianH1
 
 variable {u : C ⥤ D} [u.IsContinuous J K] [RepresentablyFlat u]
@@ -658,6 +732,27 @@ lemma pullback_eq_map [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (T
 lemma pullback_id [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)] :
     pullback ((Functor.sheafPushforwardContinuousId GrpCat.{w} J).inv.app G) = id := by
   simp
+
+/-- The pullback commutes with the connecting maps of group extensions. Let `1 → A → B → Q → 1` be
+an extension of sheaves of groups on `C` and `1 → A' → B' → Q' → 1` one on `D`, with morphisms
+`α`, `β`, `γ` to the pushforwards of `A'`, `B'`, `Q'` compatible with the maps of the extensions.
+If a global section `q'` of `Q'` restricts over each `u(U)` to the image of a global section `q`
+of `Q` under `γ`, then pulling back the torsor of lifts of `q` along `α` gives the torsor of lifts
+of `q'`. -/
+theorem pullback_connecting_of_comp_eq {A B Q : Sheaf J GrpCat.{w}} {i : A ⟶ B} {π : B ⟶ Q}
+    (hE : IsGroupExtension i π) {A' B' Q' : Sheaf K GrpCat.{w}} {i' : A' ⟶ B'} {π' : B' ⟶ Q'}
+    (hE' : IsGroupExtension i' π')
+    (α : A ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj A')
+    (β : B ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj B')
+    (γ : Q ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj Q')
+    (hα : i ≫ β = α ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map i')
+    (hγ : β ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map π' = π ≫ γ)
+    (q : (Q.obj ⋙ forget GrpCat).sections) (q' : (Q'.obj ⋙ forget GrpCat).sections)
+    (hq : ∀ U, γ.hom.app U (q.val U) = q'.val (u.op.obj U)) :
+    pullback α (connecting hE q) = connecting hE' q' := by
+  rw [connecting_def, connecting_def]
+  exact pullback_mk_eq_mk (hE.liftsPushforwardMap q hE' β γ hγ q' hq)
+    (hE.liftsPushforwardMap_smul q hE' β γ hγ q' hq α hα)
 
 end NonabelianH1
 

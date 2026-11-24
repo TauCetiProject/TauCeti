@@ -43,7 +43,13 @@ Inside `V`, a symplectic subspace `L` preserved by every `A_{Q i}` splits `V = L
 nondegenerate (`TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict`,
 `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_orthogonal`). For a form `P` in
 the span of the family and an even polynomial `p`, the vectors killed by a power of `p(A_P)` form
-such a subspace (`IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`).
+such a subspace (`IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`). The
+Hamiltonian endomorphism of the restriction of a form to such a subspace is the restriction of its
+Hamiltonian endomorphism (`TauCeti.SymplecticForm.hamiltonianEnd_comp_subtype`). Since `A_P` is
+semisimple, `p(A_P)` vanishes on that subspace
+(`Module.End.IsSemisimple.aeval_apply_eq_zero_of_mem_maxGenEigenspace`), and polynomials in `A_P`
+commute with the Hamiltonian endomorphisms of the family
+(`TauCeti.SymplecticForm.commute_aeval_hamiltonianEnd_of_mem_span`).
 
 On a product of two symplectic planes, any two nondegenerate forms on the planes, extended by zero,
 form a nondegenerate family
@@ -65,6 +71,8 @@ form a nondegenerate family
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`:
   restrictions of a nondegenerate family to the generalized eigenspaces cut out by even
   polynomials in one of its Hamiltonian endomorphisms are nondegenerate.
+* `TauCeti.SymplecticForm.commute_aeval_hamiltonianEnd_of_mem_span`: for `P` and `R` in the span
+  of a Poisson-commuting family, polynomials in `A_P` commute with `A_R`.
 
 ## References
 
@@ -367,6 +375,26 @@ theorem IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval
   exact (ω.quadraticPoissonBracket_eq_zero_iff.1 <|
     ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero
       (Submodule.subset_span ⟨i, rfl⟩) hP).symm
+
+/-- **Hamiltonian endomorphisms of restrictions.** If the Hamiltonian endomorphism of a quadratic
+form `R` preserves a symplectic subspace `L`, the Hamiltonian endomorphism of the restriction of
+`R` to `L`, for the restricted symplectic form, is the restriction of `A_R`. -/
+theorem hamiltonianEnd_comp_subtype (hL : ω.IsSymplectic L) {R : QuadraticForm ℝ V}
+    (hR : ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L) :
+    (ω.restrict L hL.nondegenerate_restrict).hamiltonianEnd (R.comp L.subtype) =
+      (ω.hamiltonianEnd R).restrict hR :=
+  ((ω.restrict L hL.nondegenerate_restrict).eq_hamiltonianEnd_iff.2 fun v w ↦ by
+    simp [QuadraticMap.polar]).symm
+
+/-- For `P` and `R` in the span of a Poisson-commuting family, every polynomial in `A_P` commutes
+with `A_R`. -/
+theorem commute_aeval_hamiltonianEnd_of_mem_span
+    (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0) {P R : QuadraticForm ℝ V}
+    (hP : P ∈ Submodule.span ℝ (Set.range Q)) (hR : R ∈ Submodule.span ℝ (Set.range Q))
+    (p : ℝ[X]) : Commute (aeval (ω.hamiltonianEnd P) p) (ω.hamiltonianEnd R) :=
+  (Algebra.commute_of_mem_adjoin_singleton_of_commute (aeval_mem_adjoin_singleton ℝ _)
+    (ω.quadraticPoissonBracket_eq_zero_iff.1 <|
+      ω.quadraticPoissonBracket_eq_zero_of_mem_span hQ hR hP)).symm
 
 end Restrict
 
