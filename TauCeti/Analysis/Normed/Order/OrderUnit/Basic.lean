@@ -54,8 +54,10 @@ assuming `NormedSpace ℝ E` gives positivity of nonnegative scalar multiplicati
   `TauCeti.IsOrderUnitNorm.isArchimedeanOrderUnit`, `TauCeti.IsOrderUnitNorm.norm_eq_orderUnitNorm`:
   scalar monotonicity, closed positive cone, the Archimedean property, and uniqueness of the norm.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
-  `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.IsOrderUnitNorm.norm_map_of_orderEmbedding`:
-  permanence under unital subspaces, nonempty finite products, and unital linear order embeddings.
+  `TauCeti.IsOrderUnitNorm.pi`: permanence under unital subspaces, binary products, and nonempty
+  finite products.
+* `TauCeti.IsOrderUnitNorm.norm_map_of_orderEmbedding`: a unital linear order embedding between two
+  order-unit spaces preserves norms.
 * `TauCeti.IsOrderUnitNorm.real_one`, `TauCeti.IsOrderUnitNorm.pi_real_one`,
   `TauCeti.IsOrderUnitNorm.continuousMap_one`,
   `TauCeti.IsOrderUnitNorm.boundedContinuousFunction_one`,

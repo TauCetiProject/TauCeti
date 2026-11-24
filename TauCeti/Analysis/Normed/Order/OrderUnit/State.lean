@@ -384,7 +384,7 @@ theorem surjective_statePullback_subtype {E : Type*} [SeminormedAddCommGroup E] 
 
 /-- **State existence:** every order-unit space admits at least one state. -/
 theorem stateSpace_nonempty {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
     (OrderUnit.stateSpace e).Nonempty := by
   let i : ℝ →ₗᵢ[ℝ] E :=
     { toFun := fun r => r • e
@@ -436,7 +436,11 @@ def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [
 theorem stateHomeomorph_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (φ : OrderUnit.stateSpace (coe he e)) (a : E) :
-    (stateHomeomorph he φ).1 a = φ.1 (coe he a) := (rfl)
+    (stateHomeomorph he φ).1 a = φ.1 (coe he a) := by
+  simp only [stateHomeomorph, ← Homeomorph.coe_toEquiv, Continuous.toEquiv_homeoOfEquivCompactToT2,
+    Equiv.coe_fn_mk]
+  exact OrderUnit.statePullback_apply (coe he).toContinuousLinearMap
+    (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl φ a
 
 @[simp]
 theorem stateHomeomorph_symm_apply_coe {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -658,13 +662,15 @@ def cstarStateSpaceHomeomorph :
 
 @[simp]
 theorem cstarStateSpaceHomeomorph_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
-    (cstarStateSpaceHomeomorph A ψ).1 a = (ψ.1 a).re := (rfl)
+    (cstarStateSpaceHomeomorph A ψ).1 a = (ψ.1 a).re :=
+  cstarStateRestrict_apply A ψ a
 
 @[simp]
 theorem cstarStateSpaceHomeomorph_symm_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A))
     (a : A) :
     ((cstarStateSpaceHomeomorph A).symm φ).1 a =
-      (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ) := (rfl)
+      (φ.1 (ℜ a) : ℂ) + Complex.I * (φ.1 (ℑ a) : ℂ) :=
+  cstarStateExtend_apply A φ a
 
 end CStarStates
 
