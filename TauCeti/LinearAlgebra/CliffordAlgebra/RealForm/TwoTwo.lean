@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
+public import TauCeti.RingTheory.TensorProduct.Pi
 
 /-!
 # The split four-dimensional real even Clifford algebra
@@ -122,11 +122,10 @@ theorem realCliffordTwoTwoVectorEquivMatrix_det (v : Fin 4 → ℝ) :
 private def prodTensorMatrixEquiv :
     (ℝ × ℝ) ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ]
       Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ :=
-  (Algebra.TensorProduct.comm ℝ _ _).trans <|
-    (Algebra.TensorProduct.prodRight ℝ ℝ _ ℝ ℝ).trans <|
-      AlgEquiv.prodCongr
-        (Algebra.TensorProduct.rid ℝ ℝ (Matrix (Fin 2) (Fin 2) ℝ))
-        (Algebra.TensorProduct.rid ℝ ℝ (Matrix (Fin 2) (Fin 2) ℝ))
+  (Algebra.TensorProduct.prodLeft ℝ ℝ ℝ ℝ (Matrix (Fin 2) (Fin 2) ℝ)).trans <|
+    AlgEquiv.prodCongr
+      (Algebra.TensorProduct.lid ℝ (Matrix (Fin 2) (Fin 2) ℝ))
+      (Algebra.TensorProduct.lid ℝ (Matrix (Fin 2) (Fin 2) ℝ))
 
 /-- The split algebra model `Cl(2,1) ≃ M₂(ℝ) × M₂(ℝ)`. -/
 noncomputable def realCliffordTwoOneEquivMatrixProd :
@@ -158,7 +157,7 @@ theorem realCliffordTwoOneEquivMatrixProd_ι (v : Fin (2 + 1) → ℝ) :
     Algebra.TensorProduct.map_tmul, map_one, prodTensorMatrixEquiv]
   rw [realBottSplitIsometry_one_zero_apply]
   apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp [Algebra.TensorProduct.prodRight_tmul] <;> ring
+    simp <;> ring
 
 private theorem realCliffordTwoOneEquivMatrixProd_ι_trace
     (v : Fin (2 + 1) → ℝ) :

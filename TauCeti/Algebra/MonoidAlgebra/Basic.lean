@@ -22,6 +22,9 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
+* This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
+  `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
+  coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in the monoid algebra of a Dedekind-finite monoid (for instance a group) over a
   commutative semiring.
@@ -57,6 +60,8 @@ none of the further theory built on it.
   exactly when it acts injectively on `R`.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
+  group, as a convolution.
 
 ## References
 
@@ -98,6 +103,13 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
   simp only [hmap, Set.mem_range, Set.mem_ofPred_eq, AddMonoidHom.coe_mulLeft] at h
   exact (exists_congr fun _ ↦ eq_comm).trans
     (h.trans (forall_congr' fun _ ↦ exists_congr fun _ ↦ eq_comm))
+
+-- Mathlib states that a natural-number constant scales every coefficient of a monoid algebra and
+-- an additive monoid algebra, but does not tag either lemma `simp`. Tag both so that `simp`
+-- normalizes `(↑n * x).coeff m` in every monoid algebra, such as Laurent polynomials, as Mathlib
+-- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
+-- (`PowerSeries.coeff_natCast_mul`).
+attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
 
 end Semiring
 
@@ -369,6 +381,12 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
+theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
+    (x y : MonoidAlgebra k G) (g : G) :
+    (x * y).coeff g = ∑ h, x.coeff h * y.coeff (h⁻¹ * g) := by
+  rw [coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
 
 /-- The basis monomials `of ℤ M m` generate the integral monoid algebra `ℤ[M]` as an additive
 group. -/

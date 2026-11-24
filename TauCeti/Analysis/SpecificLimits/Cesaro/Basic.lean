@@ -7,18 +7,20 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.Order.Floor.Semifield
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
-# Cesàro averages under shifts, finite modifications, and residue decompositions
+# Cesàro averages under shifts, finite modifications, residue decompositions, and real cutoffs
 
 * `TauCeti.tendsto_add_sub_div_div_succ`: residue-count density `((n + q - r) / q) / (n + 1) → q⁻¹`.
 * `TauCeti.tendsto_cesaro_congr_of_eventuallyEq`, `TauCeti.tendsto_cesaro_comp_add_iff`:
   finite-modification and index-shift invariance.
 * `TauCeti.tendsto_cesaro_of_forall_mod`, `TauCeti.tendsto_cesaro_mul_add_of_ite_mod`:
   residue-class decompositions modulo `q > 0`.
+* `TauCeti.tendsto_inv_smul_sum_Icc_floor`: real-cutoff Cesàro mean for convergent sequences.
 -/
 
 public section
@@ -46,6 +48,8 @@ theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
     have ht0 : t n ≠ 0 := div_ne_zero (Nat.cast_ne_zero.mpr (by omega))
       (Nat.cast_ne_zero.mpr hq.ne')
     simp [t, Nat.floor_div_eq_div, div_mul_div_cancel₀ ht0]
+
+section Seminormed
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -146,5 +150,22 @@ theorem tendsto_cesaro_mul_add_of_ite_mod {f : ℕ → E} {q r : ℕ} (hq : 0 < 
   simp only [Function.comp_apply, Nat.sub_add_cancel (Nat.mul_pos hq (Nat.succ_pos m)), hsum,
     smul_smul, Nat.cast_mul, mul_inv]
   rw [← mul_assoc, mul_inv_cancel₀ (Nat.cast_ne_zero.mpr hq.ne'), one_mul]
+
+end Seminormed
+
+/-- A sequence in a normed space converging to `l` has real-cutoff Cesàro mean
+`x⁻¹ • ∑ n ∈ Icc 1 ⌊x⌋₊, a n → l`. -/
+theorem tendsto_inv_smul_sum_Icc_floor {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a : ℕ → E} {l : E} (ha : Tendsto a atTop (𝓝 l)) :
+    Tendsto (fun x : ℝ ↦ x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 l) := by
+  have hces' : Tendsto (fun x : ℝ ↦ (⌊x⌋₊ : ℝ)⁻¹ • ∑ n ∈ Finset.range ⌊x⌋₊, a (n + 1))
+      atTop (𝓝 l) :=
+    (ha.comp (tendsto_add_atTop_nat 1)).cesaro_smul.comp tendsto_nat_floor_atTop
+  have hces : Tendsto (fun x : ℝ ↦ (⌊x⌋₊ : ℝ)⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n)
+      atTop (𝓝 l) := by
+    simpa only [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel,
+      add_comm 1] using hces'
+  exact ((Asymptotics.isEquivalent_nat_floor (R := ℝ)).inv.smul
+    Asymptotics.IsEquivalent.refl).tendsto_nhds hces
 
 end TauCeti
