@@ -89,9 +89,9 @@ need only be continuous, and their nondegeneracy as Hamiltonian orbits is replac
 shifted fields.
 
 The Fredholm property and the index of `D_u` depend only on the asymptotic orbits and on the end
-data of the Floer data, and in a unitary trivialization, for Floer data with the data `(i, 0, H_t)`
-of a Hamiltonian `H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of
-index zero along maps `u` from `x` to itself; both are proved by deformation in
+Hamiltonians of the Floer data, and in a unitary trivialization, for Floer data with a Hamiltonian
+`H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of index zero along
+maps `u` from `x` to itself; both are proved by deformation in
 `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`, which proves
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`,
@@ -105,8 +105,10 @@ along a Floer trajectory, with a version for data cylindrical near the ends (suf
 `_of_cylindrical`). In a unitary trivialization the Fredholm property for distinct ends
 `x₋ ≠ x₊` follows from a parametrix built from the invertible end models, without the adjoint
 (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
-`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`); the value of the index for distinct ends
-remains open.
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`), and for every compatible almost complex
+structure it follows by deformation
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`); the value
+of the index for distinct ends remains open.
 
 ## References
 
