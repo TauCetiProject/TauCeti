@@ -24,8 +24,9 @@ We define `γ₁` as the limit, in the same way as Mathlib defines Euler's const
 `Real.eulerMascheroniConstant`, prove that the limit exists, and give the explicit remainder
 `∑_{n ≤ x} (log n) / n = (log x)² / 2 + γ₁ + O*((log x) / x)` for every real `x ≥ 3`, where the
 sum runs over the natural numbers `1 ≤ n ≤ x` and `O*(h)` denotes a quantity of absolute value at
-most `h`. Since `t ↦ (log t) / t` decreases on `[3, ∞)`, both follow from the integral-test
-comparison `AntitoneOn.abs_sum_Ioc_natFloor_sub_integral_sub_le`.
+most `h`. Since `t ↦ (log t) / t` decreases on `[3, ∞)`, existence follows from
+`AntitoneOn.exists_tendsto_sum_Ioc_sub_integral` and the remainder from
+`AntitoneOn.abs_sum_Ioc_natFloor_sub_integral_sub_le`.
 
 ## Main results
 

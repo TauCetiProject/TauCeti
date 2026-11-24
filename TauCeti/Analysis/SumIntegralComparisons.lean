@@ -23,16 +23,21 @@ endpoints of the unit cells differs from its integral by at most `|f x₀ - f (x
 A nonnegative decreasing integrable function on the positive half-line vanishes at infinity.
 
 For `f` nonnegative and decreasing on `[a, ∞)`, with `a` a natural number, the differences
-`∑_{a < n ≤ N} f n - ∫_a^N f` decrease and converge to a constant `C`, the constant of the
-Maclaurin–Cauchy integral test (`AntitoneOn.exists_tendsto_sum_Ioc_sub_integral`); for every real
-`x ≥ a`, `∑_{a < n ≤ x} f n - ∫_a^x f` lies within `f x` of `C`
-(`AntitoneOn.abs_sum_Ioc_natFloor_sub_integral_sub_le`). Euler's constant `γ` and the first
-Stieltjes constant arise in this way from `f x = 1 / x` and `f x = log x / x`, once the terms with
-`n ≤ a` and the integral over `[1, a]` are added back.
+`∑_{a < n ≤ N} f n - ∫_a^N f` decrease (`AntitoneOn.antitoneOn_sum_Ioc_sub_integral`), while
+subtracting `∫_N^{N+1} f` from them gives an increasing sequence
+(`AntitoneOn.monotoneOn_sum_Ioc_sub_integral_sub_integral`). They converge to a constant `C`,
+the constant of the Maclaurin–Cauchy integral test
+(`AntitoneOn.exists_tendsto_sum_Ioc_sub_integral`); for every real `x ≥ a`,
+`∑_{a < n ≤ x} f n - ∫_a^x f` lies within `f x` of `C`
+(`AntitoneOn.abs_sum_Ioc_natFloor_sub_integral_sub_le`). Decreasing functions on `[c, ∞)` are
+interval integrable between any two points of `[c, ∞)` (`AntitoneOn.intervalIntegrable_of_le`).
+Euler's constant `γ` and the first Stieltjes constant arise in this way from `f x = 1 / x` and
+`f x = log x / x`, once the terms with `n ≤ a` and the integral over `[1, a]` are added back.
 
 The proofs use Mathlib's integral test (`AntitoneOn.summable_of_integrableOn_Ioi_zero`,
 `AntitoneOn.tsum_add_one_le_integral`, and `AntitoneOn.integral_le_tsum`) after dilation,
-and the finite comparisons `AntitoneOn.sum_le_integral` and `AntitoneOn.integral_le_sum`.
+and the finite comparisons `AntitoneOn.sum_le_integral`, `AntitoneOn.integral_le_sum`,
+`AntitoneOn.sum_le_integral_Ico` and `AntitoneOn.integral_le_sum_Ico`.
 The half-line approximation is used in Feller, *An Introduction to Probability Theory and
 Its Applications*, vol. II, second edition, Chapter XI, in the key renewal theorem.
 -/
@@ -214,36 +219,54 @@ section IntegralTestConstant
 
 variable {a : ℕ}
 
-/-- Between two natural numbers `a ≤ N ≤ M`, the differences `e N = ∑_{a < n ≤ N} f n - ∫_a^N f`
-decrease, by at most `∫_N^{N+1} f - ∫_M^{M+1} f`. -/
-private lemma sum_Ioc_sub_integral_le (hf : AntitoneOn f (Ici (a : ℝ))) {N M : ℕ} (hN : a ≤ N)
-    (hNM : N ≤ M) :
-    ∑ n ∈ Finset.Ioc a M, f n - ∫ t in (a : ℝ)..M, f t ≤
-        ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t ∧
-      (∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t) -
-          (∑ n ∈ Finset.Ioc a M, f n - ∫ t in (a : ℝ)..M, f t) ≤
-        (∫ t in (N : ℝ)..N + 1, f t) - ∫ t in (M : ℝ)..M + 1, f t := by
+/-- A function decreasing on `[c, ∞)` is interval integrable between any two points of
+`[c, ∞)`. -/
+theorem intervalIntegrable_of_le {c u v : ℝ} (hf : AntitoneOn f (Ici c)) (hu : c ≤ u)
+    (hv : c ≤ v) : IntervalIntegrable f volume u v :=
+  (hf.mono fun _ (ht : _ ∈ uIcc u v) => (le_inf hu hv).trans ht.1).intervalIntegrable
+
+/-- For `f` decreasing on `[a, ∞)`, the differences `∑_{a < n ≤ N} f n - ∫_a^N f` decrease
+for natural `N ≥ a`. -/
+theorem antitoneOn_sum_Ioc_sub_integral (hf : AntitoneOn f (Ici (a : ℝ))) :
+    AntitoneOn (fun N : ℕ => ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t) (Ici a) := by
+  intro N (hN : a ≤ N) M (hM : a ≤ M) hNM
   have hN' : (a : ℝ) ≤ N := Nat.cast_le.2 hN
-  have hM' : (a : ℝ) ≤ M := Nat.cast_le.2 (hN.trans hNM)
-  have hii {u v : ℝ} (hu : (a : ℝ) ≤ u) (hv : (a : ℝ) ≤ v) : IntervalIntegrable f volume u v :=
-    (hf.mono fun _ (ht : _ ∈ uIcc u v) => (le_inf hu hv).trans ht.1).intervalIntegrable
-  -- the right-endpoint sum over `(N, M]` lies below `∫_N^M f` and above `∫_{N+1}^{M+1} f`
+  have hM' : (a : ℝ) ≤ M := Nat.cast_le.2 hM
+  -- the right-endpoint sum over `(N, M]` lies below `∫_N^M f`
   have hsum : ∑ n ∈ Finset.Ioc N M, f n ≤ ∫ t in (N : ℝ)..M, f t := by
     have h := (hf.mono fun t (ht : t ∈ Icc (N : ℝ) M) => hN'.trans ht.1).sum_le_integral_Ico hNM
     rwa [Finset.sum_Ico_add' (fun n : ℕ => f n) N M 1, Finset.Ico_add_one_add_one_eq_Ioc] at h
+  simp only
+  rw [← Finset.sum_Ioc_consecutive _ hN hNM, ← intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le le_rfl hN') (hf.intervalIntegrable_of_le hN' hM')]
+  linarith
+
+/-- For `f` decreasing on `[a, ∞)`, the differences `∑_{a < n ≤ N} f n - ∫_a^N f - ∫_N^{N+1} f`
+increase for natural `N ≥ a`: between `a ≤ N ≤ M`, the differences
+`∑_{a < n ≤ N} f n - ∫_a^N f` decrease by at most `∫_N^{N+1} f - ∫_M^{M+1} f`. -/
+theorem monotoneOn_sum_Ioc_sub_integral_sub_integral (hf : AntitoneOn f (Ici (a : ℝ))) :
+    MonotoneOn (fun N : ℕ => ∑ n ∈ Finset.Ioc a N, f n - (∫ t in (a : ℝ)..N, f t) -
+      ∫ t in (N : ℝ)..N + 1, f t) (Ici a) := by
+  intro N (hN : a ≤ N) M (hM : a ≤ M) hNM
+  have hN' : (a : ℝ) ≤ N := Nat.cast_le.2 hN
+  have hM' : (a : ℝ) ≤ M := Nat.cast_le.2 hM
+  -- the right-endpoint sum over `(N, M]` lies above `∫_{N+1}^{M+1} f`
   have hint : ∫ t in (N : ℝ) + 1..(M : ℝ) + 1, f t ≤ ∑ n ∈ Finset.Ioc N M, f n := by
     have h := (hf.mono fun t (ht : t ∈ Icc ((N + 1 : ℕ) : ℝ) (M + 1 : ℕ)) =>
       (Nat.cast_le.2 (hN.trans N.le_succ)).trans ht.1).integral_le_sum_Ico
       (Nat.add_le_add_right hNM 1)
     rw [Finset.Ico_add_one_add_one_eq_Ioc] at h
     exact_mod_cast h
-  rw [← Finset.sum_Ioc_consecutive _ hN hNM,
-    ← intervalIntegral.integral_add_adjacent_intervals (hii le_rfl hN') (hii hN' hM')]
-  have h₁ := intervalIntegral.integral_add_adjacent_intervals (hii (v := (N : ℝ) + 1) hN'
-    (by linarith)) (hii (v := (M : ℝ) + 1) (by linarith) (by linarith))
-  have h₂ := intervalIntegral.integral_add_adjacent_intervals (hii hN' hM')
-    (hii (v := (M : ℝ) + 1) hM' (by linarith))
-  constructor <;> linarith
+  simp only
+  rw [← Finset.sum_Ioc_consecutive _ hN hNM, ← intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le le_rfl hN') (hf.intervalIntegrable_of_le hN' hM')]
+  have h₁ := intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le (v := (N : ℝ) + 1) hN' (by linarith))
+    (hf.intervalIntegrable_of_le (v := (M : ℝ) + 1) (by linarith) (by linarith))
+  have h₂ := intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le hN' hM')
+    (hf.intervalIntegrable_of_le (v := (M : ℝ) + 1) hM' (by linarith))
+  linarith
 
 /-- **The integral-test constant.** For `f` nonnegative and decreasing on `[a, ∞)`, with `a` a
 natural number, the differences `∑_{a < n ≤ N} f n - ∫_a^N f` converge as `N → ∞`. -/
@@ -253,11 +276,13 @@ theorem exists_tendsto_sum_Ioc_sub_integral (hf : AntitoneOn f (Ici (a : ℝ)))
       (𝓝 C) := by
   set e := fun N : ℕ => ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t
   have hanti : Antitone fun k : ℕ => e (k + a) := antitone_nat_of_succ_le fun k =>
-    (hf.sum_Ioc_sub_integral_le (Nat.le_add_left a k) (by omega)).1
+    hf.antitoneOn_sum_Ioc_sub_integral (Nat.le_add_left a k) (Nat.le_add_left a (k + 1))
+      (by omega)
   have hbdd : BddBelow (range fun k : ℕ => e (k + a)) := by
     refine ⟨e a - ∫ t in (a : ℝ)..a + 1, f t, ?_⟩
     rintro _ ⟨k, rfl⟩
-    have h := (hf.sum_Ioc_sub_integral_le le_rfl (Nat.le_add_left a k)).2
+    have h := hf.monotoneOn_sum_Ioc_sub_integral_sub_integral (le_refl a) (Nat.le_add_left a k)
+      (Nat.le_add_left a k)
     have hk : (a : ℝ) ≤ (k + a : ℕ) := Nat.cast_le.2 (Nat.le_add_left a k)
     have h0 : 0 ≤ ∫ t in ((k + a : ℕ) : ℝ)..(k + a : ℕ) + 1, f t :=
       intervalIntegral.integral_nonneg (by linarith) fun t ht => nonneg t (hk.trans ht.1)
@@ -270,7 +295,8 @@ theorem exists_tendsto_sum_Ioc_sub_integral (hf : AntitoneOn f (Ici (a : ℝ)))
 theorem le_sum_Ioc_sub_integral (hf : AntitoneOn f (Ici (a : ℝ))) {C : ℝ}
     (hC : Tendsto (fun N : ℕ => ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t) atTop (𝓝 C))
     {N : ℕ} (hN : a ≤ N) : C ≤ ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t :=
-  le_of_tendsto hC <| eventually_atTop.2 ⟨N, fun _ hM => (hf.sum_Ioc_sub_integral_le hN hM).1⟩
+  le_of_tendsto hC <| eventually_atTop.2 ⟨N, fun _ hM =>
+    hf.antitoneOn_sum_Ioc_sub_integral hN (hN.trans hM) hM⟩
 
 /-- For `f` nonnegative and decreasing on `[a, ∞)`, each difference
 `∑_{a < n ≤ N} f n - ∫_a^N f` with `N ≥ a` exceeds the limit `C` by at most `∫_N^{N+1} f`. -/
@@ -281,7 +307,7 @@ theorem sum_Ioc_sub_integral_le_add_integral (hf : AntitoneOn f (Ici (a : ℝ)))
     ∑ n ∈ Finset.Ioc a N, f n - ∫ t in (a : ℝ)..N, f t ≤ C + ∫ t in (N : ℝ)..N + 1, f t := by
   rw [← sub_le_iff_le_add]
   refine ge_of_tendsto hC <| eventually_atTop.2 ⟨N, fun M hM => ?_⟩
-  have h := (hf.sum_Ioc_sub_integral_le hN hM).2
+  have h := hf.monotoneOn_sum_Ioc_sub_integral_sub_integral hN (hN.trans hM) hM
   have hM' : (a : ℝ) ≤ M := Nat.cast_le.2 (hN.trans hM)
   have h0 : 0 ≤ ∫ t in (M : ℝ)..M + 1, f t :=
     intervalIntegral.integral_nonneg (by linarith) fun t ht => nonneg t (hM'.trans ht.1)
@@ -301,22 +327,23 @@ theorem abs_sum_Ioc_natFloor_sub_integral_sub_le (hf : AntitoneOn f (Ici (a : �
   have hN' : (a : ℝ) ≤ N := Nat.cast_le.2 hN
   have hNx : (N : ℝ) ≤ x := Nat.floor_le (a.cast_nonneg.trans hx)
   have hxN : x < N + 1 := Nat.lt_floor_add_one x
-  have hii {u v : ℝ} (hu : (a : ℝ) ≤ u) (hv : (a : ℝ) ≤ v) : IntervalIntegrable f volume u v :=
-    (hf.mono fun _ (ht : _ ∈ uIcc u v) => (le_inf hu hv).trans ht.1).intervalIntegrable
-  have h₁ := intervalIntegral.integral_add_adjacent_intervals (hii le_rfl hN') (hii hN' hx)
-  have h₂ := intervalIntegral.integral_add_adjacent_intervals (hii hN' hx)
-    (hii (v := (N : ℝ) + 1) hx (by linarith))
+  have h₁ := intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le le_rfl hN') (hf.intervalIntegrable_of_le hN' hx)
+  have h₂ := intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le hN' hx)
+    (hf.intervalIntegrable_of_le (v := (N : ℝ) + 1) hx (by linarith))
   have hup := hf.sum_Ioc_sub_integral_le_add_integral nonneg hC hN
   have hlow := hf.le_sum_Ioc_sub_integral hC (hN.trans N.le_succ)
   rw [Finset.sum_Ioc_succ_top hN] at hlow
   push_cast at hlow
-  have h₃ := intervalIntegral.integral_add_adjacent_intervals (hii le_rfl hN')
-    (hii (v := (N : ℝ) + 1) hN' (by linarith))
+  have h₃ := intervalIntegral.integral_add_adjacent_intervals
+    (hf.intervalIntegrable_of_le le_rfl hN')
+    (hf.intervalIntegrable_of_le (v := (N : ℝ) + 1) hN' (by linarith))
   have hI₀ : 0 ≤ ∫ t in x..N + 1, f t :=
     intervalIntegral.integral_nonneg hxN.le fun t ht => nonneg t (hx.trans ht.1)
   have hI₁ : ∫ t in x..N + 1, f t ≤ f x :=
     calc ∫ t in x..N + 1, f t ≤ ∫ _ in x..N + 1, f x :=
-          intervalIntegral.integral_mono_on hxN.le (hii hx (by linarith))
+          intervalIntegral.integral_mono_on hxN.le (hf.intervalIntegrable_of_le hx (by linarith))
             intervalIntegrable_const fun t ht => hf hx (hx.trans ht.1) ht.1
       _ = (N + 1 - x) * f x := by simp
       _ ≤ f x := by nlinarith [nonneg x hx]
