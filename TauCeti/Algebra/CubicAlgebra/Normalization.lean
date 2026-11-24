@@ -56,27 +56,28 @@ namespace Cubic.CubicAlgebra
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
-/-- **Associativity forces the cubic table.** Let `1, ω, θ` be linearly independent in a commutative
-`R`-algebra, with `ωθ = r`, `ω² = p + qω + sθ` and `θ² = t + uω + vθ`. Then `r = su`, `p = -sv` and
-`t = -qu`; that is, these products are the table of the form `⟨-s, q, -v, u⟩`. -/
-theorem eq_mul_and_eq_neg_mul_and_eq_neg_mul_of_linearIndependent {ω θ : A}
-    (hli : LinearIndependent R ![1, ω, θ]) {r p q s t u v : R}
-    (hωθ : ω * θ = algebraMap R A r) (hωω : ω * ω = algebraMap R A p + q • ω + s • θ)
-    (hθθ : θ * θ = algebraMap R A t + u • ω + v • θ) :
+/-- **Associativity forces the cubic table.** Let `1, ω', θ'` be linearly independent in a
+commutative `R`-algebra, with `ω'θ' = r`, `ω'² = p + qω' + sθ'` and `θ'² = t + uω' + vθ'`. Then
+`r = su`, `p = -sv` and `t = -qu`; that is, these products are the table of the form
+`⟨-s, q, -v, u⟩`. -/
+theorem eq_mul_and_eq_neg_mul_and_eq_neg_mul_of_linearIndependent {ω' θ' : A}
+    (hli : LinearIndependent R ![1, ω', θ']) {r p q s t u v : R}
+    (hωθ : ω' * θ' = algebraMap R A r) (hωω : ω' * ω' = algebraMap R A p + q • ω' + s • θ')
+    (hθθ : θ' * θ' = algebraMap R A t + u • ω' + v • θ') :
     r = s * u ∧ p = -(s * v) ∧ t = -(q * u) := by
   rw [Fintype.linearIndependent_iff] at hli
-  -- A vanishing combination `α + βω + γθ = 0` has vanishing coefficients.
-  have hcoeff {α β γ : R} (h : algebraMap R A α + β • ω + γ • θ = 0) : α = 0 ∧ β = 0 ∧ γ = 0 := by
+  -- A vanishing combination `α + βω' + γθ' = 0` has vanishing coefficients.
+  have hcoeff {α β γ : R} (h : algebraMap R A α + β • ω' + γ • θ' = 0) : α = 0 ∧ β = 0 ∧ γ = 0 := by
     have := hli ![α, β, γ] (by simpa [Fin.sum_univ_three, Algebra.smul_def] using h)
     exact ⟨this 0, this 1, this 2⟩
   simp only [Algebra.smul_def] at hωω hθθ hcoeff
-  -- Compare `ω² θ = ω (ω θ)` and `θ² ω = θ (θ ω)` in the basis `1, ω, θ`.
+  -- Compare `ω'² θ' = ω' (ω' θ')` and `θ'² ω' = θ' (θ' ω')` in the basis `1, ω', θ'`.
   obtain ⟨-, h₁, h₂⟩ := @hcoeff (q * r + s * t) (s * u - r) (p + s * v) (by
     simp only [map_add, map_sub, map_mul]
-    linear_combination -θ * hωω + ω * hωθ - algebraMap R A q * hωθ - algebraMap R A s * hθθ)
+    linear_combination -θ' * hωω + ω' * hωθ - algebraMap R A q * hωθ - algebraMap R A s * hθθ)
   obtain ⟨-, h₃, -⟩ := @hcoeff (u * p + v * r) (t + u * q) (u * s - r) (by
     simp only [map_add, map_sub, map_mul]
-    linear_combination -ω * hθθ + θ * hωθ - algebraMap R A u * hωω - algebraMap R A v * hωθ)
+    linear_combination -ω' * hθθ + θ' * hωθ - algebraMap R A u * hωω - algebraMap R A v * hωθ)
   exact ⟨by linear_combination -h₁, by linear_combination h₂, by linear_combination h₃⟩
 
 end Cubic.CubicAlgebra
@@ -92,8 +93,8 @@ variable {R A : Type*} [Ring R] [AddCommMonoid A] [Mul A] [Module R A] (c : Basi
 /-- The binary cubic form read off a basis `c`, meant for bases whose first vector is `1`. Writing
 `c 1 * c 1 = p c 0 + q c 1 + s c 2`, `c 1 * c 2 = e₀ c 0 + e₁ c 1 + e₂ c 2` and
 `c 2 * c 2 = t c 0 + u c 1 + v c 2`, it is `⟨-s, q - 2e₂, 2e₁ - v, u⟩`. When `c 1 * c 2` is a
-multiple of `c 0` this is `⟨-s, q, -v, u⟩`, and when `c 0 = 1` it does not change if `c 1` and
-`c 2` are shifted by scalars (`Module.Basis.cubicForm_cubicNormalize`). -/
+multiple of `c 0` this is `⟨-s, q, -v, u⟩`, and when `c 0 = 1` it does not change under the
+normalizing shift `Module.Basis.cubicNormalize` (`Module.Basis.cubicForm_cubicNormalize`). -/
 noncomputable def cubicForm : Cubic R :=
   ⟨-c.repr (c 1 * c 1) 2, c.repr (c 1 * c 1) 1 - 2 * c.repr (c 1 * c 2) 2,
     2 * c.repr (c 1 * c 2) 1 - c.repr (c 2 * c 2) 2, c.repr (c 2 * c 2) 1⟩
@@ -197,14 +198,14 @@ noncomputable def cubicAlgEquiv : c.cubicForm.CubicAlgebra ≃ₐ[R] A :=
     exact LinearEquiv.bijective _
 
 theorem cubicAlgEquiv_apply (x : c.cubicForm.CubicAlgebra) :
-    c.cubicAlgEquiv hc₀ hc x = algebraMap R A x.re + x.imω • c 1 + x.imθ • c 2 := (rfl)
+    c.cubicAlgEquiv hc₀ hc x = algebraMap R A x.re + x.imOmega • c 1 + x.imTheta • c 2 := (rfl)
 
 @[simp]
-theorem cubicAlgEquiv_ω : c.cubicAlgEquiv hc₀ hc (ω c.cubicForm) = c 1 := by
+theorem cubicAlgEquiv_omega : c.cubicAlgEquiv hc₀ hc (ω c.cubicForm) = c 1 := by
   simp [cubicAlgEquiv_apply]
 
 @[simp]
-theorem cubicAlgEquiv_θ : c.cubicAlgEquiv hc₀ hc (θ c.cubicForm) = c 2 := by
+theorem cubicAlgEquiv_theta : c.cubicAlgEquiv hc₀ hc (θ c.cubicForm) = c 2 := by
   simp [cubicAlgEquiv_apply]
 
 @[simp]
@@ -226,7 +227,7 @@ namespace Cubic.CubicAlgebra
 /-- The form read off the basis `1, ω, θ` of the cubic algebra of `P` is `P` itself. -/
 @[simp]
 theorem cubicForm_basis {R : Type*} [CommRing R] (P : Cubic R) : (basis P).cubicForm = P := by
-  ext <;> simp [ω_mul_ω, θ_mul_θ, ω_mul_θ]
+  ext <;> simp [omega_mul_omega, theta_mul_theta, omega_mul_theta]
 
 end Cubic.CubicAlgebra
 
