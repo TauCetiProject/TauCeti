@@ -46,10 +46,10 @@ on a compact set (`Distribution.exists_forall_hasSum_localFourier_of_eq_mul`) wr
 cone where `T (φ e_ξ)` decays rapidly and `‖m‖ ≳ ‖η‖` are small by that decay; for all the others
 the phase `⟪x, m⟫ + ⟪Φ x, η⟫` has gradient `m + DΦ(x)ᵀ η` bounded below by a multiple of
 `‖m‖ + ‖η‖`, and the Fourier coefficient is small by non-stationary phase
-(`TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le`). So if `T` is microlocally
-smooth at `(x, DΦ(x)ᵀ η)`, the pairings `T (φ 𝐞 (-⟪Φ ·, η'⟫))` decay rapidly for cutoffs `φ` near
-`x` and `η'` near the ray of `η`, and a cutoff around `y` pulls back to a sum of such cutoffs over
-the compact set `supp χ ∩ supp T ∩ Φ⁻¹ {y}`.
+(`TauCeti.exists_one_add_norm_pow_mul_norm_integral_fourierChar_le`). So if `DΦ(x)ᵀ η ≠ 0` and
+`T` is microlocally smooth at `(x, DΦ(x)ᵀ η)`, the pairings `T (φ 𝐞 (-⟪Φ ·, η'⟫))` decay
+rapidly for cutoffs `φ` near `x` and `η'` near the ray of `η`, and a cutoff around `y` pulls back
+to a sum of such cutoffs over the compact set `supp χ ∩ supp T ∩ Φ⁻¹ {y}`.
 
 The covectors with `DΦ(x)ᵀ η = 0` cannot be omitted, even for smooth `T`: along a constant map
 with value `c` the pushforward of `T` is the multiple `T χ` of the point mass at `c`, and when
@@ -71,8 +71,9 @@ which depends on `Γ` and `supp χ` but not on the distribution.
   `T (φ 𝐞 (-⟪Φ ·, η⟫))` when the pulled-back covectors `DΦ(x)ᵀ η` stay in a cone of decay of
   `T (φ e_ξ)`.
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar`,
-  `Distribution.exists_isOpen_cone_forall_decay_fourierChar_of_isCompact`: microlocal smoothness
-  at `(x, DΦ(x)ᵀ η)` gives this decay uniformly near `x`, and near a compact set of such `x`.
+  `Distribution.exists_isOpen_cone_forall_decay_fourierChar_of_isCompact`: if `DΦ(x)ᵀ η ≠ 0`,
+  microlocal smoothness at `(x, DΦ(x)ᵀ η)` gives this decay uniformly near `x`, and near a
+  compact set of such `x`.
 * `Distribution.IsMicrolocallySmoothAt.cutoffPushforwardCLM`: if `DΦ(x)ᵀ η ≠ 0` and `T` is
   microlocally smooth at `(x, DΦ(x)ᵀ η)` for every `x ∈ supp χ ∩ supp T` with `Φ x = y`, then
   `Φ_* (χ T)` is microlocally smooth at `(y, η)`.
