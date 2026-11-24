@@ -23,11 +23,13 @@ section is the same as a retraction of `I/I² → S ⊗[P] Ω[P⁄R]`
 exact on the left as well. If `S` is moreover formally unramified, then `Ω[S⁄R] = 0` and the
 conormal module `I/I²` is identified with `S ⊗[P] Ω[P⁄R]`.
 
-For a closed point of a scheme over a field whose residue field is separable over the base, this
-identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the differentials. In
-particular, if `A` is a local `k`-algebra whose residue field `κ` is formally smooth over `k`, the
-differentials `1 ⊗ d t_j` of any minimal generating set of `𝔪_A` are `κ`-linearly independent in
-`κ ⊗[A] Ω[A⁄k]`.
+For a closed point of a scheme over a field whose residue field `κ` is a finite separable extension
+of the base, `κ` is étale (formally smooth and formally unramified) over the base, so the conormal
+map is an isomorphism (`kerCotangentToTensor_bijective_of_formallyEtale`), identifying the Zariski
+cotangent space `𝔪/𝔪²` with the fibre of the differentials. More generally, when `κ` is merely
+formally smooth over `k` (for example, separable without being finite), the conormal map is
+injective (`kerCotangentToTensor_injective_of_formallySmooth`), so the differentials `1 ⊗ d t_j` of
+any minimal generating set of `𝔪_A` are `κ`-linearly independent in `κ ⊗[A] Ω[A⁄k]`.
 
 ## Main results
 

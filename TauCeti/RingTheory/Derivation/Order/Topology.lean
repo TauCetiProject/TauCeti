@@ -17,7 +17,7 @@ Over a characteristic-zero field `k`, on a regular ring `R` (`[IsRegularRing R]`
 localization `R_p` is regular local) with finitely generated projective Kähler differentials
 `Ω[R⁄k]` — in particular on any smooth `k`-algebra or any regular `k`-algebra of finite type —
 every order-threshold locus `{p | c ≤ I.orderAt p}` is Zariski closed in `PrimeSpectrum R`:
-for `c = n + 1` it is the zero locus of `(Ideal.derivationIdeal k)^[n] I`, and for `c = ⊤` it is
+for `c = n + 1` it is the zero locus of `(Ideal.derivativeIdeal k)^[n] I`, and for `c = ⊤` it is
 the intersection of those zero loci over all `n`.
 
 ## Main results
@@ -28,7 +28,7 @@ Common hypotheses: `k` is a characteristic-zero field and `R` is a regular `k`-a
 
 * `Ideal.setOf_natCast_add_one_le_orderAt_eq_zeroLocus`: assuming `Ω[R⁄k]` is finitely generated
   and projective over `R`, `{p | ((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p}` equals
-  `PrimeSpectrum.zeroLocus ((Ideal.derivationIdeal k)^[n] I)`.
+  `PrimeSpectrum.zeroLocus ((Ideal.derivativeIdeal k)^[n] I)`.
 * `Ideal.isClosed_setOf_le_orderAt`: assuming `Ω[R⁄k]` is finitely generated and projective over
   `R`, `{p | c ≤ I.orderAt p}` is Zariski closed for every `c : ℕ∞`.
 * `Ideal.isClosed_setOf_le_orderAt_of_smooth`: Zariski closedness for smooth `k`-algebras.
@@ -52,14 +52,14 @@ variable (k : Type*) [Field k] [CharZero k] {R : Type*} [CommRing R] [Algebra k 
 
 /-- Over a characteristic-zero field, on a regular ring with finitely generated projective
 differentials, the order-threshold locus `{p | n + 1 ≤ I.orderAt p}` is the zero locus of the
-`n`-th iterated derivation ideal. -/
+`n`-th iterated derivative ideal. -/
 theorem setOf_natCast_add_one_le_orderAt_eq_zeroLocus [Module.Projective R Ω[R⁄k]]
     [Module.Finite R Ω[R⁄k]] [IsRegularRing R] (I : Ideal R) (n : ℕ) :
     {p : PrimeSpectrum R | ((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p} =
-      PrimeSpectrum.zeroLocus (((derivationIdeal k)^[n] I) : Set R) := by
+      PrimeSpectrum.zeroLocus (((derivativeIdeal k)^[n] I) : Set R) := by
   ext p
   simp only [Set.mem_ofPred_eq, PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe]
-  exact natCast_add_one_le_orderAt_iff_iterate_derivationIdeal_le k I p n
+  exact natCast_add_one_le_orderAt_iff_iterate_derivativeIdeal_le k I p n
 
 /-- **Order-threshold loci are Zariski closed.** Over a characteristic-zero field, on a regular
 ring with finitely generated projective differentials, `{p | c ≤ I.orderAt p}` is closed in

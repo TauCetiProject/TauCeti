@@ -15,12 +15,12 @@ import TauCeti.RingTheory.RegularLocalRing.AssociatedGraded
 import TauCeti.RingTheory.Smooth.Field
 
 /-!
-# Order of derivation ideals in characteristic zero
+# Order of derivative ideals in characteristic zero
 
 For an algebra `R` over a characteristic-zero field `k` with `Ω[R⁄k]` finitely generated and
-projective over `R`, the derivation ideal `I.derivationIdeal k` lowers ideal order at every
+projective over `R`, the derivative ideal `I.derivativeIdeal k` lowers ideal order at every
 regular prime `p` (meaning `IsRegularLocalRing (Localization.AtPrime p.asIdeal)`) by exactly one:
-`(I.derivationIdeal k).orderAt p = I.orderAt p - 1` (truncated subtraction in `ℕ∞`, so finite
+`(I.derivativeIdeal k).orderAt p = I.orderAt p - 1` (truncated subtraction in `ℕ∞`, so finite
 positive order drops by one while `0` and `⊤` remain fixed).
 
 The proof uses formal smoothness of the residue field `κ(p)` over the characteristic-zero field `k`
@@ -31,7 +31,7 @@ applies the associated-graded criterion
 `MvPolynomial.eq_C_constantCoeff_of_forall_pderiv_eq_zero` over `κ(p)`.
 
 Iterating `n` times gives
-`((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivationIdeal k)^[n] I ≤ p.asIdeal` at every regular prime
+`((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivativeIdeal k)^[n] I ≤ p.asIdeal` at every regular prime
 `p`.
 
 ## Main results
@@ -41,12 +41,12 @@ projective over `R`.
 
 * `Ideal.mem_maximalIdeal_pow_add_two_of_forall_derivation`: elementwise order-increase test in any
   regular local localization `A` of `R`.
-* `Ideal.orderAt_derivationIdeal`: at a prime `p` with `R_p` regular local,
-  `(I.derivationIdeal k).orderAt p = I.orderAt p - 1`.
-* `Ideal.orderAt_derivationIdeal_iterate`: at a prime `p` with `R_p` regular local,
-  `((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n`.
-* `Ideal.natCast_add_one_le_orderAt_iff_iterate_derivationIdeal_le`: at a prime `p` with `R_p`
-  regular local, `((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivationIdeal k)^[n] I ≤ p.asIdeal`.
+* `Ideal.orderAt_derivativeIdeal`: at a prime `p` with `R_p` regular local,
+  `(I.derivativeIdeal k).orderAt p = I.orderAt p - 1`.
+* `Ideal.orderAt_derivativeIdeal_iterate`: at a prime `p` with `R_p` regular local,
+  `((derivativeIdeal k)^[n] I).orderAt p = I.orderAt p - n`.
+* `Ideal.natCast_add_one_le_orderAt_iff_iterate_derivativeIdeal_le`: at a prime `p` with `R_p`
+  regular local, `((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivativeIdeal k)^[n] I ≤ p.asIdeal`.
 
 ## References
 
@@ -130,42 +130,42 @@ theorem mem_maximalIdeal_pow_add_two_of_forall_derivation {k R A : Type*} [Field
 
 variable (k : Type*) [Field k] [CharZero k] {R : Type*} [CommRing R] [Algebra k R]
 
-/-- **Over a characteristic-zero field, the derivation ideal satisfies
-`(I.derivationIdeal k).orderAt p = I.orderAt p - 1` at a regular prime** (truncated subtraction
+/-- **Over a characteristic-zero field, the derivative ideal satisfies
+`(I.derivativeIdeal k).orderAt p = I.orderAt p - 1` at a regular prime** (truncated subtraction
 in `ℕ∞`, so finite positive order drops by one while `0` and `⊤` remain fixed), assuming
 `Ω[R⁄k]` is finitely generated and projective over `R` and `R_p` is regular local. -/
 @[simp]
-theorem orderAt_derivationIdeal [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
+theorem orderAt_derivativeIdeal [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)] :
-    (I.derivationIdeal k).orderAt p = I.orderAt p - 1 := by
-  refine orderAt_derivationIdeal_eq_sub_one k I p fun n hn ↦ ?_
+    (I.derivativeIdeal k).orderAt p = I.orderAt p - 1 := by
+  refine orderAt_derivativeIdeal_eq_sub_one k I p fun n hn ↦ ?_
   rw [natCast_le_orderAt_iff] at hn ⊢
   rw [Ideal.map_le_iff_le_comap]
   intro f hf
   rw [mem_comap]
   refine mem_maximalIdeal_pow_add_two_of_forall_derivation (k := k) p.asIdeal.primeCompl
-    (hn (mem_map_of_mem _ (le_derivationIdeal k I hf))) fun δ ↦ ?_
+    (hn (mem_map_of_mem _ (le_derivativeIdeal k I hf))) fun δ ↦ ?_
   rw [Derivation.extendOfIsLocalization_algebraMap]
-  exact hn (mem_map_of_mem _ (apply_mem_derivationIdeal k δ hf))
+  exact hn (mem_map_of_mem _ (apply_mem_derivativeIdeal k δ hf))
 
 /-- Over a characteristic-zero field, at a regular prime of an algebra with finitely generated
-projective differentials, `((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n`
+projective differentials, `((derivativeIdeal k)^[n] I).orderAt p = I.orderAt p - n`
 (truncated subtraction in `ℕ∞`). -/
 @[simp]
-theorem orderAt_derivationIdeal_iterate [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
+theorem orderAt_derivativeIdeal_iterate [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)]
     (n : ℕ) :
-    ((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n :=
-  orderAt_derivationIdeal_iterate_eq_sub k I p n fun J ↦ orderAt_derivationIdeal k J p
+    ((derivativeIdeal k)^[n] I).orderAt p = I.orderAt p - n :=
+  orderAt_derivativeIdeal_iterate_eq_sub k I p n fun J ↦ orderAt_derivativeIdeal k J p
 
 /-- Over a characteristic-zero field, at a regular prime of an algebra with finitely generated
 projective differentials, an ideal has order at least `n + 1` precisely when its `n`-th iterated
-derivation ideal lies in that prime. -/
-theorem natCast_add_one_le_orderAt_iff_iterate_derivationIdeal_le [Module.Projective R Ω[R⁄k]]
+derivative ideal lies in that prime. -/
+theorem natCast_add_one_le_orderAt_iff_iterate_derivativeIdeal_le [Module.Projective R Ω[R⁄k]]
     [Module.Finite R Ω[R⁄k]] (I : Ideal R) (p : PrimeSpectrum R)
     [IsRegularLocalRing (Localization.AtPrime p.asIdeal)] (n : ℕ) :
-    ((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivationIdeal k)^[n] I ≤ p.asIdeal := by
-  rw [← one_le_orderAt_iff, orderAt_derivationIdeal_iterate k]
+    ((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p ↔ (derivativeIdeal k)^[n] I ≤ p.asIdeal := by
+  rw [← one_le_orderAt_iff, orderAt_derivativeIdeal_iterate k]
   cases h : I.orderAt p with
   | top => simp
   | coe a =>

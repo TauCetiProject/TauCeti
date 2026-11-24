@@ -15,24 +15,27 @@ import TauCeti.RingTheory.MvPolynomial.Homogeneous
 /-!
 # Chain rule for derivations on evaluated multivariate polynomials
 
-For a `k`-derivation `D : Derivation k A A`, a multivariate polynomial `F : MvPolynomial σ A`
-evaluated at a point `t : σ → A` satisfies the multivariable chain rule
+For a `k`-derivation `D : Derivation k A A` and a finite variable type `σ` (`[Fintype σ]`), a
+multivariate polynomial `F : MvPolynomial σ A` evaluated at a point `t : σ → A` satisfies the
+multivariable chain rule
 
 `D (F.eval t) = (∑ e ∈ F.support, D (F.coeff e) * ∏ j, t j ^ e j) +`
 `  ∑ j, (pderiv j F).eval t * D (t j)`,
 
-differentiating both the coefficients of `F` and the coordinate entries `t j`. When `A` is local
-and `t` lies in its maximal ideal `𝔪`, this computes the leading term modulo `𝔪 ^ (n + 1)` of
-`D (F(t))` for a homogeneous form `F` of degree `n + 1` whenever `D` is dual modulo `𝔪` to
-coordinate `i`.
+differentiating both the coefficients of `F` and the coordinate entries `t j`. When `A` is local,
+`[Finite σ]`, and `t` lies in its maximal ideal `𝔪`, this computes the leading term modulo
+`𝔪 ^ (n + 1)` of `D (F(t))` for a homogeneous form `F` of degree `n + 1` whenever `D` is dual
+modulo `𝔪` to coordinate `i`.
 
 ## Main results
 
-* `Derivation.apply_eval_monomial`: chain rule on an evaluated monomial.
-* `Derivation.apply_eval_mvPolynomial`: chain rule on an evaluated multivariate polynomial.
+* `Derivation.apply_eval_monomial`: chain rule on an evaluated monomial over a finite variable type
+  `[Fintype σ]`.
+* `Derivation.apply_eval_mvPolynomial`: chain rule on an evaluated multivariate polynomial over a
+  finite variable type `[Fintype σ]`.
 * `Derivation.apply_eval_sub_pderiv_mul_mem_pow_succ`: leading-term congruence modulo
   `𝔪 ^ (n + 1)` for a derivation dual modulo `𝔪` to coordinate `i` acting on a degree-`(n + 1)`
-  homogeneous form.
+  homogeneous form over a finite variable type `[Finite σ]`.
 -/
 
 public section

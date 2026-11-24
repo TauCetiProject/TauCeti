@@ -24,9 +24,9 @@ Existence goes through Kähler differentials: `Ω[T⁄R]` is the localization of
 (`KaehlerDifferential.isLocalizedModule_map`), so the `A`-linear map `Ω[A⁄R] → N` classifying a
 derivation of `A` extends to a `T`-linear map `Ω[T⁄R] → N`.
 
-Extending global derivations unconditionally shows that the pushforward of a derivation ideal into
-a localization is contained in the derivation ideal of the pushforward
-(`Ideal.map_derivationIdeal_le`), with no finiteness hypothesis.
+Extending global derivations unconditionally shows that the pushforward of a derivative ideal into
+a localization is contained in the derivative ideal of the pushforward
+(`Ideal.map_derivativeIdeal_le`), with no finiteness hypothesis.
 
 Conversely, when `Ω[R⁄k]` is finitely presented over `R`, for any `k`-derivation `D` of a
 localization `A` of `R` at `S` there exist `s ∈ S` and a global `k`-derivation `δ` of `R` such that
@@ -34,8 +34,8 @@ the extension of `δ` to `A` equals `algebraMap R A s • D`: lifting `Ω[R⁄k]
 `Module.FinitePresentation.exists_lift_of_isLocalizedModule` produces an `R`-linear map
 `Ω[R⁄k] →ₗ[R] R` matching `s • D` on `R`, and uniqueness on localizations
 (`IsLocalization.eq_of_leibniz`) identifies the extension of `δ` with `algebraMap R A s • D` on
-`A`. Under the same finite-presentation hypothesis on `Ω[R⁄k]`, taking derivation ideals therefore
-commutes with localization (`Ideal.map_derivationIdeal`).
+`A`. Under the same finite-presentation hypothesis on `Ω[R⁄k]`, taking derivative ideals therefore
+commutes with localization (`Ideal.map_derivativeIdeal`).
 
 ## Main declarations
 
@@ -46,8 +46,8 @@ commutes with localization (`Ideal.map_derivationIdeal`).
 * `Derivation.exists_extendOfIsLocalization_eq_smul`: when `Ω[R⁄k]` is finitely presented over
   `R`, for every derivation `D` of a localization `A` of `R`, there exist `s ∈ S` and a global
   derivation `δ` of `R` whose extension to `A` equals `algebraMap R A s • D`;
-* `Ideal.map_derivationIdeal_le`, `Ideal.map_derivationIdeal`: unconditional inclusion and
-  (under `[Module.FinitePresentation R Ω[R⁄k]]`) equality for derivation ideals under localization;
+* `Ideal.map_derivativeIdeal_le`, `Ideal.map_derivativeIdeal`: unconditional inclusion and
+  (under `[Module.FinitePresentation R Ω[R⁄k]]`) equality for derivative ideals under localization;
 * `Derivation.algebraMap_notMem_maximalIdeal_sq`: if `D f ∉ Q` for a prime `Q` of `A`, then the
   image of `f` in `A_Q` does not lie in the square of its maximal ideal.
 -/
@@ -155,33 +155,33 @@ end Derivation
 
 namespace Ideal
 
-/-- Extending global derivations shows that the pushforward of a derivation ideal into a
-localization is contained in the derivation ideal of the pushforward. -/
-theorem map_derivationIdeal_le (k : Type*) {R A : Type*} [CommRing k] [CommRing R] [CommRing A]
+/-- Extending global derivations shows that the pushforward of a derivative ideal into a
+localization is contained in the derivative ideal of the pushforward. -/
+theorem map_derivativeIdeal_le (k : Type*) {R A : Type*} [CommRing k] [CommRing R] [CommRing A]
     [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
     (S : Submonoid R) [IsLocalization S A] (I : Ideal R) :
-    (I.derivationIdeal k).map (algebraMap R A) ≤ (I.map (algebraMap R A)).derivationIdeal k := by
-  rw [Ideal.map_le_iff_le_comap, Ideal.derivationIdeal_le_iff]
-  refine ⟨Ideal.map_le_iff_le_comap.mp (Ideal.le_derivationIdeal k _), fun δ f hf ↦ ?_⟩
+    (I.derivativeIdeal k).map (algebraMap R A) ≤ (I.map (algebraMap R A)).derivativeIdeal k := by
+  rw [Ideal.map_le_iff_le_comap, Ideal.derivativeIdeal_le_iff]
+  refine ⟨Ideal.map_le_iff_le_comap.mp (Ideal.le_derivativeIdeal k _), fun δ f hf ↦ ?_⟩
   rw [Ideal.mem_comap]
-  have hmem := Ideal.apply_mem_derivationIdeal k
+  have hmem := Ideal.apply_mem_derivativeIdeal k
     (((Algebra.linearMap R A).compDer δ).extendOfIsLocalization S)
     (Ideal.mem_map_of_mem (algebraMap R A) hf)
   rw [Derivation.extendOfIsLocalization_algebraMap] at hmem
   exact hmem
 
-/-- When `Ω[R⁄k]` is finitely presented over `R`, taking derivation ideals commutes with
+/-- When `Ω[R⁄k]` is finitely presented over `R`, taking derivative ideals commutes with
 localization. -/
-theorem map_derivationIdeal (k : Type*) {R A : Type*} [CommRing k] [CommRing R] [CommRing A]
+theorem map_derivativeIdeal (k : Type*) {R A : Type*} [CommRing k] [CommRing R] [CommRing A]
     [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
     [Module.FinitePresentation R Ω[R⁄k]]
     (S : Submonoid R) [IsLocalization S A] (I : Ideal R) :
-    (I.derivationIdeal k).map (algebraMap R A) = (I.map (algebraMap R A)).derivationIdeal k := by
-  refine le_antisymm (map_derivationIdeal_le k S I) ?_
-  conv_lhs => rw [← Ideal.span_eq I, Ideal.map_span, Ideal.derivationIdeal_span]
+    (I.derivativeIdeal k).map (algebraMap R A) = (I.map (algebraMap R A)).derivativeIdeal k := by
+  refine le_antisymm (map_derivativeIdeal_le k S I) ?_
+  conv_lhs => rw [← Ideal.span_eq I, Ideal.map_span, Ideal.derivativeIdeal_span]
   refine Ideal.span_le.mpr (Set.union_subset ?_ ?_)
   · exact Set.image_subset_iff.mpr fun r hr ↦
-      Ideal.mem_map_of_mem _ (Ideal.le_derivationIdeal k I hr)
+      Ideal.mem_map_of_mem _ (Ideal.le_derivativeIdeal k I hr)
   · rintro _ ⟨_, ⟨D, rfl⟩, _, ⟨r, hr, rfl⟩, rfl⟩
     obtain ⟨s, δ, hδ⟩ := Derivation.exists_extendOfIsLocalization_eq_smul S D
     have hD : algebraMap R A s * D (algebraMap R A r) = algebraMap R A (δ r) := by
@@ -189,6 +189,6 @@ theorem map_derivationIdeal (k : Type*) {R A : Type*} [CommRing k] [CommRing R] 
         (congrArg (fun d : Derivation k A A ↦ d (algebraMap R A r)) hδ).symm
     refine (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp ?_
     rw [mul_comm, hD]
-    exact Ideal.mem_map_of_mem _ (Ideal.apply_mem_derivationIdeal k δ hr)
+    exact Ideal.mem_map_of_mem _ (Ideal.apply_mem_derivativeIdeal k δ hr)
 
 end Ideal
