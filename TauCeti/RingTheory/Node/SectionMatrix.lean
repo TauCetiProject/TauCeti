@@ -7,27 +7,19 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The node-section matrix factorization of a binary quadratic form
 
 A binary quadratic form `q = x ^ 2 + γ * x * y + δ * y ^ 2` with unit discriminant
 `γ ^ 2 - 4 * δ` describes an ordinary double point `q(x, y) = 0`; over a field this includes
-nonsplit nodes and characteristic two. Two polynomial identities about `q` underlie Knudsen's
-study of a node with a section through it. Both hold for every binary quadratic form
-`f = a x² + b x y + c y²` over every commutative ring, so they are stated for
-`TauCeti.BinaryQuadraticForm` with no discriminant hypothesis.
-
-* The first-order coordinate change: when `ε ^ 2 = 0`, moving `(x, y)` by
-  `ε • (-2 c u + b v, b u - 2 a v)` adds `ε * disc(f) * (x u + y v)` to `f(x, y)`. When the
-  discriminant is a unit, every first-order deformation of `f` is thus absorbed by a coordinate
-  change.
-* The node-section matrix factorization: the matrix
-  `Φ = !![c y + c t + b x, a x + a s + b t; -(x - s), y - t]` has determinant
-  `f(x, y) - f(s, t)`, so `Φ` and its adjugate
-  `Ψ = !![y - t, -(a x + a s + b t); x - s, c y + c t + b x]` satisfy
-  `Φ * Ψ = Ψ * Φ = (f(x, y) - f(s, t)) • 1`.
+nonsplit nodes and characteristic two. Knudsen studies a node with a section through it by a
+matrix factorization. It holds for every binary quadratic form `f = a x² + b x y + c y²` over
+every commutative ring, so it is stated for `TauCeti.BinaryQuadraticForm` with no discriminant
+hypothesis: the matrix `Φ = !![c y + c t + b x, a x + a s + b t; -(x - s), y - t]` has determinant
+`f(x, y) - f(s, t)`, so `Φ` and its adjugate
+`Ψ = !![y - t, -(a x + a s + b t); x - s, c y + c t + b x]` satisfy
+`Φ * Ψ = Ψ * Φ = (f(x, y) - f(s, t)) • 1`.
 
 On the ring of a section `(s, t)` through the node, where `f(x, y) = f(s, t)`, the two matrices
 compose to zero (`TauCeti.PointedNodeRing.sectionMatrix`); Knudsen uses the periodic complex
@@ -36,8 +28,6 @@ alternating them to present the ideal of the section and its dual.
 ## Main declarations
 
 * `TauCeti.BinaryQuadraticForm.nodeForm`: the node form `x ^ 2 + γ * x * y + δ * y ^ 2`.
-* `TauCeti.BinaryQuadraticForm.eval_add_mul_add_mul_of_sq_eq_zero`: the first-order coordinate
-  change.
 * `TauCeti.BinaryQuadraticForm.sectionMatrix`: the left matrix `Φ` of the factorization.
 * `TauCeti.BinaryQuadraticForm.det_sectionMatrix`: `det Φ = f(x, y) - f(s, t)`.
 * `TauCeti.BinaryQuadraticForm.sectionMatrix_mul_adjugate`,
@@ -46,8 +36,7 @@ alternating them to present the ideal of the section and its dual.
 ## References
 
 * F. F. Knudsen, *A closer look at the stacks of stable pointed curves*, arXiv:1106.1588v2
-  (2012): Definition 1.1 (the node form), Lemma 2.6 (its first-order coordinate change) and §3,
-  Key Example (the matrices, for `a = 1`).
+  (2012): Definition 1.1 (the node form) and §3, Key Example (the matrices, for `a = 1`).
 -/
 
 public section
@@ -60,7 +49,11 @@ open Matrix
 
 section NodeForm
 
-variable {A B : Type*} [CommRing A] [CommRing B] (γ δ : A)
+variable {A B : Type*}
+
+section One
+
+variable [One A] (γ δ : A)
 
 /-- The binary quadratic node form `x ^ 2 + γ * x * y + δ * y ^ 2`. It defines an ordinary double
 point when its discriminant `γ ^ 2 - 4 * δ` is a unit; that condition is not part of the
@@ -80,6 +73,12 @@ theorem nodeForm_b : (nodeForm γ δ).b = γ :=
 theorem nodeForm_c : (nodeForm γ δ).c = δ :=
   (rfl)
 
+end One
+
+section Semiring
+
+variable [Semiring A] [Semiring B] (γ δ : A)
+
 @[simp]
 theorem eval_nodeForm (x y : A) : (nodeForm γ δ).eval x y = x ^ 2 + γ * x * y + δ * y ^ 2 := by
   simp [eval_def]
@@ -88,24 +87,21 @@ theorem eval_nodeForm (x y : A) : (nodeForm γ δ).eval x y = x ^ 2 + γ * x * y
 theorem map_nodeForm (φ : A →+* B) : (nodeForm γ δ).map φ = nodeForm (φ γ) (φ δ) := by
   ext <;> simp
 
+/-- A ring homomorphism carries the value of the node form to the value of the mapped node form
+at the mapped point. -/
+theorem eval_nodeForm_map (φ : A →+* B) (x y : A) :
+    (nodeForm (φ γ) (φ δ)).eval (φ x) (φ y) = φ ((nodeForm γ δ).eval x y) := by
+  rw [← map_nodeForm, eval_map]
+
+end Semiring
+
 @[simp]
-theorem discrim_nodeForm : (nodeForm γ δ).discrim = γ ^ 2 - 4 * δ := by
+theorem discrim_nodeForm [CommRing A] (γ δ : A) : (nodeForm γ δ).discrim = γ ^ 2 - 4 * δ := by
   simp [discrim_def, discrim, sq]
 
 end NodeForm
 
 variable {R S : Type*} [CommRing R] [CommRing S] (f : BinaryQuadraticForm R)
-
-/-- The first-order coordinate change of a binary quadratic form: when `ε ^ 2 = 0`, moving the
-coordinates by `ε * (-2 * c * u + b * v)` and `ε * (b * u - 2 * a * v)` adds
-`ε * (disc(f) * (x * u + y * v))` to `f(x, y)`. No division by `2` is involved. -/
-theorem eval_add_mul_add_mul_of_sq_eq_zero {ε : R} (hε : ε ^ 2 = 0) (x y u v : R) :
-    f.eval (x + ε * (-2 * f.c * u + f.b * v)) (y + ε * (f.b * u - 2 * f.a * v)) =
-      f.eval x y + ε * (f.discrim * (x * u + y * v)) := by
-  rw [eval_def, eval_def, discrim_def, discrim]
-  linear_combination (f.a * (-2 * f.c * u + f.b * v) ^ 2 +
-    f.b * (-2 * f.c * u + f.b * v) * (f.b * u - 2 * f.a * v) +
-    f.c * (f.b * u - 2 * f.a * v) ^ 2) * hε
 
 variable (x y s t : R)
 

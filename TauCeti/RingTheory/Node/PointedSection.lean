@@ -61,7 +61,7 @@ noncomputable section
 namespace TauCeti
 
 open Polynomial
-open BinaryQuadraticForm (nodeForm eval_nodeForm map_nodeForm)
+open BinaryQuadraticForm (nodeForm eval_nodeForm eval_nodeForm_map)
 
 variable {A : Type*} [CommRing A] (γ δ s t : A)
 
@@ -108,8 +108,8 @@ theorem eval_eval_pointedNodePolynomial (x y : A) :
   simp [pointedNodePolynomial_def]
   ring
 
-/-- The polynomial ring `A[Y][X] ⧸ (q(X, Y) - q(s, t))` of a section `(s, t)` through the
-node `q = 0`, where `q = BinaryQuadraticForm.nodeForm γ δ`, realized as `AdjoinRoot` of the
+/-- The polynomial ring `A[Y][X] ⧸ (q(X, Y) - q(s, t))` of a section `(s, t)` on the curve
+`q(X, Y) = q(s, t)`, where `q = BinaryQuadraticForm.nodeForm γ δ`, realized as `AdjoinRoot` of the
 monic quadratic `pointedNodePolynomial γ δ s t`. -/
 abbrev PointedNodeRing : Type _ :=
   AdjoinRoot (pointedNodePolynomial γ δ s t)
@@ -133,7 +133,7 @@ theorem of_X_eq_coordY : AdjoinRoot.of (pointedNodePolynomial γ δ s t) X = coo
   (rfl)
 
 theorem mk_X : AdjoinRoot.mk (pointedNodePolynomial γ δ s t) X = coordX γ δ s t :=
-  (rfl)
+  AdjoinRoot.mk_X
 
 theorem mk_C_X : AdjoinRoot.mk (pointedNodePolynomial γ δ s t) (C X) = coordY γ δ s t :=
   AdjoinRoot.mk_C X
@@ -164,8 +164,7 @@ theorem eval_coordX_coordY :
   have h : AdjoinRoot.mk (pointedNodePolynomial γ δ s t)
       ((nodeForm (C (C γ)) (C (C δ))).eval X (C X) - C (C ((nodeForm γ δ).eval s t))) = 0 := by
     rw [← pointedNodePolynomial_eq_eval_sub, AdjoinRoot.mk_self]
-  rwa [map_sub, sub_eq_zero, mk_C_C, ← BinaryQuadraticForm.eval_map, map_nodeForm, mk_C_C,
-    mk_C_C, mk_X, mk_C_X] at h
+  rwa [map_sub, sub_eq_zero, mk_C_C, ← eval_nodeForm_map, mk_C_C, mk_C_C, mk_X, mk_C_X] at h
 
 section Lift
 
@@ -282,7 +281,7 @@ vanishes. Expanded, this is the relation `c * b + d * a = 0` between the section
 @[simp]
 theorem det_sectionMatrix : (sectionMatrix γ δ s t).det = 0 := by
   rw [sectionMatrix_def, BinaryQuadraticForm.det_sectionMatrix, eval_coordX_coordY,
-    ← map_nodeForm, BinaryQuadraticForm.eval_map, sub_self]
+    eval_nodeForm_map, sub_self]
 
 /-- On the pointed node ring the node-section factorization becomes `Φ * Ψ = 0`. -/
 theorem sectionMatrix_mul_adjugate :
