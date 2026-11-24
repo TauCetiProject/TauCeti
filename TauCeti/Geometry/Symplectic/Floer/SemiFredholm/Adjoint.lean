@@ -379,22 +379,15 @@ private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (K : Set 
     ∫ w in reflectL ⁻¹' K, g (reflectL w) = ∫ z in K, g z := by
   have hr : (reflectL : ℝ × ℝ → ℝ × ℝ) = Prod.map Neg.neg id :=
     funext fun z ↦ by rw [reflectL_apply, Prod.map_apply', id_eq]
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
   rw [hr]
-  exact hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g K
+  exact setIntegral_preimage_prodMap_neg_id g K
 
 /-- The reflection `ρ` carries `[-b, -a] × [0, 1]` onto `[a, b] × [0, 1]`, preserving
 integrals. -/
 private theorem setIntegral_comp_reflectL (g : ℝ × ℝ → ℝ) (a b : ℝ) :
     ∫ z in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1, g (reflectL z) =
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, g z := by
-  have hK : reflectL ⁻¹' (Icc a b ×ˢ Icc (0 : ℝ) 1) = Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1 := by
-    ext z
-    simp only [mem_preimage, reflectL_apply, mem_prod, mem_Icc, le_neg, neg_le, and_comm]
-  rw [← hK]
-  exact setIntegral_preimage_reflectL g _
+  simpa [reflectL_apply] using (setIntegral_Icc_neg_prod_eq g (-b) (-a) (Icc 0 1)).symm
 
 /-- The reflection `ρ` preserves compactness of preimages. -/
 private theorem isCompact_preimage_reflectL {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
