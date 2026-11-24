@@ -85,7 +85,6 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
 * `Subrepresentation.coe_toRepresentation_apply`
-* `Representation.subrepresentation_eq_toRepresentation`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
 * `Subrepresentation.subtype`
@@ -191,17 +190,6 @@ theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
 theorem coe_toRepresentation_apply (S : Subrepresentation ρ) (g : G) (v : S.toSubmodule) :
     (S.toRepresentation g v : W) = ρ g v :=
   rfl
-
-/-- Mathlib's restriction `ρ.subrepresentation W le_comap` of a representation to an invariant
-submodule is the representation carried by the corresponding subrepresentation. -/
-theorem _root_.Representation.subrepresentation_eq_toRepresentation (W' : Submodule A W)
-    (le_comap : ∀ g, W' ≤ W'.comap (ρ g)) :
-    ρ.subrepresentation W' le_comap =
-      (⟨W', fun g _ hv ↦ le_comap g hv⟩ : Subrepresentation ρ).toRepresentation := by
-  ext g v
-  rw [Representation.subrepresentation_apply, LinearMap.coe_restrict_apply]
-  exact (coe_toRepresentation_apply
-    (⟨W', fun g _ hv ↦ le_comap g hv⟩ : Subrepresentation ρ) g v).symm
 
 /-- An intertwining map is zero exactly when its range is the bottom subrepresentation. -/
 theorem _root_.Representation.IntertwiningMap.eq_zero_iff_range_eq_bot

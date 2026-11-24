@@ -137,15 +137,7 @@ instance IsSmooth.directSum {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoi
     IsSmooth (directSum ρ) :=
   ⟨fun x ↦ by
     classical
-    have h : (Representation.directSum ρ).stabilizer x =
-        ⨅ i ∈ x.support, (ρ i).stabilizer (x i) := by
-      rw [stabilizer_directSum]
-      refine le_antisymm (le_iInf₂ fun i _ ↦ iInf_le _ i) (le_iInf fun i ↦ ?_)
-      by_cases hi : i ∈ x.support
-      · exact iInf₂_le i hi
-      · rw [DFinsupp.notMem_support_iff.1 hi]
-        exact fun g _ ↦ mem_stabilizer.2 (map_zero _)
-    rw [h]
+    rw [stabilizer_directSum_eq_iInf_support]
     simp only [Subgroup.coe_iInf]
     exact x.support.finite_toSet.isOpen_biInter fun i _ ↦ IsSmooth.isOpen_stabilizer (x i)⟩
 

@@ -47,10 +47,9 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Subrepresentation.stabilizer_toRepresentation`
 * `Representation.stabilizer_prod`, `Representation.stabilizer_directSum`: stabilizers in direct
   sums.
+* `Representation.stabilizer_directSum_eq_iInf_support`: only the finitely many nonzero
+  components of a vector of a direct sum constrain its stabilizer.
 * `Representation.mem_invariants_comp_subtype_iff`
-* `Representation.invariants_prod`, `Representation.invariants_directSum`: invariants of direct
-  sums.
-* `Representation.prod_comp`, `Representation.directSum_comp`: restricting a direct sum.
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
@@ -115,6 +114,19 @@ theorem stabilizer_directSum {ι : Type*} {V : ι → Type*}
   ext g
   simp [mem_stabilizer, DirectSum.ext_iff]
 
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its finitely many nonzero components. -/
+theorem stabilizer_directSum_eq_iInf_support {ι : Type*} [DecidableEq ι] {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] [∀ i (v : V i), Decidable (v ≠ 0)]
+    (ρ : ∀ i, Representation A G (V i)) (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i ∈ x.support, (ρ i).stabilizer (x i) := by
+  rw [stabilizer_directSum]
+  refine le_antisymm (le_iInf₂ fun i _ ↦ iInf_le _ i) (le_iInf fun i ↦ ?_)
+  by_cases hi : i ∈ x.support
+  · exact iInf₂_le i hi
+  · rw [DFinsupp.notMem_support_iff.1 hi]
+    exact fun g _ ↦ mem_stabilizer.2 (map_zero _)
+
 /-- The stabilizer of a basis vector of a permutation representation is the stabilizer of the
 point, for nonzero coefficient. -/
 theorem stabilizer_ofMulAction_single {X : Type*} [MulAction G X] (x : X) {r : A} (hr : r ≠ 0) :
@@ -135,38 +147,6 @@ its stabilizer. -/
 theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
     v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
   simp [mem_invariants, IsConcreteLE.le_iff]
-
-variable {W : Type*} [AddCommGroup W] [Module A W]
-
-/-- The invariants of a direct sum are the product of the invariants. -/
-theorem invariants_prod (ρ : Representation A G V) (σ : Representation A G W) :
-    invariants (ρ.prod σ) = (invariants ρ).prod (invariants σ) := by
-  ext x
-  simp [mem_invariants, Prod.ext_iff, forall_and]
-
-/-- The invariants of a direct sum of a finite family correspond, under the identification of the
-direct sum with the product, to the product of the invariants. -/
-theorem invariants_directSum {ι : Type*} [Fintype ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) :
-    invariants (directSum ρ) = (Submodule.pi Set.univ fun i ↦ invariants (ρ i)).comap
-      (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap := by
-  ext x
-  simp only [mem_invariants, directSum_apply, Submodule.mem_comap, Submodule.mem_pi, Set.mem_univ,
-    true_implies, LinearEquiv.coe_coe, DirectSum.linearEquivFunOnFintype_apply, DirectSum.ext_iff,
-    DirectSum.lmap_apply]
-  exact forall_comm
-
-/-- Restricting a direct sum along a homomorphism gives the direct sum of the restrictions. -/
-theorem prod_comp {H : Type*} [Group H] (ρ : Representation A G V) (σ : Representation A G W)
-    (f : H →* G) : (ρ.prod σ).comp f = Representation.prod (ρ.comp f) (σ.comp f) :=
-  MonoidHom.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
-
-/-- Restricting a direct sum of a family along a homomorphism gives the direct sum of the
-restrictions. -/
-theorem directSum_comp {H ι : Type*} [Group H] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) (f : H →* G) :
-    (directSum ρ).comp f = directSum fun i ↦ (ρ i).comp f :=
-  MonoidHom.ext fun _ ↦ by simp
 
 end CommRing
 

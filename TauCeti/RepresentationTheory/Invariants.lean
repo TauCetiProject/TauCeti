@@ -113,6 +113,10 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   does not change the invariants.
 * `Representation.invariants_comp_comp_subtype`: the invariants of `ρ.comp φ` under a subgroup
   `U` are the invariants of `ρ` under its image `φ(U)`.
+* `Representation.invariants_prod`, `Representation.invariants_directSum`: the invariants of a
+  direct sum are the product of the invariants.
+* `Representation.prod_comp`, `Representation.directSum_comp`: restricting a direct sum along a
+  homomorphism gives the direct sum of the restrictions.
 * `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
   a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -258,6 +262,42 @@ theorem invariants_comp_comp_subtype {k G H V : Type*} [CommRing k] [Group G] [G
     ext u : 1
     simp
   rw [h, invariants_comp_of_surjective _ _ (φ.subgroupMap_surjective U)]
+
+/-- The invariants of a direct sum are the product of the invariants. -/
+@[simp]
+theorem invariants_prod {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+    [AddCommGroup W] [Module k W] (ρ : Representation k G V) (σ : Representation k G W) :
+    invariants (ρ.prod σ) = (invariants ρ).prod (invariants σ) := by
+  ext x
+  simp [mem_invariants, Prod.ext_iff, forall_and]
+
+/-- The invariants of a direct sum of a finite family correspond, under the identification of the
+direct sum with the product, to the product of the invariants. -/
+theorem invariants_directSum {k G ι : Type*} [CommRing k] [Group G] [Fintype ι] {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i)) :
+    invariants (directSum ρ) = (Submodule.pi Set.univ fun i ↦ invariants (ρ i)).comap
+      (DirectSum.linearEquivFunOnFintype k ι V).toLinearMap := by
+  ext x
+  simp only [mem_invariants, directSum_apply, Submodule.mem_comap, Submodule.mem_pi, Set.mem_univ,
+    true_implies, LinearEquiv.coe_coe, DirectSum.linearEquivFunOnFintype_apply, DirectSum.ext_iff,
+    DirectSum.lmap_apply]
+  exact forall_comm
+
+/-- Restricting a direct sum along a homomorphism gives the direct sum of the restrictions. -/
+@[simp]
+theorem prod_comp {k G H V W : Type*} [Semiring k] [Monoid G] [Monoid H] [AddCommMonoid V]
+    [Module k V] [AddCommMonoid W] [Module k W] (ρ : Representation k G V)
+    (σ : Representation k G W) (f : H →* G) :
+    (ρ.prod σ).comp f = Representation.prod (ρ.comp f) (σ.comp f) :=
+  MonoidHom.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
+
+/-- Restricting a direct sum of a family along a homomorphism gives the direct sum of the
+restrictions. -/
+@[simp]
+theorem directSum_comp {k G H ι : Type*} [Semiring k] [Monoid G] [Monoid H] {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
+    (f : H →* G) : (directSum ρ).comp f = directSum fun i ↦ (ρ i).comp f :=
+  MonoidHom.ext fun _ ↦ by simp
 
 /-- **Invariance may be tested on a generating set**: if `s` generates `G`, a vector is invariant
 exactly when every element of `s` fixes it. -/

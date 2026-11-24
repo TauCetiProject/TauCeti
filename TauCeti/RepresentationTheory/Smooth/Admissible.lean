@@ -149,9 +149,8 @@ instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
 submodule is admissible. -/
 instance IsAdmissible.instSubrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
     (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    IsAdmissible (ρ.subrepresentation W le_comap) := by
-  rw [subrepresentation_eq_toRepresentation]
-  exact IsAdmissible.subrepresentation _
+    IsAdmissible (ρ.subrepresentation W le_comap) :=
+  IsAdmissible.of_injective (σ := ρ) ⟨W.subtype, fun _ ↦ rfl⟩ W.injective_subtype
 
 /-- An admissible representation transfers admissibility along an equivalence. -/
 private theorem IsAdmissible.of_equiv [IsAdmissible ρ] (e : Equiv ρ σ) : IsAdmissible σ := by
