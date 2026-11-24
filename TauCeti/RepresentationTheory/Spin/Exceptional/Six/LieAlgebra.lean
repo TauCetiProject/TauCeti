@@ -8,8 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.SpecialLinear
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 import TauCeti.Algebra.Lie.Matrix.Basis
+import TauCeti.Algebra.Lie.Matrix.NegTranspose
 import TauCeti.Algebra.Lie.SpecialLinear.Root.Generation
-import TauCeti.LinearAlgebra.CliffordAlgebra.CliffordExteriorSquare
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
 import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
@@ -49,7 +49,7 @@ action of an element of `so₆`. The adjacent matrix units generate `sl₄` as a
 and `sl₄` have dimension fifteen, which forces the image to be `sl₄` and the action to be
 injective: `so₆` is identified with the quadratic Clifford elements by
 `TauCeti.SpinPolarizationData.typeDQuadraticEquiv`, which have dimension `6 choose 2`
-(`CliffordAlgebra.finrank_quadraticLieSubalgebra`), while `TauCeti.finrank_sl` counts `sl₄`.
+(`TauCeti.SpinPolarizationData.finrank_typeD`), while `TauCeti.finrank_sl` counts `sl₄`.
 
 The duality comes from reversal, which negates quadratic Clifford elements
 (`CliffordAlgebra.reverse_eq_neg_of_mem_quadraticLieSubalgebra`) and exchanges the two simple
@@ -67,6 +67,9 @@ All declarations are in the namespace `TauCeti.SpinPolarizationData`.
   the trace-zero endomorphisms.
 * `typeDSpinPlusLieEquivSl`: the resulting Lie algebra isomorphism `so₆ ≃ sl₄`, given by the matrix
   of the action on `S⁺` in a chosen basis.
+* `coe_typeDQuadraticEquiv_typeDSpinPlusLieEquivSl_symm_single`: the inverse image of `c E_{ij}`
+  under this isomorphism, in the even monomial basis, is realized by the bivector part of the
+  canonical Spin lift of `1 + c E_{ij}`.
 * `typeDSpinPlusLieModuleEquivSlStd`: through this isomorphism, `S⁺` is the standard module of
   `sl₄`.
 * `nonempty_lieModuleEquiv_dual_typeDSpinPlus_typeDSpinMinus_of_card_eq_three`: `S⁻` is the dual of
@@ -76,10 +79,20 @@ All declarations are in the namespace `TauCeti.SpinPolarizationData`.
   `mem_range_typeDSpinMinusLieRep_iff_of_card_eq_three`: `so₆` acts faithfully on `S⁻`, with image
   the trace-zero endomorphisms.
 
+## Implementation notes
+
+The interface follows the rank-two comparison `so₄ ≃ sl₂ × sl₂` in
+`TauCeti/RepresentationTheory/Spin/Exceptional/Four/LieAlgebra.lean`: the `_of_card_eq_two`
+trace and image lemmas, the matrix Lie isomorphism `typeDHalfSpinLieEquivSlProdSl` with its
+`coe_…_apply` and `…_symm_apply` lemmas, and the standard-module equivalences built with
+`TauCeti.lieModuleEquivOfToMatrix`.
+
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 20.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
+* @chrisromanmiller, [Tau Ceti PR #44972](https://github.com/TauCetiProject/TauCeti/pull/44972),
+  whose rank-two comparison this file follows.
 -/
 
 public section
@@ -119,9 +132,8 @@ theorem toMatrix_typeDSpinPlusLieRep_eq_single (e : ι ≃ Fin 3) {i j : Fin 4} 
     Subtype.ext (by simp [hx])
   have h := P.evenSpinActionProd_typeDQuadraticEquiv b hline x
   rw [heven, evenSpinActionProd_apply, Prod.mk.injEq] at h
-  rw [← h.1, map_sub, map_one, map_sub,
-    toMatrix_spinPlusAction_spinSixTransvectionLift, LinearMap.toMatrix_one, Matrix.transvection,
-    add_sub_cancel_left]
+  rw [← h.1]
+  simp [toMatrix_spinPlusAction_spinSixTransvectionLift, Matrix.transvection]
 
 /-- The bivector part of the canonical Spin lift of an elementary transvection is the quadratic
 Clifford realization of an element of the split type-`D` Lie algebra. -/
@@ -183,17 +195,6 @@ private theorem sl_le_range_matrixLieHom (hι : Fintype.card ι = 3) :
     ← lieSpan_specialLinear_adjacent_single_eq_top 3 K, LieSubalgebra.lieSpan_le]
   rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩) <;> exact P.single_mem_comap_range_matrixLieHom b hline hι _
 
-include b hline in
-/-- The split type-`D` Lie algebra of rank three has dimension `15 = (6 choose 2)`: it is
-identified with the quadratic Clifford elements of the six-dimensional space `V`. -/
-private theorem finrank_typeD_of_card_eq_three (hι : Fintype.card ι = 3) :
-    finrank K (LieAlgebra.Orthogonal.typeD ι K) = 15 := by
-  have : Module.Free K V := Module.Free.of_basis (P.typeDBasis b hline)
-  have : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
-  rw [(P.typeDQuadraticEquiv b hline).toLinearEquiv.finrank_eq, finrank_quadraticLieSubalgebra,
-    finrank_eq_two_mul_card_of_basis_sum (P.typeDBasis b hline), hι]
-  rfl
-
 /-- The matrices in the even monomial basis of the action of `so₆` on `S⁺` are exactly the
 trace-zero matrices, and the action is injective: the image contains `sl₄`, and `so₆` and `sl₄`
 both have dimension fifteen. -/
@@ -204,7 +205,9 @@ private theorem range_matrixLieHom_eq_and_injective (hι : Fintype.card ι = 3) 
   have hsl : finrank K (SpecialLinear.sl (Fin 4) K) = 15 := by
     rw [finrank_sl]
     rfl
-  have hdim := P.finrank_typeD_of_card_eq_three b hline hι
+  have hdim : finrank K (LieAlgebra.Orthogonal.typeD ι K) = 15 := by
+    rw [P.finrank_typeD b hline, hι]
+    rfl
   have hrange : f.range = SpecialLinear.sl (Fin 4) K := by
     refine (LieSubalgebra.toSubmodule_injective <|
       Submodule.eq_of_le_of_finrank_le (P.sl_le_range_matrixLieHom b hline hι) ?_).symm
@@ -254,6 +257,23 @@ theorem mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three (hι : Fintype.card �
 
 /-! ### The isomorphism `so₆ ≃ sl₄` -/
 
+private theorem matrixLieHom_injective (hι : Fintype.card ι = 3) (B : Basis κ K (spinPlus Q P)) :
+    Function.Injective (P.matrixLieHom b hline B) := fun x y h ↦
+  P.typeDSpinPlusLieRep_injective_of_card_eq_three b hline hι <|
+    (LinearMap.toMatrix B B).injective <| by rwa [matrixLieHom_apply, matrixLieHom_apply] at h
+
+/-- In any basis of `S⁺`, the matrices of the action of `so₆` are exactly the trace-zero
+matrices. -/
+private theorem range_matrixLieHom (hι : Fintype.card ι = 3) (B : Basis κ K (spinPlus Q P)) :
+    (P.matrixLieHom b hline B).range = SpecialLinear.sl κ K := by
+  ext A
+  have h := P.mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three b hline hι
+    (f := Matrix.toLin B B A)
+  rw [LieHom.mem_range, LinearMap.trace_eq_matrix_trace K B, LinearMap.toMatrix_toLin] at h
+  rw [LieHom.mem_range, SpecialLinear.mem_sl_iff, ← h]
+  exact exists_congr fun x ↦ by
+    rw [matrixLieHom_apply, ← LinearMap.toMatrix_symm, LinearEquiv.eq_symm_apply]
+
 /-- **`D₃ ≅ A₃`.** For an even polarization with `dim W = 3` and a basis `B` of the even
 half-spin module `S⁺`, sending an element of the split type-`D` Lie algebra `so₆` to the matrix
 of its action on `S⁺` in the basis `B` is a Lie algebra isomorphism onto the trace-zero matrices.
@@ -261,24 +281,8 @@ Through it, `S⁺` is the standard module of `sl₄` (`typeDSpinPlusLieModuleEqu
 noncomputable def typeDSpinPlusLieEquivSl (hι : Fintype.card ι = 3)
     (B : Basis κ K (spinPlus Q P)) :
     LieAlgebra.Orthogonal.typeD ι K ≃ₗ⁅K⁆ SpecialLinear.sl κ K :=
-  LieEquiv.ofBijective
-    { toFun x := ⟨P.matrixLieHom b hline B x, by
-          rw [SpecialLinear.mem_sl_iff, matrixLieHom_apply, ← LinearMap.trace_eq_matrix_trace,
-            P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_three b hline hι]⟩
-      map_add' x y := Subtype.ext (by simp)
-      map_smul' c x := Subtype.ext (by simp)
-      map_lie' {x y} := Subtype.ext (by simp) }
-    ⟨fun x y h ↦ P.typeDSpinPlusLieRep_injective_of_card_eq_three b hline hι <|
-        (LinearMap.toMatrix B B).injective <| by
-          simpa only [LieHom.coe_mk, Subtype.mk.injEq, matrixLieHom_apply] using h,
-      fun A ↦ by
-        have hA : LinearMap.trace K (spinPlus Q P) (Matrix.toLin B B A) = 0 := by
-          rw [LinearMap.trace_eq_matrix_trace K B, LinearMap.toMatrix_toLin,
-            ← SpecialLinear.mem_sl_iff]
-          exact A.property
-        obtain ⟨x, hx⟩ := (LieHom.mem_range _ _).mp
-          ((P.mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three b hline hι).mpr hA)
-        exact ⟨x, Subtype.ext (by simp [matrixLieHom_apply, hx])⟩⟩
+  (LieEquiv.ofInjective _ (P.matrixLieHom_injective b hline hι B)).trans
+    (LieEquiv.ofEq _ _ (by rw [P.range_matrixLieHom b hline hι B]))
 
 /-- The isomorphism `so₆ ≃ sl₄` sends an element of `so₆` to the matrix of its action on `S⁺`. -/
 @[simp]
@@ -288,6 +292,23 @@ theorem coe_typeDSpinPlusLieEquivSl_apply (hι : Fintype.card ι = 3)
       LinearMap.toMatrix B B (P.typeDSpinPlusLieRep b hline x) :=
   -- `(rfl)`, not `rfl`: the body of `typeDSpinPlusLieEquivSl` is not `@[expose]`d.
   (rfl)
+
+/-- **The Clifford realization of a matrix unit.** Number a basis of `W` by `e : ι ≃ Fin 3`. In the
+even monomial basis, the element of `so₆` sent to the matrix unit `c E_{ij}` of `sl₄` by
+`typeDSpinPlusLieEquivSl` is realized in the Clifford algebra by the bivector part `ι w * ι u` of
+the canonical Spin lift `1 + ι w * ι u` of the elementary transvection `1 + c E_{ij}`. -/
+theorem coe_typeDQuadraticEquiv_typeDSpinPlusLieEquivSl_symm_single (hι : Fintype.card ι = 3)
+    (e : ι ≃ Fin 3) {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (P.typeDQuadraticEquiv b hline ((P.typeDSpinPlusLieEquivSl b hline hι
+        ((b.reindex e).spinSixEvenMonomialBasis (spinPlus_def P))).symm
+          (SpecialLinear.single i j hij c)) : CliffordAlgebra Q) =
+      CliffordAlgebra.ι Q (spinSixTransvectionSecondVector P (b.reindex e) i j c) *
+        CliffordAlgebra.ι Q (spinSixTransvectionFirstVector P (b.reindex e) i j) := by
+  obtain ⟨x, hx⟩ := P.exists_typeDQuadraticEquiv_eq_ι_mul_ι b hline e hij c
+  rw [← hx, (LieEquiv.symm_apply_eq _).mpr]
+  ext : 1
+  rw [coe_typeDSpinPlusLieEquivSl_apply, SpecialLinear.val_single,
+    P.toMatrix_typeDSpinPlusLieRep_eq_single b hline e hij c hx]
 
 /-- Through the isomorphism `so₆ ≃ sl₄`, a trace-zero matrix acts on `S⁺` by the endomorphism with
 that matrix in the basis `B`. -/
@@ -432,6 +453,15 @@ theorem exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose (hι : Finty
   -- through the linear equivalence explicitly.
   exact congrArg Matrix.transpose (map_neg (LinearMap.toMatrix B B) _)
 
+omit [Invertible (2 : K)] in
+/-- Endomorphisms whose matrices are `A` and `-Aᵀ` have opposite traces. -/
+private theorem trace_eq_neg_of_toMatrix_eq_neg_transpose {M N : Type*} [AddCommGroup M]
+    [Module K M] [AddCommGroup N] [Module K N] (B : Basis κ K M) (B' : Basis κ K N)
+    {f : Module.End K M} {g : Module.End K N}
+    (h : LinearMap.toMatrix B' B' g = -(LinearMap.toMatrix B B f)ᵀ) :
+    LinearMap.trace K N g = -LinearMap.trace K M f := by
+  simp [LinearMap.trace_eq_matrix_trace K B, LinearMap.trace_eq_matrix_trace K B', h]
+
 /-- Every element of `so₆` acts on the odd half-spin module by an endomorphism of trace zero. -/
 @[simp]
 theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_three (hι : Fintype.card ι = 3)
@@ -439,9 +469,7 @@ theorem trace_typeDSpinMinusLieRep_eq_zero_of_card_eq_three (hι : Fintype.card 
     LinearMap.trace K (spinMinus Q P) (P.typeDSpinMinusLieRep b hline x) = 0 := by
   obtain ⟨B', hB'⟩ := P.exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose b hline hι
     (P.monomialBasis b hι)
-  rw [LinearMap.trace_eq_matrix_trace K B', hB', Matrix.trace_neg, Matrix.trace_transpose,
-    ← LinearMap.trace_eq_matrix_trace,
-    P.trace_typeDSpinPlusLieRep_eq_zero_of_card_eq_three b hline hι, neg_zero]
+  simp [trace_eq_neg_of_toMatrix_eq_neg_transpose _ B' (hB' x), hι]
 
 /-- **`so₆` acts faithfully on the odd half-spin module.** For an even polarization with
 `dim W = 3`, the action of the split type-`D` Lie algebra on `S⁻` is injective. -/
@@ -450,7 +478,7 @@ theorem typeDSpinMinusLieRep_injective_of_card_eq_three (hι : Fintype.card ι =
   obtain ⟨B', hB'⟩ := P.exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose b hline hι
     (P.monomialBasis b hι)
   have hxy := congrArg (LinearMap.toMatrix B' B') h
-  rw [hB', hB', neg_inj, Matrix.transpose_inj, EmbeddingLike.apply_eq_iff_eq] at hxy
+  simp only [hB', ← negTransposeLieEquiv_apply, EmbeddingLike.apply_eq_iff_eq] at hxy
   exact P.typeDSpinPlusLieRep_injective_of_card_eq_three b hline hι hxy
 
 /-- **The image of `so₆` in `End S⁻` is `sl(S⁻)`.** For an even polarization with `dim W = 3`,
@@ -465,14 +493,13 @@ theorem mem_range_typeDSpinMinusLieRep_iff_of_card_eq_three (hι : Fintype.card 
   set B := P.monomialBasis b hι
   obtain ⟨B', hB'⟩ := P.exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose b hline hι B
   -- The endomorphism of `S⁺` whose matrix is minus the transpose of that of `f`.
-  set g := Matrix.toLin B B (-(LinearMap.toMatrix B' B' f)ᵀ)
+  set g := Matrix.toLin B B ((negTransposeLieEquiv (Fin 4) K).symm (LinearMap.toMatrix B' B' f))
+  have hfg : LinearMap.toMatrix B' B' f = -(LinearMap.toMatrix B B g)ᵀ := by
+    rw [← negTransposeLieEquiv_apply, LinearMap.toMatrix_toLin, LieEquiv.apply_symm_apply]
   have hg : LinearMap.trace K (spinPlus Q P) g = 0 := by
-    rw [LinearMap.trace_eq_matrix_trace K B, LinearMap.toMatrix_toLin, Matrix.trace_neg,
-      Matrix.trace_transpose, ← LinearMap.trace_eq_matrix_trace, hf, neg_zero]
+    rw [← neg_eq_zero, ← trace_eq_neg_of_toMatrix_eq_neg_transpose B B' hfg, hf]
   obtain ⟨x, hx⟩ := (LieHom.mem_range _ _).mp
     ((P.mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three b hline hι).mpr hg)
-  refine ⟨x, (LinearMap.toMatrix B' B').injective ?_⟩
-  rw [hB', hx, LinearMap.toMatrix_toLin, Matrix.transpose_neg, Matrix.transpose_transpose,
-    neg_neg]
+  exact ⟨x, (LinearMap.toMatrix B' B').injective (by rw [hB', hx, hfg])⟩
 
 end TauCeti.SpinPolarizationData
