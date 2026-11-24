@@ -118,9 +118,8 @@ theorem inv_mul_mul_mem_offAlgebra_iff (M : BasedChart u Λ B) (k : I) {z : Bˣ}
     exact Subalgebra.smul_mem _ (M.monomial_mem_offAlgebra ha) _
   · obtain ⟨r, hr⟩ := hz a ha
     have h : (↑z⁻¹ : B) * M.monomial a * z = ((r⁻¹ : Rˣ) : R) • (M.monomial a : B) := by
-      rw [mul_assoc, ← one_smul R ((M.monomial a : B) * z), ← Units.val_one, ← inv_mul_cancel r,
-        Units.val_mul, ← smul_smul, ← hr, Algebra.mul_smul_comm, ← mul_assoc, Units.inv_mul,
-        one_mul]
+      rw [mul_assoc, Units.inv_mul_eq_iff_eq_mul, Algebra.mul_smul_comm, hr, smul_smul,
+        Units.inv_mul, one_smul]
     rw [h]
     exact Subalgebra.smul_mem _ (M.monomial_mem_offAlgebra ha) _
 

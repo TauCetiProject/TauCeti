@@ -336,6 +336,7 @@ omit [DecidableEq K] in
 private theorem isAlt_comp_latticeMutation (s : Seed c row u B) (k : K) :
     (s.form.comp (latticeMutation s k) (latticeMutation s k)).IsAlt := by
   intro a
+  rw [LinearMap.BilinForm.comp_apply]
   exact s.isAlt _
 
 omit [DecidableEq K] in
