@@ -220,14 +220,10 @@ theorem exists_contDiffOn_ae_eq_of_forall_integral_apply_floerLinearization_eq_z
     have hae : ∀ᵐ w ∂volume, w ∈ Ωc → η (e w) = g w :=
       (ae_restrict_iff' Ωc.isOpen.measurableSet).1
         (hηc.ae_eq_preciseRepresentative hq.le)
-    have hae' := volume_preserving_equiv_real_prod.symm.quasiMeasurePreserving.ae hae
-    filter_upwards [hae'] with z hz
-    have hez : e (measurableEquivRealProd.symm z) = z := by
-      rw [← coe_measurableEquivRealProd_eq_equivRealProdCLM]
-      exact measurableEquivRealProd.apply_symm_apply z
-    have hs : measurableEquivRealProd.symm z = e.symm z :=
-      e.injective (by rw [hez, e.apply_symm_apply])
-    rw [hez, hs] at hz
+    have he : MeasurePreserving e.symm volume volume :=
+      Complex.measurePreserving_equivRealProdCLM_symm
+    filter_upwards [he.quasiMeasurePreserving.ae hae] with z hz
+    rw [e.apply_symm_apply] at hz
     split_ifs with hzΩ
     · exact hz (by simpa only [Ωc, Opens.mem_mk, Set.mem_preimage, e.apply_symm_apply] using hzΩ)
     · rfl
@@ -301,7 +297,7 @@ near the graph of a map `u`, `C²` over a connected open set `Ω`. Let `η` be a
 covector field on `Ω`, `q > 1`, annihilating `D_u ξ` for every smooth test map `ξ` compactly
 supported in `Ω`. Suppose that on a nonempty open set `U ⊆ Ω`, every point `z` is an injective
 point of `u`, with `J` tamed by `ω` at `u z` and `∂ₜu - X_{K_t} ≠ 0` at `z`, and that `η`
-annihilates the derivative of the Floer operator along `J + q Y` for every compactly supported `Cⁿ`
+annihilates the derivative of the Floer operator along `J + τ Y` for every compactly supported `Cⁿ`
 field `Y` of compatible variations of `J` supported in a neighbourhood `W` of `u(U)`. Then `η = 0`
 almost everywhere on `Ω`. This is the weak form of
 `TauCeti.SymplecticForm.eqOn_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`.
@@ -322,8 +318,8 @@ theorem ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperato
     {W : Set V} (hW : ∀ z ∈ U, W ∈ 𝓝 (u z))
     (hY : ∀ Y : V → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y → tsupport Y ⊆ W →
       (∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x)) →
-        ∫ z, η z (deriv (fun q : ℝ ↦ ω.floerOperator
-          (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap + q • Y x) Ks Kt u z)
+        ∫ z, η z (deriv (fun τ : ℝ ↦ ω.floerOperator
+          (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap + τ • Y x) Ks Kt u z)
             0) = 0) :
     η =ᵐ[volume.restrict Ω] 0 := by
   have hJ2 : ContDiff ℝ 2
@@ -350,7 +346,7 @@ be a nonstationary `C²` solution of the Floer equation `∂ₛu + J_t(u)(∂ₜ
 `C³` Hamiltonian `H`. Suppose that `u(s, t)` tends to `xm(t₀)` and `xp(t₀)`, for continuous loops
 `xm` and `xp`, as `s → -∞` and `s → +∞` and `t → t₀`. Let `η` be a locally `L^q` covector field,
 `q > 1`, annihilating `D_u ξ` for every smooth compactly supported test map `ξ`, and annihilating,
-over the strip `ℝ × (0, 1)`, the derivative of the Floer operator along `J + q Y` for every `Cⁿ`
+over the strip `ℝ × (0, 1)`, the derivative of the Floer operator along `J + τ Y` for every `Cⁿ`
 field `Y` of period one in time, vanishing for `x` outside a compact set, with `Y (t, x)` in the
 compatible tangent space of `J (t, x)`. Then `η = 0` almost everywhere. This is the weak form of
 `TauCeti.SymplecticForm.eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`.
@@ -374,8 +370,8 @@ theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOper
     (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → (∀ t x, Y (t + 1, x) = Y (t, x)) →
       (∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) →
       (∀ p, (Y p : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J p)) →
-        ∫ z in univ ×ˢ Ioo 0 1, η z (deriv (fun q : ℝ ↦ ω.floerOperator
-          (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap + q • Y (z.2, x))
+        ∫ z in univ ×ˢ Ioo 0 1, η z (deriv (fun τ : ℝ ↦ ω.floerOperator
+          (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap + τ • Y (z.2, x))
             (fun _ _ ↦ 0) (fun z ↦ H z.2) u z) 0) = 0) :
     η =ᵐ[volume] 0 := by
   have hg : ContDiff ℝ 3 fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2) :=

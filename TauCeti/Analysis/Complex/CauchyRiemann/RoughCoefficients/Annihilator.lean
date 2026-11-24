@@ -61,6 +61,20 @@ open scoped InnerProductSpace Distributions ENNReal NNReal ComplexConjugate
 
 namespace TauCeti
 
+/-- `ρ(z) = -conj z` preserves Lebesgue measure, so `J² = -1` almost everywhere on `Ω` gives
+`J'² = -1` almost everywhere on any open `Ω'` that `ρ` maps into `Ω`. -/
+private theorem ae_crReflectedAdjointCoeff_mul_self_eq_neg_one {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {Ω Ω' : Opens ℂ}
+    {J : ℂ → V →L[ℝ] V} (hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω)
+    (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) :
+    ∀ᵐ z ∂volume.restrict Ω', crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 := by
+  have hρm : MeasurePreserving (fun z : ℂ ↦ -conj z) :=
+    (conjLIE.trans (LinearIsometryEquiv.neg ℝ)).measurePreserving
+  rw [ae_restrict_iff' Ω'.isOpen.measurableSet]
+  filter_upwards [hρm.quasiMeasurePreserving.ae
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2)] with z hz hzΩ'
+  exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz (hρ hzΩ'))
+
 /-- **The annihilator of a real Cauchy–Riemann operator with Sobolev coefficients is
 `W^{1,r}_loc`.** Let `Ω ⊆ ℂ` be open, `V` a finite-dimensional real inner product space, and
 `(J, DJ, S)` Sobolev coefficients on `Ω` (`J ∈ W^{1,p}_loc` with weak derivative `DJ`,
@@ -79,17 +93,10 @@ theorem IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero {
   -- After the reflection `ρ z = -conj z`, `v` solves a homogeneous Cauchy–Riemann equation.
   set Ω' : Opens ℂ := ⟨(fun z ↦ -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
   have hweak := (hc.forall_integral_inner_eq_zero_iff hpq.le (Ω' := Ω') (fun _ ↦ Iff.rfl) hv).1 h
-  -- `ρ` preserves Lebesgue measure, so `J² = -1` a.e. on `Ω` gives `J'² = -1` a.e. on `Ω'`.
-  have hρ : MeasurePreserving (fun z : ℂ ↦ -conj z) :=
-    (conjLIE.trans (LinearIsometryEquiv.neg ℝ)).measurePreserving
-  have hJ2' : ∀ᵐ z ∂volume.restrict Ω',
-      crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 := by
-    rw [ae_restrict_iff' Ω'.isOpen.measurableSet]
-    filter_upwards [hρ.quasiMeasurePreserving.ae
-      ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2)] with z hz hzΩ'
-    exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz hzΩ')
-  have hW := hweak.memWkpLoc_one_of_le (hc.crReflectedAdjoint fun _ hz ↦ hz) hp hJ2' hpq
-    hr hr_top hrp continuousOn_const.memLpLoc
+  have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
+  have hW := hweak.memWkpLoc_one_of_le (hc.crReflectedAdjoint hρ) hp
+    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq hr hr_top hrp
+    continuousOn_const.memLpLoc
   -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
   simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
 
@@ -134,17 +141,9 @@ theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*
     ((hJ.of_le le_self_add).crReflectedAdjointCoeff hρ).memWkpLoc subset_rfl
   have hSk : MemWkpLoc p Ω' k (crReflectedAdjointZeroth (fderiv ℝ J) S) :=
     (hDJ.crReflectedAdjointZeroth hS hρ).memWkpLoc subset_rfl
-  -- `ρ` preserves Lebesgue measure, so `J² = -1` a.e. on `Ω` gives `J'² = -1` a.e. on `Ω'`.
-  have hρm : MeasurePreserving (fun z : ℂ ↦ -conj z) :=
-    (conjLIE.trans (LinearIsometryEquiv.neg ℝ)).measurePreserving
-  have hJ2ρ : ∀ᵐ z ∂volume.restrict Ω',
-      crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 := by
-    rw [ae_restrict_iff' Ω'.isOpen.measurableSet]
-    filter_upwards [hρm.quasiMeasurePreserving.ae
-      ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2')] with z hz hzΩ'
-    exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz hzΩ')
   have hc' := (IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn p).crReflectedAdjoint hρ
-  have hW := hweak.memWkpLoc_succ hc' hp hJ2ρ hpp le_rfl hJk hSk memWkpLoc_zero_fun
+  have hW := hweak.memWkpLoc_succ hc' hp (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2')
+    hpp le_rfl hJk hSk memWkpLoc_zero_fun
   -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`, and lowering the exponent to `r`.
   have hrp : r ≤ p := by
     rw [← ENNReal.coe_toNNReal hr_top]
