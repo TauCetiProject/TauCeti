@@ -23,7 +23,7 @@ graph itself. This file records how these sets sit relative to each other inside
   `closure Ω` (`TauCeti.setOf_le_inner_inter_subset_closure_of_inter_eq`); for continuous `γ`,
   conversely, `closure Ω ∩ U` lies in the closed region
   (`TauCeti.closure_inter_subset_setOf_le_inner_of_inter_eq`); and the points of the graph in `U`
-  lie on `frontier Ω` (`TauCeti.mem_frontier_of_inter_eq`).
+  lie on `frontier Ω` (`TauCeti.mem_frontier_of_inner_eq_of_inter_eq`).
 
 These are the facts used when a domain with `C^{k,α}` boundary is described near each boundary
 point as the region above a graph. The file also names that description for `k = 2`:
@@ -83,7 +83,7 @@ theorem closure_inter_subset_setOf_le_inner_of_inter_eq {Ω U : Set E} {ν : E} 
 
 /-- If `Ω` agrees on an open set `U` with the region `{x | γ x < ⟪x, ν⟫}` above the graph of `γ`,
 then the points of the graph `{x | ⟪x, ν⟫ = γ x}` in `U` lie on the frontier of `Ω`. -/
-theorem mem_frontier_of_inter_eq {Ω U : Set E} {ν : E} {γ : E → ℝ} (hU : IsOpen U)
+theorem mem_frontier_of_inner_eq_of_inter_eq {Ω U : Set E} {ν : E} {γ : E → ℝ} (hU : IsOpen U)
     (hΩU : Ω ∩ U = {x | γ x < ⟪x, ν⟫_ℝ} ∩ U) (hν : ν ≠ 0)
     (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {y : E} (hyU : y ∈ U) (hyγ : ⟪y, ν⟫_ℝ = γ y) :
     y ∈ frontier Ω := by

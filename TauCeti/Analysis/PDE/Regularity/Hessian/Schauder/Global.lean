@@ -142,8 +142,8 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_chart {α : ℝ�
   have hx₀ : γ x ≤ ⟪x, ν⟫_ℝ := hge ⟨hx.1, hRz (mem_closedBall_self hR.le)⟩
   refine (hC hx₀ (hEll x hx.1) (hEll' x hx.1) (fun i j => (hL i j).mono hcl)
     (fun y hy i j => hM y (hcl' hy) i j) hU (hcl'.trans hΩU) hu
-    (fun y hy hyγ => hu0 y (TauCeti.mem_frontier_of_inter_eq isOpen_ball hΩz hν0 hγν
-      (hRz (ball_subset_closedBall hy)) hyγ)) (fun y hy => hN0 y (hcl' hy))
+    (fun y hy hyγ => hu0 y (TauCeti.mem_frontier_of_inner_eq_of_inter_eq isOpen_ball hΩz hν0
+      hγν (hRz (ball_subset_closedBall hy)) hyγ)) (fun y hy => hN0 y (hcl' hy))
     (fun y hy => hN1 y (hcl' hy)) (fun y hy => hN2 y (hcl' hy)) (hV.mono hcl')
     (hK.mono fun y hy => ?_)).mono fun y hy => ?_
   · have h : y ∈ Ω ∩ ball z r := by
