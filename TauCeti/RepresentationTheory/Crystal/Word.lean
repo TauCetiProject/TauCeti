@@ -12,8 +12,10 @@ public import TauCeti.RepresentationTheory.Crystal.Basic
 
 A word of simple roots acts by successive partial raising or lowering operators, read from
 left to right. Reversing the word and exchanging raising with lowering gives its partial
-inverse. These operations describe generation from a highest element without choosing a
-reduced Weyl-group expression.
+inverse, and strict crystal morphisms intertwine word actions
+(`TauCeti.NormalCrystal.StrictHom.eWord_apply`, `TauCeti.NormalCrystal.StrictHom.fWord_apply`).
+These operations describe generation from a highest element without choosing a reduced Weyl-group
+expression.
 
 ## References
 
@@ -137,5 +139,31 @@ theorem eWord_eq_some_iff_of_highest {x y : B} (hx : ∀ i, c.e i x = none)
   cases w with
   | nil => simp
   | cons i w => simp [eWord_cons, hx]
+
+namespace StrictHom
+
+variable {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'} (ψ : StrictHom c d)
+
+/-- Strict crystal morphisms intertwine raising words. -/
+@[simp]
+theorem eWord_apply (w : List b.support) (x : B) :
+    d.eWord w (ψ x) = (c.eWord w x).map ψ := by
+  induction w generalizing x with
+  | nil => simp
+  | cons i w ih =>
+    rw [eWord_cons, eWord_cons, e_apply]
+    cases c.e i x <;> simp [ih]
+
+/-- Strict crystal morphisms intertwine lowering words. -/
+@[simp]
+theorem fWord_apply (w : List b.support) (x : B) :
+    d.fWord w (ψ x) = (c.fWord w x).map ψ := by
+  induction w generalizing x with
+  | nil => simp
+  | cons i w ih =>
+    rw [fWord_cons, fWord_cons, f_apply]
+    cases c.f i x <;> simp [ih]
+
+end StrictHom
 
 end TauCeti.NormalCrystal

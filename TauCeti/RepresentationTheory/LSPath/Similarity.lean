@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.LSPath.CappedReflection
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Connected
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
 public import TauCeti.RepresentationTheory.LSPath.RationalChain
-public import TauCeti.RepresentationTheory.LSPath.Subdivision
 public import TauCeti.RepresentationTheory.LSPath.Word
 import TauCeti.Data.Option.Basic
 
@@ -42,13 +41,10 @@ straight-path component `B(π_λ)` into `B(π_{n λ})`
 `TauCeti.PLPath.simpleRootStringDilationSimilarityHom`).
 
 Specializing to Lakshmibai–Seshadri paths connects `LSPath.stretch` and the denominator-clearing
-construction `LSPath.ofBruhatChain` with iterated root operators and `n`-replicated words, packages
-stretching as a similarity morphism `LSPath.stretchSimilarityHom : B(λ) → B(n • λ)` whose rigidity
-and injectivity follow from highest-weight generation of `B(λ)`
-(`LSPath.eq_of_similarityHom_apply_straight_eq`, `LSPath.similarityHom_injective`), embeds
-`B(n • λ)` strictly into the `n`-fold concatenation crystal `B(λ)^n` (`LSPath.nsmulInclusionHom`),
-and factors stretched paths in `B(λ)` into uniform-length products of single-direction LS paths
-(`LSPath.exists_uniform_subdivision_stretchSimilarityHom`).
+construction `LSPath.ofBruhatChain` with iterated root operators and `n`-replicated words, and
+packages stretching as a similarity morphism `LSPath.stretchSimilarityHom : B(λ) → B(n • λ)` whose
+rigidity and injectivity follow from highest-weight generation of `B(λ)`
+(`LSPath.eq_of_similarityHom_apply_straight_eq`, `LSPath.similarityHom_injective`).
 
 ## Main definitions
 
@@ -61,8 +57,6 @@ and factors stretched paths in `B(λ)` into uniform-length products of single-di
   isolated simple-root strings.
 * `TauCeti.LSPath.stretchSimilarityHom`: positive-integer stretching as a scale-factor-`n`
   similarity morphism `B(λ) → B(n • λ)`.
-* `TauCeti.LSPath.nsmulInclusionHom`: strict embedding of `B(n • λ)` into the `n`-fold
-  concatenation crystal on `B(λ)^n`.
 
 ## Main results
 
@@ -91,11 +85,9 @@ and factors stretched paths in `B(λ)` into uniform-length products of single-di
   `TauCeti.LSPath.lowerIter_toPLPath_ofBruhatChain`,
   `TauCeti.LSPath.lowerWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff`: root-operator
   similarity for stretched LS paths and cleared rational Bruhat-chain paths.
-* `TauCeti.LSPath.eq_of_similarityHom_apply_straight_eq`, `TauCeti.LSPath.similarityHom_injective`,
-  `TauCeti.LSPath.range_toPLPath_nsmul_subset_pow`,
-  `TauCeti.LSPath.exists_uniform_subdivision_stretchSimilarityHom`: rigidity and automatic
-  injectivity of similarity morphisms out of `B(λ)`, containment `B(n • λ) ⊆ B(λ)^n`, and uniform
-  orbit-subdivision factorization of stretched LS paths.
+* `TauCeti.LSPath.eq_of_similarityHom_apply_straight_eq`,
+  `TauCeti.LSPath.similarityHom_injective`: rigidity and automatic injectivity of similarity
+  morphisms out of `B(λ)`.
 
 ## References
 
@@ -675,11 +667,6 @@ theorem raiseIter_toPLPath_ofBruhatChain {F : Module.Dual 𝕜 V} {x : V} (hx : 
           (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_ofBruhatChain, PLPath.raiseIter_map_natCast_smul hx hn]
 
-private theorem toPLPath_straight_nsmul :
-    (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
-      (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by
-  simp [toPLPath_straight, ← Nat.cast_smul_eq_nsmul 𝕜]
-
 /-- The denominator-cleared LS path `ofBruhatChain` is obtained from `straight (n • lam)` by
 lowering along an `n`-replicated word if and only if the original rational Bruhat-chain path is
 obtained from `PLPath.straight 𝕜 (f lam)` by lowering along the un-replicated word. -/
@@ -712,68 +699,7 @@ end RationalChain
 
 section CrystalComparison
 
-open scoped Pointwise
-
 variable {f : M →+ V}
-
-/-- The `n`-fold concatenation power of the realized LS crystal `B(λ)` is crystal-admissible. -/
-theorem isCrystalSet_pow_range_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
-    {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) (n : ℕ) :
-    PLPath.IsCrystalSet b f F ((Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) ^ n) := by
-  induction n with
-  | zero =>
-    rw [pow_zero]
-    change PLPath.IsCrystalSet b f F {1}
-    simpa [map_zero, PLPath.straight_zero] using
-      PLPath.isCrystalSet_singleton_straight (𝕜 := 𝕜) hF (χ := 0) (by simp)
-  | succ n ih =>
-    rw [pow_succ]
-    exact ih.mul hF (isCrystalSet_range_toPLPath hlam f hF)
-
-/-- **Tensor-power containment `B(n • λ) ⊆ B(λ)^n`**: for dominant `λ` and every `n : ℕ`, every
-realized LS path of shape `n • λ` is a concatenation of `n` realized LS paths of shape `λ`. -/
-theorem range_toPLPath_nsmul_subset_pow (hlam : lam ∈ dominantChamber P b)
-    (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) (n : ℕ) :
-    Set.range (fun π : LSPath P b (n • lam) ↦ π.toPLPath 𝕜 f) ⊆
-      (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) ^ n := by
-  rintro _ ⟨π, rfl⟩
-  have hnsmul : n • lam ∈ dominantChamber P b := by
-    rw [← natCast_zsmul]
-    exact smul_mem_dominantChamber P b (Int.natCast_nonneg n) hlam
-  have hstraight : PLPath.straight 𝕜 (f (n • lam)) ∈
-      (Set.range fun ρ : LSPath P b lam ↦ ρ.toPLPath 𝕜 f) ^ n := by
-    rw [map_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜, PLPath.straight_natCast_smul]
-    exact Set.pow_mem_pow ⟨straight lam, toPLPath_straight 𝕜 f⟩
-  refine (isCrystalSet_pow_range_toPLPath hlam f hF n).mem_of_reflTransGen_rootStep ?_ hstraight
-  exact Relation.ReflTransGen.mono (fun _ _ ⟨i, hi⟩ ↦ PLPath.RootStep.of_lower_eq_some hi) _ _
-    (reflTransGen_lower_toPLPath_straight hnsmul hf hF π)
-
-/-- **Strict embedding `B(n • λ) ↪ B(λ)^n`** into the `n`-fold concatenation crystal of `B(λ)`. -/
-noncomputable def nsmulInclusionHom (hlam : lam ∈ dominantChamber P b)
-    (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) (n : ℕ) :
-    NormalCrystal.StrictHom
-      (normalCrystal (show n • lam ∈ dominantChamber P b by
-        rw [← natCast_zsmul]; exact smul_mem_dominantChamber P b (Int.natCast_nonneg n) hlam)
-        hf hF)
-      (PLPath.normalCrystalOn hf hF (isCrystalSet_pow_range_toPLPath hlam f hF n)) :=
-  PLPath.inclusionHom
-    (isCrystalSet_range_toPLPath
-      (show n • lam ∈ dominantChamber P b by
-        rw [← natCast_zsmul]; exact smul_mem_dominantChamber P b (Int.natCast_nonneg n) hlam)
-      f hF)
-    (isCrystalSet_pow_range_toPLPath hlam f hF n)
-    (range_toPLPath_nsmul_subset_pow hlam hf hF n)
-
-@[simp]
-theorem nsmulInclusionHom_apply (hlam : lam ∈ dominantChamber P b)
-    (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) (n : ℕ)
-    (x : Set.range fun π : LSPath P b (n • lam) ↦ π.toPLPath 𝕜 f) :
-    (nsmulInclusionHom hlam hf hF n x).val = x.val :=
-  PLPath.inclusionHom_apply _ _ _ x
 
 /-- **Kashiwara–Littelmann similarity morphism `B(λ) → B(n • λ)`** on the normal crystal of
 realized LS paths, induced by `LSPath.stretch`. -/
@@ -781,9 +707,7 @@ noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b)
     (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) {n : ℕ} (hn : 0 < n) :
     NormalCrystal.SimilarityHom n (normalCrystal hlam hf hF)
-      (normalCrystal (show n • lam ∈ dominantChamber P b by
-        rw [← natCast_zsmul]; exact smul_mem_dominantChamber P b (Int.natCast_nonneg n) hlam)
-        hf hF) :=
+      (normalCrystal (nsmul_mem_dominantChamber P b n hlam) hf hF) :=
   PLPath.dilationSimilarityHom hf hF _ _ hn <| by
     rintro _ ⟨π, rfl⟩
     exact ⟨π.stretch n hn, π.toPLPath_stretch 𝕜 f n hn⟩
@@ -819,24 +743,6 @@ theorem similarityHom_injective {B' : Type*} {d : NormalCrystal P b B'} {n : ℕ
     Function.Injective ψ :=
   ψ.injective_of_forall_exists_fWord_eq_some
     (exists_normalCrystal_fWord_straight_eq_some hlam hf hF)
-
-/-- Every element in the image of `LSPath.stretchSimilarityHom` at a uniform subdivision factor
-factors as an `n`-fold concatenation of single-direction LS paths in `B(λ)`. -/
-theorem exists_uniform_subdivision_stretchSimilarityHom
-    (hlam : lam ∈ dominantChamber P b) (hf : Function.Injective f)
-    {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) :
-    ∃ (n : ℕ) (hn : 0 < n), ∀ x : Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f,
-      ∃ word : List {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w},
-        word.length = n ∧
-        (stretchSimilarityHom hlam hf hF hn x).val =
-          (word.map fun w ↦ (single w : LSPath P b lam).toPLPath 𝕜 f).prod := by
-  obtain ⟨n, hn, hsub⟩ := exists_uniform_subdivision 𝕜 f hlam
-  refine ⟨n, hn, fun ⟨_, π, rfl⟩ ↦ ?_⟩
-  obtain ⟨word, hlen, hmin, hprod⟩ := hsub π
-  refine ⟨word.pmap (fun w hw ↦ ⟨w, hw⟩) hmin, by simpa using hlen, ?_⟩
-  simpa [stretchSimilarityHom_apply, toPLPath_stretch, List.map_pmap,
-    toPLPath_single] using hprod
 
 end CrystalComparison
 

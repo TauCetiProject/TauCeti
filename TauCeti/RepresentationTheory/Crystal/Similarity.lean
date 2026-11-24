@@ -39,7 +39,7 @@ satisfying `d.eIter i n (ψ x) = (c.e i x).map ψ`. Note that `ε_i`-scaling is 
   scaling of `φ_i` and intertwining of `f_i` with `f_i^n` follow from the raising axioms.
 * `TauCeti.NormalCrystal.SimilarityHom.eWord_flatMap_replicate`,
   `TauCeti.NormalCrystal.SimilarityHom.fWord_flatMap_replicate`: words act through `n`-fold
-  letterwise replication, specializing at `n = 1` to
+  letterwise replication, recovering at `n = 1` the strict-morphism word identities
   `TauCeti.NormalCrystal.StrictHom.eWord_apply` and
   `TauCeti.NormalCrystal.StrictHom.fWord_apply`.
 * `TauCeti.NormalCrystal.SimilarityHom.forall_e_apply_eq_none_iff`: similarity morphisms preserve
@@ -405,43 +405,6 @@ theorem injective_of_forall_exists_fWord_eq_some (ψ : SimilarityHom n c d) {h :
   have hwy : c.fWord w h = some y := c.fWord_eq_some_iff.mpr hh'
   exact Option.some.inj (hw.symm.trans hwy)
 
-/-- On a normal crystal whose raising relation is well-founded with a unique highest element `h`,
-two scale-factor-`n` similarity morphisms agreeing on `h` are equal. -/
-theorem eq_of_apply_eq_of_unique_highest
-    (hwf : WellFounded (fun y x : B ↦ ∃ i, c.e i x = some y))
-    {ψ₁ ψ₂ : SimilarityHom n c d} {h : B}
-    (heq : ψ₁ h = ψ₂ h) (hh : ∀ x, (∀ i, c.e i x = none) → x = h) :
-    ψ₁ = ψ₂ :=
-  eq_of_apply_eq_of_connected heq (c.connected_graph_of_unique_highest_of_wellFounded hwf hh)
-
-/-- On a normal crystal whose raising relation is well-founded with a unique highest element `h`,
-every scale-factor-`n` similarity morphism is injective. -/
-theorem injective_of_unique_highest
-    (hwf : WellFounded (fun y x : B ↦ ∃ i, c.e i x = some y))
-    (ψ : SimilarityHom n c d) {h : B}
-    (hh : ∀ x, (∀ i, c.e i x = none) → x = h) :
-    Function.Injective ψ :=
-  ψ.injective_of_forall_exists_fWord_eq_some
-    (c.exists_fWord_eq_some_of_unique_highest_of_wellFounded hwf hh)
-
 end SimilarityHom
-
-namespace StrictHom
-
-variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} (ψ : StrictHom c d)
-
-/-- Strict crystal morphisms intertwine raising words. -/
-@[simp]
-theorem eWord_apply (w : List b.support) (x : B) :
-    d.eWord w (ψ x) = (c.eWord w x).map ψ := by
-  simpa [List.flatMap_singleton] using (SimilarityHom.ofStrictHom ψ).eWord_flatMap_replicate w x
-
-/-- Strict crystal morphisms intertwine lowering words. -/
-@[simp]
-theorem fWord_apply (w : List b.support) (x : B) :
-    d.fWord w (ψ x) = (c.fWord w x).map ψ := by
-  simpa [List.flatMap_singleton] using (SimilarityHom.ofStrictHom ψ).fWord_flatMap_replicate w x
-
-end StrictHom
 
 end TauCeti.NormalCrystal

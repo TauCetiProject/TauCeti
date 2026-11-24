@@ -181,6 +181,12 @@ theorem toPLPath_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
   simp only [toPLPath_def, timed_stretch, PLPath.map_ofSegments, List.map_map,
     Function.comp_def, LinearMap.smul_apply, LinearMap.id_apply]
 
+/-- Realizing the straight LS path of shape `n • λ` dilates the straight path of `λ` by `n`. -/
+theorem toPLPath_straight_nsmul (lam : M) (n : ℕ) :
+    (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
+      (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by
+  simp [toPLPath_straight, ← Nat.cast_smul_eq_nsmul 𝕜]
+
 /-- Stretching multiplies the endpoint by the stretching factor. -/
 @[simp]
 theorem endpoint_toPLPath_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
