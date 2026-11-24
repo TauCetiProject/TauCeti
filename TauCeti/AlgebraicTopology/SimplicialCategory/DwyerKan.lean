@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialCategory.HomotopyCategory
-public import TauCeti.AlgebraicTopology.SimplicialSet.RealizationPiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 
 /-!
 # Dwyer–Kan equivalences of simplicially enriched categories

@@ -655,35 +655,8 @@ the coordinates of `v` in a basis `(e_j)` of `V`: with dual basis `(c_j)`,
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-
-/-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
-determined by a vector `e ∈ V` and a functional `ℓ` on `W`. -/
-private def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ →L[ℂ] ℂ) :=
-  ((ContinuousLinearMap.compL ℂ ℂ W ℂ ℓ).comp
-    ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
-    ).restrictScalars ℝ
-
-private theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
-    entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
-  (rfl)
-
-variable [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W]
-
-/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
-`(e_j)` of `V` with dual basis `(c_j)`, the component `ℓ ∘ Op(a)` of the quantization of a symbol
-`a` with values in `V →L[ℂ] W` is the sum over `j` of the scalar quantizations of the entries
-`ℓ ∘ a ∘ e_j`, applied to the coordinates `c_j v`. -/
-private theorem postcomp_comp_quantizeSobolev {a : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V)
-    (ℓ : W →L[ℂ] ℂ) (t : ℝ) :
-    BesselPotentialSpace.postcomp _ _ 2 ℓ ∘L a.quantizeSobolev ha t =
-      ∑ j, (a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t ∘L
-        BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap := by
-  ext1 v
-  simp only [_root_.sum_apply, ContinuousLinearMap.comp_apply,
-    quantizeSobolev_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum,
-    BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace V] [FiniteDimensional ℂ V]
+  [CompleteSpace W]
 
 /-- **Microlocality of matrix-valued pseudodifferential operators.** Let `a` be a symbol of order
 `m` with values in `V →L[ℂ] W` and compact spatial support, where `V` is finite-dimensional. For

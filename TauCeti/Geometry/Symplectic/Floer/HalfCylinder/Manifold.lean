@@ -14,7 +14,6 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
-import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders in a manifold
