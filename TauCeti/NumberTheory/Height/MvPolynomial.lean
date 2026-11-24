@@ -46,8 +46,8 @@ This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's
 derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`, while for a
 single derivative `MvPolynomial.mulHeight_hasseDeriv_le` and `MvPolynomial.logHeight_hasseDeriv_le`
 bound `H(∂^I P)` by `(2 ^ P.totalDegree) ^ totalWeight K * H(P)` without assuming `σ` is finite.
-More generally, `MvPolynomial.mulHeight_le_of_abv_coeff_le`,
-`MvPolynomial.logHeight_le_of_mulHeight_le`, and `MvPolynomial.logHeight_le_of_abv_coeff_le` compare
+More generally, `MvPolynomial.mulHeight_le_of_abv_coeff_le` and
+`MvPolynomial.logHeight_le_of_mulHeight_le` compare
 the height of `Q` with those of a finite tuple `x` and polynomial `P` from place-by-place
 coefficient estimates.
 
@@ -593,10 +593,11 @@ theorem mulHeight_le_of_abv_coeff_le [Finite α] [Nonempty α] {x : α → K}
 
 /-- Logarithmic form of a multiplicative height bound of the shape
 `Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight`, handling the
-empty-index case (`c = 0`, `IsEmpty τ`) unconditionally. -/
+empty-index case (`0 ≤ Real.log c`, `IsEmpty τ`) unconditionally. -/
 theorem logHeight_le_of_mulHeight_le [Finite α] {x : α → K}
     {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ}
-    (hEmpty : IsEmpty α → IsEmpty τ) (hc_pos : Nonempty α → 0 < c) (hc_zero : IsEmpty α → c = 0)
+    (hEmpty : IsEmpty α → IsEmpty τ) (hc_pos : Nonempty α → 0 < c)
+    (hc_log : IsEmpty α → 0 ≤ Real.log c)
     (hmul : Nonempty α →
       Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight) :
     Q.logHeight ≤ P.logHeight + D * Height.logHeight x + totalWeight K * D * Real.log c := by
@@ -611,21 +612,11 @@ theorem logHeight_le_of_mulHeight_le [Finite α] {x : α → K}
     linarith
   · have : IsEmpty α := not_nonempty_iff.mp hα
     have : IsEmpty τ := hEmpty ‹_›
-    simp [hc_zero ‹_›, Height.logHeight_eq_zero_of_subsingleton, P.logHeight_nonneg]
-
-/-- Logarithmic form of `mulHeight_le_of_abv_coeff_le`, handling the empty-index case
-(`c = 0`, `IsEmpty τ`) unconditionally. -/
-theorem logHeight_le_of_abv_coeff_le [Finite α] {x : α → K}
-    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ}
-    (hEmpty : IsEmpty α → IsEmpty τ) (hc1 : Nonempty α → 1 ≤ c) (hc0 : IsEmpty α → c = 0)
-    (h0P : P = 0 → Q = 0) (h0x : x = 0 → D ≠ 0 → Q = 0)
-    (harch : ∀ v ∈ archAbsVal (K := K), ∀ {B C : ℝ}, (∀ i, v (x i) ≤ B) →
-      (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ (c * B) ^ D * C)
-    (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ {B C : ℝ}, 0 ≤ B →
-      (∀ i, v (x i) ≤ B) → (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ B ^ D * C) :
-    Q.logHeight ≤ P.logHeight + D * Height.logHeight x + totalWeight K * D * Real.log c :=
-  logHeight_le_of_mulHeight_le hEmpty (fun h ↦ zero_lt_one.trans_le (hc1 h)) hc0
-    fun h ↦ mulHeight_le_of_abv_coeff_le (hc1 h) h0P h0x harch hnon
+    have hlogc : 0 ≤ Real.log c := hc_log ‹_›
+    have hP : 0 ≤ P.logHeight := P.logHeight_nonneg
+    simp only [logHeight_eq_zero_of_isEmpty, Height.logHeight_eq_zero_of_subsingleton, mul_zero,
+      add_zero]
+    positivity
 
 end Comparison
 
