@@ -21,14 +21,9 @@ public import TauCeti.Algebra.Quaternion.NormForm
 -- `TauCeti.LinearAlgebra.UnitaryGroup` supplies `Matrix.specialUnitaryGroup.star_eq_adjugate`,
 -- which turns the unitarity of a special unitary matrix into four entry identities.
 public import TauCeti.LinearAlgebra.UnitaryGroup
--- `TauCeti.Analysis.Matrix.UnitaryGroup.Basic` supplies the decomposition `U(n) = Circle · SU(n)`
--- (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`) used for `U(2)` below.
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
--- `TauCeti.Analysis.Complex.Circle.Basic` supplies `Circle.coe_mem_unitary`.
-import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
-# The real quaternions as two-by-two complex matrices, `SU(2)` and `U(2)`
+# The real quaternions as two-by-two complex matrices, and `SU(2)`
 
 The real quaternion algebra `ℍ[ℝ]` is a four-dimensional real form of the eight-dimensional real
 algebra `M₂(ℂ)`. This file builds the embedding realizing it, as a homomorphism of `ℝ`-algebras
@@ -67,19 +62,14 @@ conjugate transpose *is* the adjugate (`Matrix.specialUnitaryGroup.star_eq_adjug
 degree two the adjugate swaps the diagonal and negates the off-diagonal, which is exactly the pair
 of identities carving out the real form.
 
-Multiplying by scalars of modulus one then presents the whole unitary group: the homomorphism
-`Quaternion.unitaryProdCircleToUnitaryGroup : Sp(1) × U(1) → U(2)`, `(q, w) ↦ w • q`, is onto
-(`U(2) = Circle · SU(2)`) with kernel `{(1, 1), (-1, -1)}`, so
-`U(2) ≅ (Sp(1) × U(1)) / {±1}`.
+The presentation of the whole unitary group `U(2) ≅ (Sp(1) × U(1)) / {±1}` built from this
+equivalence is in `TauCeti/Analysis/Matrix/UnitaryGroup/Quaternion.lean`.
 
 ## Main definitions
 
 * `Quaternion.toComplexMatrix`: the `ℝ`-algebra embedding `ℍ[ℝ] →⋆ₐ[ℝ] M₂(ℂ)`.
 * `Quaternion.unitaryEquivSpecialUnitaryGroup`: the unit quaternions are `SU(2)`.
 * `Quaternion.ofFirstColumn`: the quaternion whose matrix has a given first column.
-* `Quaternion.circleToUnitary`: the circle as the unit quaternions of the complex line.
-* `Quaternion.unitaryProdCircleToUnitaryGroup`: the homomorphism `Sp(1) × U(1) → U(2)`,
-  `(q, w) ↦ w • q`.
 
 ## Main results
 
@@ -92,9 +82,6 @@ Multiplying by scalars of modulus one then presents the whole unitary group: the
 * `Quaternion.mem_specialUnitaryGroup_toComplexMatrix` and
   `Quaternion.exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup`: the two inclusions behind the
   equivalence, packaged as `Quaternion.mem_specialUnitaryGroup_iff_exists_toComplexMatrix`.
-* `Quaternion.unitaryProdCircleToUnitaryGroup_surjective` and
-  `Quaternion.mem_ker_unitaryProdCircleToUnitaryGroup_iff`: `Sp(1) × U(1) → U(2)` is onto with
-  kernel `{1, -1}`.
 
 ## Implementation notes
 
@@ -292,7 +279,7 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
       (M : Matrix (Fin 2) (Fin 2) ℂ) :=
   congrArg Subtype.val (unitaryEquivSpecialUnitaryGroup.apply_symm_apply M)
 
-/-! ### First columns and the complex line -/
+/-! ### First columns -/
 
 /-- The quaternion whose matrix under `Quaternion.toComplexMatrix` has first column `z`
 (`toComplexMatrix_ofFirstColumn_apply_zero`), and every quaternion is recovered from the first
@@ -342,75 +329,6 @@ theorem ofFirstColumn_toComplexMatrix_mulVec (q : ℍ[ℝ]) (z : Fin 2 → ℂ) 
 theorem ofFirstColumn_smul (c : ℂ) (z : Fin 2 → ℂ) :
     ofFirstColumn (c • z) = ofFirstColumn z * (c : ℍ[ℝ]) := by
   ext <;> simp [ofFirstColumn] <;> ring
-
-/-- The circle as the unit quaternions of the complex line `ℝ ⊕ ℝ i`. -/
-noncomputable def circleToUnitary : Circle →* unitary ℍ[ℝ] where
-  toFun w := ⟨((w : ℂ) : ℍ[ℝ]), by
-    rw [mem_unitary_iff_normSq_eq_one, normSq_def']
-    simpa [sq] using Circle.re_sq_add_im_sq w⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' _ _ := Subtype.ext (by simp)
-
-/-- The unit quaternion `circleToUnitary w` is the complex number `w`. -/
-@[simp]
-theorem coe_circleToUnitary (w : Circle) :
-    (circleToUnitary w : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) :=
-  (rfl)
-
-/-! ### `U(2)` as a quotient of `Sp(1) × U(1)` -/
-
-/-- **`U(2)` from unit quaternions and the circle.** The homomorphism `Sp(1) × U(1) → U(2)`,
-`(q, w) ↦ w • toComplexMatrix q`. It is onto (`unitaryProdCircleToUnitaryGroup_surjective`) with
-kernel `{1, -1}` (`mem_ker_unitaryProdCircleToUnitaryGroup_iff`). -/
-noncomputable def unitaryProdCircleToUnitaryGroup :
-    unitary ℍ[ℝ] × Circle →* Matrix.unitaryGroup (Fin 2) ℂ where
-  toFun p := ⟨(p.2 : ℂ) • toComplexMatrix (p.1 : ℍ[ℝ]),
-    Unitary.smul_mem_of_mem p.2.coe_mem_unitary
-      (Matrix.specialUnitaryGroup_le_unitaryGroup
-        (mem_specialUnitaryGroup_toComplexMatrix p.1.property))⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' p q := Subtype.ext (by
-    simp only [Prod.fst_mul, Prod.snd_mul, Submonoid.coe_mul, Circle.coe_mul, map_mul]
-    rw [smul_mul_smul_comm])
-
-/-- The matrix of `unitaryProdCircleToUnitaryGroup (q, w)` is `w • toComplexMatrix q`. -/
-@[simp]
-theorem coe_unitaryProdCircleToUnitaryGroup_apply (p : unitary ℍ[ℝ] × Circle) :
-    (unitaryProdCircleToUnitaryGroup p : Matrix (Fin 2) (Fin 2) ℂ) =
-      (p.2 : ℂ) • toComplexMatrix (p.1 : ℍ[ℝ]) :=
-  (rfl)
-
-/-- **`U(2) = U(1) · Sp(1)`.** Every unitary matrix of degree two is a scalar of modulus one times
-the matrix of a unit quaternion. -/
-theorem unitaryProdCircleToUnitaryGroup_surjective :
-    Function.Surjective unitaryProdCircleToUnitaryGroup := by
-  intro g
-  obtain ⟨c, hc⟩ := Matrix.exists_circle_smul_mem_specialUnitaryGroup g
-  refine ⟨(unitaryEquivSpecialUnitaryGroup.symm ⟨_, hc⟩, c⁻¹), Subtype.ext ?_⟩
-  rw [coe_unitaryProdCircleToUnitaryGroup_apply, coe_unitaryEquivSpecialUnitaryGroup_symm_apply,
-    smul_smul, Circle.coe_inv, inv_mul_cancel₀ (Circle.coe_ne_zero _), one_smul]
-
-/-- **The kernel of `Sp(1) × U(1) → U(2)` is `{1, -1}`**: `w • q = 1` forces `q = w⁻¹` to be a real
-unit quaternion. -/
-theorem mem_ker_unitaryProdCircleToUnitaryGroup_iff {p : unitary ℍ[ℝ] × Circle} :
-    p ∈ unitaryProdCircleToUnitaryGroup.ker ↔ p = 1 ∨ p = -1 := by
-  refine ⟨fun hp => ?_, ?_⟩
-  · obtain ⟨⟨a, ha⟩, w⟩ := p
-    have hm : (w : ℂ) • toComplexMatrix a = 1 := congrArg Subtype.val (MonoidHom.mem_ker.mp hp)
-    -- Taking determinants gives `w ^ 2 = 1`; then `toComplexMatrix a = w • 1` forces `a = w`.
-    have hw : (w : ℂ) ^ 2 = 1 := by
-      simpa [Matrix.det_smul, (mem_unitary_iff_normSq_eq_one a).mp ha] using
-        congrArg Matrix.det hm
-    rcases sq_eq_one_iff.mp hw with h | h
-    · refine Or.inl (Prod.ext (Subtype.ext (toComplexMatrix_injective ?_)) (Circle.ext h))
-      simpa [h] using hm
-    · refine Or.inr (Prod.ext (Subtype.ext (toComplexMatrix_injective ?_)) (Circle.ext ?_))
-      · simpa [h, Unitary.coe_neg, neg_eq_iff_eq_neg] using hm
-      · simpa using h
-  · rintro (rfl | rfl)
-    · exact one_mem _
-    · refine MonoidHom.mem_ker.mpr (Subtype.ext ?_)
-      simp [Unitary.coe_neg]
 
 end Quaternion
 

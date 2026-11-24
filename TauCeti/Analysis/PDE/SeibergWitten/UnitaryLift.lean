@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
-import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality

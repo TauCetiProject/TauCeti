@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
+import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 
 /-!
 # The `Spinᶜ` lift of the unitary group `U(2)`
