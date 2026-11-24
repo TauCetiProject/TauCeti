@@ -103,6 +103,8 @@ which the count has the properties listed.
 
 * `TauCeti.HeegaardRegionSystem.fullCoefficient_withBasepoints_eq_knotCoefficient`: the knot
   coefficient is the full coefficient of the doubly pointed diagram.
+* `TauCeti.HeegaardRegionSystem.fullDifferential_withBasepoints_eq_knotDifferential`: the knot
+  differential is the full differential of the doubly pointed diagram.
 * `TauCeti.HeegaardRegionSystem.coeff_knotCoefficient`: the coefficients count domains by their
   multiplicities at `w` and `z`.
 * `TauCeti.HeegaardRegionSystem.aeval_knotCoefficient_X_one`,
@@ -339,12 +341,21 @@ noncomputable def knotDifferential (χ : Region → ℤ) (w z : Basepoint) :
 
 variable {χ : Region → ℤ} {w z : Basepoint}
 
+/-- **The knot differential is the full differential of the doubly pointed diagram.** For the
+diagram pointed at `w` and `z` alone, with `X 0` the variable of `w` and `X 1` that of `z`, the full
+differential is the knot differential. -/
+theorem fullDifferential_withBasepoints_eq_knotDifferential (w z : Basepoint) :
+    (H.withBasepoints ![H.basepoint w, H.basepoint z]).fullDifferential χ =
+      H.knotDifferential χ w z :=
+  (rfl)
+
 /-- The matrix coefficients of the knot differential are the polynomials
 `TauCeti.HeegaardRegionSystem.knotCoefficient`. -/
 @[simp]
 theorem knotDifferential_single_apply (x y : H.Generator) (a : MvPolynomial (Fin 2) (ZMod 2)) :
     H.knotDifferential χ w z (Finsupp.single x a) y = a * H.knotCoefficient χ w z x y := by
-  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  rw [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
   exact fullDifferential_single_apply
     (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) x y a
 
@@ -352,13 +363,15 @@ theorem knotDifferential_single_apply (x y : H.Generator) (a : MvPolynomial (Fin
 theorem knotDifferential_apply (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2))
     (y : H.Generator) :
     H.knotDifferential χ w z c y = c.sum fun x a => a * H.knotCoefficient χ w z x y := by
-  simp only [← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  simp only [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
   exact fullDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) c y
 
 /-- The knot differential vanishes exactly when all of its coefficients vanish. -/
 theorem knotDifferential_eq_zero_iff :
     H.knotDifferential χ w z = 0 ↔ ∀ x y, H.knotCoefficient χ w z x y = 0 := by
-  simp only [← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  simp only [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
   exact fullDifferential_eq_zero_iff
 
 /-- Applying a ring homomorphism `f` to the coefficients of a chain intertwines the knot
