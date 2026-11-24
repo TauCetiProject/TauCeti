@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+public import TauCeti.Data.ZMod.Periodic
 
 /-!
 # The characteristic polynomial of a cyclic block endomorphism
@@ -83,15 +84,11 @@ private lemma charpoly_toSquareBlockProp_ne [NeZero f] (hM : ∀ r c, b r ≠ b 
     have h1 : b c - a + 1 = b r - a := by rw [hr]; ring
     -- one step forward along `ZMod f` increases the residue `val`, as it does not land on `0`
     have hr0 : b c - a + 1 ≠ 0 := by rw [h1]; exact sub_ne_zero.mpr r.2
-    have hlt := ZMod.val_lt (b c - a)
-    have hone : (1 : ZMod f).val = 1 := ZMod.val_one'' fun hf ↦ by
-      subst hf; exact c.2 (Subsingleton.elim _ _)
-    rcases Nat.lt_or_ge ((b c - a).val + 1) f with h | h
-    · rw [← h1, ZMod.val_add_of_lt (by rwa [hone]), hone]
+    rcases (b c - a).val_add_one_eq_or with h | h
+    · rw [← h1, h]
       omega
-    · refine absurd ?_ hr0
-      rw [← ZMod.natCast_zmod_val (b c - a), ← Nat.cast_add_one,
-        show (b c - a).val + 1 = f by omega, ZMod.natCast_self]
+    · have hlt := ZMod.val_lt (b c - a)
+      exact absurd ((ZMod.val_eq_zero _).mp (by omega)) hr0
   have hβ : N.BlockTriangular β := fun r c hcr ↦ by
     by_contra h
     exact (hN r c h).not_ge (OrderDual.toDual_lt_toDual.mp hcr).le
