@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Fiber
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -50,15 +51,16 @@ These are the pairing, trace and adjoint identities of the definite quaternionic
 `D^× \ G(𝔸_f)` by `h • (D^× x) = D^× x h⁻¹`. The orbits of `U` are then the points of `X(U)`,
 the operator `[UgU]` here is the double coset operator `f ↦ (x ↦ ∑ f(x gᵢ))` for
 `UgU = ⊔ gᵢ U`, and the level trace is the trace map between levels. The weights there are
-the orders of the stabilisers in `U / (U ∩ F^×)`. These are the stabiliser orders here for the
-action of the quotient of `G(𝔸_f)` by the centre `𝔸_f^×`, which acts trivially.
+the orders of the stabilisers in `U / (U ∩ F^×)`. The centre `𝔸_f^×` does not act trivially on
+`D^× \ G(𝔸_f)`, but its subgroup `F^×`, which lies in `D^×`, does. So these weights are the
+stabiliser orders here for the induced action of `G(𝔸_f) / F^×`, under which `U` acts through
+`U / (U ∩ F^×)`. Without some such quotient the stabilisers are usually infinite, their orders
+`Nat.card` are `0`, and the unit hypotheses fail.
 
 ## Main definitions
 
 * `TauCeti.stabilizerWeightedPairing`: the pairing `∑ c(x)⁻¹ f(x) g(x)` on an orbit space.
 * `TauCeti.levelTrace`: the trace from `V \ α` to `U \ α`.
-* `TauCeti.MulAction.orbitRelQuotientSmulEquiv`: translation by `g` identifies the orbits of
-  `H` with those of `gHg⁻¹`.
 * `TauCeti.heckeOperator`: the double coset operator `[UgU]` on functions on `U \ α`.
 
 ## Main results
@@ -68,7 +70,8 @@ action of the quotient of `G(𝔸_f)` by the centre `𝔸_f^×`, which acts triv
 * `TauCeti.inverse_cardStabilizerOnOrbit_smul_levelTrace`: the trace at `x`, divided by
   `c_U(x)`, is the sum over the classes `y` above `x` of `h(y) / c_V(y)`.
 * `TauCeti.stabilizerWeightedPairing_levelTrace`: trace and pullback are adjoint.
-* `TauCeti.levelTrace_self`: the trace from a level to itself is the identity.
+* `TauCeti.levelTrace_of_le`: the trace from a larger level is pullback; in particular the trace
+  from a level to itself is the identity (`TauCeti.levelTrace_self`).
 * `TauCeti.heckeOperator_mk`: the Hecke operator as a sum over coset representatives.
 * `TauCeti.stabilizerWeightedPairing_heckeOperator`: `[UgU]` and `[Ug⁻¹U]` are adjoint.
 
@@ -199,6 +202,21 @@ theorem levelTrace_mk (V U : Subgroup G) (h : orbitRel.Quotient V α → M) (x :
       ∑ᶠ c : U ⧸ V.subgroupOf U, h (orbitOfCosetTranslate x c) :=
   (rfl)
 
+/-- **The level trace from a larger level is pullback.** If `U ≤ V`, the coset space
+`U / (V ∩ U)` is a point, so the trace of `h` is `h` composed with the map from `U`-orbits to
+`V`-orbits. -/
+theorem levelTrace_of_le {U V : Subgroup G} (hUV : U ≤ V) (h : orbitRel.Quotient V α → M) :
+    levelTrace V U h = h ∘ Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le hUV) := by
+  funext p
+  induction p using Quotient.inductionOn' with
+  | h x =>
+    have : Subsingleton (U ⧸ V.subgroupOf U) := by
+      rw [Subgroup.subgroupOf_eq_top.mpr hUV]
+      exact QuotientGroup.subsingleton_quotient_top
+    rw [levelTrace_mk, finsum_eq_single _ ((1 : U) : U ⧸ V.subgroupOf U)
+      fun c hc ↦ (hc (Subsingleton.elim _ _)).elim, orbitOfCosetTranslate_mk]
+    simp
+
 /-- The level trace from a level to itself is the identity. -/
 @[simp]
 theorem levelTrace_self (U : Subgroup G) (h : orbitRel.Quotient U α → M) :
@@ -206,12 +224,16 @@ theorem levelTrace_self (U : Subgroup G) (h : orbitRel.Quotient U α → M) :
   funext p
   induction p using Quotient.inductionOn' with
   | h x =>
-    have : Subsingleton (U ⧸ U.subgroupOf U) := by
-      rw [Subgroup.subgroupOf_self]
-      exact QuotientGroup.subsingleton_quotient_top
-    rw [levelTrace_mk, finsum_eq_single _ ((1 : U) : U ⧸ U.subgroupOf U)
-      fun c hc ↦ (hc (Subsingleton.elim _ _)).elim, orbitOfCosetTranslate_mk]
-    simp
+    rw [levelTrace_of_le le_rfl]
+    rfl
+
+/-- The level trace of `0` is `0`. -/
+@[simp]
+theorem levelTrace_zero (V U : Subgroup G) :
+    levelTrace V U (0 : orbitRel.Quotient V α → M) = 0 := by
+  funext p
+  induction p using Quotient.inductionOn' with
+  | h x => simp
 
 /-- The level trace is additive. -/
 theorem levelTrace_add (V U : Subgroup G) [V.IsFiniteRelIndex U]
@@ -223,14 +245,17 @@ theorem levelTrace_add (V U : Subgroup G) [V.IsFiniteRelIndex U]
     simp only [levelTrace_mk, Pi.add_apply]
     exact finsum_add_distrib (Set.toFinite _) (Set.toFinite _)
 
-/-- If `n * b = a` and `a` is a unit, then `a⁻¹ * n = b⁻¹`. -/
-private theorem inverse_mul_natCast_of_mul_eq {R : Type*} [CommSemiring R] {n a b : ℕ}
-    (h : n * b = a) (ha : IsUnit (a : R)) : Ring.inverse (a : R) * n = Ring.inverse (b : R) := by
-  have hb : IsUnit (b : R) := isUnit_of_mul_isUnit_right (by rwa [← Nat.cast_mul, h])
-  rw [Ring.inverse_mul_eq_iff_eq_mul _ _ _ ha, ← h, Nat.cast_mul, mul_assoc,
-    Ring.mul_inverse_cancel _ hb, mul_one]
-
 variable {R : Type*} [CommSemiring R] [Module R M]
+
+/-- The level trace is `R`-linear: it commutes with scalar multiplication. -/
+theorem levelTrace_smul (V U : Subgroup G) [V.IsFiniteRelIndex U] (r : R)
+    (h : orbitRel.Quotient V α → M) :
+    levelTrace V U (r • h) = r • levelTrace V U h := by
+  funext p
+  induction p using Quotient.inductionOn' with
+  | h x =>
+    simp only [levelTrace_mk, Pi.smul_apply]
+    exact (smul_finsum' r (Set.toFinite _)).symm
 
 /-- **The level trace with its multiplicities.** For `V ≤ U` of finite index and a `U`-orbit `p`
 whose stabiliser order is a unit, the trace at `p` divided by that order is the sum of
@@ -266,7 +291,13 @@ theorem inverse_cardStabilizerOnOrbit_smul_levelTrace {V U : Subgroup G} (hle : 
   have hcount := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit hle x c
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at hcount
   rw [cardStabilizerOnOrbit_mk] at hp ⊢
-  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, inverse_mul_natCast_of_mul_eq hcount hp]
+  -- so `c_U(x)⁻¹ * #(fibre) = c_V(q)⁻¹`, as `#(fibre) * c_V(q) = c_U(x)` is a unit
+  have key {n a b : ℕ} (hn : n * b = a) (ha : IsUnit (a : R)) :
+      Ring.inverse (a : R) * n = Ring.inverse (b : R) := by
+    have hb : IsUnit (b : R) := isUnit_of_mul_isUnit_right (by rwa [← Nat.cast_mul, hn])
+    rw [Ring.inverse_mul_eq_iff_eq_mul _ _ _ ha, ← hn, Nat.cast_mul, mul_assoc,
+      Ring.mul_inverse_cancel _ hb, mul_one]
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, key hcount hp]
 
 /-- **Trace and pullback are adjoint for the stabiliser-weighted pairings.** For `V ≤ U` of finite
 index, finitely many `U`-orbits and unit stabiliser orders on them,
@@ -304,53 +335,15 @@ section Hecke
 
 variable {G α : Type*} [Group G] [MulAction G α]
 
-/-- **Translation identifies the orbits of conjugate subgroups.** If `K = gHg⁻¹`, translation by
-`g` carries the `H`-orbits bijectively onto the `K`-orbits. The equation is taken as a hypothesis
-so that `K` may be any expression for the conjugate subgroup. -/
-noncomputable def MulAction.orbitRelQuotientSmulEquiv (g : G) {H K : Subgroup G}
-    (hHK : ConjAct.toConjAct g • H = K) : orbitRel.Quotient H α ≃ orbitRel.Quotient K α :=
-  orbitRelQuotientCongr ((Subgroup.equivSMul (ConjAct.toConjAct g) H).trans
-      (MulEquiv.subgroupCongr hHK)) (MulAction.toPerm g) fun h a ↦ by
-    simp [Subgroup.smul_def, ConjAct.smul_def, mul_smul]
-
-/-- `orbitRelQuotientSmulEquiv g hHK` sends the `H`-orbit of `a` to the `K`-orbit of `g • a`. -/
-@[simp]
-theorem MulAction.orbitRelQuotientSmulEquiv_mk (g : G) {H K : Subgroup G}
-    (hHK : ConjAct.toConjAct g • H = K) (a : α) :
-    MulAction.orbitRelQuotientSmulEquiv g hHK (Quotient.mk'' a) = Quotient.mk'' (g • a) :=
-  orbitRelQuotientCongr_mk _ _ _ a
-
-/-- The inverse of `orbitRelQuotientSmulEquiv g hHK` sends the `K`-orbit of `a` to the `H`-orbit
-of `g⁻¹ • a`. -/
-@[simp]
-theorem MulAction.orbitRelQuotientSmulEquiv_symm_mk (g : G) {H K : Subgroup G}
-    (hHK : ConjAct.toConjAct g • H = K) (a : α) :
-    (MulAction.orbitRelQuotientSmulEquiv g hHK).symm (Quotient.mk'' a) = Quotient.mk'' (g⁻¹ • a) :=
-  orbitRelQuotientCongr_symm_mk _ _ _ a
-
-/-- `orbitRelQuotientSmulEquiv g hHK` preserves the stabiliser orders of the orbits. -/
-@[simp]
-theorem cardStabilizerOnOrbit_orbitRelQuotientSmulEquiv (g : G) {H K : Subgroup G}
-    (hHK : ConjAct.toConjAct g • H = K) (q : orbitRel.Quotient H α) :
-    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSmulEquiv g hHK q) =
-      cardStabilizerOnOrbit q :=
-  cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
-
-/-- `orbitRelQuotientSmulEquiv g hHK` carries the stabiliser-weighted pairing on the `K`-orbits to
+/-- `orbitRelQuotientSMulEquiv g hHK` carries the stabiliser-weighted pairing on the `K`-orbits to
 the one on the `H`-orbits. -/
-theorem stabilizerWeightedPairing_comp_orbitRelQuotientSmulEquiv {R : Type*} [CommSemiring R]
+theorem stabilizerWeightedPairing_comp_orbitRelQuotientSMulEquiv {R : Type*} [CommSemiring R]
     (g : G) {H K : Subgroup G} (hHK : ConjAct.toConjAct g • H = K)
     (f₁ f₂ : orbitRel.Quotient K α → R) :
-    stabilizerWeightedPairing (f₁ ∘ MulAction.orbitRelQuotientSmulEquiv g hHK)
-        (f₂ ∘ MulAction.orbitRelQuotientSmulEquiv g hHK) =
+    stabilizerWeightedPairing (f₁ ∘ MulAction.orbitRelQuotientSMulEquiv g hHK)
+        (f₂ ∘ MulAction.orbitRelQuotientSMulEquiv g hHK) =
       stabilizerWeightedPairing f₁ f₂ :=
   stabilizerWeightedPairing_comp_orbitRelQuotientCongr _ _ _ f₁ f₂
-
-/-- The intersection of `U` with its conjugate `gUg⁻¹`, translated back by `g⁻¹`, lies in `U`. -/
-theorem conjAct_inv_smul_inf_conjAct_smul_le (U : Subgroup G) (g : G) :
-    ConjAct.toConjAct g⁻¹ • (U ⊓ ConjAct.toConjAct g • U) ≤ U := by
-  rw [Subgroup.smul_inf, map_inv, inv_smul_smul]
-  exact inf_le_right
 
 variable {M : Type*} [AddCommMonoid M]
 
@@ -364,7 +357,7 @@ noncomputable def heckeOperator (U : Subgroup G) (g : G) (f : orbitRel.Quotient 
   levelTrace (U ⊓ ConjAct.toConjAct g • U) U
     (f ∘ Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le
         (conjAct_inv_smul_inf_conjAct_smul_le U g)) ∘
-      MulAction.orbitRelQuotientSmulEquiv g⁻¹ rfl)
+      MulAction.orbitRelQuotientSMulEquiv g⁻¹ rfl)
 
 /-- The Hecke operator at the orbit of `x` is the sum of `f((u g)⁻¹ • x)` over representatives
 `u` of the cosets of `U ∩ gUg⁻¹` in `U`. -/
@@ -378,7 +371,7 @@ theorem heckeOperator_mk (U : Subgroup G) (g : G) (f : orbitRel.Quotient U α �
   have hc := QuotientGroup.out_eq' c
   generalize c.out = u at hc ⊢
   subst hc
-  simp only [Function.comp_apply, orbitOfCosetTranslate_mk, MulAction.orbitRelQuotientSmulEquiv_mk,
+  simp only [Function.comp_apply, orbitOfCosetTranslate_mk, MulAction.orbitRelQuotientSMulEquiv_mk,
     TauCeti.Setoid.map_of_le_mk, mul_inv_rev, mul_smul]
 
 /-- The Hecke operator of the identity is the identity. -/
@@ -386,18 +379,32 @@ theorem heckeOperator_mk (U : Subgroup G) (g : G) (f : orbitRel.Quotient U α �
 theorem heckeOperator_one (U : Subgroup G) (f : orbitRel.Quotient U α → M) :
     heckeOperator U 1 f = f := by
   funext p
-  induction p using Quotient.inductionOn' with | h x => ?_
-  have : Subsingleton (U ⧸ (U ⊓ ConjAct.toConjAct (1 : G) • U).subgroupOf U) := by
-    rw [map_one, one_smul, inf_idem, Subgroup.subgroupOf_self]
-    exact QuotientGroup.subsingleton_quotient_top
-  rw [heckeOperator_mk, finsum_eq_single _ ((1 : U) : U ⧸ _)
-    fun c hc ↦ (hc (Subsingleton.elim _ _)).elim]
-  -- the summand is `f` at a translate of `x` by an element of `U`
-  refine congrArg f (Quotient.sound'
-    ⟨(((1 : U) : U ⧸ (U ⊓ ConjAct.toConjAct (1 : G) • U).subgroupOf U).out)⁻¹, ?_⟩)
-  simp [Subgroup.smul_def]
+  induction p using Quotient.inductionOn' with
+  | h x =>
+    rw [heckeOperator, levelTrace_of_le (V := U ⊓ ConjAct.toConjAct (1 : G) • U) (by simp)]
+    simp only [Function.comp_apply, MulAction.orbitRelQuotientSMulEquiv_mk, inv_one, one_smul,
+      TauCeti.Setoid.map_of_le_mk]
+
+/-- The Hecke operator of `0` is `0`. -/
+@[simp]
+theorem heckeOperator_zero (U : Subgroup G) (g : G) :
+    heckeOperator U g (0 : orbitRel.Quotient U α → M) = 0 :=
+  levelTrace_zero _ _
+
+/-- The Hecke operator is additive. -/
+theorem heckeOperator_add (U : Subgroup G) (g : G)
+    [(U ⊓ ConjAct.toConjAct g • U).IsFiniteRelIndex U]
+    (f₁ f₂ : orbitRel.Quotient U α → M) :
+    heckeOperator U g (f₁ + f₂) = heckeOperator U g f₁ + heckeOperator U g f₂ :=
+  levelTrace_add _ _ _ _
 
 variable {R : Type*} [CommSemiring R]
+
+/-- The Hecke operator is `R`-linear: it commutes with scalar multiplication. -/
+theorem heckeOperator_smul [Module R M] (U : Subgroup G) (g : G)
+    [(U ⊓ ConjAct.toConjAct g • U).IsFiniteRelIndex U] (r : R) (f : orbitRel.Quotient U α → M) :
+    heckeOperator U g (r • f) = r • heckeOperator U g f :=
+  levelTrace_smul _ _ r _
 
 /-- **The Hecke operators of `g` and `g⁻¹` are adjoint** for the stabiliser-weighted pairing:
 `⟨[UgU] f, h⟩_U = ⟨f, [Ug⁻¹U] h⟩_U`, provided there are finitely many `U`-orbits, their
@@ -416,10 +423,10 @@ theorem stabilizerWeightedPairing_heckeOperator {U : Subgroup G} {g : G}
   -- both sides are pairings on these orbits, by the weighted adjunction for each trace
   rw [stabilizerWeightedPairing_comm, heckeOperator, stabilizerWeightedPairing_levelTrace
     inf_le_left hunit, heckeOperator, stabilizerWeightedPairing_levelTrace inf_le_left hunit,
-    ← stabilizerWeightedPairing_comp_orbitRelQuotientSmulEquiv g⁻¹ hVV',
+    ← stabilizerWeightedPairing_comp_orbitRelQuotientSMulEquiv g⁻¹ hVV',
     stabilizerWeightedPairing_comm (_ ∘ _)]
   congr 1 <;> funext q <;> induction q using Quotient.inductionOn' <;>
-    simp only [Function.comp_apply, MulAction.orbitRelQuotientSmulEquiv_mk,
+    simp only [Function.comp_apply, MulAction.orbitRelQuotientSMulEquiv_mk,
       TauCeti.Setoid.map_of_le_mk, smul_smul, inv_inv, mul_inv_cancel, one_smul]
 
 end Hecke
