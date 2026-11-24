@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+import TauCeti.Analysis.Convex.Function.Basic
 
 /-!
 # Log-convexity of shifted and rescaled Gamma
@@ -24,6 +25,8 @@ These are the log-convexity inputs of the Bohr–Mollerup proof of Gauss's multi
 
 Log-convexity also bounds and orders the ratios of Gamma values at shifted points.
 
+* `Real.Gamma_add_le_rpow_mul_Gamma`: `Γ(y + a) ≤ y^a Γ(y)` for `0 < y` and `0 ≤ a ≤ 1`, the
+  interpolation step of Wendel's inequalities.
 * `Real.rpow_one_sub_le_Gamma_add_one_div_Gamma_add`,
   `Real.Gamma_add_one_div_Gamma_add_le_rpow`: Wendel's inequalities for `0 ≤ s ≤ 1`, the lower
   bound `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)` for `x ≥ 0` and the upper bound
@@ -33,8 +36,6 @@ Log-convexity also bounds and orders the ratios of Gamma values at shifted point
   `0`, and the upper bound includes `x + s = 0`, where the ratio is `0`.
 * `Real.isEquivalent_Gamma_add_one_div_Gamma_add`: for every real `s`,
   `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` as `x → ∞`.
-* `ConvexOn.sub_le_sub_of_le`: increments of a convex function over a fixed width `c ≥ 0`
-  increase.
 * `Real.strictMonoOn_Gamma_add_div_Gamma`: for `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly
   increasing on `(0, ∞)`.
 
@@ -74,13 +75,9 @@ theorem convexOn_sum_log_Gamma_add_div {ι : Type*} (s : Finset ι) {c : ι → 
     exact (convexOn_log_Gamma_add_div (hc i (mem_insert_self i s)) hm).add
       (ih fun j hj => hc j (mem_insert_of_mem hj))
 
-/-- Complementary powers recombine: for `0 ≤ y`, `y^a · y^{1-a} = y`. -/
-private theorem rpow_mul_rpow_one_sub {y : ℝ} (hy : 0 ≤ y) (a : ℝ) : y ^ a * y ^ (1 - a) = y := by
-  simp [← rpow_add' hy (by simp : a + (1 - a) ≠ 0)]
-
 /-- The interpolation step of Wendel's inequalities: for `0 < y` and `0 ≤ a ≤ 1`,
 `Γ(y + a) ≤ y^a Γ(y)`, from the log-convexity of `Γ` between `y` and `y + 1`. -/
-private theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) :
+theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) :
     Gamma (y + a) ≤ y ^ a * Gamma y := by
   rcases ha0.eq_or_lt with rfl | ha0
   · simp
@@ -94,7 +91,7 @@ private theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 �
     _ = y ^ a * (Gamma y ^ a * Gamma y ^ (1 - a)) := by
       rw [Gamma_add_one hy.ne', mul_rpow hy.le hΓ.le]
       ring
-    _ = y ^ a * Gamma y := by rw [rpow_mul_rpow_one_sub hΓ.le]
+    _ = y ^ a * Gamma y := by rw [← rpow_add' hΓ.le (by simp), add_sub_cancel, rpow_one]
 
 /-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. The case
 `(x, s) = (0, 0)`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
@@ -111,7 +108,7 @@ theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (
   calc x ^ (1 - s) * Gamma (x + s) ≤ x ^ (1 - s) * (x ^ s * Gamma x) :=
         mul_le_mul_of_nonneg_left (Gamma_add_le_rpow_mul_Gamma hx hs0 hs1) (by positivity)
     _ = (x ^ s * x ^ (1 - s)) * Gamma x := by ring
-    _ = x * Gamma x := by rw [rpow_mul_rpow_one_sub hx.le]
+    _ = x * Gamma x := by rw [← rpow_add' hx.le (by simp), add_sub_cancel, rpow_one]
 
 /-- Wendel's upper bound: for `0 ≤ s ≤ 1` and `x + s ≥ 0`, `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}`.
 The case `x + s = 0`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
@@ -193,28 +190,6 @@ theorem isEquivalent_Gamma_add_one_div_Gamma_add (s : ℝ) :
       have hn : Int.fract s + (-(n : ℝ) - 1) + 1 = Int.fract s + -(n : ℝ) := by ring
       rwa [hn]
   simpa [Int.fract_add_floor] using key ⌊s⌋
-
-/-- For a convex function on `D ⊆ ℝ`, increments over a fixed width `c ≥ 0` increase: if `s ≤ t`
-with `s ∈ D` and `t + c ∈ D`, then `f (s + c) - f s ≤ f (t + c) - f t`. -/
-theorem _root_.ConvexOn.sub_le_sub_of_le {D : Set ℝ} {f : ℝ → ℝ} (hf : ConvexOn ℝ D f)
-    {s t c : ℝ} (hs : s ∈ D) (htc : t + c ∈ D) (hc : 0 ≤ c) (hst : s ≤ t) :
-    f (s + c) - f s ≤ f (t + c) - f t := by
-  rcases hc.eq_or_lt with rfl | hc
-  · simp
-  have hsc : s + c ∈ D := hf.1.ordConnected.out hs htc ⟨by linarith, by linarith⟩
-  have ht : t ∈ D := hf.1.ordConnected.out hs htc ⟨hst, by linarith⟩
-  -- Both increments are compared with the common secant from `s` to `t + c`.
-  have key : slope f s (s + c) ≤ slope f t (t + c) := calc
-    slope f s (s + c) ≤ slope f s (t + c) := by
-      rw [slope_def_field, slope_def_field]
-      exact hf.secant_mono hs hsc htc (by linarith) (by linarith) (by linarith)
-    _ = slope f (t + c) s := slope_comm f s (t + c)
-    _ ≤ slope f (t + c) t := by
-      rw [slope_def_field, slope_def_field]
-      exact hf.secant_mono htc hs ht (by linarith) (by linarith) hst
-    _ = slope f t (t + c) := slope_comm f (t + c) t
-  simp only [slope_def_field, add_sub_cancel_left] at key
-  exact (div_le_div_iff_of_pos_right hc).1 key
 
 /-- For `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly increasing on `(0, ∞)`. -/
 theorem strictMonoOn_Gamma_add_div_Gamma {c : ℝ} (hc : 0 < c) :
