@@ -36,8 +36,6 @@ commutativity on cohomology.
 
 ## Main results
 
-* `TauCeti.CategoryTheory.homologyπ_moduleCatCyclesMk_cechReverse`: in a thin category, a cocycle
-  and its reversal have the same class.
 * `TauCeti.CategoryTheory.cechCupHomology_comm`: graded commutativity of the cup product on Čech
   cohomology.
 * `TauCeti.CategoryTheory.cechCupHomology_self_eq_zero_of_odd`: when `2` is invertible, the cup
@@ -62,20 +60,6 @@ namespace TauCeti.CategoryTheory
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] [Quiver.IsThin C] {ι : Type w}
   {U : ι → C} {R : Type u'} [CommRing R] {F : Cᵒᵖ ⥤ AlgCat.{w} R}
 
-/-- **The order-reversing operator fixes classes.** In a thin category, the reversal `τ c` of a
-Čech cocycle `c` has the same class as `c`. -/
-@[simp]
-theorem homologyπ_moduleCatCyclesMk_cechReverse {p : ℕ} (c : (cechAlgebraComplex U F).X p)
-    (m : ℕ) (hm : (ComplexShape.up ℕ).next p = m)
-    (hc : ((cechAlgebraComplex U F).d p m).hom c = 0) :
-    ((cechAlgebraComplex U F).homologyπ p).hom ((cechAlgebraComplex U F).moduleCatCyclesMk
-        ((((cechReverse (ModuleCat.{w} R) U).app
-          (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f p).hom c) m hm
-        (by rw [Hom.comm_apply, hc, map_zero])) =
-      ((cechAlgebraComplex U F).homologyπ p).hom
-        ((cechAlgebraComplex U F).moduleCatCyclesMk c m hm hc) := by
-  rw [← homologyMap_homologyπ_moduleCatCyclesMk, homologyMap_cechReverse_app, ModuleCat.id_apply]
-
 /-- **Graded commutativity** of the cup product on Čech cohomology: for a presheaf of commutative
 algebras on a thin category, `β ⌣ α = (-1) ^ (p q) α ⌣ β` for classes `α` of degree `p` and `β`
 of degree `q`. -/
@@ -86,8 +70,8 @@ theorem cechCupHomology_comm (hF : ∀ X (x y : F.obj X), x * y = y * x) {p q n 
   obtain ⟨x, hx, rfl⟩ := exists_homologyπ_moduleCatCyclesMk_eq _ (p + 1) (by simp) α
   obtain ⟨y, hy, rfl⟩ := exists_homologyπ_moduleCatCyclesMk_eq _ (q + 1) (by simp) β
   -- Replace `x` and `y` by their reversals, then `τ x ⌣ τ y` by its reversal, on the right.
-  conv_rhs => rw [← homologyπ_moduleCatCyclesMk_cechReverse x,
-    ← homologyπ_moduleCatCyclesMk_cechReverse y, cechCupHomology_homologyπ_moduleCatCyclesMk,
+  conv_rhs => rw [← homologyπ_moduleCatCyclesMk_cechReverse U x,
+    ← homologyπ_moduleCatCyclesMk_cechReverse U y, cechCupHomology_homologyπ_moduleCatCyclesMk,
     ← homologyπ_moduleCatCyclesMk_cechReverse, ← map_zsmul]
   rw [cechCupHomology_homologyπ_moduleCatCyclesMk]
   congr 1
