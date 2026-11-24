@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Geometry.Manifold.Complex.Isothermal
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Geometry.Manifold.Complex.Isothermal
 import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 
@@ -29,17 +28,13 @@ two steps:
    varying-structure normed-space Cauchy–Riemann equation on `s ∩ u ⁻¹' φ.source` for the chart
    coefficient `J.inChart (u z₀)` (smooth on `φ.target`), which bootstraps to `C^∞`.
 2. For an isothermal chart `e : OpenPartialHomeomorph M ℂ` of `(M, j)`
-   (`SmoothAlmostComplexStructure.exists_isIsothermalChart`), the inverse `e.symm` is `C¹` and
-   pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying
-   `OpenPartialHomeomorph.isInvertible_fderiv` and the inverse function theorem
-   (`OpenPartialHomeomorph.contDiffAt_symm`) to `e.symm ≫ₕ chartAt ℂ x₀` shows that `e` itself
-   is `C^∞`, so `u = (u ∘ e.symm) ∘ e` is `C^∞` near every point of the open domain.
+   (`SmoothAlmostComplexStructure.exists_isIsothermalChart`), `e` belongs to the `C^∞` maximal
+   atlas (`TauCeti.IsIsothermalChart.mem_maximalAtlas_infty`). Hence `u ∘ e.symm` is `C¹` and
+   pseudoholomorphic from `ℂ`, so `C^∞` by step 1, and composing with `e` makes
+   `u = (u ∘ e.symm) ∘ e` smooth near every point of the open domain.
 
 ## Main results
 
-* `TauCeti.IsIsothermalChart.contMDiffOn`, `TauCeti.IsIsothermalChart.contMDiffOn_symm`: every
-  isothermal chart of a smooth almost complex surface and its inverse are `C^n` for every `n : ℕ∞`
-  on their respective domains.
 * `TauCeti.IsPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsPseudoholomorphic.contMDiff`: a `C¹`
   pseudoholomorphic map from an open subset (or all) of an almost complex surface into a
   finite-dimensional smooth almost complex manifold without boundary is `C^n` for every `n : ℕ∞`.
@@ -129,74 +124,6 @@ private theorem contMDiffOn_of_isPseudoholomorphicOn_ofComplexManifold
     exact (φ.left_inv hz.2).symm
   exact (hφ_symm.comp z₀ hv_at).congr_of_eventuallyEq h_eq
 
-/-- **Smoothness of the inverse of an isothermal chart.** Every isothermal chart of a smooth
-almost complex surface has `C^n` inverse on its target for every `n : ℕ∞`. -/
-theorem IsIsothermalChart.contMDiffOn_symm
-    {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} {e : OpenPartialHomeomorph M ℂ}
-    (he : IsIsothermalChart j e) {n : ℕ∞} :
-    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n e.symm e.target := by
-  suffices ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e.symm e.target from
-    this.of_le (WithTop.coe_le_coe.2 le_top)
-  have he_symm_hol :
-      IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ) j e.symm
-        e.target :=
-    isPseudoholomorphicOn_iff.2 fun z hz =>
-      (he.isPseudoholomorphicAt_symm hz).isPseudoholomorphicWithinAt
-  have he_symm_c1 : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 e.symm e.target :=
-    contMDiffOn_symm_of_mem_maximalAtlas he.mem_maximalAtlas
-  exact contMDiffOn_of_isPseudoholomorphicOn_ofComplexManifold he_symm_hol e.open_target he_symm_c1
-
-/-- **Smoothness of an isothermal chart.** Every isothermal chart of a smooth almost complex
-surface is `C^n` on its source for every `n : ℕ∞`. -/
-theorem IsIsothermalChart.contMDiffOn
-    {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} {e : OpenPartialHomeomorph M ℂ}
-    (he : IsIsothermalChart j e) {n : ℕ∞} :
-    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n e e.source := by
-  suffices ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e e.source from
-    this.of_le (WithTop.coe_le_coe.2 le_top)
-  intro x₀ hx₀
-  refine ContMDiffAt.contMDiffWithinAt ?_
-  have he_symm_smooth : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e.symm e.target :=
-    he.contMDiffOn_symm
-  let ψ : OpenPartialHomeomorph M ℂ := chartAt ℂ x₀
-  let f : OpenPartialHomeomorph ℂ ℂ := e.symm ≫ₕ ψ
-  let z₀ : ℂ := e x₀
-  let w₀ : ℂ := ψ x₀
-  have hz₀ : z₀ ∈ e.target := e.map_source hx₀
-  have hx₀ψ : x₀ ∈ ψ.source := mem_chart_source ℂ x₀
-  have hw₀ψ : w₀ ∈ ψ.target := ψ.map_source hx₀ψ
-  have hz₀f : z₀ ∈ f.source := ⟨hz₀, by simpa [z₀, e.left_inv hx₀] using hx₀ψ⟩
-  have hw₀f : w₀ ∈ f.target := ⟨hw₀ψ, by simpa [w₀, ψ.left_inv hx₀ψ] using hx₀⟩
-  have hfsymm_w₀ : f.symm w₀ = z₀ := by simp [f, w₀, z₀, ψ.left_inv hx₀ψ]
-  have hf_z₀ : f z₀ = w₀ := by simp [f, w₀, z₀, e.left_inv hx₀]
-  have hψ_at : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ ψ x₀ :=
-    (contMDiffOn_chart (I := 𝓘(ℝ, ℂ)) (x := x₀)).contMDiffAt (ψ.open_source.mem_nhds hx₀ψ)
-  have hf_smooth : ContDiffAt ℝ ∞ f z₀ := by
-    have he_symm_at : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e.symm z₀ :=
-      he_symm_smooth.contMDiffAt (e.open_target.mem_nhds hz₀)
-    have hψ_at' : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ ψ (e.symm z₀) := by
-      simpa [z₀, e.left_inv hx₀] using hψ_at
-    exact contMDiffAt_iff_contDiffAt.1 (hψ_at'.comp z₀ he_symm_at)
-  have hf_diff : DifferentiableAt ℝ f z₀ := hf_smooth.differentiableAt (by simp)
-  have hf_symm_diff : DifferentiableAt ℝ f.symm w₀ := by
-    have he_diff : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e (ψ.symm w₀) := by
-      simpa [w₀, ψ.left_inv hx₀ψ] using
-        mdifferentiableAt_of_mem_maximalAtlas he.mem_maximalAtlas hx₀
-    have hψ_symm_diff : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ψ.symm w₀ :=
-      (contMDiffOn_chart_symm (I := 𝓘(ℝ, ℂ)) (n := ∞) (x := x₀)).contMDiffAt
-        (ψ.open_target.mem_nhds hw₀ψ) |>.mdifferentiableAt (by simp)
-    exact mdifferentiableAt_iff_differentiableAt.1 (he_diff.comp w₀ hψ_symm_diff)
-  obtain ⟨f₀', hf₀'⟩ := f.isInvertible_fderiv hz₀f hf_diff (by rwa [hf_z₀])
-  have hf_symm_smooth : ContDiffAt ℝ ∞ f.symm w₀ :=
-    f.contDiffAt_symm (f₀' := f₀') hw₀f
-      (by rw [hfsymm_w₀, hf₀']; exact hf_diff.hasFDerivAt) (by rwa [hfsymm_w₀])
-  have he_eq : e =ᶠ[nhds x₀] f.symm ∘ ψ := by
-    filter_upwards [ψ.open_source.mem_nhds hx₀ψ] with x hx
-    simp [f, ψ.left_inv hx]
-  exact ((contMDiffAt_iff_contDiffAt.2 hf_symm_smooth).comp x₀ hψ_at).congr_of_eventuallyEq he_eq
-
 /-- **Smoothness of `C¹` pseudoholomorphic curves between almost complex manifolds.** Let `M` be a
 smooth real surface carrying a smooth almost complex structure `j`, and let `M'` be a
 finite-dimensional smooth manifold without boundary carrying a smooth almost complex structure `J`.
@@ -234,7 +161,7 @@ theorem IsPseudoholomorphicOn.contMDiffOn
   have h_comp_at : ContMDiffAt 𝓘(ℝ, ℂ) I' ∞ (u ∘ e.symm) (e x₀) :=
     h_comp_smooth.contMDiffAt (hT.mem_nhds hz₀T)
   have he_at : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ e x₀ :=
-    he.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hx₀)
+    contMDiffAt_of_mem_maximalAtlas he.mem_maximalAtlas_infty hx₀
   have hu_eq : u =ᶠ[nhds x₀] (u ∘ e.symm) ∘ e := by
     filter_upwards [e.open_source.mem_nhds hx₀] with x hx
     simp [e.left_inv hx]

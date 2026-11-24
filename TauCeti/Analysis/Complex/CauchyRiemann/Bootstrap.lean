@@ -43,7 +43,9 @@ homogeneous equation on the unit disc for a `C¹` almost complex structure with 
 to belong to `W^{2,∞}_loc` on any neighbourhood of `0`
 (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). For `C^n` regularity (`n : ℕ∞`), the
 endpoint `p = ∞` is allowed because a `W^{1,∞}_loc` solution is `W^{1,3}_loc` by local
-monotonicity in the exponent, and `W^{ℓ+1,3}_loc ⊂ C^ℓ`.
+monotonicity in the exponent, and `W^{ℓ+1,3}_loc` membership gives an almost-everywhere equal
+`C^ℓ` representative (`TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`), which agrees pointwise with the
+continuous weak solution `u` on the open domain `Ω`.
 
 The geometric corollaries for `C¹` `J`-holomorphic maps into finite-dimensional real normed spaces
 (`TauCeti.IsJHolomorphicOn.contDiffOn`, `TauCeti.IsJHolomorphic.contDiff`) live in
