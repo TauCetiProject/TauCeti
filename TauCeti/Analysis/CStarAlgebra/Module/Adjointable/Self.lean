@@ -46,9 +46,11 @@ module-compact.
   right self-module is module-compact iff it is a left multiplication.
 * `TauCeti.AdjointableMap.compactOperatorMulOppositeStarAlgEquiv A`: the `⋆`-isomorphism
   `A ≃⋆ₐ[ℂ] K_A(A)`, `a ↦ L_a`.
-* `TauCeti.AdjointableMap.multiplierStarAlgEquiv A`: the `⋆`-isomorphism `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)`,
-  `T ↦ (T, star ∘ T* ∘ star)`, isometric by `norm_multiplierStarAlgEquiv`.
-* `TauCeti.AdjointableMap.multiplierStarAlgEquiv_mulLeft`: it sends `L_a` to `(a : 𝓜(ℂ, A))`.
+* `TauCeti.AdjointableMap.multiplierMulOppositeStarAlgEquiv A`: the `⋆`-isomorphism
+  `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)`, `T ↦ (T, star ∘ T* ∘ star)`, isometric by
+  `norm_multiplierMulOppositeStarAlgEquiv`.
+* `TauCeti.AdjointableMap.multiplierMulOppositeStarAlgEquiv_mulLeft`: it sends `L_a` to
+  `(a : 𝓜(ℂ, A))`.
 
 ## References
 
@@ -115,6 +117,29 @@ noncomputable def mulLeftStarHom : A →⋆ₙₐ[ℂ] AdjointableMap Aᵐᵒᵖ
 theorem mulLeftStarHom_apply (a : A) : mulLeftStarHom A a = mulLeft A a :=
   (rfl)
 
+theorem coe_mulLeftStarHom : ⇑(mulLeftStarHom A) = mulLeft A :=
+  (rfl)
+
+@[simp]
+theorem mulLeft_zero : mulLeft A 0 = 0 := by
+  simpa only [mulLeftStarHom_apply] using map_zero (mulLeftStarHom A)
+
+@[simp]
+theorem mulLeft_add (a b : A) : mulLeft A (a + b) = mulLeft A a + mulLeft A b := by
+  simpa only [mulLeftStarHom_apply] using map_add (mulLeftStarHom A) a b
+
+@[simp]
+theorem mulLeft_smul (c : ℂ) (a : A) : mulLeft A (c • a) = c • mulLeft A a := by
+  simpa only [mulLeftStarHom_apply] using map_smul (mulLeftStarHom A) c a
+
+@[simp]
+theorem mulLeft_mul (a b : A) : mulLeft A (a * b) = mulLeft A a * mulLeft A b := by
+  simpa only [mulLeftStarHom_apply] using map_mul (mulLeftStarHom A) a b
+
+@[simp]
+theorem star_mulLeft (a : A) : star (mulLeft A a) = mulLeft A (star a) := by
+  simpa only [mulLeftStarHom_apply] using (map_star (mulLeftStarHom A) a).symm
+
 theorem isometry_mulLeftStarHom : Isometry (mulLeftStarHom A) :=
   AddMonoidHomClass.isometry_of_norm _ norm_mulLeft
 
@@ -147,7 +172,7 @@ section Compact
 /-- On the right self-module, the rank-one operator `θ_{a,b} : x ↦ a ⟨b, x⟩_A` is left
 multiplication by `a * star b`. -/
 theorem rankOne_eq_mulLeft (a b : A) : rankOne Aᵐᵒᵖ a b = mulLeft A (a * star b) :=
-  ext fun x ↦ by simp [MulOpposite.smul_eq_mul_unop, mul_assoc]
+  ext fun x ↦ by simp [MulOpposite.smul_eq_mul_unop]
 
 /-- Every left multiplication on the right self-module is module-compact: it is the limit of the
 rank-one operators `θ_{a,e} = L_{a * e}` along an increasing approximate unit `e` of `A`. -/
@@ -167,10 +192,11 @@ theorem mem_compactOperator_mulOpposite_iff {T : AdjointableMap Aᵐᵒᵖ A A} 
   refine ⟨fun hT ↦ ?_, fun ⟨a, ha⟩ ↦ ha ▸ mulLeft_mem_compactOperator a⟩
   -- The range of `a ↦ L_a` is a closed subspace containing every rank-one operator.
   have hle := (compactOperator_le_iff (p := LinearMap.range (LinearMap.ofClass (mulLeftStarHom A)))
-    (by rw [LinearMap.coe_range]; exact isClosed_range_mulLeft)).mpr
-      fun a b ↦ ⟨a * star b, (rankOne_eq_mulLeft a b).symm⟩
-  obtain ⟨a, ha⟩ := hle hT
-  exact ⟨a, ha⟩
+    (by rw [LinearMap.coe_range, LinearMap.coe_ofClass, coe_mulLeftStarHom]
+        exact isClosed_range_mulLeft)).mpr
+      fun a b ↦ ⟨a * star b, by simp [rankOne_eq_mulLeft]⟩
+  obtain ⟨a, rfl⟩ := hle hT
+  exact ⟨a, by simp⟩
 
 /-- The module-compact operators on the right self-module of `A` are exactly the left
 multiplications. -/
@@ -207,6 +233,13 @@ theorem compactOperatorMulOppositeStarAlgEquiv_symm_rankOne (a b : A) :
   (StarAlgEquiv.symm_apply_eq _).mpr <| Subtype.ext <|
     (rankOne_eq_mulLeft a b).trans (coe_compactOperatorMulOppositeStarAlgEquiv_apply _).symm
 
+/-- Left multiplication by the preimage of a module-compact operator `T` under
+`compactOperatorMulOppositeStarAlgEquiv` is `T`. -/
+@[simp]
+theorem mulLeft_compactOperatorMulOppositeStarAlgEquiv_symm (T : compactOperatorIdeal Aᵐᵒᵖ A) :
+    mulLeft A ((compactOperatorMulOppositeStarAlgEquiv A).symm T) = T := by
+  rw [← coe_compactOperatorMulOppositeStarAlgEquiv_apply, StarAlgEquiv.apply_symm_apply]
+
 /-- The `⋆`-isomorphism `A ≃⋆ₐ[ℂ] K_A(A)` is isometric. -/
 theorem norm_compactOperatorMulOppositeStarAlgEquiv (a : A) :
     ‖compactOperatorMulOppositeStarAlgEquiv A a‖ = ‖a‖ :=
@@ -227,8 +260,9 @@ variable (A) in
 /-- The `⋆`-isomorphism `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)` between the adjointable operators on the right
 self-module of `A` and its multiplier algebra. It sends `T` to the double centralizer
 `(T, star ∘ T* ∘ star)`; the inverse sends `(L, R)` to `L`, whose adjoint is `star ∘ R ∘ star`.
-It is isometric (`norm_multiplierStarAlgEquiv`). -/
-noncomputable def multiplierStarAlgEquiv : AdjointableMap Aᵐᵒᵖ A A ≃⋆ₐ[ℂ] 𝓜(ℂ, A) where
+It is isometric (`norm_multiplierMulOppositeStarAlgEquiv`). -/
+noncomputable def multiplierMulOppositeStarAlgEquiv :
+    AdjointableMap Aᵐᵒᵖ A A ≃⋆ₐ[ℂ] 𝓜(ℂ, A) where
   toFun T := .ofAdjoint T.toContinuousLinearMap T.adjoint.toContinuousLinearMap
     T.star_adjoint_apply_mul
   invFun m :=
@@ -246,38 +280,48 @@ noncomputable def multiplierStarAlgEquiv : AdjointableMap Aᵐᵒᵖ A A ≃⋆�
   map_star' T := DoubleCentralizer.ext_fst fun _ ↦ by simp [star_eq_adjoint]
 
 @[simp]
-theorem multiplierStarAlgEquiv_fst (T : AdjointableMap Aᵐᵒᵖ A A) :
-    (multiplierStarAlgEquiv A T).fst = T.toContinuousLinearMap :=
+theorem multiplierMulOppositeStarAlgEquiv_fst (T : AdjointableMap Aᵐᵒᵖ A A) :
+    (multiplierMulOppositeStarAlgEquiv A T).fst = T.toContinuousLinearMap :=
   DoubleCentralizer.ofAdjoint_fst
 
 @[simp]
-theorem multiplierStarAlgEquiv_snd_apply (T : AdjointableMap Aᵐᵒᵖ A A) (x : A) :
-    (multiplierStarAlgEquiv A T).snd x = star (T.adjoint (star x)) :=
+theorem multiplierMulOppositeStarAlgEquiv_snd_apply (T : AdjointableMap Aᵐᵒᵖ A A) (x : A) :
+    (multiplierMulOppositeStarAlgEquiv A T).snd x = star (T.adjoint (star x)) :=
   DoubleCentralizer.ofAdjoint_snd_apply x
 
 @[simp]
-theorem multiplierStarAlgEquiv_symm_apply (m : 𝓜(ℂ, A)) (x : A) :
-    (multiplierStarAlgEquiv A).symm m x = m.fst x :=
+theorem multiplierMulOppositeStarAlgEquiv_symm_apply (m : 𝓜(ℂ, A)) (x : A) :
+    (multiplierMulOppositeStarAlgEquiv A).symm m x = m.fst x :=
   (rfl)
+
+/-- The adjoint of the adjointable operator corresponding to a double centralizer `(L, R)` is
+`star ∘ R ∘ star`. -/
+@[simp]
+theorem adjoint_multiplierMulOppositeStarAlgEquiv_symm_apply (m : 𝓜(ℂ, A)) (x : A) :
+    ((multiplierMulOppositeStarAlgEquiv A).symm m).adjoint x = star (m.snd (star x)) :=
+  -- The adjoint field of the inverse is by construction `(star m).fst`.
+  adjoint_mk_apply _ _ _ x
 
 /-- The `⋆`-isomorphism `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)` is isometric. -/
 @[simp]
-theorem norm_multiplierStarAlgEquiv (T : AdjointableMap Aᵐᵒᵖ A A) :
-    ‖multiplierStarAlgEquiv A T‖ = ‖T‖ := by
-  rw [← DoubleCentralizer.norm_fst, multiplierStarAlgEquiv_fst, norm_toContinuousLinearMap]
+theorem norm_multiplierMulOppositeStarAlgEquiv (T : AdjointableMap Aᵐᵒᵖ A A) :
+    ‖multiplierMulOppositeStarAlgEquiv A T‖ = ‖T‖ := by
+  rw [← DoubleCentralizer.norm_fst, multiplierMulOppositeStarAlgEquiv_fst,
+    norm_toContinuousLinearMap]
 
 /-- `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)` sends left multiplication by `a` to the canonical image of `a`. -/
 @[simp]
-theorem multiplierStarAlgEquiv_mulLeft (a : A) :
-    multiplierStarAlgEquiv A (mulLeft A a) = (a : 𝓜(ℂ, A)) :=
+theorem multiplierMulOppositeStarAlgEquiv_mulLeft (a : A) :
+    multiplierMulOppositeStarAlgEquiv A (mulLeft A a) = (a : 𝓜(ℂ, A)) :=
   DoubleCentralizer.ext_fst fun _ ↦ by simp
 
 /-- Under `L_A(A) ≃⋆ₐ[ℂ] 𝓜(ℂ, A)`, the module-compact operators `K_A(A)` correspond to the image
 of `A` in its multiplier algebra. -/
-theorem mem_compactOperator_mulOpposite_iff_multiplierStarAlgEquiv
+theorem mem_compactOperator_mulOpposite_iff_multiplierMulOppositeStarAlgEquiv
     {T : AdjointableMap Aᵐᵒᵖ A A} :
-    T ∈ compactOperator Aᵐᵒᵖ A A ↔ ∃ a : A, (a : 𝓜(ℂ, A)) = multiplierStarAlgEquiv A T := by
-  simp_rw [mem_compactOperator_mulOpposite_iff, ← multiplierStarAlgEquiv_mulLeft,
+    T ∈ compactOperator Aᵐᵒᵖ A A ↔
+      ∃ a : A, (a : 𝓜(ℂ, A)) = multiplierMulOppositeStarAlgEquiv A T := by
+  simp_rw [mem_compactOperator_mulOpposite_iff, ← multiplierMulOppositeStarAlgEquiv_mulLeft,
     EmbeddingLike.apply_eq_iff_eq]
 
 end Multiplier
