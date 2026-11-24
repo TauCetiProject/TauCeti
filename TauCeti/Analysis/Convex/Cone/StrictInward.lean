@@ -24,8 +24,8 @@ For convex sets and base points in the set, membership is equivalent to reaching
 point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
 near each admissible point and vector (hence along any relatively continuous vector field). Any
-convex set admitting a strictly inward vector has nonempty interior, so its open intersections
-enjoy unique differentiability (`Convex.uniqueDiffOn_inter_of_mem_strictInwardCone`). Curves with
+set admitting a strictly inward vector has nonempty interior
+(`TauCeti.interior_nonempty_of_mem_strictInwardCone`), without any convexity assumption. Curves with
 one-sided derivatives in the strict inward cone immediately enter and remain in the interior
 (`HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone`,
 `Convex.mem_interior_of_hasDerivWithinAt_Iic`,
@@ -71,6 +71,13 @@ theorem add_smul_mem_interior_of_mem_strictInwardCone (hv : v ∈ strictInwardCo
   obtain ⟨ε, hε, δ, hδ, h⟩ := hv
   refine ⟨δ, hδ, fun t ht ↦ mem_interior_iff_mem_nhds.mpr ?_⟩
   exact Filter.mem_of_superset (ball_mem_nhds _ (mul_pos hε ht.1)) (h t ht)
+
+/-- Admitting a strictly inward vector at any point implies nonempty interior, without any
+convexity assumption. -/
+theorem interior_nonempty_of_mem_strictInwardCone (hv : v ∈ strictInwardCone s x) :
+    (interior s).Nonempty := by
+  obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+  exact ⟨_, h (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩⟩
 
 /-- The strict inward cone at any fixed point of any set is open. -/
 theorem isOpen_strictInwardCone (s : Set E) (x : E) : IsOpen (strictInwardCone s x) := by
@@ -216,14 +223,6 @@ theorem Convex.eventually_mem_strictInwardCone_of_continuousWithinAt {u : Set E}
     ∀ᶠ y in 𝓝[u] x, y ∈ s → X y ∈ strictInwardCone s y := by
   obtain ⟨ε, hε, δ, hδ, hev⟩ := hs.exists_uniform_ball_subset_of_continuousWithinAt hv hX
   exact hev.mono fun _ hy hys ↦ ⟨ε, hε, δ, hδ, hy hys⟩
-
-/-- If a convex set `s` admits a strictly inward vector at any point, then `u ∩ s` has unique
-derivatives for every open set `u`. -/
-theorem Convex.uniqueDiffOn_inter_of_mem_strictInwardCone {u : Set E} (hs : Convex ℝ s)
-    (hu : IsOpen u) (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ (u ∩ s) := by
-  obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
-  exact inter_comm s u ▸
-    (uniqueDiffOn_convex hs ⟨_, h (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩⟩).inter hu
 
 /-- Every interior anchor supplies a strictly inward vector at every point of a convex set. -/
 theorem Convex.sub_mem_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s)
