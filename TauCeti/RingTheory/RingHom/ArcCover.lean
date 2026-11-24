@@ -174,8 +174,8 @@ theorem comap_surjective {f : A →+* B} (h : f.IsArcCover) :
   intro p
   obtain ⟨W, _, _, _, _, e, ψ, he, _, hψ⟩ := h p.asIdeal.ResidueField (algebraMap A _)
   refine ⟨⟨RingHom.ker ψ, RingHom.ker_isPrime ψ⟩, PrimeSpectrum.ext ?_⟩
-  rw [PrimeSpectrum.comap_asIdeal, RingHom.comap_ker, hψ, ← RingHom.comap_ker,
-    (RingHom.injective_iff_ker_eq_bot e).mp he, ← RingHom.ker_eq_comap_bot,
+  -- The preimage of `ker ψ` is `ker (ψ ∘ f) = ker (e ∘ φ) = ker φ = p`, as `e` is injective.
+  rw [PrimeSpectrum.comap_asIdeal, RingHom.comap_ker, hψ, RingHom.ker_comp_of_injective _ he,
     Ideal.ker_algebraMap_residueField]
 
 end IsArcCover
@@ -186,13 +186,13 @@ variable (f : A →+* B) {I : Ideal A}
 
 /-- Let `f : A →+* B` carry the ideal `I` bijectively onto an ideal of `B`. Then every
 homomorphism `φ : A →+* V` to a valuation domain of rank at most one which does not kill `I`
-extends along `f`. For `x ∈ I` with `φ x ≠ 0` and `b : B`, write `b * f x = f y` with
-`y ∈ I`; the extension sends `b` to `φ y / φ x`, which lies in `V` because a rank-one valuation
-is archimedean. -/
+extends along `f`. -/
 theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [ValuationRing V]
     [Ring.KrullDimLE 1 V] (hinj : Set.InjOn f I) (himage : (I.map f : Set B) ⊆ f '' I)
     (φ : A →+* V) {x : A} (hxI : x ∈ I) (hx : φ x ≠ 0) :
     ∃ ψ : B →+* V, ψ.comp f = φ := by
+  -- Fix `x ∈ I` with `φ x ≠ 0`. For `b : B`, write `b * f x = f y` with `y ∈ I`; the extension
+  -- sends `b` to `φ y / φ x`, which lies in `V` because a rank-one valuation is archimedean.
   have hg : ∀ b : B, ∃ y ∈ I, f y = b * f x := fun b =>
     himage (Ideal.mul_mem_left _ b (Ideal.mem_map_of_mem f hxI))
   choose g hgI hgf using hg
@@ -238,11 +238,12 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
 
 /-- A Milnor square gives an arc-cover: if `f : A →+* B` carries the ideal `I` bijectively onto
 an ideal of `B`, then `A →+* A ⧸ I × B` is an arc-cover. On spectra,
-`Spec (A ⧸ I) ⊔ Spec B → Spec A` is an arc-cover. A test map that kills `I` factors through
-`A ⧸ I`, and any other extends along `f`; no enlargement of the valuation ring is needed. -/
+`Spec (A ⧸ I) ⊔ Spec B → Spec A` is an arc-cover, and no enlargement of the valuation ring is
+needed. -/
 theorem isArcCover_quotientMk_prod (hinj : Set.InjOn f I) (himage : (I.map f : Set B) ⊆ f '' I) :
     ((Ideal.Quotient.mk I).prod f).IsArcCover := by
   refine IsArcCover.of_forall_exists_comp_eq fun V _ _ _ _ φ => ?_
+  -- A test map that kills `I` factors through `A ⧸ I`, and any other extends along `f`.
   by_cases h : ∀ x ∈ I, φ x = 0
   · exact ⟨(Ideal.Quotient.lift I φ h).comp (RingHom.fst _ _), by ext a; simp⟩
   · push Not at h
