@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.AlgebraicTopology.Singular.Basic
 import TauCeti.Topology.Connected.PathConnected
 
@@ -235,16 +234,8 @@ theorem eq_of_path_of_mono (c : ∀ W : Set B, W → M W)
       rw [hφc, hφc, singularHomology₀Section_eq_of_joined _ hj]
     have := congrArg (res (inter_subset_left : W ∩ N b ⊆ W)) hxy
     rwa [hc, hc] at this
-  have : LocallyPathConnectedSpace unitInterval :=
-    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine γ.eq_of_eventually_eq (f := c W) fun t ↦ ?_
-  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
-  have hO : {s : unitInterval | ((γ s : W) : B) ∈ N (γ t)} ∈ 𝓝 t :=
-    (hγ.tendsto t).eventually (hN _)
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  refine (hj (γ t : B) ((hs.map γ.continuous.continuousOn).mono ?_)).symm
-  rintro _ ⟨u, hu, rfl⟩
-  exact hu
+  exact γ.eq_of_joinedIn_nhds (f := c W) fun z ↦ ⟨{z' : W | (z' : B) ∈ N z},
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds (hN z), fun _ _ ↦ hj z⟩
 
 end PathConstancy
 

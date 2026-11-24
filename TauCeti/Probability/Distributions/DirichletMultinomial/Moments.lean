@@ -92,8 +92,8 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
     (StdSimplex.single (Classical.arbitrary ι) : StdSimplex ℝ≥0 ι).extendWeights
       (fun l ↦ (x l).toNNReal)
   have hp : Measurable p := (StdSimplex.measurable_extendWeights _).comp (by fun_prop)
-  have hK : Measurable (fun x ↦ multinomialMeasure n (p x)) :=
-    measurable_multinomialMeasure.comp (measurable_const.prodMk hp)
+  have hK : AEMeasurable (fun x ↦ multinomialMeasure n (p x)) (dirichletMeasure a) :=
+    (measurable_multinomialMeasure.comp (measurable_const.prodMk hp)).aemeasurable
   have hweights := ae_extendWeights_dirichletMeasure (a := a)
     (StdSimplex.single (Classical.arbitrary ι))
   have hmem (l : ι) : MemLp (fun k : ι → ℕ ↦ (k l : ℝ)) 2
