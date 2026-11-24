@@ -46,6 +46,14 @@ Pages are numbered as in `HomologicalComplex₂.columnFiltrationSpectralSequence
   classes of cycles of the first page, the isomorphism is described by
   `HomologicalComplex.homologyπ_kunnethSpectralSequenceSecondPageXIso_hom`, and on each summand by
   `HomologicalComplex.homologyMap_ι_kunnethTorSumComplexHomologyIso_hom`.
+* **Naturality in the first variable.** A chain map `f : K ⟶ K'` induces morphisms of complexes
+  `HomologicalComplex.kunnethTorComplexMap` and `HomologicalComplex.kunnethTorSumComplexMap`,
+  through which the identifications above are natural
+  (`HomologicalComplex.kunnethColumnHomologyKunneth_naturality_left`,
+  `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX_hom_naturality`,
+  `HomologicalComplex.kunnethTorSumComplexHomologyIso_hom_naturality`). They are used to describe
+  the morphisms of Künneth spectral sequences in
+  `TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Naturality`.
 
 ## References
 
@@ -444,5 +452,125 @@ lemma homologyπ_kunnethSpectralSequenceSecondPageXIso_hom (p q : ℕ) :
   rw [Iso.hom_inv_id_assoc]
   simp only [π_homologyIsoSc'_hom_assoc, ShortComplex.homologyπ_naturality_assoc,
     π_homologyIsoSc'_inv_assoc, reassoc_of% h]
+
+/-! ### Naturality in the first variable -/
+
+section Naturality
+
+variable {K} {K' : ChainComplex (ModuleCat.{u} R) ℕ} (f : K ⟶ K')
+
+/-- Naturality of `kunnethColumnHomologyKunneth` in the first variable, with respect to the
+morphism of Künneth bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`. -/
+@[reassoc]
+lemma kunnethColumnHomologyKunneth_naturality_left (p k : ℕ) :
+    GradedObject.Monoidal.whiskerRight (fun i ↦ homologyMap f i)
+        (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) k ≫
+        kunnethColumnHomologyKunneth K' L p k =
+      kunnethColumnHomologyKunneth K L p k ≫
+        homologyMap ((kunnethBicomplexMapLeft f L).f p) k := by
+  have h := homologyKunneth_naturality f (𝟙 ((cartanEilenbergResolution L).X p)) k
+  simp only [homologyMap_id] at h
+  rw [kunnethColumnHomologyKunneth_eq, kunnethColumnHomologyKunneth_eq, kunnethBicomplexMapLeft_f]
+  -- `𝟙` of a graded object is the family of identities, `f ▷ X` is `tensorHom f (𝟙 X)` and the
+  -- columns of the Künneth bicomplexes are `K ⊗ Q.X p`, all by definition
+  exact h
+
+end Naturality
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+attribute [local instance] Abelian.hasFiniteBiproducts
+
+variable {R : Type u} [CommRing R] {K K' : ChainComplex (ModuleCat.{u} R) ℕ} (f : K ⟶ K')
+  (L : ChainComplex (ModuleCat.{u} R) ℕ)
+
+/-- The morphism of complexes `kunnethTorComplex K L i j ⟶ kunnethTorComplex K' L i j` induced by
+`Hᵢ(f)`: in degree `p`, it is `Hᵢ(f) ▷ Hⱼ(Q.X p)`
+(`HomologicalComplex.kunnethTorComplexXIso_inv_kunnethTorComplexMap_f`). -/
+def kunnethTorComplexMap (i j : ℕ) : kunnethTorComplex K L i j ⟶ kunnethTorComplex K' L i j :=
+  (NatTrans.mapHomologicalComplex ((tensoringLeft _).map (homologyMap f i)) _).app
+    (homologyResolution L j).complex
+
+/-- In degree `p`, the morphism `HomologicalComplex.kunnethTorComplexMap f L i j` is
+`Hᵢ(f) ▷ Hⱼ(Q.X p)`. -/
+@[reassoc]
+lemma kunnethTorComplexXIso_inv_kunnethTorComplexMap_f (i j p : ℕ) :
+    (kunnethTorComplexXIso K L i j p).inv ≫ (kunnethTorComplexMap f L i j).f p =
+      homologyMap f i ▷ ((cartanEilenbergResolution L).X p).homology j ≫
+        (kunnethTorComplexXIso K' L i j p).inv := by
+  -- both identifications are identities, and the component of `kunnethTorComplexMap f L i j` in
+  -- degree `p` is `Hᵢ(f) ▷ Hⱼ(Q.X p)` by definition
+  exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- The identifications `HomologicalComplex.kunnethTorComplexHomologyIso` with `Tor` are natural in
+the first variable: the map induced on homology by `HomologicalComplex.kunnethTorComplexMap f L i j`
+is the map `Torₚ(Hᵢ(f), Hⱼ(L))`. -/
+@[reassoc]
+lemma kunnethTorComplexHomologyIso_hom_naturality (i j p : ℕ) :
+    homologyMap (kunnethTorComplexMap f L i j) p ≫ (kunnethTorComplexHomologyIso K' L i j p).hom =
+      (kunnethTorComplexHomologyIso K L i j p).hom ≫
+        ((Tor (ModuleCat.{u} R) p).map (homologyMap f i)).app (L.homology j) := by
+  rw [kunnethTorComplexHomologyIso_hom, kunnethTorComplexHomologyIso_hom, Tor_map,
+    ProjectiveResolution.leftDerived_app_eq _ (homologyResolution L j)]
+  -- `homologyMap` of `kunnethTorComplexMap f L i j` is the image of the component of
+  -- `NatTrans.mapHomologicalComplex` under the homology functor by definition
+  exact (Iso.inv_hom_id_assoc _ _).symm
+
+/-- The morphism of complexes `kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K' L q` induced by
+`f`: the direct sum of the morphisms `HomologicalComplex.kunnethTorComplexMap f L i j`. -/
+def kunnethTorSumComplexMap (q : ℕ) : kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K' L q :=
+  biproduct.map fun x ↦ kunnethTorComplexMap f L x.val.1 x.val.2
+
+/-- On the summand `kunnethTorComplex K L i j`, the morphism
+`HomologicalComplex.kunnethTorSumComplexMap f L q` is `HomologicalComplex.kunnethTorComplexMap`. -/
+@[reassoc (attr := simp)]
+lemma ι_kunnethTorSumComplexMap (q : ℕ) (x : Finset.antidiagonal q) :
+    biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2) x ≫
+        kunnethTorSumComplexMap f L q =
+      kunnethTorComplexMap f L x.val.1 x.val.2 ≫
+        biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K' L x.val.1 x.val.2) x := by
+  rw [kunnethTorSumComplexMap, biproduct.ι_map]
+
+/-- The identifications `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX` are natural in the
+first variable. -/
+@[reassoc]
+lemma tensorObjIsoKunnethTorSumComplexX_hom_naturality (q p : ℕ) :
+    GradedObject.Monoidal.whiskerRight (fun i ↦ homologyMap f i)
+        (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) q ≫
+      (tensorObjIsoKunnethTorSumComplexX K' L q p).hom =
+    (tensorObjIsoKunnethTorSumComplexX K L q p).hom ≫ (kunnethTorSumComplexMap f L q).f p := by
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun i j h ↦ ?_
+  simp only [GradedObject.Monoidal.ι_tensorHom_assoc,
+    ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom_assoc,
+    ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom, ← comp_f, ι_kunnethTorSumComplexMap]
+  rw [comp_f, kunnethTorComplexXIso_inv_kunnethTorComplexMap_f_assoc]
+  -- the identity of the graded object `j ↦ Hⱼ(Q.X p)` is the identity of `Hⱼ(Q.X p)` in degree
+  -- `j` by definition
+  exact congrArg (· ≫ _) (MonoidalCategory.tensorHom_id _ _)
+
+/-- The identifications `HomologicalComplex.kunnethTorSumComplexHomologyIso` with
+`⨁_{i + j = q} Torₚ(Hᵢ(K), Hⱼ(L))` are natural in the first variable: the map induced on homology
+by `HomologicalComplex.kunnethTorSumComplexMap f L q` is induced by the maps `Torₚ(Hᵢ(f), Hⱼ(L))`.
+-/
+@[reassoc]
+lemma kunnethTorSumComplexHomologyIso_hom_naturality (q p : ℕ) :
+    homologyMap (kunnethTorSumComplexMap f L q) p ≫
+        (kunnethTorSumComplexHomologyIso K' L q p).hom =
+      (kunnethTorSumComplexHomologyIso K L q p).hom ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
+          (fun i ↦ homologyMap f i) (𝟙 fun j ↦ L.homology j) q := by
+  rw [← cancel_epi ((HomologicalComplex.homologyFunctor _ _ p).mapBiproduct
+    (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2)).inv]
+  refine biproduct.hom_ext' _ _ fun ⟨⟨i, j⟩, h⟩ ↦ ?_
+  have h' : i + j = q := Finset.mem_antidiagonal.1 h
+  simp only [Functor.mapBiproduct_inv, biproduct.ι_desc_assoc, homologyFunctor_map]
+  rw [← homologyMap_comp_assoc, ι_kunnethTorSumComplexMap, homologyMap_comp_assoc,
+    homologyMap_ι_kunnethTorSumComplexHomologyIso_hom (h := h'),
+    homologyMap_ι_kunnethTorSumComplexHomologyIso_hom_assoc (h := h'),
+    kunnethTorComplexHomologyIso_hom_naturality_assoc, GradedObject.ι_mapBifunctorMapMap]
+  simp only [Pi.id_apply]
+  rw [CategoryTheory.Functor.map_id, Category.id_comp]
 
 end HomologicalComplex
