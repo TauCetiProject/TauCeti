@@ -120,8 +120,7 @@ lemma toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom :
       (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (fromSingle₀Equiv K F ι).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (fromSingle₀Equiv K F ι).property,
-            Functor.map_zero]) ≫
+          ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map_fromSingle₀Equiv_val_comp_d ι) ≫
         (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           K).homologyπ 0 :=
   Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom _ _ _ _ _ ι

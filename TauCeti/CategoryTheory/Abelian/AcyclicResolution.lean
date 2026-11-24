@@ -276,6 +276,16 @@ namespace CategoryTheory.Functor
 
 open CochainComplex
 
+/-- The image under `F` of the augmentation `X ⟶ K⁰` of a resolution `X[0] ⟶ K` lands in the
+degree-zero cycles of `F(K)`. This is the side condition for the `liftCycles` maps describing the
+degree-zero normalization of computations by resolutions. -/
+lemma map_fromSingle₀Equiv_val_comp_d {C : Type u₁} [Category.{v₁} C] [Abelian C]
+    {D : Type u₂} [Category.{v₂} D] [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms] {X : C}
+    {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) :
+    F.map (fromSingle₀Equiv K X ι).val ≫ ((F.mapHomologicalComplex _).obj K).d 0 1 = 0 := by
+  dsimp
+  rw [← F.map_comp, (fromSingle₀Equiv K X ι).property, F.map_zero]
+
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
   [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
   [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
@@ -367,7 +377,7 @@ image in `F(K⁰)` under the augmentation `X ⟶ K⁰`. -/
 lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
     F.toRightDerivedZero.app X ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK 0).hom =
       ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (fromSingle₀Equiv K X ι).val) 1
-          (by simp) (by dsimp; rw [← F.map_comp, (fromSingle₀Equiv K X ι).property, F.map_zero]) ≫
+          (by simp) (F.map_fromSingle₀Equiv_val_comp_d ι) ≫
         ((F.mapHomologicalComplex _).obj K).homologyπ 0 := by
   let I := injectiveResolution X
   let φ := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
@@ -381,10 +391,14 @@ lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
     rightDerivedObjIsoOfResolution_hom_comp_homologyMap F P hinj hP hF ι hK 0 I φ hφ,
     I.toRightDerivedZero_eq F]
   have h₀ : ι.f 0 ≫ φ.f 0 = I.ι.f 0 := by rw [← HomologicalComplex.comp_f, hφ]
-  simp
-  congr 1
-  simp [← cancel_mono (HomologicalComplex.iCycles _ _), I.toRightDerivedZero'_comp_iCycles,
-    ← F.map_comp, h₀]
+  -- in the degree-zero cycles of `F(I)`, `F(I.ι)` is `F(ι)` followed by `F(φ)`
+  have hc : I.toRightDerivedZero' F =
+      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (fromSingle₀Equiv K X ι).val) 1
+          (by simp) (F.map_fromSingle₀Equiv_val_comp_d ι) ≫
+        cyclesMap ((F.mapHomologicalComplex _).map φ) 0 := by
+    rw [← cancel_mono (HomologicalComplex.iCycles _ _)]
+    simp [← F.map_comp, h₀]
+  simp [hc]
 
 /-- A functorial resolution by objects of a class adapted to `F` computes `RⁿF`, naturally in
 its argument. The components are the comparisons through arbitrary injective resolutions given

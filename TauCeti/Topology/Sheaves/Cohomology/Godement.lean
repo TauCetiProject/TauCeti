@@ -94,8 +94,9 @@ lemma toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app
           ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
             (CochainComplex.fromSingle₀Equiv _ F
               ((toGodementResolution (ModuleCat.{u} R) X).app F)).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv _ F _).property,
-            Functor.map_zero]) ≫
+          (Functor.map_fromSingle₀Equiv_val_comp_d
+            (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+            ((toGodementResolution (ModuleCat.{u} R) X).app F)) ≫
         (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           ((godementResolution (ModuleCat.{u} R) X).obj F)).homologyπ 0 := by
   rw [← Iso.app_hom, rightDerivedΓIsoGodement_app]
