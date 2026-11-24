@@ -47,7 +47,7 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
 * `EuclideanSpace.bestSparseL1Error_eq_zero_iff`: `σₛ(x)₁ = 0` iff `x` is `s`-sparse.
 * `EuclideanSpace.bestSparseL1Error_right_antitone`,
   `EuclideanSpace.bestSparseL1Error_le_restrictedL1Norm_univ`,
-  `EuclideanSpace.bestSparseL1Error_zero`, `EuclideanSpace.bestSparseL1Error_of_card_le`:
+  `EuclideanSpace.bestSparseL1Error_zero`, `EuclideanSpace.bestSparseL1Error_eq_zero_of_card_le`:
   `σₛ(x)₁` is antitone in `s`, at most `‖x‖₁`, equal to `‖x‖₁` for `s = 0`, and `0` once `s` is
   at least the number of coordinates.
 
@@ -363,7 +363,7 @@ theorem bestSparseL1Error_eq_zero_iff (x : EuclideanSpace ℝ ι) {s : ℕ} :
     exact le_antisymm hle (x.bestSparseL1Error_nonneg s)
 
 /-- For `s` at least the number of coordinates, every vector is `s`-sparse, so `σₛ(x)₁ = 0`. -/
-theorem bestSparseL1Error_of_card_le (x : EuclideanSpace ℝ ι) {s : ℕ}
+theorem bestSparseL1Error_eq_zero_of_card_le (x : EuclideanSpace ℝ ι) {s : ℕ}
     (hs : Fintype.card ι ≤ s) : x.bestSparseL1Error s = 0 :=
   x.bestSparseL1Error_eq_zero_iff.2 (hammingNorm_le_card_fintype.trans hs)
 

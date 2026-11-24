@@ -307,10 +307,16 @@ theorem ofReal_finiteKernelDensityEstimator {K : ℝ → ℝ} (hK : ∀ u, 0 ≤
   rcases isEmpty_or_nonempty κ with _ | _
   · simp
   have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
-  rw [finiteKernelDensityEstimator_eq_mul_sum, mul_inv, mul_assoc, mul_sum,
-    ENNReal.ofReal_mul (inv_nonneg.2 hn.le),
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ mul_nonneg (inv_nonneg.2 hh) (hK _),
-    ENNReal.ofReal_inv_of_pos hn, ENNReal.ofReal_natCast, mul_sum]
+  -- The estimator is `(card κ)⁻¹` times the sum of the nonnegative rescaled terms.
+  have hsum : finiteKernelDensityEstimator K h x t =
+      (Fintype.card κ : ℝ)⁻¹ * ∑ i, h⁻¹ * K ((t - x i) / h) := by
+    rw [finiteKernelDensityEstimator_eq_mul_sum, mul_sum, mul_sum]
+    exact sum_congr rfl fun i _ ↦ by ring
+  have hterm (i : κ) : 0 ≤ h⁻¹ * K ((t - x i) / h) := mul_nonneg (inv_nonneg.2 hh) (hK _)
+  have hcoef : ENNReal.ofReal (Fintype.card κ : ℝ)⁻¹ = ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ := by
+    rw [ENNReal.ofReal_inv_of_pos hn, ENNReal.ofReal_natCast]
+  rw [hsum, ENNReal.ofReal_mul (inv_nonneg.2 hn.le),
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hterm i, hcoef, mul_sum]
 
 /-- For a Lebesgue-almost everywhere nonnegative, almost everywhere measurable kernel `K` and any
 bandwidth `h`, the convolution of the empirical measure of `x` with
