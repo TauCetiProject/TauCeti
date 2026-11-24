@@ -257,8 +257,7 @@ lemma nonempty_sections_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
   obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
   refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
   have : g.unop ≫ hT.from U.unop = hT.from V.unop := hT.hom_ext _ _
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← g.op_unop, ← op_comp, ← Category.assoc,
-    this]
+  simp [← this, -IsTerminal.comp_from]
 
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/
@@ -348,23 +347,23 @@ lemma mk_eq_one_iff (P : Torsor G) : mk P = 1 ↔ P.sheaf.obj.sections.Nonempty 
   refine ⟨fun ⟨e⟩ ↦ ⟨_, (Torsor.trivialHomEquiv P e.hom).property⟩, fun ⟨s, hs⟩ ↦ ?_⟩
   exact ⟨asIso ((Torsor.trivialHomEquiv P).symm ⟨s, hs⟩)⟩
 
-/-- For a sheaf of trivial groups, every torsor is trivial. -/
-instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) where
+/-- If every `G`-torsor has a global section, every `G`-torsor is trivial. -/
+lemma subsingleton_of_forall_nonempty_sections
+    (h : ∀ P : Torsor G, P.sheaf.obj.sections.Nonempty) : Subsingleton (NonabelianH1 G) where
   allEq x y := by
     induction x using ind with | h P => ?_
     induction y using ind with | h Q => ?_
-    rw [(mk_eq_one_iff P).2 P.nonempty_sections_of_subsingleton,
-      (mk_eq_one_iff Q).2 Q.nonempty_sections_of_subsingleton]
+    rw [(mk_eq_one_iff P).2 (h P), (mk_eq_one_iff Q).2 (h Q)]
+
+/-- For a sheaf of trivial groups, every torsor is trivial. -/
+instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) :=
+  subsingleton_of_forall_nonempty_sections fun P ↦ P.nonempty_sections_of_subsingleton
 
 /-- If `T` is a terminal object over which every covering sieve contains the identity, every
 `G`-torsor is trivial. -/
 lemma subsingleton_of_isTerminal {T : C} (hT : IsTerminal T) (hJ : ∀ S ∈ J T, S (𝟙 T)) :
-    Subsingleton (NonabelianH1 G) where
-  allEq x y := by
-    induction x using ind with | h P => ?_
-    induction y using ind with | h Q => ?_
-    rw [(mk_eq_one_iff P).2 (P.nonempty_sections_of_isTerminal hT hJ),
-      (mk_eq_one_iff Q).2 (Q.nonempty_sections_of_isTerminal hT hJ)]
+    Subsingleton (NonabelianH1 G) :=
+  subsingleton_of_forall_nonempty_sections fun P ↦ P.nonempty_sections_of_isTerminal hT hJ
 
 end NonabelianH1
 
