@@ -386,8 +386,8 @@ theorem convolutionL_eq_integral_smul_rightTranslation_inv (h k : Lp 𝕜 1 μ) 
         refine integral_congr_ae ?_
         filter_upwards [(quasiMeasurePreserving_inv_of_regular μ).ae
           (coeFn_modularInversion (𝕜 := 𝕜) k)] with z hz
-        rw [hz, inv_inv, ENNReal.toReal_one, inv_one, Real.rpow_one, smul_assoc, smul_smul,
-          modularCharacter_mul_inv, one_smul]
+        rw [hz]
+        simp [-map_inv, smul_smul, modularCharacter_mul_inv]
 
 /-- **Right convolution as a Bochner integral of right translates.** For `h ∈ L¹(G, μ; 𝕜)` over an
 `RCLike` field `𝕜` and a real kernel `k ∈ L¹(G, μ; ℝ)`, convolving `h` on the right with `k` equals

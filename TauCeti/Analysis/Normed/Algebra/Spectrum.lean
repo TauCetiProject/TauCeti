@@ -74,8 +74,8 @@ theorem toStrongDual_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
 
 @[simp]
 theorem toStrongDual_zero :
-    (0 : A →ₙₐ[𝕜] 𝕜).toStrongDual = 0 :=
-  DFunLike.ext _ _ fun _ => rfl
+    (0 : A →ₙₐ[𝕜] 𝕜).toStrongDual = 0 := by
+  ext; simp
 
 @[simp]
 theorem toStrongDual_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :

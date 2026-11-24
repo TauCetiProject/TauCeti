@@ -25,18 +25,14 @@ Convolving with such kernels on the left approximates the identity on `Lᵖ` for
 `k ⋆ u = ∫ y, k(y) • L_y u dμ(y)`, and `L_y u` tends to `u` as `y → 1` by strong continuity of left
 translation, so the peak-function estimates `TauCeti.norm_integral_smul_sub_le` and
 `TauCeti.tendsto_integral_smul_of_tendsto` apply. Convolving on the right approximates the identity
-on `L¹(G, μ; 𝕜)` over any `RCLike` scalar field `𝕜`. Since
-convolution is not commutative, this is not a formal consequence of the left-hand statement. It
-follows from the fact that the modular inversion `(J f)(x) = c(x) • f x⁻¹` of `L¹`, where `c` is
-the modular character, reverses convolution:
-
-```text
-J (h ⋆ k) = J k ⋆ J h
-```
-
-(`MeasureTheory.Lp.modularInversion_convolutionL`). Indeed `J` is an isometry, so
-`‖h ⋆ k - h‖₁ = ‖J k ⋆ J h - J h‖₁`, and `J k` is again a norm-bounded kernel of integral one
-concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G` is assumed.
+on `L¹(G, μ; 𝕜)` over any `RCLike` scalar field `𝕜`. Since convolution is not commutative, this is
+not a formal consequence of the left-hand statement. Instead, by
+`MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation_inv` (derived from
+`MeasureTheory.Lp.modularInversion_convolutionL` and the modular inversion formula), right
+convolution is the average of weighted right translates `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`.
+Strong continuity of right translation (`MeasureTheory.Lp.tendsto_rightTranslation_inv`) then lets
+the same peak-function estimates apply directly. Neither σ-finiteness of `μ` nor any countability
+of `G` is assumed.
 
 ## Main results
 
