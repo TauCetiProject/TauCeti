@@ -126,8 +126,8 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
         have hTx : |T * (x - v) / 2| ≤ 1 / 2 := by
           rw [abs_div, abs_mul, abs_of_pos hT₀, abs_two, div_le_div_iff_of_pos_right two_pos]
           simpa [hT₀.ne'] using mul_le_mul_of_nonneg_left hx' hT₀.le
-        exact mul_le_mul_of_nonneg_left (TauCeti.sq_le_sinc_sq_of_abs_le_half hTx)
-          (by positivity)
+        exact mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (by norm_num) (TauCeti.le_sinc_of_abs_le_half hTx) 2) (by positivity)
     _ ≤ c * ∫ x, K x ∂μ := by
         refine mul_le_mul_of_nonneg_left ?_ hc₀
         exact setIntegral_le_integral hK_int (ae_of_all _ fun x ↦ by positivity)

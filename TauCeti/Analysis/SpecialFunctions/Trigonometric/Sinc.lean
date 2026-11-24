@@ -14,8 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 `sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
-the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently `sinc x ^ 2` is at least
-`(23 / 24) ^ 2` while `|x| ≤ 1 / 2` (`TauCeti.sq_le_sinc_sq_of_abs_le_half`).
+the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently `sinc x` is at least `23 / 24`
+while `|x| ≤ 1 / 2` (`TauCeti.le_sinc_of_abs_le_half`).
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -101,13 +101,9 @@ namespace TauCeti
 
 open Real
 
-/-- On `[-1 / 2, 1 / 2]`, `sinc x ^ 2` is at least `(23 / 24) ^ 2`, since
-`|sinc x - 1| ≤ x² / 6`. -/
-theorem sq_le_sinc_sq_of_abs_le_half {x : ℝ} (hx : |x| ≤ 1 / 2) :
-    (23 / 24 : ℝ) ^ 2 ≤ sinc x ^ 2 := by
+/-- On `[-1 / 2, 1 / 2]`, `sinc x` is at least `23 / 24`, since `|sinc x - 1| ≤ x² / 6`. -/
+theorem le_sinc_of_abs_le_half {x : ℝ} (hx : |x| ≤ 1 / 2) : 23 / 24 ≤ sinc x := by
   have hsq : x ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hx.trans (le_abs_self _))
-  have hlow : 23 / 24 ≤ sinc x := by
-    linarith [(abs_le.1 (abs_sinc_sub_one_le x)).1]
-  exact pow_le_pow_left₀ (by norm_num) hlow 2
+  linarith [(abs_le.1 (abs_sinc_sub_one_le x)).1]
 
 end TauCeti
