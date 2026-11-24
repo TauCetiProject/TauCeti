@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The line bundles `𝒪(k)` on projective space
@@ -208,26 +207,6 @@ theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
 theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
     (v : 𝕜) : (twistCore k).coordChange i j x v = twistTransition k i j x * v :=
   (rfl)
-
-/-- The coordinate change of `𝒪(k)` from the chart `i` to the chart `j` has determinant the
-transition function. -/
-theorem det_coordChange_twistCore (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    ((twistCore k).coordChange i j x).det = twistTransition k i j x := by
-  have h : (twistCore k).coordChange i j x =
-      ContinuousLinearMap.toSpanSingleton 𝕜 (twistTransition k i j x) := by
-    ext
-    simp [mul_comm]
-  rw [h, ContinuousLinearMap.det_toSpanSingleton]
-
-/-- The coordinate change between the trivializations `i` and `j` of `𝒪(k)`, as a linear
-equivalence of the model fibre, has determinant the transition function. -/
-theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {i j : Fin (n + 1)}
-    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
-    LinearMap.det ((((twistCore k).localTriv i).coordChangeL 𝕜
-      ((twistCore k).localTriv j) x).toLinearEquiv : 𝕜 →ₗ[𝕜] 𝕜) = twistTransition k i j x := by
-  rw [← det_coordChange_twistCore k i j x,
-    ← (twistCore k).localTriv_coordChangeL (i := i) (j := j) ⟨hi, hj⟩, ContinuousLinearMap.det,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on `ℂℙⁿ`. -/

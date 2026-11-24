@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
+import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -18,8 +19,16 @@ is the integral of the kernel `im z / ((x - re z)² + (im z)²)`.
 This kernel is positive in the upper half-plane, so the imaginary part of the transform
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
-`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
-affine covariance under pushforward. No moment assumptions are needed.
+`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, the
+continuity of the transform off the real axis
+(`MeasureTheory.continuousAt_resolventTransform_of_im_ne_zero`), and prove
+affine covariance under pushforward. No moment assumptions are needed. Conversely, off the real
+axis the transform of a measure `μ` without finite weighted mass `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since
+the kernel `‖(x - z)⁻¹‖` dominates `(1 + x ^ 2)⁻¹` up to a constant and so is not integrable.
+
+For a function `h` integrable for a measure on the real line, the integrands `h(x) / (x - z)`
+(off the real axis) and `x h(x) / (1 + x ^ 2)` are integrable too
+(`TauCeti.integrable_div_ofReal_sub`, `TauCeti.integrable_div_one_add_sq_mul`).
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -39,6 +48,10 @@ open scoped ComplexConjugate
 
 namespace Complex
 
+/-- The real resolvent kernel is `(x - z)⁻¹`. -/
+theorem resolvent_real_eq_inv (z : ℂ) (x : ℝ) : resolvent (R := ℝ) z x = ((x : ℂ) - z)⁻¹ := by
+  rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+
 /-- The imaginary part of the real resolvent kernel, with sign `(x - z)⁻¹`. -/
 theorem im_resolvent_real (z : ℂ) (x : ℝ) :
     (resolvent z x).im = z.im / ((x - z.re) ^ 2 + z.im ^ 2) := by
@@ -47,7 +60,7 @@ theorem im_resolvent_real (z : ℂ) (x : ℝ) :
 /-- The real resolvent kernel is bounded by the reciprocal distance to the real axis. -/
 theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
     ‖resolvent z x‖ ≤ |z.im|⁻¹ := by
-  rw [resolvent, Ring.inverse_eq_inv', norm_inv]
+  rw [resolvent_real_eq_inv, norm_inv]
   apply inv_anti₀ (abs_pos.mpr hz)
   simpa using abs_im_le_norm ((x : ℂ) - z)
 
@@ -73,8 +86,7 @@ theorem lipschitzWith_resolvent_real {z : ℂ} (hz : z.im ≠ 0) :
   calc
     dist (resolvent z x) (resolvent z y) =
         |x - y| / (‖(x : ℂ) - z‖ * ‖(y : ℂ) - z‖) := by
-      simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
-      rw [dist_inv_inv₀ hx hy,
+      rw [resolvent_real_eq_inv, resolvent_real_eq_inv, dist_inv_inv₀ hx hy,
         dist_sub_right, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
     _ ≤ |x - y| / (|z.im| * |z.im|) :=
       div_le_div_of_nonneg_left (abs_nonneg _) (by positivity)
@@ -103,7 +115,39 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
     _ = _ := by
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
 
+/-- The resolvent transform is `-∫ (z - x)⁻¹ dμ(x)`, the negative of the Cauchy–Stieltjes transform
+in the convention `(z - x)⁻¹`. -/
+theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) :
+    resolventTransform μ z = -∫ x : ℝ, (z - x)⁻¹ ∂μ := by
+  rw [resolventTransform_apply, ← integral_neg]
+  congr 1 with x
+  rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
+/-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
+`∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/
+theorem resolventTransform_eq_zero_of_not_lintegral_lt_top {μ : Measure ℝ}
+    (hμ : ¬∫⁻ x, ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂μ < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    resolventTransform μ z = 0 := by
+  rw [resolventTransform_apply]
+  refine integral_undef fun h ↦ hμ (Integrable.lintegral_lt_top ?_)
+  refine (h.norm.const_mul (1 + ‖z‖)).mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hx : 0 < ‖(x : ℂ) - z‖ :=
+    norm_pos_iff.2 fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hle : ‖(x : ℂ) - z‖ ≤ (1 + x ^ 2) * (1 + ‖z‖) := by
+    have h1 : ‖(x : ℂ) - z‖ ≤ |x| + ‖z‖ := by simpa using norm_sub_le (x : ℂ) z
+    nlinarith [abs_nonneg x, sq_abs x, norm_nonneg z, sq_nonneg (|x| - 1), mul_nonneg
+      (sq_nonneg x) (norm_nonneg z)]
+  rw [Real.norm_of_nonneg (by positivity), Complex.resolvent_real_eq_inv, norm_inv,
+    ← div_eq_mul_inv, le_div_iff₀ hx, inv_mul_le_iff₀ (by positivity)]
+  exact hle
+
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
+
+/-- The resolvent transform of a finite measure on `ℝ` is continuous off the real axis, by
+Mathlib's `hasDerivAt_resolventTransform`. -/
+theorem continuousAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    ContinuousAt (resolventTransform μ) z :=
+  (hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)).continuousAt
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
@@ -133,6 +177,14 @@ theorem norm_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
   rw [resolventTransform_apply]
   exact norm_integral_le_of_norm_le_const
     (ae_of_all _ fun x => Complex.norm_resolvent_real_le z x hz)
+
+/-- Along the imaginary axis, `y ‖m_μ(i y)‖ ≤ μ(ℝ)` for `y > 0`. -/
+theorem mul_norm_resolventTransform_ofReal_mul_I_le {y : ℝ} (hy : 0 < y) :
+    y * ‖resolventTransform μ (y * I)‖ ≤ μ.real Set.univ := by
+  have h := norm_resolventTransform_le (μ := μ) (z := y * I) (by simpa using hy.ne')
+  rw [show ((y : ℂ) * I).im = y by simp, abs_of_pos hy] at h
+  calc y * ‖resolventTransform μ (y * I)‖ ≤ y * (y⁻¹ * μ.real Set.univ) := by gcongr
+    _ = μ.real Set.univ := by field_simp
 
 /-- The transform of a finite measure is Lipschitz away from the real axis:
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)`. -/
@@ -179,10 +231,8 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
         (a : ℂ) + (b : ℂ) * x - z = (b : ℂ) * ((x : ℂ) - (z - a) / b) := by
       field_simp [hb]
       ring
-    simp only [resolvent, Ring.inverse_eq_inv']
+    rw [Complex.resolvent_real_eq_inv, Complex.resolvent_real_eq_inv]
     push_cast
-    -- `resolvent` unfolds with `algebraMap ℝ ℂ`; restore the plain coercion so `hfactor` matches.
-    simp only [Complex.coe_algebraMap]
     rw [hfactor, mul_inv_rev]
     ring
   calc
@@ -198,3 +248,25 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
           rw [integral_const_mul, resolventTransform_apply]
 
 end MeasureTheory
+
+namespace TauCeti
+
+/-- Off the real axis, `h(x) / (x - z)` is integrable for `h ∈ L¹(μ)`: `|x - z| ≥ |Im z|`. -/
+theorem integrable_div_ofReal_sub {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) {z : ℂ}
+    (hz : z.im ≠ 0) : Integrable (fun x : ℝ ↦ h x / ((x : ℂ) - z)) μ :=
+  (hh.bdd_mul (Complex.continuous_resolvent_real hz).aestronglyMeasurable
+    (.of_forall fun x ↦ Complex.norm_resolvent_real_le z x hz)).congr
+      (.of_forall fun x ↦ by simp [resolvent, Ring.inverse_eq_inv', div_eq_mul_inv, mul_comm])
+
+/-- For `h ∈ L¹(μ)`, `x h(x) / (1 + x ^ 2)` is integrable, since `|x| / (1 + x ^ 2) ≤ 1`. -/
+theorem integrable_div_one_add_sq_mul {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) :
+    Integrable (fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2) * h x) μ := by
+  refine hh.norm.mono' (((by fun_prop : Measurable fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2))
+    |>.aestronglyMeasurable).mul hh.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  have h1 : (1 + (x : ℂ) ^ 2) = ((1 + x ^ 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, h1, ← ofReal_div, norm_real, Real.norm_eq_abs, abs_div,
+    abs_of_pos (by positivity : (0 : ℝ) < 1 + x ^ 2)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ((div_le_one (by positivity)).2 ?_)
+  nlinarith [sq_nonneg (|x| - 1), sq_abs x]
+
+end TauCeti
