@@ -23,8 +23,11 @@ by `tangentSpaceCast`.
 ## Main results
 
 * `ENat.LEInfty.ne_top`: an exponent at most `∞` is not `ω`.
+* `ENat.LEInfty.add`: a sum of exponents at most `∞` is at most `∞`.
 * `IsManifold.minSmoothness_of_isRCLikeNormedField`: a `Cⁿ` manifold over an `IsRCLikeNormedField`
   is a `C^(minSmoothness 𝕜 n)` manifold (opt-in local instance).
+* `TauCeti.isManifold_natCast_zero`: every charted space is a `C⁰` manifold for the order `0`
+  written as the cast of the natural number `0`.
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
@@ -47,6 +50,14 @@ open scoped ContDiff
 hypothesis needed to `lift` such an exponent to `ℕ∞`. -/
 theorem ENat.LEInfty.ne_top (n : ℕ∞ω) [ENat.LEInfty n] : n ≠ ⊤ :=
   ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+
+/-- A sum of smoothness exponents which are at most `∞` is at most `∞`. For instance, Mathlib's
+instances then give a `C^(∞ + 1)` or `C^(1 + 1)` manifold structure from a `C^∞` one. -/
+instance ENat.LEInfty.add (m n : ℕ∞ω) [ENat.LEInfty m] [ENat.LEInfty n] :
+    ENat.LEInfty (m + n) := by
+  lift m to ℕ∞ using ENat.LEInfty.ne_top m
+  lift n to ℕ∞ using ENat.LEInfty.ne_top n
+  exact ⟨mod_cast le_top⟩
 
 section Regularity
 
@@ -71,6 +82,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A charted space is a `C⁰` manifold for the order `0` written as the cast of the natural number
+`0`, the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+instance isManifold_natCast_zero (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] : IsManifold I ((0 : ℕ) : WithTop ℕ∞) M := by
+  rw [Nat.cast_zero]
+  infer_instance
 
 /-- The tangent space at any point of a manifold has the dimension of the model vector space. -/
 @[simp]

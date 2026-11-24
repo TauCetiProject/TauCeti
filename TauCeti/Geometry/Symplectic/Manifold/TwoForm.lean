@@ -327,6 +327,12 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
   by_contra hv0
   exact (h x v hv0).ne' (hv (J x v))
 
+/-- If `-form` tames `J`, then `form` tames `-J`. -/
+theorem Tames.neg (h : (-form).Tames J) : form.Tames (-J) := fun x v hv ↦ by
+  rw [SmoothAlmostComplexStructure.neg_apply, SmoothBundleForm.eval₂_neg_right,
+    ← SmoothBundleForm.eval₂_neg]
+  exact h x v hv
+
 /-- For two smooth almost complex structures tamed by `form`, the endomorphism `1 - J₁ J₀` of every
 tangent space is invertible. -/
 theorem Tames.isUnit_one_sub_toEndomorphism_mul [FiniteDimensional ℝ E]

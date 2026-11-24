@@ -9,11 +9,13 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.Algebra.Ring.CayleyChart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Determinant.Prod
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NoncommRing
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -58,7 +60,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
   their complex eigenlines by complex numbers of modulus one.
 * `TauCeti.SymplecticForm.Invariant.apply_add_apply_eq_zero`: invariance of `ω` under `J` in the
-  form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`.
+  form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`, and
+  `TauCeti.SymplecticForm.Invariant.apply_apply_eq_neg`: `ω (J v) w = -ω v (J w)`.
 * `TauCeti.AlmostComplexStructure.tangentSpace J`: the tangent condition `Y J + J Y = 0` for
   variations `Y` of `J`, and `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the variations
   that are moreover skew-adjoint for `ω`. Among variations anticommuting with `J`, skew-adjointness
@@ -110,6 +113,32 @@ theorem map_cayleyFormula {S F : Type*} [Ring S] [EquivLike F R S] [RingEquivCla
     (f : F) (A B : R) :
     f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
   simp only [cayleyFormula_def, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
+
+/-- For square roots `A`, `B` of `-1`, the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹`
+is the Cayley coordinate `(A - B)(A + B)⁻¹` of `TauCeti.cayleyCoord`, the inverse of the
+conjugation chart `TauCeti.cayleyParam A`. Both vanish when `A + B`, equivalently `1 - A B`, is
+not invertible. -/
+theorem cayleyCoord_eq_cayleyFormula {A B : R} (hA : A * A = -1) (hB : B * B = -1) :
+    cayleyCoord A B = cayleyFormula A B := by
+  by_cases hu : IsUnit (A + B)
+  · have hu' := (isUnit_add_iff_isUnit_one_sub_mul hA).1 hu
+    rw [cayleyFormula_def, ← neg_mul, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hu']
+    -- `1 - A B = -A (A + B)`, and `(A + B)⁻¹ A = B (A + B)⁻¹`.
+    have h : 1 - A * B = -A * (A + B) := by
+      rw [neg_mul, mul_add, hA]
+      noncomm_ring
+    rw [h, cayleyCoord_def]
+    calc (A - B) * Ring.inverse (A + B) * (-A * (A + B))
+        = -((A - B) * (Ring.inverse (A + B) * A) * (A + B)) := by noncomm_ring
+      _ = -((A - B) * B * (Ring.inverse (A + B) * (A + B))) := by
+          rw [inverse_add_mul_eq_mul_inverse_add_of_mul_self_eq_neg_one hA hB]
+          noncomm_ring
+      _ = -(1 + A * B) := by
+          rw [Ring.inverse_mul_cancel _ hu, mul_one, sub_mul, hB]
+          noncomm_ring
+  · have hu' : ¬IsUnit (1 - A * B) := fun h ↦ hu ((isUnit_add_iff_isUnit_one_sub_mul hA).2 h)
+    simp [cayleyCoord_def, cayleyFormula_def, Ring.inverse_non_unit _ hu,
+      Ring.inverse_non_unit _ hu']
 
 end CayleyFormula
 
@@ -174,11 +203,23 @@ lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
   ext v
   exact J.apply_apply v
 
+/-- `a + b J` inverts `a - b J` up to the factor `a² + b²`: `(a + b J) (a - b J) = a² + b²`. -/
+lemma smul_add_smul_apply_smul_sub_smul (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    a • (a • v - b • J v) + b • J (a • v - b • J v) = (a ^ 2 + b ^ 2) • v := by
+  rw [apply_sub, apply_smul, apply_smul, apply_apply]
+  module
+
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
   intro v w h
   have h' : J (J v) = J (J w) := congrArg J h
   simpa using h'
+
+/-- An almost complex structure is injective on every subspace. This is the injectivity hypothesis
+of the totally real API, such as `TauCeti.IsMaximalTotallyReal.normalEquiv`. -/
+theorem injective_domRestrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) :
+    Function.Injective (J.toLinearMap.domRestrict L) :=
+  J.injective.comp L.subtype_injective
 
 /-- The underlying linear map of an almost complex structure is surjective. -/
 lemma surjective (J : AlmostComplexStructure V) : Function.Surjective J := by
@@ -897,6 +938,12 @@ theorem Invariant.apply_add_apply_eq_zero {ω : SymplecticForm V} {J : AlmostCom
   beta_reduce
   rw [J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp hJ) v w]
   exact neg_add_cancel _
+
+/-- For a complex structure `J` preserving `ω`, moving `J` across `ω` negates it:
+`ω (J v) w = -ω v (J w)`. -/
+theorem Invariant.apply_apply_eq_neg {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hJ : ω.Invariant J) (v w : V) : ω (J v) w = -ω v (J w) :=
+  J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp hJ) v w
 
 /-- For a `J`-invariant form, the associated bilinear form is symmetric pointwise. Only invariance
 is needed. -/

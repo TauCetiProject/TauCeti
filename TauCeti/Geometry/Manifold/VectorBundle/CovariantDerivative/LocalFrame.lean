@@ -136,7 +136,7 @@ theorem covariantDerivative_eq_sum {n : ℕ∞ω} (hs : IsLocalFrameOn I F n s u
     simpa [Finset.sum_apply] using hy
   have hσ := hsum.congr_of_eventuallyEq (heq.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy)
   rw [hcov.congr_of_eventuallyEq hσ hsum hu heq,
-    TauCeti.Manifold.covariantDerivative_sum hcov (mem_of_mem_nhds hu) (fun i _ ↦ hterm i)]
+    hcov.sum (fun i _ ↦ hterm i) (mem_of_mem_nhds hu)]
   exact Finset.sum_congr rfl fun i _ ↦ hcov.leibniz (hframe i) (hcoeff i) (mem_of_mem_nhds hu)
 
 end IsLocalFrameOn
