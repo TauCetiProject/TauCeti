@@ -16,7 +16,7 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 Using path-lifting uniqueness along the Spin covering map
 `CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm` and the explicit rotation
 path from `1` to `-1` in `Spin(n + 2)`
-(`TauCeti.joined_one_negOne_realCliffordSpinGroupZero_add_two`),
+(`CliffordAlgebra.joined_one_negOne_realCliffordSpinGroupZero_add_two`),
 any map `φ : SO(n + 2) → SO(N)` covered by a continuous map `ψ : Spin(n + 2) → Spin(N)` with
 `ψ (-1) ≠ ψ 1` admits no continuous lift `SO(n + 2) → Spin(N)`. In particular, the Spin double
 cover `Spin(n + 2) → SO(n + 2)` admits no continuous section.

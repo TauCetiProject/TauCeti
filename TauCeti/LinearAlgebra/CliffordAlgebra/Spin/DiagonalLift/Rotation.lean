@@ -53,9 +53,11 @@ theorem spinDiagonalLift_spinToSpecialOrthogonal_spinCircle {u w : V}
         spinCircle (Q.prod Q) (0, u) (0, w) (by simpa [QuadraticMap.isOrtho_def] using huw)
           (by simpa using h) z := by
   rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
-    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinCircle huw h _ _,
-    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinCircle huw h _ _]
-  rfl
+    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinCircle huw h
+      (by simpa [QuadraticMap.isOrtho_def] using huw) (by simpa using h),
+    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinCircle huw h
+      (by simpa [QuadraticMap.isOrtho_def] using huw) (by simpa using h)]
+  simp only [Isometry.inl_apply, Isometry.inr_apply]
 
 /-- At `z = -1`, the circle-subgroup rotation projects to the identity in `SO(Q)` and its diagonal
 lift closes to `1` in `Spin(Q ⊕ Q)`. -/
@@ -77,7 +79,7 @@ theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation {u w : V}
   rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
     (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinRotation hu hw huw t,
     (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinRotation hu hw huw t]
-  rfl
+  simp only [Isometry.inl_apply, Isometry.inr_apply]
 
 /-- At Spin angle `π` (a full `2π` rotation in `SO(Q)`), each single-summand rotation equals `-1`,
 and the diagonal lift closes to `1` in `Spin(Q ⊕ Q)`. -/

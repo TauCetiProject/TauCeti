@@ -467,10 +467,8 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
 
 /-! ### Obstructions to continuous lifts and open one-block rotation path -/
 
-/-- **No continuous lift of the left one-block embedding `g ↦ diag(g, I_m)`** for rank `n + 2`:
-the corresponding Spin block inclusion `x ↦ realCliffordSpinBlockSum (n + 2) m (x, 1)` sends `-1`
-to `-1`, whereas the doubled Spin map `x ↦ realCliffordSpinBlockSum (n + 2) (n + 2) (x, x)` sends
-`-1` to `1`. -/
+/-- **No continuous lift of the left one-block embedding `SO(n + 2) → SO((n + 2) + m)`,
+`g ↦ diag(g, I_m)`, to `Spin((n + 2) + m)`.** -/
 theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one (n m : ℕ) :
     ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
         realCliffordSpinGroupZero ((n + 2) + m),
@@ -487,9 +485,8 @@ theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one 
       rw [realCliffordSpinBlockSum_mk_one,
         (realCliffordSpinBlockInlIsometry (n + 2) m).spinGroupMap_negOne])
 
-/-- **No continuous lift of the right one-block embedding `g ↦ diag(I_m, g)`** for rank `n + 2`:
-the corresponding Spin block inclusion `x ↦ realCliffordSpinBlockSum m (n + 2) (1, x)` sends `-1`
-to `-1`. -/
+/-- **No continuous lift of the right one-block embedding `SO(n + 2) → SO(m + (n + 2))`,
+`g ↦ diag(I_m, g)`, to `Spin(m + (n + 2))`.** -/
 theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_one_mk (m n : ℕ) :
     ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
         realCliffordSpinGroupZero (m + (n + 2)),
