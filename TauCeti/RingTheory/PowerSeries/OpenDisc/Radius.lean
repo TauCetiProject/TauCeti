@@ -32,6 +32,8 @@ agree on that whole disc.
 * `PowerSeries.exists_onOpenDisc_of_ofReal_lt_radius` and
   `PowerSeries.exists_onOpenDisc_of_le_radius`: below the radius, a point lies in some open disc of
   real radius on which the series (or two series) lie.
+* `PowerSeries.evalAt_add_of_le_radius` and `PowerSeries.evalAt_mul_of_le_radius`: evaluation at a
+  point of norm less than `r` is additive and multiplicative on series of radius at least `r`.
 * `PowerSeries.radius_le_radius_taylor`: Taylor translation by a point inside the radius does not
   decrease the radius of a series over an ultrametric ring.
 * `PowerSeries.le_radius_taylor_sub` and `PowerSeries.evalAt_sub_eq_evalAt_taylor_sub`: over a
@@ -77,9 +79,9 @@ theorem exists_onOpenDisc_of_ofReal_lt_radius {t : ℝ} (ht : ENNReal.ofReal t <
   exact ⟨R₀, (ENNReal.ofReal_lt_ofReal_iff'.mp htR).1, onOpenDisc_iff_ofReal_le_radius.mpr hR.le⟩
 
 /-- Two series whose radii are at least `r` both lie on one open disc of real radius containing a
-given point of norm less than `r`. -/
+given point of norm less than `r` (in any seminormed group). -/
 theorem exists_onOpenDisc_of_le_radius {g : R⟦X⟧} {r : ℝ≥0∞} (hf : r ≤ f.radius)
-    (hg : r ≤ g.radius) {y : R} (hy : ‖y‖ₑ < r) :
+    (hg : r ≤ g.radius) {E : Type*} [SeminormedAddGroup E] {y : E} (hy : ‖y‖ₑ < r) :
     ∃ R₀ : ℝ, ‖y‖ < R₀ ∧ f.OnOpenDisc R₀ ∧ g.OnOpenDisc R₀ := by
   obtain ⟨R₁, hR₁, hf₁⟩ := exists_onOpenDisc_of_ofReal_lt_radius (f := f) (t := ‖y‖)
     (by rw [ofReal_norm]; exact hy.trans_le hf)
@@ -88,6 +90,27 @@ theorem exists_onOpenDisc_of_le_radius {g : R⟦X⟧} {r : ℝ≥0∞} (hf : r �
   exact ⟨min R₁ R₂, lt_min hR₁ hR₂, hf₁.mono (min_le_left _ _), hg₂.mono (min_le_right _ _)⟩
 
 end NormedRing
+
+section NormedCommRing
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  [CompleteSpace A] {f g : R⟦X⟧} {r : ℝ≥0∞} {y : A}
+
+/-- Evaluation at a point of norm less than `r` of a complete normed algebra is additive on series
+of radius at least `r`. -/
+theorem evalAt_add_of_le_radius (hf : r ≤ f.radius) (hg : r ≤ g.radius) (hy : ‖y‖ₑ < r) :
+    (f + g).evalAt y = f.evalAt y + g.evalAt y := by
+  obtain ⟨R₀, hR₀, hf₀, hg₀⟩ := exists_onOpenDisc_of_le_radius hf hg hy
+  exact hf₀.evalAt_add hg₀ hR₀
+
+/-- Evaluation at a point of norm less than `r` of a complete normed algebra is multiplicative on
+series of radius at least `r`. -/
+theorem evalAt_mul_of_le_radius (hf : r ≤ f.radius) (hg : r ≤ g.radius) (hy : ‖y‖ₑ < r) :
+    (f * g).evalAt y = f.evalAt y * g.evalAt y := by
+  obtain ⟨R₀, hR₀, hf₀, hg₀⟩ := exists_onOpenDisc_of_le_radius hf hg hy
+  exact hf₀.evalAt_mul hg₀ hR₀
+
+end NormedCommRing
 
 section Ultrametric
 
