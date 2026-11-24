@@ -218,6 +218,14 @@ theorem signEquiv_strandIncl (δ : R) {n : ℕ} (x : TemperleyLieb R δ (n + 1))
     signEquiv δ (n + 2) (strandIncl x) = strandIncl (signEquiv δ (n + 1) x) :=
   DFunLike.congr_fun (signEquiv_comp_strandIncl δ n) x
 
+/-- The sign isomorphism commutes with `strandInclAll` at every level `n ≥ 0`. -/
+@[simp]
+theorem signEquiv_strandInclAll (δ : R) (n : ℕ) (x : TemperleyLieb R δ n) :
+    signEquiv δ (n + 1) (strandInclAll n x) = strandInclAll n (signEquiv δ n x) := by
+  cases n with
+  | zero => rw [eq_algebraMap_aug_zero x]; simp
+  | succ n => simp
+
 /-- The inverse sign isomorphism commutes with adding a straight strand. -/
 @[simp]
 theorem signEquiv_symm_strandIncl (δ : R) {n : ℕ} (x : TemperleyLieb R (-δ) (n + 1)) :
@@ -287,6 +295,15 @@ theorem signEquivOfAddEqZero_strandIncl {δ δ' : R} (h : δ + δ' = 0) {n : ℕ
       strandIncl (signEquivOfAddEqZero h (n + 1) x) := by
   obtain rfl := eq_neg_of_add_eq_zero_right h
   exact signEquiv_strandIncl δ x
+
+/-- `signEquivOfAddEqZero` commutes with `strandInclAll` at every level `n ≥ 0`. -/
+@[simp]
+theorem signEquivOfAddEqZero_strandInclAll {δ δ' : R} (h : δ + δ' = 0) (n : ℕ)
+    (x : TemperleyLieb R δ n) :
+    signEquivOfAddEqZero h (n + 1) (strandInclAll n x) =
+      strandInclAll n (signEquivOfAddEqZero h n x) := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact signEquiv_strandInclAll δ n x
 
 /-- `signEquivOfAddEqZero` preserves the augmentation. -/
 @[simp]
@@ -613,12 +630,7 @@ theorem quotientSignEquiv_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
     htr.quotientSignEquiv htr' (n + 1) (htr.quotientStrandIncl n x) =
       htr'.quotientStrandIncl n (htr.quotientSignEquiv htr' n x) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  cases n with
-  | zero =>
-    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
-      AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
-  | succ n =>
-    simp [strandInclAll_succ]
+  simp
 
 /-- The inverse quotient sign isomorphisms commute with `quotientStrandIncl`. -/
 @[simp]
@@ -740,12 +752,7 @@ theorem quotientSignEquivOfAddEqZero_quotientStrandIncl (n : ℕ) (q : htr.Quoti
     htr.quotientSignEquivOfAddEqZero htr' h (n + 1) (htr.quotientStrandIncl n q) =
       htr'.quotientStrandIncl n (htr.quotientSignEquivOfAddEqZero htr' h n q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  cases n with
-  | zero =>
-    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
-      AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
-  | succ n =>
-    simp [strandInclAll_succ]
+  simp
 
 /-- `quotientSignEquivOfAddEqZero` scales `quotientTrace` by `(-1) ^ n`. -/
 @[simp]

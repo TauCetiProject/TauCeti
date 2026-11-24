@@ -290,15 +290,6 @@ instance (δ : R) (n : ℕ) : Module.Finite R (TemperleyLieb R δ n) := by
   refine Module.Finite.of_surjective (Finsupp.linearCombination R (JonesWord.eval δ)) ?_
   rw [← LinearMap.range_eq_top, Finsupp.range_linearCombination, span_range_jonesWord_eval]
 
-/-- Over any commutative ring `S`, any quotient of `TemperleyLieb S δ n` by an `A`-submodule
-(in particular by an `S`-submodule or by any left, right, or two-sided ideal) is finitely generated
-as an `S`-module (and hence finite-dimensional over any field). -/
-instance {S A : Type*} [CommRing S] [Ring A] {δ : S} {n : ℕ}
-    [Module A (TemperleyLieb S δ n)] [SMul S A] [IsScalarTower S A (TemperleyLieb S δ n)]
-    (p : Submodule A (TemperleyLieb S δ n)) :
-    Module.Finite S (TemperleyLieb S δ n ⧸ p) :=
-  Module.Finite.of_surjective (p.mkQ.restrictScalars S) p.mkQ_surjective
-
 /-- Under any surjective `R`-linear map out of `TemperleyLieb R δ n`, the images of the
 reduced-word evaluations span the target module. -/
 theorem span_range_comp_jonesWord_eval_of_surjective {M : Type*} [AddCommMonoid M] [Module R M]

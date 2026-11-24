@@ -139,6 +139,13 @@ theorem quotientStrandIncl_mk (n : ℕ) (x : TemperleyLieb R δ n) :
       Ideal.Quotient.mk (htr.traceRadical (n + 1)) (strandInclAll n x) :=
   Ideal.quotient_map_mkₐ _ _ _
 
+/-- On zero strands, `quotientStrandIncl 0` sends a quotient class to the scalar image of the
+representative's augmentation. -/
+theorem quotientStrandIncl_zero_mk (x : TemperleyLieb R δ 0) :
+    htr.quotientStrandIncl 0 (Ideal.Quotient.mk (htr.traceRadical 0) x) =
+      algebraMap R (htr.Quotient 1) (aug x) := by
+  rw [quotientStrandIncl_mk, strandInclAll_zero, Ideal.Quotient.mk_algebraMap]
+
 /-- The strand map between trace-radical quotients is injective at every successor level, and at
 level `0` whenever multiplication by `δ` is injective. -/
 theorem quotientStrandIncl_injective (n : ℕ) (hδ : n = 0 → Function.Injective (δ * ·)) :

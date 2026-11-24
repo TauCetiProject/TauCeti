@@ -264,6 +264,15 @@ theorem evenCliffordHom_strandIncl (n : ℕ)
       map_smul, cliffordIncl_cliffordProjection, hi]
   exact AlgHom.congr_fun hhom x
 
+/-- `evenCliffordHom` intertwines Temperley–Lieb `strandInclAll` with `evenCliffordIncl` at every
+level `n ≥ 0`. -/
+@[simp]
+theorem evenCliffordHom_strandInclAll (n : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) n) :
+    evenCliffordHom (n + 1) (strandInclAll n x) = evenCliffordIncl n (evenCliffordHom n x) := by
+  cases n with
+  | zero => rw [eq_algebraMap_aug_zero x]; simp
+  | succ n => rw [strandInclAll_succ]; exact evenCliffordHom_strandIncl n x
+
 /-- Multiplying an included Clifford element on the right by the last Clifford projection scales its
 scalar trace by `2⁻¹`: the term containing `c_{n + 1}` vanishes by orthogonality. -/
 theorem scalarTrace_cliffordIncl_mul_cliffordProjection_last (n : ℕ)
@@ -431,12 +440,7 @@ theorem quotientEvenCliffordEquiv_quotientStrandIncl
     htr.quotientEvenCliffordEquiv (n + 1) (htr.quotientStrandIncl n q) =
       evenCliffordIncl n (htr.quotientEvenCliffordEquiv n q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  cases n with
-  | zero =>
-    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
-      AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
-  | succ n =>
-    simp [strandInclAll_succ]
+  simp
 
 /-- `(quotientEvenCliffordEquiv m).symm` maps `evenCliffordHom m x` back to the quotient class
 of `x`. -/

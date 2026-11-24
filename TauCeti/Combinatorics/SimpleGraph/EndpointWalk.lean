@@ -11,8 +11,8 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 `SimpleGraph.EndpointWalk G v₀ m v` records an `m`-step walk in `G` from `v₀` to `v`. On locally
 finite `G`, `walkEndpoints G v₀ m` is the `Finset` of `m`-step endpoints, `EndpointWalk.succEquiv`
-decomposes `(m + 1)`-step walks along `neighborSet v`, and `forall_eq_or_exists_endpointWalk` gives
-the step-back dichotomy under an injective unit-step height function. -/
+decomposes `(m + 1)`-step walks along `neighborSet v`, and `forall_apply_eq_val_or_nonempty`
+gives the step-back dichotomy under an injective unit-step height function. -/
 public section
 open Function
 namespace SimpleGraph
@@ -22,7 +22,7 @@ structure EndpointWalk (G : SimpleGraph V) (v₀ : V) (m : ℕ) (v : V) where
   /-- The sequence of `m + 1` vertices visited along the walk. -/
   toFun : Fin (m + 1) → V
   isWalkFrom : G.IsWalkFrom v₀ toFun
-  apply_last : toFun (Fin.last m) = v
+  protected apply_last' : toFun (Fin.last m) = v
 namespace EndpointWalk
 variable {G : SimpleGraph V} {v₀ u v : V} {m : ℕ}
 instance : DFunLike (G.EndpointWalk v₀ m v) (Fin (m + 1)) (fun _ ↦ V) where
@@ -35,7 +35,7 @@ instance : DFunLike (G.EndpointWalk v₀ m v) (Fin (m + 1)) (fun _ ↦ V) where
 @[simp] theorem mk_apply (s : Fin (m + 1) → V) (hs : G.IsWalkFrom v₀ s) (hl : s (Fin.last m) = v)
     (i : Fin (m + 1)) : (⟨s, hs, hl⟩ : G.EndpointWalk v₀ m v) i = s i := (rfl)
 @[simp] theorem apply_zero (w : G.EndpointWalk v₀ m v) : w 0 = v₀ := w.isWalkFrom.apply_zero
-@[simp] theorem apply_last_eq (w : G.EndpointWalk v₀ m v) : w (Fin.last m) = v := w.apply_last
+@[simp] theorem apply_last (w : G.EndpointWalk v₀ m v) : w (Fin.last m) = v := w.apply_last'
 theorem adj (w : G.EndpointWalk v₀ m v) {a b : Fin (m + 1)} (hab : a.val + 1 = b.val) :
     G.Adj (w a) (w b) := w.isWalkFrom.adj hab
 instance [DecidableEq V] : DecidableEq (G.EndpointWalk v₀ m v) := DFunLike.coe_injective.decidableEq
@@ -44,7 +44,7 @@ def zero (G : SimpleGraph V) (v₀ : V) : G.EndpointWalk v₀ 0 v₀ :=
   ⟨fun _ ↦ v₀, (isWalkFrom_zero _).2 rfl, rfl⟩
 @[simp] theorem zero_apply (i : Fin 1) : zero G v₀ i = v₀ := (rfl)
 theorem eq_of_zero (w : G.EndpointWalk v₀ 0 v) : v₀ = v := by
-  simpa [Fin.last_zero] using w.apply_last_eq
+  simpa [Fin.last_zero] using w.apply_last
 instance : Unique (G.EndpointWalk v₀ 0 v₀) where
   default := zero G v₀
   uniq w := ext fun i ↦ by rw [Fin.fin_one_eq_zero i, w.apply_zero, zero_apply]
@@ -52,12 +52,12 @@ theorem isEmpty_zero_of_ne (h : v₀ ≠ v) : IsEmpty (G.EndpointWalk v₀ 0 v) 
   ⟨fun w ↦ h w.eq_of_zero⟩
 /-- Reindex the endpoint of an `EndpointWalk` along an equality of vertices. -/
 def cast (h : u = v) (w : G.EndpointWalk v₀ m u) : G.EndpointWalk v₀ m v :=
-  ⟨w, w.isWalkFrom, w.apply_last_eq.trans h⟩
+  ⟨w, w.isWalkFrom, w.apply_last.trans h⟩
 @[simp] theorem coe_cast (h : u = v) (w : G.EndpointWalk v₀ m u) : ⇑(w.cast h) = ⇑w := (rfl)
 @[simp] theorem cast_rfl (w : G.EndpointWalk v₀ m v) : w.cast rfl = w := (rfl)
 /-- Extend an `m`-step walk ending at `u` by an adjacent vertex `v`. -/
 def snoc (w : G.EndpointWalk v₀ m u) (h : G.Adj u v) : G.EndpointWalk v₀ (m + 1) v :=
-  ⟨Fin.snoc (⇑w) v, (isWalkFrom_snoc _ _).2 ⟨w.isWalkFrom, w.apply_last_eq.symm ▸ h⟩,
+  ⟨Fin.snoc (⇑w) v, (isWalkFrom_snoc _ _).2 ⟨w.isWalkFrom, w.apply_last.symm ▸ h⟩,
     Fin.snoc_last (α := fun _ ↦ V) v ⇑w⟩
 @[simp] theorem coe_snoc (w : G.EndpointWalk v₀ m u) (h : G.Adj u v) :
     ⇑(w.snoc h) = (Fin.snoc (⇑w) v : Fin (m + 2) → V) := (rfl)
@@ -70,25 +70,25 @@ def init (w : G.EndpointWalk v₀ (m + 1) v) : G.EndpointWalk v₀ m (w (Fin.las
 @[simp] theorem init_apply (w : G.EndpointWalk v₀ (m + 1) v) (i : Fin (m + 1)) :
     w.init i = w i.castSucc := (rfl)
 theorem adj_init_last (w : G.EndpointWalk v₀ (m + 1) v) : G.Adj (w (Fin.last m).castSucc) v := by
-  simpa [w.apply_last_eq] using w.adj (a := (Fin.last m).castSucc) (b := Fin.last (m + 1)) (by simp)
+  simpa [w.apply_last] using w.adj (a := (Fin.last m).castSucc) (b := Fin.last (m + 1)) (by simp)
 @[simp] theorem snoc_init (w : G.EndpointWalk v₀ (m + 1) v) : w.init.snoc w.adj_init_last = w :=
-  ext fun i ↦ by simpa [w.apply_last_eq] using congrFun (Fin.snoc_init_self ⇑w) i
+  ext fun i ↦ by simpa [w.apply_last] using congrFun (Fin.snoc_init_self ⇑w) i
 /-- Two `(m + 1)`-step walks with the same endpoint and equal `init` vertex sequences are equal. -/
 theorem eq_of_coe_init_eq {w₁ w₂ : G.EndpointWalk v₀ (m + 1) v} (h : ⇑w₁.init = ⇑w₂.init) :
     w₁ = w₂ :=
-  ext fun i ↦ Fin.lastCases (w₁.apply_last_eq.trans w₂.apply_last_eq.symm) (congrFun h) i
+  ext fun i ↦ Fin.lastCases (w₁.apply_last.trans w₂.apply_last.symm) (congrFun h) i
 /-- If the `init` of an `(m + 1)`-step walk agrees pointwise with an `m`-step walk ending at `u`,
 then its penultimate vertex is `u`. -/
 theorem penultimate_eq_of_coe_init_eq {x : G.EndpointWalk v₀ (m + 1) v}
     {p : G.EndpointWalk v₀ m u} (hx : (x.init : Fin (m + 1) → V) = p) :
     x (Fin.last m).castSucc = u := by
-  simpa [coe_init, p.apply_last_eq] using congrFun hx (Fin.last m)
+  simpa [coe_init, p.apply_last] using congrFun hx (Fin.last m)
 /-- Update an interior position `b` whose neighbours `a, c` carry the same vertex. -/
 def update (w : G.EndpointWalk v₀ m v) {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) (hac : w a = w c) {x : V} (hx : G.Adj (w a) x) :
     G.EndpointWalk v₀ m v :=
   ⟨Function.update (⇑w) b x, w.isWalkFrom.update hab hbc hac hx, by
-    rw [Function.update_of_ne (Fin.ne_of_val_ne (by simp; omega))]; exact w.apply_last_eq⟩
+    rw [Function.update_of_ne (Fin.ne_of_val_ne (by simp; omega))]; exact w.apply_last⟩
 @[simp] theorem coe_update (w : G.EndpointWalk v₀ m v) {a b c : Fin (m + 1)}
     (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (hac : w a = w c) {x : V}
     (hx : G.Adj (w a) x) : ⇑(w.update hab hbc hac hx) = Function.update (⇑w) b x := (rfl)
@@ -122,7 +122,7 @@ instance instFintype [DecidableEq V] [LocallyFinite G] :
 instance subsingleton_one : Subsingleton (G.EndpointWalk v₀ 1 v) :=
   ⟨fun w₁ w₂ ↦ ext fun
     | ⟨0, _⟩ => w₁.apply_zero.trans w₂.apply_zero.symm
-    | ⟨1, _⟩ => w₁.apply_last_eq.trans w₂.apply_last_eq.symm⟩
+    | ⟨1, _⟩ => w₁.apply_last.trans w₂.apply_last.symm⟩
 section Height
 variable {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
   (hadj : ∀ {x y}, G.Adj x y → f x + 1 = f y ∨ f y + 1 = f x)
@@ -137,7 +137,7 @@ private theorem last_le_apply_add (w : G.EndpointWalk v₀ m v) (i : Fin (m + 1)
   obtain ⟨k, hk⟩ := i; induction hrem : m - k generalizing k with
   | zero =>
     obtain rfl : k = m := by omega
-    exact le_of_eq (congrArg f (w.apply_last_eq : w ⟨k, hk⟩ = v)).symm
+    exact le_of_eq (congrArg f (w.apply_last : w ⟨k, hk⟩ = v)).symm
   | succ d ih =>
     have := hadj (w.adj (a := ⟨k, hk⟩) (b := ⟨k + 1, by omega⟩) rfl)
     have := ih (k + 1) (by omega) (by omega); omega
@@ -153,12 +153,12 @@ theorem subsingleton_of_last_eq (hv : f v = m) : Subsingleton (G.EndpointWalk v�
     (w₂.apply_eq_val_of_last_eq hf₀ hadj hv i).symm⟩
 /-- **Step-back dichotomy:** under an injective unit-step height, an `(m + 2)`-step walk either
 strictly ascends (`f (w i) = i`) or shares its endpoint with an `m`-step walk. -/
-theorem forall_eq_or_exists_endpointWalk {m : ℕ} {v : V} (w : G.EndpointWalk v₀ (m + 2) v) :
+theorem forall_apply_eq_val_or_nonempty {m : ℕ} {v : V} (w : G.EndpointWalk v₀ (m + 2) v) :
     (∀ i : Fin (m + 3), f (w i) = i.val) ∨ Nonempty (G.EndpointWalk v₀ m v) := by
   induction m generalizing v with
   | zero =>
     have h01 := hadj (w.adj (a := 0) (b := 1) rfl); have h12 := hadj (w.adj (a := 1) (b := 2) rfl)
-    have h2 : w 2 = v := w.apply_last_eq; rw [w.apply_zero, hf₀] at h01; rw [h2] at h12
+    have h2 : w 2 = v := w.apply_last; rw [w.apply_zero, hf₀] at h01; rw [h2] at h12
     exact h12.elim (fun _ ↦ Or.inl (w.apply_eq_val_of_last_eq hf₀ hadj (by omega)))
       fun _ ↦ Or.inr ⟨(zero G v₀).cast (hf (by omega)).symm⟩
   | succ m ih =>

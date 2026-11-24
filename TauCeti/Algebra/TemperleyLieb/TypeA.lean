@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Algebra.TemperleyLieb.PathModel
 public import TauCeti.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.QuantumGroups.QuantumInteger.Real

@@ -78,6 +78,8 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional`: the faithful
   `TauCeti.StarPositiveFunctional` induced by `tr n` directly on the canonical trace-radical
   quotient `htr.Quotient n`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.normalizedQuotientTrace`: the normalized faithful tracial
+  state `δ⁻ⁿ • quotientStarPositiveFunctional` on `htr.Quotient n`.
 
 ## Main results
 
@@ -103,9 +105,12 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.nullSubmodule_quotientStarPositiveFunctional`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_forall_quotientStarPositiveFunctional_mul_eq`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional_quotientStrandIncl`:
-  trace-radical null-space characterization, Cauchy–Schwarz, faithfulness, separation, and
-  strand-scaling of the positive quotient trace at admissible parameters.
+  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional_quotientStrandIncl`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.normalizedQuotientTrace_one`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.normalizedQuotientTrace_quotientStrandIncl`:
+  trace-radical null-space characterization, Cauchy–Schwarz, faithfulness, separation,
+  strand-scaling of the positive quotient trace, and invariance of the normalized trace state at
+  admissible parameters.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_of_pullback`: **pullback
   admissibility criterion** for `δ > 0`.
 
@@ -617,6 +622,64 @@ theorem quotientStarPositiveFunctional_quotientStrandIncl (htr : IsMarkovTrace �
       (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x := by
   rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
     htr.quotientTrace_quotientStrandIncl]
+
+/-- The **normalized faithful positive trace** `δ⁻ⁿ • quotientStarPositiveFunctional` on
+`htr.Quotient n`. -/
+noncomputable def normalizedQuotientTrace (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
+    StarPositiveFunctional (htr.Quotient n) where
+  toLinearMap := ((δ : ℂ)⁻¹ ^ n) • (htr.quotientStarPositiveFunctional hδ n).toLinearMap
+  square_nonneg x := by
+    rw [LinearMap.smul_apply, smul_eq_mul, ← Complex.ofReal_inv, ← Complex.ofReal_pow]
+    exact mul_nonneg (Complex.zero_le_real.2 (pow_nonneg (inv_nonneg.2
+      (pos_of_mem_jonesLoopParameters hδ).le) n))
+      ((htr.quotientStarPositiveFunctional hδ n).square_nonneg x)
+
+/-- Evaluating `normalizedQuotientTrace` scales `quotientStarPositiveFunctional` by `δ⁻¹ ^ n`. -/
+theorem normalizedQuotientTrace_apply (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} [(htr.traceRadical n).IsStar]
+    (x : htr.Quotient n) :
+    htr.normalizedQuotientTrace hδ n x =
+      (δ : ℂ)⁻¹ ^ n * htr.quotientStarPositiveFunctional hδ n x := (rfl)
+
+/-- `normalizedQuotientTrace` is a state: it sends `1` to `1`. -/
+@[simp]
+theorem normalizedQuotientTrace_one (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
+    htr.normalizedQuotientTrace hδ n 1 = 1 := by
+  rw [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_one, inv_pow,
+    inv_mul_cancel₀ (pow_ne_zero n (isUnit_of_mem_jonesLoopParameters hδ).ne_zero)]
+
+/-- `normalizedQuotientTrace` is tracial on `htr.Quotient n`. -/
+theorem normalizedQuotientTrace_mul_comm (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} [(htr.traceRadical n).IsStar]
+    (x y : htr.Quotient n) :
+    htr.normalizedQuotientTrace hδ n (x * y) = htr.normalizedQuotientTrace hδ n (y * x) := by
+  simp only [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_mul_comm]
+
+/-- `normalizedQuotientTrace` is faithful on `htr.Quotient n`. -/
+@[simp]
+theorem nullSubmodule_normalizedQuotientTrace (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
+    (htr.normalizedQuotientTrace hδ n).nullSubmodule = ⊥ := by
+  ext
+  simp [StarPositiveFunctional.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
+    normalizedQuotientTrace_apply, (isUnit_of_mem_jonesLoopParameters hδ).ne_zero,
+    ← StarPositiveFunctional.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero
+      (htr.quotientStarPositiveFunctional hδ n),
+    htr.nullSubmodule_quotientStarPositiveFunctional hδ n]
+
+/-- `normalizedQuotientTrace` is invariant along the tower inclusions `quotientStrandIncl`. -/
+@[simp]
+theorem normalizedQuotientTrace_quotientStrandIncl (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} [(htr.traceRadical n).IsStar]
+    [(htr.traceRadical (n + 1)).IsStar] (x : htr.Quotient n) :
+    htr.normalizedQuotientTrace hδ (n + 1) (htr.quotientStrandIncl n x) =
+      htr.normalizedQuotientTrace hδ n x := by
+  have := (isUnit_of_mem_jonesLoopParameters hδ).ne_zero
+  rw [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_quotientStrandIncl,
+    normalizedQuotientTrace_apply, pow_succ]
+  field_simp
 
 /-- **Cauchy–Schwarz inequality** for a Markov trace at an admissible loop parameter. -/
 theorem norm_map_star_mul_sq_le (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
