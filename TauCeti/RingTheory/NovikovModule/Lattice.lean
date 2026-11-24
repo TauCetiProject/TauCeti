@@ -23,8 +23,8 @@ For a real number `C`, the completed combinations vanishing at every generator o
 `> C`, that is, those all of whose generators have valuation at least `-C`, form the subgroup
 `U_C` of the potential-cutoff topology (`TauCeti.NovikovModule.potentialFiltration`). This file
 shows that `U_C` is a module over the nonnegative subring `Λ₀` of Novikov series, the *shifted
-lattice* `lattice hF C` of cutoff `C` (`TauCeti.NovikovModule.lattice`; the roadmap, which uses
-`C` for the module, writes `C⟨t⟩` for `lattice hF t`), and develops its basic properties:
+lattice* `lattice hF C` of cutoff `C` (`TauCeti.NovikovModule.lattice`), and develops its basic
+properties:
 
 * the lattices increase with the cutoff, so that `C ≤ D` gives the injective inclusion
   `Submodule.inclusion : lattice hF C → lattice hF D`; they exhaust the completed combinations,
