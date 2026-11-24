@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
-import Mathlib.Analysis.Complex.Order
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.Analysis.Matrix.DotProduct
+import TauCeti.Data.Matrix.DotProduct
 
 /-!
 # Covariance identities for the coordinate directions of the Gaussian ensembles
@@ -75,18 +76,12 @@ public section
 noncomputable section
 
 open Matrix
-open scoped ComplexOrder
 
 namespace TauCeti
 
 namespace Probability
 
 variable {β n : ℕ}
-
-/-- The square of the normalization `(√n)⁻¹` of the Gaussian ensemble, as a complex number. -/
-private theorem inv_ofReal_sqrt_natCast_sq (n : ℕ) : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
-  rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by positivity)]
-  simp
 
 /-- **Entry covariances of the complex Hermitian ensemble.** For `β ≠ 1`, summing the products
 `E ab k l * E ab k' l'` of entries of the directions `E ab = gaussianEnsemble β n (Pi.single ab 1)`
@@ -98,9 +93,10 @@ theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (
         gaussianEnsemble β n (Pi.single ab 1) k' l' =
       if k = l' ∧ l = k' then (n : ℂ)⁻¹ else 0 := by
   have hs : ((Real.sqrt 2 : ℝ) : ℂ)⁻¹ ^ 2 = 1 / 2 := by
-    rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by norm_num)]
-    simp
-  have hn := inv_ofReal_sqrt_natCast_sq n
+    rw [inv_pow, Complex.ofReal_sqrt_sq zero_le_two]
+    norm_num
+  have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
+    rw [inv_pow, Complex.ofReal_sqrt_sq n.cast_nonneg, Complex.ofReal_natCast]
   have hI := Complex.I_sq
   simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply]
   -- Split on the position of `(k, l)` and of `(k', l')` relative to the diagonal, evaluate the sum
@@ -123,9 +119,9 @@ theorem sum_gaussianEnsemble_one_single_apply_mul_apply (k l k' l' : Fin n) :
         gaussianEnsemble 1 n (Pi.single ab 1) k' l' =
       (n : ℂ)⁻¹ * ((if k = l' ∧ l = k' then 1 else 0) + if k = k' ∧ l = l' then 1 else 0) := by
   have hs : ((Real.sqrt 2 : ℝ) : ℂ) ^ 2 = 2 := by
-    rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]
-    simp
-  have hn := inv_ofReal_sqrt_natCast_sq n
+    rw [Complex.ofReal_sqrt_sq zero_le_two, Complex.ofReal_ofNat]
+  have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
+    rw [inv_pow, Complex.ofReal_sqrt_sq n.cast_nonneg, Complex.ofReal_natCast]
   simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply]
   -- The same case analysis as for `β ≠ 1`, with real entries.
   split_ifs <;>
@@ -182,11 +178,6 @@ theorem sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul (X Y : Matrix (F
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
   · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
-/-- A bilinear form `w ⬝ᵥ M *ᵥ v` is the trace of the rank-one matrix `vecMulVec v w` times `M`. -/
-private theorem dotProduct_mulVec_eq_trace_vecMulVec_mul (v w : Fin n → ℂ)
-    (M : Matrix (Fin n) (Fin n) ℂ) : w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
-  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
-
 /-- **Bilinear forms of the complex Hermitian directions.** For `β ≠ 1` and all vectors, the sum
 over the directions `E ab = gaussianEnsemble β n (Pi.single ab 1)` of
 `(w ⬝ᵥ E ab *ᵥ v) * (w' ⬝ᵥ E ab *ᵥ v')` is `n⁻¹ (w ⬝ᵥ v') (w' ⬝ᵥ v)`. -/
@@ -214,12 +205,6 @@ theorem sum_dotProduct_mulVec_gaussianEnsemble_one_single_mul (w v w' v' : Fin n
   simp only [transpose_vecMulVec, vecMulVec_mul_vecMulVec, trace_vecMulVec, smul_dotProduct,
     smul_eq_mul, dotProduct_comm v]
 
-/-- The self dot product `star x ⬝ᵥ x` is real: it is the complex number of its real part. -/
-private theorem star_dotProduct_self_eq_ofReal_re (x : Fin n → ℂ) :
-    star x ⬝ᵥ x = ((star x ⬝ᵥ x).re : ℂ) :=
-  Complex.eq_re_of_ofReal_le (r := 0)
-    (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg x)
-
 /-- A sum of squared norms of the bilinear forms `star u ⬝ᵥ E ab *ᵥ v` of Hermitian directions,
 written as the sum of the products `(star u ⬝ᵥ E ab *ᵥ v) * (star v ⬝ᵥ E ab *ᵥ u)` in `ℂ`. -/
 private theorem ofReal_sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq (β n : ℕ)
@@ -241,7 +226,8 @@ theorem sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq_of_ne_one (h�
       (n : ℝ)⁻¹ * (star u ⬝ᵥ u).re * (star v ⬝ᵥ v).re := by
   have h := ofReal_sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq β n u v
   rw [sum_dotProduct_mulVec_gaussianEnsemble_single_mul_of_ne_one hβ,
-    star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v] at h
+    star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v,
+    RCLike.re_to_complex, RCLike.re_to_complex, RCLike.ofReal_eq_complex_ofReal] at h
   exact Complex.ofReal_injective (by rw [h]; push_cast; ring)
 
 /-- **The drift sum for the real symmetric ensemble.** For `β = 1`, the sum over the directions
@@ -254,7 +240,8 @@ theorem sum_norm_star_dotProduct_mulVec_gaussianEnsemble_one_single_sq (u v : Fi
   have h := ofReal_sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq 1 n u v
   rw [sum_dotProduct_mulVec_gaussianEnsemble_one_single_mul, star_dotProduct_star,
     dotProduct_comm v u, Complex.star_def, Complex.conj_mul'] at h
-  rw [star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v] at h
+  rw [star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v,
+    RCLike.re_to_complex, RCLike.re_to_complex, RCLike.ofReal_eq_complex_ofReal] at h
   exact Complex.ofReal_injective (by rw [h]; push_cast; ring)
 
 /-- For Hermitian directions, the sum of products of the real parts of the quadratic forms

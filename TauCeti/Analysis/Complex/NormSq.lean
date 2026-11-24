@@ -21,6 +21,7 @@ the norm along upward vertical rays leaving a point of the closed upper half-pla
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
+* `Complex.ofReal_sqrt_sq`: the square of the complex cast of `√x` is `x` for `0 ≤ x`.
 * `Complex.norm_sub_eq_of_normSq_sub_eq`: a point at squared distance `ρ ^ 2` is at distance `ρ`.
 * `Complex.eq_sub_of_normSq_eq_of_lt_re`, `Complex.eq_add_of_normSq_eq_of_re_lt`: a real point of
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
@@ -49,6 +50,10 @@ theorem norm_sq_add_I_mul_div_sqrt_two (x y : ℝ) :
     ‖((x : ℂ) + I * y) / (Real.sqrt 2 : ℝ)‖ ^ 2 = (x ^ 2 + y ^ 2) / 2 := by
   rw [Complex.sq_norm, map_div₀, normSq_ofReal, mul_comm I,
     normSq_add_mul_I, Real.mul_self_sqrt (by norm_num)]
+
+/-- The square of the complex cast of `√x` is `x` for `0 ≤ x`. -/
+theorem ofReal_sqrt_sq {x : ℝ} (hx : 0 ≤ x) : ((√x : ℝ) : ℂ) ^ 2 = x := by
+  rw [← ofReal_pow, Real.sq_sqrt hx]
 
 /-- The "radical line" identity: for real centres `c₁` and `c₂`, the difference of the two power
 functions `|z - c|² - |C - c|²` of `z` is affine in `z.re` and vanishes at `C.re`. -/
