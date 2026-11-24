@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Kernel.IonescuTulcea.PartialTraj
+public import TauCeti.Probability.Kernel.IonescuTulcea.PartialTraj
 public import TauCeti.Probability.DenoisingDiffusion.NoiseKernel
 
 /-!
@@ -15,7 +15,8 @@ A noise schedule `β : ℕ → ℝ` assigns to each step `t ≥ 1` a noise level
 forward chain of a denoising diffusion model starts from a law `μ₀` on `EuclideanSpace ℝ ι` and
 moves from the state at time `n` to the state at time `n + 1` by the noising kernel
 `noiseKernel (1 - β (n + 1))`. Its path law up to a horizon `T` is built with Mathlib's
-`ProbabilityTheory.Kernel.partialTraj`, on paths indexed by `Finset.Iic T`.
+`ProbabilityTheory.Kernel.partialTraj`, on paths indexed by `Finset.Iic T`, which are evaluated at
+a fixed time with `TauCeti.Probability.pathEval`.
 
 Since composing noising kernels multiplies their signal levels, the state at time `t` given the
 initial state `x₀` is `noiseKernel (alphaBar β t) x₀`, where `alphaBar β t` is the product of the
@@ -25,7 +26,6 @@ marginals of the path law and for the joint law of the initial and the time-`t` 
 ## Main definitions
 
 * `TauCeti.Probability.alphaBar`: the cumulative signal level `∏_{s=1}^t (1 - β s)`.
-* `TauCeti.Probability.pathEval`: evaluation of a path indexed by `Finset.Iic n` at a time `i ≤ n`.
 * `TauCeti.Probability.forwardStep`: the step kernel of the forward chain on paths.
 * `TauCeti.Probability.forwardPath`: the law of the forward chain on paths up to time `T`.
 * `TauCeti.Probability.forwardMarginal`: the law `noiseKernel (alphaBar β t) ∘ₘ μ₀`.
@@ -109,21 +109,6 @@ end AlphaBar
 
 /-! ### Paths and the forward chain -/
 
-/-- Evaluation at time `i ≤ n` of a path indexed by the times `Finset.Iic n`. -/
-def pathEval {α : Type*} {n : ℕ} (i : ℕ) (hi : i ≤ n) (x : Iic n → α) : α :=
-  x ⟨i, mem_Iic.2 hi⟩
-
-/-- Unfolding lemma for `pathEval`. -/
-@[simp]
-theorem pathEval_apply {α : Type*} {n : ℕ} (i : ℕ) (hi : i ≤ n) (x : Iic n → α) :
-    pathEval i hi x = x ⟨i, mem_Iic.2 hi⟩ := (rfl)
-
-/-- Evaluation of a path at a fixed time is measurable. -/
-@[fun_prop]
-theorem measurable_pathEval {α : Type*} [MeasurableSpace α] {n : ℕ} (i : ℕ) (hi : i ≤ n) :
-    Measurable (pathEval (α := α) i hi) :=
-  measurable_pi_apply _
-
 variable {ι : Type*} [Fintype ι]
 
 /-- The step kernel of the forward chain from time `n` to time `n + 1`: it noises the state at
@@ -168,8 +153,8 @@ instance (μ₀ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ₀] 
   rw [forwardPath_def]
   infer_instance
 
-/-- The law `noiseKernel (alphaBar β t) ∘ₘ μ₀` of the state at time `t` of the forward chain
-started from `μ₀` (`forwardPath_map_eval`). -/
+/-- The law `noiseKernel (alphaBar β t) ∘ₘ μ₀`. For a schedule with noise levels in `[0, 1]` this is
+the law of the state at time `t` of the forward chain started from `μ₀` (`forwardPath_map_eval`). -/
 noncomputable def forwardMarginal (μ₀ : Measure (EuclideanSpace ℝ ι)) (β : ℕ → ℝ) (t : ℕ) :
     Measure (EuclideanSpace ℝ ι) :=
   noiseKernel (alphaBar β t) ∘ₘ μ₀
@@ -208,26 +193,6 @@ theorem forwardMarginal_stdGaussian {β : ℕ → ℝ} (hβ : ∀ s, 1 ≤ s →
 
 /-! ### Marginals of the path law -/
 
-/-- The state at time `t ≤ T` of a trajectory up to time `T` only depends on the trajectory up to
-time `t`. -/
-private theorem partialTraj_forwardStep_map_eval_of_le (β : ℕ → ℝ) {T t : ℕ} (ht : t ≤ T) :
-    (Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) 0 T).map
-        (pathEval t ht) =
-      (Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) 0 t).map
-        (pathEval t le_rfl) := by
-  rw [← Kernel.partialTraj_map_frestrictLe₂ 0 ht]
-  -- `pathEval t ht` is `pathEval t le_rfl ∘ frestrictLe₂ ht` by unfolding both sides.
-  exact Kernel.map_comp_right _
-    (Preorder.measurable_frestrictLe₂ (X := fun _ ↦ EuclideanSpace ℝ ι) ht)
-    (measurable_pathEval (α := EuclideanSpace ℝ ι) t le_rfl)
-
-/-- A path started at `y` keeps `y 0` as its initial state. -/
-private theorem partialTraj_forwardStep_map_eval_zero (β : ℕ → ℝ) (T : ℕ) :
-    (Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) 0 T).map
-        (pathEval 0 (Nat.zero_le T)) =
-      Kernel.deterministic (pathEval 0 le_rfl) (measurable_pathEval 0 le_rfl) := by
-  rw [partialTraj_forwardStep_map_eval_of_le, Kernel.partialTraj_self, Kernel.id_map]
-
 /-- Started at a path `y` of length one, the forward chain is at time `t` distributed as
 `noiseKernel (alphaBar β t) (y 0)`. -/
 private theorem partialTraj_forwardStep_map_eval {β : ℕ → ℝ}
@@ -235,7 +200,7 @@ private theorem partialTraj_forwardStep_map_eval {β : ℕ → ℝ}
     (Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) 0 T).map
         (pathEval t ht) =
       (noiseKernel (alphaBar β t)).comap (pathEval 0 le_rfl) (measurable_pathEval 0 le_rfl) := by
-  rw [partialTraj_forwardStep_map_eval_of_le]
+  rw [Kernel.partialTraj_map_pathEval]
   clear ht T
   induction t with
   | zero =>
@@ -272,7 +237,7 @@ private theorem forwardPath_map_eq_bind (μ₀ : Measure (EuclideanSpace ℝ ι)
 theorem forwardPath_map_eval_zero (μ₀ : Measure (EuclideanSpace ℝ ι)) (β : ℕ → ℝ) (T : ℕ) :
     (forwardPath μ₀ β T).map (pathEval 0 (Nat.zero_le T)) = μ₀ := by
   rw [forwardPath_map_eq_bind μ₀ β T (by fun_prop) Kernel.id
-    (by rw [partialTraj_forwardStep_map_eval_zero, Kernel.id_comap]), Measure.id_comp]
+    (by rw [Kernel.partialTraj_map_pathEval_left, Kernel.id_comap]), Measure.id_comp]
 
 /-- **The marginals of the forward chain.** For a noise schedule with levels in `[0, 1]`, the state
 at time `t ≤ T` of the forward chain started from `μ₀` has law
@@ -296,7 +261,7 @@ theorem forwardPath_map_eval_zero_eval (μ₀ : Measure (EuclideanSpace ℝ ι))
   set P := Kernel.partialTraj (X := fun _ ↦ EuclideanSpace ℝ ι) (forwardStep β) 0 T y with hP
   -- Under `P` the initial state is almost surely `y 0`.
   have h0 : P.map (pathEval 0 (Nat.zero_le T)) = Measure.dirac (pathEval 0 le_rfl y) := by
-    rw [hP, ← Kernel.map_apply _ (by fun_prop), partialTraj_forwardStep_map_eval_zero,
+    rw [hP, ← Kernel.map_apply _ (by fun_prop), Kernel.partialTraj_map_pathEval_left,
       Kernel.deterministic_apply]
   have hae : ∀ᵐ x ∂P, pathEval 0 (Nat.zero_le T) x = pathEval 0 le_rfl y := by
     refine ae_of_ae_map (p := fun z ↦ z = pathEval 0 le_rfl y)
