@@ -53,8 +53,8 @@ ensemble is the centred Gaussian of variance `2 / β`.
 * `TauCeti.Probability.integrable_hermiteBetaWeight` and
   `TauCeti.Probability.hermiteBetaPartition_pos`: the partition function is finite and positive.
 * `TauCeti.Probability.isProbabilityMeasure_hermiteBetaEnsemble`.
-* `TauCeti.Probability.hermiteBetaEnsemble_zero_left`: for `β = 0` the ensemble degenerates to the
-  zero measure.
+* `TauCeti.Probability.hermiteBetaEnsemble_zero_left`: for `β = 0` and `n ≠ 0` the ensemble is
+  the zero measure.
 * `TauCeti.Probability.integral_hermiteBetaEnsemble_eq_integral_smul`: integrals against the
   ensemble are integrals against its real density.
 * `TauCeti.Probability.measurePreserving_comp_perm_hermiteBetaEnsemble`: permutation invariance.

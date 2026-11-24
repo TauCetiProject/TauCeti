@@ -154,7 +154,7 @@ theorem hasFDerivAt_hermiteBetaWeight {x : Fin n → ℝ} (hx : Function.Injecti
 /-! ### The divergence form of the generator -/
 
 /-- The derivative of `y ↦ p y ∂ᵢ f y` at a configuration with distinct coordinates, along the
-coordinate vector `eᵢ`, for the Hermite beta weight `p` and `f` twice differentiable at `x`. -/
+coordinate vector `eᵢ`, for the Hermite beta weight `p` and `f` of class `C²` at `x`. -/
 private theorem fderiv_hermiteBetaWeight_mul_fderiv_apply {f : (Fin n → ℝ) → ℝ}
     {x : Fin n → ℝ} (hx : Function.Injective x) (hf : ContDiffAt ℝ 2 f x) (i : Fin n) :
     fderiv ℝ (fun y ↦ hermiteBetaWeight β n y * fderiv ℝ f y (Pi.single i 1)) x
@@ -170,7 +170,7 @@ private theorem fderiv_hermiteBetaWeight_mul_fderiv_apply {f : (Fin n → ℝ) �
   simp [Pi.single_apply]
 
 /-- **The divergence form of the Ornstein–Uhlenbeck Dyson generator.** At a configuration with
-distinct coordinates, for the Hermite beta weight `p` and `f` twice differentiable there,
+distinct coordinates, for the Hermite beta weight `p` and `f` of class `C²` at `x`,
 `p · dysonOUGenerator β n f = (β n)⁻¹ ∑ᵢ ∂ᵢ (p ∂ᵢ f)`. -/
 theorem hermiteBetaWeight_mul_dysonOUGenerator (hβ : β ≠ 0) {f : (Fin n → ℝ) → ℝ}
     {x : Fin n → ℝ} (hx : Function.Injective x) (hf : ContDiffAt ℝ 2 f x) :
