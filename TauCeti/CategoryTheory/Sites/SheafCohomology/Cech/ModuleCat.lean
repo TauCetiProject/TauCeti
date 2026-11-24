@@ -85,15 +85,10 @@ theorem cechComplexπ_d (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : �
     cechComplexπ U P (n + 1) c (((cechComplexFunctor U).obj P).d n (n + 1) a) =
       ∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
         P.map (Pi.map' k.succAbove (fun _ ↦ 𝟙 _)).op
-          (cechComplexπ U P n (c ∘ k.succAbove) a) := by
-  have h : ((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) c =
-      ∑ k : Fin (n + 2), (-1 : ℤ) ^ (k : ℕ) •
-        (cechComplexπ U P n (c ∘ k.succAbove) ≫
-          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (c j)) (k.succAbove x)).op) := by
-    simp only [cechComplexπ_eq]
-    exact cechComplexFunctor_obj_d_comp_π U P n c
-  exact (ModuleCat.comp_apply _ _ a).symm.trans <| (ConcreteCategory.congr_hom h a).trans <| by
-    simp [ModuleCat.hom_sum, Pi.map', Category.comp_id]
+          (cechComplexπ U P n (c ∘ k.succAbove) a) :=
+  (ModuleCat.comp_apply _ _ a).symm.trans <|
+    (ConcreteCategory.congr_hom (cechComplexFunctor_obj_d_comp_cechComplexπ U P n c) a).trans <| by
+      simp [ModuleCat.hom_sum, Pi.map', Category.comp_id]
 
 /-- The factor of `(cechComplexMap P φ).f n a` indexed by `c` is the factor of `a` indexed by
 `φ.f ∘ c`, restricted along the product of the morphisms `φ.φ (c j)`. -/
@@ -104,10 +99,10 @@ theorem cechComplexπ_cechComplexMap {κ : Type w} {U : ι → C} {V : κ → C}
     cechComplexπ U P n c ((cechComplexMap P φ).f n a) =
       P.map ((Limits.Pi.map fun j : Fin (n + 1) ↦ φ.φ (c j) :
           (∏ᶜ fun j : Fin (n + 1) ↦ U (c j)) ⟶ ∏ᶜ fun j : Fin (n + 1) ↦ V ((φ.f ∘ c) j))).op
-        (cechComplexπ V P n (φ.f ∘ c) a) := by
-  have h := ConcreteCategory.congr_hom (cechComplexMap_f_π P φ n c) a
-  simp only [cechComplexπ_eq]
-  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans (ModuleCat.comp_apply _ _ a)
+        (cechComplexπ V P n (φ.f ∘ c) a) :=
+  (ModuleCat.comp_apply _ _ a).symm.trans <|
+    (ConcreteCategory.congr_hom (cechComplexMap_f_comp_cechComplexπ P φ n c) a).trans
+      (ModuleCat.comp_apply _ _ a)
 
 /-- The factor of `((cechComplexFunctor U).map α).f n a` indexed by `c` is the image of the
 factor of `a` indexed by `c` under `α.app`. -/
@@ -115,10 +110,10 @@ factor of `a` indexed by `c` under `α.app`. -/
 theorem cechComplexπ_cechComplexFunctor_map (U : ι → C) {P Q : Cᵒᵖ ⥤ ModuleCat.{w} R}
     (α : P ⟶ Q) (n : ℕ) (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
     cechComplexπ U Q n c (((cechComplexFunctor U).map α).f n a) =
-      α.app (op (∏ᶜ fun j ↦ U (c j))) (cechComplexπ U P n c a) := by
-  have h := ConcreteCategory.congr_hom (cechComplexFunctor_map_f_π U P α n c) a
-  simp only [cechComplexπ_eq]
-  exact (ModuleCat.comp_apply _ _ a).symm.trans <| h.trans (ModuleCat.comp_apply _ _ a)
+      α.app (op (∏ᶜ fun j ↦ U (c j))) (cechComplexπ U P n c a) :=
+  (ModuleCat.comp_apply _ _ a).symm.trans <|
+    (ConcreteCategory.congr_hom (cechComplexFunctor_map_f_comp_cechComplexπ U P α n c) a).trans
+      (ModuleCat.comp_apply _ _ a)
 
 /-- The factor of the degree-`0` augmentation of a global section `e₀ ∈ P(T)` indexed by `a` is
 the restriction of `e₀` along the terminal map from `∏ᶜ fun j ↦ U (a j)`. -/

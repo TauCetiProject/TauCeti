@@ -369,10 +369,7 @@ theorem cechCohomologyZeroIso_hom_eq_cechCohomologyUnitClass (P : Cᵒᵖ ⥤ Mo
     (hP : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT P) 0) (e₀ : P.obj (op T)) :
     (cechCohomologyZeroIso E hE hT P hP).hom e₀ =
       cechCohomologyUnitClass E hE P (fun X ↦ P.map (hT.from X.unop).op e₀)
-        (fun {X Y} f ↦ by
-          rw [← ModuleCat.comp_apply, ← P.map_comp,
-            show (hT.from X.unop).op ≫ f = (hT.from Y.unop).op from
-              Quiver.Hom.unop_inj (hT.hom_ext _ _)]) := by
+        (map_terminal_from_compat hT P e₀) := by
   rw [cechCohomologyZeroIso_hom_apply E hE hT P hP (Classical.arbitrary J),
     cechCohomologyUnitClass_eq_ι E hE P _ _ (Classical.arbitrary J),
     cechUnitClass_eq_homologyMap_cechAugmentation]

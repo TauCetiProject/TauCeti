@@ -60,10 +60,11 @@ are cohomologous.
 * `TauCeti.CategoryTheory.cechComplexMap_comp_cechReverse_app`: compatibility with refinements.
 * `TauCeti.CategoryTheory.homologyMap_cechReverse_app`: in a thin category, `τ` is the identity on
   cohomology.
-* `TauCeti.CategoryTheory.cechComponent_cechReverse`, `TauCeti.CategoryTheory.cechFace_cechReverse`:
-  the factors and restrictions of `τ c` for a presheaf of algebras.
-* `TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`: `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b`
-  for a presheaf of commutative algebras.
+* `TauCeti.CategoryTheory.cechComplexπ_cechReverse`: the factors of `τ c` for a presheaf of
+  modules.
+* `TauCeti.CategoryTheory.cechReverse_cechCupCochain` and
+  `TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`: `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b`
+  for general pairings and presheaves of commutative algebras.
 
 ## References
 
@@ -91,11 +92,6 @@ section Reverse
 
 variable (P : Cᵒᵖ ⥤ A)
 
-private lemma hom_ext {W : A} {n : ℕ} {f g : W ⟶ ((cechComplexFunctor U).obj P).X n}
-    (h : ∀ k, f ≫ cechComplexπ U P n k = g ≫ cechComplexπ U P n k) : f = g := by
-  simp only [cechComplexπ_eq] at h
-  exact Pi.hom_ext _ _ h
-
 /-- The factor of a Čech `m`-cochain indexed by `k ∘ σ`, restricted along the projection
 `U (k 0) × ⋯ × U (k n) ⟶ U (k (σ 0)) × ⋯ × U (k (σ m))`. -/
 private def restrict {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1)) :
@@ -110,23 +106,14 @@ private lemma restrict_comp_map {l m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin
   rw [restrict, restrict, Category.assoc, ← P.map_comp, ← op_comp, Pi.map'_comp_map']
   simp only [Function.comp_def, Category.id_comp]
 
-private lemma d_comp_cechComplexπ {n : ℕ} (k : Fin (n + 2) → ι) :
-    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • restrict U P k m.succAbove := by
-  have h : ((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
-        (cechComplexπ U P n (k ∘ m.succAbove) ≫
-          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) := by
-    simp only [cechComplexπ_eq]
-    exact cechComplexFunctor_obj_d_comp_π U P n k
-  simpa only [restrict, Pi.map', Category.comp_id] using h
-
 private lemma d_comp_restrict {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 2) → Fin (n + 1)) :
     ((cechComplexFunctor U).obj P).d m (m + 1) ≫ restrict U P k σ =
       ∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) • restrict U P k (σ ∘ j.succAbove) := by
-  rw [restrict, reassoc_of% d_comp_cechComplexπ, Preadditive.sum_comp]
+  rw [restrict, reassoc_of% cechComplexFunctor_obj_d_comp_cechComplexπ, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Preadditive.zsmul_comp, restrict_comp_map]
+  rw [Preadditive.zsmul_comp]
+  congr 1
+  simpa only [restrict, Pi.map', Category.comp_id] using restrict_comp_map U P k σ j.succAbove
 
 /-- The degree `n` component of the order-reversing operator. -/
 private def reverseX (n : ℕ) :
@@ -148,46 +135,39 @@ private lemma reverseX_comp_restrict {m n : ℕ} (k : Fin (n + 1) → ι)
 private lemma reverseX_comm (n : ℕ) :
     reverseX U P n ≫ ((cechComplexFunctor U).obj P).d n (n + 1) =
       ((cechComplexFunctor U).obj P).d n (n + 1) ≫ reverseX U P (n + 1) := by
-  refine hom_ext U P fun k ↦ ?_
-  rw [Category.assoc, Category.assoc, reverseX_comp_cechComplexπ, d_comp_cechComplexπ,
-    Preadditive.comp_sum, Preadditive.comp_zsmul, d_comp_restrict, Finset.smul_sum,
-    ← Equiv.sum_comp Fin.revPerm]
+  refine cechComplex_hom_ext U P fun k ↦ ?_
+  rw [Category.assoc, Category.assoc, reverseX_comp_cechComplexπ,
+    cechComplexFunctor_obj_d_comp_cechComplexπ, Preadditive.comp_sum, Preadditive.comp_zsmul,
+    d_comp_restrict, Finset.smul_sum, ← Equiv.sum_comp Fin.revPerm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hσ : j.rev.succAbove ∘ Fin.rev = Fin.rev ∘ j.succAbove :=
     funext fun x ↦ (Fin.rev_succAbove j x).symm
-  rw [Preadditive.comp_zsmul, reverseX_comp_restrict, Fin.revPerm_apply, hσ, smul_smul, smul_smul,
-    Fin.neg_one_pow_val_rev_mul]
+  have hrestr :
+      cechComplexπ U P n (k ∘ (Fin.revPerm j).succAbove) ≫
+          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) ((Fin.revPerm j).succAbove x)).op =
+        restrict U P k (Fin.revPerm j).succAbove := by
+    simp only [restrict, Pi.map', Category.comp_id]
+  rw [Preadditive.comp_zsmul, hrestr, reverseX_comp_restrict, Fin.revPerm_apply, hσ, smul_smul,
+    smul_smul, Fin.neg_one_pow_val_rev_mul]
 
 private lemma restrict_id {n : ℕ} (k : Fin (n + 1) → ι) :
     restrict U P k id = cechComplexπ U P n k := by
   simp [restrict]
 
-private lemma map_f_comp_cechComplexπ {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) {n : ℕ} (k : Fin (n + 1) → ι) :
-    ((cechComplexFunctor U).map α).f n ≫ cechComplexπ U Q n k =
-      cechComplexπ U P n k ≫ α.app (op (∏ᶜ fun j ↦ U (k j))) := by
-  simp only [cechComplexπ_eq]
-  exact cechComplexFunctor_map_f_π U P α n k
-
 private lemma map_f_comp_restrict {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) {m n : ℕ} (k : Fin (n + 1) → ι)
     (σ : Fin (m + 1) → Fin (n + 1)) :
     ((cechComplexFunctor U).map α).f m ≫ restrict U Q k σ =
       restrict U P k σ ≫ α.app (op (∏ᶜ fun j ↦ U (k j))) := by
-  rw [restrict, restrict, reassoc_of% map_f_comp_cechComplexπ, ← α.naturality, Category.assoc]
+  rw [restrict, restrict, reassoc_of% cechComplexFunctor_map_f_comp_cechComplexπ, ← α.naturality,
+    Category.assoc]
 
 private lemma reverseX_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     ((cechComplexFunctor U).map α).f n ≫ reverseX U Q n =
       reverseX U P n ≫ ((cechComplexFunctor U).map α).f n := by
-  refine hom_ext U Q fun k ↦ ?_
+  refine cechComplex_hom_ext U Q fun k ↦ ?_
   rw [Category.assoc, Category.assoc, reverseX_comp_cechComplexπ, Preadditive.comp_zsmul,
-    map_f_comp_restrict, map_f_comp_cechComplexπ, reassoc_of% reverseX_comp_cechComplexπ,
-    Preadditive.zsmul_comp]
-
-private lemma cechComplexMap_f_comp_cechComplexπ {κ : Type w} {V : κ → C}
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n : ℕ} (k : Fin (n + 1) → ι) :
-    (cechComplexMap P φ).f n ≫ cechComplexπ U P n k =
-      cechComplexπ V P n (φ.f ∘ k) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op := by
-  simp only [cechComplexπ_eq]
-  exact cechComplexMap_f_π P φ n k
+    map_f_comp_restrict, cechComplexFunctor_map_f_comp_cechComplexπ,
+    reassoc_of% reverseX_comp_cechComplexπ, Preadditive.zsmul_comp]
 
 private lemma cechComplexMap_f_comp_restrict {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m n : ℕ} (k : Fin (n + 1) → ι)
@@ -248,7 +228,7 @@ theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (k : Fin (n + 1) → 
 @[reassoc (attr := simp)]
 theorem cechReverse_comp_cechReverse : cechReverse A U ≫ cechReverse A U = 𝟙 _ := by
   ext P n : 3
-  refine hom_ext U P fun k ↦ ?_
+  refine cechComplex_hom_ext U P fun k ↦ ?_
   simp only [NatTrans.comp_app, NatTrans.id_app, HomologicalComplex.comp_f,
     HomologicalComplex.id_f, Category.assoc, cechReverse_app_f, reverseX_comp_cechComplexπ,
     Preadditive.comp_zsmul, reverseX_comp_restrict, Fin.rev_involutive.comp_self, restrict_id,
@@ -270,7 +250,7 @@ theorem cechComplexMap_comp_cechReverse_app {κ : Type w} {V : κ → C}
     cechComplexMap P φ ≫ (cechReverse A U).app P =
       (cechReverse A V).app P ≫ cechComplexMap P φ := by
   ext n : 1
-  refine hom_ext U P fun k ↦ ?_
+  refine cechComplex_hom_ext U P fun k ↦ ?_
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, Category.assoc, Category.assoc,
     cechReverse_app_f, cechReverse_app_f, reverseX_comp_cechComplexπ, Preadditive.comp_zsmul,
     cechComplexMap_f_comp_restrict, cechComplexMap_f_comp_cechComplexπ,
@@ -306,7 +286,7 @@ private lemma fromStrictMono_f_comp_cechComplexπ_of_not_injective (P : Cᵒᵖ 
 theorem fromStrictMonoCechComplex_comp_cechReverse :
     fromStrictMonoCechComplex (A := A) U ≫ cechReverse A U = fromStrictMonoCechComplex U := by
   ext P n : 3
-  refine hom_ext U P fun k ↦ ?_
+  refine cechComplex_hom_ext U P fun k ↦ ?_
   rw [NatTrans.comp_app, HomologicalComplex.comp_f, Category.assoc, cechReverse_app_f,
     reverseX_comp_cechComplexπ, Preadditive.comp_zsmul, restrict]
   by_cases hk : Function.Injective k
@@ -374,29 +354,6 @@ theorem cechComplexπ_cechReverse (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
   simpa only [ModuleCat.comp_apply, ModuleCat.hom_zsmul, LinearMap.smul_apply, Pi.map',
     Category.comp_id] using ConcreteCategory.congr_hom hm a
 
-/-- The factors of `τ c` for a cochain `c` of a presheaf of algebras: the factor at
-`k = (k 0, …, k n)` is `(-1) ^ (n (n + 1) / 2)` times the restriction of `c` along the reversal of
-the vertices. -/
-@[simp]
-theorem cechComponent_cechReverse {n : ℕ} (k : Fin (n + 1) → ι)
-    (c : (cechAlgebraComplex U F).X n) :
-    cechComponent k ((((cechReverse (ModuleCat.{w} R) U).app
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom c) =
-      (-1 : ℤ) ^ (n + 1).choose 2 • cechFace k Fin.rev c := by
-  rw [cechComponent_eq_sum_of_comp_π_eq (s := {()}) (z := fun _ ↦ (-1) ^ (n + 1).choose 2)
-    (σ := fun _ ↦ Fin.rev) (by rw [Finset.sum_singleton]; exact cechReverse_app_f_π U _ n k),
-    Finset.sum_singleton]
-
-/-- The restrictions of `τ c` along a map `σ` of vertices are the restrictions of `c` along
-`σ ∘ Fin.rev`, times the sign `(-1) ^ (m (m + 1) / 2)` of the reversal of `m + 1` vertices. -/
-@[simp]
-theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1))
-    (c : (cechAlgebraComplex U F).X m) :
-    cechFace k σ ((((cechReverse (ModuleCat.{w} R) U).app
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f m).hom c) =
-      (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
-  rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
-
 /-- **Reversal identity for the Čech cup product on cochains.** Reversing a cup product of
 reversed cochains recovers the cup product in the opposite order with the Koszul sign
 `(-1) ^ (p * q)`. -/
@@ -417,9 +374,9 @@ theorem cechReverse_cechCupCochain
   refine cechComplex_ext fun c ↦ ?_
   rw [cechComplexπ_cechReverse, map_zsmul, cechCupCochain_π, cechCupCochain_π]
   dsimp only [Function.comp_def]
-  rw [← hμ', cechComplexπ_cechReverse, cechComplexπ_cechReverse, map_zsmul, map_zsmul, map_zsmul,
-    LinearMap.smul_apply, map_zsmul, map_zsmul, map_zsmul, smul_smul, smul_smul, mul_assoc,
-    Nat.neg_one_pow_add_add_one_choose_two_mul, hcomm]
+  rw [← hμ', cechComplexπ_cechReverse, cechComplexπ_cechReverse]
+  simp only [map_zsmul, LinearMap.smul_apply, smul_smul]
+  rw [mul_comm ((-1 : ℤ) ^ (p + 1).choose 2), Nat.neg_one_pow_add_add_one_choose_two_mul, hcomm]
   refine congrArg ((-1 : ℤ) ^ (p * q) • ·) (congrArg₂ (fun x y ↦ μ _ x y) ?_ ?_)
   · simp only [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map', Function.comp_def,
       Category.id_comp]

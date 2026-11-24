@@ -288,10 +288,7 @@ theorem cechUnitClass_eq_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T
     homologyMap (cechAugmentation U hT P) 0
         ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀) =
       cechUnitClass U P (fun X ↦ P.map (hT.from X.unop).op e₀)
-        (fun {X Y} f ↦ by
-          rw [← ModuleCat.comp_apply, ← P.map_comp,
-            show (hT.from X.unop).op ≫ f = (hT.from Y.unop).op from
-              Quiver.Hom.unop_inj (hT.hom_ext _ _)]) := by
+        (map_terminal_from_compat hT P e₀) := by
   rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
     moduleCat_homologyMap_homologyπ, cechUnitClass]
   congr 1; apply moduleCat_iCycles_injective
