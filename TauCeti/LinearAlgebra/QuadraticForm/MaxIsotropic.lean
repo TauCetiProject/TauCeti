@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
@@ -24,7 +25,7 @@ metabolic quadratic space of dimension `2n` over a finite field, the dimension o
 intersection of a fixed and a uniformly random maximal isotropic subspace has an explicit law.
 The definitions work in every characteristic. In characteristic two the vanishing of `Q` on `W`
 is part of the definition: polar self-orthogonality alone does not imply it
-(`QuadraticMap.orthogonal_polarBilin_span_eq_self_binaryQuadraticForm_zero`), whereas when `2` is
+(`TauCeti.orthogonal_polarBilin_span_eq_self_binaryQuadraticForm_zero`), whereas when `2` is
 invertible it does (`QuadraticMap.isMaxIsotropic_iff_orthogonal_polarBilin_eq`).
 
 ## Main definitions
@@ -48,7 +49,7 @@ invertible it does (`QuadraticMap.isMaxIsotropic_iff_orthogonal_polarBilin_eq`).
   every maximal isotropic subspace has dimension `n`.
 * `QuadraticMap.maxIsotropicSubspaces_eq_singleton_bot`: on the zero module the zero submodule is
   the unique maximal isotropic submodule.
-* `QuadraticMap.maxIsotropicSubspaces_binaryQuadraticForm_zero`: for `Q(x, y) = xy` on `R²` over
+* `TauCeti.maxIsotropicSubspaces_binaryQuadraticForm_zero`: for `Q(x, y) = xy` on `R²` over
   an integral domain the maximal isotropic submodules are exactly the two coordinate axes.
 * `QuadraticMap.isWeaklyMetabolic_iff_equivalent_binaryQuadraticForm_zero`: a two-dimensional
   quadratic space is weakly metabolic exactly when it is isometric to `(K², xy)`.
@@ -198,21 +199,6 @@ theorem IsWeaklyMetabolic.not_anisotropic [Nontrivial M] (hQ : Q.IsWeaklyMetabol
 
 /-! ### Transport along isometries -/
 
-/-- An isometric equivalence maps the polar orthogonal complement of a submodule onto the polar
-orthogonal complement of its image. -/
-theorem IsometryEquiv.map_orthogonal_polarBilin (e : Q.IsometryEquiv Q') (W : Submodule R M) :
-    (LinearMap.BilinForm.orthogonal Q.polarBilin W).map e.toLinearMap =
-      LinearMap.BilinForm.orthogonal Q'.polarBilin (W.map e.toLinearMap) := by
-  ext y
-  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
-    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv,
-    IsometryEquiv.coe_toLinearEquiv]
-  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
-  · rw [← e.apply_symm_apply x, ← e.apply_symm_apply y, e.polar_apply]
-    exact h _ hx
-  · rw [← e.polar_apply, e.apply_symm_apply]
-    exact h (e x) (by simpa using hx)
-
 /-- An isometric equivalence carries maximal isotropic submodules to maximal isotropic
 submodules. -/
 @[simp]
@@ -240,6 +226,15 @@ theorem IsometryEquiv.coe_maxIsotropicSubspacesEquiv_apply (e : Q.IsometryEquiv 
       (W : Submodule R M).map e.toLinearMap :=
   (rfl)
 
+/-- The inverse of the bijection induced by an isometric equivalence sends a maximal isotropic
+submodule to its image under the inverse isometry. -/
+@[simp]
+theorem IsometryEquiv.coe_maxIsotropicSubspacesEquiv_symm_apply (e : Q.IsometryEquiv Q')
+    (W : Q'.maxIsotropicSubspaces) :
+    (e.maxIsotropicSubspacesEquiv.symm W : Submodule R M) =
+      (W : Submodule R M').map e.symm.toLinearMap :=
+  Submodule.comap_equiv_eq_map_symm e.toLinearEquiv W
+
 /-- Isometric quadratic forms have the same number of maximal isotropic submodules. -/
 theorem IsometryEquiv.ncard_maxIsotropicSubspaces_eq (e : Q.IsometryEquiv Q') :
     Q.maxIsotropicSubspaces.ncard = Q'.maxIsotropicSubspaces.ncard := by
@@ -258,50 +253,46 @@ theorem Equivalent.isWeaklyMetabolic_iff (h : Q.Equivalent Q') :
     Q.IsWeaklyMetabolic ↔ Q'.IsWeaklyMetabolic :=
   h.some.isWeaklyMetabolic_iff
 
+end CommRing
+
+end QuadraticMap
+
+open QuadraticMap
+
+namespace TauCeti
+
 /-! ### The hyperbolic plane `xy` -/
 
-section BinaryQuadraticForm
+section CommRing
 
-/-- The axis `R × 0` is its own polar orthogonal complement for `xy`. -/
-private theorem orthogonal_polarBilin_ker_proj_one :
+variable {R : Type*} [CommRing R]
+
+/-- Each coordinate axis is its own polar orthogonal complement for `xy`. -/
+private theorem orthogonal_polarBilin_ker_proj (i : Fin 2) :
     LinearMap.BilinForm.orthogonal (binaryQuadraticForm R 0 0).polarBilin
-        (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 1)) =
-      LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 1) := by
+        (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) i)) =
+      LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) i) := by
   ext y
   simp only [LinearMap.BilinForm.mem_orthogonal_iff,
     polarBilin_apply_apply, polar_binaryQuadraticForm_zero, LinearMap.mem_ker,
     LinearMap.proj_apply]
-  refine ⟨fun h ↦ by simpa using h (Pi.single 0 1) (by simp), fun h x hx ↦ by simp [h, hx]⟩
+  refine ⟨fun h ↦ ?_, fun h x hx ↦ ?_⟩
+  · have := h (Pi.single i.rev 1) (by fin_cases i <;> simp)
+    fin_cases i <;> simpa using this
+  · fin_cases i <;> simp_all
 
-/-- The axis `0 × R` is its own polar orthogonal complement for `xy`. -/
-private theorem orthogonal_polarBilin_ker_proj_zero :
-    LinearMap.BilinForm.orthogonal (binaryQuadraticForm R 0 0).polarBilin
-        (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 0)) =
-      LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 0) := by
-  ext y
-  simp only [LinearMap.BilinForm.mem_orthogonal_iff,
-    polarBilin_apply_apply, polar_binaryQuadraticForm_zero, LinearMap.mem_ker,
-    LinearMap.proj_apply]
-  refine ⟨fun h ↦ by simpa using h (Pi.single 1 1) (by simp), fun h x hx ↦ by simp [h, hx]⟩
-
-/-- The axis `R × 0` is maximal isotropic for `xy`. -/
-theorem isMaxIsotropic_ker_proj_one_binaryQuadraticForm_zero :
+/-- Each coordinate axis is maximal isotropic for `xy`. -/
+theorem isMaxIsotropic_ker_proj_binaryQuadraticForm_zero (i : Fin 2) :
     (binaryQuadraticForm R 0 0).IsMaxIsotropic
-      (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 1)) :=
-  ⟨isTotallyIsotropic_ker_proj_one_binaryQuadraticForm 0, orthogonal_polarBilin_ker_proj_one⟩
-
-/-- The axis `0 × R` is maximal isotropic for `xy`. -/
-theorem isMaxIsotropic_ker_proj_zero_binaryQuadraticForm_zero :
-    (binaryQuadraticForm R 0 0).IsMaxIsotropic
-      (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 0)) :=
-  ⟨isTotallyIsotropic_iff.mpr fun x hx ↦ by simp_all [binaryQuadraticForm_apply],
-    orthogonal_polarBilin_ker_proj_zero⟩
+      (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) i)) :=
+  ⟨isTotallyIsotropic_iff.mpr fun x hx ↦ by fin_cases i <;> simp_all [binaryQuadraticForm_apply],
+    orthogonal_polarBilin_ker_proj i⟩
 
 /-- The hyperbolic plane `xy` is weakly metabolic over every commutative ring. -/
 theorem isWeaklyMetabolic_binaryQuadraticForm_zero :
     (binaryQuadraticForm R 0 0).IsWeaklyMetabolic :=
   ⟨nondegenerate_polarBilin_binaryQuadraticForm_zero,
-    ⟨_, isMaxIsotropic_ker_proj_one_binaryQuadraticForm_zero⟩⟩
+    ⟨_, isMaxIsotropic_ker_proj_binaryQuadraticForm_zero 1⟩⟩
 
 /-- A submodule on which `xy` vanishes lies in one of the two coordinate axes. -/
 private theorem le_ker_proj_or_le_ker_proj_of_isTotallyIsotropic [IsDomain R]
@@ -328,11 +319,9 @@ theorem isMaxIsotropic_binaryQuadraticForm_zero_iff [IsDomain R] {W : Submodule 
         W = LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 0) := by
   refine ⟨fun hW ↦ ?_, ?_⟩
   · exact (le_ker_proj_or_le_ker_proj_of_isTotallyIsotropic hW.isTotallyIsotropic).imp
-      (hW.eq_of_le orthogonal_polarBilin_ker_proj_one)
-      (hW.eq_of_le orthogonal_polarBilin_ker_proj_zero)
-  · rintro (rfl | rfl)
-    · exact isMaxIsotropic_ker_proj_one_binaryQuadraticForm_zero
-    · exact isMaxIsotropic_ker_proj_zero_binaryQuadraticForm_zero
+      (hW.eq_of_le (orthogonal_polarBilin_ker_proj 1))
+      (hW.eq_of_le (orthogonal_polarBilin_ker_proj 0))
+  · rintro (rfl | rfl) <;> exact isMaxIsotropic_ker_proj_binaryQuadraticForm_zero _
 
 /-- Over an integral domain, the maximal isotropic submodules of the hyperbolic plane `xy` are
 exactly the two coordinate axes. -/
@@ -377,16 +366,27 @@ theorem orthogonal_polarBilin_span_eq_self_binaryQuadraticForm_zero (h2 : (2 : R
 
 /-- Over a nonzero ring, the diagonal line of the hyperbolic plane `xy` is not maximal isotropic,
 since `xy` takes the value `1` at `(1, 1)`. When `2 = 0` this line is nevertheless its own polar
-orthogonal complement (`QuadraticMap.orthogonal_polarBilin_span_eq_self_binaryQuadraticForm_zero`),
+orthogonal complement (`TauCeti.orthogonal_polarBilin_span_eq_self_binaryQuadraticForm_zero`),
 so polar self-orthogonality does not imply maximal isotropy in characteristic two. -/
 theorem not_isMaxIsotropic_span_binaryQuadraticForm_zero [Nontrivial R] :
     ¬(binaryQuadraticForm R 0 0).IsMaxIsotropic (R ∙ ![1, 1]) := fun h ↦ by
   simpa [binaryQuadraticForm_apply] using
     h.isTotallyIsotropic.apply_eq_zero (Submodule.mem_span_singleton_self _)
 
-end BinaryQuadraticForm
-
 end CommRing
+
+/-- The form `x² + xy + y²` on `𝔽₂²` is anisotropic, so it is not weakly metabolic, although its
+polar form is nondegenerate
+(`TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`). -/
+theorem not_isWeaklyMetabolic_binaryQuadraticForm_zmod_two_one_one :
+    ¬(binaryQuadraticForm (ZMod 2) 1 1).IsWeaklyMetabolic := fun h ↦
+  h.not_anisotropic <| (anisotropic_binaryQuadraticForm_one_iff (1 : ZMod 2)).mpr <| by decide
+
+end TauCeti
+
+namespace QuadraticMap
+
+open TauCeti
 
 /-! ### Dimension theory over a field -/
 
@@ -429,26 +429,6 @@ theorem IsWeaklyMetabolic.finrank_eq [FiniteDimensional K V] (hQ : Q.IsWeaklyMet
 
 /-! ### Weakly metabolic planes -/
 
-/-- A plane containing a hyperbolic pair `w, f` (isotropic vectors with polar pairing one) is
-isometric to the hyperbolic plane `(K², xy)`: in the basis `w, f` the form reads `xy`. -/
-theorem equivalent_binaryQuadraticForm_zero_of_polar_eq_one (hV : finrank K V = 2) {w f : V}
-    (hw : Q w = 0) (hf : Q f = 0) (hwf : polar Q w f = 1) :
-    Q.Equivalent (binaryQuadraticForm K 0 0) := by
-  have hli : LinearIndependent K ![w, f] := LinearIndependent.pair_iff.mpr fun s t hst ↦ by
-    have h1 := congrArg (polar Q w) hst
-    have h2 := congrArg (polar Q f) hst
-    simp only [polar_add_right, polar_smul_right, polar_self, hw, hf, hwf, polar_comm Q f w,
-      smul_zero, smul_eq_mul, mul_one, mul_zero, zero_add, add_zero, polar_zero_right] at h1 h2
-    exact ⟨h2, h1⟩
-  let b := basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])
-  refine ⟨IsometryEquiv.symm
-    { toLinearEquiv := b.equivFun.symm
-      map_app' := fun c ↦ ?_ }⟩
-  simp [b, Basis.equivFun_symm_apply, Fin.sum_univ_two, QuadraticMap.map_add,
-    QuadraticMap.map_smul, polar_smul_left, polar_smul_right, hw, hf, hwf,
-    binaryQuadraticForm_apply, smul_eq_mul]
-  ring
-
 /-- A weakly metabolic plane is isometric to the hyperbolic plane `(K², xy)`. -/
 theorem IsWeaklyMetabolic.equivalent_binaryQuadraticForm_zero (hQ : Q.IsWeaklyMetabolic)
     (hV : finrank K V = 2) : Q.Equivalent (binaryQuadraticForm K 0 0) := by
@@ -460,7 +440,7 @@ theorem IsWeaklyMetabolic.equivalent_binaryQuadraticForm_zero (hQ : Q.IsWeaklyMe
     simp at hW1)
   have hw := hW.isTotallyIsotropic.apply_eq_zero hwW
   obtain ⟨f, hf, hwf⟩ := exists_isotropic_polar_eq_one_of_radical_eq_bot hQ.radical_eq_bot hw0 hw
-  exact equivalent_binaryQuadraticForm_zero_of_polar_eq_one hV hw hf hwf
+  exact Q.equivalent_binaryQuadraticForm_zero_of_polar_eq_one hV hw hf hwf
 
 /-- A two-dimensional quadratic space is weakly metabolic exactly when it is isometric to the
 hyperbolic plane `(K², xy)`. -/
@@ -476,12 +456,5 @@ theorem IsWeaklyMetabolic.ncard_maxIsotropicSubspaces_of_finrank_eq_two
     ncard_maxIsotropicSubspaces_binaryQuadraticForm_zero]
 
 end Field
-
-/-- The form `x² + xy + y²` on `𝔽₂²` is anisotropic, so it is not weakly metabolic, although its
-polar form is nondegenerate
-(`TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`). -/
-theorem not_isWeaklyMetabolic_binaryQuadraticForm_zmod_two_one_one :
-    ¬(binaryQuadraticForm (ZMod 2) 1 1).IsWeaklyMetabolic := fun h ↦
-  h.not_anisotropic <| (anisotropic_binaryQuadraticForm_one_iff (1 : ZMod 2)).mpr <| by decide
 
 end QuadraticMap
