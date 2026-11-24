@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Colex
 public import TauCeti.Computability.Enumeration.Stage
 public import TauCeti.Computability.RecursiveIn
-public import TauCeti.Data.Nat.BitIndices
 import TauCeti.Computability.Primrec.Bitwise
 
 /-!

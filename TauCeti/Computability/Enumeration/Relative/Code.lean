@@ -8,6 +8,7 @@ module
 public import TauCeti.Computability.Enumeration.Code
 public import TauCeti.Computability.RecursiveIn
 public import TauCeti.Computability.SingleOracle.Stage
+import TauCeti.Computability.Primrec.List
 
 /-!
 # Relative finite-stage domain enumerations of oracle programs
@@ -203,11 +204,9 @@ theorem computableIn_domStage {G : Set (ℕ →. ℕ)} {σ : α → ℕ → Opti
     (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × Code × ℕ =>
       Finset.equivBitIndices.symm (p.2.1.domStage (σ p.1) p.2.2) := by
-  have hlookup : Primrec₂ fun (l : List (Option ℕ)) z => l[z]?.bind id :=
-    (Primrec.option_bind₁ Primrec.id).comp Primrec.list_getElem?
   have hF : Primrec fun p : List (Option ℕ) × ℕ × Code =>
       Finset.equivBitIndices.symm (p.2.2.domStage (fun z => p.1[z]?.bind id) p.2.1) :=
-    (primrec_domStage hlookup).comp <|
+    (primrec_domStage Primrec.list_getElem?_bind_id).comp <|
       Primrec.fst.pair ((Primrec.snd.comp Primrec.snd).pair (Primrec.fst.comp Primrec.snd))
   exact RecursiveIn.of_eq
     ((hσ.computableIn_of_primrec_range_map_option

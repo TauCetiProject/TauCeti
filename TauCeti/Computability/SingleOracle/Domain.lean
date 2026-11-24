@@ -104,6 +104,10 @@ theorem dom_eval_unionList_oracle (Z : Set ℕ) (cs : List Code) :
 noncomputable def union (cf cg : Code) : Code :=
   unionList [cf, cg]
 
+/-- Unfolding equation for `union` as a two-element list union. -/
+theorem union_def (cf cg : Code) : union cf cg = unionList [cf, cg] :=
+  (rfl)
+
 /-- Binary union of oracle programs is primitive recursive. -/
 theorem primrec₂_union : Primrec₂ union :=
   primrec_unionList.comp
@@ -193,6 +197,10 @@ theorem dom_eval_rangeDom_oracle (Z : Set ℕ) (f : Code) :
 noncomputable def imageDom (f c : Code) : Code :=
   rangeDom (comp f (restrictId c))
 
+/-- Unfolding equation for `imageDom` as `rangeDom (comp f (restrictId c))`. -/
+theorem imageDom_def (f c : Code) : imageDom f c = rangeDom (comp f (restrictId c)) :=
+  (rfl)
+
 /-- Partial-image compilation is primitive recursive in both programs. -/
 theorem primrec₂_imageDom : Primrec₂ imageDom :=
   primrec_rangeDom.comp
@@ -220,6 +228,10 @@ theorem dom_eval_imageDom_oracle (Z : Set ℕ) (f c : Code) :
 domain of `projDom c` iff `Nat.pair x y` lies in the domain of `c` for some `y`. -/
 noncomputable def projDom (c : Code) : Code :=
   imageDom left c
+
+/-- Unfolding equation for `projDom` as `imageDom left c`. -/
+theorem projDom_def (c : Code) : projDom c = imageDom left c :=
+  (rfl)
 
 /-- Existential projection on program domains is primitive recursive. -/
 theorem primrec_projDom : Primrec projDom :=

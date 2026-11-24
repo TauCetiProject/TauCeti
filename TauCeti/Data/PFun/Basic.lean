@@ -36,12 +36,14 @@ theorem some_bind {α β : Type u} (f : α →. β) (a : α) : Part.some a >>= f
   Part.bind_some a f
 
 /-- The range of a total function restricted to a set `S` is `h '' S`. -/
+@[simp]
 theorem ran_res {α : Type u} {β : Type v} (h : α → β) (S : Set α) :
     (PFun.res h S).ran = h '' S := by
   ext y
   simp [ran, mem_res]
 
 /-- The range of a partial-function composition `g.comp f` is the image of `f.ran` under `g`. -/
+@[simp]
 theorem ran_comp {α : Type u} {β : Type v} {γ : Type w} (g : β →. γ) (f : α →. β) :
     (g.comp f).ran = g.image f.ran := by
   ext z
@@ -54,6 +56,7 @@ theorem ran_comp {α : Type u} {β : Type v} {γ : Type w} (g : β →. γ) (f :
     exact ⟨x, Part.mem_bind_iff.2 ⟨y, hy, hz⟩⟩
 
 /-- Restricting the identity to the domain of `f` has range equal to `f.Dom`. -/
+@[simp]
 theorem ran_map_const {α : Type u} {β : Type v} (f : α →. β) :
     PFun.ran (fun x => (f x).map fun _ => x) = f.Dom := by
   have hres : (fun x => (f x).map fun _ => x) = PFun.res id f.Dom := by

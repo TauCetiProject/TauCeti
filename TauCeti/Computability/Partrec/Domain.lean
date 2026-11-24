@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Partrec.Code
-import TauCeti.Computability.SingleOracle.Domain
+public import TauCeti.Computability.SingleOracle.Domain
 
 /-!
 # Uniform domain compilers for ordinary program codes
@@ -41,6 +41,13 @@ compiler at the constant-zero oracle. -/
 noncomputable def unionList (cs : List Code) : Code :=
   (TauCeti.Oracle.Single.Code.unionList (cs.map toSingleOracleCode)).toPartrecCode
 
+/-- Specialization equation identifying `unionList` with the constant-zero-oracle `unionList`
+compiler. -/
+theorem unionList_def (cs : List Code) :
+    unionList cs =
+      (TauCeti.Oracle.Single.Code.unionList (cs.map toSingleOracleCode)).toPartrecCode :=
+  (rfl)
+
 /-- Finite union of ordinary code lists is primitive recursive. -/
 theorem primrec_unionList : _root_.Primrec unionList :=
   TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
@@ -60,6 +67,13 @@ at the constant-zero oracle. -/
 noncomputable def union (cf cg : Code) : Code :=
   (TauCeti.Oracle.Single.Code.union cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode
 
+/-- Specialization equation identifying `union` with the constant-zero-oracle `union` compiler. -/
+theorem union_def (cf cg : Code) :
+    union cf cg =
+      (TauCeti.Oracle.Single.Code.union
+        cf.toSingleOracleCode cg.toSingleOracleCode).toPartrecCode :=
+  (rfl)
+
 /-- Binary union of ordinary codes is primitive recursive. -/
 theorem primrec₂_union : Primrec₂ union :=
   TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
@@ -78,6 +92,12 @@ compiler at the constant-zero oracle. -/
 noncomputable def rangeDom (f : Code) : Code :=
   (TauCeti.Oracle.Single.Code.rangeDom f.toSingleOracleCode).toPartrecCode
 
+/-- Specialization equation identifying `rangeDom` with the constant-zero-oracle `rangeDom`
+compiler. -/
+theorem rangeDom_def (f : Code) :
+    rangeDom f = (TauCeti.Oracle.Single.Code.rangeDom f.toSingleOracleCode).toPartrecCode :=
+  (rfl)
+
 /-- Range-to-domain compilation is primitive recursive on ordinary codes. -/
 theorem primrec_rangeDom : _root_.Primrec rangeDom :=
   TauCeti.Oracle.Single.Code.primrec_toPartrecCode.comp <|
@@ -93,6 +113,14 @@ theorem dom_eval_rangeDom (f : Code) :
 compiler at the constant-zero oracle. -/
 noncomputable def imageDom (f c : Code) : Code :=
   (TauCeti.Oracle.Single.Code.imageDom f.toSingleOracleCode c.toSingleOracleCode).toPartrecCode
+
+/-- Specialization equation identifying `imageDom` with the constant-zero-oracle `imageDom`
+compiler. -/
+theorem imageDom_def (f c : Code) :
+    imageDom f c =
+      (TauCeti.Oracle.Single.Code.imageDom
+        f.toSingleOracleCode c.toSingleOracleCode).toPartrecCode :=
+  (rfl)
 
 /-- Partial-image compilation is primitive recursive on ordinary codes. -/
 theorem primrec₂_imageDom : Primrec₂ imageDom :=
@@ -111,6 +139,12 @@ theorem dom_eval_imageDom (f c : Code) :
 compiler at the constant-zero oracle. -/
 noncomputable def projDom (c : Code) : Code :=
   (TauCeti.Oracle.Single.Code.projDom c.toSingleOracleCode).toPartrecCode
+
+/-- Specialization equation identifying `projDom` with the constant-zero-oracle `projDom`
+compiler. -/
+theorem projDom_def (c : Code) :
+    projDom c = (TauCeti.Oracle.Single.Code.projDom c.toSingleOracleCode).toPartrecCode :=
+  (rfl)
 
 /-- Existential projection on ordinary codes is primitive recursive. -/
 theorem primrec_projDom : _root_.Primrec projDom :=

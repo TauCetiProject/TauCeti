@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.Hierarchy.Basic
 public import TauCeti.Computability.Jump.Basic
+import TauCeti.Computability.SingleOracle.Domain
 import TauCeti.Computability.SingleOracle.Relative
 
 /-!
@@ -17,11 +18,15 @@ of a partial function recursive in `Z`. The forward implication searches the tot
 the reverse implication uses finite successful computations of an oracle program. Totality of the
 oracle is essential to computing bounded simulation.
 
-This gives the ordinary characterization by `REPred` at the empty oracle, the index presentation
-by oracle-program domains, closure of relative `Σ⁰₁` sets under partial preimages
-(`RecursiveIn.isSigma_one_mem_preimage`), and one-one and many-one completeness of the relative
-jump `Z'` and its complement `(Z')ᶜ` for `Σ⁰₁` and `Π⁰₁` predicates.
-No program index is extracted computably from a semantic pointclass-membership proof.
+This gives the ordinary characterization by `REPred` at the empty oracle, the index and
+partial-range presentations (`TauCeti.ArithmeticalHierarchy.isSigma_one_iff_exists_code`,
+`TauCeti.ArithmeticalHierarchy.isSigma_one_iff_exists_recursiveIn_ran`), closure of relative
+`Σ⁰₁` sets under partial preimages (`RecursiveIn.isSigma_one_mem_preimage`), ranges
+(`RecursiveIn.isSigma_one_mem_ran`, `ComputableIn.isSigma_one_mem_range`), and partial and total
+images (`RecursiveIn.isSigma_one_mem_image`, `ComputableIn.isSigma_one_mem_image`), and one-one
+and many-one completeness of the relative jump `Z'` and its complement `(Z')ᶜ` for `Σ⁰₁` and
+`Π⁰₁` predicates. No program index is extracted computably from a semantic pointclass-membership
+proof.
 
 ## References
 
@@ -119,6 +124,82 @@ theorem _root_.RecursiveIn.isSigma_one_mem_preimage {β : Type*} [Primcodable β
       exact ⟨encode y, (hcS y).1 hyS, y, hyf, rfl⟩
   exact ((isSigma_one_dom_eval (Z := Z) (Code.comp cS cf)).preimage
     Primrec.encode.computableIn).of_eq heq
+
+/-- The range of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
+theorem _root_.RecursiveIn.isSigma_one_mem_ran {β : Type*} [Primcodable β] {f : α →. β}
+    (hf : RecursiveIn {Z.oracle} f) : IsSigma Z 1 (· ∈ f.ran) := by
+  unfold RecursiveIn at hf
+  obtain ⟨c, hc⟩ := Code.exists_code.1 hf
+  have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.rangeDom c)).Dom ↔ y ∈ f.ran := by
+    intro y
+    rw [Code.dom_eval_rangeDom_oracle, hc]
+    simp only [PFun.ran, Set.mem_ofPred_eq, Part.mem_bind_iff, Part.mem_map_iff]
+    constructor
+    · rintro ⟨n, x, _, y', hy', heq⟩
+      exact ⟨x, encode_injective heq ▸ hy'⟩
+    · rintro ⟨x, hx⟩
+      exact ⟨encode x, x, by simp [encodek], y, hx, rfl⟩
+  exact ((isSigma_one_dom_eval (Z := Z) (Code.rangeDom c)).preimage
+    Primrec.encode.computableIn).of_eq heq
+
+/-- The image of a relative Σ⁰₁ set under a partial function recursive in `Z` is Σ⁰₁ relative to
+`Z`. -/
+theorem _root_.RecursiveIn.isSigma_one_mem_image {β : Type*} [Primcodable β] {f : α →. β}
+    {S : Set α} (hf : RecursiveIn {Z.oracle} f) (hS : IsSigma Z 1 (· ∈ S)) :
+    IsSigma Z 1 (· ∈ f.image S) := by
+  unfold RecursiveIn at hf
+  obtain ⟨cf, hcf⟩ := Code.exists_code.1 hf
+  obtain ⟨g, hg, hSdom⟩ := hS.exists_recursiveIn_domain
+  unfold RecursiveIn at hg
+  obtain ⟨cg, hcg⟩ := Code.exists_code.1 hg
+  have heq : ∀ y : β, encode y ∈ (Code.eval Z.oracle (Code.imageDom cf cg)).Dom ↔
+      y ∈ f.image S := by
+    intro y
+    rw [Code.dom_eval_imageDom_oracle, PFun.mem_image, PFun.mem_image, hcf, hcg]
+    constructor
+    · rintro ⟨n, hnS, hnf⟩
+      obtain ⟨x, hx, hy⟩ := Part.mem_bind_iff.1 hnf
+      obtain ⟨y', hy', heq⟩ := (Part.mem_map_iff encode).1 hy
+      have hdx : decode (α := α) n = some x := Part.mem_ofOption.1 hx
+      have hxg : (g x).Dom := by simpa [PFun.Dom, hdx] using hnS
+      exact ⟨x, (hSdom x).2 hxg, encode_injective heq ▸ hy'⟩
+    · rintro ⟨x, hxS, hxf⟩
+      refine ⟨encode x, ?_, ?_⟩
+      · simpa [PFun.Dom, encodek] using (hSdom x).1 hxS
+      · exact Part.mem_bind (by simp [encodek]) ((Part.mem_map_iff encode).2 ⟨y, hxf, rfl⟩)
+  exact ((isSigma_one_dom_eval (Z := Z) (Code.imageDom cf cg)).preimage
+    Primrec.encode.computableIn).of_eq heq
+
+/-- The range of a total function computable in `Z` is Σ⁰₁ relative to `Z`. -/
+theorem _root_.ComputableIn.isSigma_one_mem_range {β : Type*} [Primcodable β] {f : α → β}
+    (hf : ComputableIn {Z.oracle} f) : IsSigma Z 1 (· ∈ Set.range f) := by
+  have hf' : RecursiveIn {Z.oracle} (f : α →. β) := hf
+  simpa only [PFun.ran_coe] using hf'.isSigma_one_mem_ran
+
+/-- The image of a relative Σ⁰₁ set under a total function computable in `Z` is Σ⁰₁ relative to
+`Z`. -/
+theorem _root_.ComputableIn.isSigma_one_mem_image {β : Type*} [Primcodable β] {f : α → β}
+    {S : Set α} (hf : ComputableIn {Z.oracle} f) (hS : IsSigma Z 1 (· ∈ S)) :
+    IsSigma Z 1 (· ∈ f '' S) := by
+  have hf' : RecursiveIn {Z.oracle} (f : α →. β) := hf
+  exact (hf'.isSigma_one_mem_image hS).of_eq fun y => by
+    simp [PFun.mem_image, PFun.coe_val, eq_comm]
+
+/-- A set in any primitive-codable type is Σ⁰₁ relative to `Z` if and only if it is the range of a
+partial function `ℕ →. α` recursive in `Z`. Unlike total range presentations, this holds for the
+empty set as well. -/
+theorem isSigma_one_iff_exists_recursiveIn_ran {S : Set α} :
+    IsSigma Z 1 (· ∈ S) ↔ ∃ f : ℕ →. α, RecursiveIn {Z.oracle} f ∧ f.ran = S := by
+  refine ⟨fun hS => ?_, fun ⟨f, hf, hran⟩ => hran ▸ hf.isSigma_one_mem_ran⟩
+  obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hS
+  refine ⟨_, Code.recursiveIn_decode_restrict (α := α) Z.oracle c, Set.ext fun y => ?_⟩
+  simp only [PFun.ran, Set.mem_ofPred_eq, Part.mem_bind_iff, Part.mem_ofOption, Part.mem_map_iff]
+  constructor
+  · rintro ⟨n, x, _, w, hw, rfl⟩
+    exact (hc x).2 (Part.dom_iff_mem.2 ⟨w, hw⟩)
+  · intro hy
+    obtain ⟨w, hw⟩ := Part.dom_iff_mem.1 ((hc y).1 hy)
+    exact ⟨encode y, y, encodek y, w, hw, rfl⟩
 
 /-- At the empty oracle, the quantifier definition of Σ⁰₁ agrees with Mathlib's c.e.
 predicate `REPred`. -/

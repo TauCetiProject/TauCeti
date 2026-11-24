@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.PartrecCode
-import TauCeti.Computability.SingleOracle.Code
+public import TauCeti.Computability.SingleOracle.Code
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -21,9 +21,11 @@ codes `Nat.Partrec.Code`, transported from `TauCeti.Computability.SingleOracle.C
   domains.
 * `Nat.Partrec.Code.dom_eval_comp`: the domain of `comp cf cg` is the partial preimage of
   `cf.eval.Dom` under `cg.eval`.
-* `Nat.Partrec.Code.interList`: uniform finite-intersection compiler on program lists.
-* `Nat.Partrec.Code.restrictId`, `Nat.Partrec.Code.eval_restrictId`: partial identity restricted
-  to a program's domain.
+* `Nat.Partrec.Code.interList`, `Nat.Partrec.Code.toSingleOracleCode_interList`: uniform
+  finite-intersection compiler on program lists and its translation into query-free oracle code.
+* `Nat.Partrec.Code.restrictId`, `Nat.Partrec.Code.toSingleOracleCode_restrictId`,
+  `Nat.Partrec.Code.eval_restrictId`: partial identity restricted to a program's domain and its
+  translation into query-free oracle code.
 -/
 
 public section
@@ -67,7 +69,9 @@ theorem interList_cons (c : Code) (cs : List Code) :
     interList (c :: cs) = pair c (interList cs) :=
   (rfl)
 
-private theorem toSingleOracleCode_interList (cs : List Code) :
+/-- Translating `interList cs` into query-free oracle code distributes over `interList`. -/
+@[simp]
+theorem toSingleOracleCode_interList (cs : List Code) :
     (interList cs).toSingleOracleCode =
       TauCeti.Oracle.Single.Code.interList (cs.map toSingleOracleCode) := by
   induction cs with
@@ -99,7 +103,9 @@ theorem dom_eval_interList (cs : List Code) :
 def restrictId (c : Code) : Code :=
   comp left (pair Code.id c)
 
-private theorem toSingleOracleCode_restrictId (c : Code) :
+/-- Translating `restrictId c` into query-free oracle code commutes with `restrictId`. -/
+@[simp]
+theorem toSingleOracleCode_restrictId (c : Code) :
     (restrictId c).toSingleOracleCode =
       TauCeti.Oracle.Single.Code.restrictId c.toSingleOracleCode := by
   simp [restrictId, Code.id, TauCeti.Oracle.Single.Code.restrictId_def]

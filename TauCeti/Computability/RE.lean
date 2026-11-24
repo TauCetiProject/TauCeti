@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
+import TauCeti.Computability.Enumeration.Domain
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -134,14 +135,13 @@ theorem exists_mem_finset {ι : Type*} {s : Finset ι} {p : ι → α → Prop}
 /-- C.e. predicates are closed under existential quantification over any primitive-codable type. -/
 protected theorem «exists» {β : Type*} [Primcodable β] {r : α × β → Prop} (hr : REPred r) :
     REPred fun x => ∃ y : β, r (x, y) := by
-  have hg : Nat.Partrec fun n =>
-      (Part.ofOption (decode (α := α × β) n)).bind fun p =>
-        (Part.assert (r p) fun _ => Part.some ()).map fun _ => 0 :=
-    Partrec.nat_iff.1 <|
-      Computable.decode.ofOption.bind ((hr.map (Computable.const 0).to₂).comp Computable.snd).to₂
-  obtain ⟨c, hc⟩ := Nat.Partrec.Code.exists_code.1 hg
+  have hg : REPred fun n : ℕ =>
+      ((Part.ofOption (decode (α := α × β) n)).bind fun p =>
+        Part.assert (r p) fun _ => Part.some ()).Dom :=
+    (Computable.decode.ofOption.bind (hr.comp Computable.snd).to₂).dom_re
+  obtain ⟨c, hc⟩ := TauCeti.Enumeration.rePred_iff_exists_code.1 hg
   have hdec : ∀ (x : α) (y : β), r (x, y) ↔ (c.eval (encode (x, y))).Dom := fun x y => by
-    simp [hc, encodek, Part.dom_iff_mem]
+    simpa [encodek, Part.dom_iff_mem] using hc (encode (x, y))
   have heval : Computable fun p : (α × ℕ) × β =>
       (c.evaln p.1.2.unpair.2 (encode (p.1.1, p.2))).isSome :=
     Primrec.option_isSome.to_comp.comp <| Nat.Partrec.Code.primrec_evaln.to_comp.comp <|
@@ -157,15 +157,10 @@ protected theorem «exists» {β : Type*} [Primcodable β] {r : α × β → Pro
   refine (ComputablePred.rePred_exists
     (p := fun x k => ∃ y : β, decode (α := β) k.unpair.1 = some y ∧
       (c.evaln k.unpair.2 (encode (x, y))).isSome = true) htest).of_eq fun x => ?_
-  constructor
-  · rintro ⟨k, y, -, hk⟩
-    obtain ⟨z, hz⟩ := Option.isSome_iff_exists.1 hk
-    exact ⟨y, (hdec x y).2 (Part.dom_iff_mem.2 ⟨z, Nat.Partrec.Code.evaln_sound hz⟩)⟩
-  · rintro ⟨y, hy⟩
-    obtain ⟨z, hz⟩ := Part.dom_iff_mem.1 ((hdec x y).1 hy)
-    obtain ⟨s, hs⟩ := Nat.Partrec.Code.evaln_complete.1 hz
-    exact ⟨Nat.pair (encode y) s, y, by simp [encodek],
-      by simpa using Option.isSome_iff_exists.2 ⟨z, hs⟩⟩
+  simp only [hdec, Nat.Partrec.Code.eval_eq_rfindOpt, Nat.rfindOpt_dom, Option.mem_def,
+    ← Option.isSome_iff_exists]
+  exact ⟨fun ⟨k, y, _, hk⟩ => ⟨y, k.unpair.2, hk⟩,
+    fun ⟨y, s, hs⟩ => ⟨Nat.pair (encode y) s, y, by simp [encodek], by simpa using hs⟩⟩
 
 end REPred
 
