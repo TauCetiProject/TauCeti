@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
@@ -42,8 +43,8 @@ fundamental domain `D` for it, this gives `L²(G) ≃ ℓ²(Γ, L²(D))`.
   `∑ γ, ‖f (γ • ·)|_D‖ ^ p = ‖f‖ ^ p`.
 * `MeasureTheory.IsFundamentalDomain.lpEquiv_apply`,
   `MeasureTheory.IsFundamentalDomain.coeFn_lpEquiv_apply`: the components of `lpEquiv`.
-* `MeasureTheory.IsFundamentalDomain.lpEquiv_compMeasurePreserving_apply`: `lpEquiv` turns
-  translation by `γ` into the shift of the index by `γ`.
+* `MeasureTheory.IsFundamentalDomain.lpEquiv_mk_smul_apply`: `lpEquiv` turns the translation
+  `DomMulAct.mk γ • f` by `γ` into the shift of the index by `γ`.
 * `MeasureTheory.IsFundamentalDomain.lpEquiv_symm_single`,
   `MeasureTheory.IsFundamentalDomain.coeFn_lpEquiv_symm_single`: the inverse of `lpEquiv` sends
   `g` placed at index `γ` to the translate by `γ⁻¹` of the extension of `g` by zero.
@@ -72,13 +73,21 @@ noncomputable def restrictSMul (D : Set α) (γ : Γ) : Lp E p μ →L[𝕜] Lp 
   (LpToLpRestrictCLM α E 𝕜 μ p D).comp
     (compMeasurePreservingₗᵢ 𝕜 (γ • · : α → α) (measurePreserving_smul γ μ)).toContinuousLinearMap
 
+/-- `restrictSMul 𝕜 p D γ f` is the restriction to `D` of the `DomMulAct` translate
+`DomMulAct.mk γ • f`. -/
+@[to_additive (dont_translate := 𝕜) /-- `restrictVAdd 𝕜 p D γ f` is the restriction to `D` of
+the `DomAddAct` translate `DomAddAct.mk γ +ᵥ f`. -/]
+theorem restrictSMul_apply (D : Set α) (γ : Γ) (f : Lp E p μ) :
+    restrictSMul 𝕜 p D γ f = LpToLpRestrictCLM α E 𝕜 μ p D (DomMulAct.mk γ • f) :=
+  (rfl)
+
 /-- `restrictSMul 𝕜 p D γ f` is `x ↦ f (γ • x)` almost everywhere on `D`. -/
 @[to_additive (dont_translate := 𝕜)
   /-- `restrictVAdd 𝕜 p D γ f` is `x ↦ f (γ +ᵥ x)` almost everywhere on `D`. -/]
 theorem coeFn_restrictSMul (D : Set α) (γ : Γ) (f : Lp E p μ) :
-    restrictSMul 𝕜 p D γ f =ᵐ[μ.restrict D] fun x ↦ f (γ • x) :=
-  (LpToLpRestrictCLM_coeFn 𝕜 D _).trans
-    (ae_restrict_of_ae (coeFn_compMeasurePreserving f (measurePreserving_smul γ μ)))
+    restrictSMul 𝕜 p D γ f =ᵐ[μ.restrict D] fun x ↦ f (γ • x) := by
+  rw [restrictSMul_apply]
+  exact (LpToLpRestrictCLM_coeFn 𝕜 D _).trans (ae_restrict_of_ae (DomMulAct.smul_Lp_ae_eq _ f))
 
 /-- The `p`-th power of the norm of `restrictSMul 𝕜 p D γ f` is
 `∫⁻ x in D, ‖f (γ • x)‖ₑ ^ p`. -/
@@ -91,18 +100,12 @@ theorem norm_restrictSMul_rpow (hp : p ≠ ∞) (D : Set α) (γ : Γ) (f : Lp E
       (zero_lt_one.trans_le Fact.out).ne' hp (Lp.aestronglyMeasurable _),
     lintegral_congr_ae ((coeFn_restrictSMul 𝕜 D γ f).mono fun x hx ↦ by rw [hx])]
 
-/-- Restricting the translates of `f (γ • ·)` shifts the index by `γ`. -/
+/-- Restricting the translates of `DomMulAct.mk γ • f` shifts the index by `γ`. -/
 @[to_additive (dont_translate := 𝕜)
-  /-- Restricting the translates of `f (γ +ᵥ ·)` shifts the index by `γ`. -/]
-theorem restrictSMul_compMeasurePreserving (D : Set α) (γ δ : Γ) (f : Lp E p μ) :
-    restrictSMul 𝕜 p D δ (Lp.compMeasurePreserving (γ • · : α → α)
-      (measurePreserving_smul γ μ) f) = restrictSMul 𝕜 p D (γ * δ) f := by
-  refine Lp.ext ((coeFn_restrictSMul 𝕜 D δ _).trans ?_)
-  refine Filter.EventuallyEq.trans (ae_restrict_of_ae ?_) (coeFn_restrictSMul 𝕜 D _ f).symm
-  have := (measurePreserving_smul δ μ).quasiMeasurePreserving.ae_eq_comp
-    (Lp.coeFn_compMeasurePreserving f (measurePreserving_smul γ μ))
-  filter_upwards [this] with x hx
-  simpa [mul_smul] using hx
+  /-- Restricting the translates of `DomAddAct.mk γ +ᵥ f` shifts the index by `γ`. -/]
+theorem restrictSMul_mk_smul (D : Set α) (γ δ : Γ) (f : Lp E p μ) :
+    restrictSMul 𝕜 p D δ (DomMulAct.mk γ • f) = restrictSMul 𝕜 p D (γ * δ) f := by
+  rw [restrictSMul_apply, restrictSMul_apply, smul_smul, ← DomMulAct.mk_mul]
 
 end Lp
 
@@ -182,14 +185,13 @@ private theorem restrictSMul_castLpₗᵢ_extendByZeroLpₗᵢ [DecidableEq Γ]
 index `γ`. -/
 @[to_additive (dont_translate := 𝕜) /-- The translate by `-γ` of the extension by zero of `g` is
 sent by `toLpₗᵢ` to `g` placed at index `γ`. -/]
-private theorem toLpₗᵢ_compMeasurePreserving_extendByZeroLpₗᵢ [DecidableEq Γ]
+private theorem toLpₗᵢ_mk_smul_extendByZeroLpₗᵢ [DecidableEq Γ]
     (h : IsFundamentalDomain Γ D μ) (hp : p ≠ ∞) (γ : Γ)
     (g : Lp E p (μ.restrict D)) :
-    h.toLpₗᵢ (𝕜 := 𝕜) hp (Lp.compMeasurePreserving (γ⁻¹ • · : α → α)
-      (measurePreserving_smul γ⁻¹ μ) (castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
-        (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) g))) = lp.single p γ g := by
+    h.toLpₗᵢ (𝕜 := 𝕜) hp (DomMulAct.mk γ⁻¹ • castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) g)) = lp.single p γ g := by
   refine lp.ext <| funext fun δ ↦ ?_
-  rw [toLpₗᵢ_apply, restrictSMul_compMeasurePreserving, h.restrictSMul_castLpₗᵢ_extendByZeroLpₗᵢ,
+  rw [toLpₗᵢ_apply, restrictSMul_mk_smul, h.restrictSMul_castLpₗᵢ_extendByZeroLpₗᵢ,
     lp.single_apply, Pi.single_apply]
   simp only [inv_mul_eq_one, eq_comm (a := γ)]
 
@@ -205,10 +207,9 @@ private theorem surjective_toLpₗᵢ (h : IsFundamentalDomain Γ D μ) (hp : p 
   -- It contains the elements `lp.single p γ g`, the translates of extensions by zero.
   intro x
   refine hclosed.mem_of_tendsto (lp.hasSum_single hp x) (Filter.Eventually.of_forall fun s ↦
-    ⟨∑ γ ∈ s, Lp.compMeasurePreserving (γ⁻¹ • · : α → α) (measurePreserving_smul γ⁻¹ μ)
-      (castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
-        (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) (x γ))), ?_⟩)
-  simp only [map_sum, toLpₗᵢ_compMeasurePreserving_extendByZeroLpₗᵢ]
+    ⟨∑ γ ∈ s, DomMulAct.mk γ⁻¹ • castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) (x γ)), ?_⟩)
+  simp only [map_sum, toLpₗᵢ_mk_smul_extendByZeroLpₗᵢ]
 
 variable (𝕜)
 
@@ -240,14 +241,13 @@ theorem coeFn_lpEquiv_apply (h : IsFundamentalDomain Γ D μ) (hp : p ≠ ∞) (
   rw [lpEquiv_apply]
   exact coeFn_restrictSMul 𝕜 D γ f
 
-/-- `lpEquiv` turns translation by `γ` into the shift of the index by `γ`. -/
-@[to_additive (dont_translate := 𝕜)
-  /-- `lpEquiv` turns translation by `γ` into the shift of the index by `γ`. -/]
-theorem lpEquiv_compMeasurePreserving_apply (h : IsFundamentalDomain Γ D μ) (hp : p ≠ ∞)
+/-- `lpEquiv` turns the translation `DomMulAct.mk γ • f` into the shift of the index by `γ`. -/
+@[to_additive (dont_translate := 𝕜) /-- `lpEquiv` turns the translation `DomAddAct.mk γ +ᵥ f`
+into the shift of the index by `γ`. -/]
+theorem lpEquiv_mk_smul_apply (h : IsFundamentalDomain Γ D μ) (hp : p ≠ ∞)
     (γ δ : Γ) (f : Lp E p μ) :
-    h.lpEquiv 𝕜 hp (Lp.compMeasurePreserving (γ • · : α → α) (measurePreserving_smul γ μ) f) δ =
-      h.lpEquiv 𝕜 hp f (γ * δ) := by
-  rw [lpEquiv_apply, lpEquiv_apply, restrictSMul_compMeasurePreserving]
+    h.lpEquiv 𝕜 hp (DomMulAct.mk γ • f) δ = h.lpEquiv 𝕜 hp f (γ * δ) := by
+  rw [lpEquiv_apply, lpEquiv_apply, restrictSMul_mk_smul]
 
 /-- The inverse of `lpEquiv` sends `g ∈ Lᵖ(D, μ)` placed at index `γ` to the translate by `γ⁻¹` of
 the extension of `g` by zero. -/
@@ -256,11 +256,9 @@ index `γ` to the translate by `-γ` of the extension of `g` by zero. -/]
 theorem lpEquiv_symm_single [DecidableEq Γ] (h : IsFundamentalDomain Γ D μ) (hp : p ≠ ∞)
     (γ : Γ) (g : Lp E p (μ.restrict D)) :
     (h.lpEquiv 𝕜 hp).symm (lp.single p γ g) =
-      Lp.compMeasurePreserving (γ⁻¹ • · : α → α) (measurePreserving_smul γ⁻¹ μ)
-        (castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
-          (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) g)) :=
-  (LinearIsometryEquiv.symm_apply_eq _).2
-    (h.toLpₗᵢ_compMeasurePreserving_extendByZeroLpₗᵢ hp γ g).symm
+      DomMulAct.mk γ⁻¹ • castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+        (extendByZeroLpₗᵢ 𝕜 μ h.nullMeasurableSet (subset_univ D) g) :=
+  (LinearIsometryEquiv.symm_apply_eq _).2 (h.toLpₗᵢ_mk_smul_extendByZeroLpₗᵢ hp γ g).symm
 
 /-- The inverse of `lpEquiv` sends `g ∈ Lᵖ(D, μ)` placed at index `γ` to `x ↦ g (γ⁻¹ • x)` on
 `γ • D`, extended by zero. -/
@@ -270,7 +268,7 @@ theorem coeFn_lpEquiv_symm_single [DecidableEq Γ] (h : IsFundamentalDomain Γ D
     (γ : Γ) (g : Lp E p (μ.restrict D)) :
     (h.lpEquiv 𝕜 hp).symm (lp.single p γ g) =ᵐ[μ] fun x ↦ D.indicator g (γ⁻¹ • x) := by
   rw [lpEquiv_symm_single]
-  exact (Lp.coeFn_compMeasurePreserving _ _).trans
+  exact (DomMulAct.smul_Lp_ae_eq _ _).trans
     ((measurePreserving_smul γ⁻¹ μ).quasiMeasurePreserving.ae_eq_comp
       (coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 h.nullMeasurableSet g))
 
