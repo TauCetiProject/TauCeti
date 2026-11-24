@@ -64,6 +64,9 @@ The formula is assembled from three facts.
   of `|A|²`.
 * `CovariantDerivative.IsMetricCompatible.laplaceBeltrami_innerCovariantDerivative_self`: the
   Bochner formula for `|∇σ|²`.
+* `IsMetricCompatible.neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le` (in the
+  namespace `CovariantDerivative`): the resulting inequality under bounds on `R`, on the Riemann
+  curvature and on the divergence `∑ᵢ (∇_{eᵢ}R)(·, eᵢ) σ`.
 
 ## References
 
@@ -210,6 +213,102 @@ theorem laplaceBeltrami_innerCovariantDerivative_self (hcov : cov.IsMetricCompat
     ← secondCovariantDerivative_eq_hom_apply cov (∇ᵀ) hσ, real_inner_self_eq_norm_sq,
     sub_eq_iff_eq_add.1 (hcomm _), inner_add_left, Finset.sum_add_distrib]
   ring
+
+omit [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The curvature term `Kⱼ` of the Bochner formula has norm at most `n (2 c_R + c_T) |∇σ| + D`. -/
+private theorem norm_sum_curvature_le {σ : Π y : M, V y} (x : M) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) {cR cT D : ℝ}
+    (hR : ∀ u v s, ‖cov.curvatureTensor x u v s‖ ≤ cR * ‖u‖ * ‖v‖ * ‖s‖)
+    (hRT : ∀ u v w, ‖(∇ᵀ).curvatureTensor x u v w‖ ≤ cT * ‖u‖ * ‖v‖ * ‖w‖)
+    (hD : ∀ j, ‖∑ i, cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x)‖ ≤ D) (j : ι) :
+    ‖∑ i, ((2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i)) +
+      cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x) -
+      cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i)))‖ ≤
+        Fintype.card ι * (2 * cR + cT) * √(cov.innerCovariantDerivative σ σ x) + D := by
+  set A := √(cov.innerCovariantDerivative σ σ x) with hAdef
+  have hA0 : 0 ≤ A := Real.sqrt_nonneg _
+  have hsum : ∑ i, ‖cov σ x (b i)‖ ^ 2 = A ^ 2 := by
+    rw [hAdef, Real.sq_sqrt (cov.innerCovariantDerivative_self_nonneg σ x),
+      cov.innerCovariantDerivative_eq_sum σ σ x b]
+    simp only [real_inner_self_eq_norm_sq]
+  -- `∇σ` has operator norm at most `A = |∇σ|`, so each `‖∇_{eᵢ} σ‖ ≤ A`.
+  have hop := (cov σ x).le_of_opNorm_le (cov.norm_le_sqrt_innerCovariantDerivative σ x)
+  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A := by simpa [b.orthonormal.1 i] using hop (b i)
+  -- The curvature of `∇` acting on `∇_{eᵢ} σ`.
+  have hRa (i j : ι) : ‖cov.curvatureTensor x (b j) (b i) (cov σ x (b i))‖ ≤ cR * A := by
+    rcases le_or_gt 0 cR with hcR | hcR
+    · refine (hR _ _ _).trans ?_
+      rw [b.orthonormal.1 j, b.orthonormal.1 i, mul_one, mul_one]
+      exact mul_le_mul_of_nonneg_left (ha i) hcR
+    · -- A negative bound forces `V x = 0`, so both sides vanish.
+      have h0 (s : V x) : s = 0 := by
+        have h := (norm_nonneg _).trans (hR (b j) (b j) s)
+        rw [b.orthonormal.1 j, mul_one, mul_one] at h
+        exact norm_le_zero_iff.1 (nonpos_of_mul_nonneg_right h hcR)
+      have hA : A = 0 := by
+        rw [← sq_eq_zero_iff, ← hsum]
+        simp [h0 (cov σ x _)]
+      simp [h0 (cov σ x (b i)), hA]
+  have hRT' (i j : ι) : ‖cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i))‖ ≤ A * cT := by
+    refine (hop _).trans (mul_le_mul_of_nonneg_left ?_ hA0)
+    refine (hRT _ _ _).trans_eq ?_
+    rw [b.orthonormal.1 j, b.orthonormal.1 i, mul_one, mul_one, mul_one]
+  -- The bound on the curvature term `Kⱼ` of the Bochner formula.
+  rw [Finset.sum_sub_distrib, Finset.sum_add_distrib]
+  have h1 : ‖∑ i, (2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i))‖ ≤
+      Fintype.card ι * (2 * (cR * A)) := by
+    refine (norm_sum_le _ _).trans ?_
+    refine (Finset.sum_le_card_nsmul _ _ (2 * (cR * A)) fun i _ ↦ ?_).trans_eq (by simp)
+    rw [norm_smul, Real.norm_two]
+    exact mul_le_mul_of_nonneg_left (hRa i j) zero_le_two
+  have h2 : ‖∑ i, cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i))‖ ≤
+      Fintype.card ι * (A * cT) := by
+    refine (norm_sum_le _ _).trans ?_
+    exact (Finset.sum_le_card_nsmul _ _ (A * cT) fun i _ ↦ hRT' i j).trans_eq (by simp)
+  linarith [norm_sub_le (∑ i, (2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i)) +
+    ∑ i, cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x))
+      (∑ i, cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i))),
+    norm_add_le (∑ i, (2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i)))
+      (∑ i, cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x)), hD j]
+
+/-- **The Bochner inequality for an equation of Laplace type.** Under curvature bounds at `x`,
+the Bochner formula bounds `-Δ |∇σ|² / 2 + |∇²σ|²` by the pairing of `∇(∇*∇σ)` with `∇σ` plus
+terms of order at most two in `|∇σ|`. Suppose that, for an orthonormal basis `eᵢ` of the tangent
+space at `x` with `n` elements, `|R(u, v) s| ≤ c_R |u| |v| |s|` for the curvature `R` of `∇`,
+`|Rᵀ(u, v) w| ≤ c_T |u| |v| |w|` for the Riemann curvature `Rᵀ`, and the divergence of `R`
+applied to `σ` satisfies `|∑ᵢ (∇_{eᵢ}R)(eⱼ, eᵢ) σ| ≤ D` for every `j`. Then, with
+`|∇σ| = √⟪∇σ, ∇σ⟫` the Hilbert–Schmidt norm,
+
+`-Δ |∇σ|² / 2 + ∑ᵢⱼ |∇²σ(eᵢ, eⱼ)|² ≤`
+`  ∑ⱼ ⟪∇_{eⱼ}(∇*∇σ), ∇_{eⱼ}σ⟫ + n (n (2 c_R + c_T) |∇σ| + D) |∇σ|`.
+
+Only the divergence of `R`, not all of `∇R`, enters. -/
+theorem neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le
+    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (x : M)
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) {cR cT D : ℝ}
+    (hR : ∀ u v s, ‖cov.curvatureTensor x u v s‖ ≤ cR * ‖u‖ * ‖v‖ * ‖s‖)
+    (hRT : ∀ u v w, ‖(∇ᵀ).curvatureTensor x u v w‖ ≤ cT * ‖u‖ * ‖v‖ * ‖w‖)
+    (hD : ∀ j, ‖∑ i, cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x)‖ ≤ D) :
+    -(TauCeti.Manifold.laplaceBeltrami I (cov.innerCovariantDerivative σ σ) x / 2) +
+        ∑ i, ∑ j, ‖cov.secondCovariantDerivative (∇ᵀ) σ x (b i) (b j)‖ ^ 2 ≤
+      ∑ j, ⟪cov (cov.roughLaplacian (∇ᵀ) σ) x (b j), cov σ x (b j)⟫ +
+        Fintype.card ι * (Fintype.card ι * (2 * cR + cT) *
+          √(cov.innerCovariantDerivative σ σ x) + D) * √(cov.innerCovariantDerivative σ σ x) := by
+  rw [hcov.laplaceBeltrami_innerCovariantDerivative_self hσ x b]
+  set A := √(cov.innerCovariantDerivative σ σ x)
+  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A := by
+    simpa [b.orthonormal.1 i] using
+      (cov σ x).le_of_opNorm_le (cov.norm_le_sqrt_innerCovariantDerivative σ x) (b i)
+  have hK := norm_sum_curvature_le x b hR hRT hD
+  have hKa : ∑ j, ⟪∑ i, ((2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i)) +
+      cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x) -
+      cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i))), cov σ x (b j)⟫ ≤
+        Fintype.card ι * ((Fintype.card ι * (2 * cR + cT) * A + D) * A) := by
+    refine (Finset.sum_le_card_nsmul _ _ ((Fintype.card ι * (2 * cR + cT) * A + D) * A)
+      fun j _ ↦ ?_).trans_eq (by simp)
+    refine (real_inner_le_norm _ _).trans ?_
+    exact mul_le_mul (hK j) (ha j) (norm_nonneg _) ((norm_nonneg _).trans (hK j))
+  linarith
 
 end Hessian
 
