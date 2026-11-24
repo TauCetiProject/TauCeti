@@ -318,7 +318,7 @@ theorem sectionIndex_trivial_conj (hω : oM 0 = ω.localOrientation hF)
     (Bundle.Trivial.trivialization ℂ ℂ) ⊤ (mem_univ 0) (map_zero _) hUe
     (.of_forall fun _ _ ↦ by simp) oM hω]
   -- The fibre coordinate is complex conjugation on the open set `⊤`.
-  have h := HomologicalOrientation.localIndex_comap hF oM oM
+  have h := oM.localIndex_comap oM hF
     (⊤ : TopologicalSpace.Opens ℂ).isOpenEmbedding' IsOpenEmbedding.id
     (f := fiberCoord hs (Bundle.Trivial.trivialization ℂ ℂ) hUe)
     (g := ⟨starRingEnd ℂ, Complex.continuous_conj⟩) (x := ⟨0, mem_univ 0⟩)
