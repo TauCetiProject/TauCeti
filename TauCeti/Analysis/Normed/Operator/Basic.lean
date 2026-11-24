@@ -369,15 +369,6 @@ theorem ker_eq_bot_of_forall_mul_norm_le {F : Type*} [SeminormedAddCommGroup F]
     LinearMap.ker (f : E →ₗ[𝕜] F) = ⊥ :=
   LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun x ↦ (le_inv_mul_iff₀ hα).2 (h x))
 
-/-- `T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`. -/
-theorem ker_sub_smul_id_eq_bot_iff {T : E →L[𝕜] E} {μ : 𝕜} :
-    LinearMap.ker ((T - μ • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E) = ⊥ ↔
-      ¬Module.End.HasEigenvalue (T : E →ₗ[𝕜] E) μ := by
-  rw [Module.End.hasEigenvalue_iff, not_not]
-  congr!
-  ext x
-  simp [sub_eq_zero]
-
 /-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
 with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/
 theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F]
@@ -511,6 +502,22 @@ theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L
     _ ≤ ‖x - A x‖ := norm_sub_norm_le _ _
 
 end Inverse
+
+section Eigenvalue
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
+
+/-- `T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`. -/
+theorem ker_sub_smul_id_eq_bot_iff {T : M →L[R] M} {μ : R} :
+    LinearMap.ker ((T - μ • ContinuousLinearMap.id R M : M →L[R] M) : M →ₗ[R] M) = ⊥ ↔
+      ¬Module.End.HasEigenvalue (T : M →ₗ[R] M) μ := by
+  rw [Module.End.hasEigenvalue_iff, not_not]
+  congr!
+  ext x
+  simp [sub_eq_zero]
+
+end Eigenvalue
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
 at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of `A` by
