@@ -26,16 +26,17 @@ intertwines the base-changed actions exactly when every coefficient `fᵢ` inter
 because the coefficients of the intertwining defect at `g` are the defects of the coefficients
 (`Representation.intertwiningDefectAt_homBaseChangeEquiv`).
 
-Over a field `K`, the dimension of every intertwiner space is therefore unchanged by any nonzero
-commutative `K`-algebra `L` (`Representation.finrank_intertwiningMap_baseChange`).
+Over a field `K`, the dimension of every intertwiner space whose source is finite-dimensional is
+therefore unchanged by any nonzero commutative `K`-algebra `L`
+(`Representation.finrank_intertwiningMap_baseChange`).
 
 ## Main results
 
 * `Representation.intertwiningMapBaseChangeEquivOfFree`: free scalar extension commutes with
   intertwiner spaces, for any monoid, with `intertwiningMapBaseChangeEquivOfFree_tmul` and
   `intertwiningMapBaseChangeEquivOfFree_symm_baseChange`.
-* `Representation.finrank_intertwiningMap_baseChange`: intertwiner dimensions over a field
-  are unchanged by scalar extension.
+* `Representation.finrank_intertwiningMap_baseChange`: over a field, the dimension of the
+  intertwiner space from a finite-dimensional representation is unchanged by scalar extension.
 -/
 
 public section

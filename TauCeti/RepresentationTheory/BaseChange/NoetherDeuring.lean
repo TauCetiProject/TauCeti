@@ -11,8 +11,9 @@ public import TauCeti.RepresentationTheory.Semisimple
 /-!
 # Descent of isomorphisms of semisimple representations
 
-Over a field `K`, the dimension of every intertwiner space is unchanged by any nonzero
-commutative `K`-algebra `L` (`Representation.finrank_intertwiningMap_baseChange`). Since
+Over a field `K`, the dimension of every intertwiner space whose source is finite-dimensional is
+unchanged by any nonzero commutative `K`-algebra `L`
+(`Representation.finrank_intertwiningMap_baseChange`). Since
 semisimple representations are determined by such dimensions
 (`Representation.nonempty_equiv_of_finrank_intertwiningMap_eq`), two finite-dimensional
 semisimple representations over `K` that become equivalent over `L` are already equivalent over
