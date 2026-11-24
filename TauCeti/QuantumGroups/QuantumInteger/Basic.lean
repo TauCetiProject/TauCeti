@@ -18,6 +18,10 @@ This file develops the symmetric quantum integers associated to a generic nonzer
 in a field.  Besides the quotient definition, it provides a denominator-free Laurent sum,
 the sign and three-term recurrence identities, and the nonvanishing result needed for the
 ladder coefficients of generic rank-one quantum-group representations.
+
+The predicate `TauCeti.IsGenericQuantumParameter` (nonzero and not a root of unity) is defined in
+any monoid with zero, and each of its lemmas assumes only the cancellation, inverses or
+subtraction that it needs.
 -/
 
 public section
@@ -26,51 +30,70 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {K : Type*} [Field K]
+section MonoidWithZero
 
-/-- An element of a field is a generic quantum parameter if it is nonzero and none of its
-positive natural powers is one. -/
-def IsGenericQuantumParameter (q : K) : Prop :=
+variable {M₀ : Type*} [MonoidWithZero M₀]
+
+/-- An element of a monoid with zero is a generic quantum parameter if it is nonzero and none of
+its positive natural powers is one. -/
+def IsGenericQuantumParameter (q : M₀) : Prop :=
   q ≠ 0 ∧ ∀ n : ℕ, 0 < n → q ^ n ≠ 1
 
 /-- Characterization of generic quantum parameters: nonzero, with no positive natural power
 equal to one. -/
-theorem isGenericQuantumParameter_iff {q : K} :
+theorem isGenericQuantumParameter_iff {q : M₀} :
     IsGenericQuantumParameter q ↔ q ≠ 0 ∧ ∀ n : ℕ, 0 < n → q ^ n ≠ 1 :=
   Iff.rfl
-
-/-- Since `ε = ±1`, the inverse of a signed power `ε q ^ k` is `ε q ^ (-k)`. -/
-theorem units_mul_zpow_inv (q : K) (ε : ℤˣ) (k : ℤ) :
-    (((ε : ℤ) : K) * q ^ k)⁻¹ = ((ε : ℤ) : K) * q ^ (-k) := by
-  rw [mul_inv, zpow_neg]
-  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
 
 namespace IsGenericQuantumParameter
 
 /-- A generic quantum parameter is nonzero. -/
-theorem ne_zero {q : K} (hq : IsGenericQuantumParameter q) : q ≠ 0 :=
+theorem ne_zero {q : M₀} (hq : IsGenericQuantumParameter q) : q ≠ 0 :=
   hq.1
 
 /-- No positive natural power of a generic quantum parameter is one. -/
-theorem pow_ne_one {q : K} (hq : IsGenericQuantumParameter q) {n : ℕ} (hn : 0 < n) :
+theorem pow_ne_one {q : M₀} (hq : IsGenericQuantumParameter q) {n : ℕ} (hn : 0 < n) :
     q ^ n ≠ 1 :=
   hq.2 n hn
 
+/-- A positive natural power of a generic quantum parameter is generic. -/
+theorem pow [NoZeroDivisors M₀] {q : M₀} (hq : IsGenericQuantumParameter q) {k : ℕ}
+    (hk : 0 < k) : IsGenericQuantumParameter (q ^ k) := by
+  refine ⟨pow_ne_zero k hq.ne_zero, fun n hn hpow => ?_⟩
+  rw [← pow_mul] at hpow
+  exact hq.pow_ne_one (Nat.mul_pos hk hn) hpow
+
 /-- The natural powers of a generic quantum parameter are pairwise distinct. -/
-theorem pow_injective {q : K} (hq : IsGenericQuantumParameter q) :
-    Function.Injective (q ^ · : ℕ → K) := by
+theorem pow_injective [IsRightCancelMulZero M₀] {q : M₀} (hq : IsGenericQuantumParameter q) :
+    Function.Injective (q ^ · : ℕ → M₀) := by
   intro m n h
   wlog hmn : m ≤ n generalizing m n
   · exact (this h.symm (by omega)).symm
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hmn
   dsimp only at h
-  rw [pow_add, left_eq_mul₀ (pow_ne_zero _ hq.ne_zero)] at h
+  rw [pow_add, right_eq_mul₀ (pow_ne_zero _ hq.ne_zero)] at h
   by_contra hd
   exact hq.pow_ne_one (n := d) (by omega) h
 
+/-- For nonzero `c`, the multiples `q ^ n * c` of a generic quantum parameter `q` are pairwise
+distinct. -/
+theorem pow_mul_injective [IsRightCancelMulZero M₀] {q c : M₀} (hq : IsGenericQuantumParameter q)
+    (hc : c ≠ 0) : Function.Injective fun n : ℕ => q ^ n * c :=
+  fun _ _ h => hq.pow_injective (mul_right_cancel₀ hc h)
+
+end IsGenericQuantumParameter
+
+end MonoidWithZero
+
+section GroupWithZero
+
+variable {G₀ : Type*} [GroupWithZero G₀]
+
+namespace IsGenericQuantumParameter
+
 /-- The integer powers of a generic quantum parameter are pairwise distinct. -/
-theorem zpow_injective {q : K} (hq : IsGenericQuantumParameter q) :
-    Function.Injective (q ^ · : ℤ → K) := by
+theorem zpow_injective {q : G₀} (hq : IsGenericQuantumParameter q) :
+    Function.Injective (q ^ · : ℤ → G₀) := by
   intro m n h
   wlog hmn : m ≤ n generalizing m n
   · exact (this h.symm (by omega)).symm
@@ -78,26 +101,49 @@ theorem zpow_injective {q : K} (hq : IsGenericQuantumParameter q) :
   have h : q ^ d = 1 := by simpa [zpow_add₀ hq.ne_zero, zpow_ne_zero, hq.ne_zero] using h.symm
   simpa using hq.pow_injective (h.trans (pow_zero q).symm)
 
-/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m` is an
-integral power of `q` only for the positive sign. -/
+/-- A generic quantum parameter is not equal to its inverse. -/
+theorem ne_inv {q : G₀} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := fun h =>
+  hq.pow_ne_one two_pos (by rwa [sq, mul_eq_one_iff_eq_inv₀ hq.ne_zero])
+
+/-- The inverse of a generic quantum parameter is generic. -/
+theorem inv {q : G₀} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParameter q⁻¹ := by
+  refine ⟨inv_ne_zero hq.ne_zero, fun n hn hpow => ?_⟩
+  apply hq.pow_ne_one hn
+  simpa [inv_pow] using congrArg Inv.inv hpow
+
+end IsGenericQuantumParameter
+
+end GroupWithZero
+
+section DivisionRing
+
+variable {K : Type*} [DivisionRing K]
+
+/-- Since `ε = ±1`, the inverse of a signed power `ε q ^ k` is `ε q ^ (-k)`. -/
+theorem units_mul_zpow_inv (q : K) (ε : ℤˣ) (k : ℤ) :
+    (((ε : ℤ) : K) * q ^ k)⁻¹ = ((ε : ℤ) : K) * q ^ (-k) := by
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [zpow_neg]
+
+namespace IsGenericQuantumParameter
+
+/-- At a generic parameter in a division ring of characteristic not two, a signed power
+`ε q ^ m` is an integral power of `q` only for the positive sign. -/
 theorem eq_one_of_units_mul_zpow_eq_zpow [NeZero (2 : K)] {q : K}
     (hq : IsGenericQuantumParameter q) {ε : ℤˣ} {m n : ℤ} (h : ((ε : ℤ) : K) * q ^ m = q ^ n) :
     ε = 1 := by
   rcases Int.units_eq_one_or ε with rfl | rfl
   · rfl
   exfalso
+  simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul] at h
   have hsq : q ^ (m * 2) = q ^ (n * 2) := by
-    rw [zpow_mul, zpow_mul, ← h, zpow_two, zpow_two]
-    push_cast
-    ring
+    rw [zpow_mul, zpow_mul, ← h, even_two.neg_zpow]
   obtain rfl : m = n := by have := hq.zpow_injective hsq; omega
   have : (2 : K) * q ^ m = 0 := by
-    push_cast at h
-    linear_combination -h
+    rw [two_mul, ← neg_eq_iff_add_eq_zero, h]
   exact mul_ne_zero two_ne_zero (zpow_ne_zero m hq.ne_zero) this
 
-/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m`
-determines both the sign `ε` and the exponent `m`. -/
+/-- At a generic parameter in a division ring of characteristic not two, a signed power
+`ε q ^ m` determines both the sign `ε` and the exponent `m`. -/
 theorem units_mul_zpow_inj [NeZero (2 : K)] {q : K} (hq : IsGenericQuantumParameter q)
     {ε δ : ℤˣ} {m n : ℤ} :
     ((ε : ℤ) : K) * q ^ m = ((δ : ℤ) : K) * q ^ n ↔ ε = δ ∧ m = n := by
@@ -111,39 +157,10 @@ theorem units_mul_zpow_inj [NeZero (2 : K)] {q : K} (hq : IsGenericQuantumParame
   refine ⟨rfl, hq.zpow_injective (mul_left_cancel₀ ?_ h)⟩
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
 
-/-- A generic quantum parameter is not equal to its inverse. -/
-theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
-  intro h
-  have hsq : q ^ 2 = 1 := by
-    calc
-      q ^ 2 = q * q := pow_two q
-      _ = q⁻¹ * q := congrArg (· * q) h
-      _ = 1 := inv_mul_cancel₀ hq.ne_zero
-  exact hq.pow_ne_one (n := 2) (by omega) hsq
-
 /-- The denominator in the symmetric quantum-integer formula is nonzero at a generic
 parameter. -/
 theorem sub_inv_ne_zero {q : K} (hq : IsGenericQuantumParameter q) : q - q⁻¹ ≠ 0 :=
   sub_ne_zero.mpr hq.ne_inv
-
-/-- The inverse of a generic quantum parameter is generic. -/
-theorem inv {q : K} (hq : IsGenericQuantumParameter q) : IsGenericQuantumParameter q⁻¹ := by
-  refine ⟨inv_ne_zero hq.ne_zero, fun n hn hpow => ?_⟩
-  apply hq.pow_ne_one hn
-  simpa [inv_pow] using congrArg Inv.inv hpow
-
-/-- A positive natural power of a generic quantum parameter is generic. -/
-theorem pow {q : K} (hq : IsGenericQuantumParameter q) {k : ℕ} (hk : 0 < k) :
-    IsGenericQuantumParameter (q ^ k) := by
-  refine ⟨pow_ne_zero k hq.ne_zero, fun n hn hpow => ?_⟩
-  rw [← pow_mul] at hpow
-  exact hq.pow_ne_one (Nat.mul_pos hk hn) hpow
-
-/-- For nonzero `c`, the multiples `q ^ n * c` of a generic quantum parameter `q` are pairwise
-distinct. -/
-theorem pow_mul_injective {q c : K} (hq : IsGenericQuantumParameter q) (hc : c ≠ 0) :
-    Function.Injective fun n : ℕ => q ^ n * c :=
-  fun _ _ h => hq.pow_injective (mul_right_cancel₀ hc h)
 
 end IsGenericQuantumParameter
 
@@ -151,6 +168,10 @@ end IsGenericQuantumParameter
 theorem ne_zero_of_sub_inv_ne_zero {q : K} (hq : q - q⁻¹ ≠ 0) : q ≠ 0 := by
   rintro rfl
   simp at hq
+
+end DivisionRing
+
+variable {K : Type*} [Field K]
 
 /-- The symmetric quantum integer `[r]_q = (q^r - q⁻ʳ) / (q - q⁻¹)`. -/
 noncomputable def quantumInteger (q : K) (r : ℤ) : K :=
@@ -187,26 +208,24 @@ theorem sub_inv_mul_quantumInteger_natCast (q : K) (n : ℕ) :
 /-- Replacing the parameter by its inverse leaves every quantum integer unchanged. -/
 @[simp] theorem quantumInteger_inv (q : K) (r : ℤ) :
     quantumInteger q⁻¹ r = quantumInteger q r := by
-  simp only [quantumInteger, inv_zpow, inv_inv]
-  rw [← zpow_neg q r, ← zpow_neg q (-r)]
-  have hinv_sub : q⁻¹ - q = -(q - q⁻¹) := by ring
-  rw [hinv_sub, div_neg]
-  ring_nf
+  simp only [quantumInteger_def, inv_zpow', inv_inv, neg_neg]
+  rw [← neg_sub q, div_neg, ← neg_div, neg_sub]
+
+/-- The addition formula `[a + b]_q = q^a [b]_q + q^(-b) [a]_q`. -/
+theorem quantumInteger_add (q : K) (a b : ℤ) :
+    quantumInteger q (a + b) = q ^ a * quantumInteger q b + q ^ (-b) * quantumInteger q a := by
+  by_cases hq : q - q⁻¹ = 0
+  · simp [quantumInteger, hq]
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  simp only [quantumInteger, neg_add, zpow_add₀ hq0]
+  field_simp
+  ring
 
 /-- The first-order recurrence used to obtain the Laurent expansion of positive quantum
 integers. -/
 theorem quantumInteger_natCast_succ {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
     quantumInteger q (n + 1) = q⁻¹ * quantumInteger q n + q ^ n := by
-  have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  simp only [quantumInteger]
-  rw [zpow_add₀ hq0]
-  have hneg_succ : -((n : ℤ) + 1) = -(n : ℤ) + -1 := by omega
-  rw [hneg_succ, zpow_add₀ hq0]
-  simp only [zpow_one, zpow_neg, zpow_natCast]
-  rw [div_eq_iff hq]
-  rw [add_mul, mul_assoc, div_mul_cancel₀ _ hq]
-  field_simp [hq0]
-  ring
+  rw [quantumInteger_add, quantumInteger_one hq, zpow_neg_one, zpow_natCast, mul_one, add_comm]
 
 /-- For a positive index, the quantum integer is a Laurent polynomial with coefficients one:
 `[n]_q = q^(1-n) + q^(3-n) + ⋯ + q^(n-1)`. -/
@@ -239,28 +258,12 @@ theorem sum_range_pow_two_mul_eq_pow_mul_quantumInteger {q : K} (hq : q - q⁻¹
 theorem quantumInteger_add_one (q : K) (r : ℤ) :
     quantumInteger q (r + 1) =
       (q + q⁻¹) * quantumInteger q r - quantumInteger q (r - 1) := by
-  by_cases hq : q - q⁻¹ = 0
-  · simp [quantumInteger, hq]
-  have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  simp only [quantumInteger]
-  rw [zpow_add₀ hq0, zpow_sub₀ hq0]
-  have hneg_add_one : -(r + 1) = -r + -1 := by omega
-  rw [hneg_add_one, zpow_add₀ hq0]
-  have hneg_sub_one : -(r - 1) = -r - -1 := by omega
-  rw [hneg_sub_one, zpow_sub₀ hq0]
-  simp only [zpow_one, zpow_neg]
-  field_simp [hq0, hq]
-  ring
-
-/-- The addition formula `[a + b]_q = q^a [b]_q + q^(-b) [a]_q`. -/
-theorem quantumInteger_add (q : K) (a b : ℤ) :
-    quantumInteger q (a + b) = q ^ a * quantumInteger q b + q ^ (-b) * quantumInteger q a := by
-  by_cases hq : q - q⁻¹ = 0
-  · simp [quantumInteger, hq]
-  have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  simp only [quantumInteger, neg_add, zpow_add₀ hq0]
-  field_simp
-  ring
+  -- Add the addition formula at `b = 1` and at `b = -1`; the `q ^ r [1]_q` terms cancel.
+  have h₁ := quantumInteger_add q r 1
+  have h₂ := quantumInteger_add q r (-1)
+  rw [quantumInteger_neg, ← sub_eq_add_neg, neg_neg, zpow_one] at h₂
+  rw [zpow_neg_one] at h₁
+  linear_combination h₁ + h₂
 
 /-- The difference of two quantum integers as a determinant of neighbouring quantum integers:
 `[a - b]_q = [a]_q [b + 1]_q - [a + 1]_q [b]_q`. -/
@@ -271,6 +274,7 @@ theorem quantumInteger_sub (q : K) (a b : ℤ) :
   by_cases hq : q - q⁻¹ = 0
   · simp [quantumInteger, hq]
   have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  -- `field_simp` uses this to clear the denominators `q ^ 2 - 1` left by `q - q⁻¹`.
   have h2 : q ^ 2 - 1 ≠ 0 := by
     intro h
     apply hq
@@ -279,18 +283,6 @@ theorem quantumInteger_sub (q : K) (a b : ℤ) :
   simp only [quantumInteger, zpow_sub₀ hq0, zpow_add₀ hq0, zpow_neg, neg_add, zpow_one]
   field_simp
   ring
-
-/-- Every nonzero-index quantum integer is nonzero at a generic parameter. -/
-theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : ℤ}
-    (hr : r ≠ 0) : quantumInteger q r ≠ 0 := by
-  rw [quantumInteger, div_ne_zero_iff]
-  refine ⟨fun h => ?_, hq.sub_inv_ne_zero⟩
-  have hfin : ¬IsOfFinOrder q := by
-    rw [isOfFinOrder_iff_pow_eq_one]
-    rintro ⟨n, hn, hpow⟩
-    exact hq.pow_ne_one hn hpow
-  refine hfin (isOfFinOrder_iff_zpow_eq_one.mpr ⟨r - -r, by omega, ?_⟩)
-  rw [zpow_sub₀ hq.ne_zero, sub_eq_zero.mp h, div_self (zpow_ne_zero _ hq.ne_zero)]
 
 /-- For `q ≠ 0`, the quantum integer `[r]_q` vanishes exactly when `q^(2r) = 1`. When
 `q - q⁻¹ = 0`, that is `q = ±1`, both sides hold: `[r]_q = 0` by the field convention. -/
@@ -307,18 +299,22 @@ theorem quantumInteger_eq_zero_iff {q : K} (hq : q ≠ 0) (r : ℤ) :
     zpow_neg]
   constructor <;> intro h <;> field_simp at h ⊢ <;> linear_combination h
 
-end TauCeti
+/-- Every nonzero-index quantum integer is nonzero at a generic parameter. -/
+theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : ℤ}
+    (hr : r ≠ 0) : quantumInteger q r ≠ 0 := by
+  rw [ne_eq, quantumInteger_eq_zero_iff hq.ne_zero]
+  exact fun h => hr (by have := hq.zpow_injective (h.trans (zpow_zero q).symm); omega)
 
-namespace RingHom
+section Map
 
-open TauCeti
-
-variable {K L : Type*} [Field K] [Field L]
+variable {L F : Type*} [Field L] [FunLike F K L] [RingHomClass F K L]
 
 /-- Ring homomorphisms between fields commute with the quantum integers. -/
 @[simp]
-theorem map_quantumInteger (φ : K →+* L) (q : K) (r : ℤ) :
+theorem map_quantumInteger (φ : F) (q : K) (r : ℤ) :
     φ (quantumInteger q r) = quantumInteger (φ q) r := by
   simp [quantumInteger_def]
 
-end RingHom
+end Map
+
+end TauCeti

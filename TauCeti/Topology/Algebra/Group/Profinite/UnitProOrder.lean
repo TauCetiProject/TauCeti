@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.Topology.Algebra.Group.Profinite.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Data.Nat.Cast.Prime
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 
@@ -148,10 +149,10 @@ theorem hasUnitProOrder_of_preconnectedSpace [SeparatelyContinuousMul U] [Precon
   exact isUnit_one
 
 /-- Every compact group with separately continuous multiplication has invertible pro-order in any
-`ℚ`-algebra. -/
-theorem hasUnitProOrder_of_algebra_rat [SeparatelyContinuousMul U] [CompactSpace U]
-    [Algebra ℚ A] : HasUnitProOrder A U :=
-  fun _ ↦ isUnit_natCast_of_ne_zero Nat.card_pos.ne'
+algebra over a characteristic-zero semifield `K`, for instance in every `ℚ`-algebra. -/
+theorem hasUnitProOrder_of_algebra (K : Type*) [Semifield K] [CharZero K] [Algebra K A]
+    [SeparatelyContinuousMul U] [CompactSpace U] : HasUnitProOrder A U :=
+  fun _ ↦ isUnit_natCast_of_ne_zero K Nat.card_pos.ne'
 
 /-- Invertible pro-order is preserved along semiring homomorphisms. -/
 theorem HasUnitProOrder.map {B : Type w} [Semiring B] (hU : HasUnitProOrder A U) (f : A →+* B) :
