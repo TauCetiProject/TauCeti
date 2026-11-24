@@ -107,8 +107,11 @@ theorem coe_mem_finiteAdelicIdeal_of_mem_completedIdeal {N : Ideal R} (hN : N �
       (Algebra.linearMap (integralAdeles R K) 𝔸ᶠ[R, K])
   have hle : completedIdeal K N ≤ J := by
     refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
+    rw [Ideal.mem_comap, Submodule.mem_comap, Algebra.linearMap_apply,
+      ← IsScalarTower.algebraMap_apply]
     exact (algebraMap_mem_finiteAdelicIdeal_mk0_iff hN r).mpr hr
-  exact hle hx
+  have hxJ := hle hx
+  rwa [Submodule.mem_comap, Algebra.linearMap_apply, Subalgebra.algebraMap_apply] at hxJ
 
 variable (K) in
 /-- For `N ≠ ⊥`, the completion `NÔ` is open in the integral finite adeles. -/

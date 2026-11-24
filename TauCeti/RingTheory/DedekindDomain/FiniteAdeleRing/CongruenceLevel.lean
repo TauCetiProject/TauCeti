@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CompletedIdeal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Congruence levels of `GL₂` over the integral finite adeles
@@ -102,27 +103,21 @@ theorem mem_range_integralGL_iff {g : GL (Fin n) 𝔸ᶠ[R, K]} :
   Matrix.GeneralLinearGroup.mem_range_map_val_iff (integralAdeles R K) g
 
 variable (K n) in
-/-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: it is an embedding because
-`Ô ⊆ 𝔸_f` is, and its range is cut out by the open conditions that the finitely many entries
-and inverse entries be integral. -/
+/-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: through the homeomorphisms
+`pointsContinuousMulEquiv`, it is the change of coefficients of the points of `GL_n` along the
+open embedding `Ô ⊆ 𝔸_f`. -/
 theorem isOpenEmbedding_integralGL : IsOpenEmbedding (integralGL K n (R := R)) := by
-  have hemb : IsEmbedding (integralGL K n (R := R)) := by
-    rw [integralGL, Matrix.GeneralLinearGroup.map]
-    exact IsEmbedding.units_map IsEmbedding.subtypeVal.matrix_map
-  refine ⟨hemb, ?_⟩
-  have hset : Set.range (integralGL K n (R := R)) =
-      (⋂ i, ⋂ j, (fun g : GL (Fin n) 𝔸ᶠ[R, K] ↦ (g : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j) ⁻¹'
-        integralAdeles R K) ∩
-      ⋂ i, ⋂ j, (fun g : GL (Fin n) 𝔸ᶠ[R, K] ↦ (↑g⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j) ⁻¹'
-        integralAdeles R K := by
-    ext g
-    rw [← MonoidHom.coe_range, SetLike.mem_coe, mem_range_integralGL_iff]
-    simp only [Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage, SetLike.mem_coe]
-  rw [hset]
-  exact .inter (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
-      (isOpen_integralAdeles R K).preimage (Units.continuous_val.matrix_elem i j))
-    (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
-      (isOpen_integralAdeles R K).preimage (Units.continuous_coe_inv.matrix_elem i j))
+  have h : ⇑(integralGL K n (R := R)) = pointsContinuousMulEquiv (k := R) n ∘
+      AlgHom.mapValue (H := coordinateHopfAlgebra R n) (integralAdeles R K).val ∘
+        (pointsContinuousMulEquiv (k := R) n).symm := by
+    funext g
+    rw [Function.comp_apply, Function.comp_apply, pointsContinuousMulEquiv_apply,
+      pointsMulEquiv_mapValue, pointsContinuousMulEquiv_symm_apply, MulEquiv.apply_symm_apply,
+      integralGL, AlgHom.toRingHom_eq_coe]
+  rw [h]
+  exact (pointsContinuousMulEquiv n).isOpenEmbedding.comp
+    ((AlgHom.isOpenEmbedding_mapValue (isOpen_integralAdeles R K).isOpenEmbedding_subtypeVal).comp
+      (pointsContinuousMulEquiv n).symm.isOpenEmbedding)
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is continuous. -/
@@ -184,11 +179,24 @@ theorem mem_map_integralGL_iff {H : Subgroup (GL (Fin n) (integralAdeles R K))}
       ∃ (hg : ∀ i j, (g : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
         (∀ i j, (↑g⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
           P (Matrix.of fun i j ↦ ⟨_, hg i j⟩) := by
+  -- Reading the entries of the image of `h ∈ GL_n(Ô)` back in `Ô` recovers `h`.
+  have hof (h : GL (Fin n) (integralAdeles R K))
+      (hh : ∀ i j, (integralGL K n h : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) :
+      (Matrix.of fun i j ↦ (⟨_, hh i j⟩ : integralAdeles R K)) = h := by
+    refine Matrix.ext fun i j ↦ Subtype.ext ?_
+    simp only [Matrix.of_apply, integralGL_apply]
   rw [Subgroup.mem_map]
   refine ⟨?_, fun ⟨hg, hg', h⟩ ↦ ?_⟩
   · rintro ⟨g, hg, rfl⟩
-    exact ⟨fun i j ↦ (g i j).property, fun i j ↦ (g⁻¹ i j).property, (hH g).mp hg⟩
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, ?_⟩
+    · rw [integralGL_apply]
+      exact (g i j).property
+    · rw [integralGL_inv_apply]
+      exact (g⁻¹ i j).property
+    · rw [hof]
+      exact (hH g).mp hg
   · obtain ⟨g, rfl⟩ := MonoidHom.mem_range.mp (mem_range_integralGL_iff.mpr ⟨hg, hg'⟩)
+    rw [hof] at h
     exact ⟨g, (hH g).mpr h, rfl⟩
 
 /-- Entrywise membership in `K(N)`: integral entries, integral inverse entries, and every entry of
@@ -199,10 +207,10 @@ theorem mem_principalLevel_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
         (∀ i j, (↑g⁻¹ : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
           ∀ i j, (⟨_, hg i j⟩ - (1 : Matrix (Fin 2) (Fin 2) (integralAdeles R K)) i j :
             integralAdeles R K) ∈ completedIdeal K N := by
-  rw [principalLevel_eq_map_ker]
-  exact mem_map_integralGL_iff 2
+  rw [principalLevel_eq_map_ker, mem_map_integralGL_iff 2
     (P := fun M ↦ ∀ i j, M i j - (1 : Matrix (Fin 2) (Fin 2) _) i j ∈ completedIdeal K N)
-    fun _ ↦ Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff _
+    fun _ ↦ Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff _]
+  simp only [Matrix.of_apply]
 
 /-- Entrywise membership in `K₁(N)`: integral entries, integral inverse entries, `c ∈ NÔ` and
 `d - 1 ∈ NÔ`. -/
@@ -211,17 +219,21 @@ theorem mem_level1_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
       ∃ (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
         (∀ i j, (↑g⁻¹ : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
           (⟨_, hg 1 0⟩ : integralAdeles R K) ∈ completedIdeal K N ∧
-            (⟨_, hg 1 1⟩ - 1 : integralAdeles R K) ∈ completedIdeal K N :=
-  mem_map_integralGL_iff 2
-    (P := fun M ↦ M 1 0 ∈ completedIdeal K N ∧ M 1 1 - 1 ∈ completedIdeal K N) fun _ ↦ GL2K1.mem_iff
+            (⟨_, hg 1 1⟩ - 1 : integralAdeles R K) ∈ completedIdeal K N := by
+  rw [level1_def, mem_map_integralGL_iff 2
+    (P := fun M ↦ M 1 0 ∈ completedIdeal K N ∧ M 1 1 - 1 ∈ completedIdeal K N)
+    fun _ ↦ GL2K1.mem_iff]
+  simp only [Matrix.of_apply]
 
 /-- Entrywise membership in `K₀(N)`: integral entries, integral inverse entries and `c ∈ NÔ`. -/
 theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
     g ∈ level0 K N ↔
       ∃ (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
         (∀ i j, (↑g⁻¹ : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
-          (⟨_, hg 1 0⟩ : integralAdeles R K) ∈ completedIdeal K N :=
-  mem_map_integralGL_iff 2 (P := fun M ↦ M 1 0 ∈ completedIdeal K N) fun _ ↦ GL2K0.mem_iff
+          (⟨_, hg 1 0⟩ : integralAdeles R K) ∈ completedIdeal K N := by
+  rw [level0_def, mem_map_integralGL_iff 2 (P := fun M ↦ M 1 0 ∈ completedIdeal K N)
+    fun _ ↦ GL2K0.mem_iff]
+  simp only [Matrix.of_apply]
 
 variable (K)
 
@@ -297,12 +309,6 @@ private theorem isCompact_map_integralGL [CompactSpace (GL (Fin n) (integralAdel
   exact hH.isCompact.image (continuous_integralGL K n)
 
 variable [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
-
-/-- With finite residue fields, `GL_n(Ô)` is compact. -/
-instance compactSpace_gl_integralAdeles : CompactSpace (GL (Fin n) (integralAdeles R K)) := by
-  have : CompactSpace (Matrix (Fin n) (Fin n) (integralAdeles R K)) :=
-    inferInstanceAs (CompactSpace (Fin n → Fin n → integralAdeles R K))
-  infer_instance
 
 /-- With finite residue fields and `N ≠ ⊥`, `K(N)` is compact: the kernel of reduction modulo the
 open ideal `NÔ` is an open, hence closed, subgroup of the compact group `GL₂(Ô)`. -/
