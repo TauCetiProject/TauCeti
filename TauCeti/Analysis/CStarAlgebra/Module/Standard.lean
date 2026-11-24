@@ -21,7 +21,7 @@ inner product `unop ⟪x, y⟫_{Aᵐᵒᵖ} = ∑' n, star (x n) * y n`, and nor
 `‖x‖ = √‖∑' n, star (x n) * x n‖`. Like `A` itself, `StandardHilbertModule A` is full over `A`.
 
 While the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences satisfying
-`Summable (fun n ↦ ‖x n‖ ^ 2)` embeds contractively and with dense range into
+`Summable (fun n ↦ ‖x n‖ ^ 2)` includes contractively and injectively with dense range into
 `StandardHilbertModule A` via `HilbertDirectSum.ofLp`, unconditional convergence of
 `∑' n, star (x n) * x n` in the norm topology of `A` is strictly weaker than scalar
 square-summability of `‖x n‖` in general; see

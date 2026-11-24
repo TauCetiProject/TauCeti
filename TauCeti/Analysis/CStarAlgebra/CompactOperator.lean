@@ -37,7 +37,6 @@ under the Loewner order inherited from `H →L[ℂ] H`. -/
 noncomputable instance instStarOrderedRingCompactOperatorStarSubalgebra
     {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H] :
     StarOrderedRing (compactOperatorStarSubalgebra ℂ H) :=
-  letI : StarModule ℝ (H →L[ℂ] H) := StarModule.complexToReal
   Subtype.starOrderedRing (𝕜 := ℂ) (compactOperatorStarSubalgebra ℂ H)
 
 end TauCeti

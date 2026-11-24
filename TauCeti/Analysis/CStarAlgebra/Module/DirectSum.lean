@@ -32,7 +32,7 @@ Every element `x` is the unconditional norm sum `∑' i, single A E i (x i)` of 
 so finitely supported families are dense; when `ι` is finite, `HilbertDirectSum A E` agrees
 isometrically and inner-product-preservingly with `C⋆ᵐᵒᵈ(A, Π i, E i)`. Finally, the `ℓ²` sum
 `lp E 2` of families whose squared coordinate norms are summable (`Summable (fun i ↦ ‖x i‖ ^ 2)`)
-embeds contractively, injectively, and with dense range into `HilbertDirectSum A E`, and agrees
+includes contractively, injectively, and with dense range into `HilbertDirectSum A E`, and agrees
 isometrically with `HilbertDirectSum ℂ E` via `equivLp` when `A = ℂ`. Right Hilbert `B`-modules are
 covered throughout by taking `A = Bᵐᵒᵖ`.
 
@@ -731,22 +731,16 @@ variable {A ι : Type*} {E : ι → Type*}
 theorem norm_evalCLM_le (i : ι) : ‖evalCLM A E i‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
-/-! #### Contractive dense embedding of the `ℓ²` sum `lp E 2` -/
+/-! #### Contractive injective inclusion of the `ℓ²` sum `lp E 2` with dense range -/
 
 variable (A E) in
-/-- The `ℓ²` sum `lp E 2` of families with `Summable (fun i ↦ ‖x i‖ ^ 2)` embeds contractively
-into `HilbertDirectSum A E`. -/
+/-- The contractive injective inclusion with dense range from the `ℓ²` sum `lp E 2` of families
+with `Summable (fun i ↦ ‖x i‖ ^ 2)` into `HilbertDirectSum A E`. -/
 def ofLp : lp E 2 →L[ℂ] HilbertDirectSum A E :=
   LinearMap.mkContinuous
     { toFun := fun x ↦ ⟨⇑x, x.prop.summable_inner_self⟩
-      map_add' := fun _ _ ↦ by
-        ext i
-        rw [add_apply, mk_apply, mk_apply, mk_apply]
-        simp
-      map_smul' := fun _ _ ↦ by
-        ext i
-        rw [smul_complex_apply, mk_apply, mk_apply]
-        simp [Pi.smul_apply] }
+      map_add' := fun _ _ ↦ by ext i; rfl
+      map_smul' := fun _ _ ↦ by ext i; rfl }
     1 fun x ↦ by
       have hsq : ‖∑' i, inner A (x i) (x i)‖ ≤ ‖x‖ ^ 2 := by
         calc ‖∑' i, inner A (x i) (x i)‖
@@ -826,12 +820,8 @@ equivalent to the `ℓ²` sum `lp E 2` (inverse to `ofLp ℂ E`). -/
 def equivLp : HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2 where
   toFun x := ⟨⇑x, memℓp_two x⟩
   invFun z := ofLp ℂ E z
-  map_add' _ _ := by
-    apply ofLp_injective (A := ℂ)
-    rw [map_add]
-    ext i
-    simp
-  map_smul' _ _ := by ext i; simp [Pi.smul_apply]
+  map_add' _ _ := by ext i; rfl
+  map_smul' _ _ := by ext i; rfl
   left_inv _ := by ext i; simp
   right_inv _ := by ext i; simp
   norm_map' x := by
@@ -862,15 +852,13 @@ theorem equivLp_symm_toContinuousLinearMap :
 
 @[simp]
 theorem equivLp_ofLp (x : lp E 2) : equivLp E (ofLp ℂ E x) = x := by
-  rw [← equivLp_symm_toContinuousLinearMap, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry]
-  exact (equivLp E).apply_symm_apply x
+  ext i
+  simp
 
 @[simp]
 theorem ofLp_equivLp (x : HilbertDirectSum ℂ E) : ofLp ℂ E (equivLp E x) = x := by
-  rw [← equivLp_symm_toContinuousLinearMap, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry]
-  exact (equivLp E).symm_apply_apply x
+  ext i
+  simp
 
 @[simp]
 theorem equivLp_single [DecidableEq ι] (i : ι) (y : E i) :

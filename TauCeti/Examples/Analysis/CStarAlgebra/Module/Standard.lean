@@ -15,13 +15,14 @@ import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
 # Strictness of the Banach `ℓ²` inclusion into `StandardHilbertModule K(ℓ²(ℕ, ℂ))`
 
 For a C⋆-algebra `A`, the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences whose squared
-coordinate norms are summable (`Summable (fun n ↦ ‖x n‖ ^ 2)`) embeds contractively and with dense
-range into `TauCeti.StandardHilbertModule A` via `TauCeti.HilbertDirectSum.ofLp`. Following Lance
-(*Hilbert C⋆-Modules*, Chapter 1, p. 7), this file shows that the inclusion is not surjective in
-general: for the nonunital C⋆-algebra `TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ)` of
-compact operators on `ℓ²(ℕ, ℂ)`, the sequence `a n = (√(n + 1))⁻¹ • P_n` of scaled rank-one
-coordinate projections satisfies `∑' n, star (a n) * a n = diag((n + 1)⁻¹)` unconditionally in
-operator norm, yet `∑ n, ‖a n‖ ^ 2 = ∑ n, (n + 1)⁻¹` diverges.
+coordinate norms are summable (`Summable (fun n ↦ ‖x n‖ ^ 2)`) includes contractively and
+injectively with dense range into `TauCeti.StandardHilbertModule A` via
+`TauCeti.HilbertDirectSum.ofLp`. Following Lance (*Hilbert C⋆-Modules*, Chapter 1, p. 7), this
+file shows that the inclusion is not surjective in general: for the nonunital C⋆-algebra
+`TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ)` of compact operators on `ℓ²(ℕ, ℂ)`, the
+sequence `a n = (√(n + 1))⁻¹ • P_n` of scaled rank-one coordinate projections satisfies
+`∑' n, star (a n) * a n = diag((n + 1)⁻¹)` unconditionally in operator norm, yet
+`∑ n, ‖a n‖ ^ 2 = ∑ n, (n + 1)⁻¹` diverges.
 
 ## Main declarations
 
@@ -51,14 +52,13 @@ private theorem antitone_inv_add_one :
     Antitone (fun n : ℕ ↦ (⟨((n : ℝ) + 1)⁻¹, by positivity⟩ : ℝ≥0)) := fun m n hmn ↦
   Subtype.mk_le_mk.mpr <| inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_right hmn 1)
 
-private def harmonicDiag : ℓ^∞(ℕ, ℂ) :=
+private abbrev harmonicDiag : ℓ^∞(ℕ, ℂ) :=
   lp.ofAntitone ℂ antitone_inv_add_one
 
 private theorem tendsto_norm_harmonicDiag :
     Tendsto (fun n : ℕ ↦ ‖harmonicDiag n‖) cofinite (𝓝 0) := by
   rw [Nat.cofinite_eq_atTop]
   refine tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n ↦ ?_
-  unfold harmonicDiag
   rw [one_div]
   exact (lp.norm_ofAntitone_apply ℂ antitone_inv_add_one n).symm
 
@@ -95,7 +95,6 @@ private theorem star_mul_self_harmonicCoord (n : ℕ) :
     by_cases hi : i = n
     · subst i
       have hpos : 0 ≤ (n : ℝ) + 1 := by positivity
-      unfold harmonicDiag
       simp only [e, lp.single_apply_self, ← Complex.ofReal_mul]
       rw [← mul_inv, Real.mul_self_sqrt hpos]
       exact (lp.ofAntitone_apply ℂ antitone_inv_add_one n).symm
@@ -135,8 +134,8 @@ theorem exists_notMem_range_ofLp_compactOperator :
   simp_rw [mkOfSummable_apply, norm_harmonicCoord_sq] at hmem
   exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp hmem)
 
-/-- The contractive dense embedding `lp (fun _ : ℕ ↦ K(ℓ²)) 2 →L[ℂ] StandardHilbertModule K(ℓ²)`
-is not surjective. -/
+/-- The contractive injective inclusion with dense range
+`lp (fun _ : ℕ ↦ K(ℓ²)) 2 →L[ℂ] StandardHilbertModule K(ℓ²)` is not surjective. -/
 theorem not_surjective_ofLp_compactOperator :
     ¬ Function.Surjective
       (HilbertDirectSum.ofLp
