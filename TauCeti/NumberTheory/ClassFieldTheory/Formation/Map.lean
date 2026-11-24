@@ -142,27 +142,27 @@ coefficients of `F` to coefficients of `F'`. -/
 def mapCoeffEquiv (hf : IsOpenMap f)
     (e : TopRep.res f F'.module ≅ F.module) :
     F.level L.top ≃ₗ[ℤ] F'.level (L.map f hf).top where
-  toFun x := ⟨e.inv.hom x.1, by
+  toFun x := ⟨e.inv.hom x.val, by
     rw [Formation.mem_level]
     intro g hg
     rcases hg with ⟨g, hg, rfl⟩
     rw [F'.toRep_ρ_apply]
     calc
-      _ = e.inv.hom (F.module.ρ g x.1) := (TopRep.hom_comm_apply e.inv g x.1).symm
-      _ = e.inv.hom x.1 := congrArg e.inv.hom (F.mem_level.1 x.property g hg)⟩
-  invFun x := ⟨e.hom.hom x.1, by
+      _ = e.inv.hom (F.module.ρ g x.val) := (TopRep.hom_comm_apply e.inv g x.val).symm
+      _ = e.inv.hom x.val := congrArg e.inv.hom (F.mem_level.1 x.property g hg)⟩
+  invFun x := ⟨e.hom.hom x.val, by
     rw [Formation.mem_level]
     intro g hg
     have hx := F'.mem_level.1 x.property (f g) ⟨g, hg, rfl⟩
     rw [F.toRep_ρ_apply]
     calc
-      _ = e.hom.hom (F'.module.ρ (f g) x.1) :=
-        (TopRep.hom_comm_apply e.hom g x.1).symm
-      _ = e.hom.hom x.1 := congrArg e.hom.hom hx⟩
-  left_inv x := Subtype.ext (e.inv_hom_id_apply x.1)
-  right_inv x := Subtype.ext (e.hom_inv_id_apply x.1)
-  map_add' x y := Subtype.ext (map_add e.inv.hom x.1 y.1)
-  map_smul' c x := Subtype.ext (map_zsmul e.inv.hom c x.1)
+      _ = e.hom.hom (F'.module.ρ (f g) x.val) :=
+        (TopRep.hom_comm_apply e.hom g x.val).symm
+      _ = e.hom.hom x.val := congrArg e.hom.hom hx⟩
+  left_inv x := Subtype.ext (e.inv_hom_id_apply x.val)
+  right_inv x := Subtype.ext (e.hom_inv_id_apply x.val)
+  map_add' x y := Subtype.ext (map_add e.inv.hom x.val y.val)
+  map_smul' c x := Subtype.ext (map_zsmul e.inv.hom c x.val)
 
 /-- On underlying coefficient modules, `mapCoeffEquiv` is the inverse of the chosen restriction
 isomorphism. -/
@@ -183,7 +183,7 @@ theorem mapCoeffEquiv_rep_mk (hf : IsOpenMap f) (hfi : Function.Injective f)
   apply Subtype.ext
   rw [mapCoeffEquiv_apply_coe, NormalLayer.rep_ρ_mk_apply_coe,
     NormalLayer.rep_ρ_mk_apply_coe, mapCoeffEquiv_apply_coe, mapGroundEquiv_apply_coe]
-  exact TopRep.hom_comm_apply e.inv u x.1
+  exact TopRep.hom_comm_apply e.inv u x.val
 
 /-- Transporting a normal layer along an injective open homomorphism gives a layer isomorphism
 whenever the source formation is the restriction of the target formation. -/

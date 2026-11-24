@@ -119,7 +119,7 @@ theorem isIntegralBasis_iff_isIntegral_iff_repr_mem {ι : Type*} (b : Basis ι F
     mem_integralClosure_iff]
   have hmem (y : F) :
       y ∈ Set.range (algebraMap (P.integers) F) ↔ y ∈ P.integers :=
-    ⟨fun ⟨r, hr⟩ ↦ hr ▸ r.2, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
+    ⟨fun ⟨r, hr⟩ ↦ hr ▸ r.property, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
   simp only [hmem, iff_comm]
 
 /-- Every vector of an integral basis at `P` is integral over `𝒪_P`. -/

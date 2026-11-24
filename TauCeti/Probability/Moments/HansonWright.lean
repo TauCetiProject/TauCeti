@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.Realify
 public import TauCeti.Probability.Independence.Decoupling
-public import TauCeti.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 import TauCeti.Analysis.Complex.Euclidean.Matrix
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
+import TauCeti.Probability.Moments.SubGaussian.LinearForms
 import TauCeti.Probability.Moments.SubExponential
 
 /-!
@@ -293,6 +294,43 @@ theorem measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
       (div_le_div_of_nonneg_left ht (by positivity) (mul_le_mul_of_nonneg_left hMop hK_pos.le))
     linarith
 
+/-- If the squared Frobenius norm and operator norm are almost surely bounded by `r⁻¹`,
+deviations `0 ≤ u ≤ K` lie in the quadratic regime of Hanson–Wright, with exponent proportional
+to `r`. -/
+theorem measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_inv_bound
+    {A : Ω → Matrix ι ι ℝ} (hA_meas : AEMeasurable A P)
+    (hAX : IndepFun A (fun ω i ↦ X i ω) P) {r : ℝ}
+    (hA_frob : ∀ᵐ ω ∂P, ∑ i, ∑ j, A ω i j ^ 2 ≤ r⁻¹)
+    (hA_op : ∀ᵐ ω ∂P, ‖A ω‖ ≤ r⁻¹) {u : ℝ} (hu : 0 ≤ u) (huK : u ≤ K) :
+    P.real {ω | u < |(fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) -
+        ∑ i, A ω i i * P[fun ω' ↦ X i ω' ^ 2]|} ≤
+      2 * exp (-(u ^ 2 * r) / (3200 * (K : ℝ) ^ 2)) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  by_cases hr : r ≤ 0
+  · exact (measureReal_mono (Set.subset_univ _)).trans (by
+      rw [probReal_univ]
+      have hexp : 1 ≤ exp (-(u ^ 2 * r) / (3200 * (K : ℝ) ^ 2)) :=
+        one_le_exp_iff.mpr (div_nonneg (neg_nonneg.mpr (mul_nonpos_of_nonneg_of_nonpos
+          (sq_nonneg u) hr)) (by positivity))
+      linarith)
+  have hr : 0 < r := lt_of_not_ge hr
+  by_cases hK : K = 0
+  · simp only [hK, NNReal.coe_zero, pow_two, mul_zero, div_zero, exp_zero, mul_one]
+    exact (measureReal_mono (Set.subset_univ _)).trans (by rw [probReal_univ]; norm_num)
+  have hKp : 0 < (K : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hK)
+  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
+    hX hA_meas hAX hA_frob hA_op hu
+  have hmin : u ^ 2 * r / (K : ℝ) ^ 2 ≤
+      min (u ^ 2 / ((K : ℝ) ^ 2 * r⁻¹)) (u / ((K : ℝ) * r⁻¹)) := by
+    refine le_min (by field_simp; rfl) ?_
+    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
+    field_simp
+    nlinarith [mul_nonneg hu (sub_nonneg.mpr huK)]
+  refine hbound.trans ?_
+  gcongr
+  convert mul_le_mul_of_nonpos_left hmin (by norm_num : -(1 / 3200 : ℝ) ≤ 0) using 1
+  ring
+
 end RealHansonWright
 
 section ComplexHansonWright
@@ -488,10 +526,87 @@ theorem measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le
   by_cases hu_half : 1 / 2 ≤ u
   · exact ((measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ).trans (by linarith)
   · have hu_cube : 4 * exp (-(1 / 50176) * m) = 4 * u ^ 2 * u := by
-      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_nat_mul]; congr 2; push_cast; ring
+      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_natCast_mul]; congr 2; push_cast; ring
     have hu_nonneg : 0 ≤ u := (exp_pos _).le
     exact h4.trans (hu_cube.trans_le
       (mul_le_mul_of_nonneg_right (by nlinarith) (exp_pos _).le))
+
+private lemma complex_hw_slice_bound (M : Matrix ι ι ℂ) {F op t : ℝ}
+    (hF : ∑ i, ∑ j, ‖M i j‖ ^ 2 ≤ F) (hop : ‖M‖ ≤ op) :
+    P.real {ω | t < ‖star (fun i ↦ Z i ω) ⬝ᵥ M *ᵥ (fun i ↦ Z i ω) -
+        ∑ i, M i i * ((P[fun ω' ↦ ‖Z i ω'‖ ^ 2] : ℝ) : ℂ)‖} ≤
+      2 * exp (-(1 / 150528) * min (t ^ 2 / ((K : ℝ) ^ 2 * F))
+        (t / ((K : ℝ) * op))) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  by_cases ht : 0 ≤ t
+  swap
+  · have hop0 : 0 ≤ op := (norm_nonneg M).trans hop
+    have hmin : min (t ^ 2 / ((K : ℝ) ^ 2 * F)) (t / ((K : ℝ) * op)) ≤ 0 :=
+      (min_le_right _ _).trans (div_nonpos_of_nonpos_of_nonneg (le_of_not_ge ht) (by positivity))
+    have he : 1 ≤ exp (-(1 / 150528) *
+        min (t ^ 2 / ((K : ℝ) ^ 2 * F)) (t / ((K : ℝ) * op))) :=
+      one_le_exp_iff.2 (by linarith)
+    exact ((measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ).trans (by linarith)
+  rcases eq_or_ne K 0 with rfl | hK
+  · simp only [NNReal.coe_zero, sq, zero_mul, div_zero, min_self, mul_zero, exp_zero, mul_one]
+    exact (measureReal_mono (Set.subset_univ _)).trans (by simp)
+  have hKpos : 0 < (K : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hK)
+  by_cases hM0 : M = 0
+  · simp only [hM0, Matrix.zero_mulVec, dotProduct_zero, Matrix.zero_apply, zero_mul,
+      Finset.sum_const_zero, sub_zero, norm_zero, not_lt.2 ht, Set.ofPred_false, measureReal_empty]
+    positivity
+  have hnorm : 0 < ‖M‖ := norm_pos_iff.2 hM0
+  obtain ⟨i, j, hij⟩ : ∃ i j, M i j ≠ 0 := by
+    by_contra! h
+    exact hM0 (Matrix.ext h)
+  have hsq : 0 < ∑ i, ∑ j, ‖M i j‖ ^ 2 :=
+    (sq_pos_of_pos (norm_pos_iff.2 hij)).trans_le
+      ((Finset.single_le_sum (fun j _ ↦ sq_nonneg ‖M i j‖) (Finset.mem_univ j)).trans
+        (Finset.single_le_sum (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ sq_nonneg ‖M i j‖)
+          (Finset.mem_univ i)))
+  have htail := hindep.measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le hZ M ht
+  rw [(hindep.integral_star_dotProduct_mulVec_eq_sum_diag hZ M).2] at htail
+  refine htail.trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) zero_le_two)
+  have hmin := min_le_min
+    (div_le_div_of_nonneg_left (sq_nonneg t) (mul_pos (sq_pos_of_pos hKpos) hsq)
+      (mul_le_mul_of_nonneg_left hF (sq_nonneg (K : ℝ))))
+    (div_le_div_of_nonneg_left ht (mul_pos hKpos hnorm)
+      (mul_le_mul_of_nonneg_left hop hKpos.le))
+  linarith
+
+/-- **Complex conditional Hanson–Wright inequality.** The random matrix is independent of the
+whole coordinate vector. Its squared Frobenius norm and Euclidean operator norm need only be
+bounded almost everywhere. The center is expressed using the coordinate second moments; no
+integrability of the random matrix is required. -/
+theorem measureReal_norm_star_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
+    {A : Ω → Matrix ι ι ℂ} (hA : AEMeasurable A P)
+    (hAZ : IndepFun A (fun ω i ↦ Z i ω) P)
+    {F op : ℝ} (hF : ∀ᵐ ω ∂P, ∑ i, ∑ j, ‖A ω i j‖ ^ 2 ≤ F)
+    (hop : ∀ᵐ ω ∂P, ‖A ω‖ ≤ op) {t : ℝ} :
+    P.real {ω | t < ‖star (fun i ↦ Z i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ Z i ω) -
+        ∑ i, A ω i i * ((P[fun ω' ↦ ‖Z i ω'‖ ^ 2] : ℝ) : ℂ)‖} ≤
+      2 * exp (-(1 / 150528) * min (t ^ 2 / ((K : ℝ) ^ 2 * F))
+        (t / ((K : ℝ) * op))) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have hZvec : AEMeasurable (fun ω i ↦ Z i ω) P :=
+    .of_eval fun i ↦ (integrable_of_hasSubgaussianMGF_re_star_mul (hZ i)).aemeasurable
+  let E : Set (Matrix ι ι ℂ × (ι → ℂ)) :=
+    {p | t < ‖star p.2 ⬝ᵥ p.1 *ᵥ p.2 -
+      ∑ i, p.1 i i * ((P[fun ω ↦ ‖Z i ω‖ ^ 2] : ℝ) : ℂ)‖}
+  have hE : MeasurableSet E := by
+    apply measurableSet_lt measurable_const
+    simp only [dotProduct, Matrix.mulVec]
+    fun_prop
+  apply hAZ.measureReal_preimage_le hA hZvec hE
+  have hfm : Measurable (fun M : Matrix ι ι ℂ ↦ ∑ i, ∑ j, ‖M i j‖ ^ 2) := by fun_prop
+  have hom : Measurable (fun M : Matrix ι ι ℂ ↦ ‖M‖) := by fun_prop
+  have hm : MeasurableSet {M : Matrix ι ι ℂ |
+      (∑ i, ∑ j, ‖M i j‖ ^ 2) ≤ F ∧ ‖M‖ ≤ op} :=
+    (measurableSet_le hfm measurable_const).inter (measurableSet_le hom measurable_const)
+  filter_upwards [(ae_map_iff hA hm).2 (hF.and hop)] with M hM
+  rw [map_measureReal_apply_of_aemeasurable hZvec (hE.preimage measurable_prodMk_left)]
+  exact complex_hw_slice_bound hindep hZ M hM.1 hM.2
+
 end SubGaussian
 
 /-- **Complex Hanson–Wright inequality for bounded mean-zero coordinates.** -/

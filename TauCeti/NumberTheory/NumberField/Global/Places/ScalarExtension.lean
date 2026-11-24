@@ -61,7 +61,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- The scalar extension of `V` to `ℝ` through the embedding belonging to a real place. -/
 abbrev RealScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :=
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  letI : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   ℝ ⊗[K] V
 
 end TauCeti
@@ -98,7 +98,7 @@ theorem finrank_atRealPlace
     (w : {w : InfinitePlace K // w.IsReal}) :
     Module.finrank ℝ (RealScalarExtension (V := V) w) =
       Module.finrank K V := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   simp
 
 end TauCeti

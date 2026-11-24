@@ -11,22 +11,11 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 /-!
 # Vanishing density quotients for outer measures
 
-General comparison lemmas for vanishing quotients `μ (S r) / d r → 0` along an arbitrary filter `l`
-with arbitrary denominator `d : α → ℝ≥0∞`. Because only monotonicity, finite subadditivity, and
-vanishing on null sets are used, all statements are phrased for `OuterMeasureClass`, covering both
-outer measures and measures without requiring a measurable space or metric structure.
-
-## Main results
-
-* `TauCeti.tendsto_measure_div_of_subset`: monotonicity of vanishing density quotients.
-* `TauCeti.tendsto_measure_div_of_subset_union`: finite subadditivity of vanishing density
-  quotients.
-* `TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`: subsets of null sets have vanishing
-  density quotients against arbitrary test sets.
-* `TauCeti.tendsto_measure_inter_div_of_eventually_notMem`: sets eventually avoided along a filter
-  have vanishing density quotients against any family shrinking into that filter.
-* `TauCeti.tendsto_measure_symmDiff_inter_div_of_eventuallyEq`: symmetric differences of sets that
-  agree eventually along a filter have vanishing density quotients against any shrinking family.
+Comparison lemmas for vanishing quotients `μ (S r) / d r → 0` along a filter `l`
+(`TauCeti.tendsto_measure_div_of_subset`, `TauCeti.tendsto_measure_div_of_subset_union`,
+`TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`,
+`TauCeti.tendsto_measure_inter_div_of_eventually_notMem`, and
+`TauCeti.tendsto_measure_symmDiff_inter_div_of_eventuallyEq`), stated for `OuterMeasureClass`.
 -/
 
 public section

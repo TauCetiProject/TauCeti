@@ -38,28 +38,28 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 exactly when `sigma` is a cone of that subfan. -/
 theorem mem_range_subfanAnalyticMap_iff {sigma : Phi.cones}
     {x : Phi.analyticRealization hPhi} (hx : x ∈ Phi.analyticConeOrbit hPhi sigma) :
-    x ∈ range (Phi.subfanAnalyticMap hPhi S hS hface) ↔ sigma.1 ∈ S := by
+    x ∈ range (Phi.subfanAnalyticMap hPhi S hS hface) ↔ sigma.val ∈ S := by
   rw [Phi.range_subfanAnalyticMap hPhi S hS hface, mem_iUnion]
   constructor
   · rintro ⟨tau, h_tau⟩
     have hle := (Phi.mem_range_analyticAffineChartι_iff hPhi hx).mp h_tau
-    exact hface (by simpa only [subfan_cones] using tau.2)
-      (Phi.isFaceOf_of_le (hS (by simpa only [subfan_cones] using tau.2)) sigma.2 hle)
+    exact hface (by simpa only [subfan_cones] using tau.property)
+      (Phi.isFaceOf_of_le (hS (by simpa only [subfan_cones] using tau.property)) sigma.property hle)
   · intro h_sigma
     let sigma' : (Phi.subfan S hS hface).cones :=
-      ⟨sigma.1, by simpa only [subfan_cones] using h_sigma⟩
+      ⟨sigma.val, by simpa only [subfan_cones] using h_sigma⟩
     exact ⟨sigma', (Phi.mem_range_analyticAffineChartι_iff hPhi hx).2 le_rfl⟩
 
 /-- The invariant open subset associated to the subfan of cones not containing a cone `sigma` is
 the complement of the orbit closure of `sigma`. -/
 theorem range_subfanAnalyticMap_setOf_not_le (sigma : Phi.cones) :
-    range (Phi.subfanAnalyticMap hPhi _ (Phi.setOf_not_le_subset_cones sigma.1)
-        (Phi.setOf_not_le_closedUnderFaces sigma.1)) =
+    range (Phi.subfanAnalyticMap hPhi _ (Phi.setOf_not_le_subset_cones sigma.val)
+        (Phi.setOf_not_le_closedUnderFaces sigma.val)) =
       (closure (Phi.analyticConeOrbit hPhi sigma))ᶜ := by
   ext x
   obtain ⟨tau, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
   refine (Phi.mem_range_subfanAnalyticMap_iff hPhi _ _ _ hx).trans ?_
   rw [mem_compl_iff, Phi.mem_closure_analyticConeOrbit_iff hPhi hx]
-  exact and_iff_right tau.2
+  exact and_iff_right tau.property
 
 end TauCeti.Toric.Fan

@@ -32,8 +32,8 @@ variable {α R : Type*} [LinearOrder α] [NormedCommRing R] [NormOneClass R] {s 
 theorem norm_mu_bot_le (π : NoncrossingPartition s) : ‖mu R ⊥ π‖ ≤ (4 : ℝ) ^ #s := by
   rw [mu_bot_eq_prod]
   calc
-    ‖∏ B ∈ π.1.parts, (-1 : R) ^ (#B - 1) * catalan (#B - 1)‖
-        ≤ ∏ B ∈ π.1.parts, (4 : ℝ) ^ #B := by
+    ‖∏ B ∈ π.val.parts, (-1 : R) ^ (#B - 1) * catalan (#B - 1)‖
+        ≤ ∏ B ∈ π.val.parts, (4 : ℝ) ^ #B := by
       refine (Finset.norm_prod_le _ _).trans
         (prod_le_prod₀ (fun _ _ => norm_nonneg _) fun B _ => ?_)
       calc
@@ -46,7 +46,7 @@ theorem norm_mu_bot_le (π : NoncrossingPartition s) : ‖mu R ⊥ π‖ ≤ (4 
             ((mul_le_mul hsign hcast (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
         _ ≤ (4 : ℝ) ^ (#B - 1) := by exact_mod_cast Nat.catalan_le_four_pow (#B - 1)
         _ ≤ (4 : ℝ) ^ #B := pow_le_pow_right₀ (by norm_num) (Nat.sub_le _ _)
-    _ = (4 : ℝ) ^ #s := by rw [prod_pow_eq_pow_sum, π.1.sum_card_parts]
+    _ = (4 : ℝ) ^ #s := by rw [prod_pow_eq_pow_sum, π.val.sum_card_parts]
 
 /-- An upper-interval Möbius coefficient of `NC(n)` satisfies the same exponential bound. -/
 theorem norm_mu_top_le {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :

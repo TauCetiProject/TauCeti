@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid
+public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Basic
 public import TauCeti.Geometry.Manifold.Category.InvariantForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 
@@ -128,7 +128,7 @@ theorem mpullback_objectDiffeomorph_mem_invariantForms_iff {α : SmoothForm I X 
     Subtype.ext_iff]
   simp only [SmoothForm.coe_mpullback, Subtype.ext_iff, Function.comp_def,
     objectDiffeomorph_apply]
-  exact mpullback_back_left_eq_mpullback_back_right_iff α.1
+  exact mpullback_back_left_eq_mpullback_back_right_iff α.val
 
 /-- A form on the objects of `G ⋉ X` is invariant exactly when every element of `G` preserves the
 corresponding form on `X`. -/
@@ -182,7 +182,7 @@ def invariantFormsEquivQuotient :
           (objectDiffeomorph I ∞ G X).contMDiff)).codRestrict
         (invariantForms I I (isLocalDiffeomorph_source I ∞ G X).contMDiff
           (contMDiff_target I ∞ G X) F k) mpullback_quotientMk_mem_invariantForms with
-      invFun φ := SmoothForm.descend _ (mem_invariantForms_iff_forall_mpullback_smul.1 φ.2)
+      invFun φ := SmoothForm.descend _ (mem_invariantForms_iff_forall_mpullback_smul.1 φ.property)
       left_inv β := by
         symm
         rw [SmoothForm.eq_descend_iff]
@@ -243,7 +243,7 @@ theorem invariantFormsEquivQuotient_wedgeWith {F₁ F₂ F₃ : Type*} [NormedAd
     (ψ : invariantForms I I (isLocalDiffeomorph_source I ∞ G X).contMDiff
       (contMDiff_target I ∞ G X) F₂ l) :
     invariantFormsEquivQuotient I G X F₃ (k + l)
-        ⟨SmoothForm.wedgeWith μ φ ψ, wedgeWith_mem_invariantForms μ φ.2 ψ.2⟩ =
+        ⟨SmoothForm.wedgeWith μ φ ψ, wedgeWith_mem_invariantForms μ φ.property ψ.property⟩ =
       SmoothForm.wedgeWith μ (invariantFormsEquivQuotient I G X F₁ k φ)
         (invariantFormsEquivQuotient I G X F₂ l ψ) := by
   rw [← LinearEquiv.eq_symm_apply]
@@ -259,7 +259,7 @@ theorem invariantFormsEquivQuotient_wedge {l : ℕ}
     (ψ : invariantForms I I (isLocalDiffeomorph_source I ∞ G X).contMDiff
       (contMDiff_target I ∞ G X) ℝ l) :
     invariantFormsEquivQuotient I G X ℝ (k + l)
-        ⟨SmoothForm.wedge φ ψ, wedge_mem_invariantForms φ.2 ψ.2⟩ =
+        ⟨SmoothForm.wedge φ ψ, wedge_mem_invariantForms φ.property ψ.property⟩ =
       SmoothForm.wedge (invariantFormsEquivQuotient I G X ℝ k φ)
         (invariantFormsEquivQuotient I G X ℝ l ψ) := by
   simp only [SmoothForm.wedge_def]

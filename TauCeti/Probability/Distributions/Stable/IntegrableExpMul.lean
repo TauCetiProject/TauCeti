@@ -106,7 +106,7 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
   rw [mem_integrableExpSet_id_stableMeasure_iff_one_zero]
   have hts : β * (s * t) ≤ 0 := by
-    rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+    rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.property ht
   simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using
     integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts
 

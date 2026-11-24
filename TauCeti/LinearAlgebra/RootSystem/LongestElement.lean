@@ -46,7 +46,8 @@ spelled throughout as `(inversions P b w).ncard`.
   and that length is the number of positive roots.
 * `TauCeti.isLeast_ncard_posRoots_longestElement`: `|Φ⁺|` simple reflections spell `w₀`, and no
   fewer do.
-* `TauCeti.longestElement_inv` and `TauCeti.longestElement_sq`: `w₀` is an involution.
+* `TauCeti.longestElement_inv`, `TauCeti.longestElement_sq` and
+  `TauCeti.longestElement_mul_longestElement`: `w₀` is an involution.
 * `TauCeti.inversions_longestElement_mul`: `w₀ w` inverts exactly the positive roots that `w`
   keeps positive; consequently `ℓ(w₀ w) = ℓ(w w₀) = ℓ(w₀) - ℓ(w)`
   (`TauCeti.ncard_inversions_longestElement_mul_add_ncard_inversions` and
@@ -231,6 +232,11 @@ theorem longestElement_sq : longestElement P b ^ 2 = 1 := by
   rw [sq]
   nth_rewrite 2 [← longestElement_inv P b]
   exact mul_inv_cancel _
+
+/-- The longest element is an involution of the root pairing, in the ambient automorphism group. -/
+theorem longestElement_mul_longestElement :
+    (longestElement P b : P.Aut) * longestElement P b = 1 := by
+  rw [← Subgroup.coe_mul, ← sq, longestElement_sq, Subgroup.coe_one]
 
 /-- The longest element acts on the weight space as an involution. -/
 theorem smul_smul_longestElement (x : M) :

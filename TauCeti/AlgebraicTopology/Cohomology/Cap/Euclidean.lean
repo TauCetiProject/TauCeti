@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
+import TauCeti.CategoryTheory.Linear.Int
 
 /-!
 # Capping with the fundamental class of a star-convex compact subset of a vector space
@@ -159,10 +160,7 @@ theorem bijective_singularCap_fundamentalClassOn_of_starConvex {K : Set F} (hK :
     -- `TauCeti.isZero_singularCohomology_complSingleton_of_ne` computes cohomology with the
     -- `ℤ`-linear structure of `ModuleCat ℤ` as a category of modules; it agrees with the one of a
     -- preadditive category, as a `ℤ`-module structure is unique.
-    have : Subsingleton (Linear ℤ (ModuleCat.{0} ℤ)) := ⟨by
-      rintro ⟨_, _, _⟩ ⟨_, _, _⟩
-      congr
-      exact Subsingleton.elim _ _⟩
+    have := Linear.subsingletonInt (ModuleCat.{0} ℤ)
     have h₁ : IsZero (Q.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) := by
       convert isZero_singularCohomology_complSingleton_of_ne (ModuleCat.of ℤ (ULift.{0} ℤ)) L
         (OpenPartialHomeomorph.refl F) hy' hd (by omega : p ≠ d)

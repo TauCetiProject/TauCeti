@@ -92,10 +92,11 @@ private def finiteOn (s : Set X) : Submodule ℂ (MeromorphicFunction X) where
 `s`. -/
 private def evalFiniteOn {x : X} (hx : x ∈ s) : Module.Dual ℂ (finiteOn s) where
   toFun f := (f : MeromorphicFunction X).finitePart x
-  map_add' f g := finitePart_of_eq_coe (add_apply (f.2 x hx) (g.2 x hx))
+  map_add' f g := finitePart_of_eq_coe (add_apply (f.property x hx) (g.property x hx))
   map_smul' c f := by
     refine finitePart_of_eq_coe ?_
-    rw [SetLike.val_smul, Algebra.smul_def, mul_apply (f := algebraMap ℂ _ c) (by simp) (f.2 x hx)]
+    rw [SetLike.val_smul, Algebra.smul_def, mul_apply (f := algebraMap ℂ _ c) (by simp)
+        (f.property x hx)]
     simp
 
 private theorem evalFiniteOn_apply {x : X} (hx : x ∈ s) (f : finiteOn s) :
@@ -111,15 +112,17 @@ theorem exists_forall_ne_infty_and_injOn (hs : s.Finite)
     ∃ f : MeromorphicFunction X, (∀ x ∈ s, f x ≠ ∞) ∧ s.InjOn f := by
   let ι := {q : X × X // q.1 ∈ s ∧ q.2 ∈ s ∧ q.1 ≠ q.2}
   have := (hs.prod hs).to_subtype
-  have : Finite ι := Finite.of_injective (fun q : ι ↦ (⟨q.1, q.2.1, q.2.2.1⟩ : ↥(s ×ˢ s)))
+  have : Finite ι := Finite.of_injective (fun q : ι ↦ (⟨q.val, q.property.1,
+      q.property.2.1⟩ : ↥(s ×ˢ s)))
     fun _ _ h ↦ Subtype.ext (congrArg Subtype.val h :)
   -- The linear form `f ↦ f(x) - f(y)` attached to a pair `x ≠ y` of points of `s`.
-  let D (q : ι) : Module.Dual ℂ (finiteOn s) := evalFiniteOn q.2.1 - evalFiniteOn q.2.2.1
+  let D (q : ι) : Module.Dual ℂ (finiteOn s) := evalFiniteOn q.property.1 - evalFiniteOn
+      q.property.2.1
   obtain ⟨⟨f, hf⟩, hD⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists D fun q ↦ by
-    obtain ⟨g, hg⟩ := hsep q.2.1 q.2.2.1 q.2.2.2
-    obtain ⟨h, hh, hxy⟩ := exists_forall_ne_infty_and_ne hs q.2.1 q.2.2.1 hg
+    obtain ⟨g, hg⟩ := hsep q.property.1 q.property.2.1 q.property.2.2
+    obtain ⟨h, hh, hxy⟩ := exists_forall_ne_infty_and_ne hs q.property.1 q.property.2.1 hg
     refine ⟨⟨h, hh⟩, sub_ne_zero.2 fun he ↦ hxy ?_⟩
-    rw [← coe_finitePart (hh _ q.2.1), ← coe_finitePart (hh _ q.2.2.1)]
+    rw [← coe_finitePart (hh _ q.property.1), ← coe_finitePart (hh _ q.property.2.1)]
     exact congrArg _ he
   refine ⟨f, hf, fun x hx y hy hxy ↦ by_contra fun hne ↦ hD ⟨(x, y), hx, hy, hne⟩ ?_⟩
   rw [LinearMap.sub_apply, evalFiniteOn_apply, evalFiniteOn_apply, finitePart_def, finitePart_def,

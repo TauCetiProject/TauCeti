@@ -81,16 +81,16 @@ theorem isZero_coindBot_zero : IsZero (tateCohomology (coindBot k G X) 0) := by
       rw [H0π_eq_zero_iff, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply,
         LinearMap.mem_range]
       -- An invariant function is constant, with value `c := y 1`.
-      have hconst : ∀ h : G, (y.1).1 h = (y.1).1 1 := fun h ↦ by
-        have h1 := Representation.coind_apply_coe_apply _ _ y.1 h 1
-        rw [y.2 h, one_mul] at h1
+      have hconst : ∀ h : G, (y.val).val h = (y.val).val 1 := fun h ↦ by
+        have h1 := Representation.coind_apply_coe_apply _ _ y.val h 1
+        rw [y.property h, one_mul] at h1
         exact h1.symm
       -- The function supported at `1` with value `c` has norm the constant function `c`.
-      refine ⟨(coindBotEquivPi k G X).symm fun h ↦ if h = 1 then (y.1).1 1 else 0, ?_⟩
+      refine ⟨(coindBotEquivPi k G X).symm fun h ↦ if h = 1 then (y.val).val 1 else 0, ?_⟩
       refine Subtype.ext (funext fun h ↦ ?_)
       have hval : ∀ g : G, (((coindBot k G X).ρ g)
-          ((coindBotEquivPi k G X).symm fun h ↦ if h = 1 then (y.1).1 1 else 0)).1 h =
-            if h * g = 1 then (y.1).1 1 else 0 := fun g ↦ by
+          ((coindBotEquivPi k G X).symm fun h ↦ if h = 1 then (y.val).val 1 else 0)).val h =
+            if h * g = 1 then (y.val).val 1 else 0 := fun g ↦ by
         rw [Representation.coind_apply_coe_apply, coindBotEquivPi_symm_apply_coe]
       rw [hconst h]
       simp only [Representation.norm, LinearMap.sum_apply, Submodule.coe_sum, Finset.sum_apply,
@@ -115,23 +115,23 @@ theorem isZero_coindBot_negOne : IsZero (tateCohomology (coindBot k G X) (-1)) :
       set δ : X → coindBot k G X :=
         fun x ↦ (coindBotEquivPi k G X).symm fun h ↦ if h = 1 then x else 0 with hδ
       clear_value δ
-      have hδval : ∀ (h : G) (x : X), (δ x).1 h = if h = 1 then x else 0 := fun h x ↦ by
+      have hδval : ∀ (h : G) (x : X), (δ x).val h = if h = 1 then x else 0 := fun h x ↦ by
         rw [hδ, coindBotEquivPi_symm_apply_coe]
-      have hδ_apply : ∀ (g h : G) (x : X), (((coindBot k G X).ρ g) (δ x)).1 h =
+      have hδ_apply : ∀ (g h : G) (x : X), (((coindBot k G X).ρ g) (δ x)).val h =
           if h * g = 1 then x else 0 := fun g h x ↦ by
         rw [Representation.coind_apply_coe_apply, hδval]
       -- The norm of `y` vanishes, so the values of `y` sum to zero.
-      have hsum : ∑ g : G, (y.1).1 g = 0 := by
-        have hval : ∀ c : G, (((coindBot k G X).ρ c) y.1).1 1 = (y.1).1 c := fun c ↦ by
+      have hsum : ∑ g : G, (y.val).val g = 0 := by
+        have hval : ∀ c : G, (((coindBot k G X).ρ c) y.val).val 1 = (y.val).val c := fun c ↦ by
           rw [Representation.coind_apply_coe_apply, one_mul]
-        have h0 := congrArg (fun f : coindBot k G X ↦ f.1 1) y.2
+        have h0 := congrArg (fun f : coindBot k G X ↦ f.val 1) y.property
         simp only [Representation.norm, LinearMap.sum_apply, Submodule.coe_sum, Finset.sum_apply,
           hval, ZeroMemClass.coe_zero, Pi.zero_apply] at h0
         exact h0
       -- `y` is the sum over `g` of `ρ g⁻¹ (δ (y g)) - δ (y g)`, each a generator of the
       -- augmentation submodule.
-      have hdecomp : y.1 =
-          ∑ g : G, (((coindBot k G X).ρ g⁻¹) (δ ((y.1).1 g)) - δ ((y.1).1 g)) := by
+      have hdecomp : y.val =
+          ∑ g : G, (((coindBot k G X).ρ g⁻¹) (δ ((y.val).val g)) - δ ((y.val).val g)) := by
         refine Subtype.ext (funext fun h ↦ ?_)
         simp only [Submodule.coe_sum, Submodule.coe_sub, Finset.sum_apply, Pi.sub_apply,
           hδ_apply, hδval, Finset.sum_sub_distrib]
@@ -237,15 +237,15 @@ theorem isZero_tensor_coindBot (M : Rep k G) (n : ℤ) :
   set φ : (coindBot k G X : Type u) →ₗ[k] coindBot k G X :=
     (coindBotEquivPi k G X).symm.toLinearMap ∘ₗ LinearMap.single k (fun _ : G ↦ X) 1 ∘ₗ
       LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G X).toLinearMap with hφ
-  have hφ_coe : ∀ v : coindBot k G X, (φ v).1 = Pi.single 1 (v.1 1) := fun v ↦ by
+  have hφ_coe : ∀ v : coindBot k G X, (φ v).val = Pi.single 1 (v.val 1) := fun v ↦ by
     rw [hφ, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
       LinearMap.single_apply, coindBotEquivPi_symm_apply_coe]
   refine isZero_tensor_of_forall_eq_sum φ (fun f ↦ ?_) M n
   refine Subtype.ext (funext fun h ↦ ?_)
   -- The `g`-th summand is the function supported at `g⁻¹` with value `f g⁻¹`.
-  have hval : ∀ g : G, (((coindBot k G X).ρ g) (φ (((coindBot k G X).ρ g⁻¹) f))).1 h =
-      if h * g = 1 then f.1 g⁻¹ else 0 := fun g ↦ by
+  have hval : ∀ g : G, (((coindBot k G X).ρ g) (φ (((coindBot k G X).ρ g⁻¹) f))).val h =
+      if h * g = 1 then f.val g⁻¹ else 0 := fun g ↦ by
     rw [Representation.coind_apply_coe_apply, hφ_coe, Representation.coind_apply_coe_apply, one_mul,
       Pi.single_apply]
   simp only [Submodule.coe_sum, Finset.sum_apply, hval]

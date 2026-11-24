@@ -173,13 +173,8 @@ canonical quotient projection. -/
 @[simp]
 theorem lift_comp_mk {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    (lift ψ hψ).comp (mk rels) = ψ := by
-  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
-  -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
-    (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
-  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
+    (lift ψ hψ).comp (mk rels) = ψ :=
+  ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented profinite group computes on classes as the original
 map. -/
@@ -194,11 +189,8 @@ map does on the free generators. -/
 @[simp]
 theorem lift_of {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
-    lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) := by
-  -- Reduce the named generator and lift to the quotient-map composite characterized by
-  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
-  change (lift ψ hψ).comp (mk rels) (freeProfiniteGroup.of x) = _
-  exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProfiniteGroup.of x)
+    lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) :=
+  lift_mk ψ hψ (freeProfiniteGroup.of x)
 
 /-- Two continuous homomorphisms out of a presented profinite group are equal if they agree after
 precomposition with its quotient map. -/
@@ -586,13 +578,8 @@ canonical quotient projection. -/
 @[simp]
 theorem lift_comp_mk {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
-    (lift ψ hψ).comp (mk p rels) = ψ := by
-  -- Unfold the presentation's lift and map only far enough to apply Mathlib's quotient
-  -- factorization equation.
-  change (ContinuousMonoidHom.quotientLift ψ (Subgroup.normalClosure rels).topologicalClosure
-    (topologicalClosure_normalClosure_le_ker hψ)).comp
-      (Subgroup.quotientMkContinuousMonoidHom (Subgroup.normalClosure rels).topologicalClosure) = ψ
-  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
+    (lift ψ hψ).comp (mk p rels) = ψ :=
+  ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation through a presented pro-`p` group computes on classes as the original
 map. -/
@@ -607,11 +594,8 @@ map does on the free generators. -/
 @[simp]
 theorem lift_of {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
-    lift ψ hψ (of p rels x) = ψ (freeProP.of x) := by
-  -- Reduce the named generator and lift to the quotient-map composite characterized by
-  -- `lift_comp_mk`; these definitions compute by unfolding to the corresponding quotient maps.
-  change (lift ψ hψ).comp (mk p rels) (freeProP.of x) = _
-  exact DFunLike.congr_fun (lift_comp_mk ψ hψ) (freeProP.of x)
+    lift ψ hψ (of p rels x) = ψ (freeProP.of x) :=
+  lift_mk ψ hψ (freeProP.of x)
 
 /-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree after
 precomposition with its quotient map. -/
@@ -977,6 +961,7 @@ theorem presentedProP.mk_freeProPGen (i : ℕ) :
     presentedProP.mk p rels (freeProPGen p n i) = presentedProPGen p n rels i :=
   (rfl)
 
+variable {n} in
 /-- In range, `presentedProPGen p n rels i` is the `i`-th canonical generator. -/
 @[simp]
 theorem presentedProPGen_of_lt {i : ℕ} (h : i < n) :
@@ -988,11 +973,13 @@ theorem presentedProPGen_of_lt {i : ℕ} (h : i < n) :
 theorem presentedProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : presentedProPGen p n rels i = 1 := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_eq_one_of_le p h, map_one]
 
+variable {n} in
 /-- On the values of `Fin n`, `presentedProPGen p n rels` is the canonical generator. -/
 theorem presentedProPGen_val (i : Fin n) :
     presentedProPGen p n rels i = presentedProP.of p rels i := by
   rw [← presentedProP.mk_freeProPGen, freeProPGen_val, presentedProP.mk_of]
 
+variable {p n rels} in
 /-- The value of a homomorphism on the `ℕ`-indexed generators of a presented group. -/
 theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
     [FunLike F (presentedProP p (Fin n) rels) K]
@@ -1000,7 +987,7 @@ theorem map_presentedProPGen {K F : Type*} [MulOneClass K]
     φ (presentedProPGen p n rels i) =
       if h : i < n then φ (presentedProP.of p rels ⟨i, h⟩) else 1 := by
   split_ifs with h
-  · rw [presentedProPGen_of_lt p n rels h]
+  · rw [presentedProPGen_of_lt p rels h]
   · rw [presentedProPGen_eq_one_of_le p n rels (not_lt.mp h), map_one]
 
 /-- The quotient map carries the tuple `freeProPGen` to the tuple `presentedProPGen`: the
@@ -1011,6 +998,7 @@ theorem presentedProP.mk_comp_freeProPGen :
     ⇑(presentedProP.mk p rels) ∘ freeProPGen p n = presentedProPGen p n rels :=
   funext (presentedProP.mk_freeProPGen p n rels)
 
+variable {p n rels} in
 /-- A continuous homomorphism of the presented group, pulled back to the free group along the
 quotient map, takes on the `ℕ`-indexed free generators its values on `presentedProPGen`. -/
 theorem presentedProP.comp_mk_freeProPGen {K : Type*} [Monoid K] [TopologicalSpace K]

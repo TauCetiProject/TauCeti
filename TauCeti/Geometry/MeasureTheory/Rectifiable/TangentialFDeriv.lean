@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.ApproximateTangent
+public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.TangentCone.Haar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.NormDet
-import TauCeti.Analysis.InnerProductSpace.RangeProjection
-import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Geometry.Euclidean.Volume.Density
-import TauCeti.MeasureTheory.Constructions.BorelSpace.IsOpenUnits
 import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
@@ -25,10 +23,13 @@ import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 A map `g : V → W` has **tangential derivative** `L : P →L[ℝ] W` along `E ⊆ V` at `x` on an
 approximate tangent `k`-plane `P` (`TauCeti.HasTangentialFDerivAt`, `TauCeti.tangentialFDeriv`) if
 points of `E ∩ closedBall x r` with Taylor error above `ε * dist z x` have `k`-density zero. Along
-antilipschitz charts, tangential derivatives are unique with Lipschitz norm bound, chain rule, and
-Jacobian factorization (`HasFDerivWithinAt.hasTangentialFDerivAt_unique`,
+antilipschitz charts, tangential derivatives are unique with Lipschitz norm bound, chain rule,
+Gram-inverse ambient formula, and Jacobian factorization
+(`HasFDerivWithinAt.hasTangentialFDerivAt_unique`,
+`HasFDerivWithinAt.tangentialFDeriv_comp_orthogonalProjectionOnto_eq`,
 `HasFDerivWithinAt.normDet_tangentialFDeriv_mul_eq`), yielding Rademacher differentiability and
 measurability (`TauCeti.CountablyRectifiable.ae_existsUnique_hasTangentialFDerivAt`,
+`TauCeti.CountablyRectifiable.aemeasurable_tangentialFDeriv_comp_orthogonalProjectionOnto`,
 `TauCeti.CountablyRectifiable.aemeasurable_normDet_tangentialFDeriv`).
 
 ## References
@@ -62,17 +63,16 @@ structure HasTangentialFDerivAt (k : ℕ) (g : V → W) (P : Submodule ℝ V)
 theorem hasTangentialFDerivAt_iff {k : ℕ} {g : V → W} {P : Submodule ℝ V}
     [P.HasOrthogonalProjection] {L : P →L[ℝ] W} {E : Set V} {x : V} :
     HasTangentialFDerivAt k g P L E x ↔ IsApproxTangentPlane k E P x ∧
-      ∀ ε > (0 : ℝ), Tendsto (fun r =>
-        μHE[k] {z ∈ E ∩ closedBall x r |
-          ε * dist z x < ‖g z - g x - L (P.orthogonalProjectionOnto (z - x))‖} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
-  ⟨fun h => ⟨h.1, h.2⟩, fun h => ⟨h.1, h.2⟩⟩
+      ∀ ε > (0 : ℝ), Tendsto (fun r => μHE[k] {z ∈ E ∩ closedBall x r |
+        ε * dist z x < ‖g z - g x - L (P.orthogonalProjectionOnto (z - x))‖} /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
+  ⟨fun h => ⟨h.isApproxTangentPlane, h.tendsto_outside_error_div⟩, fun ⟨h1, h2⟩ => ⟨h1, h2⟩⟩
 
 /-- No map has a tangential derivative along the empty set. -/
 @[simp] theorem not_hasTangentialFDerivAt_empty (k : ℕ) (g : V → W) (P : Submodule ℝ V)
     [P.HasOrthogonalProjection] (L : P →L[ℝ] W) (x : V) :
-    ¬ HasTangentialFDerivAt k g P L (∅ : Set V) x := fun h =>
-  not_isApproxTangentPlane_empty k P x h.isApproxTangentPlane
+    ¬ HasTangentialFDerivAt k g P L (∅ : Set V) x :=
+  fun h => not_isApproxTangentPlane_empty k P x h.isApproxTangentPlane
 
 /-- The canonical tangential derivative of `g : V → W` along `E` at `x` (`0` if not unique). -/
 noncomputable def tangentialFDeriv (k : ℕ) (g : V → W) (E : Set V) (x : V) :
@@ -104,8 +104,7 @@ theorem tangentialFDeriv_of_not_existsUnique {k : ℕ} {g : V → W} {E : Set V}
     tangentialFDeriv k g (∅ : Set V) x = 0 :=
   tangentialFDeriv_of_not_existsUnique fun ⟨_, h, _⟩ => not_hasTangentialFDerivAt_empty k g _ _ x h
 
-/-- The `0`-dimensional tangential derivative vanishes identically, since
-`approxTangentPlane 0 E x = ⊥`. -/
+/-- The `0`-dimensional tangential derivative vanishes, as `approxTangentPlane 0 E x = ⊥`. -/
 @[simp] theorem tangentialFDeriv_zero_left (g : V → W) (E : Set V) (x : V) :
     tangentialFDeriv 0 g E x = 0 := by
   have : Subsingleton (approxTangentPlane 0 E x) := by rw [approxTangentPlane_zero]; infer_instance
@@ -122,8 +121,7 @@ private theorem existsUnique_and_apply_eq_of_unique {α : Type*} {k : ℕ} {g : 
     @Φ (approxTangentPlane k E x) inferInstance inferInstance (tangentialFDeriv k g E x) =
       @Φ P hL.isApproxTangentPlane.finiteDimensional inst L := by
   have heq := (approxTangentPlane_eq_of_existsUnique hP hL.isApproxTangentPlane).symm
-  subst heq
-  cases Subsingleton.elim inst inferInstance
+  subst heq; cases Subsingleton.elim inst inferInstance
   exact ⟨⟨L, hL, huniq⟩, by rw [tangentialFDeriv_eq_of_existsUnique ⟨L, hL, huniq⟩ hL]⟩
 
 /-- Transporting unique tangential differentiability from `(P, L)` to `approxTangentPlane`. -/
@@ -136,11 +134,9 @@ theorem existsUnique_hasTangentialFDerivAt_of_unique {k : ℕ} {g : V → W} {P 
       HasTangentialFDerivAt k g (approxTangentPlane k E x) L' E x :=
   (existsUnique_and_apply_eq_of_unique (fun _ _ _ _ => ()) hP hL huniq).1
 
-/-- Evaluating any `FiniteDimensional`-parametric functional `Φ` on
-`(approxTangentPlane k E x, tangentialFDeriv k g E x)` agrees with `Φ P L` for any unique witness
-`(P, L)`. -/
-theorem tangentialFDeriv_apply_eq_of_unique {α : Type*} {k : ℕ} {g : V → W}
-    {P : Submodule ℝ V} [FiniteDimensional ℝ P] {L : P →L[ℝ] W} {E : Set V} {x : V}
+/-- Evaluating `Φ` on `(approxTangentPlane k E x, tangentialFDeriv k g E x)` via `(P, L)`. -/
+theorem tangentialFDeriv_apply_eq_of_unique {α : Type*} {k : ℕ} {g : V → W} {P : Submodule ℝ V}
+    [FiniteDimensional ℝ P] {L : P →L[ℝ] W} {E : Set V} {x : V}
     (Φ : ∀ (Q : Submodule ℝ V) [FiniteDimensional ℝ Q], (Q →L[ℝ] W) → α)
     (hP : ∃! Q : Submodule ℝ V, IsApproxTangentPlane k E Q x)
     (hL : HasTangentialFDerivAt k g P L E x)
@@ -159,29 +155,10 @@ theorem tangentialFDeriv_comp_orthogonalProjectionOnto_eq_of_unique {k : ℕ} {g
   have := hL.isApproxTangentPlane.finiteDimensional
   tangentialFDeriv_apply_eq_of_unique (fun Q _ M => M.comp Q.orthogonalProjectionOnto) hP hL huniq
 
-/-- Identifying `‖tangentialFDeriv k g E x‖` from a unique witness `(P, L)`. -/
-theorem norm_tangentialFDeriv_eq_of_unique {k : ℕ} {g : V → W} {P : Submodule ℝ V}
-    [P.HasOrthogonalProjection] {L : P →L[ℝ] W} {E : Set V} {x : V}
-    (hP : ∃! Q : Submodule ℝ V, IsApproxTangentPlane k E Q x)
-    (hL : HasTangentialFDerivAt k g P L E x)
-    (huniq : ∀ L' : P →L[ℝ] W, HasTangentialFDerivAt k g P L' E x → L' = L) :
-    ‖tangentialFDeriv k g E x‖ = ‖L‖ :=
-  have := hL.isApproxTangentPlane.finiteDimensional
-  tangentialFDeriv_apply_eq_of_unique (fun _ _ M => ‖M‖) hP hL huniq
-
-/-- Identifying `(tangentialFDeriv k g E x).normDet` from a unique witness `(P, L)`. -/
-theorem normDet_tangentialFDeriv_eq_of_unique {W₀ : Type*} [NormedAddCommGroup W₀]
-    [InnerProductSpace ℝ W₀] {k : ℕ} {g : V → W₀} {P : Submodule ℝ V} [FiniteDimensional ℝ P]
-    {L : P →L[ℝ] W₀} {E : Set V} {x : V} (hP : ∃! Q : Submodule ℝ V, IsApproxTangentPlane k E Q x)
-    (hL : HasTangentialFDerivAt k g P L E x)
-    (huniq : ∀ L' : P →L[ℝ] W₀, HasTangentialFDerivAt k g P L' E x → L' = L) :
-    (tangentialFDeriv k g E x).normDet = L.normDet :=
-  tangentialFDeriv_apply_eq_of_unique (fun _ _ (M : _ →L[ℝ] W₀) => M.normDet) hP hL huniq
-
 /-- **Ambient relative differentiability within `E` implies tangential differentiability.** -/
-theorem _root_.HasFDerivWithinAt.hasTangentialFDerivAt
-    {k : ℕ} {g : V → W} {D : V →L[ℝ] W} {P : Submodule ℝ V} [P.HasOrthogonalProjection]
-    {E : Set V} {x : V} (hg : HasFDerivWithinAt g D E x) (hP : IsApproxTangentPlane k E P x) :
+theorem _root_.HasFDerivWithinAt.hasTangentialFDerivAt {k : ℕ} {g : V → W} {D : V →L[ℝ] W}
+    {P : Submodule ℝ V} [P.HasOrthogonalProjection] {E : Set V} {x : V}
+    (hg : HasFDerivWithinAt g D E x) (hP : IsApproxTangentPlane k E P x) :
     HasTangentialFDerivAt k g P (D.comp P.subtypeL) E x where
   isApproxTangentPlane := hP
   tendsto_outside_error_div ε hε := by
@@ -190,7 +167,7 @@ theorem _root_.HasFDerivWithinAt.hasTangentialFDerivAt
     set M := max ‖D‖ 1
     have hM : 0 < M := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (hP.tendsto_outside_cone_div ((ε / 2) / M) (by positivity))
+      (densityZeroOutsideCones_iff.1 hP.densityZeroOutsideCones ((ε / 2) / M) (by positivity))
       (Eventually.of_forall fun _ => zero_le) ?_
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
     refine ENNReal.div_le_div_right (measure_mono ?_) _; rintro z ⟨⟨hzE, hzr⟩, hzerr⟩
@@ -209,15 +186,15 @@ theorem _root_.HasFDerivWithinAt.hasTangentialFDerivAt
     rw [div_mul_eq_mul_div, div_lt_iff₀ hM]; linarith
 
 /-- Ambient Fréchet differentiability at `x` implies tangential differentiability along `E`. -/
-theorem _root_.HasFDerivAt.hasTangentialFDerivAt
-    {k : ℕ} {g : V → W} {D : V →L[ℝ] W} {P : Submodule ℝ V} [P.HasOrthogonalProjection]
-    {E : Set V} {x : V} (hg : HasFDerivAt g D x) (hP : IsApproxTangentPlane k E P x) :
+theorem _root_.HasFDerivAt.hasTangentialFDerivAt {k : ℕ} {g : V → W} {D : V →L[ℝ] W}
+    {P : Submodule ℝ V} [P.HasOrthogonalProjection] {E : Set V} {x : V}
+    (hg : HasFDerivAt g D x) (hP : IsApproxTangentPlane k E P x) :
     HasTangentialFDerivAt k g P (D.comp P.subtypeL) E x :=
   hg.hasFDerivWithinAt.hasTangentialFDerivAt hP
 
 /-- Constant functions have zero tangential derivative on any approximate tangent plane. -/
-theorem hasTangentialFDerivAt_const {k : ℕ} (c : W) {P : Submodule ℝ V}
-    [P.HasOrthogonalProjection] {E : Set V} {x : V} (hP : IsApproxTangentPlane k E P x) :
+theorem hasTangentialFDerivAt_const {k : ℕ} (c : W) {P : Submodule ℝ V} [P.HasOrthogonalProjection]
+    {E : Set V} {x : V} (hP : IsApproxTangentPlane k E P x) :
     HasTangentialFDerivAt k (fun _ => c) P 0 E x := by
   simpa using (hasFDerivWithinAt_const c x E).hasTangentialFDerivAt hP
 
@@ -318,9 +295,7 @@ theorem tangentialFDeriv_congr_of_iff {k : ℕ} {g₁ g₂ : V → W} {E : Set V
   · rw [tangentialFDeriv_of_not_existsUnique h₁,
       tangentialFDeriv_of_not_existsUnique (mt hex.2 h₁)]
 
-/-- If `E₁`, `E₂` admit the same approximate tangent `k`-planes at `x` and `g₁`, `g₂` admit the
-same tangential derivatives, any functional `Φ` takes the same value on
-`(approxTangentPlane, tangentialFDeriv)`. -/
+/-- Dependent congruence of `Φ (approxTangentPlane k E x) (tangentialFDeriv k g E x)`. -/
 theorem tangentialFDeriv_apply_congr_of_iff {α W₀ : Type*} [NormedAddCommGroup W₀]
     [NormedSpace ℝ W₀] {k : ℕ} {g₁ g₂ : V → W₀} {E₁ E₂ : Set V} {x : V}
     (Φ : ∀ (P : Submodule ℝ V) [FiniteDimensional ℝ P], (P →L[ℝ] W₀) → α)
@@ -330,15 +305,12 @@ theorem tangentialFDeriv_apply_congr_of_iff {α W₀ : Type*} [NormedAddCommGrou
     Φ (approxTangentPlane k E₁ x) (tangentialFDeriv k g₁ E₁ x) =
       Φ (approxTangentPlane k E₂ x) (tangentialFDeriv k g₂ E₂ x) := by
   have key {P₁ P₂ : Submodule ℝ V} [inst₁ : FiniteDimensional ℝ P₁]
-      [inst₂ : FiniteDimensional ℝ P₂] {L₁ : P₁ →L[ℝ] W₀} {L₂ : P₂ →L[ℝ] W₀}
-      (heq : P₁ = P₂)
+      [inst₂ : FiniteDimensional ℝ P₂] {L₁ : P₁ →L[ℝ] W₀} {L₂ : P₂ →L[ℝ] W₀} (heq : P₁ = P₂)
       (h₁ : (∃! L, HasTangentialFDerivAt k g₁ P₁ L E₁ x) → HasTangentialFDerivAt k g₁ P₁ L₁ E₁ x)
       (h₀₁ : (¬ ∃! L, HasTangentialFDerivAt k g₁ P₁ L E₁ x) → L₁ = 0)
       (h₂ : (∃! L, HasTangentialFDerivAt k g₂ P₂ L E₂ x) → HasTangentialFDerivAt k g₂ P₂ L₂ E₂ x)
-      (h₀₂ : (¬ ∃! L, HasTangentialFDerivAt k g₂ P₂ L E₂ x) → L₂ = 0) :
-      Φ P₁ L₁ = Φ P₂ L₂ := by
-    subst heq
-    cases Subsingleton.elim inst₁ inst₂
+      (h₀₂ : (¬ ∃! L, HasTangentialFDerivAt k g₂ P₂ L E₂ x) → L₂ = 0) : Φ P₁ L₁ = Φ P₂ L₂ := by
+    subst heq; cases Subsingleton.elim inst₁ inst₂
     have hex := existsUnique_congr (hL P₁)
     by_cases hu : ∃! L, HasTangentialFDerivAt k g₁ P₁ L E₁ x
     · obtain ⟨_, _, huniq⟩ := hex.1 hu
@@ -349,9 +321,8 @@ theorem tangentialFDeriv_apply_congr_of_iff {α W₀ : Type*} [NormedAddCommGrou
     tangentialFDeriv_of_not_existsUnique
 
 /-- `HasTangentialFDerivAt` depends on `E` only up to `k`-density-zero symmetric differences. -/
-theorem hasTangentialFDerivAt_congr_of_tendsto_symmDiff_div
-    {k : ℕ} {g : V → W} {P : Submodule ℝ V} [P.HasOrthogonalProjection]
-    {L : P →L[ℝ] W} {E₁ E₂ : Set V} {x : V}
+theorem hasTangentialFDerivAt_congr_of_tendsto_symmDiff_div {k : ℕ} {g : V → W}
+    {P : Submodule ℝ V} [P.HasOrthogonalProjection] {L : P →L[ℝ] W} {E₁ E₂ : Set V} {x : V}
     (h : Tendsto (fun r => μHE[k] ((E₁ ∆ E₂) ∩ closedBall x r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) :
     HasTangentialFDerivAt k g P L E₁ x ↔ HasTangentialFDerivAt k g P L E₂ x := by
@@ -365,14 +336,13 @@ theorem hasTangentialFDerivAt_congr_of_tendsto_symmDiff_div
 /-- **Invariance under `μHE[k]`-null set modifications** at **every** point `x : V`. -/
 theorem hasTangentialFDerivAt_congr_set_ae {k : ℕ} {g : V → W} {P : Submodule ℝ V}
     [P.HasOrthogonalProjection] {L : P →L[ℝ] W} {E₁ E₂ : Set V} (h : E₁ =ᵐ[μHE[k]] E₂) {x : V} :
-    HasTangentialFDerivAt k g P L E₁ x ↔ HasTangentialFDerivAt k g P L E₂ x := by
+    HasTangentialFDerivAt k g P L E₁ x ↔ HasTangentialFDerivAt k g P L E₂ x :=
   have hnull : μHE[k] (E₁ ∆ E₂) = 0 := measure_union_null (ae_eq_set.1 h).1 (ae_eq_set.1 h).2
-  exact hasTangentialFDerivAt_congr_of_tendsto_symmDiff_div
+  hasTangentialFDerivAt_congr_of_tendsto_symmDiff_div
     (tendsto_measure_inter_div_of_measure_eq_zero Subset.rfl hnull _ _ _)
 
-/-- If `E₁ =ᵐ[μHE[k]] E₂`, any `FiniteDimensional`-parametric functional `Φ` takes the same value
-on `(approxTangentPlane k E₁ x, tangentialFDeriv k g E₁ x)` and
-`(approxTangentPlane k E₂ x, tangentialFDeriv k g E₂ x)` at **every** point `x : V`. -/
+/-- If `E₁ =ᵐ[μHE[k]] E₂`, any functional `Φ` agrees on `(approxTangentPlane, tangentialFDeriv)`
+at **every** point `x : V`. -/
 theorem tangentialFDeriv_apply_congr_set_ae {α W₀ : Type*} [NormedAddCommGroup W₀]
     [NormedSpace ℝ W₀] {k : ℕ} {g : V → W₀} {E₁ E₂ : Set V}
     (Φ : ∀ (P : Submodule ℝ V) [FiniteDimensional ℝ P], (P →L[ℝ] W₀) → α)
@@ -381,20 +351,6 @@ theorem tangentialFDeriv_apply_congr_set_ae {α W₀ : Type*} [NormedAddCommGrou
       Φ (approxTangentPlane k E₂ x) (tangentialFDeriv k g E₂ x) :=
   tangentialFDeriv_apply_congr_of_iff Φ (fun P => isApproxTangentPlane_congr_ae h P x)
     fun _ _ _ => hasTangentialFDerivAt_congr_set_ae h
-
-/-- If `E₁ =ᵐ[μHE[k]] E₂`, `(tangentialFDeriv k g E x).comp orthogonalProjectionOnto` agrees at `x`.
--/
-theorem tangentialFDeriv_comp_orthogonalProjectionOnto_congr_set_ae {k : ℕ} {g : V → W}
-    {E₁ E₂ : Set V} (h : E₁ =ᵐ[μHE[k]] E₂) (x : V) :
-    (tangentialFDeriv k g E₁ x).comp (approxTangentPlane k E₁ x).orthogonalProjectionOnto =
-      (tangentialFDeriv k g E₂ x).comp (approxTangentPlane k E₂ x).orthogonalProjectionOnto :=
-  tangentialFDeriv_apply_congr_set_ae (fun P _ L => L.comp P.orthogonalProjectionOnto) h x
-
-/-- If `E₁ =ᵐ[μHE[k]] E₂`, `(tangentialFDeriv k g E x).normDet` agrees at **every** point `x`. -/
-theorem normDet_tangentialFDeriv_congr_set_ae {W₀ : Type*} [NormedAddCommGroup W₀]
-    [InnerProductSpace ℝ W₀] {k : ℕ} {g : V → W₀} {E₁ E₂ : Set V} (h : E₁ =ᵐ[μHE[k]] E₂) (x : V) :
-    (tangentialFDeriv k g E₁ x).normDet = (tangentialFDeriv k g E₂ x).normDet :=
-  tangentialFDeriv_apply_congr_set_ae (fun P _ (L : P →L[ℝ] W₀) => L.toLinearMap.normDet) h x
 
 /-- `HasTangentialFDerivAt` ignores `k`-density-zero modifications of `g` away from `x` on `E`. -/
 theorem hasTangentialFDerivAt_congr_of_tendsto_ne_div {k : ℕ} {g₁ g₂ : V → W} {P : Submodule ℝ V}
@@ -446,7 +402,6 @@ theorem ae_tangentialFDeriv_congr {k : ℕ} {g₁ g₂ : V → W} {E : Set V}
     (tendsto_measure_inter_div_of_measure_eq_zero Subset.rfl hnull _ _ _)
 
 end Basic
-
 end TauCeti
 
 /-! ### Deterministic uniqueness, chain rule, and Jacobian along parametrizations -/
@@ -470,9 +425,7 @@ private theorem norm_apply_orthogonalProjectionOnto_le_of_hasTangentialFDerivAt
   set M : ℝ := (K : ℝ) + ‖L‖ + 1
   have hM : 0 < M := by positivity
   set η : ℝ := δ / (3 * M)
-  -- Since the directional slice around `r • A u` has positive lower Hausdorff density while
-  -- tangential Taylor errors above `δ / 3` have density zero, pick a witness `z` in the former
-  -- where the error bound holds.
+  -- Pick a point in the positive-density directional slice where the Taylor error is at most `δ/3`.
   have hlow := hf.liminf_euclideanHausdorffMeasure_directional_closedBall_pos hi hs hfs
     (by linarith : ‖A u‖ < 1) (show 0 < η by positivity)
   have herr := (hL.tendsto_outside_error_div (δ / 3) (by positivity)).liminf_eq
@@ -484,8 +437,6 @@ private theorem norm_apply_orthogonalProjectionOnto_le_of_hasTangentialFDerivAt
     filter_upwards [self_mem_nhdsWithin] with r (_ : 0 < r)
     refine ENNReal.div_le_div_right (measure_mono ?_) _; rintro z ⟨hzE, hzd⟩
     exact ⟨hzE, not_le.1 fun hle => hall ⟨r, ‹_›, z, hzE, hzd, hle⟩⟩
-  -- Bound the Lipschitz increment of `g`, the Taylor remainder, and the directional offset from
-  -- `r • A u`.
   have hdist_le : dist z (f x₀) ≤ r * (1 / 2 + η) := by
     rw [dist_eq_norm, show z - f x₀ = (z - f x₀ - r • A u) + r • A u by abel]
     refine (norm_add_le _ _).trans ?_
@@ -509,7 +460,6 @@ private theorem norm_apply_orthogonalProjectionOnto_le_of_hasTangentialFDerivAt
         = ‖r • L (P.orthogonalProjectionOnto (A u))‖ := by
           rw [norm_smul, Real.norm_eq_abs, abs_of_pos hr]
       _ ≤ _ := by rw [heq]; exact (norm_sub_le _ _).trans (by gcongr; exact norm_sub_le _ _)
-  -- Cancel the positive scale `r` after absorbing the `η` and `δ / 3` error terms into `δ`.
   have hKL_η : ((K : ℝ) + ‖L‖) * η < δ / 3 :=
     (mul_lt_mul_of_pos_right (show (K : ℝ) + ‖L‖ < M by simp [M]) (by positivity)).trans_eq
       (by simp only [η]; field_simp)
@@ -534,14 +484,16 @@ theorem opNorm_le_of_hasTangentialFDerivAt
   by_cases hp : p = 0; · simp [hp]
   have : 0 < ‖p‖ := norm_pos_iff.2 hp
   obtain ⟨u₀, hu₀⟩ : ∃ u₀ : U, A u₀ = (p : V) := LinearMap.mem_range.1 <| by
-    simpa only [hf.eq_range_of_isApproxTangentPlane hx₀ hi hs hfs hL.isApproxTangentPlane] using p.2
+    simpa only [hf.eq_range_of_isApproxTangentPlane hx₀ hi hs hfs hL.isApproxTangentPlane]
+      using p.property
   set u : U := (2 * ‖p‖)⁻¹ • u₀
   have hAu_norm : ‖A u‖ = 1 / 2 := by
     rw [map_smul, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), hu₀, Submodule.norm_coe]
     field_simp
   have hproj : P.orthogonalProjectionOnto (A u) = (2 * ‖p‖)⁻¹ • p := Subtype.ext <| by
     rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.coe_smul,
-      P.starProjection_eq_self_iff.2 (by rw [map_smul, hu₀]; exact P.smul_mem _ p.2), map_smul, hu₀]
+      P.starProjection_eq_self_iff.2 (by rw [map_smul, hu₀]; exact P.smul_mem _ p.property),
+      map_smul, hu₀]
   have hhalf := hf.norm_apply_orthogonalProjectionOnto_le_of_hasTangentialFDerivAt hx₀ hi hs hfs
     hg hL hAu_norm
   rw [hproj, map_smul, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)] at hhalf
@@ -623,7 +575,7 @@ theorem tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq
     ContinuousLinearMap.comp_assoc, ContinuousLinearMap.comp_assoc,
     A.ofInjective_symm_comp_orthogonalProjectionOnto_comp hinj, ContinuousLinearMap.comp_id]
 
-/-- **Explicit ambient operator formula**: `B ∘L (A† ∘L A)⁻¹ ∘L A†` in complete `V`. -/
+/-- **Explicit ambient operator formula**: `B ∘L A.gramLeftInverse` in complete `V`. -/
 theorem tangentialFDeriv_comp_orthogonalProjectionOnto_eq [CompleteSpace V]
     (hf : HasFDerivWithinAt f A s x₀) (hx₀ : x₀ ∈ s) (hi : AntilipschitzWith Lf (s.domRestrict f))
     (hs : Tendsto (fun r => volume (s ∩ closedBall x₀ r) / volume (closedBall x₀ r)) (𝓝[>] 0) (𝓝 1))
@@ -633,28 +585,26 @@ theorem tangentialFDeriv_comp_orthogonalProjectionOnto_eq [CompleteSpace V]
     (hgf : HasFDerivWithinAt (g ∘ f) B s x₀) :
     (TauCeti.tangentialFDeriv (finrank ℝ U) g E (f x₀)).comp
       (TauCeti.approxTangentPlane (finrank ℝ U) E (f x₀)).orthogonalProjectionOnto =
-      B.comp ((Ring.inverse (A.adjoint.comp A)).comp A.adjoint) := by
+      B.comp A.gramLeftInverse := by
+  have hcomp := hf.tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq hx₀ hi hs hfs hdiff hgf
   set Q := TauCeti.approxTangentPlane (finrank ℝ U) E (f x₀)
   have hQ : Q = LinearMap.range A.toLinearMap :=
     hf.approxTangentPlane_eq_range_of_tendsto_diff hx₀ hi hs hfs hdiff
-  have hcomp := hf.tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq hx₀ hi hs hfs hdiff hgf
-  have hunit : IsUnit (A.adjoint.comp A) :=
-    (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2
-      (hf.injective_of_tendsto_inter_closedBall_div volume hx₀ hi hs)
+  have hunit : IsUnit (A.adjoint.comp A) := (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2
+    (hf.injective_of_tendsto_inter_closedBall_div volume hx₀ hi hs)
   ext v
-  simp only [ContinuousLinearMap.comp_apply]
-  set u : U := Ring.inverse (A.adjoint.comp A) (A.adjoint v)
+  set u : U := A.gramLeftInverse v
   have hstar : Q.starProjection v = A u := by
     have hcongr : ∀ {P₁ P₂ : Submodule ℝ V} [P₁.HasOrthogonalProjection]
         [P₂.HasOrthogonalProjection], P₁ = P₂ → P₁.starProjection v = P₂.starProjection v := by
       rintro P _ _ _ rfl; rfl
-    rw [hcongr hQ, ContinuousLinearMap.starProjection_range_eq hunit]
-    simp only [ContinuousLinearMap.comp_apply, u]
+    simpa only [ContinuousLinearMap.comp_apply, u] using
+      (hcongr hQ).trans (DFunLike.congr_fun (ContinuousLinearMap.starProjection_range_eq hunit) v)
   have hproj : Q.orthogonalProjectionOnto v = Q.orthogonalProjectionOnto (A u) := Subtype.ext <| by
     rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.coe_orthogonalProjectionOnto_apply,
       hstar, Submodule.starProjection_eq_self_iff.2 (hQ ▸ LinearMap.mem_range_self _ u)]
-  rw [hproj]
-  simpa only [ContinuousLinearMap.comp_apply] using DFunLike.congr_fun hcomp u
+  exact (congrArg (TauCeti.tangentialFDeriv (finrank ℝ U) g E (f x₀)) hproj).trans
+    (DFunLike.congr_fun hcomp u)
 
 /-- **Jacobian factorization**: `(tangentialFDeriv k g E y).normDet * A.normDet = B.normDet`. -/
 theorem normDet_tangentialFDeriv_mul_eq
@@ -667,22 +617,19 @@ theorem normDet_tangentialFDeriv_mul_eq
     (hgf : HasFDerivWithinAt (g ∘ f) B s x₀) :
     (TauCeti.tangentialFDeriv (finrank ℝ U) g E (f x₀)).normDet * A.normDet = B.normDet := by
   have hinj : Injective A := hf.injective_of_tendsto_inter_closedBall_div volume hx₀ hi hs
+  have hcomp := hf.tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq hx₀ hi hs hfs hdiff hgf
   set Q := TauCeti.approxTangentPlane (finrank ℝ U) E (f x₀)
   have hQ : Q = LinearMap.range A.toLinearMap :=
     hf.approxTangentPlane_eq_range_of_tendsto_diff hx₀ hi hs hfs hdiff
-  have hcomp := hf.tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq hx₀ hi hs hfs hdiff hgf
   have hmem : ∀ u, A u ∈ Q := fun u => hQ ▸ LinearMap.mem_range_self _ u
   let A' : U →ₗ[ℝ] Q := A.toLinearMap.codRestrict Q hmem
   have hdim : finrank ℝ U = finrank ℝ Q := by rw [hQ, LinearMap.finrank_range_of_inj hinj]
-  rw [← A.toLinearMap.normDet_codRestrict hmem,
-    ← LinearMap.normDet_comp_of_finrank_eq A' _ hdim]
-  congr 1
-  ext u
+  rw [← A.toLinearMap.normDet_codRestrict hmem, ← LinearMap.normDet_comp_of_finrank_eq A' _ hdim]
+  congr 1; ext u
   have hproj : Q.orthogonalProjectionOnto (A u) = A' u :=
     Q.orthogonalProjectionOnto_mem_subspace_eq_self ⟨A u, hmem u⟩
-  have hu : (TauCeti.tangentialFDeriv (finrank ℝ U) g E (f x₀))
-      (Q.orthogonalProjectionOnto (A u)) = B u := DFunLike.congr_fun hcomp u
-  simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, hproj] using hu
+  exact (congrArg (TauCeti.tangentialFDeriv (finrank ℝ U) g E (f x₀)) hproj.symm).trans
+    (DFunLike.congr_fun hcomp u)
 
 /-- Explicit quotient formula `(tangentialFDeriv k g E (f x₀)).normDet = B.normDet / A.normDet`. -/
 theorem normDet_tangentialFDeriv_eq_div
@@ -701,21 +648,24 @@ theorem normDet_tangentialFDeriv_eq_div
 
 end HasFDerivWithinAt
 
-private theorem ae_chart_good_of_extend {U V W : Type*} [NormedAddCommGroup U]
-    [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V]
-    [BorelSpace V] [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
-    {f : U → V} {g g₀ : V → W} {s : Set U} {E : Set V} {Kf Lf Kg₀ : ℝ≥0}
-    (hf : LipschitzWith Kf f) (hs : MeasurableSet s) (hi : AntilipschitzWith Lf (s.domRestrict f))
-    (hfs : f '' s ⊆ E) (hEm : NullMeasurableSet E μHE[finrank ℝ U])
+section ChartAE
+
+variable {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
+  [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+
+private theorem ae_chart_good_of_extend {f : U → V} {g g₀ : V → W} {s : Set U} {E : Set V}
+    {Kf Lf Kg₀ : ℝ≥0} (hf : LipschitzWith Kf f) (hs : MeasurableSet s)
+    (hi : AntilipschitzWith Lf (s.domRestrict f)) (hfs : f '' s ⊆ E)
+    (hEm : NullMeasurableSet E μHE[finrank ℝ U])
     [IsLocallyFiniteMeasure (μHE[finrank ℝ U].restrict E)]
     (hg₀ : LipschitzWith Kg₀ g₀) (hgg₀ : EqOn g g₀ E) :
-    ∀ᵐ y ∂μHE[finrank ℝ U], y ∈ f '' s →
-      ∃ x ∈ s, f x = y ∧ DifferentiableAt ℝ f x ∧
-        HasFDerivWithinAt (g ∘ f) (fderiv ℝ (g₀ ∘ f) x) s x ∧
-        Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) ∧
-        Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' s) ∩ closedBall (f x) r) /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r)) (𝓝[>] 0) (𝓝 0) := by
+    ∀ᵐ y ∂μHE[finrank ℝ U], y ∈ f '' s → ∃ x ∈ s, f x = y ∧ DifferentiableAt ℝ f x ∧
+      HasFDerivWithinAt (g ∘ f) (fderiv ℝ (g₀ ∘ f) x) s x ∧
+      Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) ∧
+      Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' s) ∩ closedBall (f x) r) /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r)) (𝓝[>] 0) (𝓝 0) := by
   have hcomp : EqOn (g ∘ f) (g₀ ∘ f) s := fun x hx => hgg₀ (hfs (mem_image_of_mem f hx))
   filter_upwards [hf.ae_image_of_ae_volume hs (injOn_iff_injective.2 hi.injective) hEm
     ((hg₀.comp hf).ae_differentiableAt.mono fun _ h _ => h)] with y hy hyfs
@@ -724,13 +674,10 @@ private theorem ae_chart_good_of_extend {U V W : Type*} [NormedAddCommGroup U]
     hdens, hz⟩
 
 /-- **Chart-level tangential differentiability of Lipschitz maps** along bi-Lipschitz patches. -/
-theorem LipschitzWith.ae_existsUnique_hasTangentialFDerivAt_image {U V W : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] [MeasurableSpace U]
-    [BorelSpace U] [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-    [FiniteDimensional ℝ W] {f : U → V} {g : V → W} {s : Set U} {E : Set V} {Kf Lf Kg : ℝ≥0}
-    (hf : LipschitzWith Kf f) (hs : MeasurableSet s) (hi : AntilipschitzWith Lf (s.domRestrict f))
-    (hfs : f '' s ⊆ E) (hEm : NullMeasurableSet E μHE[finrank ℝ U])
+theorem LipschitzWith.ae_existsUnique_hasTangentialFDerivAt_image {f : U → V} {g : V → W}
+    {s : Set U} {E : Set V} {Kf Lf Kg : ℝ≥0} (hf : LipschitzWith Kf f) (hs : MeasurableSet s)
+    (hi : AntilipschitzWith Lf (s.domRestrict f)) (hfs : f '' s ⊆ E)
+    (hEm : NullMeasurableSet E μHE[finrank ℝ U])
     [IsLocallyFiniteMeasure (μHE[finrank ℝ U].restrict E)] (hg : LipschitzOnWith Kg g E) :
     ∀ᵐ y ∂μHE[finrank ℝ U], y ∈ f '' s →
       ∃ x ∈ s, f x = y ∧ DifferentiableAt ℝ f x ∧ DifferentiableWithinAt ℝ (g ∘ f) s x ∧
@@ -752,8 +699,9 @@ theorem LipschitzWith.ae_existsUnique_hasTangentialFDerivAt_image {U V W : Type*
   rw [hfdw_gf.fderivWithin (volume.uniqueDiffWithinAt_of_tendsto_inter_closedBall_div hdens)]
   exact hfdw_f.tangentialFDeriv_comp_orthogonalProjectionOnto_comp_eq hxs hi hdens hfs hz hfdw_gf
 
-namespace TauCeti
+end ChartAE
 
+namespace TauCeti
 section Rectifiable
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -774,8 +722,7 @@ theorem CountablyRectifiable.ae_norm_tangentialFDeriv_le
       ∀ᵐ y ∂μHE[m], y ∈ f '' A → ‖tangentialFDeriv m g E y‖ ≤ K from this k hk
   rintro _ rfl
   filter_upwards [hLip.ae_image_of_ae_volume hAm (injOn_iff_injective.2 hAnti.injective)
-    (by simpa only [hk] using hEm)
-    (Eventually.of_forall fun _ _ => True.intro)] with y hy hyfs
+    (by simpa only [hk] using hEm) (Eventually.of_forall fun _ _ => True.intro)] with y hy hyfs
   obtain ⟨x, hxs, rfl, -, hdf, hdens, -⟩ := hy hyfs
   by_cases hex : ∃! L : approxTangentPlane (finrank ℝ (EuclideanSpace ℝ (Fin k))) E (f x) →L[ℝ] W,
       HasTangentialFDerivAt (finrank ℝ (EuclideanSpace ℝ (Fin k))) g
@@ -805,15 +752,6 @@ theorem CountablyRectifiable.ae_existsUnique_hasTangentialFDerivAt
   obtain ⟨_, _, _, _, _, hex, -⟩ := hy hyfs
   exact hex
 
-/-- At `μHE[k]`-a.e. `x ∈ E`, `tangentialFDeriv k g E x` satisfies `HasTangentialFDerivAt`. -/
-theorem CountablyRectifiable.ae_hasTangentialFDerivAt_tangentialFDeriv
-    (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
-    [IsLocallyFiniteMeasure (μHE[k].restrict E)] (hg : LipschitzOnWith K g E) :
-    ∀ᵐ x ∂μHE[k], x ∈ E →
-      HasTangentialFDerivAt k g (approxTangentPlane k E x) (tangentialFDeriv k g E x) E x :=
-  (hE.ae_existsUnique_hasTangentialFDerivAt hEm hg).mono fun _ hx hxE =>
-    hasTangentialFDerivAt_tangentialFDeriv (hx hxE)
-
 private theorem CountablyRectifiable.aemeasurable_of_chart_formula {W₀ α : Type*}
     [NormedAddCommGroup W₀] [NormedSpace ℝ W₀] [FiniteDimensional ℝ W₀] [MeasurableSpace α]
     [Nonempty α] {g : V → W₀} (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
@@ -835,13 +773,12 @@ private theorem CountablyRectifiable.aemeasurable_of_chart_formula {W₀ α : Ty
   have : IsLocallyFiniteMeasure (μHE[finrank ℝ (EuclideanSpace ℝ (Fin k))].restrict E) := by
     simpa only [hk] using ‹IsLocallyFiniteMeasure (μHE[k].restrict E)›
   refine hE.aemeasurable_of_forall_bilipschitz_patch hEm fun {A f _ _} hAm hAsub hLip hAnti => ?_
-  have hSm : MeasurableSet (f '' A) :=
-    hAm.image_of_continuousOn_injOn hLip.continuous.continuousOn
-      (injOn_iff_injective.2 hAnti.injective)
+  have hSm : MeasurableSet (f '' A) := hAm.image_of_continuousOn_injOn
+    hLip.continuous.continuousOn (injOn_iff_injective.2 hAnti.injective)
   have he := hLip.continuous.continuousOn.measurableEmbedding hAm
     (injOn_iff_injective.2 hAnti.injective)
   obtain ⟨Φ, hΦm, hΦ⟩ := he.exists_measurable_extend
-    ((hFm f g₀).comp measurable_subtype_coe) (fun _ => inferInstance)
+    ((hFm f g₀).comp measurable_subtypeVal) (fun _ => inferInstance)
   refine hΦm.aemeasurable.congr ((ae_restrict_iff' hSm).2 ?_)
   rw [← (by rw [hk] : (μHE[finrank ℝ (EuclideanSpace ℝ (Fin k))] : Measure V) = μHE[k])]
   refine (ae_chart_good_of_extend hLip hAm hAnti hAsub
@@ -856,30 +793,37 @@ theorem CountablyRectifiable.aemeasurable_tangentialFDeriv_comp_orthogonalProjec
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] (hg : LipschitzOnWith K g E) :
     AEMeasurable (fun x =>
       (tangentialFDeriv k g E x).comp (approxTangentPlane k E x).orthogonalProjectionOnto)
-      (μHE[k].restrict E) :=
-  hE.aemeasurable_of_chart_formula hEm hg
+      (μHE[k].restrict E) := by
+  have hm_gram : Measurable (ContinuousLinearMap.gramLeftInverse :
+      (EuclideanSpace ℝ (Fin k) →L[ℝ] V) → V →L[ℝ] EuclideanSpace ℝ (Fin k)) := by
+    classical
+    let S : Set (EuclideanSpace ℝ (Fin k) →L[ℝ] V) := {A | Injective A}
+    have hcont : ContinuousOn ContinuousLinearMap.gramLeftInverse S := fun A hA =>
+      (ContinuousLinearMap.continuousAt_gramLeftInverse
+        ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).2 hA)).continuousWithinAt
+    have heq : (ContinuousLinearMap.gramLeftInverse :
+        (EuclideanSpace ℝ (Fin k) →L[ℝ] V) → V →L[ℝ] EuclideanSpace ℝ (Fin k)) =
+        S.piecewise ContinuousLinearMap.gramLeftInverse 0 := funext fun A =>
+      if hA : A ∈ S then (Set.piecewise_eq_of_mem _ _ _ hA).symm
+      else by
+        have hnu := mt (ContinuousLinearMap.isUnit_adjoint_comp_self_iff A).1 hA
+        rw [Set.piecewise_eq_of_notMem _ _ _ hA, ContinuousLinearMap.gramLeftInverse_def,
+          Ring.inverse_non_unit _ hnu, ContinuousLinearMap.zero_comp]; rfl
+    exact heq ▸ hcont.measurable_piecewise continuousOn_const
+      ContinuousLinearMap.isOpen_injective.measurableSet
+  exact hE.aemeasurable_of_chart_formula hEm hg
     (fun m x => (tangentialFDeriv m g E x).comp (approxTangentPlane m E x).orthogonalProjectionOnto)
-    (fun f g₀ x => (fderiv ℝ (g₀ ∘ f) x).comp
-      ((Ring.inverse ((fderiv ℝ f x).adjoint.comp (fderiv ℝ f x))).comp (fderiv ℝ f x).adjoint))
-    (fun f g₀ => by
-      have hAf := measurable_fderiv ℝ f
-      have hAadj : Measurable (fun x => (fderiv ℝ f x).adjoint) := by
-        simpa only [Function.comp_def, ContinuousLinearMap.adjointRealCLM_apply] using
-          ContinuousLinearMap.adjointRealCLM.continuous.measurable.comp hAf
-      have hgram := (continuous_fst.clm_comp continuous_snd).measurable.comp (hAadj.prodMk hAf)
-      exact (continuous_fst.clm_comp continuous_snd).measurable.comp
-        ((measurable_fderiv ℝ (g₀ ∘ f)).prodMk
-          ((continuous_fst.clm_comp continuous_snd).measurable.comp
-            (hgram.ringInverse.prodMk hAadj))))
+    (fun f g₀ x => (fderiv ℝ (g₀ ∘ f) x).comp (fderiv ℝ f x).gramLeftInverse)
+    (fun f g₀ => (continuous_fst.clm_comp continuous_snd).measurable.comp
+      ((measurable_fderiv ℝ (g₀ ∘ f)).prodMk (hm_gram.comp (measurable_fderiv ℝ f))))
     fun hxs hi hfs hdf hfdw_gf hdens hz =>
       hdf.hasFDerivAt.hasFDerivWithinAt.tangentialFDeriv_comp_orthogonalProjectionOnto_eq
         hxs hi hdens hfs hz hfdw_gf
 
 /-- **Measurability of the tangential Jacobian `normDet`** on `μHE[k].restrict E`. -/
 theorem CountablyRectifiable.aemeasurable_normDet_tangentialFDeriv
-    {W₀ : Type*} [NormedAddCommGroup W₀] [InnerProductSpace ℝ W₀]
-    [FiniteDimensional ℝ W₀] {g : V → W₀}
-    (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
+    {W₀ : Type*} [NormedAddCommGroup W₀] [InnerProductSpace ℝ W₀] [FiniteDimensional ℝ W₀]
+    {g : V → W₀} (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] (hg : LipschitzOnWith K g E) :
     AEMeasurable (fun x => (tangentialFDeriv k g E x).normDet) (μHE[k].restrict E) :=
   hE.aemeasurable_of_chart_formula hEm hg (fun m x => (tangentialFDeriv m g E x).normDet)
@@ -891,5 +835,4 @@ theorem CountablyRectifiable.aemeasurable_normDet_tangentialFDeriv
       hdf.hasFDerivAt.hasFDerivWithinAt.normDet_tangentialFDeriv_eq_div hxs hi hdens hfs hz hfdw_gf
 
 end Rectifiable
-
 end TauCeti

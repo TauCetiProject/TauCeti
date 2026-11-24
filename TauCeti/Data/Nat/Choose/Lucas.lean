@@ -8,21 +8,30 @@ module
 public import Mathlib.Data.Nat.Choose.Lucas
 
 /-!
-# Lucas' theorem with a nonzero last digit on top
+# Lucas' theorem for a lower index divisible by `p ^ k`
 
 Mathlib's `Choose.choose_mul_mul_modEq_choose_nat` reduces `choose (p * a) (p * b)` modulo a prime
-`p` to `choose a b`. This file records the companion case in which the upper index has a nonzero
-last base-`p` digit `c < p` and the lower index is still divisible by `p`: the extra digit
-contributes the factor `choose c 0 = 1`. At `p = 2` it computes the parity of
-`choose (2a + 1) (2b)`, which is what sign bookkeeping with binomial exponents of odd upper index
-needs.
+`p` to `choose a b`, and `Choose.choose_pow_mul_pow_mul_modEq_choose_nat` reduces
+`choose (p ^ k * a) (p ^ k * b)` to `choose a b`. This file generalises the latter to an arbitrary
+upper index: a lower index `p ^ k * b` has `k` vanishing last base-`p` digits, so modulo `p`,
+`choose n (p ^ k * b)` depends only on the digits of `n` at positions `k` and higher, that is on
+`n / p ^ k`. At `b = 1` it is congruent modulo `p` to the digit of `n` in position `k`. The proof
+specialises Mathlib's iterated Lucas theorem `Choose.choose_modEq_choose_mul_prod_range_choose`.
 
-When `p` divides `n ≠ 0`, the last base-`p` digit of `n - 1` is `p - 1`, so Lucas' theorem also
-gives `choose (n - 1) (p - 1) ≡ 1 [MOD p]`; this is the congruence behind Frobenius descent for
+The case `k = 1`, `n = p * a + c` with `c < p` is the case in which the upper index has a nonzero
+last base-`p` digit `c` and the lower index is still divisible by `p`: the extra digit contributes
+the factor `choose c 0 = 1`. At `p = 2` it computes the parity of `choose (2a + 1) (2b)`, which is
+what sign bookkeeping with binomial exponents of odd upper index needs.
+
+When `p` divides `n ≠ 0`, the last base-`p` digit of `n - 1` is `p - 1`, so Mathlib's one-digit
+Lucas step `Choose.choose_modEq_choose_mod_mul_choose_div_nat` also gives
+`choose (n - 1) (p - 1) ≡ 1 [MOD p]`; this is the congruence behind Frobenius descent for
 symmetric 2-cocycles.
 
 ## Main results
 
+* `Choose.choose_pow_mul_modEq_choose_div_nat`:
+  `choose n (p ^ k * b) ≡ choose (n / p ^ k) b [MOD p]`.
 * `Choose.choose_mul_add_mul_modEq_choose_nat`: `choose (p * a + c) (p * b) ≡ choose a b [MOD p]`
   for `c < p`.
 * `Choose.choose_sub_one_sub_one_modEq_one`: `choose (n - 1) (p - 1) ≡ 1 [MOD p]` when `p ∣ n`
@@ -37,30 +46,46 @@ namespace Choose
 
 variable {p a b c : ℕ} [Fact p.Prime]
 
+/-- For a prime `p`, `choose n (p ^ k * b)` is congruent to `choose (n / p ^ k) b` modulo `p`:
+the last `k` base-`p` digits of the lower index vanish, so by Lucas' theorem only the digits of `n`
+at positions `k` and higher matter. At `b = 1` it says that `choose n (p ^ k)` is congruent to
+`n / p ^ k`, whose residue is the base-`p` digit of `n` in position `k`; so at `p = 2`,
+`choose n (2 ^ k)` is odd exactly when bit `k` of `n` is set. -/
+theorem choose_pow_mul_modEq_choose_div_nat (n k b : ℕ) :
+    Nat.choose n (p ^ k * b) ≡ Nat.choose (n / p ^ k) b [MOD p] := by
+  have hp : 0 < p := (Fact.out : p.Prime).pos
+  rw [← Int.natCast_modEq_iff]
+  refine (choose_modEq_choose_mul_prod_range_choose k).trans ?_
+  -- Each of the last `k` base-`p` digits of `p ^ k * b` is `0`, contributing `choose _ 0 = 1`.
+  rw [Finset.prod_eq_one fun i hi => ?_, Nat.mul_div_cancel_left _ (pow_pos hp k),
+    Nat.cast_one, mul_one]
+  replace hi := Finset.mem_range.mp hi
+  rw [← pow_mul_pow_sub p hi.le, mul_assoc, Nat.mul_div_cancel_left _ (pow_pos hp i),
+    Nat.mod_eq_zero_of_dvd ((dvd_pow_self p (Nat.sub_ne_zero_of_lt hi)).mul_right b),
+    Nat.choose_zero_right]
+
 /-- For primes `p` and `c < p`, `choose (p * a + c) (p * b)` is congruent to `choose a b` modulo
-`p`. This is Lucas' theorem for a lower index divisible by `p`. -/
+`p`. This is Lucas' theorem for a lower index divisible by `p`: the case `k = 1` of
+`choose_pow_mul_modEq_choose_div_nat`. -/
 theorem choose_mul_add_mul_modEq_choose_nat (hc : c < p) :
     Nat.choose (p * a + c) (p * b) ≡ Nat.choose a b [MOD p] := by
   have hp : 0 < p := (Fact.out : p.Prime).pos
-  refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
-  rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hc, Nat.mul_add_div hp, Nat.div_eq_of_lt hc, add_zero,
-    Nat.mul_mod_right, Nat.mul_div_cancel_left _ hp, Nat.choose_zero_right, one_mul]
+  simpa [Nat.mul_add_div hp, Nat.div_eq_of_lt hc] using
+    choose_pow_mul_modEq_choose_div_nat (p := p) (p * a + c) 1 b
 
 /-- For a prime `p` dividing `n ≠ 0`, `choose (n - 1) (p - 1)` is congruent to `1` modulo `p`:
 the last base-`p` digit of `n - 1` is `p - 1`, and Lucas' theorem applies. -/
 theorem choose_sub_one_sub_one_modEq_one {n : ℕ} (hpn : p ∣ n) (hn : n ≠ 0) :
     Nat.choose (n - 1) (p - 1) ≡ 1 [MOD p] := by
-  have hp1 : 1 ≤ p := (Fact.out : p.Prime).one_le
-  have h₁ : (p - 1) % p = p - 1 := Nat.mod_eq_of_lt (by omega)
-  have h₂ : (p - 1) / p = 0 := Nat.div_eq_of_lt (by omega)
-  have hmod : (n - 1) % p = p - 1 := by
-    obtain ⟨q, rfl⟩ := hpn
-    have hq : 1 ≤ q := Nat.one_le_iff_ne_zero.2 (right_ne_zero_of_mul hn)
-    have hpq : p ≤ p * q := Nat.le_mul_of_pos_right p hq
-    have hsplit : p * q - 1 = p - 1 + p * (q - 1) := by rw [Nat.mul_sub_one]; omega
-    rw [hsplit, Nat.add_mul_mod_self_left, h₁]
+  have hp : 0 < p := (Fact.out : p.Prime).pos
+  have hlt : p - 1 < p := Nat.sub_lt hp one_pos
+  obtain ⟨q, rfl⟩ := hpn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (right_ne_zero_of_mul hn)
+  -- `p * (m + 1) - 1` has last base-`p` digit `p - 1`, above which come the digits of `m`.
+  have hsplit : p * (m + 1) - 1 = p * m + (p - 1) := by
+    rw [Nat.mul_succ, Nat.add_sub_assoc (Nat.succ_le_of_lt hp)]
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
-  rw [hmod, h₁, h₂, Nat.choose_self, Nat.choose_zero_right]
+  simp [hsplit, Nat.mod_eq_of_lt hlt, Nat.mul_add_div hp, Nat.div_eq_of_lt hlt, Nat.ModEq.refl]
 
 end Choose
 

@@ -112,7 +112,7 @@ theorem CountablyRectifiable.exists_bilipschitz_subset_cover {k : ℕ} {s : Set 
   refine ⟨fun n => A n ∩ f n ⁻¹' s₀, f,
     fun n => (hAm n).inter (hs₀m.preimage (hLip n).continuous.measurable),
     fun n => image_subset_iff.2 fun _ hx => hs₀s hx.2,
-    fun n => ⟨K n, L n, hLip n, fun x y => hAnti n ⟨x, x.2.1⟩ ⟨y, y.2.1⟩⟩, ?_⟩
+    fun n => ⟨K n, L n, hLip n, fun x y => hAnti n ⟨x, x.property.1⟩ ⟨y, y.property.1⟩⟩, ?_⟩
   refine measure_mono_null (fun y ⟨hys, hyU⟩ => ?_)
     (measure_union_null (ae_eq_set.1 hs₀ae.symm).1 hcover)
   by_cases hys₀ : y ∈ s₀

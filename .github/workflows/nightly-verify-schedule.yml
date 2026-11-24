@@ -1,0 +1,59 @@
+name: Nightly verification
+
+# Rebuild main's own modules from source without restoring any cached build outputs, and check
+# that this clean compile agrees byte for byte with what the cache serves. The jobs, and why they
+# are shaped as they are, live in TauCetiTools' nightly-verify.yml at main; the TauCetiFleet runner
+# group admits jobs by the workflow file that defines them, so it lists that file. This file owns
+# the triggers, the GITHUB_TOKEN ceiling and the secrets, and admits only main. Its jobs appear as
+# `run / <job>`.
+#
+# The main check runs in a job because GitHub expression comparisons ignore case: an `if:` on
+# `github.ref == 'refs/heads/main'` also admits a branch named `Main`, which would then be built and
+# reported as main. Concurrency groups ignore case too, and a workflow-level group would let any
+# dispatch, from any branch, displace a queued main run before a guard could skip it. So the
+# shared group sits on the calling job, and only a run the shell check admitted joins it.
+
+on:
+  schedule:
+  - cron: "25 15 * * *"   # daily, offset from housekeeping (:20)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  admit:
+    if: github.repository == 'TauCetiProject/TauCeti'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      main: ${{ steps.ref.outputs.main }}
+    steps:
+      - id: ref
+        run: |
+          # Shell `=` is case-sensitive, unlike the expression `==`.
+          if [ "$GITHUB_REF" = refs/heads/main ]; then
+            echo "main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Nightly verification runs only on main, not $GITHUB_REF; nothing to do."
+            echo "main=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  run:
+    needs: admit
+    if: needs.admit.outputs.main == 'true'
+    concurrency:
+      # The fallback keeps a run that was not admitted out of the shared group, whatever order
+      # GitHub applies `if:` and `concurrency:` in.
+      group: ${{ needs.admit.outputs.main == 'true' && 'nightly-verify' || format('nightly-verify-not-admitted-{0}', github.run_id) }}
+      # Never cancel mid-run: a partial verification tells us nothing, and killing a run after the
+      # from-source build but before the report wastes the expensive part.
+      cancel-in-progress: false
+    uses: TauCetiProject/TauCetiTools/.github/workflows/nightly-verify.yml@main
+    permissions:
+      # The called workflow reselects reference capacity with its own picker job.
+      actions: read
+      contents: read
+    secrets:
+      ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+      ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}

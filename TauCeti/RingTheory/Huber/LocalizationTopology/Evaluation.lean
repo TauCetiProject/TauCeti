@@ -382,7 +382,7 @@ theorem rationalEvalHom_comp_completionMap {k : ℕ} (t : Fin k → A) (ht : ∀
   obtain ⟨p, rfl⟩ : ∃ p, weightedPolynomialsEquiv isWeightFamily_one_weight p = a :=
     ⟨(weightedPolynomialsEquiv isWeightFamily_one_weight).symm a,
       (weightedPolynomialsEquiv isWeightFamily_one_weight).apply_symm_apply a⟩
-  rw [UniformSpace.Completion.map_coe uniformContinuous_subtype_val,
+  rw [UniformSpace.Completion.map_coe uniformContinuous_subtypeVal,
     AddMonoidHom.completion_coe, coe_weightedPolynomialsEquiv]
   have hpe : (polyEvalHom s (S := S) t).toAddMonoidHom
       (weightedPolynomialsEquiv isWeightFamily_one_weight p)
@@ -512,7 +512,7 @@ theorem isStrictlyTopologicallyFiniteType_toCompletionLoc [IsTateRing A]
   let _ : UniformContinuousConstSMul A S :=
     uniformContinuousConstSMul_of_continuousConstSMul A S
   let t : Fin T.card → A := fun i ↦ ((T.equivFin.symm i : ↥T) : A)
-  have ht : ∀ i, t i ∈ T := fun i ↦ (T.equivFin.symm i).2
+  have ht : ∀ i, t i ∈ T := fun i ↦ (T.equivFin.symm i).property
   have happ : ∀ y : ↥T, t (T.equivFin y) = (y : A) := fun y ↦ by simp [t]
   have hrange : Set.range t = (T : Set A) := by
     ext a

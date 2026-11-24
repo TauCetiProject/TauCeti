@@ -19,7 +19,9 @@ residue rings.
 `double_coordinates` proves correctness on Mathlib's native point group, including infinity
 and points of order two. Its output is nonzero even when the model is singular, since native
 points are nonsingular. `double_coordinates_of_cross_eq_zero` gives the same result for any nonzero
-representative of a point's coordinate pair.
+representative of a point's coordinate pair, while `double_cross_eq_zero_of_cross_eq_zero`
+records the cross-difference relation assuming only `4 * N = (A + 2) * D`, with no
+characteristic, `B ≠ 0`, `D ≠ 0`, or `S ≠ 0` hypotheses.
 
 The proof uses Mathlib's duplication numerator and denominator, in particular
 `WeierstrassCurve.Affine.den_duplication_ne_zero_or_num_duplication_ne_zero` and
@@ -98,6 +100,16 @@ theorem double_one_zero (N D : R) : double N D ⟨1, 0⟩ = ⟨D, 0⟩ := by
 theorem double_zero_one (N D : R) : double N D ⟨0, 1⟩ = ⟨D, 0⟩ := by
   ext <;> simp [double]
 
+/-- Any pair with vanishing second field doubles to a pair with vanishing second field. -/
+theorem double_of_z_eq_zero (N D : R) {P : Pair R} (hP : P.z = 0) :
+    double N D P = ⟨D * P.x ^ 4, 0⟩ := by
+  ext <;> simp only [double, hP] <;> ring
+
+/-- Any pair with vanishing first field doubles to a pair with vanishing second field. -/
+theorem double_of_x_eq_zero (N D : R) {P : Pair R} (hP : P.x = 0) :
+    double N D P = ⟨D * P.z ^ 4, 0⟩ := by
+  ext <;> simp only [double, hP] <;> ring
+
 /-- On an affine coordinate pair the scaled formula is precisely Mathlib's duplication
 numerator and denominator, with the second field additionally scaled by `B`. -/
 private theorem double_some_eq {A B N D : R} (h : 4 * N = (A + 2) * D) (x : R) :
@@ -171,6 +183,24 @@ theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
   · rw [Pair.ne_zero_iff] at hn ⊢
     simpa [hc] using hn
   · simp [hx]
+
+/-- Assuming `4 * N = (A + 2) * D`, doubling any representative of a native point has vanishing
+cross difference with the coordinate pair of its double, including when `B = 0`, `D = 0`,
+`S = 0`, or in characteristic two. -/
+theorem double_cross_eq_zero_of_cross_eq_zero
+    (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
+    (hSP : S.cross (coordinates A B P) = 0) :
+    (double N D S).cross (coordinates A B (P + P)) = 0 := by
+  by_cases hD : D = 0
+  · subst hD
+    have h0 : double N 0 S = 0 := by
+      ext
+      · simp [double_x]
+      · simp [double_z_of_relation h]
+    simp [h0]
+  · by_cases hS : S = 0
+    · simp [hS]
+    · exact (double_coordinates_of_cross_eq_zero hD h hS hSP).2
 
 end Field
 

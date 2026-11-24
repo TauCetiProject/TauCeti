@@ -24,12 +24,16 @@ relative to weights `w r` whose partial sums are at most `1`, then it is small o
 displacement `F (N + 1) - F 0`. This is how per-stage perturbation estimates, with weights such as
 `2⁻⁽ʳ⁺¹⁾`, are combined into an estimate for the limit of the stages.
 
+Finally, in a linearly ordered field, one of the `n` increments of a sequence is at most their
+average `(G n - G 0) / n`, since they telescope to `G n - G 0`.
+
 ## Main results
 
 * `TauCeti.abs_sub_sub_sum_range_le_of_forall_lt`: the bound on `G n - G 0 - ∑ k < n, g k` from
   the bounds on the increments.
 * `TauCeti.lt_of_forall_sub_lt_mul`: the telescoping bound for a subadditive function and weights
   with partial sums at most `1`.
+* `TauCeti.exists_sub_le_div`: some increment is at most the average increment.
 -/
 
 public section
@@ -64,5 +68,16 @@ theorem lt_of_forall_sub_lt_mul {G : Type*} [AddCommGroup G] (q : G → ℝ)
     _ ≤ t := by
         rw [← Finset.mul_sum]
         exact mul_le_of_le_one_right ht.le (hw _)
+
+/-- **Some increment is at most the average.** Among the increments `G (j + 1) - G j` for `j < n`,
+with `n ≠ 0`, one is at most `(G n - G 0) / n`. -/
+theorem exists_sub_le_div {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (G : ℕ → α) {n : ℕ} (hn : n ≠ 0) :
+    ∃ j < n, G (j + 1) - G j ≤ (G n - G 0) / n := by
+  have hsum : ∑ j ∈ Finset.range n, (G (j + 1) - G j) ≤
+      ∑ _j ∈ Finset.range n, (G n - G 0) / n := by
+    simp [Finset.sum_range_sub G, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn : (n : α) ≠ 0)]
+  obtain ⟨j, hj, hjle⟩ := Finset.exists_le_of_sum_le (Finset.nonempty_range_iff.2 hn) hsum
+  exact ⟨j, Finset.mem_range.1 hj, hjle⟩
 
 end TauCeti

@@ -32,7 +32,7 @@ theorem isConvexPolyhedron_pi_Icc_of_finite {I : Set ι} (hI : I.Finite) (a b : 
     IsConvexPolyhedron (I.pi fun i => Icc (a i) (b i)) := by
   have : Finite I := hI.to_subtype
   let R : (ι → ℝ) →L[ℝ] (I → ℝ) :=
-    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.1
+    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.val
   convert (isConvexPolyhedron_pi_Icc (fun i : I => a i) (fun i : I => b i)).preimage
     R.toContinuousAffineMap using 1
   ext x

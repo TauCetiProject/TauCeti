@@ -13,25 +13,16 @@ import TauCeti.MeasureTheory.Covering.EssentialBoundary
 # Tangent cones and unique differentiability at Haar density-one points
 
 At any point `x` where a set `s` has density one with respect to an additive Haar measure on a
-finite-dimensional real normed space, `s` meets small rescaled neighborhoods in every direction, so
-`posTangentConeAt s x = univ`, `tangentConeAt ℝ s x = univ`, and relative derivatives within `s` at
-`x` are unique. Combining this with `HasFDerivWithinAt.antilipschitzWith_of_tangentConeAt_eq_univ`
-transfers inverse-Lipschitz bounds of a parametrization on `s` to its relative derivative at `x`.
-
-## Main results
-
-* `MeasureTheory.Measure.posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div`,
-  `MeasureTheory.Measure.tangentConeAt_eq_univ_of_tendsto_inter_closedBall_div`,
-  `MeasureTheory.Measure.uniqueDiffWithinAt_of_tendsto_inter_closedBall_div`: Haar density-one
-  points have full tangent cones and unique relative derivatives.
-* `HasFDerivWithinAt.antilipschitzWith_of_tendsto_inter_closedBall_div`,
-  `HasFDerivWithinAt.injective_of_tendsto_inter_closedBall_div`: at a Haar density-one point, an
-  inverse-Lipschitz parametrization has an antilipschitz (hence injective) derivative.
+finite-dimensional real normed space, `posTangentConeAt s x = univ`, `tangentConeAt ℝ s x = univ`,
+and relative derivatives within `s` at `x` are unique
+(`MeasureTheory.Measure.posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div`,
+`MeasureTheory.Measure.uniqueDiffWithinAt_of_tendsto_inter_closedBall_div`), transferring
+inverse-Lipschitz bounds on `s` to the relative derivative
+(`HasFDerivWithinAt.antilipschitzWith_of_tendsto_inter_closedBall_div`).
 
 ## References
 
-* H. Federer, *Geometric Measure Theory*, §3.2.16.
-* L. Simon, *Lectures on Geometric Measure Theory*, §11.
+* H. Federer, *Geometric Measure Theory*, §3.2.16; L. Simon, *Lectures on GMT*, §11.
 -/
 
 public section
@@ -49,8 +40,7 @@ theorem posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div (μ : Measure E
     [μ.IsAddHaarMeasure] {s : Set E} {x : E}
     (hs : Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1)) :
     posTangentConeAt s x = univ := by
-  ext v
-  simp only [mem_univ, iff_true]
+  ext v; simp only [mem_univ, iff_true]
   -- Rescaled closed balls around `v` meet `s - {x}` at arbitrarily small positive scales `r n`.
   have hex (n : ℕ) : ∃ r : ℝ, 0 < r ∧ r < ((n : ℝ) + 1)⁻¹ ∧
       ∃ a ∈ closedBall v ((n : ℝ) + 1)⁻¹, x + r • a ∈ s := by
@@ -65,9 +55,9 @@ theorem posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div (μ : Measure E
   have ha_lim : Tendsto a atTop (𝓝 v) := tendsto_iff_norm_sub_tendsto_zero.2 <|
     squeeze_zero (fun _ => norm_nonneg _) (fun n => mem_closedBall_iff_norm.1 (ha n)) hinv
   have hr_lim := squeeze_zero (fun n => (hr0 n).le) (fun n => (hrε n).le) hinv
-  refine mem_tangentConeAt_of_seq atTop (fun n => Real.toNNReal (r n)⁻¹)
-    (fun n => r n • a n) (by simpa only [zero_smul] using hr_lim.smul ha_lim)
-    (Eventually.of_forall hxs) (ha_lim.congr fun n => ?_)
+  refine mem_tangentConeAt_of_seq atTop (fun n => Real.toNNReal (r n)⁻¹) (fun n => r n • a n)
+    (by simpa only [zero_smul] using hr_lim.smul ha_lim) (Eventually.of_forall hxs)
+    (ha_lim.congr fun n => ?_)
   rw [NNReal.smul_def, Real.coe_toNNReal _ (inv_nonneg.2 (hr0 n).le), inv_smul_smul₀ (hr0 n).ne']
 
 /-- At a Haar density-one point of an arbitrary set `s`, `tangentConeAt ℝ s x = univ`. -/
@@ -84,9 +74,8 @@ theorem uniqueDiffWithinAt_of_tendsto_inter_closedBall_div (μ : Measure E) [μ.
     {s : Set E} {x : E}
     (hs : Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1)) :
     UniqueDiffWithinAt ℝ s x := by
-  refine ⟨?_,
-    TauCeti.essentialInterior_subset_closure (TauCeti.mem_essentialInterior.2
-      (TauCeti.hasDensityAt_iff.2 hs))⟩
+  refine ⟨?_, TauCeti.essentialInterior_subset_closure
+    (TauCeti.mem_essentialInterior.2 (TauCeti.hasDensityAt_iff.2 hs))⟩
   rw [μ.tangentConeAt_eq_univ_of_tendsto_inter_closedBall_div hs, Submodule.span_univ,
     Submodule.top_coe]
   exact dense_univ

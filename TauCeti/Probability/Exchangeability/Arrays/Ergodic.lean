@@ -9,7 +9,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.ZeroOne
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Probability.Process.Array.FinitaryAction
 -- Non-public: cylinder approximation and its real-valued measure estimates are proof tools.
-import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.MeasureTheory.Constructions.Cylinder.Approximation
 import TauCeti.MeasureTheory.Measure.ZeroOne
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 
@@ -94,7 +94,7 @@ private theorem measurableSet_cylinder_blockSigma {F : Finset (ℕ × ℕ)} {I :
   let _ : MeasurableSpace (ℕ × ℕ → α) :=
     blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((I : Set ℕ) ×ˢ (I : Set ℕ))
   refine (Measurable.of_eval fun p => ?_) hS
-  have hp : p.1 ∈ (I : Set ℕ) ×ˢ (I : Set ℕ) := hFI p.1 p.2
+  have hp : p.val ∈ (I : Set ℕ) ×ˢ (I : Set ℕ) := hFI p.val p.property
   simpa using (measurable_blockSigma_of_mem
     (Z := fun p (x : ℕ × ℕ → α) => x p) hp)
 
@@ -110,12 +110,12 @@ private theorem measurableSet_pairReindex_preimage_cylinder_blockSigma {F : Fins
   -- a cylinder is the preimage of `S` under restriction to `F`; `cylinder` is a definition with
   -- no propositional unfolding lemma, so the preimage form is by `rfl`
   have hcyl : pairReindex π π ⁻¹' cylinder F S
-      = (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) ⁻¹' S := rfl
+      = (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.val) ⁻¹' S := rfl
   rw [hcyl]
-  have hread : Measurable (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) :=
+  have hread : Measurable (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.val) :=
     Measurable.of_eval fun p => by
-      have hpJ : (π p.1.1, π p.1.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) :=
-        ⟨hπ _ (hFI p.1 p.2).1, hπ _ (hFI p.1 p.2).2⟩
+      have hpJ : (π p.val.1, π p.val.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) :=
+        ⟨hπ _ (hFI p.val p.property).1, hπ _ (hFI p.val p.property).2⟩
       simpa only [pairReindex_apply] using (measurable_blockSigma_of_mem
         (Z := fun p (x : ℕ × ℕ → α) => x p) hpJ)
   exact hread hS
