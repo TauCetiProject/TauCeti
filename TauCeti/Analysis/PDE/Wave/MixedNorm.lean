@@ -557,8 +557,8 @@ private theorem enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt (hq : 
         ENNReal.ofReal (((2 : ℝ) ^ j) ^ (γ + γ₁)) *
         eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume *
         eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  refine (enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate hq hq₁.le hC₁ hC hF hG
-    hUF hUG).trans_eq ?_
+  refine (enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate hq.le hq₁.le
+    (Or.inl hq) hC₁ hC hF hG hUF hUG).trans_eq ?_
   rw [Real.rpow_add (zpow_pos two_pos j), ENNReal.ofReal_mul (by positivity), ENNReal.coe_mul,
     ENNReal.coe_mul]
   ring

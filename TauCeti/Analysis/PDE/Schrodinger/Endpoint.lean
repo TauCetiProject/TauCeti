@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 import TauCeti.Analysis.PDE.Strichartz.Retarded
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Integral.ChristKiselev
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -31,11 +31,12 @@ endpoint estimate** for the Duhamel integral, with the endpoint pair on both sid
 `|∫ ∫_{s < t} ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}`
 
 (`TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint`).
-Both come from the bound
+The retarded estimate comes from the bound
 `|∫∫_R ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}` on every
 measurable region `R` of pairs of times
 (`TauCeti.exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint`) for the half
-plane `R = {s < t}`; the dual estimate comes from the same bound for `R = Set.univ` and `G = F`.
+plane `R = {s < t}`; the dual estimate, and with it the weak homogeneous estimate, come from the
+same bound for `R = Set.univ` and `G = F`.
 
 The abstract endpoint theorem `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint`
 applies with the decay rate `σ = n / 2 > 1`: the propagator is unitary, it satisfies the
@@ -185,9 +186,8 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
   refine ⟨NNReal.sqrt C, fun F _ ↦ ?_⟩
   by_cases hSF : Integrable fun s ↦ schrodingerPropagator ℂ (-s) (F s)
   · -- `F(s) = S(s) (S(-s) F(s))` is integrable, since `S(s)` is unitary.
-    have hF : Integrable F := by
-      simpa using integrable_phasePropagator_apply laplacianSymbol (τ := fun s ↦ s)
-        aestronglyMeasurable_id hSF
+    have hF : Integrable F :=
+      (integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSF
     refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ) hSF ?_
     have h := hC Set.univ MeasurableSet.univ F F hF hF
     simp_rw [inner_schrodingerPropagator_sub_apply, Measure.restrict_univ] at h
@@ -267,9 +267,7 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_two_le [r'.HolderC
       ‖∫ s, schrodingerPropagator ℂ (-s) (F s)‖ₑ ≤
         C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
   rcases hq.eq_or_lt with rfl | hq
-  · -- The Hölder conjugate of `2` is `2`.
-    have : (2 : ℝ≥0∞).HolderConjugate p := by simpa using hpq.symm.coe_ennreal
-    obtain rfl : p = 2 := by exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p) 2
+  · obtain rfl := hpq.eq_two
     simpa using exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint (r' := r')
       (hn rfl) (by simpa using hqr)
   · exact exists_enorm_integral_schrodingerPropagator_neg_le hq hpq hqr
@@ -317,10 +315,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
   by_cases h22 : q = 2 ∧ q₁ = 2
   · -- Both pairs at the endpoint: the estimate of Keel and Tao.
     obtain ⟨rfl, rfl⟩ := h22
-    have : (2 : ℝ≥0∞).HolderConjugate p := by simpa using hpq.symm.coe_ennreal
-    have : (2 : ℝ≥0∞).HolderConjugate p₁ := by simpa using hpq₁.symm.coe_ennreal
-    obtain rfl : p = 2 := by exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p) 2
-    obtain rfl : p₁ = 2 := by exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p₁) 2
+    obtain rfl := hpq.eq_two
+    obtain rfl := hpq₁.eq_two
     obtain rfl : r = r₁ := eq_of_endpoint (hn rfl) (ENNReal.HolderConjugate.ne_zero r r')
       (ENNReal.HolderConjugate.ne_zero r₁ r₁') (by simpa using hqr) (by simpa using hqr₁)
     have : r.HolderConjugate r' := (inferInstance : r'.HolderConjugate r).symm
@@ -329,36 +325,29 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     obtain ⟨C, hC⟩ :=
       exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint
         (r' := r') (hn rfl) (by simpa using hqr)
-    -- `H(s) = S(s) (S(-s) H(s))` is integrable along with `s ↦ S(-s) H(s)`.
-    have hint (H : ℝ → Lp ℂ 2 (volume : Measure E))
-        (hSH : Integrable fun s ↦ schrodingerPropagator ℂ (-s) (H s)) : Integrable H := by
-      simpa using integrable_phasePropagator_apply laplacianSymbol (τ := fun s ↦ s)
-        aestronglyMeasurable_id hSH
-    exact ⟨C, fun F G _ _ hSF hSG ↦ by simpa using hC F G (hint F hSF) (hint G hSG)⟩
+    -- `F` and `G` are integrable along with `s ↦ S(-s) F(s)` and `t ↦ S(-t) G(t)`.
+    refine ⟨C, fun F G _ _ hSF hSG ↦ ?_⟩
+    simpa using hC F G
+      ((integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSF)
+      ((integrable_phasePropagator_neg_apply_iff laplacianSymbol aestronglyMeasurable_id).1 hSG)
   -- Otherwise `q₁' < q`, and the Christ–Kiselev lemma passes the bound on the untruncated pairing,
   -- which the two dual estimates give, to the region `s < t`.
   have := hpq.coe_ennreal
   have := hpq₁.coe_ennreal
-  have hpp : 1 < (p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
-    rcases hq.eq_or_lt with rfl | hq'
-    · have hq₁' : 2 < q₁ := hq₁.lt_of_ne fun h ↦ h22 ⟨rfl, h.symm⟩
-      rw [add_comm]
-      exact one_lt_inv_add_inv_of_holderConjugate (q := q₁) (q₁ := ((2 : ℝ≥0) : ℝ≥0∞))
-        (by exact_mod_cast hq₁') (by norm_num)
-    · exact one_lt_inv_add_inv_of_holderConjugate (q := q) (q₁ := q₁) (by exact_mod_cast hq')
-        (by exact_mod_cast hq₁)
-  have hp : (1 : ℝ≥0∞) ≤ p := ENNReal.HolderConjugate.one_le _ (q : ℝ≥0∞)
+  have h2 : 2 < (q : ℝ≥0∞) ∨ 2 < (q₁ : ℝ≥0∞) := by
+    rw [not_and_or] at h22
+    exact_mod_cast h22.imp hq.lt_of_ne' hq₁.lt_of_ne'
   obtain ⟨C₁, hC₁⟩ := exists_enorm_integral_schrodingerPropagator_neg_le_of_two_le (E := E)
     (r' := r₁') hq₁ hn₁ hpq₁ hqr₁
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le_of_two_le (E := E)
     (r' := r') hq hn hpq hqr
   refine ⟨((1 - (2 : ℝ≥0∞) ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹).toNNReal * C₁ * C,
     fun F G hF hG hSF hSG ↦ ?_⟩
-  rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal
-    (inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp)]
+  rw [ENNReal.coe_mul, ENNReal.coe_mul]
   simp_rw [inner_schrodingerPropagator_sub_apply, ← adjoint_schrodingerPropagator]
   simp_rw [← adjoint_schrodingerPropagator] at hC₁ hC hSF hSG
-  exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp (fun F hF _ ↦ hC₁ F hF)
+  exact enorm_integral_setIntegral_Iio_inner_adjoint_le_of_holderConjugate
+    (by exact_mod_cast hq) (by exact_mod_cast hq₁) h2 (fun F hF _ ↦ hC₁ F hF)
     (fun G hG _ ↦ hC G hG) hF hG hSF hSG
 
 end TwoPairs
