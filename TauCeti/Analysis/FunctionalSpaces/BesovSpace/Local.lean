@@ -46,7 +46,8 @@ order of `ψ T` on the Bessel-potential scale `H^{s,p}`
 (`Distribution.exists_memSobolev_cutoffTempered_of_one_lt`) and `H^{s,p} ⊆ B^s_{p,∞}`; for
 `p = ∞` from the finite `L²` Sobolev order of `ψ T` and the Bernstein embedding
 `B^s_{2,∞} ⊆ B^{s - n/2}_{∞,∞}`. Hence, for `1 < p` and `1 ≤ q`, every distribution is
-`B^s_{p,q}` near each point of `Ω` for some `s` (`Distribution.exists_isLocallyMemBesovAt`).
+`B^s_{p,q}` near each point of a compact set `K ⊆ Ω` for some `s` depending on `K`
+(`Distribution.exists_forall_isLocallyMemBesovAt`).
 
 ## References
 
@@ -246,15 +247,16 @@ theorem exists_memBesov_cutoffTempered (hp : 1 < p) (hq : q ≠ 0) (T : 𝓓'(Ω
   exact ⟨s - 1, hs.of_lt (by linarith) hq⟩
 
 variable (φ) in
-/-- **Finite local order on the Besov scale.** Let `1 < p ≤ ∞` and `1 ≤ q`. Every distribution
-on `Ω` is `B^s_{p,q}` near each point of `Ω` for some real order `s`. -/
-theorem exists_isLocallyMemBesovAt [Fact (1 ≤ q)] (hp : 1 < p) (T : 𝓓'(Ω, ℂ)) (hx : x ∈ Ω) :
-    ∃ s : ℝ, T.IsLocallyMemBesovAt φ s p q x := by
+/-- **Finite local order on the Besov scale.** Let `1 < p ≤ ∞` and `1 ≤ q`. For every compact set
+`K ⊆ Ω`, a distribution `T` on `Ω` is `B^s_{p,q}` near every point of `K` for some real order
+`s`. -/
+theorem exists_forall_isLocallyMemBesovAt [Fact (1 ≤ q)] (hp : 1 < p) (T : 𝓓'(Ω, ℂ)) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ s : ℝ, ∀ x ∈ K, T.IsLocallyMemBesovAt φ s p q x := by
   obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
-    isCompact_singleton Ω.isOpen (singleton_subset_iff.2 hx) subset_rfl
+    hK Ω.isOpen hKΩ subset_rfl
   have hq : q ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne'
   obtain ⟨s, hs⟩ := exists_memBesov_cutoffTempered φ hp hq T χ
-  exact ⟨s, isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
-    ⟨χ, by rwa [nhdsSet_singleton] at hχ1, hs⟩⟩
+  exact ⟨s, fun x hx ↦ isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
+    ⟨χ, eventually_nhdsSet_iff_forall.1 hχ1 x hx, hs⟩⟩
 
 end Distribution
