@@ -519,26 +519,6 @@ biproducts of pairs `X ⊠ Y`; its category, preadditive and `k`-linear structur
 abbrev DeligneProduct (k : Type w) (C : Type u₁) (D : Type u₂) :=
   Mat_ (LinearTensor k C D)
 
-/-- The components of Mathlib's `Mat_.ext α`: on `M`, decompose `G M` as the biproduct of the
-`G` of the entries of `M`, apply `α` entrywise, and reassemble. -/
-private theorem _root_.CategoryTheory.Mat_.ext_hom_app {C' : Type u₃} [Category.{v₃} C']
-    [Preadditive C'] {E' : Type u₃} [Category.{v₃} E'] [Preadditive E'] [HasFiniteBiproducts E']
-    {G G' : Mat_ C' ⥤ E'} [G.Additive] [G'.Additive]
-    (α : Mat_.embedding C' ⋙ G ≅ Mat_.embedding C' ⋙ G') (M : Mat_ C') :
-    (Mat_.ext α).hom.app M = (Mat_.additiveObjIsoBiproduct G M).hom ≫
-      biproduct.map (fun i ↦ α.hom.app (M.X i)) ≫ (Mat_.additiveObjIsoBiproduct G' M).inv := by
-  simp only [Mat_.ext, Mat_.liftUnique, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
-    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, Iso.trans_inv, Iso.symm_inv,
-    Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id_assoc, Iso.cancel_iso_hom_left]
-  simp only [biproduct.mapIso_hom, biproduct.mapIso_inv, Iso.app_hom, Iso.app_inv, Iso.refl_inv,
-    NatTrans.id_app]
-  -- The remaining middle factor is the biproduct of identities.
-  congr 1
-  conv_rhs => rw [← Category.id_comp (Mat_.additiveObjIsoBiproduct G' M).inv]
-  congr 1
-  ext j
-  simp
-
 namespace DeligneProduct
 
 variable (k : Type w) [CommSemiring k]

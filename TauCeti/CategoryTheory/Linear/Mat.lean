@@ -31,6 +31,8 @@ this makes the additive and idempotent envelope `Karoubi (Mat_ C)` of an `R`-lin
 * The instance `CategoryTheory.Linear R (Mat_ C)`.
 * The instances `(Mat_.embedding C).Linear R`, `F.mapMat_.Linear R` and
   `(Mat_.lift F).Linear R` for an `R`-linear functor `F`.
+* `CategoryTheory.Mat_.ext_hom_app`: the components of the isomorphism `Mat_.ext α` of additive
+  functors out of `Mat_ C`.
 -/
 
 public section
@@ -89,6 +91,24 @@ instance lift_linear [HasFiniteBiproducts E] (F : C ⥤ E) [F.Additive] [F.Linea
   map_smul f r := by
     simp only [lift_map, smul_apply, F.map_smul]
     exact biproduct.matrix_smul r _
+
+/-- The components of `Mat_.ext α`: on `M`, decompose `G M` as the biproduct of the `G` of the
+entries of `M`, apply `α` entrywise, and reassemble. -/
+theorem ext_hom_app [HasFiniteBiproducts E] {G G' : Mat_ C ⥤ E} [G.Additive] [G'.Additive]
+    (α : embedding C ⋙ G ≅ embedding C ⋙ G') (M : Mat_ C) :
+    (ext α).hom.app M = (additiveObjIsoBiproduct G M).hom ≫
+      biproduct.map (fun i ↦ α.hom.app (M.X i)) ≫ (additiveObjIsoBiproduct G' M).inv := by
+  simp only [ext, liftUnique, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, Iso.trans_inv, Iso.symm_inv,
+    Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id_assoc, Iso.cancel_iso_hom_left]
+  simp only [biproduct.mapIso_hom, biproduct.mapIso_inv, Iso.app_hom, Iso.app_inv, Iso.refl_inv,
+    NatTrans.id_app]
+  -- The remaining middle factor is the biproduct of identities.
+  congr 1
+  conv_rhs => rw [← Category.id_comp (additiveObjIsoBiproduct G' M).inv]
+  congr 1
+  ext j
+  simp
 
 end Mat_
 
