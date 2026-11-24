@@ -23,7 +23,7 @@ trivialization at a point `center i`. Every compact Hausdorff manifold modelled 
 compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), even one whose chart domains have
 closures inside any prescribed open neighbourhoods of their centres
 (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset`), and the chart domains of a finite bundle
-atlas of a Hausdorff manifold have a shrinking
+atlas of a Hausdorff manifold, or of any subfamily of charts still covering it, have a shrinking
 (`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`). Such atlases are the finite chart
 data from which function spaces of sections, such as Sobolev spaces, are built chartwise.
 
@@ -55,6 +55,7 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.chartSection`: the section with prescribed coordinates on the domain
   of one chart, extended by zero.
 * `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
+* `TauCeti.FiniteBundleAtlas.append`: the union of two finite bundle atlases of `V`.
 
 ## Main results
 
@@ -64,7 +65,8 @@ closed upper half-plane are read in `ℂ` in
   to given neighbourhoods, and of joint atlases.
 * `TauCeti.FiniteBundleAtlas.compactSpace`: a manifold with a finite bundle atlas is compact.
 * `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
-  bundle atlas of a Hausdorff manifold have a shrinking.
+  bundle atlas of a Hausdorff manifold, or of any subfamily of charts still covering it, have a
+  shrinking.
 * `TauCeti.FiniteBundleAtlas.eq_of_forall_eqOn_coord`: a section is determined by its chart
   expressions on the chart images.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
@@ -180,14 +182,16 @@ theorem compactSpace : CompactSpace M := by
   rw [huniv]
   exact isCompact_iUnion fun i ↦ A.isCompact_closure_dom i
 
-/-- The chart domains of a finite bundle atlas of a Hausdorff manifold have a shrinking: open sets
-`D j` with `closure (D j) ⊆ A.dom j` still covering `M`. -/
-theorem exists_isOpen_closure_subset_dom [T2Space M] :
-    ∃ D : Fin A.n → Set M, (∀ j, IsOpen (D j)) ∧ (∀ j, closure (D j) ⊆ A.dom j) ∧
-      ∀ x, ∃ j, x ∈ D j := by
+/-- The chart domains of a finite bundle atlas of a Hausdorff manifold have a shrinking: for any
+finite family `σ` of charts whose domains cover `M`, open sets `D l` with
+`closure (D l) ⊆ A.dom (σ l)` still covering `M`. -/
+theorem exists_isOpen_closure_subset_dom [T2Space M] {ι : Type*} [Finite ι] (σ : ι → Fin A.n)
+    (hσ : ⋃ l, A.dom (σ l) = univ) :
+    ∃ D : ι → Set M, (∀ l, IsOpen (D l)) ∧ (∀ l, closure (D l) ⊆ A.dom (σ l)) ∧
+      ∀ x, ∃ l, x ∈ D l := by
   have := A.compactSpace
-  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ A.isOpen_dom
-    (fun _ _ ↦ toFinite _) (A.iUnion_dom ▸ subset_rfl)
+  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ
+    (fun l ↦ A.isOpen_dom (σ l)) (fun _ _ ↦ toFinite _) (hσ ▸ subset_rfl)
   exact ⟨D, hDo, hD, fun x ↦ mem_iUnion.1 (hcov (mem_univ x))⟩
 
 /-- The manifold chart of the `i`th bundle chart. -/
@@ -237,6 +241,12 @@ theorem overlap_subset_image (i i' : Fin A.n) : A.overlap i i' ⊆ A.image i' :=
 /-- The chart transition from chart `i'` to chart `i`. -/
 def transition (i i' : Fin A.n) (y : E) : E :=
   A.chart i ((A.chart i').symm y)
+
+/-- The chart transition from chart `i'` to chart `i` is the inverse of chart `i'` followed by
+chart `i`. -/
+theorem transition_eq_symm_trans (i i' : Fin A.n) :
+    A.transition i i' = (A.chart i').symm ≫ₕ A.chart i :=
+  (OpenPartialHomeomorph.coe_trans _ _).symm
 
 theorem transition_chart {i i' : Fin A.n} {x : M} (hx : x ∈ A.dom i') :
     A.transition i i' (A.chart i' x) = A.chart i x := by
@@ -411,6 +421,77 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   rfl
 
 end OfBaseSet
+
+/-- The union of two finite bundle atlases of the same bundle: the charts of `A` followed by those
+of `B`. Charts of the two atlases are thereby charts of a single atlas, so that chart data can be
+compared between them. It is reducible, so that the charts `Fin.castAdd B.n i` of `A` and
+`Fin.natAdd A.n j` of `B` are charts of the union for every transparency. -/
+@[expose, reducible, simps n center dom]
+def append (B : FiniteBundleAtlas E M F V) : FiniteBundleAtlas E M F V where
+  n := A.n + B.n
+  center := Fin.append A.center B.center
+  dom := Fin.append A.dom B.dom
+  isOpen_dom i := by
+    induction i using Fin.addCases <;> simp [A.isOpen_dom, B.isOpen_dom]
+  isCompact_closure_dom i := by
+    induction i using Fin.addCases <;> simp [A.isCompact_closure_dom, B.isCompact_closure_dom]
+  closure_dom_subset_source i := by
+    induction i using Fin.addCases <;>
+      simp [A.closure_dom_subset_source, B.closure_dom_subset_source]
+  closure_dom_subset_baseSet i := by
+    induction i using Fin.addCases <;>
+      simp [A.closure_dom_subset_baseSet, B.closure_dom_subset_baseSet]
+  iUnion_dom := eq_univ_of_forall fun x ↦ by
+    obtain ⟨i, hi⟩ := A.exists_mem_dom x
+    exact mem_iUnion.2 ⟨Fin.castAdd B.n i, by simpa using hi⟩
+
+section Append
+
+variable (B : FiniteBundleAtlas E M F V)
+
+@[simp]
+theorem chart_append_castAdd (i : Fin A.n) :
+    (A.append B).chart (Fin.castAdd B.n i) = A.chart i := by
+  simp [chart]
+
+@[simp]
+theorem chart_append_natAdd (j : Fin B.n) :
+    (A.append B).chart (Fin.natAdd A.n j) = B.chart j := by
+  simp [chart]
+
+@[simp]
+theorem triv_append_castAdd (i : Fin A.n) :
+    (A.append B).triv (Fin.castAdd B.n i) = A.triv i := by
+  simp [triv]
+
+@[simp]
+theorem triv_append_natAdd (j : Fin B.n) :
+    (A.append B).triv (Fin.natAdd A.n j) = B.triv j := by
+  simp [triv]
+
+@[simp]
+theorem image_append_castAdd (i : Fin A.n) :
+    (A.append B).image (Fin.castAdd B.n i) = A.image i :=
+  SetLike.ext fun _ ↦ by simp [mem_image]
+
+@[simp]
+theorem image_append_natAdd (j : Fin B.n) :
+    (A.append B).image (Fin.natAdd A.n j) = B.image j :=
+  SetLike.ext fun _ ↦ by simp [mem_image]
+
+@[simp]
+theorem coord_append_castAdd (i : Fin A.n) :
+    (A.append B).coord (Fin.castAdd B.n i) = A.coord i := by
+  funext s y
+  rw [coord_def, coord_def, chart_append_castAdd, triv_append_castAdd]
+
+@[simp]
+theorem coord_append_natAdd (j : Fin B.n) :
+    (A.append B).coord (Fin.natAdd A.n j) = B.coord j := by
+  funext s y
+  rw [coord_def, coord_def, chart_append_natAdd, triv_append_natAdd]
+
+end Append
 
 end FiniteBundleAtlas
 

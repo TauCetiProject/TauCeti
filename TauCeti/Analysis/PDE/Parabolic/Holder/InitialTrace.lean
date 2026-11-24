@@ -164,17 +164,8 @@ theorem exists_forall_abs_sub_lt_of_uniformEquicontinuous {α : ℝ≥0} (hα : 
       |u k p - u k (slabMk (p : ParabolicSpaceTime _).space ⟨t₀, left_mem_Icc.2 ht.le⟩)| < ε := by
   obtain ⟨C, hC0, hC⟩ := exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le (ι := ι)
     (ht := ht) (∑ i, ∑ j, ‖a i j‖) (∑ i, ‖b i‖) ‖c‖
-  -- The Hölder norms of the coefficients bound them pointwise.
-  have hΛ : ∀ p i j, |a i j p| ≤ ∑ i, ∑ j, ‖a i j‖ := fun p i j ↦ by
-    have h : |a i j p| ≤ ‖a i j‖ := by simpa using HolderSpace.norm_apply_le (a i j) p
-    exact h.trans ((Finset.single_le_sum (fun j _ ↦ norm_nonneg (a i j)) (Finset.mem_univ j)).trans
-        (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖)
-          (fun i _ ↦ by positivity) (Finset.mem_univ i)))
-  have hβ : ∀ p i, |b i p| ≤ ∑ i, ‖b i‖ := fun p i ↦ by
-    have h : |b i p| ≤ ‖b i‖ := by simpa using HolderSpace.norm_apply_le (b i) p
-    exact h.trans (Finset.single_le_sum (fun i _ ↦ norm_nonneg (b i)) (Finset.mem_univ i))
-  have hγ : ∀ p, |c p| ≤ ‖c‖ := fun p ↦ by simpa using HolderSpace.norm_apply_le c p
   exact hu.exists_forall_lt_of_le_mul_add_mul (fun p ↦ sub_nonneg.2 (slabTime p).property.1)
-    hC0 (fun η k p ↦ hC hα (u k) ha hΛ hβ hγ (hP k) (hM k) p) hε
+    hC0 (fun η k p ↦ hC hα (u k) ha (HolderSpace.abs_apply_le_sum_sum_norm a)
+      (HolderSpace.abs_apply_le_sum_norm b) (HolderSpace.abs_apply_le_norm c) (hP k) (hM k) p) hε
 
 end TauCeti.ParabolicC2HolderSpace

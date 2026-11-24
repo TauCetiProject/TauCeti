@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 public import TauCeti.RingTheory.WittVector.Units
 
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent

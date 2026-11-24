@@ -19,12 +19,13 @@ even when the subspace is not closed. This definition works over every nontrivia
 field; its closed-unit-ball interpretation requires a densely normed field.
 
 We prove the norm, monotonicity, perturbation, ideal and rank laws, invariance under
-precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), the bound by
-approximation numbers, and the index laws: the Kolmogorov numbers are additive,
-`d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative, `d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`; with one
-index zero these recover the perturbation and postcomposition laws. Over a complete scalar
-field, finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict
-s-number sequence. No completeness of the domain or codomain is needed.
+precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), so that the
+Kolmogorov numbers are surjective, the bound by approximation numbers, and the index laws: the
+Kolmogorov numbers are additive, `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative,
+`d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`; with one index zero these recover the perturbation and
+postcomposition laws. Over a complete scalar field, finite-dimensional subspaces are closed, and
+the Kolmogorov numbers form a strict s-number sequence. No completeness of the domain or codomain
+is needed.
 
 ## References
 
@@ -277,6 +278,11 @@ noncomputable def kolmogorov : SNumberFamily 𝕜 := fun T ↦ T.kolmogorovNumbe
 theorem kolmogorov_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : kolmogorov T n = T.kolmogorovNumber n := (rfl)
+
+/-- The Kolmogorov numbers are surjective: precomposing with a metric surjection leaves them
+unchanged, over every nontrivially normed field. -/
+theorem isSurjective_kolmogorov : IsSurjective (kolmogorov (𝕜 := 𝕜)) where
+  comp_of_isQuotient T _ hQ n := T.kolmogorovNumber_comp_of_isQuotient hQ n
 
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
