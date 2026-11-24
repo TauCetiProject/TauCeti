@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import Mathlib.Tactic.Abel
 
