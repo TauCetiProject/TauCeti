@@ -154,25 +154,20 @@ private theorem two_mul_sum_range_min_int_eq_of_le_right {S k : ℕ} (hSk : S �
   | succ S ih =>
     rw [sum_range_succ, mul_add, ih (Nat.le_of_succ_le hSk),
       min_eq_right (Nat.lt_of_succ_le hSk).le]
-    push_cast
-    ring
+    push_cast; ring
 
 private theorem two_mul_sum_range_min_int_eq_of_le {S k : ℕ} (hkS : k ≤ S) :
     2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) = 2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k := by
   induction S with
-  | zero =>
-    obtain rfl : k = 0 := Nat.eq_zero_of_le_zero hkS
-    simp
+  | zero => obtain rfl := Nat.eq_zero_of_le_zero hkS; simp
   | succ S ih =>
     rw [sum_range_succ, mul_add]
     rcases hkS.eq_or_lt with rfl | hkS'
     · rw [two_mul_sum_range_min_int_eq_of_le_right (Nat.le_succ S), min_eq_right (Nat.le_succ S)]
-      push_cast
-      ring
+      push_cast; ring
     · have hkS'' : k ≤ S := Nat.lt_succ_iff.mp hkS'
       rw [ih hkS'', min_eq_left hkS'']
-      push_cast
-      ring
+      push_cast; ring
 
 private theorem intCast_two_mul_sum_range_min_sub_quad {R : Type*} [Ring R] (S k : ℕ) :
     ((2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) - (2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k) : ℤ) : R) =

@@ -133,10 +133,8 @@ private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : 
         simp only [Zsqrtd.embPos_apply, Finset.mul_sum, ← Finset.sum_add_distrib]
         exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ = 0 := by
-        have hreC : ∑ i : Fin R × Fin S, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ) = 0 := by
-          exact_mod_cast hre
-        have himC : ∑ i : Fin R × Fin S, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) = 0 := by
-          exact_mod_cast him
+        have hreC : ∑ i, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ) = 0 := mod_cast hre
+        have himC : ∑ i, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) = 0 := mod_cast him
         simp [hreC, himC]
 
 private noncomputable def relationPoly {R S : ℕ} (c : Fin R × Fin S → ℝ) : ℂ[X][X] :=
@@ -598,8 +596,7 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
   set D := (Zsqrtd.intGram d (baseFam d N R S)).det.toNat
   have hD_cast : (D : ℤ) = (Zsqrtd.intGram d (baseFam d N R S)).det :=
     Int.toNat_of_nonneg (by omega)
-  have hD_real : (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
-    exact_mod_cast hD_cast
+  have hD_real : (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := mod_cast hD_cast
   refine ⟨D, by omega, ?_, fun p hp hjac ↦ ?_⟩
   · rw [hD_real]
     exact log_det_intGram_le hd hd1 hdeg
