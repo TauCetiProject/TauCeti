@@ -122,27 +122,22 @@ theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
 
 section RatAlgebra
 
-variable {R S}
-variable (R' : Type) [CommRing R'] [Algebra ℚ R'] (S' : Type*)
+variable [Algebra ℚ R]
 
-local notation "F'" => _root_.FreeLieAlgebra R' S'
-local notation "U'" => _root_.UniversalEnvelopingAlgebra R' F'
-local notation "J'" => HopfIdeal.toIdeal (HopfIdeal.augmentation R' U')
-
-/-- Over a commutative `ℚ`-algebra `R' : Type`, the Lie elements sent into `J ^ (c + 1)` by `ι R'`
-are precisely `LieModule.lowerCentralSeries R' F F c`. -/
+/-- Over a commutative `ℚ`-algebra `R`, the Lie elements sent into `J ^ (c + 1)` by `ι R`
+are precisely `LieModule.lowerCentralSeries R F F c`. -/
 theorem comap_augmentation_pow_ι_of_ratAlgebra (c : ℕ) :
-    ((J' ^ (c + 1)).restrictScalars R').comap
-        (_root_.UniversalEnvelopingAlgebra.ι R' : F' →ₗ⁅R'⁆ U').toLinearMap =
-      (LieModule.lowerCentralSeries R' F' F' c).toSubmodule :=
-  comap_augmentation_pow_ι R' S' (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R' F') c
+    ((J ^ (c + 1)).restrictScalars R).comap
+        (_root_.UniversalEnvelopingAlgebra.ι R : F →ₗ⁅R⁆ U).toLinearMap =
+      (LieModule.lowerCentralSeries R F F c).toSubmodule :=
+  comap_augmentation_pow_ι R S (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R F) c
 
-/-- Over a commutative `ℚ`-algebra `R' : Type`, the free nilpotent quotient of class at most `c`
+/-- Over a commutative `ℚ`-algebra `R`, the free nilpotent quotient of class at most `c`
 embeds into `U(F) ⧸ J ^ (c + 1)`. -/
 theorem lowerCentralQuotientι_injective_of_ratAlgebra (c : ℕ) :
-    Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R' F' c) :=
-  lowerCentralQuotientι_injective R' S'
-    (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R' F') c
+    Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
+  lowerCentralQuotientι_injective R S
+    (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R F) c
 
 end RatAlgebra
 

@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 # Nilpotence in ring quotients
 
 For a positive power of a two-sided ideal, nilpotence in the quotient is equivalent to
-nilpotence modulo the original ideal, and the image of `I` in `A ⧸ I ^ n` has vanishing `n`-th
-power (`Ideal.map_quotient_mk_pow_eq_bot`). The zeroth-power quotient is the zero ring. This allows
-a representation kernel to be refined by taking powers without losing nilpotence of its operators.
+nilpotence modulo the original ideal. The zeroth-power quotient is the zero ring. In particular,
+the elements of the ideal are nilpotent modulo each of its powers, and the image of `I` in
+`A ⧸ I ^ n` has vanishing `n`-th power (`Ideal.map_quotient_mk_pow_eq_bot`). This allows a
+representation kernel to be refined by taking powers without losing nilpotence of its operators.
 The ring need not be commutative.
 
 For commutative rings, the quotient by the nilradical is reduced.
@@ -54,6 +55,13 @@ theorem _root_.Ideal.isNilpotent_quotient_pow_iff
       refine ⟨e * n, ?_⟩
       rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem, pow_mul]
       exact Ideal.pow_mem_pow he n
+
+/-- An element of a two-sided ideal `I` is nilpotent modulo every power of `I`. -/
+theorem _root_.Ideal.Quotient.isNilpotent_mk_pow_of_mem {I : Ideal A} [I.IsTwoSided] {a : A}
+    (ha : a ∈ I) (n : ℕ) : IsNilpotent (Ideal.Quotient.mk (I ^ n) a) :=
+  (Ideal.isNilpotent_quotient_pow_iff I n).mpr <| .inr <| by
+    rw [Ideal.Quotient.eq_zero_iff_mem.mpr ha]
+    exact .zero
 
 /-- In the quotient of a possibly noncommutative ring by `I ^ n`, the image of a two-sided ideal `I`
 has vanishing `n`-th power. -/

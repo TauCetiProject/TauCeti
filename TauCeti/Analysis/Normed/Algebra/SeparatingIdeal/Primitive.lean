@@ -72,19 +72,19 @@ private theorem finiteDimensional_of_isSimpleModule_of_completeSpace {J : Submod
     exact fun h ↦ hE (Module.Finite.equiv Submodule.topEquiv)
   choose g x hx hgx hg using fun p : {p : B //
     ¬ FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E p))} ↦
-      IsSimpleModule.exists_mul_smul_eq_zero p.1 p.2
+      IsSimpleModule.exists_mul_smul_eq_zero p.val p.property
   let Q : ℕ → {p : B // ¬ FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E p))} :=
-    fun n ↦ Nat.rec ⟨1, h1⟩ (fun _ p ↦ ⟨g p * p.1, hg p⟩) n
+    fun n ↦ Nat.rec ⟨1, h1⟩ (fun _ p ↦ ⟨g p * p.val, hg p⟩) n
   let b : ℕ → B := fun n ↦ g (Q n)
   let V : ℕ → Submodule ℂ B := fun n ↦
     (J.map ((List.range n).map fun i ↦ LinearMap.mulRight ℂ (b i)).prod).topologicalClosure
   have hprod (n : ℕ) (y : B) :
-      ((List.range n).map fun i ↦ LinearMap.mulRight ℂ (b i)).prod y = y * (Q n).1 := by
+      ((List.range n).map fun i ↦ LinearMap.mulRight ℂ (b i)).prod y = y * (Q n).val := by
     induction n generalizing y with
     | zero => simp [Q]
     | succ n ih => simp [List.range_succ, ih, b, Q, mul_assoc]
   -- The closure of `J * Q n` annihilates exactly the kernel of `Q n`.
-  have key (n : ℕ) (η : E) : (∀ c ∈ V n, c • η = 0) ↔ (Q n).1 • η = 0 := by
+  have key (n : ℕ) (η : E) : (∀ c ∈ V n, c • η = 0) ↔ (Q n).val • η = 0 := by
     refine ⟨fun h ↦ ?_, fun h c hc ↦ ?_⟩
     · by_contra hη
       obtain ⟨j', hj', hj'η⟩ := hJ' _ hη

@@ -63,7 +63,7 @@ theorem comap_absolutelyContinuous_volume :
   rw [volume_def]
   refine withDensity_absolutelyContinuous' (Measurable.aemeasurable (by fun_prop))
     (ae_of_all _ fun τ ↦ ?_)
-  simp [← NNReal.coe_ne_zero, τ.im_ne_zero]
+  simp [τ.im_ne_zero]
 
 /-- The invariant measure gives positive mass to nonempty open sets. -/
 instance : IsOpenPosMeasure (volume : Measure ℍ) :=

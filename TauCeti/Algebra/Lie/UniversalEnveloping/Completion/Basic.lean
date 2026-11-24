@@ -59,19 +59,19 @@ private def bidegreePiece (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
   Submodule.map₂ (TensorProduct.mk R U U) (𝒰 p.1) (𝒰 p.2)
 
 private def comulHomogeneousSpan (n : Γ) : Submodule R (U ⊗[R] U) :=
-  ⨆ p : {p : Γ × Γ // p.1 + p.2 = n}, bidegreePiece ℒ p.1
+  ⨆ p : {p : Γ × Γ // p.1 + p.2 = n}, bidegreePiece ℒ p.val
 
 private theorem comulHomogeneousSpan_le_comap_mulLeft {m n : Γ} {x : L} (hx : x ∈ ℒ m) :
     comulHomogeneousSpan ℒ n ≤ (comulHomogeneousSpan ℒ (m + n)).comap
       (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U) + (1 : U) ⊗ₜ[R] ι R x)) := by
   refine iSup_le fun p => ?_
   have hx' := ι_mem_homogeneousSubmodule ℒ hx
-  have hL : bidegreePiece ℒ p.1 ≤ (bidegreePiece ℒ (m + p.1.1, p.1.2)).comap
+  have hL : bidegreePiece ℒ p.val ≤ (bidegreePiece ℒ (m + p.val.1, p.val.2)).comap
       (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U))) := Submodule.map₂_le.mpr fun _ hu _ hv => by
     simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
       Algebra.TensorProduct.tmul_mul_tmul, one_mul]
     exact Submodule.apply_mem_map₂ _ (SetLike.mul_mem_graded hx' hu) hv
-  have hR : bidegreePiece ℒ p.1 ≤ (bidegreePiece ℒ (p.1.1, m + p.1.2)).comap
+  have hR : bidegreePiece ℒ p.val ≤ (bidegreePiece ℒ (p.val.1, m + p.val.2)).comap
       (LinearMap.mulLeft R ((1 : U) ⊗ₜ[R] ι R x)) := Submodule.map₂_le.mpr fun _ hu _ hv => by
     simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
       Algebra.TensorProduct.tmul_mul_tmul, one_mul]
@@ -79,10 +79,10 @@ private theorem comulHomogeneousSpan_le_comap_mulLeft {m n : Γ} {x : L} (hx : x
   intro t ht
   simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, add_mul]
   exact add_mem
-    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.1)
-      ⟨(m + p.1.1, p.1.2), by rw [add_assoc, p.2]⟩ (hL ht))
-    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.1)
-      ⟨(p.1.1, m + p.1.2), by rw [add_left_comm, p.2]⟩ (hR ht))
+    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.val)
+      ⟨(m + p.val.1, p.val.2), by rw [add_assoc, p.property]⟩ (hL ht))
+    (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.val)
+      ⟨(p.val.1, m + p.val.2), by rw [add_left_comm, p.property]⟩ (hR ht))
 
 private theorem comul_prod_mem_comulHomogeneousSpan (l : List (Σ i, ℒ i)) :
     Coalgebra.comul (R := R) (l.map fun x => ι R (x.2 : L)).prod ∈
@@ -90,7 +90,8 @@ private theorem comul_prod_mem_comulHomogeneousSpan (l : List (Σ i, ℒ i)) :
   induction l with
   | nil =>
     simp only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one]
-    exact le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = 0} => bidegreePiece ℒ q.1) ⟨(0, 0), add_zero 0⟩
+    exact le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = 0} => bidegreePiece ℒ q.val)
+      ⟨(0, 0), add_zero 0⟩
       (Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded 𝒰) (SetLike.one_mem_graded 𝒰))
   | cons a l ih =>
     simp only [List.map_cons, List.prod_cons, List.sum_cons, Bialgebra.comul_mul, comul_ι]
@@ -126,7 +127,7 @@ theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {u : U} (hu : u ∈ 𝒰 n) {i
       rw [TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,
         TauCeti.GradedAlgebra.proj_eq_homogeneousComponent]
       exact TauCeti.map_homogeneousComponent_eq_zero_of_mem_ne 𝒰 𝒰 ht
-        fun hp => hij (by simpa only [hp] using p.2)
+        fun hp => hij (by simpa only [hp] using p.property)
   exact LinearMap.mem_ker.mp (hker (comul_mem_comulHomogeneousSpan ℒ hu))
 
 /-- The `(i, j)`-bidegree projection of `Δ(u)` depends only on the `(i + j)`-homogeneous component

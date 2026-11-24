@@ -1,8 +1,9 @@
 name: PR status labels
 
-# Labels use the same pinned merge gate as Auto-merge. A ready label means the PR
-# passes its prerequisites; queue membership/reservations are reported separately.
-# Only trusted base and pinned policy code execute; PR contents are API data.
+# Labels use the TauCetiReview main merge gate, checked out through
+# .github/actions/checkout-merge-policy. A ready label means the PR passes its prerequisites;
+# queue membership/reservations are reported separately.
+# Only trusted base and merge policy code execute; PR contents are API data.
 
 # Per-event reconciliation lives in pr-status.yml, which batches bursts of events so that they do not
 # each take a runner. This workflow keeps the bounded rotating backstop and the manual re-sync.
@@ -18,6 +19,11 @@ on:
         description: "PR number to reconcile, or all for a complete backfill"
         required: true
         type: string
+      shared_evidence:
+        description: "Use shared evidence for a bounded reconciliation canary"
+        required: false
+        default: false
+        type: boolean
 
 # Lifecycle label writes use the scoped App token; the workflow token reconciles PR-CI routing.
 permissions:
@@ -89,22 +95,32 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e4ed3eab96457b7425b494b0ea1952319f1d12d6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e4ed3eab96457b7425b494b0ea1952319f1d12d6
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Reconcile status label
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ inputs.shared_evidence && 'true' || vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ needs.resolve.outputs.pr }}
-        run: python3 scripts/pr_status/labels.py reconcile "$PR"
+        run: |
+          result=0
+          python3 scripts/pr_status/labels.py reconcile "$PR" || result=$?
+          if [ "$result" -eq 75 ]; then
+            echo "::notice::PR reconciliation deferred until quota reset"
+            echo "PR status reconciliation: **deferred**; retry after quota reset." >> "$GITHUB_STEP_SUMMARY"
+          else
+            exit "$result"
+          fi
 
   # The scheduled backstop, or an explicit migration/backfill of every open PR (`pr: all`).
   # Per-PR jobs can overlap this pass; both read fresh state and converge.
@@ -117,12 +133,29 @@ jobs:
   # review-in-progress (its expiry raises no event), and a rotating 1/24 slice of the rest, so every
   # open PR is still rechecked over 24 runs. Selection is one paginated GraphQL listing, which does
   # not draw on the REST quota. A manual `all` checkpoints the complete pass across bounded jobs.
+  wake-shared-backstop:
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti'
+      && github.ref == 'refs/heads/main'
+      && github.event_name == 'schedule'
+      && vars.PR_STATUS_SHARED_EVIDENCE == 'true'
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 5
+    steps:
+      - name: Wake the retained shared reconciliation loop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run pr-status.yml --ref main
+
   sweep:
     timeout-minutes: 40
     if: >-
       github.repository == 'TauCetiProject/TauCeti'
       && github.ref == 'refs/heads/main'
-      && (github.event_name == 'schedule'
+      && ((github.event_name == 'schedule' && vars.PR_STATUS_SHARED_EVIDENCE != 'true')
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
     runs-on:
       group: TauCetiPRStatus
@@ -151,12 +184,11 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e4ed3eab96457b7425b494b0ea1952319f1d12d6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e4ed3eab96457b7425b494b0ea1952319f1d12d6
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Restore sweep progress
@@ -182,6 +214,9 @@ jobs:
       - name: Reconcile open PRs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ inputs.shared_evidence && 'true' || vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -198,9 +233,15 @@ jobs:
           if [[ "$FULL_PASS" == 1 ]]; then
             mkdir -p "$RUNNER_TEMP/sweep-out"
             since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            exec python3 scripts/pr_status/batch.py --since "$since" --all-open \
+            result=0
+            python3 scripts/pr_status/batch.py --since "$since" --all-open \
               --budget-seconds 1800 --state-in "$RUNNER_TEMP/sweep-in/state.json" \
-              --state-out "$RUNNER_TEMP/sweep-out/state.json"
+              --state-out "$RUNNER_TEMP/sweep-out/state.json" || result=$?
+            if [ "$result" -eq 75 ]; then
+              echo "::notice::Full sweep deferred; checkpoint retains unfinished work"
+              exit 0
+            fi
+            exit "$result"
           fi
           owner=${REPO%/*}
           name=${REPO#*/}
@@ -229,7 +270,13 @@ jobs:
             if out=$(python3 scripts/pr_status/labels.py reconcile "$pr" 2>&1); then
               printf '%s\n' "$out"
             else
+              result=$?
               printf '%s\n' "$out"
+              if [ "$result" -eq 75 ]; then
+                echo "::notice::Sweep deferred after PR #$pr; later rotating sweeps retain coverage"
+                echo "PR status sweep: **deferred**; quota hold." >> "$GITHUB_STEP_SUMMARY"
+                break
+              fi
               failures+=("$pr")
               # A rate limit refuses every later PR as well; stop instead of spending more calls.
               if grep -qiE 'rate ?limit|HTTP 401' <<< "$out"; then

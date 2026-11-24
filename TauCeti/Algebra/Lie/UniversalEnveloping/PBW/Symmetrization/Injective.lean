@@ -40,9 +40,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -126,7 +126,7 @@ theorem pbwSymmetrizationMap_injective : Function.Injective (pbwSymmetrizationMa
   rw [← RingHom.mem_ker, SymmetricAlgebra.ker_map_of_surjective π.toLinearMap hπ]
   exact hj
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `ι R : L → U(L)` is injective without any freeness
+/-- Over a commutative `ℚ`-algebra `R`, `ι R : L → U(L)` is injective without any freeness
 or flatness hypothesis on `L`. -/
 theorem ι_injective_of_ratAlgebra :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) :=

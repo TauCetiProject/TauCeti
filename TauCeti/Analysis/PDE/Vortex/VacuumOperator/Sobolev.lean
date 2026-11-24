@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 
 /-!
 # The vacuum vortex operator on the Sobolev scale
@@ -208,7 +210,7 @@ theorem sum_temperedVacuumOperator_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
       c' 3 = ∂_{I} (c 2) - ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
     refine ⟨?_, ?_, ?_, ?_⟩ <;>
     · ext z
-      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      simp [c, c', SchwartzMap.lineDerivOp_postcompCLM]
       ring
   simp only [c, c'] at h₀ h₁ h₂ h₃
   simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumOperator_apply_zero,
@@ -234,7 +236,7 @@ theorem sum_temperedVacuumAdjoint_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
       c' 3 = ∂_{I} (c 2) + ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
     refine ⟨?_, ?_, ?_, ?_⟩ <;>
     · ext z
-      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      simp [c, c', SchwartzMap.lineDerivOp_postcompCLM]
       ring
   simp only [c, c'] at h₀ h₁ h₂ h₃
   simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumAdjoint_apply_zero,
@@ -297,23 +299,25 @@ theorem temperedVacuumAdjoint_injective : Function.Injective temperedVacuumAdjoi
 automorphism of the fields of tempered distributions. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`
 (`temperedVacuumOperatorEquiv_symm_apply`). -/
 def temperedVacuumOperatorEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumOperator
+  .ofContinuousLinearMap temperedVacuumOperator
     (temperedVacuumAdjoint ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumOperator_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumOperator_injective <|
       temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent _)
-    (fun y ↦ temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
 
 /-- **The adjoint of the vacuum operator is invertible on tempered fields**: `L₀*` as a continuous
 linear automorphism of the fields of tempered distributions. Its inverse is
 `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹` (`temperedVacuumAdjointEquiv_symm_apply`). -/
 def temperedVacuumAdjointEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumAdjoint
+  .ofContinuousLinearMap temperedVacuumAdjoint
     (temperedVacuumOperator ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumAdjoint_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumAdjoint_injective <|
       temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent _)
-    (fun y ↦ temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
 
 @[simp]
 theorem coe_temperedVacuumOperatorEquiv : ⇑temperedVacuumOperatorEquiv = temperedVacuumOperator :=

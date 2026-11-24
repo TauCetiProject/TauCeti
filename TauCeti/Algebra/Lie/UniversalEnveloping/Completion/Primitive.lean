@@ -16,7 +16,7 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 For a nonnegatively graded Lie algebra `L` over a commutative ring `R` with enveloping degree
 filtration `F` on `U(L)`, every completed primitive element of `F.completion` has primitive
 homogeneous components at each cutoff (`isPrimitiveElem_decompose_of_isCompletedPrimitive`). When
-`[IsPositiveGrading d ℒ]` over a commutative `ℚ`-algebra `R : Type`,
+`[IsPositiveGrading d ℒ]` over a commutative `ℚ`-algebra `R`,
 `UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι` and
 `PositiveDegrees.completionLieEquivPi` show that `completedLieToU` identifies `d.completedLie ℒ`
 with the Lie subalgebra `completedPrimitives` without any freeness or finite-generation assumption.
@@ -26,14 +26,14 @@ with the Lie subalgebra `completedPrimitives` without any freeness or finite-gen
 * `TauCeti.UniversalEnvelopingAlgebra.completedLieToPrimitives`: the completed Lie homomorphism
   landing in `completedPrimitives`.
 * `TauCeti.UniversalEnvelopingAlgebra.completedPrimitiveLieEquiv`: over a commutative `ℚ`-algebra
-  `R : Type`, the Lie equivalence between `d.completedLie ℒ` and `completedPrimitives`.
+  `R`, the Lie equivalence between `d.completedLie ℒ` and `completedPrimitives`.
 
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.isPrimitiveElem_decompose_of_isCompletedPrimitive`: every
   homogeneous component extracted from a completed primitive element is primitive in `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.isCompletedPrimitive_iff_mem_range_completedLieToU`: over a
-  commutative `ℚ`-algebra `R : Type`, completed primitives are the range of `completedLieToU`.
+  commutative `ℚ`-algebra `R`, completed primitives are the range of `completedLieToU`.
 
 ## References
 
@@ -151,9 +151,7 @@ end Components
 
 section RatAlgebra
 
-universe u v
-
-variable {Γ : Type u} (R : Type) {L : Type v} [AddCommMonoid Γ] [CommRing R] [Algebra ℚ R]
+variable {Γ : Type*} (R : Type*) {L : Type*} [AddCommMonoid Γ] [CommRing R] [Algebra ℚ R]
   [LieRing L] [LieAlgebra R L] (ℒ : Γ → Submodule R L) [DecidableEq Γ] [GradedLieAlgebra ℒ]
   (d : PositiveDegrees Γ) [IsPositiveGrading d ℒ]
 
@@ -166,17 +164,17 @@ local notation "P" => completedPrimitives ℒ (PositiveDegrees.degree d)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, each `truncatedLieToU` is injective without any
+/-- Over a commutative `ℚ`-algebra `R`, each `truncatedLieToU` is injective without any
 module-freeness hypothesis. -/
 theorem truncatedLieToU_injective_of_ratAlgebra (k : ℕ) :
     Function.Injective (truncatedLieToU ℒ d k) :=
   truncatedLieToU_injective ℒ d (ι_injective_of_ratAlgebra R L) k
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `completedLieToU` is injective. -/
+/-- Over a commutative `ℚ`-algebra `R`, `completedLieToU` is injective. -/
 theorem completedLieToU_injective_of_ratAlgebra : Function.Injective (completedLieToU ℒ d) :=
   completedLieToU_injective ℒ d (ι_injective_of_ratAlgebra R L)
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, an element of the degree completion of `U(L)` is
+/-- Over a commutative `ℚ`-algebra `R`, an element of the degree completion of `U(L)` is
 completed primitive precisely when it belongs to the range of `completedLieToU`. -/
 theorem isCompletedPrimitive_iff_mem_range_completedLieToU {x : (F).completion} :
     (F).IsCompletedPrimitive R x ↔ x ∈ Set.range (completedLieToU ℒ d) := by
@@ -202,8 +200,10 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU {x : (F).completion} 
     have hterm (n : Γ) : (DirectSum.decompose 𝒰 (ι R (y n : L)) m : U) =
         if n = m then ι R (y n : L) else 0 := by
       split_ifs with hnm
-      · exact hnm ▸ _root_.DirectSum.decompose_of_mem_same 𝒰 (ι_mem_homogeneousSubmodule ℒ (y n).2)
-      · exact _root_.DirectSum.decompose_of_mem_ne 𝒰 (ι_mem_homogeneousSubmodule ℒ (y n).2) hnm
+      · exact hnm ▸ _root_.DirectSum.decompose_of_mem_same 𝒰
+          (ι_mem_homogeneousSubmodule ℒ (y n).property)
+      · exact _root_.DirectSum.decompose_of_mem_ne 𝒰
+          (ι_mem_homogeneousSubmodule ℒ (y n).property) hnm
     rw [_root_.DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
     simp only [hterm, Finset.sum_ite_eq', hm_cut, ↓reduceIte, hy m]
     have hm_nonneg := d.degree_nonneg hm_mon
@@ -218,7 +218,7 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU {x : (F).completion} 
       simpa only [hbot, Submodule.mem_bot] using (DirectSum.decompose 𝒰 z m).property
     rw [hz0, hz0]
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `completedLieToPrimitives` identifies
+/-- Over a commutative `ℚ`-algebra `R`, `completedLieToPrimitives` identifies
 `d.completedLie ℒ` with the Lie subalgebra of completed primitive elements of `(F).completion`. -/
 noncomputable def completedPrimitiveLieEquiv : d.completedLie ℒ ≃ₗ⁅R⁆ P :=
   LieEquiv.ofBijective (completedLieToPrimitives ℒ d)
