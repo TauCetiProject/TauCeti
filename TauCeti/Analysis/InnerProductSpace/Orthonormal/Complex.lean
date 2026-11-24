@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Orthonormal
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Analysis.InnerProductSpace.Complex
 
@@ -25,6 +25,17 @@ unconditionally by Hermitian symmetry, the imaginary condition may be written ei
 complex-orthonormal family `u`, its underlying real family `(u₀, i • u₀, …)`
 (`TauCeti.complexToRealFamily u`) is real-orthonormal (`TauCeti.orthonormal_complexToRealFamily`).
 
+Over `ℂ`, a complex orthonormal family `v` moreover gives the real orthonormal family
+`(v i, I • v i)` (`Orthonormal.complexToReal`), indexed by `ι × Fin 2` as the real basis
+`Module.Basis.complexToReal` underlying a complex basis. For a complex orthonormal basis `b` this is
+the real orthonormal basis `b.complexToReal`, whose underlying basis is `b.toBasis.complexToReal`
+(`OrthonormalBasis.toBasis_complexToReal`).
+
+## Main definitions
+
+* `OrthonormalBasis.complexToReal`: the real orthonormal basis `(b i, I • b i)` underlying a complex
+  orthonormal basis `b`.
+
 ## Main results
 
 * `Orthonormal.real`: every `𝕜`-orthonormal family (for `[RCLike 𝕜]`) is `ℝ`-orthonormal.
@@ -33,10 +44,15 @@ complex-orthonormal family `u`, its underlying real family `(u₀, i • u₀, �
   `i, j`).
 * `TauCeti.orthonormal_complexToRealFamily`: the underlying real family `(u₀, i • u₀, …)` of a
   complex-orthonormal family is real-orthonormal for any compatible real inner product.
+* `Orthonormal.complexToReal`: the family `(v i, I • v i)` of a complex orthonormal family `v` is
+  real orthonormal.
+* `OrthonormalBasis.complexToReal_apply`, `OrthonormalBasis.complexToReal_repr_apply`: the vectors
+  and coordinates of `b.complexToReal`.
 -/
 
 public section
 
+open Module
 open scoped InnerProductSpace
 
 namespace Orthonormal
@@ -98,3 +114,56 @@ theorem orthonormal_complexToRealFamily {E : Type*} [SeminormedAddCommGroup E]
   · simp [hab, hu.2 hab]
 
 end TauCeti
+
+section ComplexToReal
+
+variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
+
+/-- The family `(v i, I • v i)`, indexed by `ι × Fin 2` as in `Module.Basis.complexToReal`, of a
+complex orthonormal family `v` is orthonormal for any real inner product with the same norm. -/
+theorem Orthonormal.complexToReal {v : ι → E} (hv : Orthonormal ℂ v) :
+    Orthonormal ℝ fun p : ι × Fin 2 ↦ Complex.basisOneI p.2 • v p.1 := by
+  classical
+  rw [orthonormal_iff_ite] at hv ⊢
+  rintro ⟨i, k⟩ ⟨j, l⟩
+  rw [TauCeti.inner_real_eq_re_inner ℂ]
+  fin_cases k <;> fin_cases l <;>
+    simp [inner_smul_left, inner_smul_right, hv, apply_ite]
+
+namespace OrthonormalBasis
+
+variable [Fintype ι] [IsScalarTower ℝ ℂ E]
+
+/-- The real orthonormal basis underlying a complex orthonormal basis `b`: its vectors are `b i` at
+index `(i, 0)` and `I • b i` at index `(i, 1)`. -/
+noncomputable def complexToReal (b : OrthonormalBasis ι ℂ E) : OrthonormalBasis (ι × Fin 2) ℝ E :=
+  b.toBasis.complexToReal.toOrthonormalBasis <| by
+    convert b.orthonormal.complexToReal using 1
+    funext ⟨i, k⟩
+    simp
+
+/-- The basis underlying `b.complexToReal` is the real basis `b.toBasis.complexToReal`. -/
+@[simp]
+theorem toBasis_complexToReal (b : OrthonormalBasis ι ℂ E) :
+    b.complexToReal.toBasis = b.toBasis.complexToReal :=
+  Basis.toBasis_toOrthonormalBasis _ _
+
+/-- The vectors of `b.complexToReal` are `Complex.basisOneI k • b i`, that is, `b i` and
+`I • b i`. -/
+@[simp]
+theorem complexToReal_apply (b : OrthonormalBasis ι ℂ E) (i : ι) (k : Fin 2) :
+    b.complexToReal (i, k) = Complex.basisOneI k • b i := by
+  rw [← OrthonormalBasis.coe_toBasis, toBasis_complexToReal, Basis.complexToReal_apply,
+    OrthonormalBasis.coe_toBasis]
+
+/-- The real coordinates of a vector in `b.complexToReal` are the real and imaginary parts of its
+complex coordinates in `b`. -/
+@[simp]
+theorem complexToReal_repr_apply (b : OrthonormalBasis ι ℂ E) (x : E) (i : ι) (k : Fin 2) :
+    b.complexToReal.repr x (i, k) = Complex.basisOneI.repr (b.repr x i) k := by
+  rw [← OrthonormalBasis.coe_toBasis_repr_apply, toBasis_complexToReal,
+    Basis.complexToReal_repr_apply, OrthonormalBasis.coe_toBasis_repr_apply]
+
+end OrthonormalBasis
+
+end ComplexToReal

@@ -65,6 +65,8 @@ two-vectors.
   `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
   `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
   exterior powers.
+* `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
+  `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -340,6 +342,15 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     Function.Bijective (map n f) :=
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
+
+/-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
+@[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
+    map n (c • f) = c ^ n • map n f := by
+  apply linearMap_ext
+  ext m
+  have hm : ⇑(c • f) ∘ m = fun i ↦ c • (f ∘ m) i := funext fun _ ↦ rfl
+  simp only [LinearMap.compAlternatingMap_apply, map_apply_ιMulti, LinearMap.smul_apply, hm,
+    AlternatingMap.map_smul_univ, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
 end Bijective
 
