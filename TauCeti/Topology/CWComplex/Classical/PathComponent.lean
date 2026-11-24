@@ -31,7 +31,7 @@ need not be path connected, one path component at a time.
 * `Topology.CWComplex.pathComponentInSubcomplex C x`: the path component of `x` in `C`, as a
   subcomplex.
 * `Topology.CWComplex.coe_pathComponentInSubcomplex`: its underlying set is `pathComponentIn C x`.
-* `Topology.CWComplex.mem_I_pathComponentInSubcomplex`: a cell belongs to it exactly when its
+* `Topology.CWComplex.mem_pathComponentInSubcomplex_I_iff`: a cell belongs to it exactly when its
   centre is joined to `x` in `C`.
 * `Topology.CWComplex.pathComponent_subset_pathComponentInSubcomplex`: it contains the path
   component of `x` in the ambient space whenever `C` does.
@@ -67,6 +67,13 @@ theorem RelCWComplex.closedCell_subset_pathComponentIn {C D : Set X} [RelCWCompl
   (isPathConnected_closedCell n j).subset_pathComponentIn (map_zero_mem_closedCell n j)
     (closedCell_subset_complex n j)
 
+/-- A closed cell whose centre lies in the path component of `x` in the complex lies in that path
+component. -/
+theorem RelCWComplex.closedCell_subset_pathComponentIn_of_mem {C D : Set X} [RelCWComplex C D]
+    {x : X} {n : ℕ} {j : cell C n} (h : map n j 0 ∈ pathComponentIn C x) :
+    closedCell n j ⊆ pathComponentIn C x :=
+  (closedCell_subset_pathComponentIn n j).trans (pathComponentIn_congr h).subset
+
 namespace CWComplex
 
 variable [T2Space X] (C : Set X) [CWComplex C]
@@ -76,13 +83,11 @@ variable [T2Space X] (C : Set X) [CWComplex C]
 empty subcomplex when `x ∉ C`. -/
 def pathComponentInSubcomplex (x : X) : Subcomplex C :=
   Subcomplex.mk' C (pathComponentIn C x) (fun n ↦ {j | map n j 0 ∈ pathComponentIn C x})
-    (fun n j ↦ (RelCWComplex.closedCell_subset_pathComponentIn n (j : cell C n)).trans
-      (pathComponentIn_congr j.property).subset)
+    (fun _ j ↦ RelCWComplex.closedCell_subset_pathComponentIn_of_mem j.property)
     (by
       refine subset_antisymm (iUnion₂_subset fun n j ↦ ?_) fun y hy ↦ ?_
-      · exact (openCell_subset_closedCell n _).trans <|
-          (RelCWComplex.closedCell_subset_pathComponentIn n (j : cell C n)).trans
-            (pathComponentIn_congr j.property).subset
+      · exact (openCell_subset_closedCell n _).trans
+          (RelCWComplex.closedCell_subset_pathComponentIn_of_mem j.property)
       · have hyC : y ∈ C := pathComponentIn_subset hy
         rw [← iUnion_openCell_eq_complex (C := C)] at hyC
         obtain ⟨n, j, hyj⟩ := mem_iUnion₂.1 hyC
@@ -101,7 +106,7 @@ theorem coe_pathComponentInSubcomplex (x : X) :
 /-- A cell belongs to the subcomplex of the path component of `x` exactly when its centre is joined
 to `x` inside `C`. -/
 @[simp]
-theorem mem_I_pathComponentInSubcomplex {x : X} {n : ℕ} {j : cell C n} :
+theorem mem_pathComponentInSubcomplex_I_iff {x : X} {n : ℕ} {j : cell C n} :
     j ∈ (pathComponentInSubcomplex C x).I n ↔ map n j 0 ∈ pathComponentIn C x :=
   Iff.rfl
 

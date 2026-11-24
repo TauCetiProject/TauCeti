@@ -174,8 +174,7 @@ theorem iSup_pathFromChainSkeleton_eq_top (hC : pathComponent b ⊆ C) :
       (preimageSkeleton C (MoorePathFrom.endpoint B b) q) = ⊤ :=
     iSup_cubicalChainModuleSupportedIn_eq_top fun _ hK ↦
       exists_subset_preimageSkeleton_of_isCompact (MoorePathFrom.endpoint B b).continuous
-        (range_subset_iff.2 fun γ ↦ hC ⟨γ.toMoorePath.toPath.cast γ.source.symm
-          (MoorePathFrom.endpoint_apply γ)⟩) hK
+        (range_subset_iff.2 fun γ ↦ hC (MoorePathFrom.endpoint_mem_pathComponent γ)) hK
   rw [← Submodule.restrictScalars_eq_top_iff R, Submodule.restrictScalars_iSup]
   simpa only [restrictScalars_pathFromChainSkeleton] using h
 
