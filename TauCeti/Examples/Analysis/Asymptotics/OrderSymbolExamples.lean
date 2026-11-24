@@ -20,7 +20,7 @@ sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph 
 
 ## Main results
 
-* `TauCeti.abs_sin_pi_mul_intCast_add_le`: `|sin(πn + x)| ≤ |x|` for `n ∈ ℤ` and real `x`.
+* `Int.abs_sin_pi_mul_intCast_add_le`: `|sin(πn + x)| ≤ |x|` for `n ∈ ℤ` and real `x`.
 * `TauCeti.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ`, hence as
   `n → ±∞` (DLMF 2.1.6).
 
@@ -44,21 +44,21 @@ public section
 open Filter Asymptotics Complex
 open scoped Topology Real
 
-namespace TauCeti
-
 /-- `|sin(πn + x)| ≤ |x|` for every integer `n` and real `x`: shifting by `πn` only changes the
 sign of the sine, and `|sin x| ≤ |x|`. -/
-theorem abs_sin_pi_mul_intCast_add_le (n : ℤ) (x : ℝ) : |Real.sin (π * n + x)| ≤ |x| := by
+theorem Int.abs_sin_pi_mul_intCast_add_le (n : ℤ) (x : ℝ) : |Real.sin (π * n + x)| ≤ |x| := by
   -- `sin(πn + x) = (−1)ⁿ sin x`.
   rw [add_comm, mul_comm π]
   simpa [Real.sin_add_int_mul_pi, abs_mul] using Real.abs_sin_le_abs (x := x)
 
+namespace TauCeti
+
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ` (the filter `⊤`), the case `x = n⁻¹` of
-`TauCeti.abs_sin_pi_mul_intCast_add_le`. -/
+`Int.abs_sin_pi_mul_intCast_add_le`. -/
 theorem sin_pi_mul_add_inv_isBigO :
     (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[⊤] fun n => (n : ℝ)⁻¹ :=
   IsBigO.of_bound 1 (Eventually.of_forall fun n => by
-    simpa [Real.norm_eq_abs] using abs_sin_pi_mul_intCast_add_le n (n : ℝ)⁻¹)
+    simpa [Real.norm_eq_abs] using n.abs_sin_pi_mul_intCast_add_le (n : ℝ)⁻¹)
 
 /-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.tanh_isEquivalent_id`. -/
 example : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z :=
