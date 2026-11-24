@@ -100,7 +100,7 @@ theorem degree_pontryaginThomSphereMap_comp_eq_sum_localIndex (h : IsFramedTube 
     o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = ∑ x ∈ hσ.toFinset,
       o.localIndex o' ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) x := by
   have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
+    connectedSpace_euclideanSphere (by rw [Fintype.card_fin]; omega)
   -- The fibre of the composite over the image of the origin is `σ⁻¹(range f)`.
   have hpre : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ ⁻¹'
       {onePointHomeomorphSphere k s₀ (0 : Fin k → ℝ)} = σ ⁻¹' range f :=
@@ -120,7 +120,7 @@ theorem degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one (h : IsFramedTu
     o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = 1 ∨
       o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = -1 := by
   have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
+    connectedSpace_euclideanSphere (by rw [Fintype.card_fin]; omega)
   have hσx : σ x ∈ range f := hx.symm.subset (mem_singleton x)
   -- The fibre of the composite over the image of the origin is `σ⁻¹(range f) = {x}`.
   have hfib : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ ⁻¹'
@@ -144,7 +144,7 @@ theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp [ConnectedSpa
     Function.Bijective (ContinuousMap.singularHomologyMap ℤ k
       ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ)) := by
   have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
+    connectedSpace_euclideanSphere (by rw [Fintype.card_fin]; omega)
   exact (o.bijective_singularHomologyMap_iff o' hE finrank_euclideanSpace_fin _).2
     (h.degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one o o' hE s₀ hk σ hx hσ)
 

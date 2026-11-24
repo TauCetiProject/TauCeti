@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Function.UniformIntegrable
 
 /-!
 # Indicator classes in `Lᵖ`
@@ -21,6 +22,10 @@ compatibility with scalar multiplication, bundling both as the linear map
 `MeasureTheory.norm_indicatorConstLp`, this makes `c ↦ indicatorConstLp p hs hμs c` a bounded
 linear map, so closed subspaces of `Lᵖ` can be tested on indicator classes of a dense set of
 constants.
+
+For finite exponents, cutting a fixed `Lᵖ` function off to varying sets is continuous when
+the measures of their symmetric differences tend to zero
+(`MeasureTheory.MemLp.tendsto_toLp_indicator`). The ambient measure need not be finite.
 
 Indicator classes of pairwise disjoint sets of finite measure span a weighted finite `ℓ¹` space
 inside `L¹`: the norm of `∑ i, indicatorConstLp 1 (hs i) (hμs i) (c i)` is
@@ -41,6 +46,8 @@ constant indicator classes it intersects the supporting sets.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
   in `c`.
+* `TauCeti.indicatorConstLpL`: the same map `c ↦ indicatorConstLp p hs hμs c` as a continuous
+  linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
@@ -107,6 +114,33 @@ noncomputable def indicatorConstLpₗ (hs : MeasurableSet s) (hμs : μ s ≠ �
   toFun := indicatorConstLp p hs hμs
   map_add' _ _ := indicatorConstLp_add.symm
   map_smul' := indicatorConstLp_smul hs hμs
+
+variable (𝕜 p) in
+/-- `TauCeti.indicatorConstLpₗ` as a continuous linear map from the constants to `Lᵖ`. Its norm
+is at most `μ(s) ^ (1 / p)`, by `MeasureTheory.norm_indicatorConstLp_le`. -/
+noncomputable def indicatorConstLpL [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    E →L[𝕜] Lp E p μ :=
+  (indicatorConstLpₗ 𝕜 p hs hμs).mkContinuous (μ.real s ^ (1 / p.toReal)) fun c ↦
+    (norm_indicatorConstLp_le (hs := hs) (hμs := hμs) (c := c)).trans_eq (mul_comm _ _)
+
+/-- `TauCeti.indicatorConstLpL` sends a constant to its indicator class. -/
+@[simp]
+theorem indicatorConstLpL_apply [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
+    indicatorConstLpL 𝕜 p hs hμs c = indicatorConstLp p hs hμs c := by
+  simp [indicatorConstLpL]
+
+section NormedField
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] {s : Set α}
+
+variable (𝕜 E) in
+/-- The operator norm of `TauCeti.indicatorConstLpL` is at most `μ(s) ^ (1 / p)`. -/
+theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    ‖(indicatorConstLpL 𝕜 p hs hμs : E →L[𝕜] Lp E p μ)‖ ≤ μ.real s ^ (1 / p.toReal) :=
+  LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
+
+end NormedField
 
 section Disjoint
 
@@ -193,6 +227,32 @@ theorem _root_.MeasureTheory.SimpleFunc.integrable_indicator (g : SimpleFunc α 
   memLp_one_iff_integrable.1 (g.memLp_indicator hs hμs)
 
 end TauCeti
+
+namespace MeasureTheory.MemLp
+
+open Filter Set
+open scoped Topology ENNReal symmDiff
+
+/-- Cutting a fixed `Lᵖ` function off to sets converging in symmetric-difference measure
+converges in `Lᵖ`, for `1 ≤ p < ∞`. Neither the ambient measure nor the sets need have
+finite measure. -/
+theorem tendsto_toLp_indicator {α E ι : Type*} {_ : MeasurableSpace α}
+    [NormedAddCommGroup E] {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f : α → E} (hf : MemLp f p μ) (hp : p ≠ ∞)
+    {l : Filter ι} {s : ι → Set α} {t : Set α}
+    (hs : ∀ i, NullMeasurableSet (s i) μ) (ht : NullMeasurableSet t μ)
+    (h : Tendsto (fun i ↦ μ (s i ∆ t)) l (𝓝 0)) :
+    Tendsto (fun i ↦ (hf.indicator (hs i)).toLp ((s i).indicator f))
+      l (𝓝 ((hf.indicator ht).toLp (t.indicator f))) := by
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'']
+  simp_rw [eLpNorm_indicator_sub_indicator f (hs _) ht,
+    eLpNorm_indicator_eq_eLpNorm_restrict ((hs _).symmDiff ht)]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    ((hf.tendsto_eLpNorm_restrict_zero Fact.out hp).comp h)
+    (Eventually.of_forall fun _ ↦ bot_le) ?_
+  exact Eventually.of_forall fun i ↦ le_iSup_of_le (s i ∆ t) (le_iSup_of_le le_rfl le_rfl)
+
+end MeasureTheory.MemLp
 
 noncomputable section
 

@@ -24,11 +24,19 @@ which Mathlib's duality theory for finite abelian groups states its results, wit
   `(M →+ N) ≃ (Multiplicative M →* (Multiplicative N)ˣ)`, with the evaluation lemmas
   `AddMonoidHom.toMultiplicativeUnits_apply_apply` and
   `AddMonoidHom.toMultiplicativeUnits_symm_apply_apply`.
+
+## Main results
+
+* `AddMonoidHom.toMultiplicativeLeftAddEquiv_apply`: applying
+  `AddMonoidHom.toMultiplicativeLeftAddEquiv` evaluates to `Additive.ofMul` of
+  `AddMonoidHom.toMultiplicativeLeft`.
 -/
 
 public section
 
 namespace AddMonoidHom
+
+section
 
 variable {M N : Type*} [AddZeroClass M] [AddGroup N]
 
@@ -51,6 +59,16 @@ theorem toMultiplicativeUnits_symm_apply_apply (φ : Multiplicative M →* (Mult
     (x : M) :
     toMultiplicativeUnits.symm φ x =
       Multiplicative.toAdd (φ (Multiplicative.ofAdd x) : Multiplicative N) :=
+  (rfl)
+
+end
+
+/-- Applying `AddMonoidHom.toMultiplicativeLeftAddEquiv` is `AddMonoidHom.toMultiplicativeLeft`
+followed by `Additive.ofMul`. -/
+@[simp]
+theorem toMultiplicativeLeftAddEquiv_apply {M N : Type*} [AddMonoid M] [CommMonoid N]
+    (f : M →+ Additive N) :
+    toMultiplicativeLeftAddEquiv f = Additive.ofMul (toMultiplicativeLeft f) :=
   (rfl)
 
 end AddMonoidHom

@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Isotropic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ExteriorSquare
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
@@ -20,21 +22,30 @@ import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 Pairing the `(1, 3)` curvature tensor with the fibre inner product via `r ![u, v, z, w] =
 ⟪R(u, v)w, z⟫` defines `CovariantDerivative.curvatureFourTensor cov x`. Its contractions match
 `ricciTensor` and `scalarCurvature`, diagonal pairings recover `sectionalCurvature`, and for a
-metric-compatible torsion-free connection it lies in `algebraicCurvatureSubmodule`. Local `C^0`
-Gram–Schmidt frames give continuity of `‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`,
-and `pic2Min`.
+metric-compatible torsion-free connection, in particular the Levi-Civita connection, it lies in
+`algebraicCurvatureSubmodule`. Its values on pure bivectors are those of the curvature operator
+`curvatureEndomorphism` on the exterior square, a connection whose curvature has the
+constant-curvature form at `x` has curvature four-tensor `κ • constantCurvature`, and evaluated on
+four `C^n` vector fields it is a `C^n` function. Local `C^0` Gram–Schmidt frames give continuity of
+`‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`, and `pic2Min`.
 
 ## Main definitions & statements
 
 * `curvatureFourTensor`, `IsMetricCompatible.algebraicCurvature`, `ricci_curvatureFourTensor`,
   `scalar_curvatureFourTensor`, `sectionalCurvature_eq_curvatureFourTensor_div`,
+  `curvatureFourTensor_apply_eq_sectionalCurvature_mul`,
   `IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor`,
+  `curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule`,
+  `inner_curvatureEndomorphism_ιMulti_eq_curvatureFourTensor`,
+  `curvatureFourTensor_eq_smul_constantCurvature`, `contMDiff_curvatureFourTensor_apply`,
   `continuous_norm_curvatureFourTensor`, `continuous_sectionalMin_curvatureFourTensor`,
   `continuous_sectionalMax_curvatureFourTensor`, `continuous_pic2Min_curvatureFourTensor`.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer (2018), Chapters 7–8.
+* S. Brendle and R. Schoen, *Manifolds with 1/4-pinched curvature are space forms*, J. Amer.
+  Math. Soc. 22 (2009), §2, for the convention `r(u, v, z, w) = ⟪R(u, v)w, z⟫`.
 -/
 
 public section
@@ -87,6 +98,29 @@ theorem scalar_curvatureFourTensor (x : M) :
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [scalar_apply_orthonormalBasis b, cov.scalarCurvature_eq_sum_riemannCurvatureTensor x b]
   simp [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
+
+/-- If the curvature of `cov` at `x` has the constant-curvature form
+`R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, its curvature four-tensor is `κ` times the
+constant-curvature tensor. -/
+theorem curvatureFourTensor_eq_smul_constantCurvature (x : M) {κ : ℝ}
+    (h : ∀ w u v : TangentSpace I x,
+      cov.curvatureTensor x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
+    cov.curvatureFourTensor x = κ • constantCurvature (TangentSpace I x) := by
+  refine ext_vec fun u v z w ↦ ?_
+  rw [_root_.smul_apply, curvatureFourTensor_apply, smul_eq_mul]
+  exact inner_eq_mul_constantCurvature h _ _ _ _
+
+/-- Evaluated on four `C^n` vector fields, `n ≤ ∞`, the curvature four-tensor is a `C^n` function
+on the manifold. -/
+theorem contMDiff_curvatureFourTensor_apply {n : ℕ∞ω} (hn : n ≤ ∞)
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    {X Y Z W : Π x : M, TangentSpace I x} (hX : CMDiff n (T% X)) (hY : CMDiff n (T% Y))
+    (hZ : CMDiff n (T% Z)) (hW : CMDiff n (T% W)) :
+    CMDiff n fun x ↦ cov.curvatureFourTensor x ![X x, Y x, Z x, W x] := by
+  simp only [curvatureFourTensor_apply]
+  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
+  exact ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id)
+    (cov.contMDiff_curvatureTensor (f := id) hn hX hY hW) hZ
 
 section Continuity
 
@@ -199,6 +233,25 @@ theorem sectionalCurvature_eq_curvatureFourTensor_of_orthonormal
     cov.sectionalCurvature hcov x u v = cov.curvatureFourTensor x ![u, v, u, v] := by
   rw [cov.sectionalCurvature_eq_of_orthonormal hcov x u v huv, cov.curvatureFourTensor_apply]
 
+/-- On a linearly independent pair `u, v`, `r(u, v, u, v)` is the sectional curvature of the
+plane they span times the Gram determinant of `u, v`. -/
+theorem curvatureFourTensor_apply_eq_sectionalCurvature_mul
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) {u v : TangentSpace I x} (huv : LinearIndependent ℝ ![u, v]) :
+    cov.curvatureFourTensor x ![u, v, u, v] =
+      cov.sectionalCurvature hcov x u v * (Matrix.gram ℝ ![u, v]).det := by
+  rw [cov.sectionalCurvature_eq_curvatureFourTensor_div hcov,
+    div_mul_cancel₀ _ (Matrix.det_gram_ne_zero_iff_linearIndependent.mpr huv)]
+
+/-- The curvature operator on the exterior square pairs pure bivectors through the curvature
+four-tensor: `⟪Rop(u₀ ∧ u₁), v₀ ∧ v₁⟫ = r(u₀, u₁, v₀, v₁)`. -/
+theorem inner_curvatureEndomorphism_ιMulti_eq_curvatureFourTensor
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (u v : Fin 2 → TangentSpace I x) :
+    ⟪cov.curvatureEndomorphism hcov x (exteriorPower.ιMulti ℝ 2 u),
+      exteriorPower.ιMulti ℝ 2 v⟫_ℝ = cov.curvatureFourTensor x ![u 0, u 1, v 0, v 1] := by
+  rw [inner_curvatureEndomorphism_ιMulti, curvatureFourTensor_apply]
+
 /-- For a metric-compatible torsion-free connection, `curvatureFourTensor x` satisfies the
 algebraic curvature symmetries. -/
 theorem IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor
@@ -237,6 +290,16 @@ theorem IsMetricCompatible.coe_algebraicCurvature
     (hcov.algebraicCurvature cov ht x).val = cov.curvatureFourTensor x := (rfl)
 
 end MetricCompatible
+
+/-- The curvature four-tensor of the Levi-Civita connection of the fibre metric is an algebraic
+curvature tensor at every point. -/
+theorem curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (x : M) :
+    (leviCivitaConnection I M).curvatureFourTensor x ∈
+      algebraicCurvatureSubmodule (TangentSpace I x) :=
+  mem_algebraicCurvatureSubmodule.mpr <|
+    (isMetricCompatible_leviCivitaConnection I).isAlgebraicCurvature_curvatureFourTensor _
+      (torsion_leviCivitaConnection_eq_zero I) x
 
 end FourTensor
 

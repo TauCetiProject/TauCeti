@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
@@ -44,7 +45,8 @@ or metric on the vector type is required.
 For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `closedBall 0 R` back to
 `closedBall y (ε * R)` (`TauCeti.inv_smul_sub_mem_closedBall_zero_iff`), so composing it with a
 function supported in the closed unit ball gives a function supported in `closedBall y ε`
-(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`).
+(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`). It likewise pulls `ball 0 R` back to
+`ball y (ε * R)` (`TauCeti.preimage_inv_smul_sub_ball_zero`).
 
 In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
 distance between the centres is at most the radius of the other. The sufficiency holds in every
@@ -55,6 +57,9 @@ exactly when `r < R` and `0 < R` (`TauCeti.ball_sdiff_closedBall_nonempty_iff`).
 
 In a seminormed real space, no point of an open ball disjoint from `ball c r`, `r ≠ 0`, lies on
 the sphere of radius `r` about `c` (`TauCeti.norm_sub_ne_of_disjoint_ball`).
+
+A set on which `1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, `R ≥ 0`, lies in the closed ball of radius `√b R` about
+zero (`TauCeti.subset_closedBall_of_one_add_norm_sq_le`).
 
 For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
@@ -268,6 +273,12 @@ theorem inv_smul_sub_mem_closedBall_zero_iff {ε : ℝ} (hε : 0 < ε) {R : ℝ}
     ε⁻¹ • (z - y) ∈ closedBall (0 : E) R ↔ z ∈ closedBall y (ε * R) := by
   simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_le_iff₀ hε]
 
+/-- For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `ball 0 R` back to `ball y (ε * R)`. -/
+theorem preimage_inv_smul_sub_ball_zero {ε : ℝ} (hε : 0 < ε) (y : E) (R : ℝ) :
+    (fun z ↦ ε⁻¹ • (z - y)) ⁻¹' ball (0 : E) R = ball y (ε * R) := by
+  ext z
+  simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_lt_iff₀ hε]
+
 /-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
 function supported in `closedBall y ε`. -/
 theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ : E → α}
@@ -359,6 +370,24 @@ theorem norm_sub_ne_of_disjoint_ball {x c c' : E} {r r' : ℝ} (hr : r ≠ 0)
   exact Set.disjoint_left.1 hd' (mem_closedBall_iff_norm.2 hxc.le) hx
 
 end DisjointBall
+
+section JapaneseBracket
+
+variable {E : Type*} [SeminormedAddCommGroup E]
+
+/-- A set on which the Japanese bracket is bounded, `1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` with `R ≥ 0`, lies in
+the closed ball of radius `√b R` about zero. -/
+theorem subset_closedBall_of_one_add_norm_sq_le {s : Set E} {b R : ℝ} (hR : 0 ≤ R)
+    (hs : ∀ ξ ∈ s, 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) : s ⊆ Metric.closedBall 0 (√b * R) := fun ξ hξ ↦ by
+  have h := hs ξ hξ
+  have hb : 0 ≤ b := by
+    by_contra hb
+    nlinarith [sq_nonneg R, sq_nonneg ‖ξ‖, not_le.1 hb]
+  rw [mem_closedBall_zero_iff, ← Real.sqrt_sq (norm_nonneg ξ), ← Real.sqrt_sq hR,
+    ← Real.sqrt_mul hb]
+  exact Real.sqrt_le_sqrt (by linarith)
+
+end JapaneseBracket
 
 end TauCeti
 

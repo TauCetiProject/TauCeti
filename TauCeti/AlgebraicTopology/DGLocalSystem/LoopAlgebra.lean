@@ -46,6 +46,7 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChain_isDGAlgebra`: `C_*(Ω_b B; R)` is a differential graded algebra.
 * `TauCeti.loopChainMap_lof`, `TauCeti.loopChainAugmentation_lof_zero`,
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
+* `TauCeti.loopChainMap_apply`: `C_*(Ωf)` is the push-forward of chains along `Ωf`.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_differential`,
@@ -148,6 +149,11 @@ theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
       cubicalChainLof (MooreLoopSpace B' b') R n
         (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap n y) := by
   rw [loopChainMap, cubicalChainDGAlgHom_lof]
+
+/-- `C_*(Ωf)` is the push-forward of chains along `Ωf`. -/
+theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
+    loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a :=
+  cubicalChainDGAlgHom_apply _ a
 
 /-- The identity map induces the identity. -/
 @[simp]

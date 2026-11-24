@@ -7,14 +7,18 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -46,14 +50,31 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
   space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
+* `OpenPartialHomeomorph.differentiableAt_and_differentiableAt_symm_of_contDiffOn`: an open
+  partial homeomorphism that is `C^n`, `n ≠ 0`, in both directions is differentiable at each point
+  `x` of its source, with inverse differentiable at `e x`.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
   `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
   that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
   reciprocity of the Jacobian determinants of `e` and `e.symm`.
+* `OpenPartialHomeomorph.contDiffOn_abs_det_fderiv_of_contDiffOn`: for a real open partial
+  homeomorphism that is `C^n` in both directions, the absolute Jacobian determinant is `C^m` on
+  the source when `m + 1 ≤ n`.
+* `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
+  `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply` and their
+  `_of_contDiffOn` forms: between inner product spaces over `ℝ` or `ℂ`, the transposes of the
+  derivative of an open partial homeomorphism at a point of its source and of the derivative of
+  its inverse at the image point are mutually inverse, when both are differentiable there, in
+  particular when both are `C^n`.
+* `OpenPartialHomeomorph.adjoint_apply_eq_adjoint_fderiv_symm_apply_iff`: in the coordinates of
+  such an open partial homeomorphism `e`, the covector identity `(A ∘ De(x))ᵀ η = ξ` reads
+  `Aᵀ η = De⁻¹(e x)ᵀ ξ`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
@@ -74,7 +95,10 @@ finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
 part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
-fibre of a map defined on an open subset `s`.
+fibre of a map defined on an open subset `s`. In particular, if `f` is continuous on a compact
+set `K` and its derivative is invertible at every point of `K ∩ f⁻¹(y)`, then `K ∩ f⁻¹(y)` is
+finite (`IsCompact.finite_inter_preimage_of_isInvertible_fderiv`): an invertible `fderiv` is a
+genuine derivative.
 -/
 
 public section
@@ -191,14 +215,32 @@ theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
   rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
     ContinuousLinearMap.det_id]
 
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
+its target, is differentiable at each point `x` of its source, and its inverse is differentiable
+at `e x`. -/
+theorem differentiableAt_and_differentiableAt_symm_of_contDiffOn (e : OpenPartialHomeomorph E F)
+    {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target)
+    (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) :
+    DifferentiableAt 𝕜 e x ∧ DifferentiableAt 𝕜 e.symm (e x) :=
+  ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx),
+    (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
+
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has an invertible derivative at every point of its source. -/
+theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.isInvertible_fderiv hx hd.1 hd.2
+
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
 source. -/
 theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
     (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
     (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
-  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
-    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.det_fderiv_ne_zero hx hd.1 hd.2
 
 /-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
@@ -231,6 +273,85 @@ theorem hasFDerivAt_transHomeomorph_iff {M N G₁ G₂ : Type*} [TopologicalSpac
     simp
   rw [hcomp, L_F.comp_hasFDerivAt_iff, L_E.symm.comp_right_hasFDerivAt_iff]
   simp
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For a real open partial homeomorphism of a space to itself that is `C^n` on its source, with
+inverse `C^n` on its target, the absolute Jacobian determinant `x ↦ |det De(x)|` is `C^m` on the
+source when `m + 1 ≤ n`. -/
+theorem contDiffOn_abs_det_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E E)
+    {m : ℕ∞} {n : WithTop ℕ∞} (hmn : m + 1 ≤ n) (he : ContDiffOn ℝ n e e.source)
+    (hes : ContDiffOn ℝ n e.symm e.target) :
+    ContDiffOn ℝ m (fun x ↦ |(fderiv ℝ e x).det|) e.source := fun x hx ↦
+  have hn : n ≠ 0 := fun h ↦ by simp [h] at hmn
+  ((ContinuousLinearMap.contDiff_det.contDiffAt.comp x
+    ((he.fderiv_of_isOpen e.open_source hmn).contDiffAt (e.open_source.mem_nhds hx))).abs
+    (e.det_fderiv_ne_zero_of_contDiffOn he hes hn hx)).contDiffWithinAt
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+open scoped InnerProduct
+
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ`:
+`De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
+theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    (ξ : E) : ((fderiv 𝕜 e x)†) (((fderiv 𝕜 e.symm (e x))†) ξ) = ξ := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    e.fderiv_symm_comp_fderiv_of_mem_source hx hd hds, ContinuousLinearMap.adjoint_id,
+    ContinuousLinearMap.id_apply]
+
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, `De⁻¹(e x)ᵀ` is a left inverse of `De(x)ᵀ`:
+`De⁻¹(e x)ᵀ (De(x)ᵀ η) = η`. -/
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    (η : F) : ((fderiv 𝕜 e.symm (e x))†) (((fderiv 𝕜 e x)†) η) = η := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    e.fderiv_comp_fderiv_symm_of_mem_source hx hd hds, ContinuousLinearMap.adjoint_id,
+    ContinuousLinearMap.id_apply]
+
+/-- For an open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
+its target, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ` at a point `x` of the source:
+`De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
+theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
+    (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source)
+    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) (ξ : E) :
+    ((fderiv 𝕜 e x)†) (((fderiv 𝕜 e.symm (e x))†) ξ) = ξ :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd.1 hd.2 ξ
+
+/-- For an open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
+its target, `De⁻¹(e x)ᵀ` is a left inverse of `De(x)ᵀ` at a point `x` of the source:
+`De⁻¹(e x)ᵀ (De(x)ᵀ η) = η`. -/
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn
+    (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source)
+    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) (η : F) :
+    ((fderiv 𝕜 e.symm (e x))†) (((fderiv 𝕜 e x)†) η) = η :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd.1 hd.2 η
+
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, and a continuous linear map `A`, the covector identity
+`(A ∘ De(x))ᵀ η = ξ` reads `Aᵀ η = De⁻¹(e x)ᵀ ξ` in the coordinates of `e`. -/
+theorem adjoint_apply_eq_adjoint_fderiv_symm_apply_iff (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+    (A : F →L[𝕜] G) (η : G) (ξ : E) :
+    (A†) η = ((fderiv 𝕜 e.symm (e x))†) ξ ↔ ((A.comp (fderiv 𝕜 e x))†) η = ξ := by
+  rw [ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.comp_apply]
+  refine ⟨fun h ↦ by rw [h, e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd hds], fun h ↦ ?_⟩
+  rw [← h, e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd hds]
 
 end OpenPartialHomeomorph
 
@@ -314,6 +435,23 @@ theorem IsCompact.finite_inter_preimage_of_hasFDerivAt {𝕜 : Type*} [Nontrivia
     (hf' : ∀ x ∈ s ∩ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (s ∩ f ⁻¹' {y}).Finite :=
   hK.finite (isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2
     (((hf x hx).eventually_ne (hf' x hx)).mono fun _ hz hzK ↦ hz (hzK.2.trans hx.2.symm)))
+
+/-- **The nondegenerate points of a fibre in a compact set are finite.** If `f` is continuous on
+a compact set `K` and its derivative is invertible at every point of `K ∩ f⁻¹(y)`, then
+`K ∩ f⁻¹(y)` is finite. By `differentiableAt_of_isInvertible_fderiv`, an invertible `fderiv` is a
+genuine derivative, so this is `IsCompact.finite_inter_preimage_of_hasFDerivAt`. -/
+theorem IsCompact.finite_inter_preimage_of_isInvertible_fderiv
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E} {y : F}
+    (hK : IsCompact K) (hc : ContinuousOn f K)
+    (hinv : ∀ x ∈ K ∩ f ⁻¹' {y}, (fderiv 𝕜 f x).IsInvertible) : (K ∩ f ⁻¹' {y}).Finite := by
+  have hclosed : IsClosed (K ∩ f ⁻¹' {y}) :=
+    hc.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton
+  refine (hK.of_isClosed_subset hclosed inter_subset_left).finite_inter_preimage_of_hasFDerivAt
+    (fun x hx ↦ (differentiableAt_of_isInvertible_fderiv (hinv x hx)).hasFDerivAt) fun x hx ↦ ?_
+  obtain ⟨L, hL⟩ := hinv x hx
+  rw [← hL]
+  exact ⟨_, L.antilipschitzWith⟩
 
 /-- **A compact fibre of regular points is finite.** If every point of the fibre of `f` over `y`
 is a point where `f` has an antilipschitz derivative, for instance an invertible derivative between

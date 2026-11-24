@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -23,6 +23,12 @@ If this weight is positive at some point of `S`,
 `IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight` gives a positive maximum at
 `q ∈ S ∩ ball x₀ R`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ` lies inside the
 original ball, and `f y ≤ 2 * f q` for `y ∈ S ∩ ball q ρ`.
+More generally, `IsCompact.exists_point_picking` works along a map `g : Y → X` on a compact
+subset `S` of `g ⁻¹' closedBall x₀ R`, assuming continuity only of the weighted quantity.
+The comparison point must belong to `S` and have strictly positive weight. Taking
+`S = g ⁻¹' closedBall x₀ R` gives the compact-preimage version used for the smooth Allard
+estimate, with the local bound on the whole preimage of the ball about `g q`.
+
 Scaling distances by `f q` gives the normalized estimate in
 `IsCompact.exists_pointPickingWeight_div_two_le_and_div_le_two`.
 
@@ -127,6 +133,37 @@ theorem _root_.Continuous.pointPickingWeight {f : X → ℝ}
     (hf : Continuous f) (x₀ : X) (R : ℝ) : Continuous (pointPickingWeight x₀ R f) := by
   exact (continuous_const.sub (continuous_id.dist continuous_const)).mul hf
 
+/-- **Point picking along a map.** On a compact subset `S` of the preimage of a closed ball,
+assume the weighted quantity is continuous and strictly positive at `q ∈ S`. It attains a
+positive maximum at `p ∈ S` over the open ball, with `A p > 0` and `A y ≤ 2 * A p` for
+`y ∈ S` whose image lies within half the radial margin of `g p`.
+In particular, taking `S` to be the whole closed-ball preimage bounds `A` on the whole preimage
+of that smaller open ball. No sign assumption on `A` is needed. -/
+theorem _root_.IsCompact.exists_point_picking
+    {Y Z : Type*} [TopologicalSpace Y] [PseudoMetricSpace Z]
+    {g : Y → Z} {A : Y → ℝ} {x : Z} {r₀ : ℝ} {S : Set Y}
+    (hK : IsCompact S) (hS : S ⊆ g ⁻¹' closedBall x r₀)
+    (hcont : ContinuousOn (fun y ↦ (r₀ - dist (g y) x) * A y) S)
+    {q : Y} (hq : q ∈ S) (hpos : 0 < (r₀ - dist (g q) x) * A q) :
+    ∃ p ∈ S, g p ∈ ball x r₀ ∧ 0 < A p ∧
+      IsMaxOn (fun y ↦ (r₀ - dist (g y) x) * A y) S p ∧
+      (r₀ - dist (g q) x) * A q ≤ (r₀ - dist (g p) x) * A p ∧
+      ∀ y ∈ S, dist (g y) (g p) < (r₀ - dist (g p) x) / 2 → A y ≤ 2 * A p := by
+  obtain ⟨p, hpS, hmax⟩ := hK.exists_isMaxOn ⟨q, hq⟩ hcont
+  have hqp : (r₀ - dist (g q) x) * A q ≤ (r₀ - dist (g p) x) * A p := hmax hq
+  have hFp : 0 < (r₀ - dist (g p) x) * A p := hpos.trans_le hqp
+  have hAp : 0 < A p :=
+    pos_of_mul_pos_right hFp (sub_nonneg.mpr (mem_closedBall.mp (hS hpS)))
+  have hd : 0 < r₀ - dist (g p) x := pos_of_mul_pos_left hFp hAp.le
+  refine ⟨p, hpS, mem_ball.2 (by linarith), hAp, hmax, hqp, fun y hyS hy ↦ ?_⟩
+  by_cases hyA : 0 ≤ A y
+  · have hd2 : (r₀ - dist (g p) x) / 2 ≤ r₀ - dist (g y) x := by
+      have := dist_triangle (g y) (g p) x
+      linarith
+    have h1 := (mul_le_mul_of_nonneg_right hd2 hyA).trans (hmax hyS)
+    nlinarith
+  · linarith
+
 /-- Let `S ⊆ closedBall x₀ R` be compact and `f` continuous on `S`. If `x ∈ S` satisfies
 `0 < pointPickingWeight x₀ R f x`, the weight attains a positive maximum at
 `q ∈ S ∩ ball x₀ R`, with `0 < f q`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ`
@@ -145,10 +182,9 @@ theorem _root_.IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight
         ρ * f q = pointPickingWeight x₀ R f q / 2 ∧
         pointPickingWeight x₀ R f x / 2 ≤ ρ * f q ∧
         ∀ y ∈ S, y ∈ ball q ρ → f y ≤ 2 * f q := by
-  obtain ⟨q, hqS, hqmax⟩ := hS.exists_isMaxOn ⟨x, hx⟩ (hf.pointPickingWeight x₀ R)
+  obtain ⟨q, hqS, hqball, hfq, hqmax, _hMle, hlocal⟩ :=
+    hS.exists_point_picking (g := id) hSball (hf.pointPickingWeight x₀ R) hx hM
   have hMle : pointPickingWeight x₀ R f x ≤ pointPickingWeight x₀ R f q := hqmax hx
-  have hqpos : 0 < pointPickingWeight x₀ R f q := lt_of_lt_of_le hM hMle
-  obtain ⟨hqball, hfq⟩ := (pointPickingWeight_pos_iff_of_mem_closedBall (hSball hqS)).mp hqpos
   have hδ : 0 < R - dist q x₀ := sub_pos.mpr (mem_ball.mp hqball)
   let ρ : ℝ := (R - dist q x₀) / 2
   have hρ : 0 < ρ := by dsimp [ρ]; positivity
@@ -161,23 +197,7 @@ theorem _root_.IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight
   refine ⟨q, hqS, hqball, hfq, hqmax, hMle, ρ, hρ, rfl, ?_, hρf, hMhalf, ?_⟩
   · exact ball_subset_ball' (by dsimp [ρ]; linarith)
   · intro y hyS hyball
-    have hδy : ρ < R - dist y x₀ := by
-      rw [mem_ball] at hyball
-      have htri := dist_triangle y q x₀
-      dsimp [ρ] at hyball ⊢
-      linarith
-    by_cases hyf : 0 ≤ f y
-    · have hcompare : ρ * f y ≤ (R - dist y x₀) * f y :=
-        mul_le_mul_of_nonneg_right hδy.le hyf
-      have hweight := hqmax hyS
-      dsimp [pointPickingWeight] at hweight
-      have hhalf : ρ * f y ≤ ρ * (2 * f q) := by
-        calc
-          ρ * f y ≤ (R - dist y x₀) * f y := hcompare
-          _ ≤ (R - dist q x₀) * f q := hweight
-          _ = ρ * (2 * f q) := by dsimp [ρ]; ring
-      exact le_of_mul_le_mul_left hhalf hρ
-    · linarith
+    exact hlocal y hyS (mem_ball.mp hyball)
 
 /-- Let `S ⊆ closedBall x₀ R` be compact and `f` continuous on `S`. If `x ∈ S` satisfies
 `0 < pointPickingWeight x₀ R f x`, there are `q ∈ S ∩ ball x₀ R` and

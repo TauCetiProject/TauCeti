@@ -18,7 +18,7 @@ import TauCeti.Geometry.Manifold.Complex.Chart
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
 /-!
-# Products of curves are totally real in the symmetric power
+# Products of curves in the symmetric power: total reality and transversality
 
 Let `α` be a Hausdorff complex curve, so that its `n`-th symmetric power `Sym α n` is a complex
 manifold for its elementary-symmetric charts (`TauCeti.isManifold_symChartedSpace`). Given real
@@ -38,6 +38,16 @@ holomorphic-disk boundary conditions of Ozsváth–Szabó. The global statement,
 pairwise disjoint embedded circles is a totally real embedding of the torus, is
 `Sym.isTotallyRealEmbedding_ofFn_map`.
 
+In every chart at a tuple `p` of distinct points, the derivative of every such product through `p`
+is one complex-linear isomorphism `T`, depending only on `p` and the chart, applied to the diagonal
+map `τ ↦ (τᵢ vᵢ)ᵢ` of the velocities `vᵢ`. Two products `Γ` and `Δ` through the same unordered
+tuple, the second through the same points in another order, therefore have complementary tangent
+spaces exactly when the two diagonal maps do, that is, exactly when at each point the two curves
+through it have real-independent velocities
+(`TauCeti.isCompl_range_fderiv_symChartAt_ofFn_iff`). This is the transversality of the tori
+`T_α` and `T_β` at a generator, read in a chart; its global form is
+`Sym.isCompl_range_mfderiv_ofFn_map_iff`.
+
 ## Main declarations
 
 * `TauCeti.differentiableAt_symChartAt_ofFn`: the product of the curves, read in a chart of the
@@ -46,6 +56,9 @@ pairwise disjoint embedded circles is a totally real embedding of the torus, is
 * `TauCeti.fderiv_symChartAt_ofFn_injective`: it is an immersion.
 * `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`: its tangent space is maximal
   totally real.
+* `TauCeti.isCompl_range_fderiv_symChartAt_ofFn_iff`: two such products through the same unordered
+  tuple have complementary tangent spaces exactly when the curves meet transversally at each of
+  its points.
 
 ## References
 
@@ -148,19 +161,22 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
   · filter_upwards [hC_apply] with w ⟨hw, hCw⟩
     simp only [hT₀, ← hCw, C.left_inv hw]
 
-/-- The core computation: in every chart of the symmetric power at a tuple of distinct points on
-immersed curves, the product of the curves is differentiable, and its derivative is a complex-linear
-injection applied to the diagonal map of the velocity vectors. -/
-private theorem exists_hasFDerivAt_symChartAt_ofFn {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ}
-    {v : Fin n → ℂ} (hinj : Function.Injective fun i => γ i (t₀ i))
-    (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
-    (hv : ∀ i, HasDerivAt (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (v i) (t₀ i)) (s : Sym α n)
-    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
+/-- The core computation: in every chart of the symmetric power at a tuple `p` of distinct points,
+every product of real curves through `p` is differentiable, and its derivative is one fixed
+complex-linear injection, depending only on `p` and the chart, applied to the diagonal map of the
+velocity vectors. -/
+private theorem exists_forall_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
+    (hinj : Function.Injective p) (s : Sym α n)
+    (hs : Sym.ofFn p ∈ (symChartAt (K := ℂ) s).source) :
     ∃ T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ, Function.Injective T' ∧
-      HasFDerivAt (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i)))
-        ((T'.restrictScalars ℝ).comp (diagonalSmulRight v)) t₀ := by
+      ∀ {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ} {v : Fin n → ℂ}, (∀ i, γ i (t₀ i) = p i) →
+        (∀ i, ContinuousAt (γ i) (t₀ i)) →
+        (∀ i, HasDerivAt (fun t => chartAt ℂ (p i) (γ i t)) (v i) (t₀ i)) →
+        HasFDerivAt (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i)))
+          ((T'.restrictScalars ℝ).comp (diagonalSmulRight v)) t₀ := by
   obtain ⟨T, T', -, hT'inj, hT', hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
-  refine ⟨T', hT'inj, ?_⟩
+  refine ⟨T', hT'inj, fun {γ t₀ v} hp hγ hv => ?_⟩
+  obtain rfl : p = fun i => γ i (t₀ i) := funext fun i => (hp i).symm
   -- the product coordinates of the curves, with the diagonal derivative of the velocities
   have hG : HasFDerivAt (fun t : Fin n → ℝ => fun j => chartAt ℂ (γ j (t₀ j)) (γ j (t j)))
       (diagonalSmulRight v) t₀ := by
@@ -173,6 +189,20 @@ private theorem exists_hasFDerivAt_symChartAt_ofFn {γ : Fin n → ℝ → α} {
   refine ((hT'.restrictScalars ℝ).comp t₀ hG).congr_of_eventuallyEq ?_
   exact Tendsto.eventually (continuousAt_pi.2 fun i =>
     ContinuousAt.comp (f := fun t : Fin n → ℝ => t i) (hγ i) (continuous_apply i).continuousAt) hT
+
+/-- In every chart of the symmetric power at a tuple of distinct points on immersed curves, the
+product of the curves is differentiable, and its derivative is a complex-linear injection applied
+to the diagonal map of the velocity vectors. -/
+private theorem exists_hasFDerivAt_symChartAt_ofFn {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ}
+    {v : Fin n → ℂ} (hinj : Function.Injective fun i => γ i (t₀ i))
+    (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
+    (hv : ∀ i, HasDerivAt (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (v i) (t₀ i)) (s : Sym α n)
+    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
+    ∃ T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ, Function.Injective T' ∧
+      HasFDerivAt (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i)))
+        ((T'.restrictScalars ℝ).comp (diagonalSmulRight v)) t₀ :=
+  let ⟨T', hT', hD⟩ := exists_forall_hasFDerivAt_symChartAt_ofFn hinj s hs
+  ⟨T', hT', hD (fun _ => rfl) hγ hv⟩
 
 /-- A complex-linear injection applied to the diagonal map of nonzero vectors is injective, with
 totally real range. -/
@@ -262,6 +292,62 @@ theorem isMaximalTotallyReal_range_fderiv_symChartAt_ofFn
   · exact (AlmostComplexStructure.ofComplexModule (Fin n → ℂ)).injective.comp Subtype.val_injective
   · rw [LinearMap.finrank_range_of_inj hinjD]
     simp [Module.finrank_pi_fintype, mul_comm]
+
+/-! ### Transverse products of curves -/
+
+/-- **Products of transverse curves are transverse in the symmetric power.** Let `γ i` and `δ j`
+be real curves in a complex curve, such that the points `γ i (t₀ i)` are pairwise distinct and are
+the points `δ j (u₀ j)` up to the permutation `σ`: `δ (σ i) (u₀ (σ i)) = γ i (t₀ i)`. In every
+chart of the symmetric power, the tangent spaces at their common unordered tuple of
+`t ↦ {γ₁(t₁), …, γₙ(tₙ)}` and of `u ↦ {δ₁(u₁), …, δₙ(uₙ)}` are complementary exactly when, at
+every point `γ i (t₀ i)`, the velocities of `γ i` and `δ (σ i)` are linearly independent over `ℝ`.
+Applied to local parametrizations of the attaching curves of a Heegaard diagram, this says that
+the tori `T_α` and `T_β` meet transversally at a generator exactly when each of its points is a
+transverse intersection of an `α`-curve and a `β`-curve. -/
+theorem isCompl_range_fderiv_symChartAt_ofFn_iff {γ δ : Fin n → ℝ → α} {t₀ u₀ : Fin n → ℝ}
+    {v w : Fin n → ℂ} {σ : Equiv.Perm (Fin n)} (hinj : Function.Injective fun i => γ i (t₀ i))
+    (hσ : ∀ i, δ (σ i) (u₀ (σ i)) = γ i (t₀ i))
+    (hγ : ∀ i, ContinuousAt (γ i) (t₀ i)) (hδ : ∀ j, ContinuousAt (δ j) (u₀ j))
+    (hv : ∀ i, HasDerivAt (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (v i) (t₀ i))
+    (hw : ∀ j, HasDerivAt (fun t => chartAt ℂ (δ j (u₀ j)) (δ j t)) (w j) (u₀ j)) (s : Sym α n)
+    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
+    IsCompl
+        (LinearMap.range
+          (fderiv ℝ (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i))) t₀ :
+            (Fin n → ℝ) →ₗ[ℝ] Fin n → ℂ))
+        (LinearMap.range
+          (fderiv ℝ (fun u => symChartAt (K := ℂ) s (Sym.ofFn fun j => δ j (u j))) u₀ :
+            (Fin n → ℝ) →ₗ[ℝ] Fin n → ℂ)) ↔
+      ∀ i, LinearIndependent ℝ ![v i, w (σ i)] := by
+  obtain ⟨T', hT', hD⟩ := exists_forall_hasFDerivAt_symChartAt_ofFn hinj s hs
+  -- reindexing by `σ`, the second family passes through the same ordered tuple as the first
+  set P : (Fin n → ℝ) →L[ℝ] Fin n → ℝ :=
+    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (σ i)
+  have hδσ : HasFDerivAt (fun u : Fin n → ℝ => symChartAt (K := ℂ) s (Sym.ofFn fun j => δ j (u j)))
+      (((T'.restrictScalars ℝ).comp (diagonalSmulRight (w ∘ σ))).comp P) u₀ := by
+    have h := hD (γ := fun i => δ (σ i)) (t₀ := u₀ ∘ σ) (v := w ∘ σ) hσ (fun i => hδ (σ i))
+      fun i => by
+        have hwi := hw (σ i)
+        rw [hσ i] at hwi
+        exact hwi
+    refine (h.comp u₀ P.hasFDerivAt).congr_of_eventuallyEq (Eventually.of_forall fun u => ?_)
+    exact congrArg _ (Sym.ofFn_comp_perm σ fun j => δ j (u j)).symm
+  have hP : LinearMap.range (P : (Fin n → ℝ) →ₗ[ℝ] Fin n → ℝ) = ⊤ :=
+    LinearMap.range_eq_top.2 fun u => ⟨u ∘ σ.symm, funext fun i => by simp [P]⟩
+  -- `T'` is an injective endomorphism of the finite-dimensional space `Fin n → ℂ`, so it is
+  -- bijective, and so is its real restriction, which has the same underlying function
+  have hsurj : Function.Surjective T' := by
+    rw [← ContinuousLinearMap.coe_coe] at hT' ⊢
+    exact LinearMap.injective_iff_surjective.1 hT'
+  have hbij : Function.Bijective (T'.restrictScalars ℝ : (Fin n → ℂ) →ₗ[ℝ] Fin n → ℂ) := by
+    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_restrictScalars']
+    exact ⟨hT', hsurj⟩
+  simp only [(hD (fun _ => rfl) hγ hv).fderiv, hδσ.fderiv, ContinuousLinearMap.toLinearMap_comp]
+  rw [LinearMap.range_comp_of_range_eq_top _ hP, LinearMap.range_comp, LinearMap.range_comp,
+    ← Submodule.orderIsoMapComapOfBijective_apply _ hbij,
+    ← Submodule.orderIsoMapComapOfBijective_apply _ hbij, ← OrderIso.isCompl_iff,
+    coe_diagonalSmulRight, coe_diagonalSmulRight, isCompl_range_pi_smulRight_iff]
+  simp only [Function.comp_apply]
 
 end Curves
 

@@ -13,13 +13,13 @@ import TauCeti.LinearAlgebra.ExtensionBasis
 import TauCeti.RepresentationTheory.Unipotent.Quotient
 
 /-!
-# Solvability of faithful unipotent representations
+# Nilpotence and solvability of faithful unipotent representations
 
 Kolchin's common fixed-vector theorem constructs a complete invariant flag for a
 finite-dimensional representation whose every operator is unipotent. Relative to a basis adapted
 to this flag, every representing matrix is upper unitriangular. Consequently a group admitting a
 faithful representation of this kind embeds in an upper-unitriangular matrix group and is
-solvable.
+nilpotent, hence solvable.
 
 The block-triangularity of the matrix of an endomorphism in a basis adapted to an invariant
 submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
@@ -29,6 +29,8 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 * `Representation.exists_basis_isUpperUnitriangular_of_isUnipotent`: simultaneous
   upper-unitriangularization of a unipotent monoid representation.
+* `Representation.isNilpotent_of_injective_of_isUnipotent`: a group with a faithful
+  finite-dimensional unipotent representation is nilpotent.
 * `Representation.isSolvable_of_injective_of_isUnipotent`: a group with a faithful
   finite-dimensional unipotent representation is solvable.
 
@@ -118,21 +120,33 @@ private def _root_.Representation.toUpperUnitriangularGroup {n : ℕ}
       map_mul' := fun g h ↦ Subtype.ext (map_mul f g h) }
 
 /-- A group admitting a faithful finite-dimensional representation by unipotent operators is
-solvable. -/
-theorem _root_.Representation.isSolvable_of_injective_of_isUnipotent
+nilpotent. -/
+theorem _root_.Representation.isNilpotent_of_injective_of_isUnipotent
     [FiniteDimensional K V]
     (rho : Representation K G V) (hinjective : Function.Injective rho.asGroupHom)
-    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsSolvable G := by
+    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsNilpotent G := by
   obtain ⟨n, b, hb⟩ :=
     _root_.Representation.exists_basis_isUpperUnitriangular_of_isUnipotent rho hunipotent
-  apply Group.isSolvable_of_isSolvable_injective
-    (f := _root_.Representation.toUpperUnitriangularGroup rho b hb)
+  let f := _root_.Representation.toUpperUnitriangularGroup rho b hb
+  refine Subgroup.isNilpotent_of_ker_le_center f ?_
+  suffices hinj : Function.Injective f by
+    rw [(MonoidHom.ker_eq_bot_iff f).mpr hinj]
+    exact bot_le
   intro g h hgh
   apply hinjective
   apply Units.ext
   apply (LinearMap.toMatrixAlgEquiv b).injective
   exact congrArg (fun x : TauCeti.upperUnitriangularGroup (Fin n) K ↦
     ((x : Matrix.GeneralLinearGroup (Fin n) K) : Matrix (Fin n) (Fin n) K)) hgh
+
+/-- A group admitting a faithful finite-dimensional representation by unipotent operators is
+solvable. -/
+theorem _root_.Representation.isSolvable_of_injective_of_isUnipotent
+    [FiniteDimensional K V]
+    (rho : Representation K G V) (hinjective : Function.Injective rho.asGroupHom)
+    (hunipotent : ∀ g, IsNilpotent (rho g - 1)) : Group.IsSolvable G := by
+  have := rho.isNilpotent_of_injective_of_isUnipotent hinjective hunipotent
+  infer_instance
 
 end
 

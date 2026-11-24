@@ -82,27 +82,13 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     rw [presentationLimitGlobalGerm]
     apply congrArg CommRingCat.Hom.hom
     rw [presentationLimitRationalGerm_def]
-    have hcanon : toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ≫
-        (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by
-      simp
     have hcanon' := congrArg
       ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map)
-      ((Iso.eq_comp_inv _).mpr hcanon)
+      (toCompletionLocObjHom_comp_presentationLimitRationalIso_inv Aplus hAplus p hp).symm
     rw [Functor.map_comp] at hcanon'
     rw [presentationLimitRationalIsoInCommRingCat_inv, Category.assoc]
-    have hstruct : CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
-        (Presentation.completionLocObjCommRingCatIso p).inv =
-        (forget₂ _root_.TopCommRingCat CommRingCat).map
-          (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm) ≫
-        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-          p.toCompletionLocObjHom := by
-      simp only [Presentation.completionLocObjCommRingCatIso_inv, Functor.comp_map,
-        ObjectProperty.ι_map, Presentation.toCompletionLocObjHom_hom, Functor.map_comp]
-      simp only [← Functor.map_comp_assoc, eqToHom_trans_assoc, eqToHom_refl,
-        Category.id_comp]
-      rfl
     simp only [← Category.assoc]
-    rw [hstruct]
+    rw [Presentation.ofHom_toCompletionLoc_comp_completionLocObjCommRingCatIso_inv]
     have hcanon'' := congrArg (fun f ↦
       (forget₂ _root_.TopCommRingCat CommRingCat).map
         (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm) ≫ f) hcanon'
