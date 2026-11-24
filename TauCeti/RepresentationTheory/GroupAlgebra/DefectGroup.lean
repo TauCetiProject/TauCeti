@@ -25,10 +25,10 @@ defect group (`TauCeti.exists_isDefectGroup`).
 For `G` finite, every `x ∈ R[G]^G` has subgroups `P` minimal with `x ∈ Tr_P^G(R[G]^P)`
 (`TauCeti.exists_minimal_mem_relTraceIdeal`), since `Tr_G^G(R[G]^G) = R[G]^G`. In characteristic
 `p` each of them is a `p`-group (`TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`), because
-relative traces from a Sylow `p`-subgroup are onto the centre
-(`TauCeti.relTraceIdeal_sylow_eq_top`). For a block idempotent, these minimal subgroups
-are its defect groups (Webb, Theorem 12.5.2, pp. 244–245), which needs Rosenberg's lemma and the
-Mackey formula.
+a Sylow `p`-subgroup `S` of `P` has `|P : S|` prime to `p`, so
+`Tr_S^G(R[G]^S) = Tr_P^G(R[G]^P)` (`TauCeti.relTraceIdeal_eq_of_isUnit_index`). For a block
+idempotent, these minimal subgroups are its defect groups (Webb, Theorem 12.5.2, pp. 244–245),
+which needs Rosenberg's lemma and the Mackey formula.
 
 ## Main definitions
 
