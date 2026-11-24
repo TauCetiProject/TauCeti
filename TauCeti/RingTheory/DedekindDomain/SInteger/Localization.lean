@@ -42,9 +42,11 @@ prime `p = (2, 1 + √-5)` is not principal, but `p ^ 2 = (2)` and inverting `2`
 
 Inverting a single nonzero element `r` always gives the `S`-integers for the set `S` of primes
 containing `r` (`integer_isLocalization_away_setOf_mem`). Elementwise, some `r ^ n * x` lies in
-`R` exactly when `x` is integral at every prime not containing `r`
-(`exists_pow_mul_mem_range_iff_valuation_le_one`); this describes the elements of a number field
-that are integral away from a rational prime `l`, as `ℤ[1/l]`-multiples of algebraic integers.
+`R` exactly when `x` is an `S`-integer, that is, integral at every prime not containing `r`
+(`exists_pow_mul_mem_range_iff_mem_integer`). When `R` is the integral closure of `A` in `K`,
+the same holds with `r ^ n * x` integral over `A` (`exists_isIntegral_pow_mul_iff_mem_integer`);
+this describes the elements of a number field that are integral away from a rational prime `l`,
+as `ℤ[1/l]`-multiples of algebraic integers.
 
 ## References
 
@@ -218,12 +220,12 @@ theorem integer_isLocalization_away_setOf_mem {r : R} (hr : r ≠ 0) :
     fun _ hv ↦ ⟨r, Submonoid.mem_powers r, hv⟩⟩
 
 /-- An element `x` of `K` becomes an element of `R` after multiplication by some power of `r`
-exactly when `x` is integral at every prime not containing `r`. For `r = 0` both sides hold for
-every `x`. -/
-theorem exists_pow_mul_mem_range_iff_valuation_le_one (r : R) (x : K) :
+exactly when `x` is an `S`-integer for the set `S` of primes containing `r`, that is, `x` is
+integral at every prime not containing `r`. For `r = 0` both sides hold for every `x`. -/
+theorem exists_pow_mul_mem_range_iff_mem_integer (r : R) (x : K) :
     (∃ n : ℕ, algebraMap R K r ^ n * x ∈ (algebraMap R K).range) ↔
-      ∀ v : HeightOneSpectrum R, r ∉ v.asIdeal → v.valuation K x ≤ 1 := by
-  refine ⟨fun ⟨n, a, ha⟩ v hv ↦ ?_, fun h ↦ ?_⟩
+      x ∈ {v : HeightOneSpectrum R | r ∈ v.asIdeal}.integer K := by
+  refine ⟨fun ⟨n, a, ha⟩ ↦ (Set.mem_integer_iff K _).2 fun v hv ↦ ?_, fun h ↦ ?_⟩
   · have hle : v.valuation K (algebraMap R K a) ≤ 1 := v.valuation_le_one a
     rwa [ha, map_mul, map_pow, (v.valuation_eq_one_iff_notMem).2 hv, one_pow, one_mul] at hle
   obtain rfl | hr := eq_or_ne r 0
@@ -232,5 +234,15 @@ theorem exists_pow_mul_mem_range_iff_valuation_le_one (r : R) (x : K) :
   obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj r (⟨x, h⟩ :
     {v : HeightOneSpectrum R | r ∈ v.asIdeal}.integer K)
   exact ⟨n, a, by simpa [mul_comm] using (congrArg Subtype.val ha).symm⟩
+
+/-- Let `R` be the integral closure of `A` in `K`, such as the ring of integers of a number field
+over `ℤ`. An element `x` of `K` becomes integral over `A` after multiplication by some power of
+`r` exactly when `x` is an `S`-integer for the set `S` of primes containing `r`. -/
+theorem exists_isIntegral_pow_mul_iff_mem_integer {A : Type*} [CommRing A] [Algebra A K]
+    [IsIntegralClosure R A K] (r : R) (x : K) :
+    (∃ n : ℕ, IsIntegral A (algebraMap R K r ^ n * x)) ↔
+      x ∈ {v : HeightOneSpectrum R | r ∈ v.asIdeal}.integer K := by
+  rw [← exists_pow_mul_mem_range_iff_mem_integer]
+  simp [IsIntegralClosure.isIntegral_iff (A := R), RingHom.mem_range]
 
 end IsDedekindDomain

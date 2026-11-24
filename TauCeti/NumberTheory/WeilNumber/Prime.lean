@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.WeilNumber.Basic
 
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
@@ -21,11 +21,12 @@ of characteristic zero is an *`l`-Weil number of weight `w`* if it is a Weil `l`
 `w` (every complex conjugate of `α` has absolute value `l ^ (w / 2)`) and it is a unit at every
 finite place not above `l`. The unit condition is stated without a choice of number field: some
 `l ^ n * α` and `l ^ n * α⁻¹` are algebraic integers, that is, `α` is a unit of the integral
-closure of `ℤ[1/l]`. For `α` in a number field `K` this is the condition that `α` has valuation
-one at every height-one prime of `𝓞 K` not containing `l`
-(`TauCeti.isPrimeWeilNumber_iff_valuation_eq_one`), and since field homomorphisms preserve and
-reflect the whole predicate (`TauCeti.isPrimeWeilNumber_map_iff`), it does not depend on the
-number field containing `α`. Negative weights are allowed, and `α` need not be integral at `l`.
+closure of `ℤ[1/l]`. For `α` in a number field `K` this is the condition that `α` is an `S`-unit
+for the set `S` of height-one primes of `𝓞 K` containing `l`, that is, `α` has valuation one at
+every prime not containing `l` (`TauCeti.isPrimeWeilNumber_iff_mem_unit`). Since field
+homomorphisms preserve and reflect the whole predicate (`TauCeti.isPrimeWeilNumber_map_iff`), it
+does not depend on the number field containing `α`. Negative weights are allowed, and `α` need not
+be integral at `l`.
 
 These numbers are the eigenvalues allowed for an `l`-Weil point of a linear algebraic group over
 `ℚ`, a rational point all of whose eigenvalues in a faithful representation are `l`-Weil numbers.
@@ -47,8 +48,8 @@ characteristic `p` are `p`-Weil numbers.
 * `TauCeti.IsPrimeWeilNumber.mul`, `TauCeti.IsPrimeWeilNumber.inv`,
   `TauCeti.IsPrimeWeilNumber.zpow`: weights add under products and are negated by inverses.
 * `TauCeti.isPrimeWeilNumber_of_pow_eq_one`: roots of unity are `l`-Weil numbers of weight `0`.
-* `TauCeti.isPrimeWeilNumber_iff_valuation_eq_one`: in a number field, the unit condition is the
-  vanishing of the valuations at the primes not containing `l`.
+* `TauCeti.isPrimeWeilNumber_iff_mem_unit`: in a number field, the unit condition is
+  membership in the `S`-units for the primes `S` containing `l`.
 * `TauCeti.isPrimeWeilNumber_natCast`, `TauCeti.not_isPrimeWeilNumber_natCast`: `l` is an
   `l`-Weil number of weight `2`, while a prime `q` not dividing `l` is an `l`-Weil number of no
   weight, although it is a Weil `q`-number of weight `2`.
@@ -215,38 +216,36 @@ theorem mem_primeWeilNumbers [Fact (1 < l)] {u : Kˣ} :
 
 section NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {x : K}
+variable {K : Type*} [Field K] [NumberField K]
 
-/-- In a number field, some `l ^ n * x` is an algebraic integer exactly when `x` is integral at
-every height-one prime of `𝓞 K` not containing `l`. -/
-private theorem exists_isIntegral_pow_mul_iff :
-    (∃ n : ℕ, IsIntegral ℤ ((l : K) ^ n * x)) ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), (l : 𝓞 K) ∉ v.asIdeal → v.valuation K x ≤ 1 := by
-  rw [← exists_pow_mul_mem_range_iff_valuation_le_one]
-  simp [IsIntegralClosure.isIntegral_iff (A := 𝓞 K), RingHom.mem_range]
-
-/-- **The unit condition in a number field.** An element `α` of a number field `K` is an
-`l`-Weil number of weight `w` exactly when it is a Weil `l`-number of weight `w` with valuation
-one at every height-one prime of `𝓞 K` not containing `l`, that is, at every finite place of `K`
-not above `l`. -/
-theorem isPrimeWeilNumber_iff_valuation_eq_one {α : K} :
-    IsPrimeWeilNumber l w α ↔ IsWeilNumber l w α ∧
-      ∀ v : HeightOneSpectrum (𝓞 K), (l : 𝓞 K) ∉ v.asIdeal → v.valuation K α = 1 := by
+/-- **The unit condition in a number field.** A unit `u` of a number field `K` is an `l`-Weil
+number of weight `w` exactly when it is a Weil `l`-number of weight `w` and an `S`-unit for the
+set `S` of height-one primes of `𝓞 K` containing `l`, that is, `u` has valuation one at every
+finite place of `K` not above `l` (`Set.mem_unit_iff`). -/
+theorem isPrimeWeilNumber_iff_mem_unit {u : Kˣ} :
+    IsPrimeWeilNumber l w (u : K) ↔ IsWeilNumber l w (u : K) ∧
+      u ∈ {v : HeightOneSpectrum (𝓞 K) | (l : 𝓞 K) ∈ v.asIdeal}.unit K := by
+  set S := {v : HeightOneSpectrum (𝓞 K) | (l : 𝓞 K) ∈ v.asIdeal}
+  have hint (x : K) : (∃ n : ℕ, IsIntegral ℤ ((l : K) ^ n * x)) ↔ x ∈ S.integer K := by
+    rw [← map_natCast (algebraMap (𝓞 K) K) l]
+    exact exists_isIntegral_pow_mul_iff_mem_integer K _ x
+  have hle {n m : ℕ} {x : K} (hx : IsIntegral ℤ ((l : K) ^ n * x)) :
+      IsIntegral ℤ ((l : K) ^ (n + m) * x) := by
+    convert ((isIntegral_natCast l).pow m).mul hx using 1
+    ring
   rw [isPrimeWeilNumber_iff, and_congr_right_iff]
-  intro h
-  refine ⟨fun ⟨n, hn, hn'⟩ v hv ↦ ?_, fun hv ↦ ?_⟩
-  · have h0 : v.valuation K α ≠ 0 := (_root_.map_ne_zero _).2 h.ne_zero
-    have hinv := exists_isIntegral_pow_mul_iff.1 ⟨n, hn'⟩ v hv
-    rw [Valuation.map_inv, inv_le_one₀ (pos_iff_ne_zero.2 h0)] at hinv
-    exact le_antisymm (exists_isIntegral_pow_mul_iff.1 ⟨n, hn⟩ v hv) hinv
-  obtain ⟨n, hn⟩ := exists_isIntegral_pow_mul_iff.2 fun v hv' ↦ (hv v hv').le
-  obtain ⟨m, hm⟩ := exists_isIntegral_pow_mul_iff (x := α⁻¹) |>.2 fun v hv' ↦ by
-    rw [Valuation.map_inv, hv v hv', inv_one]
-  refine ⟨n + m, ?_, ?_⟩
-  · rw [pow_add, mul_comm ((l : K) ^ n), mul_assoc]
-    exact ((isIntegral_natCast l).pow m).mul hn
-  · rw [pow_add, mul_assoc]
-    exact ((isIntegral_natCast l).pow n).mul hm
+  refine fun _ ↦ ⟨fun ⟨n, hn, hn'⟩ ↦ ?_, fun hu ↦ ?_⟩
+  · let x : (S.integer K)ˣ := ⟨⟨u, (hint _).1 ⟨n, hn⟩⟩, ⟨_, (hint _).1 ⟨n, hn'⟩⟩,
+      Subtype.ext (mul_inv_cancel₀ u.ne_zero), Subtype.ext (inv_mul_cancel₀ u.ne_zero)⟩
+    convert ((S.unitEquivUnitsInteger K).symm x).property
+    ext
+    rfl
+  have hS {y : Kˣ} (hy : y ∈ S.unit K) : (y : K) ∈ S.integer K :=
+    (S.unitEquivUnitsInteger K ⟨y, hy⟩).val.property
+  obtain ⟨n, hn⟩ := (hint _).2 (hS hu)
+  obtain ⟨m, hm⟩ := (hint _).2 (hS (inv_mem hu))
+  rw [Units.val_inv_eq_inv_val] at hm
+  exact ⟨n + m, hle hn, add_comm m n ▸ hle hm⟩
 
 end NumberField
 
