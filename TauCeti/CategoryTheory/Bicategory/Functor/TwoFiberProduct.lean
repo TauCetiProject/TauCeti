@@ -774,14 +774,14 @@ end homMk
 
 /-- The fibers of the 2-fiber product of transformations between pseudofunctors with groupoid
 fibers are groupoids. -/
-instance isGroupoid_obj [∀ X, IsGroupoid (F.obj X)] [∀ X, IsGroupoid (G.obj X)]
-    (X : LocallyDiscrete Cᵒᵖ) : IsGroupoid ((twoFiberProduct α β).obj X) :=
+instance isGroupoid_obj (X : LocallyDiscrete Cᵒᵖ) [IsGroupoid (F.obj X)]
+    [IsGroupoid (G.obj X)] : IsGroupoid ((twoFiberProduct α β).obj X) :=
   inferInstanceAs (IsGroupoid ((α.app X).toFunctor ⊡ (β.app X).toFunctor))
 
 /-- The second projection of a 2-fiber product along a fiberwise equivalence `α` is a fiberwise
 equivalence: equivalences are stable under 2-base change. -/
-instance isEquivalence_snd_app [∀ X, (α.app X).toFunctor.IsEquivalence]
-    (X : LocallyDiscrete Cᵒᵖ) : ((snd α β).app X).toFunctor.IsEquivalence :=
+instance isEquivalence_snd_app (X : LocallyDiscrete Cᵒᵖ) [(α.app X).toFunctor.IsEquivalence] :
+    ((snd α β).app X).toFunctor.IsEquivalence :=
   inferInstanceAs (π₂ (α.app X).toFunctor (β.app X).toFunctor).IsEquivalence
 
 end twoFiberProduct
