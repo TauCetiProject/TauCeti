@@ -344,9 +344,10 @@ theorem pairwise_not_equivalent_flatMap_triples_cyclicFivePassportRecord :
           BelyiRecord.triples).Pairwise fun s s' ↦ ¬ s.toTriple.Equivalent s'.toTriple := by
   rw [mapRows_cyclicFivePassportRecord, flatMap_triples_cyclicFiveBelyiRecords]
   simp only [List.pairwise_map, StoredTriple.toTriple_equivOppositeConvention,
-    ← IsoClass.mk_eq_mk_iff, IsoClass.mk_smul]
+    ← IsoClass.mk_eq_mk_iff, ← IsoClass.quotient_mk,
+    MulAction.orbitRel.Quotient.quotient_smul_eq]
   apply (List.rotate_perm _ 2).pairwise_iff (fun h ↦ Ne.symm h) |>.mpr
-  simpa only [← IsoClass.mk_eq_mk_iff] using
+  simpa only [← IsoClass.mk_eq_mk_iff, ← IsoClass.quotient_mk] using
     pairwise_not_equivalent_triples_cyclicFivePassportRecord
 
 open scoped Classical in
@@ -361,15 +362,16 @@ theorem mapRowClasses_cyclicFivePassportRecord :
     PassportSpec.classSet_cyclicTotallyRamified_five]
   trans ∃ s ∈ [cyclicFiveBelyiRecordA, cyclicFiveBelyiRecordB, cyclicFiveBelyiRecordC].flatMap
       BelyiRecord.triples, IsoClass.mk s.toTriple = c
-  · simp only [BelyiRecord.mem_storedClasses, List.mem_flatMap]
-    exact ⟨fun ⟨q, hq, s, hs, h⟩ ↦ ⟨s, ⟨q, hq, hs⟩, h⟩, fun ⟨s, ⟨q, hq, hs⟩, h⟩ ↦ ⟨q, hq, s, hs, h⟩⟩
+  · simp only [BelyiRecord.mem_storedClasses, List.mem_flatMap, ← exists_and_left,
+      ← exists_and_right, and_assoc]
+    exact exists_comm
   rw [flatMap_triples_cyclicFiveBelyiRecords]
-  simp only [cyclicFivePassportRecord, List.rotate_cons_succ, List.rotate_zero, List.cons_append,
-    List.nil_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp,
+  simp only [List.mem_map, List.mem_rotate, cyclicFivePassportRecord,
+    List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp,
     exists_eq_left, StoredTriple.toTriple_equivOppositeConvention, Finset.image_insert,
     Finset.image_singleton, ConnectedIsoClass.forget_mk, Finset.mem_insert,
-    Finset.mem_singleton, eq_comm, IsoClass.mk_smul]
-  tauto
+    Finset.mem_singleton, eq_comm]
+  simp only [← IsoClass.quotient_mk, MulAction.orbitRel.Quotient.quotient_smul_eq]
 
 /-- **The sum formula for `5T1-5_5_5`.** The stored orbit sizes of the three map rows sum to the
 stored passport size `3`: their stored triples are pairwise non-isomorphic, and represent every
