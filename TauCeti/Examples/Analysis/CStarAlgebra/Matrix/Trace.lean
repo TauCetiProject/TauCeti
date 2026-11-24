@@ -15,7 +15,7 @@ public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 Checks on the matrix units `eᵢⱼ` of `M_k = CStarMatrix (Fin k) (Fin k) ℂ` for the normalized trace
 `tr_k = k⁻¹ Tr` and the normalized 2-norm `‖x‖₂ = tr_k(x⋆x)^{1/2}`
 (`CStarMatrix.normalizedTrace`, `CStarMatrix.normalizedTwoNorm`). Matrix indices start at `0`, so
-the matrix unit written `e₁₁` in the literature is `unit 0 0` here.
+the matrix unit written `e₁₁` in the literature is `matrixUnit 0 0` here.
 
 * `e₁₁ ∈ M_k`: `‖e₁₁‖₂ = k^{-1/2}`, `‖e₁₁‖ = 1` and `tr_k(e₁₁) = 1/k ≤ ‖e₁₁‖₂`, while the
   unnormalized Frobenius norm of `1` is `k^{1/2} > 1 = ‖1‖` for `k ≥ 2`.
@@ -41,69 +41,23 @@ namespace TauCeti.MatrixTraceExample
 
 variable {k : ℕ}
 
-/-- The matrix unit `eᵢⱼ` of `M_k`. -/
-def unit (i j : Fin k) : CStarMatrix (Fin k) (Fin k) ℂ :=
-  ofMatrix (Matrix.single i j 1)
-
-/-- The entries of `eᵢⱼ`. -/
-theorem unit_apply (i j a b : Fin k) : unit i j a b = if i = a ∧ j = b then 1 else 0 := by
-  simp [unit, Matrix.single_apply]
-
-/-- `eᵢⱼ⋆ = eⱼᵢ`. -/
-theorem star_unit (i j : Fin k) : star (unit i j) = unit j i := by
-  apply ofMatrix.symm.injective
-  simp [unit, ofMatrix_symm_star]
-
-/-- `eᵢⱼ eⱼₗ = eᵢₗ`. -/
-theorem unit_mul_unit (i j l : Fin k) : unit i j * unit j l = unit i l := by
-  apply ofMatrix.symm.injective
-  simp [unit, ofMatrix_symm_mul]
-
-/-- `eᵢⱼ eⱼ'ₗ = 0` for `j ≠ j'`. -/
-theorem unit_mul_unit_of_ne (i j j' l : Fin k) (h : j ≠ j') : unit i j * unit j' l = 0 := by
-  apply ofMatrix.symm.injective
-  simp [unit, ofMatrix_symm_mul, h, ofMatrix_symm_zero]
-
-/-- `tr_k(eᵢⱼ)` is `1/k` on the diagonal and `0` off it. -/
-theorem normalizedTrace_unit (i j : Fin k) :
-    normalizedTrace (unit i j) = if i = j then (k : ℂ)⁻¹ else 0 := by
-  rw [normalizedTrace_def, unit, Equiv.symm_apply_apply, Fintype.card_fin]
-  split_ifs with h
-  · subst h; simp [Matrix.trace_single_eq_same]
-  · simp [Matrix.trace_single_eq_of_ne _ _ _ h]
-
-/-- **`‖eᵢⱼ‖₂ = k^{-1/2}`.** -/
-theorem normalizedTwoNorm_unit (i j : Fin k) : normalizedTwoNorm (unit i j) = (√k)⁻¹ := by
-  rw [normalizedTwoNorm_def, star_unit, unit_mul_unit, normalizedTrace_unit, ite_eq_left rfl,
-    ← Complex.ofReal_natCast, ← Complex.ofReal_inv, Complex.ofReal_re, Real.sqrt_inv]
-
-/-- **`‖eᵢⱼ‖ = 1`.** -/
-theorem norm_unit (i j : Fin k) : ‖unit i j‖ = 1 := by
-  refine le_antisymm ?_ ?_
-  · have hp : IsStarProjection (unit j j) :=
-      ⟨by rw [IsIdempotentElem, unit_mul_unit], by rw [IsSelfAdjoint, star_unit]⟩
-    have h := hp.norm_le
-    have hn : ‖star (unit i j) * unit i j‖ = ‖unit i j‖ * ‖unit i j‖ :=
-      CStarRing.norm_star_mul_self
-    rw [← unit_mul_unit j i j, ← star_unit, hn] at h
-    nlinarith [norm_nonneg (unit i j)]
-  · simpa [unit_apply] using norm_entry_le_norm (M := unit i j) (i := i) (j := j)
-
 /-! ### `e₁₁ ∈ M_k` -/
 
 /-- `tr_k(e₁₁) = 1/k`. -/
-example (i : Fin k) : normalizedTrace (unit i i) = (k : ℂ)⁻¹ := by
-  simp [normalizedTrace_unit]
+example (i : Fin k) : normalizedTrace (matrixUnit i i) = (k : ℂ)⁻¹ := by
+  simp
+
+/-- `‖e₁₁‖ = 1`. -/
+example (i : Fin k) : ‖matrixUnit i i‖ = 1 :=
+  norm_matrixUnit i i
 
 /-- `tr_k(e₁₁) = 1/k ≤ k^{-1/2} = ‖e₁₁‖₂`. -/
-example (i : Fin k) : (k : ℝ)⁻¹ ≤ normalizedTwoNorm (unit i i) := by
-  have hk : (1 : ℝ) ≤ k := by
-    have := i.pos
-    exact_mod_cast this
-  rw [normalizedTwoNorm_unit]
+example (i : Fin k) : (k : ℝ)⁻¹ ≤ normalizedTwoNorm (matrixUnit i i) := by
+  have hk : (1 : ℝ) ≤ k := by exact_mod_cast i.pos
+  rw [normalizedTwoNorm_matrixUnit, Fintype.card_fin]
   refine inv_anti₀ (by positivity) ?_
-  calc √(k : ℝ) ≤ √(k : ℝ) * √(k : ℝ) := le_mul_of_one_le_right (by positivity) (by
-        rw [Real.one_le_sqrt]; exact hk)
+  calc √(k : ℝ) ≤ √(k : ℝ) * √(k : ℝ) :=
+        le_mul_of_one_le_right (by positivity) (Real.one_le_sqrt.mpr hk)
     _ = k := Real.mul_self_sqrt (by positivity)
 
 /-- The unnormalized trace would give `‖1‖₂ = k^{1/2}`, the Frobenius norm of `1`, which exceeds
@@ -122,49 +76,39 @@ example (hk : 2 ≤ k) :
 /-! ### `e₁₂` and `e₂₁` in `M_2` -/
 
 /-- `‖e₁₂e₂₁‖₂ = ‖e₁₂‖‖e₂₁‖₂ = 2^{-1/2}`: the bound `‖xy‖₂ ≤ ‖x‖‖y‖₂` is attained. -/
-example : normalizedTwoNorm (unit (0 : Fin 2) 1 * unit 1 0) = (√2)⁻¹ ∧
-    ‖unit (0 : Fin 2) 1‖ * normalizedTwoNorm (unit (1 : Fin 2) 0) = (√2)⁻¹ := by
-  rw [unit_mul_unit, normalizedTwoNorm_unit, norm_unit, normalizedTwoNorm_unit, one_mul]
-  norm_num
+example : normalizedTwoNorm (matrixUnit (0 : Fin 2) 1 * matrixUnit 1 0) = (√2)⁻¹ ∧
+    ‖matrixUnit (0 : Fin 2) 1‖ * normalizedTwoNorm (matrixUnit (1 : Fin 2) 0) = (√2)⁻¹ := by
+  simp [norm_matrixUnit]
 
 /-- `‖e₁₂‖₂‖e₂₁‖₂ = 1/2 < 2^{-1/2} = ‖e₁₂e₂₁‖₂`: the product of the 2-norms is not an upper
 bound. -/
-example : normalizedTwoNorm (unit (0 : Fin 2) 1) * normalizedTwoNorm (unit (1 : Fin 2) 0) = 1 / 2 ∧
-    1 / 2 < normalizedTwoNorm (unit (0 : Fin 2) 1 * unit 1 0) := by
-  rw [unit_mul_unit, normalizedTwoNorm_unit, normalizedTwoNorm_unit, normalizedTwoNorm_unit]
+example : normalizedTwoNorm (matrixUnit (0 : Fin 2) 1) *
+      normalizedTwoNorm (matrixUnit (1 : Fin 2) 0) = 1 / 2 ∧
+    1 / 2 < normalizedTwoNorm (matrixUnit (0 : Fin 2) 1 * matrixUnit 1 0) := by
   have h2 : √(2 : ℝ) * √2 = 2 := Real.mul_self_sqrt (by norm_num)
   have h2' : √(2 : ℝ) < 2 := by rw [Real.sqrt_lt' (by norm_num)]; norm_num
-  have hpos : (0 : ℝ) < √2 := by positivity
-  refine ⟨?_, ?_⟩
-  · push_cast
-    rw [← mul_inv, h2]
-    norm_num
-  · push_cast
-    rw [one_div]
-    exact inv_strictAnti₀ hpos h2'
+  simp only [matrixUnit_mul_matrixUnit, normalizedTwoNorm_matrixUnit, Fintype.card_fin]
+  push_cast
+  refine ⟨by rw [← mul_inv, h2]; norm_num, ?_⟩
+  rw [one_div]
+  exact inv_strictAnti₀ (by positivity) h2'
 
 /-! ### The normalized trace of the operator -/
 
 /-- The operator of `e₁₁ ∈ M_2` on `ℂ²` is an orthogonal projection. -/
-example : IsStarProjection (toEuclideanCLM (unit (0 : Fin 2) 0)) :=
-  ⟨by rw [IsIdempotentElem, ← map_mul, unit_mul_unit], by rw [IsSelfAdjoint, ← map_star, star_unit]⟩
+example : IsStarProjection (toEuclideanCLM (matrixUnit (0 : Fin 2) 0)) :=
+  ⟨(isStarProjection_matrixUnit 0).isIdempotentElem.map CStarMatrix.toEuclideanCLM,
+    (isStarProjection_matrixUnit 0).isSelfAdjoint.map CStarMatrix.toEuclideanCLM⟩
 
 /-- The normalized trace of the operator of `x ∈ M_2` on `ℂ²` is `tr_2(x)` for `x = e₁₁`, where
 both are `1/2`, and for `x = e₁₂`, where both are `0`. -/
-example : (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (unit (0 : Fin 2) 0)).toLinearMap =
-      normalizedTrace (unit (0 : Fin 2) 0) ∧
-    normalizedTrace (unit (0 : Fin 2) 0) = 1 / 2 ∧
-    (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (unit (0 : Fin 2) 1)).toLinearMap =
-      normalizedTrace (unit (0 : Fin 2) 1) ∧
-    normalizedTrace (unit (0 : Fin 2) 1) = 0 := by
-  have htr (x : CStarMatrix (Fin 2) (Fin 2) ℂ) :
-      LinearMap.trace ℂ _ (toEuclideanCLM x).toLinearMap = Matrix.trace (ofMatrix.symm x) := by
-    rw [LinearMap.trace_eq_matrix_trace ℂ (EuclideanSpace.basisFun (Fin 2) ℂ).toBasis,
-      toEuclideanCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-      Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin]
-  simp only [htr, normalizedTrace_def, Fintype.card_fin]
-  norm_num
-  simp [unit, Matrix.trace_single_eq_of_ne]
+example : (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (matrixUnit (0 : Fin 2) 0)).toLinearMap =
+      normalizedTrace (matrixUnit (0 : Fin 2) 0) ∧
+    normalizedTrace (matrixUnit (0 : Fin 2) 0) = 1 / 2 ∧
+    (2 : ℂ)⁻¹ * LinearMap.trace ℂ _ (toEuclideanCLM (matrixUnit (0 : Fin 2) 1)).toLinearMap =
+      normalizedTrace (matrixUnit (0 : Fin 2) 1) ∧
+    normalizedTrace (matrixUnit (0 : Fin 2) 1) = 0 := by
+  simp [trace_toEuclideanCLM, Matrix.trace_single_eq_of_ne]
 
 /-! ### `k = 0` -/
 
@@ -175,14 +119,14 @@ example : normalizedTrace (1 : CStarMatrix (Fin 0) (Fin 0) ℂ) = 0 :=
 /-! ### Normalization against the Frobenius inner product -/
 
 /-- `tr_2(e₁₁⋆e₁₁) = 1/2`, while `⟪e₁₁, e₁₁⟫_F = 1`: the factor `k⁻¹`. -/
-example : normalizedTrace (star (unit (0 : Fin 2) 0) * unit 0 0) = 1 / 2 ∧
-    ⟪ofMatrix.symm (unit (0 : Fin 2) 0), ofMatrix.symm (unit (0 : Fin 2) 0)⟫_ℂ = 1 := by
-  have h := normalizedTrace_star_mul_eq_inv_mul_frobenius_inner (unit (0 : Fin 2) 0)
-    (unit (0 : Fin 2) 0)
-  rw [star_unit, unit_mul_unit, normalizedTrace_unit, Fintype.card_fin] at h
-  refine ⟨by rw [star_unit, unit_mul_unit, normalizedTrace_unit]; norm_num, ?_⟩
-  simp only [ite_true, Nat.cast_ofNat] at h
-  exact (mul_left_cancel₀ (a := (2 : ℂ)⁻¹) (by norm_num) (h.symm.trans (mul_one _).symm))
+example : normalizedTrace (star (matrixUnit (0 : Fin 2) 0) * matrixUnit 0 0) = 1 / 2 ∧
+    ⟪ofMatrix.symm (matrixUnit (0 : Fin 2) 0), ofMatrix.symm (matrixUnit (0 : Fin 2) 0)⟫_ℂ = 1 := by
+  have h := normalizedTrace_star_mul_eq_inv_mul_frobenius_inner (matrixUnit (0 : Fin 2) 0)
+    (matrixUnit (0 : Fin 2) 0)
+  simp only [star_matrixUnit, matrixUnit_mul_matrixUnit, normalizedTrace_matrixUnit,
+    Fintype.card_fin] at h ⊢
+  refine ⟨by norm_num, ?_⟩
+  simpa using h.symm
 
 /-- The trace-duality matrix of `tr_2` is `(1/2)·1`: `tr_2(x) = Tr((1/2)·1 · x)`. -/
 example (x : CStarMatrix (Fin 2) (Fin 2) ℂ) :
@@ -192,26 +136,21 @@ example (x : CStarMatrix (Fin 2) (Fin 2) ℂ) :
 
 /-- The trace-duality matrix of the non-tracial state `x ↦ x₁₁` is `e₁₁`. -/
 example (x : CStarMatrix (Fin 2) (Fin 2) ℂ) :
-    x 0 0 = Matrix.trace (ofMatrix.symm (unit 0 0) * ofMatrix.symm x) := by
-  simp [unit, Matrix.trace_single_mul]
+    x 0 0 = Matrix.trace (ofMatrix.symm (matrixUnit 0 0) * ofMatrix.symm x) := by
+  simp [Matrix.trace_single_mul]
 
 /-! ### The `cxc` bound at `c = diag(1, 0)`, `x = e₁₂` -/
 
 /-- For `c = e₁₁` and `x = e₁₂` in `M_2`, `cxc = 0`, `‖x - cxc‖₂ = 2^{-1/2}`, and
 `2‖x‖‖c - 1‖₂ = 2 · 2^{-1/2}`. -/
-example : unit (0 : Fin 2) 0 * unit 0 1 * unit 0 0 = 0 ∧
-    normalizedTwoNorm (unit (0 : Fin 2) 1 - unit 0 0 * unit 0 1 * unit 0 0) = (√2)⁻¹ ∧
-    2 * ‖unit (0 : Fin 2) 1‖ * normalizedTwoNorm (unit (0 : Fin 2) 0 - 1) = 2 * (√2)⁻¹ := by
-  have hcxc : unit (0 : Fin 2) 0 * unit 0 1 * unit 0 0 = 0 := by
-    rw [unit_mul_unit, unit_mul_unit_of_ne _ _ _ _ (by decide)]
-  have hc : unit (0 : Fin 2) 0 - 1 = -unit 1 1 := by
-    apply ofMatrix.symm.injective
+example : matrixUnit (0 : Fin 2) 0 * matrixUnit 0 1 * matrixUnit 0 0 = 0 ∧
+    normalizedTwoNorm
+        (matrixUnit (0 : Fin 2) 1 - matrixUnit 0 0 * matrixUnit 0 1 * matrixUnit 0 0) = (√2)⁻¹ ∧
+    2 * ‖matrixUnit (0 : Fin 2) 1‖ * normalizedTwoNorm (matrixUnit (0 : Fin 2) 0 - 1) =
+      2 * (√2)⁻¹ := by
+  have hc : matrixUnit (0 : Fin 2) 0 - 1 = -matrixUnit 1 1 := by
     ext a b
-    fin_cases a <;> fin_cases b <;> simp [unit]
-  refine ⟨hcxc, ?_, ?_⟩
-  · rw [hcxc, sub_zero, normalizedTwoNorm_unit]
-    norm_num
-  · rw [hc, normalizedTwoNorm_neg, normalizedTwoNorm_unit, norm_unit, mul_one]
-    norm_num
+    fin_cases a <;> fin_cases b <;> simp
+  exact ⟨by simp, by simp, by simp [hc, norm_matrixUnit]⟩
 
 end TauCeti.MatrixTraceExample

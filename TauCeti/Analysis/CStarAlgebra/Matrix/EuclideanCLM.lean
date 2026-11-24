@@ -16,7 +16,7 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 
 `CStarMatrix.toEuclideanCLM` is the star algebra isomorphism between `CStarMatrix n n ℂ` and the
 operators on `EuclideanSpace ℂ n`, through Mathlib's `Matrix.toEuclideanCLM`. It preserves norms
-(`CStarMatrix.norm_toEuclideanCLM`) and the order
+(`CStarMatrix.norm_toEuclideanCLM`), traces (`CStarMatrix.trace_toEuclideanCLM`) and the order
 (`CStarMatrix.toEuclideanCLM_le_toEuclideanCLM_iff`), and sends the matrix product `x⋆y` to the
 composition `x† ∘L y` of operators (`CStarMatrix.toEuclideanCLM_symm_adjoint_comp`).
 -/
@@ -51,6 +51,13 @@ theorem toEuclideanCLM_symm_apply (Z : EuclideanSpace ℂ n →L[ℂ] EuclideanS
 theorem inner_single_toEuclideanCLM_single (x : CStarMatrix n n ℂ) (i : n) :
     ⟪EuclideanSpace.single i 1, toEuclideanCLM x (EuclideanSpace.single i 1)⟫_ℂ = x i i := by
   simp [toEuclideanCLM_apply, EuclideanSpace.inner_single_left]
+
+/-- The trace of the operator of a matrix is the trace of the matrix. -/
+theorem trace_toEuclideanCLM (x : CStarMatrix n n ℂ) :
+    LinearMap.trace ℂ _ (toEuclideanCLM x).toLinearMap = (ofMatrix.symm x).trace := by
+  rw [LinearMap.trace_eq_matrix_trace ℂ (EuclideanSpace.basisFun n ℂ).toBasis,
+    toEuclideanCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
+    Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin]
 
 /-- `toEuclideanCLM` preserves norms. -/
 @[simp]

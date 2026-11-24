@@ -37,8 +37,8 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
-diagonal embedding `b ↦ diag(b, …, b)`.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
+diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
 
 ## Main declarations
 
@@ -50,6 +50,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations.
+* `CStarMatrix.matrixUnit`: the matrix unit `eᵢⱼ` of `M_n(ℂ)`, with its entries, star and
+  products, `CStarMatrix.isStarProjection_matrixUnit` (`eᵢᵢ` is a projection) and
+  `CStarMatrix.norm_matrixUnit` (`‖eᵢⱼ‖ = 1`).
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
@@ -360,6 +363,62 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+section MatrixUnit
+
+variable {n : Type*} [DecidableEq n]
+
+/-- The matrix unit `eᵢⱼ` of `M_n(ℂ)`, with `1` in entry `(i, j)` and `0` elsewhere. -/
+def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
+  ofMatrix (Matrix.single i j 1)
+
+/-- Reading `eᵢⱼ` as an ordinary matrix gives `Matrix.single i j 1`. -/
+@[simp]
+theorem ofMatrix_symm_matrixUnit (i j : n) :
+    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
+  (rfl)
+
+/-- The entries of `eᵢⱼ`. -/
+@[simp]
+theorem matrixUnit_apply (i j a b : n) :
+    matrixUnit i j a b = if i = a ∧ j = b then 1 else 0 :=
+  (rfl)
+
+/-- `eᵢⱼ⋆ = eⱼᵢ`. -/
+@[simp]
+theorem star_matrixUnit (i j : n) : star (matrixUnit i j) = matrixUnit j i := by
+  apply ofMatrix.symm.injective
+  simp
+
+/-- `eᵢⱼ eⱼₗ = eᵢₗ`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit [Fintype n] (i j l : n) :
+    matrixUnit i j * matrixUnit j l = matrixUnit i l := by
+  apply ofMatrix.symm.injective
+  simp
+
+/-- `eᵢⱼ eⱼ'ₗ = 0` for `j ≠ j'`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit_of_ne [Fintype n] (i j j' l : n) (h : j ≠ j') :
+    matrixUnit i j * matrixUnit j' l = 0 := by
+  apply ofMatrix.symm.injective
+  simp [h]
+
+/-- The diagonal matrix unit `eᵢᵢ` is a self-adjoint idempotent. -/
+theorem isStarProjection_matrixUnit [Fintype n] (i : n) : IsStarProjection (matrixUnit i i) :=
+  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
+
+open scoped ComplexOrder in
+/-- `‖eᵢⱼ‖ = 1`: `eᵢⱼ⋆eᵢⱼ = eⱼⱼ` is a projection, and the `(i, j)` entry is `1`. -/
+theorem norm_matrixUnit [Fintype n] (i j : n) : ‖matrixUnit i j‖ = 1 := by
+  refine le_antisymm ?_ (by simpa using norm_entry_le_norm (M := matrixUnit i j) (i := i) (j := j))
+  have h := (isStarProjection_matrixUnit j).norm_le
+  have hn : ‖star (matrixUnit i j) * matrixUnit i j‖ = ‖matrixUnit i j‖ * ‖matrixUnit i j‖ :=
+    CStarRing.norm_star_mul_self
+  rw [← matrixUnit_mul_matrixUnit j i j, ← star_matrixUnit, hn] at h
+  nlinarith [norm_nonneg (matrixUnit i j)]
+
+end MatrixUnit
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
