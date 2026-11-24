@@ -126,7 +126,7 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
   let ev (j : Fin k → Fin m) := restrictedEval₂ φ (x j) (fun r ↦ (hφ r).le) (hx j) f
   suffices H : ∃ j, ‖f‖ ≤ ‖ev j‖ by
     obtain ⟨j, hj⟩ := H
-    exact ⟨x j, hx j, fun i ↦ ⟨j i, (j i).2, rfl⟩,
+    exact ⟨x j, hx j, fun i ↦ ⟨j i, (j i).isLt, rfl⟩,
       le_antisymm (norm_restrictedEval₂_le _ _ _ _ f) hj⟩
   rcases eq_or_ne f 0 with rfl | hf
   · have : Nonempty (Fin k → Fin m) := ⟨fun _ ↦ ⟨0, Nat.pos_of_ne_zero hm0⟩⟩

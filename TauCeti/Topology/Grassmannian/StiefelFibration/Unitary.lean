@@ -33,9 +33,9 @@ unitary and depends continuously on `f` by the continuity of the Gram–Schmidt 
 the identity at the standard frame (`TauCeti.exists_unitaryFrameMap_localSection`). Translating
 this section by `U(r + m)` gives one near every frame, and such a section defines a chart with
 fibre the stabilizer of the standard frame (`Subgroup.localSectionTrivializationOfCosetFibers`),
-which is `U(m)`. The special orthogonal Stiefel fibration
-`TauCeti.Topology.Grassmannian.StiefelFibration.Basic` restricts the same section to the frames
-where it has determinant `1`.
+which is `U(m)`. The special unitary Stiefel fibration
+`TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary`, and with it the special
+orthogonal one, corrects the same section to determinant `1` in a column outside the first `r`.
 
 ## Main definitions
 
@@ -109,6 +109,13 @@ theorem unitaryFrameMap_one :
     unitaryFrameMap r m (1 : unitaryGroup (Fin (r + m)) 𝕜) = standard 𝕜 (Nat.le_add_right r m) :=
   unitaryMap_one _
 
+/-- The frame map is the orbit map `A ↦ A • e` of the standard frame `e` under
+`TauCeti.finiteOrthonormalFrame.unitaryMulAction`. -/
+theorem unitaryFrameMap_eq_smul_standard (A : unitaryGroup (Fin (r + m)) 𝕜) :
+    letI := unitaryMulAction 𝕜 r (r + m)
+    unitaryFrameMap r m A = A • standard 𝕜 (Nat.le_add_right r m) :=
+  (rfl)
+
 /-- The fibres of the frame map are the left cosets of the stabilizer of the standard frame. -/
 theorem unitaryFrameMap_eq_unitaryFrameMap_iff {A B : unitaryGroup (Fin (r + m)) 𝕜} :
     unitaryFrameMap r m A = unitaryFrameMap r m B ↔
@@ -178,13 +185,13 @@ theorem unitaryFrameFiberHomeomorph_one :
 vectors, as a family of vectors of `EuclideanSpace 𝕜 (Fin (r + m))`. -/
 private def frameCompletion (f : finiteOrthonormalFrame 𝕜 r (r + m)) :
     Fin (r + m) → EuclideanSpace 𝕜 (Fin (r + m)) :=
-  Fin.append (fun i ↦ WithLp.toLp 2 (f.1 i)) fun j ↦ EuclideanSpace.single (Fin.natAdd r j) 1
+  Fin.append (fun i ↦ WithLp.toLp 2 (f.val i)) fun j ↦ EuclideanSpace.single (Fin.natAdd r j) 1
 
 private theorem continuous_frameCompletion (k : Fin (r + m)) :
     Continuous fun f : finiteOrthonormalFrame 𝕜 r (r + m) ↦ frameCompletion f k := by
   refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
   · simp only [frameCompletion, Fin.append_left]
-    exact (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
+    exact (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal)
   · simp only [frameCompletion, Fin.append_right]
     exact continuous_const
 
@@ -245,14 +252,15 @@ private theorem frameGramSchmidt_mem_unitaryGroup {f : finiteOrthonormalFrame �
 these vectors are already orthonormal. -/
 private theorem frameGramSchmidt_mulVec_single (f : finiteOrthonormalFrame 𝕜 r (r + m))
     (i : Fin r) :
-    frameGramSchmidt f *ᵥ Pi.single (Fin.castAdd m i) 1 = f.1 i := by
-  have hgs : gramSchmidtNormed 𝕜 (frameCompletion f) (Fin.castAdd m i) = WithLp.toLp 2 (f.1 i) := by
+    frameGramSchmidt f *ᵥ Pi.single (Fin.castAdd m i) 1 = f.val i := by
+  have hgs : gramSchmidtNormed 𝕜 (frameCompletion f) (Fin.castAdd m i) = WithLp.toLp 2 (f.val i)
+      := by
     refine (gramSchmidtNormed_eq_self_of_inner_eq_zero (fun k hk ↦ ?_) ?_).trans ?_
     · obtain ⟨j, rfl⟩ : ∃ j : Fin r, Fin.castAdd m j = k :=
         ⟨⟨k, lt_trans (Fin.lt_def.1 hk) (Fin.castAdd_lt m i)⟩, Fin.ext rfl⟩
       simp only [frameCompletion, Fin.append_left]
-      exact f.2.2 fun hji ↦ hk.ne (by rw [hji])
-    · simpa [frameCompletion] using f.2.1 i
+      exact f.property.2 fun hji ↦ hk.ne (by rw [hji])
+    · simpa [frameCompletion] using f.property.1 i
     · simp [frameCompletion]
   funext a
   rw [mulVec_single_one]

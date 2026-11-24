@@ -151,7 +151,7 @@ private theorem eq_top_of_forall_mem (S : Subgroup (Group.Abelianization (commut
       refine commutator_eq_closure (G := G) |>.le.trans <| (Subgroup.closure_le _).2 ?_
       rintro _ ⟨x, y, rfl⟩
       exact ⟨_, key x y, rfl⟩
-    obtain ⟨n', hn', hn'eq⟩ := hT n.2
+    obtain ⟨n', hn', hn'eq⟩ := hT n.property
     rwa [show n' = n from Subtype.ext hn'eq] at hn'
   exact eq_top_iff.2 fun α _ ↦ QuotientGroup.induction_on α hall
 

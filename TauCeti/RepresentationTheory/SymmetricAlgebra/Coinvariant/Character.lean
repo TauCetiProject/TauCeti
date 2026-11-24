@@ -139,7 +139,7 @@ theorem mk_character_coinvariantAlgebraHomogeneous [Monoid G]
     (fun p hp x ↦ by
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hp
       rw [symmetricAlgebra_apply, map_mul, ← symmetricAlgebra_apply,
-        (ρ.mem_symmetricAlgebraInvariants _).1 (f i).2 g, symmetricAlgebra_apply])
+        (ρ.mem_symmetricAlgebraInvariants _).1 (f i).property g, symmetricAlgebra_apply])
     _ hI (ρ.coinvariantAlgebra g) (ρ.coinvariantAlgebra_mk g)
   -- The characters are the traces of the restrictions of the actions on `Sym M` and on the
   -- coinvariant algebra.

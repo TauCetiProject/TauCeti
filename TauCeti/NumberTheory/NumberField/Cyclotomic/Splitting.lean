@@ -8,7 +8,9 @@ module
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import TauCeti.NumberTheory.Cyclotomic.OddLevel
+import TauCeti.Data.Nat.GCD
 import TauCeti.Data.Nat.Totient
+import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.RingTheory.Ideal.LiesOver
 
@@ -42,6 +44,8 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   `φ(p ^ k)`.
 * `TauCeti.NumberField.inertiaDegIn_eq_orderOf`: the residue degree of `p` is the order of `p`
   modulo `m`.
+* `TauCeti.NumberField.absNorm_eq_pow_orderOf`: every prime `P` of `𝓞 K` above `p` has absolute
+  norm `p ^ orderOf (p : ZMod m)`.
 * `TauCeti.NumberField.ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul`: the number of
   primes above `p` times that order is `φ(m)`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset_pow`: `p 𝓞 K` is the product of
@@ -55,6 +59,13 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   prime `p` is inert iff `p ∤ n` and `p` has order `φ(n)` modulo `n`;
   `isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two` is the version for
   `n ≡ 2 mod 4`.
+* `TauCeti.NumberField.inertiaDeg_dvd_totient_of_not_dvd` and
+  `TauCeti.NumberField.not_dvd_inertiaDeg_of_not_dvd`: for `p ∤ m` and a maximal ideal `P` of
+  `𝓞 K` over `p`, `P.inertiaDeg ℤ` divides `φ(m)`, and hence `m ∤ P.inertiaDeg ℤ` when `m > 1`.
+* `TauCeti.NumberField.inertiaDeg_eq_of_isCyclotomicExtension_pow_sub_one` and
+  `TauCeti.NumberField.absNorm_eq_of_isCyclotomicExtension_pow_sub_one`: for `q = p ^ f` with
+  `p` prime and `f > 0`, a prime of the `(q - 1)`-th cyclotomic field over `p` has residue degree
+  `f` and absolute norm `q`, so its residue field has `q` elements.
 * `TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul`: for `p ∤ n`, the classes
   in `(ZMod n)ˣ` of the `σ` sending `τ P` to `P` form a coset of `⟨p⟩`, so their representatives
   in `[1, n)` sum to `∑_{i < f} (p ^ i c(τ⁻¹) mod n)`.
@@ -105,6 +116,16 @@ theorem inertiaDegIn_eq_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) :
     have : NeZero n := ⟨by rintro rfl; exact hm (dvd_zero p)⟩
     exact IsCyclotomicExtension.Rat.inertiaDegIn_eq_of_not_dvd p K hm
   | succ k => exact IsCyclotomicExtension.Rat.inertiaDegIn_eq n K hn hm
+
+/-- **Norm of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`, every prime
+ideal `P` of `𝓞 K` lying over `p` has absolute norm `p ^ orderOf (p : ZMod m)`, by Mathlib's
+`Ideal.pow_inertiaDeg`. -/
+theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
+    [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
+    absNorm P = p ^ orderOf (p : ZMod m) := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
+  rw [← pow_inertiaDeg p P, ← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ),
+    inertiaDegIn_eq_orderOf hn hm]
 
 /-- **The number of primes above `p` in a cyclotomic field.** If `n = p ^ k * m` with `p ∤ m`,
 the number of primes above `p` in an `n`-th cyclotomic field over `ℚ`, times the order of `p`
@@ -261,6 +282,55 @@ theorem ncard_primesOver_mul_orderOf_eq_totient {m : ℕ} [IsCyclotomicExtension
     [Fact p.Prime] (hm : ¬ p ∣ m) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * orderOf (p : ZMod m) = Nat.totient m :=
   ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (k := 0) (by rw [pow_zero, one_mul]) hm
+
+/-- **The residue degree of an unramified prime divides `φ(m)`.** For a maximal ideal `P` of `𝓞 K`
+lying over `(p)` with `p ∤ m` in an `m`-th cyclotomic field `K` over `ℚ`, the inertia degree
+`P.inertiaDeg ℤ` divides `φ(m)`. -/
+theorem inertiaDeg_dvd_totient_of_not_dvd {m p : ℕ} [IsCyclotomicExtension {m} ℚ K]
+    (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})] :
+    P.inertiaDeg ℤ ∣ m.totient := by
+  have : NeZero m := ⟨by rintro rfl; exact hpm (dvd_zero p)⟩
+  have : Fact p.Prime := ⟨P.prime_of_isMaximal_of_liesOver⟩
+  rw [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p K P hpm,
+    ← ncard_primesOver_mul_orderOf_eq_totient (K := K) p hpm]
+  exact dvd_mul_left _ _
+
+/-- **The level does not divide the residue degree of an unramified prime.** For `m > 1` and a
+maximal ideal `P` of `𝓞 K` lying over `(p)` with `p ∤ m` in an `m`-th cyclotomic field `K` over
+`ℚ`, `m` does not divide `P.inertiaDeg ℤ`. -/
+theorem not_dvd_inertiaDeg_of_not_dvd {m p : ℕ} [IsCyclotomicExtension {m} ℚ K]
+    (hm : 1 < m) (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})] :
+    ¬ m ∣ P.inertiaDeg ℤ :=
+  Nat.not_dvd_of_pos_of_lt (inertiaDeg_pos P ℤ) <|
+    (Nat.le_of_dvd (Nat.totient_pos.2 (zero_lt_one.trans hm))
+      (inertiaDeg_dvd_totient_of_not_dvd hpm P)).trans_lt (Nat.totient_lt m hm)
+
+/-- **The residue degree in the `(q - 1)`-th cyclotomic field.** Let `q = p ^ f` with `p` prime
+and `f > 0`. A prime ideal `P` of `𝓞 K` above `(p)`, in a `(q - 1)`-th cyclotomic field `K` over
+`ℚ`, has residue degree `f` over `ℤ`. This specializes Mathlib's
+`IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd`. For the number of elements of the residue
+field, see `TauCeti.NumberField.absNorm_eq_of_isCyclotomicExtension_pow_sub_one`. -/
+theorem inertiaDeg_eq_of_isCyclotomicExtension_pow_sub_one {p f : ℕ} [hp : Fact p.Prime]
+    (hf : 0 < f) [IsCyclotomicExtension {p ^ f - 1} ℚ K] (P : Ideal (𝓞 K)) [P.IsPrime]
+    [P.LiesOver (span {(p : ℤ)})] : P.inertiaDeg ℤ = f := by
+  have hpf : 1 < p ^ f := Nat.one_lt_pow hf.ne' hp.out.one_lt
+  have : NeZero (p ^ f - 1) := ⟨by omega⟩
+  have hdvd : ¬p ∣ p ^ f - 1 :=
+    hp.out.coprime_iff_not_dvd.mp (Nat.coprime_pow_sub_one hp.out.ne_zero hf.ne')
+  rw [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p K P hdvd,
+    TauCeti.ZMod.orderOf_natCast_pow_sub_one hp.out.one_lt]
+
+/-- **The residue field of the `(q - 1)`-th cyclotomic field has `q` elements.** Let `q = p ^ f`
+with `p` prime and `f > 0`. A prime `P` of a `(q - 1)`-th cyclotomic field over `ℚ` that lies over
+`p` has absolute norm `q`, so `𝓞 K ⧸ P` is a finite field with `q` elements. This is
+`TauCeti.NumberField.absNorm_eq_pow_orderOf` at `k = 0` and `m = q - 1`; that theorem uses
+Mathlib's `Ideal.pow_inertiaDeg`. -/
+theorem absNorm_eq_of_isCyclotomicExtension_pow_sub_one {p f : ℕ} [hp : Fact p.Prime] (hf : 0 < f)
+    [IsCyclotomicExtension {p ^ f - 1} ℚ K] (P : Ideal (𝓞 K)) [P.IsPrime]
+    [P.LiesOver (span {(p : ℤ)})] : absNorm P = p ^ f := by
+  rw [absNorm_eq_pow_orderOf (n := p ^ f - 1) (k := 0) (by rw [pow_zero, one_mul])
+    (hp.out.coprime_iff_not_dvd.mp (Nat.coprime_pow_sub_one hp.out.ne_zero hf.ne')) P,
+    TauCeti.ZMod.orderOf_natCast_pow_sub_one hp.out.one_lt]
 
 section DecompositionCoset
 

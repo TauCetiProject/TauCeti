@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Restrict
-import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Coherent
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
@@ -24,7 +24,7 @@ Let `R` be a Noetherian ring and `X` a scheme projective over `Spec R`
 finite type and every `q : ℕ`, the higher direct image `R^q (X ↘ Spec R)_* F` is finitely presented
 (`AlgebraicGeometry.Scheme.IsProjectiveOver.isFinitePresentation_higherDirectImage`): it is
 associated to the finite `R`-module `H^q(X, F)` by Serre's finiteness theorem
-(`AlgebraicGeometry.Scheme.IsProjectiveOver.finite_cohomology`) and the affine comparison
+(`AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isProjectiveOver`) and the affine comparison
 (`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_higherDirectImage_iff_finite`).
 
 The result localizes directly to the target: for a morphism `f : X ⟶ Y` into a locally Noetherian
@@ -47,8 +47,10 @@ The localization combines `Scheme.Hom.higherDirectImageRestrictIso` with the iso
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2 and Remark III.8.8.1.
-* [Stacks, Lemma 30.19.2 (02O6)](https://stacks.math.columbia.edu/tag/02O6).
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2, Theorem III.8.8,
+  and Remark III.8.8.1.
+* [Stacks, Proposition 30.19.1 (02O5)](https://stacks.math.columbia.edu/tag/02O5) and
+  [Lemma 30.19.2 (02O6)](https://stacks.math.columbia.edu/tag/02O6).
 -/
 
 public section
@@ -69,8 +71,7 @@ theorem IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [Co
     [IsNoetherianRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
     (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
     (((X ↘ Spec (.of R)).higherDirectImage q).obj F).IsFinitePresentation :=
-  (isFinitePresentation_higherDirectImage_iff_finite R F q).mpr
-    (IsProjectiveOver.finite_cohomology R F q)
+  (isFinitePresentation_higherDirectImage_iff_finite R F q).mpr inferInstance
 
 /-- **Coherence of higher direct images for locally projective morphisms.** Let `f : X ⟶ Y` be a
 morphism to a locally Noetherian scheme `Y`, covered by affine opens `U i` over which each

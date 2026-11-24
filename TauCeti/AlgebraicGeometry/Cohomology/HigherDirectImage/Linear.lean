@@ -18,20 +18,19 @@ import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 /-!
 # Linear identification of higher direct images over an affine base
 
-Let `f : X ⟶ Y` be a quasi-compact, quasi-separated morphism to an affine scheme `Y` and `M` a
-quasi-coherent `𝒪_X`-module. The file `Cohomology/HigherDirectImage/Quasicoherent.lean` constructs
-an additive equivalence
-`higherDirectImageBasicOpenSectionsAddEquiv : Hⁿ(f⁻¹ V, M) ≃+ Γ(Rⁿ f_* M, V)` for every basic open
-`V = D(g)` of `Y`. Here we show that this equivalence is semilinear with respect to the pullback of
-global functions (`Scheme.Hom.higherDirectImageBasicOpenSectionsAddEquiv_smul`): a global function
+Let `f : X ⟶ Y` be a quasi-compact, quasi-separated morphism of schemes and `M` a quasi-coherent
+`𝒪_X`-module. The file `Cohomology/HigherDirectImage/Quasicoherent.lean` constructs an additive
+equivalence `higherDirectImageSectionsAddEquiv : Hⁿ(f⁻¹ V, M) ≃+ Γ(Rⁿ f_* M, V)` for every affine
+open `V` of `Y`. Here we show that this equivalence is semilinear with respect to the pullback of
+global functions (`Scheme.Hom.higherDirectImageSectionsAddEquiv_smul`): a global function
 `r : Γ(Y, ⊤)` acts on `Hⁿ(f⁻¹ V, M)` through `f^* r` and on `Γ(Rⁿ f_* M, V)` through its
 restriction to `V`.
 
-At `V = ⊤`, this yields the additive equivalence
+When `Y` is affine, evaluating at `V = ⊤` yields the additive equivalence
 `Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv : Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` respecting global
 functions (`Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv_smul`). When `Y = Spec R` and `X` is
-a scheme over `Spec R`, restricting scalars along `R ≃ Γ(Spec R, ⊤)` upgrades it to an `R`-linear
-equivalence
+a quasi-compact, quasi-separated scheme over `Spec R`, restricting scalars along `R ≃ Γ(Spec R, ⊤)`
+upgrades it to an `R`-linear equivalence
 `Scheme.Modules.higherDirectImageBaseLinearEquiv : Hⁿ(X, M) ≃ₗ[R] Γ(Spec R, Rⁿ f_* M)`.
 Since `Rⁿ f_* M` is quasi-coherent (`isQuasicoherent_higherDirectImage`), Mathlib's counit
 `fromTildeΓ` identifies it with the associated sheaf `(Hⁿ(X, M))~`
@@ -45,10 +44,10 @@ No diamond `Module Γ(Y, ⊤) (Cohomology M n)` instance is introduced.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBasicOpenSectionsAddEquiv_smul`:
-  scalar compatibility on basic opens `V = D(g)` of an affine target.
+* `AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv_smul`:
+  scalar compatibility of `higherDirectImageSectionsAddEquiv` on affine opens of the target.
 * `AlgebraicGeometry.Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv`:
-  `Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` with scalar compatibility
+  `Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` over an affine base, with scalar compatibility
   `higherDirectImageGlobalSectionsAddEquiv_smul`.
 * `AlgebraicGeometry.Scheme.Modules.higherDirectImageBaseLinearEquiv`:
   `Hⁿ(X, M) ≃ₗ[R] moduleSpecΓFunctor.obj (Rⁿ (X ↘ Spec R)_* M)`.
@@ -104,43 +103,38 @@ private def cohomologyOnTopEquivPreimageTop (M : X.Modules) (n : ℕ) :
           ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M |>.cohomologyPresheaf n)
           (.op ⊤)) x)
 
-section Affine
+section QuasiCompactQuasiSeparated
 
-variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
-  (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
+variable [QuasiCompact f] [QuasiSeparated f] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
 
-/-- Scalar compatibility of `higherDirectImageBasicOpenSectionsAddEquiv`: pulling back a global
-function `r : Γ(Y, ⊤)` along `f` corresponds to multiplying by its restriction to `V` in
-`Γ(Rⁿ f_* M, V)`. -/
-lemma higherDirectImageBasicOpenSectionsAddEquiv_smul {V : Y.Opens}
-    (hV : ∃ g : Γ(Y, ⊤), Y.basicOpen g = V) (r : Γ(Y, ⊤)) (x : cohomologyOn M n (f ⁻¹ᵁ V)) :
-    f.higherDirectImageBasicOpenSectionsAddEquiv M n hV (f.appTop r • x) =
+/-- Scalar compatibility of `higherDirectImageSectionsAddEquiv`: for an affine open `V` of `Y`,
+pulling back a global function `r : Γ(Y, ⊤)` along `f` corresponds to multiplying by its
+restriction to `V` in `Γ(Rⁿ f_* M, V)`. -/
+lemma higherDirectImageSectionsAddEquiv_smul {V : Y.Opens} (hV : IsAffineOpen V)
+    (r : Γ(Y, ⊤)) (x : cohomologyOn M n (f ⁻¹ᵁ V)) :
+    f.higherDirectImageSectionsAddEquiv M n hV (f.appTop r • x) =
       (Y.presheaf.map V.leTop.op r : Γ(Y, V)) •
-        f.higherDirectImageBasicOpenSectionsAddEquiv M n hV x := by
+        f.higherDirectImageSectionsAddEquiv M n hV x := by
   let e := f.higherDirectImagePresheafToPresheafIso M n
-  let y : ((f.higherDirectImagePresheaf n).obj M).obj (.op V) :=
-    (e.inv.app (.op V)) x
+  let y : ((f.higherDirectImagePresheaf n).obj M).obj (.op V) := (e.inv.app (.op V)) x
   have hy : e.hom.app (.op V) y = x := Iso.inv_hom_id_apply (e.app (.op V)) x
   let rV : Y.ringCatSheaf.obj.obj (.op V) := Y.presheaf.map V.leTop.op r
   have hsmul : f.appTop r • x = e.hom.app (.op V) (rV • y) := by
     rw [← hy]
     exact (f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r V y).symm
-  rw [hsmul,
-    higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
-  have hy' : f.higherDirectImageBasicOpenSectionsAddEquiv M n hV x =
-      ((f.higherDirectImagePresheafSheafificationIso n).app M).hom.val.app (.op V)
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app
-          ((f.higherDirectImagePresheaf n).obj M)).app (.op V) y) := by
-    rw [← hy]
-    exact higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
-      f M n hV y
-  rw [hy']
-  let η := ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app
-    ((f.higherDirectImagePresheaf n).obj M)).app (.op V)
-  let φ := ((f.higherDirectImagePresheafSheafificationIso n).app M).hom.val.app (.op V)
-  -- Both `η` and `φ` are morphisms in `ModuleCat` over `Y.ringCatSheaf.obj.obj (.op V)`,
-  -- which is definitionally `Γ(Y, V)`.
-  exact (congrArg φ (η.hom.map_smul rV y)).trans (φ.hom.map_smul rV (η y))
+  rw [hsmul, ← hy,
+    higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app,
+    higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
+  -- `higherDirectImagePresheafSectionsLinearEquiv` is linear over `Γ(Y, V)`, which is
+  -- definitionally `Y.ringCatSheaf.obj.obj (.op V)`.
+  exact (f.higherDirectImagePresheafSectionsLinearEquiv M n hV).map_smul rV y
+
+end QuasiCompactQuasiSeparated
+
+section Affine
+
+variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
+  (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
 
 /-- **Global sections of higher direct images over an affine base.** For a quasi-compact
 quasi-separated morphism `f : X ⟶ Y` to an affine scheme `Y` and a quasi-coherent `M`, the global
@@ -149,7 +143,7 @@ def higherDirectImageGlobalSectionsAddEquiv :
     Cohomology M n ≃+ Γ((f.higherDirectImage n).obj M, ⊤) :=
   ((cohomologyOnTopLinearEquiv M n).symm.trans
       (f.cohomologyOnTopEquivPreimageTop M n)).toAddEquiv.trans
-    (f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩)
+    (f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y))
 
 /-- `higherDirectImageGlobalSectionsAddEquiv` respects the action of global functions on `Y`:
 pulling back `r : Γ(Y, ⊤)` along `f` corresponds to scalar multiplication by `r` on
@@ -166,12 +160,12 @@ lemma higherDirectImageGlobalSectionsAddEquiv_smul (r : Γ(Y, ⊤)) (x : Cohomol
     (cohomologyOnTopLinearEquiv M n).symm.trans (f.cohomologyOnTopEquivPreimageTop M n)
   -- Express `higherDirectImageGlobalSectionsAddEquiv` explicitly in terms of the `Γ(X, ⊤)`-linear
   -- equivalence `g` so `g.map_smul` applies cleanly without unfolding `AddEquiv.trans`.
-  change f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
+  change f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y)
       (g (f.appTop r • x)) =
-    r • f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩ (g x)
+    r • f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y) (g x)
   rw [g.map_smul (f.appTop r) x]
   simpa only [htop] using
-    f.higherDirectImageBasicOpenSectionsAddEquiv_smul M n ⟨1, Y.basicOpen_one⟩ r (g x)
+    f.higherDirectImageSectionsAddEquiv_smul M n (isAffineOpen_top Y) r (g x)
 
 end Affine
 
@@ -241,8 +235,9 @@ lemma tildeCohomologyIsoHigherDirectImage_hom :
         (((X ↘ Spec (.of R)).higherDirectImage n).obj M).fromTildeΓ :=
   (rfl)
 
-/-- Over `Spec R`, `Rⁿ (X ↘ Spec R)_* M` is of finite type if and only if `Hⁿ(X, M)` is a
-finitely generated `R`-module. No Noetherian hypothesis on `R` is needed. -/
+/-- For a quasi-compact quasi-separated scheme `X` over `Spec R` and a quasi-coherent `M`,
+`Rⁿ (X ↘ Spec R)_* M` is of finite type if and only if `Hⁿ(X, M)` is a finitely generated
+`R`-module. No Noetherian hypothesis on `R` is needed. -/
 theorem isFiniteType_higherDirectImage_iff :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFiniteType ↔
       Module.Finite R (Cohomology M n) := by
@@ -254,8 +249,9 @@ theorem isFiniteType_higherDirectImage_iff :
     (ModuleCat.isFiniteType_tilde_iff (R := .of R)
       (ModuleCat.of (CommRingCat.of R) (Cohomology M n)))
 
-/-- Over `Spec R`, `Rⁿ (X ↘ Spec R)_* M` is finitely presented if and only if `Hⁿ(X, M)` is a
-finitely presented `R`-module. No Noetherian hypothesis on `R` is needed. -/
+/-- For a quasi-compact quasi-separated scheme `X` over `Spec R` and a quasi-coherent `M`,
+`Rⁿ (X ↘ Spec R)_* M` is finitely presented if and only if `Hⁿ(X, M)` is a finitely presented
+`R`-module. No Noetherian hypothesis on `R` is needed. -/
 theorem isFinitePresentation_higherDirectImage_iff :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation ↔
       Module.FinitePresentation R (Cohomology M n) := by
@@ -267,8 +263,9 @@ theorem isFinitePresentation_higherDirectImage_iff :
     (ModuleCat.isFinitePresentation_tilde_iff (R := .of R)
       (ModuleCat.of (CommRingCat.of R) (Cohomology M n)))
 
-/-- Over a Noetherian ring `R`, `Rⁿ (X ↘ Spec R)_* M` is finitely presented if and only if
-`Hⁿ(X, M)` is a finitely generated `R`-module. -/
+/-- For a quasi-compact quasi-separated scheme `X` over `Spec R` of a Noetherian ring `R` and a
+quasi-coherent `M`, `Rⁿ (X ↘ Spec R)_* M` is finitely presented if and only if `Hⁿ(X, M)` is a
+finitely generated `R`-module. -/
 theorem isFinitePresentation_higherDirectImage_iff_finite [IsNoetherianRing R] :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation ↔
       Module.Finite R (Cohomology M n) :=

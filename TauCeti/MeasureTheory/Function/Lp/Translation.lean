@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SegmentIncrement
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.Topology.Instances.ENNReal
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
@@ -14,6 +14,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
 
 /-!
 # The `Lᵖ` translation estimate
@@ -48,6 +50,8 @@ for a `C¹` function, and needs no integrability of the function itself.
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
   domain whose translate stays in the original domain.
+* `Filter.EventuallyEq.comp_add_right_restrict_of_mapsTo`: the same for almost everywhere
+  equality.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`: translation increments of an `Lᵖ` function
   tend to zero.
 * `MeasureTheory.eLpNorm_comp_add_sub_le_two_mul`: a translation increment is at most twice the
@@ -62,6 +66,8 @@ for a `C¹` function, and needs no integrability of the function itself.
   with `Lᵖ` derivative.
 * `ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv`: the second-order
   translation estimate, bounding a mixed second difference by the second derivative.
+* `HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv`: difference quotients
+  of a compactly supported `C¹` function converge in `Lᵖ` to its directional derivative.
 
 ## References
 
@@ -223,6 +229,16 @@ theorem comp_add_right_restrict_of_mapsTo [TopologicalSpace F] [ContinuousENorm 
   (hf.comp_measurePreserving ((measurePreserving_add_right mu h).restrict_preimage_emb
     (measurableEmbedding_addRight h) Omega)).mono_measure
     (Measure.restrict_mono_set mu hVO.subset_preimage)
+
+/-- Almost everywhere equality survives translation on any set whose translate lies in the
+original domain: if `f = g` almost everywhere on `Ω` and `V + h ⊆ Ω`, then `f (· + h) = g (· + h)`
+almost everywhere on `V`. -/
+theorem _root_.Filter.EventuallyEq.comp_add_right_restrict_of_mapsTo {Omega V : Set E} {h : E}
+    {f g : E → F} (hfg : f =ᵐ[mu.restrict Omega] g) (hVO : MapsTo (· + h) V Omega) :
+    (fun x => f (x + h)) =ᵐ[mu.restrict V] fun x => g (x + h) :=
+  ae_restrict_of_ae_restrict_of_subset hVO.subset_preimage
+    (((measurePreserving_add_right mu h).restrict_preimage_emb
+      (measurableEmbedding_addRight h) Omega).quasiMeasurePreserving.ae_eq_comp hfg)
 
 end
 
@@ -452,11 +468,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopo
           hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp h
             MeasurableSet.univ fun _ _ _ _ => mem_univ _
     _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p
-          ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable
-          (Filter.Eventually.of_forall fun x => by
-            rw [mul_comm]
-            exact ContinuousLinearMap.le_opENorm _ _)
+        TauCeti.eLpNorm_fderiv_apply_le (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable h p
 
 /-- **Continuity of translation in `Lᵖ`** for a `C¹` function with `Lᵖ` derivative: the `Lᵖ`
 distance between `u` and its translate tends to `0`. This is the qualitative corollary of
@@ -501,5 +513,66 @@ theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
         exact (hu.fderiv_right (m := 1) (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
           hp k
     _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
+
+omit [SFinite mu] [mu.IsAddRightInvariant] in
+/-- **Difference quotients of a compactly supported `C¹` function converge in `Lᵖ`** to its
+directional derivative: for a compactly supported `C¹` function `u`, every direction `v` and
+every exponent `p`,
+
+`‖t⁻¹ (u(· + t v) - u) - Du · v‖_p → 0` as `t → 0`.
+
+The derivative of `u` is uniformly continuous, so the error tends to zero uniformly, and for
+`|t| ≤ 1` it vanishes off a fixed compact set. -/
+theorem HasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv [ProperSpace E]
+    [IsFiniteMeasureOnCompacts mu] (hu : HasCompactSupport u) (hu' : ContDiff ℝ 1 u) (v : E)
+    {p : ℝ≥0∞} :
+    Filter.Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v)
+      p mu) (nhdsWithin 0 {0}ᶜ) (nhds 0) := by
+  have hd : Differentiable ℝ u := hu'.differentiable one_ne_zero
+  have hunif := Metric.tendstoUniformly_iff.1 (hd.tendstoUniformly_inv_smul_comp_add_smul_sub
+    ((hu.fderiv ℝ).uniformContinuous_of_continuous (hu'.continuous_fderiv one_ne_zero)) v)
+  -- For `|t| ≤ 1` the error vanishes off the `‖v‖`-thickening of the support.
+  set K := Metric.cthickening ‖v‖ (tsupport u)
+  have hK : IsCompact K := hu.isCompact.cthickening
+  have hvanish : ∀ x ∉ K, ∀ t : ℝ, |t| ≤ 1 → t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v = 0 := by
+    intro x hx t ht
+    have hfar : ∀ y, dist x y ≤ ‖v‖ → y ∉ tsupport u := fun y hy hy' =>
+      hx (Metric.mem_cthickening_of_dist_le x y ‖v‖ _ hy' hy)
+    have h1 : x + t • v ∉ tsupport u := hfar _ (by
+      rw [dist_comm, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+      exact mul_le_of_le_one_left (norm_nonneg v) ht)
+    have h0 : x ∉ tsupport u := hfar x (by simp)
+    rw [image_eq_zero_of_notMem_tsupport h1, image_eq_zero_of_notMem_tsupport h0,
+      fderiv_of_notMem_tsupport ℝ h0]
+    simp
+  -- Once the error is uniformly below `η`, its `Lᵖ` norm is at most `μ(K)^(1/p) η`.
+  have hLp : ∀ η : ℝ, 0 < η → ∀ᶠ t in nhdsWithin (0 : ℝ) {0}ᶜ,
+      eLpNorm (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) p mu ≤
+        mu K ^ p.toReal⁻¹ * ENNReal.ofReal η := fun η hη => by
+    filter_upwards [hunif η hη,
+      nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t hη' ht1
+    have ht1' : |t| ≤ 1 := by simpa [Real.dist_eq] using ht1
+    have hind : (fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v) =
+        K.indicator fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v := by
+      ext x
+      by_cases hx : x ∈ K
+      · rw [indicator_of_mem hx]
+      · rw [indicator_of_notMem hx, hvanish x hx t ht1']
+    rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hK.measurableSet.nullMeasurableSet]
+    have hmeas : Continuous fun x => t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v :=
+      (continuous_const.smul ((hd.continuous.comp (by fun_prop)).sub hd.continuous)).sub
+        ((hu'.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+    have h := eLpNorm_le_of_ae_bound (μ := mu.restrict K) (p := p) hmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => (by rw [← dist_eq_norm']; exact (hη' x).le))
+    rwa [Measure.restrict_apply_univ] at h
+  -- The bound `μ(K)^(1/p) η` tends to zero with `η`.
+  have hlim : Filter.Tendsto (fun η : ℝ => mu K ^ p.toReal⁻¹ * ENNReal.ofReal η)
+      (nhdsWithin 0 (Ioi 0)) (nhds 0) := by
+    simpa using ENNReal.Tendsto.const_mul
+      ((ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds)
+      (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_lt_top.ne))
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  obtain ⟨η, hηε, hη⟩ := ((hlim.eventually (eventually_le_nhds hε)).and self_mem_nhdsWithin).exists
+  exact (hLp η hη).mono fun t ht => ht.trans hηε
 
 end Translation

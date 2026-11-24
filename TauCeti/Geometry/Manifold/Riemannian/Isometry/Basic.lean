@@ -103,6 +103,12 @@ protected theorem mdifferentiable (Φ : RiemannianIsometry I J M N) :
 protected theorem mdifferentiableAt (Φ : RiemannianIsometry I J M N) (x : M) :
     MDifferentiableAt I J Φ x := Φ.mdifferentiable x
 
+/-- A smooth Riemannian isometry maps boundary points to boundary points. -/
+theorem apply_mem_boundary (Φ : RiemannianIsometry I J M N) {x : M} (hx : x ∈ I.boundary M) :
+    Φ x ∈ J.boundary N := by
+  rw [← Set.mem_preimage, ← coe_toDiffeomorph, Φ.toDiffeomorph.preimage_boundary (by simp)]
+  exact hx
+
 /-- The identity diffeomorphism is a Riemannian isometry. -/
 protected def refl (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] :
@@ -160,6 +166,14 @@ theorem symm_apply_apply (Φ : RiemannianIsometry I J M N)
 @[simp]
 theorem apply_symm_apply (Φ : RiemannianIsometry I J M N)
     (y : N) : Φ (Φ.symm y) = y := Φ.toDiffeomorph.apply_symm_apply y
+
+@[simp]
+theorem symm_comp_self (Φ : RiemannianIsometry I J M N) : ⇑Φ.symm ∘ Φ = id :=
+  funext Φ.symm_apply_apply
+
+@[simp]
+theorem self_comp_symm (Φ : RiemannianIsometry I J M N) : ⇑Φ ∘ Φ.symm = id :=
+  funext Φ.apply_symm_apply
 
 @[simp]
 theorem symm_symm (Φ : RiemannianIsometry I J M N) :

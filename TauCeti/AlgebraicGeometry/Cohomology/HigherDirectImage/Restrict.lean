@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Presheaf
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Presheaf
 
 /-!
 # Higher direct images commute with restriction to opens of the target
@@ -33,6 +34,15 @@ post-composing `f : X ⟶ Y` with a scheme isomorphism `e : Y ≅ Z` corresponds
 images to restricting along `e.inv`
 (`AlgebraicGeometry.Scheme.Hom.higherDirectImageCompRestrictIso`).
 
+The same argument applies before sheafification. Restriction of presheaves of modules is exact
+(`AlgebraicGeometry.Scheme.PresheafOfModules.isRightAdjoint_restrictFunctor` and
+`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteColimits_restrictFunctor`), so
+restricting to `U` the presheaf of modules `V ↦ H^q(f⁻¹ V, M)`, whose sheafification is
+`R^q f_* M`, gives the corresponding presheaf for `f ∣_ U`
+(`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafRestrictIso`). This identifies the action
+of functions defined only over `U` on `H^q(f⁻¹ U, M)` with the action of global functions of the
+open subscheme `U`.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.8.2.
@@ -56,6 +66,26 @@ def higherDirectImageRestrictIso (U : Y.Opens) (q : ℕ) :
     f.higherDirectImage q ⋙ Scheme.Modules.restrictFunctor U.ι ≅
       Scheme.Modules.restrictFunctor (f ⁻¹ᵁ U).ι ⋙ (f ∣_ U).higherDirectImage q :=
   Functor.rightDerivedCompIso _ _ _ _ (TauCeti.AlgebraicGeometry.restrictPushforwardIso f U) q
+
+/-- **Higher direct image presheaves are local on the target.** Restricting the presheaf of modules
+`V ↦ H^q(f⁻¹ V, M)` to an open `U` of the target is the corresponding presheaf for `f ∣_ U` and
+`M|_{f⁻¹ U}`, naturally in `M`. -/
+def higherDirectImagePresheafRestrictIso (U : Y.Opens) (q : ℕ) :
+    f.higherDirectImagePresheaf q ⋙ Scheme.PresheafOfModules.restrictFunctor U.ι ≅
+      Scheme.Modules.restrictFunctor (f ⁻¹ᵁ U).ι ⋙ (f ∣_ U).higherDirectImagePresheaf q :=
+  letI := Functor.additive_of_preserves_binary_products
+    (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
+  letI := Functor.additive_of_preserves_binary_products
+    (Scheme.Modules.pushforward (f ∣_ U) ⋙ Scheme.Modules.toPresheafOfModules U)
+  Functor.rightDerivedCompIso
+    (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
+    (Scheme.PresheafOfModules.restrictFunctor U.ι) (Scheme.Modules.restrictFunctor (f ⁻¹ᵁ U).ι)
+    (Scheme.Modules.pushforward (f ∣_ U) ⋙ Scheme.Modules.toPresheafOfModules U)
+    (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _
+      (Scheme.PresheafOfModules.toPresheafOfModulesCompRestrictFunctorIso U.ι) ≪≫
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight (TauCeti.AlgebraicGeometry.restrictPushforwardIso f U) _ ≪≫
+      Functor.associator _ _ _) q
 
 /-- Post-composing a morphism `f : X ⟶ Y` with a scheme isomorphism `e : Y ≅ Z` agrees on higher
 direct images with restricting along `e.inv`. -/
