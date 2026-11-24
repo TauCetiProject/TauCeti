@@ -265,7 +265,7 @@ theorem forwardPath_map_eval_zero_eval (μ₀ : Measure (EuclideanSpace ℝ ι))
       Kernel.deterministic_apply]
   have hae : ∀ᵐ x ∂P, pathEval 0 (Nat.zero_le T) x = pathEval 0 le_rfl y := by
     refine ae_of_ae_map (p := fun z ↦ z = pathEval 0 le_rfl y)
-      (measurable_pathEval (α := EuclideanSpace ℝ ι) 0 (Nat.zero_le T)).aemeasurable ?_
+      (measurable_pathEval (X := fun _ ↦ EuclideanSpace ℝ ι) 0 (Nat.zero_le T)).aemeasurable ?_
     rw [h0, ae_dirac_eq]
     exact Filter.eventually_pure.2 rfl
   have ht' : P.map (pathEval t ht) = noiseKernel (alphaBar β t) (pathEval 0 le_rfl y) := by
