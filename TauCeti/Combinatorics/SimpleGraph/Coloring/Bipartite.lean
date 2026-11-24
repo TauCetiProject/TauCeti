@@ -18,7 +18,7 @@ supremum of its vertex degrees.
 
 This file proves Kőnig's theorem for arbitrary bipartite simple graphs — without finiteness or
 decidability assumptions on the vertex or edge sets — together with its locally finite (`degree`
-and `ncard`) and finite (`maxDegree`) specializations:
+and `ncard`) and finite (`edgeColorable_maxDegree`) specializations:
 
 1. **Locally finite regular bipartite graphs** (`SimpleGraph.IsRegularOfDegree.edgeColorable` and
    `SimpleGraph.IsRegularOfDegree.chromaticIndex_eq`): on a locally finite `k`-regular bipartite
@@ -31,8 +31,7 @@ and `ncard`) and finite (`maxDegree`) specializations:
    `G.chromaticIndex = ⨆ v, (G.neighborSet v).encard`. Specialising yields the `degree` formulation
    under `[G.LocallyFinite]`, the `ncard` formulation under `[∀ v : V, Finite (G.neighborSet v)]`
    (which requires no `Fintype` or `DecidableRel` instances and automatically covers both
-   `[G.LocallyFinite]` and `[Finite V]`), and the `maxDegree` formulation
-   (`χ'(G) = G.maxDegree`) on finite graphs.
+   `[G.LocallyFinite]` and `[Finite V]`), and `G.EdgeColorable G.maxDegree` on finite graphs.
 
 As applications, we compute the chromatic index of `completeBipartiteGraph V W` (for arbitrary
 nonempty `V` and `W`, finite or infinite), even `cycleGraph n`, and `pathGraph n`.
@@ -63,9 +62,8 @@ finite theorem, from which the unrestricted `encard` theorem follows because a f
 * `SimpleGraph.IsBipartite.edgeColorable_iff_forall_ncard_neighborSet_le` and
   `SimpleGraph.IsBipartite.chromaticIndex_eq_iSup_ncard_neighborSet`: `ncard` formulations under
   `[∀ v : V, Finite (G.neighborSet v)]`.
-* `SimpleGraph.IsBipartite.edgeColorable_iff_maxDegree_le`,
-  `SimpleGraph.IsBipartite.edgeColorable_maxDegree`, and
-  `SimpleGraph.IsBipartite.chromaticIndex_eq_maxDegree`: finite `maxDegree` formulations.
+* `SimpleGraph.IsBipartite.edgeColorable_maxDegree`: every finite bipartite simple graph is
+  `(G.maxDegree)`-edge-colourable.
 * `SimpleGraph.CompleteBipartiteGraph.chromaticIndex`,
   `SimpleGraph.chromaticIndex_cycleGraph_of_even`, and `SimpleGraph.chromaticIndex_pathGraph`:
   chromatic indices of complete bipartite, even cycle, and path graphs.
@@ -102,7 +100,7 @@ theorem IsRegularOfDegree.edgeColorable [G.LocallyFinite] (hG : G.IsRegularOfDeg
 theorem IsRegularOfDegree.chromaticIndex_eq [G.LocallyFinite] [Nonempty V]
     (hG : G.IsRegularOfDegree k) (hbip : G.IsBipartite) :
     G.chromaticIndex = k := by
-  refine le_antisymm (hG.edgeColorable hbip).chromaticIndex_le ?_
+  refine le_antisymm (G.chromaticIndex_le_iff_edgeColorable.2 (hG.edgeColorable hbip)) ?_
   obtain ⟨v⟩ := ‹Nonempty V›
   rw [← hG.degree_eq v]
   exact G.degree_le_chromaticIndex v
@@ -115,15 +113,16 @@ copies of `(G, true)` by adding `k - (G.neighborSet v).ncard` cross-edges betwee
 private def regularCompletion (G : SimpleGraph V) (k : ℕ) :
     SimpleGraph (V × Fin k × Bool) where
   Adj p q :=
-    (p.2 = q.2 ∧ G.Adj p.1 q.1) ∨
-      (p.1 = q.1 ∧ p.2.2 ≠ q.2.2 ∧ (p.2.1 + q.2.1).1 < k - (G.neighborSet p.1).ncard)
+    (p.snd = q.snd ∧ G.Adj p.fst q.fst) ∨
+      (p.fst = q.fst ∧ p.snd.snd ≠ q.snd.snd ∧
+        (p.snd.fst + q.snd.fst).val < k - (G.neighborSet p.fst).ncard)
   symm := ⟨fun p q h ↦ by
     rcases eq_zero_or_neZero k with rfl | _
-    · exact p.2.1.elim0
+    · exact p.snd.fst.elim0
     · rcases h with ⟨h2, hadj⟩ | ⟨h1, hb, hlt⟩
       · exact Or.inl ⟨h2.symm, hadj.symm⟩
       · refine Or.inr ⟨h1.symm, hb.symm, ?_⟩
-        rwa [add_comm q.2.1 p.2.1, ← h1]⟩
+        rwa [add_comm q.snd.fst p.snd.fst, ← h1]⟩
   loopless := ⟨fun p h ↦ by
     rcases h with ⟨_, hadj⟩ | ⟨_, hb, _⟩
     · exact G.loopless.irrefl _ hadj
@@ -136,22 +135,22 @@ private theorem isBipartite_regularCompletion (hbip : G.IsBipartite) :
   obtain ⟨C⟩ := hbip
   let c : G.Coloring Bool := G.recolorOfEquiv finTwoEquiv C
   refine ⟨(regularCompletion G k).recolorOfEquiv finTwoEquiv.symm
-    (Coloring.mk (fun p ↦ bne (c p.1) p.2.2) fun {p q} h ↦ ?_)⟩
+    (Coloring.mk (fun p ↦ bne (c p.fst) p.snd.snd) fun {p q} h ↦ ?_)⟩
   rcases h with ⟨h2, hadj⟩ | ⟨h1, hb, -⟩
-  · have hne : c p.1 ≠ c q.1 := c.valid hadj
-    have : p.2.2 = q.2.2 := congrArg Prod.snd h2
-    cases hcp : c p.1 <;> cases hcq : c q.1 <;> cases hp : p.2.2 <;> simp_all
+  · have hne : c p.fst ≠ c q.fst := c.valid hadj
+    have : p.snd.snd = q.snd.snd := congrArg Prod.snd h2
+    cases hcp : c p.fst <;> cases hcq : c q.fst <;> cases hp : p.snd.snd <;> simp_all
   · rw [h1]
-    cases hcq : c q.1 <;> cases hp : p.2.2 <;> cases hq : q.2.2 <;> simp_all
+    cases hcq : c q.fst <;> cases hp : p.snd.snd <;> cases hq : q.snd.snd <;> simp_all
 
 /-- Explicit description of the neighbour set of `p` in `regularCompletion G k` as the union of
-its `G`-neighbours in the same `(Fin k × Bool)` fibre and its cross-neighbours in `!p.2.2`. -/
+its `G`-neighbours in the same `(Fin k × Bool)` fibre and its cross-neighbours in `!p.snd.snd`. -/
 private theorem neighborSet_regularCompletion (G : SimpleGraph V) (k : ℕ)
     (p : V × Fin k × Bool) :
     (regularCompletion G k).neighborSet p =
-      ((fun v ↦ (v, p.2)) '' G.neighborSet p.1) ∪
-        ((fun j ↦ (p.1, j, !p.2.2)) ''
-          {j : Fin k | (p.2.1 + j).1 < k - (G.neighborSet p.1).ncard}) := by
+      ((fun v ↦ (v, p.snd)) '' G.neighborSet p.fst) ∪
+        ((fun j ↦ (p.fst, j, !p.snd.snd)) ''
+          {j : Fin k | (p.snd.fst + j).val < k - (G.neighborSet p.fst).ncard}) := by
   rcases p with ⟨u, i, b⟩
   ext ⟨v, j, b'⟩
   simp only [mem_neighborSet, regularCompletion, mem_union, mem_image, mem_ofPred_eq,
@@ -171,27 +170,27 @@ neighbour-set cardinality `k`. -/
 private theorem ncard_neighborSet_regularCompletion [G.LocallyFinite] [NeZero k]
     (hk : ∀ v : V, G.degree v ≤ k) (p : V × Fin k × Bool) :
     ((regularCompletion G k).neighborSet p).ncard = k := by
-  let A : Set (V × Fin k × Bool) := (fun v ↦ (v, p.2)) '' G.neighborSet p.1
-  let S : Set (Fin k) := {j : Fin k | (p.2.1 + j).1 < k - (G.neighborSet p.1).ncard}
-  let B : Set (V × Fin k × Bool) := (fun j ↦ (p.1, j, !p.2.2)) '' S
+  let A : Set (V × Fin k × Bool) := (fun v ↦ (v, p.snd)) '' G.neighborSet p.fst
+  let S : Set (Fin k) := {j : Fin k | (p.snd.fst + j).val < k - (G.neighborSet p.fst).ncard}
+  let B : Set (V × Fin k × Bool) := (fun j ↦ (p.fst, j, !p.snd.snd)) '' S
   have hdisj : Disjoint A B := Set.disjoint_left.2 fun _ ⟨_, _, ha⟩ ⟨_, _, hb⟩ ↦ by
-    have := (congrArg (fun q ↦ q.2.2) ha).trans (congrArg (fun q ↦ q.2.2) hb).symm
-    cases p.2.2 <;> simp at this
-  have hS : S = (fun x : Fin (k - (G.neighborSet p.1).ncard) ↦
-      Fin.castLE (Nat.sub_le k (G.neighborSet p.1).ncard) x - p.2.1) '' univ := by
+    have := (congrArg (fun q ↦ q.snd.snd) ha).trans (congrArg (fun q ↦ q.snd.snd) hb).symm
+    cases p.snd.snd <;> simp at this
+  have hS : S = (fun x : Fin (k - (G.neighborSet p.fst).ncard) ↦
+      Fin.castLE (Nat.sub_le k (G.neighborSet p.fst).ncard) x - p.snd.fst) '' univ := by
     ext j
     simp only [S, mem_ofPred_eq, mem_image, mem_univ, true_and]
-    refine ⟨fun hj ↦ ⟨⟨(p.2.1 + j).1, hj⟩, ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
-    · exact add_sub_cancel_left p.2.1 j
+    refine ⟨fun hj ↦ ⟨⟨(p.snd.fst + j).val, hj⟩, ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
+    · exact add_sub_cancel_left p.snd.fst j
     · rw [← hx, add_sub_cancel]
-      exact x.2
+      exact x.isLt
   rw [neighborSet_regularCompletion,
-    ncard_union_eq hdisj ((G.neighborSet p.1).toFinite.image _) ((toFinite S).image _),
+    ncard_union_eq hdisj ((G.neighborSet p.fst).toFinite.image _) ((toFinite S).image _),
     ncard_image_of_injective _ (fun _ _ h ↦ congrArg Prod.fst h),
-    ncard_image_of_injective _ (fun _ _ h ↦ congrArg (fun q ↦ q.2.1) h), hS,
+    ncard_image_of_injective _ (fun _ _ h ↦ congrArg (fun q ↦ q.snd.fst) h), hS,
     ncard_image_of_injective _ (fun _ _ h ↦ Fin.castLE_injective _ (sub_left_inj.1 h)),
     ncard_univ, Nat.card_fin, ncard_neighborSet]
-  exact Nat.add_sub_of_le (hk p.1)
+  exact Nat.add_sub_of_le (hk p.fst)
 
 /-! ### Kőnig's edge-colouring theorem for bipartite simple graphs -/
 
@@ -204,8 +203,8 @@ theorem edgeColorable_iff_forall_degree_le [G.LocallyFinite] (hbip : G.IsBiparti
     G.EdgeColorable k ↔ ∀ v : V, G.degree v ≤ k := by
   constructor
   · intro hc v
-    obtain ⟨C⟩ := G.edgeColorable_def.1 hc
-    simpa using C.degree_le_card v
+    obtain ⟨c⟩ := hc
+    simpa using EdgeColoring.degree_le_card c v
   · intro hk
     rcases eq_zero_or_neZero k with rfl | _
     · refine G.edgeColorable_zero_iff.2 ?_
@@ -216,14 +215,14 @@ theorem edgeColorable_iff_forall_degree_le [G.LocallyFinite] (hbip : G.IsBiparti
       let H := regularCompletion G k
       have hHfin (p : V × Fin k × Bool) : (H.neighborSet p).Finite := by
         rw [neighborSet_regularCompletion]
-        exact ((G.neighborSet p.1).toFinite.image _).union ((toFinite _).image _)
+        exact ((G.neighborSet p.fst).toFinite.image _).union ((toFinite _).image _)
       let _ : H.LocallyFinite := fun p ↦ (hHfin p).fintype
       have hreg : H.IsRegularOfDegree k := fun p ↦ by
         rw [← H.ncard_neighborSet p]
         exact ncard_neighborSet_regularCompletion hk p
       let f : Copy G H :=
         ⟨⟨fun v ↦ (v, 0, false), fun h ↦ Or.inl ⟨rfl, h⟩⟩, fun _ _ h ↦ congrArg Prod.fst h⟩
-      exact (hreg.edgeColorable (isBipartite_regularCompletion hbip)).of_copy f
+      exact (hreg.edgeColorable (isBipartite_regularCompletion hbip)).of_isContained ⟨f⟩
 
 /-- **Kőnig's edge-colouring theorem for arbitrary bipartite simple graphs.** A bipartite simple
 graph `G` is `k`-edge-colourable if and only if `(G.neighborSet v).encard ≤ k` for every vertex
@@ -232,7 +231,8 @@ theorem edgeColorable_iff_forall_encard_neighborSet_le (hbip : G.IsBipartite) :
     G.EdgeColorable k ↔ ∀ v : V, (G.neighborSet v).encard ≤ k := by
   constructor
   · intro hc v
-    exact (G.encard_neighborSet_le_chromaticIndex v).trans hc.chromaticIndex_le
+    exact (G.encard_neighborSet_le_chromaticIndex v).trans
+      (G.chromaticIndex_le_iff_edgeColorable.2 hc)
   · intro hk
     classical
     have hfin (v : V) : (G.neighborSet v).Finite :=
@@ -309,22 +309,10 @@ theorem chromaticIndex_eq_iSup_ncard_neighborSet [∀ v : V, Finite (G.neighborS
   rw [hbip.chromaticIndex_eq_iSup_encard_neighborSet]
   exact iSup_congr fun v ↦ (G.neighborSet v).toFinite.cast_ncard_eq.symm
 
-/-- For a finite bipartite simple graph, `G` is `k`-edge-colourable iff `G.maxDegree ≤ k`. -/
-theorem edgeColorable_iff_maxDegree_le [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
-    G.EdgeColorable k ↔ G.maxDegree ≤ k := by
-  rw [hbip.edgeColorable_iff_forall_degree_le]
-  exact ⟨G.maxDegree_le_of_forall_degree_le k, fun hk v ↦ (G.degree_le_maxDegree v).trans hk⟩
-
 /-- Every finite bipartite simple graph is `(G.maxDegree)`-edge-colourable. -/
 theorem edgeColorable_maxDegree [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
     G.EdgeColorable G.maxDegree :=
-  hbip.edgeColorable_iff_maxDegree_le.2 le_rfl
-
-/-- **Kőnig's chromatic-index theorem for finite simple graphs.** The chromatic index of a finite
-bipartite simple graph equals its maximum degree (`0` when `V` is empty). -/
-theorem chromaticIndex_eq_maxDegree [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
-    G.chromaticIndex = G.maxDegree :=
-  le_antisymm hbip.edgeColorable_maxDegree.chromaticIndex_le G.maxDegree_le_chromaticIndex
+  hbip.edgeColorable_iff_forall_degree_le.2 G.degree_le_maxDegree
 
 end IsBipartite
 

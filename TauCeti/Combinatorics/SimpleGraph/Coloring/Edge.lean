@@ -12,22 +12,17 @@ public import Mathlib.Combinatorics.SimpleGraph.Matching
 /-!
 # Edge-colourings and chromatic index of simple graphs
 
-A proper edge-colouring of a simple graph `G` assigns a colour to every edge of `G` so that
-distinct edges sharing a vertex receive distinct colours. Because two edges of `G` are adjacent in
-`G.lineGraph` precisely when they are distinct and share an endpoint, proper edge-colourings of `G`
-with colours in `α` are vertex colourings of `G.lineGraph` with colours in `α`.
+An edge-colouring of a simple graph `G` is a vertex colouring of its line graph `G.lineGraph`,
+assigning a colour to every edge so that distinct edges sharing a vertex receive distinct colours.
+This module gives `SimpleGraph.EdgeColoring`, `SimpleGraph.EdgeColorableWith`,
+`SimpleGraph.EdgeColorable`, and `SimpleGraph.chromaticIndex` as abbreviations on `G.lineGraph`,
+making Mathlib's vertex-colouring API (`DFunLike` coercion to `G.edgeSet → C`,
+`SimpleGraph.Coloring.colorClass`, `SimpleGraph.recolorOfEmbedding`, `SimpleGraph.recolorOfEquiv`,
+`SimpleGraph.recolorOfCardLE`) apply directly to edge-colourings.
 
-Defining `SimpleGraph.EdgeColoring` as an abbreviation for `G.lineGraph.Coloring` makes Mathlib's
-colouring infrastructure (`DFunLike` coercion to `G.edgeSet → α`, `SimpleGraph.Coloring.colorClass`,
-`SimpleGraph.recolorOfEmbedding`, `SimpleGraph.recolorOfEquiv`, `SimpleGraph.recolorOfCardLE`)
-available directly on edge-colourings. The `n`-edge-colourability predicate
-`SimpleGraph.EdgeColorable` and the chromatic index `SimpleGraph.chromaticIndex` (`χ'(G) ∈ ℕ∞`) are
-defined as `def`s with explicit interface lemmas so downstream developments do not depend on
-definitional unfolding to `G.lineGraph`.
-
-At any vertex `v`, the edges incident with `v` form a clique in `G.lineGraph` in bijection with
-`G.neighborSet v`. Every proper edge-colouring is therefore injective on the incident edges at `v`,
-and `(G.neighborSet v).encard ≤ G.chromaticIndex` holds without any finiteness or decidability
+At any vertex `x`, the edges incident with `x` form a clique in `G.lineGraph` in bijection with
+`G.neighborSet x`. Every proper edge-colouring is therefore injective on the incident edges at `x`,
+and `(G.neighborSet x).encard ≤ G.chromaticIndex` holds without finiteness or decidability
 assumptions on `G` or its vertex type. Restricting to any vertex set containing `G.support` induces
 an isomorphism of line graphs. Finally, edge-colourings correspond bijectively to indexed
 partitions of `G.edgeSet` into matching subgraphs (`SimpleGraph.Subgraph.IsMatching`), with empty
@@ -35,37 +30,38 @@ matchings allowed so unused colours are retained.
 
 ## Main definitions
 
-* `SimpleGraph.EdgeColoring G α`: proper edge-colourings of `G` with colours in `α`, an
-  abbreviation for `G.lineGraph.Coloring α`.
+* `SimpleGraph.EdgeColoring G C`: proper edge-colourings of `G` with colours in `C`, an
+  abbreviation for `G.lineGraph.Coloring C`.
 * `SimpleGraph.EdgeColoring.mk`, `SimpleGraph.EdgeColoring.ofCopy`,
   `SimpleGraph.EdgeColoring.ofLE`, `SimpleGraph.edgeColoringCongr`: constructor and transport of
   edge-colourings along copies, subgraphs, and isomorphisms.
-* `SimpleGraph.lineGraphInduceIsoOfSupportSubset`: restricting to a vertex set containing
-  `G.support` preserves the line graph up to isomorphism.
-* `SimpleGraph.EdgeColoring.colorClassSubgraph`, `SimpleGraph.EdgeColoring.ofMatchings`,
+* `SimpleGraph.EdgeColorableWith G C`, `SimpleGraph.EdgeColorable G k`, and
+  `SimpleGraph.chromaticIndex G`: edge-colourability by `C` or by `k` colours and the chromatic
+  index `χ'(G) : ℕ∞`.
+* `SimpleGraph.lineGraphInduceIsoOfSupportSubset` and
+  `SimpleGraph.edgeColoringInduceEquivOfSupportSubset`: restricting to a vertex set containing
+  `G.support` preserves the line graph and its colourings up to equivalence.
+* `SimpleGraph.EdgeColoring.colorClassSubgraph`, `SimpleGraph.EdgeColoring.ofMatchings`, and
   `SimpleGraph.edgeColoringEquivMatchings`: correspondence between proper edge-colourings and
   indexed partitions into matching subgraphs.
-* `SimpleGraph.EdgeColorable G n`: existence of a proper edge-colouring of `G` with `n` colours.
-* `SimpleGraph.chromaticIndex G`: the chromatic index `χ'(G) : ℕ∞`, the least number of colours
-  needed in a proper edge-colouring of `G` (or `⊤` if none is finite).
 
 ## Main results
 
 * `SimpleGraph.isClique_lineGraph_incidenceSet`: the edges incident with a vertex form a clique of
   the line graph.
 * `SimpleGraph.encard_neighborSet_le_chromaticIndex`,
-  `SimpleGraph.ncard_neighborSet_le_chromaticIndex`, `SimpleGraph.degree_le_chromaticIndex`,
+  `SimpleGraph.ncard_neighborSet_le_chromaticIndex`, `SimpleGraph.degree_le_chromaticIndex`, and
   `SimpleGraph.maxDegree_le_chromaticIndex`: degree lower bounds on the chromatic index.
-* `SimpleGraph.nonempty_edgeColoring_iff_exists_matchings` and
+* `SimpleGraph.edgeColorableWith_iff_exists_matchings` and
   `SimpleGraph.edgeColorable_iff_exists_matchings`: edge-colourability as a disjoint union of
   matchings covering `G.edgeSet`.
 
 ## References
 
-* S. Broshi, *feat(Combinatorics/SimpleGraph/Coloring/Edge): create a basic edge-coloring API*,
-  [mathlib4#33313](https://github.com/leanprover-community/mathlib4/pull/33313). The module path
-  and line-graph interface design (`SimpleGraph.EdgeColoring`, `SimpleGraph.EdgeColorable`, and
-  `SimpleGraph.chromaticIndex`) follow this PR, independently implemented here.
+* S. Broshi,
+  [Mathlib pull request #33313](https://github.com/leanprover-community/mathlib4/pull/33313),
+  from which the `EdgeColoring`, `EdgeColorableWith`, `EdgeColorable`, and `chromaticIndex`
+  interface is adapted.
 * D. Kőnig, *Gráfok és alkalmazásuk a determinánsok és a halmazok elméletére*, Mat. Természett.
   Ért. 34 (1916), 104--119.
 * V. G. Vizing, *On an estimate of the chromatic class of a p-graph*, Diskret. Analiz 3 (1964),
@@ -77,27 +73,28 @@ public section
 
 open Function Set
 
-universe u v w w'
+universe u v w x
 
 namespace SimpleGraph
 
-variable {V : Type u} {G : SimpleGraph V}
+variable {V : Type u} {W : Type v} {G H : SimpleGraph V} {G' : SimpleGraph W}
+  {C : Type w} {D : Type x} {k m : ℕ}
 
 /-! ### Cliques of incident edges and support -/
 
-/-- The edges incident with a vertex `v` form a clique in `G.lineGraph`. -/
-theorem isClique_lineGraph_incidenceSet (G : SimpleGraph V) (v : V) :
-    G.lineGraph.IsClique (Subtype.val ⁻¹' G.incidenceSet v) :=
+/-- The edges incident with a vertex `x` form a clique in `G.lineGraph`. -/
+theorem isClique_lineGraph_incidenceSet (G : SimpleGraph V) (x : V) :
+    G.lineGraph.IsClique (Subtype.val ⁻¹' G.incidenceSet x) :=
   fun _ he₁ _ he₂ hne ↦ lineGraph_adj_iff_exists.2
-    ⟨hne, v, G.edge_mem_incidenceSet_iff.1 he₁, G.edge_mem_incidenceSet_iff.1 he₂⟩
+    ⟨hne, x, G.edge_mem_incidenceSet_iff.1 he₁, G.edge_mem_incidenceSet_iff.1 he₂⟩
 
-/-- Sending each neighbour `w` of `v` to the edge `s(v, w)` embeds `G.neighborSet v` as pairwise
+/-- Sending each neighbour `y` of `x` to the edge `s(x, y)` embeds `G.neighborSet x` as pairwise
 adjacent vertices of `G.lineGraph`. -/
-theorem pairwise_lineGraph_adj_neighborSet (G : SimpleGraph V) (v : V) :
-    Pairwise fun w₁ w₂ : G.neighborSet v ↦
-      G.lineGraph.Adj ⟨s(v, w₁), w₁.2⟩ ⟨s(v, w₂), w₂.2⟩ := by
-  intro w₁ w₂ hne
-  refine lineGraph_adj_iff_exists.2 ⟨?_, v, Sym2.mem_mk_left _ _, Sym2.mem_mk_left _ _⟩
+theorem pairwise_lineGraph_adj_neighborSet (G : SimpleGraph V) (x : V) :
+    Pairwise fun y₁ y₂ : G.neighborSet x ↦
+      G.lineGraph.Adj ⟨s(x, y₁), y₁.property⟩ ⟨s(x, y₂), y₂.property⟩ := by
+  intro y₁ y₂ hne
+  refine lineGraph_adj_iff_exists.2 ⟨?_, x, Sym2.mem_mk_left _ _, Sym2.mem_mk_left _ _⟩
   intro h
   exact hne (Subtype.ext (Sym2.congr_right.1 (Subtype.mk.inj h)))
 
@@ -107,7 +104,7 @@ def lineGraphInduceIsoOfSupportSubset {s : Set V} (hs : G.support ⊆ s) :
     (G.induce s).lineGraph ≃g G.lineGraph where
   toFun := (Copy.induce G s).toLineGraphEmbedding
   invFun e := ⟨(e : Sym2 V).attachWith
-      (fun _ ha ↦ Set.mem_sym2_iff_subset.1 (G.edgeSet_subset_sym2_iff.2 hs e.2) ha), by
+      (fun _ ha ↦ Set.mem_sym2_iff_subset.1 (G.edgeSet_subset_sym2_iff.2 hs e.property) ha), by
     obtain ⟨p, hp⟩ := e
     induction p using Sym2.ind with
     | _ x y => exact hp⟩
@@ -126,150 +123,293 @@ theorem coe_lineGraphInduceIsoOfSupportSubset_apply {s : Set V} (hs : G.support 
     (G.lineGraphInduceIsoOfSupportSubset hs e : Sym2 V) = (e : Sym2 s).map Subtype.val :=
   (rfl)
 
+/-- Mapping the inverse of `SimpleGraph.lineGraphInduceIsoOfSupportSubset` along `Subtype.val`
+recovers the original edge. -/
+@[simp]
+theorem map_coe_lineGraphInduceIsoOfSupportSubset_symm_apply {s : Set V} (hs : G.support ⊆ s)
+    (e : G.edgeSet) :
+    (((G.lineGraphInduceIsoOfSupportSubset hs).symm e : (G.induce s).edgeSet) : Sym2 s).map
+      Subtype.val = (e : Sym2 V) :=
+  Sym2.attachWith_map_subtypeVal _
+
 /-! ### Proper edge-colourings -/
 
-/-- A proper edge-colouring of `G` with colours in `α` is a vertex colouring of `G.lineGraph`,
-assigning a colour to each edge of `G` so that distinct edges with a common endpoint receive
-distinct colours. -/
-abbrev EdgeColoring (G : SimpleGraph V) (α : Type w) : Type (max u w) :=
-  G.lineGraph.Coloring α
+/-- A proper edge-colouring of a simple graph is a colouring of its line graph. -/
+abbrev EdgeColoring (G : SimpleGraph V) (C : Type w) : Type (max u w) :=
+  G.lineGraph.Coloring C
 
 namespace EdgeColoring
 
-section Basic
+/-- Construct a proper edge-colouring from a colour function on the edges in which distinct edges
+with a common endpoint receive different colours. -/
+def mk (c : G.edgeSet → C)
+    (valid : ∀ ⦃e f : G.edgeSet⦄ ⦃x : V⦄, e ≠ f → x ∈ (e : Sym2 V) →
+      x ∈ (f : Sym2 V) → c e ≠ c f) :
+    G.EdgeColoring C :=
+  SimpleGraph.Coloring.mk c fun h ↦
+    let ⟨hef, _x, he, hf⟩ := lineGraph_adj_iff_exists.1 h
+    valid hef he hf
 
-variable {α : Type w}
-
-/-- Construct a proper edge-colouring from a function on `G.edgeSet` that assigns distinct colours
-to distinct edges sharing a vertex. -/
-def mk (c : G.edgeSet → α)
-    (valid : ∀ ⦃e₁ e₂ : G.edgeSet⦄ ⦃v : V⦄,
-      e₁ ≠ e₂ → v ∈ (e₁ : Sym2 V) → v ∈ (e₂ : Sym2 V) → c e₁ ≠ c e₂) :
-    G.EdgeColoring α :=
-  Coloring.mk c fun hadj ↦
-    let ⟨hne, _, h₁, h₂⟩ := lineGraph_adj_iff_exists.1 hadj
-    valid hne h₁ h₂
-
-/-- Evaluating an edge-colouring built by `SimpleGraph.EdgeColoring.mk` applies the underlying
-function. -/
+/-- A proper edge-colouring built by `SimpleGraph.EdgeColoring.mk` is its colour function. -/
 @[simp]
-theorem coe_mk (c : G.edgeSet → α)
-    (valid : ∀ ⦃e₁ e₂ : G.edgeSet⦄ ⦃v : V⦄,
-      e₁ ≠ e₂ → v ∈ (e₁ : Sym2 V) → v ∈ (e₂ : Sym2 V) → c e₁ ≠ c e₂) :
+theorem coe_mk (c : G.edgeSet → C)
+    (valid : ∀ ⦃e f : G.edgeSet⦄ ⦃x : V⦄, e ≠ f → x ∈ (e : Sym2 V) →
+      x ∈ (f : Sym2 V) → c e ≠ c f) :
     ⇑(mk c valid) = c :=
   (rfl)
 
-/-- Distinct edges sharing a vertex receive distinct colours. -/
-theorem ne_of_mem (C : G.EdgeColoring α) {e₁ e₂ : G.edgeSet} {v : V} (hne : e₁ ≠ e₂)
-    (h₁ : v ∈ (e₁ : Sym2 V)) (h₂ : v ∈ (e₂ : Sym2 V)) : C e₁ ≠ C e₂ :=
-  C.valid (lineGraph_adj_iff_exists.2 ⟨hne, v, h₁, h₂⟩)
+/-- Distinct edges with a common endpoint receive different colours. -/
+theorem ne_of_mem (c : G.EdgeColoring C) {e f : G.edgeSet} (hef : e ≠ f) {x : V}
+    (he : x ∈ (e : Sym2 V)) (hf : x ∈ (f : Sym2 V)) : c e ≠ c f :=
+  c.valid (lineGraph_adj_iff_exists.2 ⟨hef, x, he, hf⟩)
 
 /-- Two edges `s(u, v)` and `s(u, w)` with `v ≠ w` receive distinct colours. -/
-theorem ne_of_adj_left (C : G.EdgeColoring α) {u v w : V} (hvw : v ≠ w)
+theorem ne_of_adj_left (c : G.EdgeColoring C) {u v w : V} (hvw : v ≠ w)
     (huv : G.Adj u v) (huw : G.Adj u w) :
-    C ⟨s(u, v), huv⟩ ≠ C ⟨s(u, w), huw⟩ :=
-  C.ne_of_mem (fun h ↦ hvw (Sym2.congr_right.1 (Subtype.mk.inj h)))
+    c ⟨s(u, v), huv⟩ ≠ c ⟨s(u, w), huw⟩ :=
+  c.ne_of_mem (fun h ↦ hvw (Sym2.congr_right.1 (Subtype.mk.inj h)))
     (Sym2.mem_mk_left u v) (Sym2.mem_mk_left u w)
 
 /-- Two edges `s(u, w)` and `s(v, w)` with `u ≠ v` receive distinct colours. -/
-theorem ne_of_adj_right (C : G.EdgeColoring α) {u v w : V} (huv : u ≠ v)
+theorem ne_of_adj_right (c : G.EdgeColoring C) {u v w : V} (huv : u ≠ v)
     (huw : G.Adj u w) (hvw : G.Adj v w) :
-    C ⟨s(u, w), huw⟩ ≠ C ⟨s(v, w), hvw⟩ :=
-  C.ne_of_mem (fun h ↦ huv (Sym2.congr_left.1 (Subtype.mk.inj h)))
+    c ⟨s(u, w), huw⟩ ≠ c ⟨s(v, w), hvw⟩ :=
+  c.ne_of_mem (fun h ↦ huv (Sym2.congr_left.1 (Subtype.mk.inj h)))
     (Sym2.mem_mk_right u w) (Sym2.mem_mk_right v w)
 
-/-- A proper edge-colouring is injective on the edges incident with any vertex `v`. -/
-theorem injOn_incidenceSet (C : G.EdgeColoring α) (v : V) :
-    InjOn C (Subtype.val ⁻¹' G.incidenceSet v) :=
-  fun _ he₁ _ he₂ hC ↦ by_contra fun hne ↦
-    C.ne_of_mem hne (G.edge_mem_incidenceSet_iff.1 he₁) (G.edge_mem_incidenceSet_iff.1 he₂) hC
+/-- A proper edge-colouring is injective on the edges incident with any vertex `x`. -/
+theorem injOn_incidenceSet (c : G.EdgeColoring C) (x : V) :
+    InjOn c (Subtype.val ⁻¹' G.incidenceSet x) :=
+  fun _ he₁ _ he₂ hc ↦ by_contra fun hne ↦
+    c.ne_of_mem hne (G.edge_mem_incidenceSet_iff.1 he₁) (G.edge_mem_incidenceSet_iff.1 he₂) hc
 
-/-- Sending each neighbour `w` of `v` to the colour of `s(v, w)` is injective. -/
-theorem injective_neighborSet (C : G.EdgeColoring α) (v : V) :
-    Injective fun w : G.neighborSet v ↦ C ⟨s(v, w), w.2⟩ :=
-  C.injective_comp_of_pairwise_adj _ (G.pairwise_lineGraph_adj_neighborSet v)
+/-- Sending each neighbour `y` of `x` to the colour of `s(x, y)` is injective. -/
+theorem injective_neighborSet (c : G.EdgeColoring C) (x : V) :
+    Injective fun y : G.neighborSet x ↦ c ⟨s(x, y), y.property⟩ :=
+  c.injective_comp_of_pairwise_adj _ (G.pairwise_lineGraph_adj_neighborSet x)
 
-/-- At any vertex `v`, the extended cardinality of `G.neighborSet v` is at most `ENat.card α`. -/
-theorem encard_neighborSet_le_card (C : G.EdgeColoring α) (v : V) :
-    (G.neighborSet v).encard ≤ ENat.card α := by
+/-- At any vertex `x`, the extended cardinality of `G.neighborSet x` is at most `ENat.card C`. -/
+theorem encard_neighborSet_le_card (c : G.EdgeColoring C) (x : V) :
+    (G.neighborSet x).encard ≤ ENat.card C := by
   rw [← ENat.card_coe_set_eq]
-  exact ENat.card_le_card_of_injective (C.injective_neighborSet v)
+  exact ENat.card_le_card_of_injective (c.injective_neighborSet x)
 
 /-- If a graph admits a proper edge-colouring by a finite colour type, every vertex has finitely
 many neighbours. -/
-theorem finite_neighborSet [Finite α] (C : G.EdgeColoring α) (v : V) :
-    (G.neighborSet v).Finite :=
-  Finite.of_injective _ (C.injective_neighborSet v)
+theorem finite_neighborSet [Finite C] (c : G.EdgeColoring C) (x : V) :
+    (G.neighborSet x).Finite :=
+  Finite.of_injective _ (c.injective_neighborSet x)
 
-/-- A proper edge-colouring by a finite colour type `α` uses at least `(G.neighborSet v).ncard`
-colours at every vertex `v`. -/
-theorem ncard_neighborSet_le_card [Finite α] (C : G.EdgeColoring α) (v : V) :
-    (G.neighborSet v).ncard ≤ Nat.card α := by
+/-- A proper edge-colouring by a finite colour type `C` uses at least `(G.neighborSet x).ncard`
+colours at every vertex `x`. -/
+theorem ncard_neighborSet_le_card [Finite C] (c : G.EdgeColoring C) (x : V) :
+    (G.neighborSet x).ncard ≤ Nat.card C := by
   rw [← Nat.card_coe_set_eq]
-  exact Nat.card_le_card_of_injective _ (C.injective_neighborSet v)
+  exact Nat.card_le_card_of_injective _ (c.injective_neighborSet x)
 
-/-- A proper edge-colouring by a `Fintype` colour type uses at least `G.degree v` colours at every
-locally finite vertex `v`. -/
-theorem degree_le_card [Fintype α] (C : G.EdgeColoring α) (v : V) [Fintype (G.neighborSet v)] :
-    G.degree v ≤ Fintype.card α := by
+/-- A proper edge-colouring by a `Fintype` colour type uses at least `G.degree x` colours at every
+locally finite vertex `x`. -/
+theorem degree_le_card [Fintype C] (c : G.EdgeColoring C) (x : V) [Fintype (G.neighborSet x)] :
+    G.degree x ≤ Fintype.card C := by
   rw [← ncard_neighborSet, ← Nat.card_eq_fintype_card]
-  exact C.ncard_neighborSet_le_card v
+  exact c.ncard_neighborSet_le_card x
 
-/-- Pull a proper edge-colouring back along a graph copy `Copy G G'`. -/
-def ofCopy {V' : Type v} {G' : SimpleGraph V'} (f : Copy G G') (C : G'.EdgeColoring α) :
-    G.EdgeColoring α :=
-  C.comp f.toLineGraphEmbedding.toHom
+/-- Pull a proper edge-colouring back along a copy of a graph. -/
+def ofCopy (f : Copy G G') (c : G'.EdgeColoring C) : G.EdgeColoring C :=
+  c.comp f.lineGraph.toHom
 
-/-- Pulling an edge-colouring back along a copy evaluates `C` on the embedded edge. -/
+/-- Pulling back a proper edge-colouring along a copy applies it to the copied edge. -/
 @[simp]
-theorem ofCopy_apply {V' : Type v} {G' : SimpleGraph V'} (f : Copy G G') (C : G'.EdgeColoring α)
-    (e : G.edgeSet) :
-    C.ofCopy f e = C (f.toLineGraphEmbedding e) :=
+theorem ofCopy_apply (f : Copy G G') (c : G'.EdgeColoring C) (e : G.edgeSet) :
+    c.ofCopy f e = c (f.lineGraph.toHom e) :=
   (rfl)
 
-/-- Restrict a proper edge-colouring of `G'` to a subgraph `G ≤ G'`, such as `G'.deleteEdges s`. -/
-def ofLE {G' : SimpleGraph V} (h : G ≤ G') (C : G'.EdgeColoring α) : G.EdgeColoring α :=
-  C.ofCopy (Copy.ofLE G G' h)
+/-- Restrict a proper edge-colouring to a subgraph. -/
+def ofLE (h : G ≤ H) (c : H.EdgeColoring C) : G.EdgeColoring C :=
+  c.ofCopy (Copy.ofLE G H h)
 
-/-- Restricting a proper edge-colouring along `G ≤ G'` preserves the colour of each edge. -/
+/-- Restricting a proper edge-colouring keeps the colour of each edge. -/
 @[simp]
-theorem ofLE_apply {G' : SimpleGraph V} (h : G ≤ G') (C : G'.EdgeColoring α) (e : G.edgeSet) :
-    C.ofLE h e = C ⟨e, edgeSet_mono h e.2⟩ := by
-  simp only [ofLE, ofCopy_apply]
-  congr 1
-  exact Subtype.ext (congrFun Sym2.map_id' e.1)
-
-end Basic
+theorem ofLE_apply (h : G ≤ H) (c : H.EdgeColoring C) (e : G.edgeSet) :
+    c.ofLE h e = c ⟨e, edgeSet_mono h e.property⟩ := by
+  simp [ofLE, Copy.lineGraph, Copy.toLineGraphEmbedding]
 
 end EdgeColoring
 
-/-- Equivalence of proper edge-colourings induced by a graph isomorphism and a colour
-equivalence. -/
-def edgeColoringCongr {V' : Type v} {G' : SimpleGraph V'} {α : Type w} {β : Type w'}
-    (f : G ≃g G') (g : α ≃ β) : G.EdgeColoring α ≃ G'.EdgeColoring β :=
+/-! ### Edge-colourability and chromatic index -/
+
+/-- A simple graph is edge-colourable with `C` when it has a proper edge-colouring by `C`. -/
+abbrev EdgeColorableWith (G : SimpleGraph V) (C : Type w) : Prop :=
+  Nonempty (G.EdgeColoring C)
+
+/-- A simple graph is edge-colourable by at most `k` colours when its line graph is colourable by
+at most `k` colours. -/
+abbrev EdgeColorable (G : SimpleGraph V) (k : ℕ) : Prop :=
+  G.lineGraph.Colorable k
+
+/-- Edge-colourability by at most `k` colours is equivalent to the existence of an edge-colouring
+by `Fin k`. -/
+theorem edgeColorable_iff_edgeColorableWith (G : SimpleGraph V) :
+    G.EdgeColorable k ↔ G.EdgeColorableWith (Fin k) :=
+  Iff.rfl
+
+/-- The chromatic index of a simple graph is the chromatic number of its line graph. -/
+noncomputable abbrev chromaticIndex (G : SimpleGraph V) : ℕ∞ :=
+  G.lineGraph.chromaticNumber
+
+/-- Edge-colourability by zero colours characterizes the graph with no edges. -/
+theorem edgeColorable_zero_iff : G.EdgeColorable 0 ↔ G = ⊥ := by
+  unfold EdgeColorable
+  rw [colorable_zero_iff, Set.isEmpty_coe_sort, edgeSet_eq_empty]
+
+/-- A simple graph has chromatic index zero exactly when it has no edges. -/
+theorem chromaticIndex_eq_zero_iff : G.chromaticIndex = 0 ↔ G = ⊥ := by
+  rw [chromaticNumber_eq_zero_iff, Set.isEmpty_coe_sort, edgeSet_eq_empty]
+
+/-- The graph with no edges has chromatic index zero. -/
+theorem chromaticIndex_bot : (⊥ : SimpleGraph V).chromaticIndex = 0 :=
+  chromaticIndex_eq_zero_iff.2 rfl
+
+/-- Increasing the number of available colours preserves edge-colourability. -/
+theorem EdgeColorable.mono (hkm : k ≤ m) (h : G.EdgeColorable k) : G.EdgeColorable m :=
+  SimpleGraph.Colorable.mono hkm h
+
+/-- The edgeless graph is `k`-edge-colourable for every `k`. -/
+theorem edgeColorable_bot (k : ℕ) : (⊥ : SimpleGraph V).EdgeColorable k :=
+  (edgeColorable_zero_iff.2 rfl).mono k.zero_le
+
+/-- A simple graph is `1`-edge-colourable iff every vertex has at most one neighbour. -/
+theorem edgeColorable_one_iff_subsingleton_neighborSet :
+    G.EdgeColorable 1 ↔ ∀ x : V, (G.neighborSet x).Subsingleton := by
+  rw [EdgeColorable, colorable_one_iff]
+  refine ⟨fun h x y₁ hy₁ y₂ hy₂ ↦ by_contra fun hne ↦ ?_, fun h ↦ ?_⟩
+  · have hadj : G.lineGraph.Adj ⟨s(x, y₁), hy₁⟩ ⟨s(x, y₂), hy₂⟩ :=
+      @pairwise_lineGraph_adj_neighborSet _ G x ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩
+        fun hy ↦ hne (congrArg Subtype.val hy)
+    rw [h] at hadj
+    exact hadj
+  · ext e₁ e₂
+    simp only [bot_adj, iff_false]
+    rintro ⟨hne, x, hx₁, hx₂⟩
+    obtain ⟨y₁, hy₁⟩ := Sym2.mem_iff_exists.1 hx₁
+    obtain ⟨y₂, hy₂⟩ := Sym2.mem_iff_exists.1 hx₂
+    have hadj₁ : y₁ ∈ G.neighborSet x := by
+      rw [mem_neighborSet, ← G.mem_edgeSet, ← hy₁]
+      exact e₁.property
+    have hadj₂ : y₂ ∈ G.neighborSet x := by
+      rw [mem_neighborSet, ← G.mem_edgeSet, ← hy₂]
+      exact e₂.property
+    exact hne (Subtype.ext (hy₁.trans (h x hadj₁ hadj₂ ▸ hy₂.symm)))
+
+/-- Containment in another graph preserves edge-colourability by a given colour type. -/
+theorem EdgeColorableWith.of_isContained (hGG' : G ⊑ G') (h : G'.EdgeColorableWith C) :
+    G.EdgeColorableWith C := by
+  obtain ⟨f⟩ := hGG'
+  obtain ⟨c⟩ := h
+  exact ⟨EdgeColoring.ofCopy f c⟩
+
+/-- Restricting a graph preserves edge-colourability by a given colour type. -/
+theorem EdgeColorableWith.of_le (hGH : G ≤ H) (h : H.EdgeColorableWith C) :
+    G.EdgeColorableWith C :=
+  h.of_isContained (IsContained.of_le hGH)
+
+/-- Containment in another graph preserves edge-colourability. -/
+theorem EdgeColorable.of_isContained (hGG' : G ⊑ G') (h : G'.EdgeColorable k) :
+    G.EdgeColorable k :=
+  EdgeColorableWith.of_isContained hGG' h
+
+/-- Restricting a graph preserves edge-colourability. -/
+theorem EdgeColorable.of_le (hGH : G ≤ H) (h : H.EdgeColorable k) : G.EdgeColorable k :=
+  h.of_isContained (IsContained.of_le hGH)
+
+/-- Embedding the colour type preserves edge-colourability. -/
+theorem EdgeColorableWith.of_embedding (f : C ↪ D) (h : G.EdgeColorableWith C) :
+    G.EdgeColorableWith D :=
+  ⟨G.lineGraph.recolorOfEmbedding f h.some⟩
+
+/-- Graph and colour isomorphisms induce an equivalence of edge-colourings. -/
+def edgeColoringCongr (f : G ≃g G') (g : C ≃ D) : G.EdgeColoring C ≃ G'.EdgeColoring D :=
   coloringCongr f.lineGraph g
 
-/-- Transporting an edge-colouring along `f : G ≃g G'` and `g : α ≃ β` pulls the edge back by
-`f.symm.lineGraph` and relabels its colour by `g`. -/
+/-- Transporting an edge-colouring applies the colour equivalence after relabelling the edge. -/
 @[simp]
-theorem edgeColoringCongr_apply {V' : Type v} {G' : SimpleGraph V'} {α : Type w} {β : Type w'}
-    (f : G ≃g G') (g : α ≃ β) (C : G.EdgeColoring α) (e : G'.edgeSet) :
-    edgeColoringCongr f g C e = g (C (f.lineGraph.symm e)) :=
+theorem edgeColoringCongr_apply (f : G ≃g G') (g : C ≃ D) (c : G.EdgeColoring C)
+    (e : G'.edgeSet) : edgeColoringCongr f g c e = g (c (f.lineGraph.symm e)) :=
   (rfl)
+
+/-- Inverse transport of an edge-colouring applies the inverse colour equivalence after relabelling
+the edge. -/
+@[simp]
+theorem edgeColoringCongr_symm_apply (f : G ≃g G') (g : C ≃ D) (c : G'.EdgeColoring D)
+    (e : G.edgeSet) : (edgeColoringCongr f g).symm c e = g.symm (c (f.lineGraph e)) :=
+  (rfl)
+
+/-- Graph and colour isomorphisms preserve edge-colourability by a given colour type. -/
+theorem edgeColorableWith_congr (f : G ≃g G') (g : C ≃ D) :
+    G.EdgeColorableWith C ↔ G'.EdgeColorableWith D :=
+  (edgeColoringCongr f g).nonempty_congr
+
+/-- Isomorphic graphs are edge-colourable by a given number of colours simultaneously. -/
+theorem edgeColorable_congr (f : G ≃g G') : G.EdgeColorable k ↔ G'.EdgeColorable k :=
+  edgeColorableWith_congr f (Equiv.refl _)
+
+/-- Isomorphic graphs have the same chromatic index. -/
+theorem chromaticIndex_congr (f : G ≃g G') : G.chromaticIndex = G'.chromaticIndex :=
+  chromaticNumber_congr f.lineGraph
+
+/-- Containment in another graph cannot increase the chromatic index. -/
+theorem IsContained.chromaticIndex_mono (hGG' : G ⊑ G') :
+    G.chromaticIndex ≤ G'.chromaticIndex :=
+  chromaticNumber_mono_of_hom hGG'.some.lineGraph.toHom
+
+/-- Passing to a subgraph cannot increase the chromatic index. -/
+@[gcongr]
+theorem chromaticIndex_mono (hGH : G ≤ H) : G.chromaticIndex ≤ H.chromaticIndex :=
+  (IsContained.of_le hGH).chromaticIndex_mono
+
+/-- The chromatic index is at most `k` exactly when the graph is edge-colourable by at most `k`
+colours. -/
+theorem chromaticIndex_le_iff_edgeColorable (G : SimpleGraph V) :
+    G.chromaticIndex ≤ k ↔ G.EdgeColorable k :=
+  chromaticNumber_le_iff_colorable
 
 /-- Equivalence between proper edge-colourings of `G.induce s` and `G` when `G.support ⊆ s`. -/
-def edgeColoringInduceEquivOfSupportSubset {α : Type w} {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).EdgeColoring α ≃ G.EdgeColoring α :=
-  coloringCongr (G.lineGraphInduceIsoOfSupportSubset hs) (.refl α)
+def edgeColoringInduceEquivOfSupportSubset {s : Set V} (hs : G.support ⊆ s) :
+    (G.induce s).EdgeColoring C ≃ G.EdgeColoring C :=
+  coloringCongr (G.lineGraphInduceIsoOfSupportSubset hs) (.refl C)
 
-/-- `SimpleGraph.edgeColoringInduceEquivOfSupportSubset` inverse restricts a proper edge-colouring
-of `G` to `G.induce s` along `Copy.induce G s`. -/
+/-- Forward evaluation of `SimpleGraph.edgeColoringInduceEquivOfSupportSubset` pulls an edge back
+along `(G.lineGraphInduceIsoOfSupportSubset hs).symm`. -/
 @[simp]
-theorem edgeColoringInduceEquivOfSupportSubset_symm_apply {α : Type w} {s : Set V}
-    (hs : G.support ⊆ s) (C : G.EdgeColoring α) (e : (G.induce s).edgeSet) :
-    (G.edgeColoringInduceEquivOfSupportSubset hs).symm C e =
-      C ((G.lineGraphInduceIsoOfSupportSubset hs) e) :=
+theorem edgeColoringInduceEquivOfSupportSubset_apply {s : Set V} (hs : G.support ⊆ s)
+    (c : (G.induce s).EdgeColoring C) (e : G.edgeSet) :
+    G.edgeColoringInduceEquivOfSupportSubset hs c e =
+      c ((G.lineGraphInduceIsoOfSupportSubset hs).symm e) :=
   (rfl)
+
+/-- Inverse evaluation of `SimpleGraph.edgeColoringInduceEquivOfSupportSubset` restricts a proper
+edge-colouring of `G` to `G.induce s`. -/
+@[simp]
+theorem edgeColoringInduceEquivOfSupportSubset_symm_apply {s : Set V} (hs : G.support ⊆ s)
+    (c : G.EdgeColoring C) (e : (G.induce s).edgeSet) :
+    (G.edgeColoringInduceEquivOfSupportSubset hs).symm c e =
+      c (G.lineGraphInduceIsoOfSupportSubset hs e) :=
+  (rfl)
+
+/-- Restricting `G` to a vertex set containing `G.support` preserves `EdgeColorableWith`. -/
+theorem edgeColorableWith_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
+    (G.induce s).EdgeColorableWith C ↔ G.EdgeColorableWith C :=
+  (G.edgeColoringInduceEquivOfSupportSubset hs).nonempty_congr
+
+/-- Restricting `G` to a vertex set containing `G.support` preserves `k`-edge-colourability. -/
+theorem edgeColorable_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
+    (G.induce s).EdgeColorable k ↔ G.EdgeColorable k :=
+  colorable_congr (G.lineGraphInduceIsoOfSupportSubset hs)
+
+/-- Restricting `G` to a vertex set containing `G.support` preserves `G.chromaticIndex`. -/
+theorem chromaticIndex_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
+    (G.induce s).chromaticIndex = G.chromaticIndex :=
+  chromaticNumber_congr (G.lineGraphInduceIsoOfSupportSubset hs)
 
 /-! ### Edge-colourings and partitions into matchings -/
 
@@ -290,37 +430,35 @@ theorem Subgraph.IsMatching.isIndepSet_lineGraph {M : G.Subgraph} (hM : M.IsMatc
 
 namespace EdgeColoring
 
-variable {α : Type w}
-
 /-- The subgraph of `G` formed by the edges of colour `i` and their endpoints. -/
-def colorClassSubgraph (C : G.EdgeColoring α) (i : α) : G.Subgraph where
-  verts := {v | ∃ e : G.edgeSet, C e = i ∧ v ∈ (e : Sym2 V)}
-  Adj v w := ∃ h : G.Adj v w, C ⟨s(v, w), h⟩ = i
+def colorClassSubgraph (c : G.EdgeColoring C) (i : C) : G.Subgraph where
+  verts := {v | ∃ e : G.edgeSet, c e = i ∧ v ∈ (e : Sym2 V)}
+  Adj v w := ∃ h : G.Adj v w, c ⟨s(v, w), h⟩ = i
   adj_sub h := h.1
   edge_vert h := ⟨⟨s(_, _), h.1⟩, h.2, Sym2.mem_mk_left _ _⟩
   symm := ⟨fun _ _ ⟨h, hc⟩ ↦ ⟨h.symm, by
     convert hc using 2
     exact Subtype.ext Sym2.eq_swap⟩⟩
 
-/-- A vertex belongs to `(C.colorClassSubgraph i).verts` iff it is an endpoint of an `i`-coloured
+/-- A vertex belongs to `(c.colorClassSubgraph i).verts` iff it is an endpoint of an `i`-coloured
 edge. -/
 @[simp]
-theorem mem_colorClassSubgraph_verts (C : G.EdgeColoring α) (i : α) {v : V} :
-    v ∈ (C.colorClassSubgraph i).verts ↔ ∃ e : G.edgeSet, C e = i ∧ v ∈ (e : Sym2 V) :=
+theorem mem_colorClassSubgraph_verts (c : G.EdgeColoring C) (i : C) {v : V} :
+    v ∈ (c.colorClassSubgraph i).verts ↔ ∃ e : G.edgeSet, c e = i ∧ v ∈ (e : Sym2 V) :=
   Iff.rfl
 
-/-- Two vertices are adjacent in `C.colorClassSubgraph i` iff they form an `i`-coloured edge of
+/-- Two vertices are adjacent in `c.colorClassSubgraph i` iff they form an `i`-coloured edge of
 `G`. -/
 @[simp]
-theorem colorClassSubgraph_adj (C : G.EdgeColoring α) (i : α) {v w : V} :
-    (C.colorClassSubgraph i).Adj v w ↔ ∃ h : G.Adj v w, C ⟨s(v, w), h⟩ = i :=
+theorem colorClassSubgraph_adj (c : G.EdgeColoring C) (i : C) {v w : V} :
+    (c.colorClassSubgraph i).Adj v w ↔ ∃ h : G.Adj v w, c ⟨s(v, w), h⟩ = i :=
   Iff.rfl
 
-/-- The edge set of `C.colorClassSubgraph i` is the image in `Sym2 V` of the colour class
-`C.colorClass i`. -/
+/-- The edge set of `c.colorClassSubgraph i` is the image in `Sym2 V` of the colour class
+`c.colorClass i`. -/
 @[simp]
-theorem edgeSet_colorClassSubgraph (C : G.EdgeColoring α) (i : α) :
-    (C.colorClassSubgraph i).edgeSet = Subtype.val '' C.colorClass i := by
+theorem edgeSet_colorClassSubgraph (c : G.EdgeColoring C) (i : C) :
+    (c.colorClassSubgraph i).edgeSet = Subtype.val '' c.colorClass i := by
   ext e
   induction e using Sym2.ind with
   | _ v w =>
@@ -328,31 +466,31 @@ theorem edgeSet_colorClassSubgraph (C : G.EdgeColoring α) (i : α) :
     refine ⟨fun ⟨h, hc⟩ ↦ ⟨⟨s(v, w), h⟩, hc, rfl⟩, fun ⟨e', hc, hvw⟩ ↦ ?_⟩
     have h : G.Adj v w := by
       rw [← G.mem_edgeSet, ← hvw]
-      exact e'.2
+      exact e'.property
     have he' : (⟨s(v, w), h⟩ : G.edgeSet) = e' := Subtype.ext hvw.symm
     exact ⟨h, he'.symm ▸ hc⟩
 
-/-- Pulling `(C.colorClassSubgraph i).edgeSet` back to `G.edgeSet` recovers `C.colorClass i`. -/
-theorem preimage_coe_edgeSet_colorClassSubgraph (C : G.EdgeColoring α) (i : α) :
-    Subtype.val ⁻¹' (C.colorClassSubgraph i).edgeSet = C.colorClass i := by
+/-- Pulling `(c.colorClassSubgraph i).edgeSet` back to `G.edgeSet` recovers `c.colorClass i`. -/
+theorem preimage_coe_edgeSet_colorClassSubgraph (c : G.EdgeColoring C) (i : C) :
+    Subtype.val ⁻¹' (c.colorClassSubgraph i).edgeSet = c.colorClass i := by
   rw [edgeSet_colorClassSubgraph, preimage_image_eq _ Subtype.val_injective]
 
 /-- Every colour-class subgraph of a proper edge-colouring is a matching. -/
-theorem isMatching_colorClassSubgraph (C : G.EdgeColoring α) (i : α) :
-    (C.colorClassSubgraph i).IsMatching := by
+theorem isMatching_colorClassSubgraph (c : G.EdgeColoring C) (i : C) :
+    (c.colorClassSubgraph i).IsMatching := by
   intro v ⟨e, hce, hve⟩
   obtain ⟨w, hw⟩ := Sym2.mem_iff_exists.1 hve
   have hvw : G.Adj v w := by
     rw [← G.mem_edgeSet, ← hw]
-    exact e.2
+    exact e.property
   have heq : (⟨s(v, w), hvw⟩ : G.edgeSet) = e := Subtype.ext hw.symm
   refine ⟨w, ⟨hvw, heq.symm ▸ hce⟩, fun w' ⟨hvw', hcw'⟩ ↦ by_contra fun hne ↦ ?_⟩
-  exact C.ne_of_adj_left (Ne.symm hne) hvw hvw' ((heq.symm ▸ hce).trans hcw'.symm)
+  exact c.ne_of_adj_left (Ne.symm hne) hvw hvw' ((heq.symm ▸ hce).trans hcw'.symm)
 
-/-- Construct a proper edge-colouring from an `α`-indexed family of matching subgraphs partitioning
-`G.edgeSet`. Empty matchings are allowed, and no inhabitant of `α` is assumed. -/
-noncomputable def ofMatchings (M : α → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
-    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) : G.EdgeColoring α :=
+/-- Construct a proper edge-colouring from a `C`-indexed family of matching subgraphs partitioning
+`G.edgeSet`. Empty matchings are allowed, and no inhabitant of `C` is assumed. -/
+noncomputable def ofMatchings (M : C → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
+    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) : G.EdgeColoring C :=
   mk (fun e ↦ (hpart e).choose) fun {e₁ e₂ v} hne hv₁ hv₂ hcol ↦ by
     have he₁ : (e₁ : Sym2 V) ∈ (M (hpart e₁).choose).edgeSet := (hpart e₁).choose_spec.1
     have he₂ : (e₂ : Sym2 V) ∈ (M (hpart e₁).choose).edgeSet := hcol ▸ (hpart e₂).choose_spec.1
@@ -361,8 +499,8 @@ noncomputable def ofMatchings (M : α → G.Subgraph) (hM : ∀ i, (M i).IsMatch
 /-- `SimpleGraph.EdgeColoring.ofMatchings` assigns colour `i` to an edge `e` iff `e` lies in
 `(M i).edgeSet`. -/
 @[simp]
-theorem ofMatchings_apply_eq_iff (M : α → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
-    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) (e : G.edgeSet) (i : α) :
+theorem ofMatchings_apply_eq_iff (M : C → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
+    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) (e : G.edgeSet) (i : C) :
     ofMatchings M hM hpart e = i ↔ (e : Sym2 V) ∈ (M i).edgeSet := by
   simp only [ofMatchings, coe_mk]
   exact ⟨fun h ↦ h ▸ (hpart e).choose_spec.1, fun h ↦ ((hpart e).choose_spec.2 i h).symm⟩
@@ -370,8 +508,8 @@ theorem ofMatchings_apply_eq_iff (M : α → G.Subgraph) (hM : ∀ i, (M i).IsMa
 /-- Taking the `i`-th colour-class subgraph of `ofMatchings M hM hpart` recovers `M i`, including
 empty matchings. -/
 @[simp]
-theorem colorClassSubgraph_ofMatchings (M : α → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
-    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) (i : α) :
+theorem colorClassSubgraph_ofMatchings (M : C → G.Subgraph) (hM : ∀ i, (M i).IsMatching)
+    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet) (i : C) :
     (ofMatchings M hM hpart).colorClassSubgraph i = M i := by
   refine Subgraph.IsMatching.injOn_edgeSet
     ((ofMatchings M hM hpart).isMatching_colorClassSubgraph i) (hM i) ?_
@@ -385,295 +523,130 @@ theorem colorClassSubgraph_ofMatchings (M : α → G.Subgraph) (hM : ∀ i, (M i
 
 /-- Rebuilding a proper edge-colouring from its colour-class subgraphs recovers the colouring. -/
 @[simp]
-theorem ofMatchings_colorClassSubgraph (C : G.EdgeColoring α)
-    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (C.colorClassSubgraph i).edgeSet) :
-    ofMatchings C.colorClassSubgraph C.isMatching_colorClassSubgraph hpart = C := by
+theorem ofMatchings_colorClassSubgraph (c : G.EdgeColoring C)
+    (hpart : ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (c.colorClassSubgraph i).edgeSet) :
+    ofMatchings c.colorClassSubgraph c.isMatching_colorClassSubgraph hpart = c := by
   ext e
-  refine (ofMatchings_apply_eq_iff _ _ _ e (C e)).2 ?_
-  have hmem : e ∈ Subtype.val ⁻¹' (C.colorClassSubgraph (C e)).edgeSet := by
+  refine (ofMatchings_apply_eq_iff _ _ _ e (c e)).2 ?_
+  have hmem : e ∈ Subtype.val ⁻¹' (c.colorClassSubgraph (c e)).edgeSet := by
     rw [preimage_coe_edgeSet_colorClassSubgraph]
-    exact C.mem_colorClass e
+    exact c.mem_colorClass e
   exact hmem
 
 end EdgeColoring
 
-/-- Proper edge-colourings of `G` with colours in `α` correspond bijectively to `α`-indexed
+/-- Proper edge-colourings of `G` with colours in `C` correspond bijectively to `C`-indexed
 families of matching subgraphs whose edge sets partition `G.edgeSet`. -/
-noncomputable def edgeColoringEquivMatchings (G : SimpleGraph V) (α : Type w) :
-    G.EdgeColoring α ≃
-      {M : α → G.Subgraph //
+noncomputable def edgeColoringEquivMatchings (G : SimpleGraph V) (C : Type w) :
+    G.EdgeColoring C ≃
+      {M : C → G.Subgraph //
         (∀ i, (M i).IsMatching) ∧ ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet} where
-  toFun C := ⟨C.colorClassSubgraph, C.isMatching_colorClassSubgraph, fun e ↦ by
-    refine ⟨C e, ?_, fun i hi ↦ ?_⟩
-    · have hmem : e ∈ Subtype.val ⁻¹' (C.colorClassSubgraph (C e)).edgeSet := by
-        rw [C.preimage_coe_edgeSet_colorClassSubgraph]
-        exact C.mem_colorClass e
+  toFun c := ⟨c.colorClassSubgraph, c.isMatching_colorClassSubgraph, fun e ↦ by
+    refine ⟨c e, ?_, fun i hi ↦ ?_⟩
+    · have hmem : e ∈ Subtype.val ⁻¹' (c.colorClassSubgraph (c e)).edgeSet := by
+        rw [c.preimage_coe_edgeSet_colorClassSubgraph]
+        exact c.mem_colorClass e
       exact hmem
-    · have hi' : e ∈ Subtype.val ⁻¹' (C.colorClassSubgraph i).edgeSet := hi
-      rw [C.preimage_coe_edgeSet_colorClassSubgraph] at hi'
+    · have hi' : e ∈ Subtype.val ⁻¹' (c.colorClassSubgraph i).edgeSet := hi
+      rw [c.preimage_coe_edgeSet_colorClassSubgraph] at hi'
       exact hi'.symm⟩
-  invFun M := EdgeColoring.ofMatchings M.1 M.2.1 M.2.2
-  left_inv C := C.ofMatchings_colorClassSubgraph _
-  right_inv M := Subtype.ext (funext (EdgeColoring.colorClassSubgraph_ofMatchings M.1 M.2.1 M.2.2))
+  invFun M := EdgeColoring.ofMatchings M.val M.property.1 M.property.2
+  left_inv c := c.ofMatchings_colorClassSubgraph _
+  right_inv M := Subtype.ext <| funext <|
+    EdgeColoring.colorClassSubgraph_ofMatchings M.val M.property.1 M.property.2
 
 /-- The forward direction of `SimpleGraph.edgeColoringEquivMatchings` sends a colour `i` to
-`C.colorClassSubgraph i`. -/
+`c.colorClassSubgraph i`. -/
 @[simp]
-theorem edgeColoringEquivMatchings_apply {α : Type w} (C : G.EdgeColoring α) (i : α) :
-    (G.edgeColoringEquivMatchings α C).1 i = C.colorClassSubgraph i :=
+theorem edgeColoringEquivMatchings_apply (c : G.EdgeColoring C) (i : C) :
+    (G.edgeColoringEquivMatchings C c).val i = c.colorClassSubgraph i :=
   (rfl)
 
 /-- The inverse of `SimpleGraph.edgeColoringEquivMatchings` colours an edge by the unique index of
 the matching containing it. -/
 @[simp]
-theorem edgeColoringEquivMatchings_symm_apply_eq_iff {α : Type w}
-    (M : {M : α → G.Subgraph //
+theorem edgeColoringEquivMatchings_symm_apply_eq_iff
+    (M : {M : C → G.Subgraph //
       (∀ i, (M i).IsMatching) ∧ ∀ e : G.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet})
-    (e : G.edgeSet) (i : α) :
-    (G.edgeColoringEquivMatchings α).symm M e = i ↔ (e : Sym2 V) ∈ (M.1 i).edgeSet :=
-  EdgeColoring.ofMatchings_apply_eq_iff M.1 M.2.1 M.2.2 e i
+    (e : G.edgeSet) (i : C) :
+    (G.edgeColoringEquivMatchings C).symm M e = i ↔ (e : Sym2 V) ∈ (M.val i).edgeSet :=
+  EdgeColoring.ofMatchings_apply_eq_iff M.val M.property.1 M.property.2 e i
 
-/-- A simple graph admits a proper edge-colouring by `α` iff `G.edgeSet` is the pairwise disjoint
-union of the edge sets of an `α`-indexed family of matching subgraphs. -/
-theorem nonempty_edgeColoring_iff_exists_matchings {α : Type w} :
-    Nonempty (G.EdgeColoring α) ↔
-      ∃ M : α → G.Subgraph, (∀ i, (M i).IsMatching) ∧
+/-- A simple graph admits a proper edge-colouring by `C` iff `G.edgeSet` is the pairwise disjoint
+union of the edge sets of a `C`-indexed family of matching subgraphs. -/
+theorem edgeColorableWith_iff_exists_matchings :
+    G.EdgeColorableWith C ↔
+      ∃ M : C → G.Subgraph, (∀ i, (M i).IsMatching) ∧
         Pairwise (Disjoint on fun i ↦ (M i).edgeSet) ∧ ⋃ i, (M i).edgeSet = G.edgeSet := by
   constructor
-  · rintro ⟨C⟩
-    refine ⟨C.colorClassSubgraph, C.isMatching_colorClassSubgraph, ?_, ?_⟩
+  · rintro ⟨c⟩
+    refine ⟨c.colorClassSubgraph, c.isMatching_colorClassSubgraph, ?_, ?_⟩
     · intro i j hij
-      rw [onFun, C.edgeSet_colorClassSubgraph i, C.edgeSet_colorClassSubgraph j]
-      exact (pairwise_disjoint_fiber C hij).image Subtype.val_injective.injOn (subset_univ _)
+      rw [onFun, c.edgeSet_colorClassSubgraph i, c.edgeSet_colorClassSubgraph j]
+      exact (pairwise_disjoint_fiber c hij).image Subtype.val_injective.injOn (subset_univ _)
         (subset_univ _)
-    · refine (iUnion_subset fun i ↦ (C.colorClassSubgraph i).edgeSet_subset).antisymm fun p hp ↦ ?_
-      refine mem_iUnion.2 ⟨C ⟨p, hp⟩, ?_⟩
-      rw [C.edgeSet_colorClassSubgraph]
-      exact ⟨⟨p, hp⟩, C.mem_colorClass ⟨p, hp⟩, rfl⟩
+    · refine (iUnion_subset fun i ↦ (c.colorClassSubgraph i).edgeSet_subset).antisymm fun p hp ↦ ?_
+      refine mem_iUnion.2 ⟨c ⟨p, hp⟩, ?_⟩
+      rw [c.edgeSet_colorClassSubgraph]
+      exact ⟨⟨p, hp⟩, c.mem_colorClass ⟨p, hp⟩, rfl⟩
   · rintro ⟨M, hM, hdisj, hcover⟩
     refine ⟨EdgeColoring.ofMatchings M hM fun e ↦ ?_⟩
     have he : (e : Sym2 V) ∈ ⋃ i, (M i).edgeSet := by
       rw [hcover]
-      exact e.2
+      exact e.property
     obtain ⟨i, hi⟩ := mem_iUnion.1 he
     refine ⟨i, hi, fun j hj ↦ by_contra fun hji ↦ ?_⟩
     exact Set.disjoint_left.1 (hdisj hji) hj hi
 
-/-! ### Edge-colourability -/
-
-/-- `G.EdgeColorable n` means that `G` admits a proper edge-colouring with `n` colours. -/
-def EdgeColorable (G : SimpleGraph V) (n : ℕ) : Prop :=
-  G.lineGraph.Colorable n
-
-/-- `G` is `n`-edge-colourable iff `G.EdgeColoring (Fin n)` is nonempty. -/
-theorem edgeColorable_def {n : ℕ} : G.EdgeColorable n ↔ Nonempty (G.EdgeColoring (Fin n)) :=
-  Iff.rfl
-
-/-- `G` is `n`-edge-colourable iff `G.lineGraph` is `n`-colourable. -/
-theorem edgeColorable_iff_colorable_lineGraph {n : ℕ} :
-    G.EdgeColorable n ↔ G.lineGraph.Colorable n :=
-  Iff.rfl
-
-/-- `G` is `n`-edge-colourable iff `G.edgeSet` is the pairwise disjoint union of `n` matchings. -/
-theorem edgeColorable_iff_exists_matchings {n : ℕ} :
-    G.EdgeColorable n ↔
-      ∃ M : Fin n → G.Subgraph, (∀ i, (M i).IsMatching) ∧
+/-- `G` is `k`-edge-colourable iff `G.edgeSet` is the pairwise disjoint union of `k` matchings. -/
+theorem edgeColorable_iff_exists_matchings :
+    G.EdgeColorable k ↔
+      ∃ M : Fin k → G.Subgraph, (∀ i, (M i).IsMatching) ∧
         Pairwise (Disjoint on fun i ↦ (M i).edgeSet) ∧ ⋃ i, (M i).edgeSet = G.edgeSet :=
-  nonempty_edgeColoring_iff_exists_matchings
+  (G.edgeColorable_iff_edgeColorableWith).trans G.edgeColorableWith_iff_exists_matchings
 
-/-- A simple graph is `0`-edge-colourable iff it has no edges. -/
-@[simp]
-theorem edgeColorable_zero_iff : G.EdgeColorable 0 ↔ G = ⊥ := by
-  rw [edgeColorable_iff_colorable_lineGraph, colorable_zero_iff, isEmpty_coe_sort,
-    edgeSet_eq_empty]
-
-/-- The edgeless graph is `n`-edge-colourable for every `n`. -/
-@[simp]
-theorem edgeColorable_bot (n : ℕ) : (⊥ : SimpleGraph V).EdgeColorable n :=
-  (edgeColorable_zero_iff.2 rfl).mono n.zero_le
-
-/-- A simple graph is `1`-edge-colourable iff every vertex has at most one neighbour. -/
-theorem edgeColorable_one_iff_subsingleton_neighborSet :
-    G.EdgeColorable 1 ↔ ∀ v : V, (G.neighborSet v).Subsingleton := by
-  rw [edgeColorable_iff_colorable_lineGraph, colorable_one_iff]
-  refine ⟨fun h v w₁ hw₁ w₂ hw₂ ↦ by_contra fun hne ↦ ?_, fun h ↦ ?_⟩
-  · have hadj : G.lineGraph.Adj ⟨s(v, w₁), hw₁⟩ ⟨s(v, w₂), hw₂⟩ :=
-      @pairwise_lineGraph_adj_neighborSet _ G v ⟨w₁, hw₁⟩ ⟨w₂, hw₂⟩
-        fun hw ↦ hne (congrArg Subtype.val hw)
-    rw [h] at hadj
-    exact hadj
-  · ext e₁ e₂
-    simp only [bot_adj, iff_false]
-    rintro ⟨hne, v, hv₁, hv₂⟩
-    obtain ⟨w₁, hw₁⟩ := Sym2.mem_iff_exists.1 hv₁
-    obtain ⟨w₂, hw₂⟩ := Sym2.mem_iff_exists.1 hv₂
-    have hadj₁ : w₁ ∈ G.neighborSet v := by
-      rw [mem_neighborSet, ← G.mem_edgeSet, ← hw₁]
-      exact e₁.2
-    have hadj₂ : w₂ ∈ G.neighborSet v := by
-      rw [mem_neighborSet, ← G.mem_edgeSet, ← hw₂]
-      exact e₂.2
-    exact hne (Subtype.ext (hw₁.trans (h v hadj₁ hadj₂ ▸ hw₂.symm)))
-
-/-- Monotonicity of `SimpleGraph.EdgeColorable` in the number of colours. -/
-theorem EdgeColorable.mono {n m : ℕ} (h : n ≤ m) (hc : G.EdgeColorable n) : G.EdgeColorable m :=
-  Colorable.mono h hc
-
-/-- Pull `n`-edge-colourability back along a graph copy `Copy G G'`. -/
-theorem EdgeColorable.of_copy {V' : Type v} {G' : SimpleGraph V'} {n : ℕ} (f : Copy G G')
-    (hc : G'.EdgeColorable n) : G.EdgeColorable n :=
-  hc.of_hom f.toLineGraphEmbedding.toHom
-
-/-- Subgraphs of `n`-edge-colourable graphs are `n`-edge-colourable. -/
-theorem EdgeColorable.mono_left {G' : SimpleGraph V} (h : G ≤ G') {n : ℕ}
-    (hc : G'.EdgeColorable n) : G.EdgeColorable n :=
-  hc.of_copy (Copy.ofLE G G' h)
-
-/-- Isomorphic simple graphs are `n`-edge-colourable for the same `n`. -/
-theorem edgeColorable_congr {V' : Type v} {G' : SimpleGraph V'} {n : ℕ} (f : G ≃g G') :
-    G.EdgeColorable n ↔ G'.EdgeColorable n :=
-  colorable_congr f.lineGraph
-
-/-- Restricting `G` to a vertex set containing `G.support` preserves `n`-edge-colourability. -/
-theorem edgeColorable_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) {n : ℕ} :
-    (G.induce s).EdgeColorable n ↔ G.EdgeColorable n :=
-  colorable_congr (G.lineGraphInduceIsoOfSupportSubset hs)
-
-/-- Any proper edge-colouring by a `Fintype` `α` witnesses `(Fintype.card α)`-edge-colourability. -/
-theorem EdgeColoring.edgeColorable {α : Type w} [Fintype α] (C : G.EdgeColoring α) :
-    G.EdgeColorable (Fintype.card α) :=
-  Coloring.colorable C
-
-/-- A simple graph with `Fintype G.edgeSet` is `(Fintype.card G.edgeSet)`-edge-colourable by giving
-every edge its own colour. -/
-theorem edgeColorable_of_fintype_edgeSet (G : SimpleGraph V) [Fintype G.edgeSet] :
-    G.EdgeColorable (Fintype.card G.edgeSet) :=
-  G.lineGraph.colorable_of_fintype
-
-/-- Extract a proper edge-colouring by `α` from `G.EdgeColorable n` when `n ≤ Fintype.card α`. -/
-noncomputable def EdgeColorable.toEdgeColoring {α : Type w} [Fintype α] {n : ℕ}
-    (hc : G.EdgeColorable n) (hn : n ≤ Fintype.card α) : G.EdgeColoring α :=
-  Colorable.toColoring hc hn
-
-/-! ### Chromatic index -/
-
-/-- The chromatic index `χ'(G) : ℕ∞` of a simple graph `G` is the least number of colours needed in
-a proper edge-colouring of `G`, or `⊤` if `G` admits no finite proper edge-colouring. -/
-noncomputable def chromaticIndex (G : SimpleGraph V) : ℕ∞ :=
-  G.lineGraph.chromaticNumber
-
-/-- The chromatic index of `G` equals the chromatic number of `G.lineGraph`. -/
-theorem chromaticIndex_eq_chromaticNumber_lineGraph (G : SimpleGraph V) :
-    G.chromaticIndex = G.lineGraph.chromaticNumber :=
-  (rfl)
-
-/-- `G.chromaticIndex ≤ n` iff `G` is `n`-edge-colourable. -/
-theorem chromaticIndex_le_iff_edgeColorable {n : ℕ} :
-    G.chromaticIndex ≤ n ↔ G.EdgeColorable n :=
-  chromaticNumber_le_iff_colorable
-
-/-- Every `n`-edge-colourable graph has chromatic index at most `n`. -/
-theorem EdgeColorable.chromaticIndex_le {n : ℕ} (hc : G.EdgeColorable n) :
-    G.chromaticIndex ≤ n :=
-  Colorable.chromaticNumber_le hc
-
-/-- `G.chromaticIndex ≠ ⊤` iff `G` is `n`-edge-colourable for some `n : ℕ`. -/
-theorem chromaticIndex_ne_top_iff_exists :
-    G.chromaticIndex ≠ ⊤ ↔ ∃ n : ℕ, G.EdgeColorable n :=
-  chromaticNumber_ne_top_iff_exists
-
-/-- When `G.chromaticIndex ≠ ⊤`, `G` is `(G.chromaticIndex.toNat)`-edge-colourable. -/
-theorem edgeColorable_toNat_chromaticIndex_of_ne_top (h : G.chromaticIndex ≠ ⊤) :
-    G.EdgeColorable G.chromaticIndex.toNat :=
-  colorable_of_chromaticNumber_ne_top h
-
-/-- Every graph with finitely many edges has finite chromatic index. -/
-theorem chromaticIndex_ne_top_of_finite_edgeSet (G : SimpleGraph V) [Finite G.edgeSet] :
-    G.chromaticIndex ≠ ⊤ := by
-  let _ := Fintype.ofFinite G.edgeSet
-  exact chromaticIndex_ne_top_iff_exists.2 ⟨_, G.edgeColorable_of_fintype_edgeSet⟩
-
-/-- A graph with finitely many edges is `(G.chromaticIndex.toNat)`-edge-colourable. -/
-theorem edgeColorable_toNat_chromaticIndex (G : SimpleGraph V) [Finite G.edgeSet] :
-    G.EdgeColorable G.chromaticIndex.toNat :=
-  edgeColorable_toNat_chromaticIndex_of_ne_top G.chromaticIndex_ne_top_of_finite_edgeSet
-
-/-- The edgeless graph has chromatic index zero. -/
-@[simp]
-theorem chromaticIndex_bot : (⊥ : SimpleGraph V).chromaticIndex = 0 := by
-  simp [chromaticIndex]
-
-/-- `G.chromaticIndex = 0` iff `G` has no edges. -/
-@[simp]
-theorem chromaticIndex_eq_zero_iff : G.chromaticIndex = 0 ↔ G = ⊥ := by
-  rw [chromaticIndex, chromaticNumber_eq_zero_iff, isEmpty_coe_sort, edgeSet_eq_empty]
-
-/-- On a subsingleton vertex type, every simple graph has chromatic index zero. -/
-@[simp]
-theorem chromaticIndex_eq_zero_of_subsingleton [Subsingleton V] : G.chromaticIndex = 0 := by
-  rw [chromaticIndex_eq_zero_iff]
-  exact Subsingleton.elim G ⊥
+/-! ### Degree bounds and small values of the chromatic index -/
 
 /-- `G.chromaticIndex = 1` iff `G` has at least one edge and every vertex has at most one
 neighbour. -/
 theorem chromaticIndex_eq_one_iff :
-    G.chromaticIndex = 1 ↔ G ≠ ⊥ ∧ ∀ v : V, (G.neighborSet v).Subsingleton := by
+    G.chromaticIndex = 1 ↔ G ≠ ⊥ ∧ ∀ x : V, (G.neighborSet x).Subsingleton := by
   rw [eq_iff_le_not_lt, Order.lt_one_iff_nonpos, ← Nat.cast_one, ← Nat.cast_zero,
     chromaticIndex_le_iff_edgeColorable, chromaticIndex_le_iff_edgeColorable,
     edgeColorable_one_iff_subsingleton_neighborSet, edgeColorable_zero_iff, and_comm]
 
-/-- Monotonicity of `SimpleGraph.chromaticIndex` under subgraph inclusion `G ≤ G'`. -/
-theorem chromaticIndex_mono {G' : SimpleGraph V} (h : G ≤ G') :
-    G.chromaticIndex ≤ G'.chromaticIndex :=
-  chromaticNumber_le_of_forall_imp fun _ hc ↦ EdgeColorable.mono_left h hc
-
-/-- A graph copy `Copy G G'` gives `G.chromaticIndex ≤ G'.chromaticIndex`. -/
-theorem Copy.chromaticIndex_le {V' : Type v} {G' : SimpleGraph V'} (f : Copy G G') :
-    G.chromaticIndex ≤ G'.chromaticIndex :=
-  chromaticNumber_mono_of_hom f.toLineGraphEmbedding.toHom
-
-/-- Isomorphic simple graphs have equal chromatic index. -/
-theorem chromaticIndex_congr {V' : Type v} {G' : SimpleGraph V'} (f : G ≃g G') :
-    G.chromaticIndex = G'.chromaticIndex :=
-  chromaticNumber_congr f.lineGraph
-
-/-- Restricting `G` to a vertex set containing `G.support` preserves `G.chromaticIndex`. -/
-theorem chromaticIndex_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).chromaticIndex = G.chromaticIndex :=
-  chromaticNumber_congr (G.lineGraphInduceIsoOfSupportSubset hs)
-
-/-- **Degree lower bound on the chromatic index.** For every graph `G` and vertex `v`, the extended
-cardinality of `G.neighborSet v` is at most `G.chromaticIndex`, with no finiteness or decidability
+/-- **Degree lower bound on the chromatic index.** For every graph `G` and vertex `x`, the extended
+cardinality of `G.neighborSet x` is at most `G.chromaticIndex`, with no finiteness or decidability
 assumptions. -/
-theorem encard_neighborSet_le_chromaticIndex (G : SimpleGraph V) (v : V) :
-    (G.neighborSet v).encard ≤ G.chromaticIndex := by
+theorem encard_neighborSet_le_chromaticIndex (G : SimpleGraph V) (x : V) :
+    (G.neighborSet x).encard ≤ G.chromaticIndex := by
   by_cases htop : G.chromaticIndex = ⊤
   · simp [htop]
-  · obtain ⟨n, hn⟩ := chromaticIndex_ne_top_iff_exists.1 htop
-    obtain ⟨C⟩ := edgeColorable_def.1 hn
-    let _ : Fintype (G.neighborSet v) := (C.finite_neighborSet v).fintype
+  · obtain ⟨n, hn⟩ := chromaticNumber_ne_top_iff_exists.1 htop
+    obtain ⟨c⟩ := hn
+    let _ : Fintype (G.neighborSet x) := (EdgeColoring.finite_neighborSet c x).fintype
     rw [encard_neighborSet, ← card_neighborSet_eq_degree, chromaticIndex]
     exact le_chromaticNumber_of_pairwise_adj Nat.card_eq_fintype_card.symm.le _
-      (G.pairwise_lineGraph_adj_neighborSet v)
+      (G.pairwise_lineGraph_adj_neighborSet x)
 
-/-- For every graph `G` and vertex `v`, `((G.neighborSet v).ncard : ℕ∞) ≤ G.chromaticIndex`. -/
-theorem ncard_neighborSet_le_chromaticIndex (G : SimpleGraph V) (v : V) :
-    ((G.neighborSet v).ncard : ℕ∞) ≤ G.chromaticIndex :=
-  (ncard_le_encard (G.neighborSet v)).trans (G.encard_neighborSet_le_chromaticIndex v)
+/-- For every graph `G` and vertex `x`, `((G.neighborSet x).ncard : ℕ∞) ≤ G.chromaticIndex`. -/
+theorem ncard_neighborSet_le_chromaticIndex (G : SimpleGraph V) (x : V) :
+    ((G.neighborSet x).ncard : ℕ∞) ≤ G.chromaticIndex :=
+  (ncard_le_encard (G.neighborSet x)).trans (G.encard_neighborSet_le_chromaticIndex x)
 
-/-- At any locally finite vertex `v`, `(G.degree v : ℕ∞) ≤ G.chromaticIndex`. -/
-theorem degree_le_chromaticIndex (G : SimpleGraph V) (v : V) [Fintype (G.neighborSet v)] :
-    (G.degree v : ℕ∞) ≤ G.chromaticIndex := by
+/-- At any locally finite vertex `x`, `(G.degree x : ℕ∞) ≤ G.chromaticIndex`. -/
+theorem degree_le_chromaticIndex (G : SimpleGraph V) (x : V) [Fintype (G.neighborSet x)] :
+    (G.degree x : ℕ∞) ≤ G.chromaticIndex := by
   rw [← encard_neighborSet]
-  exact G.encard_neighborSet_le_chromaticIndex v
+  exact G.encard_neighborSet_le_chromaticIndex x
 
 /-- In a finite simple graph, `(G.maxDegree : ℕ∞) ≤ G.chromaticIndex`. -/
 theorem maxDegree_le_chromaticIndex (G : SimpleGraph V) [Fintype V] [DecidableRel G.Adj] :
     (G.maxDegree : ℕ∞) ≤ G.chromaticIndex := by
-  rcases isEmpty_or_nonempty V with hV | hV
+  rcases isEmpty_or_nonempty V with _ | _
   · simp
-  · obtain ⟨v, hv⟩ := G.exists_maximal_degree_vertex
-    rw [hv]
-    exact G.degree_le_chromaticIndex v
+  · obtain ⟨x, hx⟩ := G.exists_maximal_degree_vertex
+    rw [hx]
+    exact G.degree_le_chromaticIndex x
 
 end SimpleGraph

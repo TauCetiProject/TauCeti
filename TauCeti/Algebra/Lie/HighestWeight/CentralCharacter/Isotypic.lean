@@ -145,7 +145,7 @@ components over the dominant integral weights `lam`, and the centre acts on the 
 component by `chi_lam`. -/
 theorem iSup_centerEigenspace_vermaCentralCharacter_eq_top :
     ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
-      centerEigenspace K L M (vermaCentralCharacter b lam.1) = ⊤ :=
+      centerEigenspace K L M (vermaCentralCharacter b lam.val) = ⊤ :=
   top_unique <| (iSup_isotypicComponent_irreducibleQuotient_eq_top M b).ge.trans <|
     iSup_mono fun _ ↦ isotypicComponent_irreducibleQuotient_le_centerEigenspace
 
@@ -177,7 +177,8 @@ theorem exists_isDominantIntegral_eq_vermaCentralCharacter {χ : Subalgebra.cent
   rw [← iSup_centerEigenspace_vermaCentralCharacter_eq_top M b]
   refine iSup_le fun lam ↦ ?_
   exact le_iSup₂_of_le (f := fun χ' (_ : χ' ≠ χ) ↦ centerEigenspace K L M χ')
-    (vermaCentralCharacter b lam.1 : Subalgebra.center K U → K) (hne lam.1 lam.2).symm le_rfl
+    (vermaCentralCharacter b lam.val : Subalgebra.center K U → K) (hne lam.val lam.property).symm
+        le_rfl
 
 end FiniteDimensional
 

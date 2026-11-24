@@ -14,6 +14,7 @@ public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # The order of vanishing of a multivariate polynomial at a point
@@ -168,17 +169,9 @@ theorem taylor_rename (f : σ → τ) (b : τ → R) (p : MvPolynomial σ R) :
 /-- The Taylor shift does not increase the total degree. -/
 theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :
     (taylor a p).totalDegree ≤ p.totalDegree := by
-  conv_lhs => rw [p.as_sum, map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun d hd ↦ ?_)
-  rw [taylor_apply, aeval_monomial, algebraMap_eq]
-  refine (totalDegree_mul _ _).trans ?_
-  rw [totalDegree_C, zero_add]
-  refine (totalDegree_finsetProd _ _).trans (le_trans ?_ (le_totalDegree hd))
-  refine Finset.sum_le_sum fun i _ ↦ (totalDegree_pow _ _).trans ?_
-  refine (Nat.mul_le_mul_left _ ((totalDegree_add _ _).trans (max_le ?_ ?_))).trans_eq
-    (mul_one _)
-  · exact (totalDegree_monomial_le _ _).trans_eq (by simp)
-  · simp
+  rw [taylor_apply]
+  refine (totalDegree_aeval_le p fun i _ ↦ ?_).trans_eq (mul_one _)
+  exact (totalDegree_add _ _).trans (max_le (TauCeti.totalDegree_X_le i) (by simp))
 
 /-- Partial differentiation commutes with the Taylor shift. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
 /-!
@@ -78,12 +79,8 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
   -- The lattice vector with coordinates `m` is `∑ i, (m i : ℝ) • b i`, of squared norm
   -- `∑ i, (m i)²` by orthonormality.
   have hv : ((b.toBasis.restrictScalars ℤ).equivFun.symm m : E) = ∑ i, (m i : ℝ) • b i := by
-    rw [Basis.equivFun_symm_apply, Submodule.coe_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    -- The `ℤ`-action on the span is the one of `Basis.restrictScalars`, so `coe_smul` only
-    -- matches up to instances.
-    erw [Submodule.coe_smul]
-    rw [Basis.restrictScalars_apply, b.coe_toBasis, Int.cast_smul_eq_zsmul]
+    rw [Basis.coe_restrictScalars_equivFun_symm, Basis.equivFun_symm_apply, b.coe_toBasis]
+    simp only [eq_intCast]
   have hn : ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
     rw [hv]
     simpa using b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
