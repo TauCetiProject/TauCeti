@@ -84,6 +84,8 @@ theorem isStarIso_iff (π : A →+* k) (e : FormalGroupIso F G) :
     e.IsStarIso π ↔ e.toHom.toPowerSeries.map π = X :=
   ⟨fun h ↦ h.map_toPowerSeries, fun h ↦ ⟨h⟩⟩
 
+attribute [simp] IsStarIso.map_toPowerSeries
+
 variable {π : A →+* k}
 
 /-- The identity isomorphism is a ⋆-isomorphism. -/
@@ -94,17 +96,14 @@ instance (π : A →+* k) (F : FormalGroup A) : (refl F).IsStarIso π where
 instance (e : FormalGroupIso F G) (e' : FormalGroupIso G H) [e.IsStarIso π] [e'.IsStarIso π] :
     (e.trans e').IsStarIso π where
   map_toPowerSeries := by
-    rw [trans_toHom, ← FormalGroupHom.map_toPowerSeries, FormalGroupHom.map_comp,
-      FormalGroupHom.comp_toPowerSeries, FormalGroupHom.map_toPowerSeries,
-      FormalGroupHom.map_toPowerSeries, IsStarIso.map_toPowerSeries,
-      IsStarIso.map_toPowerSeries, subst_X HasSubst.X']
+    rw [trans_toHom, ← FormalGroupHom.map_toPowerSeries]
+    simp [subst_X HasSubst.X']
 
 /-- The inverse series of a ⋆-isomorphism also reduces to `X`. -/
+@[simp]
 theorem IsStarIso.map_invHom_toPowerSeries (e : FormalGroupIso F G) [e.IsStarIso π] :
     e.invHom.toPowerSeries.map π = X := by
-  have h := (e.map π).subst_toHom_invHom
-  rwa [map_toHom, map_invHom, FormalGroupHom.map_toPowerSeries,
-    FormalGroupHom.map_toPowerSeries, IsStarIso.map_toPowerSeries, X_subst] at h
+  simpa [X_subst] using (e.map π).subst_toHom_invHom
 
 /-- The inverse of a ⋆-isomorphism is a ⋆-isomorphism. -/
 instance (e : FormalGroupIso F G) [e.IsStarIso π] : e.symm.IsStarIso π where
@@ -168,6 +167,7 @@ variable {A k : Type*} [CommRing A] [CommRing k] {π : A →+* k}
 
 /-- The isomorphism `F ≅ φ • F` given by a formal coordinate `φ` is a ⋆-isomorphism exactly when
 `φ` reduces to the identity coordinate. -/
+@[simp]
 theorem isStarIso_smulIso_iff (φ : FormalCoordinate A) (F : FormalGroup A) :
     (smulIso φ F).IsStarIso π ↔ FormalCoordinate.map π φ = 1 := by
   rw [FormalGroupIso.isStarIso_iff, smulIso_toHom_toPowerSeries, FormalCoordinate.ext_iff,
@@ -205,12 +205,7 @@ theorem mk_eq_mk_iff_exists_isStarIso (F G : FormalGroupLift π F₀) :
     rw [← hFG]
     exact ⟨FormalGroup.smulIso φ _, (FormalGroup.isStarIso_smulIso_iff φ _).mpr hφ⟩
   · rintro ⟨e, he⟩
-    let φ : FormalCoordinate A :=
-      { toPowerSeries := e.toHom.toPowerSeries
-        constantCoeff_toPowerSeries := e.toHom.zero_constantCoeff
-        isUnit_coeff_one := e.isUnit_coeff_one }
-    refine ⟨φ, FormalCoordinate.ext ?_, e.toHom.smul_eq rfl⟩
-    rw [FormalCoordinate.toPowerSeries_map, FormalCoordinate.toPowerSeries_one]
-    exact he.map_toPowerSeries
+    refine ⟨e.toFormalCoordinate, FormalCoordinate.ext ?_, e.toFormalCoordinate_smul⟩
+    simp
 
 end TauCeti.FormalGroupDeformation
