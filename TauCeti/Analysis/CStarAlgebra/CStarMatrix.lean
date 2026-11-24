@@ -304,6 +304,13 @@ theorem transposeₗ_apply {m : Type*} [Semiring R] [AddCommMonoid A] [Module R 
     (M : CStarMatrix m n A) : transposeₗ R M = M.transpose :=
   (rfl)
 
+/-- Applying a map entrywise commutes with `reindexₐ`. -/
+theorem reindexₐ_map {m B : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
+    [Star A] [Module R A] [AddCommMonoid B] [Mul B] [Star B] [Module R B] (e : m ≃ n)
+    (M : CStarMatrix m m A) (f : A → B) :
+    reindexₐ R B e (M.map f) = (reindexₐ R A e M).map f :=
+  (rfl)
+
 /-- Applying the zero linear map to every entry gives the zero matrix. -/
 @[simp]
 theorem map_zero_linearMap {m B : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
@@ -605,10 +612,7 @@ map. -/
 theorem norm_map_reindexₐ_linearMap {κ ι B : Type*} [Fintype κ] [Fintype ι]
     [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B] (x : CStarMatrix κ κ A)
     (e : κ ≃ ι) (φ : A →ₗ[ℂ] B) : ‖(reindexₐ ℂ A e x).map φ‖ = ‖x.map φ‖ := by
-  classical
-  have hmap : reindexₐ ℂ B e (x.map φ) = (reindexₐ ℂ A e x).map φ := by
-    simpa using mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← hmap, StarAlgEquiv.norm_map]
+  rw [← reindexₐ_map, StarAlgEquiv.norm_map]
 
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- The entrywise image of the `1 × 1` C⋆-matrix `[a]` under a linear map `φ` has norm
