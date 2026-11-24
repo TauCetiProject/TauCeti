@@ -374,12 +374,36 @@ end EndLoop
 
 /-! ### Transferring the estimate through `ω` and the reflection -/
 
+/-- The reflection `ρ` preserves integrals: `∫_{ρ⁻¹ K} g ∘ ρ = ∫_K g`. -/
+private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (K : Set (ℝ × ℝ)) :
+    ∫ w in reflectL ⁻¹' K, g (reflectL w) = ∫ z in K, g z := by
+  have hr : (reflectL : ℝ × ℝ → ℝ × ℝ) = Prod.map Neg.neg id :=
+    funext fun z ↦ by rw [reflectL_apply, Prod.map_apply', id_eq]
+  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
+    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
+  rw [hr]
+  exact hmp.setIntegral_preimage_emb
+    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g K
+
 /-- The reflection `ρ` carries `[-b, -a] × [0, 1]` onto `[a, b] × [0, 1]`, preserving
 integrals. -/
 private theorem setIntegral_comp_reflectL (g : ℝ × ℝ → ℝ) (a b : ℝ) :
     ∫ z in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1, g (reflectL z) =
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, g z := by
-  simpa [reflectL_apply] using (setIntegral_Icc_neg_prod_eq g (-b) (-a) (Icc 0 1)).symm
+  have hK : reflectL ⁻¹' (Icc a b ×ˢ Icc (0 : ℝ) 1) = Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1 := by
+    ext z
+    simp only [mem_preimage, reflectL_apply, mem_prod, mem_Icc, le_neg, neg_le, and_comm]
+  rw [← hK]
+  exact setIntegral_preimage_reflectL g _
+
+/-- The reflection `ρ` preserves compactness of preimages. -/
+private theorem isCompact_preimage_reflectL {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
+    IsCompact (reflectL ⁻¹' K) := by
+  -- `ρ` is an involution, so the preimage is the image `ρ K`.
+  have h : Function.LeftInverse reflectL reflectL := fun z ↦ by simp [reflectL_apply]
+  rw [← image_eq_preimage_of_inverse h h]
+  exact hK.image reflectL.continuous
+
 
 /-- `‖φ‖² ≤ ‖ω♭‖² ‖ω♭⁻¹ φ‖²`. -/
 private theorem norm_sq_le_norm_flatEquiv_sq_mul (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
@@ -506,25 +530,6 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
       ring
 
 /-! ### The estimate on compact parts of the domain -/
-
-/-- The reflection `ρ` preserves integrals: `∫_{ρ⁻¹ K} g ∘ ρ = ∫_K g`. -/
-private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (K : Set (ℝ × ℝ)) :
-    ∫ w in reflectL ⁻¹' K, g (reflectL w) = ∫ z in K, g z := by
-  have hr : (reflectL : ℝ × ℝ → ℝ × ℝ) = Prod.map Neg.neg id := funext fun z ↦ reflectL_apply z
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
-  rw [hr]
-  exact hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g K
-
-/-- The reflection `ρ` preserves compactness of preimages. -/
-private theorem isCompact_preimage_reflectL {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
-    IsCompact (reflectL ⁻¹' K) := by
-  have hr : (reflectL : ℝ × ℝ → ℝ × ℝ) =
-      ((Homeomorph.neg ℝ).prodCongr (Homeomorph.refl ℝ) : ℝ × ℝ → ℝ × ℝ) :=
-    funext fun z ↦ reflectL_apply z
-  rw [hr]
-  exact ((Homeomorph.neg ℝ).prodCongr (Homeomorph.refl ℝ)).isCompact_preimage.2 hK
 
 /-- **Transferring the `L²` estimate on a compact set.** Let `P ζ = ∂s ζ + Jr ∂t ζ + T ζ` satisfy
 the `L²` estimate on vector fields supported in `ρ⁻¹ K`, for a compact set `K`, and let `D` be an
