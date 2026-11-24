@@ -11,7 +11,6 @@ public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
-import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # The semi-free resolution of the ground ring over the chains on the loops of a circle
@@ -72,8 +71,6 @@ point.
   augmentation is a quasi-isomorphism.
 * `TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero`: the
   case of the circle and its counterclockwise loop.
-* `TauCeti.exists_loopCellCocycle_differential_eq_of_isUnit_windingNumber`: the case of a real
-  circle and any Moore loop of winding number `±1`.
 * `TauCeti.exists_notMem_range_rowFiniteTwistedDifferential_zero`: the zero cocycle on the same
   generators does not resolve `R`.
 
@@ -429,37 +426,6 @@ theorem exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_e
   · rw [hg, Subgroup.zpowers_inv, Circle.zpowers_fromPath_expLoop]
   · rw [hg, isOfFinOrder_inv_iff]
     exact Circle.not_isOfFinOrder_fromPath_expLoop
-
-/-- **Brown's resolution for a real circle**: for a Moore loop `γ` of winding number `±1` in a real
-circle `ℝ / pℤ`, every cycle of the free module of `TauCeti.loopCellCocycle R γ` whose augmentation
-vanishes is a boundary. The winding number is that of the path class of `γ`, so the loop
-`(AddCircle.zsmulLoop p x 1).toMooreLoop` qualifies. -/
-theorem exists_loopCellCocycle_differential_eq_of_isUnit_windingNumber {p : ℝ} [Fact (0 < p)]
-    {x : AddCircle p} {R : Type} [CommRing R] {γ : MooreLoopSpace (AddCircle p) x}
-    (hγ : IsUnit (AddCircle.windingNumber
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath))))
-    {u : Unit ⊕ Unit →₀ loopChainAlgebra (AddCircle p) x R}
-    (hu : rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra (AddCircle p) x R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace (AddCircle p) x) R)
-      (d := cubicalChainDifferential (MooreLoopSpace (AddCircle p) x) R)
-      (loopCellCocycle R γ).m u = 0)
-    (hε : loopCellAugmentation (AddCircle p) x R u = 0) :
-    ∃ v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra (AddCircle p) x R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace (AddCircle p) x) R)
-      (d := cubicalChainDifferential (MooreLoopSpace (AddCircle p) x) R)
-      (loopCellCocycle R γ).m v = u := by
-  set e := AddCircle.windingNumberIso x
-  set g := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)
-  -- `MooreLoopSpace.fundamentalGroupHom` takes the inverse of the path class of the loop.
-  have hγg : MooreLoopSpace.fundamentalGroupHom x γ = g⁻¹ :=
-    MooreLoopSpace.fundamentalGroupHom_apply γ
-  rw [AddCircle.windingNumber] at hγ
-  refine exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
-    (fun n ↦ inferInstance) ?_ ?_ hu hε <;> rw [hγg]
-  · rw [Subgroup.zpowers_inv]
-    exact e.zpowers_eq_top_iff_isUnit_toAdd.mpr hγ
-  · rw [isOfFinOrder_inv_iff, e.isOfFinOrder_iff_toAdd_eq_zero]
-    exact hγ.ne_zero
 
 end Circle
 

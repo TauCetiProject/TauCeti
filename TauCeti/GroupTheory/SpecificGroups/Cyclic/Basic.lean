@@ -14,8 +14,8 @@ For `n ≠ 0`, this file gives the standard computable enumeration of
 `Multiplicative (ZMod n)`, transported from the additive group `ZMod n`.
 It also records that `Multiplicative.ofAdd 1` generates `Multiplicative ℤ` and has infinite order,
 that the `n`-th powers of `Multiplicative ℤ` are the multiples of `n`, that an element corresponding
-to `±1` under an equivalence with `Multiplicative ℤ` generates its group and has finite order only
-when it corresponds to `0`, and reindexes finite sums by the powers of a generator.
+to `1` under an equivalence with `Multiplicative ℤ` generates its group, and reindexes finite sums
+by the powers of a generator.
 
 ## Main definitions
 
@@ -29,10 +29,6 @@ when it corresponds to `0`, and reindexes finite sums by the powers of a generat
 * `Int.mem_range_zpowGroupHom_iff`: `x` is an `n`-th power in `Multiplicative ℤ` iff `n ∣ x.toAdd`.
 * `MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one`: an element sent to `1` by an equivalence with
   `Multiplicative ℤ` generates its group.
-* `MulEquiv.zpowers_eq_top_iff_isUnit_toAdd`: an element generates a group equivalent to
-  `Multiplicative ℤ` iff it is sent to `±1`.
-* `MulEquiv.isOfFinOrder_iff_toAdd_eq_zero`: an element of a group equivalent to
-  `Multiplicative ℤ` has finite order iff it is sent to `0`.
 * `TauCeti.sum_range_orderOf_eq_sum`: summing over powers of a generator enumerates a finite group.
 
 ## References
@@ -92,29 +88,5 @@ theorem _root_.MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one {G : Type*} [Group 
     Subgroup.zpowers g = ⊤ :=
   (Subgroup.eq_top_iff' _).mpr fun y => ⟨(e y).toAdd,
     e.injective (by simp [hg, ← ofAdd_zsmul])⟩
-
-/-- An element generates a group equivalent to `Multiplicative ℤ` iff it is sent to `±1`. -/
-theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g : G}
-    (e : G ≃* Multiplicative ℤ) : Subgroup.zpowers g = ⊤ ↔ IsUnit (e g).toAdd := by
-  -- `Int.mem_zmultiples_iff`, moved to `Multiplicative ℤ` along `Multiplicative.ofAdd`.
-  have key : (e g).toAdd ∣ 1 ↔ Multiplicative.ofAdd 1 ∈ Subgroup.zpowers (e g) := by
-    rw [← Int.mem_zmultiples_iff, ← SetLike.mem_coe, ← Multiplicative.ofAdd.injective.mem_set_image,
-      ofAdd_image_zmultiples_eq_zpowers_ofAdd, ofAdd_toAdd, SetLike.mem_coe]
-  calc Subgroup.zpowers g = ⊤ ↔ Subgroup.zpowers (e g) = ⊤ := by
-        rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
-          Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
-          MulEquiv.coe_toMonoidHom]
-    -- `Multiplicative.ofAdd 1` generates `Multiplicative ℤ`.
-    _ ↔ Multiplicative.ofAdd 1 ∈ Subgroup.zpowers (e g) := by
-        rw [← top_le_iff, ← (Subgroup.eq_top_iff' _).2 Int.mem_zpowers_ofAdd_one,
-          Subgroup.zpowers_le]
-    _ ↔ IsUnit (e g).toAdd := by rw [isUnit_iff_dvd_one, key]
-
-/-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
-`0`. -/
-theorem _root_.MulEquiv.isOfFinOrder_iff_toAdd_eq_zero {G : Type*} [Group G] {g : G}
-    (e : G ≃* Multiplicative ℤ) : IsOfFinOrder g ↔ (e g).toAdd = 0 := by
-  rw [← e.injective.isOfFinOrder_iff (f := e.toMonoidHom), MulEquiv.coe_toMonoidHom,
-    isOfFinOrder_iff_eq_one, toAdd_eq_zero]
 
 end TauCeti
