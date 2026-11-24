@@ -759,6 +759,11 @@ private def AtomSpec.letters : AtomSpec G X → List (G ⊕ X × Bool)
   | .sq x => sqLetters x
   | .conj z c => conjLetters z c
 
+private def AtomSpec.vars : AtomSpec G X → List X
+  | .comm x y => [x, y]
+  | .sq x => [x]
+  | .conj z _ => [z]
+
 private def AtomSpec.headVar : AtomSpec G X → X
   | .comm x _ | .sq x | .conj x _ => x
 
@@ -956,50 +961,89 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
   have hc := isCyclicallyReduced_wordLetters S
   rwa [(GX.reducedWord_eq_iff hc.isReduced).2 (prod_wordLetters S)]
 
+omit [Group G] in
+private theorem AtomSpec.countVar_letters [DecidableEq X] (x : X) (a : AtomSpec G X) :
+    GX.countVar x a.letters = 2 * a.vars.count x := by
+  cases a with
+  | comm u v =>
+    by_cases hu : u = x <;> by_cases hv : v = x <;>
+      simp [AtomSpec.letters, AtomSpec.vars, commLetters, hu, hv]
+  | sq u =>
+    by_cases hu : u = x <;> simp [AtomSpec.letters, AtomSpec.vars, sqLetters, hu]
+  | conj u c =>
+    by_cases hu : u = x <;> simp [AtomSpec.letters, AtomSpec.vars, conjLetters, hu]
+
+private theorem countVar_wordLetters [DecidableEq X] (x : X) (S : Standard G X) :
+    GX.countVar x (wordLetters S) = 2 * (S.atomSpecs.flatMap AtomSpec.vars).count x := by
+  have hfl (as : List (AtomSpec G X)) :
+      GX.countVar x (as.map AtomSpec.letters).flatten = 2 * (as.flatMap AtomSpec.vars).count x := by
+    induction as with
+    | nil => simp
+    | cons a as ih =>
+      simp [GX.countVar_append, AtomSpec.countVar_letters, List.count_append, ih, mul_add]
+  cases S <;> simp [wordLetters, GX.countVar_append, hfl]
+
+private theorem nodup_flatMap_atomSpecs_vars (S : Standard G X) :
+    (S.atomSpecs.flatMap AtomSpec.vars).Nodup := by
+  have hcomm {n : ℕ} {x y : Fin n → X} (h : (Sum.elim x y).Injective) :
+      ((List.ofFn fun i => AtomSpec.comm (G := G) (x i) (y i)).flatMap AtomSpec.vars).Nodup := by
+    have ⟨hx, hy, hxy⟩ := Sum.elim_injective.1 h
+    rw [List.ofFn_eq_map, List.flatMap_map, List.nodup_flatMap]
+    refine ⟨fun i _ => ?_, (List.nodup_finRange n).imp fun {i j} hij v hv₁ hv₂ => ?_⟩
+    · simp only [AtomSpec.vars, List.nodup_cons, List.mem_singleton, List.not_mem_nil,
+        not_false_eq_true, List.nodup_nil, and_true]
+      exact hxy i i
+    · simp only [AtomSpec.vars, List.mem_cons, List.not_mem_nil, or_false] at hv₁ hv₂
+      rcases hv₁ with rfl | rfl <;> rcases hv₂ with h' | h'
+      · exact hij (hx h')
+      · exact hxy i j h'
+      · exact hxy j i h'.symm
+      · exact hij (hy h')
+  have hsingle {n : ℕ} (f : Fin n → AtomSpec G X) (u : Fin n → X) (hu : u.Injective)
+      (hvars : ∀ i, (f i).vars = [u i]) : ((List.ofFn f).flatMap AtomSpec.vars).Nodup := by
+    rw [List.ofFn_eq_map, List.flatMap_map, List.nodup_flatMap]
+    refine ⟨fun i _ => by simp [hvars], (List.nodup_finRange n).imp fun {i j} hij v hv₁ hv₂ => ?_⟩
+    simp only [hvars, List.mem_singleton] at hv₁ hv₂
+    exact hij (hu (hv₁.symm.trans hv₂))
+  cases S with
+  | orientable _ _ _ _ inj => exact hcomm inj
+  | nonorientable _ _ _ inj => exact hsingle _ _ inj fun _ => rfl
+  | orientableCoeff _ _ _ x y z inj _ _ _ _ =>
+    have hinj := Sum.elim_injective.1 inj
+    rw [atomSpecs, List.flatMap_append]
+    refine (hcomm hinj.1).append (hsingle _ _ hinj.2.1 fun _ => rfl) fun v hv₁ hv₂ => ?_
+    simp only [List.mem_flatMap, List.mem_ofFn] at hv₁ hv₂
+    obtain ⟨_, ⟨i, rfl⟩, h₁⟩ := hv₁
+    obtain ⟨_, ⟨j, rfl⟩, h₂⟩ := hv₂
+    simp only [AtomSpec.vars, List.mem_cons, List.not_mem_nil, or_false] at h₁ h₂
+    rcases h₁ with rfl | rfl
+    · exact hinj.2.2 (.inl i) j h₂
+    · exact hinj.2.2 (.inr i) j h₂
+  | nonorientableCoeff _ _ _ x z inj _ _ _ _ =>
+    have hinj := Sum.elim_injective.1 inj
+    rw [atomSpecs, List.flatMap_append]
+    refine (hsingle _ _ hinj.1 fun _ => rfl).append (hsingle _ _ hinj.2.1 fun _ => rfl)
+      fun v hv₁ hv₂ => ?_
+    simp only [List.mem_flatMap, List.mem_ofFn] at hv₁ hv₂
+    obtain ⟨_, ⟨i, rfl⟩, h₁⟩ := hv₁
+    obtain ⟨_, ⟨j, rfl⟩, h₂⟩ := hv₂
+    simp only [AtomSpec.vars, List.mem_singleton] at h₁ h₂
+    subst h₁
+    exact hinj.2.2 i j h₂
+
+private theorem mem_flatMap_atomSpecs_vars {S : Standard G X} {v : X} :
+    v ∈ S.atomSpecs.flatMap AtomSpec.vars ↔ v ∈ S.vars := by
+  cases S <;> simp [atomSpecs, AtomSpec.vars, List.mem_flatMap, List.mem_ofFn, exists_or, eq_comm]
+
 /-- Each variable occurs twice in a standard quadratic equation if it belongs to `S.vars`, and
 zero times otherwise. -/
 theorem occurrences_toWord (S : Standard G X) (x : X) [Decidable (x ∈ S.vars)] :
     GX.occurrences x S.toWord = if x ∈ S.vars then 2 else 0 := by
   classical
-  have hcomm (u v : X) : GX.countVar x (commLetters (G := G) u v) =
-      (if u = x then 2 else 0) + (if v = x then 2 else 0) := by
-    by_cases hu : u = x <;> by_cases hv : v = x <;> simp [commLetters, hu, hv]
-  have hsq (u : X) : GX.countVar x (sqLetters (G := G) u) = if u = x then 2 else 0 := by
-    by_cases hu : u = x <;> simp [sqLetters, hu]
-  have hconj (u : X) (c : G) : GX.countVar x (conjLetters u c) = if u = x then 2 else 0 := by
-    by_cases hu : u = x <;> simp [conjLetters, hu]
-  have sum_inj {ι : Type} [Fintype ι] {e : ι → X} (he : Function.Injective e) :
-      (∑ s : ι, if e s = x then 2 else 0) = if x ∈ Set.range e then 2 else 0 := by
-    rw [Fintype.sum_ite_eq_ite_exists (fun s => e s = x)
-      (fun _ _ h₁ h₂ => he (h₁.trans h₂.symm)) 2]
-    exact if_congr Set.mem_range.symm rfl rfl
-  rw [← prod_wordLetters S, (isCyclicallyReduced_wordLetters S).isReduced.occurrences_prod]
-  cases S with
-  | orientable _ _ a b inj =>
-    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten, List.map_ofFn,
-      Fin.sum_ofFn, Function.comp_def, hcomm, Finset.sum_add_distrib, vars_orientable]
-    convert sum_inj inj using 1
-    rw [Fintype.sum_sum_type]
-    congr 1
-  | orientableCoeff _ _ _ a b z inj _ _ _ _ =>
-    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_append, List.flatten_append,
-      List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def,
-      hcomm, hconj, GX.countVar_cons_inl, GX.countVar_nil, Finset.sum_add_distrib,
-      vars_orientableCoeff, add_zero]
-    convert sum_inj inj using 1
-    simp only [Fintype.sum_sum_type]
-    congr 2
-  | nonorientable _ _ a inj =>
-    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_flatten, List.map_ofFn,
-      Fin.sum_ofFn, Function.comp_def, hsq, vars_nonorientable]
-    convert sum_inj inj
-  | nonorientableCoeff _ _ _ a z inj _ _ _ _ =>
-    simp only [wordLetters, atomSpecs, AtomSpec.letters, GX.countVar_append, List.flatten_append,
-      List.map_append, GX.countVar_flatten, List.map_ofFn, Fin.sum_ofFn, Function.comp_def, hsq,
-      hconj, GX.countVar_cons_inl, GX.countVar_nil, vars_nonorientableCoeff, add_zero]
-    convert sum_inj inj using 1
-    rw [Fintype.sum_sum_type]
-    congr 1
+  rw [← prod_wordLetters S, (isCyclicallyReduced_wordLetters S).isReduced.occurrences_prod,
+    countVar_wordLetters]
+  simp only [List.Nodup.count (nodup_flatMap_atomSpecs_vars S), mem_flatMap_atomSpecs_vars,
+    mul_ite, mul_one, mul_zero]
 
 /-- Every variable in `S.vars` occurs twice in the standard quadratic equation `S`. -/
 theorem occurrences_toWord_of_mem_vars {S : Standard G X} {x : X} (hx : x ∈ S.vars) :

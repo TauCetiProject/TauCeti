@@ -16,6 +16,7 @@ import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.Group
 import TauCeti.Data.List.Count
+import TauCeti.Data.List.Flatten
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
@@ -136,6 +137,7 @@ theorem letter_inr_false (y : X) :
     letter (.inr (y, false) : G ⊕ X × Bool) = (inr (FreeGroup.of y))⁻¹ := (rfl)
 
 /-- Flipping the sign of a variable letter inverts the element of `G[X]` it spells. -/
+@[simp]
 theorem letter_inr_not (x : X) (b : Bool) :
     (letter (.inr (x, !b)) : GX G X) = (letter (.inr (x, b)))⁻¹ := by
   cases b <;> simp
@@ -460,6 +462,11 @@ theorem invRev_inj [InvolutiveInv G] {l₁ l₂ : List (G ⊕ X × Bool)} :
 theorem invRev_map_inr [Inv G] (L : List (X × Bool)) :
     invRev (L.map Sum.inr : List (G ⊕ X × Bool)) = (FreeGroup.invRev L).map Sum.inr := by
   simp [invRev, FreeGroup.invRev, Function.comp_def]
+
+@[simp]
+theorem getLast?_invRev [Inv G] (l : List (G ⊕ X × Bool)) :
+    (invRev l).getLast? = l.head?.map (Sum.map (·⁻¹) fun p => (p.1, !p.2)) := by
+  simp [invRev, List.getLast?_reverse]
 
 @[simp]
 theorem countVar_invRev [Inv G] (x : X) (l : List (G ⊕ X × Bool)) :
@@ -868,25 +875,6 @@ theorem isCyclicallyReduced_iff_head?_getLast? {l : List (G ⊕ X × Bool)} :
     rw [isCyclicallyReduced_cons_append, List.getLast?_cons, List.getLast?_concat, List.head?_cons]
     simp
 
-private theorem head?_flatten_of_ne_nil {α : Type*} {L : List (List α)}
-    (hne : ∀ l ∈ L, l ≠ []) :
-    L.flatten.head? = L.head?.bind List.head? := by
-  cases L with
-  | nil => rfl
-  | cons l L =>
-    rw [List.flatten_cons, List.head?_append_of_ne_nil _ (hne l List.mem_cons_self)]
-    rfl
-
-private theorem getLast?_flatten_of_ne_nil {α : Type*} {L : List (List α)}
-    (hne : ∀ l ∈ L, l ≠ []) :
-    L.flatten.getLast? = L.getLast?.bind List.getLast? := by
-  induction L using List.reverseRecOn with
-  | nil => rfl
-  | append_singleton L l _ =>
-    rw [List.flatten_append, List.flatten_singleton,
-      List.getLast?_append_of_ne_nil _ (hne l (by simp)), List.getLast?_concat]
-    rfl
-
 /-- A flatten of nonempty words is cyclically reduced if and only if each word is reduced,
 consecutive words do not combine across boundaries, and when the flattened word has at least two
 letters, the last letter of the last word and the first letter of the first word do not combine. -/
@@ -899,7 +887,7 @@ theorem isCyclicallyReduced_flatten_iff {blocks : List (List (G ⊕ X × Bool))}
         ∀ l₁ ∈ blocks.getLast?, ∀ l₂ ∈ blocks.head?,
           ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) := by
   rw [isCyclicallyReduced_iff_head?_getLast?, isReduced_flatten_iff hne,
-    head?_flatten_of_ne_nil hne, getLast?_flatten_of_ne_nil hne, and_assoc]
+    List.head?_flatten_of_ne_nil hne, List.getLast?_flatten_of_ne_nil hne, and_assoc]
   refine and_congr_right fun _ => and_congr_right fun _ => ?_
   simp only [Option.mem_bind_iff]
   exact ⟨fun h hlen l₁ hl₁ l₂ hl₂ a ha b hb => h hlen a ⟨l₁, hl₁, ha⟩ b ⟨l₂, hl₂, hb⟩,
@@ -1056,7 +1044,10 @@ theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X �
       simp [hl']
     rcases d with g | ⟨y, b⟩
     · exact ih (g * c * g⁻¹) (isReduced_append.1 hp).1 (by simpa [mul_assoc] using hprod)
-    · exfalso
+    · -- A nonempty reduced word `p'` ending in a variable letter yields a reduced word
+      -- `p' ++ [.inl c] ++ invRev p'`, which must equal `l` by normal form, contradicting
+      -- cyclic reducedness of `l` since its first and last letters are formal inverses.
+      exfalso
       have hm_red :
           IsReduced ((q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)])) := by
         rw [isReduced_append, isReduced_append]
@@ -1070,16 +1061,15 @@ theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X �
       set p' := q ++ [.inr (y, b)]
       have hp'_ne : p' ≠ [] := by simp [p']
       let a := p'.head hp'_ne
-      have ha_head : a ∈ l.head? := by
+      have ha_head : l.head? = some a := by
         rw [hm_eq, List.append_assoc, List.head?_append_of_ne_nil _ hp'_ne,
           List.head?_eq_some_head hp'_ne]
-        rfl
-      have ha_last : Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a ∈ l.getLast? := by
-        rw [hm_eq, List.getLast?_append_of_ne_nil _ (by simp [p']), invRev_def,
-          List.getLast?_reverse, List.head?_map, List.head?_eq_some_head hp'_ne]
-        rfl
+      have ha_last : l.getLast? = some (Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a) := by
+        rw [hm_eq, List.getLast?_append_of_ne_nil _ (by simp [p']), getLast?_invRev,
+          List.head?_eq_some_head hp'_ne, Option.map_some]
       have hnc := (isCyclicallyReduced_iff_head?_getLast?.1 hl).2
-        (by rw [hm_eq]; simp [p']; omega) _ ha_last _ ha_head
+        (by rw [hm_eq]; simp [p']; omega) _ (Option.mem_def.2 ha_last) _
+        (Option.mem_def.2 ha_head)
       rcases a with _ | ⟨_, _⟩ <;> simp at hnc
 
 end CyclicReduction

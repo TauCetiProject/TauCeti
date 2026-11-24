@@ -139,9 +139,8 @@ def commsProd (P : AtomicForm G X) : GX G X :=
 theorem commsProd_def (P : AtomicForm G X) : P.commsProd = (P.comms.map commWord).prod := (rfl)
 
 @[simp]
-theorem commsProd_nil (S : List X) (Z : List (X × G)) (d : G) :
-    (⟨[], S, Z, d⟩ : AtomicForm G X).commsProd = 1 := by
-  simp [commsProd_def]
+theorem commsProd_nil {P : AtomicForm G X} (h : P.comms = []) : P.commsProd = 1 := by
+  simp [commsProd_def, h]
 
 @[simp]
 theorem commsProd_cons (P : AtomicForm G X) (p : X × X) :
@@ -155,9 +154,8 @@ def squaresProd (P : AtomicForm G X) : GX G X :=
 theorem squaresProd_def (P : AtomicForm G X) : P.squaresProd = (P.squares.map sqWord).prod := (rfl)
 
 @[simp]
-theorem squaresProd_nil (C : List (X × X)) (Z : List (X × G)) (d : G) :
-    (⟨C, [], Z, d⟩ : AtomicForm G X).squaresProd = 1 := by
-  simp [squaresProd_def]
+theorem squaresProd_nil {P : AtomicForm G X} (h : P.squares = []) : P.squaresProd = 1 := by
+  simp [squaresProd_def, h]
 
 @[simp]
 theorem squaresProd_cons (P : AtomicForm G X) (s : X) :
@@ -172,9 +170,8 @@ def conjsProd (P : AtomicForm G X) : GX G X :=
 theorem conjsProd_def (P : AtomicForm G X) : P.conjsProd = (P.conjs.map conjWord).prod := (rfl)
 
 @[simp]
-theorem conjsProd_nil (C : List (X × X)) (S : List X) (d : G) :
-    (⟨C, S, [], d⟩ : AtomicForm G X).conjsProd = 1 := by
-  simp [conjsProd_def]
+theorem conjsProd_nil {P : AtomicForm G X} (h : P.conjs = []) : P.conjsProd = 1 := by
+  simp [conjsProd_def, h]
 
 @[simp]
 theorem conjsProd_cons (P : AtomicForm G X) (p : X × G) :
@@ -411,7 +408,7 @@ private theorem exists_standard_orientable {C : List (X × X)}
   refine ⟨.orientable C.length (List.length_pos_of_ne_nil (by rintro rfl; simp at hne))
     (fun i : Fin C.length => C[(i : ℕ)].1) (fun i : Fin C.length => C[(i : ℕ)].2)
     (List.nodup_ofFn_append_ofFn.1 (by simpa using hC.nodup_iff.1 hP)), ?_, ?_⟩
-  · simp [Standard.toWord_def, toWord_def, commsProd_def, squaresProd_def, conjsProd_def,
+  · simp [Standard.toWord_def, toWord_def, commsProd_def,
       funext fun p => commWord_def (G := G) p, List.ofFn_getElem_eq_map C
         fun p => ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆]
   · ext v
@@ -431,7 +428,7 @@ private theorem exists_standard_orientableCoeff {C : List (X × X)} {Z : List (X
     (fun i : Fin C.length => C[(i : ℕ)].2) (fun j : Fin Z.length => Z[(j : ℕ)].1)
     (List.nodup_ofFn_append_ofFn_append_ofFn.1 (by simpa using hC.nodup_iff.1 hP))
     (fun j : Fin Z.length => Z[(j : ℕ)].2) (fun j => hc _ (List.getElem_mem _)) d hd, ?_, ?_⟩
-  · simp [Standard.toWord_def, toWord_def, commsProd_def, squaresProd_def, conjsProd_def,
+  · simp [Standard.toWord_def, toWord_def, commsProd_def, conjsProd_def,
       funext fun p => commWord_def (G := G) p, funext fun p => conjWord_def (G := G) p, mul_assoc,
       List.ofFn_getElem_eq_map C
         fun p => ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆,
@@ -449,7 +446,7 @@ private theorem exists_standard_nonorientable {S : List X}
   simp only [vars_def, List.flatMap_nil, List.nil_append, List.map_nil, List.append_nil] at hP hne ⊢
   refine ⟨.nonorientable S.length (List.length_pos_of_ne_nil hne)
     (fun i : Fin S.length => S[(i : ℕ)]) (List.nodup_ofFn.1 (by simpa using hP)), ?_, ?_⟩
-  · simp [Standard.toWord_def, toWord_def, commsProd_def, squaresProd_def, conjsProd_def,
+  · simp [Standard.toWord_def, toWord_def, squaresProd_def,
       funext fun x => sqWord_def (G := G) x,
       List.ofFn_getElem_eq_map S fun x => (inr (FreeGroup.of x) : GX G X) ^ 2]
   · ext v
@@ -465,7 +462,7 @@ private theorem exists_standard_nonorientableCoeff {S : List X} {Z : List (X × 
     (fun i : Fin S.length => S[(i : ℕ)]) (fun j : Fin Z.length => Z[(j : ℕ)].1)
     (List.nodup_ofFn_append_ofFn.1 (by simpa using hP)) (fun j : Fin Z.length => Z[(j : ℕ)].2)
     (fun j => hc _ (List.getElem_mem _)) d hd, ?_, ?_⟩
-  · simp [Standard.toWord_def, toWord_def, commsProd_def, squaresProd_def, conjsProd_def,
+  · simp [Standard.toWord_def, toWord_def, squaresProd_def, conjsProd_def,
       funext fun x => sqWord_def (G := G) x, funext fun p => conjWord_def (G := G) p, mul_assoc,
       List.ofFn_getElem_eq_map S fun x => (inr (FreeGroup.of x) : GX G X) ^ 2,
       List.ofFn_getElem_eq_map Z
@@ -507,7 +504,7 @@ private theorem coeff_or_standard (Q : AtomicForm G X) (hQ : Q.vars.Nodup)
   · left
     obtain ⟨_ | ⟨p, C⟩, S, Z, d⟩ := Q
     · obtain ⟨rfl, rfl⟩ : S = [] ∧ Z = [] := by simpa [vars_def] using h
-      exact ⟨d, by simp [toWord_def, commsProd_def, squaresProd_def, conjsProd_def]⟩
+      exact ⟨d, by simp [toWord_def]⟩
     · simp [vars_def] at h
   · obtain ⟨S, hS, hSv⟩ := exists_standard_toWord_eq Q hQ hcs hc hd h
     exact .inr ⟨S, hS.symm, hSv.le⟩
@@ -582,8 +579,7 @@ theorem exists_standard_commutator_mul_sq : ∃ f ∈ GX.elementaryAut G (Fin 3)
   refine ⟨f, hf, .nonorientable 3 (by omega) id Function.injective_id, ?_, by simp, by simp,
     by simp⟩
   rw [hfe]
-  simp [toWord_def, commsProd_def, squaresProd_def, conjsProd_def, sqWord_def, Standard.toWord_def,
-    List.ofFn_succ]
+  simp [toWord_def, squaresProd_def, sqWord_def, Standard.toWord_def, List.ofFn_succ]
 
 /-- The word `[x, y] s² z⁻¹ c z` in atomic form, with `c ≠ 1`, is carried by an elementary
 automorphism and a conjugation to a standard quadratic word of type (4) in the variables `x`, `y`,
@@ -602,8 +598,7 @@ theorem exists_standard_commutator_mul_sq_mul_conj {c : G} (hc : c ≠ 1) :
     Fin.elim0 (by decide) Fin.elim0 (fun j => j.elim0) c hc, ?_, by simp, by simp, by simp, ?_⟩
   · rw [MulAut.mul_apply, h₁]
     refine h₂.trans ?_
-    simp [toWord_def, commsProd_def, squaresProd_def, conjsProd_def, sqWord_def,
-      Standard.toWord_def, List.ofFn_succ, mul_assoc]
+    simp [toWord_def, squaresProd_def, sqWord_def, Standard.toWord_def, List.ofFn_succ, mul_assoc]
   · ext i
     simp only [Standard.vars_nonorientableCoeff, Set.Sum.elim_range, Matrix.range_cons,
       Set.range_eq_empty, Set.union_empty, Set.mem_union, Set.mem_singleton_iff,

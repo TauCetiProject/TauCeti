@@ -22,8 +22,7 @@ system `S` and those of its image `φ S`; it carries the radical of `S` to that 
 `CoordGroup.imageMulEquiv`. More generally, for any equivalent target system `T` with
 `V_H(φ S) = V_H(T)`, this induces a solution bijection `equivVOfVImageEq`, carries `Rad ι S` to
 `Rad ι T` (`Rad_of_V_image_eq`), and induces a `G`-isomorphism `CoordGroup.mulEquivOfVImageEq`
-of radical coordinate groups; in particular, conjugation `u * φ w * u⁻¹ = w'` preserves the
-algebraic set (`V_image_singleton_eq_of_conj`).
+of radical coordinate groups.
 The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the commutator equation
 `[x, g] = 1`, so it carries its solutions, the centralizer of `ι g`, onto themselves.
 
@@ -45,8 +44,6 @@ The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the
 
 * `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
-* `TauCeti.GroupAlgGeom.V_image_singleton_eq_of_conj`: conjugation after a map preserves the
-  algebraic set of a single equation.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
   system under a `G`-isomorphism.
 * `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
@@ -452,17 +449,6 @@ end CoordGroup
 end VImageEq
 
 end MulEquiv
-
-section GHomVImageEq
-
-/-- If `u * φ w * u⁻¹ = w'` for a map `φ : G[X] → G[Y]`, then `φ '' {w}` and `{w'}` have the
-same algebraic set. -/
-theorem V_image_singleton_eq_of_conj (φ : GX G X → GX G Y) {w : GX G X} {u w' : GX G Y}
-    (hw' : u * φ w * u⁻¹ = w') :
-    V ι (φ '' {w}) = V ι {w'} := by
-  rw [Set.image_singleton, ← hw', V_singleton_conj]
-
-end GHomVImageEq
 
 /-! ### The commutator equation -/
 

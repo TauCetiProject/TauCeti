@@ -19,7 +19,8 @@ in `G[X]` to a coefficient, the trivial coefficient included
 (`TauCeti.GroupAlgGeom.Quadratic.Standard.not_isConj_inl`,
 `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`). Consequently a conjugate
 `w` of `a` in any group `A` is not carried to a standard quadratic word by any homomorphism sending
-`a` to a coefficient `inl d` followed by a conjugation (`Standard.toWord_ne_conj_map_conj_inl`).
+`a` to a coefficient `inl d` followed by a conjugation
+(`Standard.toWord_ne_conj_map_of_isConj_of_map_eq_inl`).
 For `z⁻¹ c z` with `c ≠ 1` this shows that the coefficient alternative cannot be avoided.
 
 The separation follows from cyclic reduction relative to `G`: a standard quadratic word has a
@@ -33,9 +34,9 @@ coefficient has no variable letters (`GX.IsCyclicallyReduced.countVar_eq_zero_of
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isConj_inl`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_inl`: a standard quadratic word is not
   conjugate to a coefficient.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_map_conj_inl`: a homomorphism sending
-  an element `a` to a coefficient and a conjugation do not carry a conjugate of `a` to a standard
-  quadratic word.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_ne_conj_map_of_isConj_of_map_eq_inl`: a
+  homomorphism sending an element `a` to a coefficient and a conjugation do not carry a conjugate
+  of `a` to a standard quadratic word.
 
 ## References
 
@@ -76,12 +77,13 @@ theorem toWord_ne_conj_inl (S : Standard G X) (u : GX G X) (g : G) :
 conjugation in `G[X]`, does not carry any conjugate `w` of `a` to a standard quadratic word.
 For instance the strictly quadratic word `z⁻¹ c z` is not brought to a standard quadratic word by
 a change of coordinates over `G` and a conjugation. -/
-theorem toWord_ne_conj_map_conj_inl {A F : Type*} [Group A] [FunLike F A (GX G X)]
+theorem toWord_ne_conj_map_of_isConj_of_map_eq_inl {A F : Type*} [Group A] [FunLike F A (GX G X)]
     [MonoidHomClass F A (GX G X)] (S : Standard G X) {f : F} {a w : A} {d : G}
     (hw : IsConj a w) (hf : f a = inl d) (u : GX G X) :
     S.toWord ≠ u * f w * u⁻¹ := by
   intro h
-  exact S.not_isConj_inl d <|
-    (hf ▸ (MonoidHom.ofClass f).map_isConj hw).trans (isConj_iff.2 ⟨u, h.symm⟩)
+  have hfw : IsConj (f a) (f w) := by simpa using (MonoidHom.ofClass f).map_isConj hw
+  rw [hf] at hfw
+  exact S.not_isConj_inl d (hfw.trans (isConj_iff.2 ⟨u, h.symm⟩))
 
 end TauCeti.GroupAlgGeom.Quadratic.Standard
