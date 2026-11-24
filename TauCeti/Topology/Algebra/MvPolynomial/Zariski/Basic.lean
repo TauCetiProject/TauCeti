@@ -62,8 +62,7 @@ infinite complement is open.
 * `TauCeti.polynomialTopology_eq_induced_evalPrimeSpectrum` and
   `TauCeti.noetherianSpace_polynomialTopology`: comparison with `PrimeSpectrum` and Noetherianity
   for finite `σ` over a Noetherian commutative ring.
-* `TauCeti.irreducibleSpace_polynomialTopology` and
-  `TauCeti.isIrreducible_univ_polynomialTopology`: irreducibility of `σ → R` over an infinite
+* `TauCeti.irreducibleSpace_polynomialTopology`: irreducibility of `σ → R` over an infinite
   integral domain.
 * `TauCeti.polynomialTopology_eq_cofinite`: in at most one variable over a commutative ring without
   zero divisors, the polynomial Zariski topology is the cofinite topology.
@@ -499,14 +498,6 @@ theorem irreducibleSpace_polynomialTopology :
     exact ⟨z, mem_univ z, hpU hz.1, hqV hz.2⟩⟩
   exact ⟨⟨0⟩⟩
 
-/-- Over an infinite integral domain, the whole coordinate space is irreducible in the polynomial
-Zariski topology. -/
-theorem isIrreducible_univ_polynomialTopology :
-    @IsIrreducible (σ → R) (polynomialTopology σ R) Set.univ := by
-  let := polynomialTopology σ R
-  have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
-  exact IrreducibleSpace.isIrreducible_univ (σ → R)
-
 end TauCeti
 
 namespace MvPolynomial
@@ -573,31 +564,6 @@ theorem polynomialTopology_eq_cofinite :
       simp only [mem_compl_iff, mem_ofPred_eq, not_not, mem_preimage, Polynomial.IsRoot, heval]
     rw [hcompl]
     exact (Polynomial.finite_setOfPred_isRoot hq).preimage hinj.injOn
-
-/-- In at most one variable over a commutative ring without zero divisors, a set is
-polynomial-Zariski open exactly when it is empty or has finite complement. -/
-theorem isOpen_polynomialTopology_iff_cofinite {U : Set (σ → R)} :
-    IsOpen[polynomialTopology σ R] U ↔ U = ∅ ∨ Uᶜ.Finite := by
-  rw [polynomialTopology_eq_cofinite, TopologicalSpace.cofinite, isOpen_mk, nonempty_iff_ne_empty,
-    or_iff_not_imp_left]
-
-/-- In at most one variable over a commutative ring without zero divisors, a set is
-polynomial-Zariski closed exactly when it is the whole space or finite. -/
-theorem isClosed_polynomialTopology_iff_cofinite {F : Set (σ → R)} :
-    IsClosed[polynomialTopology σ R] F ↔ F = Set.univ ∨ F.Finite := by
-  let := polynomialTopology σ R
-  rw [← isOpen_compl_iff, isOpen_polynomialTopology_iff_cofinite, compl_empty_iff, compl_compl]
-
-/-- In at most one variable over a commutative ring without zero divisors, no nonempty set with
-infinite complement (such as a complex Euclidean open ball) is open in the polynomial Zariski
-topology. -/
-theorem not_isOpen_polynomialTopology_of_nonempty_of_infinite_compl {U : Set (σ → R)}
-    (hne : U.Nonempty) (hinf : Uᶜ.Infinite) :
-    ¬ IsOpen[polynomialTopology σ R] U := by
-  rw [isOpen_polynomialTopology_iff_cofinite]
-  rintro (rfl | hfin)
-  · exact hne.ne_empty rfl
-  · exact hinf hfin
 
 end TauCeti
 

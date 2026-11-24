@@ -120,20 +120,6 @@ theorem zariskiClosure_eq_closureOperator :
     rw [zeroLocus_span]
     simp [aeval_def]
 
-/-- Over a field `K`, `MvPolynomial.zariskiClosure K S` coincides with the topological closure of
-`S` in `TauCeti.polynomialTopology σ K`. -/
-theorem zariskiClosure_eq_closure (S : Set (σ → K)) :
-    zariskiClosure K S = @closure (σ → K) (TauCeti.polynomialTopology σ K) S := by
-  let := TauCeti.polynomialTopology σ K
-  rw [zariskiClosure_eq_closureOperator, Topology.closureOperator_apply]
-
-/-- Over a field `K`, a set is closed for `MvPolynomial.zariskiClosure K` iff it is closed in
-`TauCeti.polynomialTopology σ K`. -/
-theorem zariskiClosure_isClosed_iff_isClosed_polynomialTopology {S : Set (σ → K)} :
-    (zariskiClosure K).IsClosed S ↔ @IsClosed (σ → K) (TauCeti.polynomialTopology σ K) S := by
-  let := TauCeti.polynomialTopology σ K
-  rw [zariskiClosure_eq_closureOperator, Topology.isClosed_closureOperator]
-
 /-- The zero locus of an ideal is closed for the Zariski closure. -/
 theorem zariskiClosure_isClosed_zeroLocus (I : Ideal (MvPolynomial σ k)) :
     (zariskiClosure k).IsClosed (zeroLocus K I) :=
