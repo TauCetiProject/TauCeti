@@ -267,6 +267,14 @@ private theorem vertexLift_moment
       Real.sq_sqrt (by linarith [hw j hj])]
     ring
 
+/-- At `w = 0`, the translated weight model is `v`, so it satisfies the facet inequalities
+outside `A`. -/
+private theorem vertexMoment_zero_le (hvP : v ∈ facetPolyhedron i u c) :
+    ∀ j ∉ activeSet (facetPairing i u) c v,
+      c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) 0) (i (u j)) := fun j _ ↦ by
+  rw [weightMomentMap_zero, add_zero]
+  exact mem_facetPolyhedron.1 hvP j
+
 end VertexLift
 
 section VertexLiftLevel
@@ -580,8 +588,7 @@ private def vertexChartSymm
       c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j)) then
     mk ⟨vertexLift hv hi w, vertexLift_mem_delzantLevel hv hi hw⟩
   else
-    mk ⟨vertexLift hv hi 0, vertexLift_mem_delzantLevel hv hi fun j _ ↦ by
-      simpa using mem_facetPolyhedron.1 hvP j⟩
+    mk ⟨vertexLift hv hi 0, vertexLift_mem_delzantLevel hv hi (vertexMoment_zero_le hv hi hvP)⟩
 
 private theorem vertexChartSymm_of_le
     {w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
@@ -597,8 +604,7 @@ private theorem vertexChartSymm_of_not_le
     (hw : ¬ ∀ j ∉ activeSet (facetPairing i u) c v,
       c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))) :
     vertexChartSymm hv hi hvP w =
-      mk ⟨vertexLift hv hi 0, vertexLift_mem_delzantLevel hv hi fun j _ ↦ by
-        simpa using mem_facetPolyhedron.1 hvP j⟩ :=
+      mk ⟨vertexLift hv hi 0, vertexLift_mem_delzantLevel hv hi (vertexMoment_zero_le hv hi hvP)⟩ :=
   dite_eq_right_of_eq_false (eq_false hw)
 
 /-- The inverse of the vertex chart sends its target into its source. -/
@@ -734,6 +740,16 @@ theorem mem_vertexChart_target_iff
       c j < (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j)) :=
   Iff.rfl
 
+/-- Every point in the target of the vertex chart satisfies the weak facet inequalities outside
+`A`. -/
+theorem le_of_mem_vertexChart_target
+    {w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+      EuclideanSpace ℝ (activeSet (facetPairing i u) c v)}
+    (hw : w ∈ (vertexChart hv hi hvP).target) :
+    ∀ j ∉ activeSet (facetPairing i u) c v,
+      c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j)) :=
+  fun j hj ↦ ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le
+
 /-- **The source of the vertex chart.** A point of the Delzant quotient lies in the source of the
 chart at `v` exactly when every facet active at its moment value is active at `v`. -/
 theorem mem_vertexChart_source_iff {q : DelzantQuotient i u c} :
@@ -788,7 +804,7 @@ theorem vertexChart_symm_of_not_forall_le
       c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))) :
     (vertexChart hv hi hvP).symm w = (vertexChart hv hi hvP).symm 0 := by
   rw [coe_vertexChart_symm, vertexChartSymm_of_not_le hv hi hvP hw,
-    vertexChartSymm_of_le hv hi hvP fun j _ ↦ by simpa using mem_facetPolyhedron.1 hvP j]
+    vertexChartSymm_of_le hv hi hvP (vertexMoment_zero_le hv hi hvP)]
 
 open Classical in
 /-- **The vertex chart on a normalized representative.** If the coordinates outside `A` of a point
@@ -837,8 +853,8 @@ theorem add_weightMomentMap_vertexChart {q : DelzantQuotient i u c}
     v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) (vertexChart hv hi hvP q) =
       reducedMomentMap (hv.surjective_linearCombination_real hi) q := by
   have := hi.finiteDimensional
-  rw [← reducedMomentMap_vertexChart_symm hv hi hvP fun j hj ↦
-      ((mem_vertexChart_target_iff hv hi hvP).1 ((vertexChart hv hi hvP).map_source hq) j hj).le,
+  rw [← reducedMomentMap_vertexChart_symm hv hi hvP
+      (le_of_mem_vertexChart_target hv hi hvP ((vertexChart hv hi hvP).map_source hq)),
     (vertexChart hv hi hvP).left_inv hq]
 
 /-- The point of the Delzant quotient at the centre of the vertex chart lies over `v`; it is the
@@ -848,8 +864,8 @@ theorem reducedMomentMap_vertexChart_symm_zero :
     reducedMomentMap (hv.surjective_linearCombination_real hi) ((vertexChart hv hi hvP).symm 0) =
       v := by
   have := hi.finiteDimensional
-  rw [reducedMomentMap_vertexChart_symm hv hi hvP fun j hj ↦
-      ((mem_vertexChart_target_iff hv hi hvP).1 (zero_mem_vertexChart_target hv hi hvP) j hj).le,
+  rw [reducedMomentMap_vertexChart_symm hv hi hvP
+      (le_of_mem_vertexChart_target hv hi hvP (zero_mem_vertexChart_target hv hi hvP)),
     weightMomentMap_zero, add_zero]
 
 /-- **Equivariance of the vertex chart.** The inverse of the chart intertwines the rotation
@@ -874,7 +890,7 @@ theorem vertexChart_symm_torusRotation
       simpa only [weightMomentMap_torusRotation] using hw
     rw [vertexChart_symm_of_not_forall_le hv hi hvP hw,
       vertexChart_symm_of_not_forall_le hv hi hvP hφw,
-      vertexChart_symm_apply hv hi hvP fun j _ ↦ by simpa using mem_facetPolyhedron.1 hvP j,
+      vertexChart_symm_apply hv hi hvP (vertexMoment_zero_le hv hi hvP),
       IsSmoothVertex.vertexTorusEquiv_apply, coe_vadd_mk]
     refine congrArg mk (Subtype.ext ?_)
     rw [coe_vadd_delzantLevel, ← vertexLift_torusRotation, map_zero]
