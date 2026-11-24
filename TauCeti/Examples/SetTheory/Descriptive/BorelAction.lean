@@ -59,6 +59,12 @@ example : ¬ MeasurableSet[⊥] {σ : Equiv.Perm ℕ | σ 0 = 1} := by
 example : Fintype.card (Set (Equiv.Perm (Fin 3))) = 64 := by
   simp [Fintype.card_set, Fintype.card_perm, Nat.factorial]
 
+-- The permutation groups of `ℕ` and `Fin 3` are standard Borel, by Mathlib's
+-- `standardBorel_of_polish`.
+example : StandardBorelSpace (Equiv.Perm ℕ) := inferInstance
+
+example : StandardBorelSpace (Equiv.Perm (Fin 3)) := inferInstance
+
 example (s : Set (Equiv.Perm (Fin 3))) : MeasurableSet s :=
   .of_discrete
 

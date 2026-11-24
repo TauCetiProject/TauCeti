@@ -13,8 +13,9 @@ public import TauCeti.Topology.Algebra.Group.Perm
 
 For every topological space `α`, the permutation type `Equiv.Perm α` carries the Borel σ-algebra
 of its pointwise topology `Equiv.Perm.instTopologicalSpace`, so it is a Borel space by definition.
-For a countable discrete `α`, in particular for `α = ℕ`, the topology is Polish and
-`Equiv.Perm α` is a standard Borel space. Forward and inverse evaluations are measurable.
+For a countable discrete `α`, in particular for `α = ℕ`, the topology is Polish
+(`Equiv.Perm.instPolishSpace`), so Mathlib's `standardBorel_of_polish` makes `Equiv.Perm α` a
+standard Borel space. Forward and inverse evaluations are measurable.
 
 This is the σ-algebra of the Borel `S∞`-spaces of descriptive set theory: a standard Borel space
 `X` with an action `[MulAction (Equiv.Perm ℕ) X]` that is jointly measurable,
@@ -34,11 +35,6 @@ instance instMeasurableSpace : MeasurableSpace (Equiv.Perm α) :=
 /-- Permutations carry the Borel σ-algebra of their topology, by definition. -/
 instance instBorelSpace : BorelSpace (Equiv.Perm α) :=
   ⟨rfl⟩
-
-/-- The permutation group of a countable discrete space is a standard Borel space. -/
-instance instStandardBorelSpace [DiscreteTopology α] [Countable α] :
-    StandardBorelSpace (Equiv.Perm α) :=
-  inferInstance
 
 variable [MeasurableSpace α] [BorelSpace α]
 
