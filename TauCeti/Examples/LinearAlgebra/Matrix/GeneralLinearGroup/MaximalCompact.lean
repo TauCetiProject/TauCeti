@@ -58,36 +58,23 @@ example : unitarySubgroup (GL (Fin 1) ℂ) ⊓ posUpperTriangularGroup (Fin 1) �
 example : unitarySubgroup (GL (Fin 2) ℂ) ⊓ posUpperTriangularGroup (Fin 2) ℂ = ⊥ :=
   inf_posUpperTriangularGroup_eq_bot_of_isCompact isCompact_unitarySubgroup
 
-/-- The invertible diagonal matrix `diag(1, -1)`, its own inverse. -/
-def diagOneNegOne : GL (Fin 2) ℂ where
-  val := diagonal ![1, -1]
-  inv := diagonal ![1, -1]
-  val_inv := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext i
-    fin_cases i <;> simp
-  inv_val := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext i
-    fin_cases i <;> simp
+/-- The invertible diagonal matrix `diag(1, -1)`. -/
+def diagOneNegOne : GL (Fin 2) ℂ := diagGL ![1, -1]
 
 /-- The matrix `diag(1, -1)` is unitary and upper triangular. -/
 theorem diagOneNegOne_mem_inf :
     diagOneNegOne ∈ unitarySubgroup (GL (Fin 2) ℂ) ⊓ upperTriangularGroup (Fin 2) ℂ := by
-  refine ⟨mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr ?_,
-    UpperTriangularGroup.mem_iff.mpr (blockTriangular_diagonal _)⟩
-  rw [mem_unitaryGroup_iff, star_eq_conjTranspose, diagOneNegOne, diagonal_conjTranspose,
-    diagonal_mul_diagonal, ← diagonal_one]
-  congr 1
-  ext i
-  fin_cases i <;> simp
+  refine ⟨mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr ?_, ?_⟩
+  · rw [mem_unitaryGroup_iff, diagOneNegOne, diagGL_coe]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  · rw [diagOneNegOne, ← UpperTriangularGroup.coe_diagonalHom]
+    exact (UpperTriangularGroup.diagonalHom _).property
 
 /-- The matrix `diag(1, -1)` is not the identity, so positivity of the diagonal is needed. -/
 theorem diagOneNegOne_ne_one : diagOneNegOne ≠ 1 := by
   intro h
   have h11 := congrArg (fun g : GL (Fin 2) ℂ ↦ (g : Matrix (Fin 2) (Fin 2) ℂ) 1 1) h
-  norm_num [diagOneNegOne] at h11
+  norm_num [diagOneNegOne, diagGL_coe] at h11
 
 end TauCeti.CompactPosUpperTriangular
