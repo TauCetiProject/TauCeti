@@ -80,9 +80,8 @@ theorem dist_le_dist_iff {z p q : ℍ} :
 theorem dist_le_dist_iff_re_im {z p q : ℍ} :
     dist z p ≤ dist z q ↔ q.im * ((z.re - p.re) ^ 2 + (z.im - p.im) ^ 2) ≤
       p.im * ((z.re - q.re) ^ 2 + (z.im - q.im) ^ 2) := by
-  rw [dist_le_dist_iff, Complex.dist_eq, Complex.dist_eq, Complex.sq_norm, Complex.sq_norm,
-    Complex.normSq_apply, Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.sub_im, coe_re, coe_im, sq]
+  rw [dist_le_dist_iff]
+  simp [Complex.dist_eq, Complex.sq_norm, Complex.normSq_apply, ← sq]
 
 /-- In a strip of horizontal half-width `r` about `p`, above height `p.im + r`, the excess of
 `p.im * |z - q|²` over `q.im * |z - p|²` is at least `z.im² * (p.im - 2 * q.im)`. -/

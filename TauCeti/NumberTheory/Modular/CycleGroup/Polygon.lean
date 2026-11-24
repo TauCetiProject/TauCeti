@@ -79,6 +79,11 @@ def cyclePolygon (n : List ℕ) : Set ℍ :=
 
 variable {n : List ℕ} {z : ℍ}
 
+/-- The squared Euclidean distance from `z` to a natural-number centre `N`, in coordinates. -/
+private theorem normSq_coe_sub_natCast (z : ℍ) (N : ℕ) :
+    Complex.normSq ((z : ℂ) - N) = (z.re - N) ^ 2 + z.im ^ 2 := by
+  rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im]
+
 /-- Membership in the Ford polygon is the strip condition together with the `ℓ + 1`
 exterior-disc inequalities. -/
 @[simp]
@@ -142,7 +147,7 @@ theorem disjoint_setOf_normSq_sub_take_sum_le_one (hn : ∀ a ∈ n, 2 ≤ a) {j
       (ha : Complex.normSq ((z : ℂ) - (a : ℂ)) ≤ 1)
       (hb : Complex.normSq ((z : ℂ) - (b : ℂ)) ≤ 1) : False := by
     have hab' : (a : ℝ) + 2 ≤ b := by exact_mod_cast hab
-    rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im] at ha hb
+    rw [normSq_coe_sub_natCast] at ha hb
     nlinarith [z.im_pos, sq_nonneg (z.re - a + (z.re - b))]
   rw [Set.disjoint_left]
   intro z hzj hzk
@@ -157,7 +162,7 @@ polygon. -/
 theorem mem_cyclePolygon_of_one_le_im (h0 : 0 ≤ z.re) (hm : z.re ≤ (n.sum : ℝ))
     (him : 1 ≤ z.im) : z ∈ cyclePolygon n := by
   refine mem_cyclePolygon.2 ⟨h0, hm, fun k _ ↦ ?_⟩
-  rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im]
+  rw [normSq_coe_sub_natCast]
   nlinarith [sq_nonneg (z.re - (n.take k).sum)]
 
 /-- The points `N_k + i` lie in the Ford polygon, for every prefix sum `N_k`. -/
@@ -233,7 +238,7 @@ theorem mem_cyclePolygon_of_re_mem_Icc {k : ℕ}
   have hsum : ((n.take (k + 1)).sum : ℝ) ≤ n.sum := by
     exact_mod_cast (List.take_sublist (k + 1) n).sum_le_sum fun _ _ ↦ Nat.zero_le _
   refine mem_cyclePolygon.2 ⟨by linarith, by linarith, fun j _ ↦ ?_⟩
-  rw [← Complex.ofReal_natCast, Complex.normSq_sub_ofReal, coe_re, coe_im]
+  rw [normSq_coe_sub_natCast]
   -- The centre `N_j` lies at or left of `N_k`, or at or right of `N_{k+1}`.
   have hgap : 1 ≤ (z.re - (n.take j).sum) ^ 2 := by
     rcases le_or_gt j k with hjk | hjk
