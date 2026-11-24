@@ -29,7 +29,7 @@ exactly when every monomial in its support has weight `1`, that is, when it is w
 homogeneous of degree `0`
 (`TauCeti.ComoduleAlgebra.mem_coinvariants_mvPolynomialWeight_iff`). For `𝔾ₘ` acting on `𝔸²`
 with weights `1` and `-1`, the invariants are the polynomials in `x y`
-(`TauCeti.QuotientExamples.coinvariants_gm_one_neg_one_eq_adjoin`).
+(`TauCeti.QuotientExamples.coinvariants_mvPolynomialWeight_one_neg_one_eq_adjoin`).
 
 ## Main declarations
 
