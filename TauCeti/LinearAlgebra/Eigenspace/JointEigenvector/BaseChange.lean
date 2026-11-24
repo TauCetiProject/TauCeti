@@ -105,14 +105,9 @@ private theorem exists_ne_zero_forall_baseChange_eq_smul_of_linearMap [Module.Fi
     have := hπχ b v
     rw [← hsmul, Module.mem_annihilator.1 hb, map_zero, eq_comm, smul_eq_zero] at this
     exact this.resolve_right hv
-  obtain ⟨v, hv0, hv⟩ :=
-    IsArtinianRing.exists_ne_zero_forall_smul_eq_zero_of_annihilator_le (RingHom.ker_ne_top χ) hann
-  refine ⟨v, hv0, fun a ↦ ?_⟩
-  have hmem : 1 ⊗ₜ a - algebraMap k (k ⊗[O] A) (φ a) ∈ RingHom.ker χ := by
-    simp [χ, RingHom.mem_ker]
-  have := hv _ hmem
-  rw [hsmul, map_sub, Φ.commutes, LinearMap.sub_apply, sub_eq_zero] at this
-  simpa [hΦ] using this
+  have : IsScalarTower k (k ⊗[O] A) (k ⊗[O] L) := ⟨fun c b v ↦ by simp [hsmul, map_smul]⟩
+  obtain ⟨v, hv0, hv⟩ := χ.exists_ne_zero_forall_smul_eq_smul_of_annihilator_le hann
+  exact ⟨v, hv0, fun a ↦ by simpa [hsmul, hΦ, χ] using hv (1 ⊗ₜ a)⟩
 
 variable [Module.Finite O A] [Module.Finite A L]
 
