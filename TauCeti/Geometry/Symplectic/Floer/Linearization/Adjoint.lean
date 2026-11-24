@@ -44,9 +44,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `f` gives `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`
-  (`floerLinearizationAdjoint_fun_smul`), so a cutoff with `|f| ≤ 1` changes `‖D^* η‖²` by at
-  most a multiple of `‖df‖² ‖η‖²` (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). Multiplying
-  `η` by a function `β(s)` gives `β D^* η - β' η`
+  (`floerLinearizationAdjoint_fun_smul`), so `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
+  where `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` (`norm_floerLinearizationAdjoint_fun_smul_sq_le`).
+  Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`), and in particular the weight `e^{δ s}` shifts the adjoint
   by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
