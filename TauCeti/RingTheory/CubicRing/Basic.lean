@@ -248,13 +248,28 @@ instance [Nontrivial R] : Nontrivial f.CubicRing :=
   let ⟨x, y, h⟩ := exists_pair_ne R
   ⟨⟨⟨x, x, x⟩, ⟨y, y, y⟩, fun e => h (congrArg c₀ e)⟩⟩
 
+instance {S T : Type*} [SMul S T] [SMul S R] [SMul T R] [IsScalarTower S T R] :
+    IsScalarTower S T f.CubicRing :=
+  ⟨fun _ _ _ => by ext <;> simp [smul_assoc]⟩
+
+instance {S T : Type*} [SMul S R] [SMul T R] [SMulCommClass S T R] :
+    SMulCommClass S T f.CubicRing :=
+  ⟨fun _ _ _ => by ext <;> simp [smul_comm]⟩
+
 section CommRing
 
 variable [CommRing R]
 
-@[simp] theorem c₀_algebraMap (r : R) : (algebraMap R f.CubicRing r).c₀ = r := (rfl)
-@[simp] theorem c₁_algebraMap (r : R) : (algebraMap R f.CubicRing r).c₁ = 0 := (rfl)
-@[simp] theorem c₂_algebraMap (r : R) : (algebraMap R f.CubicRing r).c₂ = 0 := (rfl)
+section algebraMap
+
+variable {S : Type*} [CommSemiring S] [Algebra S R]
+
+@[simp] theorem c₀_algebraMap (s : S) : (algebraMap S f.CubicRing s).c₀ = algebraMap S R s :=
+  (rfl)
+@[simp] theorem c₁_algebraMap (s : S) : (algebraMap S f.CubicRing s).c₁ = 0 := (rfl)
+@[simp] theorem c₂_algebraMap (s : S) : (algebraMap S f.CubicRing s).c₂ = 0 := (rfl)
+
+end algebraMap
 
 theorem algebraMap_injective : Function.Injective (algebraMap R f.CubicRing) :=
   fun _ _ h => congrArg c₀ h
@@ -488,8 +503,8 @@ def mapRingHom (f : Cubic R) : f.CubicRing →+* (f.map φ).CubicRing where
 @[simp] theorem mapRingHom_theta : mapRingHom φ f theta = theta := by
   ext <;> simp
 
-@[simp] theorem mapRingHom_algebraMap (r : R) :
-    mapRingHom φ f (algebraMap R _ r) = algebraMap S _ (φ r) := by
+@[simp] theorem mapRingHom_algebraMap {T : Type*} [CommSemiring T] [Algebra T R] (t : T) :
+    mapRingHom φ f (algebraMap T _ t) = algebraMap S _ (φ (algebraMap T R t)) := by
   ext <;> simp
 
 theorem mapRingHom_injective (hφ : Function.Injective φ) :
