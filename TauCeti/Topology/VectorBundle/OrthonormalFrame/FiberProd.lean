@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Prod
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Basic
 
 /-!
 # The fibre product of a lift of the orthonormal frame bundle with a principal bundle
