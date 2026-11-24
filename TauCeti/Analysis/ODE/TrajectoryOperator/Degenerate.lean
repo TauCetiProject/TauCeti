@@ -53,6 +53,10 @@ sequence on which it tends to zero has a convergent subsequence
 * `TauCeti.WeakDerivStep.not_isFredholm_trajectoryOperator_of_tendsto_atTop` and
   `TauCeti.WeakDerivStep.not_isFredholm_trajectoryOperator_of_tendsto_atBot`: the constant case,
   `A(s) v → 0` at `+∞` or at `-∞` for some `v ≠ 0`.
+* `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atTop` and
+  `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atBot`: the escaping profiles, smooth
+  functions with unit `L²` norm, vanishing derivative energy and disjoint supports moving off to
+  `+∞` or `-∞`, packaged for escaping approximate kernels of other trajectory operators.
 
 ## References
 
@@ -186,6 +190,69 @@ private theorem exists_abs_le_and_add_two_mul_le (S : ℕ → ℝ) :
   have := abs_nonneg (S n)
   dsimp only
   linarith
+
+/-- Profiles on the windows `|s - cₙ| < n + 1` have pairwise disjoint supports when the windows
+are pairwise disjoint. -/
+private theorem profile_mul_profile_eq_zero {c : ℕ → ℝ}
+    (hdisj : ∀ m n, m ≠ n → ∀ s, |s - c m| < m + 1 → (n : ℝ) + 1 ≤ |s - c n|) {m n : ℕ}
+    (hmn : m ≠ n) (s : ℝ) : profile (c m) (m + 1) s * profile (c n) (n + 1) s = 0 := by
+  by_contra h
+  obtain ⟨h1, h2⟩ := mul_ne_zero_iff.1 h
+  have h3 := hdisj m n hmn s (by
+    simpa [abs_of_pos (by positivity : (0 : ℝ) < m + 1)] using abs_sub_lt_of_profile_ne_zero h1)
+  have h4 := abs_sub_lt_of_profile_ne_zero h2
+  rw [abs_of_pos (by positivity : (0 : ℝ) < n + 1)] at h4
+  linarith
+
+/-- The profiles on the windows `|s - cₙ| < n + 1` have `∫ φₙ'² → 0`. -/
+private theorem tendsto_integral_deriv_profile_sq (c : ℕ → ℝ) :
+    Tendsto (fun n : ℕ ↦ ∫ s, deriv (profile (c n) (n + 1)) s ^ 2) atTop (𝓝 0) := by
+  have h (n : ℕ) : ∫ s, deriv (profile (c n) (n + 1)) s ^ 2 =
+      (∫ t, deriv bump t ^ 2) / (∫ t, bump t ^ 2) * (1 / ((n : ℝ) + 1)) ^ 2 := by
+    rw [integral_deriv_profile_sq (by positivity), one_div, inv_pow, ← div_eq_mul_inv, div_div]
+  simpa [h] using (tendsto_one_div_add_atTop_nhds_zero_nat.pow 2).const_mul
+    ((∫ t, deriv bump t ^ 2) / ∫ t, bump t ^ 2)
+
+/-- **Escaping profiles at `+∞`.** For every sequence `S`, there are smooth compactly supported
+functions `φₙ` on `ℝ` with `∫ φₙ² = 1` and `∫ φₙ'² → 0`, each supported in `[Sₙ, ∞)`, with pairwise
+disjoint supports. In `W^{1,2}(ℝ)` they form a bounded sequence escaping to `+∞` whose terms stay
+`√2` apart in `L²` while their derivatives tend to `0`. -/
+theorem _root_.TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atTop (S : ℕ → ℝ) :
+    ∃ φ : ℕ → ℝ → ℝ, (∀ n, ContDiff ℝ (⊤ : ℕ∞) (φ n)) ∧ (∀ n, HasCompactSupport (φ n)) ∧
+      (∀ n, ∫ s, φ n s ^ 2 = 1) ∧ Tendsto (fun n ↦ ∫ s, deriv (φ n) s ^ 2) atTop (𝓝 0) ∧
+      (∀ n s, φ n s ≠ 0 → S n ≤ s) ∧ ∀ m n, m ≠ n → ∀ s, φ m s * φ n s = 0 := by
+  obtain ⟨a, haS, ha⟩ := exists_abs_le_and_add_two_mul_le S
+  refine ⟨fun n ↦ profile (a n + (n + 1)) (n + 1), fun n ↦ contDiff_profile _ _,
+    fun n ↦ hasCompactSupport_profile _ _, fun n ↦ integral_profile_sq (by positivity),
+    tendsto_integral_deriv_profile_sq _, fun n s hs ↦ ?_,
+    fun m n hmn ↦ profile_mul_profile_eq_zero (c := fun n ↦ a n + (n + 1))
+      (fun m n hmn s hs ↦ le_abs_sub_of_abs_sub_lt ha hmn hs) hmn⟩
+  have h := abs_sub_lt_of_profile_ne_zero hs
+  rw [abs_of_pos (by positivity : (0 : ℝ) < n + 1), abs_lt] at h
+  linarith [le_abs_self (S n), haS n]
+
+/-- **Escaping profiles at `-∞`.** For every sequence `S`, there are smooth compactly supported
+functions `φₙ` on `ℝ` with `∫ φₙ² = 1` and `∫ φₙ'² → 0`, each supported in `(-∞, Sₙ]`, with
+pairwise disjoint supports. -/
+theorem _root_.TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atBot (S : ℕ → ℝ) :
+    ∃ φ : ℕ → ℝ → ℝ, (∀ n, ContDiff ℝ (⊤ : ℕ∞) (φ n)) ∧ (∀ n, HasCompactSupport (φ n)) ∧
+      (∀ n, ∫ s, φ n s ^ 2 = 1) ∧ Tendsto (fun n ↦ ∫ s, deriv (φ n) s ^ 2) atTop (𝓝 0) ∧
+      (∀ n s, φ n s ≠ 0 → s ≤ S n) ∧ ∀ m n, m ≠ n → ∀ s, φ m s * φ n s = 0 := by
+  obtain ⟨a, haS, ha⟩ := exists_abs_le_and_add_two_mul_le S
+  -- The windows are the reflections of those used at `+∞`.
+  have hrefl (n : ℕ) (s : ℝ) : |s - -(a n + (n + 1))| = |-s - (a n + (n + 1))| := by
+    rw [← abs_neg]
+    ring_nf
+  refine ⟨fun n ↦ profile (-(a n + (n + 1))) (n + 1), fun n ↦ contDiff_profile _ _,
+    fun n ↦ hasCompactSupport_profile _ _, fun n ↦ integral_profile_sq (by positivity),
+    tendsto_integral_deriv_profile_sq _, fun n s hs ↦ ?_,
+    fun m n hmn ↦ profile_mul_profile_eq_zero (c := fun n ↦ -(a n + (n + 1)))
+      (fun m n hmn s hs ↦ ?_) hmn⟩
+  · have h := abs_sub_lt_of_profile_ne_zero hs
+    rw [abs_of_pos (by positivity : (0 : ℝ) < n + 1), abs_lt] at h
+    linarith [neg_abs_le (S n), haS n]
+  · rw [hrefl] at hs ⊢
+    exact le_abs_sub_of_abs_sub_lt ha hmn hs
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {e : ℝ → F}
 
@@ -362,16 +429,9 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_abs_sub_lt (he : Con
     hF.isClosed_range hF.finite_ker hF.closedComplemented_ker hbdd hTx.cauchySeq
   have hprev := ((prevL _).continuous.tendsto u).comp hlim
   have hdiff := (((hprev.comp (tendsto_add_atTop_nat 1)).sub hprev).norm.pow 2)
-  have hsep (n : ℕ) : 2 * m ^ 2 ≤ ‖prev _ (x (φ (n + 1))) - prev _ (x (φ n))‖ ^ 2 := by
-    refine two_mul_sq_le_norm_prev_sub_sq he.continuous hm.le hlow (hr _) (hr _) (fun s ↦ ?_)
-      (hx _) (hx _)
-    by_contra h
-    obtain ⟨h1, h2⟩ := mul_ne_zero_iff.1 h
-    have h3 := hdisj _ _ (hφ (Nat.lt_succ_self n)).ne' s (by
-      simpa [abs_of_pos (hr _)] using abs_sub_lt_of_profile_ne_zero h1)
-    have h4 := abs_sub_lt_of_profile_ne_zero h2
-    rw [abs_of_pos (hr _)] at h4
-    linarith
+  have hsep (n : ℕ) : 2 * m ^ 2 ≤ ‖prev _ (x (φ (n + 1))) - prev _ (x (φ n))‖ ^ 2 :=
+    two_mul_sq_le_norm_prev_sub_sq he.continuous hm.le hlow (hr _) (hr _)
+      (profile_mul_profile_eq_zero hdisj (hφ (Nat.lt_succ_self n)).ne') (hx _) (hx _)
   simp only [Function.comp_apply, prevL_apply, sub_self, norm_zero] at hdiff
   -- The squared distances tend to `0` but stay above `2 m² > 0`.
   have := ge_of_tendsto' hdiff hsep

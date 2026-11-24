@@ -348,6 +348,18 @@ theorem domainTrajectoryOperator_smulRightBaseW1pL_ae (ι A : D →L[ℝ] H) (a 
   rw [hD, weakFDeriv_smulRightBaseW1pL, prev_smulRightBaseW1pL, hg, hv,
     smulRightGradientL_apply, ContinuousLinearMap.toSpanSingleton_apply, map_smul]
 
+/-- On a single mode `s ↦ w s • a`, `familyDomainTrajectoryOperator ι A` acts as
+`s ↦ w' s • ι a + w s • A(s) a`. -/
+theorem familyDomainTrajectoryOperator_smulRightBaseW1pL_ae (ι : D →L[ℝ] H)
+    (A : Lp (D →L[ℝ] H) ∞ μΩ) (a : D) (w : W1p mu Omega p) :
+    familyDomainTrajectoryOperator ι A (smulRightBaseW1pL ι a w) =ᵐ[μΩ]
+      fun s ↦ ⟪W1p.gradient w s, (1 : ℝ)⟫_ℝ • ι a + W1p.value w s • A s a := by
+  filter_upwards [familyDomainTrajectoryOperator_apply_ae ι A (smulRightBaseW1pL ι a w),
+    (smulRightGradientL (ι a)).coeFn_compLpL (W1p.gradient w),
+    (ContinuousLinearMap.toSpanSingleton ℝ a).coeFn_compLpL (W1p.value w)] with s hD hg hv
+  rw [hD, weakFDeriv_smulRightBaseW1pL, prev_smulRightBaseW1pL, hg, hv,
+    smulRightGradientL_apply, ContinuousLinearMap.toSpanSingleton_apply, map_smul]
+
 omit [Fact (1 ≤ p)] in
 /-- When `A a = 0`, the squared `L²` norm of `domainTrajectoryOperator ι A` on the scalar
 test-function mode `smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ mu Omega 2 φ)` is
