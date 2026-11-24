@@ -29,7 +29,8 @@ For a map `u` into a symplectic vector space `(V, ω)`, the energy identity of
 
 * **The curvature is supported in `Σ_2`.** Off `Σ_R`, `R ≥ 2`, every point of `Σ` lies on the
   part `±s > R` of one of the four outer ends, where `K` is the cylindrical datum `H(t) dt`
-  (`SymplecticForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`).
+  (`SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`,
+  read at the constant two-form `ω`).
   So the integral of the curvature `R_K(u)` over `Σ_R` is its integral over `Σ` for every `R ≥ 2`
   (`SymplecticForm.setIntegral_hamiltonianCurvature_plumbedTruncation_eq`).
 * **The end actions are monotone.** For a solution of the Floer equation `(du - X_K)^{0,1} = 0`
@@ -92,7 +93,7 @@ the part `±s > R` of one of the four outer ends, where the plumbed datum is the
 `H(t) dt` of that end. This is
 `SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation` for
 the constant two-form `ω`. -/
-theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
+private theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
     (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
