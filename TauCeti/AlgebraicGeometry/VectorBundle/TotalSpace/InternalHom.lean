@@ -215,20 +215,8 @@ theorem totalSpaceHomEquiv_dual_comp_functional (E : FiniteLocallyFreeSheaf X) {
     (totalSpaceDualHomEquiv_apply E T e').trans
       (congrArg (· ≫ _) (totalSpaceIhomHomEquiv_apply E (𝟙_ _) T e'))
   rw [hφ, totalSpaceHomEquiv_apply E T e]
-  -- Evaluating at a section `s` of `M = q^* E` is the transpose of composing with `s`.
-  have key (s : 𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj E.obj)
-      (D : 𝟙_ T.left.Modules ⟶
-        (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).obj (𝟙_ T.left.Modules)) :
-      s ≫ uncurry' D = D ≫ (Scheme.Modules.dualHomUnitEquiv _).symm s := by
-    rw [Scheme.Modules.dualHomUnitEquiv_symm_apply, uncurry', uncurry_eq,
-      rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc,
-      leftUnitor_inv_naturality_assoc, unitors_inv_equal]
-  have hnat (g : 𝟙_ T.left.Modules ⟶ (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).obj
-      ((Scheme.Modules.pullback T.hom).obj (𝟙_ X.Modules))) :
-      uncurry' g ≫ (Scheme.Modules.pullbackObjUnitIso T.hom).hom =
-        uncurry' (g ≫ (ihom _).map (Scheme.Modules.pullbackObjUnitIso T.hom).hom) := by
-    rw [uncurry', uncurry', uncurry_natural_right, Category.assoc]
-  rw [hnat, key, Equiv.symm_apply_apply]
+  rw [← uncurry'_natural_right, Scheme.Modules.comp_uncurry'_eq_comp_dualHomUnitEquiv_symm,
+    Equiv.symm_apply_apply]
   simp only [Category.assoc, IsIso.hom_inv_id_assoc]
 
 end
