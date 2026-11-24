@@ -394,23 +394,6 @@ private theorem isIso_localHomologyMap_actionMap_comp_prodMap {G M B : Type} [To
   exact ⟨hΘF.subset, isIso_localHomologyMap R Θ hΘ hΘF
     (isClosed_singleton.preimage (mappingSpaceEval b₀).continuous) hFΘ n⟩
 
-/-- **A map on a local section in local homology.** If `s : U → X` is a section of `π : X → M`
-over an open set `U ∋ x₀`, then `π_* ∘ s_*` carries a local homology class at `x₀`, read in `U`,
-back to itself. -/
-private theorem localHomologyMap_section {X M : Type} [TopologicalSpace X] [TopologicalSpace M]
-    [T1Space M] {U : Set M} (hU : IsOpen U) (x₀ : U) (π : C(X, M)) (s : C(U, X))
-    (hπs : ∀ z : U, π (s z) = z) (hsU : s ⁻¹' (π ⁻¹' {(x₀ : M)}) ⊆ {x₀}) (R : ModuleCat.{0} ℤ)
-    (d : ℕ) (c : localHomology (A := ModuleCat.{0} ℤ) R {(x₀ : M)} d) :
-    (localHomologyMap R π subset_rfl d).hom
-        ((localHomologyMap R s hsU d).hom
-          ((localHomologyIsoOfIsOpenEmbedding R hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom c)) =
-      c := by
-  have hcomp : π.comp s = ⟨Subtype.val, continuous_subtypeVal⟩ := ContinuousMap.ext hπs
-  rw [← ModuleCat.comp_apply, localHomologyMap_comp, localHomologyMap_congr R hcomp _ d]
-  exact ConcreteCategory.congr_hom
-    (localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap R hU.isOpenEmbedding_subtypeVal
-      x₀ _ d) c
-
 /-- **Right translation by the stabilizer under the action map.** For `h` in the stabilizer of
 `x₀` fixing the class `α` of the based mapping space, the action map sends the relative cross
 products `(c h) × α` and `c × α` to the same class: `(g h) • u = g • (h • u)`, so the first is the
@@ -563,7 +546,8 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul
   have hLc := hχ _ Lπ hLπ c
   have hLz := hχ _ Lπ hLπ sO
   -- The orbit map sends `s_* o_U` to the local orientation.
-  rw [localHomologyMap_section hU x₀ π s (fun z ↦ (hπ _).trans (hs z)) hsU] at hLz
+  rw [localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_comp_apply R
+    hU.isOpenEmbedding_subtypeVal x₀ π s (fun z ↦ (hπ _).trans (hs z)) hsU subset_rfl d] at hLz
   rw [hc] at hLc
   -- The local orientation generates the local homology, so `Lπ c₁ = m • o` with
   -- `χ (s_* o_U) * m = 1` and `ℓ = χ c * m`.
@@ -582,24 +566,7 @@ section LivesOver
 variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {d : ℕ}
   {M : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M] [ChartedSpace V M]
   (o : HomologicalOrientation M V d) (hd : finrank ℝ V = d)
-
-/-- **The localization of a class covering `ℓ • [M]`.** If `π_* A = ℓ • [M]`, then `π` sends the
-localization of `A` at the fibre over `x₀` to `ℓ` times the local orientation at `x₀`. -/
-private theorem localHomologyMap_fiberLocalization {X : Type} [TopologicalSpace X] {x₀ : M}
-    (π : C(X, M)) {ℓ : ℤ}
-    {A : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
-      ModuleCat.{0} ℤ)}
-    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
-      d).hom A = ℓ • o.fundamentalClass hd) :
-    (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) π subset_rfl d).hom
-      ((fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) π x₀ d).hom A) = ℓ • (o x₀).val := by
-  have h := ConcreteCategory.congr_hom (homologyMap_comp_fiberLocalization
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) π (p := π) (p' := id) rfl x₀ d) A
-  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, hA, map_zsmul,
-    o.fiberLocalization_id_fundamentalClass hd] at h
-  exact h.symm
-
-variable {G : Type} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [MulAction G M]
+  {G : Type} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [MulAction G M]
   [ContinuousSMul G M]
 
 /-- **Classes of the action map living over the fundamental class** (the argument of
@@ -671,7 +638,8 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
       _ = (localHomologyMap R₂ Φ hΦS (d + k)).hom
             (crossG.hom ((localHomologyMap R sU hsU' d).hom oU ⊗ₜ (ℓ • α))) := by
           refine (o.localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul hd b₀ hU x₀ π hπ
-            hloc sU hsU hsU' hfix hΦS (o.localHomologyMap_fiberLocalization hd π hA)).trans ?_
+            hloc sU hsU hsU' hfix hΦS
+            (o.localHomologyMap_fiberLocalization_of_homologyMap_eq_zsmul hd π hA x₀)).trans ?_
           -- The `ℤ`-action on these carriers is `zsmul`, so name Mathlib's instance for it.
           exact congrArg _ (congrArg _ ((CompatibleSMul.int (R := ℤ)).smul_tmul ℓ _ α))
       _ = _ :=

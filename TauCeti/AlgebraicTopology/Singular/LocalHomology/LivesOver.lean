@@ -88,8 +88,10 @@ needed for the statements below.
   Theorem 5.15. Over a division ring, on a connected manifold, the classes of `Hₙ(M)` living over
   the fundamental class for the identity are the nonzero ones
   (`TauCeti.livesOverFundamentalClass_id_iff_ne_zero`).
-* **Classes of nonzero degree.** If `α ∈ Hₙ(E; ℤ)` satisfies `p_* α = d • [M]` with `d ≠ 0`, then
-  `α` lives over the fundamental class at every point
+* **Classes of nonzero degree.** If `α ∈ Hₙ(E; ℤ)` satisfies `p_* α = d • [M]`, then `p` sends the
+  localization of `α` at the fibre over `b` to `d` times the local orientation at `b`
+  (`TauCeti.HomologicalOrientation.localHomologyMap_fiberLocalization_of_homologyMap_eq_zsmul`), so
+  when `d ≠ 0`, `α` lives over the fundamental class at every point
   (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_of_homologyMap_eq_zsmul`). In
   particular, for a compact oriented `n`-manifold `S` and a map `φ : S → E` such that
   `(p ∘ φ)_*[S] = d • [M]` with `d ≠ 0`, the class `φ_*[S]` lives over the fundamental class
@@ -675,6 +677,21 @@ theorem fiberLocalization_id_fundamentalClass (b : M) :
     (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom (o.fundamentalClass hn) =
       (o b).val := by
   rw [fiberLocalization_id_apply, singularHomologyToLocalHomology_fundamentalClass]
+
+/-- **The localization of a class covering `d • [M]`.** If `p_* α = d • [M]`, then `p` sends the
+localization of `α` at the fibre over `b` to `d` times the local orientation `o b`. -/
+theorem localHomologyMap_fiberLocalization_of_homologyMap_eq_zsmul (p : C(E, M))
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} {d : ℤ}
+    (hα : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p))
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom α = d • o.fundamentalClass hn) (b : M) :
+    (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) p subset_rfl n).hom
+      ((fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) p b n).hom α) = d • (o b).val := by
+  have h := ConcreteCategory.congr_hom (homologyMap_comp_fiberLocalization
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) p (p := p) (p' := id) rfl b n) α
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, hα, map_zsmul,
+    o.fiberLocalization_id_fundamentalClass hn] at h
+  exact h.symm
 
 include hn in
 /-- **Multiples of the fundamental class.** For the identity of a compact oriented manifold, the
