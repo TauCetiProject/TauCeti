@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Bilinear
 public import TauCeti.Algebra.Star.TensorProductLift
 public import TauCeti.Analysis.CStarAlgebra.GNS.RightRepresentation
 
@@ -20,8 +21,9 @@ algebraic tensor product `A ⊗ Aᵐᵒᵖ`, `a ⊗ bᵒᵖ ↦ π_f(a) π_fᵒ�
 
 The *tensor functional* `PositiveLinearMap.gnsTensorFunctional` is the linear functional
 `μ_f(a ⊗ bᵒᵖ) = f (a b)` on `A ⊗ Aᵐᵒᵖ`, that is `f` composed with the multiplication map
-`LinearMap.mulUnop' : A ⊗ Aᵐᵒᵖ → A`. It is defined for every positive functional. For tracial `f`,
-`μ_f(s⋆ t) = f ((m s)⋆ (m t))` with `m` the multiplication map
+`LinearMap.mulUnop' : A ⊗ Aᵐᵒᵖ → A` (`TauCeti.Algebra.Algebra.Bilinear`,
+`PositiveLinearMap.gnsTensorFunctional_apply`). It is defined for every positive functional. For
+tracial `f`, `μ_f(s⋆ t) = f ((m s)⋆ (m t))` with `m` the multiplication map
 (`PositiveLinearMap.gnsTensorFunctional_star_mul`), so `μ_f` is positive
 (`PositiveLinearMap.gnsTensorFunctional_star_mul_self_nonneg`).
 
@@ -40,19 +42,6 @@ public section
 
 open scoped InnerProductSpace ComplexOrder TensorProduct
 open MulOpposite
-
-/-- Multiplication `A ⊗ Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`. -/
-noncomputable def LinearMap.mulUnop' (R A : Type*) [CommSemiring R] [NonUnitalSemiring A]
-    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] : A ⊗[R] Aᵐᵒᵖ →ₗ[R] A :=
-  LinearMap.mul' R A ∘ₗ
-    TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv R).symm.toLinearMap
-
-/-- `LinearMap.mulUnop'` on elementary tensors. -/
-@[simp]
-theorem LinearMap.mulUnop'_tmul {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
-    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] (a : A) (b : Aᵐᵒᵖ) :
-    LinearMap.mulUnop' R A (a ⊗ₜ b) = a * b.unop :=
-  (rfl)
 
 namespace PositiveLinearMap
 
@@ -91,11 +80,18 @@ noncomputable def gnsTensorFunctional : A ⊗[ℂ] Aᵐᵒᵖ →ₗ[ℂ] ℂ :=
   (f : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mulUnop' ℂ A
 
 omit [StarOrderedRing A] in
+/-- The tensor functional is `f` composed with the multiplication map:
+`μ_f(t) = f (m t)` for every tensor `t`. -/
+theorem gnsTensorFunctional_apply (t : A ⊗[ℂ] Aᵐᵒᵖ) :
+    f.gnsTensorFunctional t = f (LinearMap.mulUnop' ℂ A t) :=
+  (rfl)
+
+omit [StarOrderedRing A] in
 /-- The tensor functional on elementary tensors: `μ_f(a ⊗ bᵒᵖ) = f (a b)`. -/
 @[simp]
 theorem gnsTensorFunctional_tmul (a : A) (b : Aᵐᵒᵖ) :
-    f.gnsTensorFunctional (a ⊗ₜ b) = f (a * b.unop) :=
-  (rfl)
+    f.gnsTensorFunctional (a ⊗ₜ b) = f (a * b.unop) := by
+  rw [gnsTensorFunctional_apply, LinearMap.mulUnop'_tmul]
 
 omit [StarOrderedRing A] in
 /-- For tracial `f`, the tensor functional at `s⋆ t` is `f` at `(m s)⋆ (m t)`, for `m` the

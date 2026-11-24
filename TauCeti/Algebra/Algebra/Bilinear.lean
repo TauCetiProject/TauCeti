@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -15,6 +16,9 @@ The multiplication map `LinearMap.mul' R A : A ⊗[R] A → A` intertwines left 
 the first tensor factor with left multiplication on `A`, and right multiplication on the second
 tensor factor with right multiplication on `A`.  These identities show, for instance, that the
 kernel of multiplication is stable under the outer bimodule actions.
+
+The multiplication map `LinearMap.mulUnop' R A : A ⊗[R] Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`, is the
+variant with the second factor read in the opposite algebra.
 -/
 
 public section
@@ -49,3 +53,16 @@ theorem mul'_lTensor_mulRight (a : A) (t : A ⊗[R] A) :
 end LinearMap
 
 end TauCeti
+
+/-- Multiplication `A ⊗ Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`. -/
+noncomputable def LinearMap.mulUnop' (R A : Type*) [CommSemiring R] [NonUnitalSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] : A ⊗[R] Aᵐᵒᵖ →ₗ[R] A :=
+  LinearMap.mul' R A ∘ₗ
+    TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv R).symm.toLinearMap
+
+/-- `LinearMap.mulUnop'` on elementary tensors. -/
+@[simp]
+theorem LinearMap.mulUnop'_tmul {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] (a : A) (b : Aᵐᵒᵖ) :
+    LinearMap.mulUnop' R A (a ⊗ₜ b) = a * b.unop :=
+  (rfl)
