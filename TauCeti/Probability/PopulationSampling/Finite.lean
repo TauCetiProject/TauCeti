@@ -47,6 +47,8 @@ of the latter's sampling law, without separation assumptions on the value space.
   with sampling;
 * `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
   deterministic-population composition forms;
+* `sampleWithoutReplacement_dirac_const`, `sampleWithReplacement_dirac_const`: a constant
+  population is sampled as its constant word;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -201,6 +203,17 @@ theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ
   rw [sampleWithoutReplacement_def]
   infer_instance
 
+/-- Sampling a constant population without replacement returns the constant word almost surely,
+whenever an injective selection exists. -/
+theorem sampleWithoutReplacement_dirac_const {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (e : ι ↪ κ) (c : α) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac fun _ : κ => c) =
+      Measure.dirac fun _ => c := by
+  have : Finite ι := Finite.of_injective e e.injective
+  have := isProbabilityMeasure_uniformOn (Set.toFinite {k : ι → κ | Function.Injective k})
+    ⟨e, e.injective⟩
+  rw [sampleWithoutReplacement_dirac, Measure.map_const, measure_univ, one_smul]
+
 section EmpiricalPopulation
 
 variable {κ : Type*} [Fintype κ] [Nonempty κ] [MeasurableSpace κ]
@@ -334,6 +347,12 @@ theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Non
     IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) := by
   rw [sampleWithReplacement_eq_samplePopulation_uniformOn]
   infer_instance
+
+/-- Sampling a constant population with replacement returns the constant word almost surely,
+whenever a selection exists. -/
+theorem sampleWithReplacement_dirac_const [Fintype ι] [Finite κ] [Nonempty (ι → κ)] (c : α) :
+    sampleWithReplacement (ι := ι) (Measure.dirac fun _ : κ => c) = Measure.dirac fun _ => c := by
+  rw [sampleWithReplacement_dirac, Measure.map_const, measure_univ, one_smul]
 
 /-- Sampling with replacement is the mixture of the finite product measures of the populations'
 empirical distributions. -/

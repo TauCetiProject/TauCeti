@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Gluing
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
 public import Mathlib.Topology.ContinuousMap.LocallyConvex
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 
@@ -120,6 +121,15 @@ theorem continuous_frameJet_apply (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
   let _ := frameTopology (I := I) (n := n) e U hU
   exact (continuous_frameTopology_iff (I := I) (n := n) e U hU).mp continuous_id i x m hm
 
+/-- A frame-coordinate jet at a chosen coordinate point depends continuously on the section. -/
+theorem continuous_frameJetAt (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).frameJetAt (hU i) x m hm z) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  rw [funext ((e i).frameJetAt_apply (hU i) x m hm z)]
+  exact (continuous_eval_const z).comp (continuous_frameJet_apply e U hU i x m hm)
+
 /-- Addition and subtraction are continuous for the frame topology. -/
 theorem isTopologicalAddGroup_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U hU
@@ -185,6 +195,52 @@ theorem continuous_frameTopology_iff_frameCoordinates {P : Type*} [TopologicalSp
     apply (continuous_frameTopology_iff e U hU).mpr
     intro i x m hm
     exact (ContMDiffMap.continuous_chartIteratedFDeriv x m hm).comp (hs i)
+
+/-- A section map is continuous for the frame topologies if, on each common frame domain, its
+coordinates are a fixed smooth family of continuous linear maps applied to the source
+coordinates. The family may depend on the frame index and on the base point, but not on the
+section. No covering assumption on the frame domains is required. -/
+theorem continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] [ContMDiffVectorBundle n G W I]
+    (e' : ι → Trivialization G (π G W)) [∀ i, MemTrivializationAtlas (e' i)]
+    (hU' : ∀ i, (U i : Set M) ⊆ (e' i).baseSet)
+    {f : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯} (A : ∀ i, C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯)
+    (hf : ∀ i s, (e' i).frameCoordinates (hU' i) (f s) =
+      ContMDiffMap.clmApplyLinearMap (A i) ((e i).frameCoordinates (hU i) s)) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    let _ := frameTopology (I := I) (n := n) e' U hU'
+    Continuous f := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := frameTopology (I := I) (n := n) e' U hU'
+  apply (continuous_frameTopology_iff_frameCoordinates e' U hU').mpr
+  intro i
+  exact ((ContMDiffMap.continuous_clmApplyLinearMap (A i)).comp
+    (continuous_frameCoordinates e U hU i)).congr fun s ↦ (hf i s).symm
+
+/-- A section map is continuous for the frame topologies if, on each common frame domain, its
+coordinates are a fixed continuous linear map applied to the source coordinates. The model map
+may depend on the frame index, but not on the base point or section. No covering assumption on
+the frame domains is required. -/
+theorem continuous_frameTopology_of_frameCoordinates_eq_clm_apply
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] [ContMDiffVectorBundle n G W I]
+    (e' : ι → Trivialization G (π G W)) [∀ i, MemTrivializationAtlas (e' i)]
+    (hU' : ∀ i, (U i : Set M) ⊆ (e' i).baseSet)
+    {f : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯} (L : ι → F →L[𝕜] G)
+    (hf : ∀ i s (x : U i),
+      (e' i).frameCoordinates (hU' i) (f s) x = L i ((e i).frameCoordinates (hU i) s x)) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    let _ := frameTopology (I := I) (n := n) e' U hU'
+    Continuous f :=
+  continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U hU e' hU'
+    (fun i ↦ ContMDiffMap.const (L i)) fun i s ↦ ContMDiffMap.ext fun x ↦ by
+      rw [ContMDiffMap.clmApplyLinearMap_apply]
+      exact hf i s x
 
 /-- The topology on sections is induced by their tuple of weak Whitney frame coefficients,
 as well as by their coordinate jets. -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
-import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -33,6 +33,9 @@ topological complement of the range, and the projection onto it along the range 
 family; see `ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod` and
 `ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`.
 
+An invertible operator has the kernel chart with zero stabilization and coordinate spaces
+(`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`).
+
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -45,6 +48,28 @@ open Function Set Topology
 open Submodule (IsTopCompl)
 
 namespace ContinuousLinearMap
+
+section Subsingleton
+
+variable {𝕜 E Λ F G : Type*} [Semiring 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommMonoid Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [Subsingleton Λ] [AddCommMonoid F]
+  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommMonoid G] [Module 𝕜 G]
+  [TopologicalSpace G] [Subsingleton G]
+
+/-- **The zero kernel chart.** An invertible operator has a kernel chart with zero stabilization
+space and zero coordinate space: the pair `((T.coprod D₂).prod q)` is then `T` itself, up to the
+zero factors. -/
+theorem IsInvertible.prod_coprod_of_subsingleton {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F}
+    {q : E × Λ →L[𝕜] G} (hT : T.IsInvertible) : ((T.coprod D₂).prod q).IsInvertible := by
+  obtain ⟨e, rfl⟩ := hT
+  let z : Λ ≃L[𝕜] G :=
+    { LinearEquiv.ofSubsingleton Λ G with
+      continuous_toFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+      continuous_invFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _ }
+  refine ⟨e.prodCongr z, ContinuousLinearMap.ext fun ⟨x, l⟩ ↦ Prod.ext ?_ (Subsingleton.elim _ _)⟩
+  simp [Subsingleton.elim l 0]
+
+end Subsingleton
 
 variable {𝕜 E F S : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]

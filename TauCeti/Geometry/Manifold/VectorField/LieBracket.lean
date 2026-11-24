@@ -339,6 +339,7 @@ theorem lieBracketWithin_neg_right {V W : E → E} {s : Set E} {x : E}
 
 omit [CompleteSpace E] in
 /-- Negating the second vector field negates the manifold Lie bracket. -/
+@[simp]
 theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I V (-W) x = -mlieBracket I V W x := by
   have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
@@ -351,6 +352,7 @@ theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
 
 omit [CompleteSpace E] in
 /-- Negating the first vector field negates the manifold Lie bracket. -/
+@[simp]
 theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I (-V) W x = -mlieBracket I V W x := by
   rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]

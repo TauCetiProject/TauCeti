@@ -30,6 +30,9 @@ same formula computes its coefficients.
   are the signed coefficients of `∏ i, (X - C (x i))`.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
+* `Polynomial.coeff_reverse_eq_esymm_roots_of_card`: for a polynomial with as many roots as its
+  degree, the coefficient `a_k` of `X^(n-k)`, extended by `0` for `k > n`, is
+  `a₀ (-1)ᵏ e_k(roots)`.
 
 Evaluated at a point `v`, the product `P(v) = ∏_{w ∈ s} (v - w)` of a multiset `s` of `m` elements
 is `vᵐ + ∑_{j=1}^{m} (-1)ʲ e_j(s) v^(m-j)`, and its derivative at a root `v ∈ s` is
@@ -41,6 +44,8 @@ first-order equations for the coefficients of `P` become equations for its simpl
 * `Multiset.prod_map_sub_eq_pow_add_sum_esymm`: `∏_{w ∈ s} (v - w) = vᵐ + ∑ (-1)ʲ e_j(s) v^(m-j)`.
 * `Multiset.prod_map_sub_eq_zero_iff`: over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly
   when `v ∈ s`.
+* `Multiset.eq_zero_of_mem_of_forall_esymm_eq_zero`: over a reduced ring, a multiset whose
+  elementary symmetric functions of positive degree vanish consists of zeros.
 * `Multiset.prod_map_sub_erase_eq_sum_esymm`: the derivative at a root,
   `∏_{w ∈ s ∖ v} (v - w) = m v^(m-1) + ∑ (-1)ʲ (m - j) e_j(s) v^(m-j-1)`.
 * `Multiset.prod_map_sub_erase_ne_zero`: it is nonzero at a simple root of a multiset over a
@@ -82,6 +87,18 @@ theorem eq_prod_X_sub_C_of_monic_of_roots_eq {f : R[X]} {s : Finset σ} {x : σ 
   rw [← prod_multiset_X_sub_C_of_monic_of_roots_card_eq hf (by simp [hroots, hdeg]), hroots,
     Multiset.map_map, Function.comp_def, Finset.prod_map_val]
 
+/-- **Vieta's formulas, indexed from the leading term.** If `p = a₀ Xⁿ + a₁ Xⁿ⁻¹ + ⋯ + aₙ` has
+`n` roots with multiplicity, then for every `k` the coefficient `a_k = p.reverse.coeff k` (which is
+`0` for `k > n`) is `a₀ * (-1) ^ k * e_k(roots p)`. -/
+theorem coeff_reverse_eq_esymm_roots_of_card {p : R[X]}
+    (hroots : Multiset.card p.roots = p.natDegree) (k : ℕ) :
+    p.reverse.coeff k = p.leadingCoeff * (-1) ^ k * p.roots.esymm k := by
+  rw [coeff_reverse]
+  rcases le_or_gt k p.natDegree with hk | hk
+  · rw [revAt_le hk, coeff_eq_esymm_roots_of_card hroots (Nat.sub_le _ _), Nat.sub_sub_self hk]
+  · rw [revAt_eq_self_of_lt hk, coeff_eq_zero_of_natDegree_lt hk,
+      Multiset.esymm_of_card_lt (hroots ▸ hk), mul_zero]
+
 end Polynomial
 
 namespace Multiset
@@ -117,6 +134,16 @@ theorem prod_map_sub_eq_pow_add_sum_esymm (hs : card s = m) (v : R) :
 /-- Over a domain, `v` is a root of `∏_{w ∈ s} (W - w)` exactly when `v ∈ s`. -/
 theorem prod_map_sub_eq_zero_iff [IsDomain R] : (s.map fun w ↦ v - w).prod = 0 ↔ v ∈ s := by
   simp [prod_eq_zero_iff, sub_eq_zero]
+
+/-- Over a reduced ring, if the elementary symmetric functions of positive degree of `s` vanish,
+then every element of `s` is `0`: it is a root of `∏_{w ∈ s} (W - w) = Wᵐ`. -/
+theorem eq_zero_of_mem_of_forall_esymm_eq_zero [IsReduced R] (h : ∀ j, j ≠ 0 → s.esymm j = 0)
+    (hv : v ∈ s) : v = 0 := by
+  have hP := prod_map_sub_eq_pow_add_sum_esymm (s := s) rfl v
+  rw [prod_eq_zero (mem_map.2 ⟨v, hv, sub_self v⟩), Finset.sum_eq_zero fun j hj ↦ by
+    rw [h j (Nat.one_le_iff_ne_zero.1 (Finset.mem_Icc.1 hj).1), mul_zero, zero_mul],
+    add_zero] at hP
+  exact IsNilpotent.eq_zero ⟨_, hP.symm⟩
 
 variable [DecidableEq R]
 

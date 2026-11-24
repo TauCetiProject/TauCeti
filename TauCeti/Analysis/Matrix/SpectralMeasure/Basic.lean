@@ -63,6 +63,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   polynomial have the same spectral measure;
 * `Matrix.spectralMeasure_units_conj`, `Matrix.eigenvalueMeasure_units_conj` — both measures are
   invariant under conjugation by an invertible matrix;
+* `Matrix.IsHermitian.spectralMeasure_pos_iff` — the spectral measure charges a set if and only if
+  some eigenvalue lies in it;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
@@ -125,6 +127,14 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     (hA : A.IsHermitian) :
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
+
+/-- The empirical spectral measure of a Hermitian matrix charges a set if and only if some
+eigenvalue lies in it. The set need not be measurable. -/
+theorem IsHermitian.spectralMeasure_pos_iff {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {s : Set ℝ} :
+    0 < (A.spectralMeasure hA : Measure ℝ) s ↔ ∃ k, hA.eigenvalues₀ k ∈ s := by
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    empiricalMeasureOfFintype_pos_iff]
 
 /-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
 Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
@@ -257,6 +267,16 @@ theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCom
     ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
+
+/-- Integrating a continuous function against a Hermitian spectral measure depends
+continuously on the matrix. The test function need not be bounded. -/
+@[fun_prop] theorem continuous_integral_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} ↦
+      ∫ x, f x ∂(A.val.spectralMeasure A.property : Measure ℝ)) := by
+  simp_rw [integral_spectralMeasure_eq_sum_eigenvalues₀]
+  exact (continuous_finsetSum _ fun i _ ↦
+    hf.comp ((continuous_apply i).comp continuous_eigenvalues₀)).const_smul _
 
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/

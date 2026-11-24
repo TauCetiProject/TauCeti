@@ -169,7 +169,7 @@ theorem factorSetFun_abelianizationProPExtensionSection (q r : G ⧸ V) :
 
 /-- Conjugation in the extension induces the canonical quotient action on `Vᵃᵇ(p)`. -/
 theorem abelianizationProPExtension_inducesAction :
-    TauCeti.GroupExtension.InducesAction (abelianizationProPExtension p G V) := by
+    GroupExtension.InducesAction (abelianizationProPExtension p G V) := by
   let S := abelianizationProPExtension p G V
   apply (GroupExtension.inducesAction_iff_conjActOfSection_eq
     (abelianizationProPExtensionSection p G V)).mpr

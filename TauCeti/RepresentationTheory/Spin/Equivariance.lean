@@ -48,7 +48,7 @@ public section
 
 namespace TauCeti
 
-open CliffordAlgebra
+open _root_.CliffordAlgebra
 
 universe u v
 

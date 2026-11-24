@@ -58,7 +58,6 @@ noncomputable def complex : CochainComplex (ModuleCat.{v} A) ℕ :=
       simp
 
 /-- The degree-`n` object of the de Rham complex is the module of differential `n`-forms. -/
-@[simp]
 theorem complex_X (n : ℕ) : (complex A B).X n = ModuleCat.of A (Forms A B n) :=
   rfl
 

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -30,7 +31,8 @@ normal form of such forms.
 In the other direction, `LinearMap.BilinForm.toMatrix` reads a bilinear form in a basis as its
 Gram matrix. For a nondegenerate form, the Gram matrix in the `B`-dual basis is the inverse
 transpose of the Gram matrix in the original basis; for a symmetric form it is the inverse Gram
-matrix, which is how the dual of a lattice is described in coordinates. Likewise, the
+matrix, which is how the dual of a lattice is described in coordinates. The `B`-dual basis itself
+is obtained from the original basis by the inverse Gram matrix. Likewise, the
 coordinates of a vector are recovered from its pairings with the basis vectors through the inverse
 Gram matrix.
 
@@ -51,21 +53,30 @@ parity condition holds.
 
 Pullback along a rectangular matrix preserves alternation over a commutative semiring. Over a
 commutative ring, alternation is equivalent to skew-symmetry together with a zero diagonal;
-the diagonal condition remains necessary in characteristic two.
+the diagonal condition remains necessary in characteristic two. In a basis, the Gram matrix of an
+alternating form is `Z - Zᵀ`, with `Z` its strictly upper triangular part.
 
 ## Main results
 
 * `Matrix.isAlt_toBilin'_transpose_mul_mul`: rectangular pullback preserves alternation.
+* `Matrix.sum_sum_transpose_mul_mul_apply_mul`: a bilinear map summed against the entries of
+  `Wᵀ A W` on vectors `eₖ` is the bilinear map summed against the entries of `A` on the vectors
+  `∑ₖ Wᵢₖ eₖ`.
 * `Matrix.isAlt_toBilin'_iff`: alternation is skew-symmetry and a zero diagonal over any
   commutative ring.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
+* `Matrix.toBilin_apply_basis`, `Matrix.toBilin_one_apply`, `Matrix.nondegenerate_toBilin_one`,
+  `Matrix.toBilin_one_apply_self_nonneg`: evaluation on basis vectors, coordinate dot-product
+  formula, nondegeneracy, and diagonal nonnegativity for the identity-matrix form in a finite basis.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
   commutative ring.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
   basis is the inverse transpose of its Gram matrix in the original basis.
 * `LinearMap.BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix`: the Gram determinants of a
   nondegenerate form in a basis and in its `B`-dual basis are inverse to each other.
+* `LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul`: the `B`-dual basis is obtained
+  from the basis by the inverse Gram matrix.
 * `LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply`: the coordinates of a
   vector in a basis are its pairings with the basis, contracted against the inverse Gram matrix.
 * `LinearMap.BilinForm.separatingLeft_of_toMatrix_mul_eq_smul`: over a domain, a form whose Gram
@@ -83,6 +94,8 @@ the diagonal condition remains necessary in characteristic two.
   up to isometry by `B` and conversely: such pairs `(B₁, D₁)` and `(B₂, D₂)` have `B₁ ≅ B₂` exactly
   when `D₁ ≅ D₂`. On a lattice `D` is the form `c B⁻¹`, read on the dual lattice, so this compares
   isometry classes of lattices with those of their `c`-scaled duals.
+* `LinearMap.BilinForm.exists_toMatrix_eq_sub_transpose_of_isAlt`: an alternating form has a Gram
+  matrix of the form `Z - Zᵀ`.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
 * `LinearMap.BilinForm.toMatrix_reindex`, `LinearMap.BilinForm.det_toMatrix_reindex`: reindexing
@@ -114,6 +127,45 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
   refine ⟨fun h => ⟨fun i => by simpa using h (Pi.single i 1)⟩, fun hn x => ?_⟩
   simp [Subsingleton.elim x 0]
 
+/-- Evaluating `Matrix.toBilin b A` on basis vectors `b i` and `b j` recovers the matrix entry
+`A i j`. -/
+theorem toBilin_apply_basis {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) (A : Matrix n n R) (i j : n) :
+    Matrix.toBilin b A (b i) (b j) = A i j := by
+  rw [← LinearMap.BilinForm.toMatrix_apply b, LinearMap.BilinForm.toMatrix_toBilin]
+
+/-- The standard bilinear form attached to the identity matrix in a finite basis `b` evaluates to
+the coordinate dot product `∑ i, b.repr x i * b.repr y i`. -/
+theorem toBilin_one_apply {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) (x y : M) :
+    Matrix.toBilin b (1 : Matrix n n R) x y = ∑ i, b.repr x i * b.repr y i := by
+  simp only [Matrix.toBilin_apply, Matrix.one_apply, mul_ite, mul_one, mul_zero, ite_mul,
+    zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+
+/-- The standard bilinear form attached to the identity matrix in a finite basis is
+nondegenerate. -/
+theorem nondegenerate_toBilin_one {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) :
+    (Matrix.toBilin b (1 : Matrix n n R)).Nondegenerate := by
+  refine ⟨fun x hx ↦ b.repr.injective ?_, fun y hy ↦ b.repr.injective ?_⟩
+  · ext i
+    have hi := hx (b i)
+    rw [toBilin_one_apply] at hi
+    simpa [Finsupp.single_apply] using hi
+  · ext i
+    have hi := hy (b i)
+    rw [toBilin_one_apply] at hi
+    simpa [Finsupp.single_apply] using hi
+
+/-- Over a linearly ordered commutative ring, the identity-matrix bilinear form in a finite basis
+has nonnegative diagonal values. -/
+theorem toBilin_one_apply_self_nonneg {n R M : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [LinearOrder R] [IsOrderedRing R] [AddCommMonoid M] [Module R M]
+    (b : Module.Basis n R M) (x : M) :
+    0 ≤ Matrix.toBilin b (1 : Matrix n n R) x x := by
+  rw [toBilin_one_apply]
+  exact Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _
+
 section BilinearAlternation
 
 variable {R I J : Type*} [CommSemiring R] [DecidableEq I] [Fintype I]
@@ -131,6 +183,33 @@ theorem apply_self_eq_zero_of_isAlt_toBilin' {Λ : Matrix I I R}
   simpa using hΛ.self_eq_zero (Pi.single i 1)
 
 end BilinearAlternation
+
+section BilinearSum
+
+/-- Summing a bilinear map `B` against the entries of `Wᵀ A W` on a family of vectors `e` is
+summing it against the entries of `A` on the vectors `∑ₖ Wᵢₖ eₖ`. -/
+theorem sum_sum_transpose_mul_mul_apply_mul {R M I J : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype I] [Fintype J] (A : Matrix I I R) (W : Matrix I J R)
+    (B : M →ₗ[R] M →ₗ[R] R) (e : J → M) :
+    ∑ k, ∑ l, (Wᵀ * A * W) k l * B (e k) (e l) =
+      ∑ i, ∑ j, A i j * B (∑ k, W i k • e k) (∑ l, W j l • e l) := by
+  have hcomm (f : J → J → I → I → R) :
+      ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i :=
+    calc ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ k, ∑ l, ∑ i, ∑ j, f k l j i :=
+          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ k, ∑ i, ∑ l, ∑ j, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ i, ∑ k, ∑ l, ∑ j, f k l j i := Finset.sum_comm
+      _ = ∑ i, ∑ k, ∑ j, ∑ l, f k l j i :=
+          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    smul_eq_mul, Matrix.mul_apply, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
+  rw [hcomm]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+end BilinearSum
 
 section BilinearAlternationRing
 
@@ -199,11 +278,10 @@ theorem toMatrix_dualBasis (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) 
   refine (Matrix.inv_eq_left_inv ?_).symm
   ext i j
   calc (toMatrix (B.dualBasis hB b) B * (toMatrix b B)ᵀ) i j
-      = B (B.dualBasis hB b i)
-          (∑ k, (B.dualBasis hB b).repr (b j) k • B.dualBasis hB b k) := by
-        simp [Matrix.mul_apply, toMatrix_apply, dualBasis_repr_apply, mul_comm]
+      = ∑ k, B (b j) (b k) • B (B.dualBasis hB b i) (B.dualBasis hB b k) := by
+        simp only [Matrix.mul_apply, toMatrix_apply, transpose_apply, smul_eq_mul, mul_comm]
     _ = (1 : Matrix ι ι K) i j := by
-        rw [(B.dualBasis hB b).sum_repr, apply_dualBasis_left, Matrix.one_apply]
+        rw [sum_apply_smul_apply_dualBasis B hB b, apply_dualBasis_left, Matrix.one_apply]
         simp only [eq_comm]
 
 /-- The Gram determinants of a nondegenerate bilinear form in a basis and in its `B`-dual basis
@@ -212,6 +290,17 @@ theorem det_toMatrix_dualBasis_mul_det_toMatrix (B : LinearMap.BilinForm K V) (h
     (b : Basis ι K V) : (toMatrix (B.dualBasis hB b) B).det * (toMatrix b B).det = 1 := by
   rw [toMatrix_dualBasis, det_nonsing_inv, det_transpose,
     Ring.inverse_mul_cancel _ (isUnit_iff_ne_zero.mpr ((nondegenerate_iff_det_ne_zero b).mp hB))]
+
+/-- **The dual basis through the inverse Gram matrix**: the `i`-th vector of the `B`-dual basis
+of `b` is `∑ⱼ (G⁻¹)ᵢⱼ bⱼ`, where `G = (B (b i) (b j))` is the Gram matrix of `B` in `b`. -/
+theorem dualBasis_apply_eq_sum_inv_toMatrix_smul (B : LinearMap.BilinForm K V)
+    (hB : B.Nondegenerate) (b : Basis ι K V) (i : ι) :
+    B.dualBasis hB b i = ∑ j, (toMatrix b B)⁻¹ i j • b j := by
+  -- Expand `B.dualBasis hB b i` in `b`: its coefficients are entries of the Gram matrix of the
+  -- dual basis, which is the inverse transpose of the Gram matrix in `b`.
+  conv_lhs => rw [← sum_apply_dualBasis_smul hB b (B.dualBasis hB b i)]
+  simp_rw [← toMatrix_apply, toMatrix_dualBasis, ← Matrix.transpose_nonsing_inv,
+    Matrix.transpose_apply]
 
 /-- **Coordinates from pairings.** For a nondegenerate bilinear form `B` and a basis `b`, the
 `k`-th coordinate of a vector `v` is `Σ_l B^(kl) B(b l, v)`, where `B^(kl)` is the inverse of the
@@ -403,6 +492,24 @@ theorem equivalent_iff_equivalent_of_toMatrix_mul_eq_smul {B₁ D₁ : BilinForm
       ((Matrix.mul_eq_smul_one_comm hc).mp h₂)⟩
 
 end Dual
+
+section Alternating
+
+open LinearMap (BilinForm)
+
+/-- The Gram matrix of an alternating bilinear form is of the form `Z - Zᵀ`. -/
+theorem exists_toMatrix_eq_sub_transpose_of_isAlt {R M ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Fintype ι] [DecidableEq ι] (b : Basis ι R M) {D : BilinForm R M}
+    (hD : D.IsAlt) : ∃ Z : Matrix ι ι R, D.toMatrix b = Z - Zᵀ := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  refine ⟨Matrix.of fun i j => if i < j then D (b i) (b j) else 0, ?_⟩
+  ext i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [toMatrix_apply, Function.swap, h, h.not_gt]
+  · simp [toMatrix_apply, hD.self_eq_zero]
+  · simp [toMatrix_apply, Function.swap, h, h.not_gt, ← hD.neg_eq (b j) (b i)]
+
+end Alternating
 
 /-! ### Gram determinants -/
 

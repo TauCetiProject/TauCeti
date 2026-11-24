@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Fredholm.Spectral.Flow
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
-public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The spectral flow in finite dimensions
@@ -30,42 +28,43 @@ spectral cut of `A` on all of `[a, b]` (`TauCeti.isSpectralCutOn_of_forall_norm_
 of eigenvalues of `A t` in `[0, c]` is then the number `dim H - n⁻(A t)` of its nonnegative
 eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 
-Two consequences are recorded.
+For a scalar path `t ↦ f t • 1` with `f` continuous on `[a, b]`, the one eigenvalue `f t` has full
+multiplicity, so the spectral flow is the dimension of `H` times the change of the indicator of
+`0 ≤ f` between the endpoints (`TauCeti.spectralFlow_algebraMap_comp`): its net number of upward
+crossings of `0` is `1`, `0` or `-1`. For `f a < 0 ≤ f b` the eigenvalue's net crossing of `0` is
+upward and the spectral flow is the dimension; this is the sign convention in which positive
+crossings count positively.
 
-* **Negation.** When the endpoints are invertible, the spectral flow of `-A` is minus that of `A`
-  (`TauCeti.spectralFlow_neg`): the negative eigenvalues of `-T` are the positive eigenvalues of
-  `T`, and `n⁺(T) + n⁻(T) = dim H` for invertible `T`.
-* **The regular-crossing formula.** On a real space, if the endpoints are invertible and every
-  crossing `t`, a time at which `A t` is not injective, is regular, that is, `A` has a derivative
-  `A' t` there and the crossing form `v ↦ ⟪A' t v, v⟫` on the kernel of `A t` is nondegenerate,
-  then the spectral flow is the sum over the crossings of the signatures of the crossing forms
-  (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`). Positive crossings count
-  positively. This is Robbin and Salamon's formula, and it rests on the drop of the negative index
-  along a path of symmetric bilinear forms with regular crossings
-  (`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`).
+Every operator on a finite-dimensional space is Fredholm, so the regular-crossing formula of
+`TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`
+(`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`) applies to every continuous path
+of self-adjoint operators on a finite-dimensional real space with invertible endpoints and regular
+crossings.
 
-These are the finite-dimensional forms of the statements that the spectral flow of `A` is the
-index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
-`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`.
+This is the finite-dimensional form of the statement that the spectral flow of `A` is the index
+of the trajectory operator `d/ds + A`; see
+`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`. The form for
+`d/ds - A` also needs `TauCeti.spectralFlow_neg_of_ker_eq_bot` from `Fredholm/Spectral/Neg.lean`.
 
 ## Main results
 
 * `TauCeti.isSpectralCutOn_iff_of_finiteDimensional`: in finite dimensions a spectral cut is a
   positive `c` with `±c` outside the spectra.
 * `TauCeti.isSpectralCutOn_of_forall_norm_lt`: a bound on the norms gives a spectral cut.
+* `TauCeti.spectralCount_eq_finrank_pointSpectralSubspace_Icc`: the local count is the number of
+  eigenvalues in `[0, c]`.
 * `TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`: above the norm, the local count is the
   number of nonnegative eigenvalues.
 * `TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`: the spectral flow is
   `n⁻(A a) - n⁻(A b)`.
-* `TauCeti.spectralFlow_neg`: negating a path with invertible endpoints negates its spectral flow.
-* `TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the regular-crossing formula.
+* `TauCeti.spectralFlow_algebraMap_comp`: the spectral flow of a scalar path.
 
 ## References
 
 * J. Phillips, *Self-adjoint Fredholm operators and spectral flow*, Canad. Math. Bull. **39**
   (1996), 460--467.
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc.
-  **27** (1995), 1--33, Section 4 (the spectral flow as a sum of crossing signatures).
+  **27** (1995), 1--33.
 -/
 
 public section
@@ -105,6 +104,16 @@ theorem isSpectralCutOn_of_forall_norm_lt (hc : 0 < c) (h : ∀ u ∈ s, ‖A u�
 
 variable [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
 
+/-- In finite dimensions, the count `TauCeti.spectralCount c T` of the eigenvalues of a
+self-adjoint `T` in `[0, c]` is the dimension of the sum of the eigenspaces of `T` at the
+eigenvalues in `[0, c]`. -/
+theorem spectralCount_eq_finrank_pointSpectralSubspace_Icc (c : ℝ) {T : H →L[𝕜] H}
+    (hT : IsSelfAdjoint T) :
+    spectralCount c T =
+      Module.finrank 𝕜 (Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Icc 0 c)) := by
+  rw [spectralCount_def, ContinuousLinearMap.cfc_indicator_eq_starProjection _ hT,
+    Submodule.range_starProjection]
+
 /-- In finite dimensions, for `c > ‖T‖` the count `TauCeti.spectralCount c T` of the eigenvalues
 of a self-adjoint `T` in `[0, c]` is the number of nonnegative eigenvalues of `T`, counted with
 multiplicity. -/
@@ -114,21 +123,13 @@ theorem spectralCount_eq_finrank_pointSpectralSubspace {T : H →L[𝕜] H} (hT 
       Module.finrank 𝕜 (Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Ici 0)) := by
   -- Every eigenvalue of `T` is at most `‖T‖ < c` in absolute value, so selecting those in
   -- `[0, c]` or in `[0, ∞)` gives the same subspace.
-  have hΩ : Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Icc 0 c) =
-      Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Ici 0) := by
-    refine le_antisymm (Module.End.pointSpectralSubspace_mono Icc_subset_Ici_self)
-      (Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦ ?_)
-    by_cases hμc : μ ≤ c
-    · exact Module.End.eigenspace_le_pointSpectralSubspace ⟨hμ, hμc⟩
-    · have hbot : Module.End.eigenspace (T : H →ₗ[𝕜] H) (μ : 𝕜) = ⊥ := by
-        by_contra hne
-        have hmem : μ ∈ Module.End.restrictedPointSpectrum (T : H →ₗ[𝕜] H) ⊤ :=
-          Module.End.mem_restrictedPointSpectrum_iff_inf_eigenspace_ne_bot.2 (by simpa using hne)
-        have := ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hmem
-        linarith [le_abs_self μ]
-      exact hbot ▸ bot_le
-  rw [spectralCount_def, ContinuousLinearMap.cfc_indicator_eq_starProjection _ hT,
-    Submodule.range_starProjection, hΩ]
+  have hΩ : Icc 0 c ∩ Metric.closedBall 0 ‖T‖ = Ici 0 ∩ Metric.closedBall 0 ‖T‖ := by
+    ext x
+    simp only [mem_inter_iff, mem_Icc, mem_Ici, mem_closedBall_zero_iff, Real.norm_eq_abs]
+    exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, (le_abs_self x).trans (h.2.trans hc.le)⟩, h.2⟩⟩
+  rw [spectralCount_eq_finrank_pointSpectralSubspace_Icc c hT,
+    ← T.pointSpectralSubspace_inter_closedBall_norm, hΩ,
+    T.pointSpectralSubspace_inter_closedBall_norm]
 
 /-! ### The spectral flow from the endpoints -/
 
@@ -159,70 +160,47 @@ theorem spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank {a b : ℝ} (h
   rw [compl_Iio] at h₁ h₂
   omega
 
-/-- **Negation.** On a finite-dimensional space, negating a continuous path of self-adjoint
-operators with invertible endpoints negates its spectral flow. -/
-theorem spectralFlow_neg {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
-    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (ha : LinearMap.ker (A a : H →ₗ[𝕜] H) = ⊥)
-    (hb : LinearMap.ker (A b : H →ₗ[𝕜] H) = ⊥) :
-    spectralFlow (fun t ↦ -A t) a b = -spectralFlow A a b := by
-  have ha' : a ∈ Icc a b := ⟨le_rfl, hab⟩
-  have hb' : b ∈ Icc a b := ⟨hab, le_rfl⟩
-  rw [spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank (A := fun t ↦ -A t) hab hA.neg
-      fun t ht ↦ (hsa t ht).neg,
-    spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank hab hA hsa]
-  -- The negative eigenvalues of `-T` are the positive ones of `T`, and for invertible `T` the
-  -- positive and the negative eigenvalues together have the dimension of `H`.
-  rw [ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
-    Module.End.pointSpectralSubspace_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero]
-  have hAa := (hsa a ha').isSymmetric
-  have hAb := (hsa b hb').isSymmetric
-  have h₁ :=
-    hAa.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero ha
-  have h₂ :=
-    hAb.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero hb
-  omega
+/-! ### Scalar paths -/
 
-end TauCeti
+omit [FiniteDimensional 𝕜 H] [CompleteSpace H]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+  [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
+/-- The scalar path `t ↦ t • 1` of operators is continuous. -/
+private theorem continuous_algebraMap_real :
+    Continuous fun t : ℝ ↦ algebraMap ℝ (H →L[𝕜] H) t := by
+  -- The `ℝ`-action on operators comes from the `NormedAlgebra` instance, so its continuity is
+  -- obtained from `NormedSpace.toIsBoundedSMul` explicitly.
+  have := (NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := H →L[𝕜] H)).continuousSMul
+  exact continuous_algebraMap ℝ _
 
-/-! ### The regular-crossing formula -/
-
-namespace TauCeti
-
-open ContinuousLinearMap
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A A' : ℝ → E →L[ℝ] E}
-
-/-- **The regular-crossing formula for the spectral flow.** Let `A` be a continuous path of
-self-adjoint operators on a finite-dimensional real inner product space over `[a, b]`, with
-invertible endpoints. Suppose that every crossing `t ∈ (a, b)`, where `A t` is not injective, is
-regular: `A` has derivative `A' t` at `t`, and the crossing form `Γₜ : v ↦ ⟪A' t v, v⟫` on the
-kernel of `A t` is nondegenerate. Then the spectral flow of `A` is the sum over the crossings of
-the signatures `sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the
-sum. That the crossings are finite in number is a separate fact,
-`ContinuousLinearMap.finite_setOf_not_nondegenerate_toBilinForm`. -/
-theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm {a b : ℝ} (hab : a ≤ b)
-    (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
-    (ha : LinearMap.ker (A a : E →ₗ[ℝ] E) = ⊥) (hb : LinearMap.ker (A b : E →ₗ[ℝ] E) = ⊥)
-    (hderiv : ∀ t ∈ Ioo a b, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ → HasDerivAt A (A' t) t)
-    (hreg : ∀ t ∈ Ioo a b, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ →
-      (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))).Nondegenerate) :
-    spectralFlow A a b = ∑ᶠ t ∈ Ioo a b,
-      ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))) : ℤ) -
-        sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t)))) := by
-  have ha' : a ∈ Icc a b := ⟨le_rfl, hab⟩
-  have hb' : b ∈ Icc a b := ⟨hab, le_rfl⟩
-  have hflow := spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank hab hA hsa
-  have hcross := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm hab
-    (continuousOn_const.clm_comp hA)
-    (fun t ht ↦ (hsa t ht).isSymmetric.isSymm_toBilinForm_innerSL_comp)
-    (nondegenerate_toBilinForm_innerSL_comp_iff.2 ha)
-    (nondegenerate_toBilinForm_innerSL_comp_iff.2 hb)
-    (fun t ht hnd ↦
-      (hderiv t ht (mt nondegenerate_toBilinForm_innerSL_comp_iff.2 hnd)).const_clm_comp _)
-    (fun t ht hnd ↦ hreg t ht (mt nondegenerate_toBilinForm_innerSL_comp_iff.2 hnd))
-  rw [(hsa a ha').isSymmetric.sigNeg_toBilinForm_innerSL_comp,
-    (hsa b hb').isSymmetric.sigNeg_toBilinForm_innerSL_comp] at hcross
-  rw [hflow, hcross]
+/-- **Scalar paths.** On a finite-dimensional space, the spectral flow of the scalar path
+`t ↦ f t • 1`, for `f` continuous on `[a, b]`, is the dimension times the change of the indicator
+of `0 ≤ f` between the endpoints: its one eigenvalue `f t` has full multiplicity, and its net
+number of upward crossings of `0` is `1`, `0` or `-1`. -/
+theorem spectralFlow_algebraMap_comp {f : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) :
+    spectralFlow (fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) a b =
+      Module.finrank 𝕜 H * ((if 0 ≤ f b then 1 else 0) - if 0 ≤ f a then 1 else 0) := by
+  -- The scalar `x • 1` has all of `H` as its eigenspace at `x`, so it has `dim H` negative
+  -- eigenvalues if `x < 0`, and none otherwise.
+  have hn (x : ℝ) : (Module.finrank 𝕜 (Module.End.pointSpectralSubspace
+      ((algebraMap ℝ (H →L[𝕜] H) x : H →L[𝕜] H) : H →ₗ[𝕜] H) (Iio 0)) : ℤ) =
+      Module.finrank 𝕜 H * if 0 ≤ x then 0 else 1 := by
+    have hx : ((algebraMap ℝ (H →L[𝕜] H) x : H →L[𝕜] H) : H →ₗ[𝕜] H) =
+        (x : 𝕜) • LinearMap.id := by
+      ext v
+      simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (H →L[𝕜] H), RCLike.algebraMap_eq_ofReal]
+    by_cases h : 0 ≤ x
+    · rw [hx, Module.End.pointSpectralSubspace_smul_id_of_notMem (not_lt.2 h : ¬x < 0),
+        finrank_bot]
+      simp [h]
+    · rw [hx, Module.End.pointSpectralSubspace_smul_id_of_mem (mem_Iio.2 (not_le.1 h)),
+        finrank_top]
+      simp [h]
+  rw [spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank
+    (A := fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) hab
+    (continuous_algebraMap_real.comp_continuousOn hf) fun t _ ↦ cfc_predicate_algebraMap (f t),
+    hn, hn]
+  split_ifs <;> ring
 
 end TauCeti

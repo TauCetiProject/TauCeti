@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Topology.Instances.AddCircle.Coe
 
 /-!
 # Time reversal and the inverse of the billiard map
@@ -163,6 +164,15 @@ theorem nextCollisionEquiv_apply (x : ℝ × Ioo (-1 : ℝ) 1) :
       (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2, χ.nextTangential_mem_Ioo x.2.property⟩) := by
   rfl
 
+/-- The next-collision map is injective on the strip `ℝ × (-1, 1)`. -/
+theorem injOn_nextCollision : InjOn χ.nextCollision (univ ×ˢ Ioo (-1 : ℝ) 1) := by
+  rintro ⟨s, v⟩ ⟨-, hv⟩ ⟨s', v'⟩ ⟨-, hv'⟩ h
+  simp only [nextCollision_apply, Prod.mk.injEq] at h
+  have := χ.nextCollisionEquiv.injective (a₁ := (s, ⟨v, hv⟩)) (a₂ := (s', ⟨v', hv'⟩)) (by
+    simp only [nextCollisionEquiv_apply]
+    exact Prod.ext h.1 (Subtype.ext h.2))
+  simpa using this
+
 /-- The inverse of the next-collision map `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` and
 `τ(s, v) = (s + L, v)`. -/
 @[simp]
@@ -173,46 +183,13 @@ theorem nextCollisionEquiv_symm_apply (x : ℝ × Ioo (-1 : ℝ) 1) :
 
 /-! ### The billiard map on the space of collision states -/
 
-/-- The class in `AddCircle L × (-1, 1)` of the next collision of `(s, v)` depends only on the class
-of `s`, since the next-collision map commutes with the deck translation. -/
-theorem periodic_nextCollisionEquiv (v : Ioo (-1 : ℝ) 1) :
-    Periodic (fun s : ℝ ↦
-      Prod.map ((↑) : ℝ → AddCircle χ.period) id (χ.nextCollisionEquiv (s, v))) χ.period := by
-  intro s
-  simp [χ.nextParam_add_period v.property, χ.nextTangential_add_period v.property]
-
-/-- The class in `AddCircle L × (-1, 1)` of the image of `(s, v)` under the inverse of the
-next-collision map depends only on the class of `s`. -/
-theorem periodic_nextCollisionEquiv_symm (v : Ioo (-1 : ℝ) 1) :
-    Periodic (fun s : ℝ ↦
-      Prod.map ((↑) : ℝ → AddCircle χ.period) id (χ.nextCollisionEquiv.symm (s, v))) χ.period := by
-  intro s
-  have hv : -(v : ℝ) ∈ Ioo (-1) 1 := ⟨by linarith [v.property.2], by linarith [v.property.1]⟩
-  ext
-  · simp only [nextCollisionEquiv_symm_apply, Prod.map_fst]
-    rw [χ.nextParam_add_period hv, add_sub_cancel_right, ← AddCircle.coe_add_period (χ.period)
-      (χ.nextParam s (-v) - χ.period), sub_add_cancel]
-  · simp [χ.nextTangential_add_period hv]
-
 /-- The billiard map `β` of the table on the space of collision states `AddCircle L × (-1, 1)`,
 induced by the next-collision map on the strip `ℝ × (-1, 1)`
 (`TauCeti.StrictConvexBilliardTable.billiardMap_coe`). It is a bijection, whose inverse is
 induced by the inverse of the next-collision map. -/
-def billiardMap : AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
-  toFun x := (χ.periodic_nextCollisionEquiv x.2).lift x.1
-  invFun x := (χ.periodic_nextCollisionEquiv_symm x.2).lift x.1
-  left_inv := by
-    rintro ⟨θ, v⟩
-    induction θ using QuotientAddGroup.induction_on with | H s => ?_
-    simp only [Periodic.lift_coe, Prod.map_fst, Prod.map_snd, id]
-    exact congrArg (Prod.map ((↑) : ℝ → AddCircle χ.period) id)
-      (χ.nextCollisionEquiv.symm_apply_apply (s, v))
-  right_inv := by
-    rintro ⟨θ, v⟩
-    induction θ using QuotientAddGroup.induction_on with | H s => ?_
-    simp only [Periodic.lift_coe, Prod.map_fst, Prod.map_snd, id]
-    exact congrArg (Prod.map ((↑) : ℝ → AddCircle χ.period) id)
-      (χ.nextCollisionEquiv.apply_symm_apply (s, v))
+def billiardMap : AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ AddCircle χ.period × Ioo (-1 : ℝ) 1 :=
+  AddCircle.prodEquivOfLift χ.nextCollisionEquiv fun s v ↦ by
+    simp [χ.nextParam_add_period v.property, χ.nextTangential_add_period v.property]
 
 /-- The billiard map sends the class of a state `(s, v)` of the strip to the class of its next
 collision. -/
@@ -227,6 +204,18 @@ theorem billiardMap_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
 period `L`. -/
 theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.period) = t :=
   (χ.periodic.lift_injective χ.period_pos χ.injOn).eq_iff (a := s) (b := t)
+
+/-- The derivative of the boundary parametrization agrees at parameters with the same boundary
+point. -/
+theorem deriv_eq_deriv_of_apply_eq {s t : ℝ} (h : χ s = χ t) : deriv χ s = deriv χ t := by
+  have hper : Periodic (deriv χ) χ.period := χ.deriv_add_period
+  simpa using congrArg hper.lift (χ.apply_eq_apply_iff.1 h)
+
+/-- States with the same base point and the same tangential component have the same outgoing
+velocity. -/
+theorem outgoingDir_eq_outgoingDir_of_apply_eq {s t : ℝ} (h : χ s = χ t) (v : ℝ) :
+    χ.outgoingDir s v = χ.outgoingDir t v := by
+  rw [outgoingDir_def, outgoingDir_def, χ.deriv_eq_deriv_of_apply_eq h]
 
 /-- A collision state and its image under the billiard map have distinct base points. -/
 theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
@@ -243,8 +232,7 @@ theorem billiardMap_symm_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
     χ.billiardMap.symm ((s : AddCircle χ.period), v) =
       ((χ.nextParam s (-v) : AddCircle χ.period),
         ⟨-χ.nextTangential s (-v), χ.neg_nextTangential_neg_mem_Ioo s v⟩) := by
-  simp only [billiardMap, Equiv.coe_fn_symm_mk, Periodic.lift_coe, nextCollisionEquiv_symm_apply,
-    Prod.map_apply, id]
+  simp only [billiardMap, AddCircle.prodEquivOfLift_symm_coe, nextCollisionEquiv_symm_apply]
   rw [← AddCircle.coe_add_period, sub_add_cancel]
 
 end StrictConvexBilliardTable

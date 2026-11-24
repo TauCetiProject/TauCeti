@@ -11,7 +11,6 @@ import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 import TauCeti.Algebra.Field.Conic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import Mathlib.Tactic.Module
 
 /-!
 # The Spin group is strictly smaller than the even unitary group in dimension six
@@ -81,35 +80,6 @@ section CommRing
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
-
-/-! ### Auxiliary volume-element computations -/
-
-/-- Both products of `a + b • ω` with `a - b • ω`, for `ω` squaring to the scalar `s`. -/
-private theorem algebraMap_add_smul_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
-    (hsq : ω * ω = algebraMap R _ s) (a b : R) :
-    (algebraMap R _ a + b • ω) * (algebraMap R _ a - b • ω) =
-        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) ∧
-      (algebraMap R _ a - b • ω) * (algebraMap R _ a + b • ω) =
-        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) := by
-  constructor <;>
-  · simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, sub_mul, mul_sub,
-      smul_mul_smul_comm, one_mul, mul_one, hsq, smul_smul]
-    module
-
-/-- Twisted conjugation of a vector by `a + b • ω`, for `ω` anticommuting with the vector and
-squaring to the scalar `s`. -/
-private theorem algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
-    (hsq : ω * ω = algebraMap R _ s) {v : M} (hv : ω * ι Q v = -(ι Q v * ω)) (a b : R) :
-    (algebraMap R _ a + b • ω) * ι Q v * (algebraMap R _ a - b • ω) =
-      (a ^ 2 + b ^ 2 * s) • ι Q v + (2 * a * b) • (ω * ι Q v) := by
-  have hvω : ι Q v * ω = -(ω * ι Q v) := by rw [hv, neg_neg]
-  have h1 : ι Q v * (algebraMap R _ a - b • ω) = (algebraMap R _ a + b • ω) * ι Q v := by
-    rw [mul_sub, add_mul, ← Algebra.commutes, mul_smul_comm, smul_mul_assoc, hvω, smul_neg,
-      sub_neg_eq_add]
-  rw [mul_assoc, h1, ← mul_assoc]
-  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
-    one_mul, mul_one, hsq, smul_smul]
-  module
 
 variable {l : List M}
 
@@ -264,9 +234,9 @@ theorem exists_spinGroup_ne_evenUnitaryGroup_finrank_six :
     intro i
     exact isRegular_iff_ne_zero.mpr (by fin_cases i <;> norm_num)
   refine ⟨QuadraticMap.weightedSumSquares ℚ ![1, -1, 1, -1, 1, -1],
-    QuadraticMap.nondegenerate_weightedSumSquares hw, ?_⟩
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr hw, ?_⟩
   exact range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank _
     (Cardinal.ofNat_lt_aleph0.trans_le (Cardinal.aleph0_le_mk ℚ))
-    (QuadraticMap.nondegenerate_weightedSumSquares hw) (by rw [finrank_fin_fun])
+    (QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr hw) (by rw [finrank_fin_fun])
 
 end CliffordAlgebra

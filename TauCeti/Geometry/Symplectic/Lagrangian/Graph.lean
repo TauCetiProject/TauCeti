@@ -64,10 +64,8 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
           (mfderiv I J φ x v) (mfderiv I J φ x w) =
           SmoothBundleForm.eval₂ σ x v w := by
     rw [LinearMap.range_comp, Manifold.map_range_mfderiv_graph (φ.mdifferentiable (by simp) x)]
-    have he : (φ.mfderivToContinuousLinearEquiv (by simp) x).toLinearEquiv.toLinearMap =
-        (mfderiv I J φ x).toLinearMap :=
-      congrArg ContinuousLinearMap.toLinearMap (φ.mfderivToContinuousLinearEquiv_coe (by simp))
-    rw [← he, SymplecticForm.isLagrangian_graph_iff, SymplecticForm.isSymplectomorphism_iff]
+    rw [← φ.mfderivToContinuousLinearEquiv_toLinearMap (by simp) x,
+      SymplecticForm.isLagrangian_graph_iff, SymplecticForm.isSymplectomorphism_iff]
     simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
       ← ContinuousLinearEquiv.coe_coe, Diffeomorph.mfderivToContinuousLinearEquiv_coe]
     constructor

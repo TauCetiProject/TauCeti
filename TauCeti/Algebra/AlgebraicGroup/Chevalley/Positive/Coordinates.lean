@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic
 
 /-!
 # Positive-root coordinates in Chevalley groups
@@ -21,7 +22,7 @@ there are no unused coordinates at negative roots. The resulting equivalence and
 commute with changes of the value ring, including noninjective ring maps.
 
 This combines the collection theorem
-`ChevalleyDatum.mem_positiveSubgroup_iff_exists_prod` with the integral
+`mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod` with the integral
 uniqueness theorem `DynkinType.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj`.
 It gives coordinates for the positive factor in Bruhat and big-cell factorizations. It does
 not identify the entire point group with its elementary subgroup, or assert a
@@ -84,25 +85,18 @@ theorem positiveRootProduct_surjective (l : List PositiveRoot)
   intro g
   have hg := (D.mem_positivePoints_iff).mp g.property
   obtain ⟨q, hq, hmatrix⟩ := hg
-  have hroots : ∀ γ, γ ∈ l.map Subtype.val ↔
-      γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    intro γ
-    constructor
-    · rintro hγ
-      obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ
-      exact γ.property
-    · intro hγ
-      exact List.mem_map.mpr ⟨⟨γ, hγ⟩, hcover _, rfl⟩
-  obtain ⟨u, hu⟩ := (D.mem_positiveSubgroup_iff_exists_prod
-    (l.map Subtype.val) (hl.map Subtype.val_injective) hroots (CommAlgCat.of ℤ A) q).mp hq
-  refine ⟨fun γ => u γ.val, ?_⟩
+  rw [D.positiveSubgroup_eq_iSup] at hq
+  obtain ⟨u, hu⟩ := (mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod
+    D.representation D.lattice D.representation_mem_lattice
+    D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A) l hl hcover q).mp hq
+  refine ⟨u, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
   have h := congrArg
     (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) hu
   simpa only [map_list_prod, List.map_map, Function.comp_def,
     coe_positiveRootProduct, SubmonoidClass.coe_list_prod,
-    coe_rootSubgroupPoints, ofAdd_toAdd, MulEquiv.toMonoidHom_eq_coe, hmatrix] using h
+    coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, hmatrix] using h
 
 /-- A datum point is positive exactly when it is a product of its positive root
 subgroups, in any order containing every positive root exactly once. Existence holds for every

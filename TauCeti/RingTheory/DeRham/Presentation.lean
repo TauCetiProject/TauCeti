@@ -110,27 +110,27 @@ variable {A}
 
 /-- An elementary form with zero coefficient vanishes. -/
 @[simp]
-theorem elementary_zero_coeff (v : Fin n → B) :
+theorem elementary_coeff_zero (v : Fin n → B) :
     elementary A (0 : B) v = 0 := by
   rw [elementary_def, zero_smul]
 
 /-- An elementary form with unit coefficient is a pure exterior product of differentials. -/
-theorem elementary_one_coeff (v : Fin n → B) :
+theorem elementary_coeff_one (v : Fin n → B) :
     elementary A (1 : B) v = exteriorPower.ιMulti B n fun i => D A B (v i) := by
   rw [elementary_def, one_smul]
 
 /-- Addition in the coefficient of an elementary form. -/
-theorem elementary_add_coeff (c e : B) (v : Fin n → B) :
+theorem elementary_coeff_add (c e : B) (v : Fin n → B) :
     elementary A (c + e) v = elementary A c v + elementary A e v := by
   simp only [elementary_def, add_smul]
 
 /-- `B`-scalar multiplication on an elementary form multiplies its coefficient. -/
-theorem elementary_smul_coeff (b c : B) (v : Fin n → B) :
+theorem smul_elementary (b c : B) (v : Fin n → B) :
     b • elementary A c v = elementary A (b * c) v := by
   simp only [elementary_def, smul_smul]
 
 /-- `A`-scalar multiplication on an elementary form acts on its coefficient. -/
-theorem elementary_base_smul_coeff (a : A) (c : B) (v : Fin n → B) :
+theorem base_smul_elementary (a : A) (c : B) (v : Fin n → B) :
     a • elementary A c v = elementary A (a • c) v := by
   simp only [elementary_def, smul_assoc]
 
@@ -360,7 +360,7 @@ theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A 
   induction s using Finsupp.induction with
   | zero => simpa using zero
   | single_add p a s _ _ ih =>
-    rw [map_add, symbolMap_single, elementary_base_smul_coeff]
+    rw [map_add, symbolMap_single, base_smul_elementary]
     exact add _ _ (elem (a • p.1) p.2) ih
 
 /-- Two additive homomorphisms out of `Forms A B n` agree once they agree on every elementary

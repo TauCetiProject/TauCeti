@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -52,9 +53,14 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
   `TauCeti.Symbol.isSmoothing_cutoffInverse_sub_cutoffInverse`: it does not depend on the cutoff
   and the radius modulo smoothing symbols.
 * `TauCeti.Symbol.exists_isEllipticAbove_iff`, `TauCeti.Symbol.exists_isUniformlyEllipticAbove_iff`:
-  characterizations of ellipticity by inverse symbols.
+  characterizations of ellipticity by inverse symbols, and
+  `TauCeti.Symbol.exists_mem_nhdsSet_isEllipticOn_iff` for ellipticity near a compact set of
+  positions only.
 * `TauCeti.Symbol.IsEllipticAbove.comp`, `TauCeti.Symbol.IsUniformlyEllipticAbove.comp`: pointwise
   products of elliptic symbols are elliptic.
+* `TauCeti.Symbol.HasCompactSpatialSupport.isCompact_closure_of_comp_eq_id`: a symbol with
+  compact spatial support has a left inverse at large frequencies only at a relatively compact
+  set of positions.
 
 ## References
 
@@ -67,7 +73,8 @@ public section
 
 noncomputable section
 
-open Set
+open Filter Set
+open scoped Topology
 
 namespace TauCeti
 
@@ -331,6 +338,82 @@ theorem exists_isUniformlyEllipticAbove_iff [CompleteSpace V] {a : Symbol n V W 
     hu.mono (by rw [abs_of_pos (by positivity)]; linarith [le_abs_self R])
   exact ⟨_, hau.cutoffInverse default _ _ _ hu'.exists_norm_inverse_le, _,
     ha.cutoffInverse_comp_eq_id⟩
+
+/-- **Ellipticity near a compact set by inverse symbols.** Let `K` be a compact set of positions.
+A symbol `a` of order `m` is elliptic on some neighbourhood of `K`, at the frequencies of norm at
+least some radius, exactly when a symbol of order `-m` inverts it at all large frequencies and all
+positions near `K`. Nothing is asked of `a` away from `K`. -/
+theorem exists_mem_nhdsSet_isEllipticOn_iff [CompleteSpace V] {a : Symbol n V W m}
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    (∃ N ∈ 𝓝ˢ K, ∃ R, a.IsEllipticOn {p | p.1 ∈ N ∧ R ≤ ‖p.2‖}) ↔
+      ∃ b : Symbol n W V (-m), ∃ R, ∀ᶠ x in 𝓝ˢ K, ∀ ξ, R ≤ ‖ξ‖ →
+        b.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V ∧
+          a.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = .id ℂ W := by
+  constructor
+  · rintro ⟨N, hN, R, ha⟩
+    -- A cutoff `ψ` equal to `1` near `K` and vanishing outside `N`, and the symbol
+    -- `r(x, ξ) = ψ(x) χ(ξ / t) id` of order `0`, `t = |R| + 1`, which vanishes wherever `a` is not
+    -- known to be elliptic. (`χ(ξ / t) id` is `TauCeti.Symbol.dilatedCutoff`, which is defined
+    -- downstream of this file; here it is the cut-off inverse of the identity.)
+    obtain ⟨ψ, hψ, -, hψ1, -, hψN⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one isOpen_interior
+      (subset_interior_iff_mem_nhdsSet.2 hN)
+    set χ : FrequencyCutoff (CoordinateSpace n) := default
+    set t := |R| + 1
+    have ht : 0 < t := by positivity
+    set r := (cutoff V hψ).comp ((const (.id ℂ V)).cutoffInverse χ t
+      (fun x ξ _ ↦ by
+        rw [coefficient_const]
+        exact .of_inverse (ContinuousLinearMap.id_comp _) (ContinuousLinearMap.id_comp _))
+      fun _ _ ↦ ⟨1, fun _ _ _ _ ↦ by simpa using ContinuousLinearMap.norm_id_le⟩)
+    have hr (x ξ : CoordinateSpace n) :
+        r.coefficient (x, ξ) = (χ (t⁻¹ • ξ) * ψ x) • ContinuousLinearMap.id ℂ V := by
+      simp [r, coefficient_comp, mul_smul]
+    have hrS : ∀ p ∉ {p : CoordinateSpace n × CoordinateSpace n | p.1 ∈ N ∧ R ≤ ‖p.2‖},
+        r.coefficient p = 0 := by
+      rintro ⟨x, ξ⟩ hp
+      rw [hr]
+      by_cases hx : x ∈ N
+      · have hξ : ‖ξ‖ ≤ t := by
+          have := not_le.1 fun h ↦ hp ⟨hx, h⟩
+          linarith [le_abs_self R]
+        simp [χ.apply_inv_smul_eq_zero ht hξ]
+      · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (interior_subset (hψN h))]
+    refine ⟨inclusion (by simp) (r.compInverse a hrS ha), 2 * t, ?_⟩
+    filter_upwards [eventually_nhdsSet_iff_forall.2 hψ1] with x hx ξ hξ
+    have hχ : χ (t⁻¹ • ξ) = 1 := χ.apply_inv_smul_eq_one ht hξ
+    have hxN : x ∈ N := interior_subset (hψN (subset_tsupport _ (by simp [hx])))
+    have hinv := ha.isInvertible (p := (x, ξ)) ⟨hxN, by linarith [le_abs_self R]⟩
+    have hr1 : r.coefficient (x, ξ) = .id ℂ V := by simp [hr, hx, hχ]
+    refine ⟨?_, ?_⟩
+    · rw [coefficient_inclusion, coefficient_compInverse_comp_coefficient, hr1]
+    · rw [coefficient_inclusion, coefficient_compInverse, hr1, ContinuousLinearMap.id_comp]
+      exact hinv.self_comp_inverse
+  · rintro ⟨b, R, h⟩
+    refine ⟨_, h, R, isEllipticOn_iff.2 fun K' hK' ↦ (b.exists_norm_coefficient_le K' hK').imp
+      fun C hC ⟨x, ξ⟩ hp hpK ↦ ?_⟩
+    obtain ⟨h₁, h₂⟩ := hp.1 ξ hp.2
+    refine ⟨.of_inverse h₂ h₁, ?_⟩
+    rw [ContinuousLinearMap.inverse_eq h₂ h₁]
+    exact hC x hpK ξ
+
+/-- A symbol with compact spatial support has a left inverse at large frequencies only at a
+relatively compact set of positions: if `e(x, ξ) ∘ a(x, ξ) = 1` at all frequencies `‖ξ‖ ≥ R` and
+all positions `x ∈ U`, and `V` is nontrivial, then `U` has compact closure. -/
+theorem HasCompactSpatialSupport.isCompact_closure_of_comp_eq_id [Nontrivial V]
+    {a : Symbol n V W m} {e : Symbol n W V m'} (ha : a.HasCompactSpatialSupport)
+    {U : Set (CoordinateSpace n)}
+    (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V) :
+    IsCompact (closure U) := by
+  obtain ⟨K, hK, haK⟩ := hasCompactSpatialSupport_iff.1 ha
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact subsingleton_of_subsingleton.isCompact
+  -- At a position `x ∉ K`, `a(x, ξ) = 0` cannot have a left inverse.
+  refine hK.closure_of_subset fun x hx ↦ by_contra fun hxK ↦ ?_
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have h := he x hx (max R 0 • EuclideanSpace.single ⟨0, hn⟩ 1) (by
+    simp [norm_smul, abs_of_nonneg (le_max_right R 0)])
+  rw [haK x hxK, ContinuousLinearMap.comp_zero] at h
+  exact hv (by simpa using (congrArg (fun T : V →L[ℂ] V ↦ T v) h).symm)
 
 /-- The Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s` above every radius: its
 inverse is the Bessel weight of order `-s`. -/

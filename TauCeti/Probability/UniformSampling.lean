@@ -9,6 +9,7 @@ public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
 import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Data.Fintype.Card.Embedding
+import TauCeti.Probability.ConditionalProbability
 
 /-!
 # Uniform sampling with and without replacement
@@ -24,12 +25,17 @@ The exact collision probability on a nonempty function space is
 When the function space is empty, Mathlib's `uniformOn` is instead the zero measure; the union
 bound remains valid under that convention, but the complement formula requires nonemptiness.
 
-When injective maps exist, conditioning the random map to be injective is uniform sampling without
-replacement.  The main results compare every event under the uniform measures on all maps and on
-injective maps, with the collision bound as error.  These inequalities remain valid when no
-injective map exists (when Mathlib's `uniformOn` is the zero measure); in the feasible case they are
-the coupling step used to compare a finite exchangeable law with the product of its empirical
-measure.
+When `ι` and `κ` are finite, singletons of `κ` are measurable and injective maps exist,
+conditioning the random map to be injective is uniform sampling without replacement.  The main
+results compare every event under the uniform measures on all maps and on injective maps.  The
+exact comparisons `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add`, whose error
+term is the collision measure, hold for Mathlib's `uniformOn` for all types `ι` and `κ` and every
+measurable structure on `κ`, including the degenerate cases where `uniformOn` is the zero measure
+(no injective map exists, or the set of maps is infinite); without measurable singletons they
+compare these measures, which need not be sampling probabilities.  The quantitative forms, with the
+collision bound `(Fintype.card ι).choose 2 / Fintype.card κ` as error, assume finite types with
+measurable singletons.  In the feasible case these inequalities are the coupling step used to
+compare a finite exchangeable law with the product of its empirical measure.
 
 The exact formula counts embeddings using Mathlib's `Fintype.card_embedding_eq`. The simpler
 estimate is the classical union bound over unordered coordinate pairs, using
@@ -40,16 +46,20 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 * `uniformOn_not_injective_le`, `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`, and
   their `.real` companions bound the uniform-measure mass of collisions;
+* `descFactorial_div_pow_le_one` and `one_sub_descFactorial_div_pow_eq_ofReal` bound the
+  injectivity probability `n.descFactorial m / n ^ m` by `1` and rewrite the collision error
+  `1 - n.descFactorial m / n ^ m` from `ℝ≥0∞` to `ENNReal.ofReal` of its real form;
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
   compute the exact uniform-measure masses;
 * `uniformOn_injective_eq_zero_of_isEmpty`,
   `uniformOn_injective_eq_uniformOn_univ_of_subsingleton`, and
   `uniformOn_not_injective_eq_zero_of_subsingleton` (with its `.real` companion) treat the
   infeasible and subsingleton-sample regimes;
-* `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
-  comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
-  under sampling without and with replacement;
+  under the uniform measures on injective maps and on all maps (sampling without and with
+  replacement, for finite types with measurable singletons); they specialise the conditioning
+  comparisons `MeasureTheory.Measure.cond_inter_le_add_compl` and
+  `MeasureTheory.Measure.cond_le_inter_add_compl` to the counting measure;
 * `uniformOn_injective_le_add_choose_two_div` and
   `uniformOn_univ_le_injective_add_choose_two_div` give the quantitative forms.
 * `uniformOn_injective_mem_range_and_mem_range` computes the probability that a uniform
@@ -132,6 +142,23 @@ theorem uniformOn_real_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSi
   rw [← Set.compl_ofPred, probReal_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_real_injective_apply_eq]
 
+/-- The injectivity probability `n.descFactorial m / n ^ m` of a uniform map from an `m`-element
+type to an `n`-element type is at most `1`. -/
+theorem descFactorial_div_pow_le_one (m n : ℕ) : (n.descFactorial m : ℝ) / (n : ℝ) ^ m ≤ 1 :=
+  div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow n m) (by positivity)
+
+/-- The collision error `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is the `ENNReal.ofReal` of its
+real counterpart. -/
+theorem one_sub_descFactorial_div_pow_eq_ofReal (m n : ℕ) :
+    1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m =
+      ENNReal.ofReal (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  have hle : (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m ≤ 1 :=
+    ENNReal.div_le_of_le_mul (by rw [one_mul]; exact_mod_cast Nat.descFactorial_le_pow n m)
+  rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one]
+  congr 1
+  rw [← ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.one_ne_top hle)]
+  simp
+
 /-- Unconditional upper bound form of `uniformOn_not_injective_apply_eq`: when `ι → κ` is
 nonempty the two sides are equal, and when `ι → κ` is empty the uniform measure is zero while
 `1 - 0 / 0 = 1`. -/
@@ -152,8 +179,7 @@ theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [Measurabl
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
   rcases isEmpty_or_nonempty (ι → κ) with h | h
   · rw [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ))), measureReal_zero_apply]
-    exact sub_nonneg.2 (div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow _ _)
-      (by positivity))
+    exact sub_nonneg.2 (descFactorial_div_pow_le_one _ _)
   · exact uniformOn_real_not_injective_apply_eq.le
 
 end
@@ -304,68 +330,56 @@ theorem uniformOn_real_not_injective_le [MeasurableSpace κ] [MeasurableSingleto
 
 end
 
-/-- Conditioning the uniform measure on a finite set `s` on an event `E` can increase the
-probability of an event `A` by at most the original probability of `Eᶜ`, provided `s ∩ E` is
-nonempty.  When `s ∩ E` is empty, Mathlib's `uniformOn (s ∩ E)` is the zero measure and the
-inequality remains valid under that convention.
-
-This is the upper half of the elementary coupling bound between a uniform law and its
-conditioning. -/
-theorem uniformOn_inter_le_add_compl {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω]
-    {s : Set Ω} (E A : Set Ω) (hs : s.Finite) :
-    uniformOn (s ∩ E) A ≤ uniformOn s A + uniformOn s Eᶜ := by
-  rcases s.eq_empty_or_nonempty with rfl | hs'
-  · simp
-  calc
-    uniformOn (s ∩ E) A
-      = uniformOn (s ∩ E) A * uniformOn s E + uniformOn (s ∩ E) A * uniformOn s Eᶜ := by
-        rw [← mul_add, uniformOn_compl E hs hs', mul_one]
-    _ ≤ uniformOn s A + uniformOn s Eᶜ := by
-      rw [← uniformOn_inter' hs]
-      exact add_le_add (measure_mono Set.inter_subset_left)
-        (mul_le_of_le_one_left bot_le prob_le_one)
-
-/-- Conditioning the uniform measure on a finite set `s` on an event `E` can decrease the
-probability of an event `A` by at most the original probability of `Eᶜ`, provided `s ∩ E` is
-nonempty.  When `s ∩ E` is empty, Mathlib's `uniformOn (s ∩ E)` is the zero measure and the
-inequality remains valid under that convention.
-
-This is the lower half of the elementary coupling bound between a uniform law and its
-conditioning. -/
-theorem uniformOn_le_inter_add_compl {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω]
-    {s : Set Ω} (E A : Set Ω) (hs : s.Finite) :
-    uniformOn s A ≤ uniformOn (s ∩ E) A + uniformOn s Eᶜ := by
-  rw [← uniformOn_add_compl_eq E A hs]
-  exact add_le_add (mul_le_of_le_one_right bot_le prob_le_one)
-    (mul_le_of_le_one_left bot_le prob_le_one)
-
 /-- The uniform measure on injective maps differs from the uniform measure on all maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
-When an injective map `ι → κ` exists, these are the probabilities for uniform sampling without and
-with replacement, respectively.  The inequality also holds when the set of injective maps is empty,
-in which case its `uniformOn` measure is zero. -/
-theorem uniformOn_injective_le_add [Finite ι] [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ]
-    (A : Set (ι → κ)) :
+This holds for Mathlib's `uniformOn` for all types `ι` and `κ` and every measurable structure on
+`κ`.  It includes the degenerate cases where the set of injective maps is empty or infinite, so
+that its `uniformOn` measure is zero; this covers an infinite index type, or a nonempty index type
+with an infinite codomain type.  When `ι` and `κ` are finite, singletons of `κ` are measurable and
+an injective map `ι → κ` exists, the left side is the probability of `A` under uniform sampling
+without replacement, and the right side is its probability under uniform sampling with
+replacement plus the collision probability.  Without measurable singletons the set of injective
+maps need not be measurable, and these measures need not be the sampling probabilities. -/
+theorem uniformOn_injective_le_add [MeasurableSpace κ] (A : Set (ι → κ)) :
     uniformOn {x : ι → κ | Function.Injective x} A ≤
       uniformOn Set.univ A + uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  simpa only [Set.univ_inter, Set.compl_ofPred] using
-    uniformOn_inter_le_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
+  by_cases h0 : uniformOn {x : ι → κ | Function.Injective x} A = 0
+  · simp [h0]
+  -- A finite nonempty set of injective maps forces `ι → κ` to be finite.
+  have : Finite (ι → κ) := by
+    obtain ⟨f, hf⟩ : {x : ι → κ | Function.Injective x}.Nonempty :=
+      Set.ne_empty_iff_nonempty.1 fun h ↦ h0 (by simp [h])
+    rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+    · infer_instance
+    classical
+    have := (finite_of_uniformOn_ne_zero h0).to_subtype
+    have : Finite κ := Finite.of_injective
+      (fun y ↦ (⟨Equiv.swap (f i₀) y ∘ f, (Equiv.injective _).comp hf⟩ :
+        ↑{x : ι → κ | Function.Injective x}))
+      fun y z h ↦ by simpa using congrFun (congrArg Subtype.val h) i₀
+    have := Finite.of_injective f hf
+    infer_instance
+  simpa only [uniformOn, Set.univ_inter, Set.compl_ofPred] using
+    Measure.cond_inter_le_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
+      (measure_ne_top _ _)
 
 /-- The uniform measure on all maps differs from the uniform measure on injective maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
 
-When an injective map `ι → κ` exists, these are the probabilities for uniform sampling with and
-without replacement, respectively.  The inequality also holds when the set of injective maps is
-empty, in which case its `uniformOn` measure is zero. -/
-theorem uniformOn_univ_le_injective_add [Finite ι] [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ]
-    (A : Set (ι → κ)) :
+This holds for Mathlib's `uniformOn` for all types `ι` and `κ` and every measurable structure on
+`κ`, including the degenerate cases: when no injective map exists, the measure on injective maps is
+zero and every map is a collision; when `ι → κ` is infinite, the uniform measure on all maps is
+zero.  When `ι` and `κ` are finite, singletons of `κ` are measurable and an injective map `ι → κ`
+exists, the left side is the probability of `A` under uniform sampling with replacement, and the
+right side is its probability under uniform sampling without replacement plus the collision
+probability.  Without measurable singletons the set of injective maps and the collision event need
+not be measurable, and these measures need not be the sampling probabilities. -/
+theorem uniformOn_univ_le_injective_add [MeasurableSpace κ] (A : Set (ι → κ)) :
     uniformOn Set.univ A ≤ uniformOn {x : ι → κ | Function.Injective x} A +
       uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  simpa only [Set.univ_inter, Set.compl_ofPred] using
-    uniformOn_le_inter_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
+  simpa only [uniformOn, Set.univ_inter, Set.compl_ofPred] using
+    Measure.cond_le_inter_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
 
 variable [Fintype ι] [Fintype κ]
 

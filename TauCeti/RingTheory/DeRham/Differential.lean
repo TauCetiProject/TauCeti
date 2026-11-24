@@ -251,7 +251,7 @@ theorem d_smul (b : B) (ω : Forms A B n) :
     abel
   | elem c v =>
     apply Subtype.ext
-    rw [elementary_smul_coeff, coe_d_elementary_mul]
+    rw [smul_elementary, coe_d_elementary_mul]
     simp only [Submodule.coe_add, TauCeti.ExteriorAlgebra.coe_wedgeLeft_apply,
       Submodule.coe_smul_of_tower, coe_elementary, coe_d_elementary, mul_smul_comm]
     rw [add_comm]

@@ -36,7 +36,9 @@ map whose range contains the homogeneous projections of its elements, with
 
 A third group is about maps compatible with a decomposition. Two linear maps out of a finite
 product `P → M` agree as soon as they agree on the homogeneous single-coordinate functions
-`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`.
+`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`, and two additive maps out of `α →₀ M`
+agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
+`Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
@@ -48,10 +50,17 @@ submodule that contains the canonical components of each of its elements,
 `DirectSum.mem_of_forall_ne_eq_bot` shows that when all pieces outside one degree vanish, every
 element lies in that piece, and over a ring `DirectSum.isInternal_submodule_comap_subtype` turns a
 supremum-independent family with supremum `S` into an internal direct sum of `S` via
-`(A i).comap S.subtype`.
+`(A i).comap S.subtype`. Over any additive commutative monoid, if two sums over the same `Finset`
+take their `i`-th terms from the `i`-th summand of an internal direct sum and are equal, then their
+terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_finsetSum_eq`).
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
+When the ambient carrier is an additive commutative group, `DirectSum.coe_decompose_neg` shows that
+homogeneous projections commute with negation even when the summand type carries only
+`AddSubmonoidClass` (such as submodules over a semiring), giving closure of each summand under
+negation, subtraction, and integer scaling (`DirectSum.Decomposition.neg_mem`,
+`DirectSum.Decomposition.sub_mem`, `DirectSum.Decomposition.zsmul_mem`).
 
 Finally, the external direct sum `⨁ i, M i` of a family of `R`-modules is the internal direct sum
 of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectSum.lof R ι M i`
@@ -59,7 +68,8 @@ of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectS
 has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
 
 Over any semiring, the spans of the basis vectors in the fibers of a map on the index set of a basis
-form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`).
+form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`), and the basis vectors in
+one fiber form a basis of their span (`Module.Basis.spanImageFiber`).
 -/
 
 public section
@@ -361,6 +371,22 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
 
 end LinearMap
 
+namespace Finsupp
+
+/-- Two additive maps out of `α →₀ M` agree if they agree on `Finsupp.single x c` for every `x`
+and every `c` in a piece `ℳ i` of a decomposition of `M`. -/
+theorem addHom_ext_of_decomposition {ι α M N σ : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
+    [AddZeroClass N] {φ ψ : (α →₀ M) →+ N}
+    (h : ∀ x i (c : M), c ∈ ℳ i → φ (single x c) = ψ (single x c)) : φ = ψ :=
+  addHom_ext fun x c ↦ by
+    induction c using DirectSum.Decomposition.inductionOn ℳ with
+    | zero => simp
+    | @homogeneous i c => exact h x i c c.property
+    | add c c' hc hc' => rw [single_add, map_add, map_add, hc, hc']
+
+end Finsupp
+
 namespace DirectSum.IsInternal
 
 /-- The recomposition map of the fiberwise collection of an internal decomposition is injective. -/
@@ -472,6 +498,22 @@ theorem iSup_inf_eq_of_component_mem
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
+/-- **Finite sums in an internal direct sum are compared termwise.** If two sums over the same
+`Finset` `s`, each taking its `i`-th term from the `i`-th summand, are equal, then their terms are
+equal at every index in `s`. -/
+theorem eq_of_finsetSum_eq {ι M σ : Type*} [DecidableEq ι] [AddCommMonoid M] [SetLike σ M]
+    [AddSubmonoidClass σ M] {A : ι → σ} (h : IsInternal A) {s : Finset ι} {v w : ι → M}
+    (hv : ∀ i ∈ s, v i ∈ A i) (hw : ∀ i ∈ s, w i ∈ A i)
+    (hvw : ∑ i ∈ s, v i = ∑ i ∈ s, w i) {i : ι} (hi : i ∈ s) : v i = w i := by
+  let _ : Decomposition A := h.chooseDecomposition
+  -- the `i`-th component of such a sum is its `i`-th term
+  have component {u : ι → M} (hu : ∀ j ∈ s, u j ∈ A j) :
+      (decompose A (∑ j ∈ s, u j) i : M) = u i := by
+    rw [decompose_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum,
+      Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ decompose_of_mem_ne A (hu j hj) hji,
+      decompose_of_mem_same A (hu i hi)]
+  rw [← component hv, hvw, component hw]
+
 end DirectSum.IsInternal
 
 namespace DirectSum
@@ -502,6 +544,43 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
 end DirectSum
 
 namespace DirectSum
+
+section AddCommGroup
+
+variable {ι M σ : Type*} [DecidableEq ι] [AddCommGroup M] [SetLike σ M] [AddSubmonoidClass σ M]
+
+/-- In an additive commutative group decomposed into additive submonoids (for instance submodules
+over a semiring), homogeneous projections commute with negation. -/
+theorem coe_decompose_neg (ℳ : ι → σ) [Decomposition ℳ] (x : M) (i : ι) :
+    (decompose ℳ (-x) i : M) = -(decompose ℳ x i : M) :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← AddMemClass.coe_add, ← DirectSum.add_apply, ← decompose_add, neg_add_cancel,
+      decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+negation, even when the summand type carries only `AddSubmonoidClass` (such as `Submodule R M`
+over a semiring `R`). -/
+theorem Decomposition.neg_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M} (hx : x ∈ ℳ i) :
+    -x ∈ ℳ i := by
+  rw [← decompose_of_mem_same ℳ hx, ← coe_decompose_neg]
+  exact (decompose ℳ (-x) i).property
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+subtraction. -/
+theorem Decomposition.sub_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x y : M}
+    (hx : x ∈ ℳ i) (hy : y ∈ ℳ i) : x - y ∈ ℳ i := by
+  rw [sub_eq_add_neg]
+  exact add_mem hx (Decomposition.neg_mem hy)
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+integer scalar multiplication. -/
+theorem Decomposition.zsmul_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M}
+    (hx : x ∈ ℳ i) (n : ℤ) : n • x ∈ ℳ i := by
+  cases n with
+  | ofNat k => simpa only [Int.ofNat_eq_natCast, natCast_zsmul] using nsmul_mem hx k
+  | negSucc k => simpa only [negSucc_zsmul] using Decomposition.neg_mem (nsmul_mem hx (k + 1))
+
+end AddCommGroup
 
 section Module
 
@@ -597,6 +676,20 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- The basis vectors of `b` in the fiber of `w : ι → κ` over `c`, as a basis of their span. -/
+noncomputable def Module.Basis.spanImageFiber {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) :
+    Module.Basis {i // w i = c} R (Submodule.span R (b '' {i | w i = c})) :=
+  (Module.Basis.span (b.linearIndependent.comp _ Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ (by rw [Set.range_comp, Subtype.range_coe_subtype]))
+
+/-- The vectors of `Module.Basis.spanImageFiber` are the basis vectors of `b`. -/
+@[simp]
+theorem Module.Basis.spanImageFiber_apply {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) (i : {i // w i = c}) :
+    (b.spanImageFiber w c i : M) = b i := by
+  simp [Module.Basis.spanImageFiber, Module.Basis.span_apply]
 
 /-- If a supremum-independent family of submodules `A` over a ring has supremum `S`, then its
 traces `(A i).comap S.subtype` on `S` form an internal direct sum of `S` (the ring hypothesis is

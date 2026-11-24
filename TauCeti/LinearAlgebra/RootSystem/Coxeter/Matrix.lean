@@ -223,10 +223,10 @@ lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder (i j : B) (hd
   · exact coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (hlt hij)
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when the Cartan entry between them
-vanishes**, provided the diagonal entry at `i` is `2` and `A i j` vanishes whenever `A j i` does:
-the product of the two entries then vanishes exactly when the first of them does. On the diagonal
-both sides fail. -/
-lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff {i j : B} (hdiag : A i i = 2)
+vanishes**, provided the diagonal entry at `i` is nonzero and `A i j` vanishes whenever `A j i`
+does: the product of the two entries then vanishes exactly when the first of them does. On the
+diagonal both sides fail. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff {i j : B} (hdiag : A i i ≠ 0)
     (hsymm : A j i = 0 → A i j = 0) :
     coxeterMatrixOfGeneralizedCartanMatrix A i j = 2 ↔ A i j = 0 := by
   rcases eq_or_ne i j with rfl | hij
