@@ -142,42 +142,27 @@ private theorem dualNumberDeformationι_pullbackSpecIso_hom :
   · rw [dualNumberDeformationι_snd, Category.assoc, pullbackSpecIso_inv_snd, ← Spec.map_comp,
       ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
     congr 2
-    ext x
-    · change algebraMap R A (algebraMap R R[ε] x).fst =
-        (tensorEquiv R A ((1 : A) ⊗ₜ algebraMap R R[ε] x)).fst
-      simp
-    · change algebraMap R A (ε : R[ε]).fst = (tensorEquiv R A ((1 : A) ⊗ₜ (ε : R[ε]))).fst
-      simp
+    ext x <;> simp
+
+variable (A) in
+/-- An automorphism of `(Spec A)[ε]` over `Spec R[ε]`, read through `pullbackSpecIso`, as an
+automorphism of `A ⊗[R] R[ε]` in `CommRingCatᵒᵖ`, using that `Spec` is fully faithful. -/
+private def tensorAut :
+    Aut (affineDualNumberDeformation R A) →* Aut (Opposite.op (CommRingCat.of (A ⊗[R] R[ε]))) :=
+  (Spec.fullyFaithful.autMulEquivOfFullyFaithful _).symm.toMonoidHom.comp <|
+    (Aut.autMulEquivOfIso (pullbackSpecIso R A R[ε])).toMonoidHom.comp
+      ((Over.forget _).mapAut _)
 
 /-- The ring endomorphism of `A ⊗[R] R[ε]` whose spectrum is an endomorphism of `(Spec A)[ε]`,
 read through `pullbackSpecIso`. -/
 private def tensorHom (e : Aut (affineDualNumberDeformation R A)) :
     CommRingCat.of (A ⊗[R] R[ε]) ⟶ CommRingCat.of (A ⊗[R] R[ε]) :=
-  Spec.preimage ((pullbackSpecIso R A R[ε]).inv ≫ e.asIso.hom.left ≫
-    (pullbackSpecIso R A R[ε]).hom)
+  (tensorAut R A e).asIso.hom.unop
 
 private theorem spec_map_tensorHom (e : Aut (affineDualNumberDeformation R A)) :
     Spec.map (tensorHom R e) = (pullbackSpecIso R A R[ε]).inv ≫ e.asIso.hom.left ≫
       (pullbackSpecIso R A R[ε]).hom :=
-  Spec.map_preimage _
-
-private theorem tensorHom_mul (e e' : Aut (affineDualNumberDeformation R A)) :
-    tensorHom R (e * e') = tensorHom R e ≫ tensorHom R e' := by
-  refine Spec.map_injective ?_
-  simp [Spec.map_comp, spec_map_tensorHom]
-
-private theorem tensorHom_one :
-    tensorHom R (1 : Aut (affineDualNumberDeformation R A)) = 𝟙 _ := by
-  refine Spec.map_injective ?_
-  simp [spec_map_tensorHom]
-
-private theorem tensorHom_inv_mul (e : Aut (affineDualNumberDeformation R A)) :
-    tensorHom R e⁻¹ ≫ tensorHom R e = 𝟙 _ := by
-  rw [← tensorHom_mul, inv_mul_cancel, tensorHom_one]
-
-private theorem tensorHom_mul_inv (e : Aut (affineDualNumberDeformation R A)) :
-    tensorHom R e ≫ tensorHom R e⁻¹ = 𝟙 _ := by
-  rw [← tensorHom_mul, mul_inv_cancel, tensorHom_one]
+  Spec.map_preimage_unop _
 
 /-- An automorphism of `(Spec A)[ε]` over `Spec R[ε]` fixes the coefficients `1 ⊗ x`. -/
 private theorem tensorHom_tmul (e : Aut (affineDualNumberDeformation R A)) (x : R[ε]) :
@@ -194,16 +179,15 @@ private theorem tensorHom_tmul (e : Aut (affineDualNumberDeformation R A)) (x : 
 
 /-- The ring automorphism of `A ⊗[R] R[ε]` underlying an automorphism of `(Spec A)[ε]`. -/
 private def tensorAlgEquiv (e : Aut (affineDualNumberDeformation R A)) :
-    A ⊗[R] R[ε] ≃ₐ[R] A ⊗[R] R[ε] where
-  toFun := (tensorHom R e).hom
-  invFun := (tensorHom R e⁻¹).hom
-  left_inv x := congr($(tensorHom_mul_inv R e).hom x)
-  right_inv x := congr($(tensorHom_inv_mul R e).hom x)
-  map_mul' := map_mul _
-  map_add' := map_add _
-  commutes' r := by
-    simpa [Algebra.TensorProduct.algebraMap_apply', Algebra.algebraMap_eq_smul_one,
-      Algebra.TensorProduct.one_def] using tensorHom_tmul R e (algebraMap R R[ε] r)
+    A ⊗[R] R[ε] ≃ₐ[R] A ⊗[R] R[ε] :=
+  AlgEquiv.ofRingEquiv (f := (tensorAut R A e).asIso.unop.commRingCatIsoToRingEquiv) fun r ↦ by
+    rw [Algebra.TensorProduct.algebraMap_apply']
+    exact tensorHom_tmul R e _
+
+@[simp]
+private theorem tensorAlgEquiv_apply (e : Aut (affineDualNumberDeformation R A))
+    (x : A ⊗[R] R[ε]) : tensorAlgEquiv R e x = (tensorHom R e).hom x :=
+  rfl
 
 /-- The automorphism of `A[ε]` underlying an automorphism of `(Spec A)[ε]` over `Spec R[ε]`. -/
 def toDualNumberAlgEquiv (e : Aut (affineDualNumberDeformation R A)) :
@@ -215,7 +199,7 @@ def toDualNumberAlgEquiv (e : Aut (affineDualNumberDeformation R A)) :
 theorem toDualNumberAlgEquiv_eps (e : Aut (affineDualNumberDeformation R A)) :
     toDualNumberAlgEquiv R e ε = ε := by
   have h := tensorHom_tmul R e ε
-  simp [toDualNumberAlgEquiv, tensorAlgEquiv, h]
+  simp [toDualNumberAlgEquiv, h]
 
 /-- The automorphism of `(Spec A)[ε]` over `Spec R[ε]` given by an automorphism of `A[ε]`
 fixing `ε`: its spectrum, read through `A ⊗[R] R[ε] ≅ A[ε]` and `pullbackSpecIso`. -/
@@ -235,8 +219,8 @@ def ofDualNumberAlgEquiv (τ : A[ε] ≃ₐ[R] A[ε]) (hτ : τ ε = ε) :
       Over.mk_hom, pullbackSpecIso_inv_snd]
     rw [← pullbackSpecIso_hom_snd]
     congr 1
-    change Spec.map (CommRingCat.ofHom _) ≫ Spec.map (CommRingCat.ofHom _) = _
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, h]
+    rw [Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_hom, ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp, h]
 
 /-- On the underlying scheme, `ofDualNumberAlgEquiv τ` is the spectrum of `τ`, read through
 `A ⊗[R] R[ε] ≃ A[ε]` and `pullbackSpecIso`. -/
@@ -258,7 +242,7 @@ private theorem tensorHom_ofDualNumberAlgEquiv (τ : A[ε] ≃ₐ[R] A[ε]) (hτ
 @[simp]
 theorem toDualNumberAlgEquiv_ofDualNumberAlgEquiv (τ : A[ε] ≃ₐ[R] A[ε]) (hτ : τ ε = ε) :
     toDualNumberAlgEquiv R (ofDualNumberAlgEquiv R τ hτ) = τ := by
-  ext z <;> simp [toDualNumberAlgEquiv, tensorAlgEquiv, tensorHom_ofDualNumberAlgEquiv]
+  ext z <;> simp [toDualNumberAlgEquiv, tensorHom_ofDualNumberAlgEquiv]
 
 @[simp]
 theorem ofDualNumberAlgEquiv_toDualNumberAlgEquiv
@@ -267,7 +251,7 @@ theorem ofDualNumberAlgEquiv_toDualNumberAlgEquiv
   have h : CommRingCat.ofHom (tensorConj R A (toDualNumberAlgEquiv R e) :
       A ⊗[R] R[ε] →+* A ⊗[R] R[ε]) = tensorHom R e := by
     refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-    simp [toDualNumberAlgEquiv, tensorAlgEquiv]
+    simp [toDualNumberAlgEquiv]
   rw [← tensorHom_ofDualNumberAlgEquiv R _ (toDualNumberAlgEquiv_eps R e)] at h
   ext1
   refine Iso.ext (Over.OverMorphism.ext ?_)
@@ -291,7 +275,7 @@ theorem spec_map_toDualNumberAlgEquiv (e : Aut (affineDualNumberDeformation R A)
   rw [← spec_map_tensorHom]
   congr 1
   refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-  simp [toDualNumberAlgEquiv, tensorAlgEquiv]
+  simp [toDualNumberAlgEquiv]
 
 /-- An automorphism of `(Spec A)[ε]` over `Spec R[ε]` restricts to the identity of `Spec A` exactly
 when the corresponding automorphism of `A[ε]` reduces to the identity modulo `ε`. -/
@@ -304,22 +288,29 @@ theorem mem_infinitesimalAut_iff_fst (e : Aut (affineDualNumberDeformation R A))
   constructor
   · intro h z
     have := congr($(h).hom ((tensorEquiv R A).symm z))
-    simpa [toDualNumberAlgEquiv, tensorAlgEquiv] using this
+    simpa [toDualNumberAlgEquiv] using this
   · intro h
     refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
     have := h (tensorEquiv R A x)
-    simpa [toDualNumberAlgEquiv, tensorAlgEquiv] using this
+    simpa [toDualNumberAlgEquiv] using this
 
 /-- Composition of automorphisms of `(Spec A)[ε]` corresponds to composition of the automorphisms
 of `A[ε]` in the opposite order. -/
+@[simp]
 theorem toDualNumberAlgEquiv_mul (e e' : Aut (affineDualNumberDeformation R A)) :
     toDualNumberAlgEquiv R (e * e') = toDualNumberAlgEquiv R e' * toDualNumberAlgEquiv R e := by
-  ext z <;> simp [toDualNumberAlgEquiv, tensorAlgEquiv, tensorHom_mul]
+  ext z <;> simp [toDualNumberAlgEquiv, tensorHom]
 
 @[simp]
 theorem toDualNumberAlgEquiv_one :
     toDualNumberAlgEquiv R (1 : Aut (affineDualNumberDeformation R A)) = 1 := by
-  ext z <;> simp [toDualNumberAlgEquiv, tensorAlgEquiv, tensorHom_one]
+  ext z <;> simp [toDualNumberAlgEquiv, tensorHom]
+
+@[simp]
+theorem toDualNumberAlgEquiv_inv (e : Aut (affineDualNumberDeformation R A)) :
+    toDualNumberAlgEquiv R e⁻¹ = (toDualNumberAlgEquiv R e)⁻¹ :=
+  eq_inv_of_mul_eq_one_right <| by
+    rw [← toDualNumberAlgEquiv_mul, inv_mul_cancel, toDualNumberAlgEquiv_one]
 
 theorem toDualNumberAlgEquiv_injective :
     Function.Injective (toDualNumberAlgEquiv R (A := A)) := by
@@ -388,6 +379,17 @@ def derivationMulEquivInfinitesimalAut :
 theorem derivationMulEquivInfinitesimalAut_apply (d : Multiplicative (Derivation R A A)) :
     derivationMulEquivInfinitesimalAut R A d = infinitesimalAutOfDerivation R d.toAdd := by
   simp [derivationMulEquivInfinitesimalAut, infinitesimalAutOfDerivationHom]
+
+/-- The derivation of an infinitesimal automorphism `e` of `(Spec A)[ε]` sends `a` to the
+`ε`-coefficient of the image of `a` under the corresponding automorphism of `A[ε]`. -/
+@[simp]
+theorem derivationMulEquivInfinitesimalAut_symm_apply
+    (e : infinitesimalAut (Spec.map (CommRingCat.ofHom (algebraMap R A)))) (a : A) :
+    ((derivationMulEquivInfinitesimalAut R A).symm e).toAdd a =
+      (toDualNumberAlgEquiv R e.val (inl a)).snd := by
+  obtain ⟨d, rfl⟩ := (derivationMulEquivInfinitesimalAut R A).surjective e
+  rw [MulEquiv.symm_apply_apply]
+  simp
 
 end Affine
 
