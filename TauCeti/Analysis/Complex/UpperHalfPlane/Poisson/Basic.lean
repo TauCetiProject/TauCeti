@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Poisson and Schwarz integrals on the upper half-plane
@@ -50,6 +51,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
 * `TauCeti.upperHalfPlanePoissonMeasure`, `TauCeti.IsPoissonFinite`: the Poisson measure
   `dx / (1 + x ^ 2)`, which is `π` times the standard Cauchy distribution, and Poisson-finite
   measures.
+* `TauCeti.integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul`: `h` is integrable for the
+  Poisson measure exactly when `h(x) / (1 + x ^ 2)` is Lebesgue integrable.
 * `TauCeti.upperHalfPlanePoissonIntegral`, `TauCeti.upperHalfPlaneSchwarzIntegral`: the Poisson and
   Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
@@ -74,11 +77,11 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Complex InnerProductSpace MeasureTheory Metric Set Filter
 
 open scoped Real Topology ENNReal ComplexConjugate
+
+namespace TauCeti
 
 /-! ### The Poisson kernel -/
 
@@ -224,6 +227,24 @@ theorem upperHalfPlanePoissonMeasure_univ :
 instance instIsFiniteMeasureUpperHalfPlanePoissonMeasure :
     IsFiniteMeasure upperHalfPlanePoissonMeasure :=
   ⟨by simp [upperHalfPlanePoissonMeasure_univ]⟩
+
+/-- A function is integrable for the Poisson measure `dx / (1 + x ^ 2)` exactly when
+`h(x) / (1 + x ^ 2)` is Lebesgue integrable. -/
+theorem integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {h : ℝ → E} :
+    Integrable h upperHalfPlanePoissonMeasure ↔ Integrable (fun x ↦ (1 + x ^ 2)⁻¹ • h x) := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
+    TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff (by fun_prop)
+      (.of_forall fun _ ↦ by positivity)]
+
+/-- A function integrable for the Poisson measure is Lebesgue a.e. strongly measurable, since the
+Poisson measure has an everywhere positive density. -/
+theorem aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
+    [NormedAddCommGroup E] {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
+    AEStronglyMeasurable h :=
+  hh.aestronglyMeasurable.mono_ac (upperHalfPlanePoissonMeasure_eq_withDensity ▸
+    withDensity_absolutelyContinuous' (by fun_prop)
+      (.of_forall fun _ ↦ (ENNReal.ofReal_pos.2 (by positivity)).ne'))
 
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
