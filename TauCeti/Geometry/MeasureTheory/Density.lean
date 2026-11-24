@@ -133,6 +133,7 @@ theorem densityRatio_smul_measure (c : ℝ≥0∞) (μ : Measure X) (k : ℕ) (x
     (c • μ).densityRatio k x ρ = c * μ.densityRatio k x ρ := by
   simp only [densityRatio_def, smul_apply, smul_eq_mul, mul_div_assoc]
 
+@[gcongr]
 theorem densityRatio_mono (h : μ ≤ ν) (k : ℕ) (x : X) (ρ : ℝ) :
     μ.densityRatio k x ρ ≤ ν.densityRatio k x ρ :=
   ENNReal.div_le_div_right (h _) _
@@ -190,13 +191,29 @@ theorem lowerDensity_smul_measure {c : ℝ≥0∞} (hc : c ≠ ∞) (μ : Measur
   rw [lowerDensity_def, funext (densityRatio_smul_measure c μ k x)]
   exact ENNReal.liminf_const_mul_of_ne_top hc
 
+@[gcongr]
 theorem upperDensity_mono (h : μ ≤ ν) (k : ℕ) (x : X) :
     μ.upperDensity k x ≤ ν.upperDensity k x :=
   limsup_le_limsup (Eventually.of_forall (densityRatio_mono h k x))
 
+@[gcongr]
 theorem lowerDensity_mono (h : μ ≤ ν) (k : ℕ) (x : X) :
     μ.lowerDensity k x ≤ ν.lowerDensity k x :=
   liminf_le_liminf (Eventually.of_forall (densityRatio_mono h k x))
+
+theorem hasDensity_zero (k : ℕ) (x : X) : (0 : Measure X).HasDensity k x 0 := by
+  rw [hasDensity_iff, funext (densityRatio_zero k x)]
+  exact tendsto_const_nhds
+
+@[simp]
+theorem upperDensity_zero (k : ℕ) (x : X) : (0 : Measure X).upperDensity k x = 0 := by
+  rw [upperDensity_def, funext (densityRatio_zero k x)]
+  exact limsup_const 0
+
+@[simp]
+theorem lowerDensity_zero (k : ℕ) (x : X) : (0 : Measure X).lowerDensity k x = 0 := by
+  rw [lowerDensity_def, funext (densityRatio_zero k x)]
+  exact liminf_const 0
 
 /-! ### Locality -/
 
@@ -313,22 +330,13 @@ section Measurability
 rational radii in `(0, ρ)`, because the open ball is the union of the smaller ones. -/
 private lemma densityRatio_le_iSup_rat (μ : Measure X) (k : ℕ) (x : X) (ρ : ℝ) :
     μ.densityRatio k x ρ ≤ ⨆ (q : ℚ) (_ : (q : ℝ) ∈ Ioo 0 ρ), μ.densityRatio k x q := by
-  set s : {q : ℚ // (q : ℝ) ∈ Ioo 0 ρ} → Set X := fun q ↦ eball x (ENNReal.ofReal q)
-  have hunion : eball x (ENNReal.ofReal ρ) = ⋃ q, s q := by
-    refine (iUnion_subset fun q ↦ eball_subset_eball
-      (ENNReal.ofReal_le_ofReal q.property.2.le)).antisymm' fun y hy ↦ ?_
-    have hy' := mem_eball.1 hy
-    have hne : edist y x ≠ ∞ := hy'.ne_top
-    obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((ENNReal.lt_ofReal_iff_toReal_lt hne).1 hy')
-    exact mem_iUnion.2 ⟨⟨q, ENNReal.toReal_nonneg.trans_lt hq1, hq2⟩,
-      (ENNReal.lt_ofReal_iff_toReal_lt hne).2 hq1⟩
-  have hmono : Monotone s := fun q q' h ↦
-    eball_subset_eball (ENNReal.ofReal_le_ofReal (Rat.cast_le.2 h))
-  rw [densityRatio_def, hunion, hmono.directed_le.measure_iUnion, ENNReal.iSup_div,
-    iSup_subtype']
-  refine iSup_mono fun q ↦ ENNReal.div_le_div_left ?_ _
+  rw [densityRatio_def, measure_eball_eq_iSup_lt]
+  simp_rw [ENNReal.iSup_div]
+  refine iSup₂_le fun r hr ↦ ?_
+  obtain ⟨q, hrq, hqρ⟩ := exists_rat_btwn (ENNReal.toReal_lt_of_lt_ofReal hr)
+  refine le_iSup₂_of_le q ⟨ENNReal.toReal_nonneg.trans_lt hrq, hqρ⟩ ?_
+  rw [densityRatio_def, ← ENNReal.ofReal_toReal hr.ne_top]
   gcongr
-  exact q.property.2.le
 
 /-- The upper density as a countable infimum of countable suprema of density ratios. -/
 private lemma upperDensity_eq_iInf_iSup_rat (μ : Measure X) (k : ℕ) (x : X) :
