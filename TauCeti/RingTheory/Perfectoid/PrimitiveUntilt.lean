@@ -100,6 +100,12 @@ Tate ring by Bhatt–Morrow–Scholze's criterion
 * `TauCeti.Perfectoid.untilt.t2Space`, `TauCeti.Perfectoid.untilt.completeSpace`: for `R` a
   perfect complete Hausdorff Tate ring of characteristic `p` and primitive `ξ`, the untilt along
   `(ξ)` is Hausdorff and complete.
+* `TauCeti.Perfectoid.untilt.exists_algebraMap_eq`: every element of `A⁺` is the image of a Witt
+  vector.
+* `WittVector.IsPrimitive.coeff_zero_mem_radical`,
+  `WittVector.IsPrimitive.exists_isPseudoUniformizer_pow_dvd_coeff_zero`: for primitive
+  `ξ ∈ 𝕎 R⁺`, `ξ₀` lies in the radical of `(ϖ)` for every pseudouniformiser `ϖ ∈ R⁺`, and if `R` is
+  perfect of characteristic `p`, some pseudouniformiser `ϖ` has `ϖ ^ p ∣ ξ₀`.
 * `TauCeti.Perfectoid.untilt.sharp_dvd_algebraMap_iff`: for primitive `ξ` and `ϖ ∣ ξ₀`, `♯ϖ`
   divides the image of `a ∈ 𝕎 R⁺` in `A⁺` exactly when `ϖ` divides `a₀`.
 * `TauCeti.Perfectoid.untilt.isPerfectoidTateRing`: for `R` a perfect complete Hausdorff Tate
@@ -328,7 +334,7 @@ variable {p} [TopologicalSpace R] [IsTopologicalRing R] [IsTateRing R] [CharP R 
 omit [Fact p.Prime] [CharP R p] [PerfectRing R p] in
 /-- The zeroth Witt coordinate of a primitive element lies in the radical of `(ϖ)`, for every
 pseudouniformiser `ϖ ∈ R⁺`. -/
-private theorem coeff_zero_mem_radical (hξ : ξ.IsPrimitive) {ϖ : P.plus}
+theorem _root_.WittVector.IsPrimitive.coeff_zero_mem_radical (hξ : ξ.IsPrimitive) {ϖ : P.plus}
     (hϖ : IsPseudoUniformizer (ϖ : R)) : ξ.coeff 0 ∈ (Ideal.span {ϖ}).radical := by
   obtain ⟨n, hn⟩ := P.plus.exists_dvd_pow_of_isTopologicallyNilpotent
     P.isRingOfIntegralElements.isOpen hϖ.isUnit
@@ -338,11 +344,12 @@ private theorem coeff_zero_mem_radical (hξ : ξ.IsPrimitive) {ϖ : P.plus}
 /-- For a primitive element `ξ`, some pseudouniformiser `ϖ ∈ R⁺` has `ϖ ^ p` dividing the zeroth
 Witt coordinate of `ξ`: a power of `ξ₀` is divisible by a pseudouniformiser `ϖ₀`, and `R⁺` is
 perfect, so a `p`-power root of `ϖ₀` will do. -/
-private theorem exists_isPseudoUniformizer_pow_dvd_coeff_zero (hξ : ξ.IsPrimitive) :
+theorem _root_.WittVector.IsPrimitive.exists_isPseudoUniformizer_pow_dvd_coeff_zero
+    (hξ : ξ.IsPrimitive) :
     ∃ ϖ : P.plus, IsPseudoUniformizer (ϖ : R) ∧ ϖ ^ p ∣ ξ.coeff 0 := by
   have hp : p.Prime := Fact.out
   obtain ⟨ϖ₀, hϖ₀⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
-  obtain ⟨n, hn⟩ := coeff_zero_mem_radical hξ hϖ₀
+  obtain ⟨n, hn⟩ := hξ.coeff_zero_mem_radical hϖ₀
   have hn' : ϖ₀ ∣ ξ.coeff 0 ^ p ^ n :=
     (Ideal.mem_span_singleton.mp hn).trans (pow_dvd_pow _ (Nat.lt_pow_self hp.one_lt).le)
   set ϖ := (iterateFrobeniusEquiv P.plus p (n + 1)).symm ϖ₀
@@ -362,7 +369,7 @@ private theorem exists_isPseudoUniformizer_pow_dvd_coeff_zero (hξ : ξ.IsPrimit
 private theorem mk_teichmuller_mem_nonZeroDivisors (hξ : ξ.IsPrimitive) {ϖ : P.plus}
     (hϖ : IsPseudoUniformizer (ϖ : R)) :
     Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ϖ) ∈ (𝕎 P.plus ⧸ Ideal.span {ξ})⁰ :=
-  hξ.isDistinguished.mk_teichmuller_mem_nonZeroDivisors (coeff_zero_mem_radical hξ hϖ)
+  hξ.isDistinguished.mk_teichmuller_mem_nonZeroDivisors (hξ.coeff_zero_mem_radical hϖ)
     (comap_nonZeroDivisors_le_of_injective (f := P.plus.subtype) Subtype.val_injective
       hϖ.isUnit.mem_nonZeroDivisors)
 
@@ -391,7 +398,7 @@ private theorem isAdicComplete_quotient (hξ : ξ.IsPrimitive) {ϖ : P.plus}
       (𝕎 P.plus ⧸ Ideal.span {ξ}) :=
   haveI := IsUniform.of_perfectRing (R := R) p
   haveI := P.isRingOfIntegralElements.isAdicComplete_span_singleton ϖ hϖ
-  hξ.isDistinguished.isAdicComplete_quotient (coeff_zero_mem_radical hξ hϖ)
+  hξ.isDistinguished.isAdicComplete_quotient (hξ.coeff_zero_mem_radical hϖ)
 
 /-- **The untilt along a primitive element is Hausdorff**, for `R` a perfect complete Hausdorff
 Tate ring of characteristic `p`. -/
@@ -446,6 +453,14 @@ theorem algebraMap_mem_untiltPlus (a : 𝕎 P.plus) :
   rw [algebraMap_apply]
   exact RingHom.mem_range_self _ _
 
+/-- Every element of `A⁺` is the image of a Witt vector. -/
+theorem exists_algebraMap_eq (y : untiltPlus p P J) :
+    ∃ a : 𝕎 P.plus, (⟨algebraMap (𝕎 P.plus) _ a, algebraMap_mem_untiltPlus _ a⟩ :
+      untiltPlus p P J) = y := by
+  obtain ⟨b, hb⟩ := mem_untiltPlus.mp y.property
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective b
+  exact ⟨a, Subtype.ext ((algebraMap_apply J a).trans hb)⟩
+
 variable (p P) in
 /-- The *sharp map on `R⁺`*, `R⁺ → A`, `x ↦ x♯ = θ_J([x])`: the image of the Teichmüller
 representative. It is multiplicative and sends `0` to `0`, but it is not additive in general. For
@@ -474,14 +489,6 @@ away from `[ϖ]`. -/
 noncomputable def theta : L →+* untilt p P J :=
   haveI := isLocalizationAway (J := J) hϖ
   IsLocalization.Away.map L (untilt p P J) (Ideal.Quotient.mk J) (teichmuller p ϖ)
-
-/-- Every element of `A⁺` is the image of a Witt vector. -/
-private theorem exists_algebraMap_eq (J : Ideal (WittVector p P.plus)) (y : untiltPlus p P J) :
-    ∃ a : 𝕎 P.plus, (⟨algebraMap (𝕎 P.plus) _ a, algebraMap_mem_untiltPlus _ a⟩ :
-      untiltPlus p P J) = y := by
-  obtain ⟨b, hb⟩ := mem_untiltPlus.mp y.property
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective b
-  exact ⟨a, Subtype.ext ((algebraMap_apply J a).trans hb)⟩
 
 /-- `θ_J` extends the map `𝕎 R⁺ → A`. -/
 @[simp]
@@ -734,7 +741,7 @@ theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.s
   obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent
     P.isRingOfIntegralElements.isOpen x
   obtain ⟨N, hN⟩ :=
-    hξ.isDistinguished.exists_mk_teichmuller_sub_mem (coeff_zero_mem_radical hξ hϖ) (n + k)
+    hξ.isDistinguished.exists_mk_teichmuller_sub_mem (hξ.coeff_zero_mem_radical hϖ) (n + k)
   obtain ⟨u, hu⟩ := hϖ.isUnit.pow N
   have hU : {y : R | ((u⁻¹ : Rˣ) : R) * (y - x) ∈ P.plus} ∈ 𝓝 x :=
     (continuous_const.mul (continuous_id.sub continuous_const)).continuousAt.preimage_mem_nhds
@@ -786,7 +793,7 @@ theorem isPerfectoidTateRing (hξ : ξ.IsPrimitive) :
   have := completeSpace hξ
   have := t2Space hξ
   have hp : p.Prime := Fact.out
-  obtain ⟨ϖ, hϖ, hϖξ⟩ := exists_isPseudoUniformizer_pow_dvd_coeff_zero hξ
+  obtain ⟨ϖ, hϖ, hϖξ⟩ := hξ.exists_isPseudoUniformizer_pow_dvd_coeff_zero
   -- `A⁺` is open and bounded, and Frobenius `A⁺ ⧸ (♯ϖ) → A⁺ ⧸ (♯ϖ ^ p)` is bijective, since it
   -- is Frobenius `R⁺ ⧸ (ϖ) → R⁺ ⧸ (ϖ ^ p)` under `quotientSharpEquiv`
   set π : untiltPlus p P (Ideal.span {ξ}) := ⟨sharp p P _ ϖ, sharp_mem_untiltPlus ϖ⟩
