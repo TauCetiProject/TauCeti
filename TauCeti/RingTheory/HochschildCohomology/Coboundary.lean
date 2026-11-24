@@ -61,6 +61,7 @@ the cochains with coefficients in the dual bimodule, see
   are the derivations.
 * `TauCeti.BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero`: a
   `TauCeti.BimoduleDerivation` is a degree-one cocycle.
+* `TauCeti.hochschildBimoduleCoboundary_two_apply`: the explicit formula for `δ` in degree two.
 
 ## References
 
@@ -410,6 +411,27 @@ theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
     hochschildBimoduleCoboundary R A M 1
         (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 D) = 0 :=
   (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
+
+/-- The coboundary of a degree-two cochain `ψ`:
+`(δψ)(a, b, c) = a • ψ(b, c) - ψ(a b, c) + ψ(a, b c) - ψ(a, b) • c`. -/
+theorem hochschildBimoduleCoboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] M) (a b c : A) :
+    hochschildBimoduleCoboundary R A M 2 ψ ![a, b, c] =
+      a • ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - op c • ψ ![a, b] := by
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_two]
+  have h₀ : Fin.contractNth (0 : Fin 2).castSucc (· * ·) ![a, b, c] = ![a * b, c] := by
+    ext i
+    fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 2).castSucc (· * ·) ![a, b, c] = ![a, b * c] := by
+    ext i
+    fin_cases i <;> rfl
+  have hi : Fin.init ![a, b, c] = ![a, b] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [h₀, h₁, hi, Fin.tail_vecCons]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val, Fin.reduceLast, Fin.val_zero, Fin.val_one,
+    zero_add, pow_one, neg_smul, one_smul, Nat.reduceAdd, even_two, Even.neg_pow, one_pow,
+    Int.reducePow]
+  abel
 
 end Coboundary
 
