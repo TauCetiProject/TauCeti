@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.Analysis.ODE.Propagator
+import TauCeti.Analysis.Normed.Algebra.NilpotentExponential
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -44,41 +45,25 @@ noncomputable abbrev opB : EuclideanSpace ℝ (Fin 2) →L[ℝ] EuclideanSpace �
 noncomputable abbrev coeff (r : ℝ) : EuclideanSpace ℝ (Fin 2) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
   opB + (Iio 1).indicator (fun _ ↦ opA - opB) r
 
-/-- An element of square zero has exponential `1 + x`. -/
-private theorem exp_eq_one_add_of_sq_eq_zero {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    {x : 𝔸} (hx : x ^ 2 = 0) : exp x = 1 + x := by
-  have hpow (n : ℕ) (hn : 2 ≤ n) : x ^ n = 0 := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-    rw [pow_add, hx, zero_mul]
-  rw [exp_eq_tsum ℝ]
-  dsimp only
-  rw [tsum_eq_sum (s := Finset.range 2) fun n hn ↦ by
-    rw [hpow n (by simp at hn; omega), smul_zero]]
-  simp [Finset.sum_range_succ]
+/-- A square-zero matrix acts with exponential `1 + M`. -/
+private theorem exp_toEuclideanCLM {n : Type*} [Fintype n] [DecidableEq n] {M : Matrix n n ℝ}
+    (hM : M * M = 0) :
+    exp (Matrix.toEuclideanCLM (𝕜 := ℝ) M) = Matrix.toEuclideanCLM (𝕜 := ℝ) (1 + M) := by
+  rw [exp_eq_one_add_of_sq_eq_zero ℝ (by rw [← map_pow, sq, hM, map_zero]), map_add, map_one]
+
+/-- Composition of matrix operators is the operator of the matrix product. -/
+private theorem toEuclideanCLM_comp {n : Type*} [Fintype n] [DecidableEq n]
+    (M N : Matrix n n ℝ) : Matrix.toEuclideanCLM (𝕜 := ℝ) M ∘L Matrix.toEuclideanCLM (𝕜 := ℝ) N =
+      Matrix.toEuclideanCLM (𝕜 := ℝ) (M * N) := by
+  rw [map_mul, ContinuousLinearMap.mul_def]
 
 private theorem exp_opA : exp opA = Matrix.toEuclideanCLM (𝕜 := ℝ) !![1, 1; 0, 1] := by
-  have hsq : opA ^ 2 = 0 := by
-    rw [opA, ← map_pow, ← map_zero (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin 2))]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [sq, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [exp_eq_one_add_of_sq_eq_zero hsq,
-    opA, ← map_one (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin 2)), ← map_add]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  rw [opA, exp_toEuclideanCLM (by ext i j; fin_cases i <;> fin_cases j <;> simp)]
+  simp [Matrix.one_fin_two]
 
 private theorem exp_opB : exp opB = Matrix.toEuclideanCLM (𝕜 := ℝ) !![1, 0; 1, 1] := by
-  have hsq : opB ^ 2 = 0 := by
-    rw [opB, ← map_pow, ← map_zero (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin 2))]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [sq, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [exp_eq_one_add_of_sq_eq_zero hsq,
-    opB, ← map_one (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin 2)), ← map_add]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  rw [opB, exp_toEuclideanCLM (by ext i j; fin_cases i <;> fin_cases j <;> simp)]
+  simp [Matrix.one_fin_two]
 
 private theorem integrableOn_coeff : IntegrableOn coeff (Icc 0 2) :=
   (integrableOn_const (C := opB) measure_Icc_lt_top.ne).add
@@ -101,33 +86,28 @@ theorem propagator_coeff_two_zero :
       rw [uIoc_of_le one_le_two] at hmem
       simp only [coeff, indicator_of_notMem (show u ∉ Iio 1 from not_lt.mpr hmem.1.le), add_zero]
   rw [← propagator_comp_propagator integrableOn_coeff (r := 1) ⟨zero_le_one, one_le_two⟩
-    ⟨le_rfl, zero_le_two⟩ ⟨zero_le_two, le_rfl⟩, h₁, h₂, exp_opA, exp_opB,
-    ← ContinuousLinearMap.mul_def, ← map_mul]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> norm_num
+    ⟨le_rfl, zero_le_two⟩ ⟨zero_le_two, le_rfl⟩, h₁, h₂, exp_opA, exp_opB, toEuclideanCLM_comp]
+  norm_num [Matrix.mul_fin_two]
 
-/-- The propagator differs from the reversed product `exp A ∘ exp B = [[2, 1], [1, 1]]`. -/
+/-- The reversed product is `exp A ∘ exp B = [[2, 1], [1, 1]]`. -/
 theorem exp_opA_comp_exp_opB :
-    exp opA ∘L exp opB = Matrix.toEuclideanCLM (𝕜 := ℝ) !![2, 1; 1, 1] ∧
-      exp opA ∘L exp opB ≠ propagator coeff 2 0 := by
-  have h : exp opA ∘L exp opB = Matrix.toEuclideanCLM (𝕜 := ℝ) !![2, 1; 1, 1] := by
-    rw [exp_opA, exp_opB, ← ContinuousLinearMap.mul_def, ← map_mul]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> norm_num
-  refine ⟨h, ?_⟩
-  rw [h, propagator_coeff_two_zero, Ne, EmbeddingLike.apply_eq_iff_eq]
-  intro h'
-  simpa using congrFun (congrFun h' 0) 0
+    exp opA ∘L exp opB = Matrix.toEuclideanCLM (𝕜 := ℝ) !![2, 1; 1, 1] := by
+  rw [exp_opA, exp_opB, toEuclideanCLM_comp]
+  norm_num [Matrix.mul_fin_two]
 
-/-- The propagator differs from the exponential `exp (A + B)` of the integral of the coefficient:
-`exp (A + B)` commutes with `A + B`, and `[[1, 1], [1, 2]]` does not. -/
-theorem exp_opA_add_opB_ne : exp (opA + opB) ≠ propagator coeff 2 0 := by
+/-- The propagator differs from the reversed product `exp A ∘ exp B`. -/
+theorem exp_opA_comp_exp_opB_ne_propagator : exp opA ∘L exp opB ≠ propagator coeff 2 0 := by
+  rw [exp_opA_comp_exp_opB, propagator_coeff_two_zero, Ne, EmbeddingLike.apply_eq_iff_eq]
   intro h
-  have hc : Commute (opA + opB) (exp (opA + opB)) := (Commute.refl _).exp_right
-  rw [h, propagator_coeff_two_zero, opA, opB, ← map_add, Commute, SemiconjBy, ← map_mul,
-    ← map_mul, EmbeddingLike.apply_eq_iff_eq] at hc
+  simpa using congrFun (congrFun h 0) 0
+
+/-- The propagator `N_P(2, 0)` differs from the exponential `exp (A + B)` of the integral
+`∫₀² P = A + B` of the coefficient. -/
+theorem exp_opA_add_opB_ne_propagator : exp (opA + opB) ≠ propagator coeff 2 0 := by
+  intro h
+  have hc := ((Commute.refl (opA + opB)).exp_right).eq
+  rw [h, propagator_coeff_two_zero, opA, opB, ← map_add] at hc
+  simp only [← map_mul, EmbeddingLike.apply_eq_iff_eq] at hc
   simpa [Matrix.mul_fin_two] using congrFun (congrFun hc 0) 1
 
 end TauCeti.Examples.Propagator
