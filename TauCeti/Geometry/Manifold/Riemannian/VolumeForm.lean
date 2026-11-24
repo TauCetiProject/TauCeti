@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
-public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -22,7 +24,13 @@ space.  This file packages Mathlib's oriented inner-product-space volume form fi
 pointwise object for the manifold divergence and Stokes identities.
 
 The construction is total, as are the rough forms in the differential-form API.  Its defining
-characterization is that it evaluates to `1` on every positively oriented orthonormal basis.
+characterization is that it evaluates to `1` on every positively oriented orthonormal basis, so any
+alternating top form bounded by `1` in absolute value on orthonormal frames is dominated pointwise
+by the Riemannian volume form (`TauCeti.abs_apply_le_abs_riemannianVolumeForm`,
+`TauCeti.abs_apply_le_riemannianVolumeForm`, `TauCeti.apply_le_riemannianVolumeForm`), and pulling
+back along a map whose differential preserves orientations and inner products recovers the source
+volume form (`TauCeti.mpullback_riemannianVolumeForm_apply_of_isOrientationPreservingAt`,
+`TauCeti.mpullback_riemannianVolumeForm_of_isOrientationPreservingAt`).
 
 For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
@@ -44,7 +52,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped Manifold
+open scoped Manifold RealInnerProductSpace
 
 namespace TauCeti
 
@@ -79,6 +87,15 @@ theorem riemannianVolumeForm_apply
   let := o.fact_finrank_tangentSpace x
   simp [riemannianVolumeForm]
 
+/-- Reversing the manifold orientation negates the Riemannian volume form. -/
+@[simp]
+theorem riemannianVolumeForm_neg (o : Manifold.Orientation I M (Fin m)) :
+    riemannianVolumeForm (-o) = -riemannianVolumeForm o := by
+  ext x v
+  let := o.fact_finrank_tangentSpace x
+  let := (-o).fact_finrank_tangentSpace x
+  simp [riemannianVolumeForm_apply, _root_.Orientation.volumeForm_neg_orientation]
+
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
 theorem riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -89,6 +106,18 @@ theorem riemannianVolumeForm_apply_orthonormal
   rw [riemannianVolumeForm_def]
   exact Orientation.volumeFormL_apply_orthonormal _ b hb
 
+/-- The Riemannian volume form takes value `1` on a positively oriented tangent `Module.Basis`
+whose vectors are orthonormal. -/
+theorem riemannianVolumeForm_apply_of_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.orientation = Manifold.Orientation.orientationAt o x)
+    (horth : Orthonormal ℝ b) :
+    riemannianVolumeForm o x b = 1 := by
+  rw [← b.coe_toOrthonormalBasis horth]
+  exact riemannianVolumeForm_apply_orthonormal o x (b.toOrthonormalBasis horth)
+    (by rwa [b.toBasis_toOrthonormalBasis])
+
 /-- The Riemannian volume form has absolute value one on every orthonormal basis. -/
 theorem abs_riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -98,6 +127,24 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
   rw [riemannianVolumeForm_def]
   rw [Orientation.volumeFormL_apply]
   exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
+
+/-- The Riemannian volume form vanishes nowhere. -/
+theorem riemannianVolumeForm_apply_ne_zero (o : Manifold.Orientation I M (Fin m)) (x : M) :
+    riemannianVolumeForm o x ≠ 0 := by
+  intro h
+  let := o.fact_finrank_tangentSpace x
+  let b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x) :=
+    (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr Fact.out)
+  have habs := abs_riemannianVolumeForm_apply_orthonormal o x b
+  rw [h, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, abs_zero] at habs
+  exact zero_ne_one habs
+
+/-- Because the Riemannian volume form vanishes nowhere, its topological support is the whole
+manifold. -/
+@[simp]
+theorem tsupport_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)) :
+    _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) (riemannianVolumeForm o) = Set.univ :=
+  Set.eq_univ_iff_forall.2 fun x ↦ subset_tsupport _ (riemannianVolumeForm_apply_ne_zero o x)
 
 /-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
 theorem riemannianVolumeForm_apply_orthonormal_of_opposite
@@ -122,6 +169,166 @@ theorem eq_riemannianVolumeForm_of_apply_orthonormal
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_def]
   exact Orientation.eq_volumeFormL_of_apply_orthonormal _ ω b hb hω
+
+/-- A top form taking value `1` on a positively oriented tangent `Module.Basis` whose vectors are
+orthonormal is the Riemannian volume form. -/
+theorem eq_riemannianVolumeForm_of_apply_of_orthonormal
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hb : b.orientation = Manifold.Orientation.orientationAt o x)
+    (horth : Orthonormal ℝ b) (hω : ω b = 1) :
+    ω = riemannianVolumeForm o x :=
+  eq_riemannianVolumeForm_of_apply_orthonormal o x ω (b.toOrthonormalBasis horth)
+    (by rwa [b.toBasis_toOrthonormalBasis]) (by rwa [b.coe_toOrthonormalBasis])
+
+/-- **Pointwise comass inequality** on arbitrary tangent `m`-tuples: in every degree `m : ℕ`, if a
+continuous alternating form `ω` on `T_x M` has absolute value at most `1` on every orthonormal
+`m`-frame, then `|ω(v)| ≤ |dvol_g(v)|` for every `v : Fin m → T_x M`. -/
+theorem abs_apply_le_abs_riemannianVolumeForm
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (hω : ∀ v : Fin m → TangentSpace I x, Orthonormal ℝ v → |ω v| ≤ 1)
+    (v : Fin m → TangentSpace I x) :
+    |ω v| ≤ |riemannianVolumeForm o x v| := by
+  let := o.fact_finrank_tangentSpace x
+  let b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x) :=
+    (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr Fact.out)
+  have hωb : |ω b.toBasis| ≤ 1 := by
+    rw [b.coe_toBasis]
+    exact hω b b.orthonormal
+  have hvolb : |riemannianVolumeForm o x b.toBasis| = 1 := by
+    rw [b.coe_toBasis]
+    exact abs_riemannianVolumeForm_apply_orthonormal o x b
+  rw [ContinuousAlternatingMap.apply_eq_det_mul ω b.toBasis v,
+    ContinuousAlternatingMap.apply_eq_det_mul (riemannianVolumeForm o x) b.toBasis v,
+    abs_mul, abs_mul, hvolb, mul_one]
+  exact mul_le_of_le_one_right (abs_nonneg _) hωb
+
+/-- **Pointwise comass inequality** on positively oriented tangent bases: in every degree `m : ℕ`,
+if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `|ω(c)| ≤ dvol_g(c)` on every
+positively oriented basis `c` of `T_x M`. -/
+theorem abs_apply_le_riemannianVolumeForm
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (hω : ∀ v : Fin m → TangentSpace I x, Orthonormal ℝ v → |ω v| ≤ 1)
+    (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
+    |ω c| ≤ riemannianVolumeForm o x c := by
+  let := o.fact_finrank_tangentSpace x
+  have hpos : 0 < riemannianVolumeForm o x c := by
+    rw [riemannianVolumeForm_apply]
+    exact _root_.Orientation.volumeForm_apply_pos_iff.2 hc
+  exact (abs_apply_le_abs_riemannianVolumeForm o x ω hω c).trans_eq (abs_of_pos hpos)
+
+/-- Signed pointwise comass inequality on positively oriented tangent bases: in every degree
+`m : ℕ`, if `|ω(v)| ≤ 1` on every orthonormal `m`-frame `v` of `T_x M`, then `ω(c) ≤ dvol_g(c)` on
+every positively oriented basis `c` of `T_x M`. -/
+theorem apply_le_riemannianVolumeForm
+    (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (ω : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ)
+    (hω : ∀ v : Fin m → TangentSpace I x, Orthonormal ℝ v → |ω v| ≤ 1)
+    (c : Module.Basis (Fin m) ℝ (TangentSpace I x))
+    (hc : c.orientation = Manifold.Orientation.orientationAt o x) :
+    ω c ≤ riemannianVolumeForm o x c :=
+  (le_abs_self _).trans (abs_apply_le_riemannianVolumeForm o x ω hω c hc)
+
+/-- At every point of an oriented Riemannian manifold with nonempty orientation index `ι`, there
+exists a positively oriented tangent `Module.Basis` whose vectors are orthonormal. -/
+theorem Manifold.Orientation.exists_basis_orientationAt_eq_and_orthonormal
+    {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
+    (o : Manifold.Orientation I M ι) (x : M) :
+    ∃ b : Module.Basis ι ℝ (TangentSpace I x),
+      b.orientation = o.orientationAt x ∧ Orthonormal ℝ b := by
+  let : FiniteDimensional ℝ (TangentSpace I x) :=
+    Module.finite_of_finrank_pos (o.finrank_tangentSpace_eq x ▸ Fintype.card_pos)
+  let b := ((stdOrthonormalBasis ℝ (TangentSpace I x)).reindex
+    (Fintype.equivFinOfCardEq (o.finrank_tangentSpace_eq x).symm).symm).adjustToOrientation
+    (o.orientationAt x)
+  refine ⟨b.toBasis,
+    ((stdOrthonormalBasis ℝ (TangentSpace I x)).reindex _).orientation_adjustToOrientation _, ?_⟩
+  rw [b.coe_toBasis]
+  exact b.orthonormal
+
+open scoped Classical in
+/-- In dimension zero, the Riemannian volume form evaluates to `1` or `-1` according to whether the
+tangent orientation is `positiveOrientation` or its opposite. -/
+theorem riemannianVolumeForm_zeroDim_apply (o : Manifold.Orientation I M (Fin 0)) (x : M)
+    (v : Fin 0 → TangentSpace I x) :
+    riemannianVolumeForm o x v =
+      if o.orientationAt x = positiveOrientation then 1 else -1 := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  rcases (o.orientationAt x).eq_or_eq_neg_of_isEmpty with h | h
+  · simp [h]
+  · have hne : -(positiveOrientation : Orientation ℝ (TangentSpace I x) (Fin 0)) ≠
+        positiveOrientation := (Module.Ray.ne_neg_self _).symm
+    simp [h, hne]
+
+/-- In dimension zero, the Riemannian volume form at `x` evaluates to `Orientation.signBasis` of the
+tangent orientation relative to any `Fin 0` basis of the model space. -/
+theorem riemannianVolumeForm_zeroDim_apply_eq_signBasis (o : Manifold.Orientation I M (Fin 0))
+    (b : Module.Basis (Fin 0) ℝ E) (x : M) (v : Fin 0 → TangentSpace I x) :
+    riemannianVolumeForm o x v = (Orientation.signBasis (o.orientationAt x) b : ℝ) := by
+  classical
+  -- `TangentSpace I x` is definitionally the model space `E`, so `b` is also a tangent basis.
+  let bT : Module.Basis (Fin 0) ℝ (TangentSpace I x) := b
+  have hs : (Orientation.signBasis (o.orientationAt x) b : ℝ) =
+      (Orientation.signBasis (o.orientationAt x) bT : ℝ) := rfl
+  rw [riemannianVolumeForm_zeroDim_apply, hs, ← bT.orientation_isEmpty]
+  split_ifs with h
+  · rw [h, _root_.Orientation.signBasis_orientation, Units.val_one, Int.cast_one]
+  · have hneg : o.orientationAt x = -bT.orientation := by
+      rcases (o.orientationAt x).eq_or_eq_neg_of_isEmpty with hpos | hneg
+      · exact False.elim (h (hpos.trans bT.orientation_isEmpty.symm))
+      · rwa [bT.orientation_isEmpty]
+    rw [hneg, _root_.Orientation.signBasis_neg, _root_.Orientation.signBasis_orientation,
+      Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one]
+
+/-- At a point where a map's differential preserves both the tangent orientations and the
+Riemannian inner products, the pullback of the target Riemannian volume form recovers the source
+Riemannian volume form. -/
+theorem mpullback_riemannianVolumeForm_apply_of_isOrientationPreservingAt
+    {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+    [FiniteDimensional ℝ E'] [IsManifold I' 1 M']
+    [RiemannianBundle (fun y : M' ↦ TangentSpace I' y)]
+    {o : Manifold.Orientation I M (Fin m)} {o' : Manifold.Orientation I' M' (Fin m)}
+    {f : M → M'} {x : M} (ho : o.IsOrientationPreservingAt o' f x)
+    (hinner : ∀ v w : TangentSpace I x,
+      inner ℝ (mfderiv I I' f x v) (mfderiv I I' f x w) = inner ℝ v w) :
+    mpullback I I' f (riemannianVolumeForm o') x = riemannianVolumeForm o x := by
+  ext v
+  let := o.fact_finrank_tangentSpace x
+  let := o'.fact_finrank_tangentSpace (f x)
+  obtain ⟨e, he, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 ho
+  have he_apply (u : TangentSpace I x) : e u = mfderiv I I' f x u :=
+    DFunLike.congr_fun he u
+  let φ : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I' (f x) :=
+    e.toLinearEquiv.isometryOfInner fun u w ↦ by
+      simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, he_apply] using
+        hinner u w
+  have hcomp : (fun i ↦ mfderiv I I' f x (v i)) = φ ∘ v :=
+    funext fun i ↦ (he_apply (v i)).symm
+  have hsymm : φ.symm ∘ (φ ∘ v) = v := funext fun i ↦ φ.symm_apply_apply (v i)
+  rw [mpullback_apply, riemannianVolumeForm_apply, riemannianVolumeForm_apply, hcomp, ← hmap]
+  exact ((o.orientationAt x).volumeForm_map φ (φ ∘ v)).trans
+    (congrArg (o.orientationAt x).volumeForm hsymm)
+
+/-- Pulling back the Riemannian volume form along a map whose differential preserves both the
+tangent orientations and the Riemannian inner products recovers the source Riemannian volume
+form. -/
+theorem mpullback_riemannianVolumeForm_of_isOrientationPreservingAt
+    {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+    [FiniteDimensional ℝ E'] [IsManifold I' 1 M']
+    [RiemannianBundle (fun y : M' ↦ TangentSpace I' y)]
+    {o : Manifold.Orientation I M (Fin m)} {o' : Manifold.Orientation I' M' (Fin m)}
+    {f : M → M'} (ho : ∀ x, o.IsOrientationPreservingAt o' f x)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      inner ℝ (mfderiv I I' f x v) (mfderiv I I' f x w) = inner ℝ v w) :
+    mpullback I I' f (riemannianVolumeForm o') = riemannianVolumeForm o :=
+  funext fun x ↦ mpullback_riemannianVolumeForm_apply_of_isOrientationPreservingAt (ho x) (hinner x)
 
 section Smooth
 

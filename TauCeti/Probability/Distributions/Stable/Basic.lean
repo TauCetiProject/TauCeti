@@ -95,6 +95,15 @@ theorem isProbabilityMeasure_stableMeasure {α β : ℝ} (hα : α ∈ Ioc 0 2) 
   rw [stableMeasure, dite_eq_left ⟨hα, hβ⟩]
   split_ifs <;> infer_instance
 
+/-- A stable law is a probability measure exactly for valid shape and skewness parameters, at
+every scale and location; otherwise it is the zero measure. -/
+@[simp]
+theorem isProbabilityMeasure_stableMeasure_iff {α β : ℝ} {s : ℝ≥0} {m : ℝ} :
+    IsProbabilityMeasure (stableMeasure α β s m) ↔ α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_stableMeasure h.1 h.2 s m⟩
+  by_contra hv
+  exact IsProbabilityMeasure.ne_zero _ (stableMeasure_of_not_valid hv s m)
+
 instance (α β : ℝ) (s : ℝ≥0) (m : ℝ) : IsFiniteMeasure (stableMeasure α β s m) := by
   by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
   · let _ := isProbabilityMeasure_stableMeasure h.1 h.2 s m

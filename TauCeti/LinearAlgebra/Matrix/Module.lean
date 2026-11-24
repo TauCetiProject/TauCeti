@@ -23,10 +23,15 @@ The scoped column action on `ι → R` agrees with the matrix-to-endomorphism al
 equivalence; in particular its action map is bijective. This identifies the matrix module
 used by matrix Morita equivalence with the usual full endomorphism representation.
 
+Changing a family `v` by the rows of a matrix, `vⱼ ↦ ∑ i, A j i • vᵢ`, is compatible with matrix
+multiplication: changing by `A` and then by `B` is changing by `B * A`.
+
 ## Main results
 
 * `TauCeti.eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul`: a family fixed by `B` vanishes as
   soon as `1 - B` is a unit.
+* `Matrix.sum_mul_apply_smul`: two successive changes of a family by matrices `A` and then `B`
+  are the change by `B * A`.
 
 ## References
 
@@ -54,6 +59,13 @@ theorem eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul {A : Type*} [Ring A] {n 
   rw [Matrix.Module.smul_apply, ← hy i]
 
 end TauCeti
+
+/-- Two successive changes of frame, by `A` and then by `B`, are the change of frame by `B * A`. -/
+theorem Matrix.sum_mul_apply_smul {R M ι κ μ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [Fintype κ] (B : Matrix μ κ R) (A : Matrix κ ι R) (v : ι → M)
+    (j : μ) : ∑ l, (B * A) j l • v l = ∑ i, B j i • ∑ l, A i l • v l := by
+  simp_rw [Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum, smul_smul]
+  exact Finset.sum_comm
 
 namespace Matrix.Module
 

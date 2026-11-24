@@ -280,7 +280,7 @@ private theorem mem_setOf_dirichletEigenvalue_of_domain_le (hU : U ≤ Omega) {k
         ∀ v ∈ W, energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
   obtain ⟨W, hW, hC⟩ := h
-  let E := extendByZeroLpₗᵢ ℝ mu U.isOpen.measurableSet (F := ℝ) (p := 2)
+  let E := extendByZeroLpₗᵢ ℝ mu U.isOpen.nullMeasurableSet (F := ℝ) (p := 2)
     (SetLike.coe_subset_coe.mpr hU)
   refine ⟨W.map (W1p0.extendByZeroL (mu := mu) (p := 2) hU).toLinearMap, ?_, ?_⟩
   · -- The values of the extensions are the extensions of the values, and `E` is injective.

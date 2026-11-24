@@ -43,6 +43,8 @@ space; neither operation changes `u` or its gradient near the segments.
 * `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient bound.
 * `TauCeti.W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient
   bound for all sufficiently small `t`.
+* `TauCeti.W1p.eLpNorm_inner_gradient_le`: the directional derivative bound
+  `‖⟪v, ∇u⟫‖_p ≤ ‖v‖ ‖∇u‖_p`.
 * `TauCeti.W1p.norm_value_differenceQuotient_le`: on the whole space the bound holds for every
   step `t`, with no compactness, in the form `‖D^t_v u‖_p ≤ ‖v‖ ‖∇u‖_p`.
 * `TauCeti.W1p.differenceQuotient_mem_w1p0Submodule`,
@@ -309,6 +311,20 @@ theorem W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ �
   rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1]
   exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans ht
 
+omit [FiniteDimensional ℝ E] in
+/-- The `Lᵖ` norm of the directional derivative `⟪v, ∇u⟫` of `u ∈ W^{1,p}(Ω)` is at most
+`‖v‖ ‖∇u‖_{Lᵖ(Ω)}`. -/
+theorem W1p.eLpNorm_inner_gradient_le (v : E) (u : W1p mu Omega p) :
+    eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega)
+      ≤ ‖v‖ₑ * ‖W1p.gradient u‖ₑ := by
+  calc eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega)
+      ≤ eLpNorm (‖v‖ • (W1p.gradient u : E → E)) p (mu.restrict Omega) :=
+        eLpNorm_mono_ae (aestronglyMeasurable_const.inner (Lp.aestronglyMeasurable _))
+          (Filter.Eventually.of_forall fun x ↦ by
+            rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
+            exact abs_real_inner_le_norm v _)
+    _ = ‖v‖ₑ * ‖W1p.gradient u‖ₑ := by rw [eLpNorm_const_smul, eNorm_norm, Lp.eNorm_def]
+
 /-- **The whole-space difference-quotient bound.** On `Ω = ⊤` no compactness is needed: the
 `Lᵖ` norm of the difference quotient of `u ∈ W^{1,p}(ℝⁿ)` in the direction `v` is at most
 `‖v‖ ‖∇u‖_p`, uniformly in the step `t`. This is the form of
@@ -321,17 +337,8 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
   set nu := mu.restrict ((⊤ : Opens E) : Set E) with _
   set q := W1p.differenceQuotient le_rfl v t (Set.mapsTo_univ (· + t • v) _) u with hq
   -- The inner product against `v` is dominated by `‖v‖` times the gradient.
-  have hmeas : AEStronglyMeasurable (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) nu :=
-    aestronglyMeasurable_const.inner (Lp.aestronglyMeasurable (W1p.gradient u))
-  have hinner : eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu
-      ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
-    calc eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu
-        ≤ eLpNorm (‖v‖ • (W1p.gradient u : E → E)) p nu :=
-          eLpNorm_mono_ae hmeas (Filter.Eventually.of_forall fun x ↦ by
-            rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
-            exact abs_real_inner_le_norm v _)
-      _ = ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
-          rw [eLpNorm_const_smul, eNorm_norm]
+  have hinner := W1p.eLpNorm_inner_gradient_le v u
+  rw [Lp.eNorm_def] at hinner
   -- The difference quotient itself, through the whole-space translation estimate.
   have hquot : eLpNorm (W1p.value q : E → ℝ) p nu
       ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
@@ -387,7 +394,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     (W1p0.extendByZeroL le_top g : W1p mu ⊤ p) =
       W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _)
         (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) := by
-  have hm := Omega.isOpen.measurableSet
+  have hm := Omega.isOpen.nullMeasurableSet (μ := mu)
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := subset_univ _
   -- Both sides vanish off `Ω`, and on `Ω` they are the difference quotient of `u`.
   have hext : ∀ v : Lp ℝ p (mu.restrict Omega),
@@ -400,7 +407,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     ae_restrict_of_ae (hext (W1p.value (u : W1p mu Omega p))),
     ae_restrict_of_ae ((measurePreserving_add_right mu (t • w)).quasiMeasurePreserving.ae_eq_comp
       (hext (W1p.value (u : W1p mu Omega p)))),
-    ae_restrict_of_ae ((ae_restrict_iff' hm).1
+    ae_restrict_of_ae ((ae_restrict_iff'₀ hm).1
       (W1p.value_differenceQuotient_ae le_rfl w t hVO (u : W1p mu Omega p)))]
     with x h1 h2 h3 h4 h5
   simp only [Function.comp_apply] at h4
@@ -420,7 +427,7 @@ theorem W1p0.norm_value_differenceQuotient_le (hp : p ≠ ∞) {w : E} {t : ℝ}
       ‖w‖ * ‖W1p.gradient (u : W1p mu Omega p)‖ := by
   have h := W1p.norm_value_differenceQuotient_le hp w t (W1p0.extendByZeroL le_top u : W1p mu ⊤ p)
   rwa [← W1p0.extendByZeroL_eq_differenceQuotient (g := ⟨_,
-      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.2⟩) hVO hΩ rfl,
+      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.property⟩) hVO hΩ rfl,
     W1p0.norm_value_extendByZeroL, W1p0.norm_gradient_extendByZeroL] at h
 
 end TauCeti

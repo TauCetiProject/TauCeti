@@ -86,11 +86,11 @@ are the coordinates of the image of `y j` in the basis of `M ⧸ N` given by the
 `x i`. -/
 noncomputable def chartMatrix {x : Fin k → M} (N : chart R x) (y : Fin k → M) :
     Matrix (Fin k) (Fin k) R :=
-  .of fun i j ↦ (chartEquiv R x N).1 (y j) i
+  .of fun i j ↦ (chartEquiv R x N).val (y j) i
 
 @[simp]
 theorem chartMatrix_apply {x : Fin k → M} (N : chart R x) (y : Fin k → M) (i j : Fin k) :
-    chartMatrix N y i j = (chartEquiv R x N).1 (y j) i :=
+    chartMatrix N y i j = (chartEquiv R x N).val (y j) i :=
   (rfl)
 
 /-- The transition matrix of a point of the chart at `x` to `x` itself is the identity. -/
@@ -102,12 +102,12 @@ theorem chartMatrix_self {x : Fin k → M} (N : chart R x) : chartMatrix N x = 1
 /-- A point `N` of the chart at `x` lies in the chart at `y` exactly when its transition matrix to
 `y` is invertible, that is, when the determinant of this matrix is a unit. -/
 theorem mem_chart_iff_isUnit_det_chartMatrix {x : Fin k → M} (N : chart R x) (y : Fin k → M) :
-    N.1 ∈ chart R y ↔ IsUnit (chartMatrix N y).det := by
+    N.val ∈ chart R y ↔ IsUnit (chartMatrix N y).det := by
   -- `R^k → M ⧸ N` given by `y` is `R^k ≃ M ⧸ N` after the endomorphism `φ ∘ y` of `R^k`
-  have h : N.1.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R y =
-      (chartQuotEquiv N).toLinearMap ∘ₗ (chartEquiv R x N).1 ∘ₗ Fintype.linearCombination R y :=
+  have h : N.val.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R y =
+      (chartQuotEquiv N).toLinearMap ∘ₗ (chartEquiv R x N).val ∘ₗ Fintype.linearCombination R y :=
     LinearMap.ext fun v ↦ (chartQuotEquiv_chartEquiv_apply x N _).symm
-  have hmat : LinearMap.toMatrix' ((chartEquiv R x N).1 ∘ₗ Fintype.linearCombination R y) =
+  have hmat : LinearMap.toMatrix' ((chartEquiv R x N).val ∘ₗ Fintype.linearCombination R y) =
       chartMatrix N y := by
     ext i j
     simp [LinearMap.toMatrix'_apply, Fintype.linearCombination_apply_single]
@@ -119,16 +119,16 @@ chart at `x` is the one attached to `N` in the chart at `y`, followed by the tra
 `N` to `y`. -/
 theorem chartEquiv_apply_eq_chartMatrix_mulVec {x y : Fin k → M} {N : G(k, M; R)}
     (hx : N ∈ chart R x) (hy : N ∈ chart R y) (m : M) :
-    (chartEquiv R x ⟨N, hx⟩).1 m = chartMatrix ⟨N, hx⟩ y *ᵥ (chartEquiv R y ⟨N, hy⟩).1 m := by
+    (chartEquiv R x ⟨N, hx⟩).val m = chartMatrix ⟨N, hx⟩ y *ᵥ (chartEquiv R y ⟨N, hy⟩).val m := by
   -- both sides are linear in `m` and agree on `N` and on the `y j`, which together span `M`
   have hspan : Submodule.span R ((N.toSubmodule : Set M) ∪ Set.range y) = ⊤ := by
     rw [Submodule.span_union, Submodule.span_eq, ← mem_chart_iff_sup_eq_top.1 hy]
-  refine LinearMap.congr_fun (LinearMap.ext_on hspan (f := (chartEquiv R x ⟨N, hx⟩).1)
-    (g := (chartMatrix ⟨N, hx⟩ y).mulVecLin ∘ₗ (chartEquiv R y ⟨N, hy⟩).1) ?_) m
+  refine LinearMap.congr_fun (LinearMap.ext_on hspan (f := (chartEquiv R x ⟨N, hx⟩).val)
+    (g := (chartMatrix ⟨N, hx⟩ y).mulVecLin ∘ₗ (chartEquiv R y ⟨N, hy⟩).val) ?_) m
   rintro m (hm | ⟨j, rfl⟩)
-  · have hmx : m ∈ LinearMap.ker (chartEquiv R x ⟨N, hx⟩).1 := by
+  · have hmx : m ∈ LinearMap.ker (chartEquiv R x ⟨N, hx⟩).val := by
       rwa [ker_chartEquiv_apply]
-    have hmy : m ∈ LinearMap.ker (chartEquiv R y ⟨N, hy⟩).1 := by
+    have hmy : m ∈ LinearMap.ker (chartEquiv R y ⟨N, hy⟩).val := by
       rwa [ker_chartEquiv_apply]
     rw [LinearMap.mem_ker] at hmx hmy
     simp [hmx, hmy]
@@ -191,7 +191,7 @@ theorem chartMatrix_chartHomEquiv (x y : Fin k → M) (g : ChartAlgebra R x →�
 `g : ChartAlgebra R x →ₐ[R] A` lies in the chart at `y` exactly when `g (transitionDet R x y)` is a
 unit. -/
 theorem chartHomEquiv_mem_chart_iff (x y : Fin k → M) (g : ChartAlgebra R x →ₐ[R] A) :
-    (chartHomEquiv R x A g).1 ∈ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i) ↔
+    (chartHomEquiv R x A g).val ∈ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i) ↔
       IsUnit (g (transitionDet R x y)) := by
   rw [mem_chart_iff_isUnit_det_chartMatrix, chartMatrix_chartHomEquiv, transitionDet_def,
     AlgHom.map_det]
@@ -217,9 +217,9 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 -- sending `transitionDet R x y` to a unit.
 private lemma isUnit_chartHomEquiv_symm_transitionDet (x y : Fin k → M)
     (N : ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i))) :
-    IsUnit ((chartHomEquiv R x A).symm ⟨N.1, Set.mem_of_mem_inter_left N.2⟩
+    IsUnit ((chartHomEquiv R x A).symm ⟨N.val, Set.mem_of_mem_inter_left N.property⟩
       (transitionDet R x y)) :=
-  (chartHomEquiv_mem_chart_iff x y _).1 <| by simpa using Set.mem_of_mem_inter_right N.2
+  (chartHomEquiv_mem_chart_iff x y _).1 <| by simpa using Set.mem_of_mem_inter_right N.property
 
 /-- `R`-algebra maps `OverlapAlgebra R x y → A` are the points of `G(k, A ⊗[R] M; A)` lying in the
 charts at `x` and at `y`: the point attached to `g` is the point of the chart at `x` classified by
@@ -227,7 +227,7 @@ the restriction of `g` to `ChartAlgebra R x`. -/
 noncomputable def overlapHomEquiv (x y : Fin k → M) (A : Type w) [CommRing A] [Algebra R A] :
     (OverlapAlgebra R x y →ₐ[R] A) ≃
       ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i)) where
-  toFun g := ⟨(chartHomEquiv R x A (g.comp (IsScalarTower.toAlgHom R _ _))).1, Subtype.prop _,
+  toFun g := ⟨(chartHomEquiv R x A (g.comp (IsScalarTower.toAlgHom R _ _))).val, Subtype.prop _,
     (chartHomEquiv_mem_chart_iff x y _).2 <|
       (IsLocalization.Away.algebraMap_isUnit (transitionDet R x y)).map g⟩
   invFun N := IsLocalization.Away.liftAlgHom _ (isUnit_chartHomEquiv_symm_transitionDet R x y N)
@@ -239,7 +239,7 @@ noncomputable def overlapHomEquiv (x y : Fin k → M) (A : Type w) [CommRing A] 
     -- the restriction of the lift to `ChartAlgebra R x` is the map classifying `N`
     have : (IsLocalization.Away.liftAlgHom _ (isUnit_chartHomEquiv_symm_transitionDet R x y N)).comp
         (IsScalarTower.toAlgHom R _ (OverlapAlgebra R x y)) =
-          (chartHomEquiv R x A).symm ⟨N.1, Set.mem_of_mem_inter_left N.2⟩ :=
+          (chartHomEquiv R x A).symm ⟨N.val, Set.mem_of_mem_inter_left N.property⟩ :=
       AlgHom.ext fun a ↦ by simp
     simp [this]
 
@@ -248,7 +248,7 @@ variable {R}
 @[simp]
 theorem coe_overlapHomEquiv_apply (x y : Fin k → M) (g : OverlapAlgebra R x y →ₐ[R] A) :
     (overlapHomEquiv R x y A g : G(k, A ⊗[R] M; A)) =
-      (chartHomEquiv R x A (g.comp (IsScalarTower.toAlgHom R _ _))).1 :=
+      (chartHomEquiv R x A (g.comp (IsScalarTower.toAlgHom R _ _))).val :=
   (rfl)
 
 @[simp]
@@ -256,7 +256,7 @@ theorem overlapHomEquiv_symm_apply_algebraMap (x y : Fin k → M)
     (N : ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i)))
     (a : ChartAlgebra R x) :
     (overlapHomEquiv R x y A).symm N (algebraMap _ _ a) =
-      (chartHomEquiv R x A).symm ⟨N.1, (Set.mem_of_mem_inter_left N.2)⟩ a := by
+      (chartHomEquiv R x A).symm ⟨N.val, (Set.mem_of_mem_inter_left N.property)⟩ a := by
   simp [overlapHomEquiv]
 
 /-- The linear map `A ⊗[R] M → A^k` attached in the chart at `x` to the point classified by
@@ -264,8 +264,8 @@ theorem overlapHomEquiv_symm_apply_algebraMap (x y : Fin k → M)
 `m`. -/
 theorem chartEquiv_overlapHomEquiv_apply_tmul (x y : Fin k → M) (g : OverlapAlgebra R x y →ₐ[R] A)
     (m : M) (j : Fin k) :
-    (chartEquiv A _ ⟨(overlapHomEquiv R x y A g).1,
-      (Set.mem_of_mem_inter_left (overlapHomEquiv R x y A g).2)⟩).1 (1 ⊗ₜ m) j =
+    (chartEquiv A _ ⟨(overlapHomEquiv R x y A g).val,
+      (Set.mem_of_mem_inter_left (overlapHomEquiv R x y A g).property)⟩).val (1 ⊗ₜ m) j =
       g (algebraMap _ _ (universalLinearMap R x m j)) :=
   chartEquiv_chartHomEquiv_apply_tmul x _ m j
 
@@ -273,7 +273,7 @@ theorem chartEquiv_overlapHomEquiv_apply_tmul (x y : Fin k → M) (g : OverlapAl
 along `f`. -/
 theorem overlapHomEquiv_comp (x y : Fin k → M) {B : Type w} [CommRing B] [Algebra R B]
     (f : A →ₐ[R] B) (g : OverlapAlgebra R x y →ₐ[R] A) :
-    (overlapHomEquiv R x y B (f.comp g)).1 = map f (overlapHomEquiv R x y A g).1 := by
+    (overlapHomEquiv R x y B (f.comp g)).val = map f (overlapHomEquiv R x y A g).val := by
   simpa [AlgHom.comp_assoc] using chartHomEquiv_comp x f (g.comp (IsScalarTower.toAlgHom R _ _))
 
 /-- The overlap of the chart subfunctors at `x` and at `y` is corepresented by
@@ -386,13 +386,14 @@ variable {R}
 -- The transition map is compatible with the points of the two overlaps.
 private lemma overlapHomEquiv_comp_transitionAlgHom (x y : Fin k → M) {A : Type w} [CommRing A]
     [Algebra R A] (g : OverlapAlgebra R x y →ₐ[R] A) :
-    (overlapHomEquiv R y x A (g.comp (transitionAlgHom R x y))).1 =
-      (overlapHomEquiv R x y A g).1 := by
-  have hx := Set.mem_of_mem_inter_left (overlapHomEquiv R x y A g).2
-  have hy := Set.mem_of_mem_inter_right (overlapHomEquiv R x y A g).2
+    (overlapHomEquiv R y x A (g.comp (transitionAlgHom R x y))).val =
+      (overlapHomEquiv R x y A g).val := by
+  have hx := Set.mem_of_mem_inter_left (overlapHomEquiv R x y A g).property
+  have hy := Set.mem_of_mem_inter_right (overlapHomEquiv R x y A g).property
   -- both points lie in the chart at `y`; compare the linear maps attached to them there
   refine congrArg Subtype.val ((chartBaseChangeEquiv R A y).injective (a₁ :=
-    ⟨_, Set.mem_of_mem_inter_left (overlapHomEquiv R y x A (g.comp (transitionAlgHom R x y))).2⟩)
+    ⟨_, Set.mem_of_mem_inter_left (overlapHomEquiv R y x A (g.comp
+        (transitionAlgHom R x y))).property⟩)
     (a₂ := ⟨_, hy⟩) (Subtype.ext <| LinearMap.ext fun m ↦ ?_))
   rw [chartBaseChangeEquiv_apply_apply, chartBaseChangeEquiv_apply_apply]
   -- the transition matrix `D` of the point classified by `g` is invertible, and multiplying by it
@@ -401,7 +402,7 @@ private lemma overlapHomEquiv_comp_transitionAlgHom (x y : Fin k → M) {A : Typ
   refine (mulVec_injective_of_isUnit ((isUnit_iff_isUnit_det _).2 hD)).eq_iff.1 ?_
   rw [← chartEquiv_apply_eq_chartMatrix_mulVec hx hy]
   have hQ : (chartEquiv A _ ⟨_, Set.mem_of_mem_inter_left
-      (overlapHomEquiv R y x A (g.comp (transitionAlgHom R x y))).2⟩).1 (1 ⊗ₜ m) =
+      (overlapHomEquiv R y x A (g.comp (transitionAlgHom R x y))).property⟩).val (1 ⊗ₜ m) =
         g ∘ transitionLinearMap R x y m := funext fun j ↦ by
     rw [chartEquiv_overlapHomEquiv_apply_tmul, AlgHom.comp_apply, transitionAlgHom_algebraMap,
       Function.comp_apply]
@@ -438,8 +439,8 @@ variable {R}
 theorem overlapHomEquiv_comp_transitionAlgEquiv (x y : Fin k → M) {A : Type w} [CommRing A]
     [Algebra R A] (g : OverlapAlgebra R x y →ₐ[R] A) :
     (overlapHomEquiv R y x A
-        (g.comp (transitionAlgEquiv R x y : OverlapAlgebra R y x →ₐ[R] OverlapAlgebra R x y))).1 =
-      (overlapHomEquiv R x y A g).1 :=
+        (g.comp (transitionAlgEquiv R x y : OverlapAlgebra R y x →ₐ[R] OverlapAlgebra R x y))).val =
+      (overlapHomEquiv R x y A g).val :=
   overlapHomEquiv_comp_transitionAlgHom x y g
 
 /-- The transition isomorphism on the universal points: the universal point of the chart at `y`,

@@ -98,15 +98,15 @@ theorem exists_wordProd_eraseIdx_eraseIdx_eq (l : List b.support)
       wordProd P b (l.take k) * RootPairing.weylGroup.ofIdx P (l[k] : ι) := by
     rw [hsucc, wordProd_append, wordProd_cons, wordProd_nil, mul_one]
   have hmem : (l[k] : ι) ∈ inversions P b (wordProd P b (l.take k)) := by
-    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].2), ← hword,
+    rw [← ncard_inversions_mul_ofIdx_lt_iff P b _ (b.isPos_of_mem_support l[k].property), ← hword,
       hprefix]
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b (l.take k)) b l[k].property
     rw [← hword, hprefix] at hstep
     omega
   obtain ⟨hmempos, hmemneg⟩ := (mem_inversions P b _ _).mp hmem
   -- The strong exchange condition deletes a letter from the shorter prefix.
-  obtain ⟨j, hj, hjeq⟩ :=
-    exists_wordProd_eraseIdx_eq_mul_ofIdx P b hmempos (l.take k) hmemneg
+  obtain ⟨j, hj, -, hjeq⟩ :=
+    P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx b hmempos (l.take k) hmemneg
   rw [List.length_take] at hj
   have hjk : j < k := by omega
   have hjlt : j < (l.take k).length := by rw [List.length_take]; omega

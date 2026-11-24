@@ -108,11 +108,12 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom (γ : SL(2, �
     rw [ha]
     linear_combination (-(a : ZMod M) * γ 1 1) * hAD
   let γ' : SL(2, ℤ) :=
-    ⟨!![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c], by
+    .mk !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] (by
       rw [Matrix.det_fin_two_of]
-      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc⟩
+      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc)
   have hγ' : (γ' : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] := rfl
+      !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] :=
+    Matrix.SpecialLinearGroup.coe_mk _
   refine ⟨γ', by simp [hγ'], by simp [hγ'], by simp [hγ'], ?_⟩
   have hM : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hM0
   have hcR : (γ 1 0 : ℝ) = M * M * c := by exact_mod_cast hc
@@ -135,7 +136,7 @@ theorem Gamma1_map_le_conjAct_upperRightHom (hNL : N * M ∣ L) (hML : M * M ∣
   rw [map_inv, Subgroup.mem_inv_pointwise_smul_iff, ConjAct.toConjAct_smul]
   obtain ⟨hA, hD, hC⟩ := (Gamma1_mem L γ).mp hγ
   obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML
-    (Gamma1_in_Gamma0 L hγ)
+    (Gamma1_le_Gamma0 L hγ)
   have hDM : ((γ 1 1 : ℤ) : ZMod M) = 1 := by
     simpa [map_one] using congrArg (ZMod.castHom (dvd_of_mul_left_dvd hML) (ZMod M)) hD
   obtain ⟨γ', hA', hC', hD', heq⟩ :=
@@ -291,7 +292,7 @@ theorem _root_.ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → �
       rw [ZMod.natCast_zmod_val]
     have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
     rw [ham, ZMod.stdAddChar_coe, coe_vadd, Function.Periodic.qParam,
-      Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
+      Function.Periodic.qParam, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul,
       ← Complex.exp_add]
     congr 1
     push_cast
@@ -334,14 +335,14 @@ private lemma slash_upperRightHom_slash_mapGL [NeZero M] (hNL : N * M ∣ L) (hM
       (χ (unitsMap (dvd_of_mul_right_dvd hNL) ((Gamma0Map L).toHomUnits g)) : ℂ) •
         (f ∣[k] upperRightHom (((a * ((g : SL(2, ℤ)) 1 1 : ZMod M) ^ 2).val : ℝ) / M)) := by
   have hNL' : N ∣ L := dvd_of_mul_right_dvd hNL
-  obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML g.2
+  obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML g.property
   obtain ⟨γ', -, hC', hD', heq⟩ := exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom
     (g : SL(2, ℤ)) (a := a.val) (a' := (a * ((g : SL(2, ℤ)) 1 1 : ZMod M) ^ 2).val) hc
     (by simp)
   simp only [Int.cast_natCast] at heq
   have hγ' : γ' ∈ Gamma0 N := by
     rw [Gamma0_mem, hC']
-    simpa using congrArg (ZMod.castHom hNL' (ZMod N)) (Gamma0_mem.mp g.2)
+    simpa using congrArg (ZMod.castHom hNL' (ZMod N)) (Gamma0_mem.mp g.property)
   rw [← SlashAction.slash_mul, heq, SlashAction.slash_mul, hf ⟨γ', hγ'⟩]
   have hN : ((((a * ((g : SL(2, ℤ)) 1 1 : ZMod M) ^ 2).val : ℤ) * M * c : ℤ) : ZMod N) = 0 :=
     (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr (by rw [mul_assoc]; exact hNc.mul_left _)

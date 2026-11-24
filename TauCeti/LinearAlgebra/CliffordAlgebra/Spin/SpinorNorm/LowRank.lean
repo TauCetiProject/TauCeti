@@ -49,7 +49,7 @@ theorem spinorNorm_eq_one_of_finrank_le_one (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : spinorNorm Q hQ = 1 := by
   have hbot := specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hV
   ext g
-  have hg : g = 1 := Subtype.ext ((Subgroup.eq_bot_iff_forall _).mp hbot g g.2)
+  have hg : g = 1 := Subtype.ext ((Subgroup.eq_bot_iff_forall _).mp hbot g g.property)
   simp [hg]
 
 /-- In dimension zero, the spinor norm on the orthogonal group is trivial, since `O(Q)` is

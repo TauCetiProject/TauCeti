@@ -68,7 +68,8 @@ def _root_.Subgroup.normalizerAdjointRepresentation (K : Subgroup G) :
     Representation ℝ (Subgroup.normalizer (K : Set G))
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   (⟨(lieSubalgebraOfSubgroup (I := I) K).toSubmodule, fun g _ hX => by
-      simpa [ContRepresentation.toMonoidHom_apply] using Ad_mem_lieSubalgebraOfSubgroup g.2 hX⟩ :
+      simpa [ContRepresentation.toMonoidHom_apply] using Ad_mem_lieSubalgebraOfSubgroup g.property
+          hX⟩ :
     Subrepresentation ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.comp
       (Subgroup.normalizer (K : Set G)).subtype)).toRepresentation
 
@@ -89,7 +90,7 @@ def _root_.Subgroup.weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative
   K.normalizerQuotientLift (K.normalizerAdjointRepresentation (I := I)) fun g hg =>
     LinearMap.ext fun X => Subtype.ext <| by
       rw [one_apply_eq_self, Subgroup.coe_normalizerAdjointRepresentation_apply]
-      exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.2
+      exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.property
 
 @[simp]
 theorem _root_.Subgroup.coe_weylAdjointRepresentation_mk_apply (K : Subgroup G) [IsMulCommutative K]
@@ -137,7 +138,7 @@ theorem lieExp_weylAdjointRepresentation_apply {K : Subgroup G} [IsMulCommutativ
     (X : (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) :
     lieExp (I := I) (K.weylAdjointRepresentation (I := I) w X : LeftInvariantDerivation I G) =
       K.normalizerQuotientMulAut w
-        ⟨lieExp (I := I) X, lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK X.2⟩ := by
+        ⟨lieExp (I := I) X, lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK X.property⟩ := by
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective w
   rw [Subgroup.coe_weylAdjointRepresentation_mk_apply,
     Subgroup.coe_normalizerQuotientMulAut_mk_apply, conj_lieExp]

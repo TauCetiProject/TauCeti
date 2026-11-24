@@ -57,7 +57,7 @@ theorem multiplicity_differentIdeal_le_ramificationIdx_sub_one_add_multiplicity_
       rw [ramificationIndex_adicCompletion v w]
       exact he)
   rw [differentExponent_adicCompletion_eq_multiplicity_differentIdeal v w,
-    multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal v w] at hlocal
+    multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w] at hlocal
   simpa only [ramificationIndex_adicCompletion,
     natCastValuation_completion_eq_multiplicity_span] using hlocal
 

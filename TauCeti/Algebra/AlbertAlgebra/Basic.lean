@@ -373,7 +373,7 @@ entries: a vanishing trace forces the last diagonal entry. Private: it exists on
 dimension count in `TauCeti.AlbertAlgebra.finrank_traceZero`. -/
 private def traceZeroLinearEquivProd (R : Type*) [Ring R] :
     traceZero R ≃ₗ[R] (R × R) × (Fin 3 → Octonion R) where
-  toFun A := ((A.1.diag 0, A.1.diag 1), A.1.offDiag)
+  toFun A := ((A.val.diag 0, A.val.diag 1), A.val.offDiag)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun p := ⟨⟨![p.1.1, p.1.2, -(p.1.1 + p.1.2)], p.2⟩, by simp [Fin.sum_univ_three]⟩
@@ -382,7 +382,7 @@ private def traceZeroLinearEquivProd (R : Type*) [Ring R] :
         = -((A : AlbertAlgebra R).diag 0 + (A : AlbertAlgebra R).diag 1) := by
       have h0 : (A : AlbertAlgebra R).diag 0 + (A : AlbertAlgebra R).diag 1
           + (A : AlbertAlgebra R).diag 2 = 0 := by
-        simpa [Fin.sum_univ_three] using mem_traceZero.mp A.2
+        simpa [Fin.sum_univ_three] using mem_traceZero.mp A.property
       exact eq_neg_of_add_eq_zero_right h0
     refine Subtype.ext (AlbertAlgebra.ext (funext fun i => ?_) rfl)
     fin_cases i <;> simp [h]

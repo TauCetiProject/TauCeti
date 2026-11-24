@@ -63,14 +63,14 @@ variable {ι : Type*} [LinearOrder ι] {K : PreAbstractSimplicialComplex ι} {k 
 vertices. -/
 theorem norm_edgewisePoint_sub_edgewisePoint_le (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
     (hw : w ∈ ρ) (σ : Finset ι) :
-    ‖(fun i : σ => edgewisePoint u.1 i) - fun i : σ => edgewisePoint w.1 i‖ ≤ (k : ℝ)⁻¹ := by
+    ‖(fun i : σ => edgewisePoint u.val i) - fun i : σ => edgewisePoint w.val i‖ ≤ (k : ℝ)⁻¹ := by
   wlog huw : u ≤ w generalizing u w
   · rw [norm_sub_rev]
     exact this hw hu ((le_or_le_of_mem_edgewiseSubdivision hρ hu hw).resolve_left huw)
   refine (pi_norm_le_iff_of_nonneg (by positivity)).mpr fun i => ?_
   -- The number of entries equal to `i` is the number at most `i` minus the number below `i`.
   have hcount (x : K.EdgewiseVertex k) :
-      (#{l | x.1 l = i} : ℝ) = #{l | x.1 l ≤ i} - #{l | x.1 l < i} := by
+      (#{l | x.val l = i} : ℝ) = #{l | x.val l ≤ i} - #{l | x.val l < i} := by
     rw [eq_sub_iff_add_eq, ← Nat.cast_add, Nat.cast_inj, ← card_union_of_disjoint
       (disjoint_filter.mpr fun l _ h h' => h'.ne h)]
     congr 1
@@ -94,19 +94,19 @@ subdivision whose vertices have all their entries in `σ`. Then every combinatio
 barycentric coordinate vectors of its vertices with coefficients `v` summing to zero has sup norm
 at least `(2 * #σ ^ 2)⁻¹ * k⁻¹ * ∑ a, |v a|`. -/
 theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdivision k)
-    {σ : Finset ι} (hσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (v : ρ → ℝ) (hv : ∑ a, v a = 0) :
+    {σ : Finset ι} (hσ : ∀ u ∈ ρ, ∀ l, u.val l ∈ σ) (v : ρ → ℝ) (hv : ∑ a, v a = 0) :
     ((2 : ℝ) * #σ ^ 2)⁻¹ * (k : ℝ)⁻¹ * ∑ a, |v a| ≤
-      ‖∑ a, v a • fun i : σ => edgewisePoint a.1.1 i‖ := by
-  set x : σ → ℝ := ∑ a, v a • fun i : σ => edgewisePoint a.1.1 i with hx
+      ‖∑ a, v a • fun i : σ => edgewisePoint a.val.val i‖ := by
+  set x : σ → ℝ := ∑ a, v a • fun i : σ => edgewisePoint a.val.val i with hx
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · simp
   -- `C a i` counts the entries of the vertex `a` that are at most `i`, and `N a j` those equal
   -- to `j`; `F i` is the set of vertices of `σ` that are at most `i`.
-  set C : ρ → σ → ℕ := fun a i => #{l | a.1.1 l ≤ i.1}
-  set N : ρ → σ → ℕ := fun a j => #{l | a.1.1 l = j.1} with hN
+  set C : ρ → σ → ℕ := fun a i => #{l | a.val.val l ≤ i.val}
+  set N : ρ → σ → ℕ := fun a j => #{l | a.val.val l = j.val} with hN
   set F : σ → Finset σ := fun i => {j | j ≤ i}
   have hcount (a : ρ) (i : σ) : C a i = ∑ j ∈ F i, N a j :=
-    card_filter_le_eq_sum_card_filter_eq (hσ a.1 a.2) i
+    card_filter_le_eq_sum_card_filter_eq (hσ a.val a.property) i
   have hxj (j : σ) : (k : ℝ) * x j = ∑ a, v a * N a j := by
     simp only [hx, hN, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, edgewisePoint_apply,
       Finset.mul_sum]
@@ -128,12 +128,12 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
       (C a ≤ C b ∧ C b ≤ C a + 1) ∨ (C b ≤ C a ∧ C a ≤ C b + 1) := by
     intro a _ b _
     have hab := fun i : σ =>
-      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ a.2 b.2
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ a.property b.property
         (p := (· ≤ (i : ι))) antitone_le
     have hba := fun i : σ =>
-      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ b.2 a.2
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ b.property a.property
         (p := (· ≤ (i : ι))) antitone_le
-    rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
+    rcases le_or_le_of_mem_edgewiseSubdivision hρ a.property b.property with h | h
     · exact Or.inr ⟨fun i => card_filter_le_card_filter_of_le h (p := (· ≤ (i : ι))) antitone_le,
         hab⟩
     · exact Or.inl ⟨fun i => card_filter_le_card_filter_of_le h (p := (· ≤ (i : ι))) antitone_le,
@@ -141,14 +141,14 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
   have hinj : ∀ a ∈ (univ : Finset ρ), ∀ b ∈ (univ : Finset ρ), C a = C b → a = b := by
     intro a _ b _ hab
     by_contra hne
-    have hne' : a.1 ≠ b.1 := fun h => hne (Subtype.ext h)
-    rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
+    have hne' : a.val ≠ b.val := fun h => hne (Subtype.ext h)
+    rcases le_or_le_of_mem_edgewiseSubdivision hρ a.property b.property with h | h
     · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h'))
-      exact hj.ne (congrFun hab ⟨a.1.1 j, hσ a.1 a.2 j⟩).symm
+      exact hj.ne (congrFun hab ⟨a.val.val j, hσ a.val a.property j⟩).symm
     · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h').symm)
-      exact hj.ne (congrFun hab ⟨b.1.1 j, hσ b.1 b.2 j⟩)
+      exact hj.ne (congrFun hab ⟨b.val.val j, hσ b.val b.property j⟩)
   have hmain := sum_abs_le_two_mul_sum_abs_sum_mul C univ hchain hinj v hv
   simp only [hpartial, abs_mul, Nat.abs_cast] at hmain
   have hsum : ∑ i : σ, (k : ℝ) * |∑ j ∈ F i, x j| ≤ k * #σ ^ 2 * ‖x‖ := by

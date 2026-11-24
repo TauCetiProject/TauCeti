@@ -71,8 +71,8 @@ variable {s : Set E} {t : Set E'} {f : s → M}
 theorem continuous (hf : ContMDiffOnSubset I n f) : Continuous f := by
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   obtain ⟨U, hU, g, hg, hgf⟩ := hf x
-  refine ((hg.continuousOn.continuousAt hU).comp continuous_subtype_val.continuousAt).congr ?_
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hU] with y hy
+  refine ((hg.continuousOn.continuousAt hU).comp continuous_subtypeVal.continuousAt).congr ?_
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds hU] with y hy
     using hgf y hy
 
 /-- A map that is `C^n` on an arbitrary subset is `C^m` there for every `m ≤ n`. -/
@@ -124,7 +124,7 @@ theorem subtypeVal_comp_iff {V : TopologicalSpace.Opens M} {f : s → V} :
     obtain ⟨U, hU, g, hg, hgf⟩ := hf x
     have hgx : g x ∈ V := by
       rw [hgf x (mem_of_mem_nhds hU)]
-      exact (f x).2
+      exact (f x).property
     refine ⟨U ∩ g ⁻¹' V, Filter.inter_mem hU
       ((hg.continuousOn.continuousAt hU).preimage_mem_nhds (V.isOpen.mem_nhds hgx)),
       fun y ↦ if h : g y ∈ V then ⟨g y, h⟩ else f x, ?_, fun y hy ↦ Subtype.ext ?_⟩
@@ -135,7 +135,7 @@ theorem subtypeVal_comp_iff {V : TopologicalSpace.Opens M} {f : s → V} :
     · have hyV : g y ∈ V := hy.2
       simpa [hyV] using hgf y hy.1
   · obtain ⟨U, hU, g, hg, hgf⟩ := hf x
-    exact ⟨U, hU, Subtype.val ∘ g, contMDiff_subtype_val.comp_contMDiffOn hg,
+    exact ⟨U, hU, Subtype.val ∘ g, contMDiff_subtypeVal.comp_contMDiffOn hg,
       fun y hy ↦ congrArg Subtype.val (hgf y hy)⟩
 
 end ContMDiffOnSubset
@@ -154,7 +154,7 @@ open TauCeti
 theorem ContMDiffOn.contMDiffOnSubset {s U : Set E} {g : E → M}
     (hg : ContMDiffOn 𝓘(𝕜, E) I n g U) (hU : U ∈ 𝓝ˢ s) :
     ContMDiffOnSubset I n (s.domRestrict g) :=
-  fun x ↦ ⟨U, mem_nhdsSet_iff_forall.1 hU x x.2, g, hg, fun _ _ ↦ rfl⟩
+  fun x ↦ ⟨U, mem_nhdsSet_iff_forall.1 hU x x.property, g, hg, fun _ _ ↦ rfl⟩
 
 /-- The restriction to `s` of a `C^n` map is `C^n` on `s`. -/
 theorem ContMDiff.contMDiffOnSubset {s : Set E} {g : E → M} (hg : ContMDiff 𝓘(𝕜, E) I n g) :

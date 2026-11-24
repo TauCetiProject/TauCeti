@@ -89,7 +89,7 @@ theorem nonempty_iso_stallingsGraph_of_treeLoopWord (hS : S.IsFolded)
   rw [← S.range_lift_treeLoopWord T S.base hO]
   apply FreeGroup.range_lift_le
   rintro _ ⟨e, rfl⟩
-  exact h e.1 e.2
+  exact h e.val e.property
 
 /-- The recognition criterion for a graph presented by its positive edges: a folded core graph
 of this form is isomorphic to the Stallings graph of a list of words as soon as it accepts

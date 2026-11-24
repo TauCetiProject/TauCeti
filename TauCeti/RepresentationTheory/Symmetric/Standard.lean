@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.Induction.Permutation
 
 /-!
 # The standard representation of the symmetric group
@@ -52,6 +53,8 @@ arbitrary `z` produces all the others, and those differences span.
   irreducible.
 * `TauCeti.char_standardRepresentation`: its character is the character of `k[α]` less `1`, the
   `1` being the character of the trivial quotient of `k[α]` by the standard subrepresentation.
+* `TauCeti.char_standardRepresentation_fin_three`: for `α = Fin 3` the character is `2` at the
+  identity, `0` at the transpositions and `-1` at the three-cycles, over every field.
 * `TauCeti.standardRepresentation_injective`: over a nontrivial ring, the standard representation
   is faithful when `|α| ≥ 3`.
 
@@ -163,6 +166,19 @@ theorem char_standardRepresentation (g : Equiv.Perm α) :
   character_augmentationSubrepresentation g
 
 end Character
+
+/-- **The character of the standard representation of `S₃`**, over every field: it is `2` at the
+identity, `0` at the transpositions (the odd permutations) and `-1` at the three-cycles. -/
+theorem char_standardRepresentation_fin_three {k : Type*} [Field k] (σ : Equiv.Perm (Fin 3)) :
+    (standardRepresentation k (Fin 3)).character σ =
+      if σ = 1 then 2 else if Equiv.Perm.sign σ = -1 then 0 else -1 := by
+  have hc : Nat.card {x : Fin 3 // σ • x = x} =
+      if σ = 1 then 3 else if Equiv.Perm.sign σ = -1 then 1 else 0 := by
+    rw [Nat.card_eq_fintype_card]
+    revert σ
+    decide
+  rw [char_standardRepresentation, char_ofMulAction, hc]
+  split_ifs <;> norm_num
 
 section Ring
 
