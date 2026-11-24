@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CartanInvolution
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
 /-!
 # Cartan involutions of stable closed subgroups
@@ -62,6 +63,7 @@ theorem mem_twistedRealPoints_quotientIsoOfComapEq_iff
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
     rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]
 
+open scoped PointTopology in
 /-- **A Cartan involution restricts to a Cartan involution of every stable closed subgroup.** If
 `θ` is a Cartan involution of `H` and the closed subgroup `G` cut out by the Hopf ideal `I` is
 mapped onto itself by `θ`, then the automorphism of `G` induced by `θ` is a Cartan involution: its
@@ -69,36 +71,16 @@ twisted real points are the twisted real points of `θ` lying in `G`, a closed s
 set. -/
 theorem IsCartanInvolution.quotient (hθ : IsCartanInvolution θ)
     (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
-    IsCartanInvolution (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) where
-  hom_comp_self := CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self hθ.hom_comp_self I hI
-  isCompact := by
-    -- Read a function on `H` as a function on `H ⧸ I` through a section of the quotient map.
-    let s := Function.surjInv (Ideal.Quotient.mk_surjective (I := I.toIdeal))
-    have hs (y : H ⧸ I.toIdeal) : Ideal.Quotient.mk I.toIdeal (s y) = y :=
-      Function.surjInv_eq _ y
-    have hcont : Continuous fun (f : H → ℂ) (y : H ⧸ I.toIdeal) ↦ f (s y) :=
-      continuous_pi fun y ↦ continuous_apply (s y)
-    have hclosed : IsClosed {f : H → ℂ | ∀ x ∈ I.toIdeal, f x = 0} := by
-      simp only [Set.ofPred_forall]
-      exact isClosed_biInter fun x _ ↦ isClosed_eq (continuous_apply x) continuous_const
-    convert (hθ.isCompact.inter_right hclosed).image hcont using 1
-    ext g
-    simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_ofPred_eq]
-    constructor
-    · rintro ⟨p, hp, rfl⟩
-      refine ⟨p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal),
-        ⟨⟨_, (mem_twistedRealPoints_quotientIsoOfComapEq_iff hI p).mp hp, rfl⟩, fun x hx ↦ ?_⟩,
-        ?_⟩
-      · simp [Ideal.Quotient.eq_zero_iff_mem.mpr hx]
-      · ext y
-        simp [hs]
-    · rintro ⟨_, ⟨⟨q, hq, rfl⟩, hvan⟩, rfl⟩
-      let p : H ⧸ I.toIdeal →ₐ[ℝ] ℂ := Ideal.Quotient.liftₐ I.toIdeal q hvan
-      have hpq : p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal) = q :=
-        Ideal.Quotient.liftₐ_comp I.toIdeal q hvan
-      refine ⟨p, (mem_twistedRealPoints_quotientIsoOfComapEq_iff hI p).mpr (hpq ▸ hq), ?_⟩
-      ext y
-      simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hs] using
-        congrArg (fun f : H →ₐ[ℝ] ℂ ↦ f (s y)) hpq
+    IsCartanInvolution (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) := by
+  refine isCartanInvolution_iff_isCompact.mpr
+    ⟨CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self hθ.hom_comp_self I hI, ?_⟩
+  -- The complex points of `G` form a closed subspace of those of `H`.
+  have : twistedRealPoints (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) =
+      (fun p ↦ p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal)) ⁻¹' twistedRealPoints θ :=
+    Set.ext (mem_twistedRealPoints_quotientIsoOfComapEq_iff hI)
+  rw [this]
+  exact (PointTopology.isClosedEmbedding_comap_of_surjective _
+    (Ideal.Quotient.mkₐ_surjective ℝ _)).isCompact_preimage
+      (isCartanInvolution_iff_isCompact.mp hθ).2
 
 end TauCeti
