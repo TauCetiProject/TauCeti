@@ -212,7 +212,9 @@ theorem adjacentQuotientEquiv_map (f : R →+* S)
       (AddMonoidHom.compLeft (f : R →+ S) (Fin n)).toMultiplicative
         (adjacentQuotientEquiv R n x) := by
   induction x using QuotientGroup.induction_on with
-  | H g => exact DFunLike.congr_fun (adjacentHom_comp_map f) g
+  | H g =>
+    rw [QuotientGroup.map_mk, adjacentQuotientEquiv_mk, adjacentQuotientEquiv_mk]
+    exact DFunLike.congr_fun (adjacentHom_comp_map f) g
 
 end CommRing
 
