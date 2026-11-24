@@ -38,6 +38,7 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
 * `TauCeti.circleMap_pi_sub_two_arctan`: rational Cayley parametrization of the unit circle via
   `π - 2 * arctan (a / b)`.
+* `TauCeti.continuous_circleMap_uncurry`: `circleMap c r θ` is jointly continuous in `(r, θ)`.
 * `ContinuousOn.continuous_uncurry_circleMap`: a function jointly continuous on a product of two
   circles pulls back along the two angle parametrizations to a continuous function on `ℝ × ℝ`.
 -/
@@ -155,6 +156,11 @@ theorem circleMap_pi_sub_two_arctan {a b : ℝ} (hb : b ≠ 0) :
   rw [hexp, div_eq_div_iff (Complex.exp_ne_zero _) hden₂, exp_ofReal_mul_I, exp_ofReal_mul_I,
     Real.cos_neg, Real.sin_neg, ofReal_neg]
   linear_combination 2 * hsin' - (2 * b * Real.sin β : ℂ) * I_mul_I
+
+/-- The point `circleMap c r θ` depends jointly continuously on the radius `r` and the angle `θ`. -/
+theorem continuous_circleMap_uncurry (c : ℂ) : Continuous fun p : ℝ × ℝ ↦ circleMap c p.1 p.2 := by
+  unfold circleMap
+  fun_prop
 
 end TauCeti
 

@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.LocalField.TamelyRamified.NormalClosure
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Finite
 import TauCeti.Topology.Algebra.Group.Profinite.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
