@@ -31,6 +31,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
 * `Matrix.l2_opNorm_mul_conjTranspose_self`: the operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`.
+* `Matrix.l2_opNorm_submatrix_le`: restricting rows and columns along injective maps does not
+  increase the operator norm.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
@@ -77,6 +79,40 @@ theorem l2_opNorm_mul_conjTranspose_self {m : Type*} [Fintype m] [DecidableEq m]
     (A : Matrix m n 𝕜) : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
   simpa only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] using
     l2_opNorm_conjTranspose_mul_self Aᴴ
+
+/-- Selecting the rows of the identity along an injective map gives a matrix of `ℓ²` operator norm
+at most one: its rows are orthonormal. -/
+private theorem l2_opNorm_one_submatrix_id_le {m : Type*} [Fintype m]
+    {e : m → n} (he : Function.Injective e) : ‖(1 : Matrix n n 𝕜).submatrix e id‖ ≤ 1 := by
+  classical
+  have h1 : (1 : Matrix n n 𝕜).submatrix e id * ((1 : Matrix n n 𝕜).submatrix e id)ᴴ = 1 := by
+    rw [conjTranspose_submatrix, conjTranspose_one,
+      ← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.mul_one, submatrix_one _ he]
+  have h := l2_opNorm_mul_conjTranspose_self ((1 : Matrix n n 𝕜).submatrix e id)
+  rw [h1] at h
+  nlinarith [l2_opNorm_one_le (n := m) (𝕜 := 𝕜), norm_nonneg ((1 : Matrix n n 𝕜).submatrix e id)]
+
+/-- Restricting the rows and columns of a matrix along injective maps does not increase its `ℓ²`
+operator norm. In particular every block of a block matrix has norm at most that of the whole
+matrix. -/
+theorem l2_opNorm_submatrix_le {l m o : Type*} [Fintype l] [Fintype m] [Fintype o]
+    [DecidableEq o] (A : Matrix m n 𝕜) {e : l → m} {f : o → n} (he : Function.Injective e)
+    (hf : Function.Injective f) : ‖A.submatrix e f‖ ≤ ‖A‖ := by
+  classical
+  -- The restriction is `A` between a row selection and the adjoint of a column selection.
+  have hA : A.submatrix e f =
+      (1 : Matrix m m 𝕜).submatrix e id * A * ((1 : Matrix n n 𝕜).submatrix f id)ᴴ := by
+    ext i j
+    simp [Matrix.mul_apply, Matrix.one_apply]
+  rw [hA]
+  calc _ ≤ ‖(1 : Matrix m m 𝕜).submatrix e id‖ * ‖A‖ *
+        ‖((1 : Matrix n n 𝕜).submatrix f id)ᴴ‖ :=
+        (l2_opNorm_mul _ _).trans (mul_le_mul_of_nonneg_right (l2_opNorm_mul _ _) (norm_nonneg _))
+    _ ≤ 1 * ‖A‖ * 1 := by
+      rw [l2_opNorm_conjTranspose]
+      gcongr
+      exacts [l2_opNorm_one_submatrix_id_le he, l2_opNorm_one_submatrix_id_le hf]
+    _ = ‖A‖ := by ring
 
 /-- The squared Frobenius norm of a rectangular matrix is at most its number of rows times
 its squared Euclidean operator norm. Empty row and column types are allowed. -/
