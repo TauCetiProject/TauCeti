@@ -17,11 +17,12 @@ positive. Consequently its restriction to all global units has finite order: eve
 root of unity, with a single positive exponent valid for all units. Real sign parities of the
 Hecke character remain unrestricted.
 
-On a global element the product of the infinite components is that monomial times a sign at each
-real place where the sign parity of the character differs from the parity of the exponent
-(`coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign`). In particular it equals the
-monomial as soon as the element is positive at every such place
-(`coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity`), for instance on totally
+On a global element the product of the infinite components is that monomial times, at each real
+place, the sign of the element to the power of the difference between the sign parity of the
+character and the parity of the exponent there
+(`coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign`). So it equals the monomial as soon
+as the element is positive at every real place where the two parities differ
+(`coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity`), in particular on totally
 positive elements.
 
 The finite-idele input is `HeckeCharacter.exists_modulus_finitePart_eq_one`; the finite-index
@@ -46,8 +47,8 @@ namespace HeckeCharacter
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- At a real place, the component of `χ` is the monomial of an algebraic infinity type `n` with
-`χ.infinityType = n + e`, times the sign of `x` to the power of the sign twist `e` there. -/
+/-- At a real place, the component of `χ` at `x` is the monomial of an algebraic infinity type `n`
+with `χ.infinityType = n + e`, times the sign of `x` to the power of the sign twist `e` there. -/
 private theorem coe_infiniteComponent_real (χ : HeckeCharacter K) (n : AlgebraicInfinityType K)
     (e : FiniteOrderInfinityType K)
     (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
@@ -63,12 +64,12 @@ private theorem coe_infiniteComponent_real (χ : HeckeCharacter K) (n : Algebrai
     AlgebraicInfinityType.toContinuous_realParity,
     FiniteOrderInfinityType.toContinuous_realExponent,
     FiniteOrderInfinityType.toContinuous_realParity, add_zero]
-  -- Split off the sign twist: `|t| ^ k sgn(t) ^ (k + e) = t ^ k sgn(t) ^ e`.
-  rw [← add_zero ((n w.val.embedding : ℤ) : ℂ), realUnitsCharacter_add,
-    ContinuousMonoidHom.mul_apply, Units.val_mul, coe_realUnitsCharacter_intCast,
-    coe_realUnitsCharacter_apply]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    Complex.cpow_zero, one_mul]
+  -- Split off the sign twist: the remaining character is the monomial of exponent `n`.
+  have hsplit := realUnitsCharacter_add (n w.val.embedding : ℂ) 0 (n w.val.embedding : ZMod 2) (e w)
+  rw [add_zero] at hsplit
+  rw [hsplit, ContinuousMonoidHom.mul_apply, Units.val_mul, coe_realUnitsCharacter_intCast,
+    coe_realUnitsCharacter_apply, Complex.cpow_zero, one_mul]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
   rw [InfinitePlace.embedding_of_isReal_apply]
 
 private theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
@@ -93,12 +94,11 @@ private theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
       (n (ComplexEmbedding.conjugate w.val.embedding)) (Units.map w.val.embedding.toMonoidHom x)
 
 open scoped Classical in
-/-- **The archimedean value of an algebraic Hecke character on a global element.** For an
-algebraic infinity type `n` matching `χ` on the identity component, the product of the infinite
-components of `χ` at `x` is the monomial `∏_τ τ(x) ^ n_τ` times, at each real place `w`, the sign
-of `x` at `w` raised to the difference between the sign parity of `χ` and the parity of `n`
-there. -/
-theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign (χ : HeckeCharacter K)
+/-- **The product of the infinite components** of `χ` at a global element `x` is the monomial of
+an algebraic infinity type `n` matching the character on the identity component, times, at each
+real place, the sign of `x` to the power of the difference between the sign parity of `χ` and the
+parity of `n` there. -/
+theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign (χ : HeckeCharacter K)
     (n : AlgebraicInfinityType K)
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     (x : Kˣ) :
@@ -108,22 +108,22 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign (χ : Hec
         (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
           (χ.infinityType.realParity w -
             (AlgebraicInfinityType.toContinuous n).realParity w).val := by
-  classical
   obtain ⟨e, he⟩ :=
     (ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
       χ.infinityType (AlgebraicInfinityType.toContinuous n)).mp hn
-  have he' (w : {w : InfinitePlace K // w.IsReal}) :
+  have hparity (w : {w : InfinitePlace K // w.IsReal}) :
       χ.infinityType.realParity w - (AlgebraicInfinityType.toContinuous n).realParity w = e w := by
-    rw [he, ContinuousInfinityType.add_realParity, Pi.add_apply,
+    simp only [he, ContinuousInfinityType.add_realParity, Pi.add_apply,
       FiniteOrderInfinityType.toContinuous_realParity, add_sub_cancel_left]
-  -- The sign factors, extended by `1` to the complex places.
-  let s : InfinitePlace K → ℂ := fun w ↦ if h : w.IsReal then
+  -- Extend the sign factor by `1` at the complex places, and compare place by place.
+  let sgn (w : InfinitePlace K) : ℂ := if h : w.IsReal then
     (SignType.sign (InfinitePlace.embedding_of_isReal h (x : K)) : ℂ) ^ (e ⟨w, h⟩).val else 1
-  have hs : ∏ w, s w = ∏ w : {w : InfinitePlace K // w.IsReal},
-      (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^ (e w).val := by
-    simp only [s, Fintype.prod_dite, Finset.prod_const_one, mul_one]
-  simp only [he']
-  rw [← hs, AlgebraicInfinityType.coe_embeddingCharacter_apply,
+  have hsgn : ∏ w : {w : InfinitePlace K // w.IsReal},
+      (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
+        (χ.infinityType.realParity w - (AlgebraicInfinityType.toContinuous n).realParity w).val =
+      ∏ w, sgn w := by
+    simp only [sgn, Fintype.prod_dite, Finset.prod_const_one, mul_one, hparity]
+  rw [hsgn, AlgebraicInfinityType.coe_embeddingCharacter_apply,
     ← Finset.prod_fiberwise Finset.univ InfinitePlace.mk, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
   by_cases hw : w.IsReal
@@ -135,9 +135,8 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign (χ : Hec
       rw [InfinitePlace.mk_embedding, InfinitePlace.conjugate_embedding_eq_of_isReal hw,
         or_self] at h
       simpa only [eq_comm] using h
-    rw [hfiber, Finset.prod_singleton]
-    simp only [s, hw, ↓reduceDIte]
-    exact coe_infiniteComponent_real χ n e he ⟨w, hw⟩ x
+    rw [hfiber, Finset.prod_singleton, coe_infiniteComponent_real χ n e he ⟨w, hw⟩ x]
+    simp only [sgn, hw, ↓reduceDIte]
   · have hne : w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
       hw (InfinitePlace.isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
     have hfiber : (Finset.univ.filter fun σ : K →+* ℂ ↦ InfinitePlace.mk σ = w) =
@@ -148,10 +147,9 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign (χ : Hec
       have h := InfinitePlace.mk_eq_iff (φ := w.embedding) (ψ := σ)
       rw [InfinitePlace.mk_embedding] at h
       simpa only [eq_comm] using h
-    rw [hfiber, Finset.prod_pair hne]
-    simp only [s, hw, ↓reduceDIte, mul_one]
-    exact coe_infiniteComponent_complex χ n e he
-      ⟨w, InfinitePlace.not_isReal_iff_isComplex.mp hw⟩ x
+    rw [hfiber, Finset.prod_pair hne, coe_infiniteComponent_complex χ n e he
+      ⟨w, InfinitePlace.not_isReal_iff_isComplex.mp hw⟩ x]
+    simp only [sgn, hw, ↓reduceDIte, mul_one]
 
 /-- The product of the infinite components of `χ` at `x` is exactly the monomial of an algebraic
 infinity type `n` matching the character on the identity component, provided `x` is positive at
@@ -165,7 +163,7 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity (χ : Hec
     ((∏ w : InfinitePlace K,
       χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) : ℂ) =
       (n.embeddingCharacter x : ℂ) := by
-  rw [χ.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign n hn x,
+  rw [χ.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign n hn x,
     Finset.prod_eq_one fun w _ ↦ ?_, mul_one]
   by_cases hw : χ.infinityType.realParity w = (AlgebraicInfinityType.toContinuous n).realParity w
   · rw [hw, sub_self, ZMod.val_zero, pow_zero]

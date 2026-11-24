@@ -28,11 +28,11 @@ idelic archimedean component, which by Neukirch VII (6.13) is the inverse of the
 character in `χ((a)) = χ_f(a) χ_∞(a)` of VII (6.1) (see `Grossencharacter.compatibility`), so
 Neukirch's `χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the archimedean value. It is the
 monomial `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
-(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`). In general it is that monomial times,
-at each real place `w`, the sign of `a` at `w` raised to the difference between the parity of the
-Hecke character and that of `n` at `w`
-(`Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign`), a difference that
-vanishes outside `𝔪`. With the
+(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`). In general it is the monomial times,
+at each real place `w`, the sign of `a` there to the power `ε_w - n_w`, the difference between the
+sign parity `ε_w` of the Hecke character and the parity `n_w` of `n` at `w`
+(`Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_sign`); this sign factor is
+trivial at the real places outside `𝔪`. With the
 monomial alone, the odd character `χ₄` modulo `4∞` of `ℚ`, of exponent `0`, would give the even
 function `a ↦ χ₄(|a|)` on `ℤ`, which is `1` at `-1` and `-1` at `3`, so does not even factor
 through the residues modulo `4`.
@@ -76,9 +76,8 @@ comparison is stated for nonzero integers only.
 
 ## Main results
 
-* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign`:
-  the archimedean value is the monomial of the infinity type corrected by a sign at each real place
-  where the parities differ.
+* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_sign`: the
+  archimedean value is the monomial of the infinity type times the signs at the real places.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacterK_eq_one_of_residueHom_eq_one`: the finite
   character is trivial on the fractions congruent to `1` modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.coe_finiteCharacterK_of_algebraMap_eq`: on an algebraic
@@ -151,19 +150,18 @@ theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x
     fun w hw ↦ hx w (not_imp_comm.mp (χ.realParity_eq w) hw)
 
 open scoped Classical in
-/-- **The archimedean value with its signs.** At any `x ∈ Kˣ` the archimedean value is the monomial
-`∏_τ τ(x) ^ (n τ)` times, at each real place `w`, the sign of `x` at `w` raised to the difference
-between the sign parity of the presented Hecke character and the parity of `n` at `w`. That
-difference vanishes at the real places outside `𝔪` (`realParity_eq`). -/
-theorem coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign (χ : Grossencharacter K 𝔪)
-    (x : Kˣ) :
+/-- **The archimedean value is the monomial of the infinity type times signs at the real places**:
+at each real place `w`, the sign of `x` there to the power `ε_w - n_w`, the difference between the
+sign parity of the Hecke character and the parity of the algebraic infinity type `n` at `w`. The
+factor is trivial at the real places outside `𝔪` (`realParity_eq`). -/
+theorem coe_archimedeanValue_eq_embeddingCharacter_mul_sign (χ : Grossencharacter K 𝔪) (x : Kˣ) :
     (χ.archimedeanValue x : ℂ) = (χ.infinityType.embeddingCharacter x : ℂ) *
       ∏ w : {w : InfinitePlace K // w.IsReal},
         (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
           (χ.toHeckeCharacter.infinityType.realParity w -
             (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w).val := by
   rw [archimedeanValue_apply, Units.coe_prod]
-  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign
+  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign
     χ.infinityType χ.agreesOnIdentityComponent x
 
 /-! ### The finite character on the fractions prime to the modulus -/
