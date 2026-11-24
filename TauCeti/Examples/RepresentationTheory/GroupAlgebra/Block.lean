@@ -275,9 +275,7 @@ theorem not_isBlockIdempotent_centerMapRingHom_r_add_r_sq (hα : α ^ 2 + α + 1
         (toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)))) := by
   rw [centerMapRingHom_r_add_r_sq hα]
   have h : toCenter (eOne α) * toCenter (eTwo α) = 0 := by
-    refine Subtype.ext ?_
-    rw [Subalgebra.coe_mul, coe_toCenter, coe_toCenter, ZeroMemClass.coe_zero]
-    exact eOne_mul_eTwo hα
+    rw [← map_mul, eOne_mul_eTwo hα, map_zero]
   exact not_isPrimitiveIdempotent_add (isBlockIdempotent_eOne hα) (isBlockIdempotent_eTwo hα) h
     ((mul_comm _ _).trans h)
 
@@ -510,7 +508,7 @@ theorem centerMapRingHom_toZMod_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
 theorem isBlockIdempotent_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
     IsBlockIdempotent (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) := by
   refine (isBlockIdempotent_centerMapRingHom_toZMod_iff (G := C₃)
-    (isIdempotentElem_toCenter (isIdempotentElem_smul_one_add_r_add_r_sq hu))).mp ?_
+    ((isIdempotentElem_smul_one_add_r_add_r_sq hu).map toCenter)).mp ?_
   rw [centerMapRingHom_toZMod_smul_one_add_r_add_r_sq hu]
   exact isBlockIdempotent_one_add_r_add_r_sq
 
@@ -530,10 +528,10 @@ theorem centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
 (here `u = 1/3`). -/
 theorem isBlockIdempotent_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
     IsBlockIdempotent (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) := by
-  rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff (G := C₃)
-    (isIdempotentElem_toCenter (by
-      rw [smul_two_sub_r_sub_r_sq hu]
-      exact (isIdempotentElem_smul_one_add_r_add_r_sq hu).one_sub)),
+  have he : IsIdempotentElem (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2))) := by
+    rw [smul_two_sub_r_sub_r_sq hu]
+    exact (isIdempotentElem_smul_one_add_r_add_r_sq hu).one_sub
+  rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff (G := C₃) (he.map toCenter),
     centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq hu]
   exact isBlockIdempotent_r_add_r_sq
 
