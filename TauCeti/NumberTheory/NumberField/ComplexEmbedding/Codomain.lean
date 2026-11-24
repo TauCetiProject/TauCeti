@@ -66,6 +66,12 @@ theorem tmul_eq_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (c : Codom
   rw [TensorProduct.smul_tmul']
   exact congrArg (· ⊗ₜ[𝓞 K] x) (mul_one (M := ℂ) c).symm
 
+/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
+theorem one_tmul_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (a : 𝓞 K) (x : E) :
+    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
+  rw [← TensorProduct.smul_tmul, tmul_eq_smul, Algebra.smul_def, mul_one,
+    equiv_algebraMap_ringOfIntegers]
+
 end Codomain
 
 end NumberField.ComplexEmbedding
