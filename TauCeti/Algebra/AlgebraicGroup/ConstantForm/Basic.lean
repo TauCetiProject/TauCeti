@@ -68,7 +68,9 @@ a relation between `C` and `Cᵀ`.
 ## Main declarations
 
 * `TauCeti.ConstantForm.formRelation`: the form relation `X C Xᵀ - C` of a matrix `X` over any
-  `R`-algebra, with `span_formRelation_le_ker_iff` saying when an algebra morphism kills it.
+  `R`-algebra, with `span_formRelation_le_ker_iff` saying when an algebra morphism kills it,
+  and `mul_mul_transpose_mul_inv_eq_one`: if `x C xᵀ = C` and `C` has unit determinant, then
+  `C xᵀ C⁻¹` is a right inverse of `x`.
 * `TauCeti.ConstantForm.relationMatrix`: the matrix of defining relations `X C Xᵀ - C`.
 * `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff`: a coordinate morphism kills the
   defining ideal exactly when its generic matrix `X` satisfies `X C Xᵀ = C`.
@@ -150,6 +152,15 @@ theorem span_formRelation_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
   refine ⟨fun h ↦ Matrix.ext fun i j ↦ h ⟨(i, j), rfl⟩, ?_⟩
   rintro h _ ⟨ij, rfl⟩
   exact congrFun (congrFun h ij.1) ij.2
+
+variable {C} in
+/-- If `x C xᵀ = C` for a matrix `C` with unit determinant, then `C xᵀ C⁻¹` is a right inverse
+of `x`. -/
+theorem mul_mul_transpose_mul_inv_eq_one (hC : IsUnit C.det) {x : Matrix (Fin n) (Fin n) A}
+    (hx : x * C.map (algebraMap R A) * xᵀ = C.map (algebraMap R A)) :
+    x * (C.map (algebraMap R A) * xᵀ * C⁻¹.map (algebraMap R A)) = 1 := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hx, ← Matrix.map_mul,
+    Matrix.mul_nonsing_inv C hC, Matrix.map_one _ (map_zero _) (map_one _)]
 
 end FormRelation
 
@@ -350,6 +361,19 @@ theorem coordinateMap_relationMatrix (i j : Fin n) :
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
     (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
       Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
+
+/-- The generic matrix of the subgroup scheme, the image of the generic matrix of `GLₙ`,
+preserves `C`. -/
+theorem map_genericMatrix_coordinateMap_mul_mul_transpose :
+    (GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom *
+        C.map (algebraMap R (coordinateHopfAlgebra R n C)) *
+        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom)ᵀ =
+      C.map (algebraMap R (coordinateHopfAlgebra R n C)) := by
+  have h := relationMatrix_map R n C (coordinateMap R n C).hom.toAlgHom
+  rw [BialgHom.coe_toAlgHom] at h
+  rw [← sub_eq_zero, ← h]
+  ext i j
+  exact coordinateMap_relationMatrix R n C i j
 
 /-! ### The group scheme and its closed immersion -/
 

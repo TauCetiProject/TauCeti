@@ -86,32 +86,6 @@ theorem polynomialRelationIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
   rw [polynomialRelationIdeal, polynomialRelationMatrix]
   exact span_formRelation_le_ker_iff C _ phi
 
-/-- The generic matrix of the subgroup scheme, the image of the generic matrix of `GLₙ`,
-preserves `C`. -/
-theorem map_genericMatrix_coordinateMap_mul_mul_transpose :
-    (GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom *
-        C.map (algebraMap R (coordinateHopfAlgebra R n C)) *
-        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom)ᵀ =
-      C.map (algebraMap R (coordinateHopfAlgebra R n C)) := by
-  have h := relationMatrix_map R n C (coordinateMap R n C).hom.toAlgHom
-  rw [BialgHom.coe_toAlgHom] at h
-  rw [← sub_eq_zero, ← h]
-  ext i j
-  exact coordinateMap_relationMatrix R n C i j
-
-variable {R n C}
-
-/-- If `x C xᵀ = C` for a matrix `C` with unit determinant, then `C xᵀ C⁻¹` is a right inverse
-of `x`. -/
-private theorem mul_mul_transpose_mul_inv_eq_one {T : Type*} [Ring T] [Algebra R T]
-    (hC : IsUnit C.det) {x : Matrix (Fin n) (Fin n) T}
-    (hx : x * C.map (algebraMap R T) * xᵀ = C.map (algebraMap R T)) :
-    x * (C.map (algebraMap R T) * xᵀ * C⁻¹.map (algebraMap R T)) = 1 := by
-  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hx, ← Matrix.map_mul,
-    Matrix.mul_nonsing_inv C hC, Matrix.map_one _ (map_zero _) (map_one _)]
-
-variable (R n C)
-
 /-- The entries of the generic matrix of the subgroup scheme preserving a matrix with unit
 determinant generate its coordinate algebra. -/
 theorem adjoin_range_map_genericMatrix (hC : IsUnit C.det) :
@@ -136,14 +110,22 @@ theorem adjoin_range_map_genericMatrix (hC : IsUnit C.det) :
 
 variable {R n C}
 
+/-- The matrix of variable classes in the polynomial quotient preserves `C`. -/
+private theorem map_mvPolynomialX_mkₐ_mul_mul_transpose :
+    (mvPolynomialX (Fin n) (Fin n) R).map (Ideal.Quotient.mkₐ R (polynomialRelationIdeal R n C)) *
+        C.map (algebraMap R _) *
+        ((mvPolynomialX (Fin n) (Fin n) R).map
+          (Ideal.Quotient.mkₐ R (polynomialRelationIdeal R n C)))ᵀ =
+      C.map (algebraMap R _) :=
+  (polynomialRelationIdeal_le_ker_iff R n C (Ideal.Quotient.mkₐ R _)).1 (by
+    rw [Ideal.Quotient.mkₐ_ker])
+
 /-- The generic matrix of the polynomial quotient, invertible because `C` has unit
 determinant. -/
 private noncomputable def polynomialQuotientMatrix (hC : IsUnit C.det) :
     GL (Fin n) (MvPolynomial (Fin n × Fin n) R ⧸ polynomialRelationIdeal R n C) :=
-  have h := mul_mul_transpose_mul_inv_eq_one hC
-    ((polynomialRelationIdeal_le_ker_iff R n C (Ideal.Quotient.mkₐ R _)).1 (by
-      rw [Ideal.Quotient.mkₐ_ker]))
-  GeneralLinearGroup.mk'' _ (Matrix.isUnit_det_of_right_inverse h)
+  GeneralLinearGroup.mk'' _ (Matrix.isUnit_det_of_right_inverse
+    (mul_mul_transpose_mul_inv_eq_one hC map_mvPolynomialX_mkₐ_mul_mul_transpose))
 
 private theorem coe_polynomialQuotientMatrix (hC : IsUnit C.det) :
     ((polynomialQuotientMatrix hC : GL (Fin n) _) :
@@ -171,8 +153,7 @@ private noncomputable def toPolynomialQuotient (hC : IsUnit C.det) :
   Ideal.Quotient.liftₐ _ (generalLinearToPolynomialQuotient hC) fun a ha ↦ RingHom.mem_ker.1 <| by
     refine (definingHopfIdeal_toIdeal_le_ker_iff R n C _).2 ?_ ha
     rw [map_genericMatrix_generalLinearToPolynomialQuotient]
-    exact (polynomialRelationIdeal_le_ker_iff R n C (Ideal.Quotient.mkₐ R _)).1 (by
-      rw [Ideal.Quotient.mkₐ_ker])
+    exact map_mvPolynomialX_mkₐ_mul_mul_transpose
 
 private theorem toPolynomialQuotient_mk (hC : IsUnit C.det)
     (a : GeneralLinear.coordinateHopfAlgebra R n) :
