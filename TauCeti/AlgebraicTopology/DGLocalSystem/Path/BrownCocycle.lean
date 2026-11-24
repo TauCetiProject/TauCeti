@@ -269,36 +269,25 @@ theorem nonempty_rowFiniteHomologous_brownCocycle_brownCocycle {C' : Set B} [CWC
     (hC' : ∀ x, x ∈ C') :
     Nonempty (RowFiniteHomologous (loopChain_isDGAlgebra B b R) (brownCocycle H R τ hC)
       (brownCocycle H' R τ' hC')) := by
-  -- The identity of the path space changes the phantom parameter, linearly over the loop chains.
-  let e := ContinuousMap.id (MoorePathFrom B b)
-  let L : cubicalChainModule (MoorePathFrom B b) H' R →ₗ[loopChainAlgebra B b R]
-      cubicalChainModule (MoorePathFrom B b) H R :=
-    { cubicalChainModuleLinearMap R e with
-      map_smul' := cubicalChainModuleLinearMap_smul e fun _ _ ↦ rfl }
-  have hLe (x) : L x = cubicalChainModuleLinearMap R e x := rfl
-  have hL' (x : cubicalChainModule (MoorePathFrom B b) H' R) :
-      cubicalChainModuleLinearMap (G' := H') R e (L x) = x :=
-    (cubicalChainModuleLinearMap_linearMap e e x).trans <| by
-      rw [ContinuousMap.id_comp, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
-  have hL (x : cubicalChainModule (MoorePathFrom B b) H R) :
-      L (cubicalChainModuleLinearMap (G' := H') R e x) = x :=
-    (cubicalChainModuleLinearMap_linearMap e e x).trans <| by
-      rw [ContinuousMap.id_comp, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+  -- Change the phantom parameter, linearly over the loop chains.
+  let L := cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R
   obtain ⟨E, _⟩ := exists_rowFiniteHomologous_brownCocycle_homotopy τ hC
     (wellFounded_mem_support_brownCocycle τ' hC') (g := L ∘ brownComparison H' R τ' hC')
-    (fun x ↦ cubicalChainModuleLinearMap_mem e
+    (fun x ↦ cubicalChainModuleLeftPhantomEquiv_mem
       (brownComparison_mem_cubicalChainModuleGrading τ' hC' x))
     (fun x ↦ by
-      rw [← apply_linearCombination, linearCombination_brownComparison_brownCocycle_m]
-      exact (cubicalChainModuleDifferential_linearMap e _).symm)
+      rw [← L.coe_coe, ← apply_linearCombination, linearCombination_brownComparison_brownCocycle_m]
+      exact (cubicalChainModuleDifferential_leftPhantomEquiv _).symm)
     fun u w hDu huw ↦ by
       obtain ⟨u', w', hu', hw'⟩ := exists_rowFiniteTwistedDifferential_brownCocycle_eq τ' hC' u
-        (cubicalChainModuleLinearMap R e w) hDu (by
-          rw [cubicalChainModuleDifferential_linearMap, ← huw, ← apply_linearCombination, hL'])
+        (L.symm w) hDu <| L.injective <| by
+          rw [← L.coe_coe, apply_linearCombination, L.coe_coe, huw,
+            cubicalChainModuleLeftPhantomEquiv_symm,
+            cubicalChainModuleDifferential_leftPhantomEquiv,
+            ← cubicalChainModuleLeftPhantomEquiv_symm, L.apply_symm_apply]
       refine ⟨u', L w', hu', ?_⟩
-      rw [← apply_linearCombination, hLe, hLe, cubicalChainModuleDifferential_linearMap, ← map_add,
-        hw']
-      exact hL w
+      rw [← L.coe_coe, ← apply_linearCombination, L.coe_coe,
+        cubicalChainModuleDifferential_leftPhantomEquiv, ← map_add, hw', L.apply_symm_apply]
   exact ⟨E⟩
 
 end TauCeti
