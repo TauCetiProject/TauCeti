@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.LSPath.Reparametrization
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.List
 import TauCeti.Data.Rat.BoundedDen
-import TauCeti.Data.Rat.Lemmas
+import TauCeti.Data.Rat.Cast.Order
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 

@@ -69,7 +69,7 @@ private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
     (by simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ)
     (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
     (by
-      rw [show (toRatPLPath (P := P) (b := b) (lam := lam)) = _ from funext toRatPLPath_def]
+      rw [toRatPLPath_eq]
       exact isCrystalSet_range_toPLPath hlam _ fun i ↦
         Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
 

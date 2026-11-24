@@ -113,6 +113,7 @@ noncomputable def weight (π : LSPath P b lam) : M :=
     (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom (P.tensorProduct_mk_injective ℚ))
 
 /-- The canonical rational endpoint of `π` is the image of `π.weight`. -/
+@[simp]
 theorem endpoint_toRatPLPath (π : LSPath P b lam) :
     π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 π.weight := by
   rw [toRatPLPath_def]

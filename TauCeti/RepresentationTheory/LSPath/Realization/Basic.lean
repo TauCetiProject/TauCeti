@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RepresentationTheory.LSPath.Basic
 
-import TauCeti.Data.Rat.Lemmas
+import TauCeti.Data.Rat.Cast.Order
 
 /-!
 # Rational piecewise-linear realization of Lakshmibai–Seshadri paths
@@ -50,8 +50,15 @@ noncomputable def toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] M
 theorem toRatPLPath_def (π : LSPath P b lam) :
     π.toRatPLPath = π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom := (rfl)
 
+/-- Function-level unfolding of `LSPath.toRatPLPath`. -/
+theorem toRatPLPath_eq :
+    (toRatPLPath : LSPath P b lam → PLPath ℚ (ℚ ⊗[ℤ] M)) =
+      fun π ↦ π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom :=
+  funext toRatPLPath_def
+
 /-- The canonical rational realization of the straight LS path is the straight path along
 `1 ⊗ λ`. -/
+@[simp]
 theorem toRatPLPath_straight :
     (straight lam : LSPath P b lam).toRatPLPath =
       PLPath.straight ℚ (TensorProduct.mk ℤ ℚ M 1 lam) := by

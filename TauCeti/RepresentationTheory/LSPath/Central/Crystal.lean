@@ -76,8 +76,7 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
       (F := fun j ↦ Module.Dual.baseChange ℚ (P.coroot' j))
       (fun j ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' j)) lam
   apply Option.map_injective (toRatPLPath_injective hlam')
-  rw [show (toRatPLPath (P := P) (b := b) (lam := lam + χ)) = _ from funext toRatPLPath_def,
-    ← lower_toPLPath hlam' f₀ i F₀ hF₀]
+  rw [toRatPLPath_eq, ← lower_toPLPath hlam' f₀ i F₀ hF₀]
   have hlow₀ := lower_toPLPath hlam f₀ i F₀ hF₀ π
   cases hf : (crystal hlam).f i π with
   | none =>
