@@ -51,7 +51,7 @@ theorem limsup_birkhoffAverage_apply_eq_limsup_birkhoffAverage {Ω : Type*} (T :
       limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop := by
   -- Re-index `A_n(x)` to `A_{n+1}(x)` and decompose for `n ≠ 0`:
   --   `A_{n+1}(x) = A_n(T x) * (n / (n + 1)) + g x / (n + 1) = u n * b n + a n`,
-  -- where `a n → 0` and `b n → 1` with `0 ≤ b n ≤ 1`.
+  -- where `a n → 0` and `b n → 1`.
   rw [← limsup_nat_add (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) 1]
   let u : ℕ → EReal := fun n ↦ ((birkhoffAverage ℝ T g n (T x) : ℝ) : EReal)
   let a : ℕ → EReal := fun n ↦ ((((n + 1 : ℕ) : ℝ)⁻¹ * g x : ℝ) : EReal)
@@ -63,11 +63,6 @@ theorem limsup_birkhoffAverage_apply_eq_limsup_birkhoffAverage {Ω : Type*} (T :
     EReal.tendsto_coe.mpr (by simpa using hinv.mul_const (g x))
   have hb : Tendsto b atTop (𝓝 1) := EReal.tendsto_coe.mpr <| by
     simpa only [Nat.cast_add, Nat.cast_one] using tendsto_natCast_div_add_atTop (1 : ℝ)
-  have hb0 : 0 ≤ᶠ[atTop] b := Eventually.of_forall fun n ↦ EReal.coe_nonneg.mpr (by positivity)
-  have hb1 : b ≤ᶠ[atTop] 1 := Eventually.of_forall fun n ↦ by
-    simp only [Pi.one_apply, b, ← EReal.coe_one, EReal.coe_le_coe_iff]
-    rw [div_le_one (by positivity)]
-    push_cast; linarith
   have heq : (fun n ↦ ((birkhoffAverage ℝ T g (n + 1) x : ℝ) : EReal)) =ᶠ[atTop] u * b + a := by
     filter_upwards [eventually_ne_atTop 0] with n hn
     have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
@@ -80,7 +75,7 @@ theorem limsup_birkhoffAverage_apply_eq_limsup_birkhoffAverage {Ω : Type*} (T :
     ((EReal.limsup_add_le (.inr (by simp [ha.limsup_eq]))
       (.inr (by simp [ha.limsup_eq]))).trans (by simp [ha.limsup_eq]))
     (by simpa [ha.liminf_eq] using EReal.le_limsup_add (u := u * b) (v := a) (f := atTop))
-  rw [hadd, EReal.limsup_mul_eq_of_tendsto_one hb0 hb1 hb]
+  rw [hadd, EReal.limsup_mul_eq_of_tendsto_one hb]
 
 /-- The extended-real `liminf` of the Birkhoff averages of a real-valued function along a forward
 orbit is invariant under shifting the starting point from `x` to `T x`. -/
