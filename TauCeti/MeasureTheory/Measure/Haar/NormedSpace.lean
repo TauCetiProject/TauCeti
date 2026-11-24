@@ -22,6 +22,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.RingTheory.Norm.RCLike
 
 /-!
@@ -118,8 +119,6 @@ gives a set of measure one.
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
-* `MeasureTheory.Measure.integral_comp_continuousLinearEquiv`: precomposing by an invertible
-  linear map `A` divides an integral against an additive Haar measure by `|det A|`.
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.addHaar_compl_closedBall`: the complement of any closed ball has infinite
@@ -139,6 +138,7 @@ gives a set of measure one.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
+* `AffineIsometryEquiv.measurePreserving_addHaar`: so does an affine isometry self-equivalence.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -148,6 +148,9 @@ gives a set of measure one.
 * `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
   `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
   lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
+* `MeasureTheory.Measure.finiteDimensional_of_isCompact_measure_ne_zero`: a compact set of
+  nonzero measure for a left-invariant measure finite on compact sets forces a normed space over a
+  complete nontrivially normed field to be finite-dimensional.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -714,19 +717,6 @@ theorem map_affine_addHaar_eq_smul
       rw [Measure.map_smul _ ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable),
         map_add_left_eq_self]
 
-/-- **Linear change of variables in an integral.** Precomposing by an invertible linear map `A`
-divides the integral against an additive Haar measure by `|det A|`. -/
-theorem integral_comp_continuousLinearEquiv
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F) (A : E ≃L[ℝ] E) :
-    ∫ x, f (A x) ∂μ = |LinearMap.det (A : E →ₗ[ℝ] E)|⁻¹ • ∫ x, f x ∂μ := by
-  have hcov := integral_map_equiv (μ := μ) A.toHomeomorph.toMeasurableEquiv f
-  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at hcov
-  have hmap : μ.map A = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
-  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
-
 /-- In a nontrivial proper real normed space, the complement of any closed ball has infinite
 measure for any additive Haar measure. -/
 @[simp]
@@ -910,6 +900,22 @@ theorem map_addHaar
 
 end LinearIsometryEquiv
 
+namespace AffineIsometryEquiv
+
+/-- Every affine isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ᵃⁱ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hf : ⇑f = fun x ↦ f.linearIsometryEquiv x + f 0 := funext fun x ↦ by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right μ (f 0)).comp
+    (f.linearIsometryEquiv.measurePreserving_addHaar μ)
+
+end AffineIsometryEquiv
+
 namespace MeasureTheory.Measure
 
 section Fubini
@@ -936,6 +942,18 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
     Set.preimage_image_eq _ e.injective] at this
 
 end Fubini
+
+/-- In a normed vector space over a complete nontrivially normed field `𝕜`, a compact set of
+nonzero measure for a left-invariant measure finite on compact sets forces the space to be
+finite-dimensional over `𝕜`. -/
+theorem finiteDimensional_of_isCompact_measure_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [MeasurableAdd E] (μ : Measure E) [μ.IsAddLeftInvariant] [IsFiniteMeasureOnCompacts μ]
+    (𝕜 : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedSpace 𝕜 E]
+    {K : Set E} (hK : IsCompact K) (hμ : μ K ≠ 0) :
+    FiniteDimensional 𝕜 E :=
+  have := hK.locallyCompactSpace_of_measure_ne_zero_of_addGroup hμ
+  .of_locallyCompactSpace 𝕜
 
 end MeasureTheory.Measure
 

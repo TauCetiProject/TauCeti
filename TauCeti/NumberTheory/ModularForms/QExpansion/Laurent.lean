@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Meromorphic.NormalForm
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.RingTheory.LaurentSeries.BoundedDenominators
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
@@ -36,7 +37,8 @@ at `0`, so it vanishes exactly when the cusp function vanishes near `0`, and for
 function it converges to the function sufficiently high in the upper half-plane. This gives the
 `q`-expansion principle: two periodic functions meromorphic at `i∞` have the same Laurent
 `q`-expansion exactly when they agree near `i∞`. Passing from the period `h` to a multiple
-`d * h` substitutes `q ^ d` for `q`.
+`d * h` substitutes `q ^ d` for `q`, so whether the expansion has bounded denominators does not
+depend on the period.
 
 These are the expansions at `i∞` through which modular functions, and fields of modular
 functions with prescribed Fourier coefficients, are described. Compare
@@ -60,7 +62,9 @@ expansion here of the function read in the scaling coordinate of the cusp.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_laurentQExpansion_iff`: the `q`-expansion
   principle.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: the expansion at period `d * h` is the
-  expansion at period `h` in the variable `q ^ d`.
+  expansion at period `h` in the variable `q ^ d`, and
+  `TauCeti.UpperHalfPlane.hasBoundedDenominators_laurentQExpansion_pnat_mul_iff`: bounded
+  denominators at `i∞` do not depend on the period.
 * `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq_upperHalfPlane_laurentQExpansion`: agreement
   with the Laurent expansion at a cusp of a Fuchsian group.
 
@@ -523,6 +527,16 @@ theorem laurentQExpansion_pnat_mul (hfper : Periodic (f ∘ ofComplex) h)
     TauCeti.qExpansion_nat_mul hh.ne' d.pos hgper han,
     laurentQExpansion_eq_of_analyticAt_qParam_pow_mul hh han, map_mul, LaurentSeries.expand_single,
     LaurentSeries.expand_coe, mul_neg, Nat.cast_mul]
+
+/-- **Bounded denominators at `i∞` do not depend on the period.** For an `h`-periodic function
+whose cusp function is meromorphic at `0`, the Laurent `q`-expansion at period `d * h` has bounded
+denominators over `R` exactly when the expansion at period `h` does. -/
+theorem hasBoundedDenominators_laurentQExpansion_pnat_mul_iff {R : Type*} [CommSemiring R]
+    [Algebra R ℂ] (hfper : Periodic (f ∘ ofComplex) h) (hf : MeromorphicAt (cuspFunction h f) 0)
+    (d : ℕ+) :
+    (laurentQExpansion ((d : ℕ) * h) f).HasBoundedDenominators R ↔
+      (laurentQExpansion h f).HasBoundedDenominators R := by
+  rw [laurentQExpansion_pnat_mul hfper hf d, LaurentSeries.hasBoundedDenominators_expand_iff]
 
 end TauCeti.UpperHalfPlane
 
