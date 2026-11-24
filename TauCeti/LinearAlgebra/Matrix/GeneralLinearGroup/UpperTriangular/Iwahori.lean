@@ -131,9 +131,12 @@ representative, reduced to the residue field. -/
 theorem iwahoriQuotientEquiv_mk_apply_val (g : iwahori m R) (i : m) :
     ((iwahoriQuotientEquiv m R
         (g : iwahori m R ⧸ (iwahoriOne m R).subgroupOf (iwahori m R)) i : (ResidueField R)ˣ) :
-      ResidueField R) = residue R (((g : GL m R) : Matrix m m R) i i) :=
-  (congrArg (fun x ↦ ((x i : (R ⧸ maximalIdeal R)ˣ) : R ⧸ maximalIdeal R))
-    (quotientEquiv_mk _ g)).trans ((diag_apply_val g i).trans (residue_def _).symm)
+      ResidueField R) = residue R (((g : GL m R) : Matrix m m R) i i) := by
+  -- `iwahoriQuotientEquiv` is `quotientEquiv` with its codomain restated over `ResidueField R`,
+  -- which is `R ⧸ maximalIdeal R` by definition; `change` states the goal over the quotient.
+  change ((quotientEquiv _ (g : iwahori m R ⧸ _) i : (R ⧸ maximalIdeal R)ˣ) : R ⧸ maximalIdeal R) =
+    residue R _
+  rw [quotientEquiv_mk, diag_apply_val, residue_def]
 
 /-- The index of the pro-`p` Iwahori subgroup in the Iwahori subgroup is `(q - 1) ^ #m`, where `q`
 is the cardinality of the residue field. -/
