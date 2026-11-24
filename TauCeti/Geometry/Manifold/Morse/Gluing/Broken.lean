@@ -93,7 +93,7 @@ namespace IsAdaptedPseudoGradient
 chart `φ` in which `X` is linear and a radius `ρ > 0` such that the coordinates of sup norm less
 than `ρ` are coordinates of points of the chart, and on the cube of radius `ρ` the stable and
 unstable sets of `q` are the coordinate planes. -/
-private theorem exists_morseChart_box (hX : IsAdaptedPseudoGradient f X)
+theorem exists_morseChart_box (hX : IsAdaptedPseudoGradient f X)
     (hf : IsMorse 𝓘(ℝ, E) f) {q : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) :
     ∃ (φ : MorseChart E f q) (ρ : ℝ),
       (∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
@@ -157,7 +157,7 @@ chart at `q` in which `X` is linear and on whose cube of radius `ρ` the stable 
 plane where the expanding split coordinate `v` vanishes, and let `a₁` be a point of a trajectory
 from `p ≠ q` to `q`. For every small `ε > 0`, the trajectory crosses the entrance face
 `‖u‖ = ε, v = 0` of the box of radius `ε`. -/
-private theorem eventually_exists_flow_mem_entranceFace (hX : IsAdaptedPseudoGradient f X)
+theorem eventually_exists_flow_mem_entranceFace (hX : IsAdaptedPseudoGradient f X)
     {p q a₁ : M} (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -362,7 +362,7 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
 points of the chart. -/
-private theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
     (φ : MorseChart E f q)
     {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
     (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
@@ -500,33 +500,38 @@ theorem exists_morseBox_of_broken_of_isSliceChart (hX : IsAdaptedPseudoGradient 
 /-- **A transverse disc crosses the entrance face of a Morse box in a Lipschitz graph.** Let `φ`
 be a Morse chart at `q` in which `X` is linear and whose cube of radius `2 ε` lies in the chart,
 and `y₁` a point of the chart on the entrance face `‖u‖ = ε, v = 0`. Let `ψ` be a disc through the
-split coordinates of `y₁`, strictly differentiable at `0` with derivative a section of the
-expanding coordinate `v`, whose points near `0` lie in a set `S`. For every neighbourhood `N₁` of
-`y₁` there is a Lipschitz graph `v ↦ (g v, v)` in the entrance face over a closed ball, each of
-whose points is reached by the flow from a point of `S ∩ N₁`. -/
-private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoGradient f X)
+split coordinates of `y₁`, strictly differentiable at `0` with the derivative of its expanding
+coordinate `v` invertible, whose points near `0` lie in a set `S`. For every neighbourhood `N₁` of
+`y₁` there is a Lipschitz graph `v ↦ (g v, v)` in the entrance face over a closed ball, through the
+split coordinates of `y₁`, each of whose points is reached by the flow from a point of `S ∩ N₁`;
+conversely, the entrance points of the orbits through the points of the disc near `0` lie on the
+graph. -/
+theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoGradient f X)
     {q y₁ : M} (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
     (hy₁φ : y₁ ∈ φ.toChart.source) (hy₁s : (φ.splitCoord (φ.coord (φ.toChart y₁))).snd = 0)
     (hy₁f : ‖(φ.splitCoord (φ.coord (φ.toChart y₁))).fst‖ = ε) {S : Set M}
-    {ψ : ({i // ¬φ.weight i = 1} → ℝ) →
-      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    {ψ' : ({i // ¬φ.weight i = 1} → ℝ) →L[ℝ]
-      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {ψ : F → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    {ψ' : F →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
     (hψ : HasStrictFDerivAt ψ ψ' 0)
-    (hψ' : WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L ψ' =
-      ContinuousLinearMap.id ℝ _)
+    (hψ' : (WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
+      ψ').IsInvertible)
     (hψ₀ : ψ 0 = φ.splitCoord (φ.coord (φ.toChart y₁)))
     (hψs : ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧
       φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (ψ z))) ∈ S)
     {N₁ : Set M} (hN₁ : N₁ ∈ 𝓝 y₁) :
     ∃ δ > 0, ∃ (K : NNReal) (g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ),
-      LipschitzOnWith K g (Metric.closedBall 0 δ) ∧ ∀ v ∈ Metric.closedBall 0 δ, ‖g v‖ = ε ∧
+      LipschitzOnWith K g (Metric.closedBall 0 δ) ∧
+      g 0 = (φ.splitCoord (φ.coord (φ.toChart y₁))).fst ∧
+      (∀ v ∈ Metric.closedBall 0 δ, ‖g v‖ = ε ∧
         ∃ u ∈ S ∩ N₁, ∃ τ : ℝ,
           hX.flow τ u =
-            φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g v, v)))) := by
+            φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g v, v))))) ∧
+      ∀ᶠ z in 𝓝 0, (splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z)).fst =
+        g (splitQuadraticFlow (splitEntryTime ε (ψ z)) (ψ z)).snd := by
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
   -- Near `0`, the points of the disc lie near `y₁`, inside the box near its entrance face.
@@ -546,16 +551,16 @@ private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoG
       h₂.eventually (gt_mem_nhds (by rw [hψ₀, hy₁s, norm_zero]; exact hε : ‖(ψ 0).snd‖ < ε))]
       with z hz₁ hz₂
     exact ⟨hz₁, hz₂⟩
-  set U' : Set ({i // ¬φ.weight i = 1} → ℝ) := {z | ‖(ψ z).fst‖ < 2 * ε ∧ ‖(ψ z).snd‖ < ε ∧
+  set U' : Set F := {z | ‖(ψ z).fst‖ < 2 * ε ∧ ‖(ψ z).snd‖ < ε ∧
     φ.coord.symm (φ.splitCoord.symm (ψ z)) ∈ φ.toChart.target ∧ Ψ (ψ z) ∈ S ∧ Ψ (ψ z) ∈ N₁}
   have hU' : U' ∈ 𝓝 0 := (hψf.and (hψs.and (hΨψ.eventually hN₁))).mono
     fun z ⟨⟨h₁, h₂⟩, ⟨h₃, h₄⟩, h₅⟩ ↦ ⟨h₁, h₂, h₃, h₄, h₅⟩
   have hΦy₁ : WithLp.toLp 2 ((φ.splitCoord (φ.coord (φ.toChart y₁))).fst, 0) =
       φ.splitCoord (φ.coord (φ.toChart y₁)) :=
     WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hy₁s.symm))
-  obtain ⟨δ, hδ, K, g, hg, -, hpts, -⟩ := exists_splitQuadraticFlow_splitEntryTime_eq_graph hψ
-    (by rw [hψ']; exact ⟨.refl ℝ _, rfl⟩) (hψ₀.trans hΦy₁.symm) hy₁f hε hU'
-  refine ⟨δ, hδ, K, g, hg, fun v hv ↦ ⟨(hpts v hv).1, ?_⟩⟩
+  obtain ⟨δ, hδ, K, g, hg, hg₀, hpts, hexh⟩ := exists_splitQuadraticFlow_splitEntryTime_eq_graph
+    hψ hψ' (hψ₀.trans hΦy₁.symm) hy₁f hε hU'
+  refine ⟨δ, hδ, K, g, hg, hg₀, fun v hv ↦ ⟨(hpts v hv).1, ?_⟩, hexh⟩
   -- The point of the disc over `v` flows to the entrance point `(g v, v)` at its entry time.
   obtain ⟨-, z, ⟨hzf, hzs, hzT, hzS, hzN₁⟩, hzflow⟩ := hpts v hv
   have hΦΨ : φ.splitCoord (φ.coord (φ.toChart (Ψ (ψ z)))) = ψ z := by
@@ -591,7 +596,7 @@ private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdapted
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) hlocq hφZ hZ φ.mem_source hqφZ hqZ hq htr
-  obtain ⟨η, hη, K, k, hk, hk₀, hkpts⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
+  obtain ⟨η, hη, K, k, hk, hk₀, hkpts, -⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
     (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (by simp [hχ₀, φ.apply_self])
     (hχs.mono fun _ hz ↦ hz.2)
   refine ⟨η, hη, K, k, hk, hk₀, fun u hu ↦ ?_⟩
@@ -638,8 +643,9 @@ private theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceCha
   have hN₁' : hX.flow (-T₁) ⁻¹' N₁ ∈ 𝓝 (hX.flow T₁ a₁) :=
     (hX.flow.continuous_toFun (-T₁)).continuousAt.preimage_mem_nhds
       (by rwa [Flow.map_neg_apply_map])
-  obtain ⟨δ, hδ, Kg, g, hg, hpts⟩ := hX.exists_lipschitzOnWith_entranceFace_graph φ hφ hε
-    (fun z hz ↦ hT z (by linarith)) hy₁φ hy₁s hy₁f hψ hψ' hψ₀ hψs hN₁'
+  obtain ⟨δ, hδ, Kg, g, hg, -, hpts, -⟩ := hX.exists_lipschitzOnWith_entranceFace_graph φ hφ hε
+    (fun z hz ↦ hT z (by linarith)) hy₁φ hy₁s hy₁f hψ (by rw [hψ']; exact ⟨.refl ℝ _, rfl⟩) hψ₀
+    hψs hN₁'
   -- `Z` as a graph through the centre, and the glued orbit, which meets it near `q`.
   obtain ⟨η, hη, Kk, k, hk, hk₀, hkZ⟩ := hX.exists_lipschitzOnWith_graph_mem_of_isSliceChart φ hρ
     (fun w hw hwρ ↦ (hloc w hw hwρ).2) (hX.mem_unstableSet_inter_stableSet_self hq).1 hφZ hZ
