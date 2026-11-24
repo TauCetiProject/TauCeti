@@ -175,6 +175,14 @@ theorem symm_right (e : AlmostIso X Y) : e.symm.right = e.left :=
 theorem symm_iso (e : AlmostIso X Y) : e.symm.iso = e.iso.symm :=
   (rfl)
 
+/-- The morphism underlying the inverse almost isomorphism is the projection onto `Y ⧸ right`,
+followed by the inverse of the isomorphism of quotients. -/
+@[simp]
+theorem symm_proj (e : AlmostIso X Y) :
+    e.symm.proj =
+      quotientπ Y e.right e.right_invariant e.right.isClosed_of_finiteDimensional ≫ e.iso.inv :=
+  (rfl)
+
 @[simp]
 theorem height_symm (e : AlmostIso X Y) : e.symm.height = -e.height := by
   rw [height_def, height_def, symm_left, symm_right, neg_sub]
@@ -407,8 +415,7 @@ theorem trans_left (e : AlmostIso X Y) (f : AlmostIso Y Z) :
 /-- A composite almost isomorphism divides out of `Z` the preimage of `(B ⊔ B') ⧸ B'`. -/
 @[simp]
 theorem trans_right (e : AlmostIso X Y) (f : AlmostIso Y Z) :
-    (e.trans f).right =
-      ((e.right ⊔ f.left).map f.symm.right.mkQ).comap f.symm.proj.hom.toLinearMap :=
+    (e.trans f).right = ((e.right ⊔ f.left).map f.left.mkQ).comap f.symm.proj.hom.toLinearMap :=
   refineRight_left f.symm _ (sup_invariant e.right_invariant f.left_invariant) le_sup_right
 
 /-- A composite almost isomorphism is the composite of the two refinements of its factors
@@ -433,9 +440,9 @@ theorem height_trans (e : AlmostIso X Y) (f : AlmostIso Y Z) :
   rw [height_symm] at hf
   rw [height_def (e.refineRight (e.right ⊔ f.left) hD le_sup_left), refineRight_left,
     refineRight_right] at he
-  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_left,
-    refineRight_right] at hf
-  rw [height_def, trans_left, trans_right]
+  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_right] at hf
+  -- `e.trans f` divides out of `Z` what the refinement of `f.symm` divides out.
+  rw [height_def, trans_left, show (e.trans f).right = (f.symm.refineRight _ hD h').left from rfl]
   linarith
 
 /-- **Being almost isomorphic is an equivalence relation.** -/
