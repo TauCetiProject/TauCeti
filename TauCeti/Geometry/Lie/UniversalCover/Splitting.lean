@@ -22,8 +22,9 @@ centre `𝔷` and the derived algebra `[𝔤, 𝔤]` of `𝔤` are complementary
 algebra of a compact Lie group, then `G` is the product of the commutative subgroup integrating `𝔷`
 and the subgroup `K` integrating `[𝔤, 𝔤]` (`TauCeti.Lie.centerProdDerivedContinuousMulEquiv`).
 Applied to the universal cover of a compact connected Lie group, this is a step towards the finite
-cover `T × K → G` by a torus times a simply connected semisimple group; transferring the
-complementarity to the universal cover and the semisimplicity of `[𝔤, 𝔤]` are not proved here.
+cover `T × K → G` by a torus times a simply connected semisimple group. The splitting takes the
+complementarity of the two ideals as a hypothesis, and does not identify the factors with `ℝʳ` or
+show that they are compact.
 
 The splitting rests on a general criterion. Let `φ : A → G` and `ψ : K → G` be smooth
 homomorphisms out of connected Lie groups.
