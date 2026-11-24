@@ -296,6 +296,16 @@ theorem isotypicProjector_apply_of_mem_isotypicComponent
 
 /-! ### The non-matching blocks, the range and idempotence -/
 
+omit [FiniteDimensional k V] [IsAlgClosed k] in
+/-- The `asModule` transport of the isotypic projector acts as the projector itself. -/
+private lemma equivLinearMapAsModule_isotypicProjector_apply (sigma : ContRepresentation k G W)
+    (hsigma : Continuous sigma) (x : rho.toRepresentation.asModule) :
+    Representation.IntertwiningMap.equivLinearMapAsModule _ _
+        (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x =
+      isotypicProjector rho hrho sigma hsigma (x : V) :=
+  (Representation.IntertwiningMap.equivLinearMapAsModule_apply _ x).trans
+    (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma) x)
+
 omit [IsAlgClosed k] in
 /-- **The isotypic projector vanishes on every inequivalent irreducible block.** -/
 theorem isotypicProjector_apply_subtype_of_not_equiv
@@ -345,12 +355,6 @@ theorem isotypicProjector_apply_of_mem_isotypicComponent_of_not_equiv
     isotypicProjector rho hrho sigma hsigma v = 0 := by
   let _ : IsSimpleModule k[G] tau.toRepresentation.asModule :=
     (Representation.irreducible_iff_isSimpleModule_asModule _).mp htau
-  have hp : ∀ x : rho.toRepresentation.asModule,
-      Representation.IntertwiningMap.equivLinearMapAsModule _ _
-          (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x =
-        isotypicProjector rho hrho sigma hsigma (x : V) := fun x ↦
-    (Representation.IntertwiningMap.equivLinearMapAsModule_apply _ x).trans
-      (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma) x)
   have hle : isotypicComponent k[G] rho.toRepresentation.asModule tau.toRepresentation.asModule ≤
       LinearMap.ker (Representation.IntertwiningMap.equivLinearMapAsModule _ _
         (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap) := by
@@ -360,11 +364,11 @@ theorem isotypicProjector_apply_of_mem_isotypicComponent_of_not_equiv
       (IsSimpleModule.congr hm.some)
     have hne' : IsEmpty (t.asSubmodule ≃ₗ[k[G]] sigma.toRepresentation.asModule) :=
       ⟨fun e ↦ hne.false (hm.some.symm.trans e)⟩
-    rw [LinearMap.mem_ker, hp]
+    rw [LinearMap.mem_ker, equivLinearMapAsModule_isotypicProjector_apply]
     exact isotypicProjector_apply_subtype_of_not_equiv rho hrho sigma hsigma hirr ht hne'
       (⟨x, hx⟩ : t.toSubmodule)
   have h := LinearMap.mem_ker.mp (hle hv)
-  rw [hp] at h
+  rw [equivLinearMapAsModule_isotypicProjector_apply] at h
   rw [← LinearEquiv.apply_symm_apply rho.toRepresentation.asModuleEquiv v,
     Representation.asModuleEquiv_apply]
   exact h
@@ -380,10 +384,7 @@ private lemma equivLinearMapAsModule_isotypicProjector_mem_isotypicComponent
       isotypicComponent k[G] rho.toRepresentation.asModule sigma.toRepresentation.asModule := by
   let tau : Subrepresentation rho.toRepresentation := Subrepresentation.ofSubmodule' m
   have htau : IsAtom tau := Subrepresentation.isSimpleModule_asSubmodule_iff.mp hm
-  rw [(Representation.IntertwiningMap.equivLinearMapAsModule_apply
-      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x).trans
-    (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma)
-      (x : V))]
+  rw [equivLinearMapAsModule_isotypicProjector_apply]
   by_cases he : Nonempty (m ≃ₗ[k[G]] sigma.toRepresentation.asModule)
   · have happly := isotypicProjector_apply_subtype_of_equiv rho hrho sigma hsigma htau
       he (⟨x, hx⟩ : tau.toSubmodule)
