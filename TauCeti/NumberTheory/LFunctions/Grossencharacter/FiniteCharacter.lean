@@ -294,11 +294,6 @@ theorem coe_finiteCharacterK_inverse (χ : Grossencharacter K 𝔪) (x : primeTo
   rw [finiteCharacterK_inverse, MonoidHom.inv_apply, Units.val_inv_eq_inv_val]
   exact Complex.inv_eq_conj (χ.norm_finiteCharacterK x)
 
-/-- The residue character of the inverse presentation is the inverse character. -/
-theorem residueCharacter_inverse_eq_inv (χ : Grossencharacter K 𝔪) :
-    χ.inverse.residueCharacter = χ.residueCharacter⁻¹ := by
-  rw [residueCharacter, residueCharacter, χ.residueUnitHom_inverse, MulChar.ofUnitHom_inv]
-
 /-- Inversion conjugates the residue character, since `(𝓞 K ⧸ 𝔪.finitePart)ˣ` is finite. -/
 @[simp]
 theorem residueCharacter_inverse (χ : Grossencharacter K 𝔪) :
@@ -337,32 +332,9 @@ theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencha
     (𝔫.mem_support_iff v).mpr (((𝔪.mem_support_iff v).mp hv).trans hdvd)
   refine χ.toHeckeCharacter.prod_finiteComponent_eq_of_subset hsub (fun v _ hv𝔪 ↦ ?_)
     (fun v hv𝔫 _ ↦ mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv𝔫))
-  exact χ.conductorExponent_eq_zero_of_not_mem_support hv𝔪
+  exact χ.conductorExponent_eq_zero_of_notMem_support hv𝔪
 
 /-! ### Finite-conductor characterization and primitivity -/
-
-/-- A prime-to-`𝔪` unit reduces to `1` modulo `𝔫.finitePart` under `finiteUnitsMap` iff its
-local images at every prime of `𝔪.support` lie in `U(K_v, 𝔫.exponent v)`. -/
-private theorem finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration
-    {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart) (x : primeToSubgroup 𝔪) :
-    finiteUnitsMap hdvd (residueHom 𝔪 x) = 1 ↔
-      ∀ v ∈ 𝔪.support,
-        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
-          TauCeti.unitFiltration (v.adicCompletion K) (𝔫.exponent v) := by
-  rw [finiteUnitsMap_residueHom_eq_one_iff]
-  constructor
-  · intro hval v hv
-    have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
-      mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv)
-    by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
-    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
-        ⟨hx_unit, hval v hvI⟩
-    · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
-      exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
-  · intro hmem v hvI
-    have hv𝔪 : v ∈ 𝔪.support := (𝔪.mem_support_iff v).mpr (hvI.trans hdvd)
-    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mp
-      (hmem v hv𝔪)).2
 
 /-- Forward direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossencharacter K 𝔪)
@@ -432,7 +404,7 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
         (TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent v) hxz)
     rw [map_mul, map_inv, h1', one_mul, inv_eq_one] at hdiff
     exact hdiff
-  · exact (χ.conductorExponent_eq_zero_of_not_mem_support hv).trans_le (Nat.zero_le _)
+  · exact (χ.conductorExponent_eq_zero_of_notMem_support hv).trans_le (Nat.zero_le _)
 
 /-- Converse direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
@@ -713,7 +685,7 @@ theorem finiteCharacterK'_one (χ : Grossencharacter K 𝔪) : χ.finiteCharacte
   simpa using χ.finiteCharacterK'_of_mem 1
 
 /-- Outside `primeToSubgroup 𝔪`, `finiteCharacterK'` vanishes on `x : Kˣ`. -/
-theorem finiteCharacterK'_of_not_mem (χ : Grossencharacter K 𝔪) {x : Kˣ}
+theorem finiteCharacterK'_of_notMem (χ : Grossencharacter K 𝔪) {x : Kˣ}
     (hx : x ∉ primeToSubgroup 𝔪) : χ.finiteCharacterK' (x : K) = 0 := by
   classical
   rw [finiteCharacterK', dite_eq_right x.ne_zero]
@@ -732,7 +704,7 @@ theorem finiteCharacterK'_algebraMap (χ : Grossencharacter K 𝔪) (a : 𝓞 K)
       have hax : algebraMap (𝓞 K) K a = ((x : Kˣ) : K) := hx.symm
       rw [hax, χ.finiteCharacterK'_of_mem x, χ.finiteCharacter_eq_finiteCharacterK x hax]
     · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo hcop]
-      exact χ.finiteCharacterK'_of_not_mem (x := Units.mk0 _ hx0) fun hmem ↦
+      exact χ.finiteCharacterK'_of_notMem (x := Units.mk0 _ hx0) fun hmem ↦
         hcop (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨⟨_, hmem⟩, Units.val_mk0 hx0⟩)
 
 /-- Multiplying any element of `K` by an element of `primeToSubgroup 𝔪` factors out
@@ -756,7 +728,7 @@ theorem finiteCharacterK'_mul_of_mem_left (χ : Grossencharacter K 𝔪) (u : pr
       rw [hmul, map_mul, Units.val_mul]
     · have huxm : (u : Kˣ) * xK ∉ primeToSubgroup 𝔪 := fun h ↦
         hxm (by simpa using mul_mem (inv_mem u.property) h)
-      rw [χ.finiteCharacterK'_of_not_mem huxm, χ.finiteCharacterK'_of_not_mem hxm, mul_zero]
+      rw [χ.finiteCharacterK'_of_notMem huxm, χ.finiteCharacterK'_of_notMem hxm, mul_zero]
 
 /-- Multiplying any element of `K` by a global unit `u : (𝓞 K)ˣ` factors out
 `χ.finiteCharacter u`. -/
@@ -783,7 +755,7 @@ private theorem finiteCharacterK'_cases {P : K → ℂ → Prop} (χ : Grossench
       rw [hx_eq, χ.finiteCharacterK'_of_mem ⟨Units.mk0 x hx0, hx⟩]
       exact hmem ⟨Units.mk0 x hx0, hx⟩
     · have hx_eq : x = (Units.mk0 x hx0 : Kˣ) := (Units.val_mk0 hx0).symm
-      rw [hx_eq, χ.finiteCharacterK'_of_not_mem hx]
+      rw [hx_eq, χ.finiteCharacterK'_of_notMem hx]
       exact hnot (Units.mk0 x hx0) hx
 
 /-- Inversion conjugates `finiteCharacterK'` on all of `K`. -/
@@ -793,7 +765,7 @@ theorem finiteCharacterK'_inverse (χ : Grossencharacter K 𝔪) (x : K) :
   finiteCharacterK'_cases (P := fun x v ↦ χ.inverse.finiteCharacterK' x = starRingEnd ℂ v)
     χ (by simp)
     (fun u ↦ by rw [χ.inverse.finiteCharacterK'_of_mem, χ.coe_finiteCharacterK_inverse])
-    (fun u hu ↦ by rw [χ.inverse.finiteCharacterK'_of_not_mem hu, map_zero]) x
+    (fun u hu ↦ by rw [χ.inverse.finiteCharacterK'_of_notMem hu, map_zero]) x
 
 /-- Every value of `finiteCharacterK'` has absolute value at most `1`. -/
 theorem norm_finiteCharacterK'_le_one (χ : Grossencharacter K 𝔪) (x : K) :

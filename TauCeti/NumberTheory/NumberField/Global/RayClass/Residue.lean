@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Congruence
 
 import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
@@ -279,5 +280,28 @@ theorem finiteUnitsMap_residueHom_eq_one_iff {𝔪 𝔫 : Modulus K}
         v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
   rw [finiteUnitsMap_residueHom, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
   simp only [Subgroup.coe_inclusion]
+
+/-- A prime-to-`𝔫` unit reduces to `1` modulo `𝔪.finitePart` under `finiteUnitsMap` iff its
+local images at every prime of `𝔫.support` lie in `U(K_v, 𝔪.exponent v)`. -/
+theorem finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration {𝔪 𝔫 : Modulus K}
+    (hdvd : 𝔪.finitePart ∣ 𝔫.finitePart) (x : primeToSubgroup 𝔫) :
+    finiteUnitsMap hdvd (residueHom 𝔫 x) = 1 ↔
+      ∀ v ∈ 𝔫.support,
+        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
+          TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v) := by
+  rw [finiteUnitsMap_residueHom_eq_one_iff]
+  constructor
+  · intro hval v hv
+    have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
+      mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv)
+    by_cases hvI : v.asIdeal ∣ 𝔪.finitePart
+    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) (x : Kˣ)).mpr
+        ⟨hx_unit, hval v hvI⟩
+    · rw [Modulus.exponent_eq_zero_of_notMem_support ((𝔪.mem_support_iff v).not.mpr hvI)]
+      exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
+  · intro hmem v hvI
+    have hv𝔫 : v ∈ 𝔫.support := (𝔫.mem_support_iff v).mpr (hvI.trans hdvd)
+    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) (x : Kˣ)).mp
+      (hmem v hv𝔫)).2
 
 end TauCeti.GlobalNumberFields
