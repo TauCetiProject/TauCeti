@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Edge integrals of functions with Mellin cutoff decay
@@ -65,23 +63,6 @@ private lemma mul_sq_le_norm_mul_one_add {ε t : ℝ} {z : ℂ} (hε : 0 ≤ ε)
   rw [sq_abs] at h
   nlinarith [norm_nonneg z]
 
-/-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. -/
-private lemma integral_abs_gt_inv_sq {T : ℝ} (hT : 0 < T) :
-    ∫ t in {t : ℝ | T < |t|}, (t ^ 2)⁻¹ = 2 / T := by
-  have hS : MeasurableSet {t : ℝ | T < |t|} :=
-    measurableSet_lt measurable_const continuous_abs.measurable
-  have hind : ({t : ℝ | T < |t|}.indicator fun t ↦ (t ^ 2)⁻¹) =
-      fun t ↦ (Ioi T).indicator (fun u ↦ (u ^ 2)⁻¹) |t| := by
-    ext t
-    by_cases h : T < |t| <;> simp [indicator, h, sq_abs]
-  have hpow : ∫ u in Ioi T, (u ^ 2)⁻¹ = ∫ u in Ioi T, u ^ (-2 : ℝ) :=
-    setIntegral_congr_fun measurableSet_Ioi fun u (hu : T < u) ↦ by
-      rw [Real.rpow_neg (hT.trans hu).le, Real.rpow_two]
-  rw [← integral_indicator hS, hind, integral_comp_abs, setIntegral_indicator measurableSet_Ioi,
-    Ioi_inter_Ioi, max_eq_right hT.le, hpow, integral_Ioi_rpow_of_lt (by norm_num) hT]
-  norm_num [Real.rpow_neg_one]
-  ring
-
 /-- **The tails of a vertical line.** If `ε > 0`, `T > 0` and
 `‖f(σ + it)‖ ≤ K / (|s| (1 + ε|s|))` at `s = σ + it` for `|t| > T`, then the integral of
 `t ↦ f(σ + it)` over `|t| > T` has norm at most `2K / (εT)`. -/
@@ -101,7 +82,7 @@ theorem norm_integral_vertical_tail_le {f : ℂ → ℂ} {σ K ε T : ℝ} (hε 
     simpa using (le_div_iff₀ hd).1 ((norm_nonneg _).trans (hf _ ht))
   have hint : IntegrableOn (fun t : ℝ ↦ (t ^ 2)⁻¹) {t : ℝ | T < |t|} :=
     Integrable.of_integral_ne_zero <| by
-      rw [integral_abs_gt_inv_sq hT]
+      rw [integral_lt_abs_inv_sq hT]
       exact div_ne_zero two_ne_zero hT.ne'
   calc ‖∫ t in {t : ℝ | T < |t|}, f (σ + t * I)‖
       ≤ ∫ t in {t : ℝ | T < |t|}, K / ε * (t ^ 2)⁻¹ := by
@@ -111,31 +92,8 @@ theorem norm_integral_vertical_tail_le {f : ℂ → ℂ} {σ K ε T : ℝ} (hε 
           (mul_sq_le_norm_mul_one_add hε.le (abs_le_norm_ofReal_add_mul_I σ t))).trans_eq ?_
         ring
     _ = 2 * K / (ε * T) := by
-        rw [integral_const_mul, integral_abs_gt_inv_sq hT]
+        rw [integral_const_mul, integral_lt_abs_inv_sq hT]
         field_simp
-
-private lemma continuous_inv_add_abs {σ : ℝ} (hσ : 0 < σ) :
-    Continuous fun t : ℝ ↦ (σ + |t|)⁻¹ :=
-  (continuous_const.add continuous_abs).inv₀ fun t ↦
-    (add_pos_of_pos_of_nonneg hσ (abs_nonneg t)).ne'
-
-/-- The integral of `(σ + |t|)⁻¹` over `[-T, T]` is `2 log(1 + T/σ)`. -/
-private lemma integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
-    ∫ t in (-T)..T, (σ + |t|)⁻¹ = 2 * Real.log (1 + T / σ) := by
-  have hc := continuous_inv_add_abs hσ
-  have hpos : ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ = Real.log (1 + T / σ) := by
-    rw [intervalIntegral.integral_congr (g := fun t ↦ (σ + t)⁻¹) fun t ht ↦ by
-        rw [uIcc_of_le hT] at ht; simp [abs_of_nonneg ht.1],
-      intervalIntegral.integral_comp_add_left (fun t ↦ t⁻¹) σ, add_zero,
-      integral_inv_of_pos hσ (by linarith)]
-    congr 1
-    field_simp
-  have hneg : ∫ t in (-T)..0, (σ + |t|)⁻¹ = ∫ t in (0 : ℝ)..T, (σ + |t|)⁻¹ := by
-    simpa [abs_neg] using
-      (intervalIntegral.integral_comp_neg (a := 0) (b := T) fun t ↦ (σ + |t|)⁻¹).symm
-  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
-    (hc.intervalIntegrable _ _), hneg, hpos]
-  ring
 
 /-- **A symmetric segment of a vertical line.** If `σ > 0`, `T ≥ 0` and
 `‖f(σ + it)‖ ≤ K / |σ + it|` for `|t| ≤ T`, then the integral of `t ↦ f(σ + it)` over `[-T, T]`
@@ -148,7 +106,9 @@ theorem norm_intervalIntegral_vertical_le {f : ℂ → ℂ} {σ K T : ℝ} (hσ 
     have h0 : ‖(σ : ℂ) + ((0 : ℝ) : ℂ) * I‖ = σ := by simp [abs_of_pos hσ]
     rw [h0] at h
     simpa using (le_div_iff₀ hσ).1 h
-  have hc := continuous_inv_add_abs hσ
+  have hc : Continuous fun t : ℝ ↦ (σ + |t|)⁻¹ :=
+    (continuous_const.add continuous_abs).inv₀ fun t ↦
+      (add_pos_of_pos_of_nonneg hσ (abs_nonneg t)).ne'
   calc ‖∫ t in (-T)..T, f (σ + t * I)‖ ≤ ∫ t in (-T)..T, 2 * K * (σ + |t|)⁻¹ := by
         refine intervalIntegral.norm_integral_le_of_norm_le (by linarith)
           (Filter.Eventually.of_forall fun t ht ↦ (hf t (Ioc_subset_Icc_self ht)).trans ?_)
