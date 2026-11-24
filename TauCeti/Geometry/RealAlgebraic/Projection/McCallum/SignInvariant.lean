@@ -86,7 +86,7 @@ theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
     (fun b hb ↦ (Finset.mem_filter.mp hb).2) hproj
   refine ⟨D.count, D.root, D.isSemialgebraicStack hsemi, fun E hE ↦
     ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS
-      (fun (b : A) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.1 j) hE, fun f hf ↦ ?_⟩⟩
+      (fun (b : A) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.val j) hE, fun f hf ↦ ?_⟩⟩
   have htail (y : Fin (n + 1) → ℝ) (hy : y ∈ E) : Fin.tail y ∈ S := by
     rw [← TauCeti.image_tail_of_mem_stackCells D.strictMono_root hE]
     exact Set.mem_image_of_mem Fin.tail hy

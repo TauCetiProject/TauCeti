@@ -48,17 +48,19 @@ namespace TauCeti
 /-- Exact `e`-th cyclotomic integers, represented by the `e.totient` coefficients of the
 canonical polynomial representative in descending order. -/
 @[expose] def Cyclotomic (e : ℕ) : Type _ := {l : List ℤ // l.length = e.totient}
-  deriving DecidableEq
 
 namespace Cyclotomic
 
 variable {e : ℕ}
 
+instance : DecidableEq (Cyclotomic e) :=
+  inferInstanceAs (DecidableEq {l : List ℤ // l.length = e.totient})
+
 /-- The descending list of coefficients representing an exact cyclotomic integer. -/
-@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.1
+@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.val
 
 @[simp]
-theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.2
+theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.property
 
 /-- An exact cyclotomic integer is determined by its coefficient list. -/
 theorem ext_coeffs {x y : Cyclotomic e} (h : x.coeffs = y.coeffs) : x = y := Subtype.ext h
@@ -96,7 +98,7 @@ theorem coeffs_ofCoeffList (e : ℕ) (l : List ℤ) :
 `Φ_e`, the polynomial it presents having degree less than `φ e` already. -/
 theorem coeffs_ofCoeffList_of_length_eq {l : List ℤ} (h : l.length = e.totient) :
     (ofCoeffList e l).coeffs = l :=
-  eq_of_length_eq_of_ofCoeffList_reverse_eq (by simp [h])
+  (ofCoeffList_reverse_inj (by simp [h])).1
     (by
       rw [coeffs_ofCoeffList, ofCoeffList_reverse_modByCyclotomic]
       exact (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2
@@ -196,7 +198,7 @@ theorem toAdjoinRoot_injective : Function.Injective (toAdjoinRoot : Cyclotomic e
   have h' := congrArg (AdjoinRoot.modByMonicHom (cyclotomic.monic e ℤ)) h
   simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, toPolynomial_modByMonic] at h'
   exact ext_coeffs
-    (eq_of_length_eq_of_ofCoeffList_reverse_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
+    ((ofCoeffList_reverse_inj (x.length_coeffs.trans y.length_coeffs.symm)).1 h')
 
 /-- The comparison map sends the exact cyclotomic integer built from a coefficient list to the
 class of the polynomial with those coefficients: reduction modulo `Φ_e` is invisible in the

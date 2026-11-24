@@ -16,7 +16,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 Mathlib's `LinearMap.trace R M` is defined through a finite basis of `M`, and is `0` when `M` has
 none. This file names that case of the definition, so that proofs need not unfold
 `LinearMap.trace`. It also computes the trace of an endomorphism whose range lies in a free
-submodule with a given basis, as the trace of its matrix in that basis.
+submodule with a given basis, as the trace of its matrix in that basis, and the trace of an
+endomorphism mapping a basis into itself, as the number of basis vectors it fixes.
 
 ## Main results
 
@@ -28,6 +29,10 @@ submodule with a given basis, as the trace of its matrix in that basis.
   endomorphism is its trace times the identity.
 * `LinearMap.trace_eq_sum_of_range_le_of_apply_single_eq`: the trace of an endomorphism whose
   range lies in a free submodule `ι → R` is the trace of its matrix there.
+* `LinearMap.trace_eq_natCard_of_apply_basis_eq`: an endomorphism sending each basis vector `b i`
+  to a basis vector `b (π i)` has trace the number of fixed points of `π`.
+* `LinearMap.trace_eq_neg_of_toMatrix_eq_neg_transpose`: endomorphisms with matrices `A` and
+  `-Aᵀ` have opposite traces.
 -/
 
 public section
@@ -95,5 +100,27 @@ theorem trace_eq_sum_of_range_le_of_apply_single_eq {R M ι : Type*} [CommRing R
     simp [hj]
   rw [← hφρ, LinearMap.trace_comp_comm', hmat, Matrix.trace_toLin'_eq]
   simp [Matrix.trace]
+
+/-- **The trace of an endomorphism that maps a basis into itself** is the number of basis vectors
+it fixes: if `f (b i) = b (π i)` for every `i`, the trace of `f` is the number of fixed points of
+`π`, cast into `R`. The map `π` need not be a permutation; when it is, this is the coordinate-free
+form of `Matrix.trace_permutation`. -/
+theorem trace_eq_natCard_of_apply_basis_eq {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Finite ι] (b : Module.Basis ι R M) {f : M →ₗ[R] M} {π : ι → ι}
+    (h : ∀ i, f (b i) = b (π i)) : trace R M f = Nat.card {i // π i = i} := by
+  classical
+  have := Fintype.ofFinite ι
+  rw [trace_eq_matrix_trace R b, Matrix.trace]
+  simp [LinearMap.toMatrix_apply, h, Finsupp.single_apply, Fintype.card_subtype]
+
+open scoped Matrix in
+/-- Endomorphisms whose matrices in some bases indexed by the same type are `A` and `-Aᵀ` have
+opposite traces. This is the trace relation between a representation and its dual. -/
+theorem trace_eq_neg_of_toMatrix_eq_neg_transpose {R M N ι : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (b' : Module.Basis ι R N) {f : M →ₗ[R] M} {g : N →ₗ[R] N}
+    (h : LinearMap.toMatrix b' b' g = -(LinearMap.toMatrix b b f)ᵀ) :
+    trace R N g = -trace R M f := by
+  simp [trace_eq_matrix_trace R b, trace_eq_matrix_trace R b', h]
 
 end LinearMap

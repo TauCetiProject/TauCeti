@@ -155,7 +155,7 @@ theorem isCyclic_inertia_span_singleton_ι (hG : (Nat.card G : K) ≠ 0)
   let := ρ.symmetricAlgebraMulSemiringAction
   set I := (Ideal.span {ι K M ℓ}).inertia G
   have hI (g : I) (m : M) : m - ρ g m ∈ K ∙ ℓ :=
-    symmetricAlgebra_mem_inertia_span_singleton_ι_iff.1 g.2 m
+    symmetricAlgebra_mem_inertia_span_singleton_ι_iff.1 g.property m
   obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one K hℓ
   -- Each element of `I` multiplies `ℓ` by the scalar `φ (ρ g ℓ)`.
   have hχ (g : I) : ρ g ℓ = φ (ρ g ℓ) • ℓ := by
@@ -205,7 +205,7 @@ theorem isCyclic_inertia_of_height_eq_one (hG : (Nat.card G : K) ≠ 0)
   · -- Otherwise every element of the inertia group acts trivially, so it is trivial.
     simp only [ne_eq, not_exists, not_and, not_not] at h
     have : Subsingleton (P.inertia G) :=
-      ⟨fun g h' ↦ Subtype.ext (hρ ((h g g.2).trans (h h' h'.2).symm))⟩
+      ⟨fun g h' ↦ Subtype.ext (hρ ((h g g.property).trans (h h' h'.property).symm))⟩
     infer_instance
 
 end Field

@@ -19,11 +19,12 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
-import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # The canonical orientation of a complex manifold
@@ -109,6 +110,8 @@ standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`.
   orientation of a complex manifold.
 * `TauCeti.orientationAt_complexManifoldOrientation`: its tangent orientation at a point, read
   through any holomorphic chart.
+* `TauCeti.orientationAt_reindex_complexManifoldOrientation_complex`: on a Riemann surface, the
+  canonical orientation reindexed to `Fin 2` is `Complex.orientation` at every point.
 * `TauCeti.complexOrientationLift`, `ModelWithCorners.complexOrientationLift`: the canonical
   orientation as a lift indexed by `Fin (finrank ℝ E)`, with all chart signs `1`
   (`TauCeti.complexOrientationLift_sign`).
@@ -334,6 +337,17 @@ theorem orientationAt_complexManifoldOrientation_eq_complexOrientation (x : M) :
   (isOrientedAtlas_maximalAtlas_complex 1).orientationAt_orientation _ _
     (IsManifold.chart_mem_maximalAtlas x)
 
+/-- On a Riemann surface, the canonical orientation, reindexed from `Fin (2 * finrank ℂ ℂ)` to
+`Fin 2`, is at every point `x` the standard orientation `Complex.orientation` of the tangent
+space `ℂ` at `x`, that of the real basis `(1, i)`. -/
+theorem orientationAt_reindex_complexManifoldOrientation_complex {N : Type*} [TopologicalSpace N]
+    [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) 1 N] (h : 2 * finrank ℂ ℂ = 2) (x : N) :
+    ((complexManifoldOrientation ℂ N).reindex (finCongr h)).orientationAt x =
+      Complex.orientation := by
+  rw [Manifold.Orientation.orientationAt_reindex,
+    orientationAt_complexManifoldOrientation_eq_complexOrientation]
+  exact reindex_complexOrientation_complex
+
 /-! ### The orientation lift indexed by the real dimension -/
 
 variable (E M) in
@@ -518,10 +532,8 @@ theorem map_orientationAt_prod_complexManifoldOrientation (n : ℕ∞ω) [NeZero
       (((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M')).orientationAt
         x) = Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
           (complexOrientation (E × E')) := by
-    -- `ContinuousLinearEquiv.prodCongr` is built from `LinearEquiv.prodCongr`.
-    have hprod : (L₁.prodCongr L₂).toLinearEquiv =
-        L₁.toLinearEquiv.prodCongr L₂.toLinearEquiv := rfl
-    rw [Manifold.Orientation.orientationAt_prod, hprod, Orientation.map_prod, h₁, h₂]
+    rw [Manifold.Orientation.orientationAt_prod, ContinuousLinearEquiv.prodCongr_toLinearEquiv,
+      Orientation.map_prod, h₁, h₂]
     exact prod_complexOrientation
   rw [hLeq]
   exact key

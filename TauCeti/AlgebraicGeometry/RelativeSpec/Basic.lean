@@ -29,10 +29,8 @@ This is exactly the input of Mathlib's relative gluing on the small affine Zaris
 
 ## Main declarations
 
-* `CategoryTheory.CommMon.sectionsAlgHom` and `CategoryTheory.CommMon.sectionsPresheafMap`:
-  algebra morphisms on sections and their compatibility with restriction and structure maps;
-* `CategoryTheory.CommMon.sectionsAlgEquiv`: the algebra isomorphism on sections induced by an
-  isomorphism of algebras;
+* `CategoryTheory.CommMon.sectionsPresheafMap`: the morphism of presheaves of section rings
+  induced by a morphism of algebras, and its compatibility with the structure maps;
 * `CategoryTheory.CommMon.isLocalization_basicOpen`: for quasi-coherent `A`, an affine open `U`
   and `f ∈ Γ(X, U)`, `Γ(A.X, X.basicOpen f)` is the localization of `Γ(A.X, U)` away from `f`;
 * `AlgebraicGeometry.Scheme.AffineZariskiSite.isPullback_relativeGluingData_cover` and
@@ -66,84 +64,6 @@ noncomputable section
 variable {X : Scheme.{u}} (A : CommMon X.Modules)
 
 namespace CategoryTheory.CommMon
-
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras.
-It sends each section to its image under the morphism and preserves the structure map
-from `Γ(X, U)`. -/
-def sectionsAlgHom {A B : CommMon X.Modules}
-    (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
-  (ModuleCat.MonModuleEquivalenceAlgebra.functor.map
-    (((Scheme.Modules.sectionsFunctor U).mapCommMon.map f).hom)).hom
-
-@[simp]
-lemma sectionsAlgHom_apply {A B : CommMon X.Modules}
-    (f : A ⟶ B) (U : X.Opens) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
-  (rfl)
-
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras commutes with
-restriction of sections. -/
-lemma sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
-    (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgHom f V (A.restrictSections i x) =
-      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
-  rw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply, CommMon.restrictSections_apply]
-  exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
-    (B.restrictSections_apply i _).symm
-
-/-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
-sections. -/
-lemma hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
-    {f g : A ⟶ B} (h : ∀ U, CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) : f = g :=
-  CommMon.hom_ext _ _ (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun x ↦
-    DFunLike.congr_fun (h U) x)
-
-@[simp]
-lemma sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
-    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by
-  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
-    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
-  -- `sectionsAlgHom` spells out the three functor maps; `map_id` is stated for
-  -- their composite `F`. `change` identifies these definitionally equal presentations.
-  change (F.map (𝟙 A)).hom = _
-  ext x
-  -- The identities use the algebra instances on `F.obj A` and on `Γ(A.X, U)`.
-  -- Rewriting the bundled maps does not match these instances; evaluation removes them.
-  change (F.map (𝟙 A)).hom x = x
-  simpa only [AlgCat.hom_id, AlgHom.id_apply] using
-    congrArg (fun f ↦ f.hom x) (F.map_id A)
-
-@[simp]
-lemma sectionsAlgHom_comp {A B C : CommMon X.Modules}
-    (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
-    CommMon.sectionsAlgHom (f ≫ g) U =
-      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) := by
-  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
-    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
-  -- `sectionsAlgHom` spells out the three functor maps; rewriting with `map_comp`
-  -- requires first presenting them as the map of the composite functor `F`.
-  change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
-  simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
-
-/-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
-commutative `𝒪ₓ`-algebras. -/
-def sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
-    (U : X.Opens) : Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
-  AlgEquiv.ofAlgHom (CommMon.sectionsAlgHom e.hom U) (CommMon.sectionsAlgHom e.inv U)
-    (by rw [← CommMon.sectionsAlgHom_comp, e.inv_hom_id, CommMon.sectionsAlgHom_id])
-    (by rw [← CommMon.sectionsAlgHom_comp, e.hom_inv_id, CommMon.sectionsAlgHom_id])
-
-@[simp]
-lemma sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
-    (U : X.Opens) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgEquiv e U x = CommMon.sectionsAlgHom e.hom U x :=
-  (rfl)
-
-@[simp]
-lemma sectionsAlgEquiv_symm_apply {A B : CommMon X.Modules}
-    (e : A ≅ B) (U : X.Opens) (x : Γ(B.X, U)) :
-    (CommMon.sectionsAlgEquiv e U).symm x = CommMon.sectionsAlgHom e.inv U x :=
-  (rfl)
 
 /-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
 def sectionsPresheafMap {A B : CommMon X.Modules}
@@ -224,8 +144,7 @@ lemma homOfSectionsPresheaf_sectionsPresheafMap
       (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) = f :=
   CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
     (CommMon.sectionsAlgHom_apply _ U x).trans
-      ((CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x).trans
-        (CommMon.sectionsAlgHom_apply f U x))
+      (CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x)
 
 /-- Two morphisms into the presheaf of section rings of a commutative `𝒪ₓ`-algebra agree as soon
 as they agree on affine opens. -/
@@ -236,7 +155,7 @@ lemma sectionsPresheaf_hom_ext {F : X.Opensᵒᵖ ⥤ CommRingCat.{u}}
     rw [Subtype.range_coe]
     exact X.isBasis_affineOpens
   exact TopCat.Sheaf.hom_ext F ⟨A.sectionsPresheaf, A.isSheaf_sectionsPresheaf⟩ hB
-    fun U ↦ h U.1 U.2
+    fun U ↦ h U.val U.property
 
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections over affine opens. -/
@@ -327,7 +246,7 @@ theorem coequifibered_toSectionsPresheaf [A.X.IsQuasicoherent] :
   intro U f
   dsimp only [CommMon.sectionsPresheaf]
   erw [Functor.whiskerLeft_app, CommMon.toSectionsPresheaf_app]
-  exact A.isLocalization_basicOpen U.2 f
+  exact A.isLocalization_basicOpen U.property f
 
 end CategoryTheory.CommMon
 
@@ -366,14 +285,14 @@ map `Γ(X, U) ⟶ F(U)`. -/
 lemma relativeGluingData_cover_f_toBase
     (U : X.AffineZariskiSite) :
     (relativeGluingData H).cover.f U ≫ (relativeGluingData H).toBase =
-      Spec.map (α.app (op U)) ≫ U.2.fromSpec :=
+      Spec.map (α.app (op U)) ≫ U.property.fromSpec :=
   colimit.ι_desc _ _
 
 /-- The preimage of an affine open `U` under the structure morphism of the glued scheme is the
 image of the chart `Spec F(U)`. -/
 lemma relativeGluingData_toBase_preimage
     (U : X.AffineZariskiSite) :
-    (relativeGluingData H).toBase ⁻¹ᵁ U.1 = ((relativeGluingData H).cover.f U).opensRange := by
+    (relativeGluingData H).toBase ⁻¹ᵁ U.val = ((relativeGluingData H).cover.f U).opensRange := by
   have h := (relativeGluingData H).toBase_preimage_eq_opensRange_ι U
   simp only [Scheme.Opens.opensRange_ι] at h
   exact h
@@ -382,8 +301,8 @@ lemma relativeGluingData_toBase_preimage
 base change of the structure morphism along `U ⟶ X`. -/
 lemma isPullback_relativeGluingData_cover
     (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (α.app (op U)) ≫ U.2.isoSpec.inv)
-      ((relativeGluingData H).cover.f U) U.1.ι (relativeGluingData H).toBase :=
+    IsPullback (Spec.map (α.app (op U)) ≫ U.property.isoSpec.inv)
+      ((relativeGluingData H).cover.f U) U.val.ι (relativeGluingData H).toBase :=
   (relativeGluingData H).isPullback_natTrans_ι_toBase U
 
 /-- The structure morphism of the scheme glued from a coequifibered presheaf of rings is affine. -/
@@ -392,8 +311,8 @@ instance isAffineHom_relativeGluingData_toBase :
   refine isAffineHom_of_forall_exists_isAffineOpen _ fun x ↦ ?_
   obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.mp
     ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  let V : X.AffineZariskiSite := ⟨U.1, U.2⟩
-  refine ⟨V.1, hxU, V.2, ?_⟩
+  let V : X.AffineZariskiSite := ⟨U.val, U.property⟩
+  refine ⟨V.val, hxU, V.property, ?_⟩
   have : IsAffine ((relativeGluingData H).cover.X V) := by
     rw [relativeGluingData_cover_X]
     infer_instance
@@ -450,7 +369,7 @@ instance isOpenImmersion_relativeSpecCover_f
   A.relativeSpecCover.map_prop U
 
 lemma relativeSpecCover_X (U : X.AffineZariskiSite) :
-    A.relativeSpecCover.X U = Spec (CommRingCat.of Γ(A.X, U.1)) :=
+    A.relativeSpecCover.X U = Spec (CommRingCat.of Γ(A.X, U.val)) :=
   (rfl)
 
 /-- Over an affine open `U`, the structure morphism of the relative spectrum is `Spec` of the
@@ -459,20 +378,20 @@ structure map `Γ(X, U) ⟶ Γ(A.X, U)`. -/
 lemma relativeSpecCover_f_relativeSpecToBase
     (U : X.AffineZariskiSite) :
     A.relativeSpecCover.f U ≫ A.relativeSpecToBase =
-      Spec.map (A.toSectionsPresheaf.app (op U.1)) ≫ U.2.fromSpec :=
+      Spec.map (A.toSectionsPresheaf.app (op U.val)) ≫ U.property.fromSpec :=
   relativeGluingData_cover_f_toBase A.coequifibered_toSectionsPresheaf U
 
 /-- The preimage of an affine open `U` under the structure morphism of the relative spectrum is the
 image of the chart `Spec Γ(A.X, U)`. -/
 lemma relativeSpecToBase_preimage (U : X.AffineZariskiSite) :
-    A.relativeSpecToBase ⁻¹ᵁ U.1 = (A.relativeSpecCover.f U).opensRange :=
+    A.relativeSpecToBase ⁻¹ᵁ U.val = (A.relativeSpecCover.f U).opensRange :=
   relativeGluingData_toBase_preimage A.coequifibered_toSectionsPresheaf U
 
 /-- Over an affine open `U` of `X`, the relative spectrum is `Spec Γ(A.X, U)`: the chart of the
 relative spectrum over `U` is the base change of the structure morphism along `U ⟶ X`. -/
 lemma isPullback_relativeSpecCover (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (A.toSectionsPresheaf.app (op U.1)) ≫ U.2.isoSpec.inv)
-      (A.relativeSpecCover.f U) U.1.ι A.relativeSpecToBase :=
+    IsPullback (Spec.map (A.toSectionsPresheaf.app (op U.val)) ≫ U.property.isoSpec.inv)
+      (A.relativeSpecCover.f U) U.val.ι A.relativeSpecToBase :=
   isPullback_relativeGluingData_cover A.coequifibered_toSectionsPresheaf U
 
 /-- The structure morphism of the relative spectrum is affine. -/

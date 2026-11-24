@@ -27,7 +27,7 @@ def selfAdjoint.subtypeL (R A : Type*) [Semiring R] [Star R] [TrivialStar R] [Ad
   toFun := Subtype.val
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  cont := continuous_subtype_val
+  cont := continuous_subtypeVal
 
 /-- Coercing `selfAdjoint.subtypeL R A` to a function yields `Subtype.val`. -/
 @[simp]

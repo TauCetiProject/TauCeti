@@ -24,6 +24,8 @@ orthogonal and special orthogonal groups under the change of scalars
   the real orthogonal matrices.
 * `TauCeti.GLSpecialOrthogonal.inf_unitarySubgroup_eq_map_real`: the unitary elements of
   `SO(n, 𝕜)` are the real special orthogonal matrices.
+* `Matrix.exists_mem_orthogonalGroup_map_eq_of_mul_transpose_eq_one`: a unitary matrix `O` with
+  `O Oᵀ = 1` is a real orthogonal matrix.
 -/
 
 public section
@@ -104,3 +106,26 @@ theorem inf_unitarySubgroup_eq_map_real :
 end GLSpecialOrthogonal
 
 end TauCeti
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
+
+/-- A unitary matrix `O` over `𝕜 = ℝ` or `ℂ` with `O Oᵀ = 1` is the image of a real orthogonal
+matrix: the matrix form of `TauCeti.GLOrthogonal.inf_unitarySubgroup_eq_map_real`. -/
+theorem exists_mem_orthogonalGroup_map_eq_of_mul_transpose_eq_one (O : unitaryGroup n 𝕜)
+    (hO : (O : Matrix n n 𝕜) * (O : Matrix n n 𝕜)ᵀ = 1) :
+    ∃ N ∈ orthogonalGroup n ℝ, N.map (algebraMap ℝ 𝕜) = O := by
+  have hval : ((unitarySubgroupUnitsEquiv.symm O : GL n 𝕜) : Matrix n n 𝕜) = O :=
+    val_unitarySubgroupUnitsEquiv_symm_apply_coe O
+  have hOU : (unitarySubgroupUnitsEquiv.symm O : GL n 𝕜) ∈
+      TauCeti.GLOrthogonal n 𝕜 ⊓ unitarySubgroup (GL n 𝕜) :=
+    ⟨TauCeti.GLOrthogonal.mem_iff'.2 (hval ▸ hO), (unitarySubgroupUnitsEquiv.symm O).property⟩
+  rw [TauCeti.GLOrthogonal.inf_unitarySubgroup_eq_map_real] at hOU
+  obtain ⟨B, hB, hBO⟩ := hOU
+  refine ⟨B, TauCeti.GLOrthogonal.mem_iff_mem_orthogonalGroup.1 hB, ?_⟩
+  rw [← hval, ← hBO]
+  ext i j
+  rw [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply]
+
+end Matrix

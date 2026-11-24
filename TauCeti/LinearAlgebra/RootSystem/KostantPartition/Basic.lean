@@ -205,8 +205,8 @@ roots. -/
 @[simp] theorem kostantPartition_zero : kostantPartition P b (0 : M) = 1 := by
   rw [kostantPartition_def, Nat.card_eq_one_iff_unique]
   refine ⟨⟨fun x y ↦ Subtype.ext ?_⟩, ⟨⟨0, (isKostantPartition_zero_iff P b).mpr rfl⟩⟩⟩
-  exact ((isKostantPartition_zero_iff P b).mp x.2).trans
-    ((isKostantPartition_zero_iff P b).mp y.2).symm
+  exact ((isKostantPartition_zero_iff P b).mp x.property).trans
+    ((isKostantPartition_zero_iff P b).mp y.property).symm
 
 /-- A positive root is a sum of positive roots, namely of itself. -/
 theorem isKostantPartition_single [DecidableEq ι] {i : ι} (hi : i ∈ posRoots P b) :
@@ -278,7 +278,7 @@ theorem eq_single_of_isKostantPartition_root_of_mem_support [DecidableEq ι] {i 
   have hipos : i ∈ posRoots P b := support_subset_posRoots P b hi
   rw [kostantPartition_def, Nat.card_eq_one_iff_unique]
   refine ⟨⟨fun x y ↦ Subtype.ext ?_⟩, ⟨⟨_, isKostantPartition_single P b hipos⟩⟩⟩
-  exact (eq_single_of_isKostantPartition_root_of_mem_support P b hi x.2).trans
-    (eq_single_of_isKostantPartition_root_of_mem_support P b hi y.2).symm
+  exact (eq_single_of_isKostantPartition_root_of_mem_support P b hi x.property).trans
+    (eq_single_of_isKostantPartition_root_of_mem_support P b hi y.property).symm
 
 end TauCeti

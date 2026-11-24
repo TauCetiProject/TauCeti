@@ -375,7 +375,6 @@ private theorem exists_weight_intersection_eq_of_four_lt
     (hf.intersection_self (t - 2) (by omega))
     (hf.intersection_self (t - 1) (by omega)) hf.branch_intersection_self
     (hf.ne (by omega) (by omega) (by omega)) (hf.ne (by omega) (by omega) (by omega))
-    (hf.branch_ne (t - 4) (by omega)).symm (hf.ne (by omega) (by omega) (by omega))
     (hf.branch_ne (t - 3) (by omega)).symm (hf.branch_ne (t - 1) (by omega)).symm
     (hf.intersection_pos (by omega) (by omega)) (hf.intersection_pos (by omega) (by omega))
     (hf.intersection_pos (by omega) (by omega)) hf.branch_intersection_pos
@@ -452,7 +451,6 @@ private theorem exists_weight_intersection_eq_four
     (hf.intersection_self 0 (by omega)) (hf.intersection_self 1 (by omega))
     (hf.intersection_self 2 (by omega)) (hf.intersection_self 3 (by omega))
     hf.branch_intersection_self (hf.ne (by omega) (by omega) (by omega))
-    (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne 0 (by omega)).symm
     (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne 1 (by omega)).symm
     (hf.branch_ne 3 (by omega)).symm (hf.intersection_succ_pos 0 (by omega))
     (hf.intersection_succ_pos 1 (by omega)) (hf.intersection_succ_pos 2 (by omega))

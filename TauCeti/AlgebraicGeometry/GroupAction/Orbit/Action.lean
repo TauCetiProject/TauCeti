@@ -37,7 +37,7 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]

@@ -96,7 +96,7 @@ private def presheafLiftApp (φ : F ⟶ B.X) (n : ℕ) (U : X.Opens) :
 
 private lemma presheafLiftApp_apply (φ : F ⟶ B.X) (n : ℕ) (U : X.Opens)
     (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val (op U)).symmetricPower n) :
-    presheafLiftApp φ n U x = sectionsLift φ U x.1 :=
+    presheafLiftApp φ n U x = sectionsLift φ U x.val :=
   (rfl)
 
 /-- The extension on sections commutes with restriction. -/
@@ -126,12 +126,12 @@ private def presheafLift (φ : F ⟶ B.X) (n : ℕ) :
       erw [ModuleCat.comp_apply, ModuleCat.restrictScalars.map_apply, ModuleCat.comp_apply,
         presheafLiftApp_apply, presheafLiftApp_apply,
         PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply]
-      exact (RingHom.congr_fun (sectionsLift_restrict φ f.unop) x.1).trans
+      exact (RingHom.congr_fun (sectionsLift_restrict φ f.unop) x.val).trans
         (B.restrictSections_apply f.unop _))
 
 private lemma presheafLift_app_apply (φ : F ⟶ B.X) (n : ℕ) (U : X.Opensᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U).symmetricPower n) :
-    (presheafLift φ n).app U x = sectionsLift φ U.unop x.1 :=
+    (presheafLift φ n).app U x = sectionsLift φ U.unop x.val :=
   (rfl)
 
 variable (X) in
@@ -153,7 +153,7 @@ private lemma presheafLift_tensorHom_comp_mul_app_tmul (φ : F ⟶ B.X) (i j : �
     ((presheafLift φ i ⊗ₘ presheafLift φ j) ≫
         Functor.LaxMonoidal.μ (forgetPresheaf X) B.X B.X ≫
           (forgetPresheaf X).map μ[B.X]).app U (x ⊗ₜ y) =
-      sectionsLift φ U.unop x.1 * sectionsLift φ U.unop y.1 :=
+      sectionsLift φ U.unop x.val * sectionsLift φ U.unop y.val :=
   (rfl)
 
 /-- The extension is multiplicative on sections. -/

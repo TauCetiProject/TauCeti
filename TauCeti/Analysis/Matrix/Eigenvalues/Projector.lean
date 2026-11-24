@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
-import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Spectral projectors of Hermitian matrices
@@ -18,15 +18,13 @@ eigenvalue list `hA.eigenvalues₀ : Fin (Fintype.card n) → ℝ` with a chosen
 building on `TauCeti.rankOneHermitianProjector` and `TauCeti.hermitianProjectorLocus` from
 `TauCeti.LinearAlgebra.Projectivization.HermitianProjector`.
 
-At repeated eigenvalues both `hA.eigenvectorBasis₀` and the rank-one projectors
-`hA.eigenprojector₀ k` depend on `Classical.choose` rather than projecting onto the full
-eigenspace. Each rank-one projector nevertheless lies in `TauCeti.hermitianProjectorLocus n 𝕜`, and
-the family is pairwise orthogonal, sums to `1`, and resolves `A` as
-`∑ k, (hA.eigenvalues₀ k : 𝕜) • hA.eigenprojector₀ k`. At a simple sorted eigenvalue
+At repeated eigenvalues both `hA.eigenvectorBasis₀` and `hA.eigenprojector₀ k` depend on
+`Classical.choose` rather than projecting onto the full eigenspace. Each rank-one projector lies in
+`TauCeti.hermitianProjectorLocus n 𝕜`, and the family is pairwise orthogonal, sums to `1`, and
+resolves `A` as `∑ k, (hA.eigenvalues₀ k : 𝕜) • hA.eigenprojector₀ k`. At a simple sorted eigenvalue
 `hA.eigenvalues₀ k`, `hA.eigenprojector₀ k` becomes canonical: it agrees with
-`TauCeti.rankOneHermitianProjector v` for every nonzero eigenvector `v`. This basis-independent
-identification drives Hadamard's eigenvalue and projector variation formulas and implies that simple
-spectral projectors of complex-embedded real-symmetric (GOE) matrices are symmetric.
+`TauCeti.rankOneHermitianProjector v` for every nonzero eigenvector `v`, and is symmetric whenever
+`A` is symmetric.
 
 ## Main definitions
 
@@ -75,13 +73,11 @@ def eigenvectorBasis₀ (hA : A.IsHermitian) :
 /-- Unfolds `hA.eigenvectorBasis₀` in terms of `LinearMap.IsSymmetric.eigenvectorBasis`. -/
 theorem eigenvectorBasis₀_def (hA : A.IsHermitian) :
     hA.eigenvectorBasis₀ =
-      (isSymmetric_toEuclideanLin_iff.mpr hA).eigenvectorBasis finrank_euclideanSpace :=
-  (rfl)
+      (isSymmetric_toEuclideanLin_iff.mpr hA).eigenvectorBasis finrank_euclideanSpace := (rfl)
 
 /-- Reindexing `hA.eigenvectorBasis` by the canonical finite equivalence recovers
 `hA.eigenvectorBasis₀`. -/
-@[simp]
-theorem eigenvectorBasis_apply_equivOfCardEq (hA : A.IsHermitian)
+@[simp] theorem eigenvectorBasis_apply_equivOfCardEq (hA : A.IsHermitian)
     (k : Fin (Fintype.card n)) :
     hA.eigenvectorBasis (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) k) =
       hA.eigenvectorBasis₀ k := by
@@ -109,8 +105,7 @@ theorem star_eigenvectorBasis₀_vecMul (hA : A.IsHermitian) (k : Fin (Fintype.c
 
 /-- Each vector of `hA.eigenvectorBasis₀` is an eigenvector of `A.toEuclideanLin` with eigenvalue
 `hA.eigenvalues₀ k`. -/
-@[simp]
-theorem toEuclideanLin_eigenvectorBasis₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem toEuclideanLin_eigenvectorBasis₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     A.toEuclideanLin (hA.eigenvectorBasis₀ k) =
       (hA.eigenvalues₀ k : 𝕜) • hA.eigenvectorBasis₀ k := by
   simp [eigenvectorBasis₀_def, eigenvalues₀]
@@ -121,11 +116,11 @@ theorem dotProduct_star_eigenvectorBasis₀ (hA : A.IsHermitian) (j k : Fin (Fin
   rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct]
   split_ifs with hjk
   · exact hjk ▸ hA.eigenvectorBasis₀.inner_eq_one j
-  · exact hA.eigenvectorBasis₀.orthonormal.2 hjk
+  · exact hA.eigenvectorBasis₀.orthonormal.right hjk
 
 /-- Every vector in `hA.eigenvectorBasis₀` has unit Hermitian norm square. -/
-@[simp]
-theorem dotProduct_star_eigenvectorBasis₀_self (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem dotProduct_star_eigenvectorBasis₀_self (hA : A.IsHermitian)
+    (k : Fin (Fintype.card n)) :
     star ⇑(hA.eigenvectorBasis₀ k) ⬝ᵥ ⇑(hA.eigenvectorBasis₀ k) = 1 := by
   simp [hA.dotProduct_star_eigenvectorBasis₀]
 
@@ -149,13 +144,12 @@ def eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) : Matrix n
 
 /-- Unfolds `hA.eigenprojector₀ k` as `vecMulVec` of the `k`-th sorted eigenvector and its star. -/
 theorem eigenprojector₀_def (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
-    hA.eigenprojector₀ k = vecMulVec ⇑(hA.eigenvectorBasis₀ k) (star ⇑(hA.eigenvectorBasis₀ k)) :=
-  (rfl)
+    hA.eigenprojector₀ k =
+      vecMulVec ⇑(hA.eigenvectorBasis₀ k) (star ⇑(hA.eigenvectorBasis₀ k)) := (rfl)
 
 /-- Equal Hermitian matrices have equal sorted projector families. -/
 theorem eigenprojector₀_congr {B : Matrix n n 𝕜} (hA : A.IsHermitian) (hB : B.IsHermitian)
-    (h : A = B) : hA.eigenprojector₀ = hB.eigenprojector₀ := by
-  subst h; rfl
+    (h : A = B) : hA.eigenprojector₀ = hB.eigenprojector₀ := by subst h; rfl
 
 /-- `hA.eigenprojector₀ k` is the rank-one Hermitian projector of `hA.eigenvectorBasis₀ k`. -/
 theorem eigenprojector₀_eq_rankOneHermitianProjector (hA : A.IsHermitian)
@@ -173,38 +167,32 @@ theorem eigenprojector₀_mem_hermitianProjectorLocus (hA : A.IsHermitian)
     (by simp [hA.dotProduct_star_eigenvectorBasis₀_self])
 
 /-- Every sorted spectral projector is a star projection. -/
-@[simp]
-theorem isStarProjection_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem isStarProjection_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     IsStarProjection (hA.eigenprojector₀ k) :=
-  (TauCeti.mem_hermitianProjectorLocus.mp (hA.eigenprojector₀_mem_hermitianProjectorLocus k)).1
+  (TauCeti.mem_hermitianProjectorLocus.mp (hA.eigenprojector₀_mem_hermitianProjectorLocus k)).left
 
 /-- Every sorted spectral projector is self-adjoint. -/
-@[simp]
-theorem isSelfAdjoint_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem isSelfAdjoint_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     IsSelfAdjoint (hA.eigenprojector₀ k) :=
   (hA.isStarProjection_eigenprojector₀ k).isSelfAdjoint
 
 /-- Every sorted spectral projector is Hermitian. -/
-@[simp]
-theorem isHermitian_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem isHermitian_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     (hA.eigenprojector₀ k).IsHermitian := by
   simpa [IsHermitian, star_eq_conjTranspose] using (hA.isSelfAdjoint_eigenprojector₀ k).star_eq
 
 /-- Taking the conjugate transpose fixes every sorted spectral projector. -/
-@[simp]
-theorem conjTranspose_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem conjTranspose_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     (hA.eigenprojector₀ k)ᴴ = hA.eigenprojector₀ k :=
   (hA.isHermitian_eigenprojector₀ k).eq
 
 /-- Taking `star` fixes every sorted spectral projector. -/
-@[simp]
-theorem star_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem star_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     star (hA.eigenprojector₀ k) = hA.eigenprojector₀ k :=
   (hA.isSelfAdjoint_eigenprojector₀ k).star_eq
 
 /-- Every sorted spectral projector is idempotent. -/
-@[simp]
-theorem eigenprojector₀_mul_self (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem eigenprojector₀_mul_self (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     hA.eigenprojector₀ k * hA.eigenprojector₀ k = hA.eigenprojector₀ k :=
   (hA.isStarProjection_eigenprojector₀ k).isIdempotentElem.eq
 
@@ -215,8 +203,7 @@ theorem eigenprojector₀_mul_of_ne (hA : A.IsHermitian) {j k : Fin (Fintype.car
     hA.dotProduct_star_eigenvectorBasis₀_of_ne hjk]
 
 /-- Multiplication table of the sorted spectral projectors. -/
-theorem eigenprojector₀_mul_eigenprojector₀ (hA : A.IsHermitian)
-    (j k : Fin (Fintype.card n)) :
+theorem eigenprojector₀_mul_eigenprojector₀ (hA : A.IsHermitian) (j k : Fin (Fintype.card n)) :
     hA.eigenprojector₀ j * hA.eigenprojector₀ k =
       if j = k then hA.eigenprojector₀ j else 0 := by
   split_ifs with hjk
@@ -230,8 +217,7 @@ theorem eigenprojector₀_mulVec (hA : A.IsHermitian) (k : Fin (Fintype.card n))
   rw [eigenprojector₀_def, vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- `hA.eigenprojector₀ k` fixes the `k`-th sorted eigenvector. -/
-@[simp]
-theorem eigenprojector₀_mulVec_eigenvectorBasis₀_self (hA : A.IsHermitian)
+@[simp] theorem eigenprojector₀_mulVec_eigenvectorBasis₀_self (hA : A.IsHermitian)
     (k : Fin (Fintype.card n)) :
     hA.eigenprojector₀ k *ᵥ ⇑(hA.eigenvectorBasis₀ k) = ⇑(hA.eigenvectorBasis₀ k) := by
   simp [hA.eigenprojector₀_mulVec]
@@ -243,10 +229,9 @@ theorem eigenprojector₀_mulVec_eigenvectorBasis₀_of_ne (hA : A.IsHermitian)
   simp [hA.eigenprojector₀_mulVec, hA.dotProduct_star_eigenvectorBasis₀_of_ne hjk]
 
 /-- Every sorted spectral projector has trace `1`. -/
-@[simp]
-theorem trace_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem trace_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     (hA.eigenprojector₀ k).trace = 1 :=
-  (TauCeti.mem_hermitianProjectorLocus.mp (hA.eigenprojector₀_mem_hermitianProjectorLocus k)).2
+  (TauCeti.mem_hermitianProjectorLocus.mp (hA.eigenprojector₀_mem_hermitianProjectorLocus k)).right
 
 /-- The trace of `hA.eigenprojector₀ k * B` is the Rayleigh matrix element of `B` at the `k`-th
 sorted eigenvector. -/
@@ -276,8 +261,7 @@ theorem trace_eigenprojector₀_mul_mul_eigenprojector₀_mul (hA : A.IsHermitia
   rw [dotProduct_comm ⇑(hA.eigenvectorBasis₀ k), mul_comm]
 
 /-- **Resolution of the identity** by the sorted rank-one spectral projectors. -/
-@[simp]
-theorem sum_eigenprojector₀ (hA : A.IsHermitian) :
+@[simp] theorem sum_eigenprojector₀ (hA : A.IsHermitian) :
     ∑ k, hA.eigenprojector₀ k = (1 : Matrix n n 𝕜) := by
   ext i j
   simpa [eigenprojector₀_def, Finset.sum_apply, vecMulVec_apply, Pi.smul_apply, Matrix.one_apply,
@@ -285,14 +269,12 @@ theorem sum_eigenprojector₀ (hA : A.IsHermitian) :
       congrFun (hA.sum_dotProduct_smul_eigenvectorBasis₀ (Pi.single j 1)) i
 
 /-- Left multiplication of `hA.eigenprojector₀ k` by `A` scales by `hA.eigenvalues₀ k`. -/
-@[simp]
-theorem mul_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem mul_eigenprojector₀ (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     A * hA.eigenprojector₀ k = (hA.eigenvalues₀ k : 𝕜) • hA.eigenprojector₀ k := by
   rw [eigenprojector₀_def, mul_vecMulVec, hA.mulVec_eigenvectorBasis₀_coe, smul_vecMulVec]
 
 /-- Right multiplication of `hA.eigenprojector₀ k` by `A` scales by `hA.eigenvalues₀ k`. -/
-@[simp]
-theorem eigenprojector₀_mul (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+@[simp] theorem eigenprojector₀_mul (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
     hA.eigenprojector₀ k * A = (hA.eigenvalues₀ k : 𝕜) • hA.eigenprojector₀ k := by
   have h := congrArg Matrix.conjTranspose (hA.mul_eigenprojector₀ k)
   rwa [conjTranspose_mul, conjTranspose_smul, hA.eq, hA.conjTranspose_eigenprojector₀ k,
@@ -333,8 +315,7 @@ theorem exists_eigenvalues₀_eq_of_mulVec_eq_smul (hA : A.IsHermitian)
   refine hv_ne ?_
   rw [← hA.sum_dotProduct_smul_eigenvectorBasis₀ v]
   exact Finset.sum_eq_zero fun j _ ↦ by
-    rw [hA.dotProduct_star_eigenvectorBasis₀_eq_zero_of_mulVec_eq_smul (hall j).symm hv,
-      zero_smul]
+    rw [hA.dotProduct_star_eigenvectorBasis₀_eq_zero_of_mulVec_eq_smul (hall j).symm hv, zero_smul]
 
 /-- At a simple sorted eigenvalue `hA.eigenvalues₀ k`, every eigenvector `v` for
 `hA.eigenvalues₀ k` is a scalar multiple of `hA.eigenvectorBasis₀ k`. -/

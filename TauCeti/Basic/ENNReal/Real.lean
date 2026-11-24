@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Basic.ENNReal.Real
 import Mathlib.Basic.ENNReal.Inv
 import Mathlib.Basic.Real.Pointwise
 
 /-!
-# `ENNReal.ofReal` of differences and suprema of maxima
+# `ENNReal.ofReal` of positive parts, differences, and suprema of maxima
 
-For `0 ≤ q ≤ p`, the embedding `ENNReal.ofReal` splits `p` into `p - q` and `q`. With `p = 1`
-and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in `ℝ≥0∞`.
+Because `ENNReal.ofReal` vanishes on `(-∞, 0]`, it absorbs the positive part
+(`ENNReal.ofReal_posPart`), and for `p > 1` it preserves the Hölder conjugate ratio `p / (p - 1)`
+(`ENNReal.ofReal_div_sub_one`). For `0 ≤ q ≤ p`, `ENNReal.ofReal` splits `p` into `p - q` and `q`.
+With `p = 1` and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in
+`ℝ≥0∞`. In the other direction, `ENNReal.toReal` vanishes at `∞`, so an exponent `q` with
+`0 < a * q.toReal` is finite.
 
 For a class `P` of functions `α → ℝ`, the quantity
 `⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x)` in `ℝ≥0∞` is the supremum of the maxima of
@@ -24,10 +29,19 @@ reparametrization of the class along surjections.
 
 ## Main results
 
+* `ENNReal.ofReal_posPart`: `ENNReal.ofReal (x⁺) = ENNReal.ofReal x`.
+* `ENNReal.ofReal_div_sub_one`:
+  `ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1)` for `1 < p`.
+* `ENNReal.ne_top_of_pos_mul_toReal`: `q ≠ ∞` whenever `0 < a * q.toReal`.
+* `ENNReal.iSup_ofReal_min_natCast`:
+  `⨆ n : ℕ, ENNReal.ofReal (min x n) = ENNReal.ofReal x`.
 * `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
   for `0 ≤ q ≤ p`.
 * `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
   `a ≤ (1 + ω)⁻¹ V`.
+* `TauCeti.ofReal_mul_ofReal_add_ofReal_mul_ofReal`: `ENNReal.ofReal` folds
+  `D * (s + r * F)` for `0 ≤ s, r, F`.
+* `TauCeti.le_ofReal_mul_add_ofReal_mul_top`: `D * (s + r * ∞)` is `∞` for `D, r > 0`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_ofReal_mul`: if the class `Q` consists of the `c • F` with `F`
   in `P`, for `c > 0`, then the supremum for `Q` is `c` times that for `P`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_of_comp`: classes related by composition with surjections have
@@ -37,6 +51,36 @@ reparametrization of the class along surjections.
 public section
 
 open scoped ENNReal
+
+namespace ENNReal
+
+/-- `ENNReal.ofReal` absorbs the positive part since it already vanishes on `(-∞, 0]`. -/
+@[simp]
+theorem ofReal_posPart (x : ℝ) : ENNReal.ofReal (x⁺) = ENNReal.ofReal x := by
+  rcases le_total 0 x with hx | hx
+  · rw [posPart_eq_self.2 hx]
+  · rw [posPart_eq_zero.2 hx, ofReal_zero, ofReal_eq_zero.2 hx]
+
+/-- For `1 < p`, `ENNReal.ofReal` commutes with the Hölder conjugate ratio `p / (p - 1)`. -/
+theorem ofReal_div_sub_one {p : ℝ} (hp : 1 < p) :
+    ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1) := by
+  rw [ofReal_div_of_pos (sub_pos.2 hp), ofReal_sub _ zero_le_one, ofReal_one]
+
+/-- An extended nonnegative real `q` with `0 < a * q.toReal` is finite, since `∞.toReal = 0`. -/
+theorem ne_top_of_pos_mul_toReal {a : ℝ} {q : ℝ≥0∞} (h : 0 < a * q.toReal) : q ≠ ∞ := by
+  rintro rfl
+  rw [toReal_top, mul_zero] at h
+  exact h.false
+
+/-- Truncating a real number `x` at `n : ℕ` and taking the supremum in `ℝ≥0∞` recovers
+`ENNReal.ofReal x`. -/
+theorem iSup_ofReal_min_natCast (x : ℝ) :
+    (⨆ n : ℕ, ENNReal.ofReal (min x n)) = ENNReal.ofReal x := by
+  refine le_antisymm (iSup_le fun _ ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)) ?_
+  obtain ⟨n, hn⟩ := exists_nat_ge x
+  exact le_iSup_of_le n (by rw [min_eq_left hn])
+
+end ENNReal
 
 namespace TauCeti
 
@@ -65,6 +109,23 @@ theorem le_ofReal_inv_add_mul_of_add_le {a b : ℝ≥0∞} {V ω : ℝ} (hV : 0 
     _ = ENNReal.ofReal (V - ω * V) := (ENNReal.ofReal_sub _ (by positivity)).symm
     _ ≤ ENNReal.ofReal ((1 + ω)⁻¹ * V) := ENNReal.ofReal_le_ofReal hδV
     _ = ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := ENNReal.ofReal_mul (by positivity)
+
+/-- `ENNReal.ofReal` folds `D * (s + r * F)` for `0 ≤ s, r, F`; the outer factor `D` may have
+either sign, since `ENNReal.ofReal` sends negative reals to `0`. -/
+theorem ofReal_mul_ofReal_add_ofReal_mul_ofReal (D : ℝ) {s r F : ℝ} (hs : 0 ≤ s)
+    (hr : 0 ≤ r) (hF : 0 ≤ F) :
+    ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ENNReal.ofReal F) =
+      ENNReal.ofReal (D * (s + r * F)) := by
+  rw [← ENNReal.ofReal_mul hr, ← ENNReal.ofReal_add hs (mul_nonneg hr hF),
+    ← ENNReal.ofReal_mul' (add_nonneg hs (mul_nonneg hr hF))]
+
+/-- If `D, r > 0`, then `ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ∞)` is `∞`,
+so it bounds everything. -/
+theorem le_ofReal_mul_add_ofReal_mul_top {X : ℝ≥0∞} {D r : ℝ} (hD : 0 < D) (hr : 0 < r)
+    (s : ℝ) : X ≤ ENNReal.ofReal D * (ENNReal.ofReal s + ENNReal.ofReal r * ∞) := by
+  rw [ENNReal.mul_top (ENNReal.ofReal_pos.2 hr).ne', add_top,
+    ENNReal.mul_top (ENNReal.ofReal_pos.2 hD).ne']
+  exact le_top
 
 /-- **Rescaling a class of functions.** If, for `c > 0`, the functions satisfying `Q` are exactly
 the `c • F` with `F` satisfying `P`, then the supremum of their maxima is `c` times that for `P`. -/

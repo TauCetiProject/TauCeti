@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.Algebra.Equiv
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+import TauCeti.GroupTheory.Index.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
@@ -49,15 +51,18 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   `Ideal.ramificationGroup` of the maximal ideal of `𝒪[L]`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_map_inertiaSubgroup`: `G_0` is
   Mathlib's `ValuationSubring.inertiaSubgroup` of the valuation subring of `L`.
-* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero`: `#G_0 = e(L/K)`.
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero` and
+  `TauCeti.LocalFieldsRamification.index_lowerRamificationGroup_zero`: `#G_0 = e(L/K)` and
+  `[Gal(L/K) : G_0] = f(L/K)`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_top_iff`: `G_0` is the whole
   Galois group exactly when `L/K` is totally ramified.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
-* `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
-  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
-  precisely for `i` past the largest jump when the Galois group is nontrivial;
-  `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_natCast_eq_bot` is the
-  first statement at natural indices.
+* `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot`,
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`, and
+  `TauCeti.LocalFieldsRamification.lowerRamificationGroup_toNat_largestLowerJump_add_one`:
+  `G_i = 1` for large `i`, precisely for `i` past the largest jump when the Galois group is
+  nontrivial; `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_natCast_eq_bot`
+  is the first statement at natural indices.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_of_sub_one_lt_of_le`: the real
   indexing is constant on each interval `(i - 1, i]`.
 * `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq`: when
@@ -165,6 +170,15 @@ theorem natCard_lowerRamificationGroup_zero [IsGalois K L] :
   rw [lowerRamificationGroup_zero, Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
     ramificationIndex_eq_ramificationIdx]
 
+/-- In a finite Galois local-field extension, the index of the inertia group `G_0` is the inertia
+degree. -/
+@[simp]
+theorem index_lowerRamificationGroup_zero [IsGalois K L] :
+    (lowerRamificationGroup K L 0).index = inertiaDegree K L :=
+  index_eq_of_natCard_eq_mul ramificationIndex_pos (natCard_lowerRamificationGroup_zero K L)
+    ((IsGalois.card_aut_eq_finrank K L).trans
+      (ramificationIndex_mul_inertiaDegree (K := K) (L := L)).symm)
+
 /-- **The inertia group is the whole Galois group exactly in the totally ramified case**:
 `G_0 = Gal(L/K)` if and only if `e(L/K) = [L : K]`. -/
 theorem lowerRamificationGroup_zero_eq_top_iff [IsGalois K L] :
@@ -255,6 +269,13 @@ theorem lowerRamificationGroup_eq_bot_of_largestLowerJump_lt {i : ℤ}
   rw [largestLowerJump] at hi
   refine eq_bot_iff.2 ((lowerRamificationGroup_antitone K L ?_).trans (eq_bot_iff.1 hmem))
   omega
+
+/-- At `J + 1 = (largestLowerJump K L).toNat + 1`, the lower ramification group of `L/K` is
+trivial. -/
+theorem lowerRamificationGroup_toNat_largestLowerJump_add_one :
+    lowerRamificationGroup K L (((largestLowerJump K L).toNat + 1 : ℕ) : ℤ) = ⊥ :=
+  lowerRamificationGroup_eq_bot_of_largestLowerJump_lt (K := K) (L := L)
+    (by have := neg_one_le_largestLowerJump K L; omega)
 
 /-- For a nontrivial automorphism group, the lower ramification group at the largest jump is
 nontrivial. -/

@@ -105,7 +105,7 @@ an element of `R` modulo the extended ideal. -/
 theorem exists_sub_algebraMap_mem_map_of_reducedMap_surjective {B : Type v} [CommRing B]
     [Algebra R B] (hB : Function.Surjective (reducedMap I B)) (b : B) :
     ∃ r : R, b - algebraMap R B r ∈ I.map (algebraMap R B) :=
-  Ideal.exists_sub_mem_of_surjective_quotientMap (hIJ := Ideal.le_comap_map) hB b
+  Ideal.exists_sub_mem_of_surjective_quotient_mk_comp (hB.comp Ideal.Quotient.mk_surjective) b
 
 /-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
 agree after quotienting their target by the extended ideal. -/

@@ -42,6 +42,8 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
 * `TauCeti.ModularSymbols.degree R`: the degree `∑ nₓ[x] ↦ ∑ nₓ` of a cusp divisor.
 * `TauCeti.ModularSymbols.degreeZero R`: the degree-zero divisors `Div⁰(ℙ¹(ℚ))`, the augmentation
   submodule of the cusp divisors, equal to the kernel of the degree (`degreeZero_eq_ker_degree`).
+* `TauCeti.ModularSymbols.divisor R a b`: the oriented divisor `{b} - {a}` of the path from the
+  cusp `a` to the cusp `b`.
 * `TauCeti.ModularSymbols.degreeZeroGLRep R`, `TauCeti.ModularSymbols.degreeZeroRep R`: the
   representations of `GL(2, ℚ)` and of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ))`.
 * `TauCeti.ModularSymbols.binaryFormSLRep R w`: the left action `P ↦ P ∣ γ⁻¹` of `SL(2, ℤ)` on
@@ -164,10 +166,43 @@ theorem single_sub_single_mem_degreeZero (α β : OnePoint ℚ) :
     single α (1 : R) - single β 1 ∈ degreeZero R := by
   simp
 
-/-- A `GL(2, ℚ)` translate of `[α] - [β]` is the difference of the translated cusps. -/
-theorem degreeZeroGLRep_single_sub_single (g : GL (Fin 2) ℚ) (α β : OnePoint ℚ) :
-    degreeZeroGLRep R g ⟨_, single_sub_single_mem_degreeZero α β⟩ =
-      ⟨_, single_sub_single_mem_degreeZero (g • α) (g • β)⟩ := by
+variable (R) in
+/-- The oriented divisor `{b} - {a}` of the path from the cusp `a` to the cusp `b`: the
+degree-zero divisor `single b 1 - single a 1`, with coefficient `1` at `b` and `-1` at `a` when
+`a ≠ b`, and zero when `a = b`. -/
+noncomputable def divisor (a b : OnePoint ℚ) : degreeZero R :=
+  ⟨single b 1 - single a 1, single_sub_single_mem_degreeZero b a⟩
+
+@[simp]
+theorem coe_divisor (a b : OnePoint ℚ) :
+    (divisor R a b : R[OnePoint ℚ]) = single b 1 - single a 1 :=
+  (rfl)
+
+/-- The constant path is the zero divisor. -/
+@[simp]
+theorem divisor_self (a : OnePoint ℚ) : divisor R a a = 0 := by
+  ext1
+  simp
+
+/-- Reversing a path negates its divisor. -/
+@[simp]
+theorem neg_divisor (a b : OnePoint ℚ) : -divisor R a b = divisor R b a := by
+  ext1
+  simp
+
+/-- Composing the path from `a` to `b` with the path from `b` to `c` gives the path from `a` to
+`c`. -/
+@[simp]
+theorem divisor_add_divisor (a b c : OnePoint ℚ) :
+    divisor R a b + divisor R b c = divisor R a c := by
+  ext1
+  simp only [Submodule.coe_add, coe_divisor]
+  abel
+
+/-- `GL(2, ℚ)` moves the path from `a` to `b` to the path from `g a` to `g b`. -/
+@[simp]
+theorem degreeZeroGLRep_divisor (g : GL (Fin 2) ℚ) (a b : OnePoint ℚ) :
+    degreeZeroGLRep R g (divisor R a b) = divisor R (g • a) (g • b) := by
   ext1
   simp
 
@@ -218,8 +253,7 @@ theorem degreeZero_eq_span_unimodular :
 degree-zero divisors. -/
 theorem span_degreeZeroRep_eq_top :
     Submodule.span R (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-      ⟨_, single_sub_single_mem_degreeZero ∞
-        ((0 : ℚ) : OnePoint ℚ)⟩) = ⊤ := by
+      (divisor R ((0 : ℚ) : OnePoint ℚ) ∞)) = ⊤ := by
   apply Submodule.map_injective_of_injective (degreeZero R).injective_subtype
   rw [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp]
   refine Eq.trans ?_ degreeZero_eq_span_unimodular.symm
@@ -298,15 +332,13 @@ unimodular symbols `([g∞] - [g0]) ⊗ P`, `g ∈ SL(2, ℤ)`, which span by Ma
 theorem hom_ext_unimodular {M : Type*} [AddCommMonoid M] [Module R M]
     {L₁ L₂ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R] M}
     (h : ∀ (g : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) R w),
-      L₁ (⟨_, single_sub_single_mem_degreeZero (mapGL ℚ g • ∞)
-        (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ))⟩ ⊗ₜ P) =
-      L₂ (⟨_, single_sub_single_mem_degreeZero (mapGL ℚ g • ∞)
-        (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ))⟩ ⊗ₜ P)) :
+      L₁ (divisor R (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ)) (mapGL ℚ g • ∞) ⊗ₜ P) =
+      L₂ (divisor R (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ)) (mapGL ℚ g • ∞) ⊗ₜ P)) :
     L₁ = L₂ :=
   TensorProduct.ext <| LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦
     LinearMap.ext fun P ↦ by
       simpa only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, degreeZeroRep_apply,
-        degreeZeroGLRep_single_sub_single] using h g P
+        degreeZeroGLRep_divisor] using h g P
 
 end ModularSymbols
 
@@ -328,29 +360,23 @@ namespace ModularSymbols
 variable {R} (Γ : Subgroup SL(2, ℤ)) {w : ℕ}
 
 /-- The modular symbol `{α, β} ⊗ P ∈ 𝕄_w(Γ; R)`, the class of `([α] - [β]) ⊗ P`, as an `R`-linear
-map in the binary form `P`. -/
+map in the binary form `P`. Here `[α] - [β]` is `divisor R β α`, the divisor of the path from `β`
+to `α`. -/
 noncomputable def symbol (α β : OnePoint ℚ) :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w :=
-  Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _
-    ⟨_, single_sub_single_mem_degreeZero α β⟩
+  Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _ (divisor R β α)
 
 -- Low priority, so that `symbol_mapGL_smul` fires before the symbol is unfolded.
 @[simp low]
 theorem symbol_apply (α β : OnePoint ℚ) (P : homogeneousSubmodule (Fin 2) R w) :
-    symbol Γ α β P =
-      Coinvariants.mk _
-        (⟨_, single_sub_single_mem_degreeZero α β⟩ ⊗ₜ[R] P) := by
+    symbol Γ α β P = Coinvariants.mk _ (divisor R β α ⊗ₜ[R] P) := by
   simp [symbol]
 
 @[simp]
 theorem symbol_self (α : OnePoint ℚ) :
     symbol Γ α α = (0 : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  have h :
-      (⟨_, single_sub_single_mem_degreeZero α α⟩ : degreeZero R) = 0 := by
-    ext1
-    simp
-  rw [symbol_apply, h, zero_tmul, map_zero, LinearMap.zero_apply]
+  rw [symbol_apply, divisor_self, zero_tmul, map_zero, LinearMap.zero_apply]
 
 /-- Modular symbols are additive in the pair of cusps: `{α, β} + {β, γ} = {α, γ}`. -/
 @[simp]
@@ -358,12 +384,8 @@ theorem symbol_add_symbol (α β γ : OnePoint ℚ) :
     symbol Γ α β + symbol Γ β γ =
       (symbol Γ α γ : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  have h : (⟨_, single_sub_single_mem_degreeZero α β⟩ : degreeZero R) +
-      ⟨_, single_sub_single_mem_degreeZero β γ⟩ =
-        ⟨_, single_sub_single_mem_degreeZero α γ⟩ := by
-    ext1
-    simp
-  simp only [LinearMap.add_apply, symbol_apply, ← map_add, ← add_tmul, h]
+  simp only [LinearMap.add_apply, symbol_apply, ← map_add, ← add_tmul, add_comm (divisor R β α),
+    divisor_add_divisor]
 
 theorem symbol_swap (α β : OnePoint ℚ) :
     symbol Γ β α =
@@ -377,11 +399,10 @@ theorem symbol_mapGL_smul {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint 
     symbol Γ (mapGL ℚ γ • α) (mapGL ℚ γ • β) P =
       symbol Γ α β (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P) := by
   rw [symbol_apply, symbol_apply, ← Coinvariants.mk_self_apply _ (⟨γ, hγ⟩ : Γ)
-    ((⟨_, single_sub_single_mem_degreeZero α β⟩ : degreeZero R) ⊗ₜ[R]
-      binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)]
+    (divisor R β α ⊗ₜ[R] binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, symbolRep_tmul,
     binaryFormSLRep_binaryFormRep]
-  rw [degreeZeroRep_apply, degreeZeroGLRep_single_sub_single]
+  rw [degreeZeroRep_apply, degreeZeroGLRep_divisor]
 
 /-- A translate `hD ⊗ P`, for `h ∈ Γ`, is the translate `D ⊗ (P ∣ h)` in `𝕄_w(Γ; R)`. -/
 private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : degreeZero R)
@@ -396,24 +417,19 @@ private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : degr
 theorem span_mk_degreeZeroRep_tmul_eq_top :
     Submodule.span R (Set.image2
       (fun D P ↦ Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P))
-      (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-        ⟨_, single_sub_single_mem_degreeZero ∞
-          ((0 : ℚ) : OnePoint ℚ)⟩)
+      (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g (divisor R ((0 : ℚ) : OnePoint ℚ) ∞))
       Set.univ) = ⊤ := by
   have h := Submodule.map₂_span_span R (TensorProduct.mk R (degreeZero R)
     (homogeneousSubmodule (Fin 2) R w)) (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-      ⟨_, single_sub_single_mem_degreeZero ∞
-        ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ
+      (divisor R ((0 : ℚ) : OnePoint ℚ) ∞)) Set.univ
   rw [span_degreeZeroRep_eq_top, Submodule.span_univ, TensorProduct.map₂_mk_top_top_eq_top] at h
   have himage : Set.image2
       (fun D P ↦ Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P))
       (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-        ⟨_, single_sub_single_mem_degreeZero ∞
-          ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ =
+        (divisor R ((0 : ℚ) : OnePoint ℚ) ∞)) Set.univ =
       Coinvariants.mk _ '' Set.image2 (fun D P ↦ TensorProduct.mk R _ _ D P)
         (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-          ⟨_, single_sub_single_mem_degreeZero ∞
-            ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ := by
+          (divisor R ((0 : ℚ) : OnePoint ℚ) ∞)) Set.univ := by
     rw [Set.image_image2]
     rfl
   rw [himage, ← Submodule.map_span, ← h, Submodule.map_top, LinearMap.range_eq_top]
@@ -429,14 +445,13 @@ theorem span_symbol_eq_top :
   rintro _ ⟨_, ⟨g, rfl⟩, P, -, rfl⟩
   refine ⟨(mapGL ℚ g • ∞, mapGL ℚ g • (0 : ℚ), P), ?_⟩
   dsimp only
-  rw [symbol_apply, degreeZeroRep_apply, degreeZeroGLRep_single_sub_single]
+  rw [symbol_apply, degreeZeroRep_apply, degreeZeroGLRep_divisor]
 
 /-- **Finiteness of modular symbols.** For a subgroup `Γ` of finite index in `SL(2, ℤ)`, the
 module of modular symbols `𝕄_w(Γ; R)` is a finitely generated `R`-module. -/
 instance instModuleFinite [Γ.FiniteIndex] : Module.Finite R (ModularSymbols R Γ w) := by
   obtain ⟨n, b, hb⟩ := Module.Finite.exists_fin (R := R) (M := homogeneousSubmodule (Fin 2) R w)
-  let e : degreeZero R := ⟨_, single_sub_single_mem_degreeZero ∞
-    ((0 : ℚ) : OnePoint ℚ)⟩
+  let e : degreeZero R := divisor R ((0 : ℚ) : OnePoint ℚ) ∞
   -- The symbols `r⁻¹{∞, 0} ⊗ bᵢ`, for `r` running over representatives of `SL(2, ℤ) ⧸ Γ`.
   let f : (SL(2, ℤ) ⧸ Γ) × Fin n → ModularSymbols R Γ w := fun x ↦
     Coinvariants.mk _ (degreeZeroRep R x.1.out⁻¹ e ⊗ₜ b x.2)
@@ -447,7 +462,7 @@ instance instModuleFinite [Γ.FiniteIndex] : Module.Finite R (ModularSymbols R �
   obtain ⟨h, hr⟩ := QuotientGroup.mk_out_eq_mul Γ g⁻¹
   have hgr : g * (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out ∈ Γ := by
     rw [hr, ← mul_assoc, mul_inv_cancel, one_mul]
-    exact h.2
+    exact h.property
   dsimp only
   rw [← mul_inv_cancel_right g (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out, map_mul,
     mul_apply_eq_comp, mk_degreeZeroRep_tmul Γ hgr]

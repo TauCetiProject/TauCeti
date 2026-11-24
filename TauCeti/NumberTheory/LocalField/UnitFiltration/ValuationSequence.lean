@@ -98,7 +98,7 @@ theorem unitFiltrationZeroIncl_comp_unitsValuationHom :
   simp only [Rep.hom_comp, Representation.IntertwiningMap.toLinearMap_apply,
     Representation.IntertwiningMap.comp_apply]
   rw [unitFiltrationZeroIncl_apply K L x]
-  exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.2
+  exact (unitsValuationHom_eq_zero_iff K L _).2 x.toMul.property
 
 /-- The canonical valuation short complex of integral Galois representations. The last term
 has trivial action; the sequence need not split as Galois representations. The body is exposed
@@ -138,7 +138,7 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
         (unitFiltrationZeroIncl_apply K L _).trans (by rfl)⟩
     · rintro ⟨y, rfl⟩
       rw [unitFiltrationZeroIncl_apply K L y]
-      exact y.toMul.2
+      exact y.toMul.property
   · exact unitFiltrationZeroIncl_injective K L
   · intro n
     obtain ⟨x, hx⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd n)

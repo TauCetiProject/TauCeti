@@ -18,32 +18,23 @@ import TauCeti.Analysis.Matrix.DotProduct
 /-!
 # Smoothness and derivative of the rank-one Hermitian projector
 
-For a finite index type `n` and an `RCLike` field `𝕜`, the rank-one orthogonal projector
-`TauCeti.rankOneHermitianProjector` (defined in
-`TauCeti.LinearAlgebra.Projectivization.HermitianProjector`) sends a vector `v : n → 𝕜` to
-`(star v ⬝ᵥ v)⁻¹ • Matrix.vecMulVec v (star v)`. This file shows that
-`v ↦ TauCeti.rankOneHermitianProjector v` is `C^m` over `ℝ` for every `m : ℕ∞ω` (in particular
-real-analytic, `C^ω`) at every nonzero vector `v`, and computes its strict Fréchet derivative over
-`ℝ`.
+For a finite index type `n` and an `RCLike` field `𝕜`, `TauCeti.rankOneHermitianProjector` sends
+`v : n → 𝕜` to `(star v ⬝ᵥ v)⁻¹ • Matrix.vecMulVec v (star v)`. We prove that this map is `C^m`
+over `ℝ` for every `m : ℕ∞ω` (in particular real-analytic, `C^ω`) at every nonzero `v`, and compute
+its strict and applied Fréchet derivatives over `ℝ`.
 
 To state or use `TauCeti.contDiffAt_rankOneHermitianProjector`,
 `open scoped Matrix.Norms.L2Operator` and enable
-`attribute [local instance] Matrix.l2OpNormedAlgebraReal` (since `ContDiffAt` requires normed-space
-instances on `Matrix n n 𝕜`). By contrast, Mathlib's `HasStrictFDerivAt` and `fderiv` require only
-`[TopologicalSpace]`, so `TauCeti.hasStrictFDerivAt_rankOneHermitianProjector` and
-`TauCeti.fderiv_rankOneHermitianProjector_apply` depend only on the product topology
-`instTopologicalSpaceMatrix` on `Matrix n n 𝕜` (they require neither `DecidableEq n` nor a choice
-of matrix norm to state or apply; the ℓ² operator norm is opened only in a local `section` for
-`contDiffAt_rankOneHermitianProjector` and an internal proof helper).
+`attribute [local instance] Matrix.l2OpNormedAlgebraReal`. By contrast,
+`TauCeti.hasStrictFDerivAt_rankOneHermitianProjector` and
+`TauCeti.fderiv_rankOneHermitianProjector_apply` use only `instTopologicalSpaceMatrix` (requiring
+neither `DecidableEq n` nor a choice of matrix norm).
 
 ## Main results
 
-* `TauCeti.contDiffAt_rankOneHermitianProjector`: `TauCeti.rankOneHermitianProjector` is `C^m` over
-  `ℝ` at every nonzero vector `v : n → 𝕜`, for every `m : ℕ∞ω`.
-* `TauCeti.hasStrictFDerivAt_rankOneHermitianProjector`: strict Fréchet derivative of
-  `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero vector `v : n → 𝕜`.
-* `TauCeti.fderiv_rankOneHermitianProjector_apply`: applied Fréchet derivative of
-  `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero vector `v : n → 𝕜` in direction `y`.
+* `TauCeti.contDiffAt_rankOneHermitianProjector`: `C^m` smoothness over `ℝ` at any nonzero `v`.
+* `TauCeti.hasStrictFDerivAt_rankOneHermitianProjector`: strict Fréchet derivative over `ℝ`.
+* `TauCeti.fderiv_rankOneHermitianProjector_apply`: applied Fréchet derivative over `ℝ`.
 -/
 
 public section

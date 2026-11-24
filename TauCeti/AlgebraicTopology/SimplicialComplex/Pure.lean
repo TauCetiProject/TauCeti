@@ -141,6 +141,16 @@ theorem IsPure.link_eq_bot_iff [DecidableEq ι] (h : IsPure K n) (hσ : σ ∈ K
     have := card_pos.mpr hne
     omega
 
+/-- Any finset with nonvoid link in a pure `n`-complex has at most `n` vertices. -/
+theorem IsPure.card_le_of_link_ne_bot [DecidableEq ι] (h : IsPure K n)
+    (hne : PreAbstractSimplicialComplex.link K σ ≠ ⊥) : σ.card ≤ n := by
+  rcases σ.eq_empty_or_nonempty with rfl | hσne
+  · exact Nat.zero_le n
+  · have hσ : σ ∈ K := mem_of_link_ne_bot hσne hne
+    have hle := h.card_le hσ
+    have htop : σ.card ≠ n + 1 := fun hcard => hne ((h.link_eq_bot_iff hσ).mpr hcard)
+    omega
+
 /-- The link of a face below top dimension in a pure `n`-complex has dimension
 `n - σ.card`. The separate top-dimensional case has void link and dimension `⊥`. -/
 theorem IsPure.dimension_link [DecidableEq ι] (h : IsPure K n) (hσ : σ ∈ K) (hcard : σ.card ≤ n) :

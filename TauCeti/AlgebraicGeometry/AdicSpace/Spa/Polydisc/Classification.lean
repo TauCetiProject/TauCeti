@@ -124,10 +124,10 @@ private theorem weightedX_sub_weightedC_eq_sub (a b : K) : T - C b = (T - C a) -
 /-- Under the two conditions characterising `η_{a,r}`, `x(T - b)` is `x(T - a)` on the disc
 `D(a, r)` and `x(b - a)` off it. -/
 private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : K}
-    (hmin : ∀ b : K, ‖b - a‖ ≤ r → x.1.toValuativeRel.vle (T - C a) (T - C b))
-    (hge : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) (b : K) :
-    x.1.valuation (T - C b) =
-      if ‖b - a‖ ≤ r then x.1.valuation (T - C a) else x.1.valuation (C (b - a)) := by
+    (hmin : ∀ b : K, ‖b - a‖ ≤ r → x.val.toValuativeRel.vle (T - C a) (T - C b))
+    (hge : ∀ c : K, x.val.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) (b : K) :
+    x.val.valuation (T - C b) =
+      if ‖b - a‖ ≤ r then x.val.valuation (T - C a) else x.val.valuation (C (b - a)) := by
   split_ifs with hb
   · refine le_antisymm ?_ ((valuation_le_iff _ _ _).mpr (hmin b hb))
     rw [weightedX_sub_weightedC_eq_sub a b]
@@ -138,8 +138,8 @@ private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : 
 
 /-- Under the second condition characterising `η_{a,r}`, `x(T - a) ≠ 0`. -/
 private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 K} {a : K}
-    (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) :
-    x.1.valuation (T - C a) ≠ 0 := fun h ↦ by
+    (hr₀ : 0 < r) (hle : ∀ c : K, x.val.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) :
+    x.val.valuation (T - C a) ≠ 0 := fun h ↦ by
   have := (hle 0).mp ((valuation_le_iff _ _ _).mp (h ▸ zero_le))
   rw [norm_zero] at this
   exact hr₀.not_ge this
@@ -151,20 +151,20 @@ private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 
 for the same `c` and `m`. -/
 private theorem exists_valuation_eval₂RingHom_eq [IsAlgClosed K] {x y : closedPolydisc 1 K} {a : K}
     (P : K → Prop) [DecidablePred P] (d : K → K)
-    (hx : ∀ b : K, x.1.valuation (T - C b) =
-      if P b then x.1.valuation (T - C a) else x.1.valuation (C (d b)))
-    (hy : ∀ b : K, y.1.valuation (T - C b) =
-      if P b then y.1.valuation (T - C a) else y.1.valuation (C (d b))) (p : Polynomial K) :
-    ∃ (c : K) (m : ℕ), x.1.valuation (Polynomial.eval₂RingHom C T p) =
-        x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ∧
-      y.1.valuation (Polynomial.eval₂RingHom C T p) =
-        y.1.valuation (C c) * y.1.valuation (T - C a) ^ m := by
+    (hx : ∀ b : K, x.val.valuation (T - C b) =
+      if P b then x.val.valuation (T - C a) else x.val.valuation (C (d b)))
+    (hy : ∀ b : K, y.val.valuation (T - C b) =
+      if P b then y.val.valuation (T - C a) else y.val.valuation (C (d b))) (p : Polynomial K) :
+    ∃ (c : K) (m : ℕ), x.val.valuation (Polynomial.eval₂RingHom C T p) =
+        x.val.valuation (C c) * x.val.valuation (T - C a) ^ m ∧
+      y.val.valuation (Polynomial.eval₂RingHom C T p) =
+        y.val.valuation (C c) * y.val.valuation (T - C a) ^ m := by
   -- the claim for a product of linear factors, by induction on the multiset of roots
   have key (s : Multiset K) : ∃ (c : K) (m : ℕ),
-      x.1.valuation ((s.map fun b ↦ T - C b).prod) =
-        x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ∧
-      y.1.valuation ((s.map fun b ↦ T - C b).prod) =
-        y.1.valuation (C c) * y.1.valuation (T - C a) ^ m := by
+      x.val.valuation ((s.map fun b ↦ T - C b).prod) =
+        x.val.valuation (C c) * x.val.valuation (T - C a) ^ m ∧
+      y.val.valuation ((s.map fun b ↦ T - C b).prod) =
+        y.val.valuation (C c) * y.val.valuation (T - C a) ^ m := by
     induction s using Multiset.induction_on with
     | empty => exact ⟨1, 0, by simp, by simp⟩
     | cons b s ih =>
@@ -190,14 +190,14 @@ variable [IsUltrametricDist K]
 `(T - a)^k` with every constant in the same way: take a `k`-th root of the constant in `K`. -/
 private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_iff [IsAlgClosed K]
     {x y : closedPolydisc 1 K} {a : K}
-    (hcmp : ∀ e : K, (x.1.valuation (T - C a) ≤ x.1.valuation (C e) ↔
-        y.1.valuation (T - C a) ≤ y.1.valuation (C e)) ∧
-      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ↔
-        y.1.valuation (C e) ≤ y.1.valuation (T - C a))) (e : K) (k : ℕ) :
-    (x.1.valuation (T - C a) ^ k ≤ x.1.valuation (C e) ↔
-        y.1.valuation (T - C a) ^ k ≤ y.1.valuation (C e)) ∧
-      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ^ k ↔
-        y.1.valuation (C e) ≤ y.1.valuation (T - C a) ^ k) := by
+    (hcmp : ∀ e : K, (x.val.valuation (T - C a) ≤ x.val.valuation (C e) ↔
+        y.val.valuation (T - C a) ≤ y.val.valuation (C e)) ∧
+      (x.val.valuation (C e) ≤ x.val.valuation (T - C a) ↔
+        y.val.valuation (C e) ≤ y.val.valuation (T - C a))) (e : K) (k : ℕ) :
+    (x.val.valuation (T - C a) ^ k ≤ x.val.valuation (C e) ↔
+        y.val.valuation (T - C a) ^ k ≤ y.val.valuation (C e)) ∧
+      (x.val.valuation (C e) ≤ x.val.valuation (T - C a) ^ k ↔
+        y.val.valuation (C e) ≤ y.val.valuation (T - C a) ^ k) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · have h₁ := (closedPolydisc_valuation_weightedC_le_iff x 1 e).trans
       (closedPolydisc_valuation_weightedC_le_iff y 1 e).symm
@@ -213,30 +213,30 @@ private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_if
 then for `c ≠ 0` and `n ≤ m` they compare `x(c) x(T - a)^m` and `x(d) x(T - a)^n`, in both
 directions, in the same way. -/
 private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x y : closedPolydisc 1 K} {a : K}
-    (hx₀ : x.1.valuation (T - C a) ≠ 0) (hy₀ : y.1.valuation (T - C a) ≠ 0)
-    (hcmp : ∀ e : K, (x.1.valuation (T - C a) ≤ x.1.valuation (C e) ↔
-        y.1.valuation (T - C a) ≤ y.1.valuation (C e)) ∧
-      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ↔
-        y.1.valuation (C e) ≤ y.1.valuation (T - C a)))
+    (hx₀ : x.val.valuation (T - C a) ≠ 0) (hy₀ : y.val.valuation (T - C a) ≠ 0)
+    (hcmp : ∀ e : K, (x.val.valuation (T - C a) ≤ x.val.valuation (C e) ↔
+        y.val.valuation (T - C a) ≤ y.val.valuation (C e)) ∧
+      (x.val.valuation (C e) ≤ x.val.valuation (T - C a) ↔
+        y.val.valuation (C e) ≤ y.val.valuation (T - C a)))
     {c : K} (hc : c ≠ 0) (d : K) {m n : ℕ} (h : n ≤ m) :
-    (x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ≤
-        x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ↔
-      y.1.valuation (C c) * y.1.valuation (T - C a) ^ m ≤
-        y.1.valuation (C d) * y.1.valuation (T - C a) ^ n) ∧
-    (x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ≤
-        x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ↔
-      y.1.valuation (C d) * y.1.valuation (T - C a) ^ n ≤
-        y.1.valuation (C c) * y.1.valuation (T - C a) ^ m) := by
+    (x.val.valuation (C c) * x.val.valuation (T - C a) ^ m ≤
+        x.val.valuation (C d) * x.val.valuation (T - C a) ^ n ↔
+      y.val.valuation (C c) * y.val.valuation (T - C a) ^ m ≤
+        y.val.valuation (C d) * y.val.valuation (T - C a) ^ n) ∧
+    (x.val.valuation (C d) * x.val.valuation (T - C a) ^ n ≤
+        x.val.valuation (C c) * x.val.valuation (T - C a) ^ m ↔
+      y.val.valuation (C d) * y.val.valuation (T - C a) ^ n ≤
+        y.val.valuation (C c) * y.val.valuation (T - C a) ^ m) := by
   -- `m = n + k` and `d = e c`: cancel `x(c) x(T - a)^n` and `y(c) y(T - a)^n`
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   obtain ⟨e, rfl⟩ : ∃ e, d = e * c := ⟨d / c, (div_mul_cancel₀ d hc).symm⟩
-  have key (z : closedPolydisc 1 K) (hz₀ : z.1.valuation (T - C a) ≠ 0) :
-      0 < z.1.valuation (C c) * z.1.valuation (T - C a) ^ n ∧
-      z.1.valuation (C c) * z.1.valuation (T - C a) ^ (n + k) =
-        z.1.valuation (C c) * z.1.valuation (T - C a) ^ n * z.1.valuation (T - C a) ^ k ∧
-      z.1.valuation (C (e * c)) * z.1.valuation (T - C a) ^ n =
-        z.1.valuation (C c) * z.1.valuation (T - C a) ^ n * z.1.valuation (C e) := by
-    refine ⟨zero_lt_iff.mpr (mul_ne_zero (fun h0 ↦ hc ?_) (pow_ne_zero n hz₀)),
+  have key (z : closedPolydisc 1 K) (hz₀ : z.val.valuation (T - C a) ≠ 0) :
+      0 < z.val.valuation (C c) * z.val.valuation (T - C a) ^ n ∧
+      z.val.valuation (C c) * z.val.valuation (T - C a) ^ (n + k) =
+        z.val.valuation (C c) * z.val.valuation (T - C a) ^ n * z.val.valuation (T - C a) ^ k ∧
+      z.val.valuation (C (e * c)) * z.val.valuation (T - C a) ^ n =
+        z.val.valuation (C c) * z.val.valuation (T - C a) ^ n * z.val.valuation (C e) := by
+    refine ⟨pos_iff_ne_zero.mpr (mul_ne_zero (fun h0 ↦ hc ?_) (pow_ne_zero n hz₀)),
       by rw [pow_add, mul_assoc], by rw [map_mul, map_mul]; ac_rfl⟩
     simpa [h0] using closedPolydisc_valuation_weightedC_le_iff z c 0
   obtain ⟨hx, hx₁, hx₂⟩ := key x hx₀
@@ -247,15 +247,15 @@ private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x y : closedPoly
 /-- If two points compare `T - a` with the constants in the same way and do not vanish on `T - a`,
 they compare `x(c) x(T - a)^m` and `x(d) x(T - a)^n` in the same way. -/
 private theorem valuation_mul_pow_le_iff [IsAlgClosed K] {x y : closedPolydisc 1 K} {a : K}
-    (hx₀ : x.1.valuation (T - C a) ≠ 0) (hy₀ : y.1.valuation (T - C a) ≠ 0)
-    (hcmp : ∀ e : K, (x.1.valuation (T - C a) ≤ x.1.valuation (C e) ↔
-        y.1.valuation (T - C a) ≤ y.1.valuation (C e)) ∧
-      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ↔
-        y.1.valuation (C e) ≤ y.1.valuation (T - C a))) (c d : K) (m n : ℕ) :
-    x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ≤
-        x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ↔
-      y.1.valuation (C c) * y.1.valuation (T - C a) ^ m ≤
-        y.1.valuation (C d) * y.1.valuation (T - C a) ^ n := by
+    (hx₀ : x.val.valuation (T - C a) ≠ 0) (hy₀ : y.val.valuation (T - C a) ≠ 0)
+    (hcmp : ∀ e : K, (x.val.valuation (T - C a) ≤ x.val.valuation (C e) ↔
+        y.val.valuation (T - C a) ≤ y.val.valuation (C e)) ∧
+      (x.val.valuation (C e) ≤ x.val.valuation (T - C a) ↔
+        y.val.valuation (C e) ≤ y.val.valuation (T - C a))) (c d : K) (m n : ℕ) :
+    x.val.valuation (C c) * x.val.valuation (T - C a) ^ m ≤
+        x.val.valuation (C d) * x.val.valuation (T - C a) ^ n ↔
+      y.val.valuation (C c) * y.val.valuation (T - C a) ^ m ≤
+        y.val.valuation (C d) * y.val.valuation (T - C a) ^ n := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp
   rcases eq_or_ne d 0 with rfl | hd
@@ -269,9 +269,9 @@ strictly larger than the values of the constants with `‖c‖ ≤ r` and strict
 values of the others, because the norms of `K` are dense. -/
 theorem forall_lt_and_forall_gt_of_vle_weightedC [IsAlgClosed K]
     {x : closedPolydisc 1 K} {a : K} (hr₀ : 0 < r)
-    (h : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖) :
-    (∀ c : K, ‖c‖ ≤ r → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
-      ∀ c : K, ¬ ‖c‖ ≤ r → x.1.valuation (T - C a) < x.1.valuation (C c) := by
+    (h : ∀ c : K, x.val.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖) :
+    (∀ c : K, ‖c‖ ≤ r → x.val.valuation (C c) < x.val.valuation (T - C a)) ∧
+      ∀ c : K, ¬ ‖c‖ ≤ r → x.val.valuation (T - C a) < x.val.valuation (C c) := by
   refine ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
   · rw [← not_le, valuation_le_iff, h]
     exact hc.not_gt
@@ -284,9 +284,9 @@ strictly larger than the values of the constants with `‖c‖ < r` and strictly
 values of the others, because the norms of `K` are dense. -/
 theorem forall_lt_and_forall_gt_of_weightedC_vle [IsAlgClosed K]
     {x : closedPolydisc 1 K} {a : K}
-    (h : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r) :
-    (∀ c : K, ‖c‖ < r → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
-      ∀ c : K, ¬ ‖c‖ < r → x.1.valuation (T - C a) < x.1.valuation (C c) := by
+    (h : ∀ c : K, x.val.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r) :
+    (∀ c : K, ‖c‖ < r → x.val.valuation (C c) < x.val.valuation (T - C a)) ∧
+      ∀ c : K, ¬ ‖c‖ < r → x.val.valuation (T - C a) < x.val.valuation (C c) := by
   refine ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
   · obtain ⟨c', h₁, h₂⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K (norm_nonneg c) hc
     exact (lt_of_not_ge fun h' ↦
@@ -299,10 +299,10 @@ theorem forall_lt_and_forall_gt_of_weightedC_vle [IsAlgClosed K]
 
 /-- A point of the closed unit disc is at most one on `T - b` for `‖b‖ ≤ 1`. -/
 private theorem valuation_weightedX_sub_weightedC_le_one (x : closedPolydisc 1 K) {b : K}
-    (hb : ‖b‖ ≤ 1) : x.1.valuation (T - C b) ≤ x.1.valuation (C 1) := by
-  have hT : x.1.valuation T ≤ x.1.valuation (C 1) := by
+    (hb : ‖b‖ ≤ 1) : x.val.valuation (T - C b) ≤ x.val.valuation (C 1) := by
+  have hT : x.val.valuation T ≤ x.val.valuation (C 1) := by
     rw [map_one, valuation_le_iff]
-    exact ((mem_closedPolydisc_iff 1 K x.1).mp x.2).2 _
+    exact ((mem_closedPolydisc_iff 1 K x.val).mp x.property).2 _
       (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0))
   exact (Valuation.map_sub _ _ _).trans
     (max_le hT ((closedPolydisc_valuation_weightedC_le_iff x b 1).mpr (by rwa [norm_one])))
@@ -311,7 +311,7 @@ private theorem valuation_weightedX_sub_weightedC_le_one (x : closedPolydisc 1 K
 with `x(T - b) ≤ x(c)`. The value `x(T - b)` lies above the constants of smaller norm and below
 those of larger norm. -/
 private noncomputable def cutRadius (x : closedPolydisc 1 K) (b : K) : ℝ :=
-  sInf (norm '' {c : K | x.1.valuation (T - C b) ≤ x.1.valuation (C c)})
+  sInf (norm '' {c : K | x.val.valuation (T - C b) ≤ x.val.valuation (C c)})
 
 omit [IsUltrametricDist K] in
 private theorem cutRadius_nonneg (x : closedPolydisc 1 K) (b : K) : 0 ≤ cutRadius x b :=
@@ -319,16 +319,16 @@ private theorem cutRadius_nonneg (x : closedPolydisc 1 K) (b : K) : 0 ≤ cutRad
 
 omit [IsUltrametricDist K] in
 private theorem bddBelow_cutRadius (x : closedPolydisc 1 K) (b : K) :
-    BddBelow (norm '' {c : K | x.1.valuation (T - C b) ≤ x.1.valuation (C c)}) :=
+    BddBelow (norm '' {c : K | x.val.valuation (T - C b) ≤ x.val.valuation (C c)}) :=
   ⟨0, by rintro _ ⟨c, -, rfl⟩; exact norm_nonneg c⟩
 
 omit [IsUltrametricDist K] in
 private theorem cutRadius_le {x : closedPolydisc 1 K} {b c : K}
-    (h : x.1.valuation (T - C b) ≤ x.1.valuation (C c)) : cutRadius x b ≤ ‖c‖ :=
+    (h : x.val.valuation (T - C b) ≤ x.val.valuation (C c)) : cutRadius x b ≤ ‖c‖ :=
   csInf_le (bddBelow_cutRadius x b) ⟨c, h, rfl⟩
 
 private theorem norm_le_cutRadius {x : closedPolydisc 1 K} {b c : K} (hb : ‖b‖ ≤ 1)
-    (h : x.1.valuation (C c) ≤ x.1.valuation (T - C b)) : ‖c‖ ≤ cutRadius x b :=
+    (h : x.val.valuation (C c) ≤ x.val.valuation (T - C b)) : ‖c‖ ≤ cutRadius x b :=
   le_csInf ⟨_, 1, valuation_weightedX_sub_weightedC_le_one x hb, rfl⟩ <| by
     rintro _ ⟨d, hd, rfl⟩
     exact (closedPolydisc_valuation_weightedC_le_iff x c d).mp (h.trans hd)
@@ -340,12 +340,13 @@ private theorem cutRadius_le_one (x : closedPolydisc 1 K) {b : K} (hb : ‖b‖ 
 omit [IsUltrametricDist K] in
 /-- The constants of norm below the radius about `b` take smaller values than `T - b`. -/
 private theorem valuation_weightedC_lt_of_norm_lt_cutRadius {x : closedPolydisc 1 K} {b c : K}
-    (h : ‖c‖ < cutRadius x b) : x.1.valuation (C c) < x.1.valuation (T - C b) :=
+    (h : ‖c‖ < cutRadius x b) : x.val.valuation (C c) < x.val.valuation (T - C b) :=
   lt_of_not_ge fun h' ↦ h.not_ge (cutRadius_le h')
 
 /-- The constants of norm above the radius about `b` take larger values than `T - b`. -/
 private theorem valuation_lt_of_cutRadius_lt_norm {x : closedPolydisc 1 K} {b c : K}
-    (hb : ‖b‖ ≤ 1) (h : cutRadius x b < ‖c‖) : x.1.valuation (T - C b) < x.1.valuation (C c) := by
+    (hb : ‖b‖ ≤ 1) (h : cutRadius x b < ‖c‖) : x.val.valuation (T - C b) < x.val.valuation (C c)
+        := by
   obtain ⟨_, ⟨c', hc', rfl⟩, hlt⟩ := (csInf_lt_iff (bddBelow_cutRadius x b)
     ⟨_, 1, valuation_weightedX_sub_weightedC_le_one x hb, rfl⟩).mp h
   exact (Set.mem_ofPred_eq ▸ hc').trans_lt
@@ -353,19 +354,19 @@ private theorem valuation_lt_of_cutRadius_lt_norm {x : closedPolydisc 1 K} {b c 
 
 /-- If `x(T - b) = x(d)`, the radius about `b` is `‖d‖`. -/
 private theorem cutRadius_eq_norm {x : closedPolydisc 1 K} {b d : K} (hb : ‖b‖ ≤ 1)
-    (h : x.1.valuation (T - C b) = x.1.valuation (C d)) : cutRadius x b = ‖d‖ :=
+    (h : x.val.valuation (T - C b) = x.val.valuation (C d)) : cutRadius x b = ‖d‖ :=
   le_antisymm (cutRadius_le h.le) (norm_le_cutRadius hb h.ge)
 
 /-- A point that does not vanish on `T - b` has positive radius about `b`: by continuity, the
 constants of small norm take smaller values than `T - b`. -/
 private theorem cutRadius_pos {x : closedPolydisc 1 K} {b : K} (hb : ‖b‖ ≤ 1)
-    (h : x.1.valuation (T - C b) ≠ 0) : 0 < cutRadius x b := by
-  have hcont : x.1.valuation.IsContinuous :=
-    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K x.1).mp x.2).1
+    (h : x.val.valuation (T - C b) ≠ 0) : 0 < cutRadius x b := by
+  have hcont : x.val.valuation.IsContinuous :=
+    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K x.val).mp x.property).1
   have hopen := (Valuation.isContinuous_def.mp hcont (T - C b)).preimage
     (continuous_weightedC isWeightFamily_one_weight)
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hopen 0
-    (by simpa only [Set.mem_preimage, map_zero, Set.mem_ofPred_eq] using zero_lt_iff.mpr h)
+    (by simpa only [Set.mem_preimage, map_zero, Set.mem_ofPred_eq] using pos_iff_ne_zero.mpr h)
   obtain ⟨c, hc₀, hcε⟩ := NormedField.exists_norm_lt K hε
   exact hc₀.trans_le (norm_le_cutRadius hb (hball (mem_ball_zero_iff.mpr hcε)).le)
 
@@ -384,7 +385,7 @@ private theorem cutRadius_le_max [IsAlgClosed K] {x : closedPolydisc 1 K} {b b' 
 /-- If the radius about `b'` is smaller than the radius about `b`, then `x(T - b) = x(b - b')`. -/
 private theorem valuation_eq_of_cutRadius_lt [IsAlgClosed K] {x : closedPolydisc 1 K} {b b' : K}
     (hb' : ‖b'‖ ≤ 1) (h : cutRadius x b' < cutRadius x b) :
-    x.1.valuation (T - C b) = x.1.valuation (C (b - b')) := by
+    x.val.valuation (T - C b) = x.val.valuation (C (b - b')) := by
   rw [weightedX_sub_weightedC_eq_sub b' b]
   refine Valuation.map_sub_eq_of_lt_right _ (valuation_lt_of_cutRadius_lt_norm hb' ?_)
   by_contra! h'
@@ -393,8 +394,8 @@ private theorem valuation_eq_of_cutRadius_lt [IsAlgClosed K] {x : closedPolydisc
 /-- If the radius about `b` is at least `‖c₀‖` and `x(T - b) < x(c₀)`, then `x(c) ≤ x(T - b)`
 holds for exactly the constants with `‖c‖ < ‖c₀‖`. -/
 private theorem weightedC_vle_iff_of_lt {x : closedPolydisc 1 K} {b c₀ : K}
-    (hr : ‖c₀‖ ≤ cutRadius x b) (hlt : x.1.valuation (T - C b) < x.1.valuation (C c₀)) (c : K) :
-    x.1.toValuativeRel.vle (C c) (T - C b) ↔ ‖c‖ < ‖c₀‖ := by
+    (hr : ‖c₀‖ ≤ cutRadius x b) (hlt : x.val.valuation (T - C b) < x.val.valuation (C c₀)) (c : K) :
+    x.val.toValuativeRel.vle (C c) (T - C b) ↔ ‖c‖ < ‖c₀‖ := by
   rw [← valuation_le_iff]
   refine ⟨fun h ↦ lt_of_not_ge fun h' ↦ (h.trans_lt hlt).not_ge
     ((closedPolydisc_valuation_weightedC_le_iff x c₀ c).mpr h'), fun h ↦ ?_⟩
@@ -403,8 +404,8 @@ private theorem weightedC_vle_iff_of_lt {x : closedPolydisc 1 K} {b c₀ : K}
 /-- If the radius about `b` is at most `‖c₀‖` and `x(c₀) < x(T - b)`, then `x(T - b) ≤ x(c)`
 holds for exactly the constants with `‖c₀‖ < ‖c‖`. -/
 private theorem vle_weightedC_iff_of_lt {x : closedPolydisc 1 K} {b c₀ : K} (hb : ‖b‖ ≤ 1)
-    (hr : cutRadius x b ≤ ‖c₀‖) (hlt : x.1.valuation (C c₀) < x.1.valuation (T - C b)) (c : K) :
-    x.1.toValuativeRel.vle (T - C b) (C c) ↔ ‖c₀‖ < ‖c‖ := by
+    (hr : cutRadius x b ≤ ‖c₀‖) (hlt : x.val.valuation (C c₀) < x.val.valuation (T - C b)) (c : K) :
+    x.val.toValuativeRel.vle (T - C b) (C c) ↔ ‖c₀‖ < ‖c‖ := by
   rw [← valuation_le_iff]
   refine ⟨fun h ↦ lt_of_not_ge fun h' ↦ (hlt.trans_le h).not_ge
     ((closedPolydisc_valuation_weightedC_le_iff x c c₀).mpr h'), fun h ↦ ?_⟩
@@ -419,11 +420,11 @@ variable [CompleteSpace K]
 kills some `T - b`. -/
 private theorem valuation_eq_zero_iff_of_eq_ite [IsAlgClosed K] {x : closedPolydisc 1 K} {a : K}
     (P : K → Prop) [DecidablePred P] (d : K → K) (hd : ∀ b : K, ¬ P b → d b ≠ 0)
-    (hx : ∀ b : K, x.1.valuation (T - C b) =
-      if P b then x.1.valuation (T - C a) else x.1.valuation (C (d b)))
-    (hx₀ : x.1.valuation (T - C a) ≠ 0) (f : 𝒯) :
-    x.1.valuation f = 0 ↔ f = 0 := by
-  suffices hsupp : x.1.supp = ⊥ by
+    (hx : ∀ b : K, x.val.valuation (T - C b) =
+      if P b then x.val.valuation (T - C a) else x.val.valuation (C (d b)))
+    (hx₀ : x.val.valuation (T - C a) ≠ 0) (f : 𝒯) :
+    x.val.valuation f = 0 ↔ f = 0 := by
+  suffices hsupp : x.val.supp = ⊥ by
     rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, hsupp, Ideal.mem_bot]
   by_contra hne
   obtain ⟨b, -, hb⟩ := exists_weightedX_sub_weightedC_mem_supp x hne
@@ -439,20 +440,20 @@ both do not vanish on `T - a` and both take the value of `T - a` on `T - b` for 
 value of the same nonzero constant `d b` for `b ∉ P`. -/
 private theorem eq_of_valuation_eq_ite [IsAlgClosed K] {x y : closedPolydisc 1 K} {a : K}
     (P : K → Prop) [DecidablePred P] (d : K → K) (hd : ∀ b : K, ¬ P b → d b ≠ 0)
-    (hx : ∀ b : K, x.1.valuation (T - C b) =
-      if P b then x.1.valuation (T - C a) else x.1.valuation (C (d b)))
-    (hy : ∀ b : K, y.1.valuation (T - C b) =
-      if P b then y.1.valuation (T - C a) else y.1.valuation (C (d b)))
-    (hx₀ : x.1.valuation (T - C a) ≠ 0) (hy₀ : y.1.valuation (T - C a) ≠ 0)
-    (hcmp : ∀ e : K, (x.1.valuation (T - C a) ≤ x.1.valuation (C e) ↔
-        y.1.valuation (T - C a) ≤ y.1.valuation (C e)) ∧
-      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ↔
-        y.1.valuation (C e) ≤ y.1.valuation (T - C a))) :
+    (hx : ∀ b : K, x.val.valuation (T - C b) =
+      if P b then x.val.valuation (T - C a) else x.val.valuation (C (d b)))
+    (hy : ∀ b : K, y.val.valuation (T - C b) =
+      if P b then y.val.valuation (T - C a) else y.val.valuation (C (d b)))
+    (hx₀ : x.val.valuation (T - C a) ≠ 0) (hy₀ : y.val.valuation (T - C a) ≠ 0)
+    (hcmp : ∀ e : K, (x.val.valuation (T - C a) ≤ x.val.valuation (C e) ↔
+        y.val.valuation (T - C a) ≤ y.val.valuation (C e)) ∧
+      (x.val.valuation (C e) ≤ x.val.valuation (T - C a) ↔
+        y.val.valuation (C e) ≤ y.val.valuation (T - C a))) :
     x = y := by
-  have hcont (z : closedPolydisc 1 K) : z.1.valuation.IsContinuous :=
-    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.1).mp z.2).1
+  have hcont (z : closedPolydisc 1 K) : z.val.valuation.IsContinuous :=
+    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.val).mp z.property).1
   -- `x` and `y` compare polynomials in the same way, and polynomials are dense
-  have hequiv : x.1.valuation.IsEquiv y.1.valuation := by
+  have hequiv : x.val.valuation.IsEquiv y.val.valuation := by
     refine (hcont x).isEquiv_of_dense (hcont y)
       (fun f ↦ (valuation_eq_zero_iff_of_eq_ite P d hd hx hx₀ f).trans
         (valuation_eq_zero_iff_of_eq_ite P d hd hy hy₀ f).symm)
@@ -471,23 +472,23 @@ private theorem eq_of_valuation_eq_ite [IsAlgClosed K] {x y : closedPolydisc 1 K
 than the values of the others, and `Q 0`, then `x = y`. -/
 private theorem eq_of_forall_lt_of_forall_gt [IsAlgClosed K] {x y : closedPolydisc 1 K} {a : K}
     (Q : K → Prop) (hQ : Q 0)
-    (hx : (∀ c : K, Q c → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
-      ∀ c : K, ¬ Q c → x.1.valuation (T - C a) < x.1.valuation (C c))
-    (hy : (∀ c : K, Q c → y.1.valuation (C c) < y.1.valuation (T - C a)) ∧
-      ∀ c : K, ¬ Q c → y.1.valuation (T - C a) < y.1.valuation (C c)) :
+    (hx : (∀ c : K, Q c → x.val.valuation (C c) < x.val.valuation (T - C a)) ∧
+      ∀ c : K, ¬ Q c → x.val.valuation (T - C a) < x.val.valuation (C c))
+    (hy : (∀ c : K, Q c → y.val.valuation (C c) < y.val.valuation (T - C a)) ∧
+      ∀ c : K, ¬ Q c → y.val.valuation (T - C a) < y.val.valuation (C c)) :
     x = y := by
   classical
   have hcmp (z : closedPolydisc 1 K)
-      (hz : (∀ c : K, Q c → z.1.valuation (C c) < z.1.valuation (T - C a)) ∧
-        ∀ c : K, ¬ Q c → z.1.valuation (T - C a) < z.1.valuation (C c)) (e : K) :
-      (z.1.valuation (T - C a) ≤ z.1.valuation (C e) ↔ ¬ Q e) ∧
-        (z.1.valuation (C e) ≤ z.1.valuation (T - C a) ↔ Q e) :=
+      (hz : (∀ c : K, Q c → z.val.valuation (C c) < z.val.valuation (T - C a)) ∧
+        ∀ c : K, ¬ Q c → z.val.valuation (T - C a) < z.val.valuation (C c)) (e : K) :
+      (z.val.valuation (T - C a) ≤ z.val.valuation (C e) ↔ ¬ Q e) ∧
+        (z.val.valuation (C e) ≤ z.val.valuation (T - C a) ↔ Q e) :=
     ⟨⟨fun h hQe ↦ (hz.1 e hQe).not_ge h, fun hQe ↦ (hz.2 e hQe).le⟩,
       ⟨fun h ↦ by_contra fun hQe ↦ (hz.2 e hQe).not_ge h, fun hQe ↦ (hz.1 e hQe).le⟩⟩
   have hne (z : closedPolydisc 1 K)
-      (hz : (∀ c : K, Q c → z.1.valuation (C c) < z.1.valuation (T - C a)) ∧
-        ∀ c : K, ¬ Q c → z.1.valuation (T - C a) < z.1.valuation (C c)) :
-      z.1.valuation (T - C a) ≠ 0 := by
+      (hz : (∀ c : K, Q c → z.val.valuation (C c) < z.val.valuation (T - C a)) ∧
+        ∀ c : K, ¬ Q c → z.val.valuation (T - C a) < z.val.valuation (C c)) :
+      z.val.valuation (T - C a) ≠ 0 := by
     have h := hz.1 0 hQ
     rw [map_zero, map_zero] at h
     exact h.ne'
@@ -505,10 +506,10 @@ polynomial they take the value of one and the same constant: over an algebraical
 a polynomial is a constant times a product of linear factors. -/
 private theorem exists_valuation_eval₂RingHom_eq_valuation_weightedC [IsAlgClosed K]
     {x y : closedPolydisc 1 K}
-    (h : ∀ b : K, ∃ e : K, x.1.valuation (T - C b) = x.1.valuation (C e) ∧
-      y.1.valuation (T - C b) = y.1.valuation (C e)) (p : Polynomial K) :
-    ∃ u : K, x.1.valuation (Polynomial.eval₂RingHom C T p) = x.1.valuation (C u) ∧
-      y.1.valuation (Polynomial.eval₂RingHom C T p) = y.1.valuation (C u) := by
+    (h : ∀ b : K, ∃ e : K, x.val.valuation (T - C b) = x.val.valuation (C e) ∧
+      y.val.valuation (T - C b) = y.val.valuation (C e)) (p : Polynomial K) :
+    ∃ u : K, x.val.valuation (Polynomial.eval₂RingHom C T p) = x.val.valuation (C u) ∧
+      y.val.valuation (Polynomial.eval₂RingHom C T p) = y.val.valuation (C u) := by
   choose e hxe hye using h
   have hP : Polynomial.eval₂RingHom C T p =
       C p.leadingCoeff * (p.roots.map fun b ↦ T - C b).prod :=
@@ -522,22 +523,22 @@ every `T - b` are equal**, over an algebraically closed field. Both then have tr
 compare polynomials as the norm compares constants, and polynomials are dense. -/
 theorem eq_of_forall_valuation_weightedX_sub_weightedC_eq [IsAlgClosed K]
     {x y : closedPolydisc 1 K}
-    (h : ∀ b : K, ∃ e : K, e ≠ 0 ∧ x.1.valuation (T - C b) = x.1.valuation (C e) ∧
-      y.1.valuation (T - C b) = y.1.valuation (C e)) : x = y := by
-  have hcont (z : closedPolydisc 1 K) : z.1.valuation.IsContinuous :=
-    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.1).mp z.2).1
+    (h : ∀ b : K, ∃ e : K, e ≠ 0 ∧ x.val.valuation (T - C b) = x.val.valuation (C e) ∧
+      y.val.valuation (T - C b) = y.val.valuation (C e)) : x = y := by
+  have hcont (z : closedPolydisc 1 K) : z.val.valuation.IsContinuous :=
+    (ValuationSpectrum.isContinuous_def _).mp ((mem_closedPolydisc_iff 1 K z.val).mp z.property).1
   -- a point with nonzero support kills some `T - b`, so both points have trivial support
   have h0 (z : closedPolydisc 1 K)
-      (hz : ∀ b : K, ∃ e : K, e ≠ 0 ∧ z.1.valuation (T - C b) = z.1.valuation (C e)) (f : 𝒯) :
-      z.1.valuation f = 0 ↔ f = 0 := by
-    suffices hsupp : z.1.supp = ⊥ by
+      (hz : ∀ b : K, ∃ e : K, e ≠ 0 ∧ z.val.valuation (T - C b) = z.val.valuation (C e)) (f : 𝒯) :
+      z.val.valuation f = 0 ↔ f = 0 := by
+    suffices hsupp : z.val.supp = ⊥ by
       rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, hsupp, Ideal.mem_bot]
     by_contra hne
     obtain ⟨b, -, hb⟩ := exists_weightedX_sub_weightedC_mem_supp z hne
     obtain ⟨e, he, hze⟩ := hz b
     rw [supp_eq_valuation_supp, Valuation.mem_supp_iff, hze] at hb
     exact he ((closedPolydisc_valuation_weightedC_eq_zero_iff z e).mp hb)
-  have hequiv : x.1.valuation.IsEquiv y.1.valuation := by
+  have hequiv : x.val.valuation.IsEquiv y.val.valuation := by
     refine (hcont x).isEquiv_of_dense (hcont y)
       (fun f ↦ (h0 x (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.1⟩) f).trans
         (h0 y (fun b ↦ (h b).imp fun _ he ↦ ⟨he.1, he.2.2⟩) f).symm)
@@ -561,14 +562,14 @@ norms. These are the points of types (2) and (3) in Wedhorn's Example 7.57. -/
 theorem eq_discPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     x = discPoint a ha hr₀ hr₁ ↔
-      (∀ b : K, ‖b - a‖ ≤ r → x.1.toValuativeRel.vle (T - C a) (T - C b)) ∧
-      (∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) ∧
-      (∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) := by
+      (∀ b : K, ‖b - a‖ ≤ r → x.val.toValuativeRel.vle (T - C a) (T - C b)) ∧
+      (∀ c : K, x.val.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) ∧
+      (∀ c : K, x.val.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) := by
   have hG := coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC ha hr₀ hr₁
   set η := discPoint a ha hr₀ hr₁
-  have hη : (∀ b : K, ‖b - a‖ ≤ r → η.1.toValuativeRel.vle (T - C a) (T - C b)) ∧
-      (∀ c : K, η.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) ∧
-      (∀ c : K, η.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) := by
+  have hη : (∀ b : K, ‖b - a‖ ≤ r → η.val.toValuativeRel.vle (T - C a) (T - C b)) ∧
+      (∀ c : K, η.val.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) ∧
+      (∀ c : K, η.val.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) := by
     refine ⟨fun b _ ↦ ?_, fun c ↦ ?_, fun c ↦ ?_⟩ <;>
       simp only [η, discPoint_vle_iff, ← NNReal.coe_le_coe, hG, taylorHom_weightedC,
         closedDiscGaussValuation_weightedC, coe_nnNorm, sub_self, norm_zero, max_eq_left hr₀.le]
@@ -590,7 +591,7 @@ written `a_{>r}` in Wedhorn's Example 7.57. -/
 theorem eq_discPointAbove_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r < 1) :
     x = discPointAbove a ha hr₀ hr₁ ↔
-      ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
+      ∀ c : K, x.val.toValuativeRel.vle (T - C a) (C c) ↔ r < ‖c‖ := by
   have hη := discPointAbove_vle_weightedC_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ ≤ r) (by simpa using hr₀.le)
@@ -605,7 +606,7 @@ written `a_{<r}` in Wedhorn's Example 7.57. -/
 theorem eq_discPointBelow_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     x = discPointBelow a ha hr₀ hr₁ ↔
-      ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
+      ∀ c : K, x.val.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ < r := by
   have hη := discPointBelow_weightedC_vle_iff a ha hr₀ hr₁
   refine ⟨by rintro rfl; exact hη, fun h ↦ ?_⟩
   exact eq_of_forall_lt_of_forall_gt (fun c ↦ ‖c‖ < r) (by simpa using hr₀)
@@ -617,7 +618,7 @@ theorem eq_discPointBelow_iff [IsAlgClosed K] (x : closedPolydisc 1 K) {a : K} (
 /-- **A point whose radius is smallest about some centre `a`** is a point `η_{a,r}`, `η_{a,r⁺}` or
 `η_{b,r⁻}`, the last two only for `r` the norm of a constant. -/
 private theorem exists_eq_of_forall_cutRadius_le [IsAlgClosed K] {x : closedPolydisc 1 K}
-    {a : K} (ha : ‖a‖ ≤ 1) (hx : x.1.valuation (T - C a) ≠ 0)
+    {a : K} (ha : ‖a‖ ≤ 1) (hx : x.val.valuation (T - C a) ≠ 0)
     (hmin : ∀ b : K, ‖b‖ ≤ 1 → cutRadius x a ≤ cutRadius x b) :
     (∃ (a : K) (ha : ‖a‖ ≤ 1) (r : ℝ) (hr₀ : 0 < r) (hr₁ : r ≤ 1),
         x = discPoint a ha hr₀ hr₁) ∨
@@ -643,12 +644,12 @@ private theorem exists_eq_of_forall_cutRadius_le [IsAlgClosed K] {x : closedPoly
       exact ⟨fun h ↦ le_of_not_gt fun h' ↦ (valuation_lt_of_cutRadius_lt_norm ha h').not_ge h,
         fun h ↦ (valuation_weightedC_lt_of_norm_lt_cutRadius (lt_of_le_of_ne h (hK c))).le⟩
   obtain ⟨c₀, hc₀⟩ := hK
-  rcases lt_trichotomy (x.1.valuation (T - C a)) (x.1.valuation (C c₀)) with hlt | heq | hgt
+  rcases lt_trichotomy (x.val.valuation (T - C a)) (x.val.valuation (C c₀)) with hlt | heq | hgt
   · -- `x(T - a)` lies just below the constants of norm `r`: `x = η_{a,r⁻}`
     exact Or.inr (Or.inr ⟨a, ha, c₀, hc₀ ▸ hr₀, hc₀ ▸ hr₁, (eq_discPointBelow_iff x ha _ _).mpr
       (weightedC_vle_iff_of_lt hc₀.le hlt)⟩)
   · by_cases hb : ∃ b : K, ‖b - a‖ ≤ cutRadius x a ∧
-        x.1.valuation (T - C b) < x.1.valuation (T - C a)
+        x.val.valuation (T - C b) < x.val.valuation (T - C a)
     · -- some `x(T - b)` lies just below the constants of norm `r`: `x = η_{b,r⁻}`
       obtain ⟨b, hba, hlt⟩ := hb
       have hb₁ : ‖b‖ ≤ 1 := by
@@ -705,7 +706,7 @@ theorem exists_eq_nestedDiscPoint_iff [IsAlgClosed K] (x : closedPolydisc 1 K) :
       (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
       (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
       (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc) ↔
-    ¬ ∃ a₀ : K, ∀ b : K, x.1.toValuativeRel.vle (T - C a₀) (T - C b) := by
+    ¬ ∃ a₀ : K, ∀ b : K, x.val.toValuativeRel.vle (T - C a₀) (T - C b) := by
   refine ⟨fun ⟨a, ha, c, hc₀, hc₁, hac, hcc, hempty, hx⟩ ↦ ?_, fun hmin ↦ ?_⟩
   · subst hx
     exact not_exists_forall_nestedDiscPoint_vle ha hc₀ hc₁ hac hcc hempty
@@ -745,7 +746,7 @@ complete nonarchimedean field: every such point is one of
 * the point attached to a decreasing sequence of discs `D(aₙ, |cₙ|)` with no common point in `K`
   (type (4)). -/
 theorem exists_eq_discPoint_or_discPointAbove_or_discPointBelow_or_nestedDiscPoint [IsAlgClosed K]
-    (x : closedPolydisc 1 K) (hx : x.1.supp = ⊥) :
+    (x : closedPolydisc 1 K) (hx : x.val.supp = ⊥) :
     (∃ (a : K) (ha : ‖a‖ ≤ 1) (r : ℝ) (hr₀ : 0 < r) (hr₁ : r ≤ 1),
         x = discPoint a ha hr₀ hr₁) ∨
       (∃ (a : K) (ha : ‖a‖ ≤ 1) (c : K) (hc₀ : 0 < ‖c‖) (hc₁ : ‖c‖ < 1),
@@ -757,7 +758,7 @@ theorem exists_eq_discPoint_or_discPointAbove_or_discPointBelow_or_nestedDiscPoi
         (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
         (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc := by
   -- `x` vanishes on no `T - b` with `‖b‖ ≤ 1`, else it would be the classical point at `b`
-  have hx₀ (b : K) (hb : ‖b‖ ≤ 1) : x.1.valuation (T - C b) ≠ 0 := fun h ↦
+  have hx₀ (b : K) (hb : ‖b‖ ≤ 1) : x.val.valuation (T - C b) ≠ 0 := fun h ↦
     ne_classicalPoint_of_supp_eq_bot x hx ⟨_, comap_weightedC_mem_spa x⟩ (fun _ ↦ b)
       (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
       (eq_classicalPoint_of_weightedX_sub_weightedC_mem_supp x _ _
@@ -789,7 +790,7 @@ theorem exists_eq_classicalPoint_or_discPoint_or_discPointAbove_or_discPointBelo
         (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
         (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖),
         (∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) ∧ x = nestedDiscPoint a ha c hc₀ hc₁ hac hcc := by
-  by_cases hx : x.1.supp = ⊥
+  by_cases hx : x.val.supp = ⊥
   · exact Or.inr (exists_eq_discPoint_or_discPointAbove_or_discPointBelow_or_nestedDiscPoint x hx)
   · exact Or.inl ((supp_ne_bot_iff_exists_eq_classicalPoint x).mp hx)
 

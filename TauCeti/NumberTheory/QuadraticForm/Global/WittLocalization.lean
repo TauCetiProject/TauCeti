@@ -93,13 +93,13 @@ variable [Invertible (2 : K)]
 real embedding of the real place `w`. -/
 noncomputable def atRealPlace (w : {w : InfinitePlace K // w.IsReal}) :
     WittRing K →+* WittRing ℝ :=
-  letI : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+  letI : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
   baseChange
 
 /-- Localization of Witt classes at a real place is scalar extension along the real embedding of
 the place. -/
 theorem atRealPlace_def (w : {w : InfinitePlace K // w.IsReal}) :
-    letI : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+    letI : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
     atRealPlace w = baseChange :=
   (rfl)
 
@@ -111,7 +111,7 @@ theorem atRealPlace_wittClass_formClass {V : Type v} [AddCommGroup V] [Module K 
     (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace w (wittClass (formClass Q hQ)) =
       wittClass (formClass (Q.atRealPlace w) (QuadraticForm.Nondegenerate.atRealPlace hQ w)) := by
-  let : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
   rw [QuadraticForm.formClass_atRealPlace Q hQ w, ← baseChange_wittClass, atRealPlace_def]
 
 /-- The signature of the localization at a real place of the Witt class of a regular form is the

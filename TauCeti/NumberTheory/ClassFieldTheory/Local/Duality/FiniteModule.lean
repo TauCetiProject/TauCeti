@@ -145,7 +145,7 @@ theorem dualityMap_bijective_of_smul_kummerCoeff_eq_self :
   let f : KummerCoeff K n →+[V] ZMod n :=
     { (kummerCoeffAddEquivZMod hn).toAddMonoidHom with
       map_smul' := fun v y ↦ by
-        rw [Subgroup.smul_def, hVN v v.2 y, MonoidHom.id_apply, htriv] }
+        rw [Subgroup.smul_def, hVN v v.property y, MonoidHom.id_apply, htriv] }
   have hf : Function.Bijective f := (kummerCoeffAddEquivZMod hn).bijective
   exact ⟨(dualityMap0_bijective_iff_of_bijective hf).2
       (dualityMap0_bijective_of_isPrimitiveRoot hζ φ htriv A hA hAV),
@@ -223,7 +223,7 @@ private theorem dualityMap_kummerCoeff_bijective_of_smul_eq_self [V.Normal] [V.F
       [DistribMulAction (AbsoluteGaloisGroup K) B] [ContinuousSMul (AbsoluteGaloisGroup K) B]
       [Finite B] (hB : ∀ b : B, n • b = 0) (hBV : ∀ v ∈ V, ∀ b : B, v • b = b) ↦
     (dualityMap_bijective_discreteCoind_kummerCoeff hn V hV hVN B hB
-      fun v b ↦ hBV v v.2 b).imp_right (And.imp_right And.left)
+      fun v b ↦ hBV v v.property b).imp_right (And.imp_right And.left)
   ⟨dualityMap0_bijective_of_bijective_discreteCoind (kummerCoeffAddEquivZMod hn) e₂ hVN hcoind A
       hA hAV,
     dualityMap1_bijective_of_injective_discreteCoind (kummerCoeffAddEquivZMod hn) e₂ hVN

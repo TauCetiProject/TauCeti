@@ -35,12 +35,12 @@ homomorphism out of it. -/
 def MonoidHomClass.mgraphEquiv (f : F) :
     G ≃ₜ* (MonoidHom.ofClass f).mgraph where
   toFun g := ⟨(g, f g), rfl⟩
-  invFun x := x.1.1
+  invFun x := x.val.1
   left_inv _ := rfl
   right_inv x := Subtype.ext (Prod.ext rfl x.property)
   map_mul' x y := by ext <;> simp
   continuous_toFun := (continuous_id.prodMk (map_continuous f)).subtype_mk _
-  continuous_invFun := continuous_fst.comp continuous_subtype_val
+  continuous_invFun := continuous_fst.comp continuous_subtypeVal
 
 /-- The submonoid graph equivalence sends an element to the corresponding point of the graph. -/
 @[to_additive (attr := simp)
@@ -54,7 +54,7 @@ theorem MonoidHomClass.coe_mgraphEquiv_apply (f : F) (g : G) :
   /-- The inverse additive submonoid graph equivalence is the first projection. -/]
 theorem MonoidHomClass.mgraphEquiv_symm_apply (f : F)
     (x : (MonoidHom.ofClass f).mgraph) :
-    (MonoidHomClass.mgraphEquiv f).symm x = x.1.1 := (rfl)
+    (MonoidHomClass.mgraphEquiv f).symm x = x.val.1 := (rfl)
 
 /-- The submonoid graph of a continuous homomorphism into a Hausdorff monoid is closed. -/
 @[to_additive
@@ -93,7 +93,7 @@ theorem MonoidHomClass.coe_graphEquiv_apply (f : F) (g : G) :
   /-- The inverse additive subgroup graph equivalence is the first projection. -/]
 theorem MonoidHomClass.graphEquiv_symm_apply (f : F)
     (x : (MonoidHom.ofClass f).graph) :
-    (MonoidHomClass.graphEquiv f).symm x = x.1.1 := (rfl)
+    (MonoidHomClass.graphEquiv f).symm x = x.val.1 := (rfl)
 
 /-- The graph of a continuous homomorphism into a Hausdorff group is closed. -/
 @[to_additive

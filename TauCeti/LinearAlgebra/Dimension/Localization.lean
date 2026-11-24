@@ -131,7 +131,7 @@ theorem tmul_one_injective [Module.IsTorsionFree R M] :
     Function.Injective fun m : M ↦ m ⊗ₜ[R] (1 : Q) := by
   have h := (IsLocalizedModule.injective_iff_isRegular R⁰
     ((TensorProduct.comm R Q M).toLinearMap ∘ₗ TensorProduct.mk R Q M 1)).mpr
-      fun c ↦ IsRegular.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr c.2)
+      fun c ↦ IsRegular.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr c.property)
   simpa [Function.comp_def] using h
 
 /-- **Clearing denominators of a rational map.** Let `R` have field of fractions `Q`, let `A` be an
@@ -154,7 +154,7 @@ theorem exists_linearMap_tmul_one_eq_smul [Module.Finite A M] [Module.IsTorsionF
     infer_instance
   obtain ⟨f, s, hf⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective R⁰
     (g := ι) (tmul_one_injective Q) (φ ∘ₗ (TensorProduct.AlgebraTensorModule.mk R A M Q).flip 1)
-  exact ⟨s, s.2, f, fun m ↦ by simpa [ι, Submonoid.smul_def] using congr($hf m)⟩
+  exact ⟨s, s.property, f, fun m ↦ by simpa [ι, Submonoid.smul_def] using congr($hf m)⟩
 
 /-- **Rational embeddings of lattices come from integral ones.** If `M` is finitely generated over
 the `R`-algebra `A`, both `M` and `N` are torsion-free over `R`, and some `A`-linear map of
