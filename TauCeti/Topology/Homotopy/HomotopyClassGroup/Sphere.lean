@@ -176,6 +176,7 @@ theorem sphereSplitting_apply (a : G ⧸ Subgroup.pathComponentOne G) :
 
 /-- **The action of `π₀(G)` on `πₙ(G, 1)` in the split extension is pointwise conjugation**:
 `[g] · α = [g α g⁻¹]`, the image of `α` under the conjugation `x ↦ g * x * g⁻¹` of `G`. -/
+@[simp]
 theorem sphereSplitting_conjAct (g : G) (a : HomotopyGroup (Fin n) G 1) :
     (sphereSplitting n G).conjAct (g : G ⧸ Subgroup.pathComponentOne G) a =
       HomotopyGroup.map ⟨fun x ↦ g * x * g⁻¹, by fun_prop⟩ (by simp) a := by
@@ -215,6 +216,7 @@ theorem sphereMulEquiv_apply
 
 /-- **The decomposition of a class in `[Sⁿ, G]`**: the class of `f` corresponds to the pair of the
 class of the based map `z ↦ f z * (f N)⁻¹` in `πₙ(G, 1)` and the path component of `f N`. -/
+@[simp]
 theorem sphereMulEquiv_symm_mk (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, G)) :
     (sphereMulEquiv n G).symm (mk _ G f) =
       ⟨⟦(GenLoop.sphereEquiv n G 1).symm
