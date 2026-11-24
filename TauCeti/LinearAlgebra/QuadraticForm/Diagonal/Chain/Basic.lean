@@ -112,9 +112,10 @@ theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
   rw [BinaryStep]
   refine ⟨i, j, hij, ?_, ?_⟩
   · intro k hki hkj
-    simp [Function.comp_apply, Equiv.swap_apply_def, hki, hkj]
-  · simpa [Function.comp_apply, Equiv.swap_apply_def, hij, hij.symm] using
-      (equivalent_weightedSumSquares_comp ![(w i : R), (w j : R)] (Equiv.swap 0 1))
+    rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne hki hkj]
+  · rw [Function.comp_apply, Function.comp_apply, Equiv.swap_apply_left, Equiv.swap_apply_right]
+    exact (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (Equiv.swap 0 1) fun t ↦
+      congrArg (· • (1 : R)) (congrFun (Matrix.cons_cons_comp_swap_zero_one _ _ ![]) t)).symm
 
 end BinaryStep
 
@@ -160,11 +161,8 @@ theorem equivalent {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
       (weightedSumSquares R fun i => (w' i : R)) := by
   rw [PermutationStep] at h
   obtain ⟨σ, hσ⟩ := h
-  have hw : (fun i => (w' i : R)) = (fun i => (w i : R)) ∘ σ := by
-    funext i
-    exact congrArg Units.val (hσ i)
-  rw [hw]
-  exact equivalent_weightedSumSquares_comp (fun i => (w i : R)) σ
+  refine (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq σ fun i ↦ ?_).symm
+  rw [hσ i]
 
 end PermutationStep
 
@@ -182,8 +180,8 @@ theorem equivalent {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
       (weightedSumSquares R fun i => (w' i : R)) := by
   rw [BinaryStep] at h
   obtain ⟨i, j, hij, hrest, hpair⟩ := h
-  exact equivalent_weightedSumSquares_of_pair hij hpair fun k hki hkj =>
-    congrArg Units.val (hrest k hki hkj)
+  exact equivalent_weightedSumSquares_of_pair hij hpair fun k hki hkj => by
+    rw [hrest k hki hkj]
 
 /-- A binary step remains a binary step after adjoining a fixed first coefficient. -/
 theorem cons {w w' : Fin n → Rˣ} (a : Rˣ) (h : BinaryStep w w') :

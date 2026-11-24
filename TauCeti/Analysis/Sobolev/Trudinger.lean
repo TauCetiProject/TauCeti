@@ -306,8 +306,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
   have hn0 : (n : ℝ) ≠ 0 := by have : 0 < n := finrank_pos; positivity
   have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by have : 0 < n := finrank_pos; positivity)
     (by exact_mod_cast hq : (n : ℝ) ≤ q)
-  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u
-    (measurableSet_toMeasurable μ Ω) (hsupp.trans (subset_toMeasurable μ Ω))
+  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u hsupp
     (p := n) (by exact_mod_cast finrank_pos) hq (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp)
     (by linarith [inv_pos.2 hq0])
   -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
@@ -316,7 +315,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
     field_simp [hn0]
     ring
   rwa [hbase, sub_sub_cancel, show 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ by
-    ring, ENNReal.coe_natCast, measure_toMeasurable] at h
+    ring, ENNReal.coe_natCast] at h
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality for compactly supported functions.** Let `n ≥ 2` be the dimension
@@ -418,12 +417,11 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient (hp : p = finra
     have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
     rw [hp] at h1
     exact_mod_cast h1
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos hn
   set n := finrank ℝ E
   have hn0 : (n : ℝ) ≠ 0 := by positivity
   have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by positivity) (by exact_mod_cast hq : (n : ℝ) ≤ q)
   have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
-    (hp ▸ ENNReal.natCast_ne_top n) hOmega (by rw [hp]; exact_mod_cast hq)
+    hOmega (by rw [hp]; exact_mod_cast hq)
     (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp [hp]) (by linarith [inv_pos.2 hq0]) hu
   -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
   have hbase : (1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) / ((n : ℝ)⁻¹ - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) =
@@ -481,7 +479,7 @@ theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ 
   obtain ⟨U, hU, hKU, T, hT⟩ := W1p.exists_zeroBoundaryLocalization (μ := mu) hp' (V := K)
     (by rwa [hK.isClosed.closure_eq]) (by rwa [hK.isClosed.closure_eq])
   set v : W1p mu U p := (T u : W1p mu U p)
-  have hv0 : v ∈ w1p0Submodule mu U p := (T u).2
+  have hv0 : v ∈ w1p0Submodule mu U p := (T u).property
   have hKU' : mu.restrict K ≤ mu.restrict U := Measure.restrict_mono hKU le_rfl
   have hum : AEStronglyMeasurable (W1p.value u : E → ℝ) (mu.restrict K) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hKO le_rfl)

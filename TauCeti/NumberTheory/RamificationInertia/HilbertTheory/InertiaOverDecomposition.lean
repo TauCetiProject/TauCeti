@@ -93,7 +93,7 @@ variable (E 𝓞E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E] [Com
   [Algebra 𝓞E E] [IsFractionRing 𝓞E E] [Algebra 𝓞E B] [Algebra 𝓞E L] [IsScalarTower 𝓞E E L]
   [IsScalarTower 𝓞E B L] [Algebra 𝓞D 𝓞E] [IsScalarTower 𝓞D 𝓞E B]
 
-variable [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
+variable [IsGalois K L] [IsDedekindDomain A]
   [Module.Finite A B]
   [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D]
   [Algebra A 𝓞E] [IsScalarTower A 𝓞E B] [IsDedekindDomain 𝓞E]
@@ -105,6 +105,7 @@ has ramification index `1` over `P.under 𝓞D`. No separability of the residue 
 assumed. -/
 theorem ramificationIdx_under_eq_one_of_isDecompositionField :
     (P.under 𝓞E).ramificationIdx 𝓞D = 1 := by
+  have : IsDomain B := .of_faithfulSMul B L
   have : FaithfulSMul 𝓞E B := .of_field_isFractionRing 𝓞E B E L
   have h := ramificationIdx_tower (R := 𝓞D) (P.under 𝓞E) P
   rw [IsDecompositionField.ramificationIdx_eq A K L P D 𝓞D,
@@ -117,6 +118,7 @@ degree of `P.under 𝓞E` over `P.under 𝓞D` is the separable residue degree o
 `P.under A`. -/
 theorem inertiaDeg_under_eq_finSepDegree_of_isDecompositionField :
     (P.under 𝓞E).inertiaDeg 𝓞D = Field.finSepDegree (A ⧸ P.under A) (B ⧸ P) := by
+  have : IsDomain B := .of_faithfulSMul B L
   have h := inertiaDeg_tower (R := 𝓞D) (P.under 𝓞E) P
   rw [IsDecompositionField.inertiaDeg_eq A K L P D 𝓞D, inertiaDeg_eq_finInsepDegree A K L P E 𝓞E,
     inertiaDeg_eq_of_isMaximal (P.under A) P, ← Field.finSepDegree_mul_finInsepDegree] at h

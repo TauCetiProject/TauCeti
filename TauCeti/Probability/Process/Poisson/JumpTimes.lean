@@ -69,8 +69,8 @@ theorem aemeasurable_hittingAfter_Ici
     (h : IsFilteredPoissonProcess ℱ α (fun t ω ↦ (M t ω : ℝ)) P)
     (hrc : ∀ᵐ ω ∂P, IsRightContinuous (M · ω)) (c : ℕ) :
     AEMeasurable (hittingAfter M (Ici c) 0) P :=
-  aemeasurable_hittingAfter_of_isOpen_of_isRightContinuous h.measurable_eval_nat hrc
-    (isOpen_discrete (Ici c)) 0
+  aemeasurable_hittingAfter_of_isOpen_of_isRightContinuous
+    (fun t ↦ (h.measurable_eval_nat t).aemeasurable) hrc (isOpen_discrete (Ici c)) 0
 
 /-- **Poisson–gamma arrival-time duality.** For an almost-surely right-continuous natural-valued
 filtered Poisson process of rate `α`, the `c`-th arrival (`c ≠ 0`) occurs by time `t` with

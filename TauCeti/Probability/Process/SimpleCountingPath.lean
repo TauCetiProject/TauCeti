@@ -67,7 +67,7 @@ theorem isCadlag {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) : IsCadlag 
   hf.monotone.isCadlag hf.isRightContinuous
 
 /-- Coercing a simple counting path to `ℝ` preserves the càdlàg property. -/
-theorem isCadlag_real {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) :
+theorem isCadlag_natCast {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f) :
     IsCadlag fun t ↦ (f t : ℝ) :=
   hf.isCadlag.continuous_comp continuous_of_discreteTopology
 
@@ -131,11 +131,11 @@ theorem apply_untopA_hittingAfter_Ici {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} 
 
 /-- Along a simple counting path, any finite hitting time of `Set.Ici c` strictly precedes the
 hitting time of `Set.Ici (c + 1)`. -/
-theorem hittingAfter_Ici_lt_succ {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
+theorem hittingAfter_Ici_lt_hittingAfter_Ici_add_one {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
     (hf : IsSimpleCountingPath (M · ω)) {c : ℕ}
     (hfin : hittingAfter M (Ici c) 0 ω ≠ ⊤) :
     hittingAfter M (Ici c) 0 ω < hittingAfter M (Ici (c + 1)) 0 ω :=
-  hf.isRightContinuous.hittingAfter_Ici_lt_succ_of_le_add_one
+  hf.isRightContinuous.hittingAfter_Ici_lt_hittingAfter_Ici_add_one_of_le_add_one
     (by simp [hf.apply_zero]) hf.exists_Ico_le_add_one hfin
 
 /-- Along a simple counting path, any finite hitting time of `Set.Ici c₁` strictly precedes the
@@ -144,7 +144,7 @@ theorem hittingAfter_Ici_lt_of_lt {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω 
     (hf : IsSimpleCountingPath (M · ω)) {c₁ c₂ : ℕ} (hc : c₁ < c₂)
     (hfin : hittingAfter M (Ici c₁) 0 ω ≠ ⊤) :
     hittingAfter M (Ici c₁) 0 ω < hittingAfter M (Ici c₂) 0 ω :=
-  (hf.hittingAfter_Ici_lt_succ hfin).trans_le
+  (hf.hittingAfter_Ici_lt_hittingAfter_Ici_add_one hfin).trans_le
     (hittingAfter_apply_anti M 0 ω (Ici_subset_Ici.mpr hc))
 
 end IsSimpleCountingPath

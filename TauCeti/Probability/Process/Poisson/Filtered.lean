@@ -227,10 +227,8 @@ independent. Only `s ≤ u` and `t ≤ u` are used, so the first interval may al
 empty. -/
 theorem indepFun_sub_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t u v : ℝ≥0}
     (hsu : s ≤ u) (htu : t ≤ u) (huv : u ≤ v) :
-    IndepFun (N t - N s) (N v - N u) P := by
-  rw [IndepFun_iff_Indep]
-  exact indep_of_indep_of_le_left (h.indep_sub huv).symm
-    ((h.adapted.measurable_le htu).sub (h.adapted.measurable_le hsu)).comap_le
+    IndepFun (N t - N s) (N v - N u) P :=
+  h.adapted.indepFun_sub_sub hsu htu (h.indep_sub huv)
 
 /-- A Poisson process has independent increments. -/
 theorem hasIndepIncrements (h : IsFilteredPoissonProcess ℱ α N P) : HasIndepIncrements N P :=
@@ -261,10 +259,7 @@ theorem ambientNullAugmentation (h : IsFilteredPoissonProcess ℱ α N P) :
   stronglyAdapted t := (h.stronglyAdapted t).mono (ℱ.le_ambientNullAugmentation P t)
   eval_zero_ae_eq_zero := h.eval_zero_ae_eq_zero
   hasLaw_sub _ _ hst := h.hasLaw_sub hst
-  indep_sub s t hst := by
-    apply indep_of_indep_of_le_right (h.indep_sub hst).eventuallyMeasurableSpace_right
-    rw [Filtration.ambientNullAugmentation_apply, Filtration.nullAugment_apply]
-    exact inf_le_right
+  indep_sub _ _ hst := (h.indep_sub hst).ambientNullAugmentation_right
 
 /-- Fixed-time almost-sure equality preserves the Poisson property, provided the replacement is
 adapted to the same filtration. Adaptedness is not inferred from almost-sure equality on a raw
@@ -287,7 +282,7 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
 theorem indep_comap_shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
     Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P := by
   have := h.isProbabilityMeasure
-  exact h.adapted.indep_comap_shift h.indep_sub s
+  exact h.adapted.indep_comap_shift_sub h.indep_sub s
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process relative to `ℱ` is a
 Poisson process of the same rate relative to its own natural filtration. -/

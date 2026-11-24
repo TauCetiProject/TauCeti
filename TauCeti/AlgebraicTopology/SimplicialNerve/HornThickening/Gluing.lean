@@ -728,19 +728,21 @@ private noncomputable def glueMap (hσ : IsCompat σ) (h₁ : i < Fin.last _)
     (x y : ULift.{v} (Fin (n + 3))) :
     (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y : SSet.{v}) ⟶
       (glueObj σ h₀ x ⟶[SSet] glueObj σ h₀ y) where
-  app q := ↾fun s ↦ (glue σ h₀ ⟨.mk x, .mk y, s.1⟩).hom
-    (glue_fst σ h₀ hσ (gluable_of_mem h₀ h₁ s.2)) (glue_snd σ h₀ hσ (gluable_of_mem h₀ h₁ s.2))
+  app q := ↾fun s ↦ (glue σ h₀ ⟨.mk x, .mk y, s.val⟩).hom
+    (glue_fst σ h₀ hσ (gluable_of_mem h₀ h₁ s.property)) (glue_snd σ h₀ hσ
+        (gluable_of_mem h₀ h₁ s.property))
   naturality q q' g := by
     ext s
     apply Arr.mk_injective (a := glueObj σ h₀ x) (b := glueObj σ h₀ y)
-    refine (Arr.mk_hom _ _ _).trans ((glue_map σ h₀ hσ (gluable_of_mem h₀ h₁ s.2) g).trans ?_)
+    refine (Arr.mk_hom _ _ _).trans ((glue_map σ h₀ hσ (gluable_of_mem h₀ h₁ s.property) g).trans
+        ?_)
     exact congrArg (Arr.map g) (Arr.mk_hom _ _ _).symm
 
 private lemma mk_glueMap_app (hσ : IsCompat σ) (h₁ : i < Fin.last _)
     (x y : ULift.{v} (Fin (n + 3)))
     (s : (hornHom (⟨i⟩ : ULift.{v} (Fin (n + 3))) x y : SSet.{v}).obj q) :
     (⟨glueObj σ h₀ x, glueObj σ h₀ y, (glueMap σ h₀ hσ h₁ x y).app q s⟩ : Arr D q) =
-      glue σ h₀ ⟨.mk x, .mk y, s.1⟩ :=
+      glue σ h₀ ⟨.mk x, .mk y, s.val⟩ :=
   Arr.mk_hom _ _ _
 
 /-- The simplicial functor `C[Λ^{n+2}_i] ⥤ D` glued from the faces `σ`. -/
@@ -756,8 +758,8 @@ private noncomputable def glueFunctor (hσ : IsCompat σ) (h₁ : i < Fin.last _
     ext q ⟨s, t⟩
     apply Arr.mk_injective (a := glueObj σ h₀ x.as) (b := glueObj σ h₀ z.as)
     refine (mk_glueMap_app σ h₀ hσ h₁ _ _ _).trans ?_
-    refine ((congrArg (glue σ h₀) (Arr.comp_mk s.1 t.1).symm).trans
-      (glue_comp_of_mem σ h₀ hσ h₁ s.2 t.2)).trans ?_
+    refine ((congrArg (glue σ h₀) (Arr.comp_mk s.val t.val).symm).trans
+      (glue_comp_of_mem σ h₀ hσ h₁ s.property t.property)).trans ?_
     rw [← mk_glueMap_app σ h₀ hσ h₁ _ _ s, ← mk_glueMap_app σ h₀ hσ h₁ _ _ t, Arr.comp_mk]
     rfl
 
@@ -817,7 +819,7 @@ theorem enrichedFunctor_ext (h₀ : 0 < i) (h₁ : i < Fin.last _)
     · rw [← arrMap_comp_functor, δ_comp_ι]
     · rw [← arrMap_comp_functor, ← arrMap_comp_functor, h j hj]
   refine ext_arrMap fun q u ↦ ?_
-  rcases gluable_of_mem h₀ h₁ u.2.2.2 with hu | ⟨v₁, v₂, h₁₂, hv, hv₁, hv₂⟩
+  rcases gluable_of_mem h₀ h₁ u.2.2.property with hu | ⟨v₁, v₂, h₁₂, hv, hv₁, hv₂⟩
   · obtain ⟨u', hu', e⟩ := hface hu
     rwa [← arrMap_ι_injective hu']
   · obtain ⟨u₁, rfl, e₁⟩ := hface hv₁

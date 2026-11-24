@@ -6,15 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.Cadlag
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # Càdlàg step and monotone functions
 
-A step taking its new value at its jump time is càdlàg, and every monotone right-continuous
-function into a conditionally complete linear order with the order topology is càdlàg. On a partial
-order, right continuity at a bottom element is full continuity there. At any discontinuity where a
-natural-valued monotone path is right-continuous and exceeds some strictly earlier value by at most
-one, its left limit is one less than its current value.
+A step taking its new value at its jump time is càdlàg (`TauCeti.isCadlag_ite_le`), supplying the
+path regularity of indicators of closed stochastic rays, and every monotone right-continuous
+function into a conditionally complete linear order with the order topology is càdlàg
+(`Monotone.isCadlag`). On a partial order, right continuity at a bottom element is full continuity
+there (`ContinuousWithinAt.continuousAt_of_isBot`). At any discontinuity where a natural-valued
+monotone path is right-continuous and exceeds some strictly earlier value by at most one, its left
+limit is one less than its current value (`Monotone.leftLim_add_one_eq_of_not_continuousAt`).
+
+Conversely, a function into a discrete space is right-continuous exactly when it is constant on a
+right neighbourhood of each point (`TauCeti.isRightContinuous_iff_eventually_eq`), as for counting
+paths.
 -/
 
 public section
@@ -77,4 +84,18 @@ theorem isCadlag_ite_le {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι]
       filter_upwards [self_mem_nhdsWithin] with s hs
       simp [not_le.mpr (hs.trans_le (le_of_not_gt hat))]
 
+/-- A function into a discrete space is right-continuous exactly when, at each point, it
+eventually takes its value there on the right. -/
+theorem isRightContinuous_iff_eventually_eq {X Y : Type*} [TopologicalSpace X] [Preorder X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} :
+    IsRightContinuous f ↔ ∀ a, ∀ᶠ x in 𝓝[>] a, f x = f a := by
+  simp only [IsRightContinuous, ContinuousWithinAt, nhds_discrete, tendsto_pure]
+
 end TauCeti
+
+/-- A right-continuous function into a discrete space is constant on a right neighbourhood of
+each point. -/
+theorem IsRightContinuous.eventually_eq {X Y : Type*} [TopologicalSpace X] [Preorder X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} (hf : IsRightContinuous f) (a : X) :
+    ∀ᶠ x in 𝓝[>] a, f x = f a :=
+  TauCeti.isRightContinuous_iff_eventually_eq.1 hf a

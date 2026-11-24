@@ -164,7 +164,8 @@ private lemma measurableSet_isDyadicGood (hN : ∀ t, Measurable (N t)) :
         {ω | N (dyadicTime m (k + 2)) ω - N (dyadicTime m k) ω ≤ 1}) := by
     ext ω
     simp only [mem_ofPred_eq, mem_inter_iff, mem_iInter, mem_iUnion]
-    exact ⟨fun h ↦ ⟨⟨⟨h.1, h.2⟩, h.3⟩, h.4⟩, fun ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ ↦ ⟨h1, h2, h3, h4⟩⟩
+    exact ⟨fun h ↦ ⟨⟨⟨h.exists_nat, h.mono⟩, h.zero⟩, h.jump⟩,
+      fun ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ ↦ ⟨h1, h2, h3, h4⟩⟩
   have h1 : MeasurableSet (⋂ (m : ℕ) (j : ℕ), ⋃ n : ℕ, {ω | N (dyadicTime m j) ω = n}) :=
     .iInter fun _ ↦ .iInter fun _ ↦ .iUnion fun _ ↦ measurableSet_eq_fun (hN _) measurable_const
   have h2 : MeasurableSet

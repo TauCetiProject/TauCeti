@@ -57,9 +57,7 @@ theorem ContMDiffAt.mfderiv_adjoint_apply (hf : ContMDiffAt I J (n + 1) f x)
   have hΦ : ∀ j, ContMDiffAt I 𝓘(ℝ) n
       (fun y ↦ Φ y (chartLocalFrame (I := I) x j y)) x := by
     intro j
-    have hframe := (contMDiffOn_chartLocalFrame (I := I) (n := n) x j).contMDiffAt
-      ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x))
+    have hframe := contMDiffAt_chartLocalFrame (I := I) (n := n) x j
     exact ContMDiffAt.inner_bundle (E := TangentSpace J) (F := F) (v := W)
       (w := fun y ↦ mfderiv I J f y (chartLocalFrame (I := I) x j y))
       hW (hf.mfderiv_apply_sectionAlong hframe le_rfl)

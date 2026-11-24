@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Category.TopCat.Pushout
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # A handle attachment deformation retracts onto the attachment of its cores
@@ -74,18 +74,18 @@ variable {k l : ℕ}
 `(x, y)` of the handle `D^k × D^l`. -/
 private def handleCylinderPoint (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
     I × closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 :=
-  (⟨‖p.2.down.1‖, norm_nonneg _, mem_closedBall_zero_iff.1 p.2.down.2⟩, p.1.down)
+  (⟨‖p.2.down.val‖, norm_nonneg _, mem_closedBall_zero_iff.1 p.2.down.property⟩, p.1.down)
 
 private lemma continuous_handleCylinderPoint :
     Continuous (handleCylinderPoint : TopCat.disk.{u} k × TopCat.disk.{u} l → _) :=
-  ((continuous_norm.comp (continuous_subtype_val.comp
+  ((continuous_norm.comp (continuous_subtypeVal.comp
     (continuous_uliftDown.comp continuous_snd))).subtype_mk _).prodMk
       (continuous_uliftDown.comp continuous_fst)
 
 /-- The height of the radial projection of `handleCylinderPoint p` is at most `‖y‖`. -/
 private lemma ballRadialProjection_handleCylinderPoint_fst_le
     (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
-    (ballRadialProjection (handleCylinderPoint p)).1 ≤ ‖p.2.down.1‖ :=
+    (ballRadialProjection (handleCylinderPoint p)).1 ≤ ‖p.2.down.val‖ :=
   ballRadialProjection_fst_le _
 
 /-- **The retraction of a handle onto its core and its attaching region.** For a point `(x, y)`
@@ -99,20 +99,22 @@ def handleCoreRetraction (k l : ℕ) :
   toFun p :=
     (ULift.up ⟨(ballRadialProjection (handleCylinderPoint p)).2,
         (ballRadialProjection_spec _).2.1⟩,
-      ULift.up ⟨((ballRadialProjection (handleCylinderPoint p)).1 / ‖p.2.down.1‖) • p.2.down.1,
+      ULift.up ⟨((ballRadialProjection (handleCylinderPoint p)).1 / ‖p.2.down.val‖) • p.2.down.val,
         mem_closedBall_zero_iff.2 <|
-          (norm_div_norm_smul_le _ (ballRadialProjection_spec _).1.1).trans
+          ((norm_div_norm_smul_le _ _).trans_eq
+            (Real.norm_of_nonneg (ballRadialProjection_spec _).1.1)).trans
             ((ballRadialProjection_handleCylinderPoint_fst_le p).trans
-              (mem_closedBall_zero_iff.1 p.2.down.2))⟩)
+              (mem_closedBall_zero_iff.1 p.2.down.property))⟩)
   continuous_toFun := by
     have hp := continuous_ballRadialProjection.comp
       (continuous_handleCylinderPoint (k := k) (l := l))
-    have hy : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ p.2.down.1 :=
-      continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd)
+    have hy : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ p.2.down.val :=
+      continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd)
     exact (continuous_uliftUp.comp (hp.snd.subtype_mk _)).prodMk
-      (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy
-        (fun p ↦ (ballRadialProjection_spec _).1.1)
-        ballRadialProjection_handleCylinderPoint_fst_le).subtype_mk _))
+      (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy fun p h ↦
+        le_antisymm ((ballRadialProjection_handleCylinderPoint_fst_le p).trans
+          (Eq.le ((isClosed_eq hy.norm continuous_const).frontier_subset h)))
+          (ballRadialProjection_spec _).1.1).subtype_mk _))
 
 @[simp]
 private theorem coe_handleCoreRetraction_fst (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
@@ -123,13 +125,14 @@ private theorem coe_handleCoreRetraction_fst (p : TopCat.disk.{u} k × TopCat.di
 @[simp]
 private theorem coe_handleCoreRetraction_snd (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
     ((handleCoreRetraction k l p).2.down : EuclideanSpace ℝ (Fin l)) =
-      ((ballRadialProjection (handleCylinderPoint p)).1 / ‖p.2.down.1‖) • p.2.down.1 :=
+      ((ballRadialProjection (handleCylinderPoint p)).1 / ‖p.2.down.val‖) • p.2.down.val :=
   (rfl)
 
 /-- The retraction `TauCeti.TopCat.handleCoreRetraction` fixes the attaching region
 `∂D^k × D^l` and the core `D^k × {0}` of the handle. -/
 theorem handleCoreRetraction_apply_of_mem {p : TopCat.disk.{u} k × TopCat.disk.{u} l}
-    (hp : p ∈ {q : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖q.1.down.1‖ = 1 ∨ q.2 = diskCenter l}) :
+    (hp : p ∈ {q : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖q.1.down.val‖ = 1 ∨ q.2 = diskCenter l})
+        :
     handleCoreRetraction k l p = p := by
   have hmem : handleCylinderPoint p ∈
       cylinderExtensionDomain (Subtype.val ⁻¹' sphere (0 : EuclideanSpace ℝ (Fin k)) 1) := by
@@ -144,8 +147,8 @@ theorem handleCoreRetraction_apply_of_mem {p : TopCat.disk.{u} k × TopCat.disk.
     rfl
   · rw [coe_handleCoreRetraction_snd, h]
     -- The height of `handleCylinderPoint p` is `‖y‖` by definition.
-    change (‖p.2.down.1‖ / ‖p.2.down.1‖) • p.2.down.1 = p.2.down.1
-    rcases eq_or_ne p.2.down.1 0 with h0 | h0
+    change (‖p.2.down.val‖ / ‖p.2.down.val‖) • p.2.down.val = p.2.down.val
+    rcases eq_or_ne p.2.down.val 0 with h0 | h0
     · simp [h0]
     · rw [div_self (norm_ne_zero_iff.2 h0), one_smul]
 
@@ -167,7 +170,7 @@ theorem handleCoreRetraction_diskCenter (x : TopCat.disk.{u} k) :
 region `∂D^k × D^l` and the core `D^k × {0}` of the handle. -/
 theorem handleCoreRetraction_mem (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
     handleCoreRetraction k l p ∈
-      {q : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖q.1.down.1‖ = 1 ∨ q.2 = diskCenter l} := by
+      {q : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖q.1.down.val‖ = 1 ∨ q.2 = diskCenter l} := by
   rcases (ballRadialProjection_spec (handleCylinderPoint p)).2.2 with h0 | hs
   · refine Or.inr (ULift.ext (Subtype.ext ?_))
     rw [coe_handleCoreRetraction_snd, h0, zero_div, zero_smul, coe_diskCenter_down]
@@ -178,17 +181,19 @@ homotopy from the identity of `D^k × D^l` to `TauCeti.TopCat.handleCoreRetracti
 the union `D^k × {0} ∪ ∂D^k × D^l` of the core and the attaching region. -/
 def handleCoreHomotopy (k l : ℕ) :
     (ContinuousMap.id (TopCat.disk.{u} k × TopCat.disk.{u} l)).HomotopyRel
-      (handleCoreRetraction k l) {p | ‖p.1.down.1‖ = 1 ∨ p.2 = diskCenter l} where
+      (handleCoreRetraction k l) {p | ‖p.1.down.val‖ = 1 ∨ p.2 = diskCenter l} where
   toFun q :=
-    (ULift.up ⟨(1 - (q.1 : ℝ)) • q.2.1.down.1 +
-          (q.1 : ℝ) • (handleCoreRetraction k l q.2).1.down.1,
-        convex_closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 q.2.1.down.2
-          (handleCoreRetraction k l q.2).1.down.2 (sub_nonneg.2 q.1.2.2) q.1.2.1
+    (ULift.up ⟨(1 - (q.1 : ℝ)) • q.2.1.down.val +
+          (q.1 : ℝ) • (handleCoreRetraction k l q.2).1.down.val,
+        convex_closedBall (0 : EuclideanSpace ℝ (Fin k)) 1 q.2.1.down.property
+          (handleCoreRetraction k l q.2).1.down.property (sub_nonneg.2 q.1.property.2)
+              q.1.property.1
           (sub_add_cancel 1 _)⟩,
-      ULift.up ⟨(1 - (q.1 : ℝ)) • q.2.2.down.1 +
-          (q.1 : ℝ) • (handleCoreRetraction k l q.2).2.down.1,
-        convex_closedBall (0 : EuclideanSpace ℝ (Fin l)) 1 q.2.2.down.2
-          (handleCoreRetraction k l q.2).2.down.2 (sub_nonneg.2 q.1.2.2) q.1.2.1
+      ULift.up ⟨(1 - (q.1 : ℝ)) • q.2.2.down.val +
+          (q.1 : ℝ) • (handleCoreRetraction k l q.2).2.down.val,
+        convex_closedBall (0 : EuclideanSpace ℝ (Fin l)) 1 q.2.2.down.property
+          (handleCoreRetraction k l q.2).2.down.property (sub_nonneg.2 q.1.property.2)
+              q.1.property.1
           (sub_add_cancel 1 _)⟩)
   continuous_toFun := by
     refine Continuous.prodMk (continuous_uliftUp.comp (Continuous.subtype_mk ?_ _))
@@ -201,11 +206,11 @@ def handleCoreHomotopy (k l : ℕ) :
     have h := handleCoreRetraction_apply_of_mem hp
     -- The time-`t` slice of the homotopy is the straight-line formula, coordinatewise.
     refine Prod.ext (ULift.ext (Subtype.ext ?_)) (ULift.ext (Subtype.ext ?_))
-    · change (1 - (t : ℝ)) • p.1.down.1 + (t : ℝ) • (handleCoreRetraction k l p).1.down.1 =
-        p.1.down.1
+    · change (1 - (t : ℝ)) • p.1.down.val + (t : ℝ) • (handleCoreRetraction k l p).1.down.val =
+        p.1.down.val
       rw [h, ← add_smul, sub_add_cancel, one_smul]
-    · change (1 - (t : ℝ)) • p.2.down.1 + (t : ℝ) • (handleCoreRetraction k l p).2.down.1 =
-        p.2.down.1
+    · change (1 - (t : ℝ)) • p.2.down.val + (t : ℝ) • (handleCoreRetraction k l p).2.down.val =
+        p.2.down.val
       rw [h, ← add_smul, sub_add_cancel, one_smul]
 
 /-- The homotopy `TauCeti.TopCat.handleCoreHomotopy` fixes the attaching region of the handle. -/
@@ -234,7 +239,7 @@ map to a space `Q` given by `a` on the attaching region and by `c` on the core. 
 is `c` of the first coordinate, a value that plays no role. -/
 private def coreAttachmentValue {Q : Type*} (a : TopCat.diskBoundary.{u} k × TopCat.disk.{u} l → Q)
     (c : TopCat.disk.{u} k → Q) (p : TopCat.disk.{u} k × TopCat.disk.{u} l) : Q :=
-  if h : ‖p.1.down.1‖ = 1 then a (ULift.up ⟨p.1.down.1, mem_sphere_zero_iff_norm.2 h⟩, p.2)
+  if h : ‖p.1.down.val‖ = 1 then a (ULift.up ⟨p.1.down.val, mem_sphere_zero_iff_norm.2 h⟩, p.2)
   else c p.1
 
 /-- On the attaching region, `coreAttachmentValue a c` is `a`. -/
@@ -260,26 +265,27 @@ private lemma continuousOn_coreAttachmentValue {Q : Type*} [TopologicalSpace Q]
     {a : TopCat.diskBoundary.{u} k × TopCat.disk.{u} l → Q} {c : TopCat.disk.{u} k → Q}
     (ha : Continuous a) (hc : Continuous c)
     (hac : ∀ s, a (s, diskCenter l) = c (TopCat.diskBoundaryInclusion k s)) :
-    ContinuousOn (coreAttachmentValue a c) {p | ‖p.1.down.1‖ = 1 ∨ p.2 = diskCenter l} := by
-  have hx : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ ‖p.1.down.1‖ :=
-    continuous_norm.comp (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_fst))
-  have hS : IsClosed {p : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖p.1.down.1‖ = 1} :=
+    ContinuousOn (coreAttachmentValue a c) {p | ‖p.1.down.val‖ = 1 ∨ p.2 = diskCenter l} := by
+  have hx : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ ‖p.1.down.val‖ :=
+    continuous_norm.comp (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_fst))
+  have hS : IsClosed {p : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖p.1.down.val‖ = 1} :=
     isClosed_eq hx continuous_const
   have hC : IsClosed {p : TopCat.disk.{u} k × TopCat.disk.{u} l | p.2 = diskCenter l} :=
     isClosed_eq continuous_snd continuous_const
   refine ContinuousOn.union_of_isClosed ?_ ?_ hS hC
   · -- On the attaching region the value is `a`, read through the boundary sphere.
     rw [continuousOn_iff_continuous_domRestrict]
-    have hσ : Continuous fun p : {p : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖p.1.down.1‖ = 1} ↦
-        ((ULift.up ⟨p.1.1.down.1, mem_sphere_zero_iff_norm.2 p.2⟩ : TopCat.diskBoundary.{u} k),
-          p.1.2) := by
+    have hσ : Continuous fun p : {p : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖p.1.down.val‖ = 1} ↦
+        ((ULift.up ⟨p.val.1.down.val, mem_sphere_zero_iff_norm.2 p.property⟩ :
+            TopCat.diskBoundary.{u} k),
+          p.val.2) := by
       refine Continuous.prodMk (continuous_uliftUp.comp (Continuous.subtype_mk ?_ _)) (by fun_prop)
       fun_prop
     refine (ha.comp hσ).congr fun p ↦ ?_
     simp only [Set.domRestrict_apply, coreAttachmentValue]
     split_ifs with h
     · rfl
-    · exact absurd p.2 h
+    · exact absurd p.property h
   · -- On the core the value is `c` of the first coordinate.
     refine (hc.comp continuous_fst).continuousOn.congr fun p hp ↦ ?_
     obtain ⟨x, y⟩ := p
@@ -416,7 +422,7 @@ theorem exists_coreAttachment_deformation
   obtain ⟨K, hKj, hKχ⟩ := exists_handleAttachment_homotopy hP
   -- On the union of the attaching region and the core, `Φ` undoes the collapse of a handle.
   have hΦG (i : ι) {p : TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i)}
-      (hp : ‖p.1.down.1‖ = 1 ∨ p.2 = diskCenter (l i)) :
+      (hp : ‖p.1.down.val‖ = 1 ∨ p.2 = diskCenter (l i)) :
       Φ (coreAttachmentValue (fun p ↦ j' (α i p)) (χ' i) p) = χ i p := by
     obtain ⟨x, y⟩ := p
     rcases hp with hx | rfl

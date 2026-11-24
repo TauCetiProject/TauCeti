@@ -12,7 +12,6 @@ import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.Order.Compact
 import Mathlib.Basic.Complex.BigOperators
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
 /-!
 # Proximity and straight-line homotopy invariance for absolutely continuous curves
@@ -67,19 +66,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
     (LipschitzWith.const z).lipschitzOnWith.absolutelyContinuousOnInterval
   have hα₀ := h₀.fun_sub hconst
   have hα₁ := h₁.fun_sub hconst
-  have hlog := (hα₁.fun_div hα₀ h₀ne).clog hσslit
-  have hlogderiv : ∀ᵐ t, t ∈ uIoc a b →
-      HasDerivAt (fun t ↦ Complex.log ((γ₁ t - z) / (γ₀ t - z)))
-        ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
-    filter_upwards [hα₁.boundedVariationOn.ae_hasDerivAt_clog_div hα₀.boundedVariationOn
-      hσslit] with t ht ht'
-    simpa [div_eq_inv_mul] using ht ht'
-  -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
-  have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
+  have hint := hα₁.integral_deriv_div_sub_integral_deriv_div_eq_log_div_sub_log_div hα₀ hσslit
   simp only [hends, sub_self] at hint
-  have hint₀ := h₀.intervalIntegrable_inv_sub_mul_deriv h₀off
-  have hint₁ := h₁.intervalIntegrable_inv_sub_mul_deriv h₁off
-  rw [intervalIntegral.integral_sub hint₁ hint₀] at hint
+  simp only [deriv_sub_const, div_eq_inv_mul] at hint
   rw [h₁.windingNumber_eq_integral h₁off,
     h₀.windingNumber_eq_integral h₀off]
   exact congrArg ((2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ·) (sub_eq_zero.mp hint)

@@ -72,7 +72,7 @@ private def extendOverCells (G : C(Z × (skeletonLT C n : Set X), Y))
   if h : ∃ j : cell C n, (p.2 : X) ∈ openCell n j then
     K h.choose (p.1, ⟨(map n h.choose).symm p.2,
       ball_subset_closedBall (map_symm_mem_ball _ h.choose_spec)⟩)
-  else G (p.1, ⟨p.2, mem_skeletonLT_of_forall_notMem_openCell _ p.2.2 (not_exists.1 h)⟩)
+  else G (p.1, ⟨p.2, mem_skeletonLT_of_forall_notMem_openCell _ p.2.property (not_exists.1 h)⟩)
 
 variable {G : C(Z × (skeletonLT C n : Set X), Y)}
   {K : cell C n → C(Z × closedBall (0 : Fin n → ℝ) 1, Y)}
@@ -88,7 +88,8 @@ private lemma extendOverCells_map
       K j (z, y) = G (z, ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩))
     (j : cell C n) (z : Z) (y : closedBall (0 : Fin n → ℝ) 1) :
     extendOverCells G K
-      (z, ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩) = K j (z, y) := by
+      (z, ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property)⟩) = K j (z,
+          y) := by
   by_cases hy : (y : Fin n → ℝ) ∈ ball 0 1
   · have hmem : map n j y ∈ openCell n j := ⟨y, hy, rfl⟩
     -- The open cell containing `map n j y` is the one of `j`, and `y` is recovered from its
@@ -106,7 +107,7 @@ private lemma extendOverCells_map
     rw [extendOverCells, dite_eq_left h]
     exact key _ h.choose_spec
   · have hs : (y : Fin n → ℝ) ∈ sphere 0 1 :=
-      mem_sphere.2 (le_antisymm (mem_closedBall.1 y.2) (not_lt.1 fun h ↦ hy (mem_ball.2 h)))
+      mem_sphere.2 (le_antisymm (mem_closedBall.1 y.property) (not_lt.1 fun h ↦ hy (mem_ball.2 h)))
     rw [extendOverCells_of_mem _ _ (cellFrontier_subset_skeletonLT n j ⟨y, hs, rfl⟩), hK j z y hs]
 
 variable [LocallyCompactSpace Z]
@@ -123,7 +124,7 @@ theorem exists_continuousMap_prod_skeletonLT_succ
       (∀ z (x : X) (hx : x ∈ (skeletonLT C n : Set X)),
         F (z, ⟨x, skeletonLT_mono (by exact_mod_cast n.le_succ) hx⟩) = G (z, ⟨x, hx⟩)) ∧
       ∀ j z (y : closedBall (0 : Fin n → ℝ) 1),
-        F (z, ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩) =
+        F (z, ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property)⟩) =
           K j (z, y) := by
   refine ⟨⟨extendOverCells G K, ?_⟩, fun z x hx ↦ extendOverCells_of_mem z _ hx,
     extendOverCells_map hK⟩
@@ -132,7 +133,8 @@ theorem exists_continuousMap_prod_skeletonLT_succ
   · rcases lt_or_ge m n with hmn | hmn
     · -- A cell of dimension below `n` lies in the `n`-skeleton, where the map is `G`.
       have hmem (y : closedBall (0 : Fin m → ℝ) 1) : map m j y ∈ (skeletonLT C n : Set X) :=
-        skeletonLT_mono (by exact_mod_cast hmn) (closedCell_subset_skeletonLT m j ⟨y, y.2, rfl⟩)
+        skeletonLT_mono (by exact_mod_cast hmn) (closedCell_subset_skeletonLT m j ⟨y, y.property,
+            rfl⟩)
       exact Continuous.congr (G.continuous.comp (continuous_fst.prodMk
         (((continuous_map_closedBall j).comp continuous_snd).subtype_mk fun p ↦ hmem p.2)))
         fun p ↦ (extendOverCells_of_mem p.1 ⟨_, _⟩ (hmem p.2)).symm
@@ -141,9 +143,10 @@ theorem exists_continuousMap_prod_skeletonLT_succ
       obtain rfl : m = n := le_antisymm (Nat.lt_succ_iff.1 (by
         simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hj)) hmn
       exact (K j).continuous.congr fun p ↦ (extendOverCells_map hK j p.1 p.2).symm
-  · have hmem (d : D) : (d : X) ∈ (skeletonLT C n : Set X) := (skeletonLT C n).base_subset d.2
+  · have hmem (d : D) : (d : X) ∈ (skeletonLT C n : Set X) :=
+      (skeletonLT C n).base_subset d.property
     exact Continuous.congr (G.continuous.comp (continuous_fst.prodMk
-      ((continuous_subtype_val.comp continuous_snd).subtype_mk fun p ↦ hmem p.2)))
+      ((continuous_subtypeVal.comp continuous_snd).subtype_mk fun p ↦ hmem p.2)))
       fun p ↦ (extendOverCells_of_mem p.1 ⟨_, _⟩ (hmem p.2)).symm
 
 end Step
@@ -158,9 +161,9 @@ theorem exists_continuousMap_closedCell_comp_map {n : ℕ} (j : cell C n)
     (hψ : ∀ y (hy : y ∈ sphere (0 : Fin n → ℝ) 1),
       ψ y = f ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) :
     ∃ L : C(closedCell n j, Y), ∀ y : closedBall (0 : Fin n → ℝ) 1,
-      L ⟨map n j y, y, y.2, rfl⟩ = ψ y := by
+      L ⟨map n j y, y, y.property, rfl⟩ = ψ y := by
   let q : C(closedBall (0 : Fin n → ℝ) 1, closedCell n j) :=
-    ⟨fun y ↦ ⟨map n j y, y, y.2, rfl⟩, (continuous_map_closedBall j).subtype_mk _⟩
+    ⟨fun y ↦ ⟨map n j y, y, y.property, rfl⟩, (continuous_map_closedBall j).subtype_mk _⟩
   have hq : IsQuotientMap q :=
     .of_surjective_continuous (fun ⟨_, y, hy, hyx⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hyx⟩) q.continuous
   have hwd : Function.FactorsThrough (fun y : closedBall (0 : Fin n → ℝ) 1 ↦ ψ y) q := by
@@ -168,7 +171,7 @@ theorem exists_continuousMap_closedCell_comp_map {n : ℕ} (j : cell C n)
     have hab' : map n j a = map n j b := congrArg Subtype.val hab
     have hsph (c : closedBall (0 : Fin n → ℝ) 1) :
         ‖(c : Fin n → ℝ)‖ < 1 ∨ (c : Fin n → ℝ) ∈ sphere (0 : Fin n → ℝ) 1 :=
-      (mem_closedBall_zero_iff.1 c.2).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
+      (mem_closedBall_zero_iff.1 c.property).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
     rcases hsph a with ha | ha <;> rcases hsph b with hb | hb
     · simp only [((map_eq_map_iff ha hb).1 hab').2]
     · exact absurd (hab' ▸ cellFrontier_subset_skeletonLT n j ⟨b, hb, rfl⟩)
@@ -205,8 +208,8 @@ variable (F) in
 /-- The map on `Z × C` glued from a family of maps on the products of `Z` with the skeleta: at a
 point of `C` it is the value of the map on any skeleton containing that point. -/
 private def glued (p : Z × C) : Y :=
-  F (exists_mem_skeletonLT_add k p.2.2).choose
-    (p.1, ⟨p.2, (exists_mem_skeletonLT_add k p.2.2).choose_spec⟩)
+  F (exists_mem_skeletonLT_add k p.2.property).choose
+    (p.1, ⟨p.2, (exists_mem_skeletonLT_add k p.2.property).choose_spec⟩)
 
 private lemma glued_apply
     (hF : ∀ j z (x : X) (hx : x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X)),
@@ -214,7 +217,7 @@ private lemma glued_apply
     (j : ℕ) (z : Z) (x : C) (hx : (x : X) ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X)) :
     glued F (z, x) = F j (z, ⟨x, hx⟩) := by
   rw [glued]
-  rcases le_total (exists_mem_skeletonLT_add k x.2).choose j with h | h
+  rcases le_total (exists_mem_skeletonLT_add k x.property).choose j with h | h
   · exact (apply_of_le hF h z _).symm
   · exact apply_of_le hF h z hx
 
@@ -235,14 +238,14 @@ theorem exists_continuousMap_prod_complex_of_skeletonLT [LocallyCompactSpace Z]
     have hmem (y : closedBall (0 : Fin m → ℝ) 1) :
         map m j y ∈ (skeletonLT C ((k + (m + 1) : ℕ) : ℕ∞) : Set X) :=
       skeletonLT_mono (by exact_mod_cast Nat.le_add_left (m + 1) k)
-        (closedCell_subset_skeletonLT m j ⟨y, y.2, rfl⟩)
+        (closedCell_subset_skeletonLT m j ⟨y, y.property, rfl⟩)
     exact ((F (m + 1)).continuous.comp (continuous_fst.prodMk
       (((continuous_map_closedBall j).comp continuous_snd).subtype_mk fun p ↦ hmem p.2))).congr
       fun p ↦ (glued_apply hF (m + 1) p.1 ⟨_, _⟩ (hmem p.2)).symm
   · have hmem (d : D) : (d : X) ∈ (skeletonLT C ((k + 0 : ℕ) : ℕ∞) : Set X) :=
-      (skeletonLT C _).base_subset d.2
+      (skeletonLT C _).base_subset d.property
     exact ((F 0).continuous.comp (continuous_fst.prodMk
-      ((continuous_subtype_val.comp continuous_snd).subtype_mk fun p ↦ hmem p.2))).congr
+      ((continuous_subtypeVal.comp continuous_snd).subtype_mk fun p ↦ hmem p.2))).congr
       fun p ↦ (glued_apply hF 0 p.1 ⟨_, _⟩ (hmem p.2)).symm
 
 end Glue

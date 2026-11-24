@@ -80,7 +80,7 @@ theorem annihilator_eq_map [CommSemiring A] [Algebra R A] [IsLocalization S A] [
   -- The product `u` of the `t m` over the generators multiplies `r` into `Ann_R(M)`, so
   -- `r / s = (u * r) / (u * s)` lies in the extension of `Ann_R(M)`.
   rw [IsLocalization.mk'_mem_map_algebraMap_iff]
-  refine ⟨∏ m ∈ T, (t m : R), S.prod_mem fun m _ ↦ (t m).2, ?_⟩
+  refine ⟨∏ m ∈ T, (t m : R), S.prod_mem fun m _ ↦ (t m).property, ?_⟩
   rw [← Submodule.annihilator_top, ← hT, Submodule.mem_annihilator_span]
   rintro ⟨m, hm⟩
   obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem (fun m ↦ (t m : R)) hm
@@ -108,7 +108,7 @@ theorem map_annihilator_span_singleton (a : R) :
       IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.mk'_eq_zero_iff] at hy
     obtain ⟨t, ht⟩ := hy
     rw [IsLocalization.mk'_mem_map_algebraMap_iff]
-    refine ⟨t, t.2, ?_⟩
+    refine ⟨t, t.property, ?_⟩
     rw [Ideal.span, mem_annihilator_span_singleton, smul_eq_mul, mul_assoc, mul_comm x, ht]
 
 end IsLocalization

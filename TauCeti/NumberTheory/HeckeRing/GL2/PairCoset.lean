@@ -78,8 +78,8 @@ Membership in `Δ` is the point of the definition: it is what lets the product n
 private noncomputable def pairRep (p : DecompQuotient Γ₂ Γ₁ (D₁.out : GL (Fin 2) ℚ)⁻¹ ×
     DecompQuotient Γ₃ Γ₂ (D₂.out : GL (Fin 2) ℚ)⁻¹) : Δ :=
   ⟨rightCosetRep D₁ p.1 * rightCosetRep D₂ p.2, mul_mem
-    (IsHeckeTriple.mem_of_mem_doubleCoset (D₁.out).2 (rightCosetRep_mem_doubleCoset D₁ p.1))
-    (IsHeckeTriple.mem_of_mem_doubleCoset (D₂.out).2 (rightCosetRep_mem_doubleCoset D₂ p.2))⟩
+    (IsHeckeTriple.mem_of_mem_doubleCoset (D₁.out).property (rightCosetRep_mem_doubleCoset D₁ p.1))
+    (IsHeckeTriple.mem_of_mem_doubleCoset (D₂.out).property (rightCosetRep_mem_doubleCoset D₂ p.2))⟩
 
 /-- The underlying matrix of `pairRep` is the product of the two right-coset
 representatives. -/
@@ -139,7 +139,7 @@ nonemptiness is what identifies the support of the Hecke structure constants dow
 abbrev PairCosetFiber (D₁ : HeckeCoset Δ Γ₁ Γ₂) (D₂ : HeckeCoset Δ Γ₂ Γ₃)
     (D : HeckeCoset Δ Γ₁ Γ₃) (x : GL (Fin 2) ℚ) : Type :=
   {i : {q // pairCoset D₁ D₂ q = D} //
-    MulOpposite.op (rightCosetRep D₁ i.1.1 * rightCosetRep D₂ i.1.2) •
+    MulOpposite.op (rightCosetRep D₁ i.val.1 * rightCosetRep D₂ i.val.2) •
         (Γ₁ : Set (GL (Fin 2) ℚ)) = MulOpposite.op x • (Γ₁ : Set (GL (Fin 2) ℚ))}
 
 /-- **Each right coset of a double coset `D` is met by Shimura's multiplicity `m(D₁, D₂; D)`

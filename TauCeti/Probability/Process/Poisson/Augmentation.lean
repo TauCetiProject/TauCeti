@@ -116,13 +116,7 @@ theorem nullAugment (h : IsFilteredPoissonProcess ℱ α N P) :
   stronglyAdapted t := (h.stronglyAdapted t).mono (ℱ.le_nullAugment P t)
   eval_zero_ae_eq_zero := P.ae_completion.symm ▸ h.eval_zero_ae_eq_zero
   hasLaw_sub _ _ hst := (h.hasLaw_sub hst).completion
-  indep_sub s t hst := by
-    have hind : Indep (.comap (N t - N s) inferInstance) (ℱ.nullAugment P s) P := by
-      rw [Filtration.nullAugment_apply]
-      exact (h.indep_sub hst).eventuallyMeasurableSpace_right
-    -- `NullMeasurableSpace Ω P` is definitionally `Ω` with ambient measurable space
-    -- `eventuallyMeasurableSpace mΩ (ae P)`, so `indep_completion_iff` transports `hind` directly.
-    exact indep_completion_iff.mpr hind
+  indep_sub _ _ hst := (h.indep_sub hst).nullAugment_right
 
 /-- The entire future increment process `(N (s + v) - N s)_v` of a filtered Poisson process is
 independent of the right-continuous past `ℱ.rightCont s`. -/

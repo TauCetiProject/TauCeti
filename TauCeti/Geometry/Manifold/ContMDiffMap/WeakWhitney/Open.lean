@@ -72,12 +72,12 @@ theorem chartIteratedFDeriv_opens_apply
         -- Opens uses a membership carrier; expose its underlying set for the target equality.
         change (z : E) ∈ (U : Set E)
         rw [← Opens.extChartAt_opens_target (𝕜 := 𝕜) U x]
-        exact z.2⟩ := by
+        exact z.property⟩ := by
   rw [chartIteratedFDeriv_self_target_apply, openIteratedFDerivContinuousMap_apply]
   simp only [Opens.extChartAt_opens_target]
   apply iteratedFDerivWithin_congr _ (by
         rw [← Opens.extChartAt_opens_target (𝕜 := 𝕜) U x]
-        exact z.2)
+        exact z.property)
   intro y hy
   have hc : ((extChartAt 𝓘(𝕜, E) x).symm y : E) = y := by
     simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
@@ -91,13 +91,13 @@ theorem chartIteratedFDeriv_opens_apply
 /-- The family of all open-source derivatives through the prescribed regularity. -/
 def openWeakWhitneyJet (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) :
     (m : {m : ℕ // m ≤ n}) → C(U, E [×(m : ℕ)]→L[𝕜] F) :=
-  fun m ↦ openIteratedFDerivContinuousMap U f m m.2
+  fun m ↦ openIteratedFDerivContinuousMap U f m m.property
 
 /-- Evaluation of the family of open-source derivatives. -/
 @[simp]
 theorem openWeakWhitneyJet_apply (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯)
     (m : {m : ℕ // m ≤ n}) :
-    openWeakWhitneyJet U f m = openIteratedFDerivContinuousMap U f m m.2 := by
+    openWeakWhitneyJet U f m = openIteratedFDerivContinuousMap U f m m.property := by
   rfl
 
 /-- Every native chart-derivative map is open-source differentiation followed by restriction
@@ -153,8 +153,8 @@ theorem continuous_openWeakWhitneyJet :
       ⟨(Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm,
         (Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm.continuous⟩
     exact ((ContinuousMap.continuous_precomp toTarget).comp
-      (continuous_chartIteratedFDeriv x m m.2)).congr fun f ↦
-        (openIteratedFDerivContinuousMap_eq U f x m m.2).symm
+      (continuous_chartIteratedFDeriv x m m.property)).congr fun f ↦
+        (openIteratedFDerivContinuousMap_eq U f x m m.property).symm
 
 /-- The open-source jet induces precisely the native manifold weak Whitney topology. -/
 theorem isInducing_openWeakWhitneyJet :
@@ -258,7 +258,7 @@ theorem exists_openWeakWhitneyJet_eq_of_tendsto
         using ht
   let H : C^(r : ℕ∞ω)⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯ :=
     ⟨fun x ↦ h x, fun x ↦ contMDiffAt_subtype_iff.mpr
-      ((hh.contDiffOn x x.2).contDiffAt (U.isOpen.mem_nhds x.2)).contMDiffAt⟩
+      ((hh.contDiffOn x x.property).contDiffAt (U.isOpen.mem_nhds x.property)).contMDiffAt⟩
   refine ⟨H, funext fun m ↦ ?_⟩
   apply ContinuousMap.ext
   intro x
@@ -266,9 +266,10 @@ theorem exists_openWeakWhitneyJet_eq_of_tendsto
   have heq : EqOn (Function.extend Subtype.val H (fun _ ↦ 0)) h U := by
     intro y hy
     exact Subtype.val_injective.extend_apply H (fun _ ↦ 0) ⟨y, hy⟩
-  rw [iteratedFDerivWithin_congr heq x.2]
-  exact (hh.eq_iteratedFDerivWithin_of_uniqueDiffOn m.2 U.isOpen.uniqueDiffOn x.2).symm.trans
-    (hp m m.2 x)
+  rw [iteratedFDerivWithin_congr heq x.property]
+  exact (hh.eq_iteratedFDerivWithin_of_uniqueDiffOn m.property U.isOpen.uniqueDiffOn
+      x.property).symm.trans
+    (hp m m.property x)
 
 /-- The native weak Whitney map space on an open source is the closed image of its derivative jet.
 No completeness of the target is required for this closed-image statement. -/

@@ -92,7 +92,7 @@ noncomputable def indexGradedPieceD1X (q p n : ℤ) :
         _ fun f ↦ (mem_rowFiniteTotalGrading_iff ℳ _).2 fun y ↦ by
       have h := (mem_rowFiniteTotalGrading_iff ℳ ind).1
         ((m.isHomogeneous_coefficientDifferential hM).map_mem
-          (mapDomain_subtypeVal_mem_rowFiniteTotalGrading f.2)) y.1
+          (mapDomain_subtypeVal_mem_rowFiniteTotalGrading f.property)) y.val
       -- Restriction to the generators of index `q` evaluates at the underlying generator.
       exact h) ∘ₗ
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n).toLinearMap
@@ -151,7 +151,7 @@ theorem d_indexGradedPieceD1X (q p : ℤ) (hqp : q + 1 = p) (n : ℤ)
       (m.coefficientDifferential_mapDomain_apply_eq_zero hM hm q p hqp n f hf)
   -- At a generator of index `q`, the coefficient differential of the restricted family is the
   -- twisted differential of the twisted differential, which vanishes.
-  have key := m.coefficientDifferential_apply_of_eq hM hm hF y.2
+  have key := m.coefficientDifferential_apply_of_eq hM hm hF y.property
   rw [m.coefficientDifferential_sq_zero] at key
   rw [rowFiniteIndexGradedPieceComplexXEquiv_d]
   simpa using key.symm
@@ -169,8 +169,8 @@ theorem rowFiniteIndexGradedPieceComplexXEquiv_indexGradedPieceD1X_single_apply 
         (shiftedModuleComplexXEquiv hM (b + 1) n α : M) := by
   classical
   have hyx : (y : P) ≠ x := fun h ↦ by
-    have h₁ := x.2
-    rw [← h, y.2] at h₁
+    have h₁ := x.property
+    rw [← h, y.property] at h₁
     omega
   set α₀ := (shiftedModuleComplexXEquiv hM (b + 1) n α : M)
   -- The row of `x` evaluated at `y`.
@@ -184,9 +184,9 @@ theorem rowFiniteIndexGradedPieceComplexXEquiv_indexGradedPieceD1X_single_apply 
   rw [rowFiniteIndexGradedPieceComplexXEquiv_indexGradedPieceD1X_apply,
     rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingle_f,
     Finsupp.mapDomain_single,
-    m.coefficientDifferential_single hM x.1 (shiftedModuleComplexXEquiv hM (b + 1) n α).2]
+    m.coefficientDifferential_single hM x.val (shiftedModuleComplexXEquiv hM (b + 1) n α).property]
   rw [Finsupp.add_apply, Finsupp.single_eq_of_ne hyx, zero_add, Finsupp.smul_apply,
-    hsum, koszulTwist_one_eq_negOnePow_smul (shiftedModuleComplexXEquiv hM (b + 1) n α).2]
+    hsum, koszulTwist_one_eq_negOnePow_smul (shiftedModuleComplexXEquiv hM (b + 1) n α).property]
   exact smul_comm _ _ _
 
 omit hm in
@@ -225,7 +225,7 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
       (m.indexSpectralSequenceFirstPageXIsoOfEq hM hm (a + 2, b - 1) (b - 1) b rfl (by omega)
         (a + b + 1) (by simp only; omega)).hom =
     HomologicalComplex.homologyMap (m.indexCokernelIsoOfEq hM hm b (b + 1) rfl).inv (a + b) ≫
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ (a + b) (a + b + 1)
+      (TauCeti.cokernelCompSequence_shortExact _ _).δ (a + b) (a + b + 1)
         rfl ≫
       HomologicalComplex.homologyMap
         (m.indexCokernelIsoOfEq hM hm (b - 1) b (by omega)).hom (a + b + 1) := by
@@ -235,8 +235,6 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
   simp only [indexSpectralSequenceFirstPageXIsoOfEq_eq, Iso.trans_inv, Iso.trans_hom,
     HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom,
     Category.assoc, Iso.inv_hom_id_assoc]
-  congr 1
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))
 
 /-- **A cycle of a graded piece lifts to the index filtration.** A cycle `f` of the graded piece
 of index `b + 1` is the projection of an element `s` of the `(b + 1)`-st stage of the filtration,
@@ -262,7 +260,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
       ⟨(mem_rowFiniteIndexFiltration_iff ind).1
           (mapDomain_subtypeVal_mem_rowFiniteIndexFiltration (R := R) f₀),
         (mem_rowFiniteTotalGrading_iff ℳ ind).1 (mapDomain_subtypeVal_mem_rowFiniteTotalGrading
-          (rowFiniteIndexGradedPieceComplexXEquiv hM (b + 1) (a + b) f).2)⟩
+          (rowFiniteIndexGradedPieceComplexXEquiv hM (b + 1) (a + b) f).property)⟩
   let s' := (m.indexCochainComplexXEquiv hM hm (b + 1) (a + b)).symm ⟨ef, hef_mem⟩
   have hs' : (m.indexCochainComplexXEquiv hM hm (b + 1) (a + b) s' : P →₀ M) = ef :=
     congrArg Subtype.val ((m.indexCochainComplexXEquiv hM hm (b + 1) (a + b)).apply_symm_apply
@@ -277,7 +275,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
         rw [← hds']
         exact (mem_rowFiniteIndexGrading_iff.1 (m.indexCochainComplexXEquiv hM hm (b + 1)
           (a + b + 1) (((m.indexCochainComplex hM hm (b + 1)).d (a + b)
-            (a + b + 1)).hom s')).2).2⟩
+            (a + b + 1)).hom s')).property).2⟩
   let w := (m.indexCochainComplexXEquiv hM hm b (a + b + 1)).symm ⟨_, hw_mem⟩
   have hw : (m.indexCochainComplexXEquiv hM hm b (a + b + 1) w : P →₀ M) =
       m.coefficientDifferential hM ef :=
@@ -415,7 +413,7 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
       (((m.indexCokernelIsoOfEq hM hm b (b + 1) rfl).inv.f (a + b)).hom f) = 0 := by
     rw [HomologicalComplex.Hom.comm_apply]
     exact (congrArg _ hf).trans (map_zero _)
-  obtain ⟨hc, hδ⟩ := exists_δ_kernelCokernelSequence_L₃_eq
+  obtain ⟨hc, hδ⟩ := exists_δ_cokernelCompSequence_eq
     ((m.indexFiltrationFunctor hM hm).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
       (show b = b - 1 + 1 by lia))))

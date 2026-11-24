@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -29,6 +29,15 @@ diffeotopy by an element `f` of the stabilizer gives the `σ`-preserving diffeot
 `f ∘ φ_t ∘ f⁻¹` (`TauCeti.Diffeotopy.transDiffeomorph`), so the subgroup is normal in the
 stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
 
+Stabilizers are natural under intertwining maps: if a smooth map `g : M' → M` satisfies
+`g ∘ f' = f ∘ g` and `f` preserves `σ`, then `f'` preserves `g^* σ`
+(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth`). Applied to the two
+projections of a product, this shows that products `f × f'` of diffeomorphisms preserving `σ` on
+`M` and `τ` on `N` preserve the form `pr₁^* σ + pr₂^* τ` on `M × N`, and products of
+diffeomorphisms in the isotopy stabilizers lie in the isotopy stabilizer of `pr₁^* σ + pr₂^* τ`,
+through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
+
 ## Main definitions
 
 * `TauCeti.SmoothForm.isotopyStabilizer σ`: the final diffeomorphisms of the diffeotopies
@@ -45,6 +54,10 @@ stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
   stabilizer of `σ` (an instance).
+* `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.prodCongr_mem_isotopyStabilizer`: products of form-preserving
+  diffeomorphisms and diffeotopies preserve the sum of the pulled-back forms.
 
 ## References
 
@@ -157,6 +170,52 @@ instance normal_isotopyStabilizer_subgroupOf :
     ((isotopyStabilizer σ).subgroupOf (diffeomorphStabilizer σ)).Normal :=
   (Subgroup.normal_subgroupOf_iff isotopyStabilizer_le_diffeomorphStabilizer).2
     fun _ _ hφ hf ↦ mul_mul_inv_mem_isotopyStabilizer hf hφ
+
+/-! ### Naturality and products -/
+
+section Naturality
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold J' 1 M']
+
+/-- The product `f × f'` of a diffeomorphism `f` of `M` preserving `σ` and a diffeomorphism `f'`
+of `M'` preserving `τ` preserves the form `pr₁^* σ + pr₂^* τ` on `M × M'`. -/
+theorem prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k} {f : M ≃ₘ⟮J, J⟯ M}
+    {f' : M' ≃ₘ⟮J', J'⟯ M'} (hf : f ∈ diffeomorphStabilizer σ)
+    (hf' : f' ∈ diffeomorphStabilizer τ) :
+    f.prodCongr f' ∈ diffeomorphStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  have hfst := mem_diffeomorphStabilizer_mpullback_of_semiconj contMDiff_fst
+    (f' := f.prodCongr f') (fun _ ↦ by rw [Diffeomorph.coe_prodCongr, Prod.map_fst]) hf
+  have hsnd := mem_diffeomorphStabilizer_mpullback_of_semiconj contMDiff_snd
+    (f' := f.prodCongr f') (fun _ ↦ by rw [Diffeomorph.coe_prodCongr, Prod.map_snd]) hf'
+  rw [mem_diffeomorphStabilizer] at hfst hsnd ⊢
+  rw [map_add, hfst, hsnd]
+
+/-- If diffeotopies `φ_t` of `M` and `ψ_t` of `M'` preserve `σ` and `τ` at every time, their
+product `φ_t × ψ_t` preserves `pr₁^* σ + pr₂^* τ` at every time. -/
+theorem timeSlice_prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k}
+    {Φ : Diffeotopy J ∞ M} {Ψ : Diffeotopy J' ∞ M'}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ)
+    (hΨ : ∀ t, Ψ.timeSlice t ∈ diffeomorphStabilizer τ) (t : unitInterval) :
+    (Φ.prodCongr Ψ).timeSlice t ∈ diffeomorphStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  rw [Diffeotopy.timeSlice_prodCongr]
+  exact prodCongr_mem_diffeomorphStabilizer (hΦ t) (hΨ t)
+
+/-- The product `f × f'` of a diffeomorphism `f` in the isotopy stabilizer of `σ` and a
+diffeomorphism `f'` in the isotopy stabilizer of `τ` lies in the isotopy stabilizer of
+`pr₁^* σ + pr₂^* τ`: the product of the two isotopies preserves this form at every time. -/
+theorem prodCongr_mem_isotopyStabilizer {τ : SmoothForm J' M' F k} {f : M ≃ₘ⟮J, J⟯ M}
+    {f' : M' ≃ₘ⟮J', J'⟯ M'} (hf : f ∈ isotopyStabilizer σ) (hf' : f' ∈ isotopyStabilizer τ) :
+    f.prodCongr f' ∈ isotopyStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  obtain ⟨Φ, hΦ, rfl⟩ := hf
+  obtain ⟨Ψ, hΨ, rfl⟩ := hf'
+  exact ⟨Φ.prodCongr Ψ, timeSlice_prodCongr_mem_diffeomorphStabilizer hΦ hΨ,
+    Diffeotopy.final_prodCongr Φ Ψ⟩
+
+end Naturality
 
 end SmoothForm
 

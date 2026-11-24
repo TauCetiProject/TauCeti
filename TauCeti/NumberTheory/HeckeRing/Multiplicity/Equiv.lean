@@ -238,8 +238,8 @@ theorem multiplicity_eq_of_inf {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g h d
       convert conj_mem_of_mk_eq h hq using 1
       simp only [c, Subgroup.coe_mul, Subgroup.coe_inclusion]; group)
   have hzP : ((i.out : G) * g * ((j.out : G) * h))⁻¹ * d ∈ P :=
-    P.mul_mem (P.inv_mem (P.mul_mem (P.mul_mem (hleP i.out.2) hgP)
-      (P.mul_mem (hleP j.out.2) hhP))) hdP
+    P.mul_mem (P.inv_mem (P.mul_mem (P.mul_mem (hleP i.out.property) hgP)
+      (P.mul_mem (hleP j.out.property) hhP))) hdP
   -- Unfold only the pair equivalence `epairs` so its second component is the named quotient `q`
   -- without unfolding `eg` or `q`, and expose the defining fibre equations.
   dsimp only [epairs, Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.prodShear_apply,

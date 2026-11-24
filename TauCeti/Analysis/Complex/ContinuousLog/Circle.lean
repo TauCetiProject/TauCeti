@@ -60,7 +60,7 @@ theorem not_hasContinuousLogOn_zpow_sub_sphere {r : ℝ} (hr : 0 ≤ r) (a : ℂ
     rw [hγdef, circleMap_sub_center, circleMap_zero, Complex.exp_add, ← Complex.ofReal_exp,
       Real.exp_log hr]
   have hc1 : ∀ t, Complex.exp (c t) = 1 := fun t => by
-    rw [hcdef, Complex.exp_sub, heq _ (hγmem t), hγsub, Complex.exp_int_mul,
+    rw [hcdef, Complex.exp_sub, heq _ (hγmem t), hγsub, Complex.exp_intCast_mul,
       div_self (zpow_ne_zero _ (Complex.exp_ne_zero _))]
   have hconst : c 0 = c (2 * π) :=
     eq_of_isPreconnected_of_forall_exp_eq_one (isPreconnected_range hcc)
