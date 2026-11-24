@@ -182,10 +182,13 @@ private theorem simplexPoint_mem_Ioo_of_mem_interior {x : Fin d → ℝ} (j : Fi
     (hx : x ∈ interior (orderedSimplex d)) (k : Fin (d + 1)) :
     0 < simplexPoint x k ∧ simplexPoint x k < 1 := by
   obtain ⟨h0, -, hlast⟩ := mem_interior_orderedSimplex_iff.mp hx
-  have hj : x j ≤ ∑ k, x k := Finset.single_le_sum (fun k _ => (h0 k).le) (Finset.mem_univ j)
   induction k using Fin.lastCases with
-  | last => simp only [simplexPoint_last]; constructor <;> linarith [h0 j, hlast j]
-  | cast k => simp only [simplexPoint_castSucc]; constructor <;> linarith [h0 j, h0 k, hlast k]
+  | last =>
+    have : 0 < ∑ k, x k := Finset.sum_pos (fun k _ => h0 k) ⟨j, Finset.mem_univ j⟩
+    simp only [simplexPoint_last]; constructor <;> linarith [h0 j, hlast j]
+  | cast k =>
+    simp only [simplexPoint_castSucc]
+    constructor <;> linarith [h0 k, lt_one_half_of_mem_interior_orderedSimplex hx k]
 
 /-- Each branch maps the interior of the simplex into itself. -/
 theorem branchMap_mem_interior_orderedSimplex (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -279,6 +282,20 @@ theorem injOn_branchMap (a : ℕ × Fin d) : InjOn (branchMap a) {x | branchDeno
     have := simplexPoint_succAbove_eq_of_branchMap_eq hq hx' h i
     rwa [hi, simplexPoint_castSucc, simplexPoint_castSucc] at this
 
+/-- Let `u` and `v` be monotone, and agree after deleting the coordinates `i < k` respectively.
+If the deleted coordinates are also equal, then `u` is constant on `[i, i + 1]` and `v` is
+constant on `[i, k]`. -/
+private theorem eq_of_succAbove_eq_of_lt {u v : Fin (d + 1) → ℝ} (hu : Monotone u)
+    (hv : Monotone v) {i k : Fin d} (hik : i < k)
+    (hs : ∀ m, u (i.castSucc.succAbove m) = v (k.castSucc.succAbove m))
+    (h : u i.castSucc = v k.castSucc) : u i.castSucc = u i.succ ∧ v i.castSucc = v k.castSucc := by
+  have h₁ := hs i
+  rw [Fin.succAbove_of_le_castSucc _ _ le_rfl,
+    Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr hik)] at h₁
+  have h₂ := hu (Fin.castSucc_le_succ i)
+  have h₃ := hv (Fin.castSucc_le_castSucc_iff.mpr hik.le)
+  constructor <;> linarith
+
 /-- **Letter recovery.** At an interior point `w` of the simplex, the image `F_a (w)` determines
 both the letter `a` and the point `w`, even among the images `F_b (w')` of all points `w'` of the
 simplex. -/
@@ -290,10 +307,8 @@ theorem branchMap_eq_branchMap_iff {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
   have hq := branchDenom_pos_of_mem_orderedSimplex a (interior_subset hx)
   have hq' := branchDenom_pos_of_mem_orderedSimplex b hx'
   have hsum : ∑ i, branchMap a x i = ∑ i, branchMap b x' i := by rw [h]
-  have hxa : x a.2 < 1 / 2 := by
-    have : x a.2 ≤ ∑ k, x k := Finset.single_le_sum (fun k _ => (h0 k).le) (Finset.mem_univ _)
-    linarith [hlast a.2]
-  have hA := fst_eq_of_sum_branchMap_eq (h0 a.2) hxa ((mem_orderedSimplex_iff.mp hx').1 b.2)
+  have hA := fst_eq_of_sum_branchMap_eq (h0 a.2)
+    (lt_one_half_of_mem_interior_orderedSimplex hx a.2) ((mem_orderedSimplex_iff.mp hx').1 b.2)
     (le_one_half_of_mem_orderedSimplex hx' b.2) hsum
   obtain ⟨hj, hqe⟩ := eq_and_branchDenom_eq_of_sum_branchMap_eq hA hq.ne' hq'.ne' hsum
   have hs := simplexPoint_succAbove_eq_of_branchMap_eq hqe hq'.ne' h
@@ -301,23 +316,15 @@ theorem branchMap_eq_branchMap_iff {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
   have hmono' := (mem_orderedSimplex_iff_simplexPoint.mp hx').2
   -- With `A` and `w_j` known, the position of `w_j` among the strictly increasing coordinates
   -- of `w` determines `j`.
+  have hj' : simplexPoint x a.2.castSucc = simplexPoint x' b.2.castSucc := by
+    simpa only [simplexPoint_castSucc] using hj
   have hj₂ : a.2 = b.2 := by
     rcases lt_trichotomy a.2 b.2 with hlt | heq | hlt
-    · have h₁ := hs a.2
-      rw [Fin.succAbove_of_le_castSucc _ _ le_rfl,
-        Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr hlt)] at h₁
-      have h₂ := hmono' (Fin.castSucc_le_castSucc_iff.mpr hlt.le)
-      have h₃ := hmono (Fin.castSucc_lt_succ (i := a.2))
-      simp only [simplexPoint_castSucc] at h₁ h₂ h₃
-      linarith
+    · exact absurd (eq_of_succAbove_eq_of_lt hmono.monotone hmono' hlt hs hj').1
+        (hmono (Fin.castSucc_lt_succ (i := a.2))).ne
     · exact heq
-    · have h₁ := hs b.2
-      rw [Fin.succAbove_of_le_castSucc _ _ le_rfl,
-        Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr hlt)] at h₁
-      have h₂ := hmono' (Fin.castSucc_le_succ b.2)
-      have h₃ := hmono (Fin.castSucc_lt_castSucc_iff.mpr hlt)
-      simp only [simplexPoint_castSucc] at h₁ h₂ h₃
-      linarith
+    · exact absurd (eq_of_succAbove_eq_of_lt hmono' hmono.monotone hlt (fun i => (hs i).symm)
+        hj'.symm).2 (hmono (Fin.castSucc_lt_castSucc_iff.mpr hlt)).ne
   obtain rfl : a = b := Prod.ext hA hj₂
   exact ⟨rfl, injOn_branchMap a hq.ne' hq'.ne' h⟩
 

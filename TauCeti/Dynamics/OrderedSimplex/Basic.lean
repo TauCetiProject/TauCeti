@@ -50,6 +50,8 @@ operators of the accelerated branches act on `C¹` functions.
   with `0 < w₁ < ⋯ < w_{d+1}`.
 * `TauCeti.le_one_half_of_mem_orderedSimplex`, `TauCeti.inv_succ_le_one_sub_sum`: every chart
   coordinate is at most `1 / 2`, and the last coordinate `w_{d+1}` is at least `1 / (d + 1)`.
+* `TauCeti.lt_one_half_of_mem_interior_orderedSimplex`: at interior points every chart coordinate
+  is less than `1 / 2`.
 * `TauCeti.pos_last_of_mem_orderedCone`, `TauCeti.simplexChart_eq_simplexChart_iff`,
   `TauCeti.last_smul_simplexLift_simplexChart`, `TauCeti.image_simplexChart_orderedCone`: the
   normalisation identifies the positive rays of `H_{d+2}` with the points of the chart.
@@ -241,6 +243,14 @@ theorem mem_interior_orderedSimplex_iff {x : Fin d → ℝ} :
     have := h.2.2 i
     simp [Finset.sum_add_distrib, ← Finset.mul_sum] at this
     linarith
+
+/-- Every chart coordinate of an interior point of the ordered simplex is less than `1 / 2`: it is
+less than the last coordinate `w_{d+1}`, and the two have sum at most `1`. -/
+theorem lt_one_half_of_mem_interior_orderedSimplex {x : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d)) (i : Fin d) : x i < 1 / 2 := by
+  obtain ⟨h0, -, hlast⟩ := mem_interior_orderedSimplex_iff.mp hx
+  have : x i ≤ ∑ k, x k := Finset.single_le_sum (fun k _ => (h0 k).le) (Finset.mem_univ i)
+  linarith [hlast i]
 
 /-- The ordered simplex has nonempty interior in `ℝ^d`: the point `wᵢ = 2 i / (n (n - 1))`,
 `n = d + 2`, is an interior point. -/
