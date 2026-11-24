@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # The idele norm of a number field
@@ -121,10 +122,8 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_sel
     (u : (v.adicCompletion K)ˣ) :
     v.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = u :=
   Units.ext <| by
-    classical
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v).trans
-      (Pi.mulSingle_eq_same _ _)
+    exact FiniteAdeleRing.ofAdicCompletion_apply_self K v u
 
 /-- Away from its own place, the finite coordinates of an idele concentrated at a finite place are
 trivial. -/
@@ -134,10 +133,8 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_
     (u : (v.adicCompletion K)ˣ) :
     v'.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
   Units.ext <| by
-    classical
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v').trans
-      (Pi.mulSingle_eq_of_ne h _)
+    exact FiniteAdeleRing.ofAdicCompletion_apply_of_ne K h u
 
 /-- The finite coordinates of a product of ideles, one concentrated at each place of a finite set
 `S` of finite places: the prescribed unit at a place of `S`, and `1` elsewhere. -/
