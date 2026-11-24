@@ -44,6 +44,8 @@ theorems, such as elliptic regularity, give smooth solutions.
   singular support.
 * `Distribution.singularSupport_eq_empty_iff`: the singular support is empty exactly when the
   distribution is a function smooth on `Ω`.
+* `Distribution.singularSupport_mapCLM_subset`: a continuous linear map of the values does not
+  enlarge the singular support.
 
 ## References
 
@@ -140,8 +142,10 @@ theorem singularSupport_add_subset (S T : 𝓓'(Ω, F)) :
   have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
   have hgV := hg.continuousOn.locallyIntegrableOn (μ := volume) hV.measurableSet
   rw [add_apply, hS φ hφU, hT φ hφV, ← integral_add
-    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφU)
-    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφV)]
+    (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      hφU)
+    (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      hφV)]
   simp [smul_add]
 
 /-- The singular support of a finite sum lies in the union of the singular supports. -/
@@ -170,7 +174,8 @@ theorem singularSupport_smul_subset (c : M) (T : 𝓓'(Ω, F)) :
   · have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
     simp_rw [← hcv, ← map_smul]
     exact (ContinuousLinearMap.integral_comp_comm _
-      (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφ)).symm
+      (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn
+        φ.hasCompactSupport hφ)).symm
   · simp [integral_of_not_completeSpace hF]
 
 /-- Multiplication by a unit does not change the singular support. -/
@@ -199,6 +204,24 @@ theorem singularSupport_sub_subset (S T : 𝓓'(Ω, F)) :
     (S - T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
   simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
 
+/-- A continuous linear map of the values does not enlarge the singular support: where `T` is a
+smooth function `f` and `F` is complete, the distribution `A ∘ T` is the smooth function `A ∘ f`;
+if `F` is not complete, `T` and hence `A ∘ T` vanish there. -/
+theorem singularSupport_mapCLM_subset {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    [CompleteSpace F'] (A : F →L[ℝ] F') (T : 𝓓'(Ω, F)) :
+    (mapCLM A T).singularSupport ⊆ T.singularSupport := by
+  refine fun x hx ↦ by_contra fun h ↦ hx.2 ?_
+  obtain ⟨U, hU, hxU, f, hf, hT⟩ := (notMem_singularSupport_iff hx.1).1 h
+  by_cases hF : CompleteSpace F
+  · refine ⟨U, hU, hxU, A ∘ f, A.contDiff.comp_contDiffOn hf, fun φ hφ ↦ ?_⟩
+    have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
+    rw [mapCLM_apply, hT φ hφ]
+    exact (A.integral_comp_comm (hfU.integrable_smul_left_of_hasCompactSupport
+      φ.continuous.continuousOn φ.hasCompactSupport hφ)).symm.trans (by simp)
+  -- Without completeness every integral in `F` is `0`, so `T`, hence `A ∘ T`, vanishes near `x`.
+  refine ⟨U, hU, hxU, fun _ ↦ 0, contDiffOn_const, fun φ hφ ↦ ?_⟩
+  simp [mapCLM_apply, hT φ hφ, integral_of_not_completeSpace hF]
+
 /-! ### The distribution is a smooth function off its singular support -/
 
 section Gluing
@@ -217,7 +240,7 @@ theorem exists_contDiffOn_apply_eq_integral (T : 𝓓'(Ω, F)) :
   by_cases hF : CompleteSpace F
   swap
   · -- Without completeness every integral vanishes, and so does `T` on `W`.
-    refine ⟨0, contDiffOn_const, fun φ hφ ↦ apply_eq_integral_of_locally hW
+    refine ⟨0, contDiffOn_const, fun φ hφ ↦ apply_eq_integral_of_locally
       locallyIntegrableOn_zero (fun x hx ↦ ⟨U ⟨x, hx⟩, hU _, hxU _, fun ψ hψ ↦ ?_⟩) hφ⟩
     simp [hT _ ψ hψ, integral_of_not_completeSpace hF]
   -- The local representatives agree on overlaps, so they glue to `g`.
@@ -228,7 +251,7 @@ theorem exists_contDiffOn_apply_eq_integral (T : 𝓓'(Ω, F)) :
         ((hf x).continuousOn.mono inter_subset_left) ((hf y).continuousOn.mono inter_subset_right)
         (fun φ hφ ↦ (hT x φ (hφ.trans inter_subset_left)).symm.trans
           (hT y φ (hφ.trans inter_subset_right))) ⟨hz.1.2, hz.2⟩) 0
-  refine ⟨g, hgW, fun φ hφ ↦ apply_eq_integral_of_locally hW
+  refine ⟨g, hgW, fun φ hφ ↦ apply_eq_integral_of_locally
     (hgW.continuousOn.locallyIntegrableOn hW.measurableSet)
     (fun x hx ↦ ⟨U ⟨x, hx⟩, hU _, hxU _, fun ψ hψ ↦ ?_⟩) hφ⟩
   rw [hT _ ψ hψ]

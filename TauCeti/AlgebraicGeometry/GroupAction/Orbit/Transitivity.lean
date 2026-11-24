@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Image
 import TauCeti.Topology.JacobsonSpace

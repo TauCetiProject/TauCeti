@@ -13,7 +13,7 @@ import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.GroupAction.Orbit.BaseChange
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 
 /-!
 # Smooth orbit schemes

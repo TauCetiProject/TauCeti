@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Transitivity
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Pullback.Over
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
