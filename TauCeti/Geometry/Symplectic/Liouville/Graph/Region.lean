@@ -93,6 +93,7 @@ compact manifold onto its boundary and `f > 1`, it is an open set bounded by the
 noncomputable def liouvilleGraphRegion : Set M :=
   W ∪ (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) '' {p | p.1 < Real.log (f p.2)}
 
+@[simp]
 theorem mem_liouvilleGraphRegion {x : M} :
     x ∈ liouvilleGraphRegion Z W ι f ↔
       x ∈ W ∨ ∃ t s, t < Real.log (f s) ∧ flowOf Z t (ι s) = x := by
@@ -135,51 +136,6 @@ private theorem union_subset_liouvilleGraphRegion_union :
   · exact Or.inl (flowOf_mem_liouvilleGraphRegion ht)
   · exact Or.inr ⟨s, by rw [liouvilleGraph_apply, ← ht]⟩
 
-open Classical in
-variable (W) in
-/-- The deformation of the region bounded by a Liouville graph onto `W`, given a left inverse `ρ`
-of the flow-out `Φ` on its range: at time `τ`, a point `x = Φ(t, s)` outside `W` goes to
-`Φ(τ t, s)`, and `W` is fixed. -/
-private noncomputable def graphRegionDeformation (Φ : ℝ × S → M) (ρ : M → ℝ × S)
-    (q : unitInterval × M) : M :=
-  if q.2 ∈ W then q.2 else Φ ((q.1 : ℝ) * (ρ q.2).1, (ρ q.2).2)
-
-omit [TopologicalSpace M] in
-/-- Along the flow-out, the deformation pulls a point back along its trajectory as long as it is
-outside `W`, at positive times, and fixes the points of `W`, at nonpositive times. -/
-private theorem graphRegionDeformation_apply {Φ : ℝ × S → M} {ρ : M → ℝ × S}
-    (hρ : ∀ p, ρ (Φ p) = p) (hΦW : ∀ p, Φ p ∈ W ↔ p.1 ≤ 0) (τ : unitInterval) (p : ℝ × S) :
-    graphRegionDeformation W Φ ρ (τ, Φ p) = Φ (min p.1 ((τ : ℝ) * p.1), p.2) := by
-  have h₁ := unitInterval.le_one τ
-  rw [graphRegionDeformation, hρ]
-  split_ifs with hp
-  · rw [min_eq_left (by nlinarith [(hΦW p).1 hp])]
-  · rw [min_eq_right (by nlinarith [not_le.1 (mt (hΦW p).2 hp)])]
-
-omit [TopologicalSpace M] in
-/-- The deformation fixes the points of `W`. -/
-private theorem graphRegionDeformation_of_mem {Φ : ℝ × S → M} {ρ : M → ℝ × S} (τ : unitInterval)
-    {x : M} (hx : x ∈ W) : graphRegionDeformation W Φ ρ (τ, x) = x :=
-  ite_eq_left hx
-
-/-- The deformation keeps the region, ends in `W` and starts at the identity. -/
-private theorem graphRegionDeformation_spec {Φ : ℝ × S → M} {ρ : M → ℝ × S}
-    (hΦdef : Φ = fun p ↦ flowOf Z p.1 (ι p.2)) (hρ : ∀ p, ρ (Φ p) = p)
-    (hΦW : ∀ p, Φ p ∈ W ↔ p.1 ≤ 0)
-    (hU : ∀ x ∈ liouvilleGraphRegion Z W ι f, x ∉ W →
-      ∃ t s, 0 < t ∧ t < Real.log (f s) ∧ Φ (t, s) = x)
-    {x : M} (hx : x ∈ liouvilleGraphRegion Z W ι f) (τ : unitInterval) :
-    graphRegionDeformation W Φ ρ (τ, x) ∈ liouvilleGraphRegion Z W ι f ∧
-      graphRegionDeformation W Φ ρ (0, x) ∈ W ∧ graphRegionDeformation W Φ ρ (1, x) = x := by
-  by_cases hxW : x ∈ W
-  · simp only [graphRegionDeformation_of_mem _ hxW]
-    exact ⟨hx, hxW, trivial⟩
-  obtain ⟨t, s, ht₀, ht, rfl⟩ := hU x hx hxW
-  simp only [graphRegionDeformation_apply hρ hΦW]
-  refine ⟨?_, (hΦW _).2 (by simp [ht₀.le]), by simp⟩
-  subst hΦdef
-  exact flowOf_mem_liouvilleGraphRegion ((min_le_left _ _).trans_lt ht)
-
 variable [TopologicalSpace S]
 
 /-- The set of times below the graph is open. -/
@@ -198,46 +154,6 @@ private theorem isCompact_setOf_nonneg_le_log [CompactSpace S] (hf : Continuous 
     ((isClosed_le continuous_const continuous_fst).inter
       (isClosed_le continuous_fst (hlog.comp continuous_snd))) fun p hp ↦
     ⟨⟨hp.1, hp.2.trans (hm (mem_range_self p.2))⟩, mem_univ _⟩
-
-/-- The deformation is continuous on the region: near a point of the interior of `W` it is the
-identity, and on the open flow-out of the times `t < log f(s)` it is the continuous map
-`Φ(t, s) ↦ Φ(min(t, τ t), s)`, read through the left inverse `ρ`. -/
-private theorem continuous_graphRegionDeformation {Φ : ℝ × S → M} {ρ : M → ℝ × S}
-    (hΦdef : Φ = fun p ↦ flowOf Z p.1 (ι p.2)) (hemb : IsOpenEmbedding Φ)
-    (hρ : ∀ p, ρ (Φ p) = p) (hρc : ContinuousOn ρ (range Φ)) (hΦW : ∀ p, Φ p ∈ W ↔ p.1 ≤ 0)
-    (hιW : range ι = frontier W) (hf : Continuous f) (hf₁ : ∀ s, 1 < f s) :
-    Continuous fun q : unitInterval × liouvilleGraphRegion Z W ι f ↦
-      graphRegionDeformation W Φ ρ (q.1, q.2) := by
-  subst hΦdef
-  have hval : Continuous fun q : unitInterval × liouvilleGraphRegion Z W ι f ↦ (q.2 : M) :=
-    continuous_subtypeVal.comp continuous_snd
-  refine continuous_iff_continuousAt.2 fun q ↦ ?_
-  rcases (liouvilleGraphRegion_eq_interior_union hιW hf₁).subset q.2.property with hq | hq
-  · -- Near a point of the interior of `W`, the deformation is the identity.
-    refine hval.continuousAt.congr (Filter.eventuallyEq_of_mem
-      ((isOpen_interior.preimage hval).mem_nhds hq) fun q' hq' ↦ ?_)
-    exact (ite_eq_left (interior_subset hq')).symm
-  · -- On the open flow-out it is read through the left inverse of `Φ`.
-    have hopen : IsOpen ((fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) ''
-        {p | p.1 < Real.log (f p.2)}) :=
-      hemb.isOpenMap _ (isOpen_setOf_lt_log hf hf₁)
-    have hρq : ContinuousAt (fun q' : unitInterval × liouvilleGraphRegion Z W ι f ↦ ρ q'.2) q :=
-      (hρc.continuousAt (hemb.isOpen_range.mem_nhds (image_subset_range _ _ hq))).comp
-        (f := fun q' : unitInterval × liouvilleGraphRegion Z W ι f ↦ (q'.2 : M))
-        hval.continuousAt
-    have hmin : ContinuousAt (fun q' : unitInterval × liouvilleGraphRegion Z W ι f ↦
-        min (ρ q'.2).1 ((q'.1 : ℝ) * (ρ q'.2).1)) q :=
-      hρq.fst.min ((continuous_subtypeVal.comp continuous_fst).continuousAt.mul hρq.fst)
-    have hcont := ContinuousAt.comp (g := fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2))
-      hemb.continuous.continuousAt (hmin.prodMk hρq.snd)
-    refine hcont.congr (Filter.eventuallyEq_of_mem ((hopen.preimage hval).mem_nhds hq)
-      fun q' hq' ↦ ?_)
-    obtain ⟨p, -, hp⟩ := hq'
-    have hp' : flowOf Z p.1 (ι p.2) = (q'.2 : M) := hp
-    have hG := graphRegionDeformation_apply (W := W) hρ hΦW q'.1 p
-    simp only at hG
-    rw [Function.comp_apply, ← hp', hρ p]
-    exact hG.symm
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I (⊤ : ℕ∞) M]
   {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1}
@@ -299,14 +215,6 @@ theorem isOpen_liouvilleGraphRegion [IsManifold J (⊤ : ℕ∞) S] [Boundaryles
 
 /-! ### Closure and compactness -/
 
-/-- The flow-out `(t, s) ↦ φ_t(ι s)` of a continuous map is continuous. -/
-private theorem continuous_flowOf_comp (hι : Continuous ι) :
-    Continuous fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2) := by
-  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
-  rw [flowOf_eq_globalFlow hZs hc]
-  exact (contMDiff_globalFlow_uncurry hc le_rfl hZs).continuous.comp
-    (continuous_fst.prodMk (hι.comp continuous_snd))
-
 omit [TopologicalSpace S] [FiniteDimensional ℝ E] in
 /-- The region bounded by a Liouville graph lies in `W` together with the flow-out of the times
 between the boundary and the graph: the flow-out at negative times stays in `W`. -/
@@ -327,7 +235,7 @@ theorem closure_liouvilleGraphRegion [CompactSpace S] (hι : Continuous ι)
     (hιW : ∀ s, ι s ∈ frontier W) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
     closure (liouvilleGraphRegion Z W ι f) =
       liouvilleGraphRegion Z W ι f ∪ range (liouvilleGraph Z ι f) := by
-  have hΦ := h.continuous_flowOf_comp hZ hc hι
+  have hΦ := continuous_flowOf_comp hc ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hι
   refine Subset.antisymm ((closure_minimal (h.liouvilleGraphRegion_subset_union hZ hc hιW)
     (h.isClosed.union ((isCompact_setOf_nonneg_le_log hf hf₀).image hΦ).isClosed)).trans
     union_subset_liouvilleGraphRegion_union) (union_subset subset_closure ?_)
@@ -347,7 +255,8 @@ the region bounded by the Liouville graph of `f` is compact. -/
 theorem isCompact_closure_liouvilleGraphRegion [CompactSpace S] (hι : Continuous ι)
     (hιW : ∀ s, ι s ∈ frontier W) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
     IsCompact (closure (liouvilleGraphRegion Z W ι f)) := by
-  have hK := (isCompact_setOf_nonneg_le_log hf hf₀).image (h.continuous_flowOf_comp hZ hc hι)
+  have hK := (isCompact_setOf_nonneg_le_log hf hf₀).image
+    (continuous_flowOf_comp hc ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hι)
   exact (h.isCompact.union hK).of_isClosed_subset isClosed_closure
     (closure_minimal (h.liouvilleGraphRegion_subset_union hZ hc hιW)
       (h.isClosed.union hK.isClosed))
@@ -373,58 +282,56 @@ theorem frontier_liouvilleGraphRegion [IsManifold J (⊤ : ℕ∞) S] [Boundaryl
 
 /-- **The region bounded by a Liouville graph deformation retracts onto the Liouville domain.**
 Let `ι : S → M` be a smooth injective immersion onto the boundary of `W` of a boundaryless manifold
-of one dimension less, and `f > 1` continuous. Then there is a retraction `r` of the region bounded
+of one dimension less, and `f > 1`. Then there is a retraction `r` of the region bounded
 by the Liouville graph of `f` onto `W`, and a homotopy from its composite with the inclusion to the
 identity that fixes `W` pointwise: a point `φ_t(ι s)` outside `W` moves along its trajectory,
 through `φ_{τ t}(ι s)`, `τ ∈ [0, 1]`. -/
 theorem exists_liouvilleGraphRegion_deformation [IsManifold J (⊤ : ℕ∞) S]
     [BoundarylessManifold J S] (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι) (hιW : range ι = frontier W)
-    (hdim : finrank ℝ E = finrank ℝ E' + 1) (hf : Continuous f) (hf₁ : ∀ s, 1 < f s) :
+    (hdim : finrank ℝ E = finrank ℝ E' + 1) (hf₁ : ∀ s, 1 < f s) :
     ∃ r : C(liouvilleGraphRegion Z W ι f, W),
       (∀ x, r (ContinuousMap.inclusion subset_liouvilleGraphRegion x) = x) ∧
       Nonempty (ContinuousMap.HomotopyRel
         ((ContinuousMap.inclusion subset_liouvilleGraphRegion).comp r)
         (ContinuousMap.id _) {x | (x : M) ∈ W}) := by
   have hιW' (s : S) : ι s ∈ frontier W := hιW ▸ mem_range_self s
-  rcases isEmpty_or_nonempty S with hS | hS
-  · -- Without boundary points the region is `W` itself.
-    have hUW (x : liouvilleGraphRegion Z W ι f) : (x : M) ∈ W := by
-      obtain hx | ⟨-, s, -⟩ := mem_liouvilleGraphRegion.1 x.property
-      exacts [hx, isEmptyElim s]
-    let r : C(liouvilleGraphRegion Z W ι f, W) :=
-      ⟨fun x ↦ ⟨x, hUW x⟩, continuous_subtypeVal.subtype_mk _⟩
-    have hr : (ContinuousMap.inclusion subset_liouvilleGraphRegion).comp r =
-        ContinuousMap.id _ := by
-      ext; rfl
-    exact ⟨r, fun _ ↦ rfl, ⟨hr ▸ ContinuousMap.HomotopyRel.refl _ _⟩⟩
-  set Φ : ℝ × S → M := fun p ↦ flowOf Z p.1 (ι p.2) with hΦdef
-  have hemb : IsOpenEmbedding Φ := h.isOpenEmbedding_flowOf_comp hZ hc hι himm hιinj hιW' hdim
-  have hΦW (p : ℝ × S) : Φ p ∈ W ↔ p.1 ≤ 0 := h.flowOf_mem_iff_of_mem_frontier hZ hc (hιW' p.2)
-  -- A left inverse of the flow-out, continuous on its open range.
-  set e := hemb.toOpenPartialHomeomorph Φ
-  have hρ (p : ℝ × S) : e.symm (Φ p) = p := hemb.toOpenPartialHomeomorph_left_inv Φ
-  have hρc : ContinuousOn e.symm (range Φ) := by
-    rw [← IsOpenEmbedding.toOpenPartialHomeomorph_target Φ hemb]
-    exact e.continuousOn_symm
-  set G := graphRegionDeformation W Φ e.symm
-  have hGW (τ : unitInterval) {x : M} (hx : x ∈ W) : G (τ, x) = x :=
-    graphRegionDeformation_of_mem τ hx
-  have hG (x : liouvilleGraphRegion Z W ι f) (τ : unitInterval) :
-      G (τ, x) ∈ liouvilleGraphRegion Z W ι f ∧ G (0, x) ∈ W ∧ G (1, x) = x :=
-    graphRegionDeformation_spec hΦdef hρ hΦW
-      (fun _ hx hxW ↦ h.exists_flowOf_eq_of_mem_liouvilleGraphRegion hZ hc hιW' hx hxW)
-      x.property τ
-  have hGc : Continuous fun q : unitInterval × liouvilleGraphRegion Z W ι f ↦ G (q.1, q.2) :=
-    continuous_graphRegionDeformation hΦdef hemb hρ hρc hΦW hιW hf hf₁
-  refine ⟨⟨fun x ↦ ⟨G (0, x), (hG x 0).2.1⟩, (hGc.comp (Continuous.prodMk_right 0)).subtype_mk _⟩,
-    fun x ↦ Subtype.ext (hGW 0 x.property), ⟨?_⟩⟩
-  exact
-    { toFun := fun q ↦ ⟨G (q.1, q.2), (hG q.2 q.1).1⟩
-      continuous_toFun := hGc.subtype_mk _
-      map_zero_left := fun _ ↦ rfl
-      map_one_left := fun x ↦ Subtype.ext (hG x 0).2.2
-      prop' := fun τ x hx ↦ Subtype.ext ((hGW τ hx).trans (hGW 0 hx).symm) }
+  have hemb := h.isOpenEmbedding_flowOf_comp hZ hc hι himm hιinj hιW' hdim
+  have hΦW (p : ℝ × S) : flowOf Z p.1 (ι p.2) ∈ W ↔ p.1 ≤ 0 :=
+    h.flowOf_mem_iff_of_mem_frontier hZ hc (hιW' p.2)
+  have hts : {p : ℝ × S | p.1 ≤ 0} ⊆ {p | p.1 < Real.log (f p.2)} :=
+    fun p hp ↦ (show p.1 ≤ 0 from hp).trans_lt (Real.log_pos (hf₁ p.2))
+  -- Along the flow-out the region is the set of times `t < log f(s)`, and `W` that of `t ≤ 0`.
+  have hs : (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) ⁻¹' liouvilleGraphRegion Z W ι f =
+      {p | p.1 < Real.log (f p.2)} := by
+    refine Subset.antisymm (fun p hp ↦ ?_) fun _ hp ↦ flowOf_mem_liouvilleGraphRegion hp
+    obtain hp | ⟨t, s, ht, hp⟩ := mem_liouvilleGraphRegion.1 hp
+    · exact hts ((hΦW p).1 hp)
+    · rwa [← hemb.injective (a₁ := (t, s)) (a₂ := p) hp]
+  -- The rest of the region lies in the interior of `W`.
+  have hSV : liouvilleGraphRegion Z W ι f \ range (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) ⊆
+      interior W := fun x hx ↦
+    ((liouvilleGraphRegion_eq_interior_union hιW hf₁).subset hx.1).resolve_right
+      fun hx' ↦ hx.2 (image_subset_range _ _ hx')
+  -- In the coordinates `(t, s)` of the flow-out, a time `t > 0` is pulled back to `τ t`.
+  have hD : Continuous fun q : unitInterval × (ℝ × S) ↦ (min q.2.1 ((q.1 : ℝ) * q.2.1), q.2.2) := by
+    fun_prop
+  refine hemb.exists_deformation_of_preimage subset_liouvilleGraphRegion hts hs (Set.ext hΦW)
+    isOpen_interior hSV (fun _ hx ↦ interior_subset hx.2)
+    ⟨fun p ↦ ⟨(min p.val.1 0, p.val.2), show min _ _ ≤ _ from min_le_right _ _⟩,
+      (((continuous_fst.min continuous_const).prodMk continuous_snd).comp
+        continuous_subtypeVal).subtype_mk _⟩
+    { toFun := fun q ↦ ⟨(min q.2.val.1 ((q.1 : ℝ) * q.2.val.1), q.2.val.2),
+        show min _ _ < _ from (min_le_left _ _).trans_lt q.2.property⟩
+      continuous_toFun :=
+        (hD.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
+      map_zero_left := fun p ↦ Subtype.ext (Prod.ext (by simp) rfl)
+      map_one_left := fun p ↦ Subtype.ext (Prod.ext (by simp) rfl)
+      prop' := fun τ p hp ↦ ?_ }
+  have hp : p.val.1 ≤ 0 := hp
+  refine Subtype.ext (Prod.ext ?_ rfl)
+  change min p.val.1 ((τ : ℝ) * p.val.1) = min p.val.1 0
+  rw [min_eq_left hp, min_eq_left (by nlinarith [unitInterval.le_one τ])]
 
 /-- **The inclusion of the Liouville domain into the region bounded by a Liouville graph is a
 homotopy equivalence.** Under the hypotheses of
@@ -434,11 +341,11 @@ the inclusion. -/
 theorem exists_liouvilleGraphRegion_homotopyEquiv [IsManifold J (⊤ : ℕ∞) S]
     [BoundarylessManifold J S] (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι) (hιW : range ι = frontier W)
-    (hdim : finrank ℝ E = finrank ℝ E' + 1) (hf : Continuous f) (hf₁ : ∀ s, 1 < f s) :
+    (hdim : finrank ℝ E = finrank ℝ E' + 1) (hf₁ : ∀ s, 1 < f s) :
     ∃ e : ContinuousMap.HomotopyEquiv W (liouvilleGraphRegion Z W ι f),
       ∀ x : W, (e x : M) = x := by
   obtain ⟨r, hr, ⟨F⟩⟩ :=
-    h.exists_liouvilleGraphRegion_deformation hZ hc hι himm hιinj hιW hdim hf hf₁
+    h.exists_liouvilleGraphRegion_deformation hZ hc hι himm hιinj hιW hdim hf₁
   exact ⟨.ofDeformationRetraction (.inclusion subset_liouvilleGraphRegion) r hr
     (ContinuousMap.HomotopicRel.homotopic ⟨F⟩), fun x ↦ by
       rw [ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply]; rfl⟩
