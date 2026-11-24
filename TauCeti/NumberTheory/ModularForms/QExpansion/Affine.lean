@@ -243,7 +243,7 @@ private theorem natAbs_sq_mul_inv_repsScale (hm : 0 < m) (hA : A ∈ reps m) :
     ((((A.val 0 0).natAbs ^ 2).toPNat' : ℕ) : ℝ) * (repsScale hm hA : ℝ)⁻¹ = m := by
   have ha : 0 < (A.val 0 0).natAbs ^ 2 := pow_pos (Int.natAbs_pos.mpr hA.2.1.ne') 2
   have had : (A.val 0 0 : ℝ) * A.val 1 1 = m := by
-    exact_mod_cast val_zero_zero_mul_val_one_one_of_mem_reps hA
+    exact_mod_cast apply_zero_zero_mul_apply_one_one hA.1
   have ha' : (A.val 0 0 : ℝ) ≠ 0 := by exact_mod_cast hA.2.1.ne'
   rw [PNat.toPNat'_coe ha, coe_repsScale, Nat.cast_pow, Nat.cast_natAbs, Int.cast_abs,
     sq_abs, inv_div, ← had]
