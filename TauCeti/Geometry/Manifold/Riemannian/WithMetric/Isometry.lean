@@ -34,36 +34,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
 
-/-- The tautological smooth Riemannian isometry from `WithMetric g` to `M` equipped with `g`. -/
-def riemannianIsometry :
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    RiemannianIsometry I I (WithMetric g) M :=
-  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  { toDiffeomorph := diffeomorph g ∞
-    inner_mfderiv' x v w := by
-      rw [coe_diffeomorph]
-      exact (inner_def x v w).symm }
-
-@[simp]
-theorem toDiffeomorph_riemannianIsometry :
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    (riemannianIsometry g).toDiffeomorph = diffeomorph g ∞ :=
-  (rfl)
-
-@[simp]
-theorem coe_riemannianIsometry :
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    ⇑(riemannianIsometry g) = ofWithMetric :=
-  coe_diffeomorph (g := g) ∞
-
-@[simp]
-theorem coe_riemannianIsometry_symm :
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    ⇑(riemannianIsometry g).symm = toWithMetric g := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  rw [RiemannianIsometry.coe_symm]
-  exact coe_diffeomorph_symm (g := g) ∞
-
 section Inner
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
@@ -94,6 +64,33 @@ def riemannianIsometryOfInner : RiemannianIsometry I I (WithMetric g) M where
 
 end Inner
 
+/-- The tautological smooth Riemannian isometry from `WithMetric g` to `M` equipped with `g`. -/
+def riemannianIsometry :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    RiemannianIsometry I I (WithMetric g) M :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  riemannianIsometryOfInner g g.inner_riemannianBundle
+
+@[simp]
+theorem toDiffeomorph_riemannianIsometry :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (riemannianIsometry g).toDiffeomorph = diffeomorph g ∞ :=
+  (rfl)
+
+@[simp]
+theorem coe_riemannianIsometry :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ⇑(riemannianIsometry g) = ofWithMetric :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  coe_riemannianIsometryOfInner g g.inner_riemannianBundle
+
+@[simp]
+theorem coe_riemannianIsometry_symm :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ⇑(riemannianIsometry g).symm = toWithMetric g :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  funext (riemannianIsometryOfInner_symm_apply g g.inner_riemannianBundle)
+
 section InnerEq
 
 variable (g₁ g₂ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
@@ -105,7 +102,7 @@ include h
 `WithMetric` copies via the identity diffeomorphism. -/
 def riemannianIsometryOfInnerEq : RiemannianIsometry I I (WithMetric g₁) (WithMetric g₂) :=
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
-  (riemannianIsometry g₁).trans
+  (riemannianIsometryOfInner g₁ g₁.inner_riemannianBundle).trans
     (riemannianIsometryOfInner g₂
       fun x v w ↦ (g₁.inner_riemannianBundle x v w).trans (h x v w)).symm
 
@@ -116,7 +113,7 @@ def riemannianIsometryOfInnerEq : RiemannianIsometry I I (WithMetric g₁) (With
   (RiemannianIsometry.trans_apply _ _ x).trans <|
     (riemannianIsometryOfInner_symm_apply g₂
       (fun x v w ↦ (g₁.inner_riemannianBundle x v w).trans (h x v w)) _).trans
-      (congrArg (toWithMetric g₂) (congrFun (coe_riemannianIsometry g₁) x))
+      (congrArg (toWithMetric g₂) (riemannianIsometryOfInner_apply g₁ g₁.inner_riemannianBundle x))
 
 /-- Evaluating the inverse of `riemannianIsometryOfInnerEq` at `x` returns
 `toWithMetric g₁ x.ofWithMetric`. -/

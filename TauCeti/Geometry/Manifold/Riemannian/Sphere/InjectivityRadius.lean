@@ -142,20 +142,13 @@ private theorem exists_norm_eq_pi_tangentSpace_sphere (hn : 1 ≤ n) (p : sphere
   have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   simp [injectivityRadius_def, injectivityRadiusAt_sphere_of_one_le hn]
 
-private theorem sphereRoundMetricOfRadius_eq_rescale {r : ℝ} (hr : 0 < r) :
-    sphereRoundMetricOfRadius (E := E) (n := n) r hr =
-      ((sphereRoundMetric (E := E) (n := n)).ofLE le_top).rescale (fun _ ↦ r ^ 2)
-        contMDiff_const fun _ ↦ pow_pos hr 2 := by
-  ext _ _ _
-  simp [inner_tangentSpace_sphere]
-
 /-- **Pointwise injectivity radius of the round `n`-sphere of radius `r > 0` (`WithMetric` form,
 `1 ≤ n`).** -/
 @[simp] theorem injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ}
     (hr : 0 < r) (p : sphere (0 : E) 1) :
     injectivityRadiusAt (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr))
         (WithMetric.toWithMetric _ p) = ENNReal.ofReal (r * Real.pi) := by
-  rw [sphereRoundMetricOfRadius_eq_rescale hr,
+  rw [sphereRoundMetricOfRadius_def hr,
     WithMetric.injectivityRadiusAt_rescale_const _ (pow_pos hr 2) p,
     WithMetric.injectivityRadiusAt_toWithMetric _ (fun _ _ _ ↦ by simp) p,
     injectivityRadiusAt_sphere_of_one_le hn p, Real.sqrt_sq hr.le, ← ENNReal.ofReal_mul hr.le]
@@ -166,7 +159,7 @@ private theorem sphereRoundMetricOfRadius_eq_rescale {r : ℝ} (hr : 0 < r) :
     (hr : 0 < r) :
     injectivityRadius (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr)) =
       ENNReal.ofReal (r * Real.pi) := by
-  rw [sphereRoundMetricOfRadius_eq_rescale hr,
+  rw [sphereRoundMetricOfRadius_def hr,
     WithMetric.injectivityRadius_rescale_const _ (pow_pos hr 2),
     WithMetric.injectivityRadius_eq _ (fun _ _ _ ↦ by simp),
     injectivityRadius_sphere_of_one_le hn, Real.sqrt_sq hr.le, ← ENNReal.ofReal_mul hr.le]

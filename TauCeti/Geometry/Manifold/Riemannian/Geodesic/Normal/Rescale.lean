@@ -8,9 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
-import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Rescale
-import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
 import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Exponential
 import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 
@@ -48,49 +45,6 @@ variable
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
   [I.Boundaryless] [T2Space M]
 
-private theorem tangent_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {α : Sort*} (F : ∀ b : M, TangentSpace I b → α)
-    {b₁ b₂ : M} (hb : b₁ = b₂) {u₁ : TangentSpace I b₁} {u₂ : TangentSpace I b₂}
-    (hu : tangentSpaceCast I b₁ b₂ u₁ = u₂) : F b₁ u₁ = F b₂ u₂ := by
-  subst hb
-  rw [tangentSpaceCast_self] at hu
-  subst hu
-  rfl
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- `ofWithMetric` sends the differential of `diffeomorphWithMetric` back to
-`mfderiv I I ofWithMetric`, transported along `(diffeomorphWithMetric g g' ∞ x).ofWithMetric =
-x.ofWithMetric`. -/
-private theorem mfderiv_ofWithMetric_diffeomorphWithMetric
-    (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    (x : WithMetric g) (v : TangentSpace I x) :
-    tangentSpaceCast I (diffeomorphWithMetric g g' ∞ x).ofWithMetric x.ofWithMetric
-        (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' ∞ x)
-          ((diffeomorphWithMetric g g' ∞).mfderivToContinuousLinearEquiv (by simp) x v)) =
-      mfderiv I I ofWithMetric x v := by
-  set Φ := diffeomorphWithMetric g g' ∞
-  have hcomp : (ofWithMetric : WithMetric g' → M) ∘ Φ = ofWithMetric := funext fun _ ↦ by simp [Φ]
-  have h := DFunLike.congr_fun
-    ((Filter.EventuallyEq.of_eq hcomp.symm).mfderiv_eq (I := I) (I' := I) (x := x)) v
-  rw [Φ.mfderiv_comp_diffeomorph (by simp) ofWithMetric x, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ← Φ.mfderivToContinuousLinearEquiv_apply (by simp) x v] at h
-  exact h.symm
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- Transporting a basepoint-dependent expression along `mfderiv_ofWithMetric_diffeomorphWithMetric`
-reduces evaluation at `(diffeomorphWithMetric g g' ∞ x).ofWithMetric` to evaluation at
-`x.ofWithMetric`. -/
-private theorem congr_mfderiv_ofWithMetric_diffeomorphWithMetric {α : Sort*}
-    (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    (F : ∀ b : M, TangentSpace I b → α) (x : WithMetric g) (v : TangentSpace I x) :
-    F (diffeomorphWithMetric g g' ∞ x).ofWithMetric
-        (mfderiv I I ofWithMetric (diffeomorphWithMetric g g' ∞ x)
-          ((diffeomorphWithMetric g g' ∞).mfderivToContinuousLinearEquiv (by simp) x v)) =
-      F x.ofWithMetric (mfderiv I I ofWithMetric x v) :=
-  tangent_congr F (by simp) (mfderiv_ofWithMetric_diffeomorphWithMetric g g' x v)
-
 omit [I.Boundaryless] [T2Space M] in
 /-- Tangent norm scaling under `diffeomorphWithMetric` for constant metric rescaling. -/
 private theorem norm_mfderiv_diffeomorphWithMetric_rescale_const
@@ -104,80 +58,8 @@ private theorem norm_mfderiv_diffeomorphWithMetric_rescale_const
   dsimp only [g_c]
   rw [ContMDiffRiemannianMetric.rescale_inner]
   congr 1
-  exact congr_mfderiv_ofWithMetric_diffeomorphWithMetric g g_c (fun b u ↦ g.inner b u u) x v
-
-omit [I.Boundaryless] [T2Space M] in
-/-- Exponential-domain transport under `diffeomorphWithMetric` for constant metric rescaling. -/
-private theorem mfderiv_diffeomorphWithMetric_rescale_const_mem_expDomain
-    {c : ℝ} (hc : 0 < c) {x : WithMetric g} {v : TangentSpace I x}
-    (hv : v ∈ expDomain I (WithMetric g) x) :
-    (diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
-        ∞).mfderivToContinuousLinearEquiv (by simp) x v ∈
-      expDomain I (WithMetric (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc))
-        (diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) ∞ x) := by
-  set g_c := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  have hmem :
-      (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩;
-        mfderiv I I ofWithMetric x v ∈ expDomain I M x.ofWithMetric) := by
-    rw [g.expDomain_rescale_const hc x.ofWithMetric]
-    let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-      Bundle.instIsContMDiffRiemannianBundle g
-    rw [← mem_expDomain_iff g g.inner_riemannianBundle]
-    exact hv
-  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩
-  let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-    Bundle.instIsContMDiffRiemannianBundle g_c
-  rw [mem_expDomain_iff g_c g_c.inner_riemannianBundle]
-  exact (congr_mfderiv_ofWithMetric_diffeomorphWithMetric g g_c
-    (fun b u ↦ u ∈ expDomain I M b) x v).mpr hmem
-
-/-- Exponential equivariance under `diffeomorphWithMetric` for constant metric rescaling. -/
-private theorem riemannianExp_mfderiv_diffeomorphWithMetric_rescale_const
-    {c : ℝ} (hc : 0 < c) (x : WithMetric g) (v : TangentSpace I x) :
-    riemannianExp I (WithMetric (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc))
-        (diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) ∞ x)
-        ((diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
-          ∞).mfderivToContinuousLinearEquiv (by simp) x v) =
-      diffeomorphWithMetric g (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) ∞
-        (riemannianExp I (WithMetric g) x v) := by
-  set g_c := g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc
-  set Φ := diffeomorphWithMetric g g_c ∞
-  refine ofWithMetric_injective ?_
-  have hexp_c :
-      (riemannianExp I (WithMetric g_c) (Φ x)
-          (Φ.mfderivToContinuousLinearEquiv (by simp) x v)).ofWithMetric =
-        (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩;
-          riemannianExp I M (Φ x).ofWithMetric
-            (mfderiv I I ofWithMetric (Φ x)
-              (Φ.mfderivToContinuousLinearEquiv (by simp) x v))) :=
-    let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-      Bundle.instIsContMDiffRiemannianBundle g_c
-    ofWithMetric_riemannianExp g_c g_c.inner_riemannianBundle (Φ x) _
-  have hexp_eq :
-      (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩;
-        riemannianExp I M (Φ x).ofWithMetric
-          (mfderiv I I ofWithMetric (Φ x)
-            (Φ.mfderivToContinuousLinearEquiv (by simp) x v))) =
-      (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
-        riemannianExp I M x.ofWithMetric (mfderiv I I ofWithMetric x v)) := by
-    trans (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩;
-        riemannianExp I M x.ofWithMetric (mfderiv I I ofWithMetric x v))
-    · let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g_c.toRiemannianMetric⟩
-      exact congr_mfderiv_ofWithMetric_diffeomorphWithMetric g g_c
-        (fun b u ↦ riemannianExp I M b u) x v
-    · exact g.riemannianExp_rescale_const hc x.ofWithMetric (mfderiv I I ofWithMetric x v)
-  have hexp_g :
-      (riemannianExp I (WithMetric g) x v).ofWithMetric =
-        (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
-          riemannianExp I M x.ofWithMetric (mfderiv I I ofWithMetric x v)) :=
-    let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
-    let _ : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-      Bundle.instIsContMDiffRiemannianBundle g
-    ofWithMetric_riemannianExp g g.inner_riemannianBundle x v
-  rw [hexp_c, hexp_eq, ← hexp_g]
-  simp [Φ]
+  exact congr_mfderiv_ofWithMetric_diffeomorphWithMetric g_c ∞ (by simp)
+    (fun b u ↦ g.inner b u u) x v
 
 /-- Forward implication for normal tangent balls under constant rescaling of `g` by `c > 0`. -/
 private theorem isNormalDomain_ball_rescale_const_of_div {c : ℝ} (hc : 0 < c) {p : M} {r : ℝ}
