@@ -191,11 +191,11 @@ theorem chernTripleSphereProduct_apply (s : ℤ × ℤ × ℤ) :
     chernTripleSphereProduct s = 2 * s.1 + 2 * s.2.1 + 2 * s.2.2 :=
   (rfl)
 
-/-- The ratio `(√3 - 1) / (√2 - 1)` is irrational. If it were a rational `q`, then
-`√3 = q √2 + (1 - q)`, and squaring gives `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2`
-would be rational unless `q (1 - q) = 0`; but `q = 0` gives `√3 = 1` and `q = 1` gives
-`√3 = √2`. -/
+/-- The ratio `(√3 - 1) / (√2 - 1)` is irrational. -/
 theorem irrational_sqrt_three_sub_one_div_sqrt_two_sub_one : Irrational ((√3 - 1) / (√2 - 1)) := by
+  -- If the ratio were a rational `q`, then `√3 = q √2 + (1 - q)`, and squaring gives
+  -- `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2` would be rational unless
+  -- `q (1 - q) = 0`; but `q = 0` gives `√3 = 1` and `q = 1` gives `√3 = √2`.
   have h2 := Real.one_lt_sqrt_two
   rintro ⟨q, hq⟩
   have h3 : √3 = q * √2 + (1 - q) := by
@@ -217,12 +217,12 @@ theorem irrational_sqrt_three_sub_one_div_sqrt_two_sub_one : Irrational ((√3 -
     exact_mod_cast hsq
 
 /-- In the product of three spheres with areas `1`, `√2` and `√3`, the areas of the Chern-zero
-classes of the period group are dense in `ℝ`: they contain the areas `√3 - 1` and `√2 - 1` of the
-classes `(-1, 0, 1)` and `(-1, 1, 0)`, whose ratio is irrational
-(`DensePeriodExample.irrational_sqrt_three_sub_one_div_sqrt_two_sub_one`). -/
+classes of the period group are dense in `ℝ`. -/
 theorem dense_map_area_ker_chern_tripleSphereProduct :
     Dense (((PeriodGroup.chern tripleArea chernTripleSphereProduct).ker.map
       (PeriodGroup.area tripleArea chernTripleSphereProduct) : AddSubgroup ℝ) : Set ℝ) := by
+  -- The Chern-zero classes `(-1, 0, 1)` and `(-1, 1, 0)` have areas `√3 - 1` and `√2 - 1`, whose
+  -- ratio is irrational.
   refine Dense.mono ?_
     (dense_addSubgroupClosure_pair_iff.2 irrational_sqrt_three_sub_one_div_sqrt_two_sub_one)
   rw [SetLike.coe_subset_coe, AddSubgroup.closure_le, pair_subset_iff]
