@@ -42,7 +42,8 @@ meant for locally profinite groups: a group with no compact open subgroup impose
 * `Representation.IsAdmissible.of_injective`: over a noetherian ring, a representation with an
   injective intertwining map to an admissible one is admissible; in particular so is every
   subrepresentation of an admissible representation
-  (`Representation.IsAdmissible.subrepresentation`).
+  (`Subrepresentation.isAdmissible_toRepresentation`, and
+  `Representation.IsAdmissible.subrepresentation` for `ρ.subrepresentation W _`).
 * `Representation.Equiv.isAdmissible_iff`: equivalent representations are admissible together.
 * `Representation.IsAdmissible.of_subsingleton`, `Representation.IsAdmissible.of_isTrivial`: the
   zero representation, and a trivial representation on a finitely generated module, are
@@ -140,14 +141,14 @@ theorem IsAdmissible.of_injective [IsNoetherianRing A] [IsAdmissible σ] (f : ρ
     infer_instance
 
 /-- A subrepresentation of an admissible representation over a noetherian ring is admissible. -/
-instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
-    (ρ' : Subrepresentation ρ) :
+instance _root_.Subrepresentation.isAdmissible_toRepresentation [IsNoetherianRing A]
+    [IsAdmissible ρ] (ρ' : Subrepresentation ρ) :
     IsAdmissible ρ'.toRepresentation :=
   IsAdmissible.of_injective ρ'.subtype ρ'.subtype_injective
 
 /-- The restriction of an admissible representation over a noetherian ring to an invariant
 submodule is admissible. -/
-instance IsAdmissible.instSubrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
+instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
     (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
     IsAdmissible (ρ.subrepresentation W le_comap) :=
   IsAdmissible.of_injective (σ := ρ) ⟨W.subtype, fun _ ↦ rfl⟩ W.injective_subtype

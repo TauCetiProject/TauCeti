@@ -102,7 +102,10 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.IntertwiningMap.invariantsMap`: an intertwining map induces a linear map on
-  invariants, injective when the intertwining map is.
+  invariants, injective when the intertwining map is, functorially
+  (`Representation.IntertwiningMap.invariantsMap_id`, `invariantsMap_comp`); for an equivalence it
+  is `Representation.Equiv.invariantsLinearEquiv`
+  (`Representation.Equiv.toLinearMap_invariantsLinearEquiv`).
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
   invariance of a vector.
@@ -457,6 +460,20 @@ theorem invariantsMap_injective (f : ρ.IntertwiningMap σ) (hf : Function.Injec
     Function.Injective f.invariantsMap :=
   fun _ _ h ↦ Subtype.ext (hf (by simpa using congrArg Subtype.val h))
 
+/-- The identity intertwining map induces the identity on invariants. -/
+@[simp]
+theorem invariantsMap_id : (IntertwiningMap.id ρ).invariantsMap = LinearMap.id := by
+  ext
+  rfl
+
+/-- The map induced on invariants by a composite is the composite of the induced maps. -/
+@[simp]
+theorem invariantsMap_comp {X : Type*} [AddCommGroup X] [Module k X] {τ : Representation k G X}
+    (f : σ.IntertwiningMap τ) (g : ρ.IntertwiningMap σ) :
+    (f.comp g).invariantsMap = f.invariantsMap ∘ₗ g.invariantsMap := by
+  ext
+  rfl
+
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
@@ -482,6 +499,13 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- The linear map underlying `invariantsLinearEquiv` is the map induced on invariants by the
+underlying intertwining map. -/
+theorem toLinearMap_invariantsLinearEquiv (φ : ρ.Equiv σ) :
+    φ.invariantsLinearEquiv.toLinearMap = φ.toIntertwiningMap.invariantsMap := by
+  ext
+  rfl
 
 /-- **Equivalent representations have equivalent quotient representations on invariants.** For a
 normal subgroup `S` of `G`, an equivalence `ρ ≃ σ` restricts to the `S`-invariants and there
