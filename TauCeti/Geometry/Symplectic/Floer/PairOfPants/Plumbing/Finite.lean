@@ -462,10 +462,12 @@ theorem sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbat
     ω.floerEnergyDensity_nonneg (hJ z (plumbedTruncation_subset hq (by linarith) R hz))
       (hfloer z (plumbedTruncation_subset hq (by linarith) R hz))
 
-/-- **The end actions are bounded by the energy.** Under the hypotheses of
-`SymplecticForm.lintegral_floerEnergyDensity_plumbedPerturbation_eq`, if the energy of `u` is
-finite, then for every `R ≥ L/2` the signed sum of the actions of the four boundary loops of the
-truncation `Σ_R` is at most the energy of `u` plus the integrated curvature `∫_Σ R_K(u)`. -/
+/-- **The end actions are bounded by the energy.** Let `u` be `C²` on the plumbed four-punctured
+sphere `Σ = ℂ ∖ {0, 1, ψ(1)}` and solve the Floer equation `(du - X_K)^{0,1} = 0` there for the
+plumbed perturbation `K` and almost complex structures `J(z)` tamed by `ω`; no convergence of the
+end actions is assumed. If the energy of `u` is finite, then for every `R ≥ L/2` the signed sum of
+the actions of the four boundary loops of the truncation `Σ_R` is at most the energy of `u` plus
+the integrated curvature `∫_Σ R_K(u)`. -/
 theorem sum_add_sum_hamiltonianAction_le_of_plumbedPerturbation (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
