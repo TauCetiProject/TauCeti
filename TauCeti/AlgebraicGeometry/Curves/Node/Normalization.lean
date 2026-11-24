@@ -10,6 +10,9 @@ public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Regular
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Separating the branches of a nodal curve
@@ -22,6 +25,22 @@ Cartier divisor to the ambient blowup. Thus a single finite modification resolve
 
 These results supply the finite regular scheme used to construct the normalization of a nodal
 curve and its normalization exact sequence.
+
+Over a separably closed field the blowup separates the branches point by point: exactly one
+point lies over each smooth point
+(`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_one_of_mem_smoothLocus`),
+and exactly two lie over each node, one on each branch. Over a node, these are the points of the
+branch scheme, which is finite étale of rank two over the singular subscheme. These counts are the
+incidence data of the dual graph of the curve.
+
+## Main results
+
+* `AlgebraicGeometry.Scheme.isFinite_blowupToBase_singularLocus`,
+  `AlgebraicGeometry.Scheme.surjective_blowupToBase_singularLocus` and
+  `AlgebraicGeometry.Scheme.isRegular_blowup_singularLocus`: blowing up the singular subscheme is
+  a finite surjective morphism from a regular scheme.
+* `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support`:
+  over a separably closed field, two points of the blowup lie over each node.
 
 ## References
 
@@ -154,5 +173,29 @@ theorem isRegular_blowup_singularLocus
       IsRegular.of_isOpenImmersion (f ∣_ (X ↘ Spec (.of K)).smoothLocus)
     exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion
       (f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus).ι y').mpr inferInstance
+
+/-- **Two points of the blowup lie over each node.** Over a separably closed field, the
+points of the blowup of a nodal curve along its singular subscheme lying over a node are the two
+points of the branch scheme over it, one on each branch. -/
+theorem natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support [IsSepClosed K]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) {x : X}
+    (hx : (letI := hnodal.syntomic; x ∈ (X.singularLocus K).support)) :
+    letI := hnodal.syntomic
+    Nat.card ((X.singularLocus K).blowupToBase ⁻¹' {x}) = 2 := by
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
+  have := X.isFinite_branchSchemeToSingularLocus hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  let I := X.singularLocus K
+  have : IsClosedImmersion (X.branchSchemeToBlowup K) :=
+    MorphismProperty.of_isPullback (X.isPullback_branchScheme K) inferInstance
+  obtain ⟨z, rfl⟩ : x ∈ Set.range I.subschemeι := by rwa [IdealSheafData.range_subschemeι]
+  have : IsSepClosed (I.subscheme.residueField z) :=
+    (I.subschemeι ≫ X ↘ Spec (.of K)).isSepClosed_residueField_of_formallyUnramified z
+  rw [← X.finrank_branchSchemeToSingularLocus hnodal z,
+    ← Scheme.Hom.natCard_preimage_singleton_eq_finrank]
+  -- the branch scheme is the inverse image of the singular subscheme in the blowup
+  exact (Scheme.natCard_preimage_fst_singleton_of_isPullback (X.isPullback_branchScheme K)
+    (X.branchSchemeToBlowup K).isClosedEmbedding.injective z).symm
 
 end AlgebraicGeometry.Scheme

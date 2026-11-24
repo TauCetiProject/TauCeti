@@ -121,7 +121,7 @@ instance [Algebra.IsAlgebraic K L] [Subsingleton (X ≃ₐ[RatFunc L] X)]
   refine DescentDatum.IsContinuous.of_openSubgroup_fixes_embedding
     (DescentDatum.ofSubsingleton K h) M₀ E₀.fixingSubgroup_isOpen fun σ hσ y ↦ ?_
   let σ' : L ≃ₐ[E₀] L := AlgEquiv.ofRingEquiv (f := (σ : L ≃+* L))
-    fun c ↦ (IntermediateField.mem_fixingSubgroup_iff E₀ σ).mp hσ c c.2
+    fun c ↦ (IntermediateField.mem_fixingSubgroup_iff E₀ σ).mp hσ c c.property
   have : Subsingleton (X.conj (σ : L ≃+* L) ≃ₐ[RatFunc L] X) :=
     AlgEquiv.subsingleton_of_subsingleton_aut
   rw [Subsingleton.elim ((DescentDatum.ofSubsingleton K h).iso σ) (M₀.conjAlgEquiv σ')]

@@ -356,7 +356,7 @@ theorem isContinuous_iff_exists_openSubgroup_fixes_embedding
     rintro z (⟨c, rfl⟩ | hz)
     · simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
         M₀.embedding_algebraMap, D.ringEquiv_algebraMap, IntermediateField.algebraMap_apply,
-        (mem_fixingSubgroup_iff E₀ σ).mp hσE c c.2]
+        (mem_fixingSubgroup_iff E₀ σ).mp hσE c c.property]
     · exact hσS z hz
   exact DFunLike.congr_fun heq y
 
@@ -452,7 +452,7 @@ theorem mem_range_algebraMap_descend_iff {x : X} :
     x ∈ Set.range (algebraMap D.descend X) ↔ ∀ σ, D.semilinearAction σ x = x := by
   refine ⟨?_, fun h ↦ ⟨⟨x, (mem_fixedField_iff _ _).mpr ?_⟩, rfl⟩⟩
   · rintro ⟨y, rfl⟩ σ
-    exact (mem_fixedField_iff _ _).mp y.2 _ ⟨σ, rfl⟩
+    exact (mem_fixedField_iff _ _).mp y.property _ ⟨σ, rfl⟩
   · rintro _ ⟨σ, rfl⟩
     exact h σ
 

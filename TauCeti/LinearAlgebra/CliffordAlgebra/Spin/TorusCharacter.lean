@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
 -- Private: the commuting of orthogonal bivectors, the square of a bivector and `w + w⁻¹ = 2 Re w`
 -- on the circle are used only in proofs.
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -51,6 +51,8 @@ has Chern root `l = 2ζ`.
 * `OrthonormalBasis.spinTorus_apply`: `spinTorus` is the product of the two circle subgroups.
 * `OrthonormalBasis.spinVectorAction_spinTorus_zero` (and `_one`, `_two`, `_three`): `(w₁, w₂)`
   rotates `⟨b₀, b₁⟩` by `w₁²` and `⟨b₂, b₃⟩` by `w₂²`.
+* `CliffordAlgebra.map_ι_mul_ι_two_three_apply`: on the `ε`-eigenspace of `Γ`,
+  `c(b₂) c(b₃) = ε c(b₀) c(b₁)`.
 * `CliffordAlgebra.halfSpinRep_one_spinTorus`, `CliffordAlgebra.halfSpinRep_neg_one_spinTorus`:
   on `W⁺`, `(w₁, w₂)` acts as `(w₁ w₂, 1)`, and on `W⁻` as `(w₁ w₂⁻¹, 1)`.
 * `CliffordAlgebra.halfSpinRep_spinTorus_mk_one`: `(w, 1)` acts as `Re w + Im w c(b₀) c(b₁)`.
@@ -198,7 +200,7 @@ variable {o} (hb : b.toBasis.orientation = o)
 include hb
 
 /-- On the `ε`-eigenspace of `Γ = -c(b₀) c(b₁) c(b₂) c(b₃)`, `c(b₂) c(b₃) = ε c(b₀) c(b₁)`. -/
-private theorem map_ι_mul_ι_two_three_apply {ε : ℂ} {ψ : W}
+theorem map_ι_mul_ι_two_three_apply {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) :
     ρ (ι Q (b 2) * ι Q (b 3)) ψ = ε • ρ (ι Q (b 0) * ι Q (b 1)) ψ := by
   rw [mem_eigenspace_iff, chirality_eq o hQ b hb, mul_assoc (ι Q (b 0) * ι Q (b 1)), map_neg,
@@ -245,7 +247,7 @@ theorem halfSpinRep_one_spinTorus (w₁ w₂ : Circle) :
   ext ψ
   simp only [coe_halfSpinRep_apply]
   refine map_spinTorus_apply_eq b hQ ρ ?_
-  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.2, map_spinTorus_mk_one_apply, one_mul]
+  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.property, map_spinTorus_mk_one_apply, one_mul]
 
 /-- **The torus acts on `W⁻` through the quotient of its coordinates**: on the negative
 half-spinors, `(w₁, w₂)` acts as `(w₁ w₂⁻¹, 1)`. -/
@@ -255,7 +257,7 @@ theorem halfSpinRep_neg_one_spinTorus (w₁ w₂ : Circle) :
   ext ψ
   simp only [coe_halfSpinRep_apply]
   refine map_spinTorus_apply_eq b hQ ρ ?_
-  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.2, map_spinTorus_mk_one_apply,
+  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.property, map_spinTorus_mk_one_apply,
     Circle.coe_inv_eq_conj, Complex.conj_re, Complex.conj_im, Complex.ofReal_neg, neg_one_mul]
 
 end Action

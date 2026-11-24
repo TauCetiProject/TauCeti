@@ -113,7 +113,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 
 /-- A bigraded homogeneous chain is Maslov homogeneous in its first degree. -/
 theorem bigradedChainMinusPiece_le_maslovChainMinusPiece (g : ℤ × ℤ) :
-    G.bigradedChainMinusPiece R g ≤ G.1.maslovChainMinusPiece R g.1 := by
+    G.bigradedChainMinusPiece R g ≤ G.val.maslovChainMinusPiece R g.1 := by
   intro c hc
   rw [GridDiagram.mem_maslovChainMinusPiece_iff_forall_mem_support]
   intro x e he

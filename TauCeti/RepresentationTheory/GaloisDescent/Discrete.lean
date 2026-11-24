@@ -128,7 +128,7 @@ private noncomputable def descentRep [IsGalois k L] {ρ : Representation k Gal(L
   haveI : Representation.IsTrivial
       (U'.toRepresentation.comp (AlgEquiv.restrictNormalHom E).ker.subtype) :=
     ⟨fun ⟨_, hg⟩ ↦ LinearMap.ext fun u ↦ Subtype.ext <|
-      hU_fix (E.restrictNormalHom_ker ▸ hg) ((U.restrictScalars_mem k _).mp u.2)⟩
+      hU_fix (E.restrictNormalHom_ker ▸ hg) ((U.restrictScalars_mem k _).mp u.property)⟩
   U'.toRepresentation.ofSurjective (AlgEquiv.restrictNormalHom E)
     (AlgEquiv.restrictNormalHom_surjective L)
 
@@ -154,7 +154,7 @@ private theorem descentRep_smul [IsGalois k L]
   obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
   apply Subtype.ext
   exact (descentRep_restrictNormalHom_coe hU_mem hU_fix g (a • u)).trans
-    ((hU_smul g a u.2).trans (congrArg (AlgEquiv.restrictNormalHom E g a • ·)
+    ((hU_smul g a u.property).trans (congrArg (AlgEquiv.restrictNormalHom E g a • ·)
       (descentRep_restrictNormalHom_coe hU_mem hU_fix g u).symm))
 
 end NormalSubextension
@@ -388,7 +388,7 @@ theorem liftBaseChange_invariants_bijective_of_isOpen [IsGalois k L]
     (hopen : ∀ v : V, IsOpen {g : Gal(L/k) | ρ g v = v}) :
     Function.Bijective (ρ.invariants.subtype.liftBaseChange L) := by
   refine ⟨liftBaseChange_injective_of_invariant_of_isGalois (ρ := ρ) Subtype.val_injective
-    fun g a w ↦ by rw [Submodule.coe_subtype, hsemi, (ρ.mem_invariants w.1).mp w.2 g], ?_⟩
+    fun g a w ↦ by rw [Submodule.coe_subtype, hsemi, (ρ.mem_invariants w.val).mp w.property g], ?_⟩
   rw [← LinearMap.range_eq_top, LinearMap.range_liftBaseChange, Submodule.range_subtype,
     span_invariants_eq_top_of_isOpen hsemi hopen]
 

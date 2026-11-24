@@ -102,7 +102,7 @@ theorem torusCurveClass_eq_singularHomologyMap (p q : ℤ) :
 /-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(Y; ℤ)`. -/
 theorem torusCurveClass_def (p q : ℤ) :
     torusCurveClass e p q =
-      H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous)) :=
+      H₁AddEquivHomology ℤ (TopCat.of Y) (loopClass ℤ ((torusCurve p q).map e.continuous)) :=
   singularHomologyMap_torusClass (e : C(Circle × Circle, Y)) p q
 
 /-- **The coordinates of the `(p, q)` curve.** For the torus framed by a parametrization `e`, the

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Approximation
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 import Mathlib.MeasureTheory.Measure.WithDensityFinite
 
@@ -144,11 +145,9 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_mul_enorm_sub_sq
     rw [← lintegral_prod_symm (fun p ↦ d k p * ‖err k p‖ₑ ^ 2)
       (((hd k).mul
         (((herrm k).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2)).aemeasurable)]
-    rw [eLpNorm_trim ℱ.predictable_le_prod (herrm k)]
-    have hnorm := eLpNorm_nnreal_pow_eq_lintegral (μ := μ k) (p := (2 : ℝ≥0))
-      (by norm_num) ((herrm k).mono ℱ.predictable_le_prod).aestronglyMeasurable
-    simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ENNReal.rpow_two] at hnorm
-    rw [hnorm, lintegral_withDensity_eq_lintegral_mul (ν.prod Q) (hd k)
+    rw [eLpNorm_trim ℱ.predictable_le_prod (herrm k), TauCeti.eLpNorm_two_sq_eq_lintegral
+        ((herrm k).mono ℱ.predictable_le_prod).aestronglyMeasurable,
+      lintegral_withDensity_eq_lintegral_mul (ν.prod Q) (hd k)
       (((herrm k).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2)]
     rfl
   have hFlim : Tendsto (fun k ↦ ∫⁻ ω, F k ω ∂Q) atTop (𝓝 0) := by

@@ -13,7 +13,9 @@ public import Mathlib.MeasureTheory.OuterMeasure.AE
 
 A projection-valued measure `P` has a diagonal scalar measure `P.diag ξ` for each vector `ξ`.
 The filter `P.ae` records sets that are conull for *every* diagonal measure. A measurable set
-is null for this filter precisely when its spectral projection vanishes.
+is null for this filter precisely when its spectral projection vanishes. Likewise, a vector is fixed
+by the spectral projection of a measurable set exactly when its diagonal measure does not charge
+the complement.
 
 The null measurable sets are closed under taking measurable subsets and countable unions.
 This is the shared almost-everywhere interface needed for the bounded Borel spectral integral.
@@ -98,6 +100,14 @@ theorem proj_eq_zero_of_subset (P : ProjValMeasure X H)
   apply (P.proj_eq_zero_iff_forall_diag_apply_eq_zero s hs).2
   intro ξ
   exact measure_mono_null hst ((P.proj_eq_zero_iff_forall_diag_apply_eq_zero t ht).1 h ξ)
+
+/-- A vector is fixed by the spectral projection of `B` iff its diagonal measure does not charge
+the complement of `B`. -/
+theorem proj_apply_eq_self_iff (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)
+    (ξ : H) : P.proj B hB ξ = ξ ↔ P.diag ξ Bᶜ = 0 := by
+  rw [← P.enorm_sq_proj_apply _ hB.compl, pow_eq_zero_iff two_ne_zero, eNorm_eq_zero,
+    P.proj_compl, sub_apply, ContinuousLinearMap.id_apply, sub_eq_zero,
+    eq_comm]
 
 /-- PVM-null measurable sets are closed under countable unions. -/
 theorem proj_iUnion_eq_zero (P : ProjValMeasure X H) {ι : Type*} [Countable ι]

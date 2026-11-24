@@ -80,6 +80,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
   log-concave.
 * `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`: the central slice of a
   symmetric convex set is the largest.
+* `Convex.measure_preimage_add_le`: a symmetric convex set has at least the measure of each
+  of its translates (Anderson's inequality).
 
 ## References
 
@@ -116,18 +118,18 @@ The pointwise bound is deliberately imposed on the supplied measurable represent
 the form which tensorizes without choosing new representatives on individual sections. -/
 def HasPrekopaLeindler (mu : Measure E) (theta : ℝ) : Prop :=
   ∀ {f g h : E → ENNReal}, Measurable f → Measurable g → Measurable h →
-    (∀ x y, (f x).rpow (1 - theta) * (g y).rpow theta ≤
+    (∀ x y, f x ^ (1 - theta) * g y ^ theta ≤
       h ((1 - theta) • x + theta • y)) →
-    (∫⁻ x, f x ∂mu).rpow (1 - theta) * (∫⁻ x, g x ∂mu).rpow theta ≤
+    (∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta ≤
       ∫⁻ x, h x ∂mu
 
 /-- The Prékopa–Leindler property unfolded into its measurable-function formulation. -/
 theorem hasPrekopaLeindler_def (mu : Measure E) (theta : ℝ) :
     mu.HasPrekopaLeindler theta ↔
       ∀ {f g h : E → ENNReal}, Measurable f → Measurable g → Measurable h →
-        (∀ x y, (f x).rpow (1 - theta) * (g y).rpow theta ≤
+        (∀ x y, f x ^ (1 - theta) * g y ^ theta ≤
           h ((1 - theta) • x + theta • y)) →
-        (∫⁻ x, f x ∂mu).rpow (1 - theta) * (∫⁻ x, g x ∂mu).rpow theta ≤
+        (∫⁻ x, f x ∂mu) ^ (1 - theta) * (∫⁻ x, g x ∂mu) ^ theta ≤
           ∫⁻ x, h x ∂mu :=
   Iff.rfl
 
@@ -181,7 +183,7 @@ theorem HasPrekopaLeindler.prod {mu : Measure E} {nu : Measure F} [SFinite nu]
   have hgMarginal : Measurable gMarginal := hg.lintegral_prod_right'
   have hhMarginal : Measurable hMarginal := hh.lintegral_prod_right'
   have hmarginal (x y : E) :
-      (fMarginal x).rpow (1 - theta) * (gMarginal y).rpow theta ≤
+      fMarginal x ^ (1 - theta) * gMarginal y ^ theta ≤
         hMarginal ((1 - theta) • x + theta • y) := by
     apply hnu (hf.comp (measurable_const.prodMk measurable_id))
       (hg.comp (measurable_const.prodMk measurable_id))
@@ -250,7 +252,7 @@ theorem HasPrekopaLeindler.withDensity {mu : Measure E} {theta : ℝ}
     lintegral_withDensity_eq_lintegral_mul _ hφ hg, lintegral_withDensity_eq_lintegral_mul _ hφ hh]
   refine hmu (hφ.mul hf) (hφ.mul hg) (hφ.mul hh) fun x y ↦ ?_
   have h1θ : 0 ≤ 1 - theta := by linarith
-  simp only [Pi.mul_apply, ENNReal.rpow_eq_pow] at hfg ⊢
+  simp only [Pi.mul_apply] at hfg ⊢
   rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ, ENNReal.mul_rpow_of_nonneg _ _ hθ₀]
   calc φ x ^ (1 - theta) * f x ^ (1 - theta) * (φ y ^ theta * g y ^ theta)
       = φ x ^ (1 - theta) * φ y ^ theta * (f x ^ (1 - theta) * g y ^ theta) := by ring
@@ -280,7 +282,7 @@ namespace TauCeti.Real
 the volume of the superlevel set of `h`: below the common supremum the two sets are nonempty and
 one-dimensional Brunn–Minkowski applies, and above it they are empty. -/
 private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hg : AEMeasurable g)
-    (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+    (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ}
     (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) (s : ℝ≥0∞) :
     ENNReal.ofReal c * volume {x | s < f x} + ENNReal.ofReal d * volume {y | s < g y} ≤
       volume {z | s < h z} := by
@@ -288,7 +290,7 @@ private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hg
   · obtain ⟨x, hx⟩ := lt_iSup_iff.1 hs
     obtain ⟨y, hy⟩ := lt_iSup_iff.1 (hfg ▸ hs)
     refine (mul_volume_add_mul_volume_le ⟨x, hx⟩ ⟨y, hy⟩
-      (hg.nullMeasurable measurableSet_Ioi) hc hd).trans (measure_mono ?_)
+      (hg.nullMeasurable measurableSet_Ioi)).trans (measure_mono ?_)
     rintro _ ⟨_, ⟨x, hx, rfl⟩, _, ⟨y, hy, rfl⟩, rfl⟩
     exact (lt_min hx hy).trans_le (hmin x y)
   · have hf0 : {x | s < f x} = ∅ :=
@@ -297,11 +299,12 @@ private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hg
       eq_empty_of_forall_notMem fun y hy ↦ hs (hfg ▸ hy.trans_le (le_iSup g y))
     simp [hf0, hg0]
 
-/-- The inequality of `TauCeti.Real.mul_lintegral_add_mul_lintegral_le` for nonnegative
-coefficients. -/
-private theorem mul_lintegral_add_mul_lintegral_le_of_nonneg {f g h : ℝ → ℝ≥0∞}
-    (hf : AEMeasurable f) (hg : AEMeasurable g) (hh : AEMeasurable h)
-    (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+/-- **Prékopa–Leindler inequality for the minimum** on `ℝ`. If `f` and `g` have the same
+supremum and `h (c * x + d * y)` dominates `min (f x) (g y)` for all `x` and `y`, then
+`c ∫ f + d ∫ g ≤ ∫ h`. The coefficients may vanish or be negative (a negative coefficient
+contributes `0`), and the common supremum and the integrals may be infinite. -/
+theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (hg : AEMeasurable g) (hh : AEMeasurable h) (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ}
     (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) :
     ENNReal.ofReal c * (∫⁻ x, f x) + ENNReal.ofReal d * ∫⁻ y, g y ≤ ∫⁻ z, h z := by
   -- The layer-cake formula in `ℝ≥0∞`, at the exponent one.
@@ -311,41 +314,7 @@ private theorem mul_lintegral_add_mul_lintegral_le_of_nonneg {f g h : ℝ → �
   rw [hlayer hf, hlayer hg, hlayer hh, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   exact (le_lintegral_add _ _).trans <| lintegral_mono fun t ↦
-    mul_volume_add_mul_volume_lt_le hg hfg hc hd hmin _
-
-/-- **Prékopa–Leindler inequality for the minimum** on `ℝ`. If `f` and `g` have the same
-supremum and `h (c * x + d * y)` dominates `min (f x) (g y)` for all `x` and `y`, then
-`c ∫ f + d ∫ g ≤ ∫ h`. The coefficients may vanish, and the common supremum and the integrals may
-be infinite. A negative coefficient contributes nothing to the left side. -/
-theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
-    (hg : AEMeasurable g) (hh : AEMeasurable h) (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ}
-    (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) :
-    ENNReal.ofReal c * (∫⁻ x, f x) + ENNReal.ofReal d * ∫⁻ y, g y ≤ ∫⁻ z, h z := by
-  -- Reflect `f` and `g` where needed, so that the coefficients become `|c|` and `|d|`.
-  have hrefl (u : ℝ → ℝ≥0∞) (hu : AEMeasurable u) (s : ℝ) (hs : s = 1 ∨ s = -1) :
-      AEMeasurable (fun x ↦ u (s * x)) ∧ ∫⁻ x, u (s * x) = ∫⁻ x, u x ∧
-        ⨆ x, u (s * x) = ⨆ x, u x := by
-    rcases hs with rfl | rfl
-    · simp [hu]
-    · simp only [neg_mul, one_mul]
-      exact ⟨hu.comp_quasiMeasurePreserving
-        (Measure.measurePreserving_neg volume).quasiMeasurePreserving,
-        lintegral_neg_eq_self u, (Equiv.neg ℝ).iSup_comp (g := u)⟩
-  have hsign (a : ℝ) : ∃ s : ℝ, (s = 1 ∨ s = -1) ∧ a * s = |a| := by
-    rcases le_or_gt 0 a with ha | ha
-    · exact ⟨1, Or.inl rfl, by simp [abs_of_nonneg ha]⟩
-    · exact ⟨-1, Or.inr rfl, by simp [abs_of_neg ha]⟩
-  obtain ⟨sc, hsc, hcs⟩ := hsign c
-  obtain ⟨sd, hsd, hds⟩ := hsign d
-  obtain ⟨hf', hfi, hfs⟩ := hrefl f hf sc hsc
-  obtain ⟨hg', hgi, hgs⟩ := hrefl g hg sd hsd
-  have key := mul_lintegral_add_mul_lintegral_le_of_nonneg hf' hg' hh
-    (hfs.trans (hfg.trans hgs.symm)) (abs_nonneg c) (abs_nonneg d) fun x y ↦ by
-      simpa only [← mul_assoc, hcs, hds] using hmin (sc * x) (sd * y)
-  rw [hfi, hgi] at key
-  exact le_trans (add_le_add
-    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self c)) _)
-    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self d)) _)) key
+    mul_volume_add_mul_volume_lt_le hg hfg hmin _
 
 /-- The one-dimensional Prékopa–Leindler inequality at an interior weight, for `f` and `g` with
 finite suprema. -/
@@ -374,7 +343,7 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
     rw [← ENNReal.mul_iSup, ← ENNReal.mul_iSup, ENNReal.inv_mul_cancel hF0 hF,
       ENNReal.inv_mul_cancel hG0 hG]
   have key := mul_lintegral_add_mul_lintegral_le (hf.const_mul _).aemeasurable
-    (hg.const_mul _).aemeasurable (hh.const_mul K⁻¹).aemeasurable hsup
+    (hg.const_mul _).aemeasurable (hh.const_mul K⁻¹).aemeasurable hsup (c := 1 - θ) (d := θ)
     fun x y ↦ (ENNReal.min_le_rpow_one_sub_mul_rpow _ _ hθ₀.le hθ₁.le).trans <| by
       rw [hscale]
       gcongr
@@ -389,7 +358,6 @@ property at every weight `0 ≤ θ ≤ 1`. -/
 theorem hasPrekopaLeindler_volume {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
     (volume : Measure ℝ).HasPrekopaLeindler θ := by
   intro f g h hf hg hh hfgh
-  simp only [ENNReal.rpow_eq_pow] at hfgh ⊢
   rcases hθ₀.eq_or_lt with rfl | hθ₀
   · simpa using lintegral_mono fun x ↦ by simpa using hfgh x x
   rcases hθ₁.eq_or_lt with rfl | hθ₁
@@ -422,10 +390,8 @@ namespace TauCeti
 /-- The **Prékopa–Leindler inequality** on `ι → ℝ`: Lebesgue measure on a finite power of `ℝ` has
 the Prékopa–Leindler property at every weight `0 ≤ θ ≤ 1`. -/
 theorem hasPrekopaLeindler_volume_pi (ι : Type*) [Fintype ι] {θ : ℝ} (hθ₀ : 0 ≤ θ)
-    (hθ₁ : θ ≤ 1) : (volume : Measure (ι → ℝ)).HasPrekopaLeindler θ := by
-  intro f g h hf hg hh hfgh
-  exact Measure.HasPrekopaLeindler.pi (fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁)
-    hf hg hh hfgh
+    (hθ₁ : θ ≤ 1) : (volume : Measure (ι → ℝ)).HasPrekopaLeindler θ :=
+  Measure.HasPrekopaLeindler.pi fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁
 
 end TauCeti
 
@@ -482,9 +448,9 @@ theorem LogConcave.lintegral_prod_right
   obtain rfl : a = 1 - b := by linarith
   have hPL := hν hb (by linarith) (hf.comp measurable_prodMk_left)
     (hf.comp measurable_prodMk_left) (hf.comp measurable_prodMk_left) fun y₁ y₂ ↦ by
-      simpa [ENNReal.rpow_eq_pow] using
+      simpa using
         hlc.rpow_mul_rpow_le (x := (x₁, y₁)) (y := (x₂, y₂)) ha hb hab
-  simpa [ENNReal.rpow_eq_pow] using hPL
+  simpa using hPL
 
 /-- **Marginals over a convex set of log-concave functions are log-concave** (Bombieri–Gubler,
 Lemma C.3.4). If `f : E × F → ℝ≥0∞` is measurable and log-concave, `s ⊆ F` is measurable and
@@ -531,5 +497,17 @@ theorem _root_.Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
     exact ⟨fun h ↦ by simpa using hneg _ h, fun h ↦ by simpa using hneg _ h⟩
   dsimp only
   rw [hslice, Measure.measure_neg]
+
+/-- **Anderson's inequality for Prékopa–Leindler measures.** For a measurable convex set
+`C ⊆ F` with `-C = C` and a negation-invariant measure `ν` with the Prékopa–Leindler property at
+every weight, no translate `(a + ·) ⁻¹' C` of `C` has larger measure than `C`. -/
+theorem _root_.Convex.measure_preimage_add_le [MeasurableAdd₂ F] [MeasurableNeg F]
+    [ν.IsNegInvariant] (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {C : Set F}
+    (hC : MeasurableSet C) (hCc : Convex ℝ C) (hneg : ∀ x ∈ C, -x ∈ C) (a : F) :
+    ν ((a + ·) ⁻¹' C) ≤ ν C := by
+  have h := (hCc.linear_preimage (LinearMap.fst ℝ F F + LinearMap.snd ℝ F F))
+    |>.measure_preimage_prodMk_le_measure_preimage_prodMk_zero hν
+      ((measurable_fst.add measurable_snd) hC) (fun p hp ↦ by simpa [add_comm] using hneg _ hp) a
+  simpa [Set.preimage, zero_add] using h
 
 end TauCeti

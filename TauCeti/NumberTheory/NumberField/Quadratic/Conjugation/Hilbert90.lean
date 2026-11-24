@@ -16,9 +16,8 @@ extension the elementary construction here gives an element of `𝓞 K` rather t
 
 ## Main result
 
-* `NumberField.exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj`: if nonzero `x : 𝓞 K` and
-  `y : 𝓞 K` have equal products with their conjugates, there is nonzero `ε : 𝓞 K` satisfying
-  `x ε = y σε`.
+* `NumberField.exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj`: if `x y : 𝓞 K` have
+  equal products with their conjugates, there is nonzero `ε : 𝓞 K` satisfying `x ε = y σε`.
 -/
 
 public section
@@ -30,18 +29,24 @@ namespace NumberField
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 /-- **Hilbert's Theorem 90 for quadratic conjugation.** Let `σ` be the quadratic conjugation of a
-quadratic number field and let `x y : 𝓞 K` with `x ≠ 0` have equal norms, `x σx = y σy`. Then there
-is a nonzero `ε : 𝓞 K` with `x ε = y σε`; equivalently `y / x = ε / σε` is a "coboundary". The
-construction is explicit: `ε = σx (x + y)` works unless `x + y = 0`, and then `ε = σx θ x` does. -/
+quadratic number field and let `x y : 𝓞 K` have equal norms, `x σx = y σy`. Then there
+is a nonzero `ε : 𝓞 K` with `x ε = y σε`; for `x ≠ 0` this says that `y / x = ε / σε` is a
+"coboundary". -/
 theorem exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {x y : 𝓞 K}
-    (hx : x ≠ 0)
     (hnorm : x * ringOfIntegersQuadraticConj hmin hgen x =
       y * ringOfIntegersQuadraticConj hmin hgen y) :
     ∃ ε : 𝓞 K, ε ≠ 0 ∧ x * ε = y * ringOfIntegersQuadraticConj hmin hgen ε := by
   set σ := ringOfIntegersQuadraticConj hmin hgen
   have hinv : ∀ z : 𝓞 K, σ (σ z) = z := ringOfIntegersQuadraticConj_involutive hmin hgen
   have hgenσ : σ θ = -θ := ringOfIntegersQuadraticConj_gen hmin hgen
+  by_cases hx : x = 0
+  · -- then `y σy = 0`, so `y = 0`, and `ε = 1` works
+    have hy : y = 0 := by
+      rw [hx, zero_mul, eq_comm, mul_eq_zero] at hnorm
+      exact hnorm.elim id fun h0 => by simpa [hinv] using congrArg σ h0
+    exact ⟨1, one_ne_zero, by simp [hx, hy]⟩
+  -- otherwise `ε = σx (x + y)` works unless `x + y = 0`, and then `ε = σx θ x` does
   have hσx : σ x ≠ 0 := fun h0 => hx (by simpa [hinv] using congrArg σ h0)
   have hθ : (θ : 𝓞 K) ≠ 0 := fun h0 => coe_gen_ne_zero hmin (by rw [h0]; simp)
   by_cases hxy : x + y = 0
