@@ -247,13 +247,10 @@ private theorem chainComplexMap_ι_f_smoothSquareChain (hv : IsSmoothSphere I x 
 chains is one and the inclusion of smooth chains is injective. -/
 private theorem d_smoothSquareChain (hv : IsSmoothSphere I x v) :
     (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).d 2 1).hom
-      hv.smoothSquareChain = 0 := by
-  apply (ModuleCat.mono_iff_injective
-    ((SSet.chainComplexMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ)).f 1)).1
-    inferInstance
-  rw [map_zero, ← ModuleCat.comp_apply, ← HomologicalComplex.Hom.comm, ModuleCat.comp_apply,
-    chainComplexMap_ι_f_smoothSquareChain]
-  exact GenLoop.d_squareChain hv.genLoop
+      hv.smoothSquareChain = 0 :=
+  HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero
+    (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ))
+    (by rw [chainComplexMap_ι_f_smoothSquareChain]; exact GenLoop.d_squareChain hv.genLoop)
 
 /-- The class of the smooth triangulated cycle of a smooth sphere in smooth singular homology. -/
 private def smoothSquareClass (hv : IsSmoothSphere I x v) :

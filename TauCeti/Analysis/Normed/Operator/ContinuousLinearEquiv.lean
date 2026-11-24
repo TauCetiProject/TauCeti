@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import TauCeti.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Normalizing continuous linear equivalences
@@ -110,8 +111,8 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearEquiv
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
+  [SeminormedAddCommGroup F] [Module 𝕜 F]
 
 /-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous linear
 equivalence `e` bounds its inverse: `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
@@ -120,10 +121,12 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
   have hx := h (e.symm x)
   rw [e.apply_symm_apply] at hx
+  have hsq : ‖e.symm x‖ ^ 2 ≤ lam⁻¹ * ‖x‖ ^ 2 := by
+    rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
+    exact hx
   rw [← Real.sqrt_inv]
-  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg x) ?_
-  rw [inv_mul_eq_div, le_div_iff₀ hlam, mul_comm]
-  exact hx
+  exact (Real.le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
 
 end ContinuousLinearEquiv
 

@@ -52,6 +52,8 @@ as soon as they are domains.
   of a valuation ring generates its maximal ideal.
 * `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
+* `Irreducible.setOf_valuation_eq_one_eq_sdiff`: for an irreducible `ϖ` of the ring of integers
+  of a valuation on a field, the elements of valuation one are `v.integer \ ϖ • v.integer`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
 * `TauCeti.PreValuationRing.dvd_of_mem_of_notMem`: an element outside an ideal divides every
@@ -150,6 +152,26 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
     ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
   rw [hϖ.maximalIdeal_eq_of_preValuationRing]
   exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
+
+open Pointwise in
+/-- For an irreducible element `ϖ` of the ring of integers of a valuation `v` on a field, the
+elements of valuation one are the complement in `v.integer` of the maximal ideal
+`ϖ • v.integer`. -/
+theorem _root_.Irreducible.setOf_valuation_eq_one_eq_sdiff {K Γ₀ : Type*} [Field K]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} {ϖ : v.integer} (hϖ : Irreducible ϖ) :
+    {x : K | v x = 1} = (v.integer : Set K) \ (ϖ : K) • (v.integer : Set K) := by
+  have hm : ((↑) : v.integer → K) '' ↑(IsLocalRing.maximalIdeal v.integer) =
+      (ϖ : K) • (v.integer : Set K) := by
+    simpa using hϖ.image_maximalIdeal_pow_eq_smul (A := K) 1
+  rw [← hm]
+  have hint := Valuation.integer.integers v
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_sdiff, SetLike.mem_coe, Set.mem_image,
+    IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, not_exists, not_and]
+  refine ⟨fun hx ↦ ⟨(Valuation.mem_integer_iff _ x).2 hx.le, fun y hy hyx ↦
+    hy (hint.isUnit_iff_valuation_eq_one.2 (hyx.symm ▸ hx :))⟩, fun ⟨hx, h⟩ ↦ ?_⟩
+  by_contra hne
+  exact h ⟨x, hx⟩ (fun hu ↦ hne (hint.isUnit_iff_valuation_eq_one.1 hu)) rfl
 
 end ValuationRing
 

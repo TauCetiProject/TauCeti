@@ -533,6 +533,44 @@ def toStrictHom (ψ : StrictIso c d) : StrictHom c d where
 @[simp]
 theorem coe_toStrictHom (ψ : StrictIso c d) : ⇑ψ.toStrictHom = ψ := (rfl)
 
+/-- Replace the source of a strict crystal isomorphism along an equality of normal crystals on the
+same carrier. -/
+def congrLeft {c₁ c₂ : NormalCrystal P b B} (h : c₁ = c₂) (ψ : StrictIso c₁ d) :
+    StrictIso c₂ d where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by subst h; exact ψ.wt_toFun x
+  e_toFun i x := by subst h; exact ψ.e_toFun i x
+
+@[simp]
+theorem coe_congrLeft {c₁ c₂ : NormalCrystal P b B} (h : c₁ = c₂) (ψ : StrictIso c₁ d) :
+    ⇑(ψ.congrLeft h) = ψ := (rfl)
+
+@[simp]
+theorem congrLeft_rfl (ψ : StrictIso c d) : ψ.congrLeft rfl = ψ := (rfl)
+
+@[simp]
+theorem congrLeft_congrLeft {c₁ c₂ c₃ : NormalCrystal P b B} (h₁ : c₁ = c₂) (h₂ : c₂ = c₃)
+    (ψ : StrictIso c₁ d) : (ψ.congrLeft h₁).congrLeft h₂ = ψ.congrLeft (h₁.trans h₂) := (rfl)
+
+/-- Replace the target of a strict crystal isomorphism along an equality of normal crystals on the
+same carrier. -/
+def congrRight {d₁ d₂ : NormalCrystal P b B'} (h : d₁ = d₂) (ψ : StrictIso c d₁) :
+    StrictIso c d₂ where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by subst h; exact ψ.wt_toFun x
+  e_toFun i x := by subst h; exact ψ.e_toFun i x
+
+@[simp]
+theorem coe_congrRight {d₁ d₂ : NormalCrystal P b B'} (h : d₁ = d₂) (ψ : StrictIso c d₁) :
+    ⇑(ψ.congrRight h) = ψ := (rfl)
+
+@[simp]
+theorem congrRight_rfl (ψ : StrictIso c d) : ψ.congrRight rfl = ψ := (rfl)
+
+@[simp]
+theorem congrRight_congrRight {d₁ d₂ d₃ : NormalCrystal P b B'} (h₁ : d₁ = d₂) (h₂ : d₂ = d₃)
+    (ψ : StrictIso c d₁) : (ψ.congrRight h₁).congrRight h₂ = ψ.congrRight (h₁.trans h₂) := (rfl)
+
 variable (ψ : StrictIso c d) (i : b.support) (x : B)
 
 @[simp]
@@ -585,6 +623,14 @@ theorem apply_symm_apply (y : B') : ψ (ψ.symm y) = y := ψ.toEquiv.apply_symm_
 
 @[simp]
 theorem symm_symm : ψ.symm.symm = ψ := (rfl)
+
+@[simp]
+theorem congrLeft_symm {c₁ c₂ : NormalCrystal P b B} (h : c₁ = c₂) (ψ : StrictIso c₁ d) :
+    (ψ.congrLeft h).symm = ψ.symm.congrRight h := (rfl)
+
+@[simp]
+theorem congrRight_symm {d₁ d₂ : NormalCrystal P b B'} (h : d₁ = d₂) (ψ : StrictIso c d₁) :
+    (ψ.congrRight h).symm = ψ.symm.congrLeft h := (rfl)
 
 /-- Composition of strict isomorphisms. -/
 def trans (χ : StrictIso d d') : StrictIso c d' where

@@ -26,7 +26,9 @@ supplies the Hausdorff instance needed by the exponential API.
 * `TauCeti.Lie.ImmersedLieSubgroupData.toContMDiffMonoidMorphism`: the presenting homomorphism as
   a smooth monoid morphism.
 * `TauCeti.Lie.ImmersedLieSubgroupData.lieMapToHom`: its differential at the identity.
-* `TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMapToHom`: the differential is injective.
+* `TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMapToHom`: the differential is injective, as is
+  the Lie map of the presenting homomorphism
+  (`TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism`).
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_lieMapToHom_le`: its range lies in
   `TauCeti.Lie.lieSubalgebraOfSubgroup K`.
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_mfderiv_toHom_one`: in the tangent space at the
@@ -118,6 +120,11 @@ theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
   apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
 
+/-- The Lie functor applied to the smooth homomorphism of an immersed presentation is injective. -/
+theorem injective_lieMap_toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
+    Function.Injective (lieMap d.toContMDiffMonoidMorphism) :=
+  d.injective_lieMapToHom
+
 /-- In the tangent space at the identity, the range of the differential of the presenting
 homomorphism is the image of the range of `lieMapToHom`. -/
 theorem range_mfderiv_toHom_one (d : ImmersedLieSubgroupData I K) :
@@ -164,9 +171,7 @@ theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K
 @[simp]
 theorem toHom_lieExp (d : ImmersedLieSubgroupData I K)
     (X : LeftInvariantDerivation d.I' d.X) :
-    let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
     d.toHom (lieExp X) = lieExp (d.lieMapToHom X) := by
-  let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
   simpa only [toContMDiffMonoidMorphism_apply, lieMap_toContMDiffMonoidMorphism] using
     map_lieExp d.toContMDiffMonoidMorphism X
 

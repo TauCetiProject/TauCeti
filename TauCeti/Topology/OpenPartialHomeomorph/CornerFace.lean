@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 import Mathlib.Topology.OpenPartialHomeomorph.Continuity
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Charts straightening the labelled faces of a corner domain
