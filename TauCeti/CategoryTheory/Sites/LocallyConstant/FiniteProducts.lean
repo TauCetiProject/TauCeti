@@ -7,7 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.Sites.Continuous
-public import TauCeti.CategoryTheory.Sites.LocallyConstant
+public import TauCeti.CategoryTheory.Sites.Limits
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
 /-!
 # Finite products of locally constant sheaves
@@ -16,18 +17,17 @@ Let `(C, J)` be a site and let `A` be a category with finite limits in which she
 exists and is left exact. For a property `P` of objects of `A` closed under binary products, the
 sheaves which are locally constant with values in `P` are closed under binary products: over a
 common refinement of the two covering sieves, `F ⨯ G` is the constant sheaf on `M ⨯ N`, since the
-constant sheaf functor and the restriction functors to the slices `Over Y` preserve finite limits.
+constant sheaf functor (`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`) and the
+restriction functors to the slices `Over Y` preserve finite limits.
 The terminal sheaf is the constant sheaf on the terminal object, so when `P` also holds for the
 terminal object of `A`, locally constant sheaves with values in `P` are closed under all finite
 products.
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`: the constant sheaf functor
-  preserves finite limits.
 * `CategoryTheory.Sheaf.IsLocallyConstantIn.prod`,
   `CategoryTheory.Sheaf.IsLocallyConstantIn.of_isTerminal`: binary products and terminal objects.
-* The instances `IsClosedUnderIsomorphisms`, `IsClosedUnderBinaryProducts` and
+* The instances `IsClosedUnderBinaryProducts`, `IsClosedUnderLimitsOfShape (Discrete PEmpty)` and
   `IsClosedUnderFiniteProducts` for the object property `Sheaf.IsLocallyConstantIn J P`.
 
 ## References
@@ -44,25 +44,11 @@ open CategoryTheory Limits
 namespace CategoryTheory.Sheaf
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {A : Type u'}
-  [Category.{v'} A]
-
-instance isClosedUnderIsomorphisms_isLocallyConstantIn [HasWeakSheafify J A]
-    {P : ObjectProperty A} :
-    ObjectProperty.IsClosedUnderIsomorphisms (IsLocallyConstantIn J P) where
-  of_iso e hF := hF.of_iso e
-
-variable [HasSheafify J A] [HasFiniteLimits A]
-
-variable (J A) in
-/-- The constant sheaf functor preserves finite limits when sheafification is left exact. -/
-instance preservesFiniteLimits_constantSheaf : PreservesFiniteLimits (constantSheaf J A) :=
-  comp_preservesFiniteLimits _ _
-
-variable {P : ObjectProperty A}
+  [Category.{v'} A] [HasSheafify J A] [HasFiniteLimits A] {P : ObjectProperty A}
 
 /-- The restriction to `Over Y` of the constant sheaf on a binary product is the binary product
 of the restrictions of the constant sheaves. -/
-noncomputable def overConstantSheafProdIso (M N : A) (Y : C) :
+private noncomputable def overConstantSheafProdIso (M N : A) (Y : C) :
     ((constantSheaf J A).obj (M ⨯ N)).over Y ≅
       ((constantSheaf J A).obj M).over Y ⨯ ((constantSheaf J A).obj N).over Y :=
   (J.overPullback A Y).mapIso (PreservesLimitPair.iso (constantSheaf J A) M N) ≪≫
@@ -100,15 +86,17 @@ instance isClosedUnderBinaryProducts_isLocallyConstantIn [P.IsClosedUnderBinaryP
       HasLimit.isoOfNatIso (diagramIsoPair p.diag)).symm
       (IsLocallyConstantIn.prod (p.prop_diag_obj _) (p.prop_diag_obj _))
 
+instance isClosedUnderLimitsOfShape_pEmpty_isLocallyConstantIn
+    [P.IsClosedUnderLimitsOfShape (Discrete.{0} PEmpty)] :
+    ObjectProperty.IsClosedUnderLimitsOfShape (IsLocallyConstantIn J P) (Discrete.{0} PEmpty) where
+  limitsOfShape_le := by
+    rintro F ⟨p⟩
+    exact .of_isTerminal P.prop_terminal
+      (isLimitChangeEmptyCone _ p.isLimit (asEmptyCone F) (Iso.refl _))
+
 instance isClosedUnderFiniteProducts_isLocallyConstantIn [P.IsClosedUnderBinaryProducts]
     [P.IsClosedUnderLimitsOfShape (Discrete.{0} PEmpty)] :
-    ObjectProperty.IsClosedUnderFiniteProducts (IsLocallyConstantIn J P) := by
-  have : ObjectProperty.IsClosedUnderLimitsOfShape (IsLocallyConstantIn J P)
-      (Discrete.{0} PEmpty) := ⟨by
-    rintro F ⟨p⟩
-    exact .of_isTerminal P.prop_terminal <| (IsLimit.equivOfNatIsoOfIso
-      (Functor.uniqueFromEmpty p.diag) _ (asEmptyCone F)
-        (Cone.ext (Iso.refl _) (by rintro ⟨⟨⟩⟩))) p.isLimit⟩
-  exact .mk'
+    ObjectProperty.IsClosedUnderFiniteProducts (IsLocallyConstantIn J P) :=
+  .mk'
 
 end CategoryTheory.Sheaf

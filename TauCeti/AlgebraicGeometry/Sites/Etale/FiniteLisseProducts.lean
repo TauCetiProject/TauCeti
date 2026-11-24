@@ -22,13 +22,15 @@ value the product of the two finitely generated modules
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.isFiniteLisse_iff_isLocallyConstantIn_isFG`: finite lisse sheaves are the
+* `CategoryTheory.Sheaf.isFiniteLisse_eq_isLocallyConstantIn_isFG`,
+  `CategoryTheory.Sheaf.isFiniteLisse_iff_isLocallyConstantIn_isFG`: finite lisse sheaves are the
   sheaves which are locally constant with values in Mathlib's `ModuleCat.isFG Λ`.
 * `CategoryTheory.Sheaf.IsFiniteLisse.prod`, `CategoryTheory.Sheaf.IsFiniteLisse.biprod`,
   `CategoryTheory.Sheaf.IsFiniteLisse.of_isZero`: binary products, binary biproducts and zero
   sheaves.
-* The instances `ContainsZero`, `IsClosedUnderIsomorphisms` and `IsClosedUnderFiniteProducts` for
-  the object property `CategoryTheory.Sheaf.IsFiniteLisse`.
+* The instances `ContainsZero` and `IsClosedUnderFiniteProducts` for the object property
+  `CategoryTheory.Sheaf.IsFiniteLisse`; it is closed under isomorphisms by the instance for
+  `CategoryTheory.Sheaf.IsLocallyConstantIn`.
 
 ## References
 
@@ -46,13 +48,20 @@ namespace CategoryTheory.Sheaf
 
 variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
 
+/-- The finite lisse étale sheaves of `Λ`-modules are the sheaves which are locally constant with
+values in the finitely generated `Λ`-modules, expressed through Mathlib's `ModuleCat.isFG Λ`. -/
+theorem isFiniteLisse_eq_isLocallyConstantIn_isFG :
+    (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) =
+      IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG Λ) :=
+  congrArg (IsLocallyConstantIn (smallEtaleTopology S))
+    (funext fun M : ModuleCat.{u} Λ ↦ propext M.isFG_iff).symm
+
 /-- An étale sheaf of `Λ`-modules is finite lisse if and only if it is locally constant with values
 in the finitely generated `Λ`-modules, expressed through Mathlib's `ModuleCat.isFG Λ`. -/
 theorem isFiniteLisse_iff_isLocallyConstantIn_isFG
     (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) :
-    F.IsFiniteLisse ↔ F.IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG Λ) := by
-  rw [show ModuleCat.isFG Λ = fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M from
-    funext fun M ↦ propext M.isFG_iff]
+    F.IsFiniteLisse ↔ F.IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG Λ) :=
+  iff_of_eq (congrFun isFiniteLisse_eq_isLocallyConstantIn_isFG F)
 
 /-- **Binary products of finite lisse sheaves.** The product of two finite lisse étale sheaves of
 `Λ`-modules is finite lisse. -/
@@ -74,11 +83,6 @@ theorem IsFiniteLisse.of_isZero {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u}
   rw [isFiniteLisse_iff_isLocallyConstantIn_isFG]
   exact .of_isTerminal (ModuleCat.isFG Λ).prop_terminal hF.isTerminal
 
-instance isClosedUnderIsomorphisms_isFiniteLisse :
-    ObjectProperty.IsClosedUnderIsomorphisms
-      (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
-  of_iso e hF := hF.of_iso e
-
 instance containsZero_isFiniteLisse :
     ObjectProperty.ContainsZero
       (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
@@ -87,10 +91,7 @@ instance containsZero_isFiniteLisse :
 instance isClosedUnderFiniteProducts_isFiniteLisse :
     ObjectProperty.IsClosedUnderFiniteProducts
       (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) := by
-  have : (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) =
-      IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG Λ) :=
-    funext fun F ↦ propext (isFiniteLisse_iff_isLocallyConstantIn_isFG F)
-  rw [this]
+  rw [isFiniteLisse_eq_isLocallyConstantIn_isFG]
   infer_instance
 
 end CategoryTheory.Sheaf
