@@ -22,13 +22,13 @@ is the class of a vector of norm `-2`, a root of `M` when `N` is negative defini
 
 The proof only adjusts the vector inside its class. Write a class representative as
 `x = α e + β f + y` with `e`, `f` the isotropic basis of `U` and `y ∈ N`. Translating by twice
-`w = a e + b f + z` changes the norm by `4 (B(x, w) + B(w, w) / 2)`, and the integer
-`B(x, w) + B(w, w) / 2 = α b + β a + 2 a b + B(y, z) + B(z, z) / 2` takes every value: if `α` or
-`β` is odd this is already so for `z = 0`, by solving a linear equation in `b` or `a`. If both are
-even, after normalizing `a` it remains to control the parity of `B(y, z) + B(z, z) / 2`, which is
-the parity of `B(y, z)` because `N` is even. If every `B(y, z)` were even, then `y` would be a
-characteristic vector of the even unimodular lattice `N`, hence lie in `2N`, and the class of `x`
-would be zero.
+`w = a e + b f + z` changes the norm by `4 (B(x, w) + B(w, w))`, and the integer
+`B(x, w) + B(w, w) = α b + β a + 2 a b + B(y, z) + B(z, z)` takes every value: if `α` or `β` is
+odd this is already so for `z = 0`, by solving a linear equation in `b` or `a`. If both are even,
+after normalizing `a` it remains to control the parity of `B(y, z) + B(z, z)`, which is the parity
+of `B(y, z)` because `B(z, z)` is even, `N` being even. If every `B(y, z)` were even, then `y`
+would be a characteristic vector of the even unimodular lattice `N`, hence lie in `2N`, and the
+class of `x` would be zero.
 
 For `M = U ⊕ E₈(-1)` this is the statement that every class of `M / 2M` with `Q = 1` contains a
 root of `M`. Since the orthogonal transvections of the quadratic space `M / 2M` over `𝔽₂` are
@@ -55,77 +55,68 @@ namespace TauCeti.IntegralLattice
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {N : IntegralLattice W}
 
-/-- The vector `a e + b f + z` of `U ⊕ N`, where `e` and `f` are the isotropic basis vectors of
-the hyperbolic plane. -/
-private noncomputable def hyperbolicVector (a b : ℤ) (z : N) : hyperbolicPlane.orthogonalSum N :=
-  ⟨(![(a : ℚ), b], z), by
-    rw [orthogonalSum_carrier, Submodule.mem_prod, mem_hyperbolicPlane_carrier_iff]
-    exact ⟨fun i ↦ by fin_cases i <;> simp, z.property⟩⟩
-
-/-- The ambient vector of `a e + b f + z`. -/
-private theorem coe_hyperbolicVector (a b : ℤ) (z : N) :
-    (hyperbolicVector a b z : (Fin 2 → ℚ) × W) = (![(a : ℚ), b], (z : W)) :=
-  (rfl)
-
-/-- Every vector of `U ⊕ N` is `α e + β f + y` with integer coordinates `α` and `β`. -/
-private theorem exists_eq_hyperbolicVector (x : hyperbolicPlane.orthogonalSum N) :
-    ∃ (α β : ℤ) (y : N), x = hyperbolicVector α β y := by
-  have hx : (x : (Fin 2 → ℚ) × W) ∈ hyperbolicPlane.carrier.prod N.carrier := by
-    rw [← orthogonalSum_carrier]
-    exact x.property
-  rw [Submodule.mem_prod] at hx
-  obtain ⟨α, hα⟩ := (mem_hyperbolicPlane_carrier_iff _).mp hx.1 0
-  obtain ⟨β, hβ⟩ := (mem_hyperbolicPlane_carrier_iff _).mp hx.1 1
-  refine ⟨α, β, ⟨(x : (Fin 2 → ℚ) × W).2, hx.2⟩, Subtype.ext (Prod.ext ?_ rfl)⟩
-  ext i
-  fin_cases i
-  · exact hα.symm
-  · exact hβ.symm
-
-/-- The integer `B(x, w) + B(w, w) / 2` for `x = α e + β f + y` and `w = a e + b f + z`. -/
-private theorem integralForm_add_integralNorm_hyperbolicVector (α β a b : ℤ) (y z : N) :
-    (hyperbolicPlane.orthogonalSum N).integralForm (hyperbolicVector α β y)
-        (hyperbolicVector a b z) +
-      (hyperbolicPlane.orthogonalSum N).integralNorm (hyperbolicVector a b z) =
-      α * b + β * a + 2 * a * b + N.integralForm y z + N.integralNorm z := by
-  apply Int.cast_injective (α := ℚ)
-  simp only [Int.cast_add, Int.cast_mul, Int.cast_ofNat, integralForm_cast, integralNorm_cast,
-    norm_apply, orthogonalSum_form, LinearMap.BilinForm.prod_apply, coe_hyperbolicVector,
-    hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
+/-- The form of `U` in the isotropic basis `e`, `f`: `B(α e + β f, a e + b f) = α b + β a`. -/
+private theorem integralForm_hyperbolicPlaneBasis (α β a b : ℤ) :
+    hyperbolicPlane.integralForm (α • hyperbolicPlaneBasis 0 + β • hyperbolicPlaneBasis 1)
+      (a • hyperbolicPlaneBasis 0 + b • hyperbolicPlaneBasis 1) = α * b + β * a := by
+  have h (i j : Fin 2) := congrFun (congrFun gramMatrix_hyperbolicPlaneBasis i) j
+  simp only [gramMatrix_apply] at h
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h,
+    Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.empty_val', Matrix.cons_val_fin_one]
   ring
 
-/-- A vector of `U ⊕ N` with even hyperbolic coordinates and component in `2N` is zero
-modulo `2(U ⊕ N)`. -/
-private theorem mk_hyperbolicVector_eq_zero (k m : ℤ) (v : N) :
-    (Submodule.Quotient.mk (hyperbolicVector (k + k) (m + m) ((2 : ℤ) • v)) :
-      QuotSMulTop (2 : ℤ) (hyperbolicPlane.orthogonalSum N)) = 0 := by
-  have h : hyperbolicVector (k + k) (m + m) ((2 : ℤ) • v) = (2 : ℤ) • hyperbolicVector k m v := by
-    apply Subtype.ext
-    apply Prod.ext
-    · ext i
-      fin_cases i <;> simp [coe_hyperbolicVector, two_mul]
-    · simp [coe_hyperbolicVector]
-  rw [h, Submodule.Quotient.mk_eq_zero]
-  exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
+/-- Every vector of `U ⊕ N` is `α e + β f + y` with integer coordinates `α` and `β` and `y ∈ N`. -/
+private theorem exists_eq_inl_add_inr (x : hyperbolicPlane.orthogonalSum N) :
+    ∃ (α β : ℤ) (y : N), x = orthogonalSumInl hyperbolicPlane N
+      (α • hyperbolicPlaneBasis 0 + β • hyperbolicPlaneBasis 1) +
+        orthogonalSumInr hyperbolicPlane N y := by
+  refine ⟨hyperbolicPlaneBasis.repr (orthogonalSumFst hyperbolicPlane N x) 0,
+    hyperbolicPlaneBasis.repr (orthogonalSumFst hyperbolicPlane N x) 1,
+    orthogonalSumSnd hyperbolicPlane N x, ?_⟩
+  rw [← Fin.sum_univ_two (fun i ↦
+      hyperbolicPlaneBasis.repr (orthogonalSumFst hyperbolicPlane N x) i • hyperbolicPlaneBasis i),
+    hyperbolicPlaneBasis.sum_repr, orthogonalSumInl_fst_add_inr_snd_eq]
 
-/-- For a vector `x` of `U ⊕ N` outside `2(U ⊕ N)`, the integer `B(x, w) + B(w, w) / 2` takes
-every value as `w` runs over `U ⊕ N`. -/
+/-- The integer `B(x, w) + B(w, w)` for `x = α e + β f + y` and `w = a e + b f + z`. -/
+private theorem integralForm_add_integralNorm_inl_add_inr (α β a b : ℤ) (y z : N) :
+    (hyperbolicPlane.orthogonalSum N).integralForm
+        (orthogonalSumInl hyperbolicPlane N
+          (α • hyperbolicPlaneBasis 0 + β • hyperbolicPlaneBasis 1) +
+            orthogonalSumInr hyperbolicPlane N y)
+        (orthogonalSumInl hyperbolicPlane N
+          (a • hyperbolicPlaneBasis 0 + b • hyperbolicPlaneBasis 1) +
+            orthogonalSumInr hyperbolicPlane N z) +
+      (hyperbolicPlane.orthogonalSum N).integralNorm
+        (orthogonalSumInl hyperbolicPlane N
+          (a • hyperbolicPlaneBasis 0 + b • hyperbolicPlaneBasis 1) +
+            orthogonalSumInr hyperbolicPlane N z) =
+      α * b + β * a + 2 * a * b + N.integralForm y z + N.integralNorm z := by
+  rw [integralForm_orthogonalSum, integralNorm_orthogonalSum]
+  simp only [map_add (orthogonalSumFst hyperbolicPlane N),
+    map_add (orthogonalSumSnd hyperbolicPlane N), orthogonalSumFst_inl, orthogonalSumFst_inr,
+    orthogonalSumSnd_inl, orthogonalSumSnd_inr, add_zero, zero_add, integralNorm_apply]
+  rw [integralForm_hyperbolicPlaneBasis, integralForm_hyperbolicPlaneBasis]
+  ring
+
+/-- For a vector `x` of `U ⊕ N` outside `2(U ⊕ N)`, the integer `B(x, w) + B(w, w)` takes every
+value as `w` runs over `U ⊕ N`. -/
 private theorem exists_integralForm_add_integralNorm_eq (hN : N.IsEven) (hNu : N.IsUnimodular)
     {x : hyperbolicPlane.orthogonalSum N}
     (hx : (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) (hyperbolicPlane.orthogonalSum N)) ≠ 0)
     (d : ℤ) :
     ∃ w, (hyperbolicPlane.orthogonalSum N).integralForm x w +
       (hyperbolicPlane.orthogonalSum N).integralNorm w = d := by
-  obtain ⟨α, β, y, rfl⟩ := exists_eq_hyperbolicVector x
+  obtain ⟨α, β, y, rfl⟩ := exists_eq_inl_add_inr x
   suffices ∃ (a b : ℤ) (z : N),
       α * b + β * a + 2 * a * b + N.integralForm y z + N.integralNorm z = d by
     obtain ⟨a, b, z, h⟩ := this
-    exact ⟨hyperbolicVector a b z, by rw [integralForm_add_integralNorm_hyperbolicVector, h]⟩
+    exact ⟨_, by rw [integralForm_add_integralNorm_inl_add_inr α β a b y z, h]⟩
   have hNz (z : N) : Even (N.integralNorm z) :=
     (N.even_integralNorm_iff z).mpr (hN.exists_norm_eq_two_mul z)
   rcases Int.even_or_odd α with ⟨k, rfl⟩ | ⟨k, rfl⟩
   · rcases Int.even_or_odd β with ⟨m, rfl⟩ | ⟨m, rfl⟩
-    · -- Both coordinates are even, so only the parity of `B(y, z) + B(z, z) / 2` matters.
+    · -- Both coordinates are even, so only the parity of `B(y, z) + B(z, z)` matters.
       obtain ⟨z, c, hc⟩ : ∃ z : N, Even (d - N.integralForm y z - N.integralNorm z) := by
         by_cases hd : Even d
         · exact ⟨0, by simpa using hd⟩
@@ -139,8 +130,10 @@ private theorem exists_integralForm_add_integralNorm_eq (hN : N.IsEven) (hNu : N
           obtain ⟨v, hv⟩ := hNu.exists_characteristicVector_sub_eq_two_smul hy
             ((N.isEven_iff_isCharacteristicVector_zero).mp hN)
           rw [sub_zero] at hv
-          rw [hv] at hx
-          exact hx (mk_hyperbolicVector_eq_zero k m v)
+          apply hx
+          rw [Submodule.Quotient.mk_eq_zero, hv, ← two_smul ℤ k, ← two_smul ℤ m, smul_assoc,
+            smul_assoc, ← smul_add, map_zsmul, map_zsmul, ← smul_add]
+          exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
         exact ⟨z, ((Int.not_even_iff_odd.mp hd).sub_odd hz).sub (hNz z)⟩
       exact ⟨1 - k, c - m * (1 - k), z, by linear_combination -hc⟩
     · exact ⟨d - (k + k) * -m, -m, 0, by simp only [map_zero, add_zero]; ring⟩

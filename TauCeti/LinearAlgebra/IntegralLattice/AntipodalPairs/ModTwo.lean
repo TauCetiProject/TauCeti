@@ -66,13 +66,6 @@ instance instFiniteNormClassesModTwo (n : ℚ) : Finite (L.normClassesModTwo n) 
 theorem finite_normClassesModTwo (n : ℚ) : (L.normClassesModTwo n).Finite :=
   Set.toFinite _
 
-/-- Translating by twice a lattice vector changes the norm by four times an integer. -/
-theorem integralNorm_add_two_smul (x w : L) :
-    L.integralNorm (x + (2 : ℤ) • w) =
-      L.integralNorm x + 4 * (L.integralForm x w + L.integralNorm w) := by
-  rw [integralNorm_add, QuadraticMap.map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  ring
-
 /-- Vectors with the same residue modulo `2L` have norms congruent modulo four. -/
 theorem integralNorm_modEq_of_mk_eq {x y : L}
     (h : (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) L) = Submodule.Quotient.mk y) :
