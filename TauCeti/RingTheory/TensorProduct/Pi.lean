@@ -20,11 +20,14 @@ right factor. This file gives the algebra equivalence for a product in the left 
 Base-changing a section factoring through a coordinate projection commutes with the same
 product decomposition (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
+For a finite family the left distribution is `piLeft`.
+
 ## Main declarations
 
 * `TauCeti.Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
 * `TauCeti.Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
   `Algebra.TensorProduct.piScalarRight` on `Pi.single i x`.
+* `TauCeti.Algebra.TensorProduct.piLeft`: `(∀ i, A i) ⊗[R] B ≃ₐ[R] ∀ i, A i ⊗[R] B` for finite `ι`.
 -/
 
 public section
@@ -70,6 +73,64 @@ theorem piScalarRight_symm_single (R S A : Type*) {ι : Type*} [CommSemiring R] 
   rw [AlgEquiv.symm_apply_eq]
   ext k
   simp [Pi.single_apply]
+
+section piLeft
+
+variable (R : Type*) {ι : Type*} (A : ι → Type*) (B : Type*) [CommSemiring R]
+  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] [Semiring B] [Algebra R B]
+  [Fintype ι] [DecidableEq ι]
+
+/-- The tensor product of algebras distributes over a finite product in the left factor:
+`(∀ i, A i) ⊗[R] B ≃ₐ[R] ∀ i, A i ⊗[R] B`. This is the algebra form of Mathlib's linear
+`TensorProduct.piLeft`, and the left counterpart of `Algebra.TensorProduct.piRight`. -/
+def piLeft : (∀ i, A i) ⊗[R] B ≃ₐ[R] ∀ i, A i ⊗[R] B :=
+  (Algebra.TensorProduct.comm R _ _).trans <| (Algebra.TensorProduct.piRight R R B A).trans <|
+    AlgEquiv.piCongrRight fun i ↦ Algebra.TensorProduct.comm R B (A i)
+
+variable {R A B}
+
+/-- `piLeft` sends a pure tensor `a ⊗ₜ b` to the family `fun i ↦ a i ⊗ₜ b`. -/
+@[simp]
+theorem piLeft_tmul (a : ∀ i, A i) (b : B) :
+    piLeft R A B (a ⊗ₜ b) = fun i ↦ a i ⊗ₜ b := by
+  ext i
+  simp [piLeft]
+
+/-- The inverse of `piLeft` sends `fun i ↦ a i ⊗ₜ b` to `a ⊗ₜ b`. -/
+@[simp]
+theorem piLeft_symm_tmul (a : ∀ i, A i) (b : B) :
+    (piLeft R A B).symm (fun i ↦ a i ⊗ₜ b) = a ⊗ₜ b :=
+  (AlgEquiv.symm_apply_eq _).2 (piLeft_tmul a b).symm
+
+/-- The inverse of `piLeft` sends `Pi.single i (a ⊗ₜ b)` to `Pi.single i a ⊗ₜ b`. -/
+@[simp]
+theorem piLeft_symm_single (i : ι) (a : A i) (b : B) :
+    (piLeft R A B).symm (Pi.single i (a ⊗ₜ b)) = Pi.single i a ⊗ₜ b := by
+  rw [AlgEquiv.symm_apply_eq, piLeft_tmul]
+  ext j
+  exact (Pi.apply_single (fun j (x : A j) ↦ x ⊗ₜ[R] b) (fun _ ↦ TensorProduct.zero_tmul _ _)
+    i a j).symm
+
+/-- The `i`-th coordinate of `piLeft R A B x` is the image of `x` under the coordinate projection
+`∀ i, A i → A i` tensored with the identity of `B`. -/
+@[simp]
+theorem piLeft_apply (i : ι) (x : (∀ i, A i) ⊗[R] B) :
+    piLeft R A B x i =
+      Algebra.TensorProduct.map (Pi.evalAlgHom R A i) (AlgHom.id R B) x := by
+  induction x with
+  | tmul a b => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- The inverse of `piLeft` sends `Pi.single i x` to the image of `x` under the inclusion
+`A i → ∀ i, A i` tensored with the identity of `B`. -/
+theorem piLeft_symm_single_eq_map (i : ι) (x : A i ⊗[R] B) :
+    (piLeft R A B).symm (Pi.single i x) =
+      TensorProduct.map (LinearMap.single R A i) LinearMap.id x := by
+  induction x with
+  | tmul a b => simp
+  | add x y hx hy => simp [Pi.single_add, hx, hy]
+
+end piLeft
 
 end TauCeti.Algebra.TensorProduct
 
