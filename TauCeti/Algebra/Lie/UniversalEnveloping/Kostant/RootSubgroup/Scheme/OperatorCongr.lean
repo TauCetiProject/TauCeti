@@ -6,19 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.LinearMap
 
 /-!
 # Changing the Lie-algebra presentation of a represented toral closure
 
 The Kostant exponential on a fixed integral lattice depends only on the rational operator
-acting on it. Consequently, two actions of possibly different Lie algebras with the same
-numbered root operators and weight torus define the same integral closed subgroup of `GLₙ`.
-This permits replacing a Serre presentation by a pinned Lie algebra without changing the
-represented group scheme, including its nonreduced fibres.
+acting on it. Consequently, two actions of possibly different Lie algebras whose root operators
+match up to a bijection of root indices and whose weight-torus coordinate maps have the same
+kernel (for instance, when one weight family is pushed forward from the other along an injective
+map of character lattices) define the same integral closed subgroup of `GLₙ`. This permits
+replacing a Serre presentation or reindexing simple nodes on a pinned Lie algebra without changing
+the represented group scheme, including its nonreduced fibres.
 
-The coordinate-map argument extends the selected-root computation in
-`kostantRootSubgroup_congr`: compare the polynomial coactions on the lattice, then use the
-common-kernel universal property for the toral defining ideals. No faithfulness, field-valued
+The coordinate-map comparison `kostantRootSubgroupCoordinateMap_eq_of_operator_eq` compares
+the polynomial coactions on the lattice. The common-kernel universal property then identifies
+the toral defining ideals. No faithfulness, field-valued
 point generation, or specialization equality is assumed.
 
 ## References
@@ -32,7 +35,7 @@ public section
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 variable {L L' : Type*} [LieRing L] [LieAlgebra ℚ L] [LieRing L'] [LieAlgebra ℚ L']
-  {I I' κ' : Type*} {κ : Type} {V : Type} [AddCommGroup V] [Module ℚ V]
+  {I I' : Type*} {κ κ' : Type} {V : Type} [AddCommGroup V] [Module ℚ V]
   (e : I → L) (h : κ → L)
   (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
@@ -41,25 +44,6 @@ variable {L L' : Type*} [LieRing L] [LieAlgebra ℚ L] [LieRing L'] [LieAlgebra 
   (e' : I' → L') (h' : κ' → L')
   (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
   (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
-
-/-- The represented root coordinate map depends only on its rational operator and integral
-lattice, not on the Lie algebra or generator presentation producing that operator. -/
-theorem kostantRootSubgroupCoordinateMap_eq_of_operator_eq
-    (i : I) (i' : I')
-    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
-    (hop : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
-      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
-    kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
-      kostantRootSubgroupCoordinateMap e' h' ρ' M hM' i' hnil' b := by
-  apply CommHopfAlgCat.hom_ext
-  apply BialgHom.coe_toAlgHom_injective
-  apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
-  intro r s
-  simp only [BialgHom.coe_toAlgHom]
-  rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
-  simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-    kostantRootSubgroupComodule_coact, hop]
 
 /-- Equality of rational root operators gives the same exponential matrix over every
 commutative value ring, not just over the rational field. -/
@@ -78,6 +62,54 @@ theorem kostantRootSubgroupMatrix_eq_of_operator_eq
       i i' hnil hnil' hop,
     pointsMulEquiv_kostantRootSubgroupCoordinateMap]
 
+/-- Two presentations on the same lattice whose root operators match along a bijection `σ : I ≃ I'`
+and whose weight-torus coordinate maps have the same kernel define the same integral toral closure,
+even if their Lie algebras, root index sets, or character lattices differ. -/
+theorem kostantToralDefiningIdeal_eq_of_operator_equiv
+    [Finite κ] [Finite κ'] (σ : I ≃ I')
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hnil' : ∀ i', IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (wt : Fin n → κ → ℤ) (wt' : Fin n → κ' → ℤ)
+    (hop : ∀ i, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' (σ i))))
+    (htorus :
+      RingHom.ker
+          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom.toRingHom =
+        RingHom.ker
+          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt').hom.toAlgHom.toRingHom) :
+    kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantToralDefiningIdeal e' h' ρ' M hM' hnil' b wt' := by
+  have hroot (i : I) := kostantRootSubgroupCoordinateMap_eq_of_operator_eq
+    e h ρ M hM b e' h' ρ' hM' i (σ i) (hnil i) (hnil' (σ i)) (hop i)
+  apply le_antisymm <;> rw [le_kostantToralDefiningIdeal_iff]
+  · refine ⟨fun i' => ?_,
+      htorus ▸ kostantToralDefiningIdeal_toIdeal_le_torus_ker e h ρ M hM hnil b wt⟩
+    obtain ⟨i, rfl⟩ := σ.surjective i'
+    simpa only [hroot i] using
+      kostantToralDefiningIdeal_toIdeal_le_root_ker e h ρ M hM hnil b wt i
+  · refine ⟨fun i => ?_,
+      htorus.symm ▸ kostantToralDefiningIdeal_toIdeal_le_torus_ker e' h' ρ' M hM' hnil' b wt'⟩
+    simpa only [← hroot i] using
+      kostantToralDefiningIdeal_toIdeal_le_root_ker e' h' ρ' M hM' hnil' b wt' (σ i)
+
+/-- Companion to `kostantToralDefiningIdeal_eq_of_operator_equiv` when the weight family `wt` is
+pushed forward from `wt'` along an injective linear map of character lattices. -/
+theorem kostantToralDefiningIdeal_eq_of_operator_equiv_linearMap
+    [Finite κ] [Finite κ'] (σ : I ≃ I')
+    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hnil' : ∀ i', IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (wt : Fin n → κ → ℤ) (wt' : Fin n → κ' → ℤ)
+    (hop : ∀ i, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' (σ i))))
+    {f : (κ' → ℤ) →ₗ[ℤ] (κ → ℤ)} (hf : Function.Injective f)
+    (hwt : wt = fun j => f (wt' j)) :
+    kostantToralDefiningIdeal e h ρ M hM hnil b wt =
+      kostantToralDefiningIdeal e' h' ρ' M hM' hnil' b wt' := by
+  refine kostantToralDefiningIdeal_eq_of_operator_equiv e h ρ M hM b e' h' ρ' hM' σ hnil hnil'
+    wt wt' hop ?_
+  rw [hwt]
+  exact GeneralLinear.ker_weightTorusCoordinateMap_linearMap hf wt'
+
 /-- Two presentations with the same numbered root operators on the same lattice and the same
 weight torus define the same integral toral closure, even if their Lie algebras differ. -/
 theorem kostantToralDefiningIdeal_eq_of_operator_eq
@@ -89,15 +121,8 @@ theorem kostantToralDefiningIdeal_eq_of_operator_eq
     (hop : ∀ i, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
       ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i))) :
     kostantToralDefiningIdeal e h ρ M hM hnil b wt =
-      kostantToralDefiningIdeal e' h' ρ' M hM' hnil' b wt := by
-  have hroot (i : I) := kostantRootSubgroupCoordinateMap_eq_of_operator_eq
-    e h ρ M hM b e' h' ρ' hM' i i (hnil i) (hnil' i) (hop i)
-  apply le_antisymm
-  · rw [le_kostantToralDefiningIdeal_iff]
-    simpa only [← hroot] using
-      (le_kostantToralDefiningIdeal_iff e h ρ M hM hnil b wt _).mp le_rfl
-  · rw [le_kostantToralDefiningIdeal_iff]
-    simpa only [hroot] using
-      (le_kostantToralDefiningIdeal_iff e' h' ρ' M hM' hnil' b wt _).mp le_rfl
+      kostantToralDefiningIdeal e' h' ρ' M hM' hnil' b wt :=
+  kostantToralDefiningIdeal_eq_of_operator_equiv e h ρ M hM b e' h' ρ' hM' (Equiv.refl I)
+    hnil hnil' wt wt hop rfl
 
 end TauCeti.UniversalEnvelopingAlgebra

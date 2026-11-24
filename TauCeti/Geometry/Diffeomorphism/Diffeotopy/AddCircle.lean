@@ -11,10 +11,11 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.SinSqWeight
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Parametric
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
@@ -36,10 +37,11 @@ The general construction is `AddCircle.prodDiffeomorphOfLift`. Let `L : ℝ × �
 family of lifts, `L (s, x + T) = L (s, x) + T`, with positive derivative in `x`, and let
 `κ : N → ℝ` be a `C^n` function on a manifold `N`, possibly with boundary or corners. Then
 `(a, [x]) ↦ (a, [L (κ a, x)])` is a `C^n` diffeomorphism of `N × AddCircle T`. The forward map is
-smooth because the quotient map `ℝ → AddCircle T` is a local diffeomorphism. For the inverse, the
-map `(s, x) ↦ (s, L (s, x))` of the plane is a bijection whose derivative is invertible everywhere,
-so it is an open map, hence a homeomorphism, and its inverse is `C^n` by the inverse function
-theorem; the inverse is again a family of lifts and descends to the circle.
+smooth because the quotient map `ℝ → AddCircle T` is a local diffeomorphism. For the inverse, each
+slice `L (s, ·)` is a bijection of `ℝ` with positive derivative, so the inverses of the slices are
+jointly `C^n` by the inverse function theorem for smooth families of diffeomorphisms
+(`ContDiffOn.parametric_invFun_of_injective_fderiv`); they again form a family of lifts, which
+descends to the circle.
 
 Every `C^n` diffeomorphism `φ` of the circle, `n ≠ 0`, has such a presentation, or the mirror
 one: by `Diffeomorph.exists_addCircle_lift` it has a `C^n` lift with either
@@ -62,6 +64,8 @@ reflection `θ ↦ -θ`.
 
 * `AddCircle.diffeotopyOfLift_final_apply_coe`: every orientation-preserving `C^n` diffeomorphism
   of the circle, `n ≠ 0`, presented by a lift, is the final map of a diffeotopy.
+* `AddCircle.exists_diffeotopyOfLift_apply_coe_eq`: every interpolation `x ↦ x + s * (F x - x)`,
+  `s ∈ [0, 1]`, is a time slice of this diffeotopy.
 * `Diffeomorph.exists_diffeotopy_final_eq_or_final_eq_comp_neg`: every `C^n` diffeomorphism `φ` of
   the circle, `n ≠ 0`, is the final map of a diffeotopy, or `φ ∘ (θ ↦ -θ)` is.
 * `AddCircle.collarDiffeomorphOfLift_apply_coe_of_nonpos` and
@@ -84,6 +88,7 @@ public section
 noncomputable section
 
 open Set Function unitInterval
+open TauCeti (sinSqWeight sinSqWeight_def sinSqWeight_mem contDiff_sinSqWeight)
 open scoped Manifold ContDiff
 
 namespace AddCircle
@@ -97,92 +102,44 @@ section Plane
 variable (hL : ContDiff ℝ n L) (hn : n ≠ 0) (hper : ∀ s x, L (s, x + T) = L (s, x) + T)
   (hpos : ∀ s x, 0 < deriv (fun y ↦ L (s, y)) x)
 
-include hL hn hper hpos in
-/-- The map `(s, x) ↦ (s, L (s, x))` is a bijection of the plane: each slice is a lift with
-positive derivative, hence a bijection of `ℝ`. -/
-private theorem bijective_plane : Bijective fun p : ℝ × ℝ ↦ (p.1, L p) := by
-  have hd (s x : ℝ) : DifferentiableAt ℝ (fun y ↦ L (s, y)) x :=
-    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) (s, x))).differentiableAt
-  have h (s : ℝ) := exists_lift_inverse (fun x ↦ (hd s x).hasDerivAt) (hper s) (hpos s)
-  refine ⟨fun ⟨s, x⟩ ⟨s', x'⟩ hpq ↦ ?_, fun ⟨s, y⟩ ↦ ?_⟩
-  · obtain ⟨rfl, hx⟩ := Prod.ext_iff.1 hpq
-    obtain ⟨G, hl, -⟩ := h s
-    exact Prod.ext rfl (hl.injective hx)
-  · obtain ⟨G, -, hr, -⟩ := h s
-    exact ⟨(s, G y), Prod.ext rfl (hr y)⟩
-
-/-- The derivative of `(s, x) ↦ (s, L (s, x))`. -/
-private def planeDeriv (p : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
-  (ContinuousLinearMap.fst ℝ ℝ ℝ).prod (fderiv ℝ L p)
-
-include hL hn hpos in
-private theorem injective_planeDeriv (p : ℝ × ℝ) : Injective (planeDeriv (L := L) p) := by
-  refine (injective_iff_map_eq_zero _).2 fun ⟨u, v⟩ h ↦ ?_
-  obtain ⟨rfl, h⟩ : u = 0 ∧ fderiv ℝ L p (u, v) = 0 := by simpa [planeDeriv] using h
-  -- The second component is `v` times the positive partial derivative in the second variable.
-  have hd : 0 < fderiv ℝ L p (0, 1) :=
-    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) p)).deriv ▸ hpos p.1 p.2
-  have hv : fderiv ℝ L p (0, v) = v * fderiv ℝ L p (0, 1) := by
-    simpa using map_smul (fderiv ℝ L p) v ((0 : ℝ), (1 : ℝ))
-  rw [hv, mul_eq_zero] at h
-  exact Prod.ext rfl (h.resolve_right hd.ne')
-
-/-- The derivative of `(s, x) ↦ (s, L (s, x))`, as a linear equivalence. -/
-private def planeDerivEquiv (p : ℝ × ℝ) : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ) :=
-  (LinearEquiv.ofInjectiveEndo (planeDeriv (L := L) p : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)
-    (injective_planeDeriv hL hn hpos p)).toContinuousLinearEquiv
-
-private theorem coe_planeDerivEquiv (p : ℝ × ℝ) :
-    (planeDerivEquiv hL hn hpos p : ℝ × ℝ →L[ℝ] ℝ × ℝ) = planeDeriv (L := L) p :=
-  DFunLike.coe_injective (by simp [planeDerivEquiv])
-
 include hL hn in
-private theorem hasStrictFDerivAt_plane (p : ℝ × ℝ) :
-    HasStrictFDerivAt (fun p : ℝ × ℝ ↦ (p.1, L p))
-      (planeDerivEquiv hL hn hpos p : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
-  have hd : HasFDerivAt (fun p : ℝ × ℝ ↦ (p.1, L p)) (planeDeriv p) p :=
-    hasFDerivAt_fst.prodMk ((hL.differentiable hn) p).hasFDerivAt
-  have hs := ((contDiff_fst.prodMk hL).contDiffAt (x := p)).hasStrictFDerivAt_fderiv hn
-  rwa [hd.fderiv, ← coe_planeDerivEquiv hL hn hpos] at hs
+private theorem hasDerivAt_slice (s x : ℝ) :
+    HasDerivAt (fun y ↦ L (s, y)) (deriv (fun y ↦ L (s, y)) x) x :=
+  (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) (s, x))).differentiableAt.hasDerivAt
 
-/-- The map `(s, x) ↦ (s, L (s, x))` as a homeomorphism of the plane: a continuous bijection which
-is open by the inverse function theorem. -/
-private def planeHomeomorph : ℝ × ℝ ≃ₜ ℝ × ℝ :=
-  (Equiv.ofBijective _ (bijective_plane hL hn hper hpos)).toHomeomorphOfContinuousOpen
-    (continuous_fst.prodMk hL.continuous)
-    (isOpenMap_of_hasStrictFDerivAt_equiv (hasStrictFDerivAt_plane hL hn hpos))
+include hL hn hper hpos in
+/-- Each slice `L (s, ·)` is a lift with positive derivative, hence a bijection of `ℝ`. -/
+private theorem bijective_slice (s : ℝ) : Bijective fun x ↦ L (s, x) := by
+  obtain ⟨G, hl, hr, -⟩ := exists_lift_inverse (hasDerivAt_slice hL hn s) (hper s) (hpos s)
+  exact ⟨hl.injective, hr.surjective⟩
 
-private theorem planeHomeomorph_apply (p : ℝ × ℝ) :
-    planeHomeomorph hL hn hper hpos p = (p.1, L p) := (rfl)
-
+variable (L) in
 /-- The inverse family of lifts: `L (s, invLift s y) = y`. -/
-private def invLift (q : ℝ × ℝ) : ℝ := ((planeHomeomorph hL hn hper hpos).symm q).2
+private def invLift (q : ℝ × ℝ) : ℝ := invFun (fun x ↦ L (q.1, x)) q.2
 
-private theorem fst_planeHomeomorph_symm (q : ℝ × ℝ) :
-    ((planeHomeomorph hL hn hper hpos).symm q).1 = q.1 := by
-  have h := congrArg Prod.fst ((planeHomeomorph hL hn hper hpos).apply_symm_apply q)
-  rwa [planeHomeomorph_apply] at h
+include hL hn hper hpos in
+private theorem apply_invLift (s y : ℝ) : L (s, invLift L (s, y)) = y :=
+  rightInverse_invFun (bijective_slice hL hn hper hpos s).2 y
 
-private theorem apply_invLift (s y : ℝ) : L (s, invLift hL hn hper hpos (s, y)) = y := by
-  have h := congrArg Prod.snd ((planeHomeomorph hL hn hper hpos).apply_symm_apply (s, y))
-  have e : (planeHomeomorph hL hn hper hpos).symm (s, y) = (s, invLift hL hn hper hpos (s, y)) :=
-    Prod.ext (fst_planeHomeomorph_symm hL hn hper hpos (s, y)) rfl
-  rwa [planeHomeomorph_apply, e] at h
+include hL hn hper hpos in
+private theorem invLift_apply (s x : ℝ) : invLift L (s, L (s, x)) = x :=
+  leftInverse_invFun (bijective_slice hL hn hper hpos s).1 x
 
-private theorem invLift_apply (s x : ℝ) : invLift hL hn hper hpos (s, L (s, x)) = x := by
-  have h := (planeHomeomorph hL hn hper hpos).symm_apply_apply (s, x)
-  rw [planeHomeomorph_apply] at h
-  exact congrArg Prod.snd h
-
-private theorem invLift_add_period (s y : ℝ) :
-    invLift hL hn hper hpos (s, y + T) = invLift hL hn hper hpos (s, y) + T := by
+include hL hn hper hpos in
+private theorem invLift_add_period (s y : ℝ) : invLift L (s, y + T) = invLift L (s, y) + T := by
   conv_lhs => rw [← apply_invLift hL hn hper hpos s y, ← hper]
   exact invLift_apply hL hn hper hpos s _
 
-private theorem contDiff_invLift : ContDiff ℝ n (invLift hL hn hper hpos) :=
-  contDiff_snd.comp ((planeHomeomorph hL hn hper hpos).contDiff_symm
-    (fun p ↦ (hasStrictFDerivAt_plane hL hn hpos p).hasFDerivAt)
-    (contDiff_fst.prodMk hL))
+include hL hn hper hpos in
+/-- The inverse family of lifts is `C^n`, by the inverse function theorem for smooth families of
+diffeomorphisms. -/
+private theorem contDiff_invLift : ContDiff ℝ n (invLift L) := by
+  have h := (hL.contDiffOn (s := univ ×ˢ univ)).parametric_invFun_of_injective_fderiv
+    isOpen_univ (ENat.one_le_iff_ne_zero_withTop.2 hn) (fun s _ ↦ bijective_slice hL hn hper hpos s)
+    (fun s _ x u v huv ↦ by
+      rw [(hasDerivAt_slice hL hn s x).hasFDerivAt.fderiv] at huv
+      simpa [(hpos s x).ne'] using huv) rfl
+  rwa [univ_prod_univ, contDiffOn_univ] at h
 
 end Plane
 
@@ -223,17 +180,17 @@ lift `L (κ a, ·)`. -/
 def prodDiffeomorphOfLift :
     (N × AddCircle T) ≃ₘ^n⟮I'.prod 𝓘(ℝ), I'.prod 𝓘(ℝ)⟯ N × AddCircle T where
   toFun := descend (fun p ↦ L (κ p.1, p.2)) fun _ _ ↦ hper _ _
-  invFun := descend (fun p ↦ invLift hL hn hper hpos (κ p.1, p.2))
+  invFun := descend (fun p ↦ invLift L (κ p.1, p.2))
     fun _ _ ↦ invLift_add_period hL hn hper hpos _ _
   left_inv := fun ⟨a, θ⟩ ↦ by
     induction θ using QuotientAddGroup.induction_on with
-    | H x => rw [descend_coe, descend_coe, invLift_apply]
+    | H x => rw [descend_coe, descend_coe, invLift_apply hL hn hper hpos]
   right_inv := fun ⟨a, θ⟩ ↦ by
     induction θ using QuotientAddGroup.induction_on with
     | H y => rw [descend_coe, descend_coe, apply_invLift hL hn hper hpos]
   contMDiff_toFun := contMDiff_descend (M := fun p ↦ L (κ p.1, p.2)) (fun _ _ ↦ hper _ _)
     (hL.contMDiff.comp ((hκ.comp contMDiff_fst).prodMk_space contMDiff_snd))
-  contMDiff_invFun := contMDiff_descend (M := fun p ↦ invLift hL hn hper hpos (κ p.1, p.2))
+  contMDiff_invFun := contMDiff_descend (M := fun p ↦ invLift L (κ p.1, p.2))
     (fun _ _ ↦ invLift_add_period hL hn hper hpos _ _)
     ((contDiff_invLift hL hn hper hpos).contMDiff.comp
       ((hκ.comp contMDiff_fst).prodMk_space contMDiff_snd))
@@ -288,15 +245,6 @@ private theorem deriv_interpolate_pos (hw : ∀ s, w s ∈ Icc 0 1) (hF : ContDi
   rw [hd.deriv]
   exact one_sub_add_mul_pos (hw s).1 (hw s).2 (hpos x)
 
-/-- The weight `sin (π t / 2) ^ 2`, rising analytically from `0` at `t = 0` to `1` at `t = 1`. -/
-private def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
-
-private theorem sinSqWeight_mem (t : ℝ) : sinSqWeight t ∈ Icc 0 1 :=
-  ⟨sq_nonneg _, Real.sin_sq_le_one _⟩
-
-private theorem contDiff_sinSqWeight : ContDiff ℝ n sinSqWeight :=
-  (Real.contDiff_sin.comp ((contDiff_const.mul contDiff_id).div_const 2)).pow 2
-
 variable (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
   (hpos : ∀ x, 0 < deriv F x)
 
@@ -312,20 +260,35 @@ def diffeotopyOfLift : TauCeti.Diffeotopy 𝓘(ℝ) n (AddCircle T) where
   fst_apply := fst_prodDiffeomorphOfLift _ _ _ _ _ _
   snd_apply_zero' θ := by
     induction θ using QuotientAddGroup.induction_on with
-    | H x => simp [interpolate, sinSqWeight]
+    | H x => simp [interpolate]
 
 /-- At time `t` the diffeotopy `diffeotopyOfLift` is the circle map with lift
 `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`. -/
 @[simp]
 theorem diffeotopyOfLift_apply_coe (t : I) (x : ℝ) :
     diffeotopyOfLift hF hn hper hpos (t, (x : AddCircle T)) =
-      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := (rfl)
+      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := by
+  rw [← sinSqWeight_def]
+  rfl
 
 /-- The diffeotopy `diffeotopyOfLift` ends at the circle diffeomorphism with lift `F`. -/
 theorem diffeotopyOfLift_final_apply_coe (x : ℝ) :
     (diffeotopyOfLift hF hn hper hpos).final x = (F x : AddCircle T) := by
   rw [TauCeti.Diffeotopy.final_apply, diffeotopyOfLift_apply_coe, Set.Icc.coe_one, mul_one,
     Real.sin_pi_div_two, one_pow, one_mul, add_sub_cancel]
+
+/-- Every interpolation weight `s ∈ [0, 1]` occurs along the diffeotopy `diffeotopyOfLift`: at some
+time `t` it is the circle map with lift `x ↦ x + s * (F x - x)`. -/
+theorem exists_diffeotopyOfLift_apply_coe_eq {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
+    ∃ t : I, ∀ x : ℝ, diffeotopyOfLift hF hn hper hpos (t, (x : AddCircle T)) =
+      ((x + s * (F x - x) : ℝ) : AddCircle T) := by
+  -- The weight rises continuously from `0` to `1`, so it takes the value `s`.
+  have hends : Icc (sinSqWeight 0) (sinSqWeight 1) = Icc 0 1 := by
+    simp
+  obtain ⟨t, ht, hts⟩ := intermediate_value_Icc zero_le_one
+    (contDiff_sinSqWeight (k := 0)).continuous.continuousOn (hends ▸ hs)
+  refine ⟨⟨t, ht⟩, fun x ↦ ?_⟩
+  rw [diffeotopyOfLift_apply_coe, ← hts, sinSqWeight_def]
 
 end Interpolation
 
@@ -409,13 +372,13 @@ def halfCylinderDiffeotopyOfLift (hF : ContDiff ℝ n F) (hn : n ≠ 0)
     (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x) :
     TauCeti.Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) n (EuclideanHalfSpace 1 × AddCircle T) := by
   let depth (p : unitInterval × EuclideanHalfSpace 1) : ℝ :=
-    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.1 0)
+    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.val 0)
   have hd : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n depth := by
     have ht : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
         (fun p : unitInterval × EuclideanHalfSpace 1 ↦ (p.1 : ℝ)) :=
       contMDiff_subtypeVal_Icc.comp contMDiff_fst
     have hr : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
-        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.1 0) :=
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.val 0) :=
       (EuclideanSpace.proj 0).contDiff.contMDiff.comp
         ((𝓡∂ 1).contMDiff.comp contMDiff_snd)
     exact contMDiff_const.sub (ht.mul
@@ -442,26 +405,26 @@ theorem halfCylinderDiffeotopyOfLift_apply_coe (hF : ContDiff ℝ n F) (hn : n �
     (t : unitInterval) (r : EuclideanHalfSpace 1) (x : ℝ) :
     halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, (x : AddCircle T)) =
       (r, ((x + Real.smoothTransition
-        ((t : ℝ) * Real.smoothTransition (2 - r.1 0)) *
+        ((t : ℝ) * Real.smoothTransition (2 - r.val 0)) *
           (F x - x) : ℝ) : AddCircle T)) := by
   simp [halfCylinderDiffeotopyOfLift, collarDiffeomorphOfLift_apply_coe]
 
 /-- The half-cylinder motion fixes every point at depth at least two, at every time. -/
 theorem halfCylinderDiffeotopyOfLift_apply_of_two_le (hF : ContDiff ℝ n F) (hn : n ≠ 0)
     (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
-    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.1 0) (θ : AddCircle T) :
+    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.val 0) (θ : AddCircle T) :
     halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, θ) = (r, θ) := by
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective θ
-  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.1 0 ≤ 0)]
+  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.val 0 ≤ 0)]
 
 /-- Through depth one, the final half-cylinder map is the product map of the prescribed lift. -/
 theorem halfCylinderDiffeotopyOfLift_final_apply_coe_of_le_one
     (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
-    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.1 0 ≤ 1) (x : ℝ) :
+    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.val 0 ≤ 1) (x : ℝ) :
     (halfCylinderDiffeotopyOfLift hF hn hper hpos).final (r, (x : AddCircle T)) =
       (r, (F x : AddCircle T)) := by
   simp [TauCeti.Diffeotopy.final_apply, Real.smoothTransition.one_of_one_le
-    (by linarith : 1 ≤ 2 - r.1 0)]
+    (by linarith : 1 ≤ 2 - r.val 0)]
 
 end HalfCylinder
 

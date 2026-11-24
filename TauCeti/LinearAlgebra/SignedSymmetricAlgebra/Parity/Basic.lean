@@ -5,314 +5,131 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
-import TauCeti.Data.ZMod.IntUnitsPower
+public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Coarsen
 
 /-!
-# The parity presentation of the signed symmetric algebra
+# Parity reduction of the signed symmetric algebra
 
-The free signed algebra can be presented using only a parity grading of its generating
-module. `TauCeti.ParitySignedSym` uses the native tensor algebra and the relation with sign
-`(-1 : ℤˣ) ^ (i * j)` for `i j : ZMod 2`. Its universal property requires no integer lift.
+Because `TauCeti.SignedSym` is defined over any Koszul-signed degree semiring `ι`
+(`[CommSemiring ι] [DecidableEq ι] [Module ι (Additive ℤˣ)]`), taking `ι = ZMod 2` constructs the
+free supercommutative algebra directly from a parity-graded module
+`H : InternalGrading R V (ZMod 2)`, complete with its universal property, native `ZMod 2`-grading
+`signedSymPiece H`, Koszul supercommutativity, word-length grading, and odd derivations
+`liftDerivation`, without choosing an integer lift.
 
-For an integer grading `G`, `TauCeti.SignedSym.parityEquiv` identifies the integer presentation
-with the presentation for `G.parity`, fixing every generator. This compares the quotients,
-not their raw generating relations: an element homogeneous for parity can be a sum of elements
-of several integer degrees. The additional parity relations already hold in the integer
-quotient by bilinearity and supercommutativity.
+For an integer grading `G : InternalGrading R V ℤ`, specializing
+`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Coarsen` to `Int.castAddHom (ZMod 2) : ℤ →+ ZMod 2`
+identifies the integer-graded orbit algebra `SignedSym G` with the parity-graded orbit algebra
+`SignedSym G.parity` built directly from parities (`TauCeti.SignedSym.parityEquiv`). Because
+`TauCeti.SignedSym.parityEquiv`, `TauCeti.SignedSym.toParity`, and `TauCeti.SignedSym.ofParity` are
+`abbrev`s for `coarsenEquiv`, `toCoarsen`, and `ofCoarsen` along `Int.castAddHom (ZMod 2)`
+(matching `TauCeti.InternalGrading.parity` and `TauCeti.parityGrading`), all generator, quotient,
+augmentation, word-length, graded-piece, naturality, homogeneity, Leibniz, and derivation-transport
+lemmas from `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Coarsen` apply directly to them.
 
-The construction follows J. Pardon, *Contact homology and virtual fundamental cycles*,
-equation (1.1) and Definition 2.48. This file also supplies the canonical augmentation and
-functoriality of `TauCeti.ParitySignedSym` along parity-preserving linear maps and equivalences;
-its parity input-degree grading, supercommutativity, and odd derivations are developed in the
-sibling files of this directory.
+For `IsDGAlgebra` differentials, conjugating a degree-one signed derivation `d` of `SignedSym G`
+across `parityEquiv` yields a parity-odd signed derivation of `SignedSym G.parity`, and `d` defines
+a differential graded algebra structure on `SignedSym G` if and only if its parity transport
+squares to zero (`TauCeti.SignedSym.isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero`). For
+derivations built from a degree-one generator assignment `δ`, this reduces `IsDGAlgebra` to the
+parity-reduced `liftDerivation` squaring to zero
+(`TauCeti.SignedSym.isDGAlgebra_liftDerivation_iff_liftDerivation_parityEquiv_comp_self_eq_zero`).
+
+## Main definitions
+
+* `TauCeti.SignedSym.parityEquiv`: the canonical `R`-algebra equivalence
+  `SignedSym G ≃ₐ[R] SignedSym G.parity` (an `abbrev` for `coarsenEquiv` along
+  `Int.castAddHom (ZMod 2)`).
+* `TauCeti.SignedSym.toParity` and `TauCeti.SignedSym.ofParity`: the mutually inverse
+  `ZMod 2`-graded algebra homomorphisms identifying `parityGrading (signedSymPiece G)` with
+  `signedSymPiece G.parity` (`abbrev`s for `toCoarsen` and `ofCoarsen`).
+
+## Main results
+
+* `TauCeti.SignedSym.isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero`: a degree-one signed
+  Leibniz endomorphism of `SignedSym G` defines an `IsDGAlgebra` structure iff its `parityEquiv`
+  conjugate squares to zero.
+* `TauCeti.SignedSym.isDGAlgebra_liftDerivation_iff_liftDerivation_parityEquiv_comp_self_eq_zero`:
+  an integer degree-one generator assignment induces an `IsDGAlgebra` structure on `SignedSym G`
+  iff the parity-reduced `liftDerivation` on `SignedSym G.parity` squares to zero.
+
+## References
+
+* J. Pardon, *Contact homology and virtual fundamental cycles*, equation (1.1) and Definition 2.48,
+  for the parity-graded orbit algebra and its comparison with an integer Conley–Zehnder lift.
+* Y. Eliashberg, A. Givental, and H. Hofer, *Introduction to symplectic field theory*,
+  Geom. Funct. Anal. (2000), 560–673, for `ℤ/2ℤ`-graded SFT orbit algebras when integer gradings
+  reduce modulo `2`.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.SignedSym
 
-universe u v w
+universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-
-/-- Signed swaps of homogeneous generators, defined using only their parities. -/
-inductive paritySignedSwapRel (G : InternalGrading R V (ZMod 2)) :
-    TensorAlgebra R V → TensorAlgebra R V → Prop where
-  | swap (i j : ZMod 2) (x y : V) (hx : x ∈ G.piece i) (hy : y ∈ G.piece j) :
-      paritySignedSwapRel G (TensorAlgebra.ι R x * TensorAlgebra.ι R y)
-        (((-1 : ℤˣ) ^ (i * j)) • (TensorAlgebra.ι R y * TensorAlgebra.ι R x))
-
-/-- The free signed algebra on a parity-graded module, without a chosen integer grading. -/
-abbrev ParitySignedSym (G : InternalGrading R V (ZMod 2)) := RingQuot (paritySignedSwapRel G)
-
-namespace ParitySignedSym
-
-variable (G : InternalGrading R V (ZMod 2))
-
-/-- The quotient map from the tensor algebra to the parity presentation. -/
-abbrev quotient : TensorAlgebra R V →ₐ[R] ParitySignedSym G :=
-  RingQuot.mkAlgHom R (paritySignedSwapRel G)
-
-/-- Every element of the parity presentation has a tensor representative. -/
-theorem quotient_surjective : Function.Surjective (quotient G) :=
-  RingQuot.mkAlgHom_surjective R (paritySignedSwapRel G)
-
-/-- The canonical linear map of generators into the parity presentation. -/
-def generator : V →ₗ[R] ParitySignedSym G :=
-  (quotient G).toLinearMap.comp (TensorAlgebra.ι R)
-
-@[simp]
-theorem quotient_ι (x : V) : quotient G (TensorAlgebra.ι R x) = generator G x := (rfl)
-
-/-- The class of a tensor word is the product of its generators in the same order. -/
-theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
-    quotient G (TensorAlgebra.tprod R V n x) =
-      (List.ofFn fun i => generator G (x i)).prod := by
-  simp only [TensorAlgebra.tprod_apply, map_list_prod, List.map_ofFn,
-    Function.comp_def, quotient_ι]
-
-/-- Homogeneous generators satisfy the sign rule determined by their parities. -/
-theorem generator_mul_generator {i j : ZMod 2} {x y : V}
-    (hx : x ∈ G.piece i) (hy : y ∈ G.piece j) :
-    generator G x * generator G y = ((-1 : ℤˣ) ^ (i * j)) •
-      (generator G y * generator G x) := by
-  simpa only [← quotient_ι, ← map_mul, Units.smul_def, ← map_zsmul] using
-    (RingQuot.mkAlgHom_rel R (paritySignedSwapRel.swap i j x y hx hy))
-
-/-- Induction on expressions in the generating module and the coefficient ring. -/
-@[elab_as_elim]
-theorem induction {P : ParitySignedSym G → Prop}
-    (algebraMap : ∀ r, P (algebraMap R (ParitySignedSym G) r))
-    (generator : ∀ x, P (ParitySignedSym.generator G x))
-    (mul : ∀ a b, P a → P b → P (a * b))
-    (add : ∀ a b, P a → P b → P (a + b)) (a : ParitySignedSym G) : P a := by
-  obtain ⟨a, rfl⟩ := quotient_surjective G a
-  induction a using TensorAlgebra.induction with
-  | algebraMap r => simpa only [AlgHom.commutes] using algebraMap r
-  | ι x => exact generator x
-  | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
-  | add a b ha hb => simpa only [map_add] using add _ _ ha hb
-
-/-- `ParitySignedSym G` is generated as an `R`-algebra by the image of `generator G`. -/
-@[simp]
-theorem adjoin_range_generator : Algebra.adjoin R (Set.range (generator G)) = ⊤ := by
-  rw [← (AlgHom.range_eq_top _).2 (quotient_surjective G), ← Algebra.map_top,
-    ← TensorAlgebra.adjoin_range_ι, AlgHom.map_adjoin, ← Set.range_comp]
-  rfl
-
-/-- Algebra maps from the parity presentation are determined on generators. -/
-@[ext 1200]
-theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : ParitySignedSym G →ₐ[R] A}
-    (h : ∀ x, f (generator G x) = g (generator G x)) : f = g := by
-  apply RingQuot.ringQuot_ext'
-  apply TensorAlgebra.hom_ext
-  exact LinearMap.ext h
-
-variable {A : Type w} [Ring A] [Algebra R A]
-
-/-- Extend a linear map whose homogeneous images satisfy the parity sign rule. -/
-def lift (f : V →ₗ[R] A)
-    (hf : ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
-      f x * f y = ((-1 : ℤˣ) ^ (i * j)) • (f y * f x)) : ParitySignedSym G →ₐ[R] A :=
-  RingQuot.liftAlgHom R ⟨TensorAlgebra.lift R f, by
-    intro a b h
-    cases h with
-    | swap i j x y hx hy => simpa [Units.smul_def] using hf i j x y hx hy⟩
-
-@[simp]
-theorem lift_quotient (f : V →ₗ[R] A) (hf) (x : TensorAlgebra R V) :
-    lift G f hf (quotient G x) = TensorAlgebra.lift R f x :=
-  RingQuot.liftAlgHom_mkAlgHom_apply R _ _ x
-
-@[simp]
-theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
-    lift G f hf (generator G x) = f x := by
-  rw [← quotient_ι, lift_quotient, TensorAlgebra.lift_ι_apply]
-
-/-- The extension to the parity presentation is unique. -/
-theorem lift_unique (f : V →ₗ[R] A) (hf) (g : ParitySignedSym G →ₐ[R] A)
-    (hg : ∀ x, g (generator G x) = f x) : g = lift G f hf := by
-  apply hom_ext
-  simpa only [lift_generator] using hg
-
-/-- The universal property of the parity presentation. -/
-def liftEquiv :
-    {f : V →ₗ[R] A // ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
-      f x * f y = ((-1 : ℤˣ) ^ (i * j)) • (f y * f x)} ≃
-      (ParitySignedSym G →ₐ[R] A) where
-  toFun f := lift G f.1 f.2
-  invFun g := ⟨g.toLinearMap.comp (generator G), by
-    intro i j x y hx hy
-    simpa [Units.smul_def] using congrArg g (generator_mul_generator G hx hy)⟩
-  left_inv f := Subtype.ext (LinearMap.ext fun x => lift_generator G f.1 f.2 x)
-  right_inv g := by ext x; simp
-
-@[simp]
-theorem liftEquiv_apply (f) : liftEquiv G (A := A) f = lift G f.1 f.2 := (rfl)
-
-@[simp]
-theorem liftEquiv_symm_apply_val (g : ParitySignedSym G →ₐ[R] A) :
-    ((liftEquiv G).symm g).val = g.toLinearMap.comp (generator G) := (rfl)
-
-/-- Sending all generators to zero defines the canonical augmentation of `ParitySignedSym G`. -/
-def augmentation : ParitySignedSym G →ₐ[R] R :=
-  lift G 0 (by simp)
-
-/-- The canonical augmentation annihilates every generator. -/
-@[simp]
-theorem augmentation_generator (x : V) : augmentation G (generator G x) = 0 := by
-  simp [augmentation]
-
-/-- The coefficient ring embeds into `ParitySignedSym G`, with the augmentation as left inverse. -/
-theorem algebraMap_injective : Function.Injective (algebraMap R (ParitySignedSym G)) :=
-  Function.LeftInverse.injective fun r ↦ (augmentation G).commutes r
-
-instance [Nontrivial R] : Nontrivial (ParitySignedSym G) :=
-  (algebraMap_injective G).nontrivial
-
-section Map
-
-variable {W : Type*} [AddCommGroup W] [Module R W]
-variable (H : InternalGrading R W (ZMod 2))
-
-/-- A parity-preserving linear map induces an algebra map of parity-presented signed symmetric
-algebras. -/
-def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
-    ParitySignedSym G →ₐ[R] ParitySignedSym H :=
-  lift G ((generator H).comp f) fun _ _ _ _ hx hy ↦
-    generator_mul_generator H (by simpa using hf.map_mem hx) (by simpa using hf.map_mem hy)
-
-/-- The induced algebra map acts on generators via `f`. -/
-@[simp]
-theorem map_generator (f : V →ₗ[R] W) (hf) (x : V) :
-    map G H f hf (generator G x) = generator H (f x) :=
-  lift_generator G _ _ x
-
-/-- The identity linear map induces the identity algebra map on `ParitySignedSym G`. -/
-@[simp]
-theorem map_id :
-    map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
-      AlgHom.id R (ParitySignedSym G) := by
-  ext x
-  simp
-
-variable {U : Type*} [AddCommGroup U] [Module R U]
-
-/-- Induced algebra maps on `ParitySignedSym` respect composition. -/
-theorem map_comp (K : InternalGrading R U (ZMod 2)) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
-    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
-    (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
-    map G K (g.comp f) (by simpa using hg.comp hf) = (map H K g hg).comp (map G H f hf) := by
-  ext x
-  simp
-
-/-- A parity-preserving linear equivalence induces an algebra equivalence of `ParitySignedSym`. -/
-def congr (e : V ≃ₗ[R] W) (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) :
-    ParitySignedSym G ≃ₐ[R] ParitySignedSym H :=
-  AlgEquiv.ofAlgHom (map G H e.toLinearMap he)
-    (map H G e.symm.toLinearMap he.linearEquiv_symm)
-    (by ext x; simp) (by ext x; simp)
-
-/-- The induced algebra equivalence acts on generators via `e`. -/
-@[simp]
-theorem congr_generator (e : V ≃ₗ[R] W) (he) (x : V) :
-    congr G H e he (generator G x) = generator H (e x) :=
-  map_generator G H e.toLinearMap he x
-
-/-- The induced algebra equivalence respects the identity. -/
-@[simp]
-theorem congr_refl :
-    congr G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) = AlgEquiv.refl := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  exact map_id G
-
-/-- The induced algebra equivalence respects inverses. -/
-@[simp]
-theorem congr_symm (e : V ≃ₗ[R] W) (he) :
-    (congr G H e he).symm = congr H G e.symm he.linearEquiv_symm := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  apply hom_ext
-  intro y
-  apply (congr G H e he).injective
-  simp
-
-/-- The induced algebra equivalences respect composition. -/
-theorem congr_trans (K : InternalGrading R U (ZMod 2)) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
-    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
-    (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
-    congr G K (e.trans f) (by simpa using hf.comp he) =
-      (congr G H e he).trans (congr H K f hf) := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  apply hom_ext
-  intro x
-  simp
-
-end Map
-
-end ParitySignedSym
-
-namespace SignedSym
-
 variable (G : InternalGrading R V ℤ)
 
-/-- Integer-graded generators also satisfy the relations for parity-homogeneous inputs,
-which need not be homogeneous for the integer grading. -/
-theorem generator_mul_generator_of_mem_parity {i j : ZMod 2} {x y : V}
-    (hx : x ∈ G.parity.piece i) (hy : y ∈ G.parity.piece j) :
-    generator G x * generator G y = ((-1 : ℤˣ) ^ (i * j)) •
-      (generator G y * generator G x) := by
-  rw [InternalGrading.parity_piece] at hx hy
-  exact mul_eq_uzpow_smul_mul_of_mem_parityGrading G
-    (generator_mem_parityGrading G hx) (generator_mem_parityGrading G hy)
+/-- **The parity-graded signed symmetric algebra `SignedSym G.parity` is canonically isomorphic to
+the integer-graded `SignedSym G`.** -/
+noncomputable abbrev parityEquiv : SignedSym G ≃ₐ[R] SignedSym G.parity :=
+  coarsenEquiv G (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p)
 
-private noncomputable def toParity : SignedSym G →ₐ[R] ParitySignedSym G.parity :=
-  lift G (ParitySignedSym.generator G.parity) (by
-    intro p q x y hx hy
-    have h := ParitySignedSym.generator_mul_generator G.parity
-      (by simpa only [InternalGrading.parity_piece] using mem_parityGrading_of_mem hx)
-      (by simpa only [InternalGrading.parity_piece] using mem_parityGrading_of_mem hy)
-    simpa only [← Int.cast_mul, uzpow_intCast_eq_negOnePow, Units.smul_def] using h)
+/-- `parityEquiv` as a `ZMod 2`-graded algebra homomorphism from `parityGrading (signedSymPiece G)`
+to `signedSymPiece G.parity`. -/
+noncomputable abbrev toParity :
+    parityGrading (signedSymPiece G) →ₐᵍ[R] signedSymPiece G.parity :=
+  toCoarsen G (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p)
 
-private noncomputable def fromParity : ParitySignedSym G.parity →ₐ[R] SignedSym G :=
-  ParitySignedSym.lift G.parity (generator G) (fun _ _ _ _ hx hy =>
-    generator_mul_generator_of_mem_parity G hx hy)
+/-- The inverse of `parityEquiv` as a `ZMod 2`-graded algebra homomorphism from
+`signedSymPiece G.parity` to `parityGrading (signedSymPiece G)`. -/
+noncomputable abbrev ofParity :
+    signedSymPiece G.parity →ₐᵍ[R] parityGrading (signedSymPiece G) :=
+  ofCoarsen G (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p)
 
-/-- Reducing the input grading modulo two does not change the signed algebra. This equivalence
-fixes the generating module and requires neither a basis nor invertibility of two. -/
-noncomputable def parityEquiv : SignedSym G ≃ₐ[R] ParitySignedSym G.parity :=
-  AlgEquiv.ofAlgHom (toParity G) (fromParity G)
-    (by ext x; simp [toParity, fromParity])
-    (by ext x; simp [toParity, fromParity])
+/-- A degree-`1` signed Leibniz endomorphism of `SignedSym G` defines a differential graded algebra
+structure if and only if its parity transport on `SignedSym G.parity` squares to zero. -/
+theorem isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero {d : SignedSym G →ₗ[R] SignedSym G}
+    (hdeg : LinearMap.IsHomogeneous d (signedSymPiece G) (signedSymPiece G) 1)
+    (hleibniz : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
+      d (a * b) = d a * b + p.negOnePow • (a * d b)) :
+    IsDGAlgebra (signedSymPiece G) d ↔
+      (parityEquiv G).toLinearEquiv.conj d ∘ₗ (parityEquiv G).toLinearEquiv.conj d = 0 := by
+  rw [← LinearEquiv.conj_comp, LinearEquiv.map_eq_zero_iff]
+  exact ⟨fun h ↦ LinearMap.ext h.sq_zero, fun h ↦
+    { map_mem := fun ha ↦ hdeg.map_mem ha
+      sq_zero := fun a ↦ LinearMap.congr_fun h a
+      leibniz := fun ha b ↦ hleibniz ha b }⟩
 
-@[simp]
-theorem parityEquiv_generator (x : V) :
-    parityEquiv G (generator G x) = ParitySignedSym.generator G.parity x :=
-  lift_generator G _ _ x
+/-- Extending an integer degree-`1` generator assignment yields a differential graded algebra
+structure on `SignedSym G` if and only if the parity-reduced odd derivation on `SignedSym G.parity`
+squares to zero. -/
+theorem isDGAlgebra_liftDerivation_iff_liftDerivation_parityEquiv_comp_self_eq_zero
+    {δ : V →ₗ[R] SignedSym G}
+    (hδ : LinearMap.IsHomogeneous δ G.piece (signedSymPiece G) 1)
+    (hδ' : LinearMap.IsHomogeneous ((parityEquiv G).toLinearMap ∘ₗ δ)
+      G.parity.piece (signedSymPiece G.parity) 1 :=
+      LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+        have h1 : Int.castAddHom (ZMod 2) 1 = 1 := Int.cast_one
+        simpa only [h1] using
+          (isHomogeneous_coarsenEquiv_comp G (f := Int.castAddHom (ZMod 2))
+            (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hδ).map_mem hx) :
+    IsDGAlgebra (signedSymPiece G) (liftDerivation δ hδ (uzpow_one (-1))) ↔
+      liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ) hδ' (uzpow_one (-1)) ∘ₗ
+        liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ) hδ' (uzpow_one (-1)) = 0 := by
+  have hconj : (parityEquiv G).toLinearEquiv.conj (liftDerivation δ hδ (uzpow_one (-1))) =
+      liftDerivation ((parityEquiv G).toLinearMap ∘ₗ δ) hδ' (uzpow_one (-1)) := by
+    rw [conj_coarsenEquiv_liftDerivation G (f := Int.castAddHom (ZMod 2))]
+    exact eq_liftDerivation hδ' (uzpow_one (-1)) (liftDerivation_mul _ _)
+      (liftDerivation_generator _ _)
+  rw [isDGAlgebra_iff_conj_parityEquiv_comp_self_eq_zero G
+      (isHomogeneous_liftDerivation hδ (uzpow_one (-1)))
+      (liftDerivation_mul hδ (uzpow_one (-1))),
+    hconj]
 
-@[simp]
-theorem parityEquiv_symm_generator (x : V) :
-    (parityEquiv G).symm (ParitySignedSym.generator G.parity x) = generator G x :=
-  ParitySignedSym.lift_generator G.parity _ _ x
-
-/-- The comparison commutes with the quotient maps, not only with individual generators. -/
-@[simp]
-theorem parityEquiv_quotient (x : TensorAlgebra R V) :
-    parityEquiv G (quotient G x) = ParitySignedSym.quotient G.parity x := by
-  have h : (parityEquiv G).toAlgHom.comp (quotient G) =
-      ParitySignedSym.quotient G.parity := by
-    apply TensorAlgebra.hom_ext
-    ext x
-    simp
-  exact AlgHom.congr_fun h x
-
-/-- The inverse comparison also commutes with the tensor-algebra quotient maps. -/
-@[simp]
-theorem parityEquiv_symm_quotient (x : TensorAlgebra R V) :
-    (parityEquiv G).symm (ParitySignedSym.quotient G.parity x) = quotient G x :=
-  (parityEquiv G).symm_apply_eq.2 (parityEquiv_quotient G x).symm
-
-end SignedSym
-
-end TauCeti
+end TauCeti.SignedSym

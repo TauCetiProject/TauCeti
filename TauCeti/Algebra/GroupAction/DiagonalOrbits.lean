@@ -19,6 +19,13 @@ an object with a moving marked point by an object whose mark is fixed once and f
 The forward map is canonical: it sends the stabilizer orbit of `x` to the diagonal orbit of
 `(x, y)`. Its injectivity does not require transitivity. Transitivity supplies surjectivity;
 the inverse sends the orbit of `(x, g • y)` to the stabilizer orbit of `g⁻¹ • x`.
+
+The diagonal action on `X × Y` is free when the action on the first factor is
+(`TauCeti.isCancelSMul_prod`).
+
+When every orbit of every point stabilizer on `S` is finite (`TauCeti.FiniteStabilizerOrbits`),
+injectivity of the forward map shows that each diagonal orbit of `S × S` meets every row and every
+column in finitely many points.
 -/
 
 public section
@@ -32,7 +39,8 @@ def orbitRelQuotientStabilizerMap (y : Y) :
     MulAction.orbitRel.Quotient (MulAction.stabilizer G y) X →
       MulAction.orbitRel.Quotient G (X × Y) :=
   Quotient.map' (fun x => (x, y)) fun _ _ ⟨g, hg⟩ =>
-    ⟨g, Prod.ext (by simpa [Subgroup.smul_def] using hg) (MulAction.mem_stabilizer_iff.mp g.2)⟩
+    ⟨g, Prod.ext (by simpa [Subgroup.smul_def] using hg) (MulAction.mem_stabilizer_iff.mp
+        g.property)⟩
 
 @[simp]
 theorem orbitRelQuotientStabilizerMap_mk (y : Y) (x : X) :
@@ -84,3 +92,57 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive 
   exact Quotient.sound' ⟨g, by simp⟩
 
 end TauCeti.MulAction
+
+namespace TauCeti
+
+open _root_.MulAction
+
+section FiniteStabilizerOrbits
+
+variable (G S : Type*) [Group G] [MulAction G S]
+
+/-- Every orbit of every point stabilizer is finite: for all `x y : S`, the orbit of `y` under the
+stabilizer of `x` is finite. This holds when `G` is a topological group and every point stabilizer
+is compact and open (`TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen`). -/
+class FiniteStabilizerOrbits : Prop where
+  finite_orbit (x y : S) : (orbit (stabilizer G x) y).Finite
+
+variable {G S} [FiniteStabilizerOrbits G S]
+
+/-- The points `t` with `(t, s)` in a given diagonal orbit form a finite set: they lie in one orbit
+of the stabilizer of `s`. -/
+theorem FiniteStabilizerOrbits.finite_setOf_mk_left_eq (s : S)
+    (q : Quotient (orbitRel G (S × S))) :
+    {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q}.Finite := by
+  rcases Set.eq_empty_or_nonempty {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q} with
+    h | ⟨t₀, ht₀⟩
+  · simp [h]
+  refine (FiniteStabilizerOrbits.finite_orbit (G := G) s t₀).subset fun t ht ↦ ?_
+  have hst : MulAction.orbitRelQuotientStabilizerMap (G := G) s (Quotient.mk'' t) =
+      MulAction.orbitRelQuotientStabilizerMap s (Quotient.mk'' t₀) := by
+    simpa using ht.trans ht₀.symm
+  exact Quotient.exact' (MulAction.orbitRelQuotientStabilizerMap_injective s hst)
+
+/-- The points `y` with `(x, y)` in a given diagonal orbit form a finite set, by swapping
+coordinates. -/
+theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (x : S)
+    (q : Quotient (orbitRel G (S × S))) :
+    {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
+  (finite_setOf_mk_left_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
+    (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
+    fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
+
+end FiniteStabilizerOrbits
+
+/-- **A diagonal action is free when it is free on the first factor** and left-cancellative on
+the second, as every group action is: an element of `G` fixing a pair fixes its first coordinate.
+-/
+@[to_additive /-- **A diagonal additive action is free when it is free on the first factor** and
+left-cancellative on the second. -/]
+instance isCancelSMul_prod {G X Y : Type*} [SMul G X] [SMul G Y] [IsCancelSMul G X]
+    [IsLeftCancelSMul G Y] : IsCancelSMul G (X × Y) where
+  left_cancel' g _ _ h := Prod.ext (IsCancelSMul.left_cancel g _ _ (congrArg Prod.fst h))
+    (IsLeftCancelSMul.left_cancel g _ _ (congrArg Prod.snd h))
+  right_cancel' g g' x hx := IsCancelSMul.right_cancel g g' x.1 (congrArg Prod.fst hx)
+
+end TauCeti

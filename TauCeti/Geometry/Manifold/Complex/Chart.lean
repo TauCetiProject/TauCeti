@@ -44,10 +44,12 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
+* `TauCeti.mfderiv_eq_zero_iff_deriv_chartAt_comp_comp_chartAt_symm_eq_zero`: the derivative of
+  a map vanishes exactly when the derivative of its representative in the preferred charts does.
 * `TauCeti.analyticAt_comp_chartAt_symm`: a function to a complete complex normed space that is
   holomorphic near `x` has an analytic representative in the preferred chart at `x`.
-* `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
-  curves is holomorphic.
+* `IsHomeomorph.mdifferentiable_symm` and `Homeomorph.mdifferentiable_symm`: the inverse of a
+  holomorphic homeomorphism between complex curves is holomorphic.
 * `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
   theorem on complex curves.
 * `TauCeti.mdifferentiableAt_of_comp_of_injOn`: a continuous lift through a locally injective
@@ -120,6 +122,29 @@ theorem analyticAt_chart_comp_comp_symm {e : OpenPartialHomeomorph X ℂ}
   have := ((mdifferentiableWithinAt_iff_of_mem_maximalAtlas he he' (e.map_target hz) hfz').1
     (mdifferentiableWithinAt_univ.2 hfz)).2
   simpa [mfld_simps, differentiableWithinAt_univ, Function.comp_def, e.right_inv hz] using this
+
+/-- On complex curves, the derivative of a map `f` differentiable at `x` vanishes exactly when the
+derivative of its representative in the preferred charts at `x` and `f x` vanishes at the
+coordinate of `x`. -/
+theorem mfderiv_eq_zero_iff_deriv_chartAt_comp_comp_chartAt_symm_eq_zero
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x) :
+    mfderiv 𝓘(ℂ) 𝓘(ℂ) f x = 0 ↔
+      deriv (fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z))) (chartAt ℂ x x) = 0 := by
+  -- In the model `𝓘(ℂ)`, the extended charts are the charts themselves.
+  have hw : writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x f =
+      fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z)) := by
+    simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, Function.comp_def, id_eq]
+  rw [hf.mfderiv, hw]
+  simp only [mfld_simps, fderivWithin_univ]
+  rw [← toSpanSingleton_deriv]
+  -- The identifications `tangentSpaceCastModel` of the tangent spaces with `ℂ` are linear
+  -- equivalences, so they do not affect vanishing.
+  refine ((tangentSpaceCastModel 𝓘(ℂ) x).arrowCongr
+    (tangentSpaceCastModel 𝓘(ℂ) (f x)).symm).map_eq_zero_iff.trans ?_
+  -- Read the zero map on the tangent space at `x` as the zero map on `ℂ`.
+  change ContinuousLinearMap.toSpanSingleton ℂ _ = (0 : ℂ →L[ℂ] ℂ) ↔ _
+  rw [← ContinuousLinearMap.toSpanSingleton_zero ℂ, ContinuousLinearMap.toSpanSingleton_inj]
 
 section PreferredCharts
 
@@ -204,6 +229,12 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
       (c.open_source.mem_nhds hcx)] with y' hy' hgy'
   simp only [Function.comp_apply, G, c'.left_inv hy']
   exact (c.left_inv hgy').symm
+
+/-- The inverse of a holomorphic homeomorphism between complex curves is holomorphic. -/
+theorem _root_.Homeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+    (e : X ≃ₜ Y) (he : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) e) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) e.symm := by
+  have h := e.isHomeomorph.mdifferentiable_symm he
+  rwa [show e.isHomeomorph.homeomorph e = e from Homeomorph.ext fun _ ↦ rfl] at h
 
 /-! ### Local criteria for holomorphy -/
 

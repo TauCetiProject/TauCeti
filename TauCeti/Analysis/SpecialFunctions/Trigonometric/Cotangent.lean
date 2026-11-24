@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
+import TauCeti.RingTheory.RootsOfUnity.Sawtooth
 import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
 
@@ -36,6 +37,8 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 ## Main results
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
+* `Complex.cot_pi_sub`: reflection about `π/2` negates the cotangent.
+* `Complex.cot_pi_div_two`: the cotangent vanishes at `π/2`.
 * `Complex.cot_mul_I`: the cotangent at an imaginary argument is a hyperbolic cotangent.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
@@ -64,6 +67,11 @@ open scoped Real
 
 namespace Complex
 
+/-- Reflection about `π/2` negates the complex cotangent, including its values at poles. -/
+@[simp]
+theorem cot_pi_sub (z : ℂ) : cot (π - z) = -cot z := by
+  rw [cot_eq_cos_div_sin, cos_pi_sub, sin_pi_sub, neg_div, ← cot_eq_cos_div_sin]
+
 /-- The cotangent is odd. -/
 @[simp]
 theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
@@ -73,6 +81,11 @@ theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
 @[simp]
 theorem cot_zero : cot 0 = 0 := by
   simp [cot_eq_cos_div_sin]
+
+/-- The cotangent vanishes at `π / 2`. -/
+@[simp]
+theorem cot_pi_div_two : cot ((π : ℂ) / 2) = 0 := by
+  rw [cot_eq_cos_div_sin, cos_pi_div_two, zero_div]
 
 /-- The cotangent at an imaginary argument is a hyperbolic cotangent:
 `cot (z i) = -(cosh z / sinh z) i` for every complex `z` (both sides vanish at `z = 0`). -/
@@ -226,7 +239,7 @@ theorem hasSum_pi_mul_cot_pi_mul_div_add_pi_mul_I (M : ℕ) [NeZero M] (c : ℕ+
   have hpow (k : ℕ) : cexp (2 * π * I * ((c * z + b) / M)) ^ k =
       ZMod.stdAddChar ((k : ZMod M) * (b : ZMod M)) * cexp (2 * π * I * z / M) ^ ((c : ℕ) * k) := by
     rw [← Int.cast_natCast (R := ZMod M) k, ← Int.cast_mul, ZMod.stdAddChar_coe,
-      ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
+      ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -276,7 +289,7 @@ theorem hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign {w : ℂ} (hw : 0 < w.im) 
       simpa using le_mul_of_one_le_left hw.le (Nat.one_le_cast.mpr hn)
     have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le hw hnw
     have hexp : Real.exp (-2 * π * ((n : ℂ) * w).im) = ρ ^ n := by
-      rw [← Real.exp_nat_mul]
+      rw [← Real.exp_natCast_mul]
       congr 1
       simp
       ring
@@ -444,23 +457,10 @@ theorem pi_mul_cot_pi_mul_val_div_eq_sum (M : ℕ) [NeZero M] {j : ZMod M} (hj :
       AddChar.map_zero_eq_one]
   have hterm (m : ZMod M) : (ZMod.stdAddChar (m * j) : ℂ) = ζ ^ m.val := by
     rw [hζdef, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_zmod_val]
-  have hgeom : ∑ i ∈ Finset.range M, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ M
-    rw [hζM, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right hζ1
-  have hind (K : ℕ) : (ζ - 1) * ∑ i ∈ Finset.range K, (i : ℂ) * ζ ^ i =
-      K * ζ ^ K - ζ * ∑ i ∈ Finset.range K, ζ ^ i := by
-    induction K with
-    | zero => simp
-    | succ K ih =>
-      rw [Finset.sum_range_succ, Finset.sum_range_succ, mul_add, ih]
-      push_cast
-      ring
   have hS : ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j) = M / (ζ - 1) := by
     simp_rw [hterm]
-    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ) * ζ ^ i), eq_div_iff hζ1, mul_comm, hind,
-      hζM, hgeom]
-    ring
+    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ) * ζ ^ i)]
+    exact sum_range_natCast_mul_pow_of_pow_eq_one hζM (sub_ne_zero.mp hζ1)
   rw [hS, cot_pi_eq_exp_ratio, ← hζ]
   have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
   have h1ζ : 1 - ζ ≠ 0 := by rwa [← neg_sub, neg_ne_zero]

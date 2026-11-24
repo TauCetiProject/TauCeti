@@ -16,9 +16,10 @@ Let a monoid `G` act on a space `E` by continuous maps. Pushing singular chains 
 translations `g • ·` makes each group of singular `n`-chains of `E` with coefficients in a
 commutative ring `k` a representation of `G` (`TauCeti.singularChainsRepresentation`), and the
 singular boundary is equivariant, so the singular chains form a chain complex of representations
-(`TauCeti.singularChainsRep`). Forgetting the action gives back the singular chain complex
-(`TauCeti.singularChainsRepForget₂Iso`), and the sum of the coefficients of a `0`-chain is an
-augmentation onto the trivial representation (`TauCeti.singularChainsRepAugmentation`).
+(`TauCeti.singularChainsRep`), whose differential in every pair of degrees is the singular boundary
+(`TauCeti.singularChainsRep_d_hom_apply`). Forgetting the action gives back the singular chain
+complex (`TauCeti.singularChainsRepForget₂Iso`), and the sum of the coefficients of a `0`-chain is
+an augmentation onto the trivial representation (`TauCeti.singularChainsRepAugmentation`).
 
 The `n`-chains are the permutation representation of `G` on the singular `n`-simplices
 (`TauCeti.singularChainsEquivOfMulAction`). If `G` is a group acting freely on `E`, it acts
@@ -147,6 +148,20 @@ lemma singularChainsRep_d (n : ℕ) :
     (singularChainsRep k E G).d (n + 1) n = singularChainsRepDifferential k E G n :=
   ChainComplex.of_d (fun n ↦ Rep.of (singularChainsRepresentation k E G n))
     (singularChainsRepDifferential k E G) n
+
+/-- In any pair of degrees, the differential of the equivariant singular chain complex is the
+singular boundary. -/
+@[simp]
+theorem singularChainsRep_d_hom_apply (i j : ℕ) (c : ((singularChains k).obj E).X i) :
+    ((singularChainsRep k E G).d i j).hom c = ((singularChains k).obj E).d i j c := by
+  by_cases h : (ComplexShape.down ℕ).Rel i j
+  · obtain rfl : i = j + 1 := h.symm
+    rw [singularChainsRep_d]
+    exact singularChainsRepDifferential_hom_apply k E G j c
+  · rw [HomologicalComplex.shape _ _ _ h, HomologicalComplex.shape _ _ _ h, Rep.zero_hom]
+    -- both sides are the zero map; the underlying map of the zero intertwining map is the zero
+    -- linear map by definition
+    rfl
 
 /-- **Forgetting the action of `G`, the equivariant singular chain complex is the singular chain
 complex** of `E`: the components of this isomorphism are identities. -/

@@ -81,8 +81,8 @@ the degree-`f` unramified extension inside `Ω`. -/
 private def maximalUnramifiedLevelEquiv (f : ℕ) :
     maximalUnramifiedLevel K Ω f ≃ₐ[K] unramifiedExtension K Ω f :=
   let hLM := unramifiedExtension_le_maximalUnramifiedExtension K Ω f
-  { toFun := fun x ↦ ⟨(x : maximalUnramifiedExtension K Ω), x.2⟩
-    invFun := fun x ↦ ⟨⟨x, hLM x.2⟩, x.2⟩
+  { toFun := fun x ↦ ⟨(x : maximalUnramifiedExtension K Ω), x.property⟩
+    invFun := fun x ↦ ⟨⟨x, hLM x.property⟩, x.property⟩
     left_inv := fun _ ↦ rfl
     right_inv := fun _ ↦ rfl
     map_add' := fun _ _ ↦ rfl
@@ -114,12 +114,12 @@ private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f �
     calc
       (((AlgEquiv.autCongr e
           (AlgEquiv.restrictNormalHom E (maximalUnramifiedFrobenius K Ω))) x : L) : Ω) =
-          (maximalUnramifiedFrobenius K Ω ⟨(x : Ω), hLM x.2⟩ : Ω) := by
+          (maximalUnramifiedFrobenius K Ω ⟨(x : Ω), hLM x.property⟩ : Ω) := by
             have hr := AlgEquiv.restrictNormalHom_apply E
               (maximalUnramifiedFrobenius K Ω) (e.symm x)
             exact congrArg (fun y : maximalUnramifiedExtension K Ω ↦ (y : Ω)) hr
       _ = (frobeniusAlgEquiv (K := K) (L := L) x : Ω) :=
-        coe_maximalUnramifiedFrobenius_apply_of_mem x.2
+        coe_maximalUnramifiedFrobenius_apply_of_mem x.property
   rw [← (AlgEquiv.autCongr e).orderOf_eq, heq, orderOf_frobeniusAlgEquiv,
     IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
 
@@ -367,9 +367,8 @@ theorem fixedField_zpowers_maximalUnramifiedFrobenius_pow (f : ℕ+) :
   refine le_antisymm ?_ ((le_fixedField_iff_le_fixingSubgroup _ _).2 ?_)
   · -- The closed subgroup fixing the fixed field of `H` contains the closure of `H`.
     rw [← InfiniteGalois.fixedField_fixingSubgroup E, fixingSubgroup_comap_unramifiedExtension]
-    exact (le_fixedField_iff_le_fixingSubgroup _ _).2 (Subgroup.topologicalClosure_minimal _
-      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
-      (InfiniteGalois.fixingSubgroup_isClosed _))
+    exact (le_fixedField_iff_le_fixingSubgroup _ _).2
+      (fixingSubgroup_fixedField_eq_topologicalClosure H).ge
   · rw [fixingSubgroup_comap_unramifiedExtension]
     exact Subgroup.le_topologicalClosure H
 
