@@ -18,9 +18,10 @@ written as a topological torsor `Torsor Aᵐᵒᵖ P` with `IsTopologicalTorsor 
 
 A topological right `A`-torsor with a continuous semilinear action of `G` is a `(G, A)`-torsor;
 these are classified by continuous nonabelian `H¹(G, A)` in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Torsor`. For a curve `X` with
-base point `b`, the torsor of étale (or unipotent) paths from `b` to a rational point is a torsor
-of this kind under the fundamental group at `b`, with `G` the absolute Galois group.
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.TopologicalTorsor`. For a
+curve `X` with base point `b`, the torsor of étale (or unipotent) paths from `b` to a rational
+point is a torsor of this kind under the fundamental group at `b`, with `G` the absolute Galois
+group.
 
 ## Main definitions
 

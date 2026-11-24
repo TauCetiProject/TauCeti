@@ -56,6 +56,8 @@ group `A`, such as the `ℚ_p`-points of a unipotent fundamental group.
 
 ## Main results
 
+* `TauCeti.Torsor.orbitHomeomorph_symm_smul`: the inverse of the orbit homeomorphism at `p` sends
+  `g • p` to `c_p g`.
 * `TauCeti.NonabelianH1.Cocycle.ofPoint_op_smul`: `c_{p · a}` is the twist of `c_p` by `a`.
 * `TauCeti.NonabelianH1.Cocycle.ofPoint_torsorEquiv_apply`: isomorphisms of torsors preserve the
   cocycle of a point.
@@ -108,6 +110,11 @@ def ofPoint (p : P) : Cocycle G A where
 
 theorem ofPoint_apply (p : P) (g : G) : ofPoint G p g = unop ((g • p) /ₛ p) :=
   (rfl)
+
+/-- The inverse of the orbit homeomorphism at `p` sends `g • p` to `c_p g`. -/
+theorem _root_.TauCeti.Torsor.orbitHomeomorph_symm_smul (p : P) (g : G) :
+    (Torsor.orbitHomeomorph p).symm (g • p) = ofPoint G p g :=
+  Torsor.orbitHomeomorph_symm_apply p (g • p)
 
 /-- The defining property of the cocycle of a point: `g • p = p · c_p g`. -/
 @[simp]
@@ -239,13 +246,14 @@ instance : SDiv Aᵐᵒᵖ (TorsorModel.{u, v, w} c) :=
 theorem sdiv_eq (x y : TorsorModel.{u, v, w} c) : x /ₛ y = op (y.toOriginal⁻¹ * x.toOriginal) :=
   (rfl)
 
-/-- The torsor model is a right `A`-torsor under right multiplication. -/
-instance : Torsor Aᵐᵒᵖ (TorsorModel.{u, v, w} c) where
-  nonempty := ⟨ofOriginal 1⟩
-  one_smul _ := by ext; simp
-  mul_smul _ _ _ := by ext; simp [mul_assoc]
-  sdiv_smul' _ _ := by ext; simp
-  smul_sdiv' _ _ := by simp
+instance : Nonempty (TorsorModel.{u, v, w} c) :=
+  ⟨ofOriginal 1⟩
+
+/-- The torsor model is a right `A`-torsor under right multiplication, pulled back from `Aᵐᵒᵖ`
+as a torsor over itself along `x ↦ op x.toOriginal`. -/
+instance : Torsor Aᵐᵒᵖ (TorsorModel.{u, v, w} c) :=
+  Function.Injective.torsor (op ∘ toOriginal) (fun _ _ h ↦ TorsorModel.ext (op_injective h))
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- The point `x * y` of the torsor model is the right translate of `x` by `y`. -/
 theorem ofOriginal_mul (x y : A) :
