@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Character.IsotypicProjection
 public import TauCeti.RepresentationTheory.Compact.StrongIntegrated
+public import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 import TauCeti.RepresentationTheory.Compact.GFiniteDensity
-import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 
 /-!
 # Isotypic projectors on Banach representations of compact groups
@@ -34,6 +34,8 @@ dense (`ContRepresentation.continuousLinearMap_ext_of_isGFinite`).
 
 * `ContRepresentation.banachIsotypicProjector_eq_isotypicProjector`: on an operator-norm
   continuous representation `e_σ` is `isotypicProjector`.
+* `ContRepresentation.banachIsotypicProjector_apply_of_mem`: on a finite-dimensional
+  subrepresentation `e_σ` is the isotypic projector of the restricted representation.
 * `ContRepresentation.banachIsotypicProjector_idempotent`: `e_σ` is idempotent.
 * `ContRepresentation.banachIsotypicProjector_comp_of_not_equiv`: `e_σ ∘ e_τ = 0` for
   inequivalent irreducibles `σ` and `τ`.
@@ -97,7 +99,7 @@ theorem banachIsotypicProjector_eq_isotypicProjector (hπ' : Continuous π)
 
 /-- On a finite-dimensional subrepresentation, for instance the span of the orbit of a `G`-finite
 vector, `e_σ` is the finite-dimensional isotypic projector of the restricted representation. -/
-private theorem banachIsotypicProjector_apply_of_mem (σ : ContRepresentation k G W)
+theorem banachIsotypicProjector_apply_of_mem (σ : ContRepresentation k G W)
     (hσ : Continuous σ) (S : Subrepresentation π.toRepresentation)
     [FiniteDimensional k S.toSubmodule] {v : V} (hv : v ∈ S.toSubmodule) :
     banachIsotypicProjector π hπ σ hσ v =
