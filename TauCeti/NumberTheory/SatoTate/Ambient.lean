@@ -66,6 +66,8 @@ those coordinates.
 * `TauCeti.SatoTate.det_eq_one_of_mem_USp`: elements of `USp(d)` have determinant one for even `d`.
 * `TauCeti.SatoTate.transpose_mem_USp_iff`, `TauCeti.SatoTate.map_star_mem_USp_iff`: `USp(d)` is
   closed under transposition (for even `d`) and entrywise complex conjugation.
+* `TauCeti.SatoTate.transpose_mul_symplecticForm_two_mul`: `Mᵀ Ω_2 M = det M • Ω_2` for every
+  `2 × 2` matrix `M`.
 * `TauCeti.SatoTate.mem_USp_two_iff`: `USp(2)` is the determinant-one subgroup of `U(2)`.
 * `TauCeti.SatoTate.map_haarProb_uSpTwoEquivSU2`: `USp(2) ≃ₜ* SU(2)` carries Haar measure to Haar
   measure.
@@ -107,13 +109,13 @@ theorem symplecticForm_eq_neg_reindex_J (g : ℕ) :
     symplecticForm (g + g) = -reindex finSumFinEquiv finSumFinEquiv (J (Fin g) ℂ) := by
   have hg : (g + g) / 2 = g := by omega
   ext i j
-  refine Fin.addCases (fun a ↦ ?_) (fun a ↦ ?_) i <;>
-    refine Fin.addCases (fun b ↦ ?_) (fun b ↦ ?_) j <;>
-    simp only [reindex_apply, submatrix_apply, finSumFinEquiv_symm_apply_castAdd,
-      finSumFinEquiv_symm_apply_natAdd, J, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
-      fromBlocks_apply₂₁, fromBlocks_apply₂₂, Matrix.neg_apply, symplecticForm_apply, hg,
-      Fin.val_castAdd, Fin.val_natAdd, Matrix.zero_apply, Matrix.one_apply, Fin.ext_iff] <;>
-    (have := a.isLt; have := b.isLt; split_ifs <;> first | omega | norm_num)
+  obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i <;>
+    obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j <;>
+    rw [symplecticForm_apply, hg] <;>
+    split_ifs <;>
+    -- `Fin.natAdd_eq_addNat` would turn `Fin.natAdd g j` into `j.addNat g` before
+    -- `finSumFinEquiv.symm` cancels against it.
+    simp [J, Matrix.one_apply, -Fin.natAdd_eq_addNat, Fin.ext_iff] at * <;> omega
 
 /-- `Ω_d` is antisymmetric for even `d`. -/
 theorem transpose_symplecticForm (hd : Even d) :
@@ -227,23 +229,27 @@ theorem map_star_mem_USp_iff {x : U d} : UnitaryGroup.map_star x ∈ USp d ↔ x
   · intro h
     rw [h, hΩ]
 
-/-- `USp(2)` is the determinant-one subgroup of `U(2)`: for a `2 × 2` matrix,
-`gᵀ Ω_2 g = det g • Ω_2`. -/
+/-- For every `2 × 2` matrix `M`, `Mᵀ Ω_2 M = det M • Ω_2`. -/
+theorem transpose_mul_symplecticForm_two_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
+    Mᵀ * symplecticForm 2 * M = M.det • symplecticForm 2 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, symplecticForm_apply, Matrix.det_fin_two] <;> ring
+
+/-- `USp(2)` is the determinant-one subgroup of `U(2)`, since `gᵀ Ω_2 g = det g • Ω_2`
+(`transpose_mul_symplecticForm_two_mul`). -/
 theorem mem_USp_two_iff {x : U 2} : x ∈ USp 2 ↔ (x : Matrix (Fin 2) (Fin 2) ℂ).det = 1 := by
-  have key : (x : Matrix (Fin 2) (Fin 2) ℂ)ᵀ * symplecticForm 2 * x =
-      (x : Matrix (Fin 2) (Fin 2) ℂ).det • symplecticForm 2 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, symplecticForm_apply, Matrix.det_fin_two] <;> ring
-  rw [mem_USp_iff, key]
+  rw [mem_USp_iff, transpose_mul_symplecticForm_two_mul]
   constructor
   · intro h
     simpa [symplecticForm_apply] using congrFun (congrFun h 0) 1
   · intro h
     rw [h, one_smul]
 
-/-- The isomorphism of topological groups `USp(2) ≃ₜ* SU(2)`, the identity on matrices. -/
-def uSpTwoEquivSU2 : USp 2 ≃ₜ* SU2 where
+/-- The isomorphism of topological groups `USp(2) ≃ₜ* SU(2)`, the identity on matrices. It is
+stated on `(uSpClosed 2).toSubgroup`, the form in which Haar measure of a closed subgroup of `U(d)`
+is taken. -/
+def uSpTwoEquivSU2 : (uSpClosed 2).toSubgroup ≃ₜ* SU2 where
   toFun x := ⟨((x : U 2) : Matrix (Fin 2) (Fin 2) ℂ),
     mem_specialUnitaryGroup_iff.mpr ⟨(x : U 2).property, mem_USp_two_iff.mp x.property⟩⟩
   invFun y := ⟨⟨y, (mem_specialUnitaryGroup_iff.mp y.property).1⟩,
@@ -255,19 +261,21 @@ def uSpTwoEquivSU2 : USp 2 ≃ₜ* SU2 where
   continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 @[simp]
-theorem coe_uSpTwoEquivSU2 (x : USp 2) :
+theorem coe_uSpTwoEquivSU2 (x : (uSpClosed 2).toSubgroup) :
     ((uSpTwoEquivSU2 x : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
       ((x : U 2) : Matrix (Fin 2) (Fin 2) ℂ) :=
   (rfl)
 
 @[simp]
 theorem coe_uSpTwoEquivSU2_symm (y : SU2) :
-    (((uSpTwoEquivSU2.symm y : USp 2) : U 2) : Matrix (Fin 2) (Fin 2) ℂ) = y :=
+    (((uSpTwoEquivSU2.symm y : (uSpClosed 2).toSubgroup) : U 2) : Matrix (Fin 2) (Fin 2) ℂ) =
+      y :=
   (rfl)
 
 /-- The isomorphism `USp(2) ≃ₜ* SU(2)` carries the Haar probability measure of `USp(2)` to that
 of `SU(2)`. -/
-theorem map_haarProb_uSpTwoEquivSU2 : (haarProb (USp 2)).map uSpTwoEquivSU2 = haarProb SU2 :=
+theorem map_haarProb_uSpTwoEquivSU2 :
+    (haarProb (uSpClosed 2).toSubgroup).map uSpTwoEquivSU2 = haarProb SU2 :=
   Measure.isHaarMeasure_eq_of_isProbabilityMeasure _ _
 
 end TauCeti.SatoTate

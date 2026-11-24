@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -24,8 +25,8 @@ any other Haar probability measure, and `MeasureTheory.integral_mul_left_eq_self
 translation and inversion identities used for averaging representations.
 
 Normalized Haar measure is also compatible with passing to a closed subgroup of finite index.
-A measurable subgroup of finite index `n` has mass `n⁻¹`
-(`TauCeti.haarProb_subgroup_eq_inv_index`), since its `n` left cosets have equal mass and
+A measurable subgroup of finite index `n` has mass `n⁻¹` for every left-invariant probability
+measure (`Subgroup.measure_eq_inv_index`), since its `n` left cosets have equal mass and
 partition the group (`Subgroup.index_mul_measure`). If `φ : H →* G` is a continuous injective
 homomorphism of compact groups whose range has finite index `n` in `G`, then pulling
 `haarProb G` back along `φ` gives `n⁻¹ • haarProb H`
@@ -80,16 +81,6 @@ end CompactGroup
 
 section FiniteIndex
 
-/-- The normalized Haar measure of a compact group gives mass `n⁻¹` to a measurable subgroup of
-finite index `n`. -/
-theorem haarProb_subgroup_eq_inv_index {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] (K : Subgroup G)
-    [K.FiniteIndex] (hK : MeasurableSet (K : Set G)) :
-    haarProb G (K : Set G) = (K.index : ℝ≥0∞)⁻¹ := by
-  have h := K.index_mul_measure hK (haarProb G)
-  rw [measure_univ, mul_comm] at h
-  exact ENNReal.eq_inv_of_mul_eq_one_left h
-
 variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [T2Space G] [MeasurableSpace G] [BorelSpace G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
@@ -115,7 +106,7 @@ theorem comap_haarProb_eq_inv_index_smul (φ : H →* G) (hφ : Continuous φ)
     rw [MonoidHom.coe_range]
     exact hemb.measurableSet_range
   rw [hemb.comap_apply, image_univ, ← MonoidHom.coe_range,
-    haarProb_subgroup_eq_inv_index _ hmeas]
+    Subgroup.measure_eq_inv_index _ hmeas]
   simp
 
 /-- The restriction of the normalized Haar measure of `G` to the range of a continuous injective
