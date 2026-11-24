@@ -104,19 +104,19 @@ private theorem exists_isOpenEmbedding_normalExp_comp
   let Φ := TauCeti.VectorBundle.unitSectionHomeomorph P ν hP hu hu1
   let D := {p : TotalSpace P ν | ‖p.snd‖ < r p.proj}
   have hmem (p : M × ℝ) (hp : |p.2| < ε) : Φ p ∈ D := by
-    simpa [D, Φ, norm_smul, hu1] using hp.trans_le (hεr p.1)
-  refine ⟨ε, hε, fun x t ht ↦ hdom (by simpa [norm_smul, hu1] using (ht.trans_le (hεr x)).le),
-    fun {X} _ h hh hhε ↦ ?_⟩
+    simp only [D, mem_ofPred_eq]
+    rw [TauCeti.VectorBundle.norm_snd_unitSectionHomeomorph]
+    simpa [Φ] using hp.trans_le (hεr p.1)
+  refine ⟨ε, hε, fun x t ht ↦ hdom ?_, fun {X} _ h hh hhε ↦ ?_⟩
+  · have := hmem (x, t) ht
+    rw [TauCeti.VectorBundle.unitSectionHomeomorph_apply] at this
+    simp only [D, mem_ofPred_eq] at this ⊢
+    exact this.le
   -- the map `y ↦ (h y).2 • u (h y).1` into the disc bundle `D`
   let g : X → D := fun y ↦ ⟨Φ (h y), hmem (h y) (hhε y)⟩
   have hΦh : IsOpenEmbedding (Φ ∘ h) := Φ.isOpenEmbedding.comp hh
-  have hg : IsOpenEmbedding g := by
-    refine ⟨hΦh.isEmbedding.codRestrict D _, ?_⟩
-    have hrange : range g = Subtype.val ⁻¹' range (Φ ∘ h) := by
-      ext p
-      exact ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Subtype.ext hy⟩⟩
-    rw [hrange]
-    exact hΦh.isOpen_range.preimage continuous_subtypeVal
+  have hg : IsOpenEmbedding g :=
+    ⟨hΦh.isEmbedding.codRestrict D _, (hΦh.isOpenMap.codRestrict _).isOpen_range⟩
   convert hopen.comp hg using 1
   funext y
   simp only [comp_apply, domRestrict_apply, g, Φ, TauCeti.VectorBundle.unitSectionHomeomorph_apply]
