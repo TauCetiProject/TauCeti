@@ -78,8 +78,7 @@ theorem isGroupLikeElem_pointsMulEquiv_id :
     IsGroupLikeElem ℂ (pointsMulEquiv S (toConv (AlgHom.id ℝ S)) : ℂ ⊗[ℝ] S) := by
   have h := WeilRestriction.isGroupLikeElem_multiplicativeGroupPoints_toConv (A := ℝ) (B := ℂ)
     (BialgHom.id ℝ S)
-  have hid : (BialgHom.id ℝ S : S →ₐ[ℝ] S) = AlgHom.id ℝ S := AlgHom.ext fun _ ↦ rfl
-  rwa [WeilRestriction.multiplicativeGroupPoints_apply, ofConv_toConv, hid,
+  rwa [WeilRestriction.multiplicativeGroupPoints_apply, ofConv_toConv, BialgHom.id_toAlgHom,
     ← ofConv_toConv (AlgHom.id ℝ S), ← coe_pointsMulEquiv] at h
 
 /-- **The universal point of `S`**, the unit of `ℂ ⊗[ℝ] S` attached to the identity of `S`, as a

@@ -182,6 +182,16 @@ private theorem hodgeComponent_tateComodule_neg (m : ℤ) :
   rw [Comodule.endOfPoint_groupLike, splittingPoint_normGroupLike_zpow, neg_neg,
     LinearMap.smul_apply, LinearMap.id_apply]
 
+/-- Every Hodge component of `ℂ ⊗ ℝ(m)` other than `V^{-m,-m}` vanishes. -/
+private theorem hodgeComponent_tateComodule_of_ne {m p q : ℤ} (h : ¬(p = -m ∧ q = -m)) :
+    letI := tateComodule M m
+    hodgeComponent M p q = ⊥ := by
+  let _ := tateComodule M m
+  have hne : (p, q) ≠ (-m, -m) := fun h' ↦ h (Prod.mk.inj h')
+  have hdisj := (isInternal_hodgeComponent M).submodule_iSupIndep.pairwiseDisjoint hne
+  simp only [Function.onFun, hodgeComponent_tateComodule_neg] at hdisj
+  exact disjoint_top.1 hdisj
+
 /-- **The Hodge type of the Tate comodule**: `ℂ ⊗ ℝ(m)` is its own Hodge component `V^{-m,-m}`,
 and every other Hodge component vanishes. -/
 theorem hodgeComponent_tateComodule (m p q : ℤ) :
@@ -190,10 +200,7 @@ theorem hodgeComponent_tateComodule (m p q : ℤ) :
   let _ := tateComodule M m
   split_ifs with h
   · rw [h.1, h.2, hodgeComponent_tateComodule_neg]
-  · have hne : (p, q) ≠ (-m, -m) := fun h' ↦ h (Prod.mk.inj h')
-    have hdisj := (isInternal_hodgeComponent M).submodule_iSupIndep.pairwiseDisjoint hne
-    simp only [Function.onFun, hodgeComponent_tateComodule_neg] at hdisj
-    exact disjoint_top.1 hdisj
+  · exact hodgeComponent_tateComodule_of_ne h
 
 /-- **The Tate comodule is pure of weight `-2 * m`**: the components `p ↦ V^{p, -2m - p}` form a
 Hodge decomposition of weight `-2 * m`. With `M = ℝ` this is the Hodge structure `ℝ(m)`. -/
@@ -203,9 +210,7 @@ theorem isHodgeDecomposition_tateComodule (m : ℤ) :
       fun p ↦ hodgeComponent M p (-2 * m - p) := by
   let _ := tateComodule M m
   refine ⟨?_, fun p ↦ by rw [map_conj_hodgeComponent, sub_sub_cancel],
-    ⟨-m, fun p hp ↦ by
-      rw [hodgeComponent_tateComodule, ite_eq_right_iff.2 fun h ↦ absurd h (by omega)]⟩⟩
-  exact isInternal_hodgeComponent_of_pure fun p q hpq ↦ by
-    rw [hodgeComponent_tateComodule, ite_eq_right_iff.2 fun h ↦ absurd h (by omega)]
+    ⟨-m, fun p hp ↦ hodgeComponent_tateComodule_of_ne (by omega)⟩⟩
+  exact isInternal_hodgeComponent_of_pure fun p q hpq ↦ hodgeComponent_tateComodule_of_ne (by omega)
 
 end TauCeti.DeligneTorus
