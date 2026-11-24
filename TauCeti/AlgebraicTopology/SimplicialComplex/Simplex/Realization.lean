@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
 public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
@@ -194,30 +195,6 @@ theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineI
   ext a
   exact h a (Finset.mem_univ a)
 
-/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
-corresponding linear combination of a family `p` is the convex hull of `p`. -/
-theorem range_linearCombination_standardSimplex (p : σ → E) :
-    Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.val a) =
-      convexHull ℝ (Set.range p) := by
-  classical
-  let : Convexity.ConvexSpace ℝ E := .ofModule
-  rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
-    ← Set.range_comp']
-  simp_rw [Fintype.linearCombination_apply,
-    ← Convexity.StdSimplex.affineMapMk_apply_eq_sum_of_fintype]
-  rw [Set.convexHull_eq_range_iConvexComb]
-  -- Reindex Mathlib's convex combinations between the family and its range.
-  let s : Set.range p → σ := fun x => x.property.choose
-  have hs (x : Set.range p) : p (s x) = x := x.property.choose_spec
-  apply Set.Subset.antisymm
-  · rintro _ ⟨w, rfl⟩
-    refine ⟨w.map (Set.rangeFactorization p), ?_⟩
-    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map,
-      Set.rangeFactorization]
-  · rintro _ ⟨w, rfl⟩
-    refine ⟨w.map s, ?_⟩
-    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map, hs]
-
 end LinearCombination
 
 end Finset
@@ -245,12 +222,10 @@ noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι
       refine PreAbstractSimplicialComplex.mem_simplex.mpr
         ⟨K.isRelLowerSet_faces.prop_of_mem (support_mem K (faceInclusion K ⟨V, hV⟩ x)), ?_⟩
       simpa only [faceInclusion_val] using StandardSimplex.support_subset x⟩
-    invFun x := ⟨x.val.val, by
-      simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
-        ⟨Realization.nonneg K x.val, Realization.sum_eq_one K x.val,
-          (PreAbstractSimplicialComplex.mem_simplex.mp x.property).2⟩⟩
+    invFun x := ⟨x.val.val, Realization.mem_convexHull_of_support_subset K x.val
+      (PreAbstractSimplicialComplex.mem_simplex.mp x.property).2⟩
     left_inv x := Subtype.ext (faceInclusion_val K ⟨V, hV⟩ x)
-    right_inv x := Subtype.ext (Subtype.ext (faceInclusion_val K ⟨V, hV⟩ _)) }
+    right_inv x := Subtype.ext (faceInclusion_mk_val K ⟨V, hV⟩ x.val _) }
   letI : CompactSpace (StandardSimplex V) :=
     (Finset.standardSimplexHomeomorph V).symm.compactSpace
   have hc : Continuous e := (continuous_faceInclusion K ⟨V, hV⟩).subtype_mk _
@@ -366,20 +341,6 @@ noncomputable def realizationOneSimplexHomeomorphUnitInterval :
     Realization (⊤ : AbstractSimplicialComplex (Fin 2)) ≃ₜ unitInterval :=
   (realizationTopHomeomorphStdSimplex (ι := Fin 2)).trans Convexity.StdSimplex.homeomorphI
 
-private theorem homeomorphI_symm_apply_coe (x : unitInterval) :
-    ((Convexity.StdSimplex.homeomorphI.symm x).weights : Fin 2 → ℝ) =
-      ![1 - (x : ℝ), (x : ℝ)] := by
-  have h : Convexity.StdSimplex.homeomorphI.symm x =
-      Convexity.StdSimplex.duple (s := 1 - (x : ℝ)) (t := (x : ℝ)) 0 1
-        (sub_nonneg.mpr x.property.2) x.property.1 (by ring) := by
-    rw [Homeomorph.symm_apply_eq]
-    exact Subtype.ext (by
-      simp [Convexity.StdSimplex.homeomorphI_apply_coe,
-        Convexity.StdSimplex.weights_duple])
-  rw [h, Convexity.StdSimplex.weights_duple]
-  funext i
-  fin_cases i <;> simp
-
 /-- The one-simplex homeomorphism is its second barycentric coordinate. -/
 @[simp]
 theorem realizationOneSimplexHomeomorphUnitInterval_coe (x : Realization
@@ -395,18 +356,16 @@ theorem realizationOneSimplexHomeomorphUnitInterval_symm_apply_val_zero (x : uni
     (realizationOneSimplexHomeomorphUnitInterval.symm x : Fin 2 →₀ ℝ) 0 =
       1 - (x : ℝ) := by
   rw [realizationOneSimplexHomeomorphUnitInterval, Homeomorph.symm_trans_apply,
-    realizationTopHomeomorphStdSimplex_symm_apply_val,
-    homeomorphI_symm_apply_coe]
-  rfl
+    realizationTopHomeomorphStdSimplex_symm_apply_val]
+  exact Convexity.StdSimplex.homeomorphI_symm_weights_zero x
 
 /-- The first barycentric coordinate of the interval inverse is the interval coordinate. -/
 @[simp]
 theorem realizationOneSimplexHomeomorphUnitInterval_symm_apply_val_one (x : unitInterval) :
     (realizationOneSimplexHomeomorphUnitInterval.symm x : Fin 2 →₀ ℝ) 1 = (x : ℝ) := by
   rw [realizationOneSimplexHomeomorphUnitInterval, Homeomorph.symm_trans_apply,
-    realizationTopHomeomorphStdSimplex_symm_apply_val,
-    homeomorphI_symm_apply_coe]
-  rfl
+    realizationTopHomeomorphStdSimplex_symm_apply_val]
+  exact Convexity.StdSimplex.homeomorphI_symm_weights_one x
 
 /-- The zeroth vertex of the realized one-simplex is the left endpoint of the interval. -/
 @[simp]

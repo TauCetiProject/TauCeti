@@ -48,8 +48,8 @@ theorem relabelCohomologyIso_cohomologyClass_factorSet {E : Type*} [Group E]
     (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m)
     (hS : S' = S.relabel eM eG)
-    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
-    (σ' : S'.Section) (hσ' : σ' 1 = 1) (hact' : InducesAction S') :
+    (σ : S.Section) (hσ : σ 1 = 1) (hact : S.InducesAction)
+    (σ' : S'.Section) (hσ' : σ' 1 = 1) (hact' : S'.InducesAction) :
     (relabelCohomologyIso eM eG hsmul 2).hom (factorSet σ hσ hact).cohomologyClass =
       (factorSet σ' hσ' hact').cohomologyClass := by
   subst hS

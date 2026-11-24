@@ -26,6 +26,10 @@ expressing the semidirect-product components of an extension element `e` in term
 
 public section
 
+/- `SemidirectProduct.right_splitting` computes the second coordinate of any splitting of a
+semidirect product extension, so it is a simp lemma. -/
+attribute [simp] SemidirectProduct.right_splitting
+
 namespace GroupExtension
 
 variable {N E G : Type*} [Group N] [Group E] [Group G]

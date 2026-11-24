@@ -84,7 +84,7 @@ theorem dihedralExtension_rightHom (n : ℕ) (g : DihedralGroup n) :
 
 /-- The relabelled dihedral extension induces the inversion action of `C₂` on `Cₙ`. -/
 theorem dihedralExtension_inducesAction (n : ℕ) :
-    TauCeti.GroupExtension.InducesAction (dihedralExtension n) :=
+    GroupExtension.InducesAction (dihedralExtension n) :=
   (dihedralRotations n).quotientExtension_inducesAction.relabel
     (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n)
     (dihedralRotationsMulEquiv_symm_smul n)

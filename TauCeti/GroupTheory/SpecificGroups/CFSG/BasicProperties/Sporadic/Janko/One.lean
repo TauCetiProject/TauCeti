@@ -29,7 +29,7 @@ needs `9240` cosets and this bound on `⟨u⟩` itself.
 The relation `u ^ 19 = 1` is a consequence of the five relators, obtained from a partial coset
 enumeration over `⟨u⟩`: a replay that stops before the coset table closes still records a power of
 `u` that is trivial in the presented group
-(`TauCeti.CosetEnumeration.wordValue_pow_exponent_replay_eq_one`). Since `u ^ 19 = 1`, an
+(`TauCeti.CosetEnumeration.wordValue_pow_replayExponent_eq_one`). Since `u ^ 19 = 1`, an
 enumeration over `⟨u⟩` may record the elements of `⟨u⟩` it tracks as exponents modulo `19`.
 
 In the signed letters of `TauCeti.CosetEnumeration.wordValue`, `0` is `a`, `2` is `b` and `3` is
@@ -73,10 +73,10 @@ private def stepCodes : List ℕ :=
 
 /-- The replay of the certificate records the exponent `19` for the word `abab⁻¹`, whose signed
 letters are `[0, 2, 0, 3]`. -/
-private theorem exponent_replay_J1 :
-    (replay J1.presentation.generatorCount
+private theorem replayExponent_eq_nineteen :
+    replayExponent J1.presentation.generatorCount
       (J1.presentation.relatorLetters.map (List.map signedLetter)) [0, 2, 0, 3] parentCodes
-      stepCodes).exponent = 19 := by
+      stepCodes = 19 := by
   rw [presentation_J1, Sporadic.j1Presentation_generatorCount,
     Sporadic.j1Presentation_relatorLetters]
   decide +kernel
@@ -86,8 +86,8 @@ the value of the signed word `[0, 2, 0, 3]` at the generators of the presented g
 is a consequence of the five relators, none of which states it. -/
 theorem wordValue_pow_eq_one_group_J1 :
     wordValue (PresentedGroup.of (rels := J1.presentation.relatorSet)) [0, 2, 0, 3] ^ 19 = 1 :=
-  exponent_replay_J1 ▸
-    J1.presentation.wordValue_pow_exponent_replay_eq_one [0, 2, 0, 3] parentCodes stepCodes
+  replayExponent_eq_nineteen ▸
+    J1.presentation.wordValue_pow_replayExponent_eq_one [0, 2, 0, 3] parentCodes stepCodes
 
 /-- The element `abab⁻¹` of the presented group of `J₁` is not the identity. -/
 private theorem wordValue_ne_one :

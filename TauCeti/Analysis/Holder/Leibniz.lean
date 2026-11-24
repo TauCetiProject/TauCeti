@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.JetBounds
+public import TauCeti.Analysis.Holder.Jet.Bounds
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Analysis.Calculus.ContDiff.Operations

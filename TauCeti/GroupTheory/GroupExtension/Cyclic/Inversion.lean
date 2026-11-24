@@ -41,7 +41,7 @@ theorem
     _root_.GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
     {n : ℕ} [NeZero n] {E : Type*} [Group E]
     {S : GroupExtension (Multiplicative (ZMod (2 * n))) E (Multiplicative (ZMod 2))}
-    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
+    (σ : S.Section) (hσ : σ 1 = 1) (hact : S.InducesAction)
     {e : E} (he : S.rightHom e = Multiplicative.ofAdd 1) {a : ZMod (2 * n)}
     (ha : S.inl (Multiplicative.ofAdd a) = e ^ 2) (x : ZMod 2) :
     groupCohomologyTwoInvEquivZModTwo n (factorSet σ hσ hact).cohomologyClass = x ↔

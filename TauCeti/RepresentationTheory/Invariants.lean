@@ -18,6 +18,7 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.CategoryTheory.Filtered.Final
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Finsupp
 import TauCeti.RepresentationTheory.Intertwining
@@ -102,6 +103,11 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Representation.exists_invariant_preimage_of_surjective_of_projective`: a surjective
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
+* `Representation.IntertwiningMap.invariantsMap`: an intertwining map induces a linear map on
+  invariants, injective when the intertwining map is, functorially
+  (`Representation.IntertwiningMap.invariantsMap_id`, `invariantsMap_comp`); for an equivalence it
+  is `Representation.Equiv.invariantsLinearEquiv`
+  (`Representation.Equiv.toLinearMap_invariantsLinearEquiv`).
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
   invariance of a vector.
@@ -110,6 +116,12 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.invariants_comp_comp_subtype`: the invariants of `ρ.comp φ` under a subgroup
+  `U` are the invariants of `ρ` under its image `φ(U)`.
+* `Representation.invariants_prod`, `Representation.invariants_directSum`: the invariants of a
+  direct sum are the product of the invariants.
+* `Representation.prod_comp`, `Representation.directSum_comp`: restricting a direct sum along a
+  homomorphism gives the direct sum of the restrictions.
 * `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
   a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -166,8 +178,8 @@ variable (ρ : Representation k G V) [Fintype G] [Invertible (Fintype.card G : k
 `Representation.norm`, scaled by the inverse of the group order. -/
 theorem averageMap_eq_invOf_card_smul_norm :
     ρ.averageMap = ⅟(Fintype.card G : k) • ρ.norm := by
-  simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
-    asAlgebraHom_single_one, norm]
+  simp only [averageMap, GroupAlgebra.average, map_smul, MonoidAlgebra.of_apply,
+    asAlgebraHom_sum_single_one]
 
 /-- The averaging projection of `v` is the normalized group sum `⅟#G • ∑ g, ρ g v`. -/
 theorem averageMap_apply (v : V) :
@@ -247,6 +259,52 @@ theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [
   ext v
   simp only [mem_invariants, MonoidHom.comp_apply]
   exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
+
+/-- **Invariants under a subgroup after restriction along a homomorphism**: a vector is fixed by
+`φ u` for every `u ∈ U` exactly when it is fixed by the image subgroup `φ(U)`. -/
+theorem invariants_comp_comp_subtype {k G H V : Type*} [CommRing k] [Group G] [Group H]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) (φ : H →* G) (U : Subgroup H) :
+    invariants ((ρ.comp φ).comp U.subtype) = invariants (ρ.comp (U.map φ).subtype) := by
+  have h : (ρ.comp φ).comp U.subtype = (ρ.comp (U.map φ).subtype).comp (φ.subgroupMap U) := by
+    ext u : 1
+    simp
+  rw [h, invariants_comp_of_surjective _ _ (φ.subgroupMap_surjective U)]
+
+/-- The invariants of a direct sum are the product of the invariants. -/
+@[simp]
+theorem invariants_prod {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+    [AddCommGroup W] [Module k W] (ρ : Representation k G V) (σ : Representation k G W) :
+    invariants (ρ.prod σ) = (invariants ρ).prod (invariants σ) := by
+  ext x
+  simp [mem_invariants, Prod.ext_iff, forall_and]
+
+/-- The invariants of a direct sum of a finite family correspond, under the identification of the
+direct sum with the product, to the product of the invariants. -/
+theorem invariants_directSum {k G ι : Type*} [CommRing k] [Group G] [Fintype ι] {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i)) :
+    invariants (directSum ρ) = (Submodule.pi Set.univ fun i ↦ invariants (ρ i)).comap
+      (DirectSum.linearEquivFunOnFintype k ι V).toLinearMap := by
+  ext x
+  simp only [mem_invariants, directSum_apply, Submodule.mem_comap, Submodule.mem_pi, Set.mem_univ,
+    true_implies, LinearEquiv.coe_coe, DirectSum.linearEquivFunOnFintype_apply, DirectSum.ext_iff,
+    DirectSum.lmap_apply]
+  exact forall_comm
+
+/-- Restricting a direct sum along a homomorphism gives the direct sum of the restrictions. -/
+@[simp]
+theorem prod_comp {k G H V W : Type*} [Semiring k] [Monoid G] [Monoid H] [AddCommMonoid V]
+    [Module k V] [AddCommMonoid W] [Module k W] (ρ : Representation k G V)
+    (σ : Representation k G W) (f : H →* G) :
+    (ρ.prod σ).comp f = Representation.prod (ρ.comp f) (σ.comp f) :=
+  MonoidHom.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
+
+/-- Restricting a direct sum of a family along a homomorphism gives the direct sum of the
+restrictions. -/
+@[simp]
+theorem directSum_comp {k G H ι : Type*} [Semiring k] [Monoid G] [Monoid H] {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
+    (f : H →* G) : (directSum ρ).comp f = directSum fun i ↦ (ρ i).comp f :=
+  MonoidHom.ext fun _ ↦ by simp
 
 /-- **Invariance may be tested on a generating set**: if `s` generates `G`, a vector is invariant
 exactly when every element of `s` fixes it. -/
@@ -386,6 +444,42 @@ end ChangeRings
 
 end Representation
 
+namespace Representation.IntertwiningMap
+
+variable {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W] {ρ : Representation k G V} {σ : Representation k G W}
+
+/-- **An intertwining map preserves invariants.** The linear map `V^G → W^G` induced by an
+intertwining map `V → W`. -/
+noncomputable def invariantsMap (f : ρ.IntertwiningMap σ) : ρ.invariants →ₗ[k] σ.invariants :=
+  f.toLinearMap.restrict fun v hv g ↦ by simpa [f.isIntertwining] using congrArg f (hv g)
+
+@[simp]
+theorem coe_invariantsMap_apply (f : ρ.IntertwiningMap σ) (x : ρ.invariants) :
+    (f.invariantsMap x : W) = f (x : V) :=
+  (rfl)
+
+/-- The map induced on invariants by an injective intertwining map is injective. -/
+theorem invariantsMap_injective (f : ρ.IntertwiningMap σ) (hf : Function.Injective f) :
+    Function.Injective f.invariantsMap :=
+  fun _ _ h ↦ Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+
+/-- The identity intertwining map induces the identity on invariants. -/
+@[simp]
+theorem invariantsMap_id : (IntertwiningMap.id ρ).invariantsMap = LinearMap.id := by
+  ext
+  rfl
+
+/-- The map induced on invariants by a composite is the composite of the induced maps. -/
+@[simp]
+theorem invariantsMap_comp {X : Type*} [AddCommGroup X] [Module k X] {τ : Representation k G X}
+    (f : σ.IntertwiningMap τ) (g : ρ.IntertwiningMap σ) :
+    (f.comp g).invariantsMap = f.invariantsMap ∘ₗ g.invariantsMap := by
+  ext
+  rfl
+
+end Representation.IntertwiningMap
+
 namespace Representation.Equiv
 
 variable {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
@@ -409,6 +503,13 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- The linear map underlying `invariantsLinearEquiv` is the map induced on invariants by the
+underlying intertwining map. -/
+theorem toLinearMap_invariantsLinearEquiv (φ : ρ.Equiv σ) :
+    φ.invariantsLinearEquiv.toLinearMap = φ.toIntertwiningMap.invariantsMap := by
+  ext
+  rfl
 
 /-- **Equivalent representations have equivalent quotient representations on invariants.** For a
 normal subgroup `S` of `G`, an equivalence `ρ ≃ σ` restricts to the `S`-invariants and there

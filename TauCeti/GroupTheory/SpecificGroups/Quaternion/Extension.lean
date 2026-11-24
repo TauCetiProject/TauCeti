@@ -86,7 +86,7 @@ theorem quaternionExtension_rightHom (n : ℕ) (g : QuaternionGroup n) :
 
 /-- The relabelled quaternion extension induces the inversion action of `C₂` on `C_{2n}`. -/
 theorem quaternionExtension_inducesAction (n : ℕ) :
-    TauCeti.GroupExtension.InducesAction (quaternionExtension n) :=
+    GroupExtension.InducesAction (quaternionExtension n) :=
   (quaternionRotations n).quotientExtension_inducesAction.relabel
     (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n)
     (quaternionRotationsMulEquiv_symm_smul n)
