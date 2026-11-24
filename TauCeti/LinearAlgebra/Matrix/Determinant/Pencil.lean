@@ -31,8 +31,9 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 ## Main results
 
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
-* `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: a subspace of matrices whose invertible
-  elements are the nonzero multiples of one invertible matrix is spanned by it.
+* `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
+  a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
+  invertible matrix is spanned by it.
 -/
 
 public section

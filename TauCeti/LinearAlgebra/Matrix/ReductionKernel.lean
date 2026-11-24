@@ -255,34 +255,24 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
       _ < p := hp
   have hp' : N ! * B ^ N < p :=
     lt_of_le_of_lt (Nat.mul_le_mul_left _ (Nat.pow_le_pow_left (le_max_left B 1) N)) hp
-  -- The solutions modulo `p` form the line through `X`.
-  let vecₗ : Matrix n n (ZMod p) →ₗ[ZMod p] n × n → ZMod p :=
-    { toFun := vec, map_add' := vec_add, map_smul' := vec_smul }
-  have hV := (LinearMap.ker (A'.mulVecLin ∘ₗ vecₗ)).eq_span_singleton_of_mem_of_det_ne_zero hcard
-    (by simpa [vecₗ] using hAX) hX fun Y hY hYdet ↦ huniq Y hYdet (by simpa [vecₗ] using hY)
+  -- The solutions modulo `p` form the line through `X`; transport it along the vectorization.
+  let e : Matrix n n (ZMod p) ≃ₗ[ZMod p] n × n → ZMod p := LinearEquiv.ofBijective
+    { toFun := vec, map_add' := vec_add, map_smul' := vec_smul } vec_bijective
+  have hV := (LinearMap.ker (A'.mulVecLin ∘ₗ e)).eq_span_singleton_of_mem_of_det_ne_zero hcard
+    (by simpa [e] using hAX) hX fun Y hY hYdet ↦ huniq Y hYdet (by simpa [e] using hY)
   have hker : LinearMap.ker A'.mulVecLin = ZMod p ∙ X.vec := by
-    ext y
-    rw [LinearMap.mem_ker, mulVecLin_apply, Submodule.mem_span_singleton]
-    constructor
-    · intro hy
-      -- `y` is the vectorization of the matrix with entries `y (j, i)`.
-      have hy' : (Matrix.of fun i j ↦ y (j, i)).vec = y := by rw [vec_of]; rfl
-      have hY : Matrix.of (fun i j ↦ y (j, i)) ∈ ZMod p ∙ X := by
-        rw [← hV, LinearMap.mem_ker, LinearMap.comp_apply, mulVecLin_apply]
-        exact hy' ▸ hy
-      obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1 hY
-      exact ⟨a, by rw [← vec_smul, ha, hy']⟩
-    · rintro ⟨a, rfl⟩
-      rw [mulVec_smul, hAX, smul_zero]
+    rw [← Submodule.map_comap_eq_of_surjective e.surjective (LinearMap.ker A'.mulVecLin),
+      ← LinearMap.ker_comp, hV, Submodule.map_span, Set.image_singleton]
+    simp [e]
   have hXvec : X.vec ≠ 0 := fun h ↦ hX (by rw [vec_eq_zero_iff.1 h, det_zero])
   obtain ⟨v, hAv, hprim, hbound, c, hc, hv⟩ :=
     exists_primitive_mulVec_eq_zero_of_ker_map_eq_span A hA hp' hXvec hker
-  let Q : Matrix n n ℤ := Matrix.of fun i j ↦ v (j, i)
+  let Q : Matrix n n ℤ := (Equiv.ofBijective _ vec_bijective).symm v
+  have hQv : Q.vec = v := Equiv.ofBijective_apply_symm_apply _ vec_bijective v
   have hQ : Q.map (Int.castRingHom (ZMod p)) = c • X := by
-    ext i j
-    simpa [Q] using congrFun hv (j, i)
-  refine ⟨Q, hAv, fun e he ↦ hprim e fun ij ↦ he ij.2 ij.1, fun i j ↦ hbound (j, i),
-    ⟨c, hc, hQ⟩, ?_⟩
+    rw [← vec_inj, vec_map, hQv, vec_smul, ← hv, Int.coe_castRingHom, Function.comp_def]
+  refine ⟨Q, hQv ▸ hAv, fun d hd ↦ hprim d fun ij ↦ hQv ▸ hd ij.2 ij.1,
+    fun i j ↦ by rw [← hQv] at hbound; exact hbound (j, i), ⟨c, hc, hQ⟩, ?_⟩
   rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_det, ← Int.coe_castRingHom, hQ, det_smul]
   exact mul_ne_zero (pow_ne_zero _ hc) hX
 
