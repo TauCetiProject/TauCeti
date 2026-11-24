@@ -21,6 +21,7 @@ import Mathlib.RingTheory.Flat.Basic
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.NormTrace.BaseChange
 import TauCeti.RingTheory.NormTrace.Pi
@@ -139,7 +140,6 @@ noncomputable def tensorProductEquiv : ℤ_[p] ⊗[ℤ] 𝓞 K ≃ₐ[ℤ_[p]] P
   AlgEquiv.refl
 
 /-- The inclusion of the ring of integers is `x ↦ 1 ⊗ x`. -/
-@[simp]
 theorem tensorProductEquiv_one_tmul (x : 𝓞 K) :
     tensorProductEquiv K p (1 ⊗ₜ x) = algebraMap (𝓞 K) (PadicIntegralAlgebra K p) x :=
   -- The algebra structure over `𝓞 K` is `Algebra.TensorProduct.rightAlgebra`, whose algebra map
@@ -147,12 +147,12 @@ theorem tensorProductEquiv_one_tmul (x : 𝓞 K) :
   (rfl)
 
 /-- The inclusion of the scalars is `a ↦ a ⊗ 1`. -/
-@[simp]
 theorem tensorProductEquiv_tmul_one (a : ℤ_[p]) :
     tensorProductEquiv K p (a ⊗ₜ 1) = algebraMap ℤ_[p] (PadicIntegralAlgebra K p) a := by
   simpa using (tensorProductEquiv K p).commutes a
 
 /-- The pure tensor `a ⊗ x` is the product of the scalar `a` and the integer `x`. -/
+@[simp]
 theorem tensorProductEquiv_tmul (a : ℤ_[p]) (x : 𝓞 K) :
     tensorProductEquiv K p (a ⊗ₜ x) =
       algebraMap ℤ_[p] (PadicIntegralAlgebra K p) a * algebraMap (𝓞 K) _ x := by
@@ -175,11 +175,11 @@ variable {K p E}
 @[simp]
 theorem liftEquiv_apply_algebraMap (σ : 𝓞 K →+* E) (x : 𝓞 K) :
     liftEquiv K p E σ (algebraMap (𝓞 K) (PadicIntegralAlgebra K p) x) = σ x := by
-  simp [liftEquiv, ← tensorProductEquiv_one_tmul]
+  simp [liftEquiv, -tensorProductEquiv_tmul, ← tensorProductEquiv_one_tmul]
 
 theorem liftEquiv_apply_tensorProductEquiv_tmul (σ : 𝓞 K →+* E) (a : ℤ_[p]) (x : 𝓞 K) :
     liftEquiv K p E σ (tensorProductEquiv K p (a ⊗ₜ x)) = algebraMap ℤ_[p] E a * σ x := by
-  simp [tensorProductEquiv_tmul]
+  simp
 
 @[simp]
 theorem liftEquiv_symm_apply (f : PadicIntegralAlgebra K p →ₐ[ℤ_[p]] E) (x : 𝓞 K) :
@@ -187,14 +187,19 @@ theorem liftEquiv_symm_apply (f : PadicIntegralAlgebra K p →ₐ[ℤ_[p]] E) (x
   conv_rhs => rw [← (liftEquiv K p E).apply_symm_apply f]
   rw [liftEquiv_apply_algebraMap]
 
+/-- Two `ℤ_p`-algebra maps out of `O_p` agree once they agree on the image of `𝓞 K`. -/
+@[ext]
+theorem algHom_ext {f g : PadicIntegralAlgebra K p →ₐ[ℤ_[p]] E}
+    (h : ∀ x : 𝓞 K, f (algebraMap (𝓞 K) _ x) = g (algebraMap (𝓞 K) _ x)) : f = g :=
+  (liftEquiv K p E).symm.injective <| RingHom.ext fun x ↦ by simpa using h x
+
 end Lift
 
 /-- The powers of `p` tend to `0` in `O_p`. -/
 theorem tendsto_prime_pow_atTop_nhds_zero :
     Filter.Tendsto (fun n : ℕ ↦ (p : PadicIntegralAlgebra K p) ^ n) Filter.atTop (nhds 0) := by
   have h : Filter.Tendsto (fun n : ℕ ↦ (p : ℤ_[p]) ^ n) Filter.atTop (nhds 0) :=
-    tendsto_pow_atTop_nhds_zero_of_norm_lt_one <| PadicInt.norm_p.trans_lt <|
-      inv_lt_one_of_one_lt₀ <| mod_cast (Fact.out : p.Prime).one_lt
+    tendsto_pow_atTop_nhds_zero_of_norm_lt_one PadicInt.norm_p_lt_one
   simpa [Function.comp_def] using
     ((continuous_algebraMap ℤ_[p] (PadicIntegralAlgebra K p)).tendsto 0).comp h
 
@@ -284,21 +289,19 @@ theorem algebraMap_norm_eq_prod_embeddings {E : Type*} [Field E] [CharZero E] [A
     Fintype.card_le_of_injective χ hχ
   let e := AlgEquiv.ofBijective _ (TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card
     (hdim.trans_le (hE.trans (hle.trans_eq Nat.card_eq_fintype_card.symm))))
-  have hcard : Fintype.card (A →ₐ[E] E) = Fintype.card (K →+* E) := by
-    refine le_antisymm ?_ hle
-    rw [← Module.finrank_fintype_fun_eq_card E, ← e.toLinearEquiv.finrank_eq, hdim]
-    exact hE
+  have hcard : Fintype.card (A →ₐ[E] E) = Fintype.card (K →+* E) :=
+    le_antisymm ((Nat.card_eq_fintype_card.symm.trans_le
+      (card_algHom_le_finrank E A E)).trans (hdim.trans_le hE)) hle
   have hχbij : Function.Bijective χ :=
     (Fintype.bijective_iff_injective_and_card χ).mpr ⟨hχ, hcard.symm⟩
   rw [← TauCeti.Algebra.norm_baseChange_tmul (A := E), ← Algebra.norm_eq_of_algEquiv e,
     TauCeti.Algebra.norm_pi]
   refine (Fintype.prod_bijective χ hχbij _ _ fun σ ↦ ?_).symm
-  -- The character `χ σ` restricts to `liftEquiv K p E σ` along `x ↦ 1 ⊗ x`.
+  -- The character `χ σ` is `Algebra.TensorProduct.lift (Algebra.ofId E E) (liftEquiv K p E σ)`,
+  -- so it sends `1 ⊗ x` to `1 * liftEquiv K p E σ x`.
   rw [AlgEquiv.ofBijective_apply, AlgHom.pi_apply, Algebra.norm_self, MonoidHom.id_apply]
-  conv_lhs => rw [← (Algebra.TensorProduct.liftEquivRight ℤ_[p] E _ E).symm_apply_apply
-    (liftEquiv K p E (σ.comp (algebraMap (𝓞 K) K)))]
-  simp only [Algebra.TensorProduct.liftEquivRight_symm_apply, AlgHom.comp_apply,
-    AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply, χ]
+  simp only [χ, Algebra.TensorProduct.liftEquivRight_apply]
+  rw [Algebra.TensorProduct.lift_tmul, map_one, one_mul]
 
 end NumberField
 
@@ -311,6 +314,7 @@ noncomputable def principalUnits (r : ℕ) : Subgroup (PadicIntegralAlgebra K p)
 
 variable {K p} in
 /-- A unit lies in `H_r` exactly when `p ^ r` divides `u - 1`. -/
+@[simp]
 theorem mem_principalUnits_iff {r : ℕ} {u : (PadicIntegralAlgebra K p)ˣ} :
     u ∈ principalUnits K p r ↔
       (p : PadicIntegralAlgebra K p) ^ r ∣ (u : PadicIntegralAlgebra K p) - 1 := by
@@ -352,13 +356,8 @@ private theorem isOpen_span_pow (r : ℕ) :
 
 /-- Each principal unit group `H_r` is open in `O_pˣ`. -/
 theorem isOpen_principalUnits (r : ℕ) :
-    IsOpen (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) := by
-  have h : (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) =
-      Units.val ⁻¹' ((· - 1) ⁻¹' (Ideal.span {(p : PadicIntegralAlgebra K p)} ^ r : Set _)) := by
-    ext u
-    exact Ideal.mem_principalUnitGroup
-  rw [h]
-  exact ((isOpen_span_pow K p r).preimage (continuous_sub_right 1)).preimage Units.continuous_val
+    IsOpen (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) :=
+  Ideal.isOpen_principalUnitGroup (isOpen_span_pow K p r)
 
 /-- Each principal unit group `H_r` has finite index in the compact group `O_pˣ`. -/
 instance finiteIndex_principalUnits (r : ℕ) : (principalUnits K p r).FiniteIndex :=
