@@ -99,12 +99,12 @@ theorem finrank_le_dim_of_forall_mem_fieldRange_frobenius (hF : IsFunctionField 
   let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
   have : FiniteDimensional k (riemannRochSpace E) := finiteDimensional_riemannRochSpace hF E
   -- The `p`-th root of an element of `V`.
-  let root : V → F := fun v ↦ (frobenius F p).rangeRestrictFieldEquiv.symm ⟨v, hVp v v.2⟩
+  let root : V → F := fun v ↦ (frobenius F p).rangeRestrictFieldEquiv.symm ⟨v, hVp v v.property⟩
   have hroot (v : V) : root v ^ p = v := by
-    have h := (frobenius F p).rangeRestrictFieldEquiv_apply_symm_apply ⟨v, hVp v v.2⟩
+    have h := (frobenius F p).rangeRestrictFieldEquiv_apply_symm_apply ⟨v, hVp v v.property⟩
     rwa [frobenius_def] at h
   have hrootE (v : V) : root v ∈ riemannRochSpace E :=
-    mem_riemannRochSpace_of_pow_mem (n := p) hDE (by rw [hroot v]; exact hV v.2)
+    mem_riemannRochSpace_of_pow_mem (n := p) hDE (by rw [hroot v]; exact hV v.property)
   -- Taking `p`-th roots is additive and injective.
   let j : V →+ riemannRochSpace E :=
     { toFun v := ⟨root v, hrootE v⟩
@@ -283,9 +283,9 @@ theorem exists_mem_notMem_fieldRange_frobenius (hF : IsFunctionField k F)
   let b := Module.finBasis k V
   obtain ⟨i, hi⟩ := exists_algebraMap_notMem_fieldRange_frobenius_of_constantCompositum_eq_top
     (k' := k) (F' := F) hF (Subsingleton.elim _ _) (by simp) hex p hD₀ hDg
-    (b := fun i ↦ (b i : F)) (fun i ↦ hV (b i).2)
+    (b := fun i ↦ (b i : F)) (fun i ↦ hV (b i).property)
     (b.linearIndependent.map' V.subtype (Submodule.ker_subtype _)) (by simpa using hlt)
-  exact hi (hVp _ (b i).2)
+  exact hi (hVp _ (b i).property)
 
 /-- **A separating element in a Riemann–Roch space of small degree.** Over a perfect field `k`,
 let `F / k` have exact constant field and genus `g`, and let `D` be a divisor with
@@ -372,9 +372,9 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
     have : (2 : ℤ) ≤ genus k F := by exact_mod_cast hg
     nlinarith
   obtain ⟨i, hi⟩ := Divisor.exists_algebraMap_notMem_fieldRange_frobenius_of_linearDisjoint hF h H
-    hex' p (by omega) (by omega) (fun i ↦ (b i).2)
+    hex' p (by omega) (by omega) (fun i ↦ (b i).property)
     (b.linearIndependent.map' (riemannRochSpace W).subtype (Submodule.ker_subtype _)) hlt
-  refine ⟨b i, (b i).2, fun h0 ↦ hi ?_⟩
+  refine ⟨b i, (b i).property, fun h0 ↦ hi ?_⟩
   rw [← hF'.D_eq_zero_iff_mem_fieldRange_frobenius p, ← KaehlerDifferential.map_D k k' F F', h0,
     map_zero]
 

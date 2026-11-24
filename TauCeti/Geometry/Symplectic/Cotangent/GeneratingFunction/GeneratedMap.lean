@@ -46,10 +46,13 @@ primitive. This is the manifold version of `TauCeti.cotangentGeneratedMap` on no
   For boundaryless `M` and `N`, the **branch** `TauCeti.CotangentBundle.generatingBranch` is the
   local inverse of the source projection through `x`. It is unique as a germ: every continuous
   local right inverse of the source projection through `x` agrees with it near `src x`
-  (`TauCeti.CotangentBundle.eventuallyEq_generatingBranch`). The **generated map**
-  `TauCeti.CotangentBundle.generatedMap` is the partial diffeomorphism `tgt ∘ branch`, between an
-  open neighbourhood of `src x` in `T*M` and an open subset of `T*N`. Near `x` its graph is the
-  generated correspondence (`TauCeti.CotangentBundle.eventually_generatedMap_generatingSource`).
+  (`TauCeti.CotangentBundle.eventuallyEq_generatingBranch`). Since every point near `src x` is the
+  source projection of its image under the branch, two maps agreeing at `src y` for all `y` near
+  `x` agree near `src x` (`TauCeti.CotangentBundle.eventuallyEq_of_eventually_generatingSource`).
+  The **generated map** `TauCeti.CotangentBundle.generatedMap` is the partial diffeomorphism
+  `tgt ∘ branch`, between an open neighbourhood of `src x` in `T*M` and an open subset of `T*N`.
+  Near `x` its graph is the generated correspondence
+  (`TauCeti.CotangentBundle.eventually_generatedMap_generatingSource`).
   At every point of its source it preserves the canonical symplectic form
   (`TauCeti.CotangentBundle.mpullback_generatedMap_symplecticForm`) and satisfies
   `λ_M - φ^*λ_N = d(S ∘ branch)`
@@ -188,9 +191,9 @@ the source projection near `z`, differentiable at `z`, then `φ = tgt ∘ β` sa
 theorem liouvilleForm_sub_mpullback_generatingTarget_comp (hS : ContMDiff (I.prod J) 𝓘(ℝ) ∞ S)
     (hβ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod J) β z)
     (hsrc : ∀ᶠ z' in 𝓝 z, generatingSource I S (β z') = z') :
-    (liouvilleForm I M).1 z -
+    (liouvilleForm I M).val z -
         mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (generatingTarget J S ∘ β)
-          (liouvilleForm J N).1 z =
+          (liouvilleForm J N).val z =
       mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (S ∘ β)) z := by
   have hcorr := (contMDiff_generatingCorrespondence hS (β z)).mdifferentiableAt (by simp)
   have htgt : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ))
@@ -215,7 +218,7 @@ theorem mpullback_generatingTarget_comp_symplecticForm (hS : ContMDiff (I.prod J
     (hβ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod J) β z)
     (hsrc : ∀ᶠ z' in 𝓝 z, generatingSource I S (β z') = z') :
     mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (generatingTarget J S ∘ β)
-        (symplecticForm J N).1 z = (symplecticForm I M).1 z := by
+        (symplecticForm J N).val z = (symplecticForm I M).val z := by
   have hcorr := (contMDiff_generatingCorrespondence hS (β z)).mdifferentiableAt (by simp)
   have htgt : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ))
       (generatingTarget J S ∘ β) z :=
@@ -229,7 +232,7 @@ theorem mpullback_generatingTarget_comp_symplecticForm (hS : ContMDiff (I.prod J
         (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate)
       (twistedProd_symplecticForm I M J N) (contMDiff_generatingCorrespondence hS)
       (hS.of_le (by simp)) (mpullback_generatingCorrespondence_liouvilleForm hS))
-  have key := congrArg (fun α ↦ mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod J) β α.1 z) hiso
+  have key := congrArg (fun α ↦ mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod J) β α.val z) hiso
   simp only [SmoothForm.coe_mpullback] at key
   rw [← mpullback_comp_at hβ hcorr] at key
   -- Near `z` the relation along `β` is the graph of `tgt ∘ β`.
@@ -330,6 +333,21 @@ theorem eventually_generatingBranch_generatingSource :
 theorem generatingBranch_generatingSource : generatingBranch hS hx (generatingSource I S x) = x :=
   (eventually_generatingBranch_generatingSource hS hx).self_of_nhds
 
+include hS hx in
+/-- **Maps agreeing on the source projection agree near the source point.** Two maps out of `T*M`
+that agree at `(q, d_q S(q, Q))` for every `(q, Q)` near `x` agree near `(q₀, d_q S(q₀, Q₀))`,
+since every point there is the source projection of its image under the branch. -/
+theorem eventuallyEq_of_eventually_generatingSource {α : Type*} {f g : CotangentBundle I M → α}
+    (h : ∀ᶠ y in 𝓝 x, f (generatingSource I S y) = g (generatingSource I S y)) :
+    f =ᶠ[𝓝 (generatingSource I S x)] g := by
+  have hβ : Tendsto (generatingBranch hS hx) (𝓝 (generatingSource I S x)) (𝓝 x) := by
+    have hc := ((generatingBranch hS hx).mdifferentiableAt (by simp)
+      (mem_generatingBranch_source hS hx)).continuousAt
+    simpa only [generatingBranch_generatingSource] using hc.tendsto
+  filter_upwards [hβ.eventually h, eventually_generatingSource_generatingBranch hS hx
+    (mem_generatingBranch_source hS hx)] with z hz hz'
+  rwa [hz'] at hz
+
 /-- **Uniqueness of the branch.** Every right inverse `β` of the source projection near
 `(q₀, d_q S(q₀, Q₀))`, continuous there and sending it to `x`, agrees with the branch near that
 point. -/
@@ -406,7 +424,7 @@ generated by `S` pulls the canonical symplectic form `ω_N = -dλ_N` back to `ω
 theorem mpullback_generatedMap_symplecticForm {z : CotangentBundle I M}
     (hz : z ∈ (generatedMap hS hx).source) :
     mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (generatedMap hS hx)
-        (symplecticForm J N).1 z = (symplecticForm I M).1 z := by
+        (symplecticForm J N).val z = (symplecticForm I M).val z := by
   rw [(eventuallyEq_generatedMap hS hx hz).mpullback_eq]
   exact mpullback_generatingTarget_comp_symplecticForm hS
     ((generatingBranch hS hx).mdifferentiableAt (by simp) (generatedMap_source_subset hS hx hz))
@@ -416,9 +434,9 @@ theorem mpullback_generatedMap_symplecticForm {z : CotangentBundle I M}
 generated by `S` satisfies `λ_M - φ^*λ_N = d(S ∘ branch)`. -/
 theorem liouvilleForm_sub_mpullback_generatedMap {z : CotangentBundle I M}
     (hz : z ∈ (generatedMap hS hx).source) :
-    (liouvilleForm I M).1 z -
+    (liouvilleForm I M).val z -
         mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (generatedMap hS hx)
-          (liouvilleForm J N).1 z =
+          (liouvilleForm J N).val z =
       mextDeriv
         (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (S ∘ generatingBranch hS hx)) z := by
   rw [(eventuallyEq_generatedMap hS hx hz).mpullback_eq]

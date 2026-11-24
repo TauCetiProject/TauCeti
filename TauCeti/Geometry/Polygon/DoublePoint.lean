@@ -288,7 +288,7 @@ noncomputable def IsRegularProjection.perfectMatchingDoublePoints
     TauCeti.PerfectMatching (poly.doublePoints R π) :=
   .ofInvolutive
     hπ.involutive_doublePointPartnerOnDoublePoints
-    (fun x hx ↦ doublePointPartner_ne x.2 (by
+    (fun x hx ↦ doublePointPartner_ne x.property (by
       simpa only [doublePointPartnerOnDoublePoints_val] using congr(($hx).val)))
 
 /-- Applying the perfect matching to a double point gives its partner. -/

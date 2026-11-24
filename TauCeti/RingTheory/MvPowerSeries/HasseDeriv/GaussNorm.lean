@@ -137,7 +137,7 @@ variable [∀ i, Fact (0 < c i)]
 noncomputable def restrictedHasseDeriv (d : σ →₀ ℕ) :
     IsRestricted.subring (R := R) c →+ IsRestricted.subring (R := R) c :=
   AddMonoidHom.mk' (fun f ↦ ⟨hasseDeriv d (f : MvPowerSeries σ R),
-      f.2.hasseDeriv fun i _ ↦ (Fact.out : 0 < c i).ne'⟩)
+      f.property.hasseDeriv fun i _ ↦ (Fact.out : 0 < c i).ne'⟩)
     fun f g ↦ Subtype.ext (map_add (hasseDeriv d) (f : MvPowerSeries σ R) g)
 
 /-- The Hasse derivative of a restricted series is its Hasse derivative as a formal series. -/
@@ -152,7 +152,7 @@ theorem norm_restrictedHasseDeriv_le (d : σ →₀ ℕ) (f : IsRestricted.subri
     ‖restrictedHasseDeriv d f‖ ≤ (d.prod (c · ^ ·))⁻¹ * ‖f‖ := by
   have hpos : 0 < d.prod (c · ^ ·) := Finset.prod_pos fun i _ ↦ pow_pos Fact.out _
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrictedHasseDeriv, le_inv_mul_iff₀ hpos]
-  exact prod_pow_mul_gaussNorm_hasseDeriv_le f.2.hasGaussNorm d
+  exact prod_pow_mul_gaussNorm_hasseDeriv_le f.property.hasGaussNorm d
 
 /-- The Hasse derivative on the restricted-series ring is Lipschitz with constant
 `(∏ᵢ cᵢ ^ dᵢ)⁻¹`. -/
