@@ -439,6 +439,9 @@ def cartanEilenbergResolutionMap {K K' : ChainComplex C ℕ} (g : K ⟶ K') :
     -- the differential is the projection of the row `p + 1` onto the `(p + 1)`-st kernel followed
     -- by its inclusion into the row `p`
     rw [d_succ, d_succ]
+    -- `rowπ` and `rowι` are `coverπ` and `kernelsι` by definition, and the rows of the
+    -- resolutions are the covers of the kernels; the lemmas relating them to the lift are stated
+    -- below in terms of `cartanEilenbergResolutionMap` itself, so they are not available here
     change coverMap _ ≫ coverπ _ ≫ kernelsι K' p = (coverπ _ ≫ kernelsι K p) ≫ coverMap _
     rw [coverMap_coverπ_assoc, kernelsMap_succ_kernelsι, Category.assoc]
 
@@ -458,6 +461,14 @@ lemma cartanEilenbergResolutionMap_f_rowπ (p : ℕ) :
     (cartanEilenbergResolutionMap g).f p ≫ rowπ K' p = rowπ K p ≫ kernelsMap g p :=
   -- the row `p` is the cover of the `p`-th kernel by definition
   coverMap_coverπ (kernelsMap g p)
+
+/-- The lift of `g` to the Cartan–Eilenberg resolutions commutes with the inclusions of the
+successive kernels into the rows. -/
+@[reassoc (attr := simp)]
+lemma kernelsMap_succ_rowι (p : ℕ) :
+    kernelsMap g (p + 1) ≫ rowι K' p = rowι K p ≫ (cartanEilenbergResolutionMap g).f p :=
+  -- `rowι` is `kernelsι` and the row `p` is the cover of the `p`-th kernel by definition
+  kernelsMap_succ_kernelsι g p
 
 end cartanEilenbergResolution
 

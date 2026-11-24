@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequenc
 public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Naturality
 
 /-!
-# Naturality of the Künneth spectral sequence in the first variable
+# Naturality of the Künneth spectral sequence
 
 A chain map `f : K ⟶ K'` of complexes of modules over a commutative ring induces a morphism of
 Künneth spectral sequences (`HomologicalComplex.kunnethSpectralSequenceMapLeft`): the morphism of
@@ -26,9 +26,11 @@ choices, so no functoriality is stated for it.
 
 ## Main definitions and results
 
-* `HomologicalComplex.kunnethSpectralSequenceMapLeft`: the morphism of Künneth spectral sequences,
-  with `HomologicalComplex.kunnethSpectralSequenceMapLeft_id` and
+* `HomologicalComplex.kunnethSpectralSequenceMapLeft`: the morphism of Künneth spectral sequences
+  in the first variable, with `HomologicalComplex.kunnethSpectralSequenceMapLeft_id` and
   `HomologicalComplex.kunnethSpectralSequenceMapLeft_comp`.
+* `HomologicalComplex.kunnethSpectralSequenceMapRight`: a morphism of Künneth spectral sequences
+  in the second variable, through a lift to the Cartan–Eilenberg resolutions.
 -/
 
 public section
