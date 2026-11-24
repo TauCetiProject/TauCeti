@@ -64,6 +64,8 @@ not belong to any particular application.
   integrable function is bounded in norm by the integral of its norm over the whole space.
 * `MeasureTheory.setIntegral_Ioc_comp_add_left`: translating a set integral over `(a, b]` to one
   over `(d + a, d + b]`.
+* `intervalIntegral.integral_of_not_completeSpace`: in an incomplete codomain every interval
+  integral is `0`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
@@ -496,6 +498,14 @@ theorem MeasureTheory.setIntegral_Ioc_comp_add_left {E : Type*} [NormedAddCommGr
       intervalIntegral.integral_comp_add_left]
   · rw [Ioc_eq_empty_of_le hab, Ioc_eq_empty_of_le (add_le_add_right hab d), setIntegral_empty,
       setIntegral_empty]
+
+/-- In an incomplete codomain every interval integral is `0`, as for the Bochner integral
+(`MeasureTheory.integral_of_not_completeSpace`). -/
+theorem intervalIntegral.integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : ¬CompleteSpace E) (f : ℝ → E) (a b : ℝ) (μ : Measure ℝ) :
+    ∫ x in a..b, f x ∂μ = 0 := by
+  rw [intervalIntegral, MeasureTheory.integral_of_not_completeSpace hE,
+    MeasureTheory.integral_of_not_completeSpace hE, sub_zero]
 
 namespace TauCeti.intervalIntegral
 
