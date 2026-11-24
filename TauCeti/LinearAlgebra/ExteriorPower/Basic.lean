@@ -59,7 +59,8 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
   `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
-  factors of an exterior product.
+  factors of an exterior product; in degree one, `exteriorPower.oneEquiv_ofEq_map` says that the
+  resulting identification of `⋀ⁿ M` with `M` is natural.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
   than the dimension of a finite-dimensional subspace lie in that subspace.
 * `Submodule.ιMulti_eq_of_sub_mem`: an exterior product with at least `dim P` factors in a
@@ -349,6 +350,15 @@ theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → M) :
       ιMulti R m (v ∘ Fin.cast h.symm) := by
   subst h
   rfl
+
+/-- In degree `n = 1`, identifying `⋀ⁿ M` with `⋀¹ M` and then with `M` (`exteriorPower.oneEquiv`)
+is natural: it carries the map induced by `f` on `⋀ⁿ` to `f`. -/
+theorem oneEquiv_ofEq_map {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (h : n = 1)
+    (f : M →ₗ[R] N) (w : ⋀[R]^n M) :
+    oneEquiv R N (LinearEquiv.ofEq _ _ (congrArg (⋀[R]^· N) h) (map n f w)) =
+      f (oneEquiv R M (LinearEquiv.ofEq _ _ (congrArg (⋀[R]^· M) h) w)) := by
+  subst h
+  exact LinearMap.congr_fun (oneEquiv_naturality f) w
 
 end OfEq
 
