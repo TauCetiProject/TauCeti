@@ -25,6 +25,9 @@ in `L` form a finite exceptional set, so the same density holds without an unram
 restriction. Each base prime is counted once, even if several primes above it have degree `n`.
 Taking `L` to be a Galois closure gives the non-Galois residue-degree form of Chebotarev.
 
+Since the primes of absolute residue degree greater than one have density zero, every Frobenius
+class also contains infinitely many primes of absolute residue degree one.
+
 ## Main results
 
 * `NumberField.Chebotarev.exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet`: the arithmetic
@@ -33,12 +36,15 @@ Taking `L` to be a Galois closure gives the non-Galois residue-degree form of Ch
   union of the selected fibres away from ramification in the Galois extension.
 * `NumberField.Chebotarev.hasDirichletDensity_setOf_exists_inertiaDeg_eq`: the resulting
   density, including all base primes.
+* `NumberField.Chebotarev.infinite_frobeniusPrimeSet_inter_setOf_inertiaDeg_eq_one`: every
+  Frobenius class contains infinitely many primes of residue degree one over `ℚ`.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9 and Chapter VII, §13.
-* The arithmetic input is `Ideal.inertiaDeg_under_fixedField_eq_relIndex`; the analytic input
-  is `NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet`.
+* The arithmetic input is `Ideal.inertiaDeg_under_fixedField_eq_relIndex`; the analytic inputs
+  are `NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet` and
+  `TauCeti.hasDirichletDensity_higherDegreePrimes`.
 -/
 
 public section
@@ -141,5 +147,19 @@ theorem hasDirichletDensity_setOf_exists_inertiaDeg_eq
   intro 𝔭 h𝔭
   simp only [Set.mem_symmDiff, Set.mem_inter_iff, Set.mem_compl_iff] at h𝔭
   tauto
+
+variable (K L) in
+/-- **Frobenius classes of residue degree one.** Every conjugacy class `C` of `Gal(L/K)` is the
+Frobenius class of infinitely many primes of `𝓞 K` of residue degree one over `ℚ`. -/
+theorem infinite_frobeniusPrimeSet_inter_setOf_inertiaDeg_eq_one (C : ConjClasses (L ≃ₐ[K] L)) :
+    (frobeniusPrimeSet K L C ∩ {𝔭 | 𝔭.asIdeal.inertiaDeg ℤ = 1}).Infinite := by
+  have h := (TauCeti.hasDirichletDensity_inter_compl_higherDegreePrimes_iff.mpr
+    (hasDirichletDensity_frobeniusPrimeSet K L C)).infinite
+      (C.card_carrier_div_card_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
+  refine h.mono ?_
+  rintro 𝔭 ⟨hC, hdeg⟩
+  have hpos := Ideal.inertiaDeg_pos 𝔭.asIdeal ℤ
+  have hle := TauCeti.mem_higherDegreePrimes.not.mp hdeg
+  exact ⟨hC, by simp only [Set.mem_ofPred_eq]; omega⟩
 
 end NumberField.Chebotarev

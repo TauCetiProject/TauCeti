@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.Translate
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Module.FinitePresentation
+public import TauCeti.RingTheory.Artinian.FiniteLength
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Finite presentation of the Auslander–Bridger transpose
@@ -15,10 +17,12 @@ public import Mathlib.Algebra.Module.FinitePresentation
 The transpose of an arrow `P₁ → P₀` between finite projective left `A`-modules is a finitely
 presented left `Aᵐᵒᵖ`-module. Thus transposing a finite projective presentation stays within
 finitely presented modules even when the ring is not Noetherian. Finite generation of the
-transpose needs only finite projectivity of `P₁`.
+transpose needs only finite projectivity of `P₁`; over an algebra finite over a Noetherian ring
+`R`, finite generation of `P₁` suffices for finite generation over `R`.
 
-Over a finite-dimensional field algebra, the translate is finite-dimensional over the field
-and finitely generated over the algebra.
+Over an algebra finite over a Noetherian ring `R`, the translate with values in a finitely
+generated `R`-module is finitely generated over `R` and over the algebra; over an Artin algebra it
+has finite length over `R`. The case of a finite-dimensional algebra over a field `k` is `E = k`.
 
 These instances complement the presentation comparison in
 `TauCeti.Algebra.Module.AuslanderReiten.StableTranspose`: the dual summands in that comparison
@@ -56,24 +60,42 @@ instance finitePresentation [Module.Finite A P₀] [Module.Projective A P₀]
   rw [ker_mk]
   exact Submodule.fg_range _
 
+section Base
+
+variable {R A P₀ P₁ : Type*} [CommRing R] [IsNoetherianRing R] [Ring A] [Algebra R A]
+  [Module.Finite R A] [AddCommMonoid P₀] [Module A P₀] [AddCommMonoid P₁] [Module A P₁]
+  [Module.Finite A P₁]
+
+/-- Over an algebra finite over a Noetherian ring `R`, the transpose of an arrow with finitely
+generated source is finitely generated over `R`, with no projectivity: `Hom_A(P₁, A)` is a
+Noetherian `R`-module (`TauCeti.isNoetherian_linearMap_of_finite`), and the transpose is a quotient
+of it. -/
+instance finite_base (f : P₁ →ₗ[A] P₀) : Module.Finite R (AuslanderReitenTranspose f) :=
+  have := isNoetherian_of_isNoetherianRing_of_finite R A
+  Module.Finite.of_surjective ((mk f).restrictScalars R) (mk_surjective f)
+
+end Base
+
 end AuslanderReitenTranspose
 
 namespace AuslanderReitenTranslate
 
-variable {k A P₀ P₁ : Type*} [Field k] [Ring A] [Algebra k A] [Module.Finite k A]
-  [AddCommMonoid P₀] [Module A P₀] [AddCommMonoid P₁] [Module A P₁]
-  [Module.Finite A P₁] [Module.Projective A P₁]
+variable {R A E P₀ P₁ : Type*} [CommRing R] [IsNoetherianRing R] [Ring A] [Algebra R A]
+  [Module.Finite R A] [AddCommGroup E] [Module R E] [Module.Finite R E]
+  [AddCommMonoid P₀] [Module A P₀] [AddCommMonoid P₁] [Module A P₁] [Module.Finite A P₁]
 
-/-- The translate of an arrow with finite projective source over a finite-dimensional
-field algebra is finite-dimensional over the field. -/
-instance finite_base (f : P₁ →ₗ[A] P₀) : Module.Finite k (AuslanderReitenTranslate k f) := by
-  have : Module.Finite k (AuslanderReitenTranspose f) := Module.Finite.trans Aᵐᵒᵖ _
-  infer_instance
+/-- The translate of an arrow with finitely generated source over an algebra finite over a
+Noetherian ring, with values in a finitely generated module, is finitely generated over the
+algebra. Its finite generation over the base ring is the instance on Matlis duals, through
+`TauCeti.AuslanderReitenTranspose.finite_base`. -/
+instance finite (f : P₁ →ₗ[A] P₀) : Module.Finite A (AuslanderReitenTranslate R E f) :=
+  Module.Finite.of_restrictScalars_finite R A _
 
-/-- The translate of an arrow with finite projective source over a finite-dimensional
-field algebra is finitely generated over the algebra. -/
-instance finite (f : P₁ →ₗ[A] P₀) : Module.Finite A (AuslanderReitenTranslate k f) :=
-  Module.Finite.of_restrictScalars_finite k A _
+/-- Over an Artin algebra, the translate of an arrow with finitely generated source, with values in
+a finitely generated module, has finite length over the base. -/
+theorem isFiniteLength [IsArtinianRing R] (f : P₁ →ₗ[A] P₀) :
+    IsFiniteLength R (AuslanderReitenTranslate R E f) :=
+  isFiniteLength_of_finite R _
 
 end AuslanderReitenTranslate
 

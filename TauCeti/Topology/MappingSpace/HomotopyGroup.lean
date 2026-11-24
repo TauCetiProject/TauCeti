@@ -76,19 +76,20 @@ private theorem const_comp_mappingSpaceEvalHom :
 /-- The fibre of evaluation over `x` is the space of based maps sending `b` to `x`. -/
 private def mappingSpaceEvalFiberHomeomorph :
     (mappingSpaceEvalHom b (Q := Q)).fiber x ≃ₜ BasedMap B Q b x :=
-  Homeomorph.setCongr (t := {f : C(B, Q) | f b = x}) (by ext; simp [mappingSpaceEval_apply])
+  (basedMapHomeomorphPreimage b x).symm
 
 private theorem mappingSpaceEvalFiberHomeomorph_mappingSpaceEvalFiberConst :
     mappingSpaceEvalFiberHomeomorph b x (mappingSpaceEvalFiberConst b x) =
       ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ :=
-  Subtype.ext rfl
+  Subtype.ext (coe_basedMapHomeomorphPreimage_symm_apply b x _)
 
 /-- Pushed into all maps, the based maps give the fibre inclusion. -/
 private theorem subtypeVal_comp_mappingSpaceEvalFiberHomeomorph :
     (⟨Subtype.val, continuous_subtypeVal⟩ : C(BasedMap B Q b x, C(B, Q))).comp
       ⟨mappingSpaceEvalFiberHomeomorph b x, (mappingSpaceEvalFiberHomeomorph b x).continuous⟩ =
       ((mappingSpaceEvalHom b (Q := Q)).fiberι x).hom :=
-  ContinuousMap.ext fun f ↦ (TopCat.Hom.fiberι_apply _ _ f).symm
+  ContinuousMap.ext fun f ↦
+    (coe_basedMapHomeomorphPreimage_symm_apply b x f).trans (TopCat.Hom.fiberι_apply _ _ f).symm
 
 /-- On homotopy groups, the inclusion of the based maps is the fibre inclusion of evaluation, up to
 the identification of the fibre with the based maps. -/

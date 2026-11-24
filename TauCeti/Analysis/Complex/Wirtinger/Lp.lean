@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 
 /-!
@@ -19,6 +21,8 @@ those of the parts.
 
 ## Main results
 
+* `TauCeti.Wirtinger.jetL`, `TauCeti.Wirtinger.coe_jetL`, `TauCeti.Wirtinger.jetL_smul`:
+  a bounded value operator and the source field determine a global Wirtinger jet.
 * `MeasureTheory.MemLp.wirtingerPartsCLM`: `x ↦ wirtingerPartsCLM (a x) (b x)` is in `Lᵖ` when
   `a` and `b` are.
 * `TauCeti.eLpNorm_wirtingerPartsCLM_le`: its `Lᵖ` norm is at most the sum of those of `a` and `b`.
@@ -26,7 +30,7 @@ those of the parts.
   convergence of the combined maps.
 -/
 
-public section
+public noncomputable section
 
 open MeasureTheory Filter Topology
 open scoped ENNReal
@@ -89,5 +93,50 @@ theorem tendsto_eLpNorm_wirtingerPartsCLM_sub {α ι : Type*} [MeasurableSpace �
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup (fun _ ↦ zero_le)
     fun i ↦ eLpNorm_wirtingerPartsCLM_sub_le hq (ha i) (hb i)
 
+
+namespace Wirtinger
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- A bounded operator on values determines a bounded global Wirtinger jet. -/
+def jetL
+    (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ)) :
+    Lp F p (volume : Measure ℂ) →L[ℝ] Lp (ℂ →L[ℝ] F) p (volume : Measure ℂ) :=
+  (((wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inl ℝ F F)).compLpL p (volume :
+    Measure ℂ)).comp
+      (B.restrictScalars ℝ) +
+    ((wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inr ℝ F F)).compLpL p (volume : Measure ℂ)
+
+/-- The global jet has the Wirtinger formula. -/
+theorem coe_jetL
+    (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ))
+    (u : Lp F p (volume : Measure ℂ)) :
+    jetL B u =ᵐ[(volume : Measure ℂ)] fun w ↦ wirtingerPartsCLM (B u w) (u w) := by
+  let a : F →L[ℝ] ℂ →L[ℝ] F :=
+    (wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inl ℝ F F)
+  let b : F →L[ℝ] ℂ →L[ℝ] F :=
+    (wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inr ℝ F F)
+  -- Expose the two native component fields for their separate a.e. evaluation laws.
+  change (a.compLpL p volume (B u) + b.compLpL p volume u :
+    Lp (ℂ →L[ℝ] F) p volume) =ᵐ[volume] _
+  filter_upwards [Lp.coeFn_add (a.compLpL p volume (B u)) (b.compLpL p volume u),
+    a.coeFn_compLpL (B u), b.coeFn_compLpL u] with w hadd ha hb
+  rw [hadd]
+  simp only [Pi.add_apply]
+  rw [ha, hb]
+  ext v
+  simp [a, b, wirtingerPartsCLM_apply]
+
+/-- The global Wirtinger jet respects the complex scalar action. -/
+theorem jetL_smul (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ))
+    (a : ℂ) (u : Lp F p (volume : Measure ℂ)) : jetL B (a • u) = a • jetL B u := by
+  apply Lp.ext
+  have hB := map_smul B a u
+  filter_upwards [coe_jetL B (a • u), coe_jetL B u, Lp.coeFn_smul a u,
+    Lp.coeFn_smul a (B u), Lp.coeFn_smul a (jetL B u)] with w h₁ h₂ h₃ h₄ h₅
+  rw [hB] at h₁
+  simp only [h₁, h₂, h₃, h₄, h₅, Pi.smul_apply, wirtingerPartsCLM_smul]
+
+end Wirtinger
 
 end TauCeti

@@ -81,9 +81,9 @@ theorem norm_matrixCoeff_weightedSubstCLM_le [DecidableEq (WithDiscreteTopology 
         (.toTopology ⊥ e) (.toTopology ⊥ t)‖ ≤ ‖g‖ * ‖(1 : R)‖ * (e.prod (c · ^ ·))⁻¹ :=
   norm_matrixCoeff_le_of_apply_eq_coeff (C := ‖g‖)
     (fun x ↦ restrictedWeightedSubstCLM g h hh (restrictedCoeffLinearIsometryEquiv.symm x))
-    (weightedSubstCLM_restrictedRadiusHom_apply g h hh hc)
+    (fun x ↦ weightedSubstCLM_restrictedRadiusHom_apply g h hh hc x e)
     (fun x ↦ (norm_restrictedWeightedSubstCLM_apply_le g h hh _).trans_eq
-      (by rw [LinearIsometryEquiv.norm_map])) e (.toTopology ⊥ t)
+      (by rw [LinearIsometryEquiv.norm_map])) (.toTopology ⊥ t)
 
 /-- **Weighted substitutions converging on a larger polydisc are row compact.** Over finitely
 many variables `Y`, let `g` and the `hᵢ` be restricted at polyradii `c` with every `cⱼ > 1`, and

@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Type `D` structures and the box tensor product
@@ -57,6 +58,10 @@ on matrices entrywise.
   (`TauCeti.TypeDStructure.cone`), the type `D` structure on the generators `X ⊕ X'` with
   coefficient matrix `fromBlocks δ F 0 δ'`; a morphism `fromCols G H` into it has differential
   `fromCols (∂G) (G * F + ∂H)` (`TauCeti.TypeDStructure.morphismDifferential_cone_fromCols`).
+* **Restriction.** The generators satisfying a predicate `p` span a type `D` structure with the
+  same idempotents and coefficients (`TauCeti.TypeDStructure.restrict`) when no coefficient leads
+  from a generator satisfying `p` to one that does not. This is how a box tensor product over the
+  idempotents is cut out of the one over the ground ring.
 * **Iterates of `δ¹`.** The coefficient of `z` in `δᵏ x` is the sum over the paths
   `x = r 0, …, r k = z` of `coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k-1)) (r k)` in the `k`-th tensor
   power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
@@ -84,6 +89,7 @@ one and so does not apply to an ungraded differential algebra.
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
 * `TauCeti.TypeDStructure.cone`: the mapping cone of a homomorphism.
+* `TauCeti.TypeDStructure.restrict`: the restriction to generators closed under `δ¹`.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
@@ -102,6 +108,8 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxDifferential_continuationMap`: morphisms act on box tensor products
   compatibly with the differentials.
 * `TauCeti.TypeDStructure.lift_iteratedCoeff_succ`: the recursion `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`.
+* `TauCeti.TypeDStructure.add_le_of_iteratedCoeff_ne_zero`: a nonzero iterate `δᵏ` raises a
+  height function increased by the coefficients by at least `k`.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
@@ -381,6 +389,89 @@ theorem morphismDifferential_cone_fromCols (G : Matrix X'' X A) (H : Matrix X'' 
 
 end Cone
 
+/-! ### Restriction to generators closed under the structure map -/
+
+section Restrict
+
+variable (N) (p : X → Prop) [DecidablePred p]
+
+/-- The **restriction** of a type `D` structure `N` to the generators satisfying `p`, when no
+coefficient of `N` leads from a generator satisfying `p` to one that does not: the generators
+`{x // p x}` span a type `D` structure with the idempotents and coefficients of `N`. The structure
+equation survives because the matrix products of `N` from such a generator to another only pass
+through generators satisfying `p`. -/
+def restrict (hp : ∀ x y, p x → ¬p y → N.coeff x y = 0) : TypeDStructure d ι {x // p x} where
+  idem x := N.idem x
+  coeff := N.coeff.submatrix Subtype.val Subtype.val
+  idem_mul_coeff x y := N.idem_mul_coeff x y
+  coeff_mul_idem x y := N.coeff_mul_idem x y
+  map_coeff_add_coeff_mul_coeff := by
+    ext x z
+    have h : (N.coeff.map d + N.coeff * N.coeff) x z = 0 := by
+      rw [N.map_coeff_add_coeff_mul_coeff, Matrix.zero_apply]
+    -- The terms of `δ * δ` through generators not satisfying `p` vanish.
+    have hout : ∑ y : {y // ¬p y}, N.coeff x y * N.coeff y z = 0 :=
+      Finset.sum_eq_zero fun y _ => by rw [hp x y x.property y.property, zero_mul]
+    rw [Matrix.add_apply, Matrix.mul_apply, ← Fintype.sum_subtype_add_sum_subtype p, hout,
+      add_zero] at h
+    simpa only [Matrix.add_apply, Matrix.map_apply, Matrix.submatrix_apply, Matrix.mul_apply,
+      Matrix.zero_apply]
+      using h
+
+variable {p} {hp : ∀ x y, p x → ¬p y → N.coeff x y = 0}
+
+@[simp]
+theorem restrict_idem (x : {x // p x}) : (N.restrict p hp).idem x = N.idem x :=
+  (rfl)
+
+@[simp]
+theorem restrict_coeff (x y : {x // p x}) : (N.restrict p hp).coeff x y = N.coeff x y :=
+  (rfl)
+
+/-- The identity morphism of the restriction is the identity morphism of `N` on the generators
+satisfying `p`. -/
+theorem submatrix_idMorphism [DecidableEq X] :
+    N.idMorphism.submatrix Subtype.val Subtype.val = (N.restrict p hp).idMorphism := by
+  ext x y
+  simp only [Matrix.submatrix_apply, idMorphism_apply, restrict_idem, Subtype.ext_iff]
+
+variable {N} in
+/-- **Restriction of morphisms.** The restriction of a morphism `F` from `N` to `N'` to the
+generators satisfying `p` and `p'` is a morphism from the restriction of `N` to that of `N'`. -/
+theorem submatrix_mem_morphisms {p' : X' → Prop} [DecidablePred p']
+    {hp' : ∀ x y, p' x → ¬p' y → N'.coeff x y = 0} {F : Matrix X X' A}
+    (hF : F ∈ morphisms N N') :
+    F.submatrix Subtype.val Subtype.val ∈ morphisms (N.restrict p hp) (N'.restrict p' hp') :=
+  mem_morphisms_iff.mpr fun x x' => by
+    simpa only [Matrix.submatrix_apply, restrict_idem] using mem_morphisms_iff.mp hF x x'
+
+/-- **Restriction commutes with the differential of morphisms.** Let `N` and `N'` be restricted to
+the generators satisfying `p` and `p'`, and let `F` be a matrix from `N` to `N'` with no
+coefficient from a generator satisfying `p` to one that does not satisfy `p'`. Then the
+differential of the restriction of `F` is the restriction of `∂F`: the products in
+`∂F = d F + F * δ' + δ * F` from a generator satisfying `p` to one satisfying `p'` only pass
+through generators satisfying `p` or `p'`. -/
+theorem morphismDifferential_submatrix {p' : X' → Prop} [DecidablePred p']
+    {hp' : ∀ x y, p' x → ¬p' y → N'.coeff x y = 0} {F : Matrix X X' A}
+    (hF : ∀ x x', p x → ¬p' x' → F x x' = 0) :
+    morphismDifferential (N.restrict p hp) (N'.restrict p' hp')
+        (F.submatrix Subtype.val Subtype.val) =
+      (morphismDifferential N N' F).submatrix Subtype.val Subtype.val := by
+  have hcoeff : (N.restrict p hp).coeff = N.coeff.submatrix Subtype.val Subtype.val :=
+    Matrix.ext (restrict_coeff N)
+  have hcoeff' : (N'.restrict p' hp').coeff = N'.coeff.submatrix Subtype.val Subtype.val :=
+    Matrix.ext (restrict_coeff N')
+  -- The products only pass through generators satisfying `p'`, respectively `p`.
+  have hmul' := Matrix.submatrix_val_mul_of_forall F N'.coeff
+    (Subtype.val : {x' // p' x'} → X') hF
+  have hmul := Matrix.submatrix_val_mul_of_forall N.coeff F
+    (Subtype.val : {x' // p' x'} → X') hp
+  rw [morphismDifferential_apply, morphismDifferential_apply, hcoeff, hcoeff', ← hmul', ← hmul,
+    ← Matrix.submatrix_map]
+  simp only [Matrix.submatrix_add, Pi.add_apply]
+
+end Restrict
+
 /-! ### The box tensor product -/
 
 section BoxTensor
@@ -616,19 +707,26 @@ theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : �
     refine Fin.cases ?_ (fun t => ?_) t <;> simp
   · rfl
 
+/-- If the coefficients of a type `D` structure strictly increase a height function `h`, then
+along a nonzero iterate `δᵏ` from `x` to `z` the height rises by at least `k`:
+`h x + k ≤ h z`. -/
+theorem add_le_of_iteratedCoeff_ne_zero (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
+    {k : ℕ} {x z : X} (hxz : N.iteratedCoeff k x z ≠ 0) : h x + k ≤ h z := by
+  obtain ⟨r, hr, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hxz
+  rw [Finset.mem_filter] at hr
+  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+    hne (MultilinearMap.map_coord_zero _ t h0)
+  -- Along a path of nonzero coefficients the height rises at each of its `k` steps.
+  have hr' : StrictMono (h ∘ r) := Fin.strictMono_iff_lt_succ.mpr fun t => hh _ _ (hnz t)
+  simpa [hr.2.1, hr.2.2] using hr'.add_sub_le_nat (Fin.zero_le (Fin.last k))
+
 /-- A type `D` structure whose coefficients strictly increase a height function `h` is bounded:
 `δᵏ = 0` as soon as `k` exceeds every height. -/
 theorem iteratedCoeff_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
     {k : ℕ} (hk : Finset.univ.sup h < k) (x z : X) : N.iteratedCoeff k x z = 0 := by
-  refine Finset.sum_eq_zero fun r _ => ?_
   by_contra hne
-  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
-    hne (MultilinearMap.map_coord_zero _ t h0)
-  -- Along a path of nonzero coefficients the height rises `k` times, beyond every height.
-  have hr : StrictMono (h ∘ r) := Fin.strictMono_iff_lt_succ.mpr fun t => hh _ _ (hnz t)
-  have := hr.add_sub_le_nat (Fin.zero_le (Fin.last k))
-  simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
-  have := Finset.le_sup (f := h) (Finset.mem_univ (r (Fin.last k)))
+  have := N.add_le_of_iteratedCoeff_ne_zero h hh hne
+  have := Finset.le_sup (f := h) (Finset.mem_univ z)
   omega
 
 /-- A type `D` structure is **bounded** when its iterates `δᵏ` vanish for all large `k`. -/

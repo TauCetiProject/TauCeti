@@ -223,7 +223,7 @@ private theorem norm_iteratedFDeriv_latticeBump_mul_le {n : ℕ} {Cχ : ℝ}
         2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
     have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
       (contDiff_latticeBump_sub j) (contDiff_latticeBump_sub j')
-      (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
+      (fun i hi ↦ hχ' (latticePoint j) i hi x) (fun i hi ↦ hχ' (latticePoint j') i hi x) hp
     simpa only [mul_apply', Function.comp_def, id] using this
   exact (hφ p hp x).trans
     (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hp) (mul_self_nonneg Cχ))
@@ -259,13 +259,14 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
       (left_ne_zero_of_mul (left_ne_zero_of_smul hx))) isClosed_closedBall
   -- The derivatives of `B (f x) (g x)`, and then of its product with the cut-off, are bounded.
   have hBfg : ∀ q ≤ N, ∀ y, ‖iteratedFDeriv ℝ q (fun y ↦ B (f y) (g y)) y‖ ≤ 2 ^ N * (C * C) :=
-    fun q hq y ↦ (B.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear hB hf hg hfC hgC hq y).trans
+    fun q hq y ↦ (B.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear hB hf hg
+      (fun i hi ↦ hfC i hi y) (fun i hi ↦ hgC i hi y) hq).trans
       (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hq) (mul_self_nonneg C))
   have hsmul : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p (fun y ↦ (latticeBump n (y - latticePoint j) *
       latticeBump n (y - latticePoint j')) • B (f y) (g y)) x‖ ≤
         4 ^ N * (2 ^ N * (Cχ * Cχ) * (C * C)) := fun p hp x ↦ by
     have h := (lsmul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear opNorm_lsmul_le hcont
-      ((B.contDiff.comp hf).clm_apply hg) hφ' hBfg hp x
+      ((B.contDiff.comp hf).clm_apply hg) (fun i hi ↦ hφ' i hi x) (fun i hi ↦ hBfg i hi x) hp
     simp only [lsmul_apply] at h
     have := mul_self_nonneg Cχ
     have := mul_self_nonneg C

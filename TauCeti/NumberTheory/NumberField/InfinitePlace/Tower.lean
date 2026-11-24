@@ -60,7 +60,7 @@ def liesOverTowerEquiv (v : InfinitePlace K) :
   toFun p := by
     let _ : p.2.val.LiesOver p.1.val := p.2.property
     let _ : p.1.val.LiesOver v := p.1.property
-    exact ⟨p.2.val, LiesOver.trans p.2.val p.1.val v⟩
+    exact ⟨p.2.val, AbsoluteValue.LiesOver.trans v.val p.1.val.val p.2.val.val⟩
   invFun u := by
     let _ : u.val.LiesOver v := u.property
     let w := u.val.comap (algebraMap L M)

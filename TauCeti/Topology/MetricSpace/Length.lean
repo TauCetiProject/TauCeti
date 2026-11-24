@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Otis Chodosh
 -/
 module
 
@@ -58,8 +58,10 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   infimum is attained, by `TauCeti.IsGeodesicSpace.exists_eVariationOn_eq`.
 * `TauCeti.IsLengthSpace.pathConnectedSpace` — a nonempty length space with finite distances is
   path connected.
-* `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
-  segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
+* `TauCeti.IsLengthSpace.isPreconnected_eball` — open balls in an extended-metric length space
+  are preconnected; `TauCeti.IsLengthSpace.isPreconnected_ball` is the metric version.
+* `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space: the affine segment
+  between two points is a geodesic segment joining them (`TauCeti.isGeodesicSegment_lineMap`).
 * `TauCeti.IsGeodesicSegment.eq_lineMap` — in a strictly convex real normed torsor the affine
   segment is the only geodesic segment, so geodesic segments are unique in every metric space that
   embeds isometrically in one (`TauCeti.IsGeodesicSegment.eqOn_of_isometry`).
@@ -118,26 +120,19 @@ theorem edist_le_iInf_eVariationOn (x y : X) :
 
 /-- A continuous curve joining `x` to `y` on an arbitrary parameter interval can be renormalised
 to `[0, 1]` without changing its length. This is how curves produced on other parameter intervals
-enter the length-space condition below. -/
+enter the length-space condition below. The affine reparametrisation by
+`AffineMap.lineMap a b` follows Mathlib's proof of `Manifold.riemannianEDist_le_pathELength`. -/
 theorem exists_isCurveJoining_of_continuousOn {a b : ℝ} (hab : a ≤ b)
     (hγ : ContinuousOn γ (Icc a b)) (ha : γ a = x) (hb : γ b = y) :
     ∃ γ' : ℝ → X, IsCurveJoining γ' x y ∧
       eVariationOn γ' (Icc 0 1) = eVariationOn γ (Icc a b) := by
-  let φ : ℝ → ℝ := fun t => (b - a) * t + a
-  have hφ : Continuous φ := by fun_prop
-  have hmaps : MapsTo φ (Icc 0 1) (Icc a b) := by
-    rintro t ⟨ht0, ht1⟩
-    simp only [φ, mem_Icc]
-    constructor <;> nlinarith
-  have hmono : MonotoneOn φ (Icc 0 1) := fun s _ t _ hst => by
-    simp only [φ]
-    nlinarith
-  have himage : φ '' Icc 0 1 = Icc a b :=
-    hmaps.image_subset.antisymm <| by
-      simpa [φ] using intermediate_value_Icc zero_le_one hφ.continuousOn
-  refine ⟨γ ∘ φ, ⟨hγ.comp hφ.continuousOn hmaps, by simpa [φ] using ha, by simpa [φ] using hb⟩,
-    ?_⟩
-  rw [eVariationOn.comp_eq_of_monotoneOn γ φ hmono, himage]
+  -- The affine parametrisation of `[a, b]` by `[0, 1]` maps `[0, 1]` onto `[a, b]`.
+  have himage : AffineMap.lineMap a b '' Icc (0 : ℝ) 1 = Icc a b := by
+    rw [← segment_eq_image_lineMap, segment_eq_Icc hab]
+  refine ⟨γ ∘ AffineMap.lineMap a b, ⟨hγ.comp AffineMap.lineMap_continuous.continuousOn
+    (mapsTo_iff_image_subset.2 himage.subset), by simpa using ha, by simpa using hb⟩, ?_⟩
+  rw [eVariationOn.comp_eq_of_monotoneOn γ _
+    ((AffineMap.lineMap_mono (k := ℝ) hab).monotoneOn (Icc 0 1)), himage]
 
 end IsCurveJoining
 
@@ -160,24 +155,20 @@ theorem IsLengthSpace.of_exists_eVariationOn_lt
     (h : ∀ (x y : X) (c : ℝ≥0∞), edist x y < c →
       ∃ γ : ℝ → X, IsCurveJoining γ x y ∧ eVariationOn γ (Icc 0 1) < c) :
     IsLengthSpace X where
-  edist_eq_iInf x y := by
-    refine le_antisymm (edist_le_iInf_eVariationOn x y) ?_
-    by_contra hcon
-    obtain ⟨γ, hγ, hlt⟩ := h x y _ (not_le.1 hcon)
-    exact absurd (iInf₂_le γ hγ) (not_le.2 hlt)
+  edist_eq_iInf x y := (edist_le_iInf_eVariationOn x y).antisymm <| le_of_forall_gt fun c hc => by
+    obtain ⟨γ, hγ, hlt⟩ := h x y c hc
+    exact (iInf₂_le γ hγ).trans_lt hlt
 
 /-- In a length space, joining curves of length arbitrarily close to the distance exist. -/
 theorem IsLengthSpace.exists_eVariationOn_lt [IsLengthSpace X] {c : ℝ≥0∞}
     (hc : edist x y < c) :
     ∃ γ : ℝ → X, IsCurveJoining γ x y ∧ eVariationOn γ (Icc 0 1) < c := by
-  simp only [IsLengthSpace.edist_eq_iInf x y, iInf_lt_iff, exists_prop] at hc
-  exact hc
+  simpa only [IsLengthSpace.edist_eq_iInf x y, iInf_lt_iff, exists_prop] using hc
 
-/-- Any two points of a length space with finite distances are joined by a continuous curve. -/
-theorem IsLengthSpace.joined {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X] (x y : X) :
+/-- Any two points at finite distance in a length space are joined by a continuous curve. -/
+theorem IsLengthSpace.joined_of_edist_ne_top [IsLengthSpace X] (h : edist x y ≠ ⊤) :
     Joined x y := by
-  obtain ⟨γ, hγ, -⟩ := IsLengthSpace.exists_eVariationOn_lt (x := x) (y := y) (c := ⊤)
-    (edist_lt_top x y)
+  obtain ⟨γ, hγ, -⟩ := IsLengthSpace.exists_eVariationOn_lt h.lt_top
   exact hγ.joined
 
 /-- A nonempty length space with finite distances is path connected. This is not an instance:
@@ -185,7 +176,7 @@ theorem IsLengthSpace.joined {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
 and a length-space structure on every such goal is not worth it. -/
 theorem IsLengthSpace.pathConnectedSpace {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
     [Nonempty X] : PathConnectedSpace X :=
-  ⟨‹Nonempty X›, IsLengthSpace.joined⟩
+  ⟨‹Nonempty X›, fun x y => IsLengthSpace.joined_of_edist_ne_top (edist_ne_top x y)⟩
 
 /-- The metric form of `TauCeti.IsLengthSpace.exists_eVariationOn_lt`. -/
 theorem IsLengthSpace.exists_eVariationOn_lt_ofReal {X : Type*} [PseudoMetricSpace X]
@@ -195,6 +186,24 @@ theorem IsLengthSpace.exists_eVariationOn_lt_ofReal {X : Type*} [PseudoMetricSpa
   refine IsLengthSpace.exists_eVariationOn_lt ?_
   rw [edist_dist]
   exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg dist_nonneg |>.2 hr
+
+/-- Every open extended-metric ball in a length space is preconnected, including empty balls. -/
+theorem IsLengthSpace.isPreconnected_eball [IsLengthSpace X] (p : X) (r : ℝ≥0∞) :
+    IsPreconnected (Metric.eball p r) := by
+  refine isPreconnected_of_forall p fun y hy ↦ ?_
+  obtain ⟨γ, hγ, hlen⟩ := IsLengthSpace.exists_eVariationOn_lt
+    (x := p) (y := y) (by simpa only [Metric.mem_eball, edist_comm] using hy)
+  refine ⟨γ '' Icc 0 1, ?_, ?_, ?_, isPreconnected_Icc.image γ hγ.continuousOn⟩
+  · rintro _ ⟨t, ht, rfl⟩
+    have hdist := (eVariationOn.edist_le γ ht (left_mem_Icc.2 zero_le_one)).trans_lt hlen
+    rwa [hγ.source] at hdist
+  · exact ⟨0, left_mem_Icc.2 zero_le_one, hγ.source⟩
+  · exact ⟨1, right_mem_Icc.2 zero_le_one, hγ.target⟩
+
+/-- Every open ball in a length space is preconnected, including empty balls. -/
+theorem IsLengthSpace.isPreconnected_ball {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
+    (p : X) (r : ℝ) : IsPreconnected (Metric.ball p r) := by
+  simpa only [Metric.eball_ofReal] using IsLengthSpace.isPreconnected_eball p (ENNReal.ofReal r)
 
 end IsLengthSpace
 
@@ -247,9 +256,8 @@ theorem IsGeodesicSegment.tendsto_nhdsGT_zero (h : IsGeodesicSegment γ x y)
     (hxy : 0 < dist x y) : Tendsto γ (𝓝[>] 0) (𝓝[≠] x) := by
   have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo (0 : ℝ) 1 := Ioo_mem_nhdsGT one_pos
   refine tendsto_nhdsWithin_iff.2 ⟨tendsto_iff_dist_tendsto_zero.2 ?_, ?_⟩
-  · have h0 : Tendsto (fun t : ℝ ↦ t * dist x y) (𝓝[>] 0) (𝓝 0) := by
-      simpa using (Continuous.tendsto (f := fun t : ℝ ↦ t * dist x y) (by fun_prop) 0).mono_left
-        (nhdsWithin_le_nhds (a := (0 : ℝ)) (s := Ioi 0))
+  · have h0 : Tendsto (fun t : ℝ ↦ t * dist x y) (𝓝[>] 0) (𝓝 0) :=
+      ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul _)).mono_left nhdsWithin_le_nhds
     refine h0.congr' ?_
     filter_upwards [hmem] with t ht
     rw [dist_comm (γ t) x, h.dist_source_apply ⟨ht.1.le, ht.2.le⟩]
@@ -258,10 +266,12 @@ theorem IsGeodesicSegment.tendsto_nhdsGT_zero (h : IsGeodesicSegment γ x y)
     rw [hγt, dist_self] at this
     exact (mul_pos ht.1 hxy).ne' this.symm
 
+/-- A geodesic segment is continuous on its parameter interval. -/
 theorem IsGeodesicSegment.continuousOn (h : IsGeodesicSegment γ x y) :
     ContinuousOn γ (Icc 0 1) :=
   h.lipschitzOnWith.continuousOn
 
+/-- A geodesic segment is a joining curve. -/
 theorem IsGeodesicSegment.isCurveJoining (h : IsGeodesicSegment γ x y) : IsCurveJoining γ x y where
   continuousOn := h.continuousOn
   source := h.source
@@ -279,9 +289,8 @@ theorem IsGeodesicSegment.reverse (h : IsGeodesicSegment γ x y) :
   source := by simpa using h.target
   target := by simpa using h.source
   dist_eq s hs t ht := by
-    have hs' : 1 - s ∈ Icc (0 : ℝ) 1 := ⟨by linarith [hs.2], by linarith [hs.1]⟩
-    have ht' : 1 - t ∈ Icc (0 : ℝ) 1 := ⟨by linarith [ht.2], by linarith [ht.1]⟩
-    rw [h.dist_eq _ hs' _ ht', dist_comm y x, sub_sub_sub_cancel_left, abs_sub_comm]
+    rw [h.dist_eq _ (Icc.one_sub_mem hs) _ (Icc.one_sub_mem ht), dist_comm y x,
+      sub_sub_sub_cancel_left, abs_sub_comm]
 
 /-- The piece of a geodesic segment between the times `a` and `b`, reparametrised over `[0, 1]`, is
 a geodesic segment from `γ a` to `γ b`. -/
@@ -291,10 +300,7 @@ theorem IsGeodesicSegment.comp_lineMap (h : IsGeodesicSegment γ x y) {a b : ℝ
   source := by rw [AffineMap.lineMap_apply_zero]
   target := by rw [AffineMap.lineMap_apply_one]
   dist_eq s hs t ht := by
-    have hmem {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) : AffineMap.lineMap a b r ∈ Icc (0 : ℝ) 1 := by
-      rw [AffineMap.lineMap_apply_ring']
-      constructor <;> nlinarith [mul_nonneg hr.1 hb.1, mul_nonneg (sub_nonneg.2 hr.2) ha.1,
-        mul_nonneg hr.1 (sub_nonneg.2 hb.2), mul_nonneg (sub_nonneg.2 hr.2) (sub_nonneg.2 ha.2)]
+    have hmem := (convex_Icc (𝕜 := ℝ) (0 : ℝ) 1).mapsTo_lineMap ha hb
     rw [h.dist_eq _ (hmem hs) _ (hmem ht), h.dist_eq a ha b hb, ← Real.dist_eq,
       dist_lineMap_lineMap, Real.dist_eq, Real.dist_eq, mul_assoc]
 
@@ -303,12 +309,8 @@ theorem IsGeodesicSegment.comp_lineMap (h : IsGeodesicSegment γ x y) {a b : ℝ
 theorem IsGeodesicSegment.dist_apply_apply_midpoint (h : IsGeodesicSegment γ x y) {s t : ℝ}
     (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
     dist (γ s) (γ (midpoint ℝ s t)) = dist (γ s) (γ t) / 2 := by
-  have hm : midpoint ℝ s t = (s + t) / 2 := by
-    rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
-  have hmI : midpoint ℝ s t ∈ Icc (0 : ℝ) 1 :=
-    ⟨by rw [hm]; linarith [hs.1, ht.1], by rw [hm]; linarith [hs.2, ht.2]⟩
-  have hsub : s - (s + t) / 2 = (s - t) / 2 := by ring
-  rw [h.dist_eq s hs _ hmI, h.dist_eq s hs t ht, hm, hsub, abs_div, abs_two]
+  rw [h.dist_eq s hs _ ((convex_Icc 0 1).midpoint_mem hs ht), h.dist_eq s hs t ht,
+    ← Real.dist_eq, dist_left_midpoint, Real.norm_two, Real.dist_eq]
   ring
 
 /-- The point of a geodesic segment at the midpoint of two times `s` and `t` is at distance
@@ -432,6 +434,8 @@ theorem IsGeodesicSpace.of_normedAddTorsor {V P : Type*} [SeminormedAddCommGroup
     [NormedSpace ℝ V] [PseudoMetricSpace P] [NormedAddTorsor V P] : IsGeodesicSpace P :=
   ⟨fun x y => ⟨AffineMap.lineMap x y, isGeodesicSegment_lineMap x y⟩⟩
 
+/-- A real seminormed space is a geodesic space: the affine segment between two points is a
+geodesic segment joining them. -/
 instance instIsGeodesicSpace {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] :
     IsGeodesicSpace E :=
   IsGeodesicSpace.of_normedAddTorsor (V := E)
@@ -456,10 +460,6 @@ theorem IsGeodesicSegment.eqOn_of_isometry {X V P : Type*} [MetricSpace X] [Norm
     (h' : IsGeodesicSegment γ' x y) : EqOn γ γ' (Icc 0 1) := fun _ ht ↦
   hf.injective <|
     ((h.comp_isometry hf).eq_lineMap ht).trans ((h'.comp_isometry hf).eq_lineMap ht).symm
-
-/-- The instance chain reaches the length-space condition: `ℝ` is a length space because it is a
-geodesic space. -/
-example : IsLengthSpace ℝ := inferInstance
 
 end Normed
 

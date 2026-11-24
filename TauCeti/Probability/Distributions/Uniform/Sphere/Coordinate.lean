@@ -156,7 +156,7 @@ theorem map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)
         Measure.map_map (by fun_prop) hfs]
       congr 1
       ext x
-      exact hcoord x
+      simpa [fs] using hcoord x
     _ = _ := by
       rw [hmap, map_eval_uniformSphereMeasure,
         Measure.map_map (by fun_prop) (by fun_prop)]

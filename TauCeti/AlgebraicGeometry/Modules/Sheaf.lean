@@ -16,9 +16,9 @@ Mathlib packages the forgetful functors out of the category `X.Modules` of `𝒪
 scheme that land in presheaves: `AlgebraicGeometry.Scheme.Modules.toPresheafOfModules` and
 `AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the one that lands in abelian
 sheaves, and records that it is exact.
-It also gives epimorphism criteria using surjectivity on sections over affine opens or local
-generators of the target, and an isomorphism criterion using sections over the members of a
-basis.
+It also gives epimorphism criteria using surjectivity on sections over the members of a basis
+(in particular over affine opens) or local generators of the target, and an isomorphism criterion
+using sections over the members of a basis.
 
 ## Main declarations
 
@@ -29,6 +29,8 @@ basis.
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures;
+* `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis`: a morphism of
+  `𝒪_X`-modules that is surjective on the sections over the members of a basis is an epimorphism;
 * `AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply`: a morphism of `𝒪_X`-modules commutes
   with restriction of sections;
 * `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_forall_exists_surjective_smul`: a morphism of
@@ -134,18 +136,26 @@ theorem shortExact_map_toSheaf {S : ShortComplex X.Modules} (hS : S.ShortExact) 
     (S.map (toSheaf X)).ShortExact :=
   hS.map_of_exact _
 
+/-- A morphism of `𝒪_X`-modules that is surjective on the sections over the members of a basis of
+the topology of `X` is an epimorphism. No quasicoherence hypothesis is required. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis
+    {M N : X.Modules} (f : M ⟶ N) {ι : Type*} {B : ι → X.Opens}
+    (hB : TopologicalSpace.Opens.IsBasis (Set.range B))
+    (hf : ∀ i, Function.Surjective (f.app (B i))) : Epi f := by
+  have : Sheaf.IsLocallySurjective ((toSheaf X).map f) := by
+    constructor
+    intro U s x hx
+    obtain ⟨_, ⟨i, rfl⟩, hxi, hiU⟩ := (TopologicalSpace.Opens.isBasis_iff_nbhd.mp hB) hx
+    exact ⟨B i, homOfLE hiU, hf i (N.presheaf.map (homOfLE hiU).op s), hxi⟩
+  exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+
 /-- Surjectivity on sections over affine opens implies that a module-sheaf morphism is an
 epimorphism. No quasicoherence hypothesis is required. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpens
     {M N : X.Modules} (f : M ⟶ N)
-    (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f := by
-  have : Sheaf.IsLocallySurjective ((toSheaf X).map f) := by
-    constructor
-    intro U s x hx
-    obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
-    have hVU' : V ≤ U := hVU
-    exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
-  exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+    (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f :=
+  Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis f (B := fun U : X.affineOpens ↦ U.val)
+    (by rw [Subtype.range_coe]; exact X.isBasis_affineOpens) fun U ↦ hf U.val U.property
 
 /-- A morphism of `𝒪_X`-modules commutes with restriction of sections. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply {M N : X.Modules}

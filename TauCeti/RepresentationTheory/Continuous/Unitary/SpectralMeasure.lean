@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.GroupTheory.SemidirectProduct
+import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Null
 
 /-!
 # Spectral measure of a unitary representation of a discrete abelian group
@@ -370,13 +371,8 @@ iff it is `π`-invariant. -/
 theorem spectralPVM_proj_singleton_one_apply_eq_self_iff (hπ : π.IsUnitary) (ξ : H) :
     (π.spectralPVM hπ).proj {1} (measurableSet_singleton 1) ξ = ξ ↔ ξ ∈ π.invariants := by
   refine ⟨fun h g => by rw [← h]; exact apply_spectralPVM_proj_singleton_one hπ g ξ,
-    fun hξ => ?_⟩
-  have h0 : (π.spectralPVM hπ).proj {1}ᶜ (measurableSet_singleton 1).compl ξ = 0 := by
-    rw [← norm_eq_zero, ← sq_eq_zero_iff, ProjValMeasure.norm_sq_proj_apply,
-      diag_spectralPVM_compl_singleton_one hπ hξ, ENNReal.toReal_zero]
-  rw [ProjValMeasure.proj_compl, sub_apply, ContinuousLinearMap.id_apply,
-    sub_eq_zero] at h0
-  exact h0.symm
+    fun hξ => ((π.spectralPVM hπ).proj_apply_eq_self_iff _ ξ).2
+      (diag_spectralPVM_compl_singleton_one hπ hξ)⟩
 
 /-- **Invariant vectors.** The spectral projection of the trivial character is the projection onto
 the `π`-invariant vectors. -/
@@ -391,8 +387,7 @@ theorem range_spectralPVM_proj_singleton_one (hπ : π.IsUnitary) :
 /-- The trivial character carries no spectral mass iff `π` has no nonzero invariant vector. -/
 theorem spectralPVM_proj_singleton_one_eq_zero_iff (hπ : π.IsUnitary) :
     (π.spectralPVM hπ).proj {1} (measurableSet_singleton 1) = 0 ↔ π.invariants = ⊥ := by
-  rw [← range_spectralPVM_proj_singleton_one hπ, LinearMap.range_eq_bot,
-    ← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj]
+  rw [← range_spectralPVM_proj_singleton_one hπ, ProjValMeasure.proj_eq_zero_iff_range_eq_bot]
 
 end Measure
 

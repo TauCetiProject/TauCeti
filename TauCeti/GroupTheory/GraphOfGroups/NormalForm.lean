@@ -33,7 +33,11 @@ The normal form of a reduced alternating path has the same darts as the path, an
 of any `𝔸`-path has at most as many darts as the path. Hence a reduced alternating path is not
 homotopic to an `𝔸`-path with fewer darts, and two homotopic reduced alternating paths have the
 same underlying edge path. In particular a reduced alternating path of positive length is not
-homotopic to a vertex group element, nor to the empty path.
+homotopic to a vertex group element, nor to the empty path. Read in the presented group
+`π₁(𝔸, T)`, this is Britton's lemma for graphs of groups: the element spelled by a reduced closed
+alternating path at `a` lies in the image of `A_a` exactly when the path has length zero. Hence
+`A_a` is all of `π₁(𝔸, a)` exactly when every reduced closed alternating path at `a` has length
+zero.
 
 The construction follows the normal forms of Mathlib for amalgamated products and HNN extensions,
 `Monoid.PushoutI.NormalWord` and `HNNExtension.NormalWord`: choose transversals, let the
@@ -76,12 +80,18 @@ transversals. For a loop, the statement about the edge paths of reduced paths is
   reduced alternating paths have the same edge path.
 * `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.toPath_homotopic_nil_iff`: a reduced
   alternating closed path is homotopic to the empty path only when it is the element `1`.
+* `TauCeti.GraphOfGroups.AlternatingPath.IsReduced.toπ₁Tree_toPath_mem_range_of_iff`: the form
+  of Britton's lemma for graphs of groups in `π₁(𝔸, S)`, for every set `S` of darts of a spanning
+  tree.
+* `TauCeti.GraphOfGroups.π₁.vertexHom_nil_bijective_iff`: `A_a` is all of `π₁(𝔸, a)` exactly
+  when every reduced closed alternating path at `a` has length zero.
 
 ## References
 
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §2, Definitions 2.2–2.3 and Proposition 2.4 (1), (2).
 * J.-P. Serre, *Trees*, Chapter I, §5.2, Theorem 11.
+* J. L. Britton, *The word problem*, Ann. of Math. 77 (1963).
 -/
 
 public section
@@ -1155,9 +1165,49 @@ theorem toPath_homotopic_nil_iff {p : 𝔸.AlternatingPath a a} (hp : p.IsReduce
   rw [← hp.toPath_homotopic_ofVertex_iff]
   exact ⟨(·.trans Path.Homotopic.ofVertex_one.symm), (·.trans Path.Homotopic.ofVertex_one)⟩
 
+/-- **Britton's lemma for graphs of groups.** Let `T` be a spanning tree of `Γ` (so `Γ` is
+connected) and `S` a set of darts of `T`. A reduced closed alternating path at `a` spells an
+element of `π₁(𝔸, S)` in the image of the vertex group `A_a` exactly when it has length zero; in
+particular a reduced closed path of positive length spells a nontrivial element. -/
+theorem toπ₁Tree_toPath_mem_range_of_iff {p : 𝔸.AlternatingPath a a} (hp : p.IsReduced)
+    (T : Γ.SpanningTree) {S : Set Γ.E} (hS : S ⊆ T.darts) :
+    p.toPath.toπ₁Tree S ∈ (π₁Tree.of S a).range ↔ p.length = 0 := by
+  refine ⟨fun ⟨g, hg⟩ => ?_, fun h => ?_⟩
+  · -- Through `π₁(𝔸, a) ≃* π₁(𝔸, T)`, the path is homotopic to the length-zero path `g`.
+    have hmk : π₁.mk p.toPath = π₁.mk (Path.ofVertex g) := by
+      apply (π₁Equiv 𝔸 a T).injective
+      rw [π₁Equiv_mk, ← Path.lift_toπ₁Tree_of_subset hS p.toPath, ← hg, π₁Tree.lift_of,
+        ← π₁.vertexHom_nil_apply]
+      simp
+    rw [hp.toPath_homotopic_ofVertex_iff.1 (π₁.mk_eq_mk_iff.1 hmk), length_single]
+  · rw [length_eq_zero_iff.1 h]
+    exact ⟨p.last, by simp⟩
+
 end IsReduced
 
 end AlternatingPath
+
+namespace π₁
+
+variable {𝔸} {a : Γ.V}
+
+/-- The vertex group `A_a` is the whole fundamental group `π₁(𝔸, a)` exactly when every reduced
+closed alternating path at `a` has length zero. -/
+theorem vertexHom_nil_bijective_iff :
+    Function.Bijective (vertexHom (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)) ↔
+      ∀ p : 𝔸.AlternatingPath a a, p.IsReduced → p.length = 0 := by
+  refine ⟨fun h p hp => ?_, fun h => ⟨vertexHom_injective _, fun x => induction_on x fun q => ?_⟩⟩
+  · obtain ⟨g, hg⟩ := h.2 (mk p.toPath)
+    rw [vertexHom_nil_apply, mk_eq_mk_iff] at hg
+    rw [hp.toPath_homotopic_ofVertex_iff.1 hg.symm, AlternatingPath.length_single]
+  · -- The normal form of a closed path is reduced, hence of length zero.
+    have h0 := h _ (normalForm default q).isReduced
+    refine ⟨(normalForm default q).toAlternatingPath.last, ?_⟩
+    rw [vertexHom_nil_apply, ← mk_toPath_normalForm default a q, NormalWord.toPath_def,
+      AlternatingPath.length_eq_zero_iff.1 h0]
+    simp
+
+end π₁
 
 end GraphOfGroups
 

@@ -46,6 +46,8 @@ reversed flow.
 * `TauCeti.IsAdaptedPseudoGradient.isOpen_stableSet_of_manifoldMorseIndex_eq_zero` and
   `TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`: `W^s(x)`
   is open when `x` has index `0`, and `W^u(x)` when `x` has index `n`.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero`: for a
+  Morse function, the unstable manifold of a critical point of index `0` is the point itself.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -196,8 +198,8 @@ theorem linearFlow_coord_negativeExtend (t : ℝ) (c : {i // φ.weight i < 0} �
   rw [Pi.smul_apply, smul_eq_mul]
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
   · rw [φ.linearFlow_of_weight_eq_neg_one hi]
-  · rw [linearFlow_apply, φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num),
-      mul_zero, mul_zero]
+  · rw [MorseBottChart.linearFlow_apply,
+      φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, mul_zero]
 
 /-- If the coordinates of `a` are those of `b` moved by the linear flow for the time `s`, the
 coordinates of negative weight of `a` are `e^{s}` times those of `b`. -/
@@ -314,7 +316,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
   obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hp).eventually (hD.mem_nhds hxD)).exists
   refine ⟨(hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D),
-    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD), isSliceChart_iff.1 (hslice T)⟩
   rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
     hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
@@ -377,6 +379,29 @@ theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedPseud
   have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
   exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
     (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
+/-- **The unstable manifold of a critical point of index zero is a point.** For a critical point
+`x` of index `0` of a Morse function, no other trajectory converges to `x` in backward time: near
+`x` the slice charts flatten `W^u(x)` onto the zero subspace, and every trajectory converging to
+`x` in backward time enters such a chart. -/
+theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    hX.flow.unstableSet x = {x} := by
+  have hxu : x ∈ hX.flow.unstableSet x := (hX.mem_unstableSet_inter_stableSet_self hx).1
+  obtain ⟨L, φ, hL, hxφ, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hxu
+  obtain rfl : L = ⊥ := Submodule.finrank_eq_zero.1 (hL.trans hind)
+  -- In the slice chart at `x`, the only point of `W^u(x)` is `x` itself.
+  have hloc (z : M) (hz : z ∈ φ.source) (hzu : z ∈ hX.flow.unstableSet x) : z = x := by
+    have hz0 : φ z = 0 := by simpa using (isSliceChart_iff.1 hs z hz).1 hzu
+    have hx0 : φ x = 0 := by simpa using (isSliceChart_iff.1 hs x hxφ).1 hxu
+    exact φ.injOn hz hxφ (hz0.trans hx0.symm)
+  refine subset_antisymm (fun p hp ↦ ?_) (singleton_subset_iff.2 hxu)
+  obtain ⟨t, ht⟩ := ((Flow.mem_unstableSet.1 hp).eventually
+    (φ.open_source.mem_nhds hxφ)).exists
+  have hpt := hloc _ ht ((Flow.apply_mem_unstableSet_iff _ t).2 hp)
+  rw [mem_singleton_iff, ← hX.flow.map_neg_apply_map t p, hpt,
+    hX.flow_apply_of_mfderiv_eq_zero hx]
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth
