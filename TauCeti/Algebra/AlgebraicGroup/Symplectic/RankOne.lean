@@ -11,10 +11,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 /-!
 # `Sp₂ = SL₂`
 
-For `2 × 2` matrices, `X J Xᵀ = det(X) J` (`TauCeti.mul_JFin_one_mul_transpose`), where
-`J = JFin 1` is the standard alternating form. So the entries of `X J Xᵀ - J` generate the same
-ideal of the coordinate algebra of `GL₂` as `det X - 1`, and the symplectic subgroup scheme `Sp₂`
-of `GL₂` is the special linear group scheme `SL₂`, as subgroup schemes of `GL₂`.
+For `2 × 2` matrices, `X J Xᵀ = det(X) J`
+(`TauCeti.mul_JFin_one_mul_transpose_eq_det_smul`), where `J = JFin 1` is the standard
+alternating form. So the entries of `X J Xᵀ - J` generate the same ideal of the coordinate algebra
+of `GL₂` as `det X - 1`, and the symplectic subgroup scheme `Sp₂` of `GL₂` is the special linear
+group scheme `SL₂`, as subgroup schemes of `GL₂`.
 
 ## Main declarations
 
@@ -38,7 +39,7 @@ theorem definingHopfIdeal_one : definingHopfIdeal R 1 = SpecialLinear.definingHo
   have hrel : ConstantForm.relationMatrix R (1 + 1) (JFin 1 R) =
       ((GeneralLinear.determinantGroupLike R 2 : GeneralLinear.coordinateHopfAlgebra R 2) - 1) •
         JFin 1 (GeneralLinear.coordinateHopfAlgebra R 2) := by
-    rw [ConstantForm.relationMatrix_def, JFin_map, mul_JFin_one_mul_transpose,
+    rw [ConstantForm.relationMatrix_def, JFin_map, mul_JFin_one_mul_transpose_eq_det_smul,
       GeneralLinear.det_genericMatrix, sub_smul, one_smul]
   have hspan : (definingHopfIdeal R 1).toIdeal = (SpecialLinear.definingHopfIdeal R 2).toIdeal := by
     rw [ConstantForm.definingHopfIdeal_toIdeal, SpecialLinear.definingHopfIdeal_toIdeal]

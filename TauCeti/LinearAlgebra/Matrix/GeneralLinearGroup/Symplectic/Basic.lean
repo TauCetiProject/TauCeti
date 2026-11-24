@@ -68,7 +68,8 @@ symplectic coordinate Hopf algebra and group scheme live in
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
 * `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
-* `TauCeti.mul_JFin_one_mul_transpose`: a `2 × 2` matrix `M` satisfies `M J Mᵀ = det(M) J`.
+* `TauCeti.mul_JFin_one_mul_transpose_eq_det_smul`: a `2 × 2` matrix `M` satisfies
+  `M J Mᵀ = det(M) J`.
 * `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
@@ -336,7 +337,7 @@ variable {R} in
 /-- A `2 × 2` matrix scales the transported alternating form by its determinant:
 `M J Mᵀ = det(M) J`. This is `Matrix.transpose_mul_J_mul_eq_det_smul` read through the
 reindexing. -/
-theorem mul_JFin_one_mul_transpose (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
+theorem mul_JFin_one_mul_transpose_eq_det_smul (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
     M * JFin 1 R * Mᵀ = M.det • JFin 1 R := by
   -- Apply the `Fin 1 ⊕ Fin 1` statement to `Mᵀ` read in those coordinates, then compare both
   -- sides after reindexing along `finSumFinEquiv`.
