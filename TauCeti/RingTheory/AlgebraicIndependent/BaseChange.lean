@@ -97,8 +97,7 @@ theorem adjoinTensorAlgEquiv_symm_X (i : s) :
 theorem adjoinTensorAlgEquiv_symm_C (b : B) :
     (hs.adjoinTensorAlgEquiv B).symm (MvPolynomial.C b) = 1 ⊗ₜ b := by
   apply (hs.adjoinTensorAlgEquiv B).injective
-  rw [AlgEquiv.apply_symm_apply, adjoinTensorAlgEquiv_tmul, map_one, map_one, map_one,
-    MvPolynomial.smul_eq_C_mul, mul_one]
+  simp [adjoinTensorAlgEquiv_tmul, MvPolynomial.smul_eq_C_mul, -Subalgebra.equivOfEq_apply]
 
 end adjoinTensorAlgEquiv
 
