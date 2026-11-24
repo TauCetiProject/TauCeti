@@ -105,9 +105,8 @@ theorem detNorm_eq_smul_detNorm (M : Submodule R V) (b b' : Basis ι K V) :
     M.detNorm b = b.det b' • M.detNorm b' := by
   rw [detNorm, detNorm, ← span_smul, ← image_smul, image_image]
   congr 1
-  refine image_congr fun v _ ↦ ?_
-  rw [smul_eq_mul, b.det_apply, b'.det_apply, b.det_apply, ← b.toMatrix_mul_toMatrix b' v,
-    Matrix.det_mul]
+  exact image_congr fun v _ ↦ by
+    rw [← smul_apply, ← b.det.eq_smul_basis_det b']
 
 /-- **Change of basis.** Over a field, if `b'` is a second basis, the norm relative to `b'` is the
 norm relative to `b` divided by the determinant `b.det b'` of the matrix expressing `b'` in `b`.
