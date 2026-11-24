@@ -414,27 +414,14 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainM
     ← TopPair.twistedHomologyConstantIso_inv, reassoc_of% hA]
   -- Compose the fibre inclusion with the covering map: the composite is the fibre inclusion of `E`
   -- over `q.proj`.
-  have hC := congrArg (TopPair.twistedHomologyCoefficientMap _ (TopPair.fstPullbackCompIso fib
-    (coverThomPairMap F E ι) (signSystem F E hι R)).inv n ≫ ·)
-    ((TopPair.twistedHomologyMap_comp fib (coverThomPairMap F E ι) (signSystem F E hι R)
-      n).symm.trans (TopPair.twistedHomologyMap_congr (signSystem F E hι R)
-        (congrArg TopPair.Hom.fst (fiberThomPairMap_comp_coverThomPairMap q)) n))
-  simp only [← TopPair.twistedHomologyCoefficientMap_comp_assoc, Iso.inv_hom_id,
-    TopPair.twistedHomologyCoefficientMap_id, Category.id_comp] at hC
+  rw [TopPair.twistedHomologyMap_naturality_assoc,
+    TopPair.twistedHomologyMap_comp_of_comp_eq_assoc fib (coverThomPairMap F E ι)
+      (signSystem F E hι R) (fiberThomPairMap_comp_coverThomPairMap q)]
   -- Move the identification of `π^*o(E)` with its written-out form past the fibre inclusion.
-  have hE : ∀ {P Q : TopPair.{0}} (g : P ⟶ Q) (L L' : LocalCoefficientSystem.{0, 0, 0} R Q.fst)
-      (h : L = L'), TopPair.twistedHomologyMap g L n ≫
-        HomologicalComplex.homologyMap (Q.twistedChainComplexCoefficientMap (eqToHom h)) n =
-      P.twistedHomologyCoefficientMap (eqToHom (congrArg (LocalCoefficientSystem.pullback
-        (TopPair.Hom.fst g).hom).obj h)) n ≫ TopPair.twistedHomologyMap g L' n := by
-    rintro _ _ g _ _ rfl
-    exact (TopPair.twistedHomologyMap_naturality g _ (𝟙 _) n).trans rfl
-  rw [TopPair.twistedHomologyMap_naturality_assoc, reassoc_of% hC]
   -- `erw`: the fibre pair of `E'` over `q` is the fibre pair of `E` over `q.proj` only up to
   -- unfolding the pull-back bundle.
-  erw [hE (P := TopPair.ofSubset (X := TopCat.of
-      (((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)) ({0}ᶜ : Set _))
-    (fiberThomPairMap F E q.proj) _ _ (thomPairSignLocalSystem_def hι).symm,
+  erw [TopPair.twistedHomologyMap_comp_twistedHomologyCoefficientMap_eqToHom
+      (fiberThomPairMap F E q.proj) _ (thomPairSignLocalSystem_def hι).symm,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
@@ -539,10 +526,9 @@ theorem singularKronecker_singularCohomologyMap_thomPairSignCohomologyMap_twiste
           (twistedThomClass F E R hι ω)))).hom
       (orientedFiberGenerator (E := E) R ω q.orientation) = 1 := by
   rw [TopPair.singularKronecker_naturality, thomPairSignCohomologyMap_def,
-    TopPair.singularKronecker_def, thomPairSignCochainMap_def]
-  erw [ChainComplex.kronecker_naturality]
-  rw [reassoc_of% singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap]
-  erw [← TopPair.twistedKronecker_def]
+    TopPair.singularKronecker_def, thomPairSignCochainMap_def, ChainComplex.kronecker_naturality,
+    reassoc_of% singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap,
+    ← TopPair.twistedKronecker_def (thomPair F E) (thomPairSignLocalSystem F E R hι)]
   -- The fibre map carries the generator of `q.orientation` to the fibre class over `q.proj`, on
   -- which the Thom class takes the value `1`.
   exact (ModuleCat.comp_apply _ _ _).trans ((congrArg _
