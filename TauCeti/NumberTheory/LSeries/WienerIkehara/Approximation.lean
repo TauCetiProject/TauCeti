@@ -59,6 +59,8 @@ by deriving the Chebyshev bound and delegating to Mathlib's `WienerIkehara.tends
   functions `psi` whose values `psi 0` approximate `L`; the limit is `2π A L`.
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`: the smoothed asymptotic for
   a Schwartz test function `g`.
+* `TauCeti.LSeries.residue_im_eq_zero`: the residue of a nonnegative Dirichlet series with a
+  boundary remainder continuous from the right at `1` is real (`A.im = 0`).
 * `TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop`: the smoothed asymptotic
   `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` for a smooth `Ψ` with compact support in `(0, ∞)`.
 
@@ -455,8 +457,9 @@ section Smooth
 variable {Ψ : ℝ → ℂ} {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
 
 /-- If a Dirichlet series with nonnegative coefficients has a boundary remainder `G` continuous
-from the right at `1` along the real axis, then the residue `A` is real. -/
-private theorem residue_im_eq_zero (ha : 0 ≤ a)
+from the right at `1` along `[1, ∞)`, then the residue `A` is real (`A.im = 0`), allowing
+complex-valued Wiener--Ikehara hypotheses to reduce to real-residue statements. -/
+theorem residue_im_eq_zero (ha : 0 ≤ a)
     (hG : ContinuousWithinAt (fun σ : ℝ ↦ G σ) (Ici 1) 1)
     (hG' : ∀ σ : ℝ, 1 < σ → G σ = LSeries a σ - A / (σ - 1)) :
     A.im = 0 := by
@@ -493,9 +496,7 @@ theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
   have hAim : A.im = 0 := residue_im_eq_zero ha
     ((hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr) 1 le_rfl)
     (fun σ hσ ↦ hG' σ (by simpa using hσ))
-  have hA : (A.re : ℂ) = A := by
-    conv_rhs => rw [← Complex.re_add_im A, hAim]
-    simp
+  have hA : (A.re : ℂ) = A := Complex.ext (by simp) (by simp [hAim])
   have ha_eq : (fun n ↦ (‖a n‖ : ℂ)) = a :=
     funext fun n ↦ (Complex.eq_coe_norm_of_nonneg (ha n)).symm
   have hmain := WienerIkehara.tendsto_sum_div_smooth (f := fun n ↦ ‖a n‖) (A := A.re)

@@ -169,8 +169,8 @@ theorem exists_sum_range_le_mul_of_isBigO {f : ℕ → ℝ}
   refine ⟨max C₀ 0 + max (f 0) 0, fun N ↦ ?_⟩
   rcases N with _ | m
   · simp
-  rw [Nat.range_succ_eq_Icc_zero, ← Finset.add_sum_Ioc_eq_sum_Icc m.zero_le,
-    ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
+  rw [Finset.sum_range_eq_add_Ico f m.succ_pos, Nat.succ_eq_add_one,
+    Finset.Ico_add_one_right_eq_Icc]
   have hm := hC₀ m
   have hmax : 0 ≤ max C₀ 0 := le_max_right _ _
   have hf0 : 0 ≤ max (f 0) 0 := le_max_right _ _

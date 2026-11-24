@@ -80,9 +80,9 @@ theorem wienerIkehara (ha : 0 ≤ a)
   have hmain := WienerIkehara.tendsto_sum_div (A := κ) hbound hG hG' ha
   have ha0 : Tendsto (fun x : ℝ ↦ a 0 / x) atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop tendsto_id
-  refine (by simpa using hmain.sub ha0 : Tendsto _ atTop (𝓝 κ)).congr fun x ↦ ?_
-  rw [← Finset.add_sum_Ioc_eq_sum_Icc (Nat.zero_le _), ← Finset.Icc_add_one_left_eq_Ioc,
-    zero_add, add_div, add_sub_cancel_left, div_eq_inv_mul]
+  refine (sub_zero κ ▸ hmain.sub ha0).congr fun x ↦ ?_
+  rw [← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le _), zero_add,
+    Finset.sum_insert (by simp), add_div, add_sub_cancel_left, div_eq_inv_mul]
 
 /-- **The Wiener--Ikehara theorem with zero residue.** If the Dirichlet series `F` of `a n ≥ 0`
 extends continuously from `Re s > 1` to `Re s ≥ 1`, then `x⁻¹ ∑_{1 ≤ n ≤ x} a n → 0`. -/
