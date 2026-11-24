@@ -1371,7 +1371,9 @@ theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent m (fun u ↦ Bundle.TotalSpace.mk' E (timeDependentFlowOf X s u x)
       (mfderiv I I (timeDependentFlowOf X s u) x v)) t := by
   have hn : 1 ≤ n := le_add_self.trans hmn
-  -- The tangent vector `(0, v)` to `ℝ × M` at `(u, x)` varies smoothly with `u`.
+  -- The tangent vector `(0, v)` to `ℝ × M` at `(u, x)` varies smoothly with `u`. The constant
+  -- field is stated with values in the model space: `v : TangentSpace I x` is read as an element
+  -- of `E` (`@id E v`), as `TangentSpace I x` unfolds to `E`.
   have hlift : ContMDiff 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod I).tangent m
       (fun u : ℝ ↦ (equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨u, 0⟩, ⟨x, v⟩)) :=
     contMDiff_equivTangentBundleProd_symm.comp
@@ -1381,10 +1383,8 @@ theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn
   refine (ContMDiffAt.mfderiv_apply_sectionAlong (contMDiffAt_uncurry_timeDependentFlowOf hn hX h)
     (b := fun u : ℝ ↦ (u, x)) (s := fun _ ↦ ((0, v) : ℝ × E)) (hlift t)
     (by exact_mod_cast hmn)).congr_of_eventuallyEq ?_
-  have hW : IsOpen {q : ℝ × M | ((s, q.1), q.2) ∈ timeDependentFlowDomain X} :=
-    (isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).preimage (by fun_prop)
-  filter_upwards [(continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
-    (hW.mem_nhds (show (t, x) ∈ _ from h))] with u (hu : ((s, u), x) ∈ timeDependentFlowDomain X)
+  filter_upwards [(by fun_prop : Continuous fun u : ℝ ↦ ((s, u), x)).continuousAt.preimage_mem_nhds
+    ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)] with u hu
   -- On the vertical vector `(0, v)`, the differential of the uncurried flow is that of `φ_{s, u}`.
   exact congrArg (Bundle.TotalSpace.mk' E _) (MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
     ((contMDiffAt_uncurry_timeDependentFlowOf hn hX hu).mdifferentiableAt
