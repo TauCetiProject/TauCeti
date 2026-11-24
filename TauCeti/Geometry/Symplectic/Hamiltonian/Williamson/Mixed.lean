@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.EllipticHyperbo
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.FocusFocus
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Tactic.FinCases
-import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Data.Fin.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Restrict
@@ -474,8 +473,8 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
       (h.restrict_maxGenEigenspace_aeval hP (prod_X_sq_sub_C_comp_neg_X s))
       (QuadraticMap.comp_mem_span_range_comp hP L.subtype) hLs.symm hs0 fun μ hμ ↦ by
         obtain ⟨v, hv⟩ := (hPs μ hμ).exists_hasEigenvector
-        rw [hamiltonianEnd_comp_subtype hL (hRL hP)]
-        exact Module.End.hasEigenvalue_restrict_sq _ (Module.End.maxGenEigenspace_aeval_le_of_dvd A
+        rw [hamiltonianEnd_comp_subtype hL (hRL hP), Module.End.pow_restrict]
+        exact Module.End.hasEigenvalue_restrict _ (Module.End.maxGenEigenspace_aeval_le_of_dvd A
           (Finset.dvd_prod_of_mem (fun ν : ℝ ↦ X ^ 2 - C ν) hμ)
           (mem_maxGenEigenspace_sq_sub (by simpa [sq] using hv.apply_eq_smul))) hv
   -- The focus-focus classification on `L^ω`.

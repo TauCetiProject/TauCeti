@@ -15,8 +15,9 @@ pass to the restriction `f.restrict` of `f` to `L`.
 
 ## Main results
 
-* `Module.End.hasEigenvalue_restrict_sq`: an eigenvector of `f²` in `L` makes its eigenvalue an
-  eigenvalue of the square of the restriction of `f` to `L`.
+* `Module.End.hasEigenvalue_restrict`: an eigenvector of `f` in `L` makes its eigenvalue an
+  eigenvalue of the restriction of `f` to `L`. Together with `Module.End.pow_restrict` this
+  applies to powers of `f`.
 * `Module.End.exists_restrict_apply_eq`: if `f v = a v - b w` and `f w = b v + a w` with `b ≠ 0`
   (over the reals: `v + iw` is an eigenvector of `f` for `a + bi`), and `v` lies in `L`, then so
   does `w`, and the restriction of `f` to `L` satisfies the same relations.
@@ -26,14 +27,13 @@ public section
 
 namespace Module.End
 
-/-- An eigenvector of `f²` in a submodule `L` preserved by `f` makes its eigenvalue an eigenvalue of
-the square of the restriction of `f` to `L`. -/
-theorem hasEigenvalue_restrict_sq {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+/-- An eigenvector of `f` in a submodule `L` preserved by `f` makes its eigenvalue an eigenvalue of
+the restriction of `f` to `L`. -/
+theorem hasEigenvalue_restrict {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     {f : End R M} {L : Submodule R M} (hL : ∀ v ∈ L, f v ∈ L) {μ : R} {v : M} (hvL : v ∈ L)
-    (hv : (f ^ 2).HasEigenvector μ v) : HasEigenvalue ((f.restrict hL) ^ 2) μ := by
-  refine hasEigenvalue_of_hasEigenvector (x := ⟨v, hvL⟩)
-    ⟨mem_eigenspace_iff.2 (Subtype.ext ?_), by simpa using hv.2⟩
-  simpa [sq, mul_apply_eq_comp] using hv.apply_eq_smul
+    (hv : f.HasEigenvector μ v) : HasEigenvalue (f.restrict hL) μ :=
+  hasEigenvalue_of_hasEigenvector (x := ⟨v, hvL⟩)
+    ⟨mem_eigenspace_iff.2 (Subtype.ext (by simpa using hv.apply_eq_smul)), by simpa using hv.2⟩
 
 /-- If `f v = a v - b w` and `f w = b v + a w` with `b ≠ 0`, and `v` lies in a submodule `L`
 preserved by `f`, then so does `w`, and the restriction of `f` to `L` satisfies the same

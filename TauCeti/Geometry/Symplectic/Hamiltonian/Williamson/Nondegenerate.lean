@@ -242,7 +242,7 @@ theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic
 are nonzero and coefficients of blocks of the same type have distinct squares. Then the squares
 `-cₖ²` and `cₖ²` of the Hamiltonian endomorphism on the elliptic and hyperbolic planes are pairwise
 distinct. -/
-theorem injective_ite_neg_sq
+theorem injective_ite_neg_sq {ι : Type*} [DecidableEq ι] (s : Finset ι) {c : ι → ℝ}
     (hc : Pairwise fun k l ↦ (k ∈ s ↔ l ∈ s) → c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0) :
     Function.Injective fun k ↦ if k ∈ s then -c k ^ 2 else c k ^ 2 := by
   intro k l e
