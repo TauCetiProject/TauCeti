@@ -28,6 +28,8 @@ the `fᵢ` generate the unit ideal of `Γ(X, ⊤)`.
 
 * `AlgebraicGeometry.Scheme.Modules.linearCombination`: the morphism `𝒪_X^ι ⟶ 𝒪_X`,
   `(gᵢ) ↦ Σ fᵢ gᵢ`.
+* `AlgebraicGeometry.Scheme.Modules.linearCombination_app_freeSection`: its value on the
+  tautological section `eᵢ` of `𝒪_X^ι` is the restriction of `fᵢ`.
 * `AlgebraicGeometry.Scheme.Modules.linearCombination_app_sum_smul`: its value on `Σ aᵢ eᵢ`,
   for the tautological sections `eᵢ` of `𝒪_X^ι`, is `Σ aᵢ fᵢ`.
 * `AlgebraicGeometry.Scheme.Modules.exists_linearCombination_app_eq` and
@@ -70,6 +72,17 @@ lemma freeHomEquiv_linearCombination (f : ι → Γ(X, ⊤)) :
       (SheafOfModules.unit X.ringCatSheaf).unitHomEquiv
         (globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) (f i)) :=
   (SheafOfModules.freeHomEquiv _).apply_symm_apply _
+
+/-- Over an open `U`, `linearCombination f` sends the `i`-th tautological section `eᵢ` of `𝒪_X^ι`
+to the restriction of `f i` to `U`. -/
+@[simp]
+lemma linearCombination_app_freeSection (f : ι → Γ(X, ⊤)) (U : X.Opens) (i : ι) :
+    (linearCombination f).app U
+        ((SheafOfModules.freeSection (R := X.ringCatSheaf) i).eval (.op U)) =
+      (X.presheaf.map U.leTop.op (f i) : Γ(X, U)) :=
+  (congrArg (fun s : (SheafOfModules.unit X.ringCatSheaf).sections ↦ s.eval (.op U))
+    (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection _ i)).trans
+      (eval_unitHomEquiv_globalSectionsSmul (f i) U)
 
 variable [Fintype ι]
 
