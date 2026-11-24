@@ -32,8 +32,6 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
   `TwoSidedIdeal.Quotient.normedAlgebra` (with its `NormedSpace` instance
   `TwoSidedIdeal.Quotient.normedSpace`): unital and algebra counterparts on `R ⧸ I`.
-* `TwoSidedIdeal.isClosed_comap`: the preimage of a closed two-sided ideal under a continuous ring
-  homomorphism is closed.
 -/
 
 public section
@@ -161,17 +159,3 @@ example {𝕜 A : Type*} [NormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A
 end Unital
 
 end TwoSidedIdeal.Quotient
-
-namespace TwoSidedIdeal
-
-variable {F R S : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S] [TopologicalSpace R]
-  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S] [ContinuousMapClass F R S]
-
-/-- The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed. -/
-theorem isClosed_comap (φ : F) {J : TwoSidedIdeal S} (hJ : IsClosed (J : Set S)) :
-    IsClosed (J.comap φ : Set R) := by
-  have : (J.comap φ : Set R) = φ ⁻¹' J := Set.ext fun _ => mem_comap φ
-  rw [this]
-  exact hJ.preimage (map_continuous φ)
-
-end TwoSidedIdeal
