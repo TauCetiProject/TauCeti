@@ -17,13 +17,11 @@ direct image `Rⁿ f_*` sends `c` to a colimit cocone in `Y.Modules`
 (`AlgebraicGeometry.Scheme.Hom.isColimitMapCoconeHigherDirectImage`): the canonical map
 `colim_j Rⁿ f_* K_j ⟶ Rⁿ f_* (colim_j K_j)` is an isomorphism.
 
-Both sides are quasi-coherent, so it suffices to check that the canonical map is bijective on
-sections over every affine open `V` of `Y`
-(`AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis`, a morphism of sheaves of modules is an
-isomorphism once it is one on a basis of opens). Over `V` the sections of the
-colimit are the colimit of the sections, since sections over an affine open preserve colimits of
-quasi-coherent sheaves, and the sections of `Rⁿ f_* M` are `Hⁿ(f⁻¹ V, M)`, naturally in the
-quasi-coherent module `M`
+By `AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis` (a morphism of sheaves of modules is
+an isomorphism once it is one on a basis of opens) it suffices to check that the canonical map is
+bijective on sections over every affine open `V` of `Y`. Since every `Rⁿ f_* K_j` is
+quasi-coherent, sections over `V` commute with their colimit, and the sections of `Rⁿ f_* M` are
+`Hⁿ(f⁻¹ V, M)`, naturally in the quasi-coherent module `M`
 (`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv_naturality`).
 As `f⁻¹ V` is quasi-compact and quasi-separated, `Hⁿ(f⁻¹ V, -)` commutes with filtered colimits
 of quasi-coherent modules
@@ -57,12 +55,6 @@ section FilteredColimit
 
 variable {J : Type w} [Category.{w'} J] [EssentiallySmall.{u} J] [IsFiltered J]
   {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent) {c : Cocone K} (hc : IsColimit c)
-
-/-- The sections over `V`, as a functor to abelian groups, send a morphism to its component
-over `V`: `Scheme.Modules.Hom.app` is defined as this composite. -/
-private lemma forget₂_map_sectionsFunctor_map {M N : Y.Modules} (φ : M ⟶ N) (V : Y.Opens) :
-    (forget₂ _ AddCommGrpCat).map ((sectionsFunctor V).map φ) = φ.app V :=
-  rfl
 
 include hK hc in
 /-- Over an affine open `V`, the sections of the higher direct images of a filtered colimit
