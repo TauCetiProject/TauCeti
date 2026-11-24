@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 
 /-!
@@ -95,21 +96,12 @@ private theorem evalCoord_sub {G : Type*} [NormedAddCommGroup G] [NormedSpace �
 private theorem norm_evalCoord_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     (A : HolderSpace α (slab (E := ℝ) a b) (G →L[ℝ] ℝ)) {w : G} (hw : ‖w‖ ≤ 1) :
     ‖evalCoord A w‖ ≤ ‖A‖ := by
-  have h : ‖ContinuousLinearMap.apply ℝ ℝ w‖ ≤ 1 := by
-    let : SeminormedAddCommGroup ((G →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-    let : NormedSpace ℝ ((G →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-    rw [ContinuousLinearMap.apply]
-    have hflip : ‖(ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ)).flip‖ ≤ 1 := by
-      rw [ContinuousLinearMap.opNorm_flip]
-      exact ContinuousLinearMap.norm_id_le
-    exact (ContinuousLinearMap.le_of_opNorm_le _ hflip w).trans ((one_mul _).trans_le hw)
-  have hL := (HolderSpace.compLeftL (α := α)
-    (X := slab (E := EuclideanSpace ℝ (Fin 1)) a b)
-    (ContinuousLinearMap.apply ℝ ℝ w)).le_of_opNorm_le
-    ((HolderSpace.norm_compLeftL_le _).trans h)
-    (HolderSpace.compIsometryEquivLIE α _
-      (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv) A)
-  simpa [evalCoord] using hL
+  simpa [evalCoord] using
+    (HolderSpace.compLeftL (α := α) (X := slab (E := EuclideanSpace ℝ (Fin 1)) a b)
+      (ContinuousLinearMap.apply ℝ ℝ w)).le_of_opNorm_le
+      ((HolderSpace.norm_compLeftL_le _).trans ((ContinuousLinearMap.norm_apply_le w).trans hw))
+      (HolderSpace.compIsometryEquivLIE α _
+        (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv) A)
 
 private theorem evalCoord_ellipticity
     {A : HolderSpace α (slab (E := ℝ) a b) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}

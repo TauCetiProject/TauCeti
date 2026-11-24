@@ -274,7 +274,12 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
         (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by
     have hL : 0 ≤ L := norm_nonneg _
     nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
-  convert (hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (mul_assoc _ _ _).symm <;> rfl
+  -- Unfold both weighted solution operators to `realTerminalDataCLE` on the assembled weighted
+  -- coefficients; `convert` then bridges only proof irrelevance in the ellipticity witnesses and
+  -- the definitionally equal product topology instances (`instTopologicalSpaceProd` vs the
+  -- product uniform structure's topology), which `exact`/`simpa` fail to unify.
+  dsimp only [weightedLogSpotTerminalDataCLE]
+  convert (hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (mul_assoc _ _ _).symm using 1
 
 end TerminalDataCLE
 

@@ -88,8 +88,8 @@ theorem eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq (hα : α ≤ 1)
     hC_diff
     (fun s _ t ht' ↦ differentiableAt_weightedLogSpotPrice_time u s ht')
     (fun s hs t ht' ↦ by
-      have hW := pde_weightedLogSpotPrice_eq_zero_of_mem_Ioo hα u hs ht'
-        (by rw [hPu, HolderSpace.zero_apply]) (ha_eq hs ht') (hr_eq hs ht')
+      have hW := pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo hα a rH u hs ht'
+      rw [ha_eq hs ht', hr_eq hs ht', hPu, HolderSpace.zero_apply, mul_zero] at hW
       rw [hC_pde hs ht', hW])
     (fun s hs ↦ by
       dsimp only [W]

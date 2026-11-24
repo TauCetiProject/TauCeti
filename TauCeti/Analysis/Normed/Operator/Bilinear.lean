@@ -44,7 +44,8 @@ adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
 reverses products, fixes the identity, and tends to the identity as `B₀` stays near an
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
-(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`). Evaluating a continuous linear map
+at a fixed vector `w` has operator norm at most `‖w‖` (`ContinuousLinearMap.norm_apply_le`).
 -/
 
 public section
@@ -56,6 +57,12 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Evaluating a continuous linear map at a fixed vector `w` has operator norm at most `‖w‖`. -/
+theorem norm_apply_le (w : V) : ‖apply 𝕜 G w‖ ≤ ‖w‖ :=
+  opNorm_le_bound _ (norm_nonneg w) fun f ↦ by
+    rw [apply_apply, mul_comm]
+    exact f.le_opNorm w
 
 /-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
 def piBilin {ι : Type*} {G : ι → Type*}

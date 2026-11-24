@@ -285,38 +285,6 @@ def euclideanTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 
   ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
     (LinearMap.range_eq_top.2 hbij.2)
 
-omit [DecidableEq ι] in
-/-- Signed data reversal `(f, g) ↦ (-f ∘ R, g)` transporting terminal-value data on `ℝⁿ × [t₀, t₁]`
-to initial-value data on `ℝⁿ × [0, T]` for `T = t₁ - t₀`. -/
-def terminalDataReverseL {t₀ t₁ : ℝ} {T : ℝ≥0} (hT : (T : ℝ) = t₁ - t₀) :
-    HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
-        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ →L[ℝ]
-      HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
-  (-(HolderSpace.compIsometryEquivLIE α ℝ
-      (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm hT) :
-    _ →L[ℝ] _)).prodMap
-    (ContinuousLinearMap.id ℝ (CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ))
-
-omit [DecidableEq ι] in
-/-- Componentwise evaluation of `terminalDataReverseL`. -/
-@[simp]
-theorem terminalDataReverseL_apply {t₀ t₁ : ℝ} {T : ℝ≥0} (hT : (T : ℝ) = t₁ - t₀)
-    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
-      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    terminalDataReverseL hT d =
-      (-(HolderSpace.compIsometryEquivLIE α ℝ
-        (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm hT) d.1), d.2) :=
-  (rfl)
-
-omit [DecidableEq ι] in
-/-- The data reversal `(f, g) ↦ (-f ∘ R, g)` of the reversed Cauchy problem does not increase the
-norm of the data. -/
-theorem norm_terminalDataReverseL_le {t₀ t₁ : ℝ} {T : ℝ≥0} (hT : (T : ℝ) = t₁ - t₀) :
-    ‖terminalDataReverseL (α := α) (ι := ι) hT‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun d ↦ by
-    simp [Prod.norm_def, terminalDataReverseL_apply]
-
 section TerminalDataCLE
 
 variable {t₀ t₁ : ℝ} {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
@@ -396,9 +364,9 @@ theorem timeReverseLIE_euclideanTerminalDataCLE_symm_apply
         (ha.imp fun _ h ↦ ⟨h.1, fun p ξ ↦ by
           simpa only [HolderSpace.compIsometryEquivLIE_apply] using
             h.2 (slabTimeReverse t₁ (sub_self t₁).symm hT p) ξ⟩)).symm
-        (terminalDataReverseL hT d) := by
+        (terminalDataReverseLIE t₁ (sub_self t₁).symm hT d) := by
   rw [ContinuousLinearEquiv.eq_symm_apply, euclideanInitialDataCLE_apply,
-    terminalDataReverseL_apply]
+    terminalDataReverseLIE_apply]
   simp_rw [HolderSpace.compIsometryEquivLIE_eq_compLipschitzL]
   rw [euclideanParabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left,
     euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
@@ -421,7 +389,7 @@ theorem timeReverseLIE_comp_euclideanTerminalDataCLE_symm {T : ℝ≥0} (hT : (T
         (ha.imp fun _ h ↦ ⟨h.1, fun p ξ ↦ by
           simpa only [HolderSpace.compIsometryEquivLIE_apply] using
             h.2 (slabTimeReverse t₁ (sub_self t₁).symm hT p) ξ⟩)).symm.toContinuousLinearMap.comp
-        (terminalDataReverseL hT) :=
+        (terminalDataReverseLIE t₁ (sub_self t₁).symm hT).toLinearIsometry.toContinuousLinearMap :=
   ContinuousLinearMap.ext fun d ↦ timeReverseLIE_euclideanTerminalDataCLE_symm_apply d hT
 
 end TerminalDataCLE
@@ -459,7 +427,7 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ :
   rw [← (timeReverseLIE t₁ (sub_self t₁).symm hT).toLinearIsometry.norm_toContinuousLinearMap_comp,
     timeReverseLIE_comp_euclideanTerminalDataCLE_symm hT]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans <| (mul_le_mul h
-    (norm_terminalDataReverseL_le hT) (norm_nonneg _) hC).trans_eq (mul_one C)
+    (LinearIsometry.norm_toContinuousLinearMap_le _) (norm_nonneg _) hC).trans_eq (mul_one C)
 
 /-- **Lipschitz dependence of the terminal-value solution operator on the coefficients.** Under
 the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
@@ -511,7 +479,7 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
     ContinuousLinearMap.comp_sub, timeReverseLIE_comp_euclideanTerminalDataCLE_symm hT,
     timeReverseLIE_comp_euclideanTerminalDataCLE_symm hT, ← ContinuousLinearMap.sub_comp]
   refine ((ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
-    (norm_terminalDataReverseL_le hT))).trans ?_
+    (LinearIsometry.norm_toContinuousLinearMap_le _))).trans ?_
   -- The goal and `h` differ only in instance arguments. Chiefly, on the data space
   -- `C_b^{α,α/2} × C_b^{2,α}` the forward bound in `h` has the product topology
   -- `instTopologicalSpaceProd`, while composing with the data reversal gives the topology of the

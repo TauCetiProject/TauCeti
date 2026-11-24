@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
 public import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Matrix.QuadraticBounds
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -688,7 +689,12 @@ theorem norm_realSecondOrderCoeff_le (a : HolderSpace α (slab (E := ℝ) t₀ t
     ((ContinuousLinearMap.apply ℝ ℝ 1).comp
       (ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))).trans ?_
   refine mul_le_of_le_one_right (norm_nonneg a) ?_
-  exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by simpa using H.le_opNorm₂ 1 1
+  have h1 : ‖ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)‖ ≤ 1 :=
+    (ContinuousLinearMap.norm_apply_le (1 : ℝ)).trans_eq norm_one
+  have h2 : ‖ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)‖ ≤ 1 :=
+    (ContinuousLinearMap.norm_apply_le (1 : ℝ)).trans_eq norm_one
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    ((mul_le_mul h1 h2 (ContinuousLinearMap.opNorm_nonneg _) zero_le_one).trans_eq (mul_one 1))
 
 end RealLine
 

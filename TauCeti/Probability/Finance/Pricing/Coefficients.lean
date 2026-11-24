@@ -83,6 +83,18 @@ theorem logSpotHalfVarianceHolder_apply (hα₀ : 0 < α) (σ : ℝ → ℝ → 
     HolderSpace.ofBoundedContinuousFunction_apply, logSpotVolBCF_apply, smul_eq_mul]
   ring
 
+/-- A uniform lower bound `δ ≤ σ(s, t)²` gives the lower bound `δ / 2 ≤ logSpotHalfVarianceHolder`
+for the log-spot half-variance field. -/
+theorem half_le_logSpotHalfVarianceHolder (hα₀ : 0 < α) {σ : ℝ → ℝ → ℝ} {δ : ℝ} {M : ℝ≥0}
+    (hσ_low : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → δ ≤ σ s t ^ 2)
+    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
+    (p : slab (E := ℝ) t₀ t₁) :
+    δ / 2 ≤ logSpotHalfVarianceHolder hα₀ σ hbdd hσ p := by
+  rw [logSpotHalfVarianceHolder_apply]
+  exact div_le_div_of_nonneg_right (hσ_low (exp_pos _) (slabTime p).property) zero_le_two
+
 /-- Norm bound for `logSpotHalfVarianceHolder`: if `|σ(e^y, t)| ≤ M` (`0 ≤ M`) and
 `(y, t) ↦ σ(e^y, t)` is parabolically `α`-Hölder with constant `H`, then the log-spot half-variance
 field `a = σ² / 2` has Hölder-space norm at most `M ^ 2 / 2 + M * H`. -/

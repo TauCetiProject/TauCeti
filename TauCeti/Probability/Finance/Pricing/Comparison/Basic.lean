@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-import TauCeti.Order.Interval.Set.Group
+import Mathlib.Algebra.Order.Interval.Set.Group
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 import TauCeti.Probability.Finance.Pricing.LogSpot
@@ -42,19 +42,23 @@ required at `s = 0`.
 
 ## The argument
 
-The equation degenerates at `s = 0` and its coefficients grow with `s`. In the log-spot variable
-`y = log s` it becomes `u_t + a u_yy + (r - a) u_y - r u = 0`
-(`TauCeti.Finance.pde_comp_exp`), and the linear-growth class becomes the class of `u` with
-`u / (1 + e^y)` bounded. Dividing by the weight `1 + e^y`, whose logarithmic derivative is the
-sigmoid `p = e^y / (1 + e^y)`, the function `w = u / (1 + e^y)` solves
+The pricing operator degenerates at `s = 0` and its coefficients grow with `s`. In the log-spot
+variable `y = log s`, the identity `TauCeti.Finance.pde_comp_exp` expresses it as
+`u_t + a u_yy + (r - a) u_y - r u`, and the one-sided linear-growth bound `C₁ - C₂ ≤ A (1 + s)`
+becomes `(u₁ - u₂) / (1 + e^y) ≤ A`. Conjugating by the positive weight `1 + e^y`, whose
+logarithmic derivative is the sigmoid `p = e^y / (1 + e^y)`, divides each pricing residual by
+`1 + e^y` (`TauCeti.Finance.pde_comp_exp_div_one_add_exp`):
 
-`w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = 0`
-(`TauCeti.Finance.pde_comp_exp_div_one_add_exp`),
+`w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = (L C) / (1 + e^y)`
+for `w = C(e^y, t) / (1 + e^y)`,
 
-an equation on the whole line with bounded coefficients. Reversing time `t = t₁ - τ` turns this
-terminal-value problem into an initial-value problem on `0 ≤ τ ≤ t₁ - t₀`, to which the comparison
-principle for bounded solutions on the whole line applies
-(`TauCeti.PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial`).
+an operator on the whole line with bounded coefficients. Reversing time `t = t₁ - τ` changes the
+sign of the time derivative and turns this backward terminal-value inequality on `[t₀, t₁]` into a
+forward initial-value inequality on `0 ≤ τ ≤ t₁ - t₀` (`v₁,τ - a v₁,yy - ... ≤ v₂,τ - a v₂,yy - ...`
+from `L C₂ ≤ L C₁`). Because the whole-line comparison principle
+`TauCeti.PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial` requires only
+an upper bound `v₁ - v₂ ≤ A` on the weighted difference—neither `v₁` nor `v₂` need be individually
+bounded—it yields `v₁ ≤ v₂` and hence `C₁ ≤ C₂`.
 
 ## Main declarations
 
@@ -87,7 +91,7 @@ private theorem continuousOn_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
       (Icc 0 (t₁ - t₀) ×ˢ univ) := by
   refine ContinuousOn.div ?_ (by fun_prop) fun p _ ↦ (by positivity : 0 < 1 + exp p.2).ne'
   refine hC.comp (f := fun p : ℝ × ℝ ↦ (exp p.2, t₁ - p.1)) (by fun_prop) fun p hp ↦ ?_
-  exact ⟨exp_pos p.2, Set.sub_mem_Icc_iff_mem_Icc_zero_sub.2 hp.1⟩
+  exact ⟨exp_pos p.2, by simpa only [Set.sub_mem_Icc_iff_right, sub_self] using hp.1⟩
 
 /-- In weighted log-spot coordinates and reversed time, `C(e^y, t₁ - τ) / (1 + e^y)` is `C²` in
 `y`. -/
@@ -95,7 +99,7 @@ private theorem contDiffAt_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
     (hcd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 (t₁ - t₀)) (y : ℝ) :
     ContDiffAt ℝ 2 (fun y ↦ C (exp y) (t₁ - τ) / (1 + exp y)) y :=
-  ((hcd (exp_pos y) (Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ)).comp y
+  ((hcd (exp_pos y) (by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ)).comp y
     contDiff_exp.contDiffAt).div
     (contDiffAt_const.add contDiff_exp.contDiffAt) (by positivity : 0 < 1 + exp y).ne'
 
@@ -104,8 +108,9 @@ differentiable in `τ`. -/
 private theorem differentiableAt_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
     (hdiff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun u ↦ C s u) t)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 (t₁ - t₀)) (y : ℝ) :
-    DifferentiableAt ℝ (fun τ' ↦ C (exp y) (t₁ - τ') / (1 + exp y)) τ :=
-  ((hdiff (exp_pos y) (Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ)).comp τ
+    DifferentiableAt ℝ (fun τ' ↦ C (exp y) (t₁ - τ') / (1 + exp y)) τ := by
+  have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ
+  exact ((hdiff (exp_pos y) hτ').comp τ
     ((differentiableAt_const t₁).sub differentiableAt_id)).div_const _
 
 /-- The first-order coefficient `r + a · (e^y - 1) / (e^y + 1)` in weighted log-spot
@@ -120,7 +125,7 @@ private theorem abs_rate_add_mul_le
   have hq : |(exp y - 1) / (exp y + 1)| ≤ 1 := by
     rw [abs_div, abs_of_pos (by positivity : 0 < exp y + 1), div_le_one (by positivity), abs_le]
     constructor <;> linarith [exp_pos y]
-  have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ
+  have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ
   have h1 := (ha (exp_pos y) hτ').trans (le_abs_self Λ)
   have h2 := (hr (exp_pos y) hτ').trans (le_abs_self R)
   have h3 := ha₀ (exp_pos y) hτ'
@@ -171,14 +176,14 @@ theorem le_of_pde_le_of_terminal_le
     (u := fun τ y ↦ C₁ (exp y) (t₁ - τ) / (1 + exp y))
     (v := fun τ y ↦ C₂ (exp y) (t₁ - τ) / (1 + exp y))
     (Lam := |Λ|) (β := |R| + |Λ|) (γ := |R|)
-    (fun τ hτ y ↦ ha₀ (exp_pos y) (Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ))
+    (fun τ hτ y ↦ ha₀ (exp_pos y) (by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ))
     (fun τ hτ y ↦ by
-      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ
+      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ
       have h1 := (ha (exp_pos y) hτ').trans (le_abs_self Λ)
       nlinarith [abs_nonneg Λ, sq_nonneg y])
     (fun τ hτ y ↦ abs_rate_add_mul_le ha₀ ha hr hτ y)
     (fun τ hτ y ↦ by
-      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ
+      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ
       have h1 := (neg_le_abs (r (exp y) (t₁ - τ))).trans
         ((hr (exp_pos y) hτ').trans (le_abs_self R))
       rw [div_le_iff₀ (hψ y)]
@@ -188,7 +193,7 @@ theorem le_of_pde_le_of_terminal_le
       rintro _ ⟨⟨τ, y⟩, ⟨hτ, -⟩, rfl⟩
       simp only [Function.uncurry_apply_pair, Pi.sub_apply, ← sub_div]
       rw [div_le_iff₀ (hψ y)]
-      have hτ' : t₁ - τ ∈ Icc t₀ t₁ := Set.sub_mem_Icc_iff_mem_Icc_zero_sub.2 hτ
+      have hτ' : t₁ - τ ∈ Icc t₀ t₁ := by simpa only [Set.sub_mem_Icc_iff_right, sub_self] using hτ
       have := hgrowth (exp_pos y) hτ'
       linarith⟩
     (fun τ hτ y ↦ contDiffAt_reversed_div_one_add_exp hcd₁ hτ y)
@@ -198,7 +203,7 @@ theorem le_of_pde_le_of_terminal_le
     (fun τ hτ y ↦ by
       rw [deriv_comp_const_sub (f := fun t ↦ C₁ (exp y) t / (1 + exp y)),
         deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
-      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := Set.sub_mem_Ioo_iff_mem_Ioo_zero_sub.2 hτ
+      have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := by simpa only [Set.sub_mem_Ioo_iff_right, sub_self] using hτ
       have hc₁ := hcd₁ (exp_pos y) hτ'
       have h₁ := pde_comp_exp_div_one_add_exp (a (exp y) (t₁ - τ)) (r (exp y) (t₁ - τ))
         (hc₁.eventually_differentiableAt (by norm_num))
@@ -215,8 +220,8 @@ theorem le_of_pde_le_of_terminal_le
       exact div_le_div_of_nonneg_right (hterminal (exp_pos y)) (hψ y).le)
   -- Undo the change of variables at `τ = t₁ - t`, `y = log s`.
   intro s hs t ht
-  have ht' : t₁ - t ∈ Icc 0 (t₁ - t₀) :=
-    Set.sub_mem_Icc_iff_mem_Icc_zero_sub.1 (by rwa [sub_sub_cancel])
+  have ht' : t₁ - t ∈ Icc 0 (t₁ - t₀) := by
+    simpa only [Set.sub_mem_Icc_iff_right, sub_zero, sub_sub_cancel] using ht
   have hle := h (t := t₁ - t) ht' (log s)
   simp only [exp_log hs, sub_sub_cancel] at hle
   exact (div_le_div_iff_of_pos_right (by linarith)).mp hle
