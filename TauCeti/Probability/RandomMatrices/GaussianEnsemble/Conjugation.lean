@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Measure
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Conjugation of the Gaussian ensembles acts orthogonally on their coordinates
@@ -91,8 +91,9 @@ theorem gueConjMatrix_mem_orthogonalGroup (U : unitaryGroup (Fin n) ℂ) :
 theorem gueMatrix_gueConjMatrix_mulVec (U : unitaryGroup (Fin n) ℂ) (g : Fin n × Fin n → ℝ) :
     gueMatrix n (gueConjMatrix n U *ᵥ g) = UnitaryGroup.hermitianConj U (gueMatrix n g) := by
   rw [gueMatrix_eq_smul_sum_orthonormalBasis, gueMatrix_eq_smul_sum_orthonormalBasis, map_smul,
-    OrthonormalBasis.map_sum_smul]
-  simp_rw [mulVec, dotProduct, gueConjMatrix_apply]
+    ← OrthonormalBasis.coe_toBasis, Basis.map_sum_smul]
+  simp_rw [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis, mulVec,
+    dotProduct, gueConjMatrix_apply]
 
 /-- **Unitary conjugation of the complex Hermitian ensemble** (`β ≠ 1`): conjugating
 `gaussianEnsemble β n g` by a unitary `U` gives the ensemble of the coordinates transformed by
@@ -151,8 +152,9 @@ theorem goeConjMatrix_mulVec_apply_upperTriangle (U : orthogonalGroup (Fin n) �
 theorem goeMatrix_goeConjMatrix_mulVec (U : orthogonalGroup (Fin n) ℝ) (g : Fin n × Fin n → ℝ) :
     goeMatrix n (goeConjMatrix n U *ᵥ g) = UnitaryGroup.symmetricConj U (goeMatrix n g) := by
   rw [goeMatrix_eq_smul_sum_orthonormalBasis, goeMatrix_eq_smul_sum_orthonormalBasis, map_smul,
-    OrthonormalBasis.map_sum_smul]
-  simp_rw [goeConjMatrix_mulVec_apply_upperTriangle]
+    ← OrthonormalBasis.coe_toBasis, Basis.map_sum_smul]
+  simp_rw [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
+    goeConjMatrix_mulVec_apply_upperTriangle]
 
 /-- **Orthogonal conjugation of the real symmetric ensemble** (`β = 1`): conjugating
 `gaussianEnsemble 1 n g` by a real orthogonal `U` gives the ensemble of the coordinates
