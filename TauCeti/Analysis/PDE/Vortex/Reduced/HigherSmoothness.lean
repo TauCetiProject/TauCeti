@@ -10,7 +10,6 @@ import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothFamily
-import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
 # Smooth dependence of the reduced vortex equation on the divisor in every Sobolev space
@@ -52,7 +51,7 @@ integrable, and it depends smoothly on `c` in `L²(ℂ)`: near `c₀`, `φ_c = �
 a combination of functions of the same kind, with coefficients polynomial in `c` and `conj c`, and
 the bound `i + j + 2 ≤ 2 m n` is preserved. So by induction on `k`, `W_{n,i,j}(c)` depends smoothly
 on `c` in `H^k(ℂ)`: a family that is smooth in `H^k` together with its first derivatives is smooth
-in `H^(k+1)` (`BesselPotentialSpace.exists_contDiff_inclusion_eq_of_lineDerivOp_eq`). Finally
+in `H^(k+1)` (`BesselPotentialSpace.isSmoothFamilyAt_add_one`). Finally
 `φ_c = W_{1,0,0}(c)` and `k_c = -φ_c / 8 + 2 ∑ conj b_k b_l W_{2,k,l}(c)`.
 
 **The solution.** The reduced equation gives
@@ -155,16 +154,8 @@ private theorem isSmoothFamily_zero_defectMonomial {n i j : ℕ} (h : i + j + 2 
     contDiff_of_coeFn_eq_backgroundDefect_pow_mul n (fun z ↦ conj z ^ i * z ^ j) fun c ↦
       (MemLp.coeFn_toLp (memLp_defectMonomial h c)).trans
         (.of_forall fun z ↦ defectMonomial_apply c n i j z)
-  -- `L²` is `H⁰(ℂ)`.
-  set J : Lp ℂ 2 (volume : Measure ℂ) →L[ℂ] H^{((0 : ℕ) : ℝ)}(ℂ) :=
-    (inclusion (by simp)).comp (toLpₗᵢ ℂ ℂ 0 2).symm.toContinuousLinearEquiv.toContinuousLinearMap
-  refine fun c₀ ↦ .of_contDiff (D := fun c ↦ J (g c)) ((J.restrictScalars ℝ).contDiff.comp hg)
-    fun c ↦ ?_
-  have hJ : inclusionLp (Nat.cast_nonneg 0) (J (g c)) = g c := by
-    simp only [J, ContinuousLinearMap.comp_apply, inclusionLp_inclusion, inclusionLp_zero]
-    exact (toLpₗᵢ_apply _).symm.trans ((toLpₗᵢ ℂ ℂ 0 2).apply_symm_apply (g c))
-  rw [hJ]
-  exact MemLp.coeFn_toLp _
+  exact fun c₀ ↦ (IsSmoothFamilyAt.of_contDiff_Lp hg fun c ↦ MemLp.coeFn_toLp _).mono
+    Nat.cast_zero.le
 
 /-! ### The derivatives of the defect monomials -/
 
@@ -278,20 +269,9 @@ private theorem isSmoothFamily_succ_defectMonomial {k : ℕ}
       omega
     · exact (ih _ _ _ (by omega)).mul_left contDiff_const
     · exact (ih _ _ _ (by omega)).mul_left contDiff_const
-  set b := Complex.orthonormalBasisOneI
-  choose G hG hGd using fun e : Fin 2 ↦ exists_contDiff_of_forall_isSmoothFamilyAt (hd (b e))
-  obtain ⟨F, hF, hFd⟩ := exists_contDiff_of_forall_isSmoothFamilyAt (ih n i j h)
-  obtain ⟨u, hu, huF⟩ := exists_contDiff_inclusion_eq_of_lineDerivOp_eq b hF hG fun c e ↦ by
-    rw [← toTemperedDistribution_inclusionLp k.cast_nonneg,
-      ← toTemperedDistribution_inclusionLp k.cast_nonneg]
-    exact lineDerivOp_toTemperedDistribution_eq_of_contDiff
-      ((contDiff_defectMonomial c n i j).of_le (by simp)) (hFd c) (hGd e c)
-  have hle : ((k + 1 : ℕ) : ℝ) ≤ k + 1 := by push_cast; rfl
-  refine fun c₀ ↦ .of_contDiff (D := fun c ↦ inclusion hle (u c))
-    (((inclusion hle).restrictScalars ℝ).contDiff.comp hu) fun c ↦ ?_
-  rw [inclusionLp_inclusion, ← inclusionLp_inclusion (by linarith : (k : ℝ) ≤ k + 1)
-    k.cast_nonneg, huF]
-  exact hFd c
+  exact fun c₀ ↦ (isSmoothFamilyAt_add_one (u := fun c ↦ defectMonomial c n i j)
+    Complex.orthonormalBasisOneI (fun c ↦ (contDiff_defectMonomial c n i j).of_le (by simp))
+    (ih n i j h) (fun e ↦ hd _) c₀).mono (Nat.cast_succ k).le
 
 /-- **The defect monomials depend smoothly on the coefficients in every `H^k`.** -/
 private theorem isSmoothFamily_defectMonomial (k : ℕ) {n i j : ℕ} (h : i + j + 2 ≤ 2 * m * n) :

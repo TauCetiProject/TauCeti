@@ -38,7 +38,10 @@ converge in `Lᵖ` and their first derivatives converge in `H^{s,p}`
 same holds for smooth families: a family that is `C^n` in `H^s` together with its first
 derivatives is `C^n` in `H^{s+1}`
 (`BesselPotentialSpace.exists_contDiff_inclusion_eq_of_lineDerivOp_eq`), since
-`u = (1 - Δ)⁻¹ (u - ∑ᵢ ∂_{b i} ∂_{b i} u)`.
+`u = (1 - Δ)⁻¹ (u - ∑ᵢ ∂_{b i} ∂_{b i} u)`. If the `Lᵖ` function of `u ∈ H^{s+1,p}(E, F)` is
+almost everywhere a `C¹` function `f`, then that of `∂_v u` is almost everywhere the classical
+derivative `x ↦ fderiv ℝ f x v`
+(`BesselPotentialSpace.coeFn_inclusionLp_lineDerivCLM_ae_eq_fderiv`).
 
 For `s ≥ 0` an element `u` of `H^{s,p}(E)` is an `Lᵖ` function, `BesselPotentialSpace.inclusionLp`.
 The second part of the file describes the operators on these functions when `u` is real-valued:
@@ -100,6 +103,30 @@ def lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) :
 theorem toDistr_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) (u : H^{s + 1, p}(E, F)) :
     (lineDerivCLM hp hp_top v u).toDistr = ∂_{v} u.toDistr := by
   simp [lineDerivCLM]
+
+/-- **Classical derivatives of elements of `H^{s+1,p}`.** For `1 < p < ∞` and `s ≥ 0`, if the
+`Lᵖ` function of `u ∈ H^{s+1,p}(E, F)` is almost everywhere a `C¹` function `f`, then the `Lᵖ`
+function of the derivative `∂_v u ∈ H^{s,p}(E, F)` is almost everywhere its classical derivative
+`x ↦ fderiv ℝ f x v`. -/
+theorem coeFn_inclusionLp_lineDerivCLM_ae_eq_fderiv (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s)
+    {f : E → F} (hf : ContDiff ℝ 1 f) {u : H^{s + 1, p}(E, F)}
+    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] f) (v : E) :
+    ⇑(inclusionLp hs (lineDerivCLM hp hp_top v u)) =ᵐ[volume] fun x ↦ fderiv ℝ f x v := by
+  -- Both functions are weak derivatives of `f` along `v`, so they agree almost everywhere.
+  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have h₁ : TauCeti.HasWeakLineDerivOn volume ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
+    TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt
+      (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
+      (hcont.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+  have h₂ : TauCeti.HasWeakLineDerivOn volume ⊤ f (inclusionLp hs (lineDerivCLM hp hp_top v u)) v :=
+    ((TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq
+      (inclusionLp (by linarith) u) (inclusionLp hs (lineDerivCLM hp hp_top v u)) v).2 (by
+      rw [toTemperedDistribution_inclusionLp, toTemperedDistribution_inclusionLp,
+        toDistr_lineDerivCLM])).congr_ae
+      (by simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using hu)
+  simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using h₂.ae_eq h₁
 
 end lineDerivCLM
 
@@ -309,23 +336,12 @@ theorem coeFn_inclusionLp_lineDerivCLM_ae_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1
     (hp_top : p ≠ ∞) (hs : 0 ≤ s) {f : E → ℝ} (hf : ContDiff ℝ 1 f) {u : H^{s + 1, p}(E)}
     (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] fun x ↦ (f x : ℂ)) (v : E) :
     ⇑(inclusionLp hs (lineDerivCLM hp hp_top v u)) =ᵐ[volume] fun x ↦ (fderiv ℝ f x v : ℂ) := by
-  have hmem := (mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq (by linarith)).2 ⟨u, hu⟩
-  obtain ⟨u₀, hu₀f, -⟩ := mem_realSobolevFunctions.1 hmem
-  obtain ⟨u', hu'f, -⟩ := mem_realSobolevFunctions.1
-    (fderiv_apply_mem_realSobolevFunctions hp hp_top hs hf hmem v)
-  -- The tempered distribution of `u` is that of the real function `u₀`.
-  have hu₀ : u.toDistr = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u₀) := by
-    rw [← toTemperedDistribution_inclusionLp (by linarith : 0 ≤ s + 1)]
-    congr 1
-    refine Lp.ext ?_
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u₀, hu₀f, hu]
-      with x h h' h''
-    rw [h'', h, Complex.ofRealCLM_apply, h']
-  have hd : inclusionLp hs (lineDerivCLM hp hp_top v u) = Complex.ofRealCLM.compLp u' := by
-    rw [inclusionLp_eq_iff, toDistr_lineDerivCLM, hu₀,
-      TauCeti.lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf hu₀f hu'f]
-  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) u', hu'f] with x h h'
-  rw [hd, h, Complex.ofRealCLM_apply, h']
+  -- The complexification `x ↦ (f x : ℂ)` is `C¹`, with derivative `x ↦ (Df(x) v : ℂ)`.
+  refine (coeFn_inclusionLp_lineDerivCLM_ae_eq_fderiv hp hp_top hs
+    (Complex.ofRealCLM.contDiff.comp hf) hu v).trans (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [fderiv_comp x Complex.ofRealCLM.differentiableAt (hf.differentiable one_ne_zero x),
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply]
 
 /-- **The classical Laplacian of real elements of `H^{s+2}`.** For `s ≥ 0`, if the `L²` function
 of `u ∈ H^{s+2}(E)` is almost everywhere a real `C²` function `f`, then the `L²` function of

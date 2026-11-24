@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.Exp
+import TauCeti.Analysis.Sobolev.BesselPotential.Operator
+import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
 # Families of functions that are smooth in a Bessel-potential space
@@ -23,7 +27,14 @@ that is smooth at every point is represented by one globally smooth family
 This is the bookkeeping for proofs that a family of functions built pointwise from simpler ones,
 such as the fields of plane vortices over a space of divisors, depends smoothly on its parameter
 in a Sobolev space: sums, differences, products by smooth scalar functions of the parameter and
-lowering of the order preserve the property.
+lowering of the order preserve the property. So do products by a fixed function with bounded
+derivatives (`BesselPotentialSpace.IsSmoothFamilyAt.smulLeft`), directional derivatives, which
+lower the order by one (`BesselPotentialSpace.IsSmoothFamilyAt.lineDeriv`), and, in the algebra
+`H^s(E)`, `s > dim E / 2`, products and `exp - 1` (`BesselPotentialSpace.IsSmoothFamilyAt.mul`,
+`BesselPotentialSpace.IsSmoothFamilyAt.cexp_sub_one`). A smooth family of `Lᵖ` functions is smooth
+in `H^{0,p} = Lᵖ` (`BesselPotentialSpace.IsSmoothFamilyAt.of_contDiff_Lp`), and a family of `C¹`
+functions that is smooth in `H^s` at every point together with its first derivatives is smooth in
+`H^{s+1}` (`BesselPotentialSpace.isSmoothFamilyAt_add_one`).
 
 ## Main declarations
 
@@ -32,6 +43,8 @@ lowering of the order preserve the property.
   representing `f` near `c₀` is `C^∞` at `c₀`.
 * `BesselPotentialSpace.exists_contDiff_of_forall_isSmoothFamilyAt`: a family that is smooth at
   every point is represented by a smooth family of elements of `H^{s,p}(E, G)`.
+* `BesselPotentialSpace.isSmoothFamilyAt_add_one`: a family smooth in `H^s` together with its first
+  derivatives is smooth in `H^{s+1}`.
 -/
 
 public section
@@ -153,5 +166,102 @@ theorem exists_contDiff_of_forall_isSmoothFamilyAt {f : X → E → G}
   have hf (c : X) : ⇑(inclusionLp hs (D c c)) =ᵐ[volume] f c := (hDf c).self_of_nhds
   exact ⟨fun c ↦ D c c, contDiff_iff_contDiffAt.2 fun c₀ ↦
     IsSmoothFamilyAt.contDiffAt ⟨D c₀, hD c₀, hDf c₀⟩ (.of_forall hf), hf⟩
+
+/-- **Smooth families of `Lᵖ` functions.** A smooth family of elements of `Lᵖ(E, G)` represents a
+family that is smooth in `H^{0,p}(E, G) = Lᵖ(E, G)` at every point. -/
+theorem IsSmoothFamilyAt.of_contDiff_Lp {g : X → Lp G p (volume : Measure E)}
+    (hg : ContDiff ℝ ∞ g) (hgf : ∀ c, ⇑(g c) =ᵐ[volume] f c) :
+    IsSmoothFamilyAt 0 p le_rfl c₀ f := by
+  set J := (toLpₗᵢ E G 0 p).symm.toContinuousLinearEquiv.toContinuousLinearMap
+  refine .of_contDiff (D := fun c ↦ J (g c)) ((J.restrictScalars ℝ).contDiff.comp hg) fun c ↦ ?_
+  have hJ : (J (g c)).toLp = g c :=
+    (toLpₗᵢ_apply _).symm.trans ((toLpₗᵢ E G 0 p).apply_symm_apply (g c))
+  rw [inclusionLp_zero, hJ]
+  exact hgf c
+
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+  {u : X → E → F}
+
+/-- **Raising the order by one.** A family of `C¹` functions that is smooth in `H^s(E, F)` at every
+point, together with its first derivatives along an orthonormal basis `b` of `E`, is smooth in
+`H^{s+1}(E, F)` at every point. -/
+theorem isSmoothFamilyAt_add_one {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    (hu₁ : ∀ c, ContDiff ℝ 1 (u c)) (hu : ∀ c₀, IsSmoothFamilyAt s 2 hs c₀ u)
+    (hu' : ∀ i c₀, IsSmoothFamilyAt s 2 hs c₀ fun c x ↦ fderiv ℝ (u c) x (b i)) (c₀ : X) :
+    IsSmoothFamilyAt (s + 1) 2 (by linarith) c₀ u := by
+  obtain ⟨D, hD, hDu⟩ := exists_contDiff_of_forall_isSmoothFamilyAt hu
+  choose D' hD' hD'u using fun i ↦ exists_contDiff_of_forall_isSmoothFamilyAt (hu' i)
+  obtain ⟨w, hw, hwD⟩ := exists_contDiff_inclusion_eq_of_lineDerivOp_eq b hD hD' fun c i ↦ by
+    rw [← toTemperedDistribution_inclusionLp hs, ← toTemperedDistribution_inclusionLp hs]
+    exact TauCeti.lineDerivOp_toTemperedDistribution_eq_of_contDiff (hu₁ c) (hDu c) (hD'u i c)
+  refine .of_contDiff hw fun c ↦ ?_
+  rw [← inclusionLp_inclusion (by linarith : s ≤ s + 1) hs, hwD]
+  exact hDu c
+
+namespace IsSmoothFamilyAt
+
+/-- Products by a fixed function `g` on `E` with bounded derivatives of order at most `k`, at an
+integer order `k` and for `1 < p < ∞`. -/
+theorem smulLeft (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {g : E → ℂ}
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (hg : g.HasTemperateGrowth)
+    (hu : IsSmoothFamilyAt k p k.cast_nonneg c₀ u) :
+    IsSmoothFamilyAt k p k.cast_nonneg c₀ fun c x ↦ g x • u c x := by
+  obtain ⟨D, hD, hDu⟩ := hu
+  set M := smulLeftCLMOfNormIteratedFDerivLe (F := F) hp hp_top hbd
+  refine ⟨fun c ↦ M (D c), (M.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
+  filter_upwards [hDu] with c h
+  filter_upwards [coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq hp hp_top hbd hg (D c),
+    h] with x h₁ h₂
+  rw [h₁, h₂]
+
+/-- Directional derivatives, from `H^{s+1,p}(E, F)` to `H^{s,p}(E, F)`, for `1 < p < ∞`, of a family
+of functions that are `C¹` near `c₀`. -/
+theorem lineDeriv (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hu : IsSmoothFamilyAt (s + 1) p (by linarith) c₀ u)
+    (hu₁ : ∀ᶠ c in 𝓝 c₀, ContDiff ℝ 1 (u c)) (v : E) :
+    IsSmoothFamilyAt s p hs c₀ fun c x ↦ fderiv ℝ (u c) x v := by
+  obtain ⟨D, hD, hDu⟩ := hu
+  set L := lineDerivCLM (F := F) (s := s) hp hp_top v
+  refine ⟨fun c ↦ L (D c), (L.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
+  filter_upwards [hDu, hu₁] with c h₁ h₂
+  exact coeFn_inclusionLp_lineDerivCLM_ae_eq_fderiv hp hp_top hs h₂ h₁ v
+
+end IsSmoothFamilyAt
+
+end InnerProductSpace
+
+namespace IsSmoothFamilyAt
+
+open Module
+
+variable {u v : X → E → ℂ}
+
+/-- Products, in the algebra `H^s(E)`, `s > dim E / 2`. -/
+theorem mul (hs' : finrank ℝ E < 2 * s) (hu : IsSmoothFamilyAt s 2 hs c₀ u)
+    (hv : IsSmoothFamilyAt s 2 hs c₀ v) : IsSmoothFamilyAt s 2 hs c₀ fun c x ↦ u c x * v c x := by
+  obtain ⟨D, hD, hDu⟩ := hu
+  obtain ⟨D', hD', hD'v⟩ := hv
+  refine ⟨fun c ↦ mulCLM hs' (D c) (D' c),
+    ((mulCLM hs').isBoundedBilinearMap.contDiff.restrict_scalars ℝ).contDiffAt.comp c₀
+      (hD.prodMk hD'), ?_⟩
+  filter_upwards [hDu, hD'v] with c h₁ h₂
+  filter_upwards [coeFn_inclusionLp_mulCLM hs' hs (D c) (D' c), h₁, h₂] with x hx h₁ h₂
+  rw [hx, h₁, h₂]
+
+/-- Exponentials `exp u - 1`, in the algebra `H^s(E)`, `s > dim E / 2`. -/
+theorem cexp_sub_one (hs' : finrank ℝ E < 2 * s) (hu : IsSmoothFamilyAt s 2 hs c₀ u) :
+    IsSmoothFamilyAt s 2 hs c₀ fun c x ↦ Complex.exp (u c x) - 1 := by
+  obtain ⟨D, hD, hDu⟩ := hu
+  refine ⟨fun c ↦ BesselPotentialSpace.expSubOne hs' (D c),
+    ((contDiff_expSubOne hs').restrict_scalars ℝ).contDiffAt.comp c₀ hD, ?_⟩
+  filter_upwards [hDu] with c h
+  have he := coeFn_toLp_inclusion_expSubOne hs' hs (D c)
+  rw [toLp_inclusion, toLp_inclusion] at he
+  filter_upwards [he, h] with x h₁ h₂
+  rw [h₁, h₂]
+
+end IsSmoothFamilyAt
 
 end BesselPotentialSpace

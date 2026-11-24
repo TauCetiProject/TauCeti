@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
+import TauCeti.Analysis.Sobolev.BesselPotential.SmoothFamily
 
 /-!
 # Smooth families of compactly supported functions in `H^s`
@@ -30,7 +30,7 @@ Multiplication by the indicator of the ball, an element of `L²`, is a bounded o
 bounded continuous functions to `L²` (`BoundedContinuousFunction.mulLpL`). The
 derivatives `x ↦ ∂_v F c x` form a family of the same kind, so a family that is smooth in `H^k`
 together with its first derivatives is smooth in `H^(k+1)`
-(`BesselPotentialSpace.exists_contDiff_inclusion_eq_of_lineDerivOp_eq`).
+(`BesselPotentialSpace.isSmoothFamilyAt_add_one`).
 -/
 
 public section
@@ -79,12 +79,11 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E]
   {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
 
-/-- **The case `L²`.** A jointly smooth family of functions vanishing outside a fixed ball is a
-smooth map into `H⁰(E) = L²(E)`. -/
-private theorem exists_contDiff_inclusionLp_zero {F : X → E → ℂ}
-    (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) :
-    ∃ Φ : X → H^{((0 : ℕ) : ℝ)}(E), ContDiff ℝ ∞ Φ ∧
-      ∀ c, ⇑(inclusionLp (Nat.cast_nonneg 0) (Φ c)) =ᵐ[volume] F c := by
+/-- **The case `L²`.** A jointly smooth family of functions vanishing outside a fixed ball is
+smooth in `H⁰(E) = L²(E)`. -/
+private theorem isSmoothFamilyAt_zero_of_forall_le_norm {F : X → E → ℂ}
+    (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) (c₀ : X) :
+    IsSmoothFamilyAt 0 2 le_rfl c₀ F := by
   set R' := max R 1
   have hR' : 0 < R' := zero_lt_one.trans_le (le_max_right _ _)
   obtain ⟨Ψ, hΨc, hΨ⟩ := BoundedContinuousFunction.exists_contDiff_apply_eq hF
@@ -94,14 +93,8 @@ private theorem exists_contDiff_inclusionLp_zero {F : X → E → ℂ}
   set M : (E →ᵇ ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure E) :=
     (BoundedContinuousFunction.mulLpL volume 2).flip
       (indicatorConstLp 2 measurableSet_closedBall hB (1 : ℂ))
-  -- `L²` is `H⁰(E)`.
-  set J : Lp ℂ 2 (volume : Measure E) →L[ℂ] H^{((0 : ℕ) : ℝ)}(E) :=
-    (inclusion (by simp)).comp (toLpₗᵢ E ℂ 0 2).symm.toContinuousLinearEquiv.toContinuousLinearMap
-  have hJ (g : Lp ℂ 2 (volume : Measure E)) : inclusionLp (Nat.cast_nonneg 0) (J g) = g := by
-    simp only [J, ContinuousLinearMap.comp_apply, inclusionLp_inclusion, inclusionLp_zero]
-    exact (toLpₗᵢ_apply _).symm.trans ((toLpₗᵢ E ℂ 0 2).apply_symm_apply g)
-  refine ⟨fun c ↦ J (M (Ψ c)), ((J.comp M).restrictScalars ℝ).contDiff.comp hΨc, fun c ↦ ?_⟩
-  rw [hJ]
+  refine .of_contDiff_Lp (g := fun c ↦ M (Ψ c)) ((M.restrictScalars ℝ).contDiff.comp hΨc)
+    fun c ↦ ?_
   filter_upwards [BoundedContinuousFunction.coeFn_mulLpL (E := ℂ) volume 2 (Ψ c)
     (indicatorConstLp 2 measurableSet_closedBall hB (1 : ℂ)),
     indicatorConstLp_coeFn (p := 2) (hs := measurableSet_closedBall) (hμs := hB) (c := (1 : ℂ))]
@@ -126,36 +119,23 @@ private theorem fderiv_eq_zero_of_forall_le_norm {f : E → ℂ} {R : ℝ} (hf :
   rw [hev.fderiv_eq, fderiv_const_apply]
 
 /-- **The case of an integer order.** -/
-private theorem exists_contDiff_inclusionLp_natCast (k : ℕ) {F : X → E → ℂ}
-    (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) :
-    ∃ Φ : X → H^{(k : ℝ)}(E), ContDiff ℝ ∞ Φ ∧
-      ∀ c, ⇑(inclusionLp k.cast_nonneg (Φ c)) =ᵐ[volume] F c := by
-  induction k generalizing F R with
-  | zero => exact exists_contDiff_inclusionLp_zero hF hR
+private theorem isSmoothFamilyAt_natCast_of_forall_le_norm (k : ℕ) {F : X → E → ℂ}
+    (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) (c₀ : X) :
+    IsSmoothFamilyAt k 2 k.cast_nonneg c₀ F := by
+  induction k generalizing F R c₀ with
+  | zero => exact (isSmoothFamilyAt_zero_of_forall_le_norm hF hR c₀).mono Nat.cast_zero.le
   | succ k ih =>
-    set b := stdOrthonormalBasis ℝ E
-    have hFc (c : X) : ContDiff ℝ ∞ (F c) := hF.comp (contDiff_const.prodMk contDiff_id)
-    -- The derivatives `x ↦ ∂_{b i} F c x` form a family of the same kind.
-    have hF' (i : Fin (finrank ℝ E)) :
-        ContDiff ℝ ∞ (Function.uncurry fun c x ↦ fderiv ℝ (F c) x (b i)) := by
+    -- The derivatives `x ↦ ∂_v F c x` form a family of the same kind.
+    have hF' (v : E) : ContDiff ℝ ∞ (Function.uncurry fun c x ↦ fderiv ℝ (F c) x v) := by
       have h : ContDiff ℝ ∞ fun p : X × E ↦ fderiv ℝ (F p.1) p.2 :=
         ContDiff.fderiv (f := fun p : X × E ↦ F p.1)
           (hF.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by simp)
       exact h.clm_apply contDiff_const
-    obtain ⟨Φ, hΦ, hΦF⟩ := ih hF hR
-    choose Φ' hΦ' hΦ'F using fun i ↦ ih (hF' i) (R := R + 1) fun c x hx ↦ by
-      simp [fderiv_eq_zero_of_forall_le_norm (hR c) hx]
-    obtain ⟨u, hu, huΦ⟩ := exists_contDiff_inclusion_eq_of_lineDerivOp_eq b hΦ hΦ' fun c i ↦ by
-      rw [← toTemperedDistribution_inclusionLp k.cast_nonneg,
-        ← toTemperedDistribution_inclusionLp k.cast_nonneg]
-      exact TauCeti.lineDerivOp_toTemperedDistribution_eq_of_contDiff ((hFc c).of_le (by simp))
-        (hΦF c) (hΦ'F i c)
-    have hle : ((k + 1 : ℕ) : ℝ) ≤ k + 1 := (Nat.cast_succ k).le
-    refine ⟨fun c ↦ inclusion hle (u c), ((inclusion hle).restrictScalars ℝ).contDiff.comp hu,
-      fun c ↦ ?_⟩
-    rw [inclusionLp_inclusion, ← inclusionLp_inclusion (by linarith : (k : ℝ) ≤ k + 1)
-      k.cast_nonneg, huΦ]
-    exact hΦF c
+    set b := stdOrthonormalBasis ℝ E
+    exact (isSmoothFamilyAt_add_one (u := F) b
+      (fun c ↦ (hF.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) (ih hF hR)
+      (fun i ↦ ih (hF' (b i)) (R := R + 1) fun c x hx ↦ by
+        simp [fderiv_eq_zero_of_forall_le_norm (hR c) hx]) c₀).mono (Nat.cast_succ k).le
 
 /-- **Compactly supported smooth families are smooth in every `H^s`.** Let `F : X → E → ℂ` be
 jointly smooth in the parameter `c ∈ X` and the point `x ∈ E`, and let every `F c` vanish wherever
@@ -164,11 +144,8 @@ jointly smooth in the parameter `c ∈ X` and the point `x ∈ E`, and let every
 theorem exists_contDiff_inclusionLp_ae_eq_of_forall_le_norm {F : X → E → ℂ}
     (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) {s : ℝ}
     (hs : 0 ≤ s) :
-    ∃ Φ : X → H^{s}(E), ContDiff ℝ ∞ Φ ∧ ∀ c, ⇑(inclusionLp hs (Φ c)) =ᵐ[volume] F c := by
-  obtain ⟨Φ, hΦ, hΦF⟩ := exists_contDiff_inclusionLp_natCast ⌈s⌉₊ hF hR
-  refine ⟨fun c ↦ inclusion (Nat.le_ceil s) (Φ c),
-    ((inclusion (Nat.le_ceil s)).restrictScalars ℝ).contDiff.comp hΦ, fun c ↦ ?_⟩
-  rw [inclusionLp_inclusion]
-  exact hΦF c
+    ∃ Φ : X → H^{s}(E), ContDiff ℝ ∞ Φ ∧ ∀ c, ⇑(inclusionLp hs (Φ c)) =ᵐ[volume] F c :=
+  exists_contDiff_of_forall_isSmoothFamilyAt fun c₀ ↦
+    (isSmoothFamilyAt_natCast_of_forall_le_norm ⌈s⌉₊ hF hR c₀).mono (Nat.le_ceil s)
 
 end BesselPotentialSpace

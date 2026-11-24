@@ -178,9 +178,12 @@ private theorem normalizedVortex_apply_one (c : Fin m → ℂ) (z : ℂ) :
 private theorem normalizedVortex_apply_two_add_three (c : Fin m → ℂ) (z : ℂ) :
     (normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I =
       bgSection c z * Real.exp (redSol c z) := by
-  rw [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgSection]
-  simp only [amplitudeField_apply_two, amplitudeField_apply_three, Matrix.cons_val, Real.exp_add]
-  apply Complex.ext <;> simp <;> ring
+  -- The section of `y_c`, twice the left side, is `g_c exp (u₀ + w_c) P_c`.
+  have h := sectionValue_gaugeTransform (polynomialGauge c) (polynomialVortex (monicOfCoeff c)) z
+  rw [sectionValue_polynomialVortex, ← normalizedVortex_def, sectionValue_apply, Real.exp_add,
+    ofReal_mul] at h
+  rw [bgSection]
+  linear_combination h / 2
 
 /-! ### The background field outside a disc -/
 
@@ -585,14 +588,20 @@ private theorem contDiff_bgSection_uncurry :
 
 /-! ### The logarithmic ratio as a smooth family in `H^(k+1)` -/
 
+/-- The complexification `z ↦ (g z : ℂ)` of a smooth real function `g` with bounded derivatives
+has bounded derivatives. -/
+private theorem exists_bound_iteratedFDeriv_ofReal {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
+    (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C :=
+  ofRealCLM.exists_bound_iteratedFDeriv_comp_left (hg.of_le (by exact_mod_cast le_top))
+    (fun i _ ↦ hbd i) n le_rfl
+
 /-- Multiplication by a smooth real function `g` with bounded derivatives, on `H^N(ℂ)`. -/
 private theorem exists_realMulCLM {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
     (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (N : ℕ) :
     ∃ M : H^{(N : ℝ)}(ℂ) →L[ℂ] H^{(N : ℝ)}(ℂ), ∀ u, ⇑(inclusionLp N.cast_nonneg (M u)) =ᵐ[volume]
       fun z ↦ (g z : ℂ) * inclusionLp N.cast_nonneg u z := by
-  have hbd' (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C :=
-    ofRealCLM.exists_bound_iteratedFDeriv_comp_left (hg.of_le (by exact_mod_cast le_top))
-      (fun i _ ↦ hbd i) n le_rfl
+  have hbd' := exists_bound_iteratedFDeriv_ofReal hg hbd
   exact ⟨smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hbd' n,
     coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num) (by norm_num)
       (fun n _ ↦ hbd' n) (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp hg) hbd')⟩
@@ -710,51 +719,37 @@ private theorem IsSmoothAt.const_mul (a : ℝ) (hF : IsSmoothAt s hs c₀ F) :
 
 /-- Products, in the algebra `H^s(ℂ)`, `s > 1`. -/
 private theorem IsSmoothAt.mul (hs' : (finrank ℝ ℂ : ℝ) < 2 * s) (hF : IsSmoothAt s hs c₀ F)
-    (hG : IsSmoothAt s hs c₀ G) : IsSmoothAt s hs c₀ fun c z ↦ F c z * G c z := by
-  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
-  obtain ⟨E, hE, hEG⟩ := isSmoothFamilyAt_iff.1 hG
-  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ mulCLM hs' (D c) (E c),
-    ((mulCLM hs').isBoundedBilinearMap.contDiff.restrict_scalars ℝ).contDiffAt.comp c₀
-      (hD.prodMk hE), ?_⟩
-  filter_upwards [hDF, hEG] with c h₁ h₂
-  filter_upwards [coeFn_inclusionLp_mulCLM hs' hs (D c) (E c), h₁, h₂] with z hz h₁ h₂
-  rw [hz, h₁, h₂, ofReal_mul]
+    (hG : IsSmoothAt s hs c₀ G) : IsSmoothAt s hs c₀ fun c z ↦ F c z * G c z :=
+  (IsSmoothFamilyAt.mul hs' hF hG).congr (.of_forall fun _ ↦ funext fun _ ↦ (ofReal_mul _ _).symm)
 
 /-- Exponentials, in the algebra `H^s(ℂ)`, `s > 1`. -/
 private theorem IsSmoothAt.exp_sub_one (hs' : (finrank ℝ ℂ : ℝ) < 2 * s)
-    (hF : IsSmoothAt s hs c₀ F) : IsSmoothAt s hs c₀ fun c z ↦ Real.exp (F c z) - 1 := by
-  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
-  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ expSubOne hs' (D c),
-    ((contDiff_expSubOne hs').restrict_scalars ℝ).contDiffAt.comp c₀ hD, ?_⟩
-  filter_upwards [hDF] with c h
-  have he := coeFn_toLp_inclusion_expSubOne hs' hs (D c)
-  rw [toLp_inclusion, toLp_inclusion] at he
-  filter_upwards [he, h] with z h₁ h₂
-  rw [h₁, h₂, ofReal_sub, ofReal_exp, ofReal_one]
+    (hF : IsSmoothAt s hs c₀ F) : IsSmoothAt s hs c₀ fun c z ↦ Real.exp (F c z) - 1 :=
+  (IsSmoothFamilyAt.cexp_sub_one hs' hF).congr (.of_forall fun _ ↦ funext fun _ ↦ by
+    rw [ofReal_sub, ofReal_exp, ofReal_one])
 
 /-- Multiplication by a fixed real function with bounded derivatives, at an integer order. -/
 private theorem IsSmoothAt.realMul {N : ℕ} {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
     (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C)
     (hF : IsSmoothAt N N.cast_nonneg c₀ F) :
     IsSmoothAt N N.cast_nonneg c₀ fun c z ↦ g z * F c z := by
-  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
-  obtain ⟨M, hM⟩ := exists_realMulCLM hg hbd N
-  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ M (D c),
-    (M.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
-  filter_upwards [hDF] with c h
-  filter_upwards [hM (D c), h] with z h₁ h₂
-  rw [h₁, h₂, ofReal_mul]
+  have hbd' := exists_bound_iteratedFDeriv_ofReal hg hbd
+  exact (IsSmoothFamilyAt.smulLeft (by norm_num) (by norm_num) (fun n _ ↦ hbd' n)
+    (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp hg) hbd') hF).congr
+    (.of_forall fun _ ↦ funext fun _ ↦ by rw [smul_eq_mul, ofReal_mul])
 
 /-- Directional derivatives, from `H^(s+1)` to `H^s`. -/
 private theorem IsSmoothAt.fderiv_apply (hF : IsSmoothAt (s + 1) (by linarith) c₀ F)
     (hF1 : ∀ᶠ c in 𝓝 c₀, ContDiff ℝ 1 (F c)) (v : ℂ) :
     IsSmoothAt s hs c₀ fun c z ↦ fderiv ℝ (F c) z v := by
-  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
-  set Dv := lineDerivCLM (E := ℂ) (F := ℂ) (s := s) ENNReal.one_lt_two ENNReal.ofNat_ne_top v
-  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ Dv (D c),
-    (Dv.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
-  filter_upwards [hDF, hF1] with c h₁ h₂
-  exact coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top hs h₂ h₁ v
+  refine (IsSmoothFamilyAt.lineDeriv (hs := hs) ENNReal.one_lt_two ENNReal.ofNat_ne_top hF
+    (hF1.mono fun c h ↦ ofRealCLM.contDiff.comp h) v).congr ?_
+  filter_upwards [hF1] with c h
+  funext z
+  -- The derivative of the complexification `z ↦ (F c z : ℂ)` is that of `F c`, complexified.
+  rw [show (fun z ↦ (F c z : ℂ)) = ofRealCLM ∘ F c from rfl,
+    fderiv_comp z ofRealCLM.differentiableAt (h.differentiable one_ne_zero z),
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, ofRealCLM_apply]
 
 end IsSmoothAt
 
@@ -913,7 +908,7 @@ theorem contDiff_subRef_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ
     ((ι.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD)).congr_of_eventuallyEq ?_
   filter_upwards [hDF] with c hc
   -- `y_c - x_m = (y_{c₀} - x_m) + (y_c - y_{c₀})`.
-  change _ = (normalizedVortex hm f s c₀).subRef j + ι (D c)
+  dsimp only [Function.comp_apply]
   refine (subRef_eq_iff hs _ j _).2 ?_
   have h₀ := (subRef_eq_iff hs (normalizedVortex hm f s c₀) j _).1 rfl
   rw [toLp_inclusion] at h₀ ⊢
