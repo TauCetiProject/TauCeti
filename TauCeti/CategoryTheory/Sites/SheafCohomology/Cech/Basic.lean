@@ -143,7 +143,6 @@ lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
 /-- The canonical projection from degree `n` of the Čech complex `Č(U, P)` to the factor indexed
 by a tuple `c : Fin (n + 1) → ι`. Using this wrapper keeps the domain syntactically equal to
 `((cechComplexFunctor U).obj P).X n` during rewriting. -/
-@[expose]
 def cechComplexπ (n : ℕ) (c : Fin (n + 1) → ι) :
     ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j))) :=
   Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c

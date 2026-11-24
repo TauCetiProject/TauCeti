@@ -188,12 +188,11 @@ private def colimitBilinearRight (i : J) (x : F.obj i) : colimit G ⟶ colimit H
           naturality j₁ j₂ f := by
             ext y
             simp only [Functor.const_obj_map, _root_.ModuleCat.hom_comp, LinearMap.comp_apply]
-            change colimitBilinearLeg B i x j₂ (G.map f y) = colimitBilinearLeg B i x j₁ y
-            rw [colimitBilinearLeg_eq B hB i x j₂ _ (IsFiltered.leftToMax i j₂)
-                (IsFiltered.rightToMax i j₂),
-              colimitBilinearLeg_eq B hB i x j₁ _ (IsFiltered.leftToMax i j₂)
-                (f ≫ IsFiltered.rightToMax i j₂),
-              ← _root_.ModuleCat.comp_apply, ← G.map_comp] } }
+            exact (colimitBilinearLeg_eq B hB i x j₂ _ (IsFiltered.leftToMax i j₂)
+                (IsFiltered.rightToMax i j₂) (G.map f y)).trans <| by
+              rw [← _root_.ModuleCat.comp_apply, ← G.map_comp]
+              exact (colimitBilinearLeg_eq B hB i x j₁ _ (IsFiltered.leftToMax i j₂)
+                (f ≫ IsFiltered.rightToMax i j₂) y).symm } }
 
 omit [HasColimit F] in
 private lemma colimitBilinearRight_ι (i : J) (x : F.obj i) (j : J) (y : G.obj j) :
@@ -213,14 +212,15 @@ private def colimitBilinearCocone : Cocone F where
       naturality i₁ i₂ f := by
         ext x
         refine linearMap_colimit_ext fun j y ↦ ?_
-        change colimitBilinearRight B hB i₂ (F.map f x) (colimit.ι G j y) =
-          colimitBilinearRight B hB i₁ x (colimit.ι G j y)
-        rw [colimitBilinearRight_ι, colimitBilinearRight_ι,
-          colimitBilinearLeg_eq B hB i₂ _ j _ (IsFiltered.leftToMax i₂ j)
-            (IsFiltered.rightToMax i₂ j),
-          colimitBilinearLeg_eq B hB i₁ _ j _ (f ≫ IsFiltered.leftToMax i₂ j)
-            (IsFiltered.rightToMax i₂ j),
-          ← _root_.ModuleCat.comp_apply, ← F.map_comp] }
+        simp only [_root_.ModuleCat.hom_comp, LinearMap.comp_apply, _root_.ModuleCat.hom_ofHom,
+          LinearMap.coe_mk, AddHom.coe_mk, Functor.const_obj_map]
+        exact (colimitBilinearRight_ι B hB i₂ (F.map f x) j y).trans <|
+          (colimitBilinearLeg_eq B hB i₂ _ j _ (IsFiltered.leftToMax i₂ j)
+              (IsFiltered.rightToMax i₂ j) y).trans <| by
+            rw [← _root_.ModuleCat.comp_apply, ← F.map_comp]
+            exact (colimitBilinearLeg_eq B hB i₁ _ j _ (f ≫ IsFiltered.leftToMax i₂ j)
+              (IsFiltered.rightToMax i₂ j) y).symm.trans
+              (colimitBilinearRight_ι B hB i₁ x j y).symm }
 
 /-- The `R`-bilinear pairing on filtered colimits of `R`-modules induced by a compatible family of
 `R`-bilinear pairings `B j : F(j) →ₗ[R] G(j) →ₗ[R] H(j)`. -/
@@ -238,9 +238,9 @@ theorem colimitBilinear_ι (j : J) (x : F.obj j) (y : G.obj j) :
     (_root_.ModuleCat.comp_apply _ _ x).symm.trans <|
       ConcreteCategory.congr_hom (colimit.ι_desc (colimitBilinearCocone B hB) j) x
   rw [hfac]
-  change colimitBilinearRight B hB j x (colimit.ι G j y) = _
-  rw [colimitBilinearRight_ι, colimitBilinearLeg_eq B hB j x j j (𝟙 j) (𝟙 j) y, F.map_id, G.map_id]
-  rfl
+  exact (colimitBilinearRight_ι B hB j x j y).trans <|
+    (colimitBilinearLeg_eq B hB j x j j (𝟙 j) (𝟙 j) y).trans <| by
+      simp only [F.map_id, G.map_id, _root_.ModuleCat.id_apply]
 
 end WithCompat
 

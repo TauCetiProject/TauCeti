@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
 import TauCeti.Data.Fin.Rev
 import TauCeti.Data.Nat.Choose.Basic
@@ -115,8 +116,9 @@ private lemma d_comp_cechComplexπ {n : ℕ} (k : Fin (n + 2) → ι) :
   have h : ((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) k =
       ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
         (cechComplexπ U P n (k ∘ m.succAbove) ≫
-          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-    cechComplexFunctor_obj_d_comp_π U P n k
+          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) := by
+    simp only [cechComplexπ_eq]
+    exact cechComplexFunctor_obj_d_comp_π U P n k
   simpa only [restrict, Pi.map', Category.comp_id] using h
 
 private lemma d_comp_restrict {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 2) → Fin (n + 1)) :
@@ -132,8 +134,10 @@ private def reverseX (n : ℕ) :
   Pi.lift fun k ↦ (-1 : ℤ) ^ (n + 1).choose 2 • restrict U P k Fin.rev
 
 private lemma reverseX_comp_cechComplexπ (n : ℕ) (k : Fin (n + 1) → ι) :
-    reverseX U P n ≫ cechComplexπ U P n k = (-1 : ℤ) ^ (n + 1).choose 2 • restrict U P k Fin.rev :=
-  Pi.lift_comp_π _ k
+    reverseX U P n ≫ cechComplexπ U P n k =
+      (-1 : ℤ) ^ (n + 1).choose 2 • restrict U P k Fin.rev := by
+  rw [cechComplexπ_eq]
+  exact Pi.lift_comp_π _ k
 
 private lemma reverseX_comp_restrict {m n : ℕ} (k : Fin (n + 1) → ι)
     (σ : Fin (m + 1) → Fin (n + 1)) :
@@ -160,8 +164,9 @@ private lemma restrict_id {n : ℕ} (k : Fin (n + 1) → ι) :
 
 private lemma map_f_comp_cechComplexπ {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) {n : ℕ} (k : Fin (n + 1) → ι) :
     ((cechComplexFunctor U).map α).f n ≫ cechComplexπ U Q n k =
-      cechComplexπ U P n k ≫ α.app (op (∏ᶜ fun j ↦ U (k j))) :=
-  cechComplexFunctor_map_f_π U P α n k
+      cechComplexπ U P n k ≫ α.app (op (∏ᶜ fun j ↦ U (k j))) := by
+  simp only [cechComplexπ_eq]
+  exact cechComplexFunctor_map_f_π U P α n k
 
 private lemma map_f_comp_restrict {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) {m n : ℕ} (k : Fin (n + 1) → ι)
     (σ : Fin (m + 1) → Fin (n + 1)) :
@@ -180,8 +185,9 @@ private lemma reverseX_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
 private lemma cechComplexMap_f_comp_cechComplexπ {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {n : ℕ} (k : Fin (n + 1) → ι) :
     (cechComplexMap P φ).f n ≫ cechComplexπ U P n k =
-      cechComplexπ V P n (φ.f ∘ k) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op :=
-  cechComplexMap_f_π P φ n k
+      cechComplexπ V P n (φ.f ∘ k) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op := by
+  simp only [cechComplexπ_eq]
+  exact cechComplexMap_f_π P φ n k
 
 private lemma cechComplexMap_f_comp_restrict {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {m n : ℕ} (k : Fin (n + 1) → ι)
@@ -189,10 +195,8 @@ private lemma cechComplexMap_f_comp_restrict {κ : Type w} {V : κ → C}
     (cechComplexMap P φ).f m ≫ restrict U P k σ =
       restrict V P (φ.f ∘ k) σ ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (k j)).op := by
   have h : Pi.map' σ (fun _ ↦ 𝟙 _) ≫ Limits.Pi.map (fun j ↦ φ.φ ((k ∘ σ) j)) =
-      Limits.Pi.map (fun j ↦ φ.φ (k j)) ≫ Pi.map' σ (fun _ ↦ 𝟙 _) := by
-    rw [Pi.map'_comp_map, Pi.map_comp_map']
-    simp only [Category.id_comp, Category.comp_id]
-    rfl
+      Limits.Pi.map (fun j ↦ φ.φ (k j)) ≫ Pi.map' σ (fun _ ↦ 𝟙 _) :=
+    Pi.hom_ext _ _ fun _ ↦ by simp
   rw [restrict, restrict, reassoc_of% cechComplexMap_f_comp_cechComplexπ, ← P.map_comp,
     Category.assoc, ← P.map_comp, ← op_comp, ← op_comp, h]
   -- the tuples `φ.f ∘ k ∘ σ` and `(φ.f ∘ k) ∘ σ` are the same function
@@ -237,6 +241,7 @@ theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (k : Fin (n + 1) → 
         P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (Fin.rev x)).op) := by
     simpa only [cechReverse_app_f, restrict, Pi.map', Category.comp_id] using
       reverseX_comp_cechComplexπ U P n k
+  simp only [cechComplexπ_eq] at h
   exact h
 
 /-- The order-reversing operator is an involution. -/
@@ -286,13 +291,15 @@ private lemma fromStrictMono_f_comp_cechComplexπ (P : Cᵒᵖ ⥤ A) {n : ℕ} 
     ((fromStrictMonoCechComplex U).app P).f n ≫ cechComplexπ U P n k =
       (-1 : ℤ) ^ #(univ.inversions k) •
         (strictMonoCechComplexπ U P ⟨k ∘ Tuple.sort k, Tuple.strictMono_comp_sort hk⟩ ≫
-          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (k j)) (Tuple.sort k j)).op) :=
-  fromStrictMonoCechComplex_app_f_π U P n hk
+          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ U (k j)) (Tuple.sort k j)).op) := by
+  simp only [cechComplexπ_eq]
+  exact fromStrictMonoCechComplex_app_f_π U P n hk
 
 private lemma fromStrictMono_f_comp_cechComplexπ_of_not_injective (P : Cᵒᵖ ⥤ A) {n : ℕ}
     {k : Fin (n + 1) → ι} (hk : ¬Function.Injective k) :
-    ((fromStrictMonoCechComplex U).app P).f n ≫ cechComplexπ U P n k = 0 :=
-  fromStrictMonoCechComplex_app_f_π_of_not_injective U P n hk
+    ((fromStrictMonoCechComplex U).app P).f n ≫ cechComplexπ U P n k = 0 := by
+  simp only [cechComplexπ_eq]
+  exact fromStrictMonoCechComplex_app_f_π_of_not_injective U P n hk
 
 /-- The alternating extension of an ordered cochain is fixed by the order-reversing operator. -/
 @[reassoc (attr := simp)]
@@ -349,6 +356,24 @@ section Cup
 
 variable {R : Type u''} [CommRing R] {F : Cᵒᵖ ⥤ AlgCat.{w} R}
 
+/-- The factor of `τ a` at `c = (c 0, …, c n)` for a presheaf of `R`-modules is
+`(-1) ^ (n (n + 1) / 2)` times the factor of `a` at `c ∘ Fin.rev`, restricted along the reversal
+of coordinates. -/
+@[simp]
+theorem cechComplexπ_cechReverse (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
+    (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c (((cechReverse (ModuleCat.{w} R) U).app P).f n a) =
+      (-1 : ℤ) ^ (n + 1).choose 2 •
+        P.map (Pi.map' (Fin.rev : Fin (n + 1) → Fin (n + 1)) (fun _ ↦ 𝟙 _)).op
+          (cechComplexπ U P n (c ∘ Fin.rev) a) := by
+  have hm : ((cechReverse (ModuleCat.{w} R) U).app P).f n ≫ cechComplexπ U P n c =
+      (-1 : ℤ) ^ (n + 1).choose 2 • (cechComplexπ U P n (c ∘ Fin.rev) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (c j)) (Fin.rev x)).op) := by
+    simp only [cechComplexπ_eq]
+    exact cechReverse_app_f_π U P n c
+  simpa only [ModuleCat.comp_apply, ModuleCat.hom_zsmul, LinearMap.smul_apply, Pi.map',
+    Category.comp_id] using ConcreteCategory.congr_hom hm a
+
 /-- The factors of `τ c` for a cochain `c` of a presheaf of algebras: the factor at
 `k = (k 0, …, k n)` is `(-1) ^ (n (n + 1) / 2)` times the restriction of `c` along the reversal of
 the vertices. -/
@@ -372,24 +397,10 @@ theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m +
       (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
   rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
 
-private lemma cechComplexπ_cechReverse {R : Type u''} [CommRing R]
-    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
-    (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
-    cechComplexπ U P n c (((cechReverse (ModuleCat.{w} R) U).app P).f n a) =
-      (-1 : ℤ) ^ (n + 1).choose 2 •
-        P.map (Pi.map' (Fin.rev : Fin (n + 1) → Fin (n + 1)) (fun _ ↦ 𝟙 _)).op
-          (cechComplexπ U P n (c ∘ Fin.rev) a) := by
-  have h : (((cechReverse (ModuleCat.{w} R) U).app P).f n ≫ cechComplexπ U P n c) a =
-      ((-1 : ℤ) ^ (n + 1).choose 2 • (cechComplexπ U P n (c ∘ Fin.rev) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (c j)) (Fin.rev x)).op)) a :=
-    ConcreteCategory.congr_hom (cechReverse_app_f_π U P n c) a
-  simpa only [ModuleCat.comp_apply, ModuleCat.hom_zsmul, LinearMap.smul_apply, Pi.map',
-    Category.comp_id] using h
-
 /-- **Reversal identity for the Čech cup product on cochains.** Reversing a cup product of
 reversed cochains recovers the cup product in the opposite order with the Koszul sign
 `(-1) ^ (p * q)`. -/
-theorem cechReverse_cechCupCochain {R : Type u''} [CommRing R]
+theorem cechReverse_cechCupCochain
     {P Q S : Cᵒᵖ ⥤ ModuleCat.{w} R}
     (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
     (μ' : ∀ X : Cᵒᵖ, Q.obj X →ₗ[R] P.obj X →ₗ[R] S.obj X)
@@ -409,30 +420,13 @@ theorem cechReverse_cechCupCochain {R : Type u''} [CommRing R]
   rw [← hμ', cechComplexπ_cechReverse, cechComplexπ_cechReverse, map_zsmul, map_zsmul, map_zsmul,
     LinearMap.smul_apply, map_zsmul, map_zsmul, map_zsmul, smul_smul, smul_smul, mul_assoc,
     Nat.neg_one_pow_add_add_one_choose_two_mul, hcomm]
-  have hres {R' : Cᵒᵖ ⥤ ModuleCat.{w} R} {k : ℕ} {f g : Fin (k + 1) → Fin (p + q + 1)}
-      (hfg : f = g) (x : ((cechComplexFunctor U).obj R').X k) :
-      R'.map (Pi.map' f (fun j ↦ 𝟙 (U (c (f j)))) :
-          (∏ᶜ fun i ↦ U (c i)) ⟶ (∏ᶜ fun j ↦ U (c (f j)))).op
-          (cechComplexπ U R' k (fun i ↦ c (f i)) x) =
-        R'.map (Pi.map' g (fun j ↦ 𝟙 (U (c (g j)))) :
-          (∏ᶜ fun i ↦ U (c i)) ⟶ (∏ᶜ fun j ↦ U (c (g j)))).op
-          (cechComplexπ U R' k (fun i ↦ c (g i)) x) := by
-    subst hfg; rfl
-  have hL : (fun i : Fin (p + 1) ↦
-        Fin.rev (Fin.cast (by omega : q + p + 1 = p + q + 1) (Fin.natAdd q (Fin.rev i)))) =
-      Fin.castLE (by omega) :=
-    funext fun i ↦ Fin.ext (by simp [Fin.val_rev]; omega)
-  have hR : (fun i : Fin (q + 1) ↦
-        Fin.rev (Fin.castLE (by omega : q + 1 ≤ p + q + 1) (Fin.rev i))) =
-      fun i : Fin (q + 1) ↦ Fin.cast (by omega) (Fin.natAdd p i) :=
-    funext fun i ↦ Fin.ext (by simp [Fin.val_rev]; omega)
   refine congrArg ((-1 : ℤ) ^ (p * q) • ·) (congrArg₂ (fun x y ↦ μ _ x y) ?_ ?_)
   · simp only [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map', Function.comp_def,
       Category.id_comp]
-    exact hres hL a
+    exact cechComplexπ_map_piMap'_eq_of_val U P c (fun i ↦ by simp [Fin.val_rev]; omega) a
   · simp only [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map', Function.comp_def,
       Category.id_comp]
-    exact hres hR b
+    exact cechComplexπ_map_piMap'_eq_of_val U Q c (fun i ↦ by simp [Fin.val_rev]; omega) b
 
 /-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
 algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of
@@ -449,12 +443,13 @@ theorem cechReverse_cechCup_cechReverse (hF : ∀ X (x y : F.obj X), x * y = y *
           ((((cechReverse (ModuleCat.{w} R) U).app
             (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f p).hom a)) =
     (-1 : ℤ) ^ (p * q) • cechCup p q n h a b := by
-  simpa [cechCup] using cechReverse_cechCupCochain U
+  rw [cechCup_eq_cechCupCochain, cechCup_eq_cechCupCochain]
+  exact cechReverse_cechCupCochain U
     (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
     (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
     (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
     (fun X ↦ LinearMap.mul R (F.obj X)) (fun X ↦ LinearMap.mul R (F.obj X))
-    (fun {X _} f (x y : F.obj X) ↦ (map_mul (F.map f).hom x y).symm)
+    (cechAlgebraMul_naturality F)
     (fun X (x y : F.obj X) ↦ hF X y x) p q n h a b
 
 end Cup

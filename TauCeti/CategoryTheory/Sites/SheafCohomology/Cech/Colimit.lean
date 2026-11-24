@@ -151,6 +151,24 @@ theorem cechCohomologyι_app (j : J) (P : Cᵒᵖ ⥤ A) :
     (cechCohomologyι E hE n j).app P = colimit.ι ((cechCohomologyDiagram A E hE n).flip.obj P) j :=
   (rfl)
 
+/-- Naturality of the structure map at `j` on elements: the induced map
+`(cechCohomology A E hE n).map α` intertwines the structure map of `E j` with `homologyMap` of
+`α`. -/
+theorem cechCohomology_map_ι {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA]
+    {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (j : J)
+    (x : CA (((cechComplexFunctor (E j).obj).obj P).homology n)) :
+    (cechCohomology A E hE n).map α ((cechCohomologyι E hE n j).app P x) =
+      (cechCohomologyι E hE n j).app Q
+        (HomologicalComplex.homologyMap ((cechComplexFunctor (E j).obj).map α) n x) := by
+  have h : ((cechCohomologyι E hE n j).app P ≫ (cechCohomology A E hE n).map α :
+        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _) x =
+      ((HomologicalComplex.homologyMap ((cechComplexFunctor (E j).obj).map α) n ≫
+        (cechCohomologyι E hE n j).app Q :
+        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _)) x :=
+    ConcreteCategory.congr_hom ((cechCohomologyι E hE n j).naturality α).symm x
+  exact (ConcreteCategory.comp_apply _ _ x).symm.trans (h.trans (ConcreteCategory.comp_apply _ _ x))
+
 /-- The structure maps commute with the transition maps of the diagram. -/
 @[reassoc (attr := simp)]
 theorem cechCohomologyDiagram_map_comp_cechCohomologyι {i j : J} (f : i ⟶ j) :
@@ -168,6 +186,20 @@ theorem cechComplexHomologyMap_comp_cechCohomologyι {i j : J} (h : i ≤ j) (φ
   (congrArg (· ≫ cechCohomologyι E hE n j)
     (cechCohomologyDiagram_map A E hE n (homOfLE h) φ)).symm.trans
       (cechCohomologyDiagram_map_comp_cechCohomologyι E hE n (homOfLE h))
+
+/-- Elementwise compatibility of the structure maps with the maps induced by morphisms of
+families `E j ⟶ E i` for `i ≤ j`. -/
+theorem cechCohomologyι_app_cechComplexHomologyMap {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA]
+    {i j : J} (hij : i ≤ j) (φ : E j ⟶ E i) (P : Cᵒᵖ ⥤ A)
+    (x : CA (((cechComplexFunctor (E i).obj).obj P).homology n)) :
+    (cechCohomologyι E hE n j).app P (HomologicalComplex.homologyMap (cechComplexMap P φ) n x) =
+      (cechCohomologyι E hE n i).app P x := by
+  have hm : (cechComplexHomologyMap A n φ).app P ≫ (cechCohomologyι E hE n j).app P =
+      (cechCohomologyι E hE n i).app P :=
+    NatTrans.congr_app (cechComplexHomologyMap_comp_cechCohomologyι A E hE n hij φ) P
+  rw [cechComplexHomologyMap_app] at hm
+  exact (ConcreteCategory.comp_apply _ _ x).symm.trans (ConcreteCategory.congr_hom hm x)
 
 variable (A) in
 /-- The Čech cohomology for the system, as a cocone over the diagram of functors of the presheaf
@@ -288,6 +320,24 @@ theorem cechCohomologyZeroIso_hom (h : ∀ j, QuasiIsoAt (cechAugmentation (E j)
   (Category.id_comp _).symm.trans <| (Category.assoc _ _ _).symm.trans <|
     (colimit.isoColimitCocone_ι_inv ⟨_, isColimitConstCocone J (P.obj (op T))⟩ j =≫ _).trans <|
       (HasColimit.ι_isoOfNatIso_hom _ j).trans (Category.assoc _ _ _)
+
+/-- Elementwise formula for `cechCohomologyZeroIso`: a global section `x ∈ P(T)` is sent to its
+image under the augmentation of any family `E j`, followed by the structure map of `E j`. -/
+theorem cechCohomologyZeroIso_hom_apply {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA]
+    (h : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT P) 0) (j : J) (x : CA (P.obj (op T))) :
+    (cechCohomologyZeroIso E hE hT P h).hom x =
+      (cechCohomologyι E hE 0 j).app P (HomologicalComplex.homologyMap
+        (cechAugmentation (E j).obj hT P) 0
+        ((HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv
+          x)) := by
+  have hhom : (cechCohomologyZeroIso E hE hT P h).hom x =
+      (((HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv ≫
+        HomologicalComplex.homologyMap (cechAugmentation (E j).obj hT P) 0 ≫
+          (cechCohomologyι E hE 0 j).app P : P.obj (op T) ⟶ _) x) :=
+    ConcreteCategory.congr_hom (cechCohomologyZeroIso_hom E hE hT P h j) x
+  exact hhom.trans <|
+    (ConcreteCategory.comp_apply _ _ x).trans (ConcreteCategory.comp_apply _ _ _)
 
 /-- The identification of degree `0` Čech cohomology with `P(T)` is natural in `P`. -/
 @[reassoc]

@@ -78,74 +78,6 @@ variable {R : Type uR} [CommRing R] {C : Type u} [Category.{v} C] [HasFiniteProd
   (E : J → FormalCoproduct.{w} C) (hE : ∀ ⦃i j : J⦄, i ≤ j → Nonempty (E j ⟶ E i))
   [HasColimitsOfShape J (ModuleCat.{w} R)] {P Q S : Cᵒᵖ ⥤ ModuleCat.{w} R}
 
-omit [IsDirectedOrder J] in
-private lemma cechCohomologyι_app_cechComplexHomologyMap {i j : J} (hij : i ≤ j)
-    (φ : E j ⟶ E i) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
-    (x : ((cechComplexFunctor (E i).obj).obj P).homology n) :
-    (cechCohomologyι E hE n j).app P (homologyMap (cechComplexMap P φ) n x) =
-      (cechCohomologyι E hE n i).app P x := by
-  have hm : (cechComplexHomologyMap (ModuleCat.{w} R) n φ).app P ≫ (cechCohomologyι E hE n j).app P
-      = (cechCohomologyι E hE n i).app P :=
-    NatTrans.congr_app
-      (cechComplexHomologyMap_comp_cechCohomologyι (ModuleCat.{w} R) E hE n hij φ) P
-  rw [cechComplexHomologyMap_app] at hm
-  exact (ModuleCat.comp_apply _ _ x).symm.trans (ConcreteCategory.congr_hom hm x)
-
-private lemma toCechCohomology_app_eq (U : FormalCoproduct.{w} C) (j : J) (φ : E j ⟶ U)
-    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ) (x : ((cechComplexFunctor U.obj).obj P).homology n) :
-    (toCechCohomology (ModuleCat.{w} R) E hE n U ⟨j, ⟨φ⟩⟩).app P x =
-      (cechCohomologyι E hE n j).app P (homologyMap (cechComplexMap P φ) n x) := by
-  have hm : (toCechCohomology (ModuleCat.{w} R) E hE n U ⟨j, ⟨φ⟩⟩).app P =
-      (cechComplexHomologyMap (ModuleCat.{w} R) n φ).app P ≫ (cechCohomologyι E hE n j).app P :=
-    NatTrans.congr_app (toCechCohomology_eq (ModuleCat.{w} R) E hE n U j φ) P
-  rw [cechComplexHomologyMap_app] at hm
-  exact (ConcreteCategory.congr_hom hm x).trans (ModuleCat.comp_apply _ _ x)
-
-omit [IsDirectedOrder J] in
-private lemma cechCohomology_map_ι {P Q : Cᵒᵖ ⥤ ModuleCat.{w} R} (α : P ⟶ Q) (n : ℕ) (j : J)
-    (x : ((cechComplexFunctor (E j).obj).obj P).homology n) :
-    (cechCohomology (ModuleCat.{w} R) E hE n).map α ((cechCohomologyι E hE n j).app P x) =
-      (cechCohomologyι E hE n j).app Q
-        (homologyMap ((cechComplexFunctor (E j).obj).map α) n x) := by
-  have h : (((cechCohomologyι E hE n j).app P ≫ (cechCohomology (ModuleCat.{w} R) E hE n).map α :
-        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _)) x =
-      ((homologyMap ((cechComplexFunctor (E j).obj).map α) n ≫ (cechCohomologyι E hE n j).app Q :
-        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _)) x :=
-    ConcreteCategory.congr_hom ((cechCohomologyι E hE n j).naturality α).symm x
-  exact (ModuleCat.comp_apply _ _ x).symm.trans (h.trans (ModuleCat.comp_apply _ _ x))
-
-omit [IsDirectedOrder J] in
-private lemma cechCohomologyComparison_app_ι {K : Type t'} [Preorder K] [IsDirectedOrder K]
-    (F : K → FormalCoproduct.{w} C) (hF : ∀ ⦃i j : K⦄, i ≤ j → Nonempty (F j ⟶ F i))
-    [HasColimitsOfShape K (ModuleCat.{w} R)] (hEF : ∀ j, ∃ k, Nonempty (F k ⟶ E j))
-    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ) (j : J)
-    (x : ((cechComplexFunctor (E j).obj).obj P).homology n) :
-    (cechCohomologyComparison (ModuleCat.{w} R) E hE F hF n hEF).app P
-        ((cechCohomologyι E hE n j).app P x) =
-      (toCechCohomology (ModuleCat.{w} R) F hF n (E j) (hEF j)).app P x := by
-  have h : (((cechCohomologyι E hE n j).app P ≫
-        (cechCohomologyComparison (ModuleCat.{w} R) E hE F hF n hEF).app P :
-        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _)) x =
-      ((toCechCohomology (ModuleCat.{w} R) F hF n (E j) (hEF j)).app P :
-        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _) x :=
-    ConcreteCategory.congr_hom (NatTrans.congr_app
-      (cechCohomologyι_comp_cechCohomologyComparison (ModuleCat.{w} R) E hE F hF n hEF j) P) x
-  exact (ModuleCat.comp_apply _ _ x).symm.trans h
-
-omit [IsDirectedOrder J] in
-private lemma cechCohomologyZeroIso_hom_apply {T : C} (hT : IsTerminal T) [IsConnected J]
-    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (hP : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT P) 0)
-    (j : J) (x : P.obj (op T)) :
-    (cechCohomologyZeroIso E hE hT P hP).hom x =
-      (cechCohomologyι E hE 0 j).app P (homologyMap (cechAugmentation (E j).obj hT P) 0
-        ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv x)) := by
-  have h : (cechCohomologyZeroIso E hE hT P hP).hom x =
-      (((singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv ≫
-        homologyMap (cechAugmentation (E j).obj hT P) 0 ≫ (cechCohomologyι E hE 0 j).app P :
-        P.obj (op T) ⟶ _)) x :=
-    ConcreteCategory.congr_hom (cechCohomologyZeroIso_hom E hE hT P hP j) x
-  exact h.trans <| (ModuleCat.comp_apply _ _ x).trans (ModuleCat.comp_apply _ _ _)
-
 /-- **The cup product on colimit Čech cohomology.** Given a natural `R`-bilinear pairing `μ` of
 presheaves of `R`-modules and `p + q = n`, this is the unique `R`-bilinear map
 `Hᵖ(E, P) →ₗ[R] H^q(E, Q) →ₗ[R] Hⁿ(E, S)` whose restriction along the colimit insertions at every
@@ -184,7 +116,9 @@ theorem cechCohomologyCup_ι (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X �
     (H := (cechCohomologyDiagram (ModuleCat.{w} R) E hE n).flip.obj S) _ _ j x y
 
 omit [IsDirectedOrder J] in
-private lemma cechCohomology_linear_ext {M : ModuleCat.{w} R} {p : ℕ}
+/-- Two `R`-linear maps out of colimit Čech cohomology agree if they agree on all classes coming
+from the individual families `E j`. -/
+theorem cechCohomology_linear_ext {M : ModuleCat.{w} R} {p : ℕ}
     {f g : (cechCohomology (ModuleCat.{w} R) E hE p).obj P →ₗ[R] M}
     (h : ∀ j (x : ((cechComplexFunctor (E j).obj).obj P).homology p),
       f ((cechCohomologyι E hE p j).app P x) = g ((cechCohomologyι E hE p j).app P x)) :
@@ -204,7 +138,9 @@ theorem cechCohomology_bilinear_ext {M : ModuleCat.{w} R} {p q : ℕ}
   TauCeti.ModuleCat.colimit_bilinear_ext fun j x y ↦ by
     rw [← cechCohomologyι_app, ← cechCohomologyι_app]; exact h j x y
 
-private lemma cechCohomology_trilinear_ext {P₁ P₂ P₃ : Cᵒᵖ ⥤ ModuleCat.{w} R}
+/-- Two `R`-trilinear maps out of colimit Čech cohomology agree if they agree on all triples of
+classes coming from the same family `E j`. -/
+theorem cechCohomology_trilinear_ext {P₁ P₂ P₃ : Cᵒᵖ ⥤ ModuleCat.{w} R}
     {M : ModuleCat.{w} R} {p q r : ℕ}
     {Φ Ψ : (cechCohomology (ModuleCat.{w} R) E hE p).obj P₁ →ₗ[R]
       (cechCohomology (ModuleCat.{w} R) E hE q).obj P₂ →ₗ[R]
@@ -233,8 +169,10 @@ theorem cechCohomologyCup_toCechCohomology (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ
       (toCechCohomology (ModuleCat.{w} R) E hE n U hU).app S
         (cechComplexCup U.obj μ hμ p q n h x y) := by
   obtain ⟨j, ⟨φ⟩⟩ := hU
-  rw [toCechCohomology_app_eq E hE U j φ P p x, toCechCohomology_app_eq E hE U j φ Q q y,
-    toCechCohomology_app_eq E hE U j φ S n _, cechCohomologyCup_ι, cechComplexCup_cechComplexMap]
+  rw [toCechCohomology_app_eq (ModuleCat.{w} R) E hE p U j φ P x,
+    toCechCohomology_app_eq (ModuleCat.{w} R) E hE q U j φ Q y,
+    toCechCohomology_app_eq (ModuleCat.{w} R) E hE n U j φ S _,
+    cechCohomologyCup_ι, cechComplexCup_cechComplexMap]
 
 /-- **Associativity of the cup product on colimit Čech cohomology.** -/
 theorem cechCohomologyCup_assoc {P₁ P₂ P₃ P₁₂ P₂₃ P₁₂₃ : Cᵒᵖ ⥤ ModuleCat.{w} R}
@@ -358,8 +296,8 @@ theorem cechCohomologyUnitClass_eq_ι (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (e : ∀
       (cechCohomologyι E hE 0 j).app P (cechUnitClass (E j).obj P e he) := by
   obtain ⟨k, hik, hjk⟩ := exists_ge_ge (Classical.arbitrary J) j
   rw [cechCohomologyUnitClass,
-    ← cechCohomologyι_app_cechComplexHomologyMap E hE hik (hE hik).some P 0,
-    ← cechCohomologyι_app_cechComplexHomologyMap E hE hjk (hE hjk).some P 0,
+    ← cechCohomologyι_app_cechComplexHomologyMap E hE 0 hik (hE hik).some P,
+    ← cechCohomologyι_app_cechComplexHomologyMap E hE 0 hjk (hE hjk).some P,
     homologyMap_cechComplexMap_cechUnitClass, homologyMap_cechComplexMap_cechUnitClass]
 
 /-- `cechCohomologyUnitClass` is the image of `cechUnitClass` from any family `U` refined by `E`. -/
@@ -369,8 +307,8 @@ theorem cechCohomologyUnitClass_eq_toCechCohomology (P : Cᵒᵖ ⥤ ModuleCat.{
     cechCohomologyUnitClass E hE P e he =
       (toCechCohomology (ModuleCat.{w} R) E hE 0 U hU).app P (cechUnitClass U.obj P e he) := by
   obtain ⟨j, ⟨φ⟩⟩ := hU
-  rw [toCechCohomology_app_eq E hE U j φ P 0, homologyMap_cechComplexMap_cechUnitClass,
-    cechCohomologyUnitClass_eq_ι E hE P e he j]
+  rw [toCechCohomology_app_eq (ModuleCat.{w} R) E hE 0 U j φ P,
+    homologyMap_cechComplexMap_cechUnitClass, cechCohomologyUnitClass_eq_ι E hE P e he j]
 
 /-- Left unit law for `cechCohomologyCup`. -/
 theorem cechCohomologyCup_unit_left (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] Q.obj X)
