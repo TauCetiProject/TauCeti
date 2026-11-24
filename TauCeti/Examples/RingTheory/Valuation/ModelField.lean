@@ -34,6 +34,6 @@ example (p : ℕ) [Fact p.Prime] : IsDiscreteValuationRing 𝒪[ℚ_[p]] :=
 /-- A trivially valued field is not a model field. -/
 example (K Γ : Type*) [Field K] [DecidableEq K] [ValuativeRel K] [LinearOrderedCommGroupWithZero Γ]
     [Valuation.Compatible (1 : Valuation K Γ)] : ¬ ModelField K :=
-  ModelField.not_of_isNontrivial K (not_isNontrivial_of_trivialRel (R := K) (Γ := Γ))
+  ModelField.not_of_not_isNontrivial K (not_isNontrivial_of_trivialRel (R := K) (Γ := Γ))
 
 end TauCeti.Examples.ModelField
