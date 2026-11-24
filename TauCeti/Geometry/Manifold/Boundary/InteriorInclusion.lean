@@ -235,4 +235,11 @@ theorem coe_interiorDiffeomorph_symm_apply [BoundarylessManifold I M] (n : WithT
   (congrFun (coe_interiorDiffeomorph (I := I) (M := M) n) _).symm.trans
     ((I.interiorDiffeomorph M n).apply_symm_apply x)
 
+/-- The inverse of the diffeomorphism onto a manifold without boundary sends a point of the
+interior, viewed in `M`, back to itself. -/
+@[simp]
+theorem interiorDiffeomorph_symm_apply_coe [BoundarylessManifold I M] (n : WithTop ℕ∞)
+    (x : I.interior M) : (I.interiorDiffeomorph M n).symm (x : M) = x :=
+  Subtype.ext (coe_interiorDiffeomorph_symm_apply n (x : M))
+
 end ModelWithCorners
