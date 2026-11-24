@@ -17,7 +17,8 @@ degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file reco
 iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
 Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
 the partial Horner sums of `p`. It also records that the iterates commute with coefficient maps,
-and that `y * (divX p)(y) = p(y) - p(0)`, in particular for powers `p ^ a`.
+and that `y * (divX p)(y) = p(y) - p(0)`, in particular for powers `p ^ a`, for which also
+`X * divX (p ^ a) = p ^ a - p(0) ^ a`.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -124,6 +125,11 @@ theorem iterate_divX_sub [Ring R] (m : ℕ) (p q : R[X]) :
     divX^[m] (p - q) = divX^[m] p - divX^[m] q := by
   ext n
   simp
+
+/-- Multiplying `divX (p ^ a)` by `X` gives `p ^ a - p(0) ^ a`. -/
+theorem X_mul_divX_pow [Ring R] (p : R[X]) (a : ℕ) :
+    X * divX (p ^ a) = p ^ a - C (p.coeff 0 ^ a) := by
+  rw [eq_sub_iff_add_eq, ← constantCoeff_apply, ← map_pow, constantCoeff_apply, X_mul_divX_add]
 
 section Eval₂
 
