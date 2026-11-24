@@ -35,6 +35,10 @@ of Cartan type `Dₙ` has Weyl group of order `2ⁿ⁻¹ · n!`.
 
 * `TauCeti.DynkinType.typeDWeylSubgroup`: the signed permutations of `n` coordinates with an even
   number of sign changes.
+* `TauCeti.DynkinType.typeDRootSub`, `TauCeti.DynkinType.typeDRootAdd`: the classical roots
+  `eᵢ - eⱼ` and `eᵢ + eⱼ`.
+* `TauCeti.DynkinType.negSwap`: the signed permutation exchanging two coordinates and changing both
+  their signs.
 * `TauCeti.DynkinType.typeDRootPermHom`: the action of signed permutations on the pinned root
   indices of type `Dₙ`.
 * `TauCeti.DynkinType.typeDWeylGroupEquiv`: the Weyl group of the pinned integral datum of type
@@ -47,6 +51,10 @@ of Cartan type `Dₙ` has Weyl group of order `2ⁿ⁻¹ · n!`.
   even-sign subgroup.
 * `TauCeti.DynkinType.closure_range_typeDRootReflectionEquiv`: the classical reflections generate
   the image of the even-sign subgroup in the permutations of the classical roots.
+* `TauCeti.DynkinType.coe_typeDWeylGroupEquiv_ofIdx_typeDRootSub` and
+  `TauCeti.DynkinType.coe_typeDWeylGroupEquiv_ofIdx_typeDRootAdd`: the reflection in `eᵢ - eⱼ` is
+  the transposition of `i` and `j`, and the reflection in `eᵢ + eⱼ` is `negSwap i j`; similarly
+  for the pinned rational root system.
 * `TauCeti.DynkinType.card_weylGroup_typeDSimplyConnectedRootDatum`: the Weyl group of the pinned
   datum of type `Dₙ` has order `2ⁿ⁻¹ · n!`.
 * `RootPairing.card_weylGroup_of_hasCartanType_D`: so does the Weyl group of every finite reduced
@@ -151,12 +159,24 @@ theorem coe_smul_typeDRoot (w : WreathProduct ℤˣ (Fin n)) (x : TypeDRoot n) :
   (rfl)
 
 /-- The classical root `eᵢ - eⱼ`. -/
-private def typeDRootSub {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
+def typeDRootSub {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
   ⟨Pi.single i 1 - Pi.single j 1, by simp [dotProduct_sub, hij, hij.symm]⟩
 
+/-- The coordinates of the classical root `eᵢ - eⱼ`. -/
+@[simp]
+theorem coe_typeDRootSub {i j : Fin n} (hij : i ≠ j) :
+    (typeDRootSub hij : Fin n → ℤ) = Pi.single i 1 - Pi.single j 1 :=
+  (rfl)
+
 /-- The classical root `eᵢ + eⱼ`. -/
-private def typeDRootAdd {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
+def typeDRootAdd {i j : Fin n} (hij : i ≠ j) : TypeDRoot n :=
   ⟨Pi.single i 1 + Pi.single j 1, by simp [dotProduct_add, hij, hij.symm]⟩
+
+/-- The coordinates of the classical root `eᵢ + eⱼ`. -/
+@[simp]
+theorem coe_typeDRootAdd {i j : Fin n} (hij : i ≠ j) :
+    (typeDRootAdd hij : Fin n → ℤ) = Pi.single i 1 + Pi.single j 1 :=
+  (rfl)
 
 /-- A signed permutation fixing the roots `eᵢ + eⱼ` and `eᵢ - eⱼ` fixes the coordinate `i` with
 sign `1`. -/
@@ -194,9 +214,20 @@ private theorem typeDRootReflectionEquiv_eq_toPerm {u : TypeDRoot n}
       coe_smul_typeDRoot, h]
 
 /-- The signed permutation exchanging the coordinates `i` and `j` and changing both their signs. -/
-private def negSwap (i j : Fin n) : WreathProduct ℤˣ (Fin n) :=
+def negSwap (i j : Fin n) : WreathProduct ℤˣ (Fin n) :=
   SemidirectProduct.inl (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) *
     SemidirectProduct.inr (Equiv.swap i j)
+
+/-- The signs of `negSwap i j`: `-1` at the coordinates `i` and `j`, `1` elsewhere. -/
+@[simp]
+theorem left_negSwap (i j : Fin n) :
+    (negSwap i j).left = Pi.mulSingle i (-1) * Pi.mulSingle j (-1) := by
+  simp [negSwap]
+
+/-- The underlying permutation of `negSwap i j` is the transposition of `i` and `j`. -/
+@[simp]
+theorem right_negSwap (i j : Fin n) : (negSwap i j).right = Equiv.swap i j := by
+  simp [negSwap]
 
 /-- The reflection in `eᵢ - eⱼ` is the transposition of the coordinates `i` and `j`. -/
 private theorem typeDRootReflectionEquiv_typeDRootSub {i j : Fin n} (hij : i ≠ j) :
@@ -316,18 +347,13 @@ private theorem typeDRootPermHom_domRestrict_injective (hn : 4 ≤ n) :
     Injective ((typeDRootPermHom n hn).domRestrict (typeDWeylSubgroup n)) :=
   fun _ _ h ↦ Subtype.ext (typeDRootPermHom_injective hn h)
 
-private theorem weylGroupToPerm_typeDSimplyConnectedRootDatum_injective (hn : 4 ≤ n) :
-    Injective (typeDSimplyConnectedRootDatum n hn).weylGroupToPerm :=
-  (RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top
-    (typeDSimplyConnectedRootDatum n hn)
-    (corootSpan_typeDSimplyConnectedRootDatum_eq_top n hn)).comp Subtype.val_injective
-
 /-- **The Weyl group of the pinned integral datum of type `Dₙ` is the group of signed permutations
 of `n` coordinates with an even number of sign changes**, acting on the root indices as on the
 classical roots `±eᵢ ± eⱼ`; see `TauCeti.DynkinType.typeDRootPermHom_typeDWeylGroupEquiv`. -/
 noncomputable def typeDWeylGroupEquiv (n : ℕ) (hn : 4 ≤ n) :
     (typeDSimplyConnectedRootDatum n hn).weylGroup ≃* typeDWeylSubgroup n :=
-  (MonoidHom.ofInjective (weylGroupToPerm_typeDSimplyConnectedRootDatum_injective hn)).trans <|
+  (MonoidHom.ofInjective (weylGroupToPerm_injective_of_corootSpan_eq_top _
+      (corootSpan_typeDSimplyConnectedRootDatum_eq_top n hn))).trans <|
     (MulEquiv.subgroupCongr (range_weylGroupToPerm_typeDSimplyConnectedRootDatum hn)).trans
       (MonoidHom.ofInjective (typeDRootPermHom_domRestrict_injective hn)).symm
 
@@ -342,6 +368,38 @@ theorem typeDRootPermHom_typeDWeylGroupEquiv (hn : 4 ≤ n)
     ← MonoidHom.domRestrict_apply, MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
     MonoidHom.ofInjective_apply]
 
+/-- The reflection in a classical root `u` goes to a signed permutation acting on the classical
+roots as the reflection in `u`. -/
+private theorem coe_typeDWeylGroupEquiv_ofIdx_symm (hn : 4 ≤ n) {u : TypeDRoot n}
+    {w : WreathProduct ℤˣ (Fin n)} (h : typeDRootReflectionEquiv u = MulAction.toPerm w) :
+    (typeDWeylGroupEquiv n hn (weylGroup.ofIdx (typeDSimplyConnectedRootDatum n hn)
+      ((typeDRootEquiv n hn).symm u)) : WreathProduct ℤˣ (Fin n)) = w := by
+  refine typeDRootPermHom_injective hn ?_
+  rw [typeDRootPermHom_typeDWeylGroupEquiv]
+  refine Equiv.ext fun l ↦ (typeDRootEquiv n hn).injective ?_
+  rw [weylGroupToPerm_ofIdx_apply, typeDRootEquiv_reflectionPerm,
+    typeDRootEquiv_typeDRootPermHom_apply, Equiv.apply_symm_apply, ← typeDRootReflectionEquiv_apply,
+    h, MulAction.toPerm_apply]
+
+/-- Under the type-`Dₙ` Weyl-group equivalence, the reflection in the root `eᵢ - eⱼ` is the
+transposition of the coordinates `i` and `j`. -/
+@[simp]
+theorem coe_typeDWeylGroupEquiv_ofIdx_typeDRootSub (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
+    (typeDWeylGroupEquiv n hn (weylGroup.ofIdx (typeDSimplyConnectedRootDatum n hn)
+      ((typeDRootEquiv n hn).symm (typeDRootSub hij))) : WreathProduct ℤˣ (Fin n)) =
+      SemidirectProduct.inr (Equiv.swap i j) :=
+  coe_typeDWeylGroupEquiv_ofIdx_symm hn (typeDRootReflectionEquiv_typeDRootSub hij)
+
+/-- Under the type-`Dₙ` Weyl-group equivalence, the reflection in the root `eᵢ + eⱼ` exchanges
+the coordinates `i` and `j` and changes both their signs. The reflection in `-(eᵢ + eⱼ)` is the
+same Weyl-group element (`RootPairing.weylGroup.ofIdx_neg`). -/
+@[simp]
+theorem coe_typeDWeylGroupEquiv_ofIdx_typeDRootAdd (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
+    (typeDWeylGroupEquiv n hn (weylGroup.ofIdx (typeDSimplyConnectedRootDatum n hn)
+      ((typeDRootEquiv n hn).symm (typeDRootAdd hij))) : WreathProduct ℤˣ (Fin n)) =
+      negSwap i j :=
+  coe_typeDWeylGroupEquiv_ofIdx_symm hn (typeDRootReflectionEquiv_eq_negSwap hij (Or.inl rfl))
+
 section Realization
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -355,12 +413,18 @@ include hQ hinj
 reflection permutations of type `Dₙ`, with the even-sign subgroup. -/
 private noncomputable def typeDWeylGroupEquivOf : Q.weylGroup ≃* typeDWeylSubgroup n :=
   (weylGroupEquivOfReflectionPermEq Q (typeDSimplyConnectedRootDatum n hn) hQ hinj
-    (weylGroupToPerm_typeDSimplyConnectedRootDatum_injective hn)).trans (typeDWeylGroupEquiv n hn)
+    (weylGroupToPerm_injective_of_corootSpan_eq_top _
+      (corootSpan_typeDSimplyConnectedRootDatum_eq_top n hn))).trans (typeDWeylGroupEquiv n hn)
 
 private theorem typeDRootPermHom_typeDWeylGroupEquivOf (w : Q.weylGroup) :
     typeDRootPermHom n hn (typeDWeylGroupEquivOf hn Q hQ hinj w) = Q.weylGroupToPerm w := by
   rw [typeDWeylGroupEquivOf, MulEquiv.trans_apply, typeDRootPermHom_typeDWeylGroupEquiv,
     weylGroupToPerm_weylGroupEquivOfReflectionPermEq]
+
+private theorem typeDWeylGroupEquivOf_ofIdx (k : Fin (2 * n * (n - 1))) :
+    typeDWeylGroupEquivOf hn Q hQ hinj (weylGroup.ofIdx Q k) =
+      typeDWeylGroupEquiv n hn (weylGroup.ofIdx (typeDSimplyConnectedRootDatum n hn) k) := by
+  rw [typeDWeylGroupEquivOf, MulEquiv.trans_apply, weylGroupEquivOfReflectionPermEq_ofIdx]
 
 end Realization
 
@@ -391,6 +455,30 @@ theorem typeDRootPermHom_typeDRationalWeylGroupEquiv (hn : 4 ≤ n)
     typeDRootPermHom n hn (typeDRationalWeylGroupEquiv n hn w) =
       ((DynkinType.D n).rationalRootSystem (DynkinType.valid_D.mpr hn)).weylGroupToPerm w :=
   typeDRootPermHom_typeDWeylGroupEquivOf hn _ _ _ w
+
+/-- Under the rational type-`Dₙ` Weyl-group equivalence, the reflection in the root `eᵢ - eⱼ` is
+the transposition of the coordinates `i` and `j`. -/
+@[simp]
+theorem coe_typeDRationalWeylGroupEquiv_ofIdx_typeDRootSub (hn : 4 ≤ n) {i j : Fin n}
+    (hij : i ≠ j) :
+    (typeDRationalWeylGroupEquiv n hn
+      (weylGroup.ofIdx ((DynkinType.D n).rationalRootSystem (DynkinType.valid_D.mpr hn))
+        ((typeDRootEquiv n hn).symm (typeDRootSub hij))) : WreathProduct ℤˣ (Fin n)) =
+      SemidirectProduct.inr (Equiv.swap i j) :=
+  (congrArg Subtype.val (typeDWeylGroupEquivOf_ofIdx hn _ _ _ _)).trans
+    (coe_typeDWeylGroupEquiv_ofIdx_typeDRootSub hn hij)
+
+/-- Under the rational type-`Dₙ` Weyl-group equivalence, the reflection in the root `eᵢ + eⱼ`
+exchanges the coordinates `i` and `j` and changes both their signs. -/
+@[simp]
+theorem coe_typeDRationalWeylGroupEquiv_ofIdx_typeDRootAdd (hn : 4 ≤ n) {i j : Fin n}
+    (hij : i ≠ j) :
+    (typeDRationalWeylGroupEquiv n hn
+      (weylGroup.ofIdx ((DynkinType.D n).rationalRootSystem (DynkinType.valid_D.mpr hn))
+        ((typeDRootEquiv n hn).symm (typeDRootAdd hij))) : WreathProduct ℤˣ (Fin n)) =
+      negSwap i j :=
+  (congrArg Subtype.val (typeDWeylGroupEquivOf_ofIdx hn _ _ _ _)).trans
+    (coe_typeDWeylGroupEquiv_ofIdx_typeDRootAdd hn hij)
 
 end
 
