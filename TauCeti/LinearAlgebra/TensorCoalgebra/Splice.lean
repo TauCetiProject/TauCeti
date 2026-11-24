@@ -644,9 +644,10 @@ theorem subword_tail_duplicateAt_zero {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 
       of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R w) := by
   rw [subword_eq_of_tprod R _ n.succ_pos (by omega)]
   refine of_tprod_congr R M _ rfl fun k ↦ ?_
-  rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
-  split_ifs with h <;> dsimp only at h
-  · exact hw.symm.trans (congrArg w (Fin.ext (by rw [Fin.val_zero]; omega)))
+  simp only [Fin.cast_eq_self, duplicateAt_apply, hj]
+  split_ifs
+  · omega
+  · rw [← hw]; exact congrArg w (Fin.ext (by simp only [Fin.val_zero]; omega))
   · exact congrArg w (Fin.ext (by dsimp only; omega))
 
 /-- When `1 ≤ j`, the tail `(n + 1)`-letter subword of `duplicateAt e j w` has `e` at `j - 1`. -/
@@ -656,8 +657,8 @@ theorem subword_tail_duplicateAt_of_pos (e : M) {n : ℕ} {j : Fin (n + 1)} (hj 
         of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
   refine ⟨fun k ↦ duplicateAt e j w ⟨1 + k.val, by omega⟩, ?_,
     subword_eq_of_tprod R _ n.succ_pos (by omega)⟩
-  dsimp only; rw [duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega),
-    ite_eq_left (by rw [Fin.val_mk]; omega)]
+  simp only [duplicateAt_apply]
+  split_ifs <;> first | rfl | omega
 
 /-- Collapsing a 2-letter block strictly before `j` in `duplicateAt e j w` has `e` at `j - 1`. -/
 theorem splice_two_duplicateAt_of_lt (e : M) {n : ℕ} {j : Fin (n + 1)} {p : ℕ}
@@ -666,10 +667,8 @@ theorem splice_two_duplicateAt_of_lt (e : M) {n : ℕ} {j : Fin (n + 1)} {p : �
       splice R (duplicateAt e j w) 0 (n + 2) p 2 v =
         of R M ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R u) := by
   refine ⟨_, ?_, splice_eq_of_tprod R (duplicateAt e j w) v two_pos (by omega) (by omega)⟩
-  dsimp only
-  rw [dite_eq_right (by rw [Fin.val_mk]; omega), dite_eq_right (by rw [Fin.val_mk]; omega),
-    duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk, Fin.val_mk]; omega),
-    ite_eq_left (by rw [Fin.val_mk, Fin.val_mk]; omega)]
+  simp only [duplicateAt_apply]
+  split_ifs <;> first | rfl | omega
 
 /-- Collapsing `[e, e]` at slot `j` to `e` in `duplicateAt e j w` recovers `w` when `w j = e`. -/
 theorem splice_two_duplicateAt_self {e : M} {n : ℕ} {j : Fin (n + 1)} {w : Fin (n + 1) → M}
@@ -716,10 +715,11 @@ theorem subword_two_duplicateAt_ge {e : M} {n : ℕ} {j : Fin (n + 1)} {q : ℕ}
     subword R (duplicateAt e j w) (q + 1) 2 = subword R w q 2 := by
   rw [subword_eq_of_tprod R _ two_pos (by omega), subword_eq_of_tprod R _ two_pos hq₂]
   refine of_tprod_congr R M _ rfl fun k ↦ ?_
-  rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
-  split_ifs with h <;> dsimp only at h
-  · exact hw.symm.trans (congrArg w (Fin.ext (by dsimp only; omega)))
-  · exact congrArg w (Fin.ext (by dsimp only; omega))
+  simp only [Fin.cast_eq_self, duplicateAt_apply]
+  split_ifs <;> first
+    | omega
+    | (rw [← hw]; exact congrArg w (Fin.ext (by dsimp only; omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
 
 /-- Splicing a two-letter block strictly after `j` commutes with duplicating `e` at slot `j`. -/
 theorem splice_two_duplicateAt_after (e : M) {n : ℕ} (j : Fin n) {q : ℕ} (hq₁ : j.val + 1 ≤ q)

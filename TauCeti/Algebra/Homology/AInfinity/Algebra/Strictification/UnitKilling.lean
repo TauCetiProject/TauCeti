@@ -271,6 +271,24 @@ private theorem unitKillingCochain_barDifferential_of_tprod (𝒜 : AInfinityAlg
   refine Finset.sum_congr (Finset.ext fun p ↦ ?_) fun _ _ ↦ rfl
   simp only [Finset.mem_filter, Finset.mem_range]; omega
 
+private theorem hochschildDifferential_unitKillingCochain_of_tprod (𝒜 : AInfinityAlgebra R A)
+    (e : A) (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) {w : Fin (m + 3) → A}
+    {𝒟 : Fin (m + 3) → ℤ} (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) :
+    𝒜.hochschildDifferential 0 (unitKillingCochain 𝒜 e π m j)
+        (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) =
+      𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R
+        ![unitKillingCochain 𝒜 e π m j (subword R w 0 (m + 2)), w (Fin.last (m + 2))])) +
+      𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R
+        ![w 0, unitKillingCochain 𝒜 e π m j (subword R w 1 (m + 2))])) -
+      ∑ p ∈ Finset.range (m + 2),
+        negOnePowCast R (prefixSum p 𝒟) •
+          unitKillingCochain 𝒜 e π m j
+            (splice R w 0 (m + 3) p 2 (𝒜.taylor (subword R w p 2))) := by
+  rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
+    brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
+    taylor_gradedCoderiv_unitKillingCochain 𝒜 e π m j hw,
+    unitKillingCochain_barDifferential_of_tprod 𝒜 e π m j hw]
+
 private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) (π : Module.Dual R A) (m : ℕ)
     (j : Fin (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) {w : Fin (m + 3) → A}
@@ -307,9 +325,10 @@ private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgeb
         rw [splice_two_eq_of_tprod R (by omega) w _,
           unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
             (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega) (by
-              dsimp only; rw [dite_eq_right (by rw [Fin.val_mk]; omega),
-                dite_eq_right (by rw [Fin.val_mk]; omega)]
-              exact (congrArg w (Fin.ext (by simp; omega))).trans hwi),
+              dsimp only; split_ifs
+              · omega
+              · omega
+              · exact (congrArg w (Fin.ext (by simp; omega))).trans hwi),
           smul_zero],
       zero_add, ← map_smul, ← map_smul, ← map_add, hcancel, map_zero]
 
@@ -321,10 +340,7 @@ private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinit
     𝒜.hochschildDifferential 0 (unitKillingCochain 𝒜 e π m j)
         (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) = 0 := by
   have _hjn := j.isLt
-  rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
-    brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
-    taylor_gradedCoderiv_unitKillingCochain 𝒜 e π m j hw,
-    unitKillingCochain_barDifferential_of_tprod 𝒜 e π m j hw]
+  rw [hochschildDifferential_unitKillingCochain_of_tprod 𝒜 e π m j hw]
   have hinit : unitKillingCochain 𝒜 e π m j (subword R w 0 (m + 2)) = 0 := by
     rw [subword_eq_of_tprod R w (by omega) (by omega)]
     exact unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
@@ -339,8 +355,10 @@ private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinit
       rw [splice_two_eq_of_tprod R (by omega) w _,
         unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
           (i := ⟨i.val, by omega⟩) hij (by
-            dsimp only; rw [dite_eq_left (by rw [Fin.val_mk]; omega)]
-            exact (congrArg w (Fin.ext rfl)).trans hwi), smul_zero],
+            dsimp only; split_ifs
+            · exact (congrArg w (Fin.ext rfl)).trans hwi
+            · omega
+            · omega), smul_zero],
     add_zero, sub_self]
 
 private theorem unitKillingCochain_splice_two_after {𝒜 : AInfinityAlgebra R A} {e : A}
@@ -460,11 +478,8 @@ private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinity
             negOnePowCast R (prefixSum j.val 𝒟) • negOnePowCast R (prefixSum (j.val + 1 + s) 𝒟) •
               𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.val + 1 + s + 1) 2
                 (𝒜.taylor (subword R w (j.val + 1 + s) 2))))) := by
-    rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
-      brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
-      taylor_gradedCoderiv_unitKillingCochain 𝒜 e π m j hw,
-      unitKillingCochain_barDifferential_of_tprod 𝒜 e π m j hw]
-    rw [Finset.sum_range_eq_sum_add_sum_sub _ (by omega : j.val + 1 ≤ m + 2), Nat.succ_sub_succ,
+    rw [hochschildDifferential_unitKillingCochain_of_tprod 𝒜 e π m j hw,
+      Finset.sum_range_eq_sum_add_sum_sub _ (by omega : j.val + 1 ≤ m + 2), Nat.succ_sub_succ,
       hpre, hsuf, hinit, taylor_of_two_neg_smul_duplicateAt 𝒜 e j w]
   rw [hdφ]
   exact Eq.trans (by abel) (rescaled_stasheff_duplicateAt h𝒜 he m j hlow hIH hw hwj h𝒟j)
@@ -518,8 +533,7 @@ private theorem exists_gauge_kill_slots {𝒜 : AInfinityAlgebra R A} (h𝒜 : �
   | r + 1, hr => by
     obtain ⟨𝒜₁, g₁, hG₁, hmin₁, htay₁, hIH₁, hg₁_filt, hg₁_iso, hg₁_lin⟩ :=
       exists_gauge_kill_slots h𝒜 he hπ hπe hlow r (by omega)
-    have he₁ := h𝒜.cohomologicalUnit_of_m_two_eq hmin₁ hG₁
-      (m_eq_of_taylor_eq_on_filtration hG₁ (by omega) htay₁) he
+    have he₁ := h𝒜.cohomologicalUnit_of_taylor_eq hmin₁ hG₁ (by omega) htay₁ he
     obtain ⟨𝒜₂, g₂, hG₂, hmin₂, htay₂, hIH₂, hg₂_filt, hg₂_iso, hg₂_lin⟩ :=
       exists_gauge_kill_slot hmin₁ he₁ (hG₁ ▸ hπ) hπe (hlow.of_taylor_eq htay₁) ⟨r, hr⟩ hIH₁
     exact ⟨𝒜₂, g₁.comp g₂, hG₂.trans hG₁, hmin₂, fun z hz ↦ (htay₂ z hz).trans (htay₁ z hz), hIH₂,
@@ -544,8 +558,7 @@ theorem IsMinimal.exists_killsUnitUpTo_isIso_of_mem_dualPiece {𝒜 : AInfinityA
       g.IsIso ∧ g.linearPart = LinearMap.id := by
   obtain ⟨𝒜', g, hG', hmin', htay', hIH', hg_filt, hg_iso, hg_lin⟩ :=
     exists_gauge_kill_slots h𝒜 he hπ hπe hlow (m + 2) le_rfl
-  have he' := h𝒜.cohomologicalUnit_of_m_two_eq hmin' hG'
-    (m_eq_of_taylor_eq_on_filtration hG' (by omega) htay') he
+  have he' := h𝒜.cohomologicalUnit_of_taylor_eq hmin' hG' (by omega) htay' he
   have hlow' := hlow.of_taylor_eq htay'
   refine ⟨𝒜', g, hG', hmin', htay', killsUnitUpTo_iff.2 fun k hk2 hkle x ⟨s, hxs⟩ ↦ ?_,
     hg_filt, hg_iso, hg_lin⟩

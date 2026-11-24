@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.BarDifferential
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
@@ -231,20 +232,13 @@ theorem IsMinimal.cohomologicalUnit_of_m_two_eq {𝒜' : AInfinityAlgebra R A} (
     fun x ↦ by rw [hm2, h𝒜.cohomologicalUnit_binary_left he],
     fun x ↦ by rw [hm2, h𝒜.cohomologicalUnit_binary_right he]⟩
 
-/-- Minimal `A∞` structures with the same grading whose Taylor maps agree on two-letter words have
-the same cohomological units. -/
+/-- Minimal `A∞` structures with the same grading whose Taylor maps agree on `filtration R A n`
+for some `2 ≤ n` have the same cohomological units. -/
 theorem IsMinimal.cohomologicalUnit_of_taylor_eq {𝒜' : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal)
-    (h𝒜' : 𝒜'.IsMinimal) (hG : 𝒜'.grading = 𝒜.grading)
-    (htay : ∀ a b, 𝒜'.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]))
-      = 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])))
-    (he : 𝒜.CohomologicalUnit e) : 𝒜'.CohomologicalUnit e := by
-  refine h𝒜'.cohomologicalUnit_iff.2 ⟨hG ▸ he.degree_zero, fun x ↦ ?_, fun x ↦ ?_⟩
-  · have h := htay e x
-    rwa [taylor_of_two, taylor_of_two, hG, 𝒜.grading.koszulTwist_apply_of_mem_zero he.degree_zero,
-      h𝒜.cohomologicalUnit_binary_left he] at h
-  · have h := htay (𝒜.grading.koszulTwist 1 x) e
-    rw [taylor_of_two, taylor_of_two, hG, InternalGrading.koszulTwist_koszulTwist] at h
-    exact h.trans (h𝒜.cohomologicalUnit_binary_right he x)
+    (h𝒜' : 𝒜'.IsMinimal) (hG : 𝒜'.grading = 𝒜.grading) {n : ℕ} (hn : 2 ≤ n)
+    (htay : ∀ z ∈ ReducedTensorWords.filtration R A n, 𝒜'.taylor z = 𝒜.taylor z)
+    (he : 𝒜.CohomologicalUnit e) : 𝒜'.CohomologicalUnit e :=
+  h𝒜.cohomologicalUnit_of_m_two_eq h𝒜' hG (m_eq_of_taylor_eq_on_filtration hG hn htay) he
 
 end Minimal
 
