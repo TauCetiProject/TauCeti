@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Galois.Basic
 
 /-!
-# Connected objects are invariant under equivalence
+# Connected objects: invariance under equivalence and a fibre-functor criterion
 
 `CategoryTheory.PreGaloisCategory.IsConnected` is defined by conditions on initial objects,
 monomorphisms and isomorphisms alone, and an equivalence of categories preserves and reflects all
@@ -16,11 +17,15 @@ three. This file records the resulting transport statements: connectedness is in
 isomorphism inside a category, and an equivalence `F : C ⥤ D` makes `F.obj A` connected exactly
 when `A` is.
 
-None of this needs the Galois axioms. Mathlib states connectedness for an object of an arbitrary
-category and only later restricts to `PreGaloisCategory`, and that arbitrary generality is what is
-used here; in particular the statements apply to a category that is merely *equivalent* to a
-Galois category, which is how a connectedness criterion is transported to a concrete category
-whose objects are not finite sets.
+The equivalence statements need no Galois axioms. Mathlib states connectedness for an object of
+an arbitrary category and only later restricts to `PreGaloisCategory`, and that arbitrary
+generality is what is used there; in particular the statements apply to a category that is merely
+*equivalent* to a Galois category, which is how a connectedness criterion is transported to a
+concrete category whose objects are not finite sets.
+
+The last statement does use the Galois axioms: for a fibre functor `F` on a pre-Galois category,
+an object whose fibre is nonempty and acted on transitively by `Aut F` is connected. This is the
+converse of Mathlib's `FiberFunctor.isPretransitive_of_isConnected`.
 
 ## Main declarations
 
@@ -30,11 +35,13 @@ whose objects are not finite sets.
   objects to connected objects, as an instance of Mathlib's `PreservesIsConnected`.
 * `CategoryTheory.Functor.isConnected_obj_iff`: connectedness of `F.obj A` is equivalent to
   connectedness of `A`.
+* `CategoryTheory.PreGaloisCategory.FiberFunctor.isConnected_of_isPretransitive`: an object whose
+  fibre is nonempty, with `Aut F` acting transitively on it, is connected.
 -/
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ u₁ u₂ w
 
 namespace CategoryTheory
 
@@ -81,6 +88,25 @@ theorem isConnected_obj_iff (A : C) : IsConnected (F.obj A) ↔ IsConnected A :=
         exact isIso_of_reflects_iso i F }
 
 end Functor
+
+/-- An object whose fibre under a fibre functor `F` is nonempty, and on which `Aut F` acts
+transitively, is connected. Mathlib's `FiberFunctor.isPretransitive_of_isConnected` is the
+converse. -/
+theorem PreGaloisCategory.FiberFunctor.isConnected_of_isPretransitive [PreGaloisCategory C]
+    (F : C ⥤ FintypeCat.{w}) [FiberFunctor F] (X : C) [Nonempty (F.obj X)]
+    [MulAction.IsPretransitive (Aut F) (F.obj X)] :
+    IsConnected X where
+  notInitial h := not_initial_of_inhabited F (Classical.arbitrary (F.obj X)) h
+  noTrivialComponent Z i _ hZ := by
+    obtain ⟨z⟩ := (not_initial_iff_fiber_nonempty F Z).mp hZ
+    have hinj : Function.Injective (F.map i) :=
+      ConcreteCategory.injective_of_mono_of_preservesPullback (F.map i)
+    have hsurj : Function.Surjective (F.map i) := fun x ↦ by
+      obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq (Aut F) (F.map i z) x
+      exact ⟨σ • z, by rw [← mulAction_naturality, hσ]⟩
+    have : IsIso (F.map i) :=
+      (ConcreteCategory.isIso_iff_bijective (F.map i)).mpr ⟨hinj, hsurj⟩
+    exact isIso_of_reflects_iso i F
 
 end CategoryTheory
 

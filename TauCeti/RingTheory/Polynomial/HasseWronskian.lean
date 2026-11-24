@@ -15,8 +15,8 @@ public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.Polynomial.Pochhammer
+import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Roots
-import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.Vandermonde
 

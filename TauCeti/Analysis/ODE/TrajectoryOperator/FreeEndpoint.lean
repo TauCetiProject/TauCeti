@@ -426,29 +426,13 @@ theorem index_coprod_endTailL_ker_eq_finrank_pointSpectralSubspace_sub_finrank_a
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) +
         Module.finrank ℝ (LinearMap.ker (Aminus : E →ₗ[ℝ] E)) := by
-  rw [index_coprod_endTailL_eq_finrank_pointSpectralSubspace_sub_finrank_add hA hsymminus
-      hsymplus hbot htop hc hcbot hctop (hgapminus δminus ⟨le_rfl, hδminus⟩)
-      (hgapplus δplus ⟨hδplus, le_rfl⟩) hmem AL hAL,
+  rw [index_coprod_endTailL (isFredholm_trajectoryOperator_sub_smul_id hA hsymminus hsymplus hbot
+      htop hc hcbot hctop (hgapminus δminus ⟨le_rfl, hδminus⟩) (hgapplus δplus ⟨hδplus, le_rfl⟩)
+      AL hAL) hmem,
+    index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker hA hsymminus
+      hsymplus hbot htop hc (δminus := -δminus) (neg_pos.2 hδminus) hδplus
+      (by rwa [neg_neg]) hctop (by rwa [neg_neg]) hgapplus AL hAL,
     Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
-  -- No eigenvalue of `A⁻` lies in `[δ⁻, 0)`, and the only one of `A⁺` in `[0, δ⁺)` is `0`.
-  have hminus : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ico δminus 0) = ⊥ :=
-    eq_bot_iff.2 (Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦
-      (not_not.1 (Module.End.hasEigenvalue_iff.not.1 (hgapminus μ hμ))).le)
-  have hplus : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ico 0 δplus) =
-      LinearMap.ker (Aplus : E →ₗ[ℝ] E) := by
-    rw [Module.End.pointSpectralSubspace_eq_eigenspace (𝕜 := ℝ) (Ω := Ico 0 δplus) (μ := 0)
-      ⟨le_rfl, hδplus⟩
-      fun ν hν hν0 ↦ not_not.1 (Module.End.hasEigenvalue_iff.not.1
-        (hgapplus ν ⟨lt_of_le_of_ne hν.1 hν0.symm, hν.2.le⟩))]
-    simp
-  have h₁ := Module.End.finrank_pointSpectralSubspace_Iio_eq_add
-    (A := (Aminus : E →ₗ[ℝ] E)) hδminus.le
-  have h₂ := Module.End.finrank_pointSpectralSubspace_Iio_eq_add
-    (A := (Aplus : E →ₗ[ℝ] E)) hδplus.le
-  rw [hminus, finrank_bot, add_zero] at h₁
-  rw [hplus] at h₂
-  rw [h₁, h₂]
-  push_cast
   ring
 
 end SymmetricLimits

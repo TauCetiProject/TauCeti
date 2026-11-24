@@ -16,10 +16,7 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test; conversely, norm divergence of partial sums over `Ico N n` does not depend on the starting
-index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with infinitely many
-terms of positive norm), each term dominates the sum of its predecessors and the partial sums
-diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
+test. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
@@ -71,91 +68,6 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
-
-/-- Divergence in norm of partial sums `∑ m ∈ Ico N n, T m` does not depend on the starting index
-`N`. -/
-theorem tendsto_norm_sum_Ico_atTop_iff {E : Type*} [SeminormedAddCommGroup E] {T : ℕ → E}
-    (N M : ℕ) :
-    Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop ↔
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-  have hmp (N M : ℕ)
-      (hN : Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop) :
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-    let K := max N M
-    let C := (∑ m ∈ Finset.Ico N K, T m) - ∑ m ∈ Finset.Ico M K, T m
-    refine Filter.tendsto_atTop_mono' Filter.atTop ?_
-      (Filter.tendsto_atTop_add_const_right Filter.atTop (-‖C‖) hN)
-    filter_upwards [Filter.eventually_ge_atTop K] with n hn
-    have hdiff : (∑ m ∈ Finset.Ico N n, T m) - C = ∑ m ∈ Finset.Ico M n, T m := by
-      rw [← Finset.sum_Ico_consecutive T (le_max_left N M) hn,
-        ← Finset.sum_Ico_consecutive T (le_max_right N M) hn]
-      simp only [C]
-      abel
-    simpa only [← sub_eq_add_neg, hdiff] using norm_sub_norm_le (∑ m ∈ Finset.Ico N n, T m) C
-  exact ⟨hmp N M, hmp M N⟩
-
-/-- If consecutive terms of a sequence eventually expand in norm by a factor `c > 2` (so
-`(c - 1)⁻¹ < 1` and each term dominates the sum of its predecessors) and infinitely many terms
-have positive norm, then the partial sums `∑ m ∈ Ico N n, T m` diverge in norm for every `N`. -/
-theorem tendsto_norm_sum_Ico_atTop_of_eventually_mul_norm_le {E : Type*}
-    [SeminormedAddCommGroup E] {T : ℕ → E} {c : ℝ} (hc : 2 < c)
-    (hgrow : ∀ᶠ m in Filter.atTop, c * ‖T m‖ ≤ ‖T (m + 1)‖)
-    (hpos : ∃ᶠ m in Filter.atTop, 0 < ‖T m‖) (N : ℕ) :
-    Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop := by
-  have hc1_pos : 0 < c - 1 := sub_pos.2 ((by norm_num : (1 : ℝ) < 2).trans hc)
-  have hc2_pos : 0 < c - 2 := sub_pos.2 hc
-  have hc_gt_one : 1 < c := (by norm_num : (1 : ℝ) < 2).trans hc
-  obtain ⟨M₀, hM₀⟩ := Filter.eventually_atTop.1 hgrow
-  obtain ⟨M, hMM₀, hTM_pos⟩ := Filter.frequently_atTop.1 hpos M₀
-  rw [tendsto_norm_sum_Ico_atTop_iff N M]
-  -- Each tail prefix `∑_{m = M}^{M + k - 1} T m` has norm at most `(c - 1)⁻¹ ‖T (M + k)‖`,
-  -- while `‖T (M + k)‖` grows at least as `c ^ k ‖T M‖`.
-  have hprefix (k : ℕ) :
-      ‖∑ m ∈ Finset.Ico M (M + k), T m‖ ≤ (c - 1)⁻¹ * ‖T (M + k)‖ ∧
-        c ^ k * ‖T M‖ ≤ ‖T (M + k)‖ := by
-    induction k with
-    | zero =>
-      exact ⟨by simpa using mul_nonneg (inv_nonneg.2 hc1_pos.le) (norm_nonneg _), by simp⟩
-    | succ k ih =>
-      have hstep : c * ‖T (M + k)‖ ≤ ‖T (M + k + 1)‖ :=
-        hM₀ (M + k) (hMM₀.trans (Nat.le_add_right M k))
-      refine ⟨?_, ?_⟩
-      · rw [← add_assoc, Finset.sum_Ico_succ_top (Nat.le_add_right M k)]
-        calc ‖(∑ m ∈ Finset.Ico M (M + k), T m) + T (M + k)‖
-            ≤ ‖∑ m ∈ Finset.Ico M (M + k), T m‖ + ‖T (M + k)‖ := norm_add_le _ _
-          _ ≤ (c - 1)⁻¹ * ‖T (M + k)‖ + ‖T (M + k)‖ := by gcongr; exact ih.1
-          _ = (c - 1)⁻¹ * (c * ‖T (M + k)‖) := by
-              have : c - 1 ≠ 0 := hc1_pos.ne'
-              field_simp
-              ring
-          _ ≤ (c - 1)⁻¹ * ‖T (M + k + 1)‖ :=
-              mul_le_mul_of_nonneg_left hstep (inv_nonneg.2 hc1_pos.le)
-      · rw [← add_assoc, pow_succ', mul_assoc]
-        exact (mul_le_mul_of_nonneg_left ih.2 (zero_le_two.trans hc.le)).trans hstep
-  have htail : Filter.Tendsto (fun k : ℕ => (c - 2) / (c - 1) * (c ^ k * ‖T M‖))
-      Filter.atTop Filter.atTop :=
-    Filter.Tendsto.const_mul_atTop (div_pos hc2_pos hc1_pos) <|
-      Filter.Tendsto.atTop_mul_const hTM_pos (tendsto_pow_atTop_atTop_of_one_lt hc_gt_one)
-  rw [Filter.tendsto_atTop_atTop] at htail ⊢
-  intro B
-  obtain ⟨K, hK⟩ := htail B
-  refine ⟨M + K + 1, fun n hn => ?_⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = M + k + 1 := ⟨n - M - 1, by omega⟩
-  calc B ≤ (c - 2) / (c - 1) * (c ^ k * ‖T M‖) := hK k (by omega)
-    _ ≤ (c - 2) / (c - 1) * ‖T (M + k)‖ := by
-          gcongr
-          exact (hprefix k).2
-    _ = ‖T (M + k)‖ - (c - 1)⁻¹ * ‖T (M + k)‖ := by
-          have : c - 1 ≠ 0 := hc1_pos.ne'
-          field_simp
-          ring
-    _ ≤ ‖T (M + k)‖ - ‖∑ m ∈ Finset.Ico M (M + k), T m‖ := by
-          gcongr
-          exact (hprefix k).1
-    _ ≤ ‖∑ m ∈ Finset.Ico M (M + k + 1), T m‖ := by
-          rw [Finset.sum_Ico_succ_top (Nat.le_add_right M k)]
-          simpa [sub_neg_eq_add, add_comm] using
-            norm_sub_norm_le (T (M + k)) (-(∑ m ∈ Finset.Ico M (M + k), T m))
 
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
@@ -211,9 +123,10 @@ theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : 
   rw [← cauchySeq_shift 1]
   simp_rw [Finset.sum_range_by_parts _ _ (_ + 1), add_tsub_cancel_right, sub_eq_add_neg]
   refine CauchySeq.add (Filter.Tendsto.cauchySeq (x := 0) ?_) (CauchySeq.neg ?_)
-  · refine squeeze_zero_norm (fun n ↦ (norm_smul_le _ _).trans
-      (mul_le_mul_of_nonneg_left (hzb (n + 1)) (norm_nonneg _))) ?_
-    simpa using (tendsto_norm_zero.comp hf0).mul_const b
+  · have hzb' : Filter.IsBoundedUnder (· ≤ ·) Filter.atTop
+        (norm ∘ fun n ↦ ∑ i ∈ Finset.range (n + 1), z i) :=
+      Filter.isBoundedUnder_of ⟨b, fun n ↦ hzb (n + 1)⟩
+    exact hf0.op_zero_isBoundedUnder_le hzb' (· • ·) norm_smul_le
   · refine cauchySeq_range_of_norm_bounded (g := fun i ↦ b * ‖f (i + 1) + -f i‖)
       (by simpa only [← sub_eq_add_neg] using (hvar.mul_left b).hasSum.tendsto_sum_nat.cauchySeq)
       fun i ↦ ?_
