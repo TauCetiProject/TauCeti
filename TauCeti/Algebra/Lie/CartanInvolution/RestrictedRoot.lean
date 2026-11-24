@@ -201,6 +201,12 @@ which the bracket vanishes, maximal under inclusion among such submodules. -/
 def IsMaximalAbelianInP (𝔞 : Submodule R L) : Prop :=
   Maximal (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞
 
+/-- `IsMaximalAbelianInP` is maximality among abelian submodules of `𝔭`. -/
+theorem isMaximalAbelianInP_iff_maximal :
+    θ.IsMaximalAbelianInP 𝔞 ↔
+      Maximal (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞 :=
+  Iff.rfl
+
 theorem isMaximalAbelianInP_iff :
     θ.IsMaximalAbelianInP 𝔞 ↔ (𝔞 ≤ θ.cartanP ∧ ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) ∧
       ∀ ⦃𝔟 : Submodule R L⦄, (𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) → 𝔞 ≤ 𝔟 → 𝔟 ≤ 𝔞 :=
@@ -209,15 +215,15 @@ theorem isMaximalAbelianInP_iff :
 namespace IsMaximalAbelianInP
 
 theorem le_cartanP (h𝔞 : θ.IsMaximalAbelianInP 𝔞) : 𝔞 ≤ θ.cartanP :=
-  h𝔞.prop.1
+  (isMaximalAbelianInP_iff_maximal.mp h𝔞).prop.1
 
 theorem lie_eq_zero (h𝔞 : θ.IsMaximalAbelianInP 𝔞) (hx : x ∈ 𝔞) (hy : y ∈ 𝔞) : ⁅x, y⁆ = 0 :=
-  h𝔞.prop.2 x hx y hy
+  (isMaximalAbelianInP_iff_maximal.mp h𝔞).prop.2 x hx y hy
 
 /-- A maximal abelian subspace `𝔞` of `𝔭` lies in its centralizer `𝔤_0`. -/
 theorem le_restrictedRootSpace_zero (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞 ≤ 𝔞.restrictedRootSpace 0 :=
-  Submodule.le_restrictedRootSpace_zero h𝔞.prop.2
+  Submodule.le_restrictedRootSpace_zero (isMaximalAbelianInP_iff_maximal.mp h𝔞).prop.2
 
 /-- A maximal abelian subspace `𝔞` of `𝔭` is its own centralizer in `𝔭`: `𝔤_0 ∩ 𝔭 = 𝔞`. -/
 theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
@@ -233,8 +239,9 @@ theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP �
     obtain ⟨s, rfl⟩ := mem_span_singleton.mp hs
     simp only [add_lie, lie_add, smul_lie, lie_smul, h𝔞.lie_eq_zero ha hb, lie_self,
       hx0 ⟨a, ha⟩, hx0 ⟨b, hb⟩, ← lie_skew x b, neg_zero, smul_zero, add_zero]
-  exact h𝔞.le_of_ge ⟨sup_le h𝔞.le_cartanP ((span_singleton_le_iff_mem _ _).mpr hxp), hab⟩
-    le_sup_left (mem_sup_right (mem_span_singleton_self x))
+  exact (isMaximalAbelianInP_iff_maximal.mp h𝔞).le_of_ge
+    ⟨sup_le h𝔞.le_cartanP ((span_singleton_le_iff_mem _ _).mpr hxp), hab⟩ le_sup_left
+    (mem_sup_right (mem_span_singleton_self x))
 
 /-- The centralizer `𝔤_0` of a maximal abelian subspace `𝔞` of `𝔭` is the sum of `𝔞` and
 `𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. This states only the sum; that it is
@@ -271,9 +278,10 @@ variable (θ) in
 /-- Every abelian subspace of `𝔭` lies in a maximal one, by Zorn's lemma. -/
 theorem exists_isMaximalAbelianInP_ge {𝔟 : Submodule R L} (h𝔟 : 𝔟 ≤ θ.cartanP)
     (hab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) : ∃ 𝔞, 𝔟 ≤ 𝔞 ∧ θ.IsMaximalAbelianInP 𝔞 := by
-  refine zorn_le_nonempty₀ {𝔠 | 𝔠 ≤ θ.cartanP ∧ ∀ x ∈ 𝔠, ∀ y ∈ 𝔠, ⁅x, y⁆ = 0}
+  refine (zorn_le_nonempty₀ {𝔠 | 𝔠 ≤ θ.cartanP ∧ ∀ x ∈ 𝔠, ∀ y ∈ 𝔠, ⁅x, y⁆ = 0}
     (fun c hc hchain 𝔠 h𝔠 ↦ ⟨sSup c, ⟨sSup_le fun 𝔡 h𝔡 ↦ (hc h𝔡).1, fun x hx y hy ↦ ?_⟩,
-      fun _ ↦ le_sSup⟩) 𝔟 ⟨h𝔟, hab⟩
+      fun _ ↦ le_sSup⟩) 𝔟 ⟨h𝔟, hab⟩).imp
+    fun _ h ↦ ⟨h.1, isMaximalAbelianInP_iff_maximal.mpr h.2⟩
   -- The union of a chain of abelian subspaces is abelian: `x` and `y` lie in a common member.
   have hdir := hchain.directedOn
   obtain ⟨𝔡, h𝔡, hx⟩ := (mem_sSup_of_directed ⟨𝔠, h𝔠⟩ hdir).mp hx
