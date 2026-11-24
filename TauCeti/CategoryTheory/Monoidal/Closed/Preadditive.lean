@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 import Mathlib.CategoryTheory.Adjunction.Additive
 
 /-!
-# Biclosed preadditive categories are monoidal preadditive
+# Additivity and linearity in closed monoidal categories
 
 If tensoring on either side with a fixed object is a left adjoint (for instance in a closed braided
 monoidal category), it preserves binary coproducts. In a preadditive category, binary coproducts
@@ -21,9 +22,13 @@ morphisms is additive in each variable: the category is `MonoidalPreadditive`.
 This applies to categories such as sheaves of modules, whose monoidal structure is constructed
 abstractly (for instance by localization) rather than from a bilinear formula on morphisms.
 
+In a linear category with a monoidal structure, currying and uncurrying preserve scalars whenever
+tensoring on the left by the individual closed object is linear.
+
 ## Main declarations
 
 * `TauCeti.monoidalPreadditive_of_isLeftAdjoint`.
+* `TauCeti.uncurry_smul` and `TauCeti.curry_smul`: scalar compatibility of the closed adjunction.
 * `TauCeti.tensorSwapCurryEquiv`: additive currying after braiding the tensor factors.
 -/
 
@@ -54,6 +59,25 @@ theorem monoidalPreadditive_of_isLeftAdjoint (C : Type*) [Category* C] [Preaddit
       add_whiskerRight _ _ := (tensorRight _).map_add }
 
 open MonoidalClosed
+
+section Linear
+
+variable {R : Type*} [Semiring R] {C : Type*} [Category* C] [MonoidalCategory C]
+  [Preadditive C] [Linear R C] {A B X : C} [Closed A] [(tensorLeft A).Linear R]
+
+/-- Uncurrying preserves scalars when tensoring on the left by the closed object is linear. -/
+lemma uncurry_smul (r : R) (f : B ⟶ A ⟶[C] X) :
+    uncurry (r • f) = r • uncurry f := by
+  have h : A ◁ (r • f) = r • (A ◁ f) := (tensorLeft A).map_smul r f
+  rw [uncurry_eq, h, Linear.smul_comp, uncurry_eq]
+
+/-- Currying preserves scalars when tensoring on the left by the closed object is linear. -/
+lemma curry_smul (r : R) (f : A ⊗ B ⟶ X) :
+    curry (r • f) = r • curry f := by
+  apply uncurry_injective
+  rw [uncurry_smul, uncurry_curry, uncurry_curry]
+
+end Linear
 
 variable {C : Type*} [Category* C] [MonoidalCategory C] [BraidedCategory C] [Preadditive C]
 variable (X Y Z : C) [Closed Y] [(tensorLeft Y).Additive]

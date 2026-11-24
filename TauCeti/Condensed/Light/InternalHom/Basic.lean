@@ -18,8 +18,8 @@ import TauCeti.CategoryTheory.Sites.Linear
 The tensor–Hom adjunction and the free test-object equivalence identify maps
 `A ⊗ R[S] ⟶ B` additively with sections of the internal Hom on `S`. This refines the
 set-valued comparison `LightCondensed.ihomPoints` with the additivity needed to
-transport difference equations. Tensoring, currying, and uncurrying preserve coefficient
-scalars.
+transport difference equations. Tensoring preserves coefficient scalars, so the generic
+`TauCeti.curry_smul` and `TauCeti.uncurry_smul` apply to light condensed modules.
 -/
 
 public section
@@ -50,19 +50,6 @@ instance tensorLeftLinear (A : LightCondMod R) : (tensorLeft A).Linear R := by
       Functor.leftUnitor _ ≪≫
       (tensoringLeft _).mapIso (asIso (adj.counit.app A))
   exact Functor.linear_of_iso _ e
-
-/-- Uncurrying a light condensed module map commutes with scalar multiplication. -/
-lemma uncurry_smul {A B C : LightCondMod R} (r : R)
-    (f : B ⟶ A ⟶[LightCondMod R] C) :
-    MonoidalClosed.uncurry (r • f) = r • MonoidalClosed.uncurry f := by
-  have h : A ◁ (r • f) = r • (A ◁ f) := (tensorLeft A).map_smul r f
-  rw [MonoidalClosed.uncurry_eq, h, Linear.smul_comp, MonoidalClosed.uncurry_eq]
-
-/-- Currying a light condensed module map commutes with scalar multiplication. -/
-lemma curry_smul {A B C : LightCondMod R} (r : R) (f : A ⊗ B ⟶ C) :
-    MonoidalClosed.curry (r • f) = r • MonoidalClosed.curry f := by
-  apply MonoidalClosed.uncurry_injective
-  rw [uncurry_smul, MonoidalClosed.uncurry_curry, MonoidalClosed.uncurry_curry]
 
 variable (R)
 

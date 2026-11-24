@@ -8,6 +8,7 @@ module
 public import TauCeti.Condensed.Light.InternalHom.Basic
 public import TauCeti.Condensed.Light.LocallyConstant
 
+import TauCeti.CategoryTheory.Monoidal.Closed.Preadditive
 import TauCeti.Topology.Category.LightProfinite.Cartesian
 import TauCeti.Topology.LocallyConstant.Product
 
@@ -108,7 +109,7 @@ lemma lightCondFreeInternalHomProductEquiv_smul (M : ModuleCat.{u} R)
     simpa only [LightProfinite.freeModuleHomLinearEquiv_symm_apply] using
       (T.freeModuleHomLinearEquiv (M := _)).symm.map_smul r s
   rw [lightCondFreeInternalHomProductEquiv_apply, lightCondFreeInternalHomProductEquiv_apply, hs,
-    LightCondensed.uncurry_smul, Linear.comp_smul, LightProfinite.freeModuleHomEquiv_smul]
+    TauCeti.uncurry_smul, Linear.comp_smul, LightProfinite.freeModuleHomEquiv_smul]
   exact (lightLocallyConstantSectionsEquiv M (S ⊗ T)).map_smul r _
 
 /-- For free source `R[S]` and discrete target `M`, internal Hom sections on `T` are
