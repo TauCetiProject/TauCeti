@@ -224,10 +224,8 @@ theorem polynomialCoact_eval_ι
       simp only [LinearMap.rTensor_tmul, Algebra.TensorProduct.lift_tmul,
         SymmetricAlgebra.lift_ι_apply, LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply,
         TensorProduct.comm_tmul, hx]
-      have ht (a : A) : a ⊗ₜ[k] ψ = a • ((1 : A) ⊗ₜ[k] ψ) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      simpa only [map_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm] using
-        (congrArg (fun ξ ↦ Module.Dual.baseChangeEvaluation ξ z) (ht ((g⁻¹).ofConv h))).symm
+      rw [TensorProduct.tmul_eq_smul_one_tmul ((g⁻¹).ofConv h) ψ,
+        map_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm]
 
 end Evaluation
 
