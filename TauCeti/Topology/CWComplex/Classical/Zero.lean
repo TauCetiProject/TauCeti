@@ -73,27 +73,24 @@ lemma eq_zero_of_mem_skeletonLT_one_of_mem_openCell {y : X} (hy : y ∈ skeleton
     (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn)) hy h
 
 variable {C} in
+/-- The closed cell whose open cell contains a point `x` of the zero-skeleton is `{x}`. -/
+lemma closedCell_eq_singleton_of_mem_openCell {x : X} (hx : x ∈ skeletonLT C 1) {n : ℕ}
+    {j : cell C n} (hj : x ∈ openCell n j) : closedCell n j = {x} := by
+  obtain rfl := eq_zero_of_mem_skeletonLT_one_of_mem_openCell hx hj
+  rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hj
+  rw [closedCell_zero_eq_singleton, hj]
+
+variable {C} in
 /-- **A zero-cell is a subcomplex.** A point `x` of the zero-skeleton of `C` forms a subcomplex of
 `C`, whose cells are the cells whose open cell contains `x`: the zero-cell at `x`, and no others. -/
 def singletonSubcomplex {x : X} (hx : x ∈ skeletonLT C 1) : CWComplex.Subcomplex C :=
   CWComplex.Subcomplex.mk' C {x} (fun n ↦ {j | x ∈ openCell n j})
-    (fun n ⟨j, hj⟩ ↦ by
-      obtain rfl := eq_zero_of_mem_skeletonLT_one_of_mem_openCell hx hj
-      have hj : x ∈ openCell 0 j := hj
-      rw [closedCell_zero_eq_singleton]
-      rw [openCell_zero_eq_singleton] at hj
-      exact Set.singleton_subset_singleton.2 (Set.mem_singleton_iff.1 hj).symm)
+    (fun _ j ↦ (closedCell_eq_singleton_of_mem_openCell hx j.property).subset)
     (by
-      refine Set.Subset.antisymm (Set.iUnion₂_subset fun n ⟨j, hj⟩ ↦ ?_)
-        (Set.singleton_subset_iff.2 ?_)
-      · obtain rfl := eq_zero_of_mem_skeletonLT_one_of_mem_openCell hx hj
-        have hj : x ∈ openCell 0 j := hj
-        rw [openCell_zero_eq_singleton] at hj ⊢
-        exact Set.singleton_subset_singleton.2 (Set.mem_singleton_iff.1 hj).symm
-      · obtain ⟨n, j, hj⟩ := Set.mem_iUnion₂.1
-          ((CWComplex.iUnion_openCell_eq_complex (C := C)).symm ▸
-            CWComplex.Subcomplex.subset_complex _ hx :
-            x ∈ ⋃ (n : ℕ) (j : cell C n), openCell n j)
+      refine Set.Subset.antisymm (Set.iUnion₂_subset fun _ j ↦ ?_) (Set.singleton_subset_iff.2 ?_)
+      · exact (openCell_subset_closedCell _ _).trans
+          (closedCell_eq_singleton_of_mem_openCell hx j.property).subset
+      · obtain ⟨n, -, j, hj⟩ := CWComplex.mem_skeletonLT_iff.1 hx
         exact Set.mem_iUnion₂.2 ⟨n, ⟨j, hj⟩, hj⟩)
 
 variable {C} in

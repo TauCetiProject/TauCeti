@@ -24,7 +24,7 @@ map `φ` is its suspension: its characteristic map sends `x` to
 `[φ (Fin.init x), (x (Fin.last n) + 1) / 2]`, and its open and closed cells are the images of the
 products of those of the `n`-cell with `(0, 1)` and with `I`. Since the basepoint of `ΣX` is again
 a `0`-cell (`TauCeti.ReducedSuspension.basepoint_mem_skeletonLT_one`), the instance applies to
-iterated suspensions as well. When `X` is finite, so is `ΣX`.
+iterated suspensions as well. When `X` is finite, so is `ΣX` (an instance).
 
 This makes the reduced suspension an operation on pointed CW complexes based at `0`-cells. Reduced
 cohomology theories on such complexes compare their values on `X` and on `ΣX` through their
@@ -171,11 +171,6 @@ private def pushoutCellEquiv (n : ℕ) :
   isPushout_cylinder.cwComplexOfMapsToSkeletonLTCellEquiv
     const_mem_skeletonLT_of_mem_cellFrontier n
 
-/-- The point has no cells of positive dimension. -/
-private instance isEmpty_cell_punit_succ (n : ℕ) :
-    IsEmpty (cell (univ : Set PUnit.{u + 1}) (n + 1)) :=
-  inferInstanceAs (IsEmpty PEmpty)
-
 /-- The `(n + 1)`-cells of the cylinder on `X` relative to its basepoint are the `n`-cells of `X`
 other than the basepoint. -/
 private def cylinderCellEquiv (n : ℕ) :
@@ -290,7 +285,7 @@ instance : Fact ((basepoint : ReducedSuspension X x₀) ∈
   ⟨basepoint_mem_skeletonLT_one⟩
 
 /-- The reduced suspension of a finite CW complex based at a `0`-cell is a finite CW complex. -/
-theorem finite_cwComplex [RelCWComplex.Finite (univ : Set X)] :
+instance finite_cwComplex [RelCWComplex.Finite (univ : Set X)] :
     RelCWComplex.Finite (univ : Set (ReducedSuspension X x₀)) := by
   let := relCWComplexCylinder X x₀
   have : RelCWComplex.Finite (univ ×ˢ univ : Set (X × I)) := by
