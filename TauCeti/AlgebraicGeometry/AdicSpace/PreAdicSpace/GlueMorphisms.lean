@@ -80,7 +80,7 @@ include hU in
 private theorem exists_ofRestrict_base_eq (x : X) :
     ∃ (i : ι) (y : X.restrict (U i).isOpenEmbedding),
       (X.ofRestrict (U i).isOpenEmbedding).base y = x := by
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (by rw [hU]; trivial : x ∈ ⨆ i, U i)
   exact ⟨i, ⟨x, hi⟩, rfl⟩
 
 /-- **Gluing morphisms out of a sheafy pre-adic space.** If `X` is sheafy, the opens `U i` cover
@@ -112,6 +112,9 @@ whose restrictions to every member of an open cover agree are equal. -/
 theorem ext_of_appTop_ofRestrict {s t : (X.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj}
     (h : ∀ i, (X.ofRestrict (U i).isOpenEmbedding).appTop s =
       (X.ofRestrict (U i).isOpenEmbedding).appTop t) : s = t := by
+  -- By `Hom.appTop_def`, the global-sections map of `X.ofRestrict _` is the presheaf map of `X`
+  -- along the counit `V i ⟶ ⊤` of the open-embedding adjunction, so `h` is the hypothesis of
+  -- `eq_of_locally_eq'` for the underlying type-valued sheaf.
   simp only [Hom.appTop_def] at h
   have hO : Presheaf.IsSheaf (Opens.grothendieckTopology _)
       (X.toPresheafedSpace.presheaf ⋙ TopCommRingCat.isCompleteSeparated.ι) :=
@@ -123,7 +126,7 @@ theorem ext_of_appTop_ofRestrict {s t : (X.toPresheafedSpace.presheaf.obj (Oppos
   refine G.eq_of_locally_eq' V ⊤
     (fun i ↦ (U i).isOpenEmbedding.isOpenMap.adjunction.counit.app ⊤) ?_ s t h
   intro x _
-  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (by rw [hU]; trivial : x ∈ ⨆ i, U i)
   exact Opens.mem_iSup.mpr ⟨i, ⟨⟨x, hi⟩, trivial, rfl⟩⟩
 
 end PreAdicSpace

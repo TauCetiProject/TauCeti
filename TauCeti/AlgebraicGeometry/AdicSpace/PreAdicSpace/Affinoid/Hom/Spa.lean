@@ -94,12 +94,9 @@ theorem exists_presentationLimitAppTop_eq_of_iso {X : PreAdicSpace.{u}}
   refine ⟨e.hom ≫ presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf χ, ?_⟩
   rw [presentationLimitAppTop_comp, presentationLimitAppTop_pairComap]
   ext a
-  -- `χ` is by construction `I.hom ∘ ψ₀`. The goal states `I` through the underlying ring maps
-  -- `.val` of the `TopCommRingCat` morphisms, which `Iso.hom_inv_id_apply` does not match, so
-  -- restate it with the concrete-category coercions.
-  change e.hom.appTop (I.inv (I.hom (e.inv.appTop (φ a)))) = φ a
-  rw [Iso.hom_inv_id_apply, ← RingHom.comp_apply, ← PreAdicSpace.Hom.appTop_comp,
-    Iso.hom_inv_id, PreAdicSpace.Hom.appTop_id, RingHom.id_apply]
+  simp only [χ, ψ₀, I, RingHom.comp_apply]
+  rw [presentationLimitPreAdicSpaceTopIso_hom_inv_id_apply, ← RingHom.comp_apply,
+    ← PreAdicSpace.Hom.appTop_comp, Iso.hom_inv_id, PreAdicSpace.Hom.appTop_id, RingHom.id_apply]
 
 /-- **Morphisms from an adic space into an affinoid spectrum from global sections** (Huber 1994,
 Proposition 2.1(ii)): for an adic space `X` and a complete Hausdorff Huber pair `(A, A⁺)`, every

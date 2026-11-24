@@ -230,6 +230,7 @@ theorem presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap (φ :
 
 /-- The global-sections map of the morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of
 Huber pairs `χ` is `χ` followed by the identification of `B` with the global sections. -/
+@[simp]
 theorem presentationLimitAppTop_pairComap (χ : Pair.Hom S T) :
     presentationLimitAppTop P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
         (presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf χ) =
@@ -241,8 +242,8 @@ theorem presentationLimitAppTop_pairComap (χ : Pair.Hom S T) :
     presentationLimitHomRingHom_eq_comp_presentationLimitAppTop] at h
   rw [← h]
   ext a
-  exact (Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P' T.plus
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hT) _).symm
+  exact (presentationLimitPreAdicSpaceTopIso_hom_inv_id_apply P' T.plus
+    T.isRingOfIntegralElements.isPowerBounded_of_mem hT _).symm
 
 /-- **Naturality in the Huber pair**: composing a morphism `f : X ⟶ Spa(B, B⁺)` with the
 morphism induced by `χ : (A, A⁺) → (B, B⁺)` precomposes the global-sections map with `χ`. -/
