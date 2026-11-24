@@ -479,7 +479,7 @@ end Commutator
 
 section ExtendHom
 
-variable {A : Type*} [Group A] (α : FactorSet G M) (h : ∀ (g : G) (a : M), g • a = a)
+variable {A : Type*} [Monoid A] (α : FactorSet G M) (h : ∀ (g : G) (a : M), g • a = a)
   (χ : M →* A)
 
 include h in
