@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.MultipleFiber
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
+import all TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Map
 import TauCeti.Geometry.Manifold.Submersion.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The normal character of a cyclic multiple fibre
@@ -65,23 +67,14 @@ private def centralTorusNormalCoord (x : AddAction.orbitRel.Quotient (LinearMap.
   let i := centralTorusEmbedding P hinj hP (u₀ := u₀) hn
   have hn₀ : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have hp := isSubmersionOfComplement_torusFamilyProjection P hinj hP
-  have hi : ⇑i = torusFamilyFiberMap P u₀ := by
-    simp [i, centralTorusEmbedding]
-  have hd : ∀ w, mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ)
-      (((↑) : rootsOfUnityBall m r → ℂ) ∘ torusFamilyProjection P) (i x) w =
-      mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) (torusFamilyProjection P) (i x) w := by
-    intro w
-    rw [mfderiv_comp _ ((rootsOfUnityBall.contMDiff_val (n := n)).mdifferentiableAt hn₀)
-      (hp.contMDiff.mdifferentiableAt hn₀), ContinuousLinearMap.comp_apply]
-    exact rootsOfUnityBall.mfderiv_val_apply _ _
   have hs : IsRegularPoint (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ)
-      (((↑) : rootsOfUnityBall m r → ℂ) ∘ torusFamilyProjection P) (i x) :=
-    isRegularPoint_iff.mpr (fun w ↦ by
-      obtain ⟨v, hv⟩ := (hp.isSubmersionAt (i x)).surjective_mfderiv hn₀ w
-      exact ⟨v, (hd v).trans hv⟩)
-  refine i.normalSpaceEquivOfLevel x hn₀ (c := (u₀ : ℂ)) (.of_forall fun y ↦ ?_) hs ?_
-  · rw [Function.comp_apply, hi, torusFamilyProjection_fiberMap]
-  · rw [Module.finrank_prod, Module.finrank_self, add_comm]
+      (torusFamilyProjection P) (i x) :=
+    isRegularPoint_iff.mpr ((hp.isSubmersionAt (i x)).surjective_mfderiv hn₀)
+  have hi : ⇑i = torusFamilyFiberMap P u₀ := by
+    simp only [i, centralTorusEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding]
+  refine (i.normalSpaceEquivOfSurjective x hn₀ hs ?_).toContinuousLinearEquiv
+  rw [SmoothEmbedding.tangentRange, hi]
+  exact range_mfderiv_torusFamilyFiberMap P hinj hP hn u₀ x
 
 private theorem centralTorusNormalCoord_normalClass
     (x : AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) (w : ℂ × E) :
@@ -95,8 +88,12 @@ private theorem centralTorusNormalCoord_normalClass
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   rw [centralTorusNormalCoord]
-  refine (SmoothEmbedding.normalSpaceEquivOfLevel_normalClass _ _ _ _ _ _ w).trans ?_
+  dsimp only
+  refine (SmoothEmbedding.normalSpaceEquivOfSurjective_normalClass
+    (centralTorusEmbedding P hinj hP hn) x _ _ _ w).trans ?_
   rw [centralTorusEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply]
+  exact (Manifold.mfderiv_subtype_val_comp_apply (I := 𝓘(ℂ)) (J := 𝓘(ℂ).prod 𝓘(ℂ, E))
+    (U := rootsOfUnityBall.opens m r) (f := torusFamilyProjection P) w).symm
 
 end CentralTorus
 
@@ -363,7 +360,7 @@ private theorem torusFamilyMultipleFiberNormalCoord_symm_smul_mfderiv
   dsimp only [p, y] at hleft ⊢
   rw [hleft, torusFamilyMultipleFiberNormalCoord_symm_mfderiv]
   have hqt : (Quotient.mk (orbitRel (rootsOfUnity m ℂ) _) (g • x)) = Quotient.mk _ x :=
-    Quotient.sound ⟨g, rfl⟩
+    MulAction.orbitRel.Quotient.quotient_smul_eq
   let normalClass z (t : ℂ × E) :=
     Bundle.TotalSpace.mk' (E := fun a ↦ i.NormalSpace a hn₀) ℂ z (i.normalClass z hn₀ t)
   have hdiff := (congrArg (fun z ↦ mfderiv A A q z w') hgy).trans hd
@@ -411,9 +408,8 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_smul
   obtain ⟨w, hw⟩ := (hp.isSubmersionAt y).surjective_mfderiv hn₀ v
   have hwp : mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ)
       (((↑) : rootsOfUnityBall m r → ℂ) ∘ torusFamilyProjection P) y w = v := by
-    rw [mfderiv_comp y ((rootsOfUnityBall.contMDiff_val (n := n)).mdifferentiableAt hn₀)
-      (hp.contMDiff.mdifferentiableAt hn₀), ContinuousLinearMap.comp_apply]
-    exact (rootsOfUnityBall.mfderiv_val_apply _ _).trans hw
+    rw [← hw]
+    exact Manifold.mfderiv_subtype_val_comp_apply (U := rootsOfUnityBall.opens m r) w
   clear hw
   subst v
   exact torusFamilyMultipleFiberNormalCoord_symm_smul_mfderiv
