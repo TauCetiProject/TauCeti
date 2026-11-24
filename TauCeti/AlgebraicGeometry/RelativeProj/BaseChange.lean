@@ -159,7 +159,7 @@ private theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativePr
 
 private noncomputable def relativeProjPullbackCover :
     ((pullback g).obj A).obj.relativeProj.OpenCover :=
-  Scheme.Cover.copy ((Scheme.AffineZariskiSite.affinePairCover g).openCover.pullback₁
+  Scheme.Cover.copy (g.affinePairCover.openCover.pullback₁
       ((pullback g).obj A).obj.relativeProjToBase)
     {p : X.AffineZariskiSite × Y.AffineZariskiSite // p.1.toOpens ≤ g ⁻¹ᵁ p.2.toOpens}
     (fun p ↦ ((pullback g).obj A).obj.relativeProjCover.X p.val.1)
@@ -169,7 +169,7 @@ private noncomputable def relativeProjPullbackCover :
     (fun p ↦ (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip
       |>.isoPullback_hom_fst.symm.trans <| congrArg (_ ≫ ·) <|
         (PreZeroHypercover.pullback₁_f ((pullback g).obj A).obj.relativeProjToBase
-          (Scheme.AffineZariskiSite.affinePairCover g).openCover.toPreZeroHypercover p).symm)
+          g.affinePairCover.openCover.toPreZeroHypercover p).symm)
 
 private instance : Preorder (relativeProjPullbackCover A g).I₀ :=
   inferInstanceAs <| Preorder
@@ -200,7 +200,7 @@ private theorem exists_relativeProjPullbackCover_refinement
     rw [CommMon.relativeProjToBase_preimage _ k]
     exact ⟨y, rfl⟩
   obtain ⟨l, hl, hlk, hli, hlj⟩ :=
-    Scheme.AffineZariskiSite.exists_affinePair_le g (leOfHom hki) (leOfHom hkj) hk
+    g.exists_affinePair_le (leOfHom hki) (leOfHom hkj) hk
   obtain ⟨z, hz⟩ : ((pullback g).obj A).obj.relativeProjCover.f k y ∈
       (((pullback g).obj A).obj.relativeProjCover.f l.val.1).opensRange := by
     rw [← CommMon.relativeProjToBase_preimage _ l.val.1]
@@ -288,7 +288,7 @@ theorem isPullback_relativeProjPullbackHom :
     IsPullback ((pullback g).obj A).obj.relativeProjToBase (relativeProjPullbackHom A g) g
       A.obj.relativeProjToBase := by
   refine Scheme.isPullback_of_openCover _ _ _ _
-    (Scheme.AffineZariskiSite.affinePairCover g).openCover fun i ↦ ?_
+    g.affinePairCover.openCover fun i ↦ ?_
   obtain ⟨⟨V, U⟩, hV⟩ := i
   have hchart := (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec V).flip
   have hQ := ((A.isPullback_proj_pullbackGradedSections g hV U.property V.property).paste_horiz

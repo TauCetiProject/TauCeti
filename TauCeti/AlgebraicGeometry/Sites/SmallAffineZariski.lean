@@ -30,10 +30,10 @@ images. This is the compatibility needed to glue morphisms out of `T` along this
 
 * `Scheme.AffineZariskiSite.isOpenCover_toOpens`: the affine opens of `X`, indexed by the small
   affine Zariski site, form an open cover of `X`.
-* `Scheme.AffineZariskiSite.affinePairCover`: for a morphism `g : X ⟶ Y`, the affine open cover
+* `Scheme.Hom.affinePairCover`: for a morphism `g : X ⟶ Y`, the affine open cover
   of `X` by the spectra of the affine opens `V` of `X` lying over an affine open `U` of `Y`,
   indexed by the pairs `(V, U)` with `V ≤ g⁻¹ U`.
-* `Scheme.AffineZariskiSite.exists_affinePair_le`: below two such pairs, every point of a common
+* `Scheme.Hom.exists_affinePair_le`: below two such pairs, every point of a common
   affine open lies in a smaller pair below both, in the order of the small affine Zariski sites.
 * `Scheme.AffineZariskiSite.directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom`: the
   transition map of `(directedCover X).pullback₁ q` along `U ⟶ V` is the inclusion
@@ -59,7 +59,7 @@ theorem isOpenCover_toOpens (X : Scheme.{u}) :
 
 end AlgebraicGeometry.Scheme.AffineZariskiSite
 
-namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
+namespace AlgebraicGeometry.Scheme.Hom
 
 section AffinePair
 
@@ -114,6 +114,10 @@ theorem exists_affinePair_le
     ⟨(k.basicOpen_le h).trans hkj, b, e.symm⟩⟩
 
 end AffinePair
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
 
 variable {X T : Scheme.{u}} (q : T ⟶ X)
 
