@@ -69,14 +69,22 @@ theorem mutableFrozenEquiv_principal (B : ExchangeMatrix row) :
     B.principal_reindex (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
       (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
 
-private def standardPartsEquiv (K J : Type*) :
+/-- Standard mutable-first exchange matrices are reconstructed from a principal exchange matrix
+and an arbitrary frozen-row matrix, without choosing a complement presentation. -/
+def standardPartsEquiv (K J : Type*) :
     ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) ≃
       ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ where
   toFun B := (B.principal, B.matrix.submatrix Sum.inr id)
   invFun p :=
     { matrix := Matrix.fromRows p.1.matrix p.2
       symmetrizer := p.1.symmetrizer
-      isSkewSymmetrizer := p.1.isSkewSymmetrizer }
+      isSkewSymmetrizer := by
+        have hblock : (Matrix.fromRows p.1.matrix p.2).submatrix
+            (Function.Embedding.inl : K ↪ K ⊕ J) id = p.1.matrix :=
+          Matrix.toRows₁_fromRows p.1.matrix p.2
+        rw [hblock]
+        simpa only [Function.Embedding.coe_refl, Matrix.submatrix_id_id] using
+          p.1.isSkewSymmetrizer }
   left_inv B := by
     ext : 1
     · dsimp only
@@ -92,6 +100,24 @@ private def standardPartsEquiv (K J : Type*) :
       · simp
     · exact Matrix.toRows₂_fromRows p.1.matrix p.2
 
+/-- Decomposing a standard presentation returns its principal and frozen blocks. -/
+@[simp]
+theorem standardPartsEquiv_apply {K J : Type*}
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) :
+    standardPartsEquiv K J B = (B.principal, B.matrix.submatrix Sum.inr id) := by rfl
+
+/-- The inverse assembles exactly the specified mutable and frozen rows. -/
+@[simp]
+theorem standardPartsEquiv_symm_matrix {K J : Type*}
+    (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ) :
+    ((standardPartsEquiv K J).symm p).matrix = Matrix.fromRows p.1.matrix p.2 := by rfl
+
+/-- The assembled standard presentation retains the principal block's chosen symmetrizer. -/
+@[simp]
+theorem standardPartsEquiv_symm_symmetrizer {K J : Type*}
+    (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ) :
+    ((standardPartsEquiv K J).symm p).symmetrizer = p.1.symmetrizer := by rfl
+
 /-- An extended exchange matrix is exactly a principal exchange matrix and an unconstrained
 frozen-row matrix, with the original row embedding retained by the inverse construction. -/
 def principalFrozenEquiv : ExchangeMatrix row ≃
@@ -99,6 +125,7 @@ def principalFrozenEquiv : ExchangeMatrix row ≃
   (mutableFrozenEquiv row).trans (standardPartsEquiv K _)
 
 /-- The forward decomposition consists of the actual principal block and actual frozen rows. -/
+@[simp]
 theorem principalFrozenEquiv_apply (B : ExchangeMatrix row) :
     principalFrozenEquiv row B = (B.principal, B.matrix.submatrix Subtype.val id) := by
   apply Prod.ext
@@ -106,31 +133,21 @@ theorem principalFrozenEquiv_apply (B : ExchangeMatrix row) :
   · ext a j
     simp [principalFrozenEquiv, standardPartsEquiv]
 
-/-- The first component of the decomposition is the original principal exchange matrix. -/
-@[simp]
-theorem principalFrozenEquiv_fst (B : ExchangeMatrix row) :
-    (principalFrozenEquiv row B).1 = B.principal := by
-  rw [principalFrozenEquiv_apply]
-
-/-- The second component contains exactly the original frozen entries. -/
-@[simp]
-theorem principalFrozenEquiv_snd (B : ExchangeMatrix row) :
-    (principalFrozenEquiv row B).2 = B.matrix.submatrix Subtype.val id := by
-  rw [principalFrozenEquiv_apply]
-
 /-- Reconstructed matrices have the prescribed principal block. -/
 @[simp]
 theorem principalFrozenEquiv_symm_principal
     (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix ((Set.range row)ᶜ : Set I) K ℤ) :
     ((principalFrozenEquiv row).symm p).principal = p.1 := by
-  rw [← principalFrozenEquiv_fst, Equiv.apply_symm_apply]
+  simpa only [principalFrozenEquiv_apply] using
+    congrArg Prod.fst ((principalFrozenEquiv row).apply_symm_apply p)
 
 /-- Reconstructed matrices have precisely the prescribed frozen block. -/
 @[simp]
 theorem principalFrozenEquiv_symm_frozen
     (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix ((Set.range row)ᶜ : Set I) K ℤ) :
     ((principalFrozenEquiv row).symm p).matrix.submatrix Subtype.val id = p.2 := by
-  rw [← principalFrozenEquiv_snd, Equiv.apply_symm_apply]
+  simpa only [principalFrozenEquiv_apply] using
+    congrArg Prod.snd ((principalFrozenEquiv row).apply_symm_apply p)
 
 section Mutation
 
