@@ -39,6 +39,7 @@ digit of `x` is the `n`th digit of any polynomial representing `x` modulo `P_{n 
   normalized factorial expansion.
 * `TauCeti.CycloCompletion.factorialDigit_injective`: an element is determined by its digits.
 * `TauCeti.CycloCompletion.factorialDigit_add`, `TauCeti.CycloCompletion.factorialDigit_smul`,
+  `TauCeti.CycloCompletion.factorialDigit_neg`, `TauCeti.CycloCompletion.factorialDigit_sub`,
   `TauCeti.CycloCompletion.factorialDigit_map`: digits are `R`-linear and commute with coefficient
   change.
 
@@ -179,6 +180,18 @@ theorem factorialDigit_smul (r : R) (x : CycloCompletion R {n | 0 < n}) (n : ℕ
     factorialDigit_eq_of_proj_eq_mk (p := r • p) (by rw [map_smul, ← hp, AdjoinRoot.smul_mk])
       n.lt_add_one, Polynomial.factorialDigit_smul]
 
+/-- Factorial digits commute with negation. -/
+@[simp]
+theorem factorialDigit_neg (x : CycloCompletion R {n | 0 < n}) (n : ℕ) :
+    (-x).factorialDigit n = -x.factorialDigit n := by
+  simpa using factorialDigit_smul (-1 : R) x n
+
+/-- Factorial digits commute with subtraction. -/
+@[simp]
+theorem factorialDigit_sub (x y : CycloCompletion R {n | 0 < n}) (n : ℕ) :
+    (x - y).factorialDigit n = x.factorialDigit n - y.factorialDigit n := by
+  simp [sub_eq_add_neg]
+
 /-- Factorial digits commute with coefficient change. -/
 @[simp]
 theorem factorialDigit_map (φ : R →+* R') (x : CycloCompletion R {n | 0 < n}) (n : ℕ) :
@@ -210,7 +223,7 @@ example : (fromPoly ℤ {n | 0 < n} X).factorialDigit 0 = 1 ∧
 
 /-- Over the torsion ring `ZMod 2`, `2 q = 0` has all digits zero while `q` keeps the digit
 `-1 = 1` at index one. -/
-example : (fromPoly (ZMod 2) {n | 0 < n} (2 * X)).factorialDigit 1 = 0 ∧
+example : (∀ n, (fromPoly (ZMod 2) {n | 0 < n} (2 * X)).factorialDigit n = 0) ∧
     (fromPoly (ZMod 2) {n | 0 < n} X).factorialDigit 1 = 1 := by
   have h2 : (2 : (ZMod 2)[X]) = 0 := CharTwo.two_eq_zero
   have h : ∑ i ∈ range 2, (1 : (ZMod 2)[X]) * factorialPoly (ZMod 2) i = X := by

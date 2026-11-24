@@ -76,6 +76,7 @@ lets them pass to the completion `lim R[q] / (P_N)`.
   `P_N`.
 * `Polynomial.factorialDigit_sum_mul_factorialPoly`: digit extraction after reconstruction.
 * `Polynomial.factorialDigit_add`, `Polynomial.factorialDigit_smul`,
+  `Polynomial.factorialDigit_neg`, `Polynomial.factorialDigit_sub`,
   `Polynomial.factorialDigit_map`: digits are `R`-linear and commute with coefficient change.
 
 ## References
@@ -552,6 +553,17 @@ theorem factorialDigit_smul (r : R) (g : R[X]) (n : ℕ) :
 @[simp]
 theorem factorialDigit_zero (n : ℕ) : (0 : R[X]).factorialDigit n = 0 := by
   simpa using factorialDigit_smul (0 : R) (0 : R[X]) n
+
+/-- Factorial digits commute with negation. -/
+@[simp]
+theorem factorialDigit_neg (g : R[X]) (n : ℕ) : (-g).factorialDigit n = -g.factorialDigit n := by
+  simpa using factorialDigit_smul (-1 : R) g n
+
+/-- Factorial digits commute with subtraction. -/
+@[simp]
+theorem factorialDigit_sub (g h : R[X]) (n : ℕ) :
+    (g - h).factorialDigit n = g.factorialDigit n - h.factorialDigit n := by
+  simp [sub_eq_add_neg]
 
 /-- Factorial residuals commute with coefficient change. -/
 @[simp]
