@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.RingTheory.Etale.Basic
-import TauCeti.RingTheory.Etale.Idempotent
+import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 import TauCeti.RingTheory.RingHom.Etale
 
 /-!

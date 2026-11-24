@@ -327,9 +327,10 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : X ⟶ Y} (hf : IsFiniteEtale f) (
         S.isRingOfIntegralElements.isPowerBounded_of_mem
         T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf := by
     have hconj := congrArg InducedCategory.Hom.hom
-      (comapOfPresentation_eq_ofPairIsoOfPresentation hS hT P hP P' hP' φ).symm
+      ((Iso.comp_inv_eq _).mp
+        (comapOfPresentation_ofPairIsoOfPresentation_inv hS hT P hP P' hP' φ)).symm
     rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
-      comapOfPresentation_hom, presentationLimitPreAdicSpacePairComap_def] at hconj
+      Category.assoc, comapOfPresentation_hom, presentationLimitPreAdicSpacePairComap_def] at hconj
     simpa only [iS, iT, Functor.mapIso_hom, Functor.mapIso_inv, ObjectProperty.ι_map] using hconj
   refine ⟨{
     V := V
@@ -426,8 +427,9 @@ theorem isFiniteEtale_comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [Is
   have _ : T2Space A := inferInstance
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  rw [comapOfPair_eq_ofPairIsoOfPresentation hS hT P hP P' hP' φ,
-    comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
+  rw [(Iso.eq_comp_inv _).mpr
+      (ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ).symm,
+    Category.assoc, comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
   have hbase := isFiniteEtale_presentationLimitPreAdicSpaceComap P P' hP hP' (hT.isSheaf P' hP')
     (isAdic_presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP (hS.isSheaf P hP)) φ hφ
