@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
 # Sections cut out by ideal sheaves
@@ -33,7 +34,12 @@ of a unique section.
   `AlgebraicGeometry.Scheme.IdealSheafData.eq_sectionOfIsIso_iff`;
 * `AlgebraicGeometry.Scheme.IdealSheafData.isIso_subschemeι_comp_iff`: an ideal sheaf is the ideal
   sheaf of a section of a separated morphism `f` exactly when its closed subscheme maps
-  isomorphically to the base.
+  isomorphically to the base;
+* `TauCeti.prodKerSection`: the canonical lift of each `x i : S ⟶ X` in a finite family to the
+  closed subscheme cut out by `∏ k, (x k).ker`;
+* `TauCeti.isFinite_prod_ker_finset` and `TauCeti.isFinite_prod_ker`: for a separated morphism
+  locally of finite type, the closed subscheme cut out by a finite product of section kernels is
+  finite over the base.
 -/
 
 public section
@@ -137,3 +143,51 @@ theorem isIso_subschemeι_comp_iff [IsSeparated f] (I : X.IdealSheafData) :
 end Scheme.IdealSheafData
 
 end AlgebraicGeometry
+
+namespace TauCeti
+
+open AlgebraicGeometry Scheme.IdealSheafData
+
+variable {X S : Scheme.{u}} {f : X ⟶ S}
+
+/-- Each morphism in a finite family factors through `V(∏ k, (x k).ker)`. -/
+theorem prod_ker_le_ker {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    ∏ k, (x k).ker ≤ (x i).ker := by
+  classical
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)]
+  exact mul_le_of_le_one_right bot_le le_top
+
+/-- The canonical lift of `x i : S ⟶ X` in a finite family to `V(∏ k, (x k).ker)`. -/
+noncomputable def prodKerSection {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    S ⟶ (∏ k, (x k).ker).subscheme :=
+  IsClosedImmersion.lift (∏ k, (x k).ker).subschemeι (x i)
+    ((ker_subschemeι _).trans_le (prod_ker_le_ker x i))
+
+/-- Composing `prodKerSection x i` with the closed immersion into `X` recovers `x i`. -/
+@[reassoc (attr := simp)]
+theorem prodKerSection_subschemeι {ι : Type*} [Fintype ι] (x : ι → (S ⟶ X)) (i : ι) :
+    prodKerSection x i ≫ (∏ k, (x k).ker).subschemeι = x i := IsClosedImmersion.lift_fac _ _ _
+
+/-- When each `x i` is a section of `f`, `prodKerSection x i` is a section of
+`V(∏ k, (x k).ker) ⟶ S`. -/
+@[reassoc] theorem prodKerSection_comp {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)}
+    (hx : ∀ i, x i ≫ f = 𝟙 S) (i : ι) :
+    prodKerSection x i ≫ ((∏ k, (x k).ker).subschemeι ≫ f) = 𝟙 S := by
+  rw [← Category.assoc, prodKerSection_subschemeι, hx]
+
+/-- The closed subscheme cut out by a finite product of section kernels of a separated morphism
+locally of finite type is finite over the base. -/
+theorem isFinite_prod_ker_finset [IsSeparated f] [LocallyOfFiniteType f] {ι : Type*}
+    {x : ι → (S ⟶ X)} {t : Finset ι} (hx : ∀ i ∈ t, x i ≫ f = 𝟙 S) :
+    IsFinite ((∏ i ∈ t, (x i).ker).subschemeι ≫ f) := by
+  refine isFinite_prod_subschemeι_comp t fun i hi ↦ ?_
+  have := Scheme.Hom.isClosedImmersion_of_comp_eq_id (x i) (hx i hi)
+  have := Scheme.Hom.isIso_ker_subschemeι_comp (x i) (hx i hi); infer_instance
+
+/-- The closed subscheme of a finite product of section kernels of a separated morphism locally of
+finite type is finite over the base. -/
+theorem isFinite_prod_ker [IsSeparated f] [LocallyOfFiniteType f] {ι : Type*} [Fintype ι]
+    {x : ι → (S ⟶ X)} (hx : ∀ i, x i ≫ f = 𝟙 S) : IsFinite ((∏ i, (x i).ker).subschemeι ≫ f) :=
+  isFinite_prod_ker_finset fun i _ ↦ hx i
+
+end TauCeti

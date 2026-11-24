@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 public import TauCeti.Analysis.Normed.Module.Quotient
 
+import TauCeti.Analysis.Normed.Operator.Basic
+
 /-!
 # Approximation numbers of projections and projection bounds
 
@@ -71,12 +73,6 @@ namespace ContinuousLinearMap
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-private theorem nnnorm_id_sub_le_one_add (P : E →L[𝕜] E) :
-    ‖ContinuousLinearMap.id 𝕜 E - P‖₊ ≤ 1 + ‖P‖₊ := by
-  refine (nnNorm_sub_le _ _).trans ?_
-  gcongr
-  exact_mod_cast norm_id_le
 
 /-- If `P : E →L[𝕜] E` has rank at most `n` and `id - P` maps into a submodule `M ≤ E`, then
 `aₙ(T) ≤ ‖id - P‖ ‖T|_M‖`. -/

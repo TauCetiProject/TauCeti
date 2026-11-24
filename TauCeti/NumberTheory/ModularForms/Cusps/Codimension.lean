@@ -144,7 +144,7 @@ theorem finrank_le_finrank_range_constantTerms_of_disjoint {ι : Type*} [Finite 
   have hinj : Function.Injective (L.comp V.subtype) := by
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro f hf
-    exact Subtype.ext <| (Submodule.disjoint_def.mp hV) _ f.2 (hker _ hf)
+    exact Subtype.ext <| (Submodule.disjoint_def.mp hV) _ f.property (hker _ hf)
   exact LinearMap.finrank_le_finrank_of_injective
     (f := (L.comp V.subtype).codRestrict (LinearMap.range L)
       fun f ↦ ⟨f, rfl⟩) (fun _ _ h ↦ hinj (congrArg Subtype.val h))

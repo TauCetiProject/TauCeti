@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Restrict
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Gelfand numbers
@@ -29,7 +30,12 @@ without completeness of the field or of the spaces, and are bounded above by the
 numbers (`ContinuousLinearMap.gelfandNumber_le_singularValue`). The two-sided ideal inequality
 pulls an admissible subspace back along the right factor, the rank axiom uses the kernel, and
 the normalization on identities uses that every subspace of codimension below the dimension is
-nonzero.
+nonzero. Postcomposition with a linear isometry preserves the norm of every restriction, so the
+Gelfand numbers are injective.
+
+The Gelfand numbers are moreover additive and multiplicative in the index: intersecting
+admissible subspaces adds codimensions, and for a composite `S T` the subspace admissible for
+`S` is pulled back along `T` first. With `n = 0` additivity recovers the perturbation axiom.
 
 ## Main declarations
 
@@ -38,15 +44,25 @@ nonzero.
   `cₙ(T)` by the norm of the restriction of `T` to it.
 * `ContinuousLinearMap.le_gelfandNumber_iff`: lower bounds for `cₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_comp_comp_le`: `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`.
+* `ContinuousLinearMap.gelfandNumber_add_index_le`: additivity,
+  `c_{m+n}(S + T) ≤ cₘ(S) + cₙ(T)`.
+* `ContinuousLinearMap.gelfandNumber_comp_add_le_mul`: multiplicativity,
+  `c_{m+n}(S T) ≤ cₘ(S) cₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_le_singularValue`: `cₙ(T) ≤ aₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_id`: `cₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`: the Gelfand numbers form a strict
   s-number sequence.
+* `LinearIsometry.gelfandNumber_toContinuousLinearMap_comp`,
+  `TauCeti.SNumbers.isInjective_gelfand`: the Gelfand numbers are injective, unchanged under
+  postcomposition with a linear isometry.
 
 ## References
 
-* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4.
+* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4, and
+  Theorem 9.5 for additivity.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), §2.4.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  blueprint Theorems 3.6 and 3.8, for the multiplicativity of Gelfand and Kolmogorov numbers.
 -/
 
 public section
@@ -65,14 +81,14 @@ codimension being the rank of `E ⧸ M`. The indexing is zero-based, so `c₀(T)
 (`gelfandNumber_zero`). -/
 noncomputable def gelfandNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨅ M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧ Module.rank 𝕜 (E ⧸ M) ≤ n},
-    ‖T ∘L M.1.subtypeL‖₊
+    ‖T ∘L M.val.subtypeL‖₊
 
 /-- `cₙ(T)` is the infimum of `‖T|_M‖` over the closed subspaces `M` of codimension at most
 `n`. -/
 theorem gelfandNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.gelfandNumber n =
       ⨅ M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧ Module.rank 𝕜 (E ⧸ M) ≤ n},
-        ‖T ∘L M.1.subtypeL‖₊ := by
+        ‖T ∘L M.val.subtypeL‖₊ := by
   rw [gelfandNumber]
 
 private instance (n : ℕ) :
@@ -89,7 +105,7 @@ theorem gelfandNumber_le (T : E →L[𝕜] F) {n : ℕ} {M : Submodule 𝕜 E}
     (LinearMap.rank_le_of_surjective _
       (Submodule.factor_surjective M.le_topologicalClosure)).trans hM
   exact ciInf_le (f := fun M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧
-      Module.rank 𝕜 (E ⧸ M) ≤ n} ↦ ‖T ∘L M.1.subtypeL‖₊) (OrderBot.bddBelow _)
+      Module.rank 𝕜 (E ⧸ M) ≤ n} ↦ ‖T ∘L M.val.subtypeL‖₊) (OrderBot.bddBelow _)
     ⟨M.topologicalClosure, M.isClosed_topologicalClosure, hrank⟩
 
 /-- **Lower-bound characterization.** `c ≤ cₙ(T)` exactly when `c ≤ ‖T|_M‖` for every closed
@@ -143,22 +159,27 @@ theorem gelfandNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.
     have h := (LinearMap.quotKerEquivRange (T : E →ₗ[𝕜] F)).lift_rank_eq
     exact Cardinal.lift_le_nat_iff.mp (h.trans_le (Cardinal.lift_le_nat_iff.mpr hT))
   refine le_antisymm ((T.gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)) bot_le
-  have hx : T x = 0 := x.2
+  have hx : T x = 0 := x.property
   simp [hx]
+
+/-- **Mixed-index additivity.** `c_{m+n}(S + T) ≤ cₘ(S) + cₙ(T)`: the intersection of subspaces
+admissible for `S` and for `T` has codimension at most `m + n`. -/
+theorem gelfandNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
+    (S + T).gelfandNumber (m + n) ≤ S.gelfandNumber m + T.gelfandNumber n := by
+  rw [gelfandNumber_def S, gelfandNumber_def T]
+  refine NNReal.le_iInf_add_iInf fun M N ↦ ?_
+  have hrank : Module.rank 𝕜 (E ⧸ (M.val ⊓ N.val)) ≤ ↑(m + n) := by
+    rw [Nat.cast_add]
+    exact (Submodule.rank_quotient_inf_le M.val N.val).trans (add_le_add M.property.2 N.property.2)
+  refine ((S + T).gelfandNumber_le hrank).trans ?_
+  rw [add_comp]
+  exact (nnNorm_add_le _ _).trans (add_le_add (S.nnnorm_comp_subtypeL_mono inf_le_left)
+    (T.nnnorm_comp_subtypeL_mono inf_le_right))
 
 /-- **Perturbative triangle bound.** `cₙ(S + T) ≤ cₙ(S) + ‖T‖`. -/
 theorem gelfandNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     (S + T).gelfandNumber n ≤ S.gelfandNumber n + ‖T‖₊ := by
-  have h := NNReal.le_iInf_add_iInf (a := (S + T).gelfandNumber n) (g := fun _ : Unit ↦ ‖T‖₊)
-    (f := fun M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧ Module.rank 𝕜 (E ⧸ M) ≤ n} ↦
-      ‖S ∘L M.1.subtypeL‖₊) fun M _ ↦ by
-    refine ((S + T).gelfandNumber_le M.2.2).trans ?_
-    rw [add_comp]
-    refine (nnNorm_add_le _ _).trans ?_
-    gcongr
-    exact (opNNNorm_comp_le _ _).trans <| mul_le_of_le_one_right' (by
-      exact_mod_cast Submodule.norm_subtypeL_le M.1)
-  rwa [ciInf_const, ← gelfandNumber_def] at h
+  simpa using S.gelfandNumber_add_index_le T n 0
 
 /-- **Two-sided ideal inequality.** `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`: a subspace `M` admissible for
 `T` pulls back along `A` to a subspace of no larger codimension. -/
@@ -167,19 +188,38 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
   rw [gelfandNumber_def T, NNReal.mul_iInf, NNReal.iInf_mul]
   refine le_ciInf fun M ↦ ?_
   -- `E ⧸ A⁻¹(M)` embeds into `F ⧸ M`, so the preimage has codimension at most `n`.
-  have hrank : Module.rank 𝕜 (E ⧸ M.1.comap (A : E →ₗ[𝕜] F)) ≤ n := by
-    have hinj : Function.Injective
-        ((M.1.comap (A : E →ₗ[𝕜] F)).mapQ M.1 (A : E →ₗ[𝕜] F) le_rfl) := by
-      rw [← LinearMap.ker_eq_bot, Submodule.ker_mapQ, Submodule.mkQ_map_self]
-    have h := LinearMap.lift_rank_le_of_injective _ hinj
-    exact Cardinal.lift_le_nat_iff.mp (h.trans (Cardinal.lift_le_nat_iff.mpr M.2.2))
-  refine ((B ∘L T ∘L A).gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hx : A x ∈ M.1 := x.2
+  refine ((B ∘L T ∘L A).gelfandNumber_le
+    (Submodule.rank_quotient_comap_le_of_le M.property.2 (A : E →ₗ[𝕜] F))).trans
+    (opNNNorm_le_bound _ _ fun x ↦ ?_)
+  have hx : A x ∈ M.val := x.property
   calc ‖B (T (A x))‖₊ ≤ ‖B‖₊ * ‖T (A x)‖₊ := B.le_opNNNorm _
-    _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * ‖A x‖₊) := by
-      gcongr; exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨A x, hx⟩
-    _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
-    _ = ‖B‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
+    _ ≤ ‖B‖₊ * (‖T ∘L M.val.subtypeL‖₊ * ‖A x‖₊) := by
+      gcongr; exact (T ∘L M.val.subtypeL).le_opNNNorm ⟨A x, hx⟩
+    _ ≤ ‖B‖₊ * (‖T ∘L M.val.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
+    _ = ‖B‖₊ * ‖T ∘L M.val.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
+
+/-- **Mixed-index multiplicativity.** `c_{m+n}(S T) ≤ cₘ(S) cₙ(T)`: intersect a subspace
+admissible for `T` with the preimage under `T` of a subspace admissible for `S`. -/
+theorem gelfandNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
+    (S ∘L T).gelfandNumber (m + n) ≤ S.gelfandNumber m * T.gelfandNumber n := by
+  rw [gelfandNumber_def S, gelfandNumber_def T, NNReal.iInf_mul]
+  refine le_ciInf fun N ↦ ?_
+  rw [NNReal.mul_iInf]
+  refine le_ciInf fun M ↦ ?_
+  have hrank : Module.rank 𝕜 (E ⧸ (M.val ⊓ N.val.comap (T : E →ₗ[𝕜] F))) ≤ ↑(m + n) := by
+    rw [Nat.cast_add, add_comm (m : Cardinal)]
+    exact (Submodule.rank_quotient_inf_le _ _).trans
+      (add_le_add M.property.2
+        (Submodule.rank_quotient_comap_le_of_le N.property.2 (T : E →ₗ[𝕜] F)))
+  refine ((S ∘L T).gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
+  have hxM : (x : E) ∈ M.val := x.property.1
+  have hxN : T x ∈ N.val := x.property.2
+  calc ‖S (T x)‖₊ ≤ ‖S ∘L N.val.subtypeL‖₊ * ‖T x‖₊ :=
+        (S ∘L N.val.subtypeL).le_opNNNorm ⟨T x, hxN⟩
+    _ ≤ ‖S ∘L N.val.subtypeL‖₊ * (‖T ∘L M.val.subtypeL‖₊ * ‖x‖₊) := by
+      gcongr
+      exact (T ∘L M.val.subtypeL).le_opNNNorm ⟨x, hxM⟩
+    _ = ‖S ∘L N.val.subtypeL‖₊ * ‖T ∘L M.val.subtypeL‖₊ * ‖x‖₊ := (mul_assoc _ _ _).symm
 
 /-- The `n`-th Gelfand number is bounded above by the `n`-th approximation number: `cₙ(T) ≤ aₙ(T)`.
 Neither completeness nor Hausdorffness of the spaces is required. -/
@@ -206,6 +246,22 @@ theorem gelfandNumber_id {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   simp
 
 end ContinuousLinearMap
+
+namespace LinearIsometry
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Injectivity.** Postcomposition with a linear isometry leaves the Gelfand numbers unchanged:
+`cₙ(J T) = cₙ(T)`, since `J` preserves the norm of every restriction of `T`. -/
+@[simp]
+theorem gelfandNumber_toContinuousLinearMap_comp (J : F →ₗᵢ[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).gelfandNumber n = T.gelfandNumber n := by
+  simp_rw [ContinuousLinearMap.gelfandNumber_def, ContinuousLinearMap.comp_assoc]
+  exact iInf_congr fun _ ↦ NNReal.eq J.norm_toContinuousLinearMap_comp
+
+end LinearIsometry
 
 universe u
 
@@ -234,5 +290,9 @@ theorem isStrictSNumberSequence_gelfand : IsStrictSNumberSequence (gelfand (𝕜
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
     simp
   normalize_of_lt_rank n hn := ContinuousLinearMap.gelfandNumber_id hn
+
+/-- Gelfand numbers form an injective family. -/
+theorem isInjective_gelfand : IsInjective (gelfand (𝕜 := 𝕜)) where
+  linearIsometry_comp J T n := J.gelfandNumber_toContinuousLinearMap_comp T n
 
 end TauCeti.SNumbers

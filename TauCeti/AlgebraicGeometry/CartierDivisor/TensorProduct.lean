@@ -141,8 +141,9 @@ def tensorPresheafHom :
     (fun r s t ↦ sectionsMul_smul_right r s t)
   naturality f := ModuleCat.MonoidalCategory.tensor_ext fun s t ↦ sectionsMul_map f.unop s t
 
-/-- The morphism on an open subset is the multiplication map on tensor products of sections. -/
-@[simp]
+/-- The morphism on an open subset is the multiplication map on tensor products of sections.
+This is not a `simp` lemma: the two sides are linear maps over syntactically different (but
+defeq) rings, so `simp` could rewrite with it but not close the resulting goal. -/
 lemma tensorPresheafHom_app :
     ModuleCat.Hom.hom (R := X.sheaf.obj.obj (op U)) ((tensorPresheafHom D E).app (op U)) =
       sectionsMulLift D E U :=
@@ -306,16 +307,17 @@ private theorem tensorProductSheafIso_hom :
 /-- On a pure tensor of local sections, the tensor-product isomorphism multiplies the
 corresponding rational functions. The sheafification unit sends the sectionwise pure tensor into
 the tensor product sheaf. -/
-@[simp]
 theorem tensorProductSheafIso_hom_tmul (U : X.Opens)
     (s : Γ(D.sheaf, U)) (t : Γ(E.sheaf, U)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
         (tensorProductSheafIso D E).hom) U
       (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
           D.sheaf.val E.sheaf.val)).app (op U) (s ⊗ₜ t)) =
-      sectionsMul D E U s t := by
+      sectionsMul D E U s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
     D.sheaf.val E.sheaf.val
   let F := PresheafOfModules.sheafification (R := X.ringCatSheaf)

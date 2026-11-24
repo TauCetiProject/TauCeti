@@ -189,8 +189,8 @@ private theorem dim_add_dim_le_indexOfSpecialty_neg (hF : IsFunctionField k F)
   have hmem : ∀ p, ψ p ∈ weilDifferentialFiltration (-B) := fun p ↦ by
     rw [hψ]
     exact Submodule.add_mem _
-      (repartitionDualMul_mem_weilDifferentialFiltration_neg hF h₁ p.1.2)
-      (repartitionDualMul_mem_weilDifferentialFiltration_neg hF h₂ p.2.2)
+      (repartitionDualMul_mem_weilDifferentialFiltration_neg hF h₁ p.1.property)
+      (repartitionDualMul_mem_weilDifferentialFiltration_neg hF h₂ p.2.property)
   have hinj : Function.Injective (ψ.codRestrict (weilDifferentialFiltration (-B)) hmem) := by
     intro p q hpq
     have h := congrArg Subtype.val hpq
@@ -260,7 +260,7 @@ theorem finrank_weilDifferentialSpace (hF : IsFunctionField k F)
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   refine (_root_.finrank_eq_one_iff_of_ne_zero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
     (fun h ↦ hω0 (congrArg Subtype.val h))).mpr fun w ↦ ?_
-  obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω0 w.2
+  obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω0 w.property
   exact ⟨c, Subtype.ext ((coe_weilDifferentialSpaceModule_smul hF c _).trans hc)⟩
 
 end TauCeti

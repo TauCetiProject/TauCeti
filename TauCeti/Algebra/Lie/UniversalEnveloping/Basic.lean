@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.FiniteType
@@ -29,6 +30,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
   detected on the canonical Lie generators alone.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center_of_mem_center`: the canonical generator of a
+  central element of `L` is central in `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
   generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_eq_map_ι_lie`: the image of a Lie bracket
@@ -37,6 +40,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   commute.
 * `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a scaled
   Lie-bracket relation gives the corresponding scaled ring-commutator relation.
+* `TauCeti.UniversalEnvelopingAlgebra.mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a Lie-bracket
+  relation with a scaled right-hand generator gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq`: an integral Lie-bracket
   structure constant gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: a ring homomorphism maps the bracket of
@@ -214,6 +219,18 @@ theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {p q 
   rw [← sub_eq_iff_eq_add', ← natCast_zsmul, ← mul_zsmul, ← hbracket]
   simp only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q]
 
+/-- A Lie-bracket relation with a scaled right-hand generator becomes the corresponding
+ring-commutator relation under every ring homomorphism from the universal enveloping algebra. -/
+theorem mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {q r : ℤ} {n : ℕ}
+    (hab : q • ⁅a, b⁆ = ((n : ℤ) * r) • b') :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι R a) *
+        (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) =
+      (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) *
+          ρ (_root_.UniversalEnvelopingAlgebra.ι R a) +
+        n • (r • ρ (_root_.UniversalEnvelopingAlgebra.ι R b')) := by
+  simpa only [one_zsmul] using
+    zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ (p := 1) (by simpa only [one_mul] using hab)
+
 /-- A bracket relation with an integral structure constant becomes the corresponding commutator
 relation under every ring homomorphism from the universal enveloping algebra. -/
 theorem mul_eq_mul_add_zsmul_of_lie_eq (ρ : F) {a b b' : L} {c : ℤ} (hab : ⁅a, b⁆ = c • b') :
@@ -268,6 +285,13 @@ theorem mem_center_iff_forall_lie_ι {u : U} :
     exact sub_eq_zero.mp <| (LieRing.of_associative_ring_bracket _ _).symm.trans (h x)
 
 variable {R L}
+
+/-- The canonical generator of a central element of `L` is central in `U(L)`. -/
+theorem ι_mem_center_of_mem_center {y : L} (hy : y ∈ LieAlgebra.center R L) :
+    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U :=
+  (mem_center_iff_forall_lie_ι R L).mpr fun x => by
+    rw [← LieHom.map_lie, ← lie_skew, (LieModule.mem_maxTrivSubmodule R L L y).mp hy x,
+      neg_zero, map_zero]
 
 /-- **The iterated commutator with a Lie generator, read on the Lie generators.**  Bracketing
 `n` times with `ι x` inside `U(L)` sends `ι y` to the image of the `n`-fold adjoint action of `x`

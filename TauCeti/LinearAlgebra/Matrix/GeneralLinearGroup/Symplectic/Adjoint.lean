@@ -100,7 +100,7 @@ private def adjointAux (A : GLSymplectic l R) : sp l R ≃ₗ⁅R⁆ sp l R :=
   (skewAdjointMatricesLieSubalgebraEquiv (J l R)
     (((A⁻¹ : GLSymplectic l R) : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)
     (Units.invertible _)).trans
-    (LieEquiv.ofEq _ _ (by rw [mem_iff'.mp (A⁻¹).2, sp]))
+    (LieEquiv.ofEq _ _ (by rw [mem_iff'.mp (A⁻¹).property, sp]))
 
 /-- The matrix of `adjointAux A X` is `A X A⁻¹`. -/
 private theorem coe_adjointAux_apply (A : GLSymplectic l R) (X : sp l R) :
@@ -172,7 +172,7 @@ theorem mem_ker_adjointAction_iff (A : GLSymplectic l R) :
     | inl _ => exact ⟨1, by ext a; exact isEmptyElim a, one_pow 2⟩
     | inr _ =>
       refine ⟨c, hc.symm, Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_J l R) ?_⟩
-      simpa only [← hc, scalar_apply, smul_one_eq_diagonal] using mem_iff.mp A.2
+      simpa only [← hc, scalar_apply, smul_one_eq_diagonal] using mem_iff.mp A.property
   · rintro ⟨c, hc, -⟩
     ext X : 2
     simp only [coe_adjointAction_apply, hc, one_apply_eq_self]

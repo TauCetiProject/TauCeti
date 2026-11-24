@@ -24,10 +24,12 @@ numbers `aₙ(T)` (`ContinuousLinearMap.gelfandNumber_le_singularValue`,
 Reversing these inequalities uses the finite-rank projection bounds from
 `TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Projection` together with the Garling–Gordon
 and Kadec–Snobar projection theorems (`TauCeti.Analysis.Normed.Module.KadecSnobar`). Over an
-`IsRCLikeNormedField` (in particular `ℝ` or `ℂ`) and between arbitrary seminormed spaces (passing
-to `SeparationQuotient` to apply the normed-space projection theorems), subspaces of codimension or
-dimension at most `n` admit projections of norm at most `√n + ε` and `√n`, yielding the universal
-upper bounds `aₙ(T) ≤ (1 + √n) cₙ(T)`, `aₙ(T) ≤ (1 + √n) dₙ(T)`, and
+`IsRCLikeNormedField` (in particular `ℝ` or `ℂ`) and between arbitrary seminormed spaces, passing
+to the normed separation quotients (`SeparationQuotient`) lets us apply those projection theorems:
+in the normed separation quotients, closed subspaces of codimension at most `n` are, for each
+`ε > 0`, kernels of bounded projections of norm at most `√n + ε`, while subspaces of dimension at
+most `n` are ranges of bounded projections of norm at most `√n`. This yields the universal upper
+bounds `aₙ(T) ≤ (1 + √n) cₙ(T)`, `aₙ(T) ≤ (1 + √n) dₙ(T)`, and
 `aₙ(T) ≤ (1 + √n) min (cₙ(T), dₙ(T))`. Because the approximation numbers dominate every s-number
 sequence, the same bounds hold with `aₙ(T)` replaced by an arbitrary s-number sequence `s T n`,
 and in particular `cₙ(T)` and `dₙ(T)` lie within a factor of `1 + √n` of each other.
