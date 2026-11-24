@@ -70,8 +70,9 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.eq_of_forall_eqOn_coord`: a section is determined by its chart
   expressions on the chart images.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
-  coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` is the
-  same for charts of two different atlases.
+  coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` and
+  `TauCeti.FiniteBundleAtlas.coord_chart_eq_coordChangeL_coord_chart` are the same for charts of
+  two different atlases.
 * `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`: functions continuous on the chart
   images and related by these coordinate changes are the chart expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_transition`: chart transitions of a `Cⁿ` manifold are `Cⁿ`.
@@ -569,24 +570,38 @@ theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy
 
-/-- On the overlap of the domains of chart `i` of `A` and chart `i'` of another atlas `A'`, the
-reading of a section in chart `i'` of `A'` is the coordinate change of the bundle applied to its
-reading in chart `i` of `A`. -/
+/-- At a point over the domain of chart `i` of `A` and the base set of bundle chart `i'` of another
+atlas `A'`, the reading of a section in chart `i'` of `A'` is the coordinate change of the bundle
+applied to its reading in chart `i` of `A`. -/
 theorem coord_eq_coordChangeL_coord (A' : FiniteBundleAtlas E M F V) {i : Fin A.n}
-    {i' : Fin A'.n} (s : ∀ x, V x) {y : E} (hy : y ∈ A'.image i')
+    {i' : Fin A'.n} (s : ∀ x, V x) {y : E} (hj : (A'.chart i').symm y ∈ (A'.triv i').baseSet)
     (hi : (A'.chart i').symm y ∈ A.dom i) :
     A'.coord i' s y = (A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y)
       (A.coord i s (A.chart i ((A'.chart i').symm y))) := by
   rw [A.coord_chart s hi, A'.coord_def]
   exact (Trivialization.coordChangeL_apply_snd ℝ (A.triv i) (A'.triv i') (p := ⟨_, s _⟩)
-    (A.dom_subset_baseSet i hi) (A'.dom_subset_baseSet i' (A'.symm_mem_dom hy))).symm
+    (A.dom_subset_baseSet i hi) hj).symm
+
+/-- At a point of the domains of chart `i` of `A` and chart `i'` of another atlas `A'`, the
+reading of a section in chart `i'` of `A'` is the coordinate change of the bundle applied to its
+reading in chart `i` of `A`. -/
+theorem coord_chart_eq_coordChangeL_coord_chart (A' : FiniteBundleAtlas E M F V) {i : Fin A.n}
+    {i' : Fin A'.n} (s : ∀ x, V x) {x : M} (hi : x ∈ A.dom i) (hi' : x ∈ A'.dom i') :
+    A'.coord i' s (A'.chart i' x) =
+      (A.triv i).coordChangeL ℝ (A'.triv i') x (A.coord i s (A.chart i x)) := by
+  have hx : (A'.chart i').symm (A'.chart i' x) = x :=
+    (A'.chart i').left_inv (A'.dom_subset_chart_source i' hi')
+  have h := A.coord_eq_coordChangeL_coord A' s (y := A'.chart i' x)
+    (by rw [hx]; exact A'.dom_subset_baseSet i' hi') (by rw [hx]; exact hi)
+  rwa [hx] at h
 
 /-- On the overlap of two charts, the coordinates of a section in chart `i'` are the coordinate
 change applied to its coordinates in chart `i` at the transition point. -/
 theorem coord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {y : E} (hy : y ∈ A.overlap i i') :
     A.coord i' s y = (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
       (A.coord i s (A.transition i i' y)) := by
-  refine A.coord_eq_coordChangeL_coord A s (A.overlap_subset_image i i' hy) ?_
+  refine A.coord_eq_coordChangeL_coord A s
+    (A.dom_subset_baseSet i' (A.symm_mem_dom (A.overlap_subset_image i i' hy))) ?_
   obtain ⟨x, hx, rfl⟩ := hy
   rw [(A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
   exact hx.1
