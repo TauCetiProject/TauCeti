@@ -131,7 +131,7 @@ theorem count_jordanPartition_parts_succ (f : End K V) (hf : IsNilpotent f) (k :
 theorem JordanChainBasis.jordanPartition_eq {f : End K V} {ι : Type*} [Fintype ι]
     (c : f.JordanChainBasis ι) (hf : IsNilpotent f) : f.jordanPartition hf = c.partition := by
   apply Nat.Partition.ext
-  apply Nat.Partition.parts_eq_of_count_succ
+  apply Nat.Partition.parts_eq_iff_count_succ.mpr
   intro k
   rw [count_jordanPartition_parts_succ, c.count_partition_parts_succ]
 
@@ -154,7 +154,7 @@ theorem jordanPartition_parts_eq_iff
     rw [f.finrank_ker_pow_eq_sum_jordanPartition hf,
       g.finrank_ker_pow_eq_sum_jordanPartition hg, h]
   · intro h
-    apply Nat.Partition.parts_eq_of_count_succ
+    apply Nat.Partition.parts_eq_iff_count_succ.mpr
     intro k
     simp only [count_jordanPartition_parts_succ, h]
 
