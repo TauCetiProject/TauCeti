@@ -507,6 +507,15 @@ theorem toPrefunctor_map (e : N ≃ₙ N') {x y : V} (a : N.Hom x y) :
       (e.toPrefunctor_obj x) (e.toPrefunctor_obj y) = e.homEquiv x y a := by
   simp only [toPrefunctor, Quiver.homOfEq_rfl]
 
+/-- The induced prefunctor's arrow map agrees heterogeneously with the corresponding arrow
+equivalence. -/
+theorem toPrefunctor_map_heq (e : N ≃ₙ N') {x y : V} (a : N.Hom x y) :
+    @Prefunctor.map V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y a ≍
+      e.homEquiv x y a :=
+  (@Quiver.Hom.cast_heq W (Quiver.mk N'.Hom) _ _ _ _
+    (e.toPrefunctor_obj x) (e.toPrefunctor_obj y) _).symm.trans
+    (heq_of_eq (e.toPrefunctor_map a))
+
 /-- The identity network isomorphism induces the identity prefunctor. -/
 @[simp]
 theorem toPrefunctor_refl (N : Network K V) :
@@ -525,6 +534,14 @@ theorem toPrefunctor_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ 
 def mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     ArrowWalk N'.Hom (e.vertexEquiv x) (e.vertexEquiv y) :=
   @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p
+
+/-- Path transport agrees heterogeneously with path mapping by the induced prefunctor. -/
+theorem mapPath_heq_toPrefunctor_mapPath (e : N ≃ₙ N') {x y : V}
+    (p : ArrowWalk N.Hom x y) :
+    e.mapPath p ≍
+      @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p :=
+  @Quiver.Path.cast_heq W (Quiver.mk N'.Hom) _ _ _ _
+    (e.toPrefunctor_obj x) (e.toPrefunctor_obj y) _
 
 /-- Path transport preserves the empty path. -/
 @[simp]

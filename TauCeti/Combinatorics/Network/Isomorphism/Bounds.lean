@@ -83,20 +83,10 @@ theorem replaceBoundsWith_toPrefunctor :
     (fun x ↦ by simp) fun x y a ↦ eq_of_heq ?_
   rw [heq_eqRec_iff, heq_eqRec_iff]
   let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
-  have hf :
-      @Prefunctor.map V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) f.toPrefunctor x y a ≍
-        f.homEquiv x y a :=
-    (@Quiver.Hom.cast_heq W (Quiver.mk N'.Hom) _ _ _ _ _ _ _).symm.trans
-      (heq_of_eq (f.toPrefunctor_map a))
-  have he :
-      @Prefunctor.map V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y a ≍
-        e.homEquiv x y a :=
-    (@Quiver.Hom.cast_heq W (Quiver.mk N'.Hom) _ _ _ _ _ _ _).symm.trans
-      (heq_of_eq (e.toPrefunctor_map a))
-  exact hf.trans
+  exact (f.toPrefunctor_map_heq a).trans
     ((heq_of_eq
       (replaceBoundsWith_homEquiv_apply e lower upper h lower' upper' h' map_lower map_upper
-        x y a)).trans he.symm)
+        x y a)).trans (e.toPrefunctor_map_heq a).symm)
 
 /-- Arbitrary corresponding bound replacements retain total arrow transport. -/
 @[simp]
@@ -106,20 +96,38 @@ theorem replaceBoundsWith_totalHomEquiv :
   apply e.eq_totalHomEquiv_of_apply
   intro x y a
   rw [totalHomEquiv_apply]
-  congr 1
+  have hx := congrArg (fun F : V ≃ W ↦ F x)
+    (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper)
+  have hy := congrArg (fun F : V ≃ W ↦ F y)
+    (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper)
+  apply Sigma.ext
+  · exact hx
+  · cases hx
+    apply heq_of_eq
+    apply Sigma.ext
+    · exact hy
+    · exact heq_of_eq
+        (replaceBoundsWith_homEquiv_apply e lower upper h lower' upper' h' map_lower map_upper
+          x y a)
 
 /-- Arbitrary corresponding bound replacements retain transport of directed paths. -/
 @[simp]
 theorem replaceBoundsWith_mapPath {x y : V} (p : ArrowWalk N.Hom x y) :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).mapPath p =
       e.mapPath p := by
-  induction p with
-  | nil =>
-      rw [mapPath_nil, mapPath_nil]
-      congr 1
-  | cons p a ih =>
-      rw [mapPath_cons, mapPath_cons, ih]
-      congr 1
+  let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
+  let hF : f.toPrefunctor = e.toPrefunctor :=
+    replaceBoundsWith_toPrefunctor e lower upper h lower' upper' h' map_lower map_upper
+  have hmap :=
+    @Prefunctor.cast_mapPath_eq_of_eq V W (Quiver.mk N.Hom) (Quiver.mk N'.Hom)
+      f.toPrefunctor e.toPrefunctor hF x y p
+  have hmap' :
+      @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) f.toPrefunctor x y p ≍
+        @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p :=
+    (@Quiver.Path.cast_heq W (Quiver.mk N'.Hom) _ _ _ _ _ _ _).symm.trans
+      (heq_of_eq hmap)
+  exact eq_of_heq ((f.mapPath_heq_toPrefunctor_mapPath p).trans
+    (hmap'.trans (e.mapPath_heq_toPrefunctor_mapPath p).symm))
 
 /-- Arbitrary corresponding bound replacements retain assignment transport. -/
 @[simp]
