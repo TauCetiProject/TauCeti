@@ -383,20 +383,9 @@ theorem torusFamilyHomologyMarking_singularHomologyMap_affineMap {g : Γ} {y y' 
         {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology n) :
     torusFamilyHomologyMarking P hcont hinj y' n (ContinuousMap.singularHomologyMap ℤ n φ c) =
       exteriorPower.map n (ρ g) (torusFamilyHomologyMarking P hcont hinj y n c) := by
-  let _ := periodAddAction P
-  -- The target fibre is the fibre over `g • y`, as `φ` sends `[y, 0]` there.
-  have hy' : y' = g • y := by
-    have : torusFamilyProjection P
-        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).2
-    rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
-  subst hy'
-  obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
-  obtain rfl : y₁ = g • y := by simpa [hb] using congrArg (torusFamilyProjection P) hβ
+  obtain ⟨rfl, β, hβ⟩ := exists_torusFamilyFiber_eq_mk_of_affineMap P R ρ hP b hb φ hφ
   exact torusFamilyHomologyMarking_map_of_affine P hcont hinj y P hcont hinj (g • y) (ρ g)
-    (φ := (R g y).toIntLinearMap) hR (fun l ↦ (hP g y l).symm) β φ
-    (fun v ↦ by
-      rw [hφ, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ.symm, AddMonoidHom.coe_toIntLinearMap])
-    n c
+    (φ := (R g y).toIntLinearMap) hR (fun l ↦ (hP g y l).symm) β φ (fun v ↦ hβ _ v rfl) n c
 
 end AffineMap
 
