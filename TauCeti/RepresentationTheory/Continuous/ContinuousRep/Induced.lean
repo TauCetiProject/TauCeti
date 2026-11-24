@@ -261,6 +261,14 @@ variable {Γ A U : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup �
   [LocallyCompactSpace Γ] [CommRing A] [TopologicalSpace A] [AddCommGroup U] [Module A U]
   [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousSMul A U] {H : Subgroup Γ}
 
+/-- A `Γ`-invariant element of the induced module is a constant function: `f x = f 1`. -/
+theorem apply_eq_apply_one_of_mem_invariants {σ : ContinuousRep H A U}
+    (f : (ind H σ).toRepresentation.invariants) (x : Γ) :
+    (f.val : C(Γ, U)) x = (f.val : C(Γ, U)) 1 := by
+  have hc := congr_arg (fun F : indV H σ => (F : C(Γ, U)) 1) (f.property x)
+  simp only [coe_toRepresentation, ind_apply_apply, one_mul] at hc
+  exact hc
+
 /-- **Shapiro's lemma on invariants.** Evaluation at `1` identifies the invariants of the induced
 representation with the invariants of `σ`. A `Γ`-invariant `f` is constant, `f x = f 1`, and
 `f 1 = f h = σ h (f 1)`; conversely each `H`-invariant vector gives a constant function. -/
@@ -268,28 +276,27 @@ noncomputable def indInvariantsEquiv (σ : ContinuousRep H A U) :
     (ind H σ).toRepresentation.invariants ≃ₗ[A] σ.toRepresentation.invariants where
   toFun f := ⟨(f.val : C(Γ, U)) 1, fun h => by
     have h1 := (mem_indV _).1 f.val.property h 1
-    have hc := congr_arg (fun F : indV H σ => (F : C(Γ, U)) 1) (f.property h)
-    change (f.val : C(Γ, U)) (1 * h) = (f.val : C(Γ, U)) 1 at hc
     rw [mul_one] at h1
-    rw [one_mul] at hc
-    exact h1.symm.trans hc⟩
+    exact h1.symm.trans (apply_eq_apply_one_of_mem_invariants f h)⟩
   invFun u := ⟨⟨ContinuousMap.const Γ u.val,
       (mem_indV _).2 fun h x => by simpa using (u.property h).symm⟩,
     fun _ => Subtype.ext (ContinuousMap.ext fun _ => (rfl))⟩
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
-  left_inv f := by
-    refine Subtype.ext (Subtype.ext (ContinuousMap.ext fun x => ?_))
-    have hc := congr_arg (fun F : indV H σ => (F : C(Γ, U)) 1) (f.property x)
-    change (f.val : C(Γ, U)) (1 * x) = (f.val : C(Γ, U)) 1 at hc
-    rw [one_mul] at hc
-    exact hc.symm
+  left_inv f := Subtype.ext (Subtype.ext (ContinuousMap.ext fun x =>
+    (apply_eq_apply_one_of_mem_invariants f x).symm))
   right_inv _ := (rfl)
 
 @[simp]
 theorem indInvariantsEquiv_apply (σ : ContinuousRep H A U)
     (f : (ind H σ).toRepresentation.invariants) :
     (indInvariantsEquiv σ f : U) = (f.val : C(Γ, U)) 1 :=
+  (rfl)
+
+@[simp]
+theorem indInvariantsEquiv_symm_apply (σ : ContinuousRep H A U)
+    (u : σ.toRepresentation.invariants) (x : Γ) :
+    (((indInvariantsEquiv σ).symm u).val : C(Γ, U)) x = u :=
   (rfl)
 
 end Invariants
