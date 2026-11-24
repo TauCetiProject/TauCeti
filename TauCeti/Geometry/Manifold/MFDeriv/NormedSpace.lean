@@ -44,6 +44,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.fderiv_comp_apply_eq_mfderiv`: the chain rule for a map between normed spaces which
+  factors through a manifold.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
   a curve in a manifold.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
@@ -350,6 +352,17 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
+
+/-- The chain rule for a map between normed spaces which factors through a manifold: the derivative
+of `Φ ∘ f` is the composite of the manifold derivatives of `f` and `Φ`. -/
+theorem fderiv_comp_apply_eq_mfderiv {Φ : M → F'} {f : F → M} {x : F}
+    (hΦ : MDifferentiableAt I 𝓘(𝕜, F') Φ (f x)) (hf : MDifferentiableAt 𝓘(𝕜, F) I f x) (a : F) :
+    fderiv 𝕜 (Φ ∘ f) x a = mfderiv I 𝓘(𝕜, F') Φ (f x) (mfderiv 𝓘(𝕜, F) I f x a) := by
+  have h := mfderiv_comp_apply x hΦ hf a
+  -- `mfderiv_eq_fderiv` reads the tangent spaces of `F` and `F'` as the spaces themselves through
+  -- `NormedSpace.fromTangentSpace`, which is the identity.
+  rw [mfderiv_eq_fderiv] at h
+  exact h
 
 /-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
 `w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative
