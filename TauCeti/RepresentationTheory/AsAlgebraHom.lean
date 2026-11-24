@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.Intertwining
 
@@ -39,6 +40,10 @@ injective on `V`, taken as an explicit assumption rather than read off the scala
 torsion-free modules over `ℤ`, where `2` is not a unit, and equally modules over a ring with zero
 divisors whose additive group has no `2`-torsion.
 
+Finally, for a finite group the norm element `∑ g, single g 1` of `k[G]` acts as the norm
+`Representation.norm` of the representation, which links statements about the norm element in
+the group algebra to the vanishing of the norm map.
+
 ## Main results
 
 * `MonoidAlgebra.toSubmodule_range_lift`: the image of a monoid-algebra lift is the span of the
@@ -54,12 +59,16 @@ divisors whose additive group has no `2`-torsion.
   monoid the action of `x` is `∑ g, x g • ρ g`.
 * `Representation.asAlgebraHom_directSum`: the monoid algebra acts on a direct sum summand by
   summand.
+* `Representation.asAlgebraHom_trivial`: an element of the monoid algebra acts on the trivial
+  representation as multiplication by its augmentation.
 * `Representation.Equiv.conjAlgEquiv_asAlgebraHom`: an equivalence of representations conjugates
   the action of the monoid algebra.
 * `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
   by the action on the representation.
 * `Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg`: with doubling injective on `V`, an
   algebra element negated by right multiplication by an element fixing `v` annihilates `v`.
+* `Representation.asAlgebraHom_sum_single_one`: for a finite group, the norm element
+  `∑ g, single g 1` of the group algebra acts as the norm `Representation.norm`.
 -/
 
 public section
@@ -176,6 +185,14 @@ theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k 
   rw [Representation.Equiv.toLinearEquiv_apply]
   exact e.toIntertwiningMap.apply_asAlgebraHom x v
 
+/-- An element `x ∈ k[G]` acts on the trivial representation as multiplication by its
+augmentation. -/
+@[simp]
+theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
+    (trivial k G V).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
+  have h : trivial k G V = 1 := MonoidHom.ext fun g ↦ LinearMap.ext (trivial_apply k g)
+  rw [asAlgebraHom_def, h, MonoidAlgebra.lift_one_apply, Algebra.algebraMap_eq_smul_one]
+
 end Representation
 
 end Range
@@ -224,5 +241,19 @@ theorem asAlgebraHom_eq_zero_of_mul_single_eq_neg
   exact neg_add_cancel _
 
 end Vanishing
+
+section Norm
+
+variable {k G V : Type*} [CommSemiring k] [Group G] [Fintype G] [AddCommMonoid V] [Module k V]
+
+/-- **The norm element of the group algebra acts as the norm of the representation**: the sum
+`∑ g, single g 1` of all group elements acts on `V` as `Representation.norm`, `v ↦ ∑ g, ρ g v`.
+It takes priority over `map_sum`, so that `simp` folds this action into `Representation.norm`. -/
+@[simp high]
+theorem asAlgebraHom_sum_single_one (ρ : Representation k G V) :
+    ρ.asAlgebraHom (∑ g, MonoidAlgebra.single g 1) = ρ.norm := by
+  simp only [map_sum, asAlgebraHom_single_one, norm]
+
+end Norm
 
 end Representation

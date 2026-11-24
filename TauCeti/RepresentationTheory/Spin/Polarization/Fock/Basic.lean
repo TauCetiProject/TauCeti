@@ -14,6 +14,8 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
 -- of bijectivity.
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.RepresentationTheory.Spin.Structure
+-- Private: the symmetry of the polar form is used only in the proof of the vacuum formula.
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # The normalized Fock action of a complex structure
@@ -241,8 +243,7 @@ theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
   have hpolar : QuadraticMap.polar (Q.baseChange ℂ) (J.holomorphicPart u)
       (J.antiholomorphicPart u) = Q u := by
     have h0 : QuadraticMap.polar Q u (J u) = 0 :=
-      J.bilinForm_apply_apply_self_eq_zero (g := Q.polarBilin) ⟨QuadraticMap.polar_comm Q⟩
-        (J.polar_apply_apply hQJ) u
+      J.bilinForm_apply_apply_self_eq_zero Q.isSymm_polarBilin (J.polar_apply_apply hQJ) u
     rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, QuadraticMap.polar_self]
     push_cast
     ring

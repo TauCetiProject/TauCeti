@@ -387,6 +387,17 @@ lemma twistedHomologyMap_naturality
       (twistedChainComplexMap_naturality f L η)).trans
       (HomologicalComplex.homologyMap_comp _ _ _))
 
+/-- The homology maps of pairs commute with a transport between equal coefficient systems on the
+target pair. -/
+@[reassoc]
+lemma twistedHomologyMap_comp_twistedHomologyCoefficientMap_eqToHom
+    {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (h : L = K) (k : ℕ) :
+    twistedHomologyMap f L k ≫ Q.twistedHomologyCoefficientMap (eqToHom h) k =
+      P.twistedHomologyCoefficientMap
+          (eqToHom (congrArg (LocalCoefficientSystem.pullback (Hom.fst f).hom).obj h)) k ≫
+        twistedHomologyMap f K k := by
+  rw [twistedHomologyMap_naturality, eqToHom_map]
+
 /-- The quotient maps from ambient to relative twisted homology are natural in maps of
 topological pairs. -/
 @[reassoc (attr := simp)]
@@ -429,6 +440,42 @@ lemma twistedHomologyMap_comp (k : ℕ) :
   (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
       (twistedChainComplexMap_comp f g K)).trans
     (by rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp])
+
+/-- Two composable maps of pairs induce on relative twisted homology the map induced by any map
+equal to their composite, after the canonical identifications of the pulled-back coefficient
+systems. -/
+@[reassoc]
+lemma twistedHomologyMap_comp_of_comp_eq {φ : P ⟶ S} (hφ : f ≫ g = φ) (k : ℕ) :
+    twistedHomologyMap f ((LocalCoefficientSystem.pullback (Hom.fst g).hom).obj K) k ≫
+        twistedHomologyMap g K k =
+      P.twistedHomologyCoefficientMap
+          ((fstPullbackCompIso f g K).inv ≫
+            eqToHom (congrArg (fun h : P ⟶ S ↦
+              (LocalCoefficientSystem.pullback (Hom.fst h).hom).obj K) hφ)) k ≫
+        twistedHomologyMap φ K k := by
+  subst hφ
+  simp only [twistedHomologyMap_comp, eqToHom_refl, Category.comp_id,
+    ← twistedHomologyCoefficientMap_comp_assoc, Iso.inv_hom_id, twistedHomologyCoefficientMap_id,
+    Category.id_comp]
+
+/-- Three composable maps of pairs induce on relative twisted homology the map induced by any map
+equal to their composite, after the canonical identifications of the pulled-back coefficient
+systems. -/
+lemma twistedHomologyMap_comp_comp {T : TopPair.{v}} (h : S ⟶ T) {φ : P ⟶ T}
+    (hφ : f ≫ g ≫ h = φ) (M : LocalCoefficientSystem.{u, v, max v w} R T.fst) (k : ℕ) :
+    twistedHomologyMap f ((LocalCoefficientSystem.pullback (Hom.fst g).hom).obj
+        ((LocalCoefficientSystem.pullback (Hom.fst h).hom).obj M)) k ≫
+      twistedHomologyMap g ((LocalCoefficientSystem.pullback (Hom.fst h).hom).obj M) k ≫
+      twistedHomologyMap h M k =
+    P.twistedHomologyCoefficientMap
+        ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map (fstPullbackCompIso g h M).inv ≫
+          (fstPullbackCompIso f (g ≫ h) M).inv ≫ eqToHom (by rw [hφ])) k ≫
+      twistedHomologyMap φ M k := by
+  subst hφ
+  simp only [twistedHomologyMap_comp, twistedHomologyMap_naturality_assoc,
+    ← twistedHomologyCoefficientMap_comp_assoc, eqToHom_refl, Category.comp_id,
+    Category.assoc, Iso.inv_hom_id_assoc, ← CategoryTheory.Functor.map_comp, Iso.inv_hom_id,
+    CategoryTheory.Functor.map_id, Category.id_comp, twistedHomologyCoefficientMap_id]
 
 /-- The homology map induced by the map on subspace chains is the coefficient comparison followed
 by the map induced by the subspace component. -/

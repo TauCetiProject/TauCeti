@@ -20,7 +20,7 @@ import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Topology.Covering.Clopen
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 import TauCeti.Analysis.Normed.Module.Connected
 

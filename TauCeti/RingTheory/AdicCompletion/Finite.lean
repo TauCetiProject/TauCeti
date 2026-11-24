@@ -38,6 +38,8 @@ it are determined by their restrictions to the module.
   every submodule (`Submodule.isHausdorff`) and to every free module (`IsHausdorff.of_free`).
 * `IsPrecomplete.of_surjective`: adic precompleteness passes along a surjective linear map.
 * `IsPrecomplete.of_finite`: a finite module over an adically precomplete ring is precomplete.
+* `Module.Finite.of_finite_quotient_smul_top`: Nakayama's lemma for complete rings, an adically
+  separated module over an adically precomplete ring is finite once its reduction is.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
 * `IsPrecomplete.of_finite_of_isLocalRing`: a finite local algebra over a precomplete local ring
@@ -93,6 +95,18 @@ theorem IsHausdorff.of_free [IsHausdorff I R] [Module.Free R M] : IsHausdorff I 
 theorem IsPrecomplete.of_finite [IsPrecomplete I R] [Module.Finite R M] : IsPrecomplete I M := by
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
   exact IsPrecomplete.of_surjective I f hf
+
+/-- **Nakayama's lemma for adically complete rings**: an `I`-adically separated module over an
+`I`-adically precomplete ring is finite as soon as its reduction modulo `I` is. Lifting finitely
+many generators of `M ⧸ I • M` gives a map from a finite free module which is surjective modulo
+`I`, hence surjective (`surjective_of_mkQ_comp_surjective`). No Noetherian hypothesis is needed. -/
+theorem Module.Finite.of_finite_quotient_smul_top [IsPrecomplete I R] [IsHausdorff I M]
+    [Module.Finite R (M ⧸ (I • ⊤ : Submodule R M))] : Module.Finite R M := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R (M ⧸ (I • ⊤ : Submodule R M))
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property (I • ⊤ : Submodule R M).mkQ f
+    (Submodule.mkQ_surjective _)
+  have : IsPrecomplete I (Fin n → R) := .of_finite I _
+  exact .of_surjective g (surjective_of_mkQ_comp_surjective (I := I) (hg ▸ hf))
 
 /-- A finite module over an `I`-adically complete Noetherian ring is `I`-adically complete. -/
 theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Module.Finite R M] :

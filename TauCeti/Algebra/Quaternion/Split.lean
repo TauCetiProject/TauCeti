@@ -12,7 +12,9 @@ import Mathlib.Tactic.FinCases
 # Split quaternion algebras
 
 This file constructs explicit algebra equivalences from split quaternion algebras to two-by-two
-matrix algebras, over a commutative ring in which two is invertible.
+matrix algebras, over a commutative ring in which two is invertible, and, for the algebras
+`ℍ[R,0,1,c]` with `c` a unit (where `i² = i`, `j² = c` and `ij + ji = j`), over any commutative
+ring.
 
 For a unit `b`, the symbol algebra `ℍ[R,1,b]` is split. The equivalence is the case `a = 1` of
 `TauCeti.QuaternionAlgebra.firstSquareEquivMatrix` for the symbol `(a²,b)`, and sends its
@@ -33,6 +35,10 @@ Their squares are respectively `a` and `-a`, and they anticommute. This is one o
 symbol relations for quaternion algebras, useful for reducing identities involving the symbol
 `(a, -a)` to computations in a matrix algebra.
 
+For a unit `c`, the algebra `ℍ[R,0,1,c]` is split over any commutative ring, by
+`i ↦ !![1, 0; 0, 0]` and `j ↦ !![0, c; 1, 0]`. The case `c = -1` is the even Clifford algebra of
+the split ternary form.
+
 The formulas for the equivalences and their inverses are recorded entrywise, so later splitting
 arguments can use the constructions without unfolding the quaternion-basis implementation.
 
@@ -42,6 +48,8 @@ arguments can use the constructions without unfolding the quaternion-basis imple
   `ℍ[R,1,b] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R` for a unit `b`.
 * `TauCeti.QuaternionAlgebra.aNegAEquivMatrix`: the equivalence
   `ℍ[R,a,-a] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R` for a unit `a`.
+* `TauCeti.QuaternionAlgebra.zeroOneEquivMatrix`: the equivalence
+  `ℍ[R,0,1,c] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R` for a unit `c`, which needs no hypothesis on two.
 
 ## References
 
@@ -170,6 +178,65 @@ theorem aNegAEquivMatrix_symm_apply (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
   (rfl)
 
 end ANegA
+
+section ZeroOne
+
+/-- The quaternion basis of `M₂(R)` with `i = E₁₁` and `j = !![0, c; 1, 0]`. -/
+private def zeroOneMatrixBasis (c : R) :
+    _root_.QuaternionAlgebra.Basis (Matrix (Fin 2) (Fin 2) R) (0 : R) 1 c where
+  i := !![1, 0; 0, 0]
+  j := !![0, c; 1, 0]
+  k := !![0, c; 0, 0]
+  i_mul_i := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  j_mul_j := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  i_mul_j := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  j_mul_i := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+
+private theorem zeroOneMatrixBasis_liftHom_apply (c : R) (q : ℍ[R,0,1,c]) :
+    (zeroOneMatrixBasis c).liftHom q =
+      !![q.re + q.imI, c * (q.imJ + q.imK); q.imJ, q.re] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [zeroOneMatrixBasis, _root_.QuaternionAlgebra.Basis.lift,
+      Algebra.algebraMap_eq_smul_one, add_mul, mul_comm c]
+
+/-- The splitting `ℍ[R, 0, 1, c] ≃ₐ[R] M₂(R)` for a unit `c`, over any commutative ring. It
+sends the quaternion generators `i` and `j`, with `i² = i`, `j² = c` and `ij + ji = j`, to
+`!![1, 0; 0, 0]` and `!![0, c; 1, 0]`. -/
+noncomputable def zeroOneEquivMatrix (c : Rˣ) :
+    ℍ[R,0,1,(c : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R where
+  __ := (zeroOneMatrixBasis (c : R)).liftHom
+  invFun M := ⟨M 1 1, M 0 0 - M 1 1, M 1 0, ↑c⁻¹ * M 0 1 - M 1 0⟩
+  left_inv q := by
+    rw [AlgHom.toFun_eq_coe, zeroOneMatrixBasis_liftHom_apply]
+    ext <;> simp [← mul_assoc]
+  right_inv M := by
+    rw [AlgHom.toFun_eq_coe, zeroOneMatrixBasis_liftHom_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [← mul_assoc]
+
+/-- The splitting of `ℍ[R, 0, 1, c]` on an arbitrary quaternion. -/
+@[simp]
+theorem zeroOneEquivMatrix_apply (c : Rˣ) (q : ℍ[R,0,1,(c : R)]) :
+    zeroOneEquivMatrix c q = !![q.re + q.imI, (c : R) * (q.imJ + q.imK); q.imJ, q.re] :=
+  zeroOneMatrixBasis_liftHom_apply _ q
+
+/-- The inverse splitting of `ℍ[R, 0, 1, c]` reads the quaternion coordinates off the matrix
+entries. -/
+@[simp]
+theorem zeroOneEquivMatrix_symm_apply (c : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
+    (zeroOneEquivMatrix c).symm M = ⟨M 1 1, M 0 0 - M 1 1, M 1 0, ↑c⁻¹ * M 0 1 - M 1 0⟩ :=
+  (rfl)
+
+end ZeroOne
 
 end QuaternionAlgebra
 

@@ -36,7 +36,9 @@ These two subgroups meet trivially, and every upper-unitriangular matrix factors
 `j ∈ U_w` and `h ∈ U'_w`. It follows that every element of `B P_w B` is uniquely
 `j * P_w * b` with `j ∈ U_w` and `b ∈ B`, the **normal form** of the Bruhat cell. Consequently
 `j ↦ j P_w B` is a bijection from `U_w` onto the Bruhat cell, and reading off the entries at the
-inversions identifies `U_w` with `R ^ {inversions of w⁻¹}`. All of this holds over any
+inversions identifies `U_w` with `R ^ {inversions of w⁻¹}`; these coordinates are the instance
+`TauCeti.unitriangularGroupEquivFunOfSupported` of the coordinates on upper-unitriangular matrices
+supported on a set of pairs, for the inversions of `w⁻¹`. All of this holds over any
 commutative ring.
 
 For `ι = Fin n` the number of inversions is the Coxeter length of `w`
@@ -436,54 +438,34 @@ theorem coe_unitriangularInversionGroupEquivBruhatCell_apply (w : Equiv.Perm ι)
       QuotientGroup.mk ((j : GL ι R) * permutationGL (k := R) w) :=
   (rfl)
 
-/-- The upper-unitriangular matrix with the prescribed entries `c` at the inversions of `w⁻¹`
-and zero entries elsewhere above the diagonal. -/
-private def inversionMatrix (w : Equiv.Perm ι) (c : Finset.univ.inversions ⇑w.symm → R) :
-    Matrix ι ι R :=
-  fun i j ↦ if i = j then 1 else if h : (i, j) ∈ Finset.univ.inversions ⇑w.symm then c ⟨_, h⟩
-    else 0
-
-private theorem isUpperUnitriangular_inversionMatrix (w : Equiv.Perm ι)
-    (c : Finset.univ.inversions ⇑w.symm → R) : (inversionMatrix w c).IsUpperUnitriangular := by
-  refine (isUpperUnitriangular_def _).mpr ⟨fun i j hji ↦ ?_, fun i ↦ by simp [inversionMatrix]⟩
-  have hji : j < i := hji
-  simp [inversionMatrix, hji.ne', hji.asymm]
-
-private theorem inversionMatrix_mem (w : Equiv.Perm ι) (c : Finset.univ.inversions ⇑w.symm → R) :
-    (isUpperUnitriangular_inversionMatrix w c).toGL ∈ unitriangularInversionGroup R w := by
-  refine mem_unitriangularInversionGroup_iff.mpr ⟨by
-    simpa using isUpperUnitriangular_inversionMatrix w c, fun i j hij hw ↦ ?_⟩
-  simpa [inversionMatrix, hij.ne] using fun _ hq ↦ absurd hq hw.asymm
+/-- The elements of `U_w` are exactly the upper-unitriangular matrices whose entries above the
+diagonal vanish off the inversions of `w⁻¹`. -/
+private theorem mem_unitriangularInversionGroup_iff_notMem_inversions (w : Equiv.Perm ι)
+    (g : GL ι R) :
+    g ∈ unitriangularInversionGroup R w ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
+      ∀ i j, i < j → (i, j) ∉ Finset.univ.inversions ⇑w.symm → (g : Matrix ι ι R) i j = 0 := by
+  have h (i j : ι) (hij : i < j) : (i, j) ∉ Finset.univ.inversions ⇑w.symm ↔ w.symm i < w.symm j :=
+    Finset.notMem_inversions_iff w.symm.injective (Finset.mem_univ _) (Finset.mem_univ _) hij
+  rw [mem_unitriangularInversionGroup_iff]
+  exact ⟨fun hg => ⟨hg.1, fun i j hij hS => hg.2 i j hij ((h i j hij).mp hS)⟩,
+    fun hg => ⟨hg.1, fun i j hij hw => hg.2 i j hij ((h i j hij).mpr hw)⟩⟩
 
 variable (R) in
 /-- **The coordinates of `U_w`**: an element of `U_w` is determined by its entries at the
-inversions of `w⁻¹`, and these entries are arbitrary. -/
+inversions of `w⁻¹`, and these entries are arbitrary. This is
+`TauCeti.unitriangularGroupEquivFunOfSupported` for the inversions of `w⁻¹`. -/
 def unitriangularInversionGroupEquivFun (w : Equiv.Perm ι) :
-    unitriangularInversionGroup R w ≃ (Finset.univ.inversions ⇑w.symm → R) where
-  toFun j p := ((j : GL ι R) : Matrix ι ι R) p.val.1 p.val.2
-  invFun c := ⟨_, inversionMatrix_mem w c⟩
-  left_inv j := by
-    obtain ⟨hU, hw⟩ := mem_unitriangularInversionGroup_iff.mp j.property
-    refine Subtype.ext (Units.ext ?_)
-    simp only [IsUpperUnitriangular.coe_toGL]
-    refine (isUpperUnitriangular_inversionMatrix w _).ext hU fun a b hab ↦ ?_
-    by_cases hinv : (a, b) ∈ Finset.univ.inversions ⇑w.symm
-    · simp only [inversionMatrix, hab.ne, hinv, ↓reduceIte, ↓reduceDIte]
-    · have hlt : w.symm a < w.symm b := by
-        refine lt_of_le_of_ne (not_lt.mp fun h ↦ hinv ?_) (w.symm.injective.ne hab.ne)
-        simpa using ⟨hab, h⟩
-      simp only [inversionMatrix, hab.ne, hinv, ↓reduceIte, ↓reduceDIte, hw a b hab hlt]
-  right_inv c := by
-    funext p
-    have hp := (Finset.mem_inversions.mp p.property).2.2.1
-    simp [inversionMatrix, hp.ne]
+    unitriangularInversionGroup R w ≃ (Finset.univ.inversions ⇑w.symm → R) :=
+  unitriangularGroupEquivFunOfSupported _ (fun p => p ∈ Finset.univ.inversions ⇑w.symm)
+    (fun _ hp => (Finset.mem_inversions.mp hp).2.2.1)
+    (mem_unitriangularInversionGroup_iff_notMem_inversions w)
 
 /-- The coordinates of `j ∈ U_w` are its entries at the inversions of `w⁻¹`. -/
 @[simp]
 theorem unitriangularInversionGroupEquivFun_apply (w : Equiv.Perm ι)
     (j : unitriangularInversionGroup R w) (p : Finset.univ.inversions ⇑w.symm) :
     unitriangularInversionGroupEquivFun R w j p = ((j : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 :=
-  (rfl)
+  unitriangularGroupEquivFunOfSupported_apply _ _ _ _ _ _
 
 /-- The element of `U_w` with coordinates `c` has the entry `c (i, j)` at an inversion `(i, j)` of
 `w⁻¹`. -/
@@ -493,15 +475,17 @@ theorem unitriangularInversionGroupEquivFun_symm_apply_of_mem_inversions (w : Eq
     (h : (i, j) ∈ Finset.univ.inversions ⇑w.symm) :
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j =
       c ⟨(i, j), h⟩ := by
-  have hij : i ≠ j := (Finset.mem_inversions.mp h).2.2.1.ne
-  simp [unitriangularInversionGroupEquivFun, inversionMatrix, hij, h]
+  rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe]
+  exact unitDiagonalMatrixOfEntries_apply_of_mem _ c
+    (ne_of_lt (Finset.mem_inversions.mp h).2.2.1) h
 
 /-- The element of `U_w` with coordinates `c` has the diagonal entries `1`. -/
 @[simp]
 theorem unitriangularInversionGroupEquivFun_symm_apply_self (w : Equiv.Perm ι)
     (c : Finset.univ.inversions ⇑w.symm → R) (i : ι) :
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i i = 1 := by
-  simp [unitriangularInversionGroupEquivFun, inversionMatrix]
+  rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe,
+    unitDiagonalMatrixOfEntries_apply_self]
 
 /-- The element of `U_w` with coordinates `c` has the entry `0` off the diagonal and off the
 inversions of `w⁻¹`. -/
@@ -510,7 +494,8 @@ theorem unitriangularInversionGroupEquivFun_symm_apply_of_notMem_inversions (w :
     (c : Finset.univ.inversions ⇑w.symm → R) {i j : ι} (hij : i ≠ j)
     (h : (i, j) ∉ Finset.univ.inversions ⇑w.symm) :
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j = 0 := by
-  simp [unitriangularInversionGroupEquivFun, inversionMatrix, hij, h]
+  rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe,
+    unitDiagonalMatrixOfEntries_apply_of_notMem _ _ hij h]
 
 /-- **The number of points of the Bruhat cell**: it is `|R| ^ N`, where `N` is the number of
 inversions of `w⁻¹`. Cardinalities are `Nat.card`, so for an infinite ring and `N > 0` both sides

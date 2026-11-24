@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Regular.SMul
@@ -210,11 +211,8 @@ theorem IsEffectiveCartier.of_comap [IsLocallyNoetherian X] {Y : Scheme.{u}}
   -- extension of the stalk of `I` at `x` is the stalk of `I.comap g` at `y`.
   obtain ⟨b, hb, hIb⟩ := h.exists_map_germ_eq_span_singleton ⟨V, hV⟩ hyV
   let _ := (g.stalkMap y).hom.toAlgebra
-  have : Module.Flat (X.presheaf.stalk (g y)) (Y.presheaf.stalk y) := Flat.stalkMap g y
-  have : IsLocalHom (algebraMap (X.presheaf.stalk (g y)) (Y.presheaf.stalk y)) :=
-    inferInstanceAs (IsLocalHom (g.stalkMap y).hom)
   have : Module.FaithfullyFlat (X.presheaf.stalk (g y)) (Y.presheaf.stalk y) :=
-    .of_flat_of_isLocalHom
+    g.faithfullyFlat_stalkMap y (Flat.stalkMap g y)
   refine Module.FaithfullyFlat.exists_isSMulRegular_and_eq_span_singleton_iff.mpr ⟨b, hb, ?_⟩
   have hg : g.appLE U V hVU ≫ Y.presheaf.germ V y hyV =
       X.presheaf.germ U (g y) hxU ≫ g.stalkMap y := by
