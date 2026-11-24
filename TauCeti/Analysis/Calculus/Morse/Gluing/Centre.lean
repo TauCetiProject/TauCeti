@@ -136,6 +136,19 @@ private theorem smul_mem_closedBall_and_norm_le {ε δ η l : ℝ} {Kk : ℝ≥0
   refine ⟨hmem, ?_⟩
   simpa [hk₀, hn] using hk.norm_sub_le hmem (mem_closedBall_self hη.le)
 
+/-- A fixed point `y` of `y ↦ l • k (l • g y)` in the closed ball of radius `δ`, for a rate `l`
+with `l ε ≤ η` and `l Kk ≤ 1`, satisfies `‖y‖ ≤ l ε`. -/
+private theorem norm_le_of_smul_comp_smul_eq_self {ε δ η l : ℝ} {Kk : ℝ≥0} {g : Eᵤ → Eₛ}
+    {k : Eₛ → Eᵤ} (hη : 0 < η) (hgε : ∀ y ∈ closedBall 0 δ, ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 η)) (hk₀ : k 0 = 0) (hl : 0 ≤ l) (h : l * ε ≤ η)
+    (hKk : l * Kk ≤ 1) {y : Eᵤ} (hy : y ∈ closedBall 0 δ) (hfix : l • k (l • g y) = y) :
+    ‖y‖ ≤ l * ε := by
+  have hε : 0 ≤ ε := (hgε y hy) ▸ norm_nonneg _
+  have hkn := (smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl h hy).2
+  rw [← hfix, norm_smul, Real.norm_of_nonneg hl]
+  have : (Kk : ℝ) * (l * ε) ≤ ε := by nlinarith
+  exact mul_le_mul_of_nonneg_left (hkn.trans this) hl
+
 /-- **The fixed-point equation of gluing at the centre.** For a small rate `l > 0`, the map
 `y ↦ l • k (l • g y)` is a contraction of the closed ball of radius `δ`, so it has a fixed point
 there. -/
@@ -216,7 +229,6 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
       (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst ∈ closedBall 0 η ∧
       (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).snd =
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst := by
-  have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- `W` contains the points whose two components are smaller than some `r`.
   obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
     (by simpa using hW))
@@ -239,10 +251,7 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   obtain ⟨y, hy, hyF⟩ :=
     exists_smul_comp_smul_eq_self hδ hη hg hgε hk hk₀ hl hl₁ h₁ h₂ (by linarith)
   obtain ⟨hgη, hkg⟩ := smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl.le h₁.le hy
-  have hny : ‖y‖ ≤ l * ε := by
-    rw [← hyF, norm_smul, Real.norm_of_nonneg hl.le]
-    have : (Kk : ℝ) * (l * ε) ≤ ε := by nlinarith [mul_nonneg Kk.coe_nonneg hε]
-    exact mul_le_mul_of_nonneg_left (hkg.trans this) hl.le
+  have hny := norm_le_of_smul_comp_smul_eq_self hη hgε hk hk₀ hl.le h₁.le h₄.le hy hyF
   -- At time `T = -log l` the orbit is at `(e^{-T} g y, k (e^{-T} g y))`.
   obtain ⟨hb, hT'⟩ := splitQuadraticFlow_neg_log_of_smul_comp_smul_eq_self hl (hgε y hy) hny hyF
   have hTl : -Real.log l = T := by rw [hldef, Real.log_exp, neg_neg]
@@ -360,12 +369,8 @@ theorem exists_continuousOn_smul_comp_smul_eq_self [CompleteSpace Eᵤ] {ε δ �
     have : (l + l') * (Kk * ε) ≤ 2 * l₀ * (Kk * ε) :=
       mul_le_mul_of_nonneg_right (by linarith [hl.2, hl'.2]) (by positivity)
     nlinarith [abs_nonneg (l - l')]
-  · -- `‖y l‖ = l ‖k (l • g (y l))‖ ≤ l Kk l ε ≤ l ε`.
-    have hkn := (smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl.1 (hεl hl) (hy l hl).1).2
-    rw [← (hy l hl).2, norm_smul, Real.norm_of_nonneg hl.1]
-    have : (Kk : ℝ) * l ≤ 1 := by nlinarith [hl.2, Kk.coe_nonneg]
-    have : (Kk : ℝ) * (l * ε) ≤ ε := by nlinarith
-    exact mul_le_mul_of_nonneg_left (hkn.trans this) hl.1
+  · exact norm_le_of_smul_comp_smul_eq_self hη hgε hk hk₀ hl.1 (hεl hl)
+      (by nlinarith [hl.2, Kk.coe_nonneg]) (hy l hl).1 (hy l hl).2
   · have h := hest hl hl hy' hfix'
     rw [sub_self, abs_zero, mul_zero] at h
     exact (sub_eq_zero.1 (norm_le_zero_iff.1 h)).symm
