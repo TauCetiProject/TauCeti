@@ -150,14 +150,14 @@ variable {K 𝔪}
 
 /-- The underlying point of `Spv A` is the spectral valuation of `A ⧸ 𝔪` pulled back to `A`. -/
 theorem maximalIdealPoint_val (h𝔪 : IsClosed (𝔪 : Set A)) :
-    (maximalIdealPoint K 𝔪 h𝔪).1 =
+    (maximalIdealPoint K 𝔪 h𝔪).val =
       ofValuation ((spectralValuation K (A ⧸ 𝔪)).comap (Ideal.Quotient.mk 𝔪)) :=
   (rfl)
 
 /-- **The classical point at `𝔪` compares elements by the spectral norms of their residues.** -/
 @[simp]
 theorem maximalIdealPoint_vle_iff (h𝔪 : IsClosed (𝔪 : Set A)) (a b : A) :
-    (maximalIdealPoint K 𝔪 h𝔪).1.toValuativeRel.vle a b ↔
+    (maximalIdealPoint K 𝔪 h𝔪).val.toValuativeRel.vle a b ↔
       spectralNorm K (A ⧸ 𝔪) (Ideal.Quotient.mk 𝔪 a) ≤
         spectralNorm K (A ⧸ 𝔪) (Ideal.Quotient.mk 𝔪 b) := by
   rw [maximalIdealPoint_val, vle_ofValuation, ← NNReal.coe_le_coe]
@@ -165,7 +165,7 @@ theorem maximalIdealPoint_vle_iff (h𝔪 : IsClosed (𝔪 : Set A)) (a b : A) :
 
 /-- **The classical point at `𝔪` compares scalars by their norms**: it extends the norm of `K`. -/
 theorem maximalIdealPoint_vle_algebraMap_iff (h𝔪 : IsClosed (𝔪 : Set A)) (c d : K) :
-    (maximalIdealPoint K 𝔪 h𝔪).1.toValuativeRel.vle (algebraMap K A c) (algebraMap K A d) ↔
+    (maximalIdealPoint K 𝔪 h𝔪).val.toValuativeRel.vle (algebraMap K A c) (algebraMap K A d) ↔
       ‖c‖ ≤ ‖d‖ := by
   simp [Ideal.Quotient.mk_algebraMap, spectralNorm_extends]
 
@@ -174,7 +174,7 @@ of a `K`-algebra map `ψ : A → K`, the classical point at `𝔪` compares `a` 
 compares `ψ a` and `ψ b`. -/
 theorem maximalIdealPoint_vle_iff_of_ker_eq (h𝔪 : IsClosed (𝔪 : Set A)) (ψ : A →ₐ[K] K)
     (hψ : RingHom.ker ψ = 𝔪) (a b : A) :
-    (maximalIdealPoint K 𝔪 h𝔪).1.toValuativeRel.vle a b ↔ ‖ψ a‖ ≤ ‖ψ b‖ := by
+    (maximalIdealPoint K 𝔪 h𝔪).val.toValuativeRel.vle a b ↔ ‖ψ a‖ ≤ ‖ψ b‖ := by
   -- every `a` has the residue of the scalar `ψ a`, since `a - ψ a` lies in `ker ψ = 𝔪`
   have hmk (a : A) : Ideal.Quotient.mk 𝔪 a = algebraMap K (A ⧸ 𝔪) (ψ a) := by
     rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq, ← hψ]
@@ -184,7 +184,7 @@ theorem maximalIdealPoint_vle_iff_of_ker_eq (h𝔪 : IsClosed (𝔪 : Set A)) (�
 /-- **The support of the classical point at `𝔪` is `𝔪`.** -/
 @[simp]
 theorem supp_maximalIdealPoint (h𝔪 : IsClosed (𝔪 : Set A)) :
-    (maximalIdealPoint K 𝔪 h𝔪).1.supp = 𝔪 := by
+    (maximalIdealPoint K 𝔪 h𝔪).val.supp = 𝔪 := by
   ext a
   simp [maximalIdealPoint_val, Valuation.mem_supp_iff, Ideal.Quotient.eq_zero_iff_mem]
 
@@ -204,16 +204,16 @@ the extension of the norm of `K` to the finite extension `A ⧸ 𝔪`
 (`Valuation.isEquiv_spectralValuation_iff`), that valuation is equivalent to the spectral
 valuation. -/
 theorem eq_maximalIdealPoint_iff (h𝔪 : IsClosed (𝔪 : Set A)) (x : spa (powerBoundedSubring A)) :
-    x = maximalIdealPoint K 𝔪 h𝔪 ↔ x.1.supp = 𝔪 := by
+    x = maximalIdealPoint K 𝔪 h𝔪 ↔ x.val.supp = 𝔪 := by
   refine ⟨fun h ↦ h ▸ supp_maximalIdealPoint h𝔪, fun hx ↦ ?_⟩
   -- `x` pulls back to a point of `Spa (K, K°)`, so it compares scalars by their norms
   have hK := comap_mem_spa (continuous_algebraMap K A) (fun c hc ↦ mem_powerBoundedSubring.mpr
     (isPowerBounded_algebraMap_of_norm_le_one
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp hc)))) x.2
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp hc)))) x.property
   -- the valuation of `x` factors through the residue field `A ⧸ 𝔪`
-  have hle : 𝔪 ≤ x.1.valuation.supp := hx ▸ (supp_eq_valuation_supp x.1).le
-  set w := x.1.valuation.onQuot hle
-  have hw (a : A) : w (Ideal.Quotient.mk 𝔪 a) = x.1.valuation a := by
+  have hle : 𝔪 ≤ x.val.valuation.supp := hx ▸ (supp_eq_valuation_supp x.val).le
+  set w := x.val.valuation.onQuot hle
+  have hw (a : A) : w (Ideal.Quotient.mk 𝔪 a) = x.val.valuation a := by
     rw [← Valuation.comap_apply, Valuation.onQuot_comap_eq]
   have hequiv : w.IsEquiv (spectralValuation K (A ⧸ 𝔪)) :=
     (w.isEquiv_spectralValuation_iff).mpr fun c d ↦ by
@@ -243,7 +243,7 @@ variable {K hA}
 /-- **The classical point at `𝔪` compares elements by the spectral norms of their residues.** -/
 @[simp]
 theorem maximalSpectrumToSpa_vle_iff (𝔪 : MaximalSpectrum A) (a b : A) :
-    (maximalSpectrumToSpa K hA 𝔪).1.toValuativeRel.vle a b ↔
+    (maximalSpectrumToSpa K hA 𝔪).val.toValuativeRel.vle a b ↔
       spectralNorm K (A ⧸ 𝔪.asIdeal) (Ideal.Quotient.mk 𝔪.asIdeal a) ≤
         spectralNorm K (A ⧸ 𝔪.asIdeal) (Ideal.Quotient.mk 𝔪.asIdeal b) :=
   haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
@@ -252,14 +252,14 @@ theorem maximalSpectrumToSpa_vle_iff (𝔪 : MaximalSpectrum A) (a b : A) :
 /-- **The support of the classical point at `𝔪` is `𝔪`.** -/
 @[simp]
 theorem supp_maximalSpectrumToSpa (𝔪 : MaximalSpectrum A) :
-    (maximalSpectrumToSpa K hA 𝔪).1.supp = 𝔪.asIdeal :=
+    (maximalSpectrumToSpa K hA 𝔪).val.supp = 𝔪.asIdeal :=
   haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
   supp_maximalIdealPoint _
 
 /-- **A point of `Spa (A, A°)` is the classical point at `𝔪` exactly when its support is `𝔪`**,
 for `A` topologically of finite type over `K`. -/
 theorem eq_maximalSpectrumToSpa_iff (x : spa (powerBoundedSubring A)) (𝔪 : MaximalSpectrum A) :
-    x = maximalSpectrumToSpa K hA 𝔪 ↔ x.1.supp = 𝔪.asIdeal :=
+    x = maximalSpectrumToSpa K hA 𝔪 ↔ x.val.supp = 𝔪.asIdeal :=
   haveI := hA.finite_quotient_of_isMaximal 𝔪.asIdeal
   eq_maximalIdealPoint_iff _ x
 
@@ -272,9 +272,9 @@ theorem maximalSpectrumToSpa_injective : Function.Injective (maximalSpectrumToSp
 /-- **The classical points of `Spa (A, A°)` are the points with maximal support**, for `A`
 topologically of finite type over `K`. -/
 theorem range_maximalSpectrumToSpa :
-    Set.range (maximalSpectrumToSpa K hA) = {x | x.1.supp.IsMaximal} := by
+    Set.range (maximalSpectrumToSpa K hA) = {x | x.val.supp.IsMaximal} := by
   ext x
-  refine ⟨?_, fun hx ↦ ⟨⟨x.1.supp, hx⟩, ((eq_maximalSpectrumToSpa_iff x _).mpr rfl).symm⟩⟩
+  refine ⟨?_, fun hx ↦ ⟨⟨x.val.supp, hx⟩, ((eq_maximalSpectrumToSpa_iff x _).mpr rfl).symm⟩⟩
   rintro ⟨𝔪, rfl⟩
   rw [Set.mem_ofPred_eq, supp_maximalSpectrumToSpa]
   exact 𝔪.isMaximal

@@ -140,7 +140,7 @@ theorem IsAnalyticSubmanifold.interior_preimage_val_eq_empty_of_dim_lt
     interior (Subtype.val ⁻¹' S : Set T) = ∅ := by
   by_contra hne
   exact (not_le_of_gt hde)
-    (hS.dim_le_of_nonempty_interior_preimage_val hT (Set.nonempty_iff_ne_empty.2 hne))
+    (hS.dim_le_of_nonempty_interior_preimage_val hT (Set.ne_empty_iff_nonempty.1 hne))
 
 /-- A finite family of analytic submanifolds covering a nonempty analytic submanifold contains
 one whose dimension is at least that of the covered submanifold. No disjointness or frontier
@@ -154,7 +154,7 @@ theorem IsAnalyticSubmanifold.exists_dim_le_of_subset_iUnion
     ext x
     simpa only [mem_iUnion, mem_preimage, mem_univ, iff_true] using hcover x.property
   obtain ⟨i, hi⟩ := nonempty_interior_of_iUnion_of_isLocallyClosed
-    (fun i ↦ (hT i).isLocallyClosed.preimage continuous_subtype_val) hU
+    (fun i ↦ (hT i).isLocallyClosed.preimage continuous_subtypeVal) hU
   exact ⟨i, (hT i).dim_le_of_nonempty_interior_preimage_val hS hi⟩
 
 /-- Inclusion between two finite unions of analytic submanifolds implies the corresponding

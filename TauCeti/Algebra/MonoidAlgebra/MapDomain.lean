@@ -9,12 +9,14 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.GroupTheory.Finiteness
 
+import TauCeti.Data.Finsupp.MapDomain
+
 /-!
 # Pushing coefficients of a monoid algebra forward along a map
 
 Functoriality of `MonoidAlgebra.mapDomain`, the map `R[M] → R[N]` induced by a map `M → N` of the
 index types, in the form of the corresponding `Finsupp.mapDomain` lemmas: the identity induces the
-identity, a composite induces the composite, a surjection induces a surjection, and an injection
+identity, a composite induces the composite, a surjection induces a surjection, and any map
 induces a map whose image consists of the elements supported on its range; so finitely many
 elements of a group algebra come from the group algebra of a finitely generated subgroup. Mathlib
 states the first two only for the bundled ring and algebra homomorphisms `mapDomainRingHom` and
@@ -32,7 +34,7 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
   additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective, with
   additive form `AddMonoidAlgebra.mapDomain_surjective`.
-* `MonoidAlgebra.mem_range_mapDomain_iff`: the image of the map induced by an injection consists of
+* `MonoidAlgebra.mem_range_mapDomain_iff`: the image of the map induced by any map consists of
   the elements supported on its range, with additive form
   `AddMonoidAlgebra.mem_range_mapDomain_iff`.
 * `MonoidAlgebra.exists_fg_forall_mem_range_mapDomain`: finitely many elements of a group algebra
@@ -82,16 +84,16 @@ theorem mapDomain_surjective {f : M → N} (hf : Function.Surjective f) :
   obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective hf y.coeff
   exact ⟨ofCoeff x, ext <| by rw [coeff_mapDomain, coeff_ofCoeff, hx]⟩
 
-/-- For an injective map `f`, an element lies in the image of `mapDomain f` exactly when its
-support lies in the range of `f`. -/
+/-- For any map `f`, an element lies in the image of `mapDomain f` exactly when its support lies
+in the range of `f`. -/
 @[to_additive
-/-- For an injective map `f`, an element lies in the image of `mapDomain f` exactly when its
-support lies in the range of `f`. -/]
-theorem mem_range_mapDomain_iff {f : M → N} (hf : Function.Injective f) (x : MonoidAlgebra R N) :
+/-- For any map `f`, an element lies in the image of `mapDomain f` exactly when its support lies
+in the range of `f`. -/]
+theorem mem_range_mapDomain_iff {f : M → N} (x : MonoidAlgebra R N) :
     x ∈ Set.range (mapDomain (R := R) f) ↔ ∀ n ∈ x.coeff.support, n ∈ Set.range f := by
   have hsupp : (∀ n ∈ x.coeff.support, n ∈ Set.range f) ↔ ∀ n ∉ Set.range f, x.coeff n = 0 :=
     forall_congr' fun n ↦ by rw [Finsupp.mem_support_iff, not_imp_comm]
-  rw [hsupp, ← Finsupp.mem_range_mapDomain_iff _ hf x.coeff]
+  rw [hsupp, ← Finsupp.mem_range_mapDomain_iff' f x.coeff]
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨y.coeff, by rw [← hy, coeff_mapDomain]⟩, fun ⟨y, hy⟩ ↦ ?_⟩
   exact ⟨ofCoeff y, ext <| by rw [coeff_mapDomain, coeff_ofCoeff, hy]⟩
 
@@ -106,7 +108,7 @@ theorem exists_fg_forall_mem_range_mapDomain {G : Type*} [Group G]
   classical
   refine ⟨.closure ↑(s.biUnion fun x ↦ x.coeff.support),
     (Subgroup.fg_iff _).mpr ⟨_, rfl, Finset.finite_toSet _⟩, fun x hx ↦ ?_⟩
-  refine (mem_range_mapDomain_iff Subtype.val_injective x).mpr fun g hg ↦ ?_
+  refine (mem_range_mapDomain_iff x).mpr fun g hg ↦ ?_
   exact ⟨⟨g, Subgroup.subset_closure (Finset.mem_biUnion.mpr ⟨x, hx, hg⟩)⟩, rfl⟩
 
 /-- The image of `mapDomain f` commutes with the monomial `single n r` when every value of `f`

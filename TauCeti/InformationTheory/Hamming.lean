@@ -1,13 +1,15 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Set.Card
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Pi
+import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Hamming support, and Hamming data under coordinate decompositions and reindexing
@@ -26,7 +28,8 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
 additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
-intersects the support with `supp c`.
+intersects the support with `supp c`. The weight of an integer vector, and of its image in any
+additive group with one (such as its reduction modulo `n`), is at most the vector's sum of squares.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
 union split as sums over the two coordinate types. Weight also splits over a retained coordinate
@@ -36,10 +39,51 @@ blocks reduce their Hamming data to the data of the blocks.
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
 coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
-factor over the coordinates.
+factor over the coordinates. For set indicators, weight is cardinality and distance is the
+cardinality of the symmetric difference.
+
+Finally, for a binary word `c : ι → Bool` and any `x` in a commutative semiring,
+`∑ y, x ^ hammingDist y c = (1 + x) ^ card ι` (`TauCeti.sum_pow_hammingDist_eq`), and for every
+radius `D` and word `a` a greedy code through `a` has distinct words at distance more than `D` and
+meets every closed ball of radius `D`
+(`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`). Both are adapted from the
+lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
+`CKSD.exists_hamming_packing`).
 -/
 
 public section
+
+namespace Finset
+
+open scoped symmDiff
+
+variable {ι A : Type*} [Fintype ι] [Zero A] [One A] [NeZero (1 : A)] [DecidableEq A]
+
+/-- The Hamming weight of the indicator of a finite subset is its cardinality. -/
+@[simp]
+theorem hammingNorm_indicator_one (s : Finset ι) :
+    hammingNorm ((s : Set ι).indicator (1 : ι → A)) = s.card := by
+  classical
+  rw [hammingNorm]
+  congr 1
+  ext i
+  by_cases hi : i ∈ s <;>
+    simp [Set.indicator_apply, hi, NeZero.ne]
+
+/-- Two indicators differ at exactly the elements of the symmetric difference of their sets. -/
+@[simp]
+theorem hammingDist_indicator_one [DecidableEq ι] (s t : Finset ι) :
+    hammingDist ((s : Set ι).indicator (1 : ι → A)) ((t : Set ι).indicator 1) = (s ∆ t).card := by
+  classical
+  rw [hammingDist]
+  congr 1
+  ext i
+  by_cases hs : i ∈ s <;> by_cases ht : i ∈ t <;>
+    simp [Set.indicator_apply, Finset.mem_symmDiff, hs, ht, NeZero.ne,
+      NeZero.ne' (1 : A)]
+
+end Finset
 
 namespace TauCeti
 
@@ -172,6 +216,25 @@ theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a :
     hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
   by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
 
+/-- The Hamming weight of an integer vector is bounded by its sum of squares. -/
+theorem hammingNorm_le_sum_sq [Fintype ι] (z : ι → ℤ) : (hammingNorm z : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if z i ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+    apply Finset.sum_le_sum
+    intro i _
+    split_ifs with hz
+    · have := sq_pos_of_ne_zero hz
+      omega
+    · exact sq_nonneg _
+  simpa only [Finset.sum_boole, hammingNorm] using hsum
+
+/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
+its reduction modulo `n`, is bounded by its sum of squares. -/
+theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
+    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 :=
+  -- Casting coordinatewise sends `0` to `0`, so it cannot increase the Hamming weight.
+  (Nat.cast_le.mpr <| hammingNorm_comp_le_hammingNorm (fun _ ↦ Int.cast) fun _ ↦
+    Int.cast_zero).trans (hammingNorm_le_sum_sq z)
+
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
 @[simp]
@@ -223,6 +286,49 @@ Hamming weight. -/
   have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
   rw [Finset.card_univ] at h
   rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, hammingNorm, ← h, Nat.add_sub_cancel]
+
+/-! ### Binary words and greedy codes -/
+
+section Codes
+
+open Finset
+
+/-- The exponential moment of the Hamming distance to a fixed binary word:
+`∑ y, x ^ hammingDist y c = (1 + x) ^ n` over the words `y : ι → Bool`, with `n = card ι`. -/
+theorem sum_pow_hammingDist_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R]
+    (c : ι → Bool) (x : R) : ∑ y : ι → Bool, x ^ hammingDist y c = (1 + x) ^ Fintype.card ι := by
+  have h (y : ι → Bool) : x ^ hammingDist y c = ∏ i, if y i ≠ c i then x else 1 := by
+    rw [prod_ite, prod_const, prod_const_one, mul_one, hammingDist]
+  have hb (i : ι) : ∑ b : Bool, (if b ≠ c i then x else 1) = 1 + x := by
+    cases c i <;> simp [add_comm]
+  calc ∑ y : ι → Bool, x ^ hammingDist y c
+      = ∏ i, ∑ b : Bool, (if b ≠ c i then x else 1) := by
+        simp only [h]
+        exact (Fintype.prod_sum fun i (b : Bool) ↦ if b ≠ c i then x else 1).symm
+    _ = (1 + x) ^ Fintype.card ι := by simp only [hb, prod_const, card_univ]
+
+/-- A greedy code: for every radius `D` and word `a`, some finite code containing `a` has distinct
+words at distance more than `D` and meets the closed ball of radius `D` about every word. -/
+theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : ι → Type*}
+    [Fintype ι] [∀ i, Finite (β i)] [∀ i, DecidableEq (β i)] (D : ℕ) (a : ∀ i, β i) :
+    ∃ C : Finset (∀ i, β i), a ∈ C ∧
+      (C : Set (∀ i, β i)).Pairwise (fun x y ↦ D < hammingDist x y) ∧
+      ∀ y, ∃ x ∈ C, hammingDist y x ≤ D := by
+  classical
+  -- A maximal `D`-separated set through `a` is a `D`-cover of the whole space.
+  let R : SetRel (∀ i, β i) (∀ i, β i) := {p | hammingDist p.1 p.2 ≤ D}
+  have : R.IsRefl := ⟨fun x ↦ by simp [R]⟩
+  have : R.IsSymm := ⟨fun x y h ↦ by simpa [R, hammingDist_comm] using h⟩
+  obtain ⟨N, haN, hN⟩ := Finite.exists_le_maximal
+    (p := fun N : Set (∀ i, β i) ↦ N ⊆ Set.univ ∧ R.IsSeparated N) (a := {a})
+    ⟨Set.subset_univ _, .singleton⟩
+  have hcover := SetRel.IsCover.of_maximal_isSeparated hN
+  refine ⟨N.toFinite.toFinset, by simpa using haN rfl, ?_, fun y ↦ ?_⟩
+  · simpa [SetRel.IsSeparated, R] using hN.1.2
+  · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
+    exact ⟨x, by simpa using hx, hxy⟩
+
+end Codes
 
 end TauCeti
 

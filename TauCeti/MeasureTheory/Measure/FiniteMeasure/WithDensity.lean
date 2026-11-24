@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 public import TauCeti.MeasureTheory.Integral.Scheffe
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Weak convergence of measures with converging densities
@@ -56,8 +56,8 @@ theorem tendsto_of_tendsto_integral_norm_sub (hf : ∀ i, Integrable (f i) μ) (
   -- The difference of the integrals is `∫ (f i - g) φ`, which is at most `‖φ‖ ∫ ‖f i - g‖` in
   -- absolute value.
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_) (by simpa using h.mul_const ‖φ‖)
-  rw [hμs, hν, TauCeti.Probability.integral_withDensity_ofReal (hf i).aemeasurable (hf₀ i),
-    TauCeti.Probability.integral_withDensity_ofReal hg.aemeasurable hg₀]
+  rw [hμs, hν, TauCeti.MeasureTheory.integral_withDensity_ofReal (hf i).aemeasurable (hf₀ i),
+    TauCeti.MeasureTheory.integral_withDensity_ofReal hg.aemeasurable hg₀]
   simp only [smul_eq_mul]
   rw [← integral_sub ((hf i).mul_bdd hφ hφb) (hg.mul_bdd hφ hφb), ← integral_mul_const]
   refine (norm_integral_le_integral_norm _).trans (integral_mono_of_nonneg

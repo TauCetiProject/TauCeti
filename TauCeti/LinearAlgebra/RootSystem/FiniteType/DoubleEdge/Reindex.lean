@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.SimpleGraph.PathGraph
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 import TauCeti.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic
