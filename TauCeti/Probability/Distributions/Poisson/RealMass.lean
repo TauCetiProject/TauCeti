@@ -52,10 +52,6 @@ theorem poissonMass_eq_poissonMeasure_real_singleton {θ : ℝ} (hθ : 0 ≤ θ)
     poissonMass θ x = (poissonMeasure θ.toNNReal).real {x} := by
   rw [poissonMeasure_real_singleton, Real.coe_toNNReal θ hθ, poissonMass_def]
 
-/-- The Poisson mass at a nonnegative rate is the mass of Mathlib's Poisson law at a point. -/
-theorem poissonMass_coe (r : ℝ≥0) (x : ℕ) : poissonMass r x = (poissonMeasure r).real {x} :=
-  (poissonMeasure_real_singleton r x).symm
-
 /-- The Poisson masses sum to `1` for every real `θ`, including negative `θ`. -/
 theorem hasSum_poissonMass (θ : ℝ) : HasSum (poissonMass θ) 1 := by
   convert (NormedSpace.expSeries_div_hasSum_exp θ).mul_left (exp (-θ)) using 1
