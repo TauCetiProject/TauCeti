@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.SameBlock
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Regression examples: the block congruence of complex characters
@@ -31,28 +32,9 @@ namespace TauCeti.SameBlockExamples
 
 variable (M : Ideal (integralClosure ℤ ℂ))
 
-/-- Numerals in the algebraic integers are the complex numerals. -/
-theorem coe_ofNat (n : ℕ) [n.AtLeastTwo] :
-    ((ofNat(n) : integralClosure ℤ ℂ) : ℂ) = ofNat(n) :=
-  map_ofNat (integralClosure ℤ ℂ).val n
-
 section C3
 
-/-- Conjugacy classes of the commutative group `C₃` are single points. -/
-theorem card_conjClasses_carrier (g : Multiplicative (ZMod 3)) :
-    Nat.card (ConjClasses.mk g).carrier = 1 := by
-  rw [Nat.card_coe_set_eq]
-  exact ConjClasses.ncard_carrier_mk_of_mem_center
-    (Submonoid.mem_center_iff.mpr fun h => mul_comm h g)
-
 variable {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 3)
-
-include hζ in
-/-- A primitive cube root of unity is a root of `1 + X + X²`. -/
-theorem one_add_add_sq : 1 + ζ + ζ ^ 2 = 0 := by
-  have hsum := hζ.geom_sum_eq_zero (by norm_num)
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at hsum
-  linear_combination hsum
 
 include hζ in
 -- Modulo a proper ideal containing `2`, the linear character `r ↦ ζ` of `C₃` is not congruent to
@@ -62,13 +44,14 @@ example (h2 : (2 : integralClosure ℤ ℂ) ∈ M) (hM : M ≠ ⊤) :
   intro h
   obtain ⟨x, hx, hxg⟩ := sameBlock_iff.1 h (Multiplicative.ofAdd 1)
   set z : integralClosure ℤ ℂ := ⟨ζ, hζ.isIntegral (by norm_num)⟩
+  have hz : IsPrimitiveRoot z 3 := IsPrimitiveRoot.coe_submonoidClass_iff.1 hζ
   have hx' : x = z - 1 := Subtype.ext <| by
-    rw [hxg, card_conjClasses_carrier]
+    rw [hxg, Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
+      (Submonoid.mem_center_iff.mpr fun h => mul_comm h _)]
     simp [z, ZMod.val_one]
-  have h3 : (3 : integralClosure ℤ ℂ) = x * (z ^ 2 - 1) := Subtype.ext <| by
+  have h3 : (3 : integralClosure ℤ ℂ) = x * (z ^ 2 - 1) := by
     rw [hx']
-    push_cast [coe_ofNat]
-    linear_combination -(1 : ℂ) * hζ.pow_eq_one + one_add_add_sq hζ
+    linear_combination -hz.pow_eq_one + hz.one_add_add_sq
   have h1 : (1 : integralClosure ℤ ℂ) ∈ M := by
     have := M.sub_mem (h3 ▸ M.mul_mem_right (z ^ 2 - 1) hx) h2
     norm_num at this
@@ -81,14 +64,14 @@ include hζ in
 example [M.IsPrime] (h3 : (3 : integralClosure ℤ ℂ) ∈ M) (j : ℕ) :
     SameBlock M (fun g : Multiplicative (ZMod 3) => ζ ^ (j * (Multiplicative.toAdd g).val)) 1 := by
   set z : integralClosure ℤ ℂ := ⟨ζ, hζ.isIntegral (by norm_num)⟩
-  have hz : z - 1 ∈ M := by
-    have hsq : (z - 1) ^ 2 = -(3 * z) := Subtype.ext <| by
-      push_cast [coe_ofNat]
-      linear_combination one_add_add_sq hζ
+  have hz : IsPrimitiveRoot z 3 := IsPrimitiveRoot.coe_submonoidClass_iff.1 hζ
+  have hz1 : z - 1 ∈ M := by
+    have hsq : (z - 1) ^ 2 = -(3 * z) := by linear_combination hz.one_add_add_sq
     exact Ideal.IsPrime.mem_of_pow_mem ‹_› 2 (hsq ▸ M.neg_mem_iff.2 (M.mul_mem_right z h3))
   refine sameBlock_iff.2 fun g => ⟨z ^ (j * (Multiplicative.toAdd g).val) - 1, ?_, ?_⟩
-  · rw [← Ideal.Quotient.eq, map_pow, Ideal.Quotient.eq.2 hz, map_one, one_pow]
-  · rw [card_conjClasses_carrier]
+  · rw [← Ideal.Quotient.eq, map_pow, Ideal.Quotient.eq.2 hz1, map_one, one_pow]
+  · rw [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
+      (Submonoid.mem_center_iff.mpr fun h => mul_comm h _)]
     simp [z]
 
 end C3
@@ -102,10 +85,13 @@ example (h2 : (2 : integralClosure ℤ ℂ) ∈ M) :
   refine sameBlock_iff.2 fun g => ?_
   rcases Int.units_eq_one_or (Equiv.Perm.sign g) with hg | hg
   · exact ⟨0, M.zero_mem, by simp [hg]⟩
-  · refine ⟨-(Nat.card (ConjClasses.mk g).carrier * 2), M.neg_mem_iff.2 (M.mul_mem_left _ h2), ?_⟩
-    simp only [hg, map_one, Pi.one_apply]
-    push_cast [coe_ofNat]
-    ring
+  · refine ⟨-((Nat.card (ConjClasses.mk g).carrier * 2 : ℕ) : integralClosure ℤ ℂ),
+      M.neg_mem_iff.2 ?_, ?_⟩
+    · rw [Nat.cast_mul, Nat.cast_ofNat]
+      exact M.mul_mem_left _ h2
+    · simp only [hg, map_one, Pi.one_apply, NegMemClass.coe_neg, SubringClass.coe_natCast]
+      push_cast
+      ring
 
 -- Modulo a proper ideal containing `2`, the standard character `σ ↦ #fix(σ) - 1` of `S₃` is not
 -- congruent to the trivial one: on the class of the three transpositions the difference is
@@ -123,7 +109,8 @@ example (h2 : (2 : integralClosure ℤ ℂ) ∈ M) (hM : M ≠ ⊤) :
     decide
   have hx' : x = -3 := Subtype.ext <| by
     rw [hxg, hcard, hfix, hfix1, Pi.one_apply, Pi.one_apply]
-    norm_num [coe_ofNat]
+    norm_num
+    norm_cast
   have h1 : (1 : integralClosure ℤ ℂ) ∈ M := by
     have := M.sub_mem (M.neg_mem_iff.1 (hx' ▸ hx : (-3 : integralClosure ℤ ℂ) ∈ M)) h2
     norm_num at this
@@ -148,7 +135,7 @@ example (h3 : (3 : integralClosure ℤ ℂ) ∈ M) :
         (Finset.univ.filter fun i => g i = i).card = 0) := by
     decide
   have hm3 : (-3 : integralClosure ℤ ℂ) ∈ M := M.neg_mem_iff.2 h3
-  have c3 : ((-3 : integralClosure ℤ ℂ) : ℂ) = -3 := by simp [coe_ofNat]
+  have c3 : ((-3 : integralClosure ℤ ℂ) : ℂ) = -3 := by norm_cast
   refine sameBlock_iff.2 fun g => ?_
   simp only [Pi.one_apply, hfix1, Nat.card_eq_fintype_card]
   rcases hcases g with ⟨hc, hf⟩ | ⟨hc, hf⟩ | ⟨hc, hf⟩ <;> rw [hc, hf]
