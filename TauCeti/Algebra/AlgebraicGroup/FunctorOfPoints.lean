@@ -134,8 +134,9 @@ noncomputable instance convGroupOfSemiring : Group (WithConv (H →ₐ[R] A)) wh
 it back: `f ∘ S² = f`, since `f ∘ S` is the convolution inverse of `f` and inversion in the
 convolution group is involutive. The antipode itself need not be involutive. -/
 @[simp]
-lemma antipodeComp_antipodeComp (f : H →ₐ[R] A) : antipodeComp (antipodeComp f) = f :=
-  congrArg WithConv.ofConv (inv_inv (toConv f))
+lemma antipodeComp_antipodeComp (f : H →ₐ[R] A) : antipodeComp (antipodeComp f) = f := by
+  simpa only [WithConv.algHom_inv_def, ofConv_toConv] using
+    congrArg WithConv.ofConv (inv_inv (toConv f))
 
 end Hopf
 
