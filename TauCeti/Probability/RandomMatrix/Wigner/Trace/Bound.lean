@@ -10,7 +10,6 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Combinatorics.TraceWord.Coding
 import TauCeti.Probability.Independence.Basic
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # Füredi–Komlós bound on growing Wigner traces
@@ -30,7 +29,8 @@ The proof expands the trace into closed walks that traverse each edge at least t
 traversed `m` times contributes at most `b ^ (m - 2) * c`, where `b = K / √n` bounds the normalized
 entries and `c = min (σ ^ 2 / n) (b ^ 2)` bounds their second moments. The walks are then counted
 by the weighted Füredi–Komlós enumeration
-`TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`.
+`TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`, after the word weights are put in its
+form by `TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`.
 
 ## Main results
 
@@ -51,32 +51,6 @@ public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset
 open scoped ENNReal NNReal
-
-namespace TauCeti
-
-/-- The bound for a single trace word in the form counted by the Füredi–Komlós enumeration: a word
-with `e` distinct edges and `t ≤ e + 1` vertices, `2 * e ≤ L`, contributes at most
-`n * σ ^ L * γ ^ (2 * (L + 2 - 2 * t)) / n ^ t`. -/
-private theorem pow_mul_pow_sub_le_mul_pow_div_pow {b c σ γ n : ℝ} (hb : 0 ≤ b) (hc : 0 ≤ c)
-    (hcb : c ≤ b ^ 2) (hcσ : c ≤ σ ^ 2 / n) (hbσ : b ≤ σ * γ ^ 2) (hn : 0 < n)
-    {e t L : ℕ} (ht : 1 ≤ t) (hte : t ≤ e + 1) (heL : 2 * e ≤ L) :
-    c ^ e * b ^ (L - 2 * e) ≤ n * σ ^ L * (γ ^ (2 * (L + 2 - 2 * t)) / n ^ t) := by
-  obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
-  have hσL : σ ^ L = (σ ^ 2) ^ t' * σ ^ (L - 2 * t') := by
-    rw [← pow_mul, ← pow_add]
-    congr 1
-    omega
-  calc _ ≤ c ^ t' * b ^ (L - 2 * t') := pow_mul_pow_sub_two_mul_le hb hc hcb (by omega) heL
-    _ ≤ (σ ^ 2 / n) ^ t' * (σ * γ ^ 2) ^ (L - 2 * t') :=
-        mul_le_mul (pow_le_pow_left₀ hc hcσ _) (pow_le_pow_left₀ hb hbσ _) (pow_nonneg hb _)
-          (pow_nonneg (hc.trans hcσ) _)
-    _ = _ := by
-        rw [show L + 2 - 2 * (t' + 1) = L - 2 * t' by omega, hσL, div_pow, mul_pow,
-          ← pow_mul γ 2]
-        field_simp [hn.ne']
-        ring
-
-end TauCeti
 
 namespace ProbabilityTheory.iIndepFun
 
@@ -124,16 +98,22 @@ theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
         n * σ ^ L * (γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / (n : ℝ) ^ #(univ.image w)) := by
         refine sum_le_sum fun w hw ↦ ?_
         have hw := (mem_filter.mp hw).2
-        -- A walk with `t` vertices and `e` distinct edges has `t ≤ e + 1` and `2 * e ≤ L`.
-        have hword := norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge
-          (fun ij hij ↦ (hξm ij hij).aemeasurable) (fun i hi ↦ (hηm i hi).aemeasurable) hindep
-          w (fun s ↦ w (finRotate L s)) hw fun s ↦ by
+        -- The upper entries read by the walk lie in the corner.
+        have hξw (s : Fin L) (ij : StrictUpper)
+            (hij : s(ij.val.1, ij.val.2) = s((w s).val, (w (finRotate L s)).val)) :
+            AEMeasurable (ξ ij) P := by
+          refine (hξm ij ?_).aemeasurable
+          rcases Sym2.eq_iff.mp hij with ⟨-, h⟩ | ⟨-, h⟩ <;> rw [h] <;> exact Fin.isLt _
+        have hword := norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge hindep
+          w (fun s ↦ w (finRotate L s)) hξw (fun s _ ↦ (hηm _ (w s).isLt).aemeasurable) hw
+          fun s ↦ by
             -- The position of each step is read `m + 2` times for some `m`.
             obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le'
               (two_le_card_filter_eq_of_no_singleton_fiber hw _ (mem_image_of_mem _ (mem_univ s)))
             rw [hm, Nat.add_sub_cancel]
-            exact integral_norm_wignerMatrix_apply_pow_add_two_le hξm hηm hξK hηK hξσ hησ _ _ m
+            exact integral_norm_wignerMatrix_apply_pow_add_two_le hξK hηK hξσ hησ _ _ m
         rw [Fintype.card_fin] at hword
+        -- A walk with `t` vertices and `e` distinct edges has `t ≤ e + 1` and `2 * e ≤ L`.
         exact hword.trans (pow_mul_pow_sub_le_mul_pow_div_pow hb₀ (le_min (by positivity)
           (sq_nonneg _)) (min_le_right _ _) (min_le_left _ _) ((div_le_iff₀ hsqrt).mpr hK)
           (Nat.cast_pos.mpr hn) (card_pos.mpr (univ_nonempty.image _))

@@ -138,6 +138,20 @@ private theorem aemeasurable_cornerEntry {n : ℕ}
   | inl ij => exact hξm ij.val ij.property
   | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.val i.property)
 
+/-- The coordinate of the corner entry array read by the `(i, j)` entry is almost everywhere
+measurable when the upper entry at the unordered position `{i, j}` is, or, for `i = j`, the
+diagonal entry. -/
+private theorem aemeasurable_cornerEntry_entryIndex {n : ℕ} {i j : Fin n}
+    (hξm : ∀ ij : StrictUpper, s(ij.val.1, ij.val.2) = s(i.val, j.val) → AEMeasurable (ξ ij) P)
+    (hηm : i = j → AEMeasurable (η i.val) P) :
+    AEMeasurable (Sum.elim (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val)
+      (fun i ω ↦ (η i.val ω : ℂ)) (entryIndex i j)) P := by
+  unfold entryIndex
+  split_ifs with h h'
+  · exact hξm _ rfl
+  · exact hξm _ Sym2.eq_swap
+  · exact Complex.measurable_ofReal.comp_aemeasurable (hηm (Fin.ext (by omega)))
+
 /-- **Edge-disjoint Wigner products are independent.** Let the entries in the `n × n` corner be
 independent. Two finite products of entries of the `n × n` Wigner matrix reading disjoint sets of
 unordered positions are independent. No centering or finite-moment assumption is required. -/
@@ -282,52 +296,51 @@ theorem integral_prod_wignerMatrix_apply_eq_prod {ι : Type*} [Fintype ι] {n : 
 open Finset in
 /-- **Expected Wigner words reading each position at least twice.** Let the entries in the
 `n × n` corner be independent, and let each unordered position read by the family `(u s, v s)`
-be read at least twice. If the position of each factor `s` is read `d` times and
+be read at least twice, the upper and diagonal entries read being almost everywhere measurable.
+If the position of each factor `s` is read `d` times and
 `∫ ‖Hₙ (u s) (v s)‖ ^ d ≤ b ^ (d - 2) * c`, the expected product of the entries has norm at most
 `c ^ e * b ^ (card ι - 2 * e)`, where `e` is the number of distinct unordered positions read. -/
 theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type*} [Fintype ι]
     {n : ℕ} {b c : ℝ}
-    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
-    (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
-    (u v : ι → Fin n) (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t))
+    (u v : ι → Fin n)
+    (hξm : ∀ s, ∀ ij : StrictUpper, s(ij.val.1, ij.val.2) = s((u s).val, (v s).val) →
+      AEMeasurable (ξ ij) P)
+    (hηm : ∀ s, u s = v s → AEMeasurable (η (u s).val) P)
+    (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t))
     (hmom : ∀ s, ∫ ω, ‖wignerMatrix ξ η n ω (u s) (v s)‖ ^ #{t | s(u t, v t) = s(u s, v s)} ∂P ≤
       b ^ (#{t | s(u t, v t) = s(u s, v s)} - 2) * c) :
     ‖∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
       c ^ #(univ.image fun s ↦ s(u s, v s)) *
         b ^ (Fintype.card ι - 2 * #(univ.image fun s ↦ s(u s, v s))) := by
-  rw [integral_prod_wignerMatrix_apply_eq_prod hξm hηm hindep u v, norm_prod]
-  set g : ι → Sym2 (Fin n) := fun s ↦ s(u s, v s)
-  -- Every position read is read at least twice.
-  have hfib := two_le_card_filter_eq_of_no_singleton_fiber (f := g) huv
-  -- The factor of a position read `d` times is bounded by the `d`th absolute moment.
-  have hbound (x : Sym2 (Fin n)) (hx : x ∈ univ.image g) :
-      ‖∫ ω, ∏ s with g s = x, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
-        b ^ (#{s | g s = x} - 2) * c := by
-    obtain ⟨s₀, -, rfl⟩ := mem_image.mp hx
-    calc _ ≤ ∫ ω, ‖∏ s with g s = g s₀, wignerMatrix ξ η n ω (u s) (v s)‖ ∂P :=
-          norm_integral_le_integral_norm _
-      _ = ∫ ω, ‖wignerMatrix ξ η n ω (u s₀) (v s₀)‖ ^ #{s | g s = g s₀} ∂P := by
-          refine integral_congr_ae (.of_forall fun ω ↦ ?_)
-          dsimp only
-          rw [norm_prod, ← prod_const]
-          exact prod_congr rfl fun s hs ↦
-            norm_wignerMatrix_apply_eq_of_mk_eq ω (mem_filter.mp hs).2
-      _ ≤ _ := hmom s₀
-  -- The multiplicities of the positions read add up to the length of the word.
-  have hsum : ∑ x ∈ univ.image g, (#{s | g s = x} - 2) + 2 * #(univ.image g) =
-      Fintype.card ι := by
-    rw [← card_univ, card_eq_sum_card_image g univ, mul_comm, ← smul_eq_mul, ← sum_const,
-      ← sum_add_distrib]
-    exact sum_congr rfl fun x hx ↦ Nat.sub_add_cancel (hfib x hx)
-  calc _ ≤ ∏ x ∈ univ.image g, b ^ (#{s | g s = x} - 2) * c :=
-        prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hbound
-    _ = c ^ #(univ.image g) * b ^ (Fintype.card ι - 2 * #(univ.image g)) := by
-        rw [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum, mul_comm]
-        congr 2
-        omega
+  classical
+  -- The entry at `(u s, v s)` reads the corner coordinate `entryIndex (u s) (v s)`, and two
+  -- entries read the same coordinate exactly when they sit at the same unordered position.
+  have hfib (s : ι) : #{t | entryIndex (u t) (v t) = entryIndex (u s) (v s)} =
+      #{t | s(u t, v t) = s(u s, v s)} := by
+    simp only [entryIndex_eq_entryIndex_iff]
+  have hcard : #(univ.image fun s ↦ entryIndex (u s) (v s)) =
+      #(univ.image fun s ↦ s(u s, v s)) := by
+    rw [← card_image_of_injective _ sym2Index_injective, image_image]
+    simp [Function.comp_def, sym2Index]
+  have h := hindep.norm_integral_fun_prod_comp_le_of_no_singleton_fiber
+    (e := fun s ↦ entryIndex (u s) (v s))
+    (fun s ↦ aemeasurable_cornerEntry_entryIndex (hξm s) (hηm s))
+    (fun t ↦ by simpa only [entryIndex_eq_entryIndex_iff] using huv t)
+    (φ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
+    (fun s ↦ (measurable_const.mul (measurable_orientEntry _ _)).aestronglyMeasurable)
+    (b := b) (c := c) fun s ↦ ?_
+  · simpa only [← wignerMatrix_apply_eq_orientEntry, hcard] using h
+  -- Every factor reading the coordinate of `s` has the norm of the entry at `(u s, v s)`.
+  rw [hfib s]
+  refine (integral_congr_ae (.of_forall fun ω ↦ ?_)).trans_le (hmom s)
+  rw [← hfib s, ← prod_const]
+  refine prod_congr rfl fun t ht ↦ ?_
+  have ht := (mem_filter.mp ht).2
+  rw [← ht, ← wignerMatrix_apply_eq_orientEntry,
+    norm_wignerMatrix_apply_eq_of_mk_eq ω (entryIndex_eq_entryIndex_iff.mp ht)]
 
 end SingleEdge
 
