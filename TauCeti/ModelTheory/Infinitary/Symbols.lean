@@ -24,7 +24,8 @@ with no restriction on the size of the language. This is the input for restricti
 theories to countable sublanguages.
 
 `BoundedFormulaInf.realize_congr_of_agreeOn` is symbol locality: two interpretations on one
-carrier which agree on the occurring symbols give the formula the same truth value. Language
+carrier which agree on the occurring symbols give the formula the same truth value, with
+`SentenceInf.realize_congr_of_agreeOn` its form for sentences. Language
 maps take occurrence sets to their exact images; bound-variable and free-variable relabelling
 and carrier coding preserve them, and free-variable substitution preserves relation symbols and
 adds at most the function symbols of the substituted terms.
@@ -437,6 +438,23 @@ instance countable_relationsInSet [Countable ι] (S : Set (L.BoundedFormulaInf �
   (relationsInSet_countable (Set.to_countable S)).to_subtype
 
 end BoundedFormulaInf
+
+namespace SentenceInf
+
+variable {L : Language.{u, v}} {ι : Type uι}
+
+/-- **Symbol locality for sentences.** Structures on the same carrier which agree on every
+symbol occurring in a sentence give it the same truth value. -/
+theorem realize_congr_of_agreeOn {M : Type w} (φ : L.SentenceInf ι) (S S' : L.Structure M)
+    (hF : ∀ {k} (f : L.Functions k), ⟨k, f⟩ ∈ BoundedFormulaInf.functionsIn φ →
+      ∀ xs, @Structure.funMap L M S k f xs = @Structure.funMap L M S' k f xs)
+    (hR : ∀ {k} (R : L.Relations k), ⟨k, R⟩ ∈ BoundedFormulaInf.relationsIn φ →
+      ∀ xs, @Structure.RelMap L M S k R xs ↔ @Structure.RelMap L M S' k R xs) :
+    @Realize L ι φ M S ↔ @Realize L ι φ M S' := by
+  simp only [realize_def, FormulaInf.realize_def]
+  exact BoundedFormulaInf.realize_congr_of_agreeOn φ S S' hF hR _ _
+
+end SentenceInf
 
 namespace LHom
 

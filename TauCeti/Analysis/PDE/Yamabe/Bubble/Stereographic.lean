@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Volume
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.MeasureTheory.Integral.Bochner.Affine
-import TauCeti.MeasureTheory.Integral.Dilation
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -32,20 +34,25 @@ preserves `L^{pₙ}` integrals between `Sⁿ` and `ℝⁿ`. The scale `2 / t` re
 normalization of `σ`, whose inverse chart alone pulls the round metric back to
 `U_{2,0} ^ (4 / (n - 2)) δ`.
 
+This is how integrals over the round sphere, such as the Yamabe quotient of a conformal factor
+on `Sⁿ`, become integrals over `ℝⁿ` weighted by bubbles.
+
 ## Main results
 
 * `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`: the pullback of the round metric
   along `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric.
 * `TauCeti.Yamabe.riemannianJacobian_stereographic'_symm_smul_sub`: the Riemannian Jacobian of
   `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ pₙ`.
+* `TauCeti.Yamabe.lintegral_riemannianVolume_sphere_eq_lintegral_bubble_rpow_mul` and
+  `TauCeti.Yamabe.integral_riemannianVolume_sphere_eq_integral_bubble_rpow_smul`: the
+  stereographic change of variables on the round sphere, for nonnegative and for vector-valued
+  functions.
 * `TauCeti.Yamabe.map_stereographic'_symm_smul_sub_withDensity_eq_restrict_riemannianVolume` and
   `TauCeti.Yamabe.map_stereographic'_symm_smul_sub_withDensity_eq_riemannianVolume`: rescaled
   stereographic pushforward of `U_{t,b} ^ pₙ dx` onto `Sⁿ \ {v}`, and onto `Sⁿ` for `n > 0`.
-* `TauCeti.Yamabe.lintegral_riemannianVolume_sphere_eq_bubble_rpow_criticalExponent`,
-  `TauCeti.Yamabe.integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent`,
-  `TauCeti.Yamabe.integral_riemannianVolume_sphere_eq_bubble_rpow_criticalExponent`, and
-  `TauCeti.Yamabe.integral_abs_rpow_criticalExponent_sphere_eq_bubble_mul`: integration on `Sⁿ`
-  against `U_{t,b} ^ pₙ dx` on `ℝⁿ`.
+* `TauCeti.Yamabe.integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent` and
+  `TauCeti.Yamabe.integral_abs_rpow_criticalExponent_sphere_eq_bubble_mul`: integrability and
+  critical `L^{pₙ}` isometry on `Sⁿ` against `U_{t,b} ^ pₙ dx` on `ℝⁿ`.
 
 ## References
 
@@ -68,6 +75,19 @@ section Metric
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
+/-- The derivative of the rescaled inverse stereographic chart `x ↦ σ⁻¹((2 / t) (x - b))`. -/
+private theorem hasMFDerivAt_stereographic'_symm_smul_sub (v : sphere (0 : E) 1) (t : ℝ)
+    (b x : EuclideanSpace ℝ (Fin n)) :
+    HasMFDerivAt (𝓡 n) (𝓡 n) ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x
+      ((mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b))).comp
+        ((2 / t) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n)))) := by
+  have hA : HasMFDerivAt (𝓡 n) (𝓡 n) (fun y ↦ (2 / t) • (y - b)) x
+      ((2 / t) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))) :=
+    (((hasFDerivAt_id x).sub_const b).const_smul (2 / t)).hasMFDerivAt
+  have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b)) :=
+    mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
+  exact hsymm.hasMFDerivAt.comp x hA
+
 /-- **The bubbles are stereographic pullbacks of the round metric.** In dimension `n ≠ 2`, let
 `σ = stereographic' n v` be a stereographic chart of the unit sphere `Sⁿ`. The round metric pulled
 back along `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ (4 / (n - 2))` times the Euclidean metric of
@@ -77,16 +97,11 @@ theorem inner_mfderiv_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphere (0
     inner ℝ (mfderiv (𝓡 n) (𝓡 n) ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x a)
         (mfderiv (𝓡 n) (𝓡 n) ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x c) =
       bubble t b x ^ (4 / ((n : ℝ) - 2)) * inner ℝ a c := by
-  have hA : HasMFDerivAt (𝓡 n) (𝓡 n) (fun y ↦ (2 / t) • (y - b)) x
-      ((2 / t) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))) :=
-    (((hasFDerivAt_id x).sub_const b).const_smul (2 / t)).hasMFDerivAt
-  have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b)) :=
-    mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
   -- The tangent spaces at `x` and at `(2 / t) • (x - b)` are both the model space.
   have hd (d : TangentSpace (𝓡 n) ((2 / t) • (x - b))) :
       mfderiv (𝓡 n) (𝓡 n) ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x d =
         (2 / t) • mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b)) d := by
-    rw [(hsymm.hasMFDerivAt.comp x hA).mfderiv]
+    rw [(hasMFDerivAt_stereographic'_symm_smul_sub v t b x).mfderiv]
     exact (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b))).map_smul (2 / t) d
   rw [hd a, hd c, real_inner_smul_left, real_inner_smul_right, inner_mfderiv_stereographic'_symm]
   have hU := bubble_rpow_four_div_finrank_sub_two (E := EuclideanSpace ℝ (Fin n))
@@ -109,58 +124,84 @@ private theorem mul_stereographic_density_eq_bubble_rpow (hn : n ≠ 2) {t : ℝ
   field_simp
   ring
 
-/-- **Riemannian Jacobian of rescaled inverse stereographic projection.** In dimension `n ≠ 2`, for
-every `t ≥ 0`, the Riemannian Jacobian of `x ↦ σ⁻¹((2 / t) (x - b))` relative to the standard
-orthonormal basis of `ℝⁿ` is `U_{t,b}(x) ^ pₙ`. -/
+/-- **The round volume density in stereographic coordinates.** In dimension `n ≠ 2`, the Riemannian
+Jacobian of `x ↦ σ⁻¹((2 / t) (x - b))` into the round sphere, for the standard orthonormal basis of
+`ℝⁿ`, is the critical power `U_{t,b}(x) ^ pₙ` of the bubble of scale `t > 0` centred at `b`. -/
 theorem riemannianJacobian_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphere (0 : E) 1)
-    {t : ℝ} (ht : 0 ≤ t) (b x : EuclideanSpace ℝ (Fin n)) :
+    {t : ℝ} (ht : 0 < t) (b x : EuclideanSpace ℝ (Fin n)) :
     riemannianJacobian (I := 𝓡 n) (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
         ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x =
       bubble t b x ^ criticalExponent n := by
-  let e := EuclideanSpace.basisFun (Fin n) ℝ
-  rcases ht.eq_or_lt with rfl | ht
-  · have hconst : ((stereographic' n v).symm ∘ fun y : EuclideanSpace ℝ (Fin n) ↦
-        (2 / (0 : ℝ)) • (y - b)) = fun _ ↦ (stereographic' n v).symm 0 := by
-      ext y
-      simp
-    rw [hconst, riemannianJacobian_eq_normDet e, mfderiv_const,
-      ContinuousLinearMap.toLinearMap_zero]
-    change LinearMap.normDet (0 : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] _) = _
-    rw [LinearMap.normDet_zero, finrank_euclideanSpace_fin, bubble_zero_left,
-      finrank_euclideanSpace_fin, criticalExponent_def]
-    rcases eq_or_ne n 0 with rfl | hn₀
-    · simp
-    · have hn' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
-      have hn₀' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn₀
-      simp [hn₀, Real.zero_rpow (div_ne_zero hn' two_ne_zero),
-        Real.zero_rpow (div_ne_zero (mul_ne_zero two_ne_zero hn₀') hn')]
-  · have hA : HasMFDerivAt (𝓡 n) (𝓡 n) (fun y ↦ (2 / t) • (y - b)) x
-        ((2 / t) • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))) :=
-      (((hasFDerivAt_id x).sub_const b).const_smul (2 / t)).hasMFDerivAt
-    have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b)) :=
-      mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
-    have hmf : mfderiv (𝓡 n) (𝓡 n) ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x =
-        (2 / t) • mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b)) := by
-      rw [mfderiv_comp x hsymm hA.mdifferentiableAt, hA.mfderiv]
-      ext d
-      exact (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b))).map_smul
-        (2 / t) d
-    let J : EuclideanSpace ℝ (Fin n) →ₗ[ℝ]
-        TangentSpace (𝓡 n) ((stereographic' n v).symm ((2 / t) • (x - b))) :=
-      (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm ((2 / t) • (x - b))).toLinearMap
-    have hJ : (mfderiv (𝓡 n) (𝓡 n)
-          ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x).toLinearMap =
-        (2 / t) • J := by
-      ext d
-      rw [ContinuousLinearMap.coe_coe, hmf]
-      rfl
-    rw [riemannianJacobian_eq_normDet e, hJ, LinearMap.normDet_smul, finrank_euclideanSpace_fin,
-      Real.norm_of_nonneg (by positivity),
-      ← riemannianJacobian_eq_normDet e (stereographic' n v).symm ((2 / t) • (x - b)),
-      riemannianJacobian_stereographic'_symm]
-    exact mul_stereographic_density_eq_bubble_rpow hn ht b x
+  have hn' : finrank ℝ (EuclideanSpace ℝ (Fin n)) ≠ 2 := by simpa using hn
+  have hU4 := bubble_rpow_four_div_finrank_sub_two hn' ht b x
+  have hUp := bubble_rpow_criticalExponent hn' ht b x
+  rw [finrank_euclideanSpace_fin] at hU4 hUp
+  rw [riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv _
+      (inner_mfderiv_stereographic'_symm_smul_sub hn v ht b x), hU4, Fintype.card_fin,
+    Real.sqrt_sq (by positivity), hUp]
+
+/-- The rescaled inverse stereographic chart `x ↦ σ⁻¹((2 / t) (x - b))` is injective, with image
+the sphere minus the pole `v`. -/
+private theorem injective_and_image_univ_stereographic'_symm_smul_sub (v : sphere (0 : E) 1)
+    {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n)) :
+    Function.Injective ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) ∧
+      ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) '' univ = {v}ᶜ := by
+  have hA : Function.Bijective fun y : EuclideanSpace ℝ (Fin n) ↦ (2 / t) • (y - b) :=
+    ⟨fun y y' h ↦ sub_left_injective (smul_right_injective _ (by positivity) h),
+      fun z ↦ ⟨(t / 2) • z + b, by simp [smul_smul, ht.ne']⟩⟩
+  refine ⟨fun y y' h ↦ hA.injective ((stereographic' n v).symm.injOn (by simp) (by simp) h), ?_⟩
+  rw [image_comp, image_univ_of_surjective hA.surjective, ← stereographic'_target v,
+    (stereographic' n v).symm_image_target_eq_source, stereographic'_source]
 
 end Metric
+
+section ChangeOfVariables
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- **Stereographic change of variables on the round sphere.** In dimension `n ≠ 0, 2`, integrating
+a nonnegative function over the round sphere `Sⁿ` is integrating its pullback along
+`x ↦ σ⁻¹((2 / t) (x - b))` over `ℝⁿ` against the density `U_{t,b} ^ pₙ`, where `σ` is a
+stereographic chart, `t > 0` and `U_{t,b}` is the bubble of scale `t` centred at `b`. The function
+need not be measurable. -/
+theorem lintegral_riemannianVolume_sphere_eq_lintegral_bubble_rpow_mul (hn₀ : n ≠ 0)
+    (hn : n ≠ 2) (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n))
+    (φ : sphere (0 : E) 1 → ℝ≥0∞) :
+    ∫⁻ y, φ y ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
+      ∫⁻ x, ENNReal.ofReal (bubble t b x ^ criticalExponent n) *
+        φ ((stereographic' n v).symm ((2 / t) • (x - b))) := by
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn₀⟩⟩
+  obtain ⟨hinj, himage⟩ := injective_and_image_univ_stereographic'_symm_smul_sub v ht b
+  have h := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.setLIntegral_riemannianVolume_image_of_injOn
+    (I := 𝓡 n) rfl MeasurableSet.univ hinj.injOn
+    (fun x _ ↦ (hasMFDerivAt_stereographic'_symm_smul_sub v t b x).mdifferentiableAt) φ
+  rw [himage, restrict_compl_singleton] at h
+  simpa only [Measure.restrict_univ, OrthonormalBasis.addHaar_eq_volume,
+    riemannianJacobian_stereographic'_symm_smul_sub hn v ht, Function.comp_apply] using h
+
+/-- **Stereographic change of variables on the round sphere.** In dimension `n ≠ 0, 2`, the
+integral of a function over the round sphere `Sⁿ` is the integral of its pullback along
+`x ↦ σ⁻¹((2 / t) (x - b))` over `ℝⁿ` against the density `U_{t,b} ^ pₙ`, where `σ` is a
+stereographic chart, `t > 0` and `U_{t,b}` is the bubble of scale `t` centred at `b`. The function
+need not be measurable or integrable. -/
+theorem integral_riemannianVolume_sphere_eq_integral_bubble_rpow_smul {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (hn₀ : n ≠ 0) (hn : n ≠ 2) (v : sphere (0 : E) 1)
+    {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n)) (φ : sphere (0 : E) 1 → G) :
+    ∫ y, φ y ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
+      ∫ x, bubble t b x ^ criticalExponent n •
+        φ ((stereographic' n v).symm ((2 / t) • (x - b))) := by
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn₀⟩⟩
+  obtain ⟨hinj, himage⟩ := injective_and_image_univ_stereographic'_symm_smul_sub v ht b
+  have h := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.setIntegral_riemannianVolume_image_of_injOn
+    (I := 𝓡 n) rfl MeasurableSet.univ hinj.injOn
+    (fun x _ ↦ (hasMFDerivAt_stereographic'_symm_smul_sub v t b x).mdifferentiableAt) φ
+  rw [himage, restrict_compl_singleton] at h
+  simpa only [Measure.restrict_univ, OrthonormalBasis.addHaar_eq_volume,
+    riemannianJacobian_stereographic'_symm_smul_sub hn v ht, Function.comp_apply] using h
+
+end ChangeOfVariables
 
 section Measure
 
@@ -231,33 +272,6 @@ theorem map_stereographic'_symm_smul_sub_withDensity_eq_riemannianVolume (hn₀ 
   rw [map_stereographic'_symm_smul_sub_withDensity_eq_restrict_riemannianVolume hn v ht b,
     restrict_compl_singleton v]
 
-/-- **Lower Lebesgue integration on `Sⁿ` via a Yamabe bubble.** In positive dimension `n ≠ 2`, for
-`t > 0`, the lower Lebesgue integral of any `f : Sⁿ → ℝ≥0∞` against the Riemannian volume is its
-rescaled stereographic integral weighted by `U_{t,b} ^ pₙ`. No measurability assumption on `f` is
-required. -/
-theorem lintegral_riemannianVolume_sphere_eq_bubble_rpow_criticalExponent (hn₀ : 0 < n)
-    (hn : n ≠ 2) (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n))
-    (f : sphere (0 : E) 1 → ℝ≥0∞) :
-    ∫⁻ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
-      ∫⁻ x : EuclideanSpace ℝ (Fin n),
-        ENNReal.ofReal (bubble t b x ^ criticalExponent n) *
-          f ((stereographic' n v).symm ((2 / t) • (x - b))) := by
-  rw [lintegral_riemannianVolume_sphere_eq_stereographic' hn₀ v f]
-  have hscale := Measure.lintegral_comp_smul volume
-    (fun y : EuclideanSpace ℝ (Fin n) ↦
-      ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) * f ((stereographic' n v).symm y))
-    (show (2 / t) ≠ 0 by positivity)
-  rw [finrank_euclideanSpace_fin,
-    abs_of_nonneg (inv_nonneg.mpr (pow_nonneg (by positivity) n)),
-    ← lintegral_sub_right_eq_self _ b] at hscale
-  have hmul := congrArg (ENNReal.ofReal ((2 / t) ^ n) * ·) hscale
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity),
-    mul_inv_cancel₀ (pow_ne_zero n (by positivity)), ENNReal.ofReal_one, one_mul] at hmul
-  rw [← hmul, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine lintegral_congr fun x ↦ ?_
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity),
-    mul_stereographic_density_eq_bubble_rpow hn ht b x]
-
 /-- **Integrability on `Sⁿ` via a Yamabe bubble.** In dimension `n ≠ 2` (including `n = 0`), for
 `t > 0`, a function `f` on `Sⁿ` is integrable for the Riemannian volume if and only if
 `x ↦ (U_{t,b}(x) ^ pₙ) • f (σ⁻¹((2 / t) (x - b)))` is Lebesgue integrable on `ℝⁿ`. -/
@@ -286,32 +300,6 @@ theorem integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent (hn 
     simp [A, sub_eq_neg_add]
   rw [Pi.smul_apply, hsub, smul_smul, mul_stereographic_density_eq_bubble_rpow hn ht b x]
 
-/-- **Bochner integration on `Sⁿ` via a Yamabe bubble.** In positive dimension `n ≠ 2`, for
-`t > 0`, the integral of any `f : Sⁿ → F` against the Riemannian volume is its rescaled
-stereographic integral weighted by `U_{t,b} ^ pₙ`. Neither integrability of `f` nor completeness of
-`F` is required. -/
-theorem integral_riemannianVolume_sphere_eq_bubble_rpow_criticalExponent (hn₀ : 0 < n)
-    (hn : n ≠ 2) {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n))
-    (f : sphere (0 : E) 1 → F) :
-    ∫ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
-      ∫ x : EuclideanSpace ℝ (Fin n),
-        (bubble t b x ^ criticalExponent n) •
-          f ((stereographic' n v).symm ((2 / t) • (x - b))) := by
-  rw [integral_riemannianVolume_sphere_eq_stereographic' hn₀ v f]
-  have hscale := Measure.integral_comp_smul_of_nonneg volume
-    (fun y : EuclideanSpace ℝ (Fin n) ↦
-      ((4 / (‖y‖ ^ 2 + 4)) ^ n) • f ((stereographic' n v).symm y))
-    (2 / t) (hR := by positivity)
-  rw [finrank_euclideanSpace_fin, ← integral_sub_right_eq_self _ b] at hscale
-  have hmul := congrArg ((2 / t) ^ n • ·) hscale
-  rw [smul_smul, mul_inv_cancel₀ (pow_ne_zero n (by positivity)), one_smul,
-    ← integral_smul] at hmul
-  rw [← hmul]
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  dsimp only
-  rw [smul_smul, mul_stereographic_density_eq_bubble_rpow hn ht b x]
-
 /-- **Critical `L^{pₙ}` isometry of the bubble pullback.** In positive dimension `n ≠ 2`, for
 `t > 0` and every `u : Sⁿ → ℝ`, the integral of `|u| ^ pₙ` on the unit round sphere equals the
 Euclidean integral of `|U_{t,b} · (u ∘ Φ)| ^ pₙ`. -/
@@ -322,7 +310,13 @@ theorem integral_abs_rpow_criticalExponent_sphere_eq_bubble_mul (hn₀ : 0 < n) 
       ∫ x : EuclideanSpace ℝ (Fin n),
         |bubble t b x *
           u ((stereographic' n v).symm ((2 / t) • (x - b)))| ^ criticalExponent n := by
-  rw [integral_riemannianVolume_sphere_eq_bubble_rpow_criticalExponent hn₀ hn v ht b]
+  have : FiniteDimensional ℝ E :=
+    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
+    BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
+  rw [integral_riemannianVolume_sphere_eq_integral_bubble_rpow_smul hn₀.ne' hn v ht b]
   refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
   dsimp only
   rw [smul_eq_mul, abs_mul, abs_of_pos (bubble_pos ht b x),

@@ -275,6 +275,10 @@ theorem integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv
         ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) = 1 := by
   have : FiniteDimensional ℝ E :=
     Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
+    BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
   have hp : criticalExponent n ≠ 0 := by
     rw [criticalExponent_def]
     exact div_ne_zero (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr hn₀))
@@ -293,6 +297,10 @@ theorem yamabeQuotient_sphere_one
     yamabeQuotient (𝓡 n) (fun _ : sphere (0 : E) 1 ↦ (1 : ℝ)) = sphereYamabeConstant n := by
   have : FiniteDimensional ℝ E :=
     Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
+    BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
   rw [yamabeQuotient_one, finrank_euclideanSpace_fin]
   simp only [scalarCurvature_sphere, integral_const, smul_eq_mul, ← riemannianTotalVolume_def,
     riemannianTotalVolume_sphere, mul_comm (roundSphereVolume n), sphereYamabeConstant_eq_div]

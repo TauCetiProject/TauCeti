@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Riccardo Brasca
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
@@ -12,22 +12,25 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Radius
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Analysis.InnerProductSpace.NormDet
-import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Hausdorff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
-import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 
 /-!
 # The Riemannian volume of the round sphere
 
-Let `E` be a real inner product space of dimension `n + 1`, and let `Sⁿ` be its unit sphere with
-the round metric (`TauCeti.sphereRoundMetric`). This file proves descriptions of its
-Riemannian volume measure `TauCeti.riemannianVolume`:
+The round metric on the unit sphere `Sⁿ` of a real inner product space `E` of dimension `n + 1`
+(`TauCeti.sphereRoundMetric`) is induced by the inclusion of the sphere into `E`. Its Riemannian
+volume is therefore the extrinsic surface measure of the sphere: the inclusion carries it to the
+normalized `n`-dimensional Hausdorff measure `μHE[n]` of `E` restricted to the sphere. In
+particular the round sphere has total volume `|Sⁿ| = TauCeti.roundSphereVolume n`, and the round
+`n`-sphere of radius `r > 0` (`TauCeti.sphereRoundMetricOfRadius`) has total volume `r ^ n |Sⁿ|`.
 
 * **Stereographic coordinates.** Read in the inverse of Mathlib's stereographic chart
   `stereographic' n v` from a unit vector `v`, the round metric is `(4 / (‖y‖² + 4))²` times the
@@ -35,20 +38,16 @@ Riemannian volume measure `TauCeti.riemannianVolume`:
   at `y` is therefore `(4 / (‖y‖² + 4)) ^ n`, and pushing forward Lebesgue measure weighted by that
   density gives the Riemannian volume on `{v}ᶜ` — hence on the whole sphere whenever `n > 0`, since
   singletons have volume zero in positive dimension.
-* **Normalized Hausdorff measure.** Composed with the inclusion `Sⁿ → E`, the inverse stereographic
-  chart has ambient norm determinant `(4 / (‖y‖² + 4)) ^ n`, so the injective area formula
-  identifies the Riemannian volume on `{v}ᶜ` with normalized `n`-dimensional Hausdorff measure
-  `μHE[n]`. Covering `Sⁿ` by `{v}ᶜ` and `{-v}ᶜ` identifies the Riemannian volume globally with the
-  pullback of `μHE[n]` (and with Mathlib's cone surface measure `Measure.toSphere volume`), in
-  every dimension `n ≥ 0` — unlike the ambient `(n + 1)`-dimensional Lebesgue measure of `Sⁿ ⊆ E`,
-  which vanishes by `MeasureTheory.Measure.addHaar_sphere`.
+* **Normalized Hausdorff measure and `Measure.toSphere`.** The Riemannian volume of `Sⁿ` is the
+  pullback of `μHE[n]` along the inclusion `Sⁿ → E` (and coincides with Mathlib's cone surface
+  measure `Measure.toSphere volume`), in every dimension `n ≥ 0` — unlike the ambient
+  `(n + 1)`-dimensional Lebesgue measure of `Sⁿ ⊆ E`, which vanishes by
+  `MeasureTheory.Measure.addHaar_sphere`.
 * **Antipodal invariance.** The instance `TauCeti.isNegInvariant_riemannianVolume_sphere` states
-  that the antipodal map preserves native Riemannian volume on the round unit sphere (for mean-zero
-  cancellation with `TauCeti.MeasureTheory.Integral.OddSymmetric`).
-
-Consequently, the total Riemannian volume of the unit round `n`-sphere is
-`|Sⁿ| = TauCeti.roundSphereVolume n = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`, and the round
-`n`-sphere of radius `r > 0` (`TauCeti.sphereRoundMetricOfRadius`) has total volume `r ^ n |Sⁿ|`.
+  that the antipodal map preserves native Riemannian volume on the round unit sphere. For mean-zero
+  cancellation, also import `TauCeti.MeasureTheory.Integral.OddSymmetric` and apply
+  `MeasureTheory.integral_eq_zero_of_odd`; for a pointwise odd function, pass
+  `Filter.Eventually.of_forall hodd` as the symmetry hypothesis.
 
 ## Main results
 
@@ -62,8 +61,8 @@ Consequently, the total Riemannian volume of the unit round `n`-sphere is
   `TauCeti.integrable_riemannianVolume_sphere_iff_stereographic'`, and
   `TauCeti.integral_riemannianVolume_sphere_eq_stereographic'`: integration on `Sⁿ` in
   stereographic coordinates.
-* `TauCeti.riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure`,
-  `TauCeti.map_subtypeVal_riemannianVolume_sphere`, and
+* `TauCeti.map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure`,
+  `TauCeti.riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure`, and
   `TauCeti.riemannianVolume_sphere_eq_toSphere`: the Riemannian volume of `Sⁿ` is normalized
   `n`-dimensional Hausdorff measure, and coincides with `Measure.toSphere volume`.
 * `TauCeti.riemannianVolume_sphere_univ`, `TauCeti.riemannianTotalVolume_sphere`, and
@@ -75,7 +74,8 @@ Consequently, the total Riemannian volume of the unit round `n`-sphere is
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2
-  (Riemannian densities) and Chapter 3 (stereographic coordinates on the round sphere).
+  (the round metric as an induced metric, and the Riemannian density) and Chapter 3 (stereographic
+  coordinates on the round sphere).
 * J. M. Lee and T. H. Parker, *The Yamabe problem*, Bull. Amer. Math. Soc. 17 (1987), §3.
 * [`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/1666783/ForTauCeti/Geometry/Manifold/Riemannian/Examples/Immersion/ProjectiveEquator/OddMean.lean)
   (origin of `isNegInvariant_riemannianVolume_sphere`).
@@ -263,51 +263,69 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
 
 end Stereographic
 
+section Antipodal
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
+
+/-- Native Riemannian volume on the round unit sphere is invariant under negation. -/
+instance isNegInvariant_riemannianVolume_sphere :
+    letI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+    (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)).IsNegInvariant := by
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+  let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
+    (n := n) (k := n)
+  have hΦ : (Φ : Metric.sphere (0 : E) 1 → Metric.sphere (0 : E) 1) = fun x => -x := by
+    funext x
+    rw [← RiemannianIsometry.coe_toDiffeomorph Φ]
+    rw [LinearIsometryEquiv.unitSphereRiemannianIsometry_toDiffeomorph]
+    exact LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply x
+  exact ⟨by simpa only [Measure.neg_def, hΦ] using Φ.measurePreserving_riemannianVolume.map_eq⟩
+
+end Antipodal
+
+section SurfaceMeasure
+
+open Metric Module Set
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)] [FiniteDimensional ℝ E]
+
+/-- **The Riemannian volume of the round sphere is its surface measure.** The inclusion of the unit
+sphere `Sⁿ` into `E` carries the Riemannian volume of the round metric to the normalized
+`n`-dimensional Hausdorff measure of `E` restricted to the sphere. -/
+theorem map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure :
+    (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).map ((↑) : sphere (0 : E) 1 → E) =
+      (μHE[n]).restrict (sphere (0 : E) 1) := by
+  have h := map_riemannianVolume_eq_restrict_euclideanHausdorffMeasure_of_inner_mfderiv
+    (I := 𝓡 n) (M := sphere (0 : E) 1) Subtype.val_injective fun x v w ↦ by
+      rw [inner_tangentSpace_sphere, mvfderiv_apply_eq_mfderiv_apply,
+        mvfderiv_apply_eq_mfderiv_apply]
+      -- The two sides use the inner products of `TangentSpace 𝓘(ℝ, E) x` and of `E`, which agree.
+      rfl
+  rwa [finrank_euclideanSpace_fin, Subtype.range_coe] at h
+
+/-- **The volume of the round sphere.** The unit sphere `Sⁿ` with its round metric has total volume
+`|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)`. -/
+@[simp]
+theorem riemannianTotalVolume_sphere :
+    riemannianTotalVolume (𝓡 n) (sphere (0 : E) 1) = roundSphereVolume n := by
+  have h := congr($(map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure
+    (E := E) (n := n)) univ)
+  rw [Measure.map_apply measurable_subtypeVal MeasurableSet.univ, preimage_univ,
+    Measure.restrict_apply MeasurableSet.univ, univ_inter,
+    euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out] at h
+  rw [riemannianTotalVolume_def, measureReal_def, h,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
+
+end SurfaceMeasure
+
 section Hausdorff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] [MeasurableSpace E] [BorelSpace E]
-
-/-- On `{v}ᶜ`, the Riemannian volume of the unit sphere agrees with the pullback of normalized
-`n`-dimensional Hausdorff measure. -/
-private theorem restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure
-    [LindelofSpace (sphere (0 : E) 1)] (v : sphere (0 : E) 1) :
-    (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).restrict {v}ᶜ =
-      ((μHE[n] : Measure E).comap (↑)).restrict {v}ᶜ := by
-  have : FiniteDimensional ℝ E :=
-    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
-  let ι : sphere (0 : E) 1 → E := (↑)
-  let σ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 := (stereographic' n v).symm
-  have hι : MeasurableEmbedding ι :=
-    MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet
-  have harea := restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure
-    (U := EuclideanSpace ℝ (Fin n)) (V := E) (f := ι ∘ σ) (s := univ) MeasurableSet.univ
-    (fun y _ ↦ (contDiff_coe_comp_stereographic'_symm (k := 1) v).differentiable one_ne_zero y)
-    (fun y _ ↦ injective_fderiv_coe_comp_stereographic'_symm v y)
-    (Subtype.val_injective.comp
-      (isSmoothEmbedding_stereographic'_symm (k := 1) v).isEmbedding.injective).injOn
-  have hdom : Measure.map ((univ : Set (EuclideanSpace ℝ (Fin n))).domRestrict (ι ∘ σ))
-      (Measure.comap Subtype.val
-        (volume.withDensity fun y : EuclideanSpace ℝ (Fin n) ↦
-          ENNReal.ofReal (fderiv ℝ (ι ∘ σ) y).toLinearMap.normDet)) =
-      Measure.map ι (Measure.map σ (volume.withDensity fun y : EuclideanSpace ℝ (Fin n) ↦
-        ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n))) := by
-    have hu := MeasurableEmbedding.subtypeVal
-      (MeasurableSet.univ : MeasurableSet (univ : Set (EuclideanSpace ℝ (Fin n))))
-    have hfun : (univ : Set (EuclideanSpace ℝ (Fin n))).domRestrict (ι ∘ σ) =
-        (ι ∘ σ) ∘ Subtype.val := rfl
-    rw [hfun, ← Measure.map_map ((contDiff_coe_comp_stereographic'_symm (k := 1)
-        v).continuous.measurable) hu.measurable, hu.map_comap, Subtype.range_coe,
-      Measure.restrict_univ, Measure.map_map hι.measurable
-        ((stereographic' n v).symm.isOpenEmbedding (by simp)).continuous.measurable]
-    simp only [normDet_fderiv_coe_comp_stereographic'_symm, ι, σ]
-  have himg : (ι ∘ σ) '' univ = ι '' ({v}ᶜ : Set (sphere (0 : E) 1)) := by
-    rw [image_comp]
-    congr 1
-    simpa [σ] using (stereographic' n v).symm.image_source_eq_target
-  rw [finrank_euclideanSpace_fin, hdom, himg,
-    map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume v] at harea
-  simpa only [hι.comap_map, ← hι.restrict_comap] using congrArg (Measure.comap ι) harea
 
 /-- **The Riemannian volume of the unit sphere is normalized Hausdorff measure.** In every
 dimension `n ≥ 0`, the Riemannian volume of `Sⁿ` for the round metric is the pullback of the
@@ -315,22 +333,19 @@ normalized `n`-dimensional Hausdorff measure `μHE[n]` along the inclusion into 
 theorem riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure
     [LindelofSpace (sphere (0 : E) 1)] :
     riemannianVolume (𝓡 n) (sphere (0 : E) 1) = (μHE[n] : Measure E).comap (↑) := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
-  have := HasUniqueDiv.of_isTorsionFree ℝ E
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-  have hcov : (⋃ b : Bool, bif b then ({v}ᶜ : Set (sphere (0 : E) 1)) else {-v}ᶜ) = univ := by
-    rw [← Set.union_eq_iUnion]
-    exact compl_singleton_union_compl_singleton_neg one_ne_zero v
-  refine Measure.ext_of_iUnion_eq_univ hcov fun b ↦ ?_
-  cases b <;> exact restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure _
-
-/-- Pushing the Riemannian volume of the unit sphere forward along the inclusion `Sⁿ → E` gives
-normalized `n`-dimensional Hausdorff measure restricted to the sphere. -/
-theorem map_subtypeVal_riemannianVolume_sphere [LindelofSpace (sphere (0 : E) 1)] :
-    (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).map (↑) =
-      (μHE[n] : Measure E).restrict (sphere 0 1) := by
-  rw [riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
+  have : FiniteDimensional ℝ E :=
+    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  let ι : sphere (0 : E) 1 → E := (↑)
+  have hι : MeasurableEmbedding ι :=
+    MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet
+  calc
+    riemannianVolume (𝓡 n) (sphere (0 : E) 1)
+      = ((riemannianVolume (𝓡 n) (sphere (0 : E) 1)).map ι).comap ι := (hι.comap_map _).symm
+    _ = ((μHE[n]).restrict (ι '' univ)).comap ι := by
+          rw [map_subtypeVal_riemannianVolume_sphere_eq_restrict_euclideanHausdorffMeasure,
+            image_univ, Subtype.range_coe]
+    _ = ((μHE[n] : Measure E).comap ι).restrict univ := (hι.restrict_comap _ _).symm
+    _ = (μHE[n] : Measure E).comap (↑) := Measure.restrict_univ
 
 /-- **The Riemannian volume of the unit sphere agrees with `Measure.toSphere volume`.** -/
 theorem riemannianVolume_sphere_eq_toSphere [FiniteDimensional ℝ E] :
@@ -359,15 +374,6 @@ theorem riemannianVolume_sphere_univ
     (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out]
 
-/-- **Total Riemannian volume of the unit round sphere**: `Vol(Sⁿ) = |Sⁿ|`. -/
-@[simp]
-theorem riemannianTotalVolume_sphere
-    [CompactSpace (sphere (0 : E) 1)]
-    [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)] :
-    riemannianTotalVolume (𝓡 n) (sphere (0 : E) 1) = roundSphereVolume n := by
-  rw [riemannianTotalVolume_def, Measure.real, riemannianVolume_sphere_univ,
-    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le]
-
 /-- **Total Riemannian volume of the round sphere of radius `r > 0`**: `Vol(Sⁿ(r)) = r ^ n |Sⁿ|`. -/
 @[simp]
 theorem riemannianTotalVolume_sphereRoundMetricOfRadius
@@ -375,8 +381,10 @@ theorem riemannianTotalVolume_sphereRoundMetricOfRadius
     riemannianTotalVolume (𝓡 n)
         (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr)) =
       r ^ n * roundSphereVolume n := by
-  let _ : MeasurableSpace (sphere (0 : E) 1) := borel (sphere (0 : E) 1)
-  have : BorelSpace (sphere (0 : E) 1) := ⟨rfl⟩
+  have : FiniteDimensional ℝ E :=
+    Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = n + 1) ▸ Nat.succ_pos n)
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
   have hrpow : (r ^ 2) ^ ((finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) / 2) = r ^ n := by
     rw [finrank_euclideanSpace_fin, ← Real.rpow_natCast r 2, ← Real.rpow_mul hr.le,
       Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast]
@@ -392,27 +400,5 @@ theorem riemannianTotalVolume_sphereRoundMetricOfRadius
     riemannianTotalVolume_sphere, mul_comm]
 
 end TotalVolume
-
-section Antipodal
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-  {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
-
-/-- Native Riemannian volume on the round unit sphere is invariant under negation. -/
-instance isNegInvariant_riemannianVolume_sphere :
-    letI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
-    (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)).IsNegInvariant := by
-  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
-  let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
-    (n := n) (k := n)
-  have hΦ : (Φ : Metric.sphere (0 : E) 1 → Metric.sphere (0 : E) 1) = fun x => -x := by
-    funext x
-    rw [← RiemannianIsometry.coe_toDiffeomorph Φ]
-    rw [LinearIsometryEquiv.unitSphereRiemannianIsometry_toDiffeomorph]
-    exact LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply x
-  exact ⟨by simpa only [Measure.neg_def, hΦ] using Φ.measurePreserving_riemannianVolume.map_eq⟩
-
-end Antipodal
 
 end TauCeti

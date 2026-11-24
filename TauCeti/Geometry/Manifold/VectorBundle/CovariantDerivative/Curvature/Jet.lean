@@ -485,9 +485,9 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     -- `T_y M` is `g.toRiemannianMetric` applied to the two vectors, by definition.
     rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-    TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
+    LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [CovariantDerivative.ricciTensor_eq_sum _ y B]
+  rw [smul_eq_mul, CovariantDerivative.ricciTensor_eq_sum _ y B]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
