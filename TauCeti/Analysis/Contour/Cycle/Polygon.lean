@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Geometry.Polygon.Simple
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Green.Polygonal.Fan
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 
@@ -185,8 +186,8 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
     Cycle.integral f poly.contourCycle =
       ∑ i, (poly (finRotate n i) - poly i) • ∫ t in (0 : ℝ)..1, f (poly.edgePath ℝ i t) := by
   have hγ := poly.isPolygonalOnInterval_boundaryParam.absolutelyContinuousOnInterval
-  have hint := hγ.intervalIntegrable_deriv_of_finiteDimensional.smul_continuousOn
-    (hf.comp hγ.continuousOn (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset))
+  have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
+    (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset)
   rw [poly.integral_contourCycle_eq_integral_boundaryParam]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))

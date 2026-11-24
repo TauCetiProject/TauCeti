@@ -96,19 +96,15 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     ∫ t in a..b, deriv γ t • f (γ t) = ∫ t in c..d, deriv δ t • f (δ t) := by
   -- A reversed parameter interval is reduced to the oriented case by reflecting the curve.
   wlog hab : a ≤ b generalizing γ a b with H
-  · have hba : b ≤ a := (not_le.mp hab).le
-    have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
-      (by simpa using hγ.comp_const_sub (a + b))
-      hγU.comp_const_sub_uIcc
-      (by simpa using hstart) (by simpa using hend) hba
+  · have := H (γ := fun t => γ (a + b - t)) (a := b) (b := a)
+      (by simpa using hγ.comp_const_sub (a + b)) hγU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) (not_le.mp hab).le
     rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
       add_sub_cancel_left] at this
   wlog hcd : c ≤ d generalizing δ c d with H
-  · have hdc : d ≤ c := (not_le.mp hcd).le
-    have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
-      (by simpa using hδ.comp_const_sub (c + d))
-      hδU.comp_const_sub_uIcc
-      (by simpa using hstart) (by simpa using hend) hdc
+  · have := H (δ := fun t => δ (c + d - t)) (c := d) (d := c)
+      (by simpa using hδ.comp_const_sub (c + d)) hδU.comp_const_sub_uIcc
+      (by simpa using hstart) (by simpa using hend) (not_le.mp hcd).le
     rwa [intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_right,
       add_sub_cancel_left] at this
   -- The closed curve: `γ` on `[a, b]`, then `δ` backwards on `[b, b + d - c]`.
@@ -126,26 +122,22 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     · simp [σ, hend]
     · exact ite_eq_right (not_le.2 hlt)
   have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
-  have hσU : MapsTo σ (uIcc a (b + d - c)) U := by
-    intro t ht
+  have hσU : MapsTo σ (uIcc a (b + d - c)) U := fun t ht ↦ by
     rw [uIcc_of_le (hab.trans hbe)] at ht
     rcases le_total t b with htb | hbt
-    · rw [hσγ ⟨ht.1, htb⟩]
-      exact hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
-    · rw [hσρ ⟨hbt, ht.2⟩]
-      exact hρU (by rw [uIcc_of_le hbe]; exact ⟨hbt, ht.2⟩)
+    · exact hσγ ⟨ht.1, htb⟩ ▸ hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
+    · exact hσρ ⟨hbt, ht.2⟩ ▸ hρU (by rw [uIcc_of_le hbe]; exact ⟨hbt, ht.2⟩)
   have hσclosed : σ a = σ (b + d - c) := by
     rw [hσγ ⟨le_rfl, hab⟩, hσρ ⟨hbe, le_rfl⟩]
     simpa using hstart
   have hzero := h σ a (b + d - c) hσpc hσU hσclosed
-  rw [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := b) (δ := fun t => δ (b + d - t))
+  rwa [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := b) (δ := fun t => δ (b + d - t))
       (fun t ht => hσγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hab] at ht)))
       (fun t ht => hσρ (Ioo_subset_Icc_self (by rwa [uIoo_of_le hbe] at ht)))
-      (hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
-      (hρ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU),
+      (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
+      (hρ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hρU),
     intervalIntegral_deriv_smul_comp_const_sub, add_sub_cancel_left, sub_sub_cancel,
     intervalIntegral.integral_symm c d, ← sub_eq_add_neg, sub_eq_zero] at hzero
-  exact hzero
 
 /-- **Segments as contour integrals.** The contour integral along the segment from `z` to `w`,
 parametrized affinely on `[s, s + 1]`, is Mathlib's curve integral of the `1`-form `v ↦ v • f x`
@@ -198,8 +190,8 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
   rw [intervalIntegral_deriv_smul_eq_add_of_eqOn (b := 1) (δ := σ)
       (fun t ht => hηγ (Ioo_subset_Icc_self (by rwa [uIoo_of_le zero_le_one] at ht)))
       (fun t ht => hησ (Ioo_subset_Icc_self (by rwa [uIoo_of_le one_le_two] at ht)))
-      (hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
-      (hσpc.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hσU),
+      (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
+      (hσpc.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hσU),
     hσ, hseg']
 
 /-- **The converse of Cauchy's theorem.** A continuous function on an open set `U` whose contour

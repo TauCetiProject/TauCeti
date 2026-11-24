@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -387,8 +388,8 @@ theorem intervalIntegrable_of_mem_support {E : Type*} [NormedAddCommGroup E] [No
     {f : ℂ → E} {C : Cycle} (hf : ContinuousOn f (trace C)) {γ : AbsolutelyContinuousClosedCurve}
     (hγ : γ ∈ FreeAddCommGroup.support C) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b :=
-  γ.intervalIntegrable_deriv.smul_continuousOn
-    (hf.comp γ.continuousOn fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
+  γ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
+    fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩
 
 /-- A continuous linear map between complex Banach spaces commutes with the integral over a cycle
 of a function whose contour integrand is interval-integrable along every curve in the support of
