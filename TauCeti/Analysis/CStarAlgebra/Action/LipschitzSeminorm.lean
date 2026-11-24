@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
+import TauCeti.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -61,12 +62,6 @@ For an ergodic action of a compact group these are the properties which make the
 public section
 
 open scoped ENNReal
-
-/-- A star-algebra equivalence between C⋆-algebras preserves the extended norm. -/
-theorem StarAlgEquiv.eNorm_map {F A B : Type*} [NonUnitalCStarAlgebra A]
-    [NonUnitalCStarAlgebra B] [EquivLike F A B] [NonUnitalAlgEquivClass F ℂ A B]
-    [StarHomClass F A B] (φ : F) (a : A) : ‖φ a‖ₑ = ‖a‖ₑ := by
-  simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
 
 namespace TauCeti
 
