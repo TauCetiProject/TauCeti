@@ -472,7 +472,7 @@ theorem exists_gaugeFixedOperator_eq_zero_eq_logVariation (hx : ContDiff ℝ ∞
     rw [hηuv]
     refine laplacian_add_sub_eq_smul hh2.contDiffAt (hu z hz) hv.contDiffAt ?_
     have hPz : (P z : ℂ) = starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 :=
-      ofReal_sq_add_sq_eq x z
+      ofReal_sq_add_sq_eq_conj_sectionValue_mul_sectionValue_div_four x z
     rw [hΔh z, ← hρu z, hPz]
     simp only [hgdef]
     linear_combination (-(ρ z : ℂ) * starRingEnd ℂ (sectionValue x z) / 4) * hαu z hz
@@ -492,8 +492,10 @@ theorem exists_gaugeFixedOperator_eq_zero_eq_logVariation (hx : ContDiff ℝ ∞
   · -- `Y` is continuous with compact support, and `logVariation x h` is square integrable since
     -- `h ∈ H²`.
     exact (hYs.continuous.memLp_of_hasCompactSupport hYc).add
-      (memLp_logVariation_of_mem_realSobolevFunctions (memLp_top_apply hx.continuous hlim (by simp))
-        (memLp_top_apply hx.continuous hlim (by simp)) (hhs.of_le (by simp)) hh₁ hh₂)
+      (memLp_logVariation_of_mem_realSobolevFunctions
+        (memLp_top_apply_of_eq_two_or_eq_three hx.continuous hlim (by simp))
+        (memLp_top_apply_of_eq_two_or_eq_three hx.continuous hlim (by simp))
+        (hhs.of_le (by simp)) hh₁ hh₂)
   · -- Off `a`, `y` is the logarithmic variation of the zero mode `η`; at `a`, by continuity.
     have hcont : Continuous (gaugeFixedOperator x y) :=
       continuous_gaugeFixedOperator hx.continuous (hys.of_le (by simp))

@@ -21,10 +21,10 @@ The proof uses the Weitzenböck formula at a vortex
 complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
 Laplacian. At a continuous field with `|α| → 1`, the squared mass `P` and the section coordinates
-are bounded (`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`, `memLp_top_apply`), and `P`
-exceeds every `a < 1/4` outside a disc (`exists_exterior_lt_mass`); together these are the
-hypotheses of the stationary Schrödinger theory for `-Δ + P`
-(`exists_memLp_top_sq_add_sq_and_le`).
+are bounded (`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`,
+`memLp_top_apply_of_eq_two_or_eq_three`), and `P` exceeds every `a < 1/4` outside a disc
+(`exists_exterior_lt_mass`); together these are the hypotheses of the stationary Schrödinger
+theory for `-Δ + P` (`exists_memLp_top_sq_add_sq_and_le`).
 
 The gauge-fixed operator `L_x` itself satisfies the same kind of exterior bound, at every mass
 below `1/2`, once the covariant derivative `∇₁ α` also tends to zero at infinity. At a vortex the
@@ -140,7 +140,7 @@ theorem memLp_top_sq_add_sq (hx : Continuous x)
 
 /-- The section coordinates of a continuous field whose section has unit modulus at infinity are
 bounded. -/
-theorem memLp_top_apply (hx : Continuous x)
+theorem memLp_top_apply_of_eq_two_or_eq_three (hx : Continuous x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
     (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
   obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim

@@ -244,8 +244,9 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
   refine ⟨y₀ + logVariation x ξ, hy₀.add (contDiff_logVariation hx (by simpa using hξ)),
     (hy₀.continuous.memLp_of_hasCompactSupport hy₀c).add
       (memLp_logVariation_of_mem_realSobolevFunctions
-        (memLp_top_apply hx.continuous hlim (by simp))
-        (memLp_top_apply hx.continuous hlim (by simp)) (hξ.of_le (by simp)) hξ₁ hξ₂), fun w ↦ ?_,
+        (memLp_top_apply_of_eq_two_or_eq_three hx.continuous hlim (by simp))
+        (memLp_top_apply_of_eq_two_or_eq_three hx.continuous hlim (by simp))
+        (hξ.of_le (by simp)) hξ₁ hξ₂), fun w ↦ ?_,
     fun w ↦ ζ w + ξ w, hζ.add hξ, fun w hw ↦ ?_⟩
   · rw [gaugeFixedOperator_add x (hy₀.differentiable (by simp) w)
       ((contDiff_logVariation hx (by simpa using hξ)).differentiable (by simp) w),

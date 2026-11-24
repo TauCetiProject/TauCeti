@@ -253,7 +253,8 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   ring
 
 /-- The potential `P = |α|² / 4` in terms of the section `α`. -/
-theorem ofReal_sq_add_sq_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+theorem ofReal_sq_add_sq_eq_conj_sectionValue_mul_sectionValue_div_four
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
       starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
   apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
