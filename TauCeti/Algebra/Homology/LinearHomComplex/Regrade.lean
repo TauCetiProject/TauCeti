@@ -298,6 +298,19 @@ theorem regradeBidualXIso_hom_apply (k : ℤ)
             (neg_neg (n - k)).symm)).hom.hom)) :=
   (rfl)
 
+/-- The inverse of `regradeBidualXIso` evaluates a form `z` on the forms on `K_(-(-(n - k)))` at
+the form `g` on `K_(n - k)`, read on `K_(-(-(n - k)))`. -/
+theorem linearDualXEquiv_regradeBidualXIso_inv_apply (k : ℤ)
+    (z : (linearDual (linearDual K)).X (n - k))
+    (g : (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).X (-k)) :
+    CochainComplex.linearDualXEquiv _ (neg_add_cancel k) ((K.regradeBidualXIso n k).inv.hom z) g =
+      z (CochainComplex.linearDualXEquiv _ (add_neg_cancel k) g ∘ₗ
+        (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+          (neg_neg (n - k)).symm)).inv.hom) := by
+  conv_rhs => rw [← (K.regradeBidualXIso n k).inv_hom_id_apply z, regradeBidualXIso_hom_apply,
+    LinearMap.comp_assoc, ← ModuleCat.hom_comp, Iso.hom_inv_id, ModuleCat.hom_id,
+    LinearMap.comp_id, LinearEquiv.symm_apply_apply]
+
 /-- The identifications `regradeBidualXIso` commute with the differentials. -/
 private theorem regradeBidualXIso_comm (k : ℤ) :
     (K.regradeBidualXIso n k).hom ≫ (linearDual (linearDual K)).d (n - k) (n - (k + 1)) =
@@ -369,6 +382,41 @@ theorem regradeBidualIso_inv_f (k : ℤ) :
       ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
         (embeddingUpIntDownIntSub_f n k)).hom ≫ (K.regradeBidualXIso n k).inv :=
   (rfl)
+
+/-- **The comparison on double duals.** The comparison `regradeBidualIso` sends a form `y` on the
+forms on `K_(n - k)` to the form evaluating `y` at a form `f` on `K_(-(-(n - k)))`, read on
+`K_(n - k)`, without sign. It is not a simp lemma: simp first rewrites the component by
+`regradeBidualIso_hom_f`. -/
+theorem restrictionXIso_hom_regradeBidualIso_hom_f_apply (k : ℤ)
+    (y : (CochainComplex.linearDual R
+      (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n)))).X k)
+    (f : (linearDual K).X (-(n - k))) :
+    ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).hom.hom (((K.regradeBidualIso n).hom.f k).hom y) f =
+      CochainComplex.linearDualXEquiv _ (neg_add_cancel k) y
+        ((CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).symm
+          (f ∘ₗ (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+            (neg_neg (n - k)).symm)).hom.hom)) := by
+  simp only [regradeBidualIso_hom_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    Iso.inv_hom_id_apply]
+  rw [regradeBidualXIso_hom_apply]
+
+/-- **The inverse comparison on double duals.** The inverse of `regradeBidualIso` sends a form `z`
+on the forms on `K_(-(-(n - k)))` to the form evaluating `z` at a form `g` on `K_(n - k)`, read on
+`K_(-(-(n - k)))`, without sign. It is not a simp lemma: simp first rewrites the component by
+`regradeBidualIso_inv_f`. -/
+theorem linearDualXEquiv_regradeBidualIso_inv_f_apply (k : ℤ)
+    (z : ((linearDual (linearDual K)).restriction (embeddingUpIntDownIntSub n)).X k)
+    (g : (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).X (-k)) :
+    CochainComplex.linearDualXEquiv _ (neg_add_cancel k)
+        (((K.regradeBidualIso n).inv.f k).hom z) g =
+      ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).hom.hom z
+          (CochainComplex.linearDualXEquiv _ (add_neg_cancel k) g ∘ₗ
+            (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+              (neg_neg (n - k)).symm)).inv.hom) := by
+  simp only [regradeBidualIso_inv_f, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [linearDualXEquiv_regradeBidualXIso_inv_apply]
 
 variable {K} in
 /-- The identifications `regradeBidualXIso` intertwine the double transposes of a morphism
