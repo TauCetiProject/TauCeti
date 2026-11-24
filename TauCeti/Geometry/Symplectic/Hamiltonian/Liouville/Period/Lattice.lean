@@ -29,6 +29,11 @@ The flows of pulled-back functions commute, since the fibres are Lagrangian, so 
 the vector group `T*_b B` (`IsLagrangianTorusFibration.fiberAction_add`), and it is transitive
 (`IsLagrangianTorusFibration.exists_fiberAction_eq`). It is packaged as an additive action
 (`IsLagrangianTorusFibration.fiberAddAction`), so that Mathlib's orbit and stabilizer API applies.
+More generally `t • dg_b` acts by the time-`t` map of the same flow
+(`IsLagrangianTorusFibration.coe_fiberAction_smul_eq_flowOf`). The orbit maps `α ↦ α • x` are
+smooth immersions of `T*_b B` into `M`, whose derivative sends `dg_b` to the Hamiltonian vector of
+`g ∘ π` (`IsLagrangianTorusFibration.mfderiv_fiberAction_apply`,
+`IsLagrangianTorusFibration.injective_mfderiv_fiberAction_apply`).
 
 The period lattice `Λ_b` (`IsLagrangianTorusFibration.periodLattice`) is the subgroup of the
 covectors acting trivially on the fibre. Since the action is transitive and commutative, a covector
@@ -70,6 +75,9 @@ here. Its model, for a lattice spanned by global closed one-forms, is
   map of the Hamiltonian flow of `g ∘ π`.
 * `IsLagrangianTorusFibration.fiberAction_add`, `IsLagrangianTorusFibration.exists_fiberAction_eq`:
   the action is an action of the additive group `T*_b B`, and it is transitive.
+* `IsLagrangianTorusFibration.contMDiff_fiberAction_apply`,
+  `IsLagrangianTorusFibration.injective_mfderiv_fiberAction_apply`: the orbit maps are smooth
+  immersions.
 * `IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_eq`,
   `IsLagrangianTorusFibration.mem_periodLattice_iff_flowOf_eq`: the period lattice is the
   stabilizer of any point of the fibre.
@@ -324,13 +332,13 @@ private theorem mvfderiv_dualCoord_dotProduct_coord (α : F →L[ℝ] ℝ) :
   rw [mvfderiv_apply_eq_mfderiv_apply, (h.coord_spec b).2.1]
   exact (φ.comp_apply _ w).symm.trans (DFunLike.congr_fun h2 w)
 
-/-- **A covector `dg_b` acts by the time-one map of the Hamiltonian flow of `g ∘ π`.** For every
-`C²` function `g` on `B` with differential `α` at `b`, the action of `α` moves each point `x` of
-the fibre over `b` to the time-one image of `x` under the flow of the Hamiltonian vector field of
+/-- **A line of covectors through `dg_b` acts by the Hamiltonian flow of `g ∘ π`.** For every
+`C²` function `g` on `B` with differential `α` at `b`, the action of `t • α` moves each point `x` of
+the fibre over `b` to the time-`t` image of `x` under the flow of the Hamiltonian vector field of
 `g ∘ π`. -/
-theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
-    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (x : π ⁻¹' {b}) :
-    (h.fiberAction hσc b α x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) 1 x := by
+theorem coe_fiberAction_smul_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (t : ℝ) (x : π ⁻¹' {b}) :
+    (h.fiberAction hσc b (t • α) x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) t x := by
   classical
   -- The covector `α` is the differential at `b` of the function `v ⬝ᵥ coord`, where `v` are the
   -- dual coordinates of `α`.
@@ -340,9 +348,19 @@ theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
     (φ.contMDiff.comp (h.coord_spec b).1).of_le (by simp)
   have hdφ : mvfderiv J (φ ∘ h.coord b) b = α := h.mvfderiv_dualCoord_dotProduct_coord b α
   have hx : π x = b := x.property
-  rw [coe_fiberAction, hamiltonianFlowActionComp_apply]
+  rw [coe_fiberAction, map_smul, hamiltonianFlowActionComp,
+    ← IsSymplectic.flowOf_hamiltonianVectorField_dotProduct]
   exact h.flowOf_hamiltonianVectorField_comp_eq h.isProperMap hφ hg
-    (by rw [hx, hdφ, hgα]) 1
+    (by rw [hx, hdφ, hgα]) t
+
+/-- **A covector `dg_b` acts by the time-one map of the Hamiltonian flow of `g ∘ π`.** For every
+`C²` function `g` on `B` with differential `α` at `b`, the action of `α` moves each point `x` of
+the fibre over `b` to the time-one image of `x` under the flow of the Hamiltonian vector field of
+`g ∘ π`. -/
+theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (x : π ⁻¹' {b}) :
+    (h.fiberAction hσc b α x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) 1 x := by
+  simpa using h.coe_fiberAction_smul_eq_flowOf hσc b hg hgα 1 x
 
 /-- The zero covector acts as the identity on the fibre. -/
 @[simp]
@@ -395,6 +413,74 @@ theorem isPretransitive_fiberAddAction :
     AddAction.IsPretransitive (F →L[ℝ] ℝ) (π ⁻¹' {b}) :=
   letI := h.fiberAddAction hσc b
   ⟨h.exists_fiberAction_eq hσc b⟩
+
+/-! ### The orbit maps of the action -/
+
+/-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, composed
+with the dual coordinates. -/
+private theorem fiberAction_apply_eq_comp (x : π ⁻¹' {b}) :
+    (fun α ↦ (h.fiberAction hσc b α x : M)) =
+      (fun v ↦ ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_coord_comp b)
+        (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) v).toMul
+          (x : M)) ∘ h.dualCoord b := by
+  funext α
+  rw [coe_fiberAction, hamiltonianFlowActionComp, Function.comp_apply]
+
+/-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, read in
+dual coordinates. -/
+private theorem hasMFDerivAt_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
+    HasMFDerivAt 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α
+      ((mfderiv 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) I
+          (fun v ↦ ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_coord_comp b)
+            (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) v).toMul
+              (x : M))
+          (h.dualCoord b α)).comp (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ)) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact (((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _
+    x).mdifferentiableAt (by simp)).hasMFDerivAt.comp α
+    (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).hasMFDerivAt
+
+/-- **The orbit maps of the action of `T*_b B` are smooth.** -/
+theorem contMDiff_fiberAction_apply (x : π ⁻¹' {b}) :
+    ContMDiff 𝓘(ℝ, F →L[ℝ] ℝ) I ∞ fun α ↦ (h.fiberAction hσc b α x : M) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact ((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _ x).comp
+    (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).contMDiff
+
+/-- The orbit maps of the action of `T*_b B` are continuous. -/
+theorem continuous_fiberAction_apply (x : π ⁻¹' {b}) :
+    Continuous fun α ↦ h.fiberAction hσc b α x :=
+  (h.contMDiff_fiberAction_apply hσc b x).continuous.subtype_mk _
+
+/-- **The derivative of an orbit map of the action of `T*_b B`.** If `g : B → ℝ` is differentiable
+at `b` with `dg_b = β`, the derivative at `α` of the orbit map `α ↦ fiberAction α x` sends `β` to
+the Hamiltonian vector of `g ∘ π` at `fiberAction α x`. -/
+theorem mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α β : F →L[ℝ] ℝ) {g : B → ℝ}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g b) (hgβ : mvfderiv J g b = β) :
+    mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α β =
+      σ.hamiltonianVectorField (g ∘ π) (h.fiberAction hσc b α x) := by
+  set w := h.dualCoord b β
+  have hy : π (h.fiberAction hσc b α x) = b := (h.fiberAction hσc b α x).property
+  have hd : MDifferentiableAt J 𝓘(ℝ) (fun c ↦ w ⬝ᵥ h.coord b c) b :=
+    (((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ (Fin (finrank ℝ F)) w)).contMDiff.comp
+      (h.coord_spec b).1) b).mdifferentiableAt (by simp)
+  rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
+  -- The velocity is the Hamiltonian vector of `w ⬝ᵥ (coord ∘ π)`, and `d(w ⬝ᵥ coord)_b = β`.
+  refine ((⟨hσc, hσ⟩ : σ.IsSymplectic).mfderiv_hamiltonianFlowAction_apply _ _ _ x _ w).trans <|
+    (hamiltonianVectorField_dotProduct (fun i ↦ (contMDiff_pi_module_iff.1
+      (h.contMDiff_coord_comp b) i).mdifferentiableAt (by simp)) w).symm.trans ?_
+  exact hamiltonianVectorField_comp_eq_of_mvfderiv_eq (g := fun c ↦ w ⬝ᵥ h.coord b c)
+    (x := (h.fiberAction hσc b α x : M))
+    (h.mdifferentiableAt _) (by rw [hy]; exact hd) (by rw [hy]; exact hg)
+    (by rw [hy, h.mvfderiv_dualCoord_dotProduct_coord b β, hgβ])
+
+/-- **The orbit maps of the action of `T*_b B` are immersions.** -/
+theorem injective_mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
+    Injective (mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α) := by
+  rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
+  exact ((⟨hσc, hσ⟩ : σ.IsSymplectic).injective_mfderiv_hamiltonianFlowAction_apply _ _ _
+    (h.isRegularPoint_coord_comp b (h.fiberAction hσc b α x).property)).comp
+    (h.dualCoord b).injective
 
 /-! ### The period lattice -/
 

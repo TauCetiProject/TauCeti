@@ -95,7 +95,10 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
-  matrix-indexed one.
+  matrix-indexed one;
+* `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
+  product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
+  eigenvalues.
 
 ## References
 
@@ -519,6 +522,15 @@ theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
     hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
       hA.eigenvalues₀ i := by
   simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
+product over the sorted eigenvalues. -/
+@[to_additive /-- A sum of a function over the matrix-indexed eigenvalues of a Hermitian matrix is
+its sum over the sorted eigenvalues. -/]
+theorem prod_comp_eigenvalues {M : Type*} [CommMonoid M] (hA : A.IsHermitian) (g : ℝ → M) :
+    ∏ i, g (hA.eigenvalues i) = ∏ k, g (hA.eigenvalues₀ k) := by
+  rw [← Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))]
+  simp only [eigenvalues_apply_equivOfCardEq]
 
 /-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
 canonical finite equivalence. -/

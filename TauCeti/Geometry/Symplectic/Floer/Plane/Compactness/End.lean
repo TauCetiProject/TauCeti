@@ -33,10 +33,10 @@ finitely many bubbling points, uniformly in the heights, from two facts.
 
 * **One equation for all heights.** Beyond `s = 2` the perturbation of the positive plane pulls
   back to the cylindrical datum `H'(t) dt` along `φ`
-  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive`). It does
-  not depend on `s`, so if the almost complex structures `J` are cylindrical far out on the end,
-  `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same Floer
-  equation for `H'(t) dt` and `J_∞`, whatever the height.
+  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift`).
+  It does not depend on `s`, so if the almost complex structures `J` are cylindrical far out on
+  the end, `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same
+  Floer equation for `H'(t) dt` and `J_∞`, whatever the height.
 * **Energy.** The energy of a translated end over a window of angular width one is the energy of
   `uₖ ∘ φ` over the translated window, so it is at most the energy of `uₖ` over the plane
   (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le`).
@@ -160,9 +160,12 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jend z.2 (v z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z : ℝ × ℝ →ₗ[ℝ] V) := by
     obtain ⟨h₁, -⟩ := hΩT z hz
-    have h := ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH
-      (hHs.of_le (by norm_num)) ((le_max_right _ _).trans (mem_Ioi.1 h₁).le)
-      (hu.differentiable (by norm_num) _) (hfl (e (z + (R, 0))))
+    have h := isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift (T₀ := 2)
+      (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH
+      (by simpa using (le_max_right _ _).trans (mem_Ioi.1 h₁).le)
+      (hu.differentiable (by norm_num) _)
+      (((hHs.differentiable (by norm_num)).comp
+        (differentiable_const _ |>.prodMk differentiable_id)) _) (hfl (e (z + (R, 0))))
     rw [hJ _ _ _ ((le_max_left _ _).trans (mem_Ioi.1 h₁).le)] at h
     have heq := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ e) (R, 0) z
     simp only [Prod.snd_add, add_zero, comp_apply] at heq
