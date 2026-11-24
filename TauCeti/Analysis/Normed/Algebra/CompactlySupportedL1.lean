@@ -685,22 +685,6 @@ theorem fromCompletionNonUnitalStarAlgHomOfMulStar_apply (f : A →L[R] B)
   DFunLike.congr_fun
     (f.toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star) x
 
-theorem fromCompletionNonUnitalStarAlgHomOfMulStar_coe (f : A →L[R] B)
-    (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
-    (x : A) :
-    f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star x = f x := by
-  rw [fromCompletionNonUnitalStarAlgHomOfMulStar_apply,
-    fromCompletionNonUnitalAlgHomOfMul_coe]
-
-@[simp]
-theorem fromCompletionNonUnitalAlgHomOfMul_star (f : A →L[R] B)
-    (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
-    (x : Completion A) :
-    f.fromCompletionNonUnitalAlgHomOfMul hf_mul (star x) =
-      star (f.fromCompletionNonUnitalAlgHomOfMul hf_mul x) := by
-  simpa only [fromCompletionNonUnitalStarAlgHomOfMulStar_apply] using
-    map_star (f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star) x
-
 @[fun_prop]
 theorem continuous_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
@@ -708,25 +692,5 @@ theorem continuous_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
   (f.toNonUnitalStarAlgHomOfMulStar hf_mul hf_star).continuous_fromCompletion _
 
 end StarAlgHomCompletion
-
-section StarAlgHomNorm
-
-variable {R A B : Type*} [Semiring R]
-  [NonUnitalSeminormedRing A] [StarAddMonoid A] [ContinuousStar A]
-  [Module R A] [UniformContinuousConstSMul R A]
-  [NonUnitalSeminormedRing B] [Star B] [ContinuousStar B]
-  [Module R B] [ContinuousConstSMul R B]
-  [T0Space B] [CompleteSpace B]
-
-/-- Extending a bounded multiplicative star-preserving continuous linear map `f : A →L[R] B` into
-a complete separated target to `Completion A` preserves linear norm bounds. -/
-theorem norm_fromCompletionNonUnitalStarAlgHomOfMulStar_le (f : A →L[R] B)
-    (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
-    {C : ℝ} (hC : ∀ x : A, ‖f x‖ ≤ C * ‖x‖) (x : Completion A) :
-    ‖f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star x‖ ≤ C * ‖x‖ := by
-  simpa only [fromCompletionNonUnitalStarAlgHomOfMulStar_apply] using
-    f.norm_fromCompletionNonUnitalAlgHomOfMul_le hf_mul hC x
-
-end StarAlgHomNorm
 
 end ContinuousLinearMap

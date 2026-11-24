@@ -19,12 +19,9 @@ actions (`ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromComp
 and reflecting it (`completion_smul_iff`, `fromCompletion_smul_iff`). `fromCompletion` is
 characterized by `ContinuousLinearMap.comp_toComplL_eq_iff`.
 Subtraction of continuous semilinear maps between uniform modules commutes with extension to the
-separated completions (`ContinuousLinearMap.completion_sub`). Extending a continuous semilinear
-map to the completion of its domain via `ContinuousLinearMap.fromCompletion` preserves
-multiplication (`ContinuousLinearMap.fromCompletion_mul`) and star
-(`ContinuousLinearMap.fromCompletion_star`) whenever the map does so on the dense domain; bundling
-these extensions gives `NonUnitalAlgHom.fromCompletion` and `NonUnitalStarAlgHom.fromCompletion`
-for continuous homomorphisms into complete separated targets.
+separated completions (`ContinuousLinearMap.completion_sub`). Bundling continuous nonunital
+algebra and `⋆`-algebra homomorphisms into complete separated targets yields
+`NonUnitalAlgHom.fromCompletion` and `NonUnitalStarAlgHom.fromCompletion`.
 
 A continuous semilinear equivalence of uniform additive groups extends to their separated
 completions (`ContinuousLinearEquiv.completion`) by completing its forward and inverse continuous
@@ -57,32 +54,6 @@ theorem completion_sub (f g : E →SL[σ] F) : (f - g).completion = f.completion
   | ih x => simp [← Completion.coe_sub]
 
 end Sub
-
-section FromCompletion
-
-variable {R S E F : Type*} [Semiring R] [Semiring S]
-  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E]
-  [Module R E] [UniformContinuousConstSMul R E]
-  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F]
-  [Module S F] [UniformContinuousConstSMul S F]
-  {σ : R →+* S} [T0Space F] [CompleteSpace F]
-
-/-- Extending a multiplicative continuous semilinear map to the completion preserves
-multiplication. -/
-theorem fromCompletion_mul [Mul E] [ContinuousMul E] [ContinuousMul (Completion E)]
-    [Mul F] [ContinuousMul F] (f : E →SL[σ] F) (hf : ∀ a b : E, f (a * b) = f a * f b)
-    (x y : Completion E) :
-    f.fromCompletion (x * y) = f.fromCompletion x * f.fromCompletion y :=
-  Completion.extension_mul (uniformContinuous_addMonoidHom_of_continuous f.continuous) hf x y
-
-/-- Extending a star-preserving continuous semilinear map to the completion preserves `star`. -/
-theorem fromCompletion_star [StarAddMonoid E] [ContinuousStar E] [Star F] [ContinuousStar F]
-    (f : E →SL[σ] F) (hf : ∀ a : E, f (star a) = star (f a)) (x : Completion E) :
-    f.fromCompletion (star x) = star (f.fromCompletion x) :=
-  Completion.extension_star TauCeti.uniformContinuous_star
-    (uniformContinuous_addMonoidHom_of_continuous f.continuous) hf x
-
-end FromCompletion
 
 section SMul
 
@@ -232,22 +203,6 @@ theorem fromCompletion_unique (f : E →ₛₙₐ[φ] F) (hf : Continuous f)
     Completion.extension_unique
       (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf)
       (uniformContinuous_addMonoidHom_of_continuous (f := g.toAddMonoidHom) hg) h
-
-/-- On the completion, `f.fromCompletion hf` agrees with `fL.fromCompletion` for any continuous
-semilinear map `fL` agreeing with `f` on `E`. -/
-theorem fromCompletion_eq_clm {R S E F : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
-    [NonUnitalNonAssocRing E] [UniformSpace E] [IsUniformAddGroup E] [IsTopologicalRing E]
-    [Module R E] [UniformContinuousConstSMul R E]
-    [NonUnitalNonAssocRing F] [UniformSpace F] [IsUniformAddGroup F] [ContinuousMul F]
-    [Module S F] [UniformContinuousConstSMul S F] [T0Space F] [CompleteSpace F]
-    (f : E →ₛₙₐ[σ.toMonoidHom] F) (hf : Continuous f) (fL : E →SL[σ] F)
-    (hfL : ∀ x : E, fL x = f x) (x : Completion E) :
-    f.fromCompletion hf x = fL.fromCompletion x := by
-  have h : ⇑(f.fromCompletion hf) = ⇑fL.fromCompletion :=
-    (coe_fromCompletion f hf).trans <| Completion.extension_unique
-      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf)
-      fL.fromCompletion.uniformContinuous fun a ↦ by simp [hfL]
-  exact congrArg (fun ψ : Completion E → F ↦ ψ x) h
 
 end FromCompletion
 

@@ -152,8 +152,8 @@ theorem integratedStarAlgHomL1_coe (f : TwistedConvolutionAlgebra ω μ) :
 
 /-- The L¹ integrated form preserves the `⋆`-involution on the twisted L¹ completion. -/
 @[simp] theorem integratedOperatorL1_star (x : Completion (TwistedConvolutionAlgebra ω μ)) :
-    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) :=
-  (P.integratedOperatorCLM μ).fromCompletionNonUnitalAlgHomOfMul_star _ (fun f => by simp) x
+    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
+  simpa only [integratedStarAlgHomL1_apply] using map_star (P.integratedStarAlgHomL1 μ) x
 
 @[fun_prop] theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) :=
   (P.integratedOperatorCLM μ).continuous_fromCompletionNonUnitalStarAlgHomOfMulStar _ _

@@ -17,9 +17,9 @@ that algebra with the metric completion of its source. The comparison extends th
 and preserves distances. This allows completion comparisons for dense subalgebras and their
 presentation quotients to share the same construction.
 
-For a continuous nonunital algebra or `⋆`-algebra homomorphism into a complete separated
-seminormed target, any linear norm bound `‖f x‖ ≤ C * ‖x‖` extends by density to the completion
-(`NonUnitalAlgHom.norm_fromCompletion_le` and `NonUnitalStarAlgHom.norm_fromCompletion_le`).
+For a continuous nonunital algebra homomorphism into a complete separated seminormed target, any
+linear norm bound `‖f x‖ ≤ C * ‖x‖` extends by density to the completion
+(`NonUnitalAlgHom.norm_fromCompletion_le`).
 
 The construction factors the one used for the Monsky–Washnitzer algebra in
 `TauCeti.RingTheory.Dagger.Completion`.
@@ -96,24 +96,3 @@ theorem norm_fromCompletion_le (f : E →ₛₙₐ[φ] F) (hf : Continuous f) {C
       (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) hC y
 
 end NonUnitalAlgHom
-
-namespace NonUnitalStarAlgHom
-
-variable {R E F : Type*} [Monoid R]
-  [NonUnitalSeminormedRing E] [StarAddMonoid E] [ContinuousStar E]
-  [DistribMulAction R E] [UniformContinuousConstSMul R E]
-  [NonUnitalSeminormedRing F] [Star F] [ContinuousStar F]
-  [DistribMulAction R F] [ContinuousConstSMul R F] [T0Space F] [CompleteSpace F]
-
-/-- If a continuous nonunital `⋆`-algebra homomorphism `f : E →⋆ₙₐ[R] F` into a complete
-separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
-`f.fromCompletion hf` to the completion satisfies `‖f.fromCompletion hf y‖ ≤ C * ‖y‖` for all
-`y`. -/
-theorem norm_fromCompletion_le (f : E →⋆ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
-    (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
-    ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
-  simpa only [← NonUnitalStarAlgHom.coe_toNonUnitalAlgHom,
-    f.toNonUnitalAlgHom_fromCompletion hf] using
-    f.toNonUnitalAlgHom.norm_fromCompletion_le hf hC y
-
-end NonUnitalStarAlgHom

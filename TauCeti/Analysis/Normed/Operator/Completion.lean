@@ -379,17 +379,6 @@ theorem fromCompletionEquivOfDenseRange_symm_apply {R R₂ E F : Type*}
     (f.fromCompletionEquivOfDenseRange hf).symm (f x) = x := by
   rw [← fromCompletionEquivOfDenseRange_coe f hf x, LinearIsometryEquiv.symm_apply_apply]
 
-/-- As a linear isometry, `fromCompletionEquivOfDenseRange` is `LinearIsometry.fromCompletion`. -/
-@[simp]
-theorem toLinearIsometry_fromCompletionEquivOfDenseRange {R R₂ E F : Type*}
-    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
-    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
-    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F]
-    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
-    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
-    (f.fromCompletionEquivOfDenseRange hf).toLinearIsometry = f.fromCompletion :=
-  (rfl)
-
 end LinearIsometry
 
 namespace LinearIsometryEquiv
