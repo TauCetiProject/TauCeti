@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.CategoryTheory.Generator.Preadditive
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- Private: the comparison of separators with generators in `ModuleCat R`, and the regular module
--- as a projective object of `FGModuleCat R`.
+-- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Generator
+import TauCeti.RingTheory.Artinian.Module
 
 /-!
 # Separators of finitely generated modules
@@ -52,6 +55,10 @@ projective object of `mod R`, such as `R`, splits.
 * `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
   module lies in the additive closure `add M` of every finitely generated generator `M`, in any
   universe.
+* `FGModuleCat.isCoseparator_iff`: `M` is a coseparator of `mod R` exactly when linear maps into
+  `M` separate the points of every finitely generated module.
+* `CategoryTheory.IsCoseparator.additiveClosure_of_injective`: dually, an injective object of
+  `mod R` that is Artinian as a module lies in `add M` for every coseparator `M`.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
   `M` is a separator of `mod R` exactly when `R ∈ add M`.
 -/
@@ -123,6 +130,43 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator_of_projective (M P : F
     refine LinearMap.pi_ext' fun i ↦ ?_
     simpa [p, LinearMap.comp_assoc] using congr((biproduct.ι _ i ≫ $hg).hom.hom)
   exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
+    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+
+/-- **The coseparators of `mod R`, elementwise**: `M` is a coseparator of `mod R` exactly when
+every nonzero element of every finitely generated module `X` is sent to a nonzero element by some
+linear map `X → M`. -/
+theorem _root_.FGModuleCat.isCoseparator_iff (M : FGModuleCat.{v} R) :
+    IsCoseparator M ↔
+      ∀ (X : FGModuleCat.{v} R) (x : X.obj), x ≠ 0 → ∃ f : X.obj →ₗ[R] M.obj, f x ≠ 0 := by
+  refine ⟨fun hM X x hx0 ↦ ?_, fun h ↦ (Preadditive.isCoseparator_iff M).2 fun {X Y} f hf ↦ ?_⟩
+  · -- Test on the inclusion of the cyclic submodule `R ∙ x`, which every map to `M` kills.
+    by_contra! hx
+    exact hx0 <| (X.span_singleton_subtype_eq_zero_iff x).1 <|
+      (Preadditive.isCoseparator_iff M).1 hM _ fun g ↦
+        (X.span_singleton_subtype_comp_eq_zero_iff x g).2 (hx g.hom.hom)
+  · refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
+    by_contra hx
+    obtain ⟨g, hg⟩ := h Y (f.hom.hom x) (by simpa using hx)
+    have hfg := hf (ObjectProperty.homMk (ModuleCat.ofHom g))
+    exact hg (by simpa using congr(($hfg).hom.hom x))
+
+/-- **Artinian injective modules are summands of finite sums of a coseparator**: if `M` is a
+coseparator of `mod R`, then an injective object of `mod R` that is Artinian as a module lies in
+`add M`. This is dual to `FGModuleCat.additiveClosure_of_isGenerator_of_projective`. The modules
+may live in any universe. -/
+theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FGModuleCat.{v} R}
+    (hM : IsCoseparator M) (I : FGModuleCat.{v} R) [Injective I] [IsArtinian R I.obj] :
+    additiveClosure M I := by
+  -- As `I` is Artinian, it embeds into a finite power `Mⁿ`, and the embedding splits.
+  obtain ⟨n, g, hg⟩ :=
+    IsArtinian.exists_injective_linearMap_pi ((FGModuleCat.isCoseparator_iff M).1 hM I)
+  let ι : I ⟶ ⨁ fun _ : Fin n ↦ M :=
+    biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
+  have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ hg ?_))
+    ext j
+    simpa [ι] using congr(($hh ≫ biproduct.π _ j).hom.hom z)
+  exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
 /-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of

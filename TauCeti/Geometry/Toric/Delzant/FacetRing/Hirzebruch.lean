@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Delzant.FacetRing
+public import TauCeti.Geometry.Toric.Delzant.FacetRing.Basic
 public import TauCeti.Geometry.Toric.Delzant.Hirzebruch
 
 /-!

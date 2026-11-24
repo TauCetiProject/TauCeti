@@ -358,7 +358,7 @@ holds. Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on
 If the data decay like `r^{2α} K_G² r^{n+1} + 4 r² ∫_{B_r} f² ≤ V (r / R)^{n+1+2γ}` for
 `0 < r ≤ R` and `∫_{B_R} ‖∇u‖² ≤ V`, then
 `∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C V (ρ / R)^{n+1+2γ}` for `0 < ρ ≤ θ R`. -/
-private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith
+theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith
     {α : ℝ≥0} {γ : ℝ} (hγ : 0 < γ) (hγα : γ ≤ α) (hγ1 : γ < 1) {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
@@ -418,7 +418,7 @@ data term of the comparison estimate on `B(z, r)` decays with the exponent `n + 
 `r^{2α} K_G² r^{n+1} + 4 r² ∫_{B(z, r)} f² ≤ (1 + 4 ω^{1-2/q}) (R^{(n+1)/2+β} Q)² (r / R)^{n+1+2β}`,
 
 where `ω` is the volume of the unit ball. -/
-private theorem rpow_mul_add_mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+theorem rpow_mul_add_mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     {T : Set (EuclideanSpace ℝ (Fin (n + 1)))} {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hf : MemLp f q (volume.restrict T)) {α β KG Q R r : ℝ} (hβα : β ≤ α)
     (hβq : β ≤ 1 - ((n : ℝ) + 1) / q.toReal) (hKG : 0 ≤ KG) (hGQ : R ^ (α - β) * KG ≤ Q)

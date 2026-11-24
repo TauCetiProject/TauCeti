@@ -13,8 +13,11 @@ public import TauCeti.Topology.FilledHull
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Curve.Concat
+import TauCeti.Analysis.Contour.Curve.FTC
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
 import TauCeti.Analysis.Contour.Winding.StarConvex
@@ -57,6 +60,9 @@ set without holes has holomorphic square roots.
   open set without holes.
 * `TauCeti.Contour.isExactOn_of_starConvex` — a holomorphic function has a primitive on an open
   star-shaped set.
+* `TauCeti.Contour.curveIntegral_segment_add_segment_eq_intervalIntegral_deriv_smul`: on an open
+  set star-shaped about `c`, the contour integral of a holomorphic function along a curve equals the
+  sum of its curve integrals along the two segments through `c`.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_isExactOn` — a nowhere-zero
   holomorphic function whose logarithmic derivative has a primitive has a holomorphic logarithm.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`,
@@ -258,7 +264,8 @@ theorem isExactOn_of_forall_isNullHomologous {f : ℂ → ℂ} (hU : IsOpen U)
       IsNullHomologous γ a b U) :
     Complex.IsExactOn f U :=
   isExactOn_of_forall_closed_integral_eq_zero hU hf.continuousOn fun γ a b hγ hγU hclosed =>
-    homologyCauchyTheorem hU γ a b hγ (fun _ ht => hγU ht) hclosed hf (h γ a b hγ hγU hclosed)
+    homologyCauchyTheorem hU γ a b hγ.absolutelyContinuousOnInterval (fun _ ht => hγU ht) hclosed
+      hf (h γ a b hγ hγU hclosed)
 
 /-- **Holomorphic functions have primitives on a set without holes.** If `U` is open and every
 connected component of `ℂ \ U` is unbounded (`filledHull U ⊆ U`), then every function holomorphic
@@ -332,5 +339,20 @@ theorem exists_differentiableOn_pow_eq_of_filledHull_subset {g : ℂ → ℂ} (h
   dsimp only
   rw [← Complex.exp_natCast_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn)]
   exact hLeq hz
+
+/-- **Path independence through a star centre.** If `g` is holomorphic on an open set `U` that is
+star-shaped about `c`, then for every piecewise-`C¹` curve `γ` in `U` the contour integral
+`∫ t in a..b, γ' t • g (γ t)` equals the sum of the curve integrals of `g(z) dz` along
+`Path.segment (γ a) c` and `Path.segment c (γ b)`. -/
+theorem curveIntegral_segment_add_segment_eq_intervalIntegral_deriv_smul {c : ℂ} {g : ℂ → ℂ}
+    {γ : ℝ → ℂ} {a b : ℝ} (hU : IsOpen U) (hstar : StarConvex ℝ c U)
+    (hg : DifferentiableOn ℂ g U) (hγ : IsPiecewiseC1On γ a b) (hγU : MapsTo γ (uIcc a b) U) :
+    (∫ᶜ z in Path.segment (γ a) c, ContinuousLinearMap.toSpanSingleton ℂ (g z)) +
+        ∫ᶜ z in Path.segment c (γ b), ContinuousLinearMap.toSpanSingleton ℂ (g z) =
+      ∫ t in a..b, deriv γ t • g (γ t) := by
+  obtain ⟨F, hF⟩ := isExactOn_of_starConvex hU hstar hg
+  rw [curveIntegral_segment_add_segment_toSpanSingleton_eq_sub hstar (hγU left_mem_uIcc)
+    (hγU right_mem_uIcc) hF hg.continuousOn,
+    intervalIntegral_deriv_smul_eq_sub_of_hasDerivAt hγ hγU hg.continuousOn hF]
 
 end TauCeti.Contour

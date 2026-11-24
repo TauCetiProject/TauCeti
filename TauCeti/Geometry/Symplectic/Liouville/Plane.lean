@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Fin
 public import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # The one-forms `x dy` and `y dx` on the real plane
@@ -42,10 +43,7 @@ pullback by a linear map evaluates there to the determinant. -/
 @[simp]
 theorem realPlaneDx_wedge_realPlaneDy_finTwoProd (q : ℝ × ℝ) :
     ((realPlaneDx q).wedge (realPlaneDy q)) (Module.Basis.finTwoProd ℝ) = 1 := by
-  have hbasis : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  rw [hbasis, ContinuousAlternatingMap.wedge_apply_one_one]
+  rw [Module.Basis.coe_finTwoProd, ContinuousAlternatingMap.wedge_apply_one_one]
   simp [realPlaneDx_apply, realPlaneDy_apply]
 
 /-- The coordinate one-form `x dy` on `ℝ × ℝ`. -/
