@@ -80,9 +80,12 @@ private noncomputable def rangeMapOfBoundAux (f : V →ₛₗ[σ] F) (e : V →�
 
 private theorem rangeMapOfBoundAux_apply (f : V →ₛₗ[σ] F) (e : V →ₗ[R] E)
     (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) (x : V) :
-    rangeMapOfBoundAux f e C h ⟨e x, mem_range_self e x⟩ = f x := by
+    rangeMapOfBoundAux f e C h (e.rangeRestrict x) = f x := by
+  have he : e.quotKerEquivRange (e.ker.mkQ x) = e.rangeRestrict x := by
+    apply Subtype.ext
+    rw [Submodule.mkQ_apply, quotKerEquivRange_apply_mk, rangeRestrict, codRestrict_apply]
   simp only [rangeMapOfBoundAux, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply, Submodule.liftQ_apply]
+    ← he, LinearEquiv.symm_apply_apply, Submodule.mkQ_apply, Submodule.liftQ_apply]
 
 /-- Factor a bounded semilinear map through the range of the linear map controlling its norm.
 
@@ -91,9 +94,10 @@ completeness of the target is needed, and the source `V` needs no norm or topolo
 noncomputable def rangeMapOfBound (f : V →ₛₗ[σ] F) (e : V →ₗ[R] E)
     (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) : e.range →SL[σ] F :=
   (rangeMapOfBoundAux f e C h).mkContinuous C (by
-    rintro ⟨_, x, rfl⟩
-    rw [← Submodule.norm_coe]
-    simpa only [rangeMapOfBoundAux_apply] using h x)
+    intro y
+    obtain ⟨x, rfl⟩ := e.surjective_rangeRestrict y
+    simpa only [rangeMapOfBoundAux_apply, ← Submodule.norm_coe, rangeRestrict,
+      codRestrict_apply] using h x)
 
 /-- The bounded range factor agrees with the original map on representatives. -/
 @[simp] theorem rangeMapOfBound_apply (f : V →ₛₗ[σ] F) (e : V →ₗ[R] E)
@@ -115,8 +119,8 @@ theorem norm_rangeMapOfBound_apply_le (f : V →ₛₗ[σ] F) (e : V →ₗ[R] E
     (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) (y : e.range) :
     ‖f.rangeMapOfBound e C h y‖ ≤ C * ‖y‖ := by
   obtain ⟨x, rfl⟩ := e.surjective_rangeRestrict y
-  rw [rangeMapOfBound_apply, ← Submodule.norm_coe]
-  exact h x
+  simpa only [rangeMapOfBound_apply, ← Submodule.norm_coe, rangeRestrict,
+    codRestrict_apply] using h x
 
 variable [ContinuousConstSMul R E] [ContinuousConstSMul S F] [CompleteSpace F]
 
@@ -146,8 +150,8 @@ noncomputable def extendOfBound (f : V →ₛₗ[σ] F) (e : V →ₗ[R] E)
   have hi : IsUniformInducing e.range.subtypeL := by
     rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
     exact isUniformInducing_val _
-  have hh : e.range.subtypeL (e.rangeRestrict x) = e x :=
-    Submodule.subtypeL_apply _ _
+  have hh : e.range.subtypeL (e.rangeRestrict x) = e x := by
+    rw [Submodule.subtypeL_apply, rangeRestrict, codRestrict_apply]
   rw [← hh, extendOfBound, ContinuousLinearMap.extend_eq _ hd' hi]
   exact rangeMapOfBound_apply f e C h x
 

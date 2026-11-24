@@ -69,7 +69,7 @@ The dense-extension construction and its norm proof follow the formal pattern of
   coefficient extension along the composite.
 * `AbstractMeasure.extendCoefficients_smul`, `AbstractMeasure.extendCoefficients_dirac`,
   `AbstractMeasure.extendCoefficients_map`, `AbstractMeasure.extendCoefficients_injective` and
-  `RingHom.extendCoefficients_surjective`.
+  `AbstractMeasure.extendCoefficients_surjective`.
 
 ## References
 
@@ -220,7 +220,8 @@ private theorem extendCoefficientsCLM_apply_comp (hj : ∀ a, ‖j a‖ ≤ B) {
     ext
     simp [φ]
   rw [hφ, extendCoefficientsCLM_apply_test]
-  exact locallyConstantIntegral_apply j μ φ q g fun _ ↦ rfl
+  exact locallyConstantIntegral_apply j μ φ q g fun x ↦ by
+    simp only [φ, LocallyConstant.coe_mk, Function.comp_apply]
 
 private theorem finiteProjection_extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ B) {A : Type*}
     [TopologicalSpace A] [DiscreteTopology A] [Finite A] (q : C(X, A)) :
@@ -270,7 +271,7 @@ theorem finiteProjection_extendCoefficients {A : Type*} [TopologicalSpace A] [Di
 
 /-- The coefficient extension depends only on `j`. A choice of uniform bound gives the same
 additive map for every valid bound. -/
-theorem _root_.RingHom.extendCoefficients_eq_of_bound {B' : ℝ} (hj' : ∀ a, ‖j a‖ ≤ B') :
+theorem extendCoefficients_eq_of_bound {B' : ℝ} (hj' : ∀ a, ‖j a‖ ≤ B') :
     extendCoefficients (X := X) j hj = extendCoefficients j hj' := by
   apply AddMonoidHom.ext
   intro μ
@@ -354,7 +355,8 @@ theorem extendCoefficients_apply_comp (hjc : Continuous j) (f : C(X, O)) :
     (hjc.comp (map_continuous μ)) (funext fun φ ↦ ?_)) f
   have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ = (φ.map j : C(X, K)) := by
     ext x
-    rfl
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, LocallyConstant.coe_continuousMap,
+      LocallyConstant.map_apply, Function.comp_apply]
   simpa only [Function.comp_apply, hjφ] using
     extendCoefficients_apply_locallyConstant j μ hj φ
 
@@ -390,11 +392,11 @@ theorem mem_range_extendCoefficients_iff_apply_comp_mem_range (hje : Topology.Is
   · rintro ⟨μ, rfl⟩ f
     exact ⟨μ f, (extendCoefficients_apply_comp j μ hj hje.continuous f).symm⟩
   · intro hν
-    obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν hν
+    obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_apply_comp_mem_range j hje ν hν
     exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
 
 /-- Extension of coefficients is surjective when `j` is a surjective topological embedding. -/
-theorem _root_.RingHom.extendCoefficients_surjective (hje : Topology.IsEmbedding j)
+theorem extendCoefficients_surjective (hje : Topology.IsEmbedding j)
     (hsurj : Function.Surjective j) : Function.Surjective (extendCoefficients (X := X) j hj) := by
   intro ν
   exact (mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje).2 fun _ ↦ hsurj _
@@ -409,7 +411,7 @@ theorem extendCoefficients_id (ν : D(X, K)) (h : ∀ a : K, ‖a‖ ≤ B) :
   simp
 
 /-- Extending coefficients successively agrees with extending along the composite with the bound
-inherited from the second map. Use `RingHom.extendCoefficients_eq_of_bound` to change that bound.
+inherited from the second map. Use `extendCoefficients_eq_of_bound` to change that bound.
 The identity rule takes precedence when the second map is the identity. Evaluation rules on
 transported tests run before composition so they can still act on the intermediate measure. -/
 @[simp low]

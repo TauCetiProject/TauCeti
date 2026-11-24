@@ -11,9 +11,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Bas
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.NumberTheory.Padics.ProperSpace
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
+import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -321,12 +321,8 @@ private theorem norm_completedLocallyConstantIntegral_le
       rw [mul_one, hφU]
       exact (LocallyConstant.toContinuousMapLinearMap ℤ_[p] φ).norm_coe_le_norm y
 
-private abbrev completedLocallyConstantTests : Submodule ℤ_[p] C(Γ, ℤ_[p]) :=
-  (LocallyConstant.toContinuousMapLinearMap ℤ_[p]).range
-
 private theorem dense_completedLocallyConstantTests :
-    DenseRange (completedLocallyConstantTests (Γ := Γ) (p := p)).subtype := by
-  apply denseRange_subtypeVal.mpr
+    DenseRange (LocallyConstant.toContinuousMapLinearMap ℤ_[p] (X := Γ) (Y := ℤ_[p])) := by
   apply (dense_setOf_comp_quotientMk ℤ_[p]).mono
   rintro f ⟨U, g, hg⟩
   have hloc : IsLocallyConstant (f : Γ → ℤ_[p]) := by
@@ -334,56 +330,16 @@ private theorem dense_completedLocallyConstantTests :
     exact (IsLocallyConstant.of_discrete g).comp_continuous QuotientGroup.continuous_mk
   exact ⟨⟨f, hloc⟩, rfl⟩
 
-private def completedIntegralOnLocallyConstantTests
-    (x : completedGroupAlgebra ℤ_[p] Γ) :
-    completedLocallyConstantTests (Γ := Γ) (p := p) →L[ℤ_[p]] ℤ_[p] :=
-  let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p])
-    LocallyConstant.toContinuousMap_injective
-  ((completedLocallyConstantIntegral x).comp e.symm.toLinearMap).mkContinuous 1 (by
-    intro f
-    have he : (e.symm f).toContinuousMap = f.val := by
-      simpa only [LocallyConstant.toContinuousMapLinearMap_apply] using
-        LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-    calc
-      ‖completedLocallyConstantIntegral x (e.symm f)‖ ≤
-          1 * ‖LocallyConstant.toContinuousMapLinearMap ℤ_[p] (e.symm f)‖ :=
-        norm_completedLocallyConstantIntegral_le x (e.symm f)
-      _ = 1 * ‖f‖ := by
-        rw [LocallyConstant.toContinuousMapLinearMap_apply, he, Submodule.norm_coe])
-
-omit [TotallyDisconnectedSpace Γ] in
-private theorem completedIntegralOnLocallyConstantTests_apply
-    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) :
-    completedIntegralOnLocallyConstantTests x
-        ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩ = completedLocallyConstantIntegral x φ := by
-  let e : LocallyConstant Γ ℤ_[p] ≃ₗ[ℤ_[p]]
-      completedLocallyConstantTests (Γ := Γ) (p := p) :=
-    LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p])
-      LocallyConstant.toContinuousMap_injective
-  have he : (⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩ :
-      completedLocallyConstantTests (Γ := Γ) (p := p)) = e φ := by
-    apply Subtype.ext
-    exact (LinearEquiv.ofInjective_apply
-      (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) φ).symm
-  simp only [completedIntegralOnLocallyConstantTests, LinearMap.mkContinuous_apply,
-    LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-  exact congrArg (completedLocallyConstantIntegral x) (he ▸ e.symm_apply_apply φ)
-
 private noncomputable def ofCompletedGroupAlgebra
     (x : completedGroupAlgebra ℤ_[p] Γ) : D(Γ, ℤ_[p]) :=
-  toCLMEquiv.symm <| (completedIntegralOnLocallyConstantTests x).extend
-    (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL
+  toCLMEquiv.symm <| (completedLocallyConstantIntegral x).extendOfBound
+    (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) 1 (norm_completedLocallyConstantIntegral_le x)
 
 private theorem ofCompletedGroupAlgebra_apply_locallyConstant
     (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) :
     ofCompletedGroupAlgebra x φ.toContinuousMap = completedLocallyConstantIntegral x φ := by
-  have he := (completedIntegralOnLocallyConstantTests x).extend_eq
-    (e := (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL)
-    dense_completedLocallyConstantTests isUniformEmbedding_subtypeVal.isUniformInducing
-    ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩
   rw [ofCompletedGroupAlgebra, coe_symm_toCLMEquiv]
-  exact he.trans (completedIntegralOnLocallyConstantTests_apply x φ)
+  exact LinearMap.extendOfBound_apply _ _ _ _ dense_completedLocallyConstantTests φ
 
 private theorem ofCompletedGroupAlgebra_apply_comp
     (x : completedGroupAlgebra ℤ_[p] Γ) (U : OpenNormalSubgroup Γ)

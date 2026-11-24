@@ -7,19 +7,26 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
+import Mathlib.Topology.Algebra.Algebra
+import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Restriction of measure coefficients along an embedding
 
 If a ring homomorphism embeds one topological coefficient ring into another, a measure restricts
 along it whenever the integral of every transported test lies in the coefficient image.
-This criterion is `RingHom.exists_apply_comp_eq_of_mem_range`.
+This criterion is `AbstractMeasure.exists_apply_comp_eq_of_apply_comp_mem_range`.
 
 Over a nontrivially normed field `K`, for an embedding `j` onto its closed unit ball and compact
 `X`, `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one` restricts any `K`-valued measure of
 operator norm at most `1`. The converse and uniqueness are recorded in
 `AbstractMeasure.existsUnique_apply_comp_eq_iff_norm_le_one`. These statements require neither
 completeness nor an ultrametric norm on `K`, nor separation or total disconnectedness of `X`.
+
+## References
+
+J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*,
+Essential Number Theory **4** (2025), no. 1, 101–216, Remark 3.28.
 -/
 
 public section
@@ -32,33 +39,42 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-- Restrict a measure through a coefficient embedding when every transported test has its
 integral in the coefficient image. -/
-theorem _root_.RingHom.exists_apply_comp_eq_of_mem_range {O K : Type*}
+theorem exists_apply_comp_eq_of_apply_comp_mem_range {O K : Type*}
     [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
     [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
     (j : O →+* K) (hje : Topology.IsEmbedding j)
     (ν : D(X, K))
     (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
     ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let J : C(O, K) := ⟨j, hje.continuous⟩
-  have hspec (f : C(X, O)) : j (hmem f).choose = ν (J.comp f) := (hmem f).choose_spec
-  let L : C(X, O) →ₗ[O] O :=
-    { toFun f := (hmem f).choose
-      map_add' f g := hje.injective <| (hspec _).trans <| by
-        have hJ : J.comp (f + g) = J.comp f + J.comp g := by
-          ext x
-          simp [J]
-        simp [hspec, hJ]
-      map_smul' a f := hje.injective <| (hspec _).trans <| by
-        have hJ : J.comp (a • f) = j a • J.comp f := by
-          ext x
-          simp [J]
-        simp [hspec, hJ] }
+  let := j.toAlgebra
+  have halg : algebraMap O K = j := j.algebraMap_toAlgebra
+  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K (halg ▸ hje.continuous)
+  let J := algebraMapCLM O K
+  have hJ : ⇑J = j := by rw [coe_algebraMapCLM, halg]
+  have hlin : ⇑(Algebra.linearMap O K) = j := by
+    rw [← toLinearMap_algebraMapCLM, ContinuousLinearMap.coe_coe]
+    exact hJ
+  let F := ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
+  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
+    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
+      have happ := (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
+        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
+      rw [happ]
+      ext x
+      simp [ContinuousLinearMap.coe_coe, hJ]
+    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      coe_toCLMEquiv, hcomp]
+  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
+    simpa only [← SetLike.mem_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hlin, hF]
+      using hmem f
+  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K)
+    (hlin.symm ▸ hje.injective) hmem'
+  have hLj (f : C(X, O)) : j (L f) = F f := by
+    rw [← hlin, LinearMap.codRestrictOfInjective_comp_apply, ContinuousLinearMap.coe_coe]
   have hL : Continuous L := hje.continuous_iff.mpr <| by
-    simpa [Function.comp_def, L, hspec] using
-      (map_continuous ν).comp (continuous_postcomp J)
+    simpa only [Function.comp_def, hLj] using F.continuous
   exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
-    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk']
-    exact (hspec f).symm⟩
+    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
 
 section OperatorNorm
 
@@ -87,7 +103,7 @@ norm at most `1` sends the test functions `j ∘ f` into the image of `j`, and t
 theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} (hν : ‖toCLMEquiv ν‖ ≤ 1) :
     ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) :=
-  j.exists_apply_comp_eq_of_mem_range hje ν fun f ↦
+  exists_apply_comp_eq_of_apply_comp_mem_range j hje ν fun f ↦
     hjr (mem_closedBall_zero_iff.mpr (norm_apply_comp_le_one hj hje.continuous hν f))
 
 include hj in
@@ -104,11 +120,14 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
       have hmem (x : X) : g x ∈ Set.range j := hjr <| by
         rw [mem_closedBall_zero_iff]
         exact (ContinuousMap.norm_coe_le_norm g x).trans hg
-      choose h hh using hmem
-      have hcont : Continuous h := hje.continuous_iff.mpr <| by
-        have : j ∘ h = g := funext hh
-        rw [this]; exact g.continuous
-      have hg' : g = (⟨j, hje.continuous⟩ : C(O, K)).comp ⟨h, hcont⟩ := by ext x; exact (hh x).symm
+      let g' : C(X, Set.range j) := ⟨fun x ↦ ⟨g x, hmem x⟩, g.continuous.subtype_mk hmem⟩
+      let Jinv : C(Set.range j, O) := ⟨hje.toHomeomorph.symm, hje.toHomeomorph.symm.continuous⟩
+      let f := Jinv.comp g'
+      have hg' : g = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
+        ext x
+        simpa only [f, g', Jinv, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+          hje.toHomeomorph_apply_coe] using
+          congrArg Subtype.val (hje.toHomeomorph.apply_symm_apply (g' x)).symm
       rw [hg', hμ]
       exact hj _
     refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_

@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 /-!
 # Weakly closed ranges of coefficient extensions
 
-`RingHom.isClosed_range_extendCoefficients_weak` proves that extension along a bounded
+`AbstractMeasure.isClosed_range_extendCoefficients_weak` proves that extension along a bounded
 coefficient embedding with closed image has weakly closed range. The range is the intersection
 of the closed conditions obtained by evaluating on transported tests.
 -/
@@ -27,7 +27,7 @@ variable {X O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
 
 /-- On a profinite space, extension along a bounded coefficient embedding with closed image has
 weakly closed range. -/
-theorem RingHom.isClosed_range_extendCoefficients_weak (j : O →+* K)
+theorem AbstractMeasure.isClosed_range_extendCoefficients_weak (j : O →+* K)
     (hj : ∀ a, ‖j a‖ ≤ B) (hje : Topology.IsEmbedding j) (hjr : IsClosed (Set.range j)) :
     @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
   have hrange : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =

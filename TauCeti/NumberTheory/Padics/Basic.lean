@@ -31,9 +31,6 @@ which formal and normed Weierstrass degrees over `ℤ_[p]` are compared. A `ℚ_
 by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
 (`PadicInt.norm_apply_le_of_mem_span_subring`).
 
-In any seminormed `ℤ_[p]`-algebra with contractive scalar action, the structure map is bounded by
-the norm of the unit (`PadicInt.norm_algebraMap_le_norm_one`).
-
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
 when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
@@ -73,13 +70,6 @@ end TauCeti
 namespace PadicInt
 
 variable {p : ℕ} [Fact (Nat.Prime p)]
-
-/-- The structure map of a seminormed `ℤ_[p]`-algebra with contractive scalar action is bounded
-by the norm of the unit. -/
-theorem norm_algebraMap_le_norm_one {R : Type*} [SeminormedRing R] [Algebra ℤ_[p] R]
-    [IsBoundedSMul ℤ_[p] R] (a : ℤ_[p]) : ‖algebraMap ℤ_[p] R a‖ ≤ ‖(1 : R)‖ := by
-  rw [Algebra.algebraMap_eq_smul_one]
-  exact (norm_smul_le a (1 : R)).trans (mul_le_of_le_one_left (norm_nonneg _) a.norm_le_one)
 
 /-- The structure map of the `ℤ_[p]`-algebra `ℚ_[p]` is the inclusion `PadicInt.Coe.ringHom`. -/
 theorem algebraMap_eq_coe_ringHom : algebraMap ℤ_[p] ℚ_[p] = Coe.ringHom :=
