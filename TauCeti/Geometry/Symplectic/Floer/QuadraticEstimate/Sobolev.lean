@@ -85,9 +85,9 @@ private theorem quadratic_terms_le {a e d d' S S₁ S₂ B : ℝ≥0∞} (he : e
     calc a * (S₁ + S₂) * S = a * (S₁ + S₂) * 1 * S := by ring
       _ ≤ a * (S₁ + S₂) * (1 + B) * S := by gcongr; exact le_self_add
   calc a * (S₁ + S₂) * (1 + B) * e + a * S * d + a * (S₁ + S₂) * d' ≤
-        a * (S₁ + S₂) * (1 + B) * S + a * (S₁ + S₂) * S + a * (S₁ + S₂) * S :=
-        add_le_add (add_le_add (mul_le_mul_right he _)
-          ((mul_le_mul_right hd _).trans_eq (by ring))) (mul_le_mul_right hd' _)
+        a * (S₁ + S₂) * (1 + B) * S + a * (S₁ + S₂) * S + a * (S₁ + S₂) * S := by
+        rw [mul_right_comm a S d]
+        gcongr
     _ ≤ a * (S₁ + S₂) * (1 + B) * S + a * (S₁ + S₂) * (1 + B) * S +
         a * (S₁ + S₂) * (1 + B) * S := add_le_add (add_le_add le_rfl h₁) h₁
     _ = 3 * a * (1 + B) * (S₁ + S₂) * S := by ring
@@ -204,16 +204,16 @@ theorem
   have hS₁₂ : (CM : ℝ≥0∞) * (S₁ + S₂) ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top
     (ENNReal.add_ne_top.2
       ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩)
-  have hS : (CM : ℝ≥0∞) * S ≠ ∞ := ne_top_of_le_ne_top hS₁₂ (mul_le_mul_right hSle _)
+  have hS : (CM : ℝ≥0∞) * S ≠ ∞ := ne_top_of_le_ne_top hS₁₂ (by gcongr)
   -- Main's `Lᵖ` estimate, with supremum norms `CM (S₁ + S₂)` and `CM S`.
   have h := h₁ volume (p := p) hp1 (a := (CM * (S₁ + S₂)).toReal) (A := B)
     (b := (CM * S).toReal) hΩ.measurableSet hφ (fun z hz => hw.differentiableAt (hΩ.mem_nhds hz))
     hd₁ hd₂ hwK (toReal_mul_add_le_of_le_div hδ₁ hS₁ hS₂)
-    (hsup Ω ξ₁ _ hΩ hΩc hfat hξ₁ hS₁₂ (mul_le_mul_right le_self_add _))
-    (hsup Ω ξ₂ _ hΩ hΩc hfat hξ₂ hS₁₂ (mul_le_mul_right le_add_self _))
+    (hsup Ω ξ₁ _ hΩ hΩc hfat hξ₁ hS₁₂ (by gcongr _ * ?_; exact le_self_add))
+    (hsup Ω ξ₂ _ hΩ hΩc hfat hξ₂ hS₁₂ (by gcongr _ * ?_; exact le_add_self))
     (hsup Ω _ _ hΩ hΩc hfat hξ hS le_rfl)
     (fun z hz => by exact_mod_cast eNorm_le_coe.1 (hB z hz))
-  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hS₁₂,
+  simp only [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hS₁₂,
     ENNReal.ofReal_toReal hS, ENNReal.ofReal_add zero_le_one B.coe_nonneg, ENNReal.ofReal_one,
     ENNReal.ofReal_coe_nnreal] at h
   -- The slice derivatives are bounded by the `W^{1,p}` norms.
@@ -225,9 +225,10 @@ theorem
     refine (eLpNorm_congr_ae (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => ?_)).trans_le
       ((eLpNorm_fderiv_apply_stdComplexLineImag_le hΩ hξ p).trans le_add_self)
     rw [fderiv_sub (hd₁ z hz) (hd₂ z hz), sub_apply]
-  refine (h.trans (mul_le_mul_right (quadratic_terms_le le_self_add hd hd') _)).trans_eq ?_
-  push_cast
-  ring
+  calc _ ≤ _ := h
+    _ ≤ C₁ * (3 * CM * (1 + B) * (S₁ + S₂) * S) := by
+      gcongr C₁ * ?_; exact quadratic_terms_le le_self_add hd hd'
+    _ = _ := by push_cast; ring
 
 /-- **The quadratic estimate for the Floer operator at a map, in `W^{1,p}`.** Under the
 hypotheses of
