@@ -11,13 +11,10 @@ public import TauCeti.CategoryTheory.Monoidal.Pivotal.Torsor
 /-!
 # Classifying pivotal structures by universal grading characters
 
-Fix a pivotal structure `P` on a finite semisimple rigid linear monoidal category over a field `k`
-such that every simple object has scalar endomorphisms (`TauCeti.HasScalarSimpleEnd k C`, automatic
-over an algebraically closed field when every hom-space `X ⟶ X` is finite-dimensional, or
-available by applying `TauCeti.HasScalarSimpleEnd.of_finiteDimensional` when only simple objects
-have finite-dimensional endomorphisms). Every other pivotal structure is uniquely the twist of `P`
-by a character of `universalGradingGroup C`, or equivalently by a `kˣ`-valued groupoid character
-`universalGradingGroupoid C ⥤ SingleObj kˣ`
+Fix a pivotal structure `P` on a finite semisimple rigid linear monoidal category over an
+algebraically closed field with finite-dimensional endomorphism spaces of simple objects. Every
+other pivotal structure is uniquely the twist of `P` by a character of `universalGradingGroup C`,
+or equivalently by a `kˣ`-valued groupoid character `universalGradingGroupoid C ⥤ SingleObj kˣ`
 (Penneys, Lemma 3.19(2)). Simplicity of the tensor unit `𝟙_ C` is not required, so both
 classifications apply to arbitrary multitensor and multifusion categories.
 
@@ -83,60 +80,69 @@ end Twist
 
 section Classification
 
-variable (k : Type*) [Field k]
+variable (k : Type*) [Field k] [IsAlgClosed k]
   {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RigidCategory C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-  [IsFiniteSemisimpleCategory C] [HasScalarSimpleEnd k C]
+  [hfin : ∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)]
+  [IsFiniteSemisimpleCategory C]
 
 /-- Relative to a chosen pivotal structure `P`, pivotal structures are parametrized by the
-characters of the universal grading group whenever simple objects have scalar endomorphisms. -/
+characters of the universal grading group. -/
 def characterEquiv (P : PivotalCategory C) :
     PivotalCategory C ≃ (universalGradingGroup C →* kˣ) := by
   letI : Nonempty (PivotalCategory C) := ⟨P⟩
-  exact (Equiv.smulConst P).symm.trans (monoidalAutCharacterEquiv k).toEquiv
+  exact (Equiv.smulConst P).symm.trans (monoidalAutCharacterEquiv (hfin := hfin) k).toEquiv
 
 /-- The character of `Q` relative to `P` is that of the automorphism `Q /ₛ P`. -/
-@[simp] theorem characterEquiv_apply (P Q : PivotalCategory C) :
-    characterEquiv k P Q = monoidalAutCharacter k (Q /ₛ P) := by simp [characterEquiv]
+@[simp]
+theorem characterEquiv_apply (P Q : PivotalCategory C) :
+    characterEquiv (hfin := hfin) k P Q =
+      monoidalAutCharacter (hfin := hfin) k (Q /ₛ P) := by
+  simp [characterEquiv]
 
 /-- A character parametrizes the pivotal structure obtained by twisting the base structure. -/
-@[simp] theorem characterEquiv_symm_apply (P : PivotalCategory C)
+@[simp]
+theorem characterEquiv_symm_apply (P : PivotalCategory C)
     (χ : universalGradingGroup C →* kˣ) :
-    (characterEquiv k P).symm χ = characterMonoidalAut k χ • P := by simp [characterEquiv]
+    (characterEquiv (hfin := hfin) k P).symm χ = characterMonoidalAut k χ • P := by
+  simp [characterEquiv]
 
-/-- Any two pivotal structures differ by exactly one universal grading character whenever simple
-objects have scalar endomorphisms. -/
+/-- Any two pivotal structures differ by exactly one universal grading character. -/
 theorem existsUnique_character_smul_eq (P Q : PivotalCategory C) :
     ∃! χ : universalGradingGroup C →* kˣ, characterMonoidalAut k χ • P = Q := by
-  simpa only [characterEquiv_symm_apply] using (characterEquiv k P).symm.bijective.existsUnique Q
+  simpa only [characterEquiv_symm_apply] using
+    (characterEquiv (hfin := hfin) k P).symm.bijective.existsUnique Q
 
 /-- Relative to a chosen pivotal structure `P`, pivotal structures on a multitensor category `C`
 are parametrized by `kˣ`-valued characters `universalGradingGroupoid C ⥤ SingleObj kˣ` of its
-universal grading groupoid whenever simple objects have scalar endomorphisms (Penneys,
-Lemma 3.19(2)). -/
+universal grading groupoid (Penneys, Lemma 3.19(2)). -/
 def groupoidCharacterEquiv (P : PivotalCategory C) :
     PivotalCategory C ≃ (universalGradingGroupoid C ⥤ SingleObj kˣ) := by
   letI : Nonempty (PivotalCategory C) := ⟨P⟩
-  exact (Equiv.smulConst P).symm.trans (monoidalAutGroupoidCharacterEquiv k).toEquiv
+  exact (Equiv.smulConst P).symm.trans (monoidalAutGroupoidCharacterEquiv (hfin := hfin) k).toEquiv
 
 /-- The groupoid character of `Q` relative to `P` is that of the monoidal automorphism
 `Q /ₛ P`. -/
-@[simp] theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
-    groupoidCharacterEquiv k P Q = monoidalAutGroupoidCharacter k (Q /ₛ P) := by
+@[simp]
+theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
+    groupoidCharacterEquiv (hfin := hfin) k P Q =
+      monoidalAutGroupoidCharacter (hfin := hfin) k (Q /ₛ P) := by
   simp [groupoidCharacterEquiv]
 
 /-- A groupoid character parametrizes the pivotal structure obtained by twisting `P`. -/
-@[simp] theorem groupoidCharacterEquiv_symm_apply (P : PivotalCategory C)
+@[simp]
+theorem groupoidCharacterEquiv_symm_apply (P : PivotalCategory C)
     (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
-    (groupoidCharacterEquiv k P).symm F = groupoidCharacterMonoidalAut k F • P := by
+    (groupoidCharacterEquiv (hfin := hfin) k P).symm F =
+      groupoidCharacterMonoidalAut k F • P := by
   simp [groupoidCharacterEquiv]
 
 /-- Any two pivotal structures on a multitensor category differ by a unique `kˣ`-valued character of
-`universalGradingGroupoid C` whenever simple objects have scalar endomorphisms. -/
+`universalGradingGroupoid C`. -/
 theorem existsUnique_groupoidCharacter_smul_eq (P Q : PivotalCategory C) :
     ∃! F : universalGradingGroupoid C ⥤ SingleObj kˣ, groupoidCharacterMonoidalAut k F • P = Q := by
   simpa only [groupoidCharacterEquiv_symm_apply] using
-    (groupoidCharacterEquiv k P).symm.bijective.existsUnique Q
+    (groupoidCharacterEquiv (hfin := hfin) k P).symm.bijective.existsUnique Q
 
 end Classification
 
