@@ -18,6 +18,7 @@ public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -80,6 +81,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   `-1` its kernel is the space of fixed vectors of `Ψ`
   (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
   that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+* `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
+  `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
@@ -356,6 +359,16 @@ theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R}
     J_squared]
   simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
 
+/-- If `S` is symmetric and `G'ᵀ * J * G + Gᵀ * J * G' = 0`, as for the derivative `G'` of a path
+`G` of symplectic matrices, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric. This is the matrix of
+the equation `Ψ' = J * S * Ψ` after a change of frame by `G`. -/
+theorem IsSymm.transpose_mul_mul_add_transpose_mul_J_mul {S G G' : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hS : S.IsSymm) (h : G'ᵀ * J l R * G + Gᵀ * J l R * G' = 0) :
+    (Gᵀ * S * G + Gᵀ * J l R * G').IsSymm := by
+  simp only [IsSymm, transpose_add, transpose_mul, transpose_transpose, hS.eq, J_transpose,
+    Matrix.neg_mul, Matrix.mul_neg, Matrix.mul_assoc, add_right_inj, neg_eq_iff_eq_neg]
+  simpa only [Matrix.mul_assoc] using eq_neg_of_add_eq_zero_left h
+
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
 theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
     (M * J l R * Mᵀ - J l R) i i = 0 := by
@@ -506,8 +519,7 @@ theorem isUnit_det_mul_J_add_J_mul {A : Matrix (l ⊕ l) (l ⊕ l) ℝ}
   have hkey : (A * J l ℝ + J l ℝ * A) * Aᵀ = J l ℝ * (1 + A * Aᵀ) := by
     rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
   have hpos : (1 + A * Aᵀ).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial] using
-      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
+    simpa [conjTranspose_eq_transpose_of_trivial] using posDef_one_add_mul_conjTranspose A
   have h := congrArg Matrix.det hkey
   rw [det_mul, det_mul] at h
   have hne : (J l ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=

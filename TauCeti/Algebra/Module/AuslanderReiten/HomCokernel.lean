@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
 public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
+public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
 public import TauCeti.RingTheory.MatlisDuality.Basic
 
 /-!
@@ -16,7 +18,12 @@ For a map `f : P₁ →ₗ[A] P₀` between finite projective modules and a `k`-
 `Hom_A(N, D Tr(f))`, where `Tr(f)` is the transpose of `f`. The equivalence evaluates on elementary
 maps `x ↦ φ(x) • n` and is contravariantly natural in the coefficient module `N`. For `E = k`,
 `D Tr(f)` is the Auslander–Reiten translate. With `E` injective this is the lemma in Krause's proof
-of Auslander's defect formula (`TauCeti/Algebra/Module/AuslanderReiten/DefectFormula.lean`).
+of Auslander's defect formula (`TauCeti/Algebra/Module/AuslanderReiten/Defect/Formula.lean`).
+
+The equivalence is also natural in the presentation: for a commutative square
+`t₀ ∘ f = f' ∘ t₁`, precomposition with the induced map of Hom cokernels
+(`LinearMap.covariantDefectMap`) corresponds to postcomposition with the dual of the map of
+transposes (`LinearMap.auslanderReitenHomCokernelDualEquiv_comap`).
 
 This comparison supplies the ambient Hom space in Auslander–Reiten duality. For a
 general projective presentation, its Hom cokernel need not be `Ext¹`: one must still
@@ -169,5 +176,29 @@ theorem auslanderReitenHomCokernelDualEquiv_map (f : P₁ →ₗ[A] P₀) (g : N
   congr 1
   ext x
   simp
+
+/-- **Naturality of `D H(N) ≅ Hom_A(N, D Tr f)` in the presentation.** For a commutative square
+`t₀ ∘ f = f' ∘ t₁`, precomposition with the map of Hom cokernels corresponds to postcomposition
+with the dual `D Tr(t) : D Tr f → D Tr f'` of the map of transposes. -/
+theorem auslanderReitenHomCokernelDualEquiv_comap {P₀ P₁ P₀' P₁' N : Type*} [AddCommGroup P₀]
+    [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀] [AddCommGroup P₁] [Module A P₁]
+    [Module.Finite A P₁] [Module.Projective A P₁] [AddCommGroup P₀'] [Module A P₀']
+    [Module.Finite A P₀'] [Module.Projective A P₀'] [AddCommGroup P₁'] [Module A P₁']
+    [Module.Finite A P₁'] [Module.Projective A P₁'] [AddCommGroup N] [Module A N] [Module k N]
+    [IsScalarTower k A N] {E : Type*} [AddCommGroup E] [Module k E] {f : P₁ →ₗ[A] P₀}
+    {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'} {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (u : ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) →ₗ[k] E) :
+    auslanderReitenHomCokernelDualEquiv f' (u ∘ₗ covariantDefectMap k ht N) =
+      MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht) ∘ₗ
+        auslanderReitenHomCokernelDualEquiv f u := by
+  ext n : 1
+  apply (MatlisDual.equivLinearMap k E _).injective
+  ext τ
+  obtain ⟨φ, rfl⟩ := AuslanderReitenTranspose.mk_surjective f' τ
+  simp only [auslanderReitenHomCokernelDualEquiv_apply_mk, LinearMap.comp_apply,
+    covariantDefectMap_mk, MatlisDual.mapOp_apply, AuslanderReitenTranspose.map_mk]
+  congr 2
+  ext x
+  simp [balancedDualTensorHom_tmul]
 
 end LinearMap

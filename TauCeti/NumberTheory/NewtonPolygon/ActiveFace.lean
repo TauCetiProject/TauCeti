@@ -63,9 +63,11 @@ theorem exists_isFiniteFace_newtonPolygon_of_hasGaussNorm
     ((he.isSupportingLine_iff.mpr (isSupportingLine_iff_forall.mpr hd)).finite_supportingFace hστ c)
     ⟨i, he.supportingFace_subset hc hi⟩
 
-/-- A finite Newton face makes the series restricted at its slope radius. -/
-theorem isRestricted_of_isFiniteFace_newtonPolygon {l u : ℕ}
-    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) : f.IsRestricted (b ^ σ) := by
+/-- A finite Newton face of slope `σ` makes the weighted coefficient norms bounded at some radius
+strictly larger than `b ^ σ`. -/
+theorem exists_lt_hasGaussNorm_of_isFiniteFace_newtonPolygon {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    ∃ τ, σ < τ ∧ f.HasGaussNorm norm (b ^ τ) := by
   have hadm : IsAdmissible fun n ↦ v (coeff n f) :=
     isAdmissible_of_lowerConvexEnvelope_ne_top (f.newtonPolygon_def v ▸ hface.left_ne_top)
   obtain ⟨ε, hε, heq⟩ :=
@@ -73,13 +75,18 @@ theorem isRestricted_of_isFiniteFace_newtonPolygon {l u : ℕ}
   have hd : IsSupportingLine (f.newtonPolygon v) (σ + ε)
       ((f.newtonPolygon v u).untop₀ - (σ + ε) * u) :=
     TauCeti.isSupportingLine_iff.mpr (heq _ ⟨by linarith, le_rfl⟩).ge
-  have hG : f.HasGaussNorm norm (b ^ (σ + ε)) :=
+  exact ⟨σ + ε, by linarith,
     (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv _).mpr <| ne_bot_of_le_ne_bot
       (EReal.coe_ne_bot _) (TauCeti.isSupportingLine_iff.mp
-        ((f.isLowerConvexEnvelope_newtonPolygon hadm).isSupportingLine_iff.mp hd))
+        ((f.isLowerConvexEnvelope_newtonPolygon hadm).isSupportingLine_iff.mp hd))⟩
+
+/-- A finite Newton face makes the series restricted at its slope radius. -/
+theorem isRestricted_of_isFiniteFace_newtonPolygon {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) : f.IsRestricted (b ^ σ) := by
+  obtain ⟨τ, hστ, hG⟩ := exists_lt_hasGaussNorm_of_isFiniteFace_newtonPolygon f v hb hv hface
   exact hG.isRestricted_of_abs_lt
     ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
-      (Real.rpow_lt_rpow_of_exponent_lt hb (by linarith)))
+      (Real.rpow_lt_rpow_of_exponent_lt hb hστ))
 
 /-- A finite Newton face of slope `σ` identifies its endpoints as the first and last active
 coefficients at `b ^ σ`. No boundedness hypothesis is needed: the face makes the weighted
