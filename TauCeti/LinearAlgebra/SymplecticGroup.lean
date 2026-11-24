@@ -86,6 +86,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
+* `Matrix.one_add_mul_mul_J_mul_transpose_sub_J`: correcting `M` by such an `X` leaves the
+  defect `X * E + E * Xᵀ + X * J * Xᵀ + X * E * Xᵀ`, quadratic in `X` and `E`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
@@ -406,6 +408,24 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
       E + Y + -Yᵀ = E + (Y - Yᵀ) := by abel
       _ = 0 := by rw [hY_sub, add_neg_cancel]
 
+/-- **The symplectic defect after a linearized correction.** If `M * J * Mᵀ - J = E` and
+`E + X * J + J * Xᵀ = 0`, the defect of `(1 + X) * M` is the sum of the terms quadratic in `X`
+and `E`. -/
+theorem one_add_mul_mul_J_mul_transpose_sub_J {M E X : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hM : M * J l R * Mᵀ - J l R = E) (hX : E + X * J l R + J l R * Xᵀ = 0) :
+    (1 + X) * M * J l R * ((1 + X) * M)ᵀ - J l R =
+      X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ := by
+  calc
+    (1 + X) * M * J l R * ((1 + X) * M)ᵀ - J l R =
+        (1 + X) * (M * J l R * Mᵀ) * (1 + Xᵀ) - J l R := by
+          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
+          noncomm_ring
+    _ = (1 + X) * (J l R + E) * (1 + Xᵀ) - J l R := by rw [← hM, add_sub_cancel]
+    _ = (E + X * J l R + J l R * Xᵀ) +
+          (X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ) := by
+        noncomm_ring
+    _ = _ := by rw [hX, zero_add]
+
 /-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `X` has entries in a
 square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
 theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal R))
@@ -428,19 +448,9 @@ theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal
   have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hE_mem hXt_mem
   have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
     mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hXJ_mem hXt_mem
-  rw [SymplecticGroup.mem_iff]
-  calc
-    (1 + X) * M * J l R * ((1 + X) * M).transpose =
-        (1 + X) * (M * J l R * Mᵀ) * (1 + Xᵀ) := by
-          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
-          noncomm_ring
-    _ = (1 + X) * (J l R + E) * (1 + Xᵀ) := by rw [← hM, add_sub_cancel]
-    _ = J l R + (E + X * J l R + J l R * Xᵀ) +
-          X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ := by
-        noncomm_ring
-    _ = J l R := by
-        rw [hX, hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
-        simp
+  rw [SymplecticGroup.mem_iff, ← sub_eq_zero, one_add_mul_mul_J_mul_transpose_sub_J hM hX,
+    hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
+  simp
 
 end Matrix
 
