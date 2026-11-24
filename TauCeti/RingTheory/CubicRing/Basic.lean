@@ -323,7 +323,7 @@ noncomputable def basis (f : Cubic R) : Module.Basis (Fin 3) R f.CubicRing :=
 @[simp] theorem basis_repr_apply (x : f.CubicRing) :
     (basis f).repr x = ![x.c₀, x.c₁, x.c₂] := by
   funext i
-  exact Module.Basis.ofEquivFun_repr_apply _ _ _
+  rw [basis, Module.Basis.ofEquivFun_repr_apply, linearEquivTuple_apply]
 
 @[simp] theorem basis_apply_zero : basis f 0 = 1 := by
   ext <;> simp [basis]
@@ -531,11 +531,12 @@ theorem discr_basis : Algebra.discr R (basis f) = f.discr := by
 /-- The discriminant of the cubic ring `R(f)` with respect to the negated basis `⟨1, -ω, -θ⟩` is
 also the discriminant of `f`. -/
 theorem discr_negBasis : Algebra.discr R (negBasis f) = f.discr := by
-  rw [Algebra.discr_def, Matrix.det_fin_three]
-  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply,
-    negBasis_apply_zero, negBasis_apply_one, negBasis_apply_two, trace_apply]
-  simp [Cubic.discr]
-  ring
+  have h : ⇑(negBasis f) =
+      ((Matrix.diagonal ![1, -1, -1]).map (algebraMap R f.CubicRing)).mulVec ⇑(basis f) := by
+    funext i
+    fin_cases i <;> simp [Matrix.diagonal_map, Matrix.mulVec_diagonal]
+  rw [h, Algebra.discr_of_matrix_mulVec, discr_basis, Matrix.det_diagonal, Fin.prod_univ_three]
+  simp
 
 end CommRing
 
