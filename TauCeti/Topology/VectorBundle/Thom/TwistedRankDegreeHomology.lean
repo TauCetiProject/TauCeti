@@ -914,7 +914,8 @@ private theorem fiberSignIso_inv_comp_overUnivIso_hom (b : B) (o : Orientation �
   -- What remains is the inverse of `TauCeti.fiberThomPairSignLocalSystemIso`, unfolded: the
   -- trivialization of the fibre over `b` in the Thom pair over the whole base, followed by the
   -- identifications of the pulled-back systems.
-  congr 2
+  simp only [fiberThomPairSignLocalSystemIso, Iso.trans_inv, Functor.mapIso_inv, eqToIso.inv,
+    Category.assoc]
 
 /-- **The fibre class read on the fibre pair in the Thom pair.** For a linear trivialization `e` at
 `b`, the fibre class over `b` is the image under the fibre inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)`
