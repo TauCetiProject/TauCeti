@@ -244,8 +244,7 @@ private theorem dual_cotangentSpaceMap_toCotangent
         (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f
           ((ψ : H →ₐ[K] H) x.val)) := by
   rw [← Bialgebra.cotangentMap_augmentation K H x, Bialgebra.cotangentSpaceMap_cotangentMap,
-    Derivation.algEquivSelf_cotangentLinearEquiv_apply]
-  rfl
+    Derivation.algEquivSelf_cotangentLinearEquiv_apply, BialgHom.coe_toAlgHom]
 
 /-- A counit-preserving algebra endomorphism preserves the augmentation ideal. -/
 private theorem augmentationIdeal_le_comap_of_counit_comp {f : H →ₐ[K] H}

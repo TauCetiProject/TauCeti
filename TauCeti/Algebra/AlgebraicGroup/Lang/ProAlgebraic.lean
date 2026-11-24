@@ -106,7 +106,10 @@ private theorem langFiberFunctor_obj
         g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop} :=
   rfl
 
-/-- Underlying `K`-point of an element in a fiber of `langFiberFunctor`. -/
+/-- Underlying `K`-point of an element in a fiber of `langFiberFunctor`. Because
+`(langFiberFunctor D n a ha).obj i` is not syntactically a `Subtype` until `langFiberFunctor` is
+unfolded, this projection and `langFiberFunctorVal_eq` isolate that definitional unfolding from
+downstream proofs. -/
 private noncomputable def langFiberFunctorVal
     {ι : Type r} [Category* ι]
     {D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F} {n : ℕ}
@@ -139,8 +142,16 @@ private theorem langFiberFunctor_map_val
     {i j : ιᵒᵖ} (f : i ⟶ j) (g : (langFiberFunctor D n a ha).obj i) :
     langFiberFunctorVal ((langFiberFunctor D n a ha).map f g) =
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop))
-        (langFiberFunctorVal g) :=
-  rfl
+        (langFiberFunctorVal g) := by
+  -- `langFiberFunctor.map f` is `TypeCat.ofHom` on `langFiberFunctor.obj`, which is not
+  -- syntactically a `Subtype`; `change` exposes `TypeCat.ofHom` at the `obj` types so
+  -- `TypeCat.ofHom_apply` applies.
+  change ((TypeCat.ofHom fun g' : (langFiberFunctor D n a ha).obj i =>
+      (⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop))
+          (langFiberFunctorVal g'),
+        ((langFiberFunctor D n a ha).map f g').property⟩ :
+        (langFiberFunctor D n a ha).obj j)) g).val = _
+  rw [TypeCat.ofHom_apply]
 
 variable [IsAlgClosed K]
 
