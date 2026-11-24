@@ -26,7 +26,10 @@ argument, gives a continuous family
 (`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
 nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`), and conjugating a continuous bilinear
 map by linear isometric equivalences in both inputs and in the output preserves its operator norm
-(`ContinuousLinearMap.opNorm_compL_bilinearComp_linearIsometryEquiv`).
+(`ContinuousLinearMap.opNorm_compL_bilinearComp_linearIsometryEquiv`). Pulling back a continuous
+family of bilinear maps along two fixed maps is also a continuous linear operation
+(`ContinuousLinearMap.bilinearCompL`), giving `ContinuousOn.bilinearComp` and
+`Continuous.bilinearComp` even when all spaces are only seminormed.
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
@@ -86,11 +89,31 @@ theorem piBilin_apply {ι : Type*} {G : ι → Type*}
     piBilin B x y i = B i x y :=
   (rfl)
 
+section BilinearComp
+
+variable {V' W' : Type*} [SeminormedAddCommGroup V'] [NormedSpace 𝕜 V']
+  [SeminormedAddCommGroup W'] [NormedSpace 𝕜 W']
+
+/-- Pull back a bilinear map along `e` in the first slot and `f` in the second slot, as a
+continuous linear map in the bilinear map. -/
+def bilinearCompL (e : V' →L[𝕜] V) (f : W' →L[𝕜] W) :
+    (V →L[𝕜] W →L[𝕜] G) →L[𝕜] V' →L[𝕜] W' →L[𝕜] G :=
+  (compL 𝕜 V' (W →L[𝕜] G) (W' →L[𝕜] G) ((compL 𝕜 W' W G).flip f)).comp
+    ((compL 𝕜 V' V (W →L[𝕜] G)).flip e)
+
+/-- The bundled pullback acts by precomposition in both slots. -/
+@[simp]
+theorem bilinearCompL_apply (e : V' →L[𝕜] V) (f : W' →L[𝕜] W)
+    (B : V →L[𝕜] W →L[𝕜] G) : bilinearCompL e f B = B.bilinearComp e f := by
+  ext v w
+  simp only [bilinearCompL, comp_apply, compL_apply, flip_apply, bilinearComp_apply]
+
+end BilinearComp
+
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/
 def pullbackBilinL (u : W →L[𝕜] V) : (V →L[𝕜] V →L[𝕜] G) →L[𝕜] W →L[𝕜] W →L[𝕜] G :=
-  (compL 𝕜 W (V →L[𝕜] G) (W →L[𝕜] G) ((compL 𝕜 W V G).flip u)).comp
-    ((compL 𝕜 W V (V →L[𝕜] G)).flip u)
+  bilinearCompL u u
 
 @[simp]
 theorem pullbackBilinL_apply (u : W →L[𝕜] V) (B : V →L[𝕜] V →L[𝕜] G) (v w : W) :
@@ -345,6 +368,34 @@ theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingH
 end Semilinear₂
 
 end ContinuousLinearMap
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {X V W F G F' : Type*} [TopologicalSpace X]
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {c : X → V →L[𝕜] W →L[𝕜] F'}
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity on a set. All spaces need only seminorms. -/
+theorem ContinuousOn.bilinearComp {s : Set X} (hc : ContinuousOn c s)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    ContinuousOn (fun r ↦ (c r).bilinearComp e f) s := by
+  simpa only [Function.comp_def, ContinuousLinearMap.bilinearCompL_apply] using
+    (ContinuousLinearMap.bilinearCompL (G := F') e f).continuous.comp_continuousOn hc
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity. All spaces need only seminorms. -/
+theorem Continuous.bilinearComp (hc : Continuous c)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    Continuous (fun r ↦ (c r).bilinearComp e f) :=
+  continuousOn_univ.mp (hc.continuousOn.bilinearComp e f)
+
+end BilinearComp
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
