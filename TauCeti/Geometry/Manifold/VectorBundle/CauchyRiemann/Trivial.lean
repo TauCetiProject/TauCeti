@@ -317,8 +317,9 @@ theorem contMDiffCovariantDerivativeOn_dbarFunction [FiniteDimensional ℝ E] [T
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     ContMDiffCovariantDerivativeOn F n (V := Bundle.Trivial M F) j.dbarFunction Set.univ where
   contMDiff {σ} hσ := by
-    have hd := (CovariantDerivative.ContMDiffCovariantDerivative.contMDiff
-      (cov := CovariantDerivative.trivial (I := I) (M := M) F) (k := n)).contMDiff hσ
+    have htriv : (CovariantDerivative.trivial (I := I) (M := M) F).ContMDiffCovariantDerivative n :=
+      inferInstance
+    have hd := htriv.contMDiff.contMDiff hσ
     rw [contMDiffOn_univ] at hd
     have hdj := hd.clm_bundle_comp (j.toEndomorphism.contMDiff.of_le hn)
     have h := (hd.add_section (contMDiffOn_univ.1 (Manifold.contMDiffOn_hom_const_smul hn
@@ -404,8 +405,9 @@ theorem contMDiffCovariantDerivativeOn_delFunction [FiniteDimensional ℝ E] [T2
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     ContMDiffCovariantDerivativeOn F n (V := Bundle.Trivial M F) j.delFunction Set.univ where
   contMDiff {σ} hσ := by
-    have hd := (CovariantDerivative.ContMDiffCovariantDerivative.contMDiff
-      (cov := CovariantDerivative.trivial (I := I) (M := M) F) (k := n)).contMDiff hσ
+    have htriv : (CovariantDerivative.trivial (I := I) (M := M) F).ContMDiffCovariantDerivative n :=
+      inferInstance
+    have hd := htriv.contMDiff.contMDiff hσ
     refine (hd.sub_section ((j.contMDiffCovariantDerivativeOn_dbarFunction hn).contMDiff
       hσ)).congr fun y _ ↦ ?_
     rw [Pi.sub_apply, CovariantDerivative.trivial_apply, delFunction]

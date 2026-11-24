@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Smoothness of the complemented-kernel implicit function theorem
@@ -65,6 +67,12 @@ and `h` is as smooth as `f` and `g`.
 * `ContinuousLinearMap.implicitCoordEquiv`: the derivative `x ↦ (f' x, P x)` of the coordinate
   map, as a continuous linear equivalence; its inverse is the inclusion on `{0} × ker f'`
   (`ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk`).
+* `ContinuousLinearMap.linearCoord`: for a surjective linear map `A` between finite-dimensional
+  real spaces, the coordinates `x ↦ (A x, P x)` with `P` a projection onto `ker A`
+  (`ContinuousLinearMap.linearCoord_apply_fst`, `ContinuousLinearMap.linearCoord_coe`),
+  and the linear section `ContinuousLinearMap.linearSection` of `A`, `y ↦ L⁻¹ (y, 0)`
+  (`ContinuousLinearMap.apply_linearSection`, `ContinuousLinearMap.linearCoord_linearSection`).
+  Every `x` is `s (A x) + P x` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`).
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
 * `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
@@ -224,6 +232,79 @@ theorem exists_continuousLinearEquiv_symm_eq {G : Type*} [NormedAddCommGroup G]
       Prod.fst_swap, Prod.snd_swap]
   exact ⟨A, fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply],
     fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply]⟩
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+/-! ### Linear coordinates adapted to a surjective linear map -/
+
+section LinearCoord
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  (A : E →L[ℝ] E') (hA : Function.Surjective A)
+
+/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
+`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
+noncomputable def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
+  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
+
+/-- The first component of `linearCoord` is `A`. -/
+@[simp]
+theorem linearCoord_apply_fst (x : E) : (A.linearCoord hA x).1 = A x := by
+  simp [linearCoord]
+
+/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
+noncomputable def linearSection : E' →L[ℝ] E :=
+  ((A.linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
+    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
+
+/-- `linearSection` is `y ↦ L⁻¹ (y, 0)`, where `L = linearCoord`. -/
+theorem linearSection_apply (y : E') :
+    A.linearSection hA y = (A.linearCoord hA).symm (y, 0) := by
+  simp [linearSection]
+
+/-- The inverse of `linearCoord` sends `(y, k)` to `s y + k`, where `s = linearSection`. -/
+@[simp]
+theorem linearCoord_symm_apply (y : E') (k : (A : E →ₗ[ℝ] E').ker) :
+    (A.linearCoord hA).symm (y, k) = A.linearSection hA y + k := by
+  have h : ((y, k) : E' × (A : E →ₗ[ℝ] E').ker) = (y, 0) + (0, k) := by simp
+  rw [h, map_add, linearSection_apply, linearCoord, A.implicitCoordEquiv_symm_apply_zero_mk]
+
+/-- In the coordinates `linearCoord`, an element `k` of `ker A` is `(0, k)`: the second component
+of `linearCoord` is a projection onto `ker A`. -/
+@[simp]
+theorem linearCoord_coe (k : (A : E →ₗ[ℝ] E').ker) : A.linearCoord hA k = (0, k) := by
+  have h := A.linearCoord_symm_apply hA 0 k
+  rw [map_zero, zero_add, ContinuousLinearEquiv.symm_apply_eq] at h
+  exact h.symm
+
+/-- In the coordinates `linearCoord`, `linearSection y` is `(y, 0)`. -/
+@[simp]
+theorem linearCoord_linearSection (y : E') :
+    A.linearCoord hA (A.linearSection hA y) = (y, 0) := by
+  rw [linearSection_apply, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- `linearSection` is a pointwise right inverse of `A`. -/
+@[simp]
+theorem apply_linearSection (y : E') : A (A.linearSection hA y) = y := by
+  rw [← A.linearCoord_apply_fst hA, linearCoord_linearSection]
+
+/-- `linearSection` is a right inverse of `A`. -/
+@[simp]
+theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.id ℝ E' := by
+  ext y
+  exact A.apply_linearSection hA y
+
+/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
+second component of `linearCoord`. -/
+theorem linearSection_add_linearCoord_snd (x : E) :
+    A.linearSection hA (A x) + ((A.linearCoord hA x).2 : E) = x := by
+  rw [← linearCoord_symm_apply, ← A.linearCoord_apply_fst hA x]
+  exact (A.linearCoord hA).symm_apply_apply x
+
+end LinearCoord
 
 end ContinuousLinearMap
 

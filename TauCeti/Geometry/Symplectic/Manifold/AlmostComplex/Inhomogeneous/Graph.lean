@@ -8,25 +8,40 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Basic
 public import TauCeti.Geometry.Symplectic.Prod.Skew
 public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The native skew graph construction for finite-regularity forcing data
 
-The pointwise graph structure is the existing skew product, transported through the canonical
-product tangent equivalence. For an antilinear forcing term its vertical component is
-`J v - 2 J ν ζ`. The square identity is inherited from the native skew construction.
-Standard complex model coordinates agree with the existing arbitrary-one-form
-`Floer.graphStructure` by its general skew-product comparison.
+Let `j` be a `Cⁿ` almost complex structure on a domain manifold `P`, `J` a jointly `Cⁿ`
+domain-dependent almost complex structure on the target `M`, and `A` a native `Cⁿ` Hom section
+from the domain tangent bundle to the target tangent bundle over `P × M`. Gromov's graph
+structure on `P × M` is the skew product of `j` and `J` along `A`: at `q = (p, x)` it sends
+`(ξ, v)` to `(j ξ, J (v - A ξ) + A (j ξ))`. For finite-dimensional models it is a `Cⁿ` almost
+complex structure on the product manifold, a `Cⁿ` section of the endomorphism bundle of the whole
+tangent bundle of `P × M` (`TauCeti.DomainDependentHomSection.graphStructure`). At each point it is
+the existing pointwise skew product, transported through the canonical product tangent
+equivalence (`TauCeti.DomainDependentHomSection.almostComplexStructureAt_graphStructure`). For
+`A = 0` it is the block structure `(ξ, v) ↦ (j ξ, J v)` of
+`TauCeti.ContMDiffAlmostComplexStructure.prodFamily`
+(`TauCeti.DomainDependentHomSection.graphStructure_zero`).
 
+For an antilinear forcing term `ν` the pointwise structure is `ν.graphStructureAt`, whose vertical
+component is `J v - 2 J ν ζ`; the square identity is inherited from the native skew construction.
 The pointwise structures assemble into a `Cⁿ` almost complex structure on `P × M`
 (`TauCeti.InhomogeneousTerm.graphStructure`), of the same regularity `n` as the domain structure
-`j`, the domain-dependent target structure `J` and the forcing term `ν`. In the tangent
-trivialization of `P × M` at a point, which is the product of the trivializations of the factors,
-the structure is the block matrix with diagonal blocks `j` and `J` and lower block `-2 J ν`, each
-read in the trivializations of the factors. This is the regularity under which compactness for
-unperturbed pseudoholomorphic curves in `P × M` applies to graphs of solutions of the
+`j`, the domain-dependent target structure `J` and the forcing term `ν`, without any
+finite-dimensionality assumption. In the tangent trivialization of `P × M` at a point, which is
+the product of the trivializations of the factors, the structure is the block matrix with diagonal
+blocks `j` and `J` and lower block `-2 J ν`, each read in the trivializations of the factors. For
+finite-dimensional models it is the general graph structure along `ν`
+(`TauCeti.InhomogeneousTerm.val_graphStructure`). This is the regularity under which compactness
+for unperturbed pseudoholomorphic curves in `P × M` applies to graphs of solutions of the
 inhomogeneous equation. A weak manifold graph equation requires its separate Sobolev derivative
-and chart assembly.
+and chart assembly. Standard complex model coordinates agree with the existing arbitrary-one-form
+`Floer.graphStructure` by its general skew-product comparison.
 
 ## References
 
@@ -40,6 +55,128 @@ public noncomputable section
 
 open Bundle
 open scoped Manifold ContDiff Topology
+
+namespace TauCeti.DomainDependentHomSection
+
+variable {E H M EP HP P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+  {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+  [IsManifold IP ∞ P] {n : ℕ∞}
+  (A : DomainDependentHomSection I M IP P n) (j : ContMDiffAlmostComplexStructure IP n P)
+  (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+
+/-- The skew product `(ξ, v) ↦ (j ξ, J (v - A ξ) + A (j ξ))` on the product of the tangent
+spaces at `q`. -/
+private def graphLinear (q : P × M) :
+    TangentSpace IP q.1 × TangentSpace I q.2 →L[ℝ] TangentSpace IP q.1 × TangentSpace I q.2 :=
+  let fst := ContinuousLinearMap.fst ℝ (TangentSpace IP q.1) (TangentSpace I q.2)
+  let snd := ContinuousLinearMap.snd ℝ (TangentSpace IP q.1) (TangentSpace I q.2)
+  ((j.toEndomorphism q.1).comp fst).prod
+    ((J.tangentEndomorphism q).comp (snd - (A.tangentHom q).comp fst) +
+      (A.tangentHom q).comp ((j.toEndomorphism q.1).comp fst))
+
+private theorem graphLinear_apply (q : P × M) (v : TangentSpace IP q.1 × TangentSpace I q.2) :
+    graphLinear A j J q v =
+      (j q.1 v.1,
+        J.tangentEndomorphism q (v.2 - A.tangentHom q v.1) + A.tangentHom q (j q.1 v.1)) :=
+  rfl
+
+private theorem graphLinear_graphLinear (q : P × M)
+    (v : TangentSpace IP q.1 × TangentSpace I q.2) :
+    graphLinear A j J q (graphLinear A j J q v) = -v := by
+  simp only [graphLinear_apply, add_sub_cancel_right, J.tangentEndomorphism_apply_apply,
+    j.apply_apply, map_neg, map_sub]
+  ext <;> simp
+
+/-- The skew product as an endomorphism of the tangent space of `P × M` at `q`. -/
+private def graphEndomorphism (q : P × M) :
+    TangentSpace (IP.prod I) q →L[ℝ] TangentSpace (IP.prod I) q :=
+  (Manifold.tangentSpaceProdEquiv q).symm.toContinuousLinearMap.comp
+    ((graphLinear A j J q).comp (Manifold.tangentSpaceProdEquiv q).toContinuousLinearMap)
+
+private theorem graphEndomorphism_apply (q : P × M) (v : TangentSpace (IP.prod I) q) :
+    graphEndomorphism A j J q v = (Manifold.tangentSpaceProdEquiv q).symm
+      (graphLinear A j J q (Manifold.tangentSpaceProdEquiv q v)) :=
+  rfl
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP]
+
+/-- The skew product is a `Cⁿ` section of the endomorphism bundle of `T(P × M)`. -/
+private theorem contMDiff_graphEndomorphism :
+    ContMDiff (IP.prod I) ((IP.prod I).prod 𝓘(ℝ, (EP × E) →L[ℝ] EP × E)) n
+      (fun q ↦ TotalSpace.mk' ((EP × E) →L[ℝ] EP × E)
+        (E := fun q : P × M ↦ TangentSpace (IP.prod I) q →L[ℝ] TangentSpace (IP.prod I) q) q
+        (graphEndomorphism A j J q)) := by
+  refine (TauCeti.contMDiff_hom_bundle_iff _).2 ?_
+  -- On total spaces, split a tangent vector of `P × M` into its components `(ξ, v)`.
+  have hsplit := contMDiff_equivTangentBundleProd (I := IP) (M := P) (I' := I) (M' := M) (n := n)
+  have hproj : ContMDiff (IP.prod I).tangent (IP.prod I) n
+      (fun r : TangentBundle (IP.prod I) (P × M) ↦ r.proj) := contMDiff_proj _
+  have hv : ContMDiff (IP.prod I).tangent I.tangent n
+      (fun r : TangentBundle (IP.prod I) (P × M) ↦ TotalSpace.mk' E r.proj.2 r.snd.2) :=
+    (contMDiff_snd.comp hsplit).congr fun r ↦ by
+      rw [Function.comp_apply, equivTangentBundleProd_apply]
+  -- The horizontal component `j ξ` and the vertical component `J (v - A ξ) + A (j ξ)`.
+  have hhor := j.contMDiff_apply le_rfl (contMDiff_fst.comp hproj) hsplit.fst
+  have hver := ((J.contMDiff_tangentEndomorphism.comp hproj).clm_bundle_apply
+    (hv.sub_sectionAlong (A.contMDiff_apply hproj hsplit.fst))).add_sectionAlong
+      (A.contMDiff_apply hproj hhor)
+  refine (contMDiff_equivTangentBundleProd_symm.comp (hhor.prodMk hver)).congr fun r ↦ ?_
+  rw [graphEndomorphism_apply, graphLinear_apply]
+  simp only [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_symm_apply,
+    Function.comp_apply]
+  rw [Equiv.eq_symm_apply, equivTangentBundleProd_apply]
+
+/-- **Gromov's graph structure** on `P × M`: the skew product of a `Cⁿ` structure `j` on `P` and a
+jointly `Cⁿ` domain-dependent structure `J` on `M` along a native `Cⁿ` Hom section `A`, sending
+`(ξ, v)` to `(j ξ, J (v - A ξ) + A (j ξ))`. It is a `Cⁿ` almost complex structure on the product
+manifold `P × M`. -/
+def graphStructure : ContMDiffAlmostComplexStructure (IP.prod I) n (P × M) where
+  toEndomorphism := ⟨graphEndomorphism A j J, contMDiff_graphEndomorphism A j J⟩
+  square_neg q := ContinuousLinearMap.ext fun v ↦ by
+    -- Keep the product identifications so that they cancel against their inverses.
+    simp [graphEndomorphism_apply, graphLinear_graphLinear,
+      -Manifold.tangentSpaceProdEquiv_apply, -Manifold.tangentSpaceProdEquiv_symm_apply]
+
+/-- Gromov's graph structure sends `(ξ, v)` to `(j ξ, J (v - A ξ) + A (j ξ))`, under the canonical
+identification of the tangent space of `P × M` with the product of the tangent spaces. -/
+@[simp]
+theorem graphStructure_apply (q : P × M) (v : TangentSpace (IP.prod I) q) :
+    A.graphStructure j J q v = (Manifold.tangentSpaceProdEquiv q).symm
+      (j q.1 (Manifold.tangentSpaceProdEquiv q v).1,
+        J.tangentEndomorphism q ((Manifold.tangentSpaceProdEquiv q v).2 -
+            A.tangentHom q (Manifold.tangentSpaceProdEquiv q v).1) +
+          A.tangentHom q (j q.1 (Manifold.tangentSpaceProdEquiv q v).1)) :=
+  graphEndomorphism_apply A j J q v
+
+/-- At each point, Gromov's graph structure is the pointwise skew product of `j` and `J` along
+`A`, transported through the canonical product tangent equivalence. -/
+theorem almostComplexStructureAt_graphStructure (q : P × M) :
+    (A.graphStructure j J).almostComplexStructureAt q =
+      ((j.almostComplexStructureAt q.1).skewProd
+        ((J.freeze q.1).almostComplexStructureAt q.2) (A.tangentHom q).toLinearMap).transport
+          (Manifold.tangentSpaceProdEquiv q).symm.toLinearEquiv := by
+  ext v
+  rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, graphStructure_apply,
+    AlmostComplexStructure.transport_apply, AlmostComplexStructure.skewProd_apply]
+  simp only [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,
+    ContinuousLinearMap.coe_coe, J.freeze_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toLinearEquiv]
+
+/-- For `A = 0`, Gromov's graph structure is the block structure `(ξ, v) ↦ (j ξ, J v)` of
+`TauCeti.ContMDiffAlmostComplexStructure.prodFamily`. -/
+theorem graphStructure_zero :
+    (0 : DomainDependentHomSection I M IP P n).graphStructure j J =
+      j.prodFamily (fun q ↦ (J.freeze q.1).almostComplexStructureAt q.2)
+        J.contMDiff_freeze_almostComplexStructureAt := by
+  refine ContMDiffAlmostComplexStructure.ext fun q v ↦ ?_
+  rw [graphStructure_apply, ContMDiffAlmostComplexStructure.prodFamily_apply, tangentHom_zero,
+    zero_apply, zero_apply, sub_zero, add_zero]
+  simp only [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, J.freeze_apply]
+
+end TauCeti.DomainDependentHomSection
 
 namespace TauCeti.InhomogeneousTerm
 
@@ -268,6 +405,18 @@ theorem almostComplexStructureAt_graphStructure (ν : InhomogeneousTerm j J) (q 
     ν.graphStructure.almostComplexStructureAt q = ν.graphStructureAt q := by
   ext v
   rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, graphStructure_apply]
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP] in
+/-- For finite-dimensional models, the `Cⁿ` graph structure of a forcing term is the general
+graph structure `TauCeti.DomainDependentHomSection.graphStructure` along `ν`. -/
+theorem val_graphStructure (ν : InhomogeneousTerm j J) :
+    ν.val.graphStructure j J = ν.graphStructure :=
+  ContMDiffAlmostComplexStructure.ext fun q v ↦ by
+    rw [← ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,
+      DomainDependentHomSection.almostComplexStructureAt_graphStructure,
+      ← ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,
+      almostComplexStructureAt_graphStructure]
+    rfl
 
 end Regularity
 

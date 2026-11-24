@@ -22,8 +22,9 @@ is an isomorphism (`TauCeti.complexTensorProductEquivProd`). Its components are 
 multiplication map and its twist by complex conjugation. For `A = ℂ` this is the splitting of the
 étale `ℝ`-algebra `ℂ` over `ℂ` along its two points `id` and `conj`; on points of the Weil
 restriction `Res_{ℂ/ℝ} 𝔾ₘ` it gives the splitting of the Deligne torus over `ℂ`. The splitting is
-natural in `A` (`TauCeti.complexTensorProductEquivProd_lTensor`), and for `A = ℂ` conjugation of
-the second factor exchanges the two components up to conjugation
+natural in `A` (`TauCeti.complexTensorProductEquivProd_lTensor`), and a conjugate-linear algebra
+map exchanges the two components (`TauCeti.complexTensorProductEquivProd_lTensor_of_map_smul`). For
+`A = ℂ`, conjugation of the second factor exchanges the two components up to conjugation
 (`TauCeti.complexTensorProductEquivProd_lTensor_conjAe`).
 
 In particular, for nontrivial `A` the tensor product `ℂ ⊗[ℝ] A` has zero divisors. Explicit
@@ -161,16 +162,26 @@ theorem complexTensorProductEquivProd_lTensor {B : Type*} [Ring B] [Algebra ℝ 
   | tmul a x => simp
   | add t u ht hu => simp only [map_add, ht, hu, Prod.fst_add, Prod.snd_add, Prod.mk_add_mk]
 
+/-- **A conjugate-linear map exchanges the two components**: for a real algebra map `h : A → B`
+with `h (a • x) = conj a • h x`, the splitting of `ℂ ⊗[ℝ] B` after `ℂ ⊗ h` is `h` applied to the
+two components of the splitting of `ℂ ⊗[ℝ] A`, in the opposite order. -/
+theorem complexTensorProductEquivProd_lTensor_of_map_smul {B : Type*} [Ring B] [Algebra ℝ B]
+    [Algebra ℂ B] [IsScalarTower ℝ ℂ B] (h : A →ₐ[ℝ] B)
+    (hh : ∀ (a : ℂ) (x : A), h (a • x) = starRingEnd ℂ a • h x) (t : ℂ ⊗[ℝ] A) :
+    complexTensorProductEquivProd B (Algebra.TensorProduct.lTensor (S := ℂ) ℂ h t) =
+      (h (complexTensorProductEquivProd A t).2, h (complexTensorProductEquivProd A t).1) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul a x => simp [hh]
+  | add t u ht hu => simp only [map_add, ht, hu, Prod.fst_add, Prod.snd_add, Prod.mk_add_mk]
+
 /-- **Complex conjugation exchanges the two components**: on `ℂ ⊗[ℝ] ℂ`, conjugating the second
 factor turns a pair `(u, v)` into `(conj v, conj u)`. -/
 theorem complexTensorProductEquivProd_lTensor_conjAe (t : ℂ ⊗[ℝ] ℂ) :
     complexTensorProductEquivProd ℂ
         (Algebra.TensorProduct.lTensor (S := ℂ) ℂ Complex.conjAe.toAlgHom t) =
       (starRingEnd ℂ (complexTensorProductEquivProd ℂ t).2,
-        starRingEnd ℂ (complexTensorProductEquivProd ℂ t).1) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul a x => simp [Complex.conjAe_coe, mul_comm]
-  | add t u ht hu => simp only [map_add, ht, hu, Prod.fst_add, Prod.snd_add, Prod.mk_add_mk]
+        starRingEnd ℂ (complexTensorProductEquivProd ℂ t).1) :=
+  complexTensorProductEquivProd_lTensor_of_map_smul _ (fun a x ↦ by simp [Complex.conjAe_coe]) t
 
 end Splitting
 

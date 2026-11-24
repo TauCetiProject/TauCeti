@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Adjoin.FG
 import TauCeti.LinearAlgebra.TensorProduct.Separation
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Tensor products over a field that are domains
@@ -80,11 +81,7 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
   let φ : A ⊗[K] L →ₐ[K] B ⊗[K] L :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom K A B) (AlgHom.id K L)
   algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[K] L) (B ⊗[K] L) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (B ⊗[K] L) :=
-    IsLocalization.tensorProduct_tensorProduct K L M B
-      (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  have := IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq K L M B rfl
   -- `A ⟶ A ⊗[K] L` is injective, so it carries the nonzero divisors `M` to nonzero elements.
   have hinj : Function.Injective (algebraMap A (A ⊗[K] L)) :=
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective

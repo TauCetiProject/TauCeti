@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
@@ -234,7 +236,7 @@ lemma δ_curry (w : Cochain (K ⊗ L) M n) (m : ℤ) : δ n m w.curry = (δ n m 
   rw [Cochain.add_v, zsmul_linearHomComplex_v,
     δ_v (p + n) q (by omega) _ a b hab (b - 1) (a + 1) (by omega) rfl]
   have hd := congr(ModuleCat.Hom.hom
-    $(ι_tensorObj_d' K L (rfl : p + a = p + a) rfl rfl rfl) (x ⊗ₜ y))
+    $(ιTensorObj_tensor_d' K L (rfl : p + a = p + a) rfl rfl rfl) (x ⊗ₜ y))
   simp only [ModuleCat.hom_add, ModuleCat.hom_comp, LinearMap.add_apply, LinearMap.comp_apply,
     Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply,

@@ -83,6 +83,9 @@ the linear algebra itself is standard.
   its determinant.
 * `LinearEquiv.detLineCongr_neg_apply`: negation acts on the determinant line by
   `(-1) ^ finrank R V`.
+* `LinearEquiv.detLineCongr_symm_dualMap_apply_eq_det_symm_smul`,
+  `LinearEquiv.lTensor_detLineCongr_symm_dualMap_apply`: an automorphism `e` acts on the dual of
+  the determinant line, and on the dual factor of `X ⊗ (det W)^*`, by `det e⁻¹`.
 * `LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and
   `e'` of `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
@@ -95,6 +98,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
   `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
   functorial.
+* `LinearMap.detLineEquivOfBijective_detLineCongrOfEq`: for equal bijective maps, that
+  identification commutes with the identifications of the determinant lines with the scalars.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -179,6 +184,15 @@ theorem coe_detLineCongr (e : V ≃ₗ[R] W) (x : detLine R V) :
   rw [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
   exact exteriorPower.coe_map _ x
 
+/-- An isomorphism `e` sends an element of a determinant line that is the exterior product of a
+family `v` to the exterior product of the image of `v`. Unlike `LinearEquiv.detLineCongr_ιMulti`,
+the element is given by its value in the exterior algebra, so `v` may have any length and no
+`Fin.cast` renumbering appears. -/
+theorem coe_detLineCongr_of_coe_eq_ιMulti (e : V ≃ₗ[R] W) {x : detLine R V} {n : ℕ}
+    {v : Fin n → V} (hx : (x : ExteriorAlgebra R V) = ExteriorAlgebra.ιMulti R n v) :
+    (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.ιMulti R n (e ∘ v) := by
+  rw [coe_detLineCongr, hx, ExteriorAlgebra.map_apply_ιMulti, LinearEquiv.coe_coe]
+
 @[simp]
 theorem detLineCongr_refl : detLineCongr (LinearEquiv.refl R V) = LinearEquiv.refl R _ := by
   ext x
@@ -211,6 +225,25 @@ theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
     LinearEquiv.det_eq_pow_of_forall_eq_smul _ (-1) fun x ↦ by simp, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one]
 
+/-- The dual of the action of the inverse of an automorphism `e` of a free module on its
+determinant line is multiplication by `det e⁻¹`. -/
+theorem detLineCongr_symm_dualMap_apply_eq_det_symm_smul [Module.Free R W] (e : W ≃ₗ[R] W)
+    (φ : Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap φ = LinearMap.det (e.symm : W →ₗ[R] W) • φ := by
+  refine LinearMap.ext fun y ↦ ?_
+  rw [dualMap_apply, detLineCongr_symm, detLineCongr_apply_eq_det_smul, _root_.map_smul,
+    LinearMap.smul_apply]
+
+/-- An automorphism `e` of a free module `W` acts on `X ⊗ (det W)^*` through the dual factor by
+multiplication by `det e⁻¹`. -/
+theorem lTensor_detLineCongr_symm_dualMap_apply [Module.Free R W] {X : Type*} [AddCommGroup X]
+    [Module R X] (e : W ≃ₗ[R] W) (z : X ⊗[R] Dual R (detLine R W)) :
+    e.detLineCongr.symm.dualMap.lTensor X z = LinearMap.det (e.symm : W →ₗ[R] W) • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    rw [lTensor_tmul, detLineCongr_symm_dualMap_apply_eq_det_symm_smul, TensorProduct.tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
 /-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
 `det e * (det e')⁻¹`. -/
 theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
@@ -219,14 +252,9 @@ theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Mod
       (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    -- The dual factor is precomposed with the inverse of multiplication by `det e'`.
-    have hφ : e'.detLineCongr.symm.dualMap φ = ((LinearEquiv.det e')⁻¹ : Rˣ) • φ := by
-      refine LinearMap.ext fun y ↦ ?_
-      have hy : e'.detLineCongr.symm y = ((LinearEquiv.det e')⁻¹ : Rˣ) • y := by
-        rw [LinearEquiv.symm_apply_eq, detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
-          ← Units.smul_def, smul_inv_smul]
-      rw [dualMap_apply, hy, LinearMap.smul_apply, Units.smul_def, Units.smul_def, _root_.map_smul]
-    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul,
+      detLineCongr_symm_dualMap_apply_eq_det_symm_smul, ← LinearEquiv.coe_det,
+      ← LinearEquiv.coe_det, LinearEquiv.det_symm, map_inv]
     simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
   | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
@@ -585,6 +613,15 @@ theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
     (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
   subst h
   simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
+
+/-- The identification of the determinant lines of equal bijective maps commutes with their
+identifications with the scalars. -/
+@[simp]
+theorem detLineEquivOfBijective_detLineCongrOfEq [Nontrivial R] {g : M →ₗ[R] N} (h : f = g)
+    (hg : Function.Bijective g) (z : f.detLine) :
+    detLineEquivOfBijective hg (detLineCongrOfEq h z) = detLineEquivOfBijective (h ▸ hg) z := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
 
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that

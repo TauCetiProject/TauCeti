@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The spectral sequence of a filtered space
@@ -47,11 +48,21 @@ singular chains.
   graded pieces `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`, whose connecting map is the
   first differential (`CochainComplex.spectralSequence_first_page_d_eq`), is isomorphic to the
   relative singular chain sequence of the triple.
-* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`).
+* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`),
+  and the `q`th piece of its filtration is the image of `Hₙ(X q) ⟶ Hₙ(Y)`
+  (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`).
+  When `X (q + 1) = Y`, the projection of `Hₙ(Y)` onto the limit object `E∞` at `q`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty`) vanishes exactly on the image of `Hₙ(X q)`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
-  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
-  absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
-  infinite-dimensional CW complex, are treated in
+  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). If moreover for
+  every position whose total degree differs by one from that of `(p, q)`, that position or
+  `(p, q)` carries the zero object on the first page, the object at `(p, q)` survives to the
+  graded homology
+  (`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`), by
+  `CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`.
+  Filtrations that absorb every compact subset without reaching `Y`, such as the skeletal
+  filtration over an infinite-dimensional CW complex, are treated in
   `TauCeti.AlgebraicTopology.Singular.FilteredSpace.Exhaustive`; the vanishing of the graded
   pieces `Hₙ(X b, X a)` they need there is transported to the quotients `F_b / F_a` by
   `TauCeti.isZero_homology_cokernel_singularChainFiltration`.
@@ -275,6 +286,71 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = 
       cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
     (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
+
+/-- **The graded homology of a degenerate finite filtration of a space.** Let `X a = ∅` and
+`X b = Y`. If for every position `pq'` of the first page whose total degree differs by one from
+that of `pq` the object at `pq` or the object at `pq'` is zero, the graded piece
+`F_{q+1} H / F_q H` of the filtration of the abutment in degree `p + q`, which is `H_{-(p+q)}(Y)` by
+`TauCeti.chainFiltrationAbutmentIso`, is isomorphic to the object at `(p, q)` on the first page. -/
+lemma nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero {a b : ℤ}
+    (ha : X a = ∅) (hb : X b = Set.univ) {pq : ℤ × ℤ}
+    (h : ∀ pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 ∨ pq'.1 + pq'.2 + 1 = pq.1 + pq.2 →
+      IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq) ∨
+        IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq')) :
+    Nonempty (cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2
+      (pq.1 + pq.2)) ≅ ((filteredSpaceSpectralSequence R hX).page 2).X pq) := by
+  -- On a late enough page the object at `pq` is the graded piece, and it is the first-page object.
+  set r := max 2 (max (pq.2 - a + 2) (b - pq.2 + 1))
+  have hr : 2 ≤ r := le_max_left _ _
+  obtain ⟨e⟩ :=
+    (filteredSpaceSpectralSequence R hX).nonempty_page_X_iso_page_two_X_of_isZero_or_isZero h r hr
+  exact ⟨(filteredSpaceSpectralSequencePageXIsoGradedOfFinite R hX ha hb r hr pq (by lia)
+    (by lia)).symm ≪≫ e⟩
+
+section ImageFiltration
+
+variable {k : Type w} [Ring k]
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(Y; M)`,
+the `q`th piece of its filtration is the image of the map `Hₙ(X q; M) ⟶ Hₙ(Y; M)` induced by the
+inclusion of `X q`. This is the singular case of
+`TauCeti.range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`. -/
+theorem range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom
+    (M : ModuleCat.{w} k) (hX : Monotone X) (q : ℤ) (n : ℕ) :
+    LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q (-n) ≫
+        (chainFiltrationAbutmentIso ((singularChainComplexFunctor _).obj M) hX n).hom).hom =
+      LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom :=
+  -- `SSet.homologyMap` is by definition the map in homology of the singular chains.
+  range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom _ hX q n
+
+end ImageFiltration
+
+/-- **The projection onto the top column of the spectral sequence of a filtered space.** If
+`X (q + 1)` is all of `Y`, then `Hₙ(Y)` is the piece `F_{q+1}` of the filtration of the abutment
+in degree `-n`, and this is its projection onto the graded piece `F_{q+1} / F_q`, the limit object
+`E∞` at `q` in degree `-n`. It is the singular case of `TauCeti.chainFiltrationToTopColumnEInfty`,
+which has the lemmas characterizing it. -/
+abbrev toFilteredSpaceTopColumnEInfty {q : ℤ} (hq : X (q + 1) = Set.univ) (n : ℕ) :
+    (TopCat.toSSet.obj Y).homology R n ⟶ (filteredSpaceSpectralObject R hX).EInfty q (-n) :=
+  chainFiltrationToTopColumnEInfty ((singularChainComplexFunctor A).obj R) hX hq n
+
+-- The source of the projection is stated as singular homology, which instance search does not
+-- unfold to the homology of the singular chains, so the instance for any chain functor is restated.
+instance {q : ℤ} (hq : X (q + 1) = Set.univ) (n : ℕ) :
+    Epi (toFilteredSpaceTopColumnEInfty R hX hq n) :=
+  inferInstanceAs (Epi (chainFiltrationToTopColumnEInfty _ hX hq n))
+
+/-- The projection onto the top column vanishes on a class `α ∈ Hₙ(Y; M)` exactly when `α` comes
+from the homology of `X q`. -/
+theorem toFilteredSpaceTopColumnEInfty_eq_zero_iff {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+    (hX : Monotone X) {q : ℤ} (hq : X (q + 1) = Set.univ) {n : ℕ}
+    (α : ((TopCat.toSSet.obj Y).homology M n : ModuleCat.{w} k)) :
+    (toFilteredSpaceTopColumnEInfty M hX hq n).hom α = 0 ↔
+      α ∈ LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom :=
+  chainFiltrationToTopColumnEInfty_eq_zero_iff ((singularChainComplexFunctor _).obj M) hX hq α
 
 section FirstDifferential
 

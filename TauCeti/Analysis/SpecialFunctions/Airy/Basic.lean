@@ -115,6 +115,12 @@ theorem airyAi_zero : airyAi 0 = (3 : ℂ) ^ (-2 / 3 : ℂ) / Gamma (2 / 3) := b
 theorem airyBi_zero : airyBi 0 = (3 : ℂ) ^ (-1 / 6 : ℂ) / Gamma (2 / 3) := by
   simp [airyBi, div_eq_mul_inv]
 
+/-- `Bi(0) ≠ 0`. -/
+theorem airyBi_zero_ne_zero : airyBi 0 ≠ 0 := by
+  rw [airyBi_zero]
+  exact div_ne_zero ((cpow_ne_zero_iff_of_exponent_ne_zero (by norm_num)).2 three_ne_zero)
+    (Gamma_ne_zero_of_re_pos (by norm_num))
+
 /-- At the origin, `Bi(0)² = 3 Ai(0)²`. -/
 theorem airyBi_zero_sq : airyBi 0 ^ 2 = 3 * airyAi 0 ^ 2 := by
   have h3 : (3 : ℂ) ≠ 0 := by norm_num
@@ -166,6 +172,12 @@ theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (
   rw [Pi.add_def, Pi.mul_def] at h
   rw [funext airyBi_def, h.deriv]
   convert airy_derivative_coefficient (-5 / 6) using 1 <;> norm_num [div_eq_mul_inv]
+
+/-- `Bi′(0) ≠ 0`. -/
+theorem deriv_airyBi_zero_ne_zero : deriv airyBi 0 ≠ 0 := by
+  rw [deriv_airyBi_zero]
+  exact div_ne_zero ((cpow_ne_zero_iff_of_exponent_ne_zero (by norm_num)).2 three_ne_zero)
+    (Gamma_ne_zero_of_re_pos (by norm_num))
 
 /-- `Bi(0) = √3 Ai(0)`. -/
 theorem airyBi_zero_eq_cpow_mul_airyAi_zero : airyBi 0 = (3 : ℂ) ^ (1 / 2 : ℂ) * airyAi 0 := by

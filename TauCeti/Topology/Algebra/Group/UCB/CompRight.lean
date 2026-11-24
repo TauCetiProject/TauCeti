@@ -171,6 +171,12 @@ theorem compRightAlgHom_leftTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B
   ext
   simp
 
+/-- The pullback intertwines right translation by `φ a` with right translation by `a`. -/
+theorem compRightAlgHom_rightTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
+    compRightAlgHom φ (rightTranslation (φ a) f) = rightTranslation a (compRightAlgHom φ f) := by
+  ext
+  simp
+
 end AddUCB
 
 end TauCeti
