@@ -133,6 +133,18 @@ private def IsJetFirstOrder (ι : Λ → M) (α : SmoothForm J M ℝ 1)
       ∀ u : TangentSpace I q, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
         mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q) w] = w.1.2 u
 
+/-- The vertical first-order conditions on `Ψ : J¹Λ → M` at `(0_q, 0)` relative to `ι : Λ → M`
+and a one-form `α` on `M`: the differential of `Ψ` sends `((0, p), c)` to a vector `v` with
+`α(v) = c` and `dα(dι ·, v) = p`. -/
+private def IsJetVerticalFirstOrder (ι : Λ → M) (α : SmoothForm J M ℝ 1)
+    (Ψ : CotangentBundle I Λ × ℝ → M) (q : Λ) : Prop :=
+  ∀ (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ),
+    α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
+      (((0 : E), (p : E →L[ℝ] ℝ)), c)] = c ∧
+    ∀ u, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
+      mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
+        (((0 : E), (p : E →L[ℝ] ℝ)), c)] = p u
+
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless] [T2Space M]
   [SecondCountableTopology M] in
 /-- If the differential of `Ψ : J¹Λ → M` at `(0_q, 0)` sends `((u, 0), 0)` to `dι u` and
@@ -142,12 +154,7 @@ private theorem isJetFirstOrder_of_mfderiv {ι : Λ → M}
     (hι : IsLegendrianImmersion I α.kerDistribution ι) {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ}
     (hhor : ∀ u : TangentSpace I q, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
         (jetZero I q) ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u)
-    (hver : ∀ (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ),
-        α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
-          (((0 : E), (p : E →L[ℝ] ℝ)), c)] = c ∧
-        ∀ u, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
-            (((0 : E), (p : E →L[ℝ] ℝ)), c)] = p u) :
+    (hver : IsJetVerticalFirstOrder ι α Ψ q) :
     IsJetFirstOrder ι α Ψ q := by
   have hαι (u : TangentSpace I q) : α.val (ι q) ![mfderiv I J ι q u] = 0 :=
     SmoothForm.mem_kerDistribution.1
@@ -197,8 +204,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] in
 /-- The differential of the zero section `q ↦ (0_q, 0)` of `J¹Λ` sends `u` to `((u, 0), 0)`. -/
 private theorem hasMFDerivAt_jetZeroSection (q : Λ) :
     HasMFDerivAt I ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-      (fun x ↦ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) x, (0 : ℝ))) q
-      ((ContinuousLinearMap.inl ℝ E (E →L[ℝ] ℝ)).prod 0) := by
+      (jetZero I) q ((ContinuousLinearMap.inl ℝ E (E →L[ℝ] ℝ)).prod 0) := by
   have h := ((contMDiff_zeroSection (IB := I) (𝕜 := ℝ) (F := E →L[ℝ] ℝ)
     (E := fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) (n := ∞)).mdifferentiableAt
     (by simp) (x := q)).hasMFDerivAt
@@ -218,8 +224,7 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
     (hdim : finrank ℝ ((E →L[ℝ] ℝ) × ℝ) = finrank ℝ F - finrank ℝ E)
     {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ} (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ)
     (v : ι.NormalSpace q hn)
-    (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0))
+    (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q))
     (hE : letI := ι.normalSpaceFiberBundle hn hdim
       MDifferentiableAt (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn)
         (zeroSection ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn) q))
@@ -227,14 +232,12 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
       (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) =
         ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
           (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) :
-    mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
+    mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
       (((0 : E), (p : E →L[ℝ] ℝ)), c) = ι.normalRepresentative q hn v := by
   let := ι.normalSpaceFiberBundle hn hdim
   let := ι.normalSpaceVectorBundle hn hdim
   have hγ := hasMFDerivAt_jetLine q p c
-  have hγ0 : ((⟨q, (0 : ℝ) • p⟩ : CotangentBundle I Λ), (0 : ℝ) * c) =
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)) := by
+  have hγ0 : ((⟨q, (0 : ℝ) • p⟩ : CotangentBundle I Λ), (0 : ℝ) * c) = jetZero I q := by
     simp [zeroSection]
   have hℓ : MDifferentiableAt 𝓘(ℝ) (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ))
       (fun t : ℝ ↦ (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 :=
@@ -253,15 +256,31 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
     (by norm_cast) hdim q 0 v
   rw [map_zero, zero_add] at h3
   -- The points `γ 0`, `ℓ 0` and the zero vectors agree only propositionally, so the chain rule
-  -- along the two lines is assembled by transitivity, all tangent spaces being model spaces.
-  exact (congrArg (mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)) hγ1.symm).trans
-    ((mfderiv_comp_apply_of_eq (hg := hΨ) (hf := hγ.mdifferentiableAt) (hy := hγ0)
-      (v := (1 : ℝ))).symm.trans ((congrArg (fun f ↦ mfderiv 𝓘(ℝ) J f 0 (1 : ℝ)) hline).trans
-      ((mfderiv_comp_apply_of_eq (hg := hE) (hf := hℓ) (hy := hℓ0) (v := (1 : ℝ))).trans
-        ((congrArg (mfderiv (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp hn)
-          (zeroSection _ (fun x ↦ ι.NormalSpace x hn) q))
-          (Bundle.zeroSectionTangentEquiv_symm_inr q v).symm).trans h3))))
+  -- along the two lines is applied in its form for propositionally equal points. All tangent
+  -- spaces involved are the model space of `M`, so the steps below chain by transitivity.
+  -- `dΨ((0, p), c) = d(Ψ ∘ γ)(1)`:
+  have hΨγ : mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
+      (((0 : E), (p : E →L[ℝ] ℝ)), c) =
+        mfderiv 𝓘(ℝ) J (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0
+          (1 : ℝ) := by
+    rw [← hγ1]
+    exact (mfderiv_comp_apply_of_eq (hg := hΨ) (hf := hγ.mdifferentiableAt) (hy := hγ0)
+      (v := (1 : ℝ))).symm
+  -- `d(Ψ ∘ γ)(1) = d(exp ∘ ℓ)(1)`:
+  have hγℓ : mfderiv 𝓘(ℝ) J (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0
+      (1 : ℝ) = mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
+        (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) := by
+    rw [hline]
+  -- `d(exp ∘ ℓ)(1) = d exp (0, v)`:
+  have hℓexp : mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
+      (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) =
+        mfderiv (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp hn)
+          (zeroSection _ (fun x ↦ ι.NormalSpace x hn) q)
+          ((Bundle.zeroSectionTangentEquiv (I := I) q).symm (0, v)) := by
+    rw [Bundle.zeroSectionTangentEquiv_symm_inr]
+    exact mfderiv_comp_apply_of_eq (hg := hE) (hf := hℓ) (hy := hℓ0) (v := (1 : ℝ))
+  -- `d exp (0, v)` is the normal representative of `v`.
+  exact hΨγ.trans (hγℓ.trans (hℓexp.trans h3))
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Boundaryless]
   [IsManifold J ∞ M] [T2Space M] [SecondCountableTopology M] in
@@ -275,9 +294,7 @@ private theorem mfderiv_jetZeroSection_eq {ι : Λ → M} {Ψ : CotangentBundle 
       ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u := by
   have hz := hasMFDerivAt_jetZeroSection (I := I) q
   have e := mfderiv_comp_apply (x := q) (hg := hΨ) (hf := hz.mdifferentiableAt) (v := u)
-  rw [show (Ψ ∘ fun x ↦
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) x, (0 : ℝ))) = ι from
-    funext hval, hz.mfderiv] at e
+  rw [show Ψ ∘ jetZero I = ι from funext hval, hz.mfderiv] at e
   exact e.symm
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless] [T2Space M]
@@ -328,29 +345,20 @@ private theorem exists_partialDiffeomorph_jet [Nonempty Λ] (ι : SmoothEmbeddin
     (by norm_cast) hdim isOpen_univ (subset_univ _)
   -- `Ψ` is the normal exponential, read through `J¹Λ ≃ T^* Λ × ℝ ≃ ν(ι)`.
   set D := ι.normalBundleDiffeomorphOfIsLegendrianImmersion hι hn hm hm hdim with hD
-  have hD0 (q : Λ) : D.symm (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) =
-      zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
+  have hD0 (q : Λ) : D.symm (jetZero I q) = zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
     rw [hD, normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply]
     exact congrArg (TotalSpace.mk' _ q) (map_zero _)
   set Ψ := D.symm.toPartialDiffeomorph.trans Φ with hΨ
   have hΨfun : ⇑Ψ = ι.normalExp hn ∘ D.symm := by
     rw [hΨ, PartialDiffeomorph.coe_trans, hΦ, Diffeomorph.coe_toPartialDiffeomorph]
-  have hsrc (q : Λ) :
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)) ∈ Ψ.source := by
+  have hsrc (q : Λ) : jetZero I q ∈ Ψ.source := by
     rw [hΨ, PartialDiffeomorph.trans_source]
     exact ⟨by simp, by simpa [hD0] using hΦ0 q⟩
-  have hval (q : Λ) :
-      Ψ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) = ι q := by
+  have hval (q : Λ) : Ψ (jetZero I q) = ι q := by
     rw [hΨfun, Function.comp_apply, hD0, normalExp_zeroSection]
   -- Along a vertical line, `Ψ` is the normal exponential along a line of a normal space.
-  have hver (q : Λ) (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ) :
-      α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-        (((0 : E), (p : E →L[ℝ] ℝ)), c)] = c ∧
-      ∀ u, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-        mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-          (((0 : E), (p : E →L[ℝ] ℝ)), c)] = p u := by
+  have hver (q : Λ) : IsJetVerticalFirstOrder ι α Ψ q := by
+    intro p c
     set v := (ι.normalSpaceEquivOfIsLegendrianImmersion hι hn q).symm (p, c) with hv
     have key := mfderiv_jetLine_eq_normalRepresentative ι hn hdim p c v
       (Ψ.mdifferentiableAt hn (hsrc q)) (hΦ ▸ Φ.mdifferentiableAt hn (hΦ0 q)) (by
@@ -370,7 +378,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] in
 `z`-component, and its exterior derivative there is the canonical symplectic form. -/
 private theorem contactization_subtypeVal_zeroSection
     {W : TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)} {q : Λ}
-    (hq : (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)) ∈ W) :
+    (hq : jetZero I q ∈ W) :
     (∀ v : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (⟨_, hq⟩ : W),
       (SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
         (CotangentBundle.liouvilleForm I Λ).contactization).val ⟨_, hq⟩ ![v] = v.2) ∧
