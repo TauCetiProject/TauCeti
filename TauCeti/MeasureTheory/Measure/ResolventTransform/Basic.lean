@@ -22,7 +22,9 @@ away from the real axis, the continuity of the kernel there, the Lipschitz bound
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, the
 continuity of the transform off the real axis
 (`MeasureTheory.continuousAt_resolventTransform_of_im_ne_zero`), and prove
-affine covariance under pushforward. No moment assumptions are needed.
+affine covariance under pushforward. No moment assumptions are needed. Conversely, off the real
+axis the transform of a measure `μ` without finite weighted mass `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since
+the kernel `‖(x - z)⁻¹‖` dominates `(1 + x ^ 2)⁻¹` up to a constant and so is not integrable.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -42,6 +44,10 @@ open scoped ComplexConjugate
 
 namespace Complex
 
+/-- The real resolvent kernel is `(x - z)⁻¹`. -/
+theorem resolvent_real_eq_inv (z : ℂ) (x : ℝ) : resolvent (R := ℝ) z x = ((x : ℂ) - z)⁻¹ := by
+  rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+
 /-- The imaginary part of the real resolvent kernel, with sign `(x - z)⁻¹`. -/
 theorem im_resolvent_real (z : ℂ) (x : ℝ) :
     (resolvent z x).im = z.im / ((x - z.re) ^ 2 + z.im ^ 2) := by
@@ -50,7 +56,7 @@ theorem im_resolvent_real (z : ℂ) (x : ℝ) :
 /-- The real resolvent kernel is bounded by the reciprocal distance to the real axis. -/
 theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
     ‖resolvent z x‖ ≤ |z.im|⁻¹ := by
-  rw [resolvent, Ring.inverse_eq_inv', norm_inv]
+  rw [resolvent_real_eq_inv, norm_inv]
   apply inv_anti₀ (abs_pos.mpr hz)
   simpa using abs_im_le_norm ((x : ℂ) - z)
 
@@ -76,8 +82,7 @@ theorem lipschitzWith_resolvent_real {z : ℂ} (hz : z.im ≠ 0) :
   calc
     dist (resolvent z x) (resolvent z y) =
         |x - y| / (‖(x : ℂ) - z‖ * ‖(y : ℂ) - z‖) := by
-      simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
-      rw [dist_inv_inv₀ hx hy,
+      rw [resolvent_real_eq_inv, resolvent_real_eq_inv, dist_inv_inv₀ hx hy,
         dist_sub_right, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
     _ ≤ |x - y| / (|z.im| * |z.im|) :=
       div_le_div_of_nonneg_left (abs_nonneg _) (by positivity)
@@ -105,6 +110,32 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
             simp [resolvent, Ring.inverse_eq_inv']
     _ = _ := by
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
+
+/-- The resolvent transform is `-∫ (z - x)⁻¹ dμ(x)`, the negative of the Cauchy–Stieltjes transform
+in the convention `(z - x)⁻¹`. -/
+theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) :
+    resolventTransform μ z = -∫ x : ℝ, (z - x)⁻¹ ∂μ := by
+  rw [resolventTransform_apply, ← integral_neg]
+  congr 1 with x
+  rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
+/-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
+`∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/
+theorem resolventTransform_eq_zero_of_not_lintegral_lt_top {μ : Measure ℝ}
+    (hμ : ¬∫⁻ x, ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂μ < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    resolventTransform μ z = 0 := by
+  rw [resolventTransform_apply]
+  refine integral_undef fun h ↦ hμ (Integrable.lintegral_lt_top ?_)
+  refine (h.norm.const_mul (1 + ‖z‖)).mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hx : 0 < ‖(x : ℂ) - z‖ :=
+    norm_pos_iff.2 fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hle : ‖(x : ℂ) - z‖ ≤ (1 + x ^ 2) * (1 + ‖z‖) := by
+    have h1 : ‖(x : ℂ) - z‖ ≤ |x| + ‖z‖ := by simpa using norm_sub_le (x : ℂ) z
+    nlinarith [abs_nonneg x, sq_abs x, norm_nonneg z, sq_nonneg (|x| - 1), mul_nonneg
+      (sq_nonneg x) (norm_nonneg z)]
+  rw [Real.norm_of_nonneg (by positivity), Complex.resolvent_real_eq_inv, norm_inv,
+    ← div_eq_mul_inv, le_div_iff₀ hx, inv_mul_le_iff₀ (by positivity)]
+  exact hle
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
@@ -142,6 +173,14 @@ theorem norm_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
   rw [resolventTransform_apply]
   exact norm_integral_le_of_norm_le_const
     (ae_of_all _ fun x => Complex.norm_resolvent_real_le z x hz)
+
+/-- Along the imaginary axis, `y ‖m_μ(i y)‖ ≤ μ(ℝ)` for `y > 0`. -/
+theorem mul_norm_resolventTransform_ofReal_mul_I_le {y : ℝ} (hy : 0 < y) :
+    y * ‖resolventTransform μ (y * I)‖ ≤ μ.real Set.univ := by
+  have h := norm_resolventTransform_le (μ := μ) (z := y * I) (by simpa using hy.ne')
+  rw [show ((y : ℂ) * I).im = y by simp, abs_of_pos hy] at h
+  calc y * ‖resolventTransform μ (y * I)‖ ≤ y * (y⁻¹ * μ.real Set.univ) := by gcongr
+    _ = μ.real Set.univ := by field_simp
 
 /-- The transform of a finite measure is Lipschitz away from the real axis:
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)`. -/
@@ -188,10 +227,8 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
         (a : ℂ) + (b : ℂ) * x - z = (b : ℂ) * ((x : ℂ) - (z - a) / b) := by
       field_simp [hb]
       ring
-    simp only [resolvent, Ring.inverse_eq_inv']
+    rw [Complex.resolvent_real_eq_inv, Complex.resolvent_real_eq_inv]
     push_cast
-    -- `resolvent` unfolds with `algebraMap ℝ ℂ`; restore the plain coercion so `hfactor` matches.
-    simp only [Complex.coe_algebraMap]
     rw [hfactor, mul_inv_rev]
     ring
   calc

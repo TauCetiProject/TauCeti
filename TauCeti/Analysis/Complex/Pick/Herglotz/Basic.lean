@@ -43,8 +43,10 @@ where `m_ρ` is the resolvent transform, so Stieltjes inversion determines `ρ`
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
 * `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
   `∫ (1 + t ^ 2)⁻¹ dν = ρ(ℝ)`.
-* `TauCeti.integrable_subtractedResolventKernel_iff`: at a nonreal point the kernel is
-  `ν`-integrable exactly when `ν` has finite weighted mass.
+* `TauCeti.lintegral_inv_one_add_sq_lt_top`: every finite measure has finite weighted mass.
+* `TauCeti.integrable_subtractedResolventKernel_iff`,
+  `TauCeti.integrable_im_subtractedResolventKernel_iff`: at a nonreal point the kernel, or its
+  imaginary part, is `ν`-integrable exactly when `ν` has finite weighted mass.
 * `TauCeti.exists_eq_subtractedResolventKernel_add`: the Herglotz representation of a Pick function.
 * `TauCeti.re_eq_of_eq_subtractedResolventKernel_add`,
   `TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add`: the constant term is `Re F(i)`, and
@@ -205,6 +207,21 @@ theorem subtractedResolventKernel_im (z : ℂ) (t : ℝ) :
   rw [subtractedResolventKernel_def, sub_im, this, ofReal_im, sub_zero, inv_im, sub_im,
     ofReal_im, zero_sub, neg_neg]
 
+/-- On the imaginary axis, the imaginary part of the subtracted resolvent kernel is
+`y / (t ^ 2 + y ^ 2)`. -/
+theorem subtractedResolventKernel_ofReal_mul_I_im (y t : ℝ) :
+    (subtractedResolventKernel (y * I) t).im = y / (t ^ 2 + y ^ 2) := by
+  rw [subtractedResolventKernel_im, normSq_apply]
+  simp only [mul_im, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_re, sub_im]
+  ring
+
+/-- Every finite measure `ν` has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, since the weight is at
+most `1`. -/
+theorem lintegral_inv_one_add_sq_lt_top (nu : Measure ℝ) [IsFiniteMeasure nu] :
+    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ :=
+  (lintegral_mono fun t ↦ ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀
+    (by nlinarith [sq_nonneg t]))).trans_lt (lintegral_one.trans_lt (measure_lt_top nu _))
+
 /-- The subtracted resolvent kernel at a nonreal point is integrable against every measure `ν` of
 finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
 theorem integrable_subtractedResolventKernel {nu : Measure ℝ}
@@ -240,16 +257,46 @@ theorem inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel {z : ℂ} (hz : z
         (|z.im| / (2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2))) := by field_simp
     _ ≤ _ := by gcongr
 
+/-- If the imaginary part of the subtracted resolvent kernel at a nonreal point is `ν`-integrable,
+then `ν` has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
+theorem lintegral_lt_top_of_integrable_im {nu : Measure ℝ} {z : ℂ} (hz : z.im ≠ 0)
+    (h : Integrable (fun t ↦ (subtractedResolventKernel z t).im) nu) :
+    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ := by
+  refine Integrable.lintegral_lt_top ?_
+  refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop)
+    (.of_forall fun t ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs]
+  exact inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t
+
+/-- At a nonreal point, the imaginary part of the subtracted resolvent kernel is `ν`-integrable
+exactly when `ν` has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
+theorem integrable_im_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun t ↦ (subtractedResolventKernel z t).im) nu ↔
+      ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ :=
+  ⟨lintegral_lt_top_of_integrable_im hz, fun h ↦ (integrable_subtractedResolventKernel h hz).im⟩
+
 /-- At a nonreal point, the subtracted resolvent kernel is `ν`-integrable exactly when `ν` has
 finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
 theorem integrable_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (hz : z.im ≠ 0) :
     Integrable (subtractedResolventKernel z) nu ↔
-      ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ := by
-  refine ⟨fun h ↦ Integrable.lintegral_lt_top ?_, fun h ↦ integrable_subtractedResolventKernel h hz⟩
-  refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop) (.of_forall fun t ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact (inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t).trans
-    (by gcongr; exact abs_im_le_norm _)
+      ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ :=
+  ⟨fun h ↦ lintegral_lt_top_of_integrable_im hz h.im,
+    fun h ↦ integrable_subtractedResolventKernel h hz⟩
+
+/-- At a nonreal point, the integral of the subtracted resolvent kernel against a measure `ν`
+without finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is `0`, since the kernel is not integrable. -/
+theorem integral_subtractedResolventKernel_eq_zero {nu : Measure ℝ}
+    (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, subtractedResolventKernel z t ∂nu = 0 :=
+  integral_undef (mt (integrable_subtractedResolventKernel_iff hz).1 hnu)
+
+/-- At a nonreal point, the integral of the imaginary part of the subtracted resolvent kernel
+against a measure `ν` without finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is `0`, since it is not
+integrable. -/
+theorem integral_im_subtractedResolventKernel_eq_zero {nu : Measure ℝ}
+    (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, (subtractedResolventKernel z t).im ∂nu = 0 :=
+  integral_undef (mt (integrable_im_subtractedResolventKernel_iff hz).1 hnu)
 
 /-- **Herglotz representation of a Pick function.** A function holomorphic on the upper
 half-plane with nonnegative imaginary part is `F z = Re F(i) + b z + ∫ ((t - z)⁻¹ -
@@ -333,8 +380,7 @@ theorem tendsto_im_div_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a 
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with y hy
   have hz : (y : ℂ) * I ∈ UpperHalfPlane.upperHalfPlaneSet := by simpa using hy
-  rw [hrep _ hz, integral_undef (mt (integrable_subtractedResolventKernel_iff
-    (ne_of_gt hz)).1 hnu)]
+  rw [hrep _ hz, integral_subtractedResolventKernel_eq_zero hnu (ne_of_gt hz)]
   simp only [add_zero, add_im, ofReal_im, mul_im, ofReal_re, I_im, I_re, mul_zero, mul_one,
     zero_mul, zero_add]
   field_simp
