@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Bialgebra
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
-import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 
 /-!
 # Completed primitive elements of positively graded universal enveloping algebras
@@ -76,8 +75,7 @@ private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid {u : Û}
   let k := (d.degree n).toNat
   let s := (d.finite_cutoff k).toFinset
   let _ : _root_.DirectSum.Decomposition (tensorGrading ℒ) :=
-    (_root_.DirectSum.IsInternal.tensorProduct _ _
-      (isInternal_homogeneousSubmodule ℒ) (isInternal_homogeneousSubmodule ℒ)).chooseDecomposition
+    (isInternal_tensorGrading ℒ).chooseDecomposition
   have hmem := hu.comul_sub_mem_tensorProduct_ideal (mk_sum_envelopingComponent d ℒ k u)
   let δ : U →ₗ[R] U ⊗[R] U :=
     Coalgebra.comul - ((TensorProduct.mk R U U 1) + (TensorProduct.mk R U U).flip 1)
@@ -109,7 +107,7 @@ theorem isPrimitiveElem_envelopingComponent {u : Û}
   by_cases hnP : n ∈ d.monoid
   · exact isPrimitiveElem_envelopingComponent_of_mem_monoid d ℒ hu hnP
   · have hc0 : (envelopingComponent d ℒ n u : U) = 0 := (Submodule.mem_bot R).mp <|
-      homogeneousSubmodule_eq_bot_of_not_mem_monoid ℒ d hnP ▸ (envelopingComponent d ℒ n u).property
+      homogeneousSubmodule_eq_bot_of_notMem_monoid ℒ d hnP ▸ (envelopingComponent d ℒ n u).property
     rw [hc0]; exact (Coalgebra.skewPrimitive R (1 : U) 1).zero_mem
 
 end CommRing
@@ -157,20 +155,16 @@ with the Lie subalgebra of completed primitive elements in `completedEnveloping`
 noncomputable def completedPrimitiveLieEquiv :
     d.completedLie ℒ ≃ₗ⁅R⁆
       completedPrimitiveLieSubalgebra ℒ d.degree (d.eq_bot_of_degree_neg ℒ) :=
-  LieEquiv.ofBijective
-    { toLinearMap := (completedLieToU d ℒ).toLinearMap.codRestrict
-        (completedPrimitiveLieSubalgebra ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).toSubmodule
-        fun x => (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr
-          (isCompletedPrimitive_completedLieToU d ℒ x)
-      map_lie' := fun {x y} => Subtype.ext ((completedLieToU d ℒ).map_lie x y) }
-    ⟨fun _ _ h => completedLieToU_injective_of_algebra_rat d ℒ (congrArg Subtype.val h), fun u => by
-      obtain ⟨x, hx⟩ := (isCompletedPrimitive_iff_mem_range_completedLieToU d ℒ u.val).mp
-        ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp u.property)
-      exact ⟨x, Subtype.ext hx⟩⟩
+  (LieEquiv.ofInjective (completedLieToU d ℒ) (completedLieToU_injective_of_algebra_rat d ℒ)).trans
+    (LieEquiv.ofEq _ _ <| by
+      ext u
+      simp only [SetLike.mem_coe, LieHom.mem_range, mem_completedPrimitiveLieSubalgebra_iff]
+      exact (isCompletedPrimitive_iff_mem_range_completedLieToU d ℒ u).symm)
 
 @[simp]
 theorem coe_completedPrimitiveLieEquiv_apply (x : d.completedLie ℒ) :
-    (completedPrimitiveLieEquiv d ℒ x : Û) = completedLieToU d ℒ x := (rfl)
+    (completedPrimitiveLieEquiv d ℒ x : Û) = completedLieToU d ℒ x := by
+  simp [completedPrimitiveLieEquiv]
 
 @[simp]
 theorem completedLieToU_completedPrimitiveLieEquiv_symm

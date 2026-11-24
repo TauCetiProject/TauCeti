@@ -60,14 +60,6 @@ noncomputable abbrev freeAugmentation : Ideal (_root_.UniversalEnvelopingAlgebra
 local notation "𝓛" => homogeneousSubmodule ℚ (Fin 2)
 local notation "𝓕" => degreeFiltration 𝓛 naturals.degree (naturals.eq_bot_of_degree_neg 𝓛)
 
-/-- The preimage of `freeAugmentation ^ (c + 1)` under `ι ℚ` is the `c`-th lower central term of
-`FreeLieTwo`. -/
-theorem comap_freeAugmentation_pow_ι (c : ℕ) :
-    ((freeAugmentation ^ (c + 1)).restrictScalars ℚ).comap
-        (ι ℚ : FreeLieTwo →ₗ⁅ℚ⁆ _root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo).toLinearMap =
-      (lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c).toSubmodule :=
-  comap_augmentation_pow_ι_of_algebra_rat ℚ (Fin 2) c
-
 private noncomputable def bchGroupLikeFactor (i : Fin 2) :=
   completedLieExpEquiv naturals 𝓛
     (LieIdeal.toCompletion (naturals.degreeIdeal 𝓛) (naturals.degreeIdeal_antitone 𝓛) (of ℚ i))
@@ -212,8 +204,10 @@ private theorem mk_ι_mem_quotAugmentationIdeal (c : ℕ) (x : FreeLieTwo) :
     (HopfIdeal.mem_toIdeal.mpr (UniversalEnvelopingAlgebra.ι_mem_augmentation ℚ FreeLieTwo x))
 
 /-- At class `0`, `bchElement 0` vanishes. -/
-@[simp] theorem bchElement_zero : bchElement 0 = 0 :=
-  (Submodule.quotEquivOfEq _ ⊤ (by simp)).injective (Subsingleton.elim _ _)
+@[simp] theorem bchElement_zero : bchElement 0 = 0 := by
+  obtain ⟨x, hx⟩ := LieIdeal.surjective_mkQ _ (bchElement 0)
+  rw [← hx, LieIdeal.mkQ_eq_zero]
+  simp
 
 /-- At class `1`, `bchElement 1` is the sum `X + Y` of the two generators. -/
 theorem bchElement_one :

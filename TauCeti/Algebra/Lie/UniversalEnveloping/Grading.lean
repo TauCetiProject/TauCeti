@@ -108,7 +108,7 @@ theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
     (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
 
 /-- Homogeneous enveloping pieces vanish outside the positive degree monoid. -/
-theorem homogeneousSubmodule_eq_bot_of_not_mem_monoid (d : PositiveDegrees Γ)
+theorem homogeneousSubmodule_eq_bot_of_notMem_monoid (d : PositiveDegrees Γ)
     [IsPositiveGrading d ℒ] {n : Γ} (hn : n ∉ d.monoid) :
     homogeneousSubmodule ℒ n = ⊥ := by
   rw [eq_bot_iff]

@@ -225,7 +225,7 @@ theorem mk_sum_envelopingComponent (k : ℕ) (u : Û) :
   have h := congrArg (envelopingQuotEquiv d ℒ k) <| d.projection_eq_sum_completionComponent
     (homogeneousSubmodule ℒ) (𝔈) (envelopingIdealSubmodule_antitone d ℒ)
     (envelopingIdealSubmodule_eq_degreeSubmodule d ℒ)
-    (fun _ hn => homogeneousSubmodule_eq_bot_of_not_mem_monoid ℒ d hn) k (toModuleCompletion d ℒ u)
+    (fun _ hn => homogeneousSubmodule_eq_bot_of_notMem_monoid ℒ d hn) k (toModuleCompletion d ℒ u)
   rw [limπ_toModuleCompletion, LinearEquiv.apply_symm_apply, envelopingQuotEquiv_π] at h
   exact h.symm
 

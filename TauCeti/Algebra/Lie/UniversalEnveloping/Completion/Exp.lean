@@ -97,13 +97,9 @@ noncomputable def completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n 
   let e₁ : completedPrimitiveLieSubalgebra ℒ d hneg ≃
       {x : (𝓕 hneg).completionIdeal 1 //
         IsCompletedPrimitive ℒ d hneg (x : completedEnveloping ℒ d hneg)} :=
-    { toFun := fun x => ⟨⟨x.val,
-        ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property).mem_completionIdeal_one
-          hpos⟩, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property⟩
-      invFun := fun x => ⟨x.val.val,
-        (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr x.property⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
+    (Equiv.subtypeEquivRight fun _ => mem_completedPrimitiveLieSubalgebra_iff ℒ d hneg).trans
+      (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ (𝓕 hneg).completionIdeal 1))
+        (q := IsCompletedPrimitive ℒ d hneg) fun hx => hx.mem_completionIdeal_one hpos).symm
   let e₂ : {x : (𝓕 hneg).completionIdeal 1 //
         IsCompletedPrimitive ℒ d hneg (x : completedEnveloping ℒ d hneg)} ≃
       {u : {u : completedEnveloping ℒ d hneg // u - 1 ∈ (𝓕 hneg).completionIdeal 1} //
@@ -114,10 +110,7 @@ noncomputable def completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n 
   let e₃ : {u : {u : completedEnveloping ℒ d hneg // u - 1 ∈ (𝓕 hneg).completionIdeal 1} //
         IsCompletedGroupLike ℒ d hneg (u : completedEnveloping ℒ d hneg)} ≃
       {u : completedEnveloping ℒ d hneg // IsCompletedGroupLike ℒ d hneg u} :=
-    { toFun := fun u => ⟨u.val.val, u.property⟩
-      invFun := fun u => ⟨⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩, u.property⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
+    Equiv.subtypeSubtypeEquivSubtype fun {u} hu => hu.sub_one_mem_completionIdeal_one hpos
   (e₁.trans e₂).trans e₃
 
 @[simp]
@@ -128,7 +121,10 @@ theorem coe_completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
       (𝓕 (fun n hn => hpos n hn.le)).completedExp ⟨x.val,
         ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property).mem_completionIdeal_one
           hpos⟩ := by
-  simp [completedPrimitiveExpEquiv]
+  simp only [completedPrimitiveExpEquiv, Equiv.trans_apply,
+    Equiv.subtypeSubtypeEquivSubtype_apply_coe, Equiv.subtypeEquiv_apply,
+    AlgFiltration.coe_completedExpEquiv, Equiv.subtypeEquivRight_apply]
+  exact congrArg _ (Subtype.ext rfl)
 
 @[simp]
 theorem coe_completedPrimitiveExpEquiv_symm (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
@@ -138,7 +134,11 @@ theorem coe_completedPrimitiveExpEquiv_symm (hpos : ∀ n, d n ≤ 0 → ℒ n =
       completedEnveloping ℒ d (fun n hn => hpos n hn.le)) =
       (𝓕 (fun n hn => hpos n hn.le)).completedLog
         ⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩ := by
-  simp [completedPrimitiveExpEquiv]
+  simp only [completedPrimitiveExpEquiv, Equiv.symm_trans_apply,
+    Equiv.subtypeEquivRight_symm_apply, Equiv.symm_symm,
+    Equiv.subtypeSubtypeEquivSubtype_apply_coe, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply, AlgFiltration.coe_completedExpEquiv_symm]
+  exact congrArg _ (Subtype.ext rfl)
 
 end Nonneg
 

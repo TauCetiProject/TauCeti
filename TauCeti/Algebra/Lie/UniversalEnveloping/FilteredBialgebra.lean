@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.DegreeFiltration
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Bialgebra.TensorProduct
@@ -15,8 +16,9 @@ import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 For a `Γ`-graded Lie algebra `L`, the bialgebra comultiplication `Δ : U(L) → U(L) ⊗[R] U(L)`
 preserves total Lie degree (`comul_mem_tensorTotalDegree`) and hence the total-degree filtration
-(`degreeFiltration_le_comap_comulAlgHom`). When negative degrees vanish, the first degree-filtration
-ideal and its tensor square lie in the kernels of the respective counits.
+(`degreeFiltration_le_comap_comulAlgHom`). When negative degrees vanish, the first ideals of the
+enveloping degree filtration and the induced tensor-product filtration lie in the kernels of their
+respective counits.
 -/
 
 public section
@@ -38,35 +40,60 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 /-- The `(p.1, p.2)`-homogeneous tensor component `U_{p.1} ⊗ U_{p.2}` inside `U(L) ⊗[R] U(L)`. -/
-@[expose]
 def tensorGrading (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
-  Submodule.map₂ (TensorProduct.mk R U U)
-    (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2)
+  InternalGrading.tensorProductBidegreePiece (homogeneousSubmodule ℒ) (homogeneousSubmodule ℒ) p
+
+/-- Unfolding characterization of `tensorGrading`. -/
+theorem tensorGrading_def (p : Γ × Γ) :
+    tensorGrading ℒ p = Submodule.map₂ (TensorProduct.mk R U U)
+      (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2) :=
+  InternalGrading.tensorProductBidegreePiece_def _ _ p
+
+/-- The homogeneous tensor components `tensorGrading ℒ` form an internal direct sum decomposition
+of `U(L) ⊗[R] U(L)`. -/
+theorem isInternal_tensorGrading [DecidableEq Γ] [GradedLieAlgebra ℒ] :
+    _root_.DirectSum.IsInternal (tensorGrading ℒ) := by
+  rw [show tensorGrading ℒ = fun p => Submodule.map₂ (TensorProduct.mk R U U)
+      (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2) from
+    funext (tensorGrading_def ℒ)]
+  exact _root_.DirectSum.IsInternal.tensorProduct _ _
+    (isInternal_homogeneousSubmodule ℒ) (isInternal_homogeneousSubmodule ℒ)
 
 /-- Multiplication of homogeneous tensor components adds their bidegrees. -/
 theorem mul_mem_tensorGrading {p q : Γ × Γ} {x y : U ⊗[R] U}
     (hx : x ∈ tensorGrading ℒ p) (hy : y ∈ tensorGrading ℒ q) :
-    x * y ∈ tensorGrading ℒ (p + q) :=
-  ((Submodule.map₂_tmul_mul_le _ _ _ _).trans <| Submodule.map₂_le_map₂
+    x * y ∈ tensorGrading ℒ (p + q) := by
+  rw [tensorGrading_def] at hx hy ⊢
+  exact ((Submodule.map₂_tmul_mul_le _ _ _ _).trans <| Submodule.map₂_le_map₂
     (GradedAlgebra.mul_le_grade_add (homogeneousSubmodule ℒ) p.1 q.1)
     (GradedAlgebra.mul_le_grade_add (homogeneousSubmodule ℒ) p.2 q.2))
     (Submodule.mul_mem_mul hx hy)
 
 /-- The total-degree-`m` submodule `⨆ p₁ + p₂ = m, U_{p₁} ⊗ U_{p₂}` of `U(L) ⊗[R] U(L)`. -/
 def tensorTotalDegree (m : Γ) : Submodule R (U ⊗[R] U) :=
-  ⨆ p : {p : Γ × Γ // p.1 + p.2 = m}, tensorGrading ℒ p.val
+  InternalGrading.tensorProductPiece (homogeneousSubmodule ℒ) (homogeneousSubmodule ℒ) m
+
+/-- Unfolding characterization of `tensorTotalDegree`. -/
+theorem tensorTotalDegree_def (m : Γ) :
+    tensorTotalDegree ℒ m = ⨆ p : Γ × Γ, ⨆ _ : p.1 + p.2 = m, tensorGrading ℒ p :=
+  InternalGrading.tensorProductPiece_def _ _ m
 
 /-- Multiplication preserves the total-degree grading on `U(L) ⊗[R] U(L)`. -/
 theorem mul_mem_tensorTotalDegree {m₁ m₂ : Γ} {x y : U ⊗[R] U}
     (hx : x ∈ tensorTotalDegree ℒ m₁) (hy : y ∈ tensorTotalDegree ℒ m₂) :
     x * y ∈ tensorTotalDegree ℒ (m₁ + m₂) := by
-  rw [tensorTotalDegree] at hx hy
+  rw [tensorTotalDegree_def] at hx hy
   refine Submodule.iSup_induction _ (motive := fun x => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hx
     (fun p x hx => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [add_mul] using add_mem h₁ h₂)
+  refine Submodule.iSup_induction _ (motive := fun x => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hx
+    (fun hp x hx => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [add_mul] using add_mem h₁ h₂)
   refine Submodule.iSup_induction _ (motive := fun y => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hy
     (fun q y hy => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [mul_add] using add_mem h₁ h₂)
-  exact Submodule.mem_iSup_of_mem ⟨p.val + q.val, by
-    simp only [Prod.fst_add, Prod.snd_add]; rw [add_add_add_comm, p.property, q.property]⟩
+  refine Submodule.iSup_induction _ (motive := fun y => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hy
+    (fun hq y hy => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [mul_add] using add_mem h₁ h₂)
+  rw [tensorTotalDegree_def]
+  exact Submodule.mem_iSup_of_mem (p + q) <| Submodule.mem_iSup_of_mem
+    (by simp only [Prod.fst_add, Prod.snd_add]; rw [add_add_add_comm, hp, hq])
     (mul_mem_tensorGrading ℒ hx hy)
 
 /-- Comultiplication sends homogeneous elements of degree `m` into total tensor degree `m`. -/
@@ -78,27 +105,37 @@ theorem comul_mem_tensorTotalDegree {m : Γ} {a : U} (ha : a ∈ homogeneousSubm
   induction l with
   | nil =>
     simp only [List.map_nil, List.prod_nil, List.sum_nil, map_one, Algebra.TensorProduct.one_def]
-    exact Submodule.mem_iSup_of_mem ⟨(0, 0), add_zero 0⟩ (Submodule.apply_mem_map₂
-      _ (SetLike.one_mem_graded _) (SetLike.one_mem_graded _))
+    rw [tensorTotalDegree_def]
+    exact Submodule.mem_iSup_of_mem (0, 0) <| Submodule.mem_iSup_of_mem (add_zero 0) <| by
+      rw [tensorGrading_def]
+      exact Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded _) (SetLike.one_mem_graded _)
   | cons b l ih =>
     simp only [List.map_cons, List.prod_cons, List.sum_cons, map_mul]
     refine mul_mem_tensorTotalDegree ℒ ?_ ih
-    rw [Bialgebra.comulAlgHom_apply, comul_ι]
-    exact add_mem
-      (Submodule.mem_iSup_of_mem ⟨(b.1, 0), add_zero b.1⟩ (Submodule.apply_mem_map₂ _
-        (ι_mem_homogeneousSubmodule ℒ b.2.property) (SetLike.one_mem_graded _)))
-      (Submodule.mem_iSup_of_mem ⟨(0, b.1), zero_add b.1⟩ (Submodule.apply_mem_map₂ _
-        (SetLike.one_mem_graded _) (ι_mem_homogeneousSubmodule ℒ b.2.property)))
+    rw [Bialgebra.comulAlgHom_apply, comul_ι, tensorTotalDegree_def]
+    refine add_mem
+      (Submodule.mem_iSup_of_mem (b.1, 0) <| Submodule.mem_iSup_of_mem (add_zero b.1) ?_)
+      (Submodule.mem_iSup_of_mem (0, b.1) <| Submodule.mem_iSup_of_mem (zero_add b.1) ?_)
+    · rw [tensorGrading_def]
+      exact Submodule.apply_mem_map₂ _
+        (ι_mem_homogeneousSubmodule ℒ b.2.property) (SetLike.one_mem_graded _)
+    · rw [tensorGrading_def]
+      exact Submodule.apply_mem_map₂ _
+        (SetLike.one_mem_graded _) (ι_mem_homogeneousSubmodule ℒ b.2.property)
 
 /-- `Δ(a) - (1 ⊗ a + a ⊗ 1)` of a degree-`m` element has total tensor degree `m`. -/
 theorem comul_sub_tmul_add_tmul_mem_tensorTotalDegree {m : Γ} {a : U}
     (ha : a ∈ homogeneousSubmodule ℒ m) :
-    Coalgebra.comul (R := R) a - (1 ⊗ₜ[R] a + a ⊗ₜ[R] 1) ∈ tensorTotalDegree ℒ m :=
-  sub_mem (comul_mem_tensorTotalDegree ℒ ha) (add_mem
-    (Submodule.mem_iSup_of_mem ⟨(0, m), zero_add m⟩
-      (Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded _) ha))
-    (Submodule.mem_iSup_of_mem ⟨(m, 0), add_zero m⟩
-      (Submodule.apply_mem_map₂ _ ha (SetLike.one_mem_graded _))))
+    Coalgebra.comul (R := R) a - (1 ⊗ₜ[R] a + a ⊗ₜ[R] 1) ∈ tensorTotalDegree ℒ m := by
+  refine sub_mem (comul_mem_tensorTotalDegree ℒ ha) ?_
+  rw [tensorTotalDegree_def]
+  refine add_mem
+    (Submodule.mem_iSup_of_mem (0, m) <| Submodule.mem_iSup_of_mem (zero_add m) ?_)
+    (Submodule.mem_iSup_of_mem (m, 0) <| Submodule.mem_iSup_of_mem (add_zero m) ?_)
+  · rw [tensorGrading_def]
+    exact Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded _) ha
+  · rw [tensorGrading_def]
+    exact Submodule.apply_mem_map₂ _ ha (SetLike.one_mem_graded _)
 
 private noncomputable def tensorComponentKer [DecidableEq Γ]
     [DirectSum.Decomposition (tensorGrading ℒ)] (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
@@ -116,8 +153,10 @@ theorem decompose_eq_zero_of_mem_tensorTotalDegree [DecidableEq Γ]
     [DirectSum.Decomposition (tensorGrading ℒ)] {m : Γ} {z : U ⊗[R] U}
     (hz : z ∈ tensorTotalDegree ℒ m) {p : Γ × Γ} (hp : p.1 + p.2 ≠ m) :
     (decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 :=
-  (mem_tensorComponentKer ℒ).mp <| (iSup_le fun q _ hw => (mem_tensorComponentKer ℒ).mpr <|
-    decompose_of_mem_ne (tensorGrading ℒ) hw fun h => hp (h ▸ q.property) :
+  (mem_tensorComponentKer ℒ).mp <| (by
+    rw [tensorTotalDegree_def]
+    exact iSup_le fun q => iSup_le fun hq _ hw => (mem_tensorComponentKer ℒ).mpr <|
+      decompose_of_mem_ne (tensorGrading ℒ) hw fun h => hp (h ▸ hq) :
       tensorTotalDegree ℒ m ≤ tensorComponentKer ℒ p) hz
 
 end Graded
@@ -149,7 +188,8 @@ theorem decompose_eq_zero_of_mem_tensorProduct_ideal (hneg : ∀ n, d n < 0 → 
     Submodule.map₂_le]
   intro j hj i hi x hx y hy
   refine (mem_tensorComponentKer ℒ).mpr <| decompose_of_mem_ne (tensorGrading ℒ) (i := (i, j))
-    (Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hx hy) fun heq => ?_
+    (by rw [tensorGrading_def]; exact Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hx hy)
+    fun heq => ?_
   rcases Prod.ext_iff.mp heq with ⟨rfl, rfl⟩; omega
 
 private theorem comul_prod_mem_tensorProduct (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :

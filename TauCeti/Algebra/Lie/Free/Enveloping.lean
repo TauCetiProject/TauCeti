@@ -93,6 +93,9 @@ theorem degreeFiltration_eq_augmentation_pow (k : ℕ) : (𝓕).ideal k = J ^ k 
 
 /-- On `U(FreeLieAlgebra R S)`, the degree filtration for `PositiveDegrees.naturals` coincides with
 powers of the augmentation ideal. -/
+-- Neither `PositiveDegrees.naturals` nor `degreeFiltration` is `@[expose]`d, so `naturals.degree`
+-- is not definitionally equal to `δ` here; generalize over `d` and `hneg` before `rfl`
+-- substitution because `hneg`'s type depends on `d`.
 theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
     (UniversalEnvelopingAlgebra.degreeFiltration ℒ
       PositiveDegrees.naturals.degree

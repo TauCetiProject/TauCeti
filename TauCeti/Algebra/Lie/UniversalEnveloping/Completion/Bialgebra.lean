@@ -105,6 +105,27 @@ theorem completedCounit_toCompletion (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (u 
     completedCounit ℒ d hneg ((𝓕 hneg).toCompletion u) = Coalgebra.counit (R := R) u :=
   completedCounit_of_representative ℒ d hneg _ u ((𝓕 hneg).projection_toCompletion 0 u).symm
 
+/-- The completed counit on the completed tensor square of `U(L)`, factored through the
+order-zero projection. -/
+noncomputable def completedTensorCounit (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
+    ((𝓕 hneg).tensorProduct R (𝓕 hneg)).completion →ₐ[R] R :=
+  (Ideal.Quotient.liftₐ (((𝓕 hneg).tensorProduct R (𝓕 hneg)).ideal 1)
+    (Bialgebra.counitAlgHom R (U ⊗[R] U))
+    (fun _ ht => RingHom.mem_ker.mp
+      (tensorProduct_degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg ht))).comp
+    (((𝓕 hneg).tensorProduct R (𝓕 hneg)).projectionₐ 0)
+
+/-- The completed tensor counit agrees with `Coalgebra.counit` on any order-zero
+representative. -/
+theorem completedTensorCounit_of_representative (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
+    (z : ((𝓕 hneg).tensorProduct R (𝓕 hneg)).completion) (t : U ⊗[R] U)
+    (ht : Ideal.Quotient.mk (((𝓕 hneg).tensorProduct R (𝓕 hneg)).ideal 1) t =
+      ((𝓕 hneg).tensorProduct R (𝓕 hneg)).projection 0 z) :
+    completedTensorCounit ℒ d hneg z = Coalgebra.counit (R := R) t := by
+  rw [completedTensorCounit, AlgHom.comp_apply, AlgFiltration.projectionₐ_apply, ← ht,
+    ← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp,
+    Bialgebra.counitAlgHom_apply]
+
 /-- Elements of the first completion ideal have completed counit zero. -/
 theorem completedCounit_eq_zero_of_mem_completionIdeal_one (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
     {x : completedEnveloping ℒ d hneg} (hx : x ∈ (𝓕 hneg).completionIdeal 1) :
@@ -159,31 +180,31 @@ variable {ℒ d} in
 theorem IsCompletedPrimitive.completedCounit_eq_zero {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x : completedEnveloping ℒ d hneg} (hx : IsCompletedPrimitive ℒ d hneg x) :
     completedCounit ℒ d hneg x = 0 := by
-  let 𝒯 := (𝓕 hneg).tensorProduct R (𝓕 hneg)
-  let ε₂ : 𝒯.completion →ₐ[R] R := (Ideal.Quotient.liftₐ (𝒯.ideal (0 + 1))
-    (Bialgebra.counitAlgHom R (U ⊗[R] U)) (fun _ ht => RingHom.mem_ker.mp
-      (tensorProduct_degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg ht))).comp
-    (𝒯.projectionₐ 0)
-  have hε₂ {z : 𝒯.completion} {t : U ⊗[R] U}
-      (ht : Ideal.Quotient.mk (𝒯.ideal (0 + 1)) t = 𝒯.projection 0 z) :
-      ε₂ z = Coalgebra.counit (R := R) t := by
-    rw [AlgHom.comp_apply, AlgFiltration.projectionₐ_apply, ← ht, ← Ideal.Quotient.mkₐ_eq_mk R,
-      ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp, Bialgebra.counitAlgHom_apply]
   obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((𝓕 hneg).projection 0 x)
-  have hL : ε₂ ((𝓕 hneg).completedTensor R (𝓕 hneg) x 1) = completedCounit ℒ d hneg x := by
-    rw [hε₂ ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 x 1 a 1 ha
-        (map_one _).symm).symm, TensorProduct.counit_tmul, Bialgebra.counit_one, one_smul,
+  have hL : completedTensorCounit ℒ d hneg ((𝓕 hneg).completedTensor R (𝓕 hneg) x 1) =
+      completedCounit ℒ d hneg x := by
+    rw [completedTensorCounit_of_representative ℒ d hneg _ _
+        ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 x 1 a 1 ha
+          (map_one _).symm).symm,
+      TensorProduct.counit_tmul, Bialgebra.counit_one, one_smul,
       completedCounit_of_representative ℒ d hneg x a ha]
-  have hR : ε₂ ((𝓕 hneg).completedTensor R (𝓕 hneg) 1 x) = completedCounit ℒ d hneg x := by
-    rw [hε₂ ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 1 x 1 a
-        (map_one _).symm ha).symm, TensorProduct.counit_tmul, Bialgebra.counit_one, smul_eq_mul,
-      mul_one, completedCounit_of_representative ℒ d hneg x a ha]
-  have hΔ : ε₂ (completedCoproduct ℒ d hneg x) = completedCounit ℒ d hneg x := by
-    rw [hε₂ (by rw [projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ,
-      Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply])]
+  have hR : completedTensorCounit ℒ d hneg ((𝓕 hneg).completedTensor R (𝓕 hneg) 1 x) =
+      completedCounit ℒ d hneg x := by
+    rw [completedTensorCounit_of_representative ℒ d hneg _ _
+        ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 1 x 1 a
+          (map_one _).symm ha).symm,
+      TensorProduct.counit_tmul, Bialgebra.counit_one, smul_eq_mul, mul_one,
+      completedCounit_of_representative ℒ d hneg x a ha]
+  have hΔ : completedTensorCounit ℒ d hneg (completedCoproduct ℒ d hneg x) =
+      completedCounit ℒ d hneg x := by
+    rw [completedTensorCounit_of_representative ℒ d hneg _ _ (by
+      rw [projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ,
+        Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply])]
     exact (CoalgHomClass.counit_comp_apply (Coalgebra.comulCoalgHom R U) a).trans
       (completedCounit_of_representative ℒ d hneg x a ha).symm
-  have hε := congrArg ε₂ hx; rw [hΔ, map_add, hL, hR] at hε; exact left_eq_add.mp hε
+  have hε := congrArg (completedTensorCounit ℒ d hneg) hx
+  rw [hΔ, map_add, hL, hR] at hε
+  exact left_eq_add.mp hε
 
 variable {ℒ d} in
 /-- Any order-`k` representative of a completed primitive element has primitive defect in the
