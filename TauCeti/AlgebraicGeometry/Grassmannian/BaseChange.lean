@@ -27,7 +27,7 @@ Both schemes represent the same functor on affine schemes over `Spec R'`. For an
 (`Module.Grassmannian.baseChangeEquiv`), that is, with the morphisms `Spec A ⟶ G(k, M)` over
 `Spec R`. This identification is natural in `A` (`Module.Grassmannian.baseChangeEquiv_map`), so
 it is composition with a morphism `Module.Grassmannian.baseChangeHom R R' M k` from
-`G(k, R' ⊗[R] M)` to `G(k, M)` (`AlgebraicGeometry.Scheme.homOfAffinePoints`), and the square
+`G(k, R' ⊗[R] M)` to `G(k, M)` (`Module.Grassmannian.homOfPoints`), and the square
 formed with the structure morphisms is a pullback square because it is one on affine points
 (`AlgebraicGeometry.Scheme.isPullback_of_forall_spec`).
 
@@ -77,78 +77,40 @@ namespace Module.Grassmannian
 variable (R R' : Type u) [CommRing R] [CommRing R'] [Algebra R R'] (M : Type u) [AddCommGroup M]
   [Module R M] (k : ℕ)
 
-/-- The morphism `Spec A ⟶ G(k, M)` over `Spec R` classifying the point of `G(k, A ⊗[R] M; A)`
-which corresponds to a morphism `Spec A ⟶ G(k, R' ⊗[R] M)` over `Spec R'`. The algebra structures
-on `A` are explicit arguments, so that `baseChangeAux_congr` can compare different choices. -/
-private noncomputable def baseChangeAux (A : Type u) [CommRing A] (_ : Algebra R' A)
-    (_ : Algebra R A) (_ : IsScalarTower R R' A) (a : Spec (.of A) ⟶ scheme R' (R' ⊗[R] M) k)
-    (ha : a ≫ toSpec R' (R' ⊗[R] M) k = Spec.map (CommRingCat.ofHom (algebraMap R' A))) :
-    Spec (.of A) ⟶ scheme R M k :=
-  toSchemeHom (baseChangeEquiv R' ((schemeHomEquiv R' (R' ⊗[R] M) k A).symm ⟨a, ha⟩))
-
--- `baseChangeAux` depends on the algebra structures on `A` only through their equality class.
-private lemma baseChangeAux_congr (A : Type u) [CommRing A] (iR' jR' : Algebra R' A)
-    (iR jR : Algebra R A)
-    (t : @IsScalarTower R R' A _ (@Algebra.toSMul _ _ _ _ iR') (@Algebra.toSMul _ _ _ _ iR))
-    (t' : @IsScalarTower R R' A _ (@Algebra.toSMul _ _ _ _ jR') (@Algebra.toSMul _ _ _ _ jR))
-    (h' : iR' = jR') (h : iR = jR) (a : Spec (.of A) ⟶ scheme R' (R' ⊗[R] M) k) (ha ha') :
-    baseChangeAux R R' M k A iR' iR t a ha = baseChangeAux R R' M k A jR' jR t' a ha' := by
-  subst h' h
-  rfl
-
-/-- The morphism of affine points underlying `baseChangeHom`: the algebra structure of `A` over
-`R'` is read off from the composite `Spec A ⟶ G(k, R' ⊗[R] M) ⟶ Spec R'`. -/
-private noncomputable def baseChangePoint {A : CommRingCat.{u}}
-    (a : Spec A ⟶ scheme R' (R' ⊗[R] M) k) : Spec A ⟶ scheme R M k :=
-  let φ : R' →+* A := (Spec.preimage (a ≫ toSpec R' (R' ⊗[R] M) k)).hom
-  letI := φ.toAlgebra
-  letI : Algebra R A := (φ.comp (algebraMap R R')).toAlgebra
-  baseChangeAux R R' M k A ‹_› ‹_› (.of_algebraMap_eq' rfl) a (Spec.map_preimage _).symm
+/-- The morphism `Spec A ⟶ G(k, M)` over `Spec R` classifying the image in `G(k, A ⊗[R] M; A)` of a
+point of `G(k, A ⊗[R'] (R' ⊗[R] M); A)`, for the algebra structure on `A` over `R` induced from
+`R'`. -/
+private noncomputable def baseChangePoint {A : Type u} [CommRing A] [Algebra R' A]
+    (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) : Spec (.of A) ⟶ scheme R M k :=
+  letI : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
+  haveI : IsScalarTower R R' A := .of_algebraMap_eq' rfl
+  toSchemeHom (baseChangeEquiv R' N)
 
 variable {R R' M k}
 
-/-- `baseChangePoint` computed with any algebra structures on `A` compatible with the morphism. -/
-private lemma baseChangePoint_eq (A : Type u) [CommRing A] [Algebra R' A] [Algebra R A]
-    [IsScalarTower R R' A] (a : Spec (.of A) ⟶ scheme R' (R' ⊗[R] M) k)
-    (ha : a ≫ toSpec R' (R' ⊗[R] M) k = Spec.map (CommRingCat.ofHom (algebraMap R' A))) :
-    baseChangePoint R R' M k a = baseChangeAux R R' M k A ‹_› ‹_› ‹_› a ha := by
-  have hφ : (Spec.preimage (a ≫ toSpec R' (R' ⊗[R] M) k)).hom = algebraMap R' A := by
-    rw [ha, Spec.preimage_map, CommRingCat.hom_ofHom]
-  refine baseChangeAux_congr R R' M k A _ _ _ _ _ ‹_› ?_ ?_ a _ _
-  · exact Algebra.algebra_ext _ _ fun r ↦ DFunLike.congr_fun hφ r
-  · refine Algebra.algebra_ext _ _ fun r ↦ ?_
-    rw [IsScalarTower.algebraMap_apply R R' A]
-    exact DFunLike.congr_fun hφ _
+/-- `baseChangePoint` computed with any compatible algebra structure on `A` over `R`. -/
+private lemma baseChangePoint_eq {A : Type u} [CommRing A] [Algebra R' A] [iR : Algebra R A]
+    [IsScalarTower R R' A] (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
+    baseChangePoint R R' M k N = toSchemeHom (baseChangeEquiv R' N) := by
+  obtain rfl : iR = ((algebraMap R' A).comp (algebraMap R R')).toAlgebra :=
+    Algebra.algebra_ext _ _ fun r ↦ IsScalarTower.algebraMap_apply R R' A r
+  -- with the induced algebra structure, both sides are `baseChangePoint` by definition
+  rfl
+
+/-- `baseChangePoint` is natural in the algebra. -/
+private lemma baseChangePoint_map {A B : Type u} [CommRing A] [Algebra R' A] [CommRing B]
+    [Algebra R' B] (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
+    baseChangePoint R R' M k (map f N) =
+      Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ baseChangePoint R R' M k N := by
+  let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
+  let _ : Algebra R B := ((algebraMap R' B).comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
+  rw [baseChangePoint_eq, baseChangePoint_eq, baseChangeEquiv_map, toSchemeHom_map]
+  -- `f.restrictScalars R` has underlying ring map `f`
+  rfl
 
 variable {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
-
-private lemma baseChangePoint_toSchemeHom (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
-    baseChangePoint R R' M k (toSchemeHom N) = toSchemeHom (baseChangeEquiv R' N) := by
-  rw [baseChangePoint_eq A _ (toSchemeHom_toSpec N), baseChangeAux]
-  congr 2
-  exact (Equiv.symm_apply_eq _).2 (Subtype.ext (coe_schemeHomEquiv_apply N).symm)
-
-/-- `baseChangePoint` is natural in the affine scheme. -/
-private lemma baseChangePoint_comp {B C : CommRingCat.{u}} (ψ : Spec C ⟶ Spec B)
-    (a : Spec B ⟶ scheme R' (R' ⊗[R] M) k) :
-    baseChangePoint R R' M k (ψ ≫ a) = ψ ≫ baseChangePoint R R' M k a := by
-  -- give `B` and `C` the algebra structures over `R'` read off from `a` and `ψ ≫ a`; with them,
-  -- `algebraMap R' B` is `φ` by definition, and `χ` is an `R'`-algebra map `χ'`
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R' (R' ⊗[R] M) k)
-  obtain ⟨χ, rfl⟩ := Spec.map_surjective ψ
-  let _ : Algebra R' B := φ.hom.toAlgebra
-  let _ : Algebra R B := (φ.hom.comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-  let _ : Algebra R' C := (χ.hom.comp φ.hom).toAlgebra
-  let _ : Algebra R C := ((χ.hom.comp φ.hom).comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' C := .of_algebraMap_eq' rfl
-  let χ' : B →ₐ[R'] C := { χ.hom with commutes' := fun _ ↦ rfl }
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
-  have h : Spec.map χ ≫ toSchemeHom N = toSchemeHom (map χ' N) := (toSchemeHom_map χ' N).symm
-  rw [h, baseChangePoint_toSchemeHom, baseChangePoint_toSchemeHom, baseChangeEquiv_map,
-    toSchemeHom_map]
-  -- `χ'.restrictScalars R` has underlying ring map `χ`
-  rfl
 
 variable (R R' M k) in
 /-- **The projection from the Grassmannian of a base change.** For an `R`-algebra `R'`, the
@@ -158,14 +120,14 @@ morphism `G(k, R' ⊗[R] M) ⟶ G(k, M)` which sends the point classifying `N` o
 `G(k, R' ⊗[R] M)`, it exhibits `G(k, R' ⊗[R] M)` as the base change of `G(k, M)` to `Spec R'`
 (`Module.Grassmannian.isPullback_baseChangeHom`). -/
 noncomputable def baseChangeHom : scheme R' (R' ⊗[R] M) k ⟶ scheme R M k :=
-  Scheme.homOfAffinePoints (baseChangePoint R R' M k) baseChangePoint_comp
+  homOfPoints (baseChangePoint R R' M k) baseChangePoint_map
 
 /-- **`baseChangeHom` on points.** The morphism classifying `N` over an `R'`-algebra `A`, composed
 with `baseChangeHom`, classifies the image of `N` in `G(k, A ⊗[R] M; A)`. -/
 @[reassoc (attr := simp)]
 theorem toSchemeHom_comp_baseChangeHom (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
     toSchemeHom N ≫ baseChangeHom R R' M k = toSchemeHom (baseChangeEquiv R' N) :=
-  (Scheme.comp_homOfAffinePoints _ _ _).trans (baseChangePoint_toSchemeHom N)
+  (toSchemeHom_comp_homOfPoints _ baseChangePoint_map N).trans (baseChangePoint_eq N)
 
 variable (R R' M k) in
 /-- `baseChangeHom` lies over `Spec R' ⟶ Spec R`. -/

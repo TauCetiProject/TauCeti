@@ -23,9 +23,9 @@ surjection `⋀ᵏ X → ⋀ᵏ (X ⧸ N)` is a point of `G(1, ⋀ᵏ X; R)`: th
 (`Module.Grassmannian.pluckerBaseChange_map`). This naturality is what makes it the map on points of
 the Plücker morphism of Grassmannian schemes (`Module.Grassmannian.pluckerHom`).
 
-The naturality is proved through the observation that two points of `G(k, X; R)` one of which
-contains the other are equal (`Module.Grassmannian.eq_of_le`): the induced surjection between the
-quotients splits, and its kernel is finite projective of rank zero.
+The naturality is proved by checking one inclusion on the wedges `(1 ⊗ m₁) ∧ ⋯ ∧ (1 ⊗ mₖ)`, which
+span `⋀ᵏ (A ⊗[R] M)`; equality then holds because comparable points of a Grassmannian are equal
+(`Module.Grassmannian.eq_of_le`).
 
 ## Main definitions
 
@@ -35,15 +35,10 @@ quotients splits, and its kernel is finite projective of rank zero.
 
 ## Main results
 
-* `Module.Grassmannian.eq_of_le`: comparable points of a Grassmannian are equal.
 * `Module.Grassmannian.toSubmodule_plucker_ofSurjective`: the Plücker point of the kernel of
   `φ : X ↠ P` is the kernel of `⋀ᵏ φ`.
 * `Module.Grassmannian.pluckerBaseChange_map`: naturality in the algebra.
-* `Module.Grassmannian.exteriorPower_map_two_mulVecLin`: the Plücker coordinates
-  `(1 : c : d : -a : -b : ad - bc)` of the chart point `((1, 0, a, b), (0, 1, c, d))` of
-  `G(2, A⁴)`, and the Plücker relation they satisfy.
 -/
-
 public section
 
 universe u v w
@@ -51,54 +46,6 @@ universe u v w
 open TensorProduct
 
 namespace Module.Grassmannian
-
-section EqOfLE
-
-variable {R : Type u} [CommRing R] {X : Type v} [AddCommGroup X] [Module R X] {k : ℕ}
-
-/-- **Points of a Grassmannian are incomparable unless equal.** If `N₁ ≤ N₂` are points of
-`G(k, X; R)`, the induced surjection `X ⧸ N₁ → X ⧸ N₂` of finite projective modules of the same
-constant rank `k` is injective, so `N₁ = N₂`. -/
-theorem eq_of_le {N₁ N₂ : G(k, X; R)} (h : N₁.toSubmodule ≤ N₂.toSubmodule) : N₁ = N₂ := by
-  ext1
-  refine le_antisymm h fun x hx ↦ ?_
-  set π := Submodule.factor h
-  obtain ⟨s, hs⟩ := Module.projective_lifting_property π LinearMap.id
-    (Submodule.factor_surjective h)
-  have hs' : ∀ z, π (s z) = z := fun z ↦ LinearMap.congr_fun hs z
-  -- the kernel of `π` is a direct summand, of rank zero
-  set p : (X ⧸ N₁.toSubmodule) →ₗ[R] LinearMap.ker π :=
-    LinearMap.codRestrict _ (LinearMap.id - s ∘ₗ π) fun y ↦ by
-      simp [LinearMap.mem_ker, hs']
-  have hp : ∀ y : LinearMap.ker π, p y = y := fun y ↦ Subtype.ext <| by
-    simp [p, LinearMap.mem_ker.1 y.property]
-  let e : (X ⧸ N₁.toSubmodule) ≃ₗ[R] (LinearMap.ker π × (X ⧸ N₂.toSubmodule)) :=
-    { toLinearMap := p.prod π
-      invFun := fun z ↦ z.1 + s z.2
-      left_inv := fun y ↦ by simp [p]
-      right_inv := fun z ↦ by
-        ext
-        · simp [p, LinearMap.mem_ker.1 z.1.property, hs']
-        · simp [LinearMap.mem_ker.1 z.1.property, hs'] }
-  have : Module.Finite R (LinearMap.ker π) :=
-    Module.Finite.of_surjective p fun y ↦ ⟨y, hp y⟩
-  have : Module.Projective R (LinearMap.ker π) :=
-    Module.Projective.of_split (LinearMap.ker π).subtype p (LinearMap.ext hp)
-  have hrank := rankAtStalk_prod (R := R) (LinearMap.ker π) (X ⧸ N₂.toSubmodule)
-  rw [← rankAtStalk_eq_of_equiv e] at hrank
-  have h0 : rankAtStalk (R := R) (LinearMap.ker π) = 0 := by
-    ext q
-    have := congr_fun hrank q
-    simp only [Pi.add_apply, N₁.rankAtStalk_eq, N₂.rankAtStalk_eq] at this
-    simp only [Pi.zero_apply]
-    omega
-  have hsub := rankAtStalk_eq_zero_iff_subsingleton.1 h0
-  have hmem : N₁.toSubmodule.mkQ x ∈ LinearMap.ker π := by
-    simpa [π, LinearMap.mem_ker] using hx
-  have : (⟨_, hmem⟩ : LinearMap.ker π) = 0 := Subsingleton.elim _ _
-  simpa using congr_arg Subtype.val this
-
-end EqOfLE
 
 section Plucker
 
@@ -152,22 +99,12 @@ noncomputable def pluckerBaseChange (N : G(k, A ⊗[R] M; A)) : G(1, A ⊗[R] �
 
 /-- The Plücker point over `A` is the image of the kernel of
 `⋀ᵏ_A (A ⊗[R] M) → ⋀ᵏ_A ((A ⊗[R] M) ⧸ N)` in `A ⊗[R] ⋀ᵏ M`. -/
+@[simp]
 theorem toSubmodule_pluckerBaseChange (N : G(k, A ⊗[R] M; A)) :
     (pluckerBaseChange N).toSubmodule =
       (LinearMap.ker (exteriorPower.map k N.toSubmodule.mkQ)).map
         (TauCeti.exteriorPower.equivBaseChange A k).toLinearMap := by
   simp [pluckerBaseChange]
-
-/-- The `A`-span of the vectors `1 ⊗ m` is all of `A ⊗[R] M`. -/
-private theorem span_one_tmul :
-    Submodule.span A (Set.range fun m : M ↦ (1 : A) ⊗ₜ[R] m) = ⊤ := by
-  refine Submodule.eq_top_iff'.2 fun x ↦ ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul a m =>
-    have : a ⊗ₜ[R] m = a • ((1 : A) ⊗ₜ[R] m) := by rw [smul_tmul', smul_eq_mul, mul_one]
-    rw [this]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨m, rfl⟩)
-  | add x y hx hy => exact add_mem hx hy
 
 /-- The value of `⋀ᵏ (B ⊗[R] M) → ⋀ᵏ ((B ⊗[R] M) ⧸ map f N)` on the image of
 `(1 ⊗ m₁) ∧ ⋯ ∧ (1 ⊗ mₖ)` under `⋀ᵏ_A (A ⊗[R] M) ≃ A ⊗[R] ⋀ᵏ M → B ⊗[R] ⋀ᵏ M ≃ ⋀ᵏ_B (B ⊗[R] M)`. -/
@@ -181,8 +118,7 @@ private theorem map_mkQ_rTensor_ιMulti (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M
   simp only [Finset.prod_const_one] at hA
   rw [hA, LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one,
     TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, one_smul,
-    exteriorPower.map_apply_ιMulti]
-  rfl
+    exteriorPower.map_apply_ιMulti, Function.comp_def]
 
 /-- The key step of `pluckerBaseChange_map`: the image under `f` of a vector of the Plücker point of
 `N` lies in the Plücker point of `map f N`. -/
@@ -193,12 +129,12 @@ private theorem map_mkQ_rTensor_eq_zero (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M
         (f.toLinearMap.rTensor (⋀[R]^k M) (TauCeti.exteriorPower.equivBaseChange A k x))) = 0 := by
   algebraize [f.toRingHom]
   set Q := (B ⊗[R] M) ⧸ (map f N).toSubmodule
+  -- after `algebraize`, `algebraMap A B` is `f` by definition
+  have hf : (Algebra.linearMap A B).restrictScalars R = f.toLinearMap := LinearMap.ext fun _ ↦ rfl
   -- the map `A ⊗[R] M → B ⊗[R] M` induced by `f`, as an `A`-linear map
   let h : A ⊗[R] M →ₗ[A] B ⊗[R] M := AlgebraTensorModule.rTensor R M (Algebra.linearMap A B)
-  have hh : ∀ x, h x = f.toLinearMap.rTensor M x := fun x ↦ by
-    induction x using TensorProduct.inductionOn with
-    | tmul a m => rfl
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
+  have hh (x : A ⊗[R] M) : h x = f.toLinearMap.rTensor M x := by
+    rw [AlgebraTensorModule.coe_rTensor, hf]
   let g : (A ⊗[R] M) ⧸ N.toSubmodule →ₗ[A] Q :=
     N.toSubmodule.mapQ ((map f N).toSubmodule.restrictScalars A) h fun x hx ↦ by
       simpa [hh] using rTensor_mem_map f hx
@@ -219,19 +155,23 @@ private theorem map_mkQ_rTensor_eq_zero (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M
       ((TauCeti.exteriorPower.equivBaseChange B k).symm
         (f.toLinearMap.rTensor (⋀[R]^k M) (TauCeti.exteriorPower.equivBaseChange A k y))) := by
     simp only [T, LinearMap.coe_comp, Function.comp_apply, LinearMap.coe_restrictScalars,
-      LinearEquiv.coe_coe]
-    congr 2
+      LinearEquiv.coe_coe, AlgebraTensorModule.coe_rTensor, hf]
+  -- the vectors `1 ⊗ m` span `A ⊗[R] M` over `A`: it is the base change of `⊤`
+  have hspan : Submodule.span A (Set.range (TensorProduct.mk R A M 1)) = ⊤ := by
+    rw [← LinearMap.coe_range, LinearMap.range_eq_map, ← Submodule.baseChange_eq_span,
+      Submodule.baseChange_top]
   have hTS : T = S ∘ₗ exteriorPower.map k N.toSubmodule.mkQ := by
-    refine LinearMap.ext_on (exteriorPower.ιMulti_span_of_span A k (A ⊗[R] M) span_one_tmul)
-      ?_
+    refine LinearMap.ext_on (exteriorPower.ιMulti_span_of_span A k (A ⊗[R] M) hspan) ?_
     rintro _ ⟨v, hv, rfl⟩
     choose m hm using fun i ↦ hv ⟨i, rfl⟩
     obtain rfl : v = fun i ↦ (1 : A) ⊗ₜ[R] m i := funext fun i ↦ (hm i).symm
     rw [hT, map_mkQ_rTensor_ιMulti, LinearMap.comp_apply, exteriorPower.map_apply_ιMulti,
       exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+    -- by definition, `S` sends the `A`-wedge of a family to the `B`-wedge of its images under `g`
     change _ = exteriorPower.ιMulti B k (fun i ↦ g (N.toSubmodule.mkQ (1 ⊗ₜ m i)))
     congr 1
     funext i
+    -- by definition of `mapQ`, `g` sends the class of `1 ⊗ m` to the class of `h (1 ⊗ m)`
     change _ = (Submodule.Quotient.mk (h (1 ⊗ₜ m i)) : Q)
     simp [h]
   rw [← hT, hTS, LinearMap.comp_apply, hx, map_zero]
@@ -249,67 +189,5 @@ theorem pluckerBaseChange_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)) :
   exact map_mkQ_rTensor_eq_zero f N hx
 
 end BaseChange
-
-section Check
-
-variable {A : Type u} [CommRing A] {V : Type v} [AddCommGroup V] [Module A V]
-
-/-- `(αu + βv) ∧ (γu + δv) = (αδ - βγ) u ∧ v`. -/
-theorem ιMulti_two_add_smul (u v : V) (α β γ δ : A) :
-    exteriorPower.ιMulti A 2 ![α • u + β • v, γ • u + δ • v] =
-      (α * δ - β * γ) • exteriorPower.ιMulti A 2 ![u, v] := by
-  apply Subtype.ext
-  simp only [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply, List.ofFn_succ,
-    List.ofFn_zero, Matrix.cons_val_zero, Matrix.cons_val_succ, List.prod_cons, List.prod_nil,
-    mul_one, Submodule.coe_smul, map_add,
-    map_smul, add_mul, mul_add, smul_mul_assoc, mul_smul_comm, ExteriorAlgebra.ι_sq_zero,
-    smul_zero, zero_add, add_zero, Fin.isValue]
-  have h : ExteriorAlgebra.ι A v * ExteriorAlgebra.ι A u =
-      -(ExteriorAlgebra.ι A u * ExteriorAlgebra.ι A v) :=
-    eq_neg_of_add_eq_zero_left (by rw [add_comm]; exact ExteriorAlgebra.ι_add_mul_swap u v)
-  rw [h]
-  module
-
-/-- **The Plücker coordinates of a point of `G(2, A⁴)`.** The quotient `q : A⁴ → A²` with matrix
-`((1, 0, a, b), (0, 1, c, d))`, the point of the chart indexed by the first two basis vectors,
-has `⋀² q (eᵢ ∧ eⱼ) = pᵢⱼ f₁ ∧ f₂` with
-`(p₁₂, p₁₃, p₁₄, p₂₃, p₂₄, p₃₄) = (1, c, d, -a, -b, ad - bc)`, and these satisfy the Plücker
-relation `p₁₂ p₃₄ - p₁₃ p₂₄ + p₁₄ p₂₃ = 0`. By
-`Module.Grassmannian.toSubmodule_plucker_ofSurjective`, the Plücker point of `ker q` is the kernel
-of `⋀² q`, the linear form with these coordinates. Without the signs of the exterior power, the
-coordinates `(1, c, d, a, b, ad - bc)` would give `2(ad - bc)` in the relation. -/
-theorem exteriorPower_map_two_mulVecLin (a b c d : A) :
-    let q := (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A).mulVecLin
-    let e : Fin 4 → Fin 4 → A := fun i ↦ Pi.single i 1
-    let w := exteriorPower.ιMulti A 2 ![(Pi.single 0 1 : Fin 2 → A), Pi.single 1 1]
-    exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 0, e 1]) = (1 : A) • w ∧
-      exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 0, e 2]) = c • w ∧
-      exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 0, e 3]) = d • w ∧
-      exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 1, e 2]) = (-a) • w ∧
-      exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 1, e 3]) = (-b) • w ∧
-      exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e 2, e 3]) = (a * d - b * c) • w ∧
-      1 * (a * d - b * c) - c * (-b) + d * (-a) = 0 := by
-  intro q e w
-  have hcol : ∀ j : Fin 4, q (e j) =
-      (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 0 j • (Pi.single 0 1 : Fin 2 → A) +
-        (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 1 j • Pi.single 1 1 := by
-    intro j
-    ext i
-    fin_cases i <;> simp [q, e, Matrix.mulVec, dotProduct, Pi.single_apply]
-  have key : ∀ i j : Fin 4, exteriorPower.map 2 q (exteriorPower.ιMulti A 2 ![e i, e j]) =
-      ((!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 0 i *
-          (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 1 j -
-        (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 1 i *
-          (!![1, 0, a, b; 0, 1, c, d] : Matrix (Fin 2) (Fin 4) A) 0 j) • w := by
-    intro i j
-    rw [exteriorPower.map_apply_ιMulti]
-    have : (q ∘ ![e i, e j]) = ![q (e i), q (e j)] := by
-      ext l : 1
-      fin_cases l <;> rfl
-    rw [this, hcol, hcol, ιMulti_two_add_smul]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, by ring⟩ <;> rw [key] <;> simp
-  ring_nf
-
-end Check
 
 end Module.Grassmannian
