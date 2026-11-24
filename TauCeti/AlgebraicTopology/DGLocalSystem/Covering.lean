@@ -106,7 +106,8 @@ theorem representation_liftingLocalSystem_lof_ofCube_point (g : FundamentalGroup
         ⟨_, (hp.monodromy g.asHom ⟨f, f.property⟩).property⟩)) := by
   obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g⁻¹
   rw [← inv_inv g, ← hγ,
-    DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply]
+    DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply,
+    cubicalChainPoint_def]
   let _ := (hp.isTransitive Φ).mulAction b
   let _ := (hp.isTransitive Φ).continuousSMul b
   refine (op_lof_smul_cubicalChainModuleLof (Y := {e // p.hom e = b}) _ _).trans ?_
