@@ -33,8 +33,8 @@ On the imaginary axis `τ = i y` every term is the positive real number `exp (-�
 there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
 divisible by `8`. Splitting a discrete subgroup `L` into the cosets of `M ≤ L` further shows that
 `θ_{γ+M}(i y) ≤ θ_{γ+L}(i y)` and `Θ_M(i y) ≤ Θ_L(i y)` on real parts, with equality if and only
-if `M = L`. In particular the theta series `Θ_M` and `Θ_L` are equal as functions if and only if
-`M = L`.
+if `M = L`. In particular the theta series `θ_{γ+M}` and `θ_{γ+L}` (and `Θ_M` and `Θ_L`) are
+equal as functions if and only if `M = L`.
 
 ## Main statements
 
@@ -51,16 +51,18 @@ if `M = L`. In particular the theta series `Θ_M` and `Θ_L` are equal as functi
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
-* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
+* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`,
+  `ZLattice.re_thetaCoset_pos`, `ZLattice.one_le_re_thetaSeries`:
+  on the imaginary axis `θ_{γ+L}` and `Θ_L` are real and positive, and `Θ_L ≥ 1`.
 * `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaCoset_lt_of_lt`,
   `ZLattice.re_thetaSeries_mono`, `ZLattice.re_thetaSeries_lt_of_lt`,
+  `ZLattice.thetaCoset_eq_iff_eq_of_le_of_re_eq_zero`,
   `ZLattice.thetaSeries_eq_iff_eq_of_le_of_re_eq_zero`: for a subgroup `M ≤ L` of a discrete `L`,
   on the imaginary axis `θ_{γ+M} ≤ θ_{γ+L}` and `Θ_M ≤ Θ_L` on real parts, with equality if and
   only if `M = L`.
-* `ZLattice.thetaSeries_eq_iff_of_le`, `ZLattice.thetaSeries_ne_of_lt`: for `M ≤ L` with `L`
-  discrete, `Θ_M = Θ_L` as functions on `ℍ` if and only if `M = L`.
+* `ZLattice.thetaCoset_eq_iff_of_le`, `ZLattice.thetaSeries_eq_iff_of_le`,
+  `ZLattice.thetaSeries_ne_of_lt`: for `M ≤ L` with `L` discrete, `θ_{γ+M} = θ_{γ+L}` and
+  `Θ_M = Θ_L` as functions on `ℍ` if and only if `M = L`.
 
 ## References
 
@@ -289,7 +291,7 @@ theorem re_thetaCoset_pos (γ : E) {τ : ℍ} (hτ : τ.re = 0) : 0 < (thetaCose
     (fun _ => (Real.exp_pos _).le) 0 (Real.exp_pos _)
 
 /-- On the imaginary axis the theta series of a discrete subgroup has real part at least `1`, the
-contribution of the zero vector (and is real, by `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`). -/
+contribution of the zero vector (and is real, by `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`). -/
 theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries L τ).re := by
   rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re]
   simpa using (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0).le_tsum 0
@@ -415,12 +417,18 @@ section SublatticeFunction
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M L : Submodule ℤ E} [DiscreteTopology L]
 
+/-- For `M ≤ L`, the coset theta series `θ_{γ+M}` and `θ_{γ+L}` are equal as functions on `ℍ`
+if and only if `M = L`. -/
+theorem thetaCoset_eq_iff_of_le (hML : M ≤ L) (γ : E) :
+    thetaCoset M γ = thetaCoset L γ ↔ M = L :=
+  ⟨fun h => (thetaCoset_eq_iff_eq_of_le_of_re_eq_zero hML γ UpperHalfPlane.I_re).mp
+    (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
+
 /-- For `M ≤ L`, the theta series `Θ_M` and `Θ_L` are equal as functions on `ℍ` if and only if
 `M = L`. -/
 theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
-    thetaSeries M = thetaSeries L ↔ M = L :=
-  ⟨fun h => (thetaSeries_eq_iff_eq_of_le_of_re_eq_zero hML UpperHalfPlane.I_re).mp
-    (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
+    thetaSeries M = thetaSeries L ↔ M = L := by
+  simpa using thetaCoset_eq_iff_of_le hML 0
 
 /-- For a proper subgroup `M < L`, `Θ_M ≠ Θ_L`. -/
 theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L :=
