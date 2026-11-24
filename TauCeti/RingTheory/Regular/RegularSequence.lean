@@ -45,8 +45,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   span of a range.
 * `TauCeti.isRegular_cons_iff_isRegular_quotient`: `x :: rs` is `R`-regular exactly
   when `x` is a non-zero-divisor and the images of `rs` are regular on `R ⧸ (x)`.
-* `Submodule.ofList_append_smul_top_eq_top_iff`: quotienting by `Ideal.ofList rs • ⊤`
-  detects whether `Ideal.ofList (rs ++ ss) • ⊤ = ⊤`.
+* `Submodule.sup_smul_top_eq_top_iff`: quotienting by `I • ⊤` detects whether
+  `(I ⊔ J) • ⊤ = ⊤`.
 * `RingTheory.Sequence.isRegular_append_iff`, `RingTheory.Sequence.IsRegular.of_append_left`:
   characterization of regularity of a concatenated sequence and prefix projection.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
@@ -123,16 +123,16 @@ end Cons
 
 section Append
 
-variable {R : Type u} [CommRing R] (M : Type v) [AddCommGroup M] [Module R M]
+/-- Quotienting by `I • ⊤` detects whether `(I ⊔ J) • ⊤ = ⊤`. -/
+theorem Submodule.sup_smul_top_eq_top_iff {R : Type u} [Ring R] (M : Type v)
+    [AddCommGroup M] [Module R M] (I J : Ideal R) :
+    (I ⊔ J) • (⊤ : Submodule R M) = ⊤ ↔
+      J • (⊤ : Submodule R (M ⧸ (I • ⊤ : Submodule R M))) = ⊤ := by
+  simpa only [Submodule.sup_smul, Submodule.map_smul'', Submodule.map_top,
+    Submodule.range_mkQ] using
+    (Submodule.map_mkQ_eq_top (I • (⊤ : Submodule R M)) (J • ⊤)).symm
 
-/-- Quotienting by `Ideal.ofList rs • ⊤` detects whether `Ideal.ofList (rs ++ ss) • ⊤ = ⊤`. -/
-theorem Submodule.ofList_append_smul_top_eq_top_iff (rs ss : List R) :
-    Ideal.ofList (rs ++ ss) • (⊤ : Submodule R M) = ⊤ ↔
-      Ideal.ofList ss • (⊤ : Submodule R (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M))) = ⊤ := by
-  simpa only [Ideal.ofList_append, Submodule.sup_smul, Submodule.map_smul'',
-    Submodule.map_top, Submodule.range_mkQ] using
-    (Submodule.map_mkQ_eq_top (Ideal.ofList rs • (⊤ : Submodule R M))
-      (Ideal.ofList ss • ⊤)).symm
+variable {R : Type u} [CommRing R] (M : Type v) [AddCommGroup M] [Module R M]
 
 namespace RingTheory.Sequence
 
@@ -141,7 +141,9 @@ namespace RingTheory.Sequence
 theorem isRegular_append_iff (rs ss : List R) :
     IsRegular M (rs ++ ss) ↔
       IsRegular M rs ∧ IsRegular (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M)) ss := by
-  have htop := Submodule.ofList_append_smul_top_eq_top_iff M rs ss
+  have htop : Ideal.ofList (rs ++ ss) • (⊤ : Submodule R M) = ⊤ ↔
+      Ideal.ofList ss • (⊤ : Submodule R (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M))) = ⊤ := by
+    rw [Ideal.ofList_append, Submodule.sup_smul_top_eq_top_iff]
   refine ⟨fun h ↦ ?_, fun ⟨hrs, hss⟩ ↦ ?_⟩
   · obtain ⟨hw1, hw2⟩ := (isWeaklyRegular_append_iff M rs ss).1 h.toIsWeaklyRegular
     exact ⟨⟨hw1, fun h1 ↦ h.top_ne_smul (top_le_iff.1 (h1.le.trans (Submodule.smul_mono_left
