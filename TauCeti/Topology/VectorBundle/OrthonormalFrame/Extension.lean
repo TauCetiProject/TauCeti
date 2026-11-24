@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.FiberBundle.Principal.Extension
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Basic
 
 /-!
 # Extending a lift of the orthonormal frame bundle along a structure group homomorphism

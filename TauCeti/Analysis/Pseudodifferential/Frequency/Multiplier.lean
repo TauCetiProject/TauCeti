@@ -281,6 +281,16 @@ section Uniform
 
 variable [CompleteSpace V] [CompleteSpace W]
 
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- The quantization of the Bessel weight `⟨ξ / 2π⟩ ^ s` is Mathlib's Bessel multiplier `J^s`, the
+Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`. -/
+theorem quantizeUniformCLM_besselPotential (s : ℝ) :
+    quantizeUniformCLM (besselPotential s : Symbol n V V s) (isUniform_besselPotential s) =
+      SchwartzMap.fourierMultiplierCLM V
+        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_besselPotential]
+
 omit [CompleteSpace W] in
 /-- **Composition with a Bessel multiplier on the right is exact.** `Op(a) ∘ J^t` is the
 quantization of `a ⟨ξ / 2π⟩ ^ t`. -/

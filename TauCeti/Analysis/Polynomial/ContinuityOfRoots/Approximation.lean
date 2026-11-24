@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+import Mathlib.Analysis.Normed.Field.Lemmas
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.Analysis.Polynomial.RootLocation
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
@@ -17,10 +20,11 @@ coefficient family with locally bounded degree. Nearby degrees may exceed the ce
 roots escaping to infinity do not affect the approximation of finite roots.
 
 Translate to a nonroot of the central polynomial and reflect at a fixed degree bound.
-The reflected leading coefficient stays nonzero, so the existing fixed-degree root
-matching theorem `Polynomial.eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt` applies.
-Reciprocal coordinates then recover the finite roots.
-This is useful for polynomial deformations whose limiting leading coefficient vanishes.
+The reflected leading coefficient stays nonzero. A nearby reflected polynomial splits and is
+small at the reflected central root compared with its leading coefficient, so
+`Polynomial.Splits.exists_mem_roots_norm_sub_lt` gives one of its roots close to it.
+Reciprocal coordinates then recover the finite roots. No local compactness of the field is
+needed. This is useful for polynomial deformations whose limiting leading coefficient vanishes.
 
 ## References
 
@@ -38,7 +42,7 @@ namespace TauCeti
 of a continuous coefficient family with locally bounded degree. No constancy of degree or
 root multiplicity is required. -/
 theorem eventually_exists_isRoot_norm_sub_lt
-    {K B : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K] [TopologicalSpace B]
+    {K B : Type*} [NormedField K] [IsAlgClosed K] [TopologicalSpace B]
     {F : B → K[X]} {x₀ : B} {d : ℕ}
     (hF : ∀ i ≤ d, ContinuousAt (fun x ↦ (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hzero : F x₀ ≠ 0)
@@ -73,25 +77,19 @@ theorem eventually_exists_isRoot_norm_sub_lt
     apply hcont.eventually_lt continuousAt_const
     simpa [u, sub_add_cancel] using hε
   obtain ⟨δ, hδ, hδclose⟩ := Metric.eventually_nhds_iff.1 hclose
-  filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt
-    (fun i _ ↦ hGcoeff i) hGdeg hδ, hdeg] with x hx hxdeg
-  obtain ⟨a, b, ha, hb, hab⟩ := hx
-  have hGa : ∃ i, a i = u := by
-    have heval := hroot.eq_zero
-    rw [ha, eval_mul, eval_C, eval_prod] at heval
-    have hlc : (G x₀).leadingCoeff ≠ 0 :=
-      leadingCoeff_ne_zero.mpr (ne_zero_of_coe_le_degree hGdeg.self_of_nhds.ge)
-    have hprod := (mul_eq_zero.mp heval).resolve_left hlc
-    obtain ⟨i, _, hi⟩ := Finset.prod_eq_zero_iff.mp hprod
-    exact ⟨i, (sub_eq_zero.mp (by simpa using hi)).symm⟩
-  obtain ⟨i, hi⟩ := hGa
-  have hbi : b i ≠ 0 ∧ ‖z - ((b i)⁻¹ + τ)‖ < ε :=
-    hδclose (by simpa [dist_eq_norm, hi, norm_sub_rev] using hab i)
-  refine ⟨(b i)⁻¹ + τ, ?_, hbi.2⟩
-  have hbroot : (G x).eval (b i) = 0 := by
-    rw [hb, eval_mul, eval_C, eval_prod]
-    apply mul_eq_zero_of_right
-    exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp)
-  exact (isRoot_reflect_taylor_iff hxdeg τ hbi.1).1 hbroot
+  -- Near `x₀`, `G x` is small at `u` compared with its leading coefficient.
+  have hsmall : ∀ᶠ x in 𝓝 x₀, ‖(G x).eval u‖ < ‖(G x).coeff d‖ * δ ^ d := by
+    have hGd : ∀ᶠ x in 𝓝 x₀, (G x).natDegree ≤ d :=
+      hGdeg.mono fun x hx ↦ natDegree_le_of_degree_le hx.le
+    refine (continuousAt_eval (fun i _ ↦ hGcoeff i) hGd continuousAt_const).norm.eventually_lt
+      ((hGcoeff d).norm.mul continuousAt_const) ?_
+    rw [hroot.eq_zero, norm_zero, htop]
+    exact mul_pos (norm_pos_iff.2 hτ) (pow_pos hδ d)
+  filter_upwards [hsmall, hGdeg, hdeg] with x hx hxGdeg hxdeg
+  -- So some root of `G x` lies within `δ` of `u`.
+  obtain ⟨b, hb, hub⟩ := (IsAlgClosed.splits (G x)).exists_mem_roots_norm_sub_lt hδ.le
+    (by rwa [leadingCoeff, natDegree_eq_of_degree_eq_some hxGdeg])
+  have hbu := hδclose (by rwa [dist_eq_norm, norm_sub_rev])
+  exact ⟨b⁻¹ + τ, (isRoot_reflect_taylor_iff hxdeg τ hbu.1).1 (isRoot_of_mem_roots hb), hbu.2⟩
 
 end TauCeti
