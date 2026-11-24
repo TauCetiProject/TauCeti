@@ -502,6 +502,11 @@ theorem toContinuousLinearEquiv_trans (e : Iso ρ σ) (f : Iso σ τ) :
       e.toContinuousLinearEquiv.trans f.toContinuousLinearEquiv :=
   (rfl)
 
+@[simp]
+theorem ofEquiv_symm [TopologicalSpace A] [IsModuleTopology A M] [IsModuleTopology A N]
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) : (ofEquiv e).symm = ofEquiv e.symm :=
+  (rfl)
+
 end Iso
 
 /-- **A morphism of continuous representations**: an equivariant continuous linear map. -/
