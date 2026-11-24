@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Sylow
 public import Mathlib.Order.Minimal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Projection
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Defect groups
