@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
+import TauCeti.NumberTheory.LocalField.ResidueCard
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
@@ -155,34 +156,6 @@ theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type
     rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
     exact mul_mem (pow_mem ϖ.property _) a.property
   exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
-
-section ResidueCard
-
-variable [Finite 𝓀[K]]
-
-/-- The residue factor `1 - q⁻¹` is nonzero when the residue field is finite. -/
-theorem one_sub_one_div_natCard_residueField_ne_zero :
-    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by
-  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  exact (tsub_pos_of_lt (by rwa [one_div, ENNReal.inv_lt_one])).ne'
-
-/-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is nonzero when the residue field is finite. -/
-theorem one_div_natCard_residueField_pow_mul_one_sub_ne_zero {n : ℕ} :
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
-  mul_ne_zero
-    (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
-    one_sub_one_div_natCard_residueField_ne_zero
-
-/-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is finite when the residue field is finite. -/
-theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top {n : ℕ} :
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ ∞ := by
-  have hq : (1 : ℝ≥0∞) ≤ Nat.card 𝓀[K] := by exact_mod_cast Nat.card_pos
-  refine ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top ?_)
-    (ENNReal.sub_ne_top ENNReal.one_ne_top)
-  rw [one_div]
-  exact ENNReal.inv_le_one.2 (one_le_pow₀ hq)
-
-end ResidueCard
 
 variable [TopologicalSpace K] {ι : Type*}
 

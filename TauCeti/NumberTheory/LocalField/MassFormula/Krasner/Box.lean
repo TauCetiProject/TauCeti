@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Integral
 public import TauCeti.NumberTheory.LocalField.MassFormula.Ore
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
+import TauCeti.NumberTheory.LocalField.ResidueCard
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
@@ -186,7 +187,9 @@ theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
     (eisensteinBox_subset_eisensteinSet K n j ha)
   obtain ⟨hadm, -, hcoeff, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
-  exact hf ▸ hadm.separable_map_of_isEisensteinAt he hf hcoeff hcrit
+  have hdeg : f.natDegree = n :=
+    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
+  exact hf ▸ hadm.separable_map_of_isEisensteinAt he hdeg hcoeff hcrit
 
 variable (K) in
 /-- Discriminant boxes for distinct wild exponents are pairwise disjoint. -/

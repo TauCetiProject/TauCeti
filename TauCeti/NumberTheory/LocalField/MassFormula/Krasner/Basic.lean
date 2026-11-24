@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Box
 public import TauCeti.NumberTheory.LocalField.MassFormula.Main
 import TauCeti.NumberTheory.LocalField.MassFormula.Total
+import TauCeti.NumberTheory.LocalField.ResidueCard
 
 /-!
 # Krasner's discriminant-refined count of totally ramified extensions

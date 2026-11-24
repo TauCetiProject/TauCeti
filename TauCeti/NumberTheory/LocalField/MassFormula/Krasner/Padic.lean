@@ -76,12 +76,28 @@ instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) := by
 /-- **Krasner's count over `ℚ_[p]`** (Pauli–Roblot, Theorem 6.1): executable `ℕ` formula for the
 number of totally ramified degree-`n` extensions of `ℚ_[p]` with wild exponent `j`, returning `0`
 unless `IsOreAdmissiblePadic p n j` holds. -/
-def krasnerCountPadic (p n j : ℕ) : ℕ :=
+@[expose] def krasnerCountPadic (p n j : ℕ) : ℕ :=
   if IsOreAdmissiblePadic p n j then
     if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
     else n * (p - 1) *
       p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
   else 0
+
+/-- For a `p`-adically Ore-admissible pair `(n, j)`, `krasnerCountPadic` evaluates to Pauli and
+Roblot's closed form. -/
+theorem krasnerCountPadic_of_isOreAdmissiblePadic {p n j : ℕ}
+    (h : IsOreAdmissiblePadic p n j) :
+    krasnerCountPadic p n j =
+      if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
+      else n * (p - 1) *
+        p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) := by
+  rw [krasnerCountPadic, ite_eq_left h]
+
+/-- Outside `p`-adically Ore-admissible pairs `(n, j)`, `krasnerCountPadic` vanishes. -/
+theorem krasnerCountPadic_of_not_isOreAdmissiblePadic {p n j : ℕ}
+    (h : ¬ IsOreAdmissiblePadic p n j) :
+    krasnerCountPadic p n j = 0 := by
+  rw [krasnerCountPadic, ite_eq_right h]
 
 noncomputable section
 
