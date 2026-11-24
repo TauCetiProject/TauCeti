@@ -57,8 +57,7 @@ theorem planeProjection_def (p : PolarPoint) :
 /-- The Cartesian projection is continuous on the polar cover. -/
 @[fun_prop] theorem continuous_planeProjection : Continuous planeProjection := by
   apply (continuous_congr planeProjection_def).mpr
-  simp only [projection_def, radius_def, angle_def]
-  fun_prop
+  exact Complex.orthonormalBasisOneI.repr.continuous.comp continuous_projection
 
 @[simp, grind =] theorem planeProjection_deckShift (k : ℤ) (p : PolarPoint) :
     planeProjection (deckShift k p) = planeProjection p := by

@@ -123,6 +123,12 @@ def projection (p : PolarPoint) : ℂ :=
 theorem projection_def (p : PolarPoint) :
     projection p = (radius p : ℂ) * (Circle.exp (angle p) : ℂ) := (rfl)
 
+/-- The polar projection is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_projection : Continuous projection := by
+  apply (continuous_congr projection_def).mpr
+  simp only [radius_def, angle_def]
+  fun_prop
+
 @[simp, grind =] theorem re_projection (p : PolarPoint) :
     (projection p).re = radius p * Real.cos (angle p) := by
   simp [projection_def, Circle.coe_exp]
