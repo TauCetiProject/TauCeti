@@ -24,7 +24,9 @@ bilinear maps, such as the coordinate expressions of metrics. In particular, pul
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
 (`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
-nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`).
+nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`), and conjugating a continuous bilinear
+map by linear isometric equivalences in both inputs and in the output preserves its operator norm
+(`ContinuousLinearMap.opNorm_compL_bilinearComp_linearIsometryEquiv`).
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
@@ -125,6 +127,24 @@ theorem injective_bilinearComp {B : V →L[𝕜] V →L[𝕜] G} (hB : Function.
   ext v
   obtain ⟨v, rfl⟩ := hu.2 v
   exact congrArg (fun φ ↦ φ v) hww'
+
+/-- Conjugating a continuous bilinear map by linear isometric equivalences in both inputs and in
+the output preserves its operator norm. -/
+@[simp]
+theorem opNorm_compL_bilinearComp_linearIsometryEquiv
+    {E₁ E₂ F₁ F₂ G₁ G₂ : Type*}
+    [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    [SeminormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [SeminormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+    [SeminormedAddCommGroup G₁] [NormedSpace 𝕜 G₁] [SeminormedAddCommGroup G₂] [NormedSpace 𝕜 G₂]
+    (B : E₂ →L[𝕜] F₂ →L[𝕜] G₂)
+    (e₁ : E₁ ≃ₗᵢ[𝕜] E₂) (e₂ : F₁ ≃ₗᵢ[𝕜] F₂) (e₃ : G₂ ≃ₗᵢ[𝕜] G₁) :
+    ‖(compL 𝕜 F₁ G₂ G₁ (e₃ : G₂ →L[𝕜] G₁)).comp
+        (B.bilinearComp (e₁ : E₁ →L[𝕜] E₂) (e₂ : F₁ →L[𝕜] F₂))‖ = ‖B‖ := by
+  refine le_antisymm
+    (opNorm_le_bound₂ _ (norm_nonneg B) fun x y ↦ by simpa using B.le_opNorm₂ (e₁ x) (e₂ y))
+    (opNorm_le_bound₂ B (opNorm_nonneg _) fun x y ↦ ?_)
+  simpa using ((compL 𝕜 F₁ G₂ G₁ (e₃ : G₂ →L[𝕜] G₁)).comp
+    (B.bilinearComp (e₁ : E₁ →L[𝕜] E₂) (e₂ : F₁ →L[𝕜] F₂))).le_opNorm₂ (e₁.symm x) (e₂.symm y)
 
 section Invertible
 
