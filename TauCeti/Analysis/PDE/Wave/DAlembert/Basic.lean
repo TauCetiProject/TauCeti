@@ -291,6 +291,22 @@ section Representation
 
 variable {u : ℝ → ℝ → F}
 
+/-- For a `C²` function `u` on space-time, `∂ₜ²u - ∂ₓ²u` at `(t, x)` is the difference of the
+second derivatives of `uncurry u` at `(t, x)` in the directions `(1, 0)` and `(0, 1)`. -/
+theorem deriv_deriv_sub_deriv_deriv_eq_fderiv (hu : ContDiff ℝ 2 (uncurry u)) (t x : ℝ) :
+    deriv (fun s ↦ deriv (fun r ↦ u r x) s) t - deriv (deriv (u t)) x =
+      fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (1, 0) (1, 0) -
+        fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (0, 1) (0, 1) := by
+  have hU1 : Differentiable ℝ (uncurry u) := hu.differentiable two_ne_zero
+  have hD : Differentiable ℝ (fderiv ℝ (uncurry u)) :=
+    (hu.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero
+  have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ (uncurry u) (s, x) (1, 0) :=
+    funext fun s ↦ (hasDerivAt_parameterCurve_uncurry (hU1 (s, x))).deriv
+  have hx : deriv (u t) = fun y ↦ fderiv ℝ (uncurry u) (t, y) (0, 1) :=
+    funext fun y ↦ (hasDerivAt_timeSlice_uncurry (hU1 (t, y))).deriv
+  rw [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
+    (hasDerivAt_fderiv_apply_snd (hD _) _).deriv]
+
 /-- **The characteristic factorization.** For a `C²` solution of the wave equation,
 `w = ∂ₜu + ∂ₓu`, the derivative of `u` in the direction `(1, 1)`, is constant along the lines
 `x + t = const`: `w(t, x) = w(0, x + t)`. -/
@@ -299,20 +315,13 @@ private theorem fderiv_apply_one_one_eq (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) :
     fderiv ℝ (uncurry u) (t, x) (1, 1) = fderiv ℝ (uncurry u) (0, x + t) (1, 1) := by
   set U := uncurry u
-  have hU1 : Differentiable ℝ U := hu.differentiable (by norm_num)
   have hD : Differentiable ℝ (fderiv ℝ U) :=
     (hu.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero
   -- The wave equation reads `D²U p e₁ e₁ = D²U p e₂ e₂`.
   have hpure : ∀ p : ℝ × ℝ, fderiv ℝ (fderiv ℝ U) p (1, 0) (1, 0) =
       fderiv ℝ (fderiv ℝ U) p (0, 1) (0, 1) := by
     rintro ⟨t, x⟩
-    have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ U (s, x) (1, 0) :=
-      funext fun s ↦ (hasDerivAt_parameterCurve_uncurry (hU1 (s, x))).deriv
-    have hx : deriv (u t) = fun y ↦ fderiv ℝ U (t, y) (0, 1) :=
-      funext fun y ↦ (hasDerivAt_timeSlice_uncurry (hU1 (t, y))).deriv
-    have h := hwave t x
-    rwa [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
-      (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
+    rw [← sub_eq_zero, ← deriv_deriv_sub_deriv_deriv_eq_fderiv hu, hwave, sub_self]
   have hsymm : ∀ p, IsSymmSndFDerivAt ℝ U p := fun p ↦
     hu.contDiffAt.isSymmSndFDerivAt (by simp)
   -- Along the characteristic `s ↦ (s, x + t - s)`, the derivative of `w` vanishes.
