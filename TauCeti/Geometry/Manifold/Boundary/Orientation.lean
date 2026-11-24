@@ -24,12 +24,13 @@ therefore have a negative slot-`0` derivative.  The definition uses the preferre
 `mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
 independence in `isOutwardPointing_iff_tangentCoordChange`; equivalently, minus the normal
 coordinate of any preferred chart increases along outward vectors
-(`isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos`). This is the interface used by boundary
-orientation and Stokes
-constructions. When the inward coordinate of the preferred chart is a nonzero multiple of `g - c`
-for a real function `g`, outwardness is the sign of the derivative of `g`
-(`isOutwardPointing_iff_mul_mvfderiv_neg`); this is how a boundary defining function, such as the
-function cutting out a sublevel, detects the outward direction.
+(`isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos`); this function is as smooth as the
+manifold on the chart source (`contMDiffAt_neg_chartAt_normal`, a case of
+`contMDiffAt_normal` for every chart of the maximal atlas). This is the interface used by
+boundary orientation and Stokes constructions. When the inward coordinate of the preferred chart
+is a nonzero multiple of `g - c` for a real function `g`, outwardness is the sign of the
+derivative of `g` (`isOutwardPointing_iff_mul_mvfderiv_neg`); this is how a boundary defining
+function, such as the function cutting out a sublevel, detects the outward direction.
 
 The same sign can be read in any chart `e` of the maximal atlas: the differentials at a boundary
 point of the normal coordinates `(e ·).1 0` of two such charts are positive multiples of each other
@@ -113,6 +114,14 @@ private theorem normal_eq_proj_comp_extend
   ext y
   simp
 
+/-- The normal coordinate of a chart of the maximal atlas is as smooth as the atlas on the chart
+source. -/
+theorem contMDiffAt_normal {k : ℕ∞ω} {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) k M) {q : M} (hqe : q ∈ e.source) :
+    ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k (fun y ↦ (e y).val 0) q := by
+  rw [normal_eq_proj_comp_extend]
+  exact (ContinuousLinearMap.contMDiff _).contMDiffAt.comp q (e.contMDiffAt_extend he hqe)
+
 /-- The differential at `x` of the normal coordinate of the preferred chart at `x` is the zeroth
 coordinate of the preferred-chart derivative, the quantity whose sign defines
 `IsOutwardPointing`. -/
@@ -140,6 +149,23 @@ theorem mdifferentiableAt_chartAt_normal (x : M) :
     EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x
       (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
 
+/-- Minus the normal coordinate of a preferred chart is minus the zeroth coordinate of its extended
+chart. -/
+private theorem neg_normal_eq_neg_proj_comp_extChartAt (α : M) :
+    (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) =
+      (-EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) ∘
+        extChartAt (𝓡∂ (n + 1)) α := by
+  ext y
+  simp
+
+/-- Minus the normal coordinate of a preferred chart is as smooth as the manifold on the chart
+source. -/
+theorem contMDiffAt_neg_chartAt_normal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1)) k M] {α x : M}
+    (hx : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source) :
+    ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k
+      (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) x :=
+  (contMDiffAt_normal (IsManifold.chart_mem_maximalAtlas α) hx).neg
+
 /-- Minus the normal coordinate of a preferred chart, read as a differential of a function on
 `M`, is minus the normal component of the tangent coordinate change into that chart. -/
 theorem mvfderiv_neg_chartAt_normal_apply [IsManifold (𝓡∂ (n + 1)) 1 M] {α q : M}
@@ -147,13 +173,9 @@ theorem mvfderiv_neg_chartAt_normal_apply [IsManifold (𝓡∂ (n + 1)) 1 M] {α
     (v : TangentSpace (𝓡∂ (n + 1)) q) :
     mvfderiv (𝓡∂ (n + 1)) (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) q v =
       -tangentCoordChange (𝓡∂ (n + 1)) q α q v 0 := by
-  have hfun : (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) =
-      (-EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) ∘
-        extChartAt (𝓡∂ (n + 1)) α := by
-    ext y
-    simp
   have hext := hasMFDerivAt_extChartAt (I := 𝓡∂ (n + 1)) hq
-  rw [hfun, ContinuousLinearMap.mvfderiv_comp_apply _ hext.mdifferentiableAt,
+  rw [neg_normal_eq_neg_proj_comp_extChartAt,
+    ContinuousLinearMap.mvfderiv_comp_apply _ hext.mdifferentiableAt,
     mvfderiv_apply_eq_mfderiv_apply, hext.mfderiv, mfderiv_chartAt_eq_tangentCoordChange hq]
   -- The tangent fibre of the half-space model is the model space itself, on which `-proj 0` is
   -- minus evaluation in slot `0`. The tangent-space wrapper makes `neg_apply` fail to typecheck
@@ -462,11 +484,8 @@ section MaximalAtlas
 theorem mdifferentiableAt_normal
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
     (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M} (hqe : q ∈ e.source) :
-    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun y ↦ (e y).val 0) q := by
-  rw [normal_eq_proj_comp_extend]
-  exact (EuclideanSpace.proj (0 : Fin (n + 1)) :
-    EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp q
-      (e.mdifferentiableAt_extend he hqe)
+    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun y ↦ (e y).val 0) q :=
+  (contMDiffAt_normal he hqe).mdifferentiableAt one_ne_zero
 
 /-- The differential of the normal coordinate of a chart of the maximal atlas is nonzero on its
 source, since the chart has invertible differential and the zeroth coordinate projection is

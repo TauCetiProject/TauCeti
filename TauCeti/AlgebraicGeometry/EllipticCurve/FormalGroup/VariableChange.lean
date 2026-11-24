@@ -367,9 +367,7 @@ private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
   rw [map_mul, map_one] at hDe
   nth_rw 1 [formalDenom_def] at hDe
   simp only [map_sub, map_mul, map_pow, hC] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by simp
   have he0 := right_ne_zero_of_mul_eq_one hDe
   rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
   simp only [map_mul, map_add, map_pow, hC]

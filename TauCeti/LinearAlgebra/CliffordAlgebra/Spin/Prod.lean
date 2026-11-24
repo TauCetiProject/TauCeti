@@ -291,15 +291,13 @@ instance normal_zpowers_negOne_negOne (hQ₁ : Q₁ ≠ 0) (hQ₂ : Q₂ ≠ 0) 
 /-- `spinGroupProd` sends `(-1, 1)` to the scalar `-1` of the orthogonal sum. -/
 theorem spinGroupProd_negOne_one (hQ₁ : Q₁ ≠ 0) :
     spinGroupProd Q₁ Q₂ (spinGroup.negOne Q₁ hQ₁, 1) =
-      spinGroup.negOne (Q₁.prod Q₂)
-        (fun h ↦ hQ₁ <| QuadraticMap.ext fun m ↦ by simpa using QuadraticMap.congr_fun h (m, 0)) :=
+      spinGroup.negOne (Q₁.prod Q₂) (QuadraticMap.prod_ne_zero_left hQ₁) :=
   Subtype.ext (by simp)
 
 /-- `spinGroupProd` sends `(1, -1)` to the scalar `-1` of the orthogonal sum. -/
 theorem spinGroupProd_one_negOne (hQ₂ : Q₂ ≠ 0) :
     spinGroupProd Q₁ Q₂ (1, spinGroup.negOne Q₂ hQ₂) =
-      spinGroup.negOne (Q₁.prod Q₂)
-        (fun h ↦ hQ₂ <| QuadraticMap.ext fun m ↦ by simpa using QuadraticMap.congr_fun h (0, m)) :=
+      spinGroup.negOne (Q₁.prod Q₂) (QuadraticMap.prod_ne_zero_right hQ₂) :=
   Subtype.ext (by simp)
 
 /-- `spinGroupProd` sends `(-1, -1)` to `1`. -/

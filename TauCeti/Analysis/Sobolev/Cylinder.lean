@@ -229,6 +229,11 @@ theorem coeFn_valueL (x : H1 V) :
     valueL x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).1 :=
   (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL _
 
+/-- The value of an element of `H1` is the first projection applied pointwise to its jet. -/
+theorem valueL_eq_compLpL (x : H1 V) :
+    valueL x = (ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure x :=
+  (rfl)
+
 /-! ### Elements of `H1` are determined by their values -/
 
 /-- A test section of the cylinder is a test section of the strip with no boundary
