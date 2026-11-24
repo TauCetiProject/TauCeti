@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 
 /-!
@@ -112,10 +113,7 @@ private lemma base_pos (ht : 1 < t) (u : ℝ) : 0 < t + √(t ^ 2 - 1) * Real.co
 private lemma mul_exp_le_base (ht : 1 < t) (u : ℝ) :
     √(t ^ 2 - 1) / 2 * Real.exp u ≤ t + √(t ^ 2 - 1) * Real.cosh u := by
   have hb := Real.sqrt_nonneg (t ^ 2 - 1)
-  have : Real.exp u / 2 ≤ Real.cosh u := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_pos (-u)]
-  nlinarith
+  nlinarith [Real.exp_le_two_mul_cosh u]
 
 private lemma base_rpow_neg_le (ht : 1 < t) {σ : ℝ} (hσ : 0 ≤ σ) (u : ℝ) :
     (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-σ) ≤
