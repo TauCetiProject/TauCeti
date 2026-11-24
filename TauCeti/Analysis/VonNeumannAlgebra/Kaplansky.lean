@@ -79,27 +79,6 @@ public section
 
 open Filter Topology TauCeti
 
-namespace TauCeti.ContinuousLinearMapStrongStar
-
-variable {𝕜 H ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-  [CompleteSpace H] [Fintype ι] [DecidableEq ι]
-
-/-- Taking the `(i, j)` matrix entry of an operator on the Hilbert sum `PiLp 2 (fun _ : ι => H)`
-is continuous for the strong-star topologies. -/
-theorem continuous_piLpEntry (i j : ι) :
-    Continuous fun Y : ContinuousLinearMapStrongStar 𝕜 (PiLp 2 (fun _ : ι => H))
-      (PiLp 2 (fun _ : ι => H)) => ofCLM (Y.toCLM.piLpEntry i j) := by
-  refine continuous_of_continuous_apply (fun v => ?_) fun v => ?_
-  · simpa only [ContinuousLinearMap.piLpEntry_apply, PiLp.proj_apply, Function.comp_def] using
-      (PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) i).continuous.comp
-        (continuous_toCLM_apply (PiLp.single 2 (β := fun _ : ι => H) j v))
-  · -- The adjoint of the `(i, j)` entry is the `(j, i)` entry of the adjoint.
-    refine ((PiLp.proj 2 (𝕜 := 𝕜) (fun _ : ι => H) j).continuous.comp
-      (continuous_adjoint_apply (PiLp.single 2 (β := fun _ : ι => H) i v))).congr fun Y => ?_
-    simp [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star]
-
-end TauCeti.ContinuousLinearMapStrongStar
-
 namespace StarSubalgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
