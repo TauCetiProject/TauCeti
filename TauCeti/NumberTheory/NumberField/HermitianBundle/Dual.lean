@@ -297,6 +297,9 @@ variable {K : Type u} [Field K]
   carrier := Module.Dual (𝓞 K) Ē
   metric := Ē.metric.dual
 
+theorem dual_metric (Ē : HermitianBundle.{u, v} K) : Ē.dual.metric = Ē.metric.dual :=
+  (rfl)
+
 end HermitianBundle
 
 end TauCeti
