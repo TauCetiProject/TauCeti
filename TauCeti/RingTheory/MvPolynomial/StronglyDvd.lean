@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
-import Mathlib.Algebra.GroupWithZero.Regular
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Algebra.MvPolynomial.PDeriv
 
