@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
+import TauCeti.Analysis.InnerProductSpace.GraphPatch
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -43,8 +44,9 @@ interpolation inequality on `Ω` would reduce `N` to the supremum of `|u|`.
   (`exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fderiv_fderiv_of_graph`)
   bounds the Hölder constant of `D²u` on `closedBall x ρ ∩ closure Ω` for a small `ρ > 0`. Inside
   `ball x r` the closure of `Ω` is the closed region `{z | γ z ≤ ⟪z, ν⟫}` and the frontier of `Ω`
-  is the graph `{z | γ z = ⟪z, ν⟫}`, so the hypotheses on `closure Ω` give those of the local
-  estimate.
+  is the graph `{z | γ z = ⟪z, ν⟫}` (`TauCeti.inter_closure_eq_inter_setOf_le_inner`,
+  `TauCeti.inter_frontier_eq_inter_setOf_inner_eq`), so the hypotheses on `closure Ω` give those
+  of the local estimate.
 * **The interior.** Finitely many of the balls `ball x ρ` cover the compact frontier of `Ω`, and
   the rest of `closure Ω` is a compact subset `K₀` of `Ω`. The interior estimate on small balls
   (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv`) has
@@ -82,56 +84,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 section Graph
 
-variable {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))} {ν x y : EuclideanSpace ℝ (Fin (n + 1))}
-  {γ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {r : ℝ}
-
-/-- Inside a boundary patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`, every point on or
-above the graph of `γ` lies in the closure of `Ω`: a point of the graph is the limit of the points
-`y + t ν`, `t > 0`, which lie above it. -/
-private theorem mem_closure_of_mem_ball_of_le (hν : ‖ν‖ = 1)
-    (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
-    (hΩ : ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) (hy : y ∈ ball x r)
-    (hle : γ y ≤ ⟪y, ν⟫_ℝ) : y ∈ closure Ω := by
-  -- Approach `y` along `ν` from above.
-  have ht : Tendsto (fun t : ℝ => y + t • ν) (𝓝[>] 0) (𝓝 y) := by
-    have h0 : Tendsto (fun t : ℝ => y + t • ν) (𝓝 0) (𝓝 (y + (0 : ℝ) • ν)) :=
-      (continuous_const.add (continuous_id.smul continuous_const)).tendsto 0
-    rw [zero_smul, add_zero] at h0
-    exact h0.mono_left nhdsWithin_le_nhds
-  refine mem_closure_of_tendsto ht ?_
-  filter_upwards [ht (isOpen_ball.mem_nhds hy), self_mem_nhdsWithin] with t hball htpos
-  have hmem : y + t • ν ∈ ball x r ∩ Ω := by
-    rw [hΩ]
-    refine ⟨hball, ?_⟩
-    rw [mem_ofPred_eq, hγν, inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
-    have ht0 : (0 : ℝ) < t := htpos
-    linarith
-  exact hmem.2
-
-/-- Inside a boundary patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`, the points of the
-closure of `Ω` lie on or above the graph of `γ`. -/
-private theorem le_of_mem_ball_of_mem_closure (hγ : Continuous γ)
-    (hΩ : ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) (hy : y ∈ ball x r)
-    (hyΩ : y ∈ closure Ω) : γ y ≤ ⟪y, ν⟫_ℝ := by
-  have h := isOpen_ball.inter_closure ⟨hy, hyΩ⟩
-  rw [hΩ] at h
-  simpa only [mem_ofPred_eq, id_eq] using
-    closure_lt_subset_le hγ (continuous_id.inner continuous_const)
-      (closure_mono inter_subset_right h)
-
-/-- Inside a boundary patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` of an open set `Ω`,
-the points of the graph of `γ` lie on the frontier of `Ω`. -/
-private theorem mem_frontier_of_mem_ball_of_eq (hΩo : IsOpen Ω) (hν : ‖ν‖ = 1)
-    (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
-    (hΩ : ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) (hy : y ∈ ball x r)
-    (heq : ⟪y, ν⟫_ℝ = γ y) : y ∈ frontier Ω := by
-  rw [hΩo.frontier_eq]
-  refine ⟨mem_closure_of_mem_ball_of_le hν hγν hΩ hy heq.ge, fun hyΩ => ?_⟩
-  have hy' : y ∈ ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} := by
-    rw [← hΩ]
-    exact ⟨hy, hyΩ⟩
-  have hlt : γ y < ⟪y, ν⟫_ℝ := by simpa only [mem_ofPred_eq] using hy'.2
-  linarith
+variable {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))} {x : EuclideanSpace ℝ (Fin (n + 1))}
 
 /-- **The Schauder estimate on a boundary patch.** At a point `x` of the closure of an open set
 `Ω` with a boundary patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`, `γ` of class `C^{2,α}`
@@ -179,11 +132,17 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure {α : 
     nlinarith
   obtain ⟨C, hC⟩ := hloc (min_le_left _ _) hρR
   refine ⟨ρ, hρ, C, fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN0 hN1 hN2 hV hK => ?_⟩
-  -- Inside the patch, the closed region above the graph lies in `closure Ω`.
+  -- Inside the patch, `closure Ω` is the closed region above the graph and `frontier Ω` is the
+  -- graph.
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)
+  have hcl := Set.ext_iff.1 (inter_closure_eq_inter_setOf_le_inner isOpen_ball hν0
+    hγ.continuous.continuousOn hγν hΩ)
+  have hfr := Set.ext_iff.1 (inter_frontier_eq_inter_setOf_inner_eq hΩo isOpen_ball hν0
+    hγ.continuous.continuousOn hγν hΩ)
   have hsub : ball x R ∩ {z | γ z ≤ ⟪z, ν⟫_ℝ} ⊆ closure Ω := fun z hz =>
-    mem_closure_of_mem_ball_of_le hν hγν hΩ (ball_subset_ball hRr.le hz.1) hz.2
+    ((hcl z).2 ⟨ball_subset_ball hRr.le hz.1, hz.2⟩).2
   have hsub' : closedBall x R ∩ {z | γ z ≤ ⟪z, ν⟫_ℝ} ⊆ closure Ω := fun z hz =>
-    mem_closure_of_mem_ball_of_le hν hγν hΩ (closedBall_subset_ball hRr hz.1) hz.2
+    ((hcl z).2 ⟨closedBall_subset_ball hRr hz.1, hz.2⟩).2
   -- The open region above the graph lies in `Ω`, and the graph in the frontier of `Ω`.
   have hsubΩ : ball x R ∩ {z | γ z < ⟪z, ν⟫_ℝ} ⊆ Ω := fun z hz => by
     have hz' : z ∈ ball x r ∩ Ω := by
@@ -191,15 +150,15 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure {α : 
       exact ⟨ball_subset_ball hRr.le hz.1, hz.2⟩
     exact hz'.2
   have hbdry : ∀ z ∈ ball x R, ⟪z, ν⟫_ℝ = γ z → u z = 0 := fun z hz heq =>
-    hu0 z (mem_frontier_of_mem_ball_of_eq hΩo hν hγν hΩ (ball_subset_ball hRr.le hz) heq)
+    hu0 z ((hfr z).2 ⟨ball_subset_ball hRr.le hz, heq⟩).2
   have hest := hC (a := a) (x₀ := x)
-    (le_of_mem_ball_of_mem_closure hγ.continuous hΩ (mem_ball_self hr) hx) (hEll x hx)
+    ((hcl x).1 ⟨mem_ball_self hr, hx⟩).2 (hEll x hx)
     (hEll' x hx) (fun i j => (hL i j).mono hsub') (fun z hz => hM z (hsub hz)) hU
     (hsub.trans hΩU) hu hbdry (fun z hz => hN0 z (hsub hz)) (fun z hz => hN1 z (hsub hz))
     (fun z hz => hN2 z (hsub hz)) (hV.mono hsub) (hK.mono hsubΩ)
   -- `ball x ρ ∩ closure Ω` lies in the region where the local estimate holds.
   exact hest.mono fun z hz => ⟨ball_subset_closedBall hz.1,
-    le_of_mem_ball_of_mem_closure hγ.continuous hΩ (ball_subset_ball hρr.le hz.1) hz.2⟩
+    ((hcl z).1 ⟨ball_subset_ball hρr.le hz.1, hz.2⟩).2⟩
 
 end Graph
 
