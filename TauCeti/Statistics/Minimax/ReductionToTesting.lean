@@ -38,7 +38,8 @@ index of a nearest parameter to `y` (measurable by `TauCeti.measurable_nearestIn
 
 * `TauCeti.comp_map_ballIndex_compl_le`: the error of the test `κ.map (ballIndex θ s i₀)`, for
   parameters whose balls of radius `s` are pairwise disjoint.
-* `TauCeti.le_max_measure_dist_ge_of_test`: every estimator is dominated by a test.
+* `TauCeti.exists_isMarkovKernel_measure_compl_le_measure_dist_ge`: every estimator is dominated
+  by a test (roadmap target 2.1, suggested there as `le_max_measure_dist_ge_of_test`).
 
 ## References
 
@@ -75,8 +76,9 @@ theorem comp_map_ballIndex_compl_le {θ : ι → Y} {s : ℝ}
 /-- **Reduction of estimation to testing.** For `2 s`-separated parameters `θ i`, every
 estimator `κ` is dominated by a test `ψ`: the error of `ψ` under `P i` is at most the probability
 under `P i` that the estimate is at distance at least `s` from `θ i`. -/
-theorem le_max_measure_dist_ge_of_test [Nonempty ι] (P : ι → Measure X) (θ : ι → Y) {s : ℝ}
-    (hs : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (κ : Kernel X Y) [IsMarkovKernel κ] :
+theorem exists_isMarkovKernel_measure_compl_le_measure_dist_ge [Nonempty ι] (P : ι → Measure X)
+    (θ : ι → Y) {s : ℝ} (hs : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (κ : Kernel X Y)
+    [IsMarkovKernel κ] :
     ∃ ψ : Kernel X ι, IsMarkovKernel ψ ∧
       ∀ i, (ψ ∘ₘ P i) {i}ᶜ ≤ (κ ∘ₘ P i) {y | s ≤ dist y (θ i)} :=
   have hd := pairwise_disjoint_ball_of_two_mul_le_dist hs
