@@ -125,8 +125,7 @@ theorem legendreParameters_ne_one (h₀ : l ≠ 0) (h₁ : l ≠ 1) (i : Fin 6) 
   · simpa using h₁
   · simpa [sub_eq_self] using h₀
   · simpa [sub_eq_self] using h₀
-  · simp only [Fin.reduceFinMk, legendreParameters_apply_four, Ne, div_eq_one_iff_eq h₁']
-    exact fun h ↦ one_ne_zero (sub_eq_self.mp h.symm)
+  · simp [div_eq_one_iff_eq h₁', eq_sub_iff_add_eq]
   · simp [div_eq_one_iff_eq h₀]
 
 /-- For `l ≠ 0, 1`, the Legendre parameters with labels `(0, 1)`, `(2, 3)` and `(4, 5)` are
@@ -191,13 +190,12 @@ theorem sub_div_sub_eq_legendreParameters (h : e 0 ≠ e 1) (i : Fin 6) :
         (e (legendreRootOrder i 1) - e (legendreRootOrder i 0)) =
       legendreParameters ((e 2 - e 0) / (e 1 - e 0)) i := by
   have h₁₀ : e 1 - e 0 ≠ 0 := sub_ne_zero.mpr h.symm
+  -- four of the orders need `a / b = -a / -b`, turning a common minuend into a common subtrahend
+  have hflip (j : Fin 3) (a c : K) : (e j - a) / (e j - c) = (a - e j) / (c - e j) := by
+    rw [← neg_div_neg_eq, neg_sub, neg_sub]
   fin_cases i <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, legendreRootOrder_apply,
-      Nat.succ_eq_add_one, Nat.reduceAdd, Matrix.cons_val_zero, Matrix.cons_val,
-      Matrix.cons_val_one, legendreParameters_def, one_sub_div h₁₀, div_sub_one h₁₀,
-      sub_sub_sub_cancel_right, div_div_div_cancel_right₀ h₁₀, inv_div]
-  -- the remaining four orders are `a / b = -a / -b`
-  all_goals rw [← neg_div_neg_eq, neg_sub, neg_sub]
+    simp [one_sub_div h₁₀, div_sub_one h₁₀, sub_sub_sub_cancel_right,
+      div_div_div_cancel_right₀ h₁₀, inv_div, hflip]
 
 /-- For roots with `e 0 ≠ e 1`, the Legendre parameters of the six orders of the roots are exactly
 the entries of the tuple of Legendre parameters at `λ = (e 2 - e 0) / (e 1 - e 0)`. -/
@@ -230,9 +228,9 @@ variable {R : Type*} [Ring R] {e : Fin 3 → R}
 
 /-- **The scale of each order.** If `e 2 - e 0 = d * l` with `d = e 1 - e 0`, the scale
 `e (σ 1) - e (σ 0)` of the `i`-th order `σ`, the second root after translating by the first, is the
-`i`-th entry of `(d, d l, -d, d (l - 1), d (1 - l), -d l)`. For `d ≠ 0` and
-`l = (e 2 - e 0) / d`, the translated roots of the `i`-th order are therefore `(0, d', d' l')`
-with this scale `d'` and the `i`-th Legendre parameter `l'` at `l`
+`i`-th entry of `(d, d l, -d, d (l - 1), d (1 - l), -d l)`. Over a field, for pairwise distinct
+roots and `l = (e 2 - e 0) / d`, the translated roots of the `i`-th order are therefore
+`(0, d', d' l')` with this scale `d'` and the `i`-th Legendre parameter `l'` at `l`
 (`TauCeti.sub_div_sub_eq_legendreParameters`). -/
 theorem sub_legendreRootOrder {l : R} (hl : e 2 - e 0 = (e 1 - e 0) * l) (i : Fin 6) :
     e (legendreRootOrder i 1) - e (legendreRootOrder i 0) =
