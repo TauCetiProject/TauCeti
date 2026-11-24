@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
+import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Compatibility
@@ -70,7 +71,6 @@ private noncomputable def finPlaceHom (K L : Type*) [Field K] [NumberField K] [F
 `A : GL ι (AdeleRing (𝓞 K) K)` over `K ⊆ L`: the product over infinite places `w` of `L` of the
 `ℓ²` norm of `A_w x` raised to `w.mult / (2 [L : ℚ])` times the `finprod` over finite places `v`
 of `L` of the `ℓ^∞` norm raised to `1 / [L : ℚ]`. -/
-@[expose]
 noncomputable def adelicHeight {K L ι : Type*} [Field K] [NumberField K] [Field L]
     [NumberField L] [Algebra K L] [Fintype ι] [DecidableEq ι]
     (A : GL ι (AdeleRing (𝓞 K) K)) (x : ι → L) : ℝ :=
@@ -92,7 +92,7 @@ theorem adelicHeight_def {K L ι : Type*} [Field K] [NumberField K] [Field L]
         ∏ᶠ v : HeightOneSpectrum (𝓞 L),
           (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
             algebraMap L (v.adicCompletion L) (x j)‖) ^ ((1 : ℝ) / finrank ℚ L) :=
-  rfl
+  (rfl)
 
 /-- Every adelic height is nonnegative. -/
 theorem adelicHeight_nonneg {K L ι : Type*} [Field K] [NumberField K] [Field L]
@@ -120,75 +120,27 @@ theorem adelicHeight_zero {K L ι : Type*} [Field K] [NumberField K] [Field L]
     simp [Real.zero_rpow hexp]
   rw [adelicHeight_def, Finset.prod_eq_zero (Finset.mem_univ w) hzero, zero_mul]
 
-private theorem hasFiniteMulSupport_rpow {α : Type*} {f : α → ℝ} (h : HasFiniteMulSupport f)
-    (r : ℝ) :
-    HasFiniteMulSupport fun a ↦ f a ^ r := by
-  refine h.subset fun a ha ↦ ?_
-  contrapose ha
-  simp [notMem_mulSupport.mp ha]
-
 private theorem finprod_rpow {α : Type*} {f : α → ℝ} (hf : ∀ a, 0 ≤ f a) (r : ℝ) :
     (∏ᶠ a, f a) ^ r = ∏ᶠ a, f a ^ r := by
   rcases eq_or_ne r 0 with rfl | hr
   · simp
-  by_cases hsupp : HasFiniteMulSupport f
-  · have hsupp' : (mulSupport f).Finite := hsupp
-    rw [finprod_eq_prod _ hsupp', ← Real.finsetProd_rpow _ _ fun a _ ↦ hf a,
-      finprod_eq_prod_of_mulSupport_subset (fun a ↦ f a ^ r) (s := hsupp'.toFinset)]
-    rw [Set.Finite.coe_toFinset hsupp']
-    intro a ha h1
-    exact ha (show f a ^ r = 1 by rw [h1, Real.one_rpow])
-  · have hinf : ¬ HasFiniteMulSupport fun a ↦ f a ^ r := by
-      intro hr_supp
-      apply hsupp
-      refine hr_supp.subset fun a ha ↦ ?_
-      contrapose ha
-      simp only [mem_mulSupport, not_not] at ha ⊢
-      rcases eq_or_lt_of_le (hf a) with h0 | hpos
-      · simp [← h0, Real.zero_rpow hr] at ha
-      · rw [Real.rpow_def_of_pos hpos, Real.exp_eq_one_iff, mul_eq_zero] at ha
-        rcases Real.log_eq_zero.mp (ha.resolve_right hr) with hzero | hone | hneg
-        · linarith
-        · exact hone
-        · linarith
-    rw [finprod_of_infinite_mulSupport hsupp, Real.one_rpow,
-      finprod_of_infinite_mulSupport hinf]
-
-private theorem norm_algebraMap_adicCompletion {L : Type*} [Field L] [NumberField L]
-    (v : HeightOneSpectrum (𝓞 L)) (c : L) :
-    ‖algebraMap L (v.adicCompletion L) c‖ = NumberField.HeightOneSpectrum.adicAbv L v c := by
-  rw [← FinitePlace.norm_embedding, HeightOneSpectrum.algebraMap_adicCompletion,
-    Function.comp_apply, FinitePlace.embedding_apply]
-  rfl
+  let g : α → ℝ≥0 := fun a ↦ ⟨f a, hf a⟩
+  have hcoe : ((∏ᶠ a, g a : ℝ≥0) : ℝ) = ∏ᶠ a, f a :=
+    (NNReal.toRealHom : ℝ≥0 →* ℝ).map_finprod_of_injective NNReal.coe_injective g
+  have hcoe2 : ((∏ᶠ a, g a ^ r : ℝ≥0) : ℝ) = ∏ᶠ a, f a ^ r :=
+    ((NNReal.toRealHom : ℝ≥0 →* ℝ).map_finprod_of_injective NNReal.coe_injective
+      (fun a ↦ g a ^ r)).trans (finprod_congr fun a ↦ NNReal.coe_rpow (g a) r)
+  have hpow : (∏ᶠ a, g a) ^ r = ∏ᶠ a, g a ^ r :=
+    (NNReal.rpowMonoidHom r).map_finprod_of_injective (NNReal.rpow_left_injective hr) g
+  rw [← hcoe, ← NNReal.coe_rpow, hpow, hcoe2]
 
 private theorem hasFiniteMulSupport_norm_algebraMap {L : Type*} [Field L] [NumberField L]
     {c : L} (hc : c ≠ 0) :
     HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 L) ↦
       ‖algebraMap L (v.adicCompletion L) c‖ := by
-  simpa only [norm_algebraMap_adicCompletion] using hasFiniteMulSupport_adicAbv hc
-
-private theorem norm_coe_infinitePlace_prod_mul_finprod_eq_one {L : Type*} [Field L]
-    [NumberField L] {c : L} (hc : c ≠ 0) :
-    (∏ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult) *
-        ∏ᶠ v : HeightOneSpectrum (𝓞 L), ‖algebraMap L (v.adicCompletion L) c‖ = 1 := by
-  have hinf : ∀ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult =
-      normalizedAbsValue (Sum.inr w) c := by
-    intro w
-    rw [normalizedAbsValue_inr, ← InfinitePlace.Completion.norm_algebraMap w c,
-      InfinitePlace.Completion.algebraMap_apply_eq_coe]
-  have hfin : ∀ v : HeightOneSpectrum (𝓞 L), ‖algebraMap L (v.adicCompletion L) c‖ =
-      normalizedAbsValue (Sum.inl v) c := by
-    intro v
-    rw [norm_algebraMap_adicCompletion, normalizedAbsValue_inl]
-  simp_rw [hinf, hfin]
-  have hpf := finprod_normalizedAbsValue_eq_one hc
-  have hsupp : HasFiniteMulSupport ((fun v ↦ normalizedAbsValue v c) ∘ Sum.inl) := by
-    simpa only [Function.comp_def, normalizedAbsValue_inl] using hasFiniteMulSupport_adicAbv hc
-  rw [finprod_sum_type _ hsupp (Set.toFinite _)] at hpf
-  have hprod :=
-    finprod_eq_prod_of_fintype (fun w : InfinitePlace L ↦ normalizedAbsValue (Sum.inr w) c)
-  rw [hprod, mul_comm] at hpf
-  exact hpf
+  simpa only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, ← normalizedAbsValue_inl_eq_norm_coe,
+    normalizedAbsValue_inl] using hasFiniteMulSupport_adicAbv hc
 
 private theorem eventually_norm_adeleExtension_le_one {K L ι : Type*} [Field K] [NumberField K]
     [Field L] [NumberField L] [Algebra K L] [Finite ι]
@@ -302,8 +254,11 @@ theorem adelicHeight_pos {K L ι : Type*} [Field K] [NumberField K] [Field L]
       Finset.sum_pos' (fun _ _ ↦ sq_nonneg _)
         ⟨i₀, Finset.mem_univ i₀, sq_pos_iff.mpr (norm_ne_zero_iff.mpr hi₀)⟩
     simpa only [hcongr] using Real.rpow_pos_of_pos hsum_pos _
-  have hsupp := hasFiniteMulSupport_rpow (hasFiniteMulSupport_adelicHeight A hx)
-    ((1 : ℝ) / finrank ℚ L)
+  have hsupp : HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 L) ↦
+      (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
+        algebraMap L (v.adicCompletion L) (x j)‖) ^ ((1 : ℝ) / finrank ℚ L) :=
+    HasFiniteMulSupport.fun_comp (hasFiniteMulSupport_adelicHeight A hx)
+      (g := fun t : ℝ ↦ t ^ ((1 : ℝ) / finrank ℚ L)) (Real.one_rpow _)
   have hfin : ∀ v ∈ hsupp.toFinset,
       0 < (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
         algebraMap L (v.adicCompletion L) (x j)‖) ^ ((1 : ℝ) / finrank ℚ L) := by
@@ -337,41 +292,36 @@ private theorem adelicHeight_archimedean_smul {K L ι : Type*} [Field K] [Number
     (∏ w : InfinitePlace L,
         (∑ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
             ((c • x) j : w.Completion)‖ ^ 2) ^ ((w.mult : ℝ) / (2 * finrank ℚ L))) =
-      (∏ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult) ^ ((1 : ℝ) / finrank ℚ L) *
+      (∏ w : InfinitePlace L, normAbs (Sum.inr w) c) *
         ∏ w : InfinitePlace L,
           (∑ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
               (x j : w.Completion)‖ ^ 2) ^ ((w.mult : ℝ) / (2 * finrank ℚ L)) := by
   have hc_term : ∀ w : InfinitePlace L,
       (∑ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
           ((c • x) j : w.Completion)‖ ^ 2) ^ ((w.mult : ℝ) / (2 * finrank ℚ L)) =
-        (‖(c : w.Completion)‖ ^ w.mult) ^ ((1 : ℝ) / finrank ℚ L) *
+        normAbs (Sum.inr w) c *
           (∑ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
               (x j : w.Completion)‖ ^ 2) ^ ((w.mult : ℝ) / (2 * finrank ℚ L)) := by
     intro w
+    let xw : ι → w.Completion := fun j ↦ (x j : w.Completion)
+    have hsmul : (fun j ↦ ((c • x) j : w.Completion)) = (c : w.Completion) • xw := funext fun j ↦
+      by simp [xw, ← InfinitePlace.Completion.algebraMap_apply_eq_coe]
     have hmul : ∀ i,
         ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
             ((c • x) j : w.Completion)‖ ^ 2 =
           ‖(c : w.Completion)‖ ^ 2 *
-            ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
-                (x j : w.Completion)‖ ^ 2 := by
+            ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w * xw j‖ ^ 2 := by
       intro i
-      have hcast : ∀ j, ((c • x) j : w.Completion) = (c : w.Completion) * (x j : w.Completion) := by
-        intro j
-        simp [← InfinitePlace.Completion.algebraMap_apply_eq_coe]
-      simp_rw [hcast]
-      rw [show (∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).1 w *
-          ((c : w.Completion) * (x j : w.Completion))) =
-            (c : w.Completion) * ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L
-              ((A : Matrix ι ι _) i j)).1 w * (x j : w.Completion) by
-          rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun _ _ ↦ ?_; ring, norm_mul, mul_pow]
+      rw [← mulVec_infPlaceHom_eq w A _ i, hsmul, Matrix.mulVec_smul, Pi.smul_apply, smul_eq_mul,
+        mulVec_infPlaceHom_eq w A xw i, norm_mul, mul_pow]
     simp_rw [hmul, ← Finset.mul_sum]
-    rw [Real.mul_rpow (sq_nonneg _) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
-      ← Real.rpow_natCast ‖(c : w.Completion)‖ 2, ← Real.rpow_mul (norm_nonneg _),
-      ← Real.rpow_natCast ‖(c : w.Completion)‖ w.mult, ← Real.rpow_mul (norm_nonneg _)]
+    rw [Real.mul_rpow (sq_nonneg _) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _), normAbs_inr,
+      ← InfinitePlace.Completion.norm_algebraMap w c,
+      InfinitePlace.Completion.algebraMap_apply_eq_coe, ← Real.rpow_natCast ‖(c : w.Completion)‖ 2,
+      ← Real.rpow_mul (norm_nonneg _)]
     congr 2
     ring
   simp_rw [hc_term, Finset.prod_mul_distrib]
-  rw [Real.finsetProd_rpow Finset.univ _ (fun _ _ ↦ pow_nonneg (norm_nonneg _) _)]
 
 private theorem adelicHeight_finite_smul {K L ι : Type*} [Field K] [NumberField K]
     [Field L] [NumberField L] [Algebra K L] [Fintype ι] [DecidableEq ι]
@@ -382,38 +332,42 @@ private theorem adelicHeight_finite_smul {K L ι : Type*} [Field K] [NumberField
     (∏ᶠ v : HeightOneSpectrum (𝓞 L),
         (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
           algebraMap L (v.adicCompletion L) ((c • x) j)‖) ^ ((1 : ℝ) / finrank ℚ L)) =
-      (∏ᶠ v : HeightOneSpectrum (𝓞 L),
-          ‖algebraMap L (v.adicCompletion L) c‖) ^ ((1 : ℝ) / finrank ℚ L) *
+      (∏ᶠ v : HeightOneSpectrum (𝓞 L), normAbs (Sum.inl v) c) *
         ∏ᶠ v : HeightOneSpectrum (𝓞 L),
           (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
             algebraMap L (v.adicCompletion L) (x j)‖) ^ ((1 : ℝ) / finrank ℚ L) := by
   have hc_fin : ∀ v : HeightOneSpectrum (𝓞 L),
       (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
           algebraMap L (v.adicCompletion L) ((c • x) j)‖) ^ ((1 : ℝ) / finrank ℚ L) =
-        ‖algebraMap L (v.adicCompletion L) c‖ ^ ((1 : ℝ) / finrank ℚ L) *
+        normAbs (Sum.inl v) c *
           (⨆ i, ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
               algebraMap L (v.adicCompletion L) (x j)‖) ^ ((1 : ℝ) / finrank ℚ L) := by
     intro v
+    let xv : ι → v.adicCompletion L := fun j ↦ algebraMap L (v.adicCompletion L) (x j)
+    have hsmul : (fun j ↦ algebraMap L (v.adicCompletion L) ((c • x) j)) =
+        algebraMap L (v.adicCompletion L) c • xv := funext fun j ↦ by
+      simp [xv, smul_eq_mul, map_mul]
     have hmul : ∀ i,
         ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
             algebraMap L (v.adicCompletion L) ((c • x) j)‖ =
           ‖algebraMap L (v.adicCompletion L) c‖ *
-            ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
-              algebraMap L (v.adicCompletion L) (x j)‖ := by
+            ‖∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v * xv j‖ := by
       intro i
-      simp_rw [Pi.smul_apply, smul_eq_mul, map_mul]
-      rw [show (∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
-          (algebraMap L (v.adicCompletion L) c * algebraMap L (v.adicCompletion L) (x j))) =
-            algebraMap L (v.adicCompletion L) c *
-              ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) i j)).2 v *
-                algebraMap L (v.adicCompletion L) (x j) by
-          rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun _ _ ↦ ?_; ring, norm_mul]
+      rw [← mulVec_finPlaceHom_eq v A _ i, hsmul, Matrix.mulVec_smul, Pi.smul_apply, smul_eq_mul,
+        mulVec_finPlaceHom_eq v A xv i, norm_mul]
+    have hc_norm : ‖algebraMap L (v.adicCompletion L) c‖ ^ ((1 : ℝ) / finrank ℚ L) =
+        normAbs (Sum.inl v) c := by
+      rw [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+        Algebra.algebraMap_self_apply, ← normalizedAbsValue_inl_eq_norm_coe, normalizedAbsValue_inl,
+        ← normAbs_inl]
     simp_rw [hmul, ← Real.mul_iSup_of_nonneg (norm_nonneg _),
-      Real.mul_rpow (norm_nonneg _) (Real.iSup_nonneg fun _ ↦ norm_nonneg _)]
-  have hsc₀ := hasFiniteMulSupport_norm_algebraMap hc
+      Real.mul_rpow (norm_nonneg _) (Real.iSup_nonneg fun _ ↦ norm_nonneg _), hc_norm]
+    rfl
+  have hsc₀ : HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 L) ↦ normAbs (Sum.inl v) c :=
+    (hasFiniteMulSupport_normAbs hc).preimage Sum.inl_injective.injOn
   simp_rw [hc_fin]
-  rw [finprod_mul_distrib (hasFiniteMulSupport_rpow hsc₀ _) (hasFiniteMulSupport_rpow hsupp _),
-    finprod_rpow (fun _ ↦ norm_nonneg _)]
+  exact finprod_mul_distrib hsc₀ (HasFiniteMulSupport.fun_comp hsupp
+    (g := fun t : ℝ ↦ t ^ ((1 : ℝ) / finrank ℚ L)) (Real.one_rpow _))
 
 /-- Projective invariance of `TauCeti.adelicHeight` under nonzero scalar multiplication. -/
 theorem adelicHeight_smul {K L ι : Type*} [Field K] [NumberField K] [Field L]
@@ -422,23 +376,16 @@ theorem adelicHeight_smul {K L ι : Type*} [Field K] [NumberField K] [Field L]
     adelicHeight A (c • x) = adelicHeight A x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  have hpf_rpow :
-      (∏ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult) ^ ((1 : ℝ) / finrank ℚ L) *
-          (∏ᶠ v : HeightOneSpectrum (𝓞 L), ‖algebraMap L (v.adicCompletion L) c‖) ^
-            ((1 : ℝ) / finrank ℚ L) = 1 := by
-    rw [← Real.mul_rpow (Finset.prod_nonneg fun _ _ ↦ pow_nonneg (norm_nonneg _) _)
-      (finprod_nonneg fun _ ↦ norm_nonneg _), norm_coe_infinitePlace_prod_mul_finprod_eq_one hc,
-      Real.one_rpow]
+  have hpf : (∏ w : InfinitePlace L, normAbs (Sum.inr w) c) *
+      ∏ᶠ v : HeightOneSpectrum (𝓞 L), normAbs (Sum.inl v) c = 1 := by
+    have hsupp : HasFiniteMulSupport ((fun v ↦ normAbs v c) ∘ Sum.inl) :=
+      (hasFiniteMulSupport_normAbs hc).preimage Sum.inl_injective.injOn
+    have h := finprod_normAbs_eq_one hc
+    rw [finprod_sum_type _ hsupp (Set.toFinite _), mul_comm, finprod_eq_prod_of_fintype] at h
+    exact h
   rw [adelicHeight_def, adelicHeight_archimedean_smul,
-    adelicHeight_finite_smul A x hc (hasFiniteMulSupport_adelicHeight A hx)]
-  calc ((∏ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult) ^ ((1 : ℝ) / finrank ℚ L) *
-          ∏ w : InfinitePlace L, _) *
-        ((∏ᶠ v : HeightOneSpectrum (𝓞 L), _) ^ ((1 : ℝ) / finrank ℚ L) * ∏ᶠ v, _)
-      = ((∏ w : InfinitePlace L, ‖(c : w.Completion)‖ ^ w.mult) ^ ((1 : ℝ) / finrank ℚ L) *
-          (∏ᶠ v : HeightOneSpectrum (𝓞 L), ‖algebraMap L (v.adicCompletion L) c‖) ^
-            ((1 : ℝ) / finrank ℚ L)) *
-          ((∏ w : InfinitePlace L, _) * ∏ᶠ v, _) := by ring
-    _ = adelicHeight A x := by rw [hpf_rpow, one_mul, adelicHeight_def]
+    adelicHeight_finite_smul A x hc (hasFiniteMulSupport_adelicHeight A hx),
+    mul_mul_mul_comm, hpf, one_mul, ← adelicHeight_def]
 
 /-- Over `K` itself, the untwisted adelic height agrees with the Euclidean height
 `TauCeti.height2`. -/
@@ -475,8 +422,9 @@ theorem adelicHeight_one {K ι : Type*} [Field K] [NumberField K] [Fintype ι] [
       (mulVec_finPlaceHom_eq v (1 : GL ι (AdeleRing (𝓞 K) K))
         (fun j ↦ algebraMap K (v.adicCompletion K) (x j)) i).symm.trans <| by
           rw [map_one, Units.val_one, Matrix.one_mulVec]
-    rw [hsum, norm_algebraMap_adicCompletion, FinitePlace.equivHeightOneSpectrum_symm_apply,
-      FinitePlace.norm_embedding]
+    rw [hsum, HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      Algebra.algebraMap_self_apply, ← normalizedAbsValue_inl_eq_norm_coe, normalizedAbsValue_inl,
+      FinitePlace.equivHeightOneSpectrum_symm_apply, FinitePlace.norm_embedding]
   have hF (w : InfinitePlace K) :
       (@Finset.sum ι ℝ _ (@Finset.univ ι (Fintype.ofFinite ι)) fun i ↦ ‖w.embedding (x i)‖ ^ 2) =
         ∑ i, ‖w.embedding (x i)‖ ^ 2 :=
@@ -502,23 +450,33 @@ theorem adelicHeight_reindex {K L ι₁ ι : Type*} [Field K] [NumberField K] [F
   refine congrArg₂ (· * ·) (Finset.prod_congr rfl fun w _ ↦ ?_) (finprod_congr fun v ↦ ?_)
   · congr 1
     refine Fintype.sum_equiv e _ _ fun i ↦ ?_
+    let xw : ι → w.Completion := fun j ↦ (x j : w.Completion)
+    have hBw : (Matrix.GeneralLinearGroup.map (infPlaceHom K L w) B).val =
+        (Matrix.GeneralLinearGroup.map (infPlaceHom K L w) A).val.submatrix e e :=
+      Matrix.ext fun i j ↦ congrArg (infPlaceHom K L w) (hB i j)
     have hs : ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((B : Matrix ι₁ ι₁ _) i j)).1 w *
           ((x ∘ e) j : w.Completion) =
-        ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) (e i) j)).1 w *
-          (x j : w.Completion) := by
-      simp only [hB, Function.comp_apply]
-      exact Fintype.sum_equiv e _ (fun j ↦ (adeleExtension (𝓞 K) K (𝓞 L) L
-        ((A : Matrix ι ι _) (e i) j)).1 w * (x j : w.Completion)) fun _ ↦ rfl
+        ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) (e i) j)).1 w * xw j := by
+      have hsubvec : ∀ j, ((x ∘ e) j : w.Completion) = (xw ∘ e) j := fun _ ↦ rfl
+      simp_rw [hsubvec]
+      rw [← mulVec_infPlaceHom_eq w B (xw ∘ e) i, hBw, Matrix.submatrix_mulVec_equiv,
+        Function.comp_apply, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id,
+        mulVec_infPlaceHom_eq w A xw (e i)]
     rw [hs]
   · congr 1
     refine e.iSup_congr fun i ↦ ?_
+    let xv : ι → v.adicCompletion L := fun j ↦ algebraMap L (v.adicCompletion L) (x j)
+    have hBv : (Matrix.GeneralLinearGroup.map (finPlaceHom K L v) B).val =
+        (Matrix.GeneralLinearGroup.map (finPlaceHom K L v) A).val.submatrix e e :=
+      Matrix.ext fun i j ↦ congrArg (finPlaceHom K L v) (hB i j)
     have hs : ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((B : Matrix ι₁ ι₁ _) i j)).2 v *
           algebraMap L (v.adicCompletion L) ((x ∘ e) j) =
-        ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) (e i) j)).2 v *
-          algebraMap L (v.adicCompletion L) (x j) := by
-      simp only [hB, Function.comp_apply]
-      exact Fintype.sum_equiv e _ (fun j ↦ (adeleExtension (𝓞 K) K (𝓞 L) L
-        ((A : Matrix ι ι _) (e i) j)).2 v * algebraMap L (v.adicCompletion L) (x j)) fun _ ↦ rfl
+        ∑ j, (adeleExtension (𝓞 K) K (𝓞 L) L ((A : Matrix ι ι _) (e i) j)).2 v * xv j := by
+      have hsubvec : ∀ j, algebraMap L (v.adicCompletion L) ((x ∘ e) j) = (xv ∘ e) j := fun _ ↦ rfl
+      simp_rw [hsubvec]
+      rw [← mulVec_finPlaceHom_eq v B (xv ∘ e) i, hBv, Matrix.submatrix_mulVec_equiv,
+        Function.comp_apply, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id,
+        mulVec_finPlaceHom_eq v A xv (e i)]
     rw [hs]
 
 private theorem finrank_mul_inv_eq {K L : Type*} [Field K] [NumberField K] [Field L]
