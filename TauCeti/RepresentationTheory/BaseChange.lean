@@ -84,6 +84,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.finrank_intertwiningMap_baseChange`: scalar extension to a nontrivial
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
+* `Representation.IntertwiningMap.coe_equivLinearMapAsModule_baseChange`: the module map of a
+  base-changed intertwining map `f` is `A ⊗ f`.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
   intertwines the base-changed representation exactly when the map intertwines on `V`.
@@ -396,6 +398,18 @@ theorem toLinearMap_baseChange
     (f : IntertwiningMap ρ σ) (A : Type*) [Semiring A] [Algebra R A] :
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
+
+/-- The `A[G]`-linear map attached to a base-changed intertwining map `f` is `A ⊗ f` on the
+underlying types: `Representation.IntertwiningMap.equivLinearMapAsModule` keeps the
+underlying function (`Representation.IntertwiningMap.equivLinearMapAsModule_apply`). -/
+theorem coe_equivLinearMapAsModule_baseChange (f : IntertwiningMap ρ σ) (A : Type*)
+    [CommSemiring A] [Algebra R A] :
+    ⇑(equivLinearMapAsModule _ _ (f.baseChange A)) = f.toLinearMap.lTensor A := by
+  funext x
+  rw [equivLinearMapAsModule_apply, ← LinearMap.baseChange_eq_lTensor]
+  -- `x : asModule` is an element of `A ⊗[R] V`, and `f.baseChange A` is
+  -- `f.toLinearMap.baseChange A` (`Representation.IntertwiningMap.toLinearMap_baseChange`).
+  rfl
 
 /-- **Base change preserves composition**: the base change of `g ∘ f` is the composite of the base
 changes `A ⊗ g ∘ A ⊗ f`. -/

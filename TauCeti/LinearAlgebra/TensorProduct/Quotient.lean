@@ -70,6 +70,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
+* `LinearMap.exact_lTensor_of_ker_eq_span_singleton`: the same exactness after scalar extension
+  to any quotient of `R` by `(r)`, such as the residue field of a discrete valuation ring.
 * `LinearMap.exact_comp_baseChange_quotient_span_singleton`: under the same hypotheses, with `r`
   regular on `R` and `N` projective, the `R ⧸ (r)`-duals of these reductions form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
@@ -170,6 +172,26 @@ theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddC
     refine ⟨n - a m, ?_⟩
     rw [smul_sub, ← map_smul, hm, map_sub, ← comp_apply, hab]
     simp
+
+/-- **Reductions of a factorization of a regular scalar are exact.** Let `a : M → N` and
+`b : N → M` compose in both orders to multiplication by `r`, with `r` regular on `M`, and let `S`
+be an `R`-algebra whose structure map is surjective with kernel `(r)`. Then `S ⊗ b` and `S ⊗ a`
+form an exact pair. This generalizes `LinearMap.exact_lTensor_quotient_span_singleton`, the case
+`S = R ⧸ (r)`, to the residue field of a discrete valuation ring and a uniformizer, for
+instance. -/
+theorem exact_lTensor_of_ker_eq_span_singleton {R M N S : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [CommRing S] [Algebra R S] {r : R}
+    (hS : Function.Surjective (algebraMap R S))
+    (hker : RingHom.ker (algebraMap R S) = Ideal.span {r}) (a : M →ₗ[R] N) (b : N →ₗ[R] M)
+    (hab : a ∘ₗ b = r • id) (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular M r) :
+    Function.Exact (b.lTensor S) (a.lTensor S) := by
+  let e : (R ⧸ Ideal.span {r}) ≃ₗ[R] S :=
+    ((Ideal.quotientEquivAlgOfEq R hker).symm.trans
+      (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS)).toLinearEquiv
+  refine (Function.Exact.iff_of_ladder_linearEquiv (e₁ := e.rTensor N) (e₂ := e.rTensor M)
+    (e₃ := e.rTensor N) ?_ ?_).mpr (exact_lTensor_quotient_span_singleton a b hab hba hr) <;>
+  · rw [LinearEquiv.coe_rTensor, LinearEquiv.coe_rTensor, lTensor_comp_rTensor,
+      rTensor_comp_lTensor]
 
 /-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
 `b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `R` and `N`

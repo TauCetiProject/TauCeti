@@ -24,7 +24,9 @@ a finitely generated abelian group, it has a class
 
 `TauCeti.reductionK0 k ρ = [k ⊗_ℤ W] ∈ G₀(k[G])`
 
-in the exact Grothendieck group of finitely generated `k[G]`-modules.
+in the exact Grothendieck group of finitely generated `k[G]`-modules. The class is defined in the
+same way for a representation over any commutative ring `O` with an algebra `k`, such as the
+residue field of a discrete valuation ring.
 
 For a `G`-module `V` (an abelian group with a distributive `G`-action) and a natural number `ℓ`
 such that `V ⧸ ℓV` and the `ℓ`-torsion `V[ℓ]` are finite, the **lattice defect** is
@@ -51,7 +53,7 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 
 ## Main definitions
 
-* `TauCeti.reductionK0`: the class in `G₀(k[G])` of the reduction `k ⊗_ℤ W`.
+* `TauCeti.reductionK0`: the class in `G₀(k[G])` of the reduction `k ⊗_O W`.
 * `TauCeti.latticeDefect`: the class `[k ⊗_ℤ (V ⧸ ℓV)] - [k ⊗_ℤ V[ℓ]]`.
 
 ## Main results
@@ -90,45 +92,48 @@ variable (k : Type u) [CommRing k] {G : Type u} [Monoid G]
 
 section Reduction
 
-/-- The module of a reduction `k ⊗_ℤ W` that is finitely generated over `k`, for instance because
-`W` is a finitely generated abelian group, is finitely generated over `k[G]`. -/
-instance instModuleFiniteAsModuleBaseChange {W : Type u} [AddCommGroup W] [Module ℤ W]
-    [Module.Finite k (k ⊗[ℤ] W)] (ρ : Representation ℤ G W) :
+variable {O : Type*} [CommRing O] [Algebra O k]
+
+/-- The module of a reduction `k ⊗_O W` that is finitely generated over `k`, for instance because
+`W` is finitely generated over `O`, is finitely generated over `k[G]`. -/
+instance instModuleFiniteAsModuleBaseChange {W : Type u} [AddCommGroup W] [Module O W]
+    [Module.Finite k (k ⊗[O] W)] (ρ : Representation O G W) :
     Module.Finite k[G] (Representation.baseChange k ρ).asModule :=
   Module.Finite.of_restrictScalars_finite k k[G] _
 
-variable {W : Type u} [AddCommGroup W] [Module ℤ W] [Module.Finite k (k ⊗[ℤ] W)]
+variable {W : Type u} [AddCommGroup W] [Module O W] [Module.Finite k (k ⊗[O] W)]
 
-/-- **The reduction class** of a representation `ρ` of `G` on an abelian group `W` whose reduction
-`k ⊗_ℤ W` is finitely generated over `k`, for instance because `W` is finitely generated: the class
-in `G₀(k[G])` of its scalar extension `k ⊗_ℤ W`, with `G` acting on the second factor. -/
-noncomputable def reductionK0 (ρ : Representation ℤ G W) :
+/-- **The reduction class** of a representation `ρ` of `G` on an `O`-module `W` whose reduction
+`k ⊗_O W` is finitely generated over `k`, for instance because `W` is finitely generated over `O`:
+the class in `G₀(k[G])` of its scalar extension `k ⊗_O W`, with `G` acting on the second factor.
+For `O = ℤ`, `W` is an abelian group. -/
+noncomputable def reductionK0 (ρ : Representation O G W) :
     ExactK0 (finiteModulesExactStructure k[G]) :=
   ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule)
 
 /-- The reduction class is the class of the `k[G]`-module of the base-changed representation. -/
-theorem reductionK0_def (ρ : Representation ℤ G W) :
+theorem reductionK0_def (ρ : Representation O G W) :
     reductionK0 k ρ = ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
   (rfl)
 
 /-- Equivalent scalar extensions have equal reduction classes. -/
-theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
-    [Module.Finite k (k ⊗[ℤ] W')] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
+theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module O W']
+    [Module.Finite k (k ⊗[O] W')] {ρ : Representation O G W} {σ : Representation O G W'}
     (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
     reductionK0 k ρ = reductionK0 k σ := by
   rw [reductionK0_def, reductionK0_def]
   exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
 
 /-- Equivalent representations have equal reduction classes. -/
-theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W']
-    [Module.Finite k (k ⊗[ℤ] W')]
-    {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
+theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module O W']
+    [Module.Finite k (k ⊗[O] W')]
+    {ρ : Representation O G W} {σ : Representation O G W'} (e : ρ.Equiv σ) :
     reductionK0 k ρ = reductionK0 k σ :=
   reductionK0_congr_baseChange k (e.baseChange k)
 
 /-- The reduction class of a zero module is zero. -/
 @[simp]
-theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representation ℤ G W) :
+theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representation O G W) :
     reductionK0 k ρ = 0 := by
   have : Subsingleton (Representation.baseChange k ρ).asModule :=
     (Representation.baseChange k ρ).asModuleEquiv.injective.subsingleton
@@ -171,10 +176,8 @@ private noncomputable abbrev reductionLinearMap {ρ : Representation ℤ G W}
   IntertwiningMap.equivLinearMapAsModule _ _ (f.baseChange k)
 
 private theorem coe_reductionLinearMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
-    (f : IntertwiningMap ρ σ) : ⇑(reductionLinearMap k f) = f.toLinearMap.lTensor k := by
-  -- `equivLinearMapAsModule` keeps the underlying function of an intertwining map
-  have h : ⇑(reductionLinearMap k f) = ⇑(f.baseChange k).toLinearMap := rfl
-  rw [h, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_lTensor]
+    (f : IntertwiningMap ρ σ) : ⇑(reductionLinearMap k f) = f.toLinearMap.lTensor k :=
+  IntertwiningMap.coe_equivLinearMapAsModule_baseChange f k
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}
