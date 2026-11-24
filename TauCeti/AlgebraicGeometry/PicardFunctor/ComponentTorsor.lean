@@ -41,7 +41,10 @@ For a smooth proper geometrically connected family of curves `f`:
 
 * `TauCeti.AlgebraicGeometry.HasPicardComponent`: `Picᵈ_{X/S}` is representable;
 * `TauCeti.AlgebraicGeometry.picardComponent`: its representing object;
-* `TauCeti.AlgebraicGeometry.picardComponentι`: the monomorphism into the Picard scheme;
+* `TauCeti.AlgebraicGeometry.picardComponentι`: the monomorphism into the Picard scheme, with
+  `TauCeti.AlgebraicGeometry.picardComponentLift` lifting the points of degree `d` and
+  `TauCeti.AlgebraicGeometry.exists_comp_picardComponentι_eq_iff`: a point of the Picard scheme
+  factors through `picardComponentι f d` exactly when its class has degree `d`;
 * the instance `CommGrpObj (picardComponent f 0)`: the group law of `Pic⁰_{X/S}`;
 * the instance `ModObj (picardComponent f 0) (picardComponent f d)`: the action on `Picᵈ_{X/S}`;
 * `TauCeti.AlgebraicGeometry.isTorsor_picardComponent`: `Picᵈ_{X/S}` is a `Pic⁰_{X/S}`-torsor;
@@ -114,6 +117,36 @@ instance : Mono (picardComponentι f d) where
     refine (picardComponentRepresentableBy f d).homEquiv.injective (Subtype.ext ?_)
     rw [← picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
       ← picardSchemeRepresentableBy_homEquiv_comp_picardComponentι, hgh]
+
+/-- A point of the Picard scheme whose class has degree `d` lifts to the degree-`d` component
+`picardComponent f d`. -/
+def picardComponentLift {T : Over S} (ψ : T ⟶ picardScheme f)
+    (h : (picardSchemeRepresentableBy f).homEquiv ψ ∈
+      (relativePicardDegreeFppfSubfunctor f d).obj (op T)) :
+    T ⟶ picardComponent f d :=
+  (picardComponentRepresentableBy f d).homEquiv.symm ⟨_, h⟩
+
+/-- The lift of a point of the Picard scheme to `picardComponent f d` factors it through
+`picardComponentι f d`. -/
+@[reassoc (attr := simp)]
+theorem picardComponentLift_comp_picardComponentι {T : Over S} (ψ : T ⟶ picardScheme f)
+    (h : (picardSchemeRepresentableBy f).homEquiv ψ ∈
+      (relativePicardDegreeFppfSubfunctor f d).obj (op T)) :
+    picardComponentLift f d ψ h ≫ picardComponentι f d = ψ := by
+  refine (picardSchemeRepresentableBy f).homEquiv.injective ?_
+  rw [picardSchemeRepresentableBy_homEquiv_comp_picardComponentι, picardComponentLift,
+    Equiv.apply_symm_apply]
+
+/-- A point of the Picard scheme factors through the degree-`d` component exactly when its class
+has degree `d`. -/
+theorem exists_comp_picardComponentι_eq_iff {T : Over S} (ψ : T ⟶ picardScheme f) :
+    (∃ φ : T ⟶ picardComponent f d, φ ≫ picardComponentι f d = ψ) ↔
+      (picardSchemeRepresentableBy f).homEquiv ψ ∈
+        (relativePicardDegreeFppfSubfunctor f d).obj (op T) := by
+  refine ⟨?_, fun h ↦ ⟨_, picardComponentLift_comp_picardComponentι f d ψ h⟩⟩
+  rintro ⟨φ, rfl⟩
+  rw [picardSchemeRepresentableBy_homEquiv_comp_picardComponentι]
+  exact ((picardComponentRepresentableBy f d).homEquiv φ).property
 
 end PicardScheme
 
