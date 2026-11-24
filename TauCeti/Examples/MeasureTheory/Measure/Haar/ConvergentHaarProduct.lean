@@ -133,9 +133,8 @@ local notation "twoZMod4" => AddSubgroup.zmultiples (2 : ZMod 4)
 lemma count_zmultiples_two : count (twoZMod4 : Set (ZMod 4)) = 2 := by
   have h : addOrderOf (2 : ZMod 4) = 2 := by
     simpa using ZMod.addOrderOf_coe (n := 4) 2 four_ne_zero
-  rw [count_apply (MeasurableSet.of_discrete), ← Set.Finite.cast_ncard_eq (Set.toFinite _),
-    ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, Nat.card_zmultiples, h]
-  norm_num
+  rw [count_apply .of_discrete, ← ENat.card_coe_set_eq]
+  simp [← Nat.card_eq_fintype_card, h]
 
 /-- Every index outside `Finset.univ` satisfies any predicate, since there is no such index. -/
 lemma forall_notMem_univ {ι : Type*} [Fintype ι] {p : ι → Prop} :
