@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Covector
 public import TauCeti.Analysis.Sobolev.DifferentialForm.Lp
 public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
@@ -40,7 +39,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Module TauCeti
-open scoped ENNReal RealInnerProductSpace
+open scoped ENNReal EuclideanSpace RealInnerProductSpace
 
 namespace Orientation
 

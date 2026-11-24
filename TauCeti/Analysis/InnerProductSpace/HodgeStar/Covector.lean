@@ -136,10 +136,9 @@ covector `α` of degree `k` and a covector `β` of degree `l`, where `k + l = fi
 theorem inner_covectorHodgeStar_left (hkl : k + l = finrank ℝ V) (hlk : l + k = finrank ℝ V)
     (α : Covector V k) (β : Covector V l) :
     ⟪o.covectorHodgeStar hkl α, β⟫ = (-1 : ℝ) ^ (k * l) * ⟪α, o.covectorHodgeStar hlk β⟫ := by
-  rw [← (o.covectorHodgeStar hkl).inner_map_map α (o.covectorHodgeStar hlk β),
-    o.covectorHodgeStar_covectorHodgeStar hlk hkl, inner_smul_right, ← mul_assoc, ← pow_add,
-    mul_comm l k, ← two_mul, pow_mul]
-  simp
+  rw [← (toExteriorPower V l).inner_map_map, toExteriorPower_covectorHodgeStar,
+    o.inner_hodgeStar_left hkl hlk, ← toExteriorPower_covectorHodgeStar,
+    (toExteriorPower V k).inner_map_map]
 
 /-- Reversing the orientation negates the Hodge star of covectors. -/
 @[simp]
