@@ -163,8 +163,7 @@ theorem dvd_coeff_zero_of_ker_fontaineTheta_eq_span {g : WittVector p (PreTilt A
     (ht : t.untilt ∣ (p : A)) : t ∣ g.coeff 0 := by
   have hgk : g ∈ RingHom.ker (fontaineTheta A p) := hg ▸ mem_span_singleton_self g
   have hg₀ := coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta hgk
-  have hgd := (ker_fontaineTheta_eq_span_iff_isDistinguished hgk).mp hg
-  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp hgd
+  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hg
   obtain ⟨c, hc⟩ := ht
   obtain ⟨w, rfl⟩ := surjective_fontaineTheta (p := p) c
   have hmem : (p : WittVector p (PreTilt A p)) - teichmuller p t * w ∈ span {g} := by
