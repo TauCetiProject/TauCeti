@@ -97,7 +97,9 @@ lemma opFunctorCompOpFunctorIso_inv_app_app (X : CosimplicialObject C) (n : Simp
   simp [opFunctorCompOpFunctorIso, opObjIso, opFunctor]
 
 /-- The functor `opFunctor : CosimplicialObject C ⥤ CosimplicialObject C` as an equivalence of
-categories. -/
+categories. Its body is exposed because the types of its unit and counit mention its functor and
+inverse, so the projection lemmas identifying them with `opFunctorCompOpFunctorIso` only typecheck
+when the functor and inverse reduce to `opFunctor`. -/
 @[expose, simps]
 def opEquivalence : CosimplicialObject C ≌ CosimplicialObject C where
   functor := opFunctor

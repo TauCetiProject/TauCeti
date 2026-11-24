@@ -23,6 +23,7 @@ this file follows.
 
 * `CosimplicialObject.Augmented.ExtraCodegeneracy`: extra codegeneracies.
 * `ExtraCodegeneracy.map`: extra codegeneracies are preserved by any functor.
+* `ExtraCodegeneracy.ofIso`: extra codegeneracies are transported along isomorphisms.
 * `SimplicialObject.Augmented.ExtraDegeneracy.rightOp`: an extra degeneracy of an augmented
   simplicial object is an extra codegeneracy of the opposite augmented cosimplicial object.
   Composed with `ExtraCodegeneracy.map`, this turns an extra degeneracy into an extra
@@ -109,12 +110,43 @@ lemma map_s' {D : Type*} [Category D] (ed : ExtraCodegeneracy X) (F : C ⥤ D) :
 lemma map_s {D : Type*} [Category D] (ed : ExtraCodegeneracy X) (F : C ⥤ D) (n : ℕ) :
     (ed.map F).s n = F.map (ed.s n) := (rfl)
 
+/-- If `ed` is an extra codegeneracy of `X` and `e : X ≅ Y` is an isomorphism of augmented
+cosimplicial objects, then `ed.ofIso e` is the extra codegeneracy of `Y` obtained by conjugating
+`ed` with the components of `e`. -/
+def ofIso {Y : CosimplicialObject.Augmented C} (e : X ≅ Y) (ed : ExtraCodegeneracy X) :
+    ExtraCodegeneracy Y where
+  s' := e.inv.right.app ⦋0⦌ ≫ ed.s' ≫ e.hom.left
+  s n := e.inv.right.app ⦋n + 1⦌ ≫ ed.s n ≫ e.hom.right.app ⦋n⦌
+  -- The components of `e` are stated for `Comma`, so `rw` cannot recombine them; we use the
+  -- equations of `e.inv_hom_id` and the augmentation square of `e.hom` directly.
+  ε_comp_s' := by
+    rw [← w_app_assoc, ed.ε_comp_s'_assoc]
+    exact (congrArg (e.inv.left ≫ ·) (id_comp _)).trans (congrArg CommaMorphism.left e.inv_hom_id)
+  δ₁_comp_s₀ := by
+    rw [δ_naturality_assoc, ed.δ₁_comp_s₀_assoc, assoc, assoc]
+    exact congrArg (e.inv.right.app ⦋0⦌ ≫ ed.s' ≫ ·) (w_app (η := e.hom)).symm
+  δ₀_comp_s n := by
+    rw [δ_naturality_assoc, ed.δ₀_comp_s_assoc]
+    exact congrArg (fun f ↦ f.right.app ⦋n⦌) e.inv_hom_id
+  δ_comp_s n i := by
+    rw [δ_naturality_assoc, ed.δ_comp_s_assoc, assoc, assoc, δ_naturality]
+  σ_comp_s n i := by
+    rw [σ_naturality_assoc, ed.σ_comp_s_assoc, assoc, assoc, σ_naturality]
+
+@[simp]
+lemma ofIso_s' {Y : CosimplicialObject.Augmented C} (e : X ≅ Y) (ed : ExtraCodegeneracy X) :
+    (ed.ofIso e).s' = e.inv.right.app ⦋0⦌ ≫ ed.s' ≫ e.hom.left := (rfl)
+
+@[simp]
+lemma ofIso_s {Y : CosimplicialObject.Augmented C} (e : X ≅ Y) (ed : ExtraCodegeneracy X)
+    (n : ℕ) : (ed.ofIso e).s n = e.inv.right.app ⦋n + 1⦌ ≫ ed.s n ≫ e.hom.right.app ⦋n⦌ := (rfl)
+
 section Preadditive
 
 variable [Preadditive C]
 
-/-- In degree `0`, the extra codegeneracy contracts the first differential up to the retraction
-of the augmentation. -/
+/-- In degree `0`, the first differential followed by the extra codegeneracy is the identity minus
+the retraction `s'` followed by the augmentation. -/
 lemma objD_zero_comp_s_zero (ed : ExtraCodegeneracy X) :
     AlternatingCofaceMapComplex.objD X.right 0 ≫ ed.s 0 = 𝟙 _ - ed.s' ≫ X.hom.app ⦋0⦌ := by
   simp [Fin.sum_univ_two, sub_eq_add_neg, ed.δ₁_comp_s₀]
@@ -216,7 +248,8 @@ def homotopyEquiv (ed : ExtraCodegeneracy X) :
           ((congrArg (fun a : X.right.obj ⦋n + 1⦌ ⟶ X.right.obj ⦋n + 1⦌ ↦ a - _) h).trans
             (zero_sub_id_eq_d_comp_neg_add ed.s n (ed.objD_succ_comp_s_add_s_comp_objD n))))
 
-/-- The homotopy equivalence of an extra codegeneracy is the augmentation. -/
+/-- The forward cochain map of the homotopy equivalence of an extra codegeneracy is the
+augmentation. -/
 @[simp]
 lemma homotopyEquiv_hom (ed : ExtraCodegeneracy X) :
     ed.homotopyEquiv.hom = AlternatingCofaceMapComplex.ε.app X := (rfl)
@@ -260,8 +293,8 @@ def homotopyEquivOfOpFunctor (ed : ExtraCodegeneracy (opFunctor.obj X)) :
           (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right)).trans
         (Homotopy.ofEq ((congrArg (_ ≫ ·) (id_comp _)).trans (Iso.inv_hom_id_app _ _))))
 
-/-- The homotopy equivalence obtained from an extra codegeneracy of the reversal is the
-augmentation of `X`. -/
+/-- The forward cochain map of the homotopy equivalence obtained from an extra codegeneracy of
+the reversal is the augmentation of `X`. -/
 @[simp]
 lemma homotopyEquivOfOpFunctor_hom (ed : ExtraCodegeneracy (opFunctor.obj X)) :
     ed.homotopyEquivOfOpFunctor.hom = AlternatingCofaceMapComplex.ε.app X := (rfl)
