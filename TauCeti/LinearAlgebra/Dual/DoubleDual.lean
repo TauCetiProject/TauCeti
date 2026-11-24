@@ -31,8 +31,6 @@ this holds for every finitely generated torsion-free `R`-module
 
 ## Main declarations
 
-* `Module.Dual.eval_comp_dualMap`: evaluation at `z` composed with the transpose of `f` is
-  evaluation at `f z`; the pointwise form of Mathlib's `Module.Dual.eval_naturality`.
 * `TauCeti.Module.Dual.injective_eval_iff`: `Module.Dual.eval R M` is injective if and only if every
   nonzero element of `M` is not killed by some `R`-linear functional.
 * `TauCeti.Module.Dual.injective_eval_of_finite`: over any integral domain `R`, a finitely
@@ -44,18 +42,6 @@ this holds for every finitely generated torsion-free `R`-module
 public section
 
 open Module Module.Dual
-
-namespace Module.Dual
-
-/-- Evaluation at `z` composed with the transpose of `f` is evaluation at `f z`. This is the
-pointwise form of `Module.Dual.eval_naturality`. -/
-@[simp]
-theorem eval_comp_dualMap {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (z : M) :
-    eval R M z ∘ₗ f.dualMap = eval R N (f z) :=
-  rfl
-
-end Module.Dual
 
 namespace TauCeti.Module.Dual
 

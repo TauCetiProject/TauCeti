@@ -261,23 +261,6 @@ theorem map_dualMap_killingSymmetricEquiv (p : SymmetricAlgebra K L) :
   congr 2
   exact LinearMap.ext fun x ↦ (cartanEquivDual_killingCartanProjection H x).symm
 
-/-- Through the Killing duality `H ≃ H*`, evaluating a polynomial function on `H*` at the weight
-`κ(z, ·)` dual to `z ∈ H` is evaluating the corresponding polynomial function on `H` at `z`. -/
-theorem _root_.LieSubalgebra.lift_eval_comp_map_cartanEquivDual (z : H) :
-    (SymmetricAlgebra.lift (Dual.eval K H z)).comp
-        (SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap) =
-      SymmetricAlgebra.lift (cartanEquivDual H z) :=
-  -- on generators this is the symmetry `κ(h, z) = κ(z, h)` of the Killing form
-  SymmetricAlgebra.algHom_ext (LinearMap.ext fun h ↦ by
-    simpa using LinearMap.trace_mul_comm K (toEnd K H L h) (toEnd K H L z))
-
-/-- Applied form of `LieSubalgebra.lift_eval_comp_map_cartanEquivDual`. -/
-theorem _root_.LieSubalgebra.lift_eval_map_cartanEquivDual (z : H) (p : SymmetricAlgebra K H) :
-    SymmetricAlgebra.lift (Dual.eval K H z)
-        (SymmetricAlgebra.map K (cartanEquivDual H).toLinearMap p) =
-      SymmetricAlgebra.lift (cartanEquivDual H z) p :=
-  AlgHom.congr_fun (H.lift_eval_comp_map_cartanEquivDual z) p
-
 /-- **The restriction, read on the weights.** Viewing `S(L)` as the polynomial functions on `L*`
 and `S(H)` as the polynomial functions on the weights `H*`, the value of `lieCartanRestriction H p`
 at a weight `λ` is the value of `p` at the extension `TauCeti.killingExtend λ` of `λ` to `L`. -/
