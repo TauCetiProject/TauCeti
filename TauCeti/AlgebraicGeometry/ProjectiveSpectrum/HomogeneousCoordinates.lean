@@ -46,7 +46,7 @@ noncomputable def projCoord (i : ι) : _root_.SymmetricAlgebra K (ι → K) :=
 
 omit [Fintype ι] in
 /-- The homogeneous coordinate `X_i` is the image of the standard basis vector. -/
-theorem projCoord_eq (i : ι) :
+theorem projCoord_def (i : ι) :
     projCoord K i = _root_.SymmetricAlgebra.ι K (ι → K) (Pi.single i 1) :=
   (rfl)
 
@@ -77,7 +77,7 @@ theorem projEval_ι (v : ι → K) (m : ι → K) :
 /-- The evaluation at `v` sends the homogeneous coordinate `X_i` to `v i`. -/
 @[simp]
 theorem projEval_projCoord (v : ι → K) (i : ι) : projEval v (projCoord K i) = v i := by
-  simp [projCoord_eq, Pi.single_apply]
+  simp [projCoord_def, Pi.single_apply]
 
 omit [DecidableEq ι] in
 /-- Rescaling the coordinates by `c` multiplies the value of a homogeneous polynomial of degree
@@ -118,7 +118,7 @@ theorem awayι_projCoord_projToSpec (k : ι) :
     Proj.awayι (homogeneousSubmodule K (ι → K)) (projCoord K k) (projCoord_mem k) one_pos ≫
         projToSpec K (ι → K) =
       Spec.algebraMap K (Away (homogeneousSubmodule K (ι → K)) (projCoord K k)) := by
-  rw [awayι_projToSpec]
+  rw [awayι_projToSpec, ← algebraMap_eq_comp]
 
 /-- The evaluation `X_i / X_k ↦ v i / v k` of the standard chart `D₊(X_k)` at a coordinate
 vector `v` with `v k ≠ 0`. -/
@@ -127,11 +127,10 @@ noncomputable def projChartEval (v : ι → K) {k : ι} (hk : v k ≠ 0) :
   { Away.lift (homogeneousSubmodule K (ι → K)) (projEval v : _ →+* K)
       (f := projCoord K k) (by simpa using hk) with
     commutes' r := by
-      -- The `K`-algebra structure of the chart factors through its degree-zero part, where
-      -- `algebraMap` is `fromZeroRingHom` by definition.
-      change Away.lift _ _ _ (fromZeroRingHom _ _ (algebraMap K _ r)) = _
-      rw [← HomogeneousLocalization.algebraMap_eq, Away.lift_algebraMap]
-      exact (projEval v).commutes r }
+      -- The `K`-algebra structure of the chart factors through its degree-zero part.
+      rw [algebraMap_eq_comp, RingHom.comp_apply, ← HomogeneousLocalization.algebraMap_eq]
+      exact (Away.lift_algebraMap (𝒜 := homogeneousSubmodule K (ι → K)) _ _ _).trans
+        ((projEval v).commutes r) }
 
 /-- The chart evaluation is `Away.lift` of the evaluation at `v`. -/
 theorem projChartEval_toRingHom (v : ι → K) {k : ι} (hk : v k ≠ 0) :
@@ -144,46 +143,31 @@ theorem projChartEval_toRingHom (v : ι → K) {k : ι} (hk : v k ≠ 0) :
 theorem projChartEval_awayMk (v : ι → K) {k : ι} (hk : v k ≠ 0) {n : ℕ}
     {a : _root_.SymmetricAlgebra K (ι → K)} (ha) :
     projChartEval v hk (Away.mk _ (projCoord_mem k) n a ha) = projEval v a / v k ^ n := by
-  rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe, projChartEval_toRingHom, Away.lift_mk,
-    Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val, IsUnit.unit_spec, RingHom.coe_coe,
-    projEval_projCoord, div_eq_mul_inv]
+  rw [← AlgHom.coe_toRingHom, ← AlgHom.toRingHom_eq_coe, projChartEval_toRingHom, Away.lift_mk]
+  simp [div_eq_mul_inv]
 
 /-- Every `K`-algebra homomorphism `α` on the standard chart `D₊(X_k)` is the chart evaluation at
 a coordinate vector whose `k`-th coordinate is `1`. -/
 theorem exists_eq_projChartEval (k : ι)
     (α : Away (homogeneousSubmodule K (ι → K)) (projCoord K k) →ₐ[K] K) :
     ∃ (v : ι → K) (hk : v k ≠ 0), v k = 1 ∧ α = projChartEval v hk := by
-  have hφ := projCoord_mem (K := K) k
-  -- Read `α` on the chart of the linear form `Pi.single k 1`, the form in which
-  -- `AlgHom.apply_awayMk_eq_lift` states the chart.
-  have hφ' := ι_mem_homogeneousSubmodule K (ι → K) (Pi.single k 1)
+  -- By definition (`projCoord_def`), `projCoord K k` is the linear coordinate
+  -- `ι (Pi.single k 1)`, so `α` is also a homomorphism `β` on the chart of that linear form, the
+  -- form in which `AlgHom.chartFunctional` reads it; this step uses that definitional unfolding.
   let β : Away (homogeneousSubmodule K (ι → K))
       (_root_.SymmetricAlgebra.ι K (ι → K) (Pi.single k 1)) →ₐ[K] K := α
   -- The linear form `c ↦ α (c / X_k)`, as in the description of closed points of `Proj`.
-  let w : Module.Dual K (ι → K) := β.toLinearMap ∘ₗ Away.mkLinearMap hφ' 1 ∘ₗ
-    (_root_.SymmetricAlgebra.ι K (ι → K)).codRestrict (homogeneousSubmodule K (ι → K) (1 • 1))
-      (fun c ↦ by simp)
-  have key {n : ℕ} {a : _root_.SymmetricAlgebra K (ι → K)}
-      (ha : a ∈ homogeneousSubmodule K (ι → K) n) :=
-    β.apply_awayMk_eq_lift w (fun c ↦ by simp [w]) ha
+  let w : Module.Dual K (ι → K) := β.chartFunctional
   have hw : projEval (fun i ↦ w (Pi.single i 1)) = _root_.SymmetricAlgebra.lift w := by
     refine _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun m ↦ ?_)
     have hm : ∑ i, m i • (Pi.single i 1 : ι → K) = m := by
       simpa using (Pi.basisFun K ι).sum_repr m
     conv_rhs => rw [← hm]
     simp [map_sum, map_smul]
-  have h1 :
-      Away.mk _ hφ' 1 (_root_.SymmetricAlgebra.ι K (ι → K) (Pi.single k 1)) (by simp) = 1 := by
-    apply val_injective
-    simp [Away.val_mk]
-  have hk1 : w (Pi.single k 1) = 1 := by
-    have := key hφ'
-    rw [h1, map_one, _root_.SymmetricAlgebra.lift_ι_apply] at this
-    exact this.symm
+  have hk1 : w (Pi.single k 1) = 1 := β.chartFunctional_self
   refine ⟨fun i ↦ w (Pi.single i 1), by simp [hk1], hk1, ?_⟩
-  ext z
-  obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective _ hφ z
+  refine Away.algHom_ext (projCoord_mem k) fun n a ha ↦ ?_
   rw [projChartEval_awayMk, hk1, one_pow, div_one, hw]
-  exact key (by simpa using ha)
+  exact β.apply_awayMk_eq_lift_chartFunctional (by simpa using ha)
 
 end TauCeti

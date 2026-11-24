@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.HomogeneousCoordinates
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Charts
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Points of projective space in homogeneous coordinates
@@ -93,7 +94,7 @@ noncomputable def projPoint (v : ι → K) (hv : v ≠ 0) : Points (R := K) (pro
 
 /-- The underlying morphism of `projPoint v` is `Proj.fromOfGlobalSections` of the evaluation
 at `v`. -/
-private theorem projPoint_val (v : ι → K) (hv : v ≠ 0) :
+theorem projPoint_val (v : ι → K) (hv : v ≠ 0) :
     (projPoint v hv).val = Proj.fromOfGlobalSections (homogeneousSubmodule K (ι → K))
       ((Scheme.ΓSpecIso (.of K)).inv.hom.comp (projEval v : _ →+* K))
       (by exact map_irrelevant_comp_projEval_eq_top _ hv) :=
@@ -117,8 +118,7 @@ theorem projPoint_smul {v : ι → K} (hv : v ≠ 0) {c : K} (hc : c ≠ 0) :
   have hck : (c • v) k ≠ 0 := by simpa using And.intro hc hk
   rw [projPoint_eq_chartPoint _ hk, projPoint_eq_chartPoint _ hck]
   congr 1
-  ext z
-  obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective _ (projCoord_mem k) z
+  refine Away.algHom_ext (projCoord_mem k) fun n a ha ↦ ?_
   rw [projChartEval_awayMk, projChartEval_awayMk, projEval_smul_of_mem c v (by simpa using ha),
     Pi.smul_apply, smul_eq_mul, mul_pow, mul_div_mul_left _ _ (pow_ne_zero n hc)]
 
@@ -167,7 +167,7 @@ theorem exists_projPoint_eq (x : Points (R := K) (projToSpec K (ι → K))) :
   have hx : x.val (IsLocalRing.closedPoint K) ∈
       ⨆ i, Proj.basicOpen (homogeneousSubmodule K (ι → K)) (projCoord K i) := by
     rw [show (⨆ i, Proj.basicOpen (homogeneousSubmodule K (ι → K)) (projCoord K i)) = ⊤ by
-      simpa only [projCoord_eq] using iSup_basicOpen_ι_eq_top K (ι → K) _ hspan]
+      simpa only [projCoord_def] using iSup_basicOpen_ι_eq_top K (ι → K) _ hspan]
     trivial
   obtain ⟨k, hk⟩ := TopologicalSpace.Opens.mem_iSup.mp hx
   rw [← Proj.opensRange_awayι _ _ (projCoord_mem k) one_pos] at hk
@@ -278,19 +278,13 @@ instance compactSpace_points_projToSpec_of_isNonarchimedeanLocalField [Finite ι
   refine (Set.eq_univ_of_forall fun x ↦ ?_).symm
   obtain ⟨v, hv, -, -, rfl⟩ := exists_projPoint_eq x
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv
-  obtain ⟨k, -, hk⟩ := Finset.exists_max_image Finset.univ (fun i ↦ valuation K (v i))
-    ⟨i₀, Finset.mem_univ _⟩
-  have hvk : v k ≠ 0 := by
-    intro h
-    have := hk i₀ (Finset.mem_univ _)
-    rw [h, map_zero, nonpos_iff_eq_zero, map_eq_zero] at this
-    exact hi₀ this
+  obtain ⟨k, -, hvk, hdiv⟩ := (valuation K).valuationSubring.exists_ne_zero_and_div_mem
+    (s := Finset.univ) (g := v) ⟨i₀, Finset.mem_univ _, hi₀⟩
   have hc : (v k)⁻¹ ≠ 0 := inv_ne_zero hvk
   refine ⟨⟨(v k)⁻¹ • v, smul_ne_zero hc hv⟩, ⟨fun i _ ↦ ?_, Set.mem_iUnion.2 ⟨k, ?_⟩⟩,
     projPoint_smul hv hc⟩
-  · simp only [Set.mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, map_mul, map_inv₀]
-    have h0 : valuation K (v k) ≠ 0 := by simpa using hvk
-    exact (inv_mul_le_iff₀' (pos_iff_ne_zero.2 h0)).2 (by simpa using hk i (Finset.mem_univ _))
+  · simp only [Set.mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, inv_mul_eq_div]
+    exact (Valuation.mem_valuationSubring_iff _ _).1 (hdiv i (Finset.mem_univ _))
   · simp [hvk]
 
 end LocalField

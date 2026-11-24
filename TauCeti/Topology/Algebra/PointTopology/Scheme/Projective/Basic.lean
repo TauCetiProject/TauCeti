@@ -44,6 +44,8 @@ product is proper because `ℙⁿ(K)` is compact.
 
 ## Main results
 
+All three assume that the `K`-points of every `ℙⁿ_K` are compact.
+
 * `TauCeti.SchemePointTopology.isProperMap_map_projToSpec`: for a finite `A`-module `M`, the
   projection `Proj (Sym_A M)(K) → (Spec A)(K)` is proper.
 * `TauCeti.SchemePointTopology.isProperMap_map_of_isProjectiveOver`: a projective scheme over a
@@ -92,9 +94,9 @@ private theorem isProperMap_map_projToSpec_tensorProduct (n : ℕ) :
   rw [he]
   exact isProperMap_snd_of_compactSpace.comp e.isProperMap
 
-/-- **Projective space over a `K`-algebra is proper on `K`-points.** For a finite module `M`
-over a `K`-algebra `A`, the structure morphism of `Proj (Sym_A M)` induces a proper map of
-`K`-points `Proj (Sym_A M)(K) → (Spec A)(K)`. -/
+/-- **Projective space over a `K`-algebra is proper on `K`-points.** When the `K`-points of every
+`ℙⁿ_K` are compact, for a finite module `M` over a `K`-algebra `A`, the structure morphism of
+`Proj (Sym_A M)` induces a proper map of `K`-points `Proj (Sym_A M)(K) → (Spec A)(K)`. -/
 theorem isProperMap_map_projToSpec (M : Type u) [AddCommMonoid M] [Module A M]
     [Module.Finite A M] :
     IsProperMap (map (R := K) (projToSpec A M)
@@ -127,9 +129,9 @@ theorem isProperMap_map_projToSpec (M : Type u) [AddCommMonoid M] [Module A M]
   exact (isProperMap_map_projToSpec_tensorProduct n).comp
     (isClosedEmbedding_of_isClosedImmersion q hq).isProperMap
 
-/-- **Projective schemes are proper on `K`-points.** If `X` is projective over a
-`K`-algebra `A`, its structure morphism induces a proper map of `K`-points
-`X(K) → (Spec A)(K)`. -/
+/-- **Projective schemes are proper on `K`-points.** When the `K`-points of every `ℙⁿ_K` are
+compact, if `X` is projective over a `K`-algebra `A`, its structure morphism induces a proper map
+of `K`-points `X(K) → (Spec A)(K)`. -/
 theorem isProperMap_map_of_isProjectiveOver {X : Scheme.{u}} [X.Over (Spec (.of A))]
     [X.IsProjectiveOver A] :
     IsProperMap (map (R := K) (X ↘ Spec (.of A))
@@ -151,8 +153,9 @@ theorem isProperMap_map_of_isProjectiveOver {X : Scheme.{u}} [X.Over (Spec (.of 
   exact (isProperMap_map_projToSpec M).comp
     (isClosedEmbedding_of_isClosedImmersion j hj').isProperMap
 
-/-- **The `K`-points of a projective `K`-scheme are compact.** This applies to `K = ℂ` and to every
-nonarchimedean local field `K : Type`. -/
+/-- **The `K`-points of a projective `K`-scheme are compact.** When the `K`-points of every `ℙⁿ_K`
+are compact, the `K`-points of a projective `K`-scheme are compact. This applies to `K = ℂ` and to
+every nonarchimedean local field `K : Type`. -/
 instance compactSpace_of_isProjectiveOver {X : Scheme.{u}} [X.Over (Spec (.of K))]
     [X.IsProjectiveOver K] : CompactSpace (Points (R := K) (X ↘ Spec (.of K))) := by
   have hid : Spec.algebraMap K K = 𝟙 _ := by simp
