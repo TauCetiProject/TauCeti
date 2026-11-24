@@ -14,6 +14,7 @@ import TauCeti.GroupTheory.DoubleCoset.Inv
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.DoubleCoset.Orbits
 import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
 
 /-!
 # The Cartan decomposition of `PGL₂` over a discretely valued field
@@ -293,10 +294,6 @@ theorem existsUnique_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ)
   let ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
   ⟨k, hk, fun _ hl ↦ (eq_of_mem_doubleCoset_mk_diagGL_pow hϖ hπ hk hl).symm⟩
 
-/-- The Weyl element `(0 1; 1 0)` of `GL₂(R)`, which is its own inverse. -/
-private def weylGL2 : GL (Fin 2) R :=
-  ⟨!![0, 1; 1, 0], !![0, 1; 1, 0], by simp [Matrix.one_fin_two], by simp [Matrix.one_fin_two]⟩
-
 omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
 /-- `diag(1, πᵏ)⁻¹` lies in the double coset of `diag(1, πᵏ)`: up to a scalar, it is the conjugate
 of `diag(1, πᵏ)` by the Weyl element. -/
@@ -305,12 +302,12 @@ private theorem inv_mem_doubleCoset_mk_diagGL_pow (k : ℕ) :
       doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
         (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
         (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range := by
-  refine mem_doubleCoset.mpr ⟨_, ⟨weylGL2, rfl⟩, _, ⟨weylGL2, rfl⟩, ?_⟩
+  refine mem_doubleCoset.mpr ⟨_, ⟨GL2WeylElement R, rfl⟩, _, ⟨GL2WeylElement R, rfl⟩, ?_⟩
   simp only [MonoidHom.comp_apply]
   rw [← map_mul, ← map_mul, ← map_inv, ProjGenLinGroup.mk_eq_mk_iff]
   refine ⟨π ^ k, Units.ext ?_⟩
   rw [← map_inv, Units.val_mul, Units.val_mul, Units.val_mul, GeneralLinearGroup.coe_scalar,
-    diagGL_coe, diagGL_coe, GeneralLinearGroup.val_map_apply, weylGL2]
+    diagGL_coe, diagGL_coe, GeneralLinearGroup.val_map_apply, coe_gl2WeylElement]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, -Units.val_pow_eq_pow_val]
