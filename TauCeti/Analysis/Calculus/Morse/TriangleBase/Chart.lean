@@ -113,8 +113,10 @@ theorem triangleBaseGluingParameter_apply (z : WithLp 2 (ℝ × ℝ)) :
 theorem triangleBaseGluingParameter_eq_exp {z : WithLp 2 (ℝ × ℝ)} (hu : z.fst ∈ Ioo 0 1)
     (hv : z.snd ∈ Ioo 0 1) :
     triangleBaseGluingParameter z = Real.exp (-triangleBaseOrbitParameter z) := by
-  have h1u : 0 < √(1 - z.fst ^ 2) := Real.sqrt_pos.2 (by nlinarith [hu.1, hu.2])
-  have h1v : 0 < √(1 - z.snd ^ 2) := Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
+  have h1u : 0 < √(1 - z.fst ^ 2) :=
+    Real.sqrt_pos.2 (sub_pos.2 (pow_lt_one₀ hu.1.le hu.2 two_ne_zero))
+  have h1v : 0 < √(1 - z.snd ^ 2) :=
+    Real.sqrt_pos.2 (sub_pos.2 (pow_lt_one₀ hv.1.le hv.2 two_ne_zero))
   rw [triangleBaseOrbitParameter_apply, neg_sub, Real.exp_sub, exp_intervalBaseTimeCoordinate hu,
     exp_intervalBaseTimeCoordinate hv, triangleBaseGluingParameter]
   field_simp [hu.1.ne']
@@ -336,7 +338,7 @@ theorem triangleBaseFstSlice_triangleBaseGluingParameter {z : WithLp 2 (ℝ × �
 `(0, 1)²`, where the source-to-sink orbits run. -/
 theorem snd_triangleBaseFstSlice_mem_Ioo {c σ : ℝ} (hc : c ∈ Ioo 0 1) (hσ : 0 < σ) :
     (triangleBaseFstSlice c σ).snd ∈ Ioo 0 1 := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   have hD := one_sub_sq_add_pos hc₁ σ
   rw [snd_triangleBaseFstSlice]
   refine ⟨div_pos (mul_pos hc.1 hσ) (Real.sqrt_pos.2 hD),
@@ -348,7 +350,7 @@ slice `u = c` is a bijection from `[0, 1]` onto the points of the triangle with 
 gluing parameter is its inverse. -/
 theorem bijOn_triangleBaseFstSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
     BijOn (triangleBaseFstSlice c) (Icc 0 1) {z | z ∈ triangleBase ∧ z.fst = c} := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   refine ⟨fun σ hσ ↦ ?_, fun σ _ τ _ h ↦ ?_, fun z hz ↦ ?_⟩
   · have hD := one_sub_sq_add_pos hc₁ σ
     refine ⟨mem_triangleBase.2 ⟨?_, ?_, hc.2.le⟩, rfl⟩
@@ -369,7 +371,7 @@ theorem bijOn_triangleBaseFstSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
 `-log σ`. -/
 theorem triangleBaseOrbitParameter_triangleBaseFstSlice {c σ : ℝ} (hc : c ∈ Ioo 0 1)
     (hσ : 0 < σ) : triangleBaseOrbitParameter (triangleBaseFstSlice c σ) = -Real.log σ := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   rw [triangleBaseOrbitParameter_eq_neg_log_triangleBaseGluingParameter
     (z := triangleBaseFstSlice c σ) hc (snd_triangleBaseFstSlice_mem_Ioo hc hσ),
     triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne' hc₁]
@@ -409,9 +411,7 @@ theorem triangleBaseSndSlice_neg (c σ : ℝ) :
 
 private theorem sq_add_one_sub_sq_pos {c : ℝ} (hc₀ : c ≠ 0) (hc₁ : c ^ 2 ≤ 1) (σ : ℝ) :
     0 < c ^ 2 + (1 - c ^ 2) * σ ^ 2 := by
-  have := pow_pos (abs_pos.2 hc₀) 2
-  rw [sq_abs] at this
-  nlinarith [sq_nonneg σ]
+  nlinarith [sq_pos_of_ne_zero hc₀, sq_nonneg σ]
 
 /-- **The slice `v = c` meets the broken end to second order**: on it,
 `1 - u² = (1 - c²) σ² / (c² + (1 - c²) σ²)`. -/
@@ -465,21 +465,19 @@ theorem triangleBaseSndSlice_triangleBaseGluingParameter {z : WithLp 2 (ℝ × �
 `(0, 1)²`, where the source-to-sink orbits run. -/
 theorem fst_triangleBaseSndSlice_mem_Ioo {c σ : ℝ} (hc : c ∈ Ioo 0 1) (hσ : σ ≠ 0) :
     (triangleBaseSndSlice c σ).fst ∈ Ioo 0 1 := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   have hE := sq_add_one_sub_sq_pos hc.1.ne' hc₁.le σ
   rw [fst_triangleBaseSndSlice]
   refine ⟨div_pos hc.1 (Real.sqrt_pos.2 hE),
     (div_lt_one (Real.sqrt_pos.2 hE)).2 ((Real.lt_sqrt hc.1.le).2 ?_)⟩
-  have := pow_pos (abs_pos.2 hσ) 2
-  rw [sq_abs] at this
-  nlinarith
+  nlinarith [sq_pos_of_ne_zero hσ]
 
 /-- **The slice `v = c` fills the interval of orbits.** For `0 < c < 1`, the evaluation on the
 slice `v = c` is a bijection from `[0, 1]` onto the points of the triangle with `v = c`; the
 gluing parameter is its inverse. -/
 theorem bijOn_triangleBaseSndSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
     BijOn (triangleBaseSndSlice c) (Icc 0 1) {z | z ∈ triangleBase ∧ z.snd = c} := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   refine ⟨fun σ hσ ↦ ?_, fun σ hσ τ hτ h ↦ ?_, fun z hz ↦ ?_⟩
   · have hE := sq_add_one_sub_sq_pos hc.1.ne' hc₁.le σ
     have hE' := Real.sqrt_pos.2 hE
@@ -505,7 +503,7 @@ theorem bijOn_triangleBaseSndSlice {c : ℝ} (hc : c ∈ Ioo 0 1) :
 `-log |σ|`. -/
 theorem triangleBaseOrbitParameter_triangleBaseSndSlice {c σ : ℝ} (hc : c ∈ Ioo 0 1)
     (hσ : σ ≠ 0) : triangleBaseOrbitParameter (triangleBaseSndSlice c σ) = -Real.log |σ| := by
-  have hc₁ : c ^ 2 < 1 := by nlinarith [hc.1, hc.2]
+  have hc₁ : c ^ 2 < 1 := pow_lt_one₀ hc.1.le hc.2 two_ne_zero
   rw [triangleBaseOrbitParameter_eq_neg_log_triangleBaseGluingParameter
     (z := triangleBaseSndSlice c σ) (fst_triangleBaseSndSlice_mem_Ioo hc hσ) hc,
     triangleBaseGluingParameter_triangleBaseSndSlice hc.1.ne' hc₁]
@@ -519,8 +517,10 @@ theorem exists_triangleBaseFlow_triangleBaseFstSlice_eq_triangleBaseSndSlice (hC
   rw [exists_triangleBaseFlow_eq_iff_triangleBaseGluingParameter_eq (z := triangleBaseFstSlice c σ)
     (w := triangleBaseSndSlice c' σ) hC hc (snd_triangleBaseFstSlice_mem_Ioo hc hσ)
     (fst_triangleBaseSndSlice_mem_Ioo hc' hσ.ne') hc',
-    triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne' (by nlinarith [hc.1, hc.2]),
-    triangleBaseGluingParameter_triangleBaseSndSlice hc'.1.ne' (by nlinarith [hc'.1, hc'.2]),
+    triangleBaseGluingParameter_triangleBaseFstSlice hc.1.ne'
+      (pow_lt_one₀ hc.1.le hc.2 two_ne_zero),
+    triangleBaseGluingParameter_triangleBaseSndSlice hc'.1.ne'
+      (pow_lt_one₀ hc'.1.le hc'.2 two_ne_zero),
     abs_of_pos hσ]
 
 end TauCeti
