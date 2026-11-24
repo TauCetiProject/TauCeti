@@ -249,6 +249,14 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
+zeroth coordinate of the point vanishes. -/
+theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
+    (z : EuclideanHalfSpace (n + 1)) :
+    (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact eq_comm
+
 namespace EuclideanHalfSpace
 
 variable {n : ℕ}

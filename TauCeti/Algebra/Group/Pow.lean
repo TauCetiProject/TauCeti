@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.ModEq
+public import Mathlib.Order.Directed
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.Ring.Nat
 import TauCeti.Data.Nat.Carry
@@ -30,6 +32,9 @@ import TauCeti.Data.Nat.Periodic.Basic
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
+* `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
+  power `(n + 1) / 2` inverts squaring on elements killed by `n`.
+* `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
 -/
 
 public section
@@ -112,5 +117,19 @@ theorem mul_pow_four_eq_one_of_sq_eq_sq {G : Type*} [Monoid G] {a b : G}
     _ = (b * a) ^ 2 * (a * b) ^ 2 := by rw [hab]
     _ = 1 := pow_mul_pow_eq_one 2 (by
       simp only [mul_assoc, ← mul_assoc a a, ha, one_mul, hb])
+
+/-- For odd `n`, raising to the power `(n + 1) / 2` inverts squaring on elements `a` with
+`a ^ n = 1`. -/
+@[to_additive /-- For odd `n`, multiplying by `(n + 1) / 2` inverts doubling on elements `a` with
+`n • a = 0`. -/]
+theorem pow_two_pow_of_odd {n : ℕ} (hn : Odd n) {a : M} (ha : a ^ n = 1) :
+    (a ^ 2) ^ ((n + 1) / 2) = a := by
+  obtain ⟨t, rfl⟩ := hn
+  rw [← pow_mul, show 2 * ((2 * t + 1 + 1) / 2) = 2 * t + 1 + 1 by omega, pow_succ, ha, one_mul]
+
+/-- The powers of an element of a monoid form a directed family for divisibility. For example,
+this is the directedness hypothesis for inverse limits along the powers of one element. -/
+theorem directed_dvd_pow (a : M) : Directed (· ∣ ·) (fun k : ℕ ↦ a ^ k) :=
+  fun k l ↦ ⟨max k l, pow_dvd_pow a (le_max_left k l), pow_dvd_pow a (le_max_right k l)⟩
 
 end TauCeti

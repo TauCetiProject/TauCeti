@@ -27,10 +27,13 @@ the projection `X × Y → X` is a homotopy equivalence when `Y` is contractible
 Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
 through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
 the two ends of a cylinder are seen to induce isomorphisms on homology.
+In the same way, a product `X × E` with a real vector space `E` deforms onto its zero section
+`X × {0}` by scaling the second factor.
 
 It also records that inverting a homotopy equivalence twice gives it back, and that a left and
 a right homotopy inverse of the same map are homotopic, so that a left homotopy inverse of a
-homotopy equivalence is automatically a right homotopy inverse.
+homotopy equivalence is automatically a right homotopy inverse, and that a map homotopic to a
+homotopy equivalence is one too, with the same homotopy inverse.
 
 ## Main declarations
 
@@ -52,12 +55,16 @@ homotopy equivalence is automatically a right homotopy inverse.
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
+* `ContinuousMap.HomotopyEquiv.prodZeroSection`: for a real vector space `E`, the zero section
+  `x ↦ (x, 0)` is a homotopy equivalence `X ≃ₕ X × E`, with homotopy inverse the projection.
 * `ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id`: a left and a right homotopy inverse
   of the same map are homotopic.
 * `ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`: a left homotopy inverse that
   has a left homotopy inverse itself is a right homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
+* `ContinuousMap.HomotopyEquiv.ofHomotopic`: a map homotopic to a homotopy equivalence is a
+  homotopy equivalence.
 -/
 
 public section
@@ -234,6 +241,37 @@ theorem HomotopyEquiv.prodIcc_symm_apply {a b : ℝ} (t : Set.Icc a b)
     (p : X × Set.Icc a b) : (HomotopyEquiv.prodIcc t).symm p = p.1 :=
   (rfl)
 
+section ZeroSection
+
+variable (X) (E : Type*) [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousSMul ℝ E]
+
+/-- **The zero section of a product with a real vector space is a homotopy equivalence.** The
+zero section `x ↦ (x, 0)` is a homotopy equivalence `X ≃ₕ X × E`, with homotopy inverse the
+projection: at time `t` a point `(x, v)` is sent to `(x, t • v)`. -/
+def HomotopyEquiv.prodZeroSection : X ≃ₕ X × E where
+  toFun := ⟨fun x ↦ (x, 0), by fun_prop⟩
+  invFun := .fst
+  left_inv := ⟨.refl _⟩
+  right_inv := ⟨
+    { toFun p := (p.2.1, (p.1 : ℝ) • p.2.2)
+      continuous_toFun := by fun_prop
+      map_zero_left p := by simp
+      map_one_left p := by simp }⟩
+
+/-- The zero section homotopy equivalence sends `x` to `(x, 0)`. -/
+@[simp]
+theorem HomotopyEquiv.prodZeroSection_apply (x : X) :
+    HomotopyEquiv.prodZeroSection X E x = (x, 0) :=
+  (rfl)
+
+/-- The homotopy inverse of the zero section homotopy equivalence is the projection. -/
+@[simp]
+theorem HomotopyEquiv.prodZeroSection_symm_apply (p : X × E) :
+    (HomotopyEquiv.prodZeroSection X E).symm p = p.1 :=
+  (rfl)
+
+end ZeroSection
+
 /-- **Left and right homotopy inverses are homotopic.** If `l ∘ f ≃ id` and `f ∘ r ≃ id`, then
 `l ≃ l f r ≃ r`. In particular `f` is then a homotopy equivalence, with `l` and `r` both two-sided
 homotopy inverses. -/
@@ -263,5 +301,34 @@ theorem HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
     (e.toFun.comp g).Homotopic (ContinuousMap.id Y) :=
   ((Homotopic.refl e.toFun).comp
     (hg.homotopic_of_comp_homotopic_id e.right_inv)).trans e.right_inv
+
+/-- **A map homotopic to a homotopy equivalence is a homotopy equivalence**, with the same
+homotopy inverse: `e.ofHomotopic f hf` has forward map `f`. -/
+def HomotopyEquiv.ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    X ≃ₕ Y where
+  toFun := f
+  invFun := e.invFun
+  left_inv := ((Homotopic.refl e.invFun).comp hf).trans e.left_inv
+  right_inv := (hf.comp (Homotopic.refl e.invFun)).trans e.right_inv
+
+theorem HomotopyEquiv.ofHomotopic_toFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).toFun = f :=
+  (rfl)
+
+theorem HomotopyEquiv.ofHomotopic_invFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).invFun = e.invFun :=
+  (rfl)
+
+/-- The homotopy equivalence `e.ofHomotopic f hf` is the map `f`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    ⇑(e.ofHomotopic f hf) = f :=
+  (rfl)
+
+/-- The inverse of `e.ofHomotopic f hf` is the inverse of `e`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic_symm (e : X ≃ₕ Y) (f : C(X, Y))
+    (hf : f.Homotopic e.toFun) : ⇑(e.ofHomotopic f hf).symm = e.symm :=
+  (rfl)
 
 end ContinuousMap

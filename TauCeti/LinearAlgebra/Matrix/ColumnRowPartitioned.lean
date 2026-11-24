@@ -22,6 +22,9 @@ which is what turns a row count into a dimension: over a field, `[I | A]` has as
 dimension of the code it generates, and `[B | I]` has as many rows as the codimension of the code
 it checks.
 
+Sums of partitioned matrices are computed blockwise (`Matrix.fromCols_add`,
+`Matrix.fromRows_add`), as for `Matrix.fromBlocks_add`.
+
 It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equivalence
 `e : ι ≃ n₁ ⊕ n₂`, with the frame of the standard basis columns `e⁻¹ (inr j)` of `ι`.
 
@@ -33,6 +36,7 @@ It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equiv
 * `Matrix.linearIndependent_row_one_fromCols`: the rows of `[I | A]` are linearly independent.
 * `Matrix.linearIndependent_row_fromCols_one`: the rows of `[B | I]` are linearly
   independent.
+* `Matrix.fromCols_add` and `Matrix.fromRows_add`: sums of partitioned matrices are blockwise.
 * `Matrix.fromRows_zero_one_submatrix_equiv`: reindexed along `e : ι ≃ n₁ ⊕ n₂`, the matrix
   `(0; 1)` is the frame of the standard basis columns `e⁻¹ (inr j)`.
 -/
@@ -40,6 +44,22 @@ It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equiv
 public section
 
 namespace Matrix
+
+section Add
+
+variable {R m m₁ m₂ n n₁ n₂ : Type*} [Add R]
+
+@[simp]
+theorem fromCols_add (A₁ B₁ : Matrix m n₁ R) (A₂ B₂ : Matrix m n₂ R) :
+    fromCols A₁ A₂ + fromCols B₁ B₂ = fromCols (A₁ + B₁) (A₂ + B₂) := by
+  ext i (j | j) <;> rfl
+
+@[simp]
+theorem fromRows_add (A₁ B₁ : Matrix m₁ n R) (A₂ B₂ : Matrix m₂ n R) :
+    fromRows A₁ A₂ + fromRows B₁ B₂ = fromRows (A₁ + B₁) (A₂ + B₂) := by
+  ext (i | i) j <;> rfl
+
+end Add
 
 variable {R m n₁ n₂ : Type*} [Semiring R]
 

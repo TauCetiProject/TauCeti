@@ -47,11 +47,9 @@ their unsigned degree calculations, which underlie signed substitution for DG an
 
 public section
 
-namespace TauCeti
+universe uR uι uκ uβ uM uN uP
 
 open scoped BigOperators
-
-universe uR uι uκ uβ uM uN uP
 
 namespace MultilinearMap
 
@@ -122,7 +120,7 @@ theorem IsHomogeneous.compLinearMap
     rw [Finset.sum_add_distrib, add_assoc]
   have h := hf.map_mem (fun i ↦ d i + r i) (fun i ↦ g i (x i)) fun i ↦ (hg i).map_mem (hx i)
   rw [hdeg] at h
-  simpa only [_root_.MultilinearMap.compLinearMap_apply] using h
+  simpa only [compLinearMap_apply] using h
 
 /-- Simultaneous substitution of homogeneous multilinear maps adds the degrees of all substituted
 maps to the degree of the outer map. -/
@@ -131,8 +129,8 @@ theorem IsHomogeneous.compMultilinearMap
     {P : (i : κ) → β i → Type uP} {σP : (i : κ) → β i → Type*}
     [∀ i j, AddCommMonoid (P i j)] [∀ i j, Module R (P i j)]
     [∀ i j, SetLike (σP i j) (P i j)]
-    {f : MultilinearMap (RingHom.id R) M N} {g : (i : κ) → MultilinearMap (RingHom.id R) (P i) (M
-        i)}
+    {f : MultilinearMap (RingHom.id R) M N}
+    {g : (i : κ) → MultilinearMap (RingHom.id R) (P i) (M i)}
     {𝒜 : (i : κ) → (j : β i) → ι → σP i j}
     {ℬ : (i : κ) → ι → σM i} {𝒞 : ι → σN}
     {q : ι} {r : κ → ι} (hf : IsHomogeneous f ℬ 𝒞 q)
@@ -150,7 +148,7 @@ theorem IsHomogeneous.compMultilinearMap
     fun i ↦ (hg i).map_mem (fun j ↦ d ⟨i, j⟩) (Sigma.curry x i) fun j ↦ by
       rw [hcurry i j]; exact hx ⟨i, j⟩
   rw [hdeg] at h
-  simpa only [_root_.MultilinearMap.compMultilinearMap_apply] using h
+  simpa only [compMultilinearMap_apply] using h
 
 /-- Reindexing the inputs of a homogeneous multilinear map along an equivalence of index types
 preserves its degree. -/
@@ -159,7 +157,7 @@ theorem IsHomogeneous.domDomCongrLinearEquiv' {κ' : Type*} [Fintype κ']
     (σ : κ ≃ κ')
     {f : MultilinearMap (RingHom.id R) M N} {𝒜 : (i : κ) → ι → σM i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) :
-    IsHomogeneous (_root_.MultilinearMap.domDomCongrLinearEquiv' ℕ (RingHom.id R) M N σ f)
+    IsHomogeneous (MultilinearMap.domDomCongrLinearEquiv' ℕ (RingHom.id R) M N σ f)
       (fun i ↦ 𝒜 (σ.symm i)) ℬ q := by
   intro d x hx
   -- reindexing does not change the total input degree
@@ -168,8 +166,7 @@ theorem IsHomogeneous.domDomCongrLinearEquiv' {κ' : Type*} [Fintype κ']
     obtain ⟨j, rfl⟩ : ∃ j, i = σ.symm j := ⟨σ i, (σ.symm_apply_apply i).symm⟩
     simpa using hx j
   rw [hdeg] at h
-  simpa only [_root_.MultilinearMap.domDomCongrLinearEquiv'_apply,
-    _root_.MultilinearMap.coe_mk, Function.comp_apply] using h
+  simpa only [domDomCongrLinearEquiv'_apply, coe_mk, Function.comp_apply] using h
 
 end Semiring
 
@@ -193,8 +190,8 @@ theorem IsHomogeneous.neg [NegMemClass σN N] {f : MultilinearMap (RingHom.id R)
 
 /-- A difference of multilinear maps of the same degree has that degree. -/
 @[grind ←]
-theorem IsHomogeneous.sub [AddMemClass σN N] [NegMemClass σN N] {f g : MultilinearMap (RingHom.id
-    R) M N}
+theorem IsHomogeneous.sub [AddMemClass σN N] [NegMemClass σN N]
+    {f g : MultilinearMap (RingHom.id R) M N}
     {𝒜 : (i : κ) → ι → σM i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) (hg : IsHomogeneous g 𝒜 ℬ q) :
     IsHomogeneous (f - g) 𝒜 ℬ q := by
@@ -264,5 +261,3 @@ theorem IsHomogeneous.compMultilinearMap {f : MultilinearMap (RingHom.id R) M N}
     hg.map_mem (hf d x hx)
 
 end LinearMap
-
-end TauCeti

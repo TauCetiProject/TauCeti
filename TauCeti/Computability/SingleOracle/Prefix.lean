@@ -92,16 +92,13 @@ theorem mem_eval_prefixDom {O : ℕ →. ℕ} {c : Code} {x y : ℕ} :
   have hz : eval O zero = fun _ => Part.some 0 := funext eval_zero
   have hl : eval O left = fun n => Part.some n.unpair.1 := funext eval_left
   have hs : eval O succ = fun n => Part.some (n + 1) := funext eval_succ
-  have hinput (n : ℕ) :
-      eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
-    simp [Seq.seq]
   have hbase : eval O (comp zero c) 0 = (eval O c 0).map fun _ => 0 := by
     simp [hz, Part.bind_some_eq_map]
   have hstep (k i : ℕ) :
       eval O (comp zero (comp c (comp succ (comp left right)))) (Nat.pair 0 (Nat.pair k i)) =
         (eval O c (k + 1)).map fun _ => 0 := by
     simp [hz, hl, hs, PFun.some_bind, Part.bind_some_eq_map]
-  rw [prefixDom, eval_comp, hinput, PFun.some_bind]
+  rw [prefixDom, eval_comp, eval_pair_zero_left_right, PFun.some_bind]
   induction x generalizing y with
   | zero =>
     rw [eval_prec_zero, hbase, Part.mem_map_iff]

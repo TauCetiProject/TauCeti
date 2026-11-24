@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
@@ -29,6 +30,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
 
 ## Main definitions
 
+* `TauCeti.QuotientGroup.mapOfLEContinuousMonoidHom`: the continuous quotient homomorphism
+  `G ⧸ V →ₜ* G ⧸ U` for normal subgroups `V ≤ U`.
 * `Subgroup.quotientOpenSubgroup`: the image of an open subgroup of `G` in `G ⧸ N`, as an open
   subgroup.
 * `Subgroup.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
@@ -58,6 +61,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   the preimage of a finite subgroup when `G` is Hausdorff.
 * `TauCeti.QuotientGroup.continuous_mapOfLE`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for normal
   subgroups `V ≤ U` is continuous.
+* `TauCeti.QuotientGroup.mapOfLEContinuousMonoidHom_mk`: the continuous quotient homomorphism
+  sends the class of `g` modulo `V` to its class modulo `U`.
 * `OpenSubgroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
   quotient map `G → G ⧸ N` is clopen.
 * `Subgroup.instFiniteIndexQuotientOpenSubgroup`, `Subgroup.instCompactSpaceQuotientOpenSubgroup`:
@@ -65,6 +70,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
+* `Subgroup.compactSpace_quotient_map`: the image of a subgroup with compact coset space under a
+  continuous surjective homomorphism has compact coset space.
 -/
 
 public section
@@ -86,6 +93,25 @@ instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [Continuou
 end QuotientGroup
 
 namespace Subgroup
+
+/-- **The image of a cocompact subgroup under a continuous surjective homomorphism is cocompact.**
+A continuous surjective homomorphism `f : G →* H` induces a continuous surjection
+`G ⧸ Γ → H ⧸ Γ.map f`, `[g] ↦ [f g]`, so if `G ⧸ Γ` is compact, then so is `H ⧸ Γ.map f`. -/
+@[to_additive /-- **The image of a cocompact additive subgroup under a continuous surjective
+homomorphism is cocompact.** A continuous surjective homomorphism `f : G →+ H` induces a continuous
+surjection `G ⧸ Γ → H ⧸ Γ.map f`, so if `G ⧸ Γ` is compact, then so is `H ⧸ Γ.map f`. -/]
+theorem compactSpace_quotient_map {G H : Type*} [Group G] [Group H] [TopologicalSpace G]
+    [TopologicalSpace H] (Γ : Subgroup G) [CompactSpace (G ⧸ Γ)] {f : G →* H} (hf : Continuous f)
+    (hs : Function.Surjective f) : CompactSpace (H ⧸ Γ.map f) := by
+  have hrel : ∀ x y : G, QuotientGroup.leftRel Γ x y →
+      QuotientGroup.leftRel (Γ.map f) (f x) (f y) := fun x y h ↦ by
+    rw [QuotientGroup.leftRel_apply] at h ⊢
+    exact ⟨_, h, by simp⟩
+  have hsurj : Function.Surjective (Quotient.map' f hrel : G ⧸ Γ → H ⧸ Γ.map f) := by
+    rintro ⟨h⟩
+    obtain ⟨g, rfl⟩ := hs h
+    exact ⟨Quotient.mk'' g, rfl⟩
+  exact hsurj.compactSpace (hf.quotient_map' hrel)
 
 open TauCeti
 
@@ -145,6 +171,18 @@ theorem continuous_mapOfLE (hVU : V ≤ U) : Continuous (mapOfLE hVU) :=
     rw [← _root_.QuotientGroup.coe_mk' V, ← MonoidHom.coe_comp, mapOfLE_comp_mk',
       _root_.QuotientGroup.coe_mk']
     exact _root_.QuotientGroup.continuous_mk
+
+/-- The continuous quotient homomorphism `G ⧸ V →ₜ* G ⧸ U` for normal subgroups `V ≤ U`,
+bundling `mapOfLE` with `continuous_mapOfLE`. No continuity of the group operations is needed. -/
+def mapOfLEContinuousMonoidHom (hVU : V ≤ U) : G ⧸ V →ₜ* G ⧸ U :=
+  { mapOfLE hVU with continuous_toFun := continuous_mapOfLE hVU }
+
+/-- The continuous quotient homomorphism sends the class of `g` modulo `V` to its class
+modulo `U`. -/
+@[simp]
+theorem mapOfLEContinuousMonoidHom_mk (hVU : V ≤ U) (g : G) :
+    mapOfLEContinuousMonoidHom hVU (g : G ⧸ V) = (g : G ⧸ U) :=
+  mapOfLE_mk hVU g
 
 end MapOfLE
 

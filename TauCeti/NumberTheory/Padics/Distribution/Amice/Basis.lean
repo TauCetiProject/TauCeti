@@ -470,7 +470,7 @@ variable [IsBoundedSMul ℤ_[p] E]
 theorem norm_amiceTerm_le (n : ℕ) (e : E) : ‖amiceTerm p h n e‖ ≤ ‖e‖ :=
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg e)).mpr fun i ↦ by
     rw [amiceTerm_apply]
-    exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg e) (PadicInt.norm_le_one _))
+    exact PadicInt.norm_smul_le_norm _ e
 
 variable [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]

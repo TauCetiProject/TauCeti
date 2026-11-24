@@ -90,7 +90,7 @@ theorem convolveFunRight_mahlerTerm (ν : LocallyAnalyticDistribution p K) (n : 
       ∑ ij ∈ Finset.antidiagonal n, amiceTerm p n ij.1 ((amiceTransform ν).coeff ij.2) := by
     ext i
     simp only [convolveFunRightStage_apply, comulCurried_amiceTerm_of_lt K hlt,
-      ZeroAtInftyContinuousMap.coe_sum, Finset.sum_apply, map_sum]
+      FunLike.coe_sum, Finset.sum_apply, map_sum]
     refine Finset.sum_congr rfl fun ij hij ↦ ?_
     obtain ⟨-, hj⟩ := Finset.Nat.div_eq_zero_of_mem_antidiagonal hlt hij
     simp [hj]

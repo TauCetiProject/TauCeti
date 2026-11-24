@@ -42,7 +42,7 @@ example (p : ℕ) [Fact p.Prime] (A : Type*) [Semiring A] :
   hasUnitProOrder_multiplicative_padicInt_iff p A
 
 example (p : ℕ) [Fact p.Prime] : HasUnitProOrder ℚ (Multiplicative ℤ_[p]) :=
-  hasUnitProOrder_of_algebra_rat
+  hasUnitProOrder_of_algebra ℚ
 
 example (p ℓ : ℕ) [Fact p.Prime] [Fact ℓ.Prime] (hpℓ : p ≠ ℓ) :
     HasUnitProOrder (ZMod ℓ) (Multiplicative ℤ_[p]) := by
@@ -77,7 +77,7 @@ example :
       ¬ HasUnitProOrder ℚ (Multiplicative (ℕ →₀ ZMod 2)) := by
   let _ : TopologicalSpace (Multiplicative (ℕ →₀ ZMod 2)) := ⊥
   have : DiscreteTopology (Multiplicative (ℕ →₀ ZMod 2)) := ⟨rfl⟩
-  refine ⟨isProP_iff.mpr fun N x ↦ ?_, isUnit_natCast_of_ne_zero (by decide), ?_⟩
+  refine ⟨isProP_iff.mpr fun N x ↦ ?_, isUnit_natCast_of_ne_zero ℚ (by decide), ?_⟩
   · obtain ⟨v, rfl⟩ := QuotientGroup.mk'_surjective N.toSubgroup x
     refine ⟨1, ?_⟩
     rw [pow_one, ← map_pow]
