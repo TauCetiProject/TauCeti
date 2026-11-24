@@ -161,6 +161,68 @@ theorem map_comp (α' : A' →+* A'') (φ' : B' →+* B'') (ψ' : C' →+* C'')
     fun_prop
   exact Eq.symm <| (eq_map_iff hc).mpr ⟨by ext; simp, by ext; simp⟩
 
+section Congr
+
+variable [Algebra A B'] [Algebra A C'] [IsAdicHom (algebraMap A B')] [IsAdicHom (algebraMap A C')]
+  (e : B ≃+* B') (f : C ≃+* C') (he : (e : B →+* B').comp (algebraMap A B) = algebraMap A B')
+  (hf : (f : C →+* C').comp (algebraMap A C) = algebraMap A C')
+  (hec : Continuous e) (hes : Continuous e.symm) (hfc : Continuous f) (hfs : Continuous f.symm)
+
+omit [TopologicalSpace A] [IsTopologicalRing A] in
+/-- The inverse of a ring isomorphism over `A` is again over `A`. -/
+private theorem symm_comp_algebraMap_of_comp_algebraMap {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra A R] [Algebra A S] (e : R ≃+* S) (he : (e : R →+* S).comp (algebraMap A R) =
+      algebraMap A S) :
+    (e.symm : S →+* R).comp (algebraMap A S) = algebraMap A R := by
+  rw [← he, ← RingHom.comp_assoc, RingEquiv.symm_comp, RingHom.id_comp]
+
+/-- The ring isomorphism `B ⊗̂_A C ≃+* B' ⊗̂_A C'` of completed tensor rings induced by
+homeomorphic ring isomorphisms `B ≃+* B'` and `C ≃+* C'` over `A`. -/
+noncomputable def congr : CompletedTensor A B C ≃+* CompletedTensor A B' C' :=
+  RingEquiv.ofRingHom
+    (map (RingHom.id A) e f (by rw [he]; rfl) (by rw [hf]; rfl)
+      (show Continuous (e : B →+* B') from hec) (show Continuous (f : C →+* C') from hfc))
+    (map (RingHom.id A) e.symm f.symm
+      (by rw [symm_comp_algebraMap_of_comp_algebraMap e he]; rfl)
+      (by rw [symm_comp_algebraMap_of_comp_algebraMap f hf]; rfl)
+      (show Continuous (e.symm : B' →+* B) from hes) (show Continuous (f.symm : C' →+* C) from hfs))
+    (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
+      (by ext; simp) (by ext; simp))
+    (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
+      (by ext; simp) (by ext; simp))
+
+/-- The induced isomorphism sends the left coprojection of `b` to that of `e b`. -/
+@[simp] theorem congr_inl (b : B) :
+    congr e f he hf hec hes hfc hfs (inl A B C b) = inl A B' C' (e b) :=
+  map_inl ..
+
+/-- The induced isomorphism sends the right coprojection of `c` to that of `f c`. -/
+@[simp] theorem congr_inr (c : C) :
+    congr e f he hf hec hes hfc hfs (inr A B C c) = inr A B' C' (f c) :=
+  map_inr ..
+
+/-- The inverse of the induced isomorphism sends the left coprojection of `b'` to that of
+`e.symm b'`. -/
+@[simp] theorem congr_symm_inl (b : B') :
+    (congr e f he hf hec hes hfc hfs).symm (inl A B' C' b) = inl A B C (e.symm b) :=
+  map_inl ..
+
+/-- The inverse of the induced isomorphism sends the right coprojection of `c'` to that of
+`f.symm c'`. -/
+@[simp] theorem congr_symm_inr (c : C') :
+    (congr e f he hf hec hes hfc hfs).symm (inr A B' C' c) = inr A B C (f.symm c) :=
+  map_inr ..
+
+/-- The induced isomorphism is continuous. -/
+@[fun_prop] theorem continuous_congr : Continuous (congr e f he hf hec hes hfc hfs) :=
+  continuous_map ..
+
+/-- The inverse of the induced isomorphism is continuous. -/
+@[fun_prop] theorem continuous_congr_symm : Continuous (congr e f he hf hec hes hfc hfs).symm :=
+  continuous_map ..
+
+end Congr
+
 end CompletedTensor
 
 namespace Pair.completedTensor
