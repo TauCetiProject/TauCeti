@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.Substitution
-import TauCeti.ModelTheory.Syntax
 
 /-!
 # Opening the bound positions of an infinitary formula
@@ -18,8 +16,7 @@ law allows a formula with parameters in bound positions to be used as an ordinar
 free parameters, without changing its meaning. The construction works for every branching
 carrier, including the empty carrier.
 
-The constructor equations and compatibility with the first-order embedding and language maps
-(`LHom.onBoundedFormulaInf_toFormula`) describe the syntax;
+The constructor equations and compatibility with the first-order embedding describe the syntax;
 `BoundedFormulaInf.realize_toFormula` describes the semantics.
 
 The definition and the quantifier step of the realization proof follow Mathlib's
@@ -30,7 +27,7 @@ The two infinitary connectives are handled componentwise.
 
 public section
 
-universe u v u' v' uι uα w
+universe u v uι uα w
 
 namespace FirstOrder.Language.BoundedFormulaInf
 
@@ -189,23 +186,3 @@ theorem toFormula_toInf (φ : L.BoundedFormula α n) :
       TauCeti.BoundedFormulaInf.relabel_toInf, BoundedFormula.toFormula]
 
 end FirstOrder.Language.BoundedFormulaInf
-
-namespace FirstOrder.Language.LHom
-
-variable {L : FirstOrder.Language.{u, v}} {L' : FirstOrder.Language.{u', v'}}
-  {ι : Type uι} {α : Type uα} {n : ℕ}
-
-/-- Opening the in-scope bound positions into free variables commutes with a language map. -/
-@[simp]
-theorem onBoundedFormulaInf_toFormula (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α n) :
-    g.onBoundedFormulaInf φ.toFormula = (g.onBoundedFormulaInf φ).toFormula := by
-  induction φ with
-  | falsum => simp
-  | equal t₁ t₂ => simp
-  | rel R ts => simp
-  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
-  | all φ ih => simp [ih]
-  | iSup φs ih => simp [ih]
-  | iInf φs ih => simp [ih]
-
-end FirstOrder.Language.LHom

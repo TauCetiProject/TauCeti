@@ -8,11 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Topology.OmegaLimit
--- Private: the mean value inequality, Heine--Cantor, monotone convergence and the comparison of
--- interval integrals are used only inside proofs; no declaration below exposes their APIs.
+-- Private: the gradient of `-f`, the mean value inequality, Heine--Cantor and monotone
+-- convergence are used only inside proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.ODE.Transform
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Topology.Order.MonotoneConvergence
@@ -49,9 +48,9 @@ The three steps are the classical ones (Audin--Damian, Chapter 2).
 *The gradient dies.* The trajectory is Lipschitz, with the bound on `‖∇ f‖` over `K` as its
 constant, and `∇ f` is uniformly continuous on `K`; so if `‖∇ f (γ t)‖ ≥ ε` at some time `t`, the
 same holds with `ε / 2` throughout a time interval `[t, t + δ]` whose length `δ` does not depend on
-`t`. The energy identity `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` then makes
-`f` drop by at least `δ (ε / 2) ^ 2` across that interval — impossible infinitely often, since the
-energy converges. Hence `∇ f (γ t) → 0`.
+`t`. The energy identity, in the form `IsIntegralCurveOn.mul_sq_le_sub_of_le_norm_gradient`, then
+makes `f` drop by at least `δ (ε / 2) ^ 2` across that interval — impossible infinitely often,
+since the energy converges. Hence `∇ f (γ t) → 0`.
 
 *The ω-limit set is a point.* Every cluster point of `γ` along `atTop` is therefore a critical
 point in `K`, so the ω-limit set is finite; and it is preconnected, by
@@ -86,8 +85,8 @@ and a map into a compact set with a unique cluster point converges to it
 
 public section
 
-open Filter Function InnerProductSpace MeasureTheory Metric Set TauCeti
-open scoped Gradient Interval Topology
+open Filter Function InnerProductSpace Metric Set TauCeti
+open scoped Gradient Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {K : Set E} {x : E}
@@ -127,62 +126,33 @@ theorem exists_tendsto_comp_atTop
 
 /-! ### The gradient dies along the trajectory -/
 
-/-- **Across a short interval the energy drops by at least `δ * (ε / 2) ^ 2`.** If `‖∇ f (γ t)‖`
-is at least `ε` at a time `t ≥ 0`, and `δ` is short enough that the trajectory cannot move by `η`
-in that time, then the modulus `hUC` keeps the gradient above `ε / 2` throughout `[t, t + δ]`, and
-the energy identity turns that into the stated drop of `f`.
-
-The bound is vacuous when `δ = 0`, which the hypotheses permit; the caller supplies a positive
-`δ`. They do not permit `ε = 0`: `hUC` applied to `γ t` against itself forces `0 < ε`. -/
-private theorem energy_drop_of_le_norm_gradient {C δ ε η : ℝ}
+/-- **The gradient stays above `ε / 2` for a short time.** If `‖∇ f (γ t)‖` is at least `ε` at a
+time `t ≥ 0`, and `δ` is short enough that the trajectory cannot move by `η` in that time, then the
+modulus `hUC` keeps the gradient above `ε / 2` throughout `[t, t + δ]`. -/
+private theorem le_norm_gradient_of_mem_Icc {C δ ε η : ℝ}
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici 0)) (hmaps : MapsTo γ (Ici 0) K)
-    (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
-    (hcontg : ContinuousOn (fun t ↦ ∇ f (γ t)) (Ici 0)) (hC : ∀ y ∈ K, ‖∇ f y‖ ≤ C)
+    (hC : ∀ y ∈ K, ‖∇ f y‖ ≤ C)
     (hUC : ∀ y ∈ K, ∀ z ∈ K, dist y z < η → dist (∇ f y) (∇ f z) < ε / 2)
-    (hδ : 0 ≤ δ) (hCδ : C * δ < η) {t : ℝ} (ht : 0 ≤ t)
-    (hbig : ε ≤ ‖∇ f (γ t)‖) :
-    δ * (ε / 2) ^ 2 ≤ f (γ t) - f (γ (t + δ)) := by
+    (hCδ : C * δ < η) {t : ℝ} (ht : 0 ≤ t) (hbig : ε ≤ ‖∇ f (γ t)‖) :
+    ∀ s ∈ Icc t (t + δ), ε / 2 ≤ ‖∇ f (γ s)‖ := by
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC _ (hmaps (mem_Ici.mpr le_rfl)))
-  -- The modulus at `γ t` against itself is what forces `ε` positive, so it is not a hypothesis.
-  have hη : 0 < η := lt_of_le_of_lt (mul_nonneg hC0 hδ) hCδ
-  have hε : 0 < ε := by
-    have h := hUC _ (hmaps (mem_Ici.mpr ht)) _ (hmaps (mem_Ici.mpr ht)) (by rwa [dist_self])
-    rw [dist_self] at h
-    linarith
-  have htδ : t ≤ t + δ := by linarith
-  have hIcc : Icc t (t + δ) ⊆ Ici (0 : ℝ) := fun s hs ↦ mem_Ici.mpr (ht.trans hs.1)
-  have huIcc : [[t, t + δ]] = Icc t (t + δ) := uIcc_of_le htδ
-  have hlow : ∀ s ∈ Icc t (t + δ), ε / 2 ≤ ‖∇ f (γ s)‖ := by
-    intro s hs
-    have hs0 : s ∈ Ici (0 : ℝ) := hIcc hs
-    have hnorm : ‖s - t‖ ≤ δ := by
-      rw [Real.norm_eq_abs, abs_of_nonneg (by linarith [hs.1])]
-      linarith [hs.2]
-    have hdist : dist (γ s) (γ t) < η := by
-      rw [dist_eq_norm]
-      calc ‖γ s - γ t‖ ≤ C * ‖s - t‖ :=
-            norm_sub_le_of_norm_gradient_le hγ hmaps hC (mem_Ici.mpr ht) hs0
-        _ ≤ C * δ := by nlinarith
-        _ < η := hCδ
-    have h := hUC _ (hmaps hs0) _ (hmaps (mem_Ici.mpr ht)) hdist
-    rw [dist_eq_norm] at h
-    have h' : ‖∇ f (γ t)‖ - ‖∇ f (γ s)‖ ≤ ‖∇ f (γ s) - ∇ f (γ t)‖ := by
-      rw [norm_sub_rev]
-      exact norm_sub_norm_le _ _
-    linarith
-  have hint : IntervalIntegrable (fun s ↦ ‖∇ f (γ s)‖ ^ 2) volume t (t + δ) := by
-    refine ContinuousOn.intervalIntegrable ?_
-    rw [huIcc]
-    exact ((hcontg.mono hIcc).norm).pow 2
-  have heq : ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 = f (γ t) - f (γ (t + δ)) :=
-    integral_norm_gradient_sq_eq_sub hγ (huIcc ▸ hIcc)
-      (fun s hs ↦ hdiff _ (hmaps (hIcc (huIcc ▸ hs))))
-  rw [← heq]
-  have hmono : ∫ _s in t..(t + δ), (ε / 2) ^ 2 ≤ ∫ s in t..(t + δ), ‖∇ f (γ s)‖ ^ 2 :=
-    intervalIntegral.integral_mono_on htδ intervalIntegrable_const hint fun s hs ↦
-      pow_le_pow_left₀ (by linarith) (hlow s hs) 2
-  simpa using hmono
-
+  intro s hs
+  have hs0 : s ∈ Ici (0 : ℝ) := mem_Ici.mpr (ht.trans hs.1)
+  have hnorm : ‖s - t‖ ≤ δ := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith [hs.1])]
+    linarith [hs.2]
+  have hdist : dist (γ s) (γ t) < η := by
+    rw [dist_eq_norm]
+    calc ‖γ s - γ t‖ ≤ C * ‖s - t‖ :=
+          norm_sub_le_of_norm_gradient_le hγ hmaps hC (mem_Ici.mpr ht) hs0
+      _ ≤ C * δ := by nlinarith
+      _ < η := hCδ
+  have h := hUC _ (hmaps hs0) _ (hmaps (mem_Ici.mpr ht)) hdist
+  rw [dist_eq_norm] at h
+  have h' : ‖∇ f (γ t)‖ - ‖∇ f (γ s)‖ ≤ ‖∇ f (γ s) - ∇ f (γ t)‖ := by
+    rw [norm_sub_rev]
+    exact norm_sub_norm_le _ _
+  linarith
 
 /-- **The gradient tends to zero along a confined negative gradient trajectory.**
 
@@ -199,7 +169,6 @@ theorem tendsto_gradient_atTop
   obtain ⟨c, hc⟩ := exists_tendsto_comp_atTop hγ hK hmaps hdiff
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hgrad
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC _ (hmaps (mem_Ici.mpr le_rfl)))
-  have hcontg : ContinuousOn (fun t ↦ ∇ f (γ t)) (Ici 0) := hgrad.comp hγ.continuousOn hmaps
   rw [NormedAddGroup.tendsto_nhds_zero]
   intro ε hε
   by_contra hcon
@@ -221,8 +190,13 @@ theorem tendsto_gradient_atTop
   obtain ⟨t, hbig, ht0, hlt⟩ :=
     (hcon.and_eventually ((eventually_ge_atTop (0 : ℝ)).and
       (hdrop.eventually (gt_mem_nhds hpos)))).exists
-  exact absurd (energy_drop_of_le_norm_gradient hγ hmaps hdiff hcontg hC hUC hδ.le hCδ ht0
-    (not_lt.mp hbig)) (not_le.mpr hlt)
+  -- Across `[t, t + δ]` the gradient stays above `ε / 2`, so `f` drops by `δ * (ε / 2) ^ 2`.
+  have hIcc : Icc t (t + δ) ⊆ Ici 0 := fun s hs ↦ mem_Ici.mpr (ht0.trans hs.1)
+  have hdrop_le := hγ.mul_sq_le_sub_of_le_norm_gradient (le_add_of_nonneg_right hδ.le) hIcc
+    (fun s hs ↦ hdiff _ (hmaps (hIcc hs))) (half_pos hε).le
+    (le_norm_gradient_of_mem_Icc hγ hmaps hC hUC hCδ ht0 (not_lt.mp hbig))
+  rw [add_sub_cancel_left] at hdrop_le
+  exact absurd hdrop_le (not_le.mpr hlt)
 
 /-! ### The ω-limit set -/
 
@@ -311,20 +285,19 @@ theorem exists_tendsto_atTop
 compact set on which `fderiv ℝ f` is continuous and every critical point of `f` is nondegenerate
 converges to a critical point of `f` in that set.
 
-Nondegeneracy enters only through the finiteness of the critical locus, which is
-`TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`; the differentiability
-and the continuity of the gradient are read off the continuity of `fderiv ℝ f` on `K`, the
+Nondegeneracy enters through the finiteness of the critical locus, which is
+`TauCeti.HasNondegenerateCriticalPointsOn.finite_setOfPred_fderiv_eq_zero`, and through the
+differentiability of `f` on `K`
+(`TauCeti.HasNondegenerateCriticalPointsOn.differentiableAt`); the continuity of the gradient is
+read off the continuity of `fderiv ℝ f` on `K`, the
 gradient being the differential transported by the Riesz isometry. -/
 theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici 0)) (hK : IsCompact K)
-    (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
+    (hmaps : MapsTo γ (Ici 0) K)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
-  refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
-  · rw [hgradeq]
+  refine exists_tendsto_atTop hγ hK hmaps (fun _ hy ↦ hM.differentiableAt hy) ?_ ?_
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
       fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
@@ -340,30 +313,10 @@ theorem exists_tendsto_atBot
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
   have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
-  have hγ_rev := hγ.comp_mul (-1)
-  have hdomain : {t : ℝ | t * (-1) ∈ Iic (0 : ℝ)} = Ici 0 := by
-    ext t
-    simp only [mem_Iic, mem_Ici]
-    constructor
-    · intro ht
-      exact neg_nonpos.mp (by simpa using ht)
-    · intro ht
-      simpa using (neg_nonpos.mpr ht)
-  have hfield :
-      ((-1 : ℝ) • (fun _ x ↦ -∇ f x)) ∘ (fun t : ℝ ↦ t * (-1)) =
-    (fun _ x ↦ -∇ (-f) x) := by
-    funext t y
-    simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, hgrad_neg, neg_neg]
-  have hγ_rev' :
-      IsIntegralCurveOn (γ ∘ (fun t : ℝ ↦ t * (-1)))
-        (fun _ x ↦ -∇ (-f) x) (Ici 0) := by
-    rw [← hdomain, ← hfield]
-    exact hγ_rev
-  have hmaps_rev : MapsTo (γ ∘ (fun t : ℝ ↦ t * (-1))) (Ici 0) K := by
-    intro t ht
-    apply hmaps
-    simp only [mem_Iic]
-    simpa using (neg_nonpos.mpr (mem_Ici.mp ht))
+  have hγ_rev' : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici 0) := by
+    simpa using hγ.comp_neg_neg_gradient
+  have hmaps_rev : MapsTo (fun t ↦ γ (-t)) (Ici 0) K :=
+    fun t ht ↦ hmaps (neg_nonpos.mpr (mem_Ici.mp ht))
   have hdiff_neg : ∀ y ∈ K, DifferentiableAt ℝ (-f) y := by
     intro y hy
     simpa only [Pi.neg_apply] using (hdiff y hy).neg
@@ -377,23 +330,23 @@ theorem exists_tendsto_atBot
     hgrad_neg_cont hfin_neg
   refine ⟨p, hpK, ?_, ?_⟩
   · simpa only [hgrad_neg, neg_eq_zero] using hp
-  · simpa only [Function.comp_def, mul_neg, mul_one, neg_neg] using
-      hp_lim.comp tendsto_neg_atBot_atTop
+  · simpa only [Function.comp_def, neg_neg] using hp_lim.comp tendsto_neg_atBot_atTop
 
 /-- **The Morse form of backward convergence.** A negative gradient trajectory confined to a
 compact set on which `fderiv ℝ f` is continuous and every critical point is nondegenerate converges
 backwards to a critical point in that set.
 
-As in `exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`, nondegeneracy is used only to
-obtain finiteness of the critical locus. -/
+As in `exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn`, nondegeneracy is used to obtain
+finiteness of the critical locus and differentiability of `f` on `K`. -/
 theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic 0)) (hK : IsCompact K)
-    (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
+    (hmaps : MapsTo γ (Iic 0) K)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  apply exists_tendsto_atBot hγ hK hmaps hdiff
-    ((toDual ℝ E).symm.continuous.comp_continuousOn hfderiv)
-  exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-    fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
+  refine exists_tendsto_atBot hγ hK hmaps (fun _ hy ↦ hM.differentiableAt hy) ?_ ?_
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
+    exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
+  · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
+      fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 end IsIntegralCurveOn

@@ -17,7 +17,9 @@ are the basic tool for testing statements about `G`-sets on points.
 
 ## Main declarations
 
+* `Action.instMulActionV`: `G` acts on the underlying set of a `G`-set.
 * `Action.hom_comm_apply`: a map of `G`-sets commutes with the actions on underlying elements.
+* `Action.Hom.toMulActionHom`: a map of `G`-sets as a `G`-map of underlying sets.
 * `CategoryTheory.Action.leftRegularHom`: the orbit map of a point of a `G`-set, as a map of
   `G`-sets out of the left regular `G`-set.
 * `CategoryTheory.Action.leftRegularHom_injective`: the orbit map is injective in the point.
@@ -78,3 +80,20 @@ theorem CategoryTheory.Action.leftRegularHom_injective {A : Action (Type u) G} :
   fun x y h ↦ by
     simpa using ((Action.leftRegularHom_hom_apply x 1).symm.trans
       (congrArg (fun f ↦ f.hom (1 : G)) h)).trans (Action.leftRegularHom_hom_apply y 1)
+
+/-- `G` acts on the underlying set of a `G`-set. This specializes `Action.instMulAction` to assist
+typeclass inference, as Mathlib does for `Action FintypeCat G`. -/
+instance Action.instMulActionV (X : Action (Type u) G) : MulAction G X.V :=
+  Action.instMulAction X
+
+/-- A map of `G`-sets as a `G`-map of underlying sets. -/
+@[expose]
+def Action.Hom.toMulActionHom {X Y : Action (Type u) G} (f : X ⟶ Y) : X.V →[G] Y.V where
+  toFun := f.hom
+  map_smul' g x := Action.hom_comm_apply f g x
+
+/-- `f.toMulActionHom` applies `f` to underlying points. -/
+@[simp]
+theorem Action.Hom.toMulActionHom_apply {X Y : Action (Type u) G} (f : X ⟶ Y) (x : X.V) :
+    f.toMulActionHom x = f.hom x :=
+  (rfl)

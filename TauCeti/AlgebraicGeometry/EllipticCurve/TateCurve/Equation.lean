@@ -34,7 +34,7 @@ The unit circle is treated as follows. Multiplied by `(1 - u)²` and `(1 - u)³`
 coordinates `x` and `y` become power series in `v` whose coefficients are polynomials in `u`: the
 coefficient of `vᴺ` in `x` is `∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` for `N ≥ 1`
 (`TauCeti.coeff_tateFormalX_of_ne_zero`), and its constant coefficient is `u / (1 - u)²`
-(`TauCeti.coeff_zero_tateFormalX_mul_one_sub_X_sq`). So the formal Tate equation multiplied by
+(`TauCeti.constantCoeff_tateFormalX_mul_one_sub_X_sq`). So the formal Tate equation multiplied by
 `(1 - u)⁶` is an identity in `ℤ[u]⟦v⟧` (`TauCeti.tateClearedY_sq_add_mul_eq`). An integral
 polynomial has norm at most one on the closed unit disc (`Polynomial.norm_aeval_le_one`), so
 `ℤ[u]⟦v⟧` can be evaluated at `u` and `v = q / u` whenever `‖u‖ = 1`. With `v = q / u` the

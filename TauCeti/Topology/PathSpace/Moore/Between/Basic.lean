@@ -16,7 +16,9 @@ strictly associative and unital, and commute. This topological bimodule is the i
 chain bimodule that transports DG local systems between basepoints.
 
 Reversal exchanges the endpoints, and concatenation joins paths with matching endpoints.
-Paths with equal specified endpoints are homeomorphic to the Moore loop space.
+Paths with equal specified endpoints are homeomorphic to the Moore loop space. A continuous map
+`f` sends paths from `a` to `b` to paths from `f a` to `f b` (`TauCeti.MoorePathBetween.map`),
+compatibly with the two loop actions through the induced map of Moore loop spaces.
 
 The right action is represented by an action of the opposite monoid, following the convention for
 right DG modules. A Moore path retains its duration, including when its underlying map is constant.
@@ -63,7 +65,21 @@ theorem target (γ : MoorePathBetween X a b) : γ.toMoorePath.target = b := γ.p
 @[fun_prop]
 theorem continuous_toMoorePath :
     Continuous (toMoorePath : MoorePathBetween X a b → MoorePath X) :=
-  continuous_subtype_val
+  continuous_subtypeVal
+
+/-- Change the specified endpoints of a Moore path along equalities, as `Path.cast`. -/
+def cast (γ : MoorePathBetween X a b) {a' b' : X} (ha : a' = a) (hb : b' = b) :
+    MoorePathBetween X a' b' :=
+  ⟨γ.toMoorePath, by simp [ha], by simp [hb]⟩
+
+@[simp]
+theorem toMoorePath_cast (γ : MoorePathBetween X a b) {a' b' : X} (ha : a' = a) (hb : b' = b) :
+    (γ.cast ha hb).toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem cast_rfl_rfl (γ : MoorePathBetween X a b) : γ.cast rfl rfl = γ :=
+  (rfl)
 
 /-- Reverse a Moore path with specified endpoints. -/
 def symm (γ : MoorePathBetween X a b) : MoorePathBetween X b a :=
@@ -221,6 +237,54 @@ multiplication. -/
 theorem loopHomeomorph_symm_op_smul (γ : MoorePathBetween X b b) (ω : MooreLoopSpace X b) :
     (loopHomeomorph b).symm (op ω • γ) = (loopHomeomorph b).symm γ * ω :=
   MooreLoopSpace.ext (by simp)
+
+section Map
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- The image of a Moore path from `a` to `b` under a continuous map `f`: a Moore path from `f a`
+to `f b` of the same length. -/
+def map (f : C(X, Y)) : C(MoorePathBetween X a b, MoorePathBetween Y (f a) (f b)) where
+  toFun γ := ⟨γ.toMoorePath.map f, by simp, by simp⟩
+  continuous_toFun := ((MoorePath.continuous_map f).comp continuous_toMoorePath).subtype_mk _
+
+@[simp]
+theorem toMoorePath_map (f : C(X, Y)) (γ : MoorePathBetween X a b) :
+    (map f γ).toMoorePath = γ.toMoorePath.map f :=
+  (rfl)
+
+/-- The image of a path under the identity is the path. It is not a `simp` lemma: `simp` would
+first rewrite the endpoints `ContinuousMap.id X a` in the type of the left-hand side. -/
+theorem map_id (γ : MoorePathBetween X a b) : map (.id X) γ = γ :=
+  ext ((toMoorePath_map _ γ).trans (MoorePath.map_id _))
+
+/-- The image of a path under a composite is the image of the image. -/
+theorem map_comp {Z : Type*} [TopologicalSpace Z] (g : C(Y, Z)) (f : C(X, Y))
+    (γ : MoorePathBetween X a b) : map (g.comp f) γ = map g (map f γ) :=
+  ext ((toMoorePath_map _ γ).trans (MoorePath.map_map g f _).symm)
+
+/-- The image of a path commutes with the loops acting in front, through the induced map of
+Moore loop spaces. -/
+theorem map_smul (f : C(X, Y)) (ω : MooreLoopSpace X a) (γ : MoorePathBetween X a b) :
+    map f (ω • γ) = MooreLoopSpace.map f rfl ω • map f γ :=
+  ext (by simp [toMoorePath_leftAct])
+
+/-- The image of a path commutes with the loops acting behind, through the induced map of Moore
+loop spaces. -/
+theorem map_op_smul (f : C(X, Y)) (ω : MooreLoopSpace X b) (γ : MoorePathBetween X a b) :
+    map f (op ω • γ) = op (MooreLoopSpace.map f rfl ω) • map f γ :=
+  ext (by simp [toMoorePath_rightAct])
+
+@[simp]
+theorem map_symm (f : C(X, Y)) (γ : MoorePathBetween X a b) : map f γ.symm = (map f γ).symm :=
+  ext (by simp)
+
+@[simp]
+theorem map_trans (f : C(X, Y)) (γ : MoorePathBetween X a b) (δ : MoorePathBetween X b c) :
+    map f (γ.trans δ) = (map f γ).trans (map f δ) :=
+  ext (by simp)
+
+end Map
 
 end MoorePathBetween
 

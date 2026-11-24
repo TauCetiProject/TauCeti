@@ -52,14 +52,14 @@ that ball is `normalBundleRadialInverse`. -/
 def normalBundleRadialMap (f : M → V) (ε : ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     TotalSpace F (fun x => normalSubspace I f x) :=
-  ⟨p.proj, ε • OpenPartialHomeomorph.univUnitBall p.2⟩
+  ⟨p.proj, ε • OpenPartialHomeomorph.univUnitBall p.snd⟩
 
 /-- Radial expansion in each normal fibre. Compression undoes this expansion on the
 open normal ball of positive radius `ε`. -/
 def normalBundleRadialInverse (f : M → V) (ε : ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     TotalSpace F (fun x => normalSubspace I f x) :=
-  ⟨p.proj, OpenPartialHomeomorph.univUnitBall.symm (ε⁻¹ • p.2)⟩
+  ⟨p.proj, OpenPartialHomeomorph.univUnitBall.symm (ε⁻¹ • p.snd)⟩
 
 /-- Radial compression preserves the base point. -/
 @[simp] theorem normalBundleRadialMap_proj (f : M → V) (ε : ℝ)
@@ -74,15 +74,15 @@ def normalBundleRadialInverse (f : M → V) (ε : ℝ)
 /-- Compression in ambient normal-vector coordinates. -/
 @[simp] theorem normalBundleRadialMap_snd (f : M → V) (ε : ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
-    ((normalBundleRadialMap f ε p).2 : V) =
-      ε • OpenPartialHomeomorph.univUnitBall (p.2 : V) := by
+    ((normalBundleRadialMap f ε p).snd : V) =
+      ε • OpenPartialHomeomorph.univUnitBall (p.snd : V) := by
   simp [normalBundleRadialMap, OpenPartialHomeomorph.univUnitBall_apply]
 
 /-- Expansion in ambient normal-vector coordinates. -/
 @[simp] theorem normalBundleRadialInverse_snd (f : M → V) (ε : ℝ)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
-    ((normalBundleRadialInverse f ε p).2 : V) =
-      OpenPartialHomeomorph.univUnitBall.symm (ε⁻¹ • (p.2 : V)) := by
+    ((normalBundleRadialInverse f ε p).snd : V) =
+      OpenPartialHomeomorph.univUnitBall.symm (ε⁻¹ • (p.snd : V)) := by
   simp [normalBundleRadialInverse, OpenPartialHomeomorph.univUnitBall_symm_apply]
 
 /-- Compression fixes the zero section. -/
@@ -113,7 +113,7 @@ def normalBundleRadialInverse (f : M → V) (ε : ℝ)
 
 /-- Compression undoes expansion on the open normal ball of radius `ε`. -/
 @[simp] theorem normalBundleRadialMap_inverse (f : M → V) {ε : ℝ}
-    (p : TotalSpace F (fun x => normalSubspace I f x)) (hp : ‖(p.2 : V)‖ < ε) :
+    (p : TotalSpace F (fun x => normalSubspace I f x)) (hp : ‖(p.snd : V)‖ < ε) :
     normalBundleRadialMap f ε (normalBundleRadialInverse f ε p) = p := by
   rcases p with ⟨x, v⟩
   have hε : 0 < ε := (norm_nonneg _).trans_lt hp
@@ -159,7 +159,7 @@ theorem contMDiffOn_normalBundleRadialInverse
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiffOn (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F)) n
-      (normalBundleRadialInverse (I := I) (F := F) f ε) {p | ‖(p.2 : V)‖ < ε} := by
+      (normalBundleRadialInverse (I := I) (F := F) f ε) {p | ‖(p.snd : V)‖ < ε} := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   rcases le_or_gt ε 0 with hε | hε
@@ -173,7 +173,7 @@ theorem contMDiffOn_normalBundleRadialInverse
   · have hscale := (contDiff_id.const_smul ε⁻¹).contMDiff.comp
       (contMDiff_normalBundle_snd hf himm hdim)
     have hball : MapsTo (fun p : TotalSpace F (fun x => normalSubspace I f x) =>
-        ε⁻¹ • (p.2 : V)) {p | ‖(p.2 : V)‖ < ε} (ball (0 : V) 1) := by
+        ε⁻¹ • (p.snd : V)) {p | ‖(p.snd : V)‖ < ε} (ball (0 : V) 1) := by
       intro p hp
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
       exact (inv_mul_lt_iff₀ hε).mpr (by simpa using hp)
@@ -199,11 +199,11 @@ def normalBundleRadialPartialDiffeomorph
     { toFun := normalBundleRadialMap f ε
       invFun := normalBundleRadialInverse f ε
       source := univ
-      target := {p | ‖(p.2 : V)‖ < ε}
+      target := {p | ‖(p.snd : V)‖ < ε}
       map_source' := fun p _ => by
         rw [mem_ofPred_eq, normalBundleRadialMap_snd, norm_smul,
           Real.norm_of_nonneg hε.le]
-        have h := OpenPartialHomeomorph.univUnitBall.map_source (mem_univ (p.2 : V))
+        have h := OpenPartialHomeomorph.univUnitBall.map_source (mem_univ (p.snd : V))
         exact (mul_lt_mul_of_pos_left (mem_ball_zero_iff.mp h) hε).trans_eq (mul_one ε)
       map_target' := fun _ _ => mem_univ _
       left_inv' := fun p _ => normalBundleRadialInverse_map f hε.ne' p
@@ -233,7 +233,7 @@ def normalBundleRadialPartialDiffeomorph
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     (normalBundleRadialPartialDiffeomorph hf himm hdim hε).target =
-      {p | ‖(p.2 : V)‖ < ε} := (rfl)
+      {p | ‖(p.snd : V)‖ < ε} := (rfl)
 
 /-- The radial diffeomorphism acts by fibrewise compression. -/
 @[simp] theorem normalBundleRadialPartialDiffeomorph_apply

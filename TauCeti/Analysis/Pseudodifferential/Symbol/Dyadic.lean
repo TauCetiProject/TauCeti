@@ -38,12 +38,16 @@ the pieces with constants independent of `j`.
   bounded family of symbols of order `m`, uniform in the position when `a` is.
 * `TauCeti.Symbol.IsUniform.ofBoundedFrequencySupport`: a uniform symbol with bounded frequency
   support, such as a piece of a uniform symbol, is a uniform symbol of every order.
+* `TauCeti.Symbol.littlewoodPaleyPieceOfOrder φ a j`: the piece `ψⱼ(ξ) a(x, ξ)` as a symbol of order
+  `-(n + 1)`, at which its kernel is integrable.
 * `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic
   estimates `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` for a uniform symbol.
 * `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`: the
   integrated estimates `∫ ‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - |β| + n)`. For `m = 0` they
   read `∫ ‖∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ A R ^ |β|` with `A = C 2^{jn}` and `R = 2^{-j}`, the
   scale-invariant form in which they control the kernels of the pieces.
+* `TauCeti.Symbol.IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le`: the case
+  `α = β = []`, `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)`.
 
 `ContDiffBump.littlewoodPaleyPiece` is the analogous decomposition of a Fourier multiplier
 satisfying Mihlin's condition, with the homogeneous partition of `ℝⁿ \ {0}`.
@@ -208,6 +212,23 @@ theorem IsUniform.ofBoundedFrequencySupport {m' : ℝ} {a : Symbol n V W m} (ha 
     rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
     positivity
 
+/-- The `j`-th Littlewood–Paley piece of a symbol, as a symbol of order `-(n + 1)`: its frequency
+support is bounded, so it is a symbol of every order. -/
+def littlewoodPaleyPieceOfOrder (a : Symbol n V W m) (j : ℕ) : Symbol n V W (-(n + 1)) :=
+  ofBoundedFrequencySupport (a.littlewoodPaleyPiece φ j).coefficient
+    (a.littlewoodPaleyPiece φ j).contDiff_coefficient (2 ^ j * φ.rOut)
+    fun x _ hξ => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ
+
+@[simp]
+theorem coefficient_littlewoodPaleyPieceOfOrder (a : Symbol n V W m) (j : ℕ) :
+    (a.littlewoodPaleyPieceOfOrder φ j).coefficient = (a.littlewoodPaleyPiece φ j).coefficient :=
+  coefficient_ofBoundedFrequencySupport _ _ _ _
+
+/-- The Littlewood–Paley pieces of a uniform symbol are uniform symbols of order `-(n + 1)`. -/
+theorem IsUniform.littlewoodPaleyPieceOfOrder {a : Symbol n V W m} (ha : a.IsUniform) (j : ℕ) :
+    (a.littlewoodPaleyPieceOfOrder φ j).IsUniform :=
+  (ha.littlewoodPaleyPiece φ j).ofBoundedFrequencySupport _ _
+
 /-! ### Dyadic estimates -/
 
 /-- **Dyadic estimates.** For a uniform symbol of order `m`, the `j`-th piece and its mixed
@@ -270,6 +291,15 @@ theorem IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le {a : S
     _ = C * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (m - β.length + n) := by
         rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
         ring
+
+/-- **Integrated size of the pieces.** For a uniform symbol of order `m` on `ℝⁿ`, the pieces
+satisfy `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)` uniformly in `x` and `j`: the case `α = β = []` of
+`IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`. -/
+theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le {a : Symbol n V W m}
+    (ha : a.IsUniform) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) x,
+      ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ ≤ C * ((2 : ℝ) ^ j) ^ (m + n) := by
+  simpa using ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
 
 end Symbol
 

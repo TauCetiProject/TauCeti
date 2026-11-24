@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
@@ -42,6 +43,10 @@ the diagonal.
   the kernel is the inverse Fourier transform of the rescaled frequency slice, equivalently the
   angular-frequency integral `(2π)⁻ⁿ ∫ exp(i ⟪x - y, ξ⟫) a(x, ξ) dξ`.
 * `TauCeti.norm_quantizationKernel_le`: `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ`, uniformly in `y`.
+* `TauCeti.norm_quantizationKernel_sub_quantizationKernel_right_le` and
+  `TauCeti.norm_quantizationKernel_sub_quantizationKernel_left_le`: the increments of `K_a` in
+  each variable are bounded by the increment times the first frequency moment
+  `∫ ‖ξ‖ ‖a(x, ξ)‖ dξ`, plus, in the first variable, the increment of the coefficient.
 * `TauCeti.continuous_quantizationKernel_right` and `TauCeti.continuous_quantizationKernel`:
   `y ↦ K_a(x, y)` is continuous when the frequency slice at `x` is integrable, and `K_a` is jointly
   continuous for a continuous coefficient with growth bounds `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m`, `m < -n`,
@@ -63,7 +68,7 @@ the diagonal.
   **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
   derivative of the integrand in `(x, y)` costs one power of the frequency.
 * `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
-  `C^∞`.
+  `C^∞`; `TauCeti.Symbol.IsSmoothing.integrable_coefficient`: its frequency slices are integrable.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -148,12 +153,16 @@ theorem fourierIntegral_flip_eq_quantizationKernel (a : E × E → V →L[ℂ] W
   rw [smul_smul, ← AddChar.map_add_eq_mul, LinearMap.flip_apply, innerₗ_apply_apply,
     real_inner_comm, inner_sub_right, neg_add_eq_sub]
 
+/-- The change of variables `ξ = 2πζ` in a real integral over `E`, with `n = finrank ℝ E`:
+`∫ g(2πζ) dζ = (2π)⁻ⁿ ∫ g(ξ) dξ`. -/
+private theorem integral_comp_two_pi_smul (g : E → ℝ) :
+    ∫ ζ, g ((2 * π) • ζ) = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, g ξ := by
+  rw [Measure.integral_comp_smul, smul_eq_mul, abs_of_pos (by positivity)]
+
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
     ‖quantizationKernel a x y‖ ≤ ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
-  have hpos : 0 < ((2 * π) ^ finrank ℝ E)⁻¹ := by positivity
-  rw [← abs_of_pos hpos, ← smul_eq_mul,
-    ← Measure.integral_comp_smul (μ := volume) (f := fun ξ ↦ ‖a (x, ξ)‖)]
+  rw [← integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖]
   exact (norm_integral_le_integral_norm _).trans_eq
     (by simp_rw [Circle.norm_smul (E := V →L[ℂ] W)])
 
@@ -188,6 +197,63 @@ theorem continuous_quantizationKernel_right (ha : Integrable (fun ξ ↦ a (x, �
   rw [funext (quantizationKernel_eq_fourierInv a x)]
   exact (VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
     continuous_inner.neg (ha.comp_smul two_pi_pos.ne')).comp (continuous_const.sub continuous_id)
+
+/-- **Increments in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` and
+`ξ ↦ ‖ξ‖ ‖a(x, ξ)‖` are integrable, then
+`‖K_a(x, y) - K_a(x, y')‖ ≤ (2π)⁻ⁿ ‖y - y'‖ ∫ ‖ξ‖ ‖a(x, ξ)‖ dξ`. -/
+theorem norm_quantizationKernel_sub_quantizationKernel_right_le
+    (ha : Integrable (fun ξ ↦ a (x, ξ))) (ha' : Integrable (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖))
+    (y y' : E) :
+    ‖quantizationKernel a x y - quantizationKernel a x y'‖ ≤
+      ((2 * π) ^ finrank ℝ E)⁻¹ * ‖y - y'‖ * ∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖ := by
+  rw [quantizationKernel_def, quantizationKernel_def,
+    ← integral_sub (integrable_quantizationKernel_integrand ha y)
+      (integrable_quantizationKernel_integrand ha y')]
+  refine (norm_integral_le_of_norm_le
+    ((ha'.comp_smul two_pi_pos.ne').const_mul ‖y - y'‖)
+    (ae_of_all _ fun ζ ↦ ?_)).trans_eq ?_
+  · refine (Real.norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+    rw [sub_sub_sub_cancel_left, norm_sub_rev, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+    ring
+  · rw [integral_const_mul, integral_comp_two_pi_smul fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖]
+    ring
+
+/-- **Increments in the first variable.** If the frequency slices `ξ ↦ a(x, ξ)` and
+`ξ ↦ a(x', ξ)` and the function `ξ ↦ ‖ξ‖ ‖a(x, ξ)‖` are integrable, then
+`‖K_a(x, y) - K_a(x', y)‖ ≤ (2π)⁻ⁿ (‖x - x'‖ ∫ ‖ξ‖ ‖a(x, ξ)‖ dξ + ∫ ‖a(x, ξ) - a(x', ξ)‖ dξ)`:
+the first term comes from the phase, the second from the coefficient. -/
+theorem norm_quantizationKernel_sub_quantizationKernel_left_le {x' : E}
+    (ha : Integrable (fun ξ ↦ a (x, ξ))) (ha' : Integrable (fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖))
+    (hx' : Integrable (fun ξ ↦ a (x', ξ))) (y : E) :
+    ‖quantizationKernel a x y - quantizationKernel a x' y‖ ≤
+      ((2 * π) ^ finrank ℝ E)⁻¹ *
+        (‖x - x'‖ * (∫ ξ, ‖ξ‖ * ‖a (x, ξ)‖) + ∫ ξ, ‖a (x, ξ) - a (x', ξ)‖) := by
+  have hd : Integrable (fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖) := (ha.sub hx').norm
+  rw [quantizationKernel_def, quantizationKernel_def,
+    ← integral_sub (integrable_quantizationKernel_integrand ha y)
+      (integrable_quantizationKernel_integrand hx' y)]
+  refine (norm_integral_le_of_norm_le
+    (((ha'.comp_smul two_pi_pos.ne').const_mul ‖x - x'‖).add
+      (hd.comp_smul two_pi_pos.ne'))
+    (ae_of_all _ fun ζ ↦ ?_)).trans_eq ?_
+  · -- Split the increment into the change of the phase and the change of the coefficient.
+    have hsplit : 𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ) - 𝐞 ⟪ζ, x' - y⟫ • a (x', (2 * π) • ζ) =
+        (𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ) - 𝐞 ⟪ζ, x' - y⟫ • a (x, (2 * π) • ζ)) +
+          𝐞 ⟪ζ, x' - y⟫ • (a (x, (2 * π) • ζ) - a (x', (2 * π) • ζ)) := by
+      simp only [Circle.smul_def, smul_sub]
+      abel
+    rw [hsplit]
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · refine (Real.norm_fourierChar_smul_sub_fourierChar_smul_le ζ _ _ _).trans_eq ?_
+      dsimp only
+      rw [sub_sub_sub_cancel_right, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+      ring
+    · exact (Circle.norm_smul (E := V →L[ℂ] W) _ _).le
+  · rw [Pi.add_def, integral_add ((ha'.comp_smul two_pi_pos.ne').const_mul _)
+      (hd.comp_smul two_pi_pos.ne'), integral_const_mul,
+      integral_comp_two_pi_smul fun ξ ↦ ‖ξ‖ * ‖a (x, ξ)‖,
+      integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ) - a (x', ξ)‖]
+    ring
 
 /-- **Joint continuity.** For a continuous coefficient whose growth bound
 `‖a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m` with `m < -n` is uniform for `x` in each compact set `K`, the kernel
@@ -543,6 +609,13 @@ theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsS
     rw [← hb]
     exact b.contDiff_quantizationKernel k (by linarith)
 
+/-- The frequency slices `ξ ↦ a(x, ξ)` of a smoothing symbol are integrable. -/
+theorem IsSmoothing.integrable_coefficient {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (x : CoordinateSpace n) : Integrable fun ξ ↦ a.coefficient (x, ξ) := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
+  rw [← hb]
+  exact b.integrable_coefficient (by linarith) x
+
 /-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
 
 /-- **Kernel of the frequency Laplacian.** For a symbol of order `m < -n`,
@@ -717,7 +790,7 @@ theorem integral_quantizationKernel_comp_adjoint {a : E × E → V →L[ℂ] W}
     simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
   have hGc : Continuous G := by
     have : Continuous fun ζ : E ↦ adjoint (b (z, (2 * π) • ζ)) :=
-      (adjoint (𝕜 := ℂ) (E := V) (F := U)).continuous.comp (hbc.comp (continuous_const_smul _))
+      (hbc.comp (continuous_const_smul _)).clm_adjoint
     exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul this
   have hG : Integrable G := by
     refine (hb.comp_smul two_pi_pos.ne').norm.mono' hGc.aestronglyMeasurable

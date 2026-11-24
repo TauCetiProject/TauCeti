@@ -56,7 +56,7 @@ theorem rootSpan_le_span_weight
   rintro _ ⟨a, ha, rfl⟩
   obtain ⟨i, hi⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective ⟨a, ha⟩
   have hindex : t.simpleIndex ht i = a := by
-    simpa only [coe_simpleSupportEquivSimplyConnectedBase] using congrArg Subtype.val hi
+    simpa only [coe_simpleSupportEquivSimplyConnectedBase_apply] using congrArg Subtype.val hi
   rw [← hindex, ← rootGeneratorWeight_inl_eq_root_simpleIndex]
   apply UniversalEnvelopingAlgebra.rootWeight_mem_span_of_representation_ne_zero
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h ρ M hM b wt hspan hwt (.inl i)

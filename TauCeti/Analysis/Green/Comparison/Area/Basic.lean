@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # The canonical planar area coefficient
@@ -48,11 +49,6 @@ theorem manifoldAreaForm_inChartAt (c : ℂ) :
   rw [RoughForm.inChartAt_modelSpace]
   rfl
 
-/-- The basis normalization agrees with existing planar Lebesgue area. -/
-theorem basisOneI_addHaar : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
-  rw [← Complex.toBasis_orthonormalBasisOneI]
-  exact Complex.orthonormalBasisOneI.addHaar_eq_volume
-
 /-- The actual top-form coefficient of a scalar multiple of planar area is that scalar. -/
 -- Normalize before chart and basis simplification erase this scalar-coefficient pattern.
 @[simp↓]
@@ -71,6 +67,6 @@ theorem integral_manifoldAreaForm_coefficient (f : ℂ → ℝ) (c : ℂ) :
     (∫ z, RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x)
       c z Complex.basisOneI ∂Complex.basisOneI.addHaar) = ∫ z, f z := by
   simp_rw [inChartAt_fun_smul_manifoldAreaForm]
-  rw [basisOneI_addHaar]
+  rw [Complex.addHaar_basisOneI]
 
 end TauCeti.Green

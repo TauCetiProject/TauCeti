@@ -27,6 +27,9 @@ representation theory of `p`-adic groups.
 
 * `TauCeti.HopfAlgebra.congruenceSubgroup k H I`: the kernel of reduction modulo `I`, a normal
   subgroup of `WithConv (H →ₐ[k] R)`.
+* `TauCeti.HopfAlgebra.quotientCongruenceSubgroupHom`: the injective homomorphism
+  `G(R) / G(R)_I → G(R ⧸ I)`, an isomorphism `quotientCongruenceSubgroupEquiv` when points lift
+  along `R → R ⧸ I`.
 * `TauCeti.HopfAlgebra.mem_congruenceSubgroup_iff`: `x` lies in `G(R)_I` exactly when `x` and the
   identity point agree modulo `I`; `mem_congruenceSubgroup_iff_of_adjoin_eq_top` checks this on a
   generating set of `H`.
@@ -38,6 +41,8 @@ representation theory of `p`-adic groups.
 * `TauCeti.HopfAlgebra.congruenceSubgroup_le_comap_mapDomain` and
   `congruenceSubgroup_le_comap_mapValue`: homomorphisms of groups and compatible maps of coefficient
   rings preserve congruence subgroups.
+* `TauCeti.HopfAlgebra.ker_mapValue_eq_congruenceSubgroup`: the kernel of the map of points induced
+  by a map of coefficient rings `ψ` is the congruence subgroup of level `ker ψ`.
 
 ## References
 
@@ -93,6 +98,56 @@ theorem mem_congruenceSubgroup_iff_of_adjoin_eq_top {s : Set H} (hs : Algebra.ad
 /-- Congruence subgroups are normal: they are kernels of group homomorphisms. -/
 instance congruenceSubgroup_normal (I : Ideal R) : (congruenceSubgroup k H I).Normal :=
   MonoidHom.normal_ker _
+
+variable (k H) in
+/-- **Reduction modulo `I` on the quotient by the congruence subgroup**: the injective group
+homomorphism `G(R) / G(R)_I → G(R ⧸ I)` induced by reduction of points modulo `I`. -/
+noncomputable def quotientCongruenceSubgroupHom (I : Ideal R) :
+    WithConv (H →ₐ[k] R) ⧸ congruenceSubgroup k H I →* WithConv (H →ₐ[k] R ⧸ I) :=
+  QuotientGroup.kerLift _
+
+/-- The class of a point `x` is sent to the reduction of `x` modulo `I`. -/
+@[simp]
+theorem quotientCongruenceSubgroupHom_mk (I : Ideal R) (x : WithConv (H →ₐ[k] R)) :
+    quotientCongruenceSubgroupHom k H I x = AlgHom.mapValue (Ideal.Quotient.mkₐ k I) x :=
+  QuotientGroup.kerLift_mk _ x
+
+/-- Two points with the same reduction modulo `I` differ by an element of `G(R)_I`. -/
+theorem quotientCongruenceSubgroupHom_injective (I : Ideal R) :
+    Function.Injective (quotientCongruenceSubgroupHom k H I) :=
+  QuotientGroup.kerLift_injective _
+
+/-- Reduction modulo `I` is onto `G(R ⧸ I)` when every point of `G(R ⧸ I)` lifts to `G(R)`. -/
+theorem quotientCongruenceSubgroupHom_surjective {I : Ideal R}
+    (hlift : Function.Surjective
+      ((Ideal.Quotient.mkₐ k I).comp : (H →ₐ[k] R) → H →ₐ[k] R ⧸ I)) :
+    Function.Surjective (quotientCongruenceSubgroupHom k H I) := by
+  intro y
+  obtain ⟨x, hx⟩ := hlift y.ofConv
+  refine ⟨toConv x, ?_⟩
+  rw [quotientCongruenceSubgroupHom_mk, AlgHom.mapValue_apply, ofConv_toConv, hx, toConv_ofConv]
+
+variable (k H) in
+/-- **The quotient by a congruence subgroup.** If every point of `G(R ⧸ I)` lifts to `G(R)`, for
+instance when `H` is formally smooth and `R` is `I`-adically complete
+(`Algebra.FormallySmooth.exists_mkₐ_comp_eq_of_isAdicComplete`), reduction modulo `I` identifies
+`G(R) / G(R)_I` with `G(R ⧸ I)`. -/
+noncomputable def quotientCongruenceSubgroupEquiv (I : Ideal R)
+    (hlift : Function.Surjective
+      ((Ideal.Quotient.mkₐ k I).comp : (H →ₐ[k] R) → H →ₐ[k] R ⧸ I)) :
+    WithConv (H →ₐ[k] R) ⧸ congruenceSubgroup k H I ≃* WithConv (H →ₐ[k] R ⧸ I) :=
+  MulEquiv.ofBijective (quotientCongruenceSubgroupHom k H I)
+    ⟨quotientCongruenceSubgroupHom_injective I, quotientCongruenceSubgroupHom_surjective hlift⟩
+
+/-- The isomorphism `quotientCongruenceSubgroupEquiv` sends the class of a point `x` to the
+reduction of `x` modulo `I`. -/
+@[simp]
+theorem quotientCongruenceSubgroupEquiv_mk (I : Ideal R)
+    (hlift : Function.Surjective
+      ((Ideal.Quotient.mkₐ k I).comp : (H →ₐ[k] R) → H →ₐ[k] R ⧸ I))
+    (x : WithConv (H →ₐ[k] R)) :
+    quotientCongruenceSubgroupEquiv k H I hlift x = AlgHom.mapValue (Ideal.Quotient.mkₐ k I) x :=
+  quotientCongruenceSubgroupHom_mk I x
 
 variable (k H R)
 
@@ -166,6 +221,18 @@ theorem congruenceSubgroup_le_comap_mapValue {R' : Type*} [CommRing R'] [Algebra
   intro h
   rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, ← AlgHom.commutes ψ, ← map_sub]
   exact hIJ (mem_congruenceSubgroup_iff.1 hx h)
+
+/-- The kernel of the map of points induced by a map of coefficient rings `ψ : R →ₐ[k] R'` is the
+congruence subgroup of level `ker ψ`. -/
+theorem ker_mapValue_eq_congruenceSubgroup {R' : Type*} [CommRing R'] [Algebra k R']
+    (ψ : R →ₐ[k] R') :
+    (AlgHom.mapValue (H := H) ψ).ker = congruenceSubgroup k H (RingHom.ker ψ) := by
+  ext x
+  rw [MonoidHom.mem_ker, mem_congruenceSubgroup_iff, AlgHom.mapValue_apply,
+    ← WithConv.ofConv_injective.eq_iff, ofConv_toConv, AlgHom.ext_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [RingHom.mem_ker, map_sub, sub_eq_zero, AlgHom.comp_apply, AlgHom.convOne_apply,
+    AlgHom.commutes]
 
 end HopfAlgebra
 

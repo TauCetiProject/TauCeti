@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
-public import TauCeti.Probability.Distributions.Cauchy.Affine
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.Distributions.Cauchy
+public import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.AddCircle
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
+import TauCeti.Probability.Distributions.Cauchy.Affine
 
 /-!
 # The wrapped Cauchy distribution

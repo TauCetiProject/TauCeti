@@ -20,6 +20,12 @@ systems at the two ends are identified by transport along the ambient homotopy, 
 than identified without transport. This gives homotopy invariance of the induced relative
 homology maps, even for nonconstant local systems and arbitrary topological pairs.
 
+As an application, the relative twisted homology vanishes modulo a set `S` into which `X` deforms
+through maps keeping `S` inside `S` (`TopPair.isZero_twistedHomology_ofSubset_of_homotopy`), the
+twisted counterpart of `TopPair.isZero_singularHomology_ofSubset_of_homotopy`. The inclusion of
+`S` is then a homotopy equivalence, so this is an instance of the vanishing criterion
+`TopPair.isZero_twistedHomology_of_isIso` of `TauCeti.AlgebraicTopology.Singular.Twisted.Relative`.
+
 The construction uses the absolute twisted prism homotopy and `Homotopy.descCokernel`,
 following the relative untwisted construction in
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance`.
@@ -142,3 +148,32 @@ lemma twistedHomologyMap_eq_comp (k : ℕ) :
     (HomologicalComplex.homologyMap_comp _ _ k)
 
 end TopPair.Homotopy
+
+namespace TopPair
+
+open TauCeti
+
+variable {R : Type u} [Ring R]
+
+/-- **Relative twisted homology vanishes modulo a set into which the space deforms.** If a homotopy
+`H` from the identity of `X` to a map `ρ` with values in `S` keeps `S` inside `S`, then
+`Hₙ(X, S; L) = 0` for every local coefficient system `L` on `X`. -/
+theorem isZero_twistedHomology_ofSubset_of_homotopy {X : TopCat.{v}} {S : Set X} {ρ : X ⟶ X}
+    (H : (TopCat.Hom.hom (𝟙 X)).Homotopy ρ.hom)
+    (hS : ∀ (τ : unitInterval) (x : X), x ∈ S → H (τ, x) ∈ S) (hρ : ∀ x, ρ x ∈ S)
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) (n : ℕ) :
+    IsZero ((ofSubset S).twistedHomology L n) := by
+  -- The inclusion of `S` is a homotopy equivalence, with homotopy inverse `ρ`.
+  let r : C(X, S) := ⟨fun x ↦ ⟨ρ x, hρ x⟩, by fun_prop⟩
+  let e : ContinuousMap.HomotopyEquiv S X :=
+    { toFun := ⟨Subtype.val, continuous_subtypeVal⟩
+      invFun := r
+      left_inv := ⟨{
+        toFun := fun p ↦ ⟨H (unitInterval.symm p.1, p.2.val), hS _ _ p.2.property⟩
+        continuous_toFun := by fun_prop
+        map_zero_left := fun x ↦ Subtype.ext (by simp [r])
+        map_one_left := fun x ↦ Subtype.ext (by simp) }⟩
+      right_inv := ⟨H.symm⟩ }
+  exact isZero_twistedHomology_of_isIso (ofSubset S) L (fun k ↦ e.isIso_twistedHomologyMap L k) n
+
+end TopPair

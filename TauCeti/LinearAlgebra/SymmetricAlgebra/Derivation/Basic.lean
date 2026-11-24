@@ -23,6 +23,8 @@ The public interface follows Mathlib's analogous `Polynomial.mkDerivation` and
 * `SymmetricAlgebra.mkDerivation`: extend prescribed values on the canonical generators.
 * `SymmetricAlgebra.derivation_ext`: symmetric-algebra derivations agree when they agree on the
   canonical generators.
+* `SymmetricAlgebra.derivation_ext_single`: derivations of the symmetric algebra on `α →₀ M`
+  agree when they agree on the generators `ι (single a x)`.
 * `SymmetricAlgebra.mkDerivationEquiv`: derivations are linearly equivalent to their restrictions
   to the canonical generators.
 
@@ -118,5 +120,24 @@ theorem mkDerivationEquiv_symm_apply (D : Derivation R (SymmetricAlgebra R M) A)
   rfl
 
 end
+
+section Finsupp
+
+variable {R M A α : Type*}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid A] [Module R A] [Module (SymmetricAlgebra R (α →₀ M)) A]
+
+/-- Two derivations of the symmetric algebra on `α →₀ M` are equal if they agree on the generators
+`ι (single a x)`. -/
+theorem derivation_ext_single {D₁ D₂ : Derivation R (SymmetricAlgebra R (α →₀ M)) A}
+    (h : ∀ a x, D₁ (ι R (α →₀ M) (Finsupp.single a x)) = D₂ (ι R (α →₀ M) (Finsupp.single a x))) :
+    D₁ = D₂ :=
+  derivation_ext fun v ↦ by
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v w hv hw => rw [map_add, map_add, map_add, hv, hw]
+    | single a x => exact h a x
+
+end Finsupp
 
 end SymmetricAlgebra

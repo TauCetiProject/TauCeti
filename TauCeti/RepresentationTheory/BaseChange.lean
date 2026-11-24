@@ -569,7 +569,7 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   toFun f := ⟨f.toLinearMap, mem_ker_intertwiningDefect.mpr f.isIntertwining'⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun f := ⟨f.1, mem_ker_intertwiningDefect.mp f.2⟩
+  invFun f := ⟨f.val, mem_ker_intertwiningDefect.mp f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 

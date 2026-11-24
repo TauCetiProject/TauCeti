@@ -92,8 +92,7 @@ noncomputable def leftTaylor (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords 
       Comodule.leftCoactRTensor (TensorWords R B)
         (Comodule.leftCofreeCoact R (TensorWords R A) M) +
     AA.coaugmentedBarDifferential.rTensor M ∘ₗ
-      (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M)
+      Comodule.cofreeCounit R (TensorWords R B) (TensorWords R A ⊗[R] M)
 
 /-- The left cofree part applies `F` after the twisted left coaction, and adds the bar
 differential of `A` after the counit of the right words. -/
@@ -103,8 +102,7 @@ theorem leftTaylor_def (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B �
           Comodule.leftCoactRTensor (TensorWords R B)
             (Comodule.leftCofreeCoact R (TensorWords R A) M) +
         AA.coaugmentedBarDifferential.rTensor M ∘ₗ
-          (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) :=
+          Comodule.cofreeCounit R (TensorWords R B) (TensorWords R A ⊗[R] M) :=
   (rfl)
 
 /-- The letterwise Koszul twist of the suspended words is compatible with deconcatenation. -/
@@ -133,9 +131,7 @@ theorem leftCofreeCoact_comp_leftTaylor
     (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M) :
     Comodule.leftCofreeCoact R (TensorWords R A) M ∘ₗ leftTaylor AA F =
       TensorProduct.map AA.coaugmentedBarDifferential
-          ((TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor
-              (TensorWords R A ⊗[R] M)) ∘ₗ
+          (Comodule.cofreeCounit R (TensorWords R B) (TensorWords R A ⊗[R] M)) ∘ₗ
           Comodule.leftCoactRTensor (TensorWords R B)
             (Comodule.leftCofreeCoact R (TensorWords R A) M) +
         TensorProduct.map (TensorWords.map ((AA.grading.shift 1).koszulTwist 1))
@@ -149,8 +145,8 @@ theorem leftCofreeCoact_comp_leftTaylor
     (Comodule.leftCofreeCoact R (TensorWords R A) M)
     (Coalgebra.counit (R := R) (A := TensorWords R B))
   -- Pass the coaction through the outer maps, then through the inner ones, then regroup.
-  simp only [leftTaylor_def, LinearMap.comp_add, LinearMap.add_comp, TensorProduct.map_add_right,
-    ← LinearMap.comp_assoc, h1, h2]
+  simp only [leftTaylor_def, Comodule.cofreeCounit_def, LinearMap.comp_add, LinearMap.add_comp,
+    TensorProduct.map_add_right, ← LinearMap.comp_assoc, h1, h2]
   simp only [LinearMap.comp_assoc, h3,
     Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact]
   simp only [← LinearMap.comp_assoc, LinearMap.map_comp_lTensor, LinearMap.rTensor_comp_lTensor]
@@ -308,9 +304,9 @@ theorem isLeftGradedCoderivationOver_gradedCoderiv (G : InternalGrading R M ℤ)
 theorem taylorProj_comp_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M) :
     taylorProj R A B M ∘ₗ gradedCoderiv AA BB G F = F := by
-  have h := AInfinityRightModule.rid_comp_lTensor_counit_comp_gradedCoderiv
+  have h := AInfinityRightModule.cofreeCounit_comp_gradedCoderiv
     (M := TensorWords R A ⊗[R] M) (AA := BB) (leftGrading AA G) (leftTaylor AA F)
-  rw [taylorProj_def, gradedCoderiv, LinearMap.comp_assoc, LinearMap.comp_assoc]
+  rw [taylorProj_def, gradedCoderiv, LinearMap.comp_assoc]
   -- `h` is stated with the additive structure of `Tᶜ(sA) ⊗ M` coming from `AddCommGroup`, which
   -- agrees with the one in the goal only up to unfolding instances, so it is applied by `congrArg`
   -- rather than by rewriting.

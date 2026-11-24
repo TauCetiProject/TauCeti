@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
-public import TauCeti.AlgebraicGeometry.DualNumber
 
 /-!
 # Infinitesimal automorphisms of prestable maps
@@ -283,15 +284,21 @@ theorem autPullbackSplitting_apply (g : Aut F) :
     (F.autPullbackSplitting h) g = F.pullbackAut p g :=
   (rfl)
 
-/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
+/-- The conjugation action of the automorphism extension on the restriction kernel is
+conjugation in `Aut (F.pullback p)`. -/
 @[simp]
+theorem autPullbackExtension_conjAct_apply_coe (e : Aut (F.pullback p))
+    (x : (F.restrictAut h).ker) :
+    ((F.autPullbackExtension h).conjAct e x : Aut (F.pullback p)) =
+      e * (x : Aut (F.pullback p)) * e⁻¹ := by
+  simpa only [autPullbackExtension_inl, Subgroup.subtype_apply] using
+    (F.autPullbackExtension h).inl_conjAct_comm (e := e) (n := x)
+
+/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
 theorem autPullbackSplitting_conjAct_apply_coe (g : Aut F) (x : (F.restrictAut h).ker) :
     ((F.autPullbackSplitting h).conjAct g x : Aut (F.pullback p)) =
-      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ := by
-  simpa only [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply,
-    MonoidHom.coe_ofClass, autPullbackSplitting_apply,
-    autPullbackExtension_inl, Subgroup.subtype_apply] using
-    (F.autPullbackExtension h).inl_conjAct_comm (e := F.pullbackAut p g) (n := x)
+      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ :=
+  F.autPullbackExtension_conjAct_apply_coe h (F.pullbackAut p g) x
 
 /-- The automorphism group of `F.pullback p` is the semidirect product of the automorphisms
 restricting to the identity along the section and the base changes of the automorphisms of `F`,
@@ -320,15 +327,15 @@ its base change along `Spec R[ε] ⟶ Spec R` to the dual numbers that reduce to
 they fix every marking and commute with the map to the target. -/
 def infinitesimalAut (F : PrestableMap q n) :
     Subgroup (Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :=
-  (F.restrictAut (dualNumberSplitEpi R)).ker
+  (F.restrictAut (TrivSqZeroExt.fstHom R R R).specSplitEpi).ker
 
 /-- An automorphism of the base change of `F` to the dual numbers is infinitesimal exactly when it
 fixes the total space of `F`, included over `ε ↦ 0`. -/
 theorem mem_infinitesimalAut_iff (F : PrestableMap q n)
     (e : Aut (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap R (DualNumber R)))))) :
     e ∈ F.infinitesimalAut ↔
-      F.pullbackSectionι (dualNumberSplitEpi R) ≫ e.asIso.hom.curve.hom =
-        F.pullbackSectionι (dualNumberSplitEpi R) :=
+      F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi ≫ e.asIso.hom.curve.hom =
+        F.pullbackSectionι (TrivSqZeroExt.fstHom R R R).specSplitEpi :=
   F.mem_ker_restrictAut_iff _ e
 
 end Infinitesimal

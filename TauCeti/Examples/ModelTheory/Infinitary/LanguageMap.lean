@@ -7,8 +7,8 @@ module
 
 import TauCeti.ModelTheory.Infinitary.ConstantAbstraction
 import TauCeti.ModelTheory.Infinitary.LanguageMap
+import TauCeti.ModelTheory.Infinitary.QuantifierRank
 import TauCeti.ModelTheory.Infinitary.SubstBounds
-import TauCeti.ModelTheory.Infinitary.ToFormula
 
 /-!
 # Regression examples: language maps on infinitary formulas
@@ -23,15 +23,17 @@ module, through public statements only:
   hypothesis;
 * a language map commutes with embedding a finitary formula, weakening it and transporting it to
   another carrier, all at once;
-* a language map commutes with free-variable substitution, free-variable relabelling, opening
-  bound positions (`toFormula`), universal/existential closures and bound-position instantiation,
-  and preserves `freeVarSupport` without decidable equality on free variables;
-* lifting a language map or language equivalence by `addConstants` commutes with
-  `constantsVarsEquiv` and `abstractConst` and preserves `constantSupport` across distinct
-  language universes.
+* a language map between languages in arbitrary universes commutes with substituting function
+  terms into a formula built with the binary connectives and closed by `alls`;
+* language maps and language equivalences commute with mixed free/bound `relabel`, `exs`,
+  `exsLast`, `toFormula` and `inst`, and preserve atomicity, quantifier rank and free-variable
+  support;
+* `addConstants` on language maps and language equivalences preserves `constantSupport` and
+  commutes with `constantsVarsEquiv` and `abstractConst`, while `lhomWithConstantsMap` maps
+  `constantSupport` to its image and translates `constantsVarsEquiv` into variable substitution.
 -/
 
-universe u v u' v' w
+universe u v u' v' uι w
 
 open FirstOrder FirstOrder.Language
 
@@ -79,33 +81,73 @@ example {L L' : Language.{u, v}} (g : L →ᴸ L') {ι κ : Type*} {α : Type*} 
       (((g.onBoundedFormula φ).toInf : L'.BoundedFormulaInf ι α m).castLE h).reindex c := by
   simp
 
--- Translating across distinct language universes commutes with free-variable substitution,
--- free-variable relabelling into bound slots, universal closure and opening bound positions.
-example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L')
-    {ι α β γ : Type*} {m n : ℕ} (φ : L.BoundedFormulaInf ι α n) (σ : α → L.Term β)
-    (ρ : β → γ ⊕ Fin m) :
-    g.onBoundedFormulaInf ((TauCeti.BoundedFormulaInf.relabel ρ
-      (TauCeti.BoundedFormulaInf.subst φ σ)).toFormula) =
-      (TauCeti.BoundedFormulaInf.relabel ρ
-        (TauCeti.BoundedFormulaInf.subst (g.onBoundedFormulaInf φ)
-          fun a => g.onTerm (σ a))).toFormula := by
+-- Translating across universes commutes with substituting function terms into a formula built
+-- with `⊓`, `⊔`, `iff` and universally closed over `n` bound slots.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : Type uι} {n : ℕ}
+    (φ ψ : L.BoundedFormulaInf ι ℕ n) (F : L.Functions 1) :
+    g.onBoundedFormulaInf
+        (TauCeti.BoundedFormulaInf.subst (((φ ⊓ ψ) ⊔ φ.iff ⊤).alls)
+          fun _ => .func F fun _ => .var ()) =
+      TauCeti.BoundedFormulaInf.subst
+        ((((g.onBoundedFormulaInf φ ⊓ g.onBoundedFormulaInf ψ) ⊔
+            (g.onBoundedFormulaInf φ).iff ⊤)).alls)
+        (fun _ => .func (g.onFunction F) fun _ => .var ()) := by
   simp
 
--- Translating commutes with single-slot instantiation and preserves free-variable support with
--- no `DecidableEq` assumption on the free-variable index type.
-example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L')
-    {ι α : Type*} (φ : L.BoundedFormulaInf ι α 1) (t : L.Term (α ⊕ Fin 0)) :
-    (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport ∧
-      g.onBoundedFormulaInf (φ.inst t) = (g.onBoundedFormulaInf φ).inst (g.onTerm t) := by
+-- Mixed free/bound `relabel` followed by `exsLast` and `exs` over arbitrary slot counts commutes
+-- with language maps.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : Type uι} {m k : ℕ}
+    (h : Bool → Unit ⊕ Fin m) (φ : L.BoundedFormulaInf ι Bool k) :
+    g.onBoundedFormulaInf ((TauCeti.BoundedFormulaInf.relabel h φ).exsLast.exs) =
+      (TauCeti.BoundedFormulaInf.relabel h (g.onBoundedFormulaInf φ)).exsLast.exs := by
+  simp
+
+-- Opening in-scope bound positions via `toFormula` commutes with a language equivalence, even
+-- under internal quantifiers.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L') {ι : Type uι} {α : Type*}
+    {n : ℕ} (φ : L.BoundedFormulaInf ι α (n + 1)) :
+    e.onBoundedFormulaInf φ.all.toFormula = (e.onBoundedFormulaInf φ).all.toFormula := by
+  simp
+
+-- Single-slot instantiation, atomicity, quantifier rank and free-variable support are preserved
+-- across arbitrary language universes.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : Type uι} {α : Type*}
+    (φ : L.BoundedFormulaInf ι α 1) (t : L.Term (α ⊕ Fin 0)) :
+    g.onBoundedFormulaInf (φ.inst t) = (g.onBoundedFormulaInf φ).inst (g.onTerm t) ∧
+      ((g.onBoundedFormulaInf φ).IsAtomic ↔ φ.IsAtomic) ∧
+      (g.onBoundedFormulaInf φ).qrank = φ.qrank ∧
+      (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport := by
+  simp
+
+-- Extending a language map by `addConstants` and mapping constants via `lhomWithConstantsMap`
+-- interact cleanly with `constantSupport`, `constantsVarsEquiv` and `abstractConst`.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : Type uι} {α : Type*}
+    {n : ℕ} (φ : L[[ℕ]].BoundedFormulaInf ι α n) (f : ℕ → Bool) (c : ℕ) :
+    ((g.addConstants ℕ).onBoundedFormulaInf φ).constantSupport = φ.constantSupport ∧
+      ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ).constantSupport =
+        f '' φ.constantSupport ∧
+      BoundedFormulaInf.constantsVarsEquiv ((g.addConstants ℕ).onBoundedFormulaInf φ) =
+        g.onBoundedFormulaInf (BoundedFormulaInf.constantsVarsEquiv φ) ∧
+      BoundedFormulaInf.constantsVarsEquiv ((L.lhomWithConstantsMap f).onBoundedFormulaInf φ) =
+        TauCeti.BoundedFormulaInf.subst (BoundedFormulaInf.constantsVarsEquiv φ)
+          (Term.var ∘ Sum.map f id) ∧
+      (g.addConstants ℕ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ) =
+        BoundedFormulaInf.abstractConst c ((g.addConstants ℕ).onBoundedFormulaInf φ) := by
   simp
 
 -- Lifting a language equivalence by `LEquiv.addConstants` commutes with single-constant
--- abstraction followed by existential quantification, and preserves the constant support.
+-- abstraction followed by existential quantification and preserves `constantSupport`, while
+-- finitary `constantsVarsEquiv`, `relabel` and `toFormula` commute with `addConstants`.
 example {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L')
-    {ι α γ : Type*} [DecidableEq γ] (c : γ) (φ : L[[γ]].FormulaInf ι α) :
+    {ι : Type uι} {α β γ : Type*} [DecidableEq γ] {m n : ℕ} (c : γ)
+    (φ : L[[γ]].FormulaInf ι α) (ψ : L[[γ]].BoundedFormula α n) (ρ : γ ⊕ α → β ⊕ Fin m) :
     (e.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ).ex =
         (BoundedFormulaInf.abstractConst c ((e.addConstants γ).onBoundedFormulaInf φ)).ex ∧
       ((e.addConstants γ).onBoundedFormulaInf
         (BoundedFormulaInf.abstractConst c φ)).constantSupport =
-        φ.constantSupport \ {c} := by
+        φ.constantSupport \ {c} ∧
+      ((BoundedFormula.constantsVarsEquiv
+        (((e.addConstants γ).toLHom).onBoundedFormula ψ)).relabel ρ).toFormula =
+        (e.toLHom.onBoundedFormula
+          ((BoundedFormula.constantsVarsEquiv ψ).relabel ρ)).toFormula := by
   simp

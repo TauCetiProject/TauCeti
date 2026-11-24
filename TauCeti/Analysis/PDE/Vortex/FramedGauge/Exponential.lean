@@ -144,7 +144,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
   have hC₂R : C₂ * R < 1 := by nlinarith
   obtain ⟨v, hv, hvs⟩ := hlog hh hCR
   have hu_cont : Continuous fun z ↦ (u z : ℂ) :=
-    continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
+    continuous_subtypeVal.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
   -- Pointwise, `‖u - 1‖ < 1` everywhere: almost everywhere by the Sobolev embedding, then
   -- everywhere by continuity.
   have hsmall : ∀ z, ‖(u z : ℂ) - 1‖ ≤ C₂ * R :=
@@ -155,8 +155,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
   have hslit (z : ℂ) : (u z : ℂ) ∈ slitPlane := by
     simpa using mem_slitPlane_of_norm_lt_one ((hsmall z).trans_lt hC₂R)
   refine ⟨fun z ↦ arg (u z : ℂ), ?_, ?_, ?_⟩
-  · exact continuous_iff_continuousAt.2 fun z ↦
-      (continuousAt_arg (hslit z)).comp_of_eq hu_cont.continuousAt rfl
+  · exact continuousOn_arg.comp_continuous hu_cont hslit
   · -- `arg u = -i log u`, and `log u = log (1 + (u - 1))` lies in `H^s`.
     exact mem_realSobolevFunctions_of_ae_eq_ofReal (v := (-I) • v)
       (hvs.toTemperedDistribution_smul _) (Circle.neg_I_smul_ae_eq_arg hhu hv)

@@ -217,7 +217,7 @@ def powSaturationInfClosureToGroupClosure :
     ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) →*
       Subgroup.closure (s : Set G) :=
   (s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid).subtype.codRestrict _
-    fun x => x.2.2
+    fun x => x.property.2
 
 /-- `powSaturationInfClosureToGroupClosure` preserves the underlying element of the ambient
 group. -/
@@ -247,7 +247,7 @@ theorem mrange_powSaturationInfClosureToGroupClosure :
       (s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation := by
   ext ⟨x, hx⟩
   rw [powSaturation_comap, mem_comap, Subgroup.coe_subtype]
-  exact ⟨fun ⟨y, hy⟩ => (congrArg Subtype.val hy) ▸ y.2.1,
+  exact ⟨fun ⟨y, hy⟩ => (congrArg Subtype.val hy) ▸ y.property.1,
     fun hx' => ⟨⟨x, mem_inf.mpr ⟨hx', hx⟩⟩, rfl⟩⟩
 
 /-- The canonical multiplicative equivalence identifying the saturation of `s` inside
@@ -259,10 +259,11 @@ theorem mrange_powSaturationInfClosureToGroupClosure :
 def powSaturationInfClosureEquiv :
     ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) ≃*
       ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation where
-  toFun x := ⟨s.powSaturationInfClosureToGroupClosure x, by rw [powSaturation_comap]; exact x.2.1⟩
-  invFun z := ⟨z.1.1, Submonoid.mem_inf.mpr
-    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.1).mp
-      z.2, z.1.2⟩⟩
+  toFun x := ⟨s.powSaturationInfClosureToGroupClosure x,
+      by rw [powSaturation_comap]; exact x.property.1⟩
+  invFun z := ⟨z.val.val, Submonoid.mem_inf.mpr
+    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.val).mp
+      z.property, z.val.property⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

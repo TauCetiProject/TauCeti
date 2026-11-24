@@ -32,8 +32,9 @@ Lifting a language map `g : L →ᴸ L'` to constant expansions via
   expansion along `h.comp g`.
 * `FirstOrder.Language.LHom.isExpansionOn_reduct_of_comp`: the reduct along `h` of an expansion
   along `h.comp g` is an expansion along `g`.
-* `FirstOrder.Language.LHom.id_isExpansionOn_reduct`: the reduct of an expansion along the map
-  it expands along is the original structure.
+* `FirstOrder.Language.LHom.reduct_eq_of_isExpansionOn` and
+  `FirstOrder.Language.LHom.id_isExpansionOn_reduct`: the reduct of an expansion along the map
+  it expands along equals the original structure.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
 * `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
@@ -49,7 +50,10 @@ Adjoining constants to an algebraic language gives an algebraic language
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`); `Equiv.sumEmpty` absorbs
+`lhomWithConstantsMap` and commutes with `LHom.addConstants`
+(`FirstOrder.Language.sumEmpty_lhomWithConstantsMap_onRelation`,
+`FirstOrder.Language.LHom.sumEmpty_addConstants_onRelation`). Symbol sets of `L[[γ]]` avoiding the
 added constants lie in the range of `lhomWithConstants`
 (`FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
 `FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
@@ -96,6 +100,13 @@ theorem isExpansionOn_reduct_of_comp (h : L' →ᴸ L'') (g : L →ᴸ L') (M : 
     @IsExpansionOn L L' g M _ (h.reduct M) :=
   @IsExpansionOn.mk L L' g M _ (h.reduct M) (fun f x => (h.comp g).map_onFunction f x)
     (fun R x => (h.comp g).map_onRelation R x)
+
+/-- If the `L'`-structure on `M` expands its `L`-structure along `g`, then its reduct along `g`
+equals the `L`-structure. -/
+theorem reduct_eq_of_isExpansionOn (g : L →ᴸ L') (M : Type w) [S : L.Structure M]
+    [L'.Structure M] [g.IsExpansionOn M] : g.reduct M = S :=
+  Structure.ext (funext fun _ => funext fun f => funext fun x => g.map_onFunction f x)
+    (funext fun _ => funext fun R => funext fun x => g.map_onRelation R x)
 
 /-- If the `L'`-structure on `M` expands its `L`-structure along `g`, then its reduct along `g` is
 the `L`-structure again, in the sense that the identity map expands the reduct to it. -/
@@ -257,6 +268,36 @@ theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
 end WithConstantsSymbols
+
+section ConstantsVarsCommutation
+
+/-- Mapping constants along `f` leaves the projection of a relation symbol of `L[[γ]]` to `L`
+unchanged. -/
+@[simp]
+theorem sumEmpty_lhomWithConstantsMap_onRelation {L : Language.{u, v}} {γ : Type w} {δ : Type*}
+    (f : γ → δ) {l : ℕ} (R : L[[γ]].Relations l) :
+    (Equiv.sumEmpty _ _) ((L.lhomWithConstantsMap f).onRelation R) = (Equiv.sumEmpty _ _) R := by
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+namespace LHom
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}}
+
+/-- Eliminating the empty constant-relation summand commutes with `LHom.addConstants`. -/
+@[simp]
+theorem sumEmpty_addConstants_onRelation (g : L →ᴸ L') {γ : Type w} {l : ℕ}
+    (R : L[[γ]].Relations l) :
+    (Equiv.sumEmpty _ _) ((g.addConstants γ).onRelation R) =
+      g.onRelation ((Equiv.sumEmpty _ _) R) := by
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+end LHom
+
+end ConstantsVarsCommutation
 
 namespace LEquiv
 
@@ -445,32 +486,11 @@ theorem addConstants_onRelation_inl {n : ℕ} (g : L →ᴸ L') (R : L.Relations
     (g.addConstants γ).onRelation (Sum.inl R : L[[γ]].Relations n) = Sum.inl (g.onRelation R) :=
   (rfl)
 
-/-- Eliminating the empty right relation summand commutes with `LHom.addConstants`. -/
-@[simp]
-theorem sumEmpty_addConstants_onRelation {n : ℕ} (g : L →ᴸ L') (R : L[[γ]].Relations n) :
-    (_root_.Equiv.sumEmpty _ _) ((g.addConstants γ).onRelation R) =
-      g.onRelation ((_root_.Equiv.sumEmpty _ _) R) := by
-  cases R with
-  | inl R => rfl
-  | inr R => exact R.elim
-
 /-- Lifting an injective language map by `LHom.addConstants` preserves injectivity. -/
 theorem Injective.addConstants {g : L →ᴸ L'} (hg : g.Injective) (γ : Type w) :
     (g.addConstants γ).Injective where
-  onFunction {n} f₁ f₂ h := by
-    rcases f₁ with f₁ | c₁ <;> rcases f₂ with f₂ | c₂
-    · exact congrArg Sum.inl (hg.onFunction (Sum.inl_injective h))
-    · cases h
-    · cases h
-    · cases n with
-      | zero => exact congrArg Sum.inr (Sum.inr_injective h)
-      | succ _ => exact isEmptyElim c₁
-  onRelation {_} R₁ R₂ h := by
-    rcases R₁ with R₁ | R₁ <;> rcases R₂ with R₂ | R₂
-    · exact congrArg Sum.inl (hg.onRelation (Sum.inl_injective h))
-    · exact R₂.elim
-    · exact R₁.elim
-    · exact R₁.elim
+  onFunction {_} := hg.onFunction.sumMap Function.injective_id
+  onRelation {_} := hg.onRelation.sumMap Function.injective_id
 
 end LHom
 

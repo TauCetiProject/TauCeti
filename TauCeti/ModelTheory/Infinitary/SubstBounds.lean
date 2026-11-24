@@ -493,7 +493,7 @@ theorem onBoundedFormulaInf_substBounds (g : L →ᴸ L') : ∀ {m k : ℕ}
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
 
-/-- Language maps commute with instantiating the single bound position of a formula at a term. -/
+/-- A language map commutes with instantiating the single bound position of a formula at a term. -/
 @[simp]
 theorem onBoundedFormulaInf_inst (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α 1)
     (t : L.Term (α ⊕ Fin 0)) :

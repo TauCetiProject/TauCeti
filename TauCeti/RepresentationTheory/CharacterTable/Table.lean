@@ -213,7 +213,7 @@ theorem coe_finEquivIrreducibleCharacters_apply (i : Fin (Nat.card (ConjClasses 
 @[simp]
 theorem irreducibleCharacter_mem (i : Fin (Nat.card (ConjClasses G))) :
     irreducibleCharacter k i ∈ irreducibleCharacters k G :=
-  (finEquivIrreducibleCharacters k G i).2
+  (finEquivIrreducibleCharacters k G i).property
 
 /-- Distinct rows of the character table are distinct characters. -/
 theorem irreducibleCharacter_injective :
@@ -354,7 +354,7 @@ variable {k G}
 
 @[simp]
 theorem basisIrreducibleCharacter_apply (i : Fin (Nat.card (ConjClasses G))) (g : G) :
-    (basisIrreducibleCharacter k G i).1 g = irreducibleCharacter k i g := by
+    (basisIrreducibleCharacter k G i).val g = irreducibleCharacter k i g := by
   have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [basisIrreducibleCharacter, ClassFunction.basisOfIrreducibleCharacters_apply,
     ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]

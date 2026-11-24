@@ -259,8 +259,8 @@ private theorem restoreWord_segment_deleteItems_true (i : ℕ) :
       have hk : k ∉ S := disjoint_left.1 h (Ω.mem_sectionItems.2 ⟨hij, Nat.lt_succ_self j⟩)
       have hc : S.collapse (j + 1) = S.collapse j + 1 := collapse_succ_of_notMem hk
       have hlt := collapse_lt_card hk
-      rw [← Ω.segment_append hij j.le_succ hjn, hc,
-        ← (Ω.deleteItems S hS).segment_append (S.collapse_mono hij) (S.collapse j).le_succ hlt,
+      rw [← Ω.segment_append hij j.le_succ, hc,
+        ← (Ω.deleteItems S hS).segment_append (S.collapse_mono hij) (S.collapse j).le_succ,
         restoreWord_append, ih]
       have h₁ : Ω.segment j (j + 1) true = [(Sum.inl k, true)] := Ω.segment_succ k true
       have h₂ : (Ω.deleteItems S hS).segment (S.collapse j) (S.collapse j + 1) true =

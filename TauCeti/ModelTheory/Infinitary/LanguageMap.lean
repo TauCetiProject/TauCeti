@@ -9,8 +9,7 @@ public import TauCeti.ModelTheory.Infinitary.Semantics
 public import Mathlib.ModelTheory.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.Operations
 public import TauCeti.ModelTheory.Infinitary.Reindex
-public import TauCeti.ModelTheory.Infinitary.Substitution
-import TauCeti.ModelTheory.Syntax
+public import TauCeti.ModelTheory.Infinitary.ToFormula
 import TauCeti.ModelTheory.Term.Substitution
 
 /-!
@@ -39,26 +38,36 @@ equivalence of formula types, so that translating along it loses no formula.
 * `FirstOrder.Language.LHom.realize_onBoundedFormulaInf`: along an expansion, the image of a
   formula is realized exactly when the formula is.
 * `FirstOrder.Language.LHom.realize_sentenceInf_onBoundedFormulaInf`: its form for sentences.
-* `FirstOrder.Language.LHom.id_onBoundedFormulaInf`,
-  `FirstOrder.Language.LHom.comp_onBoundedFormulaInf`,
-  `FirstOrder.Language.LEquiv.refl_onBoundedFormulaInf` and
-  `FirstOrder.Language.LEquiv.trans_onBoundedFormulaInf`: functoriality on homomorphisms and
-  equivalences.
+* `FirstOrder.Language.LHom.id_onBoundedFormulaInf` and
+  `FirstOrder.Language.LHom.comp_onBoundedFormulaInf`: the action is functorial.
 * `FirstOrder.Language.LHom.onBoundedFormulaInf_toInf`,
   `FirstOrder.Language.LHom.onBoundedFormulaInf_mapBound`,
   `FirstOrder.Language.LHom.onBoundedFormulaInf_castLE`,
   `FirstOrder.Language.LHom.onBoundedFormulaInf_reindex`,
-  `FirstOrder.Language.LHom.onBoundedFormulaInf_subst` and
-  `FirstOrder.Language.LHom.onBoundedFormulaInf_relabel`: the action commutes with the embedding
-  of finitary formulas, bound-variable relabelling and weakening, carrier transport,
-  free-variable substitution and free-variable relabelling, as well as derived connectives,
-  quantifier closures (`alls`, `exs`, `exsLast`), coded connectives (`iInfAlong`, `iSupAlong`)
-  and atomicity (`isAtomic_onBoundedFormulaInf_iff`).
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_subst`,
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_relabel` and
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_toFormula`: the action commutes with the embedding
+  of finitary formulas, with relabelling and weakening of bound-variable slots, with transport
+  along a coding of carriers, with free-variable substitution and relabelling, and with opening
+  bound positions as free variables; along the way it commutes with `⊥`, `⊤`, negation, the binary
+  connectives `⊓`, `⊔` and `iff`, existential quantification, the quantifier closures `alls`, `exs`
+  and `exsLast`, and the coded connectives `iInfAlong` and `iSupAlong`, and preserves atomicity
+  (`FirstOrder.Language.LHom.isAtomic_onBoundedFormulaInf`,
+  `FirstOrder.Language.BoundedFormulaInf.IsAtomic.onBoundedFormulaInf`).
+* `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_imp`,
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_all`,
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_iSup` and
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_iInf`: a language map reflects the
+  compound constructors onto preimages, with no injectivity hypothesis.
 * `FirstOrder.Language.LHom.Injective.onBoundedFormulaInf_injective`: an injective language map
   acts injectively on infinitary formulas.
-* `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
-  translation along a language equivalence, the target structure being the reduct along the
-  inverse map.
+* `FirstOrder.Language.LEquiv.onBoundedFormulaInf_refl` and
+  `FirstOrder.Language.LEquiv.onBoundedFormulaInf_trans`: the equivalence action respects identity
+  and composition of language equivalences.
+* `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf` and
+  `FirstOrder.Language.LEquiv.realize_sentenceInf_onBoundedFormulaInf`: realization of formulas and
+  sentences is preserved by translation along a language equivalence, the target structure being
+  the reduct along the inverse map.
 
 ## References
 
@@ -68,9 +77,10 @@ equivalence of formula types, so that translating along it loses no formula.
 * Divergences from that source: the action is defined at every carrier `ι` rather than at `ℕ`,
   between languages in arbitrary universes rather than a common one, and as a method of the
   language homomorphism named after Mathlib's finitary `LHom.onBoundedFormula`; the functor laws,
-  commutation with carrier-generic substitution and relabelling, injectivity and the equivalence
-  along a language equivalence, which follows Mathlib's finitary `LEquiv.onBoundedFormula`, are
-  new.
+  commutation with mixed free/bound `relabel`, `toFormula`, `alls`, `exs`, `exsLast` and the binary
+  connectives, preservation of `IsAtomic`, constructor inversion, injectivity, and the equivalence
+  along a language equivalence (following Mathlib's finitary `LEquiv.onBoundedFormula`) are new or
+  generalized to arbitrary carriers and universes.
 -/
 
 public section
@@ -141,6 +151,59 @@ theorem onBoundedFormulaInf_iInf (φs : ι → L.BoundedFormulaInf ι α n) :
     g.onBoundedFormulaInf (.iInf φs) = .iInf fun i => g.onBoundedFormulaInf (φs i) := (rfl)
 
 end ConstructorEqs
+
+section ConstructorInversion
+
+variable {g : L →ᴸ L'} {n : ℕ}
+
+/-- If the image of a formula under a language map is an implication, the formula is itself an
+implication of preimages of the two sides. -/
+theorem exists_of_onBoundedFormulaInf_eq_imp {χ : L.BoundedFormulaInf ι α n}
+    {φ ψ : L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = φ.imp ψ) :
+    ∃ χ₁ χ₂ : L.BoundedFormulaInf ι α n, χ = χ₁.imp χ₂ ∧
+      g.onBoundedFormulaInf χ₁ = φ ∧ g.onBoundedFormulaInf χ₂ = ψ := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.imp.injEq] at h
+  exact ⟨_, _, rfl, h⟩
+
+/-- If the image of a formula under a language map is a universal quantification, the formula is
+itself a universal quantification of a preimage of the body. -/
+theorem exists_of_onBoundedFormulaInf_eq_all {χ : L.BoundedFormulaInf ι α n}
+    {φ : L'.BoundedFormulaInf ι α (n + 1)} (h : g.onBoundedFormulaInf χ = φ.all) :
+    ∃ χ₁ : L.BoundedFormulaInf ι α (n + 1), χ = χ₁.all ∧ g.onBoundedFormulaInf χ₁ = φ := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.all.injEq] at h
+  exact ⟨_, rfl, h⟩
+
+/-- If the image of a formula under a language map is a disjunction over the carrier, the formula
+is itself a disjunction of preimages of the disjuncts. -/
+theorem exists_of_onBoundedFormulaInf_eq_iSup {χ : L.BoundedFormulaInf ι α n}
+    {φs : ι → L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = .iSup φs) :
+    ∃ χs : ι → L.BoundedFormulaInf ι α n, χ = .iSup χs ∧
+      ∀ i, g.onBoundedFormulaInf (χs i) = φs i := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.iSup.injEq] at h
+  exact ⟨_, rfl, congrFun h⟩
+
+/-- If the image of a formula under a language map is a conjunction over the carrier, the formula
+is itself a conjunction of preimages of the conjuncts. -/
+theorem exists_of_onBoundedFormulaInf_eq_iInf {χ : L.BoundedFormulaInf ι α n}
+    {φs : ι → L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = .iInf φs) :
+    ∃ χs : ι → L.BoundedFormulaInf ι α n, χ = .iInf χs ∧
+      ∀ i, g.onBoundedFormulaInf (χs i) = φs i := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.iInf.injEq] at h
+  exact ⟨_, rfl, congrFun h⟩
+
+end ConstructorInversion
 
 /-- **Realization along an expansion.** If the `L'`-structure on `M` expands its `L`-structure
 along `g`, the image of an infinitary formula under `g` is realized exactly when the formula is.
@@ -231,64 +294,23 @@ theorem onBoundedFormulaInf_top :
 @[simp]
 theorem onBoundedFormulaInf_inf (φ ψ : L.BoundedFormulaInf ι α n) :
     g.onBoundedFormulaInf (φ ⊓ ψ) = g.onBoundedFormulaInf φ ⊓ g.onBoundedFormulaInf ψ := by
-  simp [BoundedFormulaInf.inf_def]
+  rw [BoundedFormulaInf.inf_def, BoundedFormulaInf.inf_def, onBoundedFormulaInf_not,
+    onBoundedFormulaInf_imp, onBoundedFormulaInf_not]
 
 /-- A language map commutes with binary disjunction. -/
 @[simp]
 theorem onBoundedFormulaInf_sup (φ ψ : L.BoundedFormulaInf ι α n) :
     g.onBoundedFormulaInf (φ ⊔ ψ) = g.onBoundedFormulaInf φ ⊔ g.onBoundedFormulaInf ψ := by
-  simp [BoundedFormulaInf.sup_def]
+  rw [BoundedFormulaInf.sup_def, BoundedFormulaInf.sup_def, onBoundedFormulaInf_imp,
+    onBoundedFormulaInf_not]
 
-/-- A language map commutes with logical equivalence. -/
+/-- A language map commutes with the biconditional. -/
 @[simp]
 theorem onBoundedFormulaInf_iff (φ ψ : L.BoundedFormulaInf ι α n) :
     g.onBoundedFormulaInf (φ.iff ψ) =
       (g.onBoundedFormulaInf φ).iff (g.onBoundedFormulaInf ψ) := by
-  simp [BoundedFormulaInf.iff_def]
-
-/-- A language map commutes with universally closing all bound-variable slots. -/
-@[simp]
-theorem onBoundedFormulaInf_alls :
-    ∀ {n : ℕ} (φ : L.BoundedFormulaInf ι α n),
-      g.onBoundedFormulaInf φ.alls = (g.onBoundedFormulaInf φ).alls
-  | 0, φ => by rw [BoundedFormulaInf.alls_zero, BoundedFormulaInf.alls_zero]
-  | _ + 1, φ => by
-    rw [BoundedFormulaInf.alls_succ, BoundedFormulaInf.alls_succ,
-      onBoundedFormulaInf_alls φ.all, onBoundedFormulaInf_all]
-
-/-- A language map commutes with existentially closing all bound-variable slots. -/
-@[simp]
-theorem onBoundedFormulaInf_exs :
-    ∀ {n : ℕ} (φ : L.BoundedFormulaInf ι α n),
-      g.onBoundedFormulaInf φ.exs = (g.onBoundedFormulaInf φ).exs
-  | 0, φ => by rw [BoundedFormulaInf.exs_zero, BoundedFormulaInf.exs_zero]
-  | _ + 1, φ => by
-    rw [BoundedFormulaInf.exs_succ, BoundedFormulaInf.exs_succ,
-      onBoundedFormulaInf_exs φ.ex, onBoundedFormulaInf_ex]
-
-/-- A language map commutes with existentially quantifying the last `k` bound-variable slots. -/
-@[simp]
-theorem onBoundedFormulaInf_exsLast :
-    ∀ {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)),
-      g.onBoundedFormulaInf (BoundedFormulaInf.exsLast φ) =
-        BoundedFormulaInf.exsLast (g.onBoundedFormulaInf φ)
-  | 0, φ => by rw [BoundedFormulaInf.exsLast_zero, BoundedFormulaInf.exsLast_zero]
-  | k + 1, φ => by
-    rw [BoundedFormulaInf.exsLast_succ, BoundedFormulaInf.exsLast_succ,
-      onBoundedFormulaInf_exsLast (k := k) φ.ex, onBoundedFormulaInf_ex]
-
-/-- A language map preserves and reflects atomicity of infinitary formulas. -/
-@[simp]
-theorem isAtomic_onBoundedFormulaInf_iff {φ : L.BoundedFormulaInf ι α n} :
-    (g.onBoundedFormulaInf φ).IsAtomic ↔ φ.IsAtomic := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · cases φ with
-    | equal t₁ t₂ => exact .equal t₁ t₂
-    | rel R ts => exact .rel R ts
-    | falsum | imp _ _ | all _ | iSup _ | iInf _ => cases h
-  · cases h with
-    | equal t₁ t₂ => exact .equal _ _
-    | rel R ts => exact .rel _ _
+  rw [BoundedFormulaInf.iff_def, BoundedFormulaInf.iff_def, onBoundedFormulaInf_inf,
+    onBoundedFormulaInf_imp, onBoundedFormulaInf_imp]
 
 /-- A language map commutes with coded conjunctions. -/
 @[simp]
@@ -315,6 +337,61 @@ theorem onBoundedFormulaInf_iSupAlong {ι' : Type*} (c : TauCeti.IndexCoding ι'
   exact congrArg _ this
 
 end Connectives
+
+/-- A language map commutes with the universal closure of all bound-variable slots. -/
+@[simp]
+theorem onBoundedFormulaInf_alls (g : L →ᴸ L') :
+    ∀ {n : ℕ} (φ : L.BoundedFormulaInf ι α n),
+      g.onBoundedFormulaInf φ.alls = (g.onBoundedFormulaInf φ).alls := by
+  intro n
+  induction n with
+  | zero =>
+    intro φ
+    rw [BoundedFormulaInf.alls_zero, BoundedFormulaInf.alls_zero]
+  | succ n ih =>
+    intro φ
+    rw [BoundedFormulaInf.alls_succ, BoundedFormulaInf.alls_succ, ih, onBoundedFormulaInf_all]
+
+/-- A language map commutes with the existential closure of all bound-variable slots. -/
+@[simp]
+theorem onBoundedFormulaInf_exs (g : L →ᴸ L') :
+    ∀ {n : ℕ} (φ : L.BoundedFormulaInf ι α n),
+      g.onBoundedFormulaInf φ.exs = (g.onBoundedFormulaInf φ).exs := by
+  intro n
+  induction n with
+  | zero =>
+    intro φ
+    rw [BoundedFormulaInf.exs_zero, BoundedFormulaInf.exs_zero]
+  | succ n ih =>
+    intro φ
+    rw [BoundedFormulaInf.exs_succ, BoundedFormulaInf.exs_succ, ih, onBoundedFormulaInf_ex]
+
+/-- A language map commutes with existential quantification over the last `k` bound-variable
+slots. -/
+@[simp]
+theorem onBoundedFormulaInf_exsLast (g : L →ᴸ L') {n : ℕ} :
+    ∀ {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)),
+      g.onBoundedFormulaInf φ.exsLast = (g.onBoundedFormulaInf φ).exsLast := by
+  intro k
+  induction k with
+  | zero =>
+    intro φ
+    rw [BoundedFormulaInf.exsLast_zero, BoundedFormulaInf.exsLast_zero]
+  | succ k ih =>
+    intro φ
+    rw [BoundedFormulaInf.exsLast_succ, BoundedFormulaInf.exsLast_succ, ih, onBoundedFormulaInf_ex]
+
+/-- The image of an infinitary formula under any language map is atomic if and only if the formula
+is atomic; no injectivity on symbols is required. -/
+@[simp]
+theorem isAtomic_onBoundedFormulaInf (g : L →ᴸ L') {n : ℕ}
+    {φ : L.BoundedFormulaInf ι α n} :
+    (g.onBoundedFormulaInf φ).IsAtomic ↔ φ.IsAtomic := by
+  cases φ with
+  | equal t₁ t₂ => exact ⟨fun _ => .equal t₁ t₂, fun _ => .equal _ _⟩
+  | rel R ts => exact ⟨fun _ => .rel R ts, fun _ => .rel _ _⟩
+  | falsum | imp _ _ | all _ | iSup _ | iInf _ =>
+    constructor <;> · rintro ⟨⟩
 
 /-- A language map commutes with the embedding of finitary formulas: translating a finitary
 formula and then embedding it is embedding it and then translating. -/
@@ -365,7 +442,8 @@ theorem onBoundedFormulaInf_reindex {κ : Type*} (g : L →ᴸ L') (c : TauCeti.
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
 
-/-- A language map commutes with free-variable substitution, acting on the substituted terms. -/
+/-- A language map commutes with substituting terms for free variables, acting on each substituted
+term by `g.onTerm`. -/
 @[simp]
 theorem onBoundedFormulaInf_subst {β : Type uβ} (g : L →ᴸ L') {n : ℕ}
     (φ : L.BoundedFormulaInf ι α n) (f : α → L.Term β) :
@@ -373,8 +451,8 @@ theorem onBoundedFormulaInf_subst {β : Type uβ} (g : L →ᴸ L') {n : ℕ}
       TauCeti.BoundedFormulaInf.subst (g.onBoundedFormulaInf φ) fun a => g.onTerm (f a) := by
   have hatom {k : ℕ} :
       (fun x : α ⊕ Fin k =>
-          g.onTerm (Sum.elim (Term.relabel Sum.inl ∘ f) (Term.var ∘ Sum.inr) x)) =
-        Sum.elim (Term.relabel Sum.inl ∘ fun a => g.onTerm (f a)) (Term.var ∘ Sum.inr) := by
+        g.onTerm (Sum.elim (Term.relabel Sum.inl ∘ f) (Term.var ∘ Sum.inr) x)) =
+      Sum.elim (Term.relabel Sum.inl ∘ fun a => g.onTerm (f a)) (Term.var ∘ Sum.inr) := by
     funext x
     cases x <;> simp
   induction φ with
@@ -386,13 +464,27 @@ theorem onBoundedFormulaInf_subst {β : Type uβ} (g : L →ᴸ L') {n : ℕ}
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
 
-/-- A language map commutes with free-variable relabelling into free variables and new bound
+/-- A language map commutes with relabelling free variables into free variables and new bound
 slots. -/
 @[simp]
 theorem onBoundedFormulaInf_relabel {β : Type uβ} (g : L →ᴸ L') {m n : ℕ}
-    (f : α → β ⊕ Fin m) (φ : L.BoundedFormulaInf ι α n) :
-    g.onBoundedFormulaInf (TauCeti.BoundedFormulaInf.relabel f φ) =
-      TauCeti.BoundedFormulaInf.relabel f (g.onBoundedFormulaInf φ) := by
+    (h : α → β ⊕ Fin m) (φ : L.BoundedFormulaInf ι α n) :
+    g.onBoundedFormulaInf (TauCeti.BoundedFormulaInf.relabel h φ) =
+      TauCeti.BoundedFormulaInf.relabel h (g.onBoundedFormulaInf φ) := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- A language map commutes with opening the in-scope bound positions as free variables. -/
+@[simp]
+theorem onBoundedFormulaInf_toFormula (g : L →ᴸ L') {n : ℕ}
+    (φ : L.BoundedFormulaInf ι α n) :
+    g.onBoundedFormulaInf φ.toFormula = (g.onBoundedFormulaInf φ).toFormula := by
   induction φ with
   | falsum => simp
   | equal t₁ t₂ => simp
@@ -449,12 +541,16 @@ theorem Injective.onBoundedFormulaInf_injective {g : L →ᴸ L'} (hg : g.Inject
 
 end LHom
 
-/-- Translating an atomic infinitary formula along a language map gives an atomic formula. -/
-theorem BoundedFormulaInf.IsAtomic.onBoundedFormulaInf {L : Language.{u, v}}
-    {L' : Language.{u', v'}} {ι : Type uι} {α : Type uα} {n : ℕ}
-    {φ : L.BoundedFormulaInf ι α n} (h : φ.IsAtomic) (g : L →ᴸ L') :
-    (g.onBoundedFormulaInf φ).IsAtomic :=
-  (g.isAtomic_onBoundedFormulaInf_iff).2 h
+namespace BoundedFormulaInf
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}} {ι : Type uι} {α : Type uα}
+
+/-- A language map sends atomic infinitary formulas to atomic infinitary formulas. -/
+theorem IsAtomic.onBoundedFormulaInf {n : ℕ} {φ : L.BoundedFormulaInf ι α n}
+    (h : φ.IsAtomic) (g : L →ᴸ L') : (g.onBoundedFormulaInf φ).IsAtomic :=
+  g.isAtomic_onBoundedFormulaInf.2 h
+
+end BoundedFormulaInf
 
 namespace LEquiv
 
@@ -490,21 +586,19 @@ theorem onBoundedFormulaInf_symm (e : L ≃ᴸ L') {n : ℕ} :
       e.symm.onBoundedFormulaInf :=
   (rfl)
 
-/-- The reflexive language equivalence acts as the identity equivalence on infinitary formulas. -/
+/-- The identity language equivalence acts as the identity equivalence on infinitary formulas. -/
 @[simp]
-theorem refl_onBoundedFormulaInf {n : ℕ} :
-    (LEquiv.refl L).onBoundedFormulaInf = _root_.Equiv.refl (L.BoundedFormulaInf ι α n) := by
-  ext φ
-  simp
+theorem onBoundedFormulaInf_refl {n : ℕ} :
+    ((LEquiv.refl L).onBoundedFormulaInf : L.BoundedFormulaInf ι α n ≃ L.BoundedFormulaInf ι α n) =
+      _root_.Equiv.refl _ :=
+  _root_.Equiv.ext LHom.id_onBoundedFormulaInf
 
-/-- Composition of language equivalences goes to composition of equivalences of infinitary
+/-- A composite language equivalence acts as the composite of the equivalences on infinitary
 formulas. -/
-@[simp]
-theorem trans_onBoundedFormulaInf (e₁ : L ≃ᴸ L') (e₂ : L' ≃ᴸ L'') {n : ℕ} :
-    (e₁.trans e₂).onBoundedFormulaInf =
-      (e₁.onBoundedFormulaInf : L.BoundedFormulaInf ι α n ≃ _).trans e₂.onBoundedFormulaInf := by
-  ext φ
-  simp
+theorem onBoundedFormulaInf_trans (e : L ≃ᴸ L') (e' : L' ≃ᴸ L'') {n : ℕ} :
+    ((e.trans e').onBoundedFormulaInf : L.BoundedFormulaInf ι α n ≃ L''.BoundedFormulaInf ι α n) =
+      e.onBoundedFormulaInf.trans e'.onBoundedFormulaInf :=
+  _root_.Equiv.ext (LHom.comp_onBoundedFormulaInf e'.toLHom e.toLHom)
 
 /-- **Realization along a language equivalence.** An `L`-structure, reinterpreted as an
 `L'`-structure along the inverse map, realizes the translation of an infinitary formula exactly
@@ -518,6 +612,17 @@ theorem realize_onBoundedFormulaInf (e : L ≃ᴸ L') {M : Type w} [L.Structure 
   -- translating back along the inverse map, an expansion of the reduct, gives `φ` again
   rw [← LHom.realize_onBoundedFormulaInf e.invLHom, ← LHom.comp_onBoundedFormulaInf, e.left_inv,
     LHom.id_onBoundedFormulaInf]
+
+/-- **Sentence realization along a language equivalence.** An `L`-structure, reinterpreted as an
+`L'`-structure along the inverse map, satisfies the translation of an infinitary sentence exactly
+when it satisfies the sentence. -/
+@[simp]
+theorem realize_sentenceInf_onBoundedFormulaInf (e : L ≃ᴸ L') {M : Type w} [L.Structure M]
+    (φ : L.SentenceInf ι) :
+    letI := e.invLHom.reduct M
+    SentenceInf.Realize (e.toLHom.onBoundedFormulaInf φ) M ↔ SentenceInf.Realize φ M := by
+  let := e.invLHom.reduct M
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, e.realize_onBoundedFormulaInf]
 
 end LEquiv
 

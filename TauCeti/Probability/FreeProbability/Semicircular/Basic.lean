@@ -151,7 +151,7 @@ theorem isSemicircular_iff_freeCumulant_const (hφ : φ 1 = 1) :
   rw [card_univ, Fintype.card_fin] at hm hc
   rw [hm, ← hc]
   exact sum_congr rfl fun π _ =>
-    prod_congr rfl fun B hB => hκ B (π.1.nonempty_of_mem_parts hB)
+    prod_congr rfl fun B hB => hκ B (π.val.nonempty_of_mem_parts hB)
 
 /-- For a normalised `φ`, the zero element is semicircular of variance zero. -/
 theorem isSemicircular_zero (hφ : φ 1 = 1) : IsSemicircular φ (0 : A) 0 where

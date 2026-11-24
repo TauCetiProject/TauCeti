@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
@@ -37,6 +38,10 @@ determined by divisibility when it is at most `1` everywhere, below `1` on the n
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
 discrete valuation ring on its own elements, and the points with zero support of its adic spectrum.
 
+Total divisibility passes to localizations and quotients: an element outside an ideal divides
+every element of it, and so localizations and quotients of a valuation ring are valuation rings
+as soon as they are domains.
+
 ## Main results
 
 * `TauCeti.ValuationRing.isSquare_one_add_four_mul_iff`: `1 + 4c` is a square if and only if
@@ -49,6 +54,11 @@ discrete valuation ring on its own elements, and the points with zero support of
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
+* `TauCeti.PreValuationRing.dvd_of_mem_of_notMem`: an element outside an ideal divides every
+  element of the ideal.
+* `TauCeti.PreValuationRing.of_isLocalization` and `TauCeti.ValuationRing.of_isLocalization`:
+  localizations of (pre)valuation rings are (pre)valuation rings. There are instances for
+  `Localization M` and for quotients `R ⧸ I`.
 
 ## References
 
@@ -75,16 +85,14 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
     · exact h
     -- Otherwise `2 = z * w`, and cancelling `z ^ 2` from `z ^ 2 * (1 + w) = z ^ 2 * w ^ 2 * c`
     -- shows that `w` is a unit.
-    have hz : IsRegular ((y - 1) * w) := hw ▸ h2
-    have hz := hz.of_mul_left
+    have hz : IsRegular (y - 1) := (hw ▸ h2 : IsRegular ((y - 1) * w)).of_mul_left
     have hw' : 1 + w = w * w * c := (hz.mul hz).left <| by
       linear_combination -hy - (y - 1 - ((y - 1) * w + 2) * c) * hw
     have hu : IsUnit w := IsUnit.of_mul_eq_one (w * c - 1) (by linear_combination -hw')
-    exact ⟨↑hu.unit⁻¹, by rw [hw, mul_assoc, IsUnit.mul_val_inv, mul_one]⟩
-  refine ⟨t, (h2.mul h2).left ?_⟩
-  rw [sub_eq_iff_eq_add] at ht
-  rw [ht] at hy
-  linear_combination -hy
+    rw [hw]
+    exact hu.mul_right_dvd.mpr dvd_rfl
+  -- With `y = 1 + 2 * t`, the equation `y * y = 1 + 4 * c` is `4 * (t ^ 2 + t) = 4 * c`.
+  exact ⟨t, (h2.mul h2).left <| by linear_combination -hy - (y + 1 + 2 * t) * ht⟩
 
 section Domination
 
@@ -141,7 +149,72 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
     (k : ℕ) :
     ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
   rw [hϖ.maximalIdeal_eq_of_preValuationRing]
-  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.2 k
+  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
+
+end ValuationRing
+
+namespace PreValuationRing
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [PreValuationRing R]
+
+/-- In a ring with total divisibility, an element outside an ideal divides every element of the
+ideal. -/
+theorem dvd_of_mem_of_notMem {I : Ideal R} {x s : R} (hx : x ∈ I) (hs : s ∉ I) : s ∣ x :=
+  (_root_.ValuationRing.dvd_total s x).resolve_right fun h ↦ hs (I.mem_of_dvd h hx)
+
+/-- A localization of a ring with total divisibility has total divisibility. -/
+theorem of_isLocalization (M : Submonoid R) (S : Type*) [CommSemiring S] [Algebra R S]
+    [IsLocalization M S] : PreValuationRing S := by
+  refine PreValuationRing.iff_dvd_total.mpr ⟨fun x y ↦ ?_⟩
+  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective M x
+  obtain ⟨⟨b, t⟩, rfl⟩ := IsLocalization.mk'_surjective M y
+  -- If `a * c = b` then `a / s * (s * c / t) = b / t`, and symmetrically.
+  rcases _root_.ValuationRing.dvd_total a b with ⟨c, rfl⟩ | ⟨c, rfl⟩
+  · refine .inl ⟨IsLocalization.mk' S (s * c : R) t, ?_⟩
+    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
+    congr 1
+    ring
+  · refine .inr ⟨IsLocalization.mk' S (t * c : R) s, ?_⟩
+    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
+    congr 1
+    ring
+
+/-- `Localization M` of a ring with total divisibility has total divisibility. -/
+instance (M : Submonoid R) : PreValuationRing (Localization M) :=
+  of_isLocalization M _
+
+end CommSemiring
+
+/-- A quotient of a ring with total divisibility has total divisibility. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) :
+    PreValuationRing (R ⧸ I) :=
+  Function.Surjective.preValuationRing (Ideal.Quotient.mk I).toMonoidHom.toMulHom
+    Ideal.Quotient.mk_surjective
+
+end PreValuationRing
+
+namespace ValuationRing
+
+/-- A localization of a ring with total divisibility is a valuation ring as soon as it is a
+domain. For a valuation domain this applies to every localization at a submonoid not
+containing `0`. -/
+theorem of_isLocalization {R : Type*} [CommSemiring R] [PreValuationRing R] (M : Submonoid R)
+    (S : Type*) [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] :
+    _root_.ValuationRing S :=
+  have := PreValuationRing.of_isLocalization M S
+  {}
+
+/-- `Localization M` of a ring with total divisibility is a valuation ring when it is a domain;
+for instance `Localization.AtPrime p` for a prime `p` of a valuation domain. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (M : Submonoid R)
+    [IsDomain (Localization M)] : _root_.ValuationRing (Localization M) where
+
+/-- A quotient of a ring with total divisibility is a valuation ring when it is a domain;
+for instance `R ⧸ p` for a prime `p` of a valuation domain `R`. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) [IsDomain (R ⧸ I)] :
+    _root_.ValuationRing (R ⧸ I) where
 
 end ValuationRing
 
@@ -161,12 +234,11 @@ theorem le_iff_dvd (v : R →*₀ Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, 
     · exact hyx
     -- `y = x * z`: either `z` is a unit, or `v y = v x * v z < v x` unless `x = 0`.
     by_cases hz : IsUnit z
-    · exact ⟨↑hz.unit⁻¹, by simp [mul_assoc]⟩
+    · exact hz.mul_right_dvd.mpr dvd_rfl
     rcases eq_or_ne (v x) 0 with hx | hx
     · simp [hsupp x hx]
-    rw [map_mul] at h
-    exact absurd h (mul_lt_of_lt_one_right (zero_lt_iff.mpr hx) (hlt z hz)).not_ge
-  · rw [hz, map_mul]
-    exact mul_le_of_le_one_right' (hle z)
+    exact absurd h ((map_mul v x z).trans_lt
+      (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hx) (hlt z hz))).not_ge
+  · exact hz ▸ (map_mul v y z).trans_le (mul_le_of_le_one_right' (hle z))
 
 end MonoidWithZeroHom

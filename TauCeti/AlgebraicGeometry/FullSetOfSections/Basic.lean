@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Projective
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Full sets of sections of a finite locally free scheme
@@ -121,16 +122,16 @@ factors through its closed subscheme exactly when the base change of `s` is a fu
 (`fullSetLocus_le_ker_iff`). -/
 noncomputable def fullSetLocus : S.IdealSheafData where
   ideal U := letI := (g.app U).hom.toAlgebra
-    haveI : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
+    haveI : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.property
     haveI := g.projective_app U
     fullSetLocusIdeal (fun i ↦ sectionAlgHom g (hs i) U)
   map_ideal_basicOpen U f := by
-    have hle : g ⁻¹ᵁ S.basicOpen f ≤ g ⁻¹ᵁ U.1 := g.preimage_mono (S.basicOpen_le f)
+    have hle : g ⁻¹ᵁ S.basicOpen f ≤ g ⁻¹ᵁ U.val := g.preimage_mono (S.basicOpen_le f)
     -- `Γ(Z, g⁻¹ D(f))` is the pushout of `Γ(S, D(f))` and `Γ(Z, g⁻¹ U)` over `Γ(S, U)`
     have hpush := (isIso_pushoutSection_iff (IsPullback.of_horiz_isIso ⟨by simp⟩ :
       IsPullback (𝟙 Z) g g (𝟙 S)) (S.basicOpen_le f) le_rfl (UY := g ⁻¹ᵁ S.basicOpen f)
-      (by simpa using hle)).1 (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.2
-        (S.affineBasicOpen f).2 (U.2.preimage g))
+      (by simpa using hle)).1 (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.property
+        (S.affineBasicOpen f).property (U.property.preimage g))
     simp only [Scheme.Hom.appLE_eq_app] at hpush
     simp only [Scheme.Hom.appLE, Scheme.Hom.id_app] at hpush
     algebraize [(g.app U).hom, (S.presheaf.map (homOfLE (S.basicOpen_le f)).op).hom,
@@ -141,10 +142,10 @@ noncomputable def fullSetLocus : S.IdealSheafData where
     have : Algebra.IsPushout Γ(S, U) Γ(S, S.basicOpen f) Γ(Z, g ⁻¹ᵁ U)
         Γ(Z, g ⁻¹ᵁ S.basicOpen f) :=
       ((CommRingCat.isPushout_iff_isPushout).1 hpush).symm
-    have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
+    have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.property
     have := g.projective_app U
     have : Module.Finite Γ(S, S.basicOpen f) Γ(Z, g ⁻¹ᵁ S.basicOpen f) :=
-      g.finite_app _ (S.affineBasicOpen f).2
+      g.finite_app _ (S.affineBasicOpen f).property
     have : Module.Projective Γ(S, S.basicOpen f) Γ(Z, g ⁻¹ᵁ S.basicOpen f) :=
       g.projective_app (S.affineBasicOpen f)
     refine map_fullSetLocusIdeal_of_isPushout (A' := Γ(S, S.basicOpen f))
@@ -154,7 +155,7 @@ noncomputable def fullSetLocus : S.IdealSheafData where
     rw [sectionAlgHom_apply]
     change (Z.presheaf.map (homOfLE hle).op ≫ (s i).appLE _ (S.basicOpen f)
       (preimage_preimage_of_comp_eq_id g (hs i) _).ge) b =
-      ((s i).appLE _ U.1 (preimage_preimage_of_comp_eq_id g (hs i) _).ge ≫
+      ((s i).appLE _ U.val (preimage_preimage_of_comp_eq_id g (hs i) _).ge ≫
         S.presheaf.map (homOfLE (S.basicOpen_le f)).op) b
     rw [Scheme.Hom.map_appLE, Scheme.Hom.appLE_map]
 
@@ -162,7 +163,7 @@ noncomputable def fullSetLocus : S.IdealSheafData where
 `TauCeti.fullSetLocusIdeal` of the algebra maps `sᵢ^* : Γ(Z, g⁻¹ U) → Γ(S, U)`. -/
 theorem fullSetLocus_ideal (U : S.affineOpens) :
     (fullSetLocus g s hs).ideal U = letI := (g.app U).hom.toAlgebra
-      haveI : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
+      haveI : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.property
       haveI := g.projective_app U
       fullSetLocusIdeal (fun i ↦ sectionAlgHom g (hs i) U) :=
   (rfl)
@@ -175,7 +176,7 @@ theorem isFullSetOfSections_iff_fullSetLocus_eq_bot :
       letI := (g.app U).hom.toAlgebra
       TauCeti.IsFullSetOfSections (fun i ↦ sectionAlgHom g (hs i) U) := by
     let := (g.app U).hom.toAlgebra
-    have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
+    have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.property
     have := g.projective_app U
     exact fullSetLocusIdeal_eq_bot_iff _
   refine ⟨fun h ↦ Scheme.IdealSheafData.ext (funext fun U ↦ (key U).2 (h U)), fun h U ↦ ?_⟩
@@ -191,38 +192,38 @@ omit [IsFinite g] [Flat g] [LocallyOfFinitePresentation g]
   [IsFinite g'] [Flat g'] [LocallyOfFinitePresentation g'] in
 include H hss' in
 private theorem isFullSetOfSections_sectionAlgHom_iff_of_isPullback [IsAffineHom g]
-    (U : S.affineOpens) (V : T.affineOpens) (hV : V.1 ≤ t ⁻¹ᵁ U) :
+    (U : S.affineOpens) (V : T.affineOpens) (hV : V.val ≤ t ⁻¹ᵁ U) :
     (letI := (g'.app V).hom.toAlgebra
      TauCeti.IsFullSetOfSections (fun i ↦ sectionAlgHom g' (hs' i) V)) ↔
       (letI := (g.app U).hom.toAlgebra; letI := (t.appLE U V hV).hom.toAlgebra
        TauCeti.IsFullSetOfSections
          (fun i ↦ (sectionAlgHom g (hs i) U).sectionBaseChange Γ(T, V))) := by
-  have hUY : g' ⁻¹ᵁ V.1 = gZ ⁻¹ᵁ g ⁻¹ᵁ U ⊓ g' ⁻¹ᵁ V :=
+  have hUY : g' ⁻¹ᵁ V.val = gZ ⁻¹ᵁ g ⁻¹ᵁ U ⊓ g' ⁻¹ᵁ V :=
     (inf_eq_right.2 fun x hx ↦ by
       -- membership in a preimage is membership of the image
-      change g (gZ x) ∈ U.1
+      change g (gZ x) ∈ U.val
       rw [← Scheme.Hom.comp_apply, H.w, Scheme.Hom.comp_apply]
       exact hV hx).symm
   -- the sections of `Z'` over `V` are the pushout of `Γ(T, V)` and `Γ(Z, g⁻¹ U)`
   have hpush := (isIso_pushoutSection_iff H hV le_rfl hUY).1
-    (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.2 V.2 (U.2.preimage g))
+    (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.property V.property (U.property.preimage g))
   simp only [Scheme.Hom.appLE_eq_app] at hpush
-  have hle : g' ⁻¹ᵁ V.1 ≤ gZ ⁻¹ᵁ g ⁻¹ᵁ U := hUY.le.trans inf_le_left
-  algebraize [(g.app U).hom, (t.appLE U V hV).hom, (gZ.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ V.1) hle).hom,
+  have hle : g' ⁻¹ᵁ V.val ≤ gZ ⁻¹ᵁ g ⁻¹ᵁ U := hUY.le.trans inf_le_left
+  algebraize [(g.app U).hom, (t.appLE U V hV).hom, (gZ.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ V.val) hle).hom,
     (g'.app V).hom, (g'.app V).hom.comp (t.appLE U V hV).hom]
-  have : IsScalarTower Γ(S, U) Γ(Z, g ⁻¹ᵁ U) Γ(Z', g' ⁻¹ᵁ V.1) :=
+  have : IsScalarTower Γ(S, U) Γ(Z, g ⁻¹ᵁ U) Γ(Z', g' ⁻¹ᵁ V.val) :=
     .of_algebraMap_eq' congr($(hpush.w).hom).symm
-  have : Algebra.IsPushout Γ(S, U) Γ(T, V) Γ(Z, g ⁻¹ᵁ U) Γ(Z', g' ⁻¹ᵁ V.1) :=
+  have : Algebra.IsPushout Γ(S, U) Γ(T, V) Γ(Z, g ⁻¹ᵁ U) Γ(Z', g' ⁻¹ᵁ V.val) :=
     ((CommRingCat.isPushout_iff_isPushout).1 hpush).symm
   refine (isFullSetOfSections_iff_of_isPushout fun i b ↦ ?_)
   -- both sides are the restriction of `b` along `t ≫ sᵢ`
-  have key : ∀ (φ ψ : T ⟶ Z) (_ : φ = ψ) (e : V.1 ≤ φ ⁻¹ᵁ g ⁻¹ᵁ U) (e' : V.1 ≤ ψ ⁻¹ᵁ g ⁻¹ᵁ U),
+  have key : ∀ (φ ψ : T ⟶ Z) (_ : φ = ψ) (e : V.val ≤ φ ⁻¹ᵁ g ⁻¹ᵁ U) (e' : V.val ≤ ψ ⁻¹ᵁ g ⁻¹ᵁ U),
       φ.appLE (g ⁻¹ᵁ U) V e = ψ.appLE (g ⁻¹ᵁ U) V e' := by
     rintro _ _ rfl _ _
     rfl
   -- `sectionAlgHom` evaluates `appLE`; write both sides as composites of `appLE`s
   simp only [sectionAlgHom_apply]
-  change (gZ.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ V.1) hle ≫
+  change (gZ.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ V.val) hle ≫
       (s' i).appLE _ V (preimage_preimage_of_comp_eq_id _ (hs' i) _).ge) b =
     ((s i).appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g (hs i) _).ge ≫
       t.appLE U V hV) b
@@ -234,12 +235,12 @@ include H hss' in
 with `t(V) ⊆ U`, the restriction `Γ(S, U) → Γ(T, V)` kills the ideal of the full-set locus over
 `U` exactly when the base-changed sections form a full set of sections over `V`. -/
 private theorem fullSetLocus_ideal_le_ker_iff (U : S.affineOpens) (V : T.affineOpens)
-    (hV : V.1 ≤ t ⁻¹ᵁ U) :
+    (hV : V.val ≤ t ⁻¹ᵁ U) :
     (fullSetLocus g s hs).ideal U ≤ RingHom.ker (t.appLE U V hV).hom ↔
       letI := (g'.app V).hom.toAlgebra
       TauCeti.IsFullSetOfSections (fun i ↦ sectionAlgHom g' (hs' i) V) := by
   let := (g.app U).hom.toAlgebra; let := (t.appLE U V hV).hom.toAlgebra
-  have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.2
+  have : Module.Finite Γ(S, U) Γ(Z, g ⁻¹ᵁ U) := g.finite_app U U.property
   have := g.projective_app U
   rw [fullSetLocus_ideal, ← RingHom.algebraMap_toAlgebra (t.appLE U V hV).hom]
   exact (fullSetLocusIdeal_le_ker_iff (fun i ↦ sectionAlgHom g (hs i) U) Γ(T, V)).trans
@@ -255,7 +256,7 @@ theorem fullSetLocus_le_ker_iff_of_isPullback :
   constructor
   · intro h V
     let := (g'.app V).hom.toAlgebra
-    have : Module.Finite Γ(T, V) Γ(Z', g' ⁻¹ᵁ V.1) := g'.finite_app V V.2
+    have : Module.Finite Γ(T, V) Γ(Z', g' ⁻¹ᵁ V.val) := g'.finite_app V V.property
     have := g'.projective_app V
     refine (fullSetLocusIdeal_eq_bot_iff _).1 (eq_bot_iff.2 fun a ha ↦
       (Submodule.mem_bot _).2 (T.IsSheaf.section_ext fun p hp ↦ ?_))
@@ -263,13 +264,13 @@ theorem fullSetLocus_le_ker_iff_of_isPullback :
     obtain ⟨_, ⟨US, hUS, rfl⟩, hpUS, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
       (Set.mem_univ (t p)) isOpen_univ
     obtain ⟨_, ⟨V', hV', rfl⟩, hpV', hV'le⟩ := T.isBasis_affineOpens.exists_subset_of_mem_open
-      (show p ∈ V.1 ⊓ t ⁻¹ᵁ US from ⟨hp, hpUS⟩) (V.1 ⊓ t ⁻¹ᵁ US).2
+      (show p ∈ V.val ⊓ t ⁻¹ᵁ US from ⟨hp, hpUS⟩) (V.val ⊓ t ⁻¹ᵁ US).is_open'
     have hV'V : (⟨V', hV'⟩ : T.affineOpens) ≤ V := fun y hy ↦ (hV'le hy).1
     refine ⟨V', hV'V, hpV', ?_⟩
     -- over `V'`, the sections `s'` are a full set, so the ideal of their locus vanishes
     have hfull := (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' ⟨US, hUS⟩ ⟨V', hV'⟩
       fun y hy ↦ (hV'le hy).2).1
-      ((h ⟨US, hUS⟩).trans ((t.ideal_ker_le _).trans (t.ker_app_le_ker_appLE _)))
+      ((fullSetLocus g s hs).ideal_le_ker_appLE h ⟨US, hUS⟩ _)
     have hbot : (fullSetLocus g' s' hs').ideal ⟨V', hV'⟩ = ⊥ := by
       let := (g'.app V').hom.toAlgebra
       have : Module.Finite Γ(T, V') Γ(Z', g' ⁻¹ᵁ V') := g'.finite_app V' hV'
@@ -280,13 +281,8 @@ theorem fullSetLocus_le_ker_iff_of_isPullback :
     rw [map_zero]
     exact hmem
   · intro h
-    refine le_ofIdeals_iff.2 fun U a ha ↦ RingHom.mem_ker.2 <|
-      T.IsSheaf.section_ext fun q hq ↦ ?_
-    obtain ⟨_, ⟨UT, hUT, rfl⟩, hqUT, hUTle⟩ :=
-      T.isBasis_affineOpens.exists_subset_of_mem_open hq (t ⁻¹ᵁ U.1).2
-    refine ⟨UT, hUTle, hqUT, ?_⟩
-    have := (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' U ⟨UT, hUT⟩ hUTle).2 (h _) ha
-    simpa [Scheme.Hom.appLE] using this
+    refine (fullSetLocus g s hs).le_ker_iff t |>.2 fun U V hVU ↦ fun a ha ↦ ?_
+    exact (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' U V hVU).2 (h _) ha
 
 end IsPullback
 
@@ -392,8 +388,8 @@ theorem isFullSetOfSections_iff_of_iso {Z' : Scheme.{u}} {g' : Z' ⟶ S} (e : Z'
   refine forall_congr' fun U ↦ ?_
   let := (g.app U).hom.toAlgebra; let := (g'.app U).hom.toAlgebra
   have heinv : e.inv ≫ g' = g := by rw [← heg, Iso.inv_hom_id_assoc]
-  have hle₁ : g' ⁻¹ᵁ U.1 ≤ e.hom ⁻¹ᵁ g ⁻¹ᵁ U.1 := by rw [← heg, Scheme.Hom.comp_preimage]
-  have hle₂ : g ⁻¹ᵁ U.1 ≤ e.inv ⁻¹ᵁ g' ⁻¹ᵁ U.1 := by rw [← heinv, Scheme.Hom.comp_preimage]
+  have hle₁ : g' ⁻¹ᵁ U.val ≤ e.hom ⁻¹ᵁ g ⁻¹ᵁ U.val := by rw [← heg, Scheme.Hom.comp_preimage]
+  have hle₂ : g ⁻¹ᵁ U.val ≤ e.inv ⁻¹ᵁ g' ⁻¹ᵁ U.val := by rw [← heinv, Scheme.Hom.comp_preimage]
   let eIso : Γ(Z, g ⁻¹ᵁ U) ≅ Γ(Z', g' ⁻¹ᵁ U) :=
     { hom := e.hom.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ U) hle₁
       inv := e.inv.appLE (g' ⁻¹ᵁ U) (g ⁻¹ᵁ U) hle₂

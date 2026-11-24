@@ -57,7 +57,7 @@ theorem constantCompositum_mono {L M : IntermediateField k k'} (h : L ≤ M) :
   rw [constantCompositum_def, constantCompositum_def]
   apply IntermediateField.adjoin.mono
   rintro _ ⟨c, rfl⟩
-  exact ⟨⟨c, h c.2⟩, rfl⟩
+  exact ⟨⟨c, h c.property⟩, rfl⟩
 
 /-- **A constant compositum is the directed union of its finitely generated constant
 subextensions.**  No algebraicity hypothesis is needed for this lattice identity. -/
@@ -82,7 +82,7 @@ theorem constantCompositum_eq_iSup_adjoin_finset :
     rw [constantCompositum_def, constantCompositum_def]
     apply IntermediateField.adjoin.mono
     rintro _ ⟨c, rfl⟩
-    exact ⟨c.1, by
+    exact ⟨c.val, by
       rw [IsScalarTower.algebraMap_apply
         (IntermediateField.adjoin k (S : Set k')) k' F' c,
         IntermediateField.algebraMap_apply]⟩

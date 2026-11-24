@@ -12,25 +12,24 @@ public import TauCeti.Analysis.Distribution.Mass.Normal
 /-!
 # Mass bounds and normality for the Euclidean cone over a current
 
-Let `Ω` be an open subset of a finite-dimensional real normed space `E` and let `x₀ : E` be a
-cone apex. Pairing the Euclidean cone `Distribution.cone x₀ T` with a test `(k + 1)`-form `ω` of
-supremum norm at most `1` evaluates `T` on `TestFunction.coneCLM x₀ χ ω`
-(`χ • poincareHomotopy x₀ ω`), where `χ : 𝓓(Ω, ℝ)` is a cutoff equal to `1` near `dsupport T`
-with values in `[0, 1]`. By the sharp radial estimate
-`‖poincareHomotopy x₀ ω x‖ ≤ ‖x - x₀‖ / (k + 1)`, localizing `χ` to a ball around `x₀` yields the
-sharp Euclidean radius mass bound
+Let `Ω` be an open subset of a real normed space `E` and let `x₀ : E` be a cone apex. Pairing the
+Euclidean cone `Distribution.cone x₀ T` with a test `(k + 1)`-form `ω` of supremum norm at most `1`
+evaluates `T` on `TestFunction.coneCLM x₀ χ ω` (`χ • poincareHomotopy x₀ ω`), where
+`χ : 𝓓(Ω, ℝ)` is a cutoff equal to `1` near `dsupport T` with values in `[0, 1]`. By the sharp
+radial estimate `‖poincareHomotopy x₀ ω x‖ ≤ ‖x - x₀‖ / (k + 1)`, localizing `χ` to open
+neighbourhoods of a closed ball around `x₀` yields the sharp Euclidean radius mass bound
 
 `mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T`
 
-whenever `dsupport T ⊆ Metric.ball x₀ r` (`Distribution.mass_cone_le_of_subset_ball`), with no
-finiteness hypothesis on `mass T` and no sign assumption on `r`. Passing to open neighbourhoods of
-a closed ball extends the bound to `dsupport T ⊆ Metric.closedBall x₀ r` whenever `0 < r` or
-`mass T ≠ ⊤` (`Distribution.mass_cone_le_of_subset_closedBall`), and in particular unconditionally
-for every current of locally finite mass (`Distribution.HasLocallyFiniteMass.mass_cone_le`). Note
-that at `r = 0` a first-order distribution supported at `{x₀}` has infinite mass while its cone can
-have nonzero finite mass, whereas `0 * ⊤ = 0` in `ℝ≥0∞`; the hypothesis `0 < r ∨ mass T ≠ ⊤`
-precisely rules out this degenerate case, and for locally finite-mass currents supported in `{x₀}`
-the cone vanishes (`Distribution.HasLocallyFiniteMass.cone_eq_zero_of_dsupport_subset_singleton`).
+whenever `dsupport T ⊆ Metric.closedBall x₀ r` and either `0 < r` or `mass T ≠ ⊤`
+(`Distribution.mass_cone_le_of_subset_closedBall`). In particular it holds whenever
+`dsupport T ⊆ Metric.ball x₀ r`, with no finiteness hypothesis on `mass T` and no sign assumption
+on `r` (`Distribution.mass_cone_le_of_subset_ball`), and unconditionally for every current of
+locally finite mass (`Distribution.HasLocallyFiniteMass.mass_cone_le`). Note that at `r = 0` a
+first-order distribution supported at `{x₀}` has infinite mass while its cone can have nonzero
+finite mass, whereas `0 * ⊤ = 0` in `ℝ≥0∞`; the hypothesis `0 < r ∨ mass T ≠ ⊤` precisely rules out
+this degenerate case, and for locally finite-mass currents supported in `{x₀}` the cone vanishes
+(`Distribution.HasLocallyFiniteMass.cone_eq_zero_of_dsupport_subset_singleton`).
 
 Combining the mass bound with the positive-degree and degree-zero homotopy boundary formulas shows
 that `cone x₀ T` is always a normal current whenever `T` is locally normal or normal
@@ -41,6 +40,10 @@ augmented-zero `0`-currents. In degree zero, an augmented-zero two-point differe
 a ball is filled by a normal `1`-current supported in `segment ℝ p q` of mass at most
 `dist q p * ‖ℓ‖ ≤ 2 r * ‖ℓ‖`, whereas a single current with nonzero augmentation admits no
 compactly supported filling on `Ω` even though its ordinary `0`-current boundary is zero.
+
+On an infinite-dimensional space every test form is zero
+(`TestFunction.eq_zero_of_not_finiteDimensional`), so every cone is zero and the statements hold
+trivially.
 
 ## Main declarations
 
@@ -83,42 +86,12 @@ open scoped BoundedContinuousFunction Distributions ENNReal NNReal Topology
 
 namespace Distribution
 
-variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ω : Opens E} {k : ℕ}
 
 section MassBounds
-
-/-- **Sharp Euclidean open-ball mass bound for the cone.** If `dsupport T ⊆ Metric.ball x₀ r`,
-then `mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T`. Neither finiteness of `mass T`,
-compactness of `dsupport T`, nor nonnegativity of `r` is assumed. -/
-theorem mass_cone_le_of_subset_ball (x₀ : E) {r : ℝ}
-    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
-    (hT : dsupport T ⊆ Metric.ball x₀ r) :
-    mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T := by
-  by_cases hc : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
-  · rcases le_or_gt r 0 with hr | hr
-    · rw [Metric.ball_eq_empty.2 hr] at hT
-      simp [eq_zero_of_dsupport_subset_empty hT]
-    · let U : Opens E := Ω ⊓ ⟨Metric.ball x₀ r, Metric.isOpen_ball⟩
-      have hTU : dsupport T ⊆ (U : Set E) := subset_inter hc.2 hT
-      obtain ⟨ψ, hψ, hψ01⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hc.1 hTU
-      let χ : 𝓓(Ω, ℝ) := TestFunction.monoCLM ℝ ψ
-      have hUΩ : U ≤ Ω := inf_le_left
-      have hcoe : (χ : E → ℝ) = ψ := by simp [χ, TestFunction.monoCLM_apply, hUΩ]
-      have hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 := hψ.mono fun x hx ↦ by simp [hcoe, hx]
-      let r₀ : ℝ≥0 := ⟨r, hr.le⟩
-      rw [cone_eq hχ, coe_comp]
-      refine (mass_comp_coneCLM_le T (r := r₀) (fun x ↦ ?_) (fun x hx ↦ ?_)).trans_eq ?_
-      · rw [hcoe, abs_of_nonneg (hψ01 x).1]
-        exact (hψ01 x).2
-      · rw [hcoe] at hx
-        exact (mem_ball_iff_norm.1 (ψ.tsupport_subset hx).2).le
-      · congr 1
-        rw [← ENNReal.ofReal_coe_nnreal]
-        congr 1
-  · simp [cone_of_not_isCompact_and_subset hc]
 
 /-- **Sharp Euclidean closed-ball mass bound for the cone.** If
 `dsupport T ⊆ Metric.closedBall x₀ r` and either `0 < r` or `mass T ≠ ⊤`, then
@@ -143,6 +116,18 @@ theorem mass_cone_le_of_subset_closedBall (x₀ : E) {r : ℝ}
     congr 1
     rw [← ENNReal.ofReal_coe_nnreal]
     congr 1
+
+/-- **Sharp Euclidean open-ball mass bound for the cone.** If `dsupport T ⊆ Metric.ball x₀ r`,
+then `mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T`. Neither finiteness of `mass T`,
+compactness of `dsupport T`, nor nonnegativity of `r` is assumed. -/
+theorem mass_cone_le_of_subset_ball (x₀ : E) {r : ℝ}
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    (hT : dsupport T ⊆ Metric.ball x₀ r) :
+    mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [Metric.ball_eq_empty.2 hr] at hT
+    simp [eq_zero_of_dsupport_subset_empty hT]
+  · exact mass_cone_le_of_subset_closedBall x₀ (hT.trans Metric.ball_subset_closedBall) (Or.inl hr)
 
 /-- **Closed-ball cone mass bound for currents of locally finite mass.** Whenever `T` has locally
 finite mass and `dsupport T ⊆ Metric.closedBall x₀ r`,

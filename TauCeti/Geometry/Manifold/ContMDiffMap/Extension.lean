@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.ContMDiff.Log
 
 /-!
 # Extending local smooth data to global smooth maps
@@ -23,7 +24,10 @@ The pointwise form needs only one bump function: a function that is smooth on a
 neighbourhood of a point has the germ there of a globally smooth map
 (`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 A smooth map on an open subset, extended arbitrarily outside it, stays smooth on that subset
-(`ContMDiffMap.contMDiffOn_extend`).
+(`ContMDiffMap.contMDiffOn_extend`), and therefore agrees near any point of the open subset with
+the restriction of a global smooth map
+(`ContMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val`), or of a globally smooth positive
+function when it is positive (`ContMDiff.exists_contMDiffMap_pos_eventuallyEq_comp_subtype_val`).
 For manifold-valued maps on an open star-convex subset of a finite-dimensional real space,
 `ContMDiffOn.exists_contMDiff_eventuallyEq_of_starConvex` gives a global map agreeing near
 any set closed in the ambient real space and contained in the domain.
@@ -55,6 +59,42 @@ theorem contMDiffOn_extend (U : TopologicalSpace.Opens M) (f : C^n⟮I, U; I', M
   exact f.contMDiff _
 
 end ContMDiffMap
+
+section Cutoff
+
+variable {𝕜 E E' F H H' M P : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- A product `ψ • g` is `C^n` on the whole manifold when `ψ` and `g` are `C^n` on an open set `s`
+containing the topological support of `ψ`: multiplying by a cutoff `ψ` globalizes a vector-valued
+map defined on `s`. -/
+theorem ContMDiffOn.contMDiff_smul_of_tsupport_subset {ψ : M → 𝕜} {g : M → F} {s : Set M}
+    (hg : ContMDiffOn I 𝓘(𝕜, F) n g s) (hs : IsOpen s)
+    (hψ : ContMDiffOn I 𝓘(𝕜) n ψ s) (hψs : tsupport ψ ⊆ s) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ ψ x • g x) := by
+  refine contMDiff_of_tsupport fun x hx ↦ ?_
+  have hxs : x ∈ s := hψs (tsupport_smul_subset_left ψ g hx)
+  exact (hψ.contMDiffAt (hs.mem_nhds hxs)).smul (hg.contMDiffAt (hs.mem_nhds hxs))
+
+/-- A product `(x, p) ↦ ψ x • g (x, p)` is `C^n` on the product manifold `M × P` when `ψ` is `C^n`
+on an open set `s ⊆ M` containing `tsupport ψ` and `g` is `C^n` on `s ×ˢ univ`: multiplying by a
+cutoff on the base globalizes a parameterized family defined on `s ×ˢ univ`. -/
+theorem ContMDiffOn.contMDiff_smul_fst_of_tsupport_subset
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace P] [ChartedSpace H' P]
+    {ψ : M → 𝕜} {g : M × P → F} {s : Set M}
+    (hg : ContMDiffOn (I.prod J) 𝓘(𝕜, F) n g (s ×ˢ univ)) (hs : IsOpen s)
+    (hψ : ContMDiffOn I 𝓘(𝕜) n ψ s) (hψs : tsupport ψ ⊆ s) :
+    ContMDiff (I.prod J) 𝓘(𝕜, F) n (fun p : M × P ↦ ψ p.1 • g p) := by
+  refine hg.contMDiff_smul_of_tsupport_subset (hs.prod isOpen_univ)
+    (hψ.comp contMDiff_fst.contMDiffOn mapsTo_fst_prod) ?_
+  exact (closure_minimal (t := tsupport ψ ×ˢ (univ : Set P))
+    (fun p hp ↦ ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
+    ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψs subset_rfl)
+
+end Cutoff
 
 /-- A manifold-valued `C^n` map on an open star-convex subset of a finite-dimensional real
 space agrees near any set closed in the ambient space and contained in the domain with a
@@ -100,6 +140,32 @@ theorem ContMDiffOn.exists_contMDiffMap_eventuallyEq {U : Set M} {g : M → F} {
       mem_interior_iff_mem_nhds.mp <| hβ <| tsupport_smul_subset_left _ _ hy
   · filter_upwards [β.eventuallyEq_one] with y hy
     simp [hy]
+
+/-- **Smooth germ extension from an open submanifold.** A `C^n` vector-valued function on an open
+submanifold `U` agrees near any point `x : U` with the restriction `G ∘ Subtype.val` of a globally
+`C^n` map `G : C^n⟮I, M; 𝓘(ℝ, F), F⟯`. -/
+theorem ContMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val
+    {U : TopologicalSpace.Opens M} {φ : U → F} {x : U} (hφ : ContMDiff I 𝓘(ℝ, F) n φ) :
+    ∃ G : C^n⟮I, M; 𝓘(ℝ, F), F⟯, ((G : M → F) ∘ Subtype.val) =ᶠ[𝓝 x] φ := by
+  obtain ⟨G, hG_eq⟩ := (ContMDiffMap.contMDiffOn_extend U ⟨φ, hφ⟩
+    0).exists_contMDiffMap_eventuallyEq (U.isOpen.mem_nhds x.property)
+  refine ⟨G, ((continuous_subtypeVal.tendsto x).eventually hG_eq).mono fun y hy ↦ ?_⟩
+  simpa [Subtype.val_injective.extend_apply] using hy
+
+/-- **Positive smooth germ extension from an open submanifold.** A positive `C^n` function on an
+open submanifold `U` agrees near any point `x : U` with the restriction `G ∘ Subtype.val` of a
+globally `C^n` positive function `G : C^n⟮I, M; 𝓘(ℝ), ℝ⟯`, obtained by extending `log ∘ φ` and
+exponentiating. -/
+theorem ContMDiff.exists_contMDiffMap_pos_eventuallyEq_comp_subtype_val
+    {U : TopologicalSpace.Opens M} {φ : U → ℝ} {x : U}
+    (hφ : ContMDiff I 𝓘(ℝ) n φ) (hφ_pos : ∀ y, 0 < φ y) :
+    ∃ G : C^n⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ y, 0 < G y) ∧ ((G : M → ℝ) ∘ Subtype.val) =ᶠ[𝓝 x] φ := by
+  obtain ⟨H, hH_eq⟩ :=
+    (hφ.log fun y ↦ (hφ_pos y).ne').exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
+  refine ⟨⟨fun y ↦ Real.exp (H y), Real.contDiff_exp.comp_contMDiff H.contMDiff⟩,
+    fun y ↦ Real.exp_pos _, hH_eq.mono fun y hy ↦ ?_⟩
+  simp only [ContMDiffMap.coeFn_mk, Function.comp_apply] at hy ⊢
+  rw [hy, Real.exp_log (hφ_pos y)]
 
 /-- Locally smoothly extendible vector-valued data on a closed set have a global
 `C^n` extension supported inside any prescribed open neighbourhood of that set.

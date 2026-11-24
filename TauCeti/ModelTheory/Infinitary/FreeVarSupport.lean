@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
-public import TauCeti.ModelTheory.Infinitary.Operations
-public import TauCeti.ModelTheory.Infinitary.Reindex
-public import TauCeti.ModelTheory.Infinitary.Substitution
 public import TauCeti.ModelTheory.Semantics
 public import TauCeti.ModelTheory.Syntax
 
@@ -57,13 +54,13 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 
 public section
 
-universe u v u₁ v₁ u' uι uκ uβ w
+universe u v u' v' uα uι uκ uβ w
 
 namespace FirstOrder
 
 namespace Language
 
-variable {L : Language.{u, v}} {α : Type u'}
+variable {L : Language.{u, v}} {α : Type uα}
 
 namespace BoundedFormulaInf
 
@@ -346,9 +343,10 @@ end BoundedFormula
 
 namespace LHom
 
-variable {L' : Language.{u₁, v₁}} {ι : Type uι} {n : ℕ}
+variable {L' : Language.{u', v'}} {ι : Type uι} {n : ℕ}
 
-/-- Translating an infinitary formula along a language map preserves its free-variable support. -/
+/-- A language map preserves the free-variable support of an infinitary formula; no injectivity on
+symbols is required. -/
 @[simp]
 theorem freeVarSupport_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α n) :
     (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport := by

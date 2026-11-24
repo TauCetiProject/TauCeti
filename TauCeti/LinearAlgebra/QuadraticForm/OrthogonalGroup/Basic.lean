@@ -217,7 +217,7 @@ theorem isOrtho_iff_of_mem_orthogonalGroup {f : M ≃ₗ[R] M} (hf : f ∈ ortho
 of `orthogonalGroup` is the group structure, which `QuadraticMap.IsometryEquiv` does not carry. -/
 def orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N) :
     orthogonalGroup Q ≃ Q.IsometryEquiv Q where
-  toFun f := { (f : M ≃ₗ[R] M) with map_app' := mem_orthogonalGroup_iff.mp f.2 }
+  toFun f := { (f : M ≃ₗ[R] M) with map_app' := mem_orthogonalGroup_iff.mp f.property }
   invFun e := ⟨(e : M ≃ₗ[R] M), mem_orthogonalGroup_iff.mpr e.map_app⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -410,7 +410,7 @@ theorem mem_specialOrthogonalGroup_iff {f : M ≃ₗ[R] M} :
 @[simp]
 theorem det_coe_specialOrthogonalGroup (g : specialOrthogonalGroup Q) :
     LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
-  (mem_specialOrthogonalGroup_iff.mp g.2).2
+  (mem_specialOrthogonalGroup_iff.mp g.property).2
 
 theorem specialOrthogonalGroup_le_orthogonalGroup (Q : QuadraticMap R M N) :
     specialOrthogonalGroup Q ≤ orthogonalGroup Q := inf_le_left
@@ -547,7 +547,7 @@ theorem specialOrthogonalWithin_eq_subgroupOf :
       (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
         (TauCeti.QuadraticMap.orthogonalGroup Q) := by
   ext g
-  simp [Subgroup.mem_subgroupOf, g.2]
+  simp [Subgroup.mem_subgroupOf, g.property]
 
 /-- The inclusion `SO(Q) →* O(Q)`. -/
 noncomputable def specialOrthogonalToOrthogonal (Q : QuadraticMap R M N) :
@@ -878,6 +878,12 @@ noncomputable def reflection : M ≃ₗ[R] M :=
 theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
+
+/-- In characteristic two the reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflection_apply_of_charTwo [CharP R 2] (y : M) :
+    reflection Q v y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [reflection_apply, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq]
 
 /-- Rescaling a vector of invertible norm by a scalar that keeps the norm invertible does not
 change its quadratic reflection. -/
@@ -1315,7 +1321,7 @@ determinant `±1`. -/
 theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLeft)
     (g : orthogonalGroup Q) : orthogonalDet Q g ^ 2 = 1 := by
   have hg : BilinForm.IsIsometry Q.polarBilin (g : M ≃ₗ[R] M) :=
-    BilinForm.isIsometry_iff.mpr fun x y => polar_apply_of_mem_orthogonalGroup g.2 x y
+    BilinForm.isIsometry_iff.mpr fun x y => polar_apply_of_mem_orthogonalGroup g.property x y
   have h := hg.det_sq_eq_one (Module.Free.chooseBasis R M)
     (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hQ))
   ext
@@ -1395,7 +1401,7 @@ theorem range_orthogonalGroup_toLinearMap (Q : QuadraticForm R M)
   ext f
   constructor
   · rintro ⟨g, rfl⟩ x
-    exact mem_orthogonalGroup_iff.mp g.2 x
+    exact mem_orthogonalGroup_iff.mp g.property x
   · intro hf
     exact exists_orthogonalGroup_toLinearMap_eq hQ hf
 

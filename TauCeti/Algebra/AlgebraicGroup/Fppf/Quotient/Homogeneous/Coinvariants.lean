@@ -104,7 +104,7 @@ theorem toCoinvariantsPoints_app_mul (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
       I.toCoinvariantsPoints.app A (ULift.up g) := by
   rw [toCoinvariantsPoints_app_apply, toCoinvariantsPoints_app_apply]
   refine congrArg (fun f ↦ ULift.up (CommAlgCat.ofHom f).op) (AlgHom.ext fun x ↦ ?_)
-  exact ofConv_mul_apply_of_mem_coinvariants x.2 g n.2
+  exact ofConv_mul_apply_of_mem_coinvariants x.property g n.property
 
 /-- The morphism `G/N ⟶ Spec H^{co H/I}` of fppf sheaves induced by restricting points of `G` to
 the coinvariants. -/
