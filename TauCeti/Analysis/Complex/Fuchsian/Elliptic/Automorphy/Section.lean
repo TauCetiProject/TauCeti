@@ -34,9 +34,10 @@ For a function `G` of the quotient coordinate, `Subgroup.LinearizingCoordinate.a
   fixing `z` that lifts an element of `Γ` and satisfies `denom g z ^ (2 * r + k) = 1`
   (`Subgroup.LinearizingCoordinate.automorphySection_smul`).
 * Its coefficient is `G`
-  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphySection`), and every local
-  section is the section of its coefficient
-  (`Subgroup.LinearizingCoordinate.automorphySection_automorphyDescent`).
+  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphySection`). Conversely, every
+  local section is the section of its coefficient: rewriting with
+  `Subgroup.LinearizingCoordinate.automorphySection_coe`, this is
+  `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`.
 
 ## References
 
@@ -101,7 +102,7 @@ theorem automorphySection_const_smul (k : ℤ) (r : ℕ) (c : ℂ) (G : ℂ → 
   simp only [automorphySection_def, Pi.smul_apply, smul_eq_mul]
   ring
 
-variable {Γ' : Subgroup SL(2, ℝ)} {k : ℤ} {r : ℕ} {G : ℂ → ℂ}
+variable {k : ℤ} {r : ℕ} {G : ℂ → ℂ}
 
 /-- **The local section with a holomorphic coefficient is holomorphic** on the invariant disc. -/
 theorem mdifferentiableOn_automorphySection (hG : DifferentiableOn ℂ G ψ.quotientImage) :
@@ -162,21 +163,6 @@ theorem eqOn_automorphyDescent_automorphySection (hr : r < Nat.card (stabilizer 
     rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ (ζ : ℂˣ)).mp ζ.property, Units.val_one]
   rw [rootsOfUnity.smul_eq_mul, ← hq, ← coordinate_smul, hU, hU, coordinate_smul, hq, mul_pow,
     mul_pow, hζ, one_mul, smul_eq_mul, mul_assoc]
-
-/-- **Every local section is the local section with its coefficient**: under the hypotheses of
-`Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`, a local section `f` of the
-weight-`k` automorphy sheaf agrees on the invariant disc with the local section whose coefficient
-is `Subgroup.LinearizingCoordinate.automorphyDescent ψ k r f`. -/
-theorem automorphySection_automorphyDescent {f : ℍ → ℂ}
-    (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
-    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
-    (hf : ∀ g ∈ Γ', g • z = z → ∀ τ ∈ ball z ε,
-      f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
-    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (ball z ε)) (hr : r < Nat.card (stabilizer Γ z)) :
-    EqOn (ψ.automorphySection k r (ψ.automorphyDescent k r f)) f (ball z ε) := fun τ hτ ↦ by
-  obtain ⟨σ, rfl⟩ : ∃ σ : stabilizerBall Γ z ε, (σ : ℍ) = τ :=
-    ⟨⟨τ, (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hτ)⟩, rfl⟩
-  rw [automorphySection_coe, ψ.automorphyFrame_mul_automorphyDescent hΓ hk hf hfd hr]
 
 end LinearizingCoordinate
 

@@ -37,9 +37,9 @@ weight-`k` transformation data induces (Diamond–Shurman §§3.5–3.6).
 * It is bounded at the cusp when `G` is continuous there
   (`TauCeti.Subgroup.CuspDatum.isBoundedAtImInfty_slash_automorphySection`).
 * Its coefficient is `G`, including at the cusp
-  (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphySection`), and every local section
-  is the section of its coefficient
-  (`TauCeti.Subgroup.CuspDatum.automorphySection_automorphyDescent`).
+  (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphySection`). Conversely, every local
+  section is the section of its coefficient: unfolding `automorphySection`, this is
+  `TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent`.
 
 ## References
 
@@ -209,16 +209,5 @@ theorem eqOn_automorphyDescent_automorphySection (hs : (s : PSL(2, ℝ)) = D.sca
   rw [hU hu', hU hu, smul_eq_mul]
   beta_reduce
   rw [neg_sq, neg_pow, mul_assoc]
-
-/-- **Every local section at a cusp is the local section with its coefficient**: under the
-hypotheses of `TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent`, a function `f`
-satisfying the weight-`k` transformation law for `g` on the horodisc of height `A` agrees there with
-the local section whose coefficient is `TauCeti.Subgroup.CuspDatum.automorphyDescent D s k r f`. -/
-theorem automorphySection_automorphyDescent {f : ℍ → ℂ} (hs : (s : PSL(2, ℝ)) = D.scaling)
-    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
-    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
-    (hr : r < 2) :
-    EqOn (automorphySection D s k r (automorphyDescent D s k r f)) f (horodisc D A) :=
-  fun _ hτ ↦ automorphyFrame_mul_automorphyDescent hs hg hk hf hr hτ
 
 end TauCeti.Subgroup.CuspDatum
