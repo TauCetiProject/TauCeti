@@ -80,9 +80,10 @@ without the splitting the extension would only show that `e²` kills it.
   `TopCat.singularHomologyToTor_coefficient_naturality`: its naturality.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
-* `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
-* `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in positive degrees when
-  the homology of the first factor is flat.
+* `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree when
+  the cycles `Z_q(Y; N)` and the quotients `C_q(Y; N) / Z_q(Y; N)` are flat.
+* `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in every degree when
+  those modules and the homology of the first factor are flat.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   hereditary commutative ring.
@@ -112,6 +113,42 @@ universe w
 namespace TopCat
 
 variable {k : Type w} [CommRing k]
+
+section Flat
+
+variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+  [∀ q, Module.Flat k (cokernel (((toSSet.obj Y).chainComplex N).iCycles q) : ModuleCat.{w} k)]
+  [∀ q, Module.Flat k (((toSSet.obj Y).chainComplex N).cycles q)]
+
+/-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
+`C_q(Y; N) / Z_q(Y; N)` are flat, for instance for any projective `N` over a principal ideal
+domain. -/
+theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
+  -- explicitly: instance search does not identify the homology instances of the general
+  -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
+  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
+    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
+
+/-- **The Künneth theorem when one factor has flat homology.** If the cycles `Z_q(Y; N)` and the
+quotients `C_q(Y; N) / Z_q(Y; N)` are flat, for instance for any projective `N` over a principal
+ideal domain, and every homology module `Hₚ(X; M)` is flat, then the Künneth map
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism in every degree `n`.
+No hypothesis is placed on the homology of `Y`. -/
+theorem isIso_singularHomologyKunneth_of_flat
+    [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+    (n : ℕ) : IsIso (singularHomologyKunneth X Y M N n) := by
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
+  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology
+    ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) n)
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv
+
+end Flat
 
 section Kunneth
 
@@ -252,34 +289,6 @@ theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
     (homologyKunnethShortComplex_shortExact ((toSSet.obj X).chainComplex M)
       ((toSSet.obj Y).chainComplex N) m)
-
-/-- **The Künneth theorem when one factor has flat homology.** If the cycles `Z_q(Y; N)` and the
-quotients `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a
-principal ideal domain, and every homology module `Hₚ(X; M)` is flat, then the Künneth map
-`⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)` is an isomorphism: every `Tor₁`
-summand of the Künneth sequence vanishes. No hypothesis is placed on the homology of `Y`. -/
-theorem isIso_singularHomologyKunneth_of_flat
-    [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
-    (m : ℕ) : IsIso (singularHomologyKunneth X Y M N (m + 1)) := by
-  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
-  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
-  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
-  -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
-  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology
-    ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) m)
-    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso (m + 1)).isIso_inv
-
-/-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
-`C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
-domain. -/
-theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
-  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
-  -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
-  -- explicitly: instance search does not identify the homology instances of the general
-  -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
-  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
-    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
-    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
 /-- **The Künneth short exact sequence for singular homology splits** when, in addition, the
 cycles of the singular chain complex `C(X; M)` split off its terms; for instance for projective
