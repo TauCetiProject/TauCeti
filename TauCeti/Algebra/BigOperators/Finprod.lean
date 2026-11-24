@@ -449,8 +449,8 @@ theorem exists_finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMono
 
 /-- The product of a constant `c` over a set `s` is `c ^ s.ncard`. For infinite `s` both sides are
 `1`, since `s.ncard = 0`. -/
-@[to_additive /-- The sum of a constant `c` over a set `s` is `s.ncard • c`. For infinite `s`
-both sides are `0`, since `s.ncard = 0`. -/]
+@[to_additive (attr := simp) /-- The sum of a constant `c` over a set `s` is `s.ncard • c`. For
+infinite `s` both sides are `0`, since `s.ncard = 0`. -/]
 theorem finprod_mem_const {α M : Type*} [CommMonoid M] (s : Set α) (c : M) :
     ∏ᶠ _ ∈ s, c = c ^ s.ncard := by
   by_cases hs : s.Finite
