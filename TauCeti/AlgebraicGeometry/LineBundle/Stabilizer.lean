@@ -191,11 +191,11 @@ lemma map_autStabilizer_autMulEquivOfIso (e : Over.mk f ≅ Over.mk f') {a : Lin
     (f.autStabilizer a).map (Aut.autMulEquivOfIso e).toMonoidHom = f'.autStabilizer a' := by
   -- Pullback along `e.hom.left` is a group isomorphism with inverse pullback along `e.inv.left`.
   let E := LineBundleClass.pullbackEquiv ((Over.forget S).mapIso e)
-  have hE (b : LineBundleClass X') : E b = LineBundleClass.pullback e.hom.left b :=
-    LineBundleClass.pullbackEquiv_apply _ b
+  have hE (b : LineBundleClass X') : E b = LineBundleClass.pullback e.hom.left b := by
+    rw [LineBundleClass.pullbackEquiv_apply, Functor.mapIso_hom, Over.forget_map]
   have hEs (b : LineBundleClass X) : E.symm b = LineBundleClass.pullback e.inv.left b := by
-    rw [LineBundleClass.pullbackEquiv_symm, LineBundleClass.pullbackEquiv_apply]
-    rfl
+    rw [LineBundleClass.pullbackEquiv_symm, LineBundleClass.pullbackEquiv_apply, Iso.symm_hom,
+      Functor.mapIso_inv, Over.forget_map]
   have ha' : a' = E.symm a := E.eq_symm_apply.2 ((hE a').trans ha)
   ext g'
   obtain ⟨g, rfl⟩ := (Aut.autMulEquivOfIso e).surjective g'
@@ -205,8 +205,10 @@ lemma map_autStabilizer_autMulEquivOfIso (e : Over.mk f ≅ Over.mk f') {a : Lin
     simp only [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_inv, Iso.symm_inv, Over.comp_left,
       Category.assoc]
   rw [Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply, mem_autStabilizer_iff_pullback_inv,
-    mem_autStabilizer_iff_pullback_inv, ha', hconj, ← LineBundleClass.pullback_comp,
-    ← LineBundleClass.pullback_comp, ← hE, E.apply_symm_apply, ← hEs, E.symm.apply_eq_iff_eq]
+    mem_autStabilizer_iff_pullback_inv, hconj]
+  -- Pulling back along `e.inv ≫ g⁻¹ ≫ e.hom` is `E.symm ∘ g⁻¹^* ∘ E`, and `E a' = a`.
+  rw [← LineBundleClass.pullback_comp, ← LineBundleClass.pullback_comp, ha, ← hEs, ha',
+    E.symm.apply_eq_iff_eq]
 
 /-- An isomorphism `e` of schemes over `S` with `e^* a' = a` induces, by conjugation, an
 isomorphism between the stabilizer of `a` and the stabilizer of `a'`: an isomorphism of polarized
