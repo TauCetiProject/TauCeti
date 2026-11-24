@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -381,14 +382,10 @@ theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGrou
     {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
     {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ᵐ x ∂μ, ‖g x‖ ≤ M) (x : G) :
     ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x‖ ≤ M := by
-  rw [convolution_def]
-  calc
-    ‖∫ y, lsmul ℝ ℝ (ρ.normed μ y) (g (x - y)) ∂μ‖ ≤ ∫ y, ρ.normed μ y * M ∂μ := by
-      apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
-      filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
-      simpa only [lsmul_apply, norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed y)] using
-        mul_le_mul_of_nonneg_left hy (ρ.nonneg_normed y)
-    _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+  simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
+    ρ.integral_normed, one_mul] using
+    TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed
+      ((μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
