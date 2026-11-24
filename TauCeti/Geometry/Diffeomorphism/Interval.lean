@@ -17,9 +17,9 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 /-!
 # Diffeomorphisms of an interval that are the identity near its ends
 
-The `C^n` diffeomorphisms of a closed interval `[a, b]`, `n ≠ 0`, that are the identity on a
-neighbourhood of the two endpoints form a contractible space for the weak Whitney topology. This
-is the one-dimensional case of Smale's theorem that the diffeomorphisms of the square `[0, 1]²`
+The `C^n` diffeomorphisms of a closed interval `[a, b]`, `a < b`, `n ≠ 0`, that are the identity
+on a neighbourhood of the two endpoints form a contractible space for the weak Whitney topology.
+This is the one-dimensional case of Smale's theorem that the diffeomorphisms of the square `[0, 1]²`
 equal to the identity near the boundary form a contractible space. The contraction is the straight
 line to the identity: at time `t ∈ [0, 1]` a diffeomorphism `f` is moved to
 
@@ -126,15 +126,8 @@ private theorem exists_displacementIcc {f : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡�
     have hg : ContMDiff (𝓡∂ 1) 𝓘(ℝ) n fun p : Icc a b ↦ (f p : ℝ) - p :=
       (contMDiff_subtypeVal_Icc.comp f.contMDiff).sub contMDiff_subtypeVal_Icc
     have hon := (contMDiffOn_comp_projIcc_iff.mpr hg).contDiffOn
-    exact (hon.contDiffAt hxI).congr_of_eventuallyEq (Eventually.of_forall fun y ↦ rfl)
-
-omit [Fact (a < b)] in
-/-- A point outside `[a, b]` lies within every positive distance of its ends. -/
-private theorem lt_or_lt_of_notMem_Icc {x ε : ℝ} (hε : 0 < ε) (hx : x ∉ Icc a b) :
-    x < a + ε ∨ b - ε < x := by
-  rw [mem_Icc, not_and_or, not_le, not_le] at hx
-  rcases hx with hx | hx
-  exacts [Or.inl (by linarith), Or.inr (by linarith)]
+    exact (hon.contDiffAt hxI).congr_of_eventuallyEq (Eventually.of_forall fun y ↦ by
+      rw [displacementIcc, IccExtend])
 
 /-- The extended map `x ↦ x + d x` of a diffeomorphism equal to the identity near the endpoints
 has positive derivative: its inverse is the extended map of the inverse diffeomorphism, so its
@@ -145,19 +138,22 @@ private theorem one_add_deriv_displacementIcc_pos (hn : n ≠ 0)
     0 < 1 + deriv (displacementIcc f) x := by
   obtain ⟨hd, ε, hε, hzero⟩ := exists_displacementIcc hf
   obtain ⟨hd', ε', hε', hzero'⟩ := exists_displacementIcc (inv_mem hf)
-  set d := displacementIcc f
-  set d' := displacementIcc ⇑f⁻¹
+  set d := displacementIcc f with hd_def
+  set d' := displacementIcc ⇑f⁻¹ with hd'_def
   -- `y ↦ y + d' y` inverts `y ↦ y + d y`.
   have hinv (y : ℝ) : y + d y + d' (y + d y) = y := by
     by_cases hy : y ∈ Icc a b
-    · have hfy : y + d y = f ⟨y, hy⟩ := by
-        rw [show d y = _ from displacementIcc_val f ⟨y, hy⟩]
+    · lift y to Icc a b using hy with p
+      have hfy : (p : ℝ) + d p = f p := by
+        rw [hd_def, displacementIcc_val]
         ring
-      rw [hfy, show d' _ = _ from displacementIcc_val (⇑f⁻¹) (f ⟨y, hy⟩), Diffeomorph.inv_apply,
-        Diffeomorph.symm_apply_apply]
+      rw [hfy, hd'_def, displacementIcc_val, Diffeomorph.inv_apply, Diffeomorph.symm_apply_apply]
       ring
-    · rw [hzero y (lt_or_lt_of_notMem_Icc hε hy), add_zero,
-        hzero' y (lt_or_lt_of_notMem_Icc hε' hy), add_zero]
+    · -- A point outside `[a, b]` is within every positive distance `δ` of an end.
+      have hout (δ : ℝ) (hδ : 0 < δ) : y < a + δ ∨ b - δ < y := by
+        rw [mem_Icc, not_and_or, not_le, not_le] at hy
+        exact hy.imp (fun h ↦ by linarith) fun h ↦ by linarith
+      rw [hzero y (hout ε hε), add_zero, hzero' y (hout ε' hε'), add_zero]
   have hdiff (y : ℝ) : HasDerivAt (fun y ↦ y + d y) (1 + deriv d y) y :=
     (hasDerivAt_id y).add ((hd.differentiable hn y).hasDerivAt)
   have hdiff' (y : ℝ) : HasDerivAt (fun y ↦ y + d' y) (1 + deriv d' y) y :=
@@ -174,8 +170,9 @@ private theorem one_add_deriv_displacementIcc_pos (hn : n ≠ 0)
     exact zero_ne_one (hcomp.unique hid)
   -- It is `1` to the left of `[a, b]`, hence positive everywhere by the intermediate value theorem.
   have hone : 1 + deriv d (a - 1) = 1 := by
+    have ha : a - 1 < a + ε := by linarith
     have : d =ᶠ[𝓝 (a - 1)] fun _ ↦ 0 := by
-      filter_upwards [Iio_mem_nhds (show a - 1 < a + ε by linarith)] with y hy
+      filter_upwards [Iio_mem_nhds ha] with y hy
       exact hzero y (Or.inl hy)
     rw [this.deriv_eq, deriv_const, add_zero]
   have hcont : Continuous fun y ↦ 1 + deriv d y :=
@@ -191,14 +188,13 @@ private def straightenReal (f : Icc a b → Icc a b) (t : ℝ) (x : ℝ) : ℝ :
   x + (1 - t) * displacementIcc f x
 
 /-- For a diffeomorphism equal to the identity near the endpoints and `t ∈ [0, 1]`, the real
-straight-line map is a homeomorphism of `ℝ` with `C^n` inverse, fixing `a` and `b`. -/
-private theorem exists_homeomorph_straightenReal (hn : n ≠ 0)
+straight-line map is an order isomorphism of `ℝ` with `C^n` inverse, fixing `a` and `b`. -/
+private theorem exists_orderIso_straightenReal (hn : n ≠ 0)
     {f : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡∂ 1⟯ Icc a b}
     (hf : f ∈ Diffeomorph.nhdsFixingSubgroup ((𝓡∂ 1).boundary (Icc a b))) (t : unitInterval) :
-    ∃ e : ℝ ≃ₜ ℝ, ⇑e = straightenReal f t ∧ StrictMono e ∧ ContDiff ℝ n e.symm ∧
-      e a = a ∧ e b = b := by
+    ∃ e : ℝ ≃o ℝ, ⇑e = straightenReal f t ∧ ContDiff ℝ n e.symm ∧ e a = a ∧ e b = b := by
   obtain ⟨hd, ε, hε, hzero⟩ := exists_displacementIcc hf
-  set F := straightenReal f t
+  set F := straightenReal f t with hF_def
   have hF : ContDiff ℝ n F := contDiff_id.add (contDiff_const.mul hd)
   have hderiv (x : ℝ) : HasDerivAt F (1 + (1 - t) * deriv (displacementIcc f) x) x :=
     (hasDerivAt_id x).add (((hd.differentiable hn x).hasDerivAt).const_mul _)
@@ -211,16 +207,18 @@ private theorem exists_homeomorph_straightenReal (hn : n ≠ 0)
     · rw [ht1, sub_self, zero_mul, add_zero]
       exact zero_lt_one
   have hfix (x : ℝ) (hx : x < a + ε ∨ b - ε < x) : F x = x := by
-    rw [show F x = x + (1 - t) * displacementIcc f x from rfl, hzero x hx, mul_zero, add_zero]
+    rw [hF_def, straightenReal, hzero x hx, mul_zero, add_zero]
   have hmono : StrictMono F := strictMono_of_deriv_pos fun x ↦ (hderiv x).deriv ▸ hpos x
   have hsurj : Function.Surjective F := hF.continuous.surjective
     (tendsto_id.congr' ((eventually_gt_atTop (b - ε)).mono fun x hx ↦ (hfix x (Or.inr hx)).symm))
     (tendsto_id.congr' ((eventually_lt_atBot (a + ε)).mono fun x hx ↦ (hfix x (Or.inl hx)).symm))
-  set e := (hmono.orderIsoOfSurjective F hsurj).toHomeomorph
-  have he : ⇑e = F := (rfl)
-  refine ⟨e, he, he ▸ hmono, ?_, he ▸ hfix a (Or.inl (by linarith)),
-    he ▸ hfix b (Or.inr (by linarith))⟩
-  exact e.contDiff_symm_deriv (fun x ↦ (hpos x).ne') (he ▸ hderiv) (he ▸ hF)
+  set e := hmono.orderIsoOfSurjective F hsurj
+  have he : ⇑e = F := hmono.coe_orderIsoOfSurjective F hsurj
+  refine ⟨e, he, ?_, he ▸ hfix a (Or.inl (by linarith)), he ▸ hfix b (Or.inr (by linarith))⟩
+  have hsymm := e.toHomeomorph.contDiff_symm_deriv (fun x ↦ (hpos x).ne')
+    (by rw [OrderIso.coe_toHomeomorph, he]; exact hderiv)
+    (by rw [OrderIso.coe_toHomeomorph, he]; exact hF)
+  rwa [OrderIso.coe_toHomeomorph_symm] at hsymm
 
 /-- The straight-line map `x ↦ (1 - t) f x + t x`, `t ∈ [0, 1]`, of a diffeomorphism of `[a, b]`
 equal to the identity near the endpoints is a diffeomorphism. -/
@@ -228,25 +226,25 @@ private theorem exists_diffeomorph_convexComb (hn : n ≠ 0)
     {f : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡∂ 1⟯ Icc a b}
     (hf : f ∈ Diffeomorph.nhdsFixingSubgroup ((𝓡∂ 1).boundary (Icc a b))) (t : unitInterval) :
     ∃ g : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡∂ 1⟯ Icc a b, ∀ p, g p = Icc.convexComb (f p) p t := by
-  obtain ⟨e, he, hmono, he', hea, heb⟩ := exists_homeomorph_straightenReal hn hf t
+  obtain ⟨e, he, he', hea, heb⟩ := exists_orderIso_straightenReal hn hf t
   have hF (p : Icc a b) : e p = (Icc.convexComb (f p) p t : ℝ) := by
     rw [he, Icc.coe_convexComb, straightenReal, displacementIcc_val]
     ring
-  -- The inverse preserves `[a, b]`, since `e` is increasing and fixes both endpoints.
-  have hmaps (p : Icc a b) : e.symm p ∈ Icc a b := by
-    constructor
-    · rw [← hmono.le_iff_le, e.apply_symm_apply, hea]
-      exact p.property.1
-    · rw [← hmono.le_iff_le, e.apply_symm_apply, heb]
-      exact p.property.2
-  refine ⟨{ toFun := fun p ↦ Icc.convexComb (f p) p t
-            invFun := fun p ↦ ⟨e.symm p, hmaps p⟩
-            left_inv := fun p ↦ Subtype.ext (by dsimp only; rw [← hF, e.symm_apply_apply])
-            right_inv := fun p ↦ Subtype.ext (by dsimp only; rw [← hF, e.apply_symm_apply])
-            contMDiff_toFun := ContMDiff.convexComb f.contMDiff contMDiff_id contMDiff_const
+  -- Restrict `e` to `[a, b] ≃ [e a, e b]`, which is `[a, b]` since `e` fixes both endpoints.
+  set r : Icc a b ≃ Icc a b :=
+    (e.Icc a b).toEquiv.trans (Set.equivOfEq (by rw [hea, heb]))
+  -- `OrderIso.Icc` has no application lemmas; its two directions act as `e` and `e.symm`.
+  have hr (p : Icc a b) : (r p : ℝ) = e p := (rfl)
+  have hr' (p : Icc a b) : (r.symm p : ℝ) = e.symm p := (rfl)
+  have hval (p : Icc a b) : r p = Icc.convexComb (f p) p t := Subtype.ext ((hr p).trans (hF p))
+  have hinv : ContMDiff (𝓡∂ 1) 𝓘(ℝ) n fun p : Icc a b ↦ (r.symm p : ℝ) := by
+    simp only [hr']
+    exact he'.contMDiff.comp contMDiff_subtypeVal_Icc
+  refine ⟨{ toEquiv := r
+            contMDiff_toFun := (ContMDiff.convexComb f.contMDiff contMDiff_id contMDiff_const).congr
+              hval
             contMDiff_invFun := contMDiff_iff_comp_subtypeVal_Icc.mpr
-              ⟨(e.symm.continuous.comp continuous_subtypeVal).subtype_mk _,
-                he'.contMDiff.comp contMDiff_subtypeVal_Icc⟩ }, fun _ ↦ rfl⟩
+              ⟨continuous_induced_rng.mpr hinv.continuous, hinv⟩ }, hval⟩
 
 /-- **The straight-line contraction of the diffeomorphisms of an interval that are the identity
 near its endpoints.** For `n ≠ 0`, a `C^n` diffeomorphism `f` of `[a, b]` equal to the identity
@@ -260,8 +258,7 @@ def straightenIcc (hn : n ≠ 0)
   ⟨(exists_diffeomorph_convexComb hn f.property t).choose, by
     rw [Diffeomorph.mem_nhdsFixingSubgroup_iff]
     filter_upwards [Diffeomorph.mem_nhdsFixingSubgroup_iff.mp f.property] with p hp
-    rw [(exists_diffeomorph_convexComb hn f.property t).choose_spec p, hp]
-    exact Subtype.ext (by rw [Icc.coe_convexComb]; ring)⟩
+    rw [(exists_diffeomorph_convexComb hn f.property t).choose_spec p, hp, Icc.convexComb_eq]⟩
 
 /-- The straight-line contraction at time `t` is `x ↦ (1 - t) f x + t x`. -/
 @[simp]
@@ -291,10 +288,8 @@ theorem straightenIcc_one (hn : n ≠ 0)
 @[simp]
 theorem straightenIcc_one_left (hn : n ≠ 0) (t : unitInterval) :
     straightenIcc (a := a) (b := b) hn 1 t = 1 :=
-  Subtype.ext (Diffeomorph.ext fun p ↦ Subtype.ext (by
-    rw [straightenIcc_apply, Icc.coe_convexComb]
-    simp only [OneMemClass.coe_one, Diffeomorph.one_apply]
-    ring))
+  Subtype.ext (Diffeomorph.ext fun p ↦ by
+    rw [straightenIcc_apply, OneMemClass.coe_one, Diffeomorph.one_apply, Icc.convexComb_eq])
 
 /-- **The straight-line contraction is smooth in the time parameter**: for a fixed `f`, the map
 `(t, x) ↦ (1 - t) f x + t x` is jointly `C^n`. -/
@@ -331,12 +326,8 @@ theorem continuous_straightenIcc (hn : n ≠ 0) :
     (continuous_const.add (((continuous_const.sub
       (continuous_subtypeVal.comp continuous_snd)).smul (hf.sub continuous_const))))
     fun q ↦ ContMDiffMap.ext fun p ↦ ?_
-  -- The underlying function of `toContMDiffMap` is the diffeomorphism itself, by definition.
   rw [Function.comp_apply, Function.comp_apply, ContMDiffMap.comp_apply,
-    show ((straightenIcc hn q.1 q.2 : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡∂ 1⟯ Icc a b)
-      |>.toContMDiffMap : Icc a b → Icc a b) p =
-        (straightenIcc hn q.1 q.2 : Icc a b ≃ₘ^n⟮𝓡∂ 1, 𝓡∂ 1⟯ Icc a b) p from rfl,
-    straightenIcc_apply]
+    Diffeomorph.coe_toContMDiffMap, straightenIcc_apply]
   simp [ι]
   ring
 
@@ -365,9 +356,9 @@ theorem straighteningHomotopyIcc_apply (hn : n ≠ 0) (t : unitInterval)
   (rfl)
 
 variable (a b) in
-/-- **Smale's theorem for the interval.** For `n ≠ 0`, the `C^n` diffeomorphisms of `[a, b]` that
-are the identity on a neighbourhood of the endpoints form a contractible space in the weak Whitney
-topology. -/
+/-- **Smale's theorem for the interval.** For `a < b` and `n ≠ 0`, the `C^n` diffeomorphisms of
+`[a, b]` that are the identity on a neighbourhood of the endpoints form a contractible space in the
+weak Whitney topology. -/
 theorem contractibleSpace_nhdsFixingSubgroup_Icc (hn : n ≠ 0) :
     ContractibleSpace
       (Diffeomorph.nhdsFixingSubgroup (I := 𝓡∂ 1) (n := n) ((𝓡∂ 1).boundary (Icc a b))) :=

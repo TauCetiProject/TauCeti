@@ -42,6 +42,8 @@ the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
   setwise.
 * `Diffeomorph.toHomeomorph_mem_fixingSubgroup`: forgetting smoothness sends a relative
   diffeomorphism to the corresponding relative homeomorphism.
+* `Diffeomorph.nhdsFixingSubgroup_antitone`, `Diffeomorph.nhdsFixingSubgroup_union`: being the
+  identity near a larger set, or near a union, gives a smaller subgroup, or the intersection.
 * `Diffeomorph.nhdsFixingSubgroup_le_fixingSubgroup`: being the identity near `s` implies fixing
   `s` pointwise.
 -/
@@ -160,9 +162,39 @@ def nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) where
 /-- Membership in `nhdsFixingSubgroup s` is being the identity on a neighbourhood of `s`. -/
 @[simp]
 theorem mem_nhdsFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
-    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x := by
-  rw [nhdsFixingSubgroup, Subgroup.mem_mk, Submonoid.mem_mk, Subsemigroup.mem_mk,
-    Set.mem_ofPred_eq]
+    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x :=
+  Iff.rfl
+
+/-- Being the identity near a larger set gives a smaller subgroup. -/
+theorem nhdsFixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
+    nhdsFixingSubgroup (I := I) (n := n) t ≤ nhdsFixingSubgroup (I := I) (n := n) s :=
+  fun _ hf ↦ mem_nhdsFixingSubgroup_iff.mpr
+    ((mem_nhdsFixingSubgroup_iff.mp hf).filter_mono (nhdsSet_mono hst))
+
+/-- Every diffeomorphism is the identity near the empty set. -/
+@[simp]
+theorem nhdsFixingSubgroup_empty :
+    nhdsFixingSubgroup (I := I) (M := M) (n := n) (∅ : Set M) = ⊤ :=
+  Subgroup.eq_top_iff' _ |>.mpr fun _ ↦ by
+    rw [mem_nhdsFixingSubgroup_iff, nhdsSet_empty]
+    exact Filter.eventually_bot
+
+/-- Only the identity is the identity near every point. -/
+@[simp]
+theorem nhdsFixingSubgroup_univ :
+    nhdsFixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ hf ↦ Diffeomorph.ext fun x ↦ by
+    rw [mem_nhdsFixingSubgroup_iff, nhdsSet_univ, Filter.eventually_top] at hf
+    exact hf x
+
+/-- Being the identity near `s ∪ t` is the same as being the identity near `s` and near `t`. -/
+@[simp]
+theorem nhdsFixingSubgroup_union (s t : Set M) :
+    nhdsFixingSubgroup (I := I) (n := n) (s ∪ t) =
+      nhdsFixingSubgroup (I := I) (n := n) s ⊓ nhdsFixingSubgroup (I := I) (n := n) t :=
+  Subgroup.ext fun _ ↦ by
+    rw [Subgroup.mem_inf, mem_nhdsFixingSubgroup_iff, mem_nhdsFixingSubgroup_iff,
+      mem_nhdsFixingSubgroup_iff, nhdsSet_union, Filter.eventually_sup]
 
 /-- A diffeomorphism equal to the identity near `s` fixes `s` pointwise. -/
 theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set M) :
