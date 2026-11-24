@@ -49,6 +49,9 @@ noncomputable def sigmaPresheafOverYonedaEquivPresheafOverIso (F : Over (yoneda.
       left_inv x := Sigma.subtype_ext (β := F.left.obj T)
         (x.2.app_val.trans (yonedaEquiv_yoneda_map _)) rfl
       right_inv _ := rfl })
+    -- Naturality holds by definition: both sides send a pair `⟨h, u⟩` to `F.left.map f u.val`,
+    -- since `Over.sigmaPresheaf` maps `u` by `OverPresheafAux.OverArrows.map₂`, whose value is
+    -- `F.left.map f u.val` by definition (`OverPresheafAux.OverArrows.map₂_val`).
     (fun _ ↦ rfl)
 
 /-- The isomorphism `sigmaPresheafOverYonedaEquivPresheafOverIso F` forgets the morphism to `X`

@@ -36,8 +36,8 @@ def overFullSubcategoryEquiv :
     { obj Z := Over.mk (Y := (⟨Z.obj.left, Z.property⟩ : P.FullSubcategory)) (P.homMk Z.obj.hom)
       map f := Over.homMk (P.homMk f.hom.left) (by ext; exact Over.w f.hom) }
     (NatIso.ofComponents (fun _ ↦ Over.isoMk (Iso.refl _) (Category.id_comp _))
-      (fun _ ↦ by ext; simp; rfl))
+      (fun _ ↦ by ext; exact (Category.comp_id _).trans (Category.id_comp _).symm))
     (NatIso.ofComponents (fun _ ↦ isoMk _ (Over.isoMk (Iso.refl _) (Category.id_comp _)))
-      (fun _ ↦ by ext; simp; rfl))
+      (fun _ ↦ by ext; exact (Category.comp_id _).trans (Category.id_comp _).symm))
 
 end CategoryTheory.ObjectProperty
