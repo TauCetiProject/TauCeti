@@ -25,7 +25,7 @@ nonnegative at the endpoints of an interval containing a positive interior point
 zeros on the open interval
 (`AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`), and `[0, 1]` can be subdivided
 at the zeros of finitely many linear functionals along a segment starting outside their kernels
-(`AffineMap.exists_orderEmbOfFin_forall_lineMap_ne_zero`).
+(`AffineMap.exists_orderEmbedding_fin_forall_lineMap_ne_zero`).
 
 Finitely many affine functions of a nonnegative parameter, all initially positive and at least
 one decreasing, have a common positive exit parameter. All functions are nonnegative exactly
@@ -40,8 +40,8 @@ up to that parameter and strictly positive exactly before it. The proof uses
   `AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`: sign preservation on an open
   interval `(a, b)` for `AffineMap.lineMap u v` when it is positive at an interior point and never
   vanishes on `(a, b)`.
-* `AffineMap.exists_orderEmbOfFin_forall_lineMap_ne_zero`: subdivide `[0, 1]` at the crossing times
-  where any functional in a finite family vanishes along `AffineMap.lineMap p q`.
+* `AffineMap.exists_orderEmbedding_fin_forall_lineMap_ne_zero`: subdivide `[0, 1]` at the
+  crossing times where any functional in a finite family vanishes along `AffineMap.lineMap p q`.
 * `Finset.exists_pos_forall_nonneg_add_mul_iff`: the positive exit parameter for a finite
   family of initially positive affine functions, at least one of which decreases.
 
@@ -116,7 +116,7 @@ theorem lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero {a m b u v : k} (ham :
 
 /-- Subdivide `[0, 1]` at the crossing times where any functional in `Φ` vanishes along the
 segment `AffineMap.lineMap p q`. -/
-theorem exists_orderEmbOfFin_forall_lineMap_ne_zero {V : Type*} [AddCommGroup V] [Module k V]
+theorem exists_orderEmbedding_fin_forall_lineMap_ne_zero {V : Type*} [AddCommGroup V] [Module k V]
     (Φ : Finset (V →ₗ[k] k)) {p q : V} (hp : ∀ φ ∈ Φ, φ p ≠ 0) :
     ∃ (m : ℕ) (c : Fin (m + 2) ↪o k),
       c 0 = 0 ∧ c (Fin.last (m + 1)) = 1 ∧ (∀ j, 0 ≤ c j ∧ c j ≤ 1) ∧

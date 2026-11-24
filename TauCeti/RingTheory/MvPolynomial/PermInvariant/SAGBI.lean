@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.PermInvariant.BlockEsymm
 import Mathlib.Data.Finsupp.SMul
+import TauCeti.Data.Finsupp.RatEmbed
 import TauCeti.Data.Rat.NumDenDvd
 import TauCeti.Geometry.Convex.Cone.MinkowskiWeyl
 import TauCeti.LinearAlgebra.AffineSpace.Ordered
@@ -190,56 +191,6 @@ private theorem permAct_mul_inv_eq_self_of_mem_maxOrbitCone [Finite σ] (m : Mon
   rw [← LinearEquiv.funCongrLeft_mul_symm, mul_assoc, mul_inv_cancel, mul_one] at hfix
   rw [LinearEquiv.funCongrLeft_mul_symm, hfix, LinearEquiv.funCongrLeft_inv_cancel]
 
-/-- Subdivide `[0, 1]` at the crossing times where any functional in `Φ` vanishes along the segment
-`(1 - t) • p₁ + t • q₁`. -/
-private theorem exists_segment_crossing_nodes (Φ : Finset (Module.Dual ℚ (σ → ℚ)))
-    {p₁ q₁ : σ → ℚ} (hp₁_out : ∀ φ ∈ Φ, φ p₁ ≠ 0) :
-    ∃ (k : ℕ) (c : Fin (k + 2) ↪o ℚ),
-      c 0 = 0 ∧ c (Fin.last (k + 1)) = 1 ∧ (∀ j, 0 ≤ c j ∧ c j ≤ 1) ∧
-      ∀ (j : Fin (k + 1)) (t : ℚ), t ∈ Set.Ioo (c j.castSucc) (c j.succ) →
-        ∀ φ ∈ Φ, φ ((1 - t) • p₁ + t • q₁) ≠ 0 := by
-  classical
-  let crossTimes : Finset ℚ :=
-    ((Φ.filter fun φ => φ p₁ ≠ φ q₁).image fun φ => φ p₁ / (φ p₁ - φ q₁)).filter
-      fun t => 0 < t ∧ t < 1
-  let nodes : Finset ℚ := insert 0 (insert 1 crossTimes)
-  have h0_mem : (0 : ℚ) ∈ nodes := Finset.mem_insert_self _ _
-  have h1_mem : (1 : ℚ) ∈ nodes := Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)
-  have hnodes_card : 2 ≤ nodes.card :=
-    le_trans (by decide : 2 ≤ ({0, 1} : Finset ℚ).card) (Finset.card_le_card
-      (Finset.insert_subset_iff.mpr ⟨h0_mem, Finset.singleton_subset_iff.mpr h1_mem⟩))
-  let k : ℕ := nodes.card - 2
-  have hk_eq : nodes.card = k + 2 := by omega
-  let c : Fin (k + 2) ↪o ℚ := nodes.orderEmbOfFin hk_eq
-  have hrange : (nodes : Set ℚ) = Set.range c := (Finset.range_orderEmbOfFin nodes hk_eq).symm
-  have hc_mem : ∀ j, c j ∈ nodes := fun j => Finset.orderEmbOfFin_mem nodes hk_eq j
-  have hc_bounds : ∀ t ∈ nodes, 0 ≤ t ∧ t ≤ 1 := fun t ht => by
-    rcases Finset.mem_insert.mp ht with rfl | ht'
-    · exact ⟨le_rfl, zero_le_one⟩
-    · rcases Finset.mem_insert.mp ht' with rfl | ht''
-      · exact ⟨zero_le_one, le_rfl⟩
-      · have := (Finset.mem_filter.mp ht'').right; exact ⟨this.left.le, this.right.le⟩
-  refine ⟨k, c, ?_, ?_, fun j => hc_bounds _ (hc_mem j), fun j t ht φ hφ hzero => ?_⟩
-  · obtain ⟨j, hj⟩ := hrange ▸ Finset.mem_coe.mpr h0_mem
-    exact le_antisymm (hj ▸ c.monotone (Fin.zero_le j)) (hc_bounds _ (hc_mem 0)).left
-  · obtain ⟨j, hj⟩ := hrange ▸ Finset.mem_coe.mpr h1_mem
-    exact le_antisymm (hc_bounds _ (hc_mem _)).right (hj ▸ c.monotone (Fin.le_last j))
-  · have ht0 : 0 < t := lt_of_le_of_lt (hc_bounds _ (hc_mem j.castSucc)).left ht.left
-    have ht1 : t < 1 := lt_of_lt_of_le ht.right (hc_bounds _ (hc_mem j.succ)).right
-    have hlin : (1 - t) * φ p₁ + t * φ q₁ = 0 := by
-      simpa [map_add, map_smul, smul_eq_mul] using hzero
-    have hne : φ p₁ ≠ φ q₁ := fun heq => hp₁_out φ hφ (by rw [heq] at hlin; linarith)
-    have hteq : t = φ p₁ / (φ p₁ - φ q₁) := by
-      have hsub : φ p₁ - φ q₁ ≠ 0 := sub_ne_zero.mpr hne
-      field_simp [hsub]; linarith
-    have ht_node : t ∈ nodes := Finset.mem_insert_of_mem (Finset.mem_insert_of_mem
-      (Finset.mem_filter.mpr ⟨Finset.mem_image.mpr
-        ⟨φ, Finset.mem_filter.mpr ⟨hφ, hne⟩, hteq.symm⟩, ht0, ht1⟩))
-    obtain ⟨i, hi⟩ := hrange ▸ Finset.mem_coe.mpr ht_node
-    have h1 : (j : ℕ) < (i : ℕ) := c.lt_iff_lt.mp (hi.symm ▸ ht.left)
-    have h2 : (i : ℕ) < (j : ℕ) + 1 := c.lt_iff_lt.mp (hi.symm ▸ ht.right)
-    omega
-
 /-- If the `h`-translate of the midpoint of `(a, b)` lies in `maxOrbitCone m G` and no wall
 functional vanishes on `(a, b)`, then the `h`-translates of both endpoints lie in
 `maxOrbitCone m G`. -/
@@ -330,7 +281,7 @@ private theorem mem_closure_isSwap_of_generic_segment [Finite σ] [DecidableEq �
       nlinarith [hp₁_pos i, hq₁_pos i]
   -- 2. Crossing nodes subdividing `[0, 1]` at the zeros of `Φ` along `γ`.
   obtain ⟨k, c, hc0, hclast, hc_bounds, hno_cross⟩ :=
-    AffineMap.exists_orderEmbOfFin_forall_lineMap_ne_zero Φ hp₁_out
+    AffineMap.exists_orderEmbedding_fin_forall_lineMap_ne_zero Φ hp₁_out
   simp_rw [AffineMap.lineMap_apply_module] at hno_cross
   -- 3. Choose a group element `h j ∈ G` placing each subinterval midpoint into `maxOrbitCone m G`.
   let mid : Fin (k + 1) → ℚ := fun j => (c j.castSucc + c j.succ) / 2
@@ -357,7 +308,7 @@ private theorem mem_closure_isSwap_of_generic_segment [Finite σ] [DecidableEq �
     have h0C : LinearEquiv.funCongrLeft ℚ ℚ (h 0)⁻¹.symm p₁ ∈ maxOrbitCone m G := by
       simpa [γ, hc0] using (hendpoints 0).left
     have h1C : LinearEquiv.funCongrLeft ℚ ℚ (1 : Perm σ)⁻¹.symm p₁ ∈ maxOrbitCone m G := by
-      rwa [inv_one, Equiv.Perm.one_def, Equiv.refl_symm, LinearEquiv.funCongrLeft_id]
+      simpa using hp₁C
     exact (eq_of_permAct_mem_maxOrbitCone_of_injective m G (fun i => (hp₁_pos i).le)
       (injective_of_forall_proj_sub_proj_ne_zero heq_mem hp₁_out) G.one_mem (hhG 0) h1C h0C).symm
   have hhlast : h (Fin.last k) = g := by
@@ -467,8 +418,8 @@ private theorem exists_hyperplane_system_and_basepoint [Finite σ]
       have hw0 : (ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ (h : Perm σ)⁻¹.symm).toLinearMap)
           (LinearEquiv.funCongrLeft ℚ ℚ (h : Perm σ).symm w) = 0 :=
         LinearMap.congr_fun h0 _
-      rwa [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Equiv.Perm.inv_def,
-        ← LinearEquiv.funCongrLeft_symm, LinearEquiv.symm_apply_apply] at hw0
+      rwa [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        LinearEquiv.funCongrLeft_inv_symm_cancel] at hw0
     · obtain ⟨⟨a, b⟩, hp, rfl⟩ := Finset.mem_image.mp he
       intro h0
       have := LinearMap.congr_fun h0 (Pi.single a (1 : ℚ))
@@ -573,12 +524,11 @@ private theorem exists_generic_endpoint [Finite σ]
       have hval : (ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ g⁻¹.symm).toLinearMap) q₀ = ℓ p₁ := by
         rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
         dsimp only [q₀]
-        rw [Equiv.Perm.inv_def, ← LinearEquiv.funCongrLeft_symm, LinearEquiv.symm_apply_apply]
+        rw [LinearEquiv.funCongrLeft_inv_symm_cancel]
       rw [hval]
       have hne : ℓ p₁ ≠ 0 := by
         have hcomp : ℓ = ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ (1 : Perm σ)⁻¹.symm).toLinearMap := by
-          rw [inv_one, Equiv.Perm.one_def, Equiv.refl_symm, LinearEquiv.funCongrLeft_id]
-          exact (LinearMap.comp_id ℓ).symm
+          simp
         exact hcomp ▸ hp₁_out _ (hwall 1 G.one_mem ℓ hℓ)
       exact lt_of_le_of_ne ((hC_iff p₁).mp hp₁C ℓ hℓ) hne.symm
   -- 3. Perturb `q₀` to `q₁` preserving `Lpos` and avoiding `ℬ`.

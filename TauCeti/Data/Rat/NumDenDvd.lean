@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Basic
+public import Mathlib.Data.Finset.Defs
 public import Mathlib.Data.Rat.Lemmas
 
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Order.Ring.Rat
-import Mathlib.Data.Finsupp.Pointwise
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -24,9 +24,9 @@ explicit quotient, so that it applies with no case split on `a = 0` at the point
 what turns a rational scaling between two integral objects into integer divisibilities, as for
 the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass equations.
 
-Also provides the natural-to-rational coordinatewise embedding `TauCeti.ratEmbed` and clears
-denominators simultaneously across a finite family of nonnegative rationals
-(`TauCeti.exists_nat_smul_eq_ratEmbed`).
+Also proves the nonnegative specialization `Rat.den_dvd_iff_exists_mul_natCast_eq` and simultaneous
+denominator clearing across a `Finset` of nonnegative rationals
+(`TauCeti.exists_nat_mul_eq_natCast`).
 
 ## Main results
 
@@ -37,10 +37,8 @@ denominators simultaneously across a finite family of nonnegative rationals
 * `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
 * `Rat.den_dvd_iff_exists_mul_natCast_eq`: for `0 ≤ r`, `r.den ∣ n` exactly when `r * n` is a
   natural number.
-* `TauCeti.ratEmbed`: additive homomorphism embedding `σ →₀ ℕ` into `σ → ℚ`, together with
-  `TauCeti.ratEmbed_mapDomain`.
-* `TauCeti.exists_nat_mul_eq_natCast` and `TauCeti.exists_nat_smul_eq_ratEmbed`: nonnegative
-  rational families on a `Finset` or a finite type clear denominators simultaneously.
+* `TauCeti.exists_nat_mul_eq_natCast`: nonnegative rational families on a `Finset` clear
+  denominators simultaneously.
 -/
 
 public section
@@ -111,25 +109,6 @@ end Rat
 
 namespace TauCeti
 
-/-- Embed a finitely supported natural family `σ →₀ ℕ` coordinatewise into `σ → ℚ`. -/
-noncomputable def ratEmbed {σ : Type*} : (σ →₀ ℕ) →+ (σ → ℚ) :=
-  Finsupp.coeFnAddHom.comp (Finsupp.mapRange.addMonoidHom (Nat.castAddMonoidHom ℚ))
-
-@[simp]
-theorem ratEmbed_apply {σ : Type*} (d : σ →₀ ℕ) (i : σ) : ratEmbed d i = (d i : ℚ) :=
-  (rfl)
-
-/-- `ratEmbed` is injective. -/
-theorem ratEmbed_injective {σ : Type*} : Function.Injective (ratEmbed (σ := σ)) :=
-  fun _ _ h ↦ Finsupp.ext fun i ↦ Nat.cast_injective (congrFun h i)
-
-/-- Mapping the domain of `d : σ →₀ ℕ` along an equivalence `e : σ ≃ τ` precomposes `ratEmbed d`
-with `e.symm`. -/
-theorem ratEmbed_mapDomain {σ τ : Type*} (e : σ ≃ τ) (d : σ →₀ ℕ) :
-    ratEmbed (d.mapDomain e) = ratEmbed d ∘ e.symm :=
-  funext fun i ↦ by
-    simp [ratEmbed_apply, ← Finsupp.equivMapDomain_eq_mapDomain, Finsupp.equivMapDomain_apply]
-
 /-- Any finite subset of a nonnegative rational family `x : ι → ℚ` clears denominators
 simultaneously to natural numbers. -/
 theorem exists_nat_mul_eq_natCast {ι : Type*} (s : Finset ι) {x : ι → ℚ}
@@ -145,17 +124,6 @@ theorem exists_nat_mul_eq_natCast {ι : Type*} (s : Finset ι) {x : ι → ℚ}
   refine ⟨D, fun i ↦ if hi : i ∈ s then k ⟨i, hi⟩ else 0, hD, fun i hi ↦ ?_⟩
   simp only [hi, ↓reduceDIte]
   rw [mul_comm, hk ⟨i, hi⟩]
-
-/-- Any nonnegative rational family `x : σ → ℚ` on a finite type clears denominators to
-`ratEmbed d` for some positive natural multiplier `D` and `d : σ →₀ ℕ`. -/
-theorem exists_nat_smul_eq_ratEmbed {σ : Type*} [Finite σ] {x : σ → ℚ} (hx : ∀ i, 0 ≤ x i) :
-    ∃ (D : ℕ) (d : σ →₀ ℕ), 0 < D ∧ (D : ℚ) • x = ratEmbed d := by
-  classical
-  cases nonempty_fintype σ
-  obtain ⟨D, k, hD, hk⟩ := exists_nat_mul_eq_natCast Finset.univ fun i _ ↦ hx i
-  refine ⟨D, Finsupp.equivFunOnFinite.symm k, hD, funext fun i ↦ ?_⟩
-  simpa only [Pi.smul_apply, smul_eq_mul, ratEmbed_apply,
-    Finsupp.equivFunOnFinite_symm_apply_apply] using hk i (Finset.mem_univ i)
 
 end TauCeti
 

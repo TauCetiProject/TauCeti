@@ -85,8 +85,7 @@ theorem comp_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} 
 leaves `f` unchanged. -/
 theorem comp_symm_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
     f ∘ ⇑σ.symm = f ↔ σ ∈ fiberSubgroup f := by
-  rw [← Subgroup.inv_mem_iff, ← comp_eq_self_iff_mem_fiberSubgroup]
-  rfl
+  rw [← Subgroup.inv_mem_iff, ← comp_eq_self_iff_mem_fiberSubgroup, Equiv.Perm.inv_def]
 
 /-- Every subgroup `G ≤ Equiv.Perm α` preserves its own orbits, so it is contained in the fiber
 subgroup of the orbit quotient map. -/

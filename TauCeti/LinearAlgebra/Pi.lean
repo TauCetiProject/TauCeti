@@ -88,9 +88,10 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
-* `LinearEquiv.funCongrLeft_mul_symm`, `LinearEquiv.funCongrLeft_inv_cancel`, and
-  `LinearEquiv.funCongrLeft_eq_comp`: reindexing by permutations as composition and inverse
-  cancellation.
+* `LinearEquiv.funCongrLeft_mul_symm`, `LinearEquiv.funCongrLeft_inv_cancel`,
+  `LinearEquiv.funCongrLeft_inv_symm_cancel`, `LinearEquiv.funCongrLeft_one_symm`, and
+  `LinearEquiv.funCongrLeft_eq_comp`: reindexing by permutations as composition, identity, and
+  inverse cancellation.
 * `LinearMap.proj_comp_funCongrLeft`: composing a coordinate projection with `funCongrLeft`
   evaluates at the image coordinate.
 * `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`, and
@@ -245,6 +246,19 @@ public theorem funCongrLeft_inv_cancel {R M σ : Type*} [Semiring R] [AddCommMon
     [Module R M] (a : Equiv.Perm σ) (v : σ → M) :
     funCongrLeft R M a.symm (funCongrLeft R M a⁻¹.symm v) = v := by
   rw [Equiv.Perm.inv_def, Equiv.symm_symm, ← funCongrLeft_symm, symm_apply_apply]
+
+/-- Reindexing along `a⁻¹.symm` cancels reindexing along `a.symm`. -/
+public theorem funCongrLeft_inv_symm_cancel {R M σ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a⁻¹.symm (funCongrLeft R M a.symm v) = v := by
+  rw [Equiv.Perm.inv_def, ← funCongrLeft_symm, symm_apply_apply]
+
+/-- Reindexing along `(1 : Equiv.Perm σ).symm` is the identity linear equivalence. -/
+@[simp]
+public theorem funCongrLeft_one_symm {R M σ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] :
+    funCongrLeft R M (1 : Equiv.Perm σ).symm = LinearEquiv.refl R (σ → M) := by
+  rw [Equiv.Perm.one_def, Equiv.refl_symm, funCongrLeft_id]
 
 /-- A coordinatewise linear equivalence sends a one-point family to the one-point family
 of its image in that coordinate. -/
