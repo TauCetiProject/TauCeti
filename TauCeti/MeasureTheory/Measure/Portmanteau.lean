@@ -332,18 +332,21 @@ theorem tendsto_of_forall_isOpen_le_liminf_of_filter
       simpa using (BoundedContinuousFunction.isBounded_range_integral
         (fun i ↦ (μs i : Measure X)) f).bddAbove
   refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-  set M : ℝ := ‖f‖ + 1
-  have hM : 0 < M := by positivity
+  set M : ℝ := ‖f‖ + 1 with hM_def
+  have hM : 0 < M := by rw [hM_def]; positivity
   obtain ⟨m, hm⟩ := exists_nat_gt (2 * M / ε)
-  set k : ℕ := m + 1
-  have hk_pos : (0 : ℝ) < k := Nat.cast_pos.2 (Nat.succ_pos m)
-  set a : ℝ := M / k
-  have ha : 0 < a := by positivity
+  set k : ℕ := m + 1 with hk_def
+  have hk_pos : (0 : ℝ) < k := by rw [hk_def]; positivity
+  set a : ℝ := M / k with ha_def
+  have ha : 0 < a := by rw [ha_def]; positivity
   have ha_lt : a < ε / 2 := by
-    rw [show a = M / (k : ℝ) from rfl, div_lt_iff₀ hk_pos]
-    nlinarith [(div_lt_iff₀ hε).1 hm, show (m : ℝ) < k from Nat.cast_lt.2 (Nat.lt_succ_self m)]
+    rw [ha_def, div_lt_iff₀ hk_pos]
+    have hmk : (m : ℝ) < k := by
+      rw [hk_def]
+      exact_mod_cast Nat.lt_succ_self m
+    nlinarith [(div_lt_iff₀ hε).1 hm]
   have hka (x : X) : f x ≤ k * a := by
-    rw [show (k : ℝ) * a = M from mul_div_cancel₀ M hk_pos.ne']
+    rw [ha_def, mul_div_cancel₀ M hk_pos.ne', hM_def]
     linarith [le_trans (le_abs_self _) (f.norm_coe_le_norm x)]
   have hev : ∀ᶠ i in L, ∀ j ∈ Finset.range k,
       (μ : Measure X).real {x | (j : ℝ) * a < f x} - ε / (2 * M) <
@@ -364,7 +367,7 @@ theorem tendsto_of_forall_isOpen_le_liminf_of_filter
       Finset.sum_le_sum fun j hj ↦ (hi j hj).le
     rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul] at hsum
     have hmul := mul_le_mul_of_nonneg_left hsum ha.le
-    have hcancel : a * ((k : ℝ) * (ε / (2 * M))) = ε / 2 := by dsimp [a]; field_simp
+    have hcancel : a * ((k : ℝ) * (ε / (2 * M))) = ε / 2 := by rw [ha_def]; field_simp
     linarith
   linarith [Filter.le_liminf_of_le hbd_above.isCobounded_ge hev_int]
 

@@ -28,10 +28,10 @@ algebraic closure properties.
 
 * `TauCeti.isBoundedInProbability_iff` and `TauCeti.isBoundedInProbability_of_measure_le` —
   definitional unfolding of `IsBoundedInProbability` and sufficient `ℝ≥0∞`-valued tail criterion.
-* `TauCeti.IsBoundedInProbability.mono_norm_ae`, `TauCeti.IsBoundedInProbability.add`,
-  `TauCeti.IsBoundedInProbability.sub`, `TauCeti.IsBoundedInProbability.const_smul`,
-  `TauCeti.IsBoundedInProbability.smul` — closure of
-  `O_P(1)` under norm domination, linear combinations, and scalar actions.
+* `TauCeti.IsBoundedInProbability.mono_norm_ae`, `TauCeti.IsBoundedInProbability.of_norm_le_of_le`,
+  `TauCeti.IsBoundedInProbability.add`, `TauCeti.IsBoundedInProbability.sub`,
+  `TauCeti.IsBoundedInProbability.const_smul`, `TauCeti.IsBoundedInProbability.smul` — closure of
+  `O_P(1)` under norm domination, two-argument norm bounds, linear combinations, and scalar actions.
 * `TauCeti.isBoundedInProbability_of_tendstoInMeasure_const`,
   `TauCeti.isBoundedInProbability_of_tendstoInMeasure`,
   `TauCeti.isBoundedInProbability_of_tendstoInDistribution` — sequences converging in measure or in
@@ -39,12 +39,13 @@ algebraic closure properties.
 * `TauCeti.isBoundedInProbability_iff_isTightMeasureSet_range` — in a proper normed group with its
   Borel σ-algebra, boundedness in probability is equivalent to tightness of the sequence of laws
   `fun n ↦ μ.map (X n)`.
-* `TauCeti.tendstoInMeasure_smul_zero_of_isBoundedInProbability`,
+* `TauCeti.tendstoInMeasure_zero_of_norm_le_mul_of_isBoundedInProbability`,
+  `TauCeti.tendstoInMeasure_smul_zero_of_isBoundedInProbability`,
   `TauCeti.tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero`,
   `TauCeti.tendstoInMeasure_mul_zero_of_isBoundedInProbability`, and
   `TauCeti.tendstoInMeasure_mul_zero_of_tendstoInMeasure_zero` — the stochastic order algebra
   identities `O_P(1) • o_P(1) = o_P(1)`, `o_P(1) • O_P(1) = o_P(1)`, `O_P(1) * o_P(1) = o_P(1)`,
-  and `o_P(1) * O_P(1) = o_P(1)`.
+  `o_P(1) * O_P(1) = o_P(1)`, and their general norm-domination form.
 
 ## References
 
@@ -119,9 +120,10 @@ theorem IsBoundedInProbability.mono_norm_ae [SeminormedAddGroup F] {μ : Measure
     exact lt_of_lt_of_le hY hω
   exact (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans hn
 
-/-- Helper for two-argument closure of `IsBoundedInProbability` via a positive output threshold
-function whose tail event lies in the union of the two input tail events. -/
-private theorem isBoundedInProbability_of_union
+/-- If `X` and `Y` are bounded in probability under a finite measure `μ` and `‖Z n ω‖` is
+bounded by `C c₁ c₂` whenever `‖X n ω‖ ≤ c₁` and `‖Y n ω‖ ≤ c₂` for positive thresholds `c₁, c₂`
+with `0 < C c₁ c₂`, then `Z` is bounded in probability under `μ`. -/
+theorem IsBoundedInProbability.of_norm_le_of_le
     {E₁ E₂ E₃ : Type*} [SeminormedAddGroup E₁] [SeminormedAddGroup E₂] [SeminormedAddGroup E₃]
     {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → E₁} {Y : ℕ → Ω → E₂} {Z : ℕ → Ω → E₃}
@@ -152,7 +154,7 @@ measure. -/
 theorem IsBoundedInProbability.add {μ : Measure Ω} [IsFiniteMeasure μ] {X Y : ℕ → Ω → E}
     (hX : IsBoundedInProbability μ X) (hY : IsBoundedInProbability μ Y) :
     IsBoundedInProbability μ (fun n ω ↦ X n ω + Y n ω) :=
-  isBoundedInProbability_of_union hX hY (· + ·) (fun hc₁ hc₂ ↦ by positivity)
+  hX.of_norm_le_of_le hY (· + ·) (fun hc₁ hc₂ ↦ by positivity)
     fun _ _ _ _ h1 h2 ↦ (norm_add_le _ _).trans (add_le_add h1 h2)
 
 /-- The difference of two sequences bounded in probability is bounded in probability, under a
@@ -169,7 +171,7 @@ theorem IsBoundedInProbability.smul {𝕜 : Type*} [SeminormedAddGroup 𝕜]
     {U : ℕ → Ω → 𝕜} {V : ℕ → Ω → E}
     (hU : IsBoundedInProbability μ U) (hV : IsBoundedInProbability μ V) :
     IsBoundedInProbability μ (fun n ω ↦ U n ω • V n ω) :=
-  isBoundedInProbability_of_union hU hV (· * ·) (fun hc₁ hc₂ ↦ by positivity)
+  hU.of_norm_le_of_le hV (· * ·) (fun hc₁ hc₂ ↦ by positivity)
     fun hc₁ _ _ _ h1 h2 ↦ (norm_smul_le _ _).trans (mul_le_mul h1 h2 (norm_nonneg _) hc₁.le)
 
 /-- Scaling a sequence bounded in probability by a fixed constant preserves boundedness in
@@ -224,6 +226,11 @@ theorem isBoundedInProbability_of_tendstoInMeasure {μ : Measure Ω} [IsFiniteMe
     (isBoundedInProbability_of_tendstoInMeasure_const hsub)
   simpa only [add_neg_cancel_left] using hbd
 
+private theorem map_apply_norm_gt [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : Measure Ω} {X : Ω → E} (hX : AEMeasurable X μ) (r : ℝ) :
+    μ.map X {x | r < ‖x‖} = μ {ω | r < ‖X ω‖} :=
+  Measure.map_apply_of_aemeasurable hX (isOpen_lt continuous_const continuous_norm).measurableSet
+
 /-- A sequence converging in distribution in any seminormed group with opens-measurable structure
 is bounded in probability. Neither properness nor second countability is required. -/
 theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [MeasurableSpace Ω']
@@ -236,8 +243,6 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
     (ENNReal.ofReal_pos.2 hε)
   refine ⟨(R : ℝ) + 1, by positivity, ?_⟩
   filter_upwards [hR] with n hn
-  have hopen : MeasurableSet {y : E | (R : ℝ) + 1 < ‖y‖} :=
-    (isOpen_lt continuous_const continuous_norm).measurableSet
   have hsub : {y : E | (R : ℝ) + 1 < ‖y‖} ⊆ {y : E | R ≤ nndist (0 : E) y} := by
     intro y hy
     have hnorm : (R : ℝ) ≤ (nndist (0 : E) y : ℝ) := by
@@ -246,7 +251,7 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
     exact_mod_cast hnorm
   calc μ {ω | (R : ℝ) + 1 < ‖X n ω‖}
       = (μ.map (X n)) {y : E | (R : ℝ) + 1 < ‖y‖} :=
-          (Measure.map_apply_of_aemeasurable (h.forall_aemeasurable n) hopen).symm
+          (map_apply_norm_gt (h.forall_aemeasurable n) ((R : ℝ) + 1)).symm
     _ ≤ (μ.map (X n)) {y : E | R ≤ nndist (0 : E) y} := measure_mono hsub
     _ ≤ ENNReal.ofReal ε := hn
 
@@ -266,11 +271,9 @@ theorem isBoundedInProbability_of_isTightMeasureSet_range [OpensMeasurableSpace 
   have hlim := tendsto_measure_norm_gt_of_isTightMeasureSet htight
   obtain ⟨r, hr⟩ := (hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).exists_forall_of_atTop
   refine ⟨max r 1, by positivity, Eventually.of_forall fun n ↦ ?_⟩
-  have hopen : MeasurableSet {x : E | max r 1 < ‖x‖} :=
-    (isOpen_lt continuous_const continuous_norm).measurableSet
   calc μ {ω | max r 1 < ‖X n ω‖}
       = (μ.map (X n)) {x : E | max r 1 < ‖x‖} :=
-          (Measure.map_apply_of_aemeasurable (hX n) hopen).symm
+          (map_apply_norm_gt (hX n) (max r 1)).symm
     _ ≤ ⨆ ν ∈ Set.range (fun k ↦ μ.map (X k)), ν {x : E | max r 1 < ‖x‖} :=
           le_biSup (fun ν : Measure E ↦ ν {x : E | max r 1 < ‖x‖}) ⟨n, rfl⟩
     _ ≤ ENNReal.ofReal ε := (hr (max r 1) (le_max_left r 1)).le
@@ -290,10 +293,8 @@ theorem isTightMeasureSet_range_of_isBoundedInProbability [ProperSpace E] [Borel
   obtain ⟨C, _, hC⟩ := hbd ε.toReal hε_pos
   refine ⟨C, fun r hr ↦ limsup_le_of_le (by isBoundedDefault) ?_⟩
   filter_upwards [hC] with n hn
-  have hopen : MeasurableSet {x : E | r < ‖x‖} :=
-    (isOpen_lt continuous_const continuous_norm).measurableSet
   calc (μ.map (X n)) {x : E | r < ‖x‖}
-      = μ {ω | r < ‖X n ω‖} := Measure.map_apply_of_aemeasurable (hX n) hopen
+      = μ {ω | r < ‖X n ω‖} := map_apply_norm_gt (hX n) r
     _ ≤ μ {ω | C < ‖X n ω‖} := measure_mono fun ω (hω : r < ‖X n ω‖) ↦ hr.trans_lt hω
     _ = ENNReal.ofReal (μ.real {ω | C < ‖X n ω‖}) :=
           (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
@@ -315,7 +316,10 @@ section StochasticOrder
 
 variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω]
 
-private theorem tendstoInMeasure_zero_of_norm_le_mul
+/-- **Stochastic order domination `O_P(1) · o_P(1) = o_P(1)`.** If `U` is bounded in probability,
+`V` tends to `0` in measure, and `‖W n ω‖ ≤ ‖U n ω‖ * ‖V n ω‖` for all `n` and `ω`, then `W` tends
+to `0` in measure under any finite measure. -/
+theorem tendstoInMeasure_zero_of_norm_le_mul_of_isBoundedInProbability
     {E₁ E₂ E₃ : Type*} [SeminormedAddGroup E₁] [SeminormedAddGroup E₂]
     [SeminormedAddGroup E₃] {μ : Measure Ω} [IsFiniteMeasure μ]
     {U : ℕ → Ω → E₁} {V : ℕ → Ω → E₂} {W : ℕ → Ω → E₃}
@@ -358,7 +362,8 @@ theorem tendstoInMeasure_smul_zero_of_isBoundedInProbability
     {μ : Measure Ω} [IsFiniteMeasure μ] {U : ℕ → Ω → 𝕜} {V : ℕ → Ω → E}
     (hU : IsBoundedInProbability μ U) (hV : TendstoInMeasure μ V atTop (fun _ ↦ 0)) :
     TendstoInMeasure μ (fun n ω ↦ U n ω • V n ω) atTop (fun _ ↦ 0) :=
-  tendstoInMeasure_zero_of_norm_le_mul hU hV fun n ω ↦ norm_smul_le (U n ω) (V n ω)
+  tendstoInMeasure_zero_of_norm_le_mul_of_isBoundedInProbability hU hV fun n ω ↦
+    norm_smul_le (U n ω) (V n ω)
 
 /-- **Stochastic order algebra `o_P(1) • O_P(1) = o_P(1)`.** Scaling a sequence bounded in
 probability by a scalar sequence tending to `0` in measure yields a sequence tending to `0` in
@@ -368,7 +373,7 @@ theorem tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero
     {μ : Measure Ω} [IsFiniteMeasure μ] {U : ℕ → Ω → 𝕜} {V : ℕ → Ω → E}
     (hU : TendstoInMeasure μ U atTop (fun _ ↦ 0)) (hV : IsBoundedInProbability μ V) :
     TendstoInMeasure μ (fun n ω ↦ U n ω • V n ω) atTop (fun _ ↦ 0) :=
-  tendstoInMeasure_zero_of_norm_le_mul hV hU fun n ω ↦
+  tendstoInMeasure_zero_of_norm_le_mul_of_isBoundedInProbability hV hU fun n ω ↦
     (norm_smul_le (U n ω) (V n ω)).trans_eq (mul_comm _ _)
 
 /-- **Stochastic order algebra `O_P(1) * o_P(1) = o_P(1)`.** Multiplying a sequence bounded in

@@ -190,10 +190,10 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     refine hX_lim.congr_dist ?_
     rw [Metric.tendsto_nhds]
     intro ε hε
-    set δ : ℝ := ε / (2 * (L' : ℝ))
-    have hδ : 0 < δ := by positivity
+    set δ : ℝ := ε / (2 * (L' : ℝ)) with hδ_def
+    have hδ : 0 < δ := by rw [hδ_def]; positivity
     have hLδ : (L' : ℝ) * δ = ε / 2 := by
-      dsimp [δ]
+      rw [hδ_def]
       field_simp
     have hdist : Tendsto (fun i ↦ μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)}) l (𝓝 0) := by
       rw [tendstoInMeasure_iff_measureReal_norm] at hXY
