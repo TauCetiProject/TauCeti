@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree
+public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Basic
 public import TauCeti.AlgebraicGeometry.Birational.FunctionField.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
@@ -74,6 +74,8 @@ private theorem topologicalDegree_eq_finrank_pullbackField (f : X ⤏ Y) [f.IsDo
     ext x
     simp [pullbackField]
   rw [RationalMap.topologicalDegree_def, ← h]
+  -- An intermediate field acts on `K(X)` through its underlying subfield, so the two ranks agree
+  -- definitionally.
   rfl
 
 omit [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (Y ↘ Spec (.of k))] in
@@ -108,7 +110,8 @@ theorem RationalMap.topologicalDegree_pos_iff (f : X ⤏ Y) [f.IsDominant]
     have : Algebra.trdeg (pullbackField k f) X.functionField = 0 :=
       trdeg_eq_zero_iff.mpr inferInstance
     rw [hn] at this
-    simp_all
+    obtain rfl : n = 0 := by exact_mod_cast this
+    simp
   · intro h
     have hn0 : n = 0 := by
       have h' : ((m + n : ℕ) : WithBot ℕ∞) = (m : ℕ) := by exact_mod_cast h
