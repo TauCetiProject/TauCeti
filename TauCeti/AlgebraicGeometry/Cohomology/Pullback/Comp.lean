@@ -153,6 +153,7 @@ opens of `X'` and `X` with `U' ≤ g⁻¹ U`, so that `g` restricts to `g.resLE 
 Pulling back from `U` to `g⁻¹ U` along `g`, restricting to `U'` and pulling back to the open
 subscheme `U'` is pulling back to the open subscheme `U` and then along `g.resLE U U' hle`,
 followed by the identification `(g.resLE U U' hle)^* (M|_U) ≅ (g^* M)|_{U'}`. -/
+@[reassoc]
 theorem cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι {X' : Scheme.{u}}
     (g : X' ⟶ X) (M : X.Modules) (n : ℕ) (U : X.Opens) (U' : X'.Opens) (hle : U' ≤ g ⁻¹ᵁ U) :
     g.cohomologyOnPullback M n U ≫ cohomologyOnRes _ n hle ≫
