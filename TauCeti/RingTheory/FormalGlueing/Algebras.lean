@@ -161,14 +161,11 @@ theorem finite_equalizer_of_formalGlueing (f : M →ₐ[R] P) (g : N →ₐ[S] P
     [Module.Finite S N]
     (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
     Module.Finite R
-      (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) := by
-  refine (TauCeti.finite_iff_baseChange_and_localized hG).mpr
-    ⟨.equiv (isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG hloc).equiv.symm,
-      fun r hr ↦ ?_⟩
-  have := hM r hr
-  exact .equiv ((fst R M N).comp _ |>.algEquivOfLocalizedBijective (.powers r)
-    (Localization.Away r) (bijective_localizedMap_fst_equalizer f g _
-      (by rw [Algebra.algebraMapSubmonoid_powers]; exact hloc r hr))).toLinearEquiv.symm
+      (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) :=
+  (isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG hloc).finite_of_formalGlueing G hG
+    (fun r hr ↦ ((fst R M N).comp _ |>.algEquivOfLocalizedBijective (.powers r)
+      (Localization.Away r) (bijective_localizedMap_fst_equalizer f g _
+        (by rw [Algebra.algebraMapSubmonoid_powers]; exact hloc r hr))).toLinearEquiv) hM
 
 end Ring
 
@@ -203,21 +200,6 @@ end CommRing
 
 section AdicCompletion
 
-/-- A finite generating set of an ideal `I` of a Noetherian ring, for which `R → R̂` induces a
-bijection `R ⧸ I → R̂ ⧸ I R̂`, in the form in which the formal glueing theorems take it. -/
-private theorem exists_finset_formalGlueing_adicCompletion {R : Type*} [CommRing R]
-    [IsNoetherianRing R] (I : Ideal R) :
-    ∃ G : Finset R, Ideal.span (G : Set R) = I ∧
-      Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map
-        (algebraMap R (AdicCompletion I R))) (algebraMap R (AdicCompletion I R))
-          Ideal.le_comap_map) := by
-  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
-  refine ⟨G, rfl, ?_⟩
-  -- `quotientMap_algebraMap_bijective` is stated for the powers `I ^ n`; here `n = 1`.
-  convert AdicCompletion.quotientMap_algebraMap_bijective
-    (I := Ideal.span (G : Set R)) (Submodule.fg_span G.finite_toSet) 1
-    (H := by simpa only [pow_one] using Ideal.le_comap_map) using 3 <;> rw [pow_one]
-
 section Ring
 
 variable {R M N P : Type*} [CommRing R] [IsNoetherianRing R] {I : Ideal R}
@@ -238,9 +220,10 @@ theorem isBaseChange_snd_equalizer_of_adicCompletion (f : M →ₐ[R] P)
     IsBaseChange (AdicCompletion I R) ((snd R M N).comp
       (equalizer (f.comp (fst R M N))
         ((g.restrictScalars R).comp (snd R M N))).val).toLinearMap := by
-  obtain ⟨G, hGI, hG⟩ := exists_finset_formalGlueing_adicCompletion I
+  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
+  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
   exact isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG
-    fun r hr ↦ hloc r (hGI ▸ Ideal.subset_span hr)
+    fun r hr ↦ hloc r (Ideal.subset_span hr)
 
 /-- **Finiteness of an algebra glued along the completion.** In the situation of
 `AlgHom.isBaseChange_snd_equalizer_of_adicCompletion`, if `N` is finite over `R̂` and the
@@ -255,10 +238,11 @@ theorem finite_equalizer_of_adicCompletion (f : M →ₐ[R] P)
     (hM : ∀ r ∈ I, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
     Module.Finite R
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) := by
-  obtain ⟨G, hGI, hG⟩ := exists_finset_formalGlueing_adicCompletion I
+  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
+  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
   exact finite_equalizer_of_formalGlueing f g hf G hG
-    (fun r hr ↦ hloc r (hGI ▸ Ideal.subset_span hr))
-    fun r hr ↦ hM r (hGI ▸ Ideal.subset_span hr)
+    (fun r hr ↦ hloc r (Ideal.subset_span hr))
+    fun r hr ↦ hM r (Ideal.subset_span hr)
 
 end Ring
 
@@ -283,10 +267,11 @@ theorem etale_equalizer_of_adicCompletion (f : M →ₐ[R] P)
       Algebra.Etale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
     Algebra.Etale R
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) := by
-  obtain ⟨G, hGI, hG⟩ := exists_finset_formalGlueing_adicCompletion I
+  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
+  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
   exact etale_equalizer_of_formalGlueing f g hf G hG
-    (fun r hr ↦ hloc r (hGI ▸ Ideal.subset_span hr))
-    fun r hr ↦ hM r (hGI ▸ Ideal.subset_span hr)
+    (fun r hr ↦ hloc r (Ideal.subset_span hr))
+    fun r hr ↦ hM r (Ideal.subset_span hr)
 
 end CommRing
 
