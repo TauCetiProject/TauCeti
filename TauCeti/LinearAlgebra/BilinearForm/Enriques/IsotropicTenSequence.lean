@@ -102,19 +102,19 @@ theorem apply_f_self (i : Fin 10) : B (s.f i) (s.f i) = 0 := by
 theorem apply_f_f_of_ne {i j : Fin 10} (h : i ≠ j) : B (s.f i) (s.f j) = 1 := by
   simp [s.apply_f_f, h]
 
-private theorem sum_ite_eq_nine (i : Fin 10) :
-    ∑ j : Fin 10, (if i = j then (0 : ℤ) else 1) = 9 := by
-  fin_cases i <;> decide
-
-private theorem sum_ite_eq_nine' (i : Fin 10) :
-    ∑ j : Fin 10, (if j = i then (0 : ℤ) else 1) = 9 := by
-  fin_cases i <;> decide
+private theorem sum_ite_eq_zero_else_one {n : ℕ} (i : Fin n) :
+    ∑ j : Fin n, (if i = j then (0 : ℤ) else 1) = n - 1 := by
+  simp only [Finset.sum_ite, Finset.filter_ne, Finset.sum_const_zero, Finset.sum_const,
+    Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Fintype.card_fin,
+    zero_add, nsmul_eq_mul, mul_one]
+  have := i.pos
+  omega
 
 /-- `fᵢ · δ = 3`. -/
 @[simp]
 theorem apply_f_δ (i : Fin 10) : B (s.f i) s.δ = 3 := by
   have h := congrArg (B (s.f i)) s.three_smul_δ
-  simp only [map_smul, map_sum, s.apply_f_f, sum_ite_eq_nine, smul_eq_mul] at h
+  simp only [map_smul, map_sum, s.apply_f_f, sum_ite_eq_zero_else_one, smul_eq_mul] at h
   omega
 
 /-- `δ · fᵢ = 3`. -/
@@ -122,7 +122,7 @@ theorem apply_f_δ (i : Fin 10) : B (s.f i) s.δ = 3 := by
 theorem apply_δ_f (i : Fin 10) : B s.δ (s.f i) = 3 := by
   have h := congrArg (fun x ↦ B x (s.f i)) s.three_smul_δ
   simp only [map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply, s.apply_f_f,
-    sum_ite_eq_nine', smul_eq_mul] at h
+    @eq_comm _ _ i, sum_ite_eq_zero_else_one, smul_eq_mul] at h
   omega
 
 /-- `δ · δ = 10`. -/
@@ -265,6 +265,9 @@ theorem linearIndependent_reyeRoot : LinearIndependent ℤ s.reyeRoot := by
 /-- The Reye lattice `R`, the span of the roots `β₀, …, β₉`. -/
 def reyeLattice : Submodule ℤ M := span ℤ (Set.range s.reyeRoot)
 
+/-- Unfold the Reye lattice as the span of the roots `β₀, …, β₉`. -/
+theorem reyeLattice_def : s.reyeLattice = span ℤ (Set.range s.reyeRoot) := (rfl)
+
 theorem reyeRoot_mem_reyeLattice (i : Fin 10) : s.reyeRoot i ∈ s.reyeLattice :=
   subset_span ⟨i, rfl⟩
 
@@ -278,6 +281,9 @@ theorem coe_reyeBasis (i : Fin 10) : (s.reyeBasis i : M) = s.reyeRoot i :=
 
 /-- The lattice spanned by `f₁, …, f₁₀` and `δ`. -/
 def lattice : Submodule ℤ M := span ℤ (insert s.δ (Set.range s.f))
+
+/-- Unfold the lattice as the span of `δ` and `f₁, …, f₁₀`. -/
+theorem lattice_def : s.lattice = span ℤ (insert s.δ (Set.range s.f)) := (rfl)
 
 theorem δ_mem_lattice : s.δ ∈ s.lattice := subset_span (Set.mem_insert _ _)
 
@@ -339,7 +345,7 @@ private theorem span_range_latticeBasisVec : span ℤ (Set.range s.latticeBasisV
     | cast i => rw [latticeBasisVec_castSucc]; exact s.f_mem_lattice _
   · have hv (i : Fin 10) : s.latticeBasisVec i ∈ span ℤ (Set.range s.latticeBasisVec) :=
       subset_span ⟨i, rfl⟩
-    rw [lattice, span_le, Set.insert_subset_iff, Set.range_subset_iff]
+    rw [lattice_def, span_le, Set.insert_subset_iff, Set.range_subset_iff]
     have hδ : s.δ ∈ span ℤ (Set.range s.latticeBasisVec) := s.latticeBasisVec_nine ▸ hv 9
     refine ⟨hδ, fun i ↦ ?_⟩
     cases i using Fin.lastCases with
@@ -459,14 +465,6 @@ theorem index_reyeLattice (h : s.lattice = ⊤) : s.reyeLattice.toAddSubgroup.in
   rw [← AddSubgroup.relIndex_top_right, ← s.relIndex_reyeLattice_lattice, h,
     Submodule.top_toAddSubgroup]
 
-private theorem sum_ite_eq_eight (i : Fin 9) :
-    ∑ j : Fin 9, (if i = j then (0 : ℤ) else 1) = 8 := by
-  fin_cases i <;> decide
-
-private theorem sum_ite_eq_eight' (j : Fin 9) :
-    ∑ i : Fin 9, (if i = j then (0 : ℤ) else 1) = 8 := by
-  fin_cases j <;> decide
-
 /-! ### Construction from a basis and a model -/
 
 /-- The isotropic 10-sequence `f₁, …, f₉, f₁₀ = 3δ - (f₁ + ⋯ + f₉)` built from nine vectors
@@ -482,15 +480,15 @@ def ofGram (g : Fin 9 → M) (δ : M) (hgg : ∀ i j, B (g i) (g j) = if i = j t
       cases j using Fin.lastCases with
       | last =>
         simp only [Fin.snoc_last]
-        simp [map_sum, LinearMap.sum_apply, hgg, hgδ, hδg, hδδ, sum_ite_eq_eight]
+        simp [map_sum, LinearMap.sum_apply, hgg, hgδ, hδg, hδδ, sum_ite_eq_zero_else_one]
       | cast j =>
         simp only [Fin.snoc_last, Fin.snoc_castSucc, (Fin.castSucc_ne_last j).symm, ite_false]
-        simp [map_sum, LinearMap.sum_apply, hgg, hδg, sum_ite_eq_eight']
+        simp [map_sum, LinearMap.sum_apply, hgg, hδg, @eq_comm _ _ j, sum_ite_eq_zero_else_one]
     | cast i =>
       cases j using Fin.lastCases with
       | last =>
         simp only [Fin.snoc_last, Fin.snoc_castSucc, Fin.castSucc_ne_last i, ite_false]
-        simp [map_sum, hgg, hgδ, sum_ite_eq_eight]
+        simp [map_sum, hgg, hgδ, sum_ite_eq_zero_else_one]
       | cast j => simp [hgg]
   three_smul_δ := by
     rw [Fin.sum_univ_castSucc]
@@ -523,6 +521,13 @@ def standardGram : Matrix (Fin 10) (Fin 10) ℤ :=
   Matrix.of fun i j ↦
     if i = 9 ∧ j = 9 then 10 else if i = 9 ∨ j = 9 then 3 else if i = j then 0 else 1
 
+/-- The entries of `standardGram`. -/
+@[simp]
+theorem standardGram_apply (i j : Fin 10) :
+    standardGram i j =
+      if i = 9 ∧ j = 9 then 10 else if i = 9 ∨ j = 9 then 3 else if i = j then 0 else 1 :=
+  (rfl)
+
 /-- The isotropic 10-sequence on `ℤ¹⁰` with the form `standardGram`, whose first nine vectors and
 `δ` are the standard basis vectors. -/
 noncomputable def standard : IsotropicTenSequence (Matrix.toBilin' standardGram) :=
@@ -532,13 +537,28 @@ noncomputable def standard : IsotropicTenSequence (Matrix.toBilin' standardGram)
     (fun i ↦ by simp [standardGram, castSucc_ne_nine])
     (by simp [standardGram])
 
+/-- The first nine vectors of `standard` are standard basis vectors. -/
+@[simp]
+theorem standard_f_castSucc (i : Fin 9) : standard.f i.castSucc = Pi.single i.castSucc 1 :=
+  ofGram_f_castSucc ..
+
+/-- The last vector of `standard` is `3δ - (f₁ + ⋯ + f₉)`. -/
+@[simp]
+theorem standard_f_nine :
+    standard.f 9 = (3 : ℤ) • Pi.single 9 1 - ∑ i : Fin 9, Pi.single i.castSucc 1 :=
+  ofGram_f_nine ..
+
+/-- The vector `δ` of `standard` is the last standard basis vector. -/
+@[simp]
+theorem standard_δ : standard.δ = Pi.single 9 1 := (rfl)
+
 /-- The standard isotropic 10-sequence generates `ℤ¹⁰`. -/
 theorem lattice_standard : standard.lattice = ⊤ := by
   rw [eq_top_iff, ← (Pi.basisFun ℤ (Fin 10)).span_eq, span_le, Set.range_subset_iff]
   intro i
   cases i using Fin.lastCases with
-  | last => simpa [standard, last_nine] using standard.δ_mem_lattice
-  | cast i => simpa [standard] using standard.f_mem_lattice i.castSucc
+  | last => simpa [last_nine] using standard.δ_mem_lattice
+  | cast i => simpa using standard.f_mem_lattice i.castSucc
 
 end IsotropicTenSequence
 
