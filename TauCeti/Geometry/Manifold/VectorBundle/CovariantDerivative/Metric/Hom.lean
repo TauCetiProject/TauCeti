@@ -41,8 +41,9 @@ compatibility for the induced connection on `Hom(V, W)`.
   carrying `∇Fᵢ` and `∇Dᵢ` cancel
   (`CovariantDerivative.IsMetricCompatible.sum_apply_chartDualFrame_cancel`).
 
-These are the comparisons for the frames induced on `Hom(V, W)` by frames parallel at a point,
-following J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
+The first three items are the comparisons for the frames induced on `Hom(V, W)` by frames
+parallel at a point; the last uses the chart frame and its metric-dual frame instead. The module
+follows J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
 -/
 
 public section
