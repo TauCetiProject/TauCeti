@@ -58,8 +58,8 @@ over it (`TauCeti.thomPairOverSignFiberClass`); it is well defined because the f
 constant along paths (`TauCeti.thomPairOverSignFiberClass_eq_of_path`). Every linear trivialization
 at `x` reads the fibre class over `x` the same way (`TauCeti.thomPairOverSignFiberClass_eq`): if it
 reads the orientations of `E_x` oppositely, both the generator of the fibre pair and the
-trivialization of the coefficients change sign. Over a subset `W` of the base set of a
-trivialization of the atlas, the orientations of the fibres read by the trivialization trivialize
+trivialization of the coefficients change sign. Over a subset `W` of the base set of a linear
+trivialization, the orientations of the fibres read by the trivialization trivialize
 `π^*o(E)` over `E|_W`, which identifies the twisted homology with the untwisted homology of the
 product `W × F`, and so with `H₀(W; R)`, carrying fibre classes to classes of points. The
 Mayer–Vietoris sequence of Thom pairs with local coefficients
@@ -143,8 +143,7 @@ theorem thomPairSignLocalSystem_def :
 
 /-- The fibres of the pulled-back orientation system are fibres of `o(E)`, so they are projective.
 -/
-instance projective_thomPairSignLocalSystem_obj [FiniteDimensional ℝ F]
-    (v : FundamentalGroupoid (thomPair F E).fst) :
+instance projective_thomPairSignLocalSystem_obj (v : FundamentalGroupoid (thomPair F E).fst) :
     Projective ((thomPairSignLocalSystem F E R hι).obj v) :=
   LocalCoefficientSystem.projective_pullback_obj_obj (X := TopCat.of (TotalSpace F E)) _ _ v
 
@@ -189,9 +188,9 @@ private theorem fiberSignIso_neg_inv {W : Set B} {x : B} (hx : x ∈ W) (o : Ori
   exact congrArg ModuleCat.ofHom
     (VectorBundleOrientationCover.signLocalSystemFiberEquiv_neg_symm hι o)
 
-/-- Over a subset `W` of the base set of a trivialization `e` of the atlas, the pulled-back
-orientation system is trivialized by evaluating at the orientation read as `ω` by it. -/
-private def baseSetSignIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+/-- Over a subset `W` of the base set of a linear trivialization `e`, the pulled-back orientation
+system is trivialized by evaluating at the orientation read as `ω` by it. -/
+private def baseSetSignIso (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B}
     (hW : W ⊆ e.baseSet) (ω : Orientation ℝ F ι) :
     thomPairOverSignLocalSystem F E R hι W ≅
       (constantFunctor _).obj (ModuleCat.of R R) :=
@@ -208,7 +207,7 @@ private def baseSetSignIso (e : Trivialization F (π F E)) [MemTrivializationAtl
 /-- The trivialization over the base set, restricted to a fibre, is the trivialization of the
 fibre by the orientation it reads as `ω`. -/
 private theorem pullback_map_baseSetSignIso_hom (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) (ω : Orientation ℝ F ι) {x : B}
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) (ω : Orientation ℝ F ι) {x : B}
     (hxW : x ∈ W) :
     (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairOverMap F E hxW)).hom).map
         (baseSetSignIso (R := R) hι e hW ω).hom ≫
@@ -229,12 +228,12 @@ private theorem pullback_map_baseSetSignIso_hom (e : Trivialization F (π F E))
       (ContinuousMap.subtypeVal (π F E ⁻¹' W)))
     (fun v ↦ hW v.property) _ f
 
-/-- Over a subset of the base set of a trivialization `e` of the atlas, the fibre inclusion over
-`x`, read through the trivializations of the coefficient systems by the orientation that this
+/-- Over a subset of the base set of a linear trivialization `e`, the fibre inclusion over `x`,
+read through the trivializations of the coefficient systems by the orientation that this
 trivialization reads as `ω`, is the fibre inclusion in ordinary homology. -/
 @[reassoc]
 private theorem fiberSign_comp_twistedHomologyMap_comp_baseSetSign (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) (ω : Orientation ℝ F ι) {x : B}
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) (ω : Orientation ℝ F ι) {x : B}
     (hxW : x ∈ W) (n : ℕ) :
     ((TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyConstantIso
         (ModuleCat.of R R) n).inv ≫
@@ -629,9 +628,9 @@ def thomPairOverSignFiberClassOf (e : Trivialization F (π F E)) [e.IsLinear ℝ
           (ModuleCat.of R R) (finrank ℝ F)
           (complZeroPairPointHom (ModuleCat.of R R) F (finrank ℝ F) rfl (1 : R)))))
 
-/-- Over a subset `W` of the base set of a trivialization `e` of the atlas, the trivialization
-identifies `Hᵣ(E|_W, E₀|_W; π^*o(E))` with `H₀(W; R)`. -/
-private def localIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+/-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
+`Hᵣ(E|_W, E₀|_W; π^*o(E))` with `H₀(W; R)`. -/
+private def localIso (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B}
     (hW : W ⊆ e.baseSet) :
     (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) (finrank ℝ F) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj
@@ -643,7 +642,7 @@ private def localIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e] 
       (ModuleCat.of R R) (finrank ℝ F)) ≪≫
     prodThomPairSingularHomologyIso (ModuleCat.of R R) W F 0 (finrank ℝ F)
 
-private theorem localIso_hom (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+private theorem localIso_hom (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B}
     (hW : W ⊆ e.baseSet) :
     (localIso (R := R) hι ω e hW).hom =
       (thomPairOver F E W).twistedHomologyCoefficientMap (baseSetSignIso hι e hW ω).hom
@@ -655,10 +654,10 @@ private theorem localIso_hom (e : Trivialization F (π F E)) [MemTrivializationA
   simp only [localIso, Iso.trans_hom, Functor.mapIso_hom, HomologicalComplex.homologyFunctor_map,
     TopPair.twistedChainComplexCoefficientIso_hom, asIso_hom]
 
-/-- Through a trivialization `e` of the atlas, the fibre class over `x ∈ W` read through that
+/-- Through a linear trivialization `e`, the fibre class over `x ∈ W` read through that
 trivialization is the class of the point `x`. -/
 private theorem localIso_hom_thomPairOverSignFiberClassOf (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
     (localIso hι ω e hW).hom (thomPairOverSignFiberClassOf R hι ω e (hW hxW) hxW) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of W) ⟨x, hxW⟩ 1 := by
   have h := ConcreteCategory.congr_hom
@@ -767,7 +766,7 @@ theorem thomPairOverSignFiberClass_neg {W : Set B} {x : B} (hxW : x ∈ W) :
   thomPairOverSignFiberClassOf_neg hι ω _ _ hxW
 
 private theorem localIso_hom_thomPairOverSignFiberClass (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
     (localIso hι ω e hW).hom (thomPairOverSignFiberClass F E R hι ω hxW) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of W) ⟨x, hxW⟩ 1 := by
   rw [thomPairOverSignFiberClass, thomPairOverSignFiberClassOf_eq hι ω _ e _ (hW hxW),
@@ -834,10 +833,10 @@ private theorem thomPairOverTwistedHomologyFinrankInv_naturality {W W' : Set B} 
     ModuleCat.ofHom_toSpanSingleton_comp, thomPairOverTwistedHomologyMap_thomPairOverSignFiberClass]
   simp only [TopCat.hom_ofHom, ContinuousMap.inclusion_apply_coe]
 
-/-- Over a subset of the base set of a chosen trivialization, the map is an isomorphism, inverse to
+/-- Over a subset of the base set of a linear trivialization, the map is an isomorphism, inverse to
 `localIso`. -/
 private theorem thomPairOverTwistedHomologyFinrankInv_comp_localIso_hom
-    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) :
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) :
     thomPairOverTwistedHomologyFinrankInv F E R hι ω W ≫ (localIso hι ω e hW).hom = 𝟙 _ := by
   refine singularHomology₀_hom_ext _ fun x ↦ ?_
   rw [singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv_assoc,
@@ -847,7 +846,7 @@ private theorem thomPairOverTwistedHomologyFinrankInv_comp_localIso_hom
   simp
 
 private theorem isIso_thomPairOverTwistedHomologyFinrankInv_of_subset (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {W : Set B} (hW : W ⊆ e.baseSet) :
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) :
     IsIso (thomPairOverTwistedHomologyFinrankInv F E R hι ω W) := by
   rw [(Iso.comp_hom_eq_id _).1 (thomPairOverTwistedHomologyFinrankInv_comp_localIso_hom hι ω e hW)]
   infer_instance
@@ -855,17 +854,15 @@ private theorem isIso_thomPairOverTwistedHomologyFinrankInv_of_subset (e : Trivi
 /-! ### Finite unions of trivializing open sets -/
 
 /-- **The rank-degree homology over a finite union of trivializing open sets**: if `W` is the union
-of finitely many open sets, each inside the base set of a trivialization of the atlas, then
+of finitely many open sets, each inside the base set of a linear trivialization, then
 `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))`, sending the class of a point to the fibre class over it, is
 an isomorphism. -/
 theorem isIso_thomPairOverTwistedHomologyFinrankInv_biUnion {κ : Type*} (s : Finset κ)
     {W : κ → Set B} (hWo : ∀ i ∈ s, IsOpen (W i))
-    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e),
-      W i ⊆ e.baseSet) :
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet) :
     IsIso (thomPairOverTwistedHomologyFinrankInv F E R hι ω (⋃ i ∈ s, W i)) :=
-  -- The Mayer–Vietoris induction over finite unions of open sets in the base sets of
-  -- trivializations of the atlas; the homology over `U ∩ V` vanishes in degree `r - 1` for such a
-  -- `U`.
+  -- The Mayer–Vietoris induction over finite unions of open sets in the base sets of linear
+  -- trivializations; the homology over `U ∩ V` vanishes in degree `r - 1` for such a `U`.
   isIso_biUnion_of_mayerVietoris
     (A := TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id ⋙
       (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R))
@@ -873,7 +870,7 @@ theorem isIso_thomPairOverTwistedHomologyFinrankInv_biUnion {κ : Type*} (s : Fi
     (thomPairOverTwistedHomologyFinrankInv F E R hι ω)
     (fun _ _ h ↦ thomPairOverTwistedHomologyFinrankInv_naturality hι ω h)
     (fun U V _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ U V)
-    (fun W ↦ ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e), W ⊆ e.baseSet)
+    (fun W ↦ ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W ⊆ e.baseSet)
     (fun _ _ h ⟨e, he, hW⟩ ↦ ⟨e, he, h.trans hW⟩)
     (fun _ ⟨e, _, hW⟩ ↦ isIso_thomPairOverTwistedHomologyFinrankInv_of_subset hι ω e hW)
     (isIso_of_source_target_iso_zero _
