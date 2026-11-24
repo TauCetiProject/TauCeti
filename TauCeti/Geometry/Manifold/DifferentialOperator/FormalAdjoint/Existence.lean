@@ -357,8 +357,10 @@ private theorem exists_nhds_integral_inner_eq [OpensMeasurableSpace M]
       ∃ Q ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F, V⟯ m,
         ∀ s (t : Cₛ^∞⟮I; F', W⟯), IsCompact t.tsupport → t.tsupport ⊆ U →
           ∫ y, ⟪P s y, t y⟫ ∂μ = ∫ y, ⟪s y, Q t y⟫ ∂μ := by
-  obtain ⟨N₁, hN₁, hN₁o, e, he⟩ := exists_nhds_orthonormal_sections (I := I) (F := F) (V := V) x
-  obtain ⟨N₂, hN₂, hN₂o, f, hf⟩ := exists_nhds_orthonormal_sections (I := I) (F := F') (V := W) x
+  obtain ⟨N₁, hN₁, hN₁o, e, he⟩ :=
+    exists_nhds_orthonormal_sections (I := I) (n := ∞) (F := F) (V := V) x
+  obtain ⟨N₂, hN₂, hN₂o, f, hf⟩ :=
+    exists_nhds_orthonormal_sections (I := I) (n := ∞) (F := F') (V := W) x
   choose D' hD'm hD'T using fun a b ↦
     hT _ (innerSection_comp_comp_smulSection_mem hP (e a) (f b))
   refine ⟨N₁ ∩ N₂, inter_mem hN₁ hN₂, _, sum_mem fun a _ ↦ sum_mem fun b _ ↦ ?_,

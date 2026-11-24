@@ -36,7 +36,7 @@ compatible local trivialization of a finite-rank Riemannian bundle is smooth ove
 Orthonormalizing the local frame of a bundle trivialization shows that every point of a `C^n`
 Riemannian vector bundle with finite-dimensional model fibre has a neighbourhood carrying a `C^n`
 orthonormal local frame (`TauCeti.exists_isLocalFrameOn_orthonormal`). Cutting such a frame off by
-a bump function gives global smooth sections which form an orthonormal basis of every fibre over a
+a bump function gives global `C^n` sections which form an orthonormal basis of every fibre over a
 neighbourhood of the point (`TauCeti.exists_nhds_orthonormal_sections`).
 -/
 
@@ -232,21 +232,21 @@ theorem TauCeti.exists_isLocalFrameOn_orthonormal (x₀ : M) :
       (fun j _ ↦ hs.contMDiffAt e.open_baseSet hx j)
       ((hs.linearIndependent hx).linearIndepOn _)).contMDiffWithinAt
 
-/-- Near every point of a smooth Riemannian vector bundle of finite rank over a finite-dimensional
-Hausdorff manifold there are global smooth sections which form an orthonormal basis of every fibre
-over an open neighbourhood of the point: orthonormal local frames cut off by a bump function. -/
+/-- Near every point of a `C^n` Riemannian vector bundle of finite rank (`n ≤ ∞`) over a
+finite-dimensional smooth Hausdorff manifold there are global `C^n` sections which form an
+orthonormal basis of every fibre over an open neighbourhood of the point: orthonormal local frames
+cut off by a bump function. -/
 theorem TauCeti.exists_nhds_orthonormal_sections [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-    [IsContMDiffRiemannianBundle I ∞ F V] (x : M) :
-    ∃ N ∈ 𝓝 x, IsOpen N ∧ ∃ e : Fin (Module.finrank ℝ F) → Cₛ^∞⟮I; F, V⟯,
+    [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle n F V I] [ENat.LEInfty n] (x : M) :
+    ∃ N ∈ 𝓝 x, IsOpen N ∧ ∃ e : Fin (Module.finrank ℝ F) → Cₛ^n⟮I; F, V⟯,
       ∀ y ∈ N, Orthonormal ℝ (e · y) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (e · y)) := by
   obtain ⟨U, hU, hxU, u, hu, huo⟩ :=
-    TauCeti.exists_isLocalFrameOn_orthonormal (I := I) (n := ∞) (F := F) (V := V) x
+    TauCeti.exists_isLocalFrameOn_orthonormal (I := I) (n := n) (F := F) (V := V) x
   obtain ⟨χ, -, hχ⟩ :=
     (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 (hU.mem_nhds hxU)
   refine ⟨interior {y | χ y = 1}, interior_mem_nhds.2 χ.eventuallyEq_one, isOpen_interior,
-    fun a ↦ ⟨(χ : M → ℝ) • u a, ContMDiffOn.smul_section_of_tsupport χ.contMDiff.contMDiffOn
-      hU hχ (hu.contMDiffOn a)⟩, fun y hy ↦ ?_⟩
+    fun a ↦ ⟨(χ : M → ℝ) • u a, ContMDiffOn.smul_section_of_tsupport
+      (χ.contMDiff.of_le ENat.LEInfty.out).contMDiffOn hU hχ (hu.contMDiffOn a)⟩, fun y hy ↦ ?_⟩
   have hχy : χ y = 1 := interior_subset hy
   have hyU : y ∈ U :=
     hχ (subset_tsupport _ (by rw [Function.mem_support, hχy]; exact one_ne_zero))
