@@ -126,27 +126,37 @@ theorem sampleWithoutReplacement_dirac_update_id_fin_three_singleton_zero_two :
     natCard_embedding_update_id_fin_three_comp_eq_zero_two, ENNReal.div_eq_div_iff]
     <;> norm_num [Nat.descFactorial]
 
+/-- For `n = 3` and `m = 2`, the word `(0, 2)` of the one-pair population `update id 1 0` is
+produced by two index maps `Fin 2 → Fin 3`, namely `(0, 2)` and `(1, 2)`. -/
+theorem natCard_update_id_fin_three_comp_eq_zero_two :
+    Nat.card {g : Fin 2 → Fin 3 // update id (1 : Fin 3) 0 ∘ g = ![0, 2]} = 2 := by
+  have hw : (![0, 2] : Fin 2 → Fin 3) = update id 1 0 ∘ ![0, 2] := by decide
+  rw [hw, natCard_update_id_comp_eq_update_id_comp (by decide)]
+  decide
+
 /-- Sampling the one-pair population `update id 1 0` of size `3` twice with replacement gives the
 word `(0, 2)` mass `2/9`: it is produced by the index maps `(0, 2)` and `(1, 2)`. -/
 theorem sampleWithReplacement_dirac_update_id_fin_three_singleton_zero_two :
     sampleWithReplacement (ι := Fin 2) (Measure.dirac (update id (1 : Fin 3) 0)) {![0, 2]} =
       2 / 9 := by
-  have hw : (![0, 2] : Fin 2 → Fin 3) = update id 1 0 ∘ ![0, 2] := by decide
-  have hcard : Nat.card {g : Fin 2 → Fin 3 // update id 1 0 ∘ g = ![0, 2]} = 2 := by
-    rw [hw, natCard_update_id_comp_eq_update_id_comp (by decide)]
-    decide
-  rw [sampleWithReplacement_dirac_apply_singleton, hcard, ENNReal.div_eq_div_iff] <;> norm_num
+  rw [sampleWithReplacement_dirac_apply_singleton, natCard_update_id_fin_three_comp_eq_zero_two,
+    ENNReal.div_eq_div_iff] <;> norm_num
+
+/-- For `n = 3` and `m = 2`, the word `(2, 2)` of the one-pair population `update id 1 0` is
+produced by the single index map `(2, 2)`. -/
+theorem natCard_update_id_fin_three_comp_eq_two_two :
+    Nat.card {g : Fin 2 → Fin 3 // update id (1 : Fin 3) 0 ∘ g = ![2, 2]} = 1 := by
+  have hw : (![2, 2] : Fin 2 → Fin 3) = update id 1 0 ∘ ![2, 2] := by decide
+  rw [hw, natCard_update_id_comp_eq_update_id_comp (by decide)]
+  decide
 
 /-- Sampling the one-pair population `update id 1 0` of size `3` twice with replacement gives the
 word `(2, 2)` mass `1/9`: it is produced by the single index map `(2, 2)`. -/
 theorem sampleWithReplacement_dirac_update_id_fin_three_singleton_two_two :
     sampleWithReplacement (ι := Fin 2) (Measure.dirac (update id (1 : Fin 3) 0)) {![2, 2]} =
       1 / 9 := by
-  have hw : (![2, 2] : Fin 2 → Fin 3) = update id 1 0 ∘ ![2, 2] := by decide
-  have hcard : Nat.card {g : Fin 2 → Fin 3 // update id 1 0 ∘ g = ![2, 2]} = 1 := by
-    rw [hw, natCard_update_id_comp_eq_update_id_comp (by decide)]
-    decide
-  rw [sampleWithReplacement_dirac_apply_singleton, hcard, ENNReal.div_eq_div_iff] <;> norm_num
+  rw [sampleWithReplacement_dirac_apply_singleton, natCard_update_id_fin_three_comp_eq_two_two,
+    ENNReal.div_eq_div_iff] <;> norm_num
 
 /-! ### The one-pair formula -/
 
@@ -241,17 +251,23 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
 private theorem one_sub_descFactorial_div_pow_fin_three_fin_two :
     1 - (Fintype.card (Fin 3)).descFactorial (Fintype.card (Fin 2)) /
       (Fintype.card (Fin 3) : ℝ≥0∞) ^ Fintype.card (Fin 2) = 1 / 3 := by
-  rw [← uniformOn_not_injective_apply_eq, ← ofReal_measureReal,
-    uniformOn_real_not_injective_apply_eq]
-  norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
+  -- Subtraction in `ℝ≥0∞` is truncated, so reduce to the sum `1 = 6/9 + 3/9`.
+  have h : (1 : ℝ≥0∞) / 3 = 3 / 9 := by rw [ENNReal.div_eq_div_iff] <;> norm_num
+  refine ENNReal.sub_eq_of_eq_add_rev (by simp [ENNReal.div_eq_top]) ?_
+  norm_num only [Fintype.card_fin, Nat.descFactorial]
+  rw [h, ENNReal.div_add_div_same]
+  norm_num [ENNReal.div_self]
 
 /-- The collision probability `1 - p` for `n = m = 4` is `1 - 24/256 = 29/32`. -/
 private theorem one_sub_descFactorial_div_pow_fin_four_fin_four :
     1 - (Fintype.card (Fin 4)).descFactorial (Fintype.card (Fin 4)) /
       (Fintype.card (Fin 4) : ℝ≥0∞) ^ Fintype.card (Fin 4) = 29 / 32 := by
-  rw [← uniformOn_not_injective_apply_eq, ← ofReal_measureReal,
-    uniformOn_real_not_injective_apply_eq]
-  norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
+  -- Subtraction in `ℝ≥0∞` is truncated, so reduce to the sum `1 = 24/256 + 232/256`.
+  have h : (29 : ℝ≥0∞) / 32 = 232 / 256 := by rw [ENNReal.div_eq_div_iff] <;> norm_num
+  refine ENNReal.sub_eq_of_eq_add_rev (by simp [ENNReal.div_eq_top]) ?_
+  norm_num only [Fintype.card_fin, Nat.descFactorial]
+  rw [h, ENNReal.div_add_div_same]
+  norm_num [ENNReal.div_self]
 
 /-- **Distinct values for `n = 3`, `m = 2`.** The largest event excess of sampling the population
 `id : Fin 3 → Fin 3` of distinct values without replacement over sampling it with replacement is
