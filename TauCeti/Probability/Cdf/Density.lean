@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import TauCeti.Probability.Cdf
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Cumulative distribution functions of laws with densities
@@ -50,7 +50,8 @@ theorem cdf_sub_cdf_eq_integral_of_eq_withDensity
   wlog hab : a ≤ b generalizing a b
   · rw [intervalIntegral.integral_symm, ← this b a (le_of_not_ge hab), neg_sub]
   rw [← Measure.measureReal_Ioc_eq_cdf_sub μ hab, intervalIntegral.integral_of_le hab, hμ]
-  exact measureReal_withDensity_ofReal (ae_restrict_of_ae hnn) measurableSet_Ioc hfm.restrict
+  exact MeasureTheory.measureReal_withDensity_ofReal
+    (ae_restrict_of_ae hnn) nullMeasurableSet_Ioc hfm.restrict
 
 /-- A real probability law with an everywhere positive density has a strictly increasing cdf. -/
 theorem strictMono_cdf_of_eq_withDensity
@@ -63,7 +64,7 @@ theorem strictMono_cdf_of_eq_withDensity
   rw [← sub_pos, cdf_sub_cdf_eq_integral_of_eq_withDensity hμ hfm hnn,
     intervalIntegral.integral_of_le hxy.le,
     setIntegral_pos_iff_support_of_nonneg_ae (ae_restrict_of_ae hnn)
-      (integrable_of_eq_withDensity hμ hfm hnn).integrableOn,
+      (MeasureTheory.integrable_of_eq_withDensity hμ hfm hnn).integrableOn,
     hsupport, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
   exact sub_pos.mpr hxy
 
@@ -84,7 +85,7 @@ theorem absolutelyContinuousOnInterval_cdf_of_eq_withDensity
   have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ => cdf μ a) a b :=
     (LipschitzWith.const (cdf μ a)).lipschitzOnWith.absolutelyContinuousOnInterval
   rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn a]
-  exact hc.add ((integrable_of_eq_withDensity hμ hfm hnn).intervalIntegrable
+  exact hc.add ((MeasureTheory.integrable_of_eq_withDensity hμ hfm hnn).intervalIntegrable
     |>.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
 
 /-- **Lebesgue differentiation of the cdf.** The cdf of a law with a nonnegative density `f` has
@@ -94,7 +95,7 @@ theorem ae_hasDerivAt_cdf_of_eq_withDensity
     (hnn : 0 ≤ᵐ[volume] f) :
     ∀ᵐ t, HasDerivAt (cdf μ) (f t) t := by
   filter_upwards [LocallyIntegrable.ae_hasDerivAt_integral
-    (integrable_of_eq_withDensity hμ hfm hnn).locallyIntegrable] with t ht
+    (MeasureTheory.integrable_of_eq_withDensity hμ hfm hnn).locallyIntegrable] with t ht
   rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn 0]
   exact (ht 0).const_add _
 
@@ -104,7 +105,7 @@ theorem hasDerivAt_cdf_of_eq_withDensity
     (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
     (hnn : 0 ≤ᵐ[volume] f) {t : ℝ} (hft : ContinuousAt f t) :
     HasDerivAt (cdf μ) (f t) t := by
-  have hfi := integrable_of_eq_withDensity hμ hfm hnn
+  have hfi := MeasureTheory.integrable_of_eq_withDensity hμ hfm hnn
   rw [cdf_eq_add_integral_of_eq_withDensity hμ hfm hnn 0]
   exact (intervalIntegral.integral_hasDerivAt_right hfi.intervalIntegrable
     hfi.aestronglyMeasurable.stronglyMeasurableAtFilter hft).const_add _

@@ -52,7 +52,7 @@ theorem exists_prod_linearEquiv_fin [Module.Finite R P] [Module.Projective R P] 
   obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R P
   -- The section `g` splits `Rⁿ` as the kernel of `f` times `P`.
   let e : (Fin n → R) ≃ₗ[R] ker f × P :=
-    ((exact_subtype_ker_map f).splitSurjectiveEquiv (ker f).injective_subtype ⟨g, hfg⟩).1
+    ((exact_subtype_ker_map f).splitSurjectiveEquiv (ker f).injective_subtype ⟨g, hfg⟩).val
   have : Module.Finite R (ker f × P) := Module.Finite.equiv e
   have : Module.Projective R (ker f × P) := .of_equiv' e
   have : Module.Finite R (ker f) := .of_surjective (fst R (ker f) P) fst_surjective

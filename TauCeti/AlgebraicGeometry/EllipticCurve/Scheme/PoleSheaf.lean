@@ -151,19 +151,20 @@ theorem zMulHom_app_apply (U : W.projModel.Opens)
 /-- Pointwise in each localization, `zMulHom` multiplies by `Z / 1`. -/
 @[simp] theorem zMulHom_app_apply_val (U : W.projModel.Opens)
     (s : Γ(Proj.twistingSheaf W.toProjective.grading (-1), U)) (x : U) :
-    ((W.zMulHom.app U s).1 x).val = Localization.mk (W.toProjective.coord 2) 1 * s.1 x := by
+    ((W.zMulHom.app U s).val x).val = Localization.mk (W.toProjective.coord 2) 1 * s.val x := by
   rw [W.zMulHom_app_apply U s, Proj.sectionsLinearEquivTwistingSheafZero_symm_apply_val,
     Proj.twistingSheaf.mul_apply, Proj.toTwistingSheaf_apply_apply]
 
 /-- Multiplication by `Z` is injective on sections over every open `U`. -/
 theorem zMulHom_app_injective (U : W.projModel.Opens) : Function.Injective (W.zMulHom.app U) := by
   refine (injective_iff_map_eq_zero _).mpr fun s hs ↦ Proj.twistingSheaf.ext fun x ↦ ?_
-  let := x.1.isPrime
-  have hz0 : Localization.mk (W.toProjective.coord 2) 1 * s.1 x = 0 :=
+  let := x.val.isPrime
+  have hz0 : Localization.mk (W.toProjective.coord 2) 1 * s.val x = 0 :=
     (W.zMulHom_app_apply_val U s x).symm.trans <|
-      (congrArg (fun a : Γ(W.projModel, U) ↦ (a.1 x).val) hs).trans HomogeneousLocalization.val_zero
-  have hreg := IsLocalization.nonZeroDivisors_le_comap x.1.asHomogeneousIdeal.toIdeal.primeCompl
-    (Localization x.1.asHomogeneousIdeal.toIdeal.primeCompl)
+      (congrArg (fun a : Γ(W.projModel, U) ↦ (a.val x).val) hs).trans
+        HomogeneousLocalization.val_zero
+  have hreg := IsLocalization.nonZeroDivisors_le_comap x.val.asHomogeneousIdeal.toIdeal.primeCompl
+    (Localization x.val.asHomogeneousIdeal.toIdeal.primeCompl)
     W.toProjective.coord_two_mem_nonZeroDivisors
   rw [Localization.mk_one_eq_algebraMap] at hz0
   exact (mem_nonZeroDivisors_iff_left.mp hreg _ hz0).trans (Proj.twistingSheaf.zero_apply x).symm
@@ -185,7 +186,7 @@ private theorem zMulHom_app_chartGenerator (i : Fin 3) :
       Proj.awayToSection W.toProjective.grading (W.toProjective.coord i) (W.zOverCoord i) := by
   set U := Proj.basicOpen W.toProjective.grading (W.toProjective.coord i)
   apply Subtype.ext; funext x; apply HomogeneousLocalization.val_injective
-  let := x.1.isPrime
+  let := x.val.isPrime
   refine (W.zMulHom_app_apply_val U _ x).trans <| Eq.trans ?_
     (Proj.val_awayToSection_mk_apply (W.toProjective.coord_mem_grading i) 1
       (W.toProjective.coord 2) (by simpa using W.toProjective.coord_mem_grading 2) x).symm
@@ -259,7 +260,7 @@ theorem zeroSectionDivisor_pow_three_eq_imageIdealSheaf :
     set U : W.projModel.affineOpens := ⟨Proj.basicOpen W.toProjective.grading
       (W.toProjective.coord i),
       Proj.isAffineOpen_basicOpen _ _ (W.toProjective.coord_mem_grading i) one_pos⟩
-    have htop : (⊤ : (Spec (.of (W.toProjective.ChartRing i))).Opens) ≤ W.chartι i ⁻¹ᵁ U.1 :=
+    have htop : (⊤ : (Spec (.of (W.toProjective.ChartRing i))).Opens) ≤ W.chartι i ⁻¹ᵁ U.val :=
       fun x _ ↦ by
         rw [Scheme.Hom.mem_preimage]; dsimp only [U]; rw [← W.opensRange_chartι i]; exact ⟨x, rfl⟩
     rw [Scheme.IdealSheafData.ideal_comap_of_le _ (W.chartι i) U ⟨⊤, isAffineOpen_top _⟩ htop,
@@ -429,8 +430,7 @@ private noncomputable def poleSheafThreePairingIso :
     InvertibleSheaf.tensorProduct
         (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf
         (W.projModelTwistingSheaf 1) ≅ InvertibleSheaf.trivial W.projModel :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible W.projModel)
-    (Scheme.Modules.isoOfSheafIso W.projModel W.poleSheafThreePairingSheafIso)
+  ObjectProperty.isoMk _ W.poleSheafThreePairingSheafIso
 
 /-- Canonical identification `𝒪(3[0]) ≅ 𝒪(1)` obtained by dualizing `𝒪(-3[0]) ⊗ 𝒪(1) ≅ 𝒪`. -/
 noncomputable def poleSheafThreeIsoProjModelTwistingSheafOne :
@@ -470,9 +470,7 @@ theorem tensorProductCongrRight_poleSheafThreeIsoProjModelTwistingSheafOne_inv_t
     (congrArg (_ ≫ ·) (Category.id_comp _)).trans
       (InvertibleSheaf.tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom
         W.poleSheafThreePairingIso)
-  refine (congrArg (·.hom) h0).trans (SheafOfModules.hom_ext ?_)
-  simp only [poleSheafThreePairingIso, poleSheafThreePairingSheafIso, ObjectProperty.isoMk,
-    ObjectProperty.homMk, Scheme.Modules.isoOfSheafIso_hom_val]; rfl
+  exact congrArg (·.hom) h0
 
 /-- On underlying `𝒪_{W.projModel}`-modules, evaluating the inverse of
 `poleSheafThreeIsoProjModelTwistingSheafOne` against `𝒪(-3[0])` recovers
@@ -498,10 +496,7 @@ theorem whiskerLeft_poleSheafThreeIsoProjModelTwistingSheafOne_inv_ev :
       (@eqToIso C _ _ _
         (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1))).hom ≫
       (Proj.unitIsoTwistingSheafZero W.toProjective.grading).inv := by
-  have hpair : W.poleSheafThreePairingIso.hom.hom = W.poleSheafThreePairingSheafIso.hom :=
-    SheafOfModules.hom_ext <| by
-      simp only [poleSheafThreePairingIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-        Scheme.Modules.isoOfSheafIso_hom_val]
+  have hpair : W.poleSheafThreePairingIso.hom.hom = W.poleSheafThreePairingSheafIso.hom := rfl
   refine (InvertibleSheaf.whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev
       W.poleSheafThreePairingIso).trans <|
     congrArg ((InvertibleSheaf.tensorProductObjIso _ _).inv ≫ ·) <|

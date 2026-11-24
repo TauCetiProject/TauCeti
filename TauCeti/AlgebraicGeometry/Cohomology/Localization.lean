@@ -133,12 +133,13 @@ private lemma isLocalizedModule_cohomologyOnResLinear_zero {U W : X.Opens}
     exact M.isLocalizedModule_basicOpenRestrict_of_qcqs hU hU' (σ g)
   -- The target map is semilinear along `σ`, since `Γ(X, U)` acts on sections over
   -- `X.basicOpen (σ g)` through restriction.
-  refine IsLocalizedModule.of_bijective_semilinearMap _ _ (M.basicOpenRestrict (σ g))
+  refine Iff.mpr (IsLocalizedModule.iff_of_bijective_semilinearMap _ _ (M.basicOpenRestrict (σ g))
     (cohomologyOnZeroSemilinearMap M U)
     { toFun := cohomologyOnZeroEquiv M _
       map_add' := map_add _
       map_smul' := fun r x ↦ ?_ }
-    (cohomologyOnZeroSemilinearMap_bijective M U) (cohomologyOnZeroEquiv M _).bijective fun x ↦ ?_
+    (cohomologyOnZeroSemilinearMap_bijective M U) (cohomologyOnZeroEquiv M _).bijective
+    fun x ↦ ?_) inferInstance
   · rw [cohomologyOnZeroEquiv_smul, basicOpen_smul_def, ← ConcreteCategory.comp_apply,
       ← Functor.map_comp]
     rfl

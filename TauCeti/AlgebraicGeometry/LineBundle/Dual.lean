@@ -7,23 +7,35 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.Dual
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
+import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+import TauCeti.CategoryTheory.Monoidal.InvertibleObject
 
 /-!
 # Duals of line bundles
 
 The internal-Hom dual of an invertible sheaf is again invertible. Evaluation identifies the
-tensor product of a line bundle with its dual with the trivial line bundle.
+tensor product of a line bundle with its dual with the trivial line bundle, so tensoring on the
+right by `L.dual` is an autoequivalence of `X.Modules`. Twisting a morphism `φ : L₁ ⟶ L₂` of line
+bundles by `L₂.dual` therefore yields an `𝒪_X`-linear functional `L₁ ⊗ L₂.dual ⟶ 𝒪_X` that vanishes
+or is a monomorphism exactly when `φ` does, and whose cokernel is `(cokernel φ) ⊗ L₂.dual`.
 
 ## Main declarations
 
 * `InvertibleSheaf.dual` is the dual line bundle;
 * `InvertibleSheaf.dualCongr` transports an isomorphism through duality;
-* `InvertibleSheaf.evaluationDualIsoSheaf` packages internal-Hom evaluation as an isomorphism;
+* `InvertibleSheaf.evaluationDualIsoSheaf` and `InvertibleSheaf.evaluationDualIso` package
+  internal-Hom evaluation as isomorphisms into the structure sheaf;
 * `InvertibleSheaf.tensorDualIso` identifies `L ⊗ L.dual` with the trivial line bundle;
+* `InvertibleSheaf.tensorRightDualEquivalence` is the autoequivalence `- ⊗ L.dual` of `X.Modules`;
+* `InvertibleSheaf.twistedToUnit` twists a morphism `φ : L₁.obj ⟶ L₂.obj` into a functional
+  `(L₁ ⊗ L₂.dual).obj ⟶ 𝟙_ X.Modules`, with `twistedToUnit_eq_zero_iff`, `mono_twistedToUnit_iff`,
+  and `cokernelTwistedToUnitIso`;
 * `InvertibleSheaf.dualIsoOfTensorIsoTrivial` identifies `L.dual` with `M` from a pairing
   `L ⊗ M ≅ 𝒪_X`, characterized via `tensorDualIso` and `ihom.ev`.
 
-These constructions supply inverses for the Picard group of a scheme.
+These constructions supply inverses for the Picard group of a scheme and relate morphisms of line
+bundles to ideal sheaves.
 -/
 
 public section
@@ -83,20 +95,17 @@ lemma dualCongrIso_inv {L K : InvertibleSheaf X} (e : L ≅ K) :
 
 /-- An isomorphism of line bundles induces an isomorphism of their duals. -/
 def dualCongr {L K : InvertibleSheaf X} (e : L ≅ K) : dual L ≅ dual K :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (dualCongrIso e))
+  ObjectProperty.isoMk _ (dualCongrIso e)
 
 @[simp]
-lemma dualCongr_hom_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).hom.hom.val = (dualCongrIso e).hom.val := by
-  simp only [dualCongr, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+lemma dualCongr_hom_hom {L K : InvertibleSheaf X} (e : L ≅ K) :
+    (dualCongr e).hom.hom = (dualCongrIso e).hom :=
+  (rfl)
 
 @[simp]
-lemma dualCongr_inv_val {L K : InvertibleSheaf X} (e : L ≅ K) :
-    (dualCongr e).inv.hom.val = (dualCongrIso e).inv.val := by
-  simp only [dualCongr, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+lemma dualCongr_inv_hom {L K : InvertibleSheaf X} (e : L ≅ K) :
+    (dualCongr e).inv.hom = (dualCongrIso e).inv :=
+  (rfl)
 
 /-- Evaluation of a line bundle against its internal-Hom dual, as an isomorphism of sheaves. -/
 def evaluationDualIsoSheaf (L : InvertibleSheaf X) :
@@ -148,20 +157,145 @@ lemma tensorDualIsoSheaf_inv (L : InvertibleSheaf X) :
 
 /-- Tensoring a line bundle with its dual gives the trivial line bundle. -/
 def tensorDualIso (L : InvertibleSheaf X) : tensorProduct L (dual L) ≅ trivial X :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (tensorDualIsoSheaf L))
+  ObjectProperty.isoMk _ (tensorDualIsoSheaf L)
 
 @[simp]
-lemma tensorDualIso_hom_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).hom.hom.val = (tensorDualIsoSheaf L).hom.val := by
-  simp only [tensorDualIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val]
+lemma tensorDualIso_hom_hom (L : InvertibleSheaf X) :
+    (tensorDualIso L).hom.hom = (tensorDualIsoSheaf L).hom :=
+  (rfl)
 
 @[simp]
-lemma tensorDualIso_inv_val (L : InvertibleSheaf X) :
-    (tensorDualIso L).inv.hom.val = (tensorDualIsoSheaf L).inv.val := by
-  simp only [tensorDualIso, ObjectProperty.isoMk, ObjectProperty.homMk,
-    _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+lemma tensorDualIso_inv_hom (L : InvertibleSheaf X) :
+    (tensorDualIso L).inv.hom = (tensorDualIsoSheaf L).inv :=
+  (rfl)
+
+/-- Evaluation of a line bundle against its dual, as an isomorphism `L ⊗ L∨ ≅ 𝒪_X` in
+`X.Modules`. -/
+def evaluationDualIso (L : InvertibleSheaf X) :
+    L.obj ⊗ (dual L).obj ≅ 𝟙_ X.Modules :=
+  eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L)) ≪≫ evaluationDualIsoSheaf L
+
+/-- The forward map of `evaluationDualIso` is internal-Hom evaluation transported along
+`dual_obj`. -/
+lemma evaluationDualIso_hom (L : InvertibleSheaf X) :
+    (evaluationDualIso L).hom =
+      (eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L))).hom ≫ (evaluationDualIsoSheaf L).hom :=
+  (rfl)
+
+/-- The inverse map of `evaluationDualIso` is the inverse of internal-Hom evaluation transported
+along `dual_obj`. -/
+lemma evaluationDualIso_inv (L : InvertibleSheaf X) :
+    (evaluationDualIso L).inv =
+      (evaluationDualIsoSheaf L).inv ≫ (eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L))).inv :=
+  (rfl)
+
+/-- Tensoring on the right by the dual of a line bundle is an autoequivalence of `X.Modules`,
+with inverse given by tensoring on the right by the line bundle itself. -/
+def tensorRightDualEquivalence (L : InvertibleSheaf X) : X.Modules ≌ X.Modules :=
+  MonoidalCategory.tensorRightEquivalenceOfIso
+    (β_ (dual L).obj L.obj ≪≫ evaluationDualIso L) (evaluationDualIso L)
+
+/-- The forward functor of `tensorRightDualEquivalence L` is tensoring on the right by
+`(dual L).obj`. -/
+@[simp]
+lemma tensorRightDualEquivalence_functor (L : InvertibleSheaf X) :
+    (tensorRightDualEquivalence L).functor = tensorRight (dual L).obj :=
+  (rfl)
+
+/-- The inverse functor of `tensorRightDualEquivalence L` is tensoring on the right by `L.obj`. -/
+@[simp]
+lemma tensorRightDualEquivalence_inverse (L : InvertibleSheaf X) :
+    (tensorRightDualEquivalence L).inverse = tensorRight L.obj :=
+  (rfl)
+
+/-- Twist a morphism `φ : L₁.obj ⟶ L₂.obj` of line bundles by `L₂.dual`, producing an
+`𝒪_X`-linear functional `(L₁ ⊗ L₂.dual).obj ⟶ 𝟙_ X.Modules`. -/
+def twistedToUnit (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    (tensorProduct L₁ (dual L₂)).obj ⟶ 𝟙_ X.Modules :=
+  (tensorProductObjIso L₁ (dual L₂)).hom ≫
+    whiskerRight φ (dual L₂).obj ≫
+    (evaluationDualIso L₂).hom
+
+/-- Defining equation for `twistedToUnit`. -/
+lemma twistedToUnit_def (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    twistedToUnit L₁ L₂ φ =
+      (tensorProductObjIso L₁ (dual L₂)).hom ≫
+        whiskerRight φ (dual L₂).obj ≫
+        (evaluationDualIso L₂).hom :=
+  (rfl)
+
+/-- Twisting a morphism of line bundles by the dual of the target preserves and reflects
+vanishing. -/
+@[simp]
+theorem twistedToUnit_eq_zero_iff (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    twistedToUnit L₁ L₂ φ = 0 ↔ φ = 0 := by
+  let : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  let E := tensorRightDualEquivalence L₂
+  have : E.functor.PreservesZeroMorphisms := ⟨fun _ _ ↦ by simp [E]⟩
+  dsimp only [twistedToUnit]
+  rw [Limits.comp_eq_zero_iff_of_epi (tensorProductObjIso L₁ (dual L₂)).hom,
+    Limits.comp_eq_zero_iff_of_mono (evaluationDualIso L₂).hom]
+  exact Functor.map_eq_zero_iff E.functor
+
+/-- Twisting a morphism of line bundles by the dual of the target preserves and reflects
+monomorphisms. -/
+@[simp]
+theorem mono_twistedToUnit_iff (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    Mono (twistedToUnit L₁ L₂ φ) ↔ Mono φ := by
+  let E := tensorRightDualEquivalence L₂
+  constructor
+  · intro h
+    have : Mono (twistedToUnit L₁ L₂ φ) := h
+    have hmap : Mono (φ ▷ (dual L₂).obj) := by
+      have heq : (tensorProductObjIso L₁ (dual L₂)).inv ≫
+          twistedToUnit L₁ L₂ φ ≫ (evaluationDualIso L₂).inv = φ ▷ (dual L₂).obj := by
+        simp [twistedToUnit]
+      rw [← heq]
+      infer_instance
+    exact E.functor.mono_of_mono_map hmap
+  · intro h
+    have : Mono (φ ▷ (dual L₂).obj) := E.functor.map_mono φ
+    dsimp only [twistedToUnit]
+    infer_instance
+
+/-- Twisting a monomorphism of line bundles by the dual of the target yields a monomorphism into
+the structure sheaf. -/
+instance mono_twistedToUnit (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) [Mono φ] :
+    Mono (twistedToUnit L₁ L₂ φ) :=
+  (mono_twistedToUnit_iff L₁ L₂ φ).mpr ‹_›
+
+open Limits in
+/-- The cokernel of `twistedToUnit L₁ L₂ φ` is canonically isomorphic to
+`cokernel φ ⊗ (dual L₂).obj`. -/
+def cokernelTwistedToUnitIso (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    cokernel (twistedToUnit L₁ L₂ φ) ≅ cokernel φ ⊗ (dual L₂).obj :=
+  (cokernel.mapIso (twistedToUnit L₁ L₂ φ) ((tensorRight (dual L₂).obj).map φ)
+      (tensorProductObjIso L₁ (dual L₂))
+      (evaluationDualIso L₂).symm (by
+        dsimp [twistedToUnit]
+        simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id])) ≪≫
+    (PreservesCokernel.iso (tensorRight (dual L₂).obj) φ).symm
+
+open Limits in
+/-- `cokernelTwistedToUnitIso` intertwines `cokernel.π (twistedToUnit L₁ L₂ φ)` with
+`(evaluationDualIso L₂).inv` followed by `cokernel.π φ ▷ (dual L₂).obj`. -/
+@[reassoc (attr := simp)]
+lemma π_comp_cokernelTwistedToUnitIso_hom (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    cokernel.π (twistedToUnit L₁ L₂ φ) ≫ (cokernelTwistedToUnitIso L₁ L₂ φ).hom =
+      (evaluationDualIso L₂).inv ≫ cokernel.π φ ▷ (dual L₂).obj := by
+  dsimp [cokernelTwistedToUnitIso]
+  rw [cokernel.mapIso_hom, cokernel.π_desc_assoc, Category.assoc, PreservesCokernel.iso_inv]
+  exact congrArg ((evaluationDualIso L₂).inv ≫ ·)
+    (π_comp_cokernelComparison φ (tensorRight (dual L₂).obj))
+
+open Limits in
+/-- The inverse of `cokernelTwistedToUnitIso` intertwines `cokernel.π φ ▷ (dual L₂).obj` with
+`(evaluationDualIso L₂).hom` followed by `cokernel.π (twistedToUnit L₁ L₂ φ)`. -/
+@[reassoc (attr := simp)]
+lemma π_comp_cokernelTwistedToUnitIso_inv (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    cokernel.π φ ▷ (dual L₂).obj ≫ (cokernelTwistedToUnitIso L₁ L₂ φ).inv =
+      (evaluationDualIso L₂).hom ≫ cokernel.π (twistedToUnit L₁ L₂ φ) := by
+  rw [Iso.comp_inv_eq, Category.assoc, π_comp_cokernelTwistedToUnitIso_hom, Iso.hom_inv_id_assoc]
 
 /-- The monoidal pairing `L.obj ⊗ M.obj ≅ 𝟙_ X.Modules` induced by `e : L ⊗ M ≅ 𝒪_X`. -/
 private def pairingIso {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
@@ -207,11 +341,10 @@ private lemma isIso_curryPairing {L M : InvertibleSheaf X} (e : tensorProduct L 
 the internal-Hom adjunction. -/
 def dualIsoOfTensorIsoTrivial {L M : InvertibleSheaf X}
     (e : tensorProduct L M ≅ trivial X) : dual L ≅ M :=
-  ObjectProperty.isoMk (SheafOfModules.isInvertible X)
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X
-      (eqToIso (dual_obj L) ≪≫
-        (@asIso (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _ _ _
-          (curryPairing e) (isIso_curryPairing e)).symm))
+  ObjectProperty.isoMk _
+    (eqToIso (dual_obj L) ≪≫
+      (@asIso (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _ _ _
+        (curryPairing e) (isIso_curryPairing e)).symm)
 
 /-- Evaluating `L` against the inverse of `dualIsoOfTensorIsoTrivial e` recovers the pairing `e`
 transported to `L.obj ⊗ M.obj ⟶ 𝟙_ X.Modules`. -/
@@ -228,11 +361,7 @@ lemma whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev {L M : InvertibleSheaf X}
   let p : L₀ ⊗ M₀ ≅ 𝟙_ _ := pairingIso e
   let f : M₀ ⟶ L₀.dual := curryPairing e
   let g : M₀ ⟶ D₀ := (dualIsoOfTensorIsoTrivial e).inv.hom
-  have hval : g = f ≫ eDual.inv :=
-    _root_.SheafOfModules.hom_ext <| by
-      simp only [g, dualIsoOfTensorIsoTrivial, ObjectProperty.isoMk, ObjectProperty.homMk,
-        _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
-      rfl
+  have hval : g = f ≫ eDual.inv := rfl
   have hinv : g ≫ eDual.hom = f :=
     (congrArg (· ≫ eDual.hom) hval).trans <|
       (Category.assoc f eDual.inv eDual.hom).trans <|
@@ -271,29 +400,28 @@ lemma tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom
   let eTP : LD ≅ SheafOfModules.tensorProduct X.sheaf L₀ L₀.dual :=
     eqToIso (tensorProduct_obj L (dual L))
   have hnat : fCongr ≫ fObjD.hom = fObjM.hom ≫ (L₀ ◁ fIsoInv) :=
-    tensorProductCongrRight_hom_tensorProductObjIso_hom (L := L) (dualIsoOfTensorIsoTrivial e).symm
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom L
+      (dualIsoOfTensorIsoTrivial e).symm
   have hdual : fDual = fObjD.hom ≫ fEval ≫ fTriv.inv := by
-    refine _root_.SheafOfModules.hom_ext ?_
     have hcongr : (SheafOfModules.tensorProductCongrRight (M := L₀) X.sheaf
         (Iso.refl L₀.dual)).hom = 𝟙 _ :=
       congrArg Iso.hom (SheafOfModules.tensorProductCongrRight_refl X.sheaf L₀ L₀.dual)
     have hL : fDual = eTP.hom ≫ (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
         (L₀.tensorUnderlyingIso L₀.dual).inv ≫ fEval ≫ fTriv.inv := by
-      refine _root_.SheafOfModules.hom_ext ?_
-      rw [show fDual.val = (tensorDualIso L).hom.hom.val from rfl,
-        tensorDualIso_hom_val, tensorDualIsoSheaf_hom]
-      exact congrArg _root_.SheafOfModules.Hom.val (show eTP.hom ≫
+      have h0 : fDual = (tensorDualIsoSheaf L).hom := tensorDualIso_hom_hom L
+      rw [h0, tensorDualIsoSheaf_hom]
+      exact show eTP.hom ≫
         (SheafOfModules.tensorProductCongrRight (M := L₀) X.sheaf (Iso.refl L₀.dual)).hom ≫
         (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
         (L₀.tensorUnderlyingIso L₀.dual).inv ≫ fEval ≫ fTriv.inv = _ by
-          rw [hcongr, Category.id_comp])
+          rw [hcongr, Category.id_comp]
     have hR : fObjD.hom ≫ fEval ≫ fTriv.inv =
         eTP.hom ≫ (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
         (L₀.tensorUnderlyingIso L₀.dual).inv ≫ fEval ≫ fTriv.inv := by
       have hobj : fObjD.hom = eTP.hom ≫ (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
           (L₀.tensorUnderlyingIso L₀.dual).inv := tensorProductObjIso_hom L (dual L)
       rw [hobj, Category.assoc, Category.assoc]
-    exact congrArg _root_.SheafOfModules.Hom.val (hL.trans hR.symm)
+    exact hL.trans hR.symm
   have hev : (L₀ ◁ fIsoInv) ≫ fEval = fObjM.inv ≫ fE ≫ fTriv.hom := by
     have hid : (fIsoInv ≫ (eqToIso (dual_obj L)).hom : M₀ ⟶ L₀.dual) = fIsoInv :=
       Category.comp_id _

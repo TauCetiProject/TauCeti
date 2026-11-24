@@ -14,19 +14,28 @@ An element of `TauCeti.Wkp mu Ω p (n + 1)` is described by a chain of `Lᵖ` fi
 `G 0, …, G n` with `G i : E → TauCeti.IteratedGradient E i`: the value has weak derivative
 `innerSL ℝ ∘ G 0`, and each `G (i + 1)` is the weak derivative of `G i`. This file extracts such a
 chain from an element of `Wkp` and, conversely, assembles an element of `Wkp` from an `Lᵖ` chain,
-by induction on the order through `TauCeti.Wkp.lowerOrder` and `TauCeti.Wkp.mk`. Any weak
-derivative chain of the value of an element of `Wkp` agrees with the recorded derivatives, and its
-fields are bounded in `Lᵖ` by the graph norm, so that they converge in `Lᵖ` when the elements
-of `Wkp` converge.
+by induction on the order through `TauCeti.Wkp.lowerOrder` and `TauCeti.Wkp.mk`. Both directions
+record norms: the fields of the extracted chain have `Lᵖ` norms at most the norm of the element,
+and the assembled element has norm at most the sum of the `Lᵖ` norms of the value and the fields.
+Any weak derivative chain of the value of an element of `Wkp` agrees with the recorded derivatives,
+and its fields are bounded in `Lᵖ` by the graph norm, so that they converge in `Lᵖ` when the
+elements of `Wkp` converge. Conversely, the graph norm is at most the sum of the `Lᵖ` norms of the
+value and of the fields of any such chain.
 
 ## Main declarations
 
-* `TauCeti.Wkp.exists_iteratedGradient_chain`: the weak derivative chain of an element of `Wkp`.
+* `TauCeti.Wkp.exists_iteratedGradient_chain`: the weak derivative chain of an element of `Wkp`,
+  with norm bounds.
 * `TauCeti.Wkp.exists_value_iteratedGradient_ae_eq_of_chain`: an `Lᵖ` weak derivative chain is
-  represented by an element of `Wkp`.
+  represented by an element of `Wkp`, with a norm bound.
 * `TauCeti.Wkp.ae_eq_iteratedGradient_and_eLpNorm_le_of_chain`: a weak derivative chain of the
   value of an element of `Wkp` recovers its highest recorded derivative, with `Lᵖ` bounds by the
   graph norm.
+* `TauCeti.Wkp.iteratedGradient_ae_eq_of_value_ae_eq`: elements of `Wkp`, possibly for different
+  exponents, with almost everywhere equal values have almost everywhere equal highest recorded
+  derivatives.
+* `TauCeti.Wkp.norm_le_norm_value_add_sum_eLpNorm_of_chain`: conversely, the graph norm is at
+  most the sum of the `Lᵖ` norms of the value and of the fields of a weak derivative chain.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
   convergence of the fields of weak derivative chains of the values.
 
@@ -52,26 +61,32 @@ namespace Wkp
 
 /-- **The weak derivative chain of a Sobolev function.** An element `v` of `W^{n+1,p}(Ω)` has
 `Lᵖ` iterated weak gradients `G 0, …, G n`: the value of `v` has weak derivative
-`innerSL ℝ ∘ G 0`, each `G (i + 1)` is the weak derivative of `G i`, and `G n` is the highest
-recorded derivative of `v`. -/
+`innerSL ℝ ∘ G 0`, each `G (i + 1)` is the weak derivative of `G i`, every `G i` has `Lᵖ` norm at
+most the norm of `v`, and `G n` is the highest recorded derivative of `v`. -/
 theorem exists_iteratedGradient_chain (n : ℕ) (v : Wkp mu Omega p (n + 1)) :
     ∃ G : (i : ℕ) → E → IteratedGradient E i,
       HasWeakFDerivOn mu Omega (value (n + 1) v) (fun x => innerSL ℝ (G 0 x)) ∧
       (∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1))) ∧
       (∀ i ≤ n, MemLp (G i) p (mu.restrict Omega)) ∧
+      (∀ i ≤ n, eLpNorm (G i) p (mu.restrict Omega) ≤ ENNReal.ofReal ‖v‖) ∧
       G n =ᵐ[mu.restrict Omega] iteratedGradient n v := by
   induction n with
   | zero =>
     refine ⟨Function.update (fun i _ => 0) 0 (iteratedGradient 0 v), ?_, fun i hi => absurd hi
-      (Nat.not_lt_zero i), fun i hi => ?_, ?_⟩
+      (Nat.not_lt_zero i), fun i hi => ?_, fun i hi => ?_, ?_⟩
     · simpa only [Function.update_self] using hasWeakFDerivOn_value v
     · obtain rfl := Nat.le_zero.1 hi
       simpa only [Function.update_self] using Lp.memLp (iteratedGradient 0 v)
+    · obtain rfl := Nat.le_zero.1 hi
+      rw [Function.update_self, ← Lp.eNorm_def, ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le 0 v)
     · simp only [Function.update_self, Filter.EventuallyEq.rfl]
   | succ n ih =>
-    obtain ⟨G, h0, hG, hGp, htop⟩ := ih (lowerOrder (n + 1) v)
+    obtain ⟨G, h0, hG, hGp, hGn, htop⟩ := ih (lowerOrder (n + 1) v)
+    have hlow : ENNReal.ofReal ‖lowerOrder (n + 1) v‖ ≤ ENNReal.ofReal ‖v‖ :=
+      ENNReal.ofReal_le_ofReal (norm_lowerOrder_le (n + 1) v)
     refine ⟨Function.update G (n + 1) (iteratedGradient (n + 1) v), ?_, fun i hi => ?_,
-      fun i hi => ?_, ?_⟩
+      fun i hi => ?_, fun i hi => ?_, ?_⟩
     · rw [Function.update_of_ne (Nat.succ_ne_zero n).symm, value_succ]
       exact h0
     · rw [Function.update_of_ne (by omega)]
@@ -85,19 +100,27 @@ theorem exists_iteratedGradient_chain (n : ℕ) (v : Wkp mu Omega p (n + 1)) :
         exact hGp i (by omega)
       · rw [Function.update_self]
         exact Lp.memLp _
+    · rcases Nat.lt_or_eq_of_le hi with hi | rfl
+      · rw [Function.update_of_ne (by omega)]
+        exact (hGn i (by omega)).trans hlow
+      · rw [Function.update_self, ← Lp.eNorm_def, ← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le (n + 1) v)
     · simp only [Function.update_self, Filter.EventuallyEq.rfl]
 
 /-- **An `Lᵖ` weak derivative chain is a Sobolev function.** If `u ∈ Lᵖ(Ω)` has weak derivative
 `innerSL ℝ ∘ G 0`, each `G (i + 1)` is the weak derivative of `G i` for `i < n`, and every `G i`
 with `i ≤ n` is in `Lᵖ(Ω)`, then `u` is represented by an element of `W^{n+1,p}(Ω)` whose highest
-recorded derivative is `G n`. -/
+recorded derivative is `G n` and whose norm is at most the sum of the `Lᵖ` norms of `u` and of the
+`G i`, `i ≤ n`. -/
 theorem exists_value_iteratedGradient_ae_eq_of_chain (n : ℕ) {u : E → ℝ}
     {G : (i : ℕ) → E → IteratedGradient E i} (hu : MemLp u p (mu.restrict Omega))
     (h0 : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (G 0 x)))
     (hG : ∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1)))
     (hGp : ∀ i ≤ n, MemLp (G i) p (mu.restrict Omega)) :
     ∃ v : Wkp mu Omega p (n + 1), value (n + 1) v =ᵐ[mu.restrict Omega] u ∧
-      iteratedGradient n v =ᵐ[mu.restrict Omega] G n := by
+      iteratedGradient n v =ᵐ[mu.restrict Omega] G n ∧
+      ENNReal.ofReal ‖v‖ ≤ eLpNorm u p (mu.restrict Omega) +
+        ∑ i ∈ Finset.range (n + 1), eLpNorm (G i) p (mu.restrict Omega) := by
   induction n with
   | zero =>
     have hg : MemLp (G 0 : E → E) p (mu.restrict Omega) := hGp 0 le_rfl
@@ -105,21 +128,34 @@ theorem exists_value_iteratedGradient_ae_eq_of_chain (n : ℕ) {u : E → ℝ}
       refine (h0.congr_ae hu.coeFn_toLp.symm).congr_ae_deriv ?_
       filter_upwards [hg.coeFn_toLp] with x hx
       rw [hx]
-    refine ⟨W1p.mk _ _ hw, ?_, ?_⟩
+    refine ⟨W1p.mk _ _ hw, ?_, ?_, ?_⟩
     · exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp ℝ p (mu.restrict Omega) => (f : E → ℝ))
         ((value_one (W1p.mk _ _ hw)).trans (W1p.value_mk _ _ hw)))).trans hu.coeFn_toLp
     · exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp E p (mu.restrict Omega) => (f : E → E))
         ((iteratedGradient_zero (W1p.mk _ _ hw)).trans (W1p.gradient_mk _ _ hw)))).trans
         hg.coeFn_toLp
+    · have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 (W1p.mk _ _ hw)
+      rw [(lowerOrder_zero (W1p.mk _ _ hw)).trans (W1p.value_mk _ _ hw),
+        (iteratedGradient_zero (W1p.mk _ _ hw)).trans (W1p.gradient_mk _ _ hw), Lp.norm_toLp,
+        Lp.norm_toLp] at h
+      rw [Finset.sum_range_one]
+      exact (ENNReal.ofReal_le_ofReal h).trans (ENNReal.ofReal_add_le.trans
+        (add_le_add ENNReal.ofReal_toReal_le ENNReal.ofReal_toReal_le))
   | succ n ih =>
-    obtain ⟨v, hv, htop⟩ := ih (fun i hi => hG i (by omega)) (fun i hi => hGp i (by omega))
+    obtain ⟨v, hv, htop, hvn⟩ := ih (fun i hi => hG i (by omega)) (fun i hi => hGp i (by omega))
     have hg := hGp (n + 1) le_rfl
-    refine ⟨mk n v (hg.toLp (G (n + 1)))
-      (((hG n (Nat.lt_succ_self n)).congr_ae htop.symm).congr_ae_deriv hg.coeFn_toLp.symm), ?_, ?_⟩
+    have hD : HasWeakFDerivOn mu Omega (iteratedGradient n v) (hg.toLp (G (n + 1))) :=
+      ((hG n (Nat.lt_succ_self n)).congr_ae htop.symm).congr_ae_deriv hg.coeFn_toLp.symm
+    refine ⟨mk n v _ hD, ?_, ?_, ?_⟩
     · rw [value_mk]
       exact hv
     · rw [iteratedGradient_mk]
       exact hg.coeFn_toLp
+    · have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient (n + 1) (mk n v _ hD)
+      rw [lowerOrder_mk, iteratedGradient_mk, Lp.norm_toLp] at h
+      rw [Finset.sum_range_succ, ← add_assoc]
+      exact (ENNReal.ofReal_le_ofReal h).trans (ENNReal.ofReal_add_le.trans
+        (add_le_add hvn ENNReal.ofReal_toReal_le))
 
 /-- A function almost everywhere equal to the `j`-th recorded derivative of `y ∈ W^{j+1,p}(Ω)`
 lies in `Lᵖ(Ω)` with norm at most `‖y‖`. -/
@@ -160,6 +196,41 @@ theorem ae_eq_iteratedGradient_and_eLpNorm_le_of_chain :
     · obtain ⟨hm, hle⟩ := hb i (by omega)
       exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (norm_lowerOrder_le _ y))⟩
     · exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hGn1
+
+/-- **Highest weak derivatives are determined by values, across exponents.** If
+`z₁ ∈ W^{k+1,p}(Ω)` and `z₂ ∈ W^{k+1,r}(Ω)` have almost everywhere equal values on `Ω`, then their
+highest weak derivatives `iteratedGradient k` agree almost everywhere on `Ω`: weak derivatives are
+unique. For `k = 1` this says that the weak Hessians agree. -/
+theorem iteratedGradient_ae_eq_of_value_ae_eq {r : ℝ≥0∞} [Fact (1 ≤ r)] (k : ℕ)
+    {z₁ : Wkp mu Omega p (k + 1)} {z₂ : Wkp mu Omega r (k + 1)}
+    (h : (value (k + 1) z₁ : E → ℝ) =ᵐ[mu.restrict Omega] value (k + 1) z₂) :
+    (iteratedGradient k z₁ : E → IteratedGradient E k) =ᵐ[mu.restrict Omega]
+      iteratedGradient k z₂ := by
+  obtain ⟨G, h0, hG, -, -, hGn⟩ := exists_iteratedGradient_chain k z₁
+  exact hGn.symm.trans (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain k z₂ h.symm h0 hG).1
+
+/-- **The graph norm from a weak derivative chain.** Let `y ∈ W^{n+1,p}(Ω)` and let
+`G 0, …, G n` be a chain of iterated weak gradients on `Ω` of a representative `f` of the value of
+`y`. Then `‖y‖` is at most the `Lᵖ` norm of the value plus the sum of the `Lᵖ` norms of the
+`G i`. -/
+theorem norm_le_norm_value_add_sum_eLpNorm_of_chain :
+    ∀ (n : ℕ) (y : Wkp mu Omega p (n + 1)) {f : E → ℝ} {G : (i : ℕ) → E → IteratedGradient E i},
+    value (n + 1) y =ᵐ[mu.restrict Omega] f →
+    HasWeakFDerivOn mu Omega f (fun x => innerSL ℝ (G 0 x)) →
+    (∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1))) →
+    ‖y‖ ≤ ‖value (n + 1) y‖ +
+      ∑ i ∈ Finset.range (n + 1), (eLpNorm (G i) p (mu.restrict Omega)).toReal
+  | 0, y, f, G, hy, h0, hG => by
+    have hG0 := (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain 0 y hy h0 hG).1
+    rw [Finset.sum_range_one, eLpNorm_congr_ae hG0, ← Lp.norm_def, value_succ, value_zero]
+    exact norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 y
+  | n + 1, y, f, G, hy, h0, hG => by
+    have ih := norm_le_norm_value_add_sum_eLpNorm_of_chain n (lowerOrder (n + 1) y)
+      (by rwa [← value_succ]) h0 fun i hi => hG i (by omega)
+    have hGn1 := (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain (n + 1) y hy h0 hG).1
+    have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (n + 1) y
+    rw [Finset.sum_range_succ, eLpNorm_congr_ae hGn1, ← Lp.norm_def, value_succ]
+    linarith
 
 /-- **Convergence of weak derivative chains.** Let `y a → w` in `W^{n+1,p}(Ω)` along a filter `l`,
 with values representing `f a` and `g` almost everywhere on `Ω`, and let `G a` and `H` be chains of

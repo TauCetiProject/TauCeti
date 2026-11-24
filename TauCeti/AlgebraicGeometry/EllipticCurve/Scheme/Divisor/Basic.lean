@@ -345,7 +345,7 @@ theorem isEffectiveCartier_zeroSectionDivisor :
       (x := q) with hqt | hq1t
     · -- On `D(t)`, `t ∈ (x, z)` becomes a unit, so the ideal is `(1)`.
       set U : Y.affineOpens := Y.affineBasicOpen (U := ⟨⊤, isAffineOpen_top Y⟩) (e t)
-      have htU : IsUnit (Y.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op (e t)) :=
+      have htU : IsUnit (Y.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op (e t)) :=
         IsLocalization.Away.algebraMap_isUnit (S := Γ(Y, Y.basicOpen (e t))) (e t)
       refine ⟨U, hqt, 1, IsSMulRegular.one _, ?_⟩
       rw [ofIdealTop_ideal, Ideal.span_singleton_one]
@@ -353,7 +353,7 @@ theorem isEffectiveCartier_zeroSectionDivisor :
         (Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ W.chartOneT_mem_span)) htU
     · -- On `D(1 - t)`, `z = (1 - t)⁻¹ x³ ∈ (x)`, and `x³ = z (1 - t)` is a nonzerodivisor.
       set U : Y.affineOpens := Y.affineBasicOpen (U := ⟨⊤, isAffineOpen_top Y⟩) (e (1 - t))
-      set φ : Γ(Y, ⊤) →+* Γ(Y, U) := (Y.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom
+      set φ : Γ(Y, ⊤) →+* Γ(Y, U) := (Y.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom
       have hu : IsUnit (φ (e (1 - t))) :=
         IsLocalization.Away.algebraMap_isUnit (S := Γ(Y, Y.basicOpen (e (1 - t)))) (e (1 - t))
       have hrel : φ (e z) * φ (e (1 - t)) = φ (e x) ^ 3 := by

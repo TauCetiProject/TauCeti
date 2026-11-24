@@ -294,19 +294,19 @@ end Chart
 
 /-- Every `s : S` has an affine open neighbourhood `U` over which `𝒪_E(n[0])` (`n > 0`) is ample. -/
 theorem exists_isAffineOpen_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s : S) :
-    ∃ U : S.affineOpens, s ∈ U.1 ∧ (LineBundleClass.pullback (E.structureMap ⁻¹ᵁ U.1).ι
+    ∃ U : S.affineOpens, s ∈ U.val ∧ (LineBundleClass.pullback (E.structureMap ⁻¹ᵁ U.val).ι
       (LineBundleClass.mk (E.poleSheaf n))).IsAmple := by
   obtain ⟨U, hsU, W, _, e, hover, hzero⟩ :=
     (isLocallyWeierstrass_iff E.zero_comp).mp E.isLocallyWeierstrass s
   refine ⟨U, hsU, ?_⟩
-  have hg : IsPullback (e.inv ≫ pullback.fst E.structureMap U.1.ι) W.projModelOver E.structureMap
-      (U.2.isoSpec.inv ≫ U.1.ι) :=
-    (IsPullback.of_hasPullback E.structureMap U.1.ι).of_iso e (.refl _) U.2.isoSpec (.refl _)
-      (by simp) hover.symm (by simp) (by simp)
-  have h0 : W.projModelZero ≫ e.inv ≫ pullback.fst E.structureMap U.1.ι =
-      (U.2.isoSpec.inv ≫ U.1.ι) ≫ E.zero := by rw [← hzero]; simp
-  rw [← pullbackRestrictIsoRestrict_inv_fst E.structureMap U.1,
-    ← Iso.hom_inv_id_assoc e (pullback.fst E.structureMap U.1.ι), ← Category.assoc,
+  have hg : IsPullback (e.inv ≫ pullback.fst E.structureMap U.val.ι) W.projModelOver E.structureMap
+      (U.property.isoSpec.inv ≫ U.val.ι) :=
+    (IsPullback.of_hasPullback E.structureMap U.val.ι).of_iso e (.refl _) U.property.isoSpec
+      (.refl _) (by simp) hover.symm (by simp) (by simp)
+  have h0 : W.projModelZero ≫ e.inv ≫ pullback.fst E.structureMap U.val.ι =
+      (U.property.isoSpec.inv ≫ U.val.ι) ≫ E.zero := by rw [← hzero]; simp
+  rw [← pullbackRestrictIsoRestrict_inv_fst E.structureMap U.val,
+    ← Iso.hom_inv_id_assoc e (pullback.fst E.structureMap U.val.ι), ← Category.assoc,
     ← LineBundleClass.pullback_comp, pullback_mk_poleSheaf_of_isPullback_projModel hg h0 n]
   exact (W.isAmple_poleSheaf hn).pullback_of_isIso _
 
@@ -314,7 +314,7 @@ theorem exists_isAffineOpen_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s
 theorem exists_opens_isAmple_pullback_poleSheaf {n : ℕ} (hn : 0 < n) (s : S) :
     ∃ U : S.Opens, s ∈ U ∧ (LineBundleClass.pullback (E.structureMap ⁻¹ᵁ U).ι
       (LineBundleClass.mk (E.poleSheaf n))).IsAmple :=
-  let ⟨U, hsU, hU⟩ := E.exists_isAffineOpen_isAmple_pullback_poleSheaf hn s; ⟨U.1, hsU, hU⟩
+  let ⟨U, hsU, hU⟩ := E.exists_isAffineOpen_isAmple_pullback_poleSheaf hn s; ⟨U.val, hsU, hU⟩
 
 /-- **Global ampleness of `𝒪_E(n[0])` over a quasi-affine base** (in particular `Spec R`). -/
 theorem isAmple_poleSheaf [S.IsQuasiAffine] {n : ℕ} (hn : 0 < n) :

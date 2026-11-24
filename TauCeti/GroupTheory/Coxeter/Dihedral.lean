@@ -66,6 +66,12 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   repetition is an alternating word.
 * `CoxeterSystem.wordProd_alternatingWord_eq_of_mem_parabolic_pair`: **every element of a rank-two
   standard parabolic subgroup is spelled by an alternating word of its own length.**
+* `CoxeterSystem.not_wordProd_alternatingWord_of_not_isRightDescent`,
+  `CoxeterSystem.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent`, and
+  `CoxeterSystem.length_lt_of_mem_parabolic_pair_of_not_isRightDescent`: a nontrivial element
+  without right descent at `i` is not spelled by the alternating word of its length ending in `i`,
+  so an element of `cs.parabolic {i, i'}` without right descent at `i` is spelled by
+  `alternatingWord i i' (ℓ w)` and has length strictly less than `M i i'` whenever `M i i' ≠ 0`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_comm_iff`: the two alternating words of length `m`
   have the same product exactly when `(s i * s i') ^ m = 1`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_mul_pow`: more precisely, they differ by the factor
@@ -177,19 +183,52 @@ theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair {i i' : B} {w : W}
   · exact Or.inl (by rw [← h])
   · exact Or.inr (by rw [← h])
 
+/-- A nontrivial element without right descent at `i` is not spelled by the alternating word of
+its length ending in `i`. -/
+theorem not_wordProd_alternatingWord_of_not_isRightDescent {i i' : B} {w : W}
+    (hdesc : ¬cs.IsRightDescent w i) (hw : w ≠ 1) :
+    π (alternatingWord i' i (ℓ w)) ≠ w := by
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero (mt cs.length_eq_zero_iff.mp hw)
+  intro heq
+  have hmul : w * s i = π (alternatingWord i i' k) := by
+    rw [← heq, hk, alternatingWord_succ, wordProd_concat, simple_mul_simple_cancel_right]
+  apply hdesc
+  rw [IsRightDescent, hmul, hk]
+  exact (cs.length_wordProd_le _).trans_lt (by rw [length_alternatingWord]; omega)
+
+/-- **An element of a rank-two standard parabolic subgroup without right descent at `i` is
+spelled by the alternating word of its length ending in `i'`.** -/
+theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B}
+    {w : W} (hw : w ∈ cs.parabolic {i, i'}) (hdesc : ¬cs.IsRightDescent w i) :
+    π (alternatingWord i i' (ℓ w)) = w := by
+  rcases eq_or_ne w 1 with rfl | hw1
+  · simp [alternatingWord]
+  · exact (cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair hw).resolve_right
+      (cs.not_wordProd_alternatingWord_of_not_isRightDescent hdesc hw1)
+
+/-- **An element of a rank-two standard parabolic subgroup without right descent at `i` has length
+strictly less than `M i i'` whenever `M i i' ≠ 0`.** Appending `i` to the alternating word ending
+in `i'` still produces a reduced word, whose length cannot exceed `M i i'`. -/
+theorem length_lt_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B} (hM : M i i' ≠ 0)
+    {w : W} (hw : w ∈ cs.parabolic {i, i'}) (hdesc : ¬cs.IsRightDescent w i) :
+    ℓ w < M i i' := by
+  have hword :=
+    cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hw hdesc
+  have hred : cs.IsReduced (alternatingWord i' i (ℓ w + 1)) := by
+    rw [IsReduced, alternatingWord_succ, wordProd_concat, hword,
+      cs.not_isRightDescent_iff.mp hdesc, List.concat_eq_append, List.length_append,
+      length_alternatingWord, List.length_singleton]
+  by_contra hge
+  exact cs.not_isReduced_alternatingWord i' i (M.symmetric i' i ▸ hM)
+    (by rw [M.symmetric]; omega) hred
+
 /-- **The two alternating words of length `m` differ by the `m`-th power of the rotation.** The
 word alternating between `i` and `i'` and ending with `i'` is the word ending with `i` followed by
 `(s i * s i') ^ m`. -/
 theorem wordProd_alternatingWord_eq_mul_pow (i i' : B) (m : ℕ) :
-    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m := by
-  induction m generalizing i i' with
-  | zero => simp [alternatingWord]
-  | succ m ih =>
-    -- Conjugating by `s i'` carries the rotation `s i * s i'` to its inverse `s i' * s i`.
-    have hsemi : SemiconjBy (s i') ((s i * s i') ^ m) ((s i' * s i) ^ m) :=
-      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
-    simp only [alternatingWord_succ, wordProd_concat, ih i' i, pow_succ', mul_assoc,
-      simple_mul_simple_cancel_left, hsemi.eq]
+    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m :=
+  TauCeti.prod_map_alternatingWord_eq_mul_pow cs.simple (cs.simple_mul_simple_self i)
+    (cs.simple_mul_simple_self i') m
 
 /-- **The two alternating words of length `m` have the same product exactly when the rotation
 `s i * s i'` is killed by `m`.** This is the dihedral arithmetic of a rank-two parabolic
