@@ -10,22 +10,24 @@ public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
-# Mean-zero smooth functions on a compact manifold
+# Mean-zero `C^n` functions on a compact manifold
 
-Given a finite measure `μ` on a compact manifold `M`, the smooth real-valued functions on `M`
-whose integral against `μ` vanishes form the `ℝ`-submodule
-`TauCeti.Manifold.meanZeroSmoothFunctions I M μ`, defined as the kernel of integration against `μ`
-via `ContinuousMap.integralPositiveLinearMap` and `ContMDiffMap.toContinuousMapLinearMap`.
+Given a finite measure `μ` on a compact manifold `M` and a differentiability order `n : ℕ∞ω`, the
+`C^n` real-valued functions on `M` whose integral against `μ` vanishes form the `ℝ`-submodule
+`TauCeti.Manifold.meanZeroSmoothFunctions I M μ n`, defined as the kernel of integration against
+`μ` via `ContinuousMap.integralPositiveLinearMap` and `ContMDiffMap.toContinuousMapLinearMap`.
 
 ## Main definitions
 
-* `TauCeti.Manifold.meanZeroSmoothFunctions`: the submodule of smooth functions on `M` with
+* `TauCeti.Manifold.meanZeroSmoothFunctions`: the submodule of `C^n` functions on `M` with
   vanishing integral against `μ`.
 
 ## Main results
 
 * `TauCeti.Manifold.mem_meanZeroSmoothFunctions_iff`: membership characterization in
-  `meanZeroSmoothFunctions I M μ`.
+  `meanZeroSmoothFunctions I M μ n`.
+* `TauCeti.Manifold.integral_coe_meanZeroSmoothFunctions_eq_zero`: the integral of a bundled
+  mean-zero `C^n` function against `μ` is zero.
 -/
 
 public section
@@ -41,20 +43,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
   (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M]
   [MeasurableSpace M] [OpensMeasurableSpace M] (μ : Measure M) [IsFiniteMeasure μ]
+  (n : ℕ∞ω)
 
-/-- The submodule of smooth functions on `M` with vanishing integral against `μ`. -/
-def meanZeroSmoothFunctions : Submodule ℝ C^∞⟮I, M; ℝ⟯ :=
+/-- The submodule of `C^n` functions on `M` with vanishing integral against `μ`. -/
+def meanZeroSmoothFunctions : Submodule ℝ C^n⟮I, M; ℝ⟯ :=
   LinearMap.ker
     ((ContinuousMap.integralPositiveLinearMap μ).toLinearMap.comp
       ContMDiffMap.toContinuousMapLinearMap)
 
-variable {I M μ}
+variable {I M μ n}
 
-/-- A smooth function belongs to `meanZeroSmoothFunctions I M μ` exactly when its integral
+/-- A `C^n` function belongs to `meanZeroSmoothFunctions I M μ n` exactly when its integral
 against `μ` vanishes. -/
 @[simp]
-theorem mem_meanZeroSmoothFunctions_iff {u : C^∞⟮I, M; ℝ⟯} :
-    u ∈ meanZeroSmoothFunctions I M μ ↔ ∫ x, u x ∂μ = 0 := by
+theorem mem_meanZeroSmoothFunctions_iff {u : C^n⟮I, M; ℝ⟯} :
+    u ∈ meanZeroSmoothFunctions I M μ n ↔ ∫ x, u x ∂μ = 0 := by
   simp [meanZeroSmoothFunctions, ContinuousMap.integralPositiveLinearMap_apply]
+
+/-- The integral against `μ` of an element of `meanZeroSmoothFunctions I M μ n` vanishes. -/
+@[simp]
+theorem integral_coe_meanZeroSmoothFunctions_eq_zero (u : meanZeroSmoothFunctions I M μ n) :
+    ∫ x, u.val x ∂μ = 0 :=
+  mem_meanZeroSmoothFunctions_iff.1 u.property
 
 end TauCeti.Manifold

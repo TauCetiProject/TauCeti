@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.Harmonic
 import TauCeti.Geometry.Manifold.Riemannian.Poisson.Smooth
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
 /-!
@@ -34,13 +32,13 @@ at most that of `a`
 
 * **The codifferential of a one-form has integral zero** against the Riemannian volume measure
   (`TauCeti.SmoothForm.integral_codifferential_eq_zero`).
-* **Existence**: on a closed connected manifold, `d*a` is therefore a smooth function of integral
-  zero, so it is `Δf = d*df` for a smooth function `f` of integral zero, by the smooth Poisson
-  equation (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`),
-  and then `d*(a - df) = 0` (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`).
-* **Uniqueness**: if `a - df` and `a - dg` are both coclosed, then `df = dg`, so on a connected
-  manifold `f - g` is constant, hence zero when `f` and `g` both have integral zero
-  (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`).
+* **Existence and uniqueness**: on a closed connected manifold, `d*a` is therefore a smooth
+  function of integral zero, so the equation `Δf = d*df = d*a` has a unique smooth solution `f`
+  of integral zero by the smooth Poisson equation
+  (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`),
+  yielding both existence (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`) and
+  uniqueness (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`) of `f` with
+  `∫ f = 0` and `d*(a - df) = 0`.
 
 In abelian gauge theory, for a `U(1)` connection `A₀ + a` with `a = i b` imaginary, a gauge
 transformation `u = exp (i ξ)` acting on the determinant connection by `A ↦ A - 2 u⁻¹ du` changes
@@ -118,65 +116,55 @@ section Closed
 variable [I.Boundaryless] [CompactSpace M] [T2Space M] [MeasurableSpace M] [BorelSpace M]
   (hkl : 0 + 1 + l = m)
 
-/-- **The global Coulomb gauge for one-forms**: on a closed connected oriented Riemannian manifold
-of positive dimension, every smooth one-form `a` is `df` plus a coclosed form, `d*(a - df) = 0`,
-for a smooth function `f` of integral zero. The function `f` solves `Δf = d*a`, by the smooth
-Poisson equation. -/
-theorem exists_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace M]
-    (a : SmoothForm I M ℝ 1) :
-    ∃ f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
-      codifferential o hkl (a - mextDerivₗ I 0 f) = 0 := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨u, ⟨hu_smooth, hu₀, hu⟩, _⟩ :=
-    Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
-      (contMDiff_apply_zero (codifferential o hkl a))
-      (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
-  let u₀ : C^∞⟮I, M; ℝ⟯ := ⟨u, hu_smooth⟩
-  refine ⟨ofFunction u₀, by rwa [ofFunction_apply_zero], ?_⟩
-  -- `d*df = Δf = -div grad u = d*a`.
-  have hΔ : codifferential o hkl (mextDerivₗ I 0 (ofFunction u₀)) = codifferential o hkl a := by
-    rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl]
-    apply Subtype.ext
-    rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami, ofFunction_apply_zero,
-      RoughForm.eq_ofFunction (codifferential o hkl a).val]
-    congr 1
-    funext x
-    exact hu x
-  rw [map_sub, hΔ, sub_self]
-
-/-- **Uniqueness of the global Coulomb gauge**: on a closed connected oriented Riemannian manifold
-of positive dimension, for every smooth one-form `a` there is exactly one smooth function `f` of
-integral zero with `d*(a - df) = 0`. -/
+/-- **Uniqueness and existence of the global Coulomb gauge**: on a closed connected oriented
+Riemannian manifold of positive dimension, for every smooth one-form `a` there is a unique smooth
+function `f` of integral zero with `d*(a - df) = 0`. The function `f` is the unique mean-zero
+solution of `Δf = d*a` from the smooth Poisson equation. -/
 theorem existsUnique_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace M]
     (a : SmoothForm I M ℝ 1) :
     ∃! f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
       codifferential o hkl (a - mextDerivₗ I 0 f) = 0 := by
-  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨f, hf₀, hf⟩ := exists_codifferential_sub_mextDerivₗ_eq_zero o hkl a
-  refine ⟨f, ⟨hf₀, hf⟩, fun g ⟨hg₀, hg⟩ ↦ ?_⟩
-  have hd := mextDerivₗ_eq_of_codifferential_sub_eq_zero o hkl hg hf
-    (by simp [compactlySupportedForms_eq_top])
-  -- `g - f` is closed, hence constant, and has integral zero.
-  obtain ⟨c, hc⟩ := ((mem_closedForms_zero_iff I (g - f)).1 (by
-    rw [mem_closedForms_iff_mextDerivₗ_eq_zero, map_sub, hd, sub_self])).exists_eq_const
-  have hgf (x : M) : (g - f).val x 0 = c := congrFun hc x
-  have hint (φ : SmoothForm I M ℝ 0) : Integrable (fun x ↦ φ.val x 0) (riemannianVolume I M) :=
-    (contMDiff_apply_zero φ).continuous.integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)
-  have h₀ : ∫ x, (g - f).val x 0 ∂riemannianVolume I M = 0 := by
-    simp only [Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
-    rw [integral_sub (hint g) (hint f), hg₀, hf₀, sub_zero]
-  rw [← sub_eq_zero]
-  refine Subtype.ext (funext fun x ↦ ?_)
-  -- The constant `c` vanishes, since `M` has positive volume.
-  have hvol : (riemannianVolume I M).real Set.univ ≠ 0 :=
-    (ENNReal.toReal_pos (isOpen_univ.measure_pos _ ⟨x, Set.mem_univ x⟩).ne'
-      (measure_ne_top _ _)).ne'
-  have hc₀ : c = 0 := by
-    simpa only [hgf, integral_const, smul_eq_mul, mul_eq_zero, hvol, false_or] using h₀
-  ext v
-  rw [Subsingleton.elim v 0, hgf, hc₀]
-  simp
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨u, ⟨hu_smooth, hu₀, hu⟩, huniq⟩ :=
+    Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
+      (contMDiff_apply_zero (codifferential o hkl a))
+      (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
+  let u₀ : C^∞⟮I, M; ℝ⟯ := ⟨u, hu_smooth⟩
+  have hu₀_coe : ⇑u₀ = u := ContMDiffMap.coeFn_mk u hu_smooth
+  refine ⟨ofFunction u₀, ⟨?_, ?_⟩, fun g ⟨hg₀, hg⟩ ↦ ?_⟩
+  · simpa only [ofFunction_apply_zero, hu₀_coe] using hu₀
+  · -- `d*df = Δf = -div grad u = d*a`.
+    have hΔ : codifferential o hkl (mextDerivₗ I 0 (ofFunction u₀)) = codifferential o hkl a := by
+      rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl]
+      apply Subtype.ext
+      rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami, ofFunction_apply_zero, hu₀_coe,
+        RoughForm.eq_ofFunction (codifferential o hkl a).val]
+      congr 1
+      funext x
+      exact hu x
+    rw [map_sub, hΔ, sub_self]
+  · have hgΔ : codifferential o hkl (mextDerivₗ I 0 g) = codifferential o hkl a :=
+      eq_comm.1 (sub_eq_zero.1 (by rwa [← map_sub]))
+    rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl] at hgΔ
+    have hg_raw : (hodgeLaplacian o (show 0 + (l + 1) = m by omega) g : RoughForm I M ℝ 0) =
+        (codifferential o hkl a).val := congrArg Subtype.val hgΔ
+    rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami] at hg_raw
+    have hgeq : (fun x ↦ g.val x 0) = u := huniq (fun x ↦ g.val x 0)
+      ⟨contMDiff_apply_zero g, hg₀, fun x ↦ by
+        simpa only [RoughForm.ofFunction_apply, Pi.neg_apply] using
+          congrArg (fun φ : RoughForm I M ℝ 0 ↦ φ x 0) hg_raw⟩
+    refine Subtype.ext (funext fun x ↦ ?_)
+    ext v
+    rw [Subsingleton.elim v 0, congrFun (ofFunction_apply_zero u₀) x, hu₀_coe, ← congrFun hgeq x]
+
+/-- **The global Coulomb gauge for one-forms**: on a closed connected oriented Riemannian manifold
+of positive dimension, every smooth one-form `a` is `df` plus a coclosed form, `d*(a - df) = 0`,
+for a smooth function `f` of integral zero. -/
+theorem exists_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace M]
+    (a : SmoothForm I M ℝ 1) :
+    ∃ f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
+      codifferential o hkl (a - mextDerivₗ I 0 f) = 0 :=
+  (existsUnique_codifferential_sub_mextDerivₗ_eq_zero o hkl a).exists
 
 end Closed
 
