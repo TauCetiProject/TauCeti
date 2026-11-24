@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
