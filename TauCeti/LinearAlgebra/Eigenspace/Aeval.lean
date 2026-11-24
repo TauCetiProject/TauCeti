@@ -20,6 +20,9 @@ level `k` is contained in that of `p(f)` at `p(μ)`
 `X - μ`, and the quotient evaluated at `f` commutes with `f - μ`. This is the eigenspace form of
 the spectral mapping theorem for the characteristic roots of `p(f)`.
 
+Similarly, if `p ∣ q` then every vector killed by a power of `p(f)` is killed by a power of `q(f)`
+(`Module.End.maxGenEigenspace_aeval_le_of_dvd`).
+
 ## References
 
 * P. Deligne, *La conjecture de Weil. I*, Publ. Math. IHÉS 43 (1974), (1.5.1).
@@ -57,5 +60,17 @@ theorem maxGenEigenspace_le_maxGenEigenspace_aeval {R M : Type*} [CommRing R] [A
     [Module R M] (f : End R M) (p : R[X]) (μ : R) :
     f.maxGenEigenspace μ ≤ (aeval f p).maxGenEigenspace (p.eval μ) :=
   genEigenspace_le_genEigenspace_aeval f p μ ⊤
+
+/-- If `p ∣ q`, the vectors killed by a power of `p(f)` are killed by a power of `q(f)`. -/
+theorem maxGenEigenspace_aeval_le_of_dvd {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] (f : End R M) {p q : R[X]} (h : p ∣ q) :
+    (aeval f p).maxGenEigenspace 0 ≤ (aeval f q).maxGenEigenspace 0 := by
+  obtain ⟨r, rfl⟩ := h
+  intro x hx
+  obtain ⟨n, hn⟩ := (mem_maxGenEigenspace _ _ _).1 hx
+  refine (mem_maxGenEigenspace _ _ _).2 ⟨n, ?_⟩
+  rw [zero_smul, sub_zero] at hn ⊢
+  rw [mul_comm p r, map_mul, ((Commute.all r p).map (aeval f)).mul_pow, mul_apply_eq_comp, hn,
+    map_zero]
 
 end Module.End

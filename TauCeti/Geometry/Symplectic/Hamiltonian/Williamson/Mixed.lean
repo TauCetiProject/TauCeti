@@ -13,8 +13,8 @@ import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Spectrum
 import TauCeti.LinearAlgebra.Dimension.DirectSum
+import TauCeti.LinearAlgebra.Eigenspace.Aeval
 import TauCeti.LinearAlgebra.Eigenspace.Commute
-import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
@@ -200,15 +200,31 @@ section Parts
 variable {A : Module.End ℝ V} {s' : Finset ℂ}
 
 omit [FiniteDimensional ℝ V] in
+/-- For `z = a + bi ∈ s'`, the vectors killed by a power of
+`(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)` are killed by a power of `f(A)` for
+`f = ∏_{a + bi ∈ s'} (X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, a multiple of it. -/
+private theorem maxGenEigenspace_focusFocusCharpoly_le_prod {z : ℂ} (hz : z ∈ s') :
+    (aeval A (focusFocusCharpoly z.re z.im)).maxGenEigenspace 0 ≤
+      (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0 :=
+  Module.End.maxGenEigenspace_aeval_le_of_dvd A
+    (Finset.dvd_prod_of_mem (fun z : ℂ ↦ focusFocusCharpoly z.re z.im) hz)
+
+omit [FiniteDimensional ℝ V] in
 /-- If `A` has the eigenvalue `z = a + bi`, `z ∈ s'`, with eigenvector `v + iw`, then `v` is killed
-by `f(A)` for `f = ∏_{a + bi ∈ s'} (X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`. -/
+by a power of `f(A)` for `f = ∏_{a + bi ∈ s'} (X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`. -/
 private theorem mem_maxGenEigenspace_prod_focusFocusCharpoly {z : ℂ} (hz : z ∈ s') {v w : V}
     (hAv : A v = z.re • v - z.im • w) (hAw : A w = z.im • v + z.re • w) :
-    v ∈ (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0 := by
-  obtain ⟨r, hr⟩ := Finset.dvd_prod_of_mem (fun z : ℂ ↦ focusFocusCharpoly z.re z.im) hz
-  refine (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, ?_⟩
-  simp only [hr, mul_comm _ r, map_mul, pow_one, zero_smul, sub_zero, mul_apply_eq_comp]
-  rw [aeval_focusFocusCharpoly_apply_eq_zero hAv hAw, map_zero]
+    v ∈ (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0 :=
+  maxGenEigenspace_focusFocusCharpoly_le_prod hz <| (Module.End.mem_maxGenEigenspace _ _ _).2
+    ⟨1, by simpa using aeval_focusFocusCharpoly_apply_eq_zero hAv hAw⟩
+
+/-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `f(A)`, for `f` as in
+`mem_maxGenEigenspace_prod_focusFocusCharpoly`, form a symplectic subspace, since `f` is even. -/
+private theorem isSymplectic_maxGenEigenspace_prod_focusFocusCharpoly
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.IsSymplectic ((aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0) :=
+  ω.isSymplectic_maxGenEigenspace_aeval hA <| by
+    simp only [prod_comp, focusFocusCharpoly_comp_neg_X]
 
 omit [FiniteDimensional ℝ V] in
 /-- The vectors killed by a power of `f(A)`, for `f` as in
@@ -220,18 +236,17 @@ private theorem apply_eq_zero_of_mem_maxGenEigenspace_prod_focusFocusCharpoly
     (hv : v ∈ (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0)
     (hw : w ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0) : ω v w = 0 :=
   ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval (by
-    rw [show (X ^ 2 - C μ : ℝ[X]).comp (-X) = X ^ 2 - C μ by simp [sub_comp]]
+    rw [comp_neg_X_sq_sub_C]
     exact IsCoprime.prod_left fun z hz ↦
-      isCoprime_focusFocusCharpoly_X_sq_sub_C (hs'0 z hz).1 (hs'0 z hz).2 μ) hv hw
+      isCoprime_focusFocusCharpoly_X_sq_sub_C (hs'0 z hz).1.ne' (hs'0 z hz).2.ne' μ) hv hw
 
-/-- **Lower bound on the focus-focus part.** If `A ∈ sp(V, ω)` is semisimple and has the distinct
+/-- **Lower bound on the focus-focus part.** If `A ∈ sp(V, ω)` has the distinct
 eigenvalues `z = a + bi ∈ s'` with `a, b > 0`, then the vectors killed by a power of `f(A)`, for `f`
 as in `mem_maxGenEigenspace_prod_focusFocusCharpoly`, form a subspace of dimension at least
 `4 |s'|`: it contains the pairwise orthogonal generalized eigenspaces of the factors of `f`, each of
 dimension at least four. -/
 private theorem card_mul_four_le_finrank_maxGenEigenspace_prod_focusFocusCharpoly
-    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hAs : A.IsSemisimple)
-    (hs'0 : ∀ z ∈ s', 0 < z.re ∧ 0 < z.im)
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hs'0 : ∀ z ∈ s', 0 < z.re ∧ 0 < z.im)
     (hAs' : ∀ z ∈ s', ∃ v w : V, v ≠ 0 ∧ A v = z.re • v - z.im • w ∧ A w = z.im • v + z.re • w) :
     s'.card * 4 ≤
       finrank ℝ ((aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0) := by
@@ -239,31 +254,20 @@ private theorem card_mul_four_le_finrank_maxGenEigenspace_prod_focusFocusCharpol
     (aeval A (focusFocusCharpoly (z : ℂ).re (z : ℂ).im)).maxGenEigenspace 0
   have hHs (z : s') : ω.IsSymplectic (H z) :=
     ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusCharpoly_comp_neg_X _ _)
-  have horth : Pairwise fun z z' : s' ↦ ∀ v ∈ H z, ∀ w ∈ H z', ω v w = 0 := by
-    intro z z' hzz' v hv w hw
-    refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-      (isCoprime_focusFocusCharpoly (hs'0 _ z.property).1 (hs'0 _ z.property).2
-        (hs'0 _ z'.property).1 (hs'0 _ z'.property).2 ?_) hv hw
-    by_contra! hre
-    exact hzz' (Subtype.ext (Complex.ext hre.1 hre.2))
+  have horth : Pairwise fun z z' : s' ↦ ∀ v ∈ H z, ∀ w ∈ H z', ω v w = 0 :=
+    fun z z' hzz' _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_focusFocusCharpoly hA
+      (hs'0 _ z.property) (hs'0 _ z'.property) (fun h ↦ hzz' (Subtype.ext h)) hv hw
   have hH4 (z : s') : 4 ≤ finrank ℝ (H z) := by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hAs' z z.property
     exact four_le_finrank_maxGenEigenspace_focusFocusCharpoly hA (hs'0 _ z.property).1.ne'
       (hs'0 _ z.property).2.ne' hv hAv hAw
-  -- Since `A` is semisimple, the vectors of `H z` are killed by a factor of `f(A)`.
-  have hHL (z : s') : H z ≤ (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0 :=
-    fun v hv ↦ by
-      obtain ⟨r, hr⟩ :=
-        Finset.dvd_prod_of_mem (fun z : ℂ ↦ focusFocusCharpoly z.re z.im) z.property
-      refine (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, ?_⟩
-      simp only [hr, mul_comm _ r, map_mul, pow_one, zero_smul, sub_zero, mul_apply_eq_comp]
-      rw [hAs.aeval_apply_eq_zero_of_mem_maxGenEigenspace hv, map_zero]
   calc s'.card * 4 = ∑ _z : s', 4 := by simp
     _ ≤ ∑ z, finrank ℝ (H z) := Finset.sum_le_sum fun z _ ↦ hH4 z
     _ = finrank ℝ ↥(⨆ z, H z) :=
       (finrank_iSup_eq_sum_finrank_of_iSupIndep
         (iSupIndep_of_pairwise_apply_eq_zero hHs horth)).symm
-    _ ≤ _ := Submodule.finrank_mono (iSup_le hHL)
+    _ ≤ _ := Submodule.finrank_mono
+      (iSup_le fun z ↦ maxGenEigenspace_focusFocusCharpoly_le_prod z.property)
 
 /-- **Upper bound on the focus-focus part.** If `A ∈ sp(V, ω)` and `A²` has the distinct nonzero
 eigenvalues `μ ∈ s`, then the vectors killed by a power of `f(A)`, for `f` as in
@@ -277,16 +281,13 @@ private theorem finrank_maxGenEigenspace_prod_focusFocusCharpoly_add_card_mul_tw
       s.card * 2 ≤ finrank ℝ V := by
   set L := (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0
   set G : ℝ → Submodule ℝ V := fun μ ↦ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0
-  have hL : ω.IsSymplectic L := ω.isSymplectic_maxGenEigenspace_aeval hA <| by
-    simp only [prod_comp, focusFocusCharpoly_comp_neg_X]
+  have hL : ω.IsSymplectic L := isSymplectic_maxGenEigenspace_prod_focusFocusCharpoly hA
   -- Each `G μ` contains an eigenvector of `A²`, so it is a nonzero symplectic subspace.
   have hG2 (μ : s) : 2 ≤ finrank ℝ (G μ) := by
     obtain ⟨x, hx⟩ := (hAs μ μ.property).exists_hasEigenvector
     obtain ⟨r, hr⟩ := (ω.restrict (G μ)
       (isSymplectic_maxGenEigenspace_sq_sub hA μ).nondegenerate_restrict).even_finrank
-    have hxG : x ∈ G μ :=
-      (Module.End.mem_maxGenEigenspace _ _ _).2
-        ⟨1, by simpa [sq, sub_eq_zero] using hx.apply_eq_smul⟩
+    have hxG : x ∈ G μ := mem_maxGenEigenspace_sq_sub (by simpa [sq] using hx.apply_eq_smul)
     have hpos : finrank ℝ (G μ) ≠ 0 := fun h0 ↦
       hx.2 ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hxG))
     omega
@@ -312,18 +313,18 @@ private theorem finrank_maxGenEigenspace_prod_focusFocusCharpoly_add_card_mul_tw
     (by simp : s.card * 2 = ∑ _μ : s, 2).trans_le (Finset.sum_le_sum fun μ _ ↦ hG2 μ)
   omega
 
-/-- **Dimension of the focus-focus part.** If `A ∈ sp(V, ω)` is semisimple and has the distinct
+/-- **Dimension of the focus-focus part.** If `A ∈ sp(V, ω)` has the distinct
 eigenvalues `a + bi ∈ s'` with `a, b > 0`, and `A²` the distinct nonzero real eigenvalues `μ ∈ s`,
 with `4 |s'| + 2 |s| = dim V`, then the vectors killed by a power of `f(A)`, for `f` as in
 `mem_maxGenEigenspace_prod_focusFocusCharpoly`, form a subspace of dimension `4 |s'|`. -/
 private theorem finrank_maxGenEigenspace_prod_focusFocusCharpoly
-    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hAs : A.IsSemisimple) {s : Finset ℝ}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {s : Finset ℝ}
     (hs : s'.card * 4 + s.card * 2 = finrank ℝ V) (hs'0 : ∀ z ∈ s', 0 < z.re ∧ 0 < z.im)
     (hAs' : ∀ z ∈ s', ∃ v w : V, v ≠ 0 ∧ A v = z.re • v - z.im • w ∧ A w = z.im • v + z.re • w)
     (hAs2 : ∀ μ ∈ s, (A ^ 2).HasEigenvalue μ) :
     finrank ℝ ((aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0) =
       s'.card * 4 := by
-  have := card_mul_four_le_finrank_maxGenEigenspace_prod_focusFocusCharpoly hA hAs hs'0 hAs'
+  have := card_mul_four_le_finrank_maxGenEigenspace_prod_focusFocusCharpoly hA hs'0 hAs'
   have := finrank_maxGenEigenspace_prod_focusFocusCharpoly_add_card_mul_two_le (ω := ω) hA hs'0 hAs2
   omega
 
@@ -426,11 +427,9 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
   have hA := ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P
   -- The focus-focus part `L` has dimension `4 |s'|`, and its complement `2 |s|`.
   set L := (aeval A (∏ z ∈ s', focusFocusCharpoly z.re z.im)).maxGenEigenspace 0
-  have hL : ω.IsSymplectic L := ω.isSymplectic_maxGenEigenspace_aeval hA <| by
-    simp only [prod_comp, focusFocusCharpoly_comp_neg_X]
+  have hL : ω.IsSymplectic L := isSymplectic_maxGenEigenspace_prod_focusFocusCharpoly hA
   have hfinL : s'.card * 4 = finrank ℝ L :=
-    (finrank_maxGenEigenspace_prod_focusFocusCharpoly hA (h.isSemisimple_hamiltonianEnd hP) hs hs'0
-      hPs' hPs).symm
+    (finrank_maxGenEigenspace_prod_focusFocusCharpoly hA hs hs'0 hPs' hPs).symm
   have hfinM : s.card * 2 = finrank ℝ (ω.orthogonal L) := by
     have := ω.finrank_add_finrank_orthogonal L; omega
   -- `A` and the family preserve `L` and `L^ω`.
@@ -441,7 +440,8 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
       hv
   have hmapsM {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) :
       ∀ v ∈ ω.orthogonal L, ω.hamiltonianEnd R v ∈ ω.orthogonal L := fun _ ↦
-    hamiltonianEnd_apply_mem_orthogonal (hmapsL hR)
+    apply_mem_orthogonal_of_mem_skewAdjointLieSubalgebra
+      (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra R) (hmapsL hR)
   have hQ (i : ι) : Q i ∈ Submodule.span ℝ (Set.range Q) := Submodule.subset_span ⟨i, rfl⟩
   -- The focus-focus classification on `L`: the eigenvectors for `z ∈ s'` lie in `L`.
   obtain ⟨k, b₁, hb₁, hspan₁⟩ := (h.restrict hL fun i ↦ (Module.End.mem_invtSubmodule _).2
@@ -462,8 +462,7 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
     obtain ⟨x, hx⟩ := (hPs μ hμ).exists_hasEigenvector
     have hxM : x ∈ ω.orthogonal L := mem_orthogonal_iff.2 fun y hy ↦
       apply_eq_zero_of_mem_maxGenEigenspace_prod_focusFocusCharpoly hA hs'0 μ hy <|
-        (Module.End.mem_maxGenEigenspace _ _ _).2
-          ⟨1, by simpa [sq, sub_eq_zero] using hx.apply_eq_smul⟩
+        mem_maxGenEigenspace_sq_sub (by simpa [sq] using hx.apply_eq_smul)
     refine Module.End.hasEigenvalue_of_hasEigenvector (x := ⟨x, hxM⟩) ⟨?_, by simpa using hx.2⟩
     rw [Module.End.mem_eigenspace_iff, hamiltonianEnd_comp_subtype hL.orthogonal (hmapsM hP)]
     ext

@@ -90,13 +90,18 @@ in `A` satisfy `A₁² = 1`, `A₂² = -1` and `A = a A₁ + b A₂`. Their quad
 with the restricted family, so they lie in its span, and the four-dimensional classification
 applies on each `G`. The resulting Darboux bases of the subspaces `G` assemble to one of `V`.
 
-The polynomial `f` is `TauCeti.SymplecticForm.focusFocusCharpoly a b`. The facts about it used
-above are public, since the classification of mixed type
+The polynomial `f` is `TauCeti.SymplecticForm.focusFocusCharpoly a b`. Its basic API and the facts
+about it used above are public, since the classification of mixed type
 (`TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Mixed`) needs them too:
 
+* `focusFocusCharpoly_def`, `aeval_focusFocusCharpoly`: `f` and its values
+  `((x - a)² + b²)((x + a)² + b²)`;
 * `focusFocusCharpoly_comp_neg_X`: `f` is even;
 * `isCoprime_focusFocusCharpoly`, `isCoprime_focusFocusCharpoly_X_sq_sub_C`: `f` is coprime to its
   analogue for another point of the open first quadrant, and to every `X² - μ`, `μ` real;
+* `apply_eq_zero_of_mem_maxGenEigenspace_focusFocusCharpoly`: for `A ∈ sp(V, ω)`, the vectors
+  killed by powers of `f(A)` and of its analogue for another point of the open first quadrant are
+  `ω`-orthogonal;
 * `aeval_focusFocusCharpoly_apply_eq_zero`: `f(A)` kills the real part of an eigenvector of `A` for
   `a + bi`;
 * `four_le_finrank_maxGenEigenspace_focusFocusCharpoly`: for `A ∈ sp(V, ω)` with such an
@@ -319,6 +324,22 @@ focus-focus block. -/
 noncomputable def focusFocusCharpoly (a b : ℝ) : ℝ[X] :=
   (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2))
 
+/-- The defining formula of `focusFocusCharpoly a b`, for use outside this module. -/
+theorem focusFocusCharpoly_def (a b : ℝ) :
+    focusFocusCharpoly a b =
+      (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) *
+        (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2)) := by
+  rw [focusFocusCharpoly]
+
+/-- The value of `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` at `x` is
+`((x - a)² + b²)((x + a)² + b²)`. -/
+theorem aeval_focusFocusCharpoly {R : Type*} [CommRing R] [Algebra ℝ R] (x : R) (a b : ℝ) :
+    aeval x (focusFocusCharpoly a b) =
+      ((x - algebraMap ℝ R a) ^ 2 + algebraMap ℝ R b ^ 2) *
+        ((x + algebraMap ℝ R a) ^ 2 + algebraMap ℝ R b ^ 2) := by
+  simp only [focusFocusCharpoly, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C, map_ofNat]
+  ring
+
 /-- The polynomial `focusFocusCharpoly a b` is even. -/
 theorem focusFocusCharpoly_comp_neg_X (a b : ℝ) :
     (focusFocusCharpoly a b).comp (-X) = focusFocusCharpoly a b := by
@@ -329,13 +350,8 @@ theorem focusFocusCharpoly_comp_neg_X (a b : ℝ) :
 `±a ± bi`, so their real and imaginary parts have absolute values `|a|` and `|b|`. -/
 private theorem abs_re_eq_and_abs_im_eq_of_aeval_focusFocusCharpoly_eq_zero {a b : ℝ} (hb : b ≠ 0)
     {w : ℂ} (hw : aeval w (focusFocusCharpoly a b) = 0) : |w.re| = |a| ∧ |w.im| = |b| := by
-  have hf : aeval w (focusFocusCharpoly a b) =
-      ((w - a) ^ 2 + (b : ℂ) ^ 2) * ((w + a) ^ 2 + (b : ℂ) ^ 2) := by
-    simp only [focusFocusCharpoly, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C,
-      Complex.coe_algebraMap]
-    push_cast
-    ring
-  rw [hf] at hw
+  rw [aeval_focusFocusCharpoly] at hw
+  simp only [Complex.coe_algebraMap] at hw
   -- A root of `(w - c)² + b²` has real part `c` and imaginary part `±b`.
   have key {c : ℝ} (h : (w - c) ^ 2 + (b : ℂ) ^ 2 = 0) : w.re = c ∧ |w.im| = |b| := by
     have h1 := congrArg Complex.re h
@@ -379,23 +395,37 @@ theorem isCoprime_focusFocusCharpoly {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b)
   · exact h (h₁.symm.trans h₁')
   · exact h (h₂.symm.trans h₂')
 
-/-- For `a, b > 0` the polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` is coprime to
+/-- For `a, b ≠ 0` the polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` is coprime to
 `X² - μ` for every real `μ`: the squares of its roots `±a ± bi` are not real. -/
-theorem isCoprime_focusFocusCharpoly_X_sq_sub_C {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (μ : ℝ) :
+theorem isCoprime_focusFocusCharpoly_X_sq_sub_C {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (μ : ℝ) :
     IsCoprime (focusFocusCharpoly a b) (X ^ 2 - C μ) := by
   refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun w ↦ ?_
   by_contra! hw
-  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusCharpoly_eq_zero hb.ne' hw.1
+  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusCharpoly_eq_zero hb hw.1
   -- `w² = μ` is real, so `2 w.re w.im = 0`, while `|w.re| = a` and `|w.im| = b` are positive.
   have hw2 : w ^ 2 = (μ : ℂ) := by simpa [sub_eq_zero] using hw.2
   have him : w.re * w.im + w.im * w.re = 0 := by simpa [pow_two] using congrArg Complex.im hw2
   have hre : w.re ≠ 0 := fun h0 ↦ by
     rw [h0, abs_zero] at h₁
-    exact ha.ne' (abs_eq_zero.1 h₁.symm)
+    exact ha (abs_eq_zero.1 h₁.symm)
   have hwim : w.im ≠ 0 := fun h0 ↦ by
     rw [h0, abs_zero] at h₂
-    exact hb.ne' (abs_eq_zero.1 h₂.symm)
+    exact hb (abs_eq_zero.1 h₂.symm)
   exact mul_ne_zero hre hwim (by linarith)
+
+omit [FiniteDimensional ℝ V] in
+/-- For `A ∈ sp(V, ω)` and distinct points `z ≠ z'` of the open first quadrant, `ω` pairs the
+vectors killed by a power of `f_z(A)` trivially with those killed by a power of `f_{z'}(A)`, where
+`f_z = (X² - 2 z.re X + |z|²)(X² + 2 z.re X + |z|²)`. -/
+theorem apply_eq_zero_of_mem_maxGenEigenspace_focusFocusCharpoly {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {z z' : ℂ} (hz : 0 < z.re ∧ 0 < z.im)
+    (hz' : 0 < z'.re ∧ 0 < z'.im) (hne : z ≠ z') {v w : V}
+    (hv : v ∈ (aeval A (focusFocusCharpoly z.re z.im)).maxGenEigenspace 0)
+    (hw : w ∈ (aeval A (focusFocusCharpoly z'.re z'.im)).maxGenEigenspace 0) : ω v w = 0 := by
+  refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
+    (isCoprime_focusFocusCharpoly hz.1 hz.2 hz'.1 hz'.2 ?_) hv hw
+  by_contra! hre
+  exact hne (Complex.ext hre.1 hre.2)
 
 /-- **The focus-focus pair as odd polynomials.** For `a, b > 0` there are odd polynomials `p₁`,
 `p₂` with `p₁² ≡ 1` and `p₂² ≡ -1` modulo `f = (X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, namely
@@ -627,12 +657,9 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
     (aeval A (focusFocusCharpoly (a j) (c j))).maxGenEigenspace 0
   have hGs (j : Fin k) : ω.IsSymplectic (G j) :=
     ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusCharpoly_comp_neg_X _ _)
-  have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 := by
-    intro j j' hjj' v hv w hw
-    refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-      (isCoprime_focusFocusCharpoly (ha j) (hc j) (ha j') (hc j') ?_) hv hw
-    by_contra! hre
-    exact hjj' (e.injective (Subtype.ext (Complex.ext hre.1 hre.2)))
+  have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 := fun j j' hjj' _ hv _ hw ↦
+    apply_eq_zero_of_mem_maxGenEigenspace_focusFocusCharpoly hA (hs0 _ (e j).property)
+      (hs0 _ (e j').property) (fun h ↦ hjj' (e.injective (Subtype.ext h))) hv hw
   have hG4 : ∀ j, finrank ℝ (G j) = 4 := finrank_eq_four_of_four_le hs hGs horth fun j ↦ by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hPs _ (e j).property
     exact four_le_finrank_maxGenEigenspace_focusFocusCharpoly hA (ha j).ne' (hc j).ne' hv hAv hAw

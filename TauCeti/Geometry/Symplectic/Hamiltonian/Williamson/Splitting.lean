@@ -64,8 +64,8 @@ form a nondegenerate family
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.span_range_prod_eq`,
   `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_prod_iff`: a nondegenerate family of
   block-diagonal forms splits into nondegenerate families on the two summands.
-* `TauCeti.SymplecticForm.hamiltonianEnd_apply_mem_orthogonal`: a Hamiltonian endomorphism
-  preserving a subspace preserves its symplectic complement.
+* `TauCeti.SymplecticForm.apply_mem_orthogonal_of_mem_skewAdjointLieSubalgebra`: an element of
+  `sp(V, ω)` preserving a subspace preserves its symplectic complement.
 * `TauCeti.SymplecticForm.comp_prodEquivOfIsCompl_eq_prod`: along `L × L^ω ≃ V`, a quadratic form
   whose Hamiltonian endomorphism preserves a symplectic subspace `L` is the direct sum of its
   restrictions to `L` and `L^ω`.
@@ -323,14 +323,16 @@ theorem comp_prodEquivOfIsCompl_eq_prod (hL : ω.IsSymplectic L) {R : QuadraticF
     QuadraticMap.prod_apply, Submodule.subtype_apply]
   rw [QuadraticMap.map_add R, hab, add_zero]
 
-/-- The Hamiltonian endomorphism of a quadratic form preserves the symplectic complement of every
-subspace it preserves, since it is skew-adjoint for `ω`. -/
-theorem hamiltonianEnd_apply_mem_orthogonal {R : QuadraticForm ℝ V}
-    (hR : ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L) {v : V} (hv : v ∈ ω.orthogonal L) :
-    ω.hamiltonianEnd R v ∈ ω.orthogonal L :=
+omit [FiniteDimensional ℝ V] in
+/-- An element `A` of `sp(V, ω)` preserves the symplectic complement of every subspace it
+preserves, since it is skew-adjoint for `ω`. -/
+theorem apply_mem_orthogonal_of_mem_skewAdjointLieSubalgebra {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hAL : ∀ v ∈ L, A v ∈ L) {v : V}
+    (hv : v ∈ ω.orthogonal L) : A v ∈ ω.orthogonal L :=
   mem_orthogonal_iff.2 fun y hy ↦ by
-    rw [ω.apply_hamiltonianEnd_right, ← ω.apply_hamiltonianEnd, mem_orthogonal_iff.1 hv _ (hR y hy),
-      neg_zero]
+    have := (LinearMap.mem_skewAdjointSubmodule A).1 hA y v
+    have h0 : ω (A y) v = 0 := mem_orthogonal_iff.1 hv _ (hAL y hy)
+    simpa [h0] using this.symm
 
 /-- Restrictions of a nondegenerate family to an invariant symplectic subspace `L` and to its
 symplectic complement are nondegenerate. -/

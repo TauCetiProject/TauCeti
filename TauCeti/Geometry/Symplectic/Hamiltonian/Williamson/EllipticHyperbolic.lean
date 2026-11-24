@@ -81,6 +81,8 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
 * `isSymplectic_maxGenEigenspace_sq_sub`, `apply_eq_zero_of_mem_maxGenEigenspace_sq_sub`: for
   `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace, and these
   subspaces are pairwise `ω`-orthogonal for distinct `μ`.
+* `comp_neg_X_sq_sub_C`, `mem_maxGenEigenspace_sq_sub`: the polynomial `X² - μ` is even, and an
+  eigenvector of `A²` for `μ` is killed by `A² - μ`.
 
 ## References
 
@@ -101,7 +103,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 variable {A : Module.End ℝ V}
 
 /-- The polynomial `X² - μ` is even. -/
-private theorem comp_neg_X_sq_sub_C (μ : ℝ) : (X ^ 2 - C μ : ℝ[X]).comp (-X) = X ^ 2 - C μ := by
+theorem comp_neg_X_sq_sub_C (μ : ℝ) : (X ^ 2 - C μ : ℝ[X]).comp (-X) = X ^ 2 - C μ := by
   simp [sub_comp]
 
 /-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace. -/
@@ -122,7 +124,7 @@ theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
   exact isCoprime_sub_C_of_isUnit_sub (X ^ 2) (sub_ne_zero.2 hμν).isUnit
 
 /-- An eigenvector of `A²` for `μ` is killed by `A² - μ`. -/
-private theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = μ • v) :
+theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = μ • v) :
     v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0 :=
   (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
 
