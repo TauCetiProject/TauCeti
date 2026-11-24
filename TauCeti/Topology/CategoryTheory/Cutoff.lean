@@ -9,7 +9,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import TauCeti.CategoryTheory.Category.QuiverTotal
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Cutoff functions for étale groupoids

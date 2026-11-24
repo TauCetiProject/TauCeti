@@ -92,9 +92,8 @@ theorem ad_root_pow_lie_root (hB : B.PosDef) (hev : ∀ i, Even (B i i)) {a b : 
   by_cases heq : a = b
   · subst heq
     rw [ShellLieAlgebra.lie_self hS hev, map_zero]
-  have hle := hB.dotProduct_mulVec_le_one a.property b.property (Subtype.coe_injective.ne heq)
-  have hge := hB.neg_one_le_dotProduct_mulVec a.property b.property fun h ↦ hab (by rw [h,
-      neg_add_cancel])
+  have hcases := hB.dotProduct_mulVec_cases a.property b.property (Subtype.coe_injective.ne heq)
+    fun h ↦ hab (by rw [h, neg_add_cancel])
   rcases (by omega : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ b ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1) with hp | hp
   · rw [root_lie_root, rootBracket_eq_zero_of_nonneg hS hp, map_zero]
   -- The string `b, a + b` stops at `a + b`, which pairs to `1` with `a`.

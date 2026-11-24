@@ -45,7 +45,7 @@ of a critical submanifold of index `r`: the cohomology of the base, shifted up b
 The Thom isomorphism in cohomology holds over every commutative ring and for every module of
 coefficients, so the last statement gives the integral cohomology across the level of a critical
 submanifold whose negative bundle is oriented, for instance a complex vector bundle. For a
-non-orientable negative bundle and a ring in which `-1 ≠ 1` the cohomology of the base must be
+non-orientable negative bundle and a ring in which `2 ≠ 0` the cohomology of the base must be
 twisted by the orientation of `V`, which this file does not treat.
 
 The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
@@ -188,8 +188,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
 
 variable [FiniteDimensional ℝ F]
 
-/-- **Across a Morse–Bott level the relative cohomology mod `2` is the shifted cohomology of the
-critical submanifold, with no orientation.** Under the hypotheses of
+/-- **Across a Morse–Bott level the relative cohomology in characteristic two is the shifted
+cohomology of the critical submanifold, with no orientation.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
 bundle of a real vector bundle `V → B` of rank `r`, let `K` be a commutative ring in which

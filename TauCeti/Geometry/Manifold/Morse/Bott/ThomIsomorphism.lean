@@ -138,8 +138,8 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomCla
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
   exact ⟨e ≪≫ homologyThomIso F V p _ rfl u hu⟩
 
-/-- **Across a Morse–Bott level the relative homology mod `2` is the shifted homology of the
-critical submanifold, with no orientation.** In the setting of
+/-- **Across a Morse–Bott level the relative homology in characteristic two is the shifted homology
+of the critical submanifold, with no orientation.** In the setting of
 `TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`, let the negative disc bundle of the
 quadratic normal form `f = c - s + t` be parametrized by the disc bundle of a real vector bundle
 `V → B` of rank `r`, and let `K` be a field of characteristic two, such as `ZMod 2`. Then
