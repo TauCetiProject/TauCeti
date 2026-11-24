@@ -85,7 +85,7 @@ variable (I) in
 differentiated and the second argument `w` is the direction of differentiation. -/
 def conformalConnectionTensor (f : M → ℝ) (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x :=
-  (2 * f x)⁻¹ • (ContinuousLinearMap.smulRightL ℝ _ _ (mvfderiv I f x) +
+  (2 * f x)⁻¹ • (StrongDual.smulRightL ℝ _ _ (mvfderiv I f x) +
     (mvfderiv I f x).smulRight (ContinuousLinearMap.id ℝ (TangentSpace I x)) -
     ContinuousLinearMap.compL ℝ _ ℝ _ (ContinuousLinearMap.toSpanSingleton ℝ (mgradient I f x)) ∘L
       innerSL ℝ (E := TangentSpace I x))

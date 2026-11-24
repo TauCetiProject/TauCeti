@@ -64,7 +64,7 @@ theorem mem_implementers_iff (p : inertia A × (A ≃ₗ[k] A)) :
 /-- Implementing pairs are determined by their group elements and pointwise operator values. -/
 @[ext]
 theorem implementers.ext {p q : implementers A}
-    (ht : (p.1.1 : G) = (q.1.1 : G)) (hU : ∀ x, p.1.2 x = q.1.2 x) : p = q :=
+    (ht : (p.val.1 : G) = (q.val.1 : G)) (hU : ∀ x, p.val.2 x = q.val.2 x) : p = q :=
   Subtype.ext (Prod.ext (Subtype.ext ht) (LinearEquiv.ext hU))
 
 /-- Projection of implementing pairs to the inertia group. -/
@@ -72,7 +72,7 @@ noncomputable def projection : implementers A →* inertia A :=
   (MonoidHom.fst _ _).comp (implementers A).subtype
 
 @[simp]
-theorem projection_apply (p : implementers A) : projection A p = p.1.1 := (rfl)
+theorem projection_apply (p : implementers A) : projection A p = p.val.1 := (rfl)
 
 /-- The diagonal copy of `N`, pairing each element with its given action. -/
 noncomputable def diagonal : N →* implementers A :=
@@ -84,33 +84,33 @@ noncomputable def diagonal : N →* implementers A :=
       exact Representation.apply_conjNormal_coe A.ρ n m x)
 
 @[simp]
-theorem diagonal_fst (n : N) : (diagonal A n).1.1 = Subgroup.inclusion (le_inertia A) n :=
+theorem diagonal_fst (n : N) : (diagonal A n).val.1 = Subgroup.inclusion (le_inertia A) n :=
   (rfl)
 
 @[simp]
-theorem diagonal_snd_apply (n : N) (x : A) : (diagonal A n).1.2 x = A.ρ n x := (rfl)
+theorem diagonal_snd_apply (n : N) (x : A) : (diagonal A n).val.2 x = A.ρ n x := (rfl)
 
 /-- The diagonal is faithful even if the original representation is not. -/
 theorem diagonal_injective : Function.Injective (diagonal A) := by
   intro n m h
   apply Subtype.ext
-  simpa using congrArg (fun p : implementers A => (p.1.1 : G)) h
+  simpa using congrArg (fun p : implementers A => (p.val.1 : G)) h
 
 /-- Conjugating a diagonal pair gives the diagonal pair for the conjugated element. -/
 theorem mul_diagonal_mul_inv (p : implementers A) (n : N) :
-    p * diagonal A n * p⁻¹ = diagonal A (MulAut.conjNormal (p.1.1 : G) n) := by
+    p * diagonal A n * p⁻¹ = diagonal A (MulAut.conjNormal (p.val.1 : G) n) := by
   apply Subtype.ext
   apply Prod.ext
   · apply Subtype.ext
     simp [mul_assoc]
   · ext x
-    simpa using p.2 n (p.1.2.symm x)
+    simpa using p.property n (p.val.2.symm x)
 
 /-- The given `N`-action embeds as a normal subgroup of the implementing group. -/
 instance diagonal_range_normal : (diagonal A).range.Normal where
   conj_mem n hn p := by
     obtain ⟨n, rfl⟩ := hn
-    exact ⟨MulAut.conjNormal (p.1.1 : G) n, (mul_diagonal_mul_inv A p n).symm⟩
+    exact ⟨MulAut.conjNormal (p.val.1 : G) n, (mul_diagonal_mul_inv A p n).symm⟩
 
 /-- The canonical Clifford group: implementing pairs modulo the diagonal `N`-action. -/
 @[expose]
@@ -128,11 +128,11 @@ noncomputable def rightHom : Carrier A →* Quotient A :=
   QuotientGroup.lift _ ((QuotientGroup.mk' _).comp (projection A)) (by
     rintro _ ⟨n, rfl⟩
     rw [MonoidHom.mem_ker, MonoidHom.comp_apply, projection_apply, diagonal_fst]
-    exact (QuotientGroup.eq_one_iff _).mpr n.2)
+    exact (QuotientGroup.eq_one_iff _).mpr n.property)
 
 @[simp]
 theorem rightHom_mk (p : implementers A) :
-    rightHom A (QuotientGroup.mk p) = QuotientGroup.mk p.1.1 := (rfl)
+    rightHom A (QuotientGroup.mk p) = QuotientGroup.mk p.val.1 := (rfl)
 
 /-- An implementing pair is determined by its inertia element and its Clifford class. -/
 theorem implementer_ext {p q : implementers A} (ht : projection A p = projection A q)
@@ -184,11 +184,11 @@ noncomputable def kernelLift : (End A)ˣ →* implementers A where
     rfl
 
 @[simp]
-theorem kernelLift_fst (d : (End A)ˣ) : (kernelLift A d).1.1 = 1 := (rfl)
+theorem kernelLift_fst (d : (End A)ˣ) : (kernelLift A d).val.1 = 1 := (rfl)
 
 @[simp]
 theorem kernelLift_snd_apply (d : (End A)ˣ) (x : A) :
-    (kernelLift A d).1.2 x = d.val.asHom.hom.hom.hom x := (rfl)
+    (kernelLift A d).val.2 x = d.val.asHom.hom.hom.hom x := (rfl)
 
 /-- Invertible equivariant endomorphisms inject into the implementing group. -/
 theorem kernelLift_injective : Function.Injective (kernelLift A) := by
@@ -196,7 +196,7 @@ theorem kernelLift_injective : Function.Injective (kernelLift A) := by
   apply Units.ext
   apply End.ext
   ext x
-  exact congrArg (fun p : implementers A => p.1.2 x) h
+  exact congrArg (fun p : implementers A => p.val.2 x) h
 
 /-- The kernel of projection consists exactly of equivariant automorphisms. -/
 theorem range_kernelLift_eq_ker_projection : (kernelLift A).range = (projection A).ker := by
@@ -205,11 +205,11 @@ theorem range_kernelLift_eq_ker_projection : (kernelLift A).range = (projection 
   · rintro ⟨d, rfl⟩
     exact kernelLift_fst A d
   · intro hp
-    have ht : p.1.1 = 1 := hp
-    have hU : ∀ n x, p.1.2 (A.ρ n x) = A.ρ n (p.1.2 x) := by
+    have ht : p.val.1 = 1 := hp
+    have hU : ∀ n x, p.val.2 (A.ρ n x) = A.ρ n (p.val.2 x) := by
       intro n x
-      simpa only [ht, Subgroup.coe_one, map_one, MulAut.one_apply] using p.2 n x
-    let e : A ≅ A := Action.mkIso p.1.2.toFGModuleCatIso fun n =>
+      simpa only [ht, Subgroup.coe_one, map_one, MulAut.one_apply] using p.property n x
+    let e : A ≅ A := Action.mkIso p.val.2.toFGModuleCatIso fun n =>
       FGModuleCat.hom_ext (by simpa using LinearMap.ext (hU n))
     refine ⟨(Aut.unitsEndEquivAut A).symm (Aut.of e), ?_⟩
     apply Subtype.ext
@@ -233,7 +233,7 @@ theorem inl_injective : Function.Injective (inl A) := by
   obtain ⟨n, hn⟩ := (QuotientGroup.eq_one_iff (kernelLift A d)).mp hd
   have hn1 : n = 1 := by
     apply Subtype.ext
-    simpa using congrArg (fun p : implementers A => (p.1.1 : G)) hn
+    simpa using congrArg (fun p : implementers A => (p.val.1 : G)) hn
   have hd1 : kernelLift A d = 1 := by simpa [hn1] using hn.symm
   exact (kernelLift_injective A (hd1.trans (map_one _).symm))
 
@@ -247,8 +247,8 @@ theorem range_inl_eq_ker_rightHom : (inl A).range = (rightHom A).ker := by
     rw [MonoidHom.mem_ker, inl_apply, rightHom_mk, kernelLift_fst]
     exact map_one (QuotientGroup.mk' _)
   · intro hp
-    have ht : (p.1.1 : G) ∈ N := (QuotientGroup.eq_one_iff p.1.1).mp hp
-    let n : N := ⟨p.1.1, ht⟩
+    have ht : (p.val.1 : G) ∈ N := (QuotientGroup.eq_one_iff p.val.1).mp hp
+    let n : N := ⟨p.val.1, ht⟩
     have hk : p * (diagonal A n)⁻¹ ∈ (projection A).ker := by
       simp only [MonoidHom.mem_ker, map_mul, map_inv, projection_apply, diagonal_fst]
       exact mul_inv_eq_one.mpr (Subtype.ext rfl)
@@ -269,7 +269,7 @@ variable [Field k] (A : FDRep k N)
 /-- Every inertia element has an implementing operator, over an arbitrary field. -/
 theorem projection_surjective : Function.Surjective (projection A) := by
   intro t
-  obtain ⟨U, hU⟩ := mem_inertia_iff_exists_linearEquiv.mp t.2
+  obtain ⟨U, hU⟩ := mem_inertia_iff_exists_linearEquiv.mp t.property
   exact ⟨⟨(t, U), hU⟩, rfl⟩
 
 /-- The canonical Clifford group maps onto the inertia quotient. -/

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # Restricted power series and their coefficient algebra
@@ -42,8 +43,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
   is not restricted at the radius `‖a‖⁻¹`, and `TauCeti.PowerSeries.not_isRestricted_mk_one`:
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
-* `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
-  is restricted at `c`.
+* `PowerSeries.IsRestricted.rescale` and `PowerSeries.IsRestricted.rescale_of_le`: if `f(X)` is
+  restricted at `‖a‖ * c` (or at `r ≥ ‖a‖ * c` with `0 ≤ c`), then `f(aX)` is restricted at `c`.
 * `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
@@ -112,6 +113,15 @@ theorem _root_.PowerSeries.IsRestricted.rescale {R : Type*} [NormedCommRing R] {
   gcongr
   exact (norm_mul_le _ _).trans (by gcongr)
 
+/-- **Rescaling at a bounded radius.** Over any normed commutative ring, if `f` is restricted at
+`r`, `0 ≤ s`, and `‖u‖ * s ≤ r`, then `rescale u f` is restricted at `s`. -/
+theorem _root_.PowerSeries.IsRestricted.rescale_of_le {R : Type*} [NormedCommRing R] {r s : ℝ}
+    {u : R} {f : PowerSeries R} (hf : f.IsRestricted r) (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r) :
+    (PowerSeries.rescale u f).IsRestricted s := by
+  have hus : 0 ≤ ‖u‖ * s := mul_nonneg (norm_nonneg u) hs
+  exact (isRestricted_of_abs_le hf
+    (by rw [abs_of_nonneg hus, abs_of_nonneg (hus.trans hsr)]; exact hsr)).rescale
+
 /-- For `a ≠ 0` over a ring with multiplicative norm, the geometric series `∑ aⁿ Xⁿ` is not
 restricted at the radius `‖a‖⁻¹`: all its weighted coefficient norms there equal `1`. -/
 theorem not_isRestricted_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
@@ -149,43 +159,33 @@ variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ}
 constant series. Scalars act as on the ambient formal series, and the coefficient ring need not
 be commutative. -/
 noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] :
-    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) where
-  smul s f := ⟨s • (f : PowerSeries R), by
-    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
-    exact (PowerSeries.isRestricted_C c (algebraMap S R s)).mul f.2⟩
-  algebraMap := (algebraMap S (PowerSeries R)).codRestrict _ fun s ↦ by
+    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) :=
+  (PowerSeries.IsRestricted.subring (R := R) c).algebraOfMem fun s ↦ by
     rw [PowerSeries.algebraMap_apply]
     exact PowerSeries.isRestricted_C c _
-  commutes' s f := Subtype.ext <| by
-    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
-      Algebra.commutes s (f : PowerSeries R)
-  smul_def' s f := Subtype.ext <| by
-    rw [Subring.coe_mul, RingHom.codRestrict_apply]
-    convert Algebra.smul_def s (f : PowerSeries R) using 1
 
 /-- A scalar maps to the constant restricted series of its image in the coefficient ring. -/
 @[simp]
 theorem coe_algebraMap_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     (algebraMap S (PowerSeries.IsRestricted.subring (R := R) c) s : PowerSeries R) =
-      PowerSeries.C (algebraMap S R s) := by
-  calc
-    _ = algebraMap S (PowerSeries R) s := (rfl)
-    _ = _ := PowerSeries.algebraMap_apply
+      PowerSeries.C (algebraMap S R s) :=
+  (Subring.coe_algebraMap_algebraOfMem _ s).trans PowerSeries.algebraMap_apply
 
 /-- Scalars act on restricted series as on their underlying formal power series. -/
 @[simp]
 theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
     (f : PowerSeries.IsRestricted.subring (R := R) c) :
     ((s • f : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) =
-      s • (f : PowerSeries R) := (rfl)
+      s • (f : PowerSeries R) :=
+  Subring.coe_smul_algebraOfMem _ s f
 
 /-- Scalar towers on the coefficients induce scalar towers on restricted power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
     [SMul S T] [IsScalarTower S T R] :
-    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) where
-  smul_assoc s t f := Subtype.ext <| by
-    simp only [coe_smul_isRestrictedSubring]
-    exact smul_assoc s t (f : PowerSeries R)
+    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) :=
+  Subring.isScalarTower_algebraOfMem
+    (fun s ↦ by rw [PowerSeries.algebraMap_apply]; exact PowerSeries.isRestricted_C c _)
+    (fun t ↦ by rw [PowerSeries.algebraMap_apply]; exact PowerSeries.isRestricted_C c _)
 
 end Algebra
 

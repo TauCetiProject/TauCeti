@@ -56,8 +56,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- The flat map `g x : T_x M →L[ℝ] T_x^* M` of a nondegenerate metric is invertible. -/
 theorem isInvertible (x : M) : (g x).IsInvertible :=
-  -- The tangent fibre is the model space `E`, where the normed structure is available.
-  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) (g.nondegenerate x).1
+  ContinuousLinearMap.isInvertible_of_separatingLeft (g.nondegenerate x).1
 
 /-- The inverse of the flat map `g x` is the sharp musical isomorphism. -/
 @[simp]

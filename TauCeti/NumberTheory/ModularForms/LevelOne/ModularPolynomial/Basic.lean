@@ -9,12 +9,12 @@ public import TauCeti.Algebra.Polynomial.Bivariate
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.LevelOne.CyclicIsogenyPolynomial
 public import TauCeti.RingTheory.HahnSeries.Twist
+import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.HahnSeries.Map
@@ -86,7 +86,7 @@ open FixedDetMatrices
 determinant. Keeping `FixedDetMatrix` un-projected avoids semireducible coercion mismatches under
 `rw`. -/
 private def repEntry {m : ℤ} (A : FixedDetMatrix (Fin 2) ℤ m) (i j : Fin 2) : ℕ :=
-  (A.1 i j).natAbs
+  (A.val i j).natAbs
 
 section RepsExpansion
 
@@ -97,14 +97,14 @@ variable {n : ℕ} [NeZero n]
 private theorem mem_reps_nat_entries {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
     0 < repEntry A 0 0 ∧ 0 < repEntry A 1 1 ∧ repEntry A 0 0 * repEntry A 1 1 = n ∧
       repEntry A 0 1 < repEntry A 1 1 ∧
-      A.1 = !![(repEntry A 0 0 : ℤ), (repEntry A 0 1 : ℤ); 0, (repEntry A 1 1 : ℤ)] := by
+      A.val = !![(repEntry A 0 0 : ℤ), (repEntry A 0 1 : ℤ); 0, (repEntry A 1 1 : ℤ)] := by
   obtain ⟨h₁₀, h₀₀, h₀₁, h₁₁lt⟩ := hA
-  have hmul : A.1 0 0 * A.1 1 1 = n := apply_zero_zero_mul_apply_one_one h₁₀
+  have hmul : A.val 0 0 * A.val 1 1 = n := apply_zero_zero_mul_apply_one_one h₁₀
   have hn_pos : (0 : ℤ) < n := Int.natCast_pos.2 (NeZero.pos n)
-  have h₁₁ : 0 < A.1 1 1 := pos_of_mul_pos_right (hmul.symm ▸ hn_pos) h₀₀.le
-  have ha : (repEntry A 0 0 : ℤ) = A.1 0 0 := Int.natAbs_of_nonneg h₀₀.le
-  have hb : (repEntry A 0 1 : ℤ) = A.1 0 1 := Int.natAbs_of_nonneg h₀₁
-  have hd : (repEntry A 1 1 : ℤ) = A.1 1 1 := Int.natAbs_of_nonneg h₁₁.le
+  have h₁₁ : 0 < A.val 1 1 := pos_of_mul_pos_right (hmul.symm ▸ hn_pos) h₀₀.le
+  have ha : (repEntry A 0 0 : ℤ) = A.val 0 0 := Int.natAbs_of_nonneg h₀₀.le
+  have hb : (repEntry A 0 1 : ℤ) = A.val 0 1 := Int.natAbs_of_nonneg h₀₁
+  have hd : (repEntry A 1 1 : ℤ) = A.val 1 1 := Int.natAbs_of_nonneg h₁₁.le
   refine ⟨Int.natAbs_pos.2 h₀₀.ne', Int.natAbs_pos.2 h₁₁.ne', ?_, ?_, ?_⟩
   · exact Int.natCast_inj.1 (by rw [Nat.cast_mul, ha, hd, hmul])
   · rw [abs_of_nonneg h₀₁, abs_of_pos h₁₁] at h₁₁lt
@@ -137,7 +137,7 @@ private theorem qParam_one_toGLReal_smul_of_mem_reps {A : FixedDetMatrix (Fin 2)
   have hadC : (repEntry A 0 0 : ℂ) * repEntry A 1 1 = n := by exact_mod_cast had
   rw [coe_toGLReal_smul_of_mem_reps hA]
   simp only [Function.Periodic.qParam, Complex.ofReal_one, Complex.ofReal_natCast, div_one,
-    ← Complex.exp_nat_mul, ← Complex.exp_add]
+    ← Complex.exp_natCast_mul, ← Complex.exp_add]
   congr 1
   push_cast
   field_simp
@@ -260,15 +260,15 @@ theorem laurentQExpansion_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
     (hA : A ∈ reps (n : ℤ)) :
     UpperHalfPlane.laurentQExpansion n (fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
       LaurentSeries.expand ℂ
-        (⟨(A.1 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
+        (⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
         (HahnSeries.twistEquiv
           (zpowersHom ℂˣ (Units.mk0
-            (cexp (2 * π * I / n) ^ ((A.1 0 0).natAbs * (A.1 0 1).natAbs))
+            (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
             (pow_ne_zero _ (Complex.exp_ne_zero _))))
           (UpperHalfPlane.laurentQExpansion 1 j)) := by
   have ha : 0 < repEntry A 0 0 := Int.natAbs_pos.2 hA.2.1.ne'
   let a := repEntry A 0 0
-  set d : ℕ+ := ⟨(A.1 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
   rw [UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul
     (Nat.cast_pos.2 (NeZero.pos n)) (analyticAt_cuspFunction_qParam_pow_mul_j_toGLReal_smul hA)]
   ext k
@@ -282,7 +282,7 @@ theorem laurentQExpansion_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
         nlinarith [d.pos]
       have h0 : (UpperHalfPlane.laurentQExpansion 1 j).coeff r = 0 :=
         HahnSeries.coeff_eq_zero_of_lt_orderTop (by simpa using WithTop.coe_lt_coe.2 hr)
-      rw [ite_eq_left hlt, h0, mul_zero]
+      rw [ite_eq_left hlt, h0, smul_zero]
     · obtain ⟨m, rfl⟩ : ∃ m : ℕ, r = (m : ℤ) - 1 := ⟨(r + 1).toNat, by omega⟩
       have hdiff : (d : ℤ) * ((m : ℤ) - 1) - -((a ^ 2 : ℕ) : ℤ) = (a ^ 2 * m : ℕ) := by
         have hd_eq : (d : ℤ) = ((a ^ 2 : ℕ) : ℤ) := rfl
@@ -530,7 +530,7 @@ open scoped Classical in
 `(u.val * b) % d`. -/
 private theorem val_scaleRep_of_mem_reps (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
     (hA : A ∈ reps (n : ℤ)) :
-    (scaleRep u A).1 =
+    (scaleRep u A).val =
       !![(repEntry A 0 0 : ℤ), (((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1 : ℕ) : ℤ);
           0, (repEntry A 1 1 : ℤ)] :=
   congrArg Subtype.val (dite_eq_left hA : scaleRep u A = _)
@@ -653,14 +653,15 @@ private theorem map_val_repLaurentSeries {A : FixedDetMatrix (Fin 2) ℤ n} (hA 
   rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA), laurentQExpansion_j_toGLReal_smul hA,
     ← map_intLaurentJ]
   dsimp only [repEntry]
-  set d : ℕ+ := ⟨(A.1 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
   ext g
   by_cases hdvd : (d : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
     rw [HahnSeries.coeff_mapRingHom, LaurentSeries.coeff_expand_mul, LaurentSeries.coeff_expand_mul,
       HahnSeries.coeff_twistEquiv, HahnSeries.coeff_twistEquiv,
       HahnSeries.coeff_mapRingHom, HahnSeries.coeff_mapRingHom]
-    simp only [zpowersHom_apply, Units.val_zpow_eq_zpow_val, Units.val_mk0, map_mul, map_zpow₀]
+    simp only [smul_eq_mul, zpowersHom_apply, Units.val_zpow_eq_zpow_val, Units.val_mk0, map_mul,
+      map_zpow₀]
     simp [zetaCyclotomic]
   · simp [LaurentSeries.coeff_expand_of_not_dvd d _ hdvd]
 
@@ -788,7 +789,7 @@ private theorem laurentQExpansion_coeff_cyclicIsogenyPolynomial_j_mem_int (k : �
       (algebraMap ℤ ℂ).range := by
   let K := cyclotomicSubfield n
   have hζ : IsPrimitiveRoot (cexp (2 * π * I / n)) n := Complex.isPrimitiveRoot_exp n (NeZero.ne n)
-  have : IsCyclotomicExtension {n} ℚ K := hζ.isCyclotomicExtension_adjoin_singleton
+  have : IsCyclotomicExtension {n} ℚ K := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   have : FiniteDimensional ℚ K := IsCyclotomicExtension.finite_of_singleton n ℚ K
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
   set PK : (LaurentSeries K)[X] := ∏ A ∈ primitiveReps (n : ℤ), (X - C (repLaurentSeries A))
@@ -953,7 +954,7 @@ variable {n}
 
 /-- For every primitive integral matrix `A` of determinant `n`, `Φ_n(j(τ), j(A • τ)) = 0`. -/
 theorem aevalAeval_j_toGLReal_smul_modularPolynomial {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : TauCeti.IsPrimitive A.1) (τ : ℍ) :
+    (hA : TauCeti.IsPrimitive A.val) (τ : ℍ) :
     aevalAeval (j τ) (j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) (modularPolynomial n) = 0 := by
   rw [aevalAeval_j_modularPolynomial]
   exact isRoot_cyclicIsogenyPolynomial j_smul_SL2Z hA τ
@@ -969,7 +970,7 @@ the image of `τ` under a primitive integral matrix of determinant `n`. -/
 theorem aevalAeval_j_modularPolynomial_eq_zero_iff (τ τ' : ℍ) :
     aevalAeval (j τ) (j τ') (modularPolynomial n) = 0 ↔
       ∃ A : FixedDetMatrix (Fin 2) ℤ n,
-        TauCeti.IsPrimitive A.1 ∧ toGLReal (NeZero.ne (n : ℤ)) A • τ = τ' := by
+        TauCeti.IsPrimitive A.val ∧ toGLReal (NeZero.ne (n : ℤ)) A • τ = τ' := by
   refine ⟨fun h ↦ ?_, fun ⟨A, hA, hτ⟩ ↦ hτ ▸ aevalAeval_j_toGLReal_smul_modularPolynomial hA τ⟩
   rw [aevalAeval_j_modularPolynomial, ← IsRoot.def,
     ← mem_roots (monic_cyclicIsogenyPolynomial j τ).ne_zero,

@@ -177,7 +177,7 @@ end TauCeti
 theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] {B : BilinForm R M} (A : skewAdjointLieSubalgebra B) (u w : M) :
     B ((A : Module.End R M) u) w = -B u ((A : Module.End R M) w) := by
-  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.2 u w, Pi.neg_apply,
+  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.property u w, Pi.neg_apply,
     map_neg]
 
 /-- An endomorphism both skew-adjoint and self-adjoint for a left-separating bilinear form

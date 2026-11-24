@@ -160,7 +160,7 @@ coordinates of `ζ₃²` in the integral power basis of `ℚ(ζ₃)` are `-1`. -
 example {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {3} ℚ K] {ζ : K}
     (hζ : IsPrimitiveRoot ζ 3) (j : Fin hζ.integralPowerBasis.dim) :
     hζ.integralPowerBasis.basis.repr (hζ.toInteger ^ 2) j = -1 := by
-  have hj : (j : ℕ) < 2 := by simpa [Nat.totient_prime Nat.prime_three] using j.2
+  have hj : (j : ℕ) < 2 := by simpa [Nat.totient_prime Nat.prime_three] using j.isLt
   rw [← hζ.cyclotomicEquivRingOfIntegers_zeta, ← map_pow, hζ.repr_cyclotomicEquivRingOfIntegers]
   interval_cases (j : ℕ) <;> decide
 

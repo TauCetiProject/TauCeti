@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.Topology.Algebra.Group.Shear
 
 /-!
@@ -49,6 +50,8 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
   `U(K,i)`, and its index in `Kˣ` is `[U(K,0) : U(K,i)]`.
 * `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst`:
   the root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`.
+* `Valuation.coe_unitPart_eq_unitsEquivIntProd_snd`: the uniformizer splitting's unit component
+  agrees with the unit part of any integer-valued valuation with the same normalized order.
 
 ## Implementation notes
 
@@ -94,7 +97,7 @@ theorem continuous_normalizedValuation : Continuous (normalizedValuation K) :=
 @[simp]
 theorem normalizedValuation_coe_unitFiltration_zero (u : unitFiltration K 0) :
     normalizedValuation K u = 1 :=
-  ((ker_normalizedValuation K).ge u.2 : _)
+  ((ker_normalizedValuation K).ge u.property : _)
 
 end NormalizedValuation
 
@@ -140,7 +143,7 @@ def unitsEquivIntProd (ϖ : Kˣ) (hϖ : normalizedValuation K ϖ = .ofAdd 1) :
         ϖ ^ (-n.toAdd))).comp (continuous_normalizedValuation K))) _
   continuous_invFun :=
     (continuous_of_discreteTopology.comp continuous_fst).mul
-      (continuous_subtype_val.comp continuous_snd)
+      (continuous_subtypeVal.comp continuous_snd)
 
 /-- The `ℤ`-component of the uniformizer splitting is the normalized valuation. -/
 @[simp]
@@ -313,28 +316,28 @@ private theorem rootsOfUnity_residue_le :
 private theorem unitFiltrationZeroReduction_inclusion_symm (α : 𝓀[K]ˣ) :
     unitFiltrationZeroReduction K (Subgroup.inclusion
       (rootsOfUnity_residue_le K)
-      ((TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      ((rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).symm α)) = α :=
   Units.ext <| (coe_unitFiltrationZeroReduction K _ _
-    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
+    (rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
       𝒪[K] K α).symm).trans
-      (TauCeti.residue_teichmuller 𝒪[K] α)
+      (residue_teichmuller 𝒪[K] α)
 
 private theorem unitFiltrationZeroReduction_comp_inclusion :
     (unitFiltrationZeroReduction K).comp
         (Subgroup.inclusion (rootsOfUnity_residue_le K)) =
-      (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      (rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).toMonoidHom := by
   ext1 ζ
   obtain ⟨α, rfl⟩ :=
-    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+    (rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[K] K).symm.surjective ζ
   simp [unitFiltrationZeroReduction_inclusion_symm]
 
 /-- The projection `U(K,0) →* μ_{q-1}(K)`: the Teichmüller representative of the residue class. -/
 private def teichmullerProjection :
     unitFiltration K 0 →* rootsOfUnity (Nat.card 𝓀[K] - 1) K :=
-  (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
+  (rootsOfUnityAlgebraMulEquivUnitsResidueField
     𝒪[K] K).symm.toMonoidHom.comp (unitFiltrationZeroReduction K)
 
 private theorem teichmullerProjection_inclusion (ζ : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
@@ -363,7 +366,7 @@ private theorem teichmullerProjection_eq_one (u : unitFiltration K 0)
 
 private theorem continuous_teichmullerProjection : Continuous (teichmullerProjection K) :=
   continuous_of_continuousAt_one _ <| continuousAt_const.congr <|
-    mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+    mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (unitFiltration_mem_nhds_one (K := K) 1)) fun u hu ↦
         ((teichmullerProjection_eq_one K u hu).trans
           (map_one (teichmullerProjection K)).symm).symm
@@ -376,18 +379,18 @@ def unitFiltrationZeroEquivProd :
     unitFiltration K 0 ≃ₜ* rootsOfUnity (Nat.card 𝓀[K] - 1) K × unitFiltration K 1 where
   toFun u := (teichmullerProjection K u,
     ⟨u * (teichmullerProjection K u : Kˣ)⁻¹, mul_inv_teichmullerProjection_mem K u⟩)
-  invFun p := ⟨p.1 * p.2, mul_mem (rootsOfUnity_residue_le K p.1.2)
-    (unitFiltration_antitone (Nat.zero_le 1) p.2.2)⟩
+  invFun p := ⟨p.1 * p.2, mul_mem (rootsOfUnity_residue_le K p.1.property)
+    (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩
   left_inv u := by ext; simp
   right_inv p := by
     have h : teichmullerProjection K ⟨p.1 * p.2, mul_mem
-        (rootsOfUnity_residue_le K p.1.2)
-        (unitFiltration_antitone (Nat.zero_le 1) p.2.2)⟩ = p.1 := by
+        (rootsOfUnity_residue_le K p.1.property)
+        (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩ = p.1 := by
       have := map_mul (teichmullerProjection K)
         (Subgroup.inclusion (rootsOfUnity_residue_le K) p.1)
         (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le 1)) p.2)
       rw [teichmullerProjection_inclusion,
-        teichmullerProjection_eq_one K (Subgroup.inclusion _ p.2) p.2.2, mul_one] at this
+        teichmullerProjection_eq_one K (Subgroup.inclusion _ p.2) p.2.property, mul_one] at this
       exact this
     refine Prod.ext h (Subtype.ext ?_)
     simp only [h]
@@ -398,17 +401,17 @@ def unitFiltrationZeroEquivProd :
     rw [mul_mul_mul_comm]
   continuous_toFun := by
     refine (continuous_teichmullerProjection K).prodMk (Continuous.subtype_mk ?_ _)
-    exact continuous_subtype_val.mul
-      (continuous_subtype_val.comp (continuous_teichmullerProjection K)).inv
+    exact continuous_subtypeVal.mul
+      (continuous_subtypeVal.comp (continuous_teichmullerProjection K)).inv
   continuous_invFun := Continuous.subtype_mk
-    ((continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp continuous_snd)) _
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_snd)) _
 
 /-- The root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`. -/
 @[simp]
 theorem rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst
     (u : unitFiltration K 0) :
-    TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
+    rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
         (unitFiltrationZeroEquivProd K u).1 =
       unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk u) := by
   simp [unitFiltrationZeroEquivProd, teichmullerProjection, unitFiltrationZeroReduction]
@@ -431,3 +434,20 @@ theorem coe_unitFiltrationZeroEquivProd_symm_apply
 end Teichmuller
 
 end TauCeti
+
+namespace Valuation
+
+open scoped WithZero
+
+/-- When a discrete valuation's order agrees with the normalized local-field valuation,
+its unit part agrees with the second component of the topological uniformizer splitting.
+The equality compares underlying field units, without identifying the two unit subgroups. -/
+theorem coe_unitPart_eq_unitsEquivIntProd_snd {K : Type*} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] (v : Valuation K ℤᵐ⁰)
+    (hord : ∀ x : Kˣ, v.ord (x : K) = (TauCeti.normalizedValuation K x).toAdd)
+    (t : Kˣ) (ht : TauCeti.normalizedValuation K t = .ofAdd 1) (x : Kˣ) :
+    (v.unitPart t (by simp [hord, ht]) x : Kˣ) =
+      ((TauCeti.unitsEquivIntProd K t ht x).2 : Kˣ) := by
+  simp only [coe_unitPart, TauCeti.coe_unitsEquivIntProd_apply_snd, hord]
+
+end Valuation

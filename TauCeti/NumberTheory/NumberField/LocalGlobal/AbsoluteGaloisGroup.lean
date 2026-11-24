@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Separable
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 
 /-!
 # Decomposition groups inside the image of a local absolute Galois group
@@ -80,8 +80,8 @@ theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer
       ∀ σ ∈ MulAction.stabilizer Gal(E/F) w.asIdeal,
         ∃ g : AbsoluteGaloisGroup (v.adicCompletion K),
           ∀ x, absoluteGaloisGroupMap τ g (ι x) = ι (σ x) := by
-  have := HeightOneSpectrum.adicCompletion_isSeparable v u
-  have := HeightOneSpectrum.adicCompletion_isSeparable u w
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := K) (L := F) v u
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := F) (L := E) u w
   -- Embed `F_u` in `K_vˢ` over `K_v`, making `K_vˢ` a separable closure of `F_u`, and then embed
   -- `E_w` in it over `F_u`.
   let κ : u.adicCompletion F →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=

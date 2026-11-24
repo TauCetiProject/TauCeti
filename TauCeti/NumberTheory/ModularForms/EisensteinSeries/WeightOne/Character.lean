@@ -170,7 +170,9 @@ theorem charE1MFRaise_eq_zero (htuv : t * (u * v) ∣ N) (h : ψ (-1) * φ (-1) 
     charE1MFRaise ψ φ t htuv = 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charE1MFRaise, charE1MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
+  rw [charE1MFRaise]
+  dsimp only
+  rw [charE1MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
 
 /-- The `q`-expansion of `E₁^{ψ,φ,t}` is that of `E₁^{ψ,φ}` with `q ↦ q^t`. -/
 @[simp]

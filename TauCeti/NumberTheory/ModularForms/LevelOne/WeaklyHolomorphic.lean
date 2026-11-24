@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.HahnSeries.Map
+import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # Weakly holomorphic level-one modular functions are polynomials in `j`
@@ -41,8 +43,15 @@ constant term stay in the image of `R` because those of `jᴺ` are integers.
 
 ## Main results
 
-* `Polynomial.laurentQExpansion_aeval_j`: the Laurent `q`-expansion of `P(j)` is `P`
-  evaluated at the Laurent `q`-expansion of `j`.
+* `TauCeti.ModularForm.meromorphicAt_cuspFunction_nat_j`: the width-`n` cusp function of `j` is
+  meromorphic at `q = 0` for every natural width `n`.
+* `TauCeti.ModularForm.leadingCoeff_laurentQExpansion_j` and
+  `TauCeti.ModularForm.orderTop_laurentQExpansion_j_pow`: the Laurent `q`-expansion of `j` has
+  leading coefficient `1`, and `jᵏ` has order `-k`.
+* `Polynomial.laurentQExpansion_aeval_j`, `Polynomial.orderTop_laurentQExpansion_aeval_j`, and
+  `Polynomial.leadingCoeff_laurentQExpansion_aeval_j`: the Laurent `q`-expansion of `P(j)` is `P`
+  evaluated at the Laurent `q`-expansion of `j`, with order `-deg P` and leading coefficient the
+  image of `P.leadingCoeff` whenever that image is nonzero.
 * `Polynomial.laurentQExpansion_aeval_j_coeff_mem`: the Laurent `q`-coefficients of
   `P(j)` lie in the image of `R`.
 * `TauCeti.ModularForm.exists_natDegree_le_and_aeval_j_eq`: a weakly holomorphic modular function
@@ -73,6 +82,40 @@ local notation "𝕢" => Function.Periodic.qParam
 variable {R : Type*} [CommRing R] [Algebra R ℂ]
 
 namespace TauCeti.ModularForm
+
+/-- The width-`n` cusp function of `j` is meromorphic at `0` for every natural width `n`. -/
+theorem meromorphicAt_cuspFunction_nat_j (n : ℕ) : MeromorphicAt (cuspFunction n j) 0 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact (analyticAt_const.congr
+      (UpperHalfPlane.cuspFunction_eventuallyEq_const_of_nonpos
+        (by norm_num : ((0 : ℕ) : ℝ) ≤ 0) j).symm).meromorphicAt
+  · have han := TauCeti.analyticAt_cuspFunction_nat_mul one_ne_zero (Nat.pos_of_ne_zero hn)
+      periodic_qParam_mul_j_comp_ofComplex analyticAt_cuspFunction_qParam_mul_j
+    have hq : (fun τ : ℍ ↦ 𝕢 ((n : ℕ) * (1 : ℝ)) τ ^ n * j τ) = fun τ : ℍ ↦ 𝕢 1 τ * j τ := by
+      ext τ
+      rw [TauCeti.Periodic.qParam_nat_mul_pow hn]
+    rw [← hq, mul_one] at han
+    exact UpperHalfPlane.meromorphicAt_cuspFunction_qParam_pow_mul_iff.mp han.meromorphicAt
+
+/-- The width-one Laurent `q`-expansion of `j` has leading coefficient `1`. -/
+@[simp]
+theorem leadingCoeff_laurentQExpansion_j :
+    (UpperHalfPlane.laurentQExpansion 1 j).leadingCoeff = 1 := by
+  have hord : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = (-1 : ℤ) :=
+    orderTop_laurentQExpansion_j
+  have hne : UpperHalfPlane.laurentQExpansion 1 j ≠ 0 := by
+    rw [← HahnSeries.orderTop_ne_top, hord]
+    exact WithTop.coe_ne_top
+  rw [HahnSeries.leadingCoeff_eq,
+    WithTop.coe_injective ((HahnSeries.order_eq_orderTop_of_ne_zero hne).trans hord),
+    laurentQExpansion_j_coeff_neg_one]
+
+/-- The `k`-th power of the width-one Laurent `q`-expansion of `j` has order `-k`. -/
+theorem orderTop_laurentQExpansion_j_pow (k : ℕ) :
+    (UpperHalfPlane.laurentQExpansion 1 j ^ k).orderTop = (-k : ℤ) := by
+  have hord : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = (-1 : ℤ) :=
+    orderTop_laurentQExpansion_j
+  rw [HahnSeries.orderTop_pow, hord, ← WithTop.coe_nsmul, nsmul_eq_mul, mul_neg_one]
 
 private theorem aeval_j_add (p q : R[X]) :
     (fun τ : ℍ ↦ aeval (j τ) (p + q)) = (fun τ ↦ aeval (j τ) p) + fun τ ↦ aeval (j τ) q := by
@@ -136,6 +179,78 @@ theorem laurentQExpansion_aeval_j (P : R[X]) :
       (UpperHalfPlane.meromorphicAt_cuspFunction_pow meromorphicAt_cuspFunction_j n),
       UpperHalfPlane.laurentQExpansion_pow meromorphicAt_cuspFunction_j]
     simp [UpperHalfPlane.laurentQExpansion_const]
+
+/-- Helper bounding the Laurent `q`-order of the lower-degree part `P.eraseLead` of `P(j)` strictly
+above `-P.natDegree`. -/
+private theorem lt_orderTop_eval₂_eraseLead_laurentQExpansion_j (P : R[X]) :
+    ((-P.natDegree : ℤ) : WithTop ℤ) <
+      (eval₂RingHom (HahnSeries.C.comp (algebraMap R ℂ))
+        (UpperHalfPlane.laurentQExpansion 1 j) P.eraseLead).orderTop := by
+  set ev : R[X] →+* LaurentSeries ℂ :=
+    eval₂RingHom (HahnSeries.C.comp (algebraMap R ℂ)) (UpperHalfPlane.laurentQExpansion 1 j)
+  set N := P.natDegree
+  by_cases he0 : P.eraseLead = 0
+  · rw [he0, map_zero, HahnSeries.orderTop_zero]
+    exact WithTop.coe_lt_top _
+  · have hlt : P.eraseLead.natDegree < N :=
+      P.eraseLead_natDegree_lt_or_eraseLead_eq_zero.resolve_right he0
+    have hle : ((-(N - 1 : ℕ) : ℤ) : WithTop ℤ) ≤ (ev P.eraseLead).orderTop := by
+      rw [P.eraseLead.as_sum_range' N hlt, map_sum]
+      refine Finset.sum_induction _ (fun s : LaurentSeries ℂ ↦
+        ((-(N - 1 : ℕ) : ℤ) : WithTop ℤ) ≤ s.orderTop)
+        (fun x y hx hy ↦ (le_min hx hy).trans HahnSeries.min_orderTop_le_orderTop_add)
+        (by simp) fun i hi ↦ ?_
+      rw [Finset.mem_range] at hi
+      simp only [ev, coe_eval₂RingHom, ← C_mul_X_pow_eq_monomial, eval₂_mul, eval₂_C,
+        eval₂_X_pow, RingHom.comp_apply]
+      by_cases hci : algebraMap R ℂ (P.eraseLead.coeff i) = 0
+      · simp [hci]
+      · rw [HahnSeries.orderTop_mul, HahnSeries.C_apply, HahnSeries.orderTop_single hci,
+          orderTop_laurentQExpansion_j_pow, ← WithTop.coe_add, zero_add]
+        exact WithTop.coe_le_coe.mpr (by omega)
+    exact lt_of_lt_of_le (WithTop.coe_lt_coe.mpr (by omega)) hle
+
+/-- If the leading coefficient of `P : R[X]` maps to a nonzero complex number, the width-one
+Laurent `q`-expansion of `P(j)` has order `-P.natDegree`. -/
+theorem orderTop_laurentQExpansion_aeval_j {P : R[X]} (hP : algebraMap R ℂ P.leadingCoeff ≠ 0) :
+    (UpperHalfPlane.laurentQExpansion 1 fun τ : ℍ ↦ aeval (j τ) P).orderTop =
+      (-P.natDegree : ℤ) := by
+  rw [laurentQExpansion_aeval_j]
+  set ev : R[X] →+* LaurentSeries ℂ :=
+    eval₂RingHom (HahnSeries.C.comp (algebraMap R ℂ)) (UpperHalfPlane.laurentQExpansion 1 j)
+  -- Fold `eval₂` into `ev P` so `map_add` applies across `eraseLead_add_C_mul_X_pow`.
+  change (ev P).orderTop = (-P.natDegree : ℤ)
+  have hlead : (ev (C P.leadingCoeff * X ^ P.natDegree)).orderTop = (-P.natDegree : ℤ) := by
+    simp only [ev, coe_eval₂RingHom, eval₂_mul, eval₂_C, eval₂_X_pow, RingHom.comp_apply]
+    rw [HahnSeries.orderTop_mul, HahnSeries.C_apply, HahnSeries.orderTop_single hP,
+      orderTop_laurentQExpansion_j_pow, ← WithTop.coe_add, zero_add]
+  have herase := lt_orderTop_eval₂_eraseLead_laurentQExpansion_j P
+  conv_lhs => rw [← P.eraseLead_add_C_mul_X_pow]
+  rw [map_add, add_comm, HahnSeries.orderTop_add_eq_left (hlead ▸ herase), hlead]
+
+/-- If the leading coefficient of `P : R[X]` maps to a nonzero complex number, the width-one
+Laurent `q`-expansion of `P(j)` has leading coefficient `algebraMap R ℂ P.leadingCoeff`. -/
+theorem leadingCoeff_laurentQExpansion_aeval_j {P : R[X]}
+    (hP : algebraMap R ℂ P.leadingCoeff ≠ 0) :
+    (UpperHalfPlane.laurentQExpansion 1 fun τ : ℍ ↦ aeval (j τ) P).leadingCoeff =
+      algebraMap R ℂ P.leadingCoeff := by
+  rw [laurentQExpansion_aeval_j]
+  set ev : R[X] →+* LaurentSeries ℂ :=
+    eval₂RingHom (HahnSeries.C.comp (algebraMap R ℂ)) (UpperHalfPlane.laurentQExpansion 1 j)
+  -- Fold `eval₂` into `ev P` so `map_add` applies across `eraseLead_add_C_mul_X_pow`.
+  change (ev P).leadingCoeff = algebraMap R ℂ P.leadingCoeff
+  have hlead_ord : (ev (C P.leadingCoeff * X ^ P.natDegree)).orderTop = (-P.natDegree : ℤ) := by
+    simp only [ev, coe_eval₂RingHom, eval₂_mul, eval₂_C, eval₂_X_pow, RingHom.comp_apply]
+    rw [HahnSeries.orderTop_mul, HahnSeries.C_apply, HahnSeries.orderTop_single hP,
+      orderTop_laurentQExpansion_j_pow, ← WithTop.coe_add, zero_add]
+  have hlead_lc :
+      (ev (C P.leadingCoeff * X ^ P.natDegree)).leadingCoeff = algebraMap R ℂ P.leadingCoeff := by
+    simp only [ev, coe_eval₂RingHom, eval₂_mul, eval₂_C, eval₂_X_pow, RingHom.comp_apply]
+    rw [HahnSeries.leadingCoeff_mul, HahnSeries.C_apply, HahnSeries.leadingCoeff_of_single,
+      HahnSeries.leadingCoeff_pow, leadingCoeff_laurentQExpansion_j, one_pow, mul_one]
+  have herase := lt_orderTop_eval₂_eraseLead_laurentQExpansion_j P
+  conv_lhs => rw [← P.eraseLead_add_C_mul_X_pow]
+  rw [map_add, HahnSeries.leadingCoeff_add_eq_right (hlead_ord ▸ herase), hlead_lc]
 
 /-- **The Laurent `q`-coefficients of a polynomial in `j` over `R` lie in the image of `R`**, as
 those of `j` are integers. -/

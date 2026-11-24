@@ -113,20 +113,20 @@ theorem class_eq_one_or_eq_classGroupMk0_primeAboveTwo_of_minkowskiBound_lt_thre
   -- Minkowski gives a representative of norm at most `2`; norm `1` is principal and norm `2`
   -- must be the ramified prime.
   obtain ⟨I, hIC, hIle⟩ := NumberField.exists_ideal_in_class_of_norm_le C
-  have hIlt : (I.1.absNorm : ℝ) < 3 := hIle.trans_lt hM
-  have hIleTwo : I.1.absNorm ≤ 2 := by
+  have hIlt : (I.val.absNorm : ℝ) < 3 := hIle.trans_lt hM
+  have hIleTwo : I.val.absNorm ≤ 2 := by
     exact_mod_cast (Nat.lt_succ_iff.mp (by exact_mod_cast hIlt))
-  have hIpos : 0 < I.1.absNorm := absNorm_pos_of_nonZeroDivisors I
-  rcases (by omega : I.1.absNorm = 1 ∨ I.1.absNorm = 2) with hnorm | hnorm
+  have hIpos : 0 < I.val.absNorm := absNorm_pos_of_nonZeroDivisors I
+  rcases (by omega : I.val.absNorm = 1 ∨ I.val.absNorm = 2) with hnorm | hnorm
   · left
     rw [← hIC]
-    exact (ClassGroup.mk0_eq_one_iff I.2).mpr <| by
+    exact (ClassGroup.mk0_eq_one_iff I.property).mpr <| by
       rw [Ideal.absNorm_eq_one_iff.mp hnorm]
       exact top_isPrincipal
   · right
     rw [← hIC]
-    have hIP : I.1 = P :=
-      eq_of_absNorm_eq_of_mem_ramifiedPrimes hfin hram P I.1 hnorm
+    have hIP : I.val = P :=
+      eq_of_absNorm_eq_of_mem_ramifiedPrimes hfin hram P I.val hnorm
     apply congrArg ClassGroup.mk0
     exact Subtype.ext hIP
 

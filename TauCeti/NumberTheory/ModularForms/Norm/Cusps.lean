@@ -102,7 +102,7 @@ def TSL : 𝒮ℒ := (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict Modular
 lemma coe_TSL_zpow (j : ℤ) :
     ((TSL ^ j : 𝒮ℒ) : GL (Fin 2) ℝ) = ((ModularGroup.T ^ j : SL(2, ℤ)) : GL (Fin 2) ℝ) := by
   rw [TSL, ← map_zpow, MonoidHom.coe_rangeRestrict,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
 
 /-- The **cusp translation orbits** of `𝒢`: the orbits of left translation by `T` on the coset
 space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. The orbit of the coset of `x` represents the cusp `x⁻¹ ∞` of `𝒢`, indexed
@@ -135,7 +135,7 @@ variable [SlashInvariantFormClass F 𝒢 k]
 /-- Translating a coset by a power of `T` shifts its factor of the norm. -/
 lemma quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) (τ : ℍ) :
     quotientFunc f (TSL ^ j • q) τ = quotientFunc f q ((-j : ℝ) +ᵥ τ) := by
-  have hmem : ((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒮ℒ := (TSL ^ (-j) : 𝒮ℒ).2
+  have hmem : ((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒮ℒ := (TSL ^ (-j) : 𝒮ℒ).property
   have hsubtype : (⟨((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ), hmem⟩ : 𝒮ℒ) = TSL ^ (-j) :=
     Subtype.ext rfl
   have hinv : (⟨((TSL ^ (-j) : 𝒮ℒ) : GL (Fin 2) ℝ), hmem⟩ : 𝒮ℒ)⁻¹ = TSL ^ j := by
@@ -189,7 +189,7 @@ private lemma exists_zpow_smul_eq_out (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) 
     ∃ j : ℤ, TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
   obtain ⟨h, hh⟩ := (orbitRel_apply (G := Subgroup.zpowers TSL)).mp
     (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.2
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
   refine ⟨j, ?_⟩
   rw [hj]
   exact hh
@@ -230,7 +230,7 @@ lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2
     have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
         Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
       rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
-        TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+        Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
     simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
       map_mul]
   rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,

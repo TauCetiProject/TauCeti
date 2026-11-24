@@ -110,18 +110,18 @@ travelled along that segment. The vertical segment of column `c`, run from its `
 `O`-marking, has index `2 k`, and the horizontal segment leaving that `O`-marking has index
 `2 k + 1`, where `k` is the traversal index of `c`. -/
 def IsKnot.visitTime (v : G.crossings × Bool) : ℕ ×ₗ ℕ :=
-  if v.2 then toLex (2 * hG.traversalIndex c₀ v.1.1.1,
-    max (G.X v.1.1.1 : ℕ) v.1.1.2 - min (G.X v.1.1.1 : ℕ) v.1.1.2)
-  else toLex (2 * hG.traversalIndex c₀ (G.O.transpose v.1.1.2) + 1,
-    max (G.O.transpose v.1.1.2 : ℕ) v.1.1.1 - min (G.O.transpose v.1.1.2 : ℕ) v.1.1.1)
+  if v.2 then toLex (2 * hG.traversalIndex c₀ v.1.val.1,
+    max (G.X v.1.val.1 : ℕ) v.1.val.2 - min (G.X v.1.val.1 : ℕ) v.1.val.2)
+  else toLex (2 * hG.traversalIndex c₀ (G.O.transpose v.1.val.2) + 1,
+    max (G.O.transpose v.1.val.2 : ℕ) v.1.val.1 - min (G.O.transpose v.1.val.2 : ℕ) v.1.val.1)
 
 /-- The time of the vertical pass of a crossing in column `c`: the segment of index `2 k`, at the
 distance of the crossing from the `X`-marking of column `c`. -/
 @[simp]
 theorem IsKnot.visitTime_true (p : G.crossings) :
     hG.visitTime c₀ (p, true) =
-      toLex (2 * hG.traversalIndex c₀ p.1.1,
-        max (G.X p.1.1 : ℕ) p.1.2 - min (G.X p.1.1 : ℕ) p.1.2) :=
+      toLex (2 * hG.traversalIndex c₀ p.val.1,
+        max (G.X p.val.1 : ℕ) p.val.2 - min (G.X p.val.1 : ℕ) p.val.2) :=
   (rfl)
 
 /-- The time of the horizontal pass of a crossing in row `r`: the segment of index `2 k + 1`
@@ -129,8 +129,8 @@ leaving the `O`-marking of row `r`, at the distance of the crossing from that ma
 @[simp]
 theorem IsKnot.visitTime_false (p : G.crossings) :
     hG.visitTime c₀ (p, false) =
-      toLex (2 * hG.traversalIndex c₀ (G.O.transpose p.1.2) + 1,
-        max (G.O.transpose p.1.2 : ℕ) p.1.1 - min (G.O.transpose p.1.2 : ℕ) p.1.1) :=
+      toLex (2 * hG.traversalIndex c₀ (G.O.transpose p.val.2) + 1,
+        max (G.O.transpose p.val.2 : ℕ) p.val.1 - min (G.O.transpose p.val.2 : ℕ) p.val.1) :=
   (rfl)
 
 /-- **Distinct passes happen at distinct times.** -/

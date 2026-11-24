@@ -50,14 +50,14 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
     rw [mem_ramifiedPrimes_iff]
     intro hur
     let Q : 𝔭.asIdeal.primesOver (𝓞 F) := Classical.choice inferInstance
-    have : Q.1.IsPrime := Q.2.1
-    have : Q.1.LiesOver 𝔭.asIdeal := Q.2.2
-    have : Q.1.LiesOver (Ideal.span {(p : ℤ)}) :=
-      Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q.1
-    have := hur Q.1
-    have he := Ideal.ramificationIdx_eq_one_of_isUnramifiedAt (R := 𝓞 ℚ) (p := Q.1)
-    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.1,
-      IsCyclotomicExtension.Rat.ramificationIdx_eq n F Q.1 hnm hpm] at he
+    have : Q.val.IsPrime := Q.property.1
+    have : Q.val.LiesOver 𝔭.asIdeal := Q.property.2
+    have : Q.val.LiesOver (Ideal.span {(p : ℤ)}) :=
+      Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q.val
+    have := hur Q.val
+    have he := Ideal.ramificationIdx_eq_one_of_isUnramifiedAt (R := 𝓞 ℚ) (p := Q.val)
+    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.val,
+      IsCyclotomicExtension.Rat.ramificationIdx_eq n F Q.val hnm hpm] at he
     have hp2 : p = 2 := by
       have := Nat.eq_one_of_mul_eq_one_left he
       have := hp.two_le

@@ -7,8 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Depth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Local
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 -- Proof-only: the reduced curve over a finite residue field has finitely many points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
+-- Proof-only: comparison of reduction and minimality between `O_u` and `𝒪[F_u]`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 
 /-!
 # Indices of the formal filtration in the local point group
@@ -23,8 +26,10 @@ Write `q = #κ(u)` and let `E_ns` be the nonsingular points of the reduced equat
 
 `[E(F_u) : E_(k+1)(F_u)] = q^k · #E_ns(κ(u)) · [E(F_u) : E₀(F_u)]`.
 
-For a minimal equation the last factor is the local Tamagawa number. Multiplication by `n` with
-`n O_u = 𝔪_u ^ e` and `e < k` has image of index `q ^ e` in `E_k(F_u)`
+For a minimal equation the last factor is the local Tamagawa number
+(`WeierstrassCurve.index_formalPointFiltration_eq_mul_tamagawaNumber`, and in valuative-relation
+form `WeierstrassCurve.index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber`).
+Multiplication by `n` with `n O_u = 𝔪_u ^ e` and `e < k` has image of index `q ^ e` in `E_k(F_u)`
 (`WeierstrassCurve.index_range_nsmul_formalPointFiltration`). This formula separates
 the formal, reduced, and component-group factors in the index, as needed when comparing the
 local cokernel of an isogeny with its effect on deep formal subgroups. No minimality is needed
@@ -43,7 +48,7 @@ public section
 
 namespace WeierstrassCurve
 
-open IsDedekindDomain IsLocalRing
+open IsDedekindDomain IsLocalRing ValuativeRel
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
@@ -124,6 +129,31 @@ theorem index_formalPointFiltration_eq_mul_tamagawaNumber [IsMinimal O_u (C.base
         Nat.card ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point *
         (C.baseChange F_u).tamagawaNumber Valued.v := by
   rw [C.index_formalPointFiltration u, tamagawaNumber_eq_index]
+
+-- `𝒪[F_u]` is by definition `(ValuativeRel.valuation F_u).valuationSubring`. Register the
+-- discrete-valuation-ring structure also at the valuation-ring spelling used by `tamagawaNumber`.
+private local instance :
+    IsDiscreteValuationRing (ValuativeRel.valuation F_u).valuationSubring :=
+  inferInstanceAs (IsDiscreteValuationRing 𝒪[F_u])
+
+open scoped Classical WithZero in
+/-- Over a finite residue field, on a minimal equation over `𝒪[F_u]`, the index of the
+`(k + 1)`-st formal level factors into `(#𝓀[F_u]) ^ k`, the nonsingular reduction count at
+`𝒪[F_u]`, and the Tamagawa number with respect to `ValuativeRel.valuation F_u`. -/
+theorem index_formalPointFiltration_eq_mul_reduction_mul_tamagawaNumber
+    [Finite (A ⧸ u.asIdeal)] [IsMinimal 𝒪[F_u] (C.baseChange F_u)] (k : ℕ) :
+    (C.formalPointFiltration u (k + 1)).index =
+      Nat.card 𝓀[F_u] ^ k *
+        Nat.card ((C.baseChange F_u).reduction 𝒪[F_u]).toAffine.Point *
+        (C.baseChange F_u).tamagawaNumber (ValuativeRel.valuation F_u) := by
+  have : IsMinimal O_u (C.baseChange F_u) := (isMinimal_adicCompletion_iff _).mp inferInstance
+  have hq : Nat.card (ResidueField O_u) = Nat.card 𝓀[F_u] :=
+    Nat.card_congr <| (ResidueField.mapEquiv
+      (u.integerEquivAdicCompletionIntegers (K := F)).symm).toEquiv
+  have hequiv := ValuativeRel.isEquiv (Valued.v : Valuation F_u ℤᵐ⁰) (ValuativeRel.valuation F_u)
+  rw [C.index_formalPointFiltration_eq_mul_tamagawaNumber u, hq,
+    ← natCard_point_reduction_baseChange_adicCompletion C,
+    (C.baseChange F_u).tamagawaNumber_congr _ hequiv]
 
 open scoped Classical in
 /-- **`E₁(F_u)` has finite index in `E(F_u)`**: the kernel of reduction of a minimal equation over

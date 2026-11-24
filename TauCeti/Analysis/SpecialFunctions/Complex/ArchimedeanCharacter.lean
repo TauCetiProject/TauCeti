@@ -357,7 +357,7 @@ theorem complexUnitsCharacter_comp_expUnitHom_I (s : ℂ) (k : ℤ) :
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_complexUnitsCharacter_apply, coe_expUnitHom_complex,
     coe_expUnitHom_complex]
-  simp [← exp_int_mul]
+  simp [← exp_intCast_mul]
   ring_nf
 
 /-- Continuous characters of `ℂˣ` agree once they agree on the positive reals and on the unit

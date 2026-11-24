@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import Mathlib.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The metric of a compatible pair
@@ -44,8 +46,15 @@ against exactly this metric.
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
   metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.norm_toContinuousBilinearMap_le_one`: for that inner product, the
+  continuous bilinear map of `ω` has operator norm at most one.
+* `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
+  `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
+  product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
 * `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
-  orthogonal almost complex structure `J` on a real inner product space.
+  orthogonal almost complex structure `J` on a real inner product space, compatible with `J`
+  (`TauCeti.AlmostComplexStructure.symplecticForm_compatible`) with the inner product as its
+  metric (`TauCeti.AlmostComplexStructure.symplecticForm_associatedBilinForm_apply`).
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -268,6 +277,27 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
 
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then the continuous bilinear map of
+`ω` has operator norm at most one. -/
+theorem norm_toContinuousBilinearMap_le_one [T2Space V] [FiniteDimensional ℝ V]
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ‖ω.toBilinForm.toContinuousBilinearMap‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun v w ↦ by
+    simpa [Real.norm_eq_abs] using abs_apply_le_norm_mul_norm hg v w
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then pairing with `J v` is `ω(v, ·)`:
+`⟪J v, w⟫ = ω(v, w)`. -/
+theorem inner_apply_left_eq_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = ω v w := by
+  have h : ω w (-v) = -ω w v := map_neg (ω.toBilinForm w) v
+  rw [real_inner_comm, ← hg, J.apply_apply, h, ω.neg_eq]
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then `J` is skew-adjoint:
+`⟪J v, w⟫ = -⟪v, J w⟫`. -/
+theorem inner_apply_left_eq_neg_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ := by
+  rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, real_inner_comm,
+    inner_apply_left_eq_of_apply_apply_eq_inner hg, ω.neg_eq]
+
 end InnerProductSpace
 
 end SymplecticForm
@@ -298,6 +328,22 @@ theorem symplecticForm_apply {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
     J.symplecticForm hJ v w = ⟪J v, w⟫ :=
   (rfl)
+
+/-- For an orthogonal almost complex structure `J`, the metric `ω(·, J ·)` associated with
+`ω = ⟪J ·, ·⟫` and `J` is the inner product. -/
+theorem symplecticForm_associatedBilinForm_apply {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
+    (J.symplecticForm hJ).associatedBilinForm J v w = ⟪v, w⟫ := by
+  simp [hJ]
+
+/-- The symplectic form `ω = ⟪J ·, ·⟫` of an orthogonal almost complex structure `J` is compatible
+with `J`. -/
+theorem symplecticForm_compatible {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : (J.symplecticForm hJ).Compatible J := by
+  refine .of_tames ((SymplecticForm.invariant_iff _ _).2 fun v w ↦ ?_) fun v hv ↦ ?_
+  · simp only [symplecticForm_apply, hJ]
+  · rw [symplecticForm_apply, hJ]
+    exact real_inner_self_pos.2 hv
 
 end AlmostComplexStructure
 

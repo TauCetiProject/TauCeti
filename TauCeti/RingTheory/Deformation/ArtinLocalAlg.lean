@@ -122,6 +122,11 @@ instance (A : ArtinLocalAlg Λ k) : IsLocalRing A.obj.left := A.property.isLocal
 def augmentation (A : ArtinLocalAlg Λ k) : A.obj.left →ₐ[Λ] k :=
   A.obj.hom.hom
 
+/-- The augmentation of an object of `C_Λ` is the structure map of its underlying object of
+`Over (CommAlgCat.of Λ k)`. -/
+theorem augmentation_def (A : ArtinLocalAlg Λ k) : A.augmentation = A.obj.hom.hom :=
+  (rfl)
+
 /-- The augmentation of an object of `C_Λ` is surjective. -/
 theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A.augmentation :=
   A.property.surjective
@@ -129,8 +134,7 @@ theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A
 /-- The kernel of the augmentation of an object of `C_Λ` is its maximal ideal. -/
 theorem ker_augmentation (A : ArtinLocalAlg Λ k) :
     RingHom.ker A.augmentation = maximalIdeal A.obj.left :=
-  have := RingHom.ker_isMaximal_of_surjective _ A.augmentation_surjective
-  eq_maximalIdeal this
+  ker_eq_maximalIdeal _ A.augmentation_surjective
 
 /-- An element of an object of `C_Λ` has augmentation zero exactly when it lies in the maximal
 ideal. -/
@@ -142,7 +146,7 @@ theorem augmentation_eq_zero_iff {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
 /-- An element of an object of `C_Λ` is a unit exactly when its augmentation is nonzero. -/
 theorem isUnit_iff_augmentation_ne_zero {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
     IsUnit a ↔ A.augmentation a ≠ 0 := by
-  rw [Ne, augmentation_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, not_not]
+  rw [Ne, augmentation_eq_zero_iff, notMem_maximalIdeal]
 
 /-- Morphisms of `C_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
@@ -328,13 +332,13 @@ def pullbackAugmentation : AlgHom.pullback f.hom.left.hom g.hom.left.hom →ₐ[
 /-- The augmentation of the fibre product is that of its first component. -/
 @[simp]
 theorem pullbackAugmentation_apply (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    pullbackAugmentation f g x = A'.augmentation x.1.1 :=
+    pullbackAugmentation f g x = A'.augmentation x.val.1 :=
   (rfl)
 
 /-- The two components of a point of the fibre product have the same augmentation. -/
 theorem augmentation_snd_pullback (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
-    A''.augmentation x.1.2 = A'.augmentation x.1.1 := by
-  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 :=
+    A''.augmentation x.val.2 = A'.augmentation x.val.1 := by
+  have hx : f.hom.left.hom x.val.1 = g.hom.left.hom x.val.2 :=
     AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
   rw [← augmentation_hom_apply g, ← hx, augmentation_hom_apply]
 
@@ -411,13 +415,13 @@ def pullbackSnd : pullback f g hg ⟶ A'' :=
 /-- The first projection takes a pair to its first component. -/
 @[simp]
 theorem pullbackFst_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackFst f g hg).hom.left.hom x = x.1.1 :=
+    (pullbackFst f g hg).hom.left.hom x = x.val.1 :=
   (rfl)
 
 /-- The second projection takes a pair to its second component. -/
 @[simp]
 theorem pullbackSnd_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
-    (pullbackSnd f g hg).hom.left.hom x = x.1.2 :=
+    (pullbackSnd f g hg).hom.left.hom x = x.val.2 :=
   (rfl)
 
 /-- The fibre product square commutes. -/

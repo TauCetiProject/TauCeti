@@ -151,16 +151,18 @@ end ProjectiveSpecialLinearGroup
 
 namespace SpecialLinearGroup
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
 def rotation (θ : ℝ) : SL(2, ℝ) :=
-  ⟨!![cos θ, sin θ; -sin θ, cos θ], by
+  .mk !![cos θ, sin θ; -sin θ, cos θ] (by
     rw [det_fin_two_of]
-    linear_combination cos_sq_add_sin_sq θ⟩
+    linear_combination cos_sq_add_sin_sq θ)
 
 /-- The entries of `rotation θ`. -/
 @[simp]
 theorem coe_rotation (θ : ℝ) :
-    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := (rfl)
+    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := by
+  rw [rotation, coe_mk]
 
 /-- The rotation by `0` is the identity. -/
 @[simp]
@@ -213,16 +215,17 @@ theorem trace_rotation_mul (θ : ℝ) (A : Matrix (Fin 2) (Fin 2) ℝ) :
 /-- The matrix `!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ]` of `SL(2, ℝ)`: the rotation
 `rotation θ = !![cos θ, sin θ; -sin θ, cos θ]` conjugated by `diag (exp (t / 2), exp (-t / 2))`. -/
 def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
-  ⟨!![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ], by
+  .mk !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] (by
     rw [det_fin_two_of, exp_neg]
     field_simp
-    linear_combination cos_sq_add_sin_sq θ⟩
+    linear_combination cos_sq_add_sin_sq θ)
 
 /-- The entries of `conjRotation θ t`. -/
 @[simp]
 theorem coe_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ) =
-      !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
+      !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := by
+  rw [conjRotation, coe_mk]
 
 -- Not `@[simp]`: `conjRotation θ 0` is the form the triangle-group generators use, and the
 -- `@[simp]` trace lemmas below are stated in it.

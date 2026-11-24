@@ -61,6 +61,28 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
   continuous_iff_continuousAt.2 fun x ↦
     (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
+/-- As a function of the real input, the resolvent kernel is Lipschitz with constant
+`|Im z|⁻²`. -/
+theorem lipschitzWith_resolvent_real {z : ℂ} (hz : z.im ≠ 0) :
+    LipschitzWith (‖z.im‖₊⁻¹ ^ 2) (resolvent (R := ℝ) z) := by
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  have hx : (x : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hy : (y : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hlow (t : ℝ) : |z.im| ≤ ‖(t : ℂ) - z‖ := by
+    simpa using abs_im_le_norm ((t : ℂ) - z)
+  calc
+    dist (resolvent z x) (resolvent z y) =
+        |x - y| / (‖(x : ℂ) - z‖ * ‖(y : ℂ) - z‖) := by
+      simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
+      rw [dist_inv_inv₀ hx hy,
+        dist_sub_right, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
+    _ ≤ |x - y| / (|z.im| * |z.im|) :=
+      div_le_div_of_nonneg_left (abs_nonneg _) (by positivity)
+        (mul_le_mul (hlow x) (hlow y) (abs_nonneg _) (norm_nonneg _))
+    _ = ((‖z.im‖₊⁻¹ ^ 2 : NNReal) : ℝ) * dist x y := by
+      simp only [NNReal.coe_pow, NNReal.coe_inv, coe_nnNorm, Real.norm_eq_abs, Real.dist_eq]
+      ring
+
 end Complex
 
 namespace MeasureTheory

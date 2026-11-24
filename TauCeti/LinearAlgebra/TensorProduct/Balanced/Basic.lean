@@ -121,6 +121,22 @@ theorem tmul_add (m : M) (n n' : N) :
   simp only [tmul, map_add]
 
 @[simp]
+theorem neg_tmul (m : M) (n : N) : tmul k A (-m) n = -tmul k A m n := by
+  simp only [tmul, map_neg, LinearMap.neg_apply]
+
+@[simp]
+theorem tmul_neg (m : M) (n : N) : tmul k A m (-n) = -tmul k A m n := by
+  simp only [tmul, map_neg]
+
+theorem sub_tmul (m m' : M) (n : N) :
+    tmul k A (m - m') n = tmul k A m n - tmul k A m' n := by
+  simp only [tmul, map_sub, LinearMap.sub_apply]
+
+theorem tmul_sub (m : M) (n n' : N) :
+    tmul k A m (n - n') = tmul k A m n - tmul k A m n' := by
+  simp only [tmul, map_sub]
+
+@[simp]
 theorem smul_tmul (r : k) (m : M) (n : N) :
     tmul k A (r • m) n = r • tmul k A m n := by
   simp only [tmul, map_smul, LinearMap.smul_apply]
@@ -178,7 +194,7 @@ the balanced tensor product. -/
 def liftEquiv :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)} ≃
       (BalancedTensorProduct k A M N →ₗ[k] P) where
-  toFun f := lift f.1 f.2
+  toFun f := lift f.val f.property
   invFun g := ⟨(mk k A).compr₂ g, fun a m n ↦ congrArg g (balance k A a m n)⟩
   left_inv f := by ext m n; rfl
   right_inv g := hom_ext fun _ _ ↦ rfl
@@ -186,11 +202,11 @@ def liftEquiv :
 @[simp]
 theorem liftEquiv_apply (f :
     {f : M →ₗ[k] N →ₗ[k] P // ∀ (a : A) m n, f (op a • m) n = f m (a • n)}) :
-    liftEquiv f = lift f.1 f.2 := (rfl)
+    liftEquiv f = lift f.val f.property := (rfl)
 
 @[simp]
 theorem liftEquiv_symm_apply (g : BalancedTensorProduct k A M N →ₗ[k] P) (m : M) (n : N) :
-    (liftEquiv.symm g).1 m n = g (tmul k A m n) := (rfl)
+    (liftEquiv.symm g).val m n = g (tmul k A m n) := (rfl)
 
 section Map
 
@@ -231,6 +247,16 @@ theorem map_comp (f : M →ₗ[k] M') (g : N →ₗ[k] N')
         (fun a m ↦ by simp [hf, hf']) (fun a n ↦ by simp [hg, hg']) =
       (map f' g' hf' hg').comp (map f g hf hg) :=
   hom_ext fun _ _ ↦ rfl
+
+variable (k M) in
+/-- Tensoring an `A`-linear map `g` on the left with `M`: the map `1 ⊗ g`. -/
+def lTensor [Module k A] [IsScalarTower k A N] [IsScalarTower k A N'] (g : N →ₗ[A] N') :
+    BalancedTensorProduct k A M N →ₗ[k] BalancedTensorProduct k A M N' :=
+  map LinearMap.id (g.restrictScalars k) (fun _ _ ↦ rfl) g.map_smul
+
+@[simp]
+theorem lTensor_tmul [Module k A] [IsScalarTower k A N] [IsScalarTower k A N']
+    (g : N →ₗ[A] N') (m : M) (n : N) : lTensor k M g (tmul k A m n) = tmul k A m (g n) := (rfl)
 
 /-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
 def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')

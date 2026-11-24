@@ -199,9 +199,9 @@ theorem inl_v_khovanovBracketMappingConeIso_hom_f (p : ℤ)
           (by omega) ≫
           (D.khovanovBracketMappingConeIso c hD R j).hom.f p =
       (D.resolveCrossingCubeIso c true hD (hD.resolveCrossing _ c true) R (j := j) (j' := j)
-          (by simp)).hom.app S.1 ≫
+          (by simp)).hom.app S.val ≫
         (D.resolutionCube hD R j).cubeComplexι (r := p + 1)
-          ⟨resolveCrossingVertex c true S.1, by simp [S.2]⟩ ≫
+          ⟨resolveCrossingVertex c true S.val, by simp [S.property]⟩ ≫
           eqToHom (by rw [CochainComplex.shiftFunctor_obj_X', khovanovBracket_apply]) := by
   dsimp only [khovanovBracketMappingConeIso, cubeComplexFunctor, Functor.mapIso]
   simp [resolveCrossingFaceZeroIso, eqToHom_map, Functor.eqToHom_comp_cubeComplexι_assoc]
@@ -217,11 +217,11 @@ theorem inr_f_khovanovBracketMappingConeIso_hom_f (p : ℤ)
         (j - 1)).cubeComplexι S ≫
         (mappingCone.inr (NatTrans.cubeComplexMap (D.resolveCrossingSaddle c hD R j))).f p ≫
           (D.khovanovBracketMappingConeIso c hD R j).hom.f p =
-      -((-1 : ℤ) ^ #{a ∈ S.1 | a.castSucc < c} •
+      -((-1 : ℤ) ^ #{a ∈ S.val | a.castSucc < c} •
         (D.resolveCrossingCubeIso c false hD (hD.resolveCrossing _ c false) R (j := j)
-            (j' := j - 1) (by simp)).hom.app S.1 ≫
+            (j' := j - 1) (by simp)).hom.app S.val ≫
           (D.resolutionCube hD R j).cubeComplexι (r := p + 1)
-            ⟨resolveCrossingVertex c false S.1, by simp [S.2]⟩ ≫
+            ⟨resolveCrossingVertex c false S.val, by simp [S.property]⟩ ≫
             eqToHom (by rw [CochainComplex.shiftFunctor_obj_X', khovanovBracket_apply])) := by
   dsimp only [khovanovBracketMappingConeIso, cubeComplexFunctor, Functor.mapIso]
   simp [resolveCrossingFaceOneIso, eqToHom_map, Functor.eqToHom_comp_cubeComplexι_assoc]

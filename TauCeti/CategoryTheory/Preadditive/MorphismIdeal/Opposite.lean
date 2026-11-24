@@ -152,6 +152,14 @@ theorem opQuotientFunctor_eq_lift (I : MorphismIdeal C)
     I.opQuotientFunctor = I.op.lift I.quotientFunctor.op h :=
   (rfl)
 
+/-- The opposite-quotient comparison restricts to the opposite of the quotient functor along the
+quotient functor of the opposite ideal. -/
+@[simp]
+theorem quotientFunctor_comp_opQuotientFunctor (I : MorphismIdeal C) :
+    I.op.quotientFunctor ⋙ I.opQuotientFunctor = I.quotientFunctor.op := by
+  rw [opQuotientFunctor]
+  exact CategoryTheory.Quotient.lift_spec _ _ _
+
 /-- The canonical opposite-quotient functor sends the class of an object to the opposite of the
 class of its unopposite. -/
 @[simp]

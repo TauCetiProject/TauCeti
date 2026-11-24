@@ -27,14 +27,12 @@ indexed by invertible ideal classes; classically `j(τ)` is the `j`-invariant of
 `ℤ + τℤ`.
 
 Since `j` separates the `SL(2, ℤ)`-orbits of the upper half-plane
-(`TauCeti.ModularGroup.j_eq_j_iff`) and a primitive positive definite form is determined by its
-root across all discriminants (`eq_of_root_eq_of_isPrimitive`), a singular modulus determines both
-its discriminant (`eq_of_singularModulus_eq`) and its proper class (`singularModulus_injective`).
-Every singular modulus is an algebraic integer (`isIntegral_singularModulus`), by the integrality
-of `j` at imaginary quadratic points (`TauCeti.ModularForm.isIntegral_j_of_quadratic`). Since the
-`q`-expansion of `j` has integer coefficients, complex conjugation sends the singular modulus of a
-class to that of the reflected form `a x² - b x y + c y²`, which represents the inverse Picard
-class.
+(`TauCeti.ModularGroup.j_eq_j_iff`) and a form is determined by its root, distinct classes have
+distinct singular moduli (`singularModulus_injective`). Every singular modulus is an algebraic
+integer (`isIntegral_singularModulus`), by the integrality of `j` at imaginary quadratic points
+(`TauCeti.ModularForm.isIntegral_j_of_quadratic`). Since the `q`-expansion of `j` has integer
+coefficients, complex conjugation sends the singular modulus of a class to that of the reflected
+form `a x² - b x y + c y²`, which represents the inverse Picard class.
 
 The *Hilbert class polynomial* `hilbertClassPolynomial n` is the monic polynomial whose roots are
 the singular moduli of discriminant `-n`, each with multiplicity one. It is the product of
@@ -55,8 +53,8 @@ field of the order of discriminant `-n` over `K`.
 
 ## Main results
 
-* `TauCeti.BinaryQuadraticForm.eq_of_singularModulus_eq` and `singularModulus_injective`: a
-  singular modulus uniquely determines its discriminant `-n` and its proper class.
+* `TauCeti.BinaryQuadraticForm.singularModulus_injective`: distinct proper classes have distinct
+  singular moduli.
 * `TauCeti.BinaryQuadraticForm.isIntegral_singularModulus`: every singular modulus is an algebraic
   integer.
 * `TauCeti.BinaryQuadraticForm.star_singularModulus`: the complex conjugate of the singular
@@ -100,10 +98,10 @@ variable (n : ℕ) [NeZero n]
 class of the form. -/
 private theorem j_root_eq_of_orbitRel {f g : ↥(posDef n ⊓ primitiveForms (-n))}
     (h : orbitRel SL(2, ℤ) _ f g) :
-    j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩) =
-      j (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩) := by
+    j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩) =
+      j (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩) := by
   obtain ⟨γ, rfl⟩ := mem_orbit_iff.1 h
-  rw [← j_smul_SL2Z γ (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩), ← root_smul]
+  rw [← j_smul_SL2Z γ (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩), ← root_smul]
   -- both sides are the form `γ • g`, once as an element of `posDef n ⊓ primitiveForms (-n)` and
   -- once as an element of `posDef n`; the sub-action subtypes share their underlying forms
   congr 2
@@ -112,14 +110,14 @@ private theorem j_root_eq_of_orbitRel {f g : ↥(posDef n ⊓ primitiveForms (-n
 discriminant `-n`: the value `j(τ)` of the modular invariant at the root
 `τ = (-b + i √n) / (2 a)` of any form `a x² + b x y + c y²` in the class. -/
 def singularModulus : PosDefProperClass n → ℂ :=
-  Quotient.lift (fun f ↦ j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩))
+  Quotient.lift (fun f ↦ j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩))
     fun _ _ ↦ j_root_eq_of_orbitRel n
 
 /-- The singular modulus of the class of a form is the value of `j` at the root of the form. -/
 @[simp]
 theorem singularModulus_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     singularModulus n (Quotient.mk _ f) =
-      j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩) :=
+      j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩) :=
   (rfl)
 
 variable {n} in
@@ -134,39 +132,16 @@ theorem singularModulus_injective : Function.Injective (singularModulus n) := by
   exact (congrArg Subtype.val hγ).symm
 
 variable {n} in
-/-- **A singular modulus determines its discriminant**: if a proper class of discriminant `-n` and
-a proper class of discriminant `-n'` have the same singular modulus, then `n = n'`. -/
-theorem eq_of_singularModulus_eq {n' : ℕ} [NeZero n'] {q : PosDefProperClass n}
-    {q' : PosDefProperClass n'} (h : singularModulus n q = singularModulus n' q') :
-    n = n' := by
-  induction q using Quotient.inductionOn with | h f
-  induction q' using Quotient.inductionOn with | h g
-  rw [singularModulus_mk, singularModulus_mk] at h
-  obtain ⟨γ, hγ⟩ := ModularGroup.j_eq_j_iff.1 h
-  let f₀ : posDef n := ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
-  let g₀ : posDef n' := ⟨g, inf_le_left (b := primitiveForms (-n')) g.2⟩
-  have hf_prim : (γ • f₀).1.IsPrimitive := by
-    rw [SubMulAction.val_smul]
-    exact (isPrimitive_smul_iff f.1 γ).2 ((mem_primitiveForms (-n) f.1).1 f.2.2).2
-  have hg_prim : g₀.1.IsPrimitive := ((mem_primitiveForms (-n') g.1).1 g.2.2).2
-  have heq : (γ • f₀).1 = g₀.1 :=
-    eq_of_root_eq_of_isPrimitive hf_prim hg_prim ((root_smul γ f₀).trans hγ)
-  have hdisc : -(n : ℤ) = -(n' : ℤ) :=
-    (mem_posDef.1 (γ • f₀).2).1.symm.trans
-      ((congrArg BinaryQuadraticForm.discrim heq).trans (mem_posDef.1 g₀.2).1)
-  omega
-
-variable {n} in
 /-- The value of `j` at the root of any positive definite integral binary quadratic form is an
 algebraic integer. -/
 theorem isIntegral_j_root (f : posDef n) : IsIntegral ℤ (j (root f)) :=
-  isIntegral_j_of_quadratic (mem_posDef.1 f.2).2.ne' ((eq_root_iff f (root f)).1 rfl)
+  isIntegral_j_of_quadratic (mem_posDef.1 f.property).2.ne' ((eq_root_iff f (root f)).1 rfl)
 
 /-- **Every singular modulus is an algebraic integer.** -/
 theorem isIntegral_singularModulus (q : PosDefProperClass n) :
     IsIntegral ℤ (singularModulus n q) := by
   induction q using Quotient.inductionOn with | h f
-  exact isIntegral_j_root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
+  exact isIntegral_j_root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩
 
 variable {n} in
 /-- Complex conjugation sends the singular modulus of the class of `a x² + b x y + c y²` to the
@@ -175,8 +150,8 @@ theorem star_singularModulus_mk_of_eq_reflected {f g : ↥(posDef n ⊓ primitiv
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
     starRingEnd ℂ (singularModulus n (Quotient.mk _ f)) = singularModulus n (Quotient.mk _ g) := by
   rw [singularModulus_mk, singularModulus_mk, ← j_J_smul,
-    root_of_eq_reflected (f := ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩)
-      (g := ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩) hg]
+    root_of_eq_reflected (f := ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩)
+      (g := ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩) hg]
 
 variable {n} in
 /-- **Complex conjugation inverts the class of a singular modulus.** The complex conjugate of the
@@ -188,7 +163,8 @@ theorem star_singularModulus (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) (q
         ((posDefProperClassEquivPic n hn).symm (posDefProperClassToPic n hn q)⁻¹) := by
   induction q using Quotient.inductionOn with | h f
   let g : ↥(posDef n ⊓ primitiveForms (-n)) :=
-    ⟨(f : BinaryQuadraticForm ℤ).reflected, reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩
+    ⟨(f : BinaryQuadraticForm ℤ).reflected, reflected_mem_posDef_inf_primitiveForms_iff.2
+        f.property⟩
   rw [star_singularModulus_mk_of_eq_reflected (g := g) rfl]
   refine congrArg (singularModulus n) ((Equiv.eq_symm_apply _).2 ?_)
   rw [posDefProperClassEquivPic_apply]
@@ -211,7 +187,7 @@ theorem im_singularModulus_eq_zero_iff (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) %
 
 /-- The proper class of a primitive reduced form. -/
 private abbrev reducedClass (f : primitiveReducedForms n) : PosDefProperClass n :=
-  Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩
+  Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩
 
 /-- The **Hilbert class polynomial** of discriminant `-n`: the product of `X - j(τ)` over the
 roots `τ = (-b + i √n) / (2 a)` of the primitive reduced forms `a x² + b x y + c y²` of
@@ -219,7 +195,7 @@ discriminant `-n`. Each proper class of primitive positive definite forms contai
 primitive reduced form, so the roots are the singular moduli of discriminant `-n`. -/
 def hilbertClassPolynomial : ℂ[X] :=
   ∏ f : primitiveReducedForms n, (X - C (singularModulus n
-    (Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩)))
+    (Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩)))
 
 /-- The Hilbert class polynomial is the product of `X - j(q)` over all proper classes `q` of
 primitive positive definite forms of discriminant `-n`. -/
@@ -260,7 +236,7 @@ roots of the primitive reduced forms of discriminant `-n`. -/
 theorem roots_hilbertClassPolynomial :
     (hilbertClassPolynomial n).roots =
       Finset.univ.val.map fun f : primitiveReducedForms n ↦ singularModulus n (Quotient.mk _
-        ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩) := by
+        ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩) := by
   rw [hilbertClassPolynomial, roots_prod _ _ (monic_prod_of_monic _ _
     fun _ _ ↦ monic_X_sub_C _).ne_zero]
   simp [Multiset.bind_singleton]

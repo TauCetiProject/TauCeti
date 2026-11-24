@@ -71,7 +71,7 @@ theorem finite_singularHomology_totalPair (n : ℕ)
     [Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
     [Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] :
     Module.Finite k ((totalPair.obj T).singularHomology V n : ModuleCat k) :=
-  finiteDimensional_of_exact (T.exact_total V n)
+  (T.exact_total V n).moduleFinite
 
 /-- **Subadditivity of dimension along a triple.** If `Hₙ(A, B)` and `Hₙ(X, A)` are
 finite-dimensional, then `dim Hₙ(X, B) ≤ dim Hₙ(A, B) + dim Hₙ(X, A)`. -/

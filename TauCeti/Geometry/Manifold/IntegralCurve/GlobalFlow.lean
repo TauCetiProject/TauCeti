@@ -33,8 +33,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
   regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
-* `TauCeti.forall_globalFlow_eq_self_iff`: a point is fixed at all times exactly when the field
-  vanishes there.
+* `TauCeti.forall_globalFlow_eq_self_iff`, `TauCeti.exists_globalFlow_ne_self`: a point is fixed at
+  all times exactly when the field vanishes there.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
 * `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
@@ -199,6 +199,18 @@ theorem forall_globalFlow_eq_self_iff (x : M) :
       _ = 0 := Manifold.curveVelocityWithin_const x
   · intro h t
     exact globalFlow_eq_of_isMIntegralCurve hv hcomplete (isMIntegralCurve_const h) t
+
+/-- A point is non-stationary under the complete flow if and only if the vector field does not
+vanish there. -/
+theorem exists_globalFlow_ne_self_iff (x : M) :
+    (∃ t : ℝ, globalFlow v hv hcomplete t x ≠ x) ↔ v x ≠ 0 := by
+  simpa only [not_forall] using (forall_globalFlow_eq_self_iff hv hcomplete x).not
+
+/-- If the vector field does not vanish at `x`, then `x` is non-stationary under the complete
+flow. -/
+theorem exists_globalFlow_ne_self {x : M} (hv0 : v x ≠ 0) :
+    ∃ t : ℝ, globalFlow v hv hcomplete t x ≠ x :=
+  (exists_globalFlow_ne_self_iff hv hcomplete x).2 hv0
 
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
