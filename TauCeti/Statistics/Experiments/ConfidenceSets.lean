@@ -97,12 +97,14 @@ theorem mono (h : HasConfidenceCoverage P C α) (hαβ : α ≤ β) : HasConfide
 end HasConfidenceCoverage
 
 /-- The empty confidence set has coverage `1 - α` iff `1 ≤ α`, for a nonempty parameter type. -/
+@[simp]
 theorem hasConfidenceCoverage_empty_iff [Nonempty Θ] :
     HasConfidenceCoverage P (fun _ ↦ ∅) α ↔ 1 ≤ α := by
   simp [hasConfidenceCoverage_iff]
 
 /-- The confidence set of all parameters has coverage `1 - α` iff `0 ≤ α`, for a nonempty
 parameter type and probability laws. -/
+@[simp]
 theorem hasConfidenceCoverage_univ_iff [Nonempty Θ] [∀ θ, IsProbabilityMeasure (P θ)] :
     HasConfidenceCoverage P (fun _ ↦ univ) α ↔ 0 ≤ α := by
   simp [hasConfidenceCoverage_iff]
@@ -133,12 +135,19 @@ theorem hasConfidenceCoverage_iff_forall_hasTestLevel [∀ θ, IsProbabilityMeas
   refine and_congr_right fun hm ↦ ?_
   rw [testPower_indicator_one hm.compl, measureReal_compl hm, probReal_univ, sub_le_comm]
 
-/-- A confidence set `C` of coverage `1 - α` gives, for every `θ`, the nonrandomized test of
-level `α` for the null hypothesis `{θ}` that rejects on `{x | θ ∉ C x}`. -/
-theorem HasConfidenceCoverage.hasTestLevel [∀ θ, IsProbabilityMeasure (P θ)] {C : X → Set Θ}
-    {α : ℝ} (h : HasConfidenceCoverage P C α) (θ : Θ) :
-    HasTestLevel P {θ} α ({x | θ ∉ C x}.indicator 1) :=
-  hasConfidenceCoverage_iff_forall_hasTestLevel.1 h θ
+/-- A confidence set `C` of coverage `1 - α` gives, at every `θ` whose law `P θ` is a probability
+measure, the nonrandomized test of level `α` for the null hypothesis `{θ}` that rejects on
+`{x | θ ∉ C x}`. Only the law at `θ` needs to be normalized. -/
+theorem HasConfidenceCoverage.hasTestLevel {C : X → Set Θ} {α : ℝ}
+    (h : HasConfidenceCoverage P C α) (θ : Θ) [IsProbabilityMeasure (P θ)] :
+    HasTestLevel P {θ} α ({x | θ ∉ C x}.indicator 1) := by
+  have hcompl : {x | θ ∉ C x} = {x | θ ∈ C x}ᶜ := rfl
+  have hm := (h.measurableSet θ).compl
+  rw [hcompl]
+  refine .mk (isStatisticalTest_indicator_one_iff.2 hm) fun θ' hθ' ↦ ?_
+  rw [mem_singleton_iff.1 hθ', testPower_indicator_one hm, measureReal_compl (h.measurableSet θ),
+    probReal_univ]
+  linarith [h.le_measureReal θ]
 
 /-- **Inverting level-`α` tests**: if for every `θ` the nonrandomized test with rejection region
 `reject θ` has level `α` for the null hypothesis `{θ}`, then the parameters not rejected at `x`

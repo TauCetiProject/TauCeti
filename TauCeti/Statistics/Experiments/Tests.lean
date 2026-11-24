@@ -171,6 +171,7 @@ end IsStatisticalTest
 
 /-- The nonrandomized test `s.indicator 1`, rejecting exactly on `s`, is a test iff its rejection
 region `s` is measurable. -/
+@[simp]
 theorem isStatisticalTest_indicator_one_iff {s : Set X} :
     IsStatisticalTest (s.indicator (1 : X → ℝ)) ↔ MeasurableSet s := by
   rw [isStatisticalTest_iff, Pi.one_def, measurable_indicator_const_iff]
@@ -179,6 +180,7 @@ theorem isStatisticalTest_indicator_one_iff {s : Set X} :
 
 /-- The power at `θ` of the nonrandomized test with measurable rejection region `s` is the
 probability `(P θ).real s` of rejecting. -/
+@[simp]
 theorem testPower_indicator_one {s : Set X} (hs : MeasurableSet s) :
     testPower P (s.indicator 1) θ = (P θ).real s := by
   rw [testPower_def, integral_indicator_one hs]
