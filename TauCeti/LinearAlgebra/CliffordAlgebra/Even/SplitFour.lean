@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.SplitBaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.Algebra.Hom
 
 /-!
 # The even Clifford algebra of the split quaternary form
@@ -200,6 +201,23 @@ private theorem eq_vec (m : SplitEvenSpace R 2) :
   · ext i
     fin_cases i <;> simp [vecA, vecB]
 
+private theorem vecA_fst (i : Fin 2) : (vecA R i).1 = 0 := rfl
+private theorem vecA_snd (i : Fin 2) : (vecA R i).2 = Pi.single i 1 := rfl
+private theorem vecB_fst (i : Fin 2) : (vecB R i).1 = LinearMap.proj i := rfl
+private theorem vecB_snd (i : Fin 2) : (vecB R i).2 = 0 := rfl
+
+/-- The vectors `aᵢ` and `bᵢ` span `SplitEvenSpace R 2`. -/
+private theorem span_range_vec :
+    Submodule.span R (Set.range (Sum.elim (vecA R) (vecB R))) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun m ↦ ?_
+  have h (k : Fin 2 ⊕ Fin 2) : Sum.elim (vecA R) (vecB R) k ∈
+      Submodule.span R (Set.range (Sum.elim (vecA R) (vecB R))) :=
+    Submodule.subset_span ⟨k, rfl⟩
+  rw [eq_vec R m]
+  exact add_mem (add_mem (add_mem (Submodule.smul_mem _ _ (h (.inl 0)))
+    (Submodule.smul_mem _ _ (h (.inl 1)))) (Submodule.smul_mem _ _ (h (.inr 0))))
+    (Submodule.smul_mem _ _ (h (.inr 1)))
+
 /-- The generator `aᵢ = ι (0, eᵢ)`. -/
 private noncomputable def cA (i : Fin 2) : CliffordAlgebra (splitEvenForm R 2) := ι _ (vecA R i)
 /-- The generator `bᵢ = ι (εᵢ, 0)`. -/
@@ -306,8 +324,7 @@ private theorem unit_mul_unit (s i j t k l : Fin 2) :
 private theorem sum_unit :
     unit R 0 0 0 + unit R 0 1 1 + unit R 1 0 0 + unit R 1 1 1 = 1 := by
   apply Subtype.ext
-  simp [unit, ← mul_assoc]
-  abel
+  simp [unit, ← mul_assoc, sub_add, sub_sub]
 
 /-- The inverse map, sending the matrix units of the two factors to the matrix units `unit 0` and
 `unit 1`. -/
@@ -330,8 +347,8 @@ private noncomputable def splitEvenTwoMatrixProdToEven :
       abel)
     (fun p q ↦ by
       simp only [LinearMap.coe_mk, AddHom.coe_mk, Prod.fst_mul, Prod.snd_mul, Matrix.mul_apply,
-        Fin.sum_univ_two, add_mul, mul_add, smul_mul_smul_comm, unit_mul_unit, add_smul]
-      simp
+        Fin.sum_univ_two, add_mul, mul_add, smul_mul_smul_comm, unit_mul_unit, add_smul, and_self,
+        and_true, and_false, one_ne_zero, zero_ne_one, ↓reduceIte, smul_zero, add_zero, zero_add]
       module)
 
 private theorem splitEvenTwoEvenToMatrixProd_unit (s i j : Fin 2) :
@@ -352,13 +369,16 @@ private theorem splitEvenTwoEvenToMatrixProd_comp_inv :
 
 private theorem inv_comp_splitEvenTwoEvenToMatrixProd :
     (splitEvenTwoMatrixProdToEven R).comp (splitEvenTwoEvenToMatrixProd R) = AlgHom.id R _ := by
-  refine even.algHom_ext (splitEvenForm R 2)
-    (EvenHom.ext (LinearMap.ext₂ fun m₁ m₂ ↦ Subtype.ext ?_))
+  -- Both sides are bilinear in `(m₁, m₂)`, so it suffices to compare them on the 16 pairs of
+  -- generators `aᵢ`, `bᵢ`, where each side normal-orders to the same Clifford monomials.
+  refine even.algHom_ext (splitEvenForm R 2) (EvenHom.ext ?_)
+  refine LinearMap.ext_on_range (span_range_vec R) fun i ↦
+    LinearMap.ext_on_range (span_range_vec R) fun j ↦ Subtype.ext ?_
   simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
     AlgHom.comp_apply, AlgHom.id_apply, splitEvenTwoEvenToMatrixProd_ι]
-  conv_rhs => rw [eq_vec R m₁, eq_vec R m₂]
-  simp [splitEvenTwoMatrixProdToEven, unit, Fin.sum_univ_two, ← mul_assoc]
-  module
+  rcases i with i | i <;> rcases j with j | j <;> fin_cases i <;> fin_cases j <;>
+    simp [splitEvenTwoMatrixProdToEven, unit, Fin.sum_univ_two, ← mul_assoc, sub_add, sub_sub,
+      vecA_fst, vecA_snd, vecB_fst, vecB_snd]
 
 /-- **The even Clifford algebra of the split quaternary form is `M₂(R) × M₂(R)`**, over any
 commutative ring `R`. The equivalence sends `ι m₁ ι m₂` to `(B m₁ C m₂, C m₁ B m₂)`, where
@@ -412,8 +432,7 @@ theorem splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange :
     splitEvenEvenBaseChange_ι, splitEvenTwoEvenEquivMatrixProd_ι,
     splitEvenTwoToMatrix_splitEvenSpaceBaseChange,
     splitEvenTwoToMatrixAdj_splitEvenSpaceBaseChange, AlgHom.prodMap_apply,
-    AlgHom.mapMatrix_apply, Matrix.map_mul,
-    show ⇑(Algebra.ofId R S) = algebraMap R S from funext (Algebra.ofId_apply S)]
+    AlgHom.mapMatrix_apply, Matrix.map_mul, Algebra.coe_ofId]
 
 /-- **Naturality in the base ring**: the equivalence `splitEvenTwoEvenEquivMatrixProd` commutes
 with the base change `splitEvenEvenBaseChange` along an algebra `R → S`, acting on matrices
@@ -426,8 +445,7 @@ theorem splitEvenTwoEvenEquivMatrixProd_splitEvenEvenBaseChange
   have h := DFunLike.congr_fun (splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange R S) x
   simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom] at h
   rw [h, AlgHom.prodMap_apply, Prod.map_apply]
-  simp only [AlgHom.mapMatrix_apply,
-    show ⇑(Algebra.ofId R S) = algebraMap R S from funext (Algebra.ofId_apply S)]
+  simp only [AlgHom.mapMatrix_apply, Algebra.coe_ofId]
 
 end BaseChange
 
