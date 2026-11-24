@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Morrey.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -48,8 +49,6 @@ Arzelà–Ascoli theorem for locally Hölder families on the open set `U`
 
 ## Main results
 
-* `TauCeti.eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le`: an `Lᵖ` bound on `\bar∂u` from an
-  `Lᵖ` bound on `g` and a pointwise bound on `\bar∂u - g`.
 * `TauCeti.exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le`: the uniform interior
   `W^{1,p}` bound.
 * `TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`: the uniform Hölder bound on
@@ -72,34 +71,6 @@ open MeasureTheory Metric Set Filter
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-
-omit [CompleteSpace F] in
-/-- **`Lᵖ` bounds on `\bar∂u` up to a bounded error.** Let `1 ≤ p`, let `u` be smooth on an open
-set `U ⊆ ℂ` and let `V ⊆ U` be measurable. If `‖\bar∂u - g‖ ≤ M` on `V` and `‖g‖_{Lᵖ(V)} ≤ B`, then
-`‖\bar∂u‖_{Lᵖ(V)} ≤ vol(V)^(1/p) M + B`. -/
-theorem eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le {p : ℝ≥0∞} (hp : 1 ≤ p) {U V : Set ℂ}
-    (hU : IsOpen U) (hV : MeasurableSet V) (hVU : V ⊆ U) {u g : ℂ → F} {M : ℝ} {B : ℝ≥0}
-    (hu : ContDiffOn ℝ ∞ u U) (hM : ∀ z ∈ V, ‖conjWirtingerDeriv u z 1 - g z‖ ≤ M)
-    (hB : eLpNorm g p (volume.restrict V) ≤ B) :
-    eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V) ≤
-      volume V ^ p.toReal⁻¹ * ENNReal.ofReal M + B := by
-  have hgm : AEStronglyMeasurable g (volume.restrict V) :=
-    aestronglyMeasurable_of_eLpNorm_ne_top (hB.trans_lt ENNReal.coe_lt_top).ne
-  have hdm : AEStronglyMeasurable (fun z ↦ conjWirtingerDeriv u z 1) (volume.restrict V) :=
-    ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono
-      hVU).aestronglyMeasurable hV
-  -- Split `\bar∂u` as the bounded `\bar∂u - g` plus `g`.
-  calc eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V)
-      = eLpNorm ((fun z ↦ conjWirtingerDeriv u z 1 - g z) + g) p (volume.restrict V) := by
-        congr 1
-        ext z
-        simp
-    _ ≤ eLpNorm (fun z ↦ conjWirtingerDeriv u z 1 - g z) p (volume.restrict V) +
-        eLpNorm g p (volume.restrict V) := eLpNorm_add_le hp
-    _ ≤ volume V ^ p.toReal⁻¹ * ENNReal.ofReal M + B := by
-      refine add_le_add ((eLpNorm_le_of_ae_bound (hdm.sub hgm) ((ae_restrict_iff' hV).2
-        (Eventually.of_forall hM))).trans_eq ?_) hB
-      rw [Measure.restrict_apply_univ]
 
 /-- **Uniform interior `W^{1,p}` bounds from `\bar∂` bounds.** Let `1 < p < ∞`, let `U ⊆ ℂ` be
 open and `K ⊆ U` compact, and let `A, M, B ≥ 0`. There is a constant `N` such that every map `u`
@@ -131,8 +102,9 @@ theorem exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0�
   rw [ENNReal.coe_toNNReal (by simp [ENNReal.mul_ne_top, hS])]
   have hderiv : eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V) ≤
       S * ENNReal.ofReal M + B :=
-    eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le hp.le hU hV.measurableSet hVU hu
-      (fun z hz ↦ hM z (hVU hz))
+    eLpNorm_restrict_le_of_norm_sub_le hp.le hV.measurableSet
+      ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono hVU
+        |>.aestronglyMeasurable hV.measurableSet) (fun z hz ↦ hM z (hVU hz))
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)).trans hB)
   refine (hC₁ u (hu.mono hVU)).trans ?_
   gcongr
