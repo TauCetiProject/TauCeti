@@ -56,7 +56,8 @@ anti-invariance of a cohomology class alone does not provide a cocycle with this
 
 The lift of `U` is a Thom class of `E'`, over a compact base and for every commutative ring `R`
 (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so that a cocycle representing `U`
-lifts to a cocycle of `(E', E'₀)` representing a Thom class of `E'` which `δ^*` negates exactly. On
+lifts to a cocycle of `(E', E'₀)` representing a Thom class of `E'` which `δ^*` negates exactly
+(`exists_isThomClass_homologyπ_and_cyclesMap_deckThomPairMap_eq_neg`). On
 the fibre pair over a point `p` of the cover, `Λ` is in homology the inclusion of the fibre pair of
 `E` over `p.proj`, with the coefficients trivialized by the orientation `p.orientation`
 (`singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap`). This inclusion
@@ -86,6 +87,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `Λ` is the inclusion of the fibre pair of `E` with the coefficients trivialized by an orientation.
 * `isThomClass_thomPairSignCohomologyMap_twistedThomClass`: the lift of the Thom class with
   coefficients in the orientation system is a Thom class of `E'`.
+* `exists_isThomClass_homologyπ_and_cyclesMap_deckThomPairMap_eq_neg`: `E'` has a Thom class
+  represented by a cocycle which the lifted deck involution negates.
 
 ## References
 
@@ -570,5 +573,45 @@ theorem isThomClass_thomPairSignCohomologyMap_twistedThomClass :
   -- The scalar multiple of a morphism of modules is evaluated pointwise.
   exact (congrArg (fun r : R ↦ (TopPair.singularKronecker _ R (finrank ℝ F) d).hom
     (orientedFiberGenerator (E := E) R ω q.orientation) • r) h1).trans (mul_one _)
+
+variable (R) in
+include hι in
+/-- **An anti-invariant Thom cocycle of the orientation cover.** Over a compact base, the pull-back
+`E'` of a real vector bundle to its orientation double cover has a Thom class, with coefficients in
+any commutative ring, represented by a cocycle which the lift of the deck involution negates at the
+level of cochains: the lift of a cocycle representing the Thom class with coefficients in the
+orientation system. -/
+theorem exists_isThomClass_homologyπ_and_cyclesMap_deckThomPairMap_eq_neg :
+    ∃ φ : ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ).singularCochainComplex (ModuleCat.of R R) R (ModuleCat.of R R)).cycles (finrank ℝ F),
+      IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ((TopPair.singularCochainComplex _ (ModuleCat.of R R) R (ModuleCat.of R R)).homologyπ
+          (finrank ℝ F) φ) ∧
+      HomologicalComplex.cyclesMap (TopPair.singularCochainComplexMap (deckThomPairMap F E ι))
+        (finrank ℝ F) φ = -φ := by
+  classical
+  -- An orientation of the model fibre, from a basis indexed by `ι`.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
+  obtain ⟨z, hz⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ _
+    (twistedThomClass F E R hι ω)
+  refine ⟨HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R))
+    (finrank ℝ F) z, ?_, ?_⟩
+  · have h := ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality
+      (thomPairSignCochainMap F E hι R R (ModuleCat.of R R)) (finrank ℝ F)) z
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hz] at h
+    have hU := isThomClass_thomPairSignCohomologyMap_twistedThomClass (E := E) (R := R) hι ω
+    rw [thomPairSignCohomologyMap_def] at hU
+    exact (congrArg (IsThomClass F _) h).mp hU
+  · have hn : HomologicalComplex.cyclesMap (-thomPairSignCochainMap F E hι R R (ModuleCat.of R R))
+        (finrank ℝ F) =
+        -HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R))
+          (finrank ℝ F) :=
+      (HomologicalComplex.cyclesFunctor _ _ (finrank ℝ F)).map_neg
+    rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_comp,
+      thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap, hn]
+    -- Application of a morphism of modules is `ConcreteCategory.hom`, which is `ModuleCat.Hom.hom`
+    -- by the concrete-category instance of `ModuleCat`, and that commutes with negation.
+    exact (LinearMap.congr_fun (ModuleCat.hom_neg _) z).trans (LinearMap.neg_apply _ z)
 
 end TauCeti.VectorBundleOrientationCover
