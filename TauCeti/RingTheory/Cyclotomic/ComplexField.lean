@@ -90,7 +90,7 @@ theorem complexField.isPrimitiveRoot_zetaInteger :
 variable {e} in
 /-- An algebraic integer of `complexField e` that is `complexRoot e'` in `ℂ`, with `e'` the part
 of `e` prime to `p`, is the power of `complexField.zetaInteger e` by the `p`-part of `e`. -/
-theorem zetaInteger_pow_ordProj (p : ℕ) {x : 𝓞 (complexField e)}
+theorem complexField.zetaInteger_pow_ordProj_eq_of_coe_eq (p : ℕ) {x : 𝓞 (complexField e)}
     (hx : ((x : complexField e) : ℂ) = complexRoot (ordCompl[p] e)) :
     complexField.zetaInteger e ^ ordProj[p] e = x := by
   apply RingOfIntegers.ext
