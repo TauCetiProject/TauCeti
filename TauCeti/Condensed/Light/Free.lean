@@ -90,6 +90,8 @@ lemma freeModuleHomEquiv_symm_postcomp {S : LightProfinite.{u}} {N : LightCondMo
 lemma freeModuleHomEquiv_smul {R : Type u} [CommRing R] {M : LightCondMod R}
     (S : LightProfinite.{u}) (r : R) (g : (free R).obj S.toCondensed ⟶ M) :
     S.freeModuleHomEquiv (r • g) = r • S.freeModuleHomEquiv g := by
+  -- Sheaf morphisms inherit scalar multiplication from the underlying natural
+  -- transformations, where both scalar multiplication and identity are pointwise.
   have h : (r • 𝟙 M).hom.app (Opposite.op S) = r • 𝟙 (M.obj.obj (Opposite.op S)) := rfl
   simpa only [Linear.comp_smul, Category.comp_id, h, ModuleCat.hom_smul,
     LinearMap.smul_apply, ModuleCat.hom_id, LinearMap.id_apply] using

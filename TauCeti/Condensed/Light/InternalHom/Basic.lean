@@ -55,8 +55,10 @@ instance tensorLeftLinear (A : LightCondMod R) : (tensorLeft A).Linear R := by
     intro X Y f r
     apply NatTrans.ext
     funext T
+    -- The tensor-left functor maps a natural transformation by left whiskering.
     change ((I.obj A) ◁ (r • f)).app T = (r • ((I.obj A) ◁ f)).app T
     simp only [Monoidal.whiskerLeft_app, NatTrans.app_smul, MonoidalLinear.whiskerLeft_smul]
+    -- Scalar multiplication on natural transformations is pointwise.
     rfl
   have e : (I ⋙ tensorLeft (I.obj A)) ⋙ Q ≅ tensorLeft A :=
     Functor.associator _ _ _ ≪≫
@@ -120,6 +122,8 @@ lemma tensorHomSectionsAddEquiv_toEquiv (A B : LightCondMod R) (S : LightProfini
   ext g
   exact (tensorHomSectionsAddEquiv_apply R A B S g).trans (by
     rw [ihomPoints_symm_apply, LightProfinite.freeModuleHomEquiv_apply]
+    -- The source argument of homEquiv agrees because S.toCondensed is definitionally
+    -- (coherentTopology LightProfinite).yoneda.obj S.
     rfl)
 
 /-- Restricting the test object restricts the corresponding internal Hom section. -/
