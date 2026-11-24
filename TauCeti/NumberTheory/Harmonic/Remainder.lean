@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.SpecialFunctions.Log.OneAddInv
+public import TauCeti.Topology.Algebra.Order.Group
 
 /-!
 # Explicit bounds for the harmonic remainder
@@ -27,7 +28,8 @@ is compared with the corresponding differences of the two bounds by the series f
 `log (1 + 1/n)`, and `R₁(n) → 0`. On each interval `[N, N + 1)`, `R₁(X) = R₁(N) - log (X / N)`
 decreases from `R₁(N)` towards `R₁(N + 1) - 1/(N + 1)`, so the bounds at the integers control
 `X R₁(X)` for real `X ≥ 1`: it lies in `[-6/11, 1/2]`. The constant `6/11` is
-`1 - 2 / (2 · 2 + 2/5)`, the value of the lower integer bound at `N + 1 = 2`. For `0 < X < 1`
+`1 - 2 · 1 / (2 · 2 + 2/5)`, where `1 / (2 · 2 + 2/5) = 5/22` is the lower integer bound at
+`N + 1 = 2`, so that `(N + 1) R₁(N + 1) ≥ 5/11`. For `0 < X < 1`
 the remainder is `-log X - γ` and is bounded by elementary inequalities for the logarithm.
 
 ## Main definitions
@@ -36,8 +38,10 @@ the remainder is `-log X - γ` and is bounded by elementary inequalities for the
 
 ## Main results
 
+* `TauCeti.tendsto_harmonic_sub_log_sub_eulerMascheroniConstant`: `R₁(n) → 0` along the
+  natural numbers.
 * `TauCeti.harmonic_sub_log_sub_eulerMascheroniConstant_le`: `R₁(n) ≤ 1 / (2n)`.
-* `TauCeti.inv_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant`:
+* `TauCeti.one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant`:
   `1 / (2n + 2/5) ≤ R₁(n)` for `n ≥ 1`.
 * `TauCeti.eulerMascheroniConstant_gt_d5`: `0.57721 < γ`.
 * `TauCeti.harmonicRemainder_le`: `R₁(X) ≤ 1 / (2X)` for every real `X > 0`.
@@ -78,9 +82,8 @@ theorem harmonicRemainder_def (X : ℝ) :
 /-- The harmonic remainder written with the sum over `Finset.Icc 1 ⌊X⌋₊`. -/
 theorem harmonicRemainder_eq_sum_Icc (X : ℝ) :
     harmonicRemainder X = ∑ n ∈ Icc 1 ⌊X⌋₊, (n : ℝ)⁻¹ - log X - eulerMascheroniConstant := by
-  rw [harmonicRemainder_def, harmonic_eq_sum_Icc]
-  push_cast
-  rfl
+  rw [harmonicRemainder_def]
+  simp only [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
 
 @[simp]
 theorem harmonicRemainder_natCast (n : ℕ) :
@@ -96,33 +99,24 @@ theorem harmonicRemainder_of_lt_one {X : ℝ} (hX : X < 1) :
 theorem harmonicRemainder_one : harmonicRemainder 1 = 1 - eulerMascheroniConstant := by
   simpa using harmonicRemainder_natCast 1
 
+/-- For `X ≥ 1`, the cast of `⌊X⌋₊` to `ℝ` is at least `1`. -/
+private theorem one_le_natCast_floor {X : ℝ} (hX : 1 ≤ X) : (1 : ℝ) ≤ ⌊X⌋₊ := by
+  exact_mod_cast (Nat.one_le_floor_iff X).mpr hX
+
 /-- On `[N, N + 1)` with `N = ⌊X⌋₊ ≥ 1`, the harmonic remainder is its value at `N` minus
 `log (X / N)`. -/
 theorem harmonicRemainder_eq_harmonicRemainder_floor_sub_log {X : ℝ} (hX : 1 ≤ X) :
     harmonicRemainder X = harmonicRemainder ⌊X⌋₊ - log (X / ⌊X⌋₊) := by
-  have hN : (0 : ℝ) < ⌊X⌋₊ := by exact_mod_cast Nat.floor_pos.mpr hX
+  have hN : (0 : ℝ) < ⌊X⌋₊ := zero_lt_one.trans_le (one_le_natCast_floor hX)
   rw [harmonicRemainder_natCast, harmonicRemainder_def, log_div (by positivity) hN.ne']
   ring
 
 /-! ### Bounds at the integers -/
 
 /-- The harmonic remainder at the integers tends to zero. -/
-private theorem tendsto_harmonic_sub_log_sub_eulerMascheroniConstant :
+theorem tendsto_harmonic_sub_log_sub_eulerMascheroniConstant :
     Tendsto (fun n : ℕ ↦ (harmonic n : ℝ) - log n - eulerMascheroniConstant) atTop (𝓝 0) := by
   simpa using tendsto_harmonic_sub_log.sub_const eulerMascheroniConstant
-
-/-- Telescoping comparison: if `f` and `g` tend to zero and every decrement of `f` from `n ≥ m`
-is at most the corresponding decrement of `g`, then `f m ≤ g m`. -/
-private theorem le_of_sub_succ_le {f g : ℕ → ℝ} {m : ℕ} (hf : Tendsto f atTop (𝓝 0))
-    (hg : Tendsto g atTop (𝓝 0)) (h : ∀ n, m ≤ n → f n - f (n + 1) ≤ g n - g (n + 1)) :
-    f m ≤ g m := by
-  have hanti : Antitone fun k ↦ g (k + m) - f (k + m) := antitone_nat_of_succ_le fun k ↦ by
-    have := h (k + m) (Nat.le_add_left m k)
-    rw [Nat.add_right_comm]
-    linarith
-  have hlim : Tendsto (fun k ↦ g (k + m) - f (k + m)) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using (hg.sub hf).comp (tendsto_add_atTop_nat m)
-  simpa using hanti.le_of_tendsto hlim 0
 
 /-- The decrement of the harmonic remainder between consecutive positive integers. -/
 private theorem harmonic_sub_log_sub_succ {n : ℕ} (hn : n ≠ 0) :
@@ -141,7 +135,7 @@ theorem harmonic_sub_log_sub_eulerMascheroniConstant_le (n : ℕ) :
     (harmonic n : ℝ) - log n - eulerMascheroniConstant ≤ 1 / (2 * n) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simpa using one_half_lt_eulerMascheroniConstant.le.trans' (by norm_num)
-  refine le_of_sub_succ_le (g := fun n : ℕ ↦ 1 / (2 * (n : ℝ)))
+  refine le_of_tendsto_of_sub_succ_le (g := fun n : ℕ ↦ 1 / (2 * (n : ℝ)))
     tendsto_harmonic_sub_log_sub_eulerMascheroniConstant ?_ fun k hk ↦ ?_
   · simp only [one_div]
     exact (tendsto_natCast_atTop_atTop.const_mul_atTop (two_pos : (0 : ℝ) < 2)).inv_tendsto_atTop
@@ -156,11 +150,20 @@ theorem harmonic_sub_log_sub_eulerMascheroniConstant_le (n : ℕ) :
     rw [he]
     linarith
 
+/-- The upper integer bound in the form `n R₁(n) ≤ 1/2`. -/
+private theorem natCast_mul_harmonicRemainder_natCast_le (n : ℕ) :
+    (n : ℝ) * harmonicRemainder n ≤ 1 / 2 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · norm_num
+  have h := harmonic_sub_log_sub_eulerMascheroniConstant_le n
+  rw [← harmonicRemainder_natCast, le_div_iff₀ (by positivity)] at h
+  linarith
+
 /-- Lower bound for the harmonic remainder at the positive integers:
 `1 / (2n + 2/5) ≤ harmonic n - log n - γ`. -/
-theorem inv_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant {n : ℕ} (hn : n ≠ 0) :
+theorem one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant {n : ℕ} (hn : n ≠ 0) :
     1 / (2 * n + 2 / 5) ≤ (harmonic n : ℝ) - log n - eulerMascheroniConstant := by
-  refine le_of_sub_succ_le (f := fun n : ℕ ↦ 1 / (2 * (n : ℝ) + 2 / 5)) ?_
+  refine le_of_tendsto_of_sub_succ_le (f := fun n : ℕ ↦ 1 / (2 * (n : ℝ) + 2 / 5)) ?_
     tendsto_harmonic_sub_log_sub_eulerMascheroniConstant fun k hk ↦ ?_
   · simp only [one_div]
     exact ((tendsto_natCast_atTop_atTop.const_mul_atTop (two_pos : (0 : ℝ) < 2)).atTop_add
@@ -215,13 +218,13 @@ private theorem neg_log_le {X : ℝ} (hX : 0 < X) : -log X ≤ 1 / (2 * X) + log
 private theorem mul_harmonicRemainder_le_floor_mul {X : ℝ} (hX : 1 ≤ X) :
     X * harmonicRemainder X ≤ ⌊X⌋₊ * harmonicRemainder ⌊X⌋₊ := by
   set N := ⌊X⌋₊
-  have hN : (0 : ℝ) < N := by exact_mod_cast Nat.floor_pos.mpr hX
+  have hN1 : (1 : ℝ) ≤ N := one_le_natCast_floor hX
   have hNX : (N : ℝ) ≤ X := Nat.floor_le (by linarith)
   have hr : harmonicRemainder N ≤ 1 := by
     rw [harmonicRemainder_natCast]
     refine (harmonic_sub_log_sub_eulerMascheroniConstant_le N).trans ?_
     rw [div_le_one (by positivity)]
-    linarith [show (1 : ℝ) ≤ N by exact_mod_cast Nat.floor_pos.mpr hX]
+    linarith
   -- `log (X / N) ≥ 1 - N / X`
   have hlog : 1 - N / X ≤ log (X / N) := by
     have := one_sub_inv_le_log_of_pos (show 0 < X / N by positivity)
@@ -239,7 +242,7 @@ private theorem neg_mul_harmonicRemainder_le {X : ℝ} (hX : 1 ≤ X) :
     -(X * harmonicRemainder X) ≤ 1 - (⌊X⌋₊ + 1) * harmonicRemainder (⌊X⌋₊ + 1 : ℕ) := by
   rw [harmonicRemainder_eq_harmonicRemainder_floor_sub_log hX]
   set N := ⌊X⌋₊
-  have hN : (0 : ℝ) < N := by exact_mod_cast Nat.floor_pos.mpr hX
+  have hN : (0 : ℝ) < N := zero_lt_one.trans_le (one_le_natCast_floor hX)
   have hXN : X < N + 1 := Nat.lt_floor_add_one X
   -- At the right end, `(N + 1) (log ((N + 1) / N) - R₁(N)) = 1 - (N + 1) R₁(N + 1)`.
   have hend : ((N : ℝ) + 1) * (log ((N + 1) / N) - harmonicRemainder N) =
@@ -252,11 +255,8 @@ private theorem neg_mul_harmonicRemainder_le {X : ℝ} (hX : 1 ≤ X) :
   rw [← hend, neg_mul_eq_mul_neg, neg_sub]
   rcases le_or_gt (log (X / N) - harmonicRemainder N) 0 with h | h
   · -- the right-hand side is `1 - (N + 1) R₁(N + 1) ≥ 1 / 2`
-    have hr := harmonic_sub_log_sub_eulerMascheroniConstant_le (N + 1)
-    rw [← harmonicRemainder_natCast, le_div_iff₀ (by positivity)] at hr
     have hr' : ((N : ℝ) + 1) * harmonicRemainder (N + 1 : ℕ) ≤ 1 / 2 := by
-      push_cast at hr ⊢
-      linarith
+      exact_mod_cast natCast_mul_harmonicRemainder_natCast_le (N + 1)
     nlinarith [zero_lt_one.trans_le hX]
   · have hlog : log (X / N) ≤ log ((N + 1) / N) :=
       log_le_log (by positivity) (div_le_div_of_nonneg_right hXN.le hN.le)
@@ -271,12 +271,7 @@ theorem harmonicRemainder_le {X : ℝ} (hX : 0 ≤ X) : harmonicRemainder X ≤ 
   · rw [harmonicRemainder_of_lt_one hX1]
     linarith [neg_log_le hX, log_two_lt_d9, eulerMascheroniConstant_gt_d5]
   · have h := mul_harmonicRemainder_le_floor_mul hX1
-    have hN : (⌊X⌋₊ : ℝ) * harmonicRemainder ⌊X⌋₊ ≤ 1 / 2 := by
-      have hN0 : (0 : ℝ) < ⌊X⌋₊ := by exact_mod_cast Nat.floor_pos.mpr hX1
-      have := harmonic_sub_log_sub_eulerMascheroniConstant_le ⌊X⌋₊
-      rw [harmonicRemainder_natCast]
-      rw [le_div_iff₀ (by positivity)] at this
-      linarith
+    have hN := natCast_mul_harmonicRemainder_natCast_le ⌊X⌋₊
     rw [le_div_iff₀ (by positivity)]
     linarith
 
@@ -285,8 +280,8 @@ theorem neg_six_div_le_harmonicRemainder {X : ℝ} (hX : 1 ≤ X) :
     -(6 / (11 * X)) ≤ harmonicRemainder X := by
   have h := neg_mul_harmonicRemainder_le hX
   have hM : 5 / 11 ≤ ((⌊X⌋₊ : ℝ) + 1) * harmonicRemainder (⌊X⌋₊ + 1 : ℕ) := by
-    have h1 : (1 : ℝ) ≤ ⌊X⌋₊ := by exact_mod_cast Nat.floor_pos.mpr hX
-    have := inv_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant
+    have h1 := one_le_natCast_floor hX
+    have := one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant
       (Nat.succ_ne_zero ⌊X⌋₊)
     rw [harmonicRemainder_natCast]
     push_cast at this ⊢
@@ -367,7 +362,9 @@ theorem abs_harmonicRemainder_le_rpow {t : ℝ} (ht : 0 < t) :
     rw [harmonicRemainder_of_lt_one ht1, abs_le]
     have hγ := eulerMascheroniConstant_lt_two_thirds
     have hlt : log t < 0 := log_neg ht ht1
-    constructor <;> nlinarith
+    -- `-log t = 3 log u ≤ 0.9105 u - 3 + 3 log c ≤ 0.9105 u + γ`,
+    -- while `log t + γ < 2/3 ≤ 0.9105 u`
+    constructor <;> linarith
   · refine (abs_harmonicRemainder_le ht1).trans ?_
     have hle : t ^ (-1 : ℝ) ≤ t ^ (-(1 / 3 : ℝ)) :=
       rpow_le_rpow_of_exponent_le ht1 (by norm_num)
