@@ -140,12 +140,12 @@ theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Functio
     MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
       (stateSpace B) (stateSpace A) := by
   intro φ hφ
-  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ ha => by
+    simpa [toStrongDual_apply] using map_nonneg_of_mem_stateSpace hφ ha
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) =
       toStrongDual ((PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional φ) := by
     ext a
-    simp [ω]
-    rfl
+    simp [ω, toStrongDual_apply]
   refine mem_stateSpace_iff.2 ⟨fun a ha => by
     simpa using map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
   rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]

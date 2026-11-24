@@ -439,10 +439,10 @@ theorem IsOrderUnitNorm.posSMulMono (he : IsOrderUnitNorm e) : PosSMulMono ℝ E
   calc
     ‖‖c • (b - a)‖ • e - c • (b - a)‖
         = ‖c • (‖b - a‖ • e - (b - a))‖ := by
-          rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, mul_smul, ← smul_sub]
-    _ = c * ‖‖b - a‖ • e - (b - a)‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
+          rw [norm_smul_of_nonneg hc, mul_smul, ← smul_sub]
+    _ = c * ‖‖b - a‖ • e - (b - a)‖ := norm_smul_of_nonneg hc _
     _ ≤ c * ‖b - a‖ := mul_le_mul_of_nonneg_left hx hc
-    _ = ‖c • (b - a)‖ := by rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
+    _ = ‖c • (b - a)‖ := (norm_smul_of_nonneg hc _).symm
 
 end PosSMulMono
 

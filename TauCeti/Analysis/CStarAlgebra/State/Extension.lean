@@ -100,8 +100,7 @@ theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : Wea
     · rw [ContinuousLinearMap.pullbackFunctional_apply]
       exact map_nonneg_of_mem_stateSpace hχ (map_nonneg f hx)
     calc ‖toStrongDual (T.pullbackFunctional χ) x‖ = ‖χ (f x)‖ := by
-          rw [toStrongDual_apply, ContinuousLinearMap.pullbackFunctional_apply]
-          rfl
+          simp [T, toStrongDual_apply]
       _ ≤ ‖f x‖ := norm_apply_le_of_mem_stateSpace hχ _
       _ ≤ ‖x‖ := NonUnitalStarAlgHom.norm_apply_le f x
       _ = 1 * ‖x‖ := (one_mul _).symm

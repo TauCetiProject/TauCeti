@@ -91,11 +91,10 @@ theorem map_nonneg_of_mem_stateSpace (hφ : φ ∈ stateSpace e) {a : E} (ha : 0
 theorem convex_stateSpace : Convex ℝ (stateSpace e) := by
   intro φ hφ ψ hψ s t hs ht hst
   refine ⟨fun a b hab => ?_, ?_⟩
-  · change s * φ a + t * ψ a ≤ s * φ b + t * ψ b
+  · simp only [add_apply, smul_apply, smul_eq_mul]
     exact add_le_add (mul_le_mul_of_nonneg_left (hφ.1 hab) hs)
       (mul_le_mul_of_nonneg_left (hψ.1 hab) ht)
-  · change s * φ e + t * ψ e = 1
-    simp [hφ.2, hψ.2, hst]
+  · simp [hφ.2, hψ.2, hst]
 
 /-- The state space is weak-star closed. -/
 theorem isClosed_stateSpace : IsClosed (stateSpace e) :=
@@ -154,8 +153,7 @@ nonnegative elements together with `φ e = 1`. -/
 theorem mem_stateSpace_iff_map_nonneg :
     φ ∈ stateSpace e ↔ (∀ a : E, 0 ≤ a → 0 ≤ φ a) ∧ φ e = 1 := by
   refine and_congr_left fun _ => ?_
-  have h := monotone_iff_map_nonneg (toStrongDual φ)
-  exact h
+  simpa [Monotone, toStrongDual_apply] using monotone_iff_map_nonneg (toStrongDual φ)
 
 end OrderedGroupStateSpace
 
@@ -180,8 +178,10 @@ theorem IsOrderUnitNorm.mem_stateSpace_iff_exists_positiveLinearMap {E : Type*}
   have hω : (he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one ω : E →L[ℝ] ℝ) =
       toStrongDual φ := by
     ext a
-    simp [ω]
-    rfl
+    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      he.toPositiveContinuousLinearMap_apply, ← PositiveLinearMap.coe_toLinearMap]
+    dsimp only [ω]
+    rw [ContinuousLinearMap.coe_coe]
   exact ⟨ω, hφ.2, by rw [hω, toWeakDual_toStrongDual]⟩
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]

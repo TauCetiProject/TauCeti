@@ -65,10 +65,8 @@ theorem coe_completionPosCone :
   have : OrderClosedTopology E := he.orderClosedTopology
   ext x
   simp only [completionPosCone, SetLike.mem_coe, ProperCone.mem_map]
-  change x ∈ ((PointedCone.map (UniformSpace.Completion.toComplL (S := ℝ) (α := E) :
-    E →ₗ[ℝ] UniformSpace.Completion E) (ProperCone.positive ℝ E).toPointedCone).topologicalClosure :
-    Set (UniformSpace.Completion E)) ↔ _
-  rw [Submodule.topologicalClosure_coe, PointedCone.coe_map, ProperCone.toPointedCone_positive]
+  rw [← SetLike.mem_coe, PointedCone.coe_closure, PointedCone.coe_map,
+    ProperCone.toPointedCone_positive]
   have himg : ((UniformSpace.Completion.toComplL (S := ℝ) (α := E) :
       E →ₗ[ℝ] UniformSpace.Completion E) '' (PointedCone.positive ℝ E : Set E)) =
       (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
@@ -84,17 +82,14 @@ theorem coe_mem_completionPosCone_iff {a : E} :
     |>.closure_eq_preimage_closure_image (Set.Ici (0 : E))
   have hcl : closure (Set.Ici (0 : E)) = Set.Ici (0 : E) := he.isClosed_nonneg.closure_eq
   rw [hcl] at h
-  change (a : UniformSpace.Completion E) ∈ (he.completionPosCone : Set _) ↔ 0 ≤ a
-  rw [he.coe_completionPosCone]
+  rw [← SetLike.mem_coe, he.coe_completionPosCone]
   exact Set.ext_iff.mp h.symm a
 
 private theorem norm_sub_le_norm_add_of_mem_completionPosCone
     {u v : UniformSpace.Completion E}
     (hu : u ∈ he.completionPosCone) (hv : v ∈ he.completionPosCone) :
     ‖u - v‖ ≤ ‖u + v‖ := by
-  change u ∈ (he.completionPosCone : Set _) at hu
-  change v ∈ (he.completionPosCone : Set _) at hv
-  rw [he.coe_completionPosCone] at hu hv
+  rw [← SetLike.mem_coe, he.coe_completionPosCone] at hu hv
   let S : Set (UniformSpace.Completion E) :=
     ((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)
   have huv : (u, v) ∈ closure (S ×ˢ S) := by
@@ -105,8 +100,9 @@ private theorem norm_sub_le_norm_add_of_mem_completionPosCone
       (continuous_fst.add continuous_snd).norm) huv
   rintro ⟨u', v'⟩ ⟨⟨p, hp, hup⟩, ⟨q, hq, hvq⟩⟩
   dsimp only at hup hvq
-  change ‖u' - v'‖ ≤ ‖u' + v'‖
-  rw [← hup, ← hvq, ← UniformSpace.Completion.coe_sub, ← UniformSpace.Completion.coe_add,
+  rw [← hup, ← hvq]
+  simp only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.add_apply]
+  rw [← UniformSpace.Completion.coe_sub, ← UniformSpace.Completion.coe_add,
     UniformSpace.Completion.norm_coe, UniformSpace.Completion.norm_coe]
   refine he.norm_le_norm_of_neg_le_of_le ?_ ?_
   · rw [neg_add, sub_eq_add_neg]

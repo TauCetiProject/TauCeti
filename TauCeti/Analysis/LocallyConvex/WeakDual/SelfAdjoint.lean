@@ -60,6 +60,9 @@ noncomputable def restrictToSelfAdjoint : WeakDual ℂ A →L[ℝ] WeakDual ℝ 
 @[simp]
 theorem restrictToSelfAdjoint_apply (φ : WeakDual ℂ A) (a : selfAdjoint A) :
     restrictToSelfAdjoint φ a = (φ (a : A)).re := by
+  -- `(selfAdjoint.submodule ℝ A).subtypeL.pullbackFunctional` has codomain
+  -- `WeakDual ℝ ↥(selfAdjoint.submodule ℝ A)` rather than `WeakDual ℝ (selfAdjoint A)`, so we
+  -- align the two defeq subtype wrappers before rewriting with `comp_apply`.
   change (((selfAdjoint.submodule ℝ A).subtypeL.pullbackFunctional.comp
     (WeakDual.extendRCLikeL (𝕜 := ℂ) (F := A)).symm.toContinuousLinearMap) φ)
     ⟨(a : A), a.property⟩ = (φ (a : A)).re
@@ -72,12 +75,15 @@ section Extend
 variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModule ℂ A]
   [TopologicalSpace A] [ContinuousAdd A] [ContinuousStar A] [ContinuousConstSMul ℂ A]
 
+omit [StarAddMonoid A] [StarModule ℂ A] [ContinuousAdd A] [ContinuousStar A] in
+private theorem continuousConstSMul_real : ContinuousConstSMul ℝ A :=
+  ⟨fun r => by simpa only [← Complex.coe_smul] using continuous_const_smul (r : ℂ)⟩
+
 /-- The unique complex-linear extension of `ψ : WeakDual ℝ (selfAdjoint A)` to `A` whose value at
 every self-adjoint element `a : selfAdjoint A` is `(ψ a : ℂ)`, defined by
 `a ↦ ψ (ℜ a) + I * ψ (ℑ a)` as a weak-star continuous real-linear map. -/
 noncomputable def extendFromSelfAdjoint : WeakDual ℝ (selfAdjoint A) →L[ℝ] WeakDual ℂ A :=
-  have : ContinuousConstSMul ℝ A :=
-    ⟨fun r => by simpa only [← Complex.coe_smul] using continuous_const_smul (r : ℂ)⟩
+  have := continuousConstSMul_real (A := A)
   (WeakDual.extendRCLikeL (𝕜 := ℂ) (F := A)).toContinuousLinearMap.comp
     (selfAdjointPartL ℝ A).pullbackFunctional
 
@@ -85,14 +91,14 @@ noncomputable def extendFromSelfAdjoint : WeakDual ℝ (selfAdjoint A) →L[ℝ]
 @[simp]
 theorem extendFromSelfAdjoint_apply (ψ : WeakDual ℝ (selfAdjoint A)) (a : A) :
     extendFromSelfAdjoint ψ a = (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ) := by
-  have : ContinuousConstSMul ℝ A :=
-    ⟨fun r => by simpa only [← Complex.coe_smul] using continuous_const_smul (r : ℂ)⟩
+  have := continuousConstSMul_real (A := A)
   rw [extendFromSelfAdjoint, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     WeakDual.extendRCLikeL_apply_apply, ContinuousLinearMap.pullbackFunctional_apply,
     ContinuousLinearMap.pullbackFunctional_apply]
-  change (ψ (ℜ a) : ℂ) - Complex.I * (ψ (ℜ (Complex.I • a)) : ℂ) =
-    (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ)
-  rw [realPart_I_smul, map_neg, Complex.ofReal_neg, mul_neg, sub_neg_eq_add]
+  have hpart (x : A) : (selfAdjointPartL ℝ A) x = ℜ x := by
+    ext
+    simp [selfAdjointPartL_apply_coe, realPart_apply_coe]
+  simp [hpart, realPart_I_smul, sub_neg_eq_add]
 
 /-- On a self-adjoint element `a`, `extendFromSelfAdjoint ψ` evaluates to `(ψ a : ℂ)`. -/
 theorem extendFromSelfAdjoint_apply_coe (ψ : WeakDual ℝ (selfAdjoint A)) (a : selfAdjoint A) :

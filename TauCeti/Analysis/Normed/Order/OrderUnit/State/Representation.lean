@@ -193,7 +193,7 @@ theorem IsOrderUnitNorm.nnNorm_eq_iSup_nnNorm_state_apply (a : E) :
   let : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
   have h : ‖a‖₊ = ‖evalContinuousMap e a‖₊ := NNReal.eq (he.norm_evalContinuousMap a).symm
   rw [h, ContinuousMap.nnNorm_eq_iSup_nnNorm]
-  rfl
+  simp [evalContinuousMap_apply]
 
 /-- The canonical unital isometric order embedding `E →ₗᵢ[ℝ] C(stateSpace e, ℝ)`. -/
 noncomputable def IsOrderUnitNorm.evalLinearIsometry :
