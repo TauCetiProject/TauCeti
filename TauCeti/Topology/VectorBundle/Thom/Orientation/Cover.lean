@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv
 public import TauCeti.Topology.VectorBundle.Orientation.Proper
 public import TauCeti.Topology.VectorBundle.Orientation.Tautological
@@ -44,8 +45,8 @@ coefficients (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEqui
 * `TauCeti.VectorBundleOrientationCover.deckThomPairMap`: the lift of the deck involution to the
   Thom pair of the pull-back bundle, with `deckThomPairMap_fst_comp_thomPairProj` and its pointwise
   form `deckThomPairMap_fst_proj` (it covers the deck involution), `lift_deckThomPairMap_fst` (it
-  fixes the underlying vectors of `E`) and
-  `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
+  fixes the underlying vectors of `E`), `neg_one_smul_eq_deckThomPairMap_fst` (it is the action of
+  `-1 ∈ ℤˣ` on the total space) and `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
 * `TauCeti.VectorBundleOrientationCover.coverThomPairMap`: the map of Thom pairs from the pull-back
   bundle to `E`, with `deckThomPairMap_comp_coverThomPairMap` (the lifted deck involution covers
   the identity of the Thom pair of `E`) and `fiberThomPairMap_comp_coverThomPairMap` (it includes
@@ -168,6 +169,21 @@ theorem deckThomPairMap_fst_apply
         v.snd := by
   rw [deckThomPairMap, thomPairMapOfFiberwise_fst_apply]
   rfl
+
+section Action
+
+attribute [local instance] pullbackMulAction
+
+/-- The element `-1` of `ℤˣ` acts on the total space of the pull-back bundle
+(`TauCeti.VectorBundleOrientationCover.pullbackMulAction`) by the lift of the deck involution.
+This is the counterpart for the pull-back bundle of `neg_one_smul_eq_deck`. -/
+theorem neg_one_smul_eq_deckThomPairMap_fst
+    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
+    (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v :=
+  Pullback.totalSpace_ext ((neg_one_smul_eq_deck v.proj).trans (deckThomPairMap_fst_proj v).symm)
+    ((lift_smul _ v).trans (lift_deckThomPairMap_fst v).symm)
+
+end Action
 
 variable (F E ι) in
 /-- The lift of the deck involution is an involution. -/

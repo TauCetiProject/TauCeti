@@ -37,8 +37,10 @@ free action of `ℤˣ` preserving `E'₀`. In the form of a quotient of topologi
 both spaces of the Thom pair `(E', E'₀)`
 (`TauCeti.VectorBundleOrientationCover.thomPairFstMulAction`,
 `TauCeti.VectorBundleOrientationCover.thomPairSndMulAction`), the embedding `E'₀ → E'` commutes with
-the actions (`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`), and both maps underlying the
-map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.pullbackThomPairMap`) are quotient covering maps
+the actions (`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`), so does the projection
+`E' → B'` to the cover (`TauCeti.VectorBundleOrientationCover.thomPairProj_smul`), and both maps
+underlying the map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.pullbackThomPairMap`) are quotient
+covering maps
 (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_fst` and
 `TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_snd`, the second by
 restricting the first, `IsQuotientCoveringMap.restrict`). These are the hypotheses under which the
@@ -264,6 +266,14 @@ theorem thomPair_map_smul (u : ℤˣ)
     (thomPair F _).map (u • v) = u • (thomPair F _).map v := by
   rw [TopPair.ofSubset_map]
   exact coe_thomPairSnd_smul u v
+
+/-- The projection `E' → B'` of the Thom pair of the bundle pulled back to the orientation double
+cover commutes with the actions `thomPairFstMulAction` of `ℤˣ` on `E'` and of `ℤˣ` on the cover. -/
+theorem thomPairProj_smul (u : ℤˣ)
+    (x : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
+    thomPairProj F _ (u • x) = u • thomPairProj F _ x :=
+  (thomPairProj_apply F _ (u • x)).trans
+    ((proj_smul_totalSpace u x).trans (congrArg (u • ·) (thomPairProj_apply F _ x).symm))
 
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
 
