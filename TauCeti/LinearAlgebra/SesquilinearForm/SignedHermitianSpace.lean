@@ -249,6 +249,16 @@ theorem adjoint_comp (S T : Module.End K V) :
     h.adjoint (S ∘ₗ T) = h.adjoint T ∘ₗ h.adjoint S :=
   ((h.eq_adjoint_iff).2 ((h.isAdjointPair_adjoint S).comp (h.isAdjointPair_adjoint T))).symm
 
+@[simp]
+theorem adjoint_one : h.adjoint 1 = 1 :=
+  h.adjoint_id
+
+/-- The adjoint is an anti-multiplicative map of `Module.End K V`: `(S * T)* = T* * S*`. -/
+@[simp]
+theorem adjoint_mul (S T : Module.End K V) :
+    h.adjoint (S * T) = h.adjoint T * h.adjoint S :=
+  h.adjoint_comp S T
+
 end Field
 
 end SignedHermitianSpace
