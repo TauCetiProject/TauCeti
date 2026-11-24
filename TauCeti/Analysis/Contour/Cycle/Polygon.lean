@@ -39,6 +39,8 @@ become a contour cycle.
 ## Main results
 
 * `Polygon.trace_contourCycle`: the trace is the boundary of the polygon.
+* `Polygon.integral_contourCycle_eq_integral_boundaryParam`: the cycle integral of any function
+  equals the raw contour integral along `Polygon.boundaryParam` over `[0, n]`.
 * `Polygon.integral_contourCycle`: the integral of a function continuous on the boundary is the
   sum of its integrals along the edges.
 * `Polygon.windingNumber_contourCycle`: off the boundary, the winding number is the sum of the
@@ -169,6 +171,14 @@ theorem _root_.Polygon.contourCycle_def :
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, Polygon.image_boundaryParam]
 
+/-- Integrating over the contour cycle of a polygon equals the raw contour integral along its
+boundary parametrization on `[0, n]`. -/
+theorem _root_.Polygon.integral_contourCycle_eq_integral_boundaryParam {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] (f : ℂ → E) :
+    Cycle.integral f poly.contourCycle =
+      ∫ t in (0 : ℝ)..n, deriv poly.boundaryParam t • f (poly.boundaryParam t) := by
+  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
+
 /-- **The integral over a polygon** of a function continuous on its boundary is the sum over the
 edges `[v, w]` of `(w - v) • ∫ t in 0..1, f (v + t (w - v))`. -/
 theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -178,7 +188,7 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
   have hγ := poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
   have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
     (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset)
-  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
+  rw [poly.integral_contourCycle_eq_integral_boundaryParam]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))
     (n := n) (μ := volume) (f := fun t ↦ deriv poly.boundaryParam t • f (poly.boundaryParam t))

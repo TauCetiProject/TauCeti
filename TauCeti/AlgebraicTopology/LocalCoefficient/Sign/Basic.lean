@@ -30,7 +30,10 @@ sections (`IsCoveringMap.monodromy_section`), so a continuous section of such a 
 trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`). More generally, a
 map `f` over `X` from a double cover to another one, intertwining their involutions, is a bijection
 on each fibre, so precomposition with `f` identifies their sign local systems
-(`IsCoveringMap.signLocalSystemIsoOfMap`): monodromy commutes with `f`.
+(`IsCoveringMap.signLocalSystemIsoOfMap`): monodromy commutes with `f`. If `2 = 0` in `R`, a
+function on a fibre changing sign under `σ` is constant on it
+(`TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero`), so the sign local system of such a double
+cover is constant even without a section (`IsCoveringMap.signLocalSystemIsoOfTwoEqZero`).
 
 For the orientation double cover of a real vector bundle `E` with integral coefficients this is
 the orientation local system `o(E)`: its fibre over `b` is a copy of `ℤ` whose two generators are
@@ -49,11 +52,14 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 * `TauCeti.signFiberComapEquiv`: for a map of double covers, precomposition on the sign modules.
 * `IsCoveringMap.signLocalSystemIsoOfMap`: the isomorphism of sign local systems induced by a map
   of double covers.
+* `IsCoveringMap.signLocalSystemIsoOfTwoEqZero`: the trivialization when `2 = 0` in `R`.
 
 ## Main results
 
 * `TauCeti.sum_eq_zero_of_mem_signFiber` and `TauCeti.mem_signFiber_of_sum_eq_zero`: for a double
   cover, the functions on a finite fibre changing sign under `σ` are those whose values sum to zero.
+* `TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero`: for a double cover and `2 = 0` in `R`, a
+  function on a fibre changing sign under `σ` is constant.
 * `IsCoveringMap.signLocalSystemObjEquiv_map_apply_monodromy`: transport along a path evaluated
   at the endpoint of a lift is the original function evaluated at its starting point.
 * `IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_one` and
@@ -189,6 +195,18 @@ theorem mem_signFiber_of_sum_eq_zero {x : X} [Fintype (p ⁻¹' {x})] {g : p ⁻
     · exact .inr (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm))
   rw [huniv, Finset.sum_pair (Function.fiberMap_ne_self hfix hσ x e).symm] at hg
   exact eq_neg_of_add_eq_zero_right hg
+
+include hfib in
+/-- When every fibre of `p` is a pair `{e, σ e}` and `2 = 0` in `R`, a function on a fibre that
+changes sign under `σ` is constant: since `-1 = 1` in `R`, changing sign under `σ` is the same as
+being invariant under it. -/
+theorem apply_eq_of_mem_signFiber_of_two_eq_zero (h2 : (2 : R) = 0) {x : X}
+    {f : p ⁻¹' {x} → R} (hf : f ∈ signFiber R σ hσ x) (e e' : p ⁻¹' {x}) : f e' = f e := by
+  rcases hfib e e' (e'.property.trans e.property.symm) with h | h
+  · rw [Subtype.ext h]
+  · rw [show e' = Function.fiberMap σ hσ x e from
+      Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm), mem_signFiber_iff.1 hf]
+    exact neg_eq_of_add_eq_zero_left (by rw [← two_mul, h2, zero_mul])
 
 end DoubleCover
 
@@ -360,6 +378,50 @@ theorem signLocalSystemIsoOfSection_inv_app_apply_fiberMap (x : FundamentalGroup
           ((hp.signLocalSystemIsoOfSection hfix hfib s hs).inv.app x) (ULift.up r)) :
         p ⁻¹' {x.as} → R) (Function.fiberMap σ hσ x.as ⟨s x.as, hs x.as⟩) = -r :=
   TauCeti.signFiberEquiv_symm_apply_fiberMap hfix hfib _ r
+
+variable (hsurj : Function.Surjective p) (h2 : (2 : R) = 0)
+
+/-- **The sign local system in characteristic two.** If `2 = 0` in `R`, the sign local system of a
+double cover whose sheets are exchanged by `σ` is constant, with no section needed: a function on
+a fibre changing sign under `σ` is then constant on the fibre
+(`TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero`), and over `x` the isomorphism with the
+constant system takes its value at any point of the fibre
+(`IsCoveringMap.signLocalSystemIsoOfTwoEqZero_hom_app_apply`). -/
+def signLocalSystemIsoOfTwoEqZero :
+    hp.signLocalSystem R σ hσ ≅
+      (TauCeti.LocalCoefficientSystem.constantFunctor X).obj (ModuleCat.of R (ULift.{w} R)) :=
+  NatIso.ofComponents
+    (fun x ↦ (hp.signLocalSystemObjEquiv σ hσ x ≪≫ₗ
+      TauCeti.signFiberEquiv hfix hfib ⟨(hsurj x.as).choose, (hsurj x.as).choose_spec⟩ ≪≫ₗ
+      ULift.moduleEquiv.symm).toModuleIso)
+    -- Both sides evaluate `f` at a point of the fibre over `x`, by definition of the transport
+    -- and of `TauCeti.signFiberEquiv`, and `f` is constant on that fibre.
+    fun {x y} γ ↦ ModuleCat.hom_ext <| LinearMap.ext fun f ↦ ULift.ext <| by
+      exact TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero hfib h2 f.property
+        ⟨(hsurj x.as).choose, (hsurj x.as).choose_spec⟩
+        (hp.monodromy (inv γ) ⟨(hsurj y.as).choose, (hsurj y.as).choose_spec⟩)
+
+-- Not `simp`: the point `e` of the fibre appears only on the right-hand side.
+/-- The trivialization of the sign local system in characteristic two evaluates at any point `e`
+of the fibre over `x`. -/
+theorem signLocalSystemIsoOfTwoEqZero_hom_app_apply (x : FundamentalGroupoid X)
+    (f : (hp.signLocalSystem R σ hσ).obj x) (e : p ⁻¹' {x.as}) :
+    (ModuleCat.Hom.hom (B := ModuleCat.of R (ULift.{w} R))
+        ((hp.signLocalSystemIsoOfTwoEqZero hfix hfib hsurj h2).hom.app x)) f =
+      ULift.up ((hp.signLocalSystemObjEquiv σ hσ x f : p ⁻¹' {x.as} → R) e) :=
+  congrArg ULift.up (TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero hfib h2 f.property e _)
+
+/-- The inverse of the trivialization of the sign local system in characteristic two sends `r` to
+the constant function with value `r` on the fibre over `x`. -/
+@[simp]
+theorem signLocalSystemIsoOfTwoEqZero_inv_app_apply (x : FundamentalGroupoid X) (r : R)
+    (e : p ⁻¹' {x.as}) :
+    (hp.signLocalSystemObjEquiv σ hσ x
+        (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{w} R))
+          ((hp.signLocalSystemIsoOfTwoEqZero hfix hfib hsurj h2).inv.app x) (ULift.up r)) :
+        p ⁻¹' {x.as} → R) e = r :=
+  (TauCeti.apply_eq_of_mem_signFiber_of_two_eq_zero hfib h2 (Subtype.property _) _ e).trans
+    (TauCeti.signFiberEquiv_symm_apply_self hfix hfib _ r)
 
 end DoubleCover
 

@@ -10,6 +10,8 @@ public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Topology.Homotopy.Path
 
@@ -51,6 +53,8 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
   loop at any point of the path component of its base point.
 * `Path.joined_toCircle_iff_isConj`: two loops at `x` are joined in `C(S¹, X)` exactly when their
   classes are conjugate in `π₁(X, x)`.
+* `TauCeti.apply_fromPath_eq_of_joined_toCircle`: a family of characters of the fundamental groups
+  invariant under change of base point takes equal values on freely homotopic loops.
 * `TauCeti.freeLoopComponentOfConjClass`: the injective map `ConjClasses π₁(X, x) → π₀(C(S¹, X))`,
   whose range is the set of components of free loops based in the path component of `x`.
 * `TauCeti.conjClassesEquivFreeLoopComponents`: `ConjClasses π₁(X, x) ≃ π₀(C(S¹, X))` for
@@ -58,6 +62,12 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
 * `TauCeti.freeLoopComponentsEquivSigma`: `π₀(C(S¹, X)) ≃ Σ c, ConjClasses π₁(X, b_c)`.
 * `TauCeti.MooreFreeLoopSpace.conjClassesEquivZerothHomotopy`,
   `TauCeti.MooreFreeLoopSpace.zerothHomotopyEquivSigma`: the same on the Moore free loop space.
+* `TauCeti.MooreFreeLoopSpace.apply_fundamentalGroupHom_toMooreLoop_eq_of_joined`: a family of
+  characters invariant under change of base point is constant on the path components of the
+  Moore free loop space.
+* `TauCeti.MooreFreeLoopSpace.signExponent`: for a family of characters with values in `ℤˣ`, the
+  exponent `0` or `-1` of a free Moore loop, constant on path components
+  (`TauCeti.MooreFreeLoopSpace.signExponent_eq_of_joined`).
 
 ## References
 
@@ -140,6 +150,36 @@ theorem joined_toCircle_trans_trans_symm_toBasedLoop (f : C(Circle, X)) (χ : Pa
 end ContinuousMap
 
 namespace TauCeti
+
+/-- **Characters invariant under change of base point are free homotopy invariants.** Let `χ` be
+a family of homomorphisms from the fundamental groups of `X` to a commutative monoid, unchanged by
+transport along paths. If two loops `ℓ₀` at `x` and `ℓ₁` at `y` are joined in the free loop space
+`C(S¹, X)`, then `χ x` and `χ y` agree on their classes: after transport along the track of the
+base point the loops are conjugate, and a homomorphism to a commutative monoid is constant on
+conjugacy classes. -/
+theorem apply_fromPath_eq_of_joined_toCircle {G : Type*} [CommMonoid G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G)
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {x y : X} {ℓ₀ : Path x x} {ℓ₁ : Path y y} (h : Joined ℓ₀.toCircle ℓ₁.toCircle) :
+    χ x (.fromPath (Path.Homotopic.Quotient.mk ℓ₀)) =
+      χ y (.fromPath (Path.Homotopic.Quotient.mk ℓ₁)) := by
+  -- the track of the base point joins `x` to `y`
+  obtain ⟨δ⟩ : Joined x y := by
+    simpa only [ContinuousMap.eval_apply, Path.toCircle_one] using
+      h.map (continuous_eval_const (1 : Circle))
+  -- `ℓ₀` is conjugate to the loop `δ · ℓ₁ · δ⁻¹` at `x`
+  have hconj := Path.joined_toCircle_iff_isConj.1
+    (h.trans (Path.joined_toCircle_trans_trans_symm δ ℓ₁).symm)
+  rw [isConj_iff_eq.1 ((χ x).map_isConj hconj), ← hχ δ.symm]
+  congr 1
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  have hq : Path.Homotopic.Quotient.mk ((δ.trans ℓ₁).trans δ.symm) =
+      (Path.Homotopic.Quotient.mk δ.symm).symm.trans
+        ((Path.Homotopic.Quotient.mk ℓ₁).trans (Path.Homotopic.Quotient.mk δ.symm)) := by
+    rw [← Path.Homotopic.Quotient.mk_symm, Path.symm_symm, Path.Homotopic.Quotient.mk_trans,
+      Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
+  exact congrArg FundamentalGroup.fromPath hq
 
 variable {x : X}
 
@@ -300,6 +340,68 @@ def zerothHomotopyEquivSigma (B : PathComponentBasepoints X) :
 theorem zerothHomotopyEquivSigma_mk (B : PathComponentBasepoints X) (γ : MooreFreeLoopSpace X) :
     zerothHomotopyEquivSigma B (.mk γ) = freeLoopComponentsEquivSigma B (.mk (toCircleMap γ)) := by
   simp [zerothHomotopyEquivSigma]
+
+/-! ### Characters of free Moore loops -/
+
+/-- **Characters invariant under change of base point are constant on the path components of the
+Moore free loop space.** Let `χ` be a family of homomorphisms from the fundamental groups of `X` to
+a commutative group, unchanged by transport along paths. Joined free Moore loops `γ` and `γ'`,
+each read as a loop at its own base point, have the same value under `χ`. -/
+theorem apply_fundamentalGroupHom_toMooreLoop_eq_of_joined {G : Type*} [CommGroup G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G)
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {γ γ' : MooreFreeLoopSpace X} (h : Joined γ γ') :
+    χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) =
+      χ γ'.basepoint (MooreLoopSpace.fundamentalGroupHom γ'.basepoint γ'.toMooreLoop) := by
+  have h' := h.map (toCircleMap (X := X)).continuous
+  rw [toCircleMap_eq_toCircle, toCircleMap_eq_toCircle] at h'
+  rw [MooreLoopSpace.fundamentalGroupHom_apply, MooreLoopSpace.fundamentalGroupHom_apply, map_inv,
+    map_inv, apply_fromPath_eq_of_joined_toCircle χ hχ h']
+
+variable (χ : ∀ x : X, FundamentalGroup X x →* ℤˣ)
+
+/-- The **sign exponent** `w(γ)` of a free Moore loop `γ` for a family `χ` of characters of the
+fundamental groups with values in `ℤˣ`: `0` when `χ` at the base point of `γ` takes the value `1`
+on `γ`, read as a loop there, and `-1` otherwise. It is the exponent `w` of the twists
+`ev₀^*(o⁻¹) ⊗ ev₀^*(o^{-w})` on the free loop space of Barraud–Damian–Humilière–Oancea (§4.1),
+where `o` is the rank-one local system with monodromy `χ`. -/
+def signExponent (γ : MooreFreeLoopSpace X) : ℤ :=
+  if χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1 then 0
+  else -1
+
+/-- The sign exponent of a free loop is `0` exactly when `χ` takes the value `1` on it. -/
+@[simp]
+theorem signExponent_eq_zero_iff (γ : MooreFreeLoopSpace X) :
+    signExponent χ γ = 0 ↔
+      χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1 := by
+  rw [signExponent]
+  split_ifs with h
+  · exact iff_of_true rfl h
+  · exact iff_of_false (by decide) h
+
+/-- The sign exponent of a free loop is `-1` exactly when `χ` takes the value `-1` on it. -/
+@[simp]
+theorem signExponent_eq_neg_one_iff (γ : MooreFreeLoopSpace X) :
+    signExponent χ γ = -1 ↔
+      χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = -1 := by
+  rcases Int.units_eq_one_or
+    (χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop)) with h | h <;>
+    rw [signExponent, h] <;> decide
+
+variable {χ} in
+/-- For a family of characters invariant under change of base point, the sign exponent is
+constant on the path components of the Moore free loop space. -/
+theorem signExponent_eq_of_joined
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {γ γ' : MooreFreeLoopSpace X} (h : Joined γ γ') : signExponent χ γ = signExponent χ γ' := by
+  rw [signExponent, signExponent, apply_fundamentalGroupHom_toMooreLoop_eq_of_joined χ hχ h]
+
+/-- Constant loops have sign exponent `0`. -/
+@[simp]
+theorem signExponent_const (x : X) : signExponent χ (const x) = 0 := by
+  rw [signExponent_eq_zero_iff, toMooreLoop_const, map_one, map_one]
 
 end MooreFreeLoopSpace
 
