@@ -161,36 +161,12 @@ private theorem frobeniusLift_X (s : S) (n : ℕ) :
     frobeniusLift p S (X s n) = X s n ^ p + (p : FreeDeltaRing p S) * X s (n + 1) := by
   simp [frobeniusLift]
 
-/-- The endomorphism `x_{s,n} ↦ x_{s,n} ^ p + p * x_{s,n+1}` lifts Frobenius modulo `p`: the
-elements `x` with `p ∣ φ x - x ^ p` form a subring containing the generators. -/
+/-- The endomorphism `x_{s,n} ↦ x_{s,n} ^ p + p * x_{s,n+1}` lifts Frobenius modulo `p`, as it
+does on the generators. -/
 private theorem isFrobeniusLift_frobeniusLift : IsFrobeniusLift p (frobeniusLift p S) := by
-  refine ⟨fun x => ?_⟩
-  induction (closure_range_X p S ▸ Subring.mem_top x : x ∈ Subring.closure _)
-    using Subring.closure_induction with
-  | mem x hx =>
-    obtain ⟨⟨s, n⟩, rfl⟩ := hx
-    exact ⟨X s (n + 1), by rw [frobeniusLift_X]; ring⟩
-  | zero => simp [zero_pow hp.out.ne_zero]
-  | one => simp
-  | add x y _ _ hx hy =>
-    obtain ⟨a, ha⟩ := hx
-    obtain ⟨b, hb⟩ := hy
-    refine ⟨a + b + addCorrection p x y, ?_⟩
-    rw [map_add]
-    linear_combination ha + hb - natCast_mul_addCorrection (p := p) x y
-  | neg x _ hx =>
-    obtain ⟨a, ha⟩ := hx
-    refine ⟨-a - addCorrection p x (-x), ?_⟩
-    have h0 := natCast_mul_addCorrection (p := p) x (-x)
-    rw [add_neg_cancel, zero_pow hp.out.ne_zero, sub_zero] at h0
-    rw [map_neg]
-    linear_combination -ha + h0
-  | mul x y _ _ hx hy =>
-    obtain ⟨a, ha⟩ := hx
-    obtain ⟨b, hb⟩ := hy
-    refine ⟨a * frobeniusLift p S y + x ^ p * b, ?_⟩
-    rw [map_mul]
-    linear_combination frobeniusLift p S y * ha + x ^ p * hb
+  refine isFrobeniusLift_of_closure_eq_top (closure_range_X p S) _ ?_
+  rintro _ ⟨⟨s, n⟩, rfl⟩
+  exact ⟨X s (n + 1), by rw [frobeniusLift_X]; ring⟩
 
 variable (p S) in
 /-- The `δ`-structure of the Frobenius lift `frobeniusLift`, on which `instDeltaRing` is built. -/
