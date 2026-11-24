@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.QuotSMulTop
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
@@ -60,6 +61,10 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   to the identification of `(x) • ⊤` with `x • ⊤`.
 * `Ideal.mapQSMulTop_span_singleton_injective`: reduction modulo `(x)` preserves injectivity of the
   first map of a short exact sequence whose last term is `x`-regular.
+* `QuotSMulTop.mem_annihilator_range_map` and `QuotSMulTop.mem_annihilator_ker_map`: if `b` kills
+  the cokernel of `f`, it kills the cokernel of its reduction modulo `x`, and also the kernel when
+  `f` is injective. So an inclusion of lattices of index dividing `p ^ B` induces maps on the
+  reductions modulo `p ^ n` whose kernel and cokernel are killed by `p ^ B`.
 * `QuotSMulTop.ker_mapQ_mkQ` and `QuotSMulTop.mapQ_mkQ_surjective`: for an ideal `I` and `y : R`,
   the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective with kernel `y (N ⧸ I N)`, so that
   quotienting by `I` and by `y` may be done in either order.
@@ -70,6 +75,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   depends only on its class modulo `I`, up to multiplication by units.
 * `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: a scalar that is a unit modulo `I` is
   regular on `M ⧸ I • M`.
+* `Ideal.isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton`: if `a ∈ I ⊔ (b)` is regular
+  on `M ⧸ I • M`, then so is `b`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -202,6 +209,35 @@ theorem map_comp_quotEquivOfEq (x : R) (f : M →ₗ[R] N) :
       (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toLinearMap ∘ₗ
         ((Ideal.span {x}).mapQSMulTop f).restrictScalars R :=
   Submodule.linearMap_qext _ rfl
+
+/-- If `b` kills the cokernel of `f`, it kills the cokernel of the reduction of `f` modulo `x`. -/
+theorem mem_annihilator_range_map (x : R) {f : M →ₗ[R] N} {b : R}
+    (hb : b ∈ Module.annihilator R (N ⧸ LinearMap.range f)) :
+    b ∈ Module.annihilator R (QuotSMulTop x N ⧸ LinearMap.range (map x f)) := by
+  rw [Submodule.annihilator_quotient, Submodule.mem_colon] at hb ⊢
+  intro y _
+  induction y using Submodule.Quotient.induction_on with | H y => ?_
+  obtain ⟨m, hm⟩ := hb y trivial
+  exact ⟨Submodule.Quotient.mk m, by rw [map_apply_mk, hm, Submodule.Quotient.mk_smul]⟩
+
+/-- If `f` is injective and `b` kills its cokernel, then `b` kills the kernel of the reduction of
+`f` modulo `x`. The kernel need not vanish: the inclusion `2ℤ → ℤ` has cokernel killed by `2`,
+while modulo `2` it induces the zero map `ℤ/2 → ℤ/2`. -/
+theorem mem_annihilator_ker_map (x : R) {f : M →ₗ[R] N} {b : R} (hf : Injective f)
+    (hb : b ∈ Module.annihilator R (N ⧸ LinearMap.range f)) :
+    b ∈ Module.annihilator R (LinearMap.ker (map x f)) := by
+  rw [Submodule.annihilator_quotient, Submodule.mem_colon] at hb
+  refine Module.mem_annihilator.mpr fun ⟨z, hz⟩ ↦ Subtype.ext ?_
+  induction z using Submodule.Quotient.induction_on with | H z => ?_
+  rw [LinearMap.mem_ker, map_apply_mk, Submodule.Quotient.mk_eq_zero,
+    Submodule.mem_smul_pointwise_iff_exists] at hz
+  obtain ⟨y, -, hy⟩ := hz
+  obtain ⟨m, hm⟩ := hb y trivial
+  -- `f (b • z) = b • x • y = x • f m = f (x • m)`, so `b • z = x • m` lies in `x • M`.
+  have hbz : b • z = x • m := hf (by rw [map_smul, map_smul, ← hy, hm, smul_comm])
+  simp only [SetLike.mk_smul_mk, ← Submodule.Quotient.mk_smul, Submodule.coe_zero]
+  rw [hbz, Submodule.Quotient.mk_eq_zero]
+  exact Submodule.smul_mem_pointwise_smul m x ⊤ trivial
 
 end QuotSMulTop
 
@@ -387,6 +423,15 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+/-- If `a ∈ I ⊔ (b)` and `a` is regular on `M ⧸ I • M`, then so is `b`. -/
+theorem isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton (I : Ideal R) {a b : R}
+    (hab : a ∈ I ⊔ Ideal.span {b}) (ha : IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  obtain ⟨i, hi, c, hc, rfl⟩ := Submodule.mem_sup.mp hab
+  obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton'.mp hc
+  -- `i + y b` acts on `M ⧸ I • M` as `y b`
+  exact ((I.isSMulRegular_quotient_smul_top_congr (b := y * b) (by simpa using hi)).mp ha).of_mul
 
 /-- A scalar that is a unit modulo `I` is regular on `M ⧸ I • M`. -/
 theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {a : R}

@@ -68,7 +68,7 @@ theorem exists_finset_forall_exists_binaryNormForm_mem {d : ℤ} (hd : d ≠ 0) 
   refine ⟨S, fun {V} _ _ L h2 hdet ↦ ?_⟩
   let b := Module.finBasisOfFinrankEq ℤ L h2
   obtain ⟨γ, hγ⟩ := hS (L.binaryNormForm b) (by rw [discrim_binaryNormForm, hdet])
-  obtain ⟨b', hb'⟩ := L.exists_binaryNormForm_eq_smul b γ
+  obtain ⟨b', -, hb'⟩ := L.exists_binaryNormForm_eq_smul b γ
   exact ⟨b', hb' ▸ hγ⟩
 
 /-- **There are finitely many classes of rank-two lattices of a given nonzero determinant.** A

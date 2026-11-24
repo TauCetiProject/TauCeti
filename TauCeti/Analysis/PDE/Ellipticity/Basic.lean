@@ -45,6 +45,8 @@ constants are parameters, not hidden existential data.
 
 * `TauCeti.PDE.UniformlyEllipticOn`: uniform lower and upper ellipticity bounds on a set.
 * `TauCeti.PDE.uniformlyEllipticOn_const_one`: the identity matrix is uniformly elliptic.
+* `TauCeti.PDE.le_of_mul_norm_sq_le_toQuadraticForm'_le`: two-sided bounds
+  `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` force `λ ≤ Λ`.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_constants`: weakening constants preserves the
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
@@ -69,6 +71,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.holderOnWith_matrixBilinearForm_of_forall` and
   `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_of_contDiffOn`: Hölder entries give Hölder
   bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
+* `TauCeti.PDE.lipschitzWith_matrixBilinearForm_of_forall`: Lipschitz entries give Lipschitz
+  bilinear forms.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.lipschitzOnWith_inv_matrixBilinearForm_self` and
@@ -502,6 +506,13 @@ lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
   rw [Matrix.toQuadraticForm'_apply, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+
+/-- Two-sided bounds `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` on the quadratic form of a square matrix over a
+nonempty index type force `λ ≤ Λ`. -/
+theorem le_of_mul_norm_sq_le_toQuadraticForm'_le [Nonempty n] {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ n, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : lam ≤ Lam := by
+  simpa using (hA (EuclideanSpace.single (Classical.arbitrary n) 1)).trans (hA' _)
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
@@ -1266,6 +1277,24 @@ theorem holderOnWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (ha i j).dist_le hx hy
 
+/-- **Lipschitz entries give a Lipschitz bilinear form.** If every entry of a coefficient field `a`
+is Lipschitz with constant `L i j`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is Lipschitz in the operator
+norm, with constant `∑ᵢⱼ L i j`. -/
+theorem lipschitzWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace X]
+    {a : X → Matrix n n ℝ} {L : n → n → ℝ≥0}
+    (ha : ∀ i j, LipschitzWith (L i j) fun x => a x i j) :
+    LipschitzWith (∑ i, ∑ j, L i j) fun x => matrixBilinearForm (a x) := by
+  refine LipschitzWith.of_dist_le_mul fun y z => ?_
+  rw [dist_eq_norm, ← matrixBilinearForm_sub]
+  refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [Matrix.sub_apply, ← Real.dist_eq]
+  exact (ha i j).dist_le_mul y z
+
 /-- **`C¹` coefficient fields have Hölder bilinear forms on compact sets.** If the entries of `a`
 are continuously differentiable on an open set `s`, then on every compact `S ⊆ s` the map
 `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is `α`-Hölder in the operator norm for every `α ≤ 1`. -/
@@ -1340,20 +1369,8 @@ theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSp
     ext i j
     exact (hgS i j hx).symm
   -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
-  have hLbar : LipschitzWith (∑ i : n, ∑ j : n, K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊)
-      (fun x => matrixBilinearForm (Matrix.of fun i j => g i j x)) := by
-    refine LipschitzWith.of_dist_le_mul fun y z => ?_
-    rw [dist_eq_norm, ← matrixBilinearForm_sub]
-    refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
-    push_cast
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun i _ => ?_
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun j _ => ?_
-    rw [Matrix.sub_apply, ← Real.dist_eq]
-    exact (hgL i j).dist_le_mul y z
-  exact ⟨_, _, habar, hLbar⟩
+  exact ⟨_, _, habar, lipschitzWith_matrixBilinearForm_of_forall (a := fun x => Matrix.of
+    fun i j => g i j x) hgL⟩
 
 /-- The conormal component of a gradient, for a possibly variable coefficient field, is
 supported where the function is. -/

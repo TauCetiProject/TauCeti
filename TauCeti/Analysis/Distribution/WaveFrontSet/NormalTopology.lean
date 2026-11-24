@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
+import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 
 /-!
 # Distributions with wave front set in a cone and their normal topology
@@ -185,81 +186,44 @@ theorem range_toDistribution :
 
 section Seminorm
 
-/-- The admissible constants in the decay estimate of `T (φ e_η)` on `V` of order `N`. -/
-private def bounds (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) : Set ℝ :=
-  {C | 0 ≤ C ∧ ∀ η ∈ i.cone, (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ ≤ C}
-
-private theorem bounds_nonempty (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) :
-    (bounds i u).Nonempty :=
-  let ⟨C, hC0, hC⟩ := exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
-    i.isClosed_cone i.smul_mem_cone (i.disjoint.mono_right u.waveFrontSet_toDistribution_subset)
-    i.order
-  ⟨C, hC0, hC⟩
-
-/-- The best constant in the decay estimate of `T (φ e_η)` on `V` of order `N`. -/
-private def seminormAux (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) : ℝ :=
-  sInf (bounds i u)
-
-private theorem seminormAux_nonneg (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) :
-    0 ≤ seminormAux i u :=
-  le_csInf (bounds_nonempty i u) fun _ hC ↦ hC.1
-
-private theorem le_seminormAux (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) {η : E}
-    (hη : η ∈ i.cone) :
-    (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ ≤ seminormAux i u :=
-  le_csInf (bounds_nonempty i u) fun _ hC ↦ hC.2 η hη
-
-private theorem seminormAux_le_bound (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ)
-    {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ η ∈ i.cone, (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ ≤ C) :
-    seminormAux i u ≤ C :=
-  csInf_le ⟨0, fun _ hC ↦ hC.1⟩ ⟨hC, h⟩
-
-private theorem seminormAux_zero (i : WaveFrontSeminormIndex Ω Γ) :
-    seminormAux i (0 : WaveFrontSpace Ω Γ) = 0 :=
-  le_antisymm (seminormAux_le_bound i 0 le_rfl fun η _ ↦ by simp) (seminormAux_nonneg i 0)
-
-private theorem seminormAux_add_le (i : WaveFrontSeminormIndex Ω Γ) (u v : WaveFrontSpace Ω Γ) :
-    seminormAux i (u + v) ≤ seminormAux i u + seminormAux i v :=
-  seminormAux_le_bound i _ (add_nonneg (seminormAux_nonneg i u) (seminormAux_nonneg i v))
-    fun η hη ↦ by
-      rw [map_add, localFourier_add]
-      calc (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η +
-            v.toDistribution.localFourier i.cutoff η‖
-          ≤ (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ +
-              (1 + ‖η‖) ^ i.order * ‖v.toDistribution.localFourier i.cutoff η‖ := by
-            rw [← mul_add]
-            gcongr
-            exact norm_add_le _ _
-        _ ≤ seminormAux i u + seminormAux i v :=
-            add_le_add (le_seminormAux i u hη) (le_seminormAux i v hη)
-
-private theorem seminormAux_smul_le (i : WaveFrontSeminormIndex Ω Γ) (c : ℂ)
-    (u : WaveFrontSpace Ω Γ) : seminormAux i (c • u) ≤ ‖c‖ * seminormAux i u :=
-  seminormAux_le_bound i _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg i u)) fun η hη ↦ by
-    rw [map_smul, localFourier_smul, norm_mul, mul_left_comm]
-    exact mul_le_mul_of_nonneg_left (le_seminormAux i u hη) (norm_nonneg c)
+/-- The localized Fourier transform `T ↦ T (φ e_η)` at a frequency `η ∈ V`, as a linear map. -/
+private def localFourierLinearMap (i : WaveFrontSeminormIndex Ω Γ) (η : i.cone) :
+    WaveFrontSpace Ω Γ →ₗ[ℂ] ℂ where
+  toFun u := u.toDistribution.localFourier i.cutoff η
+  map_add' u v := by simp
+  map_smul' c u := by simp
 
 /-- The seminorm `‖T‖_{φ,V,N} = sup_{η ∈ V} (1 + ‖η‖)^N |T (φ e_η)|` of the normal topology on
 `𝓓'_Γ(Ω)`, for the data `i = (φ, V, N)`: the best constant `C` in the decay estimate
 `(1 + ‖η‖)^N ‖T (φ e_η)‖ ≤ C` for `η ∈ V`. -/
 protected def seminorm (i : WaveFrontSeminormIndex Ω Γ) : Seminorm ℂ (WaveFrontSpace Ω Γ) :=
-  Seminorm.ofSMulLE (seminormAux i) (seminormAux_zero i) (seminormAux_add_le i)
-    (seminormAux_smul_le i)
+  Seminorm.weightedSup (localFourierLinearMap i) (fun η => ((1 + ‖(η : E)‖) ^ i.order)⁻¹)
+    fun _ => by positivity
+
+/-- Every element of `𝓓'_Γ(Ω)` satisfies the decay estimates defining
+`WaveFrontSpace.seminorm i`. -/
+private theorem exists_bound_localFourierLinearMap (i : WaveFrontSeminormIndex Ω Γ)
+    (u : WaveFrontSpace Ω Γ) :
+    ∃ C, ∀ η : i.cone, ‖localFourierLinearMap i η u‖ ≤ C * ((1 + ‖(η : E)‖) ^ i.order)⁻¹ :=
+  let ⟨C, _, hC⟩ := exists_forall_one_add_norm_pow_mul_norm_localFourier_le_of_disjoint
+    i.isClosed_cone i.smul_mem_cone (i.disjoint.mono_right u.waveFrontSet_toDistribution_subset)
+    i.order
+  ⟨C, fun η => (le_mul_inv_iff₀' (by positivity)).2 (hC η η.property)⟩
 
 /-- The seminorm `‖T‖_{φ,V,N}` bounds `(1 + ‖η‖)^N ‖T (φ e_η)‖` for `η ∈ V`. -/
 theorem le_seminorm (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) {η : E}
     (hη : η ∈ i.cone) :
     (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ ≤
       WaveFrontSpace.seminorm i u :=
-  le_seminormAux i u hη
+  (le_mul_inv_iff₀' (by positivity)).1 <| Seminorm.norm_le_weightedSup (localFourierLinearMap i)
+    _ _ (exists_bound_localFourierLinearMap i) u ⟨η, hη⟩
 
 /-- A constant in the decay estimate bounds the seminorm `‖T‖_{φ,V,N}`. -/
 theorem seminorm_le_bound (i : WaveFrontSeminormIndex Ω Γ) (u : WaveFrontSpace Ω Γ) {C : ℝ}
     (hC : 0 ≤ C)
     (h : ∀ η ∈ i.cone, (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier i.cutoff η‖ ≤ C) :
     WaveFrontSpace.seminorm i u ≤ C :=
-  seminormAux_le_bound i u hC h
+  Seminorm.weightedSup_le _ _ _ hC fun η => (le_mul_inv_iff₀' (by positivity)).2 (h η η.property)
 
 /-- The seminorm `‖T‖_{φ,V,N}` is at most `C ≥ 0` exactly when `C` is a constant in the decay
 estimate `(1 + ‖η‖)^N ‖T (φ e_η)‖ ≤ C` for `η ∈ V`. -/
