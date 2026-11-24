@@ -221,7 +221,6 @@ instance : (forget₂ (FilteredFrobeniusModule.{v} σ ϖ) (ModuleCat.{v} W)).Fai
 
 /-- A linear equivalence carrying each filtration step onto the corresponding step and
 commuting with the divided Frobenius maps is an isomorphism of filtered Frobenius modules. -/
-@[expose]
 def isoMk (e : M ≃ₗ[W] N) (he : ∀ i, (M.fil i).map e.toLinearMap = N.fil i)
     (hphi : ∀ i (x : M) (hx : x ∈ M.fil i),
       e (M.phi i ⟨x, hx⟩) = N.phi i ⟨e x, he i ▸ Submodule.mem_map_of_mem hx⟩) :
@@ -296,7 +295,6 @@ theorem Hom.hom_mem_homAddSubgroup (f : M ⟶ N) : f.hom ∈ homAddSubgroup M N 
   fun i x hx => ⟨f.map_fil i hx, f.hom_phi i x hx⟩
 
 /-- The morphism with a given underlying linear map in `homAddSubgroup M N`. -/
-@[expose]
 def homOfMem {g : M →ₗ[W] N} (hg : g ∈ homAddSubgroup M N) : M ⟶ N :=
   ⟨g, fun i _ hx => (mem_homAddSubgroup.1 hg i _ hx).1,
     fun i x hx => (mem_homAddSubgroup.1 hg i x hx).2⟩
@@ -332,14 +330,15 @@ instance : SMul ℤ (M ⟶ N) := ⟨fun n f => homOfMem (zsmul_mem f.hom_mem_hom
 @[simp] theorem hom_zsmul (n : ℤ) (f : M ⟶ N) : (n • f).hom = n • f.hom := (rfl)
 
 instance : AddCommGroup (M ⟶ N) :=
-  Function.Injective.addCommGroup Hom.hom hom_injective rfl (fun _ _ => rfl) (fun _ => rfl)
-    (fun _ _ => rfl) (fun _ _ => rfl) (fun _ _ => rfl)
+  Function.Injective.addCommGroup Hom.hom hom_injective hom_zero hom_add hom_neg hom_sub
+    (fun f n => hom_nsmul n f) (fun f n => hom_zsmul n f)
 
 instance : Preadditive (FilteredFrobeniusModule.{v} σ ϖ) where
-  add_comp _ _ _ _ _ _ := hom_ext (LinearMap.comp_add _ _ _)
-  comp_add _ _ _ _ _ _ := hom_ext (LinearMap.add_comp _ _ _)
+  add_comp _ _ _ _ _ _ := hom_ext (by simp [LinearMap.comp_add])
+  comp_add _ _ _ _ _ _ := hom_ext (by simp [LinearMap.add_comp])
 
 instance : (forget₂ (FilteredFrobeniusModule.{v} σ ϖ) (ModuleCat.{v} W)).Additive where
+  map_add := ModuleCat.hom_ext (by simp)
 
 /-! ### Filtration support -/
 

@@ -190,6 +190,10 @@ def concentratedHomEquiv :
 theorem concentratedHomEquiv_apply_coe (f : concentrated ϖ ψ j ⟶ concentrated ϖ ψ' j) :
     (concentratedHomEquiv ψ ψ' j f : V →ₗ[W] V') = f.hom := (rfl)
 
+@[simp]
+theorem concentratedHomEquiv_symm_apply_hom (f : {f : V →ₗ[W] V' // ∀ x, f (ψ x) = ψ' (f x)}) :
+    ((concentratedHomEquiv (ϖ := ϖ) ψ ψ' j).symm f).hom = f.val := (rfl)
+
 /-- Twisting an object with a single jump `j` by `k` gives the object with the single jump
 `j + k`. -/
 def concentratedTwistIso (k : ℤ) :
@@ -201,10 +205,10 @@ def concentratedTwistIso (k : ℤ) :
 
 @[simp]
 theorem concentratedTwistIso_hom_hom (k : ℤ) :
-    (concentratedTwistIso (ϖ := ϖ) ψ j k).hom.hom = LinearMap.id := (rfl)
+    (concentratedTwistIso (ϖ := ϖ) ψ j k).hom.hom = LinearMap.id := isoMk_hom_hom _ _ _
 
 @[simp]
 theorem concentratedTwistIso_inv_hom (k : ℤ) :
-    (concentratedTwistIso (ϖ := ϖ) ψ j k).inv.hom = LinearMap.id := (rfl)
+    (concentratedTwistIso (ϖ := ϖ) ψ j k).inv.hom = LinearMap.id := isoMk_inv_hom _ _ _
 
 end TauCeti.FilteredFrobeniusModule

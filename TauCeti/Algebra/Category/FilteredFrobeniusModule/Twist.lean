@@ -115,25 +115,33 @@ def twistTwistIso : (M.twist j).twist k ≅ M.twist (j + k) :=
     fun _ _ _ => M.phi_congr (by ring) _ _
 
 @[simp]
-theorem twistZeroIso_hom_hom : (M.twistZeroIso).hom.hom = LinearMap.id := (rfl)
+theorem twistZeroIso_hom_hom : (M.twistZeroIso).hom.hom = LinearMap.id :=
+  isoMk_hom_hom _ _ _
 
 @[simp]
-theorem twistZeroIso_inv_hom : (M.twistZeroIso).inv.hom = LinearMap.id := (rfl)
+theorem twistZeroIso_inv_hom : (M.twistZeroIso).inv.hom = LinearMap.id :=
+  isoMk_inv_hom _ _ _
 
 @[simp]
-theorem twistTwistIso_hom_hom : (M.twistTwistIso j k).hom.hom = LinearMap.id := (rfl)
+theorem twistTwistIso_hom_hom : (M.twistTwistIso j k).hom.hom = LinearMap.id :=
+  isoMk_hom_hom _ _ _
 
 @[simp]
-theorem twistTwistIso_inv_hom : (M.twistTwistIso j k).inv.hom = LinearMap.id := (rfl)
+theorem twistTwistIso_inv_hom : (M.twistTwistIso j k).inv.hom = LinearMap.id :=
+  isoMk_inv_hom _ _ _
 
 /-- The twist by `0` is naturally isomorphic to the identity functor. -/
 def twistFunctorZeroIso : twistFunctor (σ := σ) (ϖ := ϖ) 0 ≅ 𝟭 _ :=
-  NatIso.ofComponents twistZeroIso fun _ => rfl
+  -- The twisted and untwisted modules share their underlying module, so after `simp` both sides
+  -- are `LinearMap.id ∘ₗ f.hom` and `f.hom ∘ₗ LinearMap.id` at different types: equal by `rfl`.
+  NatIso.ofComponents twistZeroIso fun _ => hom_ext (by simp; rfl)
 
 /-- Twisting by `j` and then by `k` is naturally isomorphic to twisting by `j + k`. -/
 def twistFunctorAddIso :
     twistFunctor (σ := σ) (ϖ := ϖ) j ⋙ twistFunctor k ≅ twistFunctor (j + k) :=
-  NatIso.ofComponents (fun M => M.twistTwistIso j k) fun _ => rfl
+  -- The twisted and untwisted modules share their underlying module, so after `simp` both sides
+  -- are `LinearMap.id ∘ₗ f.hom` and `f.hom ∘ₗ LinearMap.id` at different types: equal by `rfl`.
+  NatIso.ofComponents (fun M => M.twistTwistIso j k) fun _ => hom_ext (by simp; rfl)
 
 instance : (twistFunctor (σ := σ) (ϖ := ϖ) j).Faithful where
   map_injective {M N} _ _ h := hom_ext (congrArg (fun f : M.twist j ⟶ N.twist j => f.hom) h)
