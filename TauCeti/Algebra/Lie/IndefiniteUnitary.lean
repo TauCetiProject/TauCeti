@@ -44,8 +44,9 @@ multiplication by `i` (`LinearMap.trace_eq_zero_of_map_I_smul_eq_neg`). This fol
 computation of `LieAlgebra.Symplectic.killingForm_apply` in
 `TauCeti/Algebra/Lie/Symplectic/Killing.lean`.
 
-Brackets in `𝔲(p, q)` are trace-free, so the Killing form of `𝔰𝔲(p, q)` is the restriction of
-that of `𝔲(p, q)` (`LieSubalgebra.killingForm_inclusion_eq`):
+Brackets in `𝔲(p, q)` are trace-free (`TauCeti.lie_mem_specialIndefiniteUnitaryLieAlgebra`), so
+the Killing form of `𝔰𝔲(p, q)` is the restriction of that of `𝔲(p, q)`
+(`LieSubalgebra.killingForm_inclusion_eq`):
 
 `κ(X, Y) = 2 n Re trace (X * Y)`.
 
@@ -100,10 +101,16 @@ def indefiniteUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix (p ⊕ q) (p ⊕ q) 
       Matrix.mul_smul] at *
     rw [hX, smul_neg]
   lie_mem' {X Y} hX hY := by
-    simp only [Set.mem_ofPred_eq, Ring.lie_def, conjTranspose_sub, conjTranspose_mul] at *
-    rw [Matrix.sub_mul, Matrix.mul_assoc, Matrix.mul_assoc, hX, hY, Matrix.mul_neg,
-      Matrix.mul_neg, ← Matrix.mul_assoc, ← Matrix.mul_assoc, hX, hY]
-    simp only [Matrix.neg_mul, Matrix.mul_sub, Matrix.mul_assoc]
+    simp only [Set.mem_ofPred_eq] at hX hY ⊢
+    -- `hX` and `hY` with a right factor, to rewrite right-associated products.
+    have hX' (A : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
+        Xᴴ * (indefiniteDiagonal p q ℂ * A) = -(indefiniteDiagonal p q ℂ * (X * A)) := by
+      rw [← Matrix.mul_assoc, hX, Matrix.neg_mul, Matrix.mul_assoc]
+    have hY' (A : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
+        Yᴴ * (indefiniteDiagonal p q ℂ * A) = -(indefiniteDiagonal p q ℂ * (Y * A)) := by
+      rw [← Matrix.mul_assoc, hY, Matrix.neg_mul, Matrix.mul_assoc]
+    simp only [Ring.lie_def, conjTranspose_sub, conjTranspose_mul, Matrix.sub_mul,
+      Matrix.mul_sub, Matrix.mul_assoc, hX, hY, hX', hY', Matrix.mul_neg, neg_neg]
     abel
 
 variable {p q}
@@ -119,23 +126,22 @@ theorem mem_indefiniteUnitaryLieAlgebra_iff {X : Matrix (p ⊕ q) (p ⊕ q) ℂ}
 theorem mem_indefiniteUnitaryLieAlgebra_iff' {X : Matrix (p ⊕ q) (p ⊕ q) ℂ} :
     X ∈ indefiniteUnitaryLieAlgebra p q ↔
       indefiniteDiagonal p q ℂ * Xᴴ * indefiniteDiagonal p q ℂ = -X := by
-  have hJ := indefiniteDiagonal_mul_indefiniteDiagonal (p := p) (q := q) (R := ℂ)
   rw [mem_indefiniteUnitaryLieAlgebra_iff]
   constructor
   · intro h
-    rw [Matrix.mul_assoc, h, Matrix.mul_neg, ← Matrix.mul_assoc, hJ, Matrix.one_mul]
+    rw [Matrix.mul_assoc, h, Matrix.mul_neg, indefiniteDiagonal_mul_indefiniteDiagonal_mul]
   · intro h
     calc Xᴴ * indefiniteDiagonal p q ℂ = indefiniteDiagonal p q ℂ *
           (indefiniteDiagonal p q ℂ * Xᴴ * indefiniteDiagonal p q ℂ) := by
-          rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hJ, Matrix.one_mul]
+          rw [Matrix.mul_assoc, indefiniteDiagonal_mul_indefiniteDiagonal_mul]
       _ = -(indefiniteDiagonal p q ℂ * X) := by rw [h, Matrix.mul_neg]
 
 /-- `𝔲(p, q)` is closed under conjugate transpose. -/
 theorem conjTranspose_mem_indefiniteUnitaryLieAlgebra {X : Matrix (p ⊕ q) (p ⊕ q) ℂ}
     (hX : X ∈ indefiniteUnitaryLieAlgebra p q) : Xᴴ ∈ indefiniteUnitaryLieAlgebra p q := by
-  have hJ := indefiniteDiagonal_mul_indefiniteDiagonal (p := p) (q := q) (R := ℂ)
   have h := congrArg (· * indefiniteDiagonal p q ℂ) (mem_indefiniteUnitaryLieAlgebra_iff.mp hX)
-  simp only [Matrix.mul_assoc, hJ, Matrix.mul_one, Matrix.neg_mul] at h
+  simp only [Matrix.mul_assoc, indefiniteDiagonal_mul_indefiniteDiagonal, Matrix.mul_one,
+    Matrix.neg_mul] at h
   rw [mem_indefiniteUnitaryLieAlgebra_iff', conjTranspose_conjTranspose, h, neg_neg,
     Matrix.mul_assoc]
 
@@ -147,8 +153,7 @@ def specialIndefiniteUnitaryLieAlgebra : LieSubalgebra ℝ (Matrix (p ⊕ q) (p 
   add_mem' hX hY := ⟨add_mem hX.1 hY.1, by rw [trace_add, hX.2, hY.2, add_zero]⟩
   zero_mem' := ⟨zero_mem _, trace_zero _ _⟩
   smul_mem' r _ hX := ⟨SMulMemClass.smul_mem r hX.1, by rw [trace_smul, hX.2, smul_zero]⟩
-  lie_mem' hX hY := ⟨LieSubalgebra.lie_mem _ hX.1 hY.1, by
-    rw [Ring.lie_def, trace_sub, trace_mul_comm, sub_self]⟩
+  lie_mem' hX hY := ⟨LieSubalgebra.lie_mem _ hX.1 hY.1, matrix_trace_commutator_zero _ _ _ _⟩
 
 /-- Membership in `𝔰𝔲(p, q)`: membership in `𝔲(p, q)` and trace zero. -/
 @[simp]
@@ -156,6 +161,12 @@ theorem mem_specialIndefiniteUnitaryLieAlgebra_iff {X : Matrix (p ⊕ q) (p ⊕ 
     X ∈ specialIndefiniteUnitaryLieAlgebra p q ↔
       X ∈ indefiniteUnitaryLieAlgebra p q ∧ X.trace = 0 :=
   Iff.rfl
+
+/-- Brackets in `𝔲(p, q)` lie in `𝔰𝔲(p, q)`. -/
+theorem lie_mem_specialIndefiniteUnitaryLieAlgebra {X Y : Matrix (p ⊕ q) (p ⊕ q) ℂ}
+    (hX : X ∈ indefiniteUnitaryLieAlgebra p q) (hY : Y ∈ indefiniteUnitaryLieAlgebra p q) :
+    ⁅X, Y⁆ ∈ specialIndefiniteUnitaryLieAlgebra p q :=
+  ⟨LieSubalgebra.lie_mem _ hX hY, matrix_trace_commutator_zero _ _ X Y⟩
 
 /-- `𝔰𝔲(p, q)` is contained in `𝔲(p, q)`. -/
 theorem specialIndefiniteUnitaryLieAlgebra_le :
@@ -195,13 +206,10 @@ private theorem sigma_apply (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
 
 private theorem sub_sigma_mem (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
     Z - sigma Z ∈ indefiniteUnitaryLieAlgebra p q := by
-  have hJ := indefiniteDiagonal_mul_indefiniteDiagonal (p := p) (q := q) (R := ℂ)
-  have hJ' (A : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
-      indefiniteDiagonal p q ℂ * (indefiniteDiagonal p q ℂ * A) = A := by
-    rw [← Matrix.mul_assoc, hJ, Matrix.one_mul]
   simp only [mem_indefiniteUnitaryLieAlgebra_iff, sigma_apply, conjTranspose_sub,
     conjTranspose_mul, conjTranspose_conjTranspose, isHermitian_indefiniteDiagonal.eq,
-    Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc, hJ, hJ', Matrix.mul_one, neg_sub]
+    Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc, indefiniteDiagonal_mul_indefiniteDiagonal,
+    indefiniteDiagonal_mul_indefiniteDiagonal_mul, Matrix.mul_one, neg_sub]
 
 private theorem sigma_I_smul (Z : Matrix (p ⊕ q) (p ⊕ q) ℂ) :
     sigma (Complex.I • Z) = -(Complex.I • sigma Z) := by
@@ -269,8 +277,7 @@ theorem killingForm_specialIndefiniteUnitaryLieAlgebra_apply
     killingForm ℝ (specialIndefiniteUnitaryLieAlgebra p q) X Y =
       2 * Fintype.card (p ⊕ q) * ((X : Matrix (p ⊕ q) (p ⊕ q) ℂ) * Y).trace.re := by
   rw [LieSubalgebra.killingForm_inclusion_eq specialIndefiniteUnitaryLieAlgebra_le
-      (fun x hx y hy ↦ ⟨LieSubalgebra.lie_mem _ hx.1 hy, by
-        rw [Ring.lie_def, trace_sub, trace_mul_comm, sub_self]⟩),
+      (fun _ hx _ hy ↦ lie_mem_specialIndefiniteUnitaryLieAlgebra hx.1 hy),
     killingForm_indefiniteUnitaryLieAlgebra_apply]
   simp only [LieSubalgebra.coe_inclusion, X.property.2, mul_zero, zero_mul, sub_zero]
   norm_cast
