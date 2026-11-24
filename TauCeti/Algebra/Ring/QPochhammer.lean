@@ -64,7 +64,7 @@ factorial.
   `(x⁻¹; q⁻¹)_n = (-1) ^ n x⁻ⁿ q^{-n(n-1)/2} (x; q)_n`, and in particular
   `(q⁻¹; q⁻¹)_n = (-1) ^ n q^{-n(n+1)/2} (q; q)_n`.
 * `TauCeti.qPochhammerInt_natCast`: on natural indices `(a; q)_j` is the finite product.
-* `TauCeti.qPochhammerInt_neg_natCast_mul`: `(a; q)_{-n} (a q⁻ⁿ; q)_n = 1`.
+* `TauCeti.qPochhammerInt_neg_natCast_mul_qPochhammer`: `(a; q)_{-n} (a q⁻ⁿ; q)_n = 1`.
 * `TauCeti.qPochhammerInt_add`: concatenation `(a; q)_{i + j} = (a; q)_i (a q ^ i; q)_j` for all
   integers `i`, `j` with the three products defined.
 * `TauCeti.map_qPochhammerInt`: ring homomorphisms preserve the integer-indexed product.
@@ -341,7 +341,8 @@ theorem qPochhammerInt_mul_qPochhammer_of_nonpos {j : ℤ} (hj₀ : j ≤ 0)
   · simp
 
 /-- `(a; q)_{-n} (a q⁻ⁿ; q)_n = 1`. -/
-theorem qPochhammerInt_neg_natCast_mul (n : ℕ) (hn : -(n : ℤ) ∈ qPochhammerIntDomain a q) :
+theorem qPochhammerInt_neg_natCast_mul_qPochhammer (n : ℕ)
+    (hn : -(n : ℤ) ∈ qPochhammerIntDomain a q) :
     qPochhammerInt a q (-n) hn * qPochhammer (a * ↑(q ^ (-(n : ℤ)))) q n = 1 := by
   simpa using qPochhammerInt_mul_qPochhammer_of_nonpos (by omega) hn
 
@@ -351,7 +352,7 @@ theorem qPochhammerInt_neg_natCast (n : ℕ) (hn : -(n : ℤ) ∈ qPochhammerInt
     qPochhammerInt a q (-n) hn = Ring.inverse (qPochhammer (a * ↑(q ^ (-(n : ℤ)))) q n) := by
   rw [← one_mul (Ring.inverse _),
     Ring.eq_mul_inverse_iff_mul_eq _ _ _ (neg_natCast_mem_qPochhammerIntDomain_iff.mp hn)]
-  exact qPochhammerInt_neg_natCast_mul n hn
+  exact qPochhammerInt_neg_natCast_mul_qPochhammer n hn
 
 /-- `(a; q)_j (a q ^ j; q)_N = (a; q)_{j + N}` when `j + N ≥ 0`. -/
 private theorem qPochhammerInt_mul_qPochhammer_of_nonneg {j : ℤ}
@@ -365,7 +366,7 @@ private theorem qPochhammerInt_mul_qPochhammer_of_nonneg {j : ℤ}
     obtain ⟨k, rfl⟩ : ∃ k, N = n + k := ⟨N - n, by omega⟩
     have hshift : a * ↑(q ^ (-(n : ℤ))) * ↑q ^ n = a := by
       rw [mul_assoc, val_zpow_mul_pow, neg_add_cancel, zpow_zero, Units.val_one, mul_one]
-    rw [qPochhammer_add, ← mul_assoc, qPochhammerInt_neg_natCast_mul, one_mul, hshift,
+    rw [qPochhammer_add, ← mul_assoc, qPochhammerInt_neg_natCast_mul_qPochhammer, one_mul, hshift,
       show (-(n : ℤ) + ↑(n + k)).toNat = k by omega]
 
 /-- **Concatenation with a natural second index**: `(a; q)_{i + N} = (a; q)_i (a q ^ i; q)_N`
