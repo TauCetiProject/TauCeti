@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RingHom.Flat
-import Mathlib.Tactic.Algebraize
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
@@ -52,18 +51,16 @@ induced by the right unit of the Weierstrass Hopf algebroid. The right unit is f
 (`TauCeti.WeierstrassHopfAlgebroid.flat_rightUnit`), so the classifying map of the universal curve
 is flat.
 
-For an elliptic curve, the full Landweber condition, in all heights, is
-`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange` in
-`TauCeti/AlgebraicGeometry/EllipticCurve/FormalGroup/Height/Landweber.lean`. The results here
+When the third height ideal `I₃` is the unit ideal at every prime, for instance for an elliptic
+curve, the full Landweber condition, in all heights, is
+`WeierstrassCurve.isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange`
+in `TauCeti/AlgebraicGeometry/EllipticCurve/FormalGroup/Height/Landweber.lean`. The results here
 do not assume that the discriminant is a unit, so they apply over the base `R` of a flatly
 classified family of Weierstrass curves that may have nodal fibres, not over the individual
 fibres.
 
 ## Main results
 
-* `WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat`: if the
-  specialization `A → R` of the universal curve to `W` is flat, then `(p, A_W)` is a weakly
-  regular sequence on `R`.
 * `WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange`:
   if the classifying map of `W` is flat, then `(p, A_W)` is a weakly regular sequence on `R`.
 * `WeierstrassCurve.isWeaklyRegular_natCast_coeff_nsmulSeries_of_flat_universalChange`: if the
@@ -87,21 +84,6 @@ namespace WeierstrassCurve
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p : ℕ}
 
-/-- **Landweber regularity of the Hasse invariant for a flat specialization.** If the
-specialization `ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` of the universal curve to `W` is flat, then for every
-prime `p`, the sequence of `p` and the Hasse invariant of `W` is weakly regular on `R`. -/
-theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat (hp : p.Prime)
-    (hW : W.specialize.Flat) :
-    IsWeaklyRegular R
-      [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  algebraize [W.specialize]
-  have := (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat
-    (S := R)
-  -- specialization carries the universal Hasse invariant to that of `W`
-  simpa only [List.map_cons, List.map_nil, map_natCast, RingHom.algebraMap_toAlgebra,
-    ← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup,
-    map_specialize] using this
-
 /-- **Landweber regularity of the Hasse invariant for a flat classifying map.** Suppose the map
 `Spec R → M_cub` classified by `W` is flat: the specialization of the universal curve to `C • W`,
 for the universal change of variables `C` over `R[u, u⁻¹, r, s, t]`, is a flat ring homomorphism.
@@ -121,7 +103,7 @@ theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalCha
       rw [← heightIdeal_formalGroup_two _ hp, ← heightIdeal_formalGroup_two _ hp,
         VariableChange.heightIdeal_formalGroup_variableChange])).mp
     ((ChangeRing.universalChange R • W').isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat
-      hp hW)
+      hW hp)
   -- and `R[u, u⁻¹, r, s, t]` is faithfully flat over `R`
   rw [← isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat (S := ChangeRing R)]
   simpa only [List.map_cons, List.map_nil, map_natCast, W', baseChange, map_formalGroup,
