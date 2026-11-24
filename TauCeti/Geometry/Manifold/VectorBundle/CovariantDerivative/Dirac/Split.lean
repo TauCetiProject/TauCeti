@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Connection
+public import TauCeti.Geometry.Manifold.Riemannian.Killing.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -34,7 +35,7 @@ for smooth sections `σ` and `τ`, one of which has compact support. This is the
 `CovariantDerivative.IsMetricCompatible.integral_inner_clifford_covariantDerivative_left_eq_right`
 below. A Killing field is divergence-free (`TauCeti.Manifold.IsKillingField.divergence_eq_zero`), so
 `∇_T` is formally skew-adjoint
-(`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg_of_isKillingField`).
+(`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg`).
 A Killing field of constant length satisfies `∇_T T = 0`
 (`TauCeti.Manifold.IsKillingField.covariantDerivative_self_eq_zero`), so compatibility gives
 `∇_T (c(T) τ) = c(T) ∇_T τ`. The formal adjoint of `c(T) ∇_T` is therefore
@@ -127,9 +128,9 @@ theorem IsMetricCompatible.integral_inner_clifford_covariantDerivative_left_eq_r
     (torsion_leviCivitaConnection_eq_zero I) hTr
   have hAX (s : Cₛ^∞⟮I; F, V⟯) : cov.alongVectorField Tₛ (A s) = A (cov.alongVectorField Tₛ s) :=
     ContMDiffSection.ext fun y ↦ by
-      rw [alongVectorField_apply, hA, alongVectorField_apply, hTₛ,
-        show ⇑(A s) = fun y ↦ c y (T y) (s y) from funext (hA s),
-        hcomp T s hT.contMDiff s.contMDiff y (T y), hTT y, map_zero, zero_apply, zero_add]
+      -- `hcomp` is stated for the section `fun y ↦ c y (T y) (s y)`, so unfold `A s` to it.
+      have hAs : ⇑(A s) = fun y ↦ c y (T y) (s y) := funext (hA s)
+      simp [alongVectorField_apply, hA, hAs, hTₛ, hcomp T s hT.contMDiff s.contMDiff, hTT]
   have h := hcov.isFormalAdjoint_comp_alongVectorField Tₛ hT.divergence_eq_zero
     (fun y ↦ c y (T y)) hA (fun y ↦ hskew y (T y)) hAX
   have h' := h.integral_inner_eq (s := ⟨σ, hσ⟩) (t := ⟨τ, hτ⟩)

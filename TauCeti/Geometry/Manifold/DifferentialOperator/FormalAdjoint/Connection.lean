@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-public import TauCeti.Geometry.Manifold.Riemannian.Killing.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -53,10 +52,8 @@ Seiberg–Witten equations on `S¹ × Y`.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField`,
   `CovariantDerivative.IsMetricCompatible.formalAdjoint_alongVectorField_apply`: the formal
   adjoint of `∇_X` for the Riemannian volume is `-∇_X - div X`.
-* `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg`,
-  `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg_of_isKillingField`:
-  along a divergence-free field, in particular along a Killing field, `∇_X` is formally
-  skew-adjoint.
+* `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg`: along a
+  divergence-free field, in particular along a Killing field, `∇_X` is formally skew-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_alongVectorField_alongVectorField`:
   `∫ ⟪∇_X ∇_X σ, σ⟫ dV = -∫ ‖∇_X σ‖² dV` along a divergence-free field.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_comp_alongVectorField`: for a pointwise
@@ -174,15 +171,6 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_neg (hcov : cov.IsMe
     (hX : ∀ x, divergence I (fun y ↦ X y) x = 0) :
     (cov.alongVectorField X).IsFormalAdjoint (-cov.alongVectorField X) (riemannianVolume I M) :=
   hcov.isFormalAdjoint_alongVectorField X fun τ x ↦ by simp [hX x]
-
-/-- **`∇_X` is formally skew-adjoint along a Killing field.** For a metric connection on a
-Riemannian vector bundle over a Riemannian manifold without boundary, and a Killing field `X`,
-such as a parallel vector field, the formal adjoint of `∇_X` for the Riemannian volume is
-`-∇_X`. -/
-theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_neg_of_isKillingField
-    (hcov : cov.IsMetricCompatible) (hX : IsKillingField I fun y ↦ X y) :
-    (cov.alongVectorField X).IsFormalAdjoint (-cov.alongVectorField X) (riemannianVolume I M) :=
-  hcov.isFormalAdjoint_alongVectorField_neg X hX.divergence_eq_zero
 
 /-- **The energy identity along a divergence-free field.** For a metric connection on a
 Riemannian vector bundle over a Riemannian manifold without boundary, a smooth vector field `X`
