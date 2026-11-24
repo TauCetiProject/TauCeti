@@ -36,12 +36,12 @@ Since `s < g(s) < s + L`, the rotation number lies strictly between `0` and `1`
 (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.neg`), and the reversed graph has rotation
 number `1 - ρ` (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_neg`): its lift
 composed with `g` is the deck translation `s ↦ s + L`. Since `t(s, v)` is decreasing in `v`, a
-higher invariant graph has a smaller rotation number
+higher invariant graph has a rotation number that is no larger
 (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_anti`). The rotation numbers
 of the circular table are computed in `TauCeti.Dynamics.Billiard.Circle`.
 
 In the angle coordinate `δ` with `v = cos δ`, the graph `{v = ψ}` is the graph
-`{δ = arccos ψ}`, the time reversal is `δ ↦ π - δ`, and rotation numbers increase with `δ`.
+`{δ = arccos ψ}`, the time reversal is `δ ↦ π - δ`, and rotation numbers are nondecreasing in `δ`.
 
 ## Main definitions
 
@@ -272,7 +272,8 @@ theorem rotationNumber_neg (hχ : ContDiff ℝ 2 χ) :
 end IsInvariantGraph
 
 /-- **Monotonicity of rotation numbers.** Of two invariant graphs `ψ₁ ≤ ψ₂` of a `C²` table, the
-higher one has the smaller rotation number: a larger tangential component lands earlier. -/
+higher one has a rotation number no larger than the lower one: a larger tangential component
+lands earlier. -/
 theorem IsInvariantGraph.rotationNumber_anti (hχ : ContDiff ℝ 2 χ) {ψ₁ ψ₂ : ℝ → ℝ}
     (h₁ : χ.IsInvariantGraph ψ₁) (h₂ : χ.IsInvariantGraph ψ₂) (hle : ψ₁ ≤ ψ₂) :
     h₂.rotationNumber hχ ≤ h₁.rotationNumber hχ := by
