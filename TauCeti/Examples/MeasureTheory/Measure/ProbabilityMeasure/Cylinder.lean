@@ -76,21 +76,15 @@ def constMix : ProbabilityMeasure (univ : Set (ℤ → Bool)) :=
 
 private theorem correlationFunction_bernoulliHalf (F : Finset ℤ) :
     bernoulliHalf.correlationFunction F = 2⁻¹ ^ F.card := by
-  rw [ProbabilityMeasure.correlationFunction_def, bernoulliHalf,
-    ProbabilityMeasure.map_apply _ measurable_pt.aemeasurable
-      (measurableSet_preimage_fullShift_cylinder _ _), ← ENNReal.coe_inj,
-    ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
   have : pt ⁻¹' ((↑) ⁻¹' FullShift.cylinder F fun _ => true) =
       Set.pi (F : Set ℤ) fun _ => {true} := by
     ext x
     simp [pt, FullShift.mem_cylinder]
-  simp only [this, bernoulliProduct, ProbabilityMeasure.coe_mk]
-  rw [Measure.infinitePi_pi _ fun _ _ => measurableSet_singleton _]
-  have h : uniformOn (univ : Set Bool) {true} = 2⁻¹ := by
-    rw [uniformOn_univ]
-    simp
-  rw [Finset.prod_const, h]
-  simp [ENNReal.inv_pow]
+  rw [ProbabilityMeasure.correlationFunction_def, bernoulliHalf,
+    ProbabilityMeasure.map_apply _ measurable_pt.aemeasurable
+      (measurableSet_preimage_fullShift_cylinder _ _), this]
+  simp [bernoulliProduct, Measure.infinitePi_pi, uniformOn_univ, ENNReal.toNNReal_ofNat,
+    -Bool.univ_eq]
 
 private theorem correlationFunction_constMix (F : Finset ℤ) (hF : F.Nonempty) :
     constMix.correlationFunction F = 2⁻¹ := by
@@ -213,7 +207,7 @@ example : (@MeasurableSpace.pi ℤ (fun _ => Bool) fun _ => ⊥) = ⊥ ∧
     · exact (singleton_nonempty _).ne_empty h
     · exact one'_ne_zero' (mem_singleton_iff.mp (h ▸ mem_univ zero')).symm
   refine ⟨MeasurableSpace.pi_bot, isClopen_singleton_one', hnot, fun h => hnot ?_, ?_⟩
-  · rw [h]
+  · rw [h, borel]
     exact MeasurableSpace.measurableSet_generateFrom isClopen_singleton_one'.isOpen
   · rw [trivialTrace_eq_bot]
     refine @Measure.ext constants ⊥ _ _ fun s hs => ?_
