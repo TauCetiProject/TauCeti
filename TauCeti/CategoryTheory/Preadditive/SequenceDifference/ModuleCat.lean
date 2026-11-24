@@ -88,13 +88,6 @@ def isColimitShiftedCoproductCofan (X : ℕ ⥤ T) [HasCoproduct X.obj] :
   (isColimitMapCoconeCofanMkEquiv (shiftFunctor T (1 : ℤ)) X.obj (Sigma.ι X.obj)).toFun
     (isColimitOfPreserves (shiftFunctor T (1 : ℤ)) (coproductIsCoproduct X.obj))
 
-private theorem shifted_ι_sequenceDifference [(shiftFunctor T (1 : ℤ)).Additive]
-    (X : ℕ ⥤ T) [HasCoproduct X.obj] (n : ℕ) :
-    (Sigma.ι X.obj n)⟦(1 : ℤ)⟧' ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧' =
-      (Sigma.ι X.obj n)⟦(1 : ℤ)⟧' -
-        (X.map (homOfLE (n.le_add_right 1)))⟦(1 : ℤ)⟧' ≫ (Sigma.ι X.obj (n + 1))⟦(1 : ℤ)⟧' := by
-  rw [← Functor.map_comp, X.ι_sequenceDifference, Functor.map_sub, Functor.map_comp]
-
 /-- Coordinatewise, `F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op` corresponds under
 `cofanOpToPiLinearEquiv` to `ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)`. -/
 theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference {R : Type uR} [Ring R]
@@ -108,7 +101,7 @@ theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference {R : Type uR} [Ring 
         ((isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F y) :=
   cofanOpToPiLinearEquiv_map_eq_shift F (X ⋙ shiftFunctor T (1 : ℤ))
     (isColimitShiftedCoproductCofan X) ((X.sequenceDifference)⟦(1 : ℤ)⟧')
-    (fun n ↦ X.shifted_ι_sequenceDifference n) y
+    (X.map_ι_comp_map_sequenceDifference (shiftFunctor T (1 : ℤ))) y
 
 end Shift
 

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.Preadditive.TowerDifference
 
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
@@ -40,6 +42,9 @@ This is the sequential dual of `TauCeti.CategoryTheory.Preadditive.TowerDifferen
   sequence–difference map is a colimit of the sequence, and a colimit of the sequence is a
   cokernel of the sequence–difference map.
 * `CategoryTheory.Functor.sequenceDifference_naturality`: naturality in morphisms of sequences.
+* `CategoryTheory.Functor.map_ι_comp_map_sequenceDifference`,
+  `CategoryTheory.Functor.sigmaComparison_comp_map_sequenceDifference`: compatibility with additive
+  functors.
 -/
 
 public section
@@ -228,6 +233,31 @@ lemma sequenceDifference_naturality {X Y : ℕ ⥤ T} [HasCoproduct X.obj] [HasC
     _ = (Limits.Sigma.map (fun n ↦ α.app n) ≫ Y.sequenceDifference).op := by
           rw [hpi_inv]
           simp [op_comp, sequenceDifference_op, Category.assoc]
+
+/-- An additive functor `F` maps the `n`-th summand inclusion followed by `X.sequenceDifference`
+to `F.map (Sigma.ι X.obj n) - F.map (X.map _) ≫ F.map (Sigma.ι X.obj (n + 1))`. -/
+lemma map_ι_comp_map_sequenceDifference {D : Type*} [Category* D] [Preadditive D]
+    (F : T ⥤ D) [F.Additive] (n : ℕ) :
+    F.map (Sigma.ι X.obj n) ≫ F.map X.sequenceDifference =
+      F.map (Sigma.ι X.obj n) -
+        F.map (X.map (homOfLE (n.le_add_right 1))) ≫ F.map (Sigma.ι X.obj (n + 1)) := by
+  rw [← F.map_comp, X.ι_sequenceDifference, F.map_sub, F.map_comp]
+
+/-- An additive functor `F` intertwines `X.sequenceDifference` and `(X ⋙ F).sequenceDifference`
+through `sigmaComparison F X.obj`. -/
+@[reassoc]
+lemma sigmaComparison_comp_map_sequenceDifference {D : Type*} [Category* D] [Preadditive D]
+    (F : T ⥤ D) [F.Additive] [HasColimitsOfShape (Discrete ℕ) D] :
+    sigmaComparison F X.obj ≫ F.map X.sequenceDifference =
+      (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
+  refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
+  change Sigma.ι (X ⋙ F).obj n ≫ _ = Sigma.ι (X ⋙ F).obj n ≫ _
+  simp only [ι_sequenceDifference_assoc, Preadditive.sub_comp, Category.assoc]
+  change Sigma.ι (fun b ↦ F.obj (X.obj b)) n ≫ _ =
+    Sigma.ι (fun b ↦ F.obj (X.obj b)) n ≫ sigmaComparison F X.obj -
+      F.map (X.map (homOfLE (n.le_add_right 1))) ≫
+        Sigma.ι (fun b ↦ F.obj (X.obj b)) (n + 1) ≫ sigmaComparison F X.obj
+  simp [map_ι_comp_map_sequenceDifference]
 
 end SequenceDifference
 

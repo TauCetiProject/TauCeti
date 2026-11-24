@@ -69,10 +69,10 @@ theorem coprodComparisonAddEquiv_telescopeDiff (A : T) (X : ℕ ⥤ T) [HasCopro
         have hlof := ModuleCat.telescopeDiff_lof (X ⋙ preadditiveCoyonedaObj A) n g
         simp only [DirectSum.lof_eq_of] at hlof
         exact hlof
-      have hsub : (g ≫ Sigma.ι X.obj n) ≫ X.sequenceDifference =
-          g ≫ Sigma.ι X.obj n -
-            (g ≫ X.map (homOfLE (n.le_add_right 1))) ≫ Sigma.ι X.obj (n + 1) := by
-        rw [Category.assoc, X.ι_sequenceDifference, Preadditive.comp_sub, Category.assoc]
+      have hsub := congrArg
+        (fun φ : (preadditiveCoyoneda.obj (op A)).obj (X.obj n) ⟶
+            (preadditiveCoyoneda.obj (op A)).obj (∐ X.obj) ↦ φ g)
+        (X.map_ι_comp_map_sequenceDifference (preadditiveCoyoneda.obj (op A)) n)
       rw [hD, map_sub, coprodComparisonAddEquiv_of, coprodComparisonAddEquiv_of]
       exact hsub.symm
     | add a b ha hb => simp [map_add, ha, hb, Preadditive.add_comp]

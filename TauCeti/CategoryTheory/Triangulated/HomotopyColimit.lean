@@ -124,23 +124,7 @@ def isColimitMapCoconeOfMilnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M :
   let S := (shortComplexOfDistTriangle (Triangle.mk X.sequenceDifference ψ δ) ht).map F
   have hex := F.map_distinguished_exact _ ht
   have : Epi S.g := hepi
-  have hcomp : sigmaComparison F X.obj ≫ F.map X.sequenceDifference =
-      (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
-    refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
-    calc
-      Sigma.ι (fun b ↦ F.obj (X.obj b)) n ≫ sigmaComparison F X.obj ≫ F.map X.sequenceDifference
-          = F.map (Sigma.ι X.obj n) ≫ F.map X.sequenceDifference := by
-            rw [ι_comp_sigmaComparison_assoc]
-      _ = F.map (Sigma.ι X.obj n) - F.map (X.map (homOfLE (n.le_add_right 1))) ≫
-            F.map (Sigma.ι X.obj (n + 1)) := by
-            rw [← F.map_comp, X.ι_sequenceDifference, F.map_sub, F.map_comp]
-      _ = (Sigma.ι (fun b ↦ F.obj (X.obj b)) n - F.map (X.map (homOfLE (n.le_add_right 1))) ≫
-            Sigma.ι (fun b ↦ F.obj (X.obj b)) (n + 1)) ≫ sigmaComparison F X.obj := by
-            rw [Preadditive.sub_comp, Category.assoc, ι_comp_sigmaComparison,
-              ι_comp_sigmaComparison]
-      _ = Sigma.ι (X ⋙ F).obj n ≫ (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
-            rw [Functor.ι_sequenceDifference_assoc]
-            dsimp only [Functor.comp]
+  have hcomp := X.sigmaComparison_comp_map_sequenceDifference F
   have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
   have hz : (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj ≫ F.map ψ = 0 := by
     rw [← Category.assoc, ← hcomp, Category.assoc, ← F.map_comp, hψ, F.map_zero, comp_zero]
@@ -188,11 +172,12 @@ theorem comp_ι_comp_eq_zero_iff_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct
       ← Category.assoc, hm, zero_comp]⟩
   have := preservesSmallestFilteredColimits_of_preservesFilteredColimits
     (CategoryTheory.forget AddCommGrpCat.{v})
-  exact Concrete.exists_map_homOfLE_eq_zero_of_ι_eq_zero
+  obtain ⟨m, f, hm⟩ := Concrete.exists_map_eq_zero_of_ι_eq_zero
     (X ⋙ preadditiveCoyoneda.obj (op A)) (isColimitMapCoconeOfMilnorTriangle ht (A := A))
     (n := n) (x := h) (by
       rw [Functor.mapCocone_ι_app, coconeOfMilnorTriangle_ι_app]
       exact hzero)
+  exact ⟨m, leOfHom f, by rwa [Subsingleton.elim (homOfLE (leOfHom f)) f]⟩
 
 end CompactMapping
 
@@ -243,15 +228,9 @@ theorem milnorObjToLim_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : T}
       ModuleTower.limMap (Functor.whiskerRight (NatTrans.op α) F) ∘ₗ F.milnorObjToLim htY := by
   ext n u
   have hcomm2 : ψ ≫ φ.hom₃ = φ.hom₂ ≫ ψ' := φ.comm₂
-  have hcomm : (Sigma.ι X.obj n ≫ ψ) ≫ φ.hom₃ = (α.app n ≫ Sigma.ι Y.obj n) ≫ ψ' := by
-    rw [Category.assoc, hcomm2, hφ₂, Sigma.ι_map_assoc, Category.assoc]
-  have h := congrArg (fun ξ ↦ F.map ξ.op u) hcomm
-  rw [map_op_comp_apply, map_op_comp_apply, map_op_comp_apply, map_op_comp_apply] at h
-  simp only [LinearMap.comp_apply, ModuleTower.limπ_apply, coe_milnorObjToLim_apply,
-    ModuleTower.coe_limMap_apply, ModuleTower.productMap_apply, Functor.whiskerRight_app,
-    NatTrans.op_app]
-  rw [map_op_comp_apply, map_op_comp_apply]
-  exact h
+  have hcomm : (Sigma.ι X.obj n ≫ ψ) ≫ φ.hom₃ = α.app n ≫ Sigma.ι Y.obj n ≫ ψ' := by
+    rw [Category.assoc, hcomm2, hφ₂, Sigma.ι_map_assoc]
+  simpa [-Functor.comp_obj] using F.map_op_apply_eq_of_comp_eq hcomm u
 
 section Additive
 
@@ -324,20 +303,10 @@ theorem milnorLimOneToObj_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : 
         (α.app n)⟦(1 : ℤ)⟧' ≫ (Sigma.ι Y.obj n)⟦(1 : ℤ)⟧' := by
       rw [← (shiftFunctor T (1 : ℤ)).map_comp, hφ₁, Sigma.ι_map,
         (shiftFunctor T (1 : ℤ)).map_comp]
-    have h := congrArg (fun ξ ↦ F.map ξ.op y) hsq
-    rw [map_op_comp_apply, map_op_comp_apply] at h
-    simp only [ModuleTower.productMap_apply, Functor.whiskerRight_app, NatTrans.op_app,
-      Functor.comp_obj, Functor.op_obj]
-    rw [IsColimit.cofanOpToPiLinearEquiv_apply]
-    exact h.symm
+    simpa [eY, -Functor.comp_obj, -Cofan.mk_pt] using (F.map_op_apply_eq_of_comp_eq hsq y).symm
   have hL : F.milnorLimOneToObj htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y :=
     congrArg (F.map δ'.op) (eY.symm_apply_apply y)
-  have hcomm3 : δ ≫ φ.hom₁⟦(1 : ℤ)⟧' = φ.hom₃ ≫ δ' := φ.comm₃
-  have h := congrArg (fun ξ ↦ F.map ξ.op y) hcomm3
-  rw [map_op_comp_apply, map_op_comp_apply] at h
-  simp only [LinearMap.comp_apply, Submodule.mkQ_apply, ModuleTower.limOneMap_mk, hprod,
-    milnorLimOneToObj_mk_map, hL]
-  exact h.symm
+  simpa [hprod, hL] using (F.map_op_apply_eq_of_comp_eq φ.comm₃ y).symm
 
 end Additive
 
