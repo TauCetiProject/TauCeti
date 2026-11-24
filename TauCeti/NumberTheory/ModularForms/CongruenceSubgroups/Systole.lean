@@ -135,8 +135,8 @@ private theorem dist_smul_I_le_of_sum_sq_le (γ : SL(2, ℤ)) {c : ℝ} (hN : 0 
     (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ)
   rw [Matrix.SpecialLinearGroup.map_intCastRingHom_smul] at hd
   have hentry (i j : Fin 2) :
-      (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ : SL(2, ℝ)) i j = (γ i j : ℝ) :=
-    (rfl)
+      (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ : SL(2, ℝ)) i j = (γ i j : ℝ) := by
+    simp
   simp only [hentry] at hd
   push_cast at h
   have hpos : 0 < (γ 0 0 : ℝ) ^ 2 + (γ 0 1 : ℝ) ^ 2 + (γ 1 0 : ℝ) ^ 2 + (γ 1 1 : ℝ) ^ 2 := by
@@ -149,6 +149,17 @@ private theorem dist_smul_I_le_of_sum_sq_le (γ : SL(2, ℤ)) {c : ℝ} (hN : 0 
     _ ≤ Real.log (c * (N : ℝ) ^ 4) := Real.log_le_log hpos h
     _ = 4 * Real.log N + Real.log c := by
         rw [Real.log_mul hc.ne' (by positivity), Real.log_pow]; push_cast; ring
+
+/-- An integral matrix whose squared entries sum to at most `8 N⁴` moves `I` at most
+`4 log N + 3 log 2`. -/
+private theorem dist_smul_I_le_of_sum_sq_le_eight (γ : SL(2, ℤ)) (hN : 0 < N)
+    (h : γ 0 0 ^ 2 + γ 0 1 ^ 2 + γ 1 0 ^ 2 + γ 1 1 ^ 2 ≤ 8 * (N : ℤ) ^ 4) :
+    dist (γ • I) I ≤ 4 * Real.log N + 3 * Real.log 2 := by
+  have h8 : 3 * Real.log 2 = Real.log 8 := by
+    rw [show (8 : ℝ) = 2 ^ 3 by norm_num, Real.log_pow]
+    norm_num
+  rw [h8]
+  exact dist_smul_I_le_of_sum_sq_le γ hN (by exact_mod_cast h)
 
 /-- **The systole of `Γ(N)` is at most `4 log N + log 2`.** For `N ≥ 3` the matrix
 `!![1 - N², N; -N, 1] = !![1, N; 0, 1] * !![1, 0; -N, 1]` lies in `Γ(N)`, is hyperbolic with
@@ -186,23 +197,39 @@ def fillingWitnessTwo (r : ℕ) : SL(2, ℤ) :=
   S * T ^ (-(2 * r + 1 : ℤ)) * S⁻¹ * T ^ (-3 : ℤ) * (S * T ^ ((r : ℤ) + 1) * S⁻¹) * T *
     (S * T ^ (-1 : ℤ) * S⁻¹) * T
 
+/-- The witness at the level `3 r + 1` as the word `-L(2r) U(3) L(-r-1) U(3)` in `S` and `T`. -/
+theorem fillingWitnessOne_eq (r : ℕ) :
+    fillingWitnessOne r =
+      -(S * T ^ (-(2 * r : ℤ)) * S⁻¹ * T ^ (3 : ℤ) * (S * T ^ ((r : ℤ) + 1) * S⁻¹) * T ^ (3 : ℤ)) :=
+  (rfl)
+
+/-- The witness at the level `3 r + 2` as the word `L(2r+1) U(-3) L(-r-1) U(1) L(1) U(1)` in `S`
+and `T`. -/
+theorem fillingWitnessTwo_eq (r : ℕ) :
+    fillingWitnessTwo r =
+      S * T ^ (-(2 * r + 1 : ℤ)) * S⁻¹ * T ^ (-3 : ℤ) * (S * T ^ ((r : ℤ) + 1) * S⁻¹) * T *
+        (S * T ^ (-1 : ℤ) * S⁻¹) * T :=
+  (rfl)
+
 /-- The entries of the witness at the level `N = 3 r + 1`. -/
+@[simp]
 theorem coe_fillingWitnessOne (r : ℕ) :
     (fillingWitnessOne r : Matrix (Fin 2) (Fin 2) ℤ) =
       (!![1 + (3 * r + 1), 3 * (3 * r + 1); (3 * r + 1) * (2 * r + 1),
         1 + 2 * (3 * r + 1) ^ 2 - (3 * r + 1)] : Matrix (Fin 2) (Fin 2) ℤ) := by
-  simp only [fillingWitnessOne, Matrix.SpecialLinearGroup.coe_neg,
+  simp only [fillingWitnessOne_eq, Matrix.SpecialLinearGroup.coe_neg,
     Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_S, Matrix.SpecialLinearGroup.coe_inv,
     Matrix.adjugate_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;> simp <;> ring
 
 /-- The entries of the witness at the level `N = 3 r + 2`. -/
+@[simp]
 theorem coe_fillingWitnessTwo (r : ℕ) :
     (fillingWitnessTwo r : Matrix (Fin 2) (Fin 2) ℤ) =
       (!![1 + 2 * (3 * r + 2), 3 * (3 * r + 2); 2 * (3 * r + 2) * (2 * r + 1),
         1 + 2 * (3 * r + 2) ^ 2 - 2 * (3 * r + 2)] : Matrix (Fin 2) (Fin 2) ℤ) := by
-  simp only [fillingWitnessTwo, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_T, coe_S,
+  simp only [fillingWitnessTwo_eq, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_T, coe_S,
     Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;> simp <;> ring
@@ -235,31 +262,19 @@ theorem trace_fillingWitnessTwo (r : ℕ) :
 /-- The witness at the level `N = 3 r + 1`, for `r ≥ 1`, moves `I` at most `4 log N + 3 log 2`. -/
 theorem dist_fillingWitnessOne_smul_I_le {r : ℕ} (hr : 1 ≤ r) :
     dist (fillingWitnessOne r • I) I ≤ 4 * Real.log (3 * r + 1 : ℕ) + 3 * Real.log 2 := by
-  rw [show 3 * Real.log 2 = Real.log 8 by
-    rw [show (8 : ℝ) = 2 ^ 3 by norm_num, Real.log_pow]; norm_num]
-  refine dist_smul_I_le_of_sum_sq_le _ (by omega) ?_
-  have h : (fillingWitnessOne r 0 0 ^ 2 + fillingWitnessOne r 0 1 ^ 2 +
-      fillingWitnessOne r 1 0 ^ 2 + fillingWitnessOne r 1 1 ^ 2 : ℤ) ≤
-      8 * ((3 * r + 1 : ℕ) : ℤ) ^ 4 := by
-    rw [coe_fillingWitnessOne]
-    have : (1 : ℤ) ≤ r := by exact_mod_cast hr
-    simp
-    nlinarith [pow_pos (show (0 : ℤ) < r by omega) 3, pow_pos (show (0 : ℤ) < r by omega) 4]
-  exact_mod_cast h
+  refine dist_smul_I_le_of_sum_sq_le_eight _ (by omega) ?_
+  rw [coe_fillingWitnessOne]
+  have : (1 : ℤ) ≤ r := by exact_mod_cast hr
+  simp
+  nlinarith [pow_pos (show (0 : ℤ) < r by omega) 3, pow_pos (show (0 : ℤ) < r by omega) 4]
 
 /-- The witness at the level `N = 3 r + 2` moves `I` at most `4 log N + 3 log 2`. -/
 theorem dist_fillingWitnessTwo_smul_I_le (r : ℕ) :
     dist (fillingWitnessTwo r • I) I ≤ 4 * Real.log (3 * r + 2 : ℕ) + 3 * Real.log 2 := by
-  rw [show 3 * Real.log 2 = Real.log 8 by
-    rw [show (8 : ℝ) = 2 ^ 3 by norm_num, Real.log_pow]; norm_num]
-  refine dist_smul_I_le_of_sum_sq_le _ (by omega) ?_
-  have h : (fillingWitnessTwo r 0 0 ^ 2 + fillingWitnessTwo r 0 1 ^ 2 +
-      fillingWitnessTwo r 1 0 ^ 2 + fillingWitnessTwo r 1 1 ^ 2 : ℤ) ≤
-      8 * ((3 * r + 2 : ℕ) : ℤ) ^ 4 := by
-    rw [coe_fillingWitnessTwo]
-    have : (0 : ℤ) ≤ r := by exact_mod_cast r.zero_le
-    simp
-    nlinarith [pow_nonneg this 3, pow_nonneg this 4]
-  exact_mod_cast h
+  refine dist_smul_I_le_of_sum_sq_le_eight _ (by omega) ?_
+  rw [coe_fillingWitnessTwo]
+  have : (0 : ℤ) ≤ r := by exact_mod_cast r.zero_le
+  simp
+  nlinarith [pow_nonneg this 3, pow_nonneg this 4]
 
 end CongruenceSubgroup
