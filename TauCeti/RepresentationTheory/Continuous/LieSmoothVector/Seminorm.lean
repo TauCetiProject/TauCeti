@@ -27,15 +27,16 @@ summed over all words of length at most `k`. For `ι = Fin m` the *Sobolev semin
 
 `Q_k(v) = (∑_{|α| ≤ k} ‖dπ(X^α) v‖²)^{1/2}`.
 
-Every ordered monomial is a word, so `Q_k ≤ P_k` (`ContRepresentation.sobolevSeminorm_le`).
+Every ordered monomial is a word, so `Q_k ≤ P_k`
+(`ContRepresentation.sobolevSeminorm_le_wordSeminorm`).
 
 ## Main definitions
 
+* `TauCeti.Word ι k`: the words in `ι` of length at most `k`.
+* `TauCeti.monomialWord α`: the word `1^{α₁} ⋯ m^{α_m}` of an exponent vector.
+* `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`.
-* `ContRepresentation.Word ι k`: the words in `ι` of length at most `k`.
 * `ContRepresentation.wordSeminorm I π X k`: the word seminorm `P_k`.
-* `ContRepresentation.monomialWord α`: the word `1^{α₁} ⋯ m^{α_m}` of an exponent vector.
-* `ContRepresentation.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.sobolevSeminorm I π X k`: the Sobolev seminorm `Q_k`.
 
 ## Main results
@@ -43,7 +44,7 @@ Every ordered monomial is a word, so `Q_k ≤ P_k` (`ContRepresentation.sobolevS
 * `ContRepresentation.wordSeminorm_apply`, `ContRepresentation.sobolevSeminorm_apply`: the two
   seminorms as explicit sums.
 * `ContRepresentation.wordSeminorm_zero`: `P_0` is the norm.
-* `ContRepresentation.sobolevSeminorm_le`: `Q_k ≤ P_k`.
+* `ContRepresentation.sobolevSeminorm_le_wordSeminorm`: `Q_k ≤ P_k`.
 
 ## References
 
@@ -51,79 +52,20 @@ Every ordered monomial is a word, so `Q_k ≤ P_k` (`ContRepresentation.sobolevS
   Israel J. Math. 199 (2014), §§2.1–2.4.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
 open scoped ContDiff Manifold
 
-namespace ContRepresentation
+namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
-  {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  (π : ContRepresentation 𝕜 G V)
-
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
-variable {I π}
-
-/-! ### Words and the word seminorms -/
-
-variable {ι : Type*}
-
-variable (I π) in
-/-- The operator `dπ(X_w) = dπ(X_{i₁}) ∘ ⋯ ∘ dπ(X_{iₙ})` on smooth vectors attached to a word
-`w = [i₁, …, iₙ]`. -/
-def wordAction (X : ι → LeftInvariantDerivation I G) (w : List ι) :
-    Module.End 𝕜 (lieSmoothVectors I π) :=
-  (w.map fun i ↦ lieSmoothVectorsDerivative I π (X i)).prod
-
-/-- The empty word acts as the identity. -/
-@[simp]
-theorem wordAction_nil (X : ι → LeftInvariantDerivation I G) : wordAction I π X [] = 1 :=
-  rfl
-
-/-- `dπ(X_{i w}) = dπ(X_i) ∘ dπ(X_w)`. -/
-@[simp]
-theorem wordAction_cons (X : ι → LeftInvariantDerivation I G) (i : ι) (w : List ι) :
-    wordAction I π X (i :: w) = lieSmoothVectorsDerivative I π (X i) * wordAction I π X w :=
-  rfl
+/-! ### Words and ordered monomials -/
 
 /-- The words in `ι` of length at most `k`: a word of length `n ≤ k` is `⟨n, w⟩` with
 `w : Fin n → ι`. -/
 abbrev Word (ι : Type*) (k : ℕ) : Type _ :=
   Σ n : Fin (k + 1), Fin n → ι
-
-variable [Fintype ι]
-
-variable (I π) in
-/-- The word seminorm `P_k(v) = ∑_{|w| ≤ k} ‖dπ(X_w) v‖` on smooth vectors, summed over all
-words `w` in `ι` of length at most `k`. -/
-def wordSeminorm (X : ι → LeftInvariantDerivation I G) (k : ℕ) :
-    Seminorm 𝕜 (lieSmoothVectors I π) :=
-  ∑ w : Word ι k,
-    (normSeminorm 𝕜 V).comp
-      ((lieSmoothVectors I π).subtype ∘ₗ wordAction I π X (List.ofFn w.2))
-
-/-- The word seminorm as an explicit sum over words. -/
-theorem wordSeminorm_apply (X : ι → LeftInvariantDerivation I G) (k : ℕ)
-    (v : lieSmoothVectors I π) :
-    wordSeminorm I π X k v = ∑ w : Word ι k, ‖(wordAction I π X (List.ofFn w.2) v : V)‖ := by
-  change FunLike.coeAddMonoidHom _ _ _ (wordSeminorm I π X k) v = _
-  simp [wordSeminorm, map_sum, Finset.sum_apply]
-
-/-- The word seminorm of order zero is the norm of `V`. -/
-@[simp]
-theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoothVectors I π) :
-    wordSeminorm I π X 0 v = ‖(v : V)‖ := by
-  rw [wordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
-  simp
-
-/-! ### Ordered monomials and the Sobolev seminorms -/
 
 variable {m : ℕ}
 
@@ -153,6 +95,12 @@ abbrev SobolevIndex (m k : ℕ) : Type :=
 def SobolevIndex.exponent {k : ℕ} (α : SobolevIndex m k) (i : Fin m) : ℕ :=
   α.val i
 
+/-- The `i`-th entry of the exponent vector of `α`. -/
+@[simp]
+theorem SobolevIndex.exponent_apply {k : ℕ} (α : SobolevIndex m k) (i : Fin m) :
+    α.exponent i = α.val i :=
+  (rfl)
+
 /-- An index in `SobolevIndex m k` is determined by its exponent vector. -/
 theorem SobolevIndex.exponent_injective {k : ℕ} :
     Function.Injective (SobolevIndex.exponent (m := m) (k := k)) := fun _ _ h ↦
@@ -165,12 +113,99 @@ def SobolevIndex.toWord {k : ℕ} (α : SobolevIndex m k) : Word (Fin m) k :=
       rw [length_monomialWord]; exact Nat.lt_succ_of_le α.property⟩,
     (monomialWord α.exponent).get⟩
 
+/-- The word `SobolevIndex.toWord α` spells the ordered monomial word of `α`. -/
+@[simp]
+theorem SobolevIndex.ofFn_toWord {k : ℕ} (α : SobolevIndex m k) :
+    List.ofFn α.toWord.2 = monomialWord α.exponent :=
+  List.ofFn_get _
+
 /-- Distinct ordered monomials give distinct words. -/
 theorem SobolevIndex.toWord_injective {k : ℕ} :
     Function.Injective (SobolevIndex.toWord (m := m) (k := k)) := fun α β h ↦ by
   have := congrArg (fun w : Word (Fin m) k ↦ List.ofFn w.2) h
-  simp only [SobolevIndex.toWord, List.ofFn_get] at this
+  simp only [SobolevIndex.ofFn_toWord] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
+
+end TauCeti
+
+namespace ContRepresentation
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  (π : ContRepresentation 𝕜 G V)
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {I π}
+
+/-! ### The word seminorms -/
+
+variable {ι : Type*}
+
+variable (I π) in
+/-- The operator `dπ(X_w) = dπ(X_{i₁}) ∘ ⋯ ∘ dπ(X_{iₙ})` on smooth vectors attached to a word
+`w = [i₁, …, iₙ]`. -/
+def wordAction (X : ι → LeftInvariantDerivation I G) (w : List ι) :
+    Module.End 𝕜 (lieSmoothVectors I π) :=
+  (w.map fun i ↦ lieSmoothVectorsDerivative I π (X i)).prod
+
+/-- The empty word acts as the identity. -/
+@[simp]
+theorem wordAction_nil (X : ι → LeftInvariantDerivation I G) : wordAction I π X [] = 1 :=
+  (rfl)
+
+/-- `dπ(X_{i w}) = dπ(X_i) ∘ dπ(X_w)`. -/
+@[simp]
+theorem wordAction_cons (X : ι → LeftInvariantDerivation I G) (i : ι) (w : List ι) :
+    wordAction I π X (i :: w) = lieSmoothVectorsDerivative I π (X i) * wordAction I π X w :=
+  (rfl)
+
+/-- A one-letter word `[i]` acts as `dπ(X_i)`. Not `@[simp]`: `wordAction_cons` and
+`wordAction_nil` already rewrite it. -/
+theorem wordAction_singleton (X : ι → LeftInvariantDerivation I G) (i : ι) :
+    wordAction I π X [i] = lieSmoothVectorsDerivative I π (X i) := by
+  simp
+
+/-- `dπ(X_{w₁ w₂}) = dπ(X_{w₁}) ∘ dπ(X_{w₂})`. -/
+@[simp]
+theorem wordAction_append (X : ι → LeftInvariantDerivation I G) (w₁ w₂ : List ι) :
+    wordAction I π X (w₁ ++ w₂) = wordAction I π X w₁ * wordAction I π X w₂ := by
+  simp [wordAction]
+
+variable [Fintype ι]
+
+variable (I π) in
+/-- The word seminorm `P_k(v) = ∑_{|w| ≤ k} ‖dπ(X_w) v‖` on smooth vectors, summed over all
+words `w` in `ι` of length at most `k`. -/
+def wordSeminorm (X : ι → LeftInvariantDerivation I G) (k : ℕ) :
+    Seminorm 𝕜 (lieSmoothVectors I π) :=
+  ∑ w : Word ι k,
+    (normSeminorm 𝕜 V).comp
+      ((lieSmoothVectors I π).subtype ∘ₗ wordAction I π X (List.ofFn w.2))
+
+/-- The word seminorm as an explicit sum over words. -/
+theorem wordSeminorm_apply (X : ι → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I π) :
+    wordSeminorm I π X k v = ∑ w : Word ι k, ‖(wordAction I π X (List.ofFn w.2) v : V)‖ := by
+  rw [← FunLike.coeAddMonoidHom_apply]
+  simp [wordSeminorm, map_sum, Finset.sum_apply]
+
+/-- The word seminorm of order zero is the norm of `V`. -/
+@[simp]
+theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoothVectors I π) :
+    wordSeminorm I π X 0 v = ‖(v : V)‖ := by
+  rw [wordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
+  simp
+
+/-! ### The Sobolev seminorms -/
+
+variable {m : ℕ}
 
 variable (I π) in
 /-- The vector `(dπ(X^α) v)_{|α| ≤ k}` of ordered monomial derivatives, in the `ℓ²` product. -/
@@ -179,6 +214,13 @@ def sobolevVector (X : Fin m → LeftInvariantDerivation I G) (k : ℕ) :
   (WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
     LinearMap.pi fun α ↦
       (lieSmoothVectors I π).subtype ∘ₗ wordAction I π X (monomialWord α.exponent)
+
+/-- The `α`-component of `sobolevVector` is `dπ(X^α) v`. -/
+@[simp]
+theorem sobolevVector_apply (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I π) (α : SobolevIndex m k) :
+    sobolevVector I π X k v α = (wordAction I π X (monomialWord α.exponent) v : V) :=
+  (rfl)
 
 variable (I π) in
 /-- The Sobolev seminorm `Q_k(v) = (∑_{|α| ≤ k} ‖dπ(X^α) v‖²)^{1/2}` of Bernstein–Krötz, over
@@ -192,17 +234,17 @@ theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : �
     (v : lieSmoothVectors I π) :
     sobolevSeminorm I π X k v =
       √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) := by
-  simp [sobolevSeminorm, sobolevVector, PiLp.norm_eq_of_L2]
+  simp [sobolevSeminorm, PiLp.norm_eq_of_L2]
 
 /-- The Sobolev seminorm is bounded by the word seminorm: every ordered monomial is a word, and
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
-theorem sobolevSeminorm_le (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
+theorem sobolevSeminorm_le_wordSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) : sobolevSeminorm I π X k v ≤ wordSeminorm I π X k v := by
   classical
   set b : Word (Fin m) k → ℝ := fun w ↦ ‖(wordAction I π X (List.ofFn w.2) v : V)‖
   have hb : ∀ α : SobolevIndex m k,
       ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ = b α.toWord := fun α ↦ by
-    simp only [b, SobolevIndex.toWord, List.ofFn_get]
+    simp only [b, SobolevIndex.ofFn_toWord]
   have hsum : ∑ α : SobolevIndex m k, b α.toWord ≤ ∑ w, b w := by
     rw [← Finset.sum_image fun _ _ _ _ h ↦ SobolevIndex.toWord_injective h]
     exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ norm_nonneg _
