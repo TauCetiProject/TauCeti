@@ -198,7 +198,7 @@ theorem finsum_apply_mem_range_algebraMap [CharZero Ω] {E : Type*} [CommRing E]
       left_inv := fun φ ↦ RingHom.ext fun x ↦ by simp
       right_inv := fun φ ↦ RingHom.ext fun x ↦ by simp }
   calc τ (∑ᶠ φ : E →+* Ω, φ a) = ∑ᶠ φ : E →+* Ω, τ (φ a) :=
-        AddEquiv.map_finsum τ.toRingEquiv.toAddEquiv _
+        AddEquivClass.map_finsum τ _
     _ = ∑ᶠ φ : E →+* Ω, e φ a := finsum_congr fun φ ↦ by simp [e]
     _ = ∑ᶠ φ : E →+* Ω, φ a := finsum_comp_equiv e (f := fun φ : E →+* Ω ↦ φ a)
 

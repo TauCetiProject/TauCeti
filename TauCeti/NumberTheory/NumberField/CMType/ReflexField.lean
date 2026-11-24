@@ -198,7 +198,7 @@ theorem typeTrace_smul_ringAut [StarCompCommute E] (σ : RingAut ℂ) (Φ : CMTy
   have hinj : Set.InjOn (RingHom.comp (σ : ℂ →+* ℂ)) (Φ : Set (E →+* ℂ)) := fun _ _ _ _ h ↦
     RingHom.ext fun x ↦ σ.injective (RingHom.congr_fun h x)
   rw [typeTrace_apply, coe_smul, finsum_mem_image hinj, typeTrace_apply]
-  exact ((σ : ℂ →+ ℂ).map_finsum_mem _ (Set.toFinite _)).symm
+  simp [AddEquivClass.map_finsum]
 
 /-! ### Induced types -/
 
