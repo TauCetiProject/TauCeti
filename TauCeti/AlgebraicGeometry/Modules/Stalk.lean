@@ -133,10 +133,12 @@ theorem Hom.stalkₗ_comp (φ : M ⟶ N) (ψ : N ⟶ P) (x : X) :
 
 /-- An epimorphism of `𝒪_X`-modules is surjective on every stalk. -/
 theorem Hom.stalkₗ_surjective_of_epi (φ : M ⟶ N) [Epi φ] (x : X) :
-    Function.Surjective (φ.stalkₗ x) :=
-  (TopCat.Presheaf.locally_surjective_iff_surjective_on_stalks _).mp
-    ((TopCat.Sheaf.isLocallySurjective_iff_epi
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ)).mpr inferInstance) x
+    Function.Surjective (φ.stalkₗ x) := by
+  have h := (TopCat.Sheaf.isLocallySurjective_iff_epi
+    ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ)).mpr inferInstance
+  rw [TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf_map_hom] at h
+  rw [Hom.coe_stalkₗ]
+  exact (TopCat.Presheaf.locally_surjective_iff_surjective_on_stalks _).mp h x
 
 end Hom
 
