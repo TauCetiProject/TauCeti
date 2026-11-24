@@ -45,6 +45,8 @@ constants are parameters, not hidden existential data.
 
 * `TauCeti.PDE.UniformlyEllipticOn`: uniform lower and upper ellipticity bounds on a set.
 * `TauCeti.PDE.uniformlyEllipticOn_const_one`: the identity matrix is uniformly elliptic.
+* `TauCeti.PDE.le_of_mul_norm_sq_le_toQuadraticForm'_le`: two-sided bounds
+  `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` force `λ ≤ Λ`.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_constants`: weakening constants preserves the
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
@@ -504,6 +506,13 @@ lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
   rw [Matrix.toQuadraticForm'_apply, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+
+/-- Two-sided bounds `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` on the quadratic form of a square matrix over a
+nonempty index type force `λ ≤ Λ`. -/
+theorem le_of_mul_norm_sq_le_toQuadraticForm'_le [Nonempty n] {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ n, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : lam ≤ Lam := by
+  simpa using (hA (EuclideanSpace.single (Classical.arbitrary n) 1)).trans (hA' _)
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :

@@ -157,6 +157,12 @@ theorem qPochhammer_succ' (x q : R) (n : ℕ) :
 theorem qPochhammer_zero_left (q : R) (n : ℕ) : qPochhammer 0 q n = 1 := by
   simp [qPochhammer_def]
 
+/-- With `x = 1`, the first factor of every nonempty q-Pochhammer product vanishes. -/
+@[simp]
+theorem qPochhammer_one_left (q : R) (n : ℕ) : qPochhammer 1 q (n + 1) = 0 := by
+  rw [qPochhammer_succ']
+  simp
+
 /-- At `q = 1` the q-Pochhammer product is a power: `(x; 1)_n = (1 - x) ^ n`. -/
 @[simp]
 theorem qPochhammer_base_one (x : R) (n : ℕ) : qPochhammer x 1 n = (1 - x) ^ n := by

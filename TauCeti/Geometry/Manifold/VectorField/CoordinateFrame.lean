@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Coordinate frames of manifold charts
@@ -29,6 +32,9 @@ fields commute.
 * `TauCeti.Manifold.mlieBracket_symm_trivializationAt` and
   `TauCeti.Manifold.mlieBracket_localFrame_trivializationAt`: vector fields with constant
   coordinates commute, and so does the coordinate frame.
+* `TauCeti.Manifold.exists_eventually_sum_smul_mvfderiv_eq`: near every point of a real manifold,
+  globally smooth cut-offs of the coordinate frame and of the coordinate functions of a chart are
+  dual to each other, so every covector `ξ` is `∑ j, ξ (X j) du_j`.
 -/
 
 public section
@@ -163,5 +169,54 @@ theorem mlieBracket_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
   mlieBracket_eq_zero_of_eqOn_mpullbackWithin x₀ hx (b i) (b j)
     (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ i)
     (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ j)
+
+/-! ### Global coordinate frames near a point -/
+
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+
+/-- **A frame and its dual coframe near a point.** Near every point `x` there are globally smooth
+functions `u j` and vector fields `X j`, indexed by a basis of the model space, whose
+differentials and values at every nearby point `y` are dual bases of `T_y*M` and `T_yM`: every
+covector `ξ` at `y` is `∑ j, ξ (X j y) du_j(y)`. They are the coordinate functions and the
+coordinate frame of the chart at `x`, cut off away from `x`. -/
+theorem exists_eventually_sum_smul_mvfderiv_eq (x : M) :
+    ∃ (u : Fin (Module.finrank ℝ E) → C^∞⟮I, M; ℝ⟯)
+      (X : Fin (Module.finrank ℝ E) → Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯),
+      ∀ᶠ y in 𝓝 x, ∀ ξ : TangentSpace I y →L[ℝ] ℝ, ∑ j, ξ (X j y) • mvfderiv I (u j) y = ξ := by
+  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
+  let b := Module.finBasis ℝ E
+  let φ (j : Fin (Module.finrank ℝ E)) : E →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord j)
+  let e := trivializationAt E (TangentSpace I : M → Type _) x
+  have he : e.baseSet = (extChartAt I x).source := by
+    rw [extChartAt_source, TangentBundle.trivializationAt_baseSet]
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  obtain ⟨X, hXs, hXe⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b le_rfl hx
+  refine ⟨fun j ↦ ⟨fun y ↦ φ j (F y), (φ j).contMDiff.comp F.contMDiff⟩,
+    fun j ↦ ⟨X j, hXs j⟩, ?_⟩
+  filter_upwards [hF.eventuallyEq_nhds, e.open_baseSet.mem_nhds hx, eventually_all.2 hXe]
+    with y hFy hy hXy ξ
+  set B := e.basisAt b hy
+  have hX (l : Fin (Module.finrank ℝ E)) : X l y = B l := by
+    rw [hXy l, e.localFrame_apply_of_mem_baseSet b hy]
+  have hFd : MDiffAt F y := F.contMDiff.mdifferentiable (by simp) y
+  -- The cut-off coordinate functions and coordinate frame are dual near `x`.
+  have hdual (j l : Fin (Module.finrank ℝ E)) :
+      mvfderiv I (fun z ↦ φ j (F z)) y (B l) = if l = j then 1 else 0 := by
+    rw [show (fun z ↦ φ j (F z)) = φ j ∘ F from rfl, (φ j).mvfderiv_comp_apply hFd,
+      hFy.mvfderiv_eq, mvfderiv_apply_eq_mfderiv_apply, ← e.localFrame_apply_of_mem_baseSet b hy,
+      mfderiv_extChartAt_localFrame_trivializationAt b x (he ▸ hy) l]
+    simp [φ, b.coord_apply, Finsupp.single_apply]
+  refine ContinuousLinearMap.coe_injective (B.ext fun l ↦ ?_)
+  simp only [ContinuousLinearMap.toLinearMap_sum, ContinuousLinearMap.toLinearMap_smul,
+    LinearMap.sum_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe, ContMDiffMap.coeFn_mk,
+    ContMDiffSection.coeFn_mk, hX, hdual, smul_eq_mul, mul_ite, mul_one, mul_zero]
+  rw [Finset.sum_ite_eq]
+  simp
+
+end Real
 
 end TauCeti.Manifold
