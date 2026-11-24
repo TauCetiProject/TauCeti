@@ -122,13 +122,14 @@ apply to all three ends.
   `TauCeti.Floer.fst_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
   the positive end chart, up to an integer shift of `t`.
 * `TauCeti.Floer.endBandCoord`, `TauCeti.Floer.positiveEndChart_endBandCoord`,
-  `TauCeti.Floer.endBandCoord_positiveEndChart`, `TauCeti.Floer.image_positiveEndChart_band`: the
-  band coordinates, the positive end coordinates with `t` reduced to `[0, 1)`, invert the positive
-  end chart on the band `ℝ × [0, 1)`, whose image is the plane with the center of the end removed.
+  `TauCeti.Floer.endBandCoord_positiveEndChart`,
+  `TauCeti.Floer.image_positiveEndChart_univ_prod_Ico`: the band coordinates, the positive end
+  coordinates with `t` reduced to `[0, 1)`, invert the positive end chart on the band
+  `ℝ × [0, 1)`, whose image is the plane with the center of the end removed.
 * `TauCeti.Floer.positiveEndChartScale`, `TauCeti.Floer.sq_positiveEndChartScale`,
-  `TauCeti.Floer.sq_positiveEndChartScale_eq`: the derivative of the positive end chart at `ζ` is a
-  rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`, whose square is
-  the Jacobian.
+  `TauCeti.Floer.sq_positiveEndChartScale_eq_sq_add_sq`: the derivative of the positive end chart
+  at `ζ` is a rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`,
+  whose square is the Jacobian.
 * `TauCeti.Floer.subset_preimage_truncation_union_iUnion_image_positiveEndChart`: `S` is covered
   by the truncation `S_T` and the images of the bands `(T, ∞) × [0, 1)` under the three positive
   end charts.
@@ -999,7 +1000,7 @@ theorem fderiv_positiveEndChart_apply_zero_one (q : Puncture) (ζ : ℝ × ℝ) 
 
 /-- The square of the conformal scale is the squared norm of the image of `(1, 0)` under the
 derivative of the positive end chart. -/
-theorem sq_positiveEndChartScale_eq (q : Puncture) (ζ : ℝ × ℝ) :
+theorem sq_positiveEndChartScale_eq_sq_add_sq (q : Puncture) (ζ : ℝ × ℝ) :
     positiveEndChartScale q ζ ^ 2 =
       (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 ^ 2 +
         (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 ^ 2 := by
@@ -1012,7 +1013,7 @@ is at most the conformal scale in absolute value. -/
 theorem abs_fst_fderiv_positiveEndChart_le (q : Puncture) (ζ : ℝ × ℝ) :
     |(fderiv ℝ (positiveEndChart q) ζ (1, 0)).1| ≤ positiveEndChartScale q ζ := by
   refine abs_le_of_sq_le_sq ?_ (positiveEndChartScale_pos q ζ).le
-  rw [sq_positiveEndChartScale_eq]
+  rw [sq_positiveEndChartScale_eq_sq_add_sq]
   exact le_add_of_nonneg_right (sq_nonneg _)
 
 /-- The second coordinate of the image of `(1, 0)` under the derivative of the positive end chart
@@ -1020,7 +1021,7 @@ is at most the conformal scale in absolute value. -/
 theorem abs_snd_fderiv_positiveEndChart_le (q : Puncture) (ζ : ℝ × ℝ) :
     |(fderiv ℝ (positiveEndChart q) ζ (1, 0)).2| ≤ positiveEndChartScale q ζ := by
   refine abs_le_of_sq_le_sq ?_ (positiveEndChartScale_pos q ζ).le
-  rw [sq_positiveEndChartScale_eq]
+  rw [sq_positiveEndChartScale_eq_sq_add_sq]
   exact le_add_of_nonneg_left (sq_nonneg _)
 
 /-- The positive end chart sends the part `s > 0` of the end into `S`. -/
@@ -1177,7 +1178,7 @@ theorem endBandCoord_positiveEndChart (q : Puncture) {ζ : ℝ × ℝ} (hζ : ζ
 
 /-- The image of the band `ℝ × [0, 1)` under the positive end chart is the plane with the center
 of the end removed. -/
-theorem image_positiveEndChart_band (q : Puncture) :
+theorem image_positiveEndChart_univ_prod_Ico (q : Puncture) :
     positiveEndChart q '' ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1) =
       {z | Complex.equivRealProdCLM.symm z ≠ q.endCenter} := by
   ext z

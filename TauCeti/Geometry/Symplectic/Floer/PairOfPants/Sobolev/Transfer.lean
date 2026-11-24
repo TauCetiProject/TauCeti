@@ -28,17 +28,17 @@ coordinates it needs: it moves `L²` functions and `W^{1,2}` sections between th
 
 The positive end chart is holomorphic, of period one in the angular coordinate, and maps the band
 `ℝ × [0, 1)` bijectively onto the plane with the center `c_q` of the end removed
-(`TauCeti.Floer.image_positiveEndChart_band`); for `c_q = 0` this is the whole cylinder, including
-the part `s < 0` that covers the rest of `S` up to one point. Its inverse on the band is given by
-the **band coordinates** `TauCeti.Floer.endBandCoord`, the positive end coordinates with the
-angular coordinate reduced to `[0, 1)`. The derivative of `φ'_q` at `ζ` is a rotation followed by
-multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
+(`TauCeti.Floer.image_positiveEndChart_univ_prod_Ico`); for `c_q = 0` this is the whole cylinder,
+including the part `s < 0` that covers the rest of `S` up to one point. Its inverse on the band is
+given by the **band coordinates** `TauCeti.Floer.endBandCoord`, the positive end coordinates with
+the angular coordinate reduced to `[0, 1)`. The derivative of `φ'_q` at `ζ` is a rotation followed
+by multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
 (`TauCeti.Floer.positiveEndChartScale`), whose square is the Jacobian.
 
 * **The `L²` isometry.** By the change of variables formula
   (`TauCeti.Floer.setLIntegral_thricePuncturedSphereReal_eq_lintegral_positiveEndChart`),
   `h ↦ (h / r) ∘ ψ`, for the band coordinates `ψ`, is a linear isometric equivalence
-  `TauCeti.Floer.endChartLp` from `L²` of the strip onto `L²(S)`, with inverse
+  `TauCeti.Floer.positiveEndChartLp` from `L²` of the strip onto `L²(S)`, with inverse
   `g ↦ r · (g ∘ φ'_q)`. Since the `L²` norm of `D ξ` for a first-order operator
   `D = ∂s + J ∂t + C` is conformally invariant, this is the change of variables for the values of
   first-order operators.
@@ -105,9 +105,9 @@ theorem setLIntegral_thricePuncturedSphereReal_eq_lintegral_positiveEndChart (q 
     ∫⁻ z in thricePuncturedSphereReal, G z =
       ∫⁻ ζ, ENNReal.ofReal (positiveEndChartScale q ζ ^ 2) * G (positiveEndChart q ζ)
         ∂StripSobolev.stripMeasure := by
-  rw [volume_restrict_thricePuncturedSphereReal_eq q, ← image_positiveEndChart_band,
+  rw [volume_restrict_thricePuncturedSphereReal_eq q, ← image_positiveEndChart_univ_prod_Ico,
     lintegral_image_positiveEndChart q MeasurableSet.univ,
-    StripSobolev.stripMeasure_eq_restrict_band]
+    StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico]
   refine lintegral_congr fun ζ ↦ ?_
   rw [sq_positiveEndChartScale, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
 
@@ -143,7 +143,7 @@ theorem quasiMeasurePreserving_endBandCoord (q : Puncture) :
     isOpen_thricePuncturedSphereReal.measurableSet]
   set B : Set (ℝ × ℝ) := (univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1
   have hAB : volume (A ∩ B) = 0 := by
-    rw [StripSobolev.stripMeasure_eq_restrict_band, Measure.restrict_apply hA] at h0
+    rw [StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico, Measure.restrict_apply hA] at h0
     exact h0
   refine measure_mono_null (t := positiveEndChart q '' (A ∩ B)) (fun z hz ↦
     ⟨endBandCoord q z, ⟨hz.1, endBandCoord_mem q z⟩,
@@ -193,7 +193,7 @@ theorem eLpNorm_inv_smul_comp_endBandCoord (q : Puncture) {h : ℝ × ℝ → W}
     eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hh,
     setLIntegral_thricePuncturedSphereReal_eq_lintegral_positiveEndChart q]
   congr 1
-  rw [StripSobolev.stripMeasure_eq_restrict_band]
+  rw [StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico]
   refine setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Ico) fun ζ hζ ↦ ?_
   have hpos := positiveEndChartScale_pos q ζ
   simp [endBandCoord_positiveEndChart q hζ.2, eNorm_smul, mul_pow, ← mul_assoc,
@@ -219,8 +219,8 @@ theorem memLp_inv_smul_comp_endBandCoord (q : Puncture) {h : ℝ × ℝ → W}
   exact hh
 
 /-- Reading an `L²` function on `S` in the positive end chart, multiplied by the conformal scale,
-as a linear isometry into `L²` of the strip. Its inverse is `endChartLp`. -/
-private def endChartLpPull (q : Puncture) :
+as a linear isometry into `L²` of the strip. Its inverse is `positiveEndChartLp`. -/
+private def positiveEndChartLpPull (q : Puncture) :
     Lp W 2 (volume.restrict thricePuncturedSphereReal) →ₗᵢ[ℝ] Lp W 2 StripSobolev.stripMeasure where
   toFun g := (memLp_smul_comp_positiveEndChart q (Lp.memLp g)).toLp _
   map_add' g h := by
@@ -243,19 +243,20 @@ private def endChartLpPull (q : Puncture) :
     rw [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp,
       eLpNorm_smul_comp_positiveEndChart q (Lp.aestronglyMeasurable g), Lp.norm_def]
 
-private theorem coeFn_endChartLpPull (q : Puncture)
+private theorem coeFn_positiveEndChartLpPull (q : Puncture)
     (g : Lp W 2 (volume.restrict thricePuncturedSphereReal)) :
-    endChartLpPull q g =ᵐ[StripSobolev.stripMeasure]
+    positiveEndChartLpPull q g =ᵐ[StripSobolev.stripMeasure]
       fun ζ ↦ positiveEndChartScale q ζ • g (positiveEndChart q ζ) :=
   MemLp.coeFn_toLp (memLp_smul_comp_positiveEndChart q (Lp.memLp g))
 
-private theorem endChartLpPull_toLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMeasure) :
-    endChartLpPull q ((memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _) = h := by
+private theorem positiveEndChartLpPull_toLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMeasure) :
+    positiveEndChartLpPull q ((memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _) = h := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_endChartLpPull q ((memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _),
+  filter_upwards
+    [coeFn_positiveEndChartLpPull q ((memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _),
     (quasiMeasurePreserving_positiveEndChart q).ae
       (MemLp.coeFn_toLp (memLp_inv_smul_comp_endBandCoord q (Lp.memLp h))),
-    StripSobolev.stripMeasure_eq_restrict_band ▸
+    StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico ▸
       ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Ico)] with ζ h₁ h₂ hζ
   rw [h₁, h₂, endBandCoord_positiveEndChart q hζ.2, smul_inv_smul₀
     (positiveEndChartScale_pos q ζ).ne']
@@ -263,31 +264,32 @@ private theorem endChartLpPull_toLp (q : Puncture) (h : Lp W 2 StripSobolev.stri
 /-- **The `L²` isometry along an end chart.** The positive end chart `φ'_q` of the end `q`
 identifies `L²` of the strip `ℝ × [0, 1]` isometrically with `L²(S)`: a function `h` on the strip
 goes to `z ↦ h(ζ) / |dφ'_q(ζ)|` for the band coordinates `ζ` of `z`
-(`coeFn_endChartLp`), and the inverse multiplies a function on `S` read in the chart by the
-conformal scale `|dφ'_q|` (`coeFn_endChartLp_symm`). This is the change of variables for the
+(`coeFn_positiveEndChartLp`), and the inverse multiplies a function on `S` read in the chart by the
+conformal scale `|dφ'_q|` (`coeFn_positiveEndChartLp_symm`). This is the change of variables for the
 values of first-order operators, whose `L²` norm is conformally invariant. -/
-def endChartLp (q : Puncture) :
+def positiveEndChartLp (q : Puncture) :
     Lp W 2 StripSobolev.stripMeasure ≃ₗᵢ[ℝ] Lp W 2 (volume.restrict thricePuncturedSphereReal) :=
-  (LinearIsometryEquiv.ofSurjective (endChartLpPull q) fun h ↦ ⟨_, endChartLpPull_toLp q h⟩).symm
+  (LinearIsometryEquiv.ofSurjective (positiveEndChartLpPull q) fun h ↦
+    ⟨_, positiveEndChartLpPull_toLp q h⟩).symm
 
 /-- The inverse of the `L²` isometry along an end chart reads a function on `S` in the positive end
 chart and multiplies it by the conformal scale. -/
-theorem coeFn_endChartLp_symm (q : Puncture)
+theorem coeFn_positiveEndChartLp_symm (q : Puncture)
     (g : Lp W 2 (volume.restrict thricePuncturedSphereReal)) :
-    (endChartLp q).symm g =ᵐ[StripSobolev.stripMeasure]
+    (positiveEndChartLp q).symm g =ᵐ[StripSobolev.stripMeasure]
       fun ζ ↦ positiveEndChartScale q ζ • g (positiveEndChart q ζ) := by
-  rw [endChartLp, LinearIsometryEquiv.symm_symm]
-  exact coeFn_endChartLpPull q g
+  rw [positiveEndChartLp, LinearIsometryEquiv.symm_symm]
+  exact coeFn_positiveEndChartLpPull q g
 
 /-- The `L²` isometry along an end chart reads a function on the strip in the band coordinates and
 divides it by the conformal scale. -/
-theorem coeFn_endChartLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMeasure) :
-    endChartLp q h =ᵐ[volume.restrict thricePuncturedSphereReal]
+theorem coeFn_positiveEndChartLp (q : Puncture) (h : Lp W 2 StripSobolev.stripMeasure) :
+    positiveEndChartLp q h =ᵐ[volume.restrict thricePuncturedSphereReal]
       fun z ↦ (positiveEndChartScale q (endBandCoord q z))⁻¹ • h (endBandCoord q z) := by
-  have heq : endChartLp q h = (memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _ := by
-    refine (endChartLp q).symm.injective ?_
-    rw [LinearIsometryEquiv.symm_apply_apply, endChartLp, LinearIsometryEquiv.symm_symm]
-    exact (endChartLpPull_toLp q h).symm
+  have heq : positiveEndChartLp q h = (memLp_inv_smul_comp_endBandCoord q (Lp.memLp h)).toLp _ := by
+    refine (positiveEndChartLp q).symm.injective ?_
+    rw [LinearIsometryEquiv.symm_apply_apply, positiveEndChartLp, LinearIsometryEquiv.symm_symm]
+    exact (positiveEndChartLpPull_toLp q h).symm
   rw [heq]
   exact MemLp.coeFn_toLp _
 
@@ -374,7 +376,8 @@ theorem fderiv_comp_positiveEndCoord_positiveEndChart (q : Puncture) {ξ : ℝ �
   set a := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1
   set b := (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2
   have hab : fderiv ℝ (positiveEndChart q) ζ (1, 0) = (a, b) := Prod.mk.eta.symm
-  have hr2 : positiveEndChartScale q ζ ^ 2 = a ^ 2 + b ^ 2 := sq_positiveEndChartScale_eq q ζ
+  have hr2 : positiveEndChartScale q ζ ^ 2 = a ^ 2 + b ^ 2 :=
+    sq_positiveEndChartScale_eq_sq_add_sq q ζ
   have h2 : a ^ 2 + b ^ 2 ≠ 0 := hr2 ▸ pow_ne_zero 2 (positiveEndChartScale_pos q ζ).ne'
   have hlin (c d : ℝ) : L (c, d) = c • L (1, 0) + d • L (0, 1) := by
     rw [show ((c, d) : ℝ × ℝ) = c • (1, 0) + d • (0, 1) by ext <;> simp, map_add, map_smul,
@@ -607,20 +610,20 @@ theorem memLp_endTransferCoeff (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : C
 
 /-- The **transfer of `L²` jets along an end chart**: a jet `(ξ, ∂s ξ, ∂t ξ)` on the strip is sent
 by the jet coefficient of the transfer (`endTransferCoeff`) and then by the `L²` isometry
-(`endChartLp`) to `S`. For a cutoff `β` satisfying the hypotheses of `endTransfer_mem_H1`, it
-sends the jet of a test section `ξ` of the cylinder to the conformal jet of the transferred section
-(`endTransfer_jetLp_ae_eq`), so it maps `W^{1,2}` of the cylinder into `W^{1,2}_0(S)`
+(`positiveEndChartLp`) to `S`. For a cutoff `β` satisfying the hypotheses of `endTransfer_mem_H1`,
+it sends the jet of a test section `ξ` of the cylinder to the conformal jet of the transferred
+section (`endTransfer_jetLp_ae_eq`), so it maps `W^{1,2}` of the cylinder into `W^{1,2}_0(S)`
 (`endTransfer_mem_H1`). -/
 def endTransfer (q : Puncture) (β : ℝ × ℝ → ℝ) :
     Lp (V × V × V) 2 StripSobolev.stripMeasure →L[ℝ]
       Lp (V × V × V) 2 (volume.restrict thricePuncturedSphereReal) :=
-  (endChartLp (W := V × V × V) q).toContinuousLinearEquiv.toContinuousLinearMap.comp
+  (positiveEndChartLp (W := V × V × V) q).toContinuousLinearEquiv.toContinuousLinearMap.comp
     (jetOperator StripSobolev.stripMeasure (endTransferCoeff q β))
 
 theorem endTransfer_apply (q : Puncture) (β : ℝ × ℝ → ℝ)
     (f : Lp (V × V × V) 2 StripSobolev.stripMeasure) :
     endTransfer q β f =
-      endChartLp q (jetOperator StripSobolev.stripMeasure (endTransferCoeff q β) f) :=
+      positiveEndChartLp q (jetOperator StripSobolev.stripMeasure (endTransferCoeff q β) f) :=
   (rfl)
 
 /-- The transfer of an `L²` jet along an end chart reads it in the band coordinates. -/
@@ -630,7 +633,7 @@ theorem coeFn_endTransfer (q : Puncture) {β : ℝ × ℝ → ℝ}
     endTransfer q β f =ᵐ[volume.restrict thricePuncturedSphereReal]
       fun z ↦ (positiveEndChartScale q (endBandCoord q z))⁻¹ •
         endTransferCoeff q β (endBandCoord q z) (f (endBandCoord q z)) := by
-  filter_upwards [coeFn_endChartLp q (jetOperator StripSobolev.stripMeasure
+  filter_upwards [coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
       (endTransferCoeff q β) f),
     (quasiMeasurePreserving_endBandCoord q).ae (coeFn_jetOperator hN f)] with z h₁ h₂
   rw [endTransfer_apply, h₁, h₂]
@@ -694,7 +697,7 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
     (hM : MemLp M ∞ (volume.restrict thricePuncturedSphereReal))
     (f : Lp (V × V × V) 2 StripSobolev.stripMeasure) :
     jetOperator (volume.restrict thricePuncturedSphereReal) M (endTransfer q β f) =
-      endChartLp q (jetOperator StripSobolev.stripMeasure
+      positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
   have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       StripSobolev.stripMeasure :=
@@ -703,7 +706,7 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
       (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
-    coeFn_endChartLp q (jetOperator StripSobolev.stripMeasure
+    coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure
       (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f),
     (quasiMeasurePreserving_endBandCoord q).ae (coeFn_jetOperator hMφ f),
     ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ h₃ h₄ hz

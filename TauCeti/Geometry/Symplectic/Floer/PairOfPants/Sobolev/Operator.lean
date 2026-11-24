@@ -136,7 +136,7 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
       Function.comp_apply] using h
   -- The Jacobian of the positive end chart is `a² + b² = (2π |w - c_q|)²`.
   have hdet : a ^ 2 + b ^ 2 = r ^ 2 := by
-    rw [sq_positiveEndChartScale_eq, ← stdComplexLineReal_eq]
+    rw [sq_positiveEndChartScale_eq_sq_add_sq, ← stdComplexLineReal_eq]
   have hr : 0 < r := positiveEndChartScale_pos q ζ
   exact Jw.mul_opNorm_le_of_eq_smul_sub_smul hid hdet hr
 
