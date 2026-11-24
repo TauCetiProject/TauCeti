@@ -195,6 +195,11 @@ theorem IsNPositive.toLinearMap_toPositiveLinearMap {n : ℕ} {φ : A →ₗ[ℂ
     (hφ : IsNPositive n φ) (hn : 0 < n) : (hφ.toPositiveLinearMap hn).toLinearMap = φ :=
   (rfl)
 
+/-- An `n`-positive map with `0 < n` is continuous. -/
+theorem IsNPositive.continuous {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n) :
+    Continuous φ :=
+  map_continuous (hφ.toPositiveLinearMap hn)
+
 /-- An `n`-positive map with `0 < n` preserves `star`. -/
 theorem IsNPositive.map_star {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n)
     (a : A) : φ (star a) = star (φ a) :=
@@ -232,10 +237,6 @@ theorem IsNPositive.eq_zero_of_map_one_eq_zero {n : ℕ} (hφ : IsNPositive n φ
   rw [← hφ.toLinearMap_toPositiveLinearMap hn,
     (hφ.toPositiveLinearMap hn).eq_zero_of_map_one_eq_zero (by simpa using h1),
     PositiveLinearMap.toLinearMap_zero]
-
-/-- An `n`-positive map with `0 < n` on a unital C⋆-algebra is continuous. -/
-theorem IsNPositive.continuous {n : ℕ} (hφ : IsNPositive n φ) (hn : 0 < n) : Continuous φ :=
-  map_continuous (hφ.toPositiveLinearMap hn)
 
 end UnitalDomain
 
