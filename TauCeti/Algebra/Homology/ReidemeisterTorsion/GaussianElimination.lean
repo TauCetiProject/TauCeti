@@ -131,7 +131,10 @@ private theorem torsionMinor_pairBasis (i j : ℤ) :
   ext r k
   by_cases hj : j = i
   · subst hj
-    have hrk : r = k := Fin.ext (by have := r.isLt; have := k.isLt; simp at *; omega)
+    have hr := r.isLt
+    have hk := k.isLt
+    simp only [↓reduceIte] at hr hk
+    have hrk : r = k := Fin.ext (by omega)
     subst hrk
     rw [torsionMinor_apply, ← LinearMap.toMatrix_apply, toMatrix_pairComplex_d_apply]
     simp
@@ -324,6 +327,18 @@ private theorem d_basis_eq_of_not_mem {j : ℤ} (h : ¬(j = i + 1 ∨ j = i))
           c j (Fin.castAdd _ r) := by
   rw [d_basis_eq, sum_pairRank_eq_zero h, add_zero]
 
+/-- The matrices of `D` are those of `C` after the elimination: the Schur complement
+`N - w a⁻¹ v` from degree `i + 1` to degree `i`, and the matrices of `C` with the rows and columns
+of `z⁺` and `z⁻` deleted elsewhere. -/
+private def IsGaussianElimination : Prop :=
+  (∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
+      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
+        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
+          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
+          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s)) ∧
+    ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
+      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom (Fin.castAdd _ r) (Fin.castAdd _ s)
+
 variable {c}
 
 /-- The differential of the corrected vectors `x - (v x / a) z⁺` of `Cᵢ₊₁` has no
@@ -401,13 +416,7 @@ private theorem newFamily_castAdd_of_ne {j : ℤ} (h : j ≠ i + 1) (r : Fin (m 
 `C` elsewhere. -/
 private theorem d_newFamily_castAdd
     (ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0)
-    (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s))
-    (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom (Fin.castAdd _ r) (Fin.castAdd _ s))
+    (he : IsGaussianElimination c e)
     (j : ℤ) (s : Fin (m (j + 1))) :
     (C.d (j + 1) j).hom (newFamily c (j + 1) (Fin.castAdd _ s)) =
       ∑ r, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s •
@@ -416,15 +425,15 @@ private theorem d_newFamily_castAdd
   · subst h₀
     rw [newFamily_succ, d_upperFamily_castAdd ha]
     have hj : j ≠ j + 1 := by omega
-    simp only [hDi, newFamily_castAdd_of_ne hj]
+    simp only [he.1, newFamily_castAdd_of_ne hj]
   by_cases h₁ : j = i + 1
   · subst h₁
     rw [newFamily_of_ne c (by omega) (by omega), d_basis_castAdd_eq_sum_upperFamily ha,
       newFamily_succ]
-    simp only [hD (i + 1) (by omega)]
+    simp only [he.2 (i + 1) (by omega)]
   rw [newFamily_castAdd_of_ne (by omega), newFamily_of_ne c h₁ h₀,
     d_basis_eq_of_not_mem c (by omega)]
-  simp only [hD j h₀]
+  simp only [he.2 j h₀]
 
 /-- The differentials of the vectors of the pair in the new bases of `C` have the matrix of the
 elementary complex: `d z⁺` is the new vector of `Cᵢ`, whose differential vanishes. -/
@@ -527,13 +536,7 @@ private theorem d_sumBasis_natAdd (j : ℤ) (t : Fin (pairRank i (j + 1))) :
 of `D` and the elementary complex. -/
 private theorem toMatrix_newBasis
     (ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0)
-    (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s))
-    (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom (Fin.castAdd _ r) (Fin.castAdd _ s))
+    (he : IsGaussianElimination c e)
     (j : ℤ) :
     LinearMap.toMatrix (newBasis ha (j + 1)) (newBasis ha j) (C.d (j + 1) j).hom =
       (LinearMap.toMatrix (sumBasis i e (j + 1)) (sumBasis i e j)
@@ -541,7 +544,7 @@ private theorem toMatrix_newBasis
   ext k l
   refine Fin.addCases (fun s ↦ ?_) (fun t ↦ ?_) l
   · rw [Matrix.map_apply, RingHom.id_apply, LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
-      coe_newBasis, d_newFamily_castAdd e ha hDi hD, d_sumBasis_castAdd, ← coe_newBasis ha]
+      coe_newBasis, d_newFamily_castAdd e ha he, d_sumBasis_castAdd, ← coe_newBasis ha]
     simp
   · rw [Matrix.map_apply, RingHom.id_apply, LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
       coe_newBasis, d_newFamily_natAdd, d_sumBasis_natAdd, ← coe_newBasis ha]
@@ -551,21 +554,14 @@ private theorem toMatrix_newBasis
 `(-1) ^ (dim Bᵢ₋₁(D))` of the direct sum. -/
 private theorem reidemeisterTorsion_newBasis
     (ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0)
-    (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s))
-    (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom
-        (Fin.castAdd _ r) (Fin.castAdd _ s)) :
+    (he : IsGaussianElimination c e) :
     C.reidemeisterTorsion (newBasis ha) =
       (-1) ^ finrank F (LinearMap.range (D.d i (i - 1)).hom) * D.reidemeisterTorsion e := by
   have hrank (k : ℤ) (hk : k = i) : finrank F (LinearMap.range (D.d k (i - 1)).hom) =
       finrank F (LinearMap.range (D.d i (i - 1)).hom) := by
     subst hk
     rfl
-  rw [← map_reidemeisterTorsion (RingHom.id F) (toMatrix_newBasis e ha hDi hD), RingHom.id_apply,
+  rw [← map_reidemeisterTorsion (RingHom.id F) (toMatrix_newBasis e ha he), RingHom.id_apply,
     reidemeisterTorsion_sumBasis, finprod_eq_single _ (i - 1) fun j hj ↦ by
       rw [finrank_range_pairComplex_d, ite_eq_right (by omega), zero_mul, pow_zero],
     finrank_range_pairComplex_d, ite_eq_left (by omega), one_mul, hrank _ (by omega)]
@@ -573,18 +569,11 @@ private theorem reidemeisterTorsion_newBasis
 /-- The elimination preserves acyclicity. -/
 private theorem acyclic_iff_of_newBasis
     (ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0)
-    (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s))
-    (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom
-        (Fin.castAdd _ r) (Fin.castAdd _ s)) :
+    (he : IsGaussianElimination c e) :
     C.Acyclic ↔ D.Acyclic := by
   rw [acyclic_iff_of_toMatrix_eq (RingHom.id F) fun a b (hab : b + 1 = a) ↦ by
       subst hab
-      exact toMatrix_newBasis e ha hDi hD b,
+      exact toMatrix_newBasis e ha he b,
     acyclic_biprod_iff, acyclic_matrixBaseChange_id_iff]
   exact and_iff_left (acyclic_pairComplex i)
 
@@ -634,9 +623,10 @@ theorem reidemeisterTorsion_eq_mul_of_gaussianElimination {C : ChainComplex (Mod
             ((i + 1).negOnePow : ℤ) *
         D.reidemeisterTorsion e := by
   obtain rfl : n = fun j ↦ m j + pairRank i j := funext hn
-  -- After substituting `n`, the casts are identities, and the hypotheses are those of the
-  -- auxiliary lemmas up to definitional equality.
-  replace ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0 := ha
+  -- After substituting `n`, the casts are identities and the indices of the pair are `pairIdx`.
+  simp only [Fin.cast_eq_self, natAdd_eq_pairIdx (m := m) (i := i) (j := i + 1) (.inl rfl),
+    natAdd_eq_pairIdx (m := m) (i := i) (j := i) (.inr rfl)] at ha hDi hD ⊢
+  have he : IsGaussianElimination c e := ⟨hDi, hD⟩
   -- Changing to the bases adapted to the elimination multiplies the torsion by `a ^ (-1) ^ i`.
   have hdet (j : ℤ) : (c j).det (newBasis ha j) = if j = i then
       pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) else 1 := by
@@ -649,13 +639,10 @@ theorem reidemeisterTorsion_eq_mul_of_gaussianElimination {C : ChainComplex (Mod
     congr 1
     rw [finprod_eq_single _ i fun j hj ↦ by simp [hdet, hj]]
     simp [hdet]
-  have hsum := reidemeisterTorsion_newBasis e ha hDi hD
+  have hsum := reidemeisterTorsion_newBasis e ha he
   rw [hchange] at hsum
   have hu : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ^
       (i.negOnePow : ℤ) ≠ 0 := zpow_ne_zero _ ha
-  -- State the pivot with the indices `pairIdx` of the auxiliary lemmas, so that `ring` sees a
-  -- single atom; the two forms are definitionally equal.
-  change _ = _ * pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ^ _ * _
   rw [Int.negOnePow_succ, Units.val_neg, zpow_neg]
   field_simp
   linear_combination hsum
@@ -687,8 +674,9 @@ theorem acyclic_iff_of_gaussianElimination {C : ChainComplex (ModuleCat F) ℤ}
         (Fin.cast (hn j).symm (Fin.castAdd _ r)) (Fin.cast (hn (j + 1)).symm (Fin.castAdd _ s))) :
     C.Acyclic ↔ D.Acyclic := by
   obtain rfl : n = fun j ↦ m j + pairRank i j := funext hn
-  -- After substituting `n`, the casts are identities, and the hypotheses are those of
-  -- `acyclic_iff_of_newBasis` up to definitional equality.
-  exact acyclic_iff_of_newBasis e ha hDi hD
+  -- After substituting `n`, the casts are identities and the indices of the pair are `pairIdx`.
+  simp only [Fin.cast_eq_self, natAdd_eq_pairIdx (m := m) (i := i) (j := i + 1) (.inl rfl),
+    natAdd_eq_pairIdx (m := m) (i := i) (j := i) (.inr rfl)] at ha hDi hD
+  exact acyclic_iff_of_newBasis e ha ⟨hDi, hD⟩
 
 end HomologicalComplex
