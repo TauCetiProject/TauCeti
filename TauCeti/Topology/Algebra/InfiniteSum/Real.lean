@@ -43,6 +43,8 @@ analogue of the power-rule integral identity for tails.
   `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
   summable sequence `a`, the discrete counterpart of `∫_x^∞ a Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)` for
   `Ψ x = ∫_x^∞ a`.
+* `TauCeti.summable_mul_pow_of_le`: weighted powers with nonnegative real weights stay summable
+  when the nonnegative radius decreases.
 * `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
@@ -58,7 +60,7 @@ analogue of the power-rule integral identity for tails.
 public section
 
 open Filter Finset
-open scoped Topology
+open scoped Topology NNReal
 
 /-- The weights `1 + #{k ≤ n | N k ≤ n}` tend to infinity along a strictly increasing sequence
 of cut points `N`. -/
@@ -192,6 +194,15 @@ theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 
 end Tail
 
 namespace TauCeti
+
+/-- Weighted powers with nonnegative weights that are summable at radius `s` are summable
+at every nonnegative radius `r ≤ s`, for any family of natural-number exponents. -/
+theorem summable_mul_pow_of_le {ι : Type*} {w : ι → ℝ} {degree : ι → ℕ}
+    {r s : ℝ≥0} (hw : ∀ i, 0 ≤ w i) (hrs : r ≤ s)
+    (h : Summable fun i ↦ w i * (s : ℝ) ^ degree i) :
+    Summable fun i ↦ w i * (r : ℝ) ^ degree i :=
+  h.of_nonneg_of_le (fun i ↦ mul_nonneg (hw i) (pow_nonneg r.coe_nonneg _)) fun i ↦
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ r.coe_nonneg (NNReal.coe_le_coe.2 hrs) _) (hw i)
 
 /-- Repeating each nonnegative real term a finite natural number of times preserves
 summability exactly when the multiplicity-weighted family is summable. -/

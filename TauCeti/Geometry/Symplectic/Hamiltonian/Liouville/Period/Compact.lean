@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
@@ -120,7 +120,8 @@ theorem not_isLocalExtr_of_periodLattice_le_closure [J.Boundaryless] {b : B}
       AddSubgroup.closure (range fun i ↦ mvfderiv J (fun y ↦ a y i) b)) (i : ι) :
     ¬ IsLocalExtr (fun y ↦ a y i) b := fun hextr ↦
   h.mvfderiv_ne_zero_of_periodLattice_le_closure hσc hcard ha i
-    (mem_criticalPoints.1 (hextr.mem_criticalPoints (I := J)))
+    (mem_criticalPoints.1
+      (hextr.mem_criticalPoints (I := J) BoundarylessManifold.isInteriorPoint))
 
 /-- **No global action coordinates over a compact base.** Let `π : M → B` be a regular Lagrangian
 torus fibration over a nonempty compact boundaryless manifold `B`. Then no functions `a i`, at least

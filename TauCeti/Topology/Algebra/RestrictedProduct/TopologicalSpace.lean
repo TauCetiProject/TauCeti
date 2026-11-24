@@ -19,6 +19,10 @@ factors it is a closed embedding. Over the cofinite filter, evaluation at an ind
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
+A restricted product of nonempty clopen reference sets is weakly locally compact only if all but
+finitely many reference sets are compact
+(`eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct`), the converse of Mathlib's
+`RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -91,6 +95,30 @@ theorem isEmbedding_restrictedProduct_coe_comp {X : Type w} [TopologicalSpace X]
   have hg : IsEmbedding g :=
     (RestrictedProduct.isEmbedding_inclusion_principal hT).of_comp_iff.mp hf
   exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
+
+/-- **A weakly locally compact restricted product has cofinitely compact reference sets.** If
+every reference set `A i` is a nonempty clopen subset of `R i` and `Πʳ i, [R i, A i]` is weakly
+locally compact, then `A i` is compact for all but finitely many `i`. This is the converse of
+Mathlib's `RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`; it applies to open subgroups,
+which are closed. -/
+theorem eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct
+    [WeaklyLocallyCompactSpace (Πʳ i, [R i, A i])] (hAopen : ∀ i, IsOpen (A i))
+    (hAclosed : ∀ i, IsClosed (A i)) (hA : ∀ i, (A i).Nonempty) :
+    ∀ᶠ i in cofinite, IsCompact (A i) := by
+  classical
+  let x : ∀ i, A i := fun i ↦ ⟨(hA i).some, (hA i).some_mem⟩
+  obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds (RestrictedProduct.structureMap R A cofinite x)
+  rw [RestrictedProduct.nhds_eq_map_structureMap hAopen, mem_map, nhds_pi, mem_pi'] at hKx
+  obtain ⟨I, t, ht, hIt⟩ := hKx
+  -- Outside `I`, every `a ∈ A i` is the `i`-th coordinate of a point of `K`, so the compact image
+  -- of `K` under evaluation at `i` contains the closed set `A i`.
+  refine Eventually.mono I.finite_toSet.compl_mem_cofinite fun i hi ↦ ?_
+  refine (hK.image (RestrictedProduct.continuous_eval i)).of_isClosed_subset (hAclosed i)
+    fun a ha ↦ ⟨RestrictedProduct.structureMap R A cofinite (Function.update x i ⟨a, ha⟩),
+      hIt fun j hj ↦ ?_, (RestrictedProduct.structureMap_apply _ _ _).trans
+      (congrArg Subtype.val (Function.update_self i (⟨a, ha⟩ : A i) x))⟩
+  rw [Function.update_of_ne (ne_of_mem_of_not_mem hj hi)]
+  exact mem_of_mem_nhds (ht j)
 
 section
 
