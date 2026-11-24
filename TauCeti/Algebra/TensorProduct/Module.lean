@@ -62,6 +62,13 @@ theorem smul_moduleRight (b : B) (m : M) :
     letI := moduleRight (k := k) (A := A) (B := B) M
     b • m = ((1 : A) ⊗ₜ[k] b) • m := rfl
 
+/-- Successive actions of the restricted factors give the action of their pure tensor. -/
+theorem smul_moduleLeft_smul_moduleRight (a : A) (b : B) (m : M) :
+    letI := moduleLeft (k := k) (A := A) (B := B) M
+    letI := moduleRight (k := k) (A := A) (B := B) M
+    a • (b • m) = (a ⊗ₜ[k] b) • m := by
+  simp only [smul_moduleLeft, smul_moduleRight, ← mul_smul, tmul_mul_tmul, mul_one, one_mul]
+
 /-- The restricted factor actions commute. -/
 theorem moduleSMulCommClass :
     letI := moduleLeft (k := k) (A := A) (B := B) M

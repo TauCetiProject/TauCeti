@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Graded.Internal
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
+public import TauCeti.Algebra.TensorProduct.Module
 
 /-!
 # The graded tensor product of two internally graded algebras is graded
@@ -126,26 +127,49 @@ instance instGradedMonoidTensorProductPiece {R : Type uR} {A : Type uA} {B : Typ
 
 section GradedAction
 
-variable {R A B M : Type*} [CommSemiring R] [Semiring A] [Semiring B]
-  [Algebra R A] [Algebra R B] [AddCommMonoid M] [Module R M] [Module (A ⊗[R] B) M]
-  (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ) {G : ℤ → Submodule R M}
-  [SetLike.GradedSMul (GA.tensorProduct GB).piece G] {p q : ℤ} {x : M}
+open TauCeti.Algebra.TensorProduct
+
+variable {R A B M ι : Type*} [AddMonoid ι] [DecidableEq ι]
+  [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+  [AddCommMonoid M] [Module R M] [Module (A ⊗[R] B) M]
+  (GA : InternalGrading R A ι) (GB : InternalGrading R B ι) {G : ι → Submodule R M}
+  [SetLike.GradedSMul (GA.tensorProduct GB).piece G]
 
 /-- A homogeneous element of the first tensor factor acts with its own degree. -/
-theorem tmul_one_smul_mem_tensorProduct [SetLike.GradedOne GB.piece] {a : A}
-    (ha : a ∈ GA.piece p) (hx : x ∈ G q) :
+theorem tmul_one_smul_mem_tensorProduct [SetLike.GradedOne GB.piece]
+    {p q : ι} {a : A} {x : M} (ha : a ∈ GA.piece p) (hx : x ∈ G q) :
     (a ⊗ₜ[R] (1 : B)) • x ∈ G (p + q) :=
   SetLike.GradedSMul.smul_mem
     (by simpa only [add_zero] using
       (GA.tmul_mem_tensorProduct GB ha (SetLike.one_mem_graded GB.piece))) hx
 
 /-- A homogeneous element of the second tensor factor acts with its own degree. -/
-theorem one_tmul_smul_mem_tensorProduct [SetLike.GradedOne GA.piece] {b : B}
-    (hb : b ∈ GB.piece p) (hx : x ∈ G q) :
+theorem one_tmul_smul_mem_tensorProduct [SetLike.GradedOne GA.piece]
+    {p q : ι} {b : B} {x : M} (hb : b ∈ GB.piece p) (hx : x ∈ G q) :
     ((1 : A) ⊗ₜ[R] b) • x ∈ G (p + q) :=
   SetLike.GradedSMul.smul_mem
     (by simpa only [zero_add] using
       (GA.tmul_mem_tensorProduct GB (SetLike.one_mem_graded GA.piece) hb)) hx
+
+variable (G)
+
+/-- Restricting a graded tensor-product action to the first factor preserves degrees. -/
+theorem gradedSMul_moduleLeft [SetLike.GradedOne GB.piece] :
+    letI := moduleLeft (k := R) (A := A) (B := B) M
+    SetLike.GradedSMul GA.piece G := by
+  let _ := moduleLeft (k := R) (A := A) (B := B) M
+  refine ⟨fun {p q a x} ha hx ↦ ?_⟩
+  rw [smul_moduleLeft]
+  exact GA.tmul_one_smul_mem_tensorProduct GB ha hx
+
+/-- Restricting a graded tensor-product action to the second factor preserves degrees. -/
+theorem gradedSMul_moduleRight [SetLike.GradedOne GA.piece] :
+    letI := moduleRight (k := R) (A := A) (B := B) M
+    SetLike.GradedSMul GB.piece G := by
+  let _ := moduleRight (k := R) (A := A) (B := B) M
+  refine ⟨fun {p q b x} hb hx ↦ ?_⟩
+  rw [smul_moduleRight]
+  exact GA.one_tmul_smul_mem_tensorProduct GB hb hx
 
 end GradedAction
 

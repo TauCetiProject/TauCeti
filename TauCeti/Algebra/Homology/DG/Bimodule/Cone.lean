@@ -41,6 +41,12 @@ local notation "G" =>
     (InternalGrading.ofDecomposition
       (DGRightModuleCat.grading (DGBimoduleCat.toDGRightModuleCat N)))
 
+local instance {C S : Type*} [SetLike S C] [SMul C (M.shift 1)] [SMul C N] (𝒞 : ℤ → S)
+    [SetLike.GradedSMul 𝒞 (M.shift 1).grading] [SetLike.GradedSMul 𝒞 N.grading] :
+    SetLike.GradedSMul 𝒞 (G).piece := by
+  apply InternalGrading.instGradedSMulProd (hG := ?_) (hH := ?_) <;>
+    rw [InternalGrading.ofDecomposition_piece] <;> infer_instance
+
 private theorem mem_coneGrading {q : ℤ} {z : M.shift 1 × N} :
     z ∈ (G).piece q ↔ z.1 ∈ (M.shift 1).grading q ∧ z.2 ∈ N.grading q := by
   rw [InternalGrading.prod_piece, Submodule.mem_prod,
@@ -114,17 +120,6 @@ private theorem coneDifferential_leibniz_right (f : M ⟶ N) {q : ℤ} {z : M.sh
 on the source summand. -/
 @[expose, implicit_reducible]
 noncomputable def cone (f : M ⟶ N) : DGBimoduleCat hA hB := by
-  letI : SetLike.GradedSMul 𝒜 (G).piece := ⟨by
-    intro p q a z ha hz
-    exact mem_coneGrading.mpr
-      ⟨SetLike.GradedSMul.smul_mem ha (mem_coneGrading.mp hz).1,
-        SetLike.GradedSMul.smul_mem ha (mem_coneGrading.mp hz).2⟩⟩
-  letI : SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece (G).piece :=
-    ⟨by
-      intro p q b z hb hz
-      exact mem_coneGrading.mpr
-        ⟨SetLike.GradedSMul.smul_mem hb (mem_coneGrading.mp hz).1,
-          SetLike.GradedSMul.smul_mem hb (mem_coneGrading.mp hz).2⟩⟩
   exact DGBimoduleCat.of (ℳ := (G).piece) (dM := Δ[f])
     { toIsDGLeftModule :=
         { isHomogeneous := by exact LinearMap.isHomogeneous_def.mpr fun _ _ hz ↦
@@ -240,11 +235,9 @@ theorem coneInclusion_comp_coneDesc (f : M ⟶ N) (g : N ⟶ P) (h : f ≫ g = 0
 This is `LinearMap.mappingConeProjectionHomologyEquiv` in the shifted carrier coordinates. -/
 theorem isQuasiIso_forgetToRightModuleCat_map_coneDesc (f : M ⟶ N) (g : N ⟶ P)
     (hf : Function.Injective f) (hg : Function.Surjective g) (hexact : Function.Exact f g) :
-    let hfg : f ≫ g = 0 := hom_ext fun x ↦ by
-      simpa only [comp_apply, zero_apply, Function.comp_apply, Pi.zero_apply] using
-        (congrFun hexact.comp_eq_zero x)
-    DGRightModuleCat.IsQuasiIso (forgetToRightModuleCat.map (coneDesc f g hfg)) := by
-  intro hfg
+    DGRightModuleCat.IsQuasiIso
+      (forgetToRightModuleCat.map (coneDesc f g (comp_eq_zero_of_exact hexact))) := by
+  have hfg := comp_eq_zero_of_exact hexact
   apply (DGRightModuleHom.isQuasiIso_iff_bijective_homologyMap _).mpr
   let u := f.val.toLinearMap.restrictScalars R
   let v := g.val.toLinearMap.restrictScalars R

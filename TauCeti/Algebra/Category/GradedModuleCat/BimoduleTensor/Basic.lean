@@ -76,21 +76,19 @@ local instance (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
 
 local instance leftGradedSMul [SetLike.GradedOne Δ.piece]
     (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
-    SetLike.GradedSMul Γ.piece M.grading.piece where
-  smul_mem {p q} {a m} ha hm := by
-    have : SetLike.GradedOne Δ.opposite.piece :=
-      ⟨(Δ.mem_opposite_piece_iff 0 1).2 (SetLike.one_mem_graded Δ.piece)⟩
-    rw [TauCeti.Algebra.TensorProduct.smul_moduleLeft]
-    exact Γ.tmul_one_smul_mem_tensorProduct Δ.opposite ha hm
+    SetLike.GradedSMul Γ.piece M.grading.piece := by
+  have : SetLike.GradedOne Δ.opposite.piece :=
+    ⟨(Δ.mem_opposite_piece_iff 0 1).2 (SetLike.one_mem_graded Δ.piece)⟩
+  exact Γ.gradedSMul_moduleLeft Δ.opposite M.grading.piece
 
 local instance rightGradedSMul [DirectSum.Decomposition Δ.piece]
     [SetLike.GradedOne Γ.piece] (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SetLike.GradedSMul (InternalGrading.ofDecomposition Δ.piece).opposite.piece
-      M.grading.piece where
-  smul_mem {p q} {a m} ha hm := by
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece] at ha
-    rw [TauCeti.Algebra.TensorProduct.smul_moduleRight]
-    exact Γ.one_tmul_smul_mem_tensorProduct Δ.opposite ((Δ.mem_opposite_piece_iff p a).2 ha) hm
+      M.grading.piece := by
+  have hΔ : InternalGrading.ofDecomposition Δ.piece = Δ :=
+    InternalGrading.ext fun p ↦ by rw [InternalGrading.ofDecomposition_piece]
+  rw [hΔ]
+  exact Γ.gradedSMul_moduleRight Δ.opposite M.grading.piece
 
 section ModuleTensor
 

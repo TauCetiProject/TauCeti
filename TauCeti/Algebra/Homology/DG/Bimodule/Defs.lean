@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
-import TauCeti.Algebra.Ring.NegOnePow
+public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Differential graded bimodules
@@ -112,6 +113,24 @@ theorem of_leibniz_smul_op_smul (G : InternalGrading R M ℤ)
     intro q x hx b
     simpa only [hA.map_one_eq_zero, zero_smul, smul_zero, Int.negOnePow_zero, zero_add, one_smul]
       using hLeibniz (SetLike.one_mem_graded 𝒜) hx b
+
+open scoped TensorProduct
+
+/-- When the two factor actions compose to the pure-tensor action, the enveloping
+Leibniz rule gives the two DG bimodule Leibniz rules. -/
+theorem of_leibniz_tmul_smul [Module (A ⊗[R] Bᵐᵒᵖ) M] (G : InternalGrading R M ℤ)
+    [SetLike.GradedSMul 𝒜 G.piece]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece]
+    (hsmul : ∀ (a : A) (b : Bᵐᵒᵖ) (x : M), a • (b • x) = (a ⊗ₜ[R] b) • x)
+    (hD : LinearMap.IsHomogeneous dM G.piece G.piece 1) (hD₂ : ∀ x, dM (dM x) = 0)
+    (hLeibniz : ∀ {p q : ℤ} {a : A}, a ∈ 𝒜 p → ∀ {x : M}, x ∈ G.piece q → ∀ b : B,
+      dM ((a ⊗ₜ[R] op b) • x) = (dA a ⊗ₜ[R] op b) • x +
+        negOnePowCast R p • ((a ⊗ₜ[R] op b) • dM x) +
+        negOnePowCast R (p + q) • ((a ⊗ₜ[R] op (dB b)) • x)) :
+    IsDGBimodule hA hB G.piece dM := by
+  apply of_leibniz_smul_op_smul G hD hD₂
+  intro p q a ha x hx b
+  simpa only [hsmul, negOnePow_smul_eq_negOnePowCast_smul (R := R)] using hLeibniz ha hx b
 
 end IsDGBimodule
 

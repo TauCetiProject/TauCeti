@@ -75,12 +75,6 @@ local instance (priority := high) (M : Type*) [AddCommGroup M] [Module ℰ M] :
     SMulCommClass 𝒜 𝒜ᵐᵒᵖ M :=
   moduleSMulCommClass (k := k) (A := 𝒜) (B := 𝒜ᵐᵒᵖ) M
 
-private theorem tensorFactors_smul (M : Type*) [AddCommGroup M] [Module ℰ M]
-    (a : 𝒜) (b : 𝒜ᵐᵒᵖ) (z : M) :
-    a • (b • z) = (a ⊗ₜ[k] b) • z := by
-  rw [smul_moduleLeft (k := k) (B := 𝒜ᵐᵒᵖ), smul_moduleRight (k := k) (A := 𝒜), ← mul_smul,
-    _root_.Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-
 local notation "V" => InternalGrading.piece (vertexTensorGrading k Q wt)
 local notation "U" => InternalGrading.piece (arrowTensorGrading k Q wt)
 
@@ -88,91 +82,65 @@ local notation "U" => InternalGrading.piece (arrowTensorGrading k Q wt)
 noncomputable local instance vertexTensorSMulLeft : SMul 𝒜 (vertexTensorBimodule k Q) :=
   (moduleLeft (k := k) (B := 𝒜ᵐᵒᵖ) (vertexTensorBimodule k Q)).toSMul
 
-local instance : SetLike.GradedSMul (gradeBy k wt) V where
-  smul_mem := by
-    intro p q a z ha hz
-    rw [mem_vertexTensorGrading_piece_iff] at hz ⊢
-    have : SetLike.GradedMul (G).piece := inferInstance
-    have : SetLike.GradedMonoid (G).opposite.piece := inferInstance
-    simpa only [smul_moduleLeft, Submodule.coe_smul, vadd_eq_add] using
-      (G).tmul_one_smul_mem_tensorProduct (G).opposite ha hz
+local instance : SetLike.GradedSMul (Ξ).piece V :=
+  (vertexTensorBimodule k Q).subtype.gradedSMul_of_mem_iff (Ξ).piece V (Ξ).piece
+    (mem_vertexTensorGrading_piece_iff k Q wt)
 
-local instance : SetLike.GradedSMul (Γ).opposite.piece V where
-  smul_mem := by
-    intro p q b z hb hz
-    rw [mem_vertexTensorGrading_piece_iff] at hz ⊢
-    have : SetLike.GradedMonoid (G).piece := inferInstance
-    have : SetLike.GradedMul (G).opposite.piece := inferInstance
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece] at hb
-    have hb' := ((G).mem_opposite_piece_iff p b).2 hb
-    simpa only [smul_moduleRight, Submodule.coe_smul, vadd_eq_add] using
-      (G).one_tmul_smul_mem_tensorProduct (G).opposite hb' hz
+private theorem gradedSMul_opposite {M : Type*} [AddCommGroup M] [Module k M] [Module ℰ M]
+    (W : ℤ → Submodule k M) [SetLike.GradedSMul (Ξ).piece W] :
+    SetLike.GradedSMul (Γ).opposite.piece W := by
+  have hΓ : Γ = G := InternalGrading.ext fun p ↦ by rw [InternalGrading.ofDecomposition_piece]
+  rw [hΓ]
+  exact (G).gradedSMul_moduleRight (G).opposite W
+
+local instance : SetLike.GradedSMul (gradeBy k wt) V :=
+  (G).gradedSMul_moduleLeft (G).opposite V
+
+local instance : SetLike.GradedSMul (Γ).opposite.piece V :=
+  gradedSMul_opposite (wt := wt) (M := vertexTensorBimodule k Q) V
 
 include hdε
-
-private theorem isDGBimodule_vertexTensorBimodule :
-    IsDGBimodule (M := vertexTensorBimodule k Q) hd hd V
-      (vertexTensorBimoduleDifferential wt d) := by
-  refine IsDGBimodule.of_leibniz_smul_op_smul (M := vertexTensorBimodule k Q)
-    (hA := hd) (hB := hd) (dM := vertexTensorBimoduleDifferential wt d) (vertexTensorGrading k Q wt)
-    (isHomogeneous_vertexTensorBimoduleDifferential k Q wt d hd hdε)
-    (vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential hd hdε) ?_
-  intro p q a ha z hz b
-  rw [tensorFactors_smul _ a (op b) z, tensorFactors_smul _ (d a) (op b) z,
-    tensorFactors_smul _ a (op b) (vertexTensorBimoduleDifferential wt d z),
-    tensorFactors_smul _ a (op (d b)) z]
-  simpa only [negOnePow_smul_eq_negOnePowCast_smul (R := k)] using
-    (vertexTensorBimoduleDifferential_tmul_smul hd hdε ha hz b)
 
 /-- The vertex tensor term as a DG bimodule over the path algebra. -/
 @[expose, implicit_reducible]
 noncomputable def vertexTensorDGBimodule : DGBimoduleCat hd hd :=
   DGBimoduleCat.of (M := vertexTensorBimodule k Q) (hA := hd) (hB := hd) (ℳ := V)
     (dM := vertexTensorBimoduleDifferential wt d)
-    (by exact isDGBimodule_vertexTensorBimodule hd hdε)
+    (by
+      apply IsDGBimodule.of_leibniz_tmul_smul (M := vertexTensorBimodule k Q)
+        (hA := hd) (hB := hd) (dM := vertexTensorBimoduleDifferential wt d)
+        (vertexTensorGrading k Q wt) (smul_moduleLeft_smul_moduleRight (k := k) _)
+        (isHomogeneous_vertexTensorBimoduleDifferential k Q wt d hd hdε)
+        (vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential hd hdε)
+      intro p q a ha z hz b
+      exact vertexTensorBimoduleDifferential_tmul_smul hd hdε ha hz b)
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
-local instance : SetLike.GradedSMul (gradeBy k wt) U where
-  smul_mem := by
-    intro p q a z ha hz
-    rw [mem_arrowTensorGrading_piece_iff] at hz ⊢
-    have : SetLike.GradedMul (G).piece := inferInstance
-    have : SetLike.GradedMonoid (G).opposite.piece := inferInstance
-    simpa only [smul_moduleLeft, map_smul, Submodule.coe_smul, vadd_eq_add] using
-      (G).tmul_one_smul_mem_tensorProduct (G).opposite ha hz
+local instance : SetLike.GradedSMul (Ξ).piece U :=
+  (arrowTensorDifferential k Q).gradedSMul_of_mem_iff (Ξ).piece U V (by
+    intro q x
+    rw [mem_arrowTensorGrading_piece_iff, mem_vertexTensorGrading_piece_iff])
 
-local instance : SetLike.GradedSMul (Γ).opposite.piece U where
-  smul_mem := by
-    intro p q b z hb hz
-    rw [mem_arrowTensorGrading_piece_iff] at hz ⊢
-    have : SetLike.GradedMonoid (G).piece := inferInstance
-    have : SetLike.GradedMul (G).opposite.piece := inferInstance
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece] at hb
-    have hb' := ((G).mem_opposite_piece_iff p b).2 hb
-    simpa only [smul_moduleRight, map_smul, Submodule.coe_smul, vadd_eq_add] using
-      (G).one_tmul_smul_mem_tensorProduct (G).opposite hb' hz
+local instance : SetLike.GradedSMul (gradeBy k wt) U :=
+  (G).gradedSMul_moduleLeft (G).opposite U
 
-private theorem isDGBimodule_arrowTensorBimodule :
-    IsDGBimodule (M := arrowTensorBimodule k Q) hd hd U
-      (arrowTensorBimoduleDifferential wt d) := by
-  refine IsDGBimodule.of_leibniz_smul_op_smul (M := arrowTensorBimodule k Q)
-    (hA := hd) (hB := hd) (dM := arrowTensorBimoduleDifferential wt d) (arrowTensorGrading k Q wt)
-    (isHomogeneous_arrowTensorBimoduleDifferential k Q wt d hd hdε)
-    (arrowTensorBimoduleDifferential_arrowTensorBimoduleDifferential hd hdε) ?_
-  intro p q a ha z hz b
-  rw [tensorFactors_smul _ a (op b) z, tensorFactors_smul _ (d a) (op b) z,
-    tensorFactors_smul _ a (op b) (arrowTensorBimoduleDifferential wt d z),
-    tensorFactors_smul _ a (op (d b)) z]
-  simpa only [negOnePow_smul_eq_negOnePowCast_smul (R := k)] using
-    (arrowTensorBimoduleDifferential_tmul_smul hd hdε ha hz b)
+local instance : SetLike.GradedSMul (Γ).opposite.piece U :=
+  gradedSMul_opposite (wt := wt) (M := arrowTensorBimodule k Q) U
 
 /-- The arrow tensor term as a DG bimodule over the path algebra. -/
 @[expose, implicit_reducible]
 noncomputable def arrowTensorDGBimodule : DGBimoduleCat hd hd :=
   DGBimoduleCat.of (M := arrowTensorBimodule k Q) (hA := hd) (hB := hd) (ℳ := U)
     (dM := arrowTensorBimoduleDifferential wt d)
-    (by exact isDGBimodule_arrowTensorBimodule hd hdε)
+    (by
+      apply IsDGBimodule.of_leibniz_tmul_smul (M := arrowTensorBimodule k Q)
+        (hA := hd) (hB := hd) (dM := arrowTensorBimoduleDifferential wt d)
+        (arrowTensorGrading k Q wt) (smul_moduleLeft_smul_moduleRight (k := k) _)
+        (isHomogeneous_arrowTensorBimoduleDifferential k Q wt d hd hdε)
+        (arrowTensorBimoduleDifferential_arrowTensorBimoduleDifferential hd hdε)
+      intro p q a ha z hz b
+      exact arrowTensorBimoduleDifferential_tmul_smul hd hdε ha hz b)
 
 end RestrictedActions
 
