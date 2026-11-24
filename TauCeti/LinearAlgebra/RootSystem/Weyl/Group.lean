@@ -35,7 +35,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
   automorphism, and in particular a Weyl-group element, carries the coroot functional of a root to
-  the coroot functional of its image.
+  the coroot functional of its image; `RootPairing.sum_coroot'_sq_smul` deduces that the sum of
+  squares of all coroot pairings is Weyl-invariant.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
 * `RootPairing.weylGroupToPerm_neg`, `RootPairing.weylGroupToPerm_reflectionPerm_self`, and
   `RootPairing.reflectionPerm_reflectionPerm_self_right` say the action commutes with root
@@ -182,6 +183,20 @@ lemma coroot'_weylGroupToPerm_smul (w : P.weylGroup) (i : ι) (x : M) :
   have h := coroot'_smul P (w : P.Aut) ((w : P.Aut).indexEquiv i) x
   rw [_root_.Equiv.symm_apply_apply] at h
   exact h
+
+/-- **The sum of squares of all coroot pairings at a weight is invariant under the Weyl group.** -/
+theorem sum_coroot'_sq_smul {𝕜 : Type*} [Fintype ι] [CommSemiring 𝕜] [Algebra R 𝕜]
+    (w : P.weylGroup) (lam : M) :
+    ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2 =
+      ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 := by
+  calc ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2
+      = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' (P.weylGroupToPerm w⁻¹ j) lam)) ^ 2 := by
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        have hc := P.coroot'_weylGroupToPerm_smul w⁻¹ j (w • lam)
+        rw [inv_smul_smul] at hc
+        rw [hc]
+    _ = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 :=
+        Equiv.sum_comp (P.weylGroupToPerm w⁻¹) fun j ↦ (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2
 
 /-- If the roots span, the action of the Weyl group on root indices is faithful. -/
 theorem weylGroupToPerm_injective_of_span_eq_top
