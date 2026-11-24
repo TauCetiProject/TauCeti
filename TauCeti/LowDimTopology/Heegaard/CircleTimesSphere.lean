@@ -552,6 +552,7 @@ section BasepointChange
 
 /-- Moving the basepoint of the genus-one diagram of `S¹ × S²` gives the same diagram with the
 basepoint in another region. -/
+@[simp]
 theorem withBasepoints_circleTimesSphere (r s : Fin 3) :
     (circleTimesSphere r).withBasepoints (fun _ : Unit => s) = circleTimesSphere s :=
   (rfl)
