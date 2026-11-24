@@ -85,20 +85,6 @@ theorem W1p0.toD1p0L_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
 
 variable {pstar : ENNReal}
 
-/-- The Sobolev embedding of `W^{1,p}_0(Ω)` sends a test-function jet to the class of the test
-function. -/
-private theorem W1p0.sobolevEmbeddingL_ofTestFunctionₗ (hpstar : pstar ≠ ∞)
-    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (phi : 𝓓(Omega, ℝ)) :
-    W1p0.sobolevEmbeddingL hpstar hexp
-        ⟨W1p.ofTestFunctionₗ mu Omega p phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ =
-      testFunctionLp pstar phi := by
-  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  refine Lp.ext ?_
-  filter_upwards [W1p0.coeFn_sobolevEmbeddingL hpstar hexp
-      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩, testFunctionLp_apply_ae p phi,
-    testFunctionLp_apply_ae pstar phi] with x h1 h2 h3
-  rw [h1, W1p.value_ofTestFunctionₗ, h2, h3]
-
 /-- **The two Sobolev embeddings agree on `W^{1,p}_0(Ω)`**: for the Sobolev conjugate `p⋆ ≠ ∞`,
 the Sobolev embedding of `D^{1,p}_0(Ω)` composed with `W1p0.toD1p0L` is the Sobolev embedding of
 `W^{1,p}_0(Ω)`. -/
