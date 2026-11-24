@@ -105,22 +105,6 @@ section Cocycle
 
 variable {B : Type*} [TopologicalSpace B] {b : B} (R : Type*) [CommRing R]
 
-variable {R} in
-/-- The difference `[γ] - [1]` of the point chain of a Moore loop and the unit of `C_*(Ω_b B; R)`
-lies in degree `0`. -/
-theorem cubicalChainPoint_sub_one_mem (γ : MooreLoopSpace B b) :
-    cubicalChainPoint (MooreLoopSpace B b) R γ - 1 ∈ cubicalChainGrading (MooreLoopSpace B b) R 0 :=
-  sub_mem (cubicalChainPoint_mem γ)
-    (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R))
-
-variable {R} in
-/-- The difference `[γ] - [1]` of the point chain of a Moore loop and the unit of `C_*(Ω_b B; R)`
-is a cycle. -/
-theorem cubicalChainDifferential_cubicalChainPoint_sub_one (γ : MooreLoopSpace B b) :
-    cubicalChainDifferential (MooreLoopSpace B b) R
-      (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) = 0 := by
-  simp [(loopChain_isDGAlgebra B b R).map_one_eq_zero]
-
 /-- **The twisting cocycle of one `1`-cell attached along a loop.** On the generators
 `Unit ⊕ Unit`, the `0`-cell `e₀ = Sum.inl ()` of index `0` has zero row, and the `1`-cell
 `e₁ = Sum.inr ()` of index `1` is attached along the cycle `([γ] - [1]) e₀`: the difference of the
@@ -241,15 +225,6 @@ theorem loopCellCocycle_differential_single_inr (γ : MooreLoopSpace B b)
             (cubicalChainPoint (MooreLoopSpace B b) R γ - 1)) +
         Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) :=
   cycleCellCocycle_differential_single_inr _ _ β
-
-/-- The generator `e₀` is a cycle. -/
-theorem loopCellCocycle_differential_single_inl_one (γ : MooreLoopSpace B b) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m
-        (Finsupp.single (Sum.inl ()) 1) = 0 := by
-  rw [RowFiniteTwistingCocycle.differential_single_one _ (loopChain_isDGAlgebra B b R),
-    loopCellCocycle_m_inl]
 
 /-- The augmentation vanishes on boundaries. -/
 @[simp]

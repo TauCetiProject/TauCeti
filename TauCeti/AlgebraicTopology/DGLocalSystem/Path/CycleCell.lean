@@ -193,8 +193,7 @@ theorem exists_cycleCellCocycle_differential_eq_and_cycleCellPathComparison_add_
     (cycleCellPathComparison_differential hc)
     (cubicalChainModuleAugmentation_cycleCellPathComparison hcm)
     (cubicalChainModuleAugmentation_differential (G := H))
-    (by rw [RowFiniteTwistingCocycle.differential_single_one _ (loopChain_isDGAlgebra B b R),
-      cycleCellCocycle_m_inl]) (by simp) hK
+    (cycleCellCocycle_differential_single_inl_one hx hdx) (by simp) hK
     exists_pathFromChainDifferential_eq_of_augmentation_eq_zero hu hw
 
 end QuasiIso

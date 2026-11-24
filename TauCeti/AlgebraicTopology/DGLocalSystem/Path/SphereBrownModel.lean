@@ -99,11 +99,17 @@ theorem cubicalChainModuleDifferential_spherePathChain :
       cubicalChainLof _ k (m + 1) z • cubicalChainModulePoint
           (MoorePathFrom Sph (spherePolePoint h)) H k (MoorePathFrom.refl Sph (spherePolePoint h)) =
         cubicalChainModuleLof _ H k (m + 1) (map k MooreLoopSpace.toMoorePathFrom (m + 1) z) := by
+    -- The action lands in degree `m + 1 + 0`, which is `m + 1` by definition, so the closing
+    -- `rfl` of `rw` finishes the proof.
     rw [cubicalChainModulePoint_def, lof_smul_cubicalChainModuleLof,
       leftAct_ofCube_point_right _ _ _ MooreLoopSpace.toMoorePathFrom_eq_smul_refl]
   rw [spherePathChain_def, cubicalChainModuleDifferential_lof_succ, boundary_ofCube_spherePathCube,
     sphereAttachingChain_def]
-  exact (key _).symm
+  -- Both sides now carry the underlying chain of the attaching cycle, a cycle on the loops
+  -- `(loopPair Sph b).snd` of the pair. This space is `TopCat.of (MooreLoopSpace Sph b)` by
+  -- definition, so that chain is a chain of Moore loops and `key` applies to it.
+  exact (key ((((normalizedCubicalChainComplex k).obj _).iCycles (m + 1)).hom
+    (sphereAttachingCycle h k))).symm
 
 /-- **Brown's model of a sphere.** For the sphere `Sⁿ`, `n = m + 2`, with one `0`-cell at the
 pole and one `n`-cell attached along the attaching cycle `x` of its top cell, the semi-free

@@ -189,6 +189,15 @@ theorem cycleCellCocycle_differential_single_inr (β : loopChainAlgebra B b R) :
         Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) := by
   simp [cycleCellCocycle_differential_apply]
 
+/-- The generator `e₀` is a cycle. -/
+theorem cycleCellCocycle_differential_single_inl_one :
+    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m
+        (Finsupp.single (Sum.inl ()) 1) = 0 := by
+  rw [RowFiniteTwistingCocycle.differential_single_one _ (loopChain_isDGAlgebra B b R),
+    cycleCellCocycle_m_inl]
+
 end CycleCell
 
 /-! ### The augmentation -/
