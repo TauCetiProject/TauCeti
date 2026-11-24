@@ -70,6 +70,10 @@ noncomputable def map (φ : H' →ₐc[K] H) : AdelicPoints R K H →* AdelicPoi
 
 variable {R}
 
+/-- The map of adelic points is the precomposition `BialgHom.mapDomain φ*`. -/
+theorem map_def (φ : H' →ₐc[K] H) : map R φ = BialgHom.mapDomain φ :=
+  (rfl)
+
 @[simp]
 theorem map_apply_apply (φ : H' →ₐc[K] H) (x : AdelicPoints R K H) (h : H') :
     map R φ x h = x (φ h) :=
