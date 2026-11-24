@@ -143,12 +143,16 @@ theorem qPowerFrobeniusGrpHom_naturality {G H : Grp (Over (Spec (CommRingCat.of 
 elements, as an endomorphism of `G` as a commutative group scheme. -/
 noncomputable def qPowerFrobeniusCommGrpHom (G : CommGrp (Over (Spec (CommRingCat.of k)))) :
     G ⟶ G :=
-  InducedCategory.homMk (qPowerFrobeniusGrpHom k a ha G.toGrp)
+  Functor.mapCommGrpIdIso.inv.app G ≫
+    (Functor.mapCommGrpNatTrans (qPowerFrobeniusNatTrans k a ha)).app G ≫
+      Functor.mapCommGrpIdIso.hom.app G
 
+-- `rfl`: the components of `Functor.mapCommGrpIdIso` at `G` have underlying morphism `𝟙 G.X`, as
+-- for `relativeFrobeniusCommGrpHom_hom_hom_hom_left` in `Frobenius/Relative.lean`.
 @[simp]
 theorem qPowerFrobeniusCommGrpHom_hom_hom_hom (G : CommGrp (Over (Spec (CommRingCat.of k)))) :
     (qPowerFrobeniusCommGrpHom k a ha G).hom.hom.hom = qPowerFrobeniusOver k a ha G.X :=
-  qPowerFrobeniusGrpHom_hom_hom k a ha G.toGrp
+  (rfl)
 
 /-- The `n`-th power of the `q`-power Frobenius of a commutative group scheme `G`, as an
 endomorphism of `G`, has as underlying morphism the `n`-th power of the `q`-power Frobenius of the

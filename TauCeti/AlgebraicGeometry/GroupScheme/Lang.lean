@@ -46,7 +46,8 @@ a finite étale torsor under the finite group `G(k)`; that is not proved here.
 * `TauCeti.GroupScheme.langMap k a ha G`: the Lang map `F − id` of a commutative group scheme `G`
   over `k`.
 * `TauCeti.GroupScheme.langKernel k a ha G`: the scheme-theoretic kernel of the Lang map, with
-  inclusion `TauCeti.GroupScheme.langKernelι k a ha G`.
+  inclusion `TauCeti.GroupScheme.langKernelι k a ha G`; a point of `G` fixed by Frobenius lifts to
+  it by `TauCeti.GroupScheme.langKernelLift`.
 * `TauCeti.GroupScheme.frobeniusNorm k a ha G n`: the norm `1 + F + ⋯ + F^{n-1}`.
 
 ## Main results
@@ -61,6 +62,8 @@ a finite étale torsor under the finite group `G(k)`; that is not proved here.
   the Lang map are the `k`-rational points of `G`.
 * `TauCeti.GroupScheme.frobeniusNorm_comp_langMap` and
   `TauCeti.GroupScheme.langMap_comp_frobeniusNorm`: `N ∘ L = L ∘ N = F ^ n − 1`.
+* `TauCeti.GroupScheme.comp_frobeniusNorm_hom_hom_hom`: on a point `x : T ⟶ G`, the norm is the
+  product of the points `F_T ^ i ≫ x` for `i < n`.
 * `TauCeti.GroupScheme.exists_comp_langKernelι_eq_comp_frobeniusNorm`: the norm of a point fixed by
   `F ^ n` lies in the kernel of the Lang map.
 * `TauCeti.GroupScheme.Gm.pointsMulEquiv_comp_langMap`: the Lang map of `𝔾_m` is `u ↦ u ^ (q - 1)`
@@ -170,12 +173,19 @@ variable {G}
 Lang map kills it. -/
 theorem exists_comp_langKernelι_iff_comp_langMap {T : Over (Spec (CommRingCat.of k))}
     (x : T ⟶ G.X) :
-    (∃ y, y ≫ langKernelι k a ha G = x) ↔ x ≫ (langMap k a ha G).hom.hom.hom = 1 := by
-  refine ⟨?_, fun hx ↦ ⟨kernelLift x (by rw [CommGrp.forget₂Grp_map_hom]; exact hx),
-    kernelLift_ι _ _⟩⟩
-  rintro ⟨y, rfl⟩
-  rw [Category.assoc, (isPullback_langKernelι k a ha G).w, ← Category.assoc, toUnit_unique
-    (y ≫ toUnit _) (toUnit _), ← Hom.one_def]
+    (∃ y, y ≫ langKernelι k a ha G = x) ↔ x ≫ (langMap k a ha G).hom.hom.hom = 1 :=
+  -- the group object underlying `G` in `Grp (Over S)` has the same carrier `G.X`
+  (exists_comp_kernel_ι_hom_iff (f := (CommGrp.forget₂Grp _).map (langMap k a ha G)) x).trans <| by
+    rw [CommGrp.forget₂Grp_map_hom]
+    exact Iff.rfl
+
+variable (G) in
+/-- The Lang map kills its kernel: the inclusion of the kernel followed by the Lang map is the unit
+point. -/
+@[reassoc]
+theorem langKernelι_comp_langMap_hom_hom_hom :
+    langKernelι k a ha G ≫ (langMap k a ha G).hom.hom.hom = 1 :=
+  (exists_comp_langKernelι_iff_comp_langMap k a ha _).1 ⟨𝟙 _, Category.id_comp _⟩
 
 /-- **Points of the kernel of the Lang map.** A point `x : T ⟶ G` over `k` factors through the
 kernel of the Lang map if and only if it is fixed by Frobenius: `F_T ≫ x = x`, where `F_T` is the
@@ -189,6 +199,27 @@ Frobenius of `Spec k` is the identity. -/
 theorem exists_comp_langKernelι (x : 𝟙_ (Over (Spec (CommRingCat.of k))) ⟶ G.X) :
     ∃ y, y ≫ langKernelι k a ha G = x :=
   (exists_comp_langKernelι_iff k a ha x).2 (by simp)
+
+/-- The point of the kernel of the Lang map given by a point `x : T ⟶ G` over `k` fixed by
+Frobenius: `F_T ≫ x = x`, where `F_T` is the `q`-power Frobenius of `T`. -/
+noncomputable def langKernelLift {T : Over (Spec (CommRingCat.of k))} (x : T ⟶ G.X)
+    (hx : qPowerFrobeniusOver k a ha T ≫ x = x) : T ⟶ (langKernel k a ha G).X :=
+  have h : x ≫ (langMap k a ha G).hom.hom.hom = 1 := by
+    rw [comp_langMap_hom_hom_hom, hx, div_self']
+  kernelLift x (by rw [CommGrp.forget₂Grp_map_hom]; exact h)
+
+/-- The point `langKernelLift x hx` of the kernel of the Lang map maps to `x` in `G`. -/
+@[reassoc (attr := simp)]
+theorem langKernelLift_ι {T : Over (Spec (CommRingCat.of k))} (x : T ⟶ G.X)
+    (hx : qPowerFrobeniusOver k a ha T ≫ x = x) :
+    langKernelLift k a ha x hx ≫ langKernelι k a ha G = x :=
+  kernelLift_ι _ _
+
+/-- Two points of the kernel of the Lang map agree if their images in `G` do. -/
+theorem langKernel_hom_ext {T : Over (Spec (CommRingCat.of k))}
+    {y y' : T ⟶ (langKernel k a ha G).X}
+    (h : y ≫ langKernelι k a ha G = y' ≫ langKernelι k a ha G) : y = y' :=
+  (cancel_mono _).1 h
 
 variable (G)
 
@@ -222,10 +253,35 @@ the points fixed by `F ^ n` into the kernel of the Lang map
 noncomputable def frobeniusNorm (n : ℕ) : G ⟶ G :=
   (∑ i ∈ Finset.range n, End.of (qPowerFrobeniusCommGrpHom k a ha G) ^ i).asHom
 
+/-- The empty norm is zero. -/
+@[simp]
+theorem frobeniusNorm_zero : frobeniusNorm k a ha G 0 = 0 := by
+  simp [frobeniusNorm]
+
+/-- The norm `1 + F + ⋯ + F^n` is the norm `1 + F + ⋯ + F^{n-1}` plus `F ^ n`. -/
+@[simp]
+theorem frobeniusNorm_succ (n : ℕ) :
+    frobeniusNorm k a ha G (n + 1) =
+      frobeniusNorm k a ha G n + (End.of (qPowerFrobeniusCommGrpHom k a ha G) ^ n).asHom := by
+  simp [frobeniusNorm, Finset.sum_range_succ]
+
+variable {G} in
+/-- **The norm on points.** For a point `x : T ⟶ G` over `k`, the norm sends `x` to the product of
+the points `F_T ^ i ≫ x` for `i < n`, where `F_T` is the `q`-power Frobenius of `T`. -/
+theorem comp_frobeniusNorm_hom_hom_hom {T : Over (Spec (CommRingCat.of k))} (x : T ⟶ G.X)
+    (n : ℕ) : x ≫ (frobeniusNorm k a ha G n).hom.hom.hom =
+      ∏ i ∈ Finset.range n, (End.of (qPowerFrobeniusOver k a ha T) ^ i).asHom ≫ x := by
+  induction n with
+  | zero => rw [frobeniusNorm_zero, CommGrp.zero_hom_hom_hom, comp_one, Finset.prod_range_zero]
+  | succ n ih =>
+    rw [frobeniusNorm_succ, CommGrp.add_hom_hom_hom, comp_mul, ih,
+      qPowerFrobeniusCommGrpHom_pow_hom_hom_hom, comp_qPowerFrobeniusOver_pow,
+      Finset.prod_range_succ]
+
 /-- The Lang map is `F − 1` in the endomorphism ring of `G`. -/
 theorem langMap_eq_asHom :
-    langMap k a ha G = (End.of (qPowerFrobeniusCommGrpHom k a ha G) - 1).asHom :=
-  (map_sub (End.addEquiv (X := G)) _ _).symm
+    langMap k a ha G = (End.of (qPowerFrobeniusCommGrpHom k a ha G) - 1).asHom := by
+  simp [langMap_def]
 
 /-- **Telescoping.** The norm followed by the Lang map is `F ^ n − 1`, where `F ^ n` is the
 `q ^ n`-power Frobenius (`AlgebraicGeometry.Scheme.qPowerFrobeniusOver_pow_asHom_left`). -/
@@ -233,14 +289,14 @@ theorem frobeniusNorm_comp_langMap (n : ℕ) :
     frobeniusNorm k a ha G n ≫ langMap k a ha G =
       (End.of (qPowerFrobeniusCommGrpHom k a ha G) ^ n).asHom - 𝟙 G := by
   rw [langMap_eq_asHom, frobeniusNorm, ← End.mul_asHom, mul_geom_sum]
-  exact map_sub (End.addEquiv (X := G)) _ _
+  simp
 
 /-- **Telescoping.** The Lang map followed by the norm is `F ^ n − 1`. -/
 theorem langMap_comp_frobeniusNorm (n : ℕ) :
     langMap k a ha G ≫ frobeniusNorm k a ha G n =
       (End.of (qPowerFrobeniusCommGrpHom k a ha G) ^ n).asHom - 𝟙 G := by
   rw [langMap_eq_asHom, frobeniusNorm, ← End.mul_asHom, geom_sum_mul]
-  exact map_sub (End.addEquiv (X := G)) _ _
+  simp
 
 variable {G}
 
@@ -276,17 +332,17 @@ theorem pointsMulEquiv_qPowerFrobeniusOver_comp (x : T ⟶ (Gm (Spec (CommRingCa
 /-- **The Lang map of `𝔾_m`** raises the unit of `Γ(T, 𝒪_T)` attached to a point to its
 `(q − 1)`-th power. -/
 theorem pointsMulEquiv_comp_langMap (x : T ⟶ (Gm (Spec (CommRingCat.of k))).X) :
-    pointsMulEquiv T (x ≫ (langMap k a ha ⟨(Gm (Spec (CommRingCat.of k))).X⟩).hom.hom.hom) =
+    pointsMulEquiv T (x ≫ (langMap k a ha (GmCommGrp (Spec (CommRingCat.of k)))).hom.hom.hom) =
       pointsMulEquiv T x ^ (Nat.card k - 1) := by
   have hq : Nat.card k ≠ 0 := ha ▸ pow_ne_zero a (Fact.out : p.Prime).ne_zero
-  rw [comp_langMap_hom_hom_hom k a ha (G := ⟨(Gm (Spec (CommRingCat.of k))).X⟩), map_div,
+  rw [comp_langMap_hom_hom_hom k a ha (G := GmCommGrp (Spec (CommRingCat.of k))), map_div,
     pointsMulEquiv_qPowerFrobeniusOver_comp, ← pow_sub_one_mul hq, mul_div_cancel_right]
 
 /-- **The kernel of the Lang map of `𝔾_m`.** A point of `𝔾_m` with values in `T` factors through
 the kernel of the Lang map if and only if the attached unit `u` of `Γ(T, 𝒪_T)` satisfies
 `u ^ (q - 1) = 1`. -/
 theorem exists_comp_langKernelι_iff (x : T ⟶ (Gm (Spec (CommRingCat.of k))).X) :
-    (∃ y, y ≫ langKernelι k a ha ⟨(Gm (Spec (CommRingCat.of k))).X⟩ = x) ↔
+    (∃ y, y ≫ langKernelι k a ha (GmCommGrp (Spec (CommRingCat.of k))) = x) ↔
       pointsMulEquiv T x ^ (Nat.card k - 1) = 1 := by
   have hq : Nat.card k ≠ 0 := ha ▸ pow_ne_zero a (Fact.out : p.Prime).ne_zero
   rw [GroupScheme.exists_comp_langKernelι_iff, ← (pointsMulEquiv T).injective.eq_iff,
