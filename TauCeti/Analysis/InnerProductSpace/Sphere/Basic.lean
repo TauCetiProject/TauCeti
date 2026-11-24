@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
-# Inner products on the unit ball
+# Inner-product bounds on balls
 
 A vector in the open unit ball has inner product strictly greater than `-1` with every vector
 of the closed unit ball. These bounds ensure positivity of denominators in maps of the unit sphere.
+The file also records that if `‖a‖ ≤ ‖x‖` then `x - a` points weakly outward at `x`,
+`0 ≤ ⟪x - a, x⟫` (`TauCeti.inner_sub_self_nonneg_of_norm_le`).
 
 Adapted from Giada Franz's local formalization of Hersch's balancing lemma.
 -/
@@ -36,5 +38,10 @@ theorem inner_ne_neg_one {a x : E} (ha : ‖a‖ < 1) (hx : ‖x‖ ≤ 1) : ⟪
   have := one_add_inner_pos ha hx
   intro h
   linarith
+
+/-- If `‖a‖ ≤ ‖x‖`, then `x - a` points weakly outward at `x`: `0 ≤ ⟪x - a, x⟫`. -/
+theorem inner_sub_self_nonneg_of_norm_le {x a : E} (h : ‖a‖ ≤ ‖x‖) : 0 ≤ ⟪x - a, x⟫ := by
+  rw [inner_sub_left, real_inner_self_eq_norm_sq]
+  nlinarith [real_inner_le_norm a x, norm_nonneg a]
 
 end TauCeti
