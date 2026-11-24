@@ -48,6 +48,16 @@ theorem cochainToGradedResolution_injective (n : ℕ) :
     Function.Injective (X.cochainToGradedResolution n) := fun _ _ h ↦
   Subtype.ext (DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) n h)
 
+/-- Two cochains have the same inclusion into the total resolution exactly when they are equal. -/
+theorem cochainToGradedResolution_inj {n : ℕ} {z z' : (homogeneousCochains X).X n} :
+    X.cochainToGradedResolution n z = X.cochainToGradedResolution n z' ↔ z = z' :=
+  (X.cochainToGradedResolution_injective n).eq_iff
+
+/-- A cochain has zero inclusion into the total resolution exactly when it is zero. -/
+theorem cochainToGradedResolution_eq_zero_iff {n : ℕ} {z : (homogeneousCochains X).X n} :
+    X.cochainToGradedResolution n z = 0 ↔ z = 0 :=
+  map_eq_zero_iff _ (X.cochainToGradedResolution_injective n)
+
 variable [DiscreteTopology R]
 
 /-- The included cochain is invariant under the group action on the total resolution. -/
@@ -77,9 +87,7 @@ theorem gradedResolutionDifferential_cochainToGradedResolution_eq_zero_iff (n : 
     (z : (homogeneousCochains X).X n) :
     X.gradedResolutionDifferential (X.cochainToGradedResolution n z) = 0 ↔
       ((homogeneousCochains X).d n (n + 1)).hom z = 0 := by
-  rw [gradedResolutionDifferential_cochainToGradedResolution,
-    ← map_zero (X.cochainToGradedResolution (n + 1)),
-    (X.cochainToGradedResolution_injective (n + 1)).eq_iff]
+  rw [gradedResolutionDifferential_cochainToGradedResolution, cochainToGradedResolution_eq_zero_iff]
 
 /-- Every element of the total resolution that is homogeneous of degree `n` and invariant under the
 group is the inclusion of a homogeneous `n`-cochain. -/

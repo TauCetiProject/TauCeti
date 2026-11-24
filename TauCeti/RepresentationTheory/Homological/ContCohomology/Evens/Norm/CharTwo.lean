@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Resolution
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Cocycle
+import TauCeti.RepresentationTheory.Tensor.Induction.Cochain
 import TauCeti.RepresentationTheory.Tensor.Induction.Cup.DiagonalClass
 
 /-!
@@ -57,7 +57,7 @@ action by ring automorphisms, which the twisted multiplication takes into accoun
 
 * L. Evens, *A generalization of the transfer map in the cohomology of groups*,
   Trans. Amer. Math. Soc. **108** (1963), §§5–6.
-* S. Kozlowski, *The Evens–Kahn formula for the total Stiefel–Whitney class*, Proc. Amer. Math.
+* A. Kozlowski, *The Evens–Kahn formula for the total Stiefel–Whitney class*, Proc. Amer. Math.
   Soc. **91** (1984), §2, for the characteristic-two norm in every degree.
 -/
 
@@ -173,26 +173,13 @@ theorem evensNormCharTwo_cochainClass (t : U.toSubgroup.LeftTransversal) {n : �
 theorem evensNormCharTwo_zero (n : ℕ) :
     U.evensNormCharTwo A hA (0 : continuousCohomology n (ofDiscreteModule ℤ U.toSubgroup A)) =
       0 := by
-  have hten : PiTensorProduct.tprod ℤ (fun _ : G ⧸ U.toSubgroup ↦
-      (0 : (ofDiscreteModule ℤ U.toSubgroup A).gradedResolutionModule)) = 0 :=
-    (PiTensorProduct.tprod ℤ).map_coord_zero (QuotientGroup.mk 1) rfl
-  let : LinearOrder (G ⧸ U.toSubgroup) :=
-    LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U.toSubgroup)).injective
   rw [← TopRep.cochainClass_zero (X := ofDiscreteModule ℤ U.toSubgroup A) (n := n),
-    evensNormCharTwo_cochainClass U A hA default, smoothTensorInducedDiagonalClass_eq]
-  have hzero := TopRep.ResolutionContraction.gradedCohomologyClass_zero.{0, u, u}
-    (smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen' default
+    evensNormCharTwo_cochainClass U A hA default]
+  exact (congrArg (ContinuousCohomology.coeffMap
+      (smoothTensorInducedMulHom.{0, u, 0} U.toSubgroup U.isOpen' A default).hom _)
+    (smoothTensorInducedDiagonalClass_cochainToGradedResolution_zero U.toSubgroup U.isOpen' default
       ⟨ofDiscreteModule ℤ U.toSubgroup A, ofDiscreteModule_isSmoothDiscrete ℤ U.toSubgroup A⟩
-      (add_self_eq_zero U A hA))
-    (n := Fintype.card (G ⧸ U.toSubgroup) * n)
-  refine Eq.trans (congrArg (ContinuousCohomology.coeffMap
-    (smoothTensorInducedMulHom.{0, u, 0} U.toSubgroup U.isOpen' A default).hom
-    (Fintype.card (G ⧸ U.toSubgroup) * n)) ?_) (map_zero _)
-  convert hzero using 1
-  simp only [map_zero, hten]
-  -- Both sides are the class of the zero vector, typed once in the tensor power and once in the
-  -- carrier of the tensor-induced resolution, which is that tensor power by definition.
-  rfl
+      (add_self_eq_zero U A hA) n)).trans (map_zero _)
 
 -- The `show` reads `hA` on the carrier of `ofDiscreteModule ℤ U A`, as in
 -- `OpenSubgroup.evensNormCharTwo_cochainClass`.
