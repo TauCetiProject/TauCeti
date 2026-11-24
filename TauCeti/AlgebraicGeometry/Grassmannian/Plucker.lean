@@ -73,10 +73,7 @@ variable (R M k) in
 /-- `pluckerHom` lies over `Spec R`. -/
 @[reassoc (attr := simp)]
 theorem pluckerHom_toSpec : pluckerHom R M k ≫ toSpec R (⋀[R]^k M) 1 = toSpec R M k := by
-  refine Scheme.hom_ext_of_forall_spec fun B a ↦ ?_
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
-  let _ : Algebra R B := φ.hom.toAlgebra
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
+  refine hom_ext fun A _ _ N ↦ ?_
   rw [toSchemeHom_comp_pluckerHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec]
 
 end Module.Grassmannian

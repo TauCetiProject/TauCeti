@@ -474,6 +474,20 @@ theorem toSchemeHom_schemeHomEquiv_symm_apply
 section HomOfPoints
 
 variable {Y : Scheme.{u}}
+
+/-- **Morphisms out of the Grassmannian scheme are determined on points.** Two morphisms
+`G(k, M) ⟶ Y` that agree after composing with `toSchemeHom N`, for every point `N` of
+`G(k, A ⊗[R] M; A)` over every `R`-algebra `A`, are equal. -/
+theorem hom_ext {f g : scheme R M k ⟶ Y}
+    (h : ∀ (A : Type u) [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)),
+      toSchemeHom N ≫ f = toSchemeHom N ≫ g) : f = g := by
+  refine Scheme.hom_ext_of_forall_spec fun B a ↦ ?_
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
+  let _ : Algebra R B := φ.hom.toAlgebra
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
+  exact h B N
+
+variable
   (F : ∀ {S : Type u} [CommRing S] [Algebra R S], G(k, S ⊗[R] M; S) → (Spec (.of S) ⟶ Y))
 
 /-- The image under `F` of the point classified by `a`. The algebra structure on `S` is an explicit
@@ -548,6 +562,13 @@ theorem toSchemeHom_comp_homOfPoints (N : G(k, A ⊗[R] M; A)) :
     toSchemeHom N ≫ homOfPoints F hF = F N :=
   (Scheme.comp_homOfAffinePoints _ (homOfPointsPoint_comp F hF) _).trans
     (homOfPointsPoint_toSchemeHom F N)
+
+/-- **Uniqueness of `homOfPoints`.** A morphism `g : G(k, M) ⟶ Y` with `toSchemeHom N ≫ g = F N`
+for every point `N` is `homOfPoints F hF`. -/
+theorem eq_homOfPoints {g : scheme R M k ⟶ Y}
+    (hg : ∀ (A : Type u) [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)),
+      toSchemeHom N ≫ g = F N) : g = homOfPoints F hF :=
+  hom_ext fun A _ _ N ↦ (hg A N).trans (toSchemeHom_comp_homOfPoints F hF N).symm
 
 end HomOfPoints
 
