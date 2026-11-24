@@ -33,8 +33,9 @@ contractible, in particular simply connected, in its subspace topology.
 * `TauCeti.Lie.ImmersedLieSubgroupData.isClosed_of_posUpperTriangular` and
   `TauCeti.Lie.ImmersedLieSubgroupData.isClosedEmbedding_toHom_of_posUpperTriangular`: the
   subgroup is closed and its presentation is a closed embedding.
-* `TauCeti.Lie.ImmersedLieSubgroupData.contractibleSpace_of_posUpperTriangular`: the intrinsic
-  group is contractible.
+* `TauCeti.Lie.ImmersedLieSubgroupData.contractibleSpace_of_posUpperTriangular` and
+  `TauCeti.Lie.ImmersedLieSubgroupData.contractibleSpace_subgroup_of_posUpperTriangular`: the
+  intrinsic group and the subgroup with its subspace topology are contractible.
 * `LieSubalgebra.coe_integralLeafSubgroup_posUpperTriangular`: the connected subgroup of a Lie
   subalgebra `S` is the exponential image of `S`.
 * `LieSubalgebra.bijOn_lieExp_integralLeafSubgroup_posUpperTriangular`: the exponential is a
@@ -123,6 +124,12 @@ theorem contractibleSpace_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     ContractibleSpace d.X :=
   d.contractibleSpace_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
+
+/-- A connected immersed Lie subgroup of `AN` is contractible in its subspace topology. -/
+theorem contractibleSpace_subgroup_of_posUpperTriangular {K : Subgroup AN}
+    (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
+    ContractibleSpace K :=
+  d.contractibleSpace_subgroup_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 end ImmersedLieSubgroupData
 

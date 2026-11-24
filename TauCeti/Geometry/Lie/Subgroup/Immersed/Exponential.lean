@@ -84,13 +84,6 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
   ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
 
-/-- The Lie algebra of a finite-dimensional Lie group without boundary is finite-dimensional. -/
-private local instance finiteDimensionalLie {E' H' X : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
-    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace X] [ChartedSpace H' X] [Group X]
-    [LieGroup I' ∞ X] [T2Space X] : FiniteDimensional ℝ (LeftInvariantDerivation I' X) :=
-  finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-
 variable (d : ImmersedLieSubgroupData I K)
   (e : Diffeomorph 𝓘(ℝ, LeftInvariantDerivation I G) I (LeftInvariantDerivation I G) G ∞)
 
