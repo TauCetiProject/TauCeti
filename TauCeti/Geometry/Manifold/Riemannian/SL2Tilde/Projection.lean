@@ -210,7 +210,7 @@ private theorem inner_projection_coordinates (p : SL2Tilde) (u v : TangentSpace 
     tangentSpaceCastModel_mfderiv_projection, height_projection, WithLp.prod_inner_apply]
   simp only [Real.inner_apply]
   have he : exp (-2 * p.y) * exp p.y ^ 2 = 1 := by
-    rw [← exp_nat_mul, ← exp_add]
+    rw [← exp_natCast_mul, ← exp_add]
     ring_nf
     exact exp_zero
   simp only [neg_mul] at he

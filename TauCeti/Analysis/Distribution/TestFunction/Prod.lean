@@ -46,13 +46,15 @@ kernels are tested. On an open subset `W` of the `L^p` product `WithLp p (E × D
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
+* `TestFunction.prodSMulCLM_add`, `TestFunction.prodSMulCLM_smul`: its linearity in `ψ`.
 * `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
 * `TestFunction.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex test functions on
   `Ω` and `O`, with `TestFunction.tensor_apply`, its support `TestFunction.tsupport_tensor_subset`
-  and its bilinearity.
+  and its bilinearity. `TestFunction.postcompCLM_ofRealCLM_prodSMulCLM`: on real test functions it
+  is the complexification of `TestFunction.prodSMulCLM`.
 * `TestFunction.exists_nhds_prod_cutoff`: products of test functions supported near a point
   of an open subset of `WithLp p (E × D)` are test functions on it.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
@@ -104,11 +106,11 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine Finset.sum_le_sum fun j hj ↦ ?_
       have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
       have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        (norm_iteratedFDeriv_comp_snd_le p).trans
+        p.norm_iteratedFDeriv_comp_snd.le.trans
           ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
       have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
           (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        (norm_iteratedFDeriv_comp_fst_le p).trans
+        p.norm_iteratedFDeriv_comp_fst.le.trans
           ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
             (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
       calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *
@@ -146,6 +148,18 @@ theorem prodSMulCLM_apply (φ : 𝓓(Ω, F)) (p : E × D) :
 theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
     tsupport (prodSMulCLM ψ hV φ) ⊆ tsupport φ ×ˢ tsupport ψ :=
   tsupport_snd_smul_fst_subset _ _
+
+/-- The tensor product is additive in the fixed factor `ψ`. -/
+theorem prodSMulCLM_add (ψ ψ' : 𝓓(O, ℝ)) :
+    prodSMulCLM (F := F) (ψ + ψ') hV = prodSMulCLM ψ hV + prodSMulCLM ψ' hV := by
+  ext φ p
+  simp [add_smul]
+
+/-- The tensor product is homogeneous in the fixed factor `ψ`. -/
+theorem prodSMulCLM_smul (c : ℝ) (ψ : 𝓓(O, ℝ)) :
+    prodSMulCLM (F := F) (c • ψ) hV = c • prodSMulCLM ψ hV := by
+  ext φ p
+  simp [mul_smul]
 
 /-! ### Slices -/
 
@@ -299,6 +313,15 @@ theorem tensor_smul_right (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, �
     φ.tensor (c • ψ) hV = c • φ.tensor ψ hV := by
   ext p
   simp [mul_left_comm]
+
+/-- The complexification of the tensor product `(x, y) ↦ ψ y • φ x` of real test functions is the
+tensor product of their complexifications. -/
+theorem postcompCLM_ofRealCLM_prodSMulCLM (ψ : 𝓓(O, ℝ)) (φ : 𝓓(Ω, ℝ)) :
+    postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (prodSMulCLM ψ hV φ) =
+      (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ).tensor
+        (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψ) hV := by
+  ext p
+  simp [mul_comm]
 
 end Tensor
 

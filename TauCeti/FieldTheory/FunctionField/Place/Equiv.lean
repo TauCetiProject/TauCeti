@@ -91,10 +91,10 @@ noncomputable def integersEquivOfRingEquiv (P : Place k L) :
     P.integers ≃+* (equivOfRingEquiv σ τ h P).integers where
   toFun x := ⟨τ x, by
     rw [mem_integers_iff, valuation_equivOfRingEquiv, τ.symm_apply_apply]
-    exact P.mem_integers_iff.mp x.2⟩
+    exact P.mem_integers_iff.mp x.property⟩
   invFun y := ⟨τ.symm y, by
     exact P.mem_integers_iff.mpr
-      ((equivOfRingEquiv σ τ h P).mem_integers_iff.mp y.2)⟩
+      ((equivOfRingEquiv σ τ h P).mem_integers_iff.mp y.property)⟩
   left_inv x := Subtype.ext (by simp)
   right_inv y := Subtype.ext (by simp)
   map_mul' x y := Subtype.ext (map_mul τ _ _)

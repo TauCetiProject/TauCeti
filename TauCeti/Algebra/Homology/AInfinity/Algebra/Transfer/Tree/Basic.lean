@@ -179,8 +179,8 @@ private theorem suspendedM_ofComposition_apply {n : ℕ} (d : Composition n) (hd
   refine congrArg (𝒜.suspendedTreeBranch incl h (children (i.cast hlen)).val) (funext fun j ↦ ?_)
   refine congrArg x (Fin.ext ?_)
   simp only [finCongr_apply, Fin.val_cast, finSigmaFinEquiv_apply, d.coe_embedding]
-  rw [d.sizeUpTo_eq_sum_blocksFun (by omega : i.1 ≤ d.length)]
-  exact congrArg (· + j.1) (Finset.sum_congr rfl fun a _ ↦ (children _).property)
+  rw [d.sizeUpTo_eq_sum_blocksFun (by omega : i.val ≤ d.length)]
+  exact congrArg (· + j.val) (Finset.sum_congr rfl fun a _ ↦ (children _).property)
 
 /-- Evaluating `suspendedTreeBranch` on `ReducedPlanarTree.ofComposition` applies
 `-h ∘ 𝒜.suspendedM d.length` to the child branch evaluations on `x ∘ d.embedding i`. -/
@@ -289,7 +289,7 @@ private theorem unsuspend_node_sign_eq (k : ℕ) (children : Fin (k + 2) → Red
   have hcard : ((k + 2 : ℤ) - 1 - i) = ∑ b : Fin (k + 2), if i < b then (1 : ℤ) else 0 := by
     rw [← Finset.sum_filter, Finset.filter_lt_eq_Ioi, Finset.sum_const, Fin.card_Ioi,
       nsmul_eq_mul, mul_one]
-    have hi := i.2; omega
+    have hi := i.isLt; omega
   have hsum1 : (∑ b : Fin (k + 2), if i < b then (1 - ((children b).numLeaves : ℤ)) else 0) +
       2 * (∑ b : Fin (k + 2), if i < b then ((children b).numLeaves : ℤ) else 0) =
       ((k + 2 : ℤ) - 1 - i) +

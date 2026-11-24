@@ -19,6 +19,7 @@ measures order-one growth of entire functions: a factor `D ≥ 0` in front of
 
 * `Real.one_half_le_log_two_add`: `1 / 2 ≤ log (2 + r)` for `0 ≤ r`.
 * `Real.one_half_le_one_add_mul_log_two_add`: `1 / 2 ≤ (1 + r) * log (2 + r)` for `0 ≤ r`.
+* `Real.one_add_le_exp_one_add_mul_log_two_add`: `1 + r ≤ exp ((1 + r) * log (2 + r))` for `0 ≤ r`.
 * `Real.mul_exp_mul_one_add_mul_log_two_add_le`: absorption of a nonnegative factor into the
   exponent.
 * `Real.exp_mul_one_add_mul_log_two_add_le_of_le`: `exp (C (1 + r) log (2 + r))` is monotone
@@ -40,6 +41,16 @@ theorem one_half_le_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :
     (1 / 2 : ℝ) ≤ (1 + r) * log (2 + r) := by
   have hL := one_half_le_log_two_add hr
   nlinarith
+
+/-- For `0 ≤ r`, `1 + r` is dominated by `exp ((1 + r) * log (2 + r))` with unit constant. -/
+theorem one_add_le_exp_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :
+    1 + r ≤ exp ((1 + r) * log (2 + r)) := by
+  have hpos : 0 < 2 + r := by linarith
+  calc
+    1 + r ≤ 2 + r := by linarith
+    _ = exp (log (2 + r)) := (exp_log hpos).symm
+    _ ≤ exp ((1 + r) * log (2 + r)) :=
+      exp_le_exp.mpr (le_mul_of_one_le_left (log_nonneg (by linarith)) (by linarith))
 
 /-- A nonnegative factor `D` in front of `exp (C (1 + r) log (2 + r))` is absorbed by enlarging
 the constant to `C + 2 D`. -/

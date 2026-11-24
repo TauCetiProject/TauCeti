@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LowDimTopology.Plumbing.SpinC
 public import TauCeti.LowDimTopology.Plumbing.Weight.Polarization
 
 /-!
@@ -31,11 +32,11 @@ homology uses.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec`: shifting the covector by `2 · A l`
+* `TauCeti.PlumbingGraph.characteristicWeight_addTwoMulVec`: shifting the covector by `2 · A l`
   subtracts the intersection pairing `A(x, l)` from the weight.
-* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_eq_sub`: the translation equivariance
+* `TauCeti.PlumbingGraph.characteristicWeight_addTwoMulVec_eq_sub`: the translation equivariance
   `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)`.
-* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_le_iff`: the sublevel sets of the two
+* `TauCeti.PlumbingGraph.characteristicWeight_addTwoMulVec_le_iff`: the sublevel sets of the two
   spin^c representatives correspond under the `l`-translation, with the constant grading shift
   `χ_k(l)`.
 
@@ -58,11 +59,13 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 /-- Shifting a characteristic covector by `2 · A l`, the covector representing the same spin^c
 structure translated by `l`, subtracts the intersection pairing `A(x, l)` from the weight. This is
 the covector-shift half of the translation equivariance. -/
-theorem characteristicWeight_add_two_mulVec (k : P.characteristicVectors) (m x : V → ℤ) :
-    P.characteristicWeight
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x =
+theorem characteristicWeight_addTwoMulVec (k : P.characteristicVectors) (m x : V → ℤ) :
+    P.characteristicWeight (P.addTwoMulVec k m) x =
       P.characteristicWeight k x - P.intersectionForm x m := by
-  rw [characteristicWeight_add_two_mul, sum_intersectionMatrix_mulVec_mul]
+  have h : P.addTwoMulVec k m =
+      ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ :=
+    Subtype.ext (P.addTwoMulVec_val k m)
+  rw [h, characteristicWeight_add_two_mul, sum_intersectionMatrix_mulVec_mul]
 
 /-- Spin^c translation equivariance of Némethi's weight function: shifting the characteristic
 covector by `2 · A l` translates the weight by `l`, up to the additive constant `χ_k(l)`,
@@ -72,37 +75,36 @@ covector by `2 · A l` translates the weight by `l`, up to the additive constant
 The two representatives `k` and `k + 2·A l` of one spin^c structure therefore have weight functions
 that agree after translating the lattice argument by `l`; this is the weight-level statement behind
 the translation isomorphism of the associated lattice homologies. -/
-theorem characteristicWeight_add_two_mulVec_eq_sub (k : P.characteristicVectors) (m x : V → ℤ) :
-    P.characteristicWeight
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x =
+theorem characteristicWeight_addTwoMulVec_eq_sub (k : P.characteristicVectors) (m x : V → ℤ) :
+    P.characteristicWeight (P.addTwoMulVec k m) x =
       P.characteristicWeight k (x + m) - P.characteristicWeight k m := by
-  rw [characteristicWeight_add_two_mulVec, characteristicWeight_add]
+  rw [characteristicWeight_addTwoMulVec, characteristicWeight_add]
   ring
 
 /-- The sublevel sets of two spin^c representatives correspond under the `l`-translation, with a
 constant grading shift by `χ_k(l)`: a point `x` has shifted-covector weight at most `n` exactly when
 its `l`-translate has original weight at most `n + χ_k(l)`. This is the degree-preserving bijection
 of cubical generators underlying the spin^c invariance of lattice homology. -/
-theorem characteristicWeight_add_two_mulVec_le_iff (k : P.characteristicVectors) (m x : V → ℤ)
+theorem characteristicWeight_addTwoMulVec_le_iff (k : P.characteristicVectors) (m x : V → ℤ)
     (n : ℤ) :
-    P.characteristicWeight
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x ≤ n ↔
+    P.characteristicWeight (P.addTwoMulVec k m) x ≤ n ↔
       P.characteristicWeight k (x + m) ≤ n + P.characteristicWeight k m := by
-  rw [characteristicWeight_add_two_mulVec_eq_sub]
+  rw [characteristicWeight_addTwoMulVec_eq_sub]
   omega
 
 end PlumbingGraph
 
 /-- A self-validating check on the `A₂` plumbing exercising
-`characteristicWeight_add_two_mulVec_eq_sub` at the shift `m = E₀`, point `x = E₁`, and canonical
+`characteristicWeight_addTwoMulVec_eq_sub` at the shift `m = E₀`, point `x = E₁`, and canonical
 covector `k`. The theorem reduces the
 shifted-covector weight `χ_{k + 2·A E₀}(E₁)` to the translate `χ_k(E₁ + E₀) - χ_k(E₀)`, which
 evaluates to `1 - 1 = 0`. -/
 example :
     a2Plumbing.characteristicWeight
-        ⟨fun v => a2Plumbing.canonicalCharacteristic v +
-            2 * (a2Plumbing.intersectionMatrix.mulVec (Pi.single (0 : Fin 2) 1)) v,
-          a2Plumbing.isCharacteristicVector_canonicalCharacteristic.add_two_mul⟩
+        (a2Plumbing.addTwoMulVec
+          ⟨a2Plumbing.canonicalCharacteristic,
+            a2Plumbing.isCharacteristicVector_canonicalCharacteristic⟩
+          (Pi.single (0 : Fin 2) 1))
         (Pi.single (1 : Fin 2) 1) = 0 := by
   have translate :
       a2Plumbing.characteristicWeight
@@ -117,7 +119,7 @@ example :
       PlumbingGraph.characteristicWeight_canonical_single,
       PlumbingGraph.characteristicWeight_canonical_single, a2Plumbing_intersectionMatrix]
     norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
-  exact (a2Plumbing.characteristicWeight_add_two_mulVec_eq_sub
+  exact (a2Plumbing.characteristicWeight_addTwoMulVec_eq_sub
     ⟨a2Plumbing.canonicalCharacteristic,
       a2Plumbing.isCharacteristicVector_canonicalCharacteristic⟩
     (Pi.single 0 1) (Pi.single 1 1)).trans translate

@@ -40,8 +40,8 @@ theorem higherTaylor_barMap_of_tprod {R : Type uR} {A : Type uA} {B : Type uB}
     {n : ℕ} (hn : 0 < n) (x : Fin n → B) :
     𝒜.higherTaylor (f.barMap (of R B ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
       ∑ d : {d : Composition n // 2 ≤ d.length},
-        𝒜.suspendedM d.1.length
-          (fun i ↦ f.suspendedComponent (d.1.blocksFun i) (x ∘ d.1.embedding i)) := by
+        𝒜.suspendedM d.val.length
+          (fun i ↦ f.suspendedComponent (d.val.blocksFun i) (x ∘ d.val.embedding i)) := by
   rw [f.barMap_eq_coalgHom, coalgHom_of_tprod_eq_sum_composition f.taylor hn x, map_sum]
   refine Finset.sum_congr_set {d : Composition n | 2 ≤ d.length} _ _ (fun d hd ↦ ?_) fun d hd ↦ ?_
   · have hsc (i : Fin d.length) :=

@@ -62,9 +62,7 @@ noncomputable instance instFreeZigzagComponentAlgebra (C : G.ConnectedComponent)
   by_cases hC : Nontrivial C
   · let _ : Nontrivial C := hC
     rw [zigzagComponentAlgebra_eq_nonisolated]
-    exact Module.Free.of_basis <| zigzagBasis k C.toSimpleGraph fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+    exact Module.Free.of_basis <| zigzagBasis k C.toSimpleGraph C.exists_adj_toSimpleGraph
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     rw [zigzagComponentAlgebra_eq_uliftDualNumber]
     -- Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`, and defines
@@ -84,9 +82,7 @@ noncomputable instance instFiniteZigzagComponentAlgebra (C : G.ConnectedComponen
     let _ : Fintype C := Fintype.ofFinite C
     let _ : DecidableRel C.toSimpleGraph.Adj := Classical.decRel _
     let _ : Fintype C.toSimpleGraph.Dart := Dart.fintype
-    exact Module.Finite.of_basis <| zigzagBasis k C.toSimpleGraph fun i =>
-      exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
+    exact Module.Finite.of_basis <| zigzagBasis k C.toSimpleGraph C.exists_adj_toSimpleGraph
   · let _ : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     rw [zigzagComponentAlgebra_eq_uliftDualNumber]
     -- Mathlib exposes `DualNumber k` as `TrivSqZeroExt k k`, whose carrier is `k × k`, and defines

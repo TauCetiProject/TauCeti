@@ -35,6 +35,8 @@ independent of the choice of finite-dimensional model for the subgroup.
   is a Lie equivalence onto that subalgebra.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply`: the equivalence is
   the inclusion differential on underlying elements.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.finrank_eq_finrank_lieSubalgebraOfSubgroup`: the model
+  space of the subgroup has the dimension of that subalgebra.
 
 ## References
 
@@ -276,5 +278,17 @@ theorem lieEquivLieSubalgebraOfSubgroup_apply :
   intro X
   simp only [lieEquivLieSubalgebraOfSubgroup, id_eq, LieEquiv.trans_apply,
     LieHom.equivRangeOfInjective_apply, LieEquiv.ofEq_apply]
+
+include d in
+/-- **The dimension of an embedded Lie subgroup is that of its Lie algebra.** The model vector
+space of any finite-dimensional embedded-Lie-subgroup structure on `K` has the dimension of the
+ambient Lie subalgebra `TauCeti.Lie.lieSubalgebraOfSubgroup K`. -/
+theorem finrank_eq_finrank_lieSubalgebraOfSubgroup :
+    Module.finrank ℝ E' = Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) K) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+  rw [← finrank_leftInvariantDerivation_eq_modelVectorSpace (I := 𝓘(ℝ, E')) (G := K)
+    BoundarylessManifold.isInteriorPoint]
+  exact d.lieEquivLieSubalgebraOfSubgroup.toLinearEquiv.finrank_eq
 
 end TauCeti.Lie.EmbeddedLieSubgroupData

@@ -421,7 +421,8 @@ def nodeComposition (k : ℕ) (children : Fin (k + 2) → ReducedPlanarTree) :
 
 private theorem ofComposition_injective {n : ℕ} :
     Function.Injective fun p : Σ c : {c : Composition n // 2 ≤ c.length},
-      ∀ i : Fin c.1.length, Arity (c.1.blocksFun i) ↦ ofComposition p.1.1 p.1.2 p.2 := by
+      ∀ i : Fin c.val.length, Arity (c.val.blocksFun i) ↦
+        ofComposition p.1.val p.1.property p.2 := by
   rintro ⟨⟨c₁, hc₁⟩, ch₁⟩ ⟨⟨c₂, hc₂⟩, ch₂⟩ h
   have hnode := Subtype.ext_iff.mp h
   dsimp only [val_ofComposition] at hnode
@@ -433,12 +434,12 @@ private theorem ofComposition_injective {n : ℕ} :
       have hi := congrArg numLeaves (hch ⟨i, by rwa [← c₂.blocks_length]⟩)
       simpa [Composition.blocksFun_eq_getElem, (ch₁ _).property, (ch₂ _).property] using hi
   exact congrArg (Sigma.mk (β := fun e : {e : Composition n // 2 ≤ e.length} ↦
-    ∀ i : Fin e.1.length, Arity (e.1.blocksFun i)) ⟨c₁, hc₁⟩)
+    ∀ i : Fin e.val.length, Arity (e.val.blocksFun i)) ⟨c₁, hc₁⟩)
     (funext fun i ↦ Subtype.ext (hch i))
 
 private def arityCompositionInv {n : ℕ} (hn : n ≠ 1) :
     Arity n → Σ c : {c : Composition n // 2 ≤ c.length},
-      ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)
+      ∀ i : Fin c.val.length, Arity (c.val.blocksFun i)
   | ⟨leaf, ht⟩ => False.elim (hn (by simpa using ht.symm))
   | ⟨node k children, ht⟩ =>
     let c : Composition n := (nodeComposition k children).cast ht
@@ -446,7 +447,7 @@ private def arityCompositionInv {n : ℕ} (hn : n ≠ 1) :
     ⟨⟨c, by omega⟩, fun i ↦ ⟨children (i.cast hcl), by simp [c]⟩⟩
 
 private theorem ofComposition_arityCompositionInv {n : ℕ} (hn : n ≠ 1) (t : Arity n) :
-    ofComposition (arityCompositionInv hn t).1.1 (arityCompositionInv hn t).1.2
+    ofComposition (arityCompositionInv hn t).1.val (arityCompositionInv hn t).1.property
       (arityCompositionInv hn t).2 = t := by
   rcases t with ⟨leaf | ⟨k, children⟩, ht⟩
   · exact (hn (by simpa using ht.symm)).elim
@@ -456,25 +457,25 @@ private theorem ofComposition_arityCompositionInv {n : ℕ} (hn : n ≠ 1) (t : 
 compositions of `n` into at least two blocks paired with a child tree on each block. -/
 def arityCompositionEquiv {n : ℕ} (hn : n ≠ 1) :
     (Σ c : {c : Composition n // 2 ≤ c.length},
-      ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)) ≃ Arity n where
-  toFun p := ofComposition p.1.1 p.1.2 p.2
+      ∀ i : Fin c.val.length, Arity (c.val.blocksFun i)) ≃ Arity n where
+  toFun p := ofComposition p.1.val p.1.property p.2
   invFun := arityCompositionInv hn
   left_inv _ := ofComposition_injective (ofComposition_arityCompositionInv hn _)
   right_inv := ofComposition_arityCompositionInv hn
 
 @[simp] theorem arityCompositionEquiv_apply {n : ℕ} (hn : n ≠ 1)
     (c : {c : Composition n // 2 ≤ c.length})
-    (children : ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)) :
-    arityCompositionEquiv hn ⟨c, children⟩ = ofComposition c.1 c.2 children := (rfl)
+    (children : ∀ i : Fin c.val.length, Arity (c.val.blocksFun i)) :
+    arityCompositionEquiv hn ⟨c, children⟩ = ofComposition c.val c.property children := (rfl)
 
 @[simp] theorem val_fst_arityCompositionEquiv_symm {n : ℕ} (hn : n ≠ 1) (k : ℕ)
     (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n) :
-    ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.1 =
+    ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.val =
       (nodeComposition k children).cast ht := (rfl)
 
 @[simp] theorem val_snd_arityCompositionEquiv_symm {n : ℕ} (hn : n ≠ 1) (k : ℕ)
     (children : Fin (k + 2) → ReducedPlanarTree) (ht : (node k children).numLeaves = n)
-    (i : Fin ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.1.length) :
+    (i : Fin ((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).1.val.length) :
     (((arityCompositionEquiv hn).symm ⟨node k children, ht⟩).2 i).val =
       children (i.cast (by simp)) := (rfl)
 

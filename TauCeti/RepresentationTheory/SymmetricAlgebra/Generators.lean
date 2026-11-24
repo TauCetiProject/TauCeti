@@ -96,7 +96,7 @@ theorem adjoin_range_eq_top_of_le_span_sup_sq (f : ι → ρ.symmetricAlgebraInv
   induction hp using Algebra.adjoin_induction with
   | mem x hx => exact Algebra.subset_adjoin hx
   | algebraMap r =>
-    have hr := (Subalgebra.mem_grading_iff _ _).1 r.2
+    have hr := (Subalgebra.mem_grading_iff _ _).1 r.property
     have : algebraMap (𝒜 0) ρ.symmetricAlgebraInvariants r =
         algebraMap R _ (homogeneousSubmoduleZeroEquiv R M ⟨_, hr⟩) := by
       ext

@@ -45,6 +45,8 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   avoiding a point is a multiple of its Dirac measure.
 * `MeasureTheory.Measure.eq_dirac_of_measure_singleton_eq_one` — a measure of total mass `0` or
   `1` giving full mass to a point is the Dirac measure at that point.
+* `MeasureTheory.Measure.eq_dirac_of_subsingleton` — a probability measure on a subsingleton
+  space is the Dirac measure at any point.
 * `TauCeti.exists_eq_sum_smul_dirac_of_ae_mem_finset` — a probability measure carried by a
   finite set is a convex combination of the Dirac measures at its points.
 * `TauCeti.isProbabilityMeasure_sum_smul_dirac` — conversely, a convex combination of Dirac
@@ -142,6 +144,14 @@ theorem eq_dirac_of_measure_singleton_eq_one {μ : Measure X} [IsZeroOrProbabili
     ⟨le_antisymm prob_le_one (h.symm.le.trans (measure_mono (subset_univ _)))⟩
   exact (eq_of_le_of_isProbabilityMeasure ((dirac_le_iff_one_le_apply_singleton μ x).2 h.ge)).symm
 
+/-- A probability measure on a subsingleton space is the Dirac measure at any point. -/
+theorem eq_dirac_of_subsingleton [Subsingleton X] (μ : Measure X) [IsProbabilityMeasure μ]
+    (x : X) : μ = dirac x := by
+  apply eq_dirac_of_measure_singleton_eq_one
+  have hx : ({x} : Set X) = univ :=
+    eq_univ_of_forall fun y ↦ mem_singleton_iff.mpr (Subsingleton.elim y x)
+  rw [hx, measure_univ]
+
 end MeasureTheory.Measure
 
 /-! ### Counting measures of multisets -/
@@ -210,6 +220,19 @@ theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [Measurabl
     IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) :=
   Measure.sum_fintype (fun j ↦ w j • Measure.dirac (y j)) ▸
     (hw ▸ hasSum_fintype w).isProbabilityMeasure_sum_dirac_nnreal
+
+/-- A finite nonnegative linear combination `∑ i ∈ t, w i • δ_{y i}` of Dirac measures gives
+nonzero mass to any set containing an entry `y j` (`j ∈ t`) of nonzero weight `w j ≠ 0`. -/
+theorem sum_smul_dirac_apply_ne_zero_of_mem {ι X : Type*} [MeasurableSpace X] {t : Finset ι}
+    {w : ι → ℝ≥0} {y : ι → X} {j : ι} (hjt : j ∈ t) (hj : w j ≠ 0) {s : Set X}
+    (hjs : y j ∈ s) : (∑ i ∈ t, w i • Measure.dirac (y i)) s ≠ 0 := by
+  refine ne_of_gt ?_
+  calc (0 : ℝ≥0∞) < w j := ENNReal.coe_pos.2 (pos_iff_ne_zero.2 hj)
+    _ = (w j • Measure.dirac (y j)) s := by simp [Measure.dirac_apply_of_mem hjs]
+    _ ≤ ∑ i ∈ t, (w i • Measure.dirac (y i)) s :=
+        Finset.single_le_sum (f := fun i ↦ (w i • Measure.dirac (y i)) s)
+          (fun _ _ ↦ bot_le) hjt
+    _ = (∑ i ∈ t, w i • Measure.dirac (y i)) s := by rw [FunLike.coe_sum, Finset.sum_apply]
 
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]

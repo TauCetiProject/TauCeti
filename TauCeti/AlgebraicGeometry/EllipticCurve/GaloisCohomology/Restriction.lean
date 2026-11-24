@@ -190,7 +190,7 @@ def torsionCoeffBaseChange : W.TorsionCoeff m →+ (W⁄L).TorsionCoeff m :=
   ((W.pointCoeffBaseChange τ).comp (AddSubgroup.torsionBy W.PointCoeff m).subtype).codRestrict _
     fun P => by
       rw [AddSubgroup.torsionBy.nsmul_iff, AddMonoidHom.comp_apply, ← map_nsmul,
-        AddSubgroup.coe_subtype, AddSubgroup.torsionBy.nsmul_iff.1 P.2, map_zero]
+        AddSubgroup.coe_subtype, AddSubgroup.torsionBy.nsmul_iff.1 P.property, map_zero]
 
 @[simp]
 theorem coe_torsionCoeffBaseChange (P : W.TorsionCoeff m) :

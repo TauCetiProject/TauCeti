@@ -285,13 +285,13 @@ theorem blockWord_eq_sum_composition (a : ℕ) {b : ℕ} (hb : 0 < b) :
       simp [Fin.fin_one_eq_zero i]
     have hrest :
         (∑ k ∈ Finset.range b, prepend R M (e a (k + 1)) (blockWord R e (a + k + 1) (b - k))) =
-          ∑ c : {c : Composition (b + 1) // c ≠ s}, term c.1 := by
+          ∑ c : {c : Composition (b + 1) // c ≠ s}, term c.val := by
       rw [← Fin.sum_univ_eq_sum_range
         (fun k ↦ prepend R M (e a (k + 1)) (blockWord R e (a + k + 1) (b - k))),
-        ← (Composition.neSingleSuccEquiv b).sum_comp (fun c ↦ term c.1),
+        ← (Composition.neSingleSuccEquiv b).sum_comp (fun c ↦ term c.val),
         Fintype.sum_sigma]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [ih (b - k.1) (by omega) (a + k.1 + 1) (by omega), map_sum]
+      rw [ih (b - k.val) (by omega) (a + k.val + 1) (by omega), map_sum]
       refine Finset.sum_congr rfl fun c' _ ↦ ?_
       rw [prepend_of_tprod]
       dsimp only [term]
@@ -329,7 +329,7 @@ theorem coalgHom_of_tprod_eq_sum_composition (f : ReducedTensorWords R M →ₗ[
     (funext fun i ↦ congrArg f ?_))
   have hle : 0 + c.sizeUpTo i + c.blocksFun i ≤ n := by
     rw [zero_add, ← c.sizeUpTo_succ' i]
-    exact c.sizeUpTo_le (i.1 + 1)
+    exact c.sizeUpTo_le (i.val + 1)
   rw [subword_eq_of_tprod R x (c.one_le_blocksFun i) hle]
   exact of_tprod_congr R M (c.one_le_blocksFun i) rfl fun j ↦
     congrArg x (Fin.ext (by simp [Composition.coe_embedding]))

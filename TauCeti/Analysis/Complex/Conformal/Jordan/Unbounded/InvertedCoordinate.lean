@@ -36,7 +36,7 @@ vertices at infinity of a polygonal domain.
 
 * `TauCeti.recenterInvertedCoordinate` is the linear fractional change of inverted coordinate.
 * `TauCeti.recenterInvertedCoordinate_eq_div` identifies it with inversion about the new centre.
-* `TauCeti.exists_ball_lt_norm_of_inverted_coordinate`: near a boundary zero, the nonzero values
+* `TauCeti.exists_ball_lt_norm_of_inverted_coordinate`: near a zero, the nonzero values
   of the inverted coordinate correspond to points far from any given centre.
 * `TauCeti.add_inv_notMem_image_of_inverted_coordinate`: a nonzero real boundary value of the
   inverted coordinate is not a value of the original map.
@@ -62,12 +62,13 @@ theorem recenterInvertedCoordinate_apply (q c b : ℂ) (g : ℂ → ℂ) (z : �
     recenterInvertedCoordinate q c b g z = b * g z / (1 + (q - c) * g z) :=
   (rfl)
 
-/-- If `g` is inversion about `q`, its recentering is scaled inversion about `c`. -/
-theorem recenterInvertedCoordinate_eq_div {f g : ℂ → ℂ} {q c b z : ℂ}
-    (hgf : g z = (f z - q)⁻¹) (hq : f z ≠ q) :
-    recenterInvertedCoordinate q c b g z = b / (f z - c) := by
-  rw [recenterInvertedCoordinate, hgf]
-  field_simp [sub_ne_zero.mpr hq]
+/-- If `g z` is the inversion `(w - q)⁻¹` of a value `w ≠ q`, its recentering is the scaled
+inversion `b / (w - c)`. -/
+theorem recenterInvertedCoordinate_eq_div {g : ℂ → ℂ} {q c b z w : ℂ}
+    (hgw : g z = (w - q)⁻¹) (hw : w ≠ q) :
+    recenterInvertedCoordinate q c b g z = b / (w - c) := by
+  rw [recenterInvertedCoordinate, hgw]
+  field_simp [sub_ne_zero.mpr hw]
   ring
 
 /-- The difference formula for the linear fractional change of inverted coordinate. -/
@@ -85,25 +86,23 @@ theorem injOn_recenterInvertedCoordinate {S : Set ℂ} {q c b : ℂ} {g : ℂ �
     (hg : InjOn g S) (hb : b ≠ 0) (hpole : ∀ z ∈ S, 1 + (q - c) * g z ≠ 0) :
     InjOn (recenterInvertedCoordinate q c b g) S := by
   intro z hz w hw hzw
-  have hsub := congrArg (fun u => u - TauCeti.recenterInvertedCoordinate q c b g w) hzw
-  rw [sub_self, recenterInvertedCoordinate_sub (hpole z hz) (hpole w hw)] at hsub
-  have hnum : b * (g z - g w) = 0 :=
-    (div_eq_zero_iff.mp hsub).resolve_right (mul_ne_zero (hpole z hz) (hpole w hw))
-  have hgz : g z - g w = 0 := (mul_eq_zero.mp hnum).resolve_left hb
-  exact hg hz hw (sub_eq_zero.mp hgz)
+  have hsub := recenterInvertedCoordinate_sub (b := b) (hpole z hz) (hpole w hw)
+  rw [hzw, sub_self, eq_comm] at hsub
+  -- the difference formula vanishes, while `b` and both denominators do not
+  exact hg hz hw (by simpa [hb, hpole z hz, hpole w hw, sub_eq_zero] using hsub)
 
 /-- Continuity of a recentered coordinate away from its pole. -/
 theorem continuousOn_recenterInvertedCoordinate {S : Set ℂ} {q c b : ℂ} {g : ℂ → ℂ}
     (hg : ContinuousOn g S) (hpole : ∀ z ∈ S, 1 + (q - c) * g z ≠ 0) :
-    ContinuousOn (recenterInvertedCoordinate q c b g) S := by
-  exact (continuousOn_const.mul hg).div
+    ContinuousOn (recenterInvertedCoordinate q c b g) S :=
+  (continuousOn_const.mul hg).div
     (continuousOn_const.add (continuousOn_const.mul hg)) hpole
 
 /-- Holomorphy of a recentered coordinate away from its pole. -/
 theorem differentiableOn_recenterInvertedCoordinate {S : Set ℂ} {q c b : ℂ} {g : ℂ → ℂ}
     (hg : DifferentiableOn ℂ g S) (hpole : ∀ z ∈ S, 1 + (q - c) * g z ≠ 0) :
-    DifferentiableOn ℂ (recenterInvertedCoordinate q c b g) S := by
-  exact (differentiableOn_const b).mul hg |>.div
+    DifferentiableOn ℂ (recenterInvertedCoordinate q c b g) S :=
+  (differentiableOn_const b).mul hg |>.div
     ((differentiableOn_const 1).add ((differentiableOn_const (q - c)).mul hg)) hpole
 
 /-- Near a zero of a continuous inverted coordinate, every change-of-centre denominator is
@@ -113,29 +112,24 @@ theorem exists_ball_recenterInvertedCoordinate_denominator_ne {S : Set ℂ} {g :
     ∃ r > 0, ∀ z ∈ ball x r ∩ S, 1 + (q - c) * g z ≠ 0 := by
   have hcont : ContinuousWithinAt (fun z => 1 + (q - c) * g z) S x :=
     continuousWithinAt_const.add (continuousWithinAt_const.mul hg)
-  have hevent : ∀ᶠ z in nhdsWithin x S, 1 + (q - c) * g z ≠ 0 := by
-    apply (hcont.tendsto.eventually (isOpen_compl_singleton.mem_nhds ?_))
-    simp [hx]
-  have hevent' : ∀ᶠ z in nhds x, z ∈ S → 1 + (q - c) * g z ≠ 0 :=
-    eventually_nhdsWithin_iff.mp hevent
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hevent'
-  exact ⟨r, hr, fun _ hz => hball hz.1 hz.2⟩
+  obtain ⟨r, hr, hball⟩ :=
+    Metric.mem_nhdsWithin_iff.mp (hcont.tendsto.eventually_ne (b₂ := 0) (by simp [hx]))
+  exact ⟨r, hr, fun _ hz => hball hz⟩
 
-/-- Near a zero of a continuous inverted coordinate, the points `q + g⁻¹` at which `g` does not
-vanish are far from any given centre `c`. -/
-theorem exists_ball_lt_norm_of_inverted_coordinate {g : ℂ → ℂ} {q : ℂ}
-    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) {x : ℝ} (hx : g x = 0) (c : ℂ) (R : ℝ) :
-    ∃ r > 0, ∀ z ∈ ball (x : ℂ) r, 0 ≤ z.im → g z ≠ 0 → R < ‖q + (g z)⁻¹ - c‖ := by
-  have hg : Tendsto g (𝓝[{z : ℂ | 0 ≤ z.im} ∩ {z | g z ≠ 0}] (x : ℂ)) (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨hx ▸ ((hgc _ (by simp)).mono inter_subset_left).tendsto,
+/-- Near a zero of an inverted coordinate continuous within `S`, the points `q + g⁻¹` at which `g`
+does not vanish are far from any given centre `c`. -/
+theorem exists_ball_lt_norm_of_inverted_coordinate {S : Set ℂ} {g : ℂ → ℂ} {x q : ℂ}
+    (hgc : ContinuousWithinAt g S x) (hx : g x = 0) (c : ℂ) (R : ℝ) :
+    ∃ r > 0, ∀ z ∈ ball x r ∩ S, g z ≠ 0 → R < ‖q + (g z)⁻¹ - c‖ := by
+  have hg : Tendsto g (𝓝[S ∩ {z | g z ≠ 0}] x) (𝓝[≠] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨hx ▸ (hgc.mono inter_subset_left).tendsto,
       eventually_nhdsWithin_of_forall fun z hz => hz.2⟩
-  have hfar : Tendsto (fun z => q + (g z)⁻¹ - c)
-      (𝓝[{z : ℂ | 0 ≤ z.im} ∩ {z | g z ≠ 0}] (x : ℂ)) (cobounded ℂ) :=
+  have hfar : Tendsto (fun z => q + (g z)⁻¹ - c) (𝓝[S ∩ {z | g z ≠ 0}] x) (cobounded ℂ) :=
     (tendsto_sub_const_cobounded c).comp
       ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
   obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp
     ((tendsto_norm_cobounded_atTop.comp hfar).eventually_gt_atTop R)
-  exact ⟨r, hr, fun z hz hzH hgz => h ⟨hz, hzH, hgz⟩⟩
+  exact ⟨r, hr, fun z hz hgz => h ⟨hz.1, hz.2, hgz⟩⟩
 
 /-- A nonzero real boundary value `q + g⁻¹` of an inverted coordinate `g = (f - q)⁻¹`, injective
 away from its zeros, is not a value of `f` on the upper half-plane. -/
@@ -144,12 +138,8 @@ theorem add_inv_notMem_image_of_inverted_coordinate {f g : ℂ → ℂ} {q : ℂ
     (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {z : ℂ} (hz0 : z.im = 0) (hgz : g z ≠ 0) :
     q + (g z)⁻¹ ∉ f '' upperHalfPlaneSet := by
   rintro ⟨y, hy, hyz⟩
-  have hgy : g y = g z := by
-    rw [hgf hy]
-    dsimp only
-    rw [hyz, add_sub_cancel_left, inv_inv]
-  have hyz' := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hz0.ge, hgz⟩ hgy
-  exact (hyz' ▸ hy : 0 < z.im).ne' hz0
+  have hgy : g y = g z := by simp [hgf hy, hyz]
+  exact hy.ne' (hgi ⟨hy.le, hgy ▸ hgz⟩ ⟨hz0.ge, hgz⟩ hgy ▸ hz0)
 
 /-- **A recentered coordinate near a boundary prevertex.** Suppose `g = (f - q)⁻¹` in the upper
 half-plane, is continuous on the closed upper half-plane and holomorphic and nonzero in its
@@ -187,9 +177,8 @@ theorem exists_ball_recenterInvertedCoordinate {f g : ℂ → ℂ} {q c b : ℂ}
     differentiableOn_recenterInvertedCoordinate (hgd.mono inter_subset_right)
       fun z hz => hpole z (hopen hz),
     ?_, (by simp [hx]), ?_⟩
-  · intro z hz
-    apply recenterInvertedCoordinate_eq_div (hgf hz.2)
-    exact fun hzq => hgne z hz.2 (by simp [hgf hz.2, hzq])
+  · exact fun z hz => recenterInvertedCoordinate_eq_div (hgf hz.2)
+      fun hzq => hgne z hz.2 (by simp [hgf hz.2, hzq])
   · intro z hz hzero
     exact hgne z hz.2 (by simpa [hb, hpole z (hopen hz)] using hzero)
 

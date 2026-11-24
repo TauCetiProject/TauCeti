@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.Basic
+public import Mathlib.Algebra.Homology.Embedding.Extend
 
 /-!
 # The embedding `n ↦ n + k` of `ComplexShape.down ℕ`
@@ -19,6 +19,10 @@ are found there.
 ## Main definitions
 
 * `ComplexShape.embeddingDownNatAdd`: the embedding `n ↦ n + k` of `ComplexShape.down ℕ`.
+
+## Main results
+
+* `HomologicalComplex.isZero_extend_embeddingDownNatAdd_X`: below `k`, the extension is zero.
 -/
 
 public section
@@ -40,3 +44,17 @@ instance (k : ℕ) : (embeddingDownNatAdd k).IsTruncLE :=
   inferInstanceAs (embeddingDown'Add (1 : ℕ) k).IsTruncLE
 
 end ComplexShape
+
+namespace HomologicalComplex
+
+open CategoryTheory Limits
+
+/-- Below `k`, a chain complex placed `k` degrees higher is zero. -/
+lemma isZero_extend_embeddingDownNatAdd_X {C : Type*} [Category* C] [HasZeroMorphisms C]
+    [HasZeroObject C] (K : ChainComplex C ℕ) {k m : ℕ} (hm : m < k) :
+    IsZero ((K.extend (ComplexShape.embeddingDownNatAdd k)).X m) :=
+  K.isZero_extend_X _ m fun q ↦ by
+    simp only [ComplexShape.embeddingDownNatAdd_f]
+    omega
+
+end HomologicalComplex

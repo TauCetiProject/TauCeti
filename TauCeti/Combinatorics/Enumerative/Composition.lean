@@ -37,8 +37,8 @@ namespace Composition
 
 /-- Evaluating `blocksFun` at `i : Fin c.length` reads `c.blocks[i]`. -/
 theorem blocksFun_eq_getElem {n : ℕ} (c : Composition n) (i : Fin c.length) :
-    c.blocksFun i = c.blocks[i.1] :=
-  Nat.add_left_cancel ((c.sizeUpTo_succ' i).symm.trans (c.sizeUpTo_succ i.2))
+    c.blocksFun i = c.blocks[i.val] :=
+  Nat.add_left_cancel ((c.sizeUpTo_succ' i).symm.trans (c.sizeUpTo_succ i.isLt))
 
 @[simp] theorem cast_length {m n : ℕ} (c : Composition m) (h : m = n) :
     (c.cast h).length = c.length := by
@@ -67,7 +67,7 @@ applied to `c.blocksFun`. -/
 theorem coe_embedding_eq_finSigmaFinEquiv {n : ℕ} (c : Composition n) (i : Fin c.length)
     (j : Fin (c.blocksFun i)) :
     (c.embedding i j : ℕ) = (finSigmaFinEquiv (n := c.blocksFun) ⟨i, j⟩ : ℕ) := by
-  rw [c.coe_embedding, finSigmaFinEquiv_apply, c.sizeUpTo_eq_sum_blocksFun i.2.le]
+  rw [c.coe_embedding, finSigmaFinEquiv_apply, c.sizeUpTo_eq_sum_blocksFun i.isLt.le]
 
 /-- A composition of a positive integer has at least two blocks if and only if it is not the
 single-block composition. -/
@@ -115,7 +115,7 @@ theorem cons_ne_single {k n : ℕ} (hk : 0 < k) (hn : 0 < n) (c : Composition n)
 
 @[simp] theorem cons_blocksFun_succ {k n : ℕ} (hk : 0 < k) (c : Composition n)
     (j : Fin c.length) :
-    (cons hk c).blocksFun ⟨j.1 + 1, by rw [cons_length]; omega⟩ = c.blocksFun j := by
+    (cons hk c).blocksFun ⟨j.val + 1, by rw [cons_length]; omega⟩ = c.blocksFun j := by
   simp [blocksFun_eq_getElem]
 
 @[simp] theorem cons_sizeUpTo_succ {k n : ℕ} (hk : 0 < k) (c : Composition n) (m : ℕ) :
@@ -131,7 +131,7 @@ private theorem cons_blocksFun_zero_tail {n : ℕ} (c : Composition n) (h : 0 < 
 
 private def neSingleSuccInv {b : ℕ} (c : Composition (b + 1))
     (hc : c ≠ single (b + 1) (Nat.succ_pos b)) :
-    Σ k : Fin b, Composition (b - k.1) :=
+    Σ k : Fin b, Composition (b - k.val) :=
   have hlen : 0 < c.length := c.length_pos_of_pos (Nat.succ_pos b)
   let d := c.blocksFun ⟨0, hlen⟩
   have hd1 : 1 ≤ d := c.one_le_blocksFun ⟨0, hlen⟩
@@ -149,25 +149,26 @@ private def neSingleSuccInv {b : ℕ} (c : Composition (b + 1))
 /-- Splitting off the first block identifies `(k : Fin b) × Composition (b - k)` with the
 compositions of `b + 1` distinct from `Composition.single (b + 1) _`. -/
 def neSingleSuccEquiv (b : ℕ) :
-    (Σ k : Fin b, Composition (b - k.1)) ≃
+    (Σ k : Fin b, Composition (b - k.val)) ≃
       {c : Composition (b + 1) // c ≠ single (b + 1) (Nat.succ_pos b)} where
   toFun p :=
-    ⟨(cons (k := p.1.1 + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.2; omega),
+    ⟨(cons (k := p.1.val + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.isLt; omega),
       (two_le_length_iff_ne_single (Nat.succ_pos b) _).mp <| by
         rw [cast_length]
-        exact two_le_cons_length (Nat.zero_lt_succ _) (by have := p.1.2; omega) p.2⟩
-  invFun q := neSingleSuccInv q.1 q.2
+        exact two_le_cons_length (Nat.zero_lt_succ _) (by have := p.1.isLt; omega) p.2⟩
+  invFun q := neSingleSuccInv q.val q.property
   left_inv := fun ⟨k, c⟩ ↦ by
     dsimp only
     rcases hq : neSingleSuccInv
-      ((cons (k := k.1 + 1) (Nat.zero_lt_succ _) c).cast (by have := k.2; omega)) _ with ⟨k', c'⟩
+      ((cons (k := k.val + 1) (Nat.zero_lt_succ _) c).cast (by have := k.isLt; omega)) _ with
+      ⟨k', c'⟩
     have hk' : k' = k := Fin.ext <| by
       simpa [neSingleSuccInv] using
-        congrArg (fun p : Σ j : Fin b, Composition (b - j.1) ↦ p.1.1) hq.symm
+        congrArg (fun p : Σ j : Fin b, Composition (b - j.val) ↦ p.1.val) hq.symm
     subst hk'
     refine congrArg (Sigma.mk k') (Composition.ext ?_)
     simpa [neSingleSuccInv] using
-      (congrArg (fun p : Σ j : Fin b, Composition (b - j.1) ↦ p.2.blocks) hq).symm
+      (congrArg (fun p : Σ j : Fin b, Composition (b - j.val) ↦ p.2.blocks) hq).symm
   right_inv := fun ⟨c, hc⟩ ↦ by
     apply Subtype.ext
     apply Composition.ext
@@ -177,17 +178,17 @@ def neSingleSuccEquiv (b : ℕ) :
     rw [Nat.sub_add_cancel (c.one_le_blocksFun ⟨0, hlen⟩)]
     exact cons_blocksFun_zero_tail c hlen
 
-@[simp] theorem coe_neSingleSuccEquiv_apply (b : ℕ) (p : Σ k : Fin b, Composition (b - k.1)) :
-    (neSingleSuccEquiv b p).1 =
-      (cons (k := p.1.1 + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.2; omega) := (rfl)
+@[simp] theorem coe_neSingleSuccEquiv_apply (b : ℕ) (p : Σ k : Fin b, Composition (b - k.val)) :
+    (neSingleSuccEquiv b p).val =
+      (cons (k := p.1.val + 1) (Nat.zero_lt_succ _) p.2).cast (by have := p.1.isLt; omega) := (rfl)
 
 @[simp] theorem val_fst_neSingleSuccEquiv_symm (b : ℕ)
     (q : {c : Composition (b + 1) // c ≠ single (b + 1) (Nat.succ_pos b)}) :
     (((neSingleSuccEquiv b).symm q).1 : ℕ) =
-      q.1.blocksFun ⟨0, q.1.length_pos_of_pos (Nat.succ_pos b)⟩ - 1 := (rfl)
+      q.val.blocksFun ⟨0, q.val.length_pos_of_pos (Nat.succ_pos b)⟩ - 1 := (rfl)
 
 @[simp] theorem snd_neSingleSuccEquiv_symm_blocks (b : ℕ)
     (q : {c : Composition (b + 1) // c ≠ single (b + 1) (Nat.succ_pos b)}) :
-    ((neSingleSuccEquiv b).symm q).2.blocks = q.1.blocks.tail := (rfl)
+    ((neSingleSuccEquiv b).symm q).2.blocks = q.val.blocks.tail := (rfl)
 
 end Composition

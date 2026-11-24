@@ -64,7 +64,7 @@ theorem IsRemainder.map (hφ : Function.Injective φ) (h : m.IsRemainder f B r) 
   classical
   obtain ⟨g, hfg, hdeg⟩ := h.exists_linearCombination
   -- The quotient attached to `map φ b` is `map φ` of the quotient attached to `b`.
-  let e : B → MvPolynomial.map φ '' B := fun b ↦ ⟨_, Set.mem_image_of_mem _ b.2⟩
+  let e : B → MvPolynomial.map φ '' B := fun b ↦ ⟨_, Set.mem_image_of_mem _ b.property⟩
   have he : Function.Injective e := fun b c hbc ↦
     Subtype.ext (map_injective φ hφ (congrArg Subtype.val hbc))
   let g' : B →₀ MvPolynomial σ S := g.mapRange (MvPolynomial.map φ) (map_zero _)

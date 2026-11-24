@@ -8,12 +8,18 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Squares and finite products
+# Squares, powers and finite products
+
+For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and `r ^ m * r ^ n`
+is a square (`TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow`), since one of
+`m`, `n` and `m + n` is even.
 
 A unit square factor does not change whether an element is a square
-(`IsUnit.isSquare_sq_mul_iff`).
+(`IsUnit.isSquare_sq_mul_iff`), and neither does a multiplicative equivalence
+(`MulEquiv.isSquare_apply_iff`, with additive version `AddEquiv.even_apply_iff`).
 
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
@@ -23,6 +29,16 @@ coefficient of a diagonal quadratic form from its determinant.
 public section
 
 namespace TauCeti
+
+/-- For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and
+`r ^ m * r ^ n` is a square: one of `m`, `n` and `m + n` is even. -/
+theorem isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow {G : Type*} [Group G] (r : G)
+    (m n : ℤ) : IsSquare (r ^ m) ∨ IsSquare (r ^ n) ∨ IsSquare (r ^ m * r ^ n) := by
+  obtain hm | hm := Int.even_or_odd m
+  · exact .inl (hm.isSquare_zpow r)
+  obtain hn | hn := Int.even_or_odd n
+  · exact .inr (.inl (hn.isSquare_zpow r))
+  · exact .inr (.inr (by rw [← zpow_add]; exact (hm.add_odd hn).isSquare_zpow r))
 
 /-- Agreement modulo squares of two products over `s`, and of all their factors except the one
 at `j ∈ s`, forces agreement of the factors at `j`. -/
@@ -46,3 +62,11 @@ theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : Is
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
   have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
   rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
+
+/-- A multiplicative equivalence preserves and reflects squares. -/
+@[to_additive (attr := simp) /-- An additive equivalence preserves and reflects even elements. -/]
+theorem MulEquiv.isSquare_apply_iff {F α β : Type*} [Mul α] [Mul β] [EquivLike F α β]
+    [MulEquivClass F α β] (e : F) {a : α} : IsSquare (e a) ↔ IsSquare a :=
+  ⟨fun ⟨r, hr⟩ ↦ ⟨EquivLike.inv e r, EquivLike.injective e <| by
+      rw [map_mul, EquivLike.apply_inv_apply, hr]⟩,
+    fun ⟨r, hr⟩ ↦ ⟨e r, by rw [hr, map_mul]⟩⟩

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
 public import Mathlib.Topology.Category.TopCat.Limits.Products
@@ -55,6 +57,10 @@ enters inductions over the open subsets of a space.
 * `TauCeti.isColimitCofanSingularChainComplexOpens`,
   `TauCeti.isColimitCofanSingularHomologyOpens`: the same for a union of pairwise disjoint open
   subsets of a space.
+* `TauCeti.eq_zero_and_eq_zero_of_comp_singularHomologyFunctor_map_inclusion_eq_of_disjoint` and
+  `TauCeti.eq_zero_and_eq_zero_of_singularHomologyMap_inclusion_eq_of_disjoint`: morphisms or
+  module-valued homology classes on two disjoint open subsets that agree in their union both
+  vanish.
 * `TopPair.isColimitCofanSingularChainComplex` and `TopPair.isColimitCofanSingularHomology`: the
   same for the relative singular chains and relative singular homology of `∐ᵢ (Xᵢ, Aᵢ)`.
 * `TopPair.isColimitCofanSingularHomologyOfIsColimit`: relative singular homology carries every
@@ -230,16 +236,17 @@ lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Funct
       simpa using congrArg (fun f ↦ (f x : M)) h₁
     obtain rfl : i = j := by
       by_contra hij
-      exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).2 (toSSetObjEquiv _ n σ' x₀).2 (h' x₀)
+      exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).property
+          (toSSetObjEquiv _ n σ' x₀).property (h' x₀)
     refine Sigma.ext rfl (heq_of_eq ((toSSetObjEquiv (of (s i)) n).injective ?_))
     ext x
     exact h' x
   · let f := toSSetObjEquiv (of ↥(⨆ i, s i)) n τ
-    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).2
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).property
     have hrange : range (fun x ↦ (f x : M)) ⊆ s i :=
-      (isPreconnected_range (continuous_subtype_val.comp f.continuous)).subset_of_subset_iUnion
+      (isPreconnected_range (continuous_subtypeVal.comp f.continuous)).subset_of_subset_iUnion
         (fun j ↦ (s j).isOpen) hs'
-        (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).2))
+        (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).property))
         ⟨_, ⟨x₀, rfl⟩, hi⟩
     refine ⟨⟨i, (toSSetObjEquiv (of (s i)) n).symm
       ⟨fun x ↦ ⟨f x, hrange ⟨x, rfl⟩⟩, by fun_prop⟩⟩, ?_⟩
@@ -293,6 +300,125 @@ def isColimitCofanSingularHomologyOpens (hs : Pairwise (Disjoint on s)) :
     (isColimitCofanSingularChainComplexOpens s C R hs)
 
 end Homology
+
+section DisjointPair
+
+private lemma exists_singularHomologyFunctor_map_inclusion_comp_eq_id_of_disjoint
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (k : ℕ)
+    {U W : Set M} (hU : IsOpen U) (hW : IsOpen W) (hUW : Disjoint U W) :
+    (∃ p : ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥(U ∪ W)) ⟶
+          ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥U),
+        ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) ≫ p = 𝟙 _ ∧
+        ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W)))) ≫ p = 0) ∧
+      ∃ q : ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥(U ∪ W)) ⟶
+          ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥W),
+        ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) ≫ q = 0 ∧
+        ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W)))) ≫ q = 𝟙 _ := by
+  let s : ULift.{w} Bool → Opens M := fun b ↦ cond b.down ⟨U, hU⟩ ⟨W, hW⟩
+  have hs : Pairwise (Disjoint on s) := by
+    rintro ⟨a⟩ ⟨b⟩ hab
+    cases a <;> cases b
+    · exact (hab rfl).elim
+    · exact Opens.coe_disjoint.1 hUW.symm
+    · exact Opens.coe_disjoint.1 hUW
+    · exact (hab rfl).elim
+  -- `Abelian.hasFiniteBiproducts` is a local instance in Mathlib, so bring it into scope for
+  -- `hasExactColimitsOfShape_discrete_finite`.
+  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
+  let hc := isColimitCofanSingularHomologyOpens s C R k hs
+  let πU : ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥(⨆ b, s b)) ⟶
+      ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥U) :=
+    hc.desc (Cofan.mk ((toSSet.obj (of ↥U)).homology R k) fun b ↦ match b with
+      | ⟨true⟩ => 𝟙 _
+      | ⟨false⟩ => 0)
+  let πW : ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥(⨆ b, s b)) ⟶
+      ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥W) :=
+    hc.desc (Cofan.mk ((toSSet.obj (of ↥W)).homology R k) fun b ↦ match b with
+      | ⟨true⟩ => 0
+      | ⟨false⟩ => 𝟙 _)
+  have hsub : U ∪ W ⊆ (⨆ b, s b : Opens M) := by
+    rintro x (hx | hx)
+    · exact Opens.mem_iSup.2 ⟨⟨true⟩, hx⟩
+    · exact Opens.mem_iSup.2 ⟨⟨false⟩, hx⟩
+  let inc : of ↥(U ∪ W) ⟶ of ↥(⨆ b, s b) := ofHom (ContinuousMap.inclusion hsub)
+  have hfacU : ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W))) ≫ inc =
+      ofHom ⟨Opens.inclusion (le_iSup s ⟨true⟩), continuous_inclusion _⟩ := by
+    ext; rfl
+  have hfacW : ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W))) ≫ inc =
+      ofHom ⟨Opens.inclusion (le_iSup s ⟨false⟩), continuous_inclusion _⟩ := by
+    ext; rfl
+  refine ⟨⟨((AlgebraicTopology.singularHomologyFunctor C k).obj R).map inc ≫ πU, ?_, ?_⟩,
+    ⟨((AlgebraicTopology.singularHomologyFunctor C k).obj R).map inc ≫ πW, ?_, ?_⟩⟩
+  · rw [← Category.assoc, ← Functor.map_comp, hfacU]
+    exact hc.fac _ ⟨⟨true⟩⟩
+  · rw [← Category.assoc, ← Functor.map_comp, hfacW]
+    exact hc.fac _ ⟨⟨false⟩⟩
+  · rw [← Category.assoc, ← Functor.map_comp, hfacU]
+    exact hc.fac _ ⟨⟨true⟩⟩
+  · rw [← Category.assoc, ← Functor.map_comp, hfacW]
+    exact hc.fac _ ⟨⟨false⟩⟩
+
+/-- **Morphisms into the homology of disjoint open sets that agree in their union both vanish.**
+Let `U` and `W` be disjoint open subsets of `M`. If two morphisms `u` and `v` into `Hₖ(U; R)` and
+`Hₖ(W; R)` compose with the inclusion maps to the same morphism into `Hₖ(U ∪ W; R)`, then `u = 0`
+and `v = 0`. -/
+theorem eq_zero_and_eq_zero_of_comp_singularHomologyFunctor_map_inclusion_eq_of_disjoint
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {k : ℕ}
+    {U W : Set M} (hU : IsOpen U) (hW : IsOpen W) (hUW : Disjoint U W) {A : C}
+    (u : A ⟶ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥U))
+    (v : A ⟶ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥W))
+    (huv : u ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+        (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) =
+      v ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+        (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W))))) :
+    u = 0 ∧ v = 0 := by
+  obtain ⟨⟨p, hpU, hpW⟩, ⟨q, hqU, hqW⟩⟩ :=
+    exists_singularHomologyFunctor_map_inclusion_comp_eq_id_of_disjoint R k hU hW hUW
+  refine ⟨?_, ?_⟩
+  · calc
+      u = u ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) ≫ p := by
+        rw [hpU, Category.comp_id]
+      _ = v ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W)))) ≫ p := by
+        rw [← Category.assoc, huv, Category.assoc]
+      _ = 0 := by rw [hpW, Limits.comp_zero]
+  · calc
+      v = v ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W)))) ≫ q := by
+        rw [hqW, Category.comp_id]
+      _ = u ≫ ((AlgebraicTopology.singularHomologyFunctor C k).obj R).map
+            (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) ≫ q := by
+        rw [← Category.assoc, ← huv, Category.assoc]
+      _ = 0 := by rw [hqU, Limits.comp_zero]
+
+/-- **Classes on disjoint open sets that agree in the homology of their union both vanish.** Let
+`U` and `W` be disjoint open subsets of `M`. If `u ∈ Hₖ(U; N)` and `v ∈ Hₖ(W; N)` map to the same
+class in `Hₖ(U ∪ W; N)`, then `u = 0` and `v = 0`. -/
+theorem eq_zero_and_eq_zero_of_singularHomologyMap_inclusion_eq_of_disjoint
+    {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ) {k : ℕ}
+    {U W : Set M} (hU : IsOpen U) (hW : IsOpen W) (hUW : Disjoint U W)
+    (u : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of ↥U))
+    (v : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of ↥W))
+    (huv : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+        (ofHom (ContinuousMap.inclusion (subset_union_left (s := U) (t := W)))) u =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+        (ofHom (ContinuousMap.inclusion (subset_union_right (s := U) (t := W)))) v) :
+    u = 0 ∧ v = 0 := by
+  obtain ⟨⟨p, hpU, hpW⟩, ⟨q, hqU, hqW⟩⟩ :=
+    exists_singularHomologyFunctor_map_inclusion_comp_eq_id_of_disjoint N k hU hW hUW
+  have hp1 := ConcreteCategory.congr_hom hpU u
+  have hp2 := ConcreteCategory.congr_hom hpW v
+  have hq1 := ConcreteCategory.congr_hom hqU u
+  have hq2 := ConcreteCategory.congr_hom hqW v
+  simp only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply, huv] at hp1 hp2 hq1 hq2
+  exact ⟨hp1.symm.trans (hp2.trans (by simp)), hq2.symm.trans (hq1.trans (by simp))⟩
+
+end DisjointPair
 
 end Opens
 

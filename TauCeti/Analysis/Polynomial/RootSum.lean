@@ -150,7 +150,7 @@ theorem analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff {g : ℂ → �
   have hB : AnalyticAt ℂ B c₀ := Polynomial.analyticAt_linearMap_monicOfCoeff Λ c₀
   have hD : AnalyticAt ℂ D c₀ := Polynomial.analyticAt_linearMap_monicOfCoeff _ c₀
   have hunit : IsUnit (B c₀) :=
-    (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun t => by simpa [B, Λ] using hc₀ t t.2
+    (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun t => by simpa [B, Λ] using hc₀ t t.property
   have hinv : AnalyticAt ℂ (fun c => Ring.inverse (B c)) c₀ := by
     have h := analyticAt_inverse (𝕜 := ℂ) hunit.unit
     rw [hunit.unit_spec] at h

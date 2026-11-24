@@ -70,7 +70,7 @@ theorem one_lt_valuation_xCoord_add (P : TauCeti.Place F K) {Q₁ Q₂ : (W⁄K)
     1 < P.valuation (Q₁ + Q₂).xCoord := by
   classical
   -- The place is the adic place of the maximal ideal of its own valuation ring.
-  set u : HeightOneSpectrum P.integers := P.center (R := P.integers) fun r ↦ r.2
+  set u : HeightOneSpectrum P.integers := P.center (R := P.integers) fun r ↦ r.property
   have hu : u.valuation K = P.valuation := P.valuation_center _
   have hval : ∀ x : K, Valued.v (algebraMap K (u.adicCompletion K) x) = P.valuation x := fun x ↦
     (u.valuedAdicCompletion_eq_valuation' x).trans (by rw [hu])

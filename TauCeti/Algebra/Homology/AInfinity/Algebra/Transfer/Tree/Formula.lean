@@ -245,15 +245,15 @@ theorem suspendedComponent_transferInclusion (n : ℕ) :
           ← Finset.sum_neg_distrib, sum_apply,
           ← (ReducedPlanarTree.arityCompositionEquiv hn1).sum_comp, Fintype.sum_sigma]
         refine Finset.sum_congr rfl fun d _ ↦ ?_
-        have hih (i : Fin d.1.length) := ih (d.1.blocksFun i)
+        have hih (i : Fin d.val.length) := ih (d.val.blocksFun i)
           ((Composition.ne_single_iff hn).mp
-            ((Composition.two_le_length_iff_ne_single hn d.1).mp d.2) i)
+            ((Composition.two_le_length_iff_ne_single hn d.val).mp d.property) i)
         simp_rw [hih, sum_apply]
         rw [MultilinearMap.map_sum, map_sum, ← Finset.sum_neg_distrib]
         refine Finset.sum_congr rfl fun children _ ↦ ?_
         rw [ReducedPlanarTree.arityCompositionEquiv_apply]
         exact (𝒜.domDomCongr_suspendedTreeBranch_ofComposition_apply c.incl c.homotopy
-          d.1 d.2 children x).symm
+          d.val d.property children x).symm
 
 /-- **Planar-tree formula for the extending `A∞` quasi-isomorphism**: in every arity `n`, the
 unsuspended component `(𝒜.transferInclusion c hh hincl hproj).component n` is the sum of
@@ -293,7 +293,7 @@ theorem suspendedM_transfer_eq_sum_arity {n : ℕ} (hn : n ≠ 1) :
     refine Finset.sum_congr rfl fun children _ ↦ ?_
     rw [ReducedPlanarTree.arityCompositionEquiv_apply]
     exact (𝒜.domDomCongr_suspendedTreeOperation_ofComposition_apply c.incl c.proj c.homotopy
-      d.1 d.2 children x).symm
+      d.val d.property children x).symm
 
 /-- **Planar-tree formula for the transferred `A∞` operations** (Merkulov; Kontsevich--Soibelman):
 for every arity `n ≠ 1`, `(𝒜.transfer c hh hincl hproj).m n` is the sum of
@@ -337,7 +337,7 @@ over binary planar trees with `n` leaves. -/
 theorem component_transferInclusion_eq_sum_isBinary (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) (n : ℕ) :
     (𝒜.transferInclusion c hh hincl hproj).component n =
       ∑ t : {t : ReducedPlanarTree.Arity n // t.val.IsBinary},
-        (𝒜.treeBranch c.incl c.homotopy GH t.1.val).domDomCongr (finCongr t.1.property) := by
+        (𝒜.treeBranch c.incl c.homotopy GH t.val.val).domDomCongr (finCongr t.val.property) := by
   rw [𝒜.component_transferInclusion c hh hincl hproj n]
   exact Finset.sum_congr_set {t : ReducedPlanarTree.Arity n | t.val.IsBinary} _ _ (fun _ _ ↦ rfl)
     fun t ht ↦ by
@@ -349,8 +349,8 @@ planar trees with `n` leaves. -/
 theorem m_transfer_eq_sum_isBinary (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {n : ℕ} (hn : n ≠ 1) :
     (𝒜.transfer c hh hincl hproj).m n =
       ∑ t : {t : ReducedPlanarTree.Arity n // t.val.IsBinary},
-        (𝒜.treeOperation c.incl c.proj c.homotopy GH t.1.val).domDomCongr
-          (finCongr t.1.property) := by
+        (𝒜.treeOperation c.incl c.proj c.homotopy GH t.val.val).domDomCongr
+          (finCongr t.val.property) := by
   rw [𝒜.m_transfer_eq_sum_arity c hh hincl hproj hn]
   exact Finset.sum_congr_set {t : ReducedPlanarTree.Arity n | t.val.IsBinary} _ _ (fun _ _ ↦ rfl)
     fun t ht ↦ by

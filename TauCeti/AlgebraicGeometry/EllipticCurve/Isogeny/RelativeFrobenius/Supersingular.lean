@@ -275,12 +275,12 @@ theorem natCard_torsionBy_lt (hp : p.Prime) {n : ℤ} (hn : n ≠ 0) (hpn : (p :
     (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k)).subtype
   have hker : Nat.card φ.ker ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) :=
     Nat.card_le_card_of_injective
-      (fun x ↦ ⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.2)⟩)
-      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).1))
+      (fun x ↦ ⟨x.val.val, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.property)⟩)
+      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).val))
   have hrange : Nat.card φ.range ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point (p : ℤ)) := by
     refine AddSubgroup.card_le_of_le ?_
     rintro _ ⟨x, rfl⟩
-    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.2
+    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.property
     exact (Submodule.mem_torsionBy_iff _ _).2 (by simpa [φ, smul_smul, mul_comm] using hx)
   have hcard := AddSubgroup.card_ker_mul_card_range φ
   have hp' := natCard_torsionBy_le p W
