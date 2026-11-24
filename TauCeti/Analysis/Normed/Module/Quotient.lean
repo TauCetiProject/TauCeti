@@ -5,23 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Quotient
+public import TauCeti.Analysis.Normed.Group.Quotient
+public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import Mathlib.Topology.Algebra.SeparationQuotient.Basic
 import TauCeti.Analysis.Normed.Operator.RingOpNorm
-import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
 # Norm estimates on quotient modules
 
 Descending a continuous semilinear map through a submodule contained in its kernel preserves its
-operator norm. Equivalently, precomposition with the quotient projection preserves operator
-norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
-part of the duality between a quotient and the annihilator of its defining submodule.
-The quotient projection is moreover a metric quotient map: it has norm at most one and lifts
-every vector of norm less than `r` to a vector of norm less than `r`. A closed-subspace quotient
-has a chosen bounded nonlinear right inverse with public bound constant two
+operator norm, so the map is bounded by its operator norm times the quotient norm. Equivalently,
+precomposition with the quotient projection preserves operator norms. These facts apply to
+seminormed spaces and arbitrary submodules, and supply the metric part of the duality between a
+quotient and the annihilator of its defining submodule.
+Likewise, descending a bounded semilinear map to `SeparationQuotient E` via
+`SeparationQuotient.liftCLM` preserves its operator norm (`SeparationQuotient.norm_liftCLM`).
+The quotient projection is moreover a normed quotient map on the underlying seminormed additive
+groups (`Submodule.isQuotient_toNormedAddGroupHom_mkQL`), and precomposing a continuous semilinear
+map with any operator whose underlying bounded additive homomorphism is a normed quotient map
+preserves the operator norm (`ContinuousLinearMap.opNorm_comp_of_isQuotient`). Postcomposing a map
+with the quotient projection by a larger submodule does not increase its operator norm
+(`Submodule.norm_mkQL_comp_le_of_le`). A closed-subspace
+quotient has a chosen bounded nonlinear right inverse with public bound constant two
 (`Submodule.quotientRightInverse`, `Submodule.quotientRightInverse_nnnorm`).
 
 The quotient module also inherits a contractive action of a possibly noncommutative
@@ -34,6 +42,8 @@ The estimates reuse Mathlib's quotient norm and quotient lift for bounded additi
 -/
 
 public section
+
+open scoped NNReal
 
 namespace Submodule
 
@@ -83,6 +93,12 @@ theorem norm_liftQL (S : Submodule 𝕜 E) (f : E →SL[σ] F) (h : S ≤ f.ker)
   have heq : (S.liftQL f h).comp S.mkQL = f := by ext x; simp
   rw [← S.norm_comp_mkQL (S.liftQL f h), heq]
 
+/-- A continuous semilinear map vanishing on `S` is bounded by its operator norm times the quotient
+norm modulo `S`. -/
+theorem norm_apply_le_norm_mul_norm_quotientMk (S : Submodule 𝕜 E) (f : E →SL[σ] F)
+    (h : S ≤ f.ker) (x : E) : ‖f x‖ ≤ ‖f‖ * ‖(Submodule.Quotient.mk x : E ⧸ S)‖ := by
+  simpa [S.norm_liftQL f h] using (S.liftQL f h).le_opNorm (Submodule.Quotient.mk x)
+
 /-- The norm of a quotient class is its distance to the submodule. -/
 theorem norm_mkQL_apply (S : Submodule 𝕜 E) (x : E) :
     ‖S.mkQL x‖ = Metric.infDist x (S : Set E) :=
@@ -104,6 +120,26 @@ theorem nnnorm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
     ‖S.mkQL.comp f‖₊ ≤ ‖f‖₊ := by
   exact_mod_cast S.norm_mkQL_comp_le f
 
+/-- Postcomposing with the quotient projection by a larger submodule does not increase the
+operator norm: the larger quotient projection factors through the smaller one by a contraction. -/
+theorem norm_mkQL_comp_le_of_le {S S' : Submodule 𝕜₂ F} (h : S ≤ S') (f : E →SL[σ] F) :
+    ‖S'.mkQL.comp f‖ ≤ ‖S.mkQL.comp f‖ := by
+  have hker : S ≤ S'.mkQL.ker := fun x hx ↦ (Submodule.Quotient.mk_eq_zero S').mpr (h hx)
+  have heq : S'.mkQL.comp f = (S.liftQL S'.mkQL hker).comp (S.mkQL.comp f) := by
+    ext x
+    simp
+  rw [heq]
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  rw [S.norm_liftQL]
+  exact S'.norm_mkQL_le
+
+/-- Postcomposing with the quotient projection by a larger submodule does not increase the
+nonnegative operator norm. -/
+theorem nnnorm_mkQL_comp_le_of_le {S S' : Submodule 𝕜₂ F} (h : S ≤ S') (f : E →SL[σ] F) :
+    ‖S'.mkQL.comp f‖₊ ≤ ‖S.mkQL.comp f‖₊ := by
+  exact_mod_cast norm_mkQL_comp_le_of_le h f
+
 /-- The quotient projection has norm one when the submodule is not dense. -/
 theorem norm_mkQL (S : Submodule 𝕜 E) (hS : ¬ Dense (S : Set E)) : ‖S.mkQL‖ = 1 := by
   -- Both quotient projections send a representative to its class via QuotientAddGroup.mk.
@@ -123,7 +159,63 @@ theorem ball_subset_image_mkQL_ball (S : Submodule 𝕜 E) (r : ℝ) :
   obtain ⟨m, rfl, hm⟩ := Submodule.Quotient.norm_mk_lt x (sub_pos.2 hx')
   exact ⟨m, mem_ball_zero_iff.2 (by linarith), by simp⟩
 
+/-- Forgetting scalar linearity sends `S.mkQL` to `S.toAddSubgroup.normedMk`. -/
+@[simp]
+theorem toNormedAddGroupHom_mkQL (S : Submodule 𝕜 E) :
+    S.mkQL.toNormedAddGroupHom = S.toAddSubgroup.normedMk :=
+  NormedAddGroupHom.ext fun x ↦ (S.mkQL.toNormedAddGroupHom_apply x).trans rfl
+
+/-- The quotient projection by any submodule is a normed quotient map on the underlying
+seminormed additive groups. -/
+theorem isQuotient_toNormedAddGroupHom_mkQL (S : Submodule 𝕜 E) :
+    S.mkQL.toNormedAddGroupHom.IsQuotient := by
+  rw [S.toNormedAddGroupHom_mkQL]
+  exact NormedAddGroupHom.isQuotientQuotient S.toAddSubgroup
+
 end Submodule
+
+namespace ContinuousLinearMap
+
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
+  [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] [NormedSpace 𝕜₃ G]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜 →+* 𝕜₃}
+  [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃] [RingHomIsometric σ₁₂] [RingHomIsometric σ₂₃]
+
+/-- Precomposing a continuous semilinear map with a normed quotient map preserves the operator
+norm. -/
+theorem opNorm_comp_of_isQuotient (T : F →SL[σ₂₃] G) {q : E →SL[σ₁₂] F}
+    (hq : q.toNormedAddGroupHom.IsQuotient) : ‖T.comp q‖ = ‖T‖ := by
+  rw [(T.comp q).norm_eq_normedAddGroupHom (T.toNormedAddGroupHom.comp q.toNormedAddGroupHom)
+    fun _ ↦ by simp, hq.norm_comp, T.norm_toNormedAddGroupHom]
+
+/-- Precomposing a continuous semilinear map with a normed quotient map preserves the nonnegative
+operator norm. -/
+theorem opNNNorm_comp_of_isQuotient [RingHomIsometric σ₁₃] (T : F →SL[σ₂₃] G) {q : E →SL[σ₁₂] F}
+    (hq : q.toNormedAddGroupHom.IsQuotient) : ‖T.comp q‖₊ = ‖T‖₊ :=
+  NNReal.eq (T.opNorm_comp_of_isQuotient hq)
+
+end ContinuousLinearMap
+
+namespace SeparationQuotient
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Lifting a bounded semilinear map to the separation quotient of its domain preserves its
+operator norm. -/
+@[simp]
+theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
+    ‖liftCLM f hf‖ = ‖f‖ := by
+  rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
+  congr 1; ext c
+  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h ↦ surjective_mk.forall.2 fun x ↦ ?_⟩
+  · simpa only [liftCLM_mk, norm_mk] using h (mk x)
+  · simpa only [liftCLM_mk, norm_mk] using h x
+
+end SeparationQuotient
 
 namespace Submodule.Quotient
 

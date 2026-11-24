@@ -56,8 +56,9 @@ singular cohomology is obtained from the one of chain complexes.
   `TauCeti.ChainComplex.mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f` does the same for a
   degreewise epimorphism `X₂ ⊞ X₃ ⟶ X₄` and the map `Hom(X₄, Y) ⟶ Hom(X₂, Y) ⊞ Hom(X₃, Y)`.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
-* `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
-  equivalence to a cochain homotopy equivalence in the opposite direction.
+* `HomotopyEquiv.linearYonedaFunctorMap`,
+  `TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map`: `Hom(-, Y)` takes a chain
+  homotopy equivalence to a cochain homotopy equivalence in the opposite direction.
 * `ChainComplex.linearYonedaObjFunctor`: the functor `Y ↦ Hom(X, Y)` of the coefficients, with
   `ChainComplex.linearYonedaObjFunctorMap` the natural transformation induced by a chain map.
 * `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
@@ -159,6 +160,14 @@ lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_inv
     {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
     (h.linearYonedaFunctorMap k Y).inv =
       (linearYonedaFunctor k Y).map h.inv.op := (rfl)
+
+/-- `Hom(-, Y)` takes a chain homotopy equivalence `φ : X ⟶ X'` to a cochain homotopy equivalence
+`Hom(X', Y) ⟶ Hom(X, Y)`. -/
+lemma homotopyEquivalences_linearYonedaFunctor_map {X X' : ChainComplex C α} {φ : X ⟶ X'}
+    (hφ : HomologicalComplex.homotopyEquivalences _ _ φ) :
+    HomologicalComplex.homotopyEquivalences _ _ ((linearYonedaFunctor k Y).map φ.op) := by
+  obtain ⟨e, rfl⟩ := hφ
+  exact ⟨e.linearYonedaFunctorMap k Y, e.linearYonedaFunctorMap_hom k Y⟩
 
 /-- `Hom(-, Y)` takes a chain map that is an epimorphism in every degree to a monomorphism. -/
 lemma mono_linearYonedaFunctor_map_op_of_epi_f {X X' : ChainComplex C α} (φ : X ⟶ X')

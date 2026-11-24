@@ -195,7 +195,7 @@ theorem not_isMinimal_baseChange_of_pow_dvd (hϖ : Irreducible ϖ) (W : Weierstr
     simp only [C, Units.val_inv_eq_inv_val, Units.val_mk0, map_inv₀]
     exact one_lt_inv_iff₀.2 ⟨(Valuation.pos_iff _).2 hϖ₀, hv⟩
   have := mul_lt_mul_of_pos_right (one_lt_pow₀ hv' (by norm_num : (12 : ℕ) ≠ 0))
-    (zero_lt_iff.2 hvΔ)
+    (pos_iff_ne_zero.2 hvΔ)
   rw [one_mul] at this
   exact (this.trans_le hle).false
 

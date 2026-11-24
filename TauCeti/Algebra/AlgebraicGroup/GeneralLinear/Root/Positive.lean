@@ -47,13 +47,13 @@ when its row index is smaller than its column index. This includes rank zero. -/
 @[simp↓]
 theorem isPositiveRoot_diagonalRoot_iff_lt (p : DiagonalRootIndex n) :
     (splitMaximalTorus R n).IsPositiveRoot (UpperTriangular.definingHopfIdeal R n)
-        ((diagonalRootDatum.{u} n).root p) ↔ p.1.1.down < p.1.2.down := by
-  have hne : p.1.1.down ≠ p.1.2.down := fun h ↦ p.2 (ULift.down_injective h)
+        ((diagonalRootDatum.{u} n).root p) ↔ p.val.1.down < p.val.2.down := by
+  have hne : p.val.1.down ≠ p.val.2.down := fun h ↦ p.property (ULift.down_injective h)
   have hvector :
       Derivation.cotangentLinearEquiv (B := R)
-          (matrixUnitTangent (k := R) p.1.1.down p.1.2.down) ∈
+          (matrixUnitTangent (k := R) p.val.1.down p.val.2.down) ∈
         (UpperTriangular.definingHopfIdeal R n).lieSubalgebra ↔
-          p.1.1.down < p.1.2.down := by
+          p.val.1.down < p.val.2.down := by
     rw [UpperTriangular.mem_lieSubalgebra_definingHopfIdeal_iff,
       ← cotangentDualMatrixEquiv_apply, cotangentDualMatrixEquiv_matrixUnitTangent,
       TauCeti.single_mem_upperTriangular_iff one_ne_zero]
@@ -64,7 +64,7 @@ theorem isPositiveRoot_diagonalRoot_iff_lt (p : DiagonalRootIndex n) :
   refine ⟨fun h ↦ hvector.mp (h.2 _ hspace), fun hp ↦ ?_⟩
   refine ⟨ofAdd_root_mem_nontrivialAdjointWeights (k := R) p, fun x hx ↦ ?_⟩
   obtain ⟨c, hc⟩ := (rootSpaceEquiv (R := R) p).surjective ⟨x, hx⟩
-  have heq : c • matrixUnitTangent (k := R) p.1.1.down p.1.2.down = x := by
+  have heq : c • matrixUnitTangent (k := R) p.val.1.down p.val.2.down = x := by
     simpa only [rootSpaceEquiv_apply_coe] using congrArg Subtype.val hc
   rw [← heq, map_smul]
   exact (UpperTriangular.definingHopfIdeal R n).lieSubalgebra.smul_mem c (hvector.mpr hp)

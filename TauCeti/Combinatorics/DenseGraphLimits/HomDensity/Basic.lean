@@ -45,6 +45,9 @@ here needs a nonempty-carrier hypothesis.
   each edge read in its own graphon.  The integrand of `homDensity` is the special case of one
   graphon on the edges of `F`, and the telescoping proof of the counting lemma needs the general
   form;
+* `prod_edgeFactor_eq_ite_of_apply_eq_ite` — for a graphon that is the adjacency indicator of a
+  graph on its carrier, the edge product of `F` is the indicator that the vertex assignment carries
+  every edge of `F` to an edge of that graph;
 * `homDensity_nonneg`, `homDensity_le_one` — `t(F, W) ∈ [0, 1]`, with no hypotheses;
 * `homDensity_const` — the Erdős–Rényi value `t(F, W_p) = p ^ e(F)`, the first real consumer of both
   the graphon carrier and this definition.
@@ -66,8 +69,7 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-  {V : Type*} [Fintype V]
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {V : Type*}
 
 /-- The value of a graphon on a single edge, as a function of the vertex assignment.
 
@@ -76,22 +78,18 @@ orientation of the edge is chosen. -/
 def edgeFactor (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : ℝ :=
   Sym2.lift ⟨fun a b => W (x a) (x b), fun a b => W.symm (x a) (x b)⟩ e
 
-omit [Fintype V] in
 @[simp]
 theorem edgeFactor_mk (W : Graphon Ω μ) (x : V → Ω) (a b : V) :
     edgeFactor W x s(a, b) = W (x a) (x b) := (rfl)
 
-omit [Fintype V] in
 /-- Each edge factor is nonnegative, since a graphon is. -/
 theorem edgeFactor_nonneg (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : 0 ≤ edgeFactor W x e := by
   induction e using Sym2.ind with | _ a b => exact W.nonneg _ _
 
-omit [Fintype V] in
 /-- Each edge factor is at most `1`, since a graphon is. -/
 theorem edgeFactor_le_one (W : Graphon Ω μ) (x : V → Ω) (e : Sym2 V) : edgeFactor W x e ≤ 1 := by
   induction e using Sym2.ind with | _ a b => exact W.le_one _ _
 
-omit [Fintype V] in
 /-- Each edge factor depends measurably on the vertex assignment. -/
 theorem measurable_edgeFactor (W : Graphon Ω μ) (e : Sym2 V) :
     Measurable fun x : V → Ω => edgeFactor W x e := by
@@ -101,7 +99,6 @@ theorem measurable_edgeFactor (W : Graphon Ω μ) (e : Sym2 V) :
       (measurable_pi_apply a).prodMk (measurable_pi_apply b)
     exact W.measurable.comp h
 
-omit [Fintype V] in
 /-- The value of a graphon on an edge depends only on the vertex assignment along that edge.  This
 is what lets an edge factor be read off after the assignment has been altered away from the edge. -/
 theorem edgeFactor_congr (W : Graphon Ω μ) {x y : V → Ω} {e : Sym2 V}
@@ -109,7 +106,6 @@ theorem edgeFactor_congr (W : Graphon Ω μ) {x y : V → Ω} {e : Sym2 V}
   induction e using Sym2.ind with
   | _ a b => rw [edgeFactor_mk, edgeFactor_mk, h a (by simp), h b (by simp)]
 
-omit [Fintype V] in
 /-- Reading an edge after pushing it forward along a map of vertex sets is reading the original
 edge in the pulled-back assignment. -/
 @[simp]
@@ -117,25 +113,41 @@ theorem edgeFactor_map {V' : Type*} (W : Graphon Ω μ) (f : V → V') (x : V' �
     edgeFactor W x (Sym2.map f e) = edgeFactor W (x ∘ f) e := by
   induction e using Sym2.ind with | _ a b => simp
 
-omit [Fintype V] in
 /-- A finite product of edge factors, each edge read in its own graphon, depends measurably on the
 vertex assignment. -/
 theorem measurable_prod_edgeFactor (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) :
     Measurable fun x : V → Ω => ∏ e ∈ E, edgeFactor (G e) x e :=
   Finset.measurable_prod _ fun e _ => measurable_edgeFactor (G e) e
 
-omit [Fintype V] in
 /-- A finite product of edge factors is nonnegative. -/
 theorem prod_edgeFactor_nonneg (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) (x : V → Ω) :
     0 ≤ ∏ e ∈ E, edgeFactor (G e) x e :=
   Finset.prod_nonneg fun e _ => edgeFactor_nonneg (G e) x e
 
-omit [Fintype V] in
 /-- A finite product of edge factors is at most `1`: every factor lies in `[0, 1]`. -/
 theorem prod_edgeFactor_le_one (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) (x : V → Ω) :
     ∏ e ∈ E, edgeFactor (G e) x e ≤ 1 :=
   Finset.prod_le_one₀ (fun e _ => edgeFactor_nonneg (G e) x e)
     fun e _ => edgeFactor_le_one (G e) x e
+
+open scoped Classical in
+/-- **The edge product of an adjacency indicator.** If the graphon `W` is the adjacency indicator
+of a graph `G` on its carrier, the product of `edgeFactor` over the edges of `F` at `x` is `1`
+exactly when `x` carries every edge of `F` to an edge of `G`, and `0` otherwise. -/
+theorem prod_edgeFactor_eq_ite_of_apply_eq_ite (F : SimpleGraph V) [Fintype F.edgeSet]
+    {W : Graphon Ω μ} {G : SimpleGraph Ω} [DecidableRel G.Adj]
+    (hW : ∀ a b, W a b = if G.Adj a b then 1 else 0) (x : V → Ω) :
+    ∏ e ∈ F.edgeFinset, edgeFactor W x e
+      = if ∀ a b, F.Adj a b → G.Adj (x a) (x b) then (1 : ℝ) else 0 := by
+  -- each edge factor is the indicator of the edge set of the pulled-back graph `G.comap x`
+  have hfac : ∀ e : Sym2 V, edgeFactor W x e = if e ∈ (G.comap x).edgeSet then 1 else 0 := by
+    intro e
+    induction e using Sym2.ind with
+    | _ a b => simp [hW]
+  rw [Finset.prod_congr rfl fun e _ => hfac e, Finset.prod_boole]
+  simp [Sym2.forall]
+
+variable [Fintype V]
 
 /-- A finite product of edge factors is integrable against the product measure: it is measurable
 and `[0, 1]`-valued on a probability space. -/

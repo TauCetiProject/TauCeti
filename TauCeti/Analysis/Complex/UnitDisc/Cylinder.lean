@@ -27,9 +27,9 @@ namespace TauCeti.Complex.UnitDisc
 The normalization makes the angular period equal to one. -/
 def cylinderRadius : Ioi (0 : ℝ) ≃ₜ Ioo (0 : ℝ) 1 where
   toFun s := ⟨Real.exp (-(2 * Real.pi) * s), Real.exp_pos _,
-    Real.exp_lt_one_iff.mpr (mul_neg_of_neg_of_pos (by linarith [Real.pi_pos]) s.2)⟩
+    Real.exp_lt_one_iff.mpr (mul_neg_of_neg_of_pos (by linarith [Real.pi_pos]) s.property)⟩
   invFun r := ⟨-Real.log r / (2 * Real.pi),
-    div_pos (neg_pos.mpr ((Real.log_neg_iff r.2.1).mpr r.2.2)) (by positivity)⟩
+    div_pos (neg_pos.mpr ((Real.log_neg_iff r.property.1).mpr r.property.2)) (by positivity)⟩
   left_inv s := by
     ext
     simp only [Real.log_exp]
@@ -39,12 +39,12 @@ def cylinderRadius : Ioi (0 : ℝ) ≃ₜ Ioo (0 : ℝ) 1 where
     have h : -(2 * Real.pi) * (-Real.log r / (2 * Real.pi)) = Real.log r := by
       field_simp
     dsimp only
-    rw [h, Real.exp_log r.2.1]
+    rw [h, Real.exp_log r.property.1]
   continuous_toFun := by fun_prop
   continuous_invFun := by
     apply Continuous.subtype_mk
-    exact ((Real.continuousOn_log.comp_continuous continuous_subtype_val
-      (fun r ↦ r.2.1.ne')).neg).div_const _
+    exact ((Real.continuousOn_log.comp_continuous continuous_subtypeVal
+      (fun r ↦ r.property.1.ne')).neg).div_const _
 
 /-- The radial coordinate is the normalized decreasing exponential. -/
 @[simp] theorem cylinderRadius_apply (s : Ioi (0 : ℝ)) :
@@ -61,12 +61,12 @@ def puncturedPolar : ↥(Metric.ball (0 : ℂ) 1 \ {0}) ≃ₜ Circle × Ioo (0 
       ↥(Metric.ball (0 : ℂ) 1 \ {0}) :=
     { toEquiv := (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
         (Equiv.subtypeEquivRight fun _ ↦ and_comm)
-      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let radius : {r : Ioi (0 : ℝ) // (r : ℝ) < 1} ≃ₜ Ioo (0 : ℝ) 1 :=
     { toEquiv := Equiv.subtypeSubtypeEquivSubtypeInter (fun r : ℝ ↦ 0 < r) (· < 1)
-      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   source.symm.trans <|
     ((homeomorphUnitSphereProd ℂ).subtype
       (p := fun z : ({0}ᶜ : Set ℂ) ↦ (z : ℂ) ∈ Metric.ball 0 1)

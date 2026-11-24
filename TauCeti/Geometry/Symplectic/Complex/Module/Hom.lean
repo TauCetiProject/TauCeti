@@ -169,7 +169,7 @@ the induced complex module structures `J.complexModule` and `J'.complexModule`. 
   letI := J'.complexModule
   letI := J.complexModule_isScalarTower
   letI := J'.complexModule_isScalarTower
-  { toFun := fun F => F.2.toComplexLinearMap
+  { toFun := fun F => F.property.toComplexLinearMap
     invFun := fun G => ⟨G.restrictScalars ℝ, isComplexLinearMap_restrictScalars J J' G⟩
     left_inv := fun _ => Subtype.ext (LinearMap.ext fun _ => rfl)
     right_inv := fun _ => LinearMap.ext fun _ => rfl }

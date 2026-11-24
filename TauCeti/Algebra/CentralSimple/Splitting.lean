@@ -15,10 +15,13 @@ public import TauCeti.Algebra.CentralSimple.Degree
 -- `TauCeti.Algebra.matrixBaseChangeAlgEquiv` is what splits a matrix algebra, and this module also
 -- supplies the `Matrix` type occurring in every statement below.
 public import TauCeti.Algebra.Matrix.BaseChange
--- The finite-field matrix presentation, matrix composition, and quaternion and complex-number
--- facts are used only in proofs and examples.
+-- The finite-field matrix presentation, matrix composition, the action of matrices on column
+-- vectors, the dimension tower law, and quaternion and complex-number facts are used only in
+-- proofs and examples.
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Data.Matrix.Composition
+import Mathlib.LinearAlgebra.Dimension.Free
+import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.Algebra.CentralSimple.Wedderburn
 import TauCeti.Algebra.Central.Quaternion
@@ -66,6 +69,8 @@ The dimension calculation `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` liv
 * `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` and
   `TauCeti.Algebra.IsSplittingField.nonempty_algEquiv_matrix_deg`: the dimension count and the
   identification of the matrix size with the degree, for any algebra admitting a splitting.
+* `TauCeti.Algebra.IsSplittingField.deg_dvd_finrank`: the degree of a division algebra
+  divides the degree of every field splitting it.
 * `TauCeti.Algebra.isSplittingField_of_isSepClosed`: **a separably closed extension splits
   every finite-dimensional central simple algebra**.
 * `TauCeti.Algebra.isSplittingField_self_of_finite`: **over a finite field every central simple
@@ -215,6 +220,29 @@ theorem isSplittingField_iff_deg :
       Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin (deg K A)) (Fin (deg K A)) L) :=
   ⟨IsSplittingField.nonempty_algEquiv_matrix_deg K A L,
     fun h ↦ (isSplittingField_iff K A L).2 ⟨deg K A, h⟩⟩
+
+variable {K L} in
+/-- **The degree of a division algebra divides the degree of every field splitting it.**
+
+Centrality of `D` is not assumed, and finite-dimensionality follows from the splitting. No
+finiteness of `L / K` is assumed either; when `L / K` is infinite, `finrank K L = 0`. -/
+theorem IsSplittingField.deg_dvd_finrank {D : Type*} [DivisionRing D] [Algebra K D]
+    (h : IsSplittingField K D L) : deg K D ∣ Module.finrank K L := by
+  have := h.finiteDimensional
+  -- Through the splitting `e : L ⊗[K] D ≃ₐ[L] Mₙ(L)` with `n = deg K D`, the ring `D` acts on
+  -- `V = Fin n → L` compatibly with `K`, so `V` is a vector space over `D`. Counting dimensions
+  -- over `K` along the towers `K → D → V` and `K → L → V` gives `n ^ 2 ∣ finrank K L * n`.
+  obtain ⟨e⟩ := h.nonempty_algEquiv_matrix_deg
+  let V := Fin (deg K D) → L
+  let f : D →ₐ[K] Module.End L V :=
+    (Matrix.toLinAlgEquiv'.toAlgHom.restrictScalars K).comp
+      ((e.toAlgHom.restrictScalars K).comp Algebra.TensorProduct.includeRight)
+  let _ : Module D V := Module.compHom V f.toRingHom
+  have : IsScalarTower K D V := ⟨fun c x v ↦ congrArg (· v) (map_smul f c x)⟩
+  have hdvd := Module.finrank_dvd_finrank_right K D V
+  rw [finrank_eq_sq_of_algEquiv_matrix K D L e, ← Module.finrank_mul_finrank K L V,
+    Module.finrank_fin_fun, sq, mul_comm (Module.finrank K L)] at hdvd
+  exact Nat.dvd_of_mul_dvd_mul_left (deg_pos K D) hdvd
 
 section CentralSimple
 

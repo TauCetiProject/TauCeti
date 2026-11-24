@@ -26,9 +26,10 @@ The chain-level product need not be associative or unital. Then the degree-wise 
 form a graded ring with unit the class of `e` (`LinearMap.cohomologyGRing`), and a graded
 `R`-algebra (`LinearMap.cohomologyGAlgebra`), so that Mathlib's instances on direct sums make
 `⨁ i, H^i` an `R`-algebra in which `of i [a] * of j [b] = of (i + j) [μ a b]`
-(`DirectSum.of_mul_of`, `LinearMap.cohomologyGRing_gMul`, `LinearMap.cohomologyMul_mk`). If
-`μ a b - (-1)^(i j) μ b a` is a coboundary for cocycles `a` and `b` of degrees `i` and `j`, the
-ring is graded commutative (`LinearMap.cohomologyGRing_of_mul_of_comm`).
+(`LinearMap.cohomologyGRing_of_mk_mul_of_mk`) and `1 = of 0 [e]`
+(`LinearMap.cohomologyGRing_one`). If `μ a b - (-1)^(i j) μ b a` is a coboundary for cocycles
+`a` and `b` of degrees `i` and `j`, the ring is graded commutative
+(`LinearMap.cohomologyGRing_of_mul_of_comm`).
 
 A degree-preserving linear map `f` commuting with the endomorphisms, which intertwines two such
 products up to coboundaries on cocycles and sends the unit to the unit up to a coboundary, induces
@@ -124,7 +125,7 @@ private theorem cohomologyMul_eq_cohomologyProduct {i j : ℤ} :
 @[simp]
 theorem cohomologyMul_mk {i j : ℤ} (a : D.cocycles G i) (b : D.cocycles G j) :
     cohomologyMul μ hdeg hL (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
-      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles_add μ hdeg hL a.2 b.2⟩ :=
+      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles_add μ hdeg hL a.property b.property⟩ :=
   cohomologyProduct_mk μ (apply_mem_add_zero μ hdeg) hL (add_zero _) a b
 
 end Mul
@@ -158,12 +159,12 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
       rintro ⟨i, x⟩
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       exact (congrArg (GradedMonoid.mk _) (cohomologyMul_mk μ hdeg hL ⟨e, he⟩ a)).trans
-        (gradedMonoid_mk_cohomology_mk_eq (zero_add i) (hone_mul a.2))
+        (gradedMonoid_mk_cohomology_mk_eq (zero_add i) (hone_mul a.property))
     mul_one := by
       rintro ⟨i, x⟩
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       exact (congrArg (GradedMonoid.mk _) (cohomologyMul_mk μ hdeg hL a ⟨e, he⟩)).trans
-        (gradedMonoid_mk_cohomology_mk_eq (add_zero i) (hmul_one a.2))
+        (gradedMonoid_mk_cohomology_mk_eq (add_zero i) (hmul_one a.property))
     mul_assoc := by
       -- Both sides are the classes of `μ (μ a b) c` and `μ a (μ b c)` for representatives `a`,
       -- `b`, `c`, in the degrees `i + j + k` and `i + (j + k)`.
@@ -177,7 +178,7 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
         GradedMonoid.mk _ (cohomologyMul μ hdeg hL _ (cohomologyMul μ hdeg hL _ _))
       rw [cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk]
       exact gradedMonoid_mk_cohomology_mk_eq (add_assoc i j k)
-        (by simpa only [add_assoc] using hassoc a.2 b.2 c.2)
+        (by simpa only [add_assoc] using hassoc a.property b.property c.property)
     natCast n := n • Submodule.Quotient.mk ⟨e, he⟩
     natCast_zero := zero_smul _ _
     natCast_succ n := succ_nsmul _ n
@@ -199,6 +200,25 @@ theorem cohomologyGRing_gOne :
     GradedMonoid.GOne.one (A := fun i ↦ D.cohomology G i) = Submodule.Quotient.mk ⟨e, he⟩ :=
   rfl
 
+/-- In the cohomology ring, the product of the classes of two cocycles `a` and `b` is the class of
+`μ a b`. -/
+theorem cohomologyGRing_of_mk_mul_of_mk {i j : ℤ} (a : D.cocycles G i) (b : D.cocycles G j) :
+    letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+    of (fun i ↦ D.cohomology G i) i (Submodule.Quotient.mk a) * of _ j (Submodule.Quotient.mk b) =
+      of (fun i ↦ D.cohomology G i) (i + j)
+        (Submodule.Quotient.mk
+          ⟨μ a b, apply_mem_cocycles_add μ hdeg hL a.property b.property⟩) := by
+  let := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+  rw [of_mul_of, cohomologyGRing_gMul, cohomologyMul_mk]
+
+/-- The unit of the cohomology ring is the class of `e`, in degree zero. -/
+theorem cohomologyGRing_one :
+    letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+    (1 : ⨁ i, D.cohomology G i) =
+      of (fun i ↦ D.cohomology G i) 0 (Submodule.Quotient.mk ⟨e, he⟩) := by
+  let := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+  rw [one_def, cohomologyGRing_gOne]
+
 /-- Multiplying on the left by a scalar multiple `r • [e]` of the unit is scalar multiplication by
 `r`, as elements of the graded monoid of cohomology classes. -/
 theorem cohomologyGRing_smul_one_mul (r : R) (x : GradedMonoid fun i ↦ D.cohomology G i) :
@@ -211,7 +231,7 @@ theorem cohomologyGRing_smul_one_mul (r : R) (x : GradedMonoid fun i ↦ D.cohom
   refine (congrArg (GradedMonoid.mk _) (cohomologyMul_mk μ hdeg hL _ a)).trans
     (gradedMonoid_mk_cohomology_mk_eq (zero_add i) ?_)
   simpa only [Submodule.coe_smul, map_smul, LinearMap.smul_apply, smul_sub] using
-    Submodule.smul_mem _ r (hone_mul a.2)
+    Submodule.smul_mem _ r (hone_mul a.property)
 
 /-- Multiplying on the right by a scalar multiple `r • [e]` of the unit is scalar multiplication
 by `r`, as elements of the graded monoid of cohomology classes. -/
@@ -224,7 +244,8 @@ theorem cohomologyGRing_mul_smul_one (r : R) (x : GradedMonoid fun i ↦ D.cohom
   rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul]
   refine (congrArg (GradedMonoid.mk _) (cohomologyMul_mk μ hdeg hL a _)).trans
     (gradedMonoid_mk_cohomology_mk_eq (add_zero i) ?_)
-  simpa only [Submodule.coe_smul, map_smul, smul_sub] using Submodule.smul_mem _ r (hmul_one a.2)
+  simpa only [Submodule.coe_smul, map_smul, smul_sub] using Submodule.smul_mem _ r
+      (hmul_one a.property)
 
 /-- **The cohomology algebra.** The graded ring `LinearMap.cohomologyGRing` is a graded
 `R`-algebra, with structure map `r ↦ r • [e]` into degree zero. -/
@@ -272,7 +293,7 @@ theorem cohomologyGRing_of_mul_of_comm
   simp only [of_mul_of, ← of_smul, cohomologyGRing_gMul, cohomologyMul_mk,
     ← Submodule.Quotient.mk_smul]
   refine of_eq_of_gradedMonoid_eq (gradedMonoid_mk_cohomology_mk_eq (add_comm i j) ?_)
-  simpa only [add_comm i j, SetLike.mk_smul_mk] using hcomm a.2 b.2
+  simpa only [add_comm i j, SetLike.mk_smul_mk] using hcomm a.property b.property
 
 end GRing
 

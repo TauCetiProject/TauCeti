@@ -73,19 +73,19 @@ variable {K : Type u} [Field K]
 
 /-- The map from global units to real units induced by a real place. -/
 def unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : Kˣ →* ℝˣ :=
-  Units.map (embedding_of_isReal w.2).toMonoidHom
+  Units.map (embedding_of_isReal w.property).toMonoidHom
 
 /-- The underlying value of a localized unit is its image under the real-place embedding. -/
 @[simp]
 theorem unitAtRealPlace_apply (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
-    (unitAtRealPlace w a : ℝ) = embedding_of_isReal w.2 (a : K) := by
+    (unitAtRealPlace w a : ℝ) = embedding_of_isReal w.property (a : K) := by
   rfl
 
 /-- The image in `ℝˣ/(ℝˣ)²` of the square class of a global unit under a real place is the square
 class of its image at that place. -/
 theorem squareClass_unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     squareClass (unitAtRealPlace w a) =
-      (embedding_of_isReal w.2).squareClassMap (squareClass a) := by
+      (embedding_of_isReal w.property).squareClassMap (squareClass a) := by
   rw [RingHom.squareClassMap_apply]
   exact congrArg squareClass (Units.ext (by simp))
 
@@ -113,7 +113,7 @@ def atRealPlace (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     _root_.QuadraticForm ℝ (TauCeti.RealScalarExtension (V := V) w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  letI : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   exact Q.baseChange ℝ
 
 /-- The scalar extension of a quadratic form through the chosen complex embedding of an
@@ -136,9 +136,9 @@ theorem atFinitePlace_def [NumberField K] (Q : _root_.QuadraticForm K V)
 theorem atRealPlace_def (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     let _ : Invertible (2 : K) := by
-      letI : CharZero K := RingHom.charZero w.1.embedding
+      letI : CharZero K := RingHom.charZero w.val.embedding
       exact invertibleOfNonzero two_ne_zero
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     atRealPlace Q w = Q.baseChange ℝ := by
   rfl
 
@@ -163,10 +163,10 @@ theorem _root_.QuadraticMap.Represents.atFinitePlace [NumberField K]
 theorem _root_.QuadraticMap.Represents.atRealPlace
     {Q : _root_.QuadraticForm K V} {a : K}
     (h : _root_.QuadraticMap.Represents Q a) (w : {w : InfinitePlace K // w.IsReal}) :
-    (Q.atRealPlace w).Represents (embedding_of_isReal w.2 a) := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+    (Q.atRealPlace w).Represents (embedding_of_isReal w.property a) := by
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [atRealPlace_def]
   simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
 
@@ -181,27 +181,27 @@ theorem _root_.QuadraticMap.Represents.atComplexEmbedding
   rw [atComplexEmbedding_def]
   simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℂ)
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every finite place. -/
-theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every finite place. -/
+theorem Nondegenerate.atFinitePlace [NumberField K]
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
     (Q.atFinitePlace v).Nondegenerate := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   rw [atFinitePlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
-theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every real place. -/
+theorem Nondegenerate.atRealPlace
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Nondegenerate := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [atRealPlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+/-- A nondegenerate quadratic form stays nondegenerate after scalar extension
 through a complex embedding. -/
-theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+theorem Nondegenerate.atComplexEmbedding
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.embedding
@@ -224,9 +224,9 @@ theorem _root_.QuadraticMap.Equivalent.atRealPlace {W : Type v'} [AddCommGroup W
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Equivalent (R.atRealPlace w) := by
-  let : CharZero K := RingHom.charZero w.1.embedding
+  let : CharZero K := RingHom.charZero w.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   simpa only [atRealPlace_def] using h.baseChange ℝ
 
 /-- A global isometry of quadratic forms localizes to an isometry through the complex embedding
@@ -245,10 +245,10 @@ open TauCeti in
 of the form along the real embedding of the place. -/
 theorem formClass_atRealPlace [FiniteDimensional K V] [Invertible (2 : K)]
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
-    letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    letI : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) =
       RegularFormClass.baseChange ℝ (formClass Q hQ) := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   rw [← formClass_baseChange Q hQ]
   -- `atRealPlace` builds its own `Invertible 2` instance on `K`, which agrees with the given one
   -- because `Invertible 2` is a subsingleton.
@@ -293,9 +293,9 @@ def atFinitePlaceWeightedSumSquares [NumberField K] (v : HeightOneSpectrum (𝓞
 whose coefficients are evaluated at the place's real embedding. -/
 def atRealPlaceWeightedSumSquares (w : {w : InfinitePlace K // w.IsReal}) (a : ι → K) :
     (atRealPlace (QuadraticMap.weightedSumSquares K a) w).IsometryEquiv
-      (QuadraticMap.weightedSumSquares ℝ fun i => embedding_of_isReal w.2 (a i)) := by
+      (QuadraticMap.weightedSumSquares ℝ fun i => embedding_of_isReal w.property (a i)) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   let e := baseChangeWeightedSumSquares (A := ℝ) a
   refine { toLinearEquiv := e, map_app' := ?_ }
   intro x
@@ -334,10 +334,10 @@ of tensor product over the finite coordinate space. -/
 @[simp]
 theorem atRealPlaceWeightedSumSquares_apply (w : {w : InfinitePlace K // w.IsReal})
     (a : ι → K) (x : TauCeti.RealScalarExtension (V := ι → K) w) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     atRealPlaceWeightedSumSquares w a x = TensorProduct.piScalarRightHom K ℝ ℝ ι x := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   calc
     atRealPlaceWeightedSumSquares w a x = baseChangeWeightedSumSquares (A := ℝ) a x := by
       -- The specialized wrapper changes only `map_app'`; it retains the generic linear map.
@@ -378,10 +378,10 @@ theorem atFinitePlace_tmul [NumberField K] (v : HeightOneSpectrum (𝓞 K))
 coefficient of the original form. -/
 @[simp]
 theorem atRealPlace_tmul (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : V) :
-    let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    atRealPlace Q w (a ⊗ₜ x) = embedding_of_isReal w.2 (Q x) * a ^ 2 := by
+    let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
+    atRealPlace Q w (a ⊗ₜ x) = embedding_of_isReal w.property (Q x) * a ^ 2 := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   simp [atRealPlace, Algebra.smul_def, RingHom.algebraMap_toAlgebra, pow_two, mul_comm]
 
 /-- Scalar extension through a complex embedding evaluates on a pure tensor by applying the

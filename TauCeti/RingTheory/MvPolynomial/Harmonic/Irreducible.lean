@@ -48,8 +48,9 @@ the Fischer inner product, without highest-weight theory:
    both `W` and `Wᗮ` were nonzero, transitivity of `SO(N)` on the sphere would make both components
    nonzero, contradicting uniqueness of zonal harmonics.
 
-The dimension hypothesis `3 ≤ Fintype.card σ` is sharp: for `N = 2` and `d ≥ 1`, `H_d` over `ℂ`
-splits into the two one-dimensional eigenspaces spanned by `(X₀ ± i X₁)^d`.
+The dimension hypothesis `3 ≤ Fintype.card σ` is sharp over `ℂ`: for `N = 2` and `d ≥ 1`, `H_d`
+over `ℂ` splits into the two one-dimensional eigenspaces spanned by `(X₀ ± i X₁)^d` (over `ℝ` the
+`N = 2` representation is irreducible).
 
 ## Main definitions
 
@@ -138,7 +139,7 @@ theorem fischerInner_harmonicSpecialOrthogonalRep {σ 𝕜 : Type*} [Fintype σ]
       ((g : Matrix σ σ ℝ)ᵀ.map (algebraMap ℝ 𝕜))ᴴ = (g : Matrix σ σ ℝ).map (algebraMap ℝ 𝕜) := by
     ext i j
     simp [Matrix.conjTranspose_apply, RCLike.star_def]
-  rw [hH, ← Matrix.map_mul, (mem_orthogonalGroup_iff' σ ℝ).mp g.2.1,
+  rw [hH, ← Matrix.map_mul, (mem_orthogonalGroup_iff' σ ℝ).mp g.property.1,
     Matrix.map_one _ (map_zero _) (map_one _)]
 
 end Representation
@@ -187,7 +188,7 @@ private theorem exists_specialOrthogonalGroup_transpose_mulVec_eq_normalize
     TauCeti.exists_specialOrthogonalGroup_mulVec_eq_of_dotProduct_eq hσ (hyy.trans hu.symm)
   refine ⟨g, ?_⟩
   have hgu : (g : Matrix σ σ ℝ)ᵀ *ᵥ u = y := by
-    rw [← hg, mulVec_mulVec, (mem_orthogonalGroup_iff' σ ℝ).mp g.2.1, one_mulVec]
+    rw [← hg, mulVec_mulVec, (mem_orthogonalGroup_iff' σ ℝ).mp g.property.1, one_mulVec]
   rw [hgu, smul_smul, mul_inv_cancel₀ hr.ne', one_smul]
 
 /-- An `SO(σ, ℝ)`-invariant homogeneous polynomial of degree `m` on `ℝˢ` (`|σ| ≥ 2`) satisfies
@@ -642,8 +643,8 @@ private theorem exists_fischerInner_orthogonal_compl {σ 𝕜 : Type*} [Fintype 
   let : NormedAddCommGroup (MvPolynomial σ 𝕜) := (fischerInnerCore σ 𝕜).toNormedAddCommGroup
   let : InnerProductSpace 𝕜 (MvPolynomial σ 𝕜) :=
     InnerProductSpace.ofCore (fischerInnerCore σ 𝕜).toCore
-  have hinner_eq (a b : H) : ⟪a, b⟫_𝕜 = fischerInner a.1 b.1 :=
-    fischerInnerCore_inner σ 𝕜 a.1 b.1
+  have hinner_eq (a b : H) : ⟪a, b⟫_𝕜 = fischerInner a.val b.val :=
+    fischerInnerCore_inner σ 𝕜 a.val b.val
   let ρ := harmonicSpecialOrthogonalRep σ ℝ 𝕜 d
   let W' : Submodule 𝕜 H := W.comap H.subtype
   have hW'_map : W'.map H.subtype = W := Submodule.map_comap_eq_of_le (by simpa using hW)
@@ -658,11 +659,11 @@ private theorem exists_fischerInner_orthogonal_compl {σ 𝕜 : Type*} [Fintype 
       rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one]
       rfl
     rw [← hunit, hcancel]
-    exact (Submodule.mem_orthogonal W' y).mp hy _ (by simpa [W', ρ] using hinv g⁻¹ x.1 hx)
+    exact (Submodule.mem_orthogonal W' y).mp hy _ (by simpa [W', ρ] using hinv g⁻¹ x.val hx)
   have hcompl : IsCompl W' W'ᗮ := W'.isCompl_orthogonal
   refine ⟨W'ᗮ.map H.subtype, ?_, ?_, ?_, ?_, ?_⟩
   · rintro _ ⟨y, _, rfl⟩
-    exact y.2
+    exact y.property
   · rintro g _ ⟨y, hy, rfl⟩
     exact ⟨ρ g y, hW'orth_inv g y hy, coe_harmonicSpecialOrthogonalRep_apply g y⟩
   · rw [← hW'_map, ← Submodule.map_sup, hcompl.sup_eq_top, Submodule.map_top,
@@ -689,17 +690,18 @@ private theorem exists_fischerInner_eq_eval_single_last {n d : ℕ} {𝕜 : Type
     (fischerInnerCore (Fin (n + 1)) 𝕜).toNormedAddCommGroup
   let : InnerProductSpace 𝕜 (MvPolynomial (Fin (n + 1)) 𝕜) :=
     InnerProductSpace.ofCore (fischerInnerCore (Fin (n + 1)) 𝕜).toCore
-  have hinner_eq (a b : H) : ⟪a, b⟫_𝕜 = fischerInner a.1 b.1 :=
-    fischerInnerCore_inner (Fin (n + 1)) 𝕜 a.1 b.1
+  have hinner_eq (a b : H) : ⟪a, b⟫_𝕜 = fischerInner a.val b.val :=
+    fischerInnerCore_inner (Fin (n + 1)) 𝕜 a.val b.val
   let ρ := harmonicSpecialOrthogonalRep (Fin (n + 1)) ℝ 𝕜 d
   let e : Fin (n + 1) → 𝕜 := Pi.single (Fin.last n) 1
   let L : H →ₗ[𝕜] 𝕜 := (aeval e).toLinearMap.comp H.subtype
   let v : H := (InnerProductSpace.toDual 𝕜 H).symm L.toContinuousLinearMap
-  have hv_inner : ∀ p : H, ⟪v, p⟫_𝕜 = eval e p.1 := fun p ↦ by simp [v, L, aeval_eq_eval]
-  refine ⟨v.1, v.2, fun p hp ↦ (hinner_eq v ⟨p, hp⟩).symm.trans (hv_inner ⟨p, hp⟩), fun h ↦ ?_⟩
+  have hv_inner : ∀ p : H, ⟪v, p⟫_𝕜 = eval e p.val := fun p ↦ by simp [v, L, aeval_eq_eval]
+  refine ⟨v.val, v.property,
+    fun p hp ↦ (hinner_eq v ⟨p, hp⟩).symm.trans (hv_inner ⟨p, hp⟩), fun h ↦ ?_⟩
   let h' : Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ :=
-    ⟨Matrix.blockSucc h.1, Matrix.blockSucc_mem_orthogonalGroup_iff.mpr h.2.1,
-      (Matrix.det_blockSucc _).trans h.2.2⟩
+    ⟨Matrix.blockSucc h.val, Matrix.blockSucc_mem_orthogonalGroup_iff.mpr h.property.1,
+      (Matrix.det_blockSucc _).trans h.property.2⟩
   rw [← coe_harmonicSpecialOrthogonalRep_apply h' v]
   refine congrArg Subtype.val (ext_inner_right 𝕜 fun p ↦ ?_ : ρ h' v = v)
   have hunit : ⟪ρ h'⁻¹ (ρ h' v), ρ h'⁻¹ p⟫_𝕜 = ⟪ρ h' v, p⟫_𝕜 := by
@@ -709,7 +711,7 @@ private theorem exists_fischerInner_eq_eval_single_last {n d : ℕ} {𝕜 : Type
     rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one]
     rfl
   rw [← hunit, hcancel, hv_inner, hv_inner, eval_harmonicSpecialOrthogonalRep_apply, inv_inv]
-  have hfix_e : (h'.1.map (algebraMap ℝ 𝕜)) *ᵥ e = e := by
+  have hfix_e : (h'.val.map (algebraMap ℝ 𝕜)) *ᵥ e = e := by
     ext i
     rw [Matrix.map_blockSucc, Matrix.blockSucc_mulVec]
     induction i using Fin.lastCases with
@@ -742,8 +744,8 @@ private theorem eq_bot_or_eq_harmonicSubmodule_fin {n d : ℕ} {𝕜 : Type*} [R
       let M := (Matrix.blockSucc (h : Matrix (Fin n) (Fin n) ℝ))ᵀ.map (algebraMap ℝ 𝕜)
       linearSubst M v₁ = v₁ ∧ linearSubst M v₂ = v₂ := by
     let h' : Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ :=
-      ⟨Matrix.blockSucc h.1, Matrix.blockSucc_mem_orthogonalGroup_iff.mpr h.2.1,
-        (Matrix.det_blockSucc _).trans h.2.2⟩
+      ⟨Matrix.blockSucc h.val, Matrix.blockSucc_mem_orthogonalGroup_iff.mpr h.property.1,
+        (Matrix.det_blockSucc _).trans h.property.2⟩
     set M := (Matrix.blockSucc (h : Matrix (Fin n) (Fin n) ℝ))ᵀ.map (algebraMap ℝ 𝕜)
     have hsum : linearSubst M v₁ + linearSubst M v₂ = v₁ + v₂ := by
       rw [← map_add, hv_eq, hv_fix h]
@@ -834,13 +836,13 @@ theorem eq_bot_or_eq_harmonicSubmodule_of_specialOrthogonalGroup_invariant
         linearSubst ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)ᵀ.map (algebraMap ℝ 𝕜)) q ∈
           W.map φ.toLinearMap := by
     rintro g _ ⟨p, hp, rfl⟩
-    let g' : Matrix.specialOrthogonalGroup σ ℝ := ⟨g.1.submatrix e e, by
+    let g' : Matrix.specialOrthogonalGroup σ ℝ := ⟨g.val.submatrix e e, by
       rw [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff]
       refine ⟨?_, ?_⟩
       · rw [Matrix.transpose_submatrix, Matrix.submatrix_mul_equiv _ _ _ e,
-          (mem_orthogonalGroup_iff _ _).mp g.2.1, Matrix.submatrix_one_equiv]
+          (mem_orthogonalGroup_iff _ _).mp g.property.1, Matrix.submatrix_one_equiv]
       · simpa [Matrix.reindex_apply] using
-          (Matrix.det_reindex_self e.symm g.1).trans g.2.2⟩
+          (Matrix.det_reindex_self e.symm g.val).trans g.property.2⟩
     refine ⟨linearSubst ((g' : Matrix σ σ ℝ)ᵀ.map (algebraMap ℝ 𝕜)) p, hinv g' p hp, ?_⟩
     exact rename_linearSubst_submatrix e ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)ᵀ.map
       (algebraMap ℝ 𝕜)) p
@@ -871,7 +873,7 @@ theorem isIrreducible_harmonicSpecialOrthogonalRep {σ 𝕜 : Type*} [Fintype σ
   let W' : Submodule 𝕜 (MvPolynomial σ 𝕜) := W.toSubmodule.map H.subtype
   have hW'_le : W' ≤ H := by
     rintro _ ⟨x, _, rfl⟩
-    exact x.2
+    exact x.property
   have hW'_inv : ∀ g : Matrix.specialOrthogonalGroup σ ℝ, ∀ p ∈ W',
       linearSubst ((g : Matrix σ σ ℝ)ᵀ.map (algebraMap ℝ 𝕜)) p ∈ W' := by
     rintro g _ ⟨x, hx, rfl⟩

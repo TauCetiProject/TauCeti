@@ -72,7 +72,7 @@ theorem exists_specialOrthogonalGroup_mulVec_eq_of_dotProduct_ne_zero
     (by simpa only [Q, toQuadraticForm'_one_apply] using hy)
   refine ⟨⟨LinearMap.toMatrix' (g : (ι → K) ≃ₗ[K] (ι → K)).toLinearMap,
     (toMatrix_mem_specialOrthogonalGroup_iff K ι
-      ((isUnit_of_invertible (2 : K)).isSMulRegular K) _).mpr g.2⟩, ?_⟩
+      ((isUnit_of_invertible (2 : K)).isSMulRegular K) _).mpr g.property⟩, ?_⟩
   simpa only [LinearMap.toMatrix'_mulVec, LinearEquiv.coe_coe] using hg
 
 /-- Over a linearly ordered field (such as `ℝ`) and in dimension at least two, the matrix special

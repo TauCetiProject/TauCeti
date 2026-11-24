@@ -160,12 +160,12 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
 chain of chords perpendicular to `ζ`. -/
 def unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) : PrimeEnd (ball 0 1) :=
   PrimeEnd.mk (unitDiscRadialChain ζ)
-    (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.2))
+    (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.property))
 
 /-- The prime end of the unit disc at `ζ` is the class of the radial chain at `ζ`. -/
 theorem unitDiscPrimeEnd_def (ζ : sphere (0 : ℂ) 1) :
     unitDiscPrimeEnd ζ = PrimeEnd.mk (unitDiscRadialChain ζ)
-      (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.2)) :=
+      (isNullChain_unitDiscRadialChain (mem_sphere_zero_iff_norm.mp ζ.property)) :=
   (rfl)
 
 /-- **Distinct points of the circle give distinct prime ends of the disc.** -/
@@ -348,7 +348,7 @@ end Surjective
 @[simp]
 theorem impression_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
     (unitDiscPrimeEnd ζ).impression = {(ζ : ℂ)} := by
-  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.2
+  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.property
   rw [unitDiscPrimeEnd_def, PrimeEnd.impression_mk]
   refine eq_singleton_iff_nonempty_unique_mem.mpr
     ⟨((isNullChain_unitDiscRadialChain hζ).isConnected_nullChainImpression
@@ -371,7 +371,7 @@ within the disc**: the caps of the radial chain at `ζ` form a basis of `𝓝[ba
 @[simp]
 theorem domainFilter_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
     (unitDiscPrimeEnd ζ).domainFilter = 𝓝[ball 0 1] (ζ : ℂ) := by
-  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.2
+  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.property
   rw [unitDiscPrimeEnd_def, PrimeEnd.domainFilter_mk]
   refine (isNullChain_unitDiscRadialChain hζ).hasAntitoneBasis_nullChainFilter.toHasBasis.ext
     nhdsWithin_basis_ball (fun n _ => ?_) fun ε hε => ?_

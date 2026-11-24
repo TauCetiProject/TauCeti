@@ -14,19 +14,24 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 # Cell modules and their radicals
 
 A cellular basis gives a left module for each cell, with its canonical symmetric bilinear
-form. Cellular basis vectors from cells distinct from and not strictly above a cell act by
-zero on its cell module, and any vector annihilated by lower cells in a left `A`-module `S`
-induces an `A`-linear evaluation map `cellModuleHom` out of the cell module. Transporting a
-cellular basis along an `R`-algebra equivalence (`CellularBasis.map`) induces an `R`-linear
-equivalence `mapCellModuleEquiv` of cell modules intertwining the algebra actions, cell forms,
-and cell radicals.
+form. Cellular basis vectors from cells distinct from and not strictly above a cell (and more
+generally the inclusive cell ideal `leSpan ν` whenever `¬ μ ≤ ν`) act by zero on `CellModule μ`,
+and any vector annihilated by lower cells in a left `A`-module `S` induces an `A`-linear
+evaluation map `cellModuleHom` out of the cell module. Whenever a cell has nonzero form over a
+ring without zero divisors, any nonzero `A`-linear map `CellModule ν →ₗ[A] CellModule μ` forces
+`μ = ν ∨ μ < ν`; when an entry of the Gram matrix is a unit (in particular, whenever the form is
+nonzero over a field), the cell module is cyclically generated over `leSpan ν` by a single
+standard basis vector. Transporting a cellular basis along an `R`-algebra equivalence
+(`CellularBasis.map`) induces an `R`-linear equivalence `mapCellModuleEquiv` of cell modules
+intertwining the algebra actions, cell forms, and cell radicals.
 
 The radical of the form is an algebra submodule; because the form is symmetric, its
-nondegeneracy is equivalent to triviality of the cell radical (and, over an integral domain, to
-nonvanishing of the Gram determinant). Over a field every proper submodule is contained in this
-radical, so a cell with nonzero form has a simple quotient, and a nonempty cell with trivial
-radical is itself simple. These are the modules from which the simple modules of a cellular
-algebra are classified.
+nondegeneracy is equivalent to triviality of the cell radical, which holds whenever the Gram
+determinant is a non-zero-divisor (and is equivalent to nonvanishing of the Gram determinant over
+an integral domain). Over a field every proper submodule is contained in this radical, so a cell
+with nonzero form has a simple quotient and is itself simple precisely when its radical vanishes,
+and any nonempty cell with trivial radical is simple. These are the modules from which the simple
+modules of a cellular algebra are classified.
 
 The module uses the existing matrix representation `CellularBasis.cellRep`; its underlying
 scalar module is identified with the functions on the cell's index set by `cellModuleEquiv`.
@@ -35,9 +40,9 @@ No finiteness of the set of cells is required.
 ## References
 
 * J. J. Graham and G. I. Lehrer, *Cellular algebras*, Invent. Math. 123 (1996), 1–34,
-  Definition 2.1 and Proposition 2.4. The cell modules and simple radical quotients constructed
-  here lead to the classification in Theorem 3.4; this file does not prove completeness or
-  pairwise non-isomorphism.
+  Definition 2.1, Proposition 2.4, and Lemma 2.5. The cell modules and simple radical quotients
+  constructed here lead to the classification in Theorem 3.4; this file does not prove
+  completeness or pairwise non-isomorphism.
 -/
 
 public section
@@ -178,6 +183,65 @@ theorem basis_smul_eq_zero_of_not_le {μ ν : Λ} (h : ¬ μ ≤ ν) (x y : M ν
     (w : c.CellModule μ) : c.basis ⟨ν, x, y⟩ • w = 0 :=
   c.basis_smul_eq_zero_of_ne_of_not_lt (fun hEq ↦ h hEq.le) (fun hlt ↦ h hlt.le) x y w
 
+/-- `A(≤ν)` acts as zero on `c.CellModule μ` whenever `¬ μ ≤ ν`. -/
+theorem smul_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν)
+    (m : c.CellModule μ) : x • m = 0 := by
+  apply (c.cellModuleEquiv μ).injective
+  simp [c.cellRep_eq_zero_of_mem_leSpan h hx]
+
+/-- `A(≤ν)` acts as zero on any quotient of `c.CellModule μ` whenever `¬ μ ≤ ν`. -/
+theorem smul_quotient_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν)
+    {N : Submodule A (c.CellModule μ)} (m : c.CellModule μ ⧸ N) : x • m = 0 := by
+  induction m using Submodule.Quotient.induction_on with
+  | _ y =>
+    rw [← Submodule.Quotient.mk_smul, c.smul_eq_zero_of_mem_leSpan h hx, Submodule.Quotient.mk_zero]
+
+/-- If `c.gramMatrix ν t s` is a unit, then every element of `c.CellModule ν` lies in the
+`c.leSpan ν`-orbit of `c.cellBasis ν s`. -/
+theorem exists_mem_leSpan_smul_cellBasis_eq {ν : Λ} {t s : M ν}
+    (hts : IsUnit (c.gramMatrix ν t s)) (x : c.CellModule ν) :
+    ∃ a ∈ c.leSpan ν, a • c.cellBasis ν s = x := by
+  obtain ⟨u, hu⟩ := hts
+  refine ⟨∑ w, ((c.cellBasis ν).repr x w * u.inv) • c.basis ⟨ν, w, t⟩,
+    sum_mem fun w _ ↦ Submodule.smul_mem _ _ (c.basis_self_mem_leSpan ν w t), ?_⟩
+  have hstep (w : M ν) :
+      (((c.cellBasis ν).repr x w * u.inv) • c.basis ⟨ν, w, t⟩) • c.cellBasis ν s =
+        (c.cellBasis ν).repr x w • c.cellBasis ν w := by
+    rw [smul_assoc, c.basis_smul, c.cellForm_cellBasis, ← hu, smul_smul, mul_assoc,
+      u.inv_val, mul_one]
+  rw [Finset.sum_smul]
+  simp_rw [hstep]
+  exact (c.cellBasis ν).sum_repr x
+
+/-- Over a commutative ring without zero divisors, a nonzero `A`-linear map from a cell module with
+nonzero form into another cell module forces `μ = ν ∨ μ < ν`. -/
+theorem eq_or_lt_of_linearMap_cellModule_ne_zero [NoZeroDivisors R] {ν μ : Λ}
+    (hν : c.cellForm ν ≠ 0) {f : c.CellModule ν →ₗ[A] c.CellModule μ} (hf : f ≠ 0) :
+    μ = ν ∨ μ < ν := by
+  by_contra! h
+  obtain ⟨t, s, hts⟩ := c.exists_gramMatrix_ne_zero hν
+  apply hf
+  have h0 (u : M ν) : f (c.cellBasis ν u) = 0 := by
+    have hsmul : c.gramMatrix ν t s • f (c.cellBasis ν u) = 0 := by
+      rw [← LinearMap.map_smul_of_tower, ← c.cellForm_cellBasis ν t s,
+        ← c.basis_smul ν u t (c.cellBasis ν s), map_smul,
+        c.basis_smul_eq_zero_of_ne_of_not_lt h.1 h.2]
+    apply (c.cellModuleEquiv μ).injective
+    ext i
+    have hi := congrFun (congrArg (c.cellModuleEquiv μ) hsmul) i
+    simp only [map_smul, Pi.smul_apply, smul_eq_mul, map_zero, Pi.zero_apply, mul_eq_zero] at hi
+    exact hi.resolve_left hts
+  have hres : f.restrictScalars R = 0 := (c.cellBasis ν).ext h0
+  ext x
+  exact LinearMap.congr_fun hres x
+
+/-- Order form of `eq_or_lt_of_linearMap_cellModule_ne_zero`: over a commutative ring without zero
+divisors, a nonzero `A`-linear map `c.CellModule ν →ₗ[A] c.CellModule μ` from a cell with nonzero
+form implies `μ ≤ ν`. -/
+theorem le_of_linearMap_cellModule_ne_zero [NoZeroDivisors R] {ν μ : Λ}
+    (hν : c.cellForm ν ≠ 0) {f : c.CellModule ν →ₗ[A] c.CellModule μ} (hf : f ≠ 0) : μ ≤ ν :=
+  le_of_eq_or_lt (c.eq_or_lt_of_linearMap_cellModule_ne_zero hν hf)
+
 /-- Given a left `A`-module `S`, an index `t₀ : M μ`, and a vector `x₀ : S` annihilated by
 `c.lowerSpan μ`, standard coordinates induce an `A`-linear homomorphism `c.CellModule μ →ₗ[A] S`
 sending `c.cellBasis μ u` to `c.basis ⟨μ, u, t₀⟩ • x₀`. -/
@@ -278,6 +342,12 @@ theorem nondegenerate_gramMatrix_iff_cellRadical_eq_bot (μ : Λ) :
     (c.gramMatrix μ).Nondegenerate ↔ c.cellRadical μ = ⊥ := by
   rw [← c.toMatrix_cellBasis_cellForm μ, LinearMap.BilinForm.nondegenerate_toMatrix_iff,
     c.nondegenerate_cellForm_iff_cellRadical_eq_bot]
+
+/-- Over any commutative ring, if `(c.gramMatrix μ).det` is a non-zero-divisor, then
+`c.cellRadical μ = ⊥`. -/
+theorem cellRadical_eq_bot_of_det_gramMatrix_mem_nonZeroDivisors {μ : Λ}
+    (h : (c.gramMatrix μ).det ∈ nonZeroDivisors R) : c.cellRadical μ = ⊥ :=
+  (c.nondegenerate_gramMatrix_iff_cellRadical_eq_bot μ).mp (.of_det_mem_nonZeroDivisors h)
 
 section Map
 
@@ -449,15 +519,30 @@ theorem isSimpleModule_cellModule_quotient_iff :
   exact ⟨fun h => by simpa using h.ne_top, d.isCoatom_cellRadical μ⟩
 
 variable {μ} in
+/-- Over a field, a cell module whose form is nonzero is itself simple precisely when its radical is
+trivial. -/
+theorem isSimpleModule_cellModule_iff_of_cellForm_ne_zero (h : d.cellForm μ ≠ 0) :
+    IsSimpleModule B (d.CellModule μ) ↔ d.cellRadical μ = ⊥ :=
+  ⟨fun _ ↦ (eq_bot_or_eq_top (d.cellRadical μ)).resolve_right
+      (mt (d.cellRadical_eq_top_iff μ).mp h),
+    fun hbot ↦ ((d.cellRadical μ).quotEquivOfEqBot hbot).symm.isSimpleModule_iff.mpr
+      ((d.isSimpleModule_cellModule_quotient_iff μ).mpr h)⟩
+
+variable {μ} in
 /-- Over a field, a nonempty cell module with trivial cell radical is simple. -/
 theorem isSimpleModule_cellModule_of_cellRadical_eq_bot [Nonempty (M μ)]
     (h : d.cellRadical μ = ⊥) : IsSimpleModule B (d.CellModule μ) := by
   have : Nontrivial (d.CellModule μ) := inferInstanceAs (Nontrivial (M μ → K))
-  have hform : d.cellForm μ ≠ 0 :=
-    mt (d.cellRadical_eq_top_iff μ).mpr (h ▸ bot_ne_top)
-  have : IsSimpleModule B (d.CellModule μ ⧸ d.cellRadical μ) :=
-    (d.isSimpleModule_cellModule_quotient_iff μ).mpr hform
-  exact IsSimpleModule.congr ((d.cellRadical μ).quotEquivOfEqBot h).symm
+  exact (d.isSimpleModule_cellModule_iff_of_cellForm_ne_zero
+    (mt (d.cellRadical_eq_top_iff μ).mpr (h ▸ bot_ne_top))).mpr h
+
+variable {μ} in
+/-- Over a field, when `d.cellForm μ ≠ 0`, there is a standard basis vector of `d.CellModule μ`
+whose `d.leSpan μ`-orbit is the entire cell module (Graham–Lehrer, Lemma 2.5). -/
+theorem exists_cellBasis_forall_exists_mem_leSpan_smul_eq (hμ : d.cellForm μ ≠ 0) :
+    ∃ s : M μ, ∀ x : d.CellModule μ, ∃ a ∈ d.leSpan μ, a • d.cellBasis μ s = x := by
+  obtain ⟨_, s, hts⟩ := d.exists_gramMatrix_ne_zero hμ
+  exact ⟨s, fun x ↦ d.exists_mem_leSpan_smul_cellBasis_eq (isUnit_iff_ne_zero.mpr hts) x⟩
 
 end Field
 

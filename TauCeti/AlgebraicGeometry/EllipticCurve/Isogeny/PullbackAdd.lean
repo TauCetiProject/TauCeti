@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PolePoints
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # Adding coordinate pullbacks

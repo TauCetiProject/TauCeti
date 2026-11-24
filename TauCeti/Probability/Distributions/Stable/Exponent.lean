@@ -311,9 +311,9 @@ private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
 private theorem continuousAt_stableCharacteristicExponent_im_params_one {u : ℝ} (hu : u ≠ 0)
     (β : ℝ) :
     ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
-      (stableCharacteristicExponent p.1.1 p.2 u).im) (⟨1, by norm_num⟩, β) := by
+      (stableCharacteristicExponent p.1.val p.2 u).im) (⟨1, by norm_num⟩, β) := by
   have ha : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
-      (⟨1, by norm_num⟩, β) := (continuous_subtype_val.comp continuous_fst).continuousAt
+      (⟨1, by norm_num⟩, β) := (continuous_subtypeVal.comp continuous_fst).continuousAt
   -- Both divided differences extend continuously, with a nonzero cosine derivative.
   have hd := (Real.hasStrictDerivAt_const_rpow (abs_pos.mpr hu) 1).hasDerivAt
   have hc := hasDerivAt_cos_pi_mul_div_two_one
@@ -332,20 +332,20 @@ private theorem continuousAt_stableCharacteristicExponent_im_params_one {u : ℝ
 throughout `0 < α ≤ 2`. In particular, the logarithmic branch is the limit at shape one. -/
 theorem continuous_stableCharacteristicExponent_params (u : ℝ) :
     Continuous (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
-      stableCharacteristicExponent p.1.1 p.2 u) := by
+      stableCharacteristicExponent p.1.val p.2 u) := by
   by_cases hu : u = 0
   · subst u
     simpa only [stableCharacteristicExponent_zero] using
       (continuous_const : Continuous fun _ : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (0 : ℂ))
-  have hp : Continuous (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ |u| ^ p.1.1) :=
-    continuous_const.rpow (continuous_subtype_val.comp continuous_fst)
+  have hp : Continuous (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ |u| ^ p.1.val) :=
+    continuous_const.rpow (continuous_subtypeVal.comp continuous_fst)
       (fun _ ↦ Or.inl (abs_ne_zero.mpr hu))
   apply continuous_iff_continuousAt.mpr
   rintro ⟨⟨α, hα⟩, β⟩
   have ha : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ)) (⟨α, hα⟩, β) :=
-    (continuous_subtype_val.comp continuous_fst).continuousAt
+    (continuous_subtypeVal.comp continuous_fst).continuousAt
   have him : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
-      (stableCharacteristicExponent p.1.1 p.2 u).im) (⟨α, hα⟩, β) := by
+      (stableCharacteristicExponent p.1.val p.2 u).im) (⟨α, hα⟩, β) := by
     by_cases hα1 : α = 1
     · subst α
       exact continuousAt_stableCharacteristicExponent_im_params_one hu β
@@ -361,12 +361,12 @@ theorem continuous_stableCharacteristicExponent_params (u : ℝ) :
       simp only [stableCharacteristicExponent_im_of_ne_one hp1, tan_eq_sin_div_cos,
         Pi.mul_apply, Pi.div_apply, Function.comp_apply]
   have h : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
-      ((-|u| ^ p.1.1 : ℝ) : ℂ) + (stableCharacteristicExponent p.1.1 p.2 u).im * Complex.I)
+      ((-|u| ^ p.1.val : ℝ) : ℂ) + (stableCharacteristicExponent p.1.val p.2 u).im * Complex.I)
       (⟨α, hα⟩, β) := hp.continuousAt.neg.ofReal.add (him.ofReal.mul_const Complex.I)
   apply h.congr_of_eventuallyEq
   exact Filter.Eventually.of_forall fun p ↦ by
     dsimp only
-    rw [← stableCharacteristicExponent_re p.1.2.1.ne' p.2 u]
+    rw [← stableCharacteristicExponent_re p.1.property.1.ne' p.2 u]
     exact (Complex.re_add_im _).symm
 
 /-- The location in Nolan's `S₁` parameterization corresponding to an `S₀` location `m`. -/

@@ -180,7 +180,7 @@ theorem finite_isotypicComponents [ρ.IsIrreducible] [N.FiniteIndex] :
   obtain ⟨n, hn⟩ := QuotientGroup.mk_out_eq_mul N g
   refine ⟨g, ?_⟩
   dsimp only
-  rw [hn, ← conjSubrep_conjSubrep, conjSubrep_eq_self_of_mem n.2]
+  rw [hn, ← conjSubrep_conjSubrep, conjSubrep_eq_self_of_mem n.property]
 
 /-- **The restriction is isotypic exactly when one constituent is fixed by all of `G`.**  The
 right-hand side says that the inertia group of `σ` is all of `G`; Clifford's theorem then leaves the

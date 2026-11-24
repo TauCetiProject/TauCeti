@@ -96,7 +96,7 @@ private theorem binaryFormMonomialBasis_repr_periodPolynomial_eq_zero_iff (hk : 
       ModularForm.L (by omega) f ((w - j : ℕ) + 1) = 0 := by
   rw [binaryFormMonomialBasis_repr_periodPolynomial, mul_eq_zero, or_iff_right,
     ModularForm.Λ_natCast_add_one_eq_zero_iff]
-  have hj : (j : ℕ) ≤ w := Nat.lt_succ_iff.1 j.2
+  have hj : (j : ℕ) ≤ w := Nat.lt_succ_iff.1 j.isLt
   exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
     (Nat.cast_ne_zero.2 (Nat.choose_pos hj).ne')) (pow_ne_zero _ I_ne_zero)
 

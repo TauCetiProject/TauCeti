@@ -401,7 +401,7 @@ theorem finrank_puncture_eq (C : LinearCode F ι) (s : Set ι)
   rw [puncture, ← LinearMap.range_domRestrict]
   apply LinearMap.finrank_range_of_inj
   intro x y hxy
-  refine Subtype.ext (sub_eq_zero.mp (h _ (sub_mem x.2 y.2) fun j ↦ ?_))
+  refine Subtype.ext (sub_eq_zero.mp (h _ (sub_mem x.property y.property) fun j ↦ ?_))
   simpa [sub_eq_zero] using congrFun hxy j
 
 /-- Shortening preserves the dimension of the subcode of words supported on the retained
@@ -419,7 +419,7 @@ theorem finrank_shorten_eq (C : LinearCode F ι) (s : Set ι) :
   funext i
   by_cases hi : i ∈ s
   · simpa [f, LinearMap.funLeft_apply] using congrFun hxy ⟨i, hi⟩
-  · exact (Submodule.mem_pi.mp x.2.2 i hi).trans (Submodule.mem_pi.mp y.2.2 i hi).symm
+  · exact (Submodule.mem_pi.mp x.property.2 i hi).trans (Submodule.mem_pi.mp y.property.2 i hi).symm
 
 /-- Shortening cannot increase dimension. -/
 theorem finrank_shorten_le (C : LinearCode F ι) [FiniteDimensional F C] (s : Set ι) :
