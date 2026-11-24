@@ -608,10 +608,8 @@ theorem freeLoopTorusClassHom_freeLoopHomotopyGroupHom (x : Q) (a : HomotopyGrou
   have h : HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β')) =
         HomotopyGroup.pathLoopSpaceMulEquiv 0 ⟦(genLoopEquivOfUnique (Fin 1)).symm β'⟧ := by
-    -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of
-    -- `genLoopEquivOfUnique (Fin 1)`, so its inverse is computed on representatives
-    rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_apply]
-    rfl
+    rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_apply,
+      HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk]
   rw [Equiv.symm_apply_apply] at h
   rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk, ← h]
   refine freeLoopTorusClassHom_eq_hurewiczIntHom β' _ fun t ↦ ?_

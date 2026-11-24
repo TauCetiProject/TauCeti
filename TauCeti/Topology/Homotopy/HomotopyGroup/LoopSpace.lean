@@ -472,6 +472,15 @@ theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (
       pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
   by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
 
+/-- The inverse of `pi1MulEquivFundamentalGroup` sends the class of a loop `γ` to the class of the
+corresponding cube loop `(genLoopEquivOfUnique (Fin 1)).symm γ`. -/
+theorem pi1MulEquivFundamentalGroup_symm_fromPath_mk (γ : Path x x) :
+    pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm γ⟧ :=
+  -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of
+  -- `genLoopEquivOfUnique (Fin 1)`, so its inverse is computed on representatives
+  rfl
+
 end HomotopyGroup
 
 /-- The square `(s, t) ↦ β s t` of a double loop `β`, a loop at the constant loop in the loop
@@ -498,11 +507,7 @@ theorem HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk
     (β : Ω (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
       ⟦GenLoop.fromDoubleLoop β⟧ := by
-  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
-  -- representatives
-  have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
-      ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
-  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h,
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, pi1MulEquivFundamentalGroup_symm_fromPath_mk,
     pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
   rw [GenLoop.fromDoubleLoop_apply, GenLoop.genLoopLoopHomeomorph_apply,

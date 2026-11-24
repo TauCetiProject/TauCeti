@@ -595,13 +595,6 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
       SphericalPeriodGroup.ofHomotopyGroup ω c x
         (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
-  -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of `genLoopEquivOfUnique (Fin 1)`
-  -- (`homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`), so its inverse sends the class of a
-  -- loop to the class of the corresponding generalized loop by definition.
-  have h : HomotopyGroup.pi1MulEquivFundamentalGroup.symm
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β))) =
-        ⟦(genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β)⟧ :=
-    rfl
   have htorus := freeLoopTorusClassHom_eq_hurewiczIntHom β
     (GenLoop.map ⟨Subtype.val, continuous_subtypeVal⟩ (coe_constContractibleLoop x)
       ((genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β))) fun t ↦ by
@@ -612,7 +605,8 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β)))) =
         ⟦GenLoop.map ⟨Subtype.val, continuous_subtypeVal⟩ (coe_constContractibleLoop x)
           ((genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β))⟧ := by
-    rw [contractibleLoopsHomotopyGroupMulEquiv_apply, h, HomotopyGroup.map_mk]
+    rw [contractibleLoopsHomotopyGroupMulEquiv_apply,
+      HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk, HomotopyGroup.map_mk]
   refine PeriodGroup.ext ?_ ?_ <;>
     simp only [SphericalPeriodGroup.area_ofContractibleLoopsHomotopyGroup,
       SphericalPeriodGroup.chern_ofContractibleLoopsHomotopyGroup,
