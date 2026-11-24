@@ -54,6 +54,9 @@ is the special case that matters downstream.
 * `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt`: a map from a
   real normed space into a manifold with continuous Riemannian metric is Lipschitz
   on a ball around each point where it is `C¹`.
+* `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_extChartAt_symm_of_isCompact`: on a
+  boundaryless manifold, the inverse of an extended chart is Lipschitz, for the ambient distance,
+  on each compact subset of the chart target.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
@@ -442,6 +445,27 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
   apply exists_lt_of_riemannianEDist_lt
   rw [← IsRiemannianManifold.out (I := I) x y, edist_dist]
   exact (ENNReal.ofReal_lt_ofReal_iff (dist_nonneg.trans_lt hr)).2 hr
+
+section LocalLipschitz
+
+variable [I.Boundaryless] [IsManifold I 1 M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The inverse chart is Lipschitz on compact sets.** On a boundaryless manifold with a
+continuous Riemannian metric, the inverse of the extended chart at `x` is Lipschitz, from the norm
+distance of the model space to the ambient distance, on every compact subset of the chart
+target. -/
+theorem exists_lipschitzOnWith_extChartAt_symm_of_isCompact (x : M) {K : Set E}
+    (hK : IsCompact K) (hKt : K ⊆ (extChartAt I x).target) :
+    ∃ C : ℝ≥0, LipschitzOnWith C (extChartAt I x).symm K := by
+  refine LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hK fun z hz ↦ ?_
+  have hsmooth : ContMDiffAt 𝓘(ℝ, E) I 1 (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds (hKt hz))
+  obtain ⟨r, hr, C, hC⟩ := exists_lipschitzOnWith_of_contMDiffAt hsmooth
+  exact ⟨C, Metric.ball z r, mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds z hr), hC⟩
+
+end LocalLipschitz
 
 end PseudoMetric
 
