@@ -88,8 +88,10 @@ theorem toNatEndModule_map_hom_apply {Y Y' : D} (f : Y ⟶ Y') (y : F.obj Y) :
 
 /-- The lift of a faithful functor to modules over its natural endomorphisms is faithful. -/
 instance [F.Faithful] : F.toNatEndModule.Faithful where
-  map_injective h := F.map_injective (ModuleCat.hom_ext (LinearMap.ext fun y ↦
-    congrArg (fun φ ↦ φ.hom y) h))
+  map_injective h := F.map_injective (ModuleCat.hom_ext (LinearMap.ext fun y ↦ by
+    have hy := congrArg (fun φ ↦ φ.hom y) h
+    simp only [toNatEndModule_map_hom_apply] at hy
+    exact hy))
 
 end Ring
 

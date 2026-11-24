@@ -107,27 +107,6 @@ theorem hullModuleFunctor_map_hom_hom_apply {Y Y' : (subquotientHull X).FullSubc
 
 end Functor
 
-section Biproduct
-
-variable {R : Type u'} [Ring R] [Preadditive C] (ω : C ⥤ ModuleCat.{w} R)
-
-/-- A morphism out of a direct sum of copies of `P`, applied after the `j`-th inclusion on
-fibres, acts as its `j`-th component. -/
-@[simp]
-private lemma map_biproductDesc_map_ι_apply {ι : Type*} {P Y : C} [HasBiproduct fun _ : ι ↦ P]
-    (f : ι → (P ⟶ Y)) (j : ι) (v : ω.obj P) :
-    (ω.map (biproduct.desc f)).hom ((ω.map (biproduct.ι (fun _ ↦ P) j)).hom v) =
-      (ω.map (f j)).hom v := by
-  rw [← ModuleCat.comp_apply, ← ω.map_comp, biproduct.ι_desc]
-
-/-- On fibres, `ω g` kills the image of `ω f` when `f ≫ g = 0`. -/
-private lemma map_map_apply_eq_zero [ω.PreservesZeroMorphisms] {A B Y : C} {f : A ⟶ B}
-    {g : B ⟶ Y} (h : f ≫ g = 0) (u : ω.obj A) : (ω.map g).hom ((ω.map f).hom u) = 0 := by
-  rw [← ModuleCat.comp_apply, ← ω.map_comp, h]
-  simp
-
-end Biproduct
-
 section Equivalence
 
 attribute [local instance] Abelian.hasFiniteBiproducts
@@ -281,16 +260,19 @@ private lemma exists_iso (M : FGModuleCat.{w} (End ((subquotientHull X).ι ⋙ �
     (subquotientHull X).prop_of_epi (cokernel.π f) hQ
   let π := ((subquotientHull X).ι ⋙ ω).toNatEndModule.map
     (ObjectProperty.homMk (Y := ⟨_, hY⟩) (cokernel.π f))
-  have hπ : Function.Surjective π.hom :=
-    (ModuleCat.epi_iff_surjective (ω.map (cokernel.π f))).1 inferInstance
+  have hπ : Function.Surjective π.hom := fun z ↦ by
+    obtain ⟨v, hv⟩ := (ModuleCat.epi_iff_surjective (ω.map (cokernel.π f))).1 inferInstance z
+    exact ⟨v, (toNatEndModule_map_hom_apply _ _ v).trans hv⟩
   have := preservesHomology_of_preservesEpis_and_kernels ω
   have hex := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).1
     ((ShortComplex.exact_cokernel f).map ω)
   have hker : LinearMap.ker π.hom = LinearMap.ker ρ := by
     ext v
-    refine ⟨fun hv ↦ (hf v).2 (hex hv), fun hv ↦ ?_⟩
+    refine ⟨fun hv ↦ (hf v).2 (hex ((toNatEndModule_map_hom_apply _ _ v).symm.trans
+      (LinearMap.mem_ker.1 hv))), fun hv ↦ ?_⟩
     obtain ⟨u, rfl⟩ := (hf v).1 hv
-    exact LinearMap.mem_ker.2 (map_map_apply_eq_zero ω (cokernel.condition f) u)
+    exact LinearMap.mem_ker.2 ((toNatEndModule_map_hom_apply _ _ _).trans
+      (map_map_apply_eq_zero ω (cokernel.condition f) u))
   exact ⟨⟨_, hY⟩, ⟨LinearEquiv.toModuleIso ((π.hom.quotKerEquivOfSurjective hπ).symm ≪≫ₗ
     Submodule.quotEquivOfEq _ _ hker ≪≫ₗ ρ.quotKerEquivOfSurjective hρ)⟩⟩
 
@@ -299,7 +281,8 @@ under `ω` of a morphism. -/
 instance : (((subquotientHull X).ι ⋙ ω).toNatEndModule).Full where
   map_surjective {Y Y'} φ := by
     obtain ⟨g, hg⟩ := exists_map_eq ω φ.hom
-    exact ⟨ObjectProperty.homMk g, ModuleCat.hom_ext (LinearMap.ext hg)⟩
+    exact ⟨ObjectProperty.homMk g, ModuleCat.hom_ext (LinearMap.ext fun y ↦
+      (toNatEndModule_map_hom_apply _ _ y).trans (hg y))⟩
 
 /-- `hullModuleFunctor` is an equivalence of categories. -/
 instance : (ω.hullModuleFunctor X).IsEquivalence where
