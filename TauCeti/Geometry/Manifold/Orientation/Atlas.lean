@@ -303,8 +303,8 @@ theorem orientationPreservingOn_symm_trans_of_isOrientationPreservingAt
 /-- Charts of the maximal `C¹` atlas which carry the orientation `o` of `M` to one constant
 orientation of the model at every point of their sources change coordinates with positive
 Jacobian determinant. -/
-theorem symm_trans_mem_orientationPreservingGroupoid {o : Manifold.Orientation I M ι}
-    {μ : Orientation ℝ E ι} {e e' : OpenPartialHomeomorph M H}
+theorem symm_trans_mem_orientationPreservingGroupoid_of_isOrientationPreservingAt
+    {o : Manifold.Orientation I M ι} {μ : Orientation ℝ E ι} {e e' : OpenPartialHomeomorph M H}
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
     (ho : ∀ x ∈ e.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e x)
     (ho' : ∀ x ∈ e'.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e' x) :
@@ -406,7 +406,8 @@ theorem isOrientedAtlas_setOf_isOrientationPreservingAt [Nontrivial E]
         exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt hU hrev hxU
           (BoundarylessManifold.isInteriorPoint (x := x))
       exact ⟨e, ⟨he, hpres⟩, hxe⟩
-  symm_trans_mem he he' := symm_trans_mem_orientationPreservingGroupoid he.1 he'.1 he.2 he'.2
+  symm_trans_mem he he' :=
+    symm_trans_mem_orientationPreservingGroupoid_of_isOrientationPreservingAt he.1 he'.1 he.2 he'.2
 
 /-- The oriented atlas of the charts which carry `o` to `μ` determines the orientation `o`
 from the model orientation `μ`. -/
