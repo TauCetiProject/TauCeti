@@ -117,7 +117,7 @@ theorem cmSubgroup_le_iff {P : Subgroup Gal(Ω/ℚ)} :
     cmSubgroup Ω ≤ P ↔
       ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, c₁ * c₂ ∈ P := by
   rw [cmSubgroup, Subgroup.closure_le, Set.mul_subset_iff]
-  rfl
+  simp only [SetLike.mem_coe]
 
 /-- An element of `Ω` is fixed by `cmSubgroup Ω` if and only if every product of two complex
 conjugations fixes it. -/
@@ -352,8 +352,11 @@ theorem map_maximalRealOrCMSubfield {K' : Type*} [Field K'] [CharZero K']
     (maximalRealOrCMSubfield K).map (σ : K →+* K') = maximalRealOrCMSubfield K' := by
   ext y
   have : y ∈ (maximalRealOrCMSubfield K).map (σ : K →+* K') ↔
-      σ.symm y ∈ maximalRealOrCMSubfield K :=
-    Set.mem_image_equiv (f := σ.toEquiv)
+      σ.symm y ∈ maximalRealOrCMSubfield K := by
+    rw [Subfield.mem_map]
+    refine ⟨?_, fun h ↦ ⟨σ.symm y, h, σ.apply_symm_apply y⟩⟩
+    rintro ⟨x, hx, rfl⟩
+    rwa [RingEquiv.coe_toRingHom, σ.symm_apply_apply]
   rw [this, mem_maximalRealOrCMSubfield_iff
     ((toAlgebraicClosure K').comp (σ : K →+* K')),
     mem_maximalRealOrCMSubfield_iff (toAlgebraicClosure K')]
@@ -482,6 +485,8 @@ private theorem apply_comp_eq_of_mem_cmSubgroup [Add A] [IsRightCancelAdd A]
     {g : Gal(Ω/ℚ)} (hg : g ∈ cmSubgroup Ω) (τ : K →+* Ω) : m ((g : Ω →+* Ω).comp τ) = m τ := by
   have hmul (x y : Gal(Ω/ℚ)) : ((x * y : Gal(Ω/ℚ)) : Ω →+* Ω) = (x : Ω →+* Ω).comp y :=
     RingHom.ext fun _ ↦ AlgEquiv.mul_apply _ _ _
+  have h1 (τ : K →+* Ω) : ((1 : Gal(Ω/ℚ)) : Ω →+* Ω).comp τ = τ := RingHom.ext fun _ ↦ by
+    simp only [RingHom.comp_apply, RingHom.coe_coe, AlgEquiv.one_apply]
   induction hg using Subgroup.closure_induction generalizing τ with
   | mem x hx =>
     obtain ⟨c₁, hc₁, c₂, hc₂, rfl⟩ := hx
@@ -489,13 +494,10 @@ private theorem apply_comp_eq_of_mem_cmSubgroup [Add A] [IsRightCancelAdd A]
     have h₁ := hm c₁ hc₁ ((c₂ : Ω →+* Ω).comp τ)
     have h₂ := hm c₂ hc₂ ((c₂ : Ω →+* Ω).comp τ)
     rw [← RingHom.comp_assoc] at h₁ h₂
-    rw [← hmul, mul_self_of_mem_complexConjugations hc₂] at h₂
-    have h1 : ((1 : Gal(Ω/ℚ)) : Ω →+* Ω).comp τ = τ := RingHom.ext fun _ ↦ by
-      simp only [RingHom.comp_apply, RingHom.coe_coe, AlgEquiv.one_apply]
-    rw [h1] at h₂
+    rw [← hmul, mul_self_of_mem_complexConjugations hc₂, h1] at h₂
     rw [hmul]
     exact add_right_cancel (h₁.trans h₂.symm)
-  | one => congr 1
+  | one => rw [h1]
   | mul x y _ _ hx hy =>
     rw [hmul, RingHom.comp_assoc, hx, hy]
   | inv x _ hx =>
