@@ -34,8 +34,10 @@ Clifford multiplication by the gradient, `[D, f] = c(grad f)`
 `D` is a differential operator of order at most one
 (`CovariantDerivative.smoothDiracOperator_mem_differentialOperators_one`) with geometric principal
 symbol `σ_geom(D)(ξ) = c(ξ♯)` (`CovariantDerivative.sectionPrincipalSymbol_smoothDiracOperator`).
-When `V` carries a fibre metric for which each `c(v)` is skew-adjoint and `c` satisfies the Clifford
-relation `c(v)² = -‖v‖²`, the symbol satisfies `σ(ξ)* σ(ξ) = ‖ξ‖² Id`, so `D` is of Dirac type
+If `c` satisfies the Clifford relation `c(v)² = -‖v‖²`, then `D²` is of Laplace type with constant
+`1` (`CovariantDerivative.isSectionLaplaceType_smoothDiracOperator_comp`). When `V` carries a
+fibre metric for which each `c(v)` is skew-adjoint and `c` satisfies the Clifford relation, the
+symbol satisfies `σ(ξ)* σ(ξ) = ‖ξ‖² Id`, so `D` is of Dirac type
 (`CovariantDerivative.isDiracType_smoothDiracOperator`); in particular it is elliptic.
 
 **Formal self-adjointness.** Suppose that the connection is metric, each `c(v)` is skew-adjoint,
@@ -58,9 +60,7 @@ for smooth sections one of which has compact support
 (`CovariantDerivative.IsMetricCompatible.integral_inner_diracOperator_left_eq_right` and its
 variant `integral_inner_diracOperator_left_eq_right_of_isCompact_left`):
 the Dirac operator is its own formal adjoint
-(`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothDiracOperator`). Consequently `D²` is
-of Laplace type with constant `1`
-(`CovariantDerivative.IsMetricCompatible.isSectionLaplaceType_smoothDiracOperator_comp`), and
+(`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothDiracOperator`). Consequently
 `∫ ⟪D² σ, σ⟫ dV = ∫ ‖D σ‖² dV` for every compactly supported smooth section `σ`
 (`CovariantDerivative.IsMetricCompatible.integral_inner_diracOperator_diracOperator_self`), the
 identity through which the Weitzenböck formula for `D²` becomes an integral energy identity.
@@ -77,6 +77,8 @@ identity through which the Weitzenböck formula for `D²` becomes an integral en
   one.
 * `CovariantDerivative.sectionPrincipalSymbol_smoothDiracOperator`: its principal symbol is
   `ξ ↦ c(ξ♯)`.
+* `CovariantDerivative.isSectionLaplaceType_smoothDiracOperator_comp`: under the Clifford relation,
+  `D²` is of Laplace type.
 * `CovariantDerivative.isDiracType_smoothDiracOperator`: under the Clifford relation and
   skew-adjointness, `D` is of Dirac type.
 * `CovariantDerivative.formalAdjoint_flip_eq_neg_diracOperator`: `∇*(c(·) τ) = -D τ`.
@@ -86,8 +88,6 @@ identity through which the Weitzenböck formula for `D²` becomes an integral en
   self-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_diracOperator_diracOperator_self`: the
   energy identity `∫ ⟪D² σ, σ⟫ dV = ∫ ‖D σ‖² dV`.
-* `CovariantDerivative.IsMetricCompatible.isSectionLaplaceType_smoothDiracOperator_comp`: under the
-  Clifford relation, `D²` is of Laplace type.
 
 ## References
 
@@ -215,6 +215,23 @@ theorem sectionPrincipalSymbol_smoothDiracOperator [T2Space M] [FiniteDimensiona
     ← TauCeti.Manifold.mgradient_def]
   exact cov.smulCommutator_smoothDiracOperator_apply hc f σ x
 
+/-- **The square of the Dirac operator is of Laplace type.** If `c` satisfies the Clifford relation
+`c(v) c(v) = -⟪v, v⟫`, then `D² = D ∘ D` is of Laplace type with constant `1`: its principal
+symbol is `c(ξ♯) c(ξ♯) = -‖ξ‖² Id`. -/
+theorem isSectionLaplaceType_smoothDiracOperator_comp [T2Space M] [FiniteDimensional ℝ F]
+    [ContMDiffVectorBundle ∞ F V I]
+    (hcl : ∀ x (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s) :
+    IsSectionLaplaceType ⟨cov.smoothDiracOperator hc ∘ₗ cov.smoothDiracOperator hc,
+      comp_mem_differentialOperators (cov.smoothDiracOperator_mem_differentialOperators_one hc)
+        (cov.smoothDiracOperator_mem_differentialOperators_one hc)⟩ 1 := by
+  refine isSectionLaplaceType_iff.2 ⟨one_pos, fun x hx ξ ↦ LinearMap.ext fun v ↦ ?_⟩
+  rw [sectionPrincipalSymbol_comp hx
+    ⟨_, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩
+    ⟨_, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩ ξ,
+    sectionPrincipalSymbol_smoothDiracOperator, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    hcl, real_inner_self_eq_norm_sq, LinearIsometryEquiv.norm_map, LinearMap.smul_apply,
+    LinearMap.id_apply, one_mul]
+
 end Operator
 
 /-! ### Pointwise identities for a Clifford multiplication by skew-adjoint maps -/
@@ -265,22 +282,6 @@ theorem formalAdjoint_flip_eq_neg_diracOperator
   rw [h, hcomp W hW, ← hWx, add_sub_cancel_left]
 
 end Pointwise
-
-omit [FiniteDimensional ℝ E] in
-/-- The one-form `c(·) τ : w ↦ c(w) τ` of a smooth Clifford multiplication and a smooth section is
-smooth. -/
-private theorem contMDiff_flip [IsManifold I ∞ M] {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-    [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-    [FiberBundle F V] [VectorBundle ℝ F V] {c : Π x : M, TangentSpace I x →L[ℝ] V x →L[ℝ] V x}
-    (hc : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
-        (E := fun y ↦ TangentSpace I y →L[ℝ] V y →L[ℝ] V y) x (c x)))
-    {τ : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞ (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y ((c y).flip (τ y))) := fun x ↦
-  (contMDiffWithinAt_univ.1 ((hc x).contMDiffWithinAt.clm_bundle_flip (b := id))).clm_bundle_apply
-    (hτ x)
 
 /-! ### Dirac type and formal self-adjointness -/
 
@@ -338,7 +339,7 @@ theorem integral_inner_diracOperator_left_eq_right_of_isCompact_left
     (hτ : CMDiff ∞ (T% τ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
     ∫ x, ⟪cov.diracOperator c σ x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, ⟪σ x, cov.diracOperator c τ x⟫ ∂riemannianVolume I M := by
-  have hα := contMDiff_flip hc hτ
+  have hα := hc.clm_bundle_flip.clm_bundle_apply hτ
   have hadj (x : M) : cov.formalAdjoint (leviCivitaConnection I M)
       (fun y ↦ (c y).flip (τ y)) x = -cov.diracOperator c τ x :=
     formalAdjoint_flip_eq_neg_diracOperator cov (leviCivitaConnection I M)
@@ -390,21 +391,6 @@ theorem integral_inner_diracOperator_diracOperator_self (hcov : cov.IsMetricComp
   rw [hcov.integral_inner_diracOperator_left_eq_right hc hskew hcomp
     (cov.contMDiff_diracOperator hc hσ) hσ hσc]
   simp only [real_inner_self_eq_norm_sq]
-
-/-- **The square of the Dirac operator is of Laplace type.** Under the hypotheses of
-`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothDiracOperator`, if moreover `c`
-satisfies the Clifford relation `c(v) c(v) = -⟪v, v⟫`, then `D² = D ∘ D` is of Laplace type with
-constant `1`: its principal symbol is `-‖ξ‖² Id`. -/
-theorem isSectionLaplaceType_smoothDiracOperator_comp (hcov : cov.IsMetricCompatible)
-    (hcl : ∀ x (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s) :
-    IsSectionLaplaceType ⟨cov.smoothDiracOperator hc ∘ₗ cov.smoothDiracOperator hc,
-      comp_mem_differentialOperators (cov.smoothDiracOperator_mem_differentialOperators_one hc)
-        (cov.smoothDiracOperator_mem_differentialOperators_one hc)⟩ 1 :=
-  have : IsContinuousRiemannianBundle F V :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  (isDiracType_smoothDiracOperator hc hskew hcl).isSectionLaplaceType_comp
-    (Q := ⟨_, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩)
-    (hcov.isFormalAdjoint_smoothDiracOperator hc hskew hcomp)
 
 end IsMetricCompatible
 
