@@ -22,6 +22,17 @@ agree as functions, so the `A`-linearity of the first applies to the second.
 For a subring `B` of a commutative ring `R` and an `R`-module `M`, an element of `B` can be moved
 across the tensor sign of `R ⊗[B] M`.
 
+Base change of submodules and of linear maps along an `R`-algebra `A` interacts well with
+elements of `R` that become units in `A`, and with left inverses.
+
+Finally, for an `R`-algebra `A`, not necessarily commutative, and an `A`-module `M`, the action is
+an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
+`TensorProduct.lidOfCompatibleSMul` give this map only for commutative `A`.
+
+## Main definitions
+
+* `TauCeti.tensorSMul`: the action map `A ⊗[R] M →ₗ[A] M`, `a ⊗ m ↦ a • m`.
+
 ## Main results
 
 * `AlgHom.rTensor_toLinearMap_apply_smul`: the scalar-extension comparison induced by an algebra
@@ -30,15 +41,18 @@ across the tensor sign of `R ⊗[B] M`.
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
   `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
+  change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
+  `B ⊗[R] M`.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
-
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
 -/
 
 public section
@@ -54,7 +68,7 @@ theorem AlgHom.rTensor_toLinearMap_apply_smul {R A B M : Type*} [CommSemiring R]
     LinearMap.rTensor M f.toLinearMap (a • z) =
       f a • LinearMap.rTensor M f.toLinearMap z := by
   induction z using TensorProduct.inductionOn with
-  | tmul x m => simp [TensorProduct.smul_tmul', smul_eq_mul, map_mul]
+  | tmul x m => simp [smul_tmul']
   | add x y hx hy => simp [smul_add, hx, hy]
 
 /-- The `A`-linear base change of the structure map `A → B` is, as a function, the base change
@@ -75,6 +89,17 @@ theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A :
     [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     AlgebraTensorModule.lTensor A A f = f.baseChange A :=
   AlgebraTensorModule.ext fun a x => by simp
+
+/-- Cancelling the base change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image
+of `x` under the scalar extension `A ⊗[R] M → B ⊗[R] M` of the structure map `A → B`. -/
+theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor {R A B M : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (b : B) (x : A ⊗[R] M) :
+    cancelBaseChange R A B B M (b ⊗ₜ x) =
+      b • (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
+  | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
 
 /-- The comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` distributing scalar
 extension over a tensor product is natural in both tensor factors. -/
@@ -115,13 +140,13 @@ theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [A
 /-- If `a • x` lies in a submodule `N` and `a` becomes a unit in the algebra `A`, then `1 ⊗ₜ x`
 lies in the base change of `N` to `A`. -/
 theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemiring R]
-    [CommSemiring A] [Algebra R A] [AddCommMonoid M] [Module R M] (N : Submodule R M) {a : R}
+    [Semiring A] [Algebra R A] [AddCommMonoid M] [Module R M] (N : Submodule R M) {a : R}
     (ha : IsUnit (algebraMap R A a)) {x : M} (hx : a • x ∈ N) :
     (1 : A) ⊗ₜ x ∈ N.baseChange A := by
-  obtain ⟨u, hu⟩ := ha
-  have h := (N.baseChange A).smul_mem (↑u⁻¹ : A) (tmul_mem_baseChange_of_mem 1 hx)
-  rwa [← smul_tmul, ← Algebra.algebraMap_eq_smul_one, ← hu, smul_tmul', smul_eq_mul,
-    Units.inv_mul] at h
+  -- `a` acts on `A ⊗[R] M` through the unit `algebraMap R A a`, and `a • (1 ⊗ₜ x) = 1 ⊗ₜ (a • x)`.
+  rw [← (N.baseChange A).smul_mem_iff' ha.unit, Units.smul_def, IsUnit.unit_spec, algebraMap_smul,
+    ← tmul_smul]
+  exact tmul_mem_baseChange_of_mem 1 hx
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/
@@ -131,3 +156,22 @@ theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Sem
     Function.LeftInverse (f.baseChange A) (g.baseChange A) := fun z ↦ by
   rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, h, LinearMap.baseChange_id,
     LinearMap.id_apply]
+
+namespace TauCeti
+
+variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommMonoid M]
+  [Module A M] [Module R M] [IsScalarTower R A M]
+
+/-- The action map `A ⊗[R] M →ₗ[A] M`, `a ⊗ m ↦ a • m`, of a module `M` over an `R`-algebra `A`
+that need not be commutative. -/
+noncomputable def tensorSMul : A ⊗[R] M →ₗ[A] M :=
+  AlgebraTensorModule.lift (LinearMap.toSpanSingleton A (M →ₗ[R] M) LinearMap.id)
+
+variable {R A M}
+
+/-- The action map on a pure tensor. -/
+@[simp]
+theorem tensorSMul_tmul (a : A) (m : M) : tensorSMul R A M (a ⊗ₜ m) = a • m := by
+  simp [tensorSMul]
+
+end TauCeti

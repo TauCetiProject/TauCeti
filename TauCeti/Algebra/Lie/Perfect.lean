@@ -14,6 +14,17 @@ Two morphisms from a perfect Lie algebra into a central extension are equal if t
 projections are equal. Their difference takes values in the central kernel, so they agree
 on brackets, which span the source. This gives the uniqueness part of universal central
 extension constructions without imposing any condition on the map of kernels.
+
+A surjective Lie homomorphism carries the derived series onto the derived series
+(`LieIdeal.derivedSeries_map_eq`), so the image of a perfect Lie algebra is perfect.
+
+## Main results
+
+* `LieHom.eq_of_comp_eq_of_ker_le_center`: morphisms from a perfect Lie algebra into a central
+  extension are determined by their projections.
+* `LieHom.derivedSeries_eq_top_of_surjective`: a term of the derived series that is everything
+  stays everything along a surjective Lie homomorphism; in particular perfectness passes to
+  quotients and isomorphic Lie algebras.
 -/
 
 public section
@@ -52,5 +63,13 @@ theorem eq_of_comp_eq_of_ker_le_center (f g : L →ₗ⁅R⁆ E) (p : E →ₗ�
   | zero => simp
   | add x y _ _ hx hy => simp [hx, hy]
   | smul r x _ hx => simp [hx]
+
+/-- If the `k`-th term of the derived series of `L` is `⊤`, so is that of the target of a
+surjective Lie homomorphism `f : L →ₗ⁅R⁆ Q`. For `k = 1`: the image of a perfect Lie algebra is
+perfect. -/
+theorem derivedSeries_eq_top_of_surjective (f : L →ₗ⁅R⁆ Q) (hf : Function.Surjective f) {k : ℕ}
+    (h : LieAlgebra.derivedSeries R L k = ⊤) : LieAlgebra.derivedSeries R Q k = ⊤ := by
+  rw [← LieIdeal.derivedSeries_map_eq k hf, h, ← f.idealRange_eq_map,
+    f.idealRange_eq_top_of_surjective hf]
 
 end LieHom

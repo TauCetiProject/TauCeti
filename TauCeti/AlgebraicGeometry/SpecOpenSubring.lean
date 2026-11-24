@@ -10,6 +10,9 @@ public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Localization.OpenSubring
 public import TauCeti.Topology.Algebra.Ring.Subring
 
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.RingTheory.Spectrum.Prime.Topology
+
 /-!
 # The spectrum of an open subring of a Huber ring
 
@@ -94,11 +97,10 @@ the basic opens `D(s)` for `s ∈ B` topologically nilpotent in the ambient ring
 theorem nonOpenPrimes_eq_iSup_basicOpen (B : Subring A) :
     nonOpenPrimes B =
       ⨆ s : {s : B // IsTopologicallyNilpotent (s : A)}, PrimeSpectrum.basicOpen s.val := by
-  refine SetLike.ext fun q ↦
-    ((B.mem_nonOpenPrimes).trans ?_).trans TopologicalSpace.Opens.mem_iSup.symm
-  rw [isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical q.isPrime.isRadical,
-    Set.not_subset]
-  simp
+  refine Eq.trans ?_ (PrimeSpectrum.iSup_basicOpen_eq_compl_zeroLocus
+    {s : B | IsTopologicallyNilpotent (s : A)}).symm
+  apply SetLike.coe_injective
+  exact congrArg Set.compl (setOf_isOpen_eq_zeroLocus B)
 
 omit [IsHuberRing A] in
 /-- **Huber, *Continuous valuations*, Lemma 3.7: open primes pull back to open primes.** For an
@@ -145,14 +147,13 @@ theorem isIso_morphismRestrict_nonOpenPrimes (B : Subring A) (hB : IsOpen (B : S
   -- over `D(s)` the morphism is `Spec` of the isomorphism `B_s ≃+* A_s`
   refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
     (morphismRestrictRestrict (Spec.map (CommRingCat.ofHom B.subtype)) _ (V s) ≪≫
-      morphismRestrictEq (Spec.map (CommRingCat.ofHom B.subtype)) himage ≪≫
-        SpecMapRestrictBasicOpenIso (CommRingCat.ofHom B.subtype) s.val)).mpr ?_
+      morphismRestrictEq (Spec.map (CommRingCat.ofHom B.subtype)) himage)).mpr ?_
   have hbij : Function.Bijective (Localization.awayMap B.subtype s.val) := by
     have := (TauCeti.Localization.awayRingEquivOfIsTopologicallyNilpotent (Localization.Away s.val)
       (Localization.Away (B.subtype s.val)) hB s.property).bijective
     rwa [TauCeti.Localization.coe_awayRingEquivOfIsTopologicallyNilpotent] at this
-  have : IsIso (CommRingCat.ofHom (Localization.awayMap B.subtype s.val)) :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr hbij
-  exact (MorphismProperty.isomorphisms.iff _).mpr (inferInstanceAs (IsIso (Spec.map _)))
+  exact (MorphismProperty.isomorphisms.iff _).mpr
+    ((isIso_SpecMap_morphismRestrict_basicOpen_iff
+      (CommRingCat.ofHom B.subtype) s.val).mpr hbij)
 
 end Subring

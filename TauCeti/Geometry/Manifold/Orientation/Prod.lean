@@ -114,6 +114,31 @@ theorem prod_sign (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' 
       simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
         And.intro x.property x'.property⟩ = o.sign α.1 x * o'.sign α.2 x' := (rfl)
 
+/-- On the source of a product chart, the total chart sign of a product lift is the product of the
+total chart signs of its factors. -/
+theorem prod_signAt_of_mem (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n))
+    {α p : M × M'} (hp₁ : p.1 ∈ (chartAt H α.1).source) (hp₂ : p.2 ∈ (chartAt H' α.2).source) :
+    (o.prod o').signAt α p = o.signAt α.1 p.1 * o'.signAt α.2 p.2 := by
+  rw [signAt_of_mem _ (by
+      simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
+        And.intro hp₁ hp₂), signAt_of_mem _ hp₁, signAt_of_mem _ hp₂]
+  exact prod_sign o o' α ⟨p.1, hp₁⟩ ⟨p.2, hp₂⟩
+
+/-- A product with the lift of a model space all of whose chart signs are `1` has the total chart
+signs of its first factor. -/
+@[simp]
+theorem prod_ofHasGroupoid_signAt (o : OrientationLift I M (Fin m))
+    (model : _root_.Orientation ℝ E' (Fin n)) (hn : Fintype.card (Fin n) = Module.finrank ℝ E')
+    (α p : M × E') :
+    (o.prod (ofHasGroupoid (I := 𝓘(ℝ, E')) (M := E') model hn)).signAt α p =
+      o.signAt α.1 p.1 := by
+  by_cases hp : p.1 ∈ (chartAt H α.1).source
+  · have hp₂ : p.2 ∈ (chartAt E' α.2).source := by simp
+    rw [prod_signAt_of_mem _ _ hp hp₂, signAt_of_mem _ hp₂, ofHasGroupoid_sign, mul_one]
+  · rw [signAt_of_notMem _ hp, signAt_of_notMem]
+    simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod,
+      chartAt_self_eq, OpenPartialHomeomorph.refl_source, mem_univ, and_true] using hp
+
 /-- Replacing the first factor lift by its diagonal flip flips the product lift. -/
 @[simp]
 theorem flip_prod (o : OrientationLift I M (Fin m))

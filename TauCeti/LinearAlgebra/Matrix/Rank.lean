@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
@@ -29,6 +30,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.exists_det_submatrix_ne_zero_of_linearIndepOn`: over a field, for a matrix with
+  independent rows, independent columns extend to a column basis with a nonzero maximal minor.
 * `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
   homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
@@ -41,6 +44,12 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   to the independent rows of a matrix `A`, with complementary sizes, the kernel of `A` is the span
   of `x`.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
+* `Matrix.ker_mulVecLin_transpose_mul_diagonal_mul` and
+  `Matrix.rank_transpose_mul_diagonal_mul`: positive diagonal weights preserve the kernel and
+  rank of a Gram matrix over a linearly ordered ring and field, respectively.
+* `Matrix.isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map`: the weighted transpose kernel
+  and column range of a matrix over a linearly ordered field remain complementary after mapping
+  its entries to any field.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
 * `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
@@ -116,24 +125,41 @@ section LinearIndependent
 
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]
 
+/-- **Column basis extension.** For a matrix with linearly independent rows over a field, every
+linearly independent set of columns extends to a column basis: an embedding `e` of the rows into
+the columns whose range contains the set and whose square submatrix is invertible. -/
+theorem exists_det_submatrix_ne_zero_of_linearIndepOn {K : Type*} [Field K] {A : Matrix m n K}
+    (hA : LinearIndependent K A.row) {s : Set n} (hs : LinearIndepOn K A.col s) :
+    ∃ e : m ↪ n, s ⊆ Set.range e ∧ (A.submatrix id e).det ≠ 0 := by
+  classical
+  have := Fintype.ofFinite n
+  -- The columns span, since the rows are independent.
+  have hspan : Submodule.span K (Set.range A.col) = ⊤ := by
+    apply Submodule.eq_top_of_finrank_eq
+    rw [finrank_span_range_col, hA.rank_matrix, Module.finrank_fintype_fun_eq_card]
+  -- Extend `s` to a set `B` of columns forming a basis; it has as many elements as there are rows.
+  obtain ⟨B, -, hsB, hBspan, hBli⟩ := exists_linearIndepOn_extension hs (Set.subset_univ s)
+  have hBtop : ⊤ ≤ Submodule.span K (Set.range fun j : B => A.col j) := by
+    rw [← Set.image_eq_range, ← hspan, Submodule.span_le, ← Set.image_univ]
+    exact hBspan
+  have hcard : Fintype.card m = Fintype.card B := by
+    rw [← Module.finrank_fintype_fun_eq_card (R := K),
+      Module.finrank_eq_card_basis (Module.Basis.mk hBli hBtop)]
+  let e : m ≃ B := Fintype.equivOfCardEq hcard
+  refine ⟨e.toEmbedding.trans (Function.Embedding.subtype _),
+    fun j hj => ⟨e.symm ⟨j, hsB hj⟩, by simp⟩, ?_⟩
+  -- The columns of the square submatrix are the basis `B`.
+  exact ((isUnit_iff_isUnit_det _).1
+    (linearIndependent_col_iff_isUnit.1 (hBli.comp e e.injective))).ne_zero
+
 /-- The field case of `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: a family
 of independent columns of the size of the row rank exists. -/
 private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field {K : Type*}
     [Field K] {A : Matrix m n K} :
     LinearIndependent K A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
-  have : Fintype n := Fintype.ofFinite n
   refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
-  · obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.col
-    have : Finite κ := Finite.of_injective a ha
-    have : Fintype κ := Fintype.ofFinite κ
-    have hcard : Fintype.card m = Fintype.card κ := by
-      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
-        finrank_span_range_col, h.rank_matrix]
-    let e : m ↪ n := (Fintype.equivOfCardEq hcard).toEmbedding.trans ⟨a, ha⟩
-    -- The columns of the square submatrix are the columns `A.col (e j)` (`col_submatrix_eq_comp`).
-    have hcol : LinearIndependent K (A.submatrix id e).col :=
-      hli.comp _ (Fintype.equivOfCardEq hcard).injective
-    exact ⟨e, ((isUnit_iff_isUnit_det _).1 (linearIndependent_col_iff_isUnit.1 hcol)).ne_zero⟩
+  · obtain ⟨e, -, he⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn h (linearIndepOn_empty K _)
+    exact ⟨e, he⟩
   · -- The rows of the square submatrix are the rows of `A` restricted to the columns `e`.
     exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
       (linearIndependent_rows_of_det_ne_zero he)
@@ -259,6 +285,72 @@ theorem ker_mulVecLin_eq_span_of_dotProduct_eq_zero {K ι m n : Type*} [Field K]
   omega
 
 end KernelDimension
+
+section WeightedGram
+
+/-- A Gram matrix with strictly positive diagonal weights has the same kernel as the original
+matrix over a linearly ordered commutative ring. This is the weighted analogue of
+`Matrix.ker_mulVecLin_transpose_mul_self`. -/
+theorem ker_mulVecLin_transpose_mul_diagonal_mul {R m n : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [Fintype n] [DecidableEq m]
+    (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
+    LinearMap.ker (Aᵀ * diagonal w * A).mulVecLin = LinearMap.ker A.mulVecLin := by
+  ext x
+  simp only [LinearMap.mem_ker, mulVecLin_apply, ← mulVec_mulVec]
+  constructor
+  · intro h
+    have h' := congrArg (dotProduct x) h
+    rw [dotProduct_transpose_mulVec, dotProduct_zero] at h'
+    have hs : w ⬝ᵥ (fun i ↦ (A *ᵥ x) i ^ 2) = 0 := by
+      simpa only [mulVec_diagonal, dotProduct, pow_two, mul_assoc] using h'
+    have hz := (TauCeti.dotProduct_eq_zero_iff_of_pos hw (fun i ↦ sq_nonneg ((A *ᵥ x) i))).1 hs
+    ext i
+    exact sq_eq_zero_iff.1 (congrFun hz i)
+  · intro h
+    rw [h, mulVec_zero, mulVec_zero]
+
+/-- A Gram matrix with strictly positive diagonal weights has the same rank as the original
+matrix over a linearly ordered field. This is the weighted analogue of
+`Matrix.rank_transpose_mul_self`. -/
+theorem rank_transpose_mul_diagonal_mul {R m n : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Fintype m] [Finite n] [DecidableEq m]
+    (A : Matrix m n R) (w : m → R) (hw : ∀ i, 0 < w i) :
+    (Aᵀ * diagonal w * A).rank = A.rank := by
+  let := Fintype.ofFinite n
+  have h := congrArg (fun S : Submodule R (n → R) ↦ Module.finrank R S)
+    (ker_mulVecLin_transpose_mul_diagonal_mul A w hw)
+  rw [finrank_ker_mulVecLin, finrank_ker_mulVecLin] at h
+  have hA := A.rank_le_card_width
+  have hGram := (Aᵀ * diagonal w * A).rank_le_card_width
+  omega
+
+/-- After mapping a matrix and its positively weighted transpose from a linearly ordered field
+to any field, the kernel of the weighted transpose complements the column range of the matrix.
+The target field can be unordered. -/
+theorem isCompl_ker_mulVecLin_transpose_mul_diagonal_range_map {R K m n : Type*} [Field R]
+    [LinearOrder R] [IsStrictOrderedRing R] [Field K] [Fintype m] [Fintype n] [DecidableEq m]
+    (A : Matrix m n R) (φ : R →+* K) (w : m → R) (hw : ∀ i, 0 < w i) :
+    IsCompl (LinearMap.ker ((Aᵀ * diagonal w).map φ).mulVecLin)
+      (LinearMap.range (A.map φ).mulVecLin) := by
+  set D := A.map φ
+  set B := (Aᵀ * diagonal w).map φ
+  have hrank : (B * D).rank = D.rank := by
+    dsimp only [B, D]
+    rw [← Matrix.map_mul, Matrix.rank_map, Matrix.rank_map]
+    exact rank_transpose_mul_diagonal_mul A w hw
+  have hrankB : B.rank ≤ D.rank := by
+    dsimp only [B, D]
+    rw [Matrix.rank_map, Matrix.rank_map]
+    exact (Matrix.rank_mul_le_left _ _).trans_eq A.rank_transpose
+  apply (Submodule.isCompl_iff_disjoint _ _ ?_).2
+  · apply Disjoint.symm
+    apply Submodule.disjoint_ker_of_finrank_le B.mulVecLin
+    rw [← LinearMap.range_comp, ← mulVecLin_mul, finrank_range_mulVecLin,
+      finrank_range_mulVecLin, hrank]
+  · rw [finrank_ker_mulVecLin, finrank_range_mulVecLin, Module.finrank_fintype_fun_eq_card]
+    omega
+
+end WeightedGram
 
 section FullColumnRank
 

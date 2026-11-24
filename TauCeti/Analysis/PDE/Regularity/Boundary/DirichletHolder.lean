@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.GlobalHolder
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
-import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
+import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.PDE.Regularity.Boundary.Oscillation
 
 /-!

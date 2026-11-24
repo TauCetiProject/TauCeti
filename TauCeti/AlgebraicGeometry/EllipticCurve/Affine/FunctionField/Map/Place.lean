@@ -17,6 +17,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 -- Proof-only: a valuation bounded on a Dedekind domain is equivalent to an adic valuation, and a
 -- generating set of a height one prime contains an element of order one.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: equivalent surjective valuations are equal.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Places of points under change of the coefficient field
