@@ -522,8 +522,10 @@ lemma tensorRightLinearHomComplexHomotopyAdjunction_homEquiv_quotient_map
         ((HomotopyCategory.quotient _ _).map f) =
       (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) := by
   rw [tensorRightLinearHomComplexHomotopyAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
-  -- `Quot.congr e _` sends the class `Quot.mk _ f` of `f` to the class of `e f` by definition.
-  rfl
+  -- `HomotopyCategory.quotient` sends a chain map `f` to its class `Quot.mk _ f`, and
+  -- `Quot.congr e _` sends that class to the class of `e f`.
+  dsimp only [HomotopyCategory.quotient, Quotient.functor]
+  exact Quot.congr_mk _ _ f
 
 variable {L}
 

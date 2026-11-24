@@ -344,11 +344,14 @@ def derivedHomObjIsoOfQuasiIso (L : DerivedCategory C) {P : CochainComplex C ℤ
         Qh)) := by
     rw [NatTrans.isIso_iff_isIso_app]
     intro M
+    simp only [Functor.whiskerLeft_app, Functor.whiskerRight_app]
     -- The component at `M` is the image under `Qh` of precomposition with `p` on the Hom complex
-    -- into the K-injective replacement of `M` (`linearHomComplexHomotopyFunctor_map_app`).
-    exact (isIso_Qh_map_iff _).2 ((HomotopyCategory.quotient_map_mem_quasiIso_iff _).2
+    -- into the K-injective replacement of `M`, whose class is that replacement itself.
+    have h := (isIso_Qh_map_iff _).2 ((HomotopyCategory.quotient_map_mem_quasiIso_iff _).2
       ((HomologicalComplex.mem_quasiIso_iff _).2
         (quasiIso_linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)))
+    rw [← linearHomComplexHomotopyFunctor_map_app] at h
+    exact h
   @asIso _ _ _ _ _ this
 
 /-- The component of `derivedHomObjIsoOfQuasiIso` at `M` is the image of precomposition with `p`
@@ -357,7 +360,11 @@ on the linear Hom complex into the K-injective replacement of `M`. -/
 lemma derivedHomObjIsoOfQuasiIso_hom_app (L : DerivedCategory C) {P : CochainComplex C ℤ}
     (p : P ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] (M : DerivedCategory C) :
     (derivedHomObjIsoOfQuasiIso R L p).hom.app M = Qh.map ((HomotopyCategory.quotient _ _).map
-      (linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)) :=
-  (rfl)
+      (linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)) := by
+  simp only [derivedHomObjIsoOfQuasiIso]
+  rw [← linearHomComplexHomotopyFunctor_map_app]
+  -- The two sides differ only in writing the K-injective replacement of `M` as the class of its
+  -- underlying complex.
+  rfl
 
 end TauCeti

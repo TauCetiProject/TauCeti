@@ -39,14 +39,23 @@ K-injective replacement of `L`, precomposition identifies `Hom(P, I)` with `RHom
 
 ## Main definitions
 
+* `TauCeti.qhCompFlipObjIsoOfIsKFlat`: for a K-flat complex `P`, the identification of `T(-, P)` on
+  the homotopy category with the totalized tensor product with `P`.
 * `TauCeti.derivedTensorHomAdjOfIsKFlat`: for a K-flat complex `P`, the adjunction between
   `T(-, P)` and the Hom complex out of `P` into K-injective replacements.
-* `TauCeti.derivedTensorHomAdj`: the derived tensor–Hom adjunction `T(-, L) ⊣ RHom_A(L, -)`.
+* `TauCeti.derivedTensorHomAdjOfQuasiIso`: the derived tensor–Hom adjunction
+  `T(-, L) ⊣ RHom_A(L, -)` built from a given K-flat complex with a quasi-isomorphism to the
+  K-injective replacement of `L`.
+* `TauCeti.derivedTensorHomAdj`: the derived tensor–Hom adjunction `T(-, L) ⊣ RHom_A(L, -)`, built
+  from a chosen such model.
 
 ## Main results
 
 * `TauCeti.nonempty_derivedTensorHomAdj`: the functor `T(-, L)` is left adjoint to
   `RHom_A(L, -)`.
+* `TauCeti.derivedTensorHomAdjOfIsKFlat_homEquiv` and
+  `TauCeti.derivedTensorHomAdjOfQuasiIso_homEquiv`: the bijections of these adjunctions, in terms
+  of currying on homotopy categories.
 
 ## References
 
@@ -66,7 +75,24 @@ universe w u
 namespace TauCeti
 
 variable {A : Type u} [CommRing A] [HasDerivedCategory.{w} (ModuleCat.{u} A)]
-  (T : DerivedCategory (ModuleCat.{u} A) ⥤ DerivedCategory (ModuleCat.{u} A) ⥤
+
+/-- Tensoring on the right with `P` commutes with passing to the homotopy category, after
+localizing to `D(A)`: on the class of a complex `K`, the totalized tensor bifunctor of homotopy
+categories is the class of `K ⊗ P` (`CategoryTheory.Functor.map₂HomotopyCategory_map_app`). -/
+@[simps! hom_app]
+private def tensorRightQuotientCompQhIso (P : CochainComplex (ModuleCat.{u} A) ℤ) :
+    ((curriedTensor (CochainComplex (ModuleCat.{u} A) ℤ)).flip.obj P ⋙
+        HomotopyCategory.quotient _ _) ⋙ Qh ≅
+      (HomotopyCategory.quotient _ _ ⋙
+        ((curriedTensor (ModuleCat.{u} A)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
+          ((HomotopyCategory.quotient _ _).obj P)) ⋙ Qh :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    simp only [Functor.comp_map, Functor.flip_obj_map, curriedTensor_map_app, Iso.refl_hom,
+      Functor.map₂HomotopyCategory_map_app, HomologicalComplex.whiskerRight_eq_mapBifunctorMap]
+    -- Both identities are over the class of `K ⊗ P`, written in two ways.
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+variable (T : DerivedCategory (ModuleCat.{u} A) ⥤ DerivedCategory (ModuleCat.{u} A) ⥤
     DerivedCategory (ModuleCat.{u} A))
   (α : (((Functor.whiskeringLeft₂ _).obj DerivedCategory.Q).obj DerivedCategory.Q).obj T ⟶
     curriedTensor (CochainComplex (ModuleCat.{u} A) ℤ) ⋙
@@ -77,36 +103,38 @@ variable {A : Type u} [CommRing A] [HasDerivedCategory.{w} (ModuleCat.{u} A)]
 include α
 
 /-- For a K-flat complex `P`, the derived tensor product `T(-, P)` on the homotopy category is
-the totalized tensor product with `P`. -/
-private def qhCompFlipObjIsoOfIsKFlat (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat] :
+the totalized tensor product with `P`: this is the partial counit `Functor.bifunctorCounit₂ α P`,
+an isomorphism since `P` is K-flat, descended to the homotopy category. -/
+def qhCompFlipObjIsoOfIsKFlat (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat] :
     Qh ⋙ T.flip.obj (Q.obj P) ≅
       ((curriedTensor (ModuleCat.{u} A)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
         ((HomotopyCategory.quotient _ _).obj P) ⋙ Qh :=
-  CategoryTheory.Quotient.natIsoLift _ <| NatIso.ofComponents
-    (F := HomotopyCategory.quotient _ _ ⋙ Qh ⋙ T.flip.obj (Q.obj P))
-    (G := HomotopyCategory.quotient _ _ ⋙
-      ((curriedTensor (ModuleCat.{u} A)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
-        ((HomotopyCategory.quotient _ _).obj P) ⋙ Qh)
-    (fun K ↦ (T.flip.obj (Q.obj P)).mapIso ((quotientCompQhIso _).app K) ≪≫
-      asIso ((α.app K).app P) ≪≫ ((quotientCompQhIso _).app (K ⊗ P)).symm)
-    (fun {K K'} f ↦ by
-      have h₁ := congrArg (fun g ↦ (T.map g).app (Q.obj P))
-        ((quotientCompQhIso (ModuleCat.{u} A)).hom.naturality f)
-      have h₂ := congrArg (fun τ ↦ τ.app P) (α.naturality f)
-      have h₃ := (quotientCompQhIso (ModuleCat.{u} A)).inv.naturality (f ▷ P)
-      dsimp at h₁ h₂ h₃
-      simp only [Functor.map_comp, NatTrans.comp_app] at h₁
-      have key : (T.map (Qh.map ((HomotopyCategory.quotient _ _).map f))).app (Q.obj P) ≫
-          (T.map ((quotientCompQhIso _).hom.app K')).app (Q.obj P) ≫ (α.app K').app P ≫
-            (quotientCompQhIso _).inv.app (K' ⊗ P) =
-          ((T.map ((quotientCompQhIso _).hom.app K)).app (Q.obj P) ≫ (α.app K).app P ≫
-            (quotientCompQhIso _).inv.app (K ⊗ P)) ≫
-              Qh.map ((HomotopyCategory.quotient _ _).map (f ▷ P)) := by
-        rw [reassoc_of% h₁, reassoc_of% h₂, h₃, Category.assoc, Category.assoc]
-      -- The goal is `key` with the components of the composite isomorphisms written out, and with
-      -- the homotopy-category tensor of `f` and `P` written as the class of `f ▷ P`, which is its
-      -- value by `Functor.map₂HomotopyCategory_map_app`.
-      exact key)
+  CategoryTheory.Quotient.natIsoLift _ <| (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (quotientCompQhIso _) _ ≪≫ asIso (Functor.bifunctorCounit₂ α P) ≪≫
+    Functor.isoWhiskerLeft ((curriedTensor _).flip.obj P) (quotientCompQhIso _).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    tensorRightQuotientCompQhIso P ≪≫
+    Functor.associator _ _ _
+
+/-- The component of `qhCompFlipObjIsoOfIsKFlat` at the class of a complex `K` is the derived
+tensor comparison `(α.app K).app P`, conjugated by `quotientCompQhIso`. -/
+@[simp]
+lemma qhCompFlipObjIsoOfIsKFlat_hom_app (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat]
+    (K : CochainComplex (ModuleCat.{u} A) ℤ) :
+    (qhCompFlipObjIsoOfIsKFlat T α P).hom.app ((HomotopyCategory.quotient _ _).obj K) =
+      (T.map ((quotientCompQhIso _).hom.app K)).app (Q.obj P) ≫ (α.app K).app P ≫
+        (quotientCompQhIso _).inv.app (K ⊗ P) := by
+  refine (Quotient.natTransLift_app _ _ _ _ K).trans ?_
+  simp only [Functor.comp_obj, Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom,
+    asIso_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+    Functor.whiskerLeft_app, Functor.associator_hom_app, Functor.associator_inv_app,
+    Functor.bifunctorCounit₂_app, tensorRightQuotientCompQhIso_hom_app, Functor.flip_obj_map,
+    Category.id_comp]
+  -- The two remaining identities live over objects of `D(A)` written through `Qh` and through
+  -- the homotopy-category tensor bifunctor, which agree only after unfolding, so they are
+  -- cancelled by `Category.id_comp` and `Category.comp_id` stated up to that unfolding.
+  congr 2
+  exact (congrArg _ (Category.id_comp _)).trans (Category.comp_id _)
 
 /-- **Tensor–Hom adjunction on K-flat models.** For a K-flat complex `P`, the derived tensor
 product `T(-, P)` is left adjoint to the functor sending `M` to the Hom complex out of `P` into
@@ -130,19 +158,65 @@ def derivedTensorHomAdjOfIsKFlat (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.I
           (isKInjective_linearHomComplex (L := P) ((kInjectiveReplacement _).obj M).as))))
       (fun _ ↦ (kInjectiveReplacementAdjunction _).unit.naturality _))
 
+/-- Under the fully faithful functor `kInjectiveReplacement`, the bijection of
+`derivedTensorHomAdjOfIsKFlat` is currying on homotopy categories
+(`tensorRightLinearHomComplexHomotopyAdjunction`) composed with the adjunction
+`Qh ⊣ kInjectiveReplacement`, after identifying `T(X, P)` with the tensor product of the
+K-injective replacement of `X` with `P` (`qhCompFlipObjIsoOfIsKFlat`). -/
+lemma derivedTensorHomAdjOfIsKFlat_homEquiv (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat]
+    (X Y : DerivedCategory (ModuleCat.{u} A)) (f : (T.flip.obj (Q.obj P)).obj X ⟶ Y) :
+    (kInjectiveReplacement _).map ((derivedTensorHomAdjOfIsKFlat T α P).homEquiv X Y f) =
+      (tensorRightLinearHomComplexHomotopyAdjunction P).homEquiv _ _
+          ((kInjectiveReplacementAdjunction _).homEquiv _ _
+            ((qhCompFlipObjIsoOfIsKFlat T α P).inv.app ((kInjectiveReplacement _).obj X) ≫
+              (T.map ((kInjectiveReplacementAdjunction _).counit.app X)).app (Q.obj P) ≫ f)) ≫
+        (kInjectiveReplacementAdjunction _).unit.app
+          (((linearHomComplexHomotopyFunctor A (ModuleCat.{u} A)).obj
+            (op ((HomotopyCategory.quotient _ _).obj P))).obj
+              ((kInjectiveReplacement _).obj Y)) := by
+  rw [derivedTensorHomAdjOfIsKFlat, Adjunction.restrictFullyFaithful_homEquiv_apply,
+    Functor.FullyFaithful.map_preimage]
+  simp [Adjunction.homEquiv_unit]
+
+/-- **The derived tensor–Hom adjunction on a K-flat model.** For every left derived bifunctor `T`
+of the tensor product of complexes of `A`-modules, every `L` in `D(A)` and every K-flat complex
+`P` with a quasi-isomorphism `p` to the K-injective replacement of `L`, the functor
+`K ↦ T(K, L)` is left adjoint to the derived Hom functor `M ↦ RHom_A(L, M)`. It is
+`derivedTensorHomAdjOfIsKFlat` transported along the identification of `Q.obj P` with `L` and
+along `derivedHomObjIsoOfQuasiIso`. -/
+def derivedTensorHomAdjOfQuasiIso (L : DerivedCategory (ModuleCat.{u} A))
+    {P : CochainComplex (ModuleCat.{u} A) ℤ} [P.IsKFlat]
+    (p : P ⟶ ((kInjectiveReplacement _).obj L).as) [QuasiIso p] :
+    T.flip.obj L ⊣ (derivedHom A (ModuleCat.{u} A)).obj (op L) :=
+  ((derivedTensorHomAdjOfIsKFlat T α P).ofNatIsoLeft
+    (T.flip.mapIso (((asIso (kInjectiveReplacementAdjunction _).counit).app L).symm ≪≫
+      (quotientCompQhIso _).app _ ≪≫ (asIso (Q.map p)).symm)).symm).ofNatIsoRight
+    (derivedHomObjIsoOfQuasiIso A L p).symm
+
+/-- The bijection of `derivedTensorHomAdjOfQuasiIso` is that of `derivedTensorHomAdjOfIsKFlat`,
+conjugated by the identification of `Q.obj P` with `L` and by `derivedHomObjIsoOfQuasiIso`. -/
+lemma derivedTensorHomAdjOfQuasiIso_homEquiv (L : DerivedCategory (ModuleCat.{u} A))
+    {P : CochainComplex (ModuleCat.{u} A) ℤ} [P.IsKFlat]
+    (p : P ⟶ ((kInjectiveReplacement _).obj L).as) [QuasiIso p]
+    (X Y : DerivedCategory (ModuleCat.{u} A)) (f : (T.flip.obj L).obj X ⟶ Y) :
+    (derivedTensorHomAdjOfQuasiIso T α L p).homEquiv X Y f =
+      (derivedTensorHomAdjOfIsKFlat T α P).homEquiv X Y
+          ((T.flip.map (Q.map p ≫ (quotientCompQhIso _).inv.app _ ≫
+            (kInjectiveReplacementAdjunction _).counit.app L)).app X ≫ f) ≫
+        (derivedHomObjIsoOfQuasiIso A L p).inv.app Y := by
+  simp [derivedTensorHomAdjOfQuasiIso, Adjunction.homEquiv_ofNatIsoLeft_apply,
+    Adjunction.homEquiv_ofNatIsoRight_apply]
+
 /-- **The derived tensor–Hom adjunction.** For every left derived bifunctor `T` of the tensor
 product of complexes of `A`-modules and every `L` in `D(A)`, the functor `K ↦ T(K, L)` is left
-adjoint to the derived Hom functor `M ↦ RHom_A(L, M)`. It is built from a chosen K-flat complex
-with a quasi-isomorphism to the K-injective replacement of `L`. -/
+adjoint to the derived Hom functor `M ↦ RHom_A(L, M)`. It is `derivedTensorHomAdjOfQuasiIso` for
+a chosen K-flat complex with a quasi-isomorphism to the K-injective replacement of `L`. -/
 def derivedTensorHomAdj (L : DerivedCategory (ModuleCat.{u} A)) :
     T.flip.obj L ⊣ (derivedHom A (ModuleCat.{u} A)).obj (op L) :=
   let h := CochainComplex.exists_quasiIso_isKFlat_moduleCat ((kInjectiveReplacement _).obj L).as
   have : h.choose.IsKFlat := h.choose_spec.choose_spec.2
   have : QuasiIso h.choose_spec.choose := h.choose_spec.choose_spec.1
-  ((derivedTensorHomAdjOfIsKFlat T α h.choose).ofNatIsoLeft
-    (T.flip.mapIso (((asIso (kInjectiveReplacementAdjunction _).counit).app L).symm ≪≫
-      (quotientCompQhIso _).app _ ≪≫ (asIso (Q.map h.choose_spec.choose)).symm)).symm).ofNatIsoRight
-    (derivedHomObjIsoOfQuasiIso A L h.choose_spec.choose).symm
+  derivedTensorHomAdjOfQuasiIso T α L h.choose_spec.choose
 
 /-- **The derived tensor–Hom adjunction.** For every left derived bifunctor `T` of the tensor
 product of complexes of `A`-modules and every `L` in `D(A)`, the functor `K ↦ T(K, L)` is left
