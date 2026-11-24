@@ -311,14 +311,6 @@ theorem powerSubstitution_mem_degreeLT_iff {B N : ℕ} {F : MvPolynomial (Fin 2)
   rw [Set.mem_ofPred_eq, weight_vecCons_one]
   exact_mod_cast (Polynomial.le_degree_of_ne_zero hc).trans_lt (Polynomial.mem_degreeLT.mp h)
 
-/-- Division with remainder by `B` recovers an exponent `μ` with `μ 0 < B` from its weight
-`μ 0 + B * μ 1`. -/
-private theorem single_mod_add_single_div {B : ℕ} (hB : 0 < B) {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
-    single 0 ((μ 0 + B * μ 1) % B) + single 1 ((μ 0 + B * μ 1) / B) = μ := by
-  refine Finsupp.ext (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
-  · simp [Nat.mod_eq_of_lt hμ]
-  · simp [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ]
-
 /-- **The power substitution as a linear equivalence.** For `0 < B`, `F ↦ F(X, X ^ B)` is an
 `R`-linear equivalence from the polynomials supported on the strip `{μ | μ 0 < B}`, that is of
 `Z`-degree below `B`, onto `R[X]`. On monomials it is the bijection `μ ↦ μ 0 + B * μ 1` of the strip
@@ -328,7 +320,7 @@ def powerSubstitutionEquiv {B : ℕ} (hB : 0 < B) :
   (basisRestrictSupport R _).equiv (Polynomial.basisMonomials R)
     { toFun μ := (μ : Fin 2 →₀ ℕ) 0 + B * (μ : Fin 2 →₀ ℕ) 1
       invFun n := ⟨single 0 (n % B) + single 1 (n / B), by simpa using Nat.mod_lt n hB⟩
-      left_inv μ := Subtype.ext (single_mod_add_single_div hB μ.property)
+      left_inv μ := Subtype.ext (single_mod_add_single_div μ.property)
       right_inv n := by simpa using Nat.mod_add_div n B }
 
 /-- `powerSubstitutionEquiv` is the power substitution. -/
@@ -344,6 +336,7 @@ theorem powerSubstitutionEquiv_apply {B : ℕ} (hB : 0 < B)
 /-- The coefficients of the bivariate preimage of `P` under `powerSubstitutionEquiv` are those of
 `P`: the coefficient of `Z ^ μ 0 W ^ μ 1`, for `μ 0 < B`, is the coefficient of
 `X ^ (μ 0 + B * μ 1)` in `P`. -/
+@[simp]
 theorem coeff_powerSubstitutionEquiv_symm {B : ℕ} (hB : 0 < B) (P : Polynomial R)
     {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
     ((powerSubstitutionEquiv hB).symm P : MvPolynomial (Fin 2) R).coeff μ =
@@ -352,6 +345,14 @@ theorem coeff_powerSubstitutionEquiv_symm {B : ℕ} (hB : 0 < B) (P : Polynomial
   have hP : P = powerSubstitution B F := by
     rw [← powerSubstitutionEquiv_apply hB, LinearEquiv.apply_symm_apply]
   rw [hP, coeff_powerSubstitution (degreeOf_lt_of_mem_restrictSupport F.property hB fun _ h ↦ h) hμ]
+
+/-- The bivariate preimage of `P` under `powerSubstitutionEquiv` has zero coefficient of
+`Z ^ μ 0 W ^ μ 1` for `B ≤ μ 0`, since such `μ` lie outside the strip `{μ | μ 0 < B}`. -/
+@[simp]
+theorem coeff_powerSubstitutionEquiv_symm_of_le {B : ℕ} (hB : 0 < B) (P : Polynomial R)
+    {μ : Fin 2 →₀ ℕ} (hμ : B ≤ μ 0) :
+    ((powerSubstitutionEquiv hB).symm P : MvPolynomial (Fin 2) R).coeff μ = 0 :=
+  notMem_support_iff.mp fun h ↦ (((powerSubstitutionEquiv hB).symm P).property h).not_ge hμ
 
 /-- The bivariate preimage of `P ∈ degreeLT R N` under `powerSubstitutionEquivDegreeLT` is its
 preimage under `powerSubstitutionEquiv`. -/
