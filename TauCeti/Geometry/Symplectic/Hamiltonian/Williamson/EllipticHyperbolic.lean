@@ -78,6 +78,9 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   Darboux basis.
 * `IsNondegenerateQuadraticFamily.exists_mem_span_card_mul_two_eq_finrank_iff`: this
   characterizes the nondegenerate families of elliptic–hyperbolic type.
+* `isSymplectic_maxGenEigenspace_sq_sub`, `apply_eq_zero_of_mem_maxGenEigenspace_sq_sub`: for
+  `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace, and these
+  subspaces are pairwise `ω`-orthogonal for distinct `μ`.
 
 ## References
 
@@ -102,14 +105,14 @@ private theorem comp_neg_X_sq_sub_C (μ : ℝ) : (X ^ 2 - C μ : ℝ[X]).comp (-
   simp [sub_comp]
 
 /-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace. -/
-private theorem isSymplectic_maxGenEigenspace_sq_sub [FiniteDimensional ℝ V]
+theorem isSymplectic_maxGenEigenspace_sq_sub [FiniteDimensional ℝ V]
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (μ : ℝ) :
     ω.IsSymplectic ((aeval A (X ^ 2 - C μ)).maxGenEigenspace 0) :=
   ω.isSymplectic_maxGenEigenspace_aeval hA (comp_neg_X_sq_sub_C μ)
 
 /-- For `A ∈ sp(V, ω)` and `μ ≠ ν`, `ω` pairs the vectors killed by a power of `A² - μ` trivially
 with those killed by a power of `A² - ν`. -/
-private theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
+theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {μ ν : ℝ} (hμν : μ ≠ ν) {v w : V}
     (hv : v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0)
     (hw : w ∈ (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0) : ω v w = 0 := by

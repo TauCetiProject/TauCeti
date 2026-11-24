@@ -23,6 +23,8 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
 * `QuadraticMap.isSymm_polarBilin`: the polar bilinear form of a scalar-valued quadratic map is
   symmetric.
+* `QuadraticMap.span_range_comp_eq_span_range_comp`: precomposition with a linear map preserves
+  equality of the spans of two families of quadratic maps.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
 -/
@@ -83,6 +85,23 @@ theorem isRefl_polarBilin {R M P : Type*} [CommRing R] [AddCommGroup M] [Module 
 theorem isSymm_polarBilin {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     (Q : QuadraticForm R M) : LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y ↦ polar_comm Q x y⟩
+
+/-- Precomposing two families of quadratic maps with the same span with a linear map gives two
+families with the same span. -/
+theorem span_range_comp_eq_span_range_comp {R M N P ι κ : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+    {Q : ι → QuadraticMap R N P} {Q' : κ → QuadraticMap R N P}
+    (h : Submodule.span R (Set.range Q) = Submodule.span R (Set.range Q')) (f : M →ₗ[R] N) :
+    Submodule.span R (Set.range fun i ↦ (Q i).comp f) =
+      Submodule.span R (Set.range fun j ↦ (Q' j).comp f) := by
+  -- Precomposition with `f` is linear in the quadratic map.
+  let φ : QuadraticMap R N P →ₗ[R] QuadraticMap R M P :=
+    { toFun := fun Q ↦ Q.comp f
+      map_add' := fun _ _ ↦ ext fun _ ↦ rfl
+      map_smul' := fun _ _ ↦ ext fun _ ↦ rfl }
+  have hQ : (fun i ↦ (Q i).comp f) = φ ∘ Q := rfl
+  have hQ' : (fun j ↦ (Q' j).comp f) = φ ∘ Q' := rfl
+  rw [hQ, hQ', Set.range_comp, Set.range_comp, ← Submodule.map_span, ← Submodule.map_span, h]
 
 end QuadraticMap
 
