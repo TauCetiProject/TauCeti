@@ -129,7 +129,7 @@ theorem
   -- Interpolation at scale `r`, on a ball of radius `r / 2` in `H` next to each point.
   have hsup (x : E) (hx : x ∈ Hc) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
     simpa only [ENNReal.toReal_ofNat] using hJ.norm_le_add_eLpNorm_toReal_of_halfSpace
-      (mu := volume) hν hr two_ne_zero ENNReal.ofNat_ne_top hH2 (mem_ofPred.1 hx)
+      (mu := volume) hν hr two_ne_zero hH2 (mem_ofPred.1 hx)
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le ha hL (hJ.mono hoc)

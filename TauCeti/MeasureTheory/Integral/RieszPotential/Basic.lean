@@ -109,6 +109,8 @@ Hardy–Littlewood–Sobolev inequality when `p > 1`. The strong-type bound fail
 * `TauCeti.exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's
   inequality.
 * `TauCeti.exists_eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
+* `TauCeti.exists_lintegral_lintegral_mul_enorm_sub_rpow_mul_le`: its bilinear form,
+  `∫∫ a(x) ‖x - y‖ ^ (α - n) b(y) dμ(y) dμ(x) ≤ C ‖a‖_{q'} ‖b‖_p`.
 * `TauCeti.enorm_integral_norm_sub_rpow_smul_le_rieszPotential`,
   `TauCeti.exists_eLpNorm_integral_norm_sub_rpow_smul_le`: the potential of a vector-valued `f`
   is dominated by `I_α f`, so it satisfies the Hardy–Littlewood–Sobolev inequality too.
@@ -538,8 +540,7 @@ private theorem ofReal_rpow_mul_setLIntegral_ball_le_maximalFunction [Nontrivial
       ≤ ENNReal.ofReal (r ^ (α - finrank ℝ E)) *
           (μ (ball x (2 * r)) * maximalFunction μ f x) := by
         gcongr
-        exact setLIntegral_ball_le_measure_mul_maximalFunction (by positivity)
-          measure_ball_lt_top.ne
+        exact setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
     _ = ENNReal.ofReal (2 ^ finrank ℝ E * r ^ α) * μ (ball 0 1) * maximalFunction μ f x := by
         rw [Measure.addHaar_ball μ x (by positivity), ← mul_assoc, ← mul_assoc,
           ← ENNReal.ofReal_mul (by positivity), Real.rpow_sub_natCast hr.ne', mul_pow]
@@ -701,8 +702,8 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   set N := eLpNorm f p μ
   -- If `M f (x) = 0`, every ball integral around `x` vanishes.
   rcases eq_or_ne M 0 with hM | hM
-  · rw [rieszPotential_eq_zero_of_forall_setLIntegral_ball hαd fun r hr => le_antisymm
-      ((setLIntegral_ball_le_measure_mul_maximalFunction hr measure_ball_lt_top.ne).trans_eq
+  · rw [rieszPotential_eq_zero_of_forall_setLIntegral_ball hαd fun r _ => le_antisymm
+      ((setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne).trans_eq
         (by rw [← hM_def, hM, mul_zero])) zero_le]
     exact zero_le
   have hMθ : M ^ (1 - θ) ≠ 0 := by
@@ -884,6 +885,45 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
   exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.eNorm)
+
+/-- **The bilinear Hardy–Littlewood–Sobolev inequality.** For `0 < α`, `1 < p`,
+`1 / q = 1 / p - α / n` and `q'` the Hölder conjugate of `q`, there is `C`, depending only on `μ`,
+`α` and `p`, such that for almost everywhere measurable `a, b : E → ℝ≥0∞`,
+
+`∫∫ a(x) ‖x - y‖ ^ (α - n) b(y) dμ(y) dμ(x) ≤ C ‖a‖_{q'} ‖b‖_p`.
+
+The integral over `y` is `a(x) I_α b (x)`, so this is Hölder's inequality followed by the
+Hardy–Littlewood–Sobolev inequality `TauCeti.exists_eLpNorm_rieszPotential_le`. -/
+theorem exists_lintegral_lintegral_mul_enorm_sub_rpow_mul_le [FiniteDimensional ℝ E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hα : 0 < α) {p q q' : ℝ≥0} (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - α / finrank ℝ E) (hq : q'.HolderConjugate q) :
+    ∃ C : ℝ≥0, ∀ a b : E → ℝ≥0∞, AEMeasurable a μ → AEMeasurable b μ →
+      ∫⁻ x, ∫⁻ y, a x * ‖x - y‖ₑ ^ (α - finrank ℝ E) * b y ∂μ ∂μ ≤
+        C * eLpNorm a q' μ * eLpNorm b p μ := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_rieszPotential_le (F := ℝ≥0∞) μ hα hp hpq
+  refine ⟨C, fun a b ha hb => ?_⟩
+  set I := rieszPotential μ α b
+  have hI : AEMeasurable I μ := aemeasurable_rieszPotential (by simpa using hb)
+  -- For each `x`, the integral over `y` is `a x` times the Riesz potential of `b` at `x`.
+  have hinner (x : E) : ∫⁻ y, a x * ‖x - y‖ₑ ^ (α - finrank ℝ E) * b y ∂μ = a x * I x := by
+    have hk : AEMeasurable (fun y ↦ ‖x - y‖ₑ ^ (α - finrank ℝ E) * b y) μ :=
+      (by fun_prop : Measurable fun y : E ↦ ‖x - y‖ₑ ^ (α - finrank ℝ E)).aemeasurable.mul hb
+    simp_rw [mul_assoc]
+    rw [lintegral_const_mul'' _ hk]
+    simp only [I, rieszPotential_def, eNorm_eq_self]
+  -- Hölder's inequality, then Hardy–Littlewood–Sobolev.
+  simp_rw [hinner]
+  calc ∫⁻ x, a x * I x ∂μ ≤ eLpNorm a q' μ * eLpNorm I q μ := by
+        have h := ENNReal.lintegral_mul_le_Lp_mul_Lq μ hq.coe ha hI
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by exact_mod_cast hq.ne_zero)
+            ENNReal.coe_ne_top ha.aestronglyMeasurable,
+          eLpNorm_eq_lintegral_rpow_eNorm_toReal (by exact_mod_cast hq.symm.ne_zero)
+            ENNReal.coe_ne_top hI.aestronglyMeasurable]
+        simpa only [eNorm_eq_self, ENNReal.coe_toReal, Pi.mul_apply] using h
+    _ ≤ eLpNorm a q' μ * (C * eLpNorm b p μ) := by
+        gcongr
+        exact hC b
+    _ = _ := by ring
 
 section VectorValued
 

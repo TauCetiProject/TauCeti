@@ -194,8 +194,8 @@ private theorem exists_abs_card_idealsLE_sub_le :
   have hκ := (dedekindZeta_residue_pos K).le
   have hpow (y : ℝ) (hy : 1 ≤ y) : 1 ≤ y ^ (1 - (Module.finrank ℚ K : ℝ)⁻¹) :=
     Real.one_le_rpow hy (one_sub_inv_finrank_mem_Ico K).1
-  have hO := (isBigO_card_idealsLE_sub K).isBigO_principal_Ici zero_lt_one
-    (fun y hy ↦ (hpow y hy).trans_eq (Real.norm_of_nonneg (zero_le_one.trans (hpow y hy))).symm)
+  have hO := (isBigO_card_idealsLE_sub K).isBigO_principal_Ici (fun _ ↦ ⟨1, one_pos,
+    fun y hy ↦ (hpow y hy.1).trans_eq (Real.norm_of_nonneg (zero_le_one.trans (hpow y hy.1))).symm⟩)
     fun Y ↦ ⟨(idealsLE K Y).card + dedekindZeta_residue K * Y, fun y hy ↦ by
       have hcard : ((idealsLE K y).card : ℝ) ≤ (idealsLE K Y).card := by
         exact_mod_cast Finset.card_le_card (normLE_mono _ hy.2)
@@ -209,8 +209,8 @@ private theorem exists_abs_card_idealsLE_sub_le :
 /-- **Chebyshev's upper bound** `ψ_K(t) ≤ D t` on `[1, ∞)`, from the prime ideal theorem. -/
 private theorem exists_primePsi_le :
     ∃ D, 0 ≤ D ∧ ∀ t, 1 ≤ t → primePsi K Set.univ t ≤ D * t := by
-  have hO := (primeIdealTheorem K).1.isBigO.isBigO_principal_Ici zero_lt_one
-    (fun t ht ↦ ht.trans_eq (Real.norm_of_nonneg (zero_le_one.trans ht)).symm)
+  have hO := (primeIdealTheorem K).1.isBigO.isBigO_principal_Ici (fun _ ↦ ⟨1, one_pos,
+    fun t ht ↦ ht.1.trans_eq (Real.norm_of_nonneg (zero_le_one.trans ht.1)).symm⟩)
     fun Y ↦ ⟨primePsi K Set.univ Y, fun t ht ↦ by
       rw [Real.norm_of_nonneg (primePsi_nonneg _ t)]
       exact primePsi_mono _ ht.2⟩
@@ -488,7 +488,7 @@ private theorem exists_abs_primeSummatory_log_absNorm_div_sub_log_le :
   have hmono : Monotone S := summatory_mono _ (log_absNorm_div_absNorm_nonneg K)
   have hS0 (t : ℝ) : 0 ≤ S t := summatory_nonneg _ (log_absNorm_div_absNorm_nonneg K) t
   have hO := (isBigO_primeSummatory_log_absNorm_div_sub_log K).isBigO_principal_Ici (a := 2)
-    zero_lt_one (fun _ _ ↦ by simp)
+    (fun _ ↦ ⟨1, one_pos, fun _ _ ↦ by simp⟩)
     fun Y ↦ ⟨S Y + Real.log Y, fun t ht ↦ by
       have hlog0 : 0 ≤ Real.log t := Real.log_nonneg (by linarith [ht.1])
       have hlog : Real.log t ≤ Real.log Y := Real.log_le_log (by linarith [ht.1]) ht.2

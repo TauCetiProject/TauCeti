@@ -9,6 +9,8 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Order.Cofinal
+import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
 # Bounds in ordered topological spaces
@@ -34,11 +36,17 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
 * `Filter.Tendsto.atBot_max` and `Filter.Tendsto.max_atBot`: if one branch tends to `atBot` and the
   other tends to `𝓝 a`, their pointwise `max` tends to `𝓝 a` (with dual versions
   `Filter.Tendsto.atTop_min` and `Filter.Tendsto.min_atTop`).
+* `MapClusterPt.ge_of_monotone_atTop` and `MapClusterPt.le_of_monotone_atBot`: a monotone family
+  is bounded above by its cluster points at `atTop` and below by its cluster points at `atBot`.
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
 * `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
   nonempty open interval of a densely ordered space takes a value in it.
+* `TauCeti.not_tendsto_nhds_of_forall_exists_le`: an unbounded-above sequence `ℕ → α` converges to
+  no limit in `α`.
+* `TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq`: a sequence `ℕ → β` whose image under a
+  continuous map `β → α` is unbounded above converges to no limit in `β`.
 -/
 
 public section
@@ -106,6 +114,22 @@ theorem Filter.Tendsto.max_atBot {ι β : Type*} [LinearOrder β] [TopologicalSp
   simp_rw [max_comm (f _) (g _)]
   exact hg.atBot_max hf
 
+/-- **A monotone family lies below its cluster points at `atTop`.** If `f` is monotone and `a` is a
+cluster point of `f` along `atTop`, then `f i ≤ a` for every `i`. This is `Monotone.ge_of_tendsto`
+for a cluster point instead of a limit. -/
+theorem MapClusterPt.ge_of_monotone_atTop {ι α : Type*} [Preorder ι] [TopologicalSpace α]
+    [Preorder α] [ClosedIciTopology α] {f : ι → α} {a : α} (ha : MapClusterPt a atTop f)
+    (hf : Monotone f) (i : ι) : f i ≤ a :=
+  isClosed_Ici.mem_of_mapClusterPt ha <| (eventually_ge_atTop i).mono fun _ hj ↦ hf hj
+
+/-- **A monotone family lies above its cluster points at `atBot`.** If `f` is monotone and `a` is a
+cluster point of `f` along `atBot`, then `a ≤ f i` for every `i`. This is `Monotone.le_of_tendsto`
+for a cluster point instead of a limit. -/
+theorem MapClusterPt.le_of_monotone_atBot {ι α : Type*} [Preorder ι] [TopologicalSpace α]
+    [Preorder α] [ClosedIicTopology α] {f : ι → α} {a : α} (ha : MapClusterPt a atBot f)
+    (hf : Monotone f) (i : ι) : a ≤ f i :=
+  isClosed_Iic.mem_of_mapClusterPt ha <| (eventually_le_atBot i).mono fun _ hj ↦ hf hj
+
 namespace TauCeti
 
 section BoundarySection
@@ -152,5 +176,24 @@ theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder 
   obtain ⟨y, hy⟩ := Set.nonempty_Ioo.2 hab
   obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
   exact ⟨i, hy'⟩
+
+/-- An unbounded-above sequence `ℕ → α` converges to no limit in `α`. -/
+theorem not_tendsto_nhds_of_forall_exists_le {α : Type*} [LinearOrder α] [NoMaxOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] {u : ℕ → α}
+    (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) (a : α) : ¬ Tendsto u atTop (𝓝 a) := by
+  intro h
+  have hc : IsCofinal (Set.range u) := fun B ↦ by
+    obtain ⟨n, hn⟩ := hu B
+    exact ⟨u n, ⟨n, rfl⟩, hn⟩
+  exact hc.not_bddAbove h.bddAbove_range
+
+/-- If `g : β → α` is continuous at `b` and `g (v n) = u n` is unbounded above in `α`, then `v`
+converges to no limit `b` in `β`. -/
+theorem not_tendsto_nhds_of_continuousAt_comp_eq {α β : Type*}
+    [LinearOrder α] [NoMaxOrder α] [TopologicalSpace α] [ClosedIciTopology α]
+    [TopologicalSpace β] {g : β → α} {b : β} (hg : ContinuousAt g b) {v : ℕ → β} {u : ℕ → α}
+    (huv : ∀ n, g (v n) = u n) (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) :
+    ¬ Tendsto v atTop (𝓝 b) :=
+  fun h ↦ not_tendsto_nhds_of_forall_exists_le hu (g b) ((hg.tendsto.comp h).congr huv)
 
 end TauCeti

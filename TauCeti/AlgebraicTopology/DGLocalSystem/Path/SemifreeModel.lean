@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Filtration
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.PositiveCell
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.ZeroCell
@@ -64,6 +65,8 @@ resolves `R` over `C_*(Ω_b B; R)`.
   `TauCeti.brownModel_cocycle_m_mem_supported`,
   `TauCeti.exists_differential_eq_and_brownModel_comparison_add_eq_of_mem_supported`: the
   compatibility of the chosen model with the cells and the skeleta.
+* `TauCeti.nonempty_rowFiniteHomologous_brownModel_brownModel`: the chosen model does not depend on
+  the CW structure, the paths to the cells or the phantom parameter, up to homology.
 
 ## References
 
@@ -263,10 +266,11 @@ theorem exists_semifreeModel_pathFromChain (hC : ∀ x, x ∈ C) :
     refine ⟨q.toNat + 1, monotone_pathFromChainSkeleton b C H R ?_ hq⟩
     push_cast
     lia
-  obtain ⟨u', w', hu', huw'⟩ := exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported m.m
-    Sigma.fst hFmono hFex (fun k f w hf hDf hfw hw ↦ by
-      obtain ⟨f', w', -, -, hf', hfw'⟩ := hK k f w hf hDf hfw hw
-      exact ⟨f', w', hf', hfw'⟩) hu huw
+  obtain ⟨k, hk⟩ := hFex w
+  obtain ⟨u', w', -, hu', huw'⟩ := exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported
+    m.m Sigma.fst hFmono (fun k f w hf hDf hfw hw ↦ by
+      obtain ⟨f', w', -, hw', hf', hfw'⟩ := hK k f w hf hDf hfw hw
+      exact ⟨f', w', hw', hf', hfw'⟩) hu huw (Submodule.mem_iSup_of_mem k hk)
   exact ⟨u', w', hu', huw'⟩
 
 variable (H R) in
@@ -326,5 +330,21 @@ theorem exists_differential_eq_and_brownModel_comparison_add_eq_of_mem_supported
         linearCombination (loopChainAlgebra B b R) (brownModel H R τ hC).comparison u' +
           cubicalChainModuleDifferential (MoorePathFrom B b) H R w' = w :=
   (exists_semifreeModel_pathFromChain τ hC).choose_spec.2.2.2 k u w hu hDu huw hw
+
+/-- **Brown's model of a CW complex does not depend on the choices.** For two CW structures `C` and
+`C'` on `B`, any choices of Moore paths `τ` and `τ'` from `b` to the centres of their cells and any
+two phantom parameters `H` and `H'` of the chains on the path space, the cocycles of the two Brown
+models are homologous, so their twisted complexes with coefficients in any DG right module are
+homotopy equivalent (`TauCeti.RowFiniteHomologous.homotopyEquiv`), through specified continuation
+maps. -/
+theorem nonempty_rowFiniteHomologous_brownModel_brownModel (hC : ∀ x, x ∈ C) {C' : Set B}
+    [CWComplex C'] {H' : Type*} (τ' : ∀ (n : ℕ) (j : cell C' n), MoorePathBetween B b (map n j 0))
+    (hC' : ∀ x, x ∈ C') :
+    Nonempty (RowFiniteHomologous (loopChain_isDGAlgebra B b R) (brownModel H R τ hC).cocycle
+      (brownModel H' R τ' hC').cocycle) := by
+  obtain ⟨E, -⟩ := (brownModel H R τ hC).exists_rowFiniteHomologous_homotopy
+    ((brownModel H' R τ' hC').changePhantom H)
+  rw [BrownModel.changePhantom_cocycle] at E
+  exact ⟨E⟩
 
 end TauCeti

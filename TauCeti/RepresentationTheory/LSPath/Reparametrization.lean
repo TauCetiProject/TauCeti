@@ -186,7 +186,7 @@ theorem duration_reverseTimed [AddCommMonoid 𝕜] [Neg V] (p : List (𝕜 × V)
   simp [reverseTimed_def, duration_def, List.map_reverse, Function.comp_def]
 
 @[simp]
-theorem ofSegments_map_snd_reverseTimed [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+theorem ofSegments_map_snd_reverseTimed [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (p : List (𝕜 × V)) :
     ofSegments 𝕜 ((reverseTimed p).map Prod.snd) = (ofSegments 𝕜 (p.map Prod.snd)).reverse := by
   simp [reverseTimed_def, List.map_reverse, Function.comp_def]

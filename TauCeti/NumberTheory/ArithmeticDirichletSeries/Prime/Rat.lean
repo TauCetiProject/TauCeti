@@ -46,8 +46,7 @@ theorem image_absNorm_primesLE_rat (x : ℝ) :
   simp only [Finset.mem_image, mem_normLE, Nat.mem_primesLE]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv ⊢
-    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_natGenerator v⟩
+    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   · rintro ⟨hple, hp⟩
     obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     have hx0 : 0 ≤ x := by

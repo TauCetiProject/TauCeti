@@ -31,9 +31,12 @@ hypotheses of the results below.
 Two facts identify `α` as *the* factor set of the extension it builds. The set-theoretic section
 `g ↦ ⟨1, g⟩` fails to be a homomorphism by exactly `α` (`TauCeti.FactorSet.canonicalSection_mul`),
 and conjugating the copy of `M` inside the extension is the given action of `G` on `M`
-(`TauCeti.FactorSet.mul_inl`). When `G` acts trivially the latter says the copy of `M` is central,
-so the extension is a central extension; that is the case `M = kˣ` in which a projective
-representation of `G` with factor set `α` becomes a linear representation of `E_α`.
+(`TauCeti.FactorSet.mul_inl`). By the latter the copy of `M` is central exactly when `G` acts
+trivially (`TauCeti.FactorSet.range_inl_le_center_iff`). For `M = kˣ` with the trivial action,
+this central extension carries the linearization `TauCeti.IsProjectiveRep.linearization` of a
+projective representation `ρ` of `G` with factor set `α`: the homomorphism
+`E_α →* (V ≃ₗ[k] V)`, `⟨a, g⟩ ↦ a • ρ g`, which sends each element `inl a` of the central copy of
+`kˣ` to multiplication by the scalar `a` and restricts to `ρ` along the canonical section.
 
 A factor set is a multiplicative `2`-cocycle by definition, so no conversion is needed to reach
 group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂` reads `α` as a
@@ -67,8 +70,10 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   `TauCeti.FactorSet.inl_mul_canonicalSection`: every element of the extension is its `M`-component
   times the section at its `G`-component, so the two together determine a homomorphism out of the
   extension.
-* `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`.
-* `TauCeti.FactorSet.inl_range_le_center`: when `G` acts trivially the extension is central.
+* `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`,
+  so the extension induces the given action (`TauCeti.FactorSet.inducesAction_groupExtension`).
+* `TauCeti.FactorSet.range_inl_le_center_iff`: the extension is central exactly when `G` acts
+  trivially.
 * `TauCeti.FactorSet.characterTwist_groupExtension_left` and
   `TauCeti.FactorSet.characterTwist_groupExtension_right`: when the extension is central, a
   character twist multiplies the `M`-component by the character value and keeps the
@@ -422,13 +427,26 @@ by `TauCeti.FactorSet.range_inl_eq_ker_rightHom`. -/
 theorem mul_inl (x : α.Extension) (a : M) : x * inl α a = inl α (x.right • a) * x := by
   ext <;> simp [mul_comm]
 
-/-- **The extension is central when `G` acts trivially on `M`.** This is the case `M = kˣ` with the
-trivial action, in which a projective representation of `G` with factor set `α` is a linear
-representation of the extension. -/
-theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
-    (inl α).range ≤ Subgroup.center α.Extension := by
-  rintro _ ⟨a, rfl⟩
-  exact Subgroup.mem_center_iff.2 fun x => by rw [mul_inl, h]
+/-- The twisted product built from a factor set conjugates its kernel by the given action of `G`. -/
+theorem inducesAction_groupExtension :
+    GroupExtension.InducesAction α.groupExtension := by
+  refine GroupExtension.inducesAction_iff.2 fun x a => ?_
+  refine α.groupExtension.inl_injective ?_
+  rw [GroupExtension.inl_conjAct_comm]
+  simp only [groupExtension_inl, groupExtension_rightHom, rightHom_apply]
+  rw [mul_inl, mul_inv_cancel_right]
+
+/-- **The extension is central exactly when `G` acts trivially on `M`.** This is
+`GroupExtension.InducesAction.range_inl_le_center_iff` for the twisted product, which
+induces the given action by `TauCeti.FactorSet.inducesAction_groupExtension`. For `M = kˣ` with
+the trivial action this is the central extension on which `TauCeti.IsProjectiveRep.linearization`
+is defined: for a projective representation `ρ` with factor set `α`, that homomorphism
+`⟨a, g⟩ ↦ a • ρ g` sends each `inl a` to multiplication by the scalar `a` and restricts to `ρ`
+along `TauCeti.FactorSet.canonicalSection`. -/
+theorem range_inl_le_center_iff :
+    (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a := by
+  simpa only [groupExtension_inl] using
+    α.inducesAction_groupExtension.range_inl_le_center_iff
 
 /-- A character twist of a central twisted product keeps the `G`-component. -/
 theorem characterTwist_groupExtension_right

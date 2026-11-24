@@ -27,8 +27,9 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0`
+  for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -187,10 +188,25 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
 
+/-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
+`√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
+theorem tendsto_sqrt_div_rpow_pow_atTop_nhds_zero {a : ℝ} {k : ℕ} (h : 1 / 2 < a * k) :
+    Tendsto (fun x : ℝ ↦ √x / (x ^ a) ^ k) atTop (𝓝 0) := by
+  refine (tendsto_rpow_neg_atTop (sub_pos.2 h)).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le, ← Real.rpow_sub hx, neg_sub]
+
 /-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
   (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a ≤ b`, `‖s‖ ^ a` is `O(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
+    (fun s : E ↦ ‖s‖ ^ a) =O[cobounded E] fun s ↦ ‖s‖ ^ b := by
+  rcases hab.lt_or_eq with hab | rfl
+  · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
+  · exact isBigO_refl _ _
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
