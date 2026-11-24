@@ -214,11 +214,9 @@ private theorem ofDirectSum_lof (n : ℕ) (i : Fin (n + 1)) (a : ⋀[R]^(i : ℕ
 private theorem ofDirectSum_toDirectSum (n : ℕ) (x : ⋀[R]^n (M × N)) :
     ofDirectSum R M N n (toDirectSum R M N n x) = x := by
   apply Subtype.ext
-  rw [← (DirectSum.linearEquivFunOnFintype R _ _).symm_apply_apply (toDirectSum R M N n x),
-    ← Finset.univ_sum_single ((DirectSum.linearEquivFunOnFintype R _ _) (toDirectSum R M N n x))]
-  simp only [map_sum, DirectSum.linearEquivFunOnFintype_symm_single, Submodule.coe_sum,
-    ofDirectSum, DirectSum.toModule_lof, DirectSum.linearEquivFunOnFintype_apply,
-    toDirectSum_apply]
+  rw [← DirectSum.sum_univ_of (toDirectSum R M N n x)]
+  simp only [map_sum, ← DirectSum.lof_eq_of R, Submodule.coe_sum, ofDirectSum,
+    DirectSum.toModule_lof, toDirectSum_apply]
   rw [sum_coe_wedgeTensor_map_proj]
   simp
 
@@ -290,10 +288,7 @@ theorem prodEquivTensor_symm_lof_tmul_ιMulti (n : ℕ) (i : Fin (n + 1)) (m : F
         (_root_.exteriorPower.ιMulti R i m ⊗ₜ _root_.exteriorPower.ιMulti R (n - i) m')) =
       _root_.exteriorPower.ιMulti R n (Fin.append (LinearMap.inl R M N ∘ m)
         (LinearMap.inr R M N ∘ m') ∘ Fin.cast (by omega)) := by
-  apply Subtype.ext
-  simp only [coe_prodEquivTensor_symm_lof_tmul, _root_.exteriorPower.ιMulti_apply_coe,
-    ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.ιMulti_mul_ιMulti]
-  exact (ExteriorAlgebra.ιMulti_comp_cast _ _).symm
+  rw [prodEquivTensor_symm_lof, wedgeTensor_tmul_ιMulti]
 
 /-- The ordered pure-wedge formula for `prodEquivTensor`: it sends
 `(m₁, 0) ∧ ⋯ ∧ (mᵢ, 0) ∧ (0, m'₁) ∧ ⋯ ∧ (0, m'ₙ₋ᵢ)` to `(m₁ ∧ ⋯ ∧ mᵢ) ⊗ (m'₁ ∧ ⋯ ∧ m'ₙ₋ᵢ)` in the
@@ -318,21 +313,12 @@ theorem map_prodMap_prodEquivTensor_symm (f : M →ₗ[R] M') (g : N →ₗ[R] N
       (prodEquivTensor R M' N' n).symm (DirectSum.lmap (fun i : Fin (n + 1) ↦
         TensorProduct.map (_root_.exteriorPower.map i f) (_root_.exteriorPower.map (n - i) g))
           y) := by
-  have hl : f.prodMap g ∘ₗ LinearMap.inl R M N = LinearMap.inl R M' N' ∘ₗ f := by
-    ext <;> simp
-  have hr : f.prodMap g ∘ₗ LinearMap.inr R M N = LinearMap.inr R M' N' ∘ₗ g := by
-    ext <;> simp
   induction y using DirectSum.induction_on with
   | zero => simp
   | add y y' hy hy' => simp only [map_add, hy, hy']
   | of i t =>
-    induction t using TensorProduct.inductionOn with
-    | add t t' ht ht' => simp only [map_add, ht, ht']
-    | tmul a b =>
-      apply Subtype.ext
-      simp only [← DirectSum.lof_eq_of R, DirectSum.lmap_lof, TensorProduct.map_tmul,
-        _root_.exteriorPower.coe_map, coe_prodEquivTensor_symm_lof_tmul, map_mul,
-        ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, hl, hr]
+    rw [← DirectSum.lof_eq_of R, prodEquivTensor_symm_lof, map_prodMap_wedgeTensor_apply,
+      DirectSum.lmap_lof, prodEquivTensor_symm_lof]
 
 /-- Naturality of `prodEquivTensor`: for linear maps `f : M → M'` and `g : N → N'`, it intertwines
 `⋀ⁿ (f × g)` with the sum of the maps `⋀ⁱ f ⊗ ⋀ⁿ⁻ⁱ g`. -/
