@@ -217,27 +217,6 @@ section Quadratic
 
 variable (F : Type*) [Field F] [Fintype F] (E : Type*) [Field E] [Fintype E] [Algebra F E]
 
-/-- The integer `#E / 2` is `((#E - 1) / (#F - 1)) * (#F / 2)` for an extension `E/F` of finite
-fields of odd characteristic, so that raising to the power `#F / 2` after the norm is raising to
-the power `#E / 2`. -/
-private theorem card_div_two_eq (hF : ringChar F ≠ 2) :
-    Fintype.card E / 2 =
-      (Fintype.card E - 1) / (Fintype.card F - 1) * (Fintype.card F / 2) := by
-  have hq := FiniteField.odd_card_of_char_ne_two hF
-  have hq1 : 1 < Fintype.card F := Fintype.one_lt_card
-  have hpos : 0 < Fintype.card E := Fintype.card_pos
-  obtain ⟨m, hm⟩ : Fintype.card F - 1 ∣ Fintype.card E - 1 := by
-    simpa only [Fintype.card_eq_nat_card] using
-      TauCeti.FiniteField.card_sub_one_dvd_card_sub_one F E
-  have h2 : Fintype.card F - 1 = 2 * (Fintype.card F / 2) := by omega
-  rw [hm, Nat.mul_div_cancel_left _ (by omega)]
-  rw [h2] at hm
-  generalize Fintype.card F / 2 = a at hm ⊢
-  have hE : Fintype.card E = 2 * (m * a) + 1 := by
-    have : 2 * a * m = 2 * (m * a) := by ring
-    omega
-  omega
-
 variable [DecidableEq F] [DecidableEq E]
 
 /-- **The quadratic character lifts to the quadratic character.** For an extension `E/F` of
@@ -260,8 +239,10 @@ theorem liftNorm_quadraticChar : (quadraticChar F).liftNorm E = quadraticChar E 
   · rcases quadraticChar_dichotomy x.ne_zero with h | h <;> simp [h]
   · rw [← map_intCast (algebraMap F E), quadraticChar_eq_pow_of_char_ne_two' hF,
       quadraticChar_eq_pow_of_char_ne_two' (hE ▸ hF), map_pow,
-      FiniteField.algebraMap_norm_eq_pow, ← pow_mul, card_div_two_eq F E hF,
-      Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
+      FiniteField.algebraMap_norm_eq_pow, ← pow_mul]
+    simp only [Fintype.card_eq_nat_card]
+    rw [TauCeti.FiniteField.card_div_two_eq_mul_card_div_two (F := F) (F' := E)
+      (Nat.odd_iff.2 (by simpa using FiniteField.odd_card_of_char_ne_two hF))]
 
 end Quadratic
 
