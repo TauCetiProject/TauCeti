@@ -18,7 +18,8 @@ import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 The sum `‖u‖_{Lᵖ} + ‖Du‖_{Lᵖ}` of the `Lᵖ` seminorms of a function and of its derivative, the
 `W^{1,p}` seminorm of a differentiable function, satisfies the triangle inequality for
 differences of almost everywhere differentiable functions
-(`TauCeti.eLpNorm_sub_add_eLpNorm_fderiv_sub_le`).
+(`TauCeti.eLpNorm_sub_add_eLpNorm_fderiv_sub_le`). The `Lᵖ` seminorm of a directional derivative
+`x ↦ Du(x) v` is at most `‖v‖ ‖Du‖_{Lᵖ}` (`TauCeti.eLpNorm_fderiv_apply_le`).
 
 Let `a : E → (F →L[ℝ] F')` be a `C¹` field of operators that is `K`-Lipschitz. Its derivative is
 bounded by `K`, so for every direction `v` the multiplication operator `u ↦ (∂ᵥ a) u` is bounded on
@@ -30,6 +31,8 @@ product rule `∂ᵥ (a u) = (∂ᵥ a) u + a ∂ᵥ u`.
 
 * `TauCeti.eLpNorm_sub_add_eLpNorm_fderiv_sub_le`: the triangle inequality for the `W^{1,p}`
   seminorm `‖u‖_{Lᵖ} + ‖Du‖_{Lᵖ}` of almost everywhere differentiable functions.
+* `TauCeti.eLpNorm_fderiv_apply_le`: the `Lᵖ` bound `‖∂ᵥ u‖_{Lᵖ} ≤ ‖v‖ ‖Du‖_{Lᵖ}` for a
+  directional derivative.
 * `LipschitzWith.eLpNorm_fderiv_apply_apply_le`: the `Lᵖ` bound for the directional derivative of
   a `C¹` Lipschitz field of operators applied to a function.
 -/
@@ -61,6 +64,15 @@ theorem eLpNorm_sub_add_eLpNorm_fderiv_sub_le {ν : Measure E} {q : ℝ≥0∞} 
         · rw [eLpNorm_congr_ae hfd]
           exact eLpNorm_sub_le hq
     _ = _ := by ring
+
+/-- The `Lᵖ` seminorm of the directional derivative `x ↦ Du(x) v` is at most `‖v‖` times the `Lᵖ`
+seminorm of the derivative `Du`. -/
+theorem eLpNorm_fderiv_apply_le {ν : Measure E} {u : E → F}
+    (hu : AEStronglyMeasurable (fderiv 𝕜 u) ν) (v : E) (q : ℝ≥0∞) :
+    eLpNorm (fun x ↦ fderiv 𝕜 u x v) q ν ≤ ‖v‖ₑ * eLpNorm (fderiv 𝕜 u) q ν := by
+  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' q ?_ (.of_forall fun x ↦ ?_)
+  · exact (ContinuousLinearMap.apply 𝕜 F v).continuous.comp_aestronglyMeasurable hu
+  · exact ((fderiv 𝕜 u x).le_opENorm v).trans_eq (mul_comm _ _)
 
 end TauCeti
 

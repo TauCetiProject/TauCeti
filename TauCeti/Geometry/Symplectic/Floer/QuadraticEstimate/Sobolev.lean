@@ -131,16 +131,6 @@ private theorem exists_norm_le_toReal_of_convex {p : ℝ≥0} (hp : 2 < p) (r : 
   rw [← toReal_eNorm]
   exact ENNReal.toReal_mono hT ((ha Ω ξ z hΩ (hΩc.starConvex hz) hξ (hfat z hz)).trans h)
 
-/-- The derivative along the unit vector `stdComplexLineImag` of a map that is `C¹` on an open set
-`Ω` is bounded in `Lᵖ(Ω)` by its full derivative. -/
-private theorem eLpNorm_fderiv_apply_stdComplexLineImag_le {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) (p : ℝ≥0∞) :
-    eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p (volume.restrict Ω) ≤
-      eLpNorm (fderiv ℝ ξ) p (volume.restrict Ω) :=
-  eLpNorm_mono (((hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).aestronglyMeasurable hΩ.measurableSet) fun z =>
-    ((fderiv ℝ ξ z).le_opNorm _).trans_eq (by simp [stdComplexLineImag_eq])
-
 /-- **The quadratic estimate for the Floer operator in `W^{1,p}`.** Let `J` be jointly `C²` and
 the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, let `K` be a
 compact set of pairs `(a, y)` of a parameter and a target point, let `p > 2`, and let `r : ℝ` and
@@ -179,9 +169,8 @@ theorem
             (eLpNorm ξ₂ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω))) *
           (eLpNorm (ξ₁ - ξ₂) p (volume.restrict Ω) +
             eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p (volume.restrict Ω)) := by
-  -- Morrey's supremum bound with constant `CM` turns the `W^{1,p}` norms into the supremum
-  -- norms of main's `Lᵖ` estimate, whose radius `δ₁` fixes `δ`; the three resulting terms are
-  -- then combined by `quadratic_terms_le`.
+  -- Morrey's bound (constant `CM`) turns `W^{1,p}` norms into the supremum norms of main's `Lᵖ`
+  -- estimate, whose radius `δ₁` fixes `δ`; `quadratic_terms_le` combines the resulting terms.
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast one_le_two.trans hp.le
   obtain ⟨CM, hsup⟩ := exists_norm_le_toReal_of_convex (V := V) hp r hm
   obtain ⟨δ₁, hδ₁, C₁, h₁⟩ :=
@@ -201,9 +190,8 @@ theorem
   have hSle : S ≤ S₁ + S₂ := eLpNorm_sub_add_eLpNorm_fderiv_sub_le hp1
     (ae_restrict_of_forall_mem hΩ.measurableSet hd₁)
     (ae_restrict_of_forall_mem hΩ.measurableSet hd₂)
-  have hS₁₂ : (CM : ℝ≥0∞) * (S₁ + S₂) ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top
-    (ENNReal.add_ne_top.2
-      ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩)
+  have hS₁₂ : (CM : ℝ≥0∞) * (S₁ + S₂) ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.coe_ne_top ((add_le_add hS₁ hS₂).trans_lt (by finiteness)).ne
   have hS : (CM : ℝ≥0∞) * S ≠ ∞ := ne_top_of_le_ne_top hS₁₂ (by gcongr)
   -- Main's `Lᵖ` estimate, with supremum norms `CM (S₁ + S₂)` and `CM S`.
   have h := h₁ volume (p := p) hp1 (a := (CM * (S₁ + S₂)).toReal) (A := B)
@@ -216,18 +204,20 @@ theorem
   simp only [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hS₁₂,
     ENNReal.ofReal_toReal hS, ENNReal.ofReal_add zero_le_one B.coe_nonneg, ENNReal.ofReal_one,
     ENNReal.ofReal_coe_nnreal] at h
-  -- The slice derivatives are bounded by the `W^{1,p}` norms.
-  have hd : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag) p μ ≤ S₁ + S₂ :=
-    (eLpNorm_fderiv_apply_stdComplexLineImag_le hΩ hξ₁ p).trans
-      ((le_add_self : _ ≤ S₁).trans le_self_add)
+  -- The slice derivatives along the unit vector `stdComplexLineImag` are bounded in `W^{1,p}`.
+  have hD {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) :
+      eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p μ ≤ eLpNorm (fderiv ℝ ξ) p μ :=
+    (eLpNorm_fderiv_apply_le ((hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl).aestronglyMeasurable
+      hΩ.measurableSet) _ _).trans_eq (by simp [stdComplexLineImag_eq, eNorm_eq_nnNorm, μ])
   have hd' : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag -
       fderiv ℝ ξ₂ z stdComplexLineImag) p μ ≤ S := by
     refine (eLpNorm_congr_ae (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => ?_)).trans_le
-      ((eLpNorm_fderiv_apply_stdComplexLineImag_le hΩ hξ p).trans le_add_self)
+      ((hD hξ).trans le_add_self)
     rw [fderiv_sub (hd₁ z hz) (hd₂ z hz), sub_apply]
   calc _ ≤ _ := h
     _ ≤ C₁ * (3 * CM * (1 + B) * (S₁ + S₂) * S) := by
-      gcongr C₁ * ?_; exact quadratic_terms_le le_self_add hd hd'
+      gcongr C₁ * ?_
+      exact quadratic_terms_le le_self_add ((hD hξ₁).trans (le_add_self.trans le_self_add)) hd'
     _ = _ := by push_cast; ring
 
 /-- **The quadratic estimate for the Floer operator at a map, in `W^{1,p}`.** Under the
