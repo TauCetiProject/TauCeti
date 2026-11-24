@@ -25,7 +25,9 @@ public noncomputable section
 open Bundle
 open scoped ContDiff Manifold Topology
 
-namespace TauCeti
+namespace ModelWithCorners
+
+open TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
@@ -42,7 +44,7 @@ def formDensityDoubleDualEquiv (k : ℕ) (x : M) :=
 theorem formDensityDoubleDualEquiv_apply (k : ℕ) (x : M)
     (η : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
     (φ : (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] DensityBundle I M x) :
-    formDensityDoubleDualEquiv I k x η φ = φ η := by
+    I.formDensityDoubleDualEquiv k x η φ = φ η := by
   rw [formDensityDoubleDualEquiv, bundleLineDoubleDualEquiv_apply]
 
 -- Supplying the bounded-convergence topology directly lets elaboration resolve inverses
@@ -57,7 +59,7 @@ theorem apply_formDensityDoubleDualEquiv_symm (k : ℕ) (x : M)
     letI := ContinuousLinearMap.topologicalSpace (σ := RingHom.id ℝ)
       (E := (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] DensityBundle I M x)
       (F := DensityBundle I M x)
-    φ ((formDensityDoubleDualEquiv I k x).symm Φ) = Φ φ := by
+    φ ((I.formDensityDoubleDualEquiv k x).symm Φ) = Φ φ := by
   unfold formDensityDoubleDualEquiv
   exact apply_bundleLineDoubleDualEquiv_symm (𝕜 := ℝ) (F := E [⋀^Fin k]→L[ℝ] ℝ)
     (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] ℝ) (DensityBundle I M) x Φ φ
@@ -75,8 +77,8 @@ def formDensityDoubleDualDiffeomorph (k : ℕ) :=
 @[simp]
 theorem formDensityDoubleDualDiffeomorph_apply (k : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
-    formDensityDoubleDualDiffeomorph I k p =
-      ⟨p.proj, formDensityDoubleDualEquiv I k p.proj p.snd⟩ :=
+    I.formDensityDoubleDualDiffeomorph k p =
+      ⟨p.proj, I.formDensityDoubleDualEquiv k p.proj p.snd⟩ :=
   bundleLineDoubleDualDiffeomorph_apply _ _ p
 
 /-- The inverse total-space map recovers the form at the same base point. -/
@@ -88,9 +90,9 @@ theorem formDensityDoubleDualDiffeomorph_symm_apply (k : ℕ)
     letI := ContinuousLinearMap.topologicalSpace (σ := RingHom.id ℝ)
       (E := (TangentSpace I p.proj [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] DensityBundle I M p.proj)
       (F := DensityBundle I M p.proj)
-    (formDensityDoubleDualDiffeomorph I k).symm p =
-      ⟨p.proj, (formDensityDoubleDualEquiv I k p.proj).symm p.snd⟩ := by
+    (I.formDensityDoubleDualDiffeomorph k).symm p =
+      ⟨p.proj, (I.formDensityDoubleDualEquiv k p.proj).symm p.snd⟩ := by
   unfold formDensityDoubleDualDiffeomorph formDensityDoubleDualEquiv
   exact bundleLineDoubleDualDiffeomorph_symm_apply _ _ p
 
-end TauCeti
+end ModelWithCorners
