@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.RingTheory.Valuation.Annulus
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # The rational basis of the adic spectrum
@@ -169,12 +170,6 @@ theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
       rw [Finset.coe_image, ← Ideal.map_span]
       exact hopen _ hV, rfl⟩
 
-private theorem isOpen_map_of_ringEquiv {R S : Type*} [CommRing R] [TopologicalSpace R]
-    [CommRing S] [TopologicalSpace S] (φ : R ≃+* S) (hφ' : Continuous φ.symm)
-    (J : Ideal R) (hJ : IsOpen (J : Set R)) : IsOpen (Ideal.map (φ : R →+* S) J : Set S) := by
-  rw [Ideal.map_eq_image_of_surjective (φ : R →+* S) φ.surjective]
-  exact (IsOpenMap.of_inverse hφ' φ.apply_symm_apply φ.symm_apply_apply) J hJ
-
 /-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
 `spaRationalFamily A⁺`. -/
 theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [CommRing B]
@@ -188,10 +183,10 @@ theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [C
     fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U, ?_, ?_⟩⟩
   · rw [coe_spaHomeomorphOfRingEquiv]
     exact spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus Aplus _
-      (isOpen_map_of_ringEquiv e.symm he) hV
+      (e.symm.isOpen_map_ideal he) hV
   · rw [coe_spaHomeomorphOfRingEquiv_symm]
     exact spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _
-      (isOpen_map_of_ringEquiv e he') hU
+      (e.isOpen_map_ideal he') hU
   · ext x
     simp only [Set.mem_preimage, Homeomorph.symm_apply_apply]
 
