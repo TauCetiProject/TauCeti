@@ -69,8 +69,8 @@ private theorem homogeneousPartAddHom_map_smul {A : Type uA}
   induction x using DirectSum.Decomposition.inductionOn G.piece with
   | zero => simp
   | @homogeneous p x =>
-    rw [homogeneousPartAddHom_apply_of_mem G H f r (hG x.2), hf,
-      homogeneousPartAddHom_apply_of_mem G H f r x.2]
+    rw [homogeneousPartAddHom_apply_of_mem G H f r (hG x.property), hf,
+      homogeneousPartAddHom_apply_of_mem G H f r x.property]
     have hindex : (p + s) + r = (p + r) + s := by omega
     rw [hindex]
     exact (DirectSum.map_decompose_shift H.piece H.piece (DistribSMul.toAddMonoidHom N a)
@@ -104,8 +104,8 @@ theorem homogeneousPart_apply_smul {A : Type uA} [DistribSMul A M] [DistribSMul 
 /-- The degree-`r` part is homogeneous of degree `r`. -/
 @[simp]
 theorem isHomogeneous_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPart H f r) G.piece H.piece r := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    LinearMap.IsHomogeneous (G.homogeneousPart H f r) G.piece H.piece r := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [G.homogeneousPart_apply_of_mem H f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
@@ -113,7 +113,7 @@ theorem isHomogeneous_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) :
 /-- Taking the component at the degree of a homogeneous map recovers the map. -/
 @[simp]
 theorem homogeneousPart_eq_self (f : M →ₗ[k] N) (r : ℤ)
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     G.homogeneousPart H f r = f := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   rw [G.homogeneousPart_apply_of_mem H f r hx]
@@ -122,7 +122,7 @@ theorem homogeneousPart_eq_self (f : M →ₗ[k] N) (r : ℤ)
 /-- A map is fixed by its degree-`r` component exactly when it is homogeneous of degree `r`. -/
 @[simp]
 theorem homogeneousPart_eq_self_iff (f : M →ₗ[k] N) (r : ℤ) :
-    G.homogeneousPart H f r = f ↔ TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+    G.homogeneousPart H f r = f ↔ LinearMap.IsHomogeneous f G.piece H.piece r := by
   constructor
   · intro hf
     rw [← hf]
@@ -144,7 +144,7 @@ variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P �
 -- Work with the shared additive construction: a graded-scalar map need not be coefficient-linear.
 private theorem comp_homogeneousPartAddHom_apply_of_mem {A : Type uA} [Semiring A]
     [Module A N] [Module A P] (f : M →+ N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s)
+    (hg : LinearMap.IsHomogeneous g H.piece I.piece s)
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
     g (homogeneousPartAddHom G H f r x) =
       homogeneousPartAddHom G I (g.toAddMonoidHom.comp f) (r + s) x := by
@@ -155,7 +155,7 @@ private theorem comp_homogeneousPartAddHom_apply_of_mem {A : Type uA} [Semiring 
 
 private theorem homogeneousPartAddHom_comp_apply_of_mem {A : Type uA} [Semiring A]
     [Module A M] [Module A N] (f : N →+ P) (r : ℤ) {g : M →ₗ[A] N} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s)
+    (hg : LinearMap.IsHomogeneous g G.piece H.piece s)
     {p : ℤ} {x : M} (hx : x ∈ G.piece p) :
     homogeneousPartAddHom G I (f.comp g.toAddMonoidHom) (s + r) x =
       homogeneousPartAddHom H I f r (g x) := by
@@ -166,7 +166,7 @@ private theorem homogeneousPartAddHom_comp_apply_of_mem {A : Type uA} [Semiring 
 /-- Postcomposition by a degree-`s` homogeneous coefficient-linear map shifts the selected
 component by `s`. -/
 theorem comp_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) {g : N →ₗ[k] P} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s) :
+    (hg : LinearMap.IsHomogeneous g H.piece I.piece s) :
     g.comp (G.homogeneousPart H f r) = G.homogeneousPart I (g.comp f) (r + s) := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   exact comp_homogeneousPartAddHom_apply_of_mem G H I f.toAddMonoidHom r hg hx
@@ -174,7 +174,7 @@ theorem comp_homogeneousPart (f : M →ₗ[k] N) (r : ℤ) {g : N →ₗ[k] P} {
 /-- Precomposition by a degree-`s` homogeneous coefficient-linear map shifts the selected
 component by `s`. -/
 theorem homogeneousPart_comp (f : N →ₗ[k] P) (r : ℤ) {g : M →ₗ[k] N} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s) :
+    (hg : LinearMap.IsHomogeneous g G.piece H.piece s) :
     G.homogeneousPart I (f.comp g) (s + r) = (H.homogeneousPart I f r).comp g := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   exact homogeneousPartAddHom_comp_apply_of_mem G H I f.toAddMonoidHom r hg hx
@@ -196,8 +196,9 @@ private theorem homogeneousPartAddHom_map_smul_of_graded (f : M →ₗ[A] N) (r 
   | zero => simp
   | @homogeneous i a =>
     exact homogeneousPartAddHom_map_smul G H f.toAddMonoidHom r i (a : A)
-      (f.map_smul a) (fun _ _ hx ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hx)
-      (fun _ _ hy ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hy) x
+      (f.map_smul a)
+          (fun _ _ hx ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.property hx)
+      (fun _ _ hy ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.property hy) x
   | add a b ha hb => simp [add_smul, ha, hb]
 
 /-- The degree-`r` part of an `A`-linear map for a common graded scalar action. The coefficient
@@ -218,9 +219,9 @@ theorem homogeneousPartOfGradedSMul_apply_of_mem (f : M →ₗ[A] N) (r : ℤ)
 /-- The graded-scalar homogeneous part has the selected degree. -/
 @[simp]
 theorem isHomogeneous_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartOfGradedSMul H 𝒜 f r)
+    LinearMap.IsHomogeneous (G.homogeneousPartOfGradedSMul H 𝒜 f r)
       G.piece H.piece r := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
@@ -228,7 +229,7 @@ theorem isHomogeneous_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) 
 /-- Taking the component at the degree of a homogeneous graded-scalar map recovers the map. -/
 @[simp]
 theorem homogeneousPartOfGradedSMul_eq_self (f : M →ₗ[A] N) (r : ℤ)
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     G.homogeneousPartOfGradedSMul H 𝒜 f r = f := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
@@ -236,7 +237,7 @@ theorem homogeneousPartOfGradedSMul_eq_self (f : M →ₗ[A] N) (r : ℤ)
 
 /-- A homogeneous graded-scalar map has no component away from its degree. -/
 theorem homogeneousPartOfGradedSMul_eq_zero_of_ne (f : M →ₗ[A] N) {r s : ℤ}
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece s) (hrs : r ≠ s) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece s) (hrs : r ≠ s) :
     G.homogeneousPartOfGradedSMul H 𝒜 f r = 0 := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx, LinearMap.zero_apply]
@@ -267,7 +268,7 @@ theorem exists_finset_homogeneousPartOfGradedSMul_eq_zero [Module.Finite A M] (f
 @[simp]
 theorem homogeneousPartOfGradedSMul_eq_self_iff (f : M →ₗ[A] N) (r : ℤ) :
     G.homogeneousPartOfGradedSMul H 𝒜 f r = f ↔
-      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+      LinearMap.IsHomogeneous f G.piece H.piece r := by
   constructor
   · intro hf
     rw [← hf]
@@ -289,7 +290,7 @@ variable {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P]
 
 /-- Postcomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
 theorem comp_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g H.piece I.piece s) :
+    (hg : LinearMap.IsHomogeneous g H.piece I.piece s) :
     g.comp (G.homogeneousPartOfGradedSMul H 𝒜 f r) =
       G.homogeneousPartOfGradedSMul I 𝒜 (g.comp f) (r + s) := by
   refine G.linearMap_ext fun p x hx ↦ ?_
@@ -297,7 +298,7 @@ theorem comp_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) {g : N �
 
 /-- Precomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
 theorem homogeneousPartOfGradedSMul_comp (f : N →ₗ[A] P) (r : ℤ) {g : M →ₗ[A] N} {s : ℤ}
-    (hg : TauCeti.LinearMap.IsHomogeneous g G.piece H.piece s) :
+    (hg : LinearMap.IsHomogeneous g G.piece H.piece s) :
     G.homogeneousPartOfGradedSMul I 𝒜 (f.comp g) (s + r) =
       (H.homogeneousPartOfGradedSMul I 𝒜 f r).comp g := by
   refine G.linearMap_ext fun p x hx ↦ ?_
@@ -314,16 +315,16 @@ variable {A : Type uA} [Semiring A] [Module A M] [Module A N]
 of degree zero, then a map of degree `r` whose range lies in the range of `f` factors through `f`
 by a map of degree `r`. -/
 theorem exists_isHomogeneous_comp_eq_of_injective {f : M →ₗ[A] N} (hf : Function.Injective f)
-    (hf₀ : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece 0) {χ : P →ₗ[A] N} {r : ℤ}
-    (hχ : TauCeti.LinearMap.IsHomogeneous χ I.piece H.piece r)
+    (hf₀ : LinearMap.IsHomogeneous f G.piece H.piece 0) {χ : P →ₗ[A] N} {r : ℤ}
+    (hχ : LinearMap.IsHomogeneous χ I.piece H.piece r)
     (hrange : _root_.LinearMap.range χ ≤ _root_.LinearMap.range f) :
-    ∃ a : P →ₗ[A] M, TauCeti.LinearMap.IsHomogeneous a I.piece G.piece r ∧ f.comp a = χ := by
+    ∃ a : P →ₗ[A] M, LinearMap.IsHomogeneous a I.piece G.piece r ∧ f.comp a = χ := by
   -- Injectivity gives an ungraded factorization `a`.
   let a : P →ₗ[A] M := (LinearEquiv.ofInjective f hf).symm.toLinearMap.comp
     (χ.codRestrict (_root_.LinearMap.range f) fun x ↦ hrange (_root_.LinearMap.mem_range_self χ x))
   have ha : f.comp a = χ := _root_.LinearMap.ext fun x ↦ by simp [a]
   refine ⟨a, ?_, ha⟩
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   -- Applying the injective degree-zero map `f` shows that `a x` equals its degree-`(p + r)`
   -- component, since `f (a x) = χ x` already has degree `p + r`.

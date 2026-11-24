@@ -44,7 +44,7 @@ all other inputs. The output value is supplied explicitly and may be any natural
 def diagonalProbe (b e : ℕ) : Code :=
   comp (prec
     (comp (Nat.Partrec.Code.const b).toSingleOracleCode
-      (comp (ofNat Code e) (Nat.Partrec.Code.const e).toSingleOracleCode))
+      ((ofNat Code e).fixInput e))
     (rfind' (comp succ zero))) (pair zero (pair left right))
 
 private theorem eval_probe_loop (O : ℕ →. ℕ) (n : ℕ) :
@@ -61,10 +61,7 @@ private theorem eval_probe_loop (O : ℕ →. ℕ) (n : ℕ) :
 theorem eval_diagonalProbe (O : ℕ →. ℕ) (b e x : ℕ) :
     eval O (diagonalProbe b e) x =
       if x = 0 then (eval O (ofNat Code e) e).map (fun _ => b) else Part.none := by
-  have hinput (n : ℕ) :
-      eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
-    simp [Seq.seq]
-  rw [diagonalProbe, eval_comp, hinput, PFun.some_bind]
+  rw [diagonalProbe, eval_comp, eval_pair_zero_left_right, PFun.some_bind]
   cases x with
   | zero =>
     rw [eval_prec_zero]
@@ -92,9 +89,7 @@ theorem primrec₂_diagonalProbe : Primrec₂ diagonalProbe := by
       (primrec₂_comp.comp
         (Nat.Partrec.Code.primrec_toSingleOracleCode.comp
           (Nat.Partrec.Code.primrec_const.comp Primrec.fst))
-        (primrec₂_comp.comp ((Primrec.ofNat Code).comp Primrec.snd)
-          (Nat.Partrec.Code.primrec_toSingleOracleCode.comp
-            (Nat.Partrec.Code.primrec_const.comp Primrec.snd))))
+        (primrec₂_fixInput.comp ((Primrec.ofNat Code).comp Primrec.snd) Primrec.snd))
       (Primrec.const _)) (Primrec.const _)
 
 /-- On numerical program indices the probe compiler is primitive recursive as well. -/

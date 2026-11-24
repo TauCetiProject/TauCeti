@@ -17,7 +17,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 import TauCeti.AlgebraicGeometry.ResidueField
@@ -281,8 +281,8 @@ through the base change morphism `projModelBaseChange`, a point of `projModel W`
 `L`. Multiplication by `n` sends the point of `P` to the point of `n • P`. -/
 theorem projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy [DecidableEq L]
     (P : (W.map g).toAffine.Point) (n : ℤ) :
-    ((W.map g).projModelPointsEquiv.symm P).1 ≫ W.projModelBaseChange g ≫ W.projModelMulBy n =
-      ((W.map g).projModelPointsEquiv.symm (n • P)).1 ≫ W.projModelBaseChange g := by
+    ((W.map g).projModelPointsEquiv.symm P).val ≫ W.projModelBaseChange g ≫ W.projModelMulBy n =
+      ((W.map g).projModelPointsEquiv.symm (n • P)).val ≫ W.projModelBaseChange g := by
   have h := congrArg Over.Hom.left
     (map_zpow (W.baseChangePointsHom g) ((W.map g).projModelPointsMulEquiv.symm (.ofAdd P)) n)
   rw [← comp_projModelMulBy, baseChangePointsHom_left, baseChangePointsHom_left,
@@ -295,7 +295,7 @@ base change morphism `projModelBaseChange`, is the point with homogeneous coordi
 `[x : y : 1]` along `g`. -/
 theorem projModelPointsEquiv_symm_some_projModelBaseChange {x y : L}
     (h : (W.map g).toAffine.Nonsingular x y) :
-    ((W.map g).projModelPointsEquiv.symm (.some x y h)).1 ≫ W.projModelBaseChange g =
+    ((W.map g).projModelPointsEquiv.symm (.some x y h)).val ≫ W.projModelBaseChange g =
       W.projModelPoint g (P := ![x, y, 1]) ((Projective.equation_some _ _).mpr h.1) (i := 2)
         (by simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using
           isUnit_one) := by
@@ -305,7 +305,7 @@ theorem projModelPointsEquiv_symm_some_projModelBaseChange {x y : L}
   have hi : IsUnit (![x, y, 1] 2) := by
     simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using isUnit_one
   -- the section of the affine point `(x, y)` has homogeneous coordinates `[x : y : 1]`
-  have hsymm : ((W.map g).projModelPointsEquiv.symm (.some x y h)).1 =
+  have hsymm : ((W.map g).projModelPointsEquiv.symm (.some x y h)).val =
       (W.map g).projModelPoint (RingHom.id L) hE hi :=
     congrArg Subtype.val <| (Equiv.symm_apply_eq _).mpr <|
       ((projModelPointsEquiv_projModelPoint _ hE hi).trans
@@ -370,10 +370,8 @@ theorem projModelAffinePoint_projModelMulBy_ne_projModelZero_iff (n : ℤ) (s : 
   -- the point `[x : y : 1]` with values in `κ(s)`
   have hpt : Spec.map (CommRingCat.ofHom g) ≫ W.projModelAffinePoint h =
       W.projModelPoint g (P := ![g x, g y, 1]) ((Projective.equation_some _ _).mpr hns.1) (i := 2)
-        (by simp) := by
-    rw [← projModelAffinePoint_projModelBaseChange, projModelAffinePoint_def,
-      projModelPoint_projModelBaseChange]
-    exact (projModelPoint_eq_projModelPoint_iff_of_apply_eq rfl).mpr ⟨RingHom.id_comp g, rfl⟩
+        (by simp) :=
+    SpecMap_projModelAffinePoint W g h
   have hψ : g ((W.ψ n).evalEval x y) = ((W.map g).ψ n).evalEval (g x) (g y) := by
     rw [map_ψ, Polynomial.map_mapRingHom_evalEval]
   have hs : (W.projModelAffinePoint h ≫ W.projModelMulBy n) s =

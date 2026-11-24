@@ -161,7 +161,7 @@ theorem natCard_H1_mul_natCard (M : Type v) [AddCommGroup M] [TopologicalSpace M
   have : ContinuousAdd M := ⟨continuous_of_discreteTopology⟩
   have : ContinuousSMul G (M ⧸ N) := N.quotientDistribMulAction_continuousSMul hN
   have hNtriv : ∀ (g : G) (a : N), g • a = a := fun g a ↦
-    Subtype.ext ((N.restrictDistribMulAction_coe_smul hN g a).trans (hNfix g a a.2))
+    Subtype.ext ((N.restrictDistribMulAction_coe_smul hN g a).trans (hNfix g a a.property))
   -- the six-term exact sequence `0 → H⁰(N) → H⁰(M) → H⁰(M ⧸ N) → H¹(N) → H¹(M) → H¹(M ⧸ N) → 0`,
   -- exact on the right because `H²(G, N) = 0`
   set S := DiscreteShortExact.ofAddSubgroup N hN

@@ -204,12 +204,12 @@ theorem isCohenMacaulay_iff_forall_affineOpens :
   refine ⟨fun _ U ↦ ⟨IsLocallyNoetherian.component_noetherian U, fun p _ ↦ ?_⟩, fun h ↦ ?_⟩
   · -- The prime `p` is the prime of the point `U.2.fromSpec y` of `U`, whose stalk is `Γ(X, U)_p`.
     let y : PrimeSpectrum Γ(X, U) := ⟨p, inferInstance⟩
-    have hy : U.2.fromSpec y ∈ (U : X.Opens) := U.2.range_fromSpec.le ⟨y, rfl⟩
-    have hp : U.2.primeIdealOf ⟨U.2.fromSpec y, hy⟩ = y :=
-      (IsAffineOpen.isOpenImmersion_fromSpec U.2).base_open.injective
-        (U.2.fromSpec_primeIdealOf ⟨_, hy⟩)
-    have h := (isCohenMacaulay_stalk_iff_of_isAffineOpen U.2 ⟨_, hy⟩).mp
-      (IsCohenMacaulay.isCohenMacaulay_stalk (U.2.fromSpec y))
+    have hy : U.property.fromSpec y ∈ (U : X.Opens) := U.property.range_fromSpec.le ⟨y, rfl⟩
+    have hp : U.property.primeIdealOf ⟨U.property.fromSpec y, hy⟩ = y :=
+      (IsAffineOpen.isOpenImmersion_fromSpec U.property).base_open.injective
+        (U.property.fromSpec_primeIdealOf ⟨_, hy⟩)
+    have h := (isCohenMacaulay_stalk_iff_of_isAffineOpen U.property ⟨_, hy⟩).mp
+      (IsCohenMacaulay.isCohenMacaulay_stalk (U.property.fromSpec y))
     rwa [hp] at h
   · have : IsLocallyNoetherian X := ⟨fun U ↦ (h U).1⟩
     refine ⟨fun x ↦ ?_⟩

@@ -165,8 +165,7 @@ example :
       simpa [herase, a] using hmul
     have hdvd : X ^ (![2, 2] (0 : Fin 2) - 0) ∣
         taylor (a 0) (∏ i ∈ univ.erase 0, (X - C (a i)) ^ (![2, 2] i)) * h - 1 := by
-      rw [htaylor]
-      change X ^ 2 ∣ _
+      rw [htaylor, Matrix.cons_val_zero, Nat.sub_zero]
       exact ⟨C (2 / 27) * X - C 3⁻¹, by ring⟩
     dsimp only [b]
     rw [hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha ![2, 2] ⟨0, ⟨0, by decide⟩⟩ hdeg hdvd]

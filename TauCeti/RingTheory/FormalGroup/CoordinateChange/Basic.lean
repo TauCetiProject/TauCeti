@@ -12,7 +12,9 @@ public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.AddInv
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.ZSMul
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -47,9 +49,15 @@ representable by a polynomial ring over the Lazard ring.
   substitutable `x, y`.
 * `FormalGroup.subst_toPowerSeries_eq_subst_smul_toPowerSeries`: `φ` is a homomorphism from `F`
   to `φ • F`, that is `φ(F(X, Y)) = (φ • F)(φ(X), φ(Y))`.
+* `FormalGroup.subst_inv_smul_toPowerSeries` and `FormalGroup.subst_inv_smul_𝔾ₐ_toPowerSeries`:
+  `φ((φ⁻¹ • F)(X, Y)) = F(φ(X), φ(Y))`, and in particular `φ((φ⁻¹ • 𝔾ₐ)(X, Y)) = φ(X) + φ(Y)`.
+* `FormalGroup.le_order_inv_smul_sub`: if `f, g` and `F, G` agree below degree `M`, then `f⁻¹ • F`
+  and `g⁻¹ • G` agree below degree `M`.
 * `FormalGroup.isStrict_smulIso_iff`: the isomorphism `φ` is strict exactly when its linear
   coefficient is `1`.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
+* `TauCeti.FormalGroupIso.toFormalCoordinate_smul`: the coordinate `e.toFormalCoordinate` of an
+  isomorphism `e : F ≅ G` satisfies `e.toFormalCoordinate • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
 * `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
@@ -219,6 +227,76 @@ noncomputable instance instMulActionFormalCoordinate :
       FormalCoordinate.subst_toPowerSeries_mul _ _
         (F.hasSubst_subst_pair (ψ⁻¹.hasSubst_subst (hφ 0)) (ψ⁻¹.hasSubst_subst (hφ 1)))]
 
+/-- Applying `φ` to the transported formal group law `φ⁻¹ • F` recovers `F(φ(X), φ(Y))`. -/
+theorem subst_inv_smul_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R) :
+    PowerSeries.subst (φ⁻¹ • F).toPowerSeries φ.toPowerSeries =
+      F.toPowerSeries.subst
+        ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries,
+          PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries] := by
+  rw [subst_toPowerSeries_eq_subst_smul_toPowerSeries, smul_inv_smul]
+
+/-- Applying `φ` to the transported additive law `φ⁻¹ • 𝔾ₐ` recovers `φ(X) + φ(Y)`. -/
+theorem subst_inv_smul_𝔾ₐ_toPowerSeries (φ : FormalCoordinate R) :
+    PowerSeries.subst (φ⁻¹ • (𝔾ₐ : FormalGroup R)).toPowerSeries φ.toPowerSeries =
+      PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries +
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries := by
+  have hX : HasSubst
+      ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries,
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries] :=
+    hasSubst_of_constantCoeff_zero <| Fin.forall_fin_two.mpr
+      ⟨PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 0) _ φ.constantCoeff_toPowerSeries,
+       PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 1) _ φ.constantCoeff_toPowerSeries⟩
+  rw [subst_inv_smul_toPowerSeries, 𝔾ₐ_toPowerSeries, subst_add hX, subst_X hX, subst_X hX]
+  simp
+
+/-- If formal coordinates `f` and `g` agree below degree `M`, and formal group laws `F` and `G`
+agree below degree `M`, then the transported laws `f⁻¹ • F` and `g⁻¹ • G` agree below degree
+`M`. -/
+theorem le_order_inv_smul_sub {f g : FormalCoordinate R} {F G : FormalGroup R} {M : ℕ}
+    (hfg : (M : ℕ∞) ≤ (f.toPowerSeries - g.toPowerSeries).order)
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order) :
+    (M : ℕ∞) ≤ ((f⁻¹ • F).toPowerSeries - (g⁻¹ • G).toPowerSeries).order := by
+  set F' := f⁻¹ • F
+  set G' := g⁻¹ • G
+  have hsub (u : MvPowerSeries (Fin 2) R) (hu : constantCoeff u = 0) :
+      (M : ℕ∞) ≤
+        (PowerSeries.subst u f.toPowerSeries - PowerSeries.subst u g.toPowerSeries).order := by
+    rw [← PowerSeries.subst_sub (.of_constantCoeff_zero hu)]
+    exact hfg.trans (PowerSeries.le_order_subst_left hu)
+  have hsplit : PowerSeries.subst F'.toPowerSeries f.toPowerSeries -
+        PowerSeries.subst G'.toPowerSeries f.toPowerSeries =
+      (F.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) f.toPowerSeries,
+          PowerSeries.subst (X 1) f.toPowerSeries] -
+        G.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g.toPowerSeries,
+          PowerSeries.subst (X 1) g.toPowerSeries]) -
+        (PowerSeries.subst G'.toPowerSeries f.toPowerSeries -
+          PowerSeries.subst G'.toPowerSeries g.toPowerSeries) := by
+    rw [subst_inv_smul_toPowerSeries f F, subst_inv_smul_toPowerSeries g G]
+    ring
+  have hord : (M : ℕ∞) ≤
+      (PowerSeries.subst F'.toPowerSeries f.toPowerSeries -
+        PowerSeries.subst G'.toPowerSeries f.toPowerSeries).order := by
+    rw [hsplit]
+    have hc (i : Fin 2) (φ : FormalCoordinate R) :=
+      PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X (R := R) i) _
+        φ.constantCoeff_toPowerSeries
+    exact le_order_sub
+      (le_order_subst_pair_sub hFG (hc 0 f) (hc 1 f) (hc 0 g) (hc 1 g)
+        (hsub (X 0) (constantCoeff_X 0)) (hsub (X 1) (constantCoeff_X 1)))
+      (hsub G'.toPowerSeries G'.zero_constantCoeff)
+  have hF₀ := PowerSeries.constantCoeff_subst_eq_zero F'.zero_constantCoeff _
+    f.constantCoeff_toPowerSeries
+  have hG₀ := PowerSeries.constantCoeff_subst_eq_zero G'.zero_constantCoeff _
+    f.constantCoeff_toPowerSeries
+  have hinv := MvPowerSeries.le_order_subst_sub_subst (H := f⁻¹.toPowerSeries) (k := 1)
+    (one_le_order_iff_constCoeff_eq_zero.mpr f⁻¹.constantCoeff_toPowerSeries)
+    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hF₀)
+    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hG₀)
+    (fun _ ↦ hF₀) (fun _ ↦ hG₀) (fun _ ↦ hord)
+  rwa [Nat.add_sub_cancel, ← PowerSeries.subst_def, ← PowerSeries.subst_def,
+    f.subst_inv_subst (.of_constantCoeff_zero F'.zero_constantCoeff),
+    f.subst_inv_subst (.of_constantCoeff_zero G'.zero_constantCoeff)] at hinv
+
 /-- **Changing coordinates preserves commutativity.** -/
 instance instIsCommSMul (φ : FormalCoordinate R) (F : FormalGroup R) [F.IsComm] :
     (φ • F).IsComm where
@@ -291,6 +369,24 @@ theorem _root_.TauCeti.FormalGroupHom.smul_eq {F G : FormalGroup R} (f : FormalG
     fin_cases i <;> exact φ.subst_subst_inv (PowerSeries.HasSubst.X _)
   rw [smul_toPowerSeries, ← h, f.hom_subst (hasSubst_finTwo (hφ 0) (hφ 1)), h, hX, subst_self,
     id]
+
+/-- The formal coordinate given by the forward series of an isomorphism of formal group laws. -/
+def _root_.TauCeti.FormalGroupIso.toFormalCoordinate {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : FormalCoordinate R where
+  toPowerSeries := e.toHom.toPowerSeries
+  constantCoeff_toPowerSeries := e.toHom.zero_constantCoeff
+  isUnit_coeff_one := e.isUnit_coeff_one
+
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_toPowerSeries {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : e.toFormalCoordinate.toPowerSeries = e.toHom.toPowerSeries :=
+  (rfl)
+
+/-- The coordinate of an isomorphism `e : F ≅ G` changes `F` into `G`. -/
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_smul {F G : FormalGroup R}
+    (e : FormalGroupIso F G) : e.toFormalCoordinate • F = G :=
+  e.toHom.smul_eq rfl
 
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/

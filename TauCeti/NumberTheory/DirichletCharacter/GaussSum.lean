@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
+public import TauCeti.NumberTheory.GaussSum.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
@@ -56,48 +57,17 @@ theorem gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
     {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
-    gaussSum χ e * gaussSum χ⁻¹ e⁻¹ = Fintype.card (ZMod n) := by
-  classical
-  simp only [gaussSum]
-  rw [Finset.mul_sum]
-  calc
-    ∑ b, gaussSum χ e * (χ⁻¹ b * e⁻¹ b) =
-        ∑ b, gaussSum χ (e.mulShift b) * e⁻¹ b := by
-      apply Finset.sum_congr rfl
-      intro b _
-      rw [gaussSum_mulShift_of_isPrimitive e hχ b]
-      ring
-    _ = ∑ b, ∑ a, χ a * e (b * a) * e (-b) := by
-      apply Finset.sum_congr rfl
-      intro b _
-      simp only [gaussSum, AddChar.mulShift_apply, AddChar.inv_apply, Finset.sum_mul]
-    _ = ∑ a, χ a * ∑ b, e (b * (a - 1)) := by
-      rw [Finset.sum_comm]
-      apply Finset.sum_congr rfl
-      intro a _
-      rw [Finset.mul_sum]
-      apply Finset.sum_congr rfl
-      intro b _
-      rw [mul_assoc, ← e.map_add_eq_mul]
-      congr 2
-      ring
-    _ = Fintype.card (ZMod n) := by
-      simp_rw [AddChar.sum_mulShift _ he]
-      rw [Finset.sum_eq_single 1]
-      · simp
-      · intro b _ hb
-        simp [sub_eq_zero, hb]
-      · simp
+    gaussSum χ e * gaussSum χ⁻¹ e⁻¹ = Fintype.card (ZMod n) :=
+  TauCeti.gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift
+    (gaussSum_mulShift_of_isPrimitive e hχ) he
 
 /-- The absolute value of a primitive complex Dirichlet Gauss sum is the square root of
 its level, for any primitive additive character. -/
 theorem IsPrimitive.norm_gaussSum {n : ℕ} [NeZero n]
     {χ : DirichletCharacter ℂ n} (hχ : χ.IsPrimitive)
     {e : AddChar (ZMod n) ℂ} (he : e.IsPrimitive) : ‖gaussSum χ e‖ = Real.sqrt n := by
-  have hg := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
-  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj', ZMod.card] at hg
-  rw [← Real.sqrt_sq (norm_nonneg (gaussSum χ e))]
-  exact congrArg Real.sqrt (by exact_mod_cast hg)
+  rw [TauCeti.norm_gaussSum_of_forall_mulShift (gaussSum_mulShift_of_isPrimitive e hχ) he,
+    ZMod.card]
 
 /-- For a primitive Dirichlet character and a primitive additive character, the Gauss sums of
 the character and its inverse against the same additive character multiply to the character's

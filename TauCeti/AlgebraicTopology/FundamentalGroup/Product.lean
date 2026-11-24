@@ -16,7 +16,8 @@ Mathlib knows that the fundamental *groupoid* preserves products
 (`FundamentalGroupoidFunctor.prodIso`, `FundamentalGroupoidFunctor.piIso`). This file records
 the group-level statement: the fundamental *group* of a product is the product of the
 fundamental groups, both for binary and for indexed products. It also records the simplest
-consequence for path classes: a product of two simply connected spaces is simply connected.
+consequence for path classes: a product of two simply connected spaces, or subsets, is simply
+connected, and conversely each factor of a simply connected product is simply connected.
 
 In both equivalences the forward map is the product of the homomorphisms `FundamentalGroup.map`
 induced by the coordinate projections, and the inverse assembles a loop class in the product
@@ -27,7 +28,11 @@ from its coordinate loop classes by `Path.Homotopic.prod`, respectively `Path.Ho
 * `FundamentalGroup.prodMulEquiv`: `π₁(X × Y, (x, y)) ≃* π₁(X, x) × π₁(Y, y)`.
 * `FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
 * `TauCeti.instSimplyConnectedSpaceProd`: a product of two simply connected spaces is simply
-  connected.
+  connected, and `IsSimplyConnected.prod` is its form for subsets.
+* `TauCeti.simplyConnectedSpace_prod_iff`: a product is simply connected exactly when both
+  factors are.
+* `TauCeti.simplyConnectedSpace_iff_univ`: a space is simply connected exactly when the whole
+  space is a simply connected set.
 -/
 
 public section
@@ -102,6 +107,38 @@ instance instSimplyConnectedSpaceProd [SimplyConnectedSpace X] [SimplyConnectedS
   rw [← prod_projLeft_projRight p, ← prod_projLeft_projRight q,
     Subsingleton.elim (projLeft p) (projLeft q), Subsingleton.elim (projRight p) (projRight q)]
 
+/-- **A product is simply connected exactly when both factors are.** A path class in a factor is
+the coordinate class of its product with a constant path in the other factor
+(`Path.Homotopic.projLeft_prod`), so uniqueness of path classes in `X × Y` gives it in each
+factor. -/
+theorem simplyConnectedSpace_prod_iff :
+    SimplyConnectedSpace (X × Y) ↔ SimplyConnectedSpace X ∧ SimplyConnectedSpace Y := by
+  refine ⟨fun _ ↦ ?_, fun ⟨_, _⟩ ↦ inferInstance⟩
+  obtain ⟨⟨x₀, y₀⟩⟩ := (inferInstance : Nonempty (X × Y))
+  have : Nonempty X := ⟨x₀⟩
+  have : Nonempty Y := ⟨y₀⟩
+  have hX := (Prod.fst_surjective (α := X) (β := Y)).pathConnectedSpace continuous_fst
+  have hY := (Prod.snd_surjective (α := X) (β := Y)).pathConnectedSpace continuous_snd
+  refine ⟨simply_connected_iff_paths_homotopic.mpr ⟨hX, fun _ _ ↦ ⟨fun p q ↦ ?_⟩⟩,
+    simply_connected_iff_paths_homotopic.mpr ⟨hY, fun _ _ ↦ ⟨fun p q ↦ ?_⟩⟩⟩
+  · let hy := Path.Homotopic.Quotient.mk (Path.refl y₀)
+    rw [← projLeft_prod p hy, ← projLeft_prod q hy, Subsingleton.elim (prod p hy) (prod q hy)]
+  · let hx := Path.Homotopic.Quotient.mk (Path.refl x₀)
+    rw [← projRight_prod hx p, ← projRight_prod hx q, Subsingleton.elim (prod hx p) (prod hx q)]
+
+/-- A space is simply connected exactly when the whole space is a simply connected set. -/
+theorem simplyConnectedSpace_iff_univ :
+    SimplyConnectedSpace X ↔ IsSimplyConnected (Set.univ : Set X) :=
+  (Homeomorph.Set.univ X).toHomotopyEquiv.simplyConnectedSpace_iff.symm
+
 end TauCeti
+
+/-- **A product of two simply connected sets is simply connected.** -/
+theorem IsSimplyConnected.prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {s : Set X} {t : Set Y} (hs : IsSimplyConnected s) (ht : IsSimplyConnected t) :
+    IsSimplyConnected (s ×ˢ t) :=
+  have := hs.simplyConnectedSpace
+  have := ht.simplyConnectedSpace
+  (Homeomorph.Set.prod s t).toHomotopyEquiv.simplyConnectedSpace
 
 end

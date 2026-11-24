@@ -113,6 +113,6 @@ theorem exists_isProPSylow (p : ℕ) [Fact p.Prime] (G : Type u) [Group G]
     -- the section equation.
     change (S U).mapSurjective (QuotientGroup.mapOfLE_surjective hUV) = S V at h
     exact h
-  exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.1) h'
+  exact congrArg (fun Q : Sylow p (G ⧸ V.toSubgroup) ↦ Q.toSubgroup) h'
 
 end TauCeti

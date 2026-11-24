@@ -84,9 +84,9 @@ private noncomputable def coalgHomComponent (f : ReducedTensorWords R M →ₗ[R
     (n : ℕ) → TensorPower R n M →ₗ[R] ReducedTensorWords R N
   | n =>
     (if h : 0 < n then ofLetter R N ∘ₗ f ∘ₗ of R M ⟨n, h⟩ else 0) +
-      ∑ d : Fin n, if h : 0 < d.1 then
-        TensorProduct.lift ((prepend R N).compl₁₂ (f ∘ₗ of R M ⟨d.1, h⟩)
-          (coalgHomComponent f (n - d.1))) ∘ₗ TensorPower.splitAt R M n d.1 d.2.le
+      ∑ d : Fin n, if h : 0 < d.val then
+        TensorProduct.lift ((prepend R N).compl₁₂ (f ∘ₗ of R M ⟨d.val, h⟩)
+          (coalgHomComponent f (n - d.val))) ∘ₗ TensorPower.splitAt R M n d.val d.isLt.le
         else 0
 termination_by n => n
 decreasing_by have := d.isLt; omega
@@ -96,7 +96,7 @@ decreasing_by have := d.isLt; omega
 the word `f(B₁) ⋯ f(B_k)`. -/
 noncomputable def coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
     ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N :=
-  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦ coalgHomComponent R f n.1
+  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦ coalgHomComponent R f n.val
 
 variable {R}
 
@@ -107,17 +107,19 @@ private theorem coalgHom_of_tprod (f : ReducedTensorWords R M →ₗ[R] N) {n : 
       ofLetter R N (f (subword R x 0 n)) +
         ∑ d ∈ Finset.range n,
           prepend R N (f (subword R x 0 d)) (coalgHom R f (subword R x d (n - d))) := by
-  rw [coalgHom, toModule_of, coalgHomComponent, dite_eq_left hn, ← of_tprod_eq_subword R hn x]
+  rw [coalgHom, toModule_of, coalgHomComponent]
+  dsimp only
+  rw [dite_eq_left hn, ← of_tprod_eq_subword R hn x]
   simp only [LinearMap.add_apply, LinearMap.coe_comp, Function.comp_apply, LinearMap.sum_apply]
   congr 1
   rw [Finset.sum_range]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rcases Nat.eq_zero_or_pos d.1 with hd | hd
+  rcases Nat.eq_zero_or_pos d.val with hd | hd
   · rw [dite_eq_right (by omega), hd, subword_length_zero, map_zero, map_zero, LinearMap.zero_apply,
       LinearMap.zero_apply]
   · have _ := d.isLt
     rw [dite_eq_left hd, subword_eq_of_tprod R x hd (by omega),
-      subword_eq_of_tprod R x (a := d.1) (b := n - d.1) (by omega) (by omega), toModule_of]
+      subword_eq_of_tprod R x (a := d.val) (b := n - d.val) (by omega) (by omega), toModule_of]
     simp only [LinearMap.coe_comp, Function.comp_apply, TensorPower.splitAt_tprod,
       TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
     congr 3
@@ -133,7 +135,7 @@ theorem coalgHom_subword (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x :
           prepend R N (f (subword R x a d)) (coalgHom R f (subword R x (a + d) (b - d))) := by
   by_cases h : 0 < b ∧ a + b ≤ n
   · obtain ⟨hb, hab⟩ := h
-    have hy : ∀ c d : ℕ, c + d ≤ b → subword R (fun j : Fin b ↦ x ⟨a + j.1, by omega⟩) c d =
+    have hy : ∀ c d : ℕ, c + d ≤ b → subword R (fun j : Fin b ↦ x ⟨a + j.val, by omega⟩) c d =
         subword R x (a + c) d := fun c d hcd ↦
       subword_congr R _ x hcd (by omega) fun j hj ↦ congrArg x (Fin.ext (by simp only; omega))
     have hx := congrArg (coalgHom R f) (subword_eq_of_tprod R x hb hab)
@@ -160,7 +162,7 @@ one block has length at least two. -/
 theorem letter_comp_coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
     letter R N ∘ₗ coalgHom R f = f := by
   refine linearMap_ext R M fun n x ↦ ?_
-  rw [LinearMap.comp_apply, of_tprod_eq_subword R n.2, coalgHom_subword, map_add, map_sum,
+  rw [LinearMap.comp_apply, of_tprod_eq_subword R n.property, coalgHom_subword, map_add, map_sum,
     letter_ofLetter]
   simp only [letter_prepend, Finset.sum_const_zero, add_zero]
 
@@ -237,8 +239,8 @@ theorem isCoalgHom_coalgHom (f : ReducedTensorWords R M →ₗ[R] N) :
       have hbd : b - d - (e - d) = b - e := by omega
       rw [had, hbd]
   refine linearMap_ext R M fun n x ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, of_tprod_eq_subword R n.2]
-  exact key x n.1 0
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, of_tprod_eq_subword R n.property]
+  exact key x n.val 0
 
 /-- Two coalgebra morphisms of reduced tensor coalgebras whose Taylor components agree on the words
 of length at most `n` agree on those words: the value on a word is determined by its letter and
@@ -262,7 +264,7 @@ theorem IsCoalgHom.apply_eq_of_mem_filtration
       induction w using TensorProduct.inductionOn with
       | tmul u v =>
           simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
-          rw [ih' _ u.2, ih' _ v.2]
+          rw [ih' _ u.property, ih' _ v.property]
       | add u v hu hv => simp only [map_add, hu, hv]
 
 /-- A coalgebra morphism of reduced tensor coalgebras is determined by its Taylor components, that
@@ -290,20 +292,20 @@ Its body is sealed; reason about it through
 noncomputable def coalgHomEquivTaylor :
     {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N // IsCoalgHom R F} ≃
       (ReducedTensorWords R M →ₗ[R] N) where
-  toFun F := letter R N ∘ₗ F.1
+  toFun F := letter R N ∘ₗ F.val
   invFun f := ⟨coalgHom R f, isCoalgHom_coalgHom f⟩
-  left_inv F := Subtype.ext F.2.eq_coalgHom.symm
+  left_inv F := Subtype.ext F.property.eq_coalgHom.symm
   right_inv f := letter_comp_coalgHom f
 
 @[simp]
 theorem coalgHomEquivTaylor_apply
     (F : {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N // IsCoalgHom R F}) :
-    coalgHomEquivTaylor R M N F = letter R N ∘ₗ F.1 :=
+    coalgHomEquivTaylor R M N F = letter R N ∘ₗ F.val :=
   (rfl)
 
 @[simp]
 theorem coalgHomEquivTaylor_symm_apply (f : ReducedTensorWords R M →ₗ[R] N) :
-    ((coalgHomEquivTaylor R M N).symm f).1 = coalgHom R f :=
+    ((coalgHomEquivTaylor R M N).symm f).val = coalgHom R f :=
   (rfl)
 
 variable (M) in
@@ -382,9 +384,9 @@ theorem coalgHom_mem_filtration (f : ReducedTensorWords R M →ₗ[R] N) {n : �
     simp only [Submodule.mem_comap]
     induction x using PiTensorProduct.induction_on with
     | smul_tprod r y =>
-        rw [map_smul, map_smul, of_tprod_eq_subword R k.2]
+        rw [map_smul, map_smul, of_tprod_eq_subword R k.property]
         exact Submodule.smul_mem _ _
-          (filtration_monotone R N hk (coalgHom_subword_mem_filtration f y 0 k.1))
+          (filtration_monotone R N hk (coalgHom_subword_mem_filtration f y 0 k.val))
     | add u v hu hv =>
         rw [map_add, map_add]
         exact Submodule.add_mem _ hu hv
@@ -521,9 +523,10 @@ theorem IsCoalgHom.sub_mem_filtration {G : ReducedTensorWords R M →ₗ[R] Redu
     simp only [Submodule.mem_comap]
     induction x using PiTensorProduct.induction_on with
     | smul_tprod r y =>
-        rw [map_smul, map_smul, LinearMap.sub_apply, LinearMap.id_apply, of_tprod_eq_subword R k.2]
+        rw [map_smul, map_smul, LinearMap.sub_apply, LinearMap.id_apply,
+            of_tprod_eq_subword R k.property]
         exact Submodule.smul_mem _ _
-          (filtration_monotone R M (by omega) (hG.sub_subword_mem_filtration h₁ y 0 k.1))
+          (filtration_monotone R M (by omega) (hG.sub_subword_mem_filtration h₁ y 0 k.val))
     | add u v hu hv =>
         rw [map_add, map_add]
         exact Submodule.add_mem _ hu hv
