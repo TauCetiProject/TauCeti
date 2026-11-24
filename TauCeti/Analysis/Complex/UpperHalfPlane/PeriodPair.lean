@@ -856,20 +856,19 @@ theorem relIndex_lattice_smul_eq_natAbs {L L' : PeriodPair} (c : ℂˣ) {a b e f
     simp only [smul_ω₁, smul_ω₂]
     push_cast
     linear_combination (m : ℂ) * hab + (n : ℂ) * hef
-  -- the bases `ω₁, ω₂` of the lattices, viewed as `ℤ`-submodules through `toIntSubmodule`
-  let B (L : PeriodPair) :
-      Module.Basis (Fin 2) ℤ (AddSubgroup.toIntSubmodule L.lattice.toAddSubgroup) :=
-    L.latticeBasis.map (LinearEquiv.ofEq _ _ (SetLike.ext fun _ ↦ Iff.rfl))
-  rw [AddSubgroup.relIndex_eq_natAbs_det _ _ hle (B (c • L)) (B L'), Module.Basis.det_apply,
-    Matrix.det_fin_two]
-  simp only [Module.Basis.toMatrix_apply,
-    show ∀ x i, (B L').repr x i = L'.latticeBasis.repr ⟨x, x.property⟩ i from fun _ _ ↦ rfl]
+  -- transport the bases `ω₁, ω₂` to the `ℤ`-submodules `toIntSubmodule` used by `relIndex`
+  let φ (L : PeriodPair) : L.lattice ≃ₗ[ℤ] AddSubgroup.toIntSubmodule L.lattice.toAddSubgroup :=
+    LinearEquiv.ofEq _ _ (Submodule.toAddSubgroup_toIntSubmodule _).symm
+  rw [AddSubgroup.relIndex_eq_natAbs_det _ _ hle ((c • L).latticeBasis.map (φ (c • L)))
+    (L'.latticeBasis.map (φ L')), Module.Basis.det_apply, Matrix.det_fin_two]
+  simp only [Module.Basis.toMatrix_apply, Module.Basis.map_repr, Module.Basis.map_apply,
+    LinearEquiv.trans_apply]
   obtain ⟨h₁, h₂⟩ := latticeBasis_repr_eq (L := L') (m := a) (n := b)
-    (x := ⟨_, hle (B (c • L) 0).property⟩)
-    (hab.trans (by change _ = ((c • L).latticeBasis 0 : ℂ); simp))
+    (x := (φ L').symm ⟨_, hle (φ (c • L) ((c • L).latticeBasis 0)).property⟩)
+    (by simp only [φ, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply]; simpa using hab)
   obtain ⟨h₃, h₄⟩ := latticeBasis_repr_eq (L := L') (m := e) (n := f)
-    (x := ⟨_, hle (B (c • L) 1).property⟩)
-    (hef.trans (by change _ = ((c • L).latticeBasis 1 : ℂ); simp))
+    (x := (φ L').symm ⟨_, hle (φ (c • L) ((c • L).latticeBasis 1)).property⟩)
+    (by simp only [φ, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply]; simpa using hef)
   rw [h₁, h₂, h₃, h₄, mul_comm e b]
 
 /-- **The index is finite.** For `c ≠ 0` with `c Λ ⊆ Λ'`, the index `[Λ' : c Λ]` is finite. -/
