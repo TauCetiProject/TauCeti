@@ -26,7 +26,9 @@ closure arguments for improper integrals.
 For a real function `g` integrable on `(x, ∞)`, with tail integral
 `Ψ v = ∫ u in Ioi v, g u`, and `F` differentiable with continuous derivative `f`, the product
 `g * f ∘ Ψ` is integrable on `(x, ∞)` (`MeasureTheory.IntegrableOn.mul_comp_integral_Ioi`) with
-integral `F (Ψ x) - F 0` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_comp_integral_Ioi`). In
+integral `F (Ψ x) - F 0` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_comp_integral_Ioi`). For
+integrability it suffices that `f` be continuous on `[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`, since
+`Ψ` takes values there on `[x, ∞)` (`MeasureTheory.IntegrableOn.integral_Ioi_mem_Icc`). In
 particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
 (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
 `exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
@@ -117,7 +119,7 @@ variable {g : ℝ → ℝ} {x : ℝ}
 
 /-- For `g` integrable on `(x, ∞)` and `v ≥ x`, the tail integral `∫ u in Ioi v, g u` lies in
 `[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`. -/
-private lemma integral_Ioi_mem_Icc (hint : IntegrableOn g (Ioi x)) {v : ℝ} (hv : x ≤ v) :
+theorem integral_Ioi_mem_Icc (hint : IntegrableOn g (Ioi x)) {v : ℝ} (hv : x ≤ v) :
     ∫ u in Ioi v, g u ∈ Icc (-∫ u in Ioi x, ‖g u‖) (∫ u in Ioi x, ‖g u‖) :=
   abs_le.1 ((norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
     (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv).eventuallySubset))
@@ -138,18 +140,6 @@ theorem mul_comp_integral_Ioi (hint : IntegrableOn g (Ioi x)) {f : ℝ → ℝ}
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
   rw [norm_mul]
   exact mul_le_mul_of_nonneg_left (hM _ (hmaps hv)) (norm_nonneg _)
-
-/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
-`v ↦ g v * Ψ v ^ k` is integrable on `(x, ∞)`. -/
-theorem mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
-    IntegrableOn (fun v ↦ g v * (∫ u in Ioi v, g u) ^ k) (Ioi x) :=
-  hint.mul_comp_integral_Ioi (f := (· ^ k)) (continuous_pow k).continuousOn
-
-/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
-`v ↦ g v * exp (Ψ v)` is integrable on `(x, ∞)`. -/
-theorem mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
-    IntegrableOn (fun v ↦ g v * Real.exp (∫ u in Ioi v, g u)) (Ioi x) :=
-  hint.mul_comp_integral_Ioi Real.continuous_exp.continuousOn
 
 /-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, and `F`
 differentiable with continuous derivative `f`, the integral of `g * f ∘ Ψ` over `(x, ∞)` is
