@@ -169,6 +169,12 @@ theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
       rw [Finset.coe_image, ← Ideal.map_span]
       exact hopen _ hV, rfl⟩
 
+private theorem isOpen_map_of_ringEquiv {R S : Type*} [CommRing R] [TopologicalSpace R]
+    [CommRing S] [TopologicalSpace S] (φ : R ≃+* S) (hφ' : Continuous φ.symm)
+    (J : Ideal R) (hJ : IsOpen (J : Set R)) : IsOpen (Ideal.map (φ : R →+* S) J : Set S) := by
+  rw [Ideal.map_eq_image_of_surjective (φ : R →+* S) φ.surjective]
+  exact (IsOpenMap.of_inverse hφ' φ.apply_symm_apply φ.symm_apply_apply) J hJ
+
 /-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
 `spaRationalFamily A⁺`. -/
 theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [CommRing B]
@@ -177,32 +183,17 @@ theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [C
     (hplus : Aplus.map (e : A →+* B) = Bplus) :
     Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
       (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
-  have hplus_inv : ∀ b ∈ Bplus, (e.symm : B →+* A) b ∈ Aplus := fun _ hb ↦
-    Subring.mem_map_equiv.mp (hplus ▸ hb)
-  have hplus_fwd : ∀ a ∈ Aplus, (e : A →+* B) a ∈ Bplus := fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
-  have hfwd : (spaHomeomorphOfRingEquiv e he he' hplus : spa Aplus → spa Bplus) =
-      spaComap (e.symm : B →+* A) he' Bplus Aplus hplus_inv :=
-    funext fun v ↦ Subtype.ext <|
-      (spaHomeomorphOfRingEquiv_val e he he' hplus v).trans (spaComap_val ..).symm
-  have hinv : ((spaHomeomorphOfRingEquiv e he he' hplus).symm : spa Bplus → spa Aplus) =
-      spaComap (e : A →+* B) he Aplus Bplus hplus_fwd :=
-    funext fun w ↦ Subtype.ext <|
-      (spaHomeomorphOfRingEquiv_symm_val e he he' hplus w).trans (spaComap_val ..).symm
-  have hopen_symm : ∀ J : Ideal B, IsOpen (J : Set B) →
-      IsOpen (Ideal.map (e.symm : B →+* A) J : Set A) := fun J hJ ↦ by
-    rw [Ideal.map_eq_image_of_surjective (e.symm : B →+* A) e.symm.surjective]
-    exact (IsOpenMap.of_inverse he e.symm_apply_apply e.apply_symm_apply) J hJ
-  have hopen : ∀ J : Ideal A, IsOpen (J : Set A) →
-      IsOpen (Ideal.map (e : A →+* B) J : Set B) := fun J hJ ↦ by
-    rw [Ideal.map_eq_image_of_surjective (e : A →+* B) e.surjective]
-    exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
-  refine ⟨fun V hV ↦ hfwd ▸ spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus
-      Aplus hplus_inv hopen_symm hV,
+  refine ⟨fun V hV ↦ ?_,
     (spaHomeomorphOfRingEquiv e he he' hplus).surjective.preimage_injective.injOn,
-    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U,
-      hinv ▸ spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus hplus_fwd
-        hopen hU, ?_⟩⟩
-  ext x; simp
+    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U, ?_, ?_⟩⟩
+  · rw [coe_spaHomeomorphOfRingEquiv]
+    exact spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus Aplus _
+      (isOpen_map_of_ringEquiv e.symm he) hV
+  · rw [coe_spaHomeomorphOfRingEquiv_symm]
+    exact spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _
+      (isOpen_map_of_ringEquiv e he') hU
+  · ext x
+    simp only [Set.mem_preimage, Homeomorph.symm_apply_apply]
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :

@@ -124,11 +124,13 @@ private theorem factor_rationalLocalizationPair_plus_le_comap
     rw [rationalLocalizationPair_plus]
     refine completedPlusSubring_le_comap PR UR.plus TR sR SR hdenR hcl
       ((continuous_completionLocEquiv ..).comp hι) (fun r hr ↦ ?_) (fun t ht ↦ ?_)
-    · rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hloc r]
-      exact toCompletionLoc_mem_rationalLocalizationPair_plus Q _ hQ _ _ S'' hden'' (hι₀_plus r hr)
+    · rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hloc r,
+        rationalLocalizationPair_plus]
+      exact toCompletionLoc_mem_completedPlusSubring Q _ _ _ S'' hden'' (hι₀_plus r hr)
     · obtain ⟨x, hx, hxeq⟩ := hdiv t ht
-      rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hxeq]
-      exact divBy_mem_rationalLocalizationPair_plus Q _ hQ _ _ S'' hden'' hx
+      rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hxeq,
+        rationalLocalizationPair_plus]
+      exact divBy_mem_completedPlusSubring Q _ _ _ S'' hden'' hx
 
 private theorem completionLocEquiv_plus_le :
     withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
@@ -193,9 +195,10 @@ private theorem exists_mul_toCompletionLoc_of_mem_insert
     rcases Finset.mem_insert.mp hx with rfl | hx
     · exact ⟨1, (rationalLocalizationPair PR UR hPR TR sR SR hdenR).plus.one_mem, by simp⟩
     obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hx
-    refine ⟨((divBy t sR : SR) : Completion SR),
-      divBy_mem_rationalLocalizationPair_plus PR UR hPR TR sR SR hdenR ht, ?_⟩
-    rw [hι_symm, hι_symm, map_divBy_mul_toCompletionLoc PR TR sR SR hdenR t ι]
+    refine ⟨((divBy t sR : SR) : Completion SR), ?_, ?_⟩
+    · rw [rationalLocalizationPair_plus]
+      exact divBy_mem_completedPlusSubring PR UR.plus TR sR SR hdenR ht
+    · rw [hι_symm, hι_symm, map_divBy_mul_toCompletionLoc PR TR sR SR hdenR t ι]
 
 private theorem completionLocEquiv_symm_divBy_mem {x : CompletedTensor A B C}
     (hx : x ∈ insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
@@ -261,7 +264,9 @@ private theorem factor_symm_toCompletionLoc_mem_plus
     have _ := isHuberRing_completion_locTopology PR TR sR SR hdenR
     intro ι hι_symm hι_plus r hr
     rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, hι_symm]
-    exact hι_plus _ (toCompletionLoc_mem_rationalLocalizationPair_plus PR UR hPR TR sR SR hdenR hr)
+    exact hι_plus _ (by
+      rw [rationalLocalizationPair_plus]
+      exact toCompletionLoc_mem_completedPlusSubring PR UR.plus TR sR SR hdenR hr)
 
 private theorem completionLocEquiv_symm_plus_le :
     withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in

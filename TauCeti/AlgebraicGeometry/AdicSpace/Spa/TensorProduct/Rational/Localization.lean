@@ -50,11 +50,15 @@ rational-intersection formulas.
 ## Main results
 
 * `TauCeti.Huber.Pair.completedTensor.isHomeomorph_rationalRingEquiv`,
-  `map_plus_rationalRingEquiv`, and `rationalRingEquiv_toCompletion_tmul`: topological, plus-ring,
-  and pure-tensor compatibility of `rationalRingEquiv`.
-* `TauCeti.Huber.Pair.completedTensor.rationalSpaHomeomorph_val` and
-  `bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily`: valuation pullback formula and
-  rational-subset bijection for `rationalSpaHomeomorph`.
+  `map_plus_rationalRingEquiv`, `rationalRingEquiv_inl_toCompletionLoc`,
+  `rationalRingEquiv_inr_toCompletionLoc`, `rationalRingEquiv_symm_toCompletionLoc_inl`,
+  `rationalRingEquiv_symm_toCompletionLoc_inr`, `rationalRingEquiv_toCompletion_tmul`, and
+  `rationalSubset_interPresentation_eq`: topological, plus-ring, generator, pure-tensor, and
+  presentation-comparison properties of `rationalRingEquiv`.
+* `TauCeti.Huber.Pair.completedTensor.rationalSpaHomeomorph_eq_trans`,
+  `rationalSpaHomeomorph_val`, and `bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily`:
+  decomposition, valuation pullback formula, and rational-subset bijection for
+  `rationalSpaHomeomorph`.
 
 ## References
 
@@ -73,24 +77,17 @@ open UniformSpace TensorProduct
 namespace TauCeti.Huber.Pair
 
 open CompletedTensor PairOfDefinition ValuationSpectrum
-open scoped Pointwise
+open scoped Pointwise TauCeti.Huber.PairOfDefinition TauCeti.Huber.CompletedTensor
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withLocPres " P:term:max p:term:max " in " t:term : term =>
-  `(letI := locUniformSpace $P ($p).num ($p).den _ ($p).hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace $P ($p).num ($p).den _ ($p).hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace $P ($p).num ($p).den _ ($p).hasDenominatorPower
-    letI := isHuberRing_completion_locTopology $P ($p).num ($p).den _ ($p).hasDenominatorPower
-    $t)
+  `(withLocHuber $P ($p).num ($p).den _ ($p).hasDenominatorPower in $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withFourPres " PA:term:max a:term:max PB:term:max b:term:max
     PC:term:max c:term:max PD:term:max d:term:max " in " t:term : term =>
   `(withLocPres $PA $a in withLocPres $PB $b in withLocPres $PC $c in
-    letI := locUniformSpace $PD ($d).num ($d).den _ ($d).hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace $PD ($d).num ($d).den _ ($d).hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace $PD ($d).num ($d).den _ ($d).hasDenominatorPower
-    $t)
+    withLoc $PD ($d).num ($d).den _ ($d).hasDenominatorPower in $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withRationalCtx "
@@ -119,26 +116,14 @@ local macro "withRationalCtx "
     $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-open scoped Pointwise in
+open scoped Pointwise TauCeti.Huber.CompletedTensor in
 local macro "withInterLoc " A:term:max B:term:max C:term:max
     PB:term:max b:term:max hb:term:max PC:term:max c:term:max hc:term:max PD:term:max
     d₀:ident " in " t:term : term =>
-  `(letI := ((toCompletionLoc $PB ($b).num ($b).den _ ($b).hasDenominatorPower).comp
-      (algebraMap $A $B)).toAlgebra
-    letI := ((toCompletionLoc $PC ($c).num ($c).den _ ($c).hasDenominatorPower).comp
-      (algebraMap $A $C)).toAlgebra
-    haveI : IsAdicHom (algebraMap $A (Completion (Localization.Away ($b).den))) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc $PB ($b).num ($b).den _ ($b).hasDenominatorPower)
-        (inferInstanceAs (IsAdicHom (algebraMap $A $B)))
-    haveI : IsAdicHom (algebraMap $A (Completion (Localization.Away ($c).den))) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc $PC ($c).num ($c).den _ ($c).hasDenominatorPower)
-        (inferInstanceAs (IsAdicHom (algebraMap $A $C)))
-    letI := Classical.decEq (CompletedTensor $A $B $C)
+  `(letI := Classical.decEq (CompletedTensor $A $B $C)
     let $d₀ := CompletedTensor.interPresentation $PD ($b).den ($c).den $hb $hc
-    letI := locUniformSpace $PD ($d₀).num ($d₀).den _ ($d₀).hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace $PD ($d₀).num ($d₀).den _ ($d₀).hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace $PD ($d₀).num ($d₀).den _ ($d₀).hasDenominatorPower
-    letI := isHuberRing_completion_locTopology $PD ($d₀).num ($d₀).den _ ($d₀).hasDenominatorPower
+    withRationalTensorHuber $A $B $C $PB ($b).num ($b).den _ ($b).hasDenominatorPower
+      $PC ($c).num ($c).den _ ($c).hasDenominatorPower $PD _ ($d₀).hasDenominatorPower in
     $t)
 
 open TauCeti.Huber.PairOfDefinition in
@@ -179,6 +164,25 @@ variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   (hd : (Subtype.val ⁻¹' rationalSubset (UB.completedTensor A UC).plus d.num d.den :
       Set (spa (UB.completedTensor A UC).plus)) = interPreimage A UB UC b c)
 
+omit [IsHuberRing A] in
+include hb hc hd in
+/-- The rational subset presented by `interPresentation` equals that of any presentation `d` of
+`p_B⁻¹(U) ∩ p_C⁻¹(V)`. -/
+theorem completedTensor.rationalSubset_interPresentation_eq
+    [inst : DecidableEq (CompletedTensor A B C)] :
+    rationalSubset (UB.completedTensor A UC).plus
+        (interPresentation PD b.den c.den hb hc).num
+        (interPresentation PD b.den c.den hb hc).den =
+      rationalSubset (UB.completedTensor A UC).plus d.num d.den := by
+  refine rationalSubset_eq_of_spaBasicOpen_eq (SetLike.ext fun v ↦ ?_)
+  have h := Set.ext_iff.mp
+    ((completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC b.num b.den
+      c.num c.den).symm.trans hd.symm) v
+  have hdec : inst = fun x y ↦ Classical.propDecidable (x = y) := Subsingleton.elim _ _
+  subst hdec
+  simpa only [mem_spaBasicOpen, Set.mem_preimage, interPresentation_num,
+    interPresentation_den] using h
+
 include hb hc hd in
 /-- **Topological ring isomorphism `O(U) ⊗̂_{O(W)} O(V) ≃+* O_D(d)`** for presentations `a`, `b`,
 `c` of `W ⊆ Spa(A, A⁺)`, `U ⊆ Spa(B, B⁺)`, `V ⊆ Spa(C, C⁺)` with `b.num` and `c.num` generating open
@@ -205,11 +209,7 @@ noncomputable def completedTensor.rationalRingEquiv :
     (presentationRingEquivOfEq PD (UB.completedTensor A UC).plus
       (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
       d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower
-      (rationalSubset_eq_of_spaBasicOpen_eq <| SetLike.ext fun v ↦ by
-        simpa only [d₀, mem_spaBasicOpen, Set.mem_preimage, interPresentation_num,
-          interPresentation_den] using Set.ext_iff.mp
-          ((completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC b.num b.den
-            c.num c.den).symm.trans hd.symm) v))
+      (completedTensor.rationalSubset_interPresentation_eq PB UB b hb PC UC c hc PD d hd))
 
 /-- `completedTensor.rationalRingEquiv` is continuous. -/
 theorem completedTensor.continuous_rationalRingEquiv :
@@ -278,6 +278,96 @@ theorem completedTensor.map_plus_rationalRingEquiv :
       (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
       d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower _
 
+/-- `completedTensor.rationalRingEquiv` sends `inl(ρ_B(x))` to `ρ_D(inl(x))`. -/
+@[simp] theorem completedTensor.rationalRingEquiv_inl_toCompletionLoc (x : B) :
+    withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+    completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
+        hf_alg hg_alg hf hg hd
+        (CompletedTensor.inl (Completion (Localization.Away a.den))
+          (Completion (Localization.Away b.den)) (Completion (Localization.Away c.den))
+          (algebraMap B (Localization.Away b.den) x : Completion (Localization.Away b.den))) =
+      (algebraMap (CompletedTensor A B C) (Localization.Away d.den)
+          (CompletedTensor.inl A B C x) :
+        Completion (Localization.Away d.den)) :=
+  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+  withInterLoc A B C PB b hb PC c hc PD d₀ in by
+    dsimp only [completedTensor.rationalRingEquiv]
+    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, completionLocBaseEquiv_inl,
+      completionLocEquiv_inl_toCompletionLoc, ← toCompletionLoc_apply PD d₀.num d₀.den]
+    simpa only [RingHom.comp_apply, RingEquiv.coe_toRingHom, toCompletionLoc_apply] using
+      RingHom.congr_fun
+        (presentationRingEquivOfEq_coe_comp_toCompletionLoc PD (UB.completedTensor A UC).plus _
+          d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower _) _
+
+/-- `completedTensor.rationalRingEquiv` sends `inr(ρ_C(y))` to `ρ_D(inr(y))`. -/
+@[simp] theorem completedTensor.rationalRingEquiv_inr_toCompletionLoc (y : C) :
+    withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+    completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
+        hf_alg hg_alg hf hg hd
+        (CompletedTensor.inr (Completion (Localization.Away a.den))
+          (Completion (Localization.Away b.den)) (Completion (Localization.Away c.den))
+          (algebraMap C (Localization.Away c.den) y : Completion (Localization.Away c.den))) =
+      (algebraMap (CompletedTensor A B C) (Localization.Away d.den)
+          (CompletedTensor.inr A B C y) :
+        Completion (Localization.Away d.den)) :=
+  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+  withInterLoc A B C PB b hb PC c hc PD d₀ in by
+    dsimp only [completedTensor.rationalRingEquiv]
+    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, completionLocBaseEquiv_inr,
+      completionLocEquiv_inr_toCompletionLoc, ← toCompletionLoc_apply PD d₀.num d₀.den]
+    simpa only [RingHom.comp_apply, RingEquiv.coe_toRingHom, toCompletionLoc_apply] using
+      RingHom.congr_fun
+        (presentationRingEquivOfEq_coe_comp_toCompletionLoc PD (UB.completedTensor A UC).plus _
+          d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower _) _
+
+/-- The inverse of `completedTensor.rationalRingEquiv` sends `ρ_D(inl(x))` to `inl(ρ_B(x))`. -/
+@[simp] theorem completedTensor.rationalRingEquiv_symm_toCompletionLoc_inl (x : B) :
+    withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+    (completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
+        hf_alg hg_alg hf hg hd).symm
+        (algebraMap (CompletedTensor A B C) (Localization.Away d.den)
+            (CompletedTensor.inl A B C x) :
+          Completion (Localization.Away d.den)) =
+      CompletedTensor.inl (Completion (Localization.Away a.den))
+        (Completion (Localization.Away b.den)) (Completion (Localization.Away c.den))
+        (algebraMap B (Localization.Away b.den) x : Completion (Localization.Away b.den)) :=
+  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+  withInterLoc A B C PB b hb PC c hc PD d₀ in by
+    dsimp only [completedTensor.rationalRingEquiv]
+    rw [RingEquiv.symm_trans, RingEquiv.symm_trans, RingEquiv.trans_apply, RingEquiv.trans_apply]
+    have hpres := RingHom.congr_fun
+      (presentationRingEquivOfEq_symm_coe_comp_toCompletionLoc PD (UB.completedTensor A UC).plus
+        (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
+        d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower
+        (completedTensor.rationalSubset_interPresentation_eq PB UB b hb PC UC c hc PD d hd))
+      (CompletedTensor.inl A B C x)
+    simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, toCompletionLoc_apply] at hpres
+    rw [hpres, completionLocEquiv_symm_toCompletionLoc_inl, completionLocBaseEquiv_symm_inl]
+
+/-- The inverse of `completedTensor.rationalRingEquiv` sends `ρ_D(inr(y))` to `inr(ρ_C(y))`. -/
+@[simp] theorem completedTensor.rationalRingEquiv_symm_toCompletionLoc_inr (y : C) :
+    withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+    (completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
+        hf_alg hg_alg hf hg hd).symm
+        (algebraMap (CompletedTensor A B C) (Localization.Away d.den)
+            (CompletedTensor.inr A B C y) :
+          Completion (Localization.Away d.den)) =
+      CompletedTensor.inr (Completion (Localization.Away a.den))
+        (Completion (Localization.Away b.den)) (Completion (Localization.Away c.den))
+        (algebraMap C (Localization.Away c.den) y : Completion (Localization.Away c.den)) :=
+  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+  withInterLoc A B C PB b hb PC c hc PD d₀ in by
+    dsimp only [completedTensor.rationalRingEquiv]
+    rw [RingEquiv.symm_trans, RingEquiv.symm_trans, RingEquiv.trans_apply, RingEquiv.trans_apply]
+    have hpres := RingHom.congr_fun
+      (presentationRingEquivOfEq_symm_coe_comp_toCompletionLoc PD (UB.completedTensor A UC).plus
+        (UB.completedTensor A UC).isRingOfIntegralElements.isPowerBounded_of_mem
+        d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower
+        (completedTensor.rationalSubset_interPresentation_eq PB UB b hb PC UC c hc PD d hd))
+      (CompletedTensor.inr A B C y)
+    simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, toCompletionLoc_apply] at hpres
+    rw [hpres, completionLocEquiv_symm_toCompletionLoc_inr, completionLocBaseEquiv_symm_inr]
+
 /-- **Pure-tensor coefficient formula for `completedTensor.rationalRingEquiv`**:
 `e(ρ_B(x) ⊗ₜ ρ_C(y)) = ρ_D(x ⊗ₜ y)`. -/
 theorem completedTensor.rationalRingEquiv_toCompletion_tmul (x : B) (y : C) :
@@ -290,15 +380,10 @@ theorem completedTensor.rationalRingEquiv_toCompletion_tmul (x : B) (y : C) :
             toCompletionLoc PC c.num c.den _ c.hasDenominatorPower y)) =
       toCompletionLoc PD d.num d.den _ d.hasDenominatorPower
         (CompletedTensor.toCompletion A B C (x ⊗ₜ y)) :=
-  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
-  withInterLoc A B C PB b hb PC c hc PD d₀ in by
-    dsimp only [completedTensor.rationalRingEquiv]
-    rw [RingEquiv.trans_apply, RingEquiv.trans_apply, completionLocBaseEquiv_toCompletion_tmul,
-      completionLocEquiv_toCompletion_tmul]
-    simpa only [RingHom.comp_apply, RingEquiv.coe_toRingHom] using
-      RingHom.congr_fun
-        (presentationRingEquivOfEq_coe_comp_toCompletionLoc PD (UB.completedTensor A UC).plus _
-          d₀.num d₀.den _ d₀.hasDenominatorPower d.num d.den _ d.hasDenominatorPower _) _
+  withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in by
+    simp only [toCompletion_tmul, map_mul, toCompletionLoc_apply,
+      completedTensor.rationalRingEquiv_inl_toCompletionLoc,
+      completedTensor.rationalRingEquiv_inr_toCompletionLoc, ← Completion.coe_mul]
 
 include hb hc hPD hd in
 /-- **Homeomorphism `Spa(O(U) ⊗̂_{O(W)} O(V)) ≃ₜ ↥(p_B⁻¹(U) ∩ p_C⁻¹(V))`** pulling valuations back
@@ -318,6 +403,22 @@ noncomputable def completedTensor.rationalSpaHomeomorph :
         d.hasDenominatorPower)).trans
       (Homeomorph.setCongr hd)
 
+/-- `completedTensor.rationalSpaHomeomorph` is the composite of `spaHomeomorphOfRingEquiv`,
+`spaCompletedLocalizationHomeomorph`, and `Homeomorph.setCongr`. -/
+theorem completedTensor.rationalSpaHomeomorph_eq_trans :
+    withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
+    completedTensor.rationalSpaHomeomorph PA UA hPA a PB UB hPB b hb PC UC hPC c hc
+        PD hPD d f g hf_alg hg_alg hf hg hd =
+      ((spaHomeomorphOfRingEquiv
+          (completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
+            hf_alg hg_alg hf hg hd)
+          (completedTensor.continuous_rationalRingEquiv ..)
+          (completedTensor.continuous_rationalRingEquiv_symm ..)
+          (completedTensor.map_plus_rationalRingEquiv (hPD := hPD) ..)).trans
+        (spaCompletedLocalizationHomeomorph PD (UB.completedTensor A UC).plus hPD d.num d.den _
+          d.hasDenominatorPower)).trans
+        (Homeomorph.setCongr hd) := (rfl)
+
 /-- `completedTensor.rationalSpaHomeomorph` pulls valuations back along `e.symm ∘ ρ_D`. -/
 @[simp] theorem completedTensor.rationalSpaHomeomorph_val :
     withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in
@@ -330,11 +431,11 @@ noncomputable def completedTensor.rationalSpaHomeomorph :
               PD d f g hf_alg hg_alg hf hg hd).symm.toRingHom.comp
             (toCompletionLoc PD d.num d.den _ d.hasDenominatorPower)) v.val :=
   withRationalCtx PA UA hPA a PB UB hPB b PC UC hPC c PD d f g hf_alg hg_alg hf hg in by
-    dsimp only [completedTensor.rationalSpaHomeomorph]
-    intro v
+    rw [completedTensor.rationalSpaHomeomorph_eq_trans]
     simp only [Homeomorph.trans_apply, Homeomorph.setCongr_apply,
       spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val, spaComapLoc_val,
       spaHomeomorphOfRingEquiv_val, ← RingEquiv.toRingHom_eq_coe]
+    intro v
     rw [← Function.comp_apply
         (f := ValuationSpectrum.comap (toCompletionLoc PD d.num d.den _ d.hasDenominatorPower)),
       ← ValuationSpectrum.comap_comp]
@@ -366,7 +467,10 @@ theorem completedTensor.bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily :
       simp only [hd]
     rw [hdom] at hbij₂
     exact (hbij₁.comp hbij₂).congr fun Z _ ↦ by
-      ext x; simp [completedTensor.rationalSpaHomeomorph]
+      rw [completedTensor.rationalSpaHomeomorph_eq_trans]
+      ext x
+      simp only [Function.comp_apply, Set.mem_preimage, Homeomorph.trans_apply,
+        Homeomorph.setCongr_apply]
 
 end RationalEquiv
 

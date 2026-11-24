@@ -41,8 +41,10 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `spaComapTopHom_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.spaComap_spaComap`, `mem_of_spaComap_mem_map`: pulling back along a
   left inverse of `φ` and then along `φ` is the identity.
-* `TauCeti.ValuationSpectrum.spaHomeomorphOfRingEquiv_val`,
-  `spaHomeomorphOfRingEquiv_symm_val`: valuation pullback formulas for `spaHomeomorphOfRingEquiv`.
+* `TauCeti.ValuationSpectrum.coe_spaHomeomorphOfRingEquiv`,
+  `coe_spaHomeomorphOfRingEquiv_symm`, `spaHomeomorphOfRingEquiv_val`,
+  `spaHomeomorphOfRingEquiv_symm_val`: coercion and valuation pullback formulas for
+  `spaHomeomorphOfRingEquiv`.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
   `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
   rational subsets.
@@ -171,6 +173,17 @@ noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus where
     (e : A →+* B) he e.apply_symm_apply fun _ ↦ map_mem_of_map_equiv_eq e hplus
   continuous_toFun := continuous_spaComap _ he' _ _ _
   continuous_invFun := continuous_spaComap _ he _ _ _
+
+/-- `spaHomeomorphOfRingEquiv` coerces to `spaComap` along `e.symm`. -/
+theorem coe_spaHomeomorphOfRingEquiv :
+    (spaHomeomorphOfRingEquiv e he he' hplus : spa Aplus → spa Bplus) =
+      spaComap (e.symm : B →+* A) he' Bplus Aplus
+        fun _ hb ↦ Subring.mem_map_equiv.mp (hplus ▸ hb) := (rfl)
+
+/-- The inverse of `spaHomeomorphOfRingEquiv` coerces to `spaComap` along `e`. -/
+theorem coe_spaHomeomorphOfRingEquiv_symm :
+    ((spaHomeomorphOfRingEquiv e he he' hplus).symm : spa Bplus → spa Aplus) =
+      spaComap (e : A →+* B) he Aplus Bplus fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩ := (rfl)
 
 /-- `spaHomeomorphOfRingEquiv` pulls valuations back along `e.symm`. -/
 @[simp] theorem spaHomeomorphOfRingEquiv_val (v : spa Aplus) :
