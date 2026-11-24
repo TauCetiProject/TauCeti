@@ -144,8 +144,9 @@ theorem affine_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Mea
   rw [← gaussianReal_map_const_add_const_mul]
   exact hX.affine_cond a hb
 
-/-- An affine function with positive slope applied to a Gaussian variable truncated to a closed
-interval preserves both closed endpoints. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a closed interval,
+then `a + b * X` for `0 < b` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and closed interval with endpoints `a + b * l` and `a + b * r`. -/
 theorem affine_truncatedNormalMeasure_Icc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
     (a : ℝ) {b : ℝ} (hb : 0 < b) :
@@ -154,8 +155,9 @@ theorem affine_truncatedNormalMeasure_Icc_pos {Ω : Type*} [MeasurableSpace Ω] 
         (Icc (a + b * l) (a + b * r))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_pos m v a hb l r)).fun_comp hX
 
-/-- An affine function with positive slope applied to a Gaussian variable truncated to an open
-interval preserves both open endpoints. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to an open interval,
+then `a + b * X` for `0 < b` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and open interval with endpoints `a + b * l` and `a + b * r`. -/
 theorem affine_truncatedNormalMeasure_Ioo_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
     (a : ℝ) {b : ℝ} (hb : 0 < b) :
@@ -164,8 +166,10 @@ theorem affine_truncatedNormalMeasure_Ioo_pos {Ω : Type*} [MeasurableSpace Ω] 
         (Ioo (a + b * l) (a + b * r))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_pos m v a hb l r)).fun_comp hX
 
-/-- An affine function with positive slope applied to a Gaussian variable truncated to a
-lower-closed, upper-open interval preserves both endpoint conventions. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-closed,
+upper-open interval, then `a + b * X` for `0 < b` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the same endpoint conventions at `a + b * l` and
+`a + b * r`. -/
 theorem affine_truncatedNormalMeasure_Ico_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
     (a : ℝ) {b : ℝ} (hb : 0 < b) :
@@ -174,8 +178,10 @@ theorem affine_truncatedNormalMeasure_Ico_pos {Ω : Type*} [MeasurableSpace Ω] 
         (Ico (a + b * l) (a + b * r))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_pos m v a hb l r)).fun_comp hX
 
-/-- An affine function with positive slope applied to a Gaussian variable truncated to a
-lower-open, upper-closed interval preserves both endpoint conventions. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-open,
+upper-closed interval, then `a + b * X` for `0 < b` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the same endpoint conventions at `a + b * l` and
+`a + b * r`. -/
 theorem affine_truncatedNormalMeasure_Ioc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
     (a : ℝ) {b : ℝ} (hb : 0 < b) :
@@ -184,8 +190,9 @@ theorem affine_truncatedNormalMeasure_Ioc_pos {Ω : Type*} [MeasurableSpace Ω] 
         (Ioc (a + b * l) (a + b * r))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioc_pos m v a hb l r)).fun_comp hX
 
-/-- An affine function with negative slope applied to a Gaussian variable truncated to a closed
-interval reverses the endpoints. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a closed interval,
+then `a + b * X` for `b < 0` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and closed interval with reversed endpoints `a + b * r` and `a + b * l`. -/
 theorem affine_truncatedNormalMeasure_Icc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
     (a : ℝ) {b : ℝ} (hb : b < 0) :
@@ -194,8 +201,9 @@ theorem affine_truncatedNormalMeasure_Icc_neg {Ω : Type*} [MeasurableSpace Ω] 
         (Icc (a + b * r) (a + b * l))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_neg m v a hb l r)).fun_comp hX
 
-/-- An affine function with negative slope applied to a Gaussian variable truncated to an open
-interval reverses the endpoints. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to an open interval,
+then `a + b * X` for `b < 0` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and open interval with reversed endpoints `a + b * r` and `a + b * l`. -/
 theorem affine_truncatedNormalMeasure_Ioo_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
     (a : ℝ) {b : ℝ} (hb : b < 0) :
@@ -204,8 +212,10 @@ theorem affine_truncatedNormalMeasure_Ioo_neg {Ω : Type*} [MeasurableSpace Ω] 
         (Ioo (a + b * r) (a + b * l))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_neg m v a hb l r)).fun_comp hX
 
-/-- An affine function with negative slope applied to a Gaussian variable truncated to a
-lower-closed, upper-open interval reverses the endpoints and exchanges their conventions. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-closed,
+upper-open interval, then `a + b * X` for `b < 0` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the lower-open, upper-closed interval with reversed
+endpoints `a + b * r` and `a + b * l`. -/
 theorem affine_truncatedNormalMeasure_Ico_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
     (a : ℝ) {b : ℝ} (hb : b < 0) :
@@ -214,8 +224,10 @@ theorem affine_truncatedNormalMeasure_Ico_neg {Ω : Type*} [MeasurableSpace Ω] 
         (Ioc (a + b * r) (a + b * l))) P :=
   (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_neg m v a hb l r)).fun_comp hX
 
-/-- An affine function with negative slope applied to a Gaussian variable truncated to a
-lower-open, upper-closed interval reverses the endpoints and exchanges their conventions. -/
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-open,
+upper-closed interval, then `a + b * X` for `b < 0` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the lower-closed, upper-open interval with reversed
+endpoints `a + b * r` and `a + b * l`. -/
 theorem affine_truncatedNormalMeasure_Ioc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
     (a : ℝ) {b : ℝ} (hb : b < 0) :
