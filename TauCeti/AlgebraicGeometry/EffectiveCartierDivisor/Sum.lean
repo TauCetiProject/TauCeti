@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
-import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 
 /-!
 # Sums of relative effective Cartier divisors
@@ -34,6 +33,35 @@ open CategoryTheory Limits
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X S : Scheme.{u}}
+
+/-- The product of a relative effective Cartier ideal and an arbitrary ideal with flat closed
+subscheme has flat closed subscheme over the base. -/
+theorem IsRelativeEffectiveCartier.flat_mul_subschemeι_comp
+    {I : X.IdealSheafData} {f : X ⟶ S} (hI : I.IsRelativeEffectiveCartier f)
+    (J : X.IdealSheafData) [Flat (J.subschemeι ≫ f)] : Flat ((I * J).subschemeι ≫ f) := by
+  have := hI.flat
+  apply (I * J).flat_subschemeι_comp_of_forall_exists f
+  intro W x hxW
+  obtain ⟨U, hUW, hxU, a, ha, hIa⟩ :=
+    hI.isEffectiveCartier.exists_eq_span_singleton_le (f ⁻¹ᵁ W.val) hxW
+  refine ⟨U, hUW, hxU, ?_⟩
+  let _ : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
+  have hflatI := (Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff f W U hUW _).mp
+    (I.flat_appLE_comp_ofHom_quotient_mk f W.property U hUW)
+  rw [hIa] at hflatI
+  have : Module.Flat Γ(S, W) (Γ(X, U) ⧸ Ideal.span {a}) := hflatI
+  have : Module.Flat Γ(S, W) (Γ(X, U) ⧸ J.ideal U) :=
+    (Scheme.Hom.flat_appLE_comp_ofHom_quotient_mk_iff f W U hUW _).mp
+      (J.flat_appLE_comp_ofHom_quotient_mk f W.property U hUW)
+  rw [ideal_mul, Pi.mul_apply, hIa, ← Ideal.smul_eq_mul,
+    Submodule.ideal_span_singleton_smul]
+  exact Ideal.flat_quotient_smul (R := Γ(S, W)) (J.ideal U) ha
+
+end AlgebraicGeometry.Scheme.IdealSheafData
+
 namespace TauCeti
 
 open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
@@ -47,56 +75,8 @@ theorem isRelativeEffectiveCartier_mul {I J : X.IdealSheafData} {f : X ⟶ S}
     (I * J).IsRelativeEffectiveCartier f := by
   refine (isRelativeEffectiveCartier_iff _ _).mpr
     ⟨isEffectiveCartier_mul hI.isEffectiveCartier hJ.isEffectiveCartier, ?_⟩
-  let _ := hI.flat
-  let _ := hJ.flat
-  -- Specify the ring property because the general locality instances do not infer it here.
-  let : IsZariskiLocalAtSource (@Flat.{u}) :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
-  let : IsZariskiLocalAtTarget (@Flat.{u}) :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget (@Flat.{u}) (Q := @RingHom.Flat)
-  let : MorphismProperty.RespectsRight (@Flat.{u}) (@IsOpenImmersion.{u}) :=
-    MorphismProperty.Respects.toRespectsRight
-  -- Flatness is local around each point of the sum divisor, on both source and base.
-  apply (IsZariskiLocalAtSource.iff_exists_resLE (P := @Flat.{u})).mpr
-  intro x
-  obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
-    (Set.mem_univ (f ((I * J).subschemeι x))) isOpen_univ
-  replace hW : IsAffineOpen W := hW
-  obtain ⟨U, hUW, hxU, a, -, hIa⟩ :=
-    hI.isEffectiveCartier.exists_eq_span_singleton_le (f ⁻¹ᵁ W) hxW
-  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ :=
-    hJ.isEffectiveCartier.exists_eq_span_singleton_le U.1 hxU
-  have hVW : V.1 ≤ f ⁻¹ᵁ W := hVU.trans hUW
-  let a' := X.presheaf.map (homOfLE hVU).op a
-  have hIa' : I.ideal V = Ideal.span {a'} := by
-    rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
-    rfl
-  refine ⟨W, (I * J).subschemeι ⁻¹ᵁ V.1, hxV,
-    (Scheme.Hom.preimage_mono _ hVW).trans_eq rfl, ?_⟩
-  rw [flat_resLE_subschemeι_iff hW V hVW]
-  let _ : Algebra Γ(S, W) Γ(X, V) := (f.appLE W V hVW).hom.toAlgebra
-  -- The two quotient algebras are flat over the same affine base; apply the product criterion.
-  have hflatI := I.flat_appLE_comp_ofHom_quotient_mk f hW V hVW
-  have hflatJ := J.flat_appLE_comp_ofHom_quotient_mk f hW V hVW
-  rw [hIa'] at hflatI
-  rw [hJb] at hflatJ
-  have hmap (c : Γ(X, V)) :
-      algebraMap Γ(S, W) (Γ(X, V) ⧸ Ideal.span {c}) =
-        (f.appLE W V hVW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (Ideal.span {c}))).hom := by
-    rw [IsScalarTower.algebraMap_eq Γ(S, W) Γ(X, V), Ideal.Quotient.algebraMap_eq,
-      RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, CommRingCat.hom_ofHom]
-  have : Module.Flat Γ(S, W) (Γ(X, V) ⧸ Ideal.span {a'}) := by
-    rw [← RingHom.flat_algebraMap_iff, hmap]
-    exact hflatI
-  have : Module.Flat Γ(S, W) (Γ(X, V) ⧸ Ideal.span {b}) := by
-    rw [← RingHom.flat_algebraMap_iff, hmap]
-    exact hflatJ
-  have hflat := flat_quotient_span_singleton_mul (R := Γ(S, W)) (a := a') hb
-  rw [← RingHom.flat_algebraMap_iff, hmap] at hflat
-  have hIJ : (I * J).ideal V = Ideal.span {a' * b} := by
-    simp only [ideal_mul, Pi.mul_apply, hIa', hJb, Ideal.span_singleton_mul_span_singleton]
-  rw [hIJ]
-  exact hflat
+  have := hJ.flat
+  exact hI.flat_mul_subschemeι_comp J
 
 /-- Every nonnegative multiple of a relative effective Cartier divisor is relative effective
 Cartier. This includes the empty divisor for multiplicity zero. -/

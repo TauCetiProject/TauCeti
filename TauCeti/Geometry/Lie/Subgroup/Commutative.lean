@@ -174,7 +174,7 @@ theorem lie_eq_zero_of_mem_lieSubalgebraOfSubgroup {K : Subgroup G} [IsMulCommut
 /-- **The Lie algebra of a commutative subgroup is abelian.** -/
 instance isLieAbelian_lieSubalgebraOfSubgroup (K : Subgroup G) [IsMulCommutative K] :
     IsLieAbelian (lieSubalgebraOfSubgroup (I := I) K) where
-  trivial X Y := Subtype.ext (lie_eq_zero_of_mem_lieSubalgebraOfSubgroup X.2 Y.2)
+  trivial X Y := Subtype.ext (lie_eq_zero_of_mem_lieSubalgebraOfSubgroup X.property Y.property)
 
 /-- **The Lie algebra of a commutative Lie group is abelian.** -/
 instance isLieAbelian_of_isMulCommutative [IsMulCommutative G] :

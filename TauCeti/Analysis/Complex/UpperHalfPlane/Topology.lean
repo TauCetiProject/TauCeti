@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Analysis.Complex.AtInfinity
+public import TauCeti.Analysis.Normed.Field.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -191,14 +191,12 @@ theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
   exact Eventually.of_forall fun z hz => (hφ hz).symm
 
 /-- A boundary point of the closed upper half-plane whose image avoids the open half-plane image
-maps to the frontier when the map is continuous there. -/
+maps to the frontier when the map is continuous there within the open upper half-plane. -/
 theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
-    {z : ℂ} (hfc : ContinuousWithinAt f {z : ℂ | 0 ≤ z.im} z)
+    {z : ℂ} (hfc : ContinuousWithinAt f upperHalfPlaneSet z)
     (hz : z.im = 0) (hnot : f z ∉ f '' upperHalfPlaneSet) :
-    f z ∈ frontier (f '' upperHalfPlaneSet) := by
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  refine ⟨(hfc.mono hH0).mem_closure_image ?_, fun h => hnot (interior_subset h)⟩
-  · simp [upperHalfPlaneSet, hz]
+    f z ∈ frontier (f '' upperHalfPlaneSet) :=
+  ⟨hfc.mem_closure_image (by simp [upperHalfPlaneSet, hz]), fun h => hnot (interior_subset h)⟩
 
 /-- An injection on the closed upper half-plane cannot send a real point into the image of the
 open upper half-plane. -/
@@ -442,8 +440,8 @@ theorem periodic_comp_pos_real_smul_comp_ofComplex_iff {α : Type*} {f : ℍ →
   simp only [periodic_comp_ofComplex_iff, pos_real_smul_vadd]
   constructor
   · intro h τ
-    let x_inv : {y : ℝ // 0 < y} := ⟨(x : ℝ)⁻¹, inv_pos.mpr x.2⟩
-    have hx : x * x_inv = 1 := Subtype.ext (mul_inv_cancel₀ x.2.ne')
+    let x_inv : {y : ℝ // 0 < y} := ⟨(x : ℝ)⁻¹, inv_pos.mpr x.property⟩
+    have hx : x * x_inv = 1 := Subtype.ext (mul_inv_cancel₀ x.property.ne')
     have hτ : x • (x_inv • τ) = τ := by rw [← mul_smul, hx, one_smul]
     simpa [hτ] using h (x_inv • τ)
   · intro h τ
@@ -455,7 +453,7 @@ theorem periodic_comp_pos_real_smul_div_comp_ofComplex_iff {α : Type*} {f : ℍ
     (x : {y : ℝ // 0 < y}) :
     Function.Periodic ((fun τ : ℍ ↦ f (x • τ)) ∘ ofComplex) ((c / (x : ℝ) : ℝ) : ℂ) ↔
       Function.Periodic (f ∘ ofComplex) c := by
-  rw [periodic_comp_pos_real_smul_comp_ofComplex_iff, mul_div_cancel₀ c x.2.ne']
+  rw [periodic_comp_pos_real_smul_comp_ofComplex_iff, mul_div_cancel₀ c x.property.ne']
 
 /-- Precomposing a `c`-periodic function `f : ℍ → α` with scaling by a positive natural number `a`
 preserves `c`-periodicity. -/

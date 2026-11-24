@@ -19,9 +19,11 @@ The dominant neutral elements in `H` are the elements occurring as `h` in a nonz
 
 `weightedDynkinDiagram` encodes such an element by a function `b.support → Fin 3`.
 The encoding is injective: the simple roots form a basis of the dual of `H`, so their
-values determine the element. Consequently there are at most `3 ^ finrank K H` dominant
-neutral elements. This does not assert that every labeling is realized by a triple,
-or that equal labels classify nilpotent orbits.
+values determine the element, and it never takes the zero value `0` because `0` is not a
+dominant neutral element (`weightedDynkinDiagram_ne_zero`). Consequently there are at most
+`3 ^ finrank K H - 1` dominant neutral elements (`ncard_dominantNeutralElements_add_one_le`,
+`ncard_dominantNeutralElements_le`). This does not assert that every labeling is realized by a
+triple, or that equal labels classify nilpotent orbits.
 
 The zero element is excluded by the native nonzero `IsSl2Triple` convention.
 
@@ -89,6 +91,19 @@ theorem weightedDynkinDiagram_apply_eq_iff (h : dominantNeutralElements b)
     apply Fin.ext
     exact Nat.cast_injective ((natCast_weightedDynkinDiagram_apply b h i).trans hn)
 
+/-- A dominant neutral element is nonzero, so its weighted Dynkin diagram is not identically zero.
+-/
+theorem weightedDynkinDiagram_ne_zero (h : dominantNeutralElements b) :
+    weightedDynkinDiagram b h ≠ 0 := by
+  intro h0
+  have hz : (h : H) = 0 := by
+    apply Module.eval_apply_injective K
+    apply b.toWeightBasis.ext
+    intro i
+    have hi := congrArg (fun d : b.support → Fin 3 => ((d i : ℕ) : K)) h0
+    simpa using hi
+  exact zero_notMem_dominantNeutralElements b (hz ▸ h.property)
+
 /-- Simple-root labels determine a dominant neutral element uniquely. -/
 theorem weightedDynkinDiagram_injective : Function.Injective (weightedDynkinDiagram b) := by
   intro h h' heq
@@ -107,13 +122,28 @@ instance : Finite (dominantNeutralElements b) :=
 theorem finite_dominantNeutralElements : (dominantNeutralElements b).Finite :=
   Set.toFinite _
 
-/-- There are at most three choices per simple root for a dominant neutral element. -/
-theorem ncard_dominantNeutralElements_le :
-    (dominantNeutralElements b).ncard ≤ 3 ^ finrank K H := by
-  have hcard := Nat.card_le_card_of_injective _ (weightedDynkinDiagram_injective b)
+/-- Since every dominant neutral element has a nonzero weighted Dynkin diagram, adding the zero
+diagram stays within `3 ^ finrank K H`. -/
+theorem ncard_dominantNeutralElements_add_one_le :
+    (dominantNeutralElements b).ncard + 1 ≤ 3 ^ finrank K H := by
+  have hinj : Function.Injective
+      (Option.elim · (0 : b.support → Fin 3) (weightedDynkinDiagram b)) := by
+    rintro (_ | h₁) (_ | h₂) h
+    · rfl
+    · exact absurd h.symm (weightedDynkinDiagram_ne_zero b h₂)
+    · exact absurd h (weightedDynkinDiagram_ne_zero b h₁)
+    · exact congrArg some (weightedDynkinDiagram_injective b h)
+  have hcard := Nat.card_le_card_of_injective _ hinj
   have hrank : Nat.card b.support = finrank K H := by
     simpa using (Module.finrank_eq_card_basis b.toWeightBasis).symm
-  rw [Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
+  have := Fintype.ofFinite (dominantNeutralElements b)
+  rw [Nat.card_eq_fintype_card, Fintype.card_option, ← Nat.card_eq_fintype_card,
+    Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
   exact hcard
+
+/-- There are at most three choices per simple root for a dominant neutral element. -/
+theorem ncard_dominantNeutralElements_le :
+    (dominantNeutralElements b).ncard ≤ 3 ^ finrank K H :=
+  (Nat.le_succ _).trans (ncard_dominantNeutralElements_add_one_le b)
 
 end RootPairing.Base
