@@ -91,23 +91,20 @@ variable [IsUnitaryFactorSet α]
 
 private theorem of_mul_adjoint_of (g : G) :
     (of g : twistedMonoidAlgebra k G α) * adjoint (of g) = 1 := by
-  rw [adjoint_of, mul_smul_comm, of_mul_of, mul_inv_cancel, of_one, smul_smul,
-    Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary g g⁻¹), one_smul]
+  simp [adjoint_of, smul_smul, Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary _ _)]
 
 private theorem adjoint_of_mul_of (g : G) :
     adjoint (of g : twistedMonoidAlgebra k G α) * of g = 1 := by
-  rw [adjoint_of, smul_mul_assoc, of_mul_of, inv_mul_cancel, of_one, smul_smul,
-    ← IsFactorSet.apply_inv_eq_inv_apply α g,
-    Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary g g⁻¹), one_smul]
+  simp [adjoint_of, smul_smul, ← IsFactorSet.apply_inv_eq_inv_apply α g,
+    Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary _ _)]
 
 private theorem adjoint_of_mul_of_eq (g h : G) :
     adjoint (of g * of h : twistedMonoidAlgebra k G α) = adjoint (of h) * adjoint (of g) := by
   -- Both sides are inverses of `of g * of h`: the left side on the left, the right side on the
   -- right.
   refine left_inv_eq_right_inv (a := of g * of h) ?_ ?_
-  · rw [of_mul_of, LinearMap.map_smulₛₗ, starRingEnd_apply, smul_mul_smul_comm,
-      adjoint_of_mul_of, Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary g h),
-      one_smul]
+  · simp [adjoint_of_mul_of, smul_smul, starRingEnd_apply,
+      Unitary.mul_star_self_of_mem (IsUnitaryFactorSet.mem_unitary _ _)]
   · rw [mul_assoc, ← mul_assoc (of h), of_mul_adjoint_of, one_mul, of_mul_adjoint_of]
 
 private theorem adjoint_mul (x y : twistedMonoidAlgebra k G α) :
@@ -129,10 +126,8 @@ private theorem adjoint_mul (x y : twistedMonoidAlgebra k G α) :
 private theorem adjoint_adjoint (x : twistedMonoidAlgebra k G α) : adjoint (adjoint x) = x := by
   have h : adjoint ∘ₛₗ adjoint = (LinearMap.id : twistedMonoidAlgebra k G α →ₗ[k] _) :=
     (basis k G α).ext fun g ↦ by
-      simp only [LinearMap.comp_apply, basis_apply, adjoint_of, LinearMap.map_smulₛₗ,
-        starRingEnd_apply, star_star, inv_inv, smul_smul, LinearMap.id_apply]
-      rw [← IsFactorSet.apply_inv_eq_inv_apply α g, mul_comm,
-        Unitary.star_mul_self_of_mem (IsUnitaryFactorSet.mem_unitary g g⁻¹), one_smul]
+      simp [adjoint_of, smul_smul, starRingEnd_apply, ← IsFactorSet.apply_inv_eq_inv_apply α g,
+        Unitary.mul_star_self_of_mem (IsUnitaryFactorSet.mem_unitary _ _)]
   exact LinearMap.congr_fun h x
 
 /-- **The star structure on a twisted group algebra** with unitary factor set: the
@@ -181,9 +176,9 @@ theorem map_star_iff {A : Type*} [Semiring A] [StarRing A] [Algebra k A] [StarMo
     (∀ x, φ (star x) = star (φ x)) ↔ ∀ g, φ (of g) ∈ unitary A := by
   constructor
   · intro h g
-    rw [Unitary.mem_iff, ← h, ← map_mul, ← map_mul,
-      Unitary.star_mul_self_of_mem (of_mem_unitary (α := α) g),
-      Unitary.mul_star_self_of_mem (of_mem_unitary (α := α) g), map_one, and_self]
+    have hg := of_mem_unitary (α := α) g
+    simp [Unitary.mem_iff, ← h, ← map_mul, -star_of, Unitary.star_mul_self_of_mem hg,
+      Unitary.mul_star_self_of_mem hg]
   · intro h
     -- On a basis element both sides are inverses of `φ (of g)`.
     have hof (g : G) : φ (star (of g)) = star (φ (of g)) :=

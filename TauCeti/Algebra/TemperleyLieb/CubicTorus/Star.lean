@@ -21,13 +21,14 @@ involution of a twisted group algebra with unitary factor set
 `(Σ z_a W(a))† = Σ conj(z_a) W(-a)`: every `W(a)` is unitary with `W(a)† = W(-a)`, the site
 unitaries satisfy `U_j† = U_j ^ 2`, and the cubic projections `p_j = 3⁻¹ (1 + U_j + U_j ^ 2)` are
 self-adjoint. The adjoint commutes with the inversion `θ_N` and with the inclusions
-`I_N : G_N → G_(N+1)`, so the fixed subalgebra `C_N` is star-stable. The scalar coefficient
-`s_N` satisfies `s_N(x† x) = Σ_a |x_a|²`, so it is a faithful positive trace.
+`I_N : G_N → G_(N+1)`, so the fixed subalgebra `C_N` is star-stable and is itself a star algebra,
+with `C_N → G_N` a star algebra homomorphism. The scalar coefficient `s_N` satisfies
+`s_N(x† x) = Σ_a |x_a|²`, so it is a faithful positive trace.
 
 For the analytic adjoint of `TemperleyLieb ℂ (√3 : ℂ) m`, which fixes the generators, the cubic
-comparison map `F_m = cubicHom m` is therefore a star homomorphism. Every Markov trace at
-`δ = √3` is `(√3) ^ m s_(m-1) ∘ F_m`, a faithful positive functional pulled back along `F_m`, so
-its trace radical `{x | ∀ y, tr (x y) = 0}` is exactly the kernel of `F_m`
+comparison map `F_m = cubicHom m : TL_m(√3) → C_(m-1)` is therefore a star homomorphism. Every
+Markov trace at `δ = √3` is `(√3) ^ m s_(m-1) ∘ F_m`, a faithful positive functional pulled back
+along `F_m`, so its trace radical `{x | ∀ y, tr (x y) = 0}` is exactly the kernel of `F_m`
 (`LinearMap.traceRadical_eq_ker_of_nullSubmodule_eq_bot`). This does not use
 surjectivity of `F_m`: it identifies the Jones quotient at `δ = √3` with the image of `F_m`.
 
@@ -37,10 +38,13 @@ surjectivity of `F_m`: it identifies the Jones quotient at `δ = √3` with the 
   `TauCeti.TemperleyLieb.isSelfAdjoint_cubicProjection`: the adjoint on the cubic quantum torus.
 * `TauCeti.TemperleyLieb.cubicInversion_star`, `TauCeti.TemperleyLieb.star_mem_cubicFixed` and
   `TauCeti.TemperleyLieb.cubicIncl_star`: compatibility with the inversion and the inclusions.
+* `TauCeti.TemperleyLieb.coe_star_cubicFixed` and `TauCeti.TemperleyLieb.cubicFixedSubtype`: the
+  star structure on `C_N`, and the inclusion `C_N → G_N` as a star algebra homomorphism.
 * `TauCeti.TemperleyLieb.cubicScalarCoefficient_star_mul_self_eq_zero_iff`: the scalar
   coefficient is faithful.
 * `TauCeti.TemperleyLieb.coe_cubicHom_star` and `TauCeti.TemperleyLieb.cubicStarHom`: the cubic
-  comparison map preserves the adjoint, and is bundled as a star algebra homomorphism.
+  comparison map preserves the adjoint, and is bundled as a star algebra homomorphism
+  `TL_m(√3) →⋆ₐ[ℂ] C_(m-1)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.traceRadical_eq_ker_cubicHom`: the trace radical of a
   Markov trace at `δ = √3` is the kernel of the cubic comparison map.
 
@@ -119,6 +123,44 @@ theorem star_mem_cubicFixed {x : CubicTorus N} (hx : x ∈ cubicFixed N) : star 
   rw [mem_cubicFixed] at hx ⊢
   rw [cubicInversion_star, hx]
 
+/-- The ring structure of the fixed subalgebra `C_N`, recorded as a non-unital semiring at a
+variable index `N`. Without it, instance search for the star structure on `C_N`, a subalgebra of a
+subalgebra, exceeds the default budget. -/
+noncomputable instance : NonUnitalNonAssocSemiring (cubicFixed N) :=
+  (cubicFixed N).toRing.toNonUnitalNonAssocSemiring
+
+/-- The adjoint on the fixed subalgebra `C_N`, restricted from `G_N`. Declared directly, so that
+instance search at an index such as `m - 1` does not first try to read `C_N` as a star-closed
+subset of the endomorphisms underlying `G_N`. -/
+noncomputable instance : Star (cubicFixed N) :=
+  ⟨fun x ↦ ⟨star (x : CubicTorus N), star_mem_cubicFixed x.property⟩⟩
+
+/-- The adjoint makes `C_N` a star ring. -/
+noncomputable instance : StarRing (cubicFixed N) where
+  star_involutive x := Subtype.ext (star_star (x : CubicTorus N))
+  star_mul x y := Subtype.ext (star_mul (x : CubicTorus N) y)
+  star_add x y := Subtype.ext (star_add (x : CubicTorus N) y)
+
+/-- The adjoint on `C_N` is conjugate-linear. -/
+instance : StarModule ℂ (cubicFixed N) where
+  star_smul r x := Subtype.ext (star_smul r (x : CubicTorus N))
+
+/-- The adjoint on `C_N` is computed in `G_N`. -/
+@[simp, norm_cast]
+theorem coe_star_cubicFixed (x : cubicFixed N) :
+    ((star x : cubicFixed N) : CubicTorus N) = star (x : CubicTorus N) :=
+  (rfl)
+
+/-- The inclusion `C_N → G_N` as a star algebra homomorphism. -/
+noncomputable def cubicFixedSubtype (N : ℕ) : cubicFixed N →⋆ₐ[ℂ] CubicTorus N where
+  toAlgHom := (cubicFixed N).val
+  map_star' _ := (rfl)
+
+/-- `cubicFixedSubtype N` evaluates as the coercion. -/
+@[simp]
+theorem cubicFixedSubtype_apply (x : cubicFixed N) : cubicFixedSubtype N x = x :=
+  (rfl)
+
 /-- The scalar coefficient conjugates under the adjoint. -/
 @[simp]
 theorem cubicScalarCoefficient_star (x : CubicTorus N) :
@@ -147,12 +189,6 @@ end CubicTorus
 
 /-! ### The comparison map and the trace radical -/
 
-/-- Registers `IsSelfAdjoint (Real.sqrt 3 : ℂ)` as a `Fact`, so that
-`TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m` carries the analytic adjoint
-`TemperleyLieb.instStarRing`. -/
-instance : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) :=
-  ⟨Complex.conj_ofReal _⟩
-
 /-- **The cubic comparison map preserves the adjoint**: `F_m(x†) = F_m(x)†`. -/
 @[simp]
 theorem coe_cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
@@ -161,11 +197,11 @@ theorem coe_cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m
     rw [AlgHom.comp_apply, Subalgebra.coe_val, coe_cubicHom_e]
     exact IsSelfAdjoint.smul Fact.out (isSelfAdjoint_cubicProjection j)) x
 
-/-- The cubic comparison map `F_m`, read in `G_(m-1)`, as a star algebra homomorphism. -/
+/-- The cubic comparison map `F_m : TL_m(√3) → C_(m-1)` as a star algebra homomorphism. -/
 noncomputable def cubicStarHom (m : ℕ) :
-    TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →⋆ₐ[ℂ] CubicTorus (m - 1) where
-  toAlgHom := (cubicFixed (m - 1)).val.comp (cubicHom m)
-  map_star' := coe_cubicHom_star
+    TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →⋆ₐ[ℂ] cubicFixed (m - 1) where
+  toAlgHom := cubicHom m
+  map_star' x := Subtype.ext (coe_cubicHom_star x)
 
 /-- `cubicStarHom m` evaluates as `F_m`. -/
 @[simp]
@@ -186,18 +222,17 @@ variable {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 3 : ℂ) n →ₗ[ℂ] 
 /-- **The trace radical at `δ = √3` is the kernel of the cubic comparison map.** -/
 theorem traceRadical_eq_ker_cubicHom (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
     (tr m).traceRadical (htr.map_mul_comm m) = RingHom.ker (cubicHom m) := by
-  -- Pull back the faithful positive functional `(√3) ^ m s_(m-1)` along `F_m`.
+  -- Pull back the faithful positive functional `(√3) ^ m s_(m-1)` along `F_m`, read in `G_(m-1)`.
   have hc : (0 : ℂ) < (Real.sqrt 3 : ℂ) ^ m :=
     pow_pos (Complex.zero_lt_real.2 (Real.sqrt_pos.2 three_pos)) m
-  let ψ : StarPositiveFunctional (CubicTorus (m - 1)) :=
-    ⟨(Real.sqrt 3 : ℂ) ^ m • identityCoefficient.toLinearMap,
-      fun x ↦ mul_nonneg hc.le (identityCoefficient.square_nonneg x)⟩
-  have hψ : ψ.nullSubmodule = ⊥ := by
-    ext x
-    simp [ψ, hc.ne']
-  rw [LinearMap.traceRadical_eq_ker_of_nullSubmodule_eq_bot _ _ ψ hψ (cubicStarHom m) fun x ↦ by
-    simp [ψ, htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, cubicScalarCoefficient_apply],
-    ker_cubicStarHom]
+  have hψ : ((identityCoefficient : StarPositiveFunctional (CubicTorus (m - 1))).smulOfNonneg
+      hc.le).nullSubmodule = ⊥ := by
+    rw [StarPositiveFunctional.nullSubmodule_smulOfNonneg _ hc, nullSubmodule_identityCoefficient]
+  rw [LinearMap.traceRadical_eq_ker_of_nullSubmodule_eq_bot _ _ _ hψ
+    ((cubicFixedSubtype (m - 1)).comp (cubicStarHom m)) fun x ↦ by
+      simp [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, cubicScalarCoefficient_apply]]
+  ext x
+  simp [RingHom.mem_ker]
 
 end IsMarkovTrace
 

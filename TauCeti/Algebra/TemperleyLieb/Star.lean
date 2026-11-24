@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
+public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Algebra.TemperleyLieb.Basic
 
 /-!
@@ -31,7 +32,7 @@ gives `δ • e = star δ • e`, and distinct scalar multiples of the two-stran
 distinct (`TauCeti.TemperleyLieb.smul_left_injective_e_two`).
 
 The hypothesis on `δ` is the instance argument `Fact (IsSelfAdjoint δ)`; for a real loop value
-`δ : ℝ` in `ℂ` it is supplied by `Complex.conj_ofReal δ`.
+`r : ℝ` in `ℂ` it is an instance, supplied by `Complex.conj_ofReal r`.
 
 ## Main definitions
 
@@ -179,6 +180,11 @@ theorem aug_star (x : TemperleyLieb R δ n) : aug (star x) = star (aug x) :=
   map_star_iff.mpr (fun i ↦ by simp [IsSelfAdjoint]) x
 
 end Construction
+
+/-- A real loop value in `ℂ` is self-adjoint, so `TemperleyLieb ℂ (r : ℂ) n` carries the analytic
+adjoint `TemperleyLieb.instStarRing`. -/
+instance (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
+  ⟨Complex.conj_ofReal r⟩
 
 /-- Already on two strands, a conjugate-linear product reversal fixing the generator forces
 self-adjoint loop value. Neither additivity nor involutivity is needed. In particular, non-real
