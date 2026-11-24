@@ -129,15 +129,9 @@ theorem setOf_pcMem_ne_singleton [Nonempty V] (g : L →ᴸ L') (hg : g.Injectiv
   -- Reverse the value of `g R` in the structure decoded from `e`.
   let S' : L'.Structure V := reverseRelation e.toStructure (g.onRelation R)
   have hψ : @SentenceInf.Realize _ ℕ ψ V S' := by
-    have he₀ := mem_modelsOf.1 he
-    rw [@SentenceInf.realize_def _ ℕ ψ V e.toStructure,
-      @FormulaInf.realize_def _ ℕ Empty V e.toStructure ψ Empty.elim] at he₀
-    rw [@SentenceInf.realize_def _ ℕ ψ V S', @FormulaInf.realize_def _ ℕ Empty V S' ψ Empty.elim]
-    refine (BoundedFormulaInf.realize_congr_of_agreeOn ψ S' e.toStructure (fun f => isEmptyElim f)
-      (fun {n} Q hQ xs => ?_) _ _).2 he₀
-    refine relMap_reverseRelation_of_ne _ (fun hQR => hR ?_) xs
-    rw [hQR] at hQ
-    exact hQ
+    refine (SentenceInf.realize_congr_of_agreeOn ψ S' e.toStructure (fun f => isEmptyElim f)
+      fun Q hQ xs => relMap_reverseRelation_of_ne _ (fun hQR => hR ?_) xs).2 (mem_modelsOf.1 he)
+    rwa [hQR] at hQ
   have he' : @ofStructure L' V S' ∈ modelsOf ψ := by
     rw [mem_modelsOf, toStructure_ofStructure]
     exact hψ
