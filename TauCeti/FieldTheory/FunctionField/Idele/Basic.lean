@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.RestrictedProduct.Basic
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
+public import TauCeti.Topology.Algebra.RestrictedProduct.Diagonal
 
 /-!
 # The idele group of an algebraic function field
@@ -101,12 +102,12 @@ variable {k F}
 theorem eventually_ord_eq_zero (x : IdeleGroup k F) :
     ∀ᶠ (P : Place k F) in cofinite, P.completionPlace.ord (x P : P.Completion) = 0 :=
   (RestrictedProduct.eventually _ _ x).mono fun P hP ↦
-    (P.completionPlace.mem_unitGroup_iff (x P)).1 hP
+    (P.completionPlace.mem_unitGroup_iff_ord_eq_zero (x P)).1 hP
 
 /-- An idele has nonzero order at only finitely many places. -/
 theorem finite_setOf_ord_ne_zero (x : IdeleGroup k F) :
     {P : Place k F | P.completionPlace.ord (x P : P.Completion) ≠ 0}.Finite :=
-  eventually_ord_eq_zero x
+  Filter.eventually_cofinite.1 (eventually_ord_eq_zero x)
 
 /-! ### Principal ideles -/
 
@@ -116,21 +117,19 @@ private theorem eventually_units_map_mem_unitGroup (hF : IsFunctionField k F) (z
     ∀ᶠ (P : Place k F) in cofinite, Units.map (P.completionEmbedding : F →* P.Completion) z ∈
       P.completionPlace.integers.unitGroup := by
   filter_upwards [(Place.finite_setOf_ord_ne_zero hF (z : F)).compl_mem_cofinite] with P hP
-  rw [Place.mem_unitGroup_iff]
+  rw [Place.mem_unitGroup_iff_ord_eq_zero]
   simpa using hP
 
 /-- **The diagonal embedding** `Fˣ →* J_F`, sending a function to its *principal idele*, the
 family of its images in all completions. -/
-def unitEmbedding (hF : IsFunctionField k F) : Fˣ →* IdeleGroup k F where
-  toFun z := .mk (fun P ↦ Units.map (P.completionEmbedding : F →* P.Completion) z)
-    (eventually_units_map_mem_unitGroup hF z)
-  map_one' := RestrictedProduct.ext _ _ fun _ ↦ by simp
-  map_mul' y z := RestrictedProduct.ext _ _ fun _ ↦ by simp
+def unitEmbedding (hF : IsFunctionField k F) : Fˣ →* IdeleGroup k F :=
+  rationalDiagonal (fun P : Place k F ↦ Units.map (P.completionEmbedding : F →* P.Completion))
+    (fun P ↦ P.completionPlace.integers.unitGroup) (eventually_units_map_mem_unitGroup hF)
 
 @[simp]
 theorem unitEmbedding_apply (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
     unitEmbedding hF z P = Units.map (P.completionEmbedding : F →* P.Completion) z :=
-  (rfl)
+  rationalDiagonal_apply _ _ _ z P
 
 /-- The component of a principal idele at `P` is the image of the function in the completion. -/
 theorem coe_unitEmbedding_apply (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
@@ -141,31 +140,26 @@ theorem coe_unitEmbedding_apply (hF : IsFunctionField k F) (z : Fˣ) (P : Place 
 theorem unitEmbedding_injective (hF : IsFunctionField k F) :
     Function.Injective (unitEmbedding hF) := by
   obtain ⟨P⟩ := Place.nonempty hF
-  intro y z h
-  have hP := congrArg (fun x : IdeleGroup k F ↦ (x P : P.Completion)) h
-  simp only [coe_unitEmbedding_apply] at hP
-  exact Units.ext (P.completionEmbedding.toRingHom.injective hP)
+  exact injective_rationalDiagonal _ _ _
+    ⟨P, Units.map_injective P.completionEmbedding.toRingHom.injective⟩
 
 /-! ### Unit ideles -/
 
 variable (k F) in
 /-- **The unit ideles** `U_F = ∏_P 𝒪_Pˣ`: the ideles whose every component is a unit of the
 completed valuation ring. -/
-def unitIdeles : Subgroup (IdeleGroup k F) where
-  carrier := {x | ∀ P, x P ∈ P.completionPlace.integers.unitGroup}
-  one_mem' _ := one_mem _
-  mul_mem' hx hy P := mul_mem (hx P) (hy P)
-  inv_mem' hx P := inv_mem (hx P)
+def unitIdeles : Subgroup (IdeleGroup k F) :=
+  integralSubgroup fun P : Place k F ↦ P.completionPlace.integers.unitGroup
 
 @[simp]
 theorem mem_unitIdeles_iff {x : IdeleGroup k F} :
     x ∈ unitIdeles k F ↔ ∀ P, x P ∈ P.completionPlace.integers.unitGroup :=
-  Iff.rfl
+  mem_integralSubgroup _ x
 
 /-- An idele is a unit idele exactly when it has order zero at every place. -/
 theorem mem_unitIdeles_iff_ord_eq_zero {x : IdeleGroup k F} :
     x ∈ unitIdeles k F ↔ ∀ P : Place k F, P.completionPlace.ord (x P : P.Completion) = 0 := by
-  simp only [mem_unitIdeles_iff, Place.mem_unitGroup_iff]
+  simp only [mem_unitIdeles_iff, Place.mem_unitGroup_iff_ord_eq_zero]
 
 /-! ### The divisor of an idele -/
 
@@ -239,11 +233,11 @@ theorem divisor_mulSingle [DecidableEq (Place k F)] (P : Place k F) (u : P.Compl
     divisor (RestrictedProduct.mulSingle (fun Q : Place k F ↦ Q.completionPlace.integers.unitGroup)
       P u) = P.completionPlace.ord (u : P.Completion) • WeilDivisor.ofPoint P := by
   refine WeilDivisor.ext fun Q ↦ ?_
-  rw [coeff_divisor, ← WeilDivisor.single_eq_zsmul_ofPoint, RestrictedProduct.coe_mulSingle_apply]
+  rw [coeff_divisor, RestrictedProduct.coe_mulSingle_apply, WeilDivisor.coeff_zsmul]
   by_cases hQ : Q = P
   · subst hQ
-    simp [WeilDivisor.coeff]
-  · simp [WeilDivisor.coeff, Pi.mulSingle_eq_of_ne hQ, Finsupp.single_eq_of_ne hQ]
+    simp [WeilDivisor.coeff_ofPoint_self]
+  · simp [WeilDivisor.coeff_ofPoint_of_ne hQ, Pi.mulSingle_eq_of_ne hQ]
 
 /-- **The kernel of the divisor map** is the group of unit ideles. -/
 theorem divisor_eq_zero_iff {x : IdeleGroup k F} : divisor x = 0 ↔ x ∈ unitIdeles k F := by

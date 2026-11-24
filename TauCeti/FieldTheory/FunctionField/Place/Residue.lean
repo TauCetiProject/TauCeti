@@ -81,7 +81,7 @@ below — product, identity, inverse, integer power — are therefore `rfl`. Eve
 the quotient laws, a product and an inverse composed. -/
 private def unitGroupMk (P : Place k F) (f : Fˣ) (hf : P.ord (f : F) = 0) :
     P.integers.unitGroup :=
-  ⟨f, (P.mem_unitGroup_iff f).2 hf⟩
+  ⟨f, (P.mem_unitGroup_iff_ord_eq_zero f).2 hf⟩
 
 private theorem coe_unitGroupMulEquiv_unitGroupMk (P : Place k F) (f : Fˣ)
     (hf : P.ord (f : F) = 0) :
