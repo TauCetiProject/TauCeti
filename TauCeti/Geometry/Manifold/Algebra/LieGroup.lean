@@ -29,11 +29,13 @@ groups by closed normal subgroups.
 
 The charts of a Lie group can also be pulled back along a locally homeomorphic homomorphism
 from a topological group, giving the source a Lie-group structure over the same model, or
-transported along a `C^n` diffeomorphism of model spaces via `ChartedSpace.comp` (in particular,
-re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on `EuclideanSpace 𝕜 (Fin d)`).
+transported along a `C^n` diffeomorphism of model spaces via `Homeomorph.chartedSpaceComp` (in
+particular, re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on
+`EuclideanSpace 𝕜 (Fin d)`).
 
 This file also proves that the integer power maps of a `C^n` Lie group are `C^n`, and packages
-inversion as a `C^n` diffeomorphism.
+inversion, and its composites `g ↦ a * g ^ (±1)` with left translations, as `C^n`
+diffeomorphisms.
 
 ## Main results
 
@@ -54,6 +56,8 @@ inversion as a `C^n` diffeomorphism.
   a Lie group are `C^n`.
 * `TauCeti.Lie.invDiffeomorph`, `TauCeti.Lie.negDiffeomorph`: inversion, and negation, in a Lie
   group as a `C^n` diffeomorphism.
+* `TauCeti.Lie.mulZPowDiffeomorph`, `TauCeti.Lie.addZSMulDiffeomorph`: the maps `g ↦ a * g ^ e`,
+  and `g ↦ a + e • g`, for `e = ±1`, as `C^n` diffeomorphisms.
 
 ## References
 
@@ -180,18 +184,16 @@ end Pullback
 section ModelTransport
 
 /-- Changing the model space of a `C^n` Lie group along a `C^n` diffeomorphism of models
-`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the composite charts
-`ChartedSpace.comp H' H G`. -/
+`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the charts
+`Φ.toHomeomorph.chartedSpaceComp G`. -/
 @[to_additive /-- Changing the model space of a `C^n` additive Lie group along a `C^n`
 diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` additive Lie group over `I'`
-for the composite charts `ChartedSpace.comp H' H G`. -/]
+for the charts `Φ.toHomeomorph.chartedSpaceComp G`. -/]
 theorem Diffeomorph.lieGroup_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (G : Type*)
     [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G] :
-    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-    letI := ChartedSpace.comp H' H G
+    letI := Φ.toHomeomorph.chartedSpaceComp G
     LieGroup I' n G := by
-  let _ := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  let _ := ChartedSpace.comp H' H G
+  let _ := Φ.toHomeomorph.chartedSpaceComp G
   let _ : IsManifold I' n G := Φ.isManifold_chartedSpaceComp G
   have hid : ContMDiff I' I n (id : G → G) :=
     (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := (id : G → G))).mp (contMDiff_id (I := I'))
@@ -225,10 +227,7 @@ theorem TauCeti.exists_chartedSpace_euclideanSpace_lieGroup
     { toEquiv := ψLin.toContinuousLinearEquiv.toEquiv
       contMDiff_toFun := ψLin.toContinuousLinearEquiv.contDiff.contMDiff
       contMDiff_invFun := ψLin.toContinuousLinearEquiv.symm.contDiff.contMDiff }
-  have hlie := Φ.lieGroup_chartedSpaceComp G
-  let _ : ChartedSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E :=
-    Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  exact ⟨ChartedSpace.comp (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E G, hlie⟩
+  exact ⟨Φ.toHomeomorph.chartedSpaceComp G, Φ.lieGroup_chartedSpaceComp G⟩
 
 end ModelTransport
 
@@ -259,6 +258,31 @@ theorem invDiffeomorph_apply (g : G) : invDiffeomorph I n G g = g⁻¹ :=
 
 @[to_additive (attr := simp)]
 theorem invDiffeomorph_symm : (invDiffeomorph I n G).symm = invDiffeomorph I n G :=
+  (rfl)
+
+/-- For `e = ±1`, the map `g ↦ a * g ^ e` of a `C^n` Lie group as a `C^n` diffeomorphism: the
+identity or inversion, followed by left translation by `a`. -/
+@[to_additive
+  /-- For `e = ±1`, the map `g ↦ a + e • g` of a `C^n` additive Lie group as a `C^n`
+  diffeomorphism: the identity or negation, followed by translation by `a`. -/]
+def mulZPowDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) {G : Type*} [TopologicalSpace G]
+    [ChartedSpace H G] [Group G] [LieGroup I n G] (a : G) (e : ℤ) (he : e * e = 1) :
+    G ≃ₘ^n⟮I, I⟯ G where
+  toFun g := a * g ^ e
+  invFun g := (a⁻¹ * g) ^ e
+  left_inv g := by simp only [inv_mul_cancel_left, ← zpow_mul, he, zpow_one]
+  right_inv g := by simp only [← zpow_mul, he, zpow_one, mul_inv_cancel_left]
+  contMDiff_toFun := contMDiff_const.mul (TauCeti.contMDiff_zpow e)
+  contMDiff_invFun := (TauCeti.contMDiff_zpow e).comp (contMDiff_const.mul contMDiff_id)
+
+@[to_additive (attr := simp)]
+theorem mulZPowDiffeomorph_apply (a g : G) (e : ℤ) (he : e * e = 1) :
+    mulZPowDiffeomorph I n a e he g = a * g ^ e :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem mulZPowDiffeomorph_symm_apply (a g : G) (e : ℤ) (he : e * e = 1) :
+    (mulZPowDiffeomorph I n a e he).symm g = (a⁻¹ * g) ^ e :=
   (rfl)
 
 end TauCeti.Lie

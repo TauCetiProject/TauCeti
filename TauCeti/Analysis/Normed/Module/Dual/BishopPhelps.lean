@@ -135,7 +135,8 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
     obtain ⟨c, hc⟩ := hmem
     exact ⟨c, fun x ↦ by simpa using (LinearMap.congr_fun hc x).symm⟩
   -- Testing at a point of the open cone shows `c > 0`.
-  obtain ⟨x₀, hx₀⟩ := f.exists_mul_norm_lt_re_apply hkf (by nlinarith [norm_pos_iff.2 hf])
+  obtain ⟨x₀, hx₀⟩ := (f.exists_mul_norm_lt_re_apply_iff hkf).2
+    (by nlinarith [norm_pos_iff.2 hf])
   have hc₀ : 0 < c := by
     have h₁ : F₁ x₀ ≤ k * ‖f‖ * ‖x₀‖ := (le_abs_self _).trans <|
       (F₁.le_opNorm x₀).trans (mul_le_mul_of_nonneg_right hF₁le (norm_nonneg _))
@@ -158,7 +159,7 @@ boundary of `C`. -/
 theorem mem_frontier_of_isMaxOn_re (g : StrongDual 𝕜 E) (hg : g ≠ 0) {C : Set E} {x : E}
     (hx : x ∈ C) (hmax : IsMaxOn (fun y ↦ re (g y)) C x) : x ∈ frontier C := by
   refine ⟨subset_closure hx, fun hint ↦ ?_⟩
-  obtain ⟨w, hw⟩ := g.exists_mul_norm_lt_re_apply le_rfl (norm_pos_iff.2 hg)
+  obtain ⟨w, hw⟩ := (g.exists_mul_norm_lt_re_apply_iff le_rfl).2 (norm_pos_iff.2 hg)
   rw [zero_mul] at hw
   -- Moving from `x` in the direction `w` stays in `C` for a while and increases `re ∘ g`.
   have hcont : Tendsto (fun t : ℝ ↦ x + (t : 𝕜) • w) (𝓝 0) (𝓝 x) := by
@@ -221,7 +222,8 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
     rw [map_add, map_add] at this
     linarith [hgC x hx]
   -- Approaching `x` along a cone direction shows that `re ∘ g` is at most `u` at `x`.
-  obtain ⟨w₀, hw₀⟩ := f.exists_mul_norm_lt_re_apply hkf.le (by nlinarith [norm_pos_iff.2 hf])
+  obtain ⟨w₀, hw₀⟩ := (f.exists_mul_norm_lt_re_apply_iff hkf.le).2
+    (by nlinarith [norm_pos_iff.2 hf])
   have hgx : re (g x) ≤ u := by
     have hlim : Tendsto (fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀))) (𝓝[>] 0) (𝓝 (re (g x))) := by
       have : Continuous fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀)) :=
@@ -340,7 +342,8 @@ theorem dense_setOf_exists_norm_apply_eq_norm [CompleteSpace E] :
   rw [mem_closedBall_zero_iff] at hx
   refine ⟨x, hx, le_antisymm ((g.le_opNorm x).trans (mul_le_of_le_one_right (norm_nonneg _) hx))
     ?_⟩
-  have := StrongDual.re_apply_add_mul_norm_le (f := g) (x := 0) zero_le_one fun y hy ↦ hmax hy
+  have := (StrongDual.re_apply_add_mul_norm_le_iff (f := g) (x := 0) zero_le_one).2
+    fun y hy ↦ hmax hy
   rw [map_zero, zero_re, zero_add, one_mul] at this
   exact this.trans (re_le_norm _)
 

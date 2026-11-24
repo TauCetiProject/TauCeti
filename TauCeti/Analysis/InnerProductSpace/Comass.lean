@@ -49,6 +49,8 @@ relates that norm to the two norms of geometric measure theory.
 * `ContinuousAlternatingMap.norm_apply_eq_norm_apply_orthonormalBasis_span`: a form has values of
   the same norm on an orthonormal family and on any orthonormal basis of its span.
 * `exteriorPower.norm_formDualEquiv_ιMulti`: the mass of a wedge of vectors is its volume.
+* `exteriorPower.formVectorPairing`: the pairing of forms with `k`-vectors as a continuous bilinear
+  map.
 * `exteriorPower.norm_le_norm_formDualEquiv`, `exteriorPower.norm_formDualEquiv_le`: the mass of
   `k`-vectors is comparable with the inner product norm.
 * `TauCeti.norm_alternatingFormEquiv_ιMulti`, `TauCeti.norm_alternatingFormEquiv_one`: the comass
@@ -203,6 +205,14 @@ theorem norm_alternatingFormEquiv_ιMulti (u : Fin k → E) :
 theorem norm_alternatingFormEquiv_one (η : ⋀[ℝ]^1 E) : ‖alternatingFormEquiv E 1 η‖ = ‖η‖ := by
   rw [← (oneEquiv ℝ E).symm_apply_apply η, oneEquiv_symm_apply, norm_alternatingFormEquiv_ιMulti]
 
+/-- The linear map on `⋀ᵏ E` induced by the form of a `k`-vector `a` is the inner product with
+`a`. -/
+theorem continuousAlternatingMapLinearEquiv_alternatingFormEquiv (a : ⋀[ℝ]^k E) :
+    continuousAlternatingMapLinearEquiv ℝ E k ℝ (alternatingFormEquiv E k a) =
+      innerₗ (⋀[ℝ]^k E) a := by
+  ext v
+  simp
+
 end TauCeti
 
 namespace exteriorPower
@@ -211,11 +221,8 @@ namespace exteriorPower
 @[simp]
 theorem formDualEquiv_alternatingFormEquiv (ξ η : ⋀[ℝ]^k E) :
     formDualEquiv ℝ E k ξ (TauCeti.alternatingFormEquiv E k η) = ⟪η, ξ⟫ := by
-  rw [formDualEquiv_apply]
-  suffices h : continuousAlternatingMapLinearEquiv ℝ E k ℝ (TauCeti.alternatingFormEquiv E k η) =
-      innerₗ (⋀[ℝ]^k E) η from congr($h ξ)
-  ext v
-  simp
+  rw [formDualEquiv_apply, TauCeti.continuousAlternatingMapLinearEquiv_alternatingFormEquiv,
+    innerₗ_apply_apply]
 
 /-- The inner product pairing is bounded by the mass of `ξ` times the comass of the form
 associated to `η`. -/
@@ -279,6 +286,24 @@ theorem norm_formDualEquiv_le (ξ : ⋀[ℝ]^k E) :
       exact hω s
     _ = (∑ s, |⟪B s, ξ⟫|) * ‖ω‖ := (Finset.sum_mul _ _ _).symm
     _ ≤ _ := by gcongr
+
+/-- The pairing `⟨ω, ξ⟩` of a real `k`-form with a `k`-vector, with
+`⟨ω, v₁ ∧ ⋯ ∧ vₖ⟩ = ω(v₁, …, vₖ)` (`exteriorPower.formVectorPairing_ιMulti`), as a continuous
+bilinear map. For fixed `ξ` it is the functional `formDualEquiv ℝ E k ξ` whose norm is the mass of
+`ξ`. -/
+noncomputable def formVectorPairing : (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ⋀[ℝ]^k E →L[ℝ] ℝ :=
+  (LinearMap.toContinuousLinearMap (formDualEquiv ℝ E k).toLinearMap).flip
+
+/-- The pairing of a form with `ξ` is the evaluation of `formDualEquiv ℝ E k ξ`. -/
+theorem formVectorPairing_apply (ω : E [⋀^Fin k]→L[ℝ] ℝ) (ξ : ⋀[ℝ]^k E) :
+    formVectorPairing ω ξ = formDualEquiv ℝ E k ξ ω := by
+  simp [formVectorPairing]
+
+/-- A form pairs with the wedge `v₁ ∧ ⋯ ∧ vₖ` to its value at `(v₁, …, vₖ)`. -/
+@[simp]
+theorem formVectorPairing_ιMulti (ω : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin k → E) :
+    formVectorPairing ω (ιMulti ℝ k v) = ω v := by
+  simp [formVectorPairing_apply]
 
 end exteriorPower
 

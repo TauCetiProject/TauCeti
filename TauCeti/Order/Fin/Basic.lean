@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Fin.Basic
 public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Set.Defs
 
-import Mathlib.Order.Fin.Basic
 import Mathlib.Order.Fin.InsertNth
 
 /-!
@@ -25,9 +26,13 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
 * `Fin.monotone_snoc`, `Fin.strictMono_snoc`: appending a coordinate above (resp. strictly above)
   all previous coordinates preserves monotonicity (resp. strict monotonicity).
+* `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
+  is strictly increasing.
 -/
 
 public section
+
+open Set
 
 namespace Fin
 
@@ -98,5 +103,14 @@ theorem strictMono_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} 
   | succ m =>
     rw [← Fin.insertNth_last']
     exact Fin.strictMono_insertNth_last hf a (ha (Fin.last m))
+
+/-- A tuple `w` separated by a `ℤ`-indexed sequence `a`, in the sense that
+`a k < w k < a (k + 1)` for every index `k`, is strictly increasing. -/
+theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : Fin n → α}
+    {a : ℤ → α} (h : ∀ k : Fin n, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) : StrictMono w := by
+  obtain _ | n := n
+  · exact fun i ↦ i.elim0
+  · exact strictMono_iff_lt_succ.2 fun i ↦
+      ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
 
 end Fin
