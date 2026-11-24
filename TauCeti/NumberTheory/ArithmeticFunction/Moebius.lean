@@ -299,12 +299,13 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
 
 /-- A multiplicative function with nonnegative prime values is nonnegative on squarefree
 integers, so `μ(n)² f(n) ≥ 0` for every `n`. -/
-theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] {f : ArithmeticFunction R} (hf : f.IsMultiplicative)
+theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [PartialOrder R]
+    [IsOrderedRing R] {f : ArithmeticFunction R} (hf : f.IsMultiplicative)
     (hf0 : ∀ p : ℕ, p.Prime → 0 ≤ f p) (n : ℕ) : 0 ≤ (μ n : R) ^ 2 * f n := by
   by_cases hn : Squarefree n
-  · rw [← hf.prod_primeFactors hn]
-    exact mul_nonneg (sq_nonneg _) (prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp))
+  · rw [← Int.cast_pow, moebius_sq_eq_one_of_squarefree hn, Int.cast_one, one_mul,
+      ← hf.prod_primeFactors hn]
+    exact prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp)
   · simp [moebius_eq_zero_of_not_squarefree hn]
 
 end ArithmeticFunction
