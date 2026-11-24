@@ -29,8 +29,9 @@ the ends (`TauCeti.Floer.IsCylindricalNearEnds`) and `C¹` on the whole cylinder
 Hamiltonians), with almost complex structures compatible with `ω`. This file shows that the
 Fredholm property and the index of `D_u` do not depend on `u` beyond its asymptotic orbits, nor on
 the Floer data beyond their end Hamiltonians: in particular they do not depend on the almost
-complex structures, also on the ends, and `D_u` is Fredholm for every compatible almost complex
-structure when the asymptotic orbits are nondegenerate.
+complex structures, also on the ends. In a unitary trivialization (`ω = Im ⟪·, ·⟫`) with
+one-periodic `C³` end Hamiltonians, `D_u` is Fredholm for every compatible almost complex structure
+when the asymptotic orbits are one-periodic and nondegenerate.
 
 * **Invariance under the map.** Let `u` and `u'` be `C¹` maps whose loops converge uniformly to the
   same nondegenerate one-periodic orbits `x₋` at `-∞` and `x₊` at `+∞`, with slice defects
@@ -58,11 +59,11 @@ structure when the asymptotic orbits are nondegenerate.
   tending uniformly to zero there; `u` need not solve the Floer equation (it may be, for instance,
   a pre-glued map). By the invariance under the data, the same holds for all Floer data with the
   Hamiltonian `H` at both ends and any compatible almost complex structures, such as those of a
-  continuation cylinder from `H` to itself. For such data, the Fredholm property and index zero are
-`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`
-  and
+  continuation cylinder from `H` to itself. For such data, the Fredholm property is the equal-ends
+  case of `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`
+  below, and index zero is
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`
-  respectively.
+  for them.
 * **Every compatible almost complex structure.** In a unitary trivialization, for Floer data
   `(J, K_s, K_t)` with any compatible almost complex structures, along a map `u` asymptotic to
   nondegenerate orbits `x₋` and `x₊`, which may differ, `D_u` is Fredholm
@@ -1118,29 +1119,7 @@ variable {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ
   (hJc : ∀ z y, ω.Compatible (J z y))
 
 include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
-/-- The Fredholm property and index zero of the linearized Floer operator for data with equal ends,
-compared with the `s`-independent data `(i, 0, H_t)`. -/
-private theorem isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-        u).IsFredholm ∧
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-        u).index = 0 := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
-  obtain ⟨h₀, hi₀⟩ :=
-    isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω hnd
-  obtain ⟨h, hi⟩ := isFredholm_and_index_eq_of_cylindrical_data ω
-    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
-    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
-    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
-    hx hnd hup hδp h₀
-  exact ⟨h, hi.trans hi₀⟩
-
-include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
-/-- **The linearized Floer operator for data with equal ends is Fredholm.** Let `F` be a
+/-- **The linearized Floer operator for data with equal ends has index zero.** Let `F` be a
 finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and let
 `x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose
 suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate fixed point of the
@@ -1150,28 +1129,25 @@ both ends: equal to `(J₋_t, 0, H_t)` for `s` near `-∞` and to `(J₊_t, 0, H
 such as the data of a continuation cylinder from `H` to itself. Let `u` be a `C¹` map whose loops
 converge uniformly to `x` at both ends, with slice defect `∂t u - X_{H_t}(u)` tending uniformly to
 zero at both ends. Then the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the
-linearized Floer operator of these data is Fredholm. -/
-theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u).IsFredholm :=
-  ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ hKs hKt hJc hu hX hH
-    hHp hx hxp hnd hum hδm hX hH hHp hx hxp hnd hup hδp
-
-include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
-/-- **The linearized Floer operator for data with equal ends has index zero.** Under the
-hypotheses of
-`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`,
-the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator has
-index zero. -/
+linearized Floer operator of these data has index zero; it is Fredholm by
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`. -/
 theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u).index = 0 :=
-  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
-    hup hδp hcyl hJ hKs hKt hJc hω hnd).2
+      u).index = 0 := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
+  -- Compare with the `s`-independent data `(i, 0, H_t)`, whose operator has index zero.
+  obtain ⟨h₀, hi₀⟩ :=
+    isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω hnd
+  obtain ⟨-, hi⟩ := isFredholm_and_index_eq_of_cylindrical_data ω
+    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
+    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
+    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
+    hx hnd hup hδp h₀
+  exact hi.trans hi₀
 
 end EqualEnds
 
