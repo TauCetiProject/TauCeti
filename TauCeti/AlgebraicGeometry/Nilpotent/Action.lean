@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Nilpotent.Points
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Scheme.Adjoint
 
 import Mathlib.Algebra.Group.Action.TransferInstance
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 
 /-!
 # The adjoint action on the nilpotent cone
@@ -103,20 +104,6 @@ section Points
 
 variable {A : Type u} [CommRing A] [Algebra k A]
 
--- Present `Spec.mapMulEquiv` on `algSpec` objects so the action retains the same
--- over-category instances when its characteristic equation is rewritten.
-omit [Module.Finite k (Bialgebra.CotangentSpace k H)] in
-private def nilpotentConePointGroupHom : WithConv (H →ₐ[k] A) →*
-    ((algSpec (.of k)).obj (op (CommAlgCat.of k A)) ⟶ G) where
-  toFun g := (algSpec (.of k)).map (CommAlgCat.ofHom g.ofConv).op
-  map_one' := map_one (Spec.mapMulEquiv (R := k) (S := H) (T := A))
-  map_mul' := map_mul (Spec.mapMulEquiv (R := k) (S := H) (T := A))
-
-omit [Module.Finite k (Bialgebra.CotangentSpace k H)] in
-private theorem nilpotentConePointGroupHom_apply (g : WithConv (H →ₐ[k] A)) :
-    nilpotentConePointGroupHom k H g =
-      (algSpec (.of k)).map (CommAlgCat.ofHom g.ofConv).op := rfl
-
 private def nilpotentConePointOverEquiv :
     {f : Spec (.of A) ⟶ nilpotentCone k H // f.IsOver (Spec (.of k))} ≃
       ((algSpec (.of k)).obj (op (CommAlgCat.of k A)) ⟶ nilpotentConeOver k H) :=
@@ -138,7 +125,9 @@ private theorem nilpotentConePointOverEquiv_apply
 @[no_expose]
 local instance nilpotentConeOverPointAction : MulAction (WithConv (H →ₐ[k] A))
     ((algSpec (.of k)).obj (op (CommAlgCat.of k A)) ⟶ nilpotentConeOver k H) := by
-  exact MulAction.compHom _ (nilpotentConePointGroupHom k H)
+  refine MulAction.compHom _ (?_ : WithConv (H →ₐ[k] A) →*
+    ((algSpec (.of k)).obj (op (CommAlgCat.of k A)) ⟶ G))
+  exact Spec.mapMulEquiv.toMonoidHom
 
 /-- The group action on algebra-valued cone points, transported from the native action
 on scheme morphisms through their algebra homomorphisms. -/
@@ -159,12 +148,13 @@ theorem nilpotentConePointAction_eq (g : WithConv (H →ₐ[k] A))
         (algSpec (.of k)).map (CommAlgCat.ofHom
           (TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom f)).op := by
   rw [← nilpotentConePointOverEquiv_apply, ← nilpotentConePointOverEquiv_apply,
-    Equiv.smul_def (nilpotentConePointOverEquiv k H), Equiv.apply_symm_apply,
-    MulAction.compHom_smul_def (nilpotentConePointGroupHom k H),
-    nilpotentConePointGroupHom_apply]
-  -- The statement presents `G` as an `algSpec` object; both native actions use
-  -- the same `nilpotentConeAdjointAction` through these two carrier presentations.
-  rfl
+    Equiv.smul_def (nilpotentConePointOverEquiv k H), Equiv.apply_symm_apply]
+  -- Rewrite the group coordinate in the Hopf spectrum presentation used by the pulled-back
+  -- action. The relative spectrum presentation in the statement gives the same action.
+  exact congrArg
+    (fun p : (algSpec (.of k)).obj (op (CommAlgCat.of k A)) ⟶ G ↦
+      p • nilpotentConePointOverEquiv k H f)
+    (TauCeti.CommHopfAlgCat.mapMulEquiv_eq_algSpec_map H A g)
 
 /-- The action evaluates the descended coaction against the cone point and the inverse
 group point, with inversion expressed by the Hopf antipode. -/
