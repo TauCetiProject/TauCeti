@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Groupoid.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.Prod
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
@@ -126,11 +125,8 @@ include I J I' J' in
 private theorem isSubmersion_source_prod :
     Manifold.IsSubmersion (J.prod J') (I.prod I') ∞
       (Quiver.Total.left : Quiver.Total (C × D) → C × D) := by
-  -- The source of a product is `Prod.map` of the sources, read through `totalProdDiffeomorph`.
-  have h : (Quiver.Total.left : Quiver.Total (C × D) → C × D) =
-      Prod.map Quiver.Total.left Quiver.Total.left ∘ totalProdDiffeomorph C D J J' ∞ :=
-    funext fun _ ↦ by simp
-  rw [h]
+  rw [← prodMap_left_comp_totalProdHomeomorph (C := C) (D := D),
+    ← coe_totalProdDiffeomorph (J := J) (K := J') (n := ∞)]
   exact (totalProdDiffeomorph C D J J' ∞).isLocalDiffeomorph.isSubmersion_comp
     ((isSubmersion_source (I := I) (J := J) (C := C)).prodMap
       (isSubmersion_source (I := I') (J := J') (C := D)))
@@ -140,16 +136,15 @@ include I J I' J' in
 private theorem contMDiff_inverse_prod :
     ContMDiff (J.prod J') (J.prod J') ∞ fun a : Quiver.Total (C × D) ↦
       (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total (C × D)) := by
-  -- The components of the inverse of a pair of arrows are the inverses of its components.
+  -- The components of the inverse of a pair of arrows are the inverses of its components: the
+  -- projection functors preserve inverses (`Functor.map_inv`).
   have h := contMDiff_totalProd_iff.1 (contMDiff_id (I := J.prod J') (n := ∞)
     (M := Quiver.Total (C × D)))
   exact contMDiff_totalProd_iff.2
     ⟨((contMDiff_inverse (I := I) (J := J) (C := C)).comp h.1).congr fun a ↦
-      congrArg (Quiver.Total.mk _ _) (IsIso.eq_inv_of_hom_inv_id
-        (congrArg Prod.fst (IsIso.hom_inv_id a.hom))),
+      congrArg (Quiver.Total.mk _ _) (Functor.map_inv (CategoryTheory.Prod.fst C D) a.hom),
       ((contMDiff_inverse (I := I') (J := J') (C := D)).comp h.2).congr fun a ↦
-        congrArg (Quiver.Total.mk _ _) (IsIso.eq_inv_of_hom_inv_id
-          (congrArg Prod.snd (IsIso.hom_inv_id a.hom)))⟩
+        congrArg (Quiver.Total.mk _ _) (Functor.map_inv (CategoryTheory.Prod.snd C D) a.hom)⟩
 
 include I J I' J' in
 /-- Composition in a product of Lie groupoids is smooth on the transverse fibre product of target
@@ -169,40 +164,25 @@ private theorem contMDiff_comp_prod
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E' × F') + finrank ℝ (E' × F') - finrank ℝ (E × F)) → ℝ)
       (J.prod J') ∞
       fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-        p.val.1.comp p.val.2 p.property := by
-  let := transverseFiberProductChartedSpace
-    (f := (Quiver.Total.right : Quiver.Total (C × D) → C × D))
-    (g := (Quiver.Total.left : Quiver.Total (C × D) → C × D)) (n := ∞) (by simp)
-    (hs.contMDiff.comp hi) hs.contMDiff
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
-  have hemb := isSmoothEmbedding_coe_transverseFiberProduct
-    (f := (Quiver.Total.right : Quiver.Total (C × D) → C × D))
-    (g := (Quiver.Total.left : Quiver.Total (C × D) → C × D)) (n := ∞) (by simp)
-    (hs.contMDiff.comp hi) hs.contMDiff
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
-  have h₁ := contMDiff_totalProd_iff.1 (contMDiff_fst.comp hemb.contMDiff)
-  have h₂ := contMDiff_totalProd_iff.1 (contMDiff_snd.comp hemb.contMDiff)
-  let := composablePairsChartedSpace I J C
-  let := composablePairsChartedSpace I' J' D
-  have hC := (contMDiff_comp_composablePairs I J C).comp
-    ((contMDiff_composablePairs_iff I J C le_rfl
-      (f := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-        ⟨(⟨p.val.1.left.1, p.val.1.right.1, p.val.1.hom.1⟩,
-          ⟨p.val.2.left.1, p.val.2.right.1, p.val.2.hom.1⟩), congrArg Prod.fst p.property⟩)).2
-      ⟨h₁.1, h₂.1⟩)
-  have hD := (contMDiff_comp_composablePairs I' J' D).comp
-    ((contMDiff_composablePairs_iff I' J' D le_rfl
-      (f := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-        ⟨(⟨p.val.1.left.2, p.val.1.right.2, p.val.1.hom.2⟩,
-          ⟨p.val.2.left.2, p.val.2.right.2, p.val.2.hom.2⟩), congrArg Prod.snd p.property⟩)).2
-      ⟨h₁.2, h₂.2⟩)
-  refine contMDiff_totalProd_iff.2 ⟨hC.congr fun p ↦ ?_, hD.congr fun p ↦ ?_⟩ <;>
-  · obtain ⟨⟨⟨⟨x₁, x₂⟩, ⟨y₁, y₂⟩, f⟩, ⟨⟨y₁', y₂'⟩, ⟨z₁, z₂⟩, f'⟩⟩, h⟩ := p
-    simp only [Prod.mk.injEq] at h
-    obtain ⟨rfl, rfl⟩ := h
-    simp only [Function.comp_apply]
-    rw [Quiver.Total.comp_def, Quiver.Total.comp_def]
-    simp
+        p.val.1.comp p.val.2 p.property :=
+  contMDiff_composablePairs_comp_of_contMDiff hs hi fun [_] {a b} ha hb h ↦ by
+    have h₁ := contMDiff_totalProd_iff.1 ha
+    have h₂ := contMDiff_totalProd_iff.1 hb
+    refine contMDiff_totalProd_iff.2
+      ⟨(ContMDiff.totalComp I J C le_rfl h₁.1 h₂.1 fun p ↦ congrArg Prod.fst (h p)).congr
+          fun p ↦ ?_,
+        (ContMDiff.totalComp I' J' D le_rfl h₁.2 h₂.2 fun p ↦ congrArg Prod.snd (h p)).congr
+          fun p ↦ ?_⟩ <;>
+    -- Each component of a composite is the composite of the components.
+    · generalize h p = hxy
+      generalize a p = x at hxy ⊢
+      generalize b p = y at hxy ⊢
+      obtain ⟨⟨x₁, x₂⟩, ⟨y₁, y₂⟩, f⟩ := x
+      obtain ⟨⟨y₁', y₂'⟩, ⟨z₁, z₂⟩, f'⟩ := y
+      simp only [Prod.mk.injEq] at hxy
+      obtain ⟨rfl, rfl⟩ := hxy
+      rw [Quiver.Total.comp_def, Quiver.Total.comp_def]
+      simp
 
 include I J I' J' in
 /-- Every source fibre of a product of Lie groupoids is Hausdorff: it embeds in the product of the

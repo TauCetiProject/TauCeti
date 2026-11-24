@@ -72,6 +72,19 @@ theorem totalProdHomeomorph_symm_apply (p : Quiver.Total C × Quiver.Total D) :
     (totalProdHomeomorph C D).symm p =
       ⟨(p.1.left, p.2.left), (p.1.right, p.2.right), (p.1.hom, p.2.hom)⟩ := (rfl)
 
+/-- The source of a total arrow of a product category is the pair of the sources of its
+components. -/
+theorem prodMap_left_comp_totalProdHomeomorph :
+    Prod.map Quiver.Total.left Quiver.Total.left ∘ totalProdHomeomorph C D = Quiver.Total.left :=
+  (rfl)
+
+/-- The target of a total arrow of a product category is the pair of the targets of its
+components. -/
+theorem prodMap_right_comp_totalProdHomeomorph :
+    Prod.map Quiver.Total.right Quiver.Total.right ∘ totalProdHomeomorph C D =
+      Quiver.Total.right :=
+  (rfl)
+
 /-- The total arrows of a product of categories with Hausdorff total arrows are Hausdorff. -/
 instance instT2SpaceTotalProd [T2Space (Quiver.Total C)] [T2Space (Quiver.Total D)] :
     T2Space (Quiver.Total (C × D)) :=

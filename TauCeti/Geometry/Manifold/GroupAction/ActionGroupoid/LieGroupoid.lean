@@ -57,24 +57,8 @@ instance isLieGroupoid : IsLieGroupoid I I (ActionCategory G X) where
   isSubmersion_source := isSubmersion_source I G X
   contMDiff_unit := contMDiff_unit I ∞ G X
   contMDiff_inverse := contMDiff_inverse I ∞ G X
-  -- Composition is smooth for smooth families of composable arrows, and the two arrows of a
-  -- composable pair depend smoothly on the pair through the fibre-product embedding.
-  contMDiff_comp := by
-    let := transverseFiberProductChartedSpace
-      (f := (Quiver.Total.right : Quiver.Total (ActionCategory G X) → ActionCategory G X))
-      (g := (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X))
-      (n := ∞) (by simp)
-      ((isSubmersion_source I G X).contMDiff.comp (contMDiff_inverse I ∞ G X))
-      (isSubmersion_source I G X).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source I G X) p)
-    have hemb := isSmoothEmbedding_coe_transverseFiberProduct
-      (f := (Quiver.Total.right : Quiver.Total (ActionCategory G X) → ActionCategory G X))
-      (g := (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X))
-      (n := ∞) (by simp)
-      ((isSubmersion_source I G X).contMDiff.comp (contMDiff_inverse I ∞ G X))
-      (isSubmersion_source I G X).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source I G X) p)
-    exact contMDiff_comp I ∞ (contMDiff_fst.comp hemb.contMDiff)
-      (contMDiff_snd.comp hemb.contMDiff) fun p ↦ p.property
+  -- Composition is smooth for smooth families of composable arrows.
+  contMDiff_comp := contMDiff_composablePairs_comp_of_contMDiff (isSubmersion_source I G X)
+    (contMDiff_inverse I ∞ G X) fun ha hb h ↦ contMDiff_comp I ∞ ha hb h
 
 end TauCeti.ActionGroupoid

@@ -58,8 +58,10 @@ From these axioms this file derives:
   (`IsLieGroupoid.contMDiff_composablePairs_iff`), so composing arrows that depend smoothly on a
   point gives an arrow that depends smoothly on the point (`ContMDiff.totalComp`); conversely,
   composition is smooth on composable pairs as soon as it is the restriction of a smooth map on
-  `Quiver.Total C × Quiver.Total C` (`TauCeti.contMDiff_composablePairs_comp_of_eq`), which is how
-  the examples verify the composition axiom;
+  `Quiver.Total C × Quiver.Total C` (`TauCeti.contMDiff_composablePairs_comp_of_eq`), or as soon
+  as composing smooth families of composable arrows gives a smooth family
+  (`TauCeti.contMDiff_composablePairs_comp_of_contMDiff`), which is how the examples verify the
+  composition axiom;
 * the left-shear diffeomorphism (`IsLieGroupoid.shearLeftDiffeomorph`) from composable pairs to
   same-source pairs `{q : Quiver.Total C × Quiver.Total C // q.1.left = q.2.left}`, from which
   groupoid composition is a smooth submersion (`IsLieGroupoid.isSubmersion_comp`);
@@ -177,6 +179,44 @@ theorem contMDiff_composablePairs_comp_of_eq
     (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
     (hs.contMDiff.comp hi) hs.contMDiff
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)).contMDiff
+
+/-- Composition is smooth on the transverse fibre product of target and source, the condition
+`IsLieGroupoid.contMDiff_comp`, as soon as composing two smooth families of composable arrows
+parametrised by the composable pairs gives a smooth family. The hypothesis is asked for every chart
+structure on the composable pairs, so that a composition lemma for smooth families supplies it. -/
+theorem contMDiff_composablePairs_comp_of_contMDiff
+    (hs : Manifold.IsSubmersion J I ∞ (Quiver.Total.left : Quiver.Total C → C))
+    (hi : ContMDiff J J ∞ fun a : Quiver.Total C ↦
+      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C))
+    (hcomp : ∀ [ChartedSpace (Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+        {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}]
+      {a b : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} → Quiver.Total C},
+      ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞ a →
+      ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞ b →
+      ∀ h : ∀ p, (a p).right = (b p).left,
+        ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
+          fun p ↦ (a p).comp (b p) (h p)) :
+    letI := transverseFiberProductChartedSpace
+      (f := (Quiver.Total.right : Quiver.Total C → C))
+      (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+      (hs.contMDiff.comp hi) hs.contMDiff
+      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+    ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
+      fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+        p.val.1.comp p.val.2 p.property := by
+  let := transverseFiberProductChartedSpace
+    (f := (Quiver.Total.right : Quiver.Total C → C))
+    (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+    (hs.contMDiff.comp hi) hs.contMDiff
+    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+  -- The two arrows of a composable pair depend smoothly on it through the fibre-product embedding.
+  have hemb := isSmoothEmbedding_coe_transverseFiberProduct
+    (f := (Quiver.Total.right : Quiver.Total C → C))
+    (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+    (hs.contMDiff.comp hi) hs.contMDiff
+    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+  exact hcomp (contMDiff_fst.comp hemb.contMDiff) (contMDiff_snd.comp hemb.contMDiff)
+    fun p ↦ p.property
 
 end CompositionCriterion
 

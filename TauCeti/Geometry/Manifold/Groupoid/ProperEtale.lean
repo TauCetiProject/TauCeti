@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.LieGroupoid
 public import TauCeti.Geometry.Manifold.Groupoid.Examples
 public import TauCeti.Geometry.Manifold.Groupoid.Prod
 public import TauCeti.Topology.CategoryTheory.Etale
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
@@ -174,11 +175,8 @@ instance prod : IsProperEtaleGroupoid (I.prod I') (J.prod J') (C × D) where
     have := t2Space_arrows (I := I') (J := J') (C := D)
     inferInstance
   isLocalDiffeomorph_source := by
-    -- The source of a product is `Prod.map` of the sources, read through `totalProdDiffeomorph`.
-    have h : (Quiver.Total.left : Quiver.Total (C × D) → C × D) =
-        Prod.map Quiver.Total.left Quiver.Total.left ∘ totalProdDiffeomorph C D J J' ∞ :=
-      funext fun _ ↦ by simp
-    rw [h]
+    rw [← prodMap_left_comp_totalProdHomeomorph (C := C) (D := D),
+      ← coe_totalProdDiffeomorph (J := J) (K := J') (n := ∞)]
     exact fun a ↦ ((totalProdDiffeomorph C D J J' ∞).isLocalDiffeomorph a).comp (I.prod I') (C × D)
       ((isLocalDiffeomorph_source (I := I) (J := J) (C := C)).prodMap
         (isLocalDiffeomorph_source (I := I') (J := J') (C := D)) _)
