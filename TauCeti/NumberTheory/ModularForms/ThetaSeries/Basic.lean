@@ -149,6 +149,7 @@ theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
 
 /-- If `L` is not discrete, the theta series of every translate `γ + L` is identically `0`, since
 no Gaussian `exp (-π y ‖γ + v‖²)` (`y > 0`) is summable over `L`. -/
+@[simp]
 theorem thetaCoset_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L) (γ : E) :
     thetaCoset L γ = 0 :=
   thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
@@ -156,6 +157,7 @@ theorem thetaCoset_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L) 
       (by positivity) hs)
 
 /-- If `L` is not discrete, the theta series of `L` is identically `0`. -/
+@[simp]
 theorem thetaSeries_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L) :
     thetaSeries L = 0 := by
   simpa using thetaCoset_eq_zero_of_not_discreteTopology L hL 0
