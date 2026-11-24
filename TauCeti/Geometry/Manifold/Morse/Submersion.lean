@@ -90,15 +90,11 @@ theorem manifoldMorseIndex_comp [FiniteDimensional ℝ E'] (hπ : IsRegularPoint
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π z)) (hπ₂ : ContMDiffAt I' I 2 π z)
     (hcrit : π z ∈ criticalPoints I f) :
     manifoldMorseIndex I' (f ∘ π) z = manifoldMorseIndex I f (π z) := by
-  have hQ : (criticalHessian I' (f ∘ π) z).toBilinForm.toQuadraticMap =
-      (criticalHessian I f (π z)).toBilinForm.toQuadraticMap.comp
-        (mfderiv I' I π z).toLinearMap := by
-    ext u
-    simp [criticalHessian_comp_apply rfl hf hπ₂ hcrit]
   -- Tangent spaces are their model spaces.
   have : FiniteDimensional ℝ (TangentSpace I' z) := inferInstanceAs (FiniteDimensional ℝ E')
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian, manifoldMorseIndex_eq_sigNeg_criticalHessian,
-    hQ, QuadraticForm.sigNeg_comp_of_surjective _ (isRegularPoint_iff.1 hπ)]
+    toQuadraticMap_toBilinForm_criticalHessian_comp hf hπ₂ hcrit,
+    QuadraticForm.sigNeg_comp_of_surjective _ (isRegularPoint_iff.1 hπ)]
 
 end IsRegularPoint
 

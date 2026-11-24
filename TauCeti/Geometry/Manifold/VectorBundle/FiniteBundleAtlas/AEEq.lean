@@ -39,11 +39,9 @@ continuous sections whose chart expressions in every chart `i` agree almost ever
 theorem eq_of_continuous_of_coord_ae_eq [T2Space F] [MeasurableSpace E] {μ : Measure E}
     [μ.IsOpenPosMeasure] {s t : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
     (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x))
-    (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) : s = t := by
-  funext x
-  obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  exact A.eq_of_coord_chart_eq hx (Measure.eqOn_open_of_ae_eq (h i) (A.image i).isOpen
-    (A.continuousOn_coord hs i) (A.continuousOn_coord ht i) (A.mem_image.2 ⟨x, hx, rfl⟩))
+    (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) : s = t :=
+  A.eq_of_forall_eqOn_coord fun i ↦ Measure.eqOn_open_of_ae_eq (h i) (A.image i).isOpen
+    (A.continuousOn_coord hs i) (A.continuousOn_coord ht i)
 
 end FiniteBundleAtlas
 

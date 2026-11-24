@@ -15,6 +15,8 @@ public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
+-- Proof-only: a surjective valuation is nontrivial.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Extensions of places: the ramification index and the relative degree

@@ -43,6 +43,7 @@ are identified with the smooth functions on `UnitAddTorus (Fin 2)` by
 
 ## Main results
 
+* `TauCeti.UnitAddTorus.dzbar_ne_zero`: the antiholomorphic covector is nonzero at every point.
 * `TauCeti.UnitAddTorus.isZeroOneForm_iff_eq_smul_dzbar`: a `(0,1)`-form is `η (∂_s) dzbar`.
 * `TauCeti.UnitAddTorus.dbarFunction_eq_smul_dzbar`: `∂bar σ` is the conjugate Wirtinger
   derivative of `σ` on `UnitAddTorus (Fin 2)` times `dzbar`.
@@ -159,6 +160,16 @@ theorem smul_dzbar_injective (x : UnitAddCircle × UnitAddCircle) :
     Function.Injective fun c : ℂ ↦ c • dzbar x := fun c c' h ↦ by
   rw [← smul_dzbar_apply_fst x c, ← smul_dzbar_apply_fst x c']
   exact congrArg (fun η : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ ↦ η ((1, 0) : ℝ × ℝ)) h
+
+/-- The `(0,1)`-form `dzbar` of the square torus is nonzero at every point. -/
+theorem dzbar_ne_zero (x : UnitAddCircle × UnitAddCircle) :
+    dzbar x ≠ 0 := by
+  intro h
+  have hv := smul_dzbar_apply_fst x (1 : ℂ)
+  rw [one_smul, h] at hv
+  have hz : (0 : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ) ((1, 0) : ℝ × ℝ) = 0 :=
+    zero_apply _
+  exact one_ne_zero (hv.symm.trans hz)
 
 /-- **The kernel of `∂bar`.** A smooth section of the trivial line bundle of the square torus is in
 the kernel of `∂bar` if and only if it is constant. -/

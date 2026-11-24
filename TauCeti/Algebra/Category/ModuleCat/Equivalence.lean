@@ -40,6 +40,9 @@ the two module universes independent.
   `B`-modules back to the finitely generated `A`-modules.
 * `CategoryTheory.Equivalence.projective_functor_obj_iff`: `e.functor.obj M` is projective if
   and only if `M` is.
+* `CategoryTheory.Equivalence.finite_functor_obj_self` and
+  `CategoryTheory.Equivalence.projective_functor_obj_self`: an equivalence carries the regular
+  module to a finitely generated projective module.
 -/
 
 public section
@@ -97,5 +100,20 @@ theorem projective_functor_obj_iff [Small.{v} A] [Small.{v'} B] (M : ModuleCat.{
   · intro h
     have : Projective (e.functor.obj M) := (e.map_projective_iff M).mpr inferInstance
     exact (e.functor.obj M).projective_of_module_projective
+
+section Regular
+
+variable (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B)
+
+/-- An equivalence of module categories carries the regular module to a finitely generated
+module. -/
+instance finite_functor_obj_self : Module.Finite B (e.functor.obj (ModuleCat.of A A)) :=
+  (e.finite_functor_obj_iff _).2 inferInstance
+
+/-- An equivalence of module categories carries the regular module to a projective module. -/
+instance projective_functor_obj_self : Module.Projective B (e.functor.obj (ModuleCat.of A A)) :=
+  (e.projective_functor_obj_iff _).2 inferInstance
+
+end Regular
 
 end CategoryTheory.Equivalence

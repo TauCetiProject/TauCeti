@@ -127,8 +127,7 @@ private lemma nsmul_classifyingSpace_pi_singularHomology_eq_zero (ι : Type) [Fi
   · -- split off the factor indexed by `none`
     intro α _ h G _ hG
     exact nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv k
-      ({ Equiv.piOptionEquivProd with map_mul' := fun _ _ ↦ rfl } :
-        (∀ i, G i) ≃* G none × ∀ a, G (some a)).symm
+      MulEquiv.piOptionEquivProd.symm
       (nsmul_classifyingSpace_prod_singularHomology_eq_zero _ _ k (hG none)
         (h (fun a ↦ G (some a)) fun a ↦ hG (some a)))
 

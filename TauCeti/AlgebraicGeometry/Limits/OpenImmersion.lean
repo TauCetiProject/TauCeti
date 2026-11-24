@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 
 /-!
@@ -96,6 +96,10 @@ private lemma exists_isOpenImmersion_pullbackMap_of_le_opensRange
     exact hx
   -- Hence some finite-stage base change of `ψ` is an isomorphism, and that of `g` is the
   -- composite of this isomorphism with the open immersion base changed from `V.ι`.
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace p
+  have : QuasiSeparatedSpace V := quasiSeparatedSpace_of_quasiSeparated (V.ι ≫ q)
+  have : LocallyOfFinitePresentation (ψ ≫ V.ι ≫ q) := hψq ▸ inferInstance
+  have : LocallyOfFinitePresentation ψ := locallyOfFinitePresentation_of_comp ψ (V.ι ≫ q)
   obtain ⟨j, hji, hj⟩ := hc.exists_isIso_pullbackMap ψ hψq
   refine ⟨j, hji, ?_⟩
   have := hι (D.map hji)

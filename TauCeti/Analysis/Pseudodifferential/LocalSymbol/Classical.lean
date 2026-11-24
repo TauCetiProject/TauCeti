@@ -42,7 +42,14 @@ Through these extensions the facts about classical symbols on `ℝⁿ` localize:
 * `TauCeti.LocalClassicalSymbol.term_eq_of_toLocalSymbol_eq` and
   `TauCeti.LocalClassicalSymbol.ext`: the homogeneous terms are determined by the symbol;
 * the classical symbols of order `m` on `U` form a complex vector space, termwise, and restriction
-  and extension are linear.
+  and extension are linear;
+* `TauCeti.LocalClassicalSymbol.isSmoothing_toLocalSymbol_iff`: a classical symbol on `U` is
+  smoothing exactly when all of its homogeneous terms vanish, and
+  `TauCeti.LocalClassicalSymbol.ofIsSmoothing` makes every smoothing symbol on `U` classical; so the
+  kernel of the homogeneous terms `TauCeti.LocalClassicalSymbol.termsLinearMap` consists of the
+  smoothing classical symbols (`TauCeti.LocalClassicalSymbol.mem_ker_termsLinearMap`), and two
+  classical symbols differ by a smoothing symbol exactly when their homogeneous terms agree
+  (`TauCeti.LocalClassicalSymbol.isSmoothing_toLocalSymbol_sub_iff`).
 
 ## References
 
@@ -545,6 +552,70 @@ extending the original classical symbol. -/
 theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalClassicalSymbol U V W m) :
     extend ψ hψ hψU' (restrict h a) = extend ψ hψ (hψU'.trans h) a :=
   ClassicalSymbol.ext (by simp)
+
+end LocalClassicalSymbol
+
+namespace LocalClassicalSymbol
+
+variable {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+
+/-! ### Smoothing classical symbols and the homogeneous terms -/
+
+/-- A smoothing symbol of order `m` on `U` is a classical symbol of order `m` on `U`, all of whose
+homogeneous terms vanish. -/
+def ofIsSmoothing (a : LocalSymbol U V W m) (ha : a.IsSmoothing) :
+    LocalClassicalSymbol U V W m where
+  toLocalSymbol := a
+  term _ := 0
+  exists_remainder' := ⟨default, fun N => ⟨(LocalSymbol.isSmoothing_iff.1 ha (m - N)).choose,
+    fun p => by simp [(LocalSymbol.isSmoothing_iff.1 ha (m - N)).choose_spec]⟩⟩
+
+@[simp]
+theorem toLocalSymbol_ofIsSmoothing (a : LocalSymbol U V W m) (ha : a.IsSmoothing) :
+    (ofIsSmoothing a ha).toLocalSymbol = a :=
+  (rfl)
+
+@[simp]
+theorem term_ofIsSmoothing (a : LocalSymbol U V W m) (ha : a.IsSmoothing) (j : ℕ) :
+    (ofIsSmoothing a ha).term j = 0 :=
+  (rfl)
+
+/-- A classical symbol on `U` is smoothing exactly when all of its homogeneous terms vanish. -/
+theorem isSmoothing_toLocalSymbol_iff (a : LocalClassicalSymbol U V W m) :
+    a.toLocalSymbol.IsSmoothing ↔ ∀ j, a.term j = 0 := by
+  refine ⟨fun ha j => ?_, fun ha => LocalSymbol.isSmoothing_iff_forall_nat.2 fun N => ?_⟩
+  · exact (term_eq_of_toLocalSymbol_eq (a := a) (b := ofIsSmoothing a.toLocalSymbol ha) rfl
+      j).trans (term_ofIsSmoothing _ _ j)
+  · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
+    exact ⟨a.remainder default N, funext fun p => by simp [ha]⟩
+
+variable (U V W m) in
+/-- The homogeneous terms `(a_{m-j})ⱼ` of a classical symbol of order `m` on `U`, as a linear map to
+the sequences of homogeneous symbols of degrees `m - j` on `U`. -/
+def termsLinearMap : LocalClassicalSymbol U V W m →ₗ[ℂ]
+    ∀ j : ℕ, LocalHomogeneousSymbol U V W (m - j) where
+  toFun a := a.term
+  map_add' a b := funext fun j => term_add a b j
+  map_smul' c a := funext fun j => term_smul a c j
+
+@[simp]
+theorem termsLinearMap_apply (a : LocalClassicalSymbol U V W m) :
+    termsLinearMap U V W m a = a.term :=
+  (rfl)
+
+/-- The classical symbols on `U` with vanishing homogeneous terms are exactly the smoothing ones. -/
+theorem mem_ker_termsLinearMap {a : LocalClassicalSymbol U V W m} :
+    a ∈ LinearMap.ker (termsLinearMap U V W m) ↔ a.toLocalSymbol.IsSmoothing := by
+  simp only [LinearMap.mem_ker, termsLinearMap_apply, isSmoothing_toLocalSymbol_iff, funext_iff,
+    Pi.zero_apply]
+
+/-- **Uniqueness modulo smoothing.** Two classical symbols of order `m` on `U` differ by a smoothing
+symbol exactly when they have the same homogeneous terms. -/
+theorem isSmoothing_toLocalSymbol_sub_iff {a b : LocalClassicalSymbol U V W m} :
+    (a.toLocalSymbol - b.toLocalSymbol).IsSmoothing ↔ a.term = b.term := by
+  rw [← toLocalSymbol_sub, isSmoothing_toLocalSymbol_iff, funext_iff]
+  simp [sub_eq_zero]
 
 end LocalClassicalSymbol
 

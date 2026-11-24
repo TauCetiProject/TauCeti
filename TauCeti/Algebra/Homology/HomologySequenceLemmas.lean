@@ -34,6 +34,11 @@ of a pair whose subspace maps surjectively on chains onto a space weakly equival
 space, for instance when the subspace is a covering space of it with nonempty fibres: the relative
 homology is then the shifted homology of the kernel of that surjection.
 
+It computes the connecting map of a short exact sequence of complexes on all cycles of the third
+term at once: pulling back the degreewise epimorphism onto the third term along its cycles gives an
+epimorphism onto the cycles together with the lifts that the definition of the connecting map
+needs.
+
 It also proves that the connecting maps of a `3 × 3` diagram of complexes with short exact rows
 and columns anticommute: the two composites of connecting maps from the homology of one corner to
 that of the opposite corner differ by a sign. Both composites factor through the connecting maps of
@@ -60,6 +65,8 @@ variable, such as for the cup product in Tate cohomology.
   `CategoryTheory.ShortComplex.ShortExact.quasiIso_g_iff`: in a short exact sequence of
   complexes, the first map is a quasi-isomorphism if and only if the third term is acyclic, and
   the second map is one if and only if the first term is acyclic.
+* `CategoryTheory.ShortComplex.ShortExact.exists_cycles_lift_δ`: the connecting map of a short
+  exact sequence of complexes, computed on all cycles at once through a pullback lift.
 * `CategoryTheory.ShortComplex.ShortExact.liftδIso`,
   `CategoryTheory.ShortComplex.ShortExact.liftδIso_hom_comp_homologyMap`: the connecting map of a
   short exact sequence `A ⟶ X ⟶ Q` lifts to an isomorphism `Hᵢ(Q) ≅ Hⱼ(K)` along the kernel
@@ -262,6 +269,49 @@ lemma quasiIso_g_iff : _root_.QuasiIso S.g ↔ S.X₁.Acyclic := by
     · have := hS.epi_g
       exact epi_homologyMap_of_epi_of_not_rel S.g i hi
   exact isIso_of_mono_of_epi _
+
+end CategoryTheory.ShortComplex.ShortExact
+
+/-! ### The connecting map on all cycles at once -/
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open HomologicalComplex Limits
+
+variable {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact)
+
+/-- The data computing the connecting map of a short exact sequence `S` of complexes on all
+cycles of `S.X₃` at once: the pullback of `S.X₂.X i ⟶ S.X₃.X i` along the cycles of `S.X₃` gives
+an epimorphism `a₃` onto the cycles, a lift `a₂` of it to `S.X₂`, and a lift `a₁` of the
+differential of `a₂` to `S.X₁`, whose class is the connecting map applied to `a₃`. -/
+lemma exists_cycles_lift_δ {i j : ι} (hij : c.Rel i j) :
+    ∃ (P : C) (a₃ : P ⟶ S.X₃.cycles i) (a₂ : P ⟶ S.X₂.X i) (a₁ : P ⟶ S.X₁.X j)
+      (_ : a₂ ≫ S.g.f i = a₃ ≫ S.X₃.iCycles i) (_ : a₁ ≫ S.f.f j = a₂ ≫ S.X₂.d i j)
+      (ha₁ : a₁ ≫ S.X₁.d j (c.next j) = 0), Epi a₃ ∧
+        a₃ ≫ S.X₃.homologyπ i ≫ hS.δ i j hij =
+          S.X₁.liftCycles a₁ (c.next j) rfl ha₁ ≫ S.X₁.homologyπ j := by
+  have hi := (shortExact_iff_degreewise_shortExact S).1 hS i
+  have hj := (shortExact_iff_degreewise_shortExact S).1 hS j
+  have : Epi (S.g.f i) := hi.epi_g
+  have := hj.mono_f
+  have : Mono (S.f.f (c.next j)) := ((shortExact_iff_degreewise_shortExact S).1 hS _).mono_f
+  let a₃ := pullback.snd (S.g.f i) (S.X₃.iCycles i)
+  let a₂ := pullback.fst (S.g.f i) (S.X₃.iCycles i)
+  have h₂ : a₂ ≫ S.g.f i = a₃ ≫ S.X₃.iCycles i := pullback.condition
+  let a₁ := hj.exact.lift (a₂ ≫ S.X₂.d i j) (by
+    simp only [Category.assoc]
+    dsimp
+    rw [← S.g.comm, reassoc_of% h₂, iCycles_d, comp_zero])
+  have h₁ : a₁ ≫ S.f.f j = a₂ ≫ S.X₂.d i j := hj.exact.lift_f _ _
+  have ha₁ : a₁ ≫ S.X₁.d j (c.next j) = 0 := by
+    rw [← cancel_mono (S.f.f (c.next j)), Category.assoc, ← S.f.comm, reassoc_of% h₁]
+    simp
+  refine ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, inferInstance, ?_⟩
+  -- `δ_eq` computes `δ` on the cycles lifting `a₃ ≫ iCycles`, which are `a₃` itself
+  have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles i) j (c.next_eq' hij) (by simp) = a₃ := by
+    simp [← cancel_mono (S.X₃.iCycles i)]
+  have := hS.δ_eq i j hij (a₃ ≫ S.X₃.iCycles i) (by simp) a₂ h₂ a₁ h₁ _ rfl
+  rwa [e₃] at this
 
 end CategoryTheory.ShortComplex.ShortExact
 
