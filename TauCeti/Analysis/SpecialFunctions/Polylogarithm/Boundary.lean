@@ -13,7 +13,6 @@ import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Boundary continuity and the principal jump of integer-weight polylogarithms
@@ -43,12 +42,10 @@ Specifically:
 
 ## Main declarations
 
-* `TauCeti.Polylog.continuousAt_polylog_of_im_ne_zero_or_re_le_one`,
-  `TauCeti.Polylog.continuousAt_polylog_iff`, and
-  `TauCeti.Polylog.continuousAt_polylog_at_one`: unrestricted continuity off `(1, ∞)` (and its
-  iff characterization for `2 ≤ n`) and at `1`.
-* `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos` and
-  `TauCeti.Polylog.continuousOn_polylog_im_nonpos`: continuity on the closed lower
+* `TauCeti.Polylog.continuousAt_polylog_of_im_ne_zero_or_re_le_one` and
+  `TauCeti.Polylog.continuousAt_polylog_iff`: unrestricted continuity off `(1, ∞)` (and its
+  iff characterization for `2 ≤ n`).
+* `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos`: continuity within the closed lower
   half-plane.
 * `TauCeti.Polylog.polylog_ofReal_im_of_one_lt`:
   `(polylog n x).im = -π (log x) ^ (n - 1) / (n - 1)!` for `1 ≤ n` and `1 < x`.
@@ -117,22 +114,14 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
     have hn2 : 2 ≤ n := hn.resolve_left (not_not.mpr rfl)
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = (k + 2 : ℕ) := ⟨(n - 2).toNat, by omega⟩
     refine tendsto_polylog_nat_add_two_of_ae_tendsto k tendsto_id ?_
-    have hIoo : ∀ᵐ t : ℝ ∂volume.restrict (Ioc 0 1), t ∈ Ioo (0 : ℝ) 1 := by
-      filter_upwards [ae_restrict_mem measurableSet_Ioc,
-        ae_restrict_of_ae (Ioo_ae_eq_Ioc (a := (0 : ℝ)) (b := 1) (μ := volume))] with t ht h
-      exact h.mpr ht
-    filter_upwards [hIoo] with t ht
+    rw [← restrict_Ioo_eq_restrict_Ioc]
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
     have hslit : 1 - (t : ℂ) * 1 ∈ Complex.slitPlane := by
       rw [mul_one, Complex.mem_slitPlane_iff]
       exact Or.inl (by simp; linarith [ht.2])
     exact (continuousAt_clog hslit).tendsto.comp
       ((by fun_prop : Continuous fun i : ℂ ↦ 1 - (t : ℂ) * i).tendsto 1)
   · exact (analyticAt_polylog n (z.one_sub_mem_slitPlane_iff.mpr ⟨hz, hz1⟩)).continuousAt
-
-/-- For integer weight `n ≥ 2`, `polylog n` is continuous at `1` for unrestricted complex
-approach. -/
-theorem continuousAt_polylog_at_one {n : ℤ} (hn : 2 ≤ n) : ContinuousAt (polylog n) 1 :=
-  continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn) (Or.inr (by simp))
 
 /-- Every integer-weight polylogarithm is continuous within the closed lower half-plane
 `{w | w.im ≤ 0}` at every point `z` with `z ≠ 1 ∨ 2 ≤ n`. -/
@@ -157,12 +146,6 @@ theorem continuousWithinAt_polylog_im_nonpos (n : ℤ) {z : ℂ} (hz : z ≠ 1 �
       filter_upwards [ae_restrict_mem measurableSet_Ioc,
         Complex.ae_one_sub_ofReal_mul_ne_zero z] with t ht htz
       exact (continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos ht.1.le htz).tendsto
-
-/-- For integer weight `n ≥ 2`, `polylog n` is continuous on the entire closed lower half-plane
-`{z | z.im ≤ 0}`, including `z = 1` and the cut `(1, ∞)`. -/
-theorem continuousOn_polylog_im_nonpos {n : ℤ} (hn : 2 ≤ n) :
-    ContinuousOn (polylog n) {z : ℂ | z.im ≤ 0} :=
-  fun _ _ ↦ continuousWithinAt_polylog_im_nonpos n (Or.inr hn)
 
 /-- At any real `x` with `x ≠ 1 ∨ 2 ≤ n`, `polylog n x` is the limit of `polylog n z` as `z → x`
 from the open lower half-plane `{z | z.im < 0}`. -/
@@ -219,17 +202,13 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
       Complex.log_im, harg]
     ring
   have h_log_int : ∫ t in x⁻¹..1, (-Real.log t) ^ k / t = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
-    have hpow : (fun t : ℝ ↦ (-Real.log t) ^ k / t) =
-        fun t ↦ (-1 : ℝ) ^ k * (Real.log t ^ k / t) := by
-      ext t
-      rw [neg_eq_neg_one_mul, mul_pow, mul_div_assoc]
-    rw [hpow, intervalIntegral.integral_const_mul, TauCeti.integral_log_pow_div_self k h0_notMem,
-      Real.log_one, zero_pow (Nat.succ_ne_zero k), zero_sub, Real.log_inv,
-      neg_pow (Real.log x) (k + 1)]
-    calc (-1 : ℝ) ^ k * (-((-1) ^ (k + 1) * Real.log x ^ (k + 1)) / (k + 1 : ℝ))
-        = ((-1 : ℝ) * (-1)) ^ k * Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
-          rw [pow_succ', mul_pow]; ring
-      _ = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by norm_num
+    simp_rw [neg_pow (Real.log _), mul_div_assoc]
+    rw [intervalIntegral.integral_const_mul, TauCeti.integral_log_pow_div_self k h0_notMem]
+    have hneg : (-1 : ℝ) ^ k * -((-1 : ℝ) ^ (k + 1)) = 1 := by
+      rw [pow_succ, mul_neg_one, neg_neg, ← mul_pow]; norm_num
+    simp only [Real.log_one, zero_pow (Nat.succ_ne_zero k), zero_sub, Real.log_inv,
+      neg_pow (Real.log x)]
+    linear_combination (Real.log x ^ (k + 1) / (k + 1 : ℝ)) * hneg
   rw [← intervalIntegral.integral_add_adjacent_intervals hint₁ hint₂, Complex.add_im,
     him_int _ _ hint₁, him_int _ _ hint₂, h1, h2, h_log_int, zero_add]
 
@@ -244,7 +223,8 @@ theorem polylog_ofReal_im_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 <
     rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.arg_ofReal_of_neg (sub_neg.mpr hx)]
   · rw [Nat.add_sub_cancel, Nat.add_assoc, polylog_nat_add_two, Complex.mul_im,
       im_integral_radialIntegrand_of_one_lt k hx, Nat.factorial_succ]
-    simp
+    simp only [← Complex.ofReal_natCast, ← Complex.ofReal_inv, Complex.ofReal_re,
+      Complex.ofReal_im, zero_mul, add_zero, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     field_simp
 
 /-- Approaching real `x` (`x ≠ 1 ∨ 2 ≤ n`) from the open upper half-plane `{z | 0 < z.im}`,
@@ -257,7 +237,7 @@ theorem tendsto_polylog_nhdsWithin_im_pos (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   dsimp only [Function.comp_def]
-  rw [polylog_conj n (Or.inl hz.ne'), RingHomCompTriple.comp_apply, RingHom.id_apply]
+  rw [polylog_conj n (Or.inl hz.ne'), Complex.conj_conj]
 
 /-- On `(1, ∞)` in positive weight `n ≥ 1`, `conj (polylog n x)` differs from `polylog n x` by
 `2 π i (log x) ^ (n - 1) / (n - 1)!`. -/

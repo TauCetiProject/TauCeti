@@ -121,12 +121,10 @@ namespace Real
 the open upper half-plane neighbourhood filter at `x`. -/
 theorem tendsto_ofReal_add_mul_I_nhdsWithin_im_pos (x : ℝ) :
     Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) + t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | 0 < z.im}] x) := by
-  refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-  · have hcont : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I :=
-      continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with t ht
-    simpa using ht
+  have hcont : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I :=
+    continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
+  simpa using (hcont.continuousWithinAt (s := Set.Ioi 0) (x := 0)).tendsto_nhdsWithin
+    fun t ht ↦ by simpa using ht
 
 end Real
 
@@ -137,11 +135,8 @@ open scoped ComplexConjugate in
 lower half-plane neighbourhood filter at `conj z`. -/
 theorem tendsto_conj_nhdsWithin_im_pos (z : ℂ) :
     Filter.Tendsto (conj : ℂ → ℂ) (𝓝[{w : ℂ | 0 < w.im}] z)
-      (𝓝[{w : ℂ | w.im < 0}] (conj z)) := by
-  refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-  · exact (Complex.continuous_conj.tendsto z).mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with w hw
-    simpa using hw
+      (𝓝[{w : ℂ | w.im < 0}] (conj z)) :=
+  Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun w hw ↦ by simpa using hw
 
 end Complex
 

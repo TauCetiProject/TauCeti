@@ -13,7 +13,6 @@ import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.MeasureTheory.Function.UniformIntegrable
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Integrability of the polylogarithm's radial integrand
@@ -196,6 +195,32 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
       _ ≤ (3 / 2 * R' + M / a) * |Real.log t| ^ k * t := by
           gcongr
           · linarith [le_max_right R 0]
+
+end TauCeti.Polylog
+
+namespace Complex
+
+/-- For a fixed `z : ℂ`, the factor `1 - t z` vanishes at most once as `t` varies over `ℝ`. -/
+theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
+    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
+  intro t₁ ht₁ t₂ ht₂
+  have hz : z ≠ 0 := by
+    rintro rfl
+    simp at ht₁
+  have h1 : (t₁ : ℂ) * z = 1 := sub_eq_zero.mp ht₁ |>.symm
+  have h2 : (t₂ : ℂ) * z = 1 := sub_eq_zero.mp ht₂ |>.symm
+  exact ofReal_injective (mul_right_cancel₀ hz (h1.trans h2.symm))
+
+/-- For any `z : ℂ` and any measure `μ` on `ℝ` with null singletons, `1 - t z ≠ 0` almost
+everywhere. -/
+theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingletonClass μ] :
+    ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
+  rw [ae_iff]
+  simpa [Classical.not_not] using (subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
+
+end Complex
+
+namespace TauCeti.Polylog
 
 /-- Any function agreeing with the polylogarithm's radial integrand on `(0, 1)` away from the
 possible zero of `1 - t z` has the same interval integral on `[0, 1]`. -/
