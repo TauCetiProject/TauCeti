@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
-import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 /-!
 # The congruence groups of the `GL₂` components
@@ -20,9 +18,9 @@ has determinant `1`, so that `Γ_{g,U} = SL₂(ℚ) ∩ gUg⁻¹`.
 
 The argument is a direct computation with determinants. The determinants of the compact group
 `gUg⁻¹` form a compact subgroup of `𝔸_f^×`, and every compact subgroup of the finite ideles lies
-in the everywhere-integral units `Ô^×` (`TauCeti.le_integralUnits_of_isCompact`, for any Dedekind
-domain). A positive rational number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`,
-hence equal to `1`.
+in the everywhere-integral units `Ô^×` (`TauCeti.map_det_le_integralUnits_of_isCompact`, for any
+Dedekind domain). A positive rational number whose principal finite idele lies in `Ô^×` is a unit
+of `ℤ`, hence equal to `1` (`IsDedekindDomain.FiniteAdeleRing.eq_one_of_pos_of_mem_integralUnits`).
 
 ## Main definitions
 
@@ -30,9 +28,8 @@ hence equal to `1`.
 
 ## Main results
 
-* `TauCeti.map_det_le_integralUnits_of_isCompact`: the determinants of a compact subgroup of
-  `GLₙ(𝔸_f)` are everywhere-integral units, for any Dedekind domain.
-* `TauCeti.AdelicExamples.GL2.eq_one_of_pos_of_mem_integralUnits`: `ℚ_{>0} ∩ Ô^× = {1}`.
+* `TauCeti.AdelicExamples.GL2.det_eq_one_of_mem_componentGroup`: for compact `U`, every element
+  of `Γ_{g,U}` has determinant `1`.
 * `TauCeti.AdelicExamples.GL2.componentGroup_eq_ker_det_inf`: for compact `U`,
   `Γ_{g,U} = SL₂(ℚ) ∩ gUg⁻¹`.
 
@@ -48,32 +45,7 @@ open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing Matrix
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- **The determinants of a compact subgroup of `GLₙ(𝔸_f)` are everywhere-integral units**: they
-form a compact subgroup of the finite ideles. -/
-theorem map_det_le_integralUnits_of_isCompact {n : ℕ}
-    {U : Subgroup (GL (Fin n) (FiniteAdeleRing R K))}
-    (hU : IsCompact (U : Set (GL (Fin n) (FiniteAdeleRing R K)))) :
-    U.map GeneralLinearGroup.det ≤ integralUnits R K :=
-  le_integralUnits_of_isCompact R K (by
-    simpa only [Subgroup.coe_map] using hU.image GeneralLinearGroup.continuous_det)
-
 namespace AdelicExamples.GL2
-
-/-- **`ℚ_{>0} ∩ Ô^× = {1}`**: a positive rational number whose principal finite idele is an
-everywhere-integral unit is `1`, being a unit of `ℤ`. -/
-theorem eq_one_of_pos_of_mem_integralUnits {q : ℚˣ} (hq : 0 < (q : ℚ))
-    (h : unitEmbedding ℤ ℚ q ∈ integralUnits ℤ ℚ) : q = 1 := by
-  rw [← sIntegralUnits_empty, ← Subgroup.mem_comap, comap_unitEmbedding_sIntegralUnits,
-    Set.mem_unit_empty_iff] at h
-  obtain ⟨u, hu⟩ := h
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · exact Units.ext (by simpa using hu.symm)
-  · simp only [Units.val_neg, Units.val_one, algebraMap_int_eq, Int.cast_neg, Int.cast_one,
-      eq_intCast] at hu
-    linarith
 
 /-- The group `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹` of the component through `g` of the adelic quotient
 `GL₂(ℚ)\GL₂(𝔸)/K_∞U`: the rational matrices of positive determinant whose diagonal image in
@@ -85,6 +57,7 @@ def componentGroup (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
       (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)))
 
 /-- Membership in `Γ_{g,U}`: positive determinant, and diagonal image in `gUg⁻¹`. -/
+@[simp]
 theorem mem_componentGroup_iff {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
     {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} {γ : GL (Fin 2) ℚ} :
     γ ∈ componentGroup g U ↔
@@ -93,9 +66,7 @@ theorem mem_componentGroup_iff {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
   rw [componentGroup, Subgroup.mem_inf, mem_glpos, Subgroup.mem_comap, Subgroup.mem_map_equiv,
     MulAut.conj_symm_apply]
 
-/-- **Every element of `Γ_{g,U}` has determinant `1`**, for compact `U`: its determinant is a
-positive rational number whose principal finite idele is a determinant of the compact group
-`gUg⁻¹`, hence lies in `Ô^×`. -/
+/-- **For compact `U`, every element of `Γ_{g,U}` has determinant `1`.** -/
 theorem det_eq_one_of_mem_componentGroup {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
     {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
