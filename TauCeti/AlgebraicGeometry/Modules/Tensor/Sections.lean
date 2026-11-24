@@ -107,9 +107,12 @@ theorem tensorUnderlyingIso_hom_comp_app_tmulRight {P : X.Modules}
       Hom.app (X := X) p U
         (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
-  -- Normalize the site presentation once here; consumers use this section-level formula.
-  erw [Hom.comp_app, ConcreteCategory.comp_apply]
-  rw [tensorUnderlyingIso_hom_app_tmulRight]
+  -- `tensorUnderlyingIso` lives in sheaves of modules over `SheafOfModules.ringCatSheaf X.sheaf`,
+  -- so the composite is formed in that category rather than in `X.Modules` (over
+  -- `X.ringCatSheaf`). The two agree only up to unfolding, so the pattern of `Hom.comp_app` is not
+  -- found syntactically; instantiating its morphisms elaborates it at the composite in the goal.
+  rw [Hom.comp_app (φ := (F.tensorUnderlyingIso L).hom) (ψ := p), ConcreteCategory.comp_apply,
+    tensorUnderlyingIso_hom_app_tmulRight]
 
 /-- The stalk of the monoidal tensor product is the tensor product of the stalks over the
 structure-sheaf stalk. -/
