@@ -35,9 +35,9 @@ polynomial of degree at most `R` in each variable. **Bernstein's inequalities** 
 `‖∂_{v 0} ⋯ ∂_{v (k - 1)} f‖_q ≤ C ^ (k + 1) R ^ (k + d (1/p - 1/q)) ∏ l, ‖v l‖ ‖f‖_p`
 
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul`). The derivative is
-described on the Fourier side: when `ĝ(n) = (∏ l, 2πi ⟪n, v l⟫) f̂(n)`, the function `g` agrees
-almost everywhere with the derivative along `v 0, …, v (k - 1)` of the trigonometric polynomial
-that represents `f` almost everywhere. This hypothesis is what
+described on the Fourier side: when `g` is integrable and `ĝ(n) = (∏ l, 2πi ⟪n, v l⟫) f̂(n)`,
+the function `g` agrees almost everywhere with the derivative along `v 0, …, v (k - 1)` of the
+trigonometric polynomial that represents `f` almost everywhere. This hypothesis is what
 `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv` provides for the derivatives of
 the lift of a smooth function. The case `k = 0` is **Nikol'skii's inequality**
 `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, the gain of integrability of a trigonometric polynomial
@@ -63,7 +63,7 @@ norm on the torus is at most `∫ ‖𝓕⁻ τ‖`, whatever `R`
 (`SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`). Hence `V_R` is bounded in `L¹`
 uniformly in `R`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the logarithmic
 convexity of `Lʳ` norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`) gives
-`‖V_R‖_r ≤ C R ^ (d (1 - 1/r))`. Young's inequality with `1/r + 1/p = 1 + 1/q`
+`‖V_R‖_r ≤ C R ^ (d (1 - 1/r))` for `1 ≤ r ≤ ∞`. Young's inequality with `1/r + 1/p = 1 + 1/q`
 (`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`) gives Nikol'skii's inequality.
 
 For a derivative along `v`, the symbol `2πi ⟪n, v⟫ ∏ j, χ (n j / R)` is the combination
@@ -147,14 +147,16 @@ vanishing wherever one coordinate exceeds `2` in absolute value. By Poisson summ
 trigonometric polynomial `x ↦ ∑ n, τ (n / R) e_n(x)` is the periodization of the kernel
 `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹` norm on the torus is at most
 `∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`SchwartzMap.eLpNorm_periodicKernel_le`). -/
-private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
+private theorem eLpNorm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
     (hτ : ContDiff ℝ ∞ τ) (h0 : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) {R : ℝ}
     (hR : 0 < R) :
-    ∫ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ ≤ ∫ y, ‖𝓕⁻ τ y‖ := by
+    eLpNorm (fun x ↦ ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x) 1 volume ≤
+      ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
   -- The dilated symbol `τ (· / R)` as a Schwartz function.
   have hcR : HasCompactSupport fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
-    (EuclideanSpace.hasCompactSupport_of_forall_notMem_Icc (fun _ ↦ -2) (fun _ ↦ 2)
-      fun ξ i hi ↦ h0 ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))).comp_smul (inv_ne_zero hR.ne')
+    (EuclideanSpace.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc (fun _ ↦ -2)
+      (fun _ ↦ 2) fun ξ i hi ↦ h0 ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))).comp_smul
+        (inv_ne_zero hR.ne')
   have hsR : ContDiff ℝ ∞ fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
     hτ.comp (contDiff_const_smul _)
   set S : SchwartzMap (EuclideanSpace ℝ d) ℂ := hcR.toSchwartzMap hsR
@@ -170,20 +172,15 @@ private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace �
     rw [PiLp.smul_apply, latticePoint_apply, smul_eq_mul, abs_mul, abs_inv, abs_of_pos hR,
       lt_inv_mul_iff₀ hR]
     linarith
-  have hcont : Continuous fun x ↦ ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x := by
-    fun_prop
   have hFS : ∫ y, ‖𝓕⁻ (S : EuclideanSpace ℝ d → ℂ) y‖ = ∫ y, ‖𝓕⁻ τ y‖ := by
     rw [show (S : EuclideanSpace ℝ d → ℂ) = fun ξ ↦ τ (R⁻¹ • ξ) from funext hS]
     exact integral_norm_fourierInv_comp_smul τ (inv_ne_zero hR.ne')
-  have hlint : ∫⁻ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ₑ ≤
-      ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
-    have h := S.eLpNorm_periodicKernel_le
-    rw [eLpNorm_one_eq_lintegral_eNorm S.periodicKernel.continuous.aestronglyMeasurable] at h
-    simp only [SchwartzMap.periodicKernel_apply, hsum] at h
-    rw [← hFS, volume_eq_pi_haarAddCircle]
-    exact h
-  rw [integral_norm_eq_lintegral_eNorm hcont.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
+  have hK : ⇑S.periodicKernel = fun x ↦ ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x :=
+    funext fun x ↦ by rw [SchwartzMap.periodicKernel_apply, hsum]
+  have h := S.eLpNorm_periodicKernel_le
+  rw [hK, hFS] at h
+  rw [volume_eq_pi_haarAddCircle]
+  exact h
 
 end Box
 
@@ -265,8 +262,9 @@ private theorem norm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) (x
   · rw [Finset.sum_const, nsmul_eq_mul, mul_one]
     exact card_box_le hR
 
-/-- The `Lʳ` norm of the reproducing kernel at scale `R ≥ 1` is `O(R ^ (d (1 - 1/r)))`, by
-interpolation between its `L¹` bound, uniform in `R`, and its supremum bound `(7 R) ^ d`. -/
+/-- For `1 ≤ r ≤ ∞`, the `Lʳ` norm of the reproducing kernel at scale `R ≥ 1` is
+`O(R ^ (d (1 - 1/r)))`, by interpolation between its `L¹` bound, uniform in `R`, and its supremum
+bound `(7 R) ^ d`. -/
 private theorem eLpNorm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) {r : ℝ≥0∞}
     (hr : 1 ≤ r) :
     eLpNorm (cutoffKernel (d := d) R) r volume ≤
@@ -278,12 +276,8 @@ private theorem eLpNorm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R)
   set k := Fintype.card d
   have hK : Continuous K := continuous_cutoffKernel R
   -- The two endpoint bounds.
-  have h1 : eLpNorm K 1 volume ≤ ENNReal.ofReal A := by
-    rw [eLpNorm_one_eq_lintegral_eNorm hK.aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_eNorm
-        (hK.integrable_of_hasCompactSupport (.of_compactSpace _))]
-    exact ENNReal.ofReal_le_ofReal
-      (integral_norm_sum_box_le contDiff_cutoffSymbol cutoffSymbol_eq_zero hR0)
+  have h1 : eLpNorm K 1 volume ≤ ENNReal.ofReal A :=
+    eLpNorm_sum_box_le contDiff_cutoffSymbol cutoffSymbol_eq_zero hR0
   have hinf : eLpNorm K ⊤ volume ≤ ENNReal.ofReal ((7 * R) ^ k) := by
     rw [eLpNorm_exponent_top hK.aestronglyMeasurable]
     refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun x ↦ ?_)
@@ -361,13 +355,8 @@ private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ}
   set T : d → UnitAddTorus d → ℂ := fun i x ↦
     ∑ n ∈ box d R, derivCutoffSymbol i (R⁻¹ • latticePoint n) * mFourier n x
   have hT (i : d) :
-      eLpNorm (T i) 1 volume ≤ ENNReal.ofReal (∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) := by
-    have hc : Continuous (T i) := by fun_prop
-    rw [eLpNorm_one_eq_lintegral_eNorm hc.aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_eNorm
-        (hc.integrable_of_hasCompactSupport (.of_compactSpace _))]
-    exact ENNReal.ofReal_le_ofReal
-      (integral_norm_sum_box_le (contDiff_derivCutoffSymbol i) (derivCutoffSymbol_eq_zero i) hR)
+      eLpNorm (T i) 1 volume ≤ ENNReal.ofReal (∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) :=
+    eLpNorm_sum_box_le (contDiff_derivCutoffSymbol i) (derivCutoffSymbol_eq_zero i) hR
   have hK : derivKernel v R = ∑ i, (2 * Real.pi * Complex.I * R * v i) • T i := by
     ext x
     simp only [derivKernel_eq_sum v hR, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, T]
@@ -467,11 +456,11 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm :
         · exact eLpNorm_cutoffKernel_le hR hr
     _ = _ := by rw [one_mul, hrexp]
 
-/-- **Bernstein's inequality for one derivative at a fixed exponent.** If the Fourier
-coefficients of `f` vanish outside the ball `‖n‖ ≤ R` and those of `g` are
-`2πi ⟪n, v⟫ f̂(n)`, so that `g` agrees almost everywhere with the derivative along `v` of the
-trigonometric polynomial representing `f`, then `‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C` depending only
-on `d` and not on the complex Banach space `E` of values. -/
+/-- **Bernstein's inequality for one derivative at a fixed exponent.** If `f` is integrable with
+Fourier coefficients vanishing outside the ball `‖n‖ ≤ R`, and `g` is integrable with Fourier
+coefficients `2πi ⟪n, v⟫ f̂(n)`, so that `g` agrees almost everywhere with the derivative along
+`v` of the trigonometric polynomial representing `f`, then `‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C`
+depending only on `d` and not on the complex Banach space `E` of values. -/
 private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
       {p : ℝ≥0∞}, 1 ≤ p → ∀ (v : d → ℝ) {R : ℝ}, 0 < R →
