@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Normed
+public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
 /-!
 # Compatibility with the matrix exponential
@@ -21,7 +20,6 @@ series, but consumers using another scoped matrix norm must transport across the
 
 ## Main results
 
-* `Matrix.inverseTranspose_expUnit`: inverse transpose sends `expUnit X` to `expUnit (-Xᵀ)`.
 * `lieExp_generalLinearGroup_coe`: the abstract exponential, transported from the Lie algebra of
   `GL(n, ℝ)` to matrices, is `NormedSpace.exp`.
 * `lieExp_generalLinearGroup_diagonal`: the abstract exponential of a diagonal matrix is diagonal.
@@ -37,25 +35,6 @@ open scoped ContDiff Manifold Matrix Matrix.Norms.Operator
 noncomputable section
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-namespace Matrix
-
-variable {R : Type*} [NormedCommRing R] [NormedAlgebra ℚ R] [CompleteSpace R]
-
-/-- Inverse transpose carries the exponential of `X` to the exponential of `-Xᵀ`. -/
-@[simp]
-theorem inverseTranspose_expUnit (X : Matrix n n R) :
-    GeneralLinearGroup.inverseTranspose (TauCeti.expUnit X) = TauCeti.expUnit (-Xᵀ) := by
-  apply Units.ext
-  rw [GeneralLinearGroup.coe_inverseTranspose, ← TauCeti.expUnit_neg, TauCeti.expUnit_coe,
-    TauCeti.expUnit_coe]
-  -- The entrywise topology in `Matrix.exp_transpose` agrees definitionally with the
-  -- operator-norm topology used in `TauCeti.expUnit`.
-  have h := (Matrix.exp_transpose (-X)).symm
-  rw [Matrix.transpose_neg] at h
-  convert h using 1 <;> rfl
-
-end Matrix
 
 /-- Coercing the abstract exponential on `GL(n, ℝ)` to matrices gives the matrix exponential. -/
 @[simp]

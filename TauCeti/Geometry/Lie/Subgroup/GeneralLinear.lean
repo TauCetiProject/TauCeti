@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Units
-public import TauCeti.Geometry.Lie.Exponential.Matrix.Compatibility
+public import TauCeti.Geometry.Lie.Exponential.Matrix.Basic
 
 /-!
 # The linear Lie algebra of a matrix subgroup
