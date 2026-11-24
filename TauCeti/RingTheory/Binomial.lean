@@ -66,8 +66,6 @@ span. This gives independence of integral toral constructions from a choice of l
 * `TauCeti.Ring.choose_succ_smul_of_sq_eq_zero`: over a rational module, `ε choose (j + 1)` acts
   as `ε • ((-1) ^ j / (j + 1))` for a square-zero element `ε`.
 * `TauCeti.Ring.choose_intCast`: generalized binomial coefficients commute with integer casts.
-* `TauCeti.Ring.alternating_sum_range_choose_eq_choose`: the alternating partial sums
-  `∑_{k ≤ m} (-1)ᵏ (r + 1 choose k) = (-1)ᵐ (r choose m)`.
 * `TauCeti.Ring.choose_add_intCast_mem`: additive subgroups containing the coefficients of `r`
   up to degree `n` contain the degree-`n` coefficient of every integer translate of `r`.
 * `TauCeti.ringChoose_add_intCast_mem_ringChooseSpan` and
@@ -677,19 +675,6 @@ theorem neg_one_pow_mul_choose_neg_natCast_sub_one_comm (k i : ℕ) :
       (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i := by
   rw [neg_one_pow_mul_choose_neg_natCast_sub_one, neg_one_pow_mul_choose_neg_natCast_sub_one,
     Nat.add_comm k i, Nat.choose_symm_add]
-
-/-- The alternating partial sums of generalized binomial coefficients:
-`∑_{k ≤ m} (-1)ᵏ (r + 1 choose k) = (-1)ᵐ (r choose m)`. This is
-`Int.alternating_sum_range_choose_eq_choose` in an arbitrary binomial ring. -/
-theorem alternating_sum_range_choose_eq_choose (r : R) (m : ℕ) :
-    ∑ k ∈ range (m + 1), (-1 : R) ^ k * _root_.Ring.choose (r + 1) k =
-      (-1 : R) ^ m * _root_.Ring.choose r m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [sum_range_succ, ih, _root_.Ring.choose_succ_succ, pow_succ, mul_neg_one, neg_mul,
-      neg_mul, mul_add, neg_add]
-    abel
 
 /-- Negating the argument of a generalized binomial coefficient of positive degree expands, by
 Chu--Vandermonde, into a signed sum of the coefficients of the original argument weighted by

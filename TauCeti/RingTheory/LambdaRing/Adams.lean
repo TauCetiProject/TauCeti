@@ -8,7 +8,8 @@ module
 public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.LambdaRing.Binomial
 public import TauCeti.RingTheory.LambdaRing.MonoidAlgebra
-import TauCeti.RingTheory.Binomial
+import TauCeti.RingTheory.PowerSeries.Binomial
+import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
 # Adams operations of a pre-λ structure
@@ -258,34 +259,20 @@ variable {R : Type*} [CommRing R] [BinomialRing R]
 /-- The binomial Adams series is `∑_{n ≥ 1} x tⁿ`. -/
 theorem binomial_adamsSeries (x : R) :
     (binomial R).adamsSeries x = PowerSeries.mk fun k => if k = 0 then 0 else x := by
-  rw [eq_comm, eq_adamsSeries_iff]
-  ext k
-  rw [coeff_mul, coeff_neg_X_mul_derivative_rescale_totalSeries,
-    Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j => coeff i (rescale (-1) ((binomial R).totalSeries x)) *
-        coeff j (PowerSeries.mk fun k => if k = 0 then 0 else x))]
-  simp only [coeff_rescale_totalSeries, binomial_lambda, coeff_mk]
-  rw [sum_range_succ, Nat.sub_self]
-  simp only [↓reduceIte, mul_zero, add_zero]
-  have hsum : ∑ i ∈ range k, (-1) ^ i * Ring.choose x i * (if k - i = 0 then 0 else x) =
-      x * ∑ i ∈ range k, (-1) ^ i * Ring.choose x i := by
-    rw [mul_sum]
-    refine sum_congr rfl fun i hi => ?_
-    have hi : k - i ≠ 0 := by simp at hi; omega
-    simp only [hi, ↓reduceIte]
-    ring
-  rw [hsum]
-  -- `x ∑_{i < k} (-1)ⁱ (x choose i) = (-1)^(k + 1) k (x choose k)`, by the alternating partial
-  -- sums and `k (x choose k) = x (x - 1 choose k - 1)`.
-  rcases k with _ | m
-  · simp
-  have hsum' := TauCeti.Ring.alternating_sum_range_choose_eq_choose (x - 1) m
-  rw [sub_add_cancel] at hsum'
-  have hmul := Ring.choose_smul_choose x (n := m + 1) (k := 1) (by omega)
-  rw [Nat.choose_one_right, Ring.choose_one_right, Nat.add_sub_cancel, nsmul_eq_mul] at hmul
-  rw [hsum']
-  push_cast at hmul ⊢
-  linear_combination (-(-1) ^ m) * hmul
+  -- Rescale the differential equation `(1 + X) (1 + X)^x' = x (1 + X)^x` of `λ_t(x)` to `-t`,
+  -- and cancel the unit `1 - X`.
+  have h := congrArg (fun φ => rescale (-1 : R) (X * φ))
+    (one_add_X_mul_derivative_binomialSeries (A := R) x)
+  rw [mul_left_comm, map_mul, rescale_X_mul_derivative] at h
+  simp only [map_add, map_one, rescale_X, smul_eq_C_mul, map_mul, rescale_C, map_neg,
+    neg_one_mul] at h
+  have hφ : (1 - X) * (PowerSeries.mk fun k => if k = 0 then (0 : R) else x) = C x * X := by
+    ext k
+    rcases k with _ | _ | k <;> simp [sub_mul, coeff_succ_X_mul, coeff_X]
+  rw [eq_comm, eq_adamsSeries_iff, totalSeries_binomial]
+  refine (isUnit_iff_constantCoeff.mpr (by simp) : IsUnit (1 - X : R⟦X⟧)).mul_left_cancel ?_
+  rw [mul_left_comm, hφ]
+  linear_combination h
 
 /-- **The binomial Adams operations are the identity**: `ψⁿ x = x` for `n ≥ 1`. -/
 @[simp]
