@@ -36,18 +36,20 @@ This file develops the basic structure of these quotients.
 
 * `LineBundleClass.numericalIntersectionNumber`: the intersection number `(α · C)` of a numerical
   class `α ∈ Num(X/k)` with an integral closed curve `C ⊆ X`;
-* `LineBundleClass.mk_eq_mk_iff_numericallyTrivial` and
-  `LineBundleClass.mk_eq_mk_iff_relNumericallyTrivial`: `[a] = [b]` in `Num(X/k)`, respectively
-  `Num(X/S)`, iff `a⁻¹ * b` is numerically trivial, respectively `a⁻¹ * b ≡_f 0`;
-* `LineBundleClass.mk_eq_mk_iff_forall_intersectionNumber_eq`: two classes have the same image in
-  `Num(X/k)` iff they have the same degree on every integral closed curve, and
+* `LineBundleClass.quotientMk_eq_quotientMk_iff_numericallyTrivial` and
+  `LineBundleClass.quotientMk_eq_quotientMk_iff_relNumericallyTrivial`: `[a] = [b]` in
+  `Num(X/k)`, respectively `Num(X/S)`, iff `a⁻¹ * b` is numerically trivial, respectively
+  `a⁻¹ * b ≡_f 0`;
+* `LineBundleClass.quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq`: two classes have
+  the same image in `Num(X/k)` iff they have the same degree on every integral closed curve, and
   `LineBundleClass.eq_of_forall_numericalIntersectionNumber_eq` the corresponding statement on
   `Num(X/k)`;
 * `LineBundleClass.numericalFiberRestriction`: the restriction `Num(X/S) →* Num(X_s/κ(s))` to the
   fibre over `s`, with `LineBundleClass.numericalFiberRestriction_injective` saying that the
   restrictions to all fibres jointly determine a relative numerical class;
-* `LineBundleClass.mk_eq_mk_iff_forall_fiber_intersectionNumber_eq`: two classes have the same
-  image in `Num(X/S)` iff they have the same degree on every integral curve in every fibre;
+* `LineBundleClass.quotientMk_eq_quotientMk_iff_forall_fiber_intersectionNumber_eq`: two classes
+  have the same image in `Num(X/S)` iff they have the same degree on every integral curve in every
+  fibre;
 * the `HasUniqueRoots` instances on `Num(X/k)` and `Num(X/S)`: both groups are torsion-free;
 * `projectiveLine.numericalClassDegreeEquiv`: `Num(ℙ¹_k/k) ≃+ ℤ` through the degree;
 * the `Subsingleton` instance on `Num(S/S)` for the identity of `S`.
@@ -82,7 +84,7 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} (x : X ⟶ Spec (.of k)) [IsPro
 
 /-- Two classes on a proper `k`-scheme have the same image in `Num(X/k)` exactly when they have
 the same degree on every integral closed curve over `k`. -/
-theorem mk_eq_mk_iff_forall_intersectionNumber_eq (a b : LineBundleClass X) :
+theorem quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq (a b : LineBundleClass X) :
     (a : LineBundleClass X ⧸ numericallyTrivialClasses k x) = b ↔
       ∀ (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of k))] (i : C ⟶ X)
         [IsClosedImmersion i], C ↘ Spec (.of k) = i ≫ x → topologicalKrullDim C = 1 →
@@ -95,14 +97,14 @@ theorem mk_eq_mk_iff_forall_intersectionNumber_eq (a b : LineBundleClass X) :
 
 /-- Two classes on a proper `k`-scheme have the same image in `Num(X/k)` exactly when
 `a⁻¹ * b` is numerically trivial. -/
-theorem mk_eq_mk_iff_numericallyTrivial (a b : LineBundleClass X) :
+theorem quotientMk_eq_quotientMk_iff_numericallyTrivial (a b : LineBundleClass X) :
     (a : LineBundleClass X ⧸ numericallyTrivialClasses k x) = b ↔
       NumericallyTrivial k x (a⁻¹ * b) := by
   rw [QuotientGroup.eq, mem_numericallyTrivialClasses]
 
 /-- A class on a proper `k`-scheme is numerically trivial exactly when its image in `Num(X/k)`
 is trivial. -/
-theorem mk_eq_one_iff_numericallyTrivial (a : LineBundleClass X) :
+theorem quotientMk_eq_one_iff_numericallyTrivial (a : LineBundleClass X) :
     (a : LineBundleClass X ⧸ numericallyTrivialClasses k x) = 1 ↔ NumericallyTrivial k x a := by
   rw [QuotientGroup.eq_one_iff, mem_numericallyTrivialClasses]
 
@@ -113,7 +115,8 @@ well defined because numerically trivial classes have degree zero on `C`. -/
 def numericalIntersectionNumber (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1)
     (α : LineBundleClass X ⧸ numericallyTrivialClasses k x) : ℤ :=
   Quotient.liftOn' α (intersectionNumber k i) fun a b h ↦
-    (mk_eq_mk_iff_forall_intersectionNumber_eq k x a b).mp (Quotient.sound' h) C i hi hC
+    (quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq k x a b).mp (Quotient.sound' h)
+      C i hi hC
 
 variable {x i} (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1)
 
@@ -189,7 +192,8 @@ theorem eq_of_forall_numericalIntersectionNumber_eq
     α = β := by
   induction α using QuotientGroup.induction_on
   induction β using QuotientGroup.induction_on
-  exact (mk_eq_mk_iff_forall_intersectionNumber_eq k x _ _).mpr fun C _ _ i _ hi hC ↦ h C i hi hC
+  exact (quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq k x _ _).mpr
+    fun C _ _ i _ hi hC ↦ h C i hi hC
 
 variable (x) in
 /-- **`Num(X/k)` is torsion-free.** If `aⁿ` is numerically trivial for some `n ≠ 0`, then so is
@@ -209,13 +213,13 @@ variable {X S : Scheme.{u}} (f : X ⟶ S) [IsProper f]
 
 /-- Two classes have the same image in `Num(X/S)` exactly when `a⁻¹ * b` is relatively
 numerically trivial, `a⁻¹ * b ≡_f 0`. -/
-theorem mk_eq_mk_iff_relNumericallyTrivial (a b : LineBundleClass X) :
+theorem quotientMk_eq_quotientMk_iff_relNumericallyTrivial (a b : LineBundleClass X) :
     (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f) = b ↔
       RelNumericallyTrivial f (a⁻¹ * b) := by
   rw [QuotientGroup.eq, mem_relNumericallyTrivialClasses]
 
 /-- A class is relatively numerically trivial exactly when its image in `Num(X/S)` is trivial. -/
-theorem mk_eq_one_iff_relNumericallyTrivial (a : LineBundleClass X) :
+theorem quotientMk_eq_one_iff_relNumericallyTrivial (a : LineBundleClass X) :
     (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f) = 1 ↔ RelNumericallyTrivial f a := by
   rw [QuotientGroup.eq_one_iff, mem_relNumericallyTrivialClasses]
 
@@ -246,15 +250,15 @@ theorem numericalFiberRestriction_injective :
   rw [injective_iff_map_eq_one]
   intro α hα
   induction α using QuotientGroup.induction_on with | H a => ?_
-  rw [mk_eq_one_iff_relNumericallyTrivial, relNumericallyTrivial_iff]
+  rw [quotientMk_eq_one_iff_relNumericallyTrivial, relNumericallyTrivial_iff]
   intro s
-  rw [← mk_eq_one_iff_numericallyTrivial]
+  rw [← quotientMk_eq_one_iff_numericallyTrivial]
   simpa only [MonoidHom.pi_apply, numericalFiberRestriction_mk, Pi.one_apply] using
     congrFun hα s
 
 /-- Two classes have the same image in `Num(X/S)` exactly when, for every point `s` of `S`, they
 have the same degree over `κ(s)` on every integral curve in the fibre `X_s`. -/
-theorem mk_eq_mk_iff_forall_fiber_intersectionNumber_eq (a b : LineBundleClass X) :
+theorem quotientMk_eq_quotientMk_iff_forall_fiber_intersectionNumber_eq (a b : LineBundleClass X) :
     (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f) = b ↔
       ∀ (s : S) (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
         (i : C ⟶ f.fiber s) [IsClosedImmersion i],
@@ -263,18 +267,16 @@ theorem mk_eq_mk_iff_forall_fiber_intersectionNumber_eq (a b : LineBundleClass X
               intersectionNumber (S.residueField s) i (pullback (f.fiberι s) a) =
                 intersectionNumber (S.residueField s) i (pullback (f.fiberι s) b) := by
   refine ⟨fun h s ↦ ?_, fun h ↦ (numericalFiberRestriction_injective f) (funext fun s ↦ ?_)⟩
-  · rw [← mk_eq_mk_iff_forall_intersectionNumber_eq, ← numericalFiberRestriction_mk,
+  · rw [← quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq, ← numericalFiberRestriction_mk,
       ← numericalFiberRestriction_mk, h]
   · simpa only [MonoidHom.pi_apply, numericalFiberRestriction_mk] using
-      (mk_eq_mk_iff_forall_intersectionNumber_eq _ _ _ _).mpr (h s)
+      (quotientMk_eq_quotientMk_iff_forall_intersectionNumber_eq _ _ _ _).mpr (h s)
 
 /-- **`Num(X/S)` is torsion-free.** It embeds into the product of the torsion-free groups
 `Num(X_s/κ(s))` over the points `s` of `S`. -/
-instance : HasUniqueRoots (LineBundleClass X ⧸ relNumericallyTrivialClasses f) where
-  pow_left_injective n hn α β h := numericalFiberRestriction_injective f <| funext fun s ↦
-    pow_left_injective hn <| by
-      simpa only [MonoidHom.pi_apply, map_pow] using congrFun (congrArg (MonoidHom.pi fun s ↦
-        numericalFiberRestriction f s) h) s
+instance : HasUniqueRoots (LineBundleClass X ⧸ relNumericallyTrivialClasses f) :=
+  Function.Injective.hasUniqueRoots (MonoidHom.pi fun s ↦ numericalFiberRestriction f s)
+    (numericalFiberRestriction_injective f)
 
 variable (S) in
 /-- For the identity of `S` the relative numerical group `Num(S/S)` is trivial: every class is
