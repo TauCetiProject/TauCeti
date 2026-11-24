@@ -34,6 +34,13 @@ multiplication by `i`. Then `OrthonormalBasis.spinCUnitary b : U(2) →* Spinᶜ
   `CliffordAlgebra.spinCCircle` of the rotations of that plane
   (`OrthonormalBasis.spinCUnitary_unitaryTorusHom_mulSingle_one`).
 
+This is a frame model of the canonical lift `TauCeti.SeibergWitten.unitaryLift` of the unitary
+group of an almost Hermitian four-space, which is defined through a spin module as the inverse of
+the rotation homomorphism on the subgroup of `Spinᶜ(4)` fixing Taubes's canonical line. For
+`J b₀ = b₁`, `J b₂ = b₃`, the two agree
+(`TauCeti.SeibergWitten.unitaryLift_toSpecialOrthogonal_spinCUnitary`); the model here needs
+neither a spin module nor an orientation of `b`.
+
 Uniqueness holds because two such lifts differ by a homomorphism from `U(2)` to the central kernel
 `{1, [1, -1]}` of `Spinᶜ(4) → SO(4) × U(1)`, and every element of `U(2)` is a square
 (`Matrix.UnitaryGroup.isSquare`), so `CliffordAlgebra.spinCGroup.hom_ext_of_isSquare` applies.
