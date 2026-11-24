@@ -50,6 +50,8 @@ the image point.
   `TauCeti.mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg`.
 * `TauCeti.frontier_setOf_isOutwardPointing`, `TauCeti.frontier_setOf_isOutwardPointing_neg`:
   the outward and inward half-spaces have frontier `T_q∂M`.
+* `TauCeti.mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin`: a function with a local
+  minimum and nonzero differential at `q` has differential vanishing exactly on `T_q∂M`.
 * `TauCeti.curveVelocity_mem_boundaryTangentSpace`: velocities of curves through the boundary.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 
@@ -268,6 +270,17 @@ theorem frontier_setOf_isOutwardPointing_neg (q : (𝓡∂ (n + 1)).boundary M) 
   rw [frontier_Ioi]
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm
+
+/-- A function with a local minimum and nonzero differential at a boundary point `q` has
+differential vanishing exactly on the tangent space of the boundary. -/
+theorem mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin {f : M → ℝ}
+    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q)
+    (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
+    mvfderiv (𝓡∂ (n + 1)) f q v = 0 ↔ v ∈ boundaryTangentSpace q := by
+  rw [mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg,
+    isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin q.property hmin hne,
+    isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hne, not_lt, not_lt]
+  exact ⟨fun h ↦ ⟨h.ge, h.le⟩, fun h ↦ le_antisymm h.2 h.1⟩
 
 /-- The velocity at `t` of a curve `c` with `c t ∈ ∂M` is tangent to the boundary. (Without
 differentiability the velocity is `0` by convention.) -/
