@@ -206,9 +206,8 @@ theorem closedFormHomologyPeriod_suspensionClosedForm_orbitTorusHomologyClass
     [Fact (0 < (d : ℝ))] (hσc : σ.IsClosed) :
     closedFormHomologyPeriod (suspensionClosedForm hσ hσc) (orbitTorusHomologyClass hx) = d := by
   rw [← singularHomologyMap_orbitTorus_addCircleProdFundamentalClass,
-    ← closedFormHomologyPeriod_mpullback (contMDiff_orbitTorus hx),
-    closedFormHomologyPeriod_addCircleProdFundamentalClass, closedForms.coe_mpullback,
-    coe_suspensionClosedForm, mpullback_orbitTorus_suspensionForm,
+    closedFormHomologyPeriod_singularHomologyMap_addCircleProdFundamentalClass
+      (contMDiff_orbitTorus hx), coe_suspensionClosedForm, mpullback_orbitTorus_suspensionForm,
     AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 end OrbitTorus
