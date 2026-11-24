@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Chow.Pushforward
-public import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Cycles of closed points
@@ -24,6 +23,7 @@ line `Spec k[X]` is such a point, so `[0]` is a zero-cycle of degree `1` on `�
 
 ## Main statements
 
+* `Chow.single_mem_cyclesOfDimension`: `n [x]` is a `d`-cycle for a point `x` of dimension `d`.
 * `Chow.single_mem_cyclesOfDimension_zero`: `n [x]` is a zero-cycle for a closed point `x`.
 * `Chow.cyclesDegree_single`: `deg (n [x]) = [κ(x) : k] n`.
 * `Chow.cyclesMap_single`: `f_* (n [x]) = n [κ(x) : κ(f x)] [f x]`.
@@ -39,17 +39,24 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry.Chow
 
-/-- For a closed point `x`, the cycle `n [x]` is a zero-cycle. -/
-lemma single_mem_cyclesOfDimension_zero {X : Scheme.{u}} [DecidableEq X] {x : X}
-    (hx : IsClosed ({x} : Set X)) (n : ℤ) :
-    Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X 0 := by
+/-- For a point `x` of dimension `d`, the cycle `n [x]` is a `d`-cycle. -/
+lemma single_mem_cyclesOfDimension {X : Scheme.{u}} [DecidableEq X] {d : ℤ} {x : X}
+    (hx : x ∈ pointsOfDimension X d) (n : ℤ) :
+    Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X d := by
   rw [mem_cyclesOfDimension_iff]
   intro y hy
   have : y = x := by
     by_contra h
     exact hy (by simp [Function.locallyFinsuppWithin.single_apply, h])
   subst this
-  exact mem_pointsOfDimension.2 ⟨0, by simp [Scheme.height_of_isClosed hx]⟩
+  exact hx
+
+/-- For a closed point `x`, the cycle `n [x]` is a zero-cycle. -/
+lemma single_mem_cyclesOfDimension_zero {X : Scheme.{u}} [DecidableEq X] {x : X}
+    (hx : IsClosed ({x} : Set X)) (n : ℤ) :
+    Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X 0 :=
+  single_mem_cyclesOfDimension
+    (mem_pointsOfDimension.2 ⟨0, by simp [Scheme.height_of_isClosed hx]⟩) n
 
 variable (k : Type u) [Field k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
 
@@ -76,8 +83,8 @@ variable [Y.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))]
   [LocallyOfFiniteType (Y ↘ Spec (.of k))]
 
 /-- The pushforward of the `d`-cycle `n [x]` along a morphism `f` over `k` is
-`n [κ(x) : κ(f x)] [f x]`. For a closed point `x` and `d = 0`, the membership hypothesis is
-`single_mem_cyclesOfDimension_zero`. -/
+`n [κ(x) : κ(f x)] [f x]`. For a point `x` of dimension `d`, the membership hypothesis is
+`single_mem_cyclesOfDimension`. -/
 @[simp]
 lemma cyclesMap_single [DecidableEq X] [DecidableEq Y] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
     [QuasiCompact f] {d : ℤ} {x : X} {n : ℤ}
@@ -99,9 +106,9 @@ evaluation at `0`, has degree `1`. -/
 theorem cyclesDegree_single_affineLine_origin [DecidableEq (Spec (.of k[X]))] :
     cyclesDegree k (Spec (.of k[X])) ⟨_, single_mem_cyclesOfDimension_zero
       (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section
-        (TauCeti.AlgebraicGeometry.specMap_algHom_comp_eq_id (aeval (0 : k)))) 1⟩ =
+        (TauCeti.AlgebraicGeometry.SpecMap_algHom_comp_eq_id (aeval (0 : k)))) 1⟩ =
       1 :=
   cyclesDegree_single_of_section k
-    (TauCeti.AlgebraicGeometry.specMap_algHom_comp_eq_id (aeval (0 : k))) 1
+    (TauCeti.AlgebraicGeometry.SpecMap_algHom_comp_eq_id (aeval (0 : k))) 1
 
 end TauCeti.AlgebraicGeometry.Chow
