@@ -49,8 +49,9 @@ variable {R : Type u} [CommRing R]
 
 /-- The **dual complex** `K∨` of a chain complex `K` of `R`-modules: in degree `p` the linear
 forms on `K_(-p)`, with differential `d f = (-1)^(p + 1) f ∘ d_K` on a form `f` of degree `p`.
-It is an abbreviation, like `CochainComplex.linearDual`, so that its terms are the dual modules
-and their elements are linear forms. -/
+It is an abbreviation whose terms are the dual modules themselves, so its elements are linear
+forms (unlike `CochainComplex.linearDual`, whose terms are Hom-complex cochains identified with
+forms by `CochainComplex.linearDualXEquiv`). -/
 abbrev linearDual (K : ChainComplex (ModuleCat.{u} R) ℤ) : ChainComplex (ModuleCat.{u} R) ℤ where
   X p := ModuleCat.of R (Module.Dual R (K.X (-p)))
   d p q := (p + 1).negOnePow • ModuleCat.ofHom (K.d (-q) (-p)).hom.dualMap
