@@ -477,26 +477,18 @@ theorem IsIdempotentElem.rank_one_sub_add_rank [Fintype m] [DecidableEq m] {e : 
   omega
 
 /-- The rank of the sum of two idempotent matrices `p` and `q` with `p * q = 0` and `q * p = 0`
-is the sum of their ranks: the range of `p + q` is the direct sum of the ranges. -/
+is the sum of their ranks: `p`, `q` and `1 - p - q` are mutually annihilating, and `p + q` is the
+idempotent complementary to `1 - p - q`. -/
 theorem IsIdempotentElem.rank_add [Fintype m] {p q : Matrix m m K}
     (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (hpq : p * q = 0) (hqp : q * p = 0) :
     (p + q).rank = p.rank + q.rank := by
-  have hsup : LinearMap.range (p + q).mulVecLin =
-      LinearMap.range p.mulVecLin ⊔ LinearMap.range q.mulVecLin := by
-    refine le_antisymm (by rw [mulVecLin_add]; exact LinearMap.range_add_le _ _) (sup_le ?_ ?_)
-    · rintro _ ⟨v, rfl⟩
-      exact ⟨p *ᵥ v, by simp [mulVec_mulVec, hp.eq, hqp]⟩
-    · rintro _ ⟨v, rfl⟩
-      exact ⟨q *ᵥ v, by simp [mulVec_mulVec, hq.eq, hpq]⟩
-  have hdisj : Disjoint (LinearMap.range p.mulVecLin) (LinearMap.range q.mulVecLin) := by
-    rw [Submodule.disjoint_def]
-    rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
-    simp only [mulVecLin_apply] at hw ⊢
-    calc p *ᵥ v = p *ᵥ (q *ᵥ w) := by rw [hw, mulVec_mulVec, hp.eq]
-      _ = 0 := by rw [mulVec_mulVec, hpq, zero_mulVec]
-  simp only [← finrank_range_mulVecLin]
-  rw [hsup, ← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot]
-  simp
+  classical
+  have hle := rank_add_rank_add_rank_le p q (1 - p - q) hp.eq hpq
+    (by simp [sub_mul, hp.eq, hqp]) (by simp [sub_mul, hq.eq, hpq])
+  have hcard := IsIdempotentElem.rank_one_sub_add_rank (hp.add hq (by simp [hpq, hqp]))
+  rw [← sub_sub] at hcard
+  have := rank_add_le p q
+  omega
 
 /-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
 the sum is the direct sum of the ranges. -/

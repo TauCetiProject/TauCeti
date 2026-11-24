@@ -121,7 +121,8 @@ private theorem trace_map_single (i k l : n) :
     (f (single k l 1)).trace = if k = l then ((f (single i i 1)).rank : K) else 0 := by
   split_ifs with hkl
   · subst hkl
-    rw [IsIdempotentElem.trace_eq_rank (isIdempotentElem_map_single f k), rank_map_single_eq f k i]
+    rw [IsIdempotentElem.trace_eq_rank ((isIdempotentElem_single_one k).map f),
+      rank_map_single_eq f k i]
   · calc (f (single k l 1)).trace = (f (single k l 1) * f (single l l 1)).trace := by
           rw [← map_mul, single_mul_single_same, mul_one]
       _ = (f (single l l 1) * f (single k l 1)).trace := trace_mul_comm _ _

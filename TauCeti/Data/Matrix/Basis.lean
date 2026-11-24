@@ -166,7 +166,8 @@ theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n
   rw [smul_single, smul_eq_mul, mul_one]
 
 section MapSingle
-variable {n R B F : Type*} [Fintype n] [DecidableEq n] [Semiring R] [FunLike F (Matrix n n R) B]
+variable {n R B F : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
+  [FunLike F (Matrix n n R) B]
 
 /-- The images of the matrix units multiply like matrix units. -/
 theorem map_single_mul_map_single [NonUnitalNonAssocSemiring B]
