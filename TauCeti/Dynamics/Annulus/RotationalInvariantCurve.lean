@@ -27,10 +27,16 @@ invariant curves of twist maps, and of the rotational caustics of convex billiar
 
 The definition asks only `f '' C = C` of an arbitrary self-map `f`. We record:
 
+* the parametrization `TauCeti.jordanParam e` is not null-homotopic for *every* homeomorphism
+  `e : C ≃ₜ Circle` (`TauCeti.IsRotationalInvariantCurve.not_nullhomotopic`), and, when `Y` is
+  Hausdorff, the predicate holds exactly when `C` is the range of an injective continuous map
+  `c : C(Circle, AddCircle ℓ × Y)` that is not null-homotopic
+  (`TauCeti.IsRotationalInvariantCurve.of_injective`, `TauCeti.isRotationalInvariantCurve_iff`);
 * conjugating `f` by a homeomorphism `e` of the annulus carries rotational invariant curves of `f`
   to rotational invariant curves of `e ∘ f ∘ e⁻¹`
-  (`TauCeti.IsRotationalInvariantCurve.image_homeomorph`); for instance a fibre reflection `I`, an
-  involution, carries rotational invariant curves of `f` to those of `I ∘ f ∘ I`;
+  (`TauCeti.IsRotationalInvariantCurve.image_homeomorph`, with the characteristic form
+  `TauCeti.isRotationalInvariantCurve_image_homeomorph_iff`); for instance a fibre reflection
+  `I`, an involution, carries rotational invariant curves of `f` to those of `I ∘ f ∘ I`;
 * a rotational invariant curve is a Jordan curve
   (`TauCeti.IsRotationalInvariantCurve.isJordanCurve`), hence nonempty and compact, so if it lies
   in an open band `a < φ y < b`, for `φ : Y → ℝ` with `φ ∘ Prod.snd` continuous on the curve, it
@@ -64,14 +70,39 @@ structure IsRotationalInvariantCurve (f : AddCircle ℓ × Y → AddCircle ℓ �
   exists_not_nullhomotopic : ∃ e : C ≃ₜ Circle,
     ¬ (⟨jordanParam e, continuous_jordanParam e⟩ : C(Circle, AddCircle ℓ × Y)).Nullhomotopic
 
-namespace IsRotationalInvariantCurve
-
 variable {f : AddCircle ℓ × Y → AddCircle ℓ × Y} {C : Set (AddCircle ℓ × Y)}
+
+namespace IsRotationalInvariantCurve
 
 /-- A rotational invariant curve is a Jordan curve. -/
 theorem isJordanCurve (hC : IsRotationalInvariantCurve f C) : IsJordanCurve C :=
   let ⟨e, _⟩ := hC.exists_not_nullhomotopic
   isJordanCurve_iff.2 ⟨e⟩
+
+/-- The parametrization `TauCeti.jordanParam e` of a rotational invariant curve is not
+null-homotopic for every homeomorphism `e : C ≃ₜ Circle`, not only for the one supplied by the
+definition: two parametrizations differ by a homeomorphism of the circle. -/
+theorem not_nullhomotopic (hC : IsRotationalInvariantCurve f C) (e : C ≃ₜ Circle) :
+    ¬ (⟨jordanParam e, continuous_jordanParam e⟩ : C(Circle, AddCircle ℓ × Y)).Nullhomotopic := by
+  obtain ⟨g, hg⟩ := hC.exists_not_nullhomotopic
+  intro h
+  refine hg ?_
+  convert h.comp_left (g.symm.trans e : C(Circle, Circle)) using 1
+  ext1 u
+  simp
+
+/-- An invariant set `C` that is the range of an injective continuous map
+`c : C(Circle, AddCircle ℓ × Y)` which is not null-homotopic is a rotational invariant curve. The
+fibre `Y` is Hausdorff, so that `c` is a homeomorphism onto `C`. -/
+theorem of_injective [T2Space Y] (hf : f '' C = C) (c : C(Circle, AddCircle ℓ × Y))
+    (hc : Function.Injective c) (hcr : range c = C) (hnc : ¬ c.Nullhomotopic) :
+    IsRotationalInvariantCurve f C := by
+  subst hcr
+  let e : range c ≃ₜ Circle := (c.continuous.isClosedEmbedding hc).isEmbedding.toHomeomorph.symm
+  refine ⟨hf, e, ?_⟩
+  convert hnc using 2
+  ext1 u
+  simp [e]
 
 /-- Conjugating by a homeomorphism `e` of the annulus carries a rotational invariant curve `C` of
 `f` to the rotational invariant curve `e '' C` of `e ∘ f ∘ e⁻¹`. -/
@@ -110,5 +141,25 @@ theorem exists_subset_Icc (hC : IsRotationalInvariantCurve f C) {φ : Y → ℝ}
   hC.isCompact.exists_mapsTo_Icc_of_mapsTo_Ioo hC.nonempty hφ hCab
 
 end IsRotationalInvariantCurve
+
+/-- For a Hausdorff fibre `Y`, a rotational invariant curve of `f` is an invariant set that is the
+range of an injective continuous map `c : C(Circle, AddCircle ℓ × Y)` which is not
+null-homotopic. -/
+theorem isRotationalInvariantCurve_iff [T2Space Y] :
+    IsRotationalInvariantCurve f C ↔ f '' C = C ∧ ∃ c : C(Circle, AddCircle ℓ × Y),
+      Function.Injective c ∧ range c = C ∧ ¬ c.Nullhomotopic := by
+  refine ⟨fun hC => ?_, fun ⟨hf, c, hc, hcr, hnc⟩ => .of_injective hf c hc hcr hnc⟩
+  obtain ⟨e, he⟩ := hC.exists_not_nullhomotopic
+  exact ⟨hC.image_eq, _, jordanParam_injective e, range_jordanParam e, he⟩
+
+/-- Being a rotational invariant curve is invariant under conjugation by a homeomorphism `e` of
+the annulus. This is the characteristic form of
+`TauCeti.IsRotationalInvariantCurve.image_homeomorph`: the backward direction is that lemma
+applied to `e.symm`. -/
+@[simp]
+theorem isRotationalInvariantCurve_image_homeomorph_iff (e : AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y) :
+    IsRotationalInvariantCurve (e ∘ f ∘ e.symm) (e '' C) ↔ IsRotationalInvariantCurve f C := by
+  refine ⟨fun h => ?_, fun h => h.image_homeomorph e⟩
+  simpa [Function.comp_def, image_image] using h.image_homeomorph e.symm
 
 end TauCeti
