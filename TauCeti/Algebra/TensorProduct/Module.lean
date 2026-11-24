@@ -34,9 +34,9 @@ algebras, without a coproduct.
 
 Conversely to the factor actions above, commuting actions of a commutative ring `R` and a ring
 `A` on `M` give an action of `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms:
-`TauCeti.Algebra.TensorProduct.toModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`.
+`Algebra.TensorProduct.toModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`.
 It is compatible with tensoring by an `R`-module `N`, `M ↦ M ⊗[R] N`
-(`TauCeti.Algebra.TensorProduct.toModuleEnd_rTensor`).
+(`Algebra.TensorProduct.toModuleEnd_rTensor`).
 -/
 
 public section
@@ -181,7 +181,7 @@ end PairAction
 
 end TauCeti.BialgebraModule
 
-namespace TauCeti.Algebra.TensorProduct
+namespace Algebra.TensorProduct
 
 variable (R A M : Type*) [CommRing R] [Ring A] [AddCommMonoid M] [Module R M] [Module A M]
   [SMulCommClass A R M]
@@ -207,9 +207,9 @@ theorem toModuleEnd_rTensor [SMulCommClass R A M] (N : Type*) [AddCommMonoid N]
     toModuleEnd R A (M ⊗[R] N) t = (toModuleEnd R A M t).rTensor N := by
   induction t using TensorProduct.inductionOn with
   | tmul r a =>
-    apply TensorProduct.ext'
+    apply _root_.TensorProduct.ext'
     intro m n
     simp [TensorProduct.smul_tmul']
   | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
 
-end TauCeti.Algebra.TensorProduct
+end Algebra.TensorProduct

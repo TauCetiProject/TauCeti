@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.TensorProduct.Module
 public import TauCeti.RingTheory.Idempotents.Module
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 
 /-!
@@ -27,7 +27,7 @@ For a `ℤ`-basis `(bⱼ)` of `𝓞 L`, the matrix of the splitting from the bas
 coordinate basis of `∏_σ R` is `(σ(bⱼ))_{σ, j}`, whose determinant squares to `d_L`. The
 idempotents of the product split every `R`-module `M` with a commuting action of `𝓞 L` as an
 internal direct sum `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts
-through `σ`; they act on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
+through `σ`; they act on `M` through `Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
 splitting is functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with
 tensoring by an `R`-module: for an `R`-module `N`, with `𝓞 L` acting on `M ⊗[R] N` through the
 factor `M`, `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
@@ -47,7 +47,7 @@ factor `M`, `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main results
 
-* `TauCeti.NumberField.bijective_embeddingSplitting`: the splitting is bijective.
+* `TauCeti.NumberField.embeddingSplitting_bijective`: the splitting is bijective.
 * `TauCeti.NumberField.completeOrthogonalIdempotents_embeddingIdempotent`: the preimages of the
   coordinate idempotents form a complete orthogonal family.
 * `TauCeti.NumberField.isInternal_embeddingEigenspace`: `M = ⨁_σ M(σ)`.
@@ -154,7 +154,7 @@ include hd
 
 /-- **The embedding splitting is bijective** when `K` receives all `[L : ℚ]` embeddings of `L`
 and `d_L` is a unit of `R`. -/
-theorem bijective_embeddingSplitting : Function.Bijective (embeddingSplitting L K R) := by
+theorem embeddingSplitting_bijective : Function.Bijective (embeddingSplitting L K R) := by
   classical
   -- On the basis `1 ⊗ bⱼ` of `R ⊗[ℤ] 𝓞 L`, the splitting has matrix `(σ(bⱼ))`, whose
   -- determinant squares to `d_L`.
@@ -162,34 +162,21 @@ theorem bijective_embeddingSplitting : Function.Bijective (embeddingSplitting L 
     rw [hK, ← RingOfIntegers.rank, finrank_eq_card_chooseBasisIndex]
   let bR : Basis (L →+* K) R (R ⊗[ℤ] 𝓞 L) :=
     (Algebra.TensorProduct.basis R (RingOfIntegers.basis L)).reindex e.symm
-  let M : Matrix (L →+* K) (L →+* K) R :=
-    Matrix.of fun σ τ ↦ embeddingRingHom L K R σ (RingOfIntegers.basis L (e τ))
-  have hM : IsUnit M.det := by
-    have hsq : M.det ^ 2 = (discr L : R) := by
-      have h := congrArg (algebraMap (𝓞 K) R)
-        (sq_det_mapRingHom_basis_eq_discr hK (RingOfIntegers.basis L) e)
-      rw [map_pow, RingHom.map_det, map_intCast] at h
-      have hMeq : M = (algebraMap (𝓞 K) R).mapMatrix
-          (Matrix.of fun σ τ ↦ RingOfIntegers.mapRingHom σ (RingOfIntegers.basis L (e τ))) := by
-        ext σ τ
-        simp [M]
-      rw [hMeq]
-      exact h
-    exact (isUnit_pow_iff two_ne_zero).mp (hsq ▸ hd)
-  let φ := bR.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun R (L →+* K)) M hM)
-  have hφ (x : R ⊗[ℤ] 𝓞 L) : φ x = embeddingSplitting L K R x := by
-    ext σ
-    simp only [φ, LinearEquiv.trans_apply, Matrix.toLinearEquiv_apply, Matrix.toLin_eq_toLin',
-      Matrix.toLin'_apply, Basis.equivFun_apply, Matrix.mulVec, dotProduct, M, Matrix.of_apply,
-      embeddingSplitting_apply]
-    conv_rhs => rw [← bR.sum_repr x]
-    simp [bR, mul_comm]
-  exact (funext hφ : (φ : _ → _) = embeddingSplitting L K R) ▸ φ.bijective
+  refine AlgHom.pi_bijective_of_isUnit_det bR ?_
+  have h := congrArg (algebraMap (𝓞 K) R)
+    (sq_det_mapRingHom_basis_eq_discr hK (RingOfIntegers.basis L) e)
+  rw [map_pow, RingHom.map_det, map_intCast] at h
+  have hM : (Matrix.of fun σ τ ↦ embeddingEval L K R σ (bR τ)) = (algebraMap (𝓞 K) R).mapMatrix
+      (Matrix.of fun σ τ ↦ RingOfIntegers.mapRingHom σ (RingOfIntegers.basis L (e τ))) := by
+    ext σ τ
+    simp [bR]
+  rw [hM]
+  exact (isUnit_pow_iff two_ne_zero).mp (h ▸ hd)
 
 /-- The embedding splitting `R ⊗[ℤ] 𝓞 L ≃ₐ[R] ∏_σ R`, when `K` receives all `[L : ℚ]` embeddings
 of `L` and `d_L` is a unit of `R`. -/
 noncomputable def embeddingSplittingEquiv : R ⊗[ℤ] 𝓞 L ≃ₐ[R] ((L →+* K) → R) :=
-  AlgEquiv.ofBijective (embeddingSplitting L K R) (bijective_embeddingSplitting hK hd)
+  AlgEquiv.ofBijective (embeddingSplitting L K R) (embeddingSplitting_bijective hK hd)
 
 @[simp]
 theorem embeddingSplittingEquiv_apply (x : R ⊗[ℤ] 𝓞 L) :
@@ -250,7 +237,7 @@ theorem completeOrthogonalIdempotents_embeddingIdempotent :
 theorem one_tmul_mul_embeddingIdempotent (σ : L →+* K) (ℓ : 𝓞 L) :
     (1 ⊗ₜ ℓ) * embeddingIdempotent hK hd σ =
       algebraMap R _ (embeddingRingHom L K R σ ℓ) * embeddingIdempotent hK hd σ := by
-  apply (bijective_embeddingSplitting hK hd).injective
+  apply (embeddingSplitting_bijective hK hd).injective
   ext τ
   simp only [map_mul, embeddingSplitting_apply, AlgHom.commutes,
     Algebra.algebraMap_self, RingHom.id_apply, embeddingEval_tmul, one_mul]
