@@ -46,6 +46,12 @@ reduces to `-γ`, where `ε(γ) = i ε(-γ)`, and `c = 0` is `γ = ± Tᵇ`. Eac
 congruence modulo `24` between polynomials in the entries, subject to `a d - b c = 1`; these are
 checked modulo `8` and modulo `3` by evaluation.
 
+## Main definitions
+
+* `TauCeti.ModularForm.e24`: the root of unity `e(m / 24) = exp(2 π i m / 24)`, with its
+  homomorphism laws `e24_zero`, `e24_add`, `e24_mul`, `prod_mul_e24_zpow`, its periodicity
+  `e24_congr`, and its values `e24_twelve_mul`, `e24_twelve_mul_eq_χ₄` at multiples of `12`.
+
 ## Main results
 
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c`: the Kronecker form
@@ -72,20 +78,46 @@ namespace TauCeti.ModularForm
 
 /-! ### Twenty-fourth roots of unity -/
 
-/-- `e(m / 24) = exp(2 π i m / 24)`. -/
-private noncomputable def e24 (m : ℤ) : ℂ :=
+/-- `e(m / 24) = exp(2 π i m / 24)`, the `24`th root of unity in which the eta multiplier and
+its Kronecker forms are written. -/
+noncomputable def e24 (m : ℤ) : ℂ :=
   cexp (2 * π * I * m / 24)
 
-private theorem e24_add (m n : ℤ) : e24 (m + n) = e24 m * e24 n := by
+/-- The defining formula of `e24`. -/
+theorem e24_def (m : ℤ) : e24 m = cexp (2 * π * I * m / 24) :=
+  (rfl)
+
+@[simp]
+theorem e24_zero : e24 0 = 1 := by
+  simp [e24]
+
+/-- `e((m + n) / 24) = e(m / 24) e(n / 24)`. -/
+theorem e24_add (m n : ℤ) : e24 (m + n) = e24 m * e24 n := by
   simp only [e24, ← Complex.exp_add]
   congr 1
   push_cast
   ring
 
+/-- `e(n m / 24) = e(m / 24) ^ n`. -/
+theorem e24_mul (n m : ℤ) : e24 (n * m) = e24 m ^ n := by
+  rw [e24, e24, ← Complex.exp_intCast_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- A product of integral powers of `A i e(E i / 24)` splits off the single root of unity
+`e((∑ i, r i E i) / 24)`. -/
+theorem prod_mul_e24_zpow {ι : Type*} (s : Finset ι) (A : ι → ℂ) (r E : ι → ℤ) :
+    ∏ i ∈ s, (A i * e24 (E i)) ^ r i = (∏ i ∈ s, A i ^ r i) * e24 (∑ i ∈ s, r i * E i) := by
+  rw [Finset.prod_congr rfl fun i _ ↦ by rw [mul_zpow, ← e24_mul], Finset.prod_mul_distrib]
+  congr 1
+  simp only [e24, Int.cast_sum, Finset.mul_sum, Finset.sum_div, Complex.exp_sum]
+
 private theorem e24_ne_zero (m : ℤ) : e24 m ≠ 0 :=
   Complex.exp_ne_zero _
 
-private theorem e24_congr {m n : ℤ} (h : m ≡ n [ZMOD 24]) : e24 m = e24 n := by
+/-- `e(m / 24)` depends only on `m` modulo `24`. -/
+theorem e24_congr {m n : ℤ} (h : m ≡ n [ZMOD 24]) : e24 m = e24 n := by
   obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp h
   rw [show n = m + 24 * k by omega, e24_add]
   have h1 : e24 (24 * k) = 1 := by
@@ -95,11 +127,23 @@ private theorem e24_congr {m n : ℤ} (h : m ≡ n [ZMOD 24]) : e24 m = e24 n :=
     ring
   rw [h1, mul_one]
 
-private theorem e24_twelve_mul (k : ℕ) : e24 (12 * k) = (-1) ^ k := by
+/-- `e(12 k / 24) = (-1) ^ k`. -/
+theorem e24_twelve_mul (k : ℕ) : e24 (12 * k) = (-1) ^ k := by
   rw [e24, ← Complex.exp_pi_mul_I, ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring
+
+/-- `e(12 v / 24) = χ₄(2 v + 1)`: both are `(-1) ^ v`. -/
+theorem e24_twelve_mul_eq_χ₄ (v : ℤ) : e24 (12 * v) = ZMod.χ₄ (2 * v + 1 : ℤ) := by
+  obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' v
+  · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ : 12 * (2 * j) ≡ 12 * (0 : ℕ) [ZMOD 24]),
+      e24_twelve_mul, ZMod.χ₄_int_one_mod_four (by omega)]
+    simp
+  · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ :
+        12 * (2 * j + 1) ≡ 12 * (1 : ℕ) [ZMOD 24]), e24_twelve_mul,
+      ZMod.χ₄_int_three_mod_four (by omega)]
+    simp
 
 private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   rw [e24]
@@ -309,7 +353,7 @@ private theorem χ₄_natAbs_mul_e24 {d : ℤ} (hdo : Odd d) :
     push_cast
     rw [← e24_twelve_mul, ← e24_add]
   · rw [ite_eq_right (by omega), e24_congr (Int.modEq_iff_dvd.mpr ⟨0, by ring⟩ : _ ≡ 0 [ZMOD 24])]
-    simpa using e24_twelve_mul 0
+    exact e24_zero
   · rw [ite_eq_left (by omega), e24_congr (Int.modEq_iff_dvd.mpr ⟨-w, by ring⟩ : _ ≡ 12 [ZMOD 24])]
     simpa using e24_twelve_mul 1
 
@@ -476,43 +520,23 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
 
 /-! ### The even-`c` form at odd `d` -/
 
-/-- `e(12 u v / 24) = χ₄(2 v + 1) ^ u`: the sign `(-1) ^ (u v)` of quadratic reciprocity. -/
-private theorem e24_twelve_mul_mul (u : ℕ) (v : ℤ) :
-    e24 (12 * (u * v)) = (ZMod.χ₄ (2 * v + 1 : ℤ) : ℂ) ^ u := by
-  have h1 : e24 (12 * v) = ZMod.χ₄ (2 * v + 1 : ℤ) := by
-    obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' v
-    · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ : 12 * (2 * j) ≡ 12 * (0 : ℕ) [ZMOD 24]),
-        e24_twelve_mul, ZMod.χ₄_int_one_mod_four (by omega)]
-      simp
-    · rw [e24_congr (Int.modEq_iff_dvd.mpr ⟨-j, by ring⟩ :
-          12 * (2 * j + 1) ≡ 12 * (1 : ℕ) [ZMOD 24]), e24_twelve_mul,
-        ZMod.χ₄_int_three_mod_four (by omega)]
-      simp
-  induction u with
-  | zero => simp [e24]
-  | succ u ih =>
-    rw [pow_succ, ← ih, ← h1, ← e24_add]
-    congr 1
-    push_cast
-    ring
-
 /-- For odd `c > 0` and odd `d`, the odd-`c` and the even-`c` Kronecker forms agree: the symbols
 differ by `(-1) ^ ((c - 1) (d - 1) / 4)` (quadratic reciprocity), and the exponents by
 `3 (c - 1) (d - 1)`. -/
 private theorem kroneckerOdd_eq_kroneckerEven (a b : ℤ) {c : ℕ} {d : ℤ} (hc : Odd c)
     (hd : Odd d) :
     (kroneckerSym d c : ℂ) * e24 (oddExp a b c d) = kroneckerSym c d * e24 (evenExp a b c d) := by
-  rw [kroneckerSym_natCast_left_of_odd hc, kroneckerSym_neg_one_left_of_odd hd]
+  rw [kroneckerSym_quadratic_reciprocity hc, kroneckerSym_neg_one_left_of_odd hd]
   obtain ⟨u, rfl⟩ := hc
   obtain ⟨v, rfl⟩ := hd
   have hexp : e24 (oddExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) =
-      e24 (evenExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) * e24 (12 * (u * v)) := by
+      e24 (evenExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) * e24 (u * (12 * v)) := by
     rw [← e24_add]
     congr 1
     simp only [oddExp, evenExp]
     push_cast
     ring
-  rw [hexp, e24_twelve_mul_mul, show (2 * u + 1) / 2 = u by omega]
+  rw [hexp, e24_mul, e24_twelve_mul_eq_χ₄, zpow_natCast, show (2 * u + 1) / 2 = u by omega]
   push_cast
   ring
 

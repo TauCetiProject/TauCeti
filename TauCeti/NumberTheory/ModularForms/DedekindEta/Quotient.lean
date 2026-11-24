@@ -59,7 +59,9 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
-* `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`.
+* `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`, so
+  `TauCeti.ModularForm.forall_etaQuotientOrder_iff` reduces a condition at every cusp to the
+  divisors of `N`.
 
 ## References
 
@@ -266,6 +268,14 @@ theorem etaQuotientOrder_gcd (N : ℕ) (r : ℕ → ℤ) (c : ℤ) :
   simp only [etaQuotientOrder_def, Int.natAbs_natCast]
   refine Finset.sum_congr rfl fun δ hδ ↦ ?_
   rw [← Nat.gcd_assoc, Nat.gcd_eq_left (Nat.dvd_of_mem_divisors hδ)]
+
+/-- A property of the order of an eta quotient holds at every cusp exactly when it holds at the
+divisors of `N`, since the order at `c` is the order at `gcd(N, c)` (`etaQuotientOrder_gcd`). -/
+theorem forall_etaQuotientOrder_iff (N : ℕ) [NeZero N] (r : ℕ → ℤ) {p : ℚ → Prop} :
+    (∀ c : ℤ, p (etaQuotientOrder N r c)) ↔ ∀ d ∈ N.divisors, p (etaQuotientOrder N r d) := by
+  refine ⟨fun h d _ ↦ h d, fun h c ↦ ?_⟩
+  rw [← etaQuotientOrder_gcd]
+  exact h _ (Nat.mem_divisors.mpr ⟨Nat.gcd_dvd_left _ _, NeZero.ne N⟩)
 
 /-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
 `w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.

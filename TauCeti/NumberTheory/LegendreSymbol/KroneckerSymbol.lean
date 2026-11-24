@@ -59,9 +59,10 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   unrestricted power law, and value `1` on squares coprime to the denominator.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
-* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_natCast_left_of_odd`: the first
-  supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
+* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
+  first supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
   `(n / b) = (b / n) (-1 / b) ^ ((n - 1) / 2)` at an odd positive numerator `n` and every `b`.
+* `TauCeti.sq_kroneckerSym_eq_one`: `(a / b) ^ 2 = 1` for coprime `a` and `b`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
@@ -393,15 +394,15 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
     split_ifs <;> omega
 
 /-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime, as for `jacobiSym.sq_one`. -/
-theorem kroneckerSym_sq_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
+theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
   rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
 
 /-- **Quadratic reciprocity for the Kronecker symbol** at an odd positive numerator `n`: for every
 integer `b`, `(n / b) = (b / n) · (-1 / b) ^ ((n - 1) / 2)`. For odd `b > 0` this is the
 reciprocity law of the Jacobi symbol; it also covers even and negative `b`. -/
-theorem kroneckerSym_natCast_left_of_odd {n : ℕ} (hn : Odd n) (b : ℤ) :
+theorem kroneckerSym_quadratic_reciprocity {n : ℕ} (hn : Odd n) (b : ℤ) :
     kroneckerSym n b = kroneckerSym b n * kroneckerSym (-1) b ^ (n / 2) := by
-  have hsq : kroneckerSym (-1) b ^ 2 = 1 := kroneckerSym_sq_eq_one (by simp)
+  have hsq : kroneckerSym (-1) b ^ 2 = 1 := sq_kroneckerSym_eq_one (by simp)
   rw [kroneckerSym_eq_jacobiSym b hn]
   obtain ⟨m, rfl⟩ := hn
   rcases Nat.even_or_odd m with ⟨j, rfl⟩ | ⟨j, rfl⟩

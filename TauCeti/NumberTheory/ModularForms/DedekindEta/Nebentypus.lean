@@ -65,7 +65,8 @@ matrices, shows that `χ(d)` is periodic modulo `N` and multiplicative on intege
 
 ## References
 
-* K. Ono, *The Web of Modularity*, Theorems 1.64 and 1.65.
+* K. Ono, *The Web of Modularity*, Theorem 1.64 (the criterion) and Theorem 1.65 (Ligozat's
+  orders at the cusps).
 * B. Gordon and K. Hughes, *Multiplicative properties of η-products II*, Contemp. Math. **143**
   (1993).
 * M. Newman, *Construction and application of a class of modular functions II*, Proc. London
@@ -122,14 +123,17 @@ private theorem eta_natCast_mul_smul (γ : SL(2, ℤ)) {δ : ℕ} (hδ : 0 < δ)
     field_simp
   rw [← hsmul, eta_smul, hden, hw]
 
+private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
+    (δ : ℤ) * (N / δ : ℕ) = N := by
+  exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
+
 /-- The entries of `γ_δ` when `c = N t` and `δ ∣ N`: `γ_δ = (a, b δ; (N / δ) t, d)`. -/
 private theorem coe_scaleSL_of_eq {N : ℕ} {δ : ℕ} (hδ : δ ∈ N.divisors) (γ : SL(2, ℤ)) {t : ℤ}
     (ht : γ 1 0 = N * t) :
     (scaleSL γ δ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, γ 0 1 * δ; ((N / δ : ℕ) : ℤ) * t, γ 1 1] := by
-  have hδN : (δ : ℤ) * (N / δ : ℕ) = N := by
-    exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
-  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by rw [ht, ← mul_assoc, hδN]
+  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
+    rw [ht, ← mul_assoc, natCast_mul_natCast_div hδ]
   rw [coe_scaleSL γ ⟨_, hc⟩, hc,
     Int.mul_ediv_cancel_left _ (by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne')]
 
@@ -158,9 +162,8 @@ private theorem etaQuotient_slash (N : ℕ) (r : ℕ → ℤ) {k : ℤ}
   have hj : ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
   rw [ModularForm.SL_slash_apply, etaQuotient_smul N r γ hN τ, hk, zpow_mul, zpow_ofNat,
     Complex.sq_sqrt]
-  simp only [Pi.smul_apply, smul_eq_mul]
-  simp only [UpperHalfPlane.denom, zpow_neg]
-  simp
+  simp only [Pi.smul_apply, smul_eq_mul, UpperHalfPlane.denom, zpow_neg, coe_GL_coe_matrix,
+    map_apply_coe, Int.coe_castRingHom, Matrix.map_apply, ofReal_intCast]
   field_simp
 
 /-! ### The Kronecker-symbol value of the multiplier -/
@@ -171,65 +174,7 @@ private noncomputable def symb (N : ℕ) (r : ℕ → ℤ) (k d : ℤ) : ℂ :=
 
 private theorem sq_kroneckerSym_cast {a b : ℤ} (h : a.gcd b = 1) :
     (kroneckerSym a b : ℂ) ^ 2 = 1 := by
-  exact_mod_cast kroneckerSym_sq_eq_one h
-
-private theorem zpow_two_mul_of_sq_eq_one {s : ℂ} (hs : s ^ 2 = 1) (j : ℤ) : s ^ (2 * j) = 1 := by
-  rw [zpow_mul, zpow_two, ← sq, hs, one_zpow]
-
-private theorem prod_mul_cexp_zpow {s : Finset ℕ} (A : ℕ → ℂ) (x : ℕ → ℂ) (r : ℕ → ℤ) :
-    ∏ δ ∈ s, (A δ * cexp (x δ)) ^ r δ =
-      (∏ δ ∈ s, A δ ^ r δ) * cexp (∑ δ ∈ s, r δ * x δ) := by
-  rw [Complex.exp_sum, ← Finset.prod_mul_distrib]
-  exact Finset.prod_congr rfl fun δ _ ↦ by rw [mul_zpow, Complex.exp_intCast_mul]
-
-private theorem cexp_twentyFour_mul (M : ℤ) (y : ℂ) :
-    cexp (2 * π * I * (((24 * M : ℤ) : ℂ) + y) / 24) = cexp (2 * π * I * y / 24) := by
-  have h := Complex.exp_int_mul_two_pi_mul_I M
-  rw [← one_mul (cexp (2 * π * I * y / 24)), ← h, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
-private theorem χ₄_two_mul_add_one_cast (v : ℤ) :
-    ((ZMod.χ₄ (2 * v + 1 : ℤ) : ℤ) : ℂ) = (-1) ^ v := by
-  obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' v
-  · rw [ZMod.χ₄_int_one_mod_four (by omega), (Even.neg_one_zpow ⟨j, two_mul j⟩)]
-    simp
-  · rw [ZMod.χ₄_int_three_mod_four (by omega), Odd.neg_one_zpow ⟨j, rfl⟩]
-    simp
-
-private theorem cexp_twentyFour_mul_eq_one (M : ℤ) :
-    cexp (2 * π * I * ((24 * M : ℤ) : ℂ) / 24) = 1 := by
-  simpa using cexp_twentyFour_mul M 0
-
-/-- `gcd(x, d) = 1` for every divisor `x` of the lower-left entry `c` of `γ`. -/
-private theorem gcd_apply_one_one_eq_one (γ : SL(2, ℤ)) {x : ℤ} (hx : x ∣ γ 1 0) :
-    x.gcd (γ 1 1) = 1 :=
-  Int.isCoprime_iff_gcd_eq_one.mp ((γ.isCoprime_row 1).of_isCoprime_of_dvd_left hx)
-
-/-- `(x / d) = (x δ / d) (δ / d)` for `x ≥ 0`, `δ > 0` and `gcd(δ, d) = 1`. -/
-private theorem kroneckerSym_cast_eq_mul_left {x δ d : ℤ} (hx : 0 ≤ x) (hδ : 0 < δ)
-    (h : δ.gcd d = 1) :
-    (kroneckerSym x d : ℂ) = kroneckerSym (x * δ) d * kroneckerSym δ d := by
-  have hmul : kroneckerSym (x * δ) d = kroneckerSym x d * kroneckerSym δ d := by
-    rcases eq_or_ne d (-1) with rfl | hd
-    · simp [hx.not_gt, hδ.not_gt, (mul_nonneg hx hδ.le).not_gt]
-    · exact kroneckerSym_mul_left_of_ne_neg_one hd x δ
-  rw [hmul]
-  push_cast
-  rw [mul_assoc, ← sq, sq_kroneckerSym_cast h, mul_one]
-
-/-- `(d / x) = (d / x δ) (d / δ)` for nonzero `x`, `δ` with `gcd(d, δ) = 1`. -/
-private theorem kroneckerSym_cast_eq_mul_right {x δ d : ℤ} (hx : x ≠ 0) (hδ : δ ≠ 0)
-    (h : d.gcd δ = 1) :
-    (kroneckerSym d x : ℂ) = kroneckerSym d (x * δ) * kroneckerSym d δ := by
-  rw [kroneckerSym_mul_right d hx hδ]
-  push_cast
-  rw [mul_assoc, ← sq, sq_kroneckerSym_cast h, mul_one]
-
-private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
-    (δ : ℤ) * (N / δ : ℕ) = N := by
-  exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
+  exact_mod_cast sq_kroneckerSym_eq_one h
 
 /-- The entries of `γ_δ = (a, b δ; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
 private theorem scaleSL_apply_of_eq {N δ : ℕ} (hδ : δ ∈ N.divisors) (γ : SL(2, ℤ)) {t : ℤ}
@@ -261,35 +206,30 @@ private theorem sum_mul_oddExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
   exact Finset.sum_congr rfl fun δ hδ ↦ by
     linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * natCast_mul_natCast_div hδ
 
-/-- `∑_δ r δ · (2 π i E δ / 24) = 2 π i (∑_δ r δ E δ) / 24`. -/
-private theorem sum_mul_two_pi_I_div (s : Finset ℕ) (r E : ℕ → ℤ) :
-    ∑ δ ∈ s, (r δ : ℂ) * (2 * π * I * ((E δ : ℤ) : ℂ) / 24) =
-      2 * π * I * ((∑ δ ∈ s, r δ * E δ : ℤ) : ℂ) / 24 := by
-  push_cast
-  rw [Finset.mul_sum, Finset.sum_div]
-  exact Finset.sum_congr rfl fun δ _ ↦ by ring
-
 /-- For `c = N t ≥ 0`: `∏_δ ((c / δ) / d) ^ r δ = ∏_δ (δ / d) ^ r δ`, as `∑_δ r δ` is even. -/
 private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (γ : SL(2, ℤ)) {t : ℤ} (ht : γ 1 0 = N * t)
     (ht0 : 0 ≤ t) :
     ∏ δ ∈ N.divisors, (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) ^ r δ =
       ∏ δ ∈ N.divisors, (kroneckerSym δ (γ 1 1) : ℂ) ^ r δ := by
-  have hKc : (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) ^ 2 = 1 :=
-    sq_kroneckerSym_cast (gcd_apply_one_one_eq_one γ dvd_rfl)
-  calc _ = ∏ δ ∈ N.divisors, ((kroneckerSym (γ 1 0) (γ 1 1) : ℂ) ^ r δ *
-        (kroneckerSym δ (γ 1 1) : ℂ) ^ r δ) :=
-      Finset.prod_congr rfl fun δ hδ ↦ by
-        have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-          linear_combination t * natCast_mul_natCast_div hδ - ht
-        rw [kroneckerSym_cast_eq_mul_left (δ := δ) (mul_nonneg (Int.natCast_nonneg _) ht0)
-          (by exact_mod_cast Nat.pos_of_mem_divisors hδ)
-          (gcd_apply_one_one_eq_one γ ⟨(N / δ : ℕ) * t, by linear_combination -hc⟩), hc,
-          mul_zpow]
-    _ = _ := by
-      rw [Finset.prod_mul_distrib, Finset.prod_zpow_eq_zpow_sum_of_isUnit _
-        (isUnit_iff_ne_zero.mpr fun h ↦ by simp [h] at hKc), hk,
-        zpow_two_mul_of_sq_eq_one hKc, one_mul]
+  have hcop := γ.isCoprime_row 1
+  -- Each factor is `(c / d) ^ r δ (δ / d) ^ r δ`, and the factors `(c / d) ^ r δ` cancel.
+  refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
+    (sq_kroneckerSym_cast (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
+  have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
+    linear_combination t * natCast_mul_natCast_div hδ - ht
+  have hx : 0 ≤ ((N / δ : ℕ) : ℤ) * t := mul_nonneg (Int.natCast_nonneg _) ht0
+  have hδ0 : (0 : ℤ) < δ := by exact_mod_cast Nat.pos_of_mem_divisors hδ
+  have hmul : kroneckerSym ((N / δ : ℕ) * t * δ) (γ 1 1) =
+      kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) * kroneckerSym δ (γ 1 1) := by
+    rcases eq_or_ne (γ 1 1) (-1) with hd | hd
+    · rw [hd, kroneckerSym_neg_one_right, kroneckerSym_neg_one_right, kroneckerSym_neg_one_right,
+        ite_eq_right (mul_nonneg hx hδ0.le).not_gt, ite_eq_right hx.not_gt,
+        ite_eq_right hδ0.not_gt, one_mul]
+    · exact kroneckerSym_mul_left_of_ne_neg_one hd _ _
+  rw [← hc, hmul, Int.cast_mul, ← mul_zpow, mul_assoc, ← sq, sq_kroneckerSym_cast
+    (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (hc ▸ dvd_mul_left _ _))),
+    mul_one]
 
 /-- For `c = N t > 0`: `∏_δ (d / (c / δ)) ^ r δ = ∏_δ (d / δ) ^ r δ`, as `∑_δ r δ` is even. -/
 private theorem prod_kroneckerSym_div_right {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
@@ -297,24 +237,19 @@ private theorem prod_kroneckerSym_div_right {N : ℕ} {r : ℕ → ℤ} {k : ℤ
     (ht0 : 0 < t) :
     ∏ δ ∈ N.divisors, (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) ^ r δ =
       ∏ δ ∈ N.divisors, (kroneckerSym (γ 1 1) δ : ℂ) ^ r δ := by
-  have hKc : (kroneckerSym (γ 1 1) (γ 1 0) : ℂ) ^ 2 = 1 :=
-    sq_kroneckerSym_cast (by rw [Int.gcd_comm]; exact gcd_apply_one_one_eq_one γ dvd_rfl)
-  calc _ = ∏ δ ∈ N.divisors, ((kroneckerSym (γ 1 1) (γ 1 0) : ℂ) ^ r δ *
-        (kroneckerSym (γ 1 1) δ : ℂ) ^ r δ) :=
-      Finset.prod_congr rfl fun δ hδ ↦ by
-        have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-          linear_combination t * natCast_mul_natCast_div hδ - ht
-        have hm : (0 : ℤ) < (N / δ : ℕ) := by
-          exact_mod_cast Nat.div_pos (Nat.divisor_le hδ) (Nat.pos_of_mem_divisors hδ)
-        rw [kroneckerSym_cast_eq_mul_right (δ := δ) (mul_pos hm ht0).ne'
-          (by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne') (by
-            rw [Int.gcd_comm]
-            exact gcd_apply_one_one_eq_one γ ⟨(N / δ : ℕ) * t, by linear_combination -hc⟩),
-          hc, mul_zpow]
-    _ = _ := by
-      rw [Finset.prod_mul_distrib, Finset.prod_zpow_eq_zpow_sum_of_isUnit _
-        (isUnit_iff_ne_zero.mpr fun h ↦ by simp [h] at hKc), hk,
-        zpow_two_mul_of_sq_eq_one hKc, one_mul]
+  have hcop := (γ.isCoprime_row 1).symm
+  -- Each factor is `(d / c) ^ r δ (d / δ) ^ r δ`, and the factors `(d / c) ^ r δ` cancel.
+  refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
+    (sq_kroneckerSym_cast (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
+  have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
+    linear_combination t * natCast_mul_natCast_div hδ - ht
+  have hm : (0 : ℤ) < (N / δ : ℕ) := by
+    exact_mod_cast Nat.div_pos (Nat.divisor_le hδ) (Nat.pos_of_mem_divisors hδ)
+  rw [← hc, kroneckerSym_mul_right _ (mul_pos hm ht0).ne'
+    (by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'), Int.cast_mul, ← mul_zpow, mul_assoc,
+    ← sq, sq_kroneckerSym_cast
+      (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_right (hc ▸ dvd_mul_left _ _))),
+    mul_one]
 
 /-- For odd `N`, quadratic reciprocity gives `((-1) ^ k ∏_δ δ ^ r δ / d) = ∏_δ (d / δ) ^ r δ`: the
 signs `(-1 / d) ^ ((δ - 1) / 2)` multiply to `(-1 / d) ^ k` since `∑_δ δ r δ ≡ 0 (mod 4)`. -/
@@ -342,9 +277,9 @@ private theorem symb_eq_prod_of_odd {N : ℕ} {r : ℕ → ℤ} {k : ℤ} (hNo :
     refine Finset.prod_congr rfl fun δ hδ ↦ ?_
     have hrec : (kroneckerSym δ d : ℂ) =
         kroneckerSym d δ * (kroneckerSym (-1) d : ℂ) ^ (δ / 2) := by
-      exact_mod_cast kroneckerSym_natCast_left_of_odd (hδo δ hδ) d
+      exact_mod_cast kroneckerSym_quadratic_reciprocity (hδo δ hδ) d
     rw [hrec, mul_zpow, ← zpow_natCast, ← zpow_mul]
-  rw [symb, hR, mul_left_comm, ← zpow_add₀ hs0, hsum, zpow_two_mul_of_sq_eq_one hsq, mul_one]
+  rw [symb, hR, mul_left_comm, ← zpow_add₀ hs0, hsum, zpow_mul, zpow_ofNat, hsq, one_zpow, mul_one]
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0` and odd `d`.** Each `ε(γ_δ)` is given by the
 even-`c` Kronecker form; the exponents sum to `6 k (d - 1)` modulo `24`. -/
@@ -359,25 +294,20 @@ private theorem prod_etaMultiplier_scaleSL_of_odd {N : ℕ} {r : ℕ → ℤ} {k
   let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
     γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 - 3 * ((N / δ : ℕ) * t) * γ 1 1
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier (scaleSL γ δ) =
-      (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * cexp (2 * π * I * ((E δ : ℤ) : ℂ) / 24) := by
+      (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
     obtain ⟨h00, h01, h10, h11⟩ := scaleSL_apply_of_eq hδ γ ht
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d (scaleSL γ δ)
       (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact ⟨v, hv⟩),
-      h00, h01, h10, h11]
-  have hsum : ∑ δ ∈ N.divisors, r δ * E δ = 24 * (B * ((γ 0 0 + γ 1 1) * t -
-      γ 0 1 * γ 1 1 * N * t ^ 2 - 3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)) + 12 * (k * v) := by
+      h00, h01, h10, h11, e24_def]
+  -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
+  have hsum : ∑ δ ∈ N.divisors, r δ * E δ ≡ k * (12 * v) [ZMOD 24] := by
+    refine Int.modEq_iff_dvd.mpr ⟨-(B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
+      3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
     rw [sum_mul_evenExp, hA, hB, hk, hv]
     ring
-  have hsign : cexp (2 * π * I * ((12 * (k * v) : ℤ) : ℂ) / 24) = (-1) ^ (k * v) := by
-    rw [← Complex.exp_pi_mul_I, ← Complex.exp_intCast_mul]
-    congr 1
-    push_cast
-    ring
-  have hs : (kroneckerSym (-1) (γ 1 1) : ℂ) = (-1) ^ v := by
-    rw [kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, χ₄_two_mul_add_one_cast]
-  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_cexp_zpow,
-    sum_mul_two_pi_I_div, hsum, Int.cast_add, cexp_twentyFour_mul, hsign,
-    prod_kroneckerSym_div_left hk γ ht ht0, symb, hs, ← zpow_mul, mul_comm v k, mul_comm]
+  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_e24_zpow,
+    e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
+    kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0` and even `d`.** Then `c`, `N` and every
 `δ ∣ N` are odd, each `ε(γ_δ)` is given by the odd-`c` Kronecker form, and the exponents sum to a
@@ -399,19 +329,22 @@ private theorem prod_etaMultiplier_scaleSL_of_even {N : ℕ} {r : ℕ → ℤ} {
   let O : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
     γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) - 3 * ((N / δ : ℕ) * t)
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier (scaleSL γ δ) =
-      (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * cexp (2 * π * I * ((O δ : ℤ) : ℂ) / 24) := by
+      (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
     obtain ⟨h00, h01, h10, h11⟩ := scaleSL_apply_of_eq hδ γ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c (scaleSL γ δ)
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)
-      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h00, h01, h10, h11]
-  have hsum : ∑ δ ∈ N.divisors, r δ * O δ = 24 * (B * ((γ 0 0 + γ 1 1) * t -
-      γ 0 1 * γ 1 1 * N * t ^ 2 - 3 * t) + A * (γ 0 1 * γ 1 1)) := by
+      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h00, h01, h10, h11,
+      e24_def]
+  -- The exponents sum to a multiple of `24`.
+  have hsum : ∑ δ ∈ N.divisors, r δ * O δ ≡ 0 [ZMOD 24] := by
+    refine Int.modEq_zero_iff_dvd.mpr ⟨B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
+      3 * t) + A * (γ 0 1 * γ 1 1), ?_⟩
     rw [sum_mul_oddExp, hA, hB]
     ring
-  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_cexp_zpow,
-    sum_mul_two_pi_I_div, hsum, cexp_twentyFour_mul_eq_one, mul_one,
-    prod_kroneckerSym_div_right hk γ ht ht_pos, symb_eq_prod_of_odd hNo hk hA]
+  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_e24_zpow,
+    e24_congr hsum, e24_zero, mul_one, prod_kroneckerSym_div_right hk γ ht ht_pos,
+    symb_eq_prod_of_odd hNo hk hA]
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0`.** If `c = N t` with `t ≥ 0`, then
 `∏_δ ε(γ_δ) ^ r δ = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ`. -/
@@ -486,21 +419,23 @@ private theorem eq_of_smul_etaQuotient_eq (N : ℕ) (r : ℕ → ℤ) {c c' : �
     (h : (c • fun τ : ℍ ↦ etaQuotient N r τ) = c' • fun τ : ℍ ↦ etaQuotient N r τ) : c = c' :=
   mul_right_cancel₀ (etaQuotient_ne_zero N r UpperHalfPlane.I.im_pos) (congrFun h UpperHalfPlane.I)
 
-/-- A matrix of `Γ₀(N)` with lower row `(N, d)`, for `d` prime to `N`. -/
-private theorem exists_mem_Gamma0_of_isCoprime {N : ℕ} {d : ℤ} (hd : IsCoprime d N) :
-    ∃ γ : SL(2, ℤ), γ ∈ Gamma0 N ∧ γ 1 0 = N ∧ γ 1 1 = d := by
-  obtain ⟨x, y, hxy⟩ := hd
-  refine ⟨.mk !![x, -y; (N : ℤ), d] (by rw [Matrix.det_fin_two_of]; linear_combination hxy),
-    mem_Gamma0_iff_dvd.mpr ?_, ?_, ?_⟩ <;> simp
+/-- `etaQuotient_slash_eq_smul`, with the scalar written as `symb N r k d`. -/
+private theorem etaQuotient_slash_eq_symb_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
+    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) :
+    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ = symb N r k (γ 1 1) • fun τ : ℍ ↦ etaQuotient N r τ :=
+  etaQuotient_slash_eq_smul hk h24 h24' hγ
 
 /-- The Kronecker-symbol value is periodic modulo `N` on integers prime to `N`: two matrices
 `(a b; N d)` and `(a b; N d) Tʲ` of `Γ₀(N)` act on the eta quotient by `χ(d)` and `χ(d + N j)`. -/
-private theorem symb_eq_of_modEq {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+private theorem symb_eq_of_intCast_eq {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {d d' : ℤ}
-    (hd : IsCoprime d N) (h : d ≡ d' [ZMOD N]) : symb N r k d = symb N r k d' := by
-  obtain ⟨γ, hγ, hc, hdγ⟩ := exists_mem_Gamma0_of_isCoprime hd
-  obtain ⟨j, hj⟩ := Int.modEq_iff_dvd.mp h
+    (hd : IsCoprime d N) (h : (d : ZMod N) = d') : symb N r k d = symb N r k d' := by
+  obtain ⟨γ, hc, hdγ⟩ := hd.symm.exists_SL2_row 1
+  have hγ : γ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc])
+  obtain ⟨j, hj⟩ := Int.modEq_iff_dvd.mp ((ZMod.intCast_eq_intCast_iff _ _ _).mp h)
   have hT : T ^ j ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by simp [coe_T_zpow])
   have hγT : γ * T ^ j ∈ Gamma0 N := Subgroup.mul_mem _ hγ hT
   have hlaw := etaQuotient_slash_eq_smul hk h24 h24' hγT
@@ -523,19 +458,19 @@ private theorem symb_mul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {d₁ d₂ : ℤ}
     (h₁ : IsCoprime d₁ N) (h₂ : IsCoprime d₂ N) :
     symb N r k (d₁ * d₂) = symb N r k d₁ * symb N r k d₂ := by
-  obtain ⟨γ₁, hγ₁, hc₁, hd₁⟩ := exists_mem_Gamma0_of_isCoprime h₁
-  obtain ⟨γ₂, hγ₂, -, hd₂⟩ := exists_mem_Gamma0_of_isCoprime h₂
-  have hlaw := etaQuotient_slash_eq_smul hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)
-  rw [SlashAction.slash_mul, etaQuotient_slash_eq_smul hk h24 h24' hγ₁, ModularForm.SL_smul_slash,
-    etaQuotient_slash_eq_smul hk h24 h24' hγ₂, smul_smul] at hlaw
+  obtain ⟨γ₁, hc₁, hd₁⟩ := h₁.symm.exists_SL2_row 1
+  obtain ⟨γ₂, hc₂, hd₂⟩ := h₂.symm.exists_SL2_row 1
+  have hγ₁ : γ₁ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₁])
+  have hγ₂ : γ₂ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₂])
+  have hlaw := etaQuotient_slash_eq_symb_smul hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)
+  rw [SlashAction.slash_mul, etaQuotient_slash_eq_symb_smul hk h24 h24' hγ₁,
+    ModularForm.SL_smul_slash, etaQuotient_slash_eq_symb_smul hk h24 h24' hγ₂, smul_smul] at hlaw
   have h1 := eq_of_smul_etaQuotient_eq N r hlaw
   have h11 : (γ₁ * γ₂) 1 1 = N * γ₂ 0 1 + d₁ * d₂ := by
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two, hc₁, hd₁, hd₂]
-  change symb N r k (γ₁ 1 1) * symb N r k (γ₂ 1 1) = symb N r k ((γ₁ * γ₂) 1 1) at h1
   rw [hd₁, hd₂, h11] at h1
   rw [h1]
-  exact symb_eq_of_modEq hk h24 h24' (h₁.mul_left h₂)
-    (Int.modEq_iff_dvd.mpr ⟨γ₂ 0 1, by ring⟩)
+  exact symb_eq_of_intCast_eq hk h24 h24' (h₁.mul_left h₂) (by simp)
 
 private theorem symb_ne_zero {N : ℕ} (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : IsCoprime d N) :
     symb N r k d ≠ 0 := by
@@ -546,31 +481,25 @@ private theorem symb_ne_zero {N : ℕ} (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd
   exact (hd.symm.of_isCoprime_of_dvd_left
     (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_divisors hδ)))
 
-private theorem isCoprime_val (N : ℕ) (u : (ZMod N)ˣ) : IsCoprime (((u : ZMod N).val : ℕ) : ℤ) N :=
-  Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime u)
-
-private theorem val_modEq {N : ℕ} [NeZero N] (u : (ZMod N)ˣ) {d : ℤ} (hd : (d : ZMod N) = u) :
-    (((u : ZMod N).val : ℕ) : ℤ) ≡ d [ZMOD N] := by
-  rw [← ZMod.intCast_eq_intCast_iff, hd, Int.cast_natCast, ZMod.natCast_zmod_val]
-
 /-- **The character of an eta quotient**: the character `d ↦ ((-1) ^ k ∏_δ δ ^ r δ / d)` modulo
 `N`, under the congruence conditions of `etaQuotient_slash_eq_smul`, which make the Kronecker
 symbol periodic modulo `N` on integers prime to `N`. Its values are `etaQuotientChar_apply`. -/
 noncomputable def etaQuotientChar (N : ℕ) [NeZero N] (r : ℕ → ℤ) (k : ℤ)
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) : (ZMod N)ˣ →* ℂˣ where
-  toFun u := Units.mk0 (symb N r k ((u : ZMod N).val : ℕ)) (symb_ne_zero r k (isCoprime_val N u))
+  toFun u := Units.mk0 (symb N r k ((u : ZMod N).val : ℕ))
+    (symb_ne_zero r k (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime u)))
   map_one' := Units.ext <| by
-    change symb N r k (((1 : (ZMod N)ˣ) : ZMod N).val : ℕ) = 1
-    rw [symb_eq_of_modEq hk h24 h24' (isCoprime_val N 1)
-      (val_modEq 1 (d := 1) (by simp))]
+    rw [Units.val_mk0, symb_eq_of_intCast_eq hk h24 h24'
+      (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime 1)) (d' := 1) (by simp)]
     simp [symb]
   map_mul' u v := Units.ext <| by
-    change symb N r k (((u * v : (ZMod N)ˣ) : ZMod N).val : ℕ) =
-      symb N r k ((u : ZMod N).val : ℕ) * symb N r k ((v : ZMod N).val : ℕ)
-    rw [← symb_mul hk h24 h24' (isCoprime_val N u) (isCoprime_val N v)]
-    exact symb_eq_of_modEq hk h24 h24' (isCoprime_val N (u * v))
-      (val_modEq (u * v) (by push_cast; simp))
+    simp only [Units.val_mul, Units.val_mk0]
+    rw [← symb_mul hk h24 h24'
+      (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime u))
+      (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime v))]
+    exact symb_eq_of_intCast_eq hk h24 h24'
+      (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime (u * v))) (by simp)
 
 /-- The value of the character of an eta quotient at the class of an integer `d` prime to `N`:
 `χ(d) = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ`. -/
@@ -580,7 +509,8 @@ theorem etaQuotientChar_apply {N : ℕ} [NeZero N] {r : ℕ → ℤ} {k : ℤ}
     (hd : (d : ZMod N) = u) :
     (etaQuotientChar N r k hk h24 h24' u : ℂ) =
       (kroneckerSym (-1) d : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ d : ℂ) ^ r δ :=
-  symb_eq_of_modEq hk h24 h24' (isCoprime_val N u) (val_modEq u hd)
+  symb_eq_of_intCast_eq hk h24 h24' (Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime u))
+    (by simp [hd])
 
 /-- **An eta quotient is `χ`-invariant on `Γ₀(N)`** for its character `χ = etaQuotientChar`. -/
 theorem etaQuotient_mem_functionCharSpace {N : ℕ} [NeZero N] {r : ℕ → ℤ} {k : ℤ}
@@ -594,18 +524,6 @@ theorem etaQuotient_mem_functionCharSpace {N : ℕ} [NeZero N] {r : ℕ → ℤ}
       (by rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply])]
 
 /-! ### Eta quotients as modular forms -/
-
-private theorem etaQuotientOrder_nonneg {N : ℕ} [NeZero N] {r : ℕ → ℤ}
-    (hord : ∀ d ∈ N.divisors, 0 ≤ etaQuotientOrder N r d) (c : ℤ) :
-    0 ≤ etaQuotientOrder N r c := by
-  rw [← etaQuotientOrder_gcd]
-  exact hord _ (Nat.mem_divisors.mpr ⟨Nat.gcd_dvd_left _ _, NeZero.ne N⟩)
-
-private theorem etaQuotientOrder_pos {N : ℕ} [NeZero N] {r : ℕ → ℤ}
-    (hord : ∀ d ∈ N.divisors, 0 < etaQuotientOrder N r d) (c : ℤ) :
-    0 < etaQuotientOrder N r c := by
-  rw [← etaQuotientOrder_gcd]
-  exact hord _ (Nat.mem_divisors.mpr ⟨Nat.gcd_dvd_left _ _, NeZero.ne N⟩)
 
 /-- **The eta-quotient criterion, modular forms** (Ono, Theorem 1.64). Under the congruence
 conditions of `etaQuotient_slash_eq_smul`, an eta quotient whose order at every cusp is
@@ -627,7 +545,7 @@ noncomputable def etaQuotientModularForm (N : ℕ) [NeZero N] (r : ℕ → ℤ) 
   bdd_at_cusps' hc := by
     rw [OnePoint.isBoundedAt_iff_forall_SL2Z (hc.mono (Subgroup.map_le_range _ _))]
     exact fun γ _ ↦ (isBoundedAtImInfty_etaQuotient_slash_iff N r hk γ).mpr
-      (etaQuotientOrder_nonneg hord _)
+      ((forall_etaQuotientOrder_iff N r).mpr hord _)
 
 /-- The underlying function of `etaQuotientModularForm` is the eta quotient. -/
 @[simp]
@@ -647,7 +565,7 @@ theorem etaQuotientModularForm_mem_modFormCharSpace (N : ℕ) [NeZero N] (r : �
       modFormCharSpace k (etaQuotientChar N r k hk h24 h24') :=
   (coe_mem_functionCharSpace_iff _ _ _).mp (etaQuotient_mem_functionCharSpace hk h24 h24')
 
-/-- **The eta-quotient criterion, cusp forms** (Ono, Theorem 1.65). Under the congruence
+/-- **The eta-quotient criterion, cusp forms** (Ono, Theorem 1.64). Under the congruence
 conditions of `etaQuotient_slash_eq_smul`, an eta quotient whose order at every cusp is positive
 is a cusp form of weight `k` on `Γ₁(N)`; it lies in `S_k(N, χ)` for its character
 `χ = etaQuotientChar` (`etaQuotientCuspForm_mem_cuspFormCharSpace`). -/
@@ -665,7 +583,7 @@ noncomputable def etaQuotientCuspForm (N : ℕ) [NeZero N] (r : ℕ → ℤ) (k 
   zero_at_cusps' hc := by
     rw [OnePoint.isZeroAt_iff_forall_SL2Z (hc.mono (Subgroup.map_le_range _ _))]
     exact fun γ _ ↦ (isZeroAtImInfty_etaQuotient_slash_iff N r hk γ).mpr
-      (etaQuotientOrder_pos hord _)
+      ((forall_etaQuotientOrder_iff N r).mpr hord _)
 
 /-- The underlying function of `etaQuotientCuspForm` is the eta quotient. -/
 @[simp]
