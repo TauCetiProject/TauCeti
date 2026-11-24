@@ -24,7 +24,7 @@ path `[f₁, …, fₙ]` to the left-associated composite `(⋯(f₁ ≫ f₂) �
 Since composition in `B` is associative and unital only up to the associators and unitors, the
 evaluation of `p.comp q` is in general not equal to `p.eval ≫ q.eval`. Instead there is a
 canonical isomorphism `Quiver.Path.evalComp p q : (p.comp q).eval ≅ p.eval ≫ q.eval`, built from
-associators and left unitors. An empty right factor gives the inverse right unitor, an empty left
+associators and unitors. An empty right factor gives the inverse right unitor, an empty left
 factor gives the inverse left unitor, and on three paths the comparisons agree with the
 associator of `B` (`Quiver.Path.evalComp_assoc_hom`); since the paths `(p.comp q).comp r` and
 `p.comp (q.comp r)` are equal but not definitionally so, this is stated with an `eqToHom`.
@@ -172,20 +172,13 @@ lemma evalComp_assoc_hom (p : Path a b) (q : Path b c) : ∀ {d : B} (r : Path c
     -- `(p.comp q).comp nil` and `p.comp (q.comp nil)` are both `p.comp q` by definition.
     exact ((Category.id_comp _).trans (by simp)).symm
   | _, cons r f => by
-    -- Both `eqToHom`s compare `((p.comp q).comp r).cons f` with `(p.comp (q.comp r)).cons f`.
-    have e : eqToHom (congrArg eval (comp_assoc p q (r.cons f))) =
-        eqToHom (congrArg (fun P => (P.cons f).eval) (comp_assoc p q r)) := rfl
-    rw [e]
-    dsimp only [comp_cons]
-    simp only [evalComp_cons, Iso.trans_hom, whiskerRightIso_hom, whiskerLeftIso_hom,
-      Iso.symm_hom, Category.assoc]
-    -- Move `(p.comp q).evalComp r` next to `p.evalComp q` and apply the inductive hypothesis.
-    rw [whisker_exchange_assoc, associator_naturality_right, ← associator_naturality_left_assoc,
-      ← pentagon_assoc, ← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc, Category.assoc,
-      evalComp_assoc_hom p q r, evalCons_hom_congr (comp_assoc p q r) f]
-    simp only [Category.assoc, comp_whiskerRight, eqToHom_whiskerRight, eqToHom_trans_assoc,
-      eqToHom_refl, Category.id_comp, cancel_epi, whiskerLeft_comp, whiskerLeft_inv_hom_assoc]
-    bicategory
+    -- The inductive hypothesis, solved for `((p.comp q).evalComp r).hom`.
+    have ih : (evalComp (p.comp q) r).hom = eqToHom (congrArg eval (comp_assoc p q r)) ≫
+        (evalComp p (q.comp r)).hom ≫ p.eval ◁ (evalComp q r).hom ≫ (α_ _ _ _).inv ≫
+          (evalComp p q).inv ▷ r.eval := by
+      rw [← cancel_mono ((evalComp p q).hom ▷ r.eval ≫ (α_ _ _ _).hom), evalComp_assoc_hom p q r]
+      simp
+    simp [evalComp_cons, whisker_exchange_assoc, ih, evalCons_hom_congr (comp_assoc p q r) f]
 
 /-- The comparison for `(p.comp q).comp r`, expressed through those for `p.comp (q.comp r)`. -/
 lemma comp_evalComp_hom (p : Path a b) (q : Path b c) (r : Path c d) :
