@@ -29,8 +29,8 @@ isotypic module is identified with its image acting on a single summand.
   of `ker f`.
 * `TauCeti.UniversalEnvelopingAlgebra.ker_representation_le_of_surjective`: the annihilator of a
   Lie module annihilates every quotient.
-* `TauCeti.UniversalEnvelopingAlgebra.ker_representation_eq_of_lieModuleEquiv`: isomorphic Lie
-  modules have the same annihilator in `U(L)`.
+* `LieModuleEquiv.ker_representation_eq`: isomorphic Lie modules have the same annihilator in
+  `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ker_representation_directSum`: the annihilator of a direct
   sum is the intersection of the annihilators of the summands.
 -/
@@ -107,7 +107,7 @@ theorem ker_representation_le_of_surjective {f : V →ₗ⁅R,L⁆ W} (hf : Func
   rw [← map_representation, hu, LinearMap.zero_apply, map_zero, LinearMap.zero_apply]
 
 /-- **Isomorphic Lie modules have the same annihilator in the enveloping algebra.** -/
-theorem ker_representation_eq_of_lieModuleEquiv (e : V ≃ₗ⁅R,L⁆ W) :
+theorem _root_.LieModuleEquiv.ker_representation_eq (e : V ≃ₗ⁅R,L⁆ W) :
     RingHom.ker (representation R L V) = RingHom.ker (representation R L W) :=
   le_antisymm (ker_representation_le_of_surjective (f := e.toLieModuleHom) e.surjective)
     (ker_representation_le_of_surjective (f := e.symm.toLieModuleHom) e.symm.surjective)

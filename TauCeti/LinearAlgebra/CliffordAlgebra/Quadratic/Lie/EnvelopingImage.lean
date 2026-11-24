@@ -10,11 +10,9 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Range
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Commutator
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Isotypic
 
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Algebra.Lie.CartanExists
 import TauCeti.Algebra.Lie.HighestWeight.AbsoluteIrreducibility
 import TauCeti.Algebra.Lie.HighestWeight.Weyl.Dimension
-import TauCeti.Algebra.Lie.Weights.Dimension
 import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
@@ -58,10 +56,6 @@ Clifford algebra of the primitive invariants and lies in the commutant of `A`.
 * `CliffordAlgebra.mem_centralizer_adjointEnvelopingImage_iff` and
   `CliffordAlgebra.mem_centralizer_adjointEnvelopingImage_iff_mem_maxTrivSubmodule`: the commutant
   of `A` consists of the invariants of the commutator action.
-* `CliffordAlgebra.representation_kostant_apply`: `U(L)` acts on Kostant's module by left
-  multiplication by its image in `A`.
-* `CliffordAlgebra.ker_lift_adjointCliffordHom_eq_ker_representation_kostant`: the kernel of
-  `U(L) → A` is the annihilator of Kostant's module.
 * `CliffordAlgebra.ker_lift_adjointCliffordHom_eq_ker_representation_irreducibleQuotient`: the
   kernel of `U(L) → A` is the annihilator of `L(ρ)`.
 * `CliffordAlgebra.adjointEnvelopingImageEquivEnd_apply`: the isomorphism `A ≃ End(L(ρ))` sends the
@@ -84,8 +78,7 @@ universe u v
 
 open TauCeti TauCeti.LieAlgebra LieAlgebra LieModule Module
 open TauCeti.UniversalEnvelopingAlgebra (representation range_lift_eq_adjoin
-  range_lift_le_iff mem_centralizer_range_lift_iff ker_representation_eq_of_lieModuleEquiv
-  ker_representation_directSum)
+  range_lift_le_iff mem_centralizer_range_lift_iff ker_representation_directSum)
 open scoped DirectSum
 
 namespace CliffordAlgebra
@@ -180,33 +173,6 @@ section Kostant
 variable {K : Type u} [Field K] {L : Type v} [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [Invertible (2 : K)] [_root_.LieAlgebra.IsKilling K L]
 
-/-- **The enveloping algebra acts on Kostant's module by left multiplication** by its image in the
-Clifford algebra. -/
-@[simp]
-theorem representation_kostant_apply (u : _root_.UniversalEnvelopingAlgebra K L)
-    (c : CliffordAlgebra (killingQuadraticForm K L)) :
-    representation K L (CliffordAlgebra (killingQuadraticForm K L)) u c =
-      _root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) u * c := by
-  have h : representation K L (CliffordAlgebra (killingQuadraticForm K L)) =
-      (Algebra.lmul K _).comp
-        (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L)) := by
-    apply _root_.UniversalEnvelopingAlgebra.hom_ext
-    ext x c
-    simp [kostant_lie_def]
-  rw [h, AlgHom.comp_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
-
-/-- **The kernel of `U(L) → Cl(L, κ)` is the annihilator of Kostant's module.** -/
-theorem ker_lift_adjointCliffordHom_eq_ker_representation_kostant :
-    RingHom.ker (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L)) =
-      RingHom.ker (representation K L (CliffordAlgebra (killingQuadraticForm K L))) := by
-  ext u
-  simp only [RingHom.mem_ker]
-  refine ⟨fun hu ↦ LinearMap.ext fun c ↦ by rw [representation_kostant_apply, hu, zero_mul,
-    LinearMap.zero_apply], fun hu ↦ ?_⟩
-  -- Acting on `1` recovers the image of `u`.
-  rw [← mul_one (_root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) u),
-    ← representation_kostant_apply, hu, LinearMap.zero_apply]
-
 variable [CharZero K] [IsAlgClosed K] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   (base : (IsKilling.rootSystem H).Base)
 
@@ -220,7 +186,7 @@ theorem ker_lift_adjointCliffordHom_eq_ker_representation_irreducibleQuotient :
   have : Nonempty (Fin (2 ^ ((finrank K L + LieAlgebra.rank K L) / 2))) :=
     ⟨⟨0, Nat.two_pow_pos _⟩⟩
   rw [ker_lift_adjointCliffordHom_eq_ker_representation_kostant,
-    ker_representation_eq_of_lieModuleEquiv e, ker_representation_directSum, iInf_const]
+    e.ker_representation_eq, ker_representation_directSum, iInf_const]
 
 /-- **Kostant's identification `A ≃ End(L(ρ))`.** The image of the enveloping algebra in the
 Clifford algebra of the Killing form is isomorphic, as an algebra, to the algebra of linear
@@ -266,18 +232,6 @@ theorem coe_adjointEnvelopingImageEquivEnd_symm_representation
       _root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) u := by
   rw [← adjointEnvelopingImageEquivEnd_apply base u, AlgEquiv.symm_apply_apply]
 
-/-- `L(ρ)` has dimension `2 ^ ((d - l) / 2)` with `d - l` even, so its endomorphism algebra has
-dimension `2 ^ (d - l)`. -/
-private theorem finrank_end_irreducibleQuotient_weylVector :
-    finrank K (Module.End K (irreducibleQuotient base (weylVector (IsKilling.rootSystem H) base))) =
-      2 ^ (finrank K L - LieAlgebra.rank K L) := by
-  have := finiteDimensional_irreducibleQuotient_weylVector base
-  have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H base
-  rw [Module.finrank_linearMap, finrank_irreducibleQuotient_weylVector, ← pow_add,
-    H.rank_eq_finrank_cartan]
-  congr 1
-  omega
-
 end Kostant
 
 section Dimension
@@ -291,7 +245,7 @@ theorem finrank_adjointEnvelopingImage :
     finrank K (adjointEnvelopingImage K L) = 2 ^ (finrank K L - LieAlgebra.rank K L) := by
   obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base K L
   rw [(adjointEnvelopingImageEquivEnd b).toLinearEquiv.finrank_eq,
-    finrank_end_irreducibleQuotient_weylVector]
+    finrank_end_irreducibleQuotient_weylVector b]
 
 variable {K L} in
 /-- **In dimension three the image of the enveloping algebra has dimension four**, half of the
