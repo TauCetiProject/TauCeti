@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.NumberOperator
 
 /-!
@@ -42,10 +44,11 @@ the orthonormal bases `b` and `J b`, give `(1/2) (2n - k - k) = n - k`.
 ## Main results
 
 * `contractLeft_kahlerForm_mul`: `ι_u (ω ∧ x) = J u ∧ x + ω ∧ ι_u x` in the exterior algebra.
-* `dualLefschetz_eq_sum`: `Λ = (1/2) ∑ᵢ ι_{J bᵢ} ι_{bᵢ}` for the standard orthonormal basis.
+* `dualLefschetz_eq_sum`: `Λ = (1/2) ∑ᵢ ι_{J bᵢ} ι_{bᵢ}` for every orthonormal basis `b`.
 * `dualLefschetz_lefschetz_sub_lefschetz_dualLefschetz`: `[Λ, L] = (n - k) Id` on `⋀ᵏ V` for
   `k ≥ 2`, and `dualLefschetz_lefschetz_of_lt_two`: `Λ L = (n - k) Id` on `⋀ᵏ V` for `k < 2`.
-* `dualLefschetz_kahlerForm`: `Λ ω = n`.
+* `zeroEquiv_dualLefschetz_zero`: on two-vectors, `Λ y = ⟪ω, y⟫` in degree zero, and
+  `dualLefschetz_kahlerForm`: `Λ ω = n`.
 
 ## References
 
@@ -66,14 +69,6 @@ namespace TauCeti.AlmostComplexStructure
 
 variable (J : AlmostComplexStructure V)
 
-/-- The Kähler two-vector in the exterior algebra: `ω = (1/2) ∑ᵢ bᵢ ∧ J bᵢ` for the standard
-orthonormal basis `b`. -/
-theorem coe_kahlerForm :
-    (J.kahlerForm : ExteriorAlgebra ℝ V) = (2⁻¹ : ℝ) • ∑ i,
-      ExteriorAlgebra.ι ℝ (stdOrthonormalBasis ℝ V i) *
-        ExteriorAlgebra.ι ℝ (J (stdOrthonormalBasis ℝ V i)) := by
-  simp [kahlerForm_def, ExteriorAlgebra.ιMulti_apply]
-
 /-! ### The Lefschetz operator and its adjoint -/
 
 /-- The **Lefschetz operator** `L = ω ∧ ·` of an almost complex structure `J` on a real inner
@@ -82,7 +77,7 @@ exterior power to the `(k + 2)`-th. Mathlib's `exteriorPower.wedge ℝ V 2 k ω`
 with values in degree `2 + k`, which is not definitionally `k + 2`. -/
 def lefschetz (k : ℕ) : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^(k + 2) V :=
   (LinearMap.mulLeft ℝ (J.kahlerForm : ExteriorAlgebra ℝ V)).restrict fun _ hx ↦
-    add_comm 2 k ▸ SetLike.mul_mem_graded J.kahlerForm.2 hx
+    add_comm 2 k ▸ SetLike.mul_mem_graded J.kahlerForm.property hx
 
 /-- The Lefschetz operator is left multiplication by `ω` in the exterior algebra. -/
 @[simp]
@@ -97,6 +92,11 @@ def dualLefschetz (k : ℕ) : ⋀[ℝ]^(k + 2) V →ₗ[ℝ] ⋀[ℝ]^k V :=
 
 /-- The dual Lefschetz operator is the adjoint of the Lefschetz operator. -/
 theorem dualLefschetz_def (k : ℕ) : J.dualLefschetz k = LinearMap.adjoint (J.lefschetz k) :=
+  (rfl)
+
+/-- The adjoint of the Lefschetz operator is the dual Lefschetz operator. -/
+@[simp]
+theorem adjoint_lefschetz (k : ℕ) : LinearMap.adjoint (J.lefschetz k) = J.dualLefschetz k :=
   (rfl)
 
 /-- The adjoint of the dual Lefschetz operator is the Lefschetz operator. -/
@@ -114,30 +114,35 @@ theorem inner_dualLefschetz_left (k : ℕ) (y : ⋀[ℝ]^(k + 2) V) (x : ⋀[ℝ
     ⟪J.dualLefschetz k y, x⟫ = ⟪y, J.lefschetz k x⟫ :=
   LinearMap.adjoint_inner_left _ x y
 
-/-- The Lefschetz operator in the standard orthonormal basis `b`:
+section Basis
+
+variable {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+
+/-- The Lefschetz operator in an orthonormal basis `b`:
 `L = (1/2) ∑ᵢ ε_{bᵢ} ε_{J bᵢ}`, with `ε_u` exterior multiplication by `u`. -/
 theorem lefschetz_eq_sum (k : ℕ) :
     J.lefschetz k = (2⁻¹ : ℝ) • ∑ i,
-      ExteriorAlgebra.wedgeLeft (stdOrthonormalBasis ℝ V i) (k + 1) ∘ₗ
-        ExteriorAlgebra.wedgeLeft (J (stdOrthonormalBasis ℝ V i)) k := by
+      ExteriorAlgebra.wedgeLeft (b i) (k + 1) ∘ₗ ExteriorAlgebra.wedgeLeft (J (b i)) k := by
   refine LinearMap.ext fun x ↦ Subtype.ext ?_
-  simp [coe_kahlerForm, Finset.sum_mul, mul_assoc]
+  simp [coe_kahlerForm J b, Finset.sum_mul, mul_assoc]
 
-/-- The dual Lefschetz operator in the standard orthonormal basis `b`:
+/-- The dual Lefschetz operator in an orthonormal basis `b`:
 `Λ = (1/2) ∑ᵢ ι_{J bᵢ} ι_{bᵢ}`, with `ι_u` the contraction by `⟪u, ·⟫`. -/
 theorem dualLefschetz_eq_sum (k : ℕ) :
     J.dualLefschetz k = (2⁻¹ : ℝ) • ∑ i,
-      koszulDifferential (innerₗ V (J (stdOrthonormalBasis ℝ V i))) k ∘ₗ
-        koszulDifferential (innerₗ V (stdOrthonormalBasis ℝ V i)) (k + 1) := by
-  simp [dualLefschetz_def, lefschetz_eq_sum, map_sum, LinearMap.adjoint_comp, adjoint_wedgeLeft]
+      koszulDifferential (innerₗ V (J (b i))) k ∘ₗ koszulDifferential (innerₗ V (b i)) (k + 1) := by
+  rw [dualLefschetz_def, lefschetz_eq_sum J b]
+  simp [map_sum, LinearMap.adjoint_comp, adjoint_wedgeLeft]
 
-/-- The dual Lefschetz operator in the exterior algebra, in the standard orthonormal basis `b`:
+/-- The dual Lefschetz operator in the exterior algebra, in an orthonormal basis `b`:
 `Λ y = (1/2) ∑ᵢ ι_{J bᵢ} ι_{bᵢ} y`. -/
 theorem coe_dualLefschetz_apply (k : ℕ) (y : ⋀[ℝ]^(k + 2) V) :
     (J.dualLefschetz k y : ExteriorAlgebra ℝ V) = (2⁻¹ : ℝ) • ∑ i,
-      contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V (J (stdOrthonormalBasis ℝ V i)))
-        (contractLeft (innerₗ V (stdOrthonormalBasis ℝ V i)) y) := by
-  simp [dualLefschetz_eq_sum]
+      contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V (J (b i)))
+        (contractLeft (innerₗ V (b i)) y) := by
+  simp [dualLefschetz_eq_sum J b]
+
+end Basis
 
 /-- The Lefschetz operator sends `1 ∈ ⋀⁰ V` to the Kähler two-vector `ω`. -/
 @[simp]
@@ -145,6 +150,18 @@ theorem lefschetz_zero_ιMulti (v : Fin 0 → V) :
     J.lefschetz 0 (ιMulti ℝ 0 v) = J.kahlerForm := by
   ext
   simp [ExteriorAlgebra.ιMulti_apply]
+
+/-- In degree zero the dual Lefschetz operator is the inner product with the Kähler two-vector:
+`Λ y = ⟪ω, y⟫` for `y ∈ ⋀² V`, under `⋀⁰ V ≃ ℝ`. -/
+@[simp]
+theorem zeroEquiv_dualLefschetz_zero (y : ⋀[ℝ]^2 V) :
+    zeroEquiv ℝ V (J.dualLefschetz 0 y) = ⟪J.kahlerForm, y⟫ := by
+  have h : J.dualLefschetz 0 y =
+      zeroEquiv ℝ V (J.dualLefschetz 0 y) • ιMulti ℝ 0 (Fin.elim0 : Fin 0 → V) :=
+    ((zeroEquiv ℝ V).symm_apply_apply _).symm
+  have hinner := inner_dualLefschetz_left J 0 y (ιMulti ℝ 0 Fin.elim0)
+  rw [lefschetz_zero_ιMulti, h, real_inner_smul_left, inner_ιMulti_ιMulti] at hinner
+  simpa [real_inner_comm] using hinner
 
 /-! ### The commutator `[Λ, L]` -/
 
@@ -159,43 +176,9 @@ theorem contractLeft_kahlerForm_mul (u : V) (x : ExteriorAlgebra ℝ V) :
     contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u) (J.kahlerForm * x) =
       ExteriorAlgebra.ι ℝ (J u) * x +
         J.kahlerForm * contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u) x := by
-  set b := stdOrthonormalBasis ℝ V
-  -- Contracting `bᵢ ∧ J bᵢ ∧ x` produces the two terms `⟪u, bᵢ⟫ J bᵢ ∧ x` and
-  -- `-⟪u, J bᵢ⟫ bᵢ ∧ x`, and each sums to `J u ∧ x` over the basis.
-  have h₁ : ∑ i, ⟪u, b i⟫ • ExteriorAlgebra.ι ℝ (J (b i)) = ExteriorAlgebra.ι ℝ (J u) := by
-    have : ∑ i, ⟪u, b i⟫ • J (b i) = J u := by
-      conv_rhs => rw [← b.sum_repr' u]
-      simp [real_inner_comm u]
-    rw [← this, map_sum]
-    simp
-  have h₂ : ∑ i, ⟪u, J (b i)⟫ • ExteriorAlgebra.ι ℝ (b i) = -ExteriorAlgebra.ι ℝ (J u) := by
-    have : ∑ i, ⟪u, J (b i)⟫ • b i = -J u := by
-      conv_rhs => rw [← b.sum_repr' (-J u)]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [inner_neg_right, real_inner_comm, inner_apply_left hJ]
-    rw [← map_neg, ← this, map_sum]
-    simp
-  have hx (i) : contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u)
-      (ExteriorAlgebra.ι ℝ (b i) * ExteriorAlgebra.ι ℝ (J (b i)) * x) =
-      ⟪u, b i⟫ • (ExteriorAlgebra.ι ℝ (J (b i)) * x) -
-        ⟪u, J (b i)⟫ • (ExteriorAlgebra.ι ℝ (b i) * x) +
-        ExteriorAlgebra.ι ℝ (b i) * ExteriorAlgebra.ι ℝ (J (b i)) *
-          contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u) x := by
-    rw [mul_assoc, contractLeft_ι_mul, contractLeft_ι_mul, mul_sub, mul_smul_comm, mul_assoc]
-    simp only [innerₗ_apply_apply]
-    abel
-  have h₁' : ∑ i, ⟪u, b i⟫ • (ExteriorAlgebra.ι ℝ (J (b i)) * x) =
-      ExteriorAlgebra.ι ℝ (J u) * x := by
-    simp_rw [← h₁, Finset.sum_mul, smul_mul_assoc]
-  have h₂' : ∑ i, ⟪u, J (b i)⟫ • (ExteriorAlgebra.ι ℝ (b i) * x) =
-      -(ExteriorAlgebra.ι ℝ (J u) * x) := by
-    simp_rw [← neg_mul, ← h₂, Finset.sum_mul, smul_mul_assoc]
-  have hω (y : ExteriorAlgebra ℝ V) : (J.kahlerForm : ExteriorAlgebra ℝ V) * y =
-      (2⁻¹ : ℝ) • ∑ i, ExteriorAlgebra.ι ℝ (b i) * ExteriorAlgebra.ι ℝ (J (b i)) * y := by
-    rw [coe_kahlerForm, smul_mul_assoc, Finset.sum_mul]
-  rw [hω x, hω, map_smul, map_sum, Finset.sum_congr rfl fun i _ ↦ hx i, Finset.sum_add_distrib,
-    Finset.sum_sub_distrib, h₁', h₂']
-  module
+  rw [contractLeft_mul, contractLeft_kahlerForm hJ,
+    ExteriorAlgebra.involute_of_mem_exteriorPower J.kahlerForm.property]
+  simp
 
 /-- The commutator `[Λ, L]` in the exterior algebra, before the number operators are evaluated:
 with `b` the standard orthonormal basis,
@@ -224,13 +207,9 @@ private theorem sum_contractLeft_contractLeft_kahlerForm_mul (x : ExteriorAlgebr
           contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V (J (b i))) x +
         J.kahlerForm * contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V (J (b i)))
           (contractLeft (innerₗ V (b i)) x) := by
-    rw [contractLeft_kahlerForm_mul hJ, map_add, contractLeft_ι_mul,
-      contractLeft_kahlerForm_mul hJ, apply_apply, map_neg]
-    simp only [innerₗ_apply_apply, hJ, b.inner_eq_one, one_smul, neg_mul]
+    simp [contractLeft_kahlerForm_mul hJ, contractLeft_ι_mul, hJ]
     abel
-  rw [Finset.sum_congr rfl fun i _ ↦ h i, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-    Finset.sum_sub_distrib, Finset.mul_sum, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-    Nat.cast_smul_eq_nsmul]
+  simp [h, Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.mul_sum, Nat.cast_smul_eq_nsmul]
 
 /-- **The commutator of the dual Lefschetz and Lefschetz operators** in the exterior algebra: for
 `x ∈ ⋀ᵏ V` and `Λₐ = (1/2) ∑ᵢ ι_{J bᵢ} ι_{bᵢ}`, `Λₐ (ω ∧ x) - ω ∧ Λₐ x = (n - k) x` with
@@ -262,7 +241,8 @@ theorem dualLefschetz_lefschetz_sub_lefschetz_dualLefschetz (k : ℕ) (x : ⋀[�
     J.dualLefschetz (k + 2) (J.lefschetz (k + 2) x) - J.lefschetz k (J.dualLefschetz k x) =
       ((finrank ℝ V : ℝ) / 2 - (k + 2)) • x := by
   ext
-  simpa [coe_dualLefschetz_apply] using commutator_of_mem hJ x.2
+  simpa [coe_dualLefschetz_apply (b := stdOrthonormalBasis ℝ V)] using
+    commutator_of_mem hJ x.property
 
 /-- **`Λ L = (n - k) Id` on `⋀ᵏ V`** for `k < 2`, where `dim V = 2n`: in these degrees `Λ`
 vanishes, so the commutator `[Λ, L]` is `Λ L`. -/
@@ -272,17 +252,18 @@ theorem dualLefschetz_lefschetz_of_lt_two {k : ℕ} (hk : k < 2) (x : ⋀[ℝ]^k
   have h (u w : V) : contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u)
       (contractLeft (innerₗ V w) (x : ExteriorAlgebra ℝ V)) = 0 := by
     obtain _ | _ | k := k
-    · rw [ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _ x.2, map_zero]
+    · rw [ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _ x.property, map_zero]
     · exact ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _
-        (ExteriorAlgebra.contractLeft_mem_exteriorPower _ x.2)
+        (ExteriorAlgebra.contractLeft_mem_exteriorPower _ x.property)
     · omega
   ext
-  simpa [coe_dualLefschetz_apply, h] using commutator_of_mem hJ x.2
+  simpa [coe_dualLefschetz_apply (b := stdOrthonormalBasis ℝ V), h] using
+    commutator_of_mem hJ x.property
 
 /-- **`Λ ω = n`**, where `dim V = 2n`: the dual Lefschetz operator sends the Kähler two-vector to
-`n` times `1 ∈ ⋀⁰ V`. -/
-theorem dualLefschetz_kahlerForm (v : Fin 0 → V) :
-    J.dualLefschetz 0 J.kahlerForm = ((finrank ℝ V : ℝ) / 2) • ιMulti ℝ 0 v := by
-  simpa using dualLefschetz_lefschetz_of_lt_two hJ two_pos (ιMulti ℝ 0 v)
+`n` under `⋀⁰ V ≃ ℝ`. -/
+theorem dualLefschetz_kahlerForm :
+    zeroEquiv ℝ V (J.dualLefschetz 0 J.kahlerForm) = (finrank ℝ V : ℝ) / 2 := by
+  rw [zeroEquiv_dualLefschetz_zero, inner_kahlerForm_self hJ]
 
 end TauCeti.AlmostComplexStructure
