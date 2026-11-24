@@ -37,6 +37,9 @@ the push-forward `TauCeti.cubicalChainSumMap` of the direct sums of chains.
 * `TauCeti.cubicalChainDGAlgHom_apply`: the induced morphism is the push-forward of chains.
 * `TauCeti.cubicalChainDGAlgHom_id`, `TauCeti.cubicalChainDGAlgHom_comp`: functoriality.
 * `TauCeti.cubicalChainAugmentation_comp_dgAlgHom`: compatibility with the augmentations.
+* `TauCeti.cubicalChainDGAlgHom_cubicalChainPoint`,
+  `TauCeti.cubicalChainAugmentation_cubicalChainPoint`: the induced morphism sends `[g]` to
+  `[φ g]`, and `[g]` has augmentation one.
 
 ## References
 
@@ -124,6 +127,13 @@ theorem cubicalChainDGAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCu
 theorem cubicalChainDGAlgHom_apply (φ : G →ₜ* G') (a : normalizedCubicalChainAlgebra G R) :
     cubicalChainDGAlgHom R φ a = cubicalChainSumMap R φ.toContinuousMap a :=
   LinearMap.congr_fun (cubicalChainAlgHom_toLinearMap φ) a
+
+/-- The induced DG algebra morphism sends the point chain `[g]` to `[φ g]`. -/
+@[simp]
+theorem cubicalChainDGAlgHom_cubicalChainPoint (φ : G →ₜ* G') (g : G) :
+    cubicalChainDGAlgHom R φ (cubicalChainPoint G R g) = cubicalChainPoint G' R (φ g) := by
+  rw [cubicalChainDGAlgHom_apply, cubicalChainSumMap_cubicalChainPoint,
+    ContinuousMonoidHom.coe_toContinuousMap, ContinuousMap.coe_ofClass]
 
 /-- Two DG algebra morphisms out of `C^□_*(G; R)` agree if they agree on chains of each
 dimension. -/
@@ -248,6 +258,13 @@ def cubicalChainAugmentation : DGAlgAugmentation (cubicalChain_isDGAlgebra G R) 
 theorem cubicalChainAugmentation_lof (n : ℕ) (y : NormalizedCubicalChain G R n) :
     cubicalChainAugmentation G R (cubicalChainLof G R n y) = cubicalChainAugmentLof G R n y :=
   cubicalChainAugmentAlgHom_lof n y
+
+/-- The point chain `[g]` has augmentation one. -/
+@[simp]
+theorem cubicalChainAugmentation_cubicalChainPoint (g : G) :
+    cubicalChainAugmentation G R (cubicalChainPoint G R g) = 1 := by
+  rw [cubicalChainPoint_def, cubicalChainAugmentation_lof, cubicalChainAugmentLof_zero,
+    augment_ofCube]
 
 /-- The morphisms induced by continuous monoid homomorphisms are compatible with the
 augmentations. -/
