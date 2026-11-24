@@ -52,15 +52,16 @@ def rootsOfUnityResidueEquiv (hm : IsUnit (m : 𝒪[K])) :
 theorem coe_rootsOfUnityResidueEquiv_apply [NeZero m] (hm : IsUnit (m : 𝒪[K]))
     (ζ : rootsOfUnity m K) :
     ((rootsOfUnityResidueEquiv hm ζ : 𝓀[K]ˣ) : 𝓀[K]) =
-      residue 𝒪[K] (((rootsOfUnityMulEquiv 𝒪[K] K m).symm ζ : 𝒪[K]ˣ) : 𝒪[K]) :=
-  coe_rootsOfUnityEquivResidueField hm _
+      residue 𝒪[K] (((rootsOfUnityMulEquiv 𝒪[K] K m).symm ζ : 𝒪[K]ˣ) : 𝒪[K]) := by
+  rw [rootsOfUnityResidueEquiv, MulEquiv.trans_apply, coe_rootsOfUnityEquivResidueField]
 
 /-- `rootsOfUnityResidueEquiv` is reduction: the image of a root of unity `ζ` of `K`, which lies in
 `𝒪[K]`, is its residue. -/
 theorem coe_rootsOfUnityResidueEquiv_apply_of_coe_eq (hm : IsUnit (m : 𝒪[K]))
     (ζ : rootsOfUnity m K) {x : 𝒪[K]} (hx : (x : K) = ((ζ : Kˣ) : K)) :
     ((rootsOfUnityResidueEquiv hm ζ : 𝓀[K]ˣ) : 𝓀[K]) = residue 𝒪[K] x := by
-  rw [rootsOfUnityResidueEquiv, MulEquiv.trans_apply, coe_rootsOfUnityEquivResidueField]
+  have : NeZero m := ⟨by rintro rfl; simp at hm⟩
+  rw [coe_rootsOfUnityResidueEquiv_apply]
   congr 1
   refine FaithfulSMul.algebraMap_injective 𝒪[K] K ?_
   rw [algebraMap_rootsOfUnityMulEquiv_symm_apply, ← hx]
