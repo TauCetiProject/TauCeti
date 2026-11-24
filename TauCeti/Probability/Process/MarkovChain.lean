@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
-public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 public import Mathlib.Probability.HasLaw
 
@@ -499,9 +498,10 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
       exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop)
         (h₀.trans (markovChainLaw_map_eval_zero ν κ).symm)
     | succ n ih =>
-      rw [MeasureTheory.prefix_succ_eq_finSnoc_comp (n + 1)]
-      refine map_comp_eq_of_map_eq (MeasureTheory.measurable_finSnoc (n + 1)) (by fun_prop) ?_
-      rw [hstep, ih, markovChainLaw_map_prefix_succ_eq_compProd]
+      have hX (ρ : Measure (ℕ → α)) (k : ℕ) : AEMeasurable (fun x : ℕ → α => x k) ρ :=
+        (measurable_pi_apply k).aemeasurable
+      rw [← map_finSnoc_map_prefix_eval μ (hX μ), ← map_finSnoc_map_prefix_eval _ (hX _), hstep,
+        ih, markovChainLaw_map_prefix_succ_eq_compProd]
   -- Every prefix law is a pushforward of one of these, so finite-marginal uniqueness applies.
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hc : prefixProj α n = (fun (w : Fin (n + 1) → α) (i : Fin n) => w i.castSucc) ∘

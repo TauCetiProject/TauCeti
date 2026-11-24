@@ -99,17 +99,6 @@ private theorem map_prefix_fst_succ (n : ℕ) (hA : ActionGivenStates ν τ ρ n
     (ρ.comap (fun w : Fin (n + 1) → α ↦ w (Fin.last n)) hlast) _ (by rw [hprefix, hprefixF, hA]),
     hprefixF, ← Kernel.comap_compProd, Kernel.snd_comap]
 
-/-- The law of the states up to time `n + 1` is the law of the states up to time `n` and the state
-at time `n + 1`, read as one prefix. -/
-private theorem map_prefix_fst_snoc (μ : Measure (ℕ → α × β)) (n : ℕ) :
-    (μ.map fun x ↦ ((fun i : Fin (n + 1) ↦ (x i).1), (x (n + 1)).1)).map
-        (fun p ↦ (Fin.snoc p.1 p.2 : Fin (n + 2) → α)) =
-      μ.map fun x (i : Fin (n + 2)) ↦ (x i).1 := by
-  rw [Measure.map_map (MeasureTheory.measurable_finSnoc (n + 1)) (by fun_prop)]
-  congr 1
-  funext x
-  exact (congrFun (MeasureTheory.prefix_succ_eq_finSnoc_comp (n + 1)) fun k ↦ (x k).1).symm
-
 /-- If, given the states up to time `n`, the action at time `n` has law `ρ` at the state at time
 `n`, then, given the same states, the state at time `n + 1` has law `(ρ ⊗ₖ τ).snd` at the state
 at time `n`. -/
@@ -184,7 +173,8 @@ private theorem map_prefix_succ_eq_compProd (n : ℕ) (hA : ActionGivenStates ν
         rw [Measure.map_prodMap_compProd_comap _ _ (hF.prodMap measurable_id),
           map_prefix_fst_succ ν τ ρ n hA, map_prefix_fst_succ_eq_compProd ν τ ρ n hA]
     _ = _ := by
-        rw [← hρ, Measure.map_prodMap_compProd_comap _ _ hsnoc, ← map_prefix_fst_snoc]
+        rw [← hρ, Measure.map_prodMap_compProd_comap _ _ hsnoc,
+          map_finSnoc_map_prefix_eval μ (fun k ↦ (measurable_pi_apply k).fst.aemeasurable)]
 
 /-- The initial state-action pair has law `ν ⊗ₘ ρ`, so the initial action has law `ρ` at the
 initial state. -/
