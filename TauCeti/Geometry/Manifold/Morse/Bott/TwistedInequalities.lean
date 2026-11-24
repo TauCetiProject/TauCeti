@@ -22,17 +22,19 @@ is invertible, such as `ℚ`. Write `bₙ = dim Hₙ(M; K)` and
 
 the sum running over the pieces of index `r j ≤ n`. This file proves the **Morse–Bott
 inequalities** for `b` and `c`: the weak inequalities `bₙ ≤ cₙ`, the strong inequalities
-`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, and the
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, the
 polynomial identity `∑ₙ cₙ tⁿ = ∑ₙ bₙ tⁿ + (1 + t) Q(t)` with `Q` having natural number
-coefficients. No orientation of the negative normal bundles is assumed: the contribution of a
-piece is its homology twisted by the orientation of its negative normal bundle, which is its
-ordinary homology when that bundle is orientable. For instance, on the real projective plane the
-function `[x : y : z] ↦ (x² + y²) / (x² + y² + z²)` has a minimum at `[0 : 0 : 1]` and a critical
-circle of index `1` on which it is maximal, whose negative normal bundle is a Möbius line. Over `ℚ`
-the circle contributes nothing, as its homology with coefficients in the orientation system of the
-Möbius line vanishes, so `c = (1, 0, 0)` is the sequence of Betti numbers of the plane over `ℚ`;
-its untwisted homology would contribute `t + t²`. Over `𝔽₂`, where the twist disappears, the
-inequalities are those of `TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`.
+coefficients, and the lacunary principle: when no two consecutive `cₙ` are both nonzero, `bₙ = cₙ`
+for every `n`, so that the function is perfect over `K`. No orientation of the negative normal
+bundles is assumed: the contribution of a piece is its homology twisted by the orientation of its
+negative normal bundle, which is its ordinary homology when that bundle is orientable. For
+instance, on the real projective plane the function `[x : y : z] ↦ (x² + y²) / (x² + y² + z²)`
+has a minimum at `[0 : 0 : 1]` and a critical circle of index `1` on which it is maximal, whose
+negative normal bundle is a Möbius line. Over `ℚ` the circle contributes nothing, as its homology
+with coefficients in the orientation system of the Möbius line vanishes, so `c = (1, 0, 0)` is the
+sequence of Betti numbers of the plane over `ℚ`; its untwisted homology would contribute
+`t + t²`. Over `𝔽₂`, where the twist disappears, the inequalities are those of
+`TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`.
 
 The proof is that of the mod `2` inequalities, with the twisted Thom isomorphism
 (`VectorBundleOrientationCover.finrank_singularHomology_thomPair_eq_finrank_twistedHomology`)
@@ -65,6 +67,8 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   `exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul`: the weak and strong
   Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity with
   coefficients twisted by the orientation local systems of the negative normal bundles.
+* `bettiNumber_eq_sum_twistedBettiNumber_of_forall_eq_zero_or_eq_zero`: the lacunary principle,
+  `bₙ = cₙ` when no two consecutive twisted counts are both nonzero.
 
 ## References
 
@@ -282,5 +286,17 @@ theorem exists_sum_range_monomial_sum_twistedBettiNumber_eq_add_mul {n : ℕ}
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ
   exact ⟨Q, hQ⟩
+
+/-- **The lacunary principle for a Morse–Bott function with twisted coefficients.** Under the
+hypotheses of `TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`, write
+`cₖ = ∑ dim H_{k - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with `r j ≤ k`. If of any two
+consecutive counts `cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the
+Morse–Bott function is perfect over `K`. -/
+theorem bettiNumber_eq_sum_twistedBettiNumber_of_forall_eq_zero_or_eq_zero
+    (hlac : ∀ k, ∑ p with r p ≤ k, h.twistedBettiNumber hn hdim g hV K p (k - r p) = 0 ∨
+      ∑ p with r p ≤ k + 1, h.twistedBettiNumber hn hdim g hV K p (k + 1 - r p) = 0) (n : ℕ) :
+    bettiNumber K M n = ∑ p with r p ≤ n, h.twistedBettiNumber hn hdim g hV K p (n - r p) :=
+  congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
+    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_twistedBettiNumber hn hdim g hV K) hlac) n
 
 end TauCeti.IsMorseBottFamily
