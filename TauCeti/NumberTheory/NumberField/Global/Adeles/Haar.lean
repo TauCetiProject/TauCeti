@@ -162,6 +162,7 @@ theorem finiteAdeleHaar_eq_restrictedAddHaar :
 /-- **The Haar character of a finite idele.** Multiplication by a finite idele `a` scales Haar
 measure on `𝔸_{K,f}` by `∏ᶠ_v ‖a_v‖`: `μ (a • s) = (∏ᶠ_v ‖a_v‖) * μ s` for regular additive Haar
 measures `μ`. -/
+@[simp]
 theorem distribHaarChar_finiteAdeleRing (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     distribHaarChar (FiniteAdeleRing (𝓞 K) K) a =
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(a : FiniteAdeleRing (𝓞 K) K) v‖₊ := by
@@ -184,6 +185,7 @@ theorem map_finiteAdeleHaar_mul (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
 
 /-- **The Haar character of the infinite adeles.** A unit `x` of `K_∞` scales Haar measure by
 `∏_w ‖x_w‖ ^ m_w`. -/
+@[simp]
 theorem distribHaarChar_infiniteAdeleRing (x : (InfiniteAdeleRing K)ˣ) :
     distribHaarChar (InfiniteAdeleRing K) x =
       ∏ w : InfinitePlace K, ‖(x : InfiniteAdeleRing K) w‖₊ ^ w.mult := by
@@ -254,6 +256,7 @@ instance isAddHaarMeasure_adeleHaar : (adeleHaar K).IsAddHaarMeasure :=
 /-- **The idele norm is the Haar character of the adeles.** Multiplication by an idele `x`
 scales additive Haar measure on `𝔸_K` by the idele norm `‖x‖`: `μ (x • s) = ‖x‖ * μ s` for
 regular additive Haar measures `μ`. -/
+@[simp]
 theorem distribHaarChar_adeleRing (x : IdeleGroup (𝓞 K) K) :
     distribHaarChar (AdeleRing (𝓞 K) K) x = ideleNorm x := by
   have h := distribHaarChar_prod (R := InfiniteAdeleRing K) (S := FiniteAdeleRing (𝓞 K) K) x

@@ -17,12 +17,14 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 /-!
 # Second countability and Borel structures on finite adele rings
 
-Let `R` be a Dedekind domain with fraction field `K`. This file registers the Borel σ-algebras on
-the finite adele ring `FiniteAdeleRing R K`, on its unit group (the finite ideles) and on
-`GL_n(FiniteAdeleRing R K) = (Matrix n n (FiniteAdeleRing R K))ˣ`, on which the Haar measures of
-finite adeles and finite ideles live. The unit groups carry the Borel σ-algebras of their native
-units topologies. The completions `K_v` get their Borel σ-algebras in
-`TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel`.
+Let `R` be a Dedekind domain with fraction field `K`. This file registers the Borel σ-algebra on
+the finite adele ring `FiniteAdeleRing R K`, on which its Haar measures live, and defines the Borel
+σ-algebras of the native units topologies on its unit group (the finite ideles) and on
+`GL_n(FiniteAdeleRing R K) = (Matrix n n (FiniteAdeleRing R K))ˣ`, where the Haar measures of
+finite ideles live. These two are definitions, not instances: Mathlib's `Units.instMeasurableSpace`
+already gives a unit group the pullback σ-algebra along `Units.val`, which differs from the Borel
+σ-algebra because the units topology is not the subspace topology. The completions `K_v` get their
+Borel σ-algebras in `TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel`.
 
 If `R` is countable and all its residue fields are finite, the finite adele ring is second
 countable: it is the restricted product over the countably many height-one primes of `R`
@@ -34,9 +36,10 @@ nonarchimedean local fields and hence second countable, with respect to the open
 
 * `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: second countability of the
   finite adele ring of a countable Dedekind domain with finite residue fields.
-* `IsDedekindDomain.FiniteAdeleRing.instBorelSpace`,
-  `IsDedekindDomain.FiniteAdeleRing.instBorelSpaceUnits`,
-  `IsDedekindDomain.FiniteAdeleRing.instBorelSpaceMatrixUnits`: the Borel structures.
+* `IsDedekindDomain.FiniteAdeleRing.instBorelSpace`: the Borel structure on the finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.measurableSpaceUnits`,
+  `IsDedekindDomain.FiniteAdeleRing.measurableSpaceMatrixUnits`: the Borel σ-algebras on the
+  finite ideles and on `GL_n` of the finite adeles.
 
 ## References
 
@@ -70,18 +73,28 @@ instance instMeasurableSpace : MeasurableSpace (FiniteAdeleRing R K) := borel _
 
 instance instBorelSpace : BorelSpace (FiniteAdeleRing R K) := ⟨rfl⟩
 
-/-- The Borel σ-algebra on the finite ideles. -/
-instance instMeasurableSpaceUnits : MeasurableSpace (FiniteAdeleRing R K)ˣ := borel _
+/-- The Borel σ-algebra on the finite ideles, for their native units topology. It is not an
+instance: Mathlib's `Units.instMeasurableSpace` already gives the units of a measurable monoid the
+pullback σ-algebra along `Units.val`, and the units topology is not the subspace topology. -/
+@[instance_reducible]
+def measurableSpaceUnits : MeasurableSpace (FiniteAdeleRing R K)ˣ := borel _
 
-instance instBorelSpaceUnits : BorelSpace (FiniteAdeleRing R K)ˣ := ⟨rfl⟩
+/-- `measurableSpaceUnits R K` is the Borel σ-algebra of the finite ideles. -/
+theorem borelSpaceUnits :
+    @BorelSpace (FiniteAdeleRing R K)ˣ _ (measurableSpaceUnits R K) :=
+  @BorelSpace.mk _ _ (measurableSpaceUnits R K) rfl
 
 variable (n : Type*) [Fintype n] [DecidableEq n]
 
 /-- The Borel σ-algebra on `GL_n` of the finite adeles, for the native topology of the units of the
-matrix ring. -/
-instance instMeasurableSpaceMatrixUnits : MeasurableSpace (Matrix n n (FiniteAdeleRing R K))ˣ :=
+matrix ring. Like `measurableSpaceUnits`, it is not an instance. -/
+@[instance_reducible]
+def measurableSpaceMatrixUnits : MeasurableSpace (Matrix n n (FiniteAdeleRing R K))ˣ :=
   borel _
 
-instance instBorelSpaceMatrixUnits : BorelSpace (Matrix n n (FiniteAdeleRing R K))ˣ := ⟨rfl⟩
+/-- `measurableSpaceMatrixUnits R K n` is the Borel σ-algebra of `GL_n` of the finite adeles. -/
+theorem borelSpaceMatrixUnits :
+    @BorelSpace (Matrix n n (FiniteAdeleRing R K))ˣ _ (measurableSpaceMatrixUnits R K n) :=
+  @BorelSpace.mk _ _ (measurableSpaceMatrixUnits R K n) rfl
 
 end IsDedekindDomain.FiniteAdeleRing

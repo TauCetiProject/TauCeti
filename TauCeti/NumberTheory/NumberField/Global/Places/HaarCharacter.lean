@@ -7,10 +7,11 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Real
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
+public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
 import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 
 /-!
@@ -40,7 +41,6 @@ a unit `x` scales Haar measure by `‖x‖ ^ m_w`, the multiplicity `m_w` being 
   `x ∈ K_vˣ` is `‖x‖₊`.
 * `IsDedekindDomain.HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers`: the normalized Haar
   measure of the local field `K_v` gives `𝒪_v` mass `1`.
-* `NumberField.InfinitePlace.Completion.instSecondCountableTopology`: `K_w` is second countable.
 * `NumberField.InfinitePlace.distribHaarChar_completion`: the Haar character of `x ∈ K_wˣ` is
   `‖x‖₊ ^ m_w`.
 
@@ -92,31 +92,23 @@ namespace NumberField.InfinitePlace
 
 variable {K : Type*} [Field K]
 
-/-- The completion `K_w` of a number field at an infinite place is second countable, being
-isometric to `ℝ` or `ℂ`. -/
-instance Completion.instSecondCountableTopology (w : InfinitePlace K) :
-    SecondCountableTopology w.Completion := by
-  by_cases hw : w.IsReal
-  · exact (Completion.isometryEquivRealOfIsReal hw).toHomeomorph.secondCountableTopology
-  · exact (Completion.isometryEquivComplexOfIsComplex
-      (not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
-
 /-- **The Haar character at an infinite place.** Multiplication by `x ∈ K_wˣ` scales Haar measure
 on `K_w` by `‖x‖ ^ m_w`, where `m_w` is `1` at a real place and `2` at a complex place. -/
+@[simp]
 theorem distribHaarChar_completion (w : InfinitePlace K) (x : w.Completionˣ) :
     distribHaarChar w.Completion x = ‖(x : w.Completion)‖₊ ^ w.mult := by
   by_cases hw : w.IsReal
   · have h := distribHaarChar_map_ringEquiv (Completion.ringEquivRealOfIsReal hw)
       (Completion.isometryEquivRealOfIsReal hw).continuous
       (Completion.isometryEquivRealOfIsReal hw).symm.continuous x
-    rw [← h, distribHaarChar_real, mult_isReal ⟨w, hw⟩, pow_one]
+    rw [← h, distribHaarChar_real_eq, Module.finrank_self, pow_one, mult_isReal ⟨w, hw⟩, pow_one]
     ext
     exact (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero (map_zero _) _
   · have hc : w.IsComplex := not_isReal_iff_isComplex.mp hw
     have h := distribHaarChar_map_ringEquiv (Completion.ringEquivComplexOfIsComplex hc)
       (Completion.isometryEquivComplexOfIsComplex hc).continuous
       (Completion.isometryEquivComplexOfIsComplex hc).symm.continuous x
-    rw [← h, distribHaarChar_complex, mult_isComplex ⟨w, hc⟩]
+    rw [← h, distribHaarChar_complex_eq, Complex.finrank_real_complex, mult_isComplex ⟨w, hc⟩]
     congr 1
     ext
     exact (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _) _

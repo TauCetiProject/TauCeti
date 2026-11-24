@@ -5,39 +5,62 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Analysis.Complex.Basic
+import Mathlib.RingTheory.Complex
+import Mathlib.RingTheory.Norm.Transitivity
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Pushforward and transport of the distributive Haar character
+# Change of variables along the distributive Haar character
 
-Let a group `G` act distributively and continuously on a locally compact additive group `A`. The
-distributive Haar character `MeasureTheory.distribHaarChar A g` is the factor by which `g` scales
-images under its action: `μ (g • s) = distribHaarChar A g * μ s` for every regular additive Haar
-measure `μ` on `A` (Mathlib's `MeasureTheory.distribHaarChar_mul`). This file records the
-consequences used to compute such characters.
+Let a group `G` act distributively and continuously on a locally compact additive group `A`.
+Mathlib's distributive Haar character `MeasureTheory.distribHaarChar A g` is the factor by which
+`g` scales additive Haar measure: `μ (g • s) = distribHaarChar A g * μ s`. This file states the
+same fact for pushforwards and integrals,
 
-* Pushforwards carry the inverse factor
-  (`MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`), so `g` preserves `μ` exactly
-  when its character is `1`.
-* The character is transported along isomorphisms of topological additive groups intertwining
-  two actions, in particular along ring isomorphisms that are homeomorphisms.
-* A positive compact set has finite positive mass for every additive Haar measure, which is what
-  Mathlib's criterion `MeasureTheory.distribHaarChar_eq_of_measure_smul_eq_mul` needs to read off a
-  character from one set.
+`μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ`,
+
+`∫ x, f (g • x) ∂μ = (distribHaarChar A g)⁻¹ • ∫ x, f x ∂μ`,
+
+which is the form in which the character enters Fourier analysis: for a field `F` acting on
+itself, `distribHaarChar F a` is the module `|a|_F` of `a ∈ Fˣ`, and the substitution `x ↦ a x`
+in an integral over `F` produces the factor `|a|_F⁻¹`. In particular `g` preserves a Haar measure
+exactly when its character is `1`, and the character is transported along isomorphisms of
+topological additive groups intertwining two actions, in particular along ring isomorphisms that
+are homeomorphisms.
+
+The module of the archimedean fields is computed here: a nonzero real scalar `a` scales Haar
+measure on a finite-dimensional real space `E` by `|a| ^ dim_ℝ E`, and a nonzero complex scalar
+scales Haar measure on a finite-dimensional complex space by `|a| ^ dim_ℝ E` as well. In
+particular the module of `ℝ` is the usual absolute value and the module of `ℂ` is
+`|a| ^ 2 = a * conj a`. The module of a nonarchimedean local field is
+`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`.
 
 ## Main results
 
+* `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`: pushing a Haar measure forward
+  along `g • ·` divides it by `distribHaarChar A g`.
+* `MeasureTheory.integral_comp_smul_eq_inv_distribHaarChar_smul`: the corresponding change of
+  variables for Bochner integrals.
+* `MeasureTheory.distribHaarChar_eq_nnnorm_det`: a group acting `ℝ`-linearly on a
+  finite-dimensional real space scales Haar measure by the absolute value of the determinant.
+* `MeasureTheory.distribHaarChar_real_eq`, `MeasureTheory.distribHaarChar_complex_eq`: the
+  module of a nonzero real, resp. complex, scalar acting on a finite-dimensional space `E` is
+  `|a| ^ dim_ℝ E`.
 * `MeasureTheory.Measure.map_smul_eq_self_iff_distribHaarChar_eq_one`: the action of `g` preserves
   a Haar measure exactly when the character of `g` is `1`.
 * `MeasureTheory.distribHaarChar_eq_of_continuousAddEquiv`,
   `MeasureTheory.distribHaarChar_map_ringEquiv`: transport of the character.
-* `TopologicalSpace.PositiveCompacts.measure_ne_zero`,
-  `TopologicalSpace.PositiveCompacts.measure_ne_top`.
 
 ## References
 
+* J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, §2.2.
+* A. Weil, *Basic Number Theory*, Chapter I, §2.
 * V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
-  2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism, and restricted Haar products).
+  2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism).
 * The FLT project (`ImperialCollegeLondon/FLT`, Apache 2.0) develops the same Haar-character API
   in `FLT/HaarMeasure/HaarChar/`; the transport lemmas correspond to
   `ringHaarChar_eq_ringHaarChar_of_continuousAlgEquiv` in `Ring.lean` (by Kevin Buzzard) and
@@ -46,30 +69,82 @@ consequences used to compute such characters.
 
 public section
 
-open MeasureTheory Measure Set TopologicalSpace
+open Module Set
 open scoped NNReal ENNReal Pointwise
-
-namespace TopologicalSpace.PositiveCompacts
-
-variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] (K : PositiveCompacts X)
-  (μ : Measure X)
-
-/-- A positive compact set has positive mass for every measure that is positive on open sets. -/
-theorem measure_ne_zero [μ.IsOpenPosMeasure] : μ K ≠ 0 :=
-  (measure_pos_of_nonempty_interior μ K.interior_nonempty).ne'
-
-/-- A positive compact set has finite mass for every measure that is finite on compact sets. -/
-theorem measure_ne_top [IsFiniteMeasureOnCompacts μ] : μ K ≠ ∞ :=
-  K.isCompact.measure_ne_top
-
-end TopologicalSpace.PositiveCompacts
 
 namespace MeasureTheory
 
 variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [LocallyCompactSpace A] [ContinuousConstSMul G A]
 
-section Pushforward
+section ChangeOfVariables
+
+variable [MeasurableSpace A] [BorelSpace A] (μ : Measure A) [μ.IsAddHaarMeasure] [μ.Regular]
+
+namespace Measure
+
+/-- Pushing an additive Haar measure forward along `g • ·` divides it by the distributive Haar
+character of `g`. -/
+theorem map_smul_eq_inv_distribHaarChar_smul (g : G) :
+    μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ := by
+  ext s hs
+  rw [map_apply (continuous_const_smul g).measurable hs, preimage_smul, smul_apply,
+    ← distribHaarChar_mul, map_inv, nnreal_smul_coe_apply]
+
+end Measure
+
+/-- **Change of variables along the distributive Haar character**: for an additive Haar measure
+`μ`, `∫ x, f (g • x) ∂μ = (distribHaarChar A g)⁻¹ • ∫ x, f x ∂μ`. No integrability hypothesis is
+needed. -/
+theorem integral_comp_smul_eq_inv_distribHaarChar_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : A → E) (g : G) :
+    ∫ x, f (g • x) ∂μ = ((distribHaarChar A g : ℝ))⁻¹ • ∫ x, f x ∂μ := by
+  have he : MeasurableEmbedding (g • · : A → A) := (Homeomorph.smul g).measurableEmbedding
+  rw [← he.integral_map, Measure.map_smul_eq_inv_distribHaarChar_smul,
+    integral_smul_nnreal_measure, NNReal.smul_def, NNReal.coe_inv]
+
+end ChangeOfVariables
+
+section Archimedean
+
+variable (E : Type*) [NormedAddCommGroup E]
+
+/-- A group `G` acting `ℝ`-linearly on a finite-dimensional real normed space `E` scales additive
+Haar measure by the absolute value of the determinant: `distribHaarChar E g = ‖det (g • ·)‖₊`. -/
+theorem distribHaarChar_eq_nnnorm_det [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [DistribMulAction G E] [SMulCommClass G ℝ E] [ContinuousConstSMul G E] (g : G) :
+    distribHaarChar E g = ‖LinearMap.det (DistribSMul.toLinearMap ℝ E g)‖₊ := by
+  borelize E
+  let μ : Measure E := Measure.addHaar
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ)
+    (Metric.measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne ?_
+  rw [← Set.image_smul, ← ENNReal.ofReal_coe_nnreal, coe_nnNorm, Real.norm_eq_abs]
+  exact Measure.addHaar_image_linearMap μ (DistribSMul.toLinearMap ℝ E g) _
+
+/-- A nonzero real scalar `a` scales additive Haar measure on a finite-dimensional real normed
+space `E` by `|a| ^ dim_ℝ E`. For `E = ℝ` the module of `a` is its absolute value. -/
+theorem distribHaarChar_real_eq [NormedSpace ℝ E] [FiniteDimensional ℝ E] (a : ℝˣ) :
+    distribHaarChar E a = ‖(a : ℝ)‖₊ ^ finrank ℝ E := by
+  have h : DistribSMul.toLinearMap ℝ E a = (a : ℝ) • LinearMap.id := by ext; rfl
+  simp [distribHaarChar_eq_nnnorm_det, h]
+
+/-- A nonzero complex scalar `a` scales additive Haar measure on a finite-dimensional complex
+normed space `E` by `|a| ^ dim_ℝ E`. For `E = ℂ` the module of `a` is `|a| ^ 2 = a * conj a`. -/
+theorem distribHaarChar_complex_eq [NormedSpace ℂ E] [FiniteDimensional ℂ E] (a : ℂˣ) :
+    distribHaarChar E a = ‖(a : ℂ)‖₊ ^ finrank ℝ E := by
+  have h : DistribSMul.toLinearMap ℝ E a =
+      ((a : ℂ) • (LinearMap.id : E →ₗ[ℂ] E)).restrictScalars ℝ := by
+    ext; rfl
+  rw [distribHaarChar_eq_nnnorm_det, h, LinearMap.det_restrictScalars]
+  ext
+  simp [Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, finrank_real_of_complex, pow_mul,
+    pow_right_comm]
+
+end Archimedean
+
+section Criterion
+
+open Measure TopologicalSpace
 
 variable [MeasurableSpace A] [BorelSpace A]
 
@@ -85,9 +160,11 @@ theorem Measure.map_smul_eq_self_iff_distribHaarChar_eq_one (μ : Measure A) [μ
   rw [addHaarScalarFactor_smul, addHaarScalarFactor_self, smul_eq_mul, mul_one] at h1
   exact inv_eq_one.mp h1
 
-end Pushforward
+end Criterion
 
 section Transport
+
+open Measure TopologicalSpace
 
 variable {H B : Type*} [Group H] [AddCommGroup B] [DistribMulAction H B] [TopologicalSpace B]
   [IsTopologicalAddGroup B] [LocallyCompactSpace B] [ContinuousConstSMul H B]
@@ -107,7 +184,8 @@ theorem distribHaarChar_eq_of_continuousAddEquiv (f : A ≃ₜ+ B) {g : G} {h : 
   have himage (t : Set A) : μ.map f (f '' t) = μ t := by
     rw [hf'.map_apply, Set.preimage_image_eq _ f.injective]
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ.map f) (s := f '' K)
-    (by rw [himage]; exact K.measure_ne_zero μ) (by rw [himage]; exact K.measure_ne_top μ) ?_
+    (by rw [himage]; exact (measure_pos_of_nonempty_interior μ K.interior_nonempty).ne')
+    (by rw [himage]; exact K.isCompact.measure_ne_top) ?_
   have hsmul : h • f '' K = f '' (g • (K : Set A)) := by
     rw [← Set.image_smul, ← Set.image_smul, Set.image_image, Set.image_image]
     simp only [hf]

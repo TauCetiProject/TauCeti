@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 
 /-!
 # The dilation action on tempered distributions

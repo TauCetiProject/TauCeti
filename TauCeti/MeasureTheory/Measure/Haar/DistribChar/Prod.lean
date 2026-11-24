@@ -66,9 +66,10 @@ theorem distribHaarChar_prod [SecondCountableTopology R] [SecondCountableTopolog
   let L : PositiveCompacts S := Classical.arbitrary _
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ.prod ν) (s := (K : Set R) ×ˢ L) ?_ ?_ ?_
   · rw [prod_prod]
-    exact mul_ne_zero (K.measure_ne_zero μ) (L.measure_ne_zero ν)
+    exact mul_ne_zero (measure_pos_of_nonempty_interior μ K.interior_nonempty).ne'
+      (measure_pos_of_nonempty_interior ν L.interior_nonempty).ne'
   · rw [prod_prod]
-    exact ENNReal.mul_ne_top (K.measure_ne_top μ) (L.measure_ne_top ν)
+    exact ENNReal.mul_ne_top K.isCompact.measure_ne_top L.isCompact.measure_ne_top
   · rw [Units.smul_set_prod, prod_prod, prod_prod, ← distribHaarChar_mul, ← distribHaarChar_mul,
       ENNReal.coe_mul]
     ring
@@ -88,9 +89,10 @@ theorem distribHaarChar_pi [∀ i, SecondCountableTopology (T i)] (x : (Π i, T 
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := Measure.pi μ)
     (s := univ.pi fun i ↦ (K i : Set (T i))) ?_ ?_ ?_
   · rw [pi_pi]
-    exact Finset.prod_ne_zero_iff.mpr fun i _ ↦ (K i).measure_ne_zero (μ i)
+    exact Finset.prod_ne_zero_iff.mpr fun i _ ↦
+      (measure_pos_of_nonempty_interior (μ i) (K i).interior_nonempty).ne'
   · rw [pi_pi]
-    exact ENNReal.prod_ne_top fun i _ ↦ (K i).measure_ne_top (μ i)
+    exact ENNReal.prod_ne_top fun i _ ↦ (K i).isCompact.measure_ne_top
   · rw [Units.smul_set_univ_pi, pi_pi, pi_pi, ENNReal.ofNNReal_finsetProd,
       ← Finset.prod_mul_distrib]
     exact Finset.prod_congr rfl fun i _ ↦ (distribHaarChar_mul (μ i) _ _).symm
