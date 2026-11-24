@@ -224,7 +224,7 @@ theorem IsOrthonormalBasis.isTOrthogonalBasis [NormedRing R] [Nontrivial R]
 /-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
 `r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
 every `z ∈ F`. -/
-theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
+theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [SeminormedAddCommGroup M]
     [NormedSpace K M] [IsUltrametricDist M] {F : Submodule K M} {w : M} {r : ℝ≥0} (hr : r ≤ 1)
     (hw : ∀ z ∈ F, r * ‖w‖₊ ≤ ‖w - z‖₊) (c : K) {z : M} (hz : z ∈ F) :
     r * max ‖c • w‖₊ ‖z‖₊ ≤ ‖c • w + z‖₊ := by
@@ -281,7 +281,7 @@ theorem IsTOrthogonalFamily.finCons [NormedField K] [NormedAddCommGroup M]
 non-increasing sequence `T` of positive constants at most one, then in an ultrametric space
 the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
 theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
-    [NormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
+    [SeminormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
     (hT : Antitone T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
     (he : ∀ N, ∀ z ∈ Submodule.span K (e '' Set.Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊)
     (N : ℕ) : IsTOrthogonalFamily K (T N) (fun i : Set.Iio N ↦ e i) := by

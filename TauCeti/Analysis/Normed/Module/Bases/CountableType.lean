@@ -13,17 +13,21 @@ public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Analysis.Normed.Group.RieszLemma
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Analysis.Normed.Module.FiniteSpan
+import TauCeti.Analysis.Normed.Module.FiniteDimension.Closedness
 import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.Topology.MetricSpace.Ultra.SeparationQuotient
 
 /-!
 # `t`-orthogonal bases and subspaces of normed spaces of countable type
 
-Let `K` be a complete nontrivially normed field and `E` an ultrametric normed `K`-space. The space
-`E` is *of countable type* if some sequence `v : ℕ → E` has dense span. Over a field whose value
-group is not discrete, such a space need not have an orthogonal basis, but for every `t < 1` it
-has a `t`-orthogonal one. This file constructs these bases by an approximate Gram–Schmidt process.
+Let `K` be a complete normed field and `E` an ultrametric seminormed `K`-space. The space `E` is
+*of countable type* if some sequence `v : ℕ → E` has dense span. Over a field whose value group is
+not discrete, such a space need not have an orthogonal basis, but for every `t < 1` it has a
+`t`-orthogonal one. This file constructs these bases by an approximate Gram–Schmidt process, and
+derives finite-dimensional relative approximation and countable-type inheritance for subspaces over
+any complete normed field (trivially normed or not). The operator-norm results (norming functionals,
+almost-contractive projections, bounded extensions, and `SeparatingDual`) assume a complete
+nontrivially normed field and a normed space.
 
 * `TauCeti.exists_isTOrthogonalFamily_span_image_Iio_eq`: every sequence `w : ℕ → E` can be
   replaced by a `t`-orthogonal sequence `e` with the same initial spans,
@@ -31,10 +35,11 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   approximation of `w n` in the span of the previous vectors (`TauCeti.riesz_lemma_translate`);
   the losses at the successive steps are chosen with product at least `t`. This holds in any
   ultrametric seminormed space over any complete normed field, trivially normed or not.
-* `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a space of countable type has a
-  `t`-orthogonal basis indexed by a set of natural numbers.
-* `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional space has a `t`-orthogonal
-  basis in the sense of `Module.Basis`, indexed by `Fin (finrank K E)`.
+* `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a seminormed space of countable type over any
+  complete normed field has a `t`-orthogonal basis indexed by a set of natural numbers.
+* `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional ultrametric seminormed space
+  over any complete normed field has a `t`-orthogonal basis in the sense of `Module.Basis`, indexed
+  by `Fin (finrank K E)`.
 * `TauCeti.exists_strongDual_apply_eq_one_of_finiteDimensional`: for a nonzero vector `x` of a
   finite-dimensional space and `c > 1`, some continuous linear functional sends `x` to `1` and has
   norm at most `c * ‖x‖⁻¹`.
@@ -45,17 +50,18 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
 * `Submodule.exists_linearMap_comp_subtype_eq_norm_le`: any continuous linear map `φ` from a closed
   subspace `D` into a seminormed space extends to a linear map `ψ` on `E` satisfying
   `‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖` on `D ⊔ G` for any finite-dimensional subspace `G` and `c > 1`.
-* `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional space of
-  countable type has a `t`-orthogonal basis indexed by `ℕ`.
+* `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional seminormed space
+  of countable type over any complete normed field has a `t`-orthogonal basis indexed by `ℕ`.
 * `Submodule.exists_finiteDimensional_le_infDist_le`: for a closed subspace `D`, a
   finite-dimensional subspace `G` and `c > 1`, some finite-dimensional `W ≤ D` satisfies
   `infDist g W ≤ c * infDist g D` for every `g ∈ G`. The subspace `W` is cut out of `D` by lifts
   of a `t`-orthogonal basis of the image of `G` in `E ⧸ D`.
-* `Submodule.exists_dense_span_of_dense_span`: every subspace of a space of countable type, closed
-  or not, is of countable type. The approximation theorem is applied to the closed subspace
-  `closure D`: the finite-dimensional subspaces `W ≤ closure D` attached to the initial spans of a
-  densely spanning sequence together span a dense subspace of `closure D`, and each of their
-  countably many spanning vectors is then replaced by a sequence in `D` converging to it.
+* `Submodule.exists_dense_span_of_dense_span`: every subspace of a seminormed space of countable
+  type over any complete normed field, closed or not, is of countable type. The approximation
+  theorem is applied to the closed subspace `closure D`: the finite-dimensional subspaces
+  `W ≤ closure D` attached to the initial spans of a densely spanning sequence together span a
+  dense subspace of `closure D`, and each of their countably many spanning vectors is then replaced
+  by a sequence in `D` converging to it.
 * `TauCeti.separatingDual_of_dense_span` and `Submodule.separatingDual_span_of_countable`: the
   coordinate functionals of a `t`-orthogonal basis separate points on any ultrametric normed space
   of countable type, and in particular on the span of any countable set.
@@ -65,10 +71,10 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   normed (using open-ball submodules `{y | ‖y‖ < ‖x‖}` when `K` has the trivial norm).
 
 Neither a discrete valuation nor completeness of `E` is needed: the Gram–Schmidt construction
-works in the normed space `SeparationQuotient E`, where the images of the finite-dimensional
-initial spans are closed over any complete normed field by
-`Submodule.isClosed_of_finiteDimensional'` (see `TauCeti.Analysis.Normed.Module.FiniteSpan`),
-and lifts each approximant back to the original initial span.
+uses the normed space `SeparationQuotient E`, where the images of the finite-dimensional initial
+spans are closed over any complete normed field by `Submodule.isClosed_of_finiteDimensional'`
+(see `TauCeti.Analysis.Normed.Module.FiniteDimension.Closedness`), to choose approximants, lifts
+them back to the original initial spans, and applies the orthogonality criterion directly in `E`.
 The constant `c` in the approximation theorem does not depend on `G`; this uniformity is what
 lets the subspaces `W` attached to the increasing initial spans together span a dense subspace of
 the closure of `D`. Quotients of spaces of countable type are of countable type by
@@ -90,16 +96,19 @@ open scoped NNReal
 
 namespace TauCeti
 
+section Seminormed
+
+variable {K E : Type*} [NormedField K] [CompleteSpace K]
+  [SeminormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E]
+
 /-- **Approximate Gram–Schmidt process**: over a complete normed field, every sequence `w` in an
 ultrametric seminormed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence `e`
 with the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
-theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField K]
-    [CompleteSpace K] [SeminormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E]
-    (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
+theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalFamily K t e ∧
       ∀ n, span K (e '' Iio n) = span K (w '' Iio n) := by
-  -- Work in the normed space `SeparationQuotient E`, where finite spans are closed and the
-  -- quotient map preserves norms, then lift each approximant back to the original initial span.
+  -- Use the normed space `SeparationQuotient E`, where finite spans are closed and the quotient
+  -- map preserves norms, to pick approximants, then lift each approximant to the initial span.
   let q : E →ₗ[K] SeparationQuotient E := (SeparationQuotient.mkCLM K E).toLinearMap
   have hq_nnnorm (x : E) : ‖q x‖₊ = ‖x‖₊ := by simp [q]
   -- Strictly decreasing orthogonality constants `T n ∈ (t, 1)` for the initial segments.
@@ -131,29 +140,26 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
           sub_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
       · rw [span_singleton_le_iff_mem, ← sub_add_cancel (w n) (y n)]
         exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
-  -- Hence the first `N` terms of `q ∘ e` are `T N`-orthogonal, with `t ≤ T N`.
-  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) (e := q ∘ e) hT.antitone
+  -- Pull back the one-step approximation bound along `q`, so the first `N` terms of `e` are
+  -- `T N`-orthogonal, with `t ≤ T N`.
+  have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) (e := e) hT.antitone
     (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N u hu ↦ by
-      rw [← hmap e N, hspan N, hmap w N] at hu
-      rw [Function.comp_apply, map_sub, hyq N]
-      exact_mod_cast hz N u hu
+      have hu' : q u ∈ span K ((q ∘ w) '' Iio N) := by
+        rw [← hmap w N, ← hspan N]
+        exact Submodule.mem_map_of_mem hu
+      have hqe : q (e N) = q (w N) - z N := by rw [map_sub, hyq N]
+      rw [← hq_nnnorm (e N), ← hq_nnnorm (e N - u), map_sub q (e N) u, hqe]
+      exact_mod_cast hz N (q u) hu'
   refine ⟨e, isTOrthogonalFamily_def.2 fun s a ↦ ?_, hspan⟩
   have hs (i : ℕ) (hi : i ∈ s) : i ∈ Iio (s.sup id + 1) :=
     Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)
   rw [← Finset.subtype_map_of_mem hs, Finset.sup_map, Finset.sum_map]
-  -- Transfer `t`-orthogonality from `q ∘ e` to `e` via linearity and norm preservation of `q`.
-  simpa only [Function.comp_def, Function.Embedding.coe_subtype, ← map_smul, ← map_sum,
-    hq_nnnorm] using
-    (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
-      (isTOrthogonalFamily_def.1 (key _) (s.subtype (· ∈ Iio (s.sup id + 1))) fun i ↦ a i)
+  exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
+    (isTOrthogonalFamily_def.1 (key _) (s.subtype (· ∈ Iio (s.sup id + 1))) fun i ↦ a i)
 
-variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
-
-variable [CompleteSpace K] [IsUltrametricDist E]
-
-/-- **`t`-orthogonal bases of spaces of countable type**: over a complete nontrivially normed
-field, if a sequence `v` has dense span in an ultrametric normed space `E`, then for every `t < 1`
-the space `E` has a `t`-orthogonal basis indexed by a set of natural numbers. -/
+/-- **`t`-orthogonal bases of spaces of countable type**: over a complete normed field, if a
+sequence `v` has dense span in an ultrametric seminormed space `E`, then for every `t < 1` the
+space `E` has a `t`-orthogonal basis indexed by a set of natural numbers. -/
 theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) {t : ℝ≥0} (ht : t < 1) :
     ∃ (S : Set ℕ) (e : S → E), IsTOrthogonalBasis K t e := by
@@ -178,8 +184,8 @@ theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
   rw [this]
   exact hv
 
-/-- **`t`-orthogonal bases of finite-dimensional spaces**: over a complete nontrivially normed
-field, a finite-dimensional ultrametric normed space has, for every `t < 1`, a basis indexed by
+/-- **`t`-orthogonal bases of finite-dimensional spaces**: over a complete normed field, a
+finite-dimensional ultrametric seminormed space has, for every `t < 1`, a basis indexed by
 `Fin (finrank K E)` which is a `t`-orthogonal family. -/
 theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (ht : t < 1) :
     ∃ b : Module.Basis (Fin (Module.finrank K E)) K E, IsTOrthogonalFamily K t b := by
@@ -199,6 +205,13 @@ theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (
   refine ⟨basisOfTopLeSpanOfCardEqFinrank (fun i : Fin d ↦ e i) htop (Fintype.card_fin d), ?_⟩
   rw [coe_basisOfTopLeSpanOfCardEqFinrank]
   exact he.comp Fin.val_injective
+
+end Seminormed
+
+section NontriviallyNormed
+
+variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
+  [CompleteSpace K] [IsUltrametricDist E]
 
 /-- **Almost-norming functionals in finite dimensions**: over a complete nontrivially normed field,
 for every nonzero vector `x` of a finite-dimensional ultrametric normed space `E` and every `c > 1`,
@@ -349,31 +362,79 @@ theorem _root_.Submodule.exists_linearMap_comp_subtype_eq_norm_le
       _ ≤ ‖φ‖ * (c * ‖x‖) := mul_le_mul_of_nonneg_left hpx (norm_nonneg φ)
       _ = c * ‖φ‖ * ‖x‖ := by ring
 
+end NontriviallyNormed
+
+section SeminormedApprox
+
+variable {K E : Type*} [NormedField K] [CompleteSpace K]
+  [SeminormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E]
+
 /-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete
-nontrivially normed field, if a sequence has dense span in an infinite-dimensional ultrametric
-normed space `E`, then for every `t < 1` the space `E` has a `t`-orthogonal basis indexed by `ℕ`. -/
+normed field, if a sequence has dense span in an infinite-dimensional ultrametric seminormed space
+`E`, then for every `t < 1` the space `E` has a `t`-orthogonal basis indexed by `ℕ`. -/
 theorem exists_isTOrthogonalBasis_nat_of_dense_span (hE : ¬FiniteDimensional K E) {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalBasis K t e := by
   obtain ⟨S, e, he⟩ := exists_isTOrthogonalBasis_of_dense_span hv ht
-  -- A finite basis would span a closed, hence everything, finite-dimensional subspace.
-  have : Infinite S := by
-    refine not_finite_iff_infinite.1 fun hS ↦ hE ?_
-    have := FiniteDimensional.span_of_finite K (finite_range e)
-    have htop : span K (range e) = ⊤ := eq_top_iff'.2 fun x ↦
-      (span K (range e)).isClosed_of_finiteDimensional.closure_subset (he.dense_span x)
-    exact Module.finite_def.2 (htop ▸ fg_span (finite_range e))
-  obtain ⟨σ⟩ : Nonempty (ℕ ≃ S) := nonempty_equiv_of_countable
-  exact ⟨e ∘ σ, he.comp_equiv σ⟩
+  by_cases hS : S.Infinite
+  · have : Infinite S := hS.to_subtype
+    obtain ⟨σ⟩ : Nonempty (ℕ ≃ S) := nonempty_equiv_of_countable
+    exact ⟨e ∘ σ, he.comp_equiv σ⟩
+  · -- In a `T0Space`, a finite basis would span a closed (hence total) finite-dimensional subspace.
+    -- Thus some nonzero `x` has `‖x‖₊ = 0`; padding `e` with `x` preserves `t`-orthogonality.
+    have : Finite S := Set.not_infinite.1 hS
+    obtain ⟨x, hx0, hxn⟩ : ∃ x : E, x ≠ 0 ∧ ‖x‖₊ = 0 := by
+      by_contra! h
+      have : T0Space E := (t0Space_iff_inseparable E).2 fun a b hab ↦ sub_eq_zero.1 <|
+        not_not.1 fun hne ↦ h _ hne <| by
+          simpa [nnDist_eq_nnNorm] using Metric.inseparable_iff_nndist.1 hab
+      have := FiniteDimensional.span_of_finite K (finite_range e)
+      have htop : span K (range e) = ⊤ := eq_top_iff'.2 fun y ↦
+        (span K (range e)).isClosed_of_finiteDimensional'.closure_subset (he.dense_span y)
+      exact hE (Module.finite_def.2 (htop ▸ fg_span (finite_range e)))
+    obtain ⟨n, ⟨eS⟩⟩ := Finite.exists_equiv_fin S
+    let e' : ℕ → E := fun k ↦ if hk : k < n then e (eS.symm ⟨k, hk⟩) else x
+    refine ⟨e', isTOrthogonalFamily_def.2 fun s a ↦ ?_,
+      fun k ↦ by dsimp only [e']; split_ifs; exacts [he.ne_zero _, hx0],
+      he.dense_span.mono (span_mono <| by
+        rintro _ ⟨i, rfl⟩; exact ⟨(eS i).val, by simp [e', (eS i).isLt]⟩)⟩
+    classical
+    let : Fintype S := Fintype.ofFinite S
+    let f : S ↪ ℕ := ⟨fun i ↦ (eS i).val, Fin.val_injective.comp eS.injective⟩
+    let s' : Finset S := Finset.univ.filter fun i ↦ f i ∈ s
+    have hmap : s'.map f = s.filter (· < n) := by
+      ext k
+      simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_univ, true_and, s', f]
+      exact ⟨fun ⟨i, hi, hik⟩ ↦ ⟨hik ▸ hi, hik ▸ (eS i).isLt⟩,
+        fun ⟨hk, hkn⟩ ↦ ⟨eS.symm ⟨k, hkn⟩, by simpa using hk, by simp⟩⟩
+    have h0 (k : ℕ) (hk : ¬k < n) : ‖a k • e' k‖₊ = 0 := by simp [e', hk, nnNorm_smul, hxn]
+    have hsum2 : ‖∑ k ∈ s with ¬k < n, a k • e' k‖₊ = 0 := nonpos_iff_eq_zero.1 <|
+      (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans <|
+        Finset.sup_le fun k hk ↦ (h0 k (Finset.mem_filter.1 hk).2).le
+    have hsup : (s.sup fun k ↦ ‖a k • e' k‖₊) = (s.filter (· < n)).sup fun k ↦ ‖a k • e' k‖₊ :=
+      le_antisymm (Finset.sup_le fun k hk ↦ by
+        by_cases hkn : k < n
+        · exact Finset.le_sup (f := fun k ↦ ‖a k • e' k‖₊) (Finset.mem_filter.2 ⟨hk, hkn⟩)
+        · simp [h0 k hkn]) (Finset.sup_mono (Finset.filter_subset _ _))
+    have hsum : ‖∑ k ∈ s, a k • e' k‖₊ = ‖∑ k ∈ s with k < n, a k • e' k‖₊ := by
+      rw [← Finset.sum_filter_add_sum_filter_not s (· < n)]
+      set y := ∑ k ∈ s with k < n, a k • e' k; set z := ∑ k ∈ s with ¬k < n, a k • e' k
+      exact le_antisymm ((nnNorm_add_le y z).trans_eq (by rw [hsum2, add_zero])) <| by
+        simpa only [add_sub_cancel_right, hsum2, add_zero] using nnNorm_sub_le (y + z) z
+    rw [hsup, hsum, ← hmap, Finset.sup_map, Finset.sum_map]
+    simpa only [f, e', Function.comp_def, Function.Embedding.coeFn_mk, Fin.isLt, dite_true,
+      Fin.eta, Equiv.symm_apply_apply] using
+      isTOrthogonalFamily_def.1 he.isTOrthogonalFamily s' fun i ↦ a (f i)
 
 /-- **Relative approximation by finite-dimensional subspaces**: let `D` be a closed subspace and
-`G` a finite-dimensional subspace of an ultrametric normed space over a complete nontrivially
-normed field. For every `c > 1` there is a finite-dimensional subspace `W ≤ D` such that every
-`g ∈ G` is within `c * infDist g D` of `W`. -/
+`G` a finite-dimensional subspace of an ultrametric seminormed space over a complete normed field.
+For every `c > 1` there is a finite-dimensional subspace `W ≤ D` such that every `g ∈ G` is within
+`c * infDist g D` of `W`. -/
 theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule K E)
     (hD : IsClosed (D : Set E)) [FiniteDimensional K G] {c : ℝ} (hc : 1 < c) :
     ∃ W : Submodule K E, W ≤ D ∧ FiniteDimensional K W ∧
       ∀ g ∈ G, infDist g W ≤ c * infDist g D := by
+  have : IsClosed (D : Set E) := hD
   -- A `t`-orthogonal basis `b` of the image of `G` in the normed quotient `E ⧸ D`, for some
   -- `c⁻¹ < t < 1`.
   obtain ⟨t, hct, ht⟩ : ∃ t : ℝ≥0, (c⁻¹ : ℝ) < t ∧ t < 1 := by
@@ -386,12 +447,9 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
   -- Lift each `b i` to a vector `y i` of norm at most `c * t * ‖b i‖`.
   have hlift (i : Fin (Module.finrank K (G.map D.mkQ))) :
       ∃ y : E, D.mkQ y = b i ∧ ‖y‖ ≤ c * t * ‖b i‖ := by
-    have hpos : 0 < ‖b i‖ := norm_pos_iff.2 (b.ne_zero i)
     obtain ⟨y, hy, hny⟩ := Submodule.Quotient.norm_mk_lt (b i : E ⧸ D)
-      (mul_pos (sub_pos.2 hct') hpos)
-    refine ⟨y, hy, ?_⟩
-    rw [norm_coe] at hny
-    linarith
+      (mul_pos (sub_pos.2 hct') (norm_pos_iff.2 (b.ne_zero i)))
+    exact ⟨y, hy, by rw [norm_coe] at hny; linarith⟩
   choose y hy hny using hlift
   refine ⟨D ⊓ (G ⊔ span K (range y)), inf_le_left, ?_, fun g hg ↦ ?_⟩
   · have := FiniteDimensional.span_of_finite K (finite_range y)
@@ -427,8 +485,8 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
         _ ≤ c * ‖x‖ := by gcongr
     _ = c * infDist g D := by rw [← norm_coe, hxg, hnorm]
 
-/-- A closed subspace of a space of countable type is the closure of the span of a countable
-subset of it. -/
+/-- A closed subspace of a seminormed space of countable type over a complete normed field is the
+closure of the span of a countable subset of it. -/
 private theorem exists_countable_subset_closure_span_of_isClosed {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) {D : Submodule K E} (hD : IsClosed (D : Set E)) :
     ∃ S : Set E, S.Countable ∧ S ⊆ D ∧ (D : Set E) ⊆ closure (span K S) := by
@@ -464,9 +522,9 @@ private theorem exists_countable_subset_closure_span_of_isClosed {v : ℕ → E}
       _ < ε / 3 + 2 * (ε / 3) := add_lt_add hdg hgw
       _ = ε := by ring
 
-/-- **Subspaces of spaces of countable type**: over a complete nontrivially normed field, if a
-sequence has dense span in an ultrametric normed space `E`, then every subspace `D` of `E`, closed
-or not, is of countable type: some sequence in `D` has dense span in `D`. -/
+/-- **Subspaces of spaces of countable type**: over a complete normed field, if a sequence has
+dense span in an ultrametric seminormed space `E`, then every subspace `D` of `E`, closed or not,
+is of countable type: some sequence in `D` has dense span in `D`. -/
 theorem _root_.Submodule.exists_dense_span_of_dense_span (D : Submodule K E) {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) :
     ∃ w : ℕ → D, Dense (span K (range w) : Set D) := by
@@ -496,6 +554,13 @@ theorem _root_.Submodule.exists_dense_span_of_dense_span (D : Submodule K E) {v 
     rfl
   exact ⟨w, Subtype.dense_iff.2 (hspan ▸ hDT)⟩
 
+end SeminormedApprox
+
+section SeparatingDual
+
+variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
+  [CompleteSpace K] [IsUltrametricDist E]
+
 /-- **Continuous linear functionals separate points on spaces of countable type**: over a complete
 nontrivially normed field, if a sequence has dense span in an ultrametric normed space `E`, then
 `StrongDual K E` separates points of `E`, without assuming completeness of `E` or spherical
@@ -517,6 +582,8 @@ theorem _root_.Submodule.separatingDual_span_of_countable {S : Set E} (hS : S.Co
     SeparatingDual K (span K S) :=
   let ⟨_, hv⟩ := hS.exists_span_range_eq_top K
   separatingDual_of_dense_span (by rw [hv, top_coe]; exact dense_univ)
+
+end SeparatingDual
 
 end TauCeti
 

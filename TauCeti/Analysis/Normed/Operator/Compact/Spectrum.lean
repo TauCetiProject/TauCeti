@@ -9,9 +9,8 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
-import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Eigenspace
 
 /-!
 # Eigenvalue thresholds for compact operators
@@ -37,46 +36,6 @@ open Module Submodule
 
 namespace IsCompactOperator
 
-open Polynomial in
-/-- For eigenvectors `v n` of a continuous linear endomorphism `K` of a `T1` topological vector
-space, with distinct eigenvalues `μ n`, the kernels of the operators
-`∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces, and
-`K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th. -/
-private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddCommGroup E]
-    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousConstSMul 𝕜 E]
-    [T1Space E] {K : E →L[𝕜] E} (μ : ℕ → 𝕜) (hinj : Function.Injective μ) (v : ℕ → E)
-    (hv : ∀ n, Module.End.HasEigenvector (K : Module.End 𝕜 E) (μ n) (v n)) :
-    ∃ V : ℕ → Submodule 𝕜 E, (∀ n, IsClosed (V n : Set E)) ∧ (∀ n, V n < V (n + 1)) ∧
-      (∀ n x, x ∈ V (n + 1) → K x - μ n • x ∈ V n) := by
-  let P (n : ℕ) : E →L[𝕜] E := aeval K (∏ i ∈ Finset.range n, (X - C (μ i)))
-  -- The factors of `P (n + 1)` commute, so `K - μ n • 1` can be split off on either side.
-  have hP (n : ℕ) : P (n + 1) = P n * (K - μ n • 1) := by
-    simp only [P, Finset.prod_range_succ, map_mul, map_sub, aeval_X, aeval_C,
-      Algebra.algebraMap_eq_smul_one]
-  have hP' (n : ℕ) : P (n + 1) = (K - μ n • 1) * P n := by
-    simp only [P, Finset.prod_range_succ_comm, map_mul, map_sub, aeval_X, aeval_C,
-      Algebra.algebraMap_eq_smul_one]
-  -- `P n` acts on the eigenvector `v m` by the value of its polynomial at `μ m`.
-  have hPv (n m : ℕ) : P n (v m) = (∏ i ∈ Finset.range n, (μ m - μ i)) • v m := by
-    rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_aeval,
-      Module.End.aeval_apply_of_hasEigenvector (hv m), eval_prod]
-    simp only [eval_sub, eval_X, eval_C]
-  let V (n : ℕ) : Submodule 𝕜 E := LinearMap.ker (P n : E →ₗ[𝕜] E)
-  have hmem (n : ℕ) (x : E) : x ∈ V n ↔ P n x = 0 := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-  refine ⟨V, fun n ↦ (P n).isClosed_ker,
-    fun n ↦ IsConcreteLE.lt_iff_le_and_exists.2 ⟨?_, v n, ?_, ?_⟩, fun n x hx ↦ ?_⟩
-  · simpa only [V, hP', ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp] using
-      LinearMap.ker_le_ker_comp (P n : E →ₗ[𝕜] E) ((K - μ n • 1 : E →L[𝕜] E) : E →ₗ[𝕜] E)
-  · rw [hmem, hPv, Finset.prod_eq_zero (Finset.self_mem_range_succ n) (sub_self _), zero_smul]
-  · rw [hmem, hPv]
-    refine smul_ne_zero (Finset.prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 ?_)
-      (Module.End.hasEigenvector_iff.1 (hv n)).2
-    exact hinj.ne (Finset.mem_range.1 hi).ne'
-  · rw [hmem] at hx ⊢
-    rwa [hP, _root_.mul_apply_eq_comp, _root_.sub_apply, _root_.smul_apply,
-      one_apply_eq_self] at hx
-
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
 
@@ -87,11 +46,14 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     (hμ : ∀ n, Module.End.HasEigenvalue (K : Module.End 𝕜 E) (μ n)) (hnorm : ∀ n, ε ≤ ‖μ n‖) :
     ¬ Function.Injective μ := by
   intro hinj
-  choose v hv using fun n ↦ (hμ n).exists_hasEigenvector
-  obtain ⟨V, hclosed, hstrict, hstep⟩ := exists_eigenvector_ker_chain μ hinj v hv
-  obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_ascending_chain hε hnorm (fun n ↦ (hstrict n).le)
-    (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
-  exact (hstrict p).ne' hp
+  let P (n : ℕ) : E →L[𝕜] E :=
+    Polynomial.aeval K (∏ i ∈ Finset.range n, (Polynomial.X - Polynomial.C (μ i)))
+  have hlt (n : ℕ) : LinearMap.ker (P n : E →ₗ[𝕜] E) < LinearMap.ker (P (n + 1) : E →ₗ[𝕜] E) :=
+    K.ker_aeval_prod_range_lt_succ (fun _ hi ↦ hinj.ne hi.ne') (hμ n)
+  obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_ascending_chain hε hnorm (fun n ↦ (hlt n).le)
+    (fun n ↦ (P n).isClosed_ker.preimage continuous_subtypeVal)
+    (fun n _ hx ↦ (K.mem_ker_aeval_prod_range_succ_iff μ n).1 hx)
+  exact (hlt p).ne' hp
 
 /-- A compact operator on a normed space over a nontrivially normed field has only finitely many
 eigenvalues whose norm is at least a fixed positive number. Neither the scalar field nor the
