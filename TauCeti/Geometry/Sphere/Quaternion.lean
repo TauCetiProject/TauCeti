@@ -30,6 +30,9 @@ Tangent vector fields on a sphere are represented, as usual in topology, by maps
 * `TauCeti.quaternionFrame`: the three vectors `x <• i`, `x <• j`, `x <• k`.
 * `TauCeti.orthonormal_quaternionFrame`, `TauCeti.inner_quaternionFrame_self`: the three
   vectors are orthogonal to `x`, and orthonormal when `x` is a unit vector.
+* `TauCeti.orthonormal_vecCons_quaternionFrame`: with `x`, they form an orthonormal four-frame.
+* `TauCeti.orthonormal_quaternionFrame_pair_of_ne`: any two of them are orthonormal.
+* `TauCeti.continuous_quaternionFrame`: they are continuous on `E`.
 * `TauCeti.contDiff_quaternionFrame`, `TauCeti.contMDiff_quaternionFrame`: they are analytic on
   `E` and on the unit sphere.
 
@@ -70,6 +73,11 @@ theorem quaternionFrame_one (x : E) : quaternionFrame x 1 = x <• (⟨0, 0, 1, 
 theorem quaternionFrame_two (x : E) : quaternionFrame x 2 = x <• (⟨0, 0, 0, 1⟩ : ℍ) :=
   (rfl)
 
+/-- Each vector field of the quaternionic frame is a continuous map of `E`. -/
+theorem continuous_quaternionFrame [TopologicalSpace E] [ContinuousConstSMul ℍᵐᵒᵖ E] (j : Fin 3) :
+    Continuous fun x : E ↦ quaternionFrame x j := by
+  fin_cases j <;> exact continuous_const_smul _
+
 end Frame
 
 section Smooth
@@ -106,5 +114,29 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
   convert orthonormal_op_smul hx hijk using 1
   ext j
   fin_cases j <;> simp
+
+/-- A unit vector `x` followed by its quaternionic frame `x <• i`, `x <• j`, `x <• k` is
+orthonormal. -/
+theorem orthonormal_vecCons_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
+    Orthonormal ℝ (Matrix.vecCons x (quaternionFrame x)) :=
+  orthonormal_vecCons_iff.2 ⟨hx, fun i ↦ by rw [real_inner_comm, inner_quaternionFrame_self],
+    orthonormal_quaternionFrame hx⟩
+
+/-- A unit vector `x` followed by two distinct vectors of its quaternionic frame is orthonormal:
+any two of `x <• i`, `x <• j`, `x <• k` are two pointwise orthonormal tangent vector fields on the
+unit sphere. -/
+theorem orthonormal_vecCons_quaternionFrame_of_ne {x : E} (hx : ‖x‖ = 1) {i j : Fin 3}
+    (hij : i ≠ j) : Orthonormal ℝ ![x, quaternionFrame x i, quaternionFrame x j] := by
+  have hinj : Function.Injective ![0, i.succ, j.succ] := by
+    intro a b hab
+    fin_cases a <;> fin_cases b <;> simp_all [Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
+  convert (orthonormal_vecCons_quaternionFrame hx).comp _ hinj using 1
+  ext a
+  fin_cases a <;> rfl
+
+/-- Two distinct vectors of the quaternionic frame of a unit vector are orthonormal. -/
+theorem orthonormal_quaternionFrame_pair_of_ne {x : E} (hx : ‖x‖ = 1) {i j : Fin 3}
+    (hij : i ≠ j) : Orthonormal ℝ ![quaternionFrame x i, quaternionFrame x j] :=
+  (orthonormal_vecCons_iff.1 (orthonormal_vecCons_quaternionFrame_of_ne hx hij)).2.2
 
 end TauCeti

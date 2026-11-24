@@ -313,7 +313,7 @@ theorem exists_isLagrangianEmbedding_of_isCompact (hdim : 2 * Fintype.card ι = 
     hσ.isNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField
       (hF.of_le (by simp)) hcomm hreg hL
   have hσW := hσ.mpullback_subtype_val W
-  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (fun y : W ↦ F y) := hF.comp contMDiff_subtype_val
+  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (fun y : W ↦ F y) := hF.comp contMDiff_subtypeVal
   set x' : W := ⟨x, hxW⟩
   have := hσW.discreteTopology_hamiltonianFlowStabilizer hFW hcommW hcW
     (hregW x' (mem_connectedComponentIn rfl))

@@ -19,47 +19,65 @@ arrow bounds and vertex excess split componentwise.
 The resulting equivalences for `ExcessFlow` and `ExcessIntervalFlow` let exact- and
 interval-excess feasibility problems be assembled from, or restricted to, disjoint components.
 They preserve every arrow value and every vertex bound.
+
+The two arrow families may live in different universes: each summand's arrows are lifted with
+`ULift` into the common universe, so the construction is fully universe-polymorphic.
 -/
 
 public section
 
 namespace TauCeti
 
-universe u u' v w
+universe u u' v v' w
 
 variable {V : Type u} {W : Type u'}
-variable {Q : V → V → Type v} {R : W → W → Type v} {K : Type w}
+variable {Q : V → V → Type v} {R : W → W → Type v'} {K : Type w}
 
 /-- The disjoint union of two arrow families. It retains arrows within each vertex summand and
-has no arrows between the two summands. -/
+has no arrows between the two summands. The arrows of each summand are lifted to the common
+universe, so the two families may live in different universes. -/
 @[expose]
-def DisjointUnionHom (Q : V → V → Type v) (R : W → W → Type v) :
-    V ⊕ W → V ⊕ W → Type v
-  | .inl x, .inl y => Q x y
-  | .inr x, .inr y => R x y
+def DisjointUnionHom (Q : V → V → Type v) (R : W → W → Type v') :
+    V ⊕ W → V ⊕ W → Type (max v v')
+  | .inl x, .inl y => ULift.{max v v'} (Q x y)
+  | .inr x, .inr y => ULift.{max v v'} (R x y)
   | .inl _, .inr _ => PEmpty
   | .inr _, .inl _ => PEmpty
 
 instance DisjointUnionHom.instFintype [∀ x y, Fintype (Q x y)]
     [∀ x y, Fintype (R x y)] : ∀ x y, Fintype (DisjointUnionHom Q R x y)
-  | .inl _, .inl _ => inferInstanceAs (Fintype (Q _ _))
-  | .inr _, .inr _ => inferInstanceAs (Fintype (R _ _))
+  | .inl _, .inl _ => inferInstanceAs (Fintype (ULift (Q _ _)))
+  | .inr _, .inr _ => inferInstanceAs (Fintype (ULift (R _ _)))
   | .inl _, .inr _ => inferInstanceAs (Fintype PEmpty)
   | .inr _, .inl _ => inferInstanceAs (Fintype PEmpty)
+
+instance DisjointUnionHom.instFinite [∀ x y, Finite (Q x y)]
+    [∀ x y, Finite (R x y)] : ∀ x y, Finite (DisjointUnionHom Q R x y)
+  | .inl x, .inl y => inferInstanceAs (Finite (ULift (Q x y)))
+  | .inr x, .inr y => inferInstanceAs (Finite (ULift (R x y)))
+  | .inl _, .inr _ => inferInstanceAs (Finite PEmpty)
+  | .inr _, .inl _ => inferInstanceAs (Finite PEmpty)
+
+instance DisjointUnionHom.instDecidableEq [∀ x y, DecidableEq (Q x y)]
+    [∀ x y, DecidableEq (R x y)] : ∀ x y, DecidableEq (DisjointUnionHom Q R x y)
+  | .inl x, .inl y => inferInstanceAs (DecidableEq (ULift (Q x y)))
+  | .inr x, .inr y => inferInstanceAs (DecidableEq (ULift (R x y)))
+  | .inl _, .inr _ => inferInstanceAs (DecidableEq PEmpty)
+  | .inr _, .inl _ => inferInstanceAs (DecidableEq PEmpty)
 
 namespace DisjointUnionHom
 
 /-- An arrow of the left family as an arrow of the disjoint union. -/
 @[expose]
-def inl {x y : V} (e : Q x y) : DisjointUnionHom Q R (.inl x) (.inl y) := e
+def inl {x y : V} (e : Q x y) : DisjointUnionHom Q R (.inl x) (.inl y) := ULift.up e
 
 /-- An arrow of the right family as an arrow of the disjoint union. -/
 @[expose]
-def inr {x y : W} (e : R x y) : DisjointUnionHom Q R (.inr x) (.inr y) := e
+def inr {x y : W} (e : R x y) : DisjointUnionHom Q R (.inr x) (.inr y) := ULift.up e
 
 /-- The arrows in the left summand are equivalent to the original left arrows. -/
 def inlEquiv {x y : V} : Q x y ≃ DisjointUnionHom Q R (.inl x) (.inl y) :=
-  Equiv.refl _
+  Equiv.ulift.symm
 
 @[simp]
 theorem inlEquiv_apply {x y : V} (e : Q x y) : inlEquiv (R := R) e = inl e :=
@@ -84,7 +102,7 @@ theorem inl_inj {x y : V} {e e' : Q x y} : inl (R := R) e = inl e' ↔ e = e' :=
 
 /-- The arrows in the right summand are equivalent to the original right arrows. -/
 def inrEquiv {x y : W} : R x y ≃ DisjointUnionHom Q R (.inr x) (.inr y) :=
-  Equiv.refl _
+  Equiv.ulift.symm
 
 @[simp]
 theorem inrEquiv_apply {x y : W} (e : R x y) : inrEquiv (Q := Q) e = inr e :=
@@ -113,10 +131,10 @@ theorem forall_iff {P : ∀ ⦃x y⦄, DisjointUnionHom Q R x y → Prop} :
       (∀ ⦃x y⦄ (e : Q x y), P (inl e)) ∧ ∀ ⦃x y⦄ (e : R x y), P (inr e) := by
   refine ⟨fun h ↦ ⟨fun _ _ e ↦ h (inl e), fun _ _ e ↦ h (inr e)⟩, ?_⟩
   rintro ⟨hl, hr⟩ (x | x) (y | y) e
-  · exact hl e
+  · exact hl e.down
   · exact e.elim
   · exact e.elim
-  · exact hr e
+  · exact hr e.down
 
 /-- There are no arrows from the left summand to the right summand. -/
 instance instIsEmptyInlInr (x : V) (y : W) :
@@ -136,8 +154,8 @@ namespace Assignment
 @[expose]
 def disjointUnion (f : Assignment Q K) (g : Assignment R K) :
     Assignment (DisjointUnionHom Q R) K
-  | .inl _, .inl _, e => f e
-  | .inr _, .inr _, e => g e
+  | .inl _, .inl _, e => f e.down
+  | .inr _, .inr _, e => g e.down
   | .inl _, .inr _, e => e.elim
   | .inr _, .inl _, e => e.elim
 

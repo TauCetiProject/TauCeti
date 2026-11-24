@@ -58,8 +58,8 @@ theorem explicitGraphClass_ne_zero_of_involution_of_conj (U : OpenSubgroup G)
     simpa only [coe_evensGraphCocycle, hf11, map_zero, one_smul, one_mul, sub_self,
       zero_add] using hb11
   have hbvv' : b (v : G) - b 1 + b (v : G) = (trivialF2Equiv G).symm 1 := by
-    simpa [coe_evensGraphCocycle, evensGraphCochain_apply_of_mem_of_mem hs v.2 v.2,
-      hconj, evensExtend_of_mem v.2, hαv, hv, TopRep.distribMulAction_smul,
+    simpa [coe_evensGraphCocycle, evensGraphCochain_apply_of_mem_of_mem hs v.property v.property,
+      hconj, evensExtend_of_mem v.property, hαv, hv, TopRep.distribMulAction_smul,
       trivialF2_ρ_apply_apply] using hbvv
   have htwo : ∀ x : (trivialF2 G).V, x + x = 0 := by
     intro x

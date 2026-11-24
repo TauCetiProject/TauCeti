@@ -196,7 +196,9 @@ theorem integral_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ)
     (∫ z in affineMap A.toContinuousLinearMap c '' s, f z) =
       |A.toLinearEquiv.toLinearMap.det| * ∫ z in s, f (affineMap A.toContinuousLinearMap c z) := by
   rw [affineMap_eq_add]
-  simpa only [smul_eq_mul, integral_const_mul] using A.integral_image_affine c f s volume
+  simpa only [smul_eq_mul, integral_const_mul, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv] using
+    LinearMap.integral_image_affine A.toLinearEquiv.toLinearMap c f s volume
 
 /-- Area integrability is preserved under an invertible affine coordinate map. -/
 theorem integrableOn_affineMap_image_iff (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) (f : ℂ → ℝ) :

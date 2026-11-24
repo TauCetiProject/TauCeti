@@ -133,7 +133,7 @@ theorem IsRingOfIntegralElements.isIdempotentElem_comap_topologicallyNilpotentId
     IsIdempotentElem
       ((topologicallyNilpotentIdeal A).comap (Aplus.inclusion h.le_powerBoundedSubring)) := by
   rw [h.comap_topologicallyNilpotentIdeal_eq_span_range hp r hr]
-  exact isIdempotentElem_span_range_compatible_roots hp fun n ↦ r.2 n
+  exact isIdempotentElem_span_range_compatible_roots hp fun n ↦ r.property n
 
 /-- The pullback of `A°°` to a ring of integral elements admitting compatible roots of a
 pseudouniformiser is a flat module: the roots are units of `A`, hence nonzerodivisors of `A⁺`. -/

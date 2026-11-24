@@ -46,7 +46,7 @@ theorem exists_realization_orderedProd (K : AbstractSimplicialComplex α)
       (orderedProdSnd K.toPreAbstractSimplicialComplex
         L.toPreAbstractSimplicialComplex |>.domainRestrict
           (by rw [orderedProd_toPreAbstractSimplicialComplex])).realizationMap z = y := by
-  obtain ⟨w, hw, hchain, hwx, hwy⟩ := Finsupp.exists_nonneg_isChain_mapDomain x.1 y.1
+  obtain ⟨w, hw, hchain, hwx, hwy⟩ := Finsupp.exists_nonneg_isChain_mapDomain x.val y.val
     (Realization.nonneg K x) (Realization.nonneg L y)
     ((Realization.sum_eq_one K x).trans (Realization.sum_eq_one L y).symm)
   have hface : w.support ∈ orderedProd K L := by

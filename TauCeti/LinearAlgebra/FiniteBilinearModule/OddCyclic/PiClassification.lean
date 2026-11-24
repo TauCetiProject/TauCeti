@@ -344,7 +344,7 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
     -- summands, its exponents agree up to reindexing.
     obtain ⟨σ, hσ⟩ := ZMod.exists_equiv_exponents_of_pi_pow_addEquiv (Fact.out : p.Prime).one_lt
       (fun i : {i // k i ≠ 0} ↦ k i) (fun j : {j // l j ≠ 0} ↦ l j)
-      (fun i ↦ Nat.pos_of_ne_zero i.2) (fun j ↦ Nat.pos_of_ne_zero j.2)
+      (fun i ↦ Nat.pos_of_ne_zero i.property) (fun j ↦ Nat.pos_of_ne_zero j.property)
       ((isometryPiOddCyclicNeZero hp k θ).symm.trans
         (hf.some.trans (isometryPiOddCyclicNeZero hp l η))).toLinearEquiv.toAddEquiv
     have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} := by

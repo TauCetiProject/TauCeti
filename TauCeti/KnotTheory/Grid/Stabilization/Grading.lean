@@ -298,22 +298,23 @@ unchanged. -/
 -- that of the underlying stabilized diagram, the source of the stabilization comparison
 -- `GridDiagram.fullyBlockedHomologyStabilizeXEquivProd`.
 @[expose] def stabilizeX : OddComponentGridDiagram (n + 1) :=
-  ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, by
-    rw [← GridDiagram.even_alexanderTwoℤ_iff _ (G.1.O.insertPoint s.succ (G.1.X s).succ),
+  ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s, by
+    rw [← GridDiagram.even_alexanderTwoℤ_iff _ (G.val.O.insertPoint s.succ (G.val.X s).succ),
       GridDiagram.alexanderTwoℤ_stabilizeX_insertPoint]
-    exact ((G.1.even_alexanderTwoℤ_iff G.1.O).mpr G.2).sub even_two⟩
+    exact ((G.val.even_alexanderTwoℤ_iff G.val.O).mpr G.property).sub even_two⟩
 
 /-- The underlying grid diagram of `G.stabilizeX s` is the stabilization splitting the
 `X`-marking of column `s`. -/
 @[simp]
-theorem val_stabilizeX : (G.stabilizeX s).1 = G.1.stabilizeX s.castSucc (G.1.X s).castSucc s :=
+theorem val_stabilizeX : (G.stabilizeX s).val = G.val.stabilizeX s.castSucc (G.val.X s).castSucc s
+    :=
   (rfl)
 
 /-- Inserting the center lowers both state gradings by one. -/
 @[simp]
 theorem bidegree_stabilizeX_insertPoint (x : GridState n) :
-    (G.stabilizeX s).bidegree (x.insertPoint s.succ (G.1.X s).succ) = G.bidegree x - (1, 1) := by
-  have hA := G.1.alexanderTwoℤ_stabilizeX_insertPoint s x
+    (G.stabilizeX s).bidegree (x.insertPoint s.succ (G.val.X s).succ) = G.bidegree x - (1, 1) := by
+  have hA := G.val.alexanderTwoℤ_stabilizeX_insertPoint s x
   rw [← val_stabilizeX, ← two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at hA
   apply Prod.ext
   · simp [bidegree_fst]

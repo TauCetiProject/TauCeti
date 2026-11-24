@@ -442,7 +442,7 @@ private theorem liftedComulPoint_eq_include_mul :
     ext h
     rfl
   rw [hcomul, hleft, hright]
-  exact Bialgebra.toConv_comp_comulAlgHom up
+  exact AlgHom.toConv_comp_comulAlgHom up
 
 private theorem action_comul_eq_include_actions
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) :
@@ -747,18 +747,14 @@ universal point. -/
 theorem pointRepresentationEquivComodule_apply
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) :
     pointRepresentationEquivComodule Theta = PointRepresentation.toComodule Theta :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 /-- The inverse map of the representation--comodule equivalence is the point action induced by a
 coaction. -/
 @[simp]
 theorem pointRepresentationEquivComodule_symm_apply (rho : Comodule R H V) :
     pointRepresentationEquivComodule.symm rho = PointRepresentation.ofComodule rho :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 end HopfAlgebra
 

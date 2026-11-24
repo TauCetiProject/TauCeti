@@ -414,7 +414,7 @@ theorem coe_a11d7e6GlueDual :
 /-- `a11d7e6GlueVector` lies in the dual carrier of `A₁₁ ⊥ D₇ ⊥ E₆`. -/
 theorem a11d7e6GlueVector_mem_dualCarrier :
     a11d7e6GlueVector ∈ a11d7e6RootLattice.dualCarrier :=
-  a11d7e6GlueDual.2
+  a11d7e6GlueDual.property
 
 /-- The `A₁₁` component of `a11d7e6GlueVector` is the first fundamental weight `ω₁`. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Filter.Extr
+import Mathlib.Order.Filter.Extr
 public import TauCeti.Combinatorics.Network.Augmentation
 
 /-!
@@ -56,7 +56,7 @@ starts from it.
 
 * L. R. Ford, D. R. Fulkerson, *Maximal flow through a network*, Canadian J. Math. 8 (1956).
 * A. Schrijver, *Combinatorial Optimization: Polyhedra and Efficiency*, Springer, 2003,
-  Theorem 10.1 and Corollary 10.1a.
+  Theorem 10.2, Corollary 10.2a and the proof of Theorem 10.3.
 -/
 
 public section
@@ -82,6 +82,8 @@ variable [Preorder K] {lo hi : Assignment Q K} {s t : V}
 def IsMaximum (f : BoundedFlow lo hi s t) : Prop :=
   IsMaxOn val Set.univ f
 
+/-- A bounded `s`–`t` assignment `f` is maximum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at most `f.val`. -/
 theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
     f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
@@ -95,6 +97,8 @@ terminal value. No sign condition is imposed on that value. -/
 def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
   IsMinOn val Set.univ f
 
+/-- A bounded `s`–`t` assignment `f` is minimum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at least `f.val`. -/
 theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
     f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
   isMinOn_univ_iff
@@ -102,6 +106,20 @@ theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
 /-- When the terminals coincide, every bounded assignment is minimum. -/
 theorem isMinimum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMinimum :=
   isMinimum_iff.2 fun g ↦ (val_eq_zero_of_eq hst f).trans_le (val_eq_zero_of_eq hst g).ge
+
+@[simp]
+theorem isMaximum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
+
+@[simp]
+theorem isMinimum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMinimum ↔ f.IsMinimum := by
+  rw [isMinimum_iff, isMinimum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
 
 end Preorder
 
@@ -135,7 +153,8 @@ theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMi
 theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
   rw [← isMaximum_swap, swap_swap]
 
-/-- A bounded terminal assignment attaining a lower cut bound is minimum. -/
+/-- A bounded `s`–`t` assignment whose value equals minus the cut bound of the complement of a
+vertex set containing `s` but not `t` is minimum. -/
 theorem isMinimum_of_val_eq_neg_cutBound_compl [DecidableEq V]
     (f : BoundedFlow lo hi s t) {S : Finset V} (hs : s ∈ S) (ht : t ∉ S)
     (h : f.val = -cutBound lo hi Sᶜ) : f.IsMinimum :=
@@ -221,13 +240,14 @@ theorem IsMaximum.exists_val_eq_cutBound [DecidableEq V] (hst : s ≠ t)
     ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = cutBound lo hi S :=
   ((f.tfae_isMaximum hst).out 1 3).1 hf
 
-/-- A bounded terminal assignment is minimum exactly when its residual network has no positive
-path from the sink to the source. -/
+/-- A bounded assignment between distinct terminals is minimum exactly when its residual network
+has no positive path from the sink to the source. -/
 theorem isMinimum_iff_not_positiveReachable (hst : s ≠ t) (f : BoundedFlow lo hi s t) :
     f.IsMinimum ↔ ¬PositiveReachable (residualCapacity lo hi f.toFun) t s := by
   rw [← isMaximum_swap, isMaximum_iff_not_positiveReachable hst.symm, swap_toFun]
 
-/-- A minimum bounded terminal assignment attains a lower cut bound. -/
+/-- The value of a minimum bounded `s`–`t` assignment between distinct terminals equals minus the
+cut bound of the complement of some vertex set containing `s` but not `t`. -/
 theorem IsMinimum.exists_val_eq_neg_cutBound_compl [DecidableEq V] (hst : s ≠ t)
     {f : BoundedFlow lo hi s t} (hf : f.IsMinimum) :
     ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = -cutBound lo hi Sᶜ := by
@@ -252,8 +272,17 @@ flows for the same capacities. -/
 def IsMaximum (f : Flow cap s t) : Prop :=
   IsMaxOn (fun g : Flow cap s t ↦ g.val) Set.univ f
 
+/-- An ordinary `s`–`t` flow `f` is maximum exactly when every ordinary `s`–`t` flow for the same
+capacities has value at most `f.val`. -/
 theorem isMaximum_iff {f : Flow cap s t} : f.IsMaximum ↔ ∀ g : Flow cap s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
+
+@[simp]
+theorem isMaximum_congr_iff {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (Flow.congr hcap hs ht).forall_congr_right]
+  simp
 
 end Preorder
 
@@ -306,6 +335,8 @@ def AugmentsTo (f g : Flow cap s t) : Prop :=
     (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
       f.augmentBottleneck p hp hne = g
 
+/-- `g` arises from `f` by augmenting by the bottleneck along an augmenting walk that traverses at
+least one arrow and no arrow twice. -/
 theorem augmentsTo_iff {f g : Flow cap s t} :
     f.AugmentsTo g ↔ ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.arrows.Nodup)
       (hne : p.arrows ≠ []), (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧

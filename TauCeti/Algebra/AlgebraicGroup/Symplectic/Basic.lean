@@ -176,18 +176,18 @@ private noncomputable def pointsSubgroupToGLSymplecticFin
     (g : CommHopfAlgCat.quotientPointsSubgroup
       (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
       (CommAlgCat.of R A)) : GLSymplecticFin m A :=
-  ⟨GeneralLinear.pointsMulEquiv (m + m) g.1,
-    (mem_definingPointsSubgroup_iff R m g.1).mp g.2⟩
+  ⟨GeneralLinear.pointsMulEquiv (m + m) g.val,
+    (mem_definingPointsSubgroup_iff R m g.val).mp g.property⟩
 
 /-- Regard a symplectic matrix as a point in the cut-out ambient subgroup. -/
 private noncomputable def glSymplecticFinToPointsSubgroup (g : GLSymplecticFin m A) :
     CommHopfAlgCat.quotientPointsSubgroup
       (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
       (CommAlgCat.of R A) :=
-  ⟨(GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm g.1,
+  ⟨(GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm g.val,
     (mem_definingPointsSubgroup_iff R m _).mpr (by
       rw [MulEquiv.apply_symm_apply]
-      exact g.2)⟩
+      exact g.property)⟩
 
 /-- The subgroup of `GL (m + m) (A)` cut out by the symplectic Hopf ideal is
 `TauCeti.GLSymplecticFin m A`. -/
@@ -200,13 +200,13 @@ private noncomputable def definingPointsSubgroupMulEquiv :
   invFun := glSymplecticFinToPointsSubgroup R m
   left_inv g := by
     apply Subtype.ext
-    exact (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm_apply_apply g.1
+    exact (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm_apply_apply g.val
   right_inv g := by
     apply Subtype.ext
-    exact (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).apply_symm_apply g.1
+    exact (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).apply_symm_apply g.val
   map_mul' g h := by
     apply Subtype.ext
-    exact map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)) g.1 h.1
+    exact map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)) g.val h.val
 
 /-- **The points identification**: the group of algebra-valued points of the symplectic
 coordinate Hopf algebra is the symplectic subgroup of the general linear group. -/
@@ -243,7 +243,7 @@ theorem pointsMulEquiv_coe
     (CommAlgCat.of R A) f
   rw [pointsMulEquiv_apply_eq]
   exact congrArg
-    (fun g => (pointsSubgroupToGLSymplecticFin R m g : GLSymplecticFin m A).1)
+    (fun g => (pointsSubgroupToGLSymplecticFin R m g : GLSymplecticFin m A).val)
     hcomponent.symm
 
 /-- The ambient point attached to a symplectic matrix is the general-linear point attached to
@@ -253,7 +253,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : GLSymplecticFin m A) :
     CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
         (CommAlgCat.of R A) ((pointsMulEquiv R m (A := A)).symm g) =
-      (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm g.1 := by
+      (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).symm g.val := by
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) (m + m)).injective
   rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
@@ -294,6 +294,17 @@ theorem coe_pointsMulEquivGLSymplectic
       Equiv.reindexGL finSumFinEquiv.symm A
         (pointsMulEquiv R m (A := A) f : GL (Fin (m + m)) A) :=
   GLSymplecticFin.coe_mulEquivGLSymplectic m A (pointsMulEquiv R m (A := A) f)
+
+/-- The `Fin m ⊕ Fin m` reading of the points identification is natural in the value algebra. -/
+theorem pointsMulEquivGLSymplectic_mapValue (phi : A →ₐ[R] B)
+    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
+    pointsMulEquivGLSymplectic R m (A := B)
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
+      GLSymplectic.map (Fin m) (phi : A →+* B)
+        (pointsMulEquivGLSymplectic R m (A := A) f) := by
+  simp only [pointsMulEquivGLSymplectic, MulEquiv.trans_apply]
+  exact (congrArg _ (pointsMulEquiv_mapValue (R := R) (m := m) (A := A) (B := B) phi f)).trans
+    (GLSymplecticFin.mulEquivGLSymplectic_map m A (phi : A →+* B) _)
 
 end Points
 

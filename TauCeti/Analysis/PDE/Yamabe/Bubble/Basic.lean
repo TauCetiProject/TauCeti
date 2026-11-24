@@ -93,6 +93,14 @@ theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := 
   rw [criticalExponent_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The critical exponent is positive exactly in the dimensions `n > 2`; it is `0` for `n = 0` and
+`n = 2`, and `-2` for `n = 1`. -/
+theorem criticalExponent_pos_iff {n : ℕ} : 0 < criticalExponent n ↔ 2 < n := by
+  refine ⟨fun h ↦ ?_, criticalExponent_pos⟩
+  by_contra hn
+  obtain rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 := by omega
+  all_goals norm_num [criticalExponent_def] at h
+
 /-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
 theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
   have h : (2 : ℝ) < n := by exact_mod_cast hn
@@ -396,7 +404,7 @@ theorem laplacian_div_add_norm_sub_sq_rpow (t k : ℝ) (b x : E) :
     have h := congrFun (laplacian_comp_add_right (fun z : E ↦ t ^ 2 + ‖z‖ ^ 2) (-b)) x
     simp only [← sub_eq_add_neg] at h
     rw [h, (contDiff_const.add contDiff_id :
-      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).laplacian_comp_norm_sq]
+      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).contDiffAt.laplacian_comp_norm_sq]
     simp
   rw [hUF, ContDiffAt.laplacian_comp (q := fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) hFc hqc, hFd, hFdd,
     hgrad, hlap]

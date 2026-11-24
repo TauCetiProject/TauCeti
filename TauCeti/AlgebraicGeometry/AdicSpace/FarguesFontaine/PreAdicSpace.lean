@@ -442,7 +442,7 @@ theorem isOpenImmersion_ofRestrict_comp_quotientPresheafedHom (h : (spaYPresheaf
       (Opens.isOpenEmbedding (X := TopCat.of (spaY p ϖ)) V).isOpenMap).obj W
     have hsub : (W' : Set (spaY p ϖ)) ⊆ V := by
       rintro _ ⟨w, -, rfl⟩
-      exact w.2
+      exact w.property
     refine isIso_spaXPresheafι_app_comp_map h (V := W')
       (fun k hk ↦ (hV k hk).mono (Set.preimage_mono hsub) hsub) ?_ ?_ _
     · -- the image of `W` under `V → 𝒴 → 𝒳` is the image under `q` of its image in `𝒴`

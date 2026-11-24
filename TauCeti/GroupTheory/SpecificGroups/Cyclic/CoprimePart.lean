@@ -159,7 +159,7 @@ theorem exists_coprimePart_of_isCyclic (hp : p.Prime) {C : Subgroup G} [Finite C
       (∀ c ∈ C, ∃ n : ℕ, c ^ p ^ n ∈ D) ∧ D.relIndex C = ordProj[p] (Nat.card C) := by
   obtain ⟨x, rfl⟩ : ∃ x : G, C = zpowers x := by
     obtain ⟨a, ha⟩ := isCyclic_iff_exists_zpowers_eq_top.mp (inferInstance : IsCyclic C)
-    refine ⟨(a : G), le_antisymm (fun y hy => ?_) (zpowers_le.mpr a.2)⟩
+    refine ⟨(a : G), le_antisymm (fun y hy => ?_) (zpowers_le.mpr a.property)⟩
     obtain ⟨k, hk⟩ := mem_zpowers_iff.mp (ha ▸ Subgroup.mem_top (⟨y, hy⟩ : C))
     exact ⟨k, by simpa using congrArg Subtype.val hk⟩
   have horder : orderOf x ≠ 0 := orderOf_ne_zero_iff.mpr (finite_zpowers.mp inferInstance)

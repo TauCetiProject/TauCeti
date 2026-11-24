@@ -63,28 +63,30 @@ private def fiberProductDomain (hf : Continuous f) (hg : Continuous g) :
     (φ.open_source.preimage hf).prod (φ.open_source.preimage hg)⟩
 
 private def fiberProductZeroHomeomorph (hf : Continuous f) (hg : Continuous g) :
-    {p : φ.fiberProductDomain hf hg // φ.fiberProductEquation f g p.1 = 0} ≃ₜ
+    {p : φ.fiberProductDomain hf hg // φ.fiberProductEquation f g p.val = 0} ≃ₜ
       {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source} where
-  toFun p := ⟨p.1.1, (φ.fiberProductEquation_eq_zero_iff p.1.2.1 p.1.2.2).1 p.2, p.1.2.1⟩
-  invFun p := ⟨⟨p.1, p.2.2, by simpa only [mem_preimage, ← p.2.1] using p.2.2⟩,
-    (φ.fiberProductEquation_eq_zero_iff p.2.2 (p.2.1 ▸ p.2.2)).2 p.2.1⟩
+  toFun p := ⟨p.val.val, (φ.fiberProductEquation_eq_zero_iff p.val.property.1 p.val.property.2).1
+      p.property, p.val.property.1⟩
+  invFun p := ⟨⟨p.val, p.property.2,
+      by simpa only [mem_preimage, ← p.property.1] using p.property.2⟩,
+    (φ.fiberProductEquation_eq_zero_iff p.property.2 (p.property.1 ▸ p.property.2)).2 p.property.1⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem coe_fiberProductZeroHomeomorph_symm (hf : Continuous f) (hg : Continuous g)
     (p : {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source}) :
-    ((φ.fiberProductZeroHomeomorph hf hg).symm p).1.1 = p.1 := (rfl)
+    ((φ.fiberProductZeroHomeomorph hf hg).symm p).val.val = p.val := (rfl)
 
 variable (hn : 1 ≤ n) (hf : ContMDiff IX IN n f) (hg : ContMDiff IY IN n g)
 
 private theorem contMDiff_fiberProductDomain_equation :
     ContMDiff (IX.prod IY) 𝓘(ℝ, EN) n
       (fun p : φ.fiberProductDomain hf.continuous hg.continuous ↦
-        φ.fiberProductEquation f g p.1) := by
+        φ.fiberProductEquation f g p.val) := by
   exact (φ.contMDiffOn_fiberProductEquation hf hg).comp_contMDiff
-    contMDiff_subtype_val fun p ↦ p.2
+    contMDiff_subtypeVal fun p ↦ p.property
 
 include hn in
 private theorem isRegularValue_fiberProductDomain_equation
@@ -94,22 +96,22 @@ private theorem isRegularValue_fiberProductDomain_equation
           (mfderiv IY IN g p.2)).range = ⊤) :
     IsRegularValue (IX.prod IY) 𝓘(ℝ, EN)
       (fun p : φ.fiberProductDomain hf.continuous hg.continuous ↦
-        φ.fiberProductEquation f g p.1) 0 := by
+        φ.fiberProductEquation f g p.val) 0 := by
   rw [isRegularValue_iff]
   intro p hp
-  have hfg := (φ.fiberProductEquation_eq_zero_iff p.2.1 p.2.2).1 hp
+  have hfg := (φ.fiberProductEquation_eq_zero_iff p.property.1 p.property.2).1 hp
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   have hreg := (φ.isRegularPoint_fiberProductEquation_iff hn0
-    ((hf p.1.1).mdifferentiableAt hn0) ((hg p.1.2).mdifferentiableAt hn0)
-    hfg p.2.1).2 (htrans p.1 hfg p.2.1)
+    ((hf p.val.1).mdifferentiableAt hn0) ((hg p.val.2).mdifferentiableAt hn0)
+    hfg p.property.1).2 (htrans p.val hfg p.property.1)
   have hD := (isLocalDiffeomorph_subtype_val
     (I := IX.prod IY) (n := n) p).isInvertible_mfderiv hn0
   have hEq : (fun p : φ.fiberProductDomain hf.continuous hg.continuous ↦
-      φ.fiberProductEquation f g p.1) = φ.fiberProductEquation f g ∘ Subtype.val := rfl
+      φ.fiberProductEquation f g p.val) = φ.fiberProductEquation f g ∘ Subtype.val := rfl
   rw [isRegularPoint_iff, hEq, mfderiv_comp _
     ((φ.contMDiffOn_fiberProductEquation hf hg).contMDiffAt
-      ((φ.fiberProductDomain hf.continuous hg.continuous).isOpen.mem_nhds p.2)
-      |>.mdifferentiableAt hn0) (contMDiff_subtype_val.mdifferentiableAt hn0)]
+      ((φ.fiberProductDomain hf.continuous hg.continuous).isOpen.mem_nhds p.property)
+      |>.mdifferentiableAt hn0) (contMDiff_subtypeVal.mdifferentiableAt hn0)]
   exact (isRegularPoint_iff.1 hreg).comp hD.surjective
 
 variable [IsManifold IX n X] [IsManifold IY n Y] [IX.Boundaryless] [IY.Boundaryless]
@@ -137,15 +139,15 @@ theorem exists_isManifold_localFiberProduct_isSmoothEmbedding
         𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
         (Subtype.val : {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source} → X × Y) ∧
       ∀ (p : {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source})
-        (v : TangentSpace (IX.prod IY) p.1),
+        (v : TangentSpace (IX.prod IY) p.val),
         v ∈ (mfderiv
           𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
           (Subtype.val : {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source} → X × Y) p).range ↔
-        mfderiv IX IN f p.1.1 v.1 =
-          tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) := by
+        mfderiv IX IN f p.val.1 v.1 =
+          tangentSpaceCast IN (g p.val.2) (f p.val.1) (mfderiv IY IN g p.val.2 v.2) := by
   let d := finrank ℝ EX + finrank ℝ EY - finrank ℝ EN
   let U := φ.fiberProductDomain hf.continuous hg.continuous
-  let q : U → EN := fun p ↦ φ.fiberProductEquation f g p.1
+  let q : U → EN := fun p ↦ φ.fiberProductEquation f g p.val
   have hq : ContMDiff (IX.prod IY) 𝓘(ℝ, EN) n q :=
     φ.contMDiff_fiberProductDomain_equation hf hg
   have hreg : IsRegularValue (IX.prod IY) 𝓘(ℝ, EN) q 0 :=
@@ -172,16 +174,17 @@ theorem exists_isManifold_localFiberProduct_isSmoothEmbedding
   intro p v
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   have hr := (φ.isRegularPoint_fiberProductEquation_iff hn0
-    ((hf p.1.1).mdifferentiableAt hn0) ((hg p.1.2).mdifferentiableAt hn0)
-    p.2.1 p.2.2).2 (htrans p.1 p.2.1 p.2.2)
+    ((hf p.val.1).mdifferentiableAt hn0) ((hg p.val.2).mdifferentiableAt hn0)
+    p.property.1 p.property.2).2 (htrans p.val p.property.1 p.property.2)
   have hdim := hr.finrank_ker_mfderiv_add_finrank
   rw [finrank_prod] at hdim
   have heq := hr.range_mfderiv_eq_ker_mfderiv
-    (.of_forall fun z ↦ (φ.fiberProductEquation_eq_zero_iff z.2.2
-      (z.2.1 ▸ z.2.2)).2 z.2.1) ((hi.isImmersionAt p).mfderiv_injective hn0)
+    (.of_forall fun z ↦ (φ.fiberProductEquation_eq_zero_iff z.property.2
+      (z.property.1 ▸ z.property.2)).2 z.property.1) ((hi.isImmersionAt p).mfderiv_injective hn0)
     (by rw [finrank_fin_fun, finrank_prod]; omega)
   rw [heq, ← TauCeti.ker_mvfderiv]
   exact φ.mem_ker_mvfderiv_fiberProductEquation_iff hn0
-    ((hf p.1.1).mdifferentiableAt hn0) ((hg p.1.2).mdifferentiableAt hn0) p.2.1 p.2.2 v
+    ((hf p.val.1).mdifferentiableAt hn0) ((hg p.val.2).mdifferentiableAt hn0) p.property.1
+        p.property.2 v
 
 end PartialDiffeomorph

@@ -11,23 +11,27 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Basic
 /-!
 # The Weil divisor associated with a Cartier divisor
 
-On a Noetherian integral curve, a Cartier divisor has an order at every codimension-one point:
+On a Noetherian integral scheme, a Cartier divisor has an order at every codimension-one point:
 choose a rational local equation and take its order of vanishing. This does not depend on the
 equation, since two equations differ by a regular unit near the point. Only finitely many orders
 are nonzero, so they form a Weil divisor.
 
 This file constructs the resulting homomorphism from Cartier divisors to Weil divisors. It proves
-that its values are locally principal and that, when the codimension-one local rings are discrete
-valuation rings, it is inverse to the construction which glues the local equations of a Weil
-divisor. Consequently, Weil divisors and Cartier divisors are additively equivalent under these
-hypotheses.
+that its values are locally principal, that it is injective on any Noetherian normal integral
+scheme (`Scheme.CartierDivisor.toWeilDivisor_injective`), and that on a one-dimensional scheme
+whose codimension-one local rings are discrete valuation rings it is inverse to the construction
+which glues the local equations of a Weil divisor. Consequently, Weil divisors and Cartier divisors
+are additively equivalent under these hypotheses.
 
 ## Main declarations
 
 * `Scheme.CartierDivisor.orderAt` is the order of a Cartier divisor at a codimension-one point;
 * `Scheme.CartierDivisor.toWeilDivisorHom` sends a Cartier divisor to its Weil divisor;
 * `Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor` supplies its local equations;
-* `SchemeWeilDivisor.equivCartierDivisor` is the Weil--Cartier additive equivalence.
+* `Scheme.CartierDivisor.toWeilDivisor_injective` proves injectivity on Noetherian normal integral
+  schemes;
+* `SchemeWeilDivisor.equivCartierDivisor` is the one-dimensional Weil--Cartier additive
+  equivalence.
 
 The construction follows Hartshorne, *Algebraic Geometry*, II.6.11, and the Stacks Project,
 *Divisors*, Tag 0BE9.
@@ -208,7 +212,7 @@ theorem finite_support_orderAt (D : CartierDivisor X) :
   have hDg : D |_ U = rationalUnitClass X U g := by
     rw [rationalUnitClass_apply]
     simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ((SchemeWeilDivisor.finite_setOfPred_not_mem U).union
+  refine ((CodimensionOnePoint.finite_setOfPred_notMem U).union
     (SchemeWeilDivisor.finite_support_orderAt g)).subset ?_
   intro y hy
   by_cases hyU : (y : X) ∈ U
@@ -287,6 +291,31 @@ theorem isLocallyPrincipal_toWeilDivisor (D : CartierDivisor X) :
   rw [coeff_toWeilDivisor,
     orderAt_eq_of_restrict_eq_rationalUnitClass D y U hy g hDg]
 
+/-- **Cartier divisors embed into Weil divisors on a Noetherian normal integral scheme.** On a
+Noetherian normal integral scheme `X`, the map `toWeilDivisor : CartierDivisor X →
+SchemeWeilDivisor X` sending a Cartier divisor to its Weil divisor of local orders is injective.
+Hartshorne, Proposition II.6.11. -/
+theorem toWeilDivisor_injective [IsNormalScheme X] :
+    Function.Injective (toWeilDivisor (X := X)) := by
+  have hinj : Function.Injective (toWeilDivisorHom (X := X)) := by
+    refine (injective_iff_map_eq_zero toWeilDivisorHom).mpr fun D hD ↦ ?_
+    choose U _ hxU g hg using fun x : X ↦ D.exists_localEquation_le ⊤ (Opens.mem_top x)
+    have hcover : (⊤ : X.Opens) ≤ ⨆ x, U x := fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩
+    refine TopCat.Sheaf.eq_of_locally_eq' (cartierDivisorSheaf X) U ⊤ (fun _ ↦ homOfLE le_top)
+      hcover D 0 fun x ↦ ?_
+    have : Nonempty (U x) := ⟨⟨x, hxU x⟩⟩
+    obtain ⟨u, hu⟩ := exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed
+      (U := U x) (fun _ _ ↦ inferInstance) (f := g x) fun y hy ↦ by
+        rw [← D.coeff_toWeilDivisor_eq_ord y hy (g x) (hg x), ← toWeilDivisorHom_apply, hD,
+          WeilDivisor.coeff_zero]
+    have hunit : Units.map (X.germToFunctionField (U x)).hom u = g x := Units.ext hu
+    -- Unfold the presheaf map on `cartierDivisorSheaf` to the `|_` notation used by `hg` and `h0`.
+    change D |_ U x = (0 : CartierDivisor X) |_ U x
+    have h0 : (0 : CartierDivisor X) |_ U x = 0 := map_zero _
+    rw [h0, ← hg x, ← hunit, rationalUnitClass_germToFunctionField_eq_zero]
+  intro D E h
+  exact hinj (by simpa only [toWeilDivisorHom_apply] using h)
+
 end Noetherian
 
 end CartierDivisor
@@ -304,27 +333,27 @@ recovers the original Weil divisor. -/
 theorem toWeilDivisor_cartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : locallyPrincipalSubgroup X) :
     (IsLocallyPrincipal.cartierDivisor hX
-      (mem_locallyPrincipalSubgroup.mp D.2)).toWeilDivisor = D := by
+      (mem_locallyPrincipalSubgroup.mp D.property)).toWeilDivisor = D := by
   apply WeilDivisor.ext
   intro x
   obtain ⟨U, hxU, g, hg⟩ := isLocallyPrincipal_iff.mp
-    (mem_locallyPrincipalSubgroup.mp D.2) x
+    (mem_locallyPrincipalSubgroup.mp D.property) x
   let _ : Nonempty U := ⟨⟨x, hxU⟩⟩
   have hcartier : (IsLocallyPrincipal.cartierDivisor hX
-      (mem_locallyPrincipalSubgroup.mp D.2)) |_ U =
+      (mem_locallyPrincipalSubgroup.mp D.property)) |_ U =
       Scheme.rationalUnitClass X U g := by
     exact IsLocallyPrincipal.cartierDivisor_restrict hX
-      (mem_locallyPrincipalSubgroup.mp D.2) U g hg
+      (mem_locallyPrincipalSubgroup.mp D.property) U g hg
   calc
     WeilDivisor.coeff (IsLocallyPrincipal.cartierDivisor hX
-        (mem_locallyPrincipalSubgroup.mp D.2)).toWeilDivisor x =
+        (mem_locallyPrincipalSubgroup.mp D.property)).toWeilDivisor x =
         (IsLocallyPrincipal.cartierDivisor hX
-          (mem_locallyPrincipalSubgroup.mp D.2)).orderAt x :=
+          (mem_locallyPrincipalSubgroup.mp D.property)).orderAt x :=
       Scheme.CartierDivisor.coeff_toWeilDivisor _ _
     _ = SchemeWeilDivisor.orderAt x g :=
       Scheme.CartierDivisor.orderAt_eq_of_restrict_eq_rationalUnitClass
         (IsLocallyPrincipal.cartierDivisor hX
-          (mem_locallyPrincipalSubgroup.mp D.2)) x U hxU g hcartier
+          (mem_locallyPrincipalSubgroup.mp D.property)) x U hxU g hcartier
     _ = WeilDivisor.coeff D x := (hg x hxU).symm
 
 /-- Gluing the local equations of the Weil divisor associated with a Cartier divisor recovers the
@@ -334,17 +363,11 @@ theorem cartierDivisor_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : Scheme.CartierDivisor X) :
     IsLocallyPrincipal.cartierDivisor hX
         (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D) = D := by
-  apply (IsLocallyPrincipal.eq_cartierDivisor hX
-    (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D) fun x ↦ ?_).symm
-  obtain ⟨U, _, hxU, f, hf⟩ := Scheme.exists_local_equation X D x (by simp)
-  let _ : Nonempty U := ⟨⟨x, hxU⟩⟩
-  let g := Scheme.rationalUnitSectionsEquiv X U f
-  have hDg : D |_ U = Scheme.rationalUnitClass X U g := by
-    rw [Scheme.rationalUnitClass_apply]
-    simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ⟨U, inferInstance, g, hxU, fun y hy ↦ ?_, hDg⟩
-  rw [Scheme.CartierDivisor.coeff_toWeilDivisor,
-    Scheme.CartierDivisor.orderAt_eq_of_restrict_eq_rationalUnitClass D y U hy g hDg]
+  have : IsNormalScheme X := .of_forall_coheight_le_one hX
+  exact Scheme.CartierDivisor.toWeilDivisor_injective
+    (toWeilDivisor_cartierDivisor hX
+      ⟨D.toWeilDivisor, mem_locallyPrincipalSubgroup.mpr
+        (Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor D)⟩)
 
 /-- **The Weil--Cartier equivalence.** On a Noetherian integral curve whose codimension-one local
 rings are discrete valuation rings, Weil divisors are additively equivalent to Cartier divisors. -/

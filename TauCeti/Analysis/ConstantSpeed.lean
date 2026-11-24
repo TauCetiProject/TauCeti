@@ -28,6 +28,10 @@ hypothesis is needed: the bound is trivial when the variation is infinite.
   of Hausdorff dimension at most one.
 * `eVariationOn.hausdorffMeasure_image_le`: `μH[1] (f '' s) ≤ eVariationOn f s`.
 * `eVariationOn.euclideanHausdorffMeasure_image_le`: `μHE[1] (f '' s) ≤ eVariationOn f s`.
+* `BoundedVariationOn.isFiniteMeasure_euclideanHausdorffMeasure_restrict`: `μHE[1]` restricted to
+  the trace of a bounded-variation curve is a finite measure.
+* `HasConstantSpeedOnWith.isFiniteMeasure_euclideanHausdorffMeasure_restrict`: `μHE[1]` restricted
+  to the trace of a constant-speed curve on a compact interval is a finite measure.
 -/
 
 public section
@@ -106,6 +110,27 @@ theorem euclideanHausdorffMeasure_image_le (f : α → E) (s : Set α) :
   exact hausdorffMeasure_image_le f s
 
 end eVariationOn
+
+/-- `μHE[1]` restricted to the trace of a curve of bounded variation is a finite measure. -/
+theorem BoundedVariationOn.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+    {α E : Type*} [LinearOrder α] [EMetricSpace E] [MeasurableSpace E] [BorelSpace E]
+    {f : α → E} {s : Set α} (hf : BoundedVariationOn f s) :
+    IsFiniteMeasure (μHE[1].restrict (f '' s)) :=
+  isFiniteMeasure_restrict.2
+    ((eVariationOn.euclideanHausdorffMeasure_image_le f s).trans_lt hf.lt_top).ne
+
+/-- `μHE[1]` restricted to the trace of a constant-speed curve on a compact interval is a finite
+measure. -/
+theorem HasConstantSpeedOnWith.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+    {E : Type*} [EMetricSpace E] [MeasurableSpace E] [BorelSpace E]
+    {f : ℝ → E} {a b : ℝ} {l : ℝ≥0} (hf : HasConstantSpeedOnWith f (Icc a b) l) :
+    IsFiniteMeasure (μHE[1].restrict (f '' Icc a b)) := by
+  rcases le_or_gt a b with hab | hab
+  · have hbv : BoundedVariationOn f (Icc a b) := by
+      simpa using hf.hasLocallyBoundedVariationOn a b (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
+    exact hbv.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+  · rw [Icc_eq_empty_of_lt hab, image_empty, Measure.restrict_empty]
+    infer_instance
 
 /-- The image of a curve of locally bounded variation has zero additive Haar measure in every
 real normed space of dimension greater than one (so in particular finite-dimensional). -/

@@ -111,8 +111,8 @@ private theorem genLoopLiftCurry_of_mem_boundary [Nontrivial N] (γ : Ω^ N X (p
     TauCeti.isPathConnected_cubeBoundary.isConnected.isPreconnected
   have hconst := hp.const_of_comp (g := fun z : Cube.boundary N => genLoopLiftCurry hp e γ z)
     (by fun_prop) (fun z z' => by
-      simp only [apply_genLoopLiftCurry hp e, GenLoop.boundary γ _ z.2,
-        GenLoop.boundary γ _ z'.2])
+      simp only [apply_genLoopLiftCurry hp e, GenLoop.boundary γ _ z.property,
+        GenLoop.boundary γ _ z'.property])
     ⟨y, hy⟩ ⟨0, TauCeti.zero_mem_cubeBoundary⟩
   exact hconst.trans (genLoopLiftCurry_zero hp e γ)
 

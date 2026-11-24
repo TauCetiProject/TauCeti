@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Edg
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Calculus.DSlope.Continuous
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -260,7 +260,6 @@ private theorem tendsto_schwarzChristoffelBoundary_sub_of_eq_comp_neg_inv
       (continuousAt_inv₀ hx0').norm.eventually (gt_mem_nhds hxr')
     filter_upwards [nhdsWithin_le_nhds hnorm, self_mem_nhdsWithin] with z hzr hz
     exact heq z hz hzr
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   exact (tendsto_nhds_unique (hB.congr' hnear) hHx).symm
 
 /-- On the right outer edge, the normalized Schwarz--Christoffel boundary with total exponent

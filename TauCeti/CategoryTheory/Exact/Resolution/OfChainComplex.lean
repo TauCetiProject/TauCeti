@@ -89,7 +89,7 @@ differential: `Z₀ = X` with the augmentation, and `Zᵢ₊₁` is the kernel o
 @[reducible] private noncomputable def stage :
     (i : ℕ) → (Z : C) × {g : K.X i ⟶ Z // K.d (i + 1) i ≫ g = 0}
   | 0 => ⟨X, ε, hε⟩
-  | i + 1 => ⟨kernel (stage i).2.1, kernel.lift _ (K.d (i + 1) i) (stage i).2.2, by
+  | i + 1 => ⟨kernel (stage i).2.val, kernel.lift _ (K.d (i + 1) i) (stage i).2.property, by
       ext
       simp⟩
 
@@ -97,12 +97,12 @@ differential: `Z₀ = X` with the augmentation, and `Zᵢ₊₁` is the kernel o
 @[reducible] private noncomputable def syz (i : ℕ) : C := (stage K ε hε i).1
 
 /-- The map `Kᵢ ⟶ Zᵢ` induced by the differential, or by the augmentation for `i = 0`. -/
-private noncomputable def syzπ (i : ℕ) : K.X i ⟶ syz K ε hε i := (stage K ε hε i).2.1
+private noncomputable def syzπ (i : ℕ) : K.X i ⟶ syz K ε hε i := (stage K ε hε i).2.val
 
 private theorem syzπ_zero : syzπ K ε hε 0 = ε := rfl
 
 private theorem d_comp_syzπ (i : ℕ) : K.d (i + 1) i ≫ syzπ K ε hε i = 0 :=
-  (stage K ε hε i).2.2
+  (stage K ε hε i).2.property
 
 /-- The inclusion `Zᵢ₊₁ ↪ Kᵢ` of the kernel of `Kᵢ ⟶ Zᵢ`. -/
 private noncomputable def syzι (i : ℕ) : syz K ε hε (i + 1) ⟶ K.X i :=

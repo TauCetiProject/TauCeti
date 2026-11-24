@@ -51,15 +51,16 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 open tube of radius `ε`. It preserves the base point and fixes the zero section. -/
 def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
     TotalSpace V (fun x : M => normalSubspace I f x) ≃ₜ normalTube I f ε where
-  toFun p := ⟨(p.proj, ε • ((Homeomorph.unitBall p.2 : normalSubspace I f p.proj) : V)),
-    mem_normalTube.mpr ⟨(normalSubspace I f p.proj).smul_mem ε (Homeomorph.unitBall p.2).1.2, by
+  toFun p := ⟨(p.proj, ε • ((Homeomorph.unitBall p.snd : normalSubspace I f p.proj) : V)),
+    mem_normalTube.mpr ⟨(normalSubspace I f p.proj).smul_mem ε
+        (Homeomorph.unitBall p.snd).val.property, by
       rw [norm_smul, Real.norm_of_nonneg hε.le]
       exact (mul_lt_mul_of_pos_left
-        (mem_ball_zero_iff.mp (Homeomorph.unitBall p.2).2) hε).trans_eq (mul_one ε)⟩⟩
-  invFun q := ⟨q.1.1, Homeomorph.unitBall.symm
-    ⟨ε⁻¹ • (⟨q.1.2, (mem_normalTube.mp q.2).1⟩ : normalSubspace I f q.1.1), by
+        (mem_ball_zero_iff.mp (Homeomorph.unitBall p.snd).property) hε).trans_eq (mul_one ε)⟩⟩
+  invFun q := ⟨q.val.1, Homeomorph.unitBall.symm
+    ⟨ε⁻¹ • (⟨q.val.2, (mem_normalTube.mp q.property).1⟩ : normalSubspace I f q.val.1), by
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
-      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩⟩
+      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.property).2)⟩⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
     dsimp only
@@ -78,53 +79,53 @@ def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
     have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     have hv := hι.continuous.snd
     have ha : Continuous fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
-        (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ :=
+        (Real.sqrt (1 + ‖(p.snd : V)‖ ^ 2))⁻¹ :=
       ((continuous_const.add (hv.norm.pow 2)).sqrt).inv₀
-        (fun p => Real.sqrt_ne_zero'.mpr (by simpa using zero_lt_one_add_norm_sq (p.2 : V)))
+        (fun p => Real.sqrt_ne_zero'.mpr (by simpa using zero_lt_one_add_norm_sq (p.snd : V)))
     apply Continuous.subtype_mk
     convert hι.continuous.fst.prodMk ((continuous_const (y := ε)).smul (ha.smul hv)) using 1
     funext p
     dsimp only
     simp [Homeomorph.unitBall_apply_coe, OpenPartialHomeomorph.univUnitBall_apply]
   continuous_invFun := by
-    have hv : Continuous fun q : normalTube I f ε => ε⁻¹ • q.1.2 :=
-      continuous_const.smul (continuous_snd.comp continuous_subtype_val)
-    let k : normalTube I f ε → ball (0 : V) 1 := fun q => ⟨ε⁻¹ • q.1.2, by
+    have hv : Continuous fun q : normalTube I f ε => ε⁻¹ • q.val.2 :=
+      continuous_const.smul (continuous_snd.comp continuous_subtypeVal)
+    let k : normalTube I f ε → ball (0 : V) 1 := fun q => ⟨ε⁻¹ • q.val.2, by
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
-      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
+      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.property).2)⟩
     have hk : Continuous k := hv.subtype_mk _
     apply (isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f).isInducing.continuous_iff.mpr
-    convert (continuous_fst.comp continuous_subtype_val).prodMk
+    convert (continuous_fst.comp continuous_subtypeVal).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
     apply Prod.ext
     · rfl
-    · let y : ball (0 : normalSubspace I f q.1.1) 1 :=
-        ⟨ε⁻¹ • ⟨q.1.2, (mem_normalTube.mp q.2).1⟩, by
+    · let y : ball (0 : normalSubspace I f q.val.1) 1 :=
+        ⟨ε⁻¹ • ⟨q.val.2, (mem_normalTube.mp q.property).1⟩, by
           rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
-          exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
+          exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.property).2)⟩
       simpa only [k, y, Function.comp_apply, Submodule.coe_smul, Submodule.norm_coe]
-        using congrArg ((↑) : normalSubspace I f q.1.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
+        using congrArg ((↑) : normalSubspace I f q.val.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
           |>.trans (Homeomorph.unitBall_symm_apply_coe (k q)).symm
 
 /-- The radial compression leaves the base point unchanged. -/
 @[simp]
 theorem normalBundleHomeomorphTube_apply_fst (f : M → V) {ε : ℝ} (hε : 0 < ε)
     (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
-    (normalBundleHomeomorphTube f hε p).1.1 = p.proj := (rfl)
+    (normalBundleHomeomorphTube f hε p).val.1 = p.proj := (rfl)
 
 /-- The inverse radial compression also leaves the base point unchanged. -/
 @[simp]
 theorem normalBundleHomeomorphTube_symm_apply_proj (f : M → V) {ε : ℝ} (hε : 0 < ε)
     (q : normalTube I f ε) :
-    ((normalBundleHomeomorphTube f hε).symm q).proj = q.1.1 := (rfl)
+    ((normalBundleHomeomorphTube f hε).symm q).proj = q.val.1 := (rfl)
 
 /-- The fibre coordinate of radial compression, read in the ambient Euclidean space. -/
 @[simp]
 theorem normalBundleHomeomorphTube_apply_snd (f : M → V) {ε : ℝ} (hε : 0 < ε)
     (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
-    (normalBundleHomeomorphTube f hε p).1.2 =
-      ε • (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ • (p.2 : V) := by
+    (normalBundleHomeomorphTube f hε p).val.2 =
+      ε • (Real.sqrt (1 + ‖(p.snd : V)‖ ^ 2))⁻¹ • (p.snd : V) := by
   simp [normalBundleHomeomorphTube, Homeomorph.unitBall_apply_coe,
     OpenPartialHomeomorph.univUnitBall_apply]
 
@@ -132,18 +133,18 @@ theorem normalBundleHomeomorphTube_apply_snd (f : M → V) {ε : ℝ} (hε : 0 <
 @[simp]
 theorem normalBundleHomeomorphTube_symm_apply_snd (f : M → V) {ε : ℝ} (hε : 0 < ε)
     (q : normalTube I f ε) :
-    (((normalBundleHomeomorphTube f hε).symm q).2 : V) =
-      (Real.sqrt (1 - ‖ε⁻¹ • q.1.2‖ ^ 2))⁻¹ • (ε⁻¹ • q.1.2) := by
-  let y : ball (0 : normalSubspace I f q.1.1) 1 :=
-    ⟨ε⁻¹ • ⟨q.1.2, (mem_normalTube.mp q.2).1⟩, by
+    (((normalBundleHomeomorphTube f hε).symm q).snd : V) =
+      (Real.sqrt (1 - ‖ε⁻¹ • q.val.2‖ ^ 2))⁻¹ • (ε⁻¹ • q.val.2) := by
+  let y : ball (0 : normalSubspace I f q.val.1) 1 :=
+    ⟨ε⁻¹ • ⟨q.val.2, (mem_normalTube.mp q.property).1⟩, by
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
-      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
+      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.property).2)⟩
   -- The inverse fibre is definitionally `unitBall.symm y`; naming its subtype input lets the
   -- explicit formula `Homeomorph.unitBall_symm_apply_coe` apply without unfolding the
   -- partial homeomorphism.
-  change ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) = _
+  change ((Homeomorph.unitBall.symm y : normalSubspace I f q.val.1) : V) = _
   simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
-    using congrArg ((↑) : normalSubspace I f q.1.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
+    using congrArg ((↑) : normalSubspace I f q.val.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
 
 /-- The zero section is carried to the zero vectors of the bounded normal tube. -/
 @[simp]
@@ -174,24 +175,24 @@ theorem exists_isOpenEmbedding_normalBundle_subset [FiniteDimensional ℝ V]
       (mem_normalTube.mp hp).2.trans_le (min_le_left ε δ)⟩
   have hrel : IsOpen ((normalTube I f ε) ↓∩ normalTube I f r) := by
     have heq : ((normalTube I f ε) ↓∩ normalTube I f r) =
-        {p : normalTube I f ε | ‖p.1.2‖ < r} := by
+        {p : normalTube I f ε | ‖p.val.2‖ < r} := by
       ext p
       simp only [mem_preimage, mem_normalTube, mem_ofPred_eq,
-        (mem_normalTube.mp p.2).1, true_and]
+        (mem_normalTube.mp p.property).1, true_and]
     rw [heq]
-    exact isOpen_lt ((continuous_snd.comp continuous_subtype_val).norm) continuous_const
+    exact isOpen_lt ((continuous_snd.comp continuous_subtypeVal).norm) continuous_const
   have hrEmb := hemb.comp (IsOpenEmbedding.inclusion hsub hrel)
   let e := normalBundleHomeomorphTube (I := I) f hr
   let Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V :=
-    fun p => f (e p).1.1 + (e p).1.2
+    fun p => f (e p).val.1 + (e p).val.2
   refine ⟨Φ, hrEmb.comp e.isOpenEmbedding, ?_, ?_⟩
   · intro x
     simp [Φ, e]
   · rintro _ ⟨p, rfl⟩
     apply hδO
-    refine mem_thickening_iff.mpr ⟨f (e p).1.1, mem_range_self _, ?_⟩
+    refine mem_thickening_iff.mpr ⟨f (e p).val.1, mem_range_self _, ?_⟩
     simpa [Φ, dist_eq_norm] using
-      (mem_normalTube.mp (e p).2).2.trans_le (min_le_right ε δ)
+      (mem_normalTube.mp (e p).property).2.trans_le (min_le_right ε δ)
 
 /-- The whole-bundle tubular embedding inside a prescribed open neighbourhood, packaged in the
 `IsTubularNeighborhood` interface with domain the entire normal bundle. -/
@@ -212,8 +213,8 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle_subset [FiniteDimensional
     apply hι.isInducing.continuous_iff.mpr
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>
-          (p.2.1.proj, (p.2.1.2 : V)) :=
-      hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
-    exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+          (p.2.val.proj, (p.2.val.snd : V)) :=
+      hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
+    exact hp.fst.prodMk ((continuous_subtypeVal.comp continuous_fst).smul hp.snd)
 
 end TauCeti

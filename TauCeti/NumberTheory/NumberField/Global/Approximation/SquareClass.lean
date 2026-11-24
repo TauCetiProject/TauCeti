@@ -39,29 +39,29 @@ variable {K : Type*} [Field K] [NumberField K]
 real places. The quotients are read in the actual completions and in the real embeddings. -/
 theorem exists_fieldUnit_isSquare_div_at_places
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal})
-    (a : ∀ v : S, (v.1.adicCompletion K)ˣ) (b : T → ℝˣ) :
+    (a : ∀ v : S, (v.val.adicCompletion K)ˣ) (b : T → ℝˣ) :
     ∃ x : Kˣ,
       (∀ v : S, IsSquare
-        (algebraMap K (v.1.adicCompletion K) (x : K) / (a v : v.1.adicCompletion K))) ∧
-      (∀ w : T, IsSquare (embedding_of_isReal w.1.2 (x : K) / (b w : ℝ))) := by
+        (algebraMap K (v.val.adicCompletion K) (x : K) / (a v : v.val.adicCompletion K))) ∧
+      (∀ w : T, IsSquare (embedding_of_isReal w.val.property (x : K) / (b w : ℝ))) := by
   classical
-  let target := ((fun v : S => (a v : v.1.adicCompletion K)), fun w : T => (b w : ℝ))
+  let target := ((fun v : S => (a v : v.val.adicCompletion K)), fun w : T => (b w : ℝ))
   have hf (v : S) : ∀ᶠ y in 𝓝 target,
-      y.1 v ≠ 0 ∧ IsSquare (y.1 v / (a v : v.1.adicCompletion K)) := by
-    let _ : Finite (𝓞 K ⧸ v.1.asIdeal) :=
-      Ring.HasFiniteQuotients.finiteQuotient v.1.ne_bot
-    have : CharZero (v.1.adicCompletion K) :=
-      charZero_of_injective_algebraMap (algebraMap K (v.1.adicCompletion K)).injective
-    have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v) :=
+      y.1 v ≠ 0 ∧ IsSquare (y.1 v / (a v : v.val.adicCompletion K)) := by
+    let _ : Finite (𝓞 K ⧸ v.val.asIdeal) :=
+      Ring.HasFiniteQuotients.finiteQuotient v.val.ne_bot
+    have : CharZero (v.val.adicCompletion K) :=
+      charZero_of_injective_algebraMap (algebraMap K (v.val.adicCompletion K)).injective
+    have hcont : Continuous (fun y : (∀ v : S, v.val.adicCompletion K) × (T → ℝ) => y.1 v) :=
       (continuous_apply v).comp continuous_fst
-    have hopen : IsOpen {u : (v.1.adicCompletion K)ˣ | IsSquare u} := by
+    have hopen : IsOpen {u : (v.val.adicCompletion K)ˣ | IsSquare u} := by
       simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
-        using isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
+        using isOpen_range_powMonoidHom (two_ne_zero' (v.val.adicCompletion K))
     exact Filter.Tendsto.eventually_isSquare_div
-      (f := fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v)
+      (f := fun y : (∀ v : S, v.val.adicCompletion K) × (T → ℝ) => y.1 v)
       hcont.continuousAt (hopen.mem_nhds .one) (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
-    have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
+    have hcont : Continuous (fun y : (∀ v : S, v.val.adicCompletion K) × (T → ℝ) =>
         y.2 w) :=
       (continuous_apply w).comp continuous_snd
     exact hcont.continuousAt.eventually_isSquare_div
@@ -84,17 +84,17 @@ by global coefficients whose product is exactly that unit. -/
 theorem exists_coefficients_prod_eq_isSquare_div_at_places
     {n : ℕ} (S : Finset (HeightOneSpectrum (𝓞 K)))
     (T : Finset {w : InfinitePlace K // w.IsReal}) (d : Kˣ)
-    (a : ∀ v : S, Fin (n + 1) → (v.1.adicCompletion K)ˣ)
+    (a : ∀ v : S, Fin (n + 1) → (v.val.adicCompletion K)ˣ)
     (b : T → Fin (n + 1) → ℝˣ)
-    (ha : ∀ v : S, IsSquare (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom d /
+    (ha : ∀ v : S, IsSquare (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom d /
       ∏ i, a v i))
-    (hb : ∀ w : T, IsSquare (Units.map (embedding_of_isReal w.1.2).toMonoidHom d /
+    (hb : ∀ w : T, IsSquare (Units.map (embedding_of_isReal w.val.property).toMonoidHom d /
       ∏ i, b w i)) :
     ∃ c : Fin (n + 1) → Kˣ, (∏ i, c i) = d ∧
       (∀ (v : S) i, IsSquare
-        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (c i) / a v i)) ∧
+        (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom (c i) / a v i)) ∧
       (∀ (w : T) i, IsSquare
-        (Units.map (embedding_of_isReal w.1.2).toMonoidHom (c i) / b w i)) := by
+        (Units.map (embedding_of_isReal w.val.property).toMonoidHom (c i) / b w i)) := by
   classical
   choose c hc hr using fun i : Fin n => exists_fieldUnit_isSquare_div_at_places S T
     (fun v => a v i.castSucc) (fun w => b w i.castSucc)
@@ -104,32 +104,33 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
   refine ⟨e, he, ?_, ?_⟩
   · intro v i
     have hhead (j : Fin n) : IsSquare
-        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e j.castSucc) /
+        (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom (e j.castSucc) /
           a v j.castSucc) := by
       apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hc j v
     refine Fin.lastCases ?_ hhead i
     have hp : IsSquare ((∏ i, Units.map
-        (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) / ∏ i, a v i) := by
+        (algebraMap K (v.val.adicCompletion K)).toMonoidHom (e i)) / ∏ i, a v i) := by
       rw [← map_prod, he]
       exact ha v
     exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
-      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) (b := a v)
+      (a := fun i => Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom (e i)) (b := a v)
       (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
   · intro w i
     have hhead (j : Fin n) : IsSquare
-        (Units.map (embedding_of_isReal w.1.2).toMonoidHom (e j.castSucc) / b w j.castSucc) := by
+        (Units.map (embedding_of_isReal w.val.property).toMonoidHom (e j.castSucc) / b w j.castSucc)
+            := by
       apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hr j w
     refine Fin.lastCases ?_ hhead i
     have hp : IsSquare ((∏ i, Units.map
-        (embedding_of_isReal w.1.2).toMonoidHom (e i)) / ∏ i, b w i) := by
+        (embedding_of_isReal w.val.property).toMonoidHom (e i)) / ∏ i, b w i) := by
       rw [← map_prod, he]
       exact hb w
     exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
-      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i)) (b := b w)
+      (a := fun i => Units.map (embedding_of_isReal w.val.property).toMonoidHom (e i)) (b := b w)
       (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
 
 end TauCeti.GlobalNumberFields
