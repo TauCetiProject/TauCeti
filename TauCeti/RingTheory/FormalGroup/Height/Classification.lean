@@ -120,7 +120,7 @@ private theorem le_order_pSeriesError_sub (hF : F.height p = h) (hG : G.height p
   -- `f(X) - g(X)` composed with `[p]_F`, of order `p ^ h`
   have h₁ : ((M * p ^ h : ℕ) : ℕ∞) ≤
       MvPowerSeries.order (PowerSeries.subst (F.nsmulSeries p) (f - g)) := by
-    rw [PowerSeries.order_subst (F.constantCoeff_nsmulSeries p), ← PowerSeries.order_eq_order,
+    rw [← PowerSeries.order_eq_order, PowerSeries.order_subst (F.constantCoeff_nsmulSeries p),
       F.height_eq_natCast_iff.mp hF, mul_comm M]
     push_cast
     gcongr
@@ -213,11 +213,11 @@ private theorem coeff_pSeriesError_of_lt (hF : F.height p = h) (hG : G.height p 
   have hf₁ : (1 : ℕ∞) ≤ f.order := PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hf
   rw [pSeriesError, map_sub, PowerSeries.coeff_of_lt_order, PowerSeries.coeff_of_lt_order,
     sub_zero]
-  · rw [PowerSeries.order_subst' hf, G.height_eq_natCast_iff.mp hG]
+  · rw [PowerSeries.order_subst hf, G.height_eq_natCast_iff.mp hG]
     calc (n : ℕ∞) < (p ^ h : ℕ) := by exact_mod_cast hn
       _ = 1 * (p ^ h : ℕ) := (one_mul _).symm
       _ ≤ f.order * (p ^ h : ℕ) := by gcongr
-  · rw [PowerSeries.order_subst' (F.constantCoeff_nsmulSeries p), F.height_eq_natCast_iff.mp hF]
+  · rw [PowerSeries.order_subst (F.constantCoeff_nsmulSeries p), F.height_eq_natCast_iff.mp hF]
     calc (n : ℕ∞) < (p ^ h : ℕ) := by exact_mod_cast hn
       _ = (p ^ h : ℕ) * 1 := (mul_one _).symm
       _ ≤ (p ^ h : ℕ) * f.order := by gcongr

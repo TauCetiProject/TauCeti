@@ -65,7 +65,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
       ∫ t in Ico a (a + p), φ t fun _ ↦ (1 : ℝ) := by
   obtain ⟨l, hl⟩ := (AddCircle.orientation p).exists_lift
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.singleton (Fin 1) ℝ) φ hφ
-    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico finite_empty
+    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico
+    countable_empty.isNullSet
     (by rw [compl_empty, coe_image_Ico_eq])
     (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
     (fun _ ↦ ContinuousLinearEquiv.refl ℝ ℝ) (fun t _ ↦ hasMFDerivAt_coe p t)
@@ -79,8 +80,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
 
 /-- The time form `dt_p` integrates to the period `p` over `AddCircle p`. -/
 theorem integralTopForm_timeForm :
-    integralTopForm (AddCircle.orientation p) (timeForm p).1 = p := by
-  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).1) :=
+    integralTopForm (AddCircle.orientation p) (timeForm p).val = p := by
+  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).val) :=
     isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)
   rw [integralTopForm_eq_setIntegral p
     ((timeForm p).isSmoothForm.integrableTopForm hc (Module.Basis.singleton (Fin 1) ℝ)) 0,
@@ -109,7 +110,7 @@ theorem integralTopForm_prod_eq_setIntegral
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.finTwoProd ℝ) φ hφ
     (Q := Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q))
     (D := Ico a (a + p) ×ˢ Ico b (b + q))
-    (measurableSet_Ico.prod measurableSet_Ico) finite_empty
+    (measurableSet_Ico.prod measurableSet_Ico) countable_empty.isNullSet
     (by rw [compl_empty, prodMap_image_prod, coe_image_Ico_eq, coe_image_Ico_eq, univ_prod_univ])
     (InjOn.prodMap (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
       fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
@@ -144,7 +145,7 @@ theorem eval₂_wedge_timeForm (x : AddCircle p × AddCircle q)
 theorem integralTopForm_wedge_timeForm :
     integralTopForm ((AddCircle.orientation p).prod (AddCircle.orientation q))
       (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).1 = p * q := by
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).val = p * q := by
   have hval (x : AddCircle p × AddCircle q) :
       SmoothBundleForm.eval₂ (SmoothForm.wedge
         (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))

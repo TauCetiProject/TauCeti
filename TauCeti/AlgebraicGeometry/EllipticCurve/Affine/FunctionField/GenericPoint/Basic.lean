@@ -50,9 +50,7 @@ consumer may rely on that.
   equation.
 * `WeierstrassCurve.Affine.nonsingular_genericX_genericY`: they are nonsingular, on an elliptic
   curve.
-* `WeierstrassCurve.Affine.evalEval_genericX_genericY` and
-  `WeierstrassCurve.Affine.evalEval_map_genericX_genericY`: evaluation at the generic coordinates
-  (or their images under an `R`-algebra map) is reduction.
+* `WeierstrassCurve.Affine.evalEval_genericX_genericY`: evaluation there is reduction.
 * `WeierstrassCurve.Affine.aeval_genericY_polynomial`: the generic `y`-coordinate is a root of
   the Weierstrass polynomial.
 * `WeierstrassCurve.Affine.isIntegral_genericY`: it is integral over any commutative
@@ -144,17 +142,6 @@ theorem FunctionField.ringHom_ext {S : Type*} [Semiring S] {f g : W.FunctionFiel
   · simpa [genericX_def, CoordinateRing.mk_C_eq_algebraMap] using hx
   · simpa [genericY_def] using hy
 
-variable {W} in
-/-- Evaluating an `R`-polynomial at `(E genericX, E genericY)` in any commutative `R`-semiring `S`
-is applying `E` to its coordinate-ring class. -/
-theorem evalEval_map_genericX_genericY {S : Type*} [CommSemiring S] [Algebra R S]
-    (E : W.FunctionField →ₐ[R] S) (p : R[X][Y]) :
-    (p.map (mapRingHom (algebraMap R S))).evalEval (E W.genericX) (E W.genericY) =
-      E (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W p)) := by
-  rw [genericX_def, genericY_def]
-  exact (CoordinateRing.algHom_mk_eq_evalEval
-    (E.comp (IsScalarTower.toAlgHom R W.CoordinateRing W.FunctionField)) p).symm
-
 /-- **Evaluating at the generic point is reduction modulo the Weierstrass relation.** A bivariate
 polynomial over `R`, pushed to the function field and evaluated at `(genericX, genericY)`, is the
 image of its class in the coordinate ring.
@@ -164,7 +151,8 @@ of a coordinate-ring element, where the ring's own API applies. -/
 theorem evalEval_genericX_genericY (p : R[X][Y]) :
     (p.map (mapRingHom (algebraMap R W.FunctionField))).evalEval W.genericX W.genericY =
       algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W p) :=
-  evalEval_map_genericX_genericY (AlgHom.id R W.FunctionField) p
+  (CoordinateRing.algHom_mk_eq_evalEval
+    (IsScalarTower.toAlgHom R W.CoordinateRing W.FunctionField) p).symm
 
 /-- **The generic coordinate functions satisfy the equation of the curve.** `(X, Y)` satisfies
 the equation of `W` base-changed to the function field, because the Weierstrass polynomial is

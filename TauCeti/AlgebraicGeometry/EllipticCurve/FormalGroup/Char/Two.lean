@@ -10,11 +10,12 @@ import Mathlib.Algebra.CharP.Two
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
-# Explicit doubling coefficient and height two in characteristic two
+# Height two in characteristic two
 
-An elliptic Weierstrass curve in characteristic two has formal-group height two exactly when
-`a₁ = 0`. The ellipticity hypothesis matters: the formal group of a singular cubic can have
-infinite height.
+For an elliptic Weierstrass curve over a field of characteristic two, the formal group has height
+two exactly when `a₁ = 0` (the classification at every prime, including singular curves, is in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`). The ellipticity
+hypothesis matters: the formal group of a singular cubic can have infinite height.
 
 Over any commutative ring of characteristic two, when `a₁ = 0`, the doubling series begins
 `[2](T) = a₃ T⁴ + ⋯`. Indeed, the inverse parameter is `T / (1 - a₃ w(T))` with

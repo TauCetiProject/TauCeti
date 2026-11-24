@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 /-!
 # The point topology and Weil restriction
 
-For a finite projective `A`-algebra `B` and a finitely presented `B`-algebra `C`, the Weil
+For a finite projective `A`-algebra `B` and an arbitrary `B`-algebra `C`, the Weil
 restriction adjunction is a homeomorphism on `T`-points when `T` is a topological commutative
 `A`-algebra and `B ⊗[A] T` carries its `T`-module topology (`homHomeomorph`).
 
@@ -39,7 +39,6 @@ namespace TauCeti.Algebra.WeilRestriction
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [Algebra.FinitePresentation B C]
 
 section General
 

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ParamPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FormalPoint
-public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
@@ -44,23 +42,12 @@ sum of the two points in the group law of the curve
 `WeierstrassCurve.specialize` then gives it for every `W`. No hypothesis is placed on `R`; in
 particular `R` need not be reduced.
 
-The basic addition-independent API for individual parametrized formal points (`formalParamVec`,
-`formalParamPoint`, nonsingularity, affine coordinates, zero-fibre, and injectivity) lives in
-`FormalGroup/ParamPoint.lean`; this file specialises `dblAddXYZ_formalW_eq_smul` along any pair of
-substitutable series `(q₁, q₂)` to prove that `formalParamPoint` respects `formalAdd W`.
-
 ## Main results
 
-* `WeierstrassCurve.isUnit_dblAddY_formalW` and
-  `WeierstrassCurve.isUnit_dblAddY_formalW_subst_pair`: the `Y`-coordinate of `dblAddXYZ` at
-  `[z₁ : -1 : w(z₁)]`, `[z₂ : -1 : w(z₂)]` — and more generally at any pair `(q₁, q₂)` of
-  substitutable series over an `R`-algebra — is a unit.
-* `WeierstrassCurve.dblAddXYZ_formalW_eq_smul` and
-  `WeierstrassCurve.dblAddXYZ_formalW_subst_pair_eq_smul`: the value of `dblAddXYZ` at these points
-  is a unit multiple of `(F, -1, w(F))`.
-* `WeierstrassCurve.formalParamPoint_subst_pair_formalAdd`: specialising `dblAddXYZ_formalW_eq_smul`
-  along any pair of substitutable series `(q₁, q₂)` identifies `formalAdd W` with point addition on
-  `W⁄KK`, unconditionally for every Weierstrass curve `W`.
+* `WeierstrassCurve.isUnit_dblAddY_formalW`: the `Y`-coordinate of `dblAddXYZ` at the points
+  `[z₁ : -1 : w(z₁)]` and `[z₂ : -1 : w(z₂)]` is a unit of `R⟦z₁, z₂⟧`.
+* `WeierstrassCurve.dblAddXYZ_formalW_eq_smul`: the value of `dblAddXYZ` at these points is a unit
+  multiple of `(F(z₁, z₂), -1, w(F(z₁, z₂)))`.
 * `WeierstrassCurve.lift_projModelFormalPoint_additionMorphism`: the addition morphism sends the
   pair of formal points reparametrised by `X ↦ z₁` and `X ↦ z₂` to the formal point
   reparametrised by `X ↦ F(z₁, z₂)`.
@@ -103,6 +90,38 @@ theorem isUnit_dblAddY_formalW :
     hc _ (constantCoeff_X _)]
   simp [Projective.dblAddY]
 
+section FractionField
+
+variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
+  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK] [IsFractionRing (MvPowerSeries σ O) KK]
+
+omit [IsFractionRing (MvPowerSeries σ O) KK] in
+-- The point `[q : -1 : w(q)]`, read in `KK`, is a nonsingular point of `W` over `KK`.
+private theorem nonsingular_algebraMap_comp (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
+    (fracCurve W σ KK).toProjective.Nonsingular
+      (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) := by
+  refine (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ
+    fun h ↦ by simpa using congrFun h 1).mp ?_
+  rw [fracCurve_def, ← map_map]
+  exact ((W.toProjective.equation_neg_one_iff_wEquation q _).mpr
+    (W.subst_formalW_wEquation (PowerSeries.HasSubst.of_constantCoeff_zero hq))).map _
+
+-- The point `[q : -1 : w(q)]`, read in `KK`, is the parametrized point `θ(q)`.
+private theorem toAffine_algebraMap_comp_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    Projective.Point.toAffine (fracCurve W σ KK).toProjective
+      (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) =
+        W.thetaPoint hΔ hq hq0 := by
+  have hz : (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero hq hq0
+  have hN := W.nonsingular_algebraMap_comp hΔ hq
+  rw [Projective.Point.toAffine_of_Z_ne_zero hN hz, W.thetaPoint_eq_some hΔ hq hq0
+    (by simpa using (Projective.nonsingular_of_Z_ne_zero hz).mp hN)]
+  simp
+
+end FractionField
+
 -- Over a domain, with nonzero discriminant, the identity is read off the group law of the curve
 -- over a fraction field `KK` of `O⟦z₁, z₂⟧`, where `dblAddXYZ` represents the sum of the two
 -- points, which is the point with parameter `F`.
@@ -142,37 +161,35 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
   have hF0 : F ≠ 0 := W.subst_pair_formalAdd_ne_zero hχ hz₁ hz₂ hχ₁ hχ₂
   -- read in `KK`, the law `dblAddXYZ` is nonzero, since its `Y`-coordinate is a unit, so it
   -- represents the sum of the two points, which is the parametrized point `θ(F)`
-  have hN₁ := W.nonsingular_fracCurve_formalParamVec (KK := KK) (.of_constantCoeff_zero hz₁)
-  have hN₂ := W.nonsingular_fracCurve_formalParamVec (KK := KK) (.of_constantCoeff_zero hz₂)
-  have hD : W'.toProjective.dblAddXYZ (W.formalParamVec (KK := KK) z₁)
-      (W.formalParamVec (KK := KK) z₂) = ρ ∘ D := by
-    rw [hW', fracCurve_def, ← map_map, formalParamVec_def, formalParamVec_def]
+  have hN₁ := W.nonsingular_algebraMap_comp hΔ' hz₁
+  have hN₂ := W.nonsingular_algebraMap_comp hΔ' hz₂
+  have hD : W'.toProjective.dblAddXYZ (ρ ∘ ![z₁, -1, PowerSeries.subst z₁ W.formalW])
+      (ρ ∘ ![z₂, -1, PowerSeries.subst z₂ W.formalW]) = ρ ∘ D := by
+    rw [hW', fracCurve_def, ← map_map]
     exact Projective.map_dblAddXYZ ..
   have hDu : IsUnit (D 1) := by simpa [D] using W.isUnit_dblAddY_formalW
   have hD0 : ρ ∘ D ≠ 0 := fun h ↦ (hDu.map ρ).ne_zero (congrFun h 1)
   have hsum : Projective.Point.toAffine W'.toProjective (ρ ∘ D) =
-      Projective.Point.toAffine W'.toProjective (W.formalParamVec (KK := KK) F) := by
+      Projective.Point.toAffine W'.toProjective (ρ ∘ ![F, -1, PowerSeries.subst F W.formalW]) := by
     rw [← hD,
       Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ (hD ▸ hD0)),
-      Projective.Point.toAffine_add hN₁ hN₂,
-      W.toAffine_fracCurve_formalParamVec_eq_thetaPoint hΔ' hz₁ hz₁0,
-      W.toAffine_fracCurve_formalParamVec_eq_thetaPoint hΔ' hz₂ hz₂0,
-      W.toAffine_fracCurve_formalParamVec_eq_thetaPoint hΔ' hFc hF0]
+      Projective.Point.toAffine_add hN₁ hN₂, W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₁ hz₁0,
+      W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₂ hz₂0,
+      W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hFc hF0]
     exact W.thetaPoint_add_of_subst_separates hΔ' hχ hz₁ hz₂ hz₁0 hz₂0 hχ₁ hχ₂ hFc hF0
   have hDN : W'.toProjective.Nonsingular (ρ ∘ D) :=
     (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ' hD0).mp
       (hD ▸ hN₁.left.dblAddXYZ hN₂.left)
-  -- equal affine points are projectively equivalent: `ρ ∘ D = u • formalParamVec F`
+  -- equal affine points are projectively equivalent: `ρ ∘ D = u • ρ ∘ (F, -1, w(F))`
   obtain ⟨u, hu⟩ := (Projective.Point.toAffine_eq_toAffine_iff hDN
-    (W.nonsingular_fracCurve_formalParamVec (KK := KK) (.of_constantCoeff_zero hFc))).mp hsum
-  have h₁ : ρ (D 1) = -u := by
-    simpa [Units.smul_def, formalParamVec_apply_one] using (congrFun hu 1).symm
+    (W.nonsingular_algebraMap_comp hΔ' hFc)).mp hsum
+  have h₁ : ρ (D 1) = -u := by simpa [Units.smul_def] using (congrFun hu 1).symm
   rw [← hF, ← Projective.dblAddXYZ_Y, ← hDdef]
   clear_value D
   funext k
   refine IsFractionRing.injective _ KK ?_
   have hk : ρ (D k) = u * ρ (![F, -1, PowerSeries.subst F W.formalW] k) := by
-    simpa [Units.smul_def, formalParamVec_def] using (congrFun hu k).symm
+    simpa [Units.smul_def] using (congrFun hu k).symm
   simp only [Pi.smul_apply, smul_eq_mul, map_mul, map_neg]
   linear_combination hk + ρ (![F, -1, PowerSeries.subst F W.formalW] k) * h₁
 
@@ -219,121 +236,7 @@ theorem dblAddXYZ_formalW_eq_smul :
   funext k
   fin_cases k <;> simp [φ]
 
-private theorem map_substAlgHom_pair_curve {S : Type*} [CommRing S] [Algebra R S] {σ : Type*}
-    {q₁ q₂ : MvPowerSeries σ S} (ha : HasSubst (pairSubstitution q₁ q₂)) :
-    (W.toProjective.map (algebraMap R (MvPowerSeries (Unit ⊕ Unit) R))).map
-        (substAlgHom (R := R) ha).toRingHom =
-      W.toProjective.map (algebraMap R (MvPowerSeries σ S)) := by
-  refine (W.map_map _ _).trans ?_
-  rw [AlgHom.toRingHom_eq_coe, (substAlgHom (R := R) ha).comp_algebraMap]
-
-private theorem substAlgHom_pair_comp_formalW {S : Type*} [CommRing S] [Algebra R S] {σ : Type*}
-    {q₁ q₂ : MvPowerSeries σ S} (ha : HasSubst (pairSubstitution q₁ q₂))
-    {r : MvPowerSeries (Unit ⊕ Unit) R} (hr : PowerSeries.HasSubst r) :
-    (substAlgHom (R := R) ha).toRingHom ∘ ![r, -1, PowerSeries.subst r W.formalW] =
-      ![subst (pairSubstitution q₁ q₂) r, -1,
-        PowerSeries.subst (subst (pairSubstitution q₁ q₂) r) W.formalW] := by
-  funext k
-  fin_cases k
-  · simp [coe_substAlgHom]
-  · exact (map_neg (substAlgHom (R := R) ha).toRingHom 1).trans (congrArg (-·) (map_one _))
-  · simp only [Nat.succ_eq_add_one, Nat.reduceAdd, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      Fin.reduceFinMk, Function.comp_apply, Fin.isValue, Matrix.cons_val, PowerSeries.subst_def]
-    rw [coe_substAlgHom, subst_comp_subst_apply hr.const ha]
-
-/-- The `Y`-coordinate of the Bosma–Lenstra addition law `dblAddXYZ` at any pair of substitutable
-series `(q₁, q₂)` over an `R`-algebra `S` is a unit. -/
-theorem isUnit_dblAddY_formalW_subst_pair {S : Type*} [CommRing S] [Algebra R S] {σ : Type*}
-    {q₁ q₂ : MvPowerSeries σ S} (hq₁ : PowerSeries.HasSubst q₁) (hq₂ : PowerSeries.HasSubst q₂) :
-    IsUnit ((W.toProjective.map (algebraMap R (MvPowerSeries σ S))).dblAddY
-      ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-      ![q₂, -1, PowerSeries.subst q₂ W.formalW]) := by
-  have ha := hasSubst_pair_of_hasSubst hq₁ hq₂
-  have h₁ := W.substAlgHom_pair_comp_formalW ha (PowerSeries.HasSubst.X (Sum.inl ()))
-  have h₂ := W.substAlgHom_pair_comp_formalW ha (PowerSeries.HasSubst.X (Sum.inr ()))
-  simp only [subst_X ha, Sum.elim_inl] at h₁
-  simp only [subst_X ha, Sum.elim_inr] at h₂
-  rw [← h₁, ← h₂, ← W.map_substAlgHom_pair_curve ha, Projective.map_dblAddY]
-  exact W.isUnit_dblAddY_formalW.map (substAlgHom (R := R) ha).toRingHom
-
-/-- **The Bosma–Lenstra addition law specialised along any pair of substitutable series.**
-For any `R`-algebra `S` and any pair `(q₁, q₂)` of substitutable series in `MvPowerSeries σ S`,
-the value of `dblAddXYZ` at `[q₁ : -1 : w(q₁)]` and `[q₂ : -1 : w(q₂)]` is `-Y` times
-`(F(q₁, q₂), -1, w(F(q₁, q₂)))`, where `Y` is its `Y`-coordinate, a unit
-(`isUnit_dblAddY_formalW_subst_pair`), and `F = formalAdd W`. -/
-theorem dblAddXYZ_formalW_subst_pair_eq_smul {S : Type*} [CommRing S] [Algebra R S] {σ : Type*}
-    {q₁ q₂ : MvPowerSeries σ S} (hq₁ : PowerSeries.HasSubst q₁) (hq₂ : PowerSeries.HasSubst q₂) :
-    (W.toProjective.map (algebraMap R (MvPowerSeries σ S))).dblAddXYZ
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-        ![q₂, -1, PowerSeries.subst q₂ W.formalW] =
-      -(W.toProjective.map (algebraMap R (MvPowerSeries σ S))).dblAddY
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-        ![q₂, -1, PowerSeries.subst q₂ W.formalW] •
-        ![subst (pairSubstitution q₁ q₂) (formalAdd W), -1,
-          PowerSeries.subst (subst (pairSubstitution q₁ q₂) (formalAdd W)) W.formalW] := by
-  have ha := hasSubst_pair_of_hasSubst hq₁ hq₂
-  have h₁ := W.substAlgHom_pair_comp_formalW ha (PowerSeries.HasSubst.X (Sum.inl ()))
-  have h₂ := W.substAlgHom_pair_comp_formalW ha (PowerSeries.HasSubst.X (Sum.inr ()))
-  have hF := W.substAlgHom_pair_comp_formalW ha
-    (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalAdd)
-  simp only [subst_X ha, Sum.elim_inl] at h₁
-  simp only [subst_X ha, Sum.elim_inr] at h₂
-  rw [← h₁, ← h₂, ← hF, ← W.map_substAlgHom_pair_curve ha, Projective.map_dblAddXYZ,
-    Projective.map_dblAddY, W.dblAddXYZ_formalW_eq_smul]
-  funext k
-  simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, neg_mul, map_neg, map_mul]
-
 end Algebra
-
-section FormalParamPoint
-
-variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
-  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK] [Algebra O KK]
-  [IsScalarTower O (MvPowerSeries σ O) KK]
-
-/-- Specialising `dblAddXYZ_formalW_eq_smul` along any pair of substitutable series `(q₁, q₂)`
-identifies formal addition `formalAdd W` with point addition on `W⁄KK`, unconditionally for every
-Weierstrass curve `W` (with no discriminant hypothesis or case split). -/
-theorem formalParamPoint_subst_pair_formalAdd [DecidableEq KK] {q₁ q₂ : MvPowerSeries σ O}
-    (hq₁ : PowerSeries.HasSubst q₁) (hq₂ : PowerSeries.HasSubst q₂) :
-    W.formalParamPoint (KK := KK) (subst (pairSubstitution q₁ q₂) (formalAdd W)) =
-      W.formalParamPoint (KK := KK) q₁ + W.formalParamPoint (KK := KK) q₂ := by
-  have hu := W.isUnit_dblAddY_formalW_subst_pair hq₁ hq₂
-  have hdbl := W.dblAddXYZ_formalW_subst_pair_eq_smul hq₁ hq₂
-  set P₁ : Fin 3 → MvPowerSeries σ O := ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-  set P₂ : Fin 3 → MvPowerSeries σ O := ![q₂, -1, PowerSeries.subst q₂ W.formalW]
-  set F₁₂ : MvPowerSeries σ O := subst (pairSubstitution q₁ q₂) (formalAdd W)
-  set ρ := algebraMap (MvPowerSeries σ O) KK
-  have hcurve : (W.toProjective.map (algebraMap O (MvPowerSeries σ O))).map ρ =
-      (W⁄KK).toProjective := by
-    rw [Projective.map, Projective.map, WeierstrassCurve.map_map,
-      ← IsScalarTower.algebraMap_eq, ← WeierstrassCurve.baseChange, toProjective]
-  have hdblK : (W⁄KK).toProjective.dblAddXYZ (W.formalParamVec (KK := KK) q₁)
-      (W.formalParamVec (KK := KK) q₂) =
-        (-ρ ((W.toProjective.map (algebraMap O (MvPowerSeries σ O))).dblAddY P₁ P₂)) •
-          W.formalParamVec (KK := KK) F₁₂ := by
-    rw [← hcurve, formalParamVec_def, formalParamVec_def,
-      Projective.map_dblAddXYZ (W' := W.toProjective.map (algebraMap O (MvPowerSeries σ O)))
-        ρ P₁ P₂, hdbl]
-    funext k
-    fin_cases k <;> simp [formalParamVec_def, ρ]
-  have huK : IsUnit (-ρ ((W.toProjective.map (algebraMap O (MvPowerSeries σ O))).dblAddY P₁ P₂)) :=
-    (hu.map ρ).neg
-  have hN₁ := W.nonsingular_formalParamVec (KK := KK) hq₁
-  have hN₂ := W.nonsingular_formalParamVec (KK := KK) hq₂
-  have h0 : (W⁄KK).toProjective.dblAddXYZ (W.formalParamVec (KK := KK) q₁)
-      (W.formalParamVec (KK := KK) q₂) ≠ 0 := by
-    rw [hdblK]
-    intro h
-    exact huK.ne_zero (by simpa [formalParamVec_apply_one] using congrFun h 1)
-  have heq1 := Projective.dblAddXYZ_equiv_add hN₁ hN₂ h0
-  have heq2 := Projective.smul_equiv (W.formalParamVec (KK := KK) F₁₂) huK
-  rw [← hdblK] at heq2
-  rw [formalParamPoint_def, ← Projective.Point.toAffine_of_equiv heq2,
-    Projective.Point.toAffine_of_equiv heq1, Projective.Point.toAffine_add hN₁ hN₂,
-    ← formalParamPoint_def, ← formalParamPoint_def]
-
-end FormalParamPoint
 
 universe u
 

@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Data.Nat.Log
-import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -63,8 +63,9 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
   homomorphism has order a power of `p`.
 * `FormalGroup.exists_order_nsmulSeries_eq_pow`: if `p = 0` in `R`, then `[p]_F` is zero or has
   order `p ^ h` with `h ≥ 1`.
-* `FormalGroup.height_eq_top_iff` and `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤`
-  exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
+* `FormalGroup.height_eq_top_iff`, `FormalGroup.height_eq_zero_of_natCast_ne_zero`, and
+  `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤` exactly when `[p]_F = 0`, height `0` when
+  `p ≠ 0` in `K`, and height `h` in characteristic `p` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
 * `FormalGroup.ne_zero_of_height_eq_natCast`: a finite height is nonzero.
 * `FormalGroup.height_eq_one_iff`: `F` has height one exactly when the coefficient of `Tᵖ` in
@@ -214,6 +215,17 @@ theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]
 
+/-- When `p ≠ 0` in `K`, the `p`-series has nonvanishing linear coefficient `p`, so `F` has
+`p`-height `0`. -/
+theorem height_eq_zero_of_natCast_ne_zero (hp : (p : K) ≠ 0) : F.height p = 0 := by
+  have hord : (F.nsmulSeries p).order = 1 := by
+    rw [← Nat.cast_one, PowerSeries.order_eq_nat]
+    refine ⟨by rwa [F.coeff_one_nsmulSeries], fun i hi ↦ ?_⟩
+    obtain rfl : i = 0 := Nat.lt_one_iff.mp hi
+    simp
+  have h0 : F.nsmulSeries p ≠ 0 := fun h ↦ by simp [h] at hord
+  simp [height, h0, hord]
+
 /-- A commutative formal group law over a field of characteristic `p` has height `h` exactly when
 the first nonzero term of `[p]_F(T)` has degree `p ^ h`. -/
 theorem height_eq_natCast_iff [CharP K p] [F.IsComm] {h : ℕ} :
@@ -341,15 +353,7 @@ domain, if `f` is a nonzero homomorphism of formal group laws from `F` to `G`, t
 substitution. -/
 theorem order_nsmulSeries_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (n : ℕ) :
     (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
-  have h := congrArg PowerSeries.order (f.subst_nsmulSeries n)
-  rw [PowerSeries.order_subst' (F.constantCoeff_nsmulSeries n),
-    PowerSeries.order_subst' f.zero_constantCoeff, mul_comm] at h
-  -- `ord f` is a positive natural number, so it can be cancelled
-  have h0 : f.toPowerSeries.order ≠ 0 :=
-    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
-  have ht : f.toPowerSeries.order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr hf
-  exact le_antisymm ((ENat.mul_le_mul_left_iff h0 ht).mp h.le)
-    ((ENat.mul_le_mul_left_iff h0 ht).mp h.ge)
+  simpa only [FormalGroup.zsmulSeries_natCast] using f.order_zsmulSeries_eq hf n
 
 end Order
 

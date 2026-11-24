@@ -104,8 +104,8 @@ theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_of_tsupport
     [SigmaCompactSpace W] (h : U ≤ W)
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {φ : SmoothForm I W ℝ n}
     (hφ : φ ∈ compactlySupportedForms I W n)
-    (hs : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1 ⊆ {x | (x : M) ∈ U}) :
-    φ ∈ exactCompactlySupportedForms I W n ↔ integralTopForm (o.restrict W) φ.1 = 0 := by
+    (hs : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val ⊆ {x | (x : M) ∈ U}) :
+    φ ∈ exactCompactlySupportedForms I W n ↔ integralTopForm (o.restrict W) φ.val = 0 := by
   refine ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms (o.restrict W), fun hz ↦ ?_⟩
   have hn : finrank ℝ E ≤ n := by simpa using o.card_eq.ge
   let φd := compactlySupportedForms.toClosedOfFinrankLe I hn ⟨φ, hφ⟩

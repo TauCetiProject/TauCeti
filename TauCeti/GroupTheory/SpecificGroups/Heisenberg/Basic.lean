@@ -9,10 +9,11 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 public import Mathlib.LinearAlgebra.Matrix.Notation
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The Heisenberg group over a ring
@@ -56,12 +57,15 @@ group.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
   `p`, the second term of the lower `p`-central series is trivial.
 * `TauCeti.HeisenbergGroup.isPGroup_zmod`: over `ZMod p` the Heisenberg group is a `p`-group.
+* `TauCeti.HeisenbergGroup.pairwise_commute_map_of_commutatorElement_eq_pow`: over a ring of
+  characteristic `n ≠ 0`, a homomorphism from a group with torsion-free abelianization sends a
+  solution of `⁅x, y⁆ = z ^ n` to pairwise commuting elements.
 -/
 
 public section
 
 open Subgroup
-open scoped commutatorElement
+open scoped commutatorElement Matrix
 
 namespace TauCeti
 
@@ -225,6 +229,12 @@ def toMatrix : HeisenbergGroup R →* Matrix (Fin 3) (Fin 3) R where
 theorem toMatrix_apply (a : HeisenbergGroup R) :
     toMatrix a = !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1] := (rfl)
 
+/-- The Heisenberg matrix acts on vectors by its three coordinate formulas. -/
+theorem toMatrix_mulVec (a : HeisenbergGroup R) (v : Fin 3 → R) :
+    toMatrix a *ᵥ v = ![v 0 + a.x * v 1 + a.z * v 2, v 1 + a.y * v 2, v 2] := by
+  ext i
+  fin_cases i <;> simp [toMatrix_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
 /-- A group element is determined by its matrix. -/
 theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R → _) := by
   intro a b h
@@ -338,6 +348,28 @@ theorem pLowerCentralSeries_top_two_eq_bot :
 
 end CharP
 
+/-- In a group with torsion-free abelianization, every homomorphism to the Heisenberg group over a
+ring of characteristic `n ≠ 0` sends a solution of `⁅x, y⁆ = z ^ n` to pairwise commuting
+elements. -/
+theorem pairwise_commute_map_of_commutatorElement_eq_pow {n : ℕ} [CharP R n] (hn : n ≠ 0)
+    {G : Type*} [Group G] [IsMulTorsionFree (Group.Abelianization G)] {x y z : G}
+    (h : ⁅x, y⁆ = z ^ n) (π : G →* HeisenbergGroup R) :
+    ({π x, π y, π z} : Set (HeisenbergGroup R)).Pairwise Commute := by
+  -- `z` lies in the commutator subgroup: its class in the abelianization has trivial `n`-th power
+  have hz : z ∈ commutator G := by
+    rw [← Group.Abelianization.of_eq_one_iff, ← pow_eq_one_iff_left hn, ← map_pow, ← h,
+      map_commutatorElement, commutatorElement_eq_one_iff_commute]
+    exact Commute.all _ _
+  have hπz : π z ∈ zAxis := by
+    rw [← commutator_eq_zAxis, ← Group.Abelianization.of_eq_one_iff]
+    exact Group.Abelianization.commutator_le_ker (Group.Abelianization.of.comp π) hz
+  have hc := mem_center_iff.1 (zAxis_le_center hπz)
+  have hxz : Commute (π x) (π z) := hc _
+  have hyz : Commute (π y) (π z) := hc _
+  have hxy : Commute (π x) (π y) := commutatorElement_eq_one_iff_commute.1 <| by
+    rw [← map_commutatorElement, h, map_pow, pow_char_eq_one_of_mem_zAxis n hπz]
+  simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
+
 /-- The Heisenberg group over `ZMod p` is a `p`-group; for `p > 0` it has order `p ^ 3`. -/
 theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
   IsPGroup.of_card (n := 3) (by rw [card_eq, Nat.card_zmod])
@@ -345,9 +377,9 @@ theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
 /-- The central element with third coordinate one in the integer Heisenberg group is not a
 proper power. -/
 theorem not_isProperPower_mk_zero_zero_one :
-    ¬ Group.IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
+    ¬ IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
   intro h
-  obtain ⟨y, n, hn, heq⟩ := Group.isProperPower_iff.mp h
+  obtain ⟨y, n, hn, heq⟩ := isProperPower_iff.mp h
   have hx := congrArg HeisenbergGroup.x heq
   have hy := congrArg HeisenbergGroup.y heq
   simp only [pow_eq, Int.nsmul_eq_mul, zero_eq_mul, Int.natCast_eq_zero] at hx hy

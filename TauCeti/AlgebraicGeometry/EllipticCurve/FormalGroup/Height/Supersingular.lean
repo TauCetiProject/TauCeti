@@ -6,174 +6,183 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny.Differential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny.Hom
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
-import Mathlib.RingTheory.Ideal.Maximal
-import Mathlib.RingTheory.Ideal.Quotient.Basic
-import Mathlib.Tactic.ComputeDegree
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
+public import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Multiplicative
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 
 /-!
-# The formal-group height of elliptic and singular Weierstrass curves
+# Formal-group height and supersingularity of elliptic curves at every prime
 
-Let `W` be an elliptic curve over a field `K` and `Ê` its formal group law. For a nonzero integer
-`n`, the formal power series of the multiplication-by-`n` isogeny `[n] : W → W` is the
-`n`-multiplication series `[n]_Ê` (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`), and the
-order of vanishing of an isogeny's formal series is its inseparable degree
-(`TauCeti.Isogeny.order_formalSeries`). Hence the order of `[n]_Ê` equals the inseparable degree of
-`[n]` (`WeierstrassCurve.order_zsmulSeries_formalGroup`). Over any nontrivial commutative ring,
-reducing modulo a maximal ideal shows that `[n]_Ê ≠ 0` for `n ≠ 0`
-(`WeierstrassCurve.zsmulSeries_formalGroup_ne_zero`,
-`WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`).
+Let `W` be an elliptic curve over a field `K`, with formal group law `Ê = formalGroup W`.
+Identifying the formal power series of the multiplication-by-`n` isogeny `[n]` with `(formalGroup
+W).zsmulSeries n` (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`) and reading its order of
+vanishing off the inseparable degree of `[n]` (`TauCeti.Isogeny.order_formalSeries`) gives
+`ord [n]_Ê = deg_i [n]` for every `n ≠ 0`. Reducing modulo a maximal ideal shows that `[n]_Ê ≠ 0`
+for every `n ≠ 0` and every elliptic curve over a nontrivial commutative ring.
 
-Specializing to a prime `p` in characteristic `p`: `[p]` has degree `p²`, and its separable degree
-is `p` when `W` is ordinary and `1` when `W` is supersingular
-(`WeierstrassCurve.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq`,
-`WeierstrassCurve.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one`). Therefore
-`[p]_Ê` has order `p` when `W` is ordinary and `p²` when `W` is supersingular: an elliptic curve in
-characteristic `p` has formal-group height `1` precisely when it is ordinary, and height `2`
-precisely when it is supersingular (`WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one`,
-`WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`). In particular, every elliptic
-curve in characteristic `p` has formal-group height `1` or `2`.
+When `K` has prime characteristic `p`, multiplication by `p` has total degree `p²` and factors as
+`[p] = V ∘ F` with `F` purely inseparable of degree `p` and `V` of prime degree `p`. Comparing
+`deg_s [p] * deg_i [p] = p²` with the Verschiebung criteria of
+`TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular` yields the
+complete formal-group height stratification at every prime `p` (including `p = 2` and `p = 3`,
+Silverman V.3.1):
 
-On singular Weierstrass curves (`Δ = 0`), passing to `AlgebraicClosure K` and moving the unique
-singular point to the origin brings the equation to `y² + a₁ x y = x³` with `a₁⁴ = c₄`, without
-changing `c₄` or the height of `Ê`. By `WeierstrassCurve.height_formalGroup_eq_one` and
-`WeierstrassCurve.height_formalGroup_eq_top`, a nodal curve (`Δ = 0`, `c₄ ≠ 0`) has height `1` and
-a cuspidal curve (`Δ = 0`, `c₄ = 0`) has height `⊤`. Together with the elliptic case this gives the
-complete height classification for arbitrary Weierstrass equations in characteristic `p`: `Ê` has
-height `⊤` if and only if `c₄ = 0` and `Δ = 0`, and height `1` or `2` otherwise.
+* `W` is ordinary at `p` if and only if `Ê` has height `1`, equivalently if and only if the
+  coefficient of `T ^ (p - 1)` in the invariant differential of `Ê` is nonzero;
+* `W` is supersingular at `p` if and only if `Ê` has height `2`, equivalently if and only if its
+  height exceeds `1`, equivalently if and only if the coefficient of `T ^ (p - 1)` in the invariant
+  differential vanishes (with the height-`2` and invariant-differential equivalences holding in
+  characteristic `p = 0` as well);
+* the formal group of an elliptic curve in prime characteristic `p` always has height `1` or `2`
+  (never `⊤` and never `≥ 3`).
+
+Because every isogeny `φ : W₁ → W₂` induces a nonzero formal-group homomorphism
+`φ.formalGroupHom : FormalGroupHom (formalGroup W₁) (formalGroup W₂)`, formal-group height — and
+hence ordinarity and supersingularity — are invariant under arbitrary isogenies. The resulting
+family-level truncation of Landweber height ideals over arbitrary commutative rings is deduced in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
 
 ## Main results
 
-* `WeierstrassCurve.order_zsmulSeries_formalGroup` and
-  `WeierstrassCurve.order_nsmulSeries_formalGroup`: over a field, the order of `[n]_Ê` on an
-  elliptic curve is the inseparable degree of `[n]`.
+* `TauCeti.Isogeny.order_nsmulSeries_formalGroup_eq`,
+  `TauCeti.Isogeny.order_zsmulSeries_formalGroup_eq`, and `TauCeti.Isogeny.height_formalGroup_eq`:
+  isogenous elliptic curves have multiplication series of equal order and equal formal-group height.
+* `WeierstrassCurve.order_zsmulSeries_formalGroup_of_ne_zero` and
+  `WeierstrassCurve.order_nsmulSeries_formalGroup_of_ne_zero`: for `n ≠ 0`, the order of `[n]_Ê` is
+  the inseparable degree of `[n]`.
 * `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero` and
-  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`: over a nontrivial commutative ring, `[n]_Ê`
-  is nonzero for `n ≠ 0` on an elliptic curve.
-* `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one`: in prime characteristic `p`, an
-  elliptic curve is ordinary if and only if its formal group has height `1`.
-* `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: in characteristic `p`, an
-  elliptic curve is supersingular if and only if its formal group has height `2`.
+  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`: for `n ≠ 0`, `[n]_Ê ≠ 0` on any elliptic curve
+  over a nontrivial commutative ring.
+* `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one` and
+  `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: an elliptic curve in prime
+  characteristic `p` is ordinary iff `height p Ê = 1`, and in any characteristic `p` is
+  supersingular iff `height p Ê = 2`.
 * `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two` and
-  `WeierstrassCurve.height_formalGroup_le_two`: in prime characteristic `p`, the formal group of an
-  elliptic curve has height `1` or `2`.
-* `WeierstrassCurve.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero` and
-  `WeierstrassCurve.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero`: nodal curves
-  (`Δ = 0`, `c₄ ≠ 0`) have formal-group height `1`, and cuspidal curves (`Δ = 0`, `c₄ = 0`) have
-  height `⊤`.
-* `WeierstrassCurve.height_formalGroup_eq_top_iff`,
-  `WeierstrassCurve.height_formalGroup_le_two_iff`, and
-  `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_iff`: for any Weierstrass curve in prime
-  characteristic `p`, the height is `⊤` on the cuspidal locus `c₄ = Δ = 0` and `1` or `2` on its
-  complement.
+  `WeierstrassCurve.height_formalGroup_le_two`: the formal group of an elliptic curve in prime
+  characteristic `p` has height `1` or `2`.
+* `TauCeti.Isogeny.isSupersingular_iff` and `TauCeti.Isogeny.isOrdinary_iff`: supersingularity and
+  ordinarity of elliptic curves are invariant under arbitrary isogenies.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.7 and V.3.1.
-* P. G. Goerss, *Topological modular forms [after Hopkins, Miller and Lurie]*, Séminaire Bourbaki
-  1005 (2009), §3.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.4, IV.7 and V.3.1.
+* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
+  108, Princeton University Press, 1985, §12.4.
 -/
 
 public section
 
+open TauCeti.Isogeny
+
+/-! ### Order of `[n]_Ê` and formal-group height of elliptic curves over fields -/
+
 namespace WeierstrassCurve
 
-section Order
+section Field
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
-/-- **The order of `[n]_Ê` is the inseparable degree of `[n]`.** For an elliptic curve `W` over a
-field and `n : ℤ` nonzero, the power-series order of `[n]_Ê` equals the inseparable degree of the
-multiplication-by-`n` isogeny. -/
-theorem order_zsmulSeries_formalGroup {n : ℤ} (hn : n ≠ 0) :
+/-- **The order of `[n]_Ê` (`n : ℤ`, `n ≠ 0`) is the inseparable degree of `[n]`.** -/
+theorem order_zsmulSeries_formalGroup_of_ne_zero {n : ℤ} (hn : n ≠ 0) :
     ((formalGroup W).zsmulSeries n).order =
-      (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree := by
-  rw [← TauCeti.Isogeny.formalSeries_mulByIntIsogeny W _,
-    TauCeti.Isogeny.order_formalSeries]
+      (mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree := by
+  rw [← (formalSeries_mulByIntIsogeny W _ :
+      (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = _), order_formalSeries]
 
-/-- **The order of `[n]_Ê` (`n : ℕ`) is the inseparable degree of `[n]`.** -/
-theorem order_nsmulSeries_formalGroup {n : ℕ} (hn : n ≠ 0) :
+/-- **The order of `[n]_Ê` (`n : ℕ`, `n ≠ 0`) is the inseparable degree of `[n]`.** -/
+theorem order_nsmulSeries_formalGroup_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     ((formalGroup W).nsmulSeries n).order =
-      (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine
-        (Nat.cast_ne_zero.mpr hn)).inseparableDegree := by
-  rw [← FormalGroup.zsmulSeries_natCast,
-    W.order_zsmulSeries_formalGroup (Nat.cast_ne_zero.mpr hn)]
+      (mulByIntIsogenyOfNeZero W.toAffine (n := n) (mod_cast hn)).inseparableDegree := by
+  rw [← formalSeries_mulByIntIsogenyOfNeZero_natCast W hn, order_formalSeries]
 
-end Order
+private theorem zsmulSeries_formalGroup_ne_zero_of_field {n : ℤ} (hn : n ≠ 0) :
+    (formalGroup W).zsmulSeries n ≠ 0 := by
+  rw [← (formalSeries_mulByIntIsogeny W _ :
+      (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = _)]
+  exact (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries_ne_zero
 
-section Nonzero
+end Field
+
+section NontrivialRing
 
 variable {R : Type*} [CommRing R] [Nontrivial R] (W : WeierstrassCurve R) [W.IsElliptic]
 
-/-- **On an elliptic curve over a nontrivial ring, `[n]_Ê ≠ 0` for every nonzero `n : ℤ`.** -/
+/-- **For `n ≠ 0` (`n : ℤ`), multiplication by `n` on the formal group of an elliptic curve over a
+nontrivial commutative ring is nonzero.** -/
 theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
     (formalGroup W).zsmulSeries n ≠ 0 := by
   obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal R
-  let _ := Ideal.Quotient.field 𝔪
-  let π := Ideal.Quotient.mk 𝔪
-  have : (W.map π).IsElliptic := ⟨W.isUnit_Δ.map π⟩
+  let _ : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
+  set π := Ideal.Quotient.mk 𝔪
   intro h0
-  have hord := (W.map π).order_zsmulSeries_formalGroup hn
-  rw [map_formalGroup, ← FormalGroup.map_zsmulSeries, h0, map_zero, PowerSeries.order_zero]
-    at hord
-  exact ENat.top_ne_natCast _ hord
+  apply zsmulSeries_formalGroup_ne_zero_of_field (W.map π) hn
+  rw [map_formalGroup, ← FormalGroup.map_zsmulSeries, h0, map_zero]
 
-/-- **On an elliptic curve over a nontrivial ring, `[n]_Ê ≠ 0` for every nonzero `n : ℕ`.** -/
+/-- **For `n ≠ 0` (`n : ℕ`), multiplication by `n` on the formal group of an elliptic curve over a
+nontrivial commutative ring is nonzero.** -/
 theorem nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
     (formalGroup W).nsmulSeries n ≠ 0 := by
   rw [← FormalGroup.zsmulSeries_natCast]
-  exact W.zsmulSeries_formalGroup_ne_zero (Nat.cast_ne_zero.mpr hn)
+  exact W.zsmulSeries_formalGroup_ne_zero (mod_cast hn)
 
-end Nonzero
+end NontrivialRing
 
-section EllipticHeight
+section FieldHeight
 
-variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic] {p : ℕ}
+variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
-/-- **Ordinarity is formal-group height one.** Over a field of prime characteristic `p`, an elliptic
-curve is ordinary if and only if its formal group has height `1` (Silverman V.3.1). -/
-theorem isOrdinary_iff_height_formalGroup_eq_one [hp : Fact p.Prime] [CharP K p] :
+/-- **For `p ≠ 0`, the formal group of an elliptic curve over a field has finite `p`-height.** -/
+theorem height_formalGroup_ne_top {p : ℕ} (hp : p ≠ 0) : (formalGroup W).height p ≠ ⊤ := by
+  rw [Ne, FormalGroup.height_eq_top_iff]
+  exact W.nsmulSeries_formalGroup_ne_zero hp
+
+section CharP
+
+variable {p : ℕ} [CharP K p]
+
+/-- **An elliptic curve in prime characteristic `p` is ordinary if and only if its formal group has
+height `1`** (Silverman V.3.1). -/
+theorem isOrdinary_iff_height_formalGroup_eq_one [hp : Fact p.Prime] :
     W.IsOrdinary p ↔ (formalGroup W).height p = 1 := by
-  rw [W.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p hp.out, ← Nat.cast_one,
-    FormalGroup.height_eq_natCast_iff, pow_one, W.order_nsmulSeries_formalGroup hp.out.ne_zero,
-    Nat.cast_inj (R := ℕ∞)]
-  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  have hmul : φ.separableDegree * φ.inseparableDegree = p * p := by
-    rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast, sq]
+  have : ExpChar K p := .prime hp.out
+  set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast hp.out.ne_zero)
+  have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
+    rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
+      Int.natAbs_natCast]
+  rw [W.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p hp.out,
+    ← Nat.cast_one, FormalGroup.height_eq_natCast_iff, pow_one,
+    W.order_nsmulSeries_formalGroup_of_ne_zero hp.out.ne_zero, Nat.cast_inj (R := ℕ∞)]
+  have hp0 : p ≠ 0 := hp.out.ne_zero
   constructor <;> intro h
-  · rw [h] at hmul
-    exact Nat.mul_left_cancel hp.out.pos hmul
-  · rw [h] at hmul
-    exact Nat.mul_right_cancel hp.out.pos hmul
+  · rw [h, sq] at hdeg
+    exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hp0) hdeg
+  · rw [h, sq] at hdeg
+    exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hp0) hdeg
 
-/-- **Supersingularity is formal-group height two.** Over a field of characteristic `p`, an elliptic
-curve is supersingular at `p` if and only if its formal group has height `2` (Silverman V.3.1). -/
-theorem isSupersingular_iff_height_formalGroup_eq_two [CharP K p] :
+/-- **An elliptic curve in characteristic `p` is supersingular at `p` if and only if its formal
+group has height `2`** (Silverman V.3.1). -/
+theorem isSupersingular_iff_height_formalGroup_eq_two :
     W.IsSupersingular p ↔ (formalGroup W).height p = 2 := by
   rcases CharP.char_is_prime_or_zero K p with hp | rfl
   · have : Fact p.Prime := ⟨hp⟩
-    rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
-      ← Nat.cast_ofNat (n := 2), FormalGroup.height_eq_natCast_iff,
-      W.order_nsmulSeries_formalGroup hp.ne_zero, Nat.cast_inj (R := ℕ∞)]
-    set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hp.ne_zero)
-    have hmul : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-      rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
+    have : ExpChar K p := .prime hp
+    set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast hp.ne_zero)
+    have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
+      rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
         Int.natAbs_natCast]
+    rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
+      ← Nat.cast_ofNat (R := ℕ∞), FormalGroup.height_eq_natCast_iff,
+      W.order_nsmulSeries_formalGroup_of_ne_zero hp.ne_zero, Nat.cast_inj (R := ℕ∞)]
+    have hp2 : 0 < p ^ 2 := pow_pos hp.pos 2
     constructor <;> intro h
-    · rwa [h, one_mul] at hmul
-    · rw [h] at hmul
-      exact Nat.mul_right_cancel (pow_pos hp.pos 2) (hmul.trans (one_mul _).symm)
-  · -- For `p = 0`, `height 0 = ⊤ ≠ 2` and `W(AlgebraicClosure K)` contains a nonzero point.
-    classical
+    · rwa [h, one_mul] at hdeg
+    · rw [h] at hdeg
+      exact (Nat.mul_eq_right hp2.ne').mp hdeg
+  · classical
     have htop : (formalGroup W).height 0 = ⊤ := (formalGroup W).height_eq_top_iff.mpr (by simp)
     refine iff_of_false (fun hss ↦ ?_) (by rw [htop]; exact ENat.top_ne_natCast 2)
     obtain ⟨y, heq⟩ := (W.baseChange (AlgebraicClosure K)).toAffine.exists_point_on_curve 0
@@ -181,131 +190,97 @@ theorem isSupersingular_iff_height_formalGroup_eq_two [CharP K p] :
       Affine.equation_iff_nonsingular.mp heq
     exact Affine.Point.some_ne_zero hns (isSupersingular_iff_forall.mp hss _ (zero_nsmul _))
 
-/-- **An elliptic curve in prime characteristic `p` has formal-group height `1` or `2`.** -/
-theorem height_formalGroup_eq_one_or_eq_two [Fact p.Prime] [CharP K p] :
+/-- **The formal group of an elliptic curve in prime characteristic `p` has height `1` or `2`.** -/
+theorem height_formalGroup_eq_one_or_eq_two [Fact p.Prime] :
     (formalGroup W).height p = 1 ∨ (formalGroup W).height p = 2 := by
-  by_cases h : W.IsOrdinary p
-  · exact Or.inl (W.isOrdinary_iff_height_formalGroup_eq_one.mp h)
-  · exact Or.inr (W.isSupersingular_iff_height_formalGroup_eq_two.mp (not_isOrdinary.mp h))
+  by_cases h : W.IsSupersingular p
+  · exact Or.inr (W.isSupersingular_iff_height_formalGroup_eq_two.mp h)
+  · exact Or.inl (W.isOrdinary_iff_height_formalGroup_eq_one.mp (W.not_isSupersingular.mp h))
 
-/-- **An elliptic curve in prime characteristic `p` has formal-group height at most `2`.** -/
-theorem height_formalGroup_le_two [Fact p.Prime] [CharP K p] :
-    (formalGroup W).height p ≤ 2 := by
-  rcases W.height_formalGroup_eq_one_or_eq_two (p := p) with h | h <;> rw [h]; decide
+/-- **The formal group of an elliptic curve in prime characteristic `p` has height at most `2`.** -/
+theorem height_formalGroup_le_two [Fact p.Prime] : (formalGroup W).height p ≤ 2 := by
+  rcases W.height_formalGroup_eq_one_or_eq_two (p := p) with h | h
+  · rw [h]
+    exact one_le_two
+  · rw [h]
 
-end EllipticHeight
+/-- **An elliptic curve in prime characteristic `p` is supersingular if and only if its formal group
+has height strictly greater than `1`.** -/
+theorem isSupersingular_iff_one_lt_height_formalGroup [Fact p.Prime] :
+    W.IsSupersingular p ↔ 1 < (formalGroup W).height p := by
+  rw [← not_isOrdinary, isOrdinary_iff_height_formalGroup_eq_one,
+    (formalGroup W).one_le_height.lt_iff_ne', Ne]
 
-section SingularHeight
+/-- **An elliptic curve in prime characteristic `p` is ordinary if and only if the coefficient of
+`T ^ (p - 1)` in the invariant differential of its formal group is nonzero** (Hasse invariant
+criterion; Katz–Mazur §12.4, Silverman IV.4, IV.7 and V.3.1). -/
+theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero [Fact p.Prime] :
+    W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
+  rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
 
-variable {K : Type*} [Field K] (W : WeierstrassCurve K) {p : ℕ}
+/-- **An elliptic curve in characteristic `p` is supersingular at `p` if and only if the coefficient
+of `T ^ (p - 1)` in the invariant differential of its formal group vanishes.** -/
+theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
+    W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
+  · rw [W.isSupersingular_iff_height_formalGroup_eq_two,
+      (formalGroup W).height_eq_top_iff.mpr (by simp)]
+    exact iff_of_false (ENat.top_ne_natCast 2) (by simp)
 
-/-- Over `AlgebraicClosure K`, a singular Weierstrass model (`Δ = 0`) can be transformed by
-admissible changes of variables into `y² + a₁ x y = x³` with `a₁⁴ = c₄` without altering the
-formal-group height. -/
-private theorem exists_height_formalGroup_eq_of_Δ_eq_zero (hΔ : W.Δ = 0) :
-    ∃ V : WeierstrassCurve (AlgebraicClosure K),
-      V.a₂ = 0 ∧ V.a₃ = 0 ∧ V.a₄ = 0 ∧ V.a₆ = 0 ∧
-      V.a₁ ^ 4 = algebraMap K (AlgebraicClosure K) W.c₄ ∧
-      (formalGroup W).height p = (formalGroup V).height p := by
-  let L := AlgebraicClosure K
-  let ι := algebraMap K L
-  have hΔL : (W.map ι).toAffine.Δ = 0 := by simp [hΔ]
-  obtain ⟨x, y, hsing⟩ := Affine.exists_isSingular_of_Δ_eq_zero (W.map ι).toAffine hΔL
-  set V₁ := VariableChange.mk 1 x 0 y • W.map ι
-  obtain ⟨h₆, h₄, h₃⟩ := (Affine.isSingular_zero V₁.toAffine).mp
-    ((Affine.isSingular_iff_variableChange _ x y).mp hsing)
-  have hQdeg : (Polynomial.X ^ 2 + Polynomial.C V₁.a₁ * Polynomial.X -
-      Polynomial.C V₁.a₂ : Polynomial L).degree = 2 := by compute_degree!
-  obtain ⟨s, hs⟩ := IsAlgClosed.exists_root _ (by rw [hQdeg]; decide)
-  have hs0 : s ^ 2 + V₁.a₁ * s - V₁.a₂ = 0 := by simpa [Polynomial.IsRoot] using hs
-  set V₂ := VariableChange.mk 1 0 s 0 • V₁
-  have hv₂ : V₂.a₂ = 0 := by
-    rw [variableChange_a₂]
-    simp only [Units.val_one, inv_one, one_pow, one_mul, mul_zero, add_zero]
-    linear_combination -hs0
-  have hv₃ : V₂.a₃ = 0 := by simp [V₂, variableChange_a₃, h₃]
-  have hv₄ : V₂.a₄ = 0 := by simp [V₂, variableChange_a₄, h₃, h₄]
-  have hv₆ : V₂.a₆ = 0 := by simp [V₂, variableChange_a₆, h₃, h₄, h₆]
-  have hc₄ : V₂.a₁ ^ 4 = ι W.c₄ := by
-    have hV₂c₄ : V₂.c₄ = ι W.c₄ := by simp [V₂, V₁, variableChange_c₄]
-    rw [← hV₂c₄]
-    simp only [c₄, b₂, b₄, hv₂, hv₃, hv₄]
-    ring
-  refine ⟨V₂, hv₂, hv₃, hv₄, hv₆, hc₄, ?_⟩
-  rw [VariableChange.height_formalGroup_variableChange,
-    VariableChange.height_formalGroup_variableChange, map_formalGroup, FormalGroup.height_map]
+end CharP
 
-/-- **A nodal Weierstrass curve (`Δ = 0`, `c₄ ≠ 0`) in prime characteristic `p` has formal-group
-height `1`.** -/
-theorem height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero [Fact p.Prime] [CharP K p]
-    (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) : (formalGroup W).height p = 1 := by
-  have : CharP (AlgebraicClosure K) p :=
-    charP_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
-  obtain ⟨V, hv₂, hv₃, hv₄, hv₆, hVc₄, hht⟩ :=
-    W.exists_height_formalGroup_eq_of_Δ_eq_zero (p := p) hΔ
-  have ha₁ : V.a₁ ≠ 0 := fun h0 ↦ hc₄ <|
-    (map_eq_zero_iff _ (algebraMap K (AlgebraicClosure K)).injective).mp
-      (by rw [← hVc₄, h0, zero_pow (by decide)])
-  rw [hht, height_formalGroup_eq_one ha₁ hv₂ hv₃ hv₄ hv₆]
-
-/-- **A cuspidal Weierstrass curve (`Δ = 0`, `c₄ = 0`) in characteristic `p` has formal-group height
-`⊤`.** -/
-theorem height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero [CharP K p] (hΔ : W.Δ = 0)
-    (hc₄ : W.c₄ = 0) : (formalGroup W).height p = ⊤ := by
-  have : CharP (AlgebraicClosure K) p :=
-    charP_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
-  obtain ⟨V, hv₂, hv₃, hv₄, hv₆, hVc₄, hht⟩ :=
-    W.exists_height_formalGroup_eq_of_Δ_eq_zero (p := p) hΔ
-  have ha₁ : V.a₁ = 0 := (pow_eq_zero_iff (by decide : 4 ≠ 0)).mp (by rw [hVc₄, hc₄, map_zero])
-  rw [hht, height_formalGroup_eq_top ha₁ hv₂ hv₃ hv₄ hv₆]
-
-/-- **Height `⊤` characterizes the cuspidal locus.** Over a field of prime characteristic `p`, the
-formal group of a Weierstrass curve `W` has height `⊤` if and only if `W.c₄ = 0` and `W.Δ = 0`. -/
-theorem height_formalGroup_eq_top_iff [Fact p.Prime] [CharP K p] :
-    (formalGroup W).height p = ⊤ ↔ W.c₄ = 0 ∧ W.Δ = 0 := by
-  refine ⟨fun htop ↦ ?_,
-    fun ⟨hc₄, hΔ⟩ ↦ W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄⟩
-  have hΔ : W.Δ = 0 := by
-    by_contra hΔ
-    have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
-    have hle := W.height_formalGroup_le_two (p := p)
-    rw [htop] at hle
-    exact absurd hle (by decide)
-  refine ⟨?_, hΔ⟩
-  by_contra hc₄
-  have h1 := W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero (p := p) hΔ hc₄
-  rw [htop] at h1
-  exact ENat.top_ne_one h1
-
-/-- **Height at most `2` characterizes smooth-or-nodal Weierstrass curves.** Over a field of prime
-characteristic `p`, `(formalGroup W).height p ≤ 2` holds if and only if `W.c₄ ≠ 0` or `W.Δ ≠ 0`. -/
-theorem height_formalGroup_le_two_iff [Fact p.Prime] [CharP K p] :
-    (formalGroup W).height p ≤ 2 ↔ W.c₄ ≠ 0 ∨ W.Δ ≠ 0 := by
-  rw [← not_and_or, ← W.height_formalGroup_eq_top_iff (p := p)]
-  refine ⟨fun hle htop ↦ ?_, fun hne ↦ ?_⟩
-  · rw [htop] at hle
-    exact absurd hle (by decide)
-  · by_cases hΔ : W.Δ = 0
-    · have hc₄ : W.c₄ ≠ 0 :=
-        fun hc₄ ↦ hne (W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄)
-      rw [W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ hc₄]
-      decide
-    · have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
-      exact W.height_formalGroup_le_two
-
-/-- **Height `1` or `2` characterizes smooth-or-nodal Weierstrass curves.** Over a field of prime
-characteristic `p`, `(formalGroup W).height p` is `1` or `2` if and only if `W.c₄ ≠ 0` or
-`W.Δ ≠ 0`. -/
-theorem height_formalGroup_eq_one_or_eq_two_iff [Fact p.Prime] [CharP K p] :
-    (formalGroup W).height p = 1 ∨ (formalGroup W).height p = 2 ↔ W.c₄ ≠ 0 ∨ W.Δ ≠ 0 := by
-  refine ⟨fun h ↦ W.height_formalGroup_le_two_iff.mp ?_, fun h ↦ ?_⟩
-  · rcases h with h | h <;> rw [h]; decide
-  · by_cases hΔ : W.Δ = 0
-    · exact Or.inl (W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ
-        (h.resolve_right (not_not.mpr hΔ)))
-    · have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
-      exact W.height_formalGroup_eq_one_or_eq_two
-
-end SingularHeight
+end FieldHeight
 
 end WeierstrassCurve
+
+/-! ### Invariance under arbitrary isogenies -/
+
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve
+
+variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
+
+/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℕ`). -/
+theorem order_nsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℕ) :
+    ((formalGroup W₁).nsmulSeries n).order = ((formalGroup W₂).nsmulSeries n).order := by
+  have : W₁.IsElliptic := φ.isElliptic
+  exact φ.formalGroupHom.order_nsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
+
+/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℤ`). -/
+theorem order_zsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℤ) :
+    ((formalGroup W₁).zsmulSeries n).order = ((formalGroup W₂).zsmulSeries n).order := by
+  have : W₁.IsElliptic := φ.isElliptic
+  exact φ.formalGroupHom.order_zsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
+
+/-- **Isogenous elliptic curves have the same formal-group height.** -/
+theorem height_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) :
+    (formalGroup W₁).height p = (formalGroup W₂).height p := by
+  have : W₁.IsElliptic := φ.isElliptic
+  exact φ.formalGroupHom.height_eq (by simp [φ.formalSeries_ne_zero]) p
+
+/-- **Supersingularity of elliptic curves is invariant under arbitrary isogenies** in exponential
+characteristic `p`. -/
+theorem isSupersingular_iff (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) [ExpChar K p] :
+    W₁.IsSupersingular p ↔ W₂.IsSupersingular p := by
+  -- In characteristic zero (`p = 1`) both curves have trivial `1`-torsion; in prime characteristic
+  -- `p` the criterion `isSupersingular_iff_height_formalGroup_eq_two` reduces to
+  -- `height_formalGroup_eq`.
+  have : W₁.IsElliptic := φ.isElliptic
+  rcases ‹ExpChar K p› with _ | ⟨hp⟩
+  · simp [WeierstrassCurve.isSupersingular_iff_forall, one_nsmul]
+  · have : Fact p.Prime := ⟨hp⟩
+    rw [W₁.isSupersingular_iff_height_formalGroup_eq_two,
+      W₂.isSupersingular_iff_height_formalGroup_eq_two, φ.height_formalGroup_eq p]
+
+/-- **Ordinarity of elliptic curves is invariant under arbitrary isogenies** in exponential
+characteristic `p`. -/
+theorem isOrdinary_iff (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) [ExpChar K p] :
+    W₁.IsOrdinary p ↔ W₂.IsOrdinary p := by
+  rw [← W₁.not_isSupersingular, ← W₂.not_isSupersingular, φ.isSupersingular_iff p]
+
+end TauCeti.Isogeny
+
+end

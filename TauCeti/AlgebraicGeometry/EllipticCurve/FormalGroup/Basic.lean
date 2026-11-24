@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Inverse
 import TauCeti.RingTheory.MvPowerSeries.Rename
@@ -32,9 +31,6 @@ power-series-valued points whose constant coefficient is nilpotent.
 
 ## Main results
 
-* `WeierstrassCurve.subst_formalGroup_toPowerSeries`: substituting `![q₁, q₂]` into
-  `(formalGroup W).toPowerSeries` agrees with substituting `pairSubstitution q₁ q₂` into
-  `formalAdd W`.
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
 * `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
@@ -78,19 +74,6 @@ series. -/
 theorem formalGroup_toPowerSeries (W : WeierstrassCurve R) :
     (formalGroup W).toPowerSeries = rename unitSumUnitEquivFinTwo (formalAdd W) :=
   by simp [formalGroup]
-
-/-- Substituting `![q₁, q₂]` into `(formalGroup W).toPowerSeries` equals substituting
-`pairSubstitution q₁ q₂` into `formalAdd W`. -/
-theorem subst_formalGroup_toPowerSeries (W : WeierstrassCurve R) {S : Type*} [CommRing S]
-    [Algebra R S] {σ : Type*} {q₁ q₂ : MvPowerSeries σ S} (hq₁ : PowerSeries.HasSubst q₁)
-    (hq₂ : PowerSeries.HasSubst q₂) :
-    subst ![q₁, q₂] (formalGroup W).toPowerSeries =
-      subst (pairSubstitution q₁ q₂) (formalAdd W) := by
-  have h12 : HasSubst ![q₁, q₂] := hasSubst_finTwo hq₁ hq₂
-  rw [formalGroup_toPowerSeries, rename_eq_subst, subst_comp_subst_apply (HasSubst.X_comp _) h12]
-  congr 1
-  funext s
-  rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp [subst_X h12, pairSubstitution]
 
 /-- Base change of a Weierstrass curve commutes with passage to its formal group law. -/
 @[simp]

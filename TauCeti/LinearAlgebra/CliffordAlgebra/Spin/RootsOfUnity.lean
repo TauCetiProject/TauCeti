@@ -67,7 +67,7 @@ def rootsOfUnityToSpin (Q : QuadraticForm R M) (hQ : ∃ v, IsUnit (Q v)) :
     rootsOfUnity 2 R →* spinGroup Q where
   toFun ζ := ⟨algebraMap R (CliffordAlgebra Q) ((ζ : Rˣ) : R),
     algebraMap_mem_spinGroup_of_isUnit Q hQ.choose hQ.choose_spec
-      ((mem_rootsOfUnity' 2 (ζ : Rˣ)).mp ζ.2)⟩
+      ((mem_rootsOfUnity' 2 (ζ : Rˣ)).mp ζ.property)⟩
   map_one' := Subtype.ext (by simp)
   map_mul' ζ η := Subtype.ext (by simp)
 
