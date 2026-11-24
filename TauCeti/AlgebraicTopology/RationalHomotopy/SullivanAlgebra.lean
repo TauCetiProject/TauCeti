@@ -24,7 +24,7 @@ The well-ordering condition excludes free algebras whose differential is decompo
 admit no such order, such as `Λ(x, y, z)` on three generators of degree `1` with `dx = yz`,
 `dy = zx`, `dz = xy`. Minimality is a condition on the differential, not on the generators: the
 main result of this file characterises it through the indecomposables `Q(A) = A⁺ ⧸ A⁺ · A⁺`, whose
-basis is given by the classes of the generators
+basis, when `2` is invertible in `K`, is given by the classes of the generators
 (`TauCeti.IsFreeGradedCommutative.indecomposablesBasis`).
 
 ## Main definitions

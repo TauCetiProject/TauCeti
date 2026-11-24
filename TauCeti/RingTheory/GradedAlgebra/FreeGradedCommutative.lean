@@ -44,6 +44,8 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
 * `TauCeti.IsFreeGradedCommutative.basis`: the basis of standard monomials.
 * `TauCeti.IsFreeGradedCommutative.lift`: the algebra map out of `A` sending `x i` to `b i`, for
   any `b i` which commute up to the Koszul sign.
+* `TauCeti.IsFreeGradedCommutative.augmentation`: when `2` is invertible, the augmentation
+  `A → K` killing the generators.
 * `TauCeti.IsFreeGradedCommutative.indecomposablesBasis`: when `2` is invertible and every
   generator has positive degree, the basis of the indecomposables `A⁺ ⧸ A⁺ · A⁺` given by the
   classes of the generators, so that the indecomposables of `ΛV` are `V`.
@@ -64,6 +66,9 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
   respect to graded-commutative algebras.
 * `TauCeti.IsFreeGradedCommutative.mem_positivePart`: a generator of positive degree lies in the
   positive part `A⁺`.
+* `TauCeti.IsFreeGradedCommutative.ker_augmentation`: on generators of positive degree, the
+  kernel of the augmentation is `A⁺`, so that `A = K ⊕ A⁺`
+  (`TauCeti.IsFreeGradedCommutative.sub_algebraMap_augmentation_mem_positivePart`).
 * `MvPolynomial.isFreeGradedCommutative_X`: a polynomial ring is free graded-commutative on its
   variables placed in even degrees.
 
@@ -428,9 +433,17 @@ section Indecomposables
 
 open TrivSqZeroExt
 
-variable [GradedAlgebra 𝒜]
+/-- The augmentation `ε : A → K` of a free graded-commutative algebra: the algebra map killing every
+generator, which reads off the constant term. On generators of positive degree its kernel is the
+positive part `A⁺` (`ker_augmentation`), so that `A = K ⊕ A⁺`. -/
+noncomputable def augmentation (hx : IsFreeGradedCommutative 𝒜 x deg) : A →ₐ[K] K :=
+  hx.lift (fun _ => 0) fun _ _ => by simp
 
-omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem augmentation_x (hx : IsFreeGradedCommutative 𝒜 x deg) (i : ι) :
+    hx.augmentation (x i) = 0 :=
+  hx.lift_x ..
+
 /-- The algebra map from a free graded-commutative algebra to the trivial square-zero extension
 `K ⊕ (ι →₀ K)` sending each generator `x i` to the basis vector `single i 1`. It reads off the
 coefficients of the generators modulo decomposables. -/
@@ -438,17 +451,24 @@ private noncomputable def toTrivSqZeroExt (hx : IsFreeGradedCommutative 𝒜 x d
     A →ₐ[K] TrivSqZeroExt K (ι →₀ K) :=
   hx.lift (fun i => inr (single i 1)) fun _ _ => by simp
 
-omit [GradedAlgebra 𝒜] in
 private theorem toTrivSqZeroExt_x (hx : IsFreeGradedCommutative 𝒜 x deg) (i : ι) :
     hx.toTrivSqZeroExt (x i) = inr (single i 1) :=
   hx.lift_x ..
 
-/-- The constant term of `toTrivSqZeroExt` vanishes on the positive part. -/
-private theorem fst_toTrivSqZeroExt_eq_zero (hx : IsFreeGradedCommutative 𝒜 x deg)
-    {a : A} (ha : a ∈ positivePart 𝒜) : (hx.toTrivSqZeroExt a).fst = 0 := by
-  let ε : A →ₐ[K] K := (fstHom K K (ι →₀ K)).comp hx.toTrivSqZeroExt
-  have hε : ε ∘ x = 0 := funext fun i => by simp [ε, toTrivSqZeroExt_x]
-  refine positivePart_le_iff (P := LinearMap.ker ε.toLinearMap).2 (fun p hp => ?_) ha
+/-- The constant term of `toTrivSqZeroExt` is the augmentation. -/
+private theorem fst_toTrivSqZeroExt (hx : IsFreeGradedCommutative 𝒜 x deg) (a : A) :
+    (hx.toTrivSqZeroExt a).fst = hx.augmentation a :=
+  AlgHom.congr_fun (hx.algHom_ext (φ := (fstHom K K (ι →₀ K)).comp hx.toTrivSqZeroExt)
+    (ψ := hx.augmentation) fun i => by simp [toTrivSqZeroExt_x]) a
+
+variable [GradedAlgebra 𝒜]
+
+/-- The augmentation vanishes on the positive part. -/
+theorem augmentation_eq_zero_of_mem_positivePart (hx : IsFreeGradedCommutative 𝒜 x deg)
+    {a : A} (ha : a ∈ positivePart 𝒜) : hx.augmentation a = 0 := by
+  have hε : hx.augmentation ∘ x = 0 := funext hx.augmentation_x
+  refine positivePart_le_iff (P := LinearMap.ker hx.augmentation.toLinearMap).2
+    (fun p hp => ?_) ha
   rw [← hx.span_standardMonomial_eq p, Submodule.span_le]
   rintro _ ⟨f, hf, rfl⟩
   obtain ⟨i, hi⟩ : ∃ i, f.val i ≠ 0 := by
@@ -463,40 +483,55 @@ private theorem fst_toTrivSqZeroExt_eq_zero (hx : IsFreeGradedCommutative 𝒜 x
 of positive degree has positive degree and is a combination of generators modulo decomposables. -/
 private theorem sub_mem_positivePart_and_mem_span_sup (hx : IsFreeGradedCommutative 𝒜 x deg)
     (hdeg : ∀ i, 0 < deg i) (a : A) :
-    a - algebraMap K A (hx.toTrivSqZeroExt a).fst ∈ positivePart 𝒜 ∧
-      a - algebraMap K A (hx.toTrivSqZeroExt a).fst ∈
+    a - algebraMap K A (hx.augmentation a) ∈ positivePart 𝒜 ∧
+      a - algebraMap K A (hx.augmentation a) ∈
         Submodule.span K (Set.range x) ⊔ positivePart 𝒜 * positivePart 𝒜 := by
   suffices h : ∀ w ∈ Algebra.adjoin K (Set.range x),
-      w - algebraMap K A (hx.toTrivSqZeroExt w).fst ∈ positivePart 𝒜 ∧
-        w - algebraMap K A (hx.toTrivSqZeroExt w).fst ∈
+      w - algebraMap K A (hx.augmentation w) ∈ positivePart 𝒜 ∧
+        w - algebraMap K A (hx.augmentation w) ∈
           Submodule.span K (Set.range x) ⊔ positivePart 𝒜 * positivePart 𝒜 from
     h a (hx.adjoin_range_eq_top ▸ Algebra.mem_top)
   intro w hw
   induction hw using Algebra.adjoin_induction with
   | mem w hw =>
     obtain ⟨i, rfl⟩ := hw
-    simp only [toTrivSqZeroExt_x, fst_inr, map_zero, sub_zero]
+    simp only [augmentation_x, map_zero, sub_zero]
     exact ⟨hx.mem_positivePart (hdeg i),
       Submodule.mem_sup_left (Submodule.subset_span ⟨i, rfl⟩)⟩
-  | algebraMap r => simp [algebraMap_eq_inl]
+  | algebraMap r => simp
   | add w w' _ _ hw hw' =>
-    simp only [map_add, fst_add]
+    simp only [map_add]
     rw [add_sub_add_comm]
     exact ⟨add_mem hw.1 hw'.1, add_mem hw.2 hw'.2⟩
   | mul w w' _ _ hw hw' =>
-    set u := w - algebraMap K A (hx.toTrivSqZeroExt w).fst
-    set v := w' - algebraMap K A (hx.toTrivSqZeroExt w').fst
-    have key : w * w' - algebraMap K A (hx.toTrivSqZeroExt (w * w')).fst =
-        u * v + (hx.toTrivSqZeroExt w').fst • u + (hx.toTrivSqZeroExt w).fst • v := by
-      simp only [u, v, map_mul, fst_mul, Algebra.smul_def, mul_sub, sub_mul,
-        Algebra.commutes (hx.toTrivSqZeroExt w').fst w]
-      rw [Algebra.commutes (hx.toTrivSqZeroExt w').fst]
+    set u := w - algebraMap K A (hx.augmentation w)
+    set v := w' - algebraMap K A (hx.augmentation w')
+    have key : w * w' - algebraMap K A (hx.augmentation (w * w')) =
+        u * v + hx.augmentation w' • u + hx.augmentation w • v := by
+      simp only [u, v, map_mul, Algebra.smul_def, mul_sub, sub_mul,
+        Algebra.commutes (hx.augmentation w') w]
+      rw [Algebra.commutes (hx.augmentation w')]
       abel
     rw [key]
     exact ⟨add_mem (add_mem (mul_mem_positivePart_of_left (fun _ => hx.eq_bot_of_neg) hw.1 v)
         (Submodule.smul_mem _ _ hw.1)) (Submodule.smul_mem _ _ hw'.1),
       add_mem (add_mem (Submodule.mem_sup_right (Submodule.mul_mem_mul hw.1 hw'.1))
         (Submodule.smul_mem _ _ hw.2)) (Submodule.smul_mem _ _ hw'.2)⟩
+
+/-- On generators of positive degree, every element differs from its constant term by an element
+of positive degree. -/
+theorem sub_algebraMap_augmentation_mem_positivePart (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (a : A) :
+    a - algebraMap K A (hx.augmentation a) ∈ positivePart 𝒜 :=
+  (hx.sub_mem_positivePart_and_mem_span_sup hdeg a).1
+
+/-- On generators of positive degree, the kernel of the augmentation is the positive part, so
+that `A = K ⊕ A⁺`. -/
+theorem ker_augmentation (hx : IsFreeGradedCommutative 𝒜 x deg) (hdeg : ∀ i, 0 < deg i) :
+    LinearMap.ker hx.augmentation.toLinearMap = positivePart 𝒜 := by
+  refine le_antisymm (fun a ha => ?_) fun a ha => hx.augmentation_eq_zero_of_mem_positivePart ha
+  have := hx.sub_algebraMap_augmentation_mem_positivePart hdeg a
+  rwa [show hx.augmentation a = 0 from ha, map_zero, sub_zero] at this
 
 /-- The classes of the generators in the indecomposables are linearly independent: the
 coefficient of `x i` modulo decomposables is read off by `toTrivSqZeroExt`. -/
@@ -509,7 +544,8 @@ private theorem linearIndependent_mk_x (hx : IsFreeGradedCommutative 𝒜 x deg)
   · rw [LinearMap.mem_ker]
     refine Submodule.mul_induction_on (C := fun a => L a = 0) ha (fun b hb c hc => ?_)
       fun b c hb hc => ?_
-    · simp [L, fst_toTrivSqZeroExt_eq_zero hx hb, fst_toTrivSqZeroExt_eq_zero hx hc]
+    · simp [L, fst_toTrivSqZeroExt, hx.augmentation_eq_zero_of_mem_positivePart hb,
+        hx.augmentation_eq_zero_of_mem_positivePart hc]
     · simp [hb, hc]
   · convert (Finsupp.basisSingleOne : Module.Basis ι K (ι →₀ K)).linearIndependent
     ext1 i
@@ -522,34 +558,22 @@ private theorem top_le_span_mk_x (hx : IsFreeGradedCommutative 𝒜 x deg)
       (Set.range fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩) := by
   have hspan : Submodule.span K (Set.range x) ≤ positivePart 𝒜 :=
     Submodule.span_le.2 (Set.range_subset_iff.2 fun i => hx.mem_positivePart (hdeg i))
-  -- The class of a combination of generators is the combination of their classes.
-  have key : ∀ s (hs : s ∈ Submodule.span K (Set.range x)),
-      Indecomposables.mk 𝒜 ⟨s, hspan hs⟩ ∈ Submodule.span K
-        (Set.range fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩) := by
-    intro s hs
-    induction hs using Submodule.span_induction with
-    | mem s hs =>
-      obtain ⟨i, rfl⟩ := hs
-      exact Submodule.subset_span ⟨i, rfl⟩
-    | zero =>
-      rw [show (⟨0, hspan (zero_mem _)⟩ : positivePart 𝒜) = 0 from rfl, map_zero]
-      exact zero_mem _
-    | add s t hs ht hs' ht' =>
-      rw [show (⟨s + t, hspan (add_mem hs ht)⟩ : positivePart 𝒜) =
-        ⟨s, hspan hs⟩ + ⟨t, hspan ht⟩ from rfl, map_add]
-      exact add_mem hs' ht'
-    | smul c s hs hs' =>
-      rw [show (⟨c • s, hspan (Submodule.smul_mem _ c hs)⟩ : positivePart 𝒜) =
-        c • ⟨s, hspan hs⟩ from rfl, map_smul]
-      exact Submodule.smul_mem _ c hs'
+  -- The classes of combinations of generators are combinations of the classes of generators.
+  let L := Indecomposables.mk 𝒜 ∘ₗ Submodule.inclusion hspan
+  have key : LinearMap.range L ≤ Submodule.span K
+      (Set.range fun i => Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩) := by
+    rw [LinearMap.range_eq_map, ← Submodule.span_span_coe_preimage, Submodule.map_span,
+      Submodule.span_le]
+    rintro _ ⟨⟨_, _⟩, ⟨i, rfl⟩, rfl⟩
+    exact Submodule.subset_span ⟨i, rfl⟩
   -- An element of positive degree is a combination of generators modulo decomposables.
   rintro q -
   obtain ⟨⟨a, ha⟩, rfl⟩ := Indecomposables.mk_surjective q
   have h := (hx.sub_mem_positivePart_and_mem_span_sup hdeg a).2
-  rw [fst_toTrivSqZeroExt_eq_zero hx ha, map_zero, sub_zero] at h
+  rw [hx.augmentation_eq_zero_of_mem_positivePart ha, map_zero, sub_zero] at h
   obtain ⟨s, hs, m, hm, rfl⟩ := Submodule.mem_sup.1 h
-  convert key s hs using 1
-  rw [Indecomposables.mk_eq_mk_iff]
+  refine key ⟨⟨s, hs⟩, ?_⟩
+  rw [LinearMap.comp_apply, Indecomposables.mk_eq_mk_iff]
   simpa using hm
 
 /-- **The indecomposables of `ΛV` are `V`**: when `2` is invertible in `K`, the classes of the

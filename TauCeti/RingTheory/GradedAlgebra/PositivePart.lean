@@ -36,6 +36,9 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
 
 * `TauCeti.positivePart_le_iff`: `A⁺` is the least submodule containing every `Aᵖ`, `p > 0`;
   `TauCeti.mem_positivePart_iff`: its elements are those with no component of degree `≤ 0`.
+* `TauCeti.map_positivePart_le`, `TauCeti.map_positivePart_mul_positivePart_le`: maps raising
+  degrees carry `A⁺` into `B⁺`, and algebra maps carrying `A⁺` into `B⁺` carry `A⁺ · A⁺` into
+  `B⁺ · B⁺`, the two hypotheses of `TauCeti.Indecomposables.map`.
 * `TauCeti.mul_mem_positivePart_of_left`, `TauCeti.mul_mem_positivePart_of_right`: when `A`
   vanishes in negative degrees, `A⁺` is a two-sided ideal, and so is `A⁺ · A⁺`
   (`TauCeti.mul_mem_positivePart_mul_positivePart_of_left` and its mirror).
@@ -84,6 +87,15 @@ theorem map_positivePart_le {B : Type*} [Semiring B] [Algebra R B] {ℬ : ℤ �
     (positivePart 𝒜).map f ≤ positivePart ℬ :=
   Submodule.map_le_iff_le_comap.2 <| positivePart_le_iff.2 fun p hp _ ha =>
     mem_positivePart_of_mem (by omega) (hf ha)
+
+/-- An algebra map carrying the positive part into the positive part carries the decomposables
+`A⁺ · A⁺` into the decomposables, as needed to induce a map on indecomposables. -/
+theorem map_positivePart_mul_positivePart_le {B : Type*} [Semiring B] [Algebra R B]
+    {ℬ : ℤ → Submodule R B} {f : A →ₐ[R] B}
+    (hf : (positivePart 𝒜).map f.toLinearMap ≤ positivePart ℬ) :
+    (positivePart 𝒜 * positivePart 𝒜).map f.toLinearMap ≤ positivePart ℬ * positivePart ℬ := by
+  rw [Submodule.map_mul]
+  exact mul_le_mul' hf hf
 
 end Semiring
 
