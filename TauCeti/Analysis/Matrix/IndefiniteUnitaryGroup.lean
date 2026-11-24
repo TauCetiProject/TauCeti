@@ -26,6 +26,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
   the form is taken conjugate-linear: for `U(p, q)`, the form
   `z ⬝ᵥ J *ᵥ star w = Σ_{i ∈ p} zᵢ star wᵢ - Σ_{j ∈ q} zⱼ star wⱼ`, linear in the first slot, has
   the same values on the diagonal and so the same isometries.
+* Over `ℝ` or `ℂ`, the form `⟨z, z⟩` of `J = indefiniteDiagonal p q 𝕜` is the real number
+  `Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`.
 * Over a Hausdorff topological ring with continuous star, `unitaryGroupOf A` is a closed subgroup
   of the general linear group, with the topology of units.
 * The block-diagonal embedding of `U(p) × U(q)` in `U(p, q)` is continuous, so over `ℝ` or `ℂ`
@@ -35,6 +37,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
 
 * `Matrix.mem_unitaryGroupOf_iff_forall_dotProduct_self`: membership in
   `unitaryGroupOf A`, for Hermitian `A`, as the preservation of the values `⟨z, z⟩`.
+* `LieAlgebra.Orthogonal.star_dotProduct_indefiniteDiagonal_mulVec_self`: the values of the
+  indefinite Hermitian form.
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.continuous_fromBlocksHom`: the block-diagonal embedding
   of `U(p) × U(q)` is continuous.
@@ -81,6 +85,20 @@ theorem mem_unitaryGroupOf_iff_forall_dotProduct_self {𝕜 : Type*} [RCLike �
     star_dotProduct_conjTranspose_mul_mul_mulVec]
 
 end Matrix
+
+namespace LieAlgebra.Orthogonal
+
+/-- **The values of the indefinite Hermitian form.** Over `ℝ` or `ℂ`, the form
+`⟨z, z⟩ = star z ⬝ᵥ J *ᵥ z` of `J = indefiniteDiagonal p q 𝕜` is the real number
+`Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`. -/
+theorem star_dotProduct_indefiniteDiagonal_mulVec_self {p q 𝕜 : Type*} [Fintype p] [Fintype q]
+    [DecidableEq p] [DecidableEq q] [RCLike 𝕜] (z : p ⊕ q → 𝕜) :
+    star z ⬝ᵥ indefiniteDiagonal p q 𝕜 *ᵥ z =
+      ((∑ i, ‖z (Sum.inl i)‖ ^ 2 - ∑ j, ‖z (Sum.inr j)‖ ^ 2 : ℝ) : 𝕜) := by
+  simp [dotProduct, Fintype.sum_sum_type, indefiniteDiagonal, mulVec_diagonal, RCLike.conj_mul,
+    sub_eq_add_neg]
+
+end LieAlgebra.Orthogonal
 
 namespace TauCeti
 

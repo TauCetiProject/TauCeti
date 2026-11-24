@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Deriv.Fract
-public import TauCeti.Analysis.Complex.SectorBounds
+public import TauCeti.Analysis.Complex.Sector.Bounds
 public import TauCeti.Analysis.Complex.SlitPlane
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
