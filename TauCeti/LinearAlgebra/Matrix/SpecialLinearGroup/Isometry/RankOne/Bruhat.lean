@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.TitsSystem.RankOne
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.RootAction
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Basic
 import TauCeti.LinearAlgebra.Projectivization.Action
 
 /-!
