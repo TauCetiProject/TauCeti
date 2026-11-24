@@ -19,11 +19,11 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
-(`FreeGroup.invRev_flatten`), generator renaming (`FreeGroup.map_prodMap_invRev`), and
-factorisations splitting no occurrence of a word (`FreeGroup.invRev_isUnsplit`), and reducedness of
-words `w u w⁻¹` in which no letter cancels at either join, and of words `u⁻¹ v` for reduced `u` and
-`v` with different first letters (`FreeGroup.isReduced_invRev_append`). The reduced word of a
+inversion with subwords, concatenation of lists of words (`FreeGroup.invRev_flatten`), generator
+renaming (`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
+(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
+either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
+(`FreeGroup.isReduced_invRev_append`). The reduced word of a
 product `of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, a word is not reduced exactly when it contains a letter immediately followed by its inverse
@@ -122,14 +122,6 @@ theorem isReduced_of_forall_snd_eq {w : List (α × Bool)} {e : Bool} (h : ∀ x
   (List.pairwise_of_forall_mem_list (r := fun a b : α × Bool ↦ a.1 = b.1 → a.2 = b.2)
     fun a ha b hb _ ↦ (h a ha).trans (h b hb).symm).isChain
 
-/-- A signed letter belongs to the formal inverse of `u` if and only if the letter with opposite
-sign belongs to `u`. -/
-@[simp]
-theorem mem_invRev_iff {c : α × Bool} {u : List (α × Bool)} :
-    c ∈ invRev u ↔ (c.1, !c.2) ∈ u := by
-  obtain ⟨a, e⟩ := c
-  simp [invRev]
-
 /-- The formal inverse of the concatenation of a list of words is the concatenation of their formal
 inverses in the reverse order. -/
 theorem invRev_flatten (M : List (List (α × Bool))) :
@@ -163,16 +155,6 @@ theorem invRev_isUnsplit {l : List (α × Bool)} {L : List (List (α × Bool))} 
     simp [invRev, Function.comp_def]
   rw [e]
   exact List.reverse_isUnsplit.trans (List.map_isUnsplit_iff hf)
-
-/-- The first letter of the formal inverse of `w` is the inverse of the last letter of `w`. -/
-theorem _root_.TauCeti.FreeGroup.head?_invRev {w : List (α × Bool)} :
-    (invRev w).head? = w.getLast?.map fun a ↦ (a.1, !a.2) := by
-  simp [invRev, List.head?_reverse, List.getLast?_map]
-
-/-- The last letter of the formal inverse of `w` is the inverse of the first letter of `w`. -/
-theorem _root_.TauCeti.FreeGroup.getLast?_invRev {w : List (α × Bool)} :
-    (invRev w).getLast? = w.head?.map fun a ↦ (a.1, !a.2) := by
-  simp [invRev, List.getLast?_reverse, List.head?_map]
 
 /-- If `w` and the nonempty word `u` are reduced, the last letter of `w` does not cancel against
 the first letter of `u`, and the last letter of `u` does not cancel against the first letter of

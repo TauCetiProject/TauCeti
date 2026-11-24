@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Word
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Inserting a letter into the blocks of a word

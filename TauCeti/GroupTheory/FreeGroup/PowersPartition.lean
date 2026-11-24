@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.FreeGroup.StartsWith
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # The Powers partition property of free groups
