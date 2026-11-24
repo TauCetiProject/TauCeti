@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Group.Affine
+public import TauCeti.AlgebraicGeometry.AffineSpace.Line
 public import TauCeti.AlgebraicGeometry.Chow.Pushforward
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
-public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Cycles of closed points
@@ -19,7 +20,8 @@ A closed point `x` of a scheme `X` has height zero for the specialization order
 (`Chow.cyclesMap_single`, for a point cycle of any dimension). In particular, pushing
 forward along the structure morphism of a quasi-compact `k`-scheme sends `[P]` to
 `[κ(P) : k] [pt]`. At a `k`-rational point the degree is `n`; the origin of the affine
-line `Spec k[X]` is such a point, so `[0]` is a zero-cycle of degree `1` on `𝔸¹_k`
+line `Spec k[X]` (`AlgebraicGeometry.SpecMap_constantCoeff_comp_SpecMap_algebraMap`) is such
+a point, so `[0]` is a zero-cycle of degree `1` on `𝔸¹_k`
 (`Chow.cyclesDegree_single_affineLine_origin`).
 
 ## Main statements
@@ -82,13 +84,13 @@ lemma cyclesMap_single [DecidableEq X] [DecidableEq Y] (f : X ⟶ Y) [f.IsOver (
 open Polynomial
 
 /-- On the affine line `𝔸¹_k = Spec k[X]`, the zero-cycle `[0]` of the origin, the spectrum of
-evaluation at `0`, has degree `1`. -/
+`Polynomial.constantCoeff`, has degree `1`. -/
 theorem cyclesDegree_single_affineLine_origin [DecidableEq (Spec (.of k[X]))] :
     cyclesDegree k (Spec (.of k[X])) ⟨_, single_mem_cyclesOfDimension_zero
       (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section
-        (TauCeti.AlgebraicGeometry.SpecMap_algHom_comp_eq_id (aeval (0 : k)))) 1⟩ =
+        (SpecMap_constantCoeff_comp_SpecMap_algebraMap k)) 1⟩ =
       1 :=
   cyclesDegree_single_of_section k
-    (TauCeti.AlgebraicGeometry.SpecMap_algHom_comp_eq_id (aeval (0 : k))) 1
+    (SpecMap_constantCoeff_comp_SpecMap_algebraMap k) 1
 
 end TauCeti.AlgebraicGeometry.Chow

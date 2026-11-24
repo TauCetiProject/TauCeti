@@ -55,8 +55,6 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 * `TauCeti.AlgebraicGeometry.exists_algHom_SpecMap_eq`: a morphism `Spec B ⟶ Spec A` over
   `Spec R` is `Spec.map` of an `R`-algebra homomorphism; `SpecMap_quotient_mk_comp_SpecMap_algHom`
   and `SpecMap_algHom_comp_quotient` compute its restriction to `Spec (B ⧸ I)`.
-* `TauCeti.AlgebraicGeometry.SpecMap_algHom_comp_eq_id`: the spectrum of a character
-  `A →ₐ[R] R` is a section of the structure morphism `Spec A ⟶ Spec R`.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
@@ -205,15 +203,6 @@ theorem SpecMap_algHom_comp_quotient (I : Ideal B) (f : A →ₐ[R] B ⧸ I) :
     Spec.map (CommRingCat.ofHom f.toRingHom) ≫ Spec.algebraMap R A =
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.algebraMap R B := by
   exact (Spec.homEquivAlgHom.symm f).property.trans (by rw [← Spec.map_comp]; rfl)
-
-/-- The spectrum of a character `φ : A →ₐ[R] R` is a section of the structure morphism
-`Spec A ⟶ Spec R`, that is an `R`-rational point of `Spec A`. -/
-theorem SpecMap_algHom_comp_eq_id (φ : A →ₐ[R] R) :
-    Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ (Spec (.of A) ↘ Spec (.of R)) = 𝟙 _ := by
-  rw [specOverSpec_over, ← Spec.map_comp, ← Spec.map_id]
-  congr 1
-  ext r
-  simp
 
 section algSpec
 
