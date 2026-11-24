@@ -79,7 +79,7 @@ theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F
       simp
     have hleft (v : V) : e.symm (T v) = (v, 0) := e.symm_apply_eq.mpr (by simp [he'])
     refine ⟨Submodule.disjoint_def.mpr fun x hxV hxK ↦ ?_, ?_⟩
-    · have h0 : e.symm (T x) = 0 := by rw [show T x = 0 from hxK, map_zero]
+    · have h0 : e.symm (T x) = 0 := by simp [show T x = 0 by simpa [LinearMap.mem_ker] using hxK]
       simpa using congr(($((hleft ⟨x, hxV⟩).symm.trans h0)).1)
     -- `T ∘ V.subtype` has the continuous left inverse `fst ∘ e⁻¹`, whose kernel is `W`.
     have hinv : Function.LeftInverse (fst 𝕜 V W ∘L (e.symm : F →L[𝕜] V × W))

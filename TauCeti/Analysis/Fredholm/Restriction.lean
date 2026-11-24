@@ -87,7 +87,7 @@ theorem isInvertible_restrict_map_of_disjoint_ker [CompleteSpace E] [CompleteSpa
   refine isInvertible_iff_bijective.2 ⟨(injective_iff_map_eq_zero _).2 fun v h ↦ ?_,
     fun ⟨y, hy⟩ ↦ ?_⟩
   · have h' : T v = 0 := by simpa using congr(($h : F))
-    exact Subtype.ext (Submodule.disjoint_def.mp hker v v.property h')
+    exact Subtype.ext (Submodule.disjoint_def.mp hker v v.property (LinearMap.mem_ker.mpr h'))
   · obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.mp hy
     exact ⟨⟨v, hv⟩, restrict_apply _ _⟩
 
