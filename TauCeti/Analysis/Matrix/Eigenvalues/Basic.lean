@@ -35,6 +35,10 @@ Hermitian matrices with the same decreasing eigenvalue list are unitarily conjug
 `A.charpoly = ∏ k, (X - μ k)` is the decreasing eigenvalue list of `A`
 (`Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq`); in particular a decreasing list is the
 eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`).
+The sorted eigenvalues sum to the real part of the trace
+(`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their product is the determinant
+(`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts each of them
+by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`).
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -140,6 +144,44 @@ theorem IsHermitian.eigenvalues₀_diagonal {s : Fin (Fintype.card ι) → ℝ} 
     rw [charpoly_diagonal]
     exact Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
       fun k ↦ Polynomial.X - Polynomial.C (s k : 𝕜)
+
+/-- **The trace is the spectral function of the sum**: the sorted eigenvalues of a Hermitian
+matrix sum to the real part of its trace. -/
+theorem IsHermitian.sum_eigenvalues₀_eq_re_trace (hA : A.IsHermitian) :
+    ∑ k, hA.eigenvalues₀ k = RCLike.re A.trace := by
+  rw [hA.trace_eq_sum_eigenvalues, map_sum]
+  simp only [RCLike.ofReal_re]
+  exact (hA.sum_comp_eigenvalues fun x ↦ x).symm
+
+/-- **The determinant is the spectral function of the product**: the determinant of a Hermitian
+matrix is the product of its sorted eigenvalues. -/
+theorem IsHermitian.det_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
+    A.det = ∏ k, (hA.eigenvalues₀ k : 𝕜) := by
+  rw [hA.det_eq_prod_eigenvalues]
+  exact hA.prod_comp_eigenvalues fun x ↦ (x : 𝕜)
+
+open Polynomial in
+/-- The characteristic polynomial of a Hermitian matrix is `∏ k, (X - λ k)` over its sorted
+eigenvalues `λ`. -/
+theorem IsHermitian.charpoly_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
+    A.charpoly = ∏ k, (X - C (hA.eigenvalues₀ k : 𝕜)) := by
+  rw [hA.charpoly_eq]
+  exact hA.prod_comp_eigenvalues fun x ↦ X - C (x : 𝕜)
+
+open Polynomial in
+/-- **Scalar shifts.** The sorted eigenvalues of `A + t • 1` are those of `A` shifted by `t`. -/
+theorem IsHermitian.eigenvalues₀_add_smul_one (hA : A.IsHermitian) (t : ℝ)
+    (hAt : (A + t • (1 : Matrix ι ι 𝕜)).IsHermitian) :
+    hAt.eigenvalues₀ = hA.eigenvalues₀ + fun _ ↦ t := by
+  refine hAt.eigenvalues₀_eq_of_charpoly_eq
+    (hA.eigenvalues₀_antitone.add_const t) ?_
+  have hshift : A + t • (1 : Matrix ι ι 𝕜) = A - scalar ι (-(t : 𝕜)) := by
+    ext i j
+    by_cases hij : i = j <;> simp [hij, scalar_apply, RCLike.real_smul_eq_coe_mul]
+  rw [hshift, charpoly_sub_scalar, hA.charpoly_eq_prod_eigenvalues₀, prod_comp]
+  refine Finset.prod_congr rfl fun k _ ↦ ?_
+  simp only [sub_comp, X_comp, C_comp, Pi.add_apply, RCLike.ofReal_add, C_add, map_neg]
+  ring
 
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
