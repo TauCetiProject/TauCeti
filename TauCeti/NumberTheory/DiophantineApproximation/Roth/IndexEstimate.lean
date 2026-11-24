@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.Height.MvPolynomial
 public import TauCeti.NumberTheory.Height.Polynomial.RootMultiplicity
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.DegreeBound
 public import TauCeti.RingTheory.MvPolynomial.SeparateVariable
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!
 # Roth's lemma
@@ -284,7 +285,7 @@ private theorem weightedIndex_hasseWronskian_le {n m : ℕ} {σ : ℝ} (hσ0 : 0
     exact degreeOf_genWronskian_le _ _ _ _ fun l ↦ by
       rw [Polynomial.degreeOf_toMvPolynomial]
       exact (hgdeg l).trans (hdeg _)
-  have hlog : Real.log 2 ≤ 1 := (Real.log_le_sub_one_of_pos two_pos).trans (by norm_num)
+  have hlog : Real.log 2 ≤ 1 := Real.log_two_le_one
   have hrl : (r (Fin.last (n + 1)) : ℝ) ≤ r 0 := by
     exact_mod_cast hanti (Fin.zero_le (Fin.last (n + 1)))
   have hWgind := weightedIndex_toMvPolynomial_le (m • r) β (Fin.last (n + 1)) hWg hWgdeg hσ0 (by

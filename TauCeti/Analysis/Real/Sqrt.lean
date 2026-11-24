@@ -56,6 +56,7 @@ For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
+* `Real.one_le_sqrt_natAbs`: `1 ≤ √d.natAbs` for any nonzero integer `d`.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 -/
@@ -63,6 +64,10 @@ For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 public section
 
 namespace Real
+
+/-- For any nonzero integer `d`, `1 ≤ √d.natAbs`. -/
+theorem one_le_sqrt_natAbs {d : ℤ} (hd : d ≠ 0) : (1 : ℝ) ≤ √d.natAbs :=
+  one_le_sqrt.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd)
 
 /-- For `0 ≤ a` and `0 ≤ t`, if `t < |a - √r|`, then both `√r * t` and `t ^ 2`
 are strictly less than `|a ^ 2 - r|`. No sign hypothesis on `r` is required. -/

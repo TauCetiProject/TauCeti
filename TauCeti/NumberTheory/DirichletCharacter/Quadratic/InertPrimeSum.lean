@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
 import TauCeti.NumberTheory.Chebyshev.Basic
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
@@ -64,65 +65,83 @@ namespace InertPrimeSum
 private theorem grid_pow_identities (q : ℕ) {C : ℕ} (hC3 : 3 ∣ C) :
     q ^ C = (q ^ (C / 3)) ^ 3 ∧
       q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 ∧
-      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 :=
-  ⟨by rw [← pow_mul, Nat.div_mul_cancel hC3], by rw [mul_comm 2 (C / 3), pow_mul],
-    by rw [← pow_mul, ← pow_mul, show 2 * (C / 3) * 3 = C * 2 by
-      have := Nat.div_mul_cancel hC3; omega]⟩
+      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by
+  have hexp : 2 * (C / 3) * 3 = C * 2 := by
+    have := Nat.div_mul_cancel hC3
+    omega
+  exact ⟨by rw [← pow_mul, Nat.div_mul_cancel hC3], by rw [mul_comm 2 (C / 3), pow_mul],
+    by rw [← pow_mul, ← pow_mul, hexp]⟩
 
 /-- Parameter arithmetic for `X = q ^ C`, `S = X / C`, `N = q ^ (2 * (C / 3))` when `6 ≤ C` and
 `3 ∣ C`. -/
 private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
-    let X := q ^ C
-    let S := X / C
-    let N := q ^ (2 * (C / 3))
-    0 < X ∧ 0 < S ∧ 0 < N ∧
-      N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1) < N ^ 3 := by
-  intro X S N
+    0 < q ^ C ∧ 0 < q ^ C / C ∧ 0 < q ^ (2 * (C / 3)) ∧
+      q ^ (2 * (C / 3)) * ((q ^ C - 1) + (q ^ C / C - 1)) +
+        2 * (q ^ C - 1) * (q ^ C / C - 1) < (q ^ (2 * (C / 3))) ^ 3 := by
+  set X := q ^ C
+  set S := X / C
+  set N := q ^ (2 * (C / 3))
   have hm : 2 ≤ C / 3 := by omega
   set u := q ^ (C / 3)
   have hu9 : 9 ≤ u :=
     (by norm_num : 9 ≤ 3 ^ 2).trans ((Nat.pow_le_pow_right (by omega) hm).trans
       (Nat.pow_le_pow_left hq3 (C / 3)))
-  obtain ⟨(hX_eq : X = u ^ 3), (hN_eq : N = u ^ 2), (hN3_eq : N ^ 3 = X ^ 2)⟩ :=
-    grid_pow_identities q hC3
-  have h9N : 9 * N ≤ X := by rw [hN_eq, hX_eq]; nlinarith
+  have hX_eq : X = u ^ 3 := (grid_pow_identities q hC3).1
+  have hN_eq : N = u ^ 2 := (grid_pow_identities q hC3).2.1
+  have hN3_eq : N ^ 3 = X ^ 2 := (grid_pow_identities q hC3).2.2
+  have h9N : 9 * N ≤ X := by
+    rw [hN_eq, hX_eq]
+    calc 9 * u ^ 2 ≤ u * u ^ 2 := Nat.mul_le_mul_right _ hu9
+      _ = u ^ 3 := by ring
+  have hX_pos : 0 < X := by positivity
   have hX_gt_C : C < X :=
     (Nat.lt_two_pow_self (n := C)).trans_le (Nat.pow_le_pow_left (by omega) C)
   have hS_pos : 0 < S := Nat.div_pos hX_gt_C.le (by omega)
   have h6S : 6 * S ≤ X := by have := Nat.div_le_div_left (a := X) hC6 (by omega); omega
-  refine ⟨by positivity, hS_pos, by positivity, ?_⟩
-  rw [hN3_eq]
-  nlinarith [Nat.sub_le X 1, Nat.sub_le S 1]
-
-private theorem log_two_le_one : Real.log 2 ≤ 1 :=
-  (Real.log_le_sub_one_of_pos (by positivity)).trans (by norm_num)
+  refine ⟨hX_pos, hS_pos, by positivity, ?_⟩
+  have hSX : S ≤ X := by omega
+  have hX2 : 0 < X ^ 2 := pow_pos hX_pos 2
+  have h9deg : 9 * (N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1)) < 9 * N ^ 3 := by
+    calc 9 * (N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1))
+        ≤ 9 * (N * (X + S) + 2 * X * S) := by gcongr <;> omega
+      _ = (9 * N) * (X + S) + 3 * X * (6 * S) := by ring
+      _ ≤ X * (X + X) + 3 * X * X := by gcongr
+      _ = 5 * X ^ 2 := by ring
+      _ < 9 * X ^ 2 := by omega
+      _ = 9 * N ^ 3 := by rw [hN3_eq]
+  omega
 
 private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
-    let X := q ^ C
-    let N := q ^ (2 * (C / 3))
-    Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X ≤ 13 * X := by
-  intro X N
+    Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) ^ 3) +
+        2 * (q ^ (2 * (C / 3)) : ℕ) * Real.log ((q ^ C : ℕ) : ℝ) ≤
+      13 * ((q ^ C : ℕ) : ℝ) := by
   obtain ⟨hX_eq, hN_eq, -⟩ := grid_pow_identities q hC3
   set u := q ^ (C / 3)
   have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow (C / 3) q (by omega)
-  have hX_u : (X : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
-  have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
+  have hX_u : ((q ^ C : ℕ) : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
+  have hN_u : ((q ^ (2 * (C / 3)) : ℕ) : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
   have hlogu : Real.log u ≤ u :=
     (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
-  have hlog2 : Real.log 2 ≤ 1 := log_two_le_one
+  have hlog2 : Real.log 2 ≤ 1 := Real.log_two_le_one
   rw [hN_u, hX_u, Real.log_mul (by positivity) (by positivity),
     Real.log_pow, Real.log_pow, Real.log_pow]
   push_cast
+  have h1_u3 : (1 : ℝ) ≤ (u : ℝ) ^ 3 := one_le_pow₀ hu1
+  have hu_u3 : (u : ℝ) ≤ (u : ℝ) ^ 3 := by
+    calc (u : ℝ) = (u : ℝ) * 1 := (mul_one _).symm
+      _ ≤ (u : ℝ) * (u : ℝ) ^ 2 := mul_le_mul_of_nonneg_left (one_le_pow₀ hu1) (by positivity)
+      _ = (u : ℝ) ^ 3 := by ring
   have hu2_log : (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 3 := by
-    nlinarith [sq_nonneg (u : ℝ)]
-  nlinarith
+    calc (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 2 * u :=
+          mul_le_mul_of_nonneg_left hlogu (sq_nonneg _)
+      _ = (u : ℝ) ^ 3 := by ring
+  linarith
 
 private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < C)
     (hC3 : 3 ∣ C) :
-    let N := q ^ (2 * (C / 3))
-    Real.log (2 * (N : ℝ) * Real.sqrt q) =
+    Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) * Real.sqrt q) =
       Real.log 2 + (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) := by
-  intro N
+  set N := q ^ (2 * (C / 3))
   obtain ⟨-, -, hN3_eq⟩ := grid_pow_identities q hC3
   have hq_pos : (0 : ℝ) < q := by positivity
   have hC_ne : (C : ℝ) ≠ 0 := by positivity
@@ -139,16 +158,19 @@ private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < 
 
 private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq3 : 3 ≤ q)
     (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
-    let X := q ^ C
-    let S := X / C
-    let N := q ^ (2 * (C / 3))
-    (X : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X) +
-        (X : ℝ) * S * (X + S) * Real.log (2 * N * Real.sqrt d.natAbs) ≤
-      (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
-        Real.log ((q : ℝ) ^ C) + 15) := by
-  intro X S N
+    ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) *
+          (Real.log (2 * ((q ^ (2 * (C / 3)) : ℕ) : ℝ) ^ 3) +
+            2 * (q ^ (2 * (C / 3)) : ℕ) * Real.log ((q ^ C : ℕ) : ℝ)) +
+        ((q ^ C : ℕ) : ℝ) * ((q ^ C / C : ℕ) : ℝ) *
+          (((q ^ C : ℕ) : ℝ) + ((q ^ C / C : ℕ) : ℝ)) *
+          Real.log (2 * (q ^ (2 * (C / 3)) : ℕ) * Real.sqrt d.natAbs) ≤
+      ((q ^ C : ℕ) : ℝ) ^ 2 * ((q ^ C / C : ℕ) : ℝ) *
+        ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) + 15) := by
+  set X := q ^ C
+  set S := X / C
+  set N := q ^ (2 * (C / 3))
   obtain ⟨-, -, hN_pos, -⟩ := grid_deg_lt_cube hq3 hC6 hC3
-  have hlog2 : Real.log 2 ≤ 1 := log_two_le_one
+  have hlog2 : Real.log 2 ≤ 1 := Real.log_two_le_one
   have herr1 := log_grid_error_le hq3 hC3
   have h2Nq_log := log_two_mul_grid_mul_sqrt_eq (by omega : 0 < q) (by omega : 0 < C) hC3
   have hlog_dq : Real.log (2 * N * Real.sqrt d.natAbs) ≤ Real.log (2 * N * Real.sqrt q) := by
@@ -165,7 +187,7 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
     have hsq1 : (1 : ℝ) ≤ Real.sqrt q :=
       Real.one_le_sqrt.mpr (by exact_mod_cast (by omega : 1 ≤ q))
     have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN_pos
-    exact Real.log_nonneg (by nlinarith)
+    exact Real.log_nonneg (one_le_mul_of_one_le_of_one_le (by linarith) hsq1)
   calc (X : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X) +
           (X : ℝ) * S * (X + S) * Real.log (2 * N * Real.sqrt d.natAbs)
       ≤ (X : ℝ) * S * (13 * X) +
@@ -185,8 +207,11 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         have h1C : 1 / (C : ℝ) ≤ 1 :=
           div_le_one_of_le₀ (by exact_mod_cast (by omega : 1 ≤ C)) (by positivity)
-        have h1C_nn : 0 ≤ 1 + 1 / (C : ℝ) := by positivity
-        nlinarith
+        have hprod : (1 + 1 / (C : ℝ)) * Real.log 2 ≤ 2 := by
+          calc (1 + 1 / (C : ℝ)) * Real.log 2 ≤ 2 * 1 :=
+                mul_le_mul (by linarith) hlog2 (Real.log_nonneg one_le_two) (by positivity)
+            _ = 2 := mul_one 2
+        linarith
 
 private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
     (hP : ∀ p ∈ P, p ∈ Nat.primesLE X ∧ 2 * C < p) (hS_pos : 0 < S) (hC_pos : 0 < C)
@@ -211,8 +236,10 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
     have hdiv : X < (S + 1) * C := by
       have hmod := Nat.div_add_mod X C
       have hlt := Nat.mod_lt X hC_pos
-      nlinarith
-    exact_mod_cast (by nlinarith : X ≤ 2 * S * C)
+      have hmul : (S + 1) * C = C * (X / C) + C := by rw [hS_eq]; ring
+      omega
+    have hS1 : S + 1 ≤ 2 * S := by omega
+    exact_mod_cast hdiv.le.trans (Nat.mul_le_mul_right C hS1)
   have hlog4_nn : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
   have he1 : 2 * (X : ℝ) ^ 2 * (∑ p ∈ P, Real.log p / p) ≤
       (X : ℝ) ^ 2 * S * (4 * (C : ℝ) * Real.log 4) :=
@@ -244,8 +271,25 @@ private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime)
     (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
         2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
       (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
-        Real.log p :=
-  Fintype.le_two_mul_sum_fin_prod_min_div_mul hSX (Real.log_nonneg (by exact_mod_cast hp.one_le))
+        Real.log p := by
+  have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
+  have hp_nn : (0 : ℝ) ≤ p := Nat.cast_nonneg p
+  have hXS_div : (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p := by
+    rw [sq]
+    exact div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hSX_R (Nat.cast_nonneg X)) hp_nn
+  have h2div : 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p := by ring
+  have hexp :
+      (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
+        2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
+    linarith [Fintype.le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
+  have hlogp : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp.one_le)
+  calc (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
+        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2)
+      = ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
+          Real.log p := by ring
+    _ ≤ (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+          Real.log p :=
+        mul_le_mul_of_nonneg_right hexp hlogp
 
 end InertPrimeSum
 
@@ -378,6 +422,9 @@ theorem inert_prime_sum_le :
       _ ≤ 3 / 4 := by norm_num
   have hlog_nn : 0 ≤ Real.log ((q : ℝ) ^ C) :=
     Real.log_nonneg (one_le_pow₀ (by exact_mod_cast (by omega : 1 ≤ q)))
-  nlinarith
+  have hmul : (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) ≤
+      3 / 4 * Real.log ((q : ℝ) ^ C) :=
+    mul_le_mul_of_nonneg_right hcoeff hlog_nn
+  linarith
 
 end TauCeti

@@ -35,6 +35,7 @@ in explicit prime-counting estimates.
 
 ## Main results
 
+* `Real.log_two_le_one`: `log 2 ≤ 1`.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
@@ -49,12 +50,16 @@ public section
 
 namespace Real
 
+/-- The natural logarithm of `2` is at most `1`. -/
+theorem log_two_le_one : log 2 ≤ 1 :=
+  (log_le_sub_one_of_pos zero_lt_two).trans (by norm_num)
+
 /-- The natural logarithm of `4` is at most `2`. -/
 theorem log_four_le_two : log 4 ≤ 2 := by
   have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
   rw [h4, log_pow]
   norm_num
-  linarith [log_le_sub_one_of_pos zero_lt_two]
+  linarith [log_two_le_one]
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by
