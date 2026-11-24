@@ -335,6 +335,22 @@ lemma singularCohomologyMapIso_inv {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ)
     (singularCohomologyMapIso R k M e n).inv = TopPair.singularCohomologyMap e.inv n :=
   (rfl)
 
+/-- Two maps of pairs of subspaces that agree on points induce the same map on relative singular
+cohomology, up to the identifications of the pairs along equalities of the subspaces. This is the
+cohomological counterpart of `TopPair.singularHomologyMap_comp_eqToHom_of_eq`. -/
+lemma singularCohomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) φ n ≫
+        eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h h₁ hs ht)) =
+      eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h' h₁' hs' ht')) ≫
+        TopPair.singularCohomologyMap ψ n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
+
 /-- The map induced on relative singular cohomology by a map of topological pairs is the one
 induced on the relative cochains of the associated map of pairs of simplicial sets. -/
 lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :

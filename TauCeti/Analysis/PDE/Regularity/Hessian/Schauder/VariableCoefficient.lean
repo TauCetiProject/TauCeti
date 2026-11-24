@@ -11,6 +11,7 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.Lp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -187,15 +188,14 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
   let H := iteratedFDeriv ℝ 2 u
   let M : ℝ := (eLpNorm H 2 volume).toReal
   let V : ℝ := (volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹))).toReal
-  have hLam : 0 < Lam :=
-    hlam.trans_le (by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _))
+  have hLam : 0 < Lam := hlam.trans_le (le_of_mul_norm_sq_le_toQuadraticForm'_le hA hA')
   -- Absorbing the terms in `J` reduces the estimate to a two-point bound for each constant `J`.
   refine holderOnWith_univ.mp (holderOnWith_of_forall_holderOnWith_dist_le
     ⟨_, hH.holderWith.holderOnWith univ⟩ hlam hsmall fun J hJ x _ y _ => ?_)
   replace hJ : HolderWith J α H := holderOnWith_univ.mp hJ
   -- Interpolation at scale `r` makes the supremum term absorbable too.
   have hsup (x : E) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
-    simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) (by norm_num) hH2 hr x
+    simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) hH2 hr x
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderOnWith_univ.mp (holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le

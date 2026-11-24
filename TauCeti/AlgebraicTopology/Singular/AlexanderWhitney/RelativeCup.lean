@@ -149,8 +149,8 @@ pair `(X, A)`, the right relative diagonal `C(X, A; T) ⟶ C(X; R) ⊗ C(X, A; S
 homotopy `TopCat.alexanderWhitneyDiagonalKoszulBraidingHomotopy` of `X`, which by naturality
 carries the chains of `A` into the chains of `A × A`. -/
 def rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
-    _root_.Homotopy (P.rightAlexanderWhitneyDiagonal u ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((TopCat.toSSet.obj P.fst).chainComplex R) (P.singularChainComplex S))
+    _root_.Homotopy (P.rightAlexanderWhitneyDiagonal u ≫ (HomologicalComplex.tensorBraiding
+        ((TopCat.toSSet.obj P.fst).chainComplex R) (P.singularChainComplex S)).hom)
       (P.alexanderWhitneyDiagonal (u ≫ (β_ R S).hom)) :=
   -- The chains of `A` go to `C(A; S) ⊗ C(A; R)`, which the quotient map on the first factor kills.
   have hA : (SSet.chainComplexMap (TopCat.toSSet.map P.map) S ⊗ₘ
@@ -160,12 +160,12 @@ def rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy (P : TopPair.{w}) (u : T
       (congrArg (· ⊗ₘ _) (chainComplexMap_comp_singularChainComplexπ P S)).trans
         (HomologicalComplex.zero_tensorHom _)
   have hκ : ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) ≫
-      TauCeti.NatChainComplex.koszulBraidingHom ((TopCat.toSSet.obj P.fst).chainComplex R)
-        (P.singularChainComplex S) =
-      TauCeti.NatChainComplex.koszulBraidingHom ((TopCat.toSSet.obj P.fst).chainComplex R)
-          ((TopCat.toSSet.obj P.fst).chainComplex S) ≫
+      (HomologicalComplex.tensorBraiding ((TopCat.toSSet.obj P.fst).chainComplex R)
+        (P.singularChainComplex S)).hom =
+      (HomologicalComplex.tensorBraiding ((TopCat.toSSet.obj P.fst).chainComplex R)
+          ((TopCat.toSSet.obj P.fst).chainComplex S)).hom ≫
         (P.singularChainComplexπ S ▷ (TopCat.toSSet.obj P.fst).chainComplex R) :=
-    TauCeti.NatChainComplex.koszulBraidingHom_naturality _ _ (𝟙 _) (P.singularChainComplexπ S)
+    HomologicalComplex.tensorBraiding_hom_naturality (𝟙 _) (P.singularChainComplexπ S)
   _root_.Homotopy.descCokernel (TopCat.alexanderWhitneyDiagonalKoszulBraidingHomotopy P.fst u)
     (SSet.chainComplexMap (TopCat.toSSet.map P.map) T) (P.singularChainComplexπ T)
     (P.singularChainComplexπ S ▷ (TopCat.toSSet.obj P.fst).chainComplex R)

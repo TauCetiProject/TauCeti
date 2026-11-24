@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!

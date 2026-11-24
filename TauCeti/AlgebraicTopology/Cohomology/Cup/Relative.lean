@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
 public import TauCeti.AlgebraicTopology.Cohomology.Small
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
@@ -334,7 +335,7 @@ theorem singularCup_gradedComm (P : TopPair.{w})
   subst hu hμ
   rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
       (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
-    TauCeti.NatChainComplex.cup_koszulBraidingHom]
+    ChainComplex.cup_tensorBraiding_hom]
 
 end GradedComm
 

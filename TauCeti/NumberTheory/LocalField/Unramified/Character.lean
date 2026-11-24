@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Uniformizer
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Unramified characters of a local field

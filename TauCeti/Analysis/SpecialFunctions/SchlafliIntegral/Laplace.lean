@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.SchlafliIntegral.Amplitude
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 

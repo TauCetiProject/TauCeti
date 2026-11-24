@@ -129,7 +129,8 @@ instance instIsFiniteMeasureQuotientVolume [Γ.FiniteIndex] : IsFiniteMeasure Γ
 instance instNeZeroQuotientVolume : NeZero Γ.quotientVolume :=
   ⟨Measure.measure_univ_pos.mp <| by
     rw [quotientVolume_univ]
-    exact covolume_pos <| Measure.measure_univ_pos.mp <| isOpen_univ.measure_pos _ univ_nonempty⟩
+    exact MeasureTheory.covolume_pos <|
+      Measure.measure_univ_pos.mp <| isOpen_univ.measure_pos _ univ_nonempty⟩
 
 /-- **Integration over `Γ \ ℍ`** of an almost everywhere measurable nonnegative function is
 integration of its lift over any fundamental domain of the effective image of `Γ`. -/

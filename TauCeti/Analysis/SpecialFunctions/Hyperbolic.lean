@@ -49,8 +49,11 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
   `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
+* `Real.exp_le_two_mul_cosh` — `exp x ≤ 2 * cosh x`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.cosh_add_le_exp_abs_mul_cosh` — `cosh (x + y) ≤ exp |y| * cosh x`: a shift by `y` changes
+  `Real.cosh` by a factor between `exp (-|y|)` and `exp |y|`.
 * `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
@@ -324,6 +327,10 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
     rw [div_le_iff₀ hl]
     linarith
 
+/-- `exp x ≤ 2 * cosh x`: the hyperbolic cosine is at least half the exponential. -/
+theorem exp_le_two_mul_cosh (x : ℝ) : exp x ≤ 2 * cosh x := by
+  linarith [cosh_add_sinh x, sinh_lt_cosh x]
+
 /-- The hyperbolic cosine tends to infinity at `+∞`: it is at least `exp x / 2`. -/
 theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
   refine Filter.tendsto_atTop_mono (fun x ↦ ?_) (tendsto_exp_atTop.atTop_div_const two_pos)
@@ -333,6 +340,18 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- A shift by `y` multiplies the hyperbolic cosine by at most `exp |y|`:
+`cosh (x + y) ≤ exp |y| * cosh x`. -/
+theorem cosh_add_le_exp_abs_mul_cosh (x y : ℝ) : cosh (x + y) ≤ exp |y| * cosh x := by
+  have h₁ : exp (x + y) ≤ exp |y| * exp x := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [le_abs_self y])
+  have h₂ : exp (-(x + y)) ≤ exp |y| * exp (-x) := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [neg_abs_le y])
+  rw [cosh_eq, cosh_eq]
+  linarith
 
 /-- The shifted hyperbolic cosine `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`. -/
 theorem bijOn_cosh_sub_one_Ioi :

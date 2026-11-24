@@ -10,7 +10,7 @@ public import TauCeti.Topology.VectorBundle.Thom.Attachment.Basic
 public import TauCeti.Topology.VectorBundle.Thom.PointBase
 public import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Dimensions, rank bounds and point-base specialization for disc-bundle attachments
