@@ -13,7 +13,6 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
-import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
@@ -239,22 +238,6 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_idealSet {c : RayClassGroup (Modulus.o
 
 /-! ### Fractional ideals -/
 
-/-- An integral ideal `J = a I` differing from a fractional ideal `I` by a principal ideal `(a)`
-has the class of `I`. -/
-private theorem idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul {c : RayClassGroup (Modulus.one K)}
-    {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    (hI : rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) = c)
-    {a : Kˣ} {J : (Ideal (𝓞 K))⁰} (hJ : FractionalIdeal.mk0 K J = toPrincipalIdeal (𝓞 K) K a * I) :
-    idealClass (Modulus.one K) (integralIdealsPrimeToOneEquiv.symm J) = c := by
-  have h : NumberFieldArithmetic.integralIdealsAwayHom K (Modulus.one K).support
-      (integralIdealsPrimeToOneEquiv.symm J) =
-        (idealsPrimeToEquiv Modulus.support_one).symm (toPrincipalIdeal (𝓞 K) K a) *
-          (idealsPrimeToEquiv Modulus.support_one).symm I :=
-    Subtype.ext (Units.ext (by simp [← hJ]))
-  rw [← hI, idealClass_apply, h, map_mul,
-    rayClassMk_eq_one_iff.mpr (mem_ray_iff.mpr ⟨_, isCongrOne_one _,
-      (idealsPrimeToEquiv_symm_apply _ _).symm⟩), one_mul]
-
 /-- **The sum over the points of a fractional ideal in the fundamental cone.** For an invertible
 fractional ideal `I` whose class is the inverse of the class `c` of the trivial modulus, and
 `Re s > 1`, the sum of `|N(x)|^(-s)` over the points `x` of the lattice of `I` in the fundamental
@@ -268,43 +251,18 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
         ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s))
       (torsionOrder K * (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℂ) ^ (-s) *
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s) := by
-  obtain ⟨n, hn', J, hJ⟩ := FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul I
-  -- `J = n I` has the class of `I`, since `(n)` is principal
-  have hJc := idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul hI hJ
-  have hI' : (FractionalIdeal.mk0 K J : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ ((n : ℚ) : K) * (I : FractionalIdeal (𝓞 K)⁰ K) := by
-    simpa [coe_toPrincipalIdeal] using congrArg Units.val hJ
-  let e : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ≃ idealSet K J :=
-    (interIdealLatticeEquiv (q := (n : ℚ)) (by exact_mod_cast hn') hI').trans
-      (Equiv.subtypeEquivRight fun x ↦ by
-        rw [idealSet, Set.mem_inter_iff, SetLike.mem_coe, and_comm])
-  have hN : (absNorm (J : Ideal (𝓞 K)) : ℂ) =
-      (n : ℂ) ^ Module.finrank ℚ K * FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) := by
-    have h := congrArg (fun I : (FractionalIdeal (𝓞 K)⁰ K)ˣ ↦
-      FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K)) hJ
-    simp only [FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Units.val_mul,
-      coe_toPrincipalIdeal, Units.val_mk0, map_mul, FractionalIdeal.absNorm_span_singleton,
-      ← map_natCast (algebraMap ℚ K), Algebra.norm_algebraMap] at h
-    rw [abs_of_nonneg (by positivity)] at h
-    exact_mod_cast h
-  -- `(n^d)^s N(n^d x)^(-s) = N(x)^(-s)`, where `d = [K : ℚ]`
-  have hscale (x : ℝ) :
-      ((n : ℂ) ^ Module.finrank ℚ K) ^ s * ((n : ℂ) ^ Module.finrank ℚ K * x) ^ (-s) =
-        (x : ℂ) ^ (-s) := by
-    have hc : (n : ℂ) ^ Module.finrank ℚ K = (((n : ℝ) ^ Module.finrank ℚ K : ℝ) : ℂ) := by
-      rw [Complex.ofReal_pow, Complex.ofReal_natCast]
-    rw [hc, Complex.ofReal_mul_cpow (by positivity), ← mul_assoc, Complex.cpow_neg,
-      mul_inv_cancel₀ (by simp [Complex.cpow_eq_zero_iff, hn']), one_mul]
-  have h := (e.hasSum_iff.mpr (hasSum_norm_cpow_idealSet J hs)).mul_left
-    (((n : ℂ) ^ Module.finrank ℚ K) ^ s)
-  rw [← LSeries_rayClassCoeff_one_eq_tsum J hJc hs] at h
-  convert h using 1
-  · ext a
-    simp only [Function.comp_apply, e, Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
-      interIdealLatticeEquiv_apply_coe, Rat.cast_natCast, mixedEmbedding.norm_smul, Nat.abs_cast]
-    push_cast
-    rw [hscale]
-  · rw [hN, ← Complex.ofReal_ratCast, ← mul_assoc, mul_left_comm _ (torsionOrder K : ℂ),
-      hscale]
+  let e : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} ≃
+      ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) :=
+    { toFun x := ⟨x.val, x.property, x.val.property⟩
+      invFun x := ⟨⟨x.val, x.property.right⟩, x.property.left⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have hc : oneEquivClassGroup c = (ClassGroup.mk K I)⁻¹ := by
+    rw [← inv_inv c, map_inv, ← hI, oneEquivClassGroup_rayClassMk, idealsPrimeToEquiv_symm_apply]
+  have h := (e.hasSum_iff (f := fun a :
+      ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ↦
+        ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s))).mp
+    (hasSum_norm_cpow_idealLattice_fundamentalCone I hs)
+  rwa [← hc, ← LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup c hs] at h
 
 end TauCeti.LFunctions

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 import TauCeti.RingTheory.ClassGroup.Basic
 
@@ -45,9 +44,6 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 * `NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`: a point of
   nonzero norm is `u • a`, with `a` a point of the cone and `u` a unit, for exactly `w` pairs
   `(a, u)`.
-* `NumberField.mixedEmbedding.fundamentalCone.interIdealLatticeEquiv`: scaling by a nonzero
-  rational `q` with `I₂ = (q) * I₁` maps `fundamentalCone K ∩ idealLattice K I₁` bijectively onto
-  `fundamentalCone K ∩ idealLattice K I₂`.
 * `NumberField.mixedEmbedding.fundamentalCone.coneOrbitEquiv`: choosing coset representatives
   identifies `(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ torsion K)` bijectively with the
   nonzero points of `idealLattice K I`.
@@ -282,47 +278,6 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
       exact a.property
     refine ⟨⟨_, hζ⟩, Subtype.ext (Prod.ext (Subtype.ext ?_) ?_)⟩ <;>
       simp only [inv_mul_cancel_right, ← hp, inv_smul_smul, inv_inv]
-
-/-- Scaling by a nonzero rational `q` with `I₂ = (q) * I₁` maps the fundamental-cone points of
-`idealLattice K I₁` bijectively onto those of `idealLattice K I₂`. -/
-noncomputable def interIdealLatticeEquiv {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
-    (hq : q ≠ 0)
-    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K)) :
-    (fundamentalCone K ∩ idealLattice K I₁ : Set (mixedSpace K)) ≃
-      (fundamentalCone K ∩ idealLattice K I₂ : Set (mixedSpace K)) :=
-  Equiv.subtypeEquiv (MulAction.toPerm (Units.mk0 (q : ℝ) (Rat.cast_ne_zero.mpr hq))) fun x ↦ by
-    have hqR : (q : ℝ) ≠ 0 := Rat.cast_ne_zero.mpr hq
-    let a : Kˣ := Units.mk0 (q : K) (Rat.cast_ne_zero.mpr hq)
-    have ha : mixedEmbedding K (a : K) * x = (q : ℝ) • x := by
-      ext w <;> simp [a, mixedEmbedding, Complex.real_smul]
-    have hI' : I₂ = toPrincipalIdeal (𝓞 K) K a * I₁ :=
-      Units.ext (by simpa [a, coe_toPrincipalIdeal] using hI)
-    simp only [Set.mem_inter_iff, SetLike.mem_coe, MulAction.toPerm_apply,
-      Units.smul_def, Units.val_mk0]
-    refine and_congr (smul_mem_iff_mem hqR).symm ?_
-    rw [hI', ← ha]
-    exact (mixedEmbedding_mul_mem_idealLattice_iff a I₁).symm
-
-/-- Underlying mixed-space point of `interIdealLatticeEquiv`. -/
-@[simp]
-theorem interIdealLatticeEquiv_apply_coe {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
-    (hq : q ≠ 0)
-    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K))
-    (a : (fundamentalCone K ∩ idealLattice K I₁ : Set (mixedSpace K))) :
-    (interIdealLatticeEquiv hq hI a : mixedSpace K) = (q : ℝ) • (a : mixedSpace K) := by
-  simp [interIdealLatticeEquiv]
-
-/-- Underlying mixed-space point of `(interIdealLatticeEquiv hq hI).symm`. -/
-@[simp]
-theorem interIdealLatticeEquiv_symm_apply_coe {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
-    (hq : q ≠ 0)
-    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K))
-    (b : (fundamentalCone K ∩ idealLattice K I₂ : Set (mixedSpace K))) :
-    ((interIdealLatticeEquiv hq hI).symm b : mixedSpace K) = (q : ℝ)⁻¹ • (b : mixedSpace K) := by
-  simp [interIdealLatticeEquiv, Units.smul_def]
 
 /-- Choosing coset representatives `Quotient.out g` identifies
 `(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ Units.torsion K)` bijectively with the nonzero
