@@ -22,7 +22,6 @@ For a Hopf algebra `H` over a commutative semiring `R`:
 
 ## Main declarations
 
-* `TauCeti.Coop.opLinearEquiv`: canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`.
 * `MulOpposite.instHopfAlgebraCoop`: the `HopfAlgebra` instance on `(Coop H)ᵐᵒᵖ`.
 * `MulOpposite.hopfAlgebra`: the `HopfAlgebra` structure on `Hᵐᵒᵖ` when `S` is bijective.
 * `TauCeti.Coop.hopfAlgebra`: the `HopfAlgebra` structure on `Coop H` when `S` is bijective.
@@ -33,21 +32,6 @@ For a Hopf algebra `H` over a commutative semiring `R`:
 open scoped TensorProduct
 
 namespace TauCeti.Coop
-
-variable (R A : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A]
-
-/-- The canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`. -/
-def opLinearEquiv : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
-  (MulOpposite.opLinearEquiv R).symm.trans (linearEquiv R A)
-
-@[simp]
-theorem opLinearEquiv_apply (x : (Coop A)ᵐᵒᵖ) : opLinearEquiv R A x = x.unop.val :=
-  rfl
-
-@[simp]
-theorem opLinearEquiv_symm_apply (a : A) :
-    (opLinearEquiv R A).symm a = MulOpposite.op (mk a) :=
-  rfl
 
 section HopfAlgebra
 

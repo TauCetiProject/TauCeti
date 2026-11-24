@@ -415,31 +415,25 @@ theorem IsLeftCointegral.coop {φ : Module.Dual k H} (hφ : IsLeftCointegral φ)
 /-- A functional on `H` is a left cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a right
 cointegral. -/
 theorem IsLeftCointegral.opCoop_iff (φ : Module.Dual k H) :
-    IsRightCointegral
-        (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) ↔
-      IsLeftCointegral φ :=
+    IsRightCointegral (φ ∘ₗ (Coop.opLinearEquiv k H).toLinearMap) ↔ IsLeftCointegral φ :=
   (IsRightCointegral.mulOpposite_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
     (IsLeftCointegral.coop_iff φ)
 
 /-- Transferring a left cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a right cointegral. -/
 theorem IsLeftCointegral.opCoop {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
-    IsRightCointegral
-      (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) :=
+    IsRightCointegral (φ ∘ₗ (Coop.opLinearEquiv k H).toLinearMap) :=
   (IsLeftCointegral.opCoop_iff φ).mpr hφ
 
 /-- A functional on `H` is a right cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a left
 cointegral. -/
 theorem IsRightCointegral.opCoop_iff (φ : Module.Dual k H) :
-    IsLeftCointegral
-        (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) ↔
-      IsRightCointegral φ :=
+    IsLeftCointegral (φ ∘ₗ (Coop.opLinearEquiv k H).toLinearMap) ↔ IsRightCointegral φ :=
   (IsLeftCointegral.mulOpposite_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
     (IsRightCointegral.coop_iff φ)
 
 /-- Transferring a right cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a left cointegral. -/
 theorem IsRightCointegral.opCoop {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
-    IsLeftCointegral
-      (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) :=
+    IsLeftCointegral (φ ∘ₗ (Coop.opLinearEquiv k H).toLinearMap) :=
   (IsRightCointegral.opCoop_iff φ).mpr hφ
 
 end Opposite

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import Mathlib.Algebra.Algebra.Equiv
+public import Mathlib.Algebra.Module.Equiv.Opposite
 
 /-!
 # Co-opposite coalgebras and bialgebras
@@ -18,7 +19,8 @@ present, `R`-algebra) structure as `A`, with the same counit and the reversed co
 ## Main declarations
 
 * `TauCeti.Coop`: the co-opposite type wrapper.
-* `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.algEquiv`: canonical equivalences `Coop A ≃ A`.
+* `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.opLinearEquiv`, `TauCeti.Coop.algEquiv`: canonical
+  equivalences `Coop A ≃ A` and `(Coop A)ᵐᵒᵖ ≃ A`.
 * `TauCeti.Coop.instCoalgebra`, `TauCeti.Coop.instBialgebra`: coalgebra and bialgebra instances on
   `Coop A`.
 * `TauCeti.Coop.comul_mk`, `TauCeti.Coop.counit_mk`: simp lemmas for the co-opposite coalgebra
@@ -189,6 +191,21 @@ theorem linearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : Coop 
 @[simp]
 theorem linearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
     (linearEquiv R A).symm a = mk a :=
+  rfl
+
+variable (R A) in
+/-- The canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`. -/
+def opLinearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
+  (MulOpposite.opLinearEquiv R).symm.trans (linearEquiv R A)
+
+@[simp]
+theorem opLinearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : (Coop A)ᵐᵒᵖ) :
+    opLinearEquiv R A x = x.unop.val :=
+  rfl
+
+@[simp]
+theorem opLinearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
+    (opLinearEquiv R A).symm a = MulOpposite.op (mk a) :=
   rfl
 
 variable (A) in
