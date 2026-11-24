@@ -177,15 +177,10 @@ theorem IsBlockIdempotent.asAlgebraHom_trivial_eq_zero
 augmentation is injective. -/
 theorem principalBlockIdempotent_eq_one_of_subsingleton [Subsingleton G] :
     principalBlockIdempotent k G = 1 := by
-  have key (x : MonoidAlgebra k G) : x = single 1 (augmentation k G x) := by
-    induction x using MonoidAlgebra.induction_on with
-    | of g => simp [Subsingleton.elim g 1]
-    | add x y hx hy => rw [map_add, single_add, ← hx, ← hy]
-    | smul r x hx =>
-      rw [← augmentationLinearMap_apply k G (r • x), map_smul, augmentationLinearMap_apply,
-        smul_eq_mul, ← smul_single', ← hx]
-  have hinj : Function.Injective (augmentation k G) := fun x y h ↦ by rw [key x, key y, h]
-  exact Subtype.ext (hinj (by simp))
+  have h : augmentation k G = (uniqueRingEquiv (R := k) G).toRingHom :=
+    ringHom_ext (by simp) fun g ↦ by simp [Subsingleton.elim g 1]
+  refine Subtype.ext ((uniqueRingEquiv G).injective ?_)
+  simpa using (RingHom.congr_fun h (principalBlockIdempotent k G)).symm
 
 section Average
 

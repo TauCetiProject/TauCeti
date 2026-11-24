@@ -55,8 +55,7 @@ theorem mul_average (x : MonoidAlgebra k G) :
   | of g => rw [of_apply, mul_average_left, augmentation_single, one_smul]
   | add x y hx hy => rw [add_mul, hx, hy, map_add, add_smul]
   | smul r x hx =>
-    rw [smul_mul_assoc, hx, ← augmentationLinearMap_apply k G (r • x), map_smul,
-      augmentationLinearMap_apply, smul_smul, smul_eq_mul]
+    rw [smul_mul_assoc, hx, augmentation_smul, smul_smul]
 
 /-- Multiplying `average k G` on the right by any `x` multiplies it by the augmentation of `x`. -/
 theorem average_mul (x : MonoidAlgebra k G) :
@@ -65,8 +64,7 @@ theorem average_mul (x : MonoidAlgebra k G) :
   | of g => rw [of_apply, mul_average_right, augmentation_single, one_smul]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_smul]
   | smul r x hx =>
-    rw [mul_smul_comm, hx, ← augmentationLinearMap_apply k G (r • x), map_smul,
-      augmentationLinearMap_apply, smul_smul, smul_eq_mul]
+    rw [mul_smul_comm, hx, augmentation_smul, smul_smul]
 
 /-- `average k G` is central in `k[G]`. -/
 theorem average_mem_center : average k G ∈ Subalgebra.center k (MonoidAlgebra k G) :=
@@ -84,10 +82,7 @@ theorem lift_one_average {A : Type*} [Semiring A] [Algebra k A] :
 /-- The coefficient-sum augmentation sends `average k G` to `1`. -/
 @[simp]
 theorem augmentation_average : augmentation k G (average k G) = 1 := by
-  have h : (lift k k G 1 : MonoidAlgebra k G →+* k) = augmentation k G :=
-    ringHom_ext (fun _ ↦ by simp [lift_single]) fun _ ↦ by simp [lift_single]
-  rw [← h]
-  exact lift_one_average
+  simpa [lift_one_apply] using lift_one_average (k := k) (G := G) (A := k)
 
 /-- A nontrivial character with values in a domain sends `average k G` to `0`. -/
 theorem lift_average_of_ne_one {A : Type*} [CommRing A] [IsDomain A] [Algebra k A] {χ : G →* A}

@@ -184,14 +184,7 @@ augmentation. -/
 @[simp]
 theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
     (trivial k G k).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
-  induction x using MonoidAlgebra.induction_on with
-  | of g =>
-    rw [asAlgebraHom_of, MonoidAlgebra.of_apply, MonoidAlgebra.augmentation_single, one_smul]
-    exact LinearMap.ext (trivial_apply k g)
-  | add x y hx hy => rw [map_add, map_add, hx, hy, add_smul]
-  | smul r x hx =>
-    rw [map_smul, hx, ← MonoidAlgebra.augmentationLinearMap_apply k G (r • x), map_smul,
-      MonoidAlgebra.augmentationLinearMap_apply, smul_eq_mul, mul_smul]
+  rw [asAlgebraHom_def, trivial, MonoidAlgebra.lift_one_apply, Algebra.algebraMap_eq_smul_one]
 
 end Representation
 
