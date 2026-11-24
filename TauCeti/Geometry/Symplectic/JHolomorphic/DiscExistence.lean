@@ -104,9 +104,9 @@ for `h ↦ K(u)` is the second-difference estimate
   `|w| < 1/2` with `u(0) = 0`, `∂ₛu(0) = ξ` for each `‖ξ‖ ≤ 1`, which is `C¹` on `|w| < 2` and has
   values of norm at most `2` on the unit disc.
 * `TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`:
-  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` with a small conjugate-linear
-  coefficient on the ball of radius `2`, as a family `u_ξ` with `u_{c ξ}(w) = u_ξ(c w)` for
-  `|c| = 1`.
+  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` with a coefficient small on the ball of
+  radius `4`; if it is also conjugate-linear on the ball of radius `2`, the family satisfies
+  `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
 * `TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`: for
@@ -135,10 +135,6 @@ namespace TauCeti
 /-! ### The radial cutoff and Hölder helpers -/
 
 section Cutoff
-
-private theorem half_pos : (0 : ℝ≥0) < 2⁻¹ := by norm_num
-
-private theorem half_lt_one : (2⁻¹ : ℝ≥0) < 1 := by norm_num
 
 /-- The radial cutoff `z ↦ min 1 (max 0 (2 - 2 ‖z‖))`, written through the projection onto
 `[0, 1]`. -/
@@ -189,7 +185,7 @@ private def cutoffHolder : supportedHolderSubmodule (Y := ℝ) (2⁻¹ : ℝ≥0
       exact ⟨_, holderOnWith_univ.mp <|
         lipschitzWith_discCutoff.lipschitzOnWith.holderOnWith_of_norm_le
           (M := 1) (fun z _ ↦ (norm_discCutoff_le z).trans_eq NNReal.coe_one.symm)
-          half_lt_one.le⟩),
+          two_inv_lt_one.le⟩),
     mem_supportedHolderSubmodule_iff.mpr fun z hz ↦ by
       simp only [mem_closedBall, dist_zero_right, not_le] at hz
       rw [HolderSpace.ofBoundedContinuousFunction_apply, coe_cutoffBCF]
@@ -214,7 +210,7 @@ private theorem holderWith_of_norm_le {E : Type*} [NormedAddCommGroup E]
     rw [dist_eq_norm, Subtype.dist_eq, dist_eq_norm]
     exact (hL z w).trans (by gcongr; exact Real.le_coe_toNNReal L)
   exact holderOnWith_univ.mp (hLip.lipschitzOnWith.holderOnWith_of_norm_le
-    (fun z _ ↦ (hM z).trans (Real.le_coe_toNNReal M)) half_lt_one.le)
+    (fun z _ ↦ (hM z).trans (Real.le_coe_toNNReal M)) two_inv_lt_one.le)
 
 /-- A `1/2`-Hölder field on the unit disc with pointwise bound `M` and Lipschitz bound `L` has
 norm at most `3 M + L`. -/
@@ -294,7 +290,7 @@ private def kField (K : F → F →L[ℝ] F) (ξ : F) (f : Source F) :
   if h : ∃ p : ℝ≥0 × ℝ, HolderWith p.1 (2⁻¹ : ℝ≥0) (kFun K ξ f) ∧ ∀ z, ‖kFun K ξ f z‖ ≤ p.2 then
     HolderSpace.ofBoundedContinuousFunction
       (BoundedContinuousFunction.ofNormedAddCommGroup (kFun K ξ f)
-        ((Classical.choose_spec h).1.continuous half_pos) _ (Classical.choose_spec h).2)
+        ((Classical.choose_spec h).1.continuous (inv_pos.2 two_pos)) _ (Classical.choose_spec h).2)
       (by
         rw [BoundedContinuousFunction.coe_ofNormedAddCommGroup]
         exact ⟨_, (Classical.choose_spec h).1⟩)
@@ -348,17 +344,17 @@ variable (F) in
 /-- The derivative of the Cauchy transform on the unit disc, as a bounded operator from sources
 to `1/2`-Hölder fields of real-linear maps. -/
 private def derivOp : Source F →L[ℝ] HolderSpace (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) (ℂ →L[ℝ] F) :=
-  cauchyDerivativeCLM half_pos half_lt_one zero_le_one zero_le_one
+  cauchyDerivativeCLM (inv_pos.2 two_pos) two_inv_lt_one zero_le_one zero_le_one
 
 private theorem derivOp_apply (f : Source F) (z : closedBall (0 : ℂ) 1) :
     derivOp F f z = fderiv ℝ (cauchyTransform ⇑f.val) z := by
   rw [funext (cauchyTransform_apply _)]
-  exact cauchyDerivativeCLM_apply half_pos half_lt_one zero_le_one zero_le_one f z
+  exact cauchyDerivativeCLM_apply (inv_pos.2 two_pos) two_inv_lt_one zero_le_one zero_le_one f z
 
 private theorem differentiableAt_cauchyTransform (f : Source F) (z : ℂ) :
     DifferentiableAt ℝ (cauchyTransform ⇑f.val) z :=
-  (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule half_pos half_lt_one zero_le_one
-      f.property).differentiable
+  (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule (inv_pos.2 two_pos) two_inv_lt_one
+      zero_le_one f.property).differentiable
     one_ne_zero z
 
 private theorem fderiv_discMap (ξ : F) (f : Source F) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
@@ -845,8 +841,8 @@ private theorem discSource_props (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1)
   obtain ⟨hmem, hfix⟩ := discSource_spec hℓ hξ hK
   set f := discSource ℓ K ξ
   have hf := small_of_mem_closedBall hmem
-  have hTC := (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule half_pos half_lt_one
-    zero_le_one f.property).contDiffOn (s := ball 0 2)
+  have hTC := (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule (inv_pos.2 two_pos)
+    two_inv_lt_one zero_le_one f.property).contDiffOn (s := ball 0 2)
   refine ⟨?_, discMap_zero ξ _, ?_, fun z hz ↦ norm_discMap_le hξ hf hz, fun z hz ↦ ?_⟩
   · exact (((contDiffOn_id.smul contDiffOn_const).add hTC).sub contDiffOn_const).sub
       (contDiffOn_id.smul contDiffOn_const)
@@ -858,8 +854,8 @@ private theorem discSource_props (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1)
       rw [mem_ball, dist_zero_right] at hz
       exact hz.le
     -- At the fixed point, `\bar∂ T f = f = χ · K(u) ℓ(Du)`, and `χ(z) = 1`.
-    rw [conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule half_pos half_lt_one
-        zero_le_one f.property]
+    rw [conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule (inv_pos.2 two_pos)
+        two_inv_lt_one zero_le_one f.property]
     conv_lhs => rw [← hfix]
     rw [fixedPointMap_apply_of_small hξ hK hf hz1, discCutoff_eq_one hzn, one_smul]
 
@@ -1006,8 +1002,8 @@ private theorem discMap_rotSource {c : ℂ} (hc : ‖c‖ = 1) (ξ : F) {f : Sou
   -- `\bar∂ (T f)(0) = f(0) = 0`, so `D(T f)(0)` is complex linear.
   have hlin :
       fderiv ℝ (cauchyTransform ⇑f.val) 0 c = c • fderiv ℝ (cauchyTransform ⇑f.val) 0 1 := by
-    have h := conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule half_pos
-      half_lt_one zero_le_one f.property 0
+    have h := conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule (inv_pos.2 two_pos)
+      two_inv_lt_one zero_le_one f.property 0
     rw [hf0] at h
     rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
       fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
