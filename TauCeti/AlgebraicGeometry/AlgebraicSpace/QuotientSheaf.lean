@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import Mathlib.CategoryTheory.Sites.Canonical
 public import Mathlib.CategoryTheory.Sites.LeftExact
+public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.CategoryTheory.QuotientPresheaf
 
 /-!
@@ -39,6 +40,8 @@ Mathlib's type-valued sheafification for the big fppf site of `Scheme.{u}` produ
 
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.isColimit`: `π` is the coequaliser of
   `h_R ⇉ h_U` in fppf sheaves.
+* `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.isLocallySurjective_π`: `π` is fppf locally
+  surjective.
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.kernelPair`: for an equivalence relation,
   `h_R ⇉ h_U` is the kernel pair of `π`, that is, `h_R = h_U ×_{U/R} h_U`.
 
@@ -152,6 +155,15 @@ noncomputable def quotientSheaf.isColimit :
     IsColimit (Cofork.ofπ (quotientSheaf.π s t) (quotientSheaf.condition s t)) :=
   Cofork.IsColimit.mk' _ fun c ↦ ⟨quotientSheaf.desc c.π c.condition,
     quotientSheaf.π_desc _ _, fun hm ↦ quotientSheaf.hom_ext (by simpa using hm)⟩
+
+/-- The projection onto the quotient sheaf is an epimorphism of fppf sheaves. -/
+instance quotientSheaf.epi_π : Epi (quotientSheaf.π s t) :=
+  ⟨fun _ _ h ↦ quotientSheaf.hom_ext h⟩
+
+/-- The projection onto the quotient sheaf is fppf locally surjective: every section of `U/R` is,
+fppf locally, the class of a point of `U`. -/
+theorem quotientSheaf.isLocallySurjective_π : Sheaf.IsLocallySurjective (quotientSheaf.π s t) :=
+  (Sheaf.isLocallySurjective_iff_epi _).2 inferInstance
 
 /-- For an equivalence relation `(t, s)`, `h_R ⇉ h_U` is the kernel pair of the projection onto
 the quotient sheaf: `h_R = h_U ×_{U/R} h_U` (Stacks, Lemma 39.20.4 (045Y), and the injectivity of
