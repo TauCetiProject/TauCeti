@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Topology.Homotopy.Affine
 import TauCeti.Data.Set.Restrict
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -212,6 +213,20 @@ theorem localIndex_of_frequently_eq (f : C(M, N)) {x : M} (h : ∃ᶠ z in 𝓝[
     o.localIndex o' f x = 0 := by
   rw [localIndex, dite_eq_right (not_eventually.2 (by simpa using h))]
 
+/-- If the source manifold's dimension differs from `n` while the target manifold has dimension
+`n`, every continuous map has local index `0` at `x`. -/
+theorem localIndex_eq_zero_of_finrank_ne (hE : finrank ℝ E ≠ n) (hF : finrank ℝ F = n)
+    (f : C(M, N)) (x : M) : o.localIndex o' f x = 0 := by
+  have hz := isZero_singularHomology_complSingleton_of_ne (A := ModuleCat.{0} ℤ)
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (chartAt E x) (mem_chart_source E x) rfl hE.symm
+  have ho0 : (o x).val = 0 := by
+    simpa using ConcreteCategory.congr_hom (hz.eq_of_src (𝟙 _) 0) (o x).val
+  by_cases hf : ∀ᶠ z in 𝓝[≠] x, f z ≠ f x
+  · obtain ⟨U, hUo, hxU, hU⟩ := eventually_nhdsNE_ne_iff_exists_isOpen.1 hf
+    rw [o.localIndex_eq_iff o' hF f rfl hUo hxU hU, zero_zsmul,
+      IsOpenEmbedding.coe_localOrientationEquiv_symm, ho0, map_zero, map_zero]
+  · exact o.localIndex_of_frequently_eq o' f (by simpa using not_eventually.1 hf)
+
 /-- **The local index only depends on the germ of the map**: maps agreeing on a neighbourhood of
 `x` have the same local index at `x`. -/
 theorem localIndex_congr (hF : finrank ℝ F = n) {f g : C(M, N)} {x : M} (hfg : f =ᶠ[𝓝 x] g) :
@@ -356,15 +371,22 @@ variable {M N E F : Type} [TopologicalSpace M] [T2Space M] [TopologicalSpace N] 
   {n : ℕ} (o : HomologicalOrientation M E n) (o' : HomologicalOrientation N F n)
 
 /-- If `W` is an open neighbourhood of `x` meeting the fibre of `f` through `f x` only in `x` on
-which `g ∘ j = k ∘ f`, then the local index of `f` at `x` with the pulled-back orientations
-`o.comap hj` and `o'.comap hk` equals the local index of `g` at `j x` with the ambient orientations
-`o` and `o'`. -/
-private theorem localIndex_comap_of_isOpen (hF : finrank ℝ F = n) {U V : Type} [TopologicalSpace U]
+which `g ∘ j = k ∘ f`, then the restriction of `g` to `j '' W` carries the local orientation
+`o (j x)` (read in `j '' W` through excision) to `(o.comap hj).localIndex (o'.comap hk) f x` times
+`o' (k (f x))`. -/
+private theorem localHomologyMap_restrict_comap_eq {U V : Type} [TopologicalSpace U]
     [T2Space U] [ChartedSpace E U] [TopologicalSpace V] [T2Space V] [ChartedSpace F V]
     {j : U → M} (hj : IsOpenEmbedding j) {k : V → N} (hk : IsOpenEmbedding k)
     {f : C(U, V)} {g : C(M, N)} {x : U} {W : Set U} (hWo : IsOpen W) (hxW : x ∈ W)
     (hWf : ∀ z ∈ W, f z = f x → z = x) (hWg : ∀ z ∈ W, g (j z) = k (f z)) :
-    (o.comap hj).localIndex (o'.comap hk) f x = o.localIndex o' g (j x) := by
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (g.restrict (j '' W))
+        (S := {⟨j x, mem_image_of_mem j hxW⟩}) (T := {k (f x)})
+        ((Set.preimage_domRestrict_singleton_subset_iff (mem_image_of_mem j hxW)).2 <| by
+          rintro _ ⟨u, hu, rfl⟩ hgu
+          exact congrArg j (hWf u hu (hk.injective ((hWg u hu).symm.trans hgu)))) n
+        (((hj.isOpenMap W hWo).isOpenEmbedding_subtypeVal.localOrientationEquiv
+          ⟨j x, mem_image_of_mem j hxW⟩ n).symm (o (j x))).val =
+      (o.comap hj).localIndex (o'.comap hk) f x • (o' (k (f x))).val := by
   have hW'o : IsOpen (j '' W) := hj.isOpenMap W hWo
   have hxW' : j x ∈ j '' W := mem_image_of_mem j hxW
   have hW' : ∀ z ∈ j '' W, g z = k (f x) → z = j x := by
@@ -408,7 +430,7 @@ private theorem localIndex_comap_of_isOpen (hF : finrank ℝ F = n) {U V : Type}
         localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨k, hk.continuous⟩ hkx n := by
     rw [localHomologyMap_comp, localHomologyMap_comp]
     exact localHomologyMap_congr _ (ContinuousMap.ext fun z : W ↦ hWg z z.property) _ n
-  rw [eq_comm, o.localIndex_eq_iff o' hF g (hWg x hxW) hW'o hxW' hW', ← hpush, hclass, ← hpull]
+  rw [← hpush, hclass, ← hpull]
   exact (ConcreteCategory.comp_apply _ _ _).symm.trans
     ((ConcreteCategory.congr_hom hmaps _).trans (ConcreteCategory.comp_apply _ _ _))
 
@@ -425,8 +447,13 @@ theorem localIndex_comap (hF : finrank ℝ F = n) {U V : Type} [TopologicalSpace
   by_cases hfx : ∀ᶠ z in 𝓝[≠] x, f z ≠ f x
   · obtain ⟨W, hWo, hxW, hW⟩ := eventually_nhdsNE_ne_iff_exists_isOpen.1 hfx
     obtain ⟨W₁, hW₁, hW₁o, hxW₁⟩ := eventually_nhds_iff.1 h
-    exact o.localIndex_comap_of_isOpen o' hF hj hk (hWo.inter hW₁o) ⟨hxW, hxW₁⟩
-      (fun z hz ↦ hW z hz.1) (fun z hz ↦ hW₁ z hz.2)
+    have hWf : ∀ z ∈ W ∩ W₁, f z = f x → z = x := fun z hz ↦ hW z hz.1
+    have hWg : ∀ z ∈ W ∩ W₁, g (j z) = k (f z) := fun z hz ↦ hW₁ z hz.2
+    rw [eq_comm, o.localIndex_eq_iff o' hF g (hWg x ⟨hxW, hxW₁⟩) (hj.isOpenMap _ (hWo.inter hW₁o))
+      (mem_image_of_mem j ⟨hxW, hxW₁⟩) (by
+        rintro _ ⟨z, hz, rfl⟩ hgz
+        rw [hWf z hz (hk.injective ((hWg z hz).symm.trans hgz))])]
+    exact o.localHomologyMap_restrict_comap_eq o' hj hk (hWo.inter hW₁o) ⟨hxW, hxW₁⟩ hWf hWg
   · -- If `x` is not isolated in its fibre, neither is `j x`, and both local indices vanish.
     have hf : ∃ᶠ z in 𝓝[≠] x, f z = f x := by simpa using not_eventually.1 hfx
     have hg : ∃ᶠ z in 𝓝[≠] (j x), g z = g (j x) := by
@@ -799,31 +826,17 @@ theorem localIndex_eq_of_norm_sub_lt (hF : finrank ℝ F = n) {f g : C(M, F)} {x
     (h : ∀ᶠ z in 𝓝[≠] x, ‖g z - f z‖ < ‖f z - f x‖) :
     o.localIndex o' f x = o.localIndex o' g x := by
   by_cases hE0 : finrank ℝ E = 0 ∧ n ≠ 0
-  · -- When `finrank ℝ E = 0` and `n ≠ 0`, `Hₙ(M, M ∖ {x}; ℤ) = 0`, so both local indices vanish.
-    have hz := isZero_singularHomology_complSingleton_of_ne (A := ModuleCat.{0} ℤ)
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) (chartAt E x) (mem_chart_source E x) hE0.1 hE0.2
-    have ho0 : (o x).val = 0 := by
-      simpa using ConcreteCategory.congr_hom (hz.eq_of_src (𝟙 _) 0) (o x).val
-    have h0 (φ : C(M, F)) : o.localIndex o' φ x = 0 := by
-      by_cases hφ : ∀ᶠ z in 𝓝[≠] x, φ z ≠ φ x
-      · obtain ⟨U, hUo, hxU, hU⟩ := eventually_nhdsNE_ne_iff_exists_isOpen.1 hφ
-        rw [o.localIndex_eq_iff o' hF φ rfl hUo hxU hU, zero_zsmul,
-          IsOpenEmbedding.coe_localOrientationEquiv_symm, ho0, map_zero, map_zero]
-      · exact o.localIndex_of_frequently_eq o' φ (by simpa using not_eventually.1 hφ)
-    rw [h0 f, h0 g]
+  · rw [o.localIndex_eq_zero_of_finrank_ne o' (by omega) hF,
+      o.localIndex_eq_zero_of_finrank_ne o' (by omega) hF]
   have hfg : f x = g x := by
     by_cases h0 : finrank ℝ E = 0
     · have : Subsingleton F := Module.finrank_zero_iff (R := ℝ).1 (hF.trans (by tauto))
       exact Subsingleton.elim _ _
     · have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero h0)
       have : (𝓝[≠] x).NeBot := (chartAt E x).nhdsNE_neBot (mem_chart_source E x)
-      have ht0 : Tendsto (fun z ↦ ‖g z - f z‖) (𝓝[≠] x) (𝓝 0) :=
-        squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) (h.mono fun _ hz ↦ hz.le)
-          (by simpa using ((f.continuous.continuousAt (x := x)).sub
-            (continuousAt_const (y := f x))).norm.mono_left nhdsWithin_le_nhds)
-      exact (sub_eq_zero.1 (norm_eq_zero.1 (tendsto_nhds_unique
-        ((g.continuous.continuousAt.sub f.continuous.continuousAt).norm.mono_left
-          nhdsWithin_le_nhds) ht0))).symm
+      exact (f.continuous.continuousAt.mono_left nhdsWithin_le_nhds).eq_of_eventually_dist_le
+        (g.continuous.continuousAt.mono_left nhdsWithin_le_nhds)
+        (h.mono fun _ hz ↦ by simpa only [dist_eq_norm] using hz.le)
   obtain ⟨W, hW, hWo, hxW⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 h)
   -- Along the straight-line homotopy on `W` from `f` to `g`, the value `f x` is only taken at `x`.
   let H := ContinuousMap.Homotopy.affine (f.restrict W) (g.restrict W)
@@ -839,9 +852,11 @@ theorem localIndex_eq_of_norm_sub_lt (hF : finrank ℝ F = n) {f g : C(M, F)} {x
     rw [mem_singleton_iff.1 htz, norm_sub_rev] at hseg
     exact hseg
   have hfW : ∀ z ∈ W, f z = f x → z = x := fun z hz hfz ↦
-    by_contra fun hzx ↦ hH 0 ⟨z, hz⟩ (fun h ↦ hzx (congrArg Subtype.val h)) (by simpa [H] using hfz)
+    by_contra fun hzx ↦ hH 0 ⟨z, hz⟩ (fun h ↦ hzx (congrArg Subtype.val h))
+      ((H.apply_zero ⟨z, hz⟩).trans ((f.restrict_apply W ⟨z, hz⟩).trans hfz))
   have hgW : ∀ z ∈ W, g z = f x → z = x := fun z hz hgz ↦
-    by_contra fun hzx ↦ hH 1 ⟨z, hz⟩ (fun h ↦ hzx (congrArg Subtype.val h)) (by simpa [H] using hgz)
+    by_contra fun hzx ↦ hH 1 ⟨z, hz⟩ (fun h ↦ hzx (congrArg Subtype.val h))
+      ((H.apply_one ⟨z, hz⟩).trans ((g.restrict_apply W ⟨z, hz⟩).trans hgz))
   rw [eq_comm, o.localIndex_eq_iff o' hF g hfg.symm hWo hxW hgW,
     ← o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl hWo hxW hfW]
   exact ConcreteCategory.congr_hom (localHomologyMap_eq_of_homotopy _ H hH _ _ n).symm _
