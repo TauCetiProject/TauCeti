@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.CyclicIsogenyPolynomial
 public import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Affine
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.RingTheory.HahnSeries.Map
 
@@ -67,6 +68,51 @@ namespace TauCeti.ModularForm
 open FixedDetMatrices TauCeti.UpperHalfPlane
 
 variable {n : ℕ} [NeZero n]
+
+/-! ### Laurent series with algebraic integer coefficients -/
+
+/-- The Laurent series with algebraic integer coefficients. -/
+private noncomputable def integralLaurentSeries : Subring (LaurentSeries ℂ) :=
+  (HahnSeries.mapRingHom (Γ := ℤ) (algebraMap (integralClosure ℤ ℂ) ℂ)).range
+
+private theorem mem_integralLaurentSeries_iff {x : LaurentSeries ℂ} :
+    x ∈ integralLaurentSeries ↔ ∀ k, IsIntegral ℤ (x.coeff k) := by
+  have := HahnSeries.mem_map_rangeS (f := algebraMap (integralClosure ℤ ℂ) ℂ) (x := x)
+  simp only [RingHom.mem_rangeS] at this
+  rw [integralLaurentSeries, RingHom.mem_range, this]
+  refine forall_congr' fun k ↦ ⟨?_, fun hk ↦ ⟨⟨_, hk⟩, rfl⟩⟩
+  rintro ⟨y, hy⟩
+  rw [← hy]
+  exact y.property
+
+/-- The Laurent `q`-expansion of `j` has algebraic integer coefficients. -/
+private theorem laurentQExpansion_j_mem_integralLaurentSeries :
+    laurentQExpansion 1 j ∈ integralLaurentSeries :=
+  mem_integralLaurentSeries_iff.2 fun k ↦ by
+    obtain ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast k
+    rw [hz]
+    exact isIntegral_intCast z
+
+/-- Expanding by `X ↦ X ^ d` preserves algebraic integer coefficients. -/
+private theorem expand_mem_integralLaurentSeries {x : LaurentSeries ℂ}
+    (hx : x ∈ integralLaurentSeries) (d : ℕ+) :
+    LaurentSeries.expand ℂ d x ∈ integralLaurentSeries := by
+  refine mem_integralLaurentSeries_iff.2 fun k ↦ ?_
+  by_cases hk : ((d : ℕ) : ℤ) ∣ k
+  · obtain ⟨m, rfl⟩ := hk
+    rw [LaurentSeries.coeff_expand_mul]
+    exact mem_integralLaurentSeries_iff.1 hx m
+  · rw [LaurentSeries.coeff_expand_of_not_dvd _ _ hk]
+    exact isIntegral_zero
+
+/-- Rescaling by a unit of the algebraic integers preserves algebraic integer coefficients. -/
+private theorem rescale_mem_integralLaurentSeries {x : LaurentSeries ℂ}
+    (hx : x ∈ integralLaurentSeries) (u : (integralClosure ℤ ℂ)ˣ) :
+    LaurentSeries.rescale (Units.map (algebraMap (integralClosure ℤ ℂ) ℂ) u) x ∈
+      integralLaurentSeries := by
+  refine mem_integralLaurentSeries_iff.2 fun k ↦ ?_
+  rw [LaurentSeries.coeff_rescale, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+  exact (integralClosure.isIntegral _).algebraMap.mul (mem_integralLaurentSeries_iff.1 hx k)
 
 /-! ### The modular invariant along a cyclic isogeny -/
 
@@ -133,36 +179,13 @@ coefficients**: they are integers times roots of unity. -/
 theorem isIntegral_coeff_laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) (k : ℤ) :
     IsIntegral ℤ
       ((laurentQExpansion n fun τ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)).coeff k) := by
-  rw [laurentQExpansion_j_toGLReal_smul hA]
-  by_cases hk : ((repsExponent A : ℕ) : ℤ) ∣ k
-  · obtain ⟨m, rfl⟩ := hk
-    rw [LaurentSeries.coeff_expand_mul, LaurentSeries.coeff_rescale]
-    obtain ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast m
-    rw [hz]
-    refine IsIntegral.mul ?_ (isIntegral_intCast z)
-    -- a power of a root of unity is a unit of the algebraic integers
-    rw [← map_repsTwistUnit hA, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
-    exact (integralClosure.isIntegral _).algebraMap
-  · rw [LaurentSeries.coeff_expand_of_not_dvd _ _ hk]
-    exact isIntegral_zero
+  rw [laurentQExpansion_j_toGLReal_smul hA, ← map_repsTwistUnit hA]
+  exact mem_integralLaurentSeries_iff.1 (expand_mem_integralLaurentSeries
+    (rescale_mem_integralLaurentSeries laurentQExpansion_j_mem_integralLaurentSeries _) _) k
 
 end Reps
 
 /-! ### `Φ_n(j(τ), j(τ))` is an integral polynomial in `j(τ)` -/
-
-/-- The Laurent series with algebraic integer coefficients. -/
-private noncomputable def integralLaurentSeries : Subring (LaurentSeries ℂ) :=
-  (HahnSeries.mapRingHom (Γ := ℤ) (algebraMap (integralClosure ℤ ℂ) ℂ)).range
-
-private theorem mem_integralLaurentSeries_iff {x : LaurentSeries ℂ} :
-    x ∈ integralLaurentSeries ↔ ∀ k, IsIntegral ℤ (x.coeff k) := by
-  have := HahnSeries.mem_map_rangeS (f := algebraMap (integralClosure ℤ ℂ) ℂ) (x := x)
-  simp only [RingHom.mem_rangeS] at this
-  rw [integralLaurentSeries, RingHom.mem_range, this]
-  refine forall_congr' fun k ↦ ⟨?_, fun hk ↦ ⟨⟨_, hk⟩, rfl⟩⟩
-  rintro ⟨y, hy⟩
-  rw [← hy]
-  exact y.property
 
 variable (n) in
 /-- The positive integer `n`. -/
@@ -233,17 +256,10 @@ private theorem laurentQExpansion_nat_eval_cyclicIsogenyPolynomial_j_mem :
     meromorphicAt_cuspFunction_sub_j_toGLReal_smul ((mem_primitiveReps.1 hA).1)]
   refine prod_mem fun A hA ↦ ?_
   have hA' := (mem_primitiveReps.1 hA).1
-  rw [laurentQExpansion_sub_j_toGLReal_smul hA']
-  refine sub_mem (mem_integralLaurentSeries_iff.2 fun k ↦ ?_) ?_
-  · by_cases hk : ((nPNat n : ℕ) : ℤ) ∣ k
-    · obtain ⟨m, rfl⟩ := hk
-      obtain ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast m
-      rw [LaurentSeries.coeff_expand_mul, hz]
-      exact isIntegral_intCast z
-    · rw [LaurentSeries.coeff_expand_of_not_dvd _ _ hk]
-      exact isIntegral_zero
-  · rw [← laurentQExpansion_j_toGLReal_smul hA']
-    exact mem_integralLaurentSeries_iff.2 (isIntegral_coeff_laurentQExpansion_j_toGLReal_smul hA')
+  rw [laurentQExpansion_sub_j_toGLReal_smul hA', ← map_repsTwistUnit hA']
+  exact sub_mem (expand_mem_integralLaurentSeries laurentQExpansion_j_mem_integralLaurentSeries _)
+    (expand_mem_integralLaurentSeries
+      (rescale_mem_integralLaurentSeries laurentQExpansion_j_mem_integralLaurentSeries _) _)
 
 /-- `Φ_n(j(τ), j(τ))` is `1`-periodic, read on `ℂ` through `ofComplex`. -/
 private theorem periodic_eval_cyclicIsogenyPolynomial_j :
@@ -286,19 +302,6 @@ theorem exists_aeval_j_eq_eval_cyclicIsogenyPolynomial :
 
 /-! ### The leading coefficient for a nonsquare `n` -/
 
-/-- The Laurent `q`-expansion of `j` has order `-1`. -/
-private theorem order_laurentQExpansion_j : (laurentQExpansion 1 j).order = -1 := by
-  have hne : laurentQExpansion 1 j ≠ 0 := by
-    rw [← HahnSeries.orderTop_ne_top, orderTop_laurentQExpansion_j]
-    exact WithTop.coe_ne_top
-  exact WithTop.coe_injective (by
-    rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, orderTop_laurentQExpansion_j]
-    norm_num)
-
-/-- The Laurent `q`-expansion of `j` has leading coefficient `1`. -/
-private theorem leadingCoeff_laurentQExpansion_j : (laurentQExpansion 1 j).leadingCoeff = 1 := by
-  rw [HahnSeries.leadingCoeff_eq, order_laurentQExpansion_j, laurentQExpansion_j_coeff_neg_one]
-
 /-- For `n` not a square, the leading coefficient of the Laurent expansion of `j(τ) - j(A τ)` at
 period `n` is a unit of the algebraic integers: it is `1` if `a ^ 2 < n` and `-e^{-2πib/d}` if
 `a ^ 2 > n`. -/
@@ -327,18 +330,17 @@ private theorem exists_units_eq_leadingCoeff (hn : ¬ IsSquare n)
     have hxy : x.orderTop < y.orderTop := by
       rw [hxo, hyo, WithTop.coe_lt_coe, neg_lt_neg_iff]
       exact_mod_cast hlt
-    rw [HahnSeries.leadingCoeff_sub hxy, LaurentSeries.leadingCoeff_expand,
-      leadingCoeff_laurentQExpansion_j, Units.val_one, OneMemClass.coe_one]
+    simp [HahnSeries.leadingCoeff_sub hxy, x, L]
   · -- the pole of `j(A τ)` dominates
     refine ⟨-(repsTwistUnit hA)⁻¹, ?_⟩
     have hyx : y.orderTop < x.orderTop := by
       rw [hxo, hyo, WithTop.coe_lt_coe, neg_lt_neg_iff]
       exact_mod_cast hgt
     rw [← neg_sub, HahnSeries.leadingCoeff_neg, HahnSeries.leadingCoeff_sub hyx,
-      LaurentSeries.leadingCoeff_expand, LaurentSeries.leadingCoeff_rescale,
-      order_laurentQExpansion_j, leadingCoeff_laurentQExpansion_j, mul_one, ← map_repsTwistUnit hA,
-      zpow_neg_one, Units.coe_map_inv, MonoidHom.coe_ofClass, Subalgebra.algebraMap_apply,
-      Units.val_neg, NegMemClass.coe_neg]
+      LaurentSeries.leadingCoeff_expand, LaurentSeries.leadingCoeff_rescale, ← map_repsTwistUnit hA]
+    have hinv := map_units_inv (integralClosure ℤ ℂ).val (repsTwistUnit hA)
+    simp only [Subalgebra.coe_val] at hinv
+    simp [L, hinv]
 
 /-- **For `n` not a square, `Φ_n(j(τ), j(τ))` is a polynomial in `j(τ)` with unit leading
 coefficient.** Any polynomial `P` over the algebraic integers with `P(j(τ)) = Φ_n(j(τ), j(τ))`
@@ -360,8 +362,8 @@ theorem isUnit_leadingCoeff_of_aeval_j_eq_eval_cyclicIsogenyPolynomial (hn : ¬ 
   have h1 : (laurentQExpansion n fun τ ↦ (cyclicIsogenyPolynomial n j τ).eval (j τ)).leadingCoeff =
       algebraMap _ ℂ P.leadingCoeff := by
     rw [laurentQExpansion_nat_eval_cyclicIsogenyPolynomial_j, LaurentSeries.leadingCoeff_expand,
-      ← funext hP, laurentQExpansion_aeval_j, ← eval₂_map, LaurentSeries.leadingCoeff_eval₂_C hLo,
-      leadingCoeff_map_of_injective hinj, leadingCoeff_laurentQExpansion_j, one_pow, mul_one]
+      ← funext hP, laurentQExpansion_aeval_j, ← eval₂_map, LaurentSeries.leadingCoeff_eval₂_C hLo]
+    simp [leadingCoeff_map_of_injective hinj]
   -- the leading coefficient at `i∞`, read from the product over the cyclic `n`-isogenies
   choose w hw using fun (A : FixedDetMatrix (Fin 2) ℤ n) (hA : A ∈ primitiveReps (n : ℤ)) ↦
     exists_units_eq_leadingCoeff hn (hreps hA)
@@ -440,7 +442,9 @@ theorem isIntegral_j_of_quadratic {τ : ℍ} {a b c : ℤ} (ha : a ≠ 0)
     refine isPrimitive_def.2 ⟨-(|b| + (4 * a * c - b ^ 2)) •
       (Matrix.entryAddMonoidHom ℤ 1 0).toIntLinearMap +
         (Matrix.entryAddMonoidHom ℤ 1 1).toIntLinearMap, ?_⟩
-    simp [M, hx]
+    simp only [M, hx, LinearMap.add_apply, LinearMap.smul_apply, AddMonoidHom.coe_toIntLinearMap,
+      Matrix.entryAddMonoidHom_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+      Matrix.cons_val_fin_one, Matrix.cons_val_one, Int.zsmul_eq_mul]
     ring
   have hfix : toGLReal (NeZero.ne ((N.toNat : ℕ) : ℤ)) M • τ = τ := by
     have hdet : 0 < (toGLReal (NeZero.ne ((N.toNat : ℕ) : ℤ)) M).det.val := by
@@ -491,11 +495,9 @@ theorem isIntegral_singularModulus (q : PosDefProperClass n) :
 theorem isIntegral_coeff_hilbertClassPolynomial (k : ℕ) :
     IsIntegral ℤ ((hilbertClassPolynomial n).coeff k) := by
   have := Fintype.ofFinite (PosDefProperClass n)
-  set P : (integralClosure ℤ ℂ)[X] :=
-    ∏ q : PosDefProperClass n, (X - C ⟨_, isIntegral_singularModulus q⟩)
-  have hP : P.map (algebraMap (integralClosure ℤ ℂ) ℂ) = hilbertClassPolynomial n := by
-    simp [P, hilbertClassPolynomial_eq_prod, Polynomial.map_prod]
-  rw [← hP, coeff_map]
-  exact (P.coeff k).property
+  rw [hilbertClassPolynomial_eq_prod]
+  refine isIntegral_coeff_prod _ _ (fun q _ i ↦ ?_) k
+  simp [coeff_X, coeff_C, IsIntegral.sub, apply_ite (IsIntegral ℤ), isIntegral_one,
+    isIntegral_zero, isIntegral_singularModulus q]
 
 end TauCeti.BinaryQuadraticForm

@@ -154,6 +154,14 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+
 section CuspFunction
 
 open Filter Topology

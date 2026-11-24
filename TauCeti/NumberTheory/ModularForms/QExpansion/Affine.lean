@@ -138,11 +138,9 @@ theorem laurentQExpansion_vadd (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) 
       LaurentSeries.rescale (Units.mk0 (𝕢 h x) (Periodic.qParam_ne_zero _))
         (laurentQExpansion h f) := by
   set u := Units.mk0 (𝕢 h x) (Periodic.qParam_ne_zero _)
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
-    ⟨_, neg_cuspPoleOrder_le h f⟩
+  obtain ⟨k, hk⟩ := exists_neg_le_meromorphicOrderAt_cuspFunction h f
   set F : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
-  have hFper : Periodic (F ∘ ofComplex) h := fun z ↦ by
-    simpa [F] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+  have hFper : Periodic (F ∘ ofComplex) h := periodic_qParam_pow_mul_comp_ofComplex hfper k
   have hF : AnalyticAt ℂ (cuspFunction h F) 0 := analyticAt_cuspFunction_qParam_pow_mul hf hk
   -- twisting the translate by `𝕢 ^ k` is the translate of `F`, up to the constant `(𝕢 h x)⁻ᵏ`
   have htw : (fun τ : ℍ ↦ 𝕢 h τ ^ k * f (x +ᵥ τ)) =
@@ -212,8 +210,7 @@ period `h / c` is the Laurent `q`-expansion of `f` at period `h`. -/
 theorem laurentQExpansion_pos_real_smul (hh : 0 < h) (c : {x : ℝ // 0 < x})
     (hf : MeromorphicAt (cuspFunction h f) 0) :
     laurentQExpansion (h / c) (fun τ ↦ f (c • τ)) = laurentQExpansion h f := by
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
-    ⟨_, neg_cuspPoleOrder_le h f⟩
+  obtain ⟨k, hk⟩ := exists_neg_le_meromorphicOrderAt_cuspFunction h f
   set F : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
   have hF : AnalyticAt ℂ (cuspFunction h F) 0 := analyticAt_cuspFunction_qParam_pow_mul hf hk
   have htw : (fun τ : ℍ ↦ 𝕢 (h / c) τ ^ k * f (c • τ)) = fun τ ↦ F (c • τ) := by

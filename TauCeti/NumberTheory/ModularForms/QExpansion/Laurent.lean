@@ -50,8 +50,7 @@ expansion here of the function read in the scaling coordinate of the cusp.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.laurentQExpansion`: the Laurent `q`-expansion at `i∞`, built from the
-  pole order `TauCeti.UpperHalfPlane.cuspPoleOrder` of the cusp function at `0`.
+* `TauCeti.UpperHalfPlane.laurentQExpansion`: the Laurent `q`-expansion at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq`: its description through any admissible twisting
   exponent, `TauCeti.UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul` for any
   exponent making the twisted cusp function analytic, and
@@ -127,17 +126,23 @@ theorem analyticAt_cuspFunction_qParam_pow_mul {k : ℕ}
 
 /-- The pole order of `f` at `i∞`, as a natural number: the order of the pole at `0` of the cusp
 function of `f`, and `0` if there is no pole. -/
-def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
+private def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
   (-(meromorphicOrderAt (cuspFunction h f) 0).untop₀).toNat
 
 /-- The pole order bounds the order of the cusp function from below. -/
-theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
+private theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
     ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 := by
   cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
   | top => exact le_top
   | coe n =>
     simp only [cuspPoleOrder, hn, WithTop.untop₀_coe]
     exact WithTop.coe_le_coe.mpr (by omega)
+
+/-- Some twisting exponent `k` bounds the order of the cusp function of `f` at `0` from below by
+`-k`, so that `𝕢 ^ k * f` has an analytic cusp function when that of `f` is meromorphic. -/
+theorem exists_neg_le_meromorphicOrderAt_cuspFunction (h : ℝ) (f : ℍ → ℂ) :
+    ∃ k : ℕ, ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
+  ⟨_, neg_cuspPoleOrder_le h f⟩
 
 /-- The **Laurent `q`-expansion** of a function `f` on the upper half-plane at `i∞`, in the
 `q`-parameter `q = exp (2 π i τ / h)`. When the cusp function of `f` is meromorphic at `q = 0`
@@ -465,8 +470,7 @@ theorem hasSum_laurentQExpansion (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex
   set k := cuspPoleOrder h f
   have hk := neg_cuspPoleOrder_le h f
   obtain ⟨r, hr, hrF⟩ := (analyticAt_cuspFunction_qParam_pow_mul hf hk).exists_ball_analyticOnNhd
-  have hFper : Periodic ((fun τ : ℍ ↦ 𝕢 h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
-    simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+  have hFper := periodic_qParam_pow_mul_comp_ofComplex hfper k
   filter_upwards [(qParam_tendsto_atImInfty hh).eventually (Metric.ball_mem_nhds 0 hr)] with τ hτ
   have hq : 𝕢 h τ ≠ 0 := Periodic.qParam_ne_zero _
   have hsum := Complex.hasSum_taylorSeries_on_ball hrF.differentiableOn hτ
@@ -532,9 +536,7 @@ theorem laurentQExpansion_pnat_mul (hfper : Periodic (f ∘ ofComplex) h)
   set g : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
   have han : AnalyticAt ℂ (cuspFunction h g) 0 :=
     analyticAt_cuspFunction_qParam_pow_mul hf (neg_cuspPoleOrder_le h f)
-  have hgper : Periodic (g ∘ ofComplex) h := fun z ↦ by
-    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z)
-      (hfper z)
+  have hgper : Periodic (g ∘ ofComplex) h := periodic_qParam_pow_mul_comp_ofComplex hfper k
   -- twisting by `𝕢 (d * h) ^ (d * k) = 𝕢 h ^ k` at period `d * h` gives the same function `g`
   have hg : (fun τ : ℍ ↦ 𝕢 ((d : ℕ) * h) τ ^ ((d : ℕ) * k) * f τ) = g := by
     funext τ
@@ -586,8 +588,7 @@ theorem meromorphicAt_cuspFunction_of_pnat_mul (hh : 0 < h) (hfper : Periodic (f
     rw [pow_mul, TauCeti.Periodic.qParam_nat_mul_pow d.ne_zero]
   have han := analyticAt_cuspFunction_qParam_pow_mul hf hk
   rw [htw] at han
-  have hgper : Periodic (g ∘ ofComplex) h := fun z ↦ by
-    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+  have hgper : Periodic (g ∘ ofComplex) h := periodic_qParam_pow_mul_comp_ofComplex hfper k
   have hdh : (0 : ℝ) < (d : ℕ) * h := mul_pos (by exact_mod_cast d.pos) hh
   have hgbdd : IsBoundedAtImInfty g := by
     refine Tendsto.isBigO_one ℝ (c := cuspFunction ((d : ℕ) * h) g 0) ?_
