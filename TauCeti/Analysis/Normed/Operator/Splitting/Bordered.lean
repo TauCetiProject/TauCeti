@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
 -- Private: used only inside proofs.
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!

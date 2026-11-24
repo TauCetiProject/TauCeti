@@ -51,7 +51,9 @@ normal vector and an offset.
   `TauCeti.hyperplaneReflection_mem_closedBall_iff`: open and closed balls centred on the
   hyperplane are invariant.
 * `TauCeti.closure_setOf_lt_inner_subset`: the closure of the open half-space `{x | c < ⟪x, ν⟫}`
-  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`.
+  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`, and
+  (`TauCeti.closure_thickening_inter_setOf_lt_inner_subset`) the closure of the part of an open
+  `R`-thickening in it lies in the part of the closed `R`-thickening in the closed half-space.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
@@ -173,6 +175,15 @@ theorem mapsTo_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_
 theorem closure_setOf_lt_inner_subset (ν : F) (c : ℝ) :
     closure {x : F | c < ⟪x, ν⟫_ℝ} ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} :=
   closure_lt_subset_le continuous_const (continuous_id.inner continuous_const)
+
+/-- The closure of the part in the open half-space `{x | c < ⟪x, ν⟫}` of the open `R`-thickening of
+a set `S` lies in the part in the closed half-space `{x | c ≤ ⟪x, ν⟫}` of the closed
+`R`-thickening. -/
+theorem closure_thickening_inter_setOf_lt_inner_subset (R : ℝ) (S : Set F) (ν : F) (c : ℝ) :
+    closure (Metric.thickening R S ∩ {x | c < ⟪x, ν⟫_ℝ}) ⊆
+      Metric.cthickening R S ∩ {x | c ≤ ⟪x, ν⟫_ℝ} :=
+  (closure_inter_subset_inter_closure _ _).trans (Set.inter_subset_inter
+    (Metric.closure_thickening_subset_cthickening R S) (closure_setOf_lt_inner_subset ν c))
 
 /-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
 hyperplane, where the reflection is the identity. -/

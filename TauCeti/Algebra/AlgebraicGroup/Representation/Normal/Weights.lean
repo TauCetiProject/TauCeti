@@ -66,7 +66,7 @@ theorem nonzeroJointWeightAction_basePointsRepresentation_eq_one
   have hq (x : WithConv (H →ₐ[k] k)) :
       AlgHom.mapValue (H := H) x.ofConv q = x⁻¹ * n * x := by
     simp only [q, map_mul, map_inv]
-    rw [WithConv.mapValue_algebraOfId]
+    rw [AlgHom.mapValue_mapValue_ofId]
     simp [u, AlgHom.mapValue_apply]
   have heval (x : WithConv (H →ₐ[k] k)) :
       x.ofConv a = ((nonzeroJointWeightAction N ρ x χ).val n : k) := by
