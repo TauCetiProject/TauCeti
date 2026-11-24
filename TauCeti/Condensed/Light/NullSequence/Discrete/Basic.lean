@@ -81,12 +81,12 @@ module are parametrized by the finitely supported coefficient sequences in that 
 noncomputable def nullSeqHomEquivFinsupp :
     (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) ≃+ (ℕ →₀ M) := by
   let D := (LightCondMod.LocallyConstant.functor R).obj M
-  let sections := LightCondMod.LocallyConstant.sectionsEquiv M liftedSequence.{u}
+  let sections := ModuleCat.lightLocallyConstantSectionsEquiv M liftedSequence.{u}
   have hrestrict (s : D.obj.obj (Opposite.op liftedSequence.{u}))
       (x : LightProfinite.of PUnit.{u + 1}) :
-      LightCondMod.LocallyConstant.sectionsEquiv M _ (D.obj.map inftyPoint.op s) x =
+      ModuleCat.lightLocallyConstantSectionsEquiv M _ (D.obj.map inftyPoint.op s) x =
         sections s sequenceInfty :=
-    (LightCondMod.LocallyConstant.sectionsEquiv_map_apply M inftyPoint s x).trans
+    (ModuleCat.lightLocallyConstantSectionsEquiv_map_apply M inftyPoint s x).trans
       (congrArg (sections s) (inftyPoint_apply x))
   have mem_ker_iff (s : D.obj.obj (Opposite.op liftedSequence.{u})) :
       s ∈ (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ↔
@@ -98,7 +98,7 @@ noncomputable def nullSeqHomEquivFinsupp :
       rw [← hrestrict s PUnit.unit, hs]
       simp only [map_zero, LocallyConstant.zero_apply]
     · intro hs
-      apply (LightCondMod.LocallyConstant.sectionsEquiv M _).injective
+      apply (ModuleCat.lightLocallyConstantSectionsEquiv M _).injective
       ext x
       simpa only [map_zero, LocallyConstant.zero_apply] using (hrestrict s x).trans hs
   let e : (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ≃+
@@ -112,14 +112,14 @@ noncomputable def nullSeqHomEquivFinsupp :
 lemma nullSeqHomEquivFinsupp_apply
     (g : nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj M) (n : ℕ) :
     M.nullSeqHomEquivFinsupp g n =
-      LightCondMod.LocallyConstant.sectionsEquiv M liftedSequence.{u}
+      ModuleCat.lightLocallyConstantSectionsEquiv M liftedSequence.{u}
         (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) _ g).val (sequencePoint n) := by
   exact discreteSectionsEquivFinsupp_apply M _ n
 
 /-- The map represented by finitely supported coefficients has the prescribed finite values. -/
 lemma reducedLightFreeHomEquiv_nullSeqHomEquivFinsupp_symm_apply
     (a : ℕ →₀ M) (n : ℕ) :
-    LightCondMod.LocallyConstant.sectionsEquiv M liftedSequence.{u}
+    ModuleCat.lightLocallyConstantSectionsEquiv M liftedSequence.{u}
       (reducedLightFreeHomEquiv R (Under.mk inftyPoint.{u}) _
         (M.nullSeqHomEquivFinsupp.symm a)).val (sequencePoint n) = a n := by
   rw [← nullSeqHomEquivFinsupp_apply, AddEquiv.apply_symm_apply]
@@ -133,7 +133,7 @@ lemma nullSeqHomEquivFinsupp_postcomp {N : ModuleCat.{u} R} (f : M ⟶ N)
   ext n
   simp only [Finsupp.mapRange_apply, nullSeqHomEquivFinsupp_apply,
     reducedLightFreeHomEquiv_postcomp_val]
-  exact LightCondMod.LocallyConstant.sectionsEquiv_map_app_apply M f liftedSequence _ _
+  exact ModuleCat.lightLocallyConstantSectionsEquiv_map_app_apply M f liftedSequence _ _
 
 /-- Precomposition with the marked shift takes the coefficient at n + 1 to n. -/
 @[simp↓]
@@ -142,6 +142,6 @@ lemma nullSeqHomEquivFinsupp_nullShift
     nullSeqHomEquivFinsupp M (nullShift R ≫ g) n = nullSeqHomEquivFinsupp M g (n + 1) := by
   rw [nullSeqHomEquivFinsupp_apply, nullSeqHomEquivFinsupp_apply,
     reducedLightFreeHomEquiv_nullShift_val,
-    LightCondMod.LocallyConstant.sectionsEquiv_map_apply, natShift_apply_sequencePoint]
+    ModuleCat.lightLocallyConstantSectionsEquiv_map_apply, natShift_apply_sequencePoint]
 
 end ModuleCat
