@@ -58,10 +58,11 @@ From these axioms this file derives:
   (`IsLieGroupoid.contMDiff_composablePairs_iff`), so composing arrows that depend smoothly on a
   point gives an arrow that depends smoothly on the point (`ContMDiff.totalComp`); conversely,
   composition is smooth on composable pairs as soon as it is the restriction of a smooth map on
-  `Quiver.Total C × Quiver.Total C` (`TauCeti.contMDiff_composablePairs_comp_of_eq`), or as soon
-  as composing smooth families of composable arrows gives a smooth family
-  (`TauCeti.contMDiff_composablePairs_comp_of_contMDiff`), which is how the examples verify the
-  composition axiom;
+  `Quiver.Total C × Quiver.Total C` (`TauCeti.contMDiff_composablePairs_comp_of_eq`, which is how
+  the examples verify the composition axiom), or as soon as composing smooth families of
+  composable arrows gives a smooth family (`TauCeti.contMDiff_composablePairs_comp_of_contMDiff`,
+  which is how the product and action Lie groupoids `TauCeti.IsLieGroupoid.prod` and
+  `TauCeti.ActionGroupoid.isLieGroupoid` verify it);
 * the left-shear diffeomorphism (`IsLieGroupoid.shearLeftDiffeomorph`) from composable pairs to
   same-source pairs `{q : Quiver.Total C × Quiver.Total C // q.1.left = q.2.left}`, from which
   groupoid composition is a smooth submersion (`IsLieGroupoid.isSubmersion_comp`);
