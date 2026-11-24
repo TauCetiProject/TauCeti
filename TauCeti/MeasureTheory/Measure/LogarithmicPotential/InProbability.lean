@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Measure.WithDensityFinite
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Random logarithmic potentials
@@ -56,13 +57,6 @@ theorem measurable_logarithmicPotential :
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {X Y : ℕ → Ω → ProbabilityMeasure ℂ} {μ : ProbabilityMeasure ℂ}
-
-/-- Integration of a fixed measurable function is measurable in the probability measure. -/
-private theorem measurable_integral {f : ℂ → ℝ} (hf : Measurable f) :
-    Measurable fun σ : ProbabilityMeasure ℂ ↦ ∫ z, f z ∂(σ : Measure ℂ) := by
-  let κ : ProbabilityTheory.Kernel (ProbabilityMeasure ℂ) ℂ :=
-    ⟨fun σ ↦ σ, measurable_subtypeVal⟩
-  exact (hf.stronglyMeasurable.integral_kernel (κ := κ)).measurable
 
 private theorem measurable_logarithmicPotential_sub (hX : ∀ n, Measurable (X n))
     (hY : ∀ n, Measurable (Y n)) (n : ℕ) :
@@ -177,7 +171,7 @@ theorem tendstoInMeasure_integral_sub_integral_of_ae_tendstoInMeasure_logarithmi
   have hXX : ∀ᵐ ω ∂P, ∀ n, X n ω = X' n ω := ae_all_iff.2 fun n ↦ (hX n).ae_eq_mk
   have hYY : ∀ᵐ ω ∂P, ∀ n, Y n ω = Y' n ω := ae_all_iff.2 fun n ↦ (hY n).ae_eq_mk
   have hF : Measurable fun σ : ProbabilityMeasure ℂ ↦ ∫ z, f z ∂(σ : Measure ℂ) :=
-    measurable_integral hf.measurable
+    hf.stronglyMeasurable.integral_probabilityMeasure.measurable
   have hconv : ∀ ns : ℕ → ℕ, StrictMono ns → ∃ ms : ℕ → ℕ, StrictMono ms ∧ ∀ᵐ ω ∂P,
       Tendsto (fun k ↦ ∫ z, f z ∂(X (ns (ms k)) ω : Measure ℂ) -
         ∫ z, f z ∂(Y (ns (ms k)) ω : Measure ℂ)) atTop (𝓝 0) := by
@@ -241,7 +235,8 @@ theorem tendstoInMeasure_integral_of_ae_tendstoInMeasure_logarithmicPotential [I
     filter_upwards [hXX] with ω hx
     simp only [hx n, Pi.zero_apply, sub_zero]
   refine (exists_seq_tendstoInMeasure_atTop_iff fun n ↦
-    ((measurable_integral f.continuous.measurable).comp_aemeasurable (hX n)).aestronglyMeasurable).2
+    (f.continuous.stronglyMeasurable.integral_probabilityMeasure.measurable.comp_aemeasurable
+      (hX n)).aestronglyMeasurable).2
     fun ns hns ↦ ?_
   obtain ⟨ms, hms, hpath⟩ := exists_subseq_ae_ae_tendsto_logarithmicPotential_sub (X := X')
     (Y := fun _ _ ↦ μ) (fun n ↦ (hX n).measurable_mk) (fun _ ↦ measurable_const) h' hns
