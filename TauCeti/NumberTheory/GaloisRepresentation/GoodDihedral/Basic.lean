@@ -12,10 +12,10 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 /-!
 # Good-dihedral primes
 
-Let `ρ̄ : G_ℚ → GL₂(K)` be a residual representation of characteristic `p` and conductor `N`.
-Khare and Wintenberger call a prime `q ≠ p` *good-dihedral* for `ρ̄` if
+Let `ρ : G_ℚ → GL₂(K)` be a residual representation of characteristic `p` and conductor `N`.
+Khare and Wintenberger call a prime `q ≠ p` *good-dihedral* for `ρ` if
 
-1. the restriction of `ρ̄` to the inertia group `I_q` is conjugate to `diag(ψ, ψ^q)` for a
+1. the restriction of `ρ` to the inertia group `I_q` is conjugate to `diag(ψ, ψ^q)` for a
    character `ψ` of `I_q` whose order is a positive power `t^a` of a prime `t` with `t ∣ q + 1`
    and `t > max(Q(N/q²), 5, p)`; and
 2. `q ≡ 1 (mod 8)` and `q ≡ 1 (mod s)` for every prime `s ≤ max(Q(N/q²), p)`,
