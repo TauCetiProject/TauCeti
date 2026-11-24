@@ -63,11 +63,11 @@ variable {ι : Type u} (K : AbstractSimplicialComplex ι)
 /-- A simplicial cell is determined by its face: the dimension is one less than the number of
 vertices. -/
 private theorem injective_sigma_realizationCell_val :
-    Function.Injective fun c : Σ n, RealizationCell K n => c.2.1 := by
+    Function.Injective fun c : Σ n, RealizationCell K n => c.2.val := by
   rintro ⟨n, c⟩ ⟨m, d⟩ h
   have hnm : n = m := by
-    have hc := c.2
-    have hd := d.2
+    have hc := c.property
+    have hd := d.property
     simp only at h
     rw [h] at hc
     omega
@@ -93,38 +93,39 @@ theorem finite_realizationCWComplex [Finite (Face K)] :
 theorem card_cell_realizationCWComplex [Fintype (Face K)] (n : ℕ) :
     letI := realizationCWComplex K
     Nat.card (Topology.RelCWComplex.cell (Set.univ : Set (Realization K)) n) =
-      #{σ : Face K | σ.1.card = n + 1} := by
+      #{σ : Face K | σ.val.card = n + 1} := by
   rw [Nat.card_congr (realizationCellEquiv K n), Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-- The CW structure on the realization has no cells in dimensions at least the largest number of
 vertices of a face. -/
 private theorem isEmpty_cell_realizationCWComplex [Fintype (Face K)] (n : ℕ)
-    (hn : (univ.sup fun σ : Face K => σ.1.card) ≤ n) :
+    (hn : (univ.sup fun σ : Face K => σ.val.card) ≤ n) :
     letI := realizationCWComplex K
     IsEmpty (Topology.RelCWComplex.cell (Set.univ : Set (Realization K)) n) := by
   refine ⟨fun c => ?_⟩
-  have hc := (realizationCellEquiv K n c).2
-  have hle := le_sup (f := fun σ : Face K => σ.1.card) (mem_univ (realizationCellEquiv K n c).1)
+  have hc := (realizationCellEquiv K n c).property
+  have hle := le_sup (f := fun σ : Face K => σ.val.card) (mem_univ (realizationCellEquiv K n c).val)
   omega
 
 /-- The alternating cell count of the CW structure on the realization of a complex with finitely
 many faces is the alternating count of the faces: a face with `n + 1` vertices is an `n`-cell. -/
 theorem cwEulerChar_realizationCWComplex [Finite (Face K)] :
     letI := realizationCWComplex K
-    cwEulerChar (Set.univ : Set (Realization K)) = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.1.card + 1) := by
+    cwEulerChar (Set.univ : Set (Realization K)) = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.val.card + 1) := by
   let := realizationCWComplex K
   have := Fintype.ofFinite (Face K)
   -- Group the faces by their dimension `#σ - 1`; no face is empty.
-  have hpos (σ : Face K) : 0 < σ.1.card := card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem σ.2)
+  have hpos (σ : Face K) : 0 < σ.val.card := card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem
+      σ.property)
   rw [cwEulerChar_eq_sum_range _ (isEmpty_cell_realizationCWComplex K), finsum_eq_sum_of_fintype,
-    ← sum_fiberwise_of_maps_to (t := range (univ.sup fun σ : Face K => σ.1.card))
-      (g := fun σ : Face K => σ.1.card - 1) fun σ _ => by
+    ← sum_fiberwise_of_maps_to (t := range (univ.sup fun σ : Face K => σ.val.card))
+      (g := fun σ : Face K => σ.val.card - 1) fun σ _ => by
       have := hpos σ
-      have := le_sup (f := fun σ : Face K => σ.1.card) (mem_univ σ)
+      have := le_sup (f := fun σ : Face K => σ.val.card) (mem_univ σ)
       exact mem_range.mpr (by omega)]
   refine sum_congr rfl fun n _ => ?_
-  have hfiber : univ.filter (fun σ : Face K => σ.1.card - 1 = n) =
-      univ.filter (fun σ : Face K => σ.1.card = n + 1) :=
+  have hfiber : univ.filter (fun σ : Face K => σ.val.card - 1 = n) =
+      univ.filter (fun σ : Face K => σ.val.card = n + 1) :=
     filter_congr fun σ _ => by have := hpos σ; omega
   rw [card_cell_realizationCWComplex, hfiber,
     sum_congr rfl fun σ hσ => by rw [(mem_filter.mp hσ).2]]
@@ -143,7 +144,7 @@ instance instFiniteCWTypeRealization [Finite (Face K)] : FiniteCWType (Realizati
 /-- The Euler characteristic of the realization of a simplicial complex with finitely many faces
 is the alternating count of its faces: `#(vertices) - #(edges) + #(triangles) - ⋯`. -/
 theorem eulerChar_realization [Finite (Face K)] :
-    eulerChar (Realization K) = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.1.card + 1) := by
+    eulerChar (Realization K) = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.val.card + 1) := by
   let : LinearOrder ι := IsWellOrder.linearOrder WellOrderingRel
   let := realizationCWComplex K
   have := finite_realizationCWComplex K
@@ -155,7 +156,7 @@ faces is the alternating count of the faces of the complex. The space has finite
 `f.symm.finiteCWType`. -/
 theorem eulerChar_eq_finsum_of_homeomorph [Finite (Face K)] {M : Type u} [TopologicalSpace M]
     [FiniteCWType M] (f : Realization K ≃ₜ M) :
-    eulerChar M = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.1.card + 1) := by
+    eulerChar M = ∑ᶠ σ : Face K, (-1 : ℤ) ^ (σ.val.card + 1) := by
   rw [f.symm.eulerChar_eq, eulerChar_realization]
 
 end AbstractSimplicialComplex

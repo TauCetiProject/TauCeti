@@ -176,8 +176,7 @@ open ConstantGroup TauCeti.Bialgebra
 variable (R : Type u) (H : Type v) [CommRing R] [CommRing H] [Bialgebra R H]
   [Module.Free R H] [Module.Finite R H] (A : Type*) [Monoid A] [Fintype A]
 
--- `HomAlgebra` asks for the target to be finitely presented as an algebra, which holds for a
--- finite free `H`
+-- A finite free `H` is finitely presented as an algebra, so its scheme of generators is too.
 attribute [local instance] Module.finitePresentation_of_projective
 
 -- The universal family of points of `Spec H` on the scheme of homomorphisms from `A_R`: the points
@@ -191,6 +190,7 @@ variable {R H A}
 
 -- Specializing the universal family along `φ` gives the points of the homomorphism classified by
 -- `φ`; this is the naturality `HomAlgebra.homEquiv_comp_one_tmul`.
+omit [Module.Free R H] [Module.Finite R H] in
 private theorem liftEquiv_comp_generatorFamily {T : Type w} [CommRing T] [Algebra R T]
     (φ : HomAlgebra R H (coordinateRing R A) →ₐ[R] T) (a : A) :
     AlgHom.liftEquiv R T H T (φ.comp (generatorFamily R H A a)) =
@@ -262,7 +262,7 @@ theorem quotientGeneratorIdealHomEquiv_symm_apply_mk {T : Type w} [CommRing T] [
     (g : {g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A // IsAGenerator (pointsOfBialgHom H g)})
     (x : HomAlgebra R H (coordinateRing R A)) :
     (quotientGeneratorIdealHomEquiv R H A T).symm g (Ideal.Quotient.mk _ x) =
-      (HomAlgebra.homEquiv R H _ T).symm g.1 x :=
+      (HomAlgebra.homEquiv R H _ T).symm g.val x :=
   quotientFullSetIdealHomEquiv_symm_apply_mk _ _ x
 
 variable (R H A) in
@@ -295,11 +295,11 @@ theorem quotientGeneratorIdealHomEquivAGenerators_symm_apply_mk {T : Type w} [Co
     [Algebra R T] (φ : {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ})
     (x : HomAlgebra R H (coordinateRing R A)) :
     (quotientGeneratorIdealHomEquivAGenerators R H A T).symm φ (Ideal.Quotient.mk _ x) =
-      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.1) x :=
+      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.val) x :=
   quotientGeneratorIdealHomEquiv_symm_apply_mk
-    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.1, by
+    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.val, by
       rw [← pointsOfBialgHomEquiv_apply, Equiv.apply_symm_apply]
-      exact φ.2⟩ x
+      exact φ.property⟩ x
 
 end Locus
 

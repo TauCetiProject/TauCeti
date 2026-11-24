@@ -6,30 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # The derivative of a clamped function
 
-For any real function `w` on a real normed space and any `c : ℝ`, Lean's totalized `fderiv` of the
-one-sided clamp `max w c` equals `fderiv w` on `{w > c}` and zero elsewhere
-(`TauCeti.fderiv_max_const_eq_indicator`), and symmetrically `fderiv` of `min w c` equals
-`fderiv w` on `{w < c}` and zero elsewhere (`TauCeti.fderiv_min_const_eq_indicator`). Combining
-the two yields that for arbitrary `a b : ℝ`, `fderiv` of the two-sided clamp `max a (min w b)`
-equals `fderiv w` on the open band `{a < w < b}` and zero everywhere else
-(`TauCeti.fderiv_max_min_eq_indicator`).
-
-No continuity or differentiability of `w` is assumed: where `w ≤ c` the clamped function `max w c`
-attains a global minimum so its `fderiv` vanishes, while where `w > c` either `w` is differentiable
-(hence continuous, so `max w c` agrees with `w` nearby) or neither `w` nor `max w c` is
-differentiable and both totalized derivatives vanish by convention. At the threshold levels these
-identities concern `fderiv` only and do not assert differentiability.
+For a continuous real function `w` and `η > 0`, Lean's totalized `fderiv` of the clamped function
+`max 0 (min w η)` equals `fderiv w` on the open band `{0 < w < η}` and zero everywhere else
+(`TauCeti.fderiv_max_min_eq_indicator`). No differentiability of `w` is assumed: on the band the
+clamped function agrees with `w` nearby, and off the closed band it is locally constant. On the two
+levels `0` and `η` the clamped function attains a local extremum, so its `fderiv` is zero there
+either because it is differentiable with zero derivative or because `fderiv` is zero by
+convention at a point of non-differentiability; the identity does not assert differentiability
+there, and the clamped function is in general not differentiable at those levels. Likewise, for any
+`w : E → ℝ` and `c : ℝ` (with no continuity hypothesis), `fderiv` of the lower clamp `max w c`
+equals `fderiv w` on `{w > c}` and zero elsewhere (`TauCeti.fderiv_max_const_eq_indicator`).
 
 Clamped functions of this form are the standard test functions for integration by parts against
-the indicator of a superlevel set. The clamped function `max 0 (min w η)` differs from `η` times
-the indicator of `{w > 0}` by at most `η`, and only on the band `{0 < w < η}`
+the indicator of a superlevel set. The clamped function differs from `η` times the indicator of
+`{w > 0}` by at most `η`, and only on the band `{0 < w < η}`
 (`TauCeti.abs_mul_indicator_sub_max_min_le`), for any real function `w` on any type. Against a
 real weight `d`, the error is at most `η |d|` on the band
 (`TauCeti.norm_mul_sub_clamp_le_indicator`).
@@ -38,7 +34,6 @@ real weight `d`, the error is at most `η |d|` on the band
 public section
 
 open Filter Set
-open scoped Topology
 
 namespace TauCeti
 
@@ -76,6 +71,36 @@ theorem norm_mul_sub_clamp_le_indicator {X : Type*} {w : X → ℝ} {η : ℝ} (
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- Lean's totalized `fderiv` of the clamped function `max 0 (min w η)` is `fderiv w` on
+`{0 < w < η}` and zero elsewhere. At the levels `0` and `η` this is an identity for `fderiv` only:
+it does not assert that the clamped function is differentiable there, and in general it is not. -/
+theorem fderiv_max_min_eq_indicator {w : E → ℝ} (hw : Continuous w) {η : ℝ} (hη : 0 < η)
+    (x : E) :
+    fderiv ℝ (fun y => max 0 (min (w y) η)) x = (w ⁻¹' Ioo 0 η).indicator (fderiv ℝ w) x := by
+  rcases lt_trichotomy (w x) 0 with h | h | h
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h.trans hx.1).false]
+    refine (Filter.EventuallyEq.fderiv_eq (f := fun _ => (0 : ℝ)) ?_).trans (fderiv_const_apply _)
+    filter_upwards [hw.continuousAt.eventually (gt_mem_nhds h)] with y hy
+    exact max_eq_left ((min_le_left _ _).trans hy.le)
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h ▸ hx.1).false]
+    refine IsLocalMin.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    simp only [h, min_eq_left hη.le, max_self]
+    exact le_max_left _ _
+  rcases lt_trichotomy (w x) η with h' | h' | h'
+  · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) ⟨h, h'⟩]
+    refine Filter.EventuallyEq.fderiv_eq ?_
+    filter_upwards [hw.continuousAt.eventually (lt_mem_nhds h),
+      hw.continuousAt.eventually (gt_mem_nhds h')] with y hy hy'
+    rw [min_eq_left hy'.le, max_eq_right hy.le]
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h' ▸ hx.2).false]
+    refine IsLocalMax.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
+    simp only [h', min_self, max_eq_right hη.le]
+    exact max_le hη.le (min_le_right _ _)
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (hx.2.trans h').false]
+    refine (Filter.EventuallyEq.fderiv_eq (f := fun _ => η) ?_).trans (fderiv_const_apply _)
+    filter_upwards [hw.continuousAt.eventually (lt_mem_nhds h')] with y hy
+    rw [min_eq_right hy.le, max_eq_right hη.le]
+
 /-- Lean's totalized `fderiv` of the lower-clamped function `max w c` equals `fderiv w` on
 `{w > c}` and zero elsewhere, with no continuity or differentiability hypothesis on `w`. -/
 theorem fderiv_max_const_eq_indicator (w : E → ℝ) (c : ℝ) (x : E) :
@@ -92,38 +117,9 @@ theorem fderiv_max_const_eq_indicator (w : E → ℝ) (c : ℝ) (x : E) :
     · rw [fderiv_zero_of_not_differentiableAt hw]
       refine fderiv_zero_of_not_differentiableAt fun hm ↦ hw ?_
       have hmx : c < max (w x) c := by rwa [max_eq_left hcx.le]
-      have hev : (fun y ↦ max (w y) c) =ᶠ[𝓝 x] w := by
+      have hev : (fun y ↦ max (w y) c) =ᶠ[nhds x] w := by
         filter_upwards [hm.continuousAt.eventually (lt_mem_nhds hmx)] with y hy
         exact max_eq_left (le_of_not_gt fun hyc ↦ hy.ne' (max_eq_right hyc.le))
       exact hm.congr_of_eventuallyEq hev.symm
-
-/-- Lean's totalized `fderiv` of the upper-clamped function `min w c` equals `fderiv w` on
-`{w < c}` and zero elsewhere, with no continuity or differentiability hypothesis on `w`. -/
-theorem fderiv_min_const_eq_indicator (w : E → ℝ) (c : ℝ) (x : E) :
-    fderiv ℝ (fun y ↦ min (w y) c) x = (w ⁻¹' Iio c).indicator (fderiv ℝ w) x := by
-  have hmin : (fun y ↦ min (w y) c) = -(fun y ↦ max ((-w) y) (-c)) := by
-    ext y
-    simp only [Pi.neg_apply]
-    grind
-  have hpre : (-w) ⁻¹' Ioi (-c) = w ⁻¹' Iio c := by
-    ext y
-    exact neg_lt_neg_iff
-  rw [hmin, fderiv_neg, fderiv_max_const_eq_indicator (-w) (-c), hpre]
-  by_cases hx : x ∈ w ⁻¹' Iio c
-  · rw [indicator_of_mem hx, indicator_of_mem hx, fderiv_neg, neg_neg]
-  · simp [hx]
-
-/-- Lean's totalized `fderiv` of the clamped function `max a (min w b)` equals `fderiv w` on
-`{a < w < b}` and zero elsewhere, for arbitrary `w : E → ℝ` and `a b : ℝ`. At the levels `a` and
-`b` this is an identity for `fderiv` only and does not assert differentiability. -/
-theorem fderiv_max_min_eq_indicator (w : E → ℝ) (a b : ℝ) (x : E) :
-    fderiv ℝ (fun y ↦ max a (min (w y) b)) x = (w ⁻¹' Ioo a b).indicator (fderiv ℝ w) x := by
-  simp_rw [max_comm a]
-  rw [fderiv_max_const_eq_indicator, funext (fderiv_min_const_eq_indicator w b),
-    indicator_indicator]
-  congr 1
-  ext y
-  simp only [mem_inter_iff, mem_preimage, mem_Ioi, mem_Iio, mem_Ioo, lt_min_iff]
-  exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.1.trans h.2⟩, h.2⟩⟩
 
 end TauCeti

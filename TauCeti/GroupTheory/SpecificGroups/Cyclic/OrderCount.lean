@@ -175,7 +175,8 @@ theorem card_filter_dvd_orderOf_mul_prod_primeFactors (hf : f ∣ Fintype.card �
   -- the prime powers `p ^ e p`, indexed by the primes of `f`, are pairwise coprime and their
   -- product divides the order
   set a : ↥f.primeFactors → ℕ := fun i => (i : ℕ) ^ e i with ha
-  have hprime : ∀ i : ↥f.primeFactors, (i : ℕ).Prime := fun i => Nat.prime_of_mem_primeFactors i.2
+  have hprime : ∀ i : ↥f.primeFactors, (i : ℕ).Prime := fun i => Nat.prime_of_mem_primeFactors
+      i.property
   have hane : ∀ i, NeZero (a i) := fun i => ⟨pow_ne_zero _ (hprime i).ne_zero⟩
   have : NeZero (∏ i, a i) := ⟨Finset.prod_ne_zero_iff.mpr fun i _ => (hane i).ne⟩
   have hcop : Pairwise (Nat.Coprime on a) := fun i j hij =>

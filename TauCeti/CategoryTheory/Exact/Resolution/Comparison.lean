@@ -114,24 +114,25 @@ private noncomputable def liftAux (hP : P ≤ E.isProjective) :
       let g := liftAux hP r r' u
       ⟨fun n => match n with
         | 0 => g₀
-        | n + 1 => g.1 n,
+        | n + 1 => g.val n,
        by simpa using hg₀, fun n => match n with
-        | 0 => by simp [reassoc_of% g.2.1, hu]
-        | n + 1 => by simpa using g.2.2 n⟩
+        | 0 => by simp [reassoc_of% g.property.1, hu]
+        | n + 1 => by simpa using g.property.2 n⟩
 
 /-- **The comparison map.** The chain map lifting `f : X ⟶ Y` from a finite resolution `r` of
 `X` by relative projectives to any finite resolution `r'` of `Y`, compatible with the two
 augmentations. -/
 noncomputable def lift (hP : P ≤ E.isProjective) {X Y : C} (f : X ⟶ Y) (r : FiniteResolution E P X)
     (r' : FiniteResolution E P' Y) : r.toChainComplex ⟶ r'.toChainComplex :=
-  ChainComplex.ofHom (liftAux hP r r' f).1 fun n => by simpa using (liftAux hP r r' f).2.2 n
+  ChainComplex.ofHom (liftAux hP r r' f).val fun n => by
+      simpa using (liftAux hP r r' f).property.2 n
 
 /-- The lift is compatible with the augmentations. -/
 @[reassoc (attr := simp)]
 theorem lift_f_zero_comp_aug (hP : P ≤ E.isProjective) {X Y : C} (f : X ⟶ Y)
     (r : FiniteResolution E P X)
     (r' : FiniteResolution E P' Y) : (lift hP f r r').f 0 ≫ r'.aug = r.aug ≫ f :=
-  (liftAux hP r r' f).2.1
+  (liftAux hP r r' f).property.1
 
 end Lift
 
@@ -181,14 +182,14 @@ private noncomputable def liftHomotopyZeroAux (hP : P ≤ E.isProjective) :
       let H := liftHomotopyZeroAux hP r r' φ' hcomm' hφ'
       ⟨fun n => match n with
         | 0 => h₀
-        | n + 1 => H.1 n,
+        | n + 1 => H.val n,
        by simp [reassoc_of% hh₀, hu], fun n => match n with
         | 0 => by
-            have := H.2.1
+            have := H.property.1
             simp only [φ'] at this
             rw [sub_eq_iff_eq_add'] at this
             simpa using this
-        | n + 1 => by simpa [φ'] using H.2.2 n⟩
+        | n + 1 => by simpa [φ'] using H.property.2 n⟩
 
 /-- A chain map from the complex of a finite projective resolution to the complex of a finite
 resolution which vanishes against the augmentation is null-homotopic. -/
@@ -197,9 +198,9 @@ noncomputable def liftHomotopyZero (hP : P ≤ E.isProjective) {X Y : C} {r : Fi
     (hφ : φ.f 0 ≫ r'.aug = 0) : Homotopy φ 0 :=
   let H := liftHomotopyZeroAux hP r r' (fun n => φ.f n)
     (fun n => by simpa using φ.comm (n + 1) n) hφ
-  Homotopy.mkChainComplex φ H.1 (by rw [toChainComplex_d]; exact H.2.1) fun n => by
+  Homotopy.mkChainComplex φ H.val (by rw [toChainComplex_d]; exact H.property.1) fun n => by
     rw [toChainComplex_d, toChainComplex_d]
-    exact H.2.2 n
+    exact H.property.2 n
 
 /-- Two lifts of the same morphism are homotopic. -/
 noncomputable def liftHomotopy (hP : P ≤ E.isProjective) {X Y : C} (f : X ⟶ Y)

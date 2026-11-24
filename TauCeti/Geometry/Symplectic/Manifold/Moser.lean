@@ -101,16 +101,16 @@ theorem mpullback_timeDependentFlowOf_eq (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
     (hσ : ∀ t, IsSymplectic
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
     (hα : ∀ t, TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) =
-      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
+      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val)
     {X : ℝ → (x : M) → TangentSpace I x}
     (hX : ∀ t, RoughForm.interior (X t)
-        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).1 =
-      -(SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1)
+        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).val =
+      -(SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val)
     (hc : IsCompleteVectorField (timeDependentSuspensionField X)) (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t)
-        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).1 =
-      (SmoothForm.mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) σ).1 := by
+        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).val =
+      (SmoothForm.mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) σ).val := by
   -- Moser's equation determines `X_t` as the inverse flat map of `-α_t`.
   have hXeq (t : ℝ) : X t = (hσ t).isNondegenerate.interiorEquiv.symm
       (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) := by
@@ -123,8 +123,8 @@ theorem mpullback_timeDependentFlowOf_eq (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
       contMDiff_interiorEquiv_symm_mpullback_prodMk σ (fun t ↦ (hσ t).isNondegenerate) (-α)
   -- The rate `ι_t^* L_{∂_t} σ + L_{X_t} σ_t = dα_t - dα_t` vanishes.
   have hL (t : ℝ) : TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) +
-      mlieDerivForm (X t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) σ.1) = 0 := by
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) +
+      mlieDerivForm (X t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) σ.val) = 0 := by
     have h := (hσ t).mlieDerivForm_interiorEquiv_symm
       (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)
     rw [← hXeq, Submodule.coe_neg, mextDeriv_neg, SmoothForm.coe_mpullback _ _ σ] at h
@@ -144,14 +144,14 @@ theorem exists_isotopy_mpullback_eq_of_isCompact (σ : SmoothForm (𝓘(ℝ, ℝ
     (hσ : ∀ t, IsSymplectic
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
     (hα : ∀ t, TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) =
-      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
+      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val)
     {K : Set M} (hK : IsCompact K) (hαK : ∀ t, ∀ x ∉ K,
-      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x = 0) :
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x = 0) :
     ∃ ψ : ℝ → M ≃ₘ⟮I, I⟯ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ ψ p.1 p.2) ∧
       (∀ x, ψ 0 x = x) ∧
       (∀ t x, (∀ u,
-        (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x = 0) →
+        (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val x = 0) →
         ψ t x = x) ∧
       ∀ t, SmoothForm.mpullback (ψ t) (ψ t).contMDiff
           (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ) =
@@ -168,7 +168,7 @@ theorem exists_isotopy_mpullback_eq_of_isCompact (σ : SmoothForm (𝓘(ℝ, ℝ
   have hX₁ := hX.of_le (m := 1) (by simp)
   -- `X_t` vanishes exactly where `α_t` does, so outside `K`.
   have hX0 (t : ℝ) (x : M) : X t x = 0 ↔
-      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x = 0 := by
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x = 0 := by
     rw [hXdef t, IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff, Submodule.coe_neg,
       Pi.neg_apply, neg_eq_zero]
   have hc : IsCompleteVectorField (timeDependentSuspensionField X) :=
@@ -200,12 +200,12 @@ theorem exists_isotopy_mpullback_eq [CompactSpace M]
     (hσ : ∀ t, IsSymplectic
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
     (hα : ∀ t, TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.1) =
-      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1) :
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
+      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val) :
     ∃ ψ : ℝ → M ≃ₘ⟮I, I⟯ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ ψ p.1 p.2) ∧
       (∀ x, ψ 0 x = x) ∧
       (∀ t x, (∀ u,
-        (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x = 0) →
+        (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val x = 0) →
         ψ t x = x) ∧
       ∀ t, SmoothForm.mpullback (ψ t) (ψ t).contMDiff
           (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ) =

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Homfly.Existence
 public import TauCeti.KnotTheory.Jimbo.ReducedTrace
+import TauCeti.KnotTheory.Markov.Skein
 
 /-!
 # The HOMFLY polynomial with unknot value one
@@ -20,7 +21,10 @@ dimension, so the unlink on `n + 1` components has value `((a - a⁻¹) / z) ^ n
 The quotient is constructed in the Laurent polynomial ring, without inverting the quantum
 dimension or requiring its specializations to be nonzero. It is characterized by multiplication
 by that dimension; its positive-rank `sl_N` specializations recover the existing reduced
-Jimbo traces.
+Jimbo traces, and over any commutative ring where `q - q⁻¹` is a unit `u` its specialization at
+`a = q ^ N`, `z = u` agrees with `TauCeti.MarkovBraid.jimboReducedLaurent` without any
+nonvanishing assumption on `[N]_q`
+(`TauCeti.MarkovBraid.eval₂_reducedHomfly_eq_eval₂_jimboReducedLaurent`).
 
 The divisibility comes from the same Hecke spanning argument as the unreduced interpolation,
 with its submodule restricted to polynomials divisible by the unknot value. No choice of a
@@ -127,6 +131,33 @@ namespace MarkovBraid
 open KnotTheory
 
 variable (K : Type*) [Field K]
+
+/-- **Regularity of the `sl_N` HOMFLY specialization at quantum roots of unity.** Whenever
+`q - q⁻¹` is a unit `u : Rˣ` (in particular at quantum roots of unity where `[N]_q = 0`),
+evaluating `β.reducedHomfly K` at `a = q ^ N` and `z = u` agrees with evaluating the universal
+Laurent polynomial `β.jimboReducedLaurent N` at `q`, with no nonvanishing assumption on
+`[N]_q`. -/
+theorem eval₂_reducedHomfly_eq_eval₂_jimboReducedLaurent {R : Type*} [CommRing R]
+    (β : MarkovBraid) (φ : K →+* R) (q u : Rˣ) (hu : (u : R) = (q : R) - ↑q⁻¹) (N : ℕ)
+    [NeZero N] :
+    eval₂ (eval₂ φ u) (q ^ N) (β.reducedHomfly K) =
+      eval₂ (Int.castRingHom R) q (β.jimboReducedLaurent N) := by
+  refine congrFun (eq_of_skein (q ^ N) ((q : R) - ↑q⁻¹) (∑ a : Fin N, jimboWeight q a)
+    (F := fun γ ↦ eval₂ (eval₂ φ u) (q ^ N) (γ.reducedHomfly K))
+    (G := fun γ ↦ eval₂ (Int.castRingHom R) q (γ.jimboReducedLaurent N))
+    (fun _ _ h ↦ congrArg _ (h.reducedHomfly_eq K))
+    (fun _ _ h ↦ congrArg _ (h.jimboReducedLaurent_eq N)) ?_ ?_ ?_ ?_ ?_) β
+  · intro m c i
+    have hs := congrArg (eval₂ (eval₂ φ u) (q ^ N)) (reducedHomfly_skein K 1 c i)
+    simpa only [one_mul, map_sub, map_mul, eval₂_T, eval₂_C, zpow_one, zpow_neg_one, hu,
+      smul_eq_mul] using hs
+  · intro m c i
+    simpa only [one_mul, smul_eq_mul] using eval₂_jimboReducedLaurent_skein N q 1 c i
+  · intro m b
+    rw [reducedHomfly_strandIncl, map_mul, eval₂_homflyUnknot_pow K φ q u hu N, smul_eq_mul]
+  · intro m b
+    rw [jimboReducedLaurent_strandIncl, map_mul, eval₂_sum_jimboWeight_genericUnit, smul_eq_mul]
+  · simp
 
 /-- The single positive crossing on two strands closes to the unknot. -/
 @[simp]

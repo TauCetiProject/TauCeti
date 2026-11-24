@@ -230,7 +230,7 @@ theorem orthonormal_inv_norm_smul_of_pairwise_inner_eq_zero {v : ι → E}
     (hv : Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0) :
     Orthonormal 𝕜 fun i : {i // v i ≠ 0} ↦ ((‖v i‖⁻¹ : ℝ) : 𝕜) • v i := by
   refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
-  · simp [norm_smul, i.2]
+  · simp [norm_smul, i.property]
   · simp [inner_smul_left, inner_smul_right, hv (Subtype.coe_ne_coe.mpr hij)]
 
 end TauCeti

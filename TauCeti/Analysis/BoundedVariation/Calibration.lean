@@ -144,7 +144,7 @@ theorem ContDiff.setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1
     rw [this, ← integral_indicator hS, ← integral_neg]
     refine integral_congr_ae (.of_forall fun x => ?_)
     simp only [v]
-    rw [fderiv_max_min_eq_indicator w 0 η x]
+    rw [fderiv_max_min_eq_indicator hw.continuous hη x]
     by_cases hx : x ∈ S
     · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
     · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]

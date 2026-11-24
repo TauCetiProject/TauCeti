@@ -16,8 +16,11 @@ import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.LpSeminorm.Restrict
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.PolyaSzego
+import TauCeti.MeasureTheory.Function.UniformIntegrable
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # The `W^{1,1}` Pólya–Szegő inequality
@@ -35,7 +38,7 @@ kernel `rho` produces a globally Lipschitz function
 whose gradient satisfies `∫ Φ(‖D(rho ⋆ u⁺)‖) ∂mu ≤ ∫ Φ(‖∇u⁺‖) ∂mu` by convolution Jensen
 (`TauCeti.HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le`), hence
 `∫ Φ(‖D((rho ⋆ u⁺)*)‖) ∂mu ≤ ∫ Φ(‖∇u⁺‖) ∂mu` by the Lipschitz convex-integrand Pólya–Szegő
-inequality (`LipschitzWith.lintegral_ofReal_map_norm_fderiv_toReal_schwarzRearrangement_le`).
+inequality (`LipschitzWith.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le`).
 Choosing `Φ` superlinear via de la Vallée Poussin
 (`MeasureTheory.Integrable.exists_convexOn_superlinear_integrable`) yields uniform
 equi-integrability of `D((rho_n ⋆ u⁺)*)` across shrinking normalized smooth bumps `rho_n`, while
@@ -87,10 +90,7 @@ private theorem lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le
         (fun y ↦ ENNReal.ofReal ((rho ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value u)) y))
         z).toReal) x‖) ∂mu ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖W1p.gradient u x‖) ∂mu := by
-  have hu_int : Integrable (W1p.value u : E → ℝ) mu := by
-    simpa using L1.integrable_coeFn (W1p.value u)
-  have hg_int : Integrable (W1p.gradient u : E → E) mu := by
-    simpa using L1.integrable_coeFn (W1p.gradient u)
+  have hu_int := W1p.integrable_value u
   have hK := hrho_cpt.lipschitzWith_convolution_left_of_integrable (lsmul ℝ ℝ)
     (hrho.of_le (by simp)) hu_int
   calc ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ (fun z ↦ (schwarzRearrangement mu
@@ -98,12 +98,12 @@ private theorem lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le
           z).toReal) x‖) ∂mu
       ≤ ∫⁻ x, ENNReal.ofReal
           (Φ ‖fderiv ℝ (rho ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value u)) x‖) ∂mu :=
-        hK.lintegral_ofReal_map_norm_fderiv_toReal_schwarzRearrangement_le mu hΦ hΦ0.le
+        hK.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le mu hΦ hΦ0.le
     _ ≤ ∫⁻ x, ENNReal.ofReal (Φ ‖innerSL ℝ (W1p.gradient u x)‖) ∂mu := by
         rw [← convolution_flip]
         exact (W1p.hasWeakFDerivOn u).lintegral_ofReal_map_norm_fderiv_convolution_le
           hu_int.locallyIntegrable
-          ((innerSL ℝ (E := E)).integrable_comp hg_int).locallyIntegrable
+          ((innerSL ℝ (E := E)).integrable_comp (W1p.integrable_gradient u)).locallyIntegrable
           hΦ hΦm hrho hrho_cpt hrho0 hrho1
     _ = ∫⁻ x, ENNReal.ofReal (Φ ‖W1p.gradient u x‖) ∂mu :=
         lintegral_congr fun x ↦ by rw [innerSL_apply_norm]
@@ -127,9 +127,8 @@ private theorem exists_convexOn_superlinear_lintegral_gradient_ne_top (u : W1p m
     ∃ Φ : ℝ → ℝ, Φ 0 = 0 ∧ MonotoneOn Φ (Ici 0) ∧ ConvexOn ℝ (Ici 0) Φ ∧
       Tendsto (fun t ↦ Φ t / t) atTop atTop ∧
       ∫⁻ x, ENNReal.ofReal (Φ ‖W1p.gradient u x‖) ∂mu ≠ (∞ : ℝ≥0∞) := by
-  have hg_int : Integrable (W1p.gradient u : E → E) mu := by
-    simpa using L1.integrable_coeFn (W1p.gradient u)
-  obtain ⟨Φ, hΦ0, hΦm, hΦc, hΦsup, hΦint⟩ := hg_int.exists_convexOn_superlinear_integrable
+  obtain ⟨Φ, hΦ0, hΦm, hΦc, hΦsup, hΦint⟩ :=
+    (W1p.integrable_gradient u).exists_convexOn_superlinear_integrable
   refine ⟨Φ, hΦ0, hΦm.monotoneOn _, hΦc.subset (subset_univ _) (convex_Ici 0), hΦsup, ?_⟩
   exact (lintegral_ofReal_ne_top_iff_integrable hΦint.aestronglyMeasurable
     (ae_of_all _ fun x ↦ by simpa [hΦ0] using hΦm (norm_nonneg _))).2 hΦint
@@ -152,7 +151,7 @@ theorem W1p.exists_setLIntegral_enorm_fderiv_toReal_schwarzRearrangement_convolu
     ContDiff ℝ ∞ rho ∧ HasCompactSupport rho ∧ 0 ≤ᵐ[mu] rho ∧ ∫ x, rho x ∂mu = 1
   obtain ⟨T, hT⟩ := exists_setLIntegral_enorm_le_mul_add (ι := Subtype P) hΦsup hC
     (fun r ↦ lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le u
-      r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2 hΦc hΦm hΦ0) hε
+      r.property.1 r.property.2.1 r.property.2.2.1 r.property.2.2.2 hΦc hΦm hΦ0) hε
   exact ⟨T, fun rho h1 h2 h3 h4 s ↦ hT ⟨rho, h1, h2, h3, h4⟩ s⟩
 
 /-- Uniform integrability of the Fréchet derivatives of rearranged mollifications for any
@@ -165,17 +164,13 @@ private theorem uniformIntegrable_fderiv_schwarzRearrangement_convolution
         z).toReal)
       1 (mu.restrict (⊤ : Opens E)) := by
   obtain ⟨Φ, hΦ0, hΦm, hΦc, hΦsup, hC⟩ := exists_convexOn_superlinear_lintegral_gradient_ne_top w
-  have hg_int : Integrable (W1p.gradient w : E → E) mu := by
-    simpa using L1.integrable_coeFn (W1p.gradient w)
-  have htop {F : ι → E → (E →L[ℝ] ℝ)} (h : UniformIntegrable F 1 mu) :
-      UniformIntegrable F 1 (mu.restrict (⊤ : Opens E)) := by
-    rwa [Opens.coe_top, Measure.restrict_univ]
-  refine htop ⟨unifIntegrable_of_lintegral_ofReal_le hΦsup
+  rw [uniformIntegrable_restrict_coe_opens_top]
+  refine ⟨unifIntegrable_of_lintegral_ofReal_le hΦsup
       (fun i ↦ (measurable_fderiv ℝ _).aestronglyMeasurable) hC fun i ↦
       lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le w (phi i).contDiff_normed
         (phi i).hasCompactSupport_normed (ae_of_all _ (phi i).nonneg_normed)
         (phi i).integral_normed hΦc hΦm hΦ0, ?_⟩
-  refine (iSup_le fun i ↦ ?_).trans_lt hg_int.2
+  refine (iSup_le fun i ↦ ?_).trans_lt (W1p.integrable_gradient w).2
   rw [eLpNorm_one_eq_lintegral_eNorm (measurable_fderiv ℝ _).aestronglyMeasurable]
   exact lintegral_enorm_fderiv_schwarzRearrangement_convolution_le w
     (phi i).contDiff_normed (phi i).hasCompactSupport_normed (ae_of_all _ (phi i).nonneg_normed)
@@ -188,7 +183,8 @@ private theorem schwarzRearrangement_ofReal_value_posPart (hp : 1 ≠ (∞ : ℝ
       schwarzRearrangement mu (fun y ↦ ENNReal.ofReal (W1p.value u y)) := by
   refine schwarzRearrangement_congr_ae mu ?_
   have hpos : ⇑(W1p.value (W1p.posPart hp u)) =ᵐ[mu] fun y ↦ max (W1p.value u y) 0 := by
-    simpa [W1p.value_posPart] using Lp.coeFn_posPart (W1p.value u)
+    rw [← mu.ae_restrict_coe_opens_top, W1p.value_posPart]
+    exact Lp.coeFn_posPart (W1p.value u)
   exact hpos.mono fun _ hy ↦ by
     dsimp only
     rw [hy, ENNReal.ofReal_max, ENNReal.ofReal_zero, max_eq_left zero_le]
@@ -205,8 +201,7 @@ private theorem exists_hasWeakFDerivOn_of_w1p (u : W1p mu ⊤ 1) :
   set w := W1p.posPart ENNReal.one_ne_top u
   let phi : ℕ → ContDiffBump (0 : E) := fun n ↦
     ⟨1 / ((n : ℝ) + 2), 1 / ((n : ℝ) + 1), by positivity, by gcongr; linarith⟩
-  have hw_int : Integrable (W1p.value w : E → ℝ) mu := by
-    simpa using L1.integrable_coeFn (W1p.value w)
+  have hw_int := W1p.integrable_value w
   have hlip (n : ℕ) :=
     ((phi n).hasCompactSupport_normed (μ := mu)).lipschitzWith_convolution_left_of_integrable
       (lsmul ℝ ℝ) ((phi n).contDiff_normed (μ := mu) (n := 1)) hw_int
@@ -239,9 +234,9 @@ private theorem exists_hasWeakFDerivOn_of_w1p (u : W1p mu ⊤ 1) :
     ext x
     simp only [v₀, w, schwarzRearrangement_ofReal_value_posPart ENNReal.one_ne_top u]
   rw [hv₀_eq] at hg_weak
-  rw [Opens.coe_top, integrableOn_univ] at hg_int
-  rw [Opens.coe_top, Measure.restrict_univ] at hg_le
-  exact ⟨g, hg_weak, memLp_one_iff_integrable.2 (by simpa using hg_int),
+  rw [IntegrableOn, mu.restrict_coe_opens_top] at hg_int
+  rw [mu.restrict_coe_opens_top] at hg_le
+  exact ⟨g, hg_weak, memLp_restrict_coe_opens_top.2 (memLp_one_iff_integrable.2 hg_int),
     hg_le.trans (liminf_le_of_frequently_le' (Eventually.of_forall hL1_bound).frequently)⟩
 
 namespace W1p
@@ -251,10 +246,9 @@ private theorem memLp_toReal_schwarzRearrangement_value (u : W1p mu ⊤ 1) :
     MemLp
       (fun x ↦ (TauCeti.schwarzRearrangement mu
         (fun y ↦ ENNReal.ofReal (W1p.value u y)) x).toReal)
-      1 (mu.restrict (⊤ : Opens E)) := by
-  have hu_int : Integrable (W1p.value u : E → ℝ) mu := by
-    simpa using L1.integrable_coeFn (W1p.value u)
-  simpa using memLp_one_iff_integrable.2 hu_int.toReal_schwarzRearrangement
+      1 (mu.restrict (⊤ : Opens E)) :=
+  memLp_restrict_coe_opens_top.2
+    (memLp_one_iff_integrable.2 (W1p.integrable_value u).toReal_schwarzRearrangement)
 
 /-- Weak-gradient compatibility between the `Lp` classes used to construct
 `W1p.schwarzRearrangement u`. -/
@@ -292,7 +286,8 @@ theorem schwarzRearrangement_zero :
     W1p.schwarzRearrangement (0 : W1p (E := E) mu ⊤ 1) = 0 := by
   refine W1p.ext_value (Lp.ext ?_)
   have h0_ae : ⇑(W1p.value (0 : W1p (E := E) mu ⊤ 1)) =ᵐ[mu] 0 := by
-    simpa [W1p.value_zero] using Lp.coeFn_zero ℝ 1 (mu.restrict (⊤ : Opens E))
+    rw [← mu.ae_restrict_coe_opens_top, W1p.value_zero]
+    exact Lp.coeFn_zero ℝ 1 _
   have hae : (fun y ↦ ENNReal.ofReal (W1p.value (0 : W1p (E := E) mu ⊤ 1) y)) =ᵐ[mu] 0 :=
     h0_ae.mono fun _ hy ↦ by
       dsimp only
@@ -317,15 +312,14 @@ theorem schwarzRearrangement_posPart (hp : 1 ≠ (∞ : ℝ≥0∞)) (u : W1p mu
 theorem schwarzRearrangement_schwarzRearrangement (u : W1p mu ⊤ 1) :
     W1p.schwarzRearrangement (W1p.schwarzRearrangement u) = W1p.schwarzRearrangement u := by
   refine W1p.ext_value (Lp.ext ?_)
-  have hu_int : Integrable (W1p.value u : E → ℝ) mu := by
-    simpa using L1.integrable_coeFn (W1p.value u)
   have hval : ⇑(W1p.value (W1p.schwarzRearrangement u)) =ᵐ[mu]
       fun x ↦ (TauCeti.schwarzRearrangement mu
-        (fun y ↦ ENNReal.ofReal (W1p.value u y)) x).toReal := by
-    simpa using value_schwarzRearrangement_ae u
+        (fun y ↦ ENNReal.ofReal (W1p.value u y)) x).toReal :=
+    mu.ae_restrict_coe_opens_top ▸ value_schwarzRearrangement_ae u
   have hae : (fun y ↦ ENNReal.ofReal (W1p.value (W1p.schwarzRearrangement u) y)) =ᵐ[mu]
       TauCeti.schwarzRearrangement mu (fun y ↦ ENNReal.ofReal (W1p.value u y)) := by
-    filter_upwards [hval, hu_int.ae_schwarzRearrangement_ofReal_ne_top] with y hy hfin
+    filter_upwards [hval, (W1p.integrable_value u).ae_schwarzRearrangement_ofReal_ne_top]
+      with y hy hfin
     rw [hy, ENNReal.ofReal_toReal hfin]
   filter_upwards [value_schwarzRearrangement_ae (W1p.schwarzRearrangement u),
     value_schwarzRearrangement_ae u] with x hx1 hx2
@@ -359,12 +353,10 @@ theorem variationMeasure_toReal_schwarzRearrangement_eq_withDensity (u : W1p mu 
 @[simp]
 theorem norm_value_schwarzRearrangement_eq_posPart (u : W1p mu ⊤ 1) :
     ‖W1p.value (W1p.schwarzRearrangement u)‖ = ‖Lp.posPart (W1p.value u)‖ := by
-  have hu_int : Integrable (W1p.value u : E → ℝ) mu := by
-    simpa using L1.integrable_coeFn (W1p.value u)
-  have htop (f : E → ℝ) : eLpNorm f 1 (mu.restrict (⊤ : Opens E)) = eLpNorm f 1 mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
+  have hu_int := W1p.integrable_value u
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (value_schwarzRearrangement_ae u),
-    eLpNorm_congr_ae (Lp.coeFn_posPart (W1p.value u)), htop, htop,
+    eLpNorm_congr_ae (Lp.coeFn_posPart (W1p.value u)), eLpNorm_restrict_coe_opens_top,
+    eLpNorm_restrict_coe_opens_top,
     eLpNorm_one_eq_lintegral_eNorm hu_int.toReal_schwarzRearrangement.aestronglyMeasurable,
     eLpNorm_one_eq_lintegral_eNorm hu_int.pos_part.aestronglyMeasurable]
   congr 1
@@ -408,13 +400,10 @@ theorem norm_gradient_schwarzRearrangement_le_posPart (u : W1p mu ⊤ 1) :
     exact hg.2.1.coeFn_toLp
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hgrad_ae]
   refine ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) ?_
-  have hm1 : MemLp (Classical.choose (exists_hasWeakFDerivOn_of_w1p u)) 1 mu := by
-    simpa using hg.2.1
-  have hm2 : MemLp (W1p.gradient (W1p.posPart ENNReal.one_ne_top u) : E → E) 1 mu := by
-    simpa using Lp.memLp (W1p.gradient (W1p.posPart ENNReal.one_ne_top u))
-  have htop (f : E → E) : eLpNorm f 1 (mu.restrict (⊤ : Opens E)) = eLpNorm f 1 mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  rw [htop, htop (W1p.gradient _ : E → E),
+  have hm1 : MemLp (Classical.choose (exists_hasWeakFDerivOn_of_w1p u)) 1 mu :=
+    memLp_restrict_coe_opens_top.1 hg.2.1
+  have hm2 := W1p.memLp_gradient (W1p.posPart ENNReal.one_ne_top u)
+  rw [eLpNorm_restrict_coe_opens_top, eLpNorm_restrict_coe_opens_top,
     eLpNorm_one_eq_lintegral_eNorm hm1.aestronglyMeasurable,
     eLpNorm_one_eq_lintegral_eNorm hm2.aestronglyMeasurable]
   exact hg.2.2
@@ -452,8 +441,8 @@ theorem value_schwarzRearrangementNorm_ae (u : W1p mu ⊤ 1) :
     ⇑(W1p.value (W1p.schwarzRearrangementNorm u)) =ᵐ[mu.restrict (⊤ : Opens E)]
       fun x ↦ (TauCeti.schwarzRearrangement mu (fun y ↦ ‖W1p.value u y‖ₑ) x).toReal := by
   have hae : ⇑(W1p.value (W1p.posPart ENNReal.one_ne_top u +
-        W1p.posPart ENNReal.one_ne_top (-u))) =ᵐ[mu] fun x ↦ |W1p.value u x| := by
-    simpa using W1p.value_posPart_add_posPart_neg_ae ENNReal.one_ne_top u
+        W1p.posPart ENNReal.one_ne_top (-u))) =ᵐ[mu] fun x ↦ |W1p.value u x| :=
+    mu.ae_restrict_coe_opens_top ▸ W1p.value_posPart_add_posPart_neg_ae ENNReal.one_ne_top u
   have hcongr : TauCeti.schwarzRearrangement mu
       (fun y ↦ ENNReal.ofReal
         (W1p.value (W1p.posPart ENNReal.one_ne_top u + W1p.posPart ENNReal.one_ne_top (-u)) y)) =
@@ -471,7 +460,7 @@ theorem schwarzRearrangementNorm_eq_schwarzRearrangement_of_ae_nonneg {u : W1p m
     (hu : ∀ᵐ x ∂mu.restrict (⊤ : Opens E), 0 ≤ W1p.value u x) :
     W1p.schwarzRearrangementNorm u = W1p.schwarzRearrangement u := by
   refine W1p.ext_value (Lp.ext ?_)
-  have hu' : ∀ᵐ y ∂mu, 0 ≤ W1p.value u y := by simpa using hu
+  have hu' : ∀ᵐ y ∂mu, 0 ≤ W1p.value u y := mu.ae_restrict_coe_opens_top ▸ hu
   have hae : (fun y ↦ ‖W1p.value u y‖ₑ) =ᵐ[mu] fun y ↦ ENNReal.ofReal (W1p.value u y) :=
     hu'.mono fun _ hy ↦ Real.eNorm_of_nonneg hy
   filter_upwards [value_schwarzRearrangementNorm_ae u, value_schwarzRearrangement_ae u]

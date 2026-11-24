@@ -230,7 +230,7 @@ theorem interior_setOf_eq_eq_empty_of_not_eqOn_const_ball (hr : 0 < r)
   obtain ⟨u, hu, hsub⟩ := (mem_nhds_subtype _ z _).mp (mem_interior_iff_mem_nhds.mp hz)
   obtain ⟨V, hVu, hVo, hzV⟩ := _root_.mem_nhds_iff.mp hu
   refine not_eqOn_const_inter_sphere_of_not_eqOn_const_ball hr hVo
-    (hcont.mono inter_subset_right) hdiff ⟨z, hzV, z.2⟩ hnc fun y hy => ?_
+    (hcont.mono inter_subset_right) hdiff ⟨z, hzV, z.property⟩ hnc fun y hy => ?_
   have hyu : (⟨y, hy.2⟩ : sphere c r) ∈ Subtype.val ⁻¹' u := Set.mem_preimage.mpr (hVu hy.1)
   exact hsub hyu
 

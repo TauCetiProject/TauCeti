@@ -107,7 +107,7 @@ private def diskCellMap : PartialEquiv (Fin n → ℝ) (TopCat.disk.{u} n) where
   left_inv' x hx := by
     rw [diskCellFun_of_mem n (ball_subset_closedBall hx), Homeomorph.apply_symm_apply]
   right_inv' z _ := by
-    rw [diskCellFun_of_mem n (diskHomeomorphClosedBall n z).2, Subtype.coe_eta,
+    rw [diskCellFun_of_mem n (diskHomeomorphClosedBall n z).property, Subtype.coe_eta,
       Homeomorph.symm_apply_apply]
 
 private theorem diskCellMap_apply {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
@@ -145,12 +145,12 @@ def diskRelCWComplex :
       refine continuousOn_iff_continuous_domRestrict.2 ?_
       convert (diskHomeomorphClosedBall n).symm.continuous using 1
       funext x
-      exact diskCellMap_apply n x.2)
+      exact diskCellMap_apply n x.property)
     (by
       rintro m ⟨⟨hm⟩⟩
       subst m
       rw [diskCellMapOfCell_self]
-      exact (continuous_subtype_val.comp (diskHomeomorphClosedBall n).continuous).continuousOn)
+      exact (continuous_subtypeVal.comp (diskHomeomorphClosedBall n).continuous).continuousOn)
     (by
       rintro ⟨m, ⟨⟨hm⟩⟩⟩ - ⟨m', ⟨⟨hm'⟩⟩⟩ - hne
       subst m m'
@@ -174,8 +174,8 @@ def diskRelCWComplex :
     (TopCat.isClosedEmbedding_diskBoundaryInclusion n).isClosed_range
     (by
       refine eq_univ_of_forall fun z ↦ Or.inr (mem_iUnion₂.2 ⟨n, ⟨⟨rfl⟩⟩, ?_⟩)
-      refine ⟨diskHomeomorphClosedBall n z, (diskHomeomorphClosedBall n z).2, ?_⟩
-      rw [diskCellMapOfCell_self, diskCellMap_apply n (diskHomeomorphClosedBall n z).2,
+      refine ⟨diskHomeomorphClosedBall n z, (diskHomeomorphClosedBall n z).property, ?_⟩
+      rw [diskCellMapOfCell_self, diskCellMap_apply n (diskHomeomorphClosedBall n z).property,
         Subtype.coe_eta, Homeomorph.symm_apply_apply])
 
 attribute [local instance] diskRelCWComplex
@@ -202,7 +202,7 @@ theorem diskRelCWComplex_map_apply (x : closedBall (0 : Fin n → ℝ) 1) :
     map n (diskRelCWComplexTopCell n) x = (diskHomeomorphClosedBall n).symm x :=
   -- `RelCWComplex.mkFinite` takes the supplied family as its `map` field, so the characteristic
   -- map of the top cell is `diskCellMap n` by definition.
-  diskCellMap_apply n x.2
+  diskCellMap_apply n x.property
 
 section Sigma
 

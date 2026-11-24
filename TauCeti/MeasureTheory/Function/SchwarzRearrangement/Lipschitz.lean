@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
--- Proof-only: Lebesgue measure, uniqueness of Haar measure and the Brunn–Minkowski inequality.
+-- Proof-only: Lebesgue measure, uniqueness of Haar measure, the Brunn–Minkowski inequality and the
+-- extended Lipschitz bound for positive parts.
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
-import TauCeti.Topology.EMetricSpace.Lipschitz
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Schwarz rearrangement of Lipschitz functions
@@ -41,8 +42,8 @@ nonnegative integrable Lipschitz function.
 ## Main results
 
 * `TauCeti.schwarzRearrangement_le_add_mul_edist`: Lipschitz bounds pass to the rearrangement.
-* `TauCeti.schwarzRearrangement_ne_top`, `TauCeti.schwarzRearrangement_ofReal_ne_top`: finiteness
-  of the rearrangement.
+* `TauCeti.schwarzRearrangement_ne_top`, `LipschitzWith.schwarzRearrangement_ofReal_ne_top`:
+  finiteness of the rearrangement.
 * `TauCeti.lipschitzWith_toReal_schwarzRearrangement`: the real-valued form.
 
 ## References
@@ -151,21 +152,14 @@ theorem schwarzRearrangement_ne_top [Nontrivial E] (hf : ∀ x y, f x ≤ f y + 
   exact ENNReal.add_ne_top.2 ⟨ne_top_of_le_ne_top ht (not_lt.1 hy),
     ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)⟩
 
-/-- **Finiteness of the rearrangement of a real Lipschitz function.** If `h : E → ℝ` is
-`K`-Lipschitz and some superlevel set `{x | t < h x}` has finite measure, then the Schwarz
-rearrangement of the positive part of `h` is finite everywhere (including in dimension zero). -/
-theorem schwarzRearrangement_ofReal_ne_top {h : E → ℝ} (hh : LipschitzWith K h) {t : ℝ}
-    (hμt : μ {x | t < h x} ≠ ∞) (x : E) :
-    schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x ≠ ∞ := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · refine ne_top_of_le_ne_top (@ENNReal.ofReal_ne_top (h x))
-      ((schwarzRearrangement_le_essSup μ _ x).trans ?_)
-    exact essSup_le_of_ae_le (ENNReal.ofReal (h x))
-      (.of_forall fun y ↦ by rw [Subsingleton.elim y x])
-  · refine schwarzRearrangement_ne_top μ hh.ofReal_le_add_mul_edist
-      (t := ENNReal.ofReal (max t 0)) ENNReal.ofReal_ne_top (ne_top_of_le_ne_top hμt ?_) x
-    exact measure_mono fun y hy ↦ (le_max_left t 0).trans_lt
-      ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg (le_max_right t 0)).1 hy)
+/-- **Finiteness of the rearrangement of a real Lipschitz function.** If a real Lipschitz function
+`h` has some superlevel set `{h > t}` of finite measure, then the Schwarz rearrangement of its
+positive part is finite everywhere. -/
+theorem _root_.LipschitzWith.schwarzRearrangement_ofReal_ne_top [Nontrivial E] {h : E → ℝ}
+    (hh : LipschitzWith K h) {t : ℝ} (ht : μ {x | t < h x} ≠ ∞) (x : E) :
+    schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x ≠ ∞ :=
+  schwarzRearrangement_ne_top μ hh.ofReal_le_ofReal_add_mul_edist ENNReal.ofReal_ne_top
+    (ne_top_of_le_ne_top ht (measure_mono fun _ hy ↦ (ENNReal.ofReal_lt_ofReal_iff'.1 hy).1)) x
 
 /-- **Schwarz rearrangement of a real Lipschitz function.** For a real `K`-Lipschitz function `h`,
 the real value (`ENNReal.toReal`) of the Schwarz rearrangement of its positive part is
@@ -174,7 +168,7 @@ theorem lipschitzWith_toReal_schwarzRearrangement {h : E → ℝ} (hh : Lipschit
     LipschitzWith K fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x).toReal := by
   set g := schwarzRearrangement μ fun y ↦ ENNReal.ofReal (h y)
   have hg : ∀ x y, g x ≤ g y + K * edist x y :=
-    schwarzRearrangement_le_add_mul_edist μ hh.ofReal_le_add_mul_edist
+    schwarzRearrangement_le_add_mul_edist μ hh.ofReal_le_ofReal_add_mul_edist
   refine LipschitzWith.of_le_add_mul K fun x y ↦ ?_
   have hxy : K * edist x y ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)
   rcases eq_or_ne (g y) ∞ with hgy | hgy

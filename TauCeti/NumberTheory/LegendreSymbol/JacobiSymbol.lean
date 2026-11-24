@@ -181,7 +181,6 @@ private theorem exists_odd_jacobiSym_eq_neg_one {a : ℤ} (ha : ¬ IsSquare a) :
     rw [jacobiSym_eq_sign_mul_of_dvd_add a odd_one (by rw [Nat.add_sub_cancel' (by omega)]),
       jacobiSym.one_right, mul_one, Int.sign_eq_neg_one_of_neg hneg]
   obtain ⟨q, hq, hv⟩ := ha (not_lt.mp hneg)
-  rw [Nat.not_even_iff_odd] at hv
   have ha₀ : a ≠ 0 := by rintro rfl; simp at hv
   -- write `a = q ^ v * b` with `v` odd and `q ∤ b`
   set v := a.natAbs.factorization q

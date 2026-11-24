@@ -35,15 +35,18 @@ theorem measureReal_inter_of_isLowerSet (hs : IsLowerSet s) (ht : IsLowerSet t)
   · rw [inter_eq_left.mpr h, min_eq_left (measureReal_mono h hμt)]
   · rw [inter_eq_right.mpr h, min_eq_right (measureReal_mono h hμs)]
 
-/-- Removing a measurable lower set from another lower set, both of finite mass, subtracts their
-real measures, with a lower bound of zero. -/
+/-- Removing a measurable lower set `t` of finite mass from a lower set `s` subtracts their real
+measures, with a lower bound of zero. No finiteness is needed for `s`: if `μ s = ∞`, both sides
+are zero, since `μ.real` sends infinite masses to zero. -/
 theorem measureReal_sdiff_of_isLowerSet (hs : IsLowerSet s) (ht : IsLowerSet t)
-    (hmt : MeasurableSet t) (hμs : μ s ≠ ∞ := by finiteness)
-    (hμt : μ t ≠ ∞ := by finiteness) :
+    (hmt : MeasurableSet t) (hμt : μ t ≠ ∞ := by finiteness) :
     μ.real (s \ t) = max (μ.real s - μ.real t) 0 := by
   rcases hs.total ht with h | h
   · rw [sdiff_eq_empty.mpr h, measureReal_empty,
       max_eq_right (sub_nonpos.mpr (measureReal_mono h hμt))]
+  obtain hμs | hμs := eq_or_ne (μ s) ∞
+  · -- Both sides vanish: `s` and `s \ t` have infinite mass, so zero real measure.
+    simp [measureReal_def, hμs, measure_sdiff_eq_top hμs hμt]
   · rw [measureReal_sdiff h hmt hμs,
       max_eq_left (sub_nonneg.mpr (measureReal_mono h hμs))]
 

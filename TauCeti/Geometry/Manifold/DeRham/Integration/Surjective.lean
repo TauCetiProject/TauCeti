@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import Mathlib.Geometry.Manifold.BumpFunction
@@ -87,8 +87,8 @@ private theorem integral_signedInChartAt_pos_of_bump [MeasurableSpace E] [BorelS
 private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (Fin n))
     (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
     ∃ φ : compactlySupportedClosedForms I M n,
-      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1.1 ⊆ U ∧
-      integralTopForm o φ.1.1 ≠ 0 := by
+      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val.val ⊆ U ∧
+      integralTopForm o φ.val.val ≠ 0 := by
   classical
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
@@ -138,13 +138,13 @@ compactly supported closed top form of integral one, also in dimension zero. -/
 theorem exists_compactlySupportedClosedForms_integralTopForm_eq_one
     (o : Manifold.Orientation I M (Fin n)) (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
     ∃ φ : compactlySupportedClosedForms I M n,
-      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1.1 ⊆ U ∧
-      integralTopForm o φ.1.1 = 1 := by
+      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val.val ⊆ U ∧
+      integralTopForm o φ.val.val = 1 := by
   obtain ⟨φ, hφU, hφ⟩ := exists_topForm_integral_ne_zero o x hU
-  refine ⟨(integralTopForm o φ.1.1)⁻¹ • φ, ?_, ?_⟩
-  · exact (RoughForm.tsupport_smul_subset _ φ.1.1).trans hφU
+  refine ⟨(integralTopForm o φ.val.val)⁻¹ • φ, ?_, ?_⟩
+  · exact (RoughForm.tsupport_smul_subset _ φ.val.val).trans hφU
   · simpa only [Submodule.coe_smul] using
-      (integralTopForm_smul o (integralTopForm o φ.1.1)⁻¹ φ.1.1).trans (inv_mul_cancel₀ hφ)
+      (integralTopForm_smul o (integralTopForm o φ.val.val)⁻¹ φ.val.val).trans (inv_mul_cancel₀ hφ)
 
 /-- Integration on top compactly supported de Rham cohomology is onto for every nonempty
 oriented boundaryless Hausdorff sigma-compact finite-dimensional smooth manifold. Connectedness

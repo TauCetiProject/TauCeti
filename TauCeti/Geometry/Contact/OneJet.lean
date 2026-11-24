@@ -69,7 +69,7 @@ theorem isHorizontalMap_contactization_liouvilleForm_iff (α : SmoothForm I M �
     (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
     IsHorizontalMap I (liouvilleForm I M).contactization.kerDistribution
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
-      α.1 = mextDeriv (RoughForm.ofFunction I g) := by
+      α.val = mextDeriv (RoughForm.ofFunction I g) := by
   rw [SmoothForm.isHorizontalMap_contactization_iff _ (SmoothForm.degreeOneEquiv α).contMDiff hg,
     mpullback_liouvilleForm]
 
@@ -79,7 +79,7 @@ variable [CompleteSpace E] [FiniteDimensional ℝ E] [I.Boundaryless]
 `α = dg`, the one-jet `j¹g : q ↦ (dg_q, g q)` is a Legendrian embedding of `M` into the one-jet
 space `T*M × ℝ` with its contact form `dz - λ`. -/
 theorem isLegendrianEmbedding_contactization_liouvilleForm (α : SmoothForm I M ℝ 1)
-    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.1 = mextDeriv (RoughForm.ofFunction I g)) :
+    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.val = mextDeriv (RoughForm.ofFunction I g)) :
     IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
       (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
   -- The kernel of `dz - λ` is a `C¹` contact structure, which needs a `C²` manifold structure.
@@ -100,7 +100,7 @@ theorem isLegendrianEmbedding_contactization_liouvilleForm_iff (α : SmoothForm 
     (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
     IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
-      α.1 = mextDeriv (RoughForm.ofFunction I g) :=
+      α.val = mextDeriv (RoughForm.ofFunction I g) :=
   ⟨fun h ↦ (isHorizontalMap_contactization_liouvilleForm_iff α hg).1 h.isHorizontalMap,
     isLegendrianEmbedding_contactization_liouvilleForm α hg⟩
 
