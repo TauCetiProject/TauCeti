@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RingTheory.Semisimple.Charpoly
 
 /-!
@@ -48,17 +49,6 @@ variable {k G V W : Type*} [Field k] [IsAlgClosed k] [Monoid G]
   [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   [AddCommGroup W] [Module k W] [FiniteDimensional k W]
 
-omit [IsAlgClosed k] in
-/-- The action of `g` on the `k[G]`-module of `ρ` has the characteristic polynomial of `ρ g`. -/
-private theorem charpoly_lsmul_of_asModule (ρ : Representation k G V) (g : G) :
-    (Algebra.lsmul k k ρ.asModule (MonoidAlgebra.of k G g)).charpoly = (ρ g).charpoly := by
-  rw [← ρ.asModuleEquiv.charpoly_conj]
-  congr 1
-  ext x
-  simp [LinearEquiv.conj_apply]
-  -- `ρ.asModuleEquiv : ρ.asModule ≃ₗ[k] V` is the identity of the type synonym `ρ.asModule`.
-  rfl
-
 /-- **Brauer–Nesbitt.** Over an algebraically closed field of any characteristic, two
 finite-dimensional semisimple representations of a monoid with the same characteristic polynomial
 at every element are equivalent. -/
@@ -72,6 +62,6 @@ theorem nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation (ρ : Repres
       (by
         rw [← (MonoidAlgebra.basis G k).span_eq]
         congr 2) fun g => ?_
-  rw [charpoly_lsmul_of_asModule, charpoly_lsmul_of_asModule, h g]
+  rw [charpoly_lsmul_asModule_of, charpoly_lsmul_asModule_of, h g]
 
 end Representation

@@ -29,6 +29,8 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
+* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `k[G]`-module `ρ.asModule` with the
+  characteristic polynomial of `ρ g`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -99,5 +101,23 @@ theorem aroots_charpoly_dual_apply {S : Type*} [Field S] [Algebra R S] (g : G) :
   rw [charpoly_dual_apply, aroots_charpoly_apply_inv]
 
 end Group
+
+section Field
+
+variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
+  [FiniteDimensional k V]
+
+/-- The action of `g` on the `k[G]`-module `ρ.asModule` has the characteristic polynomial of
+`ρ g`. -/
+theorem charpoly_lsmul_asModule_of (ρ : Representation k G V) (g : G) :
+    (Algebra.lsmul k k ρ.asModule (MonoidAlgebra.of k G g)).charpoly = (ρ g).charpoly := by
+  rw [← ρ.asModuleEquiv.charpoly_conj]
+  congr 1
+  ext x
+  simp [LinearEquiv.conj_apply]
+  -- `ρ.asModuleEquiv : ρ.asModule ≃ₗ[k] V` is the identity of the type synonym `ρ.asModule`.
+  rfl
+
+end Field
 
 end Representation
