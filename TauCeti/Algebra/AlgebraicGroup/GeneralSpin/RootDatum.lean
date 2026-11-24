@@ -319,18 +319,6 @@ theorem two_mul_halfNegCoordinateSum (x : TypeDRoot n) :
   rw [halfNegCoordinateSum, negCoordinateSum_apply, one_dotProduct, hk, ← two_mul, ← mul_neg,
     Int.mul_ediv_cancel_left _ two_ne_zero]
 
-/-- `two_mul_halfNegCoordinateSum`, for the coroots of `SO_{2n}`. -/
-theorem two_mul_halfNegCoordinateSum_coroot (x : TypeDRoot n) :
-    2 * halfNegCoordinateSum x = negCoordinateSum n ((typeDClassicalRootDatum n).coroot x) := by
-  rw [typeDClassicalRootDatum_coroot]
-  exact two_mul_halfNegCoordinateSum n x
-
-/-- `two_mul_halfNegCoordinateSum`, for the roots of `SO_{2n}`. -/
-theorem two_mul_halfNegCoordinateSum_root (x : TypeDRoot n) :
-    2 * halfNegCoordinateSum x = negCoordinateSum n ((typeDClassicalRootDatum n).root x) := by
-  rw [typeDClassicalRootDatum_root]
-  exact two_mul_halfNegCoordinateSum n x
-
 end GeneralSpin
 
 open GeneralSpin
@@ -352,15 +340,17 @@ extended by the central cocharacter `ε₀∨`. Its roots are `±εᵢ ± εⱼ`
 `εᵢ∨ - εⱼ∨` and `±(εᵢ∨ + εⱼ∨ - ε₀∨)`. -/
 noncomputable def gspinEvenRootDatum :
     RootDatum (TypeDRoot n) ((Fin n → ℤ) × ℤ) ((Fin n → ℤ) × ℤ) :=
-  (typeDClassicalRootDatum n).extendCoroot (negCoordinateSum n) halfNegCoordinateSum
-    (two_mul_halfNegCoordinateSum_coroot n)
+  (typeDClassicalRootDatum n).extendCoroot (negCoordinateSum n) halfNegCoordinateSum fun x => by
+    rw [typeDClassicalRootDatum_coroot]
+    exact two_mul_halfNegCoordinateSum n x
 
 /-- **The root datum of `GSO₂ₙ`** on `X = (Fin n → ℤ) × ℤ`: the root datum of `SO_{2n}` extended
 by the multiplier `ε₀`. Its roots are `εᵢ - εⱼ` and `±(εᵢ + εⱼ - ε₀)` and its coroots are
 `±εᵢ∨ ± εⱼ∨`. -/
 noncomputable def gsoRootDatum : RootDatum (TypeDRoot n) ((Fin n → ℤ) × ℤ) ((Fin n → ℤ) × ℤ) :=
-  (typeDClassicalRootDatum n).extendRoot (negCoordinateSum n) halfNegCoordinateSum
-    (two_mul_halfNegCoordinateSum_root n)
+  (typeDClassicalRootDatum n).extendRoot (negCoordinateSum n) halfNegCoordinateSum fun x => by
+    rw [typeDClassicalRootDatum_root]
+    exact two_mul_halfNegCoordinateSum n x
 
 /-- The roots of `GSpin_{2n}` are the roots `±εᵢ ± εⱼ` of `SO_{2n}`, with `ε₀`-coordinate zero. -/
 @[simp]
