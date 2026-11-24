@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
 import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Slope
@@ -33,11 +34,17 @@ pair of critical points is born or dies, as in Cerf's local model `x³ / 3 - s x
   exactly two, both nondegenerate, for `t > t₀` close to `t₀`
   (`TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg`);
 * if the product is positive, the same holds with the two sides exchanged
-  (`TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`).
+  (`TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`);
+* the two critical points have **adjacent Morse indices**: if `k` is the Morse index of `f t₀` at
+  `x₀`, one of them has index `k + 1` and the other index `k`
+  (`TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg` and
+  `TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`).
 
 For the model `x³ / 3 - t x` at `(0, 0)` the third derivative is `2` and the parameter derivative
 of the differential is `-1`, so the product is `-2`: the two critical points `±√t` exist for
-`t > 0`.
+`t > 0`, a local maximum `-√t` of index `1` and a local minimum `√t` of index `0`. Adjacent indices
+are what the cancellation of the two born or dying critical points against each other in the Morse
+complex requires.
 
 The proof follows the critical locus. Choose a functional `ℓ` with `ℓ v = 1`. The map
 `Φ (t, x) = (d(f t)_x, ℓ x)` from `ℝ × E` to `E* × ℝ` has an invertible derivative at
@@ -57,18 +64,29 @@ symmetry of the Hessian, while `τ'(0) = 0`. Dividing by `s` and letting `s → 
 
 which is positive when the product above is negative. So `τ` has a fold at `0`, and the fold
 theorem `TauCeti.eventually_fold` for `τ(s) - t` shows that `τ` takes each value slightly above
-`t₀` exactly twice near `0`, and no value below `t₀`. That the two critical points are
-nondegenerate is `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`.
+`t₀` exactly twice near `0`, once on each side, and no value below `t₀`. That the two critical
+points are nondegenerate is `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`.
+
+Their Morse indices come from the Hessians along the curve. The path
+`s ↦ Hess(f τ(s))_{ξ(s)}` of symmetric forms has derivative `D³(f t₀)_{x₀} (v, ·, ·)` at `0`,
+since `τ'(0) = 0` and `ξ'(0) = v`, so `0` is a crossing whose kernel is the line through `v` and
+whose crossing form is `D³(f t₀)_{x₀} (v, v, v) ≠ 0` there. Its negative index is therefore `k + 1`
+on one side of `0` and `k` on the other
+(`ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span`), and the two critical points of
+`f t` lie on the curve on opposite sides of `0`.
 
 ## Main results
 
 * `TauCeti.exists_curve_fderiv_eq_zero`: the critical points of the family near a transverse
   degenerate critical point form a `C²` curve through it, with velocity `(0, v)` for a kernel
   vector `v` of the Hessian.
-* `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg`: a birth at a
-  birth–death point where the product is negative.
-* `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`: a death at a
-  birth–death point where the product is positive.
+* `TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg`: a birth at a birth–death
+  point where the product is negative, of two critical points of Morse indices `k + 1` and `k`.
+* `TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`: a death at a birth–death
+  point where the product is positive, of two critical points of Morse indices `k + 1` and `k`.
+* `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg` and
+  `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`: the same births and
+  deaths, counted.
 
 ## References
 
@@ -251,47 +269,42 @@ private theorem exists_pos_forall_mem_ball {c : ℝ → ℝ × E} {ℓ : StrongD
     fun hne ↦ (hr₁N hz).2 hne hy0⟩
 
 /-- **Two parameter values on the critical curve give two critical points.** Let `c` be a curve of
-critical points on `(-δ, δ)`, along which `ℓ` restricted to the space component increases at unit
-rate. Suppose that every critical point `y ∈ U` of `f s` is the point `c σ` for
-`σ = ℓ y - ℓ x ∈ (-δ, δ)`, and that the parameter component of `c` takes the value `s` on
-`(-δ, δ)` exactly at two points `x₁ ≠ x₂`, over `U`. Then `f s` has exactly two critical points
-in `U`. -/
-private theorem ncard_setOf_fderiv_eq_zero_eq_two {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
+critical points on `(-δ, δ)`. Suppose that every critical point `y ∈ U` of `f s` is the point
+`c σ` for `σ = ℓ y - ℓ x ∈ (-δ, δ)`, and that the parameter component of `c` takes the value `s`
+on `(-δ, δ)` exactly at `x₁` and `x₂`, over `U`. Then the critical points of `f s` in `U` are the
+space components of `c x₁` and `c x₂`. -/
+private theorem setOf_fderiv_eq_zero_eq_pair {c : ℝ → ℝ × E} {ℓ : StrongDual ℝ E}
     {U : Set E} {δ s x₁ x₂ : ℝ}
-    (hcrit : ∀ σ ∈ Ioo (-δ) δ, fderiv ℝ (f (c σ).1) (c σ).2 = 0 ∧ ℓ (c σ).2 = ℓ x + σ)
+    (hcrit : ∀ σ ∈ Ioo (-δ) δ, fderiv ℝ (f (c σ).1) (c σ).2 = 0)
     (hcurve : ∀ y ∈ U, fderiv ℝ (f s) y = 0 → ℓ y - ℓ x ∈ Ioo (-δ) δ ∧ c (ℓ y - ℓ x) = (s, y))
-    (hset : {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = {x₁, x₂}) (hne : x₁ ≠ x₂)
-    (h₁ : (c x₁).2 ∈ U) (h₂ : (c x₂).2 ∈ U) :
-    {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 := by
+    (hset : {σ ∈ Ioo (-δ) δ | (c σ).1 = s} = {x₁, x₂}) (h₁ : (c x₁).2 ∈ U)
+    (h₂ : (c x₂).2 ∈ U) :
+    {y ∈ U | fderiv ℝ (f s) y = 0} = {(c x₁).2, (c x₂).2} := by
   have hmem : ∀ σ ∈ ({x₁, x₂} : Set ℝ), σ ∈ Ioo (-δ) δ ∧ (c σ).1 = s := fun σ hσ ↦ by
     rw [← hset] at hσ
     exact hσ
-  have hpair : {y ∈ U | fderiv ℝ (f s) y = 0} = (fun σ ↦ (c σ).2) '' {x₁, x₂} := by
-    ext y
-    refine ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩
-    · obtain ⟨hσ, hcσ⟩ := hcurve y hy hy0
-      exact ⟨ℓ y - ℓ x, hset ▸ ⟨hσ, by simp [hcσ]⟩, by simp [hcσ]⟩
-    · rintro ⟨σ, hσ, rfl⟩
-      obtain ⟨hσI, hτσ⟩ := hmem σ hσ
-      refine ⟨?_, hτσ ▸ (hcrit σ hσI).1⟩
-      rcases hσ with rfl | rfl
-      exacts [h₁, h₂]
-  rw [hpair, Set.image_pair, Set.ncard_pair]
-  intro h
-  have h₁ := (hcrit x₁ (hmem x₁ (by simp)).1).2
-  rw [h, (hcrit x₂ (hmem x₂ (by simp)).1).2] at h₁
-  exact hne (by linarith)
+  refine Eq.trans ?_ (Set.image_pair (fun σ ↦ (c σ).2) x₁ x₂)
+  ext y
+  refine ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩
+  · obtain ⟨hσ, hcσ⟩ := hcurve y hy hy0
+    exact ⟨ℓ y - ℓ x, hset ▸ ⟨hσ, by simp [hcσ]⟩, by simp [hcσ]⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    obtain ⟨hσI, hτσ⟩ := hmem σ hσ
+    refine ⟨?_, hτσ ▸ hcrit σ hσI⟩
+    rcases hσ with rfl | rfl
+    exacts [h₁, h₂]
 
-/-- **Two critical points after the fold.** In the situation of
-`ncard_setOf_fderiv_eq_zero_eq_two`, suppose that for `s > t` close to `t` the parameter
-component of `c` takes the value `s` exactly twice on `(-δ₀, δ₀)` and exactly twice on
-`(-δ₁, δ₁)`, once on each side of `0`, where `δ₁ ≤ δ₀` and the curve stays over `ball x r` on
-`(-δ₁, δ₁)`. If the critical points in `ball x r` of `f s`, for `|s - t| < r`, are points `c σ`
-with `σ ∈ (-δ₀, δ₀)`, nondegenerate away from `(t, x)`, then for `s > t` close to `t` the function
-`f s` has exactly two critical points in `ball x r`, both nondegenerate. -/
-private theorem eventually_ncard_setOf_fderiv_eq_zero_eq_two {c : ℝ → ℝ × E}
+/-- **Two critical points after the fold.** In the situation of `setOf_fderiv_eq_zero_eq_pair`,
+suppose that for `s > t` close to `t` the parameter component of `c` takes the value `s` exactly
+twice on `(-δ₀, δ₀)` and exactly twice on `(-δ₁, δ₁)`, once on each side of `0`, where
+`δ₁ ≤ δ₀` and the curve stays over `ball x r` on `(-δ₁, δ₁)`. If the critical points in
+`ball x r` of `f s`, for `|s - t| < r`, are points `c σ` with `σ ∈ (-δ₀, δ₀)`, nondegenerate away
+from `(t, x)`, then for `s > t` close to `t` the critical points of `f s` in `ball x r` are the
+space components of `c σ₁` and `c σ₂` for some `σ₁ ∈ (-δ₁, 0)` and `σ₂ ∈ (0, δ₁)` with parameter
+components `s`, and they are nondegenerate. -/
+private theorem eventually_setOf_fderiv_eq_zero_eq_pair {c : ℝ → ℝ × E}
     {ℓ : StrongDual ℝ E} {δ₀ δ₁ r : ℝ} (hδ : δ₁ ≤ δ₀) (hr : 0 < r)
-    (hcrit : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 ∧ ℓ (c σ).2 = ℓ x + σ)
+    (hcrit : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0)
     (hcurve : ∀ s y, dist s t < r → y ∈ ball x r → fderiv ℝ (f s) y = 0 →
       ℓ y - ℓ x ∈ Ioo (-δ₀) δ₀ ∧ c (ℓ y - ℓ x) = (s, y) ∧
         ((s, y) ≠ (t, x) → IsNondegenerateCriticalPoint (f s) y))
@@ -300,7 +313,8 @@ private theorem eventually_ncard_setOf_fderiv_eq_zero_eq_two {c : ℝ → ℝ ×
       {σ ∈ Ioo (-δ₀) δ₀ | (c σ).1 = s} = {x₁, x₂})
     (h₁ : ∀ᶠ s in 𝓝 t, t < s → ∃ x₁ ∈ Ioo (-δ₁) 0, ∃ x₂ ∈ Ioo 0 δ₁,
       {σ ∈ Ioo (-δ₁) δ₁ | (c σ).1 = s} = {x₁, x₂}) :
-    ∀ᶠ s in 𝓝[>] t, {y ∈ ball x r | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
+    ∀ᶠ s in 𝓝[>] t, ∃ σ₁ ∈ Ioo (-δ₁) 0, ∃ σ₂ ∈ Ioo 0 δ₁, (c σ₁).1 = s ∧ (c σ₂).1 = s ∧
+      {y ∈ ball x r | fderiv ℝ (f s) y = 0} = {(c σ₁).2, (c σ₂).2} ∧
       ∀ y ∈ ball x r, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
   filter_upwards [nhdsWithin_le_nhds (h₀.and h₁), Ioo_mem_nhdsGT (show t < t + r by linarith)]
     with s ⟨h₀, h₁⟩ hs
@@ -319,11 +333,13 @@ private theorem eventually_ncard_setOf_fderiv_eq_zero_eq_two {c : ℝ → ℝ ×
   have he₂ : y₂ = x₂ := mem_singleton_iff.1 <| (hsub y₂ (by simp)).resolve_left fun h ↦ by
     linarith [hy₂.1, hx₁.2]
   subst he₁ he₂
-  refine ⟨ncard_setOf_fderiv_eq_zero_eq_two hcrit
-    (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left) hset₀
-    (by linarith [hy₁.2, hy₂.1]) (hU _ ⟨hy₁.1, by linarith [hy₁.1, hy₁.2]⟩)
-    (hU _ ⟨by linarith [hy₂.1, hy₂.2], hy₂.2⟩), fun y hy hy0 ↦
-      (hcurve s y hst hy hy0).2.2 fun h ↦ ?_⟩
+  have hval : ∀ σ ∈ ({y₁, y₂} : Set ℝ), (c σ).1 = s := fun σ hσ ↦ by
+    rw [← hset₁] at hσ
+    exact hσ.2
+  refine ⟨y₁, hy₁, y₂, hy₂, hval y₁ (by simp), hval y₂ (by simp),
+    setOf_fderiv_eq_zero_eq_pair hcrit (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left)
+      hset₀ (hU _ ⟨hy₁.1, by linarith [hy₁.1, hy₁.2]⟩) (hU _ ⟨by linarith [hy₂.1, hy₂.2], hy₂.2⟩),
+    fun y hy hy0 ↦ (hcurve s y hst hy hy0).2.2 fun h ↦ ?_⟩
   linarith [congrArg Prod.fst h, hs.1]
 
 /-! ### The critical curve through a birth–death point -/
@@ -417,16 +433,102 @@ theorem exists_curve_fderiv_eq_zero (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     rw [comp_apply, hΦz]
     exact P.left_inv hz
 
+/-! ### The Morse index along the critical curve -/
+
+/-- **The Morse index along the critical curve.** Let `c` be a curve through `(t, x)` with
+velocity `(0, v)` at `0`, where `x` is a critical point of `f t` at which the family is jointly
+`C³` and transverse, and `v` is a kernel vector of the Hessian of `f t` at `x` with
+`κ = D³(f t)_x (v, v, v) ≠ 0`. The Hessians at the points of `c` form a path of symmetric forms
+with derivative `D³(f t)_x (v, ·, ·)` at `0`, so `0` is a crossing whose kernel is the line through
+`v` and whose crossing form is `κ` there. With `k` the Morse index of `f t` at `x`, the points of
+`c` just after `0` therefore have Morse index `k + 1` if `κ < 0` and `k` if `κ > 0`, and the points
+just before `0` the other one: this holds on `(0, ε)` and on `(-ε, 0)` for some `ε > 0`. -/
+private theorem exists_pos_morseIndex_curve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
+    (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+    (hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0) {c : ℝ → ℝ × E}
+    (hc0 : c 0 = (t, x)) (hc' : HasDerivAt c (0, v) 0) :
+    ∃ ε > 0, (∀ σ ∈ Ioo 0 ε, morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
+      if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 1 else 0) ∧
+    ∀ σ ∈ Ioo (-ε) 0, morseIndex (f (c σ).1) (c σ).2 = morseIndex (f t) x +
+      if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 0 else 1 := by
+  have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
+  -- The Hessian `H (s, y)` of `f s` at `y`.
+  obtain ⟨H, hHdef⟩ : ∃ H : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ,
+      H = fun w ↦ fderiv ℝ (fderiv ℝ (f w.1)) w.2 := ⟨_, rfl⟩
+  have hG : ContDiffAt ℝ 2 (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x) :=
+    hf.fderiv_slice (m := 2) le_rfl
+  have hH : ContDiffAt ℝ 1 H (t, x) := by
+    subst hHdef
+    exact hG.fderiv_slice (m := 1) le_rfl
+  -- The path of Hessians `σ ↦ H (c σ)` and its derivative `D³(f t)_x (v, ·, ·)` at `0`.
+  have hV : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
+    have hH' : HasFDerivAt H (fderiv ℝ H (t, x)) (c 0) :=
+      hc0 ▸ (hH.differentiableAt one_ne_zero).hasFDerivAt
+    simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
+  have hκ' : fderiv ℝ H (t, x) (0, v) v v = fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v := by
+    rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
+      (hH.differentiableAt one_ne_zero)]
+    simp [hHdef]
+  have hV0 : (H ∘ c) 0 = fderiv ℝ (fderiv ℝ (f t)) x := by simp [hHdef, hc0]
+  have hmorse : ∀ σ, morseIndex (f (c σ).1) (c σ).2 =
+      sigNeg ((H ∘ c) σ).toBilinForm.toQuadraticMap := fun σ ↦ by
+    rw [morseIndex_def, hessianQuadraticForm_def, hHdef]
+    rfl
+  have hk : morseIndex (f t) x = sigNeg ((H ∘ c) 0).toBilinForm.toQuadraticMap := by
+    rw [hV0, morseIndex_def, hessianQuadraticForm_def]
+  -- At `0` the Hessian is symmetric, with kernel the line through `v`.
+  have hsymm : ((H ∘ c) 0).toBilinForm.IsSymm := by
+    rw [hV0]
+    exact ⟨fun u w ↦ fderiv_fderiv_apply_comm_of_uncurry hf2 u w⟩
+  have hker : ((H ∘ c) 0).ker = ℝ ∙ v := by
+    rw [hV0]
+    refine le_antisymm (fun w hw ↦ ?_)
+      ((Submodule.span_singleton_le_iff_mem _ _).2 (by simpa using hv))
+    obtain ⟨a, rfl⟩ :=
+      exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv (by simpa using hw)
+    exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self v)
+  -- The negative index jumps across this crossing by one, on the side given by the sign of `κ`.
+  obtain ⟨hR, hL⟩ := ContinuousLinearMap.eventually_sigNeg_eq_of_ker_eq_span hsymm hV hker
+    (by rwa [hκ'])
+  rw [hκ', ← hk] at hR hL
+  obtain ⟨ε₁, hε₁, hR⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hR
+  obtain ⟨ε₂, hε₂, hL⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1 hL
+  refine ⟨min ε₁ (-ε₂), lt_min hε₁ (neg_pos.2 hε₂), fun σ hσ ↦ (hmorse σ).trans
+    (hR ⟨hσ.1, hσ.2.trans_le (min_le_left _ _)⟩), fun σ hσ ↦ (hmorse σ).trans (hL ⟨?_, hσ.2⟩)⟩
+  linarith [hσ.1, min_le_right ε₁ (-ε₂)]
+
 /-! ### Births and deaths -/
 
-/-- **A pair of critical points is born at a birth–death point.** Let `f t` be a family of
-functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
-critical point of `f t` at which the family is transverse: the derivative of the parametrized
-differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at
-`x` with `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`. Then `x` has a neighbourhood `U` in which
-`x` is the only critical point of `f t`, `f s` has no critical point for `s < t` close to `t`,
-and `f s` has exactly two critical points, both nondegenerate, for `s > t` close to `t`. -/
-theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
+omit [FiniteDimensional ℝ E] in
+/-- Two nondegenerate critical points which are all the critical points of `g` in `U`, one of
+Morse index `k` and the other of index `k + 1` in one order or the other according to a
+proposition `p`, are a critical point of index `k + 1` and one of index `k`. -/
+private theorem exists_eq_pair_morseIndex {g : E → ℝ} {U : Set E} {y₁ y₂ : E} {k : ℕ}
+    {p : Prop} [Decidable p] (hset : {y ∈ U | fderiv ℝ g y = 0} = {y₁, y₂})
+    (hnd : ∀ y ∈ U, fderiv ℝ g y = 0 → IsNondegenerateCriticalPoint g y)
+    (hi₁ : morseIndex g y₁ = k + if p then 0 else 1)
+    (hi₂ : morseIndex g y₂ = k + if p then 1 else 0) :
+    ∃ z₁ z₂, {y ∈ U | fderiv ℝ g y = 0} = {z₁, z₂} ∧ IsNondegenerateCriticalPoint g z₁ ∧
+      IsNondegenerateCriticalPoint g z₂ ∧ morseIndex g z₁ = k + 1 ∧ morseIndex g z₂ = k := by
+  have h₁ := hset.symm.subset (by simp : y₁ ∈ ({y₁, y₂} : Set E))
+  have h₂ := hset.symm.subset (by simp : y₂ ∈ ({y₁, y₂} : Set E))
+  by_cases hp : p
+  · simp only [hp, ite_true, add_zero] at hi₁ hi₂
+    exact ⟨y₂, y₁, hset.trans (Set.pair_comm _ _), hnd _ h₂.1 h₂.2, hnd _ h₁.1 h₁.2, hi₂, hi₁⟩
+  · simp only [hp, ite_false, add_zero] at hi₁ hi₂
+    exact ⟨y₁, y₂, hset, hnd _ h₁.1 h₁.2, hnd _ h₂.1 h₂.2, hi₁, hi₂⟩
+
+/-- **A pair of critical points of adjacent indices is born at a birth–death point.** Let `f t` be
+a family of functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where
+`x` is a critical point of `f t` at which the family is transverse: the derivative of the
+parametrized differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of
+`f t` at `x` with `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`, and let `k` be the Morse index of
+`f t` at `x`. Then `x` has a neighbourhood `U` in which `x` is the only critical point of `f t`,
+`f s` has no critical point for `s < t` close to `t`, and for `s > t` close to `t` the critical
+points of `f s` in `U` are two nondegenerate critical points, of Morse indices `k + 1` and `k`. -/
+theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg
     (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
     (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
@@ -434,8 +536,10 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
       deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0) :
     ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
       (∀ᶠ s in 𝓝[<] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
-      ∀ᶠ s in 𝓝[>] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
-        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
+      ∀ᶠ s in 𝓝[>] t, ∃ y₁ y₂, {y ∈ U | fderiv ℝ (f s) y = 0} = {y₁, y₂} ∧
+        IsNondegenerateCriticalPoint (f s) y₁ ∧ IsNondegenerateCriticalPoint (f s) y₂ ∧
+        morseIndex (f s) y₁ = morseIndex (f t) x + 1 ∧
+          morseIndex (f s) y₂ = morseIndex (f t) x := by
   have hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0 := fun h ↦ by simp [h] at hsign
   have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
@@ -444,20 +548,20 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
   have hfold := eventually_fold_curve_fst hf hv hsign hc0 hcd hc' (hcrit.mono fun _ h ↦ h.1)
   obtain ⟨ε, hε, hεc⟩ := Metric.eventually_nhds_iff.1 hcrit
   obtain ⟨δ₀, hfold₀, hδ₀⟩ := (hfold.and (Ioo_mem_nhdsGT hε)).exists
-  have hcritI : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 ∧ ℓ (c σ).2 = ℓ x + σ :=
-    fun σ hσ ↦ hεc (by
-      rw [← mem_ball, Real.ball_zero_eq_Ioo]
-      exact Ioo_subset_Ioo (neg_le_neg hδ₀.2.le) hδ₀.2.le hσ)
+  have hcritI : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 := fun σ hσ ↦
+    (hεc ((Real.dist_0_eq_abs σ).trans_lt ((abs_lt.2 hσ).trans hδ₀.2))).1
   -- The critical points in a small ball lie on the curve.
   obtain ⟨r, hr, hcurve⟩ := exists_pos_forall_mem_ball hN hcN
     (eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero hf hs
       fun u hu hu3 ↦ eq_zero_of_fderiv_fderiv_fderiv_apply_eq_zero (hf.of_le (by norm_num)) hs
         hv hκ hu hu3) hδ₀.1
-  -- On `(-δ₁, δ₁)` the curve stays over the ball.
+  -- On `(-δ₁, δ₁)` the curve stays over the ball, and its Morse index is constant on each side.
   have hξ : Tendsto (fun σ ↦ (c σ).2) (𝓝 0) (𝓝 x) := by
     simpa [hc0] using hcd.continuousAt.snd.tendsto
   obtain ⟨ε₁, hε₁, hε₁U⟩ := Metric.eventually_nhds_iff.1 (hξ.eventually (ball_mem_nhds x hr))
-  obtain ⟨δ₁, hfold₁, hδ₁⟩ := (hfold.and (Ioo_mem_nhdsGT (lt_min hδ₀.1 hε₁))).exists
+  obtain ⟨ε₂, hε₂, hR, hL⟩ := exists_pos_morseIndex_curve hf hs hv hκ hc0 hc'
+  obtain ⟨δ₁, hfold₁, hδ₁⟩ :=
+    (hfold.and (Ioo_mem_nhdsGT (lt_min (lt_min hδ₀.1 hε₁) hε₂))).exists
   refine ⟨ball x r, ball_mem_nhds x hr, Set.ext fun y ↦ ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩, ?_, ?_⟩
   · -- At `t`, the only critical point in the ball is `x`, the point of the curve at `σ = 0`.
     obtain ⟨hσ, hcσ, -⟩ := hcurve t y (by simpa using hr) hy hy0
@@ -475,22 +579,29 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
       exact Ioo_subset_Ioo_right (by linarith) hs) hy hy0
     have := h₀.1 hs.2 _ hσ
     simp [hcσ] at this
-  · -- After `t`, there are exactly two, both nondegenerate.
-    exact eventually_ncard_setOf_fderiv_eq_zero_eq_two (hδ₁.2.le.trans (min_le_left _ _)) hr
-      hcritI hcurve (fun σ hσ ↦ hε₁U (by
-        have hδε : δ₁ ≤ ε₁ := hδ₁.2.le.trans (min_le_right _ _)
-        rw [← mem_ball, Real.ball_zero_eq_Ioo]
-        exact Ioo_subset_Ioo (neg_le_neg hδε) hδε hσ))
-      (hfold₀.mono fun _ h ↦ h.2.2) (hfold₁.mono fun _ h ↦ h.2.2)
+  · -- After `t`, there are exactly two, both nondegenerate, one on each side of `0` on the curve.
+    filter_upwards [eventually_setOf_fderiv_eq_zero_eq_pair
+      (hδ₁.2.le.trans ((min_le_left _ _).trans (min_le_left _ _))) hr hcritI hcurve
+      (fun σ hσ ↦ hε₁U ((Real.dist_0_eq_abs σ).trans_lt
+        ((abs_lt.2 hσ).trans (hδ₁.2.trans_le ((min_le_left _ _).trans (min_le_right _ _))))))
+      (hfold₀.mono fun _ h ↦ h.2.2) (hfold₁.mono fun _ h ↦ h.2.2)]
+      with s ⟨σ₁, hσ₁, σ₂, hσ₂, hs₁, hs₂, hset, hnd⟩
+    have hδε₂ : δ₁ ≤ ε₂ := hδ₁.2.le.trans (min_le_right _ _)
+    have hi₁ := hL σ₁ ⟨by linarith [hσ₁.1], hσ₁.2⟩
+    have hi₂ := hR σ₂ ⟨hσ₂.1, by linarith [hσ₂.2]⟩
+    rw [hs₁] at hi₁
+    rw [hs₂] at hi₂
+    exact exists_eq_pair_morseIndex hset hnd hi₁ hi₂
 
-/-- **A pair of critical points dies at a birth–death point.** Let `f t` be a family of
-functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
-critical point of `f t` at which the family is transverse: the derivative of the parametrized
-differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at
-`x` with `0 < D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v`. Then `x` has a neighbourhood `U` in which
-`x` is the only critical point of `f t`, `f s` has no critical point for `s > t` close to `t`,
-and `f s` has exactly two critical points, both nondegenerate, for `s < t` close to `t`. -/
-theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
+/-- **A pair of critical points of adjacent indices dies at a birth–death point.** Let `f t` be a
+family of functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x`
+is a critical point of `f t` at which the family is transverse: the derivative of the parametrized
+differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at `x`
+with `0 < D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v`, and let `k` be the Morse index of `f t` at `x`.
+Then `x` has a neighbourhood `U` in which `x` is the only critical point of `f t`, `f s` has no
+critical point for `s > t` close to `t`, and for `s < t` close to `t` the critical points of `f s`
+in `U` are two nondegenerate critical points, of Morse indices `k + 1` and `k`. -/
+theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos
     (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
     (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
@@ -498,8 +609,10 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
       deriv (fun s ↦ fderiv ℝ (f s) x) t v) :
     ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
       (∀ᶠ s in 𝓝[>] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
-      ∀ᶠ s in 𝓝[<] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
-        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
+      ∀ᶠ s in 𝓝[<] t, ∃ y₁ y₂, {y ∈ U | fderiv ℝ (f s) y = 0} = {y₁, y₂} ∧
+        IsNondegenerateCriticalPoint (f s) y₁ ∧ IsNondegenerateCriticalPoint (f s) y₂ ∧
+        morseIndex (f s) y₁ = morseIndex (f t) x + 1 ∧
+          morseIndex (f s) y₂ = morseIndex (f t) x := by
   -- Reverse the parameter: `g s = f (-s)` has a birth at `-t`.
   set g : ℝ → E → ℝ := fun s ↦ f (-s)
   have hgt : g (-t) = f t := by simp [g]
@@ -513,13 +626,72 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
     rw [surjective_fderiv_fderiv_iff (hg.of_le (by norm_num)), hgt, hderiv]
     have := (surjective_fderiv_fderiv_iff (hf.of_le (by norm_num))).1 hs
     simpa using this
-  obtain ⟨U, hU, h₀, h₁, h₂⟩ := exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg hg hgs
+  obtain ⟨U, hU, h₀, h₁, h₂⟩ := exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg hg hgs
     (by rwa [hgt]) (by rwa [hgt]) (by rw [hgt, hderiv]; simpa using hsign)
   refine ⟨U, hU, by rwa [hgt] at h₀, ?_, ?_⟩
   · filter_upwards [tendsto_neg_nhdsGT.eventually h₁] with s hs
     simpa [g] using hs
   · filter_upwards [tendsto_neg_nhdsLT.eventually h₂] with s hs
-    simpa [g] using hs
+    simpa [g, hgt] using hs
+
+omit [FiniteDimensional ℝ E] in
+/-- Two nondegenerate critical points of different Morse indices which are all the critical points
+of `g` in `U` are exactly two critical points, all nondegenerate. -/
+private theorem ncard_setOf_fderiv_eq_zero_eq_two {g : E → ℝ} {U : Set E} {y₁ y₂ : E} {k : ℕ}
+    (hset : {y ∈ U | fderiv ℝ g y = 0} = {y₁, y₂}) (hnd₁ : IsNondegenerateCriticalPoint g y₁)
+    (hnd₂ : IsNondegenerateCriticalPoint g y₂) (hi₁ : morseIndex g y₁ = k + 1)
+    (hi₂ : morseIndex g y₂ = k) :
+    {y ∈ U | fderiv ℝ g y = 0}.ncard = 2 ∧
+      ∀ y ∈ U, fderiv ℝ g y = 0 → IsNondegenerateCriticalPoint g y := by
+  refine ⟨hset ▸ Set.ncard_pair fun h ↦ by rw [h] at hi₁; omega, fun y hy hy0 ↦ ?_⟩
+  rcases (hset ▸ ⟨hy, hy0⟩ : y ∈ ({y₁, y₂} : Set E)) with rfl | rfl
+  exacts [hnd₁, hnd₂]
+
+/-- **A pair of critical points is born at a birth–death point.** Let `f t` be a family of
+functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
+critical point of `f t` at which the family is transverse: the derivative of the parametrized
+differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at
+`x` with `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`. Then `x` has a neighbourhood `U` in which
+`x` is the only critical point of `f t`, `f s` has no critical point for `s < t` close to `t`,
+and `f s` has exactly two critical points, both nondegenerate, for `s > t` close to `t`. Their
+Morse indices are computed in `exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg`. -/
+theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
+    (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
+    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+    (hsign : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
+      deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0) :
+    ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
+      (∀ᶠ s in 𝓝[<] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
+      ∀ᶠ s in 𝓝[>] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
+        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
+  obtain ⟨U, hU, h₀, h₁, h₂⟩ :=
+    exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg hf hs hc hv hsign
+  exact ⟨U, hU, h₀, h₁, h₂.mono fun _ ⟨_, _, hset, hnd₁, hnd₂, hi₁, hi₂⟩ ↦
+    ncard_setOf_fderiv_eq_zero_eq_two hset hnd₁ hnd₂ hi₁ hi₂⟩
+
+/-- **A pair of critical points dies at a birth–death point.** Let `f t` be a family of
+functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
+critical point of `f t` at which the family is transverse: the derivative of the parametrized
+differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at `x`
+with `0 < D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v`. Then `x` has a neighbourhood `U` in which `x` is
+the only critical point of `f t`, `f s` has no critical point for `s > t` close to `t`, and `f s`
+has exactly two critical points, both nondegenerate, for `s < t` close to `t`. Their Morse indices
+are computed in `exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`. -/
+theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
+    (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
+    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+    (hsign : 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
+      deriv (fun s ↦ fderiv ℝ (f s) x) t v) :
+    ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
+      (∀ᶠ s in 𝓝[>] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
+      ∀ᶠ s in 𝓝[<] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
+        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
+  obtain ⟨U, hU, h₀, h₁, h₂⟩ :=
+    exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos hf hs hc hv hsign
+  exact ⟨U, hU, h₀, h₁, h₂.mono fun _ ⟨_, _, hset, hnd₁, hnd₂, hi₁, hi₂⟩ ↦
+    ncard_setOf_fderiv_eq_zero_eq_two hset hnd₁ hnd₂ hi₁ hi₂⟩
 
 end FiniteDimensional
 

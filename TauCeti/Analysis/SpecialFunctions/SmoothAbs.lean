@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # A smooth approximation of the absolute value
 
 For a real parameter `η`, the function `TauCeti.smoothAbs η : t ↦ √(t ^ 2 + η ^ 2) - η` is the
-absolute value for `η = 0` and is smooth for `η ≠ 0`, with derivative `t / √(t ^ 2 + η ^ 2)` of
-absolute value at most `1`. For `η ≥ 0` it vanishes at `0`, lies between `0` and `|t|`, and is
-within `η` of `|t|`.
+absolute value for `η = 0` and is smooth for `η ≠ 0`, with derivative `t / √(t ^ 2 + η ^ 2)`
+wherever `t ^ 2 + η ^ 2 ≠ 0` (and absolute value at most `1` everywhere). For `η ≥ 0` it vanishes
+at `0`, lies between `0` and `|t|`, and is within `η` of `|t|`.
 
 Composing a smooth function `u` with `smoothAbs η` for `η > 0` gives smooth functions converging
 uniformly to `|u|` as `η → 0⁺`, with pointwise gradients
@@ -24,8 +26,9 @@ completion of smooth functions, with no larger energy than `u`.
 ## Main declarations
 
 * `TauCeti.smoothAbs`: the function `t ↦ √(t ^ 2 + η ^ 2) - η`.
-* `TauCeti.contDiff_smoothAbs`, `TauCeti.hasDerivAt_smoothAbs`: its smoothness and derivative for
-  `η ≠ 0`.
+* `TauCeti.contDiff_smoothAbs`: its smoothness for `η ≠ 0`.
+* `TauCeti.hasDerivAt_smoothAbs`, `TauCeti.deriv_smoothAbs`: its derivative wherever
+  `t ^ 2 + η ^ 2 ≠ 0`, and the unconditional `deriv` formula.
 * `TauCeti.abs_deriv_smoothAbs_le_one`, `TauCeti.lipschitzWith_smoothAbs`: derivative and
   Lipschitz bounds by `1`.
 * `TauCeti.abs_smoothAbs_sub_abs_le`: `smoothAbs η` is within `η` of the absolute value for `η ≥ 0`.
@@ -58,20 +61,26 @@ theorem smoothAbs_zero_right {η : ℝ} (hη : 0 ≤ η) : smoothAbs η 0 = 0 :=
 theorem contDiff_smoothAbs {η : ℝ} (hη : η ≠ 0) {n : WithTop ℕ∞} : ContDiff ℝ n (smoothAbs η) :=
   ((contDiff_id.pow 2).add contDiff_const).sqrt (fun t ↦ by positivity) |>.sub contDiff_const
 
-/-- For `η ≠ 0`, the derivative of `smoothAbs η` at `t` is `t / √(t² + η²)`. -/
-theorem hasDerivAt_smoothAbs {η : ℝ} (hη : η ≠ 0) (t : ℝ) :
+/-- Wherever `t² + η² ≠ 0`, the derivative of `smoothAbs η` at `t` is `t / √(t² + η²)`. -/
+theorem hasDerivAt_smoothAbs (η t : ℝ) (h : t ^ 2 + η ^ 2 ≠ 0) :
     HasDerivAt (smoothAbs η) (t / √(t ^ 2 + η ^ 2)) t := by
-  have h := (((hasDerivAt_pow 2 t).add_const (η ^ 2)).sqrt (by positivity)).sub_const η
-  convert h using 1
-  · ext x
-    rw [smoothAbs]
-  simp [mul_div_mul_left]
+  have h' := (Real.hasDerivAt_sqrt_sq_add (p := η ^ 2) t h).sub_const η
+  convert h' using 1
+  ext x
+  rw [smoothAbs]
 
-/-- For `η ≠ 0`, the derivative of the approximation has its explicit quotient formula. -/
+/-- The derivative of `smoothAbs η` at `t` is `t / √(t² + η²)` for all `η` and `t`, including at
+`η = t = 0` where both sides vanish (`smoothAbs 0 = abs` is not differentiable at `0`). -/
 @[simp]
-theorem deriv_smoothAbs {η : ℝ} (hη : η ≠ 0) (t : ℝ) :
-    deriv (smoothAbs η) t = t / √(t ^ 2 + η ^ 2) :=
-  (hasDerivAt_smoothAbs hη t).deriv
+theorem deriv_smoothAbs (η t : ℝ) :
+    deriv (smoothAbs η) t = t / √(t ^ 2 + η ^ 2) := by
+  by_cases h : t ^ 2 + η ^ 2 = 0
+  · obtain ⟨rfl, rfl⟩ : t = 0 ∧ η = 0 := by
+      simpa [add_eq_zero_iff_of_nonneg (sq_nonneg t) (sq_nonneg η)] using h
+    have h0 : smoothAbs 0 = abs := funext smoothAbs_zero_left
+    rw [h0, zero_div]
+    exact deriv_abs_zero
+  · exact (hasDerivAt_smoothAbs η t h).deriv
 
 /-- For every parameter, `smoothAbs η` is continuous, including at parameter zero. -/
 @[fun_prop]
@@ -88,15 +97,15 @@ theorem lipschitzWith_smoothAbs (η : ℝ) : LipschitzWith 1 (smoothAbs η) := b
     rw [hzero]
     exact lipschitzWith_one_norm
   · apply lipschitzWith_of_nnNorm_deriv_le
-      (fun t ↦ (hasDerivAt_smoothAbs hη t).differentiableAt)
+      (fun t ↦ (hasDerivAt_smoothAbs η t (by positivity)).differentiableAt)
     intro t
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one, deriv_smoothAbs hη]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one, deriv_smoothAbs]
     exact Real.abs_div_sqrt_sq_add_le_one (sq_nonneg η) t
 
 /-- The derivative of the approximation has absolute value at most one for every parameter. -/
 theorem abs_deriv_smoothAbs_le_one (η t : ℝ) : |deriv (smoothAbs η) t| ≤ 1 := by
-  simpa only [Real.norm_eq_abs, NNReal.coe_one] using
-    (norm_deriv_le_of_lipschitz (x₀ := t) (lipschitzWith_smoothAbs η))
+  rw [deriv_smoothAbs]
+  exact Real.abs_div_sqrt_sq_add_le_one (sq_nonneg η) t
 
 /-- The approximation is even in its argument. -/
 @[simp]

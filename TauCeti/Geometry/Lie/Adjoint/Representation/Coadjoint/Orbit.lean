@@ -19,10 +19,10 @@ Let `G` be a real Lie group with finite-dimensional boundaryless model and Lie a
 `𝔤 = GroupLieAlgebra I G`, and fix `ν ∈ 𝔤*`. Its coadjoint stabilizer
 `G_ν = {g | Ad*_g ν = ν}` is a closed subgroup
 (`TauCeti.Lie.isClosed_stabilizer_coadjointRepresentation`), so the coset space `G ⧸ G_ν` is a
-smooth manifold, the homogeneous space of `Subgroup.quotientChartedSpaceOfIsClosed`, on which `G`
-acts smoothly by left multiplication. This file installs that structure as instances: the coadjoint
-orbit of `ν` with its intrinsic homogeneous smooth structure, whose points are cosets rather than
-covectors.
+Hausdorff smooth manifold, the homogeneous space of `Subgroup.quotientChartedSpaceOfIsClosed`, on
+which `G` acts smoothly by left multiplication. This file installs that structure as instances:
+the coadjoint orbit of `ν` with its intrinsic homogeneous smooth structure, whose points are cosets
+rather than covectors.
 
 The vertical directions of the projection `π : G → G ⧸ G_ν` at `g` are the left translate
 `d(L_g)(𝔤_ν)` of the infinitesimal stabilizer `𝔤_ν = {ξ | ⁅ξ, ν⁆ = 0}`, the Lie algebra of `G_ν`.
@@ -96,6 +96,15 @@ instance instContMDiffSMulQuotientStabilizer :
       𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) ∞ G
       (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
   Subgroup.contMDiffSMul_quotientOfIsClosed (isClosed_stabilizer_coadjointRepresentation I ν)
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- A coadjoint orbit `G ⧸ G_ν` is Hausdorff, as the quotient of a topological group by the closed
+subgroup `G_ν`. -/
+instance instT2SpaceQuotientStabilizer :
+    T2Space (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :=
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have := isClosed_stabilizer_coadjointRepresentation I ν
+  QuotientGroup.instT2Space
 
 variable (ν)
 

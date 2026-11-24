@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.IsLocalHomeomorph
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Orbit-space charts from slices

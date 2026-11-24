@@ -30,6 +30,9 @@ Rescaling an expanded series `f (X ^ d)` by `a` is expansion of the series resca
 
 * `TauCeti.LaurentSeries.coeff_rescale`: rescaling multiplies coefficients by powers of `a`.
 * `TauCeti.LaurentSeries.rescale_single`: rescaling a monomial.
+* `TauCeti.LaurentSeries.orderTop_rescale` and `TauCeti.LaurentSeries.leadingCoeff_rescale`:
+  rescaling preserves the order and multiplies the leading coefficient by `a` to the power of the
+  order.
 * `TauCeti.LaurentSeries.rescale_coe`: compatibility with rescaling power series.
 * `TauCeti.LaurentSeries.rescale_expand`: compatibility with exponent expansion `X ↦ X ^ d`.
 * `TauCeti.LaurentSeries.rescale_expand_of_pow_eq_one`: rescaling by a `d`-th root of unity
@@ -89,6 +92,36 @@ theorem rescale_coe (a : Rˣ) (f : R⟦X⟧) :
   · simp
   · rw [PowerSeries.coeff_rescale, ← Units.val_pow_eq_pow_val,
       ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp hn)]
+
+/-- Rescaling by a unit does not change which coefficients vanish. -/
+@[simp]
+theorem support_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).support = f.support := by
+  ext n
+  simp [Units.mul_right_eq_zero]
+
+/-- Rescaling by a unit preserves the order. -/
+@[simp]
+theorem orderTop_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).orderTop = f.orderTop := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · rw [map_zero]
+  rw [orderTop_of_ne_zero hf,
+    orderTop_of_ne_zero ((map_ne_zero_iff _ (rescale a).injective).mpr hf)]
+  simp only [support_rescale]
+
+/-- Rescaling by a unit preserves the order. -/
+@[simp]
+theorem order_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).order = f.order := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · rw [map_zero]
+  have hf' : rescale a f ≠ 0 := (map_ne_zero_iff _ (rescale a).injective).mpr hf
+  exact WithTop.coe_injective (by
+    rw [order_eq_orderTop_of_ne_zero hf', order_eq_orderTop_of_ne_zero hf, orderTop_rescale])
+
+/-- Rescaling by `a` multiplies the leading coefficient by `a` to the power of the order. -/
+@[simp]
+theorem leadingCoeff_rescale (a : Rˣ) (f : R⸨X⸩) :
+    (rescale a f).leadingCoeff = ↑(a ^ f.order) * f.leadingCoeff := by
+  rw [leadingCoeff_eq, leadingCoeff_eq, order_rescale, coeff_rescale]
 
 /-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ d`:
 `f ((a X) ^ d) = (f (a ^ d X)) (X ^ d)`. -/
