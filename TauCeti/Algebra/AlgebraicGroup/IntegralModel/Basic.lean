@@ -130,7 +130,10 @@ theorem toBialgHom_genericFiberIso_hom_comp (f : Hom 𝒢 𝒢') :
         (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K)
           (FiniteTypeCommHopfAlgCat.toBialgHom f.left)) =
       FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom := by
-  simpa using congrArg FiniteTypeCommHopfAlgCat.toBialgHom (CostructuredArrow.w f)
+  simpa only [CostructuredArrow.mk_left, CostructuredArrow.mk_hom_eq_self,
+    FiniteTypeCommHopfAlgCat.toBialgHom_comp, FiniteTypeCommHopfAlgCat.baseChangeFunctor_map,
+    FiniteTypeCommHopfAlgCat.toBialgHom_baseChangeMap] using
+    congrArg FiniteTypeCommHopfAlgCat.toBialgHom (CostructuredArrow.w f)
 
 /-- On pure tensors `1 ⊗ a`, a morphism of models is compatible with the generic-fiber
 isomorphisms. -/
@@ -139,7 +142,8 @@ lemma genericFiberIso_hom_one_tmul (f : Hom 𝒢 𝒢') (a : 𝒢.coord) :
     FiniteTypeCommHopfAlgCat.toBialgHom 𝒢'.genericFiberIso.hom
         (1 ⊗ₜ[O] FiniteTypeCommHopfAlgCat.toBialgHom (H := 𝒢.coord) (K := 𝒢'.coord) f.left a) =
       FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom (1 ⊗ₜ[O] a) := by
-  simpa using DFunLike.congr_fun (toBialgHom_genericFiberIso_hom_comp f) (1 ⊗ₜ[O] a)
+  simpa only [CostructuredArrow.mk_left, BialgHom.comp_apply, Bialgebra.TensorProduct.map_tmul,
+    BialgHom.id_apply] using DFunLike.congr_fun (toBialgHom_genericFiberIso_hom_comp f) (1 ⊗ₜ[O] a)
 
 /-- When `O → K` is injective, there is at most one morphism between two smooth models. -/
 instance instSubsingleton [FaithfulSMul O K] : Subsingleton (Hom 𝒢 𝒢') :=
