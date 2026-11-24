@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.AscentCharZero
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent.CharZero
 
 /-!
 # A faithful completely reducible representation makes a group reductive

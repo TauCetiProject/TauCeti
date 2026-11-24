@@ -8,10 +8,9 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.RingTheory.Jacobson.BaseChange
+import TauCeti.Algebra.Coalgebra.Comodule.Convolution.BaseChange
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
-import Mathlib.LinearAlgebra.Dual.BaseChange
 
 /-!
 # Complete reducibility of a comodule ascends in characteristic zero
@@ -29,7 +28,8 @@ is a semisimple algebra. In characteristic zero `K ⊗[k] B` is again semisimple
 `K ⊗[k] B`-submodules are exactly its subcomodules: a subcomodule is stable under the base
 changes of the `C^∨`-action, and conversely a subspace stable under them is stable under every
 `K`-linear functional on `K ⊗[k] C`, because the base changes of the `k`-linear functionals on
-`C` separate the points of `K ⊗[k] C` and a functional acts through the matrix coefficients.
+`C` separate the points of `K ⊗[k] C` and a functional acts through the matrix coefficients
+(`TauCeti.Comodule.convolutionAction_mem_of_forall_baseChangeDual`).
 
 Characteristic zero is used only for the semisimplicity of `K ⊗[k] B`. Over an imperfect field
 the statement fails: a purely inseparable extension field `B` of `k`, as a comodule over the dual
@@ -40,8 +40,6 @@ The descent direction, for any nonzero commutative algebra, is
 
 ## Main results
 
-* `TauCeti.Comodule.convolutionAction_baseChangeDual`: the base change of a functional acts on
-  `K ⊗[k] M` as the base change of its action on `M`.
 * `TauCeti.Comodule.IsCompletelyReducible.baseChange`: complete reducibility of a comodule
   ascends along field extensions in characteristic zero.
 
@@ -60,87 +58,9 @@ namespace TauCeti.Comodule
 universe u v w x
 
 variable {k : Type u} {C : Type v} {M : Type w} (K : Type x)
-variable [Field k] [AddCommGroup C] [Module k C]
+variable [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+variable [AddCommGroup M] [Module k M] [Comodule k C M]
 variable [Field K] [Algebra k K]
-
-/-- The base change of a `k`-linear functional on a coalgebra, as an element of the convolution
-algebra of the base-changed coalgebra. -/
-noncomputable def baseChangeDual (f : WithConv (C →ₗ[k] k)) :
-    WithConv (K ⊗[k] C →ₗ[K] K) :=
-  WithConv.toConv (Module.Dual.baseChange K f.ofConv)
-
-/-- The base change of a functional evaluates on a pure tensor `a ⊗ c` to `f c • a`. -/
-@[simp]
-theorem baseChangeDual_tmul (f : WithConv (C →ₗ[k] k)) (a : K) (c : C) :
-    (baseChangeDual K f).ofConv (a ⊗ₜ[k] c) = f.ofConv c • a := by
-  simp [baseChangeDual]
-
-/-- The base changes of the `k`-linear functionals on `C` separate the points of `K ⊗[k] C`. -/
-theorem eq_zero_of_forall_baseChangeDual_eq_zero {x : K ⊗[k] C}
-    (hx : ∀ f : WithConv (C →ₗ[k] k), (baseChangeDual K f).ofConv x = 0) : x = 0 := by
-  let b := Module.Basis.ofVectorSpace k C
-  have hrepr (y : K ⊗[k] C) (i) : (b.baseChange K).repr y i =
-      (baseChangeDual K (WithConv.toConv (b.coord i))).ofConv y := by
-    induction y with
-    | add y z hy hz => simp only [map_add, Finsupp.add_apply, hy, hz]
-    | tmul a c => simp
-  apply (b.baseChange K).repr.injective
-  ext i
-  rw [hrepr, hx, map_zero, Finsupp.zero_apply]
-
-variable [Coalgebra k C] [AddCommGroup M] [Module k M] [Comodule k C M]
-
-/-- The base change of a functional acts on the base-changed comodule as the base change of its
-action on the original comodule. -/
-theorem convolutionAction_baseChangeDual (f : WithConv (C →ₗ[k] k)) :
-    letI := Comodule.baseChange (R := k) (H := C) (M := M) K
-    convolutionAction (R := K) (C := K ⊗[k] C) (M := K ⊗[k] M) (baseChangeDual K f) =
-      (convolutionAction (R := k) (C := C) (M := M) f).baseChange K := by
-  let _ := Comodule.baseChange (R := k) (H := C) (M := M) K
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro a m
-  rw [convolutionAction_apply, LinearMap.baseChange_tmul, convolutionAction_apply,
-    baseChange_coact, baseChangeCoact_tmul]
-  induction coact (R := k) (C := C) m with
-  | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-  | tmul n c =>
-    simp [LinearMap.tensorComponent_def, TensorProduct.smul_tmul']
-
-/-- A subspace of `K ⊗[k] M` which is stable under the base changes of the `k`-linear
-functionals on `C` is stable under every `K`-linear functional on `K ⊗[k] C`. -/
-theorem convolutionAction_mem_of_forall_baseChangeDual (P : Submodule K (K ⊗[k] M))
-    (hP : ∀ f : WithConv (C →ₗ[k] k), ∀ v ∈ P,
-      (convolutionAction (R := k) (C := C) (M := M) f).baseChange K v ∈ P)
-    (g : WithConv (K ⊗[k] C →ₗ[K] K)) {v : K ⊗[k] M} (hv : v ∈ P) :
-    letI := Comodule.baseChange (R := k) (H := C) (M := M) K
-    convolutionAction (R := K) (C := K ⊗[k] C) (M := K ⊗[k] M) g v ∈ P := by
-  let _ := Comodule.baseChange (R := k) (H := C) (M := M) K
-  by_contra hg
-  obtain ⟨φ, hφ, hφP⟩ := P.exists_dual_map_eq_bot_of_notMem hg inferInstance
-  apply hφ
-  have hc : matrixCoefficient (R := K) (C := K ⊗[k] C) φ v = 0 := by
-    apply eq_zero_of_forall_baseChangeDual_eq_zero K
-    intro f
-    rw [LinearMap.apply_matrixCoefficient, coactComponent_apply, ← convolutionAction_apply,
-      convolutionAction_baseChangeDual]
-    rw [← LinearMap.le_ker_iff_map] at hφP
-    exact hφP (hP f v hv)
-  have := LinearMap.apply_matrixCoefficient (R := K) (C := K ⊗[k] C) g.ofConv φ v
-  rw [hc, map_zero, coactComponent_apply, ← convolutionAction_apply] at this
-  exact this.symm
-
-/-- Complements transfer between submodules over two rings acting on the same additive group,
-when the submodules have the same carriers. -/
-private theorem isCompl_of_coe_eq {R₁ R₂ V : Type*} [Ring R₁] [Ring R₂] [AddCommGroup V]
-    [Module R₁ V] [Module R₂ V] {p₁ q₁ : Submodule R₁ V} {p₂ q₂ : Submodule R₂ V}
-    (hp : (p₁ : Set V) = p₂) (hq : (q₁ : Set V) = q₂) (h : IsCompl p₁ q₁) : IsCompl p₂ q₂ := by
-  have hp' (x : V) : x ∈ p₁ ↔ x ∈ p₂ := by rw [← SetLike.mem_coe, hp, SetLike.mem_coe]
-  have hq' (x : V) : x ∈ q₁ ↔ x ∈ q₂ := by rw [← SetLike.mem_coe, hq, SetLike.mem_coe]
-  refine ⟨Submodule.disjoint_def.2 fun x hx hx' ↦ ?_,
-    Submodule.codisjoint_iff_exists_add_eq.2 fun x ↦ ?_⟩
-  · exact Submodule.disjoint_def.1 h.disjoint x ((hp' x).2 hx) ((hq' x).2 hx')
-  · obtain ⟨y, z, hy, hz, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 h.codisjoint x
-    exact ⟨y, z, (hp' y).1 hy, (hq' z).1 hz, rfl⟩
 
 section CharZero
 
@@ -157,6 +77,8 @@ private theorem isSemisimpleModule_actionRange (h : IsCompletelyReducible k C M)
   have hD := (isCompletelyReducible_iff_isSemisimpleModule (R := k) (C := C) (V := M)).1 h
   let σ := (convolutionAction (R := k) (C := C) (M := M)).rangeRestrict.toRingHom
   have : RingHomSurjective σ := ⟨AlgHom.rangeRestrict_surjective _⟩
+  -- `σ f` is `convolutionAction f` as an element of the range, and both scalar actions are
+  -- `Module.compHom` actions evaluating that endomorphism, so they agree by definition.
   let l : M →ₛₗ[σ] M :=
     { toFun := id
       map_add' := fun _ _ ↦ rfl
@@ -236,11 +158,15 @@ private theorem IsCompletelyReducible.baseChange_of_finite [Module.Finite k M]
         | add r s hr hs => rw [map_add, LinearMap.add_apply]; exact W.add_mem hr hs
         | tmul a s =>
           obtain ⟨_, f, rfl⟩ := s
-          change a • (convolutionAction (R := k) (C := C) (M := M) f).baseChange K v ∈ W
+          rw [baseChangeAction_tmul, LinearMap.smul_apply]
+          simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
           rw [← convolutionAction_baseChangeDual]
           exact (W.restrictScalars K).smul_mem a (W.smul_mem (baseChangeDual K f) hv) }
   obtain ⟨Q', hQ'⟩ := ComplementedLattice.exists_isCompl W'
-  exact ⟨toConv Q', isCompl_of_coe_eq (p₁ := W') (q₁ := Q') rfl rfl hQ'⟩
+  refine ⟨toConv Q', ?_⟩
+  -- `W'` and `W`, and `Q'` and `toConv Q'`, have the same carriers.
+  rw [← Submodule.isCompl_restrictScalars_iff ℤ] at hQ' ⊢
+  exact hQ'
 
 /-- **Complete reducibility of a comodule ascends along field extensions in characteristic
 zero.** If `M` is a completely reducible comodule over a coalgebra `C` over a field `k` of
