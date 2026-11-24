@@ -33,8 +33,7 @@ theorem nsmul_succ_zero_lt_toLex_of_pos {α β : Type*} [AddMonoid α] [Preorder
     (b : β) (n : ℕ) :
     n • succ (0 : α ×ₗ β) < toLex (a, b) := by
   have hfst : (ofLex (n • succ (0 : α ×ₗ β))).1 = 0 := by
-    change AddMonoidHom.fst α β (ofLexAddEquiv (α × β) (n • succ (0 : α ×ₗ β))) = 0
-    rw [map_nsmul, map_nsmul]
+    rw [← coe_ofLexAddEquiv (α × β), map_nsmul, ← AddMonoidHom.coe_fst, map_nsmul]
     simp
   exact Prod.Lex.lt_iff.2 (.inl (by simpa [hfst] using ha))
 
