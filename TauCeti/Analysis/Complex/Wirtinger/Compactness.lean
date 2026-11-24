@@ -9,7 +9,6 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Sobolev.Morrey.Basic
-import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -185,12 +184,10 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_s
   refine exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le hp hU hu
     (fun _ hKU _ ↦ ⟨A, fun n z hz ↦ hA n z (hKU hz)⟩) fun K hKU hK ↦
       ⟨volume K ^ (p : ℝ≥0∞).toReal⁻¹ * ENNReal.ofReal M + B, ?_, fun n ↦ ?_⟩
-  · exact ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-      hK.measure_lt_top.ne) ENNReal.ofReal_ne_top, ENNReal.coe_ne_top⟩
+  · simp [ENNReal.mul_ne_top, hK.measure_lt_top.ne]
   -- Split `\bar∂(u n)` on `K` as the bounded `\bar∂(u n) - g n` plus `g n`.
-  exact eLpNorm_restrict_le_of_norm_sub_le (by exact_mod_cast (one_lt_two.trans hp).le)
-    hK.measurableSet (((hu n).conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp)
-      1).continuousOn.mono hKU |>.aestronglyMeasurable hK.measurableSet)
+  exact eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le
+    (by exact_mod_cast (one_lt_two.trans hp).le) hU hK.measurableSet hKU (hu n)
     (fun z hz ↦ hM n z (hKU hz))
     ((eLpNorm_mono_measure _ (Measure.restrict_mono hKU le_rfl)).trans (hB n))
 

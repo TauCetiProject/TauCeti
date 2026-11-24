@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.Compactness
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.Monic.RootBound
-import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -42,7 +41,7 @@ exponent of `W^{1, p_m}` in the plane.
 The roots bound the coefficients and the zeroth-order terms of the equation
 (`Multiset.norm_esymm_le`), so `\bar∂ b_j` differs from the remainder by a uniformly bounded
 term. It is therefore bounded in `Lᵖ` on each compact subset of `U`
-(`TauCeti.eLpNorm_restrict_le_of_norm_sub_le`), and each coefficient sequence is
+(`TauCeti.eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le`), and each coefficient sequence is
 precompact by `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`.
 A common subsequence for the finitely many coefficients is extracted one coefficient at a time
 (`TauCeti.extraction_forall_mem_finset`).
@@ -145,9 +144,9 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ�
         ∀ n, eLpNorm (fun z ↦ conjWirtingerDeriv (b (φ n) j) z 1) p (volume.restrict K) ≤ A := by
       obtain ⟨B, hB⟩ := hr K hKU hK
       refine ⟨_, by simp [ENNReal.mul_ne_top, hK.measure_lt_top.ne], fun n ↦
-        eLpNorm_restrict_le_of_norm_sub_le (by exact_mod_cast one_le_two.trans hp.le)
-          hK.measurableSet ((((hb (φ n) _ hj).conjWirtingerDeriv_apply_of_isOpen hU (m := 0)
-            (by simp) 1).continuousOn.mono hKU).aestronglyMeasurable hK.measurableSet) (fun z hz ↦
+        eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le
+          (by exact_mod_cast one_le_two.trans hp.le) hU hK.measurableSet hKU (hb (φ n) _ hj)
+          (fun z hz ↦
             norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z (hKU hz))
               (hbR (φ n) _ hj z (hKU hz)) (hρ (φ n) z (hKU hz)) (hν (φ n) z (hKU hz))
               (hμ (φ n) z (hKU hz))) (hB (φ n) j hj)⟩

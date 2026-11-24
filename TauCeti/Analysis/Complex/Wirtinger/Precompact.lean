@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Precompactness of bounded maps with `\bar∂` bounded in `Lᵖ`, `p > 2`
+# Uniform `W^{1,p}` and Hölder bounds for bounded maps with `\bar∂` bounded in `Lᵖ`, `p > 2`
 
 Let `2 < p < ∞` and let `U ⊆ ℂ` be open. This file proves that a family of smooth maps
 `u : ℂ → F` into a complex Hilbert space which is uniformly bounded on `U`, and whose
@@ -44,6 +44,8 @@ distant points (`HolderOnWith.of_dist_lt_of_dist_le`).
 
 ## Main results
 
+* `TauCeti.eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le`: an `Lᵖ(K)` bound on `\bar∂u`
+  from `‖\bar∂u - g‖ ≤ M` on `K` and an `Lᵖ(K)` bound on `g`.
 * `TauCeti.exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le`: the uniform interior
   `W^{1,p}` bound.
 * `TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`: the uniform Hölder bound on
@@ -64,6 +66,19 @@ open MeasureTheory Metric Set Filter
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **`Lᵖ` bounds on `\bar∂` up to a bounded error.** Let `1 ≤ p`, let `U ⊆ ℂ` be open and let
+`K ⊆ U` be measurable. If `u` is smooth on `U`, `‖\bar∂u - g‖ ≤ M` on `K` and
+`‖g‖_{Lᵖ(K)} ≤ B`, then `‖\bar∂u‖_{Lᵖ(K)} ≤ |K|^(1/p) M + B`. -/
+theorem eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {p : ℝ≥0∞} (hp : 1 ≤ p) {U K : Set ℂ} (hU : IsOpen U)
+    (hK : MeasurableSet K) (hKU : K ⊆ U) {u g : ℂ → E} (hu : ContDiffOn ℝ ∞ u U) {M : ℝ}
+    {B : ℝ≥0} (hM : ∀ z ∈ K, ‖conjWirtingerDeriv u z 1 - g z‖ ≤ M)
+    (hB : eLpNorm g p (volume.restrict K) ≤ B) :
+    eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict K) ≤
+      volume K ^ p.toReal⁻¹ * ENNReal.ofReal M + B :=
+  eLpNorm_restrict_le_of_norm_sub_le hp hK ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0)
+    (by simp) 1).continuousOn.mono hKU |>.aestronglyMeasurable hK) hM hB
 
 /-- **Uniform interior `W^{1,p}` bounds from `\bar∂` bounds.** Let `1 < p < ∞`, let `U ⊆ ℂ` be
 open and `K ⊆ U` compact, and let `A, M, B ≥ 0`. There is a constant `N` such that every map `u`
@@ -95,9 +110,8 @@ theorem exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0�
   rw [ENNReal.coe_toNNReal (by simp [ENNReal.mul_ne_top, hS])]
   have hderiv : eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V) ≤
       S * ENNReal.ofReal M + B :=
-    eLpNorm_restrict_le_of_norm_sub_le hp.le hV.measurableSet
-      ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono hVU
-        |>.aestronglyMeasurable hV.measurableSet) (fun z hz ↦ hM z (hVU hz))
+    eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le hp.le hU hV.measurableSet hVU hu
+      (fun z hz ↦ hM z (hVU hz))
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)).trans hB)
   refine (hC₁ u (hu.mono hVU)).trans ?_
   gcongr
