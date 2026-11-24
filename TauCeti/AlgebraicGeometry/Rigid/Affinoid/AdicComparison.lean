@@ -10,9 +10,10 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.AddCommG
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Site
 public import TauCeti.RingTheory.Affinoid.Subdomain.Rational.Basic
 public import TauCeti.RingTheory.Affinoid.TopologicallyFiniteType
+import Mathlib.CategoryTheory.Limits.Preserves.Lattice
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
-import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
 /-!
@@ -50,8 +51,6 @@ hypothesis is involved in the comparison itself.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.maximalSpectrumToSpa_mem_spaBasicOpen_iff`: a classical point lies
-  in `R(T/s)` exactly when `|s(x)| ≠ 0` and `|t(x)| ≤ |s(x)|` for every `t ∈ T`.
 * `TauCeti.AffinoidSubdomain.quasiIso_cechAugmentation_ofSpaRationalOpen_iff`: the augmented
   Čech complex of the classical coordinate presheaf for the traces of a family of rational opens
   is exact if and only if the augmented Čech complex of the adic structure presheaf for the family
@@ -75,29 +74,6 @@ universe u
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type u} [NormedCommRing A] [IsUltrametricDist A] [NormedAlgebra K A] [CompleteSpace A]
-
-namespace ValuationSpectrum
-
-/-- **The classical points of a rational subset.** For an affinoid algebra `A`, the classical
-point of a maximal ideal `x` lies in `R(T/s) ⊆ Spa(A, A°)` exactly when `|s(x)| ≠ 0` and
-`|t(x)| ≤ |s(x)|` for every `t ∈ T`. -/
-theorem maximalSpectrumToSpa_mem_spaBasicOpen_iff (hA : IsAffinoidAlgebra K A) (T : Finset A)
-    (s : A) (x : MaximalSpectrum A) :
-    maximalSpectrumToSpa K hA.isTopologicallyFiniteType x ∈
-        spaBasicOpen (powerBoundedSubring A) T s ↔
-      pointNorm K x s ≠ 0 ∧ ∀ t ∈ T, pointNorm K x t ≤ pointNorm K x s := by
-  let := Ideal.Quotient.field x.asIdeal
-  have h (f : A) : pointNorm K x f =
-      spectralNorm K (A ⧸ x.asIdeal) (Ideal.Quotient.mk x.asIdeal f) :=
-    pointNorm_eq_spectralNorm (ψ := Ideal.Quotient.mkₐ K x.asIdeal)
-      (fun a ha ↦ (Ideal.Quotient.mkₐ_eq_mk K x.asIdeal ▸
-        Ideal.Quotient.eq_zero_iff_mem.mpr ha :)) f
-  rw [mem_spaBasicOpen, mem_rationalSubset_iff]
-  simp only [maximalSpectrumToSpa_vle_iff, map_zero, spectralNorm_zero, Subtype.coe_prop,
-    true_and, h]
-  rw [and_comm, ← h, ← (pointNorm_nonneg (K := K) s).lt_iff_ne', not_le]
-
-end ValuationSpectrum
 
 open ValuationSpectrum
 
@@ -129,7 +105,7 @@ private theorem range_enum (T : Finset A) : Set.range (enum T) = T := by
   ext a
   refine ⟨?_, fun ha ↦ ⟨T.equivFin ⟨a, ha⟩, by simp [enum]⟩⟩
   rintro ⟨i, rfl⟩
-  exact (T.equivFin.symm i).2
+  exact (T.equivFin.symm i).property
 
 omit [NormedCommRing A] [IsUltrametricDist A] [CompleteSpace A] in
 private theorem insert_range_enum {T : Finset A} {s : A} (hs : s ∈ T) :
@@ -214,9 +190,9 @@ private theorem preimage_spaBasicOpen (T : Finset A) (s : A) :
         (spaBasicOpen (powerBoundedSubring A) T s : Set (spa (powerBoundedSubring A))) =
       rationalDomain K s (enum T) := by
   ext x
-  rw [Set.mem_preimage, SetLike.mem_coe, maximalSpectrumToSpa_mem_spaBasicOpen_iff hA.out,
+  rw [Set.mem_preimage, SetLike.mem_coe, maximalSpectrumToSpa_mem_spaBasicOpen_iff,
     mem_rationalDomain]
-  refine and_congr_right fun _ ↦ ⟨fun h i ↦ h _ (T.equivFin.symm i).2, fun h t ht ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h i ↦ h _ (T.equivFin.symm i).property, fun h t ht ↦ ?_⟩
   simpa [enum] using h (T.equivFin ⟨t, ht⟩)
 
 /-- **The classical trace of a rational open.** The classical points of a rational open `V` of
@@ -251,6 +227,7 @@ theorem ofSpaRationalOpen_mono {V W : Opens (spa (powerBoundedSubring A))}
 
 /-- The classical trace of an intersection of rational opens is the intersection of the
 classical traces. -/
+@[simp]
 theorem ofSpaRationalOpen_inf {V W : Opens (spa (powerBoundedSubring A))}
     (hV : V ∈ spaRationalOpens (powerBoundedSubring A))
     (hW : W ∈ spaRationalOpens (powerBoundedSubring A))
@@ -463,26 +440,12 @@ private noncomputable instance [IsHuberRing A] : SemilatticeInf (RatOpen A) :=
 private noncomputable instance [IsHuberRing A] : OrderTop (RatOpen A) :=
   Subtype.orderTop (top_mem_spaRationalOpens _)
 
-/-- A map of meet-semilattices with top preserving finite meets preserves the finite products
-`f (a 0) × ⋯ × f (a n)` of the members of a family. -/
-private theorem isIso_piComparison {α β : Type*} [SemilatticeInf α] [OrderTop α]
-    [SemilatticeInf β] [OrderTop β] (g : InfTopHom α β) {ι : Type*} (f : ι → α) {J : Type*}
-    [Finite J] (a : J → ι) :
-    IsIso (piComparison (OrderHomClass.mono g).functor fun j ↦ f (a j)) := by
-  classical
-  have := Fintype.ofFinite J
-  refine ⟨homOfLE ?_, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
-  simp only [Monotone.functor_obj]
-  rw [CompleteLattice.finite_product_eq_finset_image_inf f a,
-    CompleteLattice.finite_product_eq_finset_image_inf (fun i ↦ g (f i)) a, map_finset_inf]
-  rfl
-
 /-- The sections of the presentation limit, as an abelian group, are the values of
 `presentationLimitAddCommGrpPresheaf`. -/
 private noncomputable def adicIso (V : Set.Iic (⊤ : Opens (spa (powerBoundedSubring A)))) :
-    (Ab').obj ((F).obj (presentationLimit (P := P) (powerBoundedSubring A) V.1)) ≅
+    (Ab').obj ((F).obj (presentationLimit (P := P) (powerBoundedSubring A) V.val)) ≅
       (presentationLimitAddCommGrpPresheaf P (powerBoundedSubring A) ⊤).obj (Opposite.op V) :=
-  (presentationLimitAddCommGrpPresheafObjEquiv P (powerBoundedSubring A) V).symm.toAddCommGrpIso
+  eqToIso (presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ P (powerBoundedSubring A) V).symm
 
 omit [CompleteSpace A] in
 private theorem adicIso_naturality
@@ -490,16 +453,7 @@ private theorem adicIso_naturality
     (Ab').map ((F).map (presentationLimitMap (P := P) (leOfHom h))) ≫ (adicIso P W).hom =
       (adicIso P V).hom ≫
         (presentationLimitAddCommGrpPresheaf P (powerBoundedSubring A) ⊤).map h.op := by
-  ext x
-  apply (presentationLimitAddCommGrpPresheafObjEquiv P (powerBoundedSubring A) W).injective
-  rw [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply, AddCommGrpCat.hom_comp,
-    AddMonoidHom.comp_apply, presentationLimitAddCommGrpPresheafObjEquiv_map_apply]
-  have e (X Y : AddCommGrpCat) (e : X ≃+ Y) (x : X) : e.toAddCommGrpIso.hom.hom x = e x := rfl
-  rw [adicIso, adicIso]
-  -- The objects in the goal are images of `presentationLimit` under forgetful functors, equal to
-  -- the domains of the equivalences only up to unfolding, so these rewrites need `erw`.
-  erw [e, e, AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
-  rfl
+  simp [adicIso, presentationLimitAddCommGrpPresheaf_map_eq_forget₂]
 
 section Huber
 
@@ -508,14 +462,14 @@ variable [IsHuberRing A]
 variable (K) in
 /-- Taking classical traces preserves finite intersections and the whole space. -/
 private noncomputable def traceHom : InfTopHom (RatOpen A) (AffinoidSubdomain K A) where
-  toFun V := ofSpaRationalOpen V.2
-  map_inf' V W := ofSpaRationalOpen_inf V.2 W.2 _
+  toFun V := ofSpaRationalOpen V.property
+  map_inf' V W := ofSpaRationalOpen_inf V.property W.property _
   map_top' := ofSpaRationalOpen_top _
 
 /-- The inclusion of the rational opens into all opens. -/
 private noncomputable def inclHom :
     InfTopHom (RatOpen A) (Set.Iic (⊤ : Opens (spa (powerBoundedSubring A)))) where
-  toFun V := ⟨V.1, Set.mem_Iic.2 le_top⟩
+  toFun V := ⟨V.val, Set.mem_Iic.2 le_top⟩
   map_inf' _ _ := rfl
   map_top' := rfl
 
@@ -523,20 +477,20 @@ private noncomputable def inclHom :
 `Spa(A, A°)`, the classical coordinate presheaf of the traces and the adic structure presheaf
 are naturally isomorphic as presheaves of abelian groups. -/
 private noncomputable def addCommGrpIso :
-    (OrderHomClass.mono (traceHom K (A := A))).functor.op ⋙ presheaf ⋙ Ab ≅
-      (OrderHomClass.mono (inclHom (A := A))).functor.op ⋙
+    (OrderHom.ofClass (traceHom K (A := A))).toFunctor.op ⋙ presheaf ⋙ Ab ≅
+      (OrderHom.ofClass (inclHom (A := A))).toFunctor.op ⋙
         presentationLimitAddCommGrpPresheaf P (powerBoundedSubring A) ⊤ :=
-  NatIso.ofComponents (fun V ↦ (Ab').mapIso (sectionsIso (K := K) P V.unop.2) ≪≫
+  NatIso.ofComponents (fun V ↦ (Ab').mapIso (sectionsIso (K := K) P V.unop.property) ≪≫
       adicIso P (inclHom V.unop))
     fun {V W} f ↦ by
-      have hcl : ((OrderHomClass.mono (traceHom K (A := A))).functor.op ⋙ presheaf ⋙ Ab).map f =
+      have hcl : ((OrderHom.ofClass (traceHom K (A := A))).toFunctor.op ⋙ presheaf ⋙ Ab).map f =
           (Ab').map (CommRingCat.ofHom (restrict (ofSpaRationalOpen_mono (K := K)
-            (hV := V.unop.2) (hW := W.unop.2) (leOfHom f.unop))).toRingHom) := rfl
+            (hV := V.unop.property) (hW := W.unop.property) (leOfHom f.unop))).toRingHom) := rfl
       have N₁ := congrArg (Ab').map
-        (sectionsIso_hom_naturality (K := K) P V.unop.2 W.unop.2 (leOfHom f.unop))
+        (sectionsIso_hom_naturality (K := K) P V.unop.property W.unop.property (leOfHom f.unop))
       rw [Functor.map_comp, Functor.map_comp] at N₁
       have N₂ := adicIso_naturality P
-        ((OrderHomClass.mono (inclHom (A := A))).functor.map f.unop)
+        ((OrderHom.ofClass (inclHom (A := A))).toFunctor.map f.unop)
       rw [hcl]
       exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) N₁.symm).trans
         ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) N₂).trans (Category.assoc _ _ _).symm)))
@@ -560,7 +514,7 @@ theorem quasiIso_cechAugmentation_ofSpaRationalOpen_iff {ι : Type u}
         isTerminalTop (presentationLimitAddCommGrpPresheaf P (powerBoundedSubring A) ⊤)) := by
   have := IsTateRing.of_normedAlgebra K A
   let U : ι → RatOpen A := fun i ↦ ⟨V i, hV i⟩
-  have htop : (OrderHomClass.mono (traceHom K (A := A))).functor.obj ⊤ = ⊤ :=
+  have htop : (OrderHom.ofClass (traceHom K (A := A))).toFunctor.obj ⊤ = ⊤ :=
     map_top (traceHom K (A := A))
   -- The classical complex is taken for the terminal object `⊤`, the transport along
   -- `traceHom` for its value at `⊤`; these agree, and terminality is a proposition.
@@ -573,12 +527,12 @@ theorem quasiIso_cechAugmentation_ofSpaRationalOpen_iff {ι : Type u}
     rw [Subsingleton.elim hT hT']
   refine (hterm htop.symm isTerminalTop (isTerminalTop.ofIso (eqToIso htop.symm))).trans ?_
   refine (quasiIso_cechAugmentation_op_comp_iff
-    (OrderHomClass.mono (traceHom K (A := A))).functor U (presheaf ⋙ Ab)
-    (fun _ _ ↦ isIso_piComparison _ _ _) isTerminalTop _).symm.trans ?_
+    (OrderHom.ofClass (traceHom K (A := A))).toFunctor U (presheaf ⋙ Ab)
+    (fun _ _ ↦ inferInstance) isTerminalTop _).symm.trans ?_
   refine (quasiIso_cechAugmentation_iff_of_iso U isTerminalTop _
     (addCommGrpIso (K := K) P)).trans ?_
-  exact quasiIso_cechAugmentation_op_comp_iff (OrderHomClass.mono (inclHom (A := A))).functor U
-    _ (fun _ _ ↦ isIso_piComparison _ _ _) isTerminalTop isTerminalTop
+  exact quasiIso_cechAugmentation_op_comp_iff (OrderHom.ofClass (inclHom (A := A))).toFunctor U
+    _ (fun _ _ ↦ inferInstance) isTerminalTop isTerminalTop
 
 end AffinoidSubdomain
 

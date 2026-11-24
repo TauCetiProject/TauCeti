@@ -77,7 +77,7 @@ theorem quasiIso_cechAugmentation_of_span_eq_top {T : Finset A} (hT : T.Nonempty
   -- `U t` is the classical trace of the rational open `R(T/t)`.
   have hUV : U = fun t ↦ ofSpaRationalOpen (K := K) (hV t) :=
     funext fun t ↦ ext fun x ↦ by
-      rw [hU, mem_ofSpaRationalOpen, maximalSpectrumToSpa_mem_spaBasicOpen_iff hA.out]
+      rw [hU, mem_ofSpaRationalOpen, maximalSpectrumToSpa_mem_spaBasicOpen_iff]
   rw [hUV, quasiIso_cechAugmentation_ofSpaRationalOpen_iff P hV]
   have h := quasiIso_cechAugmentation_inf_spaBasicOpen_of_span_eq_top P P.le_powerBoundedSubring
     (fun _ ha ↦ mem_powerBoundedSubring.mp ha) hT hspan (top_mem_spaRationalOpens _)
