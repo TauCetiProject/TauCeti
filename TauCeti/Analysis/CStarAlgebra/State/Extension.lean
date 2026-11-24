@@ -52,8 +52,9 @@ state `λ + a ↦ λ + φ a` of `Unitization ℂ A`
 (`PositiveContinuousLinearMap.unitization`), which is pure when `φ` is, since the states of the
 unitization restricting to `φ` form a face with one point. Extend it along the injective unital
 star homomorphism `Unitization.starMap f` and restrict the extension to `B`. The restriction is a
-state because restriction to `A` does not lower its norm below `‖φ‖ = 1`, and it is pure when the
-extension is, because a convex decomposition of it extends to one of the extension.
+state: it is positive with norm at most `1`, and its norm is at least `‖φ‖ = 1` because restricting
+it further to `A` gives `φ` and restriction does not increase norms. It is pure when the extension
+is, because a convex decomposition of it extends to one of the extension.
 
 Pure states are the extreme points `extremePoints ℝ (stateSpace A)` of the state space.
 
