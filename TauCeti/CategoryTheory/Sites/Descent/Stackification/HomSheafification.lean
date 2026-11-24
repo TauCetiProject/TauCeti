@@ -126,13 +126,6 @@ def toSheafifySections : (evaluation _ _).obj (op (Over.mk (𝟙 U))) ⟶ sheafi
 lemma toSheafifySections_app (P : (Over U)ᵒᵖ ⥤ Type v') :
     (toSheafifySections J U).app P = (toSheafify (J.over U) P).app (op (Over.mk (𝟙 U))) := (rfl)
 
-/-- The sections over the terminal object of the sheafification of the terminal presheaf form a
-subsingleton, since `sheafifySections J U` preserves the terminal object. -/
-instance subsingleton_sheafifySections_obj_tensorUnit :
-    Subsingleton ((sheafifySections J U).obj (𝟙_ ((Over U)ᵒᵖ ⥤ Type v'))) :=
-  have : Subsingleton (𝟙_ (Type v')) := inferInstanceAs (Subsingleton PUnit)
-  (Functor.Monoidal.εIso (sheafifySections J U)).toEquiv.symm.subsingleton
-
 end
 
 /-- The fibre over `U` of the Hom-sheafification of `F`: its objects are those of `F` over `U`,
@@ -176,20 +169,23 @@ lemma μ_toSheafifySections {P Q : (Over U)ᵒᵖ ⥤ Type v'} (x : P.obj (op (O
     μ (sheafifySections J U) P Q ((toSheafifySections J U).app P x,
       (toSheafifySections J U).app Q y) =
       (toSheafifySections J U).app (P ⊗ Q) ((x, y) : (P ⊗ Q).obj (op (Over.mk (𝟙 U)))) := by
-  set G := sheafifySections J U
-  set η := toSheafifySections J U
-  set z : (P ⊗ Q).obj (op (Over.mk (𝟙 U))) := (x, y)
-  have h₁ := ConcreteCategory.congr_hom (Functor.OplaxMonoidal.δ_fst G P Q) (η.app (P ⊗ Q) z)
-  have h₂ := ConcreteCategory.congr_hom (Functor.OplaxMonoidal.δ_snd G P Q) (η.app (P ⊗ Q) z)
-  have n₁ := ConcreteCategory.congr_hom (η.naturality (CartesianMonoidalCategory.fst P Q)) z
-  have n₂ := ConcreteCategory.congr_hom (η.naturality (CartesianMonoidalCategory.snd P Q)) z
-  have := ConcreteCategory.congr_hom (Functor.Monoidal.δ_μ G P Q) (η.app (P ⊗ Q) z)
-  simp only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] at h₁ h₂ n₁ n₂ this
-  rw [← this]
-  congr 1
-  refine Prod.ext ?_ ?_
-  · exact (h₁.trans n₁.symm).symm
-  · exact (h₂.trans n₂.symm).symm
+  -- Evaluation at the terminal object preserves finite products, so `toSheafifySections J U` is
+  -- a monoidal natural transformation (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`), and
+  -- the monoidal structure of evaluation is the identity on pairs.
+  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
+  have hδ : δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
+    apply CartesianMonoidalCategory.hom_ext
+    · exact (Functor.OplaxMonoidal.δ_fst _ P Q).trans (Category.id_comp _).symm
+    · exact (Functor.OplaxMonoidal.δ_snd _ P Q).trans (Category.id_comp _).symm
+  have hμ : μ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
+    have h := Functor.Monoidal.μ_δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q
+    rw [hδ] at h
+    exact (Category.comp_id _).symm.trans h
+  have := ConcreteCategory.congr_hom (NatTrans.IsMonoidal.tensor (τ := toSheafifySections J U) P Q)
+    (show P.obj (op (Over.mk (𝟙 U))) × Q.obj (op (Over.mk (𝟙 U))) from (x, y))
+  simp only [evaluation_obj_obj, Monoidal.tensorObj_obj, hμ, toSheafifySections_app,
+    ConcreteCategory.comp_apply] at this
+  exact this.symm
 
 /-- The morphisms of the fibre of the Hom-sheafification are the sections over the terminal
 object of the sheafified presheaves of morphisms of `F`. -/
@@ -250,9 +246,14 @@ lemma Fiber.homMk_comp {M N P : Fiber J F U}
 /-- The morphism given by the identity local morphism is the identity. -/
 lemma Fiber.homMk_id (M : Fiber J F U) : Fiber.homMk (𝟙 _) = 𝟙 M := by
   ext
-  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply,
-    Subsingleton.elim (ε (sheafifySections J U) PUnit.unit)
-      ((toSheafifySections J U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit)]
+  -- `toSheafifySections J U` is compatible with the units, as a monoidal natural transformation
+  -- (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`).
+  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
+  have hε : ε (sheafifySections J U) PUnit.unit =
+      (toSheafifySections J U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit :=
+    (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := toSheafifySections J U))
+      PUnit.unit).symm
+  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply, hε]
   exact (congrArg ((toSheafifySections J U).app _)
     (presheafHomId_app_apply M.obj _ PUnit.unit)).symm.trans
     (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality (presheafHomId M.obj)) _)
