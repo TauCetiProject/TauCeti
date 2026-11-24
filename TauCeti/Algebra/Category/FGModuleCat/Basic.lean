@@ -12,6 +12,8 @@ public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+
 /-!
 # Finitely generated modules
 
@@ -130,11 +132,8 @@ theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_fst {R : Type u} [Ring R]
   have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
     preservesBinaryBiproduct_of_preservesBinaryCoproduct _
   apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
-  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
-      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.fst = biprod.fst := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
   rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
-    Iso.trans_inv, Category.assoc, h]
+    Iso.trans_inv, Category.assoc, Functor.mapBiprod_inv_map_fst]
   -- The forgetful functor sends `X` to `X.obj` and `FGModuleCat.ofHom f` to `ModuleCat.ofHom f`
   -- definitionally, so Mathlib's projection lemma closes the goal up to that unfolding.
   exact ModuleCat.biprodIsoProd_inv_comp_fst _ _
@@ -148,11 +147,8 @@ theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_snd {R : Type u} [Ring R]
   have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
     preservesBinaryBiproduct_of_preservesBinaryCoproduct _
   apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
-  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
-      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.snd = biprod.snd := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
   rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
-    Iso.trans_inv, Category.assoc, h]
+    Iso.trans_inv, Category.assoc, Functor.mapBiprod_inv_map_snd]
   -- As for `biprodIsoProd_inv_comp_fst`.
   exact ModuleCat.biprodIsoProd_inv_comp_snd _ _
 
