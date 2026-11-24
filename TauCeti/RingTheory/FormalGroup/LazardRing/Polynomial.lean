@@ -161,15 +161,15 @@ variable {R : Type*} [CommRing R]
 same as families of elements indexed by the generators: `φ` corresponds to `n ↦ φ xₙ`. -/
 def homEquiv : (LazardRing →+* R) ≃ (ℕ+ → R) where
   toFun φ n := φ (generator n)
-  invFun v := (MvPolynomial.homEquiv.symm v).comp mvPolynomialEquiv.symm.toRingEquiv.toRingHom
+  invFun v := (MvPolynomial.eval₂Hom (Int.castRingHom R) v).comp
+    (mvPolynomialEquiv.symm : LazardRing →+* MvPolynomial ℕ+ ℤ)
   left_inv φ := by
-    have h : (fun n ↦ φ (generator n)) = MvPolynomial.homEquiv
-        (φ.comp mvPolynomialEquiv.toRingEquiv.toRingHom) := by
-      ext n
-      simp [MvPolynomial.homEquiv]
+    have h : MvPolynomial.eval₂Hom (Int.castRingHom R) (fun n ↦ φ (generator n)) =
+        φ.comp (mvPolynomialEquiv : MvPolynomial ℕ+ ℤ →+* LazardRing) :=
+      MvPolynomial.ringHom_ext (fun _ ↦ by simp) (fun _ ↦ by simp)
     ext x
     simp [h]
-  right_inv v := funext fun n ↦ by simp [MvPolynomial.homEquiv]
+  right_inv v := funext fun n ↦ by simp
 
 @[simp]
 theorem homEquiv_apply (φ : LazardRing →+* R) (n : ℕ+) : homEquiv φ n = φ (generator n) :=
