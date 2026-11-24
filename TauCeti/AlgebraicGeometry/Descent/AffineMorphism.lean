@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # The descended scheme of a descent datum on an affine morphism

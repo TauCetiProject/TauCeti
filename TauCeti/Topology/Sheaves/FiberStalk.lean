@@ -118,7 +118,7 @@ theorem fiberStalkMap_naturality (f : X ⟶ Y) {F G : X.Presheaf C} (α : F ⟶ 
   -- only after unfolding `stalkFunctor`, so `rw` and `simp` cannot reassociate them; the
   -- associativity steps are therefore chained as terms.
   refine ((Category.assoc _ _ _).trans (congrArg _ hG)).trans
-    ((TauCeti.Topology.stalkPushforward_naturality f α x).trans ?_)
+    ((stalkPushforward_naturality f α x).trans ?_)
   exact ((Category.assoc _ _ _).trans ((congrArg _
     (Pi.map_π (fun x' : { x' : X // f x' = f x } ↦ (stalkFunctor C x'.val).map α) ⟨x, rfl⟩)).trans
     ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (stalkFunctor C x).map α) hF)))).symm

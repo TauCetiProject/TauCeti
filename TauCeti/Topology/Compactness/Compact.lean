@@ -19,7 +19,8 @@ import TauCeti.Topology.Separation.InvFunOn
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
 ultrafilters of families eventually in a compact set, families whose values tend to the
 cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it. Maps converging
+valid near each point of a compact set to one constant valid on all of it, also for eventual
+bounds along a filter (`IsCompact.exists_eventually_forall_le_of_forall`). Maps converging
 continuously on a compact set eventually map it into any open set containing the image under the
 limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
 `C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
@@ -71,6 +72,22 @@ theorem _root_.IsCompact.exists_forall_of_forall_exists_eventually {α : Type*}
     exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
   · obtain ⟨a, ha⟩ := h y hy
     exact ⟨_, ha, a, fun _ h ↦ h⟩
+
+/-- **A locally eventual bound is uniform over a compact set.** If near each point of a compact
+set `C`, within `C`, the functions `g n` are eventually bounded above by a constant, then they are
+eventually bounded above on all of `C` by one constant. -/
+theorem _root_.IsCompact.exists_eventually_forall_le_of_forall {ι α : Type*} [Preorder α]
+    [IsDirected α (· ≤ ·)] [Nonempty α] {l : Filter ι} {g : ι → X → α} {C : Set X}
+    (hC : IsCompact C) (h : ∀ x ∈ C, ∃ s ∈ 𝓝[C] x, ∃ M, ∀ᶠ n in l, ∀ y ∈ s, g n y ≤ M) :
+    ∃ M, ∀ᶠ n in l, ∀ y ∈ C, g n y ≤ M := by
+  refine hC.induction_on (p := fun s ↦ ∃ M, ∀ᶠ n in l, ∀ y ∈ s, g n y ≤ M)
+    ⟨Classical.arbitrary α, by simp⟩
+    (fun s t hst ⟨M, hM⟩ ↦ ⟨M, hM.mono fun n hn y hy ↦ hn y (hst hy)⟩)
+    (fun s t ⟨M, hM⟩ ⟨M', hM'⟩ ↦ ?_) h
+  obtain ⟨N, hMN, hM'N⟩ := directed_of (· ≤ ·) M M'
+  refine ⟨N, ?_⟩
+  filter_upwards [hM, hM'] with n hn hn' y hy
+  exacts [hy.elim (fun hy ↦ (hn y hy).trans hMN) fun hy ↦ (hn' y hy).trans hM'N]
 
 /-- **Connected components of a compact set are compact.** The connected component of a compact
 set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
@@ -268,6 +285,18 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
     isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
+
+/-- The preimage of a compact set `K` under an inducing map `j` is compact when `K` lies in the
+union of the range of `j` and an open set `V` meeting no point of `K` in that range: it is the
+preimage of the compact set `K ∖ V`. -/
+theorem _root_.Topology.IsInducing.isCompact_preimage_of_subset_union {Y : Type*}
+    [TopologicalSpace Y] {j : X → Y} (hj : IsInducing j) {V : Set Y} (hV : IsOpen V) {K : Set Y}
+    (hK : IsCompact K) (hKV : K ⊆ range j ∪ V) (hdisj : Disjoint (K ∩ range j) V) :
+    IsCompact (j ⁻¹' K) := by
+  have h : j ⁻¹' (K \ V) = j ⁻¹' K :=
+    Set.ext fun z ↦ and_iff_left_of_imp fun hz ↦ hdisj.notMem_of_mem_left ⟨hz, mem_range_self z⟩
+  exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
+    (hKV hz).resolve_right hz').2 (hK.diff hV)
 
 /-- In a compact Hausdorff space `X`, the punctured space `{x : X // x ≠ x₀}` is compact if and
 only if `x₀` is an isolated point (`{x₀}` is open). -/

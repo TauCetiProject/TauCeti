@@ -16,6 +16,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Matrix.Hermitian
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -48,6 +49,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
+* `OrthonormalBasis.isSymm_toMatrix_hessianOperator`: for a `C²` function its matrix in an
+  orthonormal basis is symmetric.
 * `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
   standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
@@ -228,6 +231,14 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
     _ = ⟪(hessianOperator f x : E → E) w, v⟫_ℝ :=
       (inner_hessianOperator_left f x w v).symm
     _ = ⟪v, (hessianOperator f x : E → E) w⟫_ℝ := real_inner_comm _ _
+
+/-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
+symmetric, since the Hessian operator is self-adjoint. -/
+theorem _root_.OrthonormalBasis.isSymm_toMatrix_hessianOperator {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap).IsSymm :=
+  Matrix.isHermitian_iff_isSymm.1
+    ((LinearMap.isHermitian_toMatrix_iff b).2 hf.isSelfAdjoint_hessianOperator.isSymmetric)
 
 /-- The gradient is differentiable at a twice continuously differentiable point, with derivative
 the Hessian operator. -/

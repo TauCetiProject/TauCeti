@@ -51,8 +51,12 @@ kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
 and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
-preservation hypothesis. Commutative squares into the images under a functor combine into
-squares through lifts into and descents out of binary biproducts
+preservation hypothesis. For a functor preserving a binary biproduct, the inverse of
+`Functor.mapBiprod` followed by the images of the projections is the pair of projections
+(`CategoryTheory.Functor.mapBiprod_inv_map_fst`, `CategoryTheory.Functor.mapBiprod_inv_map_snd`),
+and morphisms into `F.obj (X ⊞ Y)` are determined by their composites with the images of the
+projections (`CategoryTheory.Functor.map_biprod_hom_ext`). Commutative squares into the images
+under a functor combine into squares through lifts into and descents out of binary biproducts
 (`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
@@ -648,6 +652,37 @@ theorem biprod_desc_comp_map {A₂ A₃ A₄ : D} {B₂ B₃ B₄ : C} [HasBinar
       biprod.inr_desc, h']
 
 end Comparison
+
+section MapBiprod
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [HasZeroMorphisms D] (F : C ⥤ D) [F.PreservesZeroMorphisms] (X Y : C) [HasBinaryBiproduct X Y]
+  [PreservesBinaryBiproduct X Y F]
+
+/-- The inverse of the comparison `F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y`, followed by the image of the
+first projection, is the first projection. -/
+@[reassoc]
+theorem mapBiprod_inv_map_fst : (F.mapBiprod X Y).inv ≫ F.map biprod.fst = biprod.fst := by
+  rw [Iso.inv_comp_eq, mapBiprod_hom, biprod.lift_fst]
+
+/-- The inverse of the comparison `F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y`, followed by the image of the
+second projection, is the second projection. -/
+@[reassoc]
+theorem mapBiprod_inv_map_snd : (F.mapBiprod X Y).inv ≫ F.map biprod.snd = biprod.snd := by
+  rw [Iso.inv_comp_eq, mapBiprod_hom, biprod.lift_snd]
+
+variable {F X Y} in
+/-- For a functor preserving the biproduct `X ⊞ Y`, two morphisms into `F.obj (X ⊞ Y)` agree if
+their composites with the images of both projections agree. -/
+theorem map_biprod_hom_ext {Z : D} {f g : Z ⟶ F.obj (X ⊞ Y)}
+    (h₁ : f ≫ F.map biprod.fst = g ≫ F.map biprod.fst)
+    (h₂ : f ≫ F.map biprod.snd = g ≫ F.map biprod.snd) : f = g := by
+  rw [← cancel_mono (F.mapBiprod X Y).hom]
+  ext
+  · simpa only [Category.assoc, mapBiprod_hom, biprod.lift_fst] using h₁
+  · simpa only [Category.assoc, mapBiprod_hom, biprod.lift_snd] using h₂
+
+end MapBiprod
 
 section Op
 
