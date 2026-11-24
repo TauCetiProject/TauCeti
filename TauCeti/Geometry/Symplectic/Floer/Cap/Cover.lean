@@ -454,6 +454,11 @@ theorem RawCap.toCircle_mem_contractibleLoops (D : RawCap γ) :
   mem_contractibleLoops_iff.2
     ⟨x, ⟨(D.out.map (Path.continuous_toCircle x)).cast rfl (Path.toCircle_refl x).symm⟩⟩
 
+/-- **A loop with a cap class is a contractible free loop.** -/
+theorem SphericalCapClass.toCircle_mem_contractibleLoops (q : SphericalCapClass ω c γ) :
+    γ.toCircle ∈ contractibleLoops X :=
+  (mk_surjective q).elim fun D _ ↦ D.toCircle_mem_contractibleLoops
+
 /-- The path of free loops traced by a disc `p` bounding `γ`, run from its centre to `γ`. -/
 private def capFreeLoopPath (p : Path γ (Path.refl x)) :
     Path ((constContractibleLoop x : contractibleLoops X) : C(Circle, X)) γ.toCircle :=
@@ -537,9 +542,9 @@ variable (ω c) in
 a path in `Ω X x` from `γ` to the constant loop, a disc bounding `γ`. Run backwards and read in the
 contractible free loops, it is a path from the constant loop at `x` to `γ`, whose class is a point
 of the cap cover over `γ`. -/
-def RawCap.toCapCover (hγ : γ.toCircle ∈ contractibleLoops X) (D : RawCap γ) :
-    CapCover ω c x :=
-  Quotient.mk'' (UniversalCover.mk ⟨γ.toCircle, hγ⟩ (Quotient.map (capCoverPath hγ)
+def RawCap.toCapCover (D : RawCap γ) : CapCover ω c x :=
+  Quotient.mk'' (UniversalCover.mk ⟨γ.toCircle, D.toCircle_mem_contractibleLoops⟩
+    (Quotient.map (capCoverPath D.toCircle_mem_contractibleLoops)
     (fun p q h ↦ homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset
       (pathComponent_constContractibleLoop_subset x) <| by
         rw [map_subtypeVal_capCoverPath, map_subtypeVal_capCoverPath]
@@ -547,17 +552,18 @@ def RawCap.toCapCover (hγ : γ.toCircle ∈ contractibleLoops X) (D : RawCap γ
     D))
 
 /-- The point of the cap cover of the class of a disc `p` is the class of its path of free loops. -/
-theorem RawCap.toCapCover_mk (hγ : γ.toCircle ∈ contractibleLoops X)
-    (p : Path γ (Path.refl x)) :
-    RawCap.toCapCover ω c hγ (Path.Homotopic.Quotient.mk p) =
-      Quotient.mk'' (UniversalCover.mk ⟨γ.toCircle, hγ⟩
-        (Path.Homotopic.Quotient.mk (capCoverPath hγ p))) :=
+theorem RawCap.toCapCover_mk (p : Path γ (Path.refl x)) :
+    RawCap.toCapCover ω c (Path.Homotopic.Quotient.mk p) =
+      Quotient.mk'' (UniversalCover.mk
+        ⟨γ.toCircle, toCircle_mem_contractibleLoops (Path.Homotopic.Quotient.mk p)⟩
+        (Path.Homotopic.Quotient.mk
+          (capCoverPath (toCircle_mem_contractibleLoops (Path.Homotopic.Quotient.mk p)) p))) :=
   (rfl)
 
 /-- The point of the cap cover of a raw cap of `γ` lies over `γ`. -/
 @[simp]
-theorem RawCap.capCoverProj_toCapCover (hγ : γ.toCircle ∈ contractibleLoops X) (D : RawCap γ) :
-    capCoverProj ω c x (D.toCapCover ω c hγ) = ⟨γ.toCircle, hγ⟩ := by
+theorem RawCap.capCoverProj_toCapCover (D : RawCap γ) :
+    capCoverProj ω c x (D.toCapCover ω c) = ⟨γ.toCircle, D.toCircle_mem_contractibleLoops⟩ := by
   rw [RawCap.toCapCover]
   exact subgroupQuotientProj_mk _ _ _
 
@@ -600,11 +606,10 @@ variable [PathConnectedSpace X] [LocallyPathConnectedSpace (contractibleLoops X)
 /-- **Gluing a sphere to a disc moves its point of the cap cover by the sign times its class.**
 For a sphere `a ∈ π₂(X, x)` and a raw cap `D`, the point of the cap cover of `a +ᵥ D` is that of
 `D` moved by `torusHurewiczSign` times the class of `a` in the spherical period group. -/
-theorem RawCap.toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (a : Additive (π_ 2 X x))
-    (D : RawCap γ) :
-    (a +ᵥ D).toCapCover ω c hγ =
+theorem RawCap.toCapCover_vadd (a : Additive (π_ 2 X x)) (D : RawCap γ) :
+    (a +ᵥ D).toCapCover ω c =
       ((torusHurewiczSign : ℤ) • SphericalPeriodGroup.ofHomotopyGroup ω c x a) +ᵥ
-        D.toCapCover ω c hγ := by
+        D.toCapCover ω c := by
   -- Represent `a` by a double loop `β` and `D` by a disc `p`. An element of the fundamental group
   -- is `FundamentalGroup.fromPath` of its `toPath` by structure eta for `CategoryTheory.End.of`.
   have hfrom : Function.Surjective (FundamentalGroup.fromPath (x := (Path.refl x : Ω X x))) :=
@@ -623,7 +628,7 @@ theorem RawCap.toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (a : 
   rw [hvadd, RawCap.toCapCover_mk, RawCap.toCapCover_mk, capCoverPath_trans,
     ← ofContractibleLoopsHomotopyGroup_sphereLoopPath, ofContractibleLoopsHomotopyGroup_vadd_mk,
     MulEquiv.apply_symm_apply, UniversalCover.smul_mk, FundamentalGroup.inv_def,
-    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm]
+    Path.Homotopic.Quotient.mk_trans (sphereLoopPath β).symm, Path.Homotopic.Quotient.mk_symm]
 
 namespace SphericalCapClass
 
@@ -631,34 +636,30 @@ variable (ω c) in
 /-- **The point of the cap cover of a cap class.** Raw caps of `γ` with the same cap class differ
 by a sphere of zero area and zero first Chern number, and gluing such a sphere does not move the
 point of the cap cover (`TauCeti.Floer.RawCap.toCapCover_vadd`). -/
-def toCapCover (hγ : γ.toCircle ∈ contractibleLoops X) (q : SphericalCapClass ω c γ) :
-    CapCover ω c x :=
-  Quotient.liftOn' q (RawCap.toCapCover ω c hγ) fun D D' h ↦ by
+def toCapCover (q : SphericalCapClass ω c γ) : CapCover ω c x :=
+  Quotient.liftOn' q (RawCap.toCapCover ω c) fun D D' h ↦ by
     obtain ⟨k, rfl⟩ := h
     dsimp only
     rw [AddSubgroup.vadd_def, RawCap.toCapCover_vadd, AddMonoidHom.mem_ker.1 k.property, smul_zero,
       zero_vadd]
 
 @[simp]
-theorem toCapCover_mk (hγ : γ.toCircle ∈ contractibleLoops X) (D : RawCap γ) :
-    toCapCover ω c hγ (mk ω c D) = D.toCapCover ω c hγ := by
+theorem toCapCover_mk (D : RawCap γ) : toCapCover ω c (mk ω c D) = D.toCapCover ω c := by
   rw [mk_def]
   rfl
 
 /-- The point of the cap cover of a cap class of `γ` lies over `γ`. -/
 @[simp]
-theorem capCoverProj_toCapCover (hγ : γ.toCircle ∈ contractibleLoops X)
-    (q : SphericalCapClass ω c γ) :
-    capCoverProj ω c x (toCapCover ω c hγ q) = ⟨γ.toCircle, hγ⟩ :=
+theorem capCoverProj_toCapCover (q : SphericalCapClass ω c γ) :
+    capCoverProj ω c x (toCapCover ω c q) = ⟨γ.toCircle, q.toCircle_mem_contractibleLoops⟩ :=
   induction_on q fun D ↦ by
     rw [toCapCover_mk]
-    exact RawCap.capCoverProj_toCapCover hγ D
+    exact RawCap.capCoverProj_toCapCover D
 
 /-- **Recapping moves the point of the cap cover by the torus–Hurewicz sign times the period
 class.** -/
-theorem toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (g : SphericalPeriodGroup ω c)
-    (q : SphericalCapClass ω c γ) :
-    toCapCover ω c hγ (g +ᵥ q) = ((torusHurewiczSign : ℤ) • g) +ᵥ toCapCover ω c hγ q := by
+theorem toCapCover_vadd (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
+    toCapCover ω c (g +ᵥ q) = ((torusHurewiczSign : ℤ) • g) +ᵥ toCapCover ω c q := by
   obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
   induction q using induction_on with
   | h D => rw [ofHomotopyGroup_vadd_mk, toCapCover_mk, toCapCover_mk, RawCap.toCapCover_vadd]
@@ -666,12 +667,12 @@ theorem toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (g : Spheric
 /-- The point of the cap cover of a cap class, as a point of the fibre over `γ`. -/
 private def toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoops X)
     (q : SphericalCapClass ω c γ) : capCoverProj ω c x ⁻¹' {⟨γ.toCircle, hγ⟩} :=
-  ⟨toCapCover ω c hγ q, capCoverProj_toCapCover hγ q⟩
+  ⟨toCapCover ω c q, capCoverProj_toCapCover q⟩
 
 private theorem toCapCoverFiber_vadd (hγ : γ.toCircle ∈ contractibleLoops X)
     (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
     toCapCoverFiber hγ (g +ᵥ q) = ((torusHurewiczSign : ℤ) • g) +ᵥ toCapCoverFiber hγ q :=
-  Subtype.ext ((toCapCover_vadd hγ g q).trans
+  Subtype.ext ((toCapCover_vadd g q).trans
     (CapCover.coe_vadd_fiber (x := x) _ (toCapCoverFiber hγ q)).symm)
 
 /-- Sending a cap class to its point of the fibre of the cap cover is a bijection: both are torsors
@@ -704,7 +705,7 @@ def capCoverFiberEquiv (hγ : γ.toCircle ∈ contractibleLoops X) [Nonempty (Ra
 @[simp]
 theorem coe_capCoverFiberEquiv_apply (hγ : γ.toCircle ∈ contractibleLoops X)
     [Nonempty (RawCap γ)] (q : SphericalCapClass ω c γ) :
-    (capCoverFiberEquiv ω c hγ q : CapCover ω c x) = toCapCover ω c hγ q := by
+    (capCoverFiberEquiv ω c hγ q : CapCover ω c x) = toCapCover ω c q := by
   rfl
 
 /-- **The fibre equivalence intertwines recapping with the deck action**, up to the
