@@ -268,17 +268,18 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le {p 
     refine ⟨M * (ρ / 2) + ‖W1p.value u‖ /
       (μ (ball (0 : E) (ρ / 2))).toReal ^ (1 / p.toReal), fun x hx => ?_⟩
     have hxΩ : ball x (ρ / 2) ⊆ (Ω : Set E) := (hball x hx).trans hρS
-    have hosc : ∀ y ∈ ball x (ρ / 2),
-        dist (preciseRepresentative μ (W1p.value u) x)
-          (preciseRepresentative μ (W1p.value u) y) ≤ M * (ρ / 2) := fun y hy =>
-      ((hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y hy).trans
-        (mul_le_mul_of_nonneg_left (mem_ball'.1 hy).le M.coe_nonneg)
-    have hle := norm_le_add_toReal_eLpNorm_div_of_forall_dist_le
-      measurableSet_ball.nullMeasurableSet
-      (measure_ball_pos μ x (by positivity)).ne' hosc
-      (ae_restrict_of_ae_restrict_of_subset hxΩ (W1p.ae_eq_preciseRepresentative u))
-      (zero_lt_one.trans_le Fact.out).ne' (W1p.eLpNorm_value_restrict_ne_top u hxΩ)
-    rw [Measure.addHaar_ball_center] at hle
+    have hosc : ∀ᵐ y ∂μ.restrict (ball x (ρ / 2)),
+        dist (preciseRepresentative μ (W1p.value u) x) (W1p.value u y) ≤ M * (ρ / 2) := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset hxΩ (W1p.ae_eq_preciseRepresentative u),
+        ae_restrict_mem measurableSet_ball] with y hy hyB
+      rw [hy]
+      exact ((hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y hyB).trans
+        (mul_le_mul_of_nonneg_left (mem_ball'.1 hyB).le M.coe_nonneg)
+    have hle := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
+      (zero_lt_one.trans_le Fact.out).ne'
+      (Measure.restrict_eq_zero.not.2 (measure_ball_pos μ x (by positivity)).ne')
+      (W1p.eLpNorm_value_restrict_ne_top u hxΩ) hosc
+    rw [Measure.restrict_apply_univ, Measure.addHaar_ball_center] at hle
     exact hle.trans (by gcongr; exact W1p.toReal_eLpNorm_value_le_norm u hxΩ)
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
   refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M) (D := (2 * B).toNNReal)

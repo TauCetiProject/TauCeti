@@ -18,11 +18,10 @@ with respect to a nonzero measure `μ` and `u` has finite `Lᵖ(μ)` seminorm, t
 seminorms of both sides gives `t ≤ μ(X)^{-1/p} ‖u‖_{Lᵖ(μ)}`
 (`MeasureTheory.le_toReal_eLpNorm_div_of_ae_le`).
 
-Applied to a restricted measure `μ.restrict s` and to `‖c‖ - A`, this is the averaging step that
-turns a pointwise oscillation bound `dist c (f y) ≤ A` on a null-measurable set `s` of nonzero
-measure into a bound on `‖c‖`: if `g` agrees with `f` almost everywhere on `s` and has finite
-`Lᵖ(μ.restrict s)` seminorm, then `‖c‖ ≤ A + ‖g‖_{Lᵖ(μ.restrict s)} / μ(s)^{1/p}`
-(`MeasureTheory.norm_le_add_toReal_eLpNorm_div_of_forall_dist_le`).
+Applied to `‖c‖ - A`, this is the averaging step that turns an almost-everywhere oscillation bound
+`dist c (u y) ≤ A` with respect to a nonzero measure `μ` into a bound on `‖c‖`: if `u` has finite
+`Lᵖ(μ)` seminorm, then `‖c‖ ≤ A + ‖u‖_{Lᵖ(μ)} / μ(X)^{1/p}`
+(`MeasureTheory.norm_le_add_toReal_eLpNorm_div_of_ae_dist_le`).
 
 For a planar disc `B(x, r) ⊆ ℂ` of radius `r > 0`, whose area `π r²` is at least `r²`, if `u` has
 finite `Lᵖ(B(x, r))` seminorm and `t ≤ ‖u y‖` almost everywhere on `B(x, r)`, then
@@ -63,23 +62,17 @@ theorem le_toReal_eLpNorm_div_of_ae_le (hp : p ≠ 0) (h0 : μ ≠ 0)
   rw [ENNReal.toReal_rpow, le_div_iff₀ hpos]
   exact hreal
 
-/-- **Pointwise bound from an oscillation bound on a null-measurable set.** Let `p ≠ 0`, let `s`
-be a null-measurable set of nonzero measure, and suppose `dist c (f y) ≤ A` for every `y ∈ s`.
-If `g` agrees with `f` almost everywhere on `s` and has finite `Lᵖ(μ.restrict s)` seminorm, then
-`‖c‖ ≤ A + ‖g‖_{Lᵖ(μ.restrict s)} / μ(s)^{1/p}`. -/
-theorem norm_le_add_toReal_eLpNorm_div_of_forall_dist_le {s : Set X} (hs : NullMeasurableSet s μ)
-    (hμ : μ s ≠ 0) {f g : X → F} {c : F} {A : ℝ} (hf : ∀ y ∈ s, dist c (f y) ≤ A)
-    (hfg : g =ᵐ[μ.restrict s] f) (hp : p ≠ 0) (hg : eLpNorm g p (μ.restrict s) ≠ ∞) :
-    ‖c‖ ≤ A + (eLpNorm g p (μ.restrict s)).toReal / (μ s).toReal ^ (1 / p.toReal) := by
-  have hbound : ∀ᵐ y ∂μ.restrict s, ‖c‖ - A ≤ ‖g y‖ := by
-    filter_upwards [hfg, ae_restrict_mem₀ hs] with y hy hys
-    rw [hy]
-    have hd := hf y hys
-    rw [dist_eq_norm] at hd
-    linarith [norm_sub_norm_le c (f y)]
-  have havg := le_toReal_eLpNorm_div_of_ae_le hp (Measure.restrict_eq_zero.not.2 hμ) hg hbound
-  rw [Measure.restrict_apply_univ] at havg
-  linarith
+/-- **Norm bound from an almost-everywhere oscillation bound.** Let `p ≠ 0`, let `μ` be a nonzero
+measure, and let `u` have finite `Lᵖ(μ)` seminorm. If `dist c (u y) ≤ A` for almost every `y`,
+then `‖c‖ ≤ A + ‖u‖_{Lᵖ(μ)} / μ(X)^{1/p}`. -/
+theorem norm_le_add_toReal_eLpNorm_div_of_ae_dist_le (hp : p ≠ 0) (h0 : μ ≠ 0)
+    {u : X → F} (hu : eLpNorm u p μ ≠ ∞) {c : F} {A : ℝ} (h : ∀ᵐ y ∂μ, dist c (u y) ≤ A) :
+    ‖c‖ ≤ A + (eLpNorm u p μ).toReal / (μ Set.univ).toReal ^ (1 / p.toReal) := by
+  have hbound : ∀ᵐ y ∂μ, ‖c‖ - A ≤ ‖u y‖ :=
+    h.mono fun y hy => by
+      rw [dist_eq_norm] at hy
+      linarith [norm_sub_norm_le c (u y)]
+  linarith [le_toReal_eLpNorm_div_of_ae_le hp h0 hu hbound]
 
 end MeasureTheory
 

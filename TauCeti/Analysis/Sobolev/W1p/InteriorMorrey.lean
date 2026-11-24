@@ -287,10 +287,12 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
   set G := (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * r)))).toReal
   have hBΩ : B ⊆ (Omega : Set E) :=
     ball_subset_closedBall.trans ((closedBall_subset_closedBall (by linarith)).trans hxr)
-  -- Pointwise oscillation on `B`: `dist (u*(x)) (u*(y)) ≤ C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α`.
-  have hosc : ∀ y ∈ B, dist (f x) (f y) ≤ C * G * r ^ α := by
-    intro y hy
-    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hy).le
+  -- Almost everywhere on `B`: `dist (u*(x)) (u(y)) ≤ C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α`.
+  have hosc : ∀ᵐ y ∂mu.restrict B, dist (f x) (W1p.value u y) ≤ C * G * r ^ α := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u),
+      ae_restrict_mem measurableSet_ball] with y hy hyB
+    rw [hy]
+    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hyB).le
     have hsub : closedBall x (2 * dist x y) ⊆ (Omega : Set E) :=
       (closedBall_subset_closedBall (by linarith)).trans hxr
     have hN : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * dist x y)))).toReal ≤ G :=
@@ -300,13 +302,11 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
       (Real.rpow_le_rpow dist_nonneg hxy (NNReal.coe_nonneg _)) (by positivity)
       (by positivity))
   -- Average the oscillation bound over `B`.
-  have havg := norm_le_add_toReal_eLpNorm_div_of_forall_dist_le
-    measurableSet_ball.nullMeasurableSet
-    (measure_ball_pos mu x hr).ne' hosc
-    (ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u))
+  have havg := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-    (W1p.eLpNorm_value_restrict_ne_top u hBΩ)
-  rw [← measureReal_def] at havg
+    (Measure.restrict_eq_zero.not.2 (measure_ball_pos mu x hr).ne')
+    (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hosc
+  rw [Measure.restrict_apply_univ, ← measureReal_def] at havg
   linarith
 
 /-- **Morrey's sup bound on compact subsets.** If `n < p ≤ ∞`, where `n` is the dimension, there
