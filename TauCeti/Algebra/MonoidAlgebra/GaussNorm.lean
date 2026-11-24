@@ -20,19 +20,20 @@ norm whose completion is the algebra of functions on the unit polydisc, the unit
 affinoid toric chart; with `M ⊆ ℚ ⊗ M` a monoid of `p`-power-divisible characters it is the norm
 of the perfected charts.
 
-The norm is ultrametric when `v` is, and submultiplicative when `v` is submultiplicative, for an
-arbitrary exponent magma `M`. When `v` is an absolute value and `M` has unique sums (for instance a
-torsion-free commutative monoid, a submonoid of one, or a linearly ordered cancellative monoid),
-it is multiplicative: the largest coefficients of `f` and `g` sit on finite sets `A` and `B`, a
-sum `a₀ + b₀` with `a₀ ∈ A`, `b₀ ∈ B` that arises in only one way from `A` and `B` has
-coefficient `f a₀ * g b₀` up to strictly smaller terms, and the ultrametric inequality keeps
-those terms from cancelling it. Without unique sums multiplicativity fails: in `R[ℤ/2]`,
-`(1 + χ) * (1 - χ) = 0`.
+The norm is ultrametric when `v` is, and submultiplicative when `v` is ultrametric and
+submultiplicative, for an arbitrary exponent magma `M`. When `v` is a nonarchimedean absolute value
+and `M` has unique sums (for instance a torsion-free cancellative commutative monoid, a submonoid
+of one, or a linearly ordered cancellative monoid), it is multiplicative: the largest
+coefficients of `f` and `g` sit on finite sets `A` and `B`, a sum `a₀ + b₀` with `a₀ ∈ A`,
+`b₀ ∈ B` that arises in only one way from `A` and `B` has coefficient `f a₀ * g b₀` up to
+strictly smaller terms, and the ultrametric inequality keeps those terms from cancelling it.
+Without unique sums multiplicativity fails: in `R[ℤ/2]`, `(1 + χ) * (1 - χ) = 0`.
 
 Reindexing the exponents along an injective map, and changing coefficients along a map that
 preserves `v`, preserve the Gauss norm. For `M = ℕ` this is the Gauss norm of radius one of
 Mathlib's `Polynomial.gaussNorm`, and for `M = σ →₀ ℕ` it is the Gauss norm of multivariate
-polynomials.
+polynomials. The definition and the layout of its API follow Mathlib's `Polynomial.gaussNorm`
+(`Mathlib/RingTheory/Polynomial/GaussNorm.lean`).
 
 ## Main declarations
 
