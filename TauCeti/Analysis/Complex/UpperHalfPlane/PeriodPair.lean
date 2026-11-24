@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
+public import Mathlib.GroupTheory.Index
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Weierstrass.Zeta
 public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 import TauCeti.Algebra.Field.Basic
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
@@ -54,7 +56,8 @@ becomes a series of cotangents,
 
 Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`;
 this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²` and `℘'(c z)` by `c⁻³`, and
-every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane.
+every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane. For `c Λ ⊆ Λ'`
+the index `[Λ' : c Λ]` is the determinant of `c` in the two lattice bases, so it is finite.
 
 ## Main definitions
 
@@ -100,6 +103,10 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   `z ↦ ζ((b₀ z + b₁) / M; ℤ z + ℤ)` are locally uniform limits of their partial sums, hence
   holomorphic on `ℍ`.
 * `PeriodPair.lattice_smul`: the lattice of `c • L` is `c Λ`.
+* `PeriodPair.relIndex_lattice_smul_eq_natAbs`, `PeriodPair.relIndex_lattice_smul_ne_zero`: for
+  `c Λ ⊆ Λ'`, the index `[Λ' : c Λ]` is the absolute value of the determinant of the integer
+  matrix of `c` in the two lattice bases, and is finite.
+* `PeriodPair.relIndex_div_mul_mem_lattice`: with `n = [Λ' : c Λ]`, `(n / c) Λ' ⊆ Λ`.
 * `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
   `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
   `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
@@ -802,20 +809,6 @@ instance instSMulUnitsComplex : SMul ℂˣ PeriodPair where
 
 variable (L : PeriodPair) (c : ℂˣ)
 
-/-- The lattice is stable under multiplication by integers. -/
-lemma intCast_mul_mem_lattice (n : ℤ) {z : ℂ} (hz : z ∈ L.lattice) : (n : ℂ) * z ∈ L.lattice := by
-  simpa [zsmul_eq_mul] using zsmul_mem hz n
-
-/-- The coordinates of `m ω₁ + n ω₂` in the basis `ω₁, ω₂` of the lattice are `m` and `n`. -/
-lemma latticeBasis_repr_eq {L : PeriodPair} {m n : ℤ} {x : L.lattice}
-    (hx : (m : ℂ) * L.ω₁ + n * L.ω₂ = x) :
-    L.latticeBasis.repr x 0 = m ∧ L.latticeBasis.repr x 1 = n := by
-  have : x = m • L.latticeBasis 0 + n • L.latticeBasis 1 := by
-    ext
-    simp [← hx, zsmul_eq_mul]
-  subst this
-  simp
-
 @[simp]
 lemma smul_ω₁ : (c • L).ω₁ = c * L.ω₁ := rfl
 
@@ -845,6 +838,74 @@ lemma coe_latticeSMulEquiv (l : L.lattice) : (L.latticeSMulEquiv c l : ℂ) = c 
 lemma mul_mem_lattice_smul_iff {x : ℂ} : (c : ℂ) * x ∈ (c • L).lattice ↔ x ∈ L.lattice := by
   rw [lattice_smul, Submodule.mem_map]
   exact ⟨fun ⟨y, hy, hyx⟩ ↦ mul_right_injective₀ c.ne_zero hyx ▸ hy, fun h ↦ ⟨x, h, rfl⟩⟩
+
+/-- **The index as a determinant.** If `c ω₁ = a ω₁' + b ω₂'` and `c ω₂ = e ω₁' + f ω₂'`, then
+`[Λ' : c Λ] = |a f - b e|`. -/
+theorem relIndex_lattice_smul_eq_natAbs {L L' : PeriodPair} (c : ℂˣ) {a b e f : ℤ}
+    (hab : (a : ℂ) * L'.ω₁ + b * L'.ω₂ = c * L.ω₁)
+    (hef : (e : ℂ) * L'.ω₁ + f * L'.ω₂ = c * L.ω₂) :
+    (c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup = (a * f - b * e).natAbs := by
+  have hle : (c • L).lattice.toAddSubgroup ≤ L'.lattice.toAddSubgroup := by
+    intro x hx
+    obtain ⟨m, n, rfl⟩ := mem_lattice.mp hx
+    refine mem_lattice.mpr ⟨m * a + n * e, m * b + n * f, ?_⟩
+    simp only [smul_ω₁, smul_ω₂]
+    push_cast
+    linear_combination (m : ℂ) * hab + (n : ℂ) * hef
+  -- the bases `ω₁, ω₂` of the lattices, viewed as `ℤ`-submodules through `toIntSubmodule`
+  let B (L : PeriodPair) :
+      Module.Basis (Fin 2) ℤ (AddSubgroup.toIntSubmodule L.lattice.toAddSubgroup) :=
+    L.latticeBasis.map (LinearEquiv.ofEq _ _ (SetLike.ext fun _ ↦ Iff.rfl))
+  rw [AddSubgroup.relIndex_eq_natAbs_det _ _ hle (B (c • L)) (B L'), Module.Basis.det_apply,
+    Matrix.det_fin_two]
+  simp only [Module.Basis.toMatrix_apply,
+    show ∀ x i, (B L').repr x i = L'.latticeBasis.repr ⟨x, x.property⟩ i from fun _ _ ↦ rfl]
+  obtain ⟨h₁, h₂⟩ := latticeBasis_repr_eq (L := L') (m := a) (n := b)
+    (x := ⟨_, hle (B (c • L) 0).property⟩)
+    (hab.trans (by change _ = ((c • L).latticeBasis 0 : ℂ); simp))
+  obtain ⟨h₃, h₄⟩ := latticeBasis_repr_eq (L := L') (m := e) (n := f)
+    (x := ⟨_, hle (B (c • L) 1).property⟩)
+    (hef.trans (by change _ = ((c • L).latticeBasis 1 : ℂ); simp))
+  rw [h₁, h₂, h₃, h₄, mul_comm e b]
+
+/-- **The index is finite.** For `c ≠ 0` with `c Λ ⊆ Λ'`, the index `[Λ' : c Λ]` is finite. -/
+theorem relIndex_lattice_smul_ne_zero {L L' : PeriodPair} (c : ℂˣ)
+    (h : ∀ z ∈ L.lattice, (c : ℂ) * z ∈ L'.lattice) :
+    (c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup ≠ 0 := by
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (h _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (h _ L.ω₂_mem_lattice)
+  rw [relIndex_lattice_smul_eq_natAbs c hab hef, Int.natAbs_ne_zero]
+  -- the determinant is nonzero since `c ω₁` and `c ω₂` are linearly independent over `ℝ`
+  intro hD
+  have hD' : (a : ℂ) * f - b * e = 0 := by exact_mod_cast hD
+  have hind := LinearIndependent.pair_iff.mp (c • L).indep
+  obtain ⟨-, hb⟩ := hind (f : ℝ) (-b : ℝ) (by
+    simp only [smul_ω₁, smul_ω₂, Complex.real_smul, Complex.ofReal_intCast, Complex.ofReal_neg]
+    linear_combination (-(f : ℂ)) * hab + (b : ℂ) * hef + hD' * L'.ω₁)
+  obtain ⟨-, ha⟩ := hind (-e : ℝ) (a : ℝ) (by
+    simp only [smul_ω₁, smul_ω₂, Complex.real_smul, Complex.ofReal_intCast, Complex.ofReal_neg]
+    linear_combination (e : ℂ) * hab - (a : ℂ) * hef + hD' * L'.ω₂)
+  have ha' : (a : ℂ) = 0 := by exact_mod_cast ha
+  have hb' : (b : ℂ) = 0 := by simpa using hb
+  have hc : (c : ℂ) * L.ω₁ = 0 := by rw [← hab, ha', hb']; ring
+  exact mul_ne_zero c.ne_zero (by simpa using L.indep.ne_zero 0) hc
+
+/-- With `n = [Λ' : c Λ]`, multiplication by `n / c` maps `Λ'` into `Λ`. -/
+lemma relIndex_div_mul_mem_lattice {L L' : PeriodPair} (c : ℂˣ) {z : ℂ} (hz : z ∈ L'.lattice) :
+    ((c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup / (c : ℂ)) * z ∈
+      L.lattice := by
+  have hn := AddSubgroup.nsmul_relIndex_mem (c • L).lattice.toAddSubgroup
+    (K := L'.lattice.toAddSubgroup) (g := z) hz
+  have key : ((c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup : ℂ) * z =
+      c * ((c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup / (c : ℂ) * z) := by
+    field_simp [c.ne_zero]
+  rwa [Submodule.mem_toAddSubgroup, nsmul_eq_mul, key, mul_mem_lattice_smul_iff] at hn
+
+/-- With `n = [Λ' : c Λ]`, the scalar `n / c` is nonzero. -/
+lemma relIndex_div_ne_zero {L L' : PeriodPair} (c : ℂˣ)
+    (h : ∀ z ∈ L.lattice, (c : ℂ) * z ∈ L'.lattice) :
+    ((c • L).lattice.toAddSubgroup.relIndex L'.lattice.toAddSubgroup / (c : ℂ)) ≠ 0 :=
+  div_ne_zero (Nat.cast_ne_zero.mpr (relIndex_lattice_smul_ne_zero c h)) c.ne_zero
 
 /-- The lattice sums `G n` are homogeneous of degree `-n` in the lattice. -/
 @[simp]
