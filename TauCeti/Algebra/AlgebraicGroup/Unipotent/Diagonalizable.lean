@@ -51,6 +51,12 @@ In the `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` namespace:
   `counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective`: a diagonalizable closed subgroup of a
   reduced unipotent group is trivial.
 
+In the `TauCeti.FiniteTypeCommHopfAlgCat` namespace:
+
+* `sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`: a diagonalizable closed subgroup
+  meets a smooth unipotent closed subgroup trivially, in the Hopf-ideal form
+  `I ⊔ U = augmentation`.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 14 (unipotent groups) and Theorem 16.33.
