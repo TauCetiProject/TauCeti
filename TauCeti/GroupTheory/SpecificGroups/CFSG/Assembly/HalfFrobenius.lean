@@ -71,7 +71,7 @@ family, as an endomorphism of the uniform ambient group. On each of the four fam
 family's special isogeny, by `halfFrobenius_suzuki` and its siblings; its action on the simple
 root subgroups is `halfFrobenius_simpleRootSubgroup`, and its square is the prime-field Frobenius
 by `halfFrobenius_halfFrobenius`. -/
-def halfFrobenius : (e : SuzukiReeIndex) → e.1.AmbientGroup →* e.1.AmbientGroup
+def halfFrobenius : (e : SuzukiReeIndex) → e.val.AmbientGroup →* e.val.AmbientGroup
   | ⟨⟨.A _ _, _⟩, h⟩ | ⟨⟨.twistedA _ _, _⟩, h⟩ | ⟨⟨.B _ _, _⟩, h⟩ | ⟨⟨.C _ _, _⟩, h⟩
   | ⟨⟨.D _ _, _⟩, h⟩ | ⟨⟨.twistedD _ _, _⟩, h⟩ | ⟨⟨.E6 _, _⟩, h⟩ | ⟨⟨.E7 _, _⟩, h⟩
   | ⟨⟨.E8 _, _⟩, h⟩ | ⟨⟨.F4 _, _⟩, h⟩ | ⟨⟨.G2 _, _⟩, h⟩ | ⟨⟨.twistedE6 _, _⟩, h⟩
@@ -121,10 +121,10 @@ end Branches
 `x_i(u)` to `x_{σ i}(u ^ e_i)`, for `σ` the length permutation of the index and `e_i` its
 exponent, `1` on a long simple root and the defining characteristic on a short one. -/
 @[simp]
-theorem halfFrobenius_simpleRootSubgroup (e : SuzukiReeIndex) (i : Fin e.1.rank)
-    (u : Multiplicative e.1.Closure) :
-    e.halfFrobenius (e.1.simpleRootSubgroup i u) =
-      e.1.simpleRootSubgroup (e.lengthPerm i)
+theorem halfFrobenius_simpleRootSubgroup (e : SuzukiReeIndex) (i : Fin e.val.rank)
+    (u : Multiplicative e.val.Closure) :
+    e.halfFrobenius (e.val.simpleRootSubgroup i u) =
+      e.val.simpleRootSubgroup (e.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.exponent i)) := by
   -- On each family the branch equations turn the uniform maps into the family's own, whose
   -- action formula closes the goal.
@@ -143,8 +143,8 @@ theorem halfFrobenius_simpleRootSubgroup (e : SuzukiReeIndex) (i : Fin e.1.rank)
 /-- **The square of the half-Frobenius is the prime-field Frobenius**, `τ (τ g) = Frob_p g` for
 `p` the defining characteristic of the index. -/
 @[simp]
-theorem halfFrobenius_halfFrobenius (e : SuzukiReeIndex) (g : e.1.AmbientGroup) :
-    e.halfFrobenius (e.halfFrobenius g) = e.1.primeFrobenius g := by
+theorem halfFrobenius_halfFrobenius (e : SuzukiReeIndex) (g : e.val.AmbientGroup) :
+    e.halfFrobenius (e.halfFrobenius g) = e.val.primeFrobenius g := by
   obtain ⟨⟨d, hv⟩, h⟩ := e
   cases d
   all_goals try { simp [usesHalfFrobenius_iff] at h }
@@ -160,14 +160,14 @@ theorem halfFrobenius_halfFrobenius (e : SuzukiReeIndex) (g : e.1.AmbientGroup) 
 /-- The square relation `τ ^ 2 = Frob_p` as an equation in the endomorphism monoid. -/
 @[simp]
 theorem halfFrobenius_sq (e : SuzukiReeIndex) :
-    HPow.hPow (α := Monoid.End e.1.AmbientGroup) e.halfFrobenius 2 = e.1.primeFrobenius :=
+    HPow.hPow (α := Monoid.End e.val.AmbientGroup) e.halfFrobenius 2 = e.val.primeFrobenius :=
   (pow_two (M := Monoid.End _) _).trans (MonoidHom.ext e.halfFrobenius_halfFrobenius)
 
 /-- **The Steinberg endomorphism of a Suzuki--Ree index is the odd power `τ ^ (2m + 1)` of its
 half-Frobenius**, for `2m + 1` the field exponent the index records. -/
 theorem steinberg_eq_halfFrobenius_pow (e : SuzukiReeIndex) :
-    e.1.steinberg =
-      HPow.hPow (α := Monoid.End e.1.AmbientGroup) e.halfFrobenius e.1.fieldExponent := by
+    e.val.steinberg =
+      HPow.hPow (α := Monoid.End e.val.AmbientGroup) e.halfFrobenius e.val.fieldExponent := by
   obtain ⟨⟨d, hv⟩, h⟩ := e
   cases d
   all_goals try { simp [usesHalfFrobenius_iff] at h }

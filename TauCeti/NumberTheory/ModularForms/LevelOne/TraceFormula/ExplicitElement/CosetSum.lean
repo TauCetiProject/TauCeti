@@ -324,15 +324,15 @@ local notation "ℳ" => TraceFormulaMatrixModule
 private theorem finsum_mem_orbit_mk_diagonal_weight [Ring k] {d₀ m : ℤ} (hd₀ : 0 < d₀)
     (hm : 0 < m) (h : d₀ * (d₀ * m) = n) :
     ∑ᶠ A ∈ mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ (mk (TraceFormulaMatrix.diagonal d₀ (d₀ * m) h)),
-      (PopaZagier.weight A.1 : k) = -12 := by
+      (PopaZagier.weight A.val : k) = -12 := by
   have hn : n ≠ 0 := by
     rw [← h]
     positivity
   have hbij : (mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ
-      (mk (TraceFormulaMatrix.diagonal d₀ (d₀ * m) h))).BijOn (fun A : TraceFormulaMatrix n ↦ A.1)
+      (mk (TraceFormulaMatrix.diagonal d₀ (d₀ * m) h))).BijOn (fun A : TraceFormulaMatrix n ↦ A.val)
       (PopaZagier.cosetMatrices d₀ (d₀ * m)) := by
     refine ⟨fun A hA ↦ ?_, fun A _ B _ hAB ↦ Subtype.ext hAB, fun M hM ↦ ?_⟩
-    · exact ⟨A.2.trans h.symm, (mk_mem_orbit_op_mk_diagonal_iff h hn).mp hA⟩
+    · exact ⟨A.property.trans h.symm, (mk_mem_orbit_op_mk_diagonal_iff h hn).mp hA⟩
     · exact ⟨⟨M, hM.1.trans h⟩, (mk_mem_orbit_op_mk_diagonal_iff h hn).mpr hM.2, rfl⟩
   refine (finsum_mem_eq_of_bijOn (g := fun M ↦ (PopaZagier.weight M : k)) _ hbij
     fun _ _ ↦ rfl).trans ?_

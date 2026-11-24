@@ -198,7 +198,7 @@ private noncomputable def heisenbergZ :
   map_mul' y _ := by
     rw [Subgroup.coe_mul, map_mul, ULift.mul_down, HeisenbergGroup.mul_z,
       (down_x_eq_zero_of_mem_pLowerCentralSeries_one
-        (heisenbergHom_mem_pLowerCentralSeries χ ψ y.2)).1,
+        (heisenbergHom_mem_pLowerCentralSeries χ ψ y.property)).1,
       zero_mul, add_zero, ofAdd_add]
 
 private theorem heisenbergZ_eq_one_of_mem {y : pLowerCentralSeries p (freeProP p X) 1}
@@ -256,7 +256,7 @@ theorem continuous_heisenbergFunctional_gradedMk :
       heisenbergFunctional χ ψ (gradedMk p (freeProP p X) 1 y) := by
   simp_rw [heisenbergFunctional_gradedMk]
   exact (continuous_of_discreteTopology (f := fun a : HeisenbergLift.{u} p ↦ a.down.z)).comp
-    ((heisenbergHom χ ψ).continuous.comp continuous_subtype_val)
+    ((heisenbergHom χ ψ).continuous.comp continuous_subtypeVal)
 
 /-- **Uniqueness of the Heisenberg functional among continuous functionals**, for arbitrary `X`: a
 linear functional on `gr_1(F)` that is continuous on `λ_1(F)` and has the values
@@ -335,7 +335,7 @@ theorem heisenbergFunctional_comp_gradedMap (χ ψ : freeProP p Y →ₜ* Multip
     (by
       simp_rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedMk]
       exact (continuous_heisenbergFunctional_gradedMk χ ψ).comp
-        ((φ.continuous.comp continuous_subtype_val).subtype_mk _))
+        ((φ.continuous.comp continuous_subtypeVal).subtype_mk _))
     (continuous_heisenbergFunctional_gradedMk _ _)
     (fun u ↦ by
       rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedPow,

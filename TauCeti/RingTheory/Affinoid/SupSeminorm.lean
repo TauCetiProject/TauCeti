@@ -387,6 +387,13 @@ theorem supSeminorm_map_of_ker_le_nilradical {φ : A →ₐ[K] B} (hφ : Functio
   rw [← hg.iSup_comp]
   exact iSup_congr fun y ↦ (pointNorm_comap φ y (Ideal.comap_isMaximal_of_surjective φ hφ) a).symm
 
+/-- A `K`-algebra isomorphism preserves the supremum seminorm. -/
+@[simp]
+theorem _root_.AlgEquiv.supSeminorm_eq (e : A ≃ₐ[K] B) (a : A) :
+    supSeminorm K (e a) = supSeminorm K a :=
+  supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
+    ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
+
 /-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
 reduction `A ⧸ nilradical A`. -/
 theorem supSeminorm_mk_nilradical (f : A) :
@@ -551,17 +558,17 @@ theorem pointNorm_le_supSeminorm_map (hB : IsAffinoidAlgebra K B) {φ : A →ₐ
 `|f|sup` is the supremum, over the finitely many minimal primes `𝔭` of `A`, of the supremum
 seminorm of the residue of `f` in the affinoid domain `A ⧸ 𝔭`. -/
 theorem supSeminorm_eq_iSup_minimalPrimes (hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K f = ⨆ 𝔭 : minimalPrimes A, supSeminorm K (Ideal.Quotient.mk 𝔭.1 f) := by
+    supSeminorm K f = ⨆ 𝔭 : minimalPrimes A, supSeminorm K (Ideal.Quotient.mk 𝔭.val f) := by
   have := hA.isNoetherianRing
   have : Finite (minimalPrimes A) := (minimalPrimes.finite_of_isNoetherianRing A).to_subtype
   refine le_antisymm (supSeminorm_le (Real.iSup_nonneg fun _ ↦ supSeminorm_nonneg _) fun x ↦ ?_)
-    (Real.iSup_le (fun 𝔭 ↦ hA.supSeminorm_map_le (hA.quotient 𝔭.1)
-      (Ideal.Quotient.mkₐ K 𝔭.1) f) (supSeminorm_nonneg f))
+    (Real.iSup_le (fun 𝔭 ↦ hA.supSeminorm_map_le (hA.quotient 𝔭.val)
+      (Ideal.Quotient.mkₐ K 𝔭.val) f) (supSeminorm_nonneg f))
   -- Every classical point lies on the closed subspace of some minimal prime.
   obtain ⟨𝔭, h𝔭, h𝔭x⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.asIdeal)
   refine (hA.quotient 𝔭).pointNorm_le_supSeminorm_map (φ := Ideal.Quotient.mkₐ K 𝔭)
     (Ideal.Quotient.mkₐ_surjective K 𝔭) ((Ideal.Quotient.mkₐ_ker K 𝔭).trans_le h𝔭x) f |>.trans ?_
-  exact le_ciSup (f := fun 𝔮 : minimalPrimes A ↦ supSeminorm K (Ideal.Quotient.mk 𝔮.1 f))
+  exact le_ciSup (f := fun 𝔮 : minimalPrimes A ↦ supSeminorm K (Ideal.Quotient.mk 𝔮.val f))
     (Set.finite_range _).bddAbove ⟨𝔭, h𝔭⟩
 
 /-- On a nonzero affinoid algebra the supremum seminorm `|f|sup` is attained on the quotient by
@@ -572,8 +579,8 @@ theorem exists_mem_minimalPrimes_supSeminorm_eq [Nontrivial A] (hA : IsAffinoidA
   have : Finite (minimalPrimes A) := (minimalPrimes.finite_of_isNoetherianRing A).to_subtype
   have : Nonempty (minimalPrimes A) := Ideal.nonempty_minimalPrimes bot_ne_top
   obtain ⟨𝔭, h𝔭⟩ := exists_eq_ciSup_of_finite
-    (f := fun 𝔮 : minimalPrimes A ↦ supSeminorm K (Ideal.Quotient.mk 𝔮.1 f))
-  exact ⟨𝔭.1, 𝔭.2, h𝔭.trans (hA.supSeminorm_eq_iSup_minimalPrimes f).symm⟩
+    (f := fun 𝔮 : minimalPrimes A ↦ supSeminorm K (Ideal.Quotient.mk 𝔮.val f))
+  exact ⟨𝔭.val, 𝔭.property, h𝔭.trans (hA.supSeminorm_eq_iSup_minimalPrimes f).symm⟩
 
 /-- The supremum seminorm of an affinoid algebra, bundled as a ring seminorm. -/
 noncomputable def supRingSeminorm (hA : IsAffinoidAlgebra K A) : RingSeminorm A where
@@ -603,7 +610,8 @@ theorem supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hA : IsAffinoidAlgebra K
     rw [coe_supRingSeminorm]
     exact hA.isNonarchimedean_supSeminorm
   simpa only [coe_supRingSeminorm] using
-    hp.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero hpm hna hf
+    hp.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero (map_zero _) (apply_nonneg _)
+      (map_mul_le_mul _) hpm hna hf
 
 end IsAffinoidAlgebra
 

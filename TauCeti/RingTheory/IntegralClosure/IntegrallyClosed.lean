@@ -33,6 +33,10 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 homomorphism carries an integrally closed subring containing its kernel to an integrally closed
 subring: lift a monic integral equation, whose evaluation then lies in the kernel.
 
+In an integrally closed domain, if `b ^ e = u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`, then `ϖ` divides
+`b` (Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`) and the quotient `b / ϖ` is an `e`-th root
+of `u`.
+
 ## Main results
 
 * `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`: the elementwise criterion for a field
@@ -55,8 +59,14 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
+  of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
+* `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
+  `Function.LeftInverse.isIntegrallyClosed`: a ring retract of an integrally closed commutative ring
+  whose section preserves nonzerodivisors (in particular when the ambient ring has no zero divisors)
+  is integrally closed.
 -/
 
 public section
@@ -150,7 +160,7 @@ theorem of_isLocalization_of_le_powers {x : R} (hx : x ∈ nonZeroDivisors R)
     exact Polynomial.dvd_pow_natDegree_of_eval₂_eq_zero hinj hp x a w hpw ha
   refine isIntegrallyClosedIn_iff.mpr ⟨hinj, fun {z} hz ↦ ?_⟩
   obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M z
-  obtain ⟨n, hn⟩ := hM m.2
+  obtain ⟨n, hn⟩ := hM m.property
   rw [← hn] at ha
   clear hn
   -- induction on the exponent of the denominator `x ^ n` of `z`
@@ -207,7 +217,7 @@ theorem mem_of_pow_mem_of_isIntegrallyClosedIn {S : Subring A} [IsIntegrallyClos
     {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ S) : a ∈ S := by
   have hpow : IsIntegral S (a ^ n) := isIntegral_algebraMap (R := S) (x := (⟨a ^ n, ha⟩ : S))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
-  exact hy ▸ y.2
+  exact hy ▸ y.property
 
 /-- **A subring integrally closed in a perfect ring is perfect**: the `p`-th root in `A` of an
 element of `S` has a power in `S`, so it lies in `S`. -/
@@ -220,7 +230,7 @@ instance perfectRing_of_isIntegrallyClosedIn (S : Subring A) [IsIntegrallyClosed
   have hy : y ^ p = x := hy
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · exact ⟨1, Subtype.ext (by simpa using hy)⟩
-  · exact ⟨⟨y, mem_of_pow_mem_of_isIntegrallyClosedIn hp (hy ▸ x.2)⟩, Subtype.ext hy⟩
+  · exact ⟨⟨y, mem_of_pow_mem_of_isIntegrallyClosedIn hp (hy ▸ x.property)⟩, Subtype.ext hy⟩
 
 /-- A surjective ring homomorphism carries an integrally closed subring to an integrally closed
 subring if its kernel is contained in that subring. -/
@@ -252,3 +262,47 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
     exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
+
+/-- **A ring retract of an integrally closed ring along a nonzerodivisor-preserving section is
+integrally closed.** If `i : R →+* A` admits a left inverse `π : A →+* R`, carries nonzerodivisors
+of `R` to nonzerodivisors of `A`, and `A` is integrally closed, then `R` is integrally closed. -/
+theorem Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le {R A : Type*} [CommRing R]
+    [CommRing A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R} (h : Function.LeftInverse π i)
+    (hnzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i) : IsIntegrallyClosed R := by
+  let f : FractionRing R →+* FractionRing A := IsLocalization.map (FractionRing A) i hnzd
+  have hf (r : R) : f (algebraMap R (FractionRing R) r) = algebraMap A (FractionRing A) (i r) :=
+    IsLocalization.map_eq hnzd r
+  refine (isIntegrallyClosed_iff (FractionRing R)).mpr fun {z} hz ↦ ?_
+  obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.mp
+    (hz.map_of_comp_eq i f (IsLocalization.map_comp hnzd).symm)
+  obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors R) z
+  dsimp only at hzb
+  have hyb : y * i b.val = i a := IsFractionRing.injective A (FractionRing A) <| by
+    rw [map_mul, hy, ← hf b.val, ← map_mul, hzb, hf a]
+  refine ⟨π y, (IsLocalization.map_units (FractionRing R) b).mul_right_cancel ?_⟩
+  rw [hzb, ← h a, ← hyb, map_mul, h b.val, map_mul]
+
+/-- **A ring retract of an integrally closed ring without zero divisors is integrally closed.** If
+`i : R →+* A` admits a left inverse `π : A →+* R` and `A` is integrally closed without zero
+divisors, then `R` is integrally closed. -/
+theorem Function.LeftInverse.isIntegrallyClosed {R A : Type*} [CommRing R] [CommRing A]
+    [NoZeroDivisors A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R}
+    (h : Function.LeftInverse π i) : IsIntegrallyClosed R :=
+  h.isIntegrallyClosed_of_nonZeroDivisors_le
+    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+
+/-- In an integrally closed domain, an `e`-th root `b` of `u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`
+gives an `e`-th root `b / ϖ` of `u`: the element `b` is divisible by `ϖ`, since `ϖ ^ e` divides
+`b ^ e`. -/
+theorem exists_eq_mul_of_pow_eq_mul_pow {ϖ u b : R} (hϖ : ϖ ≠ 0) {e : ℕ} (he : e ≠ 0)
+    (hb : b ^ e = u * ϖ ^ e) : ∃ s : R, b = ϖ * s ∧ s ^ e = u := by
+  obtain ⟨s, hs⟩ := (IsIntegrallyClosed.pow_dvd_pow_iff he (a := ϖ) (b := b)).mp
+    ⟨u, by rw [hb, mul_comm]⟩
+  refine ⟨s, hs, mul_left_cancel₀ (pow_ne_zero e hϖ) ?_⟩
+  rw [← mul_pow, ← hs, hb, mul_comm]
+
+end TauCeti

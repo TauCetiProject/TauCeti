@@ -57,7 +57,7 @@ theorem homEquivKerProjHom_symm_apply_comp
     (f : {g : UniversalCover (1 : G) →ₜ* K //
       ((projHom : UniversalCover (1 : G) →ₜ* G) :
         UniversalCover (1 : G) →* G).ker ≤ (g : UniversalCover (1 : G) →* K).ker}) :
-    (homEquivKerProjHom.symm f).comp projHom = f.1 := by
+    (homEquivKerProjHom.symm f).comp projHom = f.val := by
   have h := congrArg Subtype.val (homEquivKerProjHom.apply_symm_apply f)
   rw [homEquivKerProjHom_apply_coe] at h
   exact h

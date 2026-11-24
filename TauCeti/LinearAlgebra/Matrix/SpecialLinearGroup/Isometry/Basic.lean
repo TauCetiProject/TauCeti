@@ -122,7 +122,7 @@ def isotropicPoints : SubMulAction (Q.specialIsometryGroup σ) (ℙ K (n → K))
     simp only [Set.mem_ofPred_eq, comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff] at hp ⊢
     rw [Subgroup.smul_def, Projectivization.smul_mk,
       comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff, SpecialLinearGroup.smul_def, smul_eq_mulVec,
-      comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2), hp]
+      comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property), hp]
 
 /-- A point lies in `isotropicPoints` exactly when its chosen representative is isotropic. -/
 theorem mem_isotropicPoints_iff {p : ℙ K (n → K)} :
@@ -139,7 +139,7 @@ theorem mk_mem_isotropicPoints_iff {v : n → K} (hv : v ≠ 0) :
 /-- The representative of an isotropic point is an isotropic vector. -/
 theorem comp_rep_dotProduct_mulVec_rep (p : Q.isotropicPoints σ) :
     (σ ∘ (p : ℙ K (n → K)).rep) ⬝ᵥ (Q *ᵥ (p : ℙ K (n → K)).rep) = 0 :=
-  mem_isotropicPoints_iff.mp p.2
+  mem_isotropicPoints_iff.mp p.property
 
 end Field
 

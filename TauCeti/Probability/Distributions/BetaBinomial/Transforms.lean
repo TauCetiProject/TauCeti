@@ -59,7 +59,7 @@ theorem mgf_id_map_cast_betaBinomialMeasure {a b : ℝ} (ha : 0 < a) (hb : 0 < b
       ∑ k ∈ Finset.Iic n,
         (n.choose k * beta (a + k) (b + (n - k)) / beta a b) * Real.exp (t * k) := by
   rw [mgf_id_map_natCast, pgf_betaBinomialMeasure ha hb]
-  simp only [← Real.exp_nat_mul, mul_comm t]
+  simp only [← Real.exp_natCast_mul, mul_comm t]
 
 /-- The beta-binomial cumulant-generating function is the logarithm of its finite exponential
 sum, on its full domain `ℝ`. -/

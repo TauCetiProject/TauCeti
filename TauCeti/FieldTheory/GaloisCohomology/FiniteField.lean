@@ -67,7 +67,7 @@ private theorem invariants_mem_range_groupNorm {U : OpenNormalSubgroup Gal(L/K)}
       fun σ => by
         simpa [AlgEquiv.smul_units_def] using
           congrArg (fun v : FixedPoints.addSubgroup U.toSubgroup (Additive Lˣ) =>
-            ((v : Additive Lˣ).toMul : L)) (m.2 (σ : Gal(L/K) ⧸ U.toSubgroup))
+            ((v : Additive Lˣ).toMul : L)) (m.property (σ : Gal(L/K) ⧸ U.toSubgroup))
   have ha0 : a ≠ 0 := by
     intro h
     exact ((m : FixedPoints.addSubgroup U.toSubgroup (Additive Lˣ)) : Additive Lˣ).toMul.ne_zero
@@ -77,7 +77,7 @@ private theorem invariants_mem_range_groupNorm {U : OpenNormalSubgroup Gal(L/K)}
     ⟨Additive.ofMul (Units.map (F.val : F →* L) b), fun σ => by
       refine Additive.toMul.injective (Units.ext ?_)
       simpa [Subgroup.smul_def, AlgEquiv.smul_units_def] using
-        (IntermediateField.mem_fixedField_iff _ _).1 (b : F).2 σ σ.2⟩
+        (IntermediateField.mem_fixedField_iff _ _).1 (b : F).property σ σ.property⟩
   refine ⟨c, Subtype.ext (Additive.toMul.injective (Units.ext ?_))⟩
   have hc (q : Gal(L/K) ⧸ U.toSubgroup) :
       (((q • c : FixedPoints.addSubgroup U.toSubgroup (Additive Lˣ)) :

@@ -241,8 +241,8 @@ def vanishingSubgroup [SMulInvariantMeasure G X μ] : Subgroup G where
   one_mem' := by simp [tendsto_const_nhds]
   mul_mem' {g h} hg hh := by
     have hsum : Tendsto (fun i ↦
-        μ ((h • F i) ∆ F i) / μ (F i) + μ ((g • F i) ∆ F i) / μ (F i)) l (𝓝 0) := by
-      simpa using hh.add hg
+        μ ((g • F i) ∆ F i) / μ (F i) + μ ((h • F i) ∆ F i) / μ (F i)) l (𝓝 0) := by
+      simpa using hg.add hh
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
       (.of_forall fun _ ↦ zero_le) (.of_forall fun i ↦ ?_)
     rw [← ENNReal.add_div]

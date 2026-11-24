@@ -170,7 +170,7 @@ private theorem valuation_le_max_one_valuation_sub (P : Place k F) {φ : MvPolyn
       ⟨c', P.mem_integers_iff.mpr (hint c)⟩ i
     have hq' : w ^ i - c' ^ i = (w - c') * q := by simpa using congrArg Subtype.val hq
     rw [hq', map_mul]
-    exact (mul_le_of_le_one_right' (P.mem_integers_iff.mp q.2)).trans_lt hwc
+    exact (mul_le_of_le_one_right' (P.mem_integers_iff.mp q.property)).trans_lt hwc
   have hyinv : v y⁻¹ < 1 := by
     rw [map_inv₀]
     exact inv_lt_one_of_one_lt₀ h1

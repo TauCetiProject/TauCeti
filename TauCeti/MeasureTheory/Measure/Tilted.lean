@@ -86,7 +86,7 @@ theorem map_tilted {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ.tilted (g ∘ f)).map f = (μ.map f).tilted g := by
   rw [Measure.tilted, Measure.tilted, integral_map hf.aemeasurable
     (hg.exp.stronglyMeasurable.aestronglyMeasurable)]
-  exact map_withDensity_comp hf ((hg.exp.div_const _).ennreal_ofReal)
+  exact map_withDensity_comp hf.aemeasurable ((hg.exp.div_const _).ennreal_ofReal).aemeasurable
 
 /-- **Parameter measurability of tilting a fixed measure.** Tilting a measure by a jointly
 measurable family of potentials gives a measurable family of measures. No s-finiteness is needed:

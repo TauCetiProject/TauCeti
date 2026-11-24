@@ -86,7 +86,8 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet
   refine ⟨LeftInverse.injective (g := TensorProduct.lift β) fun m ↦ by simp [β], fun x ↦ ?_⟩
   induction x using TensorProduct.inductionOn with
   | tmul s m =>
-    obtain ⟨r, hr⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hI.2 s
+    obtain ⟨r, hr⟩ :=
+      Ideal.exists_sub_mem_of_surjective_quotient_mk_comp (hI.2.comp Ideal.Quotient.mk_surjective) s
     have hm : m ∈ torsionBySet R M I := (mem_torsionBySet_iff _ _).mpr fun a ↦ @hM m a
     have h := (Ideal.mem_torsionOf_iff _ _).mp (map_le_torsionOf_one_tmul (S := S) hm hr)
     rw [smul_tmul', smul_eq_mul, mul_one, sub_tmul, sub_eq_zero] at h
@@ -118,7 +119,7 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet_pow (n : ℕ) :
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, mem_torsionBySet_iff]
       intro i
       rw [smul_smul]
-      exact @hM m ⟨_, by rw [pow_succ']; exact Ideal.mul_mem_mul i.2 a.2⟩
+      exact @hM m ⟨_, by rw [pow_succ']; exact Ideal.mul_mem_mul i.property a.property⟩
     refine ⟨(injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_, fun y ↦ ?_⟩
     · have hmN : m ∈ N := by
         rw [← Submodule.Quotient.mk_eq_zero]
@@ -170,7 +171,7 @@ private noncomputable def primaryComponentMap :
     I.primaryComponent M →ₗ[R]
       ((I.map (algebraMap R S)).primaryComponent (S ⊗[R] M)).restrictScalars R :=
   ((TensorProduct.mk R S M 1).domRestrict _).codRestrict _ fun m ↦
-    one_tmul_mem_primaryComponent_map m.2
+    one_tmul_mem_primaryComponent_map m.property
 
 omit [Module.Flat R S] hI in
 private theorem coe_primaryComponentMap_apply (m : I.primaryComponent M) :
@@ -286,7 +287,7 @@ theorem isBaseChange_of_primaryComponent_eq_top {N : Type*} [AddCommGroup N] [Mo
     refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr fun a ↦ ?_⟩
     rw [← algebraMap_smul S]
     exact (mem_torsionBySet_iff _ _).mp hn
-      ⟨_, Ideal.map_pow (algebraMap R S) I n ▸ Ideal.mem_map_of_mem _ a.2⟩
+      ⟨_, Ideal.map_pow (algebraMap R S) I n ▸ Ideal.mem_map_of_mem _ a.property⟩
   have hb := tensorProduct_mk_bijective_of_primaryComponent_eq_top hI (S := S) hN'
   let l := ((LinearMap.id : N →ₗ[S] N).restrictScalars R).liftBaseChange S
   have hl (n : N) : l (1 ⊗ₜ n) = n := by simp [l]

@@ -99,83 +99,19 @@ end BrauerDiagram
 
 /-! ### Undoing the reconnection by a cap-cup diagram -/
 
-section Reconnect
-
-variable (hcap : D.val (Sum.inl a) = Sum.inl b) (hcup : D.val (Sum.inr c) = Sum.inr d)
-include hcap hcup
-
-open BrauerDiagram
-
-/-- **A cap-cup diagram undoes the reconnection of a cap and a cup.** If `D` caps the bottom
-points `a` and `b` and cups the top points `c` and `d`, then stacking `capCup c d` above the
-diagram `D.reconnect (Sum.inr c) (Sum.inl a)`, in which these two arcs have become the through
-strands `a`–`c` and `b`–`d`, gives back `D`. -/
-theorem composeDiagram_capCup_reconnect :
+/-- **A cap-cup diagram undoes the reconnection of a cap and a cup.** If `D` cups the top points
+`c` and `d`, then stacking `capCup c d` above `D.reconnect (Sum.inr c) (Sum.inl a)` reconnects
+`Sum.inr c` back to `Sum.inr d` and gives back `D`. -/
+theorem composeDiagram_capCup_reconnect (a : Fin k) (hcup : D.val (Sum.inr c) = Sum.inr d) :
     composeDiagram (capCup c d) (D.reconnect (Sum.inr c) (Sum.inl a)) = D := by
-  set X := D.reconnect (Sum.inr c) (Sum.inl a)
-  have hcd : c ≠ d := fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h])
-  have hba : D.val (Sum.inl b) = Sum.inl a := D.apply_eq_of_apply_eq hcap
-  have hdc : D.val (Sum.inr d) = Sum.inr c := D.apply_eq_of_apply_eq hcup
-  have hXa : X.val (Sum.inl a) = Sum.inr c := PerfectMatching.reconnect_val_right Sum.inl_ne_inr
-  have hXb : X.val (Sum.inl b) = Sum.inr d :=
-    hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_right Sum.inl_ne_inr
-  have hXc : X.val (Sum.inr c) = Sum.inl a := PerfectMatching.reconnect_val_self Sum.inl_ne_inr
-  have hXd : X.val (Sum.inr d) = Sum.inl b :=
-    hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-  refine Subtype.ext (Equiv.ext fun x => ?_)
-  -- The four points `a`, `b`, `c`, `d` are treated by hand; every other point keeps its arc.
-  by_cases hxa : x = Sum.inl a
-  · subst x
-    rw [hcap]
-    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ hXa
-      (capCup_val_inl_left hcd) hXd
-  by_cases hxb : x = Sum.inl b
-  · subst x
-    rw [hba]
-    exact composeDiagram_val_inl_eq_inl_of_cap_upper _ _ hXb
-      (capCup_val_inl_right hcd) hXc
-  by_cases hxc : x = Sum.inr c
-  · subst x
-    rw [hcup]
-    exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_left hcd)
-  by_cases hxd : x = Sum.inr d
-  · subst x
-    rw [hdc]
-    exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_right hcd)
-  have hX : X.val x = D.val x :=
-    PerfectMatching.reconnect_val_of_ne hxc hxa (hcup ▸ hxd) (hcap ▸ hxb)
-  obtain ⟨hyc, hyd⟩ := (D.apply_ne_and_ne_iff hcup x).mpr ⟨hxc, hxd⟩
-  rcases x with i | j <;> rcases hy : D.val _ with i' | j'
-  · exact composeDiagram_val_inl_eq_inl_of_cap_lower _ _ (hX.trans hy)
-  · rw [hy] at hyc hyd
-    exact composeDiagram_val_inl_eq_inr_of_through _ _ (hX.trans hy)
-      (capCup_val_inl_of_ne (by simpa using hyc) (by simpa using hyd))
-  · exact composeDiagram_val_inr_eq_inl_of_through _ _
-      (capCup_val_inr_of_ne (by simpa using hxc) (by simpa using hxd)) (hX.trans hy)
-  · rw [hy] at hyc hyd
-    exact composeDiagram_val_inr_eq_inr_of_cup_lower _ _
-      (capCup_val_inr_of_ne (by simpa using hxc) (by simpa using hxd)) (hX.trans hy)
-      (capCup_val_inl_of_ne (by simpa using hyc) (by simpa using hyd))
+  rw [composeDiagram_capCup_left, ← hcup, PerfectMatching.reconnect_reconnect_val]
 
-/-- **Undoing the reconnection closes up no loop**: every middle point lies on a through strand,
-of the reconnected diagram at the two middle points `c` and `d` of the cap, and of the cap-cup
-diagram at every other middle point. -/
-theorem middleLoopCount_capCup_reconnect :
+/-- **Undoing the reconnection closes up no loop**: in `D.reconnect (Sum.inr c) (Sum.inl a)`, the
+top point `c` is joined to the bottom point `a` rather than to `Sum.inr d`. -/
+theorem middleLoopCount_capCup_reconnect (a c d : Fin k) (D : BrauerDiagram k) :
     middleLoopCount (capCup c d) (D.reconnect (Sum.inr c) (Sum.inl a)) = 0 := by
-  refine middleLoopCount_eq_zero_iff.mpr fun m => ?_
-  by_cases hmc : m = c
-  · subst m
-    exact not_onMiddleLoop_of_isThrough_right <| by
-      simp [isThrough_def]
-  by_cases hmd : m = d
-  · subst m
-    exact not_onMiddleLoop_of_isThrough_right <| by
-      simp [isThrough_def,
-        hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self (D := D) Sum.inl_ne_inr]
-  exact not_onMiddleLoop_of_isThrough_left <| by
-    simp [isThrough_def, capCup_val_inl_of_ne hmc hmd]
-
-end Reconnect
+  rw [middleLoopCount_capCup_left, PerfectMatching.reconnect_val_self Sum.inl_ne_inr,
+    ite_eq_right Sum.inl_ne_inr]
 
 /-! ### Induction on Brauer diagrams -/
 
@@ -194,8 +130,8 @@ theorem exists_composeDiagram_capCup_eq (ha : a ∈ D.bottomCap) :
   obtain ⟨d, hcup⟩ : ∃ d, D.val (Sum.inr c) = Sum.inr d :=
     Sum.isRight_iff.mp ((isCup_def D _).mp ((mem_topCup D).mp hc)).2
   exact ⟨c, d, _, fun h => D.apply_ne (Sum.inr c) (by rw [hcup, h]),
-    middleLoopCount_capCup_reconnect hcap hcup, card_bottomCap_reconnect hcap hcup,
-    composeDiagram_capCup_reconnect hcap hcup⟩
+    middleLoopCount_capCup_reconnect a c d D, card_bottomCap_reconnect hcap hcup,
+    composeDiagram_capCup_reconnect a hcup⟩
 
 /-- **Induction on Brauer diagrams.** A property of Brauer diagrams that holds for every
 permutation diagram, and passes from a diagram `X` to the stack `capCup a b ∘ X` of a cap-cup

@@ -113,31 +113,31 @@ The corrected class function vanishes at the identity, which is what makes induc
 trivial-intersection subgroup an isometry on it; adding the multiple of the trivial character of `G`
 back restores the degree, `φ*(1) = φ(1)`. -/
 noncomputable def indExtend [H.FiniteIndex] : ClassFunction k H →ₗ[k] ClassFunction k G where
-  toFun φ := H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
-    φ.1 1 • ofCharacter (Representation.trivial k G k)
+  toFun φ := H.indClassFunction (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)) +
+    φ.val 1 • ofCharacter (Representation.trivial k G k)
   map_add' φ ψ := by
-    have hval : ((φ + ψ : ClassFunction k H) : H → k) 1 = φ.1 1 + ψ.1 1 := rfl
+    have hval : ((φ + ψ : ClassFunction k H) : H → k) 1 = φ.val 1 + ψ.val 1 := rfl
     have hinner : (φ + ψ : ClassFunction k H) -
         ((φ + ψ : ClassFunction k H) : H → k) 1 • ofCharacter (Representation.trivial k H k) =
-          (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
-            (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k)) := by
+          (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)) +
+            (ψ - ψ.val 1 • ofCharacter (Representation.trivial k H k)) := by
       rw [hval, add_smul]
       abel
     rw [hinner, hval, map_add, add_smul]
     abel
   map_smul' c φ := by
-    have hval : ((c • φ : ClassFunction k H) : H → k) 1 = c * φ.1 1 := rfl
+    have hval : ((c • φ : ClassFunction k H) : H → k) 1 = c * φ.val 1 := rfl
     have hinner : (c • φ : ClassFunction k H) -
         ((c • φ : ClassFunction k H) : H → k) 1 • ofCharacter (Representation.trivial k H k) =
-          c • (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) := by
+          c • (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)) := by
       rw [hval, smul_sub, mul_smul]
     rw [hinner, hval, map_smul, RingHom.id_apply, smul_add, mul_smul]
 
 /-- **The defining formula of the exceptional extension.**  The definition itself is not exposed,
 so this is what a consumer unfolds it with. -/
 theorem indExtend_def [H.FiniteIndex] (φ : ClassFunction k H) :
-    indExtend H φ = H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) +
-      φ.1 1 • ofCharacter (Representation.trivial k G k) :=
+    indExtend H φ = H.indClassFunction (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)) +
+      φ.val 1 • ofCharacter (Representation.trivial k G k) :=
   (rfl)
 
 /-- **The exceptional extension of the trivial character is the trivial character.**
@@ -154,7 +154,7 @@ theorem indExtend_ofCharacter_trivial [H.FiniteIndex] :
 
 /-- The corrected class function `φ - φ(1) · 1_H` vanishes at the identity, as designed. -/
 private theorem sub_smul_trivial_apply_one (φ : ClassFunction k H) :
-    ((φ - φ.1 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) : H → k) 1 =
+    ((φ - φ.val 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) : H → k) 1 =
       0 := by
   simp
 
@@ -187,7 +187,7 @@ private theorem coe_ofCharacter_trivial :
 /-- Induction takes a class function vanishing at the identity to one vanishing at the identity:
 every summand of the coset sum at the identity is the value of `f` at the identity. -/
 private theorem ind_apply_one_of_apply_one_eq_zero [H.FiniteIndex] {f : ClassFunction k H}
-    (hf : (f : H → k) 1 = 0) : (H.indClassFunction f).1 1 = 0 := by
+    (hf : (f : H → k) 1 = 0) : (H.indClassFunction f).val 1 = 0 := by
   classical
   rw [Subgroup.indClassFunction_apply, Subgroup.indClassFun_apply]
   refine Finset.sum_eq_zero fun t _ => ?_
@@ -224,7 +224,7 @@ The correction term is what makes this work: `φ - φ(1) · 1_H` vanishes at the
 induction does too, and the value at the identity is the correction term alone. -/
 @[simp]
 theorem indExtend_apply_one [H.FiniteIndex] (φ : ClassFunction k H) :
-    (indExtend H φ).1 1 = φ.1 1 := by
+    (indExtend H φ).val 1 = φ.val 1 := by
   rw [indExtend_def, Submodule.coe_add, Pi.add_apply,
     ind_apply_one_of_apply_one_eq_zero (sub_smul_trivial_apply_one φ), SetLike.val_smul,
     coe_ofCharacter_trivial]
@@ -278,22 +278,22 @@ theorem characterPairing_indExtend_indExtend (hG : IsUnit (Nat.card G : k)) (hH 
     fun f => by rw [characterPairing_ind hG, comap_subtype_ofCharacter_trivial]
   -- the induction isometry on the two corrected class functions
   have hAB : characterPairing
-      (H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
-      (H.indClassFunction (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
+      (H.indClassFunction (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)))
+      (H.indClassFunction (ψ - ψ.val 1 • ofCharacter (Representation.trivial k H k))) =
         characterPairing φ ψ -
-          ψ.1 1 * characterPairing φ (ofCharacter (Representation.trivial k H k)) -
-          φ.1 1 * characterPairing ψ (ofCharacter (Representation.trivial k H k)) +
-          φ.1 1 * ψ.1 1 := by
+          ψ.val 1 * characterPairing φ (ofCharacter (Representation.trivial k H k)) -
+          φ.val 1 * characterPairing ψ (ofCharacter (Representation.trivial k H k)) +
+          φ.val 1 * ψ.val 1 := by
     rw [characterPairing_ind_ind hG hH _ _ (sub_smul_trivial_apply_one ψ),
       characterPairing_sub_smul_trivial hk]
   have hAtG : characterPairing
-      (H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)))
+      (H.indClassFunction (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)))
       (ofCharacter (Representation.trivial k G k)) =
-        characterPairing φ (ofCharacter (Representation.trivial k H k)) - φ.1 1 := by
+        characterPairing φ (ofCharacter (Representation.trivial k H k)) - φ.val 1 := by
     rw [hcross, characterPairing_sub_smul_trivial_right hk]
   have htGB : characterPairing (ofCharacter (Representation.trivial k G k))
-      (H.indClassFunction (ψ - ψ.1 1 • ofCharacter (Representation.trivial k H k))) =
-        characterPairing ψ (ofCharacter (Representation.trivial k H k)) - ψ.1 1 := by
+      (H.indClassFunction (ψ - ψ.val 1 • ofCharacter (Representation.trivial k H k))) =
+        characterPairing ψ (ofCharacter (Representation.trivial k H k)) - ψ.val 1 := by
     rw [characterPairing_symm, hcross, characterPairing_sub_smul_trivial_right hk]
   -- expand both extensions by bilinearity and cancel
   simp only [indExtend_def, map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply,
@@ -314,23 +314,23 @@ correction terms are integer multiples of the trivial character, which is the ch
 trivial representation.  Integrality of `φ(1)` is what makes those multiples lie in the lattice,
 which is an additive subgroup and not a `k`-submodule. -/
 theorem indExtend_mem_virtualCharacters {φ : ClassFunction k H} {n : ℤ}
-    (hφ : (φ : H → k) ∈ virtualCharacters k H) (hn : φ.1 1 = (n : k)) :
+    (hφ : (φ : H → k) ∈ virtualCharacters k H) (hn : φ.val 1 = (n : k)) :
     ((indExtend H φ : ClassFunction k G) : G → k) ∈ virtualCharacters k G := by
-  have hsub : ((φ - φ.1 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) :
+  have hsub : ((φ - φ.val 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) :
       H → k) ∈ virtualCharacters k H := by
-    have : ((φ - φ.1 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) :
+    have : ((φ - φ.val 1 • ofCharacter (Representation.trivial k H k) : ClassFunction k H) :
         H → k) = (φ : H → k) - n • (1 : H → k) := by
       rw [Submodule.coe_sub, SetLike.val_smul, coe_ofCharacter_trivial, hn,
         Int.cast_smul_eq_zsmul]
     rw [this]
     exact sub_mem hφ (zsmul_mem one_mem_virtualCharacters n)
-  have hind : ((H.indClassFunction (φ - φ.1 1 • ofCharacter (Representation.trivial k H k)) :
+  have hind : ((H.indClassFunction (φ - φ.val 1 • ofCharacter (Representation.trivial k H k)) :
       ClassFunction k G) : G → k) ∈ virtualCharacters k G := by
     rw [coe_ind]
     exact Subgroup.indClassFun_mem_virtualCharacters H hsub
-  have hcorr : ((φ.1 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) :
+  have hcorr : ((φ.val 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) :
       G → k) ∈ virtualCharacters k G := by
-    have : ((φ.1 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) : G → k) =
+    have : ((φ.val 1 • ofCharacter (Representation.trivial k G k) : ClassFunction k G) : G → k) =
         n • (1 : G → k) := by
       rw [SetLike.val_smul, coe_ofCharacter_trivial, hn, Int.cast_smul_eq_zsmul]
     rw [this]
@@ -365,7 +365,7 @@ theorem indExtend_mem_irreducibleCharacters (hH : IsTISubgroup H) {φ : ClassFun
   let : Invertible (Nat.card H : k) := invertibleOfNonzero hk.ne_zero
   obtain ⟨j, hj⟩ := exists_irreducibleCharacter_eq (k := k) hφ
   -- the degree of `φ`, a natural number
-  have hdeg : φ.1 1 = (characterDegree k j : k) := by
+  have hdeg : φ.val 1 = (characterDegree k j : k) := by
     rw [← hj, irreducibleCharacter_one]
   -- `φ` has norm `1` and is a virtual character
   have hφclass : φ = ofCharacter (irreducibleRepresentation k j) :=
@@ -380,7 +380,7 @@ theorem indExtend_mem_irreducibleCharacters (hH : IsTISubgroup H) {φ : ClassFun
   -- so the extension is a virtual character of norm `1` and of the same degree
   have hstarnorm : characterPairing (indExtend H φ) (indExtend H φ) = 1 := by
     rw [characterPairing_indExtend_indExtend hG hH φ φ, hnorm]
-  have hone : (indExtend H φ).1 1 = (characterDegree k j : k) := by
+  have hone : (indExtend H φ).val 1 = (characterDegree k j : k) := by
     rw [indExtend_apply_one, hdeg]
   exact mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (indExtend_mem_virtualCharacters hvirt (n := (characterDegree k j : ℤ)) (by simpa using hdeg))

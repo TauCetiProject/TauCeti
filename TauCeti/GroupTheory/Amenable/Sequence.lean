@@ -5,26 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.DiscreteFoelner
+public import TauCeti.GroupTheory.Amenable.Foelner
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 
 /-!
 # Følner sequences in countable groups
 
-A countable group has Følner sets (and, when discrete, is amenable) exactly when it admits a
-sequence of finite nonempty sets whose relative translation boundaries tend to zero for every group
-element. Countability allows the finite-test Følner net to be restricted along a cofinal sequence
-of tests. This works for finite groups as well as infinite ones: no injective enumeration is
-required.
+A countable group has Følner sets exactly when it admits a sequence of finite nonempty sets
+whose relative translation boundaries tend to zero for every group element. Countability
+allows the finite-test Følner net to be restricted along a cofinal sequence of tests. This
+works for finite groups as well as infinite ones: no injective enumeration is required.
 
 The sets in the resulting sequence need not be nested or exhaust the group.
 
 ## Main results
 
-* `TauCeti.hasFoelnerSets_iff_exists_seq`: the countable Følner sequence criterion for
-  `HasFoelnerSets`.
-* `TauCeti.amenable_iff_exists_seq`: the countable Følner sequence characterization of discrete
-  amenability.
+* `TauCeti.hasFoelnerSets_iff_exists_seq` and `TauCeti.hasAddFoelnerSets_iff_exists_seq`: the
+  countable Følner sequence criteria for multiplicative and additive groups.
 
 ## References
 
@@ -43,6 +40,9 @@ variable {G : Type*} [Group G] [DecidableEq G]
 
 /-- A countable group has Følner sets exactly when there is a sequence of finite nonempty
 sets whose relative translation boundaries tend to zero for every group element. -/
+@[to_additive hasAddFoelnerSets_iff_exists_seq /-- A countable additive group has Følner sets
+exactly when there is a sequence of finite nonempty sets whose relative translation boundaries tend
+to zero for every group element. -/]
 theorem hasFoelnerSets_iff_exists_seq [Countable G] : HasFoelnerSets G ↔
     ∃ F : ℕ → Finset G, (∀ n, (F n).Nonempty) ∧
       ∀ g : G, Tendsto (fun n => (#((g • F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) := by
@@ -54,14 +54,5 @@ theorem hasFoelnerSets_iff_exists_seq [Countable G] : HasFoelnerSets G ↔
   obtain ⟨a, -, ha⟩ := exists_seq_monotone_tendsto_atTop_atTop (Finset G × ℕ)
   refine ⟨F ∘ a, fun n => hne (a n), fun g => ?_⟩
   exact (hF.comp_tendsto ha).tendsto_card_smul_symmDiff_div_card g
-
-/-- A countable discrete group is amenable iff it admits a sequence of finite nonempty sets whose
-relative translation boundaries tend to zero for every group element. -/
-theorem amenable_iff_exists_seq [Countable G] [TopologicalSpace G] [IsTopologicalGroup G]
-    [DiscreteTopology G] :
-    Amenable G ↔
-      ∃ F : ℕ → Finset G, (∀ n, (F n).Nonempty) ∧
-        ∀ g : G, Tendsto (fun n ↦ (#((g • F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) :=
-  amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_exists_seq
 
 end TauCeti

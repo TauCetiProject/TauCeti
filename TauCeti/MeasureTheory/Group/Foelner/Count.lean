@@ -119,7 +119,7 @@ theorem maxFoelner_count_neBot_iff_of_closure_eq_top [MeasurableSingletonClass X
       (ENNReal.ofReal_pos.2 hε).ne'
     have hfin : F.Finite := (Measure.count_apply_lt_top' hFm).1 (lt_top_iff_ne_top.2 htop)
     have hne : F.Nonempty := by
-      simpa [Set.nonempty_iff_ne_empty] using mt Measure.count_eq_zero_iff.2 h0
+      simpa [← Set.ne_empty_iff_nonempty] using mt Measure.count_eq_zero_iff.2 h0
     exact ⟨F, hfin, hne, fun g hg ↦
       (Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne g).1 (hFK g hg)⟩
   · intro h K hKS ε hε
@@ -129,7 +129,7 @@ theorem maxFoelner_count_neBot_iff_of_closure_eq_top [MeasurableSingletonClass X
       · exact ⟨ε.toReal, ENNReal.toReal_pos hε htop, (ENNReal.ofReal_toReal htop).le⟩
     obtain ⟨F, hfin, hne, hFK⟩ := h K hKS δ hδ0
     refine ⟨F, hfin.measurableSet, ?_, ?_, fun g hg ↦ ?_⟩
-    · simpa [Set.nonempty_iff_ne_empty] using hne
+    · simpa [← Set.ne_empty_iff_nonempty] using hne
     · exact (Measure.count_apply_lt_top.2 hfin).ne
     · exact ((Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne g).2
         (hFK g hg)).trans_le hδε

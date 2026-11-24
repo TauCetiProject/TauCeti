@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Green.WindingWeight.Basic
+public import TauCeti.LinearAlgebra.Trace.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Green.Winding
@@ -29,6 +30,10 @@ sign `TauCeti.Contour.jordanSign γ a b ∈ {1, -1}` is a conclusion of simplici
   `jordanSign γ a b` times the integral of `curl P Q` over `filledHull C \ C`, with both
   integrabilities deduced automatically.
 * `TauCeti.Green.green_ac_flux_jordan`: flux-divergence form for a simple closed AC curve.
+* `AbsolutelyContinuousOnInterval.integrableOn_filledHull_sdiff_trace_fderiv`,
+  `AbsolutelyContinuousOnInterval.intervalIntegrable_inner_jordanSign_smul_I_mul_deriv`, and
+  `AbsolutelyContinuousOnInterval.setIntegral_filledHull_sdiff_trace_fderiv_eq`: trace-divergence
+  and normal-flux form of Green's theorem for a `C¹` vector field `φ : ℂ → ℂ`.
 -/
 
 public section
@@ -118,3 +123,93 @@ theorem green_ac_flux_jordan {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {X Y :
   rwa [hc, hd] at h
 
 end TauCeti.Green
+
+namespace AbsolutelyContinuousOnInterval
+
+open Complex
+open scoped RealInnerProductSpace
+
+variable {γ : ℝ → ℂ} {a b : ℝ}
+
+/-- Bundle of integrability and Green's divergence-flux identity on the bounded inside of a simple
+closed absolutely continuous curve. -/
+private theorem integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv {W : Set ℂ} {φ : ℂ → ℂ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
+    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
+    IntegrableOn (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap)
+        (TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b) ∧
+      IntervalIntegrable
+        (fun t => ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫)
+        volume a b ∧
+      (∫ z in TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b,
+          LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) =
+        ∫ t in a..b,
+          ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫ := by
+  set D := TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b
+  set σ : ℝ := (TauCeti.Contour.jordanSign γ a b : ℝ)
+  have hD : MeasurableSet D :=
+    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isClosed.isOpen_filledHull_sdiff
+      |>.measurableSet
+  have hflux := TauCeti.Green.green_ac_flux_jordan hab hγ hclosed hinj hW hregion
+    (Complex.reCLM.contDiff.comp_contDiffOn hφ) (Complex.imCLM.contDiff.comp_contDiffOn hφ)
+  have htr : EqOn (fun z => fderiv ℝ (Complex.reCLM ∘ φ) z 1 + fderiv ℝ (Complex.imCLM ∘ φ) z I)
+      (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) D := fun z hz => by
+    dsimp only
+    have hd : DifferentiableAt ℝ φ z :=
+      (hφ.differentiableOn one_ne_zero z (sdiff_subset.trans hregion hz)).differentiableAt
+        (hW.mem_nhds (sdiff_subset.trans hregion hz))
+    rw [LinearMap.trace_complex_apply, (Complex.reCLM.hasFDerivAt.comp z hd.hasFDerivAt).fderiv,
+      (Complex.imCLM.hasFDerivAt.comp z hd.hasFDerivAt).fderiv]
+    simp only [ContinuousLinearMap.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply,
+      ContinuousLinearMap.coe_coe]
+  have hpt (t : ℝ) :
+      ⟪φ (γ t), -σ • (I * deriv γ t)⟫ =
+        σ * ((φ (γ t)).re * (deriv γ t).im - (φ (γ t)).im * (deriv γ t).re) := by
+    simp [Complex.inner, mul_re, mul_im]
+    ring
+  have hσsq : σ * σ = 1 := by
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [σ, h]
+  refine ⟨hflux.2.1.congr_fun htr hD, ?_, ?_⟩
+  · simp only [Function.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply] at hflux
+    simpa only [hpt] using hflux.1.const_mul σ
+  · simp only [Function.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply] at hflux
+    simp_rw [hpt, intervalIntegral.integral_const_mul]
+    rw [← setIntegral_congr_fun hD htr, hflux.2.2, ← mul_assoc, hσsq, one_mul]
+
+/-- The divergence `tr(Dφ)` of a `C¹` vector field on an open neighbourhood of
+`filledHull (γ '' uIcc a b)` is integrable on `filledHull (γ '' uIcc a b) \ γ '' uIcc a b`. -/
+theorem integrableOn_filledHull_sdiff_trace_fderiv {W : Set ℂ} {φ : ℂ → ℂ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
+    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
+    IntegrableOn (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap)
+      (TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b) :=
+  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).1
+
+/-- Along a simple closed absolutely continuous curve `γ`, the normal flux integrand
+`⟪φ (γ t), -(jordanSign γ a b : ℝ) • (I * deriv γ t)⟫` is interval-integrable on `[a, b]` for any
+`C¹` vector field `φ` on an open neighbourhood of `filledHull (γ '' uIcc a b)`. -/
+theorem intervalIntegrable_inner_jordanSign_smul_I_mul_deriv {W : Set ℂ} {φ : ℂ → ℂ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
+    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
+    IntervalIntegrable
+      (fun t => ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫)
+      volume a b :=
+  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).2.1
+
+/-- **Divergence-flux form of Green's theorem for a simple closed absolutely continuous curve.**
+For any `C¹` vector field `φ : ℂ → ℂ` on an open neighbourhood `W` of `filledHull (γ '' uIcc a b)`,
+`∫_{filledHull C \ C} tr(Dφ) = ∫ₐᵇ ⟪φ (γ t), -(jordanSign γ a b : ℝ) • (I * deriv γ t)⟫`. -/
+theorem setIntegral_filledHull_sdiff_trace_fderiv_eq {W : Set ℂ} {φ : ℂ → ℂ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
+    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
+    (∫ z in TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b,
+        LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) =
+      ∫ t in a..b,
+        ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫ :=
+  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).2.2
+
+end AbsolutelyContinuousOnInterval

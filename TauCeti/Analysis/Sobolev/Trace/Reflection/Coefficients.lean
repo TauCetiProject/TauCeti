@@ -57,6 +57,11 @@ theorem higherReflectionNode_neg {k : ℕ} (j : Fin k) : higherReflectionNode j 
 theorem higherReflectionNode_ne_zero {k : ℕ} (j : Fin k) : higherReflectionNode j ≠ 0 :=
   (higherReflectionNode_neg j).ne
 
+/-- Each node lies in `[-1, 0)`, so its dilation does not increase normal distances. -/
+theorem abs_higherReflectionNode_le_one {k : ℕ} (j : Fin k) : |higherReflectionNode j| ≤ 1 := by
+  rw [higherReflectionNode_eq, abs_neg, abs_inv, abs_of_pos (by positivity)]
+  exact inv_le_one_of_one_le₀ (by simp)
+
 /-- The reflection nodes are pairwise distinct. -/
 theorem higherReflectionNode_injective (k : ℕ) :
     Function.Injective (higherReflectionNode (k := k)) := by

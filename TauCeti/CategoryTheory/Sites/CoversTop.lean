@@ -5,21 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
+public import Mathlib.CategoryTheory.Sites.Over
 
 /-!
-# Common refinements of covering families
+# Common refinements and joint faithfulness for covering families
 
 Given two families of objects `X₁` and `X₂` that cover the terminal object of a site, this file
 constructs a third covering family each of whose members maps to a member of `X₁` and to a member
-of `X₂`. Such common refinements are used to compare two local trivializations of a sheaf.
+of `X₂`. It also shows that for any family `Y` covering the terminal object of `(C, J)`, the
+restriction functors `J.overPullback A (Y i) : Sheaf J A ⥤ Sheaf (J.over (Y i)) A` are jointly
+faithful (and therefore jointly reflect epimorphisms) for any coefficient category `A`.
 
-## Main definitions
+## Main declarations
 
 * `CategoryTheory.GrothendieckTopology.CoversTop.CommonRefinement`: a covering family together
   with arrows from each of its members to a member of each of two given families.
 * `CategoryTheory.GrothendieckTopology.CoversTop.commonRefinement`: a common refinement of two
   families covering the terminal object.
+* `CategoryTheory.GrothendieckTopology.CoversTop.jointlyFaithful_overPullback` and
+  `CategoryTheory.GrothendieckTopology.CoversTop.jointlyReflectEpimorphisms_overPullback`:
+  restrictions to slice sites over a covering family are jointly faithful and jointly reflect
+  epimorphisms.
 -/
 
 public section
@@ -61,11 +69,33 @@ noncomputable def commonRefinement {I₁ I₂ : Type*} {X₁ : I₁ → C} {X₂
     CommonRefinement.{u} J X₁ X₂ where
   I := {W : C // (∃ i, Nonempty (W ⟶ X₁ i)) ∧ ∃ j, Nonempty (W ⟶ X₂ j)}
   X := Subtype.val
-  leftIndex w := w.2.1.choose
-  left w := w.2.1.choose_spec.some
-  rightIndex w := w.2.2.choose
-  right w := w.2.2.choose_spec.some
+  leftIndex w := w.property.1.choose
+  left w := w.property.1.choose_spec.some
+  rightIndex w := w.property.2.choose
+  right w := w.property.2.choose_spec.some
   coversTop A := J.superset_covering (fun Z _ hZ ↦ ⟨⟨Z, hZ⟩, ⟨𝟙 Z⟩⟩)
     (J.intersection_covering (h₁ A) (h₂ A))
+
+/-- If `Y : I → C` covers the terminal object for `J`, then the restriction functors
+`J.overPullback A (Y i) : Sheaf J A ⥤ Sheaf (J.over (Y i)) A` are jointly faithful for any
+coefficient category `A`. -/
+theorem jointlyFaithful_overPullback {I : Type*} {Y : I → C} {J : GrothendieckTopology C}
+    (hY : J.CoversTop Y) (A : Type*) [Category* A] :
+    JointlyFaithful (fun i ↦ J.overPullback A (Y i)) where
+  map_injective {F G φ ψ} h := by
+    ext ⟨W⟩
+    refine G.property.hom_ext (hY.cover W) _ _ ?_
+    rintro ⟨Z, a, ⟨i, ⟨b⟩⟩⟩
+    have hi : φ.hom.app (Opposite.op Z) = ψ.hom.app (Opposite.op Z) :=
+      congr(($(h i)).hom.app (Opposite.op (Over.mk b)))
+    rw [← φ.hom.naturality, ← ψ.hom.naturality, hi]
+
+/-- If `Y : I → C` covers the terminal object for `J`, then the restriction functors
+`J.overPullback A (Y i) : Sheaf J A ⥤ Sheaf (J.over (Y i)) A` jointly reflect epimorphisms for any
+coefficient category `A`. -/
+theorem jointlyReflectEpimorphisms_overPullback {I : Type*} {Y : I → C}
+    {J : GrothendieckTopology C} (hY : J.CoversTop Y) (A : Type*) [Category* A] :
+    JointlyReflectEpimorphisms (fun i ↦ J.overPullback A (Y i)) :=
+  (hY.jointlyFaithful_overPullback A).jointlyReflectEpimorphisms
 
 end CategoryTheory.GrothendieckTopology.CoversTop

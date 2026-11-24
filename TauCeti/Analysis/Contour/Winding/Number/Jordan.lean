@@ -69,9 +69,9 @@ theorem windingNumber_sub_eq_of_isJordanCurve {C : Set ℂ} (hC : IsJordanCurve 
     rw [ContinuousMap.coe_mk, sub_ne_zero]
     rcases eq_or_ne st.1 0 with hs | hs
     · simpa [hs] using hpq st.2
-    have hpos : 0 < (st.1 : ℝ) := lt_of_le_of_ne st.1.2.1 fun h ↦ hs (Subtype.ext h.symm)
+    have hpos : 0 < (st.1 : ℝ) := lt_of_le_of_ne st.1.property.1 fun h ↦ hs (Subtype.ext h.symm)
     have hball : (1 - (st.1 : ℝ)) • e.symm (q st.2) ∈ ball (0 : ℂ) 1 := by
-      rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr st.1.2.2), hnorm,
+      rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr st.1.property.2), hnorm,
         mul_one]
       linarith
     have hin : e ((1 - (st.1 : ℝ)) • e.symm (q st.2)) ∈ filledHull C \ C :=

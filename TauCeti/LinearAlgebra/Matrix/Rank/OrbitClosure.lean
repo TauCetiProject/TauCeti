@@ -86,7 +86,7 @@ theorem isNilpotent_of_forall_rank_pow_le {K : Type*} [Field K] {X Y : Matrix n 
   apply (isNilpotent_toLin'_iff Y).1
   refine ⟨N, LinearMap.range_eq_bot.1 (Submodule.finrank_eq_zero.1 ?_)⟩
   have := h N
-  rwa [hN, rank_zero, Nat.le_zero, rank, ← toLin'_apply', toLin'_pow] at this
+  rwa [hN, rank_zero, Nat.le_zero, ← finrank_range_mulVecLin, ← toLin'_apply', toLin'_pow] at this
 
 section Zariski
 
@@ -141,8 +141,9 @@ theorem rank_pow_add_smul_toMatrix'_joinEnds (c : Module.End.JordanChainBasis (t
     {i j : ι} (hij : i ≠ j) {t : K} (ht : t ≠ 0) (k : ℕ) :
     ((Y + t • LinearMap.toMatrix' (c.joinEnds i j)) ^ k).rank =
       (Y ^ k).rank + if c.len j ≤ k ∧ k ≤ c.len i then 1 else 0 := by
-  rw [rank, rank, ← toLin'_apply', ← toLin'_apply', toLin'_pow, toLin'_pow, map_add, map_smul,
-    toLin'_toMatrix', c.finrank_range_add_smul_joinEnds_pow hij ht]
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← toLin'_apply', ← toLin'_apply',
+    toLin'_pow, toLin'_pow, map_add, map_smul, toLin'_toMatrix',
+    c.finrank_range_add_smul_joinEnds_pow hij ht]
 
 omit [Finite ι] in
 /-- **Elementary degenerations lie in orbit closures.** Over a field with continuous ring
@@ -189,7 +190,7 @@ variable {K : Type*} [Field K]
 private theorem rank_pow_add_sum_min_len {Y : Matrix n n K} {ι : Type*} [Fintype ι]
     (c : Module.End.JordanChainBasis (toLin' Y) ι) (k : ℕ) :
     (Y ^ k).rank + ∑ i, min k (c.len i) = Fintype.card n := by
-  rw [rank, ← toLin'_apply', toLin'_pow, ← c.finrank_ker_pow,
+  rw [← finrank_range_mulVecLin, ← toLin'_apply', toLin'_pow, ← c.finrank_ker_pow,
     LinearMap.finrank_range_add_finrank_ker, Module.finrank_fintype_fun_eq_card]
 
 /-- If the rank of some power of `Y` is strictly smaller than that of the same power of `X`, then
@@ -314,7 +315,8 @@ theorem jordanPartition_dominates_jordanPartition_iff {X Y : Matrix n n K} (hX :
       ∀ k, (Y ^ k).rank ≤ (X ^ k).rank := by
   rw [Module.End.jordanPartition_dominates_jordanPartition_iff]
   refine forall_congr' fun k => ?_
-  rw [rank, rank, ← toLin'_apply', ← toLin'_apply', toLin'_pow, toLin'_pow]
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← toLin'_apply', ← toLin'_apply',
+    toLin'_pow, toLin'_pow]
 
 /-- **Orbit closures and dominance.** Over a field with continuous ring operations and closed
 points in which `0` is not isolated, such as `ℂ`, a nilpotent matrix `Y` lies in the closure of the

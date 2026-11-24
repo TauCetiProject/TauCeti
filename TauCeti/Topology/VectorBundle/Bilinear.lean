@@ -94,24 +94,24 @@ variable [FiniteDimensional ℝ F]
 defines an open subset of the total space. The forms are not required to be symmetric. -/
 theorem isOpen_setOf_forall_bilinear_bundle_apply_self_pos :
     IsOpen {z : TotalSpace (F →L[ℝ] F →L[ℝ] ℝ)
-      (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) | ∀ v, v ≠ 0 → 0 < z.2 v v} := by
+      (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) | ∀ v, v ≠ 0 → 0 < z.snd v v} := by
   rw [isOpen_iff_mem_nhds]
   intro z hz
   have hcoord := (continuousAt_hom_bundle (RingHom.id ℝ) _).mp
     (continuousAt_id : ContinuousAt
       (id : TotalSpace (F →L[ℝ] F →L[ℝ] ℝ)
         (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) → _) z)
-  have hbase : ∀ᶠ w in 𝓝 z, w.1 ∈ (trivializationAt F V z.1).baseSet :=
-    hcoord.1 ((trivializationAt F V z.1).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F V z.1))
+  have hbase : ∀ᶠ w in 𝓝 z, w.proj ∈ (trivializationAt F V z.proj).baseSet :=
+    hcoord.1 ((trivializationAt F V z.proj).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F V z.proj))
   have hpos : ∀ᶠ w in 𝓝 z, ∀ v : F, v ≠ 0 →
       0 < inCoordinates F V (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] ℝ)
-        z.1 w.1 z.1 w.1 w.2 v v :=
+        z.proj w.proj z.proj w.proj w.snd v v :=
     hcoord.2 (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
       ((forall_inCoordinates_bilinear_apply_self_pos_iff
-        (mem_baseSet_trivializationAt F V z.1) z.2).mpr hz))
+        (mem_baseSet_trivializationAt F V z.proj) z.snd).mpr hz))
   filter_upwards [hbase, hpos] with w hw hp
-  exact (forall_inCoordinates_bilinear_apply_self_pos_iff hw w.2).mp hp
+  exact (forall_inCoordinates_bilinear_apply_self_pos_iff hw w.snd).mp hp
 
 /-- Positivity of a continuous family of bilinear fields on a compact subset of the base is
 an open condition on the parameter. This applies in particular to symmetric metric fields. -/

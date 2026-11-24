@@ -251,7 +251,7 @@ theorem exists_hasWeakFDerivOn_iff_locally :
     exact ⟨Ω, hx, U, hU⟩
   · intro h
     by_cases hfd : FiniteDimensional ℝ E
-    · choose V hxV W hW using fun x : Ω ↦ h x x.2
+    · choose V hxV W hW using fun x : Ω ↦ h x x.property
       obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
       refine ⟨U, hU.mono fun x hx ↦ ?_⟩
       exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)

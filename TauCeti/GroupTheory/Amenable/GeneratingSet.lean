@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Action.Pointwise.Finset
-public import TauCeti.GroupTheory.Amenable.Sequence
+public import TauCeti.GroupTheory.Amenable.DiscreteFoelner
+import TauCeti.Algebra.Group.Action.Pointwise.Finset
 
 /-!
 # Generating-set Følner characterizations of amenability
@@ -17,17 +17,17 @@ controlling the translation boundaries `|gF △ F|` of a finite set `F ⊆ G` on
 of `G` controls `|gF △ F|` on all words in `S ∪ S⁻¹`, with a uniform multiplicative constant
 `M : ℕ` independent of `F` (`Finset.exists_finset_card_smul_symmDiff_le_of_subset_closure`).
 
-This file develops the resulting generating-set Følner and amenability characterizations for
-discrete and topological groups, together with countable Følner-sequence generator criteria and
-`DecidableEq`-free finite `Set` (`Set.ncard`) forms:
+Building on the basic finite-test generator reductions
+`TauCeti.hasFoelnerSets_iff_of_closure_eq_top` and
+`TauCeti.hasFoelnerSets_iff_of_closure_finset_eq_top` (and their discrete-amenability forms
+`TauCeti.amenable_iff_exists_finset_of_closure_eq_top` and
+`TauCeti.amenable_iff_exists_finset_of_closure_finset_eq_top`), this file develops the remaining
+generating-set Følner and amenability characterizations:
 
-* For any generating set `S : Set G` (`Subgroup.closure S = ⊤`), `HasFoelnerSets G` (and, when `G`
-  is discrete, `Amenable G`) holds iff every finite subset `K ⊆ S` and `ε > 0` admit a finite
-  nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`.
-* For a **finite** generating set `S : Finset G` (`Subgroup.closure (S : Set G) = ⊤`), only the
-  single test set `S` is needed: `HasFoelnerSets G` is equivalent to small individual generator
-  boundaries, small summed generator boundary `∑ g ∈ S, |gF △ F| < ε · |F|`, and non-expansion of
-  the unit Cayley ball `|({1} ∪ S) • F| < (1 + c) · |F|`. Negating gives a positive Cheeger /
+* `DecidableEq`-free finite-`Set` (`Set.ncard`) criteria on an arbitrary generating set `S : Set G`.
+* For a **finite** generating set `S : Finset G` (`Subgroup.closure (S : Set G) = ⊤`), equivalences
+  with small summed generator boundary `∑ g ∈ S, |gF △ F| < ε · |F|` and non-expansion of the unit
+  Cayley ball `|({1} ∪ S) • F| < (1 + c) · |F|`. Negating gives a positive Cheeger /
   vertex-expansion constant on `{1} ∪ S` itself for every nonamenable finitely generated group.
 * Along any nontrivial filter `l`, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating
   set `S` for an eventually nonempty family `F` is sufficient for `HasFoelnerSets G` (and hence
@@ -37,13 +37,11 @@ discrete and topological groups, together with countable Følner-sequence genera
 
 ## Main results
 
-* `TauCeti.hasFoelnerSets_iff_exists_finite_set_of_closure_eq_top`,
-  `TauCeti.hasFoelnerSets_iff_of_closure_eq_top`, `TauCeti.amenable_iff_of_closure_eq_top`:
-  characterizations testing finite subsets of an arbitrary generating set `S : Set G`.
-* `TauCeti.hasFoelnerSets_iff_forall_pos_of_closure_eq_top`,
-  `TauCeti.hasFoelnerSets_iff_sum_lt_of_closure_eq_top`,
-  `TauCeti.hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top`: single-test, boundary-sum,
-  and Cayley-ball expansion criteria for a finite generating set `S : Finset G`.
+* `TauCeti.hasFoelnerSets_iff_exists_finite_set_of_closure_eq_top`: `DecidableEq`-free `Set.ncard`
+  characterization testing finite subsets of an arbitrary generating set `S : Set G`.
+* `TauCeti.hasFoelnerSets_iff_sum_lt_of_closure_eq_top`,
+  `TauCeti.hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top`: boundary-sum and
+  Cayley-ball expansion criteria for a finite generating set `S : Finset G`.
 * `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top`,
   `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top`: Følner-net generator
   criteria for `HasFoelnerSets` and topological `Amenable`.
@@ -72,6 +70,10 @@ variable {G : Type*} [Group G]
 /-- **Garrido Lemma 3.4 (arbitrary generating set, `Set.ncard` form).** When `S` generates `G`,
 `HasFoelnerSets G` holds iff every finite `K ⊆ S` and `ε > 0` admit a finite nonempty `F : Set G`
 passing the `K`-test. -/
+@[to_additive hasAddFoelnerSets_iff_exists_finite_set_of_closure_eq_top
+/-- **Garrido Lemma 3.4 (arbitrary additive generating set, `Set.ncard` form).** When `S` generates
+`G`, `HasAddFoelnerSets G` holds iff every finite `K ⊆ S` and `ε > 0` admit a finite nonempty
+`F : Set G` passing the `K`-test. -/]
 theorem hasFoelnerSets_iff_exists_finite_set_of_closure_eq_top {S : Set G}
     (hS : Subgroup.closure S = ⊤) :
     HasFoelnerSets G ↔
@@ -81,52 +83,16 @@ theorem hasFoelnerSets_iff_exists_finite_set_of_closure_eq_top {S : Set G}
   let : MeasurableSpace G := ⊤
   exact maxFoelner_count_neBot_iff_of_closure_eq_top hS
 
-/-- **Garrido Lemma 3.4 (`Finset` form).** When `S` generates `G`, `HasFoelnerSets G` holds iff
-every finite subset `K ⊆ S` and `ε > 0` admit a nonempty `F : Finset G` with
-`#((g • F) ∆ F) < ε * #F` for all `g ∈ K`. -/
-theorem hasFoelnerSets_iff_of_closure_eq_top [DecidableEq G] {S : Set G}
-    (hS : Subgroup.closure S = ⊤) :
-    HasFoelnerSets G ↔
-      ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ, 0 < ε →
-        ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-  rw [hasFoelnerSets_iff_exists_finite_set_of_closure_eq_top hS]
-  simp_rw [exists_finite_ncard_smul_symmDiff_lt_iff]
-
-/-- Discrete amenability tested on finite subsets of a generating set `S : Set G`. -/
-theorem amenable_iff_of_closure_eq_top [TopologicalSpace G] [IsTopologicalGroup G]
-    [DiscreteTopology G] [DecidableEq G] {S : Set G} (hS : Subgroup.closure S = ⊤) :
-    Amenable G ↔
-      ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ, 0 < ε →
-        ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F :=
-  amenable_iff_hasFoelnerSets.trans (hasFoelnerSets_iff_of_closure_eq_top hS)
-
-/-- **Single-test Følner criterion for finitely generated groups (Garrido Lemma 3.4,
-BDHV Remark G.5.3).** If `S : Finset G` generates `G`, then `HasFoelnerSets G` holds iff for every
-`ε > 0` there is a finite nonempty `F ⊆ G` with `#((g • F) ∆ F) < ε * #F` for all `g ∈ S`. -/
-theorem hasFoelnerSets_iff_forall_pos_of_closure_eq_top [DecidableEq G] {S : Finset G}
-    (hS : Subgroup.closure (S : Set G) = ⊤) :
-    HasFoelnerSets G ↔
-      ∀ ε : ℝ, 0 < ε → ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ S, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-  rw [hasFoelnerSets_iff_of_closure_eq_top hS]
-  exact ⟨fun h ε hε ↦ h S Set.Subset.rfl ε hε, fun h K hKS ε hε ↦
-    let ⟨F, hne, hFS⟩ := h ε hε
-    ⟨F, hne, foelnerTest_mono (coe_subset.1 hKS) le_rfl hFS⟩⟩
-
-/-- Single-test amenability criterion for a discrete group generated by a finite set `S`. -/
-theorem amenable_iff_forall_pos_of_closure_eq_top [TopologicalSpace G] [IsTopologicalGroup G]
-    [DiscreteTopology G] [DecidableEq G] {S : Finset G}
-    (hS : Subgroup.closure (S : Set G) = ⊤) :
-    Amenable G ↔
-      ∀ ε : ℝ, 0 < ε → ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ S, (#((g • F) ∆ F) : ℝ) < ε * #F :=
-  amenable_iff_hasFoelnerSets.trans (hasFoelnerSets_iff_forall_pos_of_closure_eq_top hS)
-
 /-- Summed-boundary (isoperimetric / Cheeger) Følner criterion for a finite generating set `S`. -/
+@[to_additive hasAddFoelnerSets_iff_sum_lt_of_closure_eq_top
+/-- Summed-boundary (isoperimetric / Cheeger) additive Følner criterion for a finite generating set
+`S`. -/]
 theorem hasFoelnerSets_iff_sum_lt_of_closure_eq_top [DecidableEq G] {S : Finset G}
     (hS : Subgroup.closure (S : Set G) = ⊤) :
     HasFoelnerSets G ↔
       ∀ ε : ℝ, 0 < ε →
         ∃ F : Finset G, F.Nonempty ∧ (∑ g ∈ S, (#((g • F) ∆ F) : ℝ)) < ε * #F := by
-  rw [hasFoelnerSets_iff_forall_pos_of_closure_eq_top hS]
+  rw [hasFoelnerSets_iff_of_closure_finset_eq_top hS]
   constructor
   · intro h ε hε
     obtain ⟨F, hne, hFS⟩ := h (ε / (#S + 1)) (by positivity)
@@ -147,6 +113,10 @@ theorem hasFoelnerSets_iff_sum_lt_of_closure_eq_top [DecidableEq G] {S : Finset 
 
 /-- Cayley-ball non-expansion characterization: for a finite generating set `S`, `G` has Følner
 sets iff `{1} ∪ S` fails to expand all finite nonempty subsets by a uniform factor `1 + c > 1`. -/
+@[to_additive hasAddFoelnerSets_iff_card_insert_zero_vadd_lt_of_closure_eq_top
+/-- Additive Cayley-ball non-expansion characterization: for a finite generating set `S`, `G` has
+additive Følner sets iff `{0} ∪ S` fails to expand all finite nonempty subsets by a uniform factor
+`1 + c > 1`. -/]
 theorem hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top [DecidableEq G] {S : Finset G}
     (hS : Subgroup.closure (S : Set G) = ⊤) :
     HasFoelnerSets G ↔
@@ -163,7 +133,7 @@ theorem hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top [DecidableE
       exact_mod_cast card_insert_one_smul_finset_le S F
     linarith
   · intro h
-    rw [hasFoelnerSets_iff_forall_pos_of_closure_eq_top hS]
+    rw [hasFoelnerSets_iff_of_closure_finset_eq_top hS]
     intro ε hε
     obtain ⟨F, hne, hFc⟩ := h (ε / 2) (by positivity)
     refine ⟨F, hne, fun g hg ↦ ?_⟩
@@ -180,6 +150,9 @@ theorem hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top [DecidableE
 
 /-- Along a nontrivial filter, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating set `S`
 for an eventually nonempty family `F` gives `HasFoelnerSets G`. -/
+@[to_additive HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card_of_closure_eq_top
+/-- Along a nontrivial filter, vanishing of `#((g +ᵥ F i) ∆ F i) / #(F i)` on a generating set `S`
+for an eventually nonempty family `F` gives `HasAddFoelnerSets G`. -/]
 theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top [DecidableEq G]
     {S : Set G} (hS : Subgroup.closure S = ⊤) {ι : Type*} {l : Filter ι} [l.NeBot]
     {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
@@ -203,6 +176,9 @@ theorem Amenable.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top [Topol
 
 /-- When `G` is countable and `S` generates `G`, `HasFoelnerSets G` holds iff there is a sequence
 of finite nonempty sets whose relative translation boundaries tend to zero on `S`. -/
+@[to_additive hasAddFoelnerSets_iff_exists_seq_of_closure_eq_top
+/-- When `G` is countable and `S` generates `G`, `HasAddFoelnerSets G` holds iff there is a sequence
+of finite nonempty sets whose relative translation boundaries tend to zero on `S`. -/]
 theorem hasFoelnerSets_iff_exists_seq_of_closure_eq_top [Countable G] [DecidableEq G] {S : Set G}
     (hS : Subgroup.closure S = ⊤) :
     HasFoelnerSets G ↔
@@ -215,8 +191,7 @@ theorem hasFoelnerSets_iff_exists_seq_of_closure_eq_top [Countable G] [Decidable
 /-- Countable Følner-sequence characterization of discrete amenability tested on a generating set
 `S`. -/
 theorem amenable_iff_exists_seq_of_closure_eq_top [Countable G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [DiscreteTopology G] [DecidableEq G] {S : Set G}
-    (hS : Subgroup.closure S = ⊤) :
+    [DiscreteTopology G] [DecidableEq G] {S : Set G} (hS : Subgroup.closure S = ⊤) :
     Amenable G ↔
       ∃ F : ℕ → Finset G, (∀ n, (F n).Nonempty) ∧
         ∀ g ∈ S, Tendsto (fun n ↦ (#((g • F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) :=

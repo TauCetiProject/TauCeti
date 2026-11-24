@@ -20,6 +20,9 @@ compare the numbers of maps between finite semisimple modules in
 and monotonicity of finite products, which need no `ZeroLEOneClass`. Nonnegativity needs a nonempty
 index set, since the empty product `1` is the only place where `0 ≤ 1` would be used; monotonicity
 holds for every index set, the empty case being `1 ≤ 1`.
+
+`Finset.prod_le_pow_card_sdiff_mul_prod` bounds a product over `t ⊆ B` by its product over `B`:
+if `1 ≤ C * f k` for every `k ∈ B \ t`, dropping these factors costs at most `C ^ #(B \ t)`.
 -/
 
 public section
@@ -64,5 +67,18 @@ theorem prod_le_prod_of_nonneg_of_le (h0 : ∀ i ∈ s, 0 ≤ f i)
       fun i hi ↦ h1 i (by simp [hi]))
       (prod_nonneg_of_nonempty hs fun i hi ↦ h0 i (by simp [hi]))
       ((h0 a (by simp)).trans (h1 a (by simp)))
+
+/-- If `t ⊆ B`, the values `f k` are nonnegative on `t` and `1 ≤ C * f k` for every `k ∈ B \ t`,
+then the product of `f` over `t` is at most `C ^ #(B \ t)` times its product over `B`. -/
+theorem prod_le_pow_card_sdiff_mul_prod [ZeroLEOneClass R] [DecidableEq ι] {t B : Finset ι}
+    (htB : t ⊆ B) (hf : ∀ k ∈ t, 0 ≤ f k) {C : R} (hC : ∀ k ∈ B \ t, 1 ≤ C * f k) :
+    ∏ k ∈ t, f k ≤ C ^ #(B \ t) * ∏ k ∈ B, f k := by
+  have := PosMulMono.toMulPosMono (α := R)
+  rw [← prod_sdiff htB]
+  calc ∏ k ∈ t, f k = 1 * ∏ k ∈ t, f k := (one_mul _).symm
+    _ ≤ (∏ k ∈ B \ t, C * f k) * ∏ k ∈ t, f k :=
+        mul_le_mul_of_nonneg_right (one_le_prod₀ hC) (prod_nonneg hf)
+    _ = C ^ #(B \ t) * ((∏ k ∈ B \ t, f k) * ∏ k ∈ t, f k) := by
+        rw [prod_mul_distrib, prod_const, mul_assoc]
 
 end Finset

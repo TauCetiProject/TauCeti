@@ -71,13 +71,13 @@ def ofRankOne (hn : (n : G) * n ∈ B) (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻
     · exact Subgroup.subset_closure (Or.inl hg)
     · obtain ⟨x, hx, y, hy, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
       exact mul_mem (mul_mem (Subgroup.subset_closure (Or.inl hx))
-        (Subgroup.subset_closure (Or.inr n.2))) (Subgroup.subset_closure (Or.inl hy))
+        (Subgroup.subset_closure (Or.inr n.property))) (Subgroup.subset_closure (Or.inl hy))
   intersection_normal := inferInstance
   simple := {QuotientGroup.mk n}
   closure_simple := by
     refine eq_top_iff.mpr fun x _ ↦ ?_
     obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective x
-    rcases hN x x.2 with hx | hx
+    rcases hN x x.property with hx | hx
     · rw [(QuotientGroup.eq_one_iff x).mpr (Subgroup.mem_subgroupOf.mpr hx)]
       exact one_mem _
     · rw [← (QuotientGroup.eq (s := B.subgroupOf N) (a := n) (b := x)).mpr
@@ -85,7 +85,7 @@ def ofRankOne (hn : (n : G) * n ∈ B) (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻
       exact Subgroup.subset_closure rfl
   exists_simpleRep_mul_self_mem s hs := ⟨n, hs.symm, Subgroup.mem_subgroupOf.mpr hn⟩
   mul_doubleCoset_subset s hs := ⟨n, hs.symm, fun w ↦
-    B.doubleCoset_mul_doubleCoset_subset_union hn (hN w w.2) hbruhat⟩
+    B.doubleCoset_mul_doubleCoset_subset_union hn (hN w w.property) hbruhat⟩
   exists_conj_not_mem s hs := by
     obtain ⟨b, hb, hnb⟩ := hconj
     exact ⟨n, hs.symm, ⟨b, hb⟩, hnb⟩
@@ -109,7 +109,7 @@ theorem ofRankOne_subgroupN : (ofRankOne B N n hn hN hconj hbruhat).subgroupN = 
 @[simp]
 theorem ofRankOne_simple :
     (ofRankOne B N n hn hN hconj hbruhat).simple =
-      {QuotientGroup.mk ⟨(n : G), by rw [ofRankOne_subgroupN]; exact n.2⟩} :=
+      {QuotientGroup.mk ⟨(n : G), by rw [ofRankOne_subgroupN]; exact n.property⟩} :=
   (rfl)
 
 /-- **A Tits system of rank one is irreducible.** -/

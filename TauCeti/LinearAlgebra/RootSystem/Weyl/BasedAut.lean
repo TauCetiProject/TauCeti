@@ -55,6 +55,8 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 * `RootPairing.Base.mem_basedAut_iff`, `RootPairing.Base.mem_basedAut_iff_forall_mem_support`
   and `RootPairing.Base.mem_basedAut_iff_map_eq`: an automorphism is based exactly when it carries
   the simple roots onto, or into, themselves, and exactly when it fixes the base.
+* `RootPairing.Base.autCongr_mem_basedAut_map_iff`: conjugation by an equivalence `e` carries the
+  based automorphisms of `b` onto those of `b.map e`.
 * `RootPairing.Base.mem_basedAut_iff_image_posRoots`: an automorphism is based exactly when it
   carries the positive roots onto themselves.
 * `RootPairing.Base.mem_basedAut_iff_smul_openDominantChamber`: over a linearly ordered
@@ -123,6 +125,19 @@ theorem mem_basedAut_iff_forall_mem_support :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ mem_basedAut_iff_map_eq.mpr (map_eq_of_forall_mem_support h)⟩
   rw [← Finset.mem_coe, ← mem_basedAut_iff.mp h]
   exact Set.mem_image_of_mem _ hi
+
+/-- **Based automorphisms are transported along equivalences**: conjugation by an equivalence `e`
+carries the based automorphisms of `b` onto those of the transported base `b.map e`. -/
+theorem autCongr_mem_basedAut_map_iff {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₂] [Module R N₂] {Q : RootPairing ι₂ R M₂ N₂} (e : P.Equiv Q) :
+    e.autCongr g ∈ (b.map e).basedAut ↔ g ∈ b.basedAut := by
+  classical
+  have h : (e.autCongr g).indexEquiv '' (b.map e).support =
+      e.indexEquiv '' (g.indexEquiv '' b.support) := by
+    simp only [support_map_eq, Finset.coe_image, image_image,
+      RootPairing.Equiv.indexEquiv_autCongr_apply, _root_.Equiv.symm_apply_apply]
+  rw [mem_basedAut_iff, mem_basedAut_iff, h, support_map_eq, Finset.coe_image,
+    (image_injective.mpr e.indexEquiv.injective).eq_iff]
 
 /-- A based automorphism carries the positive roots onto themselves. -/
 theorem image_posRoots_of_mem_basedAut [CharZero R] (h : g ∈ b.basedAut) :
@@ -207,7 +222,7 @@ theorem isComplement'_weylGroup_basedAut (b : P.Base) :
   · -- The Weyl-group element `w` carrying `b` to `b.map g` leaves the based factor `w⁻¹ g`.
     refine Set.eq_univ_of_forall fun g ↦ ?_
     obtain ⟨w, hw, -⟩ := b.existsUnique_map_eq (b.map g)
-    refine Set.mem_mul.mpr ⟨w, w.2, (w : P.Aut)⁻¹ * g, ?_, mul_inv_cancel_left _ _⟩
+    refine Set.mem_mul.mpr ⟨w, w.property, (w : P.Aut)⁻¹ * g, ?_, mul_inv_cancel_left _ _⟩
     rw [SetLike.mem_coe, mem_basedAut_iff_map_eq, Base.map_mul, ← hw, ← Base.map_mul,
       inv_mul_cancel, Base.map_one]
 
@@ -281,7 +296,7 @@ theorem coroot'_indexEquiv_semidirectProductMulEquiv (b : P.Base) (x) (i : ι) (
 `b`. -/
 theorem map_semidirectProductMulEquiv (b : P.Base) (x) :
     b.map (b.semidirectProductMulEquiv x) = b.map (x.left : P.Aut) := by
-  rw [semidirectProductMulEquiv_apply, Base.map_mul, map_eq_of_mem_basedAut x.right.2]
+  rw [semidirectProductMulEquiv_apply, Base.map_mul, map_eq_of_mem_basedAut x.right.property]
 
 /-- **The Weyl factor of an automorphism `g` carries `b` to `b.map g`**; by simple transitivity
 it is the unique Weyl-group element doing so. -/

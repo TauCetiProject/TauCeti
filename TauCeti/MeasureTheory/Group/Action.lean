@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.Topology.MetricSpace.IsometricSMul
+import Mathlib.Algebra.Order.BigOperators.Group.List
 
 /-!
 # Invariant measures of a scalar multiplication
 
 General facts about `SMulInvariantMeasure`, Mathlib's class of measures invariant under a scalar
-multiplication, that do not concern ergodicity: the restriction of an invariant measure to an
-exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), and for a
-transitive isometric action all balls of one radius have the same invariant measure
-(`measure_ball_eq_measure_ball`). Every linear action on a finite-dimensional real space has
-measurable translations (`measurableConstSMul_of_finiteDimensional`).
+multiplication, that do not concern ergodicity: the restriction of an invariant measure to a
+measurable set that is invariant up to null sets is again invariant
+(`SMulInvariantMeasure.restrict`), for a transitive isometric action all balls of one radius have
+the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
+measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
 
 For a group action preserving a measure `μ`, the symmetric difference of translated sets has
 invariant measure (`measure_smul_symmDiff_smul`), inversion symmetry
@@ -38,15 +38,15 @@ section Restrict
 
 variable {G X : Type*} [SMul G X] {m : MeasurableSpace X} {μ : Measure X}
 
-/-- The restriction of an invariant measure to an exactly invariant measurable set is
-invariant. -/
+/-- The restriction of an invariant measure to a measurable set that is invariant up to null
+sets is invariant. -/
 theorem SMulInvariantMeasure.restrict [SMulInvariantMeasure G X μ]
-    {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (g • ·) ⁻¹' u = u) :
+    {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (g • ·) ⁻¹' u =ᵐ[μ] u) :
     SMulInvariantMeasure G X (μ.restrict u) :=
   ⟨fun g v hv => by
-    have h : (g • ·) ⁻¹' v ∩ u = (g • ·) ⁻¹' (v ∩ u) := by rw [preimage_inter, huinv g]
-    rw [Measure.restrict_apply' hum, Measure.restrict_apply' hum, h,
-      SMulInvariantMeasure.measure_preimage_smul g (hv.inter hum)]⟩
+    rw [Measure.restrict_apply' hum, Measure.restrict_apply' hum,
+      ← SMulInvariantMeasure.measure_preimage_smul g (hv.inter hum), preimage_inter]
+    exact measure_congr (ae_eq_set_inter .rfl (huinv g).symm)⟩
 
 end Restrict
 
@@ -65,17 +65,24 @@ theorem measure_ball_eq_measure_ball (μ : Measure X) [SMulInvariantMeasure G X 
 
 end Ball
 
-section Linear
+section Orbit
 
-variable {G E : Type*} [Monoid G] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [DistribMulAction G E] [SMulCommClass G ℝ E]
+/-- If every `g • ·` preserves a finite measure on a space with measurable singletons, any point of
+nonzero singleton measure has a finite orbit. -/
+theorem finite_orbit_of_measure_singleton_ne_zero {G α : Type*} [SMul G α]
+    {_ : MeasurableSpace α} [MeasurableSingletonClass α] {μ : Measure α} [IsFiniteMeasure μ]
+    [SMulInvariantMeasure G α μ] {x : α} (hx : μ {x} ≠ 0) :
+    Finite (MulAction.orbit G x) := by
+  rw [Set.finite_coe_iff]
+  by_contra hinf
+  refine measure_ne_top μ (MulAction.orbit G x)
+    ((Set.not_finite.mp hinf).meas_eq_top ⟨μ {x}, hx, ?_⟩)
+  rintro _ ⟨g, rfl⟩
+  -- `{x}` lies in the preimage of `{g • x}` under `g • ·`, which has the same measure
+  rw [← SMulInvariantMeasure.measure_preimage_smul g (measurableSet_singleton (g • x))]
+  exact measure_mono (by simp)
 
-/-- Every linear action on a finite-dimensional real space has measurable translations. -/
-theorem measurableConstSMul_of_finiteDimensional : MeasurableConstSMul G E :=
-  ⟨fun g => (LinearMap.continuous_of_finiteDimensional
-    (DistribMulAction.toModuleEnd ℝ E g)).measurable⟩
-
-end Linear
+end Orbit
 
 section SMulSymmDiff
 
@@ -104,22 +111,26 @@ theorem measure_inv_smul_symmDiff_self (g : G) (s : Set X) :
 @[to_additive
 /-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` under group addition. -/]
 theorem measure_mul_smul_symmDiff_le (g h : G) (s : Set X) :
-    μ (((g * h) • s) ∆ s) ≤ μ ((h • s) ∆ s) + μ ((g • s) ∆ s) :=
+    μ (((g * h) • s) ∆ s) ≤ μ ((g • s) ∆ s) + μ ((h • s) ∆ s) :=
   calc
     μ (((g * h) • s) ∆ s) = μ ((g • (h • s)) ∆ s) := by rw [mul_smul]
     _ ≤ μ ((g • (h • s)) ∆ (g • s)) + μ ((g • s) ∆ s) := measure_symmDiff_le _ (g • s) _
     _ = μ ((h • s) ∆ s) + μ ((g • s) ∆ s) := by rw [measure_smul_symmDiff_smul]
+    _ = μ ((g • s) ∆ s) + μ ((h • s) ∆ s) := add_comm _ _
+
+/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` along a list sum in an additive group `A`. -/
+theorem measure_list_sum_vadd_symmDiff_le {A X : Type*} [AddGroup A] [AddAction A X]
+    [MeasurableSpace X] (μ : Measure X) [VAddInvariantMeasure A X μ] (L : List A) (s : Set X) :
+    μ ((L.sum +ᵥ s) ∆ s) ≤ (L.map fun g ↦ μ ((g +ᵥ s) ∆ s)).sum :=
+  L.le_sum_of_subadditive (fun g ↦ μ ((g +ᵥ s) ∆ s)) (by simp) fun g h ↦
+    measure_add_vadd_symmDiff_le μ g h s
 
 /-- Subadditivity of `μ ((g • s) ∆ s)` along a list product in `G`. -/
-@[to_additive
-/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` along a list sum in `G`. -/]
+@[to_additive existing]
 theorem measure_list_prod_smul_symmDiff_le (L : List G) (s : Set X) :
-    μ ((L.prod • s) ∆ s) ≤ (L.map fun g ↦ μ ((g • s) ∆ s)).sum := by
-  induction L with
-  | nil => simp
-  | cons g L ih =>
-    simpa only [List.prod_cons, List.map_cons, List.sum_cons, add_comm] using
-      (measure_mul_smul_symmDiff_le μ g L.prod s).trans (add_le_add_left ih _)
+    μ ((L.prod • s) ∆ s) ≤ (L.map fun g ↦ μ ((g • s) ∆ s)).sum :=
+  L.apply_prod_le_sum_map (fun g ↦ μ ((g • s) ∆ s)) (by simp) fun g h ↦
+    measure_mul_smul_symmDiff_le μ g h s
 
 end SMulSymmDiff
 

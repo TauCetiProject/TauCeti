@@ -19,7 +19,7 @@ For coordinate monomials, the expansion instead sums over bounded multi-indices,
 binomial coefficients and powers of the mean made explicit. It reduces noncentered moments
 to centered moments without requiring a nonsingular covariance matrix.
 
-Integrability is supplied by `ProbabilityTheory.IsGaussian.integrable_prod_dual` and
+Integrability is supplied by `ProbabilityTheory.IsGaussian.integrable_prod_clm` and
 `TauCeti.Probability.integrable_prod_pow_sub_multivariateGaussian`, re-exported here.
 
 ## References
@@ -49,7 +49,7 @@ theorem integral_prod_add_dual_eq_sum_even_of_isGaussian (μ : Measure E) [IsGau
           ∫ x, ∏ i ∈ t, (L i x - μ[L i]) ∂μ := by
   have hint (t : Finset ι) : Integrable (fun x ↦ ∏ i ∈ t, (L i x - μ[L i])) μ := by
     simpa only [sub_eq_add_neg] using
-      IsGaussian.integrable_prod_dual μ t L (fun i ↦ -μ[L i])
+      IsGaussian.integrable_prod_clm μ t L (fun i ↦ -μ[L i])
   calc
     _ = ∫ x, ∑ t ∈ s.powerset,
         (∏ i ∈ s \ t, (μ[L i] + c i)) * ∏ i ∈ t, (L i x - μ[L i]) ∂μ := by
@@ -81,7 +81,7 @@ theorem integral_prod_pow_add_dual_eq_sum_even_of_isGaussian (μ : Measure E) [I
           ∫ x, ∏ i, (L i x - μ[L i]) ^ k i ∂μ := by
   have hint (k : ι → ℕ) : Integrable (fun x ↦ ∏ i, (L i x - μ[L i]) ^ k i) μ := by
     simpa [Fintype.prod_sigma, sub_eq_add_neg] using
-      IsGaussian.integrable_prod_dual μ (Finset.univ : Finset (Σ i, Fin (k i)))
+      IsGaussian.integrable_prod_clm μ (Finset.univ : Finset (Σ i, Fin (k i)))
         (fun p ↦ L p.1) (fun p ↦ -μ[L p.1])
   -- Expand each affine observable by the binomial theorem, then distribute the finite product.
   have hexpand (x : E) :

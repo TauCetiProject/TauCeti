@@ -204,7 +204,7 @@ private theorem isRestricted_mvPowerSeriesBaseChange_map
       (TensorProduct.map LinearMap.id restrictedMvPowerSeriesSubringVal.toLinearMap x)) := by
   induction x using TensorProduct.inductionOn with
   | tmul m f =>
-      simpa using (mem_restrictedMvPowerSeriesSubring.mp f.2).mvPowerSeriesBaseChange_tmul m
+      simpa using (mem_restrictedMvPowerSeriesSubring.mp f.property).mvPowerSeriesBaseChange_tmul m
   | add y z hy hz => simpa using hy.add hz
 
 /-- **The comparison map of Wedhorn Remark 8.29**: `M ⊗[A] A⟨T₁, …, Tₖ⟩ →ₗ[A] M⟨T₁, …, Tₖ⟩`.
