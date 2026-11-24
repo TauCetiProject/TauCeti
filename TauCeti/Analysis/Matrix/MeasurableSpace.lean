@@ -32,6 +32,7 @@ of scalars is measurable even at zero.
 * `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
+* `Measurable.matrix_det` — the determinant of a measurable family of matrices is measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -114,6 +115,15 @@ theorem measurable_matrix_blockSucc {n : ℕ} {R : Type*} [Semiring R] [Measurab
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
     simp [Matrix.measurable_apply]
+
+/-- The determinant of a measurable family of square matrices is measurable, since the determinant
+is a polynomial in the entries. -/
+@[fun_prop]
+theorem _root_.Measurable.matrix_det {m R α : Type*} [Fintype m] [DecidableEq m] [CommRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [MeasurableSpace R] [BorelSpace R]
+    [SecondCountableTopology R] [MeasurableSpace α] {A : α → Matrix m m R} (hA : Measurable A) :
+    Measurable fun x ↦ (A x).det :=
+  (Continuous.matrix_det continuous_id).measurable.comp hA
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
