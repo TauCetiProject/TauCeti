@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+public import TauCeti.RepresentationTheory.LSPath.Realization.Basic
+
+import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -14,7 +18,7 @@ import TauCeti.LinearAlgebra.RootSystem.Reduced
 An LS encoding records minimal coset directions and rational breaks. Its timed presentation
 recovers both: durations determine the breaks, and velocities determine the minimal coset
 representatives for a dominant shape. Consequently an injective realization of the orbit gives
-an injective map from encodings to timed presentations.
+an injective map from encodings to timed presentations (`TauCeti.LSPath.timed_injective`).
 
 If distinct realized orbit weights never lie in the same ray, the distinguished-presentation
 uniqueness theorem also recovers the timed presentation from the unparametrized path. Thus
@@ -22,6 +26,10 @@ uniqueness theorem also recovers the timed presentation from the unparametrized 
 counting presentations. This allows root operators on paths to be transferred to encodings
 once their stability is established. Zero and central shapes are included; no regularity of
 the dominant shape is required.
+
+In particular, this holds in any compatible realization
+(`TauCeti.LSPath.toPLPath_injective_of_compatible`) and in the canonical rational realization
+(`TauCeti.LSPath.toRatPLPath_injective`).
 
 ## References
 
@@ -37,11 +45,11 @@ open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
-  {lam : M} {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
+  {lam : M}
 
 section Timed
 
-variable [CharZero 𝕜]
+variable {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 /-- For a dominant shape, an LS encoding is determined by its timed presentation whenever the
 realization separates orbit weights. No ray condition is needed for timed presentations. -/
@@ -88,7 +96,10 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
 
 end Timed
 
-variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+section PLPath
+
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 /-- For a dominant shape whose realized orbit has no distinct weights on the same ray, the
 unparametrized piecewise-linear path determines the entire LS encoding, including its breaks. -/
@@ -112,5 +123,30 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
       fun u v ↦ ¬ SameRay 𝕜 u v) {π π' : LSPath P b lam} :
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
+
+/-- In any compatible realization `(𝕜, V, f, F)`, the realized piecewise-linear path determines the
+LS encoding of a dominant shape without needing global injectivity of `f` or an explicit
+ray-separation hypothesis. -/
+theorem toPLPath_injective_of_compatible (hlam : lam ∈ dominantChamber P b)
+    {f : M →+ V} {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) :
+    Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
+  toPLPath_injective hlam (P.injOn_orbit_of_compatible b hF lam)
+    (P.pairwise_not_sameRay_image_orbit_of_compatible b hF lam)
+
+end PLPath
+
+section Rational
+
+/-- The canonical rational realization `LSPath.toRatPLPath` is injective for any dominant shape. -/
+theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
+    Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
+  intro π₁ π₂ h
+  simp only [toRatPLPath_def] at h
+  exact toPLPath_injective_of_compatible hlam
+    (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
+    (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)) h
+
+end Rational
 
 end TauCeti.LSPath
