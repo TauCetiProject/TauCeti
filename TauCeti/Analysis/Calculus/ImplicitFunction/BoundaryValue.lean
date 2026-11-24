@@ -11,8 +11,9 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 # Mathlib's implicit function theorem packaged for boundary-value problems
 
 Let `P`, `X`, `Y`, `Z` be Banach spaces: parameters `p ∈ P` (for instance a metric), unknowns
-`u ∈ X` (for instance `C^{2,α}(B̄)`), values `N(p, u) ∈ Y` of a nonlinear operator (for instance
-`C^{0,α}(B̄)`), and boundary data `φ ∈ Z` (for instance `C^{2,α}(∂B)`), with a bounded trace
+`u ∈ X` (for instance `C^{2,α}(closure B)`), values `N(p, u) ∈ Y` of a nonlinear operator
+(for instance `C^{0,α}(closure B)`), and boundary data `φ ∈ Z` (for instance `C^{2,α}(∂B)`),
+with a bounded trace
 `T : X → Z`. Consider the boundary-value problem
 
 `N(p, u) = 0`, `T u = φ`.
