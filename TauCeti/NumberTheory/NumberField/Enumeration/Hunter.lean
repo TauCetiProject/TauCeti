@@ -15,6 +15,7 @@ import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Localization.NormTrace
 import TauCeti.Analysis.InnerProductSpace.Gram.Projection
 import TauCeti.Data.Int.Round
+import TauCeti.LinearAlgebra.Unimodular.Basis
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
@@ -277,7 +278,14 @@ theorem hunter {Γ : ℝ} (hΓ : ∀ A : Matrix (Fin (finrank ℚ K - 1)) (Fin (
         Γ * (|(discr K : ℝ)| / finrank ℚ K) ^ (1 / ((finrank ℚ K : ℝ) - 1)) := by
   -- Complete `1` to a basis `e` of `𝓞 K`; the `e (inr j)` form a basis of `𝓞 K / ℤ`, in which
   -- `Q` has the positive definite Gram matrix `A` of determinant `|discr K| / n`.
-  obtain ⟨e, he⟩ := RingOfIntegers.exists_basis_inl_eq_one K
+  have hrank : finrank ℤ (𝓞 K) = finrank ℚ K - 1 + 1 := by
+    have := finrank_pos (R := ℚ) (M := K)
+    rw [RingOfIntegers.rank]
+    omega
+  obtain ⟨b, hb⟩ := Module.Free.exists_basis_zero_eq_one hrank
+  set e := b.reindex ((finSuccEquiv _).trans
+    ((Equiv.optionEquivSumPUnit _).trans (Equiv.sumComm _ Unit)))
+  have he : e (Sum.inl ()) = 1 := by simp [e, hb]
   set A := gram ℝ fun j ↦ projT2 K (e (Sum.inr j) : K)
   have hA : A.det = |(discr K : ℝ)| / finrank ℚ K := det_gram_projT2 he
   have hApos : A.PosDef := by
