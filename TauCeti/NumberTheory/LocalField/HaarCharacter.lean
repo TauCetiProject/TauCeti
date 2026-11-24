@@ -312,16 +312,7 @@ cardinality of the residue field: they are the complement in `𝒪[K]` of the ma
 `ϖ 𝒪[K]`, of mass `q⁻¹ μ 𝒪[K]`. -/
 theorem addHaar_setOf_valuation_eq_one :
     μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hsub : (ϖ : K) • (𝒪[K] : Set K) ⊆ 𝒪[K] := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact mul_mem ϖ.property hy
-  have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
-  have hcpt := hO.smul (ϖ : K)
-  rw [hϖ.setOf_valuation_eq_one_eq_sdiff, measure_sdiff hsub
-    hcpt.isClosed.measurableSet.nullMeasurableSet hcpt.measure_lt_top.ne,
-    addHaar_smul_integer_of_irreducible μ hϖ,
-    ENNReal.sub_mul fun _ _ ↦ hO.measure_lt_top.ne, one_mul]
+  simpa using addHaar_setOf_normalizedAbsoluteValue_eq μ (1 : K)
 
 end Measure
 
