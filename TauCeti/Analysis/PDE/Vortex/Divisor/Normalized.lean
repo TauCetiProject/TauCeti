@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor.Family
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.PDE.Vortex.Reduced.HigherSmoothness
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
@@ -37,9 +38,9 @@ vortex orbit with divisor `P_c`. This file proves that these representatives for
 the coordinates `y_c - x_m ∈ H^s(ℂ)⁴` depend smoothly on `c` for every `s ≥ 0`
 (`TauCeti.Vortex.SobolevFieldSpace.contDiff_subRef_normalizedVortex`). Through the elementary
 symmetric chart `Sym.coeffHomeomorph` this is a smooth family of representatives over every compact
-window of divisors, collisions included, with exterior phase the fixed winding phase. It is the
-family through which the Coulomb slice charts of the vortex moduli space are compared with the
-coordinates `c`.
+window of divisors, collisions included, with exterior phase the fixed winding phase, smooth in
+the Sobolev topology of `A_m^s`, which is the topology of the Coulomb slice charts of the vortex
+moduli space.
 
 **The proof.** Fix `c₀`. The difference `y_c - y_{c₀}` is the sum of three kinds of terms.
 
@@ -142,13 +143,11 @@ private abbrev bgAmp (c : Fin m → ℂ) : ℂ → ℝ :=
 private abbrev redSol (c : Fin m → ℂ) : ℂ → ℝ :=
   reducedSolution (monicOfCoeff c)
 
-/-- The first connection coordinate of the normalized background field. -/
-private def bgConn0 (c : Fin m → ℂ) (z : ℂ) : ℝ :=
-  -fderiv ℝ (bgAmp c) z I - gaugeForm (polynomialGauge c) z 1
-
-/-- The second connection coordinate of the normalized background field. -/
-private def bgConn1 (c : Fin m → ℂ) (z : ℂ) : ℝ :=
-  fderiv ℝ (bgAmp c) z 1 - gaugeForm (polynomialGauge c) z I
+/-- The connection coordinate `∂_v u₀ - Im (conj g_c ∂_{I v} g_c)` of the normalized background
+field along the direction `v`: its two connection coordinates are `-bgConn c I` and
+`bgConn c 1`. -/
+private def bgConn (c : Fin m → ℂ) (v z : ℂ) : ℝ :=
+  fderiv ℝ (bgAmp c) z v - gaugeForm (polynomialGauge c) z (I * v)
 
 /-- The section `p + i q` of the normalized background field, `g_c exp (u₀) P_c / 2`. -/
 private def bgSection (c : Fin m → ℂ) (z : ℂ) : ℂ :=
@@ -158,21 +157,21 @@ private theorem contDiff_bgAmp (c : Fin m → ℂ) : ContDiff ℝ ∞ (bgAmp c) 
   contDiff_backgroundAmplitude ((monicOfCoeff c).differentiable.contDiff.restrict_scalars ℝ)
 
 private theorem normalizedVortex_apply_zero (c : Fin m → ℂ) (z : ℂ) :
-    normalizedVortex c z 0 = bgConn0 c z - fderiv ℝ (redSol c) z I := by
+    normalizedVortex c z 0 = -(bgConn c I z + fderiv ℝ (redSol c) z I) := by
   have hu := ((contDiff_bgAmp c).differentiable (by simp)) z
   have hw := ((contDiff_reducedSolution (monicOfCoeff c)).differentiable (by simp)) z
-  simp only [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgConn0,
-    Matrix.cons_val_zero, amplitudeField_apply_zero, fderiv_fun_add hu hw, add_apply]
+  simp only [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgConn,
+    Matrix.cons_val_zero, amplitudeField_apply_zero, fderiv_fun_add hu hw, add_apply, I_mul_I,
+    map_neg]
   ring
 
 private theorem normalizedVortex_apply_one (c : Fin m → ℂ) (z : ℂ) :
-    normalizedVortex c z 1 = bgConn1 c z + fderiv ℝ (redSol c) z 1 := by
+    normalizedVortex c z 1 = bgConn c 1 z + fderiv ℝ (redSol c) z 1 := by
   have hu := ((contDiff_bgAmp c).differentiable (by simp)) z
   have hw := ((contDiff_reducedSolution (monicOfCoeff c)).differentiable (by simp)) z
-  simp only [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgConn1,
-    Matrix.cons_val_one, amplitudeField_apply_one, fderiv_fun_add hu hw,
-    add_apply]
-  simp
+  simp only [normalizedVortex, polynomialVortex_def, gaugeTransform_apply,
+    amplitudeField_apply_one, fderiv_fun_add hu hw, add_apply, gaugeForm_apply, Matrix.cons_val_one,
+    Matrix.cons_val_zero, bgConn, mul_one]
   ring
 
 private theorem normalizedVortex_apply_two_add_three (c : Fin m → ℂ) (z : ℂ) :
@@ -181,7 +180,19 @@ private theorem normalizedVortex_apply_two_add_three (c : Fin m → ℂ) (z : �
   rw [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgSection]
   simp only [amplitudeField_apply_two, amplitudeField_apply_three]
   simp only [Matrix.cons_val, Real.exp_add]
-  apply Complex.ext <;> simp <;> ring
+  apply Complex.ext
+  · simp only [exp_backgroundAmplitude, ofReal_sub, ofReal_mul, ofReal_div, ofReal_inv, ofReal_exp,
+      ofReal_ofNat, ofReal_add, add_re, sub_re, mul_re, ofReal_re, div_ofNat_re, inv_re,
+      normSq_ofReal, div_self_mul_self', inv_im, ofReal_im, neg_zero, zero_div, exp_ofReal_im,
+      mul_zero, sub_zero, mul_im, zero_mul, add_zero, div_ofNat_im, I_re, add_im, I_im, mul_one,
+      sub_self]
+    ring
+  · simp only [exp_backgroundAmplitude, ofReal_sub, ofReal_mul, ofReal_div, ofReal_inv, ofReal_exp,
+      ofReal_ofNat, ofReal_add, add_im, sub_im, mul_im, ofReal_re, div_ofNat_im, mul_re, inv_re,
+      normSq_ofReal, div_self_mul_self', inv_im, ofReal_im, neg_zero, zero_div, exp_ofReal_im,
+      mul_zero, sub_zero, zero_mul, add_zero, div_ofNat_re, sub_self, add_re, I_im, mul_one, I_re,
+      zero_add]
+    ring
 
 /-! ### The background field outside a disc -/
 
@@ -245,34 +256,23 @@ private theorem fderiv_logMod_apply (c : Fin m → ℂ) {z : ℂ} (hz : (monicOf
     (((contDiff_bgAmp c).differentiable (by simp) z).hasFDerivAt.fun_add hL).fderiv, add_apply,
     hLv]
 
-/-- Outside the disc where the polynomial gauge normalizes, the first connection coordinate of the
-background field is `-∂_I Λ_c - m Im (1 / z)`. -/
-private theorem bgConn0_eq (c : Fin m → ℂ) {z : ℂ} (hP : (monicOfCoeff c).eval z ≠ 0)
-    (hz : m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) :
-    bgConn0 c z = -fderiv ℝ (logMod c) z I - m * (1 / z).im := by
-  rw [bgConn0, gaugeForm_polynomialGauge_apply hz, fderiv_logMod_apply c hP]
+/-- Outside the disc where the polynomial gauge normalizes, the background connection coordinate
+along `v` is `∂_v Λ_c - m Im (I v / z)`: the term `Im (P_c' (I v) / P_c)` of the gauge form is
+`⟪P_c, P_c' v⟫ / ‖P_c‖²`, the derivative of `log ‖P_c‖`. -/
+private theorem bgConn_eq (c : Fin m → ℂ) {z : ℂ} (hP : (monicOfCoeff c).eval z ≠ 0)
+    (hz : m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) (v : ℂ) :
+    bgConn c v z = fderiv ℝ (logMod c) z v - m * (I * v / z).im := by
+  rw [bgConn, gaugeForm_polynomialGauge_apply hz, fderiv_logMod_apply c hP]
   set P := (monicOfCoeff c).eval z
   set P' := (monicOfCoeff c).derivative.eval z
   have hn : ‖P‖ ^ 2 = P.re * P.re + P.im * P.im := by
     rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp only [Complex.inner, mul_re, mul_im, I_re, I_im, div_im, one_re, one_im,
-    Complex.normSq_apply, hn, mul_one, mul_zero, conj_re, conj_im]
-  field_simp
-  ring
-
-/-- Outside the disc where the polynomial gauge normalizes, the second connection coordinate of the
-background field is `∂_1 Λ_c - m Im (I / z)`. -/
-private theorem bgConn1_eq (c : Fin m → ℂ) {z : ℂ} (hP : (monicOfCoeff c).eval z ≠ 0)
-    (hz : m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) :
-    bgConn1 c z = fderiv ℝ (logMod c) z 1 - m * (I / z).im := by
-  rw [bgConn1, gaugeForm_polynomialGauge_apply hz, fderiv_logMod_apply c hP]
-  set P := (monicOfCoeff c).eval z
-  set P' := (monicOfCoeff c).derivative.eval z
-  have hn : ‖P‖ ^ 2 = P.re * P.re + P.im * P.im := by
-    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp only [Complex.inner, mul_re, mul_im, I_re, I_im, div_im,
-    Complex.normSq_apply, hn, mul_one, mul_zero, conj_re, conj_im]
-  field_simp
+  have key : (P' * (I * v) / P).im = ⟪P, P' * v⟫_ℝ / ‖P‖ ^ 2 := by
+    rw [hn, Complex.inner, div_im, Complex.normSq_apply]
+    simp only [mul_re, mul_im, I_re, I_im, conj_re, conj_im]
+    field_simp
+    ring
+  rw [key]
   ring
 
 /-- Outside the disc where the polynomial gauge normalizes, the background section is
@@ -287,12 +287,16 @@ private theorem bgSection_eq (c : Fin m → ℂ) {z : ℂ} (hP : (monicOfCoeff c
 
 /-! ### A common exterior over a neighbourhood of a divisor -/
 
+/-- The squared radius `R₀` serves the coefficients near `c₀`: beyond it every `P_c`,
+`c ∈ ball c₀ 1`, is nonzero and the polynomial gauge of `c` normalizes. -/
+private def IsGoodRadius (c₀ : Fin m → ℂ) (R₀ : ℝ) : Prop :=
+  ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
+    (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2
+
 /-- Over the coefficients near `c₀`, one radius `R₀` serves: beyond it every `P_c` is nonzero and
 the polynomial gauge of `c` normalizes, and slightly inside it `‖P_{c₀}‖ ≥ 1`. -/
 private theorem exists_radius (hm : 0 < m) (c₀ : Fin m → ℂ) :
-    ∃ R₀ : ℝ, 1 ≤ R₀ ∧
-      (∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-        (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) ∧
+    ∃ R₀ : ℝ, 1 ≤ R₀ ∧ IsGoodRadius c₀ R₀ ∧
       ∀ z : ℂ, R₀ - 1 < ‖z‖ ^ 2 → 1 ≤ ‖(monicOfCoeff c₀).eval z‖ := by
   obtain ⟨r, hr⟩ := _root_.Polynomial.exists_forall_le_norm_eval
     (P := monicOfCoeff c₀) (by rwa [natDegree_monicOfCoeff]) 1
@@ -327,8 +331,29 @@ private abbrev innerCut (R₀ : ℝ) (z : ℂ) : ℝ :=
   Real.smoothTransition (‖z‖ ^ 2 - (R₀ - 1))
 
 /-- The cutoff equal to `1` beyond the squared radius `R₀ + 2` and to `0` inside `R₀ + 1`. -/
-private abbrev outerCut (R₀ : ℝ) (z : ℂ) : ℝ :=
-  Real.smoothTransition (‖z‖ ^ 2 - (R₀ + 1))
+private abbrev outerCut (R₀ : ℝ) : ℂ → ℝ :=
+  innerCut (R₀ + 2)
+
+private theorem contDiff_innerCut (R₀ : ℝ) : ContDiff ℝ ∞ (innerCut R₀) :=
+  Real.smoothTransition.contDiff.comp ((contDiff_norm_sq ℝ).sub contDiff_const)
+
+/-- The cutoff `innerCut R₀` is `1` outside the disc of radius `|R₀| + 1`. -/
+private theorem innerCut_eq_one {R₀ : ℝ} {z : ℂ} (hz : |R₀| + 1 ≤ ‖z‖) : innerCut R₀ z = 1 :=
+  Real.smoothTransition.one_of_one_le
+    (by nlinarith [le_abs_self R₀, abs_nonneg R₀, mul_le_mul hz hz (by positivity) (norm_nonneg z)])
+
+/-- The cutoff `innerCut R₀` has bounded derivatives: it is bounded by `1`, and it agrees with the
+constant `1` outside a disc. -/
+private theorem exists_bound_iteratedFDeriv_innerCut (R₀ : ℝ) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (innerCut R₀) z‖ ≤ C := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact ⟨1, fun z ↦ by simpa [abs_of_nonneg (Real.smoothTransition.nonneg _)] using
+      Real.smoothTransition.le_one (‖z‖ ^ 2 - (R₀ - 1))⟩
+  · refine ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl
+      ((contDiff_innerCut R₀).of_le (by exact_mod_cast le_top)) (Nat.one_le_iff_ne_zero.2 hn)
+      (isCompact_closedBall (0 : ℂ) (|R₀| + 1)) (b := (1 : ℝ)) (L := 0) fun z hz ↦ ?_
+    simp only [zero_apply, add_zero]
+    exact innerCut_eq_one (le_of_lt (by simpa using hz))
 
 /-- The weight `(1 - χ₀ φ_{c₀})⁻¹`, equal to `(1 - φ_{c₀})⁻¹` beyond `R₀`. -/
 private abbrev weight (c₀ : Fin m → ℂ) (R₀ : ℝ) (z : ℂ) : ℝ :=
@@ -368,8 +393,7 @@ private theorem innerCut_mul_defect_le {c₀ : Fin m → ℂ} {R₀ : ℝ}
 
 /-- Beyond `R₀`, `V_c = 2 (Λ_c - Λ_{c₀})` near every point. -/
 private theorem logRatio_eventuallyEq {c₀ : Fin m → ℂ} {R₀ : ℝ}
-    (hR : ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-      (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2)
+    (hR : IsGoodRadius c₀ R₀)
     {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1) {z : ℂ} (hz : R₀ < ‖z‖ ^ 2) :
     logRatio c₀ R₀ c =ᶠ[𝓝 z] fun w ↦ 2 * logMod c w - 2 * logMod c₀ w := by
   have hopen : IsOpen {w : ℂ | R₀ < ‖w‖ ^ 2} :=
@@ -389,30 +413,13 @@ private theorem logRatio_eventuallyEq {c₀ : Fin m → ℂ} {R₀ : ℝ}
   rw [logRatio, hq, Real.log_div (by linarith) (by linarith), logMod, logMod]
   ring
 
-/-- Beyond `R₀`, the first background connection coordinates differ by `-∂_I V_c / 2`. -/
-private theorem bgConn0_sub_eq {c₀ : Fin m → ℂ} {R₀ : ℝ}
-    (hR : ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-      (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2)
-    {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1) {z : ℂ} (hz : R₀ < ‖z‖ ^ 2) :
-    bgConn0 c z - bgConn0 c₀ z = -(fderiv ℝ (logRatio c₀ R₀ c) z I / 2) := by
+/-- Beyond `R₀`, the background connection coordinates along `v` differ by `∂_v V_c / 2`. -/
+private theorem bgConn_sub_eq {c₀ : Fin m → ℂ} {R₀ : ℝ} (hR : IsGoodRadius c₀ R₀)
+    {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1) {z : ℂ} (hz : R₀ < ‖z‖ ^ 2) (v : ℂ) :
+    bgConn c v z - bgConn c₀ v z = fderiv ℝ (logRatio c₀ R₀ c) z v / 2 := by
   obtain ⟨hP, hg⟩ := hR c hc z hz
   obtain ⟨hP₀, hg₀⟩ := hR c₀ (mem_ball_self one_pos) z hz
-  rw [bgConn0_eq c hP hg, bgConn0_eq c₀ hP₀ hg₀, (logRatio_eventuallyEq hR hc hz).fderiv_eq,
-    fderiv_fun_sub ((differentiableAt_logMod c hP).const_mul 2)
-      ((differentiableAt_logMod c₀ hP₀).const_mul 2), sub_apply, fderiv_const_mul
-      (differentiableAt_logMod c hP), fderiv_const_mul (differentiableAt_logMod c₀ hP₀)]
-  simp only [smul_apply, smul_eq_mul]
-  ring
-
-/-- Beyond `R₀`, the second background connection coordinates differ by `∂_1 V_c / 2`. -/
-private theorem bgConn1_sub_eq {c₀ : Fin m → ℂ} {R₀ : ℝ}
-    (hR : ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-      (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2)
-    {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1) {z : ℂ} (hz : R₀ < ‖z‖ ^ 2) :
-    bgConn1 c z - bgConn1 c₀ z = fderiv ℝ (logRatio c₀ R₀ c) z 1 / 2 := by
-  obtain ⟨hP, hg⟩ := hR c hc z hz
-  obtain ⟨hP₀, hg₀⟩ := hR c₀ (mem_ball_self one_pos) z hz
-  rw [bgConn1_eq c hP hg, bgConn1_eq c₀ hP₀ hg₀, (logRatio_eventuallyEq hR hc hz).fderiv_eq,
+  rw [bgConn_eq c hP hg, bgConn_eq c₀ hP₀ hg₀, (logRatio_eventuallyEq hR hc hz).fderiv_eq,
     fderiv_fun_sub ((differentiableAt_logMod c hP).const_mul 2)
       ((differentiableAt_logMod c₀ hP₀).const_mul 2), sub_apply, fderiv_const_mul
       (differentiableAt_logMod c hP), fderiv_const_mul (differentiableAt_logMod c₀ hP₀)]
@@ -421,8 +428,7 @@ private theorem bgConn1_sub_eq {c₀ : Fin m → ℂ} {R₀ : ℝ}
 
 /-- Beyond `R₀`, the background sections differ by the factor `exp (V_c / 2)`. -/
 private theorem bgSection_eq_mul {c₀ : Fin m → ℂ} {R₀ : ℝ}
-    (hR : ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-      (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2)
+    (hR : IsGoodRadius c₀ R₀)
     {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1) {z : ℂ} (hz : R₀ < ‖z‖ ^ 2) :
     bgSection c z = bgSection c₀ z * Real.exp (logRatio c₀ R₀ c z / 2) := by
   obtain ⟨hP, hg⟩ := hR c hc z hz
@@ -447,173 +453,63 @@ private theorem outerCut_smul_eq {M : Type*} [AddCommGroup M] [Module ℝ M] {R�
 
 section Decomposition
 
-variable {c₀ : Fin m → ℂ} {R₀ : ℝ}
-  (hR : ∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-    (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2)
-  {c : Fin m → ℂ} (hc : c ∈ ball c₀ 1)
-include hR hc
+variable {c₀ : Fin m → ℂ} {R₀ : ℝ} {c : Fin m → ℂ}
 
-/-- The first coordinate of `y_c - y_{c₀}`: the core of the background difference, the exterior
-term `-χ ∂_I V_c / 2` and the term `-∂_I (w_c - w_{c₀})`. -/
-private theorem normalizedVortex_sub_apply_zero (z : ℂ) :
-    normalizedVortex c z 0 - normalizedVortex c₀ z 0 =
-      (1 - outerCut R₀ z) * (bgConn0 c z - bgConn0 c₀ z) -
-        outerCut R₀ z * (fderiv ℝ (logRatio c₀ R₀ c) z I / 2) -
-          fderiv ℝ (fun w ↦ redSol c w - redSol c₀ w) z I := by
-  have h := outerCut_smul_eq (a := fun z ↦ bgConn0 c z - bgConn0 c₀ z)
-    (b := fun z ↦ -(fderiv ℝ (logRatio c₀ R₀ c) z I / 2)) (fun z hz ↦ bgConn0_sub_eq hR hc hz) z
+/-- The connection part of `y_c - y_{c₀}` along `v`: the core of the background difference, the
+exterior term `χ ∂_v V_c / 2` and the term `∂_v (w_c - w_{c₀})`. -/
+private theorem bgConn_add_fderiv_redSol_sub_eq (hR : IsGoodRadius c₀ R₀) (hc : c ∈ ball c₀ 1)
+    (v z : ℂ) :
+    bgConn c v z + fderiv ℝ (redSol c) z v - (bgConn c₀ v z + fderiv ℝ (redSol c₀) z v) =
+      (1 - outerCut R₀ z) * (bgConn c v z - bgConn c₀ v z) +
+        outerCut R₀ z * (fderiv ℝ (logRatio c₀ R₀ c) z v / 2) +
+          fderiv ℝ (fun w ↦ redSol c w - redSol c₀ w) z v := by
+  have h := outerCut_smul_eq (a := fun z ↦ bgConn c v z - bgConn c₀ v z)
+    (b := fun z ↦ fderiv ℝ (logRatio c₀ R₀ c) z v / 2) (fun z hz ↦ bgConn_sub_eq hR hc hz v) z
   simp only [smul_eq_mul] at h
-  rw [normalizedVortex_apply_zero, normalizedVortex_apply_zero,
-    fderiv_fun_sub (((contDiff_reducedSolution _).differentiable (by simp)) z)
-      (((contDiff_reducedSolution _).differentiable (by simp)) z), sub_apply]
+  rw [fderiv_fun_sub (((contDiff_reducedSolution _).differentiable (by simp)) z)
+    (((contDiff_reducedSolution _).differentiable (by simp)) z), sub_apply]
   linear_combination h
 
-/-- The second coordinate of `y_c - y_{c₀}`. -/
-private theorem normalizedVortex_sub_apply_one (z : ℂ) :
-    normalizedVortex c z 1 - normalizedVortex c₀ z 1 =
-      (1 - outerCut R₀ z) * (bgConn1 c z - bgConn1 c₀ z) +
-        outerCut R₀ z * (fderiv ℝ (logRatio c₀ R₀ c) z 1 / 2) +
-          fderiv ℝ (fun w ↦ redSol c w - redSol c₀ w) z 1 := by
-  have h := outerCut_smul_eq (a := fun z ↦ bgConn1 c z - bgConn1 c₀ z)
-    (b := fun z ↦ fderiv ℝ (logRatio c₀ R₀ c) z 1 / 2) (fun z hz ↦ bgConn1_sub_eq hR hc hz) z
-  simp only [smul_eq_mul] at h
-  rw [normalizedVortex_apply_one, normalizedVortex_apply_one,
-    fderiv_fun_sub (((contDiff_reducedSolution _).differentiable (by simp)) z)
-      (((contDiff_reducedSolution _).differentiable (by simp)) z), sub_apply]
-  linear_combination h
-
-/-- The section of `y_c - y_{c₀}`, with `σ₀ = p + i q` the section of `y_{c₀}`. -/
-private theorem normalizedVortex_sub_section (z : ℂ) :
-    ((normalizedVortex c z 2 - normalizedVortex c₀ z 2 : ℝ) : ℂ) +
-        (normalizedVortex c z 3 - normalizedVortex c₀ z 3 : ℝ) * I =
-      (1 - outerCut R₀ z) * ((bgSection c z - bgSection c₀ z) * Real.exp (redSol c z)) +
-        outerCut R₀ z * (((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) *
-          ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) * Real.exp (redSol c z - redSol c₀ z))) +
-        ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) *
-          (Real.exp (redSol c z - redSol c₀ z) - 1) := by
+/-- The section of `y_c - y_{c₀}`, with `σ₀ = p + i q` the section of `y_{c₀}`, as a combination
+of `bgSection c - bgSection c₀` and `σ₀` with real coefficients. -/
+private theorem normalizedVortex_sub_section (hR : IsGoodRadius c₀ R₀) (hc : c ∈ ball c₀ 1)
+    (z : ℂ) :
+    (normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I -
+        ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) =
+      ((1 - outerCut R₀ z) * Real.exp (redSol c z)) • (bgSection c z - bgSection c₀ z) +
+        (outerCut R₀ z * ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) *
+          Real.exp (redSol c z - redSol c₀ z))) •
+          ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) +
+        (Real.exp (redSol c z - redSol c₀ z) - 1) •
+          ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) := by
   have hs := outerCut_smul_eq (a := fun z ↦ bgSection c z - bgSection c₀ z)
     (b := fun z ↦ bgSection c₀ z * (Real.exp (logRatio c₀ R₀ c z / 2) - 1))
     (fun z hz ↦ by rw [bgSection_eq_mul hR hc hz]; ring) z
-  simp only [Complex.real_smul] at hs
-  have hL : ((normalizedVortex c z 2 - normalizedVortex c₀ z 2 : ℝ) : ℂ) +
-      (normalizedVortex c z 3 - normalizedVortex c₀ z 3 : ℝ) * I =
-      ((normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I) -
-        ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) := by
-    push_cast
-    ring
-  rw [hL, normalizedVortex_apply_two_add_three, normalizedVortex_apply_two_add_three, Real.exp_sub,
-    ofReal_div]
+  simp only [Complex.real_smul] at hs ⊢
+  rw [normalizedVortex_apply_two_add_three, normalizedVortex_apply_two_add_three, Real.exp_sub]
   have he : (Real.exp (redSol c₀ z) : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.exp_pos _).ne'
+  simp only [ofReal_mul, ofReal_sub, ofReal_one, ofReal_div]
   field_simp
   linear_combination (Real.exp (redSol c z) : ℂ) * hs
 
-/-- The third coordinate of `y_c - y_{c₀}`, the real part of the section. -/
-private theorem normalizedVortex_sub_apply_two (z : ℂ) :
-    normalizedVortex c z 2 - normalizedVortex c₀ z 2 =
-      (1 - outerCut R₀ z) * (bgSection c z - bgSection c₀ z).re * Real.exp (redSol c z) +
-        outerCut R₀ z * (normalizedVortex c₀ z 2 *
-          ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) * Real.exp (redSol c z - redSol c₀ z))) +
-        normalizedVortex c₀ z 2 * (Real.exp (redSol c z - redSol c₀ z) - 1) := by
-  have h := congrArg Complex.re (normalizedVortex_sub_section hR hc z)
-  simp only [add_re, mul_re, sub_re, one_re, ofReal_re, ofReal_im, I_re, I_im, sub_im, one_im,
-    mul_im, add_im, mul_zero, mul_one, sub_zero, zero_mul, add_zero] at h
-  rw [sub_re]
-  linear_combination h
-
-/-- The fourth coordinate of `y_c - y_{c₀}`, the imaginary part of the section. -/
-private theorem normalizedVortex_sub_apply_three (z : ℂ) :
-    normalizedVortex c z 3 - normalizedVortex c₀ z 3 =
-      (1 - outerCut R₀ z) * (bgSection c z - bgSection c₀ z).im * Real.exp (redSol c z) +
-        outerCut R₀ z * (normalizedVortex c₀ z 3 *
-          ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) * Real.exp (redSol c z - redSol c₀ z))) +
-        normalizedVortex c₀ z 3 * (Real.exp (redSol c z - redSol c₀ z) - 1) := by
-  have h := congrArg Complex.im (normalizedVortex_sub_section hR hc z)
-  simp only [add_re, mul_re, sub_re, one_re, ofReal_re, ofReal_im, I_re, I_im, sub_im, one_im,
-    mul_im, add_im, mul_zero, mul_one, sub_zero, zero_mul, add_zero, zero_add] at h
-  rw [sub_im]
-  linear_combination h
+/-- An `ℝ`-linear functional `ℓ` of the section of `y_c - y_{c₀}`; `ℓ = re` and `ℓ = im` give its
+third and fourth coordinates. -/
+private theorem map_normalizedVortex_sub_section (hR : IsGoodRadius c₀ R₀) (hc : c ∈ ball c₀ 1)
+    (ℓ : ℂ →L[ℝ] ℝ) (z : ℂ) :
+    ℓ ((normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I) -
+        ℓ ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) =
+      (1 - outerCut R₀ z) * Real.exp (redSol c z) * ℓ (bgSection c z - bgSection c₀ z) +
+        outerCut R₀ z * ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) *
+          Real.exp (redSol c z - redSol c₀ z)) *
+            ℓ ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) +
+        (Real.exp (redSol c z - redSol c₀ z) - 1) *
+          ℓ ((normalizedVortex c₀ z 2 : ℂ) + normalizedVortex c₀ z 3 * I) := by
+  rw [← map_sub, normalizedVortex_sub_section hR hc z]
+  simp only [map_add, map_smul, smul_eq_mul]
 
 end Decomposition
 
-/-! ### Multipliers and bounded derivatives -/
-
-/-- A real function with bounded derivatives of every order, complexified, has bounded
-derivatives of every order. -/
-private theorem exists_bound_iteratedFDeriv_ofReal {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
-    (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C := by
-  obtain ⟨C, hC⟩ := hbd n
-  refine ⟨C, fun z ↦ ?_⟩
-  have h := ofRealLI.norm_iteratedFDeriv_comp_left (hg.contDiffAt (x := z))
-    (i := n) (by exact_mod_cast le_top)
-  rw [Function.comp_def] at h
-  exact (h.trans_le (hC z) :)
-
-/-- Multiplication by a real function with bounded derivatives, as a bounded operator on
-`H^N(ℂ)`. -/
-private def realMulCLM (N : ℕ) {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
-    (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) :
-    H^{(N : ℝ)}(ℂ) →L[ℂ] H^{(N : ℝ)}(ℂ) :=
-  mapCLM (TemperedDistribution.smulLeftCLM ℂ fun z ↦ (g z : ℂ)) fun u ↦
-    u.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by norm_num)
-      fun n _ ↦ exists_bound_iteratedFDeriv_ofReal hg hbd n
-
-private theorem coeFn_inclusionLp_realMulCLM (N : ℕ) {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
-    (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (u : H^{(N : ℝ)}(ℂ)) :
-    ⇑(inclusionLp N.cast_nonneg (realMulCLM N hg hbd u)) =ᵐ[volume]
-      fun z ↦ (g z : ℂ) * inclusionLp N.cast_nonneg u z := by
-  have hgc : ContDiff ℝ ∞ fun z ↦ (g z : ℂ) := ofRealCLM.contDiff.comp hg
-  have htemp : (fun z ↦ (g z : ℂ)).HasTemperateGrowth :=
-    ⟨hgc, fun n ↦ by
-      obtain ⟨C, hC⟩ := exists_bound_iteratedFDeriv_ofReal hg hbd n
-      exact ⟨0, C, fun z ↦ by simpa using hC z⟩⟩
-  obtain ⟨C, hC⟩ := exists_bound_iteratedFDeriv_ofReal hg hbd 0
-  have h := coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM N.cast_nonneg N.cast_nonneg
-    htemp (C := C) (fun z ↦ by simpa using hC z) (w := realMulCLM N hg hbd u)
-    (toDistr_mapCLM _ _ u)
-  simpa only [smul_eq_mul] using h
-
-/-- A difference of smooth functions with bounded derivatives has bounded derivatives. -/
-private theorem exists_bound_iteratedFDeriv_sub {f g : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
-    (hg : ContDiff ℝ ∞ g) (hfb : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n f z‖ ≤ C)
-    (hgb : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ f z - g z) z‖ ≤ C := by
-  obtain ⟨A, hA⟩ := hfb n
-  obtain ⟨B, hB⟩ := hgb n
-  refine ⟨A + B, fun z ↦ ?_⟩
-  rw [show (fun z ↦ f z - g z) = f - g from rfl, iteratedFDeriv_sub_apply
-    (hf.contDiffAt.of_le (by exact_mod_cast le_top))
-    (hg.contDiffAt.of_le (by exact_mod_cast le_top))]
-  exact (norm_sub_le _ _).trans (add_le_add (hA z) (hB z))
-
-/-- Constants have bounded derivatives. -/
-private theorem exists_bound_iteratedFDeriv_const (a : ℝ) (n : ℕ) :
-    ∃ C, ∀ z : ℂ, ‖iteratedFDeriv ℝ n (fun _ : ℂ ↦ a) z‖ ≤ C := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact ⟨‖a‖, fun z ↦ by simp⟩
-  · exact ⟨0, fun z ↦ by simp [iteratedFDeriv_const_of_ne hn]⟩
-
-/-- A smooth function equal to `1` outside a compact set has bounded derivatives. -/
-private theorem exists_bound_iteratedFDeriv_of_hasCompactSupport_one_sub {g : ℂ → ℝ}
-    (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport fun z ↦ 1 - g z) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C := by
-  have h := exists_bound_iteratedFDeriv_sub contDiff_const (contDiff_const.sub hg)
-    (exists_bound_iteratedFDeriv_const 1) (fun k ↦ by
-      obtain ⟨C, -, hC⟩ := hc.exists_bound_iteratedFDeriv (contDiff_const.sub hg) k
-      exact ⟨C, hC k le_rfl⟩) n
-  simpa using h
-
-private theorem contDiff_smoothTransition_normSq_sub (a : ℝ) :
-    ContDiff ℝ ∞ fun z : ℂ ↦ Real.smoothTransition (‖z‖ ^ 2 - a) :=
-  Real.smoothTransition.contDiff.comp ((contDiff_norm_sq ℝ).sub contDiff_const)
-
-/-- `1 - smoothTransition (‖z‖² - a)` vanishes outside a ball. -/
-private theorem hasCompactSupport_one_sub_smoothTransition (a : ℝ) :
-    HasCompactSupport fun z : ℂ ↦ 1 - Real.smoothTransition (‖z‖ ^ 2 - a) := by
-  refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (|a| + 1)) fun z hz ↦ ?_
-  rw [Metric.mem_closedBall, dist_zero_right, not_le] at hz
-  have h1 : |a| + 1 ≤ ‖z‖ ^ 2 := by nlinarith [abs_nonneg a]
-  rw [Real.smoothTransition.one_of_one_le (by linarith [le_abs_self a]), sub_self]
+/-! ### Bounded derivatives -/
 
 /-- The defect `φ_c` is smooth. -/
 private theorem contDiff_defect (c : Fin m → ℂ) : ContDiff ℝ ∞ (defect c) :=
@@ -628,48 +524,40 @@ private theorem exists_bound_iteratedFDeriv_defect (hm : 0 < m) (c : Fin m → �
     (_root_.Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions
       (by rwa [natDegree_monicOfCoeff]) _) (contDiff_defect c).continuous le_rfl
 
-/-- The product `χ₀ φ_{c₀}` has bounded derivatives. -/
+/-- The product `χ₀ φ_{c₀}` has bounded derivatives: outside a disc it is `φ_{c₀}`. -/
 private theorem exists_bound_iteratedFDeriv_innerCut_mul_defect (hm : 0 < m) (c₀ : Fin m → ℂ)
     (R₀ : ℝ) (n : ℕ) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ innerCut R₀ z * defect c₀ z) z‖ ≤ C := by
-  have hcut := contDiff_smoothTransition_normSq_sub (R₀ - 1)
-  have hcs : HasCompactSupport fun z ↦ (1 - innerCut R₀ z) * defect c₀ z :=
-    (hasCompactSupport_one_sub_smoothTransition (R₀ - 1)).mul_right
-  have h := exists_bound_iteratedFDeriv_sub (contDiff_defect c₀)
-    ((contDiff_const.sub hcut).mul (contDiff_defect c₀))
-    (exists_bound_iteratedFDeriv_defect hm c₀) (fun k ↦ by
-      obtain ⟨C, -, hC⟩ := hcs.exists_bound_iteratedFDeriv
-        ((contDiff_const.sub hcut).mul (contDiff_defect c₀)) k
-      exact ⟨C, hC k le_rfl⟩) n
-  have hfun : (fun z ↦ defect c₀ z - (1 - innerCut R₀ z) * defect c₀ z) =
-      fun z ↦ innerCut R₀ z * defect c₀ z := by
-    ext z
-    ring
-  rwa [hfun] at h
+  obtain ⟨C, hC⟩ := exists_bound_iteratedFDeriv_defect hm c₀ n
+  exact (((contDiff_innerCut R₀).mul (contDiff_defect c₀)).of_le
+    (by exact_mod_cast le_top)).exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm (g := defect c₀)
+    (R := |R₀| + 1) (fun z hz ↦ by rw [innerCut_eq_one hz.le, one_mul]) fun z _ ↦ hC z
 
 private theorem contDiff_weight {c₀ : Fin m → ℂ} {R₀ : ℝ}
     (hq : ∀ z, innerCut R₀ z * defect c₀ z ≤ 1 / 2) : ContDiff ℝ ∞ (weight c₀ R₀) :=
-  (contDiff_const.sub ((contDiff_smoothTransition_normSq_sub _).mul (contDiff_defect c₀))).inv
+  (contDiff_const.sub ((contDiff_innerCut R₀).mul (contDiff_defect c₀))).inv
     fun z ↦ by linarith [hq z]
 
 /-- The weight `(1 - χ₀ φ_{c₀})⁻¹` has bounded derivatives. -/
 private theorem exists_bound_iteratedFDeriv_weight (hm : 0 < m) {c₀ : Fin m → ℂ} {R₀ : ℝ}
     (hq : ∀ z, 0 ≤ innerCut R₀ z * defect c₀ z ∧ innerCut R₀ z * defect c₀ z ≤ 1 / 2) (n : ℕ) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (weight c₀ R₀) z‖ ≤ C := by
-  have hp : ContDiff ℝ ∞ fun z ↦ 1 - innerCut R₀ z * defect c₀ z :=
-    contDiff_const.sub ((contDiff_smoothTransition_normSq_sub _).mul (contDiff_defect c₀))
-  have hpb := exists_bound_iteratedFDeriv_sub contDiff_const
-    ((contDiff_smoothTransition_normSq_sub _).mul (contDiff_defect c₀))
-    (exists_bound_iteratedFDeriv_const 1) (exists_bound_iteratedFDeriv_innerCut_mul_defect hm c₀ R₀)
-  choose B hB using hpb
+  have hh : ContDiff ℝ ∞ fun z ↦ innerCut R₀ z * defect c₀ z :=
+    (contDiff_innerCut R₀).mul (contDiff_defect c₀)
+  choose B hB using exists_bound_iteratedFDeriv_innerCut_mul_defect hm c₀ R₀
   set C := max 1 (∑ i ∈ Finset.range (n + 1), |B i|)
   refine ⟨(n.factorial : ℝ) ^ 2 * C ^ n / (1 / 2) ^ (n + 1), fun z ↦ ?_⟩
-  refine norm_iteratedFDeriv_inv_comp_le (hp.of_le (by exact_mod_cast le_top)) (by norm_num)
-    (by norm_num) ?_ (le_max_left _ _) fun i _ hi ↦ ?_
+  refine norm_iteratedFDeriv_inv_comp_le ((contDiff_const.sub hh).of_le
+    (by exact_mod_cast le_top)) (by norm_num) (by norm_num) ?_ (le_max_left _ _)
+    fun i hi hin ↦ ?_
   · rw [Real.norm_eq_abs, abs_of_pos (by linarith [(hq z).2])]
     linarith [(hq z).2]
-  · refine (hB i z).trans ((le_abs_self _).trans ((Finset.single_le_sum (f := fun i ↦ |B i|)
-      (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))).trans (le_max_right _ _)))
+  -- In positive order, the derivatives of `1 - χ₀ φ_{c₀}` are those of `-χ₀ φ_{c₀}`.
+  rw [fun_iteratedFDeriv_sub_apply contDiffAt_const
+    (hh.contDiffAt.of_le (by exact_mod_cast le_top)), iteratedFDeriv_const_of_ne (by omega),
+    Pi.zero_apply, zero_sub, norm_neg]
+  exact (hB i z).trans ((le_abs_self _).trans ((Finset.single_le_sum (f := fun i ↦ |B i|)
+    (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))).trans (le_max_right _ _)))
 
 /-! ### Joint smoothness of the background field -/
 
@@ -688,29 +576,19 @@ private theorem contDiff_bgAmp_uncurry :
   simpa only [bgAmp, backgroundAmplitude_apply] using
     (h.log fun p ↦ by positivity).neg.div_const 2
 
-/-- The derivative in the point of a jointly smooth family, along a fixed vector. -/
-private theorem contDiff_fderiv_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {F : (Fin m → ℂ) → ℂ → G} (hF : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ F p.1 p.2) (v : ℂ) :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ fderiv ℝ (F p.1) p.2 v :=
-  (ContDiff.fderiv (f := fun p : (Fin m → ℂ) × ℂ ↦ F p.1)
-    (hF.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by simp)).clm_apply
-    contDiff_const
-
 private theorem contDiff_gaugeForm_uncurry (v : ℂ) :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ gaugeForm (polynomialGauge p.1) p.2 v := by
   simp only [gaugeForm_apply]
   exact imCLM.contDiff.comp ((conjCLE.contDiff.comp contDiff_polynomialGauge).mul
-    (contDiff_fderiv_apply (F := fun c z ↦ (polynomialGauge c z : ℂ)) contDiff_polynomialGauge v))
+    (ContDiff.fderiv_apply (f := fun p : (Fin m → ℂ) × ℂ ↦ fun z ↦ (polynomialGauge p.1 z : ℂ))
+      (contDiff_polynomialGauge.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd
+      contDiff_const (by simp)))
 
-private theorem contDiff_bgConn0_uncurry :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgConn0 p.1 p.2 :=
-  (contDiff_fderiv_apply (F := bgAmp) contDiff_bgAmp_uncurry I).neg.sub
-    (contDiff_gaugeForm_uncurry 1)
-
-private theorem contDiff_bgConn1_uncurry :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgConn1 p.1 p.2 :=
-  (contDiff_fderiv_apply (F := bgAmp) contDiff_bgAmp_uncurry 1).sub
-    (contDiff_gaugeForm_uncurry I)
+private theorem contDiff_bgConn_uncurry (v : ℂ) :
+    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgConn p.1 v p.2 :=
+  (ContDiff.fderiv_apply (f := fun p : (Fin m → ℂ) × ℂ ↦ bgAmp p.1)
+    (contDiff_bgAmp_uncurry.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd
+    contDiff_const (by simp)).sub (contDiff_gaugeForm_uncurry (I * v))
 
 private theorem contDiff_bgSection_uncurry :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgSection p.1 p.2 :=
@@ -718,19 +596,6 @@ private theorem contDiff_bgSection_uncurry :
     (Real.contDiff_exp.comp contDiff_bgAmp_uncurry)).mul contDiff_eval_monicOfCoeff)).div_const 2
 
 /-! ### The logarithmic ratio as a smooth family in `H^(k+1)` -/
-
-/-- A complex number of modulus less than `1` whose exponential is the positive real `1 + u` is
-the real logarithm `log (1 + u)`. -/
-private theorem eq_ofReal_log_of_exp_sub_one_eq {v : ℂ} {u : ℝ} (hv : ‖v‖ < 1) (hu : 0 < 1 + u)
-    (h : Complex.exp v - 1 = u) : v = (Real.log (1 + u) : ℂ) := by
-  have hexp : Complex.exp v = ((1 + u : ℝ) : ℂ) := by
-    push_cast
-    linear_combination h
-  have him : |v.im| < Real.pi :=
-    (abs_im_le_norm v).trans_lt (hv.trans (by linarith [Real.two_le_pi]))
-  calc v = Complex.log (Complex.exp v) :=
-        (Complex.log_exp (by linarith [neg_abs_le v.im]) (by linarith [le_abs_self v.im])).symm
-    _ = (Real.log (1 + u) : ℂ) := by rw [hexp, Complex.ofReal_log hu.le]
 
 private theorem contDiff_ratioSubOne {c₀ : Fin m → ℂ} {R₀ : ℝ}
     (hq : ∀ z, innerCut R₀ z * defect c₀ z ≤ 1 / 2) (c : Fin m → ℂ) :
@@ -747,34 +612,26 @@ private theorem exists_ratioSubOne_family (hm : 0 < m) (k : ℕ) (c₀ : Fin m �
   have hdeg (c : Fin m → ℂ) : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
   set φS : (Fin m → ℂ) → H^{((k + 1 : ℕ) : ℝ)}(ℂ) := fun c ↦
     sobolevBackgroundDefect (hdeg c) (Nat.cast_nonneg _)
-  set μ := realMulCLM (k + 1) (contDiff_weight fun z ↦ (hq z).2)
-    (exists_bound_iteratedFDeriv_weight hm hq)
+  -- Multiplication by the weight, whose complexification has bounded derivatives.
+  have hμ (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (weight c₀ R₀ z : ℂ)) z‖ ≤ C :=
+    ofRealCLM.exists_bound_iteratedFDeriv_comp_left ((contDiff_weight fun z ↦ (hq z).2).of_le
+      (by exact_mod_cast le_top)) (fun i _ ↦ exists_bound_iteratedFDeriv_weight hm hq i) n le_rfl
+  set μ : H^{((k + 1 : ℕ) : ℝ)}(ℂ) →L[ℂ] H^{((k + 1 : ℕ) : ℝ)}(ℂ) :=
+    smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hμ n
   set ι : H^{((k + 1 : ℕ) : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
-    BesselPotentialSpace.inclusion (by push_cast; rfl)
+    BesselPotentialSpace.inclusion (Nat.cast_succ k).ge
   refine ⟨fun c ↦ ι (μ (φS c₀ - φS c)), (ι.restrictScalars ℝ).contDiff.comp
     ((μ.restrictScalars ℝ).contDiff.comp (contDiff_const.sub
       (contDiff_sobolevBackgroundDefect_monicOfCoeff hm (Nat.cast_nonneg _)))), by simp,
     fun c ↦ ?_⟩
   rw [inclusionLp_inclusion]
-  filter_upwards [coeFn_inclusionLp_realMulCLM (k + 1) (contDiff_weight fun z ↦ (hq z).2)
-    (exists_bound_iteratedFDeriv_weight hm hq) (φS c₀ - φS c),
+  filter_upwards [coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num)
+    (by norm_num) (fun n _ ↦ hμ n)
+    (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp (contDiff_weight fun z ↦ (hq z).2)) hμ)
+    (φS c₀ - φS c),
     coeFn_inclusionLp_sub_ae_eq _ (coeFn_inclusionLp_sobolevBackgroundDefect (hdeg c₀) _)
       (coeFn_inclusionLp_sobolevBackgroundDefect (hdeg c) _)] with z h₁ h₂
-  rw [h₁, h₂]
-  push_cast
-  rfl
-
-/-- If the `L²` function of `u ∈ H^s` is a continuous real function `g`, then `g` is bounded by
-the sup norm of the continuous representative of `u`. -/
-private theorem abs_le_norm_toZeroAtInfty {s : ℝ} (hs : (finrank ℝ ℂ : ℝ) < 2 * s) (h0 : 0 ≤ s)
-    {u : H^{s}(ℂ)} {g : ℂ → ℝ} (hg : Continuous g)
-    (hu : ⇑(inclusionLp h0 u) =ᵐ[volume] fun z ↦ (g z : ℂ)) (z : ℂ) :
-    |g z| ≤ ‖toZeroAtInfty (E := ℂ) (F := ℂ) hs u‖ := by
-  have h : toZeroAtInfty hs u z = (g z : ℂ) := congrFun ((Continuous.ae_eq_iff_eq volume
-    (toZeroAtInfty hs u).continuous (ofRealCLM.continuous.comp hg)).1
-    ((coeFn_inclusionLp_ae_eq_toZeroAtInfty _ u).symm.trans hu)) z
-  have := ZeroAtInftyContinuousMap.norm_coe_le_norm (toZeroAtInfty hs u) z
-  rwa [h, norm_real, Real.norm_eq_abs] at this
+  rw [h₁, h₂, smul_eq_mul, ← ofReal_sub, ← ofReal_mul]
 
 /-- **The logarithmic ratio `V_c` is a smooth family in `H^(k+1)` near `c₀`.** There is a family of
 elements of `H^(k+1)(ℂ)`, smooth at `c₀`, whose `L²` function near `c₀` is `log (1 + U_c)`, where
@@ -786,9 +643,7 @@ private theorem exists_logRatio_family (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k) (c�
         ⇑(inclusionLp (by positivity) (V c)) =ᵐ[volume]
           fun z ↦ (logRatio c₀ R₀ c z : ℂ) := by
   have hk1 : (finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) :=
-    finrank_real_complex_lt_two_mul (by
-      have : (2 : ℝ) ≤ k := by exact_mod_cast hk
-      linarith)
+    finrank_real_complex_lt_two_mul (by linarith [show (2 : ℝ) ≤ k from mod_cast hk])
   have hq := innerCut_mul_defect_le hR'
   obtain ⟨U, hU, hU0, hUae⟩ := exists_ratioSubOne_family hm k c₀ hq
   obtain ⟨L, hL, hL0, hLinv⟩ := exists_contDiffAt_expSubOne_eq hk1
@@ -806,19 +661,29 @@ private theorem exists_logRatio_family (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k) (c�
     hUt.eventually (gt_mem_nhds (by norm_num : (0 : ℝ) < 1 / 2)),
     hVt.eventually (gt_mem_nhds one_pos)] with c h₁ h₂ h₃
   have hpos (z : ℂ) : 0 < 1 + ratioSubOne c₀ R₀ c z := by
-    have := abs_le_norm_toZeroAtInfty hk1 (by positivity)
-      (contDiff_ratioSubOne (fun z ↦ (hq z).2) c).continuous (hUae c) z
+    have := norm_le_norm_toZeroAtInfty_of_ae_eq (hs := hk1) (by positivity)
+      (g := fun z ↦ (ratioSubOne c₀ R₀ c z : ℂ))
+      (ofRealCLM.continuous.comp (contDiff_ratioSubOne (fun z ↦ (hq z).2) c).continuous)
+      (hUae c) z
+    rw [norm_real, Real.norm_eq_abs] at this
     linarith [neg_abs_le (ratioSubOne c₀ R₀ c z)]
   refine ⟨hpos, ?_⟩
-  -- `exp V_c - 1 = U_c`, and `V_c` is small, so `V_c = log (1 + U_c)`.
   have hexp := coeFn_toLp_inclusion_expSubOne hk1 (by positivity) (L (U c))
   rw [h₁, toLp_inclusion, toLp_inclusion] at hexp
   filter_upwards [coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hk1) (by positivity) (L (U c)),
     hexp, hUae c] with z hz₁ hz₂ hz₃
+  -- `exp V_c = 1 + U_c` with `|Im V_c| ≤ ‖V_c‖ < 1 < π`, so `V_c` is the real `log (1 + U_c)`.
   rw [hz₁]
-  refine eq_ofReal_log_of_exp_sub_one_eq ?_ (hpos z) ?_
-  · exact (ZeroAtInftyContinuousMap.norm_coe_le_norm _ z).trans_lt h₃
-  · rw [← hz₁, ← hz₂, hz₃]
+  set v := T (L (U c)) z
+  have he : Complex.exp v = ((1 + ratioSubOne c₀ R₀ c z : ℝ) : ℂ) := by
+    have h : Complex.exp v - 1 = ratioSubOne c₀ R₀ c z := by rw [← hz₁, ← hz₂, hz₃]
+    rw [ofReal_add, ofReal_one]
+    linear_combination h
+  have him : |v.im| < Real.pi := (abs_im_le_norm v).trans_lt
+    (((ZeroAtInftyContinuousMap.norm_coe_le_norm _ z).trans_lt h₃).trans
+      (by linarith [Real.two_le_pi]))
+  rw [logRatio, ofReal_log (hpos z).le, ← he,
+    log_exp (by linarith [neg_abs_le v.im]) (by linarith [le_abs_self v.im])]
 
 /-! ### Families of real functions that are smooth in `H^s` at a point -/
 
@@ -872,9 +737,7 @@ private theorem IsSmoothAt.mul (hs' : (finrank ℝ ℂ : ℝ) < 2 * s) (hF : IsS
       (hD.prodMk hE), ?_⟩
   filter_upwards [hDF, hEG] with c h₁ h₂
   filter_upwards [coeFn_inclusionLp_mulCLM hs' hs (D c) (E c), h₁, h₂] with z hz h₁ h₂
-  rw [hz, h₁, h₂]
-  push_cast
-  rfl
+  rw [hz, h₁, h₂, ofReal_mul]
 
 /-- Exponentials, in the algebra `H^s(ℂ)`, `s > 1`. -/
 private theorem IsSmoothAt.exp_sub_one (hs' : (finrank ℝ ℂ : ℝ) < 2 * s)
@@ -886,9 +749,7 @@ private theorem IsSmoothAt.exp_sub_one (hs' : (finrank ℝ ℂ : ℝ) < 2 * s)
   have he := coeFn_toLp_inclusion_expSubOne hs' hs (D c)
   rw [toLp_inclusion, toLp_inclusion] at he
   filter_upwards [he, h] with z h₁ h₂
-  rw [h₁, h₂]
-  push_cast
-  rfl
+  rw [h₁, h₂, ofReal_sub, ofReal_exp, ofReal_one]
 
 /-- Lowering the order. -/
 private theorem IsSmoothAt.mono {t : ℝ} {ht : 0 ≤ t} (hF : IsSmoothAt t ht c₀ F) (hst : s ≤ t) :
@@ -905,13 +766,17 @@ private theorem IsSmoothAt.realMul {N : ℕ} {g : ℂ → ℝ} (hg : ContDiff �
     (hF : IsSmoothAt N N.cast_nonneg c₀ F) :
     IsSmoothAt N N.cast_nonneg c₀ fun c z ↦ g z * F c z := by
   obtain ⟨D, hD, hDF⟩ := hF
-  refine ⟨fun c ↦ realMulCLM N hg hbd (D c),
-    ((realMulCLM N hg hbd).restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
+  have hbd' (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C :=
+    ofRealCLM.exists_bound_iteratedFDeriv_comp_left (hg.of_le (by exact_mod_cast le_top))
+      (fun i _ ↦ hbd i) n le_rfl
+  set M : H^{(N : ℝ)}(ℂ) →L[ℂ] H^{(N : ℝ)}(ℂ) :=
+    smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hbd' n
+  refine ⟨fun c ↦ M (D c), (M.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
   filter_upwards [hDF] with c h
-  filter_upwards [coeFn_inclusionLp_realMulCLM N hg hbd (D c), h] with z h₁ h₂
-  rw [h₁, h₂]
-  push_cast
-  rfl
+  filter_upwards [coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num)
+    (by norm_num) (fun n _ ↦ hbd' n)
+    (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp hg) hbd') (D c), h] with z h₁ h₂
+  rw [h₁, h₂, smul_eq_mul, ofReal_mul]
 
 /-- Directional derivatives, from `H^(s+1)` to `H^s`. -/
 private theorem IsSmoothAt.fderiv_apply (hF : IsSmoothAt (s + 1) (by linarith) c₀ F)
@@ -933,12 +798,6 @@ end IsSmoothAt
 
 /-! ### The pieces of the difference of two normalized vortices -/
 
-/-- `1 - smoothTransition (‖z‖² - a)` vanishes for `‖z‖ ≥ |a| + 1`. -/
-private theorem one_sub_smoothTransition_eq_zero {a : ℝ} {z : ℂ} (hz : |a| + 1 ≤ ‖z‖) :
-    1 - Real.smoothTransition (‖z‖ ^ 2 - a) = 0 := by
-  have h1 : |a| + 1 ≤ ‖z‖ ^ 2 := by nlinarith [abs_nonneg a]
-  rw [Real.smoothTransition.one_of_one_le (by linarith [le_abs_self a]), sub_self]
-
 /-- The core `(1 - χ) F_c` of a jointly smooth family is smooth in every `H^k`. -/
 private theorem isSmoothAt_core {F : (Fin m → ℂ) → ℂ → ℝ}
     (hF : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ F p.1 p.2) (R₀ : ℝ) (k : ℕ)
@@ -946,10 +805,9 @@ private theorem isSmoothAt_core {F : (Fin m → ℂ) → ℂ → ℝ}
     IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ (1 - outerCut R₀ z) * F c z := by
   have hj : ContDiff ℝ ∞ (Function.uncurry fun c z ↦ (((1 - outerCut R₀ z) * F c z : ℝ) : ℂ)) :=
     ofRealCLM.contDiff.comp ((contDiff_const.sub
-      ((contDiff_smoothTransition_normSq_sub (R₀ + 1)).comp contDiff_snd)).mul hF)
+      ((contDiff_innerCut (R₀ + 2)).comp contDiff_snd)).mul hF)
   obtain ⟨D, hD, hDF⟩ := exists_contDiff_inclusionLp_ae_eq_of_forall_le_norm hj
-    (R := |R₀ + 1| + 1) (fun c z hz ↦ by simp [one_sub_smoothTransition_eq_zero hz])
-    k.cast_nonneg
+    (R := |R₀ + 2| + 1) (fun c z hz ↦ by simp [innerCut_eq_one hz]) k.cast_nonneg
   exact isSmoothAt_of_contDiff hD hDF
 
 /-- The reduced solution `w_c` is smooth in every `H^s`. -/
@@ -969,12 +827,6 @@ private theorem contDiff_redSol_sub (c c₀ : Fin m → ℂ) :
     ContDiff ℝ 1 fun z ↦ redSol c z - redSol c₀ z :=
   ((contDiff_reducedSolution _).sub (contDiff_reducedSolution _)).of_le (by simp)
 
-/-- The cutoff `χ` has bounded derivatives. -/
-private theorem exists_bound_iteratedFDeriv_outerCut (R₀ : ℝ) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (outerCut R₀) z‖ ≤ C :=
-  exists_bound_iteratedFDeriv_of_hasCompactSupport_one_sub
-    (contDiff_smoothTransition_normSq_sub _) (hasCompactSupport_one_sub_smoothTransition _) n
-
 /-- The coordinates of the normalized vortex have bounded derivatives. -/
 private theorem exists_bound_iteratedFDeriv_normalizedVortex (hm : 0 < m) (c₀ : Fin m → ℂ)
     (j : Fin 4) (n : ℕ) :
@@ -992,8 +844,7 @@ private theorem contDiff_normalizedVortex_apply (c₀ : Fin m → ℂ) (j : Fin 
 the logarithmic ratio `V_c`, smooth in `H^(k+1)` and of class `C¹`. -/
 private theorem exists_radius_isSmoothAt_logRatio (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
     (c₀ : Fin m → ℂ) :
-    ∃ R₀ : ℝ, (∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-        (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) ∧
+    ∃ R₀ : ℝ, IsGoodRadius c₀ R₀ ∧
       IsSmoothAt ((k : ℝ) + 1) (by positivity) c₀ (logRatio c₀ R₀) ∧
       ∀ᶠ c in 𝓝 c₀, ContDiff ℝ 1 (logRatio c₀ R₀ c) := by
   obtain ⟨R₀, -, hR, hR'⟩ := exists_radius hm c₀
@@ -1003,60 +854,39 @@ private theorem exists_radius_isSmoothAt_logRatio (hm : 0 < m) {k : ℕ} (hk : 2
   exact (((contDiff_const.add (contDiff_ratioSubOne (fun z ↦ (hq z).2) c)).log
     fun z ↦ (h.1 z).ne').of_le (by simp))
 
-/-- **The first coordinate of `y_c - y_{c₀}` is smooth in `H^k` at `c₀`.** -/
-private theorem isSmoothAt_normalizedVortex_sub_apply_zero (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
-    (c₀ : Fin m → ℂ) :
-    IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ normalizedVortex c z 0 - normalizedVortex c₀ z 0 := by
+/-- **The connection part of `y_c - y_{c₀}` along `v` is smooth in `H^k` at `c₀`.** The
+connection coordinates of `y_c` are `-(bgConn c I + ∂_I w_c)` and `bgConn c 1 + ∂_1 w_c`. -/
+private theorem isSmoothAt_bgConn_add_fderiv_redSol_sub (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
+    (c₀ : Fin m → ℂ) (v : ℂ) :
+    IsSmoothAt k k.cast_nonneg c₀ fun c z ↦
+      bgConn c v z + fderiv ℝ (redSol c) z v - (bgConn c₀ v z + fderiv ℝ (redSol c₀) z v) := by
   obtain ⟨R₀, hR, hV, hV1⟩ := exists_radius_isSmoothAt_logRatio hm hk c₀
-  have hK := isSmoothAt_core (F := fun c z ↦ bgConn0 c z - bgConn0 c₀ z)
-    (contDiff_bgConn0_uncurry.sub (contDiff_bgConn0_uncurry.comp
+  have hK := isSmoothAt_core (F := fun c z ↦ bgConn c v z - bgConn c₀ v z)
+    ((contDiff_bgConn_uncurry v).sub ((contDiff_bgConn_uncurry v).comp
       (contDiff_const.prodMk contDiff_snd))) R₀ k c₀
-  have hdV := ((hV.fderiv_apply (hs := k.cast_nonneg) hV1 I).const_mul (1 / 2)).realMul
-    (contDiff_smoothTransition_normSq_sub _) (exists_bound_iteratedFDeriv_outerCut R₀)
+  have hdV := ((hV.fderiv_apply (hs := k.cast_nonneg) hV1 v).const_mul (1 / 2)).realMul
+    (g := outerCut R₀) (contDiff_innerCut (R₀ + 2)) (exists_bound_iteratedFDeriv_innerCut (R₀ + 2))
   have hdW := (isSmoothAt_redSol_sub (by positivity : (0 : ℝ) ≤ k + 1) c₀).fderiv_apply
-    (hs := k.cast_nonneg) (.of_forall fun c ↦ contDiff_redSol_sub c c₀) I
-  refine ((hK.sub hdV).sub hdW).congr ?_
-  filter_upwards [ball_mem_nhds c₀ one_pos] with c hc
-  funext z
-  rw [normalizedVortex_sub_apply_zero hR hc z]
-  ring
-
-/-- **The second coordinate of `y_c - y_{c₀}` is smooth in `H^k` at `c₀`.** -/
-private theorem isSmoothAt_normalizedVortex_sub_apply_one (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
-    (c₀ : Fin m → ℂ) :
-    IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ normalizedVortex c z 1 - normalizedVortex c₀ z 1 := by
-  obtain ⟨R₀, hR, hV, hV1⟩ := exists_radius_isSmoothAt_logRatio hm hk c₀
-  have hK := isSmoothAt_core (F := fun c z ↦ bgConn1 c z - bgConn1 c₀ z)
-    (contDiff_bgConn1_uncurry.sub (contDiff_bgConn1_uncurry.comp
-      (contDiff_const.prodMk contDiff_snd))) R₀ k c₀
-  have hdV := ((hV.fderiv_apply (hs := k.cast_nonneg) hV1 1).const_mul (1 / 2)).realMul
-    (contDiff_smoothTransition_normSq_sub _) (exists_bound_iteratedFDeriv_outerCut R₀)
-  have hdW := (isSmoothAt_redSol_sub (by positivity : (0 : ℝ) ≤ k + 1) c₀).fderiv_apply
-    (hs := k.cast_nonneg) (.of_forall fun c ↦ contDiff_redSol_sub c c₀) 1
+    (hs := k.cast_nonneg) (.of_forall fun c ↦ contDiff_redSol_sub c c₀) v
   refine ((hK.add hdV).add hdW).congr ?_
   filter_upwards [ball_mem_nhds c₀ one_pos] with c hc
   funext z
-  rw [normalizedVortex_sub_apply_one hR hc z]
+  rw [bgConn_add_fderiv_redSol_sub_eq hR hc v z]
   ring
 
-/-- The section coordinates `j = 2, 3` of `y_c - y_{c₀}` are smooth in `H^k` at `c₀`, given the
-pointwise decomposition of their background part `B_c` (the real or imaginary part of
-`bgSection c - bgSection c₀`). -/
+/-- **The section coordinates of `y_c - y_{c₀}` are smooth in `H^k` at `c₀`.** Here `ℓ` is `re` or
+`im`, and the coordinate `j` is `ℓ` of the section. -/
 private theorem isSmoothAt_normalizedVortex_sub_section (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
-    (c₀ : Fin m → ℂ) (j : Fin 4) {B : (Fin m → ℂ) → ℂ → ℝ}
-    (hB : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ B p.1 p.2)
-    (hdec : ∀ R₀ : ℝ, (∀ c ∈ ball c₀ 1, ∀ z : ℂ, R₀ < ‖z‖ ^ 2 →
-        (monicOfCoeff c).eval z ≠ 0 ∧ m * ∑ i, ‖c i‖ ^ 2 + 2 < ‖z‖ ^ 2) →
-      ∀ c ∈ ball c₀ 1, ∀ z, normalizedVortex c z j - normalizedVortex c₀ z j =
-        (1 - outerCut R₀ z) * B c z * Real.exp (redSol c z) +
-          outerCut R₀ z * (normalizedVortex c₀ z j *
-            ((Real.exp (logRatio c₀ R₀ c z / 2) - 1) * Real.exp (redSol c z - redSol c₀ z))) +
-          normalizedVortex c₀ z j * (Real.exp (redSol c z - redSol c₀ z) - 1)) :
+    (c₀ : Fin m → ℂ) (ℓ : ℂ →L[ℝ] ℝ) (j : Fin 4)
+    (hℓ : ∀ (c : Fin m → ℂ) z, ℓ ((normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I) =
+      normalizedVortex c z j) :
     IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ normalizedVortex c z j - normalizedVortex c₀ z j := by
   obtain ⟨R₀, hR, hV, -⟩ := exists_radius_isSmoothAt_logRatio hm hk c₀
   have hk0 : (finrank ℝ ℂ : ℝ) < 2 * k := finrank_real_complex_lt_two_mul (by exact_mod_cast hk)
   have hk1 : (finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) := by linarith
-  have hK := isSmoothAt_core hB R₀ k c₀
+  have hS := contDiff_bgSection_uncurry (m := m)
+  have hK := isSmoothAt_core (F := fun c z ↦ ℓ (bgSection c z - bgSection c₀ z))
+    (ℓ.contDiff.comp (hS.sub (hS.comp (contDiff_const.prodMk contDiff_snd)))) R₀ k c₀
   have hw := (isSmoothAt_redSol k.cast_nonneg c₀).exp_sub_one hk0
   have hEW := (isSmoothAt_redSol_sub k.cast_nonneg c₀).exp_sub_one hk0
   have hEV : IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ Real.exp (1 / 2 * logRatio c₀ R₀ c z) - 1 :=
@@ -1064,28 +894,30 @@ private theorem isSmoothAt_normalizedVortex_sub_section (hm : 0 < m) {k : ℕ} (
   have hy := contDiff_normalizedVortex_apply c₀ j
   have hyb := exists_bound_iteratedFDeriv_normalizedVortex hm c₀ j
   have h₁ := hK.add (hK.mul hk0 hw)
-  have h₂ := ((hEV.add (hEV.mul hk0 hEW)).realMul hy hyb).realMul
-    (contDiff_smoothTransition_normSq_sub _) (exists_bound_iteratedFDeriv_outerCut R₀)
+  have h₂ := ((hEV.add (hEV.mul hk0 hEW)).realMul hy hyb).realMul (g := outerCut R₀)
+    (contDiff_innerCut (R₀ + 2)) (exists_bound_iteratedFDeriv_innerCut (R₀ + 2))
   refine ((h₁.add h₂).add (hEW.realMul hy hyb)).congr ?_
   filter_upwards [ball_mem_nhds c₀ one_pos] with c hc
   funext z
-  rw [hdec R₀ hR c hc z, show logRatio c₀ R₀ c z / 2 = 1 / 2 * logRatio c₀ R₀ c z by ring]
+  have h := map_normalizedVortex_sub_section hR hc ℓ z
+  rw [hℓ, hℓ] at h
+  rw [h, show logRatio c₀ R₀ c z / 2 = 1 / 2 * logRatio c₀ R₀ c z by ring]
   ring
 
 /-- **The coordinates of `y_c - y_{c₀}` are smooth in `H^k` at `c₀`.** -/
 private theorem isSmoothAt_normalizedVortex_sub (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k)
     (c₀ : Fin m → ℂ) (j : Fin 4) :
     IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ normalizedVortex c z j - normalizedVortex c₀ z j := by
-  have hS := contDiff_bgSection_uncurry (m := m)
-  have hS₀ : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ bgSection p.1 p.2 - bgSection c₀ p.2 :=
-    hS.sub (hS.comp (contDiff_const.prodMk contDiff_snd))
   fin_cases j
-  · exact isSmoothAt_normalizedVortex_sub_apply_zero hm hk c₀
-  · exact isSmoothAt_normalizedVortex_sub_apply_one hm hk c₀
-  · exact isSmoothAt_normalizedVortex_sub_section hm hk c₀ 2 (reCLM.contDiff.comp hS₀)
-      fun R₀ hR c hc z ↦ normalizedVortex_sub_apply_two hR hc z
-  · exact isSmoothAt_normalizedVortex_sub_section hm hk c₀ 3 (imCLM.contDiff.comp hS₀)
-      fun R₀ hR c hc z ↦ normalizedVortex_sub_apply_three hR hc z
+  · refine ((isSmoothAt_bgConn_add_fderiv_redSol_sub hm hk c₀ I).const_mul (-1)).congr
+      (.of_forall fun c ↦ funext fun z ↦ ?_)
+    simp only [Fin.zero_eta, normalizedVortex_apply_zero]
+    ring
+  · refine (isSmoothAt_bgConn_add_fderiv_redSol_sub hm hk c₀ 1).congr
+      (.of_forall fun c ↦ funext fun z ↦ ?_)
+    simp only [Fin.mk_one, normalizedVortex_apply_one]
+  · exact isSmoothAt_normalizedVortex_sub_section hm hk c₀ reCLM 2 fun c z ↦ by simp
+  · exact isSmoothAt_normalizedVortex_sub_section hm hk c₀ imCLM 3 fun c z ↦ by simp
 
 /-! ### The normalized vortices as a smooth family in `A_m^s` -/
 
@@ -1124,12 +956,9 @@ theorem contDiff_subRef_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ
       ((Vortex.normalizedVortex c z j - Vortex.normalizedVortex c₀ z j : ℝ) : ℂ) := by
     rw [inclusionLp_inclusion]
     exact hc
-  have e (c : Fin m → ℂ) : (normalizedVortex hm f s c).toFun = Vortex.normalizedVortex c := (rfl)
   filter_upwards [coeFn_inclusionLp_add_ae_eq hs h₀ h₁] with z hz
-  simp only [Function.comp_apply, ContinuousLinearMap.coe_restrictScalars', e] at hz ⊢
-  rw [hz]
-  push_cast
-  ring
+  simpa only [map_add, AddSubgroup.coe_add, coe_normalizedVortex, ofReal_sub, sub_add_sub_cancel',
+    ContinuousLinearMap.coe_restrictScalars', Function.comp_apply] using hz
 
 /-- The normalized vortices depend continuously on their divisor coefficients in `A_m^s`. -/
 theorem continuous_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) {s : ℝ}

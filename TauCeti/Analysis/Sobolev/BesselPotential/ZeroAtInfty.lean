@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # The bounded Sobolev embeddings of `H^s(ℝⁿ)` into `C₀` and `C^k`
@@ -27,7 +28,9 @@ bounded operators.
   `s > n / 2`, sending `u` to its continuous representative. Its image is `C^k` for
   `s > k + n / 2`, with derivatives of order at most `k` bounded by a constant times `‖u‖_{H^s}`.
   It turns multiplication by a Schwartz function `φ` into pointwise multiplication
-  (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`).
+  (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`). A continuous function representing
+  `u` is bounded by the sup norm of this embedding
+  (`BesselPotentialSpace.norm_le_norm_toZeroAtInfty_of_ae_eq`).
 * `BesselPotentialSpace.smulLeftContDiffMapSupportedIn`: for a Schwartz function `φ` with
   topological support in a compact set `K` and `s > k + n / 2`, the bounded operator
   `H^s(E, F) →L[ℂ] 𝓓^{k}_{K}(E, F)` sending `u` to the continuous representative of `φ u`. The
@@ -119,6 +122,16 @@ function `u`. -/
 theorem toZeroAtInfty_eq_iff (h0 : 0 ≤ s) (u : H^{s}(E, F)) (g : C₀(E, F)) :
     toZeroAtInfty hs u = g ↔ inclusionLp h0 u =ᵐ[volume] g :=
   TauCeti.zeroAtInftyRepresentativeₗ_eq_iff (exists_inclusionLp_ae_eq h0 hs) _ _ u g
+
+/-- If the `L²` function of `u ∈ H^s` is almost everywhere a continuous function `g`, then `g` is
+the Sobolev embedding of `u`, so it is bounded by the sup norm of that embedding. -/
+theorem norm_le_norm_toZeroAtInfty_of_ae_eq (h0 : 0 ≤ s) {u : H^{s}(E, F)} {g : E → F}
+    (hg : Continuous g) (hu : inclusionLp h0 u =ᵐ[volume] g) (x : E) :
+    ‖g x‖ ≤ ‖toZeroAtInfty hs u‖ := by
+  have h : ⇑(toZeroAtInfty hs u) = g :=
+    (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs u).continuous hg).1
+      ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u).symm.trans hu)
+  exact h ▸ ZeroAtInftyContinuousMap.norm_coe_le_norm (toZeroAtInfty hs u) x
 
 /-- The tempered distribution `u ∈ H^s`, `s > dim E / 2`, is integration against its Sobolev
 embedding. -/
