@@ -64,8 +64,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
   polynomial of degree `d` and order `a` of vanishing at zero has `d - a` finite unit edges,
   and by `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
-* `PowerSeries.newtonPolygon_C` and `PowerSeries.newtonPolygon_one`: the Newton polygon of a
-  constant power series `C c` is the single point `(0, v c)`.
+* `PowerSeries.newtonPolygon_C`, `PowerSeries.newtonPolygon_one`, `Polynomial.newtonPolygon_C`
+  and `Polynomial.newtonPolygon_one`: the Newton polygon of a constant `C c` is the single point
+  `(0, v c)`.
 * `PowerSeries.newtonPolygon_neg` and `Polynomial.newtonPolygon_neg`: negation preserves the
   Newton polygon.
 * `PowerSeries.newtonPolygon_smul`, `PowerSeries.newtonPolygon_X_pow_mul`,
@@ -302,6 +303,16 @@ theorem supportingValue_newtonPolygon :
 theorem newtonPolygon_zero : (0 : R[X]).newtonPolygon v = ⊤ := by
   simp only [newtonPolygon_def, coeff_zero, AddValuation.map_zero]
   exact lowerConvexEnvelope_top
+
+/-- The Newton polygon of a constant polynomial `C c` is the single point `(0, v c)`, and is
+empty when `v c = ⊤`. -/
+theorem newtonPolygon_C (c : R) :
+    (C c).newtonPolygon v = fun n => if n = 0 then v c else ⊤ := by
+  rw [← newtonPolygon_coe, coe_C, PowerSeries.newtonPolygon_C]
+
+/-- The Newton polygon of the polynomial `1` is the single point `(0, 0)`. -/
+theorem newtonPolygon_one : (1 : R[X]).newtonPolygon v = fun n => if n = 0 then 0 else ⊤ := by
+  rw [← newtonPolygon_coe, coe_one, PowerSeries.newtonPolygon_one]
 
 /-- The Newton polygon of a polynomial is empty exactly when every coefficient has infinite
 valuation. -/

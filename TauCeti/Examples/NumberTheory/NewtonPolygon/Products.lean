@@ -57,6 +57,21 @@ private theorem isConvexSeq_ite_le (k : ℕ) :
     IsConvexSeq fun n : ℕ => if n ≤ k then (0 : WithTop ℝ) else ⊤ := by
   simpa using isConvexSeq_affine_ite (s := Set.Iic k) Set.ordConnected_Iic 0 0
 
+/-- For `σ ≤ 0`, the line of slope `σ` through the origin supports the zero heights. -/
+private theorem isSupportingLine_zero {σ : ℝ} (hσ : σ ≤ 0) :
+    IsSupportingLine (0 : ℕ → WithTop ℝ) σ 0 :=
+  isSupportingLine_iff_forall.mpr fun n =>
+    WithTop.coe_le_coe.mpr (by nlinarith [Nat.cast_nonneg (α := ℝ) n])
+
+/-- For `σ ≤ 0`, the line of slope `σ` through the origin supports the heights `0` on `[0, k]`
+and `⊤` beyond. -/
+private theorem isSupportingLine_ite_le {σ : ℝ} (hσ : σ ≤ 0) (k : ℕ) :
+    IsSupportingLine (fun n : ℕ => if n ≤ k then (0 : WithTop ℝ) else ⊤) σ 0 :=
+  isSupportingLine_iff_forall.mpr fun n => by
+    split_ifs
+    · exact isSupportingLine_iff_forall.mp (isSupportingLine_zero hσ) n
+    · exact le_top
+
 section LinearFactors
 
 open Polynomial
@@ -127,27 +142,20 @@ theorem minkowskiSum_newtonPolygon_mk_one_newtonPolygon_one_sub_X :
 theorem isFiniteFace_newtonPolygon_mk_one {σ : ℝ} (hσ : σ < 0) :
     IsFiniteFace ((mk 1 : R⟦X⟧).newtonPolygon v) σ 0 0 := by
   rw [newtonPolygon_mk_one]
-  refine isFiniteFace_iff.mpr ⟨le_rfl, 0,
-    isSupportingLine_iff_forall.mpr fun n => WithTop.coe_le_coe.mpr ?_, Set.ext fun n => ?_⟩
-  · nlinarith [Nat.cast_nonneg (α := ℝ) n]
-  · simp [eq_comm (a := (0 : WithTop ℝ)), hσ.ne]
+  refine isFiniteFace_iff.mpr ⟨le_rfl, 0, isSupportingLine_zero hσ.le, Set.ext fun n => ?_⟩
+  simp [eq_comm (a := (0 : WithTop ℝ)), hσ.ne]
 
 /-- At a slope `σ < 0` the Newton polygon of `1 - X` has the finite face `{0}`. -/
 theorem isFiniteFace_newtonPolygon_one_sub_X {σ : ℝ} (hσ : σ < 0) :
     IsFiniteFace ((1 - X : R⟦X⟧).newtonPolygon v) σ 0 0 := by
   rw [newtonPolygon_one_sub_X]
-  refine isFiniteFace_iff.mpr
-    ⟨le_rfl, 0, isSupportingLine_iff_forall.mpr fun n => ?_, Set.ext fun n => ?_⟩
-  · rcases n with _ | _ | n
-    · simp
-    · simpa using hσ.le
-    · simp
-  · rcases n with _ | _ | n
-    · simp
-    · simpa [eq_comm (a := (0 : WithTop ℝ))] using hσ.ne
-    · refine iff_of_false (fun h => ?_) (by simp)
-      simp only [mem_supportingFace, show ¬n + 1 + 1 ≤ 1 by omega, ↓reduceIte] at h
-      exact WithTop.top_ne_coe h
+  refine isFiniteFace_iff.mpr ⟨le_rfl, 0, isSupportingLine_ite_le hσ.le 1, Set.ext fun n => ?_⟩
+  rcases n with _ | _ | n
+  · simp
+  · simpa [eq_comm (a := (0 : WithTop ℝ))] using hσ.ne
+  · refine iff_of_false (fun h => ?_) (by simp)
+    simp only [mem_supportingFace, show ¬n + 1 + 1 ≤ 1 by omega, ↓reduceIte] at h
+    exact WithTop.top_ne_coe h
 
 end GeometricSeries
 
@@ -194,16 +202,10 @@ theorem supportingValue_newtonPolygon_mk_one_mul_one_sub_X_eq_add_iff (σ : ℝ)
     exact EReal.zero_ne_bot h
   · intro hσ
     have hs₁ : supportingValue (0 : ℕ → WithTop ℝ) σ = 0 :=
-      supportingValue_eq_coe_of_mem_supportingFace (c := 0) (isSupportingLine_iff_forall.mpr
-        fun n => WithTop.coe_le_coe.mpr (by nlinarith [Nat.cast_nonneg (α := ℝ) n]))
-        (n := 0) (by simp)
-    have hs₂ : supportingValue (fun n : ℕ => if n ≤ 1 then (0 : WithTop ℝ) else ⊤) σ = 0 := by
-      refine supportingValue_eq_coe_of_mem_supportingFace (c := 0)
-        (isSupportingLine_iff_forall.mpr fun n => ?_) (n := 0) (by simp)
-      rcases n with _ | _ | n
-      · simp
-      · simpa using hσ
-      · simp
+      supportingValue_eq_coe_of_mem_supportingFace (isSupportingLine_zero hσ) (n := 0) (by simp)
+    have hs₂ : supportingValue (fun n : ℕ => if n ≤ 1 then (0 : WithTop ℝ) else ⊤) σ = 0 :=
+      supportingValue_eq_coe_of_mem_supportingFace (isSupportingLine_ite_le hσ 1) (n := 0)
+        (by simp)
     rw [hs₁, hs₂, add_zero]
 
 /-- At a slope `σ < 0` the local product law gives the Newton polygon of `(∑ Xⁿ) (1 - X)` the
@@ -253,7 +255,8 @@ theorem inf_newtonPolygon_one_newtonPolygon_X_sq_apply_one :
     rw [newtonPolygon_def]
     exact lowerConvexEnvelope_eq_top_of_forall_le fun i hi => by
       simp [coeff_X_pow, show i ≠ 2 by omega]
-  rw [Pi.inf_apply, newtonPolygon_eq_top_of_natDegree_lt _ v (by simp), h, inf_idem]
+  rw [Pi.inf_apply, newtonPolygon_one, h]
+  simp
 
 /-- **The pointwise minimum is not a lower bound.** The pointwise minimum of the Newton polygons
 of `1` and `X ^ 2` does not lie below the Newton polygon of `1 + X ^ 2`. -/
