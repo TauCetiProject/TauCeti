@@ -248,6 +248,8 @@ theorem doubledIsometryHom_apply (p : B.isometryGroup × (-B).isometryGroup) (u 
     (B.doubledIsometryHom p : (M × M) ≃ₗ[R] (M × M)) u =
       ((p.1 : M ≃ₗ[R] M) u.1, (p.2 : M ≃ₗ[R] M) u.2) := (rfl)
 
+/-- The blockwise embedding `(f, g) ↦ f × g` of the isometry groups of `B` and `-B` into the
+isometry group of the doubled form is injective. -/
 theorem doubledIsometryHom_injective : Function.Injective B.doubledIsometryHom := by
   intro p q h
   have h' (u : M × M) := congrArg (fun e : B.doubled.isometryGroup ↦
@@ -304,6 +306,9 @@ theorem coe_doubledSimilitudeHom (p : B.doubledSimilitudeDomain S) :
       ((p.val.1 : (M ≃ₗ[R] M) × Sˣ).1.prodCongr (p.val.2 : (M ≃ₗ[R] M) × Sˣ).1,
         (p.val.1 : (M ≃ₗ[R] M) × Sˣ).2) := (rfl)
 
+/-- The blockwise embedding `((f, λ), (g, λ)) ↦ (f × g, λ)` of the equal-multiplier fibre product
+of the similitude groups of `B` and `-B` into the similitude group of the doubled form is
+injective. -/
 theorem doubledSimilitudeHom_injective : Function.Injective (B.doubledSimilitudeHom S) := by
   intro p q h
   have hp := B.similitudeMultiplier_eq_of_doubledSimilitudeDomain S p

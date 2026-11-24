@@ -188,7 +188,12 @@ end TauCeti
 The isometry group `Aut(M, B) ≤ M ≃ₗ[R] M` of a bilinear form `B` is the isometry group
 `LinearMap.isometryGroup B` of `B` as a sesquilinear form. The declarations below, specific to
 bilinear forms, live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
-`B.isometryGroupEquivIsometryEquiv` works on a bilinear form `B`. -/
+`B.isometryGroupEquivIsometryEquiv` works on a bilinear form `B`.
+
+For a finite free `ℤ`-module `V` carrying an integral form `Q` this group is the arithmetic group
+`Aut(V, Q)`; when `Q` is preserved by monodromy, a variation of Hodge structure has its monodromy
+representation land in this group and act on the complexification through
+`LinearMap.BilinForm.isometryGroupBaseChange`. -/
 
 namespace LinearMap.BilinForm
 
@@ -201,12 +206,7 @@ variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCo
   [Module R M'] {B : BilinForm R M}
 
 /-- Membership in the isometry group `Aut(M, B) = LinearMap.isometryGroup B` of a bilinear form is
-the isometry predicate.
-
-For a finite free `ℤ`-module `V` carrying an integral form `Q` this group is the arithmetic group
-`Aut(V, Q)`; when `Q` is preserved by monodromy, a variation of Hodge structure has its monodromy
-representation land in this group and act on the complexification through
-`LinearMap.BilinForm.isometryGroupBaseChange`. -/
+the isometry predicate. -/
 theorem mem_isometryGroup {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ IsIsometry B (e : M →ₗ[R] M) :=
   mem_isometryGroup_iff.trans isIsometry_iff.symm

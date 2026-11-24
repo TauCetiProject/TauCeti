@@ -86,6 +86,8 @@ def isometryGroup : Subgroup (M ≃ₗ[R] M) where
     simpa using (he (e.symm x) (e.symm y)).symm
 
 variable {B} in
+/-- A self-equivalence lies in the isometry group exactly when it preserves `B` on every pair of
+vectors. -/
 @[simp]
 theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ B.isometryGroup ↔ ∀ x y, B (e x) (e y) = B x y := Iff.rfl
@@ -156,6 +158,7 @@ def isometryToSimilitude : B.isometryGroup →* B.similitudeGroup S where
 theorem coe_isometryToSimilitude (e : B.isometryGroup) :
     (B.isometryToSimilitude S e : (M ≃ₗ[R] M) × Sˣ) = ((e : M ≃ₗ[R] M), 1) := (rfl)
 
+/-- The inclusion `e ↦ (e, 1)` of the isometry group into the similitude group is injective. -/
 theorem isometryToSimilitude_injective : Function.Injective (B.isometryToSimilitude S) :=
   fun _ _ h ↦ Subtype.ext (by simpa using congrArg (B.similitudeToLinearEquiv S) h)
 
