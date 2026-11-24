@@ -127,22 +127,14 @@ theorem IsQuadraticTwistBy.exists_smul_baseChange_eq (h2 : (2 : K) ≠ 0)
     (Units.mk0 _ hv) a
   have hV : V • (W.quadraticTwistOf 0 (-d)).baseChange (AlgebraicClosure K) =
       W.baseChange (AlgebraicClosure K) := by
-    have h := (W.baseChange (AlgebraicClosure K)).quadraticTwistOfVariableChange_smul 1 0
-      (Units.mk0 _ hv) a
-    rw [quadraticTwistOf_one_zero] at h
-    rw [baseChange_quadraticTwistOf]
-    convert h using 3
-    · simp only [map_zero, Units.val_mk0]
-      ring
-    · simp only [map_neg, Units.val_mk0]
-      linear_combination ha
+    rw [baseChange_quadraticTwistOf, map_zero, map_neg, ← ha]
+    exact quadraticTwistOfVariableChange_smul_quadraticTwistOf_zero_neg_sq _ (Units.val_mk0 hv)
   have hu : (((C.baseChange (AlgebraicClosure K) * V⁻¹).u : (AlgebraicClosure K)ˣ) :
       AlgebraicClosure K) = algebraMap K (AlgebraicClosure K) C.u * (-2 * a)⁻¹ := by
     simp [V, VariableChange.baseChange]
   refine ⟨C.baseChange (AlgebraicClosure K) * V⁻¹, ?_, ⟨C.u ^ 2 / (4 * d), ?_⟩, fun g ↦ ?_⟩
   · rw [mul_smul, ← hV, inv_smul_smul, baseChange_smul_baseChange, hC]
-  · rw [hu]
-    simp [mul_pow, ha, map_ofNat]
+  · simp only [hu, mul_pow, inv_pow, neg_sq, ha, map_div₀, map_pow, map_mul, map_ofNat]
     ring
   · -- work with `g` as an automorphism of `Kᵃˡᵍ`, so that the ring-hom lemmas apply to it
     obtain ⟨σ, rfl⟩ : ∃ σ : Gal(AlgebraicClosure K/K), σ = g := ⟨g, rfl⟩
@@ -233,12 +225,9 @@ theorem isQuadraticTwistBy_one_iff (h2 : (2 : K) ≠ 0) :
     E.IsQuadraticTwistBy W 1 ↔ ∃ C : VariableChange K, C • W = E := by
   -- for `x ≠ 0`, the twist by `(0, -x²)` is the split twist by the roots `±x`
   have hsplit (x : K) (hx : x ≠ 0) :
-      ∃ C : VariableChange K, C • W = W.quadraticTwistOf 0 (-x ^ 2) := by
-    have hx2 : -x - x ≠ 0 := by
-      rw [show -x - x = -(2 * x) by ring]
-      exact neg_ne_zero.mpr (mul_ne_zero h2 hx)
-    obtain ⟨C, hC⟩ := W.exists_smul_eq_quadraticTwistOf_add_mul x (-x) (isUnit_iff_ne_zero.mpr hx2)
-    exact ⟨C, hC.trans (by congr 1 <;> ring)⟩
+      ∃ C : VariableChange K, C • W = W.quadraticTwistOf 0 (-x ^ 2) :=
+    ⟨_, inv_smul_eq_iff.mpr (quadraticTwistOfVariableChange_smul_quadraticTwistOf_zero_neg_sq _
+      (Units.val_mk0 (mul_ne_zero (neg_ne_zero.mpr h2) hx))).symm⟩
   refine ⟨fun ⟨d, a, ha, hg, C, hC⟩ ↦ ?_, fun ⟨C, hC⟩ ↦ ?_⟩
   · -- `Field.absoluteGaloisGroup K` is by definition `Gal(Kᵃˡᵍ/K)` with its Krull topology, so
     -- the trivial character of the former is compared with `sqrtCharacter ha` directly
