@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -16,7 +17,9 @@ A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` int
 `C_G(u) →* C_{G'}(f u)`. An injective `f` pulls `C_{G'}(f(s))` back to `C_G(s)`, and an
 isomorphism `e : G ≃* G'` maps `C_G(s)` onto `C_{G'}(e(s))`, so restricts to an isomorphism
 `C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this identifies the centralizers of conjugate
-elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
+elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`. In pointwise form, an automorphism `e` of `G` gives
+`C_G(e • s) = e • C_G(s)`, so conjugate subsets have conjugate centralizers,
+`C_G(gsg⁻¹) = g C_G(s) g⁻¹`.
 
 ## Main definitions
 
@@ -30,6 +33,7 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 * `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
 * `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
   centralizer of its image.
+* `Subgroup.centralizer_pointwise_smul`: `C_G(e • s) = e • C_G(s)` for an automorphism `e` of `G`.
 -/
 
 public section
@@ -109,3 +113,18 @@ theorem centralizerMap_symm_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (
   (rfl)
 
 end MulEquiv
+
+namespace Subgroup
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G]
+
+/-- An automorphism `e` of `G` carries the centralizer of `s` onto the centralizer of `e • s`,
+`C_G(e • s) = e • C_G(s)`; for `e = MulAut.conj g` this is `C_G(gsg⁻¹) = g C_G(s) g⁻¹`. -/
+theorem centralizer_pointwise_smul (e : MulAut G) (s : Set G) :
+    centralizer (e • s) = e • centralizer s := by
+  rw [← Set.image_smul]
+  exact (e.map_centralizer s).symm
+
+end Subgroup

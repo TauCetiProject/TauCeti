@@ -436,6 +436,21 @@ theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure {h 
   · have hv₁ : v 1 = m * -sphericalPendulumRotationAngle h j + n * (2 * π) := by linarith
     simp [hv₁]
 
+/-- **The period lattice of the spherical pendulum** on the domain of distinct nonpolar turning
+points: `TauCeti.hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure` for a value
+`(h, j)` in `TauCeti.sphericalPendulumTurningPointDomain`. -/
+theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem {h j : ℝ}
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain)
+    {x : sphericalPendulumPhaseSpace} (hx : sphericalPendulumEnergyMomentum x = (h, j)) :
+    isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec x =
+      AddSubgroup.closure
+        {![sphericalPendulumPeriod h j, -sphericalPendulumRotationAngle h j], ![0, 2 * π]} :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz₀ hV hx
+
 end PeriodLattice
 
 end TauCeti

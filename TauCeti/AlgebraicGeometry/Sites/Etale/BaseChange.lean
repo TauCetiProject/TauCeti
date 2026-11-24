@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -17,7 +17,7 @@ For a morphism of schemes `f : X ⟶ Y`, the base-change functor
 `smallEtaleBaseChangeId`, `smallEtaleBaseChangeCongr` and `smallEtaleBaseChangeComp`, and, for étale
 `f`, the post-composition functor `f.smallEtaleMap` and the adjunction
 `f.smallEtaleMapBaseChangeAdj : f.smallEtaleMap ⊣ f.smallEtaleBaseChange` are defined in
-`TauCeti/AlgebraicGeometry/Sites/Etale/Over.lean`; finite-limit preservation and continuity of
+`TauCeti/AlgebraicGeometry/Sites/Etale/Over/Basic.lean`; finite-limit preservation and continuity of
 `f.smallEtaleBaseChange` are in `TauCeti/AlgebraicGeometry/Sites/Etale/Pullback.lean`. This file
 develops further API for these functors.
 

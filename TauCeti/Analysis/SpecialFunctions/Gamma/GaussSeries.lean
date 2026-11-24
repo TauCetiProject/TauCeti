@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 
 /-!
 # Gauss' series for digamma
@@ -179,15 +180,6 @@ private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
   rw [he]
   ring
 
-private theorem analyticOnNhd_digamma_pos :
-    AnalyticOnNhd ℂ digamma {s : ℂ | 0 < s.re} := by
-  have hΓ : AnalyticOnNhd ℂ Gamma {s : ℂ | 0 < s.re} := by
-    apply DifferentiableOn.analyticOnNhd _ (isOpen_re_gt 0)
-    intro s hs
-    exact (differentiableAt_Gamma s (ne_neg_natCast_of_re_pos hs)).differentiableWithinAt
-  simpa only [digamma_def, logDeriv, Pi.div_def] using
-    hΓ.deriv.div hΓ (fun s hs ↦ Gamma_ne_zero (ne_neg_natCast_of_re_pos hs))
-
 private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     digamma s = gaussSeries s := by
   let v : ℕ → ℝ := fun n ↦ 1 + ((n : ℝ) + 1)⁻¹
@@ -209,7 +201,7 @@ private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     apply hvp.frequently
     exact (Eventually.of_forall fun n ↦ digamma_ofReal_eq_gaussSeries
       (show 0 < v n by dsimp [v]; positivity)).frequently
-  exact (analyticOnNhd_digamma_pos.eqOn_of_preconnected_of_frequently_eq
+  exact (analyticOnNhd_digamma_re_pos.eqOn_of_preconnected_of_frequently_eq
     (differentiableOn_gaussSeries.analyticOnNhd (isOpen_re_gt 0))
     (convex_halfSpace_re_gt 0).isPreconnected (by norm_num : (1 : ℂ) ∈ {s : ℂ | 0 < s.re})
     hfreq) hs

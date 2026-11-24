@@ -142,7 +142,7 @@ theorem le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le_parabolicBound
     IsContMDiffRiemannianBundle.of_le hn
   -- At a spatial maximum of `u s - v s` the Laplacian of `u s - v s` is nonpositive ...
   have hΔ := laplaceBeltrami_add_mul_nonpos_of_isLocalMax (k := -1) (hucd hs hy) (hvcd hs hy)
-    (by simpa only [neg_one_mul, sub_eq_add_neg] using hmax)
+    BoundarylessManifold.isInteriorPoint (by simpa only [neg_one_mul, sub_eq_add_neg] using hmax)
   -- ... and its differential vanishes, so the drift terms agree.
   have hd : mvfderiv I (u s) y = mvfderiv I (v s) y := by
     have h :=
@@ -334,7 +334,8 @@ theorem div_one_sub_mul_le_of_laplaceBeltrami_add_mvfderiv_add_mul_sq_le_deriv (
       let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn
       -- At a spatial minimum the Laplacian is nonnegative and the differential vanishes.
-      have hΔ := laplaceBeltrami_nonneg_of_isLocalMin (hucd ht).contMDiffAt hmin
+      have hΔ := laplaceBeltrami_nonneg_of_isLocalMin (hucd ht).contMDiffAt
+        BoundarylessManifold.isInteriorPoint hmin
       have hd : mvfderiv I (u t) x = 0 := mem_criticalPoints.mp (hmin.mem_criticalPoints (I := I))
       have h := hsuper ht x
       rw [hd, zero_apply] at h
