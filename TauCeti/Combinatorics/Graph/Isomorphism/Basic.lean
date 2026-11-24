@@ -169,6 +169,56 @@ theorem self_trans_symm (f : Iso G H) : f.trans f.symm = refl G := by
 theorem symm_trans_self (f : Iso G H) : f.symm.trans f = refl H := by
   ext <;> simp
 
+/-- The isomorphism between two equal graphs on the same ambient types. -/
+def ofEq {G₁ G₂ : Graph α β} (h : G₁ = G₂) : Iso G₁ G₂ :=
+  h ▸ refl G₁
+
+/-- For `rfl`, `ofEq` is the identity isomorphism. -/
+@[simp]
+theorem ofEq_rfl (G : Graph α β) : ofEq (rfl : G = G) = refl G :=
+  (rfl)
+
+/-- Inverting `ofEq` gives `ofEq` of the symmetric equality. -/
+@[simp]
+theorem ofEq_symm {G₁ G₂ : Graph α β} (h : G₁ = G₂) : (ofEq h).symm = ofEq h.symm := by
+  subst h
+  rfl
+
+/-- Composing `ofEq` along two equalities gives `ofEq` of their composite. -/
+@[simp]
+theorem ofEq_trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ = G₂) (h₂ : G₂ = G₃) :
+    (ofEq h₁).trans (ofEq h₂) = ofEq (h₁.trans h₂) := by
+  subst h₁ h₂
+  rfl
+
+/-- The vertex equivalence of `ofEq` acts trivially on coerced vertices. -/
+@[simp, grind =]
+theorem coe_ofEq_vertexEquiv_apply {G₁ G₂ : Graph α β} (h : G₁ = G₂) (x : G₁.vertexSet) :
+    ((ofEq h).vertexEquiv x : α) = x := by
+  subst h
+  rfl
+
+/-- The inverse vertex equivalence of `ofEq` acts trivially on coerced vertices. -/
+@[simp, grind =]
+theorem coe_ofEq_vertexEquiv_symm_apply {G₁ G₂ : Graph α β} (h : G₁ = G₂) (x : G₂.vertexSet) :
+    ((ofEq h).vertexEquiv.symm x : α) = x := by
+  subst h
+  rfl
+
+/-- The edge equivalence of `ofEq` acts trivially on coerced edges. -/
+@[simp, grind =]
+theorem coe_ofEq_edgeEquiv_apply {G₁ G₂ : Graph α β} (h : G₁ = G₂) (e : G₁.edgeSet) :
+    ((ofEq h).edgeEquiv e : β) = e := by
+  subst h
+  rfl
+
+/-- The inverse edge equivalence of `ofEq` acts trivially on coerced edges. -/
+@[simp, grind =]
+theorem coe_ofEq_edgeEquiv_symm_apply {G₁ G₂ : Graph α β} (h : G₁ = G₂) (e : G₂.edgeSet) :
+    ((ofEq h).edgeEquiv.symm e : β) = e := by
+  subst h
+  rfl
+
 /-- Transport a set of ambient vertices along a graph isomorphism, discarding points outside the
 actual vertex set. -/
 def mapVertexSet (f : Iso G H) (S : Set α) : Set α' :=

@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Forest
 public import TauCeti.Combinatorics.Graph.Connectivity.Isomorphism
 public import TauCeti.Combinatorics.Graph.Isomorphism.Subgraph
-import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Paths
 
 /-!
 # Isomorphism invariance of bridge components and bridge forests
@@ -43,7 +42,36 @@ variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
 
 private noncomputable def deleteEdgesBridgeSetIso (f : Iso G H) :
     Iso (G.deleteEdges G.bridgeSet) (H.deleteEdges H.bridgeSet) :=
-  f.deleteEdgesIso fun e ↦ by simpa [mem_bridgeSet] using f.isBridge_edgeEquiv_iff e
+  f.subgraphIsoOfEq ⟨G.deleteEdges G.bridgeSet, deleteEdges_le⟩
+    ((f.mapSubgraph_deleteEdges_self G.bridgeSet).trans (by rw [f.mapEdgeSet_bridgeSet]))
+
+@[simp]
+private theorem coe_deleteEdgesBridgeSetIso_vertexEquiv_apply (f : Iso G H)
+    (x : V(G.deleteEdges G.bridgeSet)) :
+    (f.deleteEdgesBridgeSetIso.vertexEquiv x : α') =
+      f.vertexEquiv ⟨x, deleteEdges_le.vertexSet_mono x.property⟩ :=
+  f.coe_subgraphIsoOfEq_vertexEquiv_apply ⟨G.deleteEdges G.bridgeSet, deleteEdges_le⟩ _ x
+
+@[simp]
+private theorem coe_deleteEdgesBridgeSetIso_vertexEquiv_symm_apply (f : Iso G H)
+    (y : V(H.deleteEdges H.bridgeSet)) :
+    (f.deleteEdgesBridgeSetIso.vertexEquiv.symm y : α) =
+      f.vertexEquiv.symm ⟨y, deleteEdges_le.vertexSet_mono y.property⟩ :=
+  f.coe_subgraphIsoOfEq_vertexEquiv_symm_apply ⟨G.deleteEdges G.bridgeSet, deleteEdges_le⟩ _ y
+
+@[simp]
+private theorem coe_deleteEdgesBridgeSetIso_edgeEquiv_apply (f : Iso G H)
+    (e : E(G.deleteEdges G.bridgeSet)) :
+    (f.deleteEdgesBridgeSetIso.edgeEquiv e : β') =
+      f.edgeEquiv ⟨e, e.property.1⟩ :=
+  f.coe_subgraphIsoOfEq_edgeEquiv_apply ⟨G.deleteEdges G.bridgeSet, deleteEdges_le⟩ _ e
+
+@[simp]
+private theorem coe_deleteEdgesBridgeSetIso_edgeEquiv_symm_apply (f : Iso G H)
+    (e : E(H.deleteEdges H.bridgeSet)) :
+    (f.deleteEdgesBridgeSetIso.edgeEquiv.symm e : β) =
+      f.edgeEquiv.symm ⟨e, e.property.1⟩ :=
+  f.coe_subgraphIsoOfEq_edgeEquiv_symm_apply ⟨G.deleteEdges G.bridgeSet, deleteEdges_le⟩ _ e
 
 /-- A multigraph isomorphism induces an equivalence of bridge components. -/
 noncomputable def bridgeComponentEquiv (f : Iso G H) :
@@ -57,7 +85,7 @@ theorem bridgeComponentEquiv_bridgeComponentOf (f : Iso G H) {x : α} (hx : x �
       H.bridgeComponentOf (f.vertexEquiv ⟨x, hx⟩) (f.vertexEquiv ⟨x, hx⟩).property := by
   rw [bridgeComponentEquiv, bridgeComponentOf_def, bridgeComponentOf_def,
     f.deleteEdgesBridgeSetIso.connectedComponentEquiv_connectedComponentOf]
-  simp only [deleteEdgesBridgeSetIso, coe_deleteEdgesIso_vertexEquiv_apply]
+  simp only [coe_deleteEdgesBridgeSetIso_vertexEquiv_apply]
 
 /-- The inverse bridge-component equivalence sends the component of an actual vertex to the
 component of its preimage. -/
@@ -68,27 +96,19 @@ theorem bridgeComponentEquiv_symm_bridgeComponentOf (f : Iso G H) {y : α'} (hy 
         (f.vertexEquiv.symm ⟨y, hy⟩).property := by
   rw [bridgeComponentEquiv, bridgeComponentOf_def, bridgeComponentOf_def,
     f.deleteEdgesBridgeSetIso.connectedComponentEquiv_symm_connectedComponentOf]
-  simp only [deleteEdgesBridgeSetIso, coe_deleteEdgesIso_vertexEquiv_symm_apply]
+  simp only [coe_deleteEdgesBridgeSetIso_vertexEquiv_symm_apply]
 
 /-- The vertices of a transported bridge component are the transported vertices of the component. -/
 theorem vertexSet_bridgeComponentEquiv (f : Iso G H) (C : G.BridgeComponent) :
     V((f.bridgeComponentEquiv C).val) = f.mapVertexSet V(C.val) := by
-  simpa [bridgeComponentEquiv, deleteEdgesBridgeSetIso] using
-    f.deleteEdgesBridgeSetIso.vertexSet_connectedComponentEquiv C
+  rw [bridgeComponentEquiv, vertexSet_connectedComponentEquiv, deleteEdgesBridgeSetIso,
+    subgraphIsoOfEq_mapVertexSet_of_subset _ _ _ C.property.le.vertexSet_mono]
 
 /-- The edges of a transported bridge component are the transported edges of the component. -/
 theorem edgeSet_bridgeComponentEquiv (f : Iso G H) (C : G.BridgeComponent) :
     E((f.bridgeComponentEquiv C).val) = f.mapEdgeSet E(C.val) := by
   rw [bridgeComponentEquiv, edgeSet_connectedComponentEquiv, deleteEdgesBridgeSetIso,
-    mapEdgeSet_deleteEdgesIso, sdiff_eq_left, disjoint_left]
-  intro e he heH
-  have he' := f.mapEdgeSet_subset_edgeSet E(C.val) he
-  have hC : (f.edgeEquiv.symm ⟨e, he'⟩ : β) ∈ E(C.val) :=
-    (f.mem_mapEdgeSet_iff E(C.val) ⟨e, he'⟩).mp he
-  have hG := C.property.le.edgeSet_mono hC
-  rw [edgeSet_deleteEdges, mem_sdiff] at hG
-  exact hG.2 (mem_bridgeSet.mpr ((f.isBridge_edgeEquiv_iff _).mp
-    (by simpa [mem_bridgeSet] using heH)))
+    subgraphIsoOfEq_mapEdgeSet_of_subset _ _ _ C.property.le.edgeSet_mono]
 
 /-- An actual vertex lies in the transported bridge component exactly when its preimage lies in
 the original bridge component. -/
@@ -98,7 +118,7 @@ theorem vertexEquiv_mem_vertexSet_bridgeComponentEquiv_iff (f : Iso G H)
     (f.vertexEquiv x : α') ∈ V((f.bridgeComponentEquiv C).val) ↔ (x : α) ∈ V(C.val) := by
   have h := f.deleteEdgesBridgeSetIso.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff C
     ⟨x.val, by simp⟩
-  simpa [bridgeComponentEquiv, deleteEdgesBridgeSetIso] using h
+  simpa only [bridgeComponentEquiv, coe_deleteEdgesBridgeSetIso_vertexEquiv_apply] using h
 
 /-- An actual edge lies in the transported bridge component exactly when its preimage lies in the
 original bridge component. -/
@@ -118,7 +138,7 @@ theorem vertexEquiv_symm_mem_vertexSet_bridgeComponentEquiv_symm_iff (f : Iso G 
   have h :=
     f.deleteEdgesBridgeSetIso.vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff
       D ⟨y.val, by simp⟩
-  simpa [bridgeComponentEquiv, deleteEdgesBridgeSetIso] using h
+  simpa only [bridgeComponentEquiv, coe_deleteEdgesBridgeSetIso_vertexEquiv_symm_apply] using h
 
 /-- An actual edge lies in the pulled-back bridge component exactly when its image lies in the
 original bridge component. -/
@@ -134,26 +154,27 @@ theorem edgeEquiv_symm_mem_edgeSet_bridgeComponentEquiv_symm_iff (f : Iso G H)
 @[simp]
 theorem bridgeComponentEquiv_refl (G : Graph α β) :
     (refl G).bridgeComponentEquiv = Equiv.refl G.BridgeComponent := by
-  simp [bridgeComponentEquiv, deleteEdgesBridgeSetIso]
+  rw [bridgeComponentEquiv]
+  have h : (refl G).deleteEdgesBridgeSetIso = refl (G.deleteEdges G.bridgeSet) := by
+    ext <;> simp
+  rw [h, connectedComponentEquiv_refl]
 
 /-- Inversion of multigraph isomorphisms inverts the induced bridge-component equivalence. -/
 @[simp]
 theorem bridgeComponentEquiv_symm (f : Iso G H) :
     f.symm.bridgeComponentEquiv = f.bridgeComponentEquiv.symm := by
-  rw [bridgeComponentEquiv, bridgeComponentEquiv, deleteEdgesBridgeSetIso,
-    deleteEdgesBridgeSetIso, ← connectedComponentEquiv_symm]
+  rw [bridgeComponentEquiv, bridgeComponentEquiv, ← connectedComponentEquiv_symm]
   congr 1
-  exact (deleteEdgesIso_symm f _).symm
+  ext <;> simp
 
 /-- Composition of multigraph isomorphisms composes their bridge-component equivalences. -/
 @[simp]
 theorem bridgeComponentEquiv_trans (f : Iso G H) (g : Iso H K) :
     (f.trans g).bridgeComponentEquiv = f.bridgeComponentEquiv.trans g.bridgeComponentEquiv := by
   rw [bridgeComponentEquiv, bridgeComponentEquiv, bridgeComponentEquiv,
-    deleteEdgesBridgeSetIso, deleteEdgesBridgeSetIso, deleteEdgesBridgeSetIso,
     ← connectedComponentEquiv_trans]
   congr 1
-  exact (deleteEdgesIso_trans f g _ _).symm
+  ext <;> simp
 
 /-- A multigraph isomorphism restricts to an isomorphism between each bridge component and the
 corresponding bridge component. -/
@@ -169,7 +190,7 @@ theorem coe_bridgeComponentIso_vertexEquiv_apply (f : Iso G H) (C : G.BridgeComp
     ((f.bridgeComponentIso C).vertexEquiv x : α') =
       f.vertexEquiv ⟨x, BridgeComponent.mem_vertexSet x.property⟩ :=
   (f.deleteEdgesBridgeSetIso.coe_connectedComponentIso_vertexEquiv_apply C x).trans
-    (by simp [deleteEdgesBridgeSetIso])
+    (by simp)
 
 /-- The inverse vertex equivalence of a restricted bridge-component isomorphism acts by the
 original inverse vertex equivalence. -/
@@ -179,7 +200,7 @@ theorem coe_bridgeComponentIso_vertexEquiv_symm_apply (f : Iso G H) (C : G.Bridg
     ((f.bridgeComponentIso C).vertexEquiv.symm y : α) =
       f.vertexEquiv.symm ⟨y, BridgeComponent.mem_vertexSet y.property⟩ :=
   (f.deleteEdgesBridgeSetIso.coe_connectedComponentIso_vertexEquiv_symm_apply C y).trans
-    (by simp [deleteEdgesBridgeSetIso])
+    (by simp)
 
 /-- The edge equivalence of a restricted bridge-component isomorphism acts by the original edge
 equivalence. -/
@@ -189,7 +210,7 @@ theorem coe_bridgeComponentIso_edgeEquiv_apply (f : Iso G H) (C : G.BridgeCompon
     ((f.bridgeComponentIso C).edgeEquiv e : β') =
       f.edgeEquiv ⟨e, (C.property.le.edgeSet_mono e.property).1⟩ :=
   (f.deleteEdgesBridgeSetIso.coe_connectedComponentIso_edgeEquiv_apply C e).trans
-    (by simp [deleteEdgesBridgeSetIso])
+    (by simp)
 
 /-- The inverse edge equivalence of a restricted bridge-component isomorphism acts by the original
 inverse edge equivalence. -/
@@ -199,62 +220,70 @@ theorem coe_bridgeComponentIso_edgeEquiv_symm_apply (f : Iso G H) (C : G.BridgeC
     ((f.bridgeComponentIso C).edgeEquiv.symm e : β) =
       f.edgeEquiv.symm ⟨e, ((f.bridgeComponentEquiv C).property.le.edgeSet_mono e.property).1⟩ :=
   (f.deleteEdgesBridgeSetIso.coe_connectedComponentIso_edgeEquiv_symm_apply C e).trans
-    (by simp [deleteEdgesBridgeSetIso])
-
-private theorem bridgeComponentIso_cast_eq {G₁ : Graph α β} {G₂ : Graph α' β'}
-    {C₁ : G₁.BridgeComponent} {D₁ D₂ : G₂.BridgeComponent} (h : D₁ = D₂)
-    (k₁ : Iso C₁.val D₂.val) (k₂ : Iso C₁.val D₁.val)
-    (hv : ∀ x : V(C₁.val), (k₁.vertexEquiv x : α') = (k₂.vertexEquiv x : α'))
-    (he : ∀ e : E(C₁.val), (k₁.edgeEquiv e : β') = (k₂.edgeEquiv e : β')) :
-    k₁ = (congrArg Subtype.val h) ▸ k₂ := by
-  subst h
-  ext x
-  · exact hv x
-  · exact he x
+    (by simp)
 
 /-- Restricting the identity isomorphism to a bridge component gives the identity isomorphism,
 identifying the target component. -/
 @[simp]
 theorem bridgeComponentIso_refl (G : Graph α β) (C : G.BridgeComponent) :
     (refl G).bridgeComponentIso C =
-      (congrArg Subtype.val (by simp : C = (refl G).bridgeComponentEquiv C)) ▸ refl C.val :=
-  bridgeComponentIso_cast_eq (by simp) _ _ (fun x ↦ by simp) (fun e ↦ by simp)
+      Iso.ofEq (congrArg Subtype.val (by simp : C = (refl G).bridgeComponentEquiv C)) := by
+  ext <;> simp
 
 /-- Restricting an inverse isomorphism to the transported bridge component equals the inverse of
 the restricted isomorphism, identifying the target component. -/
 @[simp]
 theorem bridgeComponentIso_symm (f : Iso G H) (C : G.BridgeComponent) :
     (f.bridgeComponentIso C).symm =
-      (congrArg Subtype.val
-        (by simp : f.symm.bridgeComponentEquiv (f.bridgeComponentEquiv C) = C)) ▸
-        f.symm.bridgeComponentIso (f.bridgeComponentEquiv C) :=
-  bridgeComponentIso_cast_eq (by simp) _ _ (fun y ↦ by simp) (fun e ↦ by simp)
+      (f.symm.bridgeComponentIso (f.bridgeComponentEquiv C)).trans
+        (Iso.ofEq (congrArg Subtype.val
+          (by simp : f.symm.bridgeComponentEquiv (f.bridgeComponentEquiv C) = C))) := by
+  ext <;> simp
 
 /-- Restricting a composite isomorphism to a bridge component equals the composite of the
 restricted isomorphisms, identifying the target component. -/
 @[simp]
 theorem bridgeComponentIso_trans (f : Iso G H) (g : Iso H K) (C : G.BridgeComponent) :
     (f.trans g).bridgeComponentIso C =
-      (congrArg Subtype.val
-        (by simp : g.bridgeComponentEquiv (f.bridgeComponentEquiv C) =
-          (f.trans g).bridgeComponentEquiv C)) ▸
-        (f.bridgeComponentIso C).trans
-          (g.bridgeComponentIso (f.bridgeComponentEquiv C)) :=
-  bridgeComponentIso_cast_eq (by simp) _ _ (fun x ↦ by simp) (fun e ↦ by simp)
+      ((f.bridgeComponentIso C).trans
+        (g.bridgeComponentIso (f.bridgeComponentEquiv C))).trans
+        (Iso.ofEq (congrArg Subtype.val
+          (by simp : g.bridgeComponentEquiv (f.bridgeComponentEquiv C) =
+            (f.trans g).bridgeComponentEquiv C))) := by
+  ext <;> simp
 
 /-! ### The bridge forest -/
+
+private noncomputable def bridgeForestEdgeEquiv (f : Iso G H) :
+    E(G.bridgeForest) ≃ E(H.bridgeForest) :=
+  (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ E(G))) (q := (· ∈ E(G.bridgeForest)))
+    (fun {_} he ↦ G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset he))).symm.trans
+    ((f.edgeEquiv.subtypeEquiv (p := fun e : E(G) ↦ (e : β) ∈ E(G.bridgeForest))
+      (q := fun e : E(H) ↦ (e : β') ∈ E(H.bridgeForest)) fun e ↦ by
+        simpa [edgeSet_bridgeForest, mem_bridgeSet] using (f.isBridge_edgeEquiv_iff e).symm).trans
+      (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ E(H))) (q := (· ∈ E(H.bridgeForest)))
+        (fun {_} he ↦ H.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset he))))
+
+private theorem coe_bridgeForestEdgeEquiv_apply (f : Iso G H) (e : E(G.bridgeForest)) :
+    (f.bridgeForestEdgeEquiv e : β') =
+      f.edgeEquiv ⟨e, G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset e.property)⟩ := by
+  simp only [bridgeForestEdgeEquiv, Equiv.trans_apply, Equiv.subtypeSubtypeEquivSubtype_apply_coe,
+    Equiv.subtypeEquiv_apply]
+  congr 2
+
+private theorem coe_bridgeForestEdgeEquiv_symm_apply (f : Iso G H) (e : E(H.bridgeForest)) :
+    (f.bridgeForestEdgeEquiv.symm e : β) =
+      f.edgeEquiv.symm
+        ⟨e, H.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset e.property)⟩ := by
+  simp only [bridgeForestEdgeEquiv, Equiv.symm_trans_apply, Equiv.symm_symm,
+    Equiv.subtypeSubtypeEquivSubtype_apply_coe, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply]
+  congr 2
 
 /-- A multigraph isomorphism induces an isomorphism between the bridge forests. -/
 noncomputable def bridgeForestIso (f : Iso G H) : Iso G.bridgeForest H.bridgeForest where
   vertexEquiv := f.bridgeComponentEquiv.subtypeEquiv fun _ ↦ by simp
-  edgeEquiv :=
-    (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ E(G))) (q := (· ∈ E(G.bridgeForest)))
-      (fun {_} he ↦ G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset he))).symm.trans
-      ((f.edgeEquiv.subtypeEquiv (p := fun e : E(G) ↦ (e : β) ∈ E(G.bridgeForest))
-        (q := fun e : E(H) ↦ (e : β') ∈ E(H.bridgeForest)) fun e ↦ by
-          simpa [edgeSet_bridgeForest, mem_bridgeSet] using (f.isBridge_edgeEquiv_iff e).symm).trans
-        (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ E(H))) (q := (· ∈ E(H.bridgeForest)))
-          (fun {_} he ↦ H.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset he))))
+  edgeEquiv := f.bridgeForestEdgeEquiv
   map_isLink_iff e C D := by
     let e' : E(G) := ⟨e, G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset e.property)⟩
     have hbr := f.isBridge_edgeEquiv_iff e'
@@ -265,43 +294,36 @@ noncomputable def bridgeForestIso (f : Iso G H) : Iso G.bridgeForest H.bridgeFor
         f.vertexEquiv.symm ⟨y', hl.right_mem⟩, ?_, ?_⟩
       · exact (f.vertexEquiv_mem_vertexSet_bridgeComponentEquiv_iff C.val _).mp (by simpa using hx')
       · exact (f.vertexEquiv_mem_vertexSet_bridgeComponentEquiv_iff D.val _).mp (by simpa using hy')
-      · rw [← f.map_isLink_iff e']
-        simp only [Equiv.apply_symm_apply]
-        simp only [Equiv.trans_apply, Equiv.subtypeSubtypeEquivSubtype_apply_coe,
-          Equiv.subtypeEquiv_apply] at hl
-        have heq : (↑((Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ E(G)))
-            (q := (· ∈ E(G.bridgeForest)))
-            (fun {_} he ↦ G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset he))).symm e) :
-            E(G)) = e' := by
-          ext
-          simp [e']
-        rwa [heq] at hl
+      · rw [coe_bridgeForestEdgeEquiv_apply] at hl
+        rw [← f.map_isLink_iff e']
+        simpa [e'] using hl
     · rintro ⟨he, x, hx, y, hy, hl⟩
       refine ⟨hbr.mpr he, f.vertexEquiv ⟨x, BridgeComponent.mem_vertexSet hx⟩,
         (f.vertexEquiv_mem_vertexSet_bridgeComponentEquiv_iff C.val _).mpr hx,
         f.vertexEquiv ⟨y, BridgeComponent.mem_vertexSet hy⟩,
         (f.vertexEquiv_mem_vertexSet_bridgeComponentEquiv_iff D.val _).mpr hy, ?_⟩
+      rw [coe_bridgeForestEdgeEquiv_apply]
       exact f.map_isLink hl
 
 /-- The vertex equivalence of `bridgeForestIso` acts by `bridgeComponentEquiv`. -/
 @[simp]
 theorem coe_bridgeForestIso_vertexEquiv_apply (f : Iso G H) (C : V(G.bridgeForest)) :
-    ((f.bridgeForestIso.vertexEquiv C : H.BridgeComponent)) = f.bridgeComponentEquiv C.val :=
-  (rfl)
+    ((f.bridgeForestIso.vertexEquiv C : H.BridgeComponent)) = f.bridgeComponentEquiv C.val := by
+  simp [bridgeForestIso]
 
 /-- The inverse vertex equivalence of `bridgeForestIso` acts by `bridgeComponentEquiv.symm`. -/
 @[simp]
 theorem coe_bridgeForestIso_vertexEquiv_symm_apply (f : Iso G H) (D : V(H.bridgeForest)) :
     ((f.bridgeForestIso.vertexEquiv.symm D : G.BridgeComponent)) =
-      f.bridgeComponentEquiv.symm D.val :=
-  (rfl)
+      f.bridgeComponentEquiv.symm D.val := by
+  simp [bridgeForestIso]
 
 /-- The edge equivalence of `bridgeForestIso` acts by the original edge equivalence. -/
 @[simp]
 theorem coe_bridgeForestIso_edgeEquiv_apply (f : Iso G H) (e : E(G.bridgeForest)) :
     (f.bridgeForestIso.edgeEquiv e : β') =
       f.edgeEquiv ⟨e, G.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset e.property)⟩ :=
-  (rfl)
+  f.coe_bridgeForestEdgeEquiv_apply e
 
 /-- The inverse edge equivalence of `bridgeForestIso` acts by the original inverse edge
 equivalence. -/
@@ -309,7 +331,7 @@ equivalence. -/
 theorem coe_bridgeForestIso_edgeEquiv_symm_apply (f : Iso G H) (e : E(H.bridgeForest)) :
     (f.bridgeForestIso.edgeEquiv.symm e : β) =
       f.edgeEquiv.symm ⟨e, H.bridgeSet_subset_edgeSet (edgeSet_bridgeForest.subset e.property)⟩ :=
-  (rfl)
+  f.coe_bridgeForestEdgeEquiv_symm_apply e
 
 /-- The bridge-forest isomorphism of the identity is the identity isomorphism. -/
 @[simp]

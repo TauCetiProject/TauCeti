@@ -431,38 +431,18 @@ identifying the target component. -/
 @[simp]
 theorem connectedComponentIso_refl (G : Graph α β) (C : G.ConnectedComponent) :
     (refl G).connectedComponentIso C =
-      (congrArg Subtype.val (by simp : C = (refl G).connectedComponentEquiv C)) ▸ refl C.val := by
-  have key : ∀ {D : G.ConnectedComponent} (h : C = D) (k : Iso C.val D.val),
-      (∀ x : V(C.val), (k.vertexEquiv x : α) = x) →
-      (∀ e : E(C.val), (k.edgeEquiv e : β) = e) →
-      k = (congrArg Subtype.val h) ▸ refl C.val := by
-    rintro D rfl k hv he
-    ext x
-    · simp [hv x]
-    · simp [he x]
-  exact key (by simp) _ (fun x ↦ by simp) (fun e ↦ by simp)
+      Iso.ofEq (congrArg Subtype.val (by simp : C = (refl G).connectedComponentEquiv C)) := by
+  ext <;> simp
 
 /-- Restricting an inverse isomorphism to the transported connected component equals the inverse of
 the restricted isomorphism, identifying the target component. -/
 @[simp]
 theorem connectedComponentIso_symm (f : Iso G H) (C : G.ConnectedComponent) :
     (f.connectedComponentIso C).symm =
-      (congrArg Subtype.val
-        (by simp : f.symm.connectedComponentEquiv (f.connectedComponentEquiv C) = C)) ▸
-        f.symm.connectedComponentIso (f.connectedComponentEquiv C) := by
-  have key : ∀ {D : G.ConnectedComponent} (h : D = C)
-      (k₁ : Iso (f.connectedComponentEquiv C).val C.val)
-      (k₂ : Iso (f.connectedComponentEquiv C).val D.val),
-      (∀ y : V((f.connectedComponentEquiv C).val),
-        (k₁.vertexEquiv y : α) = (k₂.vertexEquiv y : α)) →
-      (∀ e : E((f.connectedComponentEquiv C).val),
-        (k₁.edgeEquiv e : β) = (k₂.edgeEquiv e : β)) →
-      k₁ = (congrArg Subtype.val h) ▸ k₂ := by
-    rintro D rfl k₁ k₂ hv he
-    ext y
-    · simp [hv y]
-    · simp [he y]
-  exact key (by simp) _ _ (fun y ↦ by simp) (fun e ↦ by simp)
+      (f.symm.connectedComponentIso (f.connectedComponentEquiv C)).trans
+        (Iso.ofEq (congrArg Subtype.val
+          (by simp : f.symm.connectedComponentEquiv (f.connectedComponentEquiv C) = C))) := by
+  ext <;> simp
 
 /-- Restricting a composite isomorphism to a connected component equals the composite of the
 restricted isomorphisms, identifying the target component. -/
@@ -470,21 +450,12 @@ restricted isomorphisms, identifying the target component. -/
 theorem connectedComponentIso_trans {α'' β'' : Type*} {K : Graph α'' β''}
     (f : Iso G H) (g : Iso H K) (C : G.ConnectedComponent) :
     (f.trans g).connectedComponentIso C =
-      (congrArg Subtype.val
-        (by simp : g.connectedComponentEquiv (f.connectedComponentEquiv C) =
-          (f.trans g).connectedComponentEquiv C)) ▸
-        (f.connectedComponentIso C).trans
-          (g.connectedComponentIso (f.connectedComponentEquiv C)) := by
-  have key : ∀ {D₁ D₂ : K.ConnectedComponent} (h : D₁ = D₂)
-      (k₁ : Iso C.val D₂.val) (k₂ : Iso C.val D₁.val),
-      (∀ x : V(C.val), (k₁.vertexEquiv x : α'') = (k₂.vertexEquiv x : α'')) →
-      (∀ e : E(C.val), (k₁.edgeEquiv e : β'') = (k₂.edgeEquiv e : β'')) →
-      k₁ = (congrArg Subtype.val h) ▸ k₂ := by
-    rintro D₁ D₂ rfl k₁ k₂ hv he
-    ext x
-    · simp [hv x]
-    · simp [he x]
-  exact key (by simp) _ _ (fun x ↦ by simp) (fun e ↦ by simp)
+      ((f.connectedComponentIso C).trans
+        (g.connectedComponentIso (f.connectedComponentEquiv C))).trans
+        (Iso.ofEq (congrArg Subtype.val
+          (by simp : g.connectedComponentEquiv (f.connectedComponentEquiv C) =
+            (f.trans g).connectedComponentEquiv C))) := by
+  ext <;> simp
 
 /-- The number of connected components is invariant under multigraph isomorphism. -/
 theorem componentCount_eq (f : Iso G H) : H.componentCount = G.componentCount := by
