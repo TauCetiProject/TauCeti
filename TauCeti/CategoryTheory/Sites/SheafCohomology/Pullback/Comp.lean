@@ -48,33 +48,6 @@ variable {C : Type u₁} [Category.{v} C] (J : GrothendieckTopology C)
 
 noncomputable section
 
-/-- The unit of `(u₁ ⋙ u₂)^* ⊣ (u₁ ⋙ u₂)_*` is the unit of `u₁^* ⊣ u₁_*`, followed by the unit of
-`u₂^* ⊣ u₂_*` and the isomorphism `u₂^* u₁^* ≅ (u₁ ⋙ u₂)^*` of `sheafPullbackComp`. -/
-lemma sheafAdjunctionContinuous_comp_unit_app (A : Type*) [Category* A]
-    [(u₁.sheafPushforwardContinuous A J K).IsRightAdjoint]
-    [(u₂.sheafPushforwardContinuous A K L).IsRightAdjoint] (G : Sheaf J A) :
-    let := isContinuous_comp u₁ u₂ J K L
-    have := isRightAdjoint_sheafPushforwardContinuous_comp u₁ u₂ A J K L
-    ((u₁ ⋙ u₂).sheafAdjunctionContinuous A J L).unit.app G =
-      (u₁.sheafAdjunctionContinuous A J K).unit.app G ≫
-        (u₁.sheafPushforwardContinuous A J K).map
-          ((u₂.sheafAdjunctionContinuous A K L).unit.app _ ≫
-            (u₂.sheafPushforwardContinuous A K L).map
-              ((sheafPullbackComp u₁ u₂ A J K L).hom.app G)) := by
-  intro _ _
-  have h := unit_conjugateEquiv ((u₁.sheafAdjunctionContinuous A J K).comp
-    (u₂.sheafAdjunctionContinuous A K L)) ((u₁ ⋙ u₂).sheafAdjunctionContinuous A J L)
-    (sheafPullbackComp u₁ u₂ A J K L).inv G
-  rw [conjugateEquiv_sheafPullbackComp_inv, Adjunction.comp_unit_app] at h
-  -- The isomorphism of pushforwards in `sheafPullbackComp` is the identity.
-  have h' := congrArg (· ≫ ((u₁ ⋙ u₂).sheafPushforwardContinuous A J L).map
-    ((sheafPullbackComp u₁ u₂ A J K L).hom.app G)) h
-  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app, Functor.map_id] at h'
-  refine (Category.comp_id _).symm.trans (h'.symm.trans ?_)
-  rw [Functor.map_comp]
-  simp only [sheafPushforwardContinuousComp, Iso.refl_hom, NatTrans.id_app]
-  exact congrArg (fun φ ↦ _ ≫ _ ≫ φ) (Category.id_comp _)
-
 variable [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
   [HasSheafify L AddCommGrpCat.{v}]
   [(u₁.sheafPushforwardContinuous AddCommGrpCat.{v} J K).IsRightAdjoint]
@@ -99,14 +72,18 @@ lemma freeYonedaSheafToSheafPullback_comp :
   simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app]
   rw [freeYonedaSheafSectionsEquiv_naturality_right,
     freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app]
-  erw [freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app K L u₂ (u₁.obj U)]
+  have h₂ := freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app K L u₂ (u₁.obj U)
+  dsimp only [Functor.comp_obj] at h₂ ⊢
+  rw [h₂]
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
-  erw [ConcreteCategory.comp_apply]
+  simp only [AddCommGrpCat.hom_comp]
   refine (congrArg (((sheafPullbackComp u₁ u₂ AddCommGrpCat.{v} J K L).hom.app _).hom.app _)
     (sheafAdjunctionContinuous_unit_app_hom_app_freeYonedaSheafSectionsEquiv K L u₂
       ((u₁.freeYonedaSheafToSheafPullback J K).app U)).symm).trans ?_
-  erw [freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app J K u₁ U]
-  rw [sheafAdjunctionContinuous_comp_unit_app J K L u₁ u₂ AddCommGrpCat.{v}]
+  rw [freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app J K u₁ U]
+  rw [sheafAdjunctionContinuous_comp_unit_app u₁ u₂ AddCommGrpCat.{v} J K L]
+  -- Both sides are the same composite of sections: `(u₁^*).map φ` evaluated at `U` is `φ`
+  -- evaluated at `u₁(U)`, by definition of the sheaf pushforward.
   rfl
 
 end
@@ -150,6 +127,9 @@ lemma pullback_comp_pullback
         G n (ψ₂ ≫ u₂.map ψ₁) := by
   refine AddCommGrpCat.ext fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, pullback_apply, pullback_apply, pullback_apply]
+  -- `Hⁿ(U, G)` is `Ext ℤ[U] G n` only up to unfolding `H'`. Retype the class `x` as an extension
+  -- so that the `Ext` lemmas below rewrite it; ascribing this type already in `AddCommGrpCat.ext`
+  -- would stop `ConcreteCategory.comp_apply` from matching.
   revert x
   refine fun (x : Ext ((freeYonedaSheafFunctor J).obj U) G n) ↦ ?_
   rw [Ext.comp_mapExactFunctor, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
@@ -172,8 +152,11 @@ lemma pullback_comp_map_app
       pullback pb₁' (c₁ ≫ (freeYonedaSheafFunctor J).whiskerLeft τ) G n ψ := by
   refine AddCommGrpCat.ext fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, pullback_apply, pullback_apply]
+  -- Retype `x` as an extension, as in `pullback_comp_pullback`.
   revert x
   refine fun (x : Ext ((freeYonedaSheafFunctor J).obj U) G n) ↦ ?_
+  -- The evaluated map `Hⁿ(τ_G)` on `Hⁿ(V, pb G)` is composition with `Ext.mk₀ (τ.app G)` by
+  -- definition of `cohomologyPresheafFunctor`.
   change ((Ext.mk₀ _).comp (x.mapExactFunctor pb₁) (zero_add n)).comp (Ext.mk₀ (τ.app G))
     (add_zero n) = _
   rw [Ext.comp_assoc_of_third_deg_zero, Ext.mapExactFunctor_comp_mk₀_natTransApp,
