@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
@@ -54,7 +55,7 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
   `a + b = d` and `a - b` is its trace.
 * `Matrix.pow_card_eq_zero_of_trace_pow_eq_zero` and
   `LinearMap.pow_finrank_eq_zero_of_trace_pow_eq_zero`: without additive torsion, if these traces
-  all vanish then `A ^ d = 0`.
+  all vanish then `A ^ d = 0`, by `Matrix.pow_eq_zero_of_charpoly_eq_X_pow`.
 
 ## References
 
@@ -209,11 +210,10 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
 `X ^ d`, so this is the Cayley–Hamilton theorem. -/
 theorem pow_card_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {A : Matrix n n R}
     (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = 0) : A ^ Fintype.card n = 0 := by
-  have hA : A.charpoly = X ^ Fintype.card n := by
-    rw [← charpoly_zero]
-    exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjn ↦ by
-      rw [h j hj hjn, zero_pow hj.ne', trace_zero]
-  simpa [hA] using A.aeval_self_charpoly
+  refine pow_eq_zero_of_charpoly_eq_X_pow ?_
+  rw [← charpoly_zero]
+  exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjn ↦ by
+    rw [h j hj hjn, zero_pow hj.ne', trace_zero]
 
 /-- Without additive torsion in the scalars, if `A ^ 2 = 1`, then the characteristic polynomial of
 `A` is `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = d` and `a - b = tr A`. -/
@@ -282,11 +282,11 @@ theorem pow_finrank_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {f : Modul
   rcases subsingleton_or_nontrivial R with hR | hR
   · have := Module.subsingleton R M
     exact Subsingleton.elim _ _
-  have hf : f.charpoly = X ^ Module.finrank R M := by
-    rw [← charpoly_zero]
-    exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjM ↦ by
-      rw [h j hj hjM, zero_pow hj.ne', map_zero]
-  simpa [hf] using f.aeval_self_charpoly
+  let b := Module.Free.chooseBasis R M
+  simp only [trace_eq_matrix_trace R b, ← LinearMap.toMatrix_pow,
+    Module.finrank_eq_card_chooseBasisIndex] at h ⊢
+  rw [← (toMatrix b b).map_eq_zero_iff, ← LinearMap.toMatrix_pow]
+  exact Matrix.pow_card_eq_zero_of_trace_pow_eq_zero h
 
 /-- Without additive torsion in the scalars, endomorphisms of free modules of the same finite rank
 have the same characteristic polynomial if and only if they have the same traces of all positive

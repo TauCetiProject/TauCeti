@@ -47,8 +47,8 @@ of the unipotent variety and the morphisms between unipotent varieties on coordi
   are the unipotent points.
 * `TauCeti.HopfAlgebra.unipotenceIdeal_le_unipotentVarietyIdeal`: it contains the unipotence ideal
   of every finite-dimensional representation.
-* `TauCeti.HopfAlgebra.pow_endOfPoint_sub_one_eq_zero_of_unipotentVarietyIdeal_le_ker`: its points
-  with values in any commutative algebra satisfy `(ρ(g) - 1) ^ dim M = 0` in every
+* `TauCeti.HopfAlgebra.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker`: its
+  points with values in any commutative algebra satisfy `(ρ(g) - 1) ^ dim M = 0` in every
   finite-dimensional representation `ρ` on `M`.
 * `TauCeti.HopfAlgebra.comap_antipodeAlgHom_unipotentVarietyIdeal`: stability under inversion.
 * `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_comap`: functoriality along homomorphisms of
@@ -179,11 +179,11 @@ theorem unipotenceIdeal_le_unipotentVarietyIdeal (M : FGComoduleCat.{u, v, u} k 
 of the unipotent variety with values in any commutative `k`-algebra `B`, possibly nonreduced: an
 algebra homomorphism `H → B` killing its ideal. Then `(ρ(g) - 1) ^ dim M = 0` for every
 finite-dimensional representation `ρ` on `M`. -/
-theorem pow_endOfPoint_sub_one_eq_zero_of_unipotentVarietyIdeal_le_ker
+theorem endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker
     (M : FGComoduleCat.{u, v, u} k H) {B : Type w} [CommRing B] [Algebra k B] (g : H →ₐ[k] B)
     (hg : unipotentVarietyIdeal k H ≤ RingHom.ker g) :
     (Comodule.endOfPoint M g - 1) ^ Module.finrank k M = 0 :=
-  Comodule.pow_endOfPoint_sub_one_eq_zero_of_unipotenceIdeal_le_ker g
+  g.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotenceIdeal_le_ker
     ((unipotenceIdeal_le_unipotentVarietyIdeal M).trans hg)
 
 end Field
