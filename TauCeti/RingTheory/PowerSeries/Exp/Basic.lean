@@ -37,6 +37,8 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 
 * `PowerSeries.rescale_exp_mul_rescale_neg_exp`, `PowerSeries.rescale_exp_mul_self`:
   `e^{aX} e^{-aX} = 1` and `e^{aX} e^{aX} = e^{2aX}`.
+* `PowerSeries.coeff_exp_eq_inv_factorial`: over a division ring, the coefficients `(n!)⁻¹` of
+  `exp`.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
@@ -79,6 +81,11 @@ theorem expMonoidHom_apply (a : Multiplicative R) :
 theorem expMonoidHom_ofAdd (a : R) :
     expMonoidHom R (Multiplicative.ofAdd a) = rescale a (exp R) :=
   (rfl)
+
+/-- Over a division ring, the coefficient of `exp` in degree `n` is `(n!)⁻¹`. -/
+theorem coeff_exp_eq_inv_factorial {k : Type*} [DivisionRing k] [Algebra ℚ k] (n : ℕ) :
+    coeff n (exp k) = (n.factorial : k)⁻¹ := by
+  simp [coeff_exp]
 
 end PowerSeries
 

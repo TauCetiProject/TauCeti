@@ -50,8 +50,6 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one`: the identity `log (exp X) = X`, truncated
   to polynomials: the composite of the truncations of the two series agrees with `X` below both
   truncation degrees.
-* `PowerSeries.coeff_exp_eq_inv_factorial`: over a division ring, the coefficients `(n!)⁻¹` of
-  `exp`.
 * `PowerSeries.coeff_exp_sub_one_of_ne_zero`, `PowerSeries.coeff_log_eq_neg_one_pow_div`: over a
   field, the coefficients `1 / n!` of `exp - 1` and `(-1) ^ (n + 1) / n` of the logarithm series.
 * `PowerSeries.coeff_exp_sub_one_mul_pow`: over a field, the `n`-th term `xⁿ / n!` of `exp - 1`
@@ -127,11 +125,6 @@ theorem coeff_trunc_log_comp_trunc_exp_sub_one {M N k : ℕ} (hM : k < M) (hN : 
   rw [coeff_trunc_comp_trunc _ (by simp) hM hN, subst_log_exp_sub_one, Polynomial.coeff_X,
     coeff_X]
   grind
-
-/-- Over a division ring, the coefficient of `exp` in degree `n` is `(n!)⁻¹`. -/
-theorem coeff_exp_eq_inv_factorial {k : Type*} [DivisionRing k] [Algebra ℚ k] (n : ℕ) :
-    coeff n (exp k) = (n.factorial : k)⁻¹ := by
-  simp [coeff_exp]
 
 /-- Over a field, the coefficient of `exp - 1` in degree `n ≠ 0` is `1 / n!`. -/
 theorem coeff_exp_sub_one_of_ne_zero {k : Type*} [Field k] [Algebra ℚ k] {n : ℕ} (hn : n ≠ 0) :

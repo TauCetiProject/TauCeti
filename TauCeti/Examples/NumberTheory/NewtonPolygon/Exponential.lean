@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.Padics.Factorial
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 import TauCeti.RingTheory.PowerSeries.Exp.Padic
-import TauCeti.RingTheory.PowerSeries.Log
 
 /-!
 # The Newton polygon and radius of the `p`-adic exponential
