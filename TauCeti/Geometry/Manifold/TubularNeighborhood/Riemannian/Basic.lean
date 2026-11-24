@@ -57,7 +57,7 @@ variable [IsManifold J ∞ N] [J.Boundaryless] [T2Space N]
 representatives lie in the domain of the ambient Riemannian exponential. -/
 def normalExpDomain (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
     Set (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-  {p | f.normalRepresentative p.proj hn p.2 ∈ Manifold.expDomain J N (f p.proj)}
+  {p | f.normalRepresentative p.proj hn p.snd ∈ Manifold.expDomain J N (f p.proj)}
 
 omit [J.Boundaryless] [T2Space N] in
 /-- Membership in the natural normal-exponential domain means that the orthogonal representative
@@ -67,7 +67,7 @@ theorem mem_normalExpDomain
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
     p ∈ f.normalExpDomain (P := P) hn ↔
-      f.normalRepresentative p.proj hn p.2 ∈ Manifold.expDomain J N (f p.proj) :=
+      f.normalRepresentative p.proj hn p.snd ∈ Manifold.expDomain J N (f p.proj) :=
   Iff.rfl
 
 omit [J.Boundaryless] [T2Space N] in
@@ -112,7 +112,7 @@ orthogonal representative. It takes the base point as a junk value outside its n
 following `Manifold.riemannianExp`. -/
 def normalExp (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) : N :=
-  Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.2)
+  Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.snd)
 
 omit [J.Boundaryless] [T2Space N] in
 /-- The normal exponential is the ambient Riemannian exponential of the orthogonal
@@ -121,7 +121,7 @@ theorem normalExp_apply
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
     f.normalExp (P := P) hn p =
-      Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.2) :=
+      Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.snd) :=
   (rfl)
 
 /-- The normal exponential sends the zero section to the original embedding. -/

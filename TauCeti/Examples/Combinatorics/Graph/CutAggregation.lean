@@ -108,7 +108,7 @@ abbrev vertex (i : Fin 3) : V(graph) :=
 /-- The weights two and three lie on the parallel edges, seven lies on the loop, and the final
 edge has weight zero. -/
 def edgeCapacity (e : E(graph)) : ℕ :=
-  ![2, 3, 7, 0] e.1
+  ![2, 3, 7, 0] e.val
 
 /-- The first parallel edge has capacity two. -/
 @[simp]
@@ -183,6 +183,6 @@ theorem pairCutCapacity_pairCapacityWithDiagonal (S : Finset V(graph)) :
       congrFun (pairCutCapacity_eq_of_offDiagonal_eq _ _
         pairCapacityWithDiagonal_mk_of_ne) S
     _ = graph.edgeCutCapacity edgeCapacity S :=
-      Graph.pairCutCapacity_pairCapacity graph edgeCapacity S
+      congrFun (Graph.pairCutCapacity_pairCapacity graph edgeCapacity) S
 
 end TauCeti.Examples.CutAggregation

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
 # Base change of a tensor product, and injectivity of base-change maps
@@ -35,10 +37,15 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
-The image of a base change map spans its target over the extended scalars.
+The image of a base change map spans its target over the extended scalars, and for an
+`R'`-algebra `A` the tensors `a ⊗ f m` generate `A ⊗[R'] M'` additively.
 
 ## Main results
 
+* `Module.Basis.isBaseChange_of_map_basis`: a map carrying a basis to a basis over extended
+  scalars is a base-change map.
+* `Module.Basis.isPushout_of_algebraMap_eq`: compatible bases identify an algebra as the scalar
+  extension of an under-semiring model.
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
 * `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
@@ -54,11 +61,40 @@ The image of a base change map spans its target over the extended scalars.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
 * `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
+* `IsBaseChange.cancelBaseChange`: for a base change `f : M → M'` along `R → R'` and an
+  `R'`-algebra `A`, the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`.
+* `IsBaseChange.cancelBaseChange_trans_cancelBaseChange`: cancelling two successive base changes
+  is cancelling the composite base change.
+* `IsBaseChange.tensorProduct_induction`: induction on `A ⊗[R'] M'` over the tensors `a ⊗ f m`.
+* `IsBaseChange.restrictScalars_cancelBaseChange`: for a ring `A`, `cancelBaseChange` is Mathlib's
+  `R'`-linear `IsBaseChange.tensorEquiv`.
 -/
 
 public section
 
 open scoped TensorProduct
+
+/-- A linear map carrying a basis to a basis over the extended scalars is a base-change map. -/
+theorem Module.Basis.isBaseChange_of_map_basis
+    {A S M N ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid M] [Module A M] [AddCommMonoid N] [Module A N] [Module S N]
+    [IsScalarTower A S N] (c : Basis ι A M) (b : Basis ι S N) (f : M →ₗ[A] N)
+    (h : ∀ i, f (c i) = b i) : IsBaseChange S f := by
+  have he : (Finsupp.linearCombination A b).comp c.repr.toLinearMap = f := by
+    apply c.ext
+    intro i
+    simp [h]
+  have hbase := (IsBaseChange.of_basis A b).comp_equiv c.repr (Finsupp.linearCombination A b)
+  rwa [he] at hbase
+
+/-- Compatible bases identify an algebra as the scalar extension of an under-semiring model. -/
+theorem Module.Basis.isPushout_of_algebraMap_eq
+    {A S C B ι : Type*} [CommSemiring A] [CommSemiring S] [CommSemiring C]
+    [CommSemiring B] [Algebra A S] [Algebra A C] [Algebra S B] [Algebra C B]
+    [Algebra A B] [IsScalarTower A S B] [IsScalarTower A C B]
+    (c : Basis ι A C) (b : Basis ι S B)
+    (h : ∀ i, algebraMap C B (c i) = b i) : Algebra.IsPushout A S C B :=
+  ⟨c.isBaseChange_of_map_basis b (IsScalarTower.toAlgHom A C B).toLinearMap h⟩
 
 variable {R S M M' N N' : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
@@ -186,5 +222,100 @@ theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R']
   | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
   | smul r n hn => exact Submodule.smul_mem _ r hn
   | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+section CancelBaseChange
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- For a base change `f : M → M'` along `R → R'` and an `R'`-algebra `A`, the `A`-linear
+isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
+(`IsBaseChange.cancelBaseChange_tmul`). For `M' = R' ⊗[R] M` with the canonical base change map
+`f m = 1 ⊗ₜ m` it is Mathlib's `TensorProduct.AlgebraTensorModule.cancelBaseChange`. For a
+ring `A` it is Mathlib's `R'`-linear `IsBaseChange.tensorEquiv`, made `A`-linear
+(`IsBaseChange.restrictScalars_cancelBaseChange`). -/
+noncomputable def cancelBaseChange : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
+  (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl A A) hf.equiv.symm).trans
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange R R' A A M)
+
+@[simp]
+theorem cancelBaseChange_tmul (a : A) (m : M) : hf.cancelBaseChange A (a ⊗ₜ f m) = a ⊗ₜ m := by
+  simp [cancelBaseChange]
+
+@[simp]
+theorem cancelBaseChange_symm_tmul (a : A) (m : M) :
+    (hf.cancelBaseChange A).symm (a ⊗ₜ m) = a ⊗ₜ f m :=
+  (LinearEquiv.symm_apply_eq _).2 (hf.cancelBaseChange_tmul A a m).symm
+
+end CancelBaseChange
+
+section CancelBaseChangeTrans
+
+variable {R R' R'' M M' M'' : Type*} [CommSemiring R] [CommSemiring R'] [CommSemiring R'']
+  [Algebra R R'] [Algebra R' R''] [Algebra R R''] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  [AddCommMonoid M''] [Module R'' M''] [Module R' M''] [Module R M''] [IsScalarTower R' R'' M'']
+  [IsScalarTower R R'' M''] [IsScalarTower R R' M''] {f : M →ₗ[R] M'} {g : M' →ₗ[R'] M''}
+  (hf : IsBaseChange R' f) (hg : IsBaseChange R'' g)
+  (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ f))
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [Algebra R'' A]
+  [IsScalarTower R R' A] [IsScalarTower R' R'' A] [IsScalarTower R R'' A]
+
+/-- **`cancelBaseChange` is transitive.** For base changes `f : M → M'` along `R → R'` and
+`g : M' → M''` along `R' → R''`, cancelling `g` and then `f` is cancelling `g ∘ f`: both send
+`a ⊗ g (f m)` to `a ⊗ m`. -/
+theorem cancelBaseChange_trans_cancelBaseChange :
+    (hg.cancelBaseChange A).trans (hf.cancelBaseChange A) = hgf.cancelBaseChange A := by
+  refine LinearEquiv.symm_bijective.injective (LinearEquiv.ext fun x ↦ ?_)
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [LinearEquiv.trans_symm]
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+end CancelBaseChangeTrans
+
+section Induction
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R' A]
+
+include hf in
+/-- **Induction on `A ⊗[R'] M'` for a base change `M'` of `M`.** A property of the elements of
+`A ⊗[R'] M'` which is closed under addition holds as soon as it holds on the tensors `a ⊗ f m`,
+since `M'` is generated over `R'` by the image of `f`. -/
+@[elab_as_elim]
+theorem tensorProduct_induction {motive : A ⊗[R'] M' → Prop}
+    (add : ∀ x y, motive x → motive y → motive (x + y))
+    (tmul : ∀ (a : A) (m : M), motive (a ⊗ₜ f m)) (x : A ⊗[R'] M') : motive x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => exact add x y hx hy
+  | tmul a m' =>
+    induction m' using hf.inductionOn generalizing a with
+    | tmul m => exact tmul a m
+    | smul s n h => rw [← TensorProduct.smul_tmul]; exact h _
+    | add n₁ n₂ h₁ h₂ => rw [TensorProduct.tmul_add]; exact add _ _ (h₁ a) (h₂ a)
+
+end Induction
+
+section TensorEquiv
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- For a ring `A`, `IsBaseChange.cancelBaseChange` restricted to `R'`-linearity is Mathlib's
+`IsBaseChange.tensorEquiv`. -/
+theorem restrictScalars_cancelBaseChange :
+    (hf.cancelBaseChange A).restrictScalars R' = hf.tensorEquiv A := by
+  refine LinearEquiv.ext fun x ↦ ?_
+  induction x using hf.tensorProduct_induction A with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a m => simp [tensorEquiv, hf.equiv_symm_apply]
+
+end TensorEquiv
 
 end IsBaseChange

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # The transpose on `M₂(ℂ)` is positive but not `2`-positive
@@ -27,28 +27,22 @@ namespace TauCeti.CompletelyPositiveMapExample
 
 /-- The transpose on complex square matrices is `1`-positive. -/
 theorem isNPositive_one_transpose {m : Type*} [Fintype m] :
-    IsNPositive 1 (CStarMatrix.ofMatrixₗ.toLinearMap ∘ₗ
-      (Matrix.transposeLinearEquiv m m ℂ ℂ).toLinearMap ∘ₗ
-        (CStarMatrix.ofMatrixₗ (R := ℂ)).symm.toLinearMap) := by
+    IsNPositive 1 (CStarMatrix.transposeₗ ℂ : CStarMatrix m m ℂ →ₗ[ℂ] _) := by
   refine isNPositive_one_iff.mpr fun M hM =>
     CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun x => ?_
   -- The quadratic form of the transpose at `x` is that of `M` at `star x`.
   convert CStarMatrix.nonneg_iff_forall_sum_nonneg.mp hM (star x) using 1
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  simp [CStarMatrix.ofMatrix_apply, mul_assoc, mul_comm, mul_left_comm]
+  simp [mul_assoc, mul_comm, mul_left_comm]
 
 /-- The transpose on `M₂(ℂ)` is not `2`-positive. -/
 theorem not_isNPositive_two_transpose :
-    ¬ IsNPositive 2 (CStarMatrix.ofMatrixₗ.toLinearMap ∘ₗ
-      (Matrix.transposeLinearEquiv (Fin 2) (Fin 2) ℂ ℂ).toLinearMap ∘ₗ
-        (CStarMatrix.ofMatrixₗ (R := ℂ)).symm.toLinearMap) := by
+    ¬ IsNPositive 2 (CStarMatrix.transposeₗ ℂ : CStarMatrix (Fin 2) (Fin 2) ℂ →ₗ[ℂ] _) := by
   set T : CStarMatrix (Fin 2) (Fin 2) ℂ →ₗ[ℂ] CStarMatrix (Fin 2) (Fin 2) ℂ :=
-    CStarMatrix.ofMatrixₗ.toLinearMap ∘ₗ
-      (Matrix.transposeLinearEquiv (Fin 2) (Fin 2) ℂ ℂ).toLinearMap ∘ₗ
-        (CStarMatrix.ofMatrixₗ (R := ℂ)).symm.toLinearMap
+    CStarMatrix.transposeₗ ℂ
   have hT (M : CStarMatrix (Fin 2) (Fin 2) ℂ) (i j : Fin 2) : T M i j = M j i := by
-    simp [T, CStarMatrix.ofMatrix_apply]
+    simp [T]
   intro h
   have h1 : T 1 = 1 := by
     ext i j

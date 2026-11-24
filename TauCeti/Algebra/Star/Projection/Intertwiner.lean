@@ -5,54 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Algebra.Star.PartialIsometry
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # Sz.-Nagy's projection intertwiner and unitization partial-isometry transfer
 
 For idempotents `p` and `q` in a ring `R`, Sz.-Nagy's intertwiner
+`projectionIntertwiner p q = q * p + (1 - q) * (1 - p)` satisfies `z * p = q * z`, and
+`1 - (p - q) ^ 2` commutes with both `p` and `q`. When `R` is a star ring and `p`, `q` are star
+projections, `star z * z = z * star z = 1 - (p - q) ^ 2` and `z + star z = 2 * (1 - (p - q) ^ 2)`.
 
-`projectionIntertwiner p q = q * p + (1 - q) * (1 - p)`
+For a non-unital star `R`-algebra `B`, when `u` is unitary in `Unitization R B` and conjugates a
+star projection `p : B` to `q : B`, `u.mulInr p = u.fst • p + u.snd * p` is a partial isometry in
+`B` with initial projection `p` and final projection `q`.
 
-satisfies `z * p = q * z`, and `1 - (p - q) ^ 2` commutes with both `p` and `q`. When `R` is a
-star ring and `p`, `q` are star projections, `star z * z = z * star z = 1 - (p - q) ^ 2` and
-`z + star z = 2 * (1 - (p - q) ^ 2)`. In a unital C⋆-algebra these identities imply that `z` is
-invertible whenever `‖p - q‖ < 1`, and its polar unitary factor conjugates `p` to `q`
-(see `TauCeti/Analysis/CStarAlgebra/Projection/Perturbation.lean`).
+## Main declarations
 
-For a non-unital `R`-algebra `B`, an element `u` of the forced unitization `Unitization R B` acts
-on `p : B` on the left via the ideal product `u.mulInr p = u.fst • p + u.snd * p : B`, whose image
-in `Unitization R B` is `u * p`. When `u` is unitary in `Unitization R B` and conjugates a star
-projection `p : B` to `q : B`, `u.mulInr p` is a partial isometry in `B` itself with initial
-projection `p` and final projection `q`.
-
-## Main definitions
-
-* `TauCeti.projectionIntertwiner p q`: the intertwiner `q * p + (1 - q) * (1 - p)`.
-* `Unitization.mulInr u p`: the element `u.fst • p + u.snd * p` in `B` whose image in
-  `Unitization R B` is `u * p`.
-
-## Main statements
-
-* `TauCeti.projectionIntertwiner_mul_eq_mul`:
-  `projectionIntertwiner p q * p = q * projectionIntertwiner p q` for idempotents `p` and `q`.
-* `TauCeti.star_projectionIntertwiner_mul_self`, `TauCeti.projectionIntertwiner_mul_star_self`,
-  `TauCeti.projectionIntertwiner_add_star`: star-ring identities for `projectionIntertwiner p q`
-  when `p` and `q` are star projections.
-* `Unitization.inr_mulInr`, `Unitization.star_mulInr_mul_self`, `Unitization.mulInr_mul_star_self`,
-  `Unitization.isPartialIsometry_mulInr`: properties of `u.mulInr p`.
-* `IsStarProjection.exists_isPartialIsometry_of_unitization_unitary_conj`: unitary conjugacy of
-  star projections in `Unitization R B` transfers to a partial isometry in `B`.
+* `TauCeti.projectionIntertwiner`: the intertwiner `q * p + (1 - q) * (1 - p)`.
+* `TauCeti.projectionIntertwiner_mul_eq_mul`, `TauCeti.star_projectionIntertwiner_mul_self`,
+  `TauCeti.projectionIntertwiner_mul_star_self`, `TauCeti.projectionIntertwiner_add_star`:
+  intertwining and star-ring identities.
+* `Unitization.star_mulInr_mul_self`, `Unitization.mulInr_mul_star_self`,
+  `Unitization.isPartialIsometry_mulInr`,
+  `IsStarProjection.exists_isPartialIsometry_of_unitization_unitary_conj`: partial-isometry transfer
+  from `Unitization R B` to `B`.
 
 ## References
 
 * B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., MSRI Publications 5, Cambridge
   University Press (1998), Proposition 4.6.6.
 * M. Rørdam, F. Larsen, and N. Laustsen, *An Introduction to K-Theory for C⋆-Algebras*, London
-  Mathematical Society Student Texts 49, Cambridge University Press (2000), Proposition 2.2.4 and
-  Proposition 2.2.6.
+  Mathematical Society Student Texts 49, Cambridge University Press (2000), Propositions 2.2.4 and
+  2.2.6.
 -/
 
 public section
@@ -69,33 +54,26 @@ def projectionIntertwiner (p q : R) : R :=
 
 /-- Unfold `TauCeti.projectionIntertwiner`. -/
 theorem projectionIntertwiner_def (p q : R) :
-    projectionIntertwiner p q = q * p + (1 - q) * (1 - p) :=
-  (rfl)
+    projectionIntertwiner p q = q * p + (1 - q) * (1 - p) := (rfl)
 
 /-- At equal idempotents `p = q`, the intertwiner is `1`. -/
 @[simp]
 theorem projectionIntertwiner_self {p : R} (hp : IsIdempotentElem p) :
     projectionIntertwiner p p = 1 := by
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hp.eq]
+  rw [projectionIntertwiner_def]; noncomm_ring [hp.eq]
 
-/-- Right multiplication by an idempotent `p` collapses `projectionIntertwiner p q * p` to
-`q * p`. -/
+/-- Right multiplication by an idempotent `p` reduces `projectionIntertwiner p q * p` to `q * p`. -/
 theorem projectionIntertwiner_mul_right {p q : R} (hp : IsIdempotentElem p) :
     projectionIntertwiner p q * p = q * p := by
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hp.eq]
+  rw [projectionIntertwiner_def]; noncomm_ring [hp.eq]
 
-/-- Left multiplication by an idempotent `q` collapses `q * projectionIntertwiner p q` to
-`q * p`. -/
+/-- Left multiplication by an idempotent `q` reduces `q * projectionIntertwiner p q` to `q * p`. -/
 theorem mul_projectionIntertwiner_left {p q : R} (hq : IsIdempotentElem q) :
     q * projectionIntertwiner p q = q * p := by
   have hqqp : q * (q * p) = q * p := by rw [← mul_assoc, hq.eq]
-  rw [projectionIntertwiner_def]
-  noncomm_ring [hq.eq, hqqp]
+  rw [projectionIntertwiner_def]; noncomm_ring [hq.eq, hqqp]
 
-/-- The element `projectionIntertwiner p q` intertwines idempotents `p` and `q`:
-`z * p = q * z`. -/
+/-- `projectionIntertwiner p q` intertwines idempotents `p` and `q`: `z * p = q * z`. -/
 theorem projectionIntertwiner_mul_eq_mul {p q : R} (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) :
     projectionIntertwiner p q * p = q * projectionIntertwiner p q := by
@@ -105,21 +83,19 @@ theorem projectionIntertwiner_mul_eq_mul {p q : R} (hp : IsIdempotentElem p)
 theorem commute_one_sub_sub_mul_self_left {p q : R} (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) : Commute (1 - (p - q) * (p - q)) p := by
   have hppq : p * (p * q) = p * q := by rw [← mul_assoc, hp.eq]
-  rw [commute_iff_eq]
-  noncomm_ring [hp.eq, hq.eq, hppq]
+  rw [commute_iff_eq]; noncomm_ring [hp.eq, hq.eq, hppq]
 
 /-- For idempotents `p` and `q`, `1 - (p - q) ^ 2` commutes with `q`. -/
 theorem commute_one_sub_sub_mul_self_right {p q : R} (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) : Commute (1 - (p - q) * (p - q)) q := by
   have hqqp : q * (q * p) = q * p := by rw [← mul_assoc, hq.eq]
-  rw [commute_iff_eq]
-  noncomm_ring [hp.eq, hq.eq, hqqp]
+  rw [commute_iff_eq]; noncomm_ring [hp.eq, hq.eq, hqqp]
 
 section Star
 
 variable [StarRing R]
 
-/-- Taking the star of `projectionIntertwiner p q` for self-adjoint `p`, `q` swaps `p` and `q`. -/
+/-- Taking `star` of `projectionIntertwiner p q` for self-adjoint `p`, `q` swaps `p` and `q`. -/
 theorem star_projectionIntertwiner {p q : R} (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q) :
     star (projectionIntertwiner p q) = projectionIntertwiner q p := by
   rw [projectionIntertwiner_def, projectionIntertwiner_def, star_add, star_mul, star_mul,
@@ -135,16 +111,14 @@ theorem star_projectionIntertwiner_mul_self {p q : R} (hp : IsStarProjection p)
     projectionIntertwiner_def]
   noncomm_ring [hp.isIdempotentElem.eq, hq.isIdempotentElem.eq, hqqp, hpqqp]
 
-/-- For star projections `p` and `q`, `z * star z = 1 - (p - q) ^ 2`; in particular `z` is
-normal. -/
+/-- For star projections `p` and `q`, `z * star z = 1 - (p - q) ^ 2`, so `z` is normal. -/
 theorem projectionIntertwiner_mul_star_self {p q : R} (hp : IsStarProjection p)
     (hq : IsStarProjection q) :
     projectionIntertwiner p q * star (projectionIntertwiner p q) = 1 - (p - q) * (p - q) := by
   rw [star_projectionIntertwiner hp.isSelfAdjoint hq.isSelfAdjoint]
   have h := star_projectionIntertwiner_mul_self hq hp
   rw [star_projectionIntertwiner hq.isSelfAdjoint hp.isSelfAdjoint] at h
-  rw [h]
-  noncomm_ring
+  rw [h]; noncomm_ring
 
 /-- Twice `1 - (p - q) ^ 2` equals `z + star z` for `z = projectionIntertwiner p q`. -/
 theorem projectionIntertwiner_add_star {p q : R} (hp : IsStarProjection p)
@@ -164,26 +138,7 @@ end TauCeti
 namespace Unitization
 
 variable {R B : Type*} [CommSemiring R] [NonUnitalSemiring B] [Module R B]
-
-/-- For an element `u` of the unitization `Unitization R B` and `p : B`, `u.mulInr p` is the
-unique element `u.fst • p + u.snd * p` of `B` whose image in `Unitization R B` is `u * p`. -/
-def mulInr (u : Unitization R B) (p : B) : B :=
-  u.fst • p + u.snd * p
-
-/-- Unfold `Unitization.mulInr`. -/
-theorem mulInr_def (u : Unitization R B) (p : B) :
-    u.mulInr p = u.fst • p + u.snd * p :=
-  (rfl)
-
-/-- Coercing `u.mulInr p` into `Unitization R B` recovers `u * p`. -/
-@[simp]
-theorem inr_mulInr (u : Unitization R B) (p : B) :
-    ((u.mulInr p : B) : Unitization R B) = u * (p : Unitization R B) := by
-  ext
-  · simp [mulInr]
-  · simp [mulInr]
-
-variable [StarRing R] [IsScalarTower R B B] [SMulCommClass R B B] [StarRing B] [StarModule R B]
+  [StarRing R] [IsScalarTower R B B] [SMulCommClass R B B] [StarRing B] [StarModule R B]
 
 /-- If `u` is unitary in `Unitization R B` and `p` is a star projection in `B`, the initial
 projection `star v * v` of `v = u.mulInr p` in `B` is `p`. -/
@@ -197,8 +152,7 @@ theorem star_mulInr_mul_self {u : Unitization R B}
 
 /-- If `u` in `Unitization R B` conjugates a star projection `p : B` to `q : B`, the final
 projection `v * star v` of `v = u.mulInr p` in `B` is `q`. -/
-theorem mulInr_mul_star_self {u : Unitization R B} {p q : B}
-    (hp : IsStarProjection p)
+theorem mulInr_mul_star_self {u : Unitization R B} {p q : B} (hp : IsStarProjection p)
     (hconj : u * (p : Unitization R B) * star u = (q : Unitization R B)) :
     u.mulInr p * star (u.mulInr p) = q := by
   apply Unitization.inr_injective (R := R)
@@ -229,9 +183,7 @@ theorem exists_isPartialIsometry_of_unitization_unitary_conj {R B : Type*}
     (h : (u : Unitization R B) * (p : Unitization R B) * star (u : Unitization R B) =
       (q : Unitization R B)) :
     ∃ v : B, TauCeti.IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q :=
-  ⟨(u : Unitization R B).mulInr p,
-    Unitization.isPartialIsometry_mulInr u.property hp,
-    Unitization.star_mulInr_mul_self u.property hp,
-    Unitization.mulInr_mul_star_self hp h⟩
+  ⟨(u : Unitization R B).mulInr p, Unitization.isPartialIsometry_mulInr u.property hp,
+    Unitization.star_mulInr_mul_self u.property hp, Unitization.mulInr_mul_star_self hp h⟩
 
 end IsStarProjection

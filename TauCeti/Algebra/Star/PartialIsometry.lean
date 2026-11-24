@@ -32,8 +32,7 @@ part of the theory.
   corresponding statement for the final projection `u * star u`.
 * `TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self`,
   `TauCeti.isPartialIsometry_iff_isStarProjection_mul_star_self`: in a non-unital star ring with
-  proper star (such as any C⋆-algebra), `u` is a partial isometry if and only if `star u * u`
-  (equivalently `u * star u`) is a star projection, or merely idempotent.
+  proper star, `u` is a partial isometry iff `star u * u` (or `u * star u`) is a star projection.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
   `IsStarProjection.isPartialIsometry`: isometries, unitaries and star projections are partial
   isometries.
@@ -82,10 +81,6 @@ protected theorem star (hu : IsPartialIsometry u) : IsPartialIsometry (star u) :
   rw [isPartialIsometry_iff, star_star]
   simpa only [star_mul, star_star, mul_assoc] using congrArg star hu.mul_star_mul_self
 
-/-- Dual defining equation `star u * u * star u = star u` of a partial isometry. -/
-theorem star_mul_self_mul_star (hu : IsPartialIsometry u) : star u * u * star u = star u := by
-  simpa only [star_star] using hu.star.mul_star_mul_self
-
 /-- The initial projection `star u * u` of a partial isometry is a star projection. -/
 theorem isStarProjection_star_mul_self (hu : IsPartialIsometry u) :
     IsStarProjection (star u * u) where
@@ -116,38 +111,26 @@ theorem IsPartialIsometry.of_isIdempotentElem_star_mul_self
     (h : IsIdempotentElem (star u * u)) : IsPartialIsometry u := by
   have hux : star u * (u * star u * u - u) = 0 := by
     rw [mul_sub, ← mul_assoc, ← mul_assoc, mul_assoc (star u * u), h.eq, sub_self]
-  have hxx : star (u * star u * u - u) * (u * star u * u - u) = 0 := calc
-    star (u * star u * u - u) * (u * star u * u - u)
-      = (star u * u * star u - star u) * (u * star u * u - u) := by
-          rw [star_sub, star_mul, star_mul, star_star, ← mul_assoc (star u) u (star u)]
-    _ = star u * u * (star u * (u * star u * u - u)) - star u * (u * star u * u - u) := by
-          rw [sub_mul, mul_assoc (star u * u) (star u)]
-    _ = 0 := by rw [hux, mul_zero, sub_zero]
+  have hxx : star (u * star u * u - u) * (u * star u * u - u) = 0 := by
+    rw [star_sub, star_mul, star_mul, star_star, ← mul_assoc (star u) u (star u), sub_mul,
+      mul_assoc (star u * u) (star u), hux, mul_zero, sub_zero]
   exact sub_eq_zero.mp (star_mul_self_eq_zero.mp hxx)
 
 /-- In a ring with proper star, `u` is a partial isometry iff `star u * u` is idempotent. -/
 theorem isPartialIsometry_iff_isIdempotentElem_star_mul_self :
     IsPartialIsometry u ↔ IsIdempotentElem (star u * u) :=
-  ⟨fun h => h.isStarProjection_star_mul_self.isIdempotentElem,
-    IsPartialIsometry.of_isIdempotentElem_star_mul_self⟩
+  ⟨fun h => h.isStarProjection_star_mul_self.isIdempotentElem, .of_isIdempotentElem_star_mul_self⟩
 
 /-- In a ring with proper star, `u` is a partial isometry iff `star u * u` is a star projection. -/
 theorem isPartialIsometry_iff_isStarProjection_star_mul_self :
     IsPartialIsometry u ↔ IsStarProjection (star u * u) :=
   ⟨IsPartialIsometry.isStarProjection_star_mul_self,
-    fun h => IsPartialIsometry.of_isIdempotentElem_star_mul_self h.isIdempotentElem⟩
-
-/-- In a ring with proper star, `u` is a partial isometry iff `u * star u` is idempotent. -/
-theorem isPartialIsometry_iff_isIdempotentElem_mul_star_self :
-    IsPartialIsometry u ↔ IsIdempotentElem (u * star u) := by
-  rw [← isPartialIsometry_star_iff, isPartialIsometry_iff_isIdempotentElem_star_mul_self,
-    star_star]
+    fun h => .of_isIdempotentElem_star_mul_self h.isIdempotentElem⟩
 
 /-- In a ring with proper star, `u` is a partial isometry iff `u * star u` is a star projection. -/
 theorem isPartialIsometry_iff_isStarProjection_mul_star_self :
     IsPartialIsometry u ↔ IsStarProjection (u * star u) := by
-  rw [← isPartialIsometry_star_iff, isPartialIsometry_iff_isStarProjection_star_mul_self,
-    star_star]
+  rw [← isPartialIsometry_star_iff, isPartialIsometry_iff_isStarProjection_star_mul_self, star_star]
 
 end ProperStar
 

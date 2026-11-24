@@ -64,6 +64,16 @@ theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) :=
   (rfl)
 
+/-- Moore loops with the same underlying Moore path have the same value under a family of
+homomorphisms out of the fundamental groups, even when their base points are only propositionally
+equal. -/
+theorem apply_fundamentalGroupHom_congr {G : Type*} [MulOneClass G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G) {x' : X} {α : MooreLoopSpace X x'}
+    {β : MooreLoopSpace X x} (h : α.toMoorePath = β.toMoorePath) :
+    χ x' (fundamentalGroupHom x' α) = χ x (fundamentalGroupHom x β) := by
+  obtain rfl : x' = x := by rw [← α.source_eq, h, β.source_eq]
+  rw [MooreLoopSpace.ext h]
+
 /-- Path components of Moore loops identify with the fundamental group, in the multiplicative
 convention of `fundamentalGroupHom`. -/
 def zerothHomotopyEquivFundamentalGroup (x : X) :
@@ -92,6 +102,23 @@ theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamenta
     obtain ⟨q, rfl⟩ := (zerothHomotopyEquivFundamentalGroup x).surjective g
     induction q using Quotient.inductionOn with
     | h γ => exact ⟨γ, (zerothHomotopyEquivFundamentalGroup_mk γ).symm⟩
+
+/-- Two homomorphisms out of the fundamental group agree once they agree on the classes of Moore
+loops. -/
+theorem fundamentalGroup_hom_ext {M : Type*} [Monoid M] {χ ψ : FundamentalGroup X x →* M}
+    (h : ∀ γ : MooreLoopSpace X x, χ (fundamentalGroupHom x γ) = ψ (fundamentalGroupHom x γ)) :
+    χ = ψ :=
+  MonoidHom.ext fun g ↦ by
+    obtain ⟨γ, rfl⟩ := fundamentalGroupHom_surjective x g
+    exact h γ
+
+/-- Two Moore loops have the same multiplicative class exactly when they are joined by a path in
+the Moore loop space. -/
+theorem fundamentalGroupHom_eq_iff_joined {γ δ : MooreLoopSpace X x} :
+    fundamentalGroupHom x γ = fundamentalGroupHom x δ ↔ Joined γ δ := by
+  rw [← zerothHomotopyEquivFundamentalGroup_mk, ← zerothHomotopyEquivFundamentalGroup_mk,
+    (zerothHomotopyEquivFundamentalGroup x).apply_eq_iff_eq]
+  exact Quotient.eq
 
 /-- Moore loops are path connected exactly when the fundamental group at their
 basepoint is trivial. -/

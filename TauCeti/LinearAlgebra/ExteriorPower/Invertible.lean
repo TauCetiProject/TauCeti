@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Projective.Trans
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
@@ -70,7 +70,7 @@ theorem invertible_of_invertible_of_rankAtStalk_eq {S : Type*} [CommRing S] [Alg
     [Module.Invertible S M] {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) S p = d) :
     Module.Invertible R (⋀[R]^d M) :=
   have : Module.Finite R M := .trans S M
-  have : Module.Projective R M := .trans S M
+  have : Module.Projective R M := .trans R S M
   invertible_of_rankAtStalk_eq fun p ↦ by
     rw [Module.Invertible.rankAtStalk_eq_rankAtStalk_algebra (S := S), hd]
 
