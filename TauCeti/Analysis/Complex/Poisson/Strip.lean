@@ -285,18 +285,16 @@ theorem differentiableOn_holoPoisson₀ : DifferentiableOn ℂ holoPoisson₀ (v
     ((differentiable_const (1 : ℂ)).sub differentiable_id).differentiableOn
     fun _ hζ => one_sub_mem_verticalStrip_iff.2 hζ
 
-/-- Uniform bound on `‖deriv holoPoisson₁ ζ‖` across any compact substrip `a ≤ re ζ ≤ b` of
-`0 < re ζ < 1`. -/
-theorem norm_deriv_holoPoisson₁_le {a b : ℝ} (ha : 0 < a) (hb : b < 1) {ζ : ℂ}
-    (hζ : ζ.re ∈ Icc a b) :
+/-- Uniform bound on `‖deriv holoPoisson₁ ζ‖` across any substrip `0 < re ζ ≤ b` (`b < 1`). -/
+theorem norm_deriv_holoPoisson₁_le {b : ℝ} (hb : b < 1) {ζ : ℂ} (hζ : ζ.re ∈ Ioc 0 b) :
     ‖deriv holoPoisson₁ ζ‖ ≤ π / (2 * (1 + Real.cos (π * b))) := by
   rw [(hasDerivAt_holoPoisson₁
-    (one_add_exp_I_pi_mul_ne_zero ⟨ha.trans_le hζ.1, hζ.2.trans_lt hb⟩)).deriv]
+    (one_add_exp_I_pi_mul_ne_zero ⟨hζ.1, hζ.2.trans_lt hb⟩)).deriv]
   have hcosb : 0 < 1 + Real.cos (π * b) := by
     linarith [neg_abs_le (Real.cos (π * b)), abs_cos_lt_one_of_sin_ne_zero
-      (sin_pi_mul_pos_of_pos_of_lt_one (ha.trans_le (hζ.1.trans hζ.2)) hb).ne']
+      (sin_pi_mul_pos_of_pos_of_lt_one (hζ.1.trans_le hζ.2) hb).ne']
   have hcos : Real.cos (π * b) ≤ Real.cos (π * ζ.re) :=
-    Real.cos_le_cos_of_nonneg_of_le_pi (mul_nonneg pi_pos.le (ha.le.trans hζ.1))
+    Real.cos_le_cos_of_nonneg_of_le_pi (mul_nonneg pi_pos.le hζ.1.le)
       (mul_le_of_le_one_right pi_pos.le hb.le) (mul_le_mul_of_nonneg_left hζ.2 pi_pos.le)
   have hden : 2 * Real.exp (-(π * ζ.im)) * (1 + Real.cos (π * b)) ≤
       ‖1 + Complex.exp (I * π * ζ)‖ ^ 2 := by
@@ -310,17 +308,15 @@ theorem norm_deriv_holoPoisson₁_le {a b : ℝ} (ha : 0 < a) (hb : b < 1) {ζ :
   exact (div_le_div_of_nonneg_left (by positivity) (by positivity) hden).trans_eq
     (by field_simp [(Real.exp_pos (-(π * ζ.im))).ne'])
 
-/-- Uniform bound on `‖deriv holoPoisson₀ ζ‖` across any compact substrip `a ≤ re ζ ≤ b` of
-`0 < re ζ < 1`. -/
-theorem norm_deriv_holoPoisson₀_le {a b : ℝ} (ha : 0 < a) (hb : b < 1) {ζ : ℂ}
-    (hζ : ζ.re ∈ Icc a b) :
+/-- Uniform bound on `‖deriv holoPoisson₀ ζ‖` across any substrip `a ≤ re ζ < 1` (`0 < a`). -/
+theorem norm_deriv_holoPoisson₀_le {a : ℝ} (ha : 0 < a) {ζ : ℂ} (hζ : ζ.re ∈ Ico a 1) :
     ‖deriv holoPoisson₀ ζ‖ ≤ π / (2 * (1 - Real.cos (π * a))) := by
-  have hws : ζ ∈ verticalStrip 0 1 := ⟨ha.trans_le hζ.1, hζ.2.trans_lt hb⟩
+  have hws : ζ ∈ verticalStrip 0 1 := ⟨ha.trans_le hζ.1, hζ.2⟩
   have h1ζ : 1 - ζ ∈ verticalStrip 0 1 := one_sub_mem_verticalStrip_iff.2 hws
   have harg : π * (1 - a) = π - π * a := by ring
   rw [(hasDerivAt_holoPoisson₀ (one_add_exp_I_pi_mul_ne_zero h1ζ)).deriv, norm_neg,
     ← (hasDerivAt_holoPoisson₁ (one_add_exp_I_pi_mul_ne_zero h1ζ)).deriv]
-  refine (norm_deriv_holoPoisson₁_le (sub_pos.2 hb) (sub_lt_self 1 ha)
+  refine (norm_deriv_holoPoisson₁_le (sub_lt_self 1 ha)
     ⟨by simp; linarith [hζ.2], by simp; linarith [hζ.1]⟩).trans_eq ?_
   rw [harg, Real.cos_pi_sub]; ring
 
@@ -401,7 +397,8 @@ theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℂ} (hu : Integra
   · exact ae_of_all _ fun s ζ hζ => by
       rw [norm_mul, mul_comm]
       exact mul_le_mul_of_nonneg_right
-        ((norm_deriv_holoPoisson₁_le ha hb (hmem hζ s)).trans (le_abs_self C)) (norm_nonneg _)
+        ((norm_deriv_holoPoisson₁_le hb ⟨ha.trans_le (hmem hζ s).1, (hmem hζ s).2⟩).trans
+          (le_abs_self C)) (norm_nonneg _)
   · exact ae_of_all _ fun s ζ hζ =>
       have hd := hasDerivAt_holoPoisson₁ (one_add_exp_I_pi_mul_ne_zero (hws hζ s))
       by simpa using ((hd.comp ζ ((hasDerivAt_id ζ).sub_const ((s : ℂ) * I))).const_mul

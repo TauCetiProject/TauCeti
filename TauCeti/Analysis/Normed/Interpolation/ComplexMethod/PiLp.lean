@@ -128,6 +128,9 @@ def piLpStripTracesEquiv : (piLp C q₀ q₁).stripTraces ≃L[ℂ] ∀ i, (C i)
         rw [ContinuousLinearMap.comp_apply, piLpStripTracesInv_apply_snd,
           piLpStripTracesFwd_apply_snd, ContinuousLinearMap.id_apply])))
 
+private theorem piLpStripTracesEquiv_apply (g : (piLp C q₀ q₁).stripTraces) :
+    piLpStripTracesEquiv C q₀ q₁ g = piLpStripTracesFwd C q₀ q₁ g := rfl
+
 @[simp]
 theorem piLpStripTracesEquiv_apply_fst (g : (piLp C q₀ q₁).stripTraces) (i : ι) (t : ℝ) :
     (piLpStripTracesEquiv C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t =
@@ -158,11 +161,10 @@ theorem stripFunction_piLpStripTracesEquiv_apply (g : (piLp C q₀ q₁).stripTr
     (z : ℂ) :
     (C i).stripFunction (piLpStripTracesEquiv C q₀ q₁ g i) z =
       piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).stripFunction g z) i := by
-  rw [← stripEval_apply, ← stripEval_apply]
-  change (C i).stripEval z (piLpStripTracesFwd C q₀ q₁ g i) = _
-  rw [piLpStripTracesFwd, ContinuousLinearMap.pi_apply, stripEval_stripTracesMap
-    (PiLp.proj q₀ X₀ i) (PiLp.proj q₁ X₁ i)
-    (fstToSum_proj_interFst_eq_sndToSum_proj_interSnd C q₀ q₁ i), ← piLpSumEquiv_apply_eq_sumLift]
+  rw [← stripEval_apply, ← stripEval_apply, piLpStripTracesEquiv_apply, piLpStripTracesFwd,
+    ContinuousLinearMap.pi_apply, stripEval_stripTracesMap
+      (PiLp.proj q₀ X₀ i) (PiLp.proj q₁ X₁ i)
+      (fstToSum_proj_interFst_eq_sndToSum_proj_interSnd C q₀ q₁ i), ← piLpSumEquiv_apply_eq_sumLift]
 
 /-- `stripFunction` evaluation at `z` on a trace pair assembled with
 `(piLpStripTracesEquiv C q₀ q₁).symm h` projects coordinatewise to `(C i).stripFunction (h i) z`. -/
@@ -235,10 +237,13 @@ def piLpContinuousLinearEquiv :
     (ContinuousLinearMap.ext fun u => by
       obtain ⟨g, rfl⟩ := mk_surjective u; simp [piLpCLEFwd_mk, piLpCLEInv_mk])
 
+private theorem piLpContinuousLinearEquiv_apply (u : (piLp C q₀ q₁).ComplexMethodSpace θ) :
+    piLpContinuousLinearEquiv C q₀ q₁ q θ u = piLpCLEFwd C q₀ q₁ q θ u := rfl
+
 @[simp]
 theorem piLpContinuousLinearEquiv_mk_apply (g : (piLp C q₀ q₁).stripTraces) (i : ι) :
-    piLpContinuousLinearEquiv C q₀ q₁ q θ (mk θ g) i = mk θ (piLpStripTracesEquiv C q₀ q₁ g i) :=
-  by change piLpCLEFwd C q₀ q₁ q θ (mk θ g) i = _; rw [piLpCLEFwd_mk, PiLp.toLp_apply]
+    piLpContinuousLinearEquiv C q₀ q₁ q θ (mk θ g) i = mk θ (piLpStripTracesEquiv C q₀ q₁ g i) := by
+  rw [piLpContinuousLinearEquiv_apply, piLpCLEFwd_mk, PiLp.toLp_apply]
 
 @[simp]
 theorem toSum_piLpContinuousLinearEquiv_apply (u : (piLp C q₀ q₁).ComplexMethodSpace θ) (i : ι) :

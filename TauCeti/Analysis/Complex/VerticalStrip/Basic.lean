@@ -61,9 +61,9 @@ theorem one_sub_mem_verticalClosedStrip_iff :
   simpa only [one_re, sub_self, sub_zero] using
     sub_mem_verticalClosedStrip_iff (a := 0) (b := 1) (1 : ℂ) z
 
-/-- For `0 < ε < 1 / 4`, the affine contraction `z ↦ (1 - 2 ε) z + ε` maps the enlarged open
+/-- For `0 < ε < 1 / 2`, the affine contraction `z ↦ (1 - 2 ε) z + ε` maps the enlarged open
 vertical strip `verticalStrip (-(ε / 2)) (1 + ε / 2)` into `verticalStrip 0 1`. -/
-theorem mapsTo_contracted_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) :
+theorem mapsTo_contracted_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) :
     MapsTo (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε)
       (verticalStrip (-(ε / 2)) (1 + ε / 2)) (verticalStrip 0 1) := by
   intro z hz

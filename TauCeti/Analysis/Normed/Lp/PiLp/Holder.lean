@@ -49,11 +49,8 @@ theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} (hq₀ : q₀ ≠ 
     refine MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow_of_ae_le hθ hq
       Measurable.of_discrete.aestronglyMeasurable Measurable.of_discrete.aestronglyMeasurable
       Measurable.of_discrete.aestronglyMeasurable (Filter.Eventually.of_forall fun i ↦ ?_)
-    rw [Real.eNorm_eq_ofReal_abs, Real.eNorm_eq_ofReal_abs, Real.eNorm_eq_ofReal_abs,
-      abs_of_nonneg (mul_nonneg (Real.rpow_nonneg (ha i) _) (Real.rpow_nonneg (hb i) _)),
-      abs_of_nonneg (ha i), abs_of_nonneg (hb i),
-      ENNReal.ofReal_mul (Real.rpow_nonneg (ha i) _),
-      ← ENNReal.ofReal_rpow_of_nonneg (ha i) h1θ, ← ENNReal.ofReal_rpow_of_nonneg (hb i) hθ.1]
+    simp [Real.eNorm_eq_ofReal_abs, abs_of_nonneg, ha i, hb i, h1θ, hθ.1,
+      ENNReal.ofReal_rpow_of_nonneg, Real.rpow_nonneg]
   rw [ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) h1θ,
     ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) hθ.1,
     ← ENNReal.ofReal_mul (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)] at h

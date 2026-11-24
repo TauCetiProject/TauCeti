@@ -109,7 +109,7 @@ private theorem contracted_one_add_mul_I (ε t : ℝ) :
   push_cast; ring
 
 private theorem diffContOnCl_contractedExpNegHoloPotential (g : C.stripTraces) {δ ε : ℝ}
-    (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) :
+    (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) :
     DiffContOnCl ℂ (contractedExpNegHoloPotential g δ ε) (verticalStrip 0 1) := by
   have hdiff : DifferentiableOn ℂ (contractedExpNegHoloPotential g δ ε)
       (verticalStrip (-(ε / 2)) (1 + ε / 2)) :=
@@ -122,13 +122,13 @@ private theorem diffContOnCl_contractedExpNegHoloPotential (g : C.stripTraces) {
     hdiff.continuousOn.mono ((closure_verticalStrip_subset 0 1).trans hsub)⟩
 
 private theorem norm_contractedExpNegHoloPotential_le (g : C.stripTraces) {δ ε : ℝ}
-    (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
+    (hδ : 0 < δ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
     ‖contractedExpNegHoloPotential g δ ε z‖ ≤ δ⁻¹ :=
   norm_exp_neg_holoPotential_le g hδ
     (mapsTo_contracted_verticalStrip hε ⟨by linarith [hε.1, hz.1], by linarith [hε.1, hz.2]⟩)
 
 private theorem norm_contracted_smul_le_of_tail_and_core {δ T κ ε : ℝ} (hδ : 0 < δ)
-    (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces) {E : Type*}
+    (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1)
     (t : ℝ) (x : E) (htail_le : T ≤ |t| → ‖x‖ ≤ δ)
     (hcore : ¬ T ≤ |t| → Real.log (max ‖x‖ δ) - κ ≤
@@ -144,7 +144,7 @@ private theorem norm_contracted_smul_le_of_tail_and_core {δ T κ ε : ℝ} (hδ
       (hδ.trans_le (le_max_right _ _)) (hcore ht)
 
 private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (hκ : 0 < κ)
-    (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces) (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ)
+    (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ)
     (happrox₀ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ t - κ ≤
       ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s *
         stripPoisson₀ ε ((1 - 2 * ε) * t - s))
@@ -162,7 +162,7 @@ private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
       (r := ε) (y := (1 - 2 * ε) * t) ⟨hε.1, by linarith [hε.2]⟩]
 
 private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (hκ : 0 < κ)
-    (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces) (hg₁ : ∀ s, T ≤ |s| → ‖g.val.2 s‖ ≤ δ)
+    (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) (hg₁ : ∀ s, T ≤ |s| → ‖g.val.2 s‖ ≤ δ)
     (happrox₁ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ t - κ ≤
       ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ s *
         stripPoisson₁ (1 - ε) ((1 - 2 * ε) * t - s))
@@ -180,7 +180,7 @@ private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
       (r := 1 - ε) (y := (1 - 2 * ε) * t) ⟨by linarith [hε.2], by linarith [hε.1]⟩]
 
 private theorem norm_mk_le_exp_mul_exp_re_contracted_holoPotential {θ δ T κ ε : ℝ}
-    (hδ : 0 < δ) (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 4⁻¹) (g : C.stripTraces)
+    (hδ : 0 < δ) (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces)
     (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ) (hg₁ : ∀ s, T ≤ |s| → ‖g.val.2 s‖ ≤ δ)
     (happrox₀ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ t - κ ≤
       ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s *
@@ -232,7 +232,7 @@ private theorem norm_mk_le_exp_re_holoPotential {θ δ : ℝ} (hθ : θ ∈ Ioo 
         (hΦ_cont.comp_of_eq hlin (by simp)).tendsto)).const_mul
       (Real.exp κ)).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto htend ?_
-  filter_upwards [Ioo_mem_nhdsGT (lt_min (lt_min hε₀ hε₁) (by norm_num : (0 : ℝ) < 4⁻¹))]
+  filter_upwards [Ioo_mem_nhdsGT (lt_min (lt_min hε₀ hε₁) (by norm_num : (0 : ℝ) < 2⁻¹))]
     with ε hε
   exact norm_mk_le_exp_mul_exp_re_contracted_holoPotential hδ hκ
     ⟨hε.1, hε.2.trans_le (min_le_right _ _)⟩ g (fun s hs => hg₀ s ((le_max_left _ _).trans hs))
