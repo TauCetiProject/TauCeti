@@ -10,9 +10,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Cycle
 public import TauCeti.Analysis.Contour.Cycle.Jordan
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Cycle.Circle
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
 import TauCeti.MeasureTheory.Integral.Circle.Integral
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 

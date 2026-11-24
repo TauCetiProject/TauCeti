@@ -33,8 +33,9 @@ and null-homology adapters for the finitely connected Jordan region
 ## Main results
 
 * `TauCeti.Contour.PiecewiseC1ClosedCurve.positivelyOrient_positivelyOrient`,
-  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `jordanSign_positivelyOrient`: algebraic and
-  orientation properties of `positivelyOrient`.
+  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `exists_lt_injOn_of_ne`,
+  `jordanSign_ne_zero_of_ne`, `jordanSign_positivelyOrient`: algebraic and orientation properties
+  of `positivelyOrient`.
 * `TauCeti.Contour.Cycle.windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff`: a
   positively oriented simple closed piecewise-`C¹` curve has winding number `1` on its inside.
 * `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`, `windingNumber_jordanBoundaryCycle`,
@@ -138,6 +139,31 @@ theorem image_positivelyOrient (γ : PiecewiseC1ClosedCurve) :
       γ '' uIcc γ.a γ.b := by
   simp
 
+/-- Every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has either `γ` or `γ.symm` with increasing
+endpoints `a < b` and `InjOn` on `Ico a b`. -/
+theorem exists_lt_injOn_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
+    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
+    (γ.a < γ.b ∧ InjOn γ (Ico γ.a γ.b)) ∨
+      (γ.symm.a < γ.symm.b ∧ InjOn γ.symm (Ico γ.symm.a γ.symm.b)) := by
+  rcases lt_or_gt_of_ne hab with hlt | hlt
+  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
+    exact Or.inl ⟨hlt, hinj⟩
+  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
+    exact Or.inr ⟨by simpa using hlt, by simpa using hinj⟩
+
+/-- Every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has nonzero `jordanSign`. -/
+theorem jordanSign_ne_zero_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
+    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
+    jordanSign γ γ.a γ.b ≠ 0 := by
+  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
+  · exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
+      hlt γ.source_eq_target hinj'
+  · rw [← neg_ne_zero, ← jordanSign_symm]
+    exact γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
+      hlt γ.symm.source_eq_target hinj'
+
 /-- After `positivelyOrient`, every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has `jordanSign` equal to `1`. -/
 theorem jordanSign_positivelyOrient {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
@@ -150,33 +176,22 @@ theorem jordanSign_positivelyOrient {γ : PiecewiseC1ClosedCurve} (hab : γ.a �
         hη η.source_eq_target hηinj with h | h
     · rwa [positivelyOrient_of_jordanSign_eq_one h]
     · rw [positivelyOrient_of_jordanSign_eq_neg_one h, jordanSign_symm, h, neg_neg]
-  rcases lt_or_gt_of_ne hab with hlt | hlt
-  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
-    exact hlt_case hlt hinj
-  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
-    have hηlt : γ.symm.a < γ.symm.b := by simpa using hlt
-    have hηinj : InjOn γ.symm (Ico γ.symm.a γ.symm.b) := by simpa using hinj
-    have hsign : jordanSign γ.symm γ.symm.a γ.symm.b ≠ 0 :=
-      γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
-        hηlt γ.symm.source_eq_target hηinj
-    have hne : jordanSign γ γ.a γ.b ≠ 0 := by
-      rwa [← neg_ne_zero, ← jordanSign_symm]
-    rw [← positivelyOrient_symm hne]
-    exact hlt_case hηlt hηinj
+  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
+  · exact hlt_case hlt hinj'
+  · rw [← positivelyOrient_symm (jordanSign_ne_zero_of_ne hab hinj)]
+    exact hlt_case hlt hinj'
 
 /-- A simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has a Jordan curve as its interval image. -/
 theorem isJordanCurve_image_of_ne (γ : PiecewiseC1ClosedCurve) (hab : γ.a ≠ γ.b)
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
     TauCeti.IsJordanCurve (γ '' uIcc γ.a γ.b) := by
-  rcases lt_or_gt_of_ne hab with hlt | hlt
-  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
-    exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      hlt γ.source_eq_target hinj
-  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
-    rw [← γ.image_symm]
+  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
+  · exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
+      hlt γ.source_eq_target hinj'
+  · rw [← γ.image_symm]
     exact γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      (by simpa using hlt : γ.symm.a < γ.symm.b) γ.symm.source_eq_target (by simpa using hinj)
+      hlt γ.symm.source_eq_target hinj'
 
 end PiecewiseC1ClosedCurve
 
@@ -249,19 +264,11 @@ theorem windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
     · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h,
         windingNumber_of_symm η hzη.2, windingNumber_of, hw, h, Int.cast_neg, Int.cast_one,
         neg_neg]
-  rcases lt_or_gt_of_ne hab with hlt | hlt
-  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
-    exact hlt_case hlt hinj hz
-  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
-    have hηlt : γ.symm.a < γ.symm.b := by simpa using hlt
-    have hηinj : InjOn γ.symm (Ico γ.symm.a γ.symm.b) := by simpa using hinj
-    have hsign : jordanSign γ.symm γ.symm.a γ.symm.b ≠ 0 :=
-      γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
-        hηlt γ.symm.source_eq_target hηinj
-    have hne : jordanSign γ γ.a γ.b ≠ 0 := by
-      rwa [← neg_ne_zero, ← PiecewiseC1ClosedCurve.jordanSign_symm]
-    rw [← PiecewiseC1ClosedCurve.positivelyOrient_symm hne]
-    exact hlt_case hηlt hηinj (by simpa only [γ.image_symm] using hz)
+  rcases PiecewiseC1ClosedCurve.exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
+  · exact hlt_case hlt hinj' hz
+  · rw [← PiecewiseC1ClosedCurve.positivelyOrient_symm
+      (PiecewiseC1ClosedCurve.jordanSign_ne_zero_of_ne hab hinj)]
+    exact hlt_case hlt hinj' (by simpa only [γ.image_symm] using hz)
 
 end Cycle
 

@@ -124,6 +124,8 @@ let alone a holomorphic map.
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 * `IsOpen.closure_sdiff_of_isClosed` and `IsOpen.frontier_sdiff_of_isClosed` — the closure and
   frontier of an open set with a closed subset removed.
+* `interior_biUnion_of_isClosed_of_pairwiseDisjoint` — the interior of a finite union of
+  pairwise-disjoint closed sets is the union of their interiors.
 * `IsOpen.closure_sdiff_biUnion` and `IsOpen.frontier_sdiff_biUnion` — the closure and frontier
   of an open set with finitely many pairwise-disjoint closed subsets removed.
 -/
@@ -414,7 +416,9 @@ theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (
     · have hxK : x ∈ K := hK.closure_eq ▸ hxKcl
       exact ⟨⟨subset_closure (hKU hxK), hxKint⟩, fun h ↦ h.2 hxK⟩
 
-private theorem interior_biUnion_of_isClosed_pairwiseDisjoint (s : Finset ι) {K : ι → Set X}
+/-- The interior of a finite union of pairwise-disjoint closed sets is the union of their
+interiors. -/
+theorem _root_.interior_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
     (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
     interior (⋃ i ∈ s, K i) = ⋃ i ∈ s, interior (K i) := by
   classical
@@ -440,7 +444,7 @@ theorem _root_.IsOpen.closure_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Fin
     closure (U \ ⋃ i ∈ s, K i) = closure U \ ⋃ i ∈ s, interior (K i) := by
   have hK_star : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
   rw [hU.closure_sdiff_of_isClosed hK_star (iUnion₂_subset hsub),
-    interior_biUnion_of_isClosed_pairwiseDisjoint s hK hdisj]
+    interior_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj]
 
 /-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
 `U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
@@ -456,7 +460,7 @@ theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Fi
   obtain ⟨i, hi, hxicl, hxiint⟩ := mem_iUnion₂.mp hxfr
   have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
   refine ⟨subset_closure (mem_iUnion₂.mpr ⟨i, hi, hxi⟩), fun h ↦ ?_⟩
-  rw [interior_biUnion_of_isClosed_pairwiseDisjoint s hK hdisj] at h
+  rw [interior_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj] at h
   obtain ⟨j, hj, hxjint⟩ := mem_iUnion₂.mp h
   by_cases hji : j = i
   · exact hxiint (hji ▸ hxjint)

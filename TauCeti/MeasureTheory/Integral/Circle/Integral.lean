@@ -34,7 +34,7 @@ any parameter interval `[a, a + 2π]`.
 * `TauCeti.norm_circleIntegral_sub_inv_smul_sub_le` and
   `TauCeti.norm_circleIntegral_sub_inv_smul_sub_le_sSup`: quantitative bounds on
   `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` in terms of `‖f z - y‖` on the circle.
-* `TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT`,
+* `Filter.Tendsto.tendsto_circleIntegral_sub_inv_smul_nhdsGT`,
   `ContinuousAt.tendsto_circleIntegral_sub_inv_smul_nhdsGT`, and
   `ContinuousOn.tendsto_circleIntegral_sub_inv_smul_nhdsGT`: for maps into a complete space, as
   `R → 0⁺`, `∮ z in C(c, R), (z - c)⁻¹ • f z` tends to `(2 * π * I) • y` from a punctured limit
@@ -139,8 +139,9 @@ theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le_sSup [CompleteSpace E] {
 /-- **Small-circle limit of the Cauchy integral from a punctured limit.** If `f z → y` along the
 punctured neighborhood `𝓝[≠] c` and `f` is circle-integrable on small positive circles centered at
 `c`, then `∮ z in C(c, R), (z - c)⁻¹ • f z → (2 * π * I) • y` as `R → 0⁺`. -/
-theorem TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT [CompleteSpace E] {f : ℂ → E} {c : ℂ}
-    {y : E} (hf : Tendsto f (𝓝[≠] c) (𝓝 y)) (hint : ∀ᶠ R in 𝓝[>] 0, CircleIntegrable f c R) :
+theorem Filter.Tendsto.tendsto_circleIntegral_sub_inv_smul_nhdsGT [CompleteSpace E] {f : ℂ → E}
+    {c : ℂ} {y : E} (hf : Tendsto f (𝓝[≠] c) (𝓝 y))
+    (hint : ∀ᶠ R in 𝓝[>] 0, CircleIntegrable f c R) :
     Tendsto (fun R ↦ ∮ z in C(c, R), (z - c)⁻¹ • f z) (𝓝[>] 0)
       (𝓝 ((2 * π * I : ℂ) • y)) := by
   rw [Metric.tendsto_nhds]
@@ -170,8 +171,7 @@ theorem ContinuousAt.tendsto_circleIntegral_sub_inv_smul_nhdsGT [CompleteSpace E
     {c : ℂ} (hf : ContinuousAt f c) (hint : ∀ᶠ R in 𝓝[>] 0, CircleIntegrable f c R) :
     Tendsto (fun R ↦ ∮ z in C(c, R), (z - c)⁻¹ • f z) (𝓝[>] 0)
       (𝓝 ((2 * π * I : ℂ) • f c)) :=
-  TauCeti.tendsto_circleIntegral_sub_inv_smul_nhdsGT
-    (hf.tendsto.mono_left nhdsWithin_le_nhds) hint
+  (hf.tendsto.mono_left nhdsWithin_le_nhds).tendsto_circleIntegral_sub_inv_smul_nhdsGT hint
 
 /-- **Small-circle limit of the Cauchy integral for a map continuous near the center.** If `f` is
 continuous on a neighborhood of `c`, then `∮ z in C(c, R), (z - c)⁻¹ • f z → (2 * π * I) • f c`
