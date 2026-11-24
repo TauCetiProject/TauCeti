@@ -20,9 +20,9 @@ compute the radius of cyclotomic translations in p-adic analysis.
 
 More generally, the cyclotomic polynomial of order `p ^ (k + 1)` takes the value `p` at one, and
 that of an order other than one and a prime power takes the value one. So a primitive root of
-order `p ^ (k + 1)` satisfies `‖ζ - 1‖ ^ φ(p ^ (k + 1)) = ‖p‖`, and one whose order is not a
-prime power lies at distance one from one. If moreover `‖p‖ < 1`, every other prime has norm
-one, and these combine into the lower bound `‖p‖ ≤ ‖ζ - 1‖ ^ (p - 1)` for every root of unity
+order `p ^ (k + 1)` satisfies `‖ζ - 1‖ ^ φ(p ^ (k + 1)) = ‖p‖`, and one whose order is neither
+one nor a prime power lies at distance one from one. If moreover `‖p‖ < 1`, every other prime has
+norm one, and these combine into the lower bound `‖p‖ ≤ ‖ζ - 1‖ ^ (p - 1)` for every root of unity
 `ζ ≠ 1`. Over `ℚ_[p]` and its extensions, where `‖p‖ = p⁻¹`, this is the classical bound
 `|ζ - 1| ≥ p ^ (-1 / (p - 1))`: the open ball of that radius about one contains no root of unity
 other than one. This is the cyclotomic input to the congruence argument of Borel showing that

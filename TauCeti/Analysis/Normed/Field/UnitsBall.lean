@@ -53,12 +53,7 @@ def unitsBallSubgroup {r : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) : Subgroup Kˣ
     simpa using norm_mul_sub_one_lt hr₁ hu hv
   one_mem' := by simpa using hr₀
   inv_mem' {u} hu := by
-    have hu₁ : ‖(u : K)‖ = 1 :=
-      norm_eq_one_of_norm_one_sub_lt_one ((norm_sub_rev _ _).trans_lt (hu.trans_le hr₁))
-    have h : (↑u⁻¹ : K) - 1 = -(↑u⁻¹ : K) * ((u : K) - 1) := by
-      rw [neg_mul, mul_sub, Units.inv_mul, mul_one, neg_sub]
-    rwa [Set.mem_ofPred_eq, h, norm_mul, norm_neg, Units.val_inv_eq_inv_val, norm_inv, hu₁,
-      inv_one, one_mul]
+    simpa [norm_inv_sub_one_eq (hu.trans_le hr₁)] using hu
 
 variable {K}
 
