@@ -103,15 +103,24 @@ def denom (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) : ℝ :=
   Complex.normSq (A 1 0 * (p : WithLp 2 (ℂ × ℝ)).fst + A 1 1) +
     Complex.normSq (A 1 0) * height p ^ 2
 
+/-- The formula `J = |c w + d|² + |c|² t²` for the denominator of the Möbius action. -/
+theorem denom_def (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
+    denom A p = Complex.normSq (A 1 0 * (p : WithLp 2 (ℂ × ℝ)).fst + A 1 1) +
+      Complex.normSq (A 1 0) * height p ^ 2 :=
+  (rfl)
+
+/-- For an upper triangular `A = (a b; 0 d)` of `SL(2, ℂ)`, the determinant is `a d = 1`. -/
+private theorem apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {A : SL(2, ℂ)}
+    (hc : A 1 0 = 0) : A 0 0 * A 1 1 = 1 := by
+  have hdet := A.det_coe
+  rwa [det_fin_two, hc, mul_zero, sub_zero] at hdet
+
 /-- The denominator `J` of the Möbius action is positive: if `c = 0` then `d ≠ 0`. -/
 theorem denom_pos (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) : 0 < denom A p := by
   rcases eq_or_ne (A 1 0) 0 with hc | hc
-  · have hd : A 1 1 ≠ 0 := by
-      intro hd
-      have := A.det_coe
-      rw [det_fin_two, hc, hd] at this
-      simp at this
-    simpa [denom, hc] using hd
+  · have hd : A 1 1 ≠ 0 :=
+      right_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
+    simpa [denom_def, hc] using hd
   · exact add_pos_of_nonneg_of_pos (Complex.normSq_nonneg _)
       (mul_pos (Complex.normSq_pos.2 hc) (pow_pos (height_pos p) 2))
 
@@ -123,7 +132,7 @@ theorem denom_ne_zero (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) : denom A p ≠ 
 theorem normSq_coe_mul_toQuaternion_add (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
     Quaternion.normSq ((A 1 0 : ℍ[ℝ]) * toQuaternion p + (A 1 1 : ℍ[ℝ])) = denom A p := by
   rw [Quaternion.normSq_def']
-  simp [denom, Complex.normSq_apply]
+  simp [denom_def, Complex.normSq_apply]
   ring
 
 /-- The numerator of the quaternionic Möbius transformation `(a q + b)(c q + d)⁻¹`, computed as
@@ -221,6 +230,7 @@ theorem fst_smul (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
   simp [smul_def, mobius]
 
 /-- The height of `A • (w, t)` is `t / J`. -/
+@[simp]
 theorem height_smul (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
     height (A • p) = height p / denom A p := by
   simp [smul_def, mobius]
@@ -271,25 +281,24 @@ theorem pslMk_smul (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
 
 /-- An upper triangular `A = (a b; 0 a⁻¹)` acts on the horizontal coordinate by the complex
 similarity `w ↦ a (a w + b)`. -/
-theorem fst_smul_of_apply_one_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0) (p : UpperHalfSpace ℂ) :
+theorem fst_smul_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
+    (p : UpperHalfSpace ℂ) :
     ((A • p : UpperHalfSpace ℂ) : WithLp 2 (ℂ × ℝ)).fst =
       A 0 0 * (A 0 0 * (p : WithLp 2 (ℂ × ℝ)).fst + A 0 1) := by
-  have hdet := A.det_coe
-  rw [det_fin_two, hc, mul_zero, sub_zero] at hdet
+  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   have hd : A 1 1 ≠ 0 := right_ne_zero_of_mul_eq_one hdet
   rw [fst_smul, eq_inv_of_mul_eq_one_left hdet]
-  simp only [denom, hc, zero_mul, zero_add, map_zero, mul_zero, add_zero]
+  simp only [denom_def, hc, zero_mul, zero_add, map_zero, mul_zero, add_zero]
   rw [Complex.normSq_eq_conj_mul_self]
   have := (map_ne_zero (starRingEnd ℂ)).mpr hd
   field_simp
 
 /-- An upper triangular `A = (a b; 0 a⁻¹)` multiplies heights by `|a|²`. -/
-theorem height_smul_of_apply_one_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0) (p : UpperHalfSpace ℂ) :
-    height (A • p) = Complex.normSq (A 0 0) * height p := by
-  have hdet := A.det_coe
-  rw [det_fin_two, hc, mul_zero, sub_zero] at hdet
+theorem height_smul_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
+    (p : UpperHalfSpace ℂ) : height (A • p) = Complex.normSq (A 0 0) * height p := by
+  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   rw [height_smul, eq_inv_of_mul_eq_one_left hdet, map_inv₀]
-  simp [denom, hc, div_eq_inv_mul]
+  simp [denom_def, hc, div_eq_inv_mul]
 
 /-- The matrix `S = (0 -1; 1 0)` sends the horizontal coordinate `w` of `(w, t)` to
 `-conj w / (|w|² + t²)`. -/
@@ -299,7 +308,7 @@ theorem fst_smul_of_coe_eq_S {A : SL(2, ℂ)}
       -conj (p : WithLp 2 (ℂ × ℝ)).fst /
         ((Complex.normSq (p : WithLp 2 (ℂ × ℝ)).fst + height p ^ 2 : ℝ) : ℂ) := by
   rw [fst_smul]
-  simp [hA, denom, neg_div]
+  simp [hA, denom_def, neg_div]
 
 /-- The matrix `S = (0 -1; 1 0)` sends the height `t` of `(w, t)` to `t / (|w|² + t²)`. -/
 theorem height_smul_of_coe_eq_S {A : SL(2, ℂ)}
@@ -307,7 +316,7 @@ theorem height_smul_of_coe_eq_S {A : SL(2, ℂ)}
     height (A • p) =
       height p / (Complex.normSq (p : WithLp 2 (ℂ × ℝ)).fst + height p ^ 2) := by
   rw [height_smul]
-  simp [hA, denom]
+  simp [hA, denom_def]
 
 /-- The point `(0, 1)` of the upper half-space over `ℂ`, whose quaternion is `j`. -/
 def j : UpperHalfSpace ℂ :=
@@ -334,11 +343,10 @@ theorem exists_smul_j_eq (p : UpperHalfSpace ℂ) : ∃ A : SL(2, ℂ), A • j 
     rfl
   have hc : A 1 0 = 0 := by simp [hA]
   refine ⟨A, ext_fst_height ?_ ?_⟩
-  · rw [fst_smul_of_apply_one_zero hc]
-    simp only [hA, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
-      cons_val_fin_one, fst_j, mul_zero, zero_add]
+  · rw [fst_smul_of_apply_one_zero_eq_zero hc]
+    simp [hA]
     field_simp
-  · rw [height_smul_of_apply_one_zero hc]
+  · rw [height_smul_of_apply_one_zero_eq_zero hc]
     simp [hA, Complex.normSq_ofReal, Real.mul_self_sqrt (height_pos p).le]
 
 /-- `SL(2, ℂ)` acts transitively on the upper half-space. -/
@@ -366,7 +374,7 @@ private theorem denom_eq_one_and_of_smul_eq {A : SL(2, ℂ)} {w : ℂ} {t : ℝ}
     exact mul_left_cancel₀ (height_pos p).ne' (by linarith)
   have hf := congrArg (fun q : UpperHalfSpace ℂ ↦ (q : WithLp 2 (ℂ × ℝ)).fst) h
   simp only [fst_smul, hd, Complex.ofReal_one, div_one] at hf
-  simp only [denom, p, coe_mk, height_mk] at hd hf
+  simp only [denom_def, p, coe_mk, height_mk] at hd hf
   exact ⟨hd, hf⟩
 
 /-- **The kernel of the Möbius action** is the center `{±1}` of `SL(2, ℂ)`: a matrix fixes every
@@ -387,8 +395,7 @@ theorem mem_center_iff_forall_smul_eq {A : SL(2, ℂ)} :
   have hd : A 1 1 ≠ 0 := left_ne_zero_of_mul_eq_one hdd
   have hb : A 0 1 = 0 := by
     simpa [(map_ne_zero (starRingEnd ℂ)).mpr hd] using f₁
-  have hdet := A.det_coe
-  rw [det_fin_two, hc, mul_zero, sub_zero] at hdet
+  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   -- `a d = 1` and `d conj d = 1` give `a = conj d`; then `a conj d = 1` gives `conj d = d`
   have ha : A 0 0 = conj (A 1 1) := by
     linear_combination conj (A 1 1) * hdet - A 0 0 * hdd
@@ -429,20 +436,25 @@ theorem smul_j_eq_j_iff {A : SL(2, ℂ)} :
       linear_combination (-A 0 0) * hS' + A 1 0 * hN + conj (A 1 1) * hdet
     have hb : A 0 1 = -conj (A 1 0) := by
       linear_combination (-A 0 1) * hS' + A 1 1 * hN - conj (A 1 0) * hdet
-    ext i k
-    fin_cases i <;> fin_cases k <;>
-      simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Matrix.mul_apply, star_apply,
-        RCLike.star_def, Fin.sum_univ_two, ha, hb, RingHomCompTriple.comp_apply, RingHom.id_apply,
-        map_neg, mul_neg, neg_mul, neg_neg, one_apply_eq, one_apply_ne, ne_eq, zero_ne_one,
-        one_ne_zero, not_false_eq_true] <;>
-      first | linear_combination hS' | ring1
+    have h₀₀ : A 0 0 * conj (A 0 0) + A 0 1 * conj (A 0 1) = 1 := by
+      rw [ha, hb, Complex.conj_conj, map_neg, Complex.conj_conj]
+      linear_combination hS'
+    have h₀₁ : A 0 0 * conj (A 1 0) + A 0 1 * conj (A 1 1) = 0 := by
+      rw [ha, hb]
+      ring
+    have h₁₀ : A 1 0 * conj (A 0 0) + A 1 1 * conj (A 0 1) = 0 := by
+      rw [ha, hb, Complex.conj_conj, map_neg, Complex.conj_conj]
+      ring
+    rw [← Matrix.ext_iff]
+    simpa [Fin.forall_fin_two, Matrix.mul_apply, Fin.sum_univ_two] using
+      (⟨⟨h₀₀, h₀₁⟩, h₁₀, hS'⟩ : (_ ∧ _) ∧ _ ∧ _)
   · intro h
-    have e₀₁ := congrFun (congrFun h 0) 1
-    have e₁₁ := congrFun (congrFun h 1) 1
-    simp only [Fin.isValue, Matrix.mul_apply, star_apply, RCLike.star_def, Fin.sum_univ_two, ne_eq,
-      zero_ne_one, not_false_eq_true, one_apply_ne, one_apply_eq] at e₀₁ e₁₁
+    have e₀₁ : A 0 0 * conj (A 1 0) + A 0 1 * conj (A 1 1) = 0 := by
+      simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun h 0) 1
+    have e₁₁ : A 1 0 * conj (A 1 0) + A 1 1 * conj (A 1 1) = 1 := by
+      simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun h 1) 1
     have hd : denom A j = 1 := by
-      simp only [denom, fst_j, height_j, mul_zero, zero_add, one_pow, mul_one]
+      simp only [denom_def, fst_j, height_j, mul_zero, zero_add, one_pow, mul_one]
       have := congrArg Complex.re e₁₁
       simp only [Complex.mul_conj, Complex.add_re, Complex.ofReal_re, Complex.one_re] at this
       linarith
@@ -459,14 +471,8 @@ theorem stabilizer_j :
     MulAction.stabilizer PSL(2, ℂ) j =
       (specialUnitaryGroup.toPSL : specialUnitaryGroup (Fin 2) ℂ →* PSL(2, ℂ)).range := by
   ext g
-  refine ⟨fun hg ↦ ?_, ?_⟩
-  · induction g using QuotientGroup.induction_on with | H A => ?_
-    rw [MulAction.mem_stabilizer_iff, pslMk_smul, smul_j_eq_j_iff] at hg
-    obtain ⟨U, rfl⟩ := specialUnitaryGroup.mem_range_toSL_iff.mpr hg
-    exact ⟨U, specialUnitaryGroup.toPSL_apply U⟩
-  · rintro ⟨U, rfl⟩
-    rw [MulAction.mem_stabilizer_iff, specialUnitaryGroup.toPSL_apply, pslMk_smul, smul_j_eq_j_iff,
-      specialUnitaryGroup.coe_toSL]
-    exact (mem_specialUnitaryGroup_iff.mp U.property).1
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  rw [MulAction.mem_stabilizer_iff, pslMk_smul, smul_j_eq_j_iff,
+    specialUnitaryGroup.mk_mem_range_toPSL_iff]
 
 end TauCeti.UpperHalfSpace
