@@ -66,11 +66,6 @@ private def sigmaDiskHomeomorph :
       Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 :=
   Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n
 
-private lemma sigmaDiskHomeomorph_apply
-    (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    sigmaDiskHomeomorph ι n p = ⟨p.1, diskHomeomorphClosedBall n p.2⟩ :=
-  Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
-
 /-- The disjoint union of copies, indexed by `ι`, of the Euclidean disk pair
 `TauCeti.diskBoundaryPair n` is isomorphic to `TauCeti.sigmaDiskPair ι n`, the disjoint union of
 closed unit balls of the sup norm on `Fin n → ℝ` relative to their unit spheres.  On each summand
@@ -84,16 +79,17 @@ def sigmaDiskBoundaryPairIso :
         ((diskBoundaryPair_map n ▸ (norm_diskHomeomorphClosedBall_eq_one_iff p.2).symm).trans
           (congrArg (fun q : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 ↦
               q ∈ {q : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 | ‖(q.2 : Fin n → ℝ)‖ = 1})
-            (sigmaDiskHomeomorph_apply ι n p).symm).to_iff)
+            (Homeomorph.sigmaCongrRight_apply
+              (fun _ : ι ↦ diskHomeomorphClosedBall n) p).symm).to_iff)
 
 private lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
     TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p =
       ⟨p.1, diskHomeomorphClosedBall n p.2⟩ := by
   rw [sigmaDiskBoundaryPairIso, Iso.trans_hom, TopPair.Hom.fst_comp, TopCat.comp_app,
-    TopPair.isoOfSubsetRange_hom_fst_apply, TopPair.ofSubsetIso_hom]
-  exact (TopPair.ofSubsetMap_fst_apply _ _ _).trans <|
-    (TopCat.ofHom_apply _ p).trans (sigmaDiskHomeomorph_apply ι n p)
+    TopPair.isoOfSubsetRange_hom_fst_apply]
+  exact (TopPair.ofSubsetIso_hom_fst_apply _ _ p).trans
+    (Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p)
 
 /-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` preserves the summand. -/
 @[simp]
