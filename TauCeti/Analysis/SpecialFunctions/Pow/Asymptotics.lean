@@ -27,8 +27,8 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -186,6 +186,13 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
   (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a ≤ b`, `‖s‖ ^ a` is `O(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
+    (fun s : E ↦ ‖s‖ ^ a) =O[cobounded E] fun s ↦ ‖s‖ ^ b := by
+  rcases hab.lt_or_eq with hab | rfl
+  · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
+  · exact isBigO_refl _ _
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
