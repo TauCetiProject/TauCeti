@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import Mathlib.NumberTheory.Real.Irrational
+import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -190,31 +190,6 @@ theorem tripleArea_apply (s : ℤ × ℤ × ℤ) : tripleArea s = s.1 + √2 * s
 theorem chernTripleSphereProduct_apply (s : ℤ × ℤ × ℤ) :
     chernTripleSphereProduct s = 2 * s.1 + 2 * s.2.1 + 2 * s.2.2 :=
   (rfl)
-
-/-- The ratio `(√3 - 1) / (√2 - 1)` is irrational. -/
-theorem irrational_sqrt_three_sub_one_div_sqrt_two_sub_one : Irrational ((√3 - 1) / (√2 - 1)) := by
-  -- If the ratio were a rational `q`, then `√3 = q √2 + (1 - q)`, and squaring gives
-  -- `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2` would be rational unless
-  -- `q (1 - q) = 0`; but `q = 0` gives `√3 = 1` and `q = 1` gives `√3 = √2`.
-  have h2 := Real.one_lt_sqrt_two
-  rintro ⟨q, hq⟩
-  have h3 : √3 = q * √2 + (1 - q) := by
-    rw [eq_div_iff (by linarith)] at hq
-    linarith
-  have hsq : 2 * q * (1 - q) * √2 + (2 * q ^ 2 + (1 - q) ^ 2) = ((3 : ℕ) : ℝ) := by
-    have h3sq := Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)
-    rw [h3] at h3sq
-    push_cast
-    linear_combination h3sq - (q : ℝ) ^ 2 * Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num)
-  by_cases hq₀ : 2 * q * (1 - q) = 0
-  · rcases mul_eq_zero.1 hq₀ with hq₀ | hq₀
-    · obtain rfl : q = 0 := by simpa using hq₀
-      norm_num at h3
-    · obtain rfl : q = 1 := (sub_eq_zero.1 hq₀).symm
-      norm_num at h3
-  · refine ((irrational_sqrt_two.ratCast_mul hq₀).add_ratCast (2 * q ^ 2 + (1 - q) ^ 2)).ne_nat
-      3 ?_
-    exact_mod_cast hsq
 
 /-- In the product of three spheres with areas `1`, `√2` and `√3`, the areas of the Chern-zero
 classes of the period group are dense in `ℝ`. -/
