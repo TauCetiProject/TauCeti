@@ -55,17 +55,12 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 module pullback. The scheme module carriers are explicit because typeclass search does not
 unfold them when matching Mathlib's composite instance. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
-    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided :=
-  @Functor.Braided.instComp (QuasicoherentSheaf Y) _
-    (instMonoidalCategoryQuasicoherentSheaf Y)
-    (instSymmetricCategoryQuasicoherentSheaf Y).toBraidedCategory
-    Y.Modules _ (Scheme.Modules.instMonoidalCategory Y)
-    (Scheme.Modules.instSymmetricCategory Y).toBraidedCategory
-    X.Modules _ (Scheme.Modules.instMonoidalCategory X)
-    (Scheme.Modules.instSymmetricCategory X).toBraidedCategory
-    (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) (pullback f)
-    (@ObjectProperty.instBraidedFullSubcategoryι Y.Modules _ _ _
-      (Scheme.Modules.isMonoidal_isQuasicoherent Y) _) (Scheme.Modules.pullbackBraided f)
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided := by
+  let F : QuasicoherentSheaf Y ⥤ Y.Modules := ObjectProperty.ι _
+  let G : Y.Modules ⥤ X.Modules := pullback f
+  letI : F.Braided := ObjectProperty.instBraidedFullSubcategoryι (C := Y.Modules) _
+  letI : G.Braided := Scheme.Modules.pullbackBraided f
+  exact Functor.Braided.instComp F G
 
 /-- The inverse tensor comparison is the canonical module-pullback tensor comparison. -/
 @[simp]

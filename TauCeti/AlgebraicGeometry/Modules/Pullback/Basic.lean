@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
 
 /-!
 # Pullback and restriction of modules on schemes
@@ -494,15 +494,14 @@ instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
 
 /-- Pullback of module sheaves along any scheme morphism is strong symmetric monoidal,
 with comparisons inverse to the canonical oplax comparisons. -/
-instance pullbackBraided : (pullback f).Braided := by
-  letI := Functor.Monoidal.ofOplaxMonoidal (pullback f)
-  exact (pullbackPushforwardAdjunction f).leftAdjointBraided
+instance pullbackBraided : (pullback f).Braided :=
+  SheafOfModules.pullbackBraided f.toRingCatSheafHom
 
 /-- The unit comparison `𝒪_X ⟶ f^* 𝒪_Y` of strong monoidal pullback is the inverse of
 `pullbackObjUnitIso f`. -/
 @[simp]
-lemma pullback_ε : Functor.LaxMonoidal.ε (pullback f) = (pullbackObjUnitIso f).inv := by
-  simp only [← Functor.Monoidal.inv_η, pullback_η, IsIso.Iso.inv_hom]
+lemma pullback_ε : Functor.LaxMonoidal.ε (pullback f) = (pullbackObjUnitIso f).inv :=
+  SheafOfModules.pullback_ε f.toRingCatSheafHom
 
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 

@@ -166,6 +166,9 @@ theorem coe_stalkMapCommRing (f : N ⟶ N') :
       (TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map ((toPresheaf _).map f) := by
   funext s
   obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq N.presheaf s
+  -- The linear stalk map is the underlying additive stalk map. Here `erw` unfolds
+  -- `PresheafOfModules.presheaf` and `toPresheaf` to identify their section types;
+  -- the resulting maps agree definitionally.
   erw [stalkMapCommRing_germ, TopCat.Presheaf.stalkFunctor_map_germ_apply]
   rfl
 

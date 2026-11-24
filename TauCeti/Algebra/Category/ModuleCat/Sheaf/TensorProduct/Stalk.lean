@@ -112,8 +112,7 @@ theorem tensorStalkComparison_bijective :
   apply (PresheafOfModules.tensorStalkComparison_bijective M.val N.val x).comp
   apply ((PresheafOfModulesOfCommRing.Monoidal.tensorObj M.val N.val).sheafificationStalkEquiv
     R x).symm.bijective.comp
-  -- The linear stalk map is the underlying additive stalk map of the defining tensor
-  -- isomorphism, so it is bijective because the stalk functor preserves isomorphisms.
+  -- The stalk functor preserves the defining tensor isomorphism.
   have : IsIso (tensorProductIso R M N).hom.val :=
     inferInstanceAs (IsIso ((_root_.SheafOfModules.forget _).map
       (tensorProductIso R M N).hom))
@@ -190,6 +189,8 @@ private theorem tensorStalkEquiv_map_germ_unit_tmul
     simp only [_root_.SheafOfModules.comp_val]
     rw [← Category.assoc (tensorProductIso R M N).inv.val, hi,
       Category.id_comp, ← Category.assoc, hη, Category.assoc]
+  -- `erw` unfolds `PresheafOfModules.presheaf` to identify the germ
+  -- section types `.val.presheaf.obj` and `.val.obj` in the stalk-map equation.
   erw [PresheafOfModules.stalkMapCommRing_germ]
   have hs := congrArg (fun k ↦ k.app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)) h
   simp only [PresheafOfModules.comp_app] at hs
@@ -303,6 +304,8 @@ theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
       (TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
         ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
           (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) = _
+  -- `erw` unfolds `PresheafOfModules.presheaf` to identify the germ
+  -- section types `.val.presheaf.obj` and `.val.obj` in the stalk-map equation.
   erw [PresheafOfModules.stalkMapCommRing_germ]
   refine (congrArg (fun k : M.val ⊗ N.val ⟶ (tensorProduct R M N).val ↦
     tensorStalkEquiv R M N x (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf

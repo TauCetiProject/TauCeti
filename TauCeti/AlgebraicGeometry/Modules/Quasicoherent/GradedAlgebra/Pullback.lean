@@ -123,8 +123,9 @@ private lemma pullbackOne_def :
     pullbackOne f A = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       (Scheme.Modules.pullback f).map A.obj.toMon.one := by
   have hε : ε (pullbackQ f) = ε (Scheme.Modules.pullback f) := by
-    simp only [← Functor.Monoidal.inv_η, Scheme.Modules.pullbackToModules_η,
-      Scheme.Modules.pullback_η]
+    rw [Scheme.Modules.pullback_ε]
+    simp only [← Functor.Monoidal.inv_η (pullbackQ f), Scheme.Modules.pullbackToModules_η,
+      IsIso.Iso.inv_hom]
   simp only [pullbackOne, hε, Scheme.Modules.pullback_ε]
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
   exact congrArg (_ ≫ ·) (eq_of_heq ((comp_eqToHom_heq _

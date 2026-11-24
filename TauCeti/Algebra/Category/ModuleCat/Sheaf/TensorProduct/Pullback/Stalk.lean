@@ -159,6 +159,8 @@ private lemma pullbackTensorStalk_germ (y : Y) (a : ↑(TopCat.Presheaf.stalk �
   refine (pullback_δ_stalk_germ φ M N y a U hy m n).trans ?_
   dsimp only [b, c]
   rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
+  -- The tensor factors use `.val.presheaf.obj`, while the pullback germ equations use
+  -- `.val.obj`; `erw` unfolds `PresheafOfModules.presheaf` to identify these section types.
   erw [TensorProduct.congr_tmul, pullbackStalkEquiv_tmul_germ, pullbackStalkEquiv_tmul_germ]
   -- The scalar actions use the same stalk modules after unfolding the pullback section types.
   rw [one_smul, TensorProduct.smul_tmul']
@@ -236,13 +238,9 @@ instance _root_.SheafOfModules.pullbackBraided :
 from the pullback of the structure sheaf to the structure sheaf. -/
 @[simp]
 theorem _root_.SheafOfModules.pullback_ε :
-    haveI : IsIso (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by infer_instance
     Functor.LaxMonoidal.ε (_root_.SheafOfModules.pullback.{u} φ) =
       inv (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by
-  have : IsIso (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by infer_instance
-  refine (Functor.Monoidal.inv_η (_root_.SheafOfModules.pullback.{u} φ)).symm.trans ?_
-  congr 1
-  exact _root_.SheafOfModules.pullback_η φ
+  simp only [← Functor.Monoidal.inv_η, _root_.SheafOfModules.pullback_η]
 
 section Coherence
 

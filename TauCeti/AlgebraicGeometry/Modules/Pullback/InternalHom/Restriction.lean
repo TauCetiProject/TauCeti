@@ -40,13 +40,14 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
     (hR : IsIso (((Scheme.Modules.restrictFunctor j).ihomComparison M).app N)) :
     IsIso ((pullbackIhomComparison M j).app N) := by
   let P := Scheme.Modules.pullback j
-  let : P.Monoidal := Functor.Monoidal.ofOplaxMonoidal P
   let σ := (Scheme.Modules.restrictFunctorIsoPullback j).inv
   have hm : μ P M ((ihom M).obj N) ≫ σ.app (M ⊗ (ihom M).obj N) =
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
+    have hδμ : δ P M ((ihom M).obj N) ≫ μ P M ((ihom M).obj N) = 𝟙 _ :=
+      Functor.Monoidal.δ_μ P M ((ihom M).obj N)
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
-    rw [← Category.assoc, Functor.Monoidal.δ_μ, Category.id_comp]
+    rw [← Category.assoc, hδμ, Category.id_comp]
     rw [← Category.assoc,
       ← Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor,
       Category.assoc, IsIso.inv_hom_id, Category.comp_id]
@@ -55,7 +56,8 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
       (Scheme.Modules.restrictFunctorIsoPullback j).symm M N hm).mpr hR
   have h : (pullbackIhomComparison M j).app N = (P.ihomComparison M).app N := by
     rw [pullbackIhomComparison_app_eq_curry, Functor.ihomComparison_app_eq_curry,
-      ← Functor.Monoidal.inv_δ]
+      ← Functor.Monoidal.inv_δ P]
+    rfl
   exact h ▸ hP
 
 /-- Pullback to an open subscheme commutes with internal Hom of arbitrary module sheaves. -/
