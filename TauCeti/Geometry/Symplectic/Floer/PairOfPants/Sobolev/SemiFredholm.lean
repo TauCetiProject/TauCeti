@@ -21,6 +21,15 @@ metric, `TauCeti.ConformalSobolev.H1 V S ρ` for the cylindrical weight
 realization `D_u : W^{1,2}_0(S, V) → L²(S, V)` has finite-dimensional kernel and closed range, the
 first half of the Fredholm property behind the pair-of-pants product.
 
+Every result here holds more generally for Floer data `(J, K_s, K_t)` on `S` that are cylindrical
+and equal to the pair-of-pants data far out on the ends, along a map `u` that solves the Floer
+equation there: the semi-Fredholm estimate and the bound on the coefficient field use the
+pair-of-pants data only on the ends, and elsewhere the data need only be `C²` along `u`. This
+covers the families that modify the pair-of-pants datum away from its ends, such as the pair of
+pants with continuation necks
+(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation.SemiFredholm`). A Floer pair of pants
+is the case of the pair-of-pants data on all of `S`.
+
 The semi-Fredholm estimate for `C²` sections with compact support in `S`
 (`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`) controls the `W^{1,2}` energy of a
@@ -231,14 +240,15 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_esti
       exact (hW (hξ2.of_le one_le_two) hξc hξS).trans
         (mul_le_mul_of_nonneg_left (hest hξ2 hξc hξS) hA)
 
-/-- **The coefficients of the linearized operator of a Floer pair of pants are bounded on the
-jets of `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
-`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` on the ends
-(jointly `C²` period-one Hamiltonians `H_q`, almost complex structures equal far out on each end to
-`C¹` families `J_q(t)`, and a `C¹` Floer pair of pants `u` whose loops in each positive end chart
-converge uniformly on `[0, 1]` to loops `x_q` continuous on `[0, 1]`, while the slice defects tend
-uniformly to zero), the coefficient field of the linearized Floer operator on the conformal jets of
-the cylindrical weight is essentially bounded on `S`. -/
+/-- **The coefficients of the linearized operator along a pair of pants are bounded on the jets of
+`W^{1,2}`.** Let `H_q` be jointly `C²` period-one Hamiltonians on the three ends of `S`, and let
+`(J, K_s, K_t)` be Floer data on `S`, with `J` `C¹` and `K_s`, `K_t` `C²` along `u`, which far out
+on each end, beyond a height `R₁`, are cylindrical, `J(φ'_q(s, t)) = J_q(t)` for `C¹` families
+`J_q`, with perturbation the pair-of-pants perturbation of `H`. Let `u` be `C¹` on `S`, solve the
+Floer equation for these data beyond `R₁` on each end, and have loops in each positive end chart
+converging uniformly on `[0, 1]` to loops `x_q` continuous on `[0, 1]`, while the slice defects tend
+uniformly to zero. Then the coefficient field of the linearized Floer operator on the conformal
+jets of the cylindrical weight is essentially bounded on `S`. -/
 theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {x : Puncture → ℝ → V}
@@ -246,24 +256,26 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
     {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
     MemLp (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) ∞
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
       (volume.restrict thricePuncturedSphereReal) := by
   -- Far out on every end `u` is within `1` of its asymptotic loop, and the slice defect is less
   -- than `1`, over the band `t ∈ [0, 1]`.
@@ -272,13 +284,20 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
       (Metric.tendstoUniformlyOn_iff.1 (hδ q) 1 one_pos))
   choose Mx hMx using fun q ↦
     (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q)
-  have hT₁ : R₁ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_left _ _)
-  have hT₀ : S₀ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_right _ _)
-  refine ω.memLp_floerConformalJetCoeff_pairOfPants hH hHs hJ
+  set T := max 2 (max R₁ S₀)
+  have hT₁ : R₁ ≤ T := le_max_of_le_right (le_max_left _ _)
+  have hT₀ : S₀ ≤ T := le_max_of_le_right (le_max_right _ _)
+  -- Beyond the height `T` the end points lie in `S` and beyond the height `R₁`.
+  have hend (q : Puncture) {ζ : ℝ × ℝ} (hζ : T ≤ ζ.1) :
+      positiveEndChart q ζ ∈ thricePuncturedSphereReal ∧
+        R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 := by
+    rw [fst_positiveEndCoord_positiveEndChart]
+    exact ⟨positiveEndChart_mem_thricePuncturedSphereReal (by linarith [le_max_left 2 (max R₁ S₀)]),
+      hT₁.trans hζ⟩
+  refine ω.memLp_floerConformalJetCoeff_pairOfPants hH hHs hJ hKs hKt
     (fun z hz ↦ (hu z hz).contDiffWithinAt) hJe (le_max_left _ _)
-    (fun q ζ hζ ↦ hJeq q ζ (hT₁.trans hζ))
-    (fun q ζ hζ ↦ hF _ (positiveEndChart_mem_thricePuncturedSphereReal
-      (by linarith [le_max_left 2 (max R₁ S₀)])))
+    (fun q ζ hζ ↦ hJeq q ζ (hT₁.trans hζ)) (fun q ζ hζ ↦ hK q _ (hend q hζ).1 (hend q hζ).2)
+    (fun q ζ hζ ↦ hF q _ (hend q hζ).1 (hend q hζ).2)
     (Cu := ∑ q, |Mx q| + 1) (Cδ := 1) (fun q ζ hζ ht ↦ ?_) (fun q ζ hζ ht ↦ ?_)
   · have h : dist (x q ζ.2) (u (positiveEndChart q ζ)) < 1 :=
       ((hS₀ ζ.1 (hT₀.trans hζ)) q).1 ζ.2 ht
@@ -293,11 +312,12 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
     rw [Pi.zero_apply, dist_zero_left] at h
     exact h.le
 
-/-- **Peetre's estimate along a Floer pair of pants.** Under the hypotheses of the semi-Fredholm
+/-- **Peetre's estimate along a pair of pants.** Under the hypotheses of the semi-Fredholm
 estimate `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add`
-(a Floer pair of pants `u` whose ends converge to nondegenerate one-periodic orbits of the end
-Hamiltonians, with almost complex structures cylindrical far out on the ends), there are a compact
-set `K ⊆ S` and `C` such that the jet `x ∈ W^{1,2}_0(S, V)` of every test section `ξ` satisfies
+(Floer data `(J, K_s, K_t)` that are cylindrical and equal to the pair-of-pants data far out on the
+ends, and a map `u` that solves the Floer equation there and whose ends converge to nondegenerate
+one-periodic orbits of the end Hamiltonians), there are a compact set `K ⊆ S` and `C` such that the
+jet `x ∈ W^{1,2}_0(S, V)` of every test section `ξ` satisfies
 `‖x‖ ≤ C (‖D_u x‖ + ‖√ρ ξ‖_{L²(K)})` for the realization
 `D_u = TauCeti.SymplecticForm.floerConformalSobolevOperator` of the linearized Floer operator. -/
 theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : SymplecticForm V)
@@ -315,16 +335,20 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
@@ -335,32 +359,27 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
         (y : Lp (V × V × V) 2 (volume.restrict thricePuncturedSphereReal)) ∈
           jetSubmodule V thricePuncturedSphereReal cylindricalWeight →
         ‖y‖ ≤ C * (‖ω.floerConformalSobolevOperator thricePuncturedSphereReal cylindricalWeight
-            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-            u y‖ +
+            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u y‖ +
           ‖restrictWeightedValue V thricePuncturedSphereReal K y‖) := by
   obtain ⟨C, -, T, hT, hest⟩ :=
     ω.exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add hH hHs
-      hX hx hnd hJe hJex hJeq (fun _ _ _ _ ↦ ⟨rfl, rfl⟩) hJ
-      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
-      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hc
-      (fun _ z hz _ ↦ hF z hz) hux hδ
+      hX hx hnd hJe hJex hJeq hK hJ hKs hKt hu hc hF hux hδ
   have hM := ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs
     (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe hJeq
-    hJ hu hF hux hδ
+    hK hJ hKs hKt hu hF hux hδ
   obtain ⟨C', hC'⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_estimate hM hT hest
   exact ⟨_, isCompact_preimage_truncation _, preimage_truncation_subset_thricePuncturedSphereReal _,
     C', hC'⟩
 
-/-- **The linearized operator of a Floer pair of pants has finite-dimensional kernel on
-`W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
-`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` (a Floer
-pair of pants `u` whose ends converge to nondegenerate one-periodic orbits of the end Hamiltonians,
-with almost complex structures cylindrical far out on the ends), the realization
-`D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operator for the cylindrical metric has
-finite-dimensional kernel. -/
+/-- **The linearized operator along a pair of pants has finite-dimensional kernel on `W^{1,2}`.**
+Under the hypotheses of the semi-Fredholm estimate
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` (Floer data
+`(J, K_s, K_t)` that are cylindrical and equal to the pair-of-pants data far out on the ends, and a
+map `u` that solves the Floer equation there and whose ends converge to nondegenerate one-periodic
+orbits of the end Hamiltonians), the realization `D_u : W^{1,2}_0(S, V) → L²(S, V)` of the
+linearized Floer operator for the cylindrical metric has finite-dimensional kernel. A Floer pair of
+pants is the case of the pair-of-pants data on all of `S`. -/
 theorem finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
@@ -376,32 +395,33 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants (ω : Sy
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
     FiniteDimensional ℝ (ω.floerConformalSobolevOperator thricePuncturedSphereReal
-      cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      u).ker := by
+      cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).ker := by
   obtain ⟨K, hK, hKS, C, hest⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add hH hHs hX hx hnd hJe hJex
-      hJeq hJ hu hc hF hux hδ
+      hJeq hK hJ hKs hKt hu hc hF hux hδ
   exact finiteDimensional_ker_of_estimate isWeight_cylindricalWeight hK hKS _ hest
 
-/-- **The linearized operator of a Floer pair of pants has closed range on `W^{1,2}`.** Under the
+/-- **The linearized operator along a pair of pants has closed range on `W^{1,2}`.** Under the
 hypotheses of `finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants`, the realization
 `D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operator for the cylindrical metric has
 closed range. -/
@@ -420,29 +440,31 @@ theorem isClosed_range_floerConformalSobolevOperator_pairOfPants (ω : Symplecti
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
     IsClosed ((ω.floerConformalSobolevOperator thricePuncturedSphereReal
-      cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u).range :
+      cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).range :
         Set (Lp V 2 (volume.restrict thricePuncturedSphereReal))) := by
   obtain ⟨K, hK, hKS, C, hest⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add hH hHs hX hx hnd hJe hJex
-      hJeq hJ hu hc hF hux hδ
+      hJeq hK hJ hKs hKt hu hc hF hux hδ
   exact isClosed_range_of_estimate isWeight_cylindricalWeight hK hKS _ hest
 
 end SymplecticForm
