@@ -107,6 +107,7 @@ theorem toSelmerStructure_localCondition (i : ι) :
 omit [IsTopologicalGroup G] [ContinuousSMul G X.V] in
 /-- Replacing the local conditions of `𝓕` replaces those of `𝓕.toSelmerStructure` by their
 pullbacks along the explicit comparison. -/
+@[simp]
 theorem toSelmerStructure_withLocalConditions
     (L : ∀ i, Submodule R (_root_.continuousCohomology 1 (Y i))) :
     (𝓕.withLocalConditions L).toSelmerStructure =
