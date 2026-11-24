@@ -222,4 +222,14 @@ map is an isomorphism of complexes. -/
 instance isIso_bidualHom [∀ p, Module.IsReflexive R (K.X p)] : IsIso (bidualHom K) :=
   (isIso_bidualHom_iff (K := K)).2 inferInstance
 
+/-- For a complex of reflexive modules, the inverse of the bidual map sends a form `y` of degree
+`p` on `K∨` to the element `x` of `Kᵖ` with `f x = (-1)ᵖ y f` for every form `f` on `Kᵖ`. -/
+theorem linearDualXEquiv_inv_bidualHom_f_apply [∀ p, Module.IsReflexive R (K.X p)] {p q : ℤ}
+    (h : p + q = 0) (y : (linearDual R (linearDual R K)).X p) (f : (linearDual R K).X q) :
+    linearDualXEquiv K h f (((inv (bidualHom K)).f p).hom y) =
+      p.negOnePow • linearDualXEquiv (linearDual R K) (by omega) y f := by
+  conv_rhs => rw [← Iso.inv_hom_id_apply (HomologicalComplex.Hom.isoApp (asIso (bidualHom K)) p) y]
+  rw [HomologicalComplex.Hom.isoApp_hom, HomologicalComplex.Hom.isoApp_inv, asIso_hom, asIso_inv,
+    linearDualXEquiv_bidualHom_f_apply, smul_smul, Int.units_mul_self, one_smul]
+
 end CochainComplex

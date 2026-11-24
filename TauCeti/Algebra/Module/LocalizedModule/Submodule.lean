@@ -32,6 +32,8 @@ This file proves the following facts about submodules and localized modules:
   localization of `R` at `S`, every finitely generated `R`-submodule of the `F`-span of an
   `R`-submodule `M` is carried into `M` by a single element of `S`. This is the uniform version of
   Mathlib's `multiple_mem_span_of_mem_localization_span`.
+* `Submodule.isLocalizedModule_subtype_of_span_eq_top`: when `F` is the localization of `R` at
+  `S`, the inclusion of an `R`-submodule spanning an `F`-module is a localization at `S`.
 -/
 
 public section
@@ -95,6 +97,17 @@ theorem FG.exists_smul_mem_of_le_span {N : Submodule R E} (hN : N.FG)
     obtain ⟨v₁, hv₁, v₂, hv₂, rfl⟩ := mem_sup.1 hv
     rw [smul_add, mul_smul, mul_comm, mul_smul]
     exact add_mem (smul_mem _ r₂ (h₁ v₁ hv₁)) (smul_mem _ r₁ (h₂ v₂ hv₂))
+
+variable (M) in
+/-- If `F` is the localization of `R` at `S`, the inclusion of an `R`-submodule spanning the
+ambient `F`-module, such as a full lattice, is a localization of `R`-modules at `S`. -/
+theorem isLocalizedModule_subtype_of_span_eq_top (hM : span F (M : Set E) = ⊤) :
+    IsLocalizedModule S M.subtype := by
+  have := isLocalizedModule_id S E F
+  let e := (LinearEquiv.ofTop (M.localized' F S LinearMap.id)
+    (by simpa [localized'_eq_span] using hM)).restrictScalars R
+  have h : e.toLinearMap ∘ₗ M.toLocalized' F S LinearMap.id = M.subtype := by ext; simp [e]
+  exact h ▸ IsLocalizedModule.of_linearEquiv S _ e
 
 end ClearDenominators
 

@@ -335,14 +335,8 @@ private theorem cellFrontier_inter_range_subset_skeletonLT [T2Space P] {A' : Set
     cellFrontier n c ∩ range j ⊆ skeletonLT (range j) n := by
   let := h.relCWComplex
   let := rangeRelCWComplex h hA
-  intro y hy
-  obtain ⟨w, hw, rfl⟩ := cellFrontier_inter_range_subset_image_skeletonLT h hg n c hy
-  rcases RelCWComplex.mem_skeletonLT_iff.1 hw with hwA | ⟨l, hl, k, hk⟩
-  · exact RelCWComplex.mem_skeletonLT_iff.2 (.inl (hA ▸ mem_image_of_mem _ hwA))
-  refine RelCWComplex.mem_skeletonLT_iff.2
-    (.inr ⟨l, hl, ((h.isClosedEmbedding_inr.relCWComplexCellEquiv image_univ hA) l).symm k, ?_⟩)
-  rw [h.isClosedEmbedding_inr.openCell_relCWComplex, Equiv.apply_symm_apply]
-  exact mem_image_of_mem _ hk
+  rw [h.isClosedEmbedding_inr.coe_skeletonLT_relCWComplex image_univ hA]
+  exact cellFrontier_inter_range_subset_image_skeletonLT h hg n c
 
 /-- The relative CW structure on a pushout `P` of `D → C` along a cellular map, over any set `A'`
 equal to the image of `A`. -/

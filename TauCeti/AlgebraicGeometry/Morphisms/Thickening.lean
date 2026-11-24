@@ -230,6 +230,11 @@ instance respectsIso : RespectsIso @IsFirstOrderThickening.{u} :=
 instance isStableUnderBaseChange : IsStableUnderBaseChange @IsFirstOrderThickening.{u} :=
   IsStableUnderBaseChange.mk' fun _ _ _ f i _ _ ↦ pullback_fst f i
 
+/-- The restriction of a first-order thickening over an open subset is a first-order thickening. -/
+instance morphismRestrict (i : Z ⟶ X) [IsFirstOrderThickening i] (U : X.Opens) :
+    IsFirstOrderThickening (i ∣_ U) :=
+  of_isPullback (P := @IsFirstOrderThickening) (isPullback_morphismRestrict i U).flip ‹_›
+
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a first-order
 thickening if and only if the kernel of `φ` has square zero. -/
 theorem SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) (hφ : Function.Surjective φ) :
@@ -311,6 +316,25 @@ theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤
   (inclusion_iff h).mpr <| by
     rw [← pow_mul]
     exact pow_le_pow_of_le_one bot_le le_top (by omega)
+
+/-- The product of two sections of the ideal sheaf of a first-order thickening vanishes, over any
+open subset. -/
+theorem mul_eq_zero_of_app_eq_zero (i : Z ⟶ X) [IsFirstOrderThickening i] {U : X.Opens}
+    {s t : Γ(X, U)} (hs : i.app U s = 0) (ht : i.app U t = 0) : s * t = 0 := by
+  refine TopCat.Presheaf.section_ext X.sheaf U _ _ fun x hx ↦ ?_
+  obtain ⟨V, hV, hxV, hVU⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens hx
+  have hres : ∀ s : Γ(X, U), i.app U s = 0 →
+      X.presheaf.map (homOfLE hVU).op s ∈ i.ker.ideal ⟨V, hV⟩ := by
+    intro s hs
+    rw [Scheme.Hom.ker_apply, RingHom.mem_ker, ← CommRingCat.comp_apply, i.naturality,
+      CommRingCat.comp_apply, hs, map_zero]
+  have h0 : X.presheaf.map (homOfLE hVU).op (s * t) = 0 := by
+    have : _ ∈ (i.ker * i.ker).ideal ⟨V, hV⟩ := Ideal.mul_mem_mul (hres s hs) (hres t ht)
+    rw [ker_mul_self, ← map_mul] at this
+    simpa using this
+  -- `section_ext` states its goal for the presheaf of `X.sheaf`, which is `X.presheaf`.
+  change X.presheaf.germ U x hx (s * t) = X.presheaf.germ U x hx 0
+  rw [← TopCat.Presheaf.germ_res_apply X.presheaf (homOfLE hVU) x hxV, h0, map_zero, map_zero]
 
 end IsFirstOrderThickening
 

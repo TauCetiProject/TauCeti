@@ -47,6 +47,8 @@ embedding `C ⥤ Kar C` is a quasi-equivalence.
   equivalence exactly when `H⁰(Kar C)` is idempotent complete.
 * `TauCeti.DGKaroubi.isQuasiEquivalence_toDGKaroubi`: if `H⁰(C)` is idempotent complete, the
   embedding `C ⥤ Kar C` is a quasi-equivalence.
+* `TauCeti.DGKaroubi.isIdempotentComplete_dgHomotopyCategory`: if `H⁰(C)` is idempotent complete,
+  so is `H⁰(Kar C)`.
 * `TauCeti.DGKaroubi.isEquivalence_homotopyCategoryToKaroubi`: if `H⁰(C)` is idempotent complete,
   the comparison functor is an equivalence.
 
@@ -321,15 +323,25 @@ theorem isQuasiEquivalence_toDGKaroubi [IsIdempotentComplete (DGHomotopyCategory
   exact ⟨Y, ⟨(homotopyCategoryToKaroubiFullyFaithful R C).preimageIso
     ((toDGKaroubiCompHomotopyCategoryToKaroubiIso R C).app Y ≪≫ e)⟩⟩
 
+/-- If `H⁰(C)` is idempotent complete, the embedding `C ⥤ Kar C` induces an equivalence
+`H⁰(C) ⥤ H⁰(Kar C)`. -/
+instance isEquivalence_mapDGHomotopyCategory_toDGKaroubi
+    [IsIdempotentComplete (DGHomotopyCategory R C)] :
+    (toDGKaroubi R C).mapDGHomotopyCategory.IsEquivalence :=
+  (isQuasiEquivalence_toDGKaroubi R C).isEquivalence_mapDGHomotopyCategory
+
+/-- **If `H⁰(C)` is idempotent complete, so is `H⁰(Kar C)`.** -/
+instance isIdempotentComplete_dgHomotopyCategory [IsIdempotentComplete (DGHomotopyCategory R C)] :
+    IsIdempotentComplete (DGHomotopyCategory R (DGKaroubi R C)) :=
+  (isIdempotentComplete_iff_of_equivalence
+    (toDGKaroubi R C).mapDGHomotopyCategory.asEquivalence).1 inferInstance
+
 variable (R C) in
 /-- If `H⁰(C)` is idempotent complete, the comparison functor `H⁰(Kar C) ⥤ Karoubi H⁰(C)` is an
 equivalence. -/
 theorem isEquivalence_homotopyCategoryToKaroubi [IsIdempotentComplete (DGHomotopyCategory R C)] :
-    (homotopyCategoryToKaroubi R C).IsEquivalence := by
-  have := (isQuasiEquivalence_toDGKaroubi R C).isEquivalence_mapDGHomotopyCategory
-  exact (isEquivalence_homotopyCategoryToKaroubi_iff R C).2
-    ((isIdempotentComplete_iff_of_equivalence
-      (toDGKaroubi R C).mapDGHomotopyCategory.asEquivalence).1 inferInstance)
+    (homotopyCategoryToKaroubi R C).IsEquivalence :=
+  (isEquivalence_homotopyCategoryToKaroubi_iff R C).2 inferInstance
 
 end
 

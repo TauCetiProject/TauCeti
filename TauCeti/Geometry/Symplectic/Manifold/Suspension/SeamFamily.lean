@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 

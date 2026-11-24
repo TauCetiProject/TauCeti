@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.Complex.RealIdentity
-import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 
 /-!
 # Bilinear product identities for Gauss hypergeometric series

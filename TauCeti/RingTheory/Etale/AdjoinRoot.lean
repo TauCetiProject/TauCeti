@@ -25,8 +25,9 @@ ring in which `n` is invertible.
 
 ## References
 
-* Mathlib's `Mathlib.RingTheory.Etale.StandardEtale`, for `StandardEtalePair` and its
-  universal mapping API.
+* Mathlib's `Mathlib.RingTheory.Etale.StandardEtale`, for `StandardEtalePair` and the
+  equivalence `StandardEtalePair.equivAwayAdjoinRoot` of its algebra with `(R[X]/(f))[1/g]`;
+  for `g = 1` this localization is `R[X]/(f)` itself by `IsLocalization.atUnit`.
 * [Stacks Project, Definition 10.144.1](https://stacks.math.columbia.edu/tag/00UB), for
   standard étale maps.
 -/
