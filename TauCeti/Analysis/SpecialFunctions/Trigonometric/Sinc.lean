@@ -14,12 +14,15 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 `sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
-the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`.
+the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently the real-line Fejér kernel
+`T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` while `|y| ≤ T⁻¹`
+(`TauCeti.div_four_le_mul_sinc_sq`).
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
 `f'' = -ω² f` with `f 0 = 0` and `f' 0 = 1`, uniformly in the frequency `ω`, including the
-degenerate frequency `0`.
+degenerate frequency `0`. Together with `t ↦ cos (ω t)` it satisfies the subtraction formulas of
+`sin` and `cos` (`Real.sub_mul_sinc_sub_mul`, `Real.cos_sub_mul`), again for every `ω`.
 -/
 
 public section
@@ -45,6 +48,25 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- The subtraction formula for `t ↦ t sinc (t a)`, which is `sin (t a) / a` for `a ≠ 0`:
+`(t - s) sinc ((t - s) a) = t sinc (t a) cos (s a) - cos (t a) s sinc (s a)`. -/
+theorem sub_mul_sinc_sub_mul (a s t : ℝ) :
+    (t - s) * sinc ((t - s) * a) =
+      t * sinc (t * a) * cos (s * a) - cos (t * a) * (s * sinc (s * a)) := by
+  rcases eq_or_ne a 0 with rfl | h
+  · simp
+  · rw [mul_comm (t - s) a, mul_comm t a, mul_comm s a, mul_sinc_mul_of_ne_zero h,
+      mul_sinc_mul_of_ne_zero h, mul_sinc_mul_of_ne_zero h, mul_sub, sin_sub]
+    ring
+
+/-- The subtraction formula for `cos (t a)`, in terms of `t ↦ t sinc (t a)`:
+`cos ((t - s) a) = cos (s a) cos (t a) + a² s sinc (s a) t sinc (t a)`. -/
+theorem cos_sub_mul (a s t : ℝ) :
+    cos ((t - s) * a) =
+      cos (s * a) * cos (t * a) + s * sinc (s * a) * (t * sinc (t * a)) * a ^ 2 := by
+  rw [sub_mul, cos_sub, ← mul_sinc (s * a), ← mul_sinc (t * a)]
+  ring
 
 /-- The function `sinc` is nonnegative on `[-π, π]`. -/
 theorem sinc_nonneg {x : ℝ} (hx : |x| ≤ π) : 0 ≤ sinc x := by
@@ -75,3 +97,31 @@ theorem one_sub_cos_eq_sq_div_two_mul_sinc_sq (x : ℝ) :
   linear_combination -h₁ - 2 * h₂
 
 end Real
+
+namespace TauCeti
+
+open Real
+
+/-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` when `|y| ≤ T⁻¹`. -/
+theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
+    T / 4 ≤ T / 2 * sinc (T * y / 2) ^ 2 := by
+  rcases le_or_gt T 0 with hT | hT
+  · -- For `T ≤ 0` the hypothesis forces `T⁻¹ = 0`, hence `T = 0`.
+    have hT₀ : T = 0 := inv_eq_zero.1 (le_antisymm (inv_nonpos.2 hT) ((abs_nonneg y).trans hy))
+    simp [hT₀]
+  -- Multiplying `|y| ≤ T⁻¹` by `T > 0` gives `T * |y| ≤ 1`.
+  have hTy₁ : T * |y| ≤ 1 := by
+    simpa [hT.ne'] using mul_le_mul_of_nonneg_left hy hT.le
+  have hTy : |T * y / 2| ≤ 1 / 2 := by
+    rw [abs_div, abs_mul, abs_of_pos hT, abs_two]
+    linarith
+  have hsq : (T * y / 2) ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hTy.trans (le_abs_self _))
+  -- Since `|T * y / 2| ≤ 1 / 2`, `sinc (T * y / 2)` is at least `3 / 4`.
+  have hlow : 3 / 4 ≤ sinc (T * y / 2) := by
+    linarith [(abs_le.1 (abs_sinc_sub_one_le (T * y / 2))).1]
+  have hsinc : 1 / 2 ≤ sinc (T * y / 2) ^ 2 :=
+    le_trans (by norm_num) (pow_le_pow_left₀ (by norm_num) hlow 2)
+  calc T / 4 = T / 2 * (1 / 2) := by ring
+    _ ≤ T / 2 * sinc (T * y / 2) ^ 2 := by gcongr
+
+end TauCeti
