@@ -35,7 +35,7 @@ numbers weighted by regulators.
 ## Main results
 
 * `TauCeti.norm_sum_Icc_kroneckerChar_le`: `‖∑ n ∈ Icc 1 K, χ_D n‖ ≤ √|D| * (1 + log |D|)`.
-* `TauCeti.norm_LFunction_kroneckerChar_one_sub_sum_Icc_le`: the partial sum of
+* `TauCeti.norm_LFunction_kroneckerChar_one_sub_sum_Icc_div_le`: the partial sum of
   `∑ χ_D(n) / n` up to `K` is within `2 √|D| (1 + log |D|) / (K + 1)` of `L(1, χ_D)`.
 
 ## References
@@ -105,7 +105,7 @@ theorem norm_sum_Icc_kroneckerChar_le (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4
 /-- **Truncating `L(1, χ_D)`.** For a nonsquare discriminant `D ≡ 0, 1 (mod 4)`, the partial sum
 `∑ n ∈ Icc 1 K, χ_D n / n` of the Dirichlet series of the Kronecker character `χ_D = (D / ·)` is
 within `2 √|D| (1 + log |D|) / (K + 1)` of `L(1, χ_D)`. -/
-theorem norm_LFunction_kroneckerChar_one_sub_sum_Icc_le [NeZero D.natAbs]
+theorem norm_LFunction_kroneckerChar_one_sub_sum_Icc_div_le [NeZero D.natAbs]
     (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (hD₀ : D ≠ 0) (hsq : ¬ IsSquare D) (K : ℕ) :
     ‖LFunction (kroneckerChar ℂ D hD hD₀) 1 -
         ∑ n ∈ Icc 1 K, kroneckerChar ℂ D hD hD₀ n / (n : ℂ)‖ ≤

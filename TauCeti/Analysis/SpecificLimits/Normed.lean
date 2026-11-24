@@ -240,46 +240,45 @@ theorem norm_sum_Ioc_smul_le {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : �
     ‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1) := by
   have hB : 0 ≤ B := (norm_nonneg _).trans (ha 0)
   have hK : 0 ≤ w (K + 1) := hw₀ _ K.lt_succ_self
-  rcases lt_or_ge M K with hMK | hKM
-  · rw [Ioc_eq_empty_of_le hMK.le, sum_empty, norm_zero]
+  rcases le_or_gt M K with hMK | hKM
+  · rw [Ioc_eq_empty_of_le hMK, sum_empty, norm_zero]
     positivity
-  set S : ℕ → E := fun n ↦ ∑ k ∈ Icc 1 n, a k
-  have hSucc (n : ℕ) : S (n + 1) = S n + a (n + 1) := sum_Icc_succ_top (by omega) a
-  -- Summation by parts: the boundary terms are `w (M + 1) • S M - w (K + 1) • S K`, and the
-  -- remaining terms are bounded by `B` times the telescoping variation of `w`.
-  have key (M : ℕ) (hM : K ≤ M) :
-      ‖∑ n ∈ Ioc K M, w n • a n - (w (M + 1) • S M - w (K + 1) • S K)‖ ≤
-        B * (w (K + 1) - w (M + 1)) := by
-    induction M, hM using Nat.le_induction with
-    | base => simp
-    | succ M hKM ih =>
-      have hstep : ∑ n ∈ Ioc K (M + 1), w n • a n - (w (M + 2) • S (M + 1) - w (K + 1) • S K) =
-          (∑ n ∈ Ioc K M, w n • a n - (w (M + 1) • S M - w (K + 1) • S K)) +
-            (w (M + 1) - w (M + 2)) • S (M + 1) := by
-        rw [sum_Ioc_succ_top hKM, hSucc]
-        simp only [sub_smul, smul_add]
-        abel
-      have hmono : w (M + 2) ≤ w (M + 1) :=
-        hw (show K < M + 1 by omega) (show K < M + 2 by omega) (by omega)
-      rw [hstep]
-      calc _ ≤ B * (w (K + 1) - w (M + 1)) + (w (M + 1) - w (M + 2)) * B := by
-            refine (norm_add_le _ _).trans (add_le_add ih ?_)
-            rw [norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr hmono)]
-            exact mul_le_mul_of_nonneg_left (ha _) (sub_nonneg.mpr hmono)
-        _ = _ := by ring
-  have hM : 0 ≤ w (M + 1) := hw₀ _ (by omega)
-  calc ‖∑ n ∈ Ioc K M, w n • a n‖ ≤
-        ‖∑ n ∈ Ioc K M, w n • a n - (w (M + 1) • S M - w (K + 1) • S K)‖ +
-          (‖w (M + 1) • S M‖ + ‖w (K + 1) • S K‖) := by
-        calc _ = ‖(∑ n ∈ Ioc K M, w n • a n - (w (M + 1) • S M - w (K + 1) • S K)) +
-              (w (M + 1) • S M - w (K + 1) • S K)‖ := by rw [sub_add_cancel]
-          _ ≤ _ := (norm_add_le _ _).trans (add_le_add le_rfl (norm_sub_le _ _))
-    _ ≤ B * (w (K + 1) - w (M + 1)) + (w (M + 1) * B + w (K + 1) * B) := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg hM, Real.norm_of_nonneg hK]
-        gcongr
-        · exact key M hKM
-        · exact ha M
-        · exact ha K
+  -- Summation by parts against `a'`, which agrees with `a` off `0` and vanishes at `0`, so that
+  -- its partial sums over `range (n + 1)` are the partial sums `∑ k ∈ Icc 1 n, a k`.
+  set a' : ℕ → E := fun n ↦ if n = 0 then 0 else a n with ha'
+  have hS (n : ℕ) : ∑ i ∈ range (n + 1), a' i = ∑ k ∈ Icc 1 n, a k := by
+    induction n with
+    | zero => simp [ha']
+    | succ n ih => rw [sum_range_succ, ih, sum_Icc_succ_top (by omega)]; simp [ha']
+  have hsum : ∑ n ∈ Ioc K M, w n • a n = ∑ n ∈ Ioc K M, w n • a' n :=
+    sum_congr rfl fun n hn ↦ by
+      have hn0 : n ≠ 0 := by simp only [mem_Ioc] at hn; omega
+      simp [ha', hn0]
+  rw [hsum, sum_Ioc_by_parts w a' hKM, hS, hS]
+  -- The remaining terms are bounded by `B` times the telescoping variation of `w`.
+  have hvar : ‖∑ i ∈ Ioc K (M - 1), (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a' j‖ ≤
+      B * (w (K + 1) - w M) := by
+    have htel : ∑ i ∈ Ico (K + 1) M, (w i - w (i + 1)) = w (K + 1) - w M := by
+      have := sum_Ico_sub w (show K + 1 ≤ M by omega)
+      rw [sum_sub_distrib] at this ⊢
+      linarith
+    calc _ ≤ ∑ i ∈ Ioc K (M - 1), (w i - w (i + 1)) * B := by
+          refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
+          have hi' := mem_Ioc.mp hi
+          have hmono : w (i + 1) ≤ w i :=
+            hw (show K < i by omega) (show K < i + 1 by omega) (by omega)
+          rw [norm_smul, hS, Real.norm_of_nonpos (sub_nonpos.mpr hmono), neg_sub]
+          exact mul_le_mul_of_nonneg_left (ha i) (sub_nonneg.mpr hmono)
+      _ = B * (w (K + 1) - w M) := by
+          rw [← sum_mul, ← Ico_add_one_add_one_eq_Ioc, Nat.sub_add_cancel (by omega : 1 ≤ M),
+            htel, mul_comm]
+  have hM : 0 ≤ w M := hw₀ _ hKM
+  calc _ ≤ w M * B + w (K + 1) * B + B * (w (K + 1) - w M) := by
+        refine norm_sub_le_of_le (norm_sub_le_of_le ?_ ?_) hvar
+        · rw [norm_smul, Real.norm_of_nonneg hM]
+          exact mul_le_mul_of_nonneg_left (ha M) hM
+        · rw [norm_smul, Real.norm_of_nonneg hK]
+          exact mul_le_mul_of_nonneg_left (ha K) hK
     _ = 2 * B * w (K + 1) := by ring
 
 /-- **The tail of a series with bounded partial sums.** If every partial sum
