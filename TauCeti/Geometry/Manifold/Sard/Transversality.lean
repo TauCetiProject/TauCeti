@@ -14,12 +14,13 @@ import TauCeti.LinearAlgebra.Submodule.FiberProduct
 /-!
 # Parametric transversality
 
-Let `F : M × S → N` be a smooth family of maps `F (·, s) : M → N` parametrized by a manifold
-`S`, and let `g : Z → N` be a smooth map that is a topological embedding. If `F` is transverse
-to `g`, then for all parameters `s` outside a null set of `S` (`TauCeti.IsNullSet`), the slice
-`F (·, s)` is transverse to `g`; in particular such parameters are dense. This is the parametric
-transversality theorem. Transversality of maps `f : X → N` and `g : Z → N` is written, as for
-the transverse fibre products of `TauCeti.transverseFiberProductChartedSpace`, as the equation
+Let `M`, `S`, `N` and `Z` be manifolds without boundary, let `F : M × S → N` be a smooth family
+of maps `F (·, s) : M → N` parametrized by `S`, and let `g : Z → N` be a smooth map that is a
+topological embedding. If `F` is transverse to `g`, then for all parameters `s` outside a null set
+of `S` (`TauCeti.IsNullSet`), the slice `F (·, s)` is transverse to `g`; in particular such
+parameters are dense. This is the parametric transversality theorem, in the boundaryless case.
+Transversality of maps `f : X → N` and `g : Z → N` is written, as for the transverse fibre
+products of `TauCeti.transverseFiberProductChartedSpace`, as the equation
 `range (df) ⊔ range (dg) = ⊤` at every pair of points with `f x = g z`.
 
 The bad parameters are critical values of the projection to `S` of the transverse fibre product
@@ -37,7 +38,11 @@ a chart domain of `S` the fibre product is second countable. An injective immers
 suffice: for the discrete line `Z = ℝ_δ` with the identity map to `N = ℝ`, the point `M` and
 `F (x, s) = s`, the family `F` is a submersion, but no slice is transverse to `g`. Neither can the
 Lindelöf hypothesis on `M` be dropped: for the discrete line `M = ℝ_δ`, `S = N = ℝ`, the point `Z`
-mapping to `0` and `F (m, s) = s - m`, every parameter is bad. All models are boundaryless.
+mapping to `0` and `F (m, s) = s - m`, every parameter is bad.
+
+All four manifolds `M`, `S`, `N` and `Z` are assumed boundaryless. Lee's version of the theorem
+also allows `M` to have boundary; that case is not covered here.
+
 For maps between normed spaces, the corresponding statement is
 `TauCeti.addHaar_setOf_not_isRegularIncidenceParameter_eq_zero`.
 
@@ -138,9 +143,10 @@ theorem isRegularPoint_snd_fst_transverseFiberProduct_iff (hn : 1 ≤ n)
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.range_eq_top]
   exact Eq.congr_left ((LinearMap.range_comp _ _).trans (congrArg _ hrange))
 
-/-- **The parametric transversality theorem.** Let `F : M × S → N` be a `C^n` family of maps,
-transverse to a `C^n` map `g : Z → N` that is a topological embedding, where `M` is Lindelöf
-and `n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)`
+/-- **The parametric transversality theorem.** Let `M`, `S`, `N` and `Z` be manifolds without
+boundary, and let `F : M × S → N` be a `C^n` family of maps, transverse to a `C^n` map
+`g : Z → N` that is a topological embedding, where `M` is Lindelöf and
+`n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)`
 is not transverse to `g` form a null set of `S`. -/
 theorem _root_.ContMDiff.isNullSet_setOf_exists_not_transverse [LindelofSpace M]
     [MeasurableSpace ES] [BorelSpace ES]
@@ -200,10 +206,10 @@ theorem _root_.ContMDiff.isNullSet_setOf_exists_not_transverse [LindelofSpace M]
   exact (isRegularPoint_snd_fst_transverseFiberProduct_iff hn hF hg htrans
     ⟨((x, s), z), hxz⟩).1 hreg'
 
-/-- **Generic slices are transverse.** Let `F : M × S → N` be a `C^n` family of maps, transverse
-to a `C^n` map `g : Z → N` that is a topological embedding, where `M` is Lindelöf and
-`n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)` is
-transverse to `g` are dense in `S`. -/
+/-- **Generic slices are transverse.** Let `M`, `S`, `N` and `Z` be manifolds without boundary,
+and let `F : M × S → N` be a `C^n` family of maps, transverse to a `C^n` map `g : Z → N` that
+is a topological embedding, where `M` is Lindelöf and `n > dim M + dim Z - dim N`, `n ≥ 1`.
+Then the parameters `s` for which the slice `F (·, s)` is transverse to `g` are dense in `S`. -/
 theorem _root_.ContMDiff.dense_setOf_forall_transverse [LindelofSpace M]
     (hF : ContMDiff (IM.prod IS) IN n F) (hg : ContMDiff IZ IN n g) (hgi : IsEmbedding g)
     (hk : ((finrank ℝ EM + finrank ℝ EZ - finrank ℝ EN + 1 : ℕ) : ℕ∞ω) ≤ n)
