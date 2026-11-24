@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.Ring.FinitePresentation
 public import TauCeti.Algebra.Category.CommAlgCat.BaseChange
 public import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
-import TauCeti.RingTheory.TensorProduct.Maps
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Finitely presented algebras over a filtered colimit of base changes
@@ -48,15 +48,15 @@ the descent of morphisms of finitely presented schemes along limits of affine sc
 
 The index category `J` may live in any universes no larger than that of the rings, so that, for
 instance, `ℕ`-indexed colimits of rings in any universe are covered. The `UnivLE` hypotheses
-express this smallness; they let the forgetful functors preserve and reflect colimits of shape `J`
-(`CategoryTheory.Limits.preservesFilteredColimitsOfSize_of_univLE`).
+express this smallness; they let the forgetful functors to commutative rings and to types preserve
+colimits of shape `J` (`CategoryTheory.Limits.preservesFilteredColimitsOfSize_of_univLE`).
 -/
 
 public section
 
 open CategoryTheory Limits
-open Algebra.TensorProduct (comm includeRight liftEquivRight liftEquivRight_comp_liftEquivRight
-  liftEquivRight_comp_map map restrictScalars_map_id)
+open Algebra.TensorProduct (comm includeRight liftEquivRight map)
+open AlgHom (liftEquivRight_comp_liftEquivRight_eq_id liftEquivRight_comp_map)
 open scoped TensorProduct
 
 universe u v w
@@ -72,12 +72,23 @@ variable (T) in
 private noncomputable abbrev tensorDiagram : J ⥤ CommRingCat.{u} :=
   D ⋙ CommAlgCat.extendScalars.{u, u, u} R T ⋙ forget₂ (CommAlgCat.{u} T) CommRingCat.{u}
 
+omit [IsFiltered J] [UnivLE.{v, u}] [UnivLE.{w, u}] in
+/-- The transition maps of the diagram `T ⊗[R] D j` are the base changes of those of `D`. -/
+private theorem tensorDiagram_map {j k : J} (f : j ⟶ k) :
+    (tensorDiagram (D := D) T).map f =
+      CommRingCat.ofHom (map (AlgHom.id R T) (D.map f).hom).toRingHom := by
+  rw [Functor.comp_map, Functor.comp_map, CommAlgCat.forget₂_commRingCat_map,
+    CommAlgCat.extendScalars_map_hom]
+  -- The base change over `T` is the base change over `R`, with its scalars restricted.
+  rfl
+
 variable (T) in
 /-- The structure maps `R → T ⊗[R] D j`, as a natural transformation from the constant diagram. -/
 private noncomputable def tensorStructureMap :
     (Functor.const J).obj (CommRingCat.of R) ⟶ tensorDiagram (D := D) T where
   app j := CommRingCat.ofHom (algebraMap R (T ⊗[R] D.obj j))
   naturality j k f := by
+    rw [tensorDiagram_map]
     ext x
     exact ((map (AlgHom.id R T) (D.map f).hom).commutes x).symm
 
@@ -86,18 +97,21 @@ variable (T) in
 private noncomputable def isColimitTensor (hc : IsColimit c) :
     IsColimit ((forget₂ (CommAlgCat.{u} T) CommRingCat.{u}).mapCocone
       ((CommAlgCat.extendScalars.{u, u, u} R T).mapCocone c)) := by
-  have : PreservesFilteredColimitsOfSize.{w, v} (forget (CommAlgCat.{u} T)) :=
+  have : PreservesFilteredColimitsOfSize.{w, v} (forget₂ (CommAlgCat.{u} T) CommRingCat.{u}) :=
     preservesFilteredColimitsOfSize_of_univLE.{u, u, w, v} _
-  have : PreservesColimitsOfShape J
-      (forget₂ (CommAlgCat.{u} T) CommRingCat.{u} ⋙ forget CommRingCat.{u}) :=
-    preservesColimitsOfShape_of_natIso (eqToIso HasForget₂.forget_comp).symm
-  have : PreservesFilteredColimitsOfSize.{w, v} (forget CommRingCat.{u}) :=
-    preservesFilteredColimitsOfSize_of_univLE.{u, u, w, v} _
-  have : ReflectsFilteredColimitsOfSize.{w, v} (forget CommRingCat.{u}) :=
-    reflectsFilteredColimitsOfSize_of_univLE.{u, u, w, v} _
-  have : PreservesColimitsOfShape J (forget₂ (CommAlgCat.{u} T) CommRingCat.{u}) :=
-    preservesColimitsOfShape_of_reflects_of_preserves _ (forget CommRingCat.{u})
   exact isColimitOfPreserves _ (isColimitOfPreserves _ hc)
+
+omit [IsFiltered J] [UnivLE.{v, u}] [UnivLE.{w, u}] in
+/-- The legs `T ⊗[R] D j → T ⊗[R] H` of the colimit cocone of `isColimitTensor` are the base
+changes of the legs of `c`. -/
+private theorem isColimitTensor_ι_app (j : J) :
+    ((forget₂ (CommAlgCat.{u} T) CommRingCat.{u}).mapCocone
+      ((CommAlgCat.extendScalars.{u, u, u} R T).mapCocone c)).ι.app j =
+      CommRingCat.ofHom (map (AlgHom.id R T) (c.ι.app j).hom).toRingHom := by
+  rw [Functor.mapCocone_ι_app, Functor.mapCocone_ι_app, CommAlgCat.forget₂_commRingCat_map,
+    CommAlgCat.extendScalars_map_hom]
+  -- The base change over `T` is the base change over `R`, with its scalars restricted.
+  rfl
 
 /-- An `R`-algebra map from a finitely presented `R`-algebra into `T ⊗[R] H` factors through
 `T ⊗[R] D j` for some stage `j`. This is the form with `T` on the left used in the proofs. -/
@@ -106,14 +120,17 @@ private theorem exists_algHom_comp_eq_of_isColimit_left (hc : IsColimit c) {S : 
     ∃ (j : J) (g' : S →ₐ[R] T ⊗[R] D.obj j), (map (AlgHom.id R T) (c.ι.app j).hom).comp g' = g := by
   have : PreservesFilteredColimitsOfSize.{w, v} (forget CommRingCat.{u}) :=
     preservesFilteredColimitsOfSize_of_univLE.{u, u, w, v} _
-  have hcT := isColimitTensor.{u, v, w} T hc
   obtain ⟨j, g', hg', hg⟩ := RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit
     (CommRingCat.of R) (tensorDiagram (D := D) T) (tensorStructureMap T)
-    (CommRingCat.ofHom (algebraMap R S)) _ hcT
+    (CommRingCat.ofHom (algebraMap R S)) _ (isColimitTensor.{u, v, w} T hc)
     (RingHom.finitePresentation_algebraMap.mpr inferInstance) (CommRingCat.ofHom g.toRingHom)
-    fun j ↦ by ext x; simp [tensorStructureMap]
+    fun j ↦ by
+      rw [isColimitTensor_ι_app]
+      ext x
+      simp [tensorStructureMap]
   refine ⟨j, { g'.hom with commutes' := fun x ↦ congr(CommRingCat.Hom.hom $hg' x) },
     AlgHom.ext fun x ↦ ?_⟩
+  rw [isColimitTensor_ι_app] at hg
   exact congr(CommRingCat.Hom.hom $hg x).symm
 
 /-- An `R`-algebra map from a finitely presented `R`-algebra `S` into `H ⊗[R] T`, for `H` the
@@ -143,21 +160,28 @@ private theorem exists_algHom_comp_eq_comp_of_isColimit_left (hc : IsColimit c) 
       (map (AlgHom.id R T) (D.map f).hom).comp g₂ := by
   have : PreservesFilteredColimitsOfSize.{w, v} (forget CommRingCat.{u}) :=
     preservesFilteredColimitsOfSize_of_univLE.{u, u, w, v} _
-  have hcT := isColimitTensor.{u, v, w} T hc
+  have hstr (g : S →ₐ[R] T ⊗[R] D.obj j) : CommRingCat.ofHom (algebraMap R S) ≫
+      CommRingCat.ofHom g.toRingHom = (tensorStructureMap T).app j := by
+    ext x
+    simp [tensorStructureMap]
   obtain ⟨k, f₁, f₂, hk⟩ := RingHom.EssFiniteType.exists_comp_map_eq_of_isColimit
     (CommRingCat.of R) (tensorDiagram (D := D) T) (tensorStructureMap T)
-    (CommRingCat.ofHom (algebraMap R S)) _ hcT
+    (CommRingCat.ofHom (algebraMap R S)) _ (isColimitTensor.{u, v, w} T hc)
     (RingHom.essFiniteType_algebraMap.mpr inferInstance) (CommRingCat.ofHom g₁.toRingHom)
-    (by ext x; simp [tensorStructureMap]) (CommRingCat.ofHom g₂.toRingHom)
-    (by ext x; simp [tensorStructureMap])
-    (by ext x; simpa [← restrictScalars_map_id] using congr($h x))
+    (hstr g₁) (CommRingCat.ofHom g₂.toRingHom) (hstr g₂) (by
+      rw [isColimitTensor_ι_app]
+      ext x
+      exact congr($h x))
+  have hk' : (map (AlgHom.id R T) (D.map f₁).hom).comp g₁ =
+      (map (AlgHom.id R T) (D.map f₂).hom).comp g₂ := by
+    rw [tensorDiagram_map, tensorDiagram_map] at hk
+    ext x
+    exact congr(CommRingCat.Hom.hom $hk x)
   -- The two maps `j ⟶ k` need not agree; coequalize them.
-  refine ⟨IsFiltered.coeq f₁ f₂, f₁ ≫ IsFiltered.coeqHom f₁ f₂, AlgHom.ext fun x ↦ ?_⟩
-  have hx := congr(map (AlgHom.id T T) (D.map (IsFiltered.coeqHom f₁ f₂)).hom
-    (CommRingCat.Hom.hom $hk x))
-  simp only [AlgHom.comp_apply, ← restrictScalars_map_id, AlgHom.restrictScalars_apply]
+  refine ⟨IsFiltered.coeq f₁ f₂, f₁ ≫ IsFiltered.coeqHom f₁ f₂, ?_⟩
   conv_rhs => rw [IsFiltered.coeq_condition f₁ f₂]
-  simpa [Algebra.TensorProduct.map_id_comp] using hx
+  simp only [D.map_comp, CommAlgCat.hom_comp, Algebra.TensorProduct.map_id_comp,
+    AlgHom.comp_assoc, hk']
 
 /-- Two `R`-algebra maps from an essentially finite type `R`-algebra `S` into `D j ⊗[R] T` that
 agree in `H ⊗[R] T`, for `H` the colimit of a small filtered diagram `D` of `R`-algebras, agree
@@ -183,24 +207,20 @@ theorem _root_.CategoryTheory.Limits.IsColimit.exists_algHom_comp_eq_comp (hc : 
   exact (AlgHom.cancel_left (comm R (D.obj k) T).injective).mp hk
 
 omit [IsFiltered J] [UnivLE.{v, u}] [UnivLE.{w, u}] in
-/-- Base change along a transition map followed by the colimit leg is the colimit leg. -/
-private theorem map_ι_comp_map {M : Type u} [CommRing M] [Algebra R M] {j k : J} (f : j ⟶ k) :
-    (map (c.ι.app k).hom (AlgHom.id R M)).comp (map (D.map f).hom (AlgHom.id R M)) =
-      map (c.ι.app j).hom (AlgHom.id R M) := by
-  rw [← Algebra.TensorProduct.map_comp, AlgHom.comp_id, ← CommAlgCat.hom_comp, c.w f]
+/-- A factorization `φ` of `g` through the stage `D j ⊗[R] M` gives one through any later stage,
+by base change along the transition map. -/
+private theorem map_ι_comp_map_comp {M N : Type u} [CommRing M] [Algebra R M] [Semiring N]
+    [Algebra R N] {j k : J} (f : j ⟶ k) {φ : N →ₐ[R] D.obj j ⊗[R] M} {g : N →ₐ[R] c.pt ⊗[R] M}
+    (h : (map (c.ι.app j).hom (AlgHom.id R M)).comp φ = g) :
+    (map (c.ι.app k).hom (AlgHom.id R M)).comp ((map (D.map f).hom (AlgHom.id R M)).comp φ) =
+      g := by
+  rw [← AlgHom.comp_assoc, ← Algebra.TensorProduct.map_comp, AlgHom.comp_id, ← CommAlgCat.hom_comp,
+    c.w f, h]
 
-omit [IsFiltered J] [UnivLE.{v, u}] [UnivLE.{w, u}] in
-/-- Base change along two composable transition maps is base change along their composite. -/
-private theorem map_comp_map {M : Type u} [CommRing M] [Algebra R M] {j k l : J} (f : j ⟶ k)
-    (g : k ⟶ l) :
-    (map (D.map g).hom (AlgHom.id R M)).comp (map (D.map f).hom (AlgHom.id R M)) =
-      map (D.map (f ≫ g)).hom (AlgHom.id R M) := by
-  rw [← Algebra.TensorProduct.map_comp, AlgHom.comp_id, ← CommAlgCat.hom_comp, D.map_comp]
-
-/-- One half of the descent of an isomorphism: if `φ` and `ψ` are stage models of the
-restrictions of `e` and `e⁻¹` to `S` and `T`, then `liftEquivRight ψ` after `φ` becomes the
-inclusion of `S` at a later stage. -/
-private theorem exists_liftEquivRight_comp_eq_includeRight (hc : IsColimit c) {S : Type u}
+/-- Half of the descent of an isomorphism: if `φ` and `ψ` are stage models of the restrictions of
+`e` and `e⁻¹` to `S` and `T`, then from some transition `f` on, the extensions of `φ` and `ψ`
+compose to the identity of `D l ⊗[R] S`. -/
+private theorem exists_liftEquivRight_comp_liftEquivRight_eq_id (hc : IsColimit c) {S : Type u}
     [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S]
     (e : c.pt ⊗[R] S ≃ₐ[c.pt] c.pt ⊗[R] T) {j : J}
     (φ : S →ₐ[R] D.obj j ⊗[R] T) (ψ : T →ₐ[R] D.obj j ⊗[R] S)
@@ -208,17 +228,27 @@ private theorem exists_liftEquivRight_comp_eq_includeRight (hc : IsColimit c) {S
       (e.toAlgHom.restrictScalars R).comp includeRight)
     (hψ : (map (c.ι.app j).hom (AlgHom.id R S)).comp ψ =
       (e.symm.toAlgHom.restrictScalars R).comp includeRight) :
-    ∃ (k : J) (f : j ⟶ k),
-      (map (D.map f).hom (AlgHom.id R S)).comp
-          (((liftEquivRight R _ _ _ ψ).restrictScalars R).comp φ) =
-        (map (D.map f).hom (AlgHom.id R S)).comp includeRight := by
+    ∃ (k : J) (f : j ⟶ k), ∀ ⦃l : J⦄ (g : k ⟶ l),
+      (liftEquivRight R _ _ _ ((map (D.map (f ≫ g)).hom (AlgHom.id R S)).comp ψ)).comp
+          (liftEquivRight R _ _ _ ((map (D.map (f ≫ g)).hom (AlgHom.id R T)).comp φ)) =
+        AlgHom.id _ _ := by
   have he : liftEquivRight R c.pt T _ ((e.symm.toAlgHom.restrictScalars R).comp includeRight) =
       e.symm.toAlgHom :=
     (liftEquivRight R c.pt T _).apply_symm_apply _
-  refine hc.exists_algHom_comp_eq_comp ?_
-  rw [← AlgHom.comp_assoc, ← liftEquivRight_comp_map (B := c.pt), hψ, he, AlgHom.comp_assoc, hφ]
-  ext s
-  simp
+  -- The composite of `φ` with the extension of `ψ` is the inclusion of `S` in the colimit.
+  obtain ⟨k, f, hk⟩ := hc.exists_algHom_comp_eq_comp
+    (g₁ := ((liftEquivRight R _ _ _ ψ).restrictScalars R).comp φ) (g₂ := includeRight) (by
+      rw [← AlgHom.comp_assoc, ← liftEquivRight_comp_map (B := c.pt), hψ, he, AlgHom.comp_assoc,
+        hφ]
+      ext s
+      simp)
+  refine ⟨k, f, fun l g ↦ liftEquivRight_comp_liftEquivRight_eq_id _ _ ?_⟩
+  have hl := congr((map (D.map g).hom (AlgHom.id R S)).comp $hk)
+  simp only [← AlgHom.comp_assoc] at hl
+  rw [← Algebra.TensorProduct.map_comp, AlgHom.comp_id, ← CommAlgCat.hom_comp, ← D.map_comp] at hl
+  rw [← AlgHom.comp_assoc, liftEquivRight_comp_map, AlgHom.comp_assoc]
+  simpa only [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
+    using hl
 
 /-- An `H`-algebra isomorphism `H ⊗[R] S ≃ H ⊗[R] T`, for `H` the colimit of a small filtered
 diagram `D` of `R`-algebras and `S`, `T` finitely presented `R`-algebras, is the base change of a
@@ -234,37 +264,20 @@ theorem _root_.CategoryTheory.Limits.IsColimit.exists_algEquiv_tensorProduct (hc
     hc.exists_algHom_comp_eq ((e.toAlgHom.restrictScalars R).comp includeRight)
   obtain ⟨j₂, ψ₂, hψ₂⟩ :=
     hc.exists_algHom_comp_eq ((e.symm.toAlgHom.restrictScalars R).comp includeRight)
-  let j := IsFiltered.max j₁ j₂
   let φ := (map (D.map (IsFiltered.leftToMax j₁ j₂)).hom (AlgHom.id R T)).comp φ₁
   let ψ := (map (D.map (IsFiltered.rightToMax j₁ j₂)).hom (AlgHom.id R S)).comp ψ₂
-  have hφ : (map (c.ι.app j).hom (AlgHom.id R T)).comp φ =
-      (e.toAlgHom.restrictScalars R).comp includeRight := by
-    rw [← hφ₁, ← map_ι_comp_map (IsFiltered.leftToMax j₁ j₂), AlgHom.comp_assoc]
-  have hψ : (map (c.ι.app j).hom (AlgHom.id R S)).comp ψ =
-      (e.symm.toAlgHom.restrictScalars R).comp includeRight := by
-    rw [← hψ₂, ← map_ι_comp_map (IsFiltered.rightToMax j₁ j₂), AlgHom.comp_assoc]
-  -- Both composites become the identity at a common later stage `l`, reached by `ρ`.
-  obtain ⟨k₁, f₁, h₁⟩ := exists_liftEquivRight_comp_eq_includeRight hc e φ ψ hφ hψ
+  have hφ := map_ι_comp_map_comp (IsFiltered.leftToMax j₁ j₂) hφ₁
+  have hψ := map_ι_comp_map_comp (IsFiltered.rightToMax j₁ j₂) hψ₂
+  -- Both composites become the identity at a common later stage `l`, reached by `f₁ ≫ g₁`.
+  obtain ⟨k₁, f₁, h₁⟩ := exists_liftEquivRight_comp_liftEquivRight_eq_id hc e φ ψ hφ hψ
   obtain ⟨k₂, f₂, h₂⟩ :=
-    exists_liftEquivRight_comp_eq_includeRight hc e.symm ψ φ hψ (by simpa using hφ)
+    exists_liftEquivRight_comp_liftEquivRight_eq_id hc e.symm ψ φ hψ (by simpa using hφ)
   obtain ⟨l, g₁, g₂, hg⟩ := IsFiltered.span f₁ f₂
-  let ρ := (D.map (f₁ ≫ g₁)).hom
-  have h₁' := congr((map (D.map g₁).hom (AlgHom.id R S)).comp $h₁)
-  have h₂' := congr((map (D.map g₂).hom (AlgHom.id R T)).comp $h₂)
-  simp only [← AlgHom.comp_assoc, map_comp_map, ← hg] at h₁' h₂'
   refine ⟨l, AlgEquiv.ofAlgHom
-    (liftEquivRight R _ _ _ ((map ρ (AlgHom.id R T)).comp φ))
-    (liftEquivRight R _ _ _ ((map ρ (AlgHom.id R S)).comp ψ))
-    (liftEquivRight_comp_liftEquivRight _ _ ?_) (liftEquivRight_comp_liftEquivRight _ _ ?_),
-    fun s ↦ ?_⟩
-  · rw [← AlgHom.comp_assoc, liftEquivRight_comp_map, AlgHom.comp_assoc]
-    simpa only [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
-      using h₂'
-  · rw [← AlgHom.comp_assoc, liftEquivRight_comp_map, AlgHom.comp_assoc]
-    simpa only [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
-      using h₁'
-  have hs := congr($hφ s)
-  rw [← map_ι_comp_map (f₁ ≫ g₁)] at hs
-  simpa [ρ, ← Algebra.TensorProduct.one_def] using hs
+    (liftEquivRight R _ _ _ ((map (D.map (f₁ ≫ g₁)).hom (AlgHom.id R T)).comp φ))
+    (liftEquivRight R _ _ _ ((map (D.map (f₁ ≫ g₁)).hom (AlgHom.id R S)).comp ψ))
+    (hg ▸ h₂ g₂) (h₁ g₁), fun s ↦ ?_⟩
+  have hs := congr($(map_ι_comp_map_comp (f₁ ≫ g₁) hφ) s)
+  simpa [φ, ← Algebra.TensorProduct.one_def] using hs
 
 end TauCeti.CommAlgCat

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 public import TauCeti.RingTheory.StrictHenselization.FinitePresentation
-import Mathlib.RingTheory.Finiteness.FinitePresentationLocal
 
 /-!
 # Products of standard tame covers over a strict henselization

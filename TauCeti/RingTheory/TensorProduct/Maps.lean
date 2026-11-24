@@ -82,12 +82,6 @@ ones, so the public `LinearMap.baseChange` API applies.
   `Algebra.TensorProduct.ker_mapRingHom_id`: over the identity of the base, `mapRingHom` is
   `Algebra.TensorProduct.map`; for surjective maps it is surjective, and its kernel is generated
   by the two kernels.
-* `Algebra.TensorProduct.restrictScalars_map_id`: the base change `S ⊗[R] B → S ⊗[R] C` of an
-  algebra map is the same map whether read over `S` or over `R`.
-* `Algebra.TensorProduct.liftEquivRight_comp_map`,
-  `Algebra.TensorProduct.liftEquivRight_comp_liftEquivRight`: `liftEquivRight` commutes with base
-  change, and extensions `A ⊗[R] M → A ⊗[R] N → A ⊗[R] M` compose to the identity once they do
-  so on `M`.
 * `Algebra.TensorProduct.coe_rid`: the right unitor `A ⊗[R] R ≃ₐ[S] A` is, as a function, the
   linear right unitor over `R`, whatever the scalars `S`.
 * `AlgHom.sectionBaseChange`: the base change `T ⊗[A] B →ₐ[T] T` of an `A`-algebra map
@@ -492,44 +486,6 @@ theorem coe_rid (R S A : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] 
   induction x using TensorProduct.inductionOn with
   | tmul a r => simp
   | add x y hx hy => simp [hx, hy]
-
-section RestrictScalars
-
-variable {R S B C : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring B]
-  [Algebra R B] [Semiring C] [Algebra R C]
-
-/-- The base change `S ⊗[R] B → S ⊗[R] C` of an `R`-algebra map, read as an `R`-algebra map, is
-the base change of the same map over `R`. -/
-@[simp]
-theorem restrictScalars_map_id (f : B →ₐ[R] C) :
-    (map (AlgHom.id S S) f).restrictScalars R = map (AlgHom.id R S) f :=
-  rfl
-
-end RestrictScalars
-
-section LiftEquivRight
-
-variable {R A B M N : Type*} [CommRing R] [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
-  [CommRing M] [Algebra R M] [CommRing N] [Algebra R N]
-
-/-- `liftEquivRight` commutes with base change along an `R`-algebra map `ρ : A → B`: extending
-`ρ ⊗ id ∘ φ` to `B ⊗[R] M` and precomposing with `ρ ⊗ id` is `ρ ⊗ id` after the extension of
-`φ` to `A ⊗[R] M`. -/
-theorem liftEquivRight_comp_map (ρ : A →ₐ[R] B) (φ : M →ₐ[R] A ⊗[R] N) :
-    ((liftEquivRight R B M _ ((map ρ (AlgHom.id R N)).comp φ)).restrictScalars R).comp
-        (map ρ (AlgHom.id R M)) =
-      (map ρ (AlgHom.id R N)).comp ((liftEquivRight R A M _ φ).restrictScalars R) := by
-  ext <;> simp
-
-/-- If the extension of `ψ : N → A ⊗[R] M` to `A ⊗[R] N` sends `φ m` to `1 ⊗ m` for every `m`,
-then the extensions of `φ` and `ψ` compose to the identity of `A ⊗[R] M`. -/
-theorem liftEquivRight_comp_liftEquivRight (φ : M →ₐ[R] A ⊗[R] N) (ψ : N →ₐ[R] A ⊗[R] M)
-    (h : ((liftEquivRight R A N _ ψ).restrictScalars R).comp φ = includeRight) :
-    (liftEquivRight R A N _ ψ).comp (liftEquivRight R A M _ φ) = AlgHom.id A _ := by
-  refine ext (Subsingleton.elim _ _) (AlgHom.ext fun x ↦ ?_)
-  simpa [← one_def] using congr($h x)
-
-end LiftEquivRight
 
 end Algebra.TensorProduct
 

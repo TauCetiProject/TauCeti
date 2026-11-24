@@ -561,20 +561,25 @@ theorem standardTameCoverBaseChangeAlgEquiv_one_tmul_mk (B : Type*) [CommRing B]
 
 /-- Base change of a finite product `∀ i, A[x]/(x^{e i} − f)` of standard tamely ramified covers to
 an `A`-algebra `B` is the product `∀ i, B[x]/(x^{e i} − f)` of the standard covers over `B`. -/
-noncomputable def standardTameCoverPiBaseChangeAlgEquiv {ι : Type*} [Fintype ι] [DecidableEq ι]
+noncomputable def standardTameCoverPiBaseChangeAlgEquiv {ι : Type*} [Finite ι]
     (B : Type*) [CommRing B] [Algebra A B] (f : A) (e : ι → ℕ) :
     B ⊗[A] (∀ i, standardTameCover A f (e i)) ≃ₐ[B]
-      ∀ i, standardTameCover B (algebraMap A B f) (e i) :=
-  (Algebra.TensorProduct.piRight A B B _).trans <|
+      ∀ i, standardTameCover B (algebraMap A B f) (e i) := by
+  classical
+  let _ := Fintype.ofFinite ι
+  exact (Algebra.TensorProduct.piRight A B B _).trans <|
     AlgEquiv.piCongrRight fun i ↦ standardTameCoverBaseChangeAlgEquiv B f (e i)
 
-/-- `standardTameCoverPiBaseChangeAlgEquiv` sends `1 ⊗ x` at `i` to the base change of `x i`. -/
+/-- `standardTameCoverPiBaseChangeAlgEquiv` sends `b ⊗ x` at `i` to the base change `b ⊗ x i` of
+`x i`. -/
 @[simp]
-theorem standardTameCoverPiBaseChangeAlgEquiv_one_tmul {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (B : Type*) [CommRing B] [Algebra A B] (f : A) (e : ι → ℕ)
+theorem standardTameCoverPiBaseChangeAlgEquiv_tmul {ι : Type*} [Finite ι]
+    (B : Type*) [CommRing B] [Algebra A B] (f : A) (e : ι → ℕ) (b : B)
     (x : ∀ i, standardTameCover A f (e i)) (i : ι) :
-    standardTameCoverPiBaseChangeAlgEquiv B f e (1 ⊗ₜ x) i =
-      standardTameCoverBaseChangeAlgEquiv B f (e i) (1 ⊗ₜ x i) := by
+    standardTameCoverPiBaseChangeAlgEquiv B f e (b ⊗ₜ x) i =
+      standardTameCoverBaseChangeAlgEquiv B f (e i) (b ⊗ₜ x i) := by
+  classical
+  let _ := Fintype.ofFinite ι
   simp [standardTameCoverPiBaseChangeAlgEquiv]
 
 /-- Being a finite product of standard tame covers is stable under base change to any `A`-algebra
