@@ -117,7 +117,7 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
   obtain ⟨L, hL, hKL, hLχ⟩ := exists_compact_between hK (isClosed_tsupport χ).isOpen_compl hKχ
   obtain ⟨M, hM0, hM⟩ := hv_cd.exists_pos_bound_iteratedFDeriv_partial_prod (hs.prod isOpen_univ)
     hD hL (prod_mono hDs (subset_univ L)) (by simp)
-  obtain ⟨N, ζ, c, g, -, hg, ha_cd_of, ha_q_of, -, happrox⟩ :=
+  obtain ⟨N, ζ, c, g, hζ, hg, happrox⟩ :=
     hfill.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le hΩ hK hKΩ isOpen_interior hKL
       (div_pos hε hM0)
   let a : P × Q → ℂ → F := fun x w ↦ ∑ i : Fin N, (c i * g i w) • v x (ζ i)
@@ -126,10 +126,11 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
     DifferentiableOn.fun_sum fun i _ ↦ ((hg i).const_mul (c i)).smul_const (v x (ζ i))
   refine ⟨u, ?_, ?_, ?_, ?_, ?_⟩
   · have ha_cd : ContDiffOn ℝ ∞ ↿a (s ×ˢ Ω) :=
-      ha_cd_of (hv_cd.mono (prod_mono Subset.rfl (subset_univ _)))
+      contDiffOn_sum_mul_smul_eval hΩ (fun i ↦ (hζ i).1) c hg
+        (hv_cd.mono (prod_mono Subset.rfl (subset_univ _)))
     exact (hv_cd.mono (prod_mono Subset.rfl (subset_univ Ω))).sub ha_cd
   · intro x hx w _
-    exact (hv_q x hx w).sub (ha_q_of fun i ↦ hv_q x hx (ζ i))
+    exact (hv_q x hx w).sub (DifferentiableAt.fun_sum fun i _ ↦ (hv_q x hx (ζ i)).const_smul _)
   · intro x hx w hw
     have hvd : DifferentiableAt ℝ (v x) w :=
       ((hv_cd.contDiffAt ((hs.prod isOpen_univ).mem_nhds ⟨hx, mem_univ w⟩)).comp w
