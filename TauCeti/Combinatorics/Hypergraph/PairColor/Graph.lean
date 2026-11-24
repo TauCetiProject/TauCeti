@@ -106,8 +106,7 @@ theorem pairColorDensity_toPairColorSystem_decide {𝕜 : Type*} [DivisionRing �
   · rw [decide_eq_false he, G.pairColorDensity_toPairColorSystem_false hst,
       G.patternDensity_of_neg he,
       eq_sub_of_add_eq' (G.edgeDensity_add_edgeDensity_compl hs ht hst)]
-    push_cast
-    rfl
+    norm_cast
 
 end SimpleGraph
 
