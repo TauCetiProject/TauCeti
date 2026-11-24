@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.DeltaRing.Basic
 import Mathlib.Algebra.Order.Ring.GeomSum
 import Mathlib.Tactic.IntervalCases
 import TauCeti.Algebra.Ring.GeomSum
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The Frobenius ideals `I_r = ∏_{s < r} φ^s(I) A`
@@ -196,9 +197,7 @@ theorem frobeniusIdeal_map (hf : f.comp φ = ψ.comp f) (r : ℕ) :
 
 /-- Ring maps intertwining the endomorphisms carry `I_r` to `J_r` for `J = f(I) B`. -/
 theorem Ir_map (hf : f.comp φ = ψ.comp f) (r : ℕ) : Ir ψ (I.map f) r = (Ir φ I r).map f := by
-  have h := map_prod (mapHom f) (frobeniusIdeal φ I) (range r)
-  simp only [mapHom_apply] at h
-  rw [Ir_def, Ir_def, h]
+  rw [Ir_def, Ir_def, map_finset_prod]
   exact prod_congr rfl fun s _ => frobeniusIdeal_map φ I hf s
 
 end Map
@@ -212,12 +211,6 @@ end CommSemiring
 section FrobeniusLift
 
 variable {A : Type*} [CommRing A] {p : ℕ} {φ : A →+* A} (I : Ideal A)
-
-/-- Modulo `p`, the product `x · φ(x) ⋯ φ^(r - 1)(x)` is `x ^ (1 + p + ⋯ + p ^ (r - 1))`. -/
-private theorem mk_prod_pow_apply (hφ : DeltaRing.IsFrobeniusLift p φ) (x : A) (r : ℕ) :
-    Ideal.Quotient.mk (span {(p : A)}) (∏ s ∈ range r, (φ ^ s) x) =
-      Ideal.Quotient.mk (span {(p : A)}) x ^ ∑ s ∈ range r, p ^ s := by
-  rw [map_prod, prod_congr rfl fun s _ => hφ.mk_pow_apply s x, prod_pow_eq_pow_sum]
 
 /-- For a Frobenius lift, `φ^r(I) A` modulo `p` lies in the `p ^ r`-th power of `I` modulo `p`. -/
 theorem map_frobeniusIdeal_le_pow (hφ : DeltaRing.IsFrobeniusLift p φ) (r : ℕ) :
@@ -233,9 +226,7 @@ theorem map_frobeniusIdeal_le_pow (hφ : DeltaRing.IsFrobeniusLift p φ) (r : �
 theorem map_Ir_le_pow (hφ : DeltaRing.IsFrobeniusLift p φ) (r : ℕ) :
     (Ir φ I r).map (Ideal.Quotient.mk (span {(p : A)})) ≤
       I.map (Ideal.Quotient.mk (span {(p : A)})) ^ ∑ s ∈ range r, p ^ s := by
-  have h := map_prod (mapHom (Ideal.Quotient.mk (span {(p : A)}))) (frobeniusIdeal φ I) (range r)
-  simp only [mapHom_apply] at h
-  rw [Ir_def, h, ← prod_pow_eq_pow_sum]
+  rw [Ir_def, map_finset_prod, ← prod_pow_eq_pow_sum]
   exact prod_le_prod fun s _ => map_frobeniusIdeal_le_pow I hφ s
 
 /-- For a Frobenius lift and a principal ideal `(d)`, `(d)_r` modulo `p` is the
@@ -244,11 +235,10 @@ theorem map_Ir_span_singleton (hφ : DeltaRing.IsFrobeniusLift p φ) (d : A) (r 
     (Ir φ (span {d}) r).map (Ideal.Quotient.mk (span {(p : A)})) =
       (span {d}).map (Ideal.Quotient.mk (span {(p : A)})) ^ ∑ s ∈ range r, p ^ s := by
   rw [Ir_span_singleton, map_span, map_span, Set.image_singleton, Set.image_singleton,
-    span_singleton_pow, mk_prod_pow_apply hφ]
+    span_singleton_pow, hφ.mk_prod_pow_apply]
 
-/-- For a Frobenius lift, `φ^r(I) A` modulo `p` lies in `I_r` modulo `p`, that is
-`φ^r(I) A ⊆ I_r + (p)`: modulo `p`, `φ^r(x) = x ^ (p ^ r)` is a multiple of
-`x · φ(x) ⋯ φ^(r - 1)(x) = x ^ (1 + p + ⋯ + p ^ (r - 1))`. -/
+/-- For a Frobenius lift, `φ^r(I) A ⊆ I_r + (p)`, stated as an inclusion of the images
+modulo `p`. -/
 theorem map_frobeniusIdeal_le_map_Ir (hφ : DeltaRing.IsFrobeniusLift p φ) (r : ℕ) :
     (frobeniusIdeal φ I r).map (Ideal.Quotient.mk (span {(p : A)})) ≤
       (Ir φ I r).map (Ideal.Quotient.mk (span {(p : A)})) := by
@@ -265,11 +255,13 @@ theorem map_frobeniusIdeal_le_map_Ir (hφ : DeltaRing.IsFrobeniusLift p φ) (r :
     intro x _
     rw [Subsingleton.elim x 0]
     exact zero_mem _
-  · obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le
+  · -- Modulo `p`, `φ^r(x) = x ^ (p ^ r)` is a multiple of
+    -- `x · φ(x) ⋯ φ^(r - 1)(x) = x ^ (1 + p + ⋯ + p ^ (r - 1))`.
+    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le
       (Nat.geomSum_lt hp (s := range r) fun _ hs => mem_range.1 hs).le
     rw [frobeniusIdeal_def, Ideal.map_map, map_le_iff_le_comap]
     intro x hx
-    rw [mem_comap, RingHom.comp_apply, hφ.mk_pow_apply, hk, pow_add, ← mk_prod_pow_apply hφ,
+    rw [mem_comap, RingHom.comp_apply, hφ.mk_pow_apply, hk, pow_add, ← hφ.mk_prod_pow_apply,
       ← map_pow, ← map_mul]
     exact mem_map_of_mem _ (mul_mem_right _ _ (prod_pow_apply_mem_Ir φ I hx r))
 
@@ -278,23 +270,6 @@ end FrobeniusLift
 section QDeRham
 
 variable {A : Type*} [CommSemiring A] {p : ℕ} {φ : A →+* A} {q : A}
-
-/-- If `φ(q) = q ^ p` then `[p]_q · φ([p]_q) ⋯ φ^(r - 1)([p]_q) = [p ^ r]_q`, where
-`[n]_q = ∑ i ∈ range n, q ^ i`. -/
-theorem prod_pow_apply_geom_sum (hq : φ q = q ^ p) (r : ℕ) :
-    ∏ s ∈ range r, (φ ^ s) (∑ i ∈ range p, q ^ i) = ∑ i ∈ range (p ^ r), q ^ i := by
-  -- The iterates of `φ` act on `q` by `φ^s(q) = q ^ (p ^ s)`.
-  have hqs (s : ℕ) : (φ ^ s) q = q ^ p ^ s := by
-    induction s with
-    | zero => simp
-    | succ s ih =>
-      rw [pow_succ', RingHom.coe_mul, Function.comp_apply, ih, map_pow, hq, ← pow_mul,
-        ← pow_succ']
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    rw [prod_range_succ, ih, pow_succ, geom_sum_range_mul, map_sum]
-    simp [map_pow, hqs]
 
 /-- If `φ(q) = q ^ p` then for `I = ([p]_q)` one has `I_r = ([p ^ r]_q)`, where
 `[n]_q = ∑ i ∈ range n, q ^ i`. -/

@@ -11,10 +11,10 @@ import TauCeti.RingTheory.Prismatic.FrobeniusIdeal
 /-!
 # Checks for the Frobenius ideals `I_r`
 
-The ideals `I_r = ∏_{s < r} φ^s(I) A` start with `I_0 = A` and `I_1 = I`. For the crystalline
-prism `(A, (p))` with `φ = id` they are the powers `(p ^ r)`. On a `δ`-ring with `δ(q) = 0`, the
-ideal `I = ([p]_q)` has `I_r = ([p ^ r]_q)`. In `ℤ[X]` with the Frobenius lift `X ↦ X ^ 2` and
-`q = X`, this reads `I_2 = ((1 + X)(1 + X ^ 2)) = (1 + X + X ^ 2 + X ^ 3)`, and
+The ideals `I_r = ∏_{s < r} φ^s(I) A` start with `I_0 = A` and `I_1 = I`. For `φ = id` and
+`I = (p)` (as for the crystalline prism `(ℤ_p, (p))`), `I_r = (p ^ r)`. On a `δ`-ring with
+`δ(q) = 0`, the ideal `I = ([p]_q)` has `I_r = ([p ^ r]_q)`. In `ℤ[X]` with the Frobenius lift
+`X ↦ X ^ 2` and `q = X`, this reads `I_2 = ((1 + X)(1 + X ^ 2)) = (1 + X + X ^ 2 + X ^ 3)`, and
 `[4]_X - 2 [2]_X = (1 + X) ^ 2 (X - 1)` lies in `I_1 ^ 2`.
 -/
 

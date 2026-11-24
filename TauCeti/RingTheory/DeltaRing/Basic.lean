@@ -165,8 +165,16 @@ theorem IsFrobeniusLift.mk_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) 
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ', RingHom.coe_mul, Function.comp_apply, hf.mk_eq, map_pow, ih, ← pow_mul,
-      pow_succ]
+    rw [RingHom.coe_pow, Function.iterate_succ_apply', ← RingHom.coe_pow, hf.mk_eq, map_pow, ih,
+      ← pow_mul, pow_succ]
+
+/-- Modulo `p`, the product `x · f(x) ⋯ f^(r - 1)(x)` of the iterates of a Frobenius lift `f` is
+`x ^ (1 + p + ⋯ + p ^ (r - 1))`. -/
+theorem IsFrobeniusLift.mk_prod_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
+    (r : ℕ) :
+    Ideal.Quotient.mk (Ideal.span {(p : A)}) (∏ s ∈ Finset.range r, (f ^ s) x) =
+      Ideal.Quotient.mk (Ideal.span {(p : A)}) x ^ ∑ s ∈ Finset.range r, p ^ s := by
+  rw [map_prod, Finset.prod_congr rfl fun s _ => hf.mk_pow_apply s x, Finset.prod_pow_eq_pow_sum]
 
 /-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
 `x ^ i * y ^ (p - i)` has `0 < i`. -/
