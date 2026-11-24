@@ -8,7 +8,7 @@ module
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-public import TauCeti.LowDimTopology.Plumbing.CovectorSquare
+public import TauCeti.LowDimTopology.Plumbing.Covector.Square
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 public import TauCeti.LowDimTopology.Plumbing.Tower
 import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo

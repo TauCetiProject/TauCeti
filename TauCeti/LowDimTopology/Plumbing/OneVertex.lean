@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Plumbing.CovectorSquare
+public import TauCeti.LowDimTopology.Plumbing.Covector.Square
 public import TauCeti.LowDimTopology.Plumbing.Tower
 import TauCeti.LowDimTopology.Plumbing.DiagonalDominance
 import TauCeti.LowDimTopology.Plumbing.TopDegree
