@@ -222,7 +222,7 @@ theorem matchingNumber_le_iff_perm (σ : Equiv.Perm (Fin q.card)) {k : ℕ} :
   rw [matchingNumber_le_iff]
   refine ⟨fun h E hE => ?_, fun h E hE => ?_⟩
   · rw [← card_map (σ.toEmbedding.prodMap σ.toEmbedding)]
-    exact h _ (hE.map σ.toEmbedding (fun _ _ => id) (subset_univ _))
+    exact h _ (hE.map σ.toEmbedding (fun _ _ h => by simpa using h) (subset_univ _))
   · rw [← card_map (σ.symm.toEmbedding.prodMap σ.symm.toEmbedding)]
     exact h _ (hE.map σ.symm.toEmbedding (fun _ _ => by simp) (subset_univ _))
 
