@@ -57,7 +57,10 @@ group, as that construction does.  Its first component is the projection
 `Submodule.projectionOnto` along the complement, which therefore intertwines
 (`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
 `Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
-includes the dual of `ρ₁` equivariantly into the dual of `ρ`.
+includes the dual of `ρ₁` equivariantly into the dual of `ρ`. Annihilators exchange
+subrepresentations of `ρ` and of its dual: `Subrepresentation.dualAnnihilator` and
+`Subrepresentation.dualCoannihilator` carry `Submodule.dualAnnihilator` and
+`Submodule.dualCoannihilator`.
 
 The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
@@ -96,6 +99,10 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.subtype_eq_zero_iff`
 * `Subrepresentation.subtype_surjective_iff`
 * `Subrepresentation.isIntertwiningMap_dualRestrict`
+* `Subrepresentation.dualAnnihilator`
+* `Subrepresentation.mem_dualAnnihilator`
+* `Subrepresentation.dualCoannihilator`
+* `Subrepresentation.mem_dualCoannihilator`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
@@ -259,6 +266,56 @@ theorem isIntertwiningMap_dualRestrict {k H V : Type*} [CommSemiring k] [Group H
     [AddCommMonoid V] [Module k V] {τ : Representation k H V} (S : Subrepresentation τ) :
     Representation.IsIntertwiningMap τ.dual S.toRepresentation.dual S.toSubmodule.dualRestrict :=
   Representation.IsIntertwiningMap.dualMap ⟨fun _ _ ↦ rfl⟩
+
+section Annihilator
+
+variable {k H V : Type*} [CommSemiring k] [Group H] [AddCommMonoid V] [Module k V]
+  {τ : Representation k H V}
+
+/-- The annihilator of a subrepresentation of `τ`, the linear forms vanishing on it, as a
+subrepresentation of the dual `τ.dual`. -/
+def dualAnnihilator (S : Subrepresentation τ) : Subrepresentation τ.dual where
+  toSubmodule := S.toSubmodule.dualAnnihilator
+  apply_mem_toSubmodule g φ hφ := by
+    rw [Submodule.mem_dualAnnihilator] at hφ ⊢
+    intro v hv
+    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
+      hφ _ (S.apply_mem_toSubmodule g⁻¹ hv)
+
+@[simp]
+theorem toSubmodule_dualAnnihilator (S : Subrepresentation τ) :
+    S.dualAnnihilator.toSubmodule = S.toSubmodule.dualAnnihilator :=
+  (rfl)
+
+/-- A linear form lies in the annihilator of a subrepresentation exactly when it vanishes on it. -/
+@[simp]
+theorem mem_dualAnnihilator {S : Subrepresentation τ} {φ : Module.Dual k V} :
+    φ ∈ S.dualAnnihilator ↔ ∀ v ∈ S, φ v = 0 :=
+  Submodule.mem_dualAnnihilator φ
+
+/-- The coannihilator of a subrepresentation of the dual `τ.dual`, the vectors on which all its
+linear forms vanish, as a subrepresentation of `τ`. -/
+def dualCoannihilator (S : Subrepresentation τ.dual) : Subrepresentation τ where
+  toSubmodule := S.toSubmodule.dualCoannihilator
+  apply_mem_toSubmodule g v hv := by
+    rw [Submodule.mem_dualCoannihilator] at hv ⊢
+    intro φ hφ
+    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
+      hv _ (S.apply_mem_toSubmodule g⁻¹ hφ)
+
+@[simp]
+theorem toSubmodule_dualCoannihilator (S : Subrepresentation τ.dual) :
+    S.dualCoannihilator.toSubmodule = S.toSubmodule.dualCoannihilator :=
+  (rfl)
+
+/-- A vector lies in the coannihilator of a subrepresentation of the dual exactly when all its
+linear forms vanish on it. -/
+@[simp]
+theorem mem_dualCoannihilator {S : Subrepresentation τ.dual} {v : V} :
+    v ∈ S.dualCoannihilator ↔ ∀ φ ∈ S, φ v = 0 :=
+  Submodule.mem_dualCoannihilator v
+
+end Annihilator
 
 /-- The group-algebra action on a subrepresentation, coerced to the ambient module, is the
 original group-algebra action. -/
