@@ -276,13 +276,18 @@ theorem congruenceModuleCongr_symm (e : M ≃ₗ[A] N) :
 
 @[simp]
 theorem congruenceModuleCongr_refl :
-    φ.congruenceModuleCongr (LinearEquiv.refl A M) = LinearEquiv.refl O _ :=
-  LinearEquiv.toLinearMap_injective φ.congruenceModuleMap_id
+    φ.congruenceModuleCongr (LinearEquiv.refl A M) = LinearEquiv.refl O _ := by
+  ext x
+  obtain ⟨m, rfl⟩ := φ.congruenceModuleMk_surjective M x
+  simp
 
+@[simp]
 theorem congruenceModuleCongr_trans (e₁ : M ≃ₗ[A] N) (e₂ : N ≃ₗ[A] P) :
     φ.congruenceModuleCongr (e₁ ≪≫ₗ e₂) =
-      φ.congruenceModuleCongr e₁ ≪≫ₗ φ.congruenceModuleCongr e₂ :=
-  LinearEquiv.toLinearMap_injective (φ.congruenceModuleMap_comp e₂.toLinearMap e₁.toLinearMap)
+      φ.congruenceModuleCongr e₁ ≪≫ₗ φ.congruenceModuleCongr e₂ := by
+  ext x
+  obtain ⟨m, rfl⟩ := φ.congruenceModuleMk_surjective M x
+  simp
 
 end Functoriality
 
@@ -314,6 +319,16 @@ theorem congruenceModulePiEquiv_congruenceModuleMk (m : ∀ i, M i) (i : ι) :
     φ.congruenceModulePiEquiv M (φ.congruenceModuleMk _ m) i = φ.congruenceModuleMk _ (m i) :=
   φ.congruenceModuleMap_congruenceModuleMk _ m
 
+/-- The inverse of `AlgHom.congruenceModulePiEquiv` sends the family of classes of `m i` to the
+class of `m`. -/
+@[simp]
+theorem congruenceModulePiEquiv_symm_congruenceModuleMk (m : ∀ i, M i) :
+    (φ.congruenceModulePiEquiv M).symm (fun i => φ.congruenceModuleMk _ (m i)) =
+      φ.congruenceModuleMk _ m := by
+  rw [LinearEquiv.symm_apply_eq]
+  ext i
+  simp
+
 end Pi
 
 section Self
@@ -337,8 +352,7 @@ noncomputable def congruenceModuleSelfEquiv : φ.congruenceModule A ≃ₗ[O] O 
   ((φ.congruenceModuleMk A).quotKerEquivOfSurjective (φ.congruenceModuleMk_surjective A)).symm ≪≫ₗ
     Submodule.quotEquivOfEq _ _ (by
       ext a
-      rw [LinearMap.mem_ker, congruenceModuleMk_self_eq_zero_iff, LinearMap.mem_ker,
-        LinearMap.comp_apply, mkQ_apply, Submodule.Quotient.mk_eq_zero, toLinearMap_apply]) ≪≫ₗ
+      simp [congruenceModuleMk_self_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]) ≪≫ₗ
     ((φ.congruenceIdeal.mkQ ∘ₗ φ.toLinearMap).quotKerEquivOfSurjective
       ((mkQ_surjective _).comp φ.augmentation_surjective))
 
@@ -351,9 +365,7 @@ theorem congruenceModuleSelfEquiv_congruenceModuleMk (a : A) :
 theorem congruenceModuleSelfEquiv_symm_mk (x : O) :
     φ.congruenceModuleSelfEquiv.symm (Ideal.Quotient.mk φ.congruenceIdeal x) =
       φ.congruenceModuleMk A (algebraMap O A x) := by
-  rw [← Ideal.Quotient.mk_eq_mk, LinearEquiv.symm_apply_eq,
-    congruenceModuleSelfEquiv_congruenceModuleMk, φ.commutes, Algebra.algebraMap_self,
-    RingHom.id_apply]
+  simp [← Ideal.Quotient.mk_eq_mk, LinearEquiv.symm_apply_eq]
 
 end Self
 
@@ -380,13 +392,12 @@ theorem congruenceModuleEquivOfBasis_symm_mk (b : Module.Basis ι A M) (x : ι �
     (φ.congruenceModuleEquivOfBasis b).symm
         (fun i => Ideal.Quotient.mk φ.congruenceIdeal (x i)) =
       φ.congruenceModuleMk M (∑ i, x i • b i) := by
-  have h : ∑ i, x i • b i = b.equivFun.symm fun i => algebraMap O A (x i) := by
-    simp [Module.Basis.equivFun_symm_apply, algebraMap_smul]
   simp only [← Ideal.Quotient.mk_eq_mk]
   rw [LinearEquiv.symm_apply_eq]
   ext i
-  rw [congruenceModuleEquivOfBasis_congruenceModuleMk, h, ← b.equivFun_apply,
-    LinearEquiv.apply_symm_apply, φ.commutes, Algebra.algebraMap_self, RingHom.id_apply]
+  have h : ∑ j, x j • b j = ∑ j, algebraMap O A (x j) • b j := by simp [algebraMap_smul]
+  rw [congruenceModuleEquivOfBasis_congruenceModuleMk, h, b.repr_sum_self]
+  simp
 
 end Basis
 
