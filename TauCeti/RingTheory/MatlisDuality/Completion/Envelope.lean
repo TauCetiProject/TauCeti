@@ -114,7 +114,7 @@ theorem adicCompletion :
   have := hι.moduleInjective
   refine
     { moduleInjective := AdicCompletion.moduleInjective_of_primaryComponent
-        ((isNoetherianRing_iff_ideal_fg R).mp inferInstance (maximalIdeal R))
+        (maximalIdeal R).fg_of_isNoetherianRing
         hι.mem_primaryComponent
       injective := fun x y hxy ↦ ?_
       isEssential_range := isEssential_iff.mpr fun K hK ↦ ?_ }

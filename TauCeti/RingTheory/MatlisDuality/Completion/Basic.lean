@@ -83,7 +83,7 @@ theorem isArtinian_adicCompletion_linearMap_of_finite (N : Type w) [AddCommGroup
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := hι.adicCompletion.isArtinian_linearMap_of_finite N
   exact (AdicCompletion.isArtinian_iff_of_primaryComponent
-    ((isNoetherianRing_iff_ideal_fg R).mp inferInstance (maximalIdeal R))
+    (maximalIdeal R).fg_of_isNoetherianRing
     ((maximalIdeal R).mem_primaryComponent_linearMap_of_finite hι.mem_primaryComponent)).mp
     inferInstance
 
@@ -108,8 +108,7 @@ def evalEquivAdicCompletionOfIsArtinian (M : Type w) [AddCommGroup M] [Module R 
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) := by
   letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have hfg : (maximalIdeal R).FG :=
-    (isNoetherianRing_iff_ideal_fg R).mp inferInstance (maximalIdeal R)
+  have hfg : (maximalIdeal R).FG := (maximalIdeal R).fg_of_isNoetherianRing
   letI := AdicCompletion.torsionModule
     (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M) hfg)
   haveI : IsArtinian (_root_.AdicCompletion (maximalIdeal R) R) M :=
@@ -129,7 +128,7 @@ theorem evalEquivAdicCompletionOfIsArtinian_apply_apply (M : Type w) [AddCommGro
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   let := AdicCompletion.torsionModule
     (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M)
-      ((isNoetherianRing_iff_ideal_fg R).mp inferInstance (maximalIdeal R)))
+      (maximalIdeal R).fg_of_isNoetherianRing)
   simp [evalEquivAdicCompletionOfIsArtinian]
 
 @[simp]
@@ -168,7 +167,7 @@ def evalEquivOfFiniteAdicCompletion (N : Type w) [AddCommGroup N]
   letI := AdicCompletion.torsionModule hι.mem_primaryComponent
   exact (hι.adicCompletion.evalEquivOfFinite N).trans
     (AdicCompletion.restrictScalarsEquivOfPrimaryComponent
-      ((isNoetherianRing_iff_ideal_fg R).mp inferInstance (maximalIdeal R))
+      (maximalIdeal R).fg_of_isNoetherianRing
       ((maximalIdeal R).mem_primaryComponent_linearMap_of_finite hι.mem_primaryComponent))
 
 @[simp]

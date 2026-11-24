@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Injective
 
 /-!
 # Homology of short complexes of modules
@@ -29,9 +30,12 @@ two finiteness consequences of that description:
   of the range of the first map is the rank of the kernel of the second.
 
 It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
-complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
+complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), shows that the
 dual of a short exact sequence is short exact when every functional on `X₁` extends to `X₂`
-(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`).
+(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`), and records that any functor
+`(ModuleCat A)ᵒᵖ ⥤ ModuleCat B` naturally isomorphic to `Hom_A(-, E)` with `E` injective sends
+short exact sequences to short exact sequences
+(`CategoryTheory.ShortComplex.ShortExact.op_map_of_lcomp`).
 
 ## References
 
@@ -42,7 +46,7 @@ public section
 
 open CategoryTheory Limits Module Cardinal
 
-universe u v
+universe u v w t
 
 namespace CategoryTheory.ShortComplex
 
@@ -138,6 +142,48 @@ theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
     (((ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact).lcomp_of_surjective A
       hS.moduleCat_surjective_g)
     (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
+
+/-- **Dualizing a short exact sequence by an injective module**: any zero-preserving functor
+`(ModuleCat A)ᵒᵖ ⥤ ModuleCat B` naturally isomorphic to `Hom_A(-, E)` for an injective `A`-module
+`E` sends every short exact sequence of `A`-modules to a short exact sequence of `B`-modules. -/
+theorem ShortExact.op_map_of_lcomp {B : Type*} [Ring B] {E : Type t} [AddCommGroup E]
+    [Module A E] [Module B E] [SMulCommClass A B E] [Small.{t} A] [Module.Injective A E]
+    (hS : S.ShortExact) (F : (ModuleCat.{v} A)ᵒᵖ ⥤ ModuleCat.{w} B) [F.PreservesZeroMorphisms]
+    (e : ∀ M : ModuleCat.{v} A, F.obj (Opposite.op M) ≃ₗ[B] (M →ₗ[A] E))
+    (he : ∀ {M M' : ModuleCat.{v} A} (g : M ⟶ M') (φ : F.obj (Opposite.op M')) (x : M),
+      e M (F.map g.op φ) x = e M' φ (g x)) :
+    (S.op.map F).ShortExact := by
+  have hf := hS.moduleCat_injective_f
+  have hg := hS.moduleCat_surjective_g
+  have hex := (ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact
+  refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
+  · intro φ
+    constructor
+    · intro hφ
+      have hφ' : S.f.hom.lcomp B E (e S.X₂ φ) = 0 := by
+        ext x
+        simpa [ShortComplex.map_g, he] using congrArg (fun f ↦ e S.X₁ f x) hφ
+      obtain ⟨ψ, hψ⟩ := ((hex.lcomp_of_surjective E hg) (e S.X₂ φ)).mp hφ'
+      refine ⟨(e S.X₃).symm ψ, (e S.X₂).injective ?_⟩
+      ext x
+      simpa [ShortComplex.map_f, he] using LinearMap.congr_fun hψ x
+    · rintro ⟨ψ, rfl⟩
+      apply (e S.X₁).injective
+      ext x
+      have hfg : S.g (S.f x) = 0 := by
+        rw [← ConcreteCategory.comp_apply, S.zero]
+        simp
+      simp [ShortComplex.map_f, ShortComplex.map_g, he, hfg]
+  · intro φ₁ φ₂ hφ
+    apply (e S.X₃).injective
+    apply LinearMap.lcomp_injective_of_surjective (S := B) (N := E) S.g.hom hg
+    ext x
+    simpa [ShortComplex.map_f, he] using congrArg (fun f ↦ e S.X₂ f x) hφ
+  · intro φ
+    obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E S.X₁ S.X₂ S.f.hom hf (e S.X₁ φ)
+    refine ⟨(e S.X₂).symm ψ, (e S.X₁).injective ?_⟩
+    ext x
+    simpa [ShortComplex.map_g, he] using LinearMap.congr_fun hψ x
 
 end OpDual
 
