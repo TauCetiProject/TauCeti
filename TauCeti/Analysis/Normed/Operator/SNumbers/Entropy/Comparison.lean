@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Hilbert
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Factorization
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # s-numbers against entropy numbers
@@ -66,29 +67,6 @@ namespace ContinuousLinearMap
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Finite dependent choice along `Fin N`: if every finite set of fewer than `N` elements admits
-some `a` with `Q s a`, then there is a family `p : Fin N → α` each of whose elements `p j` satisfies
-`Q` relative to the set of its predecessors. -/
-private theorem exists_fin_family {α : Type*} {Q : Set α → α → Prop} {N : ℕ}
-    (h : ∀ s : Set α, s.Finite → #s < N → ∃ a, Q s a) :
-    ∃ p : Fin N → α, ∀ j, Q (p '' Iio j) (p j) := by
-  induction N with
-  | zero => exact ⟨finZeroElim, finZeroElim⟩
-  | succ N ih =>
-    obtain ⟨p, hp⟩ := ih fun s hs hsN ↦ h s hs (hsN.trans (by exact_mod_cast N.lt_succ_self))
-    obtain ⟨a, ha⟩ := h (range p) (finite_range p) <|
-      ((lift_le_nat_iff (n := N)).mp (mk_range_le_lift.trans_eq (by simp))).trans_lt
-        (by exact_mod_cast N.lt_succ_self)
-    refine ⟨Fin.snoc p a, Fin.lastCases ?_ fun i ↦ ?_⟩
-    · have hIio : Iio (Fin.last N) = range Fin.castSucc := by
-        rw [Fin.range_castSucc]
-        ext i
-        simp [Fin.lt_def]
-      rw [hIio, ← range_comp, Fin.snoc_comp_castSucc, Fin.snoc_last]
-      exact ha
-    · rw [← Fin.image_castSucc_Iio, ← image_comp, Fin.snoc_comp_castSucc, Fin.snoc_castSucc]
-      exact hp i
-
 /-- The separation step for sign averages of a triangular family: for two distinct sign vectors,
 the coefficient at the last index where they differ has norm `2`, and the earlier terms lie in the
 span of the earlier images. -/
@@ -140,19 +118,21 @@ theorem le_mul_entropyNumber_of_forall_le_norm_add {ι : Type*} [Fintype ι] [Li
   have hn : (0 : ℝ) < n + 1 := by positivity
   have hf : ∀ ε, f ε ∈ closedBall (0 : E) 1 := by
     intro ε
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, RCLike.norm_natCast, Nat.cast_succ,
-      inv_mul_le_iff₀ hn, mul_one]
-    calc ‖∑ k, σ (ε k) • x k‖ ≤ ∑ _ : ι, (1 : ℝ) :=
-          (norm_sum_le _ _).trans <| Finset.sum_le_sum fun k _ ↦ by
-            rw [norm_smul, hσ, one_mul]; exact hx k
-      _ = n + 1 := by simp [hι]
+    have hsum : ‖∑ k, σ (ε k) • x k‖ ≤ n + 1 :=
+      calc ‖∑ k, σ (ε k) • x k‖ ≤ ∑ _ : ι, (1 : ℝ) :=
+            (norm_sum_le _ _).trans <| Finset.sum_le_sum fun k _ ↦ by
+              simpa [norm_smul, hσ] using hx k
+        _ = n + 1 := by simp [hι]
+    simp only [f, mem_closedBall_zero_iff, norm_smul, norm_inv, RCLike.norm_natCast]
+    rw [inv_mul_le_iff₀ (by positivity)]
+    simpa using hsum
   have hsep : Pairwise fun ε ε' ↦ 2 * γ / (n + 1) ≤ dist (T (f ε)) (T (f ε')) := by
     intro ε ε' hne
     have hdiff : T (f ε) - T (f ε') =
         ((n + 1 : ℕ) : 𝕜)⁻¹ • ∑ k, (σ (ε k) - σ (ε' k)) • T (x k) := by
       simp only [f, map_smul, map_sum, ← smul_sub, ← Finset.sum_sub_distrib, sub_smul]
-    rw [dist_eq_norm, hdiff, norm_smul, norm_inv, RCLike.norm_natCast, Nat.cast_succ,
-      div_eq_inv_mul]
+    simp only [dist_eq_norm, hdiff, norm_smul, norm_inv, RCLike.norm_natCast, div_eq_inv_mul]
+    push_cast
     gcongr
     exact two_mul_le_norm_sum_smul_sub hγ hσ₂ hne
   have hcard : 2 ^ n < Fintype.card (ι → Bool) := by
@@ -169,12 +149,14 @@ theorem exists_flag_of_lt_kolmogorovNumber {T : E →L[𝕜] F} {n : ℕ} {γ : 
     (hγ : γ < T.kolmogorovNumber n) :
     ∃ x : Fin (n + 1) → E, (∀ j, ‖x j‖ ≤ 1) ∧
       ∀ j, ∀ w ∈ Submodule.span 𝕜 ((T ∘ x) '' Iio j), γ < ‖T (x j) + w‖ := by
-  obtain ⟨x, hx⟩ := exists_fin_family (N := n + 1)
-    (Q := fun s a ↦ ‖a‖ ≤ 1 ∧ ∀ w ∈ Submodule.span 𝕜 (T '' s), γ < ‖T a + w‖) fun s _ hs ↦ by
-      set V := Submodule.span 𝕜 (T '' s)
-      have hV : Module.rank 𝕜 V ≤ n :=
-        (rank_span_le _).trans <| lift_le_nat_iff.mp <| mk_image_le_lift.trans <|
-          lift_le_nat_iff.mpr (lt_natCast_add_one_iff.mp (mod_cast hs))
+  obtain ⟨x, hx⟩ := Fin.exists_tuple_forall_image_Iio (N := n + 1)
+    (Q := fun s a ↦ ‖a‖ ≤ 1 ∧ ∀ w ∈ Submodule.span 𝕜 (T '' s), γ < ‖T a + w‖) fun m hm y ↦ by
+      set V := Submodule.span 𝕜 (T '' range y)
+      have hV : Module.rank 𝕜 V ≤ n := by
+        refine (rank_span_le _).trans ?_
+        rw [← range_comp]
+        refine lift_le_nat_iff.mp (mk_range_le_lift.trans ?_)
+        simpa using Nat.lt_succ_iff.mp hm
       have hlt : γ < ‖V.mkQL ∘L T‖ :=
         hγ.trans_le (by exact_mod_cast T.kolmogorovNumber_le hV)
       -- A unit vector on which `V.mkQL ∘L T` exceeds `γ`.
@@ -197,20 +179,17 @@ theorem exists_flag_of_lt_gelfandNumber {T : E →L[𝕜] F} {n : ℕ} {γ : ℝ
     (hγ : γ < T.gelfandNumber n) :
     ∃ (x : Fin (n + 1) → E) (ρ : Fin (n + 1) → StrongDual 𝕜 F), (∀ j, ‖x j‖ ≤ 1) ∧
       (∀ j, ‖ρ j‖ ≤ 1) ∧ (∀ j, γ < ‖ρ j (T (x j))‖) ∧ ∀ i j, i < j → ρ i (T (x j)) = 0 := by
-  obtain ⟨p, hp⟩ := exists_fin_family (α := E × StrongDual 𝕜 F) (N := n + 1)
+  obtain ⟨p, hp⟩ := Fin.exists_tuple_forall_image_Iio (α := E × StrongDual 𝕜 F) (N := n + 1)
     (Q := fun s a ↦ ‖a.1‖ ≤ 1 ∧ ‖a.2‖ ≤ 1 ∧ γ < ‖a.2 (T a.1)‖ ∧ ∀ q ∈ s, q.2 (T a.1) = 0)
-    fun s hs hsn ↦ by
-      have := hs.fintype
-      -- The common kernel `M` of the functionals `q.2 ∘L T`, `q ∈ s`, has codimension `≤ n`.
-      let φ : E →L[𝕜] (s → 𝕜) := ContinuousLinearMap.pi fun q : s ↦ q.val.2 ∘L T
-      set M : Submodule 𝕜 E := LinearMap.ker (φ : E →ₗ[𝕜] s → 𝕜)
+    fun m hm y ↦ by
+      -- The common kernel `M` of the functionals `(y i).2 ∘L T`, `i < m`, has codimension `≤ n`.
+      let φ : E →L[𝕜] (Fin m → 𝕜) := ContinuousLinearMap.pi fun i ↦ (y i).2 ∘L T
+      set M : Submodule 𝕜 E := LinearMap.ker (φ : E →ₗ[𝕜] Fin m → 𝕜)
       have hMc : IsClosed (M : Set E) := φ.isClosed_ker
       have hMr : Module.rank 𝕜 (E ⧸ M) ≤ n := by
-        have hrange : Module.rank 𝕜 (LinearMap.range (φ : E →ₗ[𝕜] s → 𝕜)) ≤ n := by
-          refine (Submodule.rank_le _).trans ?_
-          rw [rank_fun', ← mk_fintype]
-          exact lt_natCast_add_one_iff.mp (mod_cast hsn)
-        exact lift_le_nat_iff.mp ((φ : E →ₗ[𝕜] s → 𝕜).quotKerEquivRange.lift_rank_eq.trans_le
+        have hrange : Module.rank 𝕜 (LinearMap.range (φ : E →ₗ[𝕜] Fin m → 𝕜)) ≤ n :=
+          (Submodule.rank_le _).trans <| by simpa using Nat.lt_succ_iff.mp hm
+        exact lift_le_nat_iff.mp ((φ : E →ₗ[𝕜] Fin m → 𝕜).quotKerEquivRange.lift_rank_eq.trans_le
           (lift_le_nat_iff.mpr hrange))
       have hlt : γ < ‖T ∘L M.subtypeL‖ :=
         hγ.trans_le (by exact_mod_cast le_gelfandNumber_iff.mp le_rfl M hMc hMr)
@@ -221,9 +200,9 @@ theorem exists_flag_of_lt_gelfandNumber {T : E →L[𝕜] F} {n : ℕ} {γ : ℝ
         by_contra! H
         exact hlt.not_ge ((T ∘L M.subtypeL).opNorm_le_of_unit_norm hγ0 fun a ha ↦ H a ha.le)
       obtain ⟨g, hg, hga⟩ := exists_dual_vector'' 𝕜 (T a)
-      refine ⟨(a, g), ha, hg, by simpa [hga] using hγa, fun q hq ↦ ?_⟩
-      have h0 := congrFun (LinearMap.mem_ker.mp a.property) ⟨q, hq⟩
-      rwa [coe_coe, pi_apply, comp_apply, Pi.zero_apply] at h0
+      refine ⟨(a, g), ha, hg, by simpa [hga] using hγa, ?_⟩
+      rintro _ ⟨i, rfl⟩
+      simpa [M, φ] using congrFun (LinearMap.mem_ker.mp a.property) i
   refine ⟨fun j ↦ (p j).1, fun j ↦ (p j).2, fun j ↦ (hp j).1, fun j ↦ (hp j).2.1,
     fun j ↦ (hp j).2.2.1, fun i j hij ↦ (hp j).2.2.2 (p i) ⟨i, hij, rfl⟩⟩
 
@@ -274,8 +253,7 @@ theorem singularValue_le_two_mul_entropyNumber {H₁ H₂ : Type*}
       (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))).entropyNumber n := by
     exact_mod_cast one_half_le_entropyNumber_id hrank
   have hle := entropyNumber_comp_comp_le_of_norm_le_one hB hA T n
-  rw [hfac, entropyNumber_smul, ← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm,
-    RCLike.norm_ofReal, abs_of_nonneg hc0] at hle
+  simp [hfac, entropyNumber_smul, ← NNReal.coe_le_coe, abs_of_nonneg hc0] at hle
   push_cast
   nlinarith
 
