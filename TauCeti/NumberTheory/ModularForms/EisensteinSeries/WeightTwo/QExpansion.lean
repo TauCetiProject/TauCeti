@@ -178,6 +178,28 @@ theorem qExpansion_weightedG2MF_coeff (W : (Fin 2 → ZMod N) → ℂ) (n : ℕ)
   rw [← hform]
   exact qExpansion_weightedG2MF_coeff_of_sum_eq_zero hV n
 
+/-- A finite formula for every normalized weight-two coefficient, including the constant
+coefficient. The average weight is subtracted before taking the Fourier transform. -/
+theorem qExpansion_weightedG2MF_coeff_div (W : (Fin 2 → ZMod N) → ℂ) (n : ℕ) :
+    (qExpansion N (weightedG2MF W)).coeff n / (2 * π * I) ^ 2 =
+      let V := fun a ↦ W a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b
+      if n = 0 then -(∑ j : ZMod N, 𝓕 (fun d ↦ V ![0, d]) j *
+          (((Polynomial.bernoulli 2).eval ((j.val : ℚ) / N) : ℚ) : ℂ)) / (2 * N)
+      else (∑ x ∈ n.divisorsAntidiagonal,
+        𝓕 (fun d ↦ V ![(x.1 : ZMod N), d] + V ![-(x.1 : ZMod N), -d])
+          (-(x.2 : ZMod N)) * (x.2 : ℂ)) / N ^ 2 := by
+  have hπ : (2 * π * I : ℂ) ^ 2 ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
+  rw [qExpansion_weightedG2MF_coeff]
+  dsimp only
+  split_ifs
+  · have hsum := (hasSum_mul_zpow_neg_bernoulli
+      (fun d : ZMod N ↦ W ![0, d] - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b)
+      (k := 2) le_rfl).tsum_eq
+    norm_num only [Nat.cast_ofNat] at hsum
+    rw [hsum]
+    field_simp [hπ]
+  · field_simp [hπ]
+
 /-- After division by `(2πi)²`, every Fourier coefficient of a weighted division-value
 series belongs to any subfield containing its weights and the `N`-th roots of unity. -/
 theorem qExpansion_weightedG2MF_coeff_div_mem {K : Subfield ℂ}
@@ -188,23 +210,13 @@ theorem qExpansion_weightedG2MF_coeff_div_mem {K : Subfield ℂ}
   have hV (a) : V a ∈ K :=
     K.sub_mem (hW a) (K.mul_mem (K.inv_mem (K.pow_mem (natCast_mem K N) 2))
       (K.sum_mem fun b _ ↦ hW b))
-  have hπ : (2 * π * I : ℂ) ^ 2 ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  rw [qExpansion_weightedG2MF_coeff]
+  rw [qExpansion_weightedG2MF_coeff_div]
   dsimp only
-  split_ifs with hn
-  · have hsum := (hasSum_mul_zpow_neg_bernoulli (fun d ↦ V ![0, d]) (k := 2) le_rfl).tsum_eq
-    norm_num only [Nat.cast_ofNat] at hsum
-    rw [hsum]
-    have heq (S : ℂ) : (-(2 * π * I) ^ 2 / (2 * N) * S) / (2 * π * I) ^ 2 =
-        -S / (2 * N) := by field_simp [hπ]
-    rw [heq]
-    exact K.div_mem (K.neg_mem (K.sum_mem fun j _ ↦ K.mul_mem
+  split_ifs
+  · exact K.div_mem (K.neg_mem (K.sum_mem fun j _ ↦ K.mul_mem
       (dft_apply_mem (R := K.toSubring) hK (fun d ↦ hV _) j) (SubfieldClass.ratCast_mem K _)))
       (K.mul_mem (natCast_mem K 2) (natCast_mem K N))
-  · have heq (S : ℂ) : ((2 * π * I) ^ 2 / N ^ 2 * S) / (2 * π * I) ^ 2 =
-        S / N ^ 2 := by field_simp [hπ]
-    rw [heq]
-    exact K.div_mem (K.sum_mem fun x _ ↦ K.mul_mem
+  · exact K.div_mem (K.sum_mem fun x _ ↦ K.mul_mem
       (dft_apply_mem (R := K.toSubring) hK (fun d ↦ K.add_mem (hV _) (hV _)) _)
       (natCast_mem K _)) (K.pow_mem (natCast_mem K N) 2)
 

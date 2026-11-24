@@ -139,4 +139,18 @@ theorem dft_apply_mem {R : Subring ℂ} (hR : ∀ ζ : ℂ, ζ ^ N = 1 → ζ �
   refine R.mul_mem (hR _ ?_) (hΦ j)
   rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_self, zero_mul, AddChar.map_zero_eq_one]
 
+omit [NeZero v] [AddCommGroup E] [Module ℂ E] in
+/-- A cyclotomic coefficient map intertwines the Fourier transform with multiplication
+of the residue variable. No continuity of the coefficient map is required. -/
+theorem map_dft_of_mul {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
+    {Φ Ψ : ZMod N → ℂ} (hΦ : ∀ j, Ψ ((d : ZMod N) * j) = σ (Φ j)) (k : ZMod N) :
+    σ (𝓕 Φ k) = 𝓕 Ψ k := by
+  simp only [dft_apply, smul_eq_mul, map_sum, map_mul, hσ]
+  conv_rhs => rw [← Equiv.sum_comp d.mulLeft]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [Units.mulLeft_apply, hΦ]
+  congr 1
+  ring_nf
+
 end ZMod
