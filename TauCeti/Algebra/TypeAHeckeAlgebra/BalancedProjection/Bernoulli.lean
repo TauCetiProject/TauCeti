@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Zero
 import TauCeti.Algebra.MvPolynomial.Supported
 import Mathlib.Algebra.Algebra.Subalgebra.Directed
+import TauCeti.RingTheory.TraceFunctional.Radical
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.MvPolynomial.Basic
 
@@ -140,28 +141,28 @@ private theorem boolExpect_mul_X_mul_X (η : R) (p : MvPolynomial ℕ R) (i : �
       Finsupp.support_add_eq_union]
   | add p q hp hq => simp only [add_mul, map_add, hp, hq]
 
-/-- The Bernoulli expectation vanishes on the ideal of the relations `X i * X i = X i`. -/
-private theorem boolExpect_eq_zero (η : R) {x : MvPolynomial ℕ R} (hx : x ∈ boolIdeal R) :
-    boolExpect η x = 0 := by
-  suffices ∀ a, boolExpect η (a * x) = 0 by simpa using this 1
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    intro a
-    rw [mul_sub, map_sub, boolExpect_mul_X_mul_X, sub_self]
-  | zero => simp
-  | add x y _ _ hx hy => intro a; rw [mul_add, map_add, hx, hy, add_zero]
-  | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc, hx]
+private theorem boolExpect_mul_comm (η : R) (p q : MvPolynomial ℕ R) :
+    boolExpect η (p * q) = boolExpect η (q * p) := by
+  rw [mul_comm]
+
+/-- The Bernoulli expectation vanishes on the ideal of the relations `X i * X i = X i`: this ideal
+lies in its trace radical. -/
+private theorem boolIdeal_le_traceRadical (η : R) :
+    boolIdeal R ≤ (boolExpect η).traceRadical (boolExpect_mul_comm η) := by
+  rw [boolIdeal, Ideal.span_le]
+  rintro _ ⟨i, rfl⟩
+  rw [SetLike.mem_coe, LinearMap.mem_traceRadical]
+  intro a
+  rw [boolExpect_mul_comm, mul_sub, map_sub, boolExpect_mul_X_mul_X, sub_self]
 
 /-- The Bernoulli expectation on the quotient by the relations `X i * X i = X i`. -/
 private noncomputable def boolTrace (η : R) : (MvPolynomial ℕ R ⧸ boolIdeal R) →ₗ[R] R :=
-  ((boolIdeal R).restrictScalars R).liftQ (boolExpect η) (fun x hx ↦ LinearMap.mem_ker.2 <|
-      boolExpect_eq_zero η ((Submodule.restrictScalars_mem _ _ x).1 hx)) ∘ₗ
-    (Submodule.Quotient.restrictScalarsEquiv R (boolIdeal R)).symm.toLinearMap
+  (boolExpect η).quotientTrace (boolExpect_mul_comm η) ∘ₗ
+    (Ideal.Quotient.factorₐ R (boolIdeal_le_traceRadical η)).toLinearMap
 
 private theorem boolTrace_mk (η : R) (p : MvPolynomial ℕ R) :
     boolTrace η (Ideal.Quotient.mkₐ R (boolIdeal R) p) = boolExpect η p := by
-  simp [boolTrace, Ideal.Quotient.mkₐ_eq_mk, ← Ideal.Quotient.mk_eq_mk]
+  simp [boolTrace, Ideal.Quotient.mkₐ_eq_mk]
 
 /-- Appending a new last variable multiplies the Bernoulli expectation by `η`. -/
 private theorem boolExpect_mul_X {η : R} {n : ℕ} {p : MvPolynomial ℕ R}
