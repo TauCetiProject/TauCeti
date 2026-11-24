@@ -36,19 +36,17 @@ namespace TauCeti
 namespace Polylog
 
 private theorem polylog_neg_nat_eq_mul_iterate_of_ne_one (r : ℕ) {z : ℂ} (hz : z ≠ 1) :
-    polylog (-(r : ℤ)) z = z * ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + 1 * f w)^[r])
-      (fun w => (1 - w)⁻¹) z := by
+    polylog (-(r : ℤ)) z = z * ((shiftedEulerOp 1)^[r]) (fun w => (1 - w)⁻¹) z := by
   induction r generalizing z with
   | zero => simp [div_eq_mul_inv]
   | succ r ih =>
-    let F : ℕ → ℂ → ℂ := fun k =>
-      ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + 1 * f w)^[k]) (fun w => (1 - w)⁻¹)
+    let F : ℕ → ℂ → ℂ := fun k => ((shiftedEulerOp 1)^[k]) (fun w => (1 - w)⁻¹)
     have hlocal : polylog (-(r : ℤ)) =ᶠ[𝓝 z] fun w : ℂ => w * F r w := by
       filter_upwards [isOpen_ne.mem_nhds hz] with w hw
       exact ih hw
     have hF_local : F r =ᶠ[𝓝 z] fun w : ℂ => (shiftedEulerianPolynomial (1 : ℂ) r).eval w /
         (1 - w) ^ (r + 1) :=
-      Eventually.of_forall fun w => iterate_mul_deriv_add_mul_inv_one_sub r w 1
+      Eventually.of_forall fun w => iterate_shiftedEulerOp_inv_one_sub r w 1
     have hF_diff : HasDerivAt (F r) (deriv (F r) z) z :=
       (((analyticOnNhd_shiftedEulerianPolynomial_div r (z, 1) hz).comp
         (f := fun w : ℂ => (w, (1 : ℂ)))
@@ -56,7 +54,7 @@ private theorem polylog_neg_nat_eq_mul_iterate_of_ne_one (r : ℕ) {z : ℂ} (hz
         hF_local).hasDerivAt
     have hmul := (hasDerivAt_id z).mul hF_diff
     rw [polylog_neg_nat_succ, (hmul.congr_of_eventuallyEq hlocal).deriv,
-      Function.iterate_succ_apply']
+      Function.iterate_succ_apply', shiftedEulerOp_apply]
     dsimp only [id_eq, F]
     ring
 
@@ -67,9 +65,9 @@ theorem tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one (r : ℕ) :
       (𝓝[≠] 1) (𝓝 (r.factorial : ℂ)) := by
   have hz1 : Tendsto (fun z : ℂ => z) (𝓝[≠] (1 : ℂ)) (𝓝 (1 : ℂ)) :=
     continuousAt_id.tendsto.mono_left (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
-  have hshared := tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one r 1
+  have hshared := tendsto_one_sub_pow_mul_iterate_shiftedEulerOp_inv_one_sub_nhdsNE_one r 1
   have hprod : Tendsto (fun z : ℂ => z * ((1 - z) ^ (r + 1) *
-      ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + 1 * f w)^[r]) (fun w => (1 - w)⁻¹) z))
+      ((shiftedEulerOp 1)^[r]) (fun w => (1 - w)⁻¹) z))
       (𝓝[≠] 1) (𝓝 (1 * (r.factorial : ℂ))) := hz1.mul hshared
   rw [one_mul] at hprod
   refine hprod.congr' ?_
@@ -107,7 +105,7 @@ theorem polylog_neg_nat_eq_div (r : ℕ) (z : ℂ) :
         (mt DifferentiableAt.continuousAt (not_continuousAt_polylog_neg_nat_one r))]
       simp
   · rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
-      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left_eval_eq_aeval,
+      iterate_shiftedEulerOp_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left_eval_eq_aeval,
       mul_div_assoc]
 
 /-- In weight minus two the rational numerator is `z(1 + z)`.

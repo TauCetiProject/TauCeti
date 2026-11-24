@@ -37,7 +37,9 @@ in `(z, s, c)` admit uniform summable bounds, giving joint analyticity, the lowe
 
 ## Main definitions and results
 
-* `TauCeti.lerchSeries`, `TauCeti.lerchZeta`: power-series and additive-phase Lerch series.
+* `TauCeti.lerchSeries`, `TauCeti.lerchZeta`, `TauCeti.lerchSeriesDomain`,
+  `TauCeti.lerchZetaDomain`: power-series and additive-phase Lerch series and their joint
+  analyticity domains.
 * `TauCeti.summable_norm_lerchSeries_term`, `TauCeti.hasSum_lerchSeries`,
   `IsCompact.exists_summable_norm_lerchSeries_term_le`,
   `IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le`,
@@ -115,7 +117,7 @@ private theorem norm_log_pow_lerchTerm_le_aux {s z c : ℂ} {r S C δ : ℝ} {k 
   have hC0 : 0 ≤ C := (norm_nonneg c).trans hc
   have hw_hi : ‖(n : ℂ) + c‖ ≤ (n : ℝ) + C + 1 := by
     have := norm_add_le (n : ℂ) c; rw [Complex.norm_natCast] at this; linarith
-  have hbase := Complex.norm_log_pow_mul_exp_le hs hδ0 hw_lo hw_hi k
+  have hbase := Complex.norm_neg_log_pow_mul_exp_neg_mul_log_le hs hδ0 hw_lo hw_hi k
   set L : ℝ := |Real.log δ| + Real.pi + C + 1
   set M : ℕ := Nat.ceil S
   have hL_bound : |Real.log δ| + Real.pi + ((n : ℝ) + C + 1) ≤ L * ((n : ℝ) + 1) := by
@@ -335,18 +337,45 @@ theorem lerchZeta_eq_exp_add_mul_add_one_right {s a c : ℂ}
 
 /-! ### Termwise derivatives, compact mixed-derivative bounds, and joint analyticity -/
 
-/-- The joint analyticity domain
-`{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}` of `lerchSeries` is open. -/
-theorem isOpen_lerchSeriesDomain :
-    IsOpen {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} :=
-  (isOpen_lt (continuous_norm.comp (continuous_fst.comp continuous_snd)) continuous_const).inter
+/-- The joint analyticity domain `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`
+of `lerchSeries` in coordinates `(s, z, c)`. -/
+def lerchSeriesDomain : Set (ℂ × ℂ × ℂ) :=
+  {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}
+
+/-- Defining set expression for `lerchSeriesDomain`. -/
+theorem lerchSeriesDomain_def :
+    lerchSeriesDomain = {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} := by rfl
+
+/-- Membership characterization for `lerchSeriesDomain`. -/
+@[simp]
+theorem mem_lerchSeriesDomain {p : ℂ × ℂ × ℂ} :
+    p ∈ lerchSeriesDomain ↔ ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane := by rfl
+
+/-- The joint analyticity domain `{p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}`
+of `lerchZeta` in coordinates `(s, a, c)`. -/
+def lerchZetaDomain : Set (ℂ × ℂ × ℂ) :=
+  {p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}
+
+/-- Defining set expression for `lerchZetaDomain`. -/
+theorem lerchZetaDomain_def :
+    lerchZetaDomain = {p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} := by rfl
+
+/-- Membership characterization for `lerchZetaDomain`. -/
+@[simp]
+theorem mem_lerchZetaDomain {p : ℂ × ℂ × ℂ} :
+    p ∈ lerchZetaDomain ↔ 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane := by rfl
+
+/-- The joint analyticity domain `lerchSeriesDomain` of `lerchSeries` is open. -/
+theorem isOpen_lerchSeriesDomain : IsOpen lerchSeriesDomain := by
+  rw [lerchSeriesDomain_def]
+  exact (isOpen_lt (continuous_norm.comp (continuous_fst.comp continuous_snd))
+      continuous_const).inter
     (Complex.isOpen_slitPlane.preimage (continuous_snd.comp continuous_snd))
 
-/-- The joint analyticity domain
-`{p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}` of `lerchZeta` is open. -/
-theorem isOpen_lerchZetaDomain :
-    IsOpen {p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} :=
-  (isOpen_lt continuous_const
+/-- The joint analyticity domain `lerchZetaDomain` of `lerchZeta` is open. -/
+theorem isOpen_lerchZetaDomain : IsOpen lerchZetaDomain := by
+  rw [lerchZetaDomain_def]
+  exact (isOpen_lt continuous_const
       (Complex.continuous_im.comp (continuous_fst.comp continuous_snd))).inter
     (Complex.isOpen_slitPlane.preimage (continuous_snd.comp continuous_snd))
 
@@ -365,7 +394,12 @@ theorem hasDerivAt_lerchSeries_left {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
   have hd := Complex.hasDerivAt_tsum_of_summable_norm (F := F) hu (fun _ => by fun_prop) isOpen_ball
     (fun n w hw => by simpa [F] using hle n (s, w) ⟨rfl, ball_subset_closedBall hw⟩)
     (mem_ball_zero_iff.mpr hzr)
-  simpa [F, lerchSeries_def] using hd
+  have hterm : (fun n => deriv (F n) z) =
+      fun n : ℕ => (n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c)) := by
+    ext n
+    exact ((hasDerivAt_pow n z).mul_const _).deriv
+  rw [hterm] at hd
+  exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def w s c).symm)
 
 /-- Term-by-term formula for `deriv (fun w => lerchSeries w s c) z` on `‖z‖ < 1`. -/
 theorem deriv_lerchSeries_left {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
@@ -502,17 +536,15 @@ theorem differentiableOn_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ
     DifferentiableOn ℂ (fun w => lerchSeries z s w) Complex.slitPlane := fun _ hc =>
   (hasDerivAt_lerchSeries_right hz s hc).differentiableAt.differentiableWithinAt
 
-/-- `lerchSeries` is jointly analytic in `(s, z, c)` on
-`{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
+/-- `lerchSeries` is jointly analytic in `(s, z, c)` on `lerchSeriesDomain`. -/
 theorem analyticOnNhd_lerchSeries :
-    AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2)
-      {p | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} := by
+    AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2) lerchSeriesDomain := by
   intro p₀ hp₀
   obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
     (isOpen_lerchSeriesDomain.mem_nhds hp₀)
   obtain ⟨u, hu, hle⟩ := (isCompact_closedBall p₀ δ).exists_summable_norm_lerchSeries_term_le
-    (fun q hq => (hcb hq).1)
-    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (hcb hq).2 n)
+    (fun q hq => (mem_lerchSeriesDomain.mp (hcb hq)).1)
+    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (mem_lerchSeriesDomain.mp (hcb hq)).2 n)
   have hunif : TendstoUniformlyOn
       (fun N (p : ℂ × ℂ × ℂ) =>
         ∑ n ∈ Finset.range N, p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2)))
@@ -524,7 +556,8 @@ theorem analyticOnNhd_lerchSeries :
         ∑ n ∈ Finset.range N, p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2)))
       (ball p₀ δ) := fun N q hq => by
     refine DifferentiableWithinAt.fun_sum fun n _ => ?_
-    have hslit := forall_natCast_add_mem_slitPlane_iff.mpr (hcb (ball_subset_closedBall hq)).2 n
+    have hslit := forall_natCast_add_mem_slitPlane_iff.mpr
+      (mem_lerchSeriesDomain.mp (hcb (ball_subset_closedBall hq))).2 n
     exact (((differentiableAt_fst.comp q differentiableAt_snd).pow n).mul
       ((differentiableAt_fst.neg.mul
         (((differentiableAt_const (n : ℂ)).add
@@ -533,33 +566,28 @@ theorem analyticOnNhd_lerchSeries :
   have hdiff := hunif.differentiableOn (Eventually.of_forall hdiff_sum) isOpen_ball
   exact hdiff.analyticOnNhd_of_finiteDimensional isOpen_ball p₀ (mem_ball_self hδ)
 
-/-- `lerchSeries` is jointly complex differentiable in `(s, z, c)` on
-`{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
+/-- `lerchSeries` is jointly complex differentiable in `(s, z, c)` on `lerchSeriesDomain`. -/
 theorem differentiableOn_lerchSeries :
-    DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2)
-      {p | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} :=
+    DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2) lerchSeriesDomain :=
   analyticOnNhd_lerchSeries.differentiableOn
 
-/-- `lerchZeta` is jointly analytic in `(s, a, c)` on the upper half-plane in `a` and slit plane in
-`c`: `{p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}`. -/
+/-- `lerchZeta` is jointly analytic in `(s, a, c)` on `lerchZetaDomain`. -/
 theorem analyticOnNhd_lerchZeta :
-    AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ => lerchZeta p.1 p.2.1 p.2.2)
-      {p | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} := by
+    AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ => lerchZeta p.1 p.2.1 p.2.2) lerchZetaDomain := by
   intro p hp
+  rw [mem_lerchZetaDomain] at hp
   let φ : ℂ × ℂ × ℂ → ℂ × ℂ × ℂ := fun q => (q.1, Complex.exp (2 * Real.pi * I * q.2.1), q.2.2)
   have hφ : AnalyticAt ℂ φ p :=
     analyticAt_fst.prod (((analyticAt_const.mul (analyticAt_fst.comp analyticAt_snd)).cexp).prod
       (analyticAt_snd.comp analyticAt_snd))
-  have hmem : φ p ∈ {q : ℂ × ℂ × ℂ | ‖q.2.1‖ < 1 ∧ q.2.2 ∈ Complex.slitPlane} :=
-    ⟨UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr hp.1, hp.2⟩
+  have hmem : φ p ∈ lerchSeriesDomain :=
+    mem_lerchSeriesDomain.mpr ⟨UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr hp.1, hp.2⟩
   exact ((analyticOnNhd_lerchSeries (φ p) hmem).comp hφ).congr
     (Eventually.of_forall fun q => (lerchZeta_def q.1 q.2.1 q.2.2).symm)
 
-/-- `lerchZeta` is jointly complex differentiable in `(s, a, c)` on
-`{p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}`. -/
+/-- `lerchZeta` is jointly complex differentiable in `(s, a, c)` on `lerchZetaDomain`. -/
 theorem differentiableOn_lerchZeta :
-    DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchZeta p.1 p.2.1 p.2.2)
-      {p | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} :=
+    DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchZeta p.1 p.2.1 p.2.2) lerchZetaDomain :=
   analyticOnNhd_lerchZeta.differentiableOn
 
 private theorem iteratedDeriv_lerchSeries_term_eq (n dz ds dc : ℕ) (p : ℂ × ℂ × ℂ) :
@@ -590,12 +618,11 @@ private theorem norm_mul_iteratedDeriv_right_lerchSeries_term_le (n ds dc : ℕ)
     ⟨hg_diff.mono ball_subset_closedBall, hg_diff.continuousOn.mono closure_ball_subset_closedBall⟩
     hB
 
-/-- On any compact subset `K` of `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`
-(in coordinates `(s, z, c)`), every fixed mixed iterated partial derivative of order `(dz, ds, dc)`
-of the Lerch series terms has a single summable norm bound uniformly on `K`. -/
+/-- On any compact subset `K` of `lerchSeriesDomain` (in coordinates `(s, z, c)`), every fixed mixed
+iterated partial derivative of order `(dz, ds, dc)` of the Lerch series terms has a single summable
+norm bound uniformly on `K`. -/
 theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
-    {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K)
-    (hKU : K ⊆ {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane})
+    {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K) (hKU : K ⊆ lerchSeriesDomain)
     (dz ds dc : ℕ) :
     ∃ u : ℕ → ℝ, Summable u ∧ ∀ n : ℕ, ∀ p ∈ K,
       ‖iteratedDeriv dc (fun c =>
@@ -612,8 +639,9 @@ theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
     simp only [Prod.dist_eq, dist_self, max_le_iff]
     exact ⟨hδ.le, (mem_closedBall.mp hz').trans hRδ, (mem_closedBall.mp hc').trans hRδ⟩
   obtain ⟨v, hv, hv_le⟩ := exists_summable_norm_log_pow_lerchSeries_term_le hK.cthickening
-    (fun q hq => (hK'U hq).1)
-    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (hK'U hq).2 n) ds
+    (fun q hq => (mem_lerchSeriesDomain.mp (hK'U hq)).1)
+    (fun q hq n => natCast_add_ne_zero_of_mem_slitPlane (mem_lerchSeriesDomain.mp (hK'U hq)).2 n)
+    ds
   refine ⟨fun n => (dz.factorial / R ^ dz) * (dc.factorial / R ^ dc) * v n,
     hv.mul_left _, fun n p hp => ?_⟩
   rw [iteratedDeriv_lerchSeries_term_eq]
@@ -621,7 +649,9 @@ theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
     Complex.exp (-p.1 * Complex.log (n + c))) p.2.2
   have hc_bound : ∀ z' ∈ sphere p.2.1 R, ‖z' ^ n * W‖ ≤ dc.factorial * v n / R ^ dc :=
     fun z' hz' => norm_mul_iteratedDeriv_right_lerchSeries_term_le n ds dc hR
-      (fun c' hc' => (hK'U (hmem_K' p hp z' (sphere_subset_closedBall hz') c' hc')).2)
+      (fun c' hc' =>
+        (mem_lerchSeriesDomain.mp
+          (hK'U (hmem_K' p hp z' (sphere_subset_closedBall hz') c' hc'))).2)
       (fun c' hc' => hv_le n (p.1, z', c')
         (hmem_K' p hp z' (sphere_subset_closedBall hz') c' (sphere_subset_closedBall hc')))
   calc ‖iteratedDeriv dz (fun z' : ℂ => z' ^ n * W) p.2.1‖
@@ -681,7 +711,7 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
     (isCompact_singleton.prod
       (isCompact_singleton.prod
         (isCompact_closedBall p.2.2 δ))).exists_summable_norm_iteratedDeriv_lerchSeries_term_le
-      (fun q hq => ⟨by rw [hq.2.1]; exact hz, hcb hq.2.2⟩) dz ds 0
+      (fun q hq => mem_lerchSeriesDomain.mpr ⟨by rw [hq.2.1]; exact hz, hcb hq.2.2⟩) dz ds 0
   refine (Complex.hasSum_iteratedDeriv_of_summable_norm hu (fun n c' hc' => ?_) isOpen_ball
     (fun n c' hc' => ?_) dc (mem_ball_self hδ)).tsum_eq.symm
   · simp_rw [iteratedDeriv_middle_lerchSeries_term, iteratedDeriv_mul_const_field]
@@ -690,10 +720,9 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
   · simpa using hle n (p.1, p.2.1, c') ⟨rfl, rfl, ball_subset_closedBall hc'⟩
 
 /-- Partial sums of every mixed `(dz, ds, dc)` partial derivative of `lerchSeries` converge
-uniformly on every compact subset of `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
+uniformly on every compact subset of `lerchSeriesDomain`. -/
 theorem _root_.IsCompact.tendstoUniformlyOn_iteratedDeriv_lerchSeries {K : Set (ℂ × ℂ × ℂ)}
-    (hK : IsCompact K)
-    (hKU : K ⊆ {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}) (dz ds dc : ℕ) :
+    (hK : IsCompact K) (hKU : K ⊆ lerchSeriesDomain) (dz ds dc : ℕ) :
     TendstoUniformlyOn
       (fun N p => ∑ n ∈ Finset.range N,
         iteratedDeriv dc (fun c =>
@@ -706,7 +735,8 @@ theorem _root_.IsCompact.tendstoUniformlyOn_iteratedDeriv_lerchSeries {K : Set (
       atTop K := by
   obtain ⟨u, hu, hle⟩ := hK.exists_summable_norm_iteratedDeriv_lerchSeries_term_le hKU dz ds dc
   exact (tendstoUniformlyOn_tsum_nat hu hle).congr_right fun p hp =>
-    (iteratedDeriv_lerchSeries_eq_tsum (hKU hp).1 (hKU hp).2 dz ds dc).symm
+    (iteratedDeriv_lerchSeries_eq_tsum (mem_lerchSeriesDomain.mp (hKU hp)).1
+      (mem_lerchSeriesDomain.mp (hKU hp)).2 dz ds dc).symm
 
 /-! ### Boundary convergence on `‖z‖ ≤ 1, 1 < s.re` -/
 

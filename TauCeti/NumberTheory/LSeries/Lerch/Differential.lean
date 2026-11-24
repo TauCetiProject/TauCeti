@@ -5,11 +5,11 @@ Authors: Tau Ceti
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Eulerian
 public import TauCeti.NumberTheory.LSeries.Lerch.Series
 public import TauCeti.RingTheory.Polynomial.Eulerian
 
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.SpecialFunctions.Eulerian
 
 /-!
 # Lerch PDE and nonpositive-integer values for the Lerch series
@@ -78,13 +78,13 @@ iteration of the shifted Euler operator `f ↦ (w ↦ w * deriv f w + c * f w)` 
 theorem lerchSeries_neg_nat_middle_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
     (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-(m : ℂ)) c =
-      ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z := by
+      ((shiftedEulerOp c)^[m]) (fun w => (1 - w)⁻¹) z := by
   induction m generalizing z with
   | zero => simpa using lerchSeries_zero_middle hz c
   | succ m ih =>
-    rw [Function.iterate_succ_apply']
-    have hloc : (((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m])
-        (fun w => (1 - w)⁻¹)) =ᶠ[𝓝 z] fun w => lerchSeries w (-(m : ℂ)) c := by
+    rw [Function.iterate_succ_apply', shiftedEulerOp_apply]
+    have hloc : ((shiftedEulerOp c)^[m]) (fun w => (1 - w)⁻¹) =ᶠ[𝓝 z]
+        fun w => lerchSeries w (-(m : ℂ)) c := by
       filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hz)] with w hw
       exact (ih (mem_ball_zero_iff.mp hw)).symm
     have hcast : -(m : ℂ) - 1 = -((m + 1 : ℕ) : ℂ) := by push_cast; ring
@@ -94,7 +94,7 @@ theorem lerchSeries_neg_nat_middle_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ 
 theorem lerchSeries_neg_nat_middle_eq_div (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
     (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-(m : ℂ)) c = (shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1) := by
-  rw [lerchSeries_neg_nat_middle_eq_iterate m hz hc, iterate_mul_deriv_add_mul_inv_one_sub]
+  rw [lerchSeries_neg_nat_middle_eq_iterate m hz hc, iterate_shiftedEulerOp_inv_one_sub]
 
 /-- Explicit rational value `Φ(z, -1, c) = c / (1 - z) + z / (1 - z) ^ 2` on `‖z‖ < 1` whenever
 `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/

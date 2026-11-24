@@ -111,8 +111,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
   for `|θ| < π` and `0 ≤ r`.
-* `Complex.norm_log_pow_mul_exp_le` -- uniform norm bound for `(-log w) ^ k * exp (-s * log w)`
-  on an annulus `δ ≤ ‖w‖ ≤ B` with `‖s‖ ≤ S`.
+* `Complex.norm_neg_log_pow_mul_exp_neg_mul_log_le` -- uniform norm bound for
+  `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B` with `‖s‖ ≤ S`.
 -/
 
 public section
@@ -789,7 +789,7 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
 
 /-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
 (`0 < δ`) with `‖s‖ ≤ S`. -/
-theorem norm_log_pow_mul_exp_le {s w : ℂ} {S δ B : ℝ} (hS : ‖s‖ ≤ S)
+theorem norm_neg_log_pow_mul_exp_neg_mul_log_le {s w : ℂ} {S δ B : ℝ} (hS : ‖s‖ ≤ S)
     (hδ0 : 0 < δ) (hw_lo : δ ≤ ‖w‖) (hw_hi : ‖w‖ ≤ B) (k : ℕ) :
     ‖(-Complex.log w) ^ k * Complex.exp (-s * Complex.log w)‖ ≤
       (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
