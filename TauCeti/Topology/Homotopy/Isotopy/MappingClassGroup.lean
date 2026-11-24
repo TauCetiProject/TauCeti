@@ -35,7 +35,8 @@ homomorphism from the smooth group is `TauCeti.MappingClassGroup.toMappingClassG
   identity.
 * `TauCeti.MappingClassGroupFull M`: the topological mapping class group, the quotient of
   `M ≃ₜ M` by `isotopicToIdSubgroup M`.
-* `TauCeti.MappingClassGroupFull.mk M`: the quotient homomorphism `(M ≃ₜ M) →* Mod(M)`.
+* `TauCeti.MappingClassGroupFull.mk M`: the quotient homomorphism
+  `(M ≃ₜ M) →* MappingClassGroupFull M`.
 * `TauCeti.MappingClassGroupFull.lift`: a homomorphism out of `M ≃ₜ M` trivial on every
   homeomorphism isotopic to the identity descends to `MappingClassGroupFull M`.
 * `TauCeti.MappingClassGroupFull.congr e`: the isomorphism of mapping class groups induced by a
@@ -48,8 +49,8 @@ homomorphism from the smooth group is `TauCeti.MappingClassGroup.toMappingClassG
   isotopy to the identity.
 * `TauCeti.MappingClassGroupFull.mk_eq_mk_iff`: two homeomorphisms have the same class exactly
   when they are isotopic.
-* `TauCeti.MappingClassGroupFull.mk_finalHomeomorph`: the final homeomorphism of an ambient
-  isotopy represents the trivial class.
+* `TauCeti.MappingClassGroupFull.mk_finalHomeomorph_eq_one`: the final homeomorphism of an
+  ambient isotopy represents the trivial class.
 * `TauCeti.MappingClassGroupFull.lift_mk`, `TauCeti.MappingClassGroupFull.hom_ext`: the universal
   property of `mk`.
 
@@ -171,7 +172,7 @@ theorem mk_eq_mk_iff {f g : M ≃ₜ M} : mk M f = mk M g ↔ Isotopic (f : C(M,
 
 /-- The final homeomorphism of an ambient isotopy represents the trivial mapping class. -/
 @[simp]
-theorem mk_finalHomeomorph (Φ : AmbientIsotopy M) : mk M Φ.finalHomeomorph = 1 :=
+theorem mk_finalHomeomorph_eq_one (Φ : AmbientIsotopy M) : mk M Φ.finalHomeomorph = 1 :=
   (QuotientGroup.eq_one_iff _).2 (finalHomeomorph_mem_isotopicToIdSubgroup Φ)
 
 section Lift
@@ -248,8 +249,7 @@ theorem congr_trans (e : M ≃ₜ N) (e' : N ≃ₜ P) :
 theorem congr_symm (e : M ≃ₜ N) : (congr e).symm = congr e.symm := by
   ext φ
   obtain ⟨f, rfl⟩ := mk_surjective φ
-  rw [MulEquiv.symm_apply_eq, congr_mk, congr_mk, ← MulEquiv.trans_apply,
-    ← Homeomorph.homeoCongr_symm, MulEquiv.symm_trans_self, MulEquiv.refl_apply]
+  simp [MulEquiv.symm_apply_eq, ← Homeomorph.homeoCongr_symm]
 
 end Congr
 
