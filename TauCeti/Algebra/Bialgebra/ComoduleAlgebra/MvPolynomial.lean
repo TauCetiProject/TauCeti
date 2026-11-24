@@ -59,6 +59,31 @@ noncomputable def monomialWeight (w : σ → G) (s : σ →₀ ℕ) : G :=
 theorem monomialWeight_def (w : σ → G) (s : σ →₀ ℕ) :
     monomialWeight w s = (Finsupp.weight (Additive.ofMul ∘ w) s).toMul := (rfl)
 
+/-- The weight of a monomial is the product `∏ i, w i ^ s i` over the support of `s`. -/
+theorem monomialWeight_eq_prod (w : σ → G) (s : σ →₀ ℕ) :
+    monomialWeight w s = s.prod fun i n ↦ w i ^ n := by
+  simp [monomialWeight_def, Finsupp.weight_apply, Finsupp.sum, Finsupp.prod, toMul_sum]
+
+/-- The constant monomial has weight `1`: `map_zero` for `Finsupp.weight`, read
+multiplicatively. -/
+@[simp]
+theorem monomialWeight_zero (w : σ → G) : monomialWeight w 0 = 1 := by
+  rw [monomialWeight_def, map_zero, toMul_zero]
+
+/-- The weight of a product of monomials is the product of their weights: `map_add` for
+`Finsupp.weight`, read multiplicatively. -/
+@[simp]
+theorem monomialWeight_add (w : σ → G) (s t : σ →₀ ℕ) :
+    monomialWeight w (s + t) = monomialWeight w s * monomialWeight w t := by
+  rw [monomialWeight_def, map_add, toMul_add, monomialWeight_def, monomialWeight_def]
+
+/-- The monomial `X i ^ n` has weight `w i ^ n`: `Finsupp.weight_single`, read
+multiplicatively. -/
+@[simp]
+theorem monomialWeight_single (w : σ → G) (i : σ) (n : ℕ) :
+    monomialWeight w (Finsupp.single i n) = w i ^ n := by
+  rw [monomialWeight_def, Finsupp.weight_single, toMul_nsmul, Function.comp_apply, toMul_ofMul]
+
 /-- The coaction with weights `w`, as an algebra homomorphism: it sends `X i` to `X i ⊗ [w i]`. -/
 noncomputable def mvPolynomialWeightCoact (w : σ → G) :
     MvPolynomial σ R →ₐ[R] MvPolynomial σ R ⊗[R] MonoidAlgebra R G :=
@@ -77,12 +102,11 @@ theorem mvPolynomialWeightCoact_monomial (w : σ → G) (s : σ →₀ ℕ) (c :
   classical
   induction s using Finsupp.induction with
   | zero =>
-    simp [mvPolynomialWeightCoact, monomialWeight_def, Algebra.TensorProduct.algebraMap_apply,
-      MonoidAlgebra.one_def]
+    simp [mvPolynomialWeightCoact, Algebra.TensorProduct.algebraMap_apply, MonoidAlgebra.one_def]
   | single_add i n s _ _ ih =>
     rw [monomial_single_add, map_mul, map_pow, mvPolynomialWeightCoact_X, ih,
       Algebra.TensorProduct.tmul_pow, Algebra.TensorProduct.tmul_mul_tmul]
-    simp [monomialWeight_def, MonoidAlgebra.single_pow, Finsupp.weight_single]
+    simp [MonoidAlgebra.single_pow]
 
 /-- The diagonal comodule on the monomial basis has coaction `mvPolynomialWeightCoact w`. -/
 theorem ofWeights_basisMonomials_coact (w : σ → G) :
