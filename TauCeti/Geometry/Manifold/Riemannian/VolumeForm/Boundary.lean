@@ -78,8 +78,8 @@ private theorem exists_orthonormalBasis_cons_outwardUnitNormal
       (by rw [TauCeti.finrank_tangentSpace]; simp)).toOrthonormalBasis
       (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact hf_orth)
   have hb'_coe : ⇑b'.toBasis = Fin.cons N fun i ↦ dι (b i) := by
-    rw [Module.Basis.toBasis_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
-    rfl
+    rw [Module.Basis.toBasis_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank,
+      Matrix.vecCons]
   have hN_neg : (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) N < 0 := by
     have h := (isOutwardPointing_outwardUnitNormal x).coordinate_deriv_neg
     rwa [mfderiv_extChartAt_self] at h

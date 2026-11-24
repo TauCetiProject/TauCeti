@@ -68,6 +68,8 @@ trivialization.
   map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a `C^n` trivialization agrees with a family of globally `C^n` sections.
+* `Bundle.Trivialization.contMDiffOn_mul_localFrameCoeff`: the local-frame coefficients of a
+  `C^n` section, multiplied by a `C^n` function on `e.baseSet`, are `C^n` on `e.baseSet`.
 * `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
   section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
 * `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
@@ -351,6 +353,24 @@ theorem exists_contMDiff_eventuallyEq_localFrame
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+
+/-- The coefficients of a `C^n` section in the local frame of a trivialization `e`, multiplied by a
+`C^n` function `ρ` on `e.baseSet`, are `C^n` on `e.baseSet`. -/
+theorem contMDiffOn_mul_localFrameCoeff
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] {n : ℕ∞ω} [ContMDiffVectorBundle 1 G W I]
+    [ContMDiffVectorBundle n G W I]
+    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι 𝕜 G)
+    {ρ : M → 𝕜} (hρ : CMDiff[e.baseSet] n ρ)
+    {s : Π y : M, W y} (hs : CMDiff[e.baseSet] n (T% s)) (i : ι) :
+    CMDiff[e.baseSet] n (fun y ↦ ρ y * e.localFrameCoeff I b i y (s y)) :=
+  hρ.mul (contMDiffOn_baseSet_localFrameCoeff b hs i)
 
 /-- The coefficients of a `C^n` section in the local frame of a trivialization `e`, multiplied by a
 `C^n` function `ρ` supported in `e.baseSet`, are globally `C^n`. Only regularity on `e.baseSet`

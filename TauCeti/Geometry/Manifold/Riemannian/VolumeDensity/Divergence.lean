@@ -163,9 +163,7 @@ private theorem stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum
         (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrameCoeff I
           (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i z (X z)) =ᶠ[nhds y]
       fun z ↦ ∑ j : Fin m,
-        (|((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-          ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-            (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
+        (stdChartDetFactor m *
           (EuclideanSpace.basisFun (Fin m) ℝ).toBasis.repr
             ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
               (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))) j) i) •
@@ -204,7 +202,7 @@ theorem stdChartVolumeDensity_mul_divergence
   set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
   set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
   set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  let D : ℝ := |stdB.det (finB.reindex finσ)|⁻¹
+  let D : ℝ := stdChartDetFactor m
   let A (i j : Fin m) : ℝ := stdB.repr (finB.reindex finσ j) i
   let g (k) (z : M) : ℝ := chartVolumeDensity (I := I) α z * e.localFrameCoeff I finB k z (X z)
   have hρ := ((contMDiffOn_chartVolumeDensity (n := 1) α).contMDiffAt

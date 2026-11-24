@@ -77,12 +77,11 @@ private theorem chartVolumeDensity_eq_metricVolumeDensity (α : M) {x : M}
     chartVolumeDensity (I := I) α x =
       ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx).metricVolumeDensity
         (innerSL ℝ) := by
-  rw [chartVolumeDensity_def, Module.Basis.metricVolumeDensity_def]
+  rw [chartVolumeDensity_def, Module.Basis.metricVolumeDensity_innerSL_eq_sqrt_det_gram]
   congr 2
   ext i j
   simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)]
-  rfl
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hx), Matrix.gram_apply]
 
 /-- A `C^n` metric has a `C^n` volume density in every chart of a `C^(n+1)` manifold. -/
 theorem contMDiffOn_chartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]
@@ -151,27 +150,39 @@ variable {m : ℕ} {H : Type*} [TopologicalSpace H]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-private theorem stdBasisDet_ne_zero (m : ℕ) :
-    |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-      ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-        (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))| ≠ 0 :=
-  abs_ne_zero.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
+/-- The constant rescaling factor `|det ((finBasis).reindex _)|⁻¹` relating
+`TauCeti.stdChartVolumeDensity` to `TauCeti.chartVolumeDensity`, and `(Module.finBasis ℝ _).addHaar`
+to Lebesgue measure `volume` on `EuclideanSpace ℝ (Fin m)`. -/
+def stdChartDetFactor (m : ℕ) : ℝ :=
+  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹
+
+/-- The defining formula for `TauCeti.stdChartDetFactor`. -/
+theorem stdChartDetFactor_def (m : ℕ) :
+    stdChartDetFactor m =
+      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ :=
+  (rfl)
+
+/-- `TauCeti.stdChartDetFactor m` is strictly positive. -/
+theorem stdChartDetFactor_pos (m : ℕ) : 0 < stdChartDetFactor m :=
+  inv_pos.2 <| abs_pos.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
+
+/-- `TauCeti.stdChartDetFactor m` is nonzero. -/
+theorem stdChartDetFactor_ne_zero (m : ℕ) : stdChartDetFactor m ≠ 0 :=
+  (stdChartDetFactor_pos m).ne'
 
 /-- The Riemannian volume density in the chart frame induced by `EuclideanSpace.basisFun`. -/
 def stdChartVolumeDensity (α x : M) : ℝ :=
-  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
-    chartVolumeDensity (I := I) α x
+  stdChartDetFactor m * chartVolumeDensity (I := I) α x
 
 /-- Defining relation expressing `TauCeti.stdChartVolumeDensity` as a rescaling of
 `TauCeti.chartVolumeDensity`. -/
 theorem stdChartVolumeDensity_def (α x : M) :
     stdChartVolumeDensity (I := I) α x =
-      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ *
-        chartVolumeDensity (I := I) α x := (rfl)
+      stdChartDetFactor m * chartVolumeDensity (I := I) α x := (rfl)
 
 /-- On the trivialization base set, `stdChartVolumeDensity` equals the square root of the Gram
 determinant of the standard Euclidean basis chart frame. -/
@@ -186,22 +197,22 @@ theorem stdChartVolumeDensity_eq_sqrt_det_gram (α : M) {y : M}
   set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
   set B_std := e.basisAt stdB hy
   set B_fin := e.basisAt (finB.reindex finσ) hy
-  have hdet_pos : 0 < |stdB.det (finB.reindex finσ)| :=
-    lt_of_le_of_ne (abs_nonneg _) (stdBasisDet_ne_zero m).symm
   have hmat : B_std.toMatrix B_fin = stdB.toMatrix (finB.reindex finσ) := by
-    ext i j
-    simp [Module.Basis.toMatrix_apply, B_std, B_fin, Bundle.Trivialization.basisAt,
-      e.apply_mk_symm hy]
+    dsimp only [B_std, B_fin, Bundle.Trivialization.basisAt]
+    rw [Module.Basis.toMatrix_map, Module.Basis.coe_map]
+    congr 1
+    ext k
+    simp only [Function.comp_apply, LinearEquiv.symm_apply_apply]
+  have hreindex : B_fin = (e.basisAt finB hy).reindex finσ := by
+    ext i
+    simp [B_fin, Bundle.Trivialization.basisAt]
   have hchart : chartVolumeDensity (I := I) α y = B_fin.metricVolumeDensity (innerSL ℝ) := by
-    rw [chartVolumeDensity_eq_metricVolumeDensity α hy,
-      ← Module.Basis.metricVolumeDensity_reindex _ finσ (innerSL ℝ)]
-    rfl
-  have hstd : B_std.metricVolumeDensity (innerSL ℝ) = √(Matrix.gram ℝ B_std).det := by
-    rw [Module.Basis.metricVolumeDensity_def]
-    rfl
+    rw [chartVolumeDensity_eq_metricVolumeDensity α hy, hreindex,
+      Module.Basis.metricVolumeDensity_reindex]
   have hcov := Module.Basis.metricVolumeDensity_change_basis B_std B_fin (innerSL ℝ)
   rw [hmat, ← Module.Basis.det_apply, ← hchart] at hcov
-  rw [stdChartVolumeDensity_def, hcov, ← hstd, inv_mul_cancel_left₀ hdet_pos.ne']
+  rw [stdChartVolumeDensity_def, hcov, B_std.metricVolumeDensity_innerSL_eq_sqrt_det_gram,
+    stdChartDetFactor_def, inv_mul_cancel_left₀ (abs_ne_zero.2 (stdB.isUnit_det _).ne_zero)]
 
 /-- A `C^n` metric has a `C^n` standard-frame volume density on every chart source of a `C^(n+1)`
 manifold. -/

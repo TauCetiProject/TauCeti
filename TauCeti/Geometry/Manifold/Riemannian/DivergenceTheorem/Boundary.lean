@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Boundary.Ch
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.Boundary.Flux
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Integration
+import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # The divergence theorem on a Riemannian manifold with boundary
@@ -262,15 +263,12 @@ theorem integral_divergence_eq_tsum_boundaryFlux {X : (x : M) → TangentSpace (
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin 1)) X) :
     (∫ x, divergence (𝓡∂ 1) X x ∂riemannianVolume (𝓡∂ 1) M) =
       ∑' x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x) := by
-  have _ := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) ((𝓡∂ 1).boundary M)
-  have _ : Countable ((𝓡∂ 1).boundary M) := countable_of_Lindelof_of_discrete
-  have _ : T1Space ((𝓡∂ 1).boundary M) := ChartedSpace.t1Space (EuclideanSpace ℝ (Fin 0)) _
-  have hint := halfSpaceBoundaryVolume_zero_eq_count (M := M) ▸
-    TauCeti.integrable_boundaryFlux (n := 0) hX.continuous hc
+  have hint : Integrable
+      (fun x : (𝓡∂ 1).boundary M ↦ inner ℝ (X (x : M)) (outwardUnitNormal x)) Measure.count :=
+    halfSpaceBoundaryVolume_zero_eq_count (M := M) ▸
+      TauCeti.integrable_boundaryFlux (n := 0) hX.continuous hc
   rw [integral_divergence_eq_boundaryFlux (n := 0) hX hc,
-    halfSpaceBoundaryVolume_zero_eq_count, integral_countable hint]
-  exact tsum_congr fun x ↦ by
-    simp [measureReal_def, Measure.count_singleton' (measurableSet_singleton x)]
+    halfSpaceBoundaryVolume_zero_eq_count, MeasureTheory.integral_count_eq_tsum hint]
 
 /-- On a one-dimensional Riemannian manifold with finite boundary (`n = 0`), the integral of
 `div X` is the finite sum of outward normal fluxes `inner ℝ (X x) (N x)` at the boundary

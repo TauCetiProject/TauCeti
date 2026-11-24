@@ -149,6 +149,35 @@ noncomputable def restrictBoundaryTangentSpace
     g.pullback Subtype.val (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
       TauCeti.injective_mfderiv_subtypeVal_boundary
 
+/-- Restricting a `C^k` metric to the boundary commutes with forgetting regularity via
+`toRiemannianMetric`. -/
+@[simp]
+theorem toRiemannianMetric_restrictBoundaryTangentSpace
+    (g : let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+      ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k
+        (EuclideanSpace ℝ (Fin (n + 1)))
+        (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)) :
+    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+        ((𝓡∂ (n + 1)).boundary M) :=
+      TauCeti.isManifold_boundary (n := n) (k := k + 1) M
+    let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+        ((𝓡∂ (n + 1)).boundary M) :=
+      IsManifold.of_le (n := k + 1) (ENat.one_le_iff_ne_zero_withTop.2 (by simp))
+    g.restrictBoundaryTangentSpace.toRiemannianMetric =
+      g.toRiemannianMetric.restrictBoundaryTangentSpace := by
+  let _ : IsManifold (𝓡∂ (n + 1)) 1 M := ambientOne n k M
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1)
+      ((𝓡∂ (n + 1)).boundary M) := boundaryManifold n k M
+  let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
+      ((𝓡∂ (n + 1)).boundary M) := boundaryOne n k M
+  dsimp only [restrictBoundaryTangentSpace, RiemannianMetric.restrictBoundaryTangentSpace]
+  exact g.toRiemannianMetric_pullback Subtype.val
+    (contMDiff_subtypeVal_boundary (n := n) (k := k) (M := M))
+    TauCeti.injective_mfderiv_subtypeVal_boundary
+
 /-- The induced boundary metric evaluates the ambient metric on boundary tangent derivatives. -/
 @[simp]
 theorem restrictBoundaryTangentSpace_inner
@@ -242,7 +271,8 @@ instance halfSpaceBoundaryMetric_isContMDiff {k : ℕ∞ω} [IsManifold (𝓡∂
   ⟨g.restrictBoundaryTangentSpace.inner, g.restrictBoundaryTangentSpace.contMDiff, fun x v w ↦ by
     rw [inner_tangentSpace_boundary,
       ContMDiffRiemannianMetric.restrictBoundaryTangentSpace_inner (n := n) (k := k) (M := M) g,
-      ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]; rfl⟩
+      ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
+      RiemannianMetric.inner_riemannianBundle]⟩
 
 /-- If the ambient Riemannian metric is continuous on a `C¹` manifold with boundary, then the
 induced boundary metric is continuous. -/

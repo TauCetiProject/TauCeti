@@ -40,17 +40,16 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     IsOutwardPointing y (FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
       (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M))
       (-EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) (x : M)) y) := by
-  let v₀ : TangentSpace (𝓡∂ (n + 1)) (x : M) := -EuclideanSpace.single 0 1
-  change IsOutwardPointing y (FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
-    (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M)) v₀ y)
   have hy_base : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
       (TangentSpace (𝓡∂ (n + 1))) (x : M)).baseSet := by
     rwa [TangentBundle.trivializationAt_baseSet]
   have hfst : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 =
-      -EuclideanSpace.single 0 1 := by
-    rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
-      tangentCoordChange_self (mem_extChartAt_source (x : M))]
+      (TangentSpace (𝓡∂ (n + 1))) (x : M)
+      ⟨(x : M), (-EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) (x : M))⟩).2 =
+      -EuclideanSpace.single 0 1 :=
+    (TangentBundle.trivializationAt_snd_eq_tangentCoordChange
+      (-EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) (x : M))).trans
+      (by simp only [tangentCoordChange_self (mem_extChartAt_source (x : M))])
   dsimp only [FiberBundle.extend]
   rw [hfst, ← Trivialization.symmL_apply (R := ℝ) _ hy_base]
   exact isOutwardPointing_trivializationAt_symmL_neg_single_zero (y := ⟨y, hby⟩) hy_base

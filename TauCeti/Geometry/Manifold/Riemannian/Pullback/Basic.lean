@@ -252,6 +252,7 @@ noncomputable def pullback (g : RiemannianMetric (fun y : N ↦ TangentSpace J y
     let _ : NormedSpace ℝ (TangentSpace J (f x)) := inferInstanceAs (NormedSpace ℝ F)
     let A : TangentSpace I x →L[ℝ] TangentSpace J (f x) := mfderiv I J f x
     obtain ⟨_, -, hK⟩ := A.toLinearMap.exists_antilipschitzWith (LinearMap.ker_eq_bot.2 (hinj x))
+    -- The defining inequality is definitionally membership in the preimage above.
     exact NormedSpace.isVonNBounded_of_isBounded ℝ ((hK.isBounded_preimage
       ((NormedSpace.isVonNBounded_iff ℝ).mp (g.isVonNBounded (f x)))).subset fun _ hv ↦ hv)
 
@@ -269,11 +270,8 @@ omit [IsManifold I 1 M] in
 theorem pullback_id (g : RiemannianMetric (fun y : M ↦ TangentSpace I y))
     (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
     g.pullback id hinj = g := by
-  cases g with
-  | mk ginner gsymm gpos gcont gisVonNBounded =>
-    dsimp only [pullback]
-    congr 1; funext x; ext v w
-    simp [ContinuousLinearMap.precomp_apply, mfderiv_id]
+  ext x v w
+  simp [mfderiv_id]
 
 section Comp
 
@@ -307,9 +305,8 @@ theorem pullback_comp [FiniteDimensional ℝ F]
           rw [mfderiv_comp x (hh (f x)) (hf x)]
           exact (hinjh (f x)).comp (hinjf x)) =
       (g.pullback h hinjh).pullback f hinjf := by
-  dsimp only [pullback]
-  congr 1; funext x; ext v w
-  simp [ContinuousLinearMap.precomp_apply, mfderiv_comp x (hh (f x)) (hf x)]
+  ext x v w
+  simp [mfderiv_comp x (hh (f x)) (hf x)]
 
 end Comp
 

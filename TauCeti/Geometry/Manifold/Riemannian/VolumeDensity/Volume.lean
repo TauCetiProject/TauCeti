@@ -268,6 +268,17 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
 
 end Coordinates
 
+/-- The Haar measure on `EuclideanSpace ℝ (Fin m)` normalized by `Module.finBasis` is
+`TauCeti.stdChartDetFactor m` times Lebesgue volume. -/
+theorem finBasis_addHaar_eq_stdChartDetFactor_smul_volume (m : ℕ) :
+    (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar =
+      ENNReal.ofReal (stdChartDetFactor m) • (volume : Measure (EuclideanSpace ℝ (Fin m))) := by
+  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB,
+    stdChartDetFactor_def]
+  simp only [stdB, finσ, OrthonormalBasis.addHaar_eq_volume, abs_inv]
+
 /-- **Integration in coordinates** against the Riemannian volume using Lebesgue measure on
 `EuclideanSpace ℝ (Fin m)` and `TauCeti.stdChartVolumeDensity`. -/
 theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [TopologicalSpace H]
@@ -281,23 +292,16 @@ theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [Topolo
     ∫ x in s, φ x ∂riemannianVolume I M = ∫ z in (extChartAt I α) '' s,
       stdChartVolumeDensity (I := I) α ((extChartAt I α).symm z) •
         φ ((extChartAt I α).symm z) ∂volume := by
-  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
-  let finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
-  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  have hhaar : finB.addHaar =
-      ENNReal.ofReal |stdB.det (finB.reindex finσ)|⁻¹ • (volume : Measure _) := by
-    rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB]
-    simp only [stdB, OrthonormalBasis.addHaar_eq_volume, abs_inv]
   rw [setIntegral_riemannianVolume_of_subset hs hs' φ,
-    Module.Basis.setIntegral_addHaar_congr_measurableSpace finB ((extChartAt I α) '' s)
+    Module.Basis.setIntegral_addHaar_congr_measurableSpace
+      (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))) ((extChartAt I α) '' s)
       (fun z ↦
         chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z))
       (@extChartAtMeasurableSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance
       (@extChartAtBorelSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance,
-    hhaar, Measure.restrict_smul, integral_smul_measure,
-    ENNReal.toReal_ofReal (inv_nonneg.2 (abs_nonneg _)), ← integral_smul]
+    finBasis_addHaar_eq_stdChartDetFactor_smul_volume m, Measure.restrict_smul,
+    integral_smul_measure, ENNReal.toReal_ofReal (stdChartDetFactor_pos m).le, ← integral_smul]
   simp_rw [smul_smul, stdChartVolumeDensity_def]
-  dsimp only [stdB, finB, finσ]
 
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In
 particular, the Riemannian volume of a compact manifold is a finite measure. -/

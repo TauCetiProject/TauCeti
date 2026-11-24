@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Density-weighted chart fluxes of a vector field
@@ -29,7 +30,6 @@ manifolds with or without boundary.
   outside the extended chart target.
 * `TauCeti.chartFlux_eq_zero` and `TauCeti.chartFlux_eventuallyEq_zero`: vanishing outside the
   chart image of `tsupport X`.
-* `TauCeti.contMDiffOn_mul_localFrameCoeff`: `C^k` regularity of `ρ · Xⁱ` on the chart source.
 * `TauCeti.contDiffOn_chartFlux`: `C^k` regularity of `chartFlux` on `range I` when the chart
   image of `tsupport X` is compact and contained in the chart target.
 -/
@@ -104,21 +104,6 @@ theorem hasCompactSupport_chartFlux (b : Module.Basis ι 𝕜 E) (ρ : M → �
     HasCompactSupport (chartFlux b ρ α X i) :=
   hKc.of_isClosed_subset isClosed_closure (tsupport_chartFlux_subset b ρ hKc.isClosed i)
 
-/-- On the chart source at `α`, the product of a `C^k` scalar density `ρ` and a local-frame
-coefficient of a `C^k` vector field `X` is `C^k`. -/
-theorem contMDiffOn_mul_localFrameCoeff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k : ℕ∞ω}
-    [IsManifold I (k + 1) M] (b : Module.Basis ι 𝕜 E) {ρ : M → 𝕜}
-    (hρ : ContMDiffOn I 𝓘(𝕜) k ρ (chartAt H α).source)
-    (hX : ContMDiffOn I I.tangent k (T% X) (chartAt H α).source) (i : ι) :
-    ContMDiffOn I 𝓘(𝕜) k (fun y ↦ ρ y *
-      (trivializationAt E (TangentSpace I) α).localFrameCoeff I b i y (X y))
-      (chartAt H α).source := by
-  let _ : ContMDiffVectorBundle k E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  rw [← TangentBundle.trivializationAt_baseSet (I := I) (x := α)] at hρ hX ⊢
-  exact hρ.mul (contMDiffOn_baseSet_localFrameCoeff (I := I)
-    (e := trivializationAt E (TangentSpace I) α) b (k := k) hX i)
-
 /-- When the chart image of `tsupport X` is compact and contained in the chart target, each chart
 flux is `C^k` on `range I`. -/
 theorem contDiffOn_chartFlux [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k : ℕ∞ω}
@@ -129,13 +114,19 @@ theorem contDiffOn_chartFlux [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k 
     (himage : extChartAt I α '' tsupport (α := E) X ⊆ (extChartAt I α).target) (i : ι) :
     ContDiffOn 𝕜 k (chartFlux b ρ α X i) (range I) := by
   have : IsManifold I k M := IsManifold.of_le (n := k + 1) le_self_add
+  let _ : ContMDiffVectorBundle k E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
   intro z _
   by_cases hz : z ∈ (extChartAt I α).target
   · have hy : (extChartAt I α).symm z ∈ (chartAt H α).source := by
       rw [← extChartAt_source (I := I)]; exact (extChartAt I α).map_target hz
+    have hcoeff := (trivializationAt E (TangentSpace I) α).contMDiffOn_mul_localFrameCoeff b
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hρ)
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hX) i
     have hg : ContDiffWithinAt 𝕜 k _ (range I) z := contMDiffWithinAt_iff_contDiffWithinAt.1
-      (((contMDiffOn_mul_localFrameCoeff b hρ hX i).contMDiffAt
-        ((chartAt H α).open_source.mem_nhds hy)).comp_contMDiffWithinAt z
+      ((hcoeff.contMDiffAt
+        (by simpa only [TangentBundle.trivializationAt_baseSet] using
+          (chartAt H α).open_source.mem_nhds hy)).comp_contMDiffWithinAt z
           (contMDiffWithinAt_extChartAt_symm_range (n := k) α hz))
     exact hg.congr_of_eventuallyEq
       (Filter.eventually_of_mem (extChartAt_target_mem_nhdsWithin_of_mem hz) fun _ h ↦

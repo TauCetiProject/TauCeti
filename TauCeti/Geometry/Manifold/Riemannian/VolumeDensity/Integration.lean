@@ -47,8 +47,7 @@ volume. -/
 theorem integrable_divergence {X : (x : M) → TangentSpace I x}
     (hX : ContMDiff I I.tangent 1 (T% X)) (hc : HasCompactSupport (β := E) X) :
     Integrable (divergence I X) (riemannianVolume I M) :=
-  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-    (by simpa using hX)).continuous.integrable_of_hasCompactSupport (hc.divergence I)
+  (continuous_divergence hX).integrable_of_hasCompactSupport (hc.divergence I)
 
 /-- Integration-by-parts decomposition for the divergence of `f • X`, assuming `f • X` has
 compact support and `f * div X` is integrable. -/
@@ -83,8 +82,7 @@ theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSup
         ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
   integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
     (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right)
+    ((hf.continuous.mul (continuous_divergence hX)).integrable_of_hasCompactSupport hfc.mul_right)
 
 /-- Integration-by-parts decomposition for `f * div X` when `X` has compact support. -/
 theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_right
@@ -95,8 +93,7 @@ theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSup
         ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
   integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
     (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
+    ((hf.continuous.mul (continuous_divergence hX)).integrable_of_hasCompactSupport
       (hXc.divergence I).mul_left)
 
 end TauCeti.Manifold
