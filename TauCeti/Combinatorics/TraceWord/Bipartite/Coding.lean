@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Combinatorics.TraceWord.Coding
 
 /-!
@@ -79,8 +80,7 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
   -- The cyclic words visit rows at even times and columns at odd times.
   let A (s : Fin (2 * k)) : Finset (α ⊕ β) :=
     Sum.elim (fun _ ↦ univ.map .inl) (fun _ ↦ univ.map .inr) (e.symm s)
-  have hA (s : Fin (2 * k)) (x : (Fin k → α) × (Fin k → β)) :
-      bipartiteWord x.1 x.2 s ∈ A s := by
+  have hA (s : Fin (2 * k)) (x : (Fin k → α) × (Fin k → β)) : bipartiteWord x.1 x.2 s ∈ A s := by
     obtain ⟨a, rfl⟩ := e.surjective s
     cases a <;> simp [A, e]
   let g (w : Fin (2 * k) → α ⊕ β) : ℝ :=
@@ -116,9 +116,12 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
       simp only [e, finRotate_finSumFinInterleaveEquiv_inl, finRotate_finSumFinInterleaveEquiv_inr,
         A, Equiv.symm_apply_apply, Sum.elim_inl, Sum.elim_inr, card_map, card_univ, prod_const,
         Fintype.card_fin, ← mul_pow]
-      -- `a / √(a * b) = √a / √b = √(a / b)`.
+      -- `√(a * b) = a * √(b / a)`, so `a / √(a * b) = (√(b / a))⁻¹ = √(a / b)`.
       have hdiv {a b : ℝ} (ha : 0 ≤ a) : a / √(a * b) = √(a / b) := by
-        rw [Real.sqrt_mul ha, ← div_div, Real.div_sqrt, Real.sqrt_div ha]
+        rcases ha.eq_or_lt with rfl | ha
+        · simp
+        rw [mul_comm, Real.sqrt_mul_eq_mul_sqrt_div b ha.le, div_mul_cancel_left₀ ha.ne',
+          ← Real.sqrt_inv, inv_div]
       rw [hdiv (Nat.cast_nonneg _), mul_comm (Fintype.card α : ℝ), hdiv (Nat.cast_nonneg _)]
       push_cast
       ring

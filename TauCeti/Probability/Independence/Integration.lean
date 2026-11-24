@@ -321,7 +321,8 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
 open Finset in
 /-- **Expected products reading each member at least twice.** Let `Y` be an independent family,
 and let the factors `φ i (Y (e i))` of a finite product read each member they read at least
-twice, the members read being almost everywhere measurable. If, for each factor `i`, the product
+twice, the members read being almost everywhere measurable and each `φ i` almost everywhere
+strongly measurable for the law of `Y (e i)`. If, for each factor `i`, the product
 of the norms of the `d` factors reading the member `Y (e i)` has integral at most
 `b ^ (d - 2) * c`, then the expected product has norm at most `c ^ m * b ^ (card ι - 2 * m)`,
 where `m` is the number of members read. This bounds the expected words of the moment method for

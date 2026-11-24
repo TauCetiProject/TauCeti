@@ -11,6 +11,7 @@ public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.Probability.Moments.CenteredTruncation
 import TauCeti.Analysis.Matrix.SampleCovariance.OperatorNorm
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Probability.RandomMatrix.ExtremeEigenvalues
 import TauCeti.Probability.RandomMatrix.SampleCovariance.MarchenkoPastur
@@ -45,8 +46,9 @@ with the parameter `γ` a constant multiple of `n ^ (-1 / 12)`.
 ## Main results
 
 * `TauCeti.Probability.ae_tendsto_eigenvalues₀_zero_sampleCovariance`: the almost-sure limit of
-  the largest eigenvalue. The variant with the suffix `_of_integral_re_trace_pow_two_mul_le`
-  reduces it to a growing trace bound.
+  the largest eigenvalue.
+* `ae_tendsto_eigenvalues₀_zero_sampleCovariance_of_integral_re_trace_pow_two_mul_le`, in the
+  same namespace: its reduction to a growing trace bound.
 
 ## References
 
@@ -235,7 +237,7 @@ private theorem eventually_integral_re_trace_pow_sampleCovariance_centeredTrunca
     have h₃ : ((n : ℝ) ^ (1 / 3 : ℝ)) ^ 3 = n := by
       simpa [one_div] using Real.rpow_inv_natCast_pow hn₀.le (n := 3) three_ne_zero
     have hsqrt : √((y : ℝ) / 2) * n ≤ √(p n * n) := calc
-      _ = √((y : ℝ) / 2 * n ^ 2) := by rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hn₀.le]
+      _ = √((y : ℝ) / 2 * n ^ 2) := by rw [Real.sqrt_mul_sq, abs_of_nonneg hn₀.le]
       _ ≤ √(p n * n) := by
         refine Real.sqrt_le_sqrt ?_
         rw [sq, ← mul_assoc]

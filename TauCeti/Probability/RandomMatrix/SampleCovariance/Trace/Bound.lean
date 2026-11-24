@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Word
 import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Combinatorics.TraceWord.Bipartite.Coding
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Tactic.FieldSimp
@@ -14,18 +15,19 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # Füredi–Komlós bound on growing sample covariance traces
 
-Let `X` be a random `p × n` matrix with independent centred entries, bounded by `K` almost surely
-and with second absolute moments at most `v ≥ 0`, and let `S = X Xᴴ / n`. If
-`K ^ 2 ≤ v * γ ^ 4 * √(p * n)` with `0 ≤ γ ≤ 1`, then for every `k`, writing `y = p / n`,
+Let `X` be a random `p × n` matrix with independent, almost everywhere strongly measurable,
+centred entries, bounded by `K` almost surely and with second absolute moments at most `v ≥ 0`,
+and let `S = X Xᴴ / n`. If `K ^ 2 ≤ v * γ ^ 4 * √(p * n)` with `0 ≤ γ ≤ 1`, then for every `k`,
+writing `y = p / n`,
 
 `‖E trace S ^ k‖ ≤ p * (v * (1 + √y + 2 * k * γ * √y) * (1 + √y + 2 * k * γ)) ^ k`.
 
-The bound is uniform in `k`. For entries truncated at a power `n ^ a` with `a < 1/2` and
-`p / n` bounded away from `0` and `∞`, the parameter `γ` can be chosen to decay like a negative
-power of `n`, so that `k * γ` tends to zero along orders `k` of logarithmic size. Then the expected
-trace grows at most like `p * (v * (1 + √y) ^ 2) ^ k`, the `k`-th power of the upper edge of the
-Marchenko–Pastur law of ratio `y` and scale `v`. This is the input of the moment method for the
-largest eigenvalue of a sample covariance matrix.
+The bound is uniform in `k`. For entries truncated at a power `n ^ a` with `a < 1/2`, a fixed
+variance bound `v > 0` and `p / n` bounded away from `0` and `∞`, the parameter `γ` can be chosen
+to decay like a negative power of `n`, so that `k * γ` tends to zero along orders `k` of
+logarithmic size. Then the expected trace grows at most like `p * (v * (1 + √y) ^ 2) ^ k`, the
+`k`-th power of the upper edge of the Marchenko–Pastur law of ratio `y` and scale `v`. This is
+the input of the moment method for the largest eigenvalue of a sample covariance matrix.
 
 The proof expands the trace into closed bipartite words reading each position at least twice
 (`TauCeti.Probability.integral_trace_sampleCovariance_pow`). A position read `d` times contributes
@@ -116,10 +118,11 @@ private theorem norm_integral_trace_pow_sampleCovariance_le_mul_sum [Nonempty p]
     rwa [pow_mul (√(v * m)) 2 k, hA, mul_comm m] at hword
 
 /-- **Füredi–Komlós bound on sample covariance traces.** Let the entries of a random `p × n`
-matrix `X` be independent and centred, bounded by `K` in norm almost surely, and with second
-absolute moments at most `v ≥ 0`. If `0 ≤ γ ≤ 1` and `K ^ 2 ≤ v * γ ^ 4 * √(p * n)`, then for
-every `k` the expected trace of the `k`-th power of the sample covariance `X Xᴴ / n` has norm at
-most `p * (v * (1 + √y + 2 * k * γ * √y) * (1 + √y + 2 * k * γ)) ^ k`, where `y = p / n`. -/
+matrix `X` be independent, almost everywhere strongly measurable and centred, bounded by `K` in
+norm almost surely, and with second absolute moments at most `v ≥ 0`. If `0 ≤ γ ≤ 1` and
+`K ^ 2 ≤ v * γ ^ 4 * √(p * n)`, then for every `k` the expected trace of the `k`-th power of the
+sample covariance `X Xᴴ / n` has norm at most
+`p * (v * (1 + √y + 2 * k * γ * √y) * (1 + √y + 2 * k * γ)) ^ k`, where `y = p / n`. -/
 theorem norm_integral_trace_pow_sampleCovariance_le
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hXm : ∀ i j, AEStronglyMeasurable (fun ω ↦ X ω i j) P)
@@ -150,10 +153,8 @@ theorem norm_integral_trace_pow_sampleCovariance_le
   have hp₀ : (0 : ℝ) < Fintype.card p := Nat.cast_pos.mpr Fintype.card_pos
   have hn₀ : (0 : ℝ) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
   have h₁ : √(Fintype.card p * Fintype.card n : ℝ) =
-      Fintype.card n * √(Fintype.card p / Fintype.card n : ℝ) := by
-    rw [← Real.sqrt_sq hn₀.le, ← Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hn₀.le]
-    congr 1
-    field_simp
+      Fintype.card n * √(Fintype.card p / Fintype.card n : ℝ) :=
+    Real.sqrt_mul_eq_mul_sqrt_div _ hn₀.le
   have h₂ : √(Fintype.card n / Fintype.card p : ℝ) =
       (√(Fintype.card p / Fintype.card n : ℝ))⁻¹ := by
     rw [← Real.sqrt_inv, inv_div]

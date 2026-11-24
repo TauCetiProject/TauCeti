@@ -711,30 +711,34 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq
     rw [card_subtype, filter_true_of_mem fun _ ↦ hS]
   have key := sum_piFinset_pow_div_pow_card_image_le_of_finite hγ₀ hγ₁ hm A'
   simp only [hcard] at key
-  refine le_of_eq_of_le (sum_bij (fun w hw t ↦ ⟨w t,
-      hS (Fintype.mem_piFinset.mp (mem_filter.mp hw).1 t)⟩) ?_ ?_ ?_ ?_) key
+  -- A walk through the prescribed sets restricts to a walk in `S`, which projects back to it.
+  let r (w : Fin L → α) (hw : w ∈ Fintype.piFinset A) (t : Fin L) : S :=
+    ⟨w t, hS (Fintype.mem_piFinset.mp hw t)⟩
+  have hr (w : Fin L → α) (hw : w ∈ Fintype.piFinset A) : Subtype.val ∘ r w hw = w := rfl
+  refine le_of_eq_of_le (sum_bij (fun w hw ↦ r w (mem_filter.mp hw).1) ?_ ?_ ?_ ?_) key
   · intro w hw
     obtain ⟨hw, hsing⟩ := mem_filter.mp hw
     refine mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦
       mem_subtype.mpr (Fintype.mem_piFinset.mp hw t), fun t ↦ ?_⟩
     obtain ⟨s, hst, he⟩ := hsing t
-    exact ⟨s, hst, Sym2.map.injective Subtype.val_injective (by simpa using he)⟩
-  · intro w _ w' _ h
-    funext t
-    simpa using congrFun h t
+    exact ⟨s, hst, Sym2.map.injective Subtype.val_injective (by simpa [r] using he)⟩
+  · intro w hw w' hw' h
+    rw [← hr w (mem_filter.mp hw).1, ← hr w' (mem_filter.mp hw').1]
+    exact congrArg (Subtype.val ∘ ·) h
   · intro w' hw'
     obtain ⟨hw', hsing⟩ := mem_filter.mp hw'
-    refine ⟨fun t ↦ (w' t).val, mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦
-      mem_subtype.mp (Fintype.mem_piFinset.mp hw' t), fun t ↦ ?_⟩, rfl⟩
+    have hw : Subtype.val ∘ w' ∈ Fintype.piFinset A := Fintype.mem_piFinset.mpr fun t ↦
+      mem_subtype.mp (Fintype.mem_piFinset.mp hw' t)
+    refine ⟨Subtype.val ∘ w', mem_filter.mpr ⟨hw, fun t ↦ ?_⟩,
+      funext fun t ↦ Subtype.ext (congrFun (hr _ hw) t)⟩
     obtain ⟨s, hst, he⟩ := hsing t
     exact ⟨s, hst, by simpa using congrArg (Sym2.map Subtype.val) he⟩
-  · intro w _
+  · intro w hw
     -- The restricted walk visits as many vertices as the walk itself.
-    have : #(univ.image w) = #(univ.image fun t ↦ (⟨w t, hS (Fintype.mem_piFinset.mp
-        (mem_filter.mp ‹_›).1 t)⟩ : S)) := by
-      rw [← card_image_of_injective _ Subtype.val_injective, image_image]
-      simp [Function.comp_def]
-    rw [this]
+    have himage : #(univ.image (r w (mem_filter.mp hw).1)) = #(univ.image w) := by
+      rw [← card_image_of_injective _ Subtype.val_injective, image_image,
+        hr w (mem_filter.mp hw).1]
+    rw [himage]
 
 /-- **Weighted Füredi–Komlós enumeration.** Let `α` be a finite type of cardinality `n` and let
 `0 ≤ γ ≤ 1`. Over the closed walks `w : Fin L → α` traversing each of their edges

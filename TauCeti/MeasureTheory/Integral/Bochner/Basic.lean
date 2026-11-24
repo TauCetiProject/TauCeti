@@ -365,10 +365,9 @@ theorem integral_norm_pow_add_two_le {Ω E : Type*} [MeasurableSpace Ω] {μ : M
   have h2 : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ := by
     simpa only [norm_norm] using (MemLp.of_bound (p := (2 : ℕ)) hY K
       (by simpa only [norm_norm] using hK)).integrable_norm_pow two_ne_zero
-  have hK2 : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ K ^ 2 := by
-    calc _ ≤ ∫ _ : Ω, K ^ 2 ∂μ := integral_mono_ae h2 (integrable_const _)
-          (hK.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
-      _ = K ^ 2 := by simp
+  have hK2 : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ K ^ 2 := (Real.le_norm_self _).trans (by
+    simpa using norm_integral_le_of_norm_le_const (f := fun ω ↦ ‖Y ω‖ ^ 2)
+      (hK.mono fun ω hω ↦ by simpa using pow_le_pow_left₀ (norm_nonneg _) hω 2))
   calc _ ≤ ∫ ω, K ^ m * ‖Y ω‖ ^ 2 ∂μ :=
         integral_mono_ae hm (h2.const_mul _) (hK.mono fun ω hω ↦ by
           dsimp only
