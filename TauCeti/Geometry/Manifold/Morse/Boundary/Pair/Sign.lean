@@ -74,9 +74,10 @@ critical points of sets `S₀` and `S₁` conjugates it by the involutions `Fins
 pseudo-gradients its coefficients reduce modulo two to the numbers of points of the intersections
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmalePair.intCast_signedPairCoeff`), and for the pair
 `(X, X)` with the same orientation data at both ends it is the identity
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedPairMap_self`). That it commutes with the
-integral Morse boundaries needs the signed count of the ends of the one-dimensional intersections,
-and is not proved here.
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedPairMap_self`). Whether it commutes with the
+integral Morse boundaries is reduced to signed counts of broken configurations in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation`; that these counts agree, which needs
+the oriented ends of the one-dimensional intersections, is not proved.
 
 ## Main definitions
 

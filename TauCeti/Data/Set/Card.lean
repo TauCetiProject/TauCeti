@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.Set.Card
 import TauCeti.Data.Nat.Set
 import TauCeti.Data.Set.Prod
@@ -60,7 +61,11 @@ A set covered by finitely many finite sets `C i` is finite, with at most `∑ i,
 (`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
 of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` for coefficients
 `a i` equal to `|A i|` when `P i` holds and `0` otherwise, and `b i` likewise for `B i` and `Q i`
-(`Set.natCast_ncard_setOf_and_and_mem_and_mem`).
+(`Set.natCast_ncard_setOf_and_and_mem_and_mem`). The same fibrewise regrouping sums weights
+`g i y * k i z` over the triples into `∑ i, a i * b i`, for `a i` the sum of `g i` over `A i` when
+`P i` holds and `0` otherwise, and `b i` likewise (`Set.finsum_mem_setOf_and_and_mem_and_mem`);
+this is the coefficient of a composite of two matrices whose entries are weighted counts, such as
+signed counts.
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -195,6 +200,47 @@ theorem natCast_ncard_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι
     · rw [ite_eq_left ⟨hP, hQ⟩, Nat.cast_mul, ha i hP, hb i hQ]
     · rw [ite_eq_right fun h ↦ hQ h.2, hb₀ i hQ, mul_zero]
   · rw [ite_eq_right fun h ↦ hP h.1, ha₀ i hP, zero_mul]
+
+/-- **Summing over triples fibrewise.** Let `a i` be the sum of `g i` over `A i` when `P i` holds
+and `0` otherwise, and `b i` the sum of `k i` over `B i` when `Q i` holds and `0` otherwise. Over a
+finite index type, when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds, the weights `g i y * k i z` of the triples `(i, y, z)` with `P i`, `Q i`, `y ∈ A i` and
+`z ∈ B i` sum to `∑ i, a i * b i`. This is the coefficient of a composite of two linear maps whose
+matrices are weighted counts of the elements of `A i` and of `B i`. -/
+theorem finsum_mem_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι]
+    [NonUnitalNonAssocSemiring R] {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β}
+    {g : ι → α → R} {k : ι → β → R} {a b : ι → R}
+    (hA : ∀ i, P i → (A i).Finite) (hB : ∀ i, Q i → (B i).Finite)
+    (ha : ∀ i, P i → a i = ∑ᶠ y ∈ A i, g i y) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = ∑ᶠ z ∈ B i, k i z) (hb₀ : ∀ i, ¬Q i → b i = 0) :
+    ∑ᶠ x ∈ {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1},
+        g x.1 x.2.1 * k x.1 x.2.2 =
+      ∑ i, a i * b i := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [finsum_mem_eq_finite_toFinset_sum _ (finite_setOf_and_and_mem_and_mem hA hB),
+    ← Finset.sum_fiberwise _ Prod.fst]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hi : P i ∧ Q i
+  · rw [ha i hi.1, hb i hi.2, finsum_mem_eq_finite_toFinset_sum _ (hA i hi.1),
+      finsum_mem_eq_finite_toFinset_sum _ (hB i hi.2), Finset.sum_mul_sum, ← Finset.sum_product']
+    refine Finset.sum_nbij' (fun x ↦ x.2) (Prod.mk i) (fun x hx ↦ ?_) (fun z hz ↦ ?_)
+      (fun x hx ↦ ?_) (fun _ _ ↦ rfl) fun x hx ↦ ?_
+    · rw [Finset.mem_filter, Finite.mem_toFinset] at hx
+      obtain ⟨⟨-, -, hy, hz⟩, rfl⟩ := hx
+      exact Finset.mem_product.2 ⟨(hA _ hi.1).mem_toFinset.2 hy, (hB _ hi.2).mem_toFinset.2 hz⟩
+    · rw [Finset.mem_product, Finite.mem_toFinset, Finite.mem_toFinset] at hz
+      exact Finset.mem_filter.2 ⟨Finite.mem_toFinset _ |>.2 ⟨hi.1, hi.2, hz⟩, rfl⟩
+    · exact Prod.ext (Finset.mem_filter.1 hx).2.symm rfl
+    · rw [(Finset.mem_filter.1 hx).2]
+  · -- Off the indices with `P i` and `Q i`, the fibre is empty and `a i * b i` vanishes.
+    rw [Finset.sum_eq_zero fun x hx ↦ (hi ?_).elim]
+    · rcases not_and_or.1 hi with hP | hQ
+      · rw [ha₀ i hP, zero_mul]
+      · rw [hb₀ i hQ, mul_zero]
+    · obtain ⟨hmem, rfl⟩ := Finset.mem_filter.1 hx
+      rw [Finite.mem_toFinset] at hmem
+      exact ⟨hmem.1, hmem.2.1⟩
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/
