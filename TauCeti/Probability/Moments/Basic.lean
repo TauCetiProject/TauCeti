@@ -34,9 +34,6 @@ This file supplements Mathlib's basic API for moments and moment-generating func
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
 * `TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero`: a finite sum of square-integrable random
   variables whose second moments sum to zero vanishes almost surely.
-* `TauCeti.integral_norm_pow_add_two_le`: under a probability measure, a variable bounded by `K`
-  with second absolute moment at most `v` has `(m + 2)`-th absolute moment at most
-  `K ^ m * min v (K ^ 2)`.
 * `ProbabilityTheory.iIndepFun.mgf_sum_of_aemeasurable`: the moment-generating function of a finite
   sum of independent variables is the product of the factors, needing a.e. measurability only on
   the summation set.
@@ -133,38 +130,6 @@ theorem ae_sum_eq_zero_of_sum_integral_sq_eq_zero {ι : Type*} {X : ι → Ω �
     simpa using hω
   filter_upwards [(Filter.eventually_all_finset s).2 hae] with ω hω
   exact Finset.sum_eq_zero hω
-
-/-- On a probability space, a variable bounded by `K` almost everywhere, with second absolute
-moment at most `v`, has absolute moment of order `m + 2` at most `K ^ m * min v (K ^ 2)`. -/
-theorem integral_norm_pow_add_two_le {E : Type*} [NormedAddCommGroup E] [IsProbabilityMeasure μ]
-    {Y : Ω → E} {K v : ℝ} (hK : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ K) (hv : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ v) (m : ℕ) :
-    ∫ ω, ‖Y ω‖ ^ (m + 2) ∂μ ≤ K ^ m * min v (K ^ 2) := by
-  have hK₀ : 0 ≤ K := hK.exists.elim fun _ h ↦ (norm_nonneg _).trans h
-  have hv₀ : 0 ≤ v := (integral_nonneg fun _ ↦ by positivity).trans hv
-  by_cases hm : Integrable (fun ω ↦ ‖Y ω‖ ^ (m + 2)) μ
-  swap
-  · rw [integral_undef hm]
-    positivity
-  -- The norm of `Y` is measurable, as the `(m + 2)`-th root of an integrable function.
-  have hY : AEStronglyMeasurable (fun ω ↦ ‖Y ω‖) μ := by
-    refine ((hm.aemeasurable.pow_const ((m + 2 : ℕ) : ℝ)⁻¹).congr
-      (.of_forall fun ω ↦ ?_)).aestronglyMeasurable
-    exact_mod_cast Real.pow_rpow_inv_natCast (norm_nonneg (Y ω)) (by omega : m + 2 ≠ 0)
-  have h2 : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ := by
-    simpa only [norm_norm] using (MemLp.of_bound (p := (2 : ℕ)) hY K
-      (by simpa only [norm_norm] using hK)).integrable_norm_pow two_ne_zero
-  have hK2 : ∫ ω, ‖Y ω‖ ^ 2 ∂μ ≤ K ^ 2 := by
-    calc _ ≤ ∫ _ : Ω, K ^ 2 ∂μ := integral_mono_ae h2 (integrable_const _)
-          (hK.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
-      _ = K ^ 2 := by simp
-  calc _ ≤ ∫ ω, K ^ m * ‖Y ω‖ ^ 2 ∂μ :=
-        integral_mono_ae hm (h2.const_mul _) (hK.mono fun ω hω ↦ by
-          dsimp only
-          rw [pow_add]
-          exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hω m)
-            (sq_nonneg _))
-    _ = K ^ m * ∫ ω, ‖Y ω‖ ^ 2 ∂μ := integral_const_mul _ _
-    _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hv hK2) (pow_nonneg hK₀ m)
 
 section Symmetrization
 

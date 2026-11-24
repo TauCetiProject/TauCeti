@@ -17,9 +17,11 @@ of size `p × n`, counts the closed bipartite words `u 0, v 0, u 1, v 1, …, v 
 (`TauCeti.bipartiteEdge`) of growing half-length `k` that read each of their positions at least
 twice. Such a word visits at most `k + 1` row and column indices, and the words attaining this
 bound are the double traversals of trees. Weighted by `n⁻ᵏ`, these leading words with `p` rows and
-`n` columns contribute asymptotically `p` times the `k`-th moment of the Marchenko–Pastur law of
-ratio `p / n`. That moment is at most `(1 + √(p / n)) ^ (2 * k)`, the `k`-th power of the upper
-edge.
+`n` columns contribute `p` times the `k`-th moment of the Marchenko–Pastur law of ratio `p / n`,
+up to a factor that tends to `1` for fixed `k` as `p` and `n` tend to infinity. That moment is at
+most `(1 + √(p / n)) ^ (2 * k)`, the `k`-th power of the upper edge. For growing `k` the other
+words must be counted as well, so the enumeration below bounds the total weight of all words,
+uniformly in `k`.
 
 This file proves a weighted form of this enumeration with this sharp base. A word visiting `t` row
 and column indices is weighted by `√(p * n) ^ (-t)` and damped by the factor

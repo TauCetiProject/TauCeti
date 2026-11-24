@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Word
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Combinatorics.TraceWord.Bipartite.Coding
-import TauCeti.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -30,13 +30,14 @@ largest eigenvalue of a sample covariance matrix.
 The proof expands the trace into closed bipartite words reading each position at least twice
 (`TauCeti.Probability.integral_trace_sampleCovariance_pow`). A position read `d` times contributes
 at most `K ^ (d - 2) * min v (K ^ 2)`
-(`TauCeti.Probability.norm_integral_prod_mul_star_le_of_no_singleton_edge`), and the words are
-counted by the weighted bipartite Füredi–Komlós enumeration
-`TauCeti.sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge`.
+(`TauCeti.Probability.norm_integral_prod_mul_star_le_of_no_singleton_edge`). The word weights are
+put in the form of the weighted bipartite Füredi–Komlós enumeration
+`TauCeti.sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge` by
+`TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`, with the scale `√(v * √(p * n))`, and counted by it.
 
 ## Main results
 
-* `ProbabilityTheory.iIndepFun.norm_integral_trace_sampleCovariance_pow_le`: the trace bound.
+* `ProbabilityTheory.iIndepFun.norm_integral_trace_pow_sampleCovariance_le`: the trace bound.
 
 ## References
 
@@ -54,33 +55,17 @@ open MeasureTheory ProbabilityTheory Matrix Finset
 
 namespace TauCeti
 
-/-- The bound for a single bipartite word in the form counted by the bipartite Füredi–Komlós
-enumeration: a word reading `e ≤ k` distinct positions and visiting `1 ≤ t ≤ e + 1` row and
-column indices contributes at most `(v * m) ^ k * m * γ ^ (2 * (2 * k + 2 - 2 * t)) / m ^ t`. -/
-private theorem pow_mul_pow_sub_le_mul_pow_div_pow {b c v γ m : ℝ} (hb : 0 ≤ b) (hc : 0 ≤ c)
-    (hcb : c ≤ b ^ 2) (hcv : c ≤ v) (hbm : b ^ 2 ≤ v * γ ^ 4 * m) (hm : 0 < m)
-    {e t k : ℕ} (ht : 1 ≤ t) (hte : t ≤ e + 1) (hek : e ≤ k) :
-    c ^ e * b ^ (2 * k - 2 * e) ≤ (v * m) ^ k * m * (γ ^ (2 * (2 * k + 2 - 2 * t)) / m ^ t) := by
-  obtain ⟨t, rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
-  obtain ⟨j, rfl⟩ : ∃ j, k = t + j := ⟨k - t, by omega⟩
-  have hv : 0 ≤ v := hc.trans hcv
-  calc _ ≤ c ^ t * b ^ (2 * (t + j) - 2 * t) := pow_mul_pow_sub_two_mul_le hb hc hcb (by omega)
-        (by omega)
-    _ ≤ v ^ t * (v * γ ^ 4 * m) ^ j := by
-        rw [show 2 * (t + j) - 2 * t = 2 * j by omega, pow_mul]
-        exact mul_le_mul (pow_le_pow_left₀ hc hcv _) (pow_le_pow_left₀ (sq_nonneg b) hbm _)
-          (by positivity) (by positivity)
-    _ = _ := by
-        rw [show 2 * (2 * (t + j) + 2 - 2 * (t + 1)) = 4 * j by omega]
-        field_simp
-        ring
-
 /-- The rescaled bound of the bipartite Füredi–Komlós enumeration, for `s = √(p / n)`. -/
 private theorem inv_pow_mul_pow_mul_mul_eq {n s v δ : ℝ} (hn : n ≠ 0) (hs : s ≠ 0) (k : ℕ) :
     n⁻¹ ^ k * ((v * (n * s)) ^ k * (n * s)) * (s * ((s⁻¹ + 1 + δ) * (s + 1 + δ)) ^ k) =
       n * s ^ 2 * (v * (1 + s + δ * s) * (1 + s + δ)) ^ k := by
-  rw [show v * (1 + s + δ * s) * (1 + s + δ) =
-      n⁻¹ * (v * (n * s)) * ((s⁻¹ + 1 + δ) * (s + 1 + δ)) by field_simp; ring]
+  -- The base of the right side is the product of the bases `n⁻¹`, `v * (n * s)` and
+  -- `(s⁻¹ + 1 + δ) * (s + 1 + δ)` of the left side.
+  have hbase : v * (1 + s + δ * s) * (1 + s + δ) =
+      n⁻¹ * (v * (n * s)) * ((s⁻¹ + 1 + δ) * (s + 1 + δ)) := by
+    field_simp
+    ring
+  rw [hbase]
   simp only [mul_pow]
   ring
 
@@ -110,7 +95,7 @@ variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜] {P : Measure �
 /-- With rows and columns, the expected trace of the `k`-th power of the sample covariance,
 `k ≠ 0`, is bounded by `n⁻ᵏ * (v * m) ^ k * m` times the weighted count of bipartite words of the
 bipartite Füredi–Komlós enumeration, where `m = √(p * n)`. -/
-private theorem norm_integral_trace_sampleCovariance_pow_le_mul_sum [Nonempty p] [Nonempty n]
+private theorem norm_integral_trace_pow_sampleCovariance_le_mul_sum [Nonempty p] [Nonempty n]
     [DecidableEq n] (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hXm : ∀ i j, AEStronglyMeasurable (fun ω ↦ X ω i j) P)
     (hX₀ : ∀ i j, ∫ ω, X ω i j ∂P = 0) {K v γ : ℝ} (hXK : ∀ i j, ∀ᵐ ω ∂P, ‖X ω i j‖ ≤ K)
@@ -139,22 +124,33 @@ private theorem norm_integral_trace_sampleCovariance_pow_le_mul_sum [Nonempty p]
   have huw := (mem_filter.mp hw).2
   -- A position read `d ≥ 2` times contributes at most `K ^ (d - 2) * min v (K ^ 2)`.
   refine (norm_integral_prod_mul_star_le_of_no_singleton_edge (b := K) (c := min v (K ^ 2))
-    (fun i j ↦ (hXm i j).aemeasurable) hindep huw fun a ↦ ?_).trans ?_
+    hindep (fun a ↦ (hXm _ _).aemeasurable) huw fun a ↦ ?_).trans ?_
   · obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le'
       (two_le_card_filter_eq_of_no_singleton_fiber huw _ (mem_image_of_mem _ (mem_univ a)))
     rw [hd, Nat.add_sub_cancel]
     exact integral_norm_pow_add_two_le (hXK _ _) (hXv _ _) d
-  · exact pow_mul_pow_sub_le_mul_pow_div_pow hK₀ (le_min hv (sq_nonneg K)) (min_le_right _ _)
-      (min_le_left _ _) hK hm (card_pos.mpr (univ_nonempty.image _) |>.trans_le le_self_add)
+  · -- The word weight, with the scale `A = √(v * m)`: `A ^ 2 / m = v` and `K ≤ A * γ ^ 2`.
+    set m := √(Fintype.card p * Fintype.card n)
+    have hA : √(v * m) ^ 2 = v * m := Real.sq_sqrt (by positivity)
+    have hcA : min v (K ^ 2) ≤ √(v * m) ^ 2 / m := by
+      rw [hA, mul_div_cancel_right₀ _ hm.ne']
+      exact min_le_left _ _
+    have hKA : K ≤ √(v * m) * γ ^ 2 := by
+      refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) (hK.trans_eq ?_)
+      rw [mul_pow, hA]
+      ring
+    have hword := pow_mul_pow_sub_le_mul_pow_div_pow hK₀ (le_min hv (sq_nonneg K))
+      (min_le_right _ _) hcA hKA hm (card_pos.mpr (univ_nonempty.image _) |>.trans_le le_self_add)
       (card_image_add_card_image_le_card_image_bipartiteEdge_add_one u w)
-      (card_image_bipartiteEdge_le_of_no_singleton_edge huw)
+      (Nat.mul_le_mul_left 2 (card_image_bipartiteEdge_le_of_no_singleton_edge huw))
+    rwa [pow_mul (√(v * m)) 2 k, hA, mul_comm m] at hword
 
 /-- **Füredi–Komlós bound on sample covariance traces.** Let the entries of a random `p × n`
 matrix `X` be independent and centred, bounded by `K` in norm almost surely, and with second
 absolute moments at most `v ≥ 0`. If `0 ≤ γ ≤ 1` and `K ^ 2 ≤ v * γ ^ 4 * √(p * n)`, then for
 every `k` the expected trace of the `k`-th power of the sample covariance `X Xᴴ / n` has norm at
 most `p * (v * (1 + √y + 2 * k * γ * √y) * (1 + √y + 2 * k * γ)) ^ k`, where `y = p / n`. -/
-theorem norm_integral_trace_sampleCovariance_pow_le
+theorem norm_integral_trace_pow_sampleCovariance_le
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hXm : ∀ i j, AEStronglyMeasurable (fun ω ↦ X ω i j) P)
     (hX₀ : ∀ i j, ∫ ω, X ω i j ∂P = 0) {K v γ : ℝ} (hXK : ∀ i j, ∀ᵐ ω ∂P, ‖X ω i j‖ ≤ K)
@@ -175,7 +171,7 @@ theorem norm_integral_trace_sampleCovariance_pow_le
   · have h0 (ω : Ω) : (X ω).sampleCovariance = 0 := by simp [sampleCovariance_def]
     simp only [h0, zero_pow hk.ne', trace_zero, integral_zero, norm_zero]
     positivity
-  refine ((norm_integral_trace_sampleCovariance_pow_le_mul_sum hindep hXm hX₀ hXK hXv hv hK
+  refine ((norm_integral_trace_pow_sampleCovariance_le_mul_sum hindep hXm hX₀ hXK hXv hv hK
     hk.ne').trans ?_).trans_eq (inv_pow_mul_pow_mul_sqrt_mul_eq
       (Nat.cast_pos.mpr Fintype.card_pos) (Nat.cast_pos.mpr Fintype.card_pos) k)
   gcongr

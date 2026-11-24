@@ -321,21 +321,23 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
 open Finset in
 /-- **Expected products reading each member at least twice.** Let `Y` be an independent family,
 and let the factors `φ i (Y (e i))` of a finite product read each member they read at least
-twice. If, for each factor `i`, the product of the norms of the `d` factors reading the member
-`Y (e i)` has integral at most `b ^ (d - 2) * c`, then the expected product has norm at most
-`c ^ m * b ^ (card ι - 2 * m)`, where `m` is the number of members read. This bounds the
-expected words of the moment method for random matrices with independent entries. -/
+twice, the members read being almost everywhere measurable. If, for each factor `i`, the product
+of the norms of the `d` factors reading the member `Y (e i)` has integral at most
+`b ^ (d - 2) * c`, then the expected product has norm at most `c ^ m * b ^ (card ι - 2 * m)`,
+where `m` is the number of members read. This bounds the expected words of the moment method for
+random matrices with independent entries. -/
 theorem norm_integral_fun_prod_comp_le_of_no_singleton_fiber {Ω κ ι β 𝕜 : Type*}
     [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ] [Fintype ι]
-    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)
-    {e : ι → κ} (he : ∀ i, ∃ i' ≠ i, e i' = e i) {φ : ι → β → 𝕜}
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) {e : ι → κ}
+    (mY : ∀ i, AEMeasurable (Y (e i)) P) (he : ∀ i, ∃ i' ≠ i, e i' = e i) {φ : ι → β → 𝕜}
     (hφ : ∀ i, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) {b c : ℝ}
     (hmom : ∀ i, ∫ ω, ∏ i' with e i' = e i, ‖φ i' (Y (e i) ω)‖ ∂P ≤
       b ^ (#{i' | e i' = e i} - 2) * c) :
     ‖∫ ω, ∏ i, φ i (Y (e i) ω) ∂P‖ ≤
       c ^ #(univ.image e) * b ^ (Fintype.card ι - 2 * #(univ.image e)) := by
   rw [hY.integral_fun_prod_comp_fiberwise_of_maps_to (s := univ) (t := univ.image e)
-    (fun i _ ↦ mem_image_of_mem _ (mem_univ i)) (fun j _ ↦ mY j) (fun i _ ↦ hφ i), norm_prod]
+    (fun i _ ↦ mem_image_of_mem _ (mem_univ i))
+    (fun j hj ↦ (mem_image.mp hj).elim fun i hi ↦ hi.2 ▸ mY i) (fun i _ ↦ hφ i), norm_prod]
   have hfib := TauCeti.two_le_card_filter_eq_of_no_singleton_fiber he
   -- The multiplicities of the members read add up to the number of factors.
   have hsum : ∑ j ∈ univ.image e, (#{i | e i = j} - 2) + 2 * #(univ.image e) =

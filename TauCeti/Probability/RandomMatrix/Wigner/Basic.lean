@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
-import TauCeti.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Wigner matrices

@@ -138,6 +138,20 @@ private theorem aemeasurable_cornerEntry {n : ℕ}
   | inl ij => exact hξm ij.val ij.property
   | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.val i.property)
 
+/-- The coordinate of the corner entry array read by the `(i, j)` entry is almost everywhere
+measurable when the upper entry at the unordered position `{i, j}` is, or, for `i = j`, the
+diagonal entry. -/
+private theorem aemeasurable_cornerEntry_entryIndex {n : ℕ} {i j : Fin n}
+    (hξm : ∀ ij : StrictUpper, s(ij.val.1, ij.val.2) = s(i.val, j.val) → AEMeasurable (ξ ij) P)
+    (hηm : i = j → AEMeasurable (η i.val) P) :
+    AEMeasurable (Sum.elim (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val)
+      (fun i ω ↦ (η i.val ω : ℂ)) (entryIndex i j)) P := by
+  unfold entryIndex
+  split_ifs with h h'
+  · exact hξm _ rfl
+  · exact hξm _ Sym2.eq_swap
+  · exact Complex.measurable_ofReal.comp_aemeasurable (hηm (Fin.ext (by omega)))
+
 /-- **Edge-disjoint Wigner products are independent.** Let the entries in the `n × n` corner be
 independent. Two finite products of entries of the `n × n` Wigner matrix reading disjoint sets of
 unordered positions are independent. No centering or finite-moment assumption is required. -/
@@ -282,17 +296,20 @@ theorem integral_prod_wignerMatrix_apply_eq_prod {ι : Type*} [Fintype ι] {n : 
 open Finset in
 /-- **Expected Wigner words reading each position at least twice.** Let the entries in the
 `n × n` corner be independent, and let each unordered position read by the family `(u s, v s)`
-be read at least twice. If the position of each factor `s` is read `d` times and
+be read at least twice, the upper and diagonal entries read being almost everywhere measurable.
+If the position of each factor `s` is read `d` times and
 `∫ ‖Hₙ (u s) (v s)‖ ^ d ≤ b ^ (d - 2) * c`, the expected product of the entries has norm at most
 `c ^ e * b ^ (card ι - 2 * e)`, where `e` is the number of distinct unordered positions read. -/
 theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type*} [Fintype ι]
     {n : ℕ} {b c : ℝ}
-    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
-    (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
-    (u v : ι → Fin n) (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t))
+    (u v : ι → Fin n)
+    (hξm : ∀ s, ∀ ij : StrictUpper, s(ij.val.1, ij.val.2) = s((u s).val, (v s).val) →
+      AEMeasurable (ξ ij) P)
+    (hηm : ∀ s, u s = v s → AEMeasurable (η (u s).val) P)
+    (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t))
     (hmom : ∀ s, ∫ ω, ‖wignerMatrix ξ η n ω (u s) (v s)‖ ^ #{t | s(u t, v t) = s(u s, v s)} ∂P ≤
       b ^ (#{t | s(u t, v t) = s(u s, v s)} - 2) * c) :
     ‖∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
@@ -309,7 +326,8 @@ theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type
     rw [← card_image_of_injective _ sym2Index_injective, image_image]
     simp [Function.comp_def, sym2Index]
   have h := hindep.norm_integral_fun_prod_comp_le_of_no_singleton_fiber
-    (aemeasurable_cornerEntry hξm hηm) (e := fun s ↦ entryIndex (u s) (v s))
+    (e := fun s ↦ entryIndex (u s) (v s))
+    (fun s ↦ aemeasurable_cornerEntry_entryIndex (hξm s) (hηm s))
     (fun t ↦ by simpa only [entryIndex_eq_entryIndex_iff] using huv t)
     (φ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
     (fun s ↦ (measurable_const.mul (measurable_orientEntry _ _)).aestronglyMeasurable)
