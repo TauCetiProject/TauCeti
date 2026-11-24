@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import Mathlib.MeasureTheory.Measure.Decomposition.IntegralRNDeriv
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -45,9 +44,8 @@ square-root Radon–Nikodym derivative `√(dμ/dν)` when `μ ≪ ν`.
   `TauCeti.memLp_sqrt_rnDeriv_smul_iff`, and `TauCeti.memLp_mul_sqrt_rnDeriv_iff` — scaling a
   (not necessarily measurable) function by `√(dμ/dν)` preserves the `L²` seminorm and `L²`
   membership between `μ` and `ν`.
-* `TauCeti.memLp_sqrt_rnDeriv`, `TauCeti.eLpNorm_sqrt_rnDeriv`, and
-  `TauCeti.eLpNorm_sqrt_rnDeriv_eq_one` — `√(dμ/dν)` lies in `L²(ν)` with norm `(μ univ)^(1/2)`
-  (and norm `1` for probability measures).
+* `TauCeti.eLpNorm_sqrt_rnDeriv` and `TauCeti.eLpNorm_sqrt_rnDeriv_eq_one` — `√(dμ/dν)` has
+  `L²(ν)` seminorm `(μ univ)^(1/2)` (and `1` for probability measures).
 -/
 
 public section
@@ -212,16 +210,6 @@ theorem memLp_mul_sqrt_rnDeriv_iff {μ ν : Measure α} [μ.HaveLebesgueDecompos
     (hμν : μ ≪ ν) {f : α → ℝ} :
     MemLp (fun x ↦ f x * √((μ.rnDeriv ν x).toReal)) 2 ν ↔ MemLp f 2 μ := by
   simp only [memLp_iff, eLpNorm_mul_sqrt_rnDeriv hμν f]
-
-/-- For any finite measure `μ` and any measure `ν`, the square-root Radon–Nikodym derivative
-`√(dμ/dν)` belongs to `L²(ν)`. -/
-theorem memLp_sqrt_rnDeriv (μ ν : Measure α) [IsFiniteMeasure μ] :
-    MemLp (fun x ↦ √((μ.rnDeriv ν x).toReal)) 2 ν := by
-  have hm : Measurable fun x ↦ √((μ.rnDeriv ν x).toReal) :=
-    (Measure.measurable_rnDeriv μ ν).ennreal_toReal.sqrt
-  rw [memLp_two_iff_integrable_sq hm.aestronglyMeasurable]
-  exact Measure.integrable_toReal_rnDeriv.congr
-    (.of_forall fun _ ↦ (Real.sq_sqrt ENNReal.toReal_nonneg).symm)
 
 /-- For `μ ≪ ν` with `μ` σ-finite and admitting a Lebesgue decomposition with respect to `ν`, the
 `L²(ν)` seminorm of `√(dμ/dν)` is `(μ univ) ^ (1 / 2)`. -/

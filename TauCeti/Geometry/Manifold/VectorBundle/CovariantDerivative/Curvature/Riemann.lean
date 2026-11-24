@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!

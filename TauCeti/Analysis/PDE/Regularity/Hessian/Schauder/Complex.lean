@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.WholeSpace
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Laplacian
 
 /-!
 # A global Schauder estimate on the complex plane
@@ -43,7 +44,7 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_laplacian_complex
   have hcv : HasCompactSupport v := hc.comp_homeomorph e.toHomeomorph
   have hDv : ContDiff ℝ 1 (iteratedFDeriv ℝ 2 v) :=
     hv.iteratedFDeriv_right (by simp)
-  obtain ⟨B, hB, hBN⟩ := hDv.exists_holderWith_and_norm_le_of_hasCompactSupport
+  obtain ⟨B, hB, -⟩ := hDv.exists_holderWith_and_norm_le_of_hasCompactSupport
     (hcv.iteratedFDeriv 2) hα1.le
   have hΔv : HolderWith K α (Δ v) := by
     rw [show v = u ∘ e from rfl, laplacian_comp_linearIsometryEquiv_right]
@@ -51,13 +52,10 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_laplacian_complex
   have hLv : HolderWith K α (fun x ↦ ∑ i : Fin 2, ∑ j : Fin 2,
       (1 : Matrix (Fin 2) (Fin 2) ℝ) i j • fderiv ℝ (fderiv ℝ v) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
-    convert hΔv using 1
-    funext x
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis v (EuclideanSpace.basisFun (Fin 2) ℝ)]
-    simp [Matrix.one_apply, iteratedFDeriv_two_apply, EuclideanSpace.basisFun_apply]
+    simpa only [sum_one_smul_fderiv_fderiv_eq_laplacian (n := 1)] using hΔv
   obtain ⟨hH, -, hD⟩ := hC (uniformlyEllipticOn_const_one_one univ)
     (fun _ _ ↦ HolderWith.const) (hv.of_le (by simp)) (fun x ↦ hN (e x))
-    ⟨B, by rintro _ ⟨x, rfl⟩; exact hBN x⟩ ⟨B, hB⟩ hLv
+    ⟨B, hB⟩ hLv
   have heN : ‖(e.toContinuousLinearEquiv.symm : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 2))‖₊ = 1 := by
     apply NNReal.coe_injective
     exact e.symm.norm_toContinuousLinearMap

@@ -57,10 +57,12 @@ fundamental-theorem results to curves.
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
-* `TauCeti.absolutelyContinuousOnInterval_of_eq_integral` and
+* `IntervalIntegrable.integral_mul_pow_integral`: for a real `g` with primitive `G` based at `c`,
+  `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`.
+* `TauCeti.continuous_of_eq_integral`, `TauCeti.absolutelyContinuousOnInterval_of_eq_integral`, and
   `TauCeti.ae_hasDerivAt_of_eq_integral`: a function represented as an indefinite interval integral
-  is absolutely continuous on every subinterval and is differentiable almost everywhere with the
-  integrand as its derivative.
+  is continuous, is absolutely continuous on every subinterval, and is differentiable almost
+  everywhere with the integrand as its derivative.
 
 ## References
 
@@ -365,6 +367,30 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
     Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
   exact intervalIntegral.norm_integral_le_abs_integral_norm
 
+/-- For `g` interval integrable on `c..d`, with primitive `G s = ∫ u in c..s, g u`, the integral
+of `g * G ^ k` over `c..d` is `G d ^ (k + 1) / (k + 1)`, whatever the order of `c` and `d`. This
+is the finite-interval form of `MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`;
+it gives the factorial decay of the Picard iterates of linear equations with integrable
+coefficients. -/
+theorem IntervalIntegrable.integral_mul_pow_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : IntervalIntegrable g volume c d) (k : ℕ) :
+    ∫ s in c..d, g s * (∫ u in c..s, g u) ^ k = (∫ u in c..d, g u) ^ (k + 1) / (k + 1) := by
+  set G : ℝ → ℝ := fun s ↦ ∫ u in c..s, g u
+  have hpow : AbsolutelyContinuousOnInterval (fun s ↦ G s ^ (k + 1)) c d :=
+    (hg.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc).comp_of_contDiffAt
+      (φ := fun x : ℝ ↦ x ^ (k + 1)) fun _ _ ↦ (contDiff_id.pow _).contDiffAt
+  have hderiv : ∀ᵐ s, s ∈ uIoc c d →
+      deriv (fun s ↦ G s ^ (k + 1)) s = (k + 1) * (g s * G s ^ k) := by
+    filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
+    rw [((hs (uIoc_subset_uIcc hsI) c left_mem_uIcc).fun_pow (k + 1)).deriv]
+    push_cast
+    ring
+  have h := hpow.integral_deriv_eq_sub
+  rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_const_mul] at h
+  simp only [G, intervalIntegral.integral_same, zero_pow k.succ_ne_zero, sub_zero] at h
+  rw [← h]
+  field_simp
+
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/
 theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
@@ -399,6 +425,13 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   abel
 
 namespace TauCeti
+
+/-- A function represented globally as an indefinite integral `f x = f c + ∫ t in c..x, f' t` of an
+interval-integrable function `f'` is continuous. -/
+theorem continuous_of_eq_integral {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f f' : ℝ → F} {c : ℝ} (hf' : ∀ a b, IntervalIntegrable f' volume a b)
+    (heq : ∀ x, f x = f c + ∫ t in c..x, f' t) : Continuous f :=
+  (continuous_const.add (intervalIntegral.continuous_primitive hf' c)).congr fun x ↦ (heq x).symm
 
 /-- A function `f` that agrees on `uIcc a b` with `f c + ∫ t in c..x, f' t` (with `f'` interval
 integrable on `c..a` and `a..b`) is absolutely continuous on `uIcc a b`. -/

@@ -109,28 +109,29 @@ variable {m : ℕ} (L : CoherentCubeHomotopies X m)
 
 /-- The homotopy of the boundary of an `(m + 1)`-cube glued from the homotopies of its faces. -/
 def boundaryHomotopy (c : SingularCube X (m + 1)) : C(I × Cube.boundary (Fin (m + 1)), X) where
-  toFun q := L.homotopy (SingularCube.face q.2.2.choose (q.2.1 q.2.2.choose) c)
-    (q.1, q.2.2.choose.removeNth q.2.1)
+  toFun q := L.homotopy (SingularCube.face q.2.property.choose (q.2.val q.2.property.choose) c)
+    (q.1, q.2.property.choose.removeNth q.2.val)
   continuous_toFun := by
     let e : Bool → I := fun b ↦ if b then 1 else 0
     let F : Fin (m + 1) × Bool → Set (I × Cube.boundary (Fin (m + 1))) :=
       fun jb ↦ {q | (q.2 : Fin (m + 1) → I) jb.1 = e jb.2}
     refine (locallyFinite_of_finite F).continuous ?_ (fun jb ↦ isClosed_eq
-      ((continuous_apply jb.1).comp (continuous_subtype_val.comp continuous_snd))
+      ((continuous_apply jb.1).comp (continuous_subtypeVal.comp continuous_snd))
       continuous_const) fun jb ↦ ?_
     · refine Set.eq_univ_of_forall fun q ↦ Set.mem_iUnion.2 ?_
-      obtain ⟨j, hj⟩ := q.2.2
+      obtain ⟨j, hj⟩ := q.2.property
       rcases hj with hj | hj
       exacts [⟨(j, false), hj⟩, ⟨(j, true), hj⟩]
     · have hcont : Continuous fun q : I × Cube.boundary (Fin (m + 1)) ↦
           L.homotopy (SingularCube.face jb.1 (e jb.2) c)
             (q.1, jb.1.removeNth (q.2 : Fin (m + 1) → I)) :=
         (L.homotopy _).continuous.comp (continuous_fst.prodMk
-          ((removeNthCM jb.1).continuous.comp (continuous_subtype_val.comp continuous_snd)))
+          ((removeNthCM jb.1).continuous.comp (continuous_subtypeVal.comp continuous_snd)))
       refine hcont.continuousOn.congr ?_
       intro q hq
       have hq : (q.2 : Fin (m + 1) → I) jb.1 = e jb.2 := hq
-      refine L.coherent c _ jb.1 _ _ q.2.2.choose_spec (by cases jb.2 <;> simp [e]) _ _ ?_ q.1
+      refine L.coherent c _ jb.1 _ _ q.2.property.choose_spec (by cases jb.2 <;> simp
+          [e]) _ _ ?_ q.1
       rw [Fin.insertNth_self_removeNth, ← hq, Fin.insertNth_self_removeNth]
 
 /-- The glued boundary homotopy is read off any face containing the point. -/
@@ -139,14 +140,14 @@ theorem boundaryHomotopy_apply (c : SingularCube X (m + 1)) (s : I)
     (j : Fin (m + 1)) (hj : (y : Fin (m + 1) → I) j = 0 ∨ (y : Fin (m + 1) → I) j = 1) :
     L.boundaryHomotopy c (s, y) = L.homotopy (SingularCube.face j ((y : Fin (m + 1) → I) j) c)
       (s, j.removeNth (y : Fin (m + 1) → I)) :=
-  L.coherent c _ j _ _ y.2.choose_spec hj _ _
+  L.coherent c _ j _ _ y.property.choose_spec hj _ _
     (by rw [Fin.insertNth_self_removeNth, Fin.insertNth_self_removeNth]) s
 
 /-- The glued boundary homotopy of `c` starts at the restriction of `c` to the boundary. -/
 @[simp]
 theorem boundaryHomotopy_zero (c : SingularCube X (m + 1)) (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (0, y) = c y := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c 0 y j hj, L.homotopy_zero, SingularCube.face_apply,
     Fin.insertNth_self_removeNth]
 

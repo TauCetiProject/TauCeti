@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 
@@ -38,10 +41,10 @@ instance and its associativity and unit axioms in Mathlib's factor order are con
 The monoidal structure used here is Mathlib's `HomologicalComplex.monoidalCategory` at
 `ComplexShape.up ℤ`; nothing is re-totalized.  The component equations for the whiskerings, the
 unitors and the associator, which Mathlib does not state, are taken from
-`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  Its
-colimit-preservation hypotheses are discharged
+`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  The
+colimit-preservation hypotheses of Mathlib's monoidal structure are discharged
 by Mathlib's instances for a braided monoidal closed category, so
-`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, which that file imports, is what makes the
+`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, imported here, is what makes the
 tensor product of cochain complexes exist at all.  Note that `ModuleCat.{v} R` is monoidal only for
 a commutative `R : Type v`, so this file, unlike
 `TauCeti/Algebra/Homology/LinearHomComplex/Basic.lean`, requires `CommRing R` and ties the ring to
@@ -258,10 +261,9 @@ lemma linearHomComplexUnit_f_zero_apply (r : R) :
       (r • Cochain.ofHom (𝟙 F) : ModuleCat.of R (Cochain F F 0)) := by
   rw [linearHomComplexUnit_def, linearHomComplexOfHom_f_zero_apply]
 
-/- Two maps out of a tensor product of linear Hom complexes agree when they agree on every pure
-tensor of cochains.  This keeps the totalization and `ModuleCat` extensionality boilerplate out of
-the naturality and unit calculations below. -/
-private lemma linearHomComplexTensor_hom_ext
+/-- Two maps out of a tensor product of linear Hom complexes agree when they agree on every pure
+tensor of cochains. -/
+lemma linearHomComplex_tensor_hom_ext
     {A B D E : CochainComplex C ℤ} {Z : CochainComplex (ModuleCat.{v} R) ℤ}
     {f g : linearHomComplex R A B ⊗ linearHomComplex R D E ⟶ Z}
     (h : ∀ (p q j : ℤ)
@@ -300,7 +302,7 @@ cochain `Cochain.ofHom φ` in the first (diagrammatic) argument. -/
 lemma linearHomComplexComp_naturality_source (φ : F₁ ⟶ F₂) (G K : CochainComplex C ℤ) :
     linearHomComplex R G K ◁ linearHomComplexPrecomp R φ G ≫ linearHomComplexComp R F₁ G K =
       linearHomComplexComp R F₂ G K ≫ linearHomComplexPrecomp R φ K := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,
@@ -331,7 +333,7 @@ cochain `Cochain.ofHom ψ` in the last (diagrammatic) argument. -/
 lemma linearHomComplexComp_naturality_target (ψ : K₁ ⟶ K₂) (F G : CochainComplex C ℤ) :
     linearHomComplexPostcomp R G ψ ▷ linearHomComplex R F G ≫ linearHomComplexComp R F G K₂ =
       linearHomComplexComp R F G K₁ ≫ linearHomComplexPostcomp R F ψ := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,
@@ -363,7 +365,7 @@ lemma linearHomComplexComp_dinaturality_middle (ψ : G₁ ⟶ G₂) (F K : Cocha
         linearHomComplexComp R F G₁ K =
       linearHomComplex R G₂ K ◁ linearHomComplexPostcomp R F ψ ≫
         linearHomComplexComp R F G₂ K := by
-  apply linearHomComplexTensor_hom_ext
+  apply linearHomComplex_tensor_hom_ext
   intro p q j h z₂ z₁
   have h' : p + q = j := h
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ← Category.assoc,
@@ -537,10 +539,10 @@ lemma linearHomComplexOfHom_comp (ψ : G ⟶ K) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
+  rw [HomologicalComplex.leftUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           (linearHomComplex R F G) 0 j j (zero_add j) ≫
         (linearHomComplexOfHom R ψ ▷ linearHomComplex R F G).f j ≫
           (linearHomComplexComp R F G K).f j =
@@ -587,10 +589,10 @@ lemma linearHomComplexComp_ofHom {F' : CochainComplex C ℤ} (φ : F' ⟶ F) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
+  rw [HomologicalComplex.rightUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj (linearHomComplex R F G)
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           j 0 j (add_zero j) ≫
         (linearHomComplex R F G ◁ linearHomComplexOfHom R φ).f j ≫
           (linearHomComplexComp R F' F G).f j =
