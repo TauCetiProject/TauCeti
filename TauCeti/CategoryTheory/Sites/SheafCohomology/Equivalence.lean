@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import Mathlib.CategoryTheory.Sites.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
+public import TauCeti.CategoryTheory.Sites.Preadditive
 
 /-!
 # Sheaf cohomology along an equivalence of sites
@@ -72,9 +73,6 @@ def sheafCongrInverseFreeYonedaIso (V : D) :
 variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] [HasExt.{v} (Sheaf K AddCommGrpCat.{v})]
 
 local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.functor.Additive :=
-  Functor.additive_of_preserves_binary_products _
-
-local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.inverse.Additive :=
   Functor.additive_of_preserves_binary_products _
 
 /-- Sheaf cohomology is invariant under an equivalence of sites: the cohomology at `V : D` of the

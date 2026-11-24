@@ -45,6 +45,25 @@ instance opensCongr_isDenseSubsite :
       exact ⟨h.symm.opensCongr V, h.symm.opensCongr.equivalence.functor.map f,
         ⟨V, f, 𝟙 _, hf, (Category.id_comp _).symm⟩, hv⟩
 
+/-- The inverse-opens functor of the identity homeomorphism is the native identity functor. -/
+theorem opensCongr_inverse_refl :
+    (Homeomorph.refl X).opensCongr.equivalence.inverse = 𝟭 (Opens X) := by
+  rfl
+
+/-- Inverse-opens transport follows the actual composite in the contravariant order. -/
+theorem opensCongr_inverse_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse =
+      k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse := by
+  rfl
+
+/-- The actual inverse-opens precomposition functors compose in the same order after `op`. -/
+theorem opensCongr_inverse_op_trans {Z : Type*} [TopologicalSpace Z] (k : Y ≃ₜ Z) :
+    (h.trans k).opensCongr.equivalence.inverse.op =
+      k.opensCongr.equivalence.inverse.op ⋙ h.opensCongr.equivalence.inverse.op := by
+  change (h.trans k).opensCongr.equivalence.inverse.op =
+    (k.opensCongr.equivalence.inverse ⋙ h.opensCongr.equivalence.inverse).op
+  exact congrArg Functor.op (opensCongr_inverse_trans h k)
+
 variable (A : Type a) [Category.{b} A]
 
 private def sectionsHomeomorphIso :

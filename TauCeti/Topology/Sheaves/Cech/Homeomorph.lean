@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.Topology.Sheaves.Cech.Functoriality
 public import TauCeti.Topology.Sheaves.Cech.LongExactSequence
 
-import Mathlib.CategoryTheory.CommSq
+public import Mathlib.CategoryTheory.CommSq
 
 /-!
 # Čech cohomology under a homeomorphism
@@ -50,17 +50,6 @@ private lemma inverseOpens_mapHomeomorph :
     rw [PointOpenCover.mapHomeomorph_opens]
     exact h.opensCongr.symm_apply_apply _
 
-omit [HasProducts.{u} A] in
-@[reassoc]
-private lemma cechComplex_eqToIso_hom_app_f_π (V W : Y → Opens X) (q : V = W)
-    (n : ℕ) (a : Fin (n + 1) → Y) :
-    ((eqToIso (congrArg (fun V ↦ cechComplexFunctor (A := A) V) q)).hom.app P).f n ≫
-        (cechXIso W P n).hom ≫ Pi.π _ a =
-      (cechXIso V P n).hom ≫ Pi.π _ a ≫
-        P.map (eqToHom (congrArg (fun V ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op := by
-  subst W
-  simp
-
 /-- The native Čech complex of a cover is unchanged after transporting the points, opens and
 presheaf through a homeomorphism, even across different base universes. -/
 def cechComplexIso :
@@ -68,7 +57,7 @@ def cechComplexIso :
       (Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
           h.opensCongr.equivalence.inverse.op ⋙
         cechComplexFunctor.{v} (U.mapHomeomorph h).opens :=
-  (cechComplexReindexIso h.symm.toEquiv U.opens).symm ≪≫
+  (Equiv.cechComplexReindexIso h.symm.toEquiv U.opens).symm ≪≫
     (eqToIso (congrArg (fun V : Y → Opens X ↦ cechComplexFunctor (A := A) V)
       (inverseOpens_mapHomeomorph h U).symm)) ≪≫
     NatIso.ofComponents (fun P ↦
@@ -82,8 +71,8 @@ def cechComplexIso :
 def cechTupleComparison (n : ℕ) (a : Fin (n + 1) → Y) :
     h.opensCongr.equivalence.inverse.obj (∏ᶜ fun j ↦ (U.mapHomeomorph h).opens (a j)) ⟶
       ∏ᶜ fun j ↦ U.opens (h.symm (a j)) :=
-  (Pi.lift fun j ↦ h.opensCongr.equivalence.inverse.map
-    (Pi.π (fun j ↦ (U.mapHomeomorph h).opens (a j)) j)) ≫
+  (piComparison h.opensCongr.equivalence.inverse
+    (fun j ↦ (U.mapHomeomorph h).opens (a j))) ≫
       eqToHom (congrArg (fun V ↦ ∏ᶜ fun j ↦ V (a j)) (inverseOpens_mapHomeomorph h U))
 
 /-- Inverse-image transport preserves finite intersections. -/
@@ -94,11 +83,11 @@ instance cechTupleComparison_isIso (n : ℕ) (a : Fin (n + 1) → Y) :
     (fun j ↦ (U.mapHomeomorph h).opens (a j)) ≫ _)
   infer_instance
 
-/-- The native component reads a transported tuple by the corresponding original tuple. -/
-@[reassoc]
-theorem cechComplexIso_hom_app_f_π (n : ℕ) (a : Fin (n + 1) → Y) :
-    ((h.cechComplexIso (A := A) U).hom.app P).f n ≫ Pi.π _ a =
-      Pi.π _ (h.symm.toEquiv ∘ a) ≫ P.map (h.cechTupleComparison U n a).op := by
+private lemma cechComplexIso_hom_app_f_commSq (n : ℕ) (a : Fin (n + 1) → Y) :
+    CommSq (((h.cechComplexIso (A := A) U).hom.app P).f n)
+      ((cechXIso U.opens P n).hom ≫ Pi.π _ (h.symm.toEquiv ∘ a))
+      ((cechXIso (U.mapHomeomorph h).opens (h.opensCongr.equivalence.inverse.op ⋙ P) n).hom ≫
+        Pi.π _ a) (P.map (h.cechTupleComparison U n a).op) := by
   let G := h.opensCongr.equivalence.inverse
   let V := (U.mapHomeomorph h).opens
   -- Compose the native projection laws as terms: rewriting the hidden tuple carrier can
@@ -110,11 +99,11 @@ theorem cechComplexIso_hom_app_f_π (n : ℕ) (a : Fin (n + 1) → Y) :
     (_ ≫= cechXIso_hom_π V (G.op ⋙ P) n a).trans <|
       (cechComplexCompIso_hom_f_π G V P (fun _ _ ↦ inferInstance) n a).trans
         (cechXIso_hom_π_assoc _ P n a _).symm
-  have hi : ((cechComplexReindexIso h.symm.toEquiv U.opens).inv.app P).f n ≫
+  have hi : ((Equiv.cechComplexReindexIso h.symm.toEquiv U.opens).inv.app P).f n ≫
       (cechXIso (U.opens ∘ h.symm.toEquiv) P n).hom ≫ Pi.π _ a =
       (cechXIso U.opens P n).hom ≫ Pi.π _ (h.symm.toEquiv ∘ a) :=
     (_ ≫= cechXIso_hom_π _ P n a).trans
-      ((cechComplexReindexIso_inv_app_f_π h.symm.toEquiv U.opens P n a).trans
+      ((Equiv.cechComplexReindexIso_inv_app_f_π h.symm.toEquiv U.opens P n a).trans
         (cechXIso_hom_π U.opens P n (h.symm.toEquiv ∘ a)).symm)
   have hr : ((h.cechComplexIso (A := A) U).hom.app P).f n ≫
       (cechXIso V (G.op ⋙ P) n).hom ≫ Pi.π _ a =
@@ -126,9 +115,31 @@ theorem cechComplexIso_hom_app_f_π (n : ℕ) (a : Fin (n + 1) → Y) :
     rw [hc, cechComplex_eqToIso_hom_app_f_π_assoc P (U.opens ∘ h.symm.toEquiv)
       (fun y ↦ G.obj (V y)) (inverseOpens_mapHomeomorph h U).symm n a,
       reassoc_of% hi]
-    simp only [cechTupleComparison, op_comp, Functor.map_comp]
-  exact (_ ≫= (cechXIso_hom_π V (G.op ⋙ P) n a).symm).trans
-    (hr.trans (cechXIso_hom_π_assoc U.opens P n (h.symm.toEquiv ∘ a) _))
+    simp only [cechTupleComparison, piComparison, op_comp, Functor.map_comp]
+  exact ⟨hr.trans (Category.assoc _ _ _).symm⟩
+
+/-- The native tuple reading is a commuting square through the canonical product
+coordinates. This retains the dependent Čech carriers during composition. -/
+theorem cechComplexIso_hom_app_f_commSq_of_eq (n : ℕ) (a : Fin (n + 1) → Y)
+    (b : Fin (n + 1) → X) (q : b = h.symm.toEquiv ∘ a) :
+    CommSq (((h.cechComplexIso (A := A) U).hom.app P).f n)
+      ((cechXIso U.opens P n).hom ≫ Pi.π _ b)
+      ((cechXIso (U.mapHomeomorph h).opens (h.opensCongr.equivalence.inverse.op ⋙ P) n).hom ≫
+        Pi.π _ a) (P.map (h.cechTupleComparison U n a ≫
+          eqToHom (congrArg (fun b ↦ ∏ᶜ fun j ↦ U.opens (b j)) q.symm)).op) := by
+  subst b
+  simpa only [eqToHom_refl, Category.comp_id] using
+    (cechComplexIso_hom_app_f_commSq h U P n a)
+
+/-- The native component reads a transported tuple by the corresponding original tuple. -/
+@[reassoc]
+theorem cechComplexIso_hom_app_f_π (n : ℕ) (a : Fin (n + 1) → Y) :
+    ((h.cechComplexIso (A := A) U).hom.app P).f n ≫ Pi.π _ a =
+      Pi.π _ (h.symm.toEquiv ∘ a) ≫ P.map (h.cechTupleComparison U n a).op := by
+  exact (_ ≫= (cechXIso_hom_π (U.mapHomeomorph h).opens
+      (h.opensCongr.equivalence.inverse.op ⋙ P) n a).symm).trans
+    (((cechComplexIso_hom_app_f_commSq h U P n a).w.trans (Category.assoc _ _ _)).trans
+      (cechXIso_hom_π_assoc U.opens P n (h.symm.toEquiv ∘ a) _))
 
 /-- The inverse component reads each original tuple through the inverse open comparison. -/
 @[reassoc]
@@ -153,7 +164,7 @@ theorem cechAugmentation_comp_cechComplexIso_hom_app [HasZeroObject A] :
           (h.opensCongr.equivalence.inverse.op ⋙ P) := by
   let G := h.opensCongr.equivalence.inverse
   let B := fun y ↦ G.obj ((U.mapHomeomorph h).opens y)
-  let r := cechComplexReindexIso (A := A) h.symm.toEquiv U.opens
+  let r := Equiv.cechComplexReindexIso (A := A) h.symm.toEquiv U.opens
   let q := eqToIso (congrArg (cechComplexFunctor.{v} (A := A))
     (inverseOpens_mapHomeomorph h U).symm)
   let c := cechComplexCompIso G (U.mapHomeomorph h).opens P (fun _ _ ↦ inferInstance)
@@ -173,14 +184,9 @@ theorem cechAugmentation_comp_cechComplexIso_hom_app [HasZeroObject A] :
     exact (Category.assoc _ _ _).trans
       ((α ≫= cechAugmentation_f_zero_comp_π B hGT P a).trans
         (hmap.trans (cechAugmentation_f_zero_comp_π B isTerminalTop P a).symm))
-  have hq (V W : Y → Opens X) (q : V = W) :
-      cechAugmentation V isTerminalTop P ≫
-        (eqToIso (congrArg (cechComplexFunctor.{v} (A := A)) q)).hom.app P =
-          cechAugmentation W isTerminalTop P := by
-    subst W
-    exact Category.comp_id _
   have hr := (Iso.eq_comp_inv (r.app P)).mpr
-    (cechAugmentation_comp_cechComplexReindexIso_hom_app h.symm.toEquiv U.opens P isTerminalTop)
+    (Equiv.cechAugmentation_comp_cechComplexReindexIso_hom_app
+      h.symm.toEquiv U.opens P isTerminalTop)
   have hc := cechAugmentation_comp_cechComplexCompIso_hom G (U.mapHomeomorph h).opens P
     (fun _ _ ↦ inferInstance) isTerminalTop hGT
   -- Unfold Iso.trans and NatIso.ofComponents to read the composite as r⁻¹ ≫ q ≫ c.
@@ -194,7 +200,8 @@ theorem cechAugmentation_comp_cechComplexIso_hom_app [HasZeroObject A] :
         q.hom.app P ≫ c.hom := hr.symm =≫ _
     _ = cechAugmentation B isTerminalTop P ≫ c.hom :=
       (Category.assoc _ _ _).symm.trans
-        (hq _ _ (inverseOpens_mapHomeomorph h U).symm =≫ _)
+        (P.cechAugmentation_comp_cechComplex_eqToIso_hom_app _ _
+          (inverseOpens_mapHomeomorph h U).symm isTerminalTop =≫ _)
     _ = ((CochainComplex.single₀ A).map α ≫ cechAugmentation B hGT P) ≫ c.hom := ht.symm =≫ _
     _ = (CochainComplex.single₀ A).map α ≫
         cechAugmentation (U.mapHomeomorph h).opens isTerminalTop (G.op ⋙ P) :=
@@ -266,14 +273,14 @@ theorem cechComplexMap_comp_cechComplexIso_hom_app {V : PointOpenCover X}
       cechComplexFunctor.{v} (A := A) (fun y ↦ G.obj ((T.mapHomeomorph h).opens y)) ≅
         cechComplexFunctor.{u} (A := A) T.opens :=
     eqToIso (congrArg (cechComplexFunctor.{v} (A := A))
-      (inverseOpens_mapHomeomorph h T)) ≪≫ cechComplexReindexIso h.symm.toEquiv T.opens
+      (inverseOpens_mapHomeomorph h T)) ≪≫ Equiv.cechComplexReindexIso h.symm.toEquiv T.opens
   let ψG : FormalCoproduct.mk Y (fun y ↦ G.obj ((U.mapHomeomorph h).opens y)) ⟶
       FormalCoproduct.mk Y (fun y ↦ G.obj ((V.mapHomeomorph h).opens y)) :=
     ⟨ψ.f, fun y ↦ G.map (ψ.φ y)⟩
   have hf : φ.f ∘ h.symm.toEquiv = h.symm.toEquiv ∘ ψG.f := by
     funext y
     simp [ψG, ψ, PointOpenCover.mapHomeomorphHom_f]
-  have hr := cechComplexMap_comp_cechComplexReindexIso_hom_app (A := A)
+  have hr := Equiv.cechComplexMap_comp_cechComplexReindexIso_hom_app (A := A)
     h.symm.toEquiv U.opens P
     h.symm.toEquiv V.opens _ _ (inverseOpens_mapHomeomorph h U)
     (inverseOpens_mapHomeomorph h V) φ ψG hf (fun _ ↦ Subsingleton.elim _ _)
@@ -296,12 +303,12 @@ private def coverHomeomorphEquivalence : PointOpenCover X ≌ PointOpenCover Y :
   let G : PointOpenCover X ⥤ PointOpenCover Y :=
     { obj := fun U ↦ U.mapHomeomorph h
       map := fun f ↦ homOfLE
-        ((PointOpenCover.mapHomeomorph_le_mapHomeomorph_iff h _ _).mpr (leOfHom f)) }
-  (PointOpenCover.orderIsoOfHomeomorph h).equivalence.changeFunctor
+        ((PointOpenCover.mapHomeomorph_le_mapHomeomorph_iff _ _ h).mpr (leOfHom f)) }
+  (h.pointOpenCoverOrderIso).equivalence.changeFunctor
     (NatIso.ofComponents (fun U ↦ eqToIso (by
       simp only [OrderIso.equivalence_functor, Monotone.functor_obj,
-        PointOpenCover.orderIsoOfHomeomorph_apply, G])) (fun _ ↦ Subsingleton.elim _ _)
-      : (PointOpenCover.orderIsoOfHomeomorph h).equivalence.functor ≅ G)
+        Homeomorph.pointOpenCoverOrderIso_apply, G])) (fun _ ↦ Subsingleton.elim _ _)
+      : (h.pointOpenCoverOrderIso).equivalence.functor ≅ G)
 
 variable [CategoryWithHomology A] (n : ℕ)
 
@@ -546,28 +553,37 @@ theorem δ_comp_homologyMap_cechComplexIso_hom_app
     (T.mapNatTrans (h.cechComplexIso (A := A) U).hom)
     hT (cechComplexIso_shortExact h U hT) n (n + 1) rfl
 
+/-- Exactness on all source covers supplies exactness on every target cover by transporting
+its inverse-image cover through the actual homeomorphism comparison. -/
+theorem cechComplexIso_shortExact_of_forall
+    {T : ShortComplex ((Opens X)ᵒᵖ ⥤ A)}
+    (hX : ∀ V : PointOpenCover X, (T.map (cechComplexFunctor V.opens)).ShortExact)
+    (V : PointOpenCover Y) :
+    ((T.map ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
+      h.opensCongr.equivalence.inverse.op)).map (cechComplexFunctor V.opens)).ShortExact := by
+  have ht := cechComplexIso_shortExact h (V.mapHomeomorph h.symm) (hX _)
+  exact Eq.mp (congrArg (fun V : PointOpenCover Y ↦
+    ((T.map ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
+      h.opensCongr.equivalence.inverse.op)).map (cechComplexFunctor V.opens)).ShortExact)
+    (PointOpenCover.mapHomeomorph_symm_mapHomeomorph V h.symm)) ht
+
 variable [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → X)) A]
-  [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → Y)) A]
 
 variable [HasColimitsOfShape (PointOpenCover X) A] [HasColimitsOfShape (PointOpenCover Y) A]
 
-omit [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → X)) A]
-  [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → Y)) A] in
+omit [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → X)) A] in
 /-- Coverwise short exactness suffices for the native connecting-map transport square. -/
 @[reassoc]
-theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_shortExact
+theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_forall_shortExact
     {T : ShortComplex ((Opens X)ᵒᵖ ⥤ A)}
     (hX : ∀ V : PointOpenCover X, (T.map (cechComplexFunctor V.opens)).ShortExact)
-    (hY : ∀ V : PointOpenCover Y,
-      ((T.map ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
-        h.opensCongr.equivalence.inverse.op)).map (cechComplexFunctor V.opens)).ShortExact)
     (n : ℕ) :
     TauCeti.CategoryTheory.cechCohomologyδ PointOpenCover.toFormalCoproduct
         (fun _ _ hf ↦ hf) hX n ≫
         (h.cechCohomologyIso (A := A) (n + 1)).hom.app T.X₁ =
       (h.cechCohomologyIso (A := A) n).hom.app T.X₃ ≫
         TauCeti.CategoryTheory.cechCohomologyδ PointOpenCover.toFormalCoproduct
-          (fun _ _ hf ↦ hf) hY n := by
+          (fun _ _ hf ↦ hf) (cechComplexIso_shortExact_of_forall h hX) n := by
   apply colimit.hom_ext
   intro V
   have hi := cechCohomologyι_app PointOpenCover.toFormalCoproduct
@@ -579,7 +595,7 @@ theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_shortExact
     (hX V) n
   have htarget := cechCohomologyι_app_δ PointOpenCover.toFormalCoproduct
     (fun _ _ hf ↦ hf)
-    hY n (V.mapHomeomorph h)
+    (cechComplexIso_shortExact_of_forall h hX) n (V.mapHomeomorph h)
   have hq₁ := cechCohomologyIso_hom_app_ι h T.X₁ (n + 1) V
   have hq₃ := cechCohomologyIso_hom_app_ι h T.X₃ n V
   have sourceSquare : CommSq _ _ _ _ := ⟨hsource⟩
@@ -590,7 +606,8 @@ theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_shortExact
     ((hlocal =≫ _).trans (upperSquare.vert_comp targetSquare).w.symm)
 
 
-/-- Transport through a homeomorphism commutes with native cover-colimit connecting maps. -/
+/-- Transport through a homeomorphism commutes with native cover-colimit connecting maps.
+Exact products are required only on the source: every target cover is transported from one. -/
 @[reassoc]
 theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app
     {T : ShortComplex ((Opens X)ᵒᵖ ⥤ A)} (hT : T.ShortExact) (n : ℕ) :
@@ -599,15 +616,10 @@ theorem cechCohomologyδ_comp_cechCohomologyIso_hom_app
         (h.cechCohomologyIso (A := A) (n + 1)).hom.app T.X₁ =
       (h.cechCohomologyIso (A := A) n).hom.app T.X₃ ≫
         TauCeti.CategoryTheory.cechCohomologyδ PointOpenCover.toFormalCoproduct
-          (fun _ _ hf ↦ hf)
-          (fun V : PointOpenCover Y ↦ (hT.map_of_exact
-            ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
-              h.opensCongr.equivalence.inverse.op)).map_of_exact
-                (cechComplexFunctor V.opens)) n :=
-  cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_shortExact h
-    (fun V ↦ hT.map_of_exact (cechComplexFunctor V.opens))
-    (fun V ↦ (hT.map_of_exact ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
-      h.opensCongr.equivalence.inverse.op)).map_of_exact (cechComplexFunctor V.opens)) n
+          (fun _ _ hf ↦ hf) (cechComplexIso_shortExact_of_forall h
+            (fun V ↦ hT.map_of_exact (cechComplexFunctor V.opens))) n :=
+  cechCohomologyδ_comp_cechCohomologyIso_hom_app_of_forall_shortExact h
+    (fun V ↦ hT.map_of_exact (cechComplexFunctor V.opens)) n
 
 end Homeomorph
 
@@ -693,7 +705,13 @@ def cechPullbackRefinement :
     rw [PointOpenCover.mapHomeomorph_opens]
     exact le_of_eq (h.opensCongr.symm_apply_apply _))⟩
 
-/-- The inverse continuous-map pullback agrees with native transport at each cover. -/
+/-- The actual refinement reads a transported point at its inverse image. -/
+@[simp]
+theorem cechPullbackRefinement_f (y : Y) : (h.cechPullbackRefinement U).f y = h.symm y := by
+  rfl
+
+/-- Native transport followed by continuous-map pullback is the actual refinement map
+from the preimage of the transported cover to the original cover. -/
 theorem cechComplexIso_hom_app_comp_cechComplexPullback :
     (h.cechComplexIso (A := A) U).hom.app P ≫
         (TopCat.isoOfHomeo h).hom.cechComplexPullback (U.mapHomeomorph h).opens
@@ -738,7 +756,7 @@ variable [CategoryWithHomology A] [HasColimitsOfShape (PointOpenCover X) A]
   [HasColimitsOfShape (PointOpenCover Y) A] (n : ℕ)
 
 /-- In the same base universe the inverse is exactly native continuous-map pullback. -/
-theorem cechCohomologyIso_inv_app_eq_pullback :
+theorem cechCohomologyIso_inv_app_eq_cechCohomologyPullback :
     (h.cechCohomologyIso (A := A) n).inv.app P =
       (TopCat.isoOfHomeo h).hom.cechCohomologyPullback n
         (𝟙 ((TopCat.Presheaf.pushforward A (TopCat.isoOfHomeo h).hom).obj P)) := by
@@ -780,5 +798,354 @@ theorem cechCohomologyIso_inv_app_eq_pullback :
       (Category.assoc _ _ _).symm.trans (hcomp =≫ _)
     _ = (toCechCohomology A n U.opens U.isOpenCover).app P := hr
     _ = _ := by simpa only [Category.comp_id] using hx
+
+end Homeomorph
+
+namespace Homeomorph
+
+private lemma map_comp_whiskeringLeft_eqToIso_op_id_app
+    {C : Type*} [Category* C] [Quiver.IsThin C] {A : Type*} [Category* A]
+    (F : C ⥤ C) (q : F = 𝟭 C) (P : Cᵒᵖ ⥤ A) {V W : C}
+    (i : F.obj W ⟶ V) (j : V ⟶ W) :
+    P.map i.op ≫ (F.op ⋙ P).map j.op ≫
+      ((eqToIso (congrArg
+        (fun G : C ⥤ C ↦ (Functor.whiskeringLeft Cᵒᵖ Cᵒᵖ A).obj G.op) q) ≪≫
+        Functor.whiskeringLeftObjIdIso (C := Cᵒᵖ) (E := A)).hom.app P).app (op V) = 𝟙 _ := by
+  subst F
+  simp [Functor.whiskeringLeft, ← P.map_comp,
+    Subsingleton.elim (i.op ≫ j.op) (𝟙 (op V))]
+
+end Homeomorph
+
+namespace Homeomorph
+
+private lemma whiskeringLeft_eqToIso_hom_app_app
+    {C : Type*} [Category* C] {D : Type*} [Category* D] {A : Type*} [Category* A]
+    (F G : C ⥤ D) (q : F = G) (P : D ⥤ A) (V : C) :
+    (((eqToIso (congrArg
+      (fun G : C ⥤ D ↦ (Functor.whiskeringLeft C D A).obj G) q)).hom.app P).app V) =
+        P.map (eqToHom (congrArg (fun G : C ⥤ D ↦ G.obj V) q)) := by
+  subst G
+  simp
+
+end Homeomorph
+
+namespace Homeomorph
+
+universe u₁ u₂ u₃ a₁ b₁
+
+open CategoryTheory Limits TopologicalSpace Opposite TauCeti.Topology TauCeti.CategoryTheory
+
+variable {A : Type a₁} [Category.{b₁} A] [Preadditive A]
+  {X : TopCat.{u₁}} {Y : TopCat.{u₂}} {Z : TopCat.{u₃}}
+  [HasProducts.{u₁} A] [HasProducts.{u₂} A] [HasProducts.{u₃} A]
+
+omit [HasProducts.{u₂} A] [HasProducts.{u₃} A] in
+/-- Identity transport is the canonical unit identification of the actual Čech complex functor. -/
+theorem cechComplexIso_refl (U : PointOpenCover X) :
+    let C := cechComplexFunctor.{u₁} (A := A) U.opens
+    let W := (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj
+      (Homeomorph.refl X).opensCongr.equivalence.inverse.op
+    let q : W ⋙ cechComplexFunctor.{u₁} (A := A)
+        (U.mapHomeomorph (Homeomorph.refl X)).opens ≅ W ⋙ C :=
+      isoWhiskerLeft W (eqToIso (congrArg
+        (fun V : PointOpenCover X ↦ cechComplexFunctor.{u₁} (A := A) V.opens)
+        (PointOpenCover.mapHomeomorph_refl U)))
+    let e : W ≅ 𝟭 ((Opens X)ᵒᵖ ⥤ A) :=
+      eqToIso (congrArg (fun G : Opens X ⥤ Opens X ↦
+        (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj G.op)
+        (opensCongr_inverse_refl (X := X))) ≪≫
+        Functor.whiskeringLeftObjIdIso (C := (Opens X)ᵒᵖ) (E := A)
+    (Homeomorph.refl X).cechComplexIso (A := A) U =
+      (q ≪≫ isoWhiskerRight e C ≪≫ Functor.leftUnitor C).symm := by
+  apply Iso.ext
+  apply (Iso.comp_hom_eq_id _).mp
+  apply NatTrans.ext
+  funext P
+  let F := (Homeomorph.refl X).opensCongr.equivalence.inverse
+  let R := F.op ⋙ P
+  let q := congrArg PointOpenCover.opens (PointOpenCover.mapHomeomorph_refl U)
+  let e := (eqToIso (congrArg (cechComplexFunctor.{u₁} (A := A)) q)).hom.app R
+  let ρ := eqToIso (congrArg (fun G : Opens X ⥤ Opens X ↦
+      (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj G.op)
+      (opensCongr_inverse_refl (X := X))) ≪≫
+    Functor.whiskeringLeftObjIdIso (C := (Opens X)ᵒᵖ) (E := A)
+  let φ := ρ.hom.app P
+  ext n : 2
+  apply (cancel_mono (cechXIso U.opens P n).hom).mp
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  let f := (((Homeomorph.refl X).cechComplexIso (A := A) U).hom.app P).f n
+  let g := ((cechComplexFunctor U.opens).map φ).f n
+  have sf := cechComplexIso_hom_app_f_commSq (Homeomorph.refl X) U P n a
+  have se : CommSq (e.f n)
+      ((cechXIso (U.mapHomeomorph (Homeomorph.refl X)).opens R n).hom ≫ Pi.π _ a)
+      ((cechXIso U.opens R n).hom ≫ Pi.π _ a)
+      (R.map (eqToHom (congrArg (fun V : X → Opens X ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op) :=
+    ⟨(R.cechComplex_eqToIso_hom_app_f_π
+      (U.mapHomeomorph (Homeomorph.refl X)).opens U.opens q n a).trans
+        (Category.assoc _ _ _).symm⟩
+  have sg : CommSq g ((cechXIso U.opens R n).hom ≫ Pi.π _ a)
+      ((cechXIso U.opens P n).hom ≫ Pi.π _ a) (φ.app (op (∏ᶜ fun j ↦ U.opens (a j)))) :=
+    ⟨(cechComplexFunctor_map_f_comp_cechXIso_hom_π U.opens φ n a).trans
+      (Category.assoc _ _ _).symm⟩
+  have hm := map_comp_whiskeringLeft_eqToIso_op_id_app F
+    (opensCongr_inverse_refl (X := X)) P ((Homeomorph.refl X).cechTupleComparison U n a)
+    (eqToHom (congrArg (fun V : X → Opens X ↦ ∏ᶜ fun j ↦ V (a j)) q.symm))
+  simp only [NatTrans.comp_app, Iso.trans_hom, isoWhiskerLeft_hom, whiskerLeft_app,
+    isoWhiskerRight_hom, whiskerRight_app, Functor.leftUnitor_hom_app,
+    HomologicalComplex.comp_f, HomologicalComplex.id_f, NatTrans.id_app,
+    Category.id_comp]
+  change ((f ≫ e.f n ≫ g ≫ 𝟙 _) ≫ (cechXIso U.opens P n).hom) ≫ Pi.π _ a =
+    (cechXIso U.opens P n).hom ≫ Pi.π _ a
+  refine (((f ≫= (e.f n ≫= Category.comp_id g)) =≫
+    (cechXIso U.opens P n).hom) =≫ Pi.π _ a).trans ?_
+  have hs := ((sf.horiz_comp se).horiz_comp sg).w
+  have he := hs.trans (((cechXIso U.opens P n).hom ≫ Pi.π _ a) ≫=
+    ((Category.assoc _ _ _).trans hm))
+  exact (Category.assoc _ _ _).trans
+    (((Category.assoc f (e.f n) g).symm =≫ _).trans (he.trans (Category.comp_id _)))
+
+/-- Successive homeomorphisms give the same actual tuple transport as their composite,
+including the equality identifying the transported cover and the canonical whiskering map. -/
+theorem cechComplexIso_trans (h : X ≃ₜ Y) (k : Y ≃ₜ Z) (U : PointOpenCover X) :
+    (h.trans k).cechComplexIso (A := A) U =
+      h.cechComplexIso U ≪≫
+        isoWhiskerLeft ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
+          h.opensCongr.equivalence.inverse.op) (k.cechComplexIso (U.mapHomeomorph h)) ≪≫
+        (Functor.associator _ _ _).symm ≪≫
+        isoWhiskerRight ((Functor.whiskeringLeftObjCompIso
+          (E := A) k.opensCongr.equivalence.inverse.op h.opensCongr.equivalence.inverse.op).symm ≪≫
+          eqToIso (congrArg (fun G : (Opens Z)ᵒᵖ ⥤ (Opens X)ᵒᵖ ↦
+            (Functor.whiskeringLeft (Opens Z)ᵒᵖ (Opens X)ᵒᵖ A).obj G)
+            (opensCongr_inverse_op_trans h k).symm))
+          (cechComplexFunctor.{u₃} (A := A) ((U.mapHomeomorph h).mapHomeomorph k).opens) ≪≫
+        isoWhiskerLeft ((Functor.whiskeringLeft (Opens Z)ᵒᵖ (Opens X)ᵒᵖ A).obj
+          (h.trans k).opensCongr.equivalence.inverse.op)
+          (eqToIso (congrArg (fun V : PointOpenCover Z ↦ cechComplexFunctor (A := A) V.opens)
+            (PointOpenCover.mapHomeomorph_trans U h k))) := by
+  apply Iso.ext
+  apply NatTrans.ext
+  funext P
+  let Q := h.opensCongr.equivalence.inverse.op ⋙ P
+  let R := k.opensCongr.equivalence.inverse.op ⋙ Q
+  let S := (h.trans k).opensCongr.equivalence.inverse.op ⋙ P
+  let V := (U.mapHomeomorph h).mapHomeomorph k
+  let T := U.mapHomeomorph (h.trans k)
+  let q := congrArg PointOpenCover.opens (PointOpenCover.mapHomeomorph_trans U h k)
+  let γ := eqToIso (congrArg (fun G : (Opens Z)ᵒᵖ ⥤ (Opens X)ᵒᵖ ↦
+    (Functor.whiskeringLeft (Opens Z)ᵒᵖ (Opens X)ᵒᵖ A).obj G)
+    (opensCongr_inverse_op_trans h k).symm)
+  let φ : R ⟶ S := γ.hom.app P
+  let t := (cechComplexFunctor.{u₃} V.opens).map φ ≫
+    (eqToIso (congrArg (cechComplexFunctor.{u₃} (A := A)) q)).hom.app S
+  ext n : 2
+  apply (cancel_mono (cechXIso T.opens S n).hom).mp
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  let ha : (h.trans k).symm.toEquiv ∘ a =
+      h.symm.toEquiv ∘ (k.symm.toEquiv ∘ a) := rfl
+  let mh := P.map (h.cechTupleComparison U n (k.symm.toEquiv ∘ a) ≫
+    eqToHom (congrArg (fun b ↦ ∏ᶜ fun j ↦ U.opens (b j)) ha.symm)).op
+  let mk := Q.map (k.cechTupleComparison (U.mapHomeomorph h) n a).op
+  let mt := φ.app (op (∏ᶜ fun j ↦ V.opens (a j))) ≫
+    S.map (eqToHom (congrArg (fun V : Z → Opens Z ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op
+  have sf := cechComplexIso_hom_app_f_commSq_of_eq h U P n
+    (k.symm.toEquiv ∘ a) ((h.trans k).symm.toEquiv ∘ a) ha
+  have sg := cechComplexIso_hom_app_f_commSq k (U.mapHomeomorph h) Q n a
+  have st : CommSq (t.f n) ((cechXIso V.opens R n).hom ≫ Pi.π _ a)
+      ((cechXIso T.opens S n).hom ≫ Pi.π _ a) mt :=
+    ⟨(R.cechComplexFunctor_map_comp_eqToIso_hom_app_f_π φ V.opens T.opens q n a).trans
+      (Category.assoc _ _ _).symm⟩
+  have hm : (mh ≫ mk) ≫ mt = P.map ((h.trans k).cechTupleComparison U n a).op := by
+    dsimp only [mh, mk, mt, φ]
+    rw [whiskeringLeft_eqToIso_hom_app_app _ _ (opensCongr_inverse_op_trans h k).symm]
+    dsimp only [Q, R, S, Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op]
+    exact ((P.map_comp _ _).symm =≫ _).trans ((_ ≫= (P.map_comp _ _).symm).trans
+      ((P.map_comp _ _).symm.trans (congrArg P.map (Subsingleton.elim _ _))))
+  have hr := ((sf.horiz_comp sg).horiz_comp st).w.trans
+    (((cechXIso U.opens P n).hom ≫ Pi.π _ _) ≫= hm)
+  have hl := cechComplexIso_hom_app_f_commSq (A := A) (h.trans k) U P n a
+  have hid := Category.id_comp (γ.hom.app P)
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
+    isoWhiskerRight_hom, whiskerRight_app, whiskerLeft_app, Functor.associator_inv_app,
+    Functor.whiskeringLeftObjCompIso, Iso.refl_symm, Iso.refl_hom, NatTrans.id_app,
+    HomologicalComplex.comp_f, Category.id_comp]
+  rw [hid]
+  refine ((Category.assoc _ _ _).trans hl.w).trans ?_
+  simpa only [t, Q, R, S, V, T, φ, γ, HomologicalComplex.comp_f,
+    Functor.whiskeringLeft_obj_obj, Function.comp_def, Category.assoc] using hr.symm
+
+end Homeomorph
+
+namespace TauCeti.Topology.PointOpenCover
+
+universe u₁ a₁ b₁
+
+open CategoryTheory Limits TopologicalSpace Opposite TauCeti.CategoryTheory
+
+variable {X : TopCat.{u₁}} {A : Type a₁} [Category.{b₁} A] [Preadditive A]
+  [HasProducts.{u₁} A] [CategoryWithHomology A]
+  [HasColimitsOfShape (PointOpenCover X) A]
+
+/-- Equality transport of the actual cover complex preserves its native colimit class. -/
+@[reassoc]
+theorem homologyMap_eqToIso_comp_cechCohomologyι (U V : PointOpenCover X) (q : U = V)
+    (P : (Opens X)ᵒᵖ ⥤ A) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((eqToIso (congrArg (fun W : PointOpenCover X ↦
+          cechComplexFunctor.{u₁} (A := A) W.opens) q)).hom.app P) n ≫
+        (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n V).app P =
+      (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n U).app P := by
+  subst V
+  simp only [eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
+    HomologicalComplex.homologyMap_id]
+  exact Category.id_comp _
+
+end TauCeti.Topology.PointOpenCover
+
+namespace Homeomorph
+
+universe u₁ u₂ u₃ a₁ b₁
+
+open CategoryTheory Limits TopologicalSpace Opposite TauCeti.Topology TauCeti.CategoryTheory
+
+variable {A : Type a₁} [Category.{b₁} A] [Preadditive A] [CategoryWithHomology A]
+  {X : TopCat.{u₁}} {Y : TopCat.{u₂}} {Z : TopCat.{u₃}}
+  [HasProducts.{u₁} A] [HasProducts.{u₂} A] [HasProducts.{u₃} A]
+  [HasColimitsOfShape (PointOpenCover X) A] [HasColimitsOfShape (PointOpenCover Y) A]
+  [HasColimitsOfShape (PointOpenCover Z) A]
+
+/-- Successive native cover-colimit transport agrees with the composite homeomorphism,
+with the canonical actual inverse-opens precomposition identification. -/
+theorem cechCohomologyIso_trans (h : X ≃ₜ Y) (k : Y ≃ₜ Z) (n : ℕ) :
+    (h.trans k).cechCohomologyIso (A := A) n =
+      h.cechCohomologyIso n ≪≫
+        isoWhiskerLeft ((Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
+          h.opensCongr.equivalence.inverse.op) (k.cechCohomologyIso n) ≪≫
+        (Functor.associator _ _ _).symm ≪≫
+        isoWhiskerRight ((Functor.whiskeringLeftObjCompIso
+          (E := A) k.opensCongr.equivalence.inverse.op h.opensCongr.equivalence.inverse.op).symm ≪≫
+          eqToIso (congrArg (fun G : (Opens Z)ᵒᵖ ⥤ (Opens X)ᵒᵖ ↦
+            (Functor.whiskeringLeft (Opens Z)ᵒᵖ (Opens X)ᵒᵖ A).obj G)
+            (opensCongr_inverse_op_trans h k).symm)) (cechCohomology Z A n) := by
+  apply Iso.ext
+  apply NatTrans.ext
+  funext P
+  let Q := h.opensCongr.equivalence.inverse.op ⋙ P
+  let R := k.opensCongr.equivalence.inverse.op ⋙ Q
+  let S := (h.trans k).opensCongr.equivalence.inverse.op ⋙ P
+  let γ := eqToIso (congrArg (fun G : (Opens Z)ᵒᵖ ⥤ (Opens X)ᵒᵖ ↦
+    (Functor.whiskeringLeft (Opens Z)ᵒᵖ (Opens X)ᵒᵖ A).obj G)
+    (opensCongr_inverse_op_trans h k).symm)
+  let φ : R ⟶ S := γ.hom.app P
+  apply cechCohomology_obj_hom_ext
+  intro U
+  let V := (U.mapHomeomorph h).mapHomeomorph k
+  let T := U.mapHomeomorph (h.trans k)
+  let q := PointOpenCover.mapHomeomorph_trans U h k
+  have sh : CommSq _ _ _ _ := ⟨cechCohomologyIso_hom_app_ι h P n U⟩
+  have sk : CommSq _ _ _ _ := ⟨cechCohomologyIso_hom_app_ι k Q n (U.mapHomeomorph h)⟩
+  have sp : CommSq
+      ((cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n V).app R)
+      (HomologicalComplex.homologyMap ((cechComplexFunctor V.opens).map φ) n)
+      ((cechCohomology Z A n).map φ)
+      ((cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) n V).app S) :=
+    ⟨((cechCohomologyι PointOpenCover.toFormalCoproduct
+      (fun _ _ hf ↦ hf) n V).naturality φ).symm⟩
+  have hs := ((sh.vert_comp sk).vert_comp sp).w
+  have he := PointOpenCover.homologyMap_eqToIso_comp_cechCohomologyι V T q S n
+  have hc := congrArg (fun e ↦ HomologicalComplex.homologyMap (e.hom.app P) n)
+    (cechComplexIso_trans (A := A) h k U)
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
+    isoWhiskerRight_hom, whiskerRight_app, whiskerLeft_app, Functor.associator_inv_app,
+    Functor.whiskeringLeftObjCompIso, Iso.refl_symm, Iso.refl_hom, NatTrans.id_app,
+    Category.id_comp, HomologicalComplex.homologyMap_comp] at hc
+  have hid := Category.id_comp (γ.hom.app P)
+  rw [hid] at hc
+  simp only [Functor.whiskeringLeft_obj_obj, Functor.comp_obj] at hc
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
+    isoWhiskerRight_hom, whiskerRight_app, whiskerLeft_app, Functor.associator_inv_app,
+    Functor.whiskeringLeftObjCompIso, Iso.refl_symm, Iso.refl_hom, NatTrans.id_app,
+    Category.id_comp]
+  rw [hid]
+  have ht := cechCohomologyIso_hom_app_ι (h.trans k) P n U
+  have hb := ((HomologicalComplex.homologyMap ((h.cechComplexIso U).hom.app P) n ≫
+      HomologicalComplex.homologyMap ((k.cechComplexIso (U.mapHomeomorph h)).hom.app Q) n) ≫
+      HomologicalComplex.homologyMap ((cechComplexFunctor V.opens).map φ) n) ≫= he
+  have hch := hc.trans ((Category.assoc _ _ _).symm.trans (Category.assoc _ _ _).symm)
+  have hr := (((hch =≫ (cechCohomologyι PointOpenCover.toFormalCoproduct
+    (fun _ _ hf ↦ hf) n T).app S).trans (Category.assoc _ _ _)).trans hb).trans hs.symm
+  simpa only [Q, φ, Functor.whiskeringLeft_obj_obj, Category.assoc] using ht.trans hr
+
+end Homeomorph
+
+namespace Homeomorph
+
+universe u₁ a₁ b₁
+
+open CategoryTheory Limits TopologicalSpace Opposite TauCeti.Topology TauCeti.CategoryTheory
+
+variable {A : Type a₁} [Category.{b₁} A] [Preadditive A] [CategoryWithHomology A]
+  {X : TopCat.{u₁}} [HasProducts.{u₁} A] [HasColimitsOfShape (PointOpenCover X) A]
+
+/-- Identity homeomorphism transport is the canonical unit on native cover-colimit cohomology. -/
+theorem cechCohomologyIso_refl (n : ℕ) :
+    let C := cechCohomology X A n
+    let W := (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj
+      (Homeomorph.refl X).opensCongr.equivalence.inverse.op
+    let e : W ≅ 𝟭 ((Opens X)ᵒᵖ ⥤ A) :=
+      eqToIso (congrArg (fun G : Opens X ⥤ Opens X ↦
+        (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj G.op)
+        (opensCongr_inverse_refl (X := X))) ≪≫
+        Functor.whiskeringLeftObjIdIso (C := (Opens X)ᵒᵖ) (E := A)
+    (Homeomorph.refl X).cechCohomologyIso (A := A) n =
+      (isoWhiskerRight e C ≪≫ Functor.leftUnitor C).symm := by
+  apply Iso.ext
+  apply (Iso.comp_hom_eq_id _).mp
+  apply NatTrans.ext
+  funext P
+  let R := (Homeomorph.refl X).opensCongr.equivalence.inverse.op ⋙ P
+  let ρ := eqToIso (congrArg (fun G : Opens X ⥤ Opens X ↦
+      (Functor.whiskeringLeft (Opens X)ᵒᵖ (Opens X)ᵒᵖ A).obj G.op)
+      (opensCongr_inverse_refl (X := X))) ≪≫
+    Functor.whiskeringLeftObjIdIso (C := (Opens X)ᵒᵖ) (E := A)
+  let φ : R ⟶ P := ρ.hom.app P
+  simp only [NatTrans.comp_app, Iso.trans_hom, isoWhiskerRight_hom, whiskerRight_app,
+    Functor.leftUnitor_hom_app, NatTrans.id_app]
+  change _ ≫ (cechCohomology X A n).map φ ≫ 𝟙 _ = 𝟙 _
+  rw [Category.comp_id ((cechCohomology X A n).map φ)]
+  apply cechCohomology_obj_hom_ext
+  intro U
+  let V := U.mapHomeomorph (Homeomorph.refl X)
+  let q := PointOpenCover.mapHomeomorph_refl U
+  let e := eqToIso (congrArg (fun T : PointOpenCover X ↦
+    cechComplexFunctor.{u₁} (A := A) T.opens) q)
+  have sh : CommSq _ _ _ _ := ⟨cechCohomologyIso_hom_app_ι (Homeomorph.refl X) P n U⟩
+  have sp : CommSq _ _ _ _ := ⟨((cechCohomologyι PointOpenCover.toFormalCoproduct
+    (fun _ _ hf ↦ hf) n V).naturality φ).symm⟩
+  change CommSq _ (HomologicalComplex.homologyMap ((cechComplexFunctor V.opens).map φ) n) _ _ at sp
+  have hs := (sh.vert_comp sp).w
+  have he := PointOpenCover.homologyMap_eqToIso_comp_cechCohomologyι V U q P n
+  have hn := e.hom.naturality φ
+  have hi := cechComplexIso_refl (A := A) U
+  have hc := (Iso.comp_hom_eq_id _).mpr (congrArg Iso.hom hi)
+  have hcP := congrArg (fun t ↦ t.app P) hc
+  simp only [NatTrans.comp_app, Iso.trans_hom, isoWhiskerLeft_hom, whiskerLeft_app,
+    isoWhiskerRight_hom, whiskerRight_app, Functor.leftUnitor_hom_app,
+    NatTrans.id_app] at hcP
+  change _ ≫ e.hom.app R ≫ (cechComplexFunctor U.opens).map φ ≫ 𝟙 _ = 𝟙 _ at hcP
+  rw [Category.comp_id ((cechComplexFunctor U.opens).map φ)] at hcP
+  have hm := ((Homeomorph.refl X).cechComplexIso (A := A) U).hom.app P ≫= hn
+  have hm' := hm.trans (by simpa only [e, R, φ, ρ, Iso.trans_hom, NatTrans.comp_app,
+    Functor.whiskeringLeft_obj_obj, Category.assoc] using hcP)
+  have hh := congrArg (fun f ↦ HomologicalComplex.homologyMap f n) hm'
+  simp only [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_id] at hh
+  have hb := (HomologicalComplex.homologyMap
+      (((Homeomorph.refl X).cechComplexIso U).hom.app P) n ≫
+      HomologicalComplex.homologyMap ((cechComplexFunctor V.opens).map φ) n) ≫= he
+  have hh' := (Category.assoc _ _ _).trans hh
+  have hy := (hh' =≫ (cechCohomologyι PointOpenCover.toFormalCoproduct
+    (fun _ _ hf ↦ hf) n U).app P).trans (Category.id_comp _)
+  have hx := (Category.assoc _ _ _).trans hb
+  exact (hs.trans (hx.symm.trans hy)).trans (Category.comp_id _).symm
 
 end Homeomorph

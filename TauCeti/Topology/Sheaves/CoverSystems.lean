@@ -152,13 +152,13 @@ theorem le_iff_forall_exists (U V : PointOpenCover X) :
     exact ⟨⟨f, fun x ↦ homOfLE (hf x)⟩⟩
 
 /-- Move the neighborhoods of a point cover through a homeomorphism. -/
-def mapHomeomorph (h : X ≃ₜ Y) (U : PointOpenCover X) : PointOpenCover Y where
+def mapHomeomorph (U : PointOpenCover X) (h : X ≃ₜ Y) : PointOpenCover Y where
   opens y := h.opensCongr (U.opens (h.symm y))
   mem_opens y := U.mem_opens (h.symm y)
 
 /-- The neighborhood assigned to an arbitrary point of the transported cover. -/
 @[simp]
-theorem mapHomeomorph_opens (h : X ≃ₜ Y) (U : PointOpenCover X) (y : Y) :
+theorem mapHomeomorph_opens (U : PointOpenCover X) (h : X ≃ₜ Y) (y : Y) :
     (U.mapHomeomorph h).opens y = h.opensCongr (U.opens (h.symm y)) := by rfl
 
 /-- The identity homeomorphism leaves every actual point-neighborhood cover unchanged. -/
@@ -171,19 +171,19 @@ theorem mapHomeomorph_refl (U : PointOpenCover X) :
 /-- Successive homeomorphisms transport the same actual neighborhoods as their composite. -/
 @[simp]
 theorem mapHomeomorph_trans {Z : Type*} [TopologicalSpace Z]
-    (h : X ≃ₜ Y) (k : Y ≃ₜ Z) (U : PointOpenCover X) :
+    (U : PointOpenCover X) (h : X ≃ₜ Y) (k : Y ≃ₜ Z) :
     (U.mapHomeomorph h).mapHomeomorph k = U.mapHomeomorph (h.trans k) := by
   ext x z
   rfl
 
 /-- Transporting through a homeomorphism and back recovers the same native cover. -/
-theorem mapHomeomorph_symm_mapHomeomorph (h : X ≃ₜ Y) (U : PointOpenCover X) :
+theorem mapHomeomorph_symm_mapHomeomorph (U : PointOpenCover X) (h : X ≃ₜ Y) :
     (U.mapHomeomorph h).mapHomeomorph h.symm = U := by
   ext x z
   simp [mapHomeomorph, Homeomorph.opensCongr]
 
 /-- Transport both the neighborhoods and the actual refinement relation. -/
-theorem mapHomeomorph_le_mapHomeomorph_iff (h : X ≃ₜ Y) (U V : PointOpenCover X) :
+theorem mapHomeomorph_le_mapHomeomorph_iff (U V : PointOpenCover X) (h : X ≃ₜ Y) :
     U.mapHomeomorph h ≤ V.mapHomeomorph h ↔ U ≤ V := by
   rw [le_iff_forall_exists, le_iff_forall_exists]
   constructor
@@ -197,22 +197,23 @@ theorem mapHomeomorph_le_mapHomeomorph_iff (h : X ≃ₜ Y) (U V : PointOpenCove
     simpa [mapHomeomorph] using h.opensCongr.monotone hyx
 
 /-- A homeomorphism identifies the native refinement preorders, with no universe restriction. -/
-def orderIsoOfHomeomorph (h : X ≃ₜ Y) : PointOpenCover X ≃o PointOpenCover Y where
-  toFun := mapHomeomorph h
-  invFun := mapHomeomorph h.symm
-  left_inv := mapHomeomorph_symm_mapHomeomorph h
-  right_inv := mapHomeomorph_symm_mapHomeomorph h.symm
-  map_rel_iff' := mapHomeomorph_le_mapHomeomorph_iff h _ _
+def _root_.Homeomorph.pointOpenCoverOrderIso (h : X ≃ₜ Y) :
+    PointOpenCover X ≃o PointOpenCover Y where
+  toFun := fun U ↦ U.mapHomeomorph h
+  invFun := fun U ↦ U.mapHomeomorph h.symm
+  left_inv := fun U ↦ U.mapHomeomorph_symm_mapHomeomorph h
+  right_inv := fun U ↦ U.mapHomeomorph_symm_mapHomeomorph h.symm
+  map_rel_iff' := mapHomeomorph_le_mapHomeomorph_iff _ _ h
 
 /-- The cover order equivalence applies by the actual neighborhood transport. -/
 @[simp]
-theorem orderIsoOfHomeomorph_apply (h : X ≃ₜ Y) (U : PointOpenCover X) :
-    orderIsoOfHomeomorph h U = U.mapHomeomorph h := by rfl
+theorem _root_.Homeomorph.pointOpenCoverOrderIso_apply (h : X ≃ₜ Y) (U : PointOpenCover X) :
+    h.pointOpenCoverOrderIso U = U.mapHomeomorph h := by rfl
 
 /-- The inverse cover order equivalence transports neighborhoods by the inverse homeomorphism. -/
 @[simp]
-theorem orderIsoOfHomeomorph_symm_apply (h : X ≃ₜ Y) (U : PointOpenCover Y) :
-    (orderIsoOfHomeomorph h).symm U = U.mapHomeomorph h.symm := by rfl
+theorem _root_.Homeomorph.pointOpenCoverOrderIso_symm_apply (h : X ≃ₜ Y) (U : PointOpenCover Y) :
+    (h.pointOpenCoverOrderIso).symm U = U.mapHomeomorph h.symm := by rfl
 
 /-- Transport an actual refinement function and all its open inclusions. -/
 def mapHomeomorphHom (U : PointOpenCover X) (h : X ≃ₜ Y) {V : PointOpenCover X}

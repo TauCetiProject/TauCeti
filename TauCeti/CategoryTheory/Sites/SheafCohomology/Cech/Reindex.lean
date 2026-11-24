@@ -20,7 +20,9 @@ open CategoryTheory Limits Opposite
 
 universe w₁ w₂ w₃ v v' u u'
 
-namespace TauCeti.CategoryTheory
+namespace Equiv
+
+open TauCeti.CategoryTheory
 
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Preadditive A]
@@ -235,4 +237,4 @@ theorem cechComplexReindexIso_trans (f : ι ≃ κ) (g : κ ≃ τ) (V : τ → 
   simp only [Equiv.coe_trans, Function.comp_assoc, Category.assoc] at hleft hright ⊢
   exact hleft.trans hright.symm
 
-end TauCeti.CategoryTheory
+end Equiv

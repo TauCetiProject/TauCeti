@@ -164,10 +164,9 @@ theorem gammaTransportClass_eq : gammaTransportClass.{u,v} = liftedClass.{u,v} :
       ((ConcreteCategory.comp_apply γ.hom c.hom _).trans
         (congrArg c.hom (γ.inv_hom_id_apply oneSection.{max u v})))
   have happly := (ConcreteCategory.congr_hom h (γ.inv oneSection.{max u v})).symm
-  exact (ConcreteCategory.comp_apply g (sectionsIsoCechZero liftedSheaf.{u,v}).hom
-    (γ.inv oneSection.{max u v})).symm.trans
-    (happly.trans ((ConcreteCategory.comp_apply (sectionsIsoCechZero F).hom d _).trans
-      (congrArg d.hom hread)))
+  simp only [ConcreteCategory.comp_apply] at happly
+  exact happly.trans (congrArg d.hom hread)
+
 
 /-- A genuinely cross-universe permutation of a repeated two-set cover. -/
 def indexEquiv : Fin 2 ≃ ULift.{u + 1} (Fin 2) :=
@@ -197,7 +196,7 @@ theorem tupleCochain_one :
 
 /-- Apply the actual complex reindexing map to the cochain on the repeated cover. -/
 def reindexedCochain :=
-  ((TauCeti.CategoryTheory.cechComplexReindexIso indexEquiv.{u}
+  ((Equiv.cechComplexReindexIso indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))).hom.app
       tuplePresheaf.{max u v}).f 0 tupleCochain.{max u v}
 
@@ -205,7 +204,7 @@ def reindexedCochain :=
 theorem reindexedCochain_one :
     (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
       (indexEquiv.{u} ∘ (fun _ : Fin 1 ↦ 1))) reindexedCochain.{u,v} = ULift.up 1 := by
-  have h := TauCeti.CategoryTheory.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
+  have h := Equiv.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))
     tuplePresheaf.{max u v} 0 (fun _ ↦ 1)
   exact (congrArg (fun f ↦ f.hom tupleCochain.{max u v}) h).trans tupleCochain_one
@@ -214,7 +213,7 @@ theorem reindexedCochain_one :
 theorem reindexedCochain_zero :
     (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
       (indexEquiv.{u} ∘ (fun _ : Fin 1 ↦ 0))) reindexedCochain.{u,v} = 0 := by
-  have h := TauCeti.CategoryTheory.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
+  have h := Equiv.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))
     tuplePresheaf.{max u v} 0 (fun _ ↦ 0)
   exact (congrArg (fun f ↦ f.hom tupleCochain.{max u v}) h).trans tupleCochain_zero
@@ -301,11 +300,14 @@ theorem twiceSheafMap_transport :
           ((cechCohomology (TopCat.of (OnePoint ℂ))
             (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
               twiceSheafMap.{max u v}.hom oneClass.{max u v}) := by
-  exact (congrArg (fun f ↦ f.hom oneClass.{max u v})
+  have h := ConcreteCategory.congr_hom
     ((cechCohomologyIso
       (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
       (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} 0).hom.naturality
-        twiceSheafMap.{max u v}.hom)).symm
+        twiceSheafMap.{max u v}.hom) oneClass.{max u v}
+  simp only [ConcreteCategory.comp_apply] at h
+  exact h.symm
+
 
 /-- A nonzero-valued presheaf on the literal empty base in arbitrary universe. -/
 abbrev emptyPresheaf : (Opens PEmpty.{u + 1})ᵒᵖ ⥤ ModuleCat.{max (u + 1) (v + 1)} ℂ :=
@@ -328,7 +330,7 @@ theorem emptyPresheaf_cech_isZero (n : ℕ) :
 
 /-- The actual reindexing map on an empty family, in arbitrary index universes. -/
 def emptyIndexMap (n : ℕ) :=
-  ((TauCeti.CategoryTheory.cechComplexReindexIso
+  ((Equiv.cechComplexReindexIso
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ)
     (Equiv.ulift.symm : PEmpty.{u + 1} ≃ ULift.{v + 1} PEmpty.{u + 1})
     (fun _ ↦ (⊤ : Opens PEmpty.{u + 1}))).hom.app emptyPresheaf.{u,v}).f n
@@ -570,11 +572,11 @@ example :
 
 /-- The inverse of the actual cross-universe map recovers the original cochain. -/
 example :
-    (((cechComplexReindexIso indexEquiv.{u}
+    (((Equiv.cechComplexReindexIso indexEquiv.{u}
       (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))).inv.app
         tuplePresheaf.{max u v}).f 0) reindexedCochain.{u,v} = tupleCochain.{max u v} := by
   have h := congrArg (fun f ↦ f.f 0)
-    ((cechComplexReindexIso indexEquiv.{u}
+    ((Equiv.cechComplexReindexIso indexEquiv.{u}
       (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))).app
         tuplePresheaf.{max u v}).hom_inv_id
   simpa only [reindexedCochain, Iso.app_hom, Iso.app_inv, HomologicalComplex.comp_f,
@@ -583,25 +585,25 @@ example :
 
 /-- The public inverse factor law reads each actual lifted tuple. -/
 example (n : ℕ) (a : Fin (n + 1) → Fin 2) :
-    ((cechComplexReindexIso indexEquiv.{u}
+    ((Equiv.cechComplexReindexIso indexEquiv.{u}
       (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))).inv.app
         tuplePresheaf.{max u v}).f n ≫ Pi.π _ a = Pi.π _ (indexEquiv.{u} ∘ a) :=
-  cechComplexReindexIso_inv_app_f_π _ _ _ n a
+  Equiv.cechComplexReindexIso_inv_app_f_π _ _ _ n a
 
 /-- Identity indexing leaves the complete native complex functor unchanged. -/
 example :
-    cechComplexReindexIso (A := ModuleCat.{v + 1} ℂ) (Equiv.refl (Fin 2))
+    Equiv.cechComplexReindexIso (A := ModuleCat.{v + 1} ℂ) (Equiv.refl (Fin 2))
       (fun _ ↦ (⊤ : Opens (OnePoint ℂ))) = Iso.refl _ :=
-  cechComplexReindexIso_refl _
+  Equiv.cechComplexReindexIso_refl _
 
 /-- Two actual cross-universe index changes obey the public composition law. -/
 example :
-    cechComplexReindexIso (A := ModuleCat.{max (u + 1) (v + 1)} ℂ)
+    Equiv.cechComplexReindexIso (A := ModuleCat.{max (u + 1) (v + 1)} ℂ)
       (indexEquiv.{u}.trans indexEquiv.{u}.symm) (fun _ ↦ (⊤ : Opens (OnePoint ℂ))) =
-      cechComplexReindexIso indexEquiv.{u}
+      Equiv.cechComplexReindexIso indexEquiv.{u}
         ((fun _ ↦ (⊤ : Opens (OnePoint ℂ))) ∘ indexEquiv.{u}.symm) ≪≫
-          cechComplexReindexIso indexEquiv.{u}.symm (fun _ ↦ (⊤ : Opens (OnePoint ℂ))) :=
-  cechComplexReindexIso_trans _ _ _
+          Equiv.cechComplexReindexIso indexEquiv.{u}.symm (fun _ ↦ (⊤ : Opens (OnePoint ℂ))) :=
+  Equiv.cechComplexReindexIso_trans _ _ _
 
 
 /-- The nonidentity refinement remains a native refinement after lifting the sphere. -/
@@ -717,7 +719,7 @@ example (n : ℕ) :
           (TopCat.isoOfHomeo (X := TopCat.of disconnectedBase)
           (Y := TopCat.of disconnectedBase) h).hom).obj
           disconnectedSheaf.obj)) :=
-  cechCohomologyIso_inv_app_eq_pullback
+  cechCohomologyIso_inv_app_eq_cechCohomologyPullback
     (X := TopCat.of disconnectedBase) (Y := TopCat.of disconnectedBase)
     (A := ModuleCat.{0} ℂ) _ _ _
 
@@ -729,7 +731,7 @@ def emptyFixedCochain :
 
 /-- Change the actual fixed cover's index universe without adding any point to the base. -/
 def emptyFixedTransportedCochain :=
-  ((cechComplexReindexIso (Equiv.ulift.symm : Fin 1 ≃ ULift.{v + 1} (Fin 1))
+  ((Equiv.cechComplexReindexIso (Equiv.ulift.symm : Fin 1 ≃ ULift.{v + 1} (Fin 1))
     (fun _ ↦ (⊥ : Opens PEmpty.{u + 1}))).hom.app emptyPresheaf.{u,v}).f 0
       emptyFixedCochain.{u,v}
 
@@ -738,7 +740,7 @@ still vanishes by `emptyPresheaf_cech_isZero`. No nonzero empty-open sheaf is as
 theorem emptyFixedTransportedCochain_read_two :
     (Pi.π (fun _ : Fin 1 → ULift.{v + 1} (Fin 1) ↦ coefficient.{max u v})
       (fun _ ↦ ULift.up 0)) emptyFixedTransportedCochain.{u,v} = ULift.up 2 := by
-  have h := cechComplexReindexIso_hom_app_f_π
+  have h := Equiv.cechComplexReindexIso_hom_app_f_π
     (Equiv.ulift.symm : Fin 1 ≃ ULift.{v + 1} (Fin 1))
     (fun _ ↦ (⊥ : Opens PEmpty.{u + 1})) emptyPresheaf.{u,v} 0 (fun _ ↦ 0)
   have hp : (Pi.π (fun _ : Fin 1 → Fin 1 ↦ coefficient.{max u v}) (fun _ ↦ 0))
@@ -765,8 +767,128 @@ example (n : ℕ) :
     ((Category.id_comp _).trans (Category.id_comp _).symm)
   -- pushforward's presheaf map is definitionally whiskering, so its identity is map_id.
   erw [CategoryTheory.Functor.map_id, Category.id_comp] at hn
-  exact (cechCohomologyIso_inv_app_eq_pullback
+  exact (cechCohomologyIso_inv_app_eq_cechCohomologyPullback
     (X := TopCat.of disconnectedBase) (Y := TopCat.of disconnectedBase)
     (A := ModuleCat.{0} ℂ) h P n =≫ _).trans hn.symm
+
+end TauCeti.Examples.CechHomeomorph
+
+namespace TauCeti.Examples.CechHomeomorph
+
+attribute [local instance] Classical.propDecidable
+attribute [local instance] ModuleCat.hasLimitsOfSize TauCeti.hasSheafify_moduleCat
+
+open CategoryTheory.Functor
+
+/-- A universe-large native skyscraper supported on the left disconnected component. -/
+abbrev compositionSheaf :
+    Sheaf (Opens.grothendieckTopology (TopCat.of disconnectedBase)) (ModuleCat.{u + 1} ℂ) :=
+  (Opens.pointGrothendieckTopology
+    (Sum.inl (OnePoint.infty : OnePoint ℂ) : disconnectedBase)).skyscraperSheaf coefficient.{u}
+
+/-- A section with actual coefficient value two. -/
+def compositionSection : compositionSheaf.{u}.obj.obj (op ⊤) :=
+  (Pi.lift (fun _ ↦ 𝟙 coefficient.{u})).hom (ULift.up 2)
+
+/-- The literal point-fibre reading over the top open of the disconnected base. -/
+def compositionRead : compositionSheaf.{u}.obj.obj (op ⊤) ⟶ coefficient.{u} :=
+  Pi.π (fun _ : ULift.{0} (PLift ((Sum.inl (OnePoint.infty : OnePoint ℂ) : disconnectedBase) ∈
+    (⊤ : Opens disconnectedBase))) ↦ coefficient.{u}) ⟨⟨trivial⟩⟩
+
+/-- The chosen native section reads two at its supported point. -/
+theorem compositionSection_read_two : compositionRead.{u} compositionSection.{u} = ULift.up 2 := by
+  exact congrArg (fun f : coefficient.{u} ⟶ coefficient.{u} ↦ f (ULift.up 2))
+    (Pi.lift_comp_π (fun _ : ULift.{0}
+      (PLift ((Sum.inl (OnePoint.infty : OnePoint ℂ) : disconnectedBase) ∈
+        (⊤ : Opens disconnectedBase))) ↦ 𝟙 coefficient.{u}) ⟨⟨trivial⟩⟩)
+
+/-- The native degree-zero class of the value-two section. -/
+def compositionClass := (cechCohomologyZeroIso compositionSheaf.{u}).hom compositionSection.{u}
+
+/-- The component swap is followed by a genuine change of base universe. -/
+def compositionLift : disconnectedBase ≃ₜ ULift.{u + 1} disconnectedBase := Homeomorph.ulift.symm
+
+/-- The nonidentity component permutation used before the universe lift. -/
+abbrev compositionSwap : disconnectedBase ≃ₜ disconnectedBase :=
+  Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)
+
+/-- The chosen permutation genuinely moves the supported point to the other component. -/
+theorem compositionSwap_left :
+    compositionSwap (Sum.inl (OnePoint.infty : OnePoint ℂ)) = Sum.inr OnePoint.infty := rfl
+
+/-- The actual inverse-opens identification between sequential and composite coefficients. -/
+def compositionCoefficientIso :
+    compositionLift.{u}.opensCongr.equivalence.inverse.op ⋙
+        (compositionSwap.opensCongr.equivalence.inverse.op ⋙ compositionSheaf.{u}.obj) ≅
+      (compositionSwap.trans compositionLift.{u}).opensCongr.equivalence.inverse.op ⋙
+        compositionSheaf.{u}.obj :=
+  (eqToIso (congrArg (fun G : (Opens (ULift.{u + 1} disconnectedBase))ᵒᵖ ⥤
+      (Opens disconnectedBase)ᵒᵖ ↦
+      (Functor.whiskeringLeft _ _ (ModuleCat.{u + 1} ℂ)).obj G)
+      (opensCongr_inverse_op_trans compositionSwap compositionLift.{u}).symm)).app
+    compositionSheaf.{u}.obj
+
+/-- The actual sequential swap/lift cohomology map, including canonical coefficient transport. -/
+def compositionSequentialMap :
+    (cechCohomology (TopCat.of disconnectedBase) (ModuleCat.{u + 1} ℂ) 0).obj
+        compositionSheaf.{u}.obj ⟶
+      (cechCohomology (TopCat.of (ULift.{u + 1} disconnectedBase))
+        (ModuleCat.{u + 1} ℂ) 0).obj
+        ((compositionSwap.trans compositionLift.{u}).opensCongr.equivalence.inverse.op ⋙
+          compositionSheaf.{u}.obj) :=
+  (compositionSwap.cechCohomologyIso (X := TopCat.of disconnectedBase)
+    (Y := TopCat.of disconnectedBase) (A := ModuleCat.{u + 1} ℂ) 0).hom.app
+      compositionSheaf.{u}.obj ≫
+    (compositionLift.{u}.cechCohomologyIso (X := TopCat.of disconnectedBase)
+      (Y := TopCat.of (ULift.{u + 1} disconnectedBase))
+      (A := ModuleCat.{u + 1} ℂ) 0).hom.app
+      (compositionSwap.opensCongr.equivalence.inverse.op ⋙ compositionSheaf.{u}.obj) ≫
+    (cechCohomology (TopCat.of (ULift.{u + 1} disconnectedBase))
+      (ModuleCat.{u + 1} ℂ) 0).map compositionCoefficientIso.{u}.hom
+
+/-- Native swap/lift transport on the value-two section equals the actual composite map. -/
+theorem compositionSequentialMap_eq :
+    compositionSequentialMap.{u} =
+      ((compositionSwap.trans compositionLift.{u}).cechCohomologyIso
+        (X := TopCat.of disconnectedBase) (Y := TopCat.of (ULift.{u + 1} disconnectedBase))
+        (A := ModuleCat.{u + 1} ℂ) 0).hom.app compositionSheaf.{u}.obj := by
+  have h := congrArg (fun e ↦ e.hom.app compositionSheaf.{u}.obj)
+    (Homeomorph.cechCohomologyIso_trans (X := TopCat.of disconnectedBase)
+      (Y := TopCat.of disconnectedBase) (Z := TopCat.of (ULift.{u + 1} disconnectedBase))
+      (A := ModuleCat.{u + 1} ℂ) compositionSwap compositionLift.{u} 0)
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    isoWhiskerLeft_hom, isoWhiskerRight_hom, whiskerLeft_app, whiskerRight_app,
+    Functor.associator_inv_app, Functor.whiskeringLeftObjCompIso,
+    Iso.refl_symm, Iso.refl_hom, NatTrans.id_app] at h
+  change _ = _ ≫ _ ≫ (cechCohomology (TopCat.of (ULift.{u + 1} disconnectedBase))
+    (ModuleCat.{u + 1} ℂ) 0).map (𝟙 _ ≫ compositionCoefficientIso.{u}.hom) at h
+  rw [Category.id_comp compositionCoefficientIso.{u}.hom] at h
+  simpa only [compositionSequentialMap, Functor.whiskeringLeft_obj_obj, Functor.comp_obj]
+    using h.symm
+
+/-- Reading back the sequentially transported class returns the original nonzero value two. -/
+theorem compositionSequential_read_two :
+    compositionRead.{u}
+      ((cechCohomologyZeroIso compositionSheaf.{u}).inv
+        ((((compositionSwap.trans compositionLift.{u}).cechCohomologyIso
+          (X := TopCat.of disconnectedBase) (Y := TopCat.of (ULift.{u + 1} disconnectedBase))
+          (A := ModuleCat.{u + 1} ℂ) 0).inv.app compositionSheaf.{u}.obj)
+            (compositionSequentialMap.{u} compositionClass.{u}))) = ULift.up 2 := by
+  let e := ((compositionSwap.trans compositionLift.{u}).cechCohomologyIso
+    (X := TopCat.of disconnectedBase) (Y := TopCat.of (ULift.{u + 1} disconnectedBase))
+    (A := ModuleCat.{u + 1} ℂ) 0).app compositionSheaf.{u}.obj
+  rw [compositionSequentialMap_eq]
+  change compositionRead.{u} ((cechCohomologyZeroIso compositionSheaf.{u}).inv
+    (e.inv (e.hom compositionClass.{u}))) = ULift.up 2
+  rw [e.hom_inv_id_apply, compositionClass, Iso.hom_inv_id_apply]
+  exact compositionSection_read_two
+
+/-- The actual sequentially transported class is nonzero, as detected by its value-two reading. -/
+theorem compositionSequential_ne_zero :
+    compositionSequentialMap.{u} compositionClass.{u} ≠ 0 := by
+  intro hz
+  have he := compositionSequential_read_two.{u}
+  rw [hz, map_zero, map_zero, map_zero] at he
+  exact two_ne_zero (congrArg ULift.down he).symm
 
 end TauCeti.Examples.CechHomeomorph
