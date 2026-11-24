@@ -27,7 +27,8 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
-(`PiLp.card_filter_lt_norm_le`).
+(`PiLp.card_filter_lt_norm_le`). For `0 < p < ∞`, bounds `‖x i‖ ^ p F ≤ G i` on the coordinate
+shares of `‖x‖ ^ p F` add up to `‖x‖ ^ p F ≤ ∑ i, G i` (`PiLp.norm_rpow_mul_le_sum`).
 
 Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
 in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
@@ -100,6 +101,14 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
     ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
   rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
+
+/-- For `0 < p < ∞`, bounds `‖x i‖ ^ p * F ≤ G i` on the coordinate shares of `‖x‖ ^ p * F` add
+up to `‖x‖ ^ p * F ≤ ∑ i, G i`. -/
+theorem norm_rpow_mul_le_sum [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) (hp : 0 < p.toReal)
+    {F : ℝ} {G : ι → ℝ} (h : ∀ i, ‖x i‖ ^ p.toReal * F ≤ G i) :
+    ‖x‖ ^ p.toReal * F ≤ ∑ i, G i := by
+  rw [norm_rpow_eq_sum hp, Finset.sum_mul]
+  exact Finset.sum_le_sum fun i _ ↦ h i
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]

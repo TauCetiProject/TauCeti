@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.AffineTransitionLimit
 public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+public import TauCeti.AlgebraicGeometry.VectorBundle.Limit
 
 /-!
 # Equalities of line-bundle morphisms over a limit of schemes
@@ -24,6 +26,10 @@ stage. Equality need not hold at the stage `i` itself: on `Spec k[ε]/(ε²)`, m
 This is the uniqueness half of the finite-stage description of line bundles on a limit
 (Stacks, Lemma 32.10.2, 01ZR): it lets a construction on the limit that is descended to a
 stage be compared with any other descended construction after passing to a common refinement.
+Conversely, every morphism between the pullbacks to the limit of two line bundles on a stage
+of a cofiltered limit of quasi-compact quasi-separated schemes with affine transitions descends
+to a refinement; this is the existence half (Stacks, Lemma 32.10.2, 01ZR, part (2)), and it
+applies to arbitrary module maps, not only isomorphisms.
 
 The proof reduces to functions. Each point of `F i` has an affine open neighbourhood `U` on which
 both `M` and `N` are trivial, and the trivializations identify `a` and `b` over `U` with
@@ -38,6 +44,8 @@ quasi-compact `U` that agree on the limit agree at some stage, and finitely many
   line bundles with equal pullbacks to the limit have equal pullbacks to some stage;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_forall_pullback_map_eq_of_isLimit`: the same
   for a finite family of pairs of morphisms, at one common stage.
+* `CategoryTheory.Limits.IsLimit.exists_pullback_map_eq_of_invertibleSheaf`: every morphism
+  between pullbacks to the limit of line bundles on a stage comes from some later stage.
 
 ## References
 
@@ -53,7 +61,7 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 
-open Scheme.Modules hiding pullback pullbackComp pullbackId
+open _root_.AlgebraicGeometry.Scheme.Modules hiding pullback pullbackComp pullbackId
 open MonoidalCategory
 
 variable {I : Type u} [SmallCategory I] [IsCofiltered I] {F : I ⥤ Scheme.{u}}
@@ -124,3 +132,28 @@ theorem exists_forall_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)
     Functor.comp_map, Functor.comp_map, hf k]
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
+
+namespace CategoryTheory.Limits.IsLimit
+
+open AlgebraicGeometry TauCeti.AlgebraicGeometry
+
+local notation "PB" => InvertibleSheaf.pullback
+
+/-- Every morphism between line bundles pulled back from stage `i` of a cofiltered limit of
+qcqs schemes with affine transitions comes from a refinement `j ⟶ i`. The equality at the
+limit uses the canonical comparison of the two pullbacks on the underlying modules. -/
+theorem exists_pullback_map_eq_of_invertibleSheaf {I : Type u} [Category.{u} I] [IsCofiltered I]
+    {D : I ⥤ Scheme.{u}} [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)]
+    [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)]
+    {c : Cone D} (hc : IsLimit c) {i : I} {L M : InvertibleSheaf (D.obj i)}
+    (a : (PB (c.π.app i)).obj L ⟶ (PB (c.π.app i)).obj M) :
+    ∃ (j : I) (f : j ⟶ i) (b : (PB (D.map f)).obj L ⟶ (PB (D.map f)).obj M),
+      let e := Scheme.Modules.pullbackComp (c.π.app j) (D.map f) ≪≫
+        Scheme.Modules.pullbackCongr (c.w f)
+      e.inv.app L.obj ≫ ((PB (c.π.app j)).map b).hom ≫ e.hom.app M.obj = a.hom := by
+  obtain ⟨j, f, b, hb⟩ := hc.exists_pullback_map_eq_of_finiteLocallyFree
+    ((InvertibleSheaf.toFiniteLocallyFree _).obj L) ((InvertibleSheaf.toFiniteLocallyFree _).obj M)
+    a.hom
+  exact ⟨j, f, ObjectProperty.homMk b, hb⟩
+
+end CategoryTheory.Limits.IsLimit

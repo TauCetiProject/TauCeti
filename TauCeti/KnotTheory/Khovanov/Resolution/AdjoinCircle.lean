@@ -230,7 +230,7 @@ variable (hD : D.IsPlanar) (R : Type u) [CommRing R] {j j' : ℤ}
 /-- Inserting the adjoined circle labelled `1` raises the quantum degree by one, and inserting it
 labelled `X` lowers it by one. -/
 theorem isHomogeneous_adjoinCircleInsert (s : Fin n → Bool) (b : Bool) :
-    TauCeti.LinearMap.IsHomogeneous (D.adjoinCircleInsert R s b)
+    LinearMap.IsHomogeneous (D.adjoinCircleInsert R s b)
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
       (Khovanov.circleQuantumGrading R (D.adjoinCircle.ResolvedCircle s)).piece
       (bif b then -1 else 1) := by
@@ -241,7 +241,7 @@ theorem isHomogeneous_adjoinCircleInsert (s : Fin n → Bool) (b : Bool) :
 /-- Reading off the coefficient of `1` on the adjoined circle lowers the quantum degree by one,
 and reading off the coefficient of `X` raises it by one. -/
 theorem isHomogeneous_adjoinCircleDelete (s : Fin n → Bool) (b : Bool) :
-    TauCeti.LinearMap.IsHomogeneous (D.adjoinCircleDelete R s b)
+    LinearMap.IsHomogeneous (D.adjoinCircleDelete R s b)
       (Khovanov.circleQuantumGrading R (D.adjoinCircle.ResolvedCircle s)).piece
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
       (-bif b then -1 else 1) := by

@@ -15,8 +15,8 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Complex powers of the Japanese bracket
@@ -137,6 +137,13 @@ theorem japaneseBracketCpow_conj (z : ℂ) (x : E) :
 theorem norm_japaneseBracketCpow (z : ℂ) (x : E) :
     ‖japaneseBracketCpow z x‖ = (1 + ‖x‖ ^ 2) ^ (z.re / 2) := by
   rw [japaneseBracketCpow, norm_cpow_eq_rpow_re_of_pos (by positivity), div_ofNat_re]
+
+/-- The complex powers of nonpositive real part have norm at most one: `‖⟨x⟩ ^ z‖ ≤ 1` for
+`re z ≤ 0`. -/
+theorem norm_japaneseBracketCpow_le_one {z : ℂ} (hz : z.re ≤ 0) (x : E) :
+    ‖japaneseBracketCpow z x‖ ≤ 1 := by
+  rw [norm_japaneseBracketCpow]
+  exact Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg x]) (by linarith)
 
 /-- The complex powers are multiplicative in the exponent. -/
 theorem japaneseBracketCpow_add (z w : ℂ) (x : E) :
@@ -360,7 +367,9 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (N : ℕ) :
         -- Since `re z ≤ 0`, the bracket power has order at most `-k`.
         calc (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) :=
               Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
-          _ ≤ 1 / ‖ξ‖ ^ k := Real.one_add_sq_rpow_neg_le (norm_pos_iff.2 hξ) k
+          _ ≤ 1 / ‖ξ‖ ^ k := by
+            simpa [add_comm, one_div] using
+              norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
     _ = _ := by
         push_cast
         ring

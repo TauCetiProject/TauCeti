@@ -327,8 +327,9 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_congr_range
   rw [hrange]
   exact ⟨w, rfl⟩
 
-/-- A complex-linear map carrying one maximal real form to another intertwines their canonical
-conjugations. Neither map is required to be invertible. -/
+/-- A complex-linear map carrying one maximal real form into another intertwines their canonical
+conjugations. The map `A` need not be invertible, and no map between the real carriers `W` and
+`W'` is required. -/
 theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     {W W' E' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
     [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
@@ -336,13 +337,14 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
     (g : W' →ₗ[ℝ] E') (hg : Function.Injective g)
     (hmax' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) g.range)
-    (A : E →ₗ[ℂ] E') (b : W →ₗ[ℝ] W') (hreal : ∀ w, A (f w) = g (b w)) (v : E) :
+    (A : E →ₗ[ℂ] E') (hA : Set.MapsTo A (f.range : Set E) (g.range : Set E')) (v : E) :
     g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
       A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
-  unfold LinearMap.conjugationOfMaximalTotallyReal
-  apply LinearEquiv.conjugationOfComplexification_natural _ _ A b
-  intro w
-  simpa only [IsBaseChange.equiv_tmul, one_smul] using hreal w
+  have h := (Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints
+    (f.conjugationOfMaximalTotallyReal_involutive hf hmax) A).mpr fun u hu ↦
+      mem_realPoints.mpr ((g.conjugationOfMaximalTotallyReal_eq_self_iff hg hmax' _).mpr
+        (hA ((f.conjugationOfMaximalTotallyReal_eq_self_iff hf hmax u).mp (mem_realPoints.mp hu))))
+  simpa only [LinearMap.comp_apply] using LinearMap.congr_fun h v
 
 namespace IsMaximalTotallyReal
 
@@ -400,18 +402,14 @@ theorem mem_iff_forall_conj_complexBasis_repr {ι : Type*} (b : Basis ι ℝ L) 
     simpa [← algebraMap_smul ℂ, Complex.conj_eq_iff_re.mp (h i)] using
       L.smul_mem ((hL.complexBasis b).repr x i).re (b i).property
 
-/-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
+/-- A complex-linear isomorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/
-theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-      (L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) := by
-  have hcomm : ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ).comp
-      ((A : E →ₗ[ℂ] E).restrictScalars ℝ) =
-        ((A : E →ₗ[ℂ] E).restrictScalars ℝ).comp
-          ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) :=
-    LinearMap.ext fun x => (A.map_smul Complex.I x).symm
-  rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
-  exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
+theorem map_linearEquiv {F : Type*} [AddCommGroup F] [Module ℝ F] [Module ℂ F]
+    [IsScalarTower ℝ ℂ F] (A : E ≃ₗ[ℂ] F) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ)
+      (L.map ((A : E →ₗ[ℂ] F).restrictScalars ℝ)) :=
+  ((A.restrictScalars ℝ).isMaximalTotallyReal_map_iff
+    (LinearMap.ext fun x => (A.map_smul Complex.I x).symm)).2 hL
 
 omit hL in
 /-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then

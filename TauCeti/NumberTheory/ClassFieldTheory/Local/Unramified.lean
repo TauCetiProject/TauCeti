@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.LocalField.Unramified.Coordinate
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Cyclic
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.UnitsLayer
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Finite unramified local reciprocity

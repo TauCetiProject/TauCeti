@@ -10,13 +10,14 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.FourierCharDeriv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -74,6 +75,10 @@ frequency derivative of its Fourier transform.
   `i ⟪ξ, v⟫`.
 * `TauCeti.quantizeSchwartzValue_arrowCongr`: the quantization is compatible with isomorphisms
   `V ≃L[ℂ] V'` and `W ≃L[ℂ] W'` of the coefficient spaces.
+* `TauCeti.quantizeSchwartzValue_eq_integral_smul_fourierInv`: if the frequency slice of `a` at
+  `x` is a superposition `∫ exp(2πi ⟪η, x⟫) N_η(ζ) dη` of suitably decaying multipliers, then
+  `Op(a) u (x)` is the superposition `∫ exp(2πi ⟪η, x⟫) 𝓕⁻ (N_η 𝓕 u) (x) dη` of modulated Fourier
+  multipliers.
 * `TauCeti.Symbol.continuous_quantizeSchwartzValue_coefficient` and
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
@@ -81,10 +86,12 @@ frequency derivative of its Fourier transform.
 * `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial` and
   `TauCeti.Symbol.quantizeSchwartzValue_const`: the symbol `f(x)` quantizes to multiplication by
   `f`, and a constant symbol `T` to `T`.
-* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_comp` and
-  `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: composing a symbol on the left
-  with a smooth function `f` of the position, operator-valued between Banach spaces or real,
-  composes its quantization with `f`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_comp`: composing a symbol on the left with a
+  smooth operator-valued function `f` of the position composes its quantization with `f`.
+* `TauCeti.Symbol.quantizeSchwartzValue_smulLeft`: multiplying a symbol by a smooth function `ψ`
+  of the position multiplies its quantization by `ψ`, `Op(ψ a) u = ψ Op(a) u`.
+* `TauCeti.Symbol.quantizeSchwartzValue_comp_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
+  maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -463,10 +470,10 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
         ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ := by gcongr; exact le_opNorm _ _
       _ ≤ C' * w ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
       _ = C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by ring
-  have hw₁ := one_add_norm_sq_rpow_mul_norm_le ((2 * π) • ζ) m
+  have hw₁ := Real.one_add_sq_rpow_mul_abs_le ‖(2 * π) • ζ‖ m
   have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
     Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
-  rw [← hw] at hw₁
+  rw [abs_norm, ← hw] at hw₁
   calc _ ≤ C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ + C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ :=
         add_le_add h₁ h₂
     _ ≤ C * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ + C' * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ := by
@@ -908,6 +915,55 @@ theorem quantizeSchwartzValue_inner_eq_lineDerivOp (v : E) (u : 𝓢(E, V)) (x :
 
 end Examples
 
+section Superposition
+
+/-! ### Superpositions of modulated Fourier multipliers -/
+
+variable {a : E × E → V →L[ℂ] W} {N : E → E → V →L[ℂ] W} {g : E → ℝ} {x : E} {C M : ℝ}
+
+/-- **The superposition formula.** Suppose that the frequency slice of the coefficient at `x` is a
+superposition `a(x, 2πζ) = ∫ exp(2πi ⟪η, x⟫) N_η(ζ) dη` of multipliers `N_η(ζ)`, jointly continuous
+in `η` and `ζ` with `‖N_η(ζ)‖ ≤ C ⟨ζ⟩ ^ M g(η)` for an integrable `g`. Then the quantization at `x`
+is the superposition of the modulated Fourier multipliers:
+`Op(a) u (x) = ∫ exp(2πi ⟪η, x⟫) 𝓕⁻ (N_η 𝓕 u) (x) dη`. -/
+theorem quantizeSchwartzValue_eq_integral_smul_fourierInv
+    (hN : Continuous fun q : E × E ↦ N q.1 q.2) (hg : Integrable g)
+    (hC : ∀ η ζ, ‖N η ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (M / 2) * g η)
+    (ha : ∀ ζ, a (x, (2 * π) • ζ) = ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • N η ζ) (u : 𝓢(E, V)) :
+    quantizeSchwartzValue a u x = ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕⁻ (fun ζ ↦ N η ζ (𝓕 u ζ)) x := by
+  have he : Continuous fun y : E ↦ (𝐞 ⟪y, x⟫ : ℂ) :=
+    Real.continuous_fourierChar_inner.comp (continuous_id.prodMk continuous_const)
+  -- The integrand of the double integral is dominated by `C ⟨ζ⟩ ^ M ‖𝓕 u ζ‖ g(η)`.
+  set F : E × E → W := fun q ↦ (𝐞 ⟪q.1, x⟫ : ℂ) • (𝐞 ⟪q.2, x⟫ : ℂ) • N q.2 q.1 (𝓕 u q.1) with hF
+  have hFint : Integrable F (volume.prod volume) := by
+    refine ((((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (M / 2)).mul_prod hg).const_mul
+      C).mono' ?_ (.of_forall fun q ↦ ?_)
+    · exact ((he.comp continuous_fst).smul ((he.comp continuous_snd).smul
+        ((hN.comp continuous_swap).clm_apply
+          ((𝓕 u).continuous.comp continuous_fst)))).aestronglyMeasurable
+    · simp only [hF, norm_smul, Circle.norm_coe, one_mul]
+      calc ‖N q.2 q.1 (𝓕 u q.1)‖ ≤ ‖N q.2 q.1‖ * ‖𝓕 u q.1‖ := (N q.2 q.1).le_opNorm _
+        _ ≤ C * (1 + ‖q.1‖ ^ 2) ^ (M / 2) * g q.2 * ‖𝓕 u q.1‖ := by gcongr; exact hC _ _
+        _ = _ := by ring
+  have hint (ζ : E) : Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) • N η ζ :=
+    (hg.const_mul (C * (1 + ‖ζ‖ ^ 2) ^ (M / 2))).mono'
+      (he.smul (hN.comp (continuous_id.prodMk continuous_const))).aestronglyMeasurable
+      (.of_forall fun η ↦ by simpa only [norm_smul, Circle.norm_coe, one_mul] using hC η ζ)
+  calc quantizeSchwartzValue a u x = ∫ ζ, ∫ η, F (ζ, η) := by
+        rw [quantizeSchwartzValue_def]
+        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+        simp only [hF, ha, ContinuousLinearMap.integral_apply (hint ζ), Circle.smul_def]
+        rw [← integral_smul]
+        simp only [smul_apply]
+    _ = ∫ η, ∫ ζ, F (ζ, η) := integral_integral_swap hFint
+    _ = _ := by
+        refine integral_congr_ae (.of_forall fun η ↦ ?_)
+        simp only [hF, Real.fourierInv_eq, Circle.smul_def]
+        rw [← integral_smul]
+        simp only [smul_comm (𝐞 ⟪η, x⟫ : ℂ)]
+
+end Superposition
+
 /-! ### Quantization of symbols -/
 
 namespace Symbol
@@ -971,18 +1027,31 @@ theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
   simp only [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_apply,
     Circle.smul_def, map_smul]
 
+/-- **Composition with constant maps of the fibres.** For continuous linear maps `L : W →L[ℂ] W'`
+and `K : V' →L[ℂ] V`, quantizing the coefficient `L ∘ a(x, ξ) ∘ K` on `u` gives `L` applied to the
+quantization of `a` on `K ∘ u`. -/
+theorem quantizeSchwartzValue_comp_comp [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] [CompleteSpace W'] (L : W →L[ℂ] W') (K : V' →L[ℂ] V) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V')) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (fun p ↦ L ∘L a.coefficient p ∘L K) u x =
+      L (quantizeSchwartzValue a.coefficient (u.postcompCLM K) x) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← L.integral_comp_comm
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 (u.postcompCLM K)))]
+  simp only [ContinuousLinearMap.comp_apply, SchwartzMap.fourier_postcompCLM_apply,
+    Circle.smul_def, map_smul]
+
 open scoped ContDiff in
-/-- Multiplying a symbol by a real function `f` of the position before quantizing multiplies the
-quantization by `f`. -/
-theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
-    {f : CoordinateSpace n → ℝ} (hf : ContDiff ℝ ∞ fun x ↦ f x • ContinuousLinearMap.id ℂ W)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue ((ofSpatial (fun x ↦ f x • ContinuousLinearMap.id ℂ W) hf).comp
-      a).coefficient u x = (f x : ℂ) • quantizeSchwartzValue a.coefficient u x := by
-  rw [quantizeSchwartzValue_congr_left (b := (f x : ℂ) • a.coefficient) (fun ξ ↦ by
-      rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
-    quantizeSchwartzValue_smul_left]
+/-- **Multiplication by a smooth function of the position.** The quantization of the symbol
+`ψ(x) a(x, ξ)` is `ψ Op(a)`: `Op(ψ a) u (x) = ψ(x) Op(a) u (x)`. -/
+theorem quantizeSchwartzValue_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (smulLeft hψ a).coefficient u x =
+      ψ x • quantizeSchwartzValue a.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient)
+    (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
 
 open scoped ContDiff in
 /-- The symbol `f(x)` of multiplication by `f` quantizes to multiplication: `Op(f) u = f u`. -/

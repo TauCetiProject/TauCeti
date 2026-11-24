@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
-public import TauCeti.Analysis.Complex.HasPrimitives
+public import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Dawson's integral

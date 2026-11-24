@@ -41,6 +41,8 @@ passes to sheaves along sheafification.
   `CategoryTheory.GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous`;
 * `CategoryTheory.GradedObject.Monoidal.oneOfDegreeZero`: the morphism `𝟙_ ⟶ X` determined by a
   morphism `𝟙_ C ⟶ X 0`;
+* `CategoryTheory.GradedObject.Monoidal.toTensorUnitOfDegreeZero`: the morphism `X ⟶ 𝟙_`
+  determined by a morphism `X 0 ⟶ 𝟙_ C`, when `C` has zero morphisms;
 * `CategoryTheory.GradedObject.monObjOfHomogeneous`: the monoid object structure defined by
   homogeneous data satisfying the graded associativity and unit laws;
 * `CategoryTheory.GradedObject.isCommMonObj_monObjOfHomogeneous`: commutativity of that monoid
@@ -127,6 +129,30 @@ degree-zero part of the tensor unit with `𝟙_ C`. -/
 lemma oneOfDegreeZero_zero (one : 𝟙_ C ⟶ X 0) :
     oneOfDegreeZero X one 0 = tensorUnit₀.hom ≫ one := by
   simp [oneOfDegreeZero, tensorUnit₀]
+
+section ToTensorUnit
+
+variable [HasZeroMorphisms C]
+
+/-- The morphism `X ⟶ 𝟙_` of graded objects given in degree zero by `f : X 0 ⟶ 𝟙_ C`; in every
+other degree the tensor unit is a zero object. -/
+def toTensorUnitOfDegreeZero (f : X 0 ⟶ 𝟙_ C) : X ⟶ tensorUnit := fun i ↦
+  if h : i = 0 then eqToHom (congrArg X h) ≫ f ≫ (singleObjApplyIsoOfEq 0 (𝟙_ C) i h).inv
+  else 0
+
+/-- In degree zero, the morphism determined by `f` is `f`, up to the identification of the
+degree-zero part of the tensor unit with `𝟙_ C`. -/
+@[simp]
+lemma toTensorUnitOfDegreeZero_zero (f : X 0 ⟶ 𝟙_ C) :
+    toTensorUnitOfDegreeZero X f 0 = f ≫ tensorUnit₀.inv := by
+  simp [toTensorUnitOfDegreeZero, tensorUnit₀]
+
+/-- Away from degree zero, the morphism determined by `f` vanishes. -/
+lemma toTensorUnitOfDegreeZero_of_ne (f : X 0 ⟶ 𝟙_ C) {i : I} (hi : i ≠ 0) :
+    toTensorUnitOfDegreeZero X f i = 0 := by
+  simp [toTensorUnitOfDegreeZero, hi]
+
+end ToTensorUnit
 
 end One
 

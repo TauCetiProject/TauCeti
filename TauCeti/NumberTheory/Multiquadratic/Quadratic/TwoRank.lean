@@ -56,11 +56,18 @@ bound gives the imaginary quadratic `2`-rank formula for `Cl(K)`. For a real qua
 ordinary `2`-rank can be strictly smaller than `t - 1` — `ℚ(√3)` has `t = 2` and class number `1` —
 so there the formula is genuinely a statement about `Cl⁺(K)`.
 
+Read as a count, the narrow formula says that `Cl⁺(K)/Cl⁺(K)²` has `2 ^ (t - 1)` elements. Its
+fibres, the genera, are cosets of the subgroup of squares, so each genus contains exactly
+`h⁺(K) / 2 ^ (t - 1)` narrow classes, `h⁺(K)` the narrow class number. This is the genus size
+in the genus averages of Duke, Imamoglu and Tóth.
+
 See F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2, which runs the same
 route: its Proposition 2.9 is the Hilbert-90 descent realising an ambiguous class by an ambiguous
 ideal, and its "first inequality" `#Cl⁺/Cl⁺² ≤ 2^(t-1)` is the bound proved here. D. A. Cox,
 *Primes of the Form x² + ny²*, §6.A has the same statement for field discriminants, and §3.B the
-form-theoretic genus theory it descends from.
+form-theoretic genus theory it descends from. The genus count is (4.1)–(4.2) of W. Duke,
+Ö. Imamoglu and Á. Tóth, *Geometric invariants for real quadratic fields*, Ann. of Math. 184
+(2016), §4, p. 959, where `h(D)` denotes the narrow class number.
 
 ## Main results
 
@@ -76,6 +83,10 @@ form-theoretic genus theory it descends from.
   quadratic field of either signature is exactly `t - 1`.
 * `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one`: the
   ordinary `2`-rank is also exactly `t - 1` when some unit of `𝓞 K` has norm `-1`.
+* `TauCeti.Multiquadratic.card_genusFiber_mul_two_pow_ncard_ramifiedPrimes` and
+  `TauCeti.Multiquadratic.card_genusFiber_mul_two_pow`: every genus, a fibre of
+  `Cl⁺(K) → Cl⁺(K)/Cl⁺(K)²`, has `h⁺(K) / 2 ^ (t - 1)` narrow classes, with `t` counted either
+  as ramified primes or as the prime discriminants dividing the discriminant.
 * `TauCeti.Multiquadratic.ncard_ramifiedPrimes_sub_two_le_twoRank` and
   `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two`: the ordinary
   `2`-rank of any field of degree `2` over `ℚ` is `t - 1` or `t - 2`.
@@ -290,6 +301,42 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_exists_norm_eq_neg_one
   rw [← NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank_of_injective K
     (NumberField.NarrowClassGroup.toClassGroup_injective_of_norm_eq_neg_one hmin hgen hu)]
   exact narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf
+
+/-! ### The number of narrow classes in a genus -/
+
+/-- **Every genus of a quadratic field has `h⁺(K) / 2 ^ (t - 1)` narrow classes.** For any field
+`K` of degree `2` over `ℚ`, of either signature, and any square class `g ∈ Cl⁺(K)/Cl⁺(K)²`, the
+genus `{A ∈ Cl⁺(K) | A Cl⁺(K)² = g}` satisfies `#genus · 2 ^ (t - 1) = h⁺(K)`, where `t` is the
+number of rational primes ramifying in `K`. In particular all genera have the same number of
+classes and `2 ^ (t - 1)` divides the narrow class number. -/
+theorem card_genusFiber_mul_two_pow_ncard_ramifiedPrimes (hK : Module.finrank ℚ K = 2)
+    (g : NumberField.NarrowClassGroup.ElementaryTwoQuotient K) :
+    Nat.card {A : NumberField.NarrowClassGroup K // TauCeti.elementaryTwoQuotientMk A = g} *
+        2 ^ ((ramifiedPrimes K).ncard - 1) =
+      Nat.card (NumberField.NarrowClassGroup K) := by
+  obtain ⟨θ, d, hmin, hgen, hsf⟩ :=
+    NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  rw [← narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf,
+    ← NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank]
+  exact TauCeti.card_elementaryTwoQuotientMk_fiber_mul_card g
+
+/-- **Every genus has `h⁺(D) / 2 ^ (r - 1)` narrow classes, `r` the number of prime
+discriminants dividing `D`.** For `K = ℚ(√d)` with `d` squarefree, of either signature, write its
+discriminant `D = fundamentalDiscriminant d` as a product of the prime discriminants in `s`. Then
+every genus `{A ∈ Cl⁺(K) | A Cl⁺(K)² = g}` satisfies `#genus · 2 ^ (#s - 1) = h⁺(D)`; here `#s`
+is also the number of rational primes ramifying in `K`. For `D = 60 = (-4)(-3)5` there are four
+genera of `h⁺/4` classes each. -/
+theorem card_genusFiber_mul_two_pow {s : Finset ℤ}
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
+    (g : NumberField.NarrowClassGroup.ElementaryTwoQuotient K) :
+    Nat.card {A : NumberField.NarrowClassGroup K // TauCeti.elementaryTwoQuotientMk A = g} *
+        2 ^ (s.card - 1) =
+      Nat.card (NumberField.NarrowClassGroup K) := by
+  rw [← ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod]
+  exact card_genusFiber_mul_two_pow_ncard_ramifiedPrimes
+    (NumberField.finrank_rat_eq_two hmin hgen) g
 
 /-! ### The ordinary `2`-rank of a quadratic field -/
 
