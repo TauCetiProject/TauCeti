@@ -21,9 +21,9 @@ norm recovery and Paschke's inequality, available on Hom spaces.
 
 Read through this instance, the module's Cauchy–Schwarz inequality is
 `(f†g)†(f†g) ≤ ‖f‖² g†g` for parallel arrows `f g : X ⟶ Y`, and its norm recovery says that
-`‖f‖` is the largest value of `‖g†f‖` over `‖g‖ ≤ 1`. The conjugation bounds and norm
-monotonicity in `f†f`, which use only the C*-identity and the order on `End X`, are in
-`TauCeti.Analysis.CStarAlgebra.Category.Basic`.
+`‖f‖` is the largest value of `‖g†f‖` over `‖g‖ ≤ 1`, and its norm monotonicity says that
+`f†f ≤ g†g` implies `‖f‖ ≤ ‖g‖`. The conjugation bounds, which use only the C*-identity and the
+order on `End X`, are in `TauCeti.Analysis.CStarAlgebra.Category.Basic`.
 
 The polarization identity for `f†g` holds in any complex linear dagger category
 (`TauCeti.comp_dagger_polarization`).
@@ -35,6 +35,8 @@ The polarization identity for `f†g` holds in any complex linear dagger categor
   `(f†g)†(f†g) ≤ ‖f‖² g†g`.
 * `TauCeti.CStarCategory.isGreatest_norm_comp_dagger`: `‖f‖` is the largest value of `‖g†f‖`
   over arrows `g` of norm at most one.
+* `TauCeti.CStarCategory.norm_le_norm_of_self_comp_dagger_le`: `f†f ≤ g†g` implies
+  `‖f‖ ≤ ‖g‖`.
 
 ## References
 
@@ -130,5 +132,11 @@ theorem isGreatest_norm_comp_dagger (f : X ⟶ Y) :
     IsGreatest {‖f ≫ dagger g‖ | (g : X ⟶ Y) (_ : ‖g‖ ≤ 1)} ‖f‖ := by
   simpa only [unop_inner, End.norm_of] using
     CStarModule.isGreatest_norm_unop_inner (A := End X) f
+
+/-- Norms are monotone in `f†f`: for arrows `f : X ⟶ Y` and `g : X ⟶ Z` with `f†f ≤ g†g` in
+`End X`, that is `f ≫ dagger f ≤ g ≫ dagger g`, we have `‖f‖ ≤ ‖g‖`. -/
+theorem norm_le_norm_of_self_comp_dagger_le {Z : C} {f : X ⟶ Y} {g : X ⟶ Z}
+    (h : End.of (f ≫ dagger f) ≤ End.of (g ≫ dagger g)) : ‖f‖ ≤ ‖g‖ :=
+  CStarModule.norm_le_of_inner_self_le (A := (End X)ᵐᵒᵖ) (MulOpposite.op_le_op.2 h)
 
 end TauCeti.CStarCategory

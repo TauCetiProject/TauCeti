@@ -36,8 +36,6 @@ is stated as `f ≫ dagger f = g ≫ dagger g` for an endomorphism `g` of `X`; i
 * `CategoryTheory.End.comp_comp_dagger_mono`: conjugation `a ↦ g†ag` by an arrow `g` is
   monotone.
 * `CategoryTheory.End.comp_comp_dagger_le_norm_smul`: `g†ag ≤ ‖a‖ g†g` for self-adjoint `a`.
-* `TauCeti.CStarCategory.norm_le_norm_of_self_comp_dagger_le`: `f†f ≤ g†g` implies
-  `‖f‖ ≤ ‖g‖`.
 
 ## Implementation notes
 
@@ -299,19 +297,3 @@ theorem comp_comp_dagger_le_norm_smul {Y : C} (g : X ⟶ Y) (a : End Y)
   simp [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
 
 end CategoryTheory.End
-
-namespace TauCeti.CStarCategory
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
-  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
-  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X Y Z : C}
-
-/-- Norms are monotone in `f†f`: for arrows `f : X ⟶ Y` and `g : X ⟶ Z` with `f†f ≤ g†g` in
-`End X`, that is `f ≫ dagger f ≤ g ≫ dagger g`, we have `‖f‖ ≤ ‖g‖`. -/
-theorem norm_le_norm_of_self_comp_dagger_le {f : X ⟶ Y} {g : X ⟶ Z}
-    (h : End.of (f ≫ dagger f) ≤ End.of (g ≫ dagger g)) : ‖f‖ ≤ ‖g‖ := by
-  refine (pow_le_pow_iff_left₀ (norm_nonneg f) (norm_nonneg g) two_ne_zero).1 ?_
-  rw [← norm_self_comp_dagger, ← norm_self_comp_dagger, ← End.norm_of, ← End.norm_of]
-  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg h (End.self_comp_dagger_nonneg f)
-
-end TauCeti.CStarCategory
