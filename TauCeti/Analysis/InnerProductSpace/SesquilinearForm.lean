@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.SesquilinearForm.Star
 
 /-!
 # Sesquilinear forms on inner product spaces
@@ -32,7 +33,8 @@ The comparison uses Mathlib's rank-one operators: their adjoints exchange the tw
 It does not assume that the form being compared is already represented by an operator.
 
 Conversely, a positive definite Hermitian form `h` on a vector space makes it an inner product
-space with inner product `h` (`LinearMap.IsSymm.innerProductCore`).
+space with inner product `h` (`LinearMap.IsSymm.innerProductCore`), and a sesquilinear form which
+is real diagonal in some basis is Hermitian (`LinearMap.isSymm_of_basis_diag`).
 -/
 
 public section
@@ -186,6 +188,25 @@ theorem IsSymm.innerProductCore_inner (hh : h.IsSymm)
     (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (u v : E) :
     @inner 𝕜 E (hh.innerProductCore hpos).toInner u v = h u v :=
   (rfl)
+
+/-- The inner product of the inner product space built from `IsSymm.innerProductCore` is the
+form. -/
+theorem IsSymm.inner_ofCore_innerProductCore (hh : h.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (u v : E) :
+    letI := (hh.innerProductCore hpos).toNormedAddCommGroup
+    letI := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
+    inner 𝕜 u v = h u v :=
+  (rfl)
+
+/-- **A sesquilinear form which is real diagonal in a basis is Hermitian.** -/
+theorem isSymm_of_basis_diag {ι : Type*} [DecidableEq ι] {B : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+    (bs : Module.Basis ι 𝕜 E) {w : ι → ℝ}
+    (hB : ∀ i j, B (bs i) (bs j) = if i = j then (w i : 𝕜) else 0) : B.IsSymm := by
+  refine (LinearMap.isSymm_iff_basis bs).2 fun i j ↦ ?_
+  rw [hB, hB]
+  by_cases hij : i = j
+  · subst hij; simp
+  · simp [hij, Ne.symm hij]
 
 end InnerProductCore
 

@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.RelEigenvalueVector
 public import TauCeti.Analysis.Complex.QuadraticLeviForm
-public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
-public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Manifold.Complex.TwoFormHermitianForm
 
 /-!
 # The Hermitian form of `α + i ∂∂bar φ` on a complex manifold
@@ -18,9 +16,9 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 Let `X` be a complex manifold modelled on `𝓘(ℂ, E)`, so that every tangent space is `E` and
 multiplication by `i` is its almost complex structure `J`. For a real two-form `α` on the
 underlying real manifold, `TauCeti.twoFormHermitianForm E α x` is the Hermitian form
-`H_α(u, v) = α(u, J v) + i·α(u, v)` of `α` at `x` (`ContinuousAlternatingMap.hermitianForm`).
-For a Hermitian metric `ω`, a smooth two-form compatible with `J`, it is the Hermitian inner
-product `h` of `ω`.
+`H_α(u, v) = α(u, J v) + i·α(u, v)` of `α` at `x`
+(`TauCeti.Geometry.Manifold.Complex.TwoFormHermitianForm`). For a Hermitian metric `ω`, a smooth
+two-form compatible with `J`, it is the Hermitian inner product `h` of `ω`.
 
 For a real function `φ`, the real (1,1)-form `i ∂∂bar φ` has Hermitian form `2·L_φ`, where `L_φ`
 is the Levi form `TauCeti.manifoldLeviForm E φ x`; with this normalization
@@ -31,10 +29,8 @@ that a complex Hessian equation prescribes a symmetric function of.
 
 ## Main definitions
 
-* `TauCeti.twoFormHermitianForm E α x`: the Hermitian form `H_α` of a real two-form at `x`.
 * `TauCeti.ddbarHermitianForm E α φ x`: the Hermitian form `H_α + 2·L_φ` of `α + i ∂∂bar φ`.
-* `TauCeti.twoFormSesqForm`, `TauCeti.ddbarSesqForm`: the same forms as sesquilinear forms, when
-  `α` has type (1,1) at `x`.
+* `TauCeti.ddbarSesqForm`: the same form as a sesquilinear form, when `α` has type (1,1) at `x`.
 
 ## Main results
 
@@ -43,12 +39,7 @@ that a complex Hessian equation prescribes a symmetric function of.
   `φ` and is additive in `φ`.
 * `TauCeti.isSymm_ddbarSesqForm`: if `α` has type (1,1) at `x` and `φ` is `C²` at `x`, the
   form `H_{α + i ∂∂bar φ}(x)` is a Hermitian sesquilinear form (`TauCeti.ddbarSesqForm`).
-* `TauCeti.SmoothTwoForm.Invariant.isSymm_twoFormSesqForm` and
-  `TauCeti.SmoothTwoForm.Tames.re_twoFormHermitianForm_apply_self_pos`: for a two-form `ω`
-  invariant under, respectively taming, multiplication by `i`, `H_ω(x)` is Hermitian,
-  respectively positive definite; a Hermitian metric is both.
-* `TauCeti.twoFormHermitianForm_add`, `TauCeti.ddbarHermitianForm_add_form` and their
-  companions: `H_α` is real linear in `α`.
+* `TauCeti.ddbarHermitianForm_add_form`: `H_{α + i ∂∂bar φ}` is additive in `α`.
 * `TauCeti.SmoothTwoForm.Compatible.exists_isRelEigenvalueVector_ddbarHermitianForm`: relative to
   a Hermitian metric, `α + i ∂∂bar φ` has a decreasingly sorted eigenvalue vector at `x`, unique
   by `TauCeti.IsRelEigenvalueVector.eq_of_antitone`.
@@ -81,56 +72,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 section Forms
 
 variable {α : RoughForm 𝓘(ℝ, E) X ℝ 2} {φ ψ : X → ℝ} {x : X}
-
-variable (E) in
-/-- The Hermitian form `H_α(u, v) = α(u, J v) + i·α(u, v)` of a real two-form `α` at `x`, where
-`J` is multiplication by `i` on the tangent space `E`. It is complex linear in the second slot; it
-is conjugate linear in the first slot, and Hermitian, when `α(x)` has type (1,1); for a Hermitian
-metric `ω` it is the Hermitian inner product `h`. -/
-def twoFormHermitianForm (α : RoughForm 𝓘(ℝ, E) X ℝ 2) (x : X) (u v : E) : ℂ :=
-  ContinuousAlternatingMap.hermitianForm (E := E) (α x) u v
-
-/-- Unfolding lemma for `twoFormHermitianForm`. -/
-theorem twoFormHermitianForm_def (u v : E) :
-    twoFormHermitianForm E α x u v = ⟨α x ![u, I • v], α x ![u, v]⟩ :=
-  ContinuousAlternatingMap.hermitianForm_def (E := E) (α x) u v
-
-/-- `twoFormHermitianForm E α x` is the Hermitian form of the two-form `α x`. -/
-theorem twoFormHermitianForm_eq_hermitianForm :
-    twoFormHermitianForm E α x = ContinuousAlternatingMap.hermitianForm (E := E) (α x) :=
-  (rfl)
-
-/-- The Hermitian form of the zero two-form vanishes. -/
-@[simp]
-theorem twoFormHermitianForm_zero (u v : E) :
-    twoFormHermitianForm E (0 : RoughForm 𝓘(ℝ, E) X ℝ 2) x u v = 0 :=
-  ContinuousAlternatingMap.hermitianForm_zero u v
-
-/-- The Hermitian form is additive in the two-form. -/
-@[simp]
-theorem twoFormHermitianForm_add (β : RoughForm 𝓘(ℝ, E) X ℝ 2) (u v : E) :
-    twoFormHermitianForm E (α + β) x u v =
-      twoFormHermitianForm E α x u v + twoFormHermitianForm E β x u v :=
-  ContinuousAlternatingMap.hermitianForm_add (E := E) (α x) (β x) u v
-
-/-- The Hermitian form of `-α` is `-H_α`. -/
-@[simp]
-theorem twoFormHermitianForm_neg (u v : E) :
-    twoFormHermitianForm E (-α) x u v = -twoFormHermitianForm E α x u v :=
-  ContinuousAlternatingMap.hermitianForm_neg (E := E) (α x) u v
-
-/-- The Hermitian form of `α - β` is `H_α - H_β`. -/
-@[simp]
-theorem twoFormHermitianForm_sub (β : RoughForm 𝓘(ℝ, E) X ℝ 2) (u v : E) :
-    twoFormHermitianForm E (α - β) x u v =
-      twoFormHermitianForm E α x u v - twoFormHermitianForm E β x u v :=
-  ContinuousAlternatingMap.hermitianForm_sub (E := E) (α x) (β x) u v
-
-/-- The Hermitian form of `r • α` is `r·H_α`. -/
-@[simp]
-theorem twoFormHermitianForm_smul (r : ℝ) (u v : E) :
-    twoFormHermitianForm E (r • α) x u v = r * twoFormHermitianForm E α x u v :=
-  ContinuousAlternatingMap.hermitianForm_smul (E := E) (α x) r u v
 
 variable (E) in
 /-- The Hermitian form `H_{α + i ∂∂bar φ} = H_α + 2·L_φ` of the real (1,1)-form `α + i ∂∂bar φ`
@@ -182,31 +123,9 @@ theorem ddbarHermitianForm_add (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x)
 @[simp]
 theorem ddbarHermitianForm_zero_form (u v : E) :
     ddbarHermitianForm E 0 φ x u v = 2 * manifoldLeviForm E φ x u v := by
-  rw [ddbarHermitianForm_def, add_eq_right]
-  apply Complex.ext <;> simp [twoFormHermitianForm_def]
+  rw [ddbarHermitianForm_def, twoFormHermitianForm_zero, zero_add]
 
 variable (hα : ∀ u v : E, α x ![I • u, I • v] = α x ![u, v])
-
-variable (E α x) in
-/-- If `α(x)` has type (1,1), the form `H_α(x)` as a sesquilinear form, conjugate linear in the
-first slot. -/
-def twoFormSesqForm : E →ₗ⋆[ℂ] E →ₗ[ℂ] ℂ :=
-  ContinuousAlternatingMap.hermitianSesqForm (E := E) (α := α x) hα
-
-/-- The sesquilinear form `twoFormSesqForm` evaluates as `H_α`. -/
-@[simp]
-theorem twoFormSesqForm_apply (u v : E) :
-    twoFormSesqForm E α x hα u v = twoFormHermitianForm E α x u v :=
-  ContinuousAlternatingMap.hermitianSesqForm_apply (E := E) (α := α x) hα u v
-
-/-- The function underlying `twoFormSesqForm` is `H_α`. -/
-theorem coe_twoFormSesqForm :
-    (fun u v ↦ twoFormSesqForm E α x hα u v) = twoFormHermitianForm E α x :=
-  funext fun u ↦ funext fun v ↦ twoFormSesqForm_apply hα u v
-
-/-- **`H_α(x)` is Hermitian** if `α(x)` has type (1,1). -/
-theorem isSymm_twoFormSesqForm : (twoFormSesqForm E α x hα).IsSymm :=
-  ContinuousAlternatingMap.isSymm_hermitianSesqForm (E := E) (α := α x) hα
 
 variable (E φ) in
 /-- If `α(x)` has type (1,1), the form `H_{α + i ∂∂bar φ}(x)` as a sesquilinear form, conjugate
@@ -228,27 +147,18 @@ theorem coe_ddbarSesqForm :
 /-- **`H_{α + i ∂∂bar φ}(x)` is Hermitian** if `α(x)` has type (1,1) and `φ` is `C²` at `x`. -/
 theorem isSymm_ddbarSesqForm (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x) :
     (ddbarSesqForm E φ hα).IsSymm := by
-  refine ⟨fun u v ↦ ?_⟩
-  have h₁ := (isSymm_twoFormSesqForm hα).eq u v
-  have h₂ := (isSymm_manifoldLeviForm hφ).eq u v
-  simp only [twoFormSesqForm_apply] at h₁ h₂
-  simp only [ddbarSesqForm_apply, ddbarHermitianForm_def, map_add, map_mul, map_ofNat, h₁, h₂]
+  rw [ddbarSesqForm, two_smul]
+  exact (isSymm_twoFormSesqForm hα).add
+    ((isSymm_manifoldLeviForm hφ).add (isSymm_manifoldLeviForm hφ))
 
 /-- **The sign at a local maximum.** If `φ` is `C²` at a local maximum `x`, then
 `H_{i ∂∂bar φ}(x)` is negative semidefinite. -/
 theorem re_ddbarHermitianForm_zero_form_apply_self_nonpos_of_isLocalMax
     (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x) (hmax : IsLocalMax φ x) (v : E) :
     (ddbarHermitianForm E 0 φ x v v).re ≤ 0 := by
-  have hx : (chartAt E x).symm (chartAt E x x) = x := (chartAt E x).left_inv (mem_chart_source E x)
-  have hmax' : IsLocalMax (φ ∘ (chartAt E x).symm) (chartAt E x x) :=
-    IsLocalMax.comp_continuous (hx.symm ▸ hmax)
-      ((chartAt E x).continuousAt_symm (mem_chart_target E x))
-  have h := re_leviForm_nonpos_of_isLocalMax hφ.contDiffAt_comp_chartAt_symm hmax' v
-  rw [ddbarHermitianForm_zero_form, manifoldLeviForm_def]
-  simp only [re_leviForm_apply] at h
-  have h2 : ((2 : ℂ) * leviForm (φ ∘ (chartAt E x).symm) (chartAt E x x) v v).re =
-      2 * (leviForm (φ ∘ (chartAt E x).symm) (chartAt E x x) v v).re := by simp
-  rw [h2, re_leviForm_apply]
+  have h := re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax hφ hmax v
+  rw [ddbarHermitianForm_zero_form, show ((2 : ℂ) * manifoldLeviForm E φ x v v).re =
+    2 * (manifoldLeviForm E φ x v v).re by simp]
   linarith
 
 end Forms
@@ -270,30 +180,6 @@ end NormSq
 namespace SmoothTwoForm
 
 variable [IsManifold 𝓘(ℂ, E) ∞ X] {κ : SmoothTwoForm 𝓘(ℝ, E) X}
-
-/-- A two-form invariant under multiplication by `i` has type (1,1) at every point. -/
-theorem Invariant.apply_I_smul_I_smul
-    (hκ : κ.Invariant (SmoothAlmostComplexStructure.ofComplexManifold E X)) (x : X) (u v : E) :
-    κ.val x ![I • u, I • v] = κ.val x ![u, v] := by
-  have h := hκ.apply x u v
-  simp only [SmoothAlmostComplexStructure.ofComplexManifold_apply] at h
-  exact (SmoothBundleForm.eval₂_apply κ x (I • u) (I • v)).symm.trans
-    (h.trans (SmoothBundleForm.eval₂_apply κ x u v))
-
-/-- **The Hermitian form of an invariant two-form is Hermitian.** -/
-theorem Invariant.isSymm_twoFormSesqForm
-    (hκ : κ.Invariant (SmoothAlmostComplexStructure.ofComplexManifold E X)) (x : X) :
-    (twoFormSesqForm E κ.val x (hκ.apply_I_smul_I_smul x)).IsSymm :=
-  TauCeti.isSymm_twoFormSesqForm _
-
-/-- **The Hermitian form of a two-form taming multiplication by `i` is positive definite.** -/
-theorem Tames.re_twoFormHermitianForm_apply_self_pos
-    (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) (x : X) {v : E}
-    (hv : v ≠ 0) : 0 < (twoFormHermitianForm E κ.val x v v).re := by
-  have h := (SmoothTwoForm.tames_iff.1 hκ) x v hv
-  simp only [SmoothAlmostComplexStructure.ofComplexManifold_apply] at h
-  rw [twoFormHermitianForm_def]
-  exact h.trans_eq (SmoothBundleForm.eval₂_apply κ x v (I • v))
 
 variable (hκ : κ.Compatible (SmoothAlmostComplexStructure.ofComplexManifold E X))
 include hκ

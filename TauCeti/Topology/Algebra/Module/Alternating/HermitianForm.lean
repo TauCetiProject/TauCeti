@@ -111,11 +111,13 @@ theorem hermitianForm_smul (r : ℝ) (u v : E) :
 variable {α}
 
 /-- `H_α` is additive in the first slot. -/
+@[simp]
 theorem hermitianForm_add_left (u u' v : E) :
     α.hermitianForm (u + u') v = α.hermitianForm u v + α.hermitianForm u' v := by
   apply Complex.ext <;> simp [vecCons_add]
 
 /-- `H_α` is additive in the second slot. -/
+@[simp]
 theorem hermitianForm_add_right (u v v' : E) :
     α.hermitianForm u (v + v') = α.hermitianForm u v + α.hermitianForm u v' := by
   apply Complex.ext <;> simp [smul_add, α.apply_vecCons_add_right]
@@ -126,6 +128,7 @@ theorem hermitianForm_I_smul_right (u v : E) :
   apply Complex.ext <;> simp [smul_smul, α.apply_vecCons_neg_right]
 
 /-- **`H_α` is complex linear in the second slot**, for every real two-form `α`. -/
+@[simp]
 theorem hermitianForm_smul_right (c : ℂ) (u v : E) :
     α.hermitianForm u (c • v) = c * α.hermitianForm u v := by
   have hr (r : ℝ) (w : E) : α.hermitianForm u (r • w) = r * α.hermitianForm u w := by
@@ -136,6 +139,7 @@ theorem hermitianForm_smul_right (c : ℂ) (u v : E) :
   ring
 
 /-- `H_α` is real homogeneous in the first slot, for every real two-form `α`. -/
+@[simp]
 theorem hermitianForm_real_smul_left (r : ℝ) (u v : E) :
     α.hermitianForm (r • u) v = r * α.hermitianForm u v := by
   apply Complex.ext <;> simp [hermitianForm_def, vecCons_smul]
@@ -181,18 +185,29 @@ theorem re_hermitianForm_apply_self_pos_iff (v : E) :
     0 < (α.hermitianForm v v).re ↔ 0 < α ![v, I • v] := by
   rw [hermitianForm_apply_self, ofReal_re]
 
+/-- **`H_α` is determined by `α`**: if `α(u, v) = Im B(u, v)` for a sesquilinear form `B`, then
+`H_α = B`. -/
+theorem hermitianForm_eq_of_apply_eq_im {B : E →ₗ⋆[ℂ] E →ₗ[ℂ] ℂ}
+    (hB : ∀ u v, α ![u, v] = (B u v).im) (u v : E) : α.hermitianForm u v = B u v := by
+  apply Complex.ext
+  · simp [hB, Complex.mul_im]
+  · simp [hB]
+
 section Invariant
 
 variable (hα : ∀ u v : E, α ![I • u, I • v] = α ![u, v])
 include hα
 
+/-- For `α` of type (1,1), `α(i u, v) = -α(u, i v)`. -/
+theorem apply_vecCons_I_smul_left (u v : E) : α ![I • u, v] = -α ![u, I • v] := by
+  have h₂ := hα u (I • v)
+  simp only [smul_smul, I_mul_I, neg_one_smul, α.apply_vecCons_neg_right] at h₂
+  linarith
+
 /-- For `α` of type (1,1), `H_α(i u, v) = -i·H_α(u, v)`. -/
 theorem hermitianForm_I_smul_left (u v : E) :
     α.hermitianForm (I • u) v = -I * α.hermitianForm u v := by
-  have h₂ := hα u (I • v)
-  simp only [smul_smul, I_mul_I, neg_one_smul, α.apply_vecCons_neg_right] at h₂
-  have h₁ : α ![I • u, v] = -α ![u, I • v] := by linarith
-  apply Complex.ext <;> simp [hα, h₁]
+  apply Complex.ext <;> simp [hα, apply_vecCons_I_smul_left hα]
 
 /-- **For `α` of type (1,1), `H_α` is conjugate linear in the first slot.** -/
 theorem hermitianForm_smul_left (c : ℂ) (u v : E) :
@@ -208,10 +223,7 @@ theorem hermitianForm_smul_left (c : ℂ) (u v : E) :
 /-- **For `α` of type (1,1), `H_α` is Hermitian**: `conj H_α(u, v) = H_α(v, u)`. -/
 theorem conj_hermitianForm (u v : E) : conj (α.hermitianForm u v) = α.hermitianForm v u := by
   have h₁ : α ![v, I • u] = α ![u, I • v] := by
-    have h₂ := hα v (I • u)
-    simp only [smul_smul, I_mul_I, neg_one_smul, α.apply_vecCons_neg_right] at h₂
-    rw [α.apply_vecCons_swap u, neg_neg] at h₂
-    exact h₂.symm
+    rw [α.apply_vecCons_swap (I • u) v, apply_vecCons_I_smul_left hα, neg_neg]
   apply Complex.ext
   · simp [h₁]
   · simp [α.apply_vecCons_swap u v]

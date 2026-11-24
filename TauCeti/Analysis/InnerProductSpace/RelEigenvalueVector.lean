@@ -38,10 +38,15 @@ not of type (1,1) still has a meaning; the results take sesquilinear forms.
 * `TauCeti.exists_isRelEigenvalueVector`: for `h` positive definite Hermitian and `a` Hermitian,
   there is a decreasingly sorted eigenvalue vector.
 * `TauCeti.IsRelEigenvalueVector.eq_of_antitone`: it is unique.
+* `TauCeti.IsRelEigenvalueVector.isSymm_left`, `TauCeti.IsRelEigenvalueVector.re_apply_self_pos`
+  and `TauCeti.IsRelEigenvalueVector.isSymm_right`: conversely, in finite dimension, an eigenvalue
+  vector forces `h` to be positive definite Hermitian and `a` to be Hermitian.
 * `TauCeti.IsRelEigenvalueVector.exists_perm_eq` and
   `TauCeti.IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm`: any two eigenvalue vectors
   are reorderings of each other, and the eigenvalue vectors are exactly the reorderings of one of
   them.
+* `TauCeti.isRelEigenvalueVector_smul_iff`: for any `h`, the eigenvalue vectors of `s·h` relative
+  to `h` are `s·e`, where `e = (1, …, 1)` is one for `h` relative to itself.
 * `TauCeti.isRelEigenvalueVector_smul_self_iff`, `TauCeti.isRelEigenvalueVector_self_iff`: `s·h`
   has the eigenvalue vector `s·e`, `e = (1, …, 1)`, relative to `h`, and `h` has `e`.
 
@@ -121,21 +126,21 @@ theorem IsRelEigenvalueVector.smul_left {μ : Fin (finrank 𝕜 E) → ℝ}
     (hμ : IsRelEigenvalueVector (h · ·) (a · ·) μ) {s : ℝ} (hs : 0 < s) :
     IsRelEigenvalueVector (fun u v ↦ (s : 𝕜) * h u v) (a · ·) (s⁻¹ • μ) := by
   obtain ⟨b, hb⟩ := hμ
-  have hc : ((Real.sqrt s)⁻¹ : ℝ) * (Real.sqrt s)⁻¹ = s⁻¹ := by
-    rw [← mul_inv, Real.mul_self_sqrt hs.le]
+  -- the family `c • b`, `c = s^{-1/2}`, with `c² = s⁻¹`
+  have hc : (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) * (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) = (s : 𝕜)⁻¹ := by
+    rw [← RCLike.ofReal_mul, ← mul_inv, Real.mul_self_sqrt hs.le, RCLike.ofReal_inv]
+  have hs' : (s : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hs.ne'
   refine ⟨fun i ↦ (((Real.sqrt s)⁻¹ : ℝ) : 𝕜) • b i, fun i j ↦ ⟨?_, ?_⟩⟩
-  · have h₁ := (hb i j).1
-    beta_reduce at h₁ ⊢
-    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
-      RCLike.conj_ofReal, h₁]
-    rw [← mul_assoc, ← mul_assoc, ← RCLike.ofReal_mul, ← RCLike.ofReal_mul, mul_assoc s, hc,
-      mul_inv_cancel₀ hs.ne', RCLike.ofReal_one, one_mul]
-  · have h₂ := (hb i j).2
-    beta_reduce at h₂ ⊢
-    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
-      RCLike.conj_ofReal, h₂]
-    rw [← mul_assoc, ← RCLike.ofReal_mul, hc]
-    split_ifs <;> simp
+  · simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
+      RCLike.conj_ofReal, (hb i j).1]
+    split_ifs
+    · rw [mul_one, hc, mul_inv_cancel₀ hs']
+    · simp
+  · simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
+      RCLike.conj_ofReal, (hb i j).2]
+    split_ifs
+    · rw [← mul_assoc, hc, Pi.smul_apply, smul_eq_mul, RCLike.ofReal_mul, RCLike.ofReal_inv]
+    · simp
 
 /-- **Simultaneous diagonalization.** For a positive definite Hermitian `h` and a Hermitian `a`,
 there is an `h`-orthonormal basis diagonalizing `a` with decreasing diagonal entries. -/
@@ -146,21 +151,11 @@ theorem exists_isRelEigenvalueVector (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 
     let : InnerProductSpace 𝕜 E := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
     refine ⟨ha.relEigenvalues rfl, ha.relEigenvalues_antitone rfl,
       ha.relEigenvectorBasis rfl, fun i j ↦ ⟨?_, ha.apply_relEigenvectorBasis rfl i j⟩⟩
-    exact (hh.innerProductCore_inner hpos _ _).symm.trans
+    exact (hh.inner_ofCore_innerProductCore hpos _ _).symm.trans
       ((ha.relEigenvectorBasis rfl).inner_eq_ite i j)
   · have : IsEmpty (Fin (finrank 𝕜 E)) :=
       Module.isEmpty_of_card_eq_finrank_of_not_finite (Fintype.card_fin _) hE
     exact ⟨isEmptyElim, fun i ↦ isEmptyElim i, isEmptyElim, fun i ↦ isEmptyElim i⟩
-
-/-- A sesquilinear form which is real diagonal in a basis is Hermitian. -/
-private theorem isSymm_of_diag {ι : Type*} [DecidableEq ι]
-    {B : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} (bs : Module.Basis ι 𝕜 E) {w : ι → ℝ}
-    (hB : ∀ i j, B (bs i) (bs j) = if i = j then (w i : 𝕜) else 0) : B.IsSymm := by
-  refine (LinearMap.isSymm_iff_basis bs).2 fun i j ↦ ?_
-  rw [hB, hB]
-  by_cases hij : i = j
-  · subst hij; simp
-  · simp [hij, Ne.symm hij]
 
 open scoped ComplexOrder in
 /-- An eigenvalue vector forces `h` to be a positive definite Hermitian form and `a` to be
@@ -179,13 +174,29 @@ private theorem IsRelEigenvalueVector.isSymm_pos [FiniteDimensional 𝕜 E]
   have hbs (i : Fin (finrank 𝕜 E)) : bs i = b i := Module.Basis.mk_apply _ _ i
   have hh (i j) : h (bs i) (bs j) = if i = j then ((1 : ℝ) : 𝕜) else 0 := by
     simpa [hbs] using (hb i j).1
-  refine ⟨isSymm_of_diag bs hh, fun v hv ↦ ?_,
-    isSymm_of_diag bs (w := μ) fun i j ↦ by simpa [hbs] using (hb i j).2⟩
+  refine ⟨LinearMap.isSymm_of_basis_diag bs hh, fun v hv ↦ ?_,
+    LinearMap.isSymm_of_basis_diag bs (w := μ) fun i j ↦ by simpa [hbs] using (hb i j).2⟩
   have h1 : LinearMap.toMatrix₂ bs bs h = 1 := by
     ext i j
     rw [LinearMap.toMatrix₂_apply, hh, Matrix.one_apply, RCLike.ofReal_one]
   rw [apply_eq_star_dotProduct_toMatrix₂_mulVec bs, h1]
   exact Matrix.PosDef.one.re_dotProduct_pos (by simpa using hv)
+
+/-- **An eigenvalue vector forces a Hermitian reference form.** -/
+theorem IsRelEigenvalueVector.isSymm_left [FiniteDimensional 𝕜 E] {μ : Fin (finrank 𝕜 E) → ℝ}
+    (hμ : IsRelEigenvalueVector (h · ·) (a · ·) μ) : h.IsSymm :=
+  hμ.isSymm_pos.1
+
+/-- **An eigenvalue vector forces a positive definite reference form.** -/
+theorem IsRelEigenvalueVector.re_apply_self_pos [FiniteDimensional 𝕜 E]
+    {μ : Fin (finrank 𝕜 E) → ℝ} (hμ : IsRelEigenvalueVector (h · ·) (a · ·) μ) {v : E}
+    (hv : v ≠ 0) : 0 < RCLike.re (h v v) :=
+  hμ.isSymm_pos.2.1 v hv
+
+/-- **An eigenvalue vector forces a Hermitian form.** -/
+theorem IsRelEigenvalueVector.isSymm_right [FiniteDimensional 𝕜 E] {μ : Fin (finrank 𝕜 E) → ℝ}
+    (hμ : IsRelEigenvalueVector (h · ·) (a · ·) μ) : a.IsSymm :=
+  hμ.isSymm_pos.2.2
 
 /-- **Uniqueness of the sorted eigenvalue vector.** Two decreasingly sorted eigenvalue vectors of
 `a` relative to `h` are equal. -/
@@ -204,7 +215,7 @@ theorem IsRelEigenvalueVector.eq_of_antitone {μ ν : Fin (finrank 𝕜 E) → �
       (hμa : Antitone μ) : ha.relEigenvalues rfl = μ := by
     obtain ⟨b, hb⟩ := hμ
     have hon : Orthonormal 𝕜 b := orthonormal_iff_ite.2 fun i j ↦
-      (hh.innerProductCore_inner hpos _ _).trans (hb i j).1
+      (hh.inner_ofCore_innerProductCore hpos _ _).trans (hb i j).1
     refine ha.relEigenvalues_eq_of_orthonormalBasis rfl
       (OrthonormalBasis.mk hon (hon.linearIndependent.span_eq_top_of_card_eq_finrank'
         (Fintype.card_fin _)).ge) hμa fun i j ↦ ?_
@@ -231,25 +242,34 @@ theorem IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm {μ ν : Fin
   rintro ⟨σ, rfl⟩
   exact hμ.comp_perm σ
 
+/-- **A multiple of a form relative to the form, unbundled.** For any `h`, `s·h` has the eigenvalue
+vector `μ` relative to `h` exactly when `h` has the eigenvalue vector `e = (1, …, 1)` relative to
+itself and `μ = s·e`. -/
+theorem isRelEigenvalueVector_smul_iff {h : E → E → 𝕜} (s : ℝ) {μ : Fin (finrank 𝕜 E) → ℝ} :
+    IsRelEigenvalueVector h (fun u v ↦ (s : 𝕜) * h u v) μ ↔
+      IsRelEigenvalueVector h h 1 ∧ μ = fun _ ↦ s := by
+  constructor
+  · rintro ⟨b, hb⟩
+    refine ⟨⟨b, fun i j ↦ ⟨(hb i j).1, by simpa using (hb i j).1⟩⟩, funext fun i ↦ ?_⟩
+    obtain ⟨h₁, h₂⟩ := hb i i
+    simp only [ite_true] at h₁ h₂
+    rw [h₁, mul_one] at h₂
+    exact_mod_cast h₂.symm
+  · rintro ⟨⟨b, hb⟩, rfl⟩
+    refine ⟨b, fun i j ↦ ⟨(hb i j).1, ?_⟩⟩
+    beta_reduce
+    rw [(hb i j).1]
+    split_ifs <;> simp
+
 /-- **A multiple of a form relative to the form.** For a positive definite Hermitian form `h` and
 `s ∈ ℝ`, `s·h` has the eigenvalue vector `s·e` relative to `h`, and no other. -/
 theorem isRelEigenvalueVector_smul_self_iff (hh : h.IsSymm)
     (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (s : ℝ) {μ : Fin (finrank 𝕜 E) → ℝ} :
     IsRelEigenvalueVector (h · ·) (fun u v ↦ (s : 𝕜) * h u v) μ ↔ μ = fun _ ↦ s := by
-  constructor
-  · rintro ⟨b, hb⟩
-    ext i
-    obtain ⟨h₁, h₂⟩ := hb i i
-    simp only [ite_true] at h₁ h₂
-    rw [h₁, mul_one] at h₂
-    exact_mod_cast h₂.symm
-  · rintro rfl
-    obtain ⟨_, _, b, hb⟩ := exists_isRelEigenvalueVector hh hpos hh
-    refine ⟨b, fun i j ↦ ⟨(hb i j).1, ?_⟩⟩
-    have h₁ := (hb i j).1
-    beta_reduce at h₁ ⊢
-    rw [h₁]
-    split_ifs <;> simp
+  rw [isRelEigenvalueVector_smul_iff]
+  refine and_iff_right ?_
+  obtain ⟨_, _, b, hb⟩ := exists_isRelEigenvalueVector hh hpos hh
+  exact ⟨b, fun i j ↦ ⟨(hb i j).1, by simpa using (hb i j).1⟩⟩
 
 /-- **A form relative to itself.** A positive definite Hermitian form `h` has the eigenvalue vector
 `e = (1, …, 1)` relative to itself, and no other. -/
