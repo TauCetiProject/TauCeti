@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Data.PNat.Prime
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.Data.Int.MulOrderEmbedding
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
 public import TauCeti.RingTheory.HahnSeries.Map
@@ -36,9 +37,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 
 ## Main definitions
 
-* `LaurentSeries.mulOrderEmbedding d`: multiplication by `d` as an order embedding of `ℤ`.
 * `LaurentSeries.expand R d`: the `R`-algebra map `R⸨X⸩ → R⸨X⸩` substituting `X ↦ X ^ d`, the
-  exponent embedding along `mulOrderEmbedding d` (`LaurentSeries.expand_apply`).
+  exponent embedding along `Int.mulOrderEmbedding d` (`LaurentSeries.expand_apply`).
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
 * `LaurentSeries.ramifiedEmbedding R n`: the `R`-algebra map `R⸨X⸩ → HahnSeries ℚ R` substituting
   `X ↦ t ^ (1 / n)`.
@@ -92,36 +92,28 @@ variable (R : Type*) [CommSemiring R]
 
 /-! ### Expansion `X ↦ X ^ d` -/
 
-/-- Multiplication by a positive integer as an order embedding of `ℤ`. -/
-def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
-  OrderEmbedding.ofStrictMono (fun k ↦ (d : ℤ) * k)
-    (strictMono_mul_left_of_pos (by exact_mod_cast d.pos))
-
-theorem mulOrderEmbedding_apply (d : ℕ+) (k : ℤ) : mulOrderEmbedding d k = d * k :=
-  (rfl)
-
 /-- The substitution `X ↦ X ^ d` in Laurent series, sending the coefficient of `X ^ k` to the
 coefficient of `X ^ (d * k)`. -/
 noncomputable def expand (d : ℕ+) : R⸨X⸩ →ₐ[R] R⸨X⸩ where
-  toFun := embDomain (mulOrderEmbedding d)
+  toFun := embDomain (Int.mulOrderEmbedding d)
   map_one' := embDomain_one _ (mul_zero _)
   map_mul' := embDomain_mul _ fun _ _ ↦ mul_add _ _ _
   map_zero' := embDomain_zero
   map_add' := embDomain_add _
-  commutes' r := by simp [algebraMap_apply', mulOrderEmbedding_apply]
+  commutes' r := by simp [algebraMap_apply']
 
 variable {R}
 
 /-- The substitution `X ↦ X ^ d` is the exponent embedding along multiplication by `d`. -/
 theorem expand_apply (d : ℕ+) (f : R⸨X⸩) :
-    expand R d f = embDomain (mulOrderEmbedding d) f :=
+    expand R d f = embDomain (Int.mulOrderEmbedding d) f :=
   (rfl)
 
 /-- The coefficient of `X ^ (d * k)` in `expand R d f` is the coefficient of `X ^ k` in `f`. -/
 @[simp]
 theorem coeff_expand_mul (d : ℕ+) (f : R⸨X⸩) (k : ℤ) :
     (expand R d f).coeff ((d : ℤ) * k) = f.coeff k :=
-  embDomain_coeff (f := mulOrderEmbedding d)
+  embDomain_coeff (f := Int.mulOrderEmbedding d)
 
 /-- The coefficients of `expand R d f` at exponents not divisible by `d` vanish. -/
 theorem coeff_expand_of_not_dvd (d : ℕ+) (f : R⸨X⸩) {k : ℤ} (hk : ¬ (d : ℤ) ∣ k) :
@@ -157,7 +149,7 @@ theorem orderTop_expand (d : ℕ+) (f : R⸨X⸩) :
   | top =>
     obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero d.ne_zero
     simp [hk, succ_nsmul]
-  | coe k => simp [mulOrderEmbedding_apply, ← WithTop.coe_nsmul]
+  | coe k => simp [← WithTop.coe_nsmul]
 
 /-- Expansion is injective. -/
 theorem expand_injective (d : ℕ+) : Function.Injective (expand R d) :=
@@ -200,7 +192,7 @@ theorem expand_expand (d e : ℕ+) (f : R⸨X⸩) :
   rw [expand_apply, expand_apply, expand_apply, embDomain_embDomain]
   congr 1
   ext k
-  simp [mulOrderEmbedding_apply, mul_assoc]
+  simp [mul_assoc]
 
 /-- On power series, expansion of Laurent series is Mathlib's `PowerSeries.expand`. -/
 theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
@@ -545,7 +537,7 @@ theorem ramifiedEmbedding_expand (n d : ℕ+) (f : R⸨X⸩) :
   congr 1
   ext k
   have hd : ((d : ℕ) : ℚ) ≠ 0 := by exact_mod_cast d.ne_zero
-  simp only [RelEmbedding.trans_apply, mulOrderEmbedding_apply, divOrderEmbedding_apply,
+  simp only [RelEmbedding.trans_apply, Int.mulOrderEmbedding_apply, divOrderEmbedding_apply,
     PNat.mul_coe, Int.cast_mul, Int.cast_natCast, Nat.cast_mul]
   field_simp
 
