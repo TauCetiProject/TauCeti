@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.Topology.Algebra.Algebra
+public import TauCeti.Topology.Algebra.Algebra.Subalgebra
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
@@ -52,7 +53,8 @@ approximates `a`.
 ## Main results
 
 * `IsDedekindDomain.FiniteAdeleRing.integralAdeles`: the `R`-subalgebra of integral finite adeles,
-  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, and `isCompact_integralAdeles`.
+  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, `isCompact_integralAdeles`, and the
+  instance `compactSpace_integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
   the local integer rings into the finite adeles, with range `integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, and `mul_apply`: the
@@ -209,6 +211,12 @@ theorem isCompact_integralAdeles
   rw [← range_integralEmbedding]
   exact isCompact_range (continuous_integralEmbedding (R := R) (K := K))
 
+/-- The integral finite adeles form a compact space when every local integer ring is compact. -/
+instance compactSpace_integralAdeles
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)] :
+    CompactSpace (integralAdeles R K) :=
+  isCompact_iff_compactSpace.mp isCompact_integralAdeles
+
 /-! ### `S`-integral finite adeles -/
 
 variable (R K) in
@@ -334,6 +342,15 @@ theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R 
     f - algebraMap K (FiniteAdeleRing R K) (x + algebraMap R K y) ∈ integralAdeles R K := by
   rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
   exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
+
+variable (K) in
+/-- If `R` is not a field, the diagonal map `K → 𝔸_f` is injective: `R` then has a maximal
+ideal, hence a finite place, and `K` embeds in its completion there. -/
+theorem algebraMap_injective (hR : ¬ IsField R) :
+    Function.Injective (algebraMap K (FiniteAdeleRing R K)) := by
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal R
+  let v : HeightOneSpectrum R := ⟨M, hM.isPrime, Ring.ne_bot_of_isMaximal_of_not_isField hM hR⟩
+  exact fun x y h ↦ by simpa using congr($h v)
 
 end IsDedekindDomain.FiniteAdeleRing
 

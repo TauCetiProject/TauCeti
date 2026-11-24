@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Sphere.Connected
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Real projective space as an antipodal quotient
 
@@ -184,14 +186,7 @@ instance instUniqueZero : Unique (RealProjectiveSpace 0) := by
       have := v.property
       rw [Metric.mem_sphere, dist_zero_right] at this
       exact this
-    have h_eval (w : EuclideanSpace ℝ (Fin 1)) : ‖w‖ = |w 0| := by
-      have hsq : ‖w‖^2 = (w 0)^2 := by
-        rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs]
-      have h2 : |w 0|^2 = (w 0)^2 := sq_abs (w 0)
-      have hpos1 : 0 ≤ ‖w‖ := norm_nonneg w
-      have hpos2 : 0 ≤ |w 0| := abs_nonneg (w 0)
-      nlinarith
-    rw [h_eval] at hu_norm hv_norm
+    rw [EuclideanSpace.norm_fin_one] at hu_norm hv_norm
     have hu0 : u.val 0 = 1 ∨ u.val 0 = -1 := sq_eq_one_iff.mp (by
       have := sq_abs (u.val 0)
       rw [hu_norm] at this

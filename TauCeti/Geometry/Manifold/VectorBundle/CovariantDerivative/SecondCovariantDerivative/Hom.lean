@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+public import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -63,6 +64,15 @@ theorem secondCovariantDerivative_eq_hom_apply (hσ : CMDiff ∞ (T% σ))
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     hom_apply covT cov (hD.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)]
+
+/-- The second covariant derivative of a smooth section, as a bilinear map, is the underlying
+bilinear map of the induced Hom covariant derivative of its first covariant derivative. -/
+theorem secondCovariantDerivative_eq_toLinearMap₁₂_hom (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    cov.secondCovariantDerivative covT σ x =
+      ContinuousLinearMap.toLinearMap₁₂ (covT.hom cov (cov σ) x) :=
+  LinearMap.ext₂ fun u v ↦ by
+    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+      secondCovariantDerivative_eq_hom_apply cov covT hσ x u v]
 
 section Third
 

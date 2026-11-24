@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 import Mathlib.Tactic.FinCases
+import TauCeti.LinearAlgebra.Alternating.LinearDependent
 
 /-!
 # Bilinear maps read off multilinear maps in two variables
@@ -40,6 +41,9 @@ map can likewise be read as an `AlternatingMap` on `Fin 2`, and these two readin
   argument; `AlternatingMap.isAlt_toBilinMap` specializes this to alternating maps.
 * `MultilinearMap.toBilinMap_injective`: the other half of "the same data" -- the bilinear map
   determines the multilinear map.
+* `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`: an alternating bilinear map vanishes on a
+  linearly dependent pair when unequal scalars act differently on every nonzero value, the case of
+  two arguments of `AlternatingMap.map_linearDependent_of_smul_left_injective`.
 * `AlternatingMap.toAlternatingMap_isAlt_toBilinMap` and
   `LinearMap.IsAlt.toBilinMap_toAlternatingMap`: the two round trips between alternating maps on
   `Fin 2` and alternating bilinear maps.
@@ -76,6 +80,15 @@ def toAlternatingMap {ω : V →ₗ[R] V →ₗ[R] N} (hω : LinearMap.IsAlt ω)
 theorem toAlternatingMap_apply {ω : V →ₗ[R] V →ₗ[R] N} (hω : LinearMap.IsAlt ω)
     (v : Fin 2 → V) : hω.toAlternatingMap v = ω (v 0) (v 1) :=
   (rfl)
+
+/-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
+act differently on every nonzero value. Over an integral domain acting on torsion-free values in an
+additive group, the latter hypothesis is `fun _ ↦ smul_left_injective R`. This is the case of two
+arguments of `AlternatingMap.map_linearDependent_of_smul_left_injective`. -/
+theorem eq_zero_of_not_linearIndependent {ω : V →ₗ[R] V →ₗ[R] N} (halt : ω.IsAlt)
+    (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) {v w : V}
+    (hvw : ¬LinearIndependent R ![v, w]) : ω v w = 0 := by
+  simpa using halt.toAlternatingMap.map_linearDependent_of_smul_left_injective hN hvw
 
 end IsAlt
 
