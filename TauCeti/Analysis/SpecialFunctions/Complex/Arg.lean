@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -199,26 +200,18 @@ theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
 `1 - exp (θ i) = 2 sin (θ / 2) exp ((θ - π) i / 2)` with `sin (θ / 2) > 0`, it is `(θ - π) / 2`. -/
 theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
     arg (1 - exp (θ * I)) = (θ - π) / 2 := by
-  obtain ⟨t, rfl⟩ : ∃ t, θ = 2 * t := ⟨θ / 2, by ring⟩
-  have hsin : 0 < Real.sin t :=
+  -- `1 - e^{iθ} = -2i e^{iθ/2} sin (θ/2) = 2 sin (θ/2) e^{i(θ - π)/2}`, with `sin (θ/2) > 0`
+  have hfac : 1 - exp (θ * I) =
+      ((2 * Real.sin (θ / 2) : ℝ) : ℂ) * exp (((θ - π) / 2 : ℝ) * I) := by
+    rw [mul_comm (θ : ℂ) I, one_sub_exp_mul_I, show (((θ - π) / 2 : ℝ) : ℂ) * I =
+      I * θ / 2 + -(π / 2) * I by push_cast; ring, Complex.exp_add, ← log_neg_I,
+      exp_log (neg_ne_zero.2 I_ne_zero)]
+    push_cast
+    ring
+  have hsin : 0 < Real.sin (θ / 2) :=
     Real.sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
-  have hcos : Real.cos ((2 * t - π) / 2) = Real.sin t := by
-    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.cos_sub_pi_div_two]
-  have hsin' : Real.sin ((2 * t - π) / 2) = -Real.cos t := by
-    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.sin_sub_pi_div_two]
-  have hfac : 1 - exp ((2 * t : ℝ) * I) =
-      ((2 * Real.sin t : ℝ) : ℂ) *
-        (Real.cos ((2 * t - π) / 2) + Real.sin ((2 * t - π) / 2) * I) := by
-    have h1 : 1 - Real.cos (2 * t) = 2 * Real.sin t * Real.sin t := by
-      rw [Real.cos_two_mul]; nlinarith [Real.sin_sq_add_cos_sq t]
-    have h2 : -Real.sin (2 * t) = 2 * Real.sin t * -Real.cos t := by
-      rw [Real.sin_two_mul]; ring
-    rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, hcos, hsin']
-    apply Complex.ext <;>
-      simp only [sub_re, one_re, add_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_im, one_im,
-        add_im, mul_im] <;> linarith
-  rw [hfac, arg_ofReal_mul (by positivity), ofReal_cos, ofReal_sin,
-    arg_cos_add_sin_mul_I ⟨by linarith [hθ.1, Real.pi_pos], by linarith [hθ.2, Real.pi_pos]⟩]
+  rw [hfac, arg_ofReal_mul (by positivity), arg_exp_mul_I, toIocMod_eq_self]
+  constructor <;> linarith [hθ.1, hθ.2, Real.pi_pos]
 
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :

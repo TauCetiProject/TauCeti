@@ -165,7 +165,9 @@ theorem algebraicDirichletValue_changeLevel {F : Type*} [Field F] [Algebra ℚ F
   set K := IntermediateField.adjoin ℚ (Set.range χ)
   let χK : DirichletCharacter K M := χ.restrictValues
   let j : K →ₐ[ℚ] F := (K.val : K →+* F).toRatAlgHom
-  have hχK : χK.ringHomComp (j : K →+* F) = χ := χ.ringHomComp_restrictValues
+  have hχK : χK.ringHomComp (j : K →+* F) = χ := by
+    rw [RingHom.toRatAlgHom_toRingHom]
+    exact χ.ringHomComp_restrictValues
   -- prove the formula over `K` through a complex embedding `ι`
   let ι : K →ₐ[ℚ] ℂ := IsAlgClosed.lift
   have hK : (changeLevel hMN χK).algebraicDirichletValue k =
