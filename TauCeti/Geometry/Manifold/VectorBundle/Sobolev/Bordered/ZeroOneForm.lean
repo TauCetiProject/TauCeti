@@ -253,7 +253,6 @@ theorem borderedZeroOnePartSobolevL_eq_zero_iff
           Complex.I •
             (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
               volume p k i w z v := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   simp_rw [← halfSectionChartData_image_tangentHom]
   exact SectionChartData.antilinearPartSobolevL_eq_zero_iff _ _
 
