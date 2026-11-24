@@ -1405,14 +1405,6 @@ theorem eventually_curveVelocity_timeDependentFlowOf_eq {α : Type*} [Topologica
     ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with r hr
   exact curveVelocity_timeDependentFlowOf hX hr
 
-end CompleteSpace
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ E] (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
-    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-include hX
-
 /-- The transverse velocity of the trajectories through a curve of initial points is the
 derivative of the flow applied to the velocity of the curve. -/
 theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
@@ -1420,9 +1412,17 @@ theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
     curveVelocity I (fun a ↦ timeDependentFlowOf X s t (c a)) q =
       mfderiv I I (timeDependentFlowOf X s t) (c q) (curveVelocity I c q) := by
   have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) (c q) :=
-    mdifferentiableAt_timeDependentFlowOf hX h
+    (contMDiffAt_timeDependentFlowOf le_rfl hX h).mdifferentiableAt one_ne_zero
   simpa only [curveVelocityWithin_univ, Function.comp_def] using
     curveVelocityWithin_map hφ uniqueDiffWithinAt_univ hc.mdifferentiableWithinAt
+
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℝ E] (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+include hX
 
 /-- **The derivative of the flow is injective.** Wherever the time-dependent flow from `s` to `t`
 is defined at `x`, flowing back from `t` to `s` is a left inverse near `x`, so `dφ_{s, t}` is
