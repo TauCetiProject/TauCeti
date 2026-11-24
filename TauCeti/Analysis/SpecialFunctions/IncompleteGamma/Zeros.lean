@@ -479,7 +479,7 @@ private theorem logGapDeriv2_pos {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n)
   have hV := upperMoment_zero_pos hx a
   -- `ψ'(a) = ψ'(a + 2n) + ∑_{k < 2n} 1 / (a + k)²` with `ψ'(a + 2n) ≥ 0`
   have hrec := Real.deriv_digamma_apply_add_nat (ne_neg_natCast_of_mem_band ha) (2 * n)
-  have hψ := Real.deriv_digamma_nonneg (x := a + (2 * n : ℕ)) fun m h => by
+  have hψ := Real.deriv_digamma_pos (x := a + (2 * n : ℕ)) fun m h => by
     push_cast at h
     linarith [ha.1, (m.cast_nonneg : (0 : ℝ) ≤ m)]
   have ha0 : a < 0 := by linarith [ha.2, (show (1 : ℝ) ≤ n by exact_mod_cast hn)]

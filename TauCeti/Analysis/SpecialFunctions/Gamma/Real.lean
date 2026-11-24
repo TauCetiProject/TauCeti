@@ -31,9 +31,9 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
 * `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
   of the convex function `log ∘ Gamma`.
-* `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_nonneg`:
+* `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_pos`:
   at every regular real point digamma is differentiable, its derivative satisfies the shifted
-  recurrence `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²`, and it is nonnegative.
+  recurrence `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²`, and it is positive.
 * `Real.digamma_one_half`, `Real.digamma_three_halves`, `Real.digamma_one_half_neg`,
   `Real.digamma_three_halves_pos`: the values `ψ(1/2) = -γ - 2 log 2 < 0` and
   `ψ(3/2) = 2 - γ - 2 log 2 > 0`.
@@ -199,16 +199,18 @@ theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ
   simp only [id, div_eq_mul_inv, neg_one_mul, Finset.sum_neg_distrib] at h
   linarith
 
-/-- The derivative of real digamma is nonnegative at every regular real point. -/
-theorem deriv_digamma_nonneg {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 ≤ deriv digamma x := by
-  obtain ⟨n, hn⟩ := exists_nat_gt (-x)
-  have hpos : 0 < x + n := by linarith
+/-- The derivative of real digamma (trigamma) is positive at every regular real point. -/
+theorem deriv_digamma_pos {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 < deriv digamma x := by
+  -- Shift by `n ≥ 1` into the positive axis; the recurrence sum then contains `(x ^ 2)⁻¹ > 0`.
+  obtain ⟨n, hn⟩ := exists_nat_gt (max (-x) 0)
+  have hpos : 0 < x + n := by linarith [le_max_left (-x) 0]
   have h := deriv_digamma_apply_add_nat hx n
   have hmono : 0 ≤ deriv digamma (x + n) := by
     rw [← derivWithin_of_isOpen isOpen_Ioi (Set.mem_Ioi.2 hpos)]
     exact monotoneOn_digamma.derivWithin_nonneg
-  have hsum : 0 ≤ ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ :=
-    Finset.sum_nonneg fun k _ => by positivity
+  have hsum : 0 < ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ :=
+    Finset.sum_pos (fun k _ => inv_pos.2 (sq_pos_iff.2 fun h => hx k (by linarith)))
+      ⟨0, Finset.mem_range.2 (by exact_mod_cast (le_max_right (-x) 0).trans_lt hn)⟩
   linarith
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
