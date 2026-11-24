@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import TauCeti.Topology.Sheaves.KSheaf.Homotopy
+public import TauCeti.Topology.Sheaves.KSheaf.ToPresheaf
 public import TauCeti.Topology.Sets.Compacts
 
 /-!
@@ -146,12 +147,9 @@ private theorem eq_zero_of_forall_map_inf_eq_zero (G : KPresheaf (ModuleCat.{w} 
     refine ih K' (Set.inter_subset_left.trans hKW) (by simp [K', Compacts.coe_finset_sup])
       _ fun b hb ↦ ?_
     -- restricting from `K` to `K' ∩ L b` factors through `K ∩ L b`
-    have e : (opHomOfLE sq.le₃₄ ≫ opHomOfLE (inf_le_left : K' ⊓ L b ≤ K') :
-        op K ⟶ op (K' ⊓ L b)) = opHomOfLE (inf_le_left : K ⊓ L b ≤ K) ≫
-          opHomOfLE (inf_le_inf_right _ inf_le_left : K' ⊓ L b ≤ K ⊓ L b) :=
-      Subsingleton.elim _ _
-    have := congr(($(congr_arg G.map e)).hom x)
-    simpa [hx b (Finset.mem_insert_of_mem hb)] using this
+    rw [map_opHomOfLE_comp_map_opHomOfLE_apply, ← map_opHomOfLE_comp_map_opHomOfLE_apply G
+      (inf_le_left : K ⊓ L b ≤ K) (inf_le_inf_right _ inf_le_left),
+      hx b (Finset.mem_insert_of_mem hb), map_zero]
 
 variable [WeaklyLocallyCompactSpace X]
 
@@ -189,14 +187,10 @@ private theorem isZero_obj_of_forall_isZero_singleton_aux (G : KPresheaf (Module
   obtain ⟨t, ht, hKt⟩ := K.isCompact.elim_nhds_subcover (fun p ↦ M p) hM
   refine eq_zero_of_forall_map_inf_eq_zero G hbot hpb M t K hKW hKt _ fun p hp ↦ ?_
   -- restricting from `L` to `K ∩ M p` factors through `M p`
-  have e : ((G.coconeOfCompacts K).ι.app ⟨L, hL⟩ ≫ G.map (opHomOfLE inf_le_left) :
-      G.obj (op L) ⟶ G.obj (op (K ⊓ M p))) =
-        G.map (opHomOfLE (hML p (ht p hp))) ≫ G.map (opHomOfLE inf_le_right) := by
-    simp only [coconeOfCompacts_ι_app, ← G.map_comp]
-    exact congr_arg G.map (Subsingleton.elim _ _)
-  have := congr(($e).hom y)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, hMy p (ht p hp), map_zero] at this
-  exact this
+  refine (map_opHomOfLE_comp_map_opHomOfLE_apply G (Compacts.subset_of_mem_compactNhds hL)
+    inf_le_left y).trans ?_
+  rw [← map_opHomOfLE_comp_map_opHomOfLE_apply G (hML p (ht p hp)) inf_le_right, hMy p (ht p hp),
+    map_zero]
 
 /-- A K-sheaf of modules on a locally compact Hausdorff space whose stalks `G({x})` all vanish is
 zero. -/
