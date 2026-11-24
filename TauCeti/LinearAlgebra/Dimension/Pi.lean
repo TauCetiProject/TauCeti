@@ -84,10 +84,8 @@ theorem Module.rank_pi_ideal {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) :
   have hscale : Function.Injective scale := by
     refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ funext fun i ↦ ?_
     have := congrArg Subtype.val (congrFun hv i)
-    simp only [scale, LinearMap.pi_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.coe_proj, Function.eval, LinearMap.toSpanSingleton_apply, SetLike.mk_smul_mk,
-      smul_eq_mul, Pi.zero_apply, ZeroMemClass.coe_zero] at this
-    exact (mul_eq_zero.mp this).resolve_right (ha0 i)
+    simp [scale] at this
+    exact this.resolve_right (ha0 i)
   apply le_antisymm
   · simpa [rank_fun'] using incl.lift_rank_le_of_injective hincl
   · simpa [rank_fun'] using scale.lift_rank_le_of_injective hscale

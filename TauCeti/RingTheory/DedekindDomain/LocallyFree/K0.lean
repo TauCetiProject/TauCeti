@@ -129,10 +129,7 @@ noncomputable def rankSteinitzEquiv :
   invFun := rankSteinitzInv A
   left_inv := DFunLike.congr_fun (show (rankSteinitzInv A).comp (rankSteinitz A) =
       AddMonoidHom.id _ from SplitK0.hom_ext fun P ↦ by
-    simp only [rankSteinitzInv, AddMonoidHom.coe_comp, Function.comp_apply, rankSteinitz_of,
-      AddMonoidHom.coprod_apply, zmultiplesHom_apply, natCast_zsmul, idealClassHom_steinitzClass,
-      classOf_def, AddMonoidHom.id_apply]
-    exact add_sub_cancel _ _)
+    simp [rankSteinitzInv, idealClassHom_steinitzClass, classOf_def])
   right_inv p := by
     simp only [rankSteinitzInv, AddMonoidHom.coprod_apply, zmultiplesHom_apply, map_add,
       map_zsmul, rankSteinitz_regular, rankSteinitz_idealClassHom]
@@ -146,6 +143,7 @@ theorem rankSteinitzEquiv_apply (x : SplitK0.{u} (finiteProjectiveModules A).Ful
 
 /-- The inverse of the rank–Steinitz isomorphism sends `(n, c)` to `n[A]` plus the reduced ideal
 class `c`. -/
+@[simp]
 theorem rankSteinitzEquiv_symm_apply (p : ℤ × Additive (ClassGroup A)) :
     (rankSteinitzEquiv A).symm p =
       p.1 • SplitK0.of
