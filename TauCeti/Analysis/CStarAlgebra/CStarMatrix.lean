@@ -53,7 +53,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices.
+  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
@@ -442,6 +442,11 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+/-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
+theorem norm_toOneByOne (a : A) : ‖toOneByOne (Fin 1) ℂ A a‖ = ‖a‖ :=
+  NonUnitalStarAlgHom.norm_map (toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
+    (toOneByOne (Fin 1) ℂ A).injective a
 
 open scoped ComplexOrder in
 /-- The entrywise image of the scalar matrix `x` under `z ↦ z • a` has norm at most `‖x‖ ‖a‖`.

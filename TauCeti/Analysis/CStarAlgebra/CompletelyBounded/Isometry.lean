@@ -109,26 +109,13 @@ theorem IsCompleteIsometry.norm_map {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsom
     {κ : Type*} [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ = ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
-    ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
+  rw [← norm_map_reindexₐ φ e, ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact hφ _ _
 
 /-- A complete isometry is isometric. -/
 theorem IsCompleteIsometry.norm_apply {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) (a : A) :
     ‖φ a‖ = ‖a‖ := by
-  let eA := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
-  let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
-  have hmap : eB (φ a) = (eA a).map φ := by
-    ext i j
-    -- As in `norm_apply_le_cbNorm_mul`: the instances `toOneByOne` is stated with differ
-    -- syntactically from those `toNonUnitalStarAlgHom` expects, so unfold the coercion.
-    change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
-      φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
-    simp
-  rw [← NonUnitalStarAlgHom.norm_map eB (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective, hmap,
-    ← NonUnitalStarAlgHom.norm_map eA (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a]
+  rw [← norm_map_toOneByOne φ a, ← CStarMatrix.norm_toOneByOne a]
   exact hφ 1 _
 
 /-- A complete isometry is an isometry. -/
