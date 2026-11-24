@@ -30,6 +30,18 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+/-- Left-multiplying an element of `D.weylSubgroup A` by an actual torus point commutes past it to
+a right-multiplied actual torus point. -/
+theorem exists_torusPoints_mul_eq_mul_torusPoints_of_mem_weylSubgroup
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) {n : D.points A}
+    (hn : n ∈ D.weylSubgroup A) :
+    ∃ s' : Fin t.rank → Aˣ, D.torusPoints A s * n = n * D.torusPoints A s' := by
+  have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints A (inv_mem hn)
+  obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints A s)).mp ⟨s, rfl⟩
+  refine ⟨s', ?_⟩
+  rw [hs']
+  group
+
 /-- Every element of `D.weylSubgroup A` is a positive word in the pinned simple Weyl
 representatives followed by a point of the actual torus, over every commutative ring. -/
 theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints (A : Type v) [CommRing A]
@@ -39,20 +51,6 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints (A : Type v) [Comm
         (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod *
           D.torusPoints A s = g := by
   let r : Fin t.rank → D.points A := fun i => D.weylElement (t.simpleIndex ht i) A 1
-  have htorus_mul (s₀ : Fin t.rank → Aˣ) (l : List (Fin t.rank)) (s : Fin t.rank → Aˣ) :
-      ∃ s' : Fin t.rank → Aˣ,
-        D.torusPoints A s₀ * ((l.map r).prod * D.torusPoints A s) =
-          (l.map r).prod * D.torusPoints A s' := by
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints A
-      (inv_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l))
-    obtain ⟨s₁, hs₁⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints A s₀)).mp
-      ⟨s₀, rfl⟩
-    refine ⟨s₁ * s, ?_⟩
-    have hcomm : D.torusPoints A s₀ * (l.map r).prod = (l.map r).prod * D.torusPoints A s₁ := by
-      rw [hs₁]
-      dsimp only [r]
-      group
-    rw [← mul_assoc, hcomm, mul_assoc, (D.torusPoints A).map_mul]
   constructor
   · intro hg
     rw [D.weylSubgroup_def] at hg
@@ -62,26 +60,30 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints (A : Type v) [Comm
     | mul_left x hx y _ ih =>
       obtain ⟨l, s, rfl⟩ := ih
       rcases hx with ⟨s₀, rfl⟩ | ⟨i, rfl⟩
-      · obtain ⟨s', hs'⟩ := htorus_mul s₀ l s
-        exact ⟨l, s', hs'.symm⟩
+      · obtain ⟨s', hs'⟩ := D.exists_torusPoints_mul_eq_mul_torusPoints_of_mem_weylSubgroup A s₀
+          (D.list_prod_map_weylElement_mem_weylSubgroup A l)
+        exact ⟨l, s' * s, by rw [(D.torusPoints A).map_mul, ← mul_assoc, ← hs', mul_assoc]⟩
       · exact ⟨i :: l, s, by simp [mul_assoc]⟩
     | inv_mul_cancel x hx y _ ih =>
       obtain ⟨l, s, rfl⟩ := ih
       rcases hx with ⟨s₀, rfl⟩ | ⟨i, rfl⟩
-      · rw [← map_inv]
-        obtain ⟨s', hs'⟩ := htorus_mul s₀⁻¹ l s
-        exact ⟨l, s', hs'.symm⟩
+      · obtain ⟨s', hs'⟩ := D.exists_torusPoints_mul_eq_mul_torusPoints_of_mem_weylSubgroup A s₀⁻¹
+          (D.list_prod_map_weylElement_mem_weylSubgroup A l)
+        exact ⟨l, s' * s, by
+          rw [← map_inv, (D.torusPoints A).map_mul, ← mul_assoc, ← hs', mul_assoc]⟩
       · have hri_inv : (r i)⁻¹ =
             r i * D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹ := by
           apply inv_eq_of_mul_eq_one_right
           rw [← mul_assoc, D.weylElement_mul_self i A, D.simpleCorootPoints_eq_torusPoints,
             ← (D.torusPoints A).map_mul, mul_inv_cancel, map_one]
-        rw [hri_inv, mul_assoc]
-        obtain ⟨s', hs'⟩ := htorus_mul (D.simpleCorootParameter i A (-1))⁻¹ l s
-        refine ⟨i :: l, s', ?_⟩
+        obtain ⟨s', hs'⟩ := D.exists_torusPoints_mul_eq_mul_torusPoints_of_mem_weylSubgroup A
+          (D.simpleCorootParameter i A (-1))⁻¹
+          (D.list_prod_map_weylElement_mem_weylSubgroup A l)
+        refine ⟨i :: l, s' * s, ?_⟩
         dsimp only [r] at hs' ⊢
         simp only [List.map_cons, List.prod_cons, mul_assoc]
-        rw [← hs']
+        rw [hri_inv, mul_assoc, (D.torusPoints A).map_mul, ← mul_assoc _ (D.torusPoints A s'),
+          ← hs', mul_assoc]
   · rintro ⟨l, s, rfl⟩
     exact mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
       (D.torusPoints_mem_weylSubgroup A s)
