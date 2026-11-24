@@ -63,6 +63,10 @@ The fibre of the first pullback projection has the same `Set.ncard` as the origi
 (`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
 identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
+
+A set of lists built from an optional empty list `[]` and disjoint `List.cons a` images over a
+finite set `T` has cardinality `(if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard`
+(`Set.ncard_nil_union_biUnion_cons`).
 -/
 
 public section
@@ -257,6 +261,29 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
+
+/-- Cardinality of the disjoint union of an optional empty list `[]` (present when `P` holds) and
+cons-images `List.cons a '' S a` over `a ∈ T`. -/
+theorem ncard_nil_union_biUnion_cons {α : Type*} (P : Prop) [Decidable P]
+    {T : Set α} (hT : T.Finite) {S : α → Set (List α)} (hS : ∀ a ∈ T, (S a).Finite) :
+    ({u : List α | u = [] ∧ P} ∪ ⋃ a ∈ T, List.cons a '' S a).ncard =
+      (if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard := by
+  have hdisj : Disjoint {u : List α | u = [] ∧ P} (⋃ a ∈ T, List.cons a '' S a) := by
+    rw [disjoint_left]
+    rintro _ ⟨rfl, -⟩ h
+    simp at h
+  have hpair : T.PairwiseDisjoint fun a => List.cons a '' S a := by
+    intro a _ b _ hab
+    rw [Function.onFun, disjoint_left]
+    rintro _ ⟨u, -, rfl⟩ ⟨v, -, h⟩
+    exact hab (List.cons.inj h).1.symm
+  rw [ncard_union_eq hdisj ((finite_singleton []).subset fun _ hu => hu.1)
+    (hT.biUnion fun a ha => (hS a ha).image _),
+    hT.ncard_biUnion (fun a ha => (hS a ha).image _) hpair]
+  congr 1
+  · split_ifs with h <;> simp [h]
+  · simp only [ncard_image_of_injective _ List.cons_injective]
+    rw [finsum_mem_eq_finite_toFinset_sum _ hT]
 
 end Set
 

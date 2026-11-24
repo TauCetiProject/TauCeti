@@ -14,6 +14,7 @@ public import TauCeti.Dynamics.OrderedSimplex.Branch
 
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Data.List.TakeWhile
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Set.List
@@ -22,6 +23,7 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import TauCeti.Data.List.Infix
+import TauCeti.Data.Set.Card
 import TauCeti.Order.Fin.Basic
 import TauCeti.Order.Northcott.Basic
 import TauCeti.Order.Northcott.Prod
@@ -83,9 +85,11 @@ linear maps.
 * `TauCeti.mem_support_wordCount_branchMap_iff`, `TauCeti.finite_support_wordCount_branchMap`,
   `TauCeti.wordCount_eq_add_finsum`, `TauCeti.wordCount_eq_add_tsum`: the renewal equation, a
   finite sum at each `r`.
-* `TauCeti.unaccelWordMove_injective`, `TauCeti.expandWord_injective`,
-  `TauCeti.wordMove_injective`, `TauCeti.range_wordMove`, `TauCeti.wordCount_simplexChart_eq`:
-  semigroup freeness and the homogeneous renewal count formula.
+* `TauCeti.unaccelWordMove_injective`, `TauCeti.unaccelWordMoveConeSpan_injective`,
+  `TauCeti.expandWord_injective`, `TauCeti.range_expandWord`, `TauCeti.wordMove_injective`,
+  `TauCeti.wordMoveConeSpan_injective`, `TauCeti.range_wordMove`,
+  `TauCeti.wordCount_simplexChart_eq`: semigroup freeness, range of `expandWord`, and the
+  homogeneous renewal count formula.
 
 ## References
 
@@ -321,11 +325,11 @@ theorem unaccelWordMove_mapsTo_orderedCone (js : List (Fin (d + 1))) :
 /-- Every unaccelerated linear word move preserves the hyperplane `coneSpan d`. -/
 theorem unaccelWordMove_mem_coneSpan (js : List (Fin (d + 1))) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) : unaccelWordMove js y ∈ coneSpan d := by
-  induction js generalizing y with
+  induction js using List.reverseRecOn with
   | nil => exact hy
-  | cons j _ ih =>
-    rw [unaccelWordMove_cons_apply]
-    exact ih (linearMove_mem_coneSpan j y)
+  | append_singleton js j _ =>
+    rw [unaccelWordMove_append, mul_apply_eq_comp, unaccelWordMove_singleton]
+    exact linearMove_mem_coneSpan j _
 
 /-- Every unaccelerated linear word move maps `coneSpan d` into itself. -/
 theorem unaccelWordMove_mapsTo_coneSpan (js : List (Fin (d + 1))) :
@@ -412,11 +416,11 @@ theorem wordMove_mapsTo_orderedCone (u : List (ℕ × Fin d)) :
 /-- Every accelerated linear word move preserves the hyperplane `coneSpan d`. -/
 theorem wordMove_mem_coneSpan (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) : wordMove u y ∈ coneSpan d := by
-  induction u generalizing y with
+  induction u using List.reverseRecOn with
   | nil => exact hy
-  | cons a _ ih =>
-    rw [wordMove_cons_apply]
-    exact ih (accelMove_mem_coneSpan a y)
+  | append_singleton u a _ =>
+    rw [wordMove_append, mul_apply_eq_comp, wordMove_singleton]
+    exact accelMove_mem_coneSpan a _
 
 /-- Every accelerated linear word move maps `coneSpan d` into itself. -/
 theorem wordMove_mapsTo_coneSpan (u : List (ℕ × Fin d)) :
@@ -616,27 +620,6 @@ theorem finite_support_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ order
     fun a ha =>
       fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)
 
-private theorem ncard_nil_union_biUnion_cons {α : Type*} (P : Prop) [Decidable P]
-    {T : Set α} (hT : T.Finite) {S : α → Set (List α)} (hS : ∀ a ∈ T, (S a).Finite) :
-    ({u : List α | u = [] ∧ P} ∪ ⋃ a ∈ T, List.cons a '' S a).ncard =
-      (if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard := by
-  have hdisj : Disjoint {u : List α | u = [] ∧ P} (⋃ a ∈ T, List.cons a '' S a) := by
-    rw [disjoint_left]
-    rintro _ ⟨rfl, -⟩ h
-    simp at h
-  have hpair : T.PairwiseDisjoint fun a => List.cons a '' S a := by
-    intro a _ b _ hab
-    rw [Function.onFun, disjoint_left]
-    rintro _ ⟨u, -, rfl⟩ ⟨v, -, h⟩
-    exact hab (List.cons.inj h).1.symm
-  rw [ncard_union_eq hdisj ((finite_singleton []).subset fun _ hu => hu.1)
-    (hT.biUnion fun a ha => (hS a ha).image _),
-    hT.ncard_biUnion (fun a ha => (hS a ha).image _) hpair]
-  congr 1
-  · split_ifs with h <;> simp [h]
-  · simp only [ncard_image_of_injective _ List.cons_injective]
-    rw [finsum_mem_eq_finite_toFinset_sum _ hT]
-
 /-- **The renewal equation** `N (w, r) = 1{r ≥ 0} + ∑_a N (F_a w, r - τ_a (w))` on the simplex:
 the empty word counts exactly when `r ≥ 0`, and a nonempty word `a :: u` counts exactly when `u`
 counts at `F_a w` with the delay `τ_a (w)` subtracted. The sum is finite
@@ -823,6 +806,17 @@ theorem unaccelWordMove_injective {d : ℕ} (hd : 1 ≤ d) :
     Function.Injective (unaccelWordMove (d := d)) := fun _ _ hEq =>
   unaccelWordMove_apply_injective hd (strictOrderedConePoint_mem hd) (by dsimp only; rw [hEq])
 
+/-- For `1 ≤ d`, distinct unaccelerated words induce distinct linear maps on `coneSpan d`
+(freeness of the restricted unaccelerated semigroup). -/
+theorem unaccelWordMoveConeSpan_injective {d : ℕ} (hd : 1 ≤ d) :
+    Function.Injective (unaccelWordMoveConeSpan (d := d)) := fun _ _ hEq =>
+  unaccelWordMove_apply_injective hd (strictOrderedConePoint_mem hd) <| by
+    have h := congrArg
+      (fun f : Module.End ℝ (coneSpan d) =>
+        (f ⟨strictOrderedConePoint d, (strictOrderedConePoint_mem hd).2.2⟩ :
+          Fin (d + 2) → ℝ)) hEq
+    simpa only [coe_unaccelWordMoveConeSpan_apply] using h
+
 /-- Expansion of an accelerated word into its underlying unaccelerated word in `Fin (d + 1)`. -/
 def expandWord : List (ℕ × Fin d) → List (Fin (d + 1))
   | [] => []
@@ -903,9 +897,54 @@ theorem expandWord_injective : Function.Injective (expandWord (d := d)) := by
         (expandWord_head?_ne_last v₁) (expandWord_head?_ne_last v₂)).1 h.2 with ⟨hA, hv⟩
       rw [Prod.ext hA (Fin.castSucc_injective d h.1), ih hv]
 
-/-- Distinct accelerated words induce distinct linear maps on `Fin (d + 2) → ℝ` for every `d : ℕ`
-(freeness of the accelerated semigroup). -/
-theorem wordMove_injective (d : ℕ) : Function.Injective (wordMove (d := d)) := by
+/-- An unaccelerated word lies in the range of `expandWord` if and only if its `head?` differs
+from `some (Fin.last d)`. -/
+theorem range_expandWord (d : ℕ) :
+    Set.range (expandWord (d := d)) =
+      {js : List (Fin (d + 1)) | js.head? ≠ some (Fin.last d)} := by
+  ext js
+  refine ⟨?_, fun hjs => ?_⟩
+  · rintro ⟨u, rfl⟩
+    exact expandWord_head?_ne_last u
+  · suffices ∀ n (js : List (Fin (d + 1))),
+        js.length ≤ n → js.head? ≠ some (Fin.last d) →
+        ∃ u : List (ℕ × Fin d), expandWord u = js from this js.length js le_rfl hjs
+    intro n
+    induction n with
+    | zero =>
+      intro js hlen _
+      exact ⟨[], by cases js <;> simp_all⟩
+    | succ n ih =>
+      intro js hlen hhead
+      cases js with
+      | nil => exact ⟨[], rfl⟩
+      | cons k t =>
+        have hk : k ≠ Fin.last d := by simpa using hhead
+        obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hk
+        set p : Fin (d + 1) → Bool := (· == Fin.last d)
+        set pref := t.takeWhile p
+        set rest := t.dropWhile p
+        have hpref : pref = List.replicate pref.length (Fin.last d) := by
+          refine List.eq_replicate_iff.2 ⟨rfl, fun x hx => ?_⟩
+          simpa [p] using List.mem_takeWhile_imp hx
+        have hrest_head : rest.head? ≠ some (Fin.last d) := fun h => by
+          obtain ⟨t', ht'⟩ := List.head?_eq_some_iff.1 h
+          have h0 := List.head?_dropWhile_not (l := t) (p := p)
+          rw [show t.dropWhile p = Fin.last d :: t' from ht'] at h0
+          simp [p] at h0
+        have hrest_len : rest.length ≤ n := by
+          have : rest.length ≤ t.length := List.length_dropWhile_le p t
+          simp only [List.length_cons] at hlen
+          omega
+        obtain ⟨v, hv⟩ := ih rest hrest_len hrest_head
+        refine ⟨(pref.length, j) :: v, ?_⟩
+        rw [expandWord_cons, ← hpref, hv]
+        simp [pref, rest, List.takeWhile_append_dropWhile]
+
+/-- Distinct accelerated words induce distinct linear maps on `coneSpan d` for every `d : ℕ`
+(freeness of the restricted accelerated semigroup). -/
+theorem wordMoveConeSpan_injective (d : ℕ) :
+    Function.Injective (wordMoveConeSpan (d := d)) := by
   cases d with
   | zero =>
     rintro (_ | ⟨a, _⟩) (_ | ⟨b, _⟩) _
@@ -915,8 +954,15 @@ theorem wordMove_injective (d : ℕ) : Function.Injective (wordMove (d := d)) :=
     · exact Fin.elim0 a.2
   | succ d =>
     intro u₁ u₂ h
-    exact expandWord_injective <| unaccelWordMove_injective (Nat.succ_pos d) <| by
-      rw [unaccelWordMove_expandWord, unaccelWordMove_expandWord, h]
+    exact expandWord_injective <| unaccelWordMoveConeSpan_injective (Nat.succ_pos d) <| by
+      rw [unaccelWordMoveConeSpan_expandWord, unaccelWordMoveConeSpan_expandWord, h]
+
+/-- Distinct accelerated words induce distinct linear maps on `Fin (d + 2) → ℝ` for every
+`d : ℕ` (freeness of the accelerated semigroup). -/
+theorem wordMove_injective (d : ℕ) : Function.Injective (wordMove (d := d)) :=
+  fun _ _ h => wordMoveConeSpan_injective d <| by
+    ext y i
+    simp [h]
 
 /-- The range of `wordMove` is the submonoid of endomorphisms generated by `accelMove`. -/
 theorem range_wordMove (d : ℕ) :
@@ -950,6 +996,11 @@ theorem wordCount_simplexChart_eq {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedC
           Set ((Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ))) |
         T y (Fin.last (d + 1)) ≤ Real.exp r * y (Fin.last (d + 1))}.ncard := by
   have hypos := pos_last_of_mem_orderedCone hy
+  have hcut (u : List (ℕ × Fin d)) :
+      wordDelay u (simplexChart y) ≤ r ↔
+        wordMove u y (Fin.last (d + 1)) ≤ Real.exp r * y (Fin.last (d + 1)) := by
+    rw [wordMove_last_eq u hy, mul_comm (Real.exp r), mul_le_mul_iff_right₀ hypos,
+      Real.exp_le_exp]
   have himg :
       (wordMove (d := d)) '' {u : List (ℕ × Fin d) | wordDelay u (simplexChart y) ≤ r} =
         {T ∈ (Submonoid.closure (Set.range (accelMove (d := d))) :
@@ -959,13 +1010,9 @@ theorem wordCount_simplexChart_eq {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedC
     simp only [mem_image, mem_ofPred_eq, ← range_wordMove d, Set.mem_range]
     refine ⟨?_, ?_⟩
     · rintro ⟨u, hu, rfl⟩
-      refine ⟨⟨u, rfl⟩, ?_⟩
-      rw [wordMove_last_eq u hy, mul_comm (Real.exp r)]
-      exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 hu) hypos.le
+      exact ⟨⟨u, rfl⟩, (hcut u).1 hu⟩
     · rintro ⟨⟨u, rfl⟩, hT⟩
-      refine ⟨u, ?_, rfl⟩
-      rw [wordMove_last_eq u hy, mul_comm (Real.exp r)] at hT
-      exact Real.exp_le_exp.1 (le_of_mul_le_mul_left hT hypos)
+      exact ⟨u, (hcut u).2 hT, rfl⟩
   rw [wordCount_def, ← Set.ncard_image_of_injective _ (wordMove_injective d), himg]
 
 end TauCeti
