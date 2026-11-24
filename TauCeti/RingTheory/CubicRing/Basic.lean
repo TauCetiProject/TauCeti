@@ -321,15 +321,17 @@ noncomputable def basis (f : Cubic R) : Module.Basis (Fin 3) R f.CubicRing :=
   .ofEquivFun (linearEquivTuple f)
 
 @[simp] theorem basis_repr_apply (x : f.CubicRing) :
-    (basis f).repr x = ![x.c₀, x.c₁, x.c₂] := (rfl)
+    (basis f).repr x = ![x.c₀, x.c₁, x.c₂] := by
+  funext i
+  exact Module.Basis.ofEquivFun_repr_apply _ _ _
 
-@[simp] theorem basis_zero : basis f 0 = 1 := by
+@[simp] theorem basis_apply_zero : basis f 0 = 1 := by
   ext <;> simp [basis]
 
-@[simp] theorem basis_one : basis f 1 = omega := by
+@[simp] theorem basis_apply_one : basis f 1 = omega := by
   ext <;> simp [basis]
 
-@[simp] theorem basis_two : basis f 2 = theta := by
+@[simp] theorem basis_apply_two : basis f 2 = theta := by
   ext <;> simp [basis]
 
 instance : Module.Free R f.CubicRing := .of_basis (basis f)
@@ -348,14 +350,19 @@ is that of Bhargava, Shankar and Tsimerman: see `CubicRing.neg_omega_mul_neg_the
 noncomputable def negBasis (f : Cubic R) : Module.Basis (Fin 3) R f.CubicRing :=
   (basis f).unitsSMul ![1, -1, -1]
 
-@[simp] theorem negBasis_zero : negBasis f 0 = 1 := by
+@[simp] theorem negBasis_apply_zero : negBasis f 0 = 1 := by
   simp [negBasis, Module.Basis.unitsSMul_apply]
 
-@[simp] theorem negBasis_one : negBasis f 1 = -omega := by
+@[simp] theorem negBasis_apply_one : negBasis f 1 = -omega := by
   simp [negBasis, Module.Basis.unitsSMul_apply]
 
-@[simp] theorem negBasis_two : negBasis f 2 = -theta := by
+@[simp] theorem negBasis_apply_two : negBasis f 2 = -theta := by
   simp [negBasis, Module.Basis.unitsSMul_apply]
+
+@[simp] theorem negBasis_repr_apply (x : f.CubicRing) :
+    (negBasis f).repr x = ![x.c₀, -x.c₁, -x.c₂] := by
+  funext i
+  fin_cases i <;> simp [negBasis, Module.Basis.repr_unitsSMul]
 
 /-- In the negated basis, `(-ω)(-θ) = -a d`. -/
 theorem neg_omega_mul_neg_theta :
@@ -366,13 +373,15 @@ theorem neg_omega_mul_neg_theta :
 theorem neg_omega_mul_neg_omega :
     (-omega : f.CubicRing) * -omega =
       algebraMap R _ (-(f.a * f.c)) - f.b • -omega + f.a • -theta := by
-  rw [neg_mul_neg, omega_mul_omega, smul_neg, smul_neg, sub_neg_eq_add, ← sub_eq_add_neg]
+  rw [neg_mul_neg, omega_mul_omega]
+  module
 
 /-- In the negated basis, `(-θ)² = -b d - d (-ω) + c (-θ)`. -/
 theorem neg_theta_mul_neg_theta :
     (-theta : f.CubicRing) * -theta =
       algebraMap R _ (-(f.b * f.d)) - f.d • -omega + f.c • -theta := by
-  rw [neg_mul_neg, theta_mul_theta, smul_neg, smul_neg, sub_neg_eq_add, ← sub_eq_add_neg]
+  rw [neg_mul_neg, theta_mul_theta]
+  module
 
 /-! ### The universal property -/
 
@@ -499,8 +508,8 @@ end map
 theorem trace_apply (x : f.CubicRing) :
     Algebra.trace R f.CubicRing x = 3 * x.c₀ + f.b * x.c₁ - f.c * x.c₂ := by
   rw [Algebra.trace_eq_matrix_trace (basis f), Matrix.trace_fin_three]
-  simp only [Algebra.leftMulMatrix_eq_repr_mul, basis_zero, basis_one, basis_two,
-    basis_repr_apply]
+  simp only [Algebra.leftMulMatrix_eq_repr_mul, basis_apply_zero, basis_apply_one,
+    basis_apply_two, basis_repr_apply]
   simp
   ring
 
@@ -508,8 +517,8 @@ theorem trace_apply (x : f.CubicRing) :
 the discriminant `b²c² - 4ac³ - 4b³d - 27a²d² + 18abcd` of the form `f`. -/
 theorem discr_basis : Algebra.discr R (basis f) = f.discr := by
   rw [Algebra.discr_def, Matrix.det_fin_three]
-  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply, basis_zero, basis_one,
-    basis_two, trace_apply]
+  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply, basis_apply_zero,
+    basis_apply_one, basis_apply_two, trace_apply]
   simp [Cubic.discr]
   ring
 
@@ -517,8 +526,8 @@ theorem discr_basis : Algebra.discr R (basis f) = f.discr := by
 also the discriminant of `f`. -/
 theorem discr_negBasis : Algebra.discr R (negBasis f) = f.discr := by
   rw [Algebra.discr_def, Matrix.det_fin_three]
-  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply, negBasis_zero, negBasis_one,
-    negBasis_two, trace_apply]
+  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply,
+    negBasis_apply_zero, negBasis_apply_one, negBasis_apply_two, trace_apply]
   simp [Cubic.discr]
   ring
 
