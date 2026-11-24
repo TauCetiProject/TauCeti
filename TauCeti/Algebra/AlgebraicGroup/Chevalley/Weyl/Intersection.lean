@@ -21,7 +21,7 @@ subgroup `D.positivePoints A` meets `D.weylSubgroup A` trivially.
 When `A` is nontrivial, writing any `g ∈ B(A) ∩ N(A)` as a Weyl word times an actual torus point
 puts the Weyl word in `B(A)`. By `ChevalleyDatum.geckWeylWordProd_eq_one_of_mem_borelSubgroup`, the
 word spells `1` in `W`, so `D.weylQuotientMulEquiv A` sends `[g]` to `1`. Hence `g ∈ T_D(A)`.
-Combining `B(A) ∩ N(A) = T_D(A)` with `U(A) ∩ T_D(A) = ⊥` from `Chevalley.Borel` gives
+Combining `B(A) ∩ N(A) = T_D(A)` with `U(A) ∩ T_D(A) = ⊥` from `Chevalley.Opposite` gives
 `U(A) ∩ N(A) = ⊥`, and over fields `D.ker_weylProjection` yields `D.weylProjection K g = 1` for
 `g ∈ B(K) ∩ N(K)`.
 
