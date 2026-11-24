@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
@@ -176,13 +177,12 @@ theorem isUniformLattice_iff_discreteTopology_and_compactSpace [IsTopologicalGro
   obtain ⟨K, hK, hKΓ⟩ := QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ.mp hc
   have : Countable Γ := countable_of_Lindelof_of_discrete
   obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op μ
-  refine ⟨⟨hd, s, hs, ?_⟩, K, hK, hKΓ⟩
-  calc μ s ≤ μ (⋃ γ : Γ.op, γ • K ∩ s) := measure_mono fun x hx ↦ ?_
-    _ ≤ ∑' γ : Γ.op, μ (γ • K ∩ s) := measure_iUnion_le _
-    _ = μ K := (hs.measure_eq_tsum K).symm
-    _ < ∞ := hK.measure_lt_top
-  obtain ⟨k, hk, γ, hγ, rfl⟩ : x ∈ K * (Γ : Set G) := hKΓ ▸ mem_univ x
-  refine mem_iUnion.mpr ⟨⟨MulOpposite.op γ, Subgroup.mem_op.mpr hγ⟩, ⟨k, hk, ?_⟩, hx⟩
-  simp only [Subgroup.mk_smul, op_smul_eq_mul]
+  -- `K * Γ = G` says the right `Γ`-translates of `K` cover `G`
+  have hcov : s ⊆ ⋃ γ : Γ.op, γ • K := fun x _ ↦ by
+    obtain ⟨k, hk, γ, hγ, rfl⟩ : x ∈ K * (Γ : Set G) := hKΓ ▸ mem_univ x
+    refine mem_iUnion.mpr ⟨⟨MulOpposite.op γ, Subgroup.mem_op.mpr hγ⟩, k, hk, ?_⟩
+    simp only [Subgroup.mk_smul, op_smul_eq_mul]
+  exact ⟨⟨hd, s, hs, (hs.measure_le_of_subset_iUnion_smul hcov).trans_lt hK.measure_lt_top⟩,
+    K, hK, hKΓ⟩
 
 end Subgroup
