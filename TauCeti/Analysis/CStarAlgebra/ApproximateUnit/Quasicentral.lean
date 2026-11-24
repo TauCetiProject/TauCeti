@@ -157,6 +157,15 @@ private theorem norm_avg_commutator_lt {N : ℕ} {w p : Fin N → A} {a : A} {M 
 
 variable [PartialOrder A] [StarOrderedRing A]
 
+/-- Along the open-unit-ball restriction of `CStarAlgebra.approximateUnit S`, every positive
+strict contraction `u₀` is eventually dominated by strict contractions. -/
+private theorem eventually_le_and_norm_lt_one_ball (S : NonUnitalStarSubalgebra ℂ A)
+    [IsClosed (S : Set A)] {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1) :
+    ∀ᶠ y : S in (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1),
+      u₀ ≤ y ∧ ‖y‖ < 1 :=
+  eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
+    (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun _ hy => ⟨hy.1, by simpa using hy.2⟩
+
 /-- Single step in the inductive construction of Arveson's chain: given `p : Fin n → S`, choose a
 strict contraction `w_new ≥ u₀` right-approximating `p` and `p * f`, and then choose `p_new`
 right-approximating the adjoint commutators of `w_new` with `f`. -/
@@ -173,9 +182,7 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
   have hl₀ : l₀.IsIncreasingApproximateUnit :=
     TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
   have := hl₀.neBot
-  have hu₀_mem : ∀ᶠ y : S in l₀, u₀ ≤ y ∧ ‖y‖ < 1 :=
-    eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
-      (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun y hy => ⟨hy.1, by simpa using hy.2⟩
+  have hu₀_mem := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
   have hp_mem : ∀ᶠ y : S in l₀, ∀ j : Fin n, ‖(p j : A) * (y : A) - (p j : A)‖ ≤ δ ∧
       ∀ i, ‖((p j : A) * f i) * (y : A) - (p j : A) * f i‖ ≤ δ :=
     eventually_all.mpr fun j =>
@@ -287,9 +294,7 @@ theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed
   have hl₀ : l₀.IsIncreasingApproximateUnit :=
     TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
   have := hl₀.neBot
-  have hu₀_mem : ∀ᶠ y : S in l₀, u₀ ≤ y ∧ ‖y‖ < 1 :=
-    eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
-      (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun y hy => ⟨hy.1, by simpa using hy.2⟩
+  have hu₀_mem := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
   have hg_mem : ∀ᶠ y : S in l₀, ∀ j : κ, ‖y * g j - g j‖ < ε ^ 2 / (‖g j‖ + 1) :=
     eventually_all.mpr fun j =>
       (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_right (g j))).eventually
@@ -300,38 +305,11 @@ theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed
   obtain ⟨e, hu₁_e, he_norm, he_f⟩ :=
     exists_quasicentral_fin_approx S hmul hu₁_0 hu₁_norm (f ∘ equiv.symm) hε
   refine ⟨e, hu₀_u₁.trans hu₁_e, he_norm, fun j => ?_, fun i => ?_⟩
-  · have hx_icc : 1 - (e : S⁺¹) ∈ Set.Icc (0 : S⁺¹) 1 :=
-      Set.sub_mem_Icc_zero_iff_right.mpr
-        (CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨hu₁_0.trans hu₁_e, he_norm.le⟩)
-    obtain ⟨hx0, hx1⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp hx_icc
-    let x : S⁺¹ := 1 - (e : S⁺¹)
-    let y : S⁺¹ := 1 - (u₁ : S⁺¹)
-    have hxstar : star x = x := hx0.isSelfAdjoint.star_eq
-    have hxy : x ≤ y := sub_le_sub_left ((Unitization.inr_le_inr_iff ℂ).mpr hu₁_e) 1
-    have hxx_y : x * x ≤ y := (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hx0 hx1).trans hxy
-    have hconj : star (x * (g j : S⁺¹)) * (x * (g j : S⁺¹)) ≤
-        star (g j : S⁺¹) * y * (g j : S⁺¹) := by
-      simpa only [star_mul, hxstar, mul_assoc] using
-        star_left_conjugate_le_conjugate hxx_y (g j : S⁺¹)
-    have hnorm_sq : ‖e * g j - g j‖ ^ 2 ≤ ‖g j‖ * ‖u₁ * g j - g j‖ := by
-      have hx_mul : x * (g j : S⁺¹) = ((g j - e * g j : S) : S⁺¹) := by
-        simp [x, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
-      have hy_mul : y * (g j : S⁺¹) = ((g j - u₁ * g j : S) : S⁺¹) := by
-        simp [y, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
-      calc ‖e * g j - g j‖ ^ 2
-          = ‖x * (g j : S⁺¹)‖ ^ 2 := by rw [hx_mul, Unitization.norm_inr, norm_sub_rev]
-        _ = ‖star (x * (g j : S⁺¹)) * (x * (g j : S⁺¹))‖ := by
-            rw [sq, ← CStarRing.norm_star_mul_self]
-        _ ≤ ‖star (g j : S⁺¹) * y * (g j : S⁺¹)‖ :=
-            CStarAlgebra.norm_le_norm_of_le_of_nonneg hconj (star_mul_self_nonneg _)
-        _ ≤ ‖star (g j : S⁺¹)‖ * ‖y * (g j : S⁺¹)‖ := by
-            rw [mul_assoc]; exact norm_mul_le _ _
-        _ = ‖g j‖ * ‖u₁ * g j - g j‖ := by
-            rw [norm_star, Unitization.norm_inr, hy_mul, Unitization.norm_inr, norm_sub_rev]
-    refine lt_of_pow_lt_pow_left₀ 2 hε.le ?_
+  · refine lt_of_pow_lt_pow_left₀ 2 hε.le ?_
     have hgj_pos : 0 < ‖g j‖ + 1 := by positivity
     calc ‖e * g j - g j‖ ^ 2
-        ≤ ‖g j‖ * ‖u₁ * g j - g j‖ := hnorm_sq
+        ≤ ‖g j‖ * ‖u₁ * g j - g j‖ :=
+          TauCeti.CStarAlgebra.norm_mul_sub_sq_le_of_le (hu₁_0.trans hu₁_e) he_norm.le hu₁_e (g j)
       _ ≤ ‖g j‖ * (ε ^ 2 / (‖g j‖ + 1)) :=
           mul_le_mul_of_nonneg_left (hu₁_g j).le (norm_nonneg _)
       _ < (‖g j‖ + 1) * (ε ^ 2 / (‖g j‖ + 1)) :=
@@ -478,9 +456,7 @@ theorem exists_quasicentral_isIncreasingApproximateUnit :
     have hu₀S_1 : ‖φ.symm u₀‖ < 1 :=
       (NonUnitalStarAlgHom.norm_map φ.symm φ.symm.injective u₀).trans_lt hu₀_1
     refine (hstrict (φ.symm u₀) hu₀S_0 hu₀S_1).mono fun e ⟨hle, hnorm⟩ => ⟨?_, ?_⟩
-    · have hsub : 0 ≤ φ (e - φ.symm u₀) := map_nonneg φ (sub_nonneg.mpr hle)
-      rw [map_sub, StarAlgEquiv.apply_symm_apply] at hsub
-      exact sub_nonneg.mp hsub
+    · exact (φ.apply_symm_apply u₀).symm.trans_le (OrderHomClass.mono φ hle)
     · exact (NonUnitalStarAlgHom.norm_map φ φ.injective e).trans_lt hnorm
   · rw [tendsto_map'_iff]
     exact (hcomm a).congr fun e => by
@@ -503,9 +479,7 @@ theorem exists_quasicentral_approx {u₀ : I} (hu₀ : 0 ≤ u₀) (hu₀_norm :
       f (fun j => φ.symm (g j)) hε
   refine ⟨φ eS, ?_, (NonUnitalStarAlgHom.norm_map φ φ.injective eS).trans_lt heS_norm,
     fun j => ?_, fun i => ?_⟩
-  · have hsub : 0 ≤ φ (eS - φ.symm u₀) := map_nonneg φ (sub_nonneg.mpr heS_u₀)
-    rw [map_sub, StarAlgEquiv.apply_symm_apply] at hsub
-    exact sub_nonneg.mp hsub
+  · exact (φ.apply_symm_apply u₀).symm.trans_le (OrderHomClass.mono φ heS_u₀)
   · have heq : φ eS * g j - g j = φ (eS * φ.symm (g j) - φ.symm (g j)) := by simp
     rw [heq, NonUnitalStarAlgHom.norm_map φ φ.injective]
     exact heS_g j

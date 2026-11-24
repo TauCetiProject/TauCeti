@@ -300,15 +300,16 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
     have hc : 0 ≤ c := RCLike.ofReal_nonneg.mpr (inv_nonneg.mpr hr.le)
     have hrc : (r : ℂ) * c = 1 := by
       rw [← Complex.ofReal_mul, mul_inv_cancel₀ hr.ne', Complex.ofReal_one]
+    have hsmul (x : A) : (c • φ) x = c * φ x := by simp
     have hstate : c • φ ∈ stateSpace A := by
       refine mem_stateSpace_iff.mpr ⟨fun x hx => ?_, ?_⟩
-      · rw [← toStrongDual_apply, map_smul, smul_apply, smul_eq_mul, toStrongDual_apply]
+      · rw [hsmul]
         have hx0 : 0 ≤ φ x := by simpa [φ] using map_nonneg_of_mem_stateSpace hψ (hx.inr ℂ)
         exact mul_nonneg hc hx0
       · rw [map_smul, norm_smul, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
           inv_mul_cancel₀ hr.ne']
     have hle : 0 ≤ (c • φ) a := h _ hstate
-    rw [← toStrongDual_apply, map_smul, smul_apply, smul_eq_mul, toStrongDual_apply] at hle
+    rw [hsmul] at hle
     have hmul := mul_nonneg (RCLike.ofReal_nonneg.mpr hr.le) hle
     simpa [φ, ← mul_assoc, hrc] using hmul
 

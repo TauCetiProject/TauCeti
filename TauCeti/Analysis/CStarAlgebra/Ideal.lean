@@ -29,7 +29,7 @@ while `(c • e) * a ∈ I` by left ideal absorption. For self-adjointness, the 
 `⋆`-subalgebra of `A`, hence a nonunital C⋆-algebra containing `star a * a` for every `a ∈ I`.
 Along the increasing approximate unit `e` of `S`, right ideal absorption gives
 `(e : A) * star a ∈ I`, while
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` gives
+`Filter.IsApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` gives
 `(e : A) * star a → star a` (see, e.g., Gerard J. Murphy, *C*-Algebras and Operator Theory*,
 Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
 

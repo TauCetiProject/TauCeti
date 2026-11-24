@@ -659,7 +659,11 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
       isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
         (.of_forall fun m => map_nonneg_compressFunctional
           (fun _ => map_nonneg_of_mem_stateSpace (hω_mem m)) (Unitization.inr_nonneg ℂ x hx))
-  have hφ₀_apply (x : A) : φ₀ x = ψ₀ (x : A⁺¹) := rfl
+  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so rewrite via
+  -- `toLinearMap`.
+  have hφ₀_apply (x : A) : φ₀ x = ψ₀ (x : A⁺¹) := by
+    rw [← PositiveLinearMap.coe_toLinearMap]
+    simp [φ₀, PositiveLinearMap.mk₀]
   have hφ₀_ne : φ₀ ≠ 0 := fun h0 => by
     have hge : ε ^ 2 ≤ ‖ψ₀ ((a * star a : A) : A⁺¹)‖ :=
       (isClosed_le continuous_const continuous_norm).mem_of_mapClusterPt

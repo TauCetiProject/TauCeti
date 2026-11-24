@@ -111,8 +111,10 @@ noncomputable def stateToPositiveLinearMap (hφ : φ ∈ stateSpace A) : A →�
 @[simp]
 theorem stateToPositiveLinearMap_apply (hφ : φ ∈ stateSpace A) (a : A) :
     stateToPositiveLinearMap hφ a = φ a := by
-  unfold stateToPositiveLinearMap
-  rfl
+  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so rewrite via
+  -- `toLinearMap`.
+  rw [stateToPositiveLinearMap, ← PositiveLinearMap.coe_toLinearMap]
+  simp [PositiveLinearMap.mk₀]
 
 /-- The continuous linear map underlying `stateToPositiveLinearMap hφ` is `toStrongDual φ`. -/
 @[simp]

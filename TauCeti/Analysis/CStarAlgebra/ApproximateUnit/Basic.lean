@@ -41,19 +41,21 @@ star-algebra homomorphism `f` right-approximates every `a` with `star a * a ∈ 
 (`Filter.IsApproximateUnit.tendsto_mul_left_of_star_mul_self_mem_range`) and left-approximates
 every `a` with `a * star a ∈ Set.range f`
 (`Filter.IsApproximateUnit.tendsto_mul_right_of_mul_star_self_mem_range`). For closed
-`⋆`-subalgebras `B`, `Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem`,
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_star_mul_self_mem`, and
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_mul_star_self_mem` specialize this to increasing
-approximate units of `B`. Since an increasing approximate unit eventually lies in the closed unit
+`⋆`-subalgebras `B`, `Filter.IsApproximateUnit.tendsto_mul_star_of_star_mul_self_mem`,
+`Filter.IsApproximateUnit.tendsto_mul_of_star_mul_self_mem`, and
+`Filter.IsApproximateUnit.tendsto_mul_of_mul_star_self_mem` specialize this to approximate
+units of `B`. Since an increasing approximate unit eventually lies in the closed unit
 ball, the convergence `e * a → a` is uniform for `a` in a compact set,
 `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is `a * e → a`,
 `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`.
 
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` gives the quantitative estimate for a positive
 contraction `e`: `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companions
-`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`, and
+`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`,
 `TauCeti.CStarAlgebra.norm_sub_mul_le_of_star_mul_self_le`, `‖x - x * e‖ ≤ ‖y - y * e‖` whenever
-`star x * x ≤ star y * y`, drive the quotient C⋆-identity and order-heredity arguments.
+`star x * x ≤ star y * y`, and `TauCeti.CStarAlgebra.norm_mul_sub_sq_le_of_le`,
+`‖e * g - g‖ ^ 2 ≤ ‖g‖ * ‖u * g - g‖` whenever `u ≤ e`, drive the quotient C⋆-identity,
+order-heredity, and quasicentral approximation arguments.
 
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le_of_star_mul_self_le` compares an element `y` with a
 dominating `b ≥ star y * y`: `‖y - y * e‖ ^ 2 ≤ 2 * ‖b - b * e‖` for a self-adjoint contraction
@@ -140,6 +142,37 @@ theorem tendsto_mul_right_of_mul_star_self_mem_range {A B F : Type*} [NonUnitalC
     (tendsto_map'_iff.mp (hl.map_star.tendsto_mul_left_of_star_mul_self_mem_range f ha'))
   rw [star_star] at hlim
   exact hlim.congr fun e => by simp [star_mul, ← StarHomClass.map_star]
+
+section Subalgebra
+
+variable {A : Type*} [NonUnitalCStarAlgebra A]
+  {B : NonUnitalStarSubalgebra ℂ A} [IsClosed (B : Set A)]
+
+/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * star x → star x` along
+any approximate unit `l` of `B`. -/
+theorem tendsto_mul_star_of_star_mul_self_mem {l : Filter B} (hl : l.IsApproximateUnit)
+    {x : A} (hx : star x * x ∈ B) :
+    Tendsto (fun e : B => (e : A) * star x) l (𝓝 (star x)) :=
+  hl.tendsto_mul_right_of_mul_star_self_mem_range
+    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, by simp⟩
+
+/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `x * (e : A) → x` along any
+approximate unit `l` of `B`. -/
+theorem tendsto_mul_of_star_mul_self_mem {l : Filter B} (hl : l.IsApproximateUnit)
+    {x : A} (hx : star x * x ∈ B) :
+    Tendsto (fun e : B => x * (e : A)) l (𝓝 x) :=
+  hl.tendsto_mul_left_of_star_mul_self_mem_range
+    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, rfl⟩
+
+/-- If `x * star x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * x → x` along any
+approximate unit `l` of `B`. -/
+theorem tendsto_mul_of_mul_star_self_mem {l : Filter B} (hl : l.IsApproximateUnit)
+    {x : A} (hx : x * star x ∈ B) :
+    Tendsto (fun e : B => (e : A) * x) l (𝓝 x) :=
+  hl.tendsto_mul_right_of_mul_star_self_mem_range
+    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, rfl⟩
+
+end Subalgebra
 
 end Filter.IsApproximateUnit
 
@@ -375,6 +408,34 @@ theorem norm_sub_mul_le_of_star_mul_self_le {x y : A} (hxy : star x * x ≤ star
   exact (sq_le_sq.mp hle).trans_eq (abs_of_nonneg (norm_nonneg _)) |>.trans'
     (le_abs_self _)
 
+/-- For elements `u ≤ e` in a nonunital C⋆-algebra where `e` is a positive contraction (`0 ≤ e`,
+`‖e‖ ≤ 1`), `‖e * g - g‖ ^ 2 ≤ ‖g‖ * ‖u * g - g‖` for every `g`. -/
+theorem norm_mul_sub_sq_le_of_le {u e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (hue : u ≤ e) (g : A) :
+    ‖e * g - g‖ ^ 2 ≤ ‖g‖ * ‖u * g - g‖ := by
+  have hx_icc : 1 - (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
+    Set.sub_mem_Icc_zero_iff_right.mpr (CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨he₀, he₁⟩)
+  obtain ⟨hx0, hx1⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp hx_icc
+  let x : A⁺¹ := 1 - (e : A⁺¹)
+  let y : A⁺¹ := 1 - (u : A⁺¹)
+  have hxstar : star x = x := hx0.isSelfAdjoint.star_eq
+  have hxy : x ≤ y := sub_le_sub_left ((Unitization.inr_le_inr_iff ℂ).mpr hue) 1
+  have hxx_y : x * x ≤ y := (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hx0 hx1).trans hxy
+  have hconj : star (x * (g : A⁺¹)) * (x * (g : A⁺¹)) ≤ star (g : A⁺¹) * y * (g : A⁺¹) := by
+    simpa only [star_mul, hxstar, mul_assoc] using
+      star_left_conjugate_le_conjugate hxx_y (g : A⁺¹)
+  have hx_mul : x * (g : A⁺¹) = ((g - e * g : A) : A⁺¹) := by
+    simp [x, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
+  have hy_mul : y * (g : A⁺¹) = ((g - u * g : A) : A⁺¹) := by
+    simp [y, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
+  calc ‖e * g - g‖ ^ 2
+      = ‖x * (g : A⁺¹)‖ ^ 2 := by rw [hx_mul, Unitization.norm_inr, norm_sub_rev]
+    _ = ‖star (x * (g : A⁺¹)) * (x * (g : A⁺¹))‖ := by rw [sq, ← CStarRing.norm_star_mul_self]
+    _ ≤ ‖star (g : A⁺¹) * y * (g : A⁺¹)‖ :=
+        CStarAlgebra.norm_le_norm_of_le_of_nonneg hconj (star_mul_self_nonneg _)
+    _ ≤ ‖star (g : A⁺¹)‖ * ‖y * (g : A⁺¹)‖ := by rw [mul_assoc]; exact norm_mul_le _ _
+    _ = ‖g‖ * ‖u * g - g‖ := by
+        rw [norm_star, Unitization.norm_inr, hy_mul, Unitization.norm_inr, norm_sub_rev]
+
 /-- If `e` is a self-adjoint contraction and `star y * y ≤ b`, then
 `‖y - y * e‖ ^ 2 ≤ 2 * ‖b - b * e‖`: the defect of `e` as a right unit for `y` is controlled by
 its defect for `b`. -/
@@ -435,30 +496,6 @@ theorem tendsto_coe_mul_star_of_tendsto_mul_coe [StarOrderedRing A] {l : Filter 
   filter_upwards [hl.eventually_nonneg] with e he
   simp only [Function.comp_def, star_mul,
     (IsSelfAdjoint.of_nonneg (Subtype.coe_le_coe.mpr he)).star_eq]
-
-/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * star x → star x` along
-any increasing approximate unit `l` of `B`. -/
-theorem tendsto_mul_star_of_star_mul_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
-    {x : A} (hx : star x * x ∈ B) :
-    Tendsto (fun e : B => (e : A) * star x) l (𝓝 (star x)) :=
-  hl.toIsApproximateUnit.tendsto_mul_right_of_mul_star_self_mem_range
-    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, by simp⟩
-
-/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `x * (e : A) → x` along any
-increasing approximate unit `l` of `B`. -/
-theorem tendsto_mul_of_star_mul_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
-    {x : A} (hx : star x * x ∈ B) :
-    Tendsto (fun e : B => x * (e : A)) l (𝓝 x) :=
-  hl.toIsApproximateUnit.tendsto_mul_left_of_star_mul_self_mem_range
-    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, rfl⟩
-
-/-- If `x * star x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * x → x` along any
-increasing approximate unit `l` of `B`. -/
-theorem tendsto_mul_of_mul_star_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
-    {x : A} (hx : x * star x ∈ B) :
-    Tendsto (fun e : B => (e : A) * x) l (𝓝 x) :=
-  hl.toIsApproximateUnit.tendsto_mul_right_of_mul_star_self_mem_range
-    (NonUnitalStarSubalgebraClass.subtype B) ⟨⟨_, hx⟩, rfl⟩
 
 end Subalgebra
 
