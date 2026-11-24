@@ -61,10 +61,6 @@ private theorem zpow_min_neg_mul_zpow (t : K) (n : ℕ) :
     (p : ℝ) ^ min (0 : ℤ) (-n) * ‖t‖ ^ (-(n : ℤ)) = (((p : ℝ) * ‖t‖)⁻¹) ^ n := by
   rw [min_eq_right (by omega)]; simp [mul_pow]; ring
 
-private theorem norm_p_eq_inv (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K] :
-    ‖(p : K)‖ = (p : ℝ)⁻¹ := by
-  rw [TauCeti.norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
-
 section NormedAlgebra
 variable [NormedAlgebra ℚ_[p] K]
 
@@ -101,7 +97,7 @@ theorem summable_norm_padicIntAlgebraMap_coeff_mul_zpow (ht : ‖t‖ ∈ Set.Io
 private theorem norm_evalTUTerm_eval_le (F : MvPowerSeries (Fin 2) ℤ_[p]) (d : Fin 2 →₀ ℕ) :
     ‖padicIntAlgebraMap p K (MvPowerSeries.coeff d F) * t ^ d 0 * ((p : K) / t) ^ d 1‖ ≤
       ‖t‖ ^ d 0 * (((p : ℝ) * ‖t‖)⁻¹) ^ d 1 := by
-  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_p_eq_inv (p := p) K, div_eq_mul_inv,
+  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_natCast_p_eq_inv, div_eq_mul_inv,
     mul_inv_rev, mul_comm (‖t‖⁻¹), norm_padicIntAlgebraMap]
   exact mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (pow_nonneg (norm_nonneg t) _) (PadicInt.norm_le_one _)) (by positivity)
@@ -487,7 +483,7 @@ private theorem ringHom_eq_eval_of_bounded (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)�
   let sU (N : ℕ) : K :=
     ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i g₀) * ((p : K) / t) ^ i
   have hnorm_p_div_t : ‖(p : K) / t‖ = ((p : ℝ) * ‖t‖)⁻¹ := by
-    rw [norm_div, norm_p_eq_inv (p := p) K, div_eq_mul_inv, mul_inv_rev, mul_comm]
+    rw [norm_div, norm_natCast_p_eq_inv, div_eq_mul_inv, mul_inv_rev, mul_comm]
   have hdiff (N : ℕ) :
       ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤ ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C := by
     have hgx : g x - (sT N + ((p : K) / t) * sU N) =
