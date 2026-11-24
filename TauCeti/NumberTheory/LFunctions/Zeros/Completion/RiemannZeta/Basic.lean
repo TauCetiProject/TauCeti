@@ -172,13 +172,6 @@ theorem re_mem_Ioo_of_zetaEntireCompletion_eq_zero {ρ : ℂ}
       fun _ ↦ zetaEntireCompletion_ne_zero_of_one_le_re)
     (by simpa only [riemannZetaData_entireCompletion] using hρ)
 
-/-- Every point of positive divisor of `zetaEntireCompletion` lies in the open critical strip. -/
-theorem re_mem_Ioo_of_divisor_zetaEntireCompletion_pos {ρ : ℂ}
-    (hρ : 0 < MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ) :
-    ρ.re ∈ Set.Ioo 0 1 :=
-  re_mem_Ioo_of_zetaEntireCompletion_eq_zero <|
-    (differentiable_zetaEntireCompletion.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne'
-
 /-- On the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the same analytic
 order (at the pole `1`, `zetaEntireCompletion 1 = 1 ≠ 0` and `riemannZeta` is not analytic, so both
 analytic orders vanish). -/
@@ -227,14 +220,5 @@ theorem zeroCount_zetaEntireCompletion_eq_riemannZeta {R : Set ℂ}
         divisor_riemannZeta_one]
       rfl
     · rw [divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs) hs1]
-
-/-- On any region `R`, the zero count of `zetaEntireCompletion` is the zero count of `riemannZeta`
-on the intersection of `R` with the open critical strip. -/
-theorem zeroCount_zetaEntireCompletion_eq_riemannZeta_inter (R : Set ℂ) :
-    zeroCount zetaEntireCompletion Set.univ R =
-      zeroCount riemannZeta Set.univ (R ∩ {s | s.re ∈ Set.Ioo 0 1}) := by
-  rw [← zeroCount_inter_eq_self (S := {s | s.re ∈ Set.Ioo 0 1})
-    fun _ _ hρ ↦ re_mem_Ioo_of_divisor_zetaEntireCompletion_pos hρ]
-  exact zeroCount_zetaEntireCompletion_eq_riemannZeta fun _ hs ↦ hs.2.1
 
 end TauCeti.LFunctions

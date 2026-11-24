@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.LFunctions.Hecke.Dirichlet
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
-import TauCeti.NumberTheory.LFunctions.Hecke.DedekindZeta
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.DedekindZeta
 
 /-!
 # Zero counts of primitive Dirichlet entire completions and rational Hecke L-functions
@@ -22,8 +20,6 @@ rational presented Hecke `L`-functions `TauCeti.LFunctions.heckeLFunctionC`.
 
 ## Main results
 
-* `TauCeti.LFunctions.zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_inter`: zero-count
-  comparison for `ψ : PrimitiveRayClassCharacter ℚ`.
 * `zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_ofDirichletCharacter_inter`:
   zero-count comparison for `ofDirichletCharacter χ` (`χ.IsPrimitive`).
 * `TauCeti.LFunctions.zeroCount_zetaEntireCompletion_eq_heckeLFunctionC_one_inter`: zero-count
@@ -40,19 +36,6 @@ public section
 open DirichletCharacter Set
 
 namespace TauCeti.LFunctions
-
-/-- **For every primitive ray class character `ψ` of `ℚ` (including `ψ = 1`), the zero count of
-its entire Dirichlet completion on any region `R` equals the zero count of
-`heckeLFunctionC ψ.character` on the part of `R` in the open critical strip.** -/
-theorem zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_inter
-    (ψ : PrimitiveRayClassCharacter ℚ) (R : Set ℂ) :
-    zeroCount
-        (dirichletData ψ.toDirichletCharacter ψ.isPrimitive_toDirichletCharacter).entireCompletion
-        univ R =
-      zeroCount (heckeLFunctionC ψ.character) univ (R ∩ {s | s.re ∈ Ioo 0 1}) := by
-  rw [zeroCount_dirichletData_entireCompletion_eq_LFunction_inter
-      ψ.toDirichletCharacter ψ.isPrimitive_toDirichletCharacter R,
-    ← zeroCount_heckeLFunctionC_eq_LFunction]
 
 /-- **For every primitive Dirichlet character `χ` (including the principal character mod `1`), the
 zero count of `(dirichletData χ hχ).entireCompletion` on `R` equals the zero count of the Hecke
@@ -73,7 +56,9 @@ theorem zeroCount_zetaEntireCompletion_eq_heckeLFunctionC_one_inter (R : Set ℂ
     zeroCount zetaEntireCompletion univ R =
       zeroCount (heckeLFunctionC (1 : PrimitiveRayClassCharacter ℚ).character)
         univ (R ∩ {s | s.re ∈ Ioo 0 1}) := by
-  rw [PrimitiveRayClassCharacter.character_one, heckeLFunctionC_one_modulus_one,
-    zeroCount_zetaEntireCompletion_eq_dedekindZetaC_rat_inter]
+  have h := zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_ofDirichletCharacter_inter
+    (isPrimitive_one_level_one (R := ℂ)) R
+  rwa [dirichletData_modOne, riemannZetaData_entireCompletion,
+    PrimitiveRayClassCharacter.ofDirichletCharacter_one] at h
 
 end TauCeti.LFunctions
