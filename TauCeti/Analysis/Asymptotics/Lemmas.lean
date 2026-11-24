@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
@@ -96,8 +95,6 @@ evaluations of elliptic integrals.
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
 * `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
   dividing by `‖x a‖` gives `O(L)`.
-* `Asymptotics.isBigO_apply_div_norm`: a Euclidean coordinate divided by the norm, `x j / ‖x‖`, is
-  `O(1)`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when, on each `[a, b]`, `f` is bounded and `‖g‖` is bounded below by a positive constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
@@ -336,13 +333,6 @@ theorem isBigO_inv_norm_smul_apply {α E F : Type*} [SeminormedAddCommGroup E] [
   refine IsBigO.of_bound' (Eventually.of_forall fun a ↦ ?_)
   rw [norm_smul, norm_inv, norm_norm, inv_mul_eq_div]
   exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) ((L a).le_opNorm (x a))
-
-/-- **A Euclidean coordinate divided by the norm is bounded:** `x j / ‖x‖ = O(1)` on
-`EuclideanSpace ℝ ι`, along any filter. -/
-theorem isBigO_apply_div_norm {ι : Type*} [Fintype ι] (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
-    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
-  ((isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
-    (isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by simp [div_eq_inv_mul]
 
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is

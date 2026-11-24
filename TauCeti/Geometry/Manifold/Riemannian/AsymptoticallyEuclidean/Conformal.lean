@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Flux
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -170,7 +171,7 @@ theorem isLittleO_coordinateFluxIntegrand_mul_sub {w : EuclideanSpace ℝ (Fin n
     refine IsLittleO.fun_sum fun j _ ↦ ?_
     simpa using (IsLittleO.fun_sum fun i _ ↦ ((hDe i).mul_isLittleO (hh i j)).sub
       ((hDe j).mul_isLittleO ((hh i i).congr_left fun x ↦ by simp))).mul_isBigO
-        (Asymptotics.isBigO_apply_div_norm _ j)
+        (EuclideanSpace.isBigO_apply_div_norm _ j)
   -- The radial derivative of `w - a |x| ^ (2 - n)` is `o(|x| ^ (1 - n))`.
   have h3 : (fun x ↦ (1 - n : ℝ) * ((fderiv ℝ w x - a • fderiv ℝ (fun y ↦ ‖y‖ ^ (2 - n : ℝ)) x) x /
       ‖x‖)) =o[cobounded _] fun x ↦ ‖x‖ ^ (1 - n : ℝ) :=

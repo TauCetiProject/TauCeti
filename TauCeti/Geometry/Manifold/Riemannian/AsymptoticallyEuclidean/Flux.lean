@@ -11,8 +11,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The coordinate ADM flux
@@ -124,7 +124,7 @@ theorem isLittleO_coordinateFluxIntegrand {g : EuclideanSpace ℝ (Fin n) → Fi
   rw [funext (coordinateFluxIntegrand_def g)]
   refine Asymptotics.IsLittleO.fun_sum fun j _ ↦ ?_
   simpa using ((Asymptotics.IsLittleO.fun_sum fun i _ ↦ (hD i j i).sub (hD i i j))).mul_isBigO
-    (Asymptotics.isBigO_apply_div_norm _ j)
+    (EuclideanSpace.isBigO_apply_div_norm _ j)
 
 /-- The flux density vanishes at the origin, where `x_j / |x|` is `0`. -/
 @[simp]
