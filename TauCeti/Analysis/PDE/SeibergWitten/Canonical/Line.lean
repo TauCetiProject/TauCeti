@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
@@ -126,35 +127,6 @@ namespace TauCeti.SeibergWitten
 open CliffordAlgebra Module
 open scoped RealInnerProductSpace InnerProductSpace
 
-/-- Contracting an `ℝ`-linear complex covector `L` with an `ℝ`-linear map `M : V →ₗ[ℝ] W` over an
-orthonormal basis does not depend on the choice of orthonormal basis. -/
-private theorem sum_apply_smul_apply_eq_of_orthonormalBasis {V W κ₁ κ₂ : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [AddCommGroup W] [Module ℂ W] [Module ℝ W]
-    [IsScalarTower ℝ ℂ W] [Fintype κ₁] [Fintype κ₂]
-    (e : OrthonormalBasis κ₁ ℝ V) (b : OrthonormalBasis κ₂ ℝ V) (L : V →ₗ[ℝ] ℂ) (M : V →ₗ[ℝ] W) :
-    ∑ k, L (e k) • M (e k) = ∑ j, L (b j) • M (b j) := by
-  classical
-  have hsmul (r : ℝ) (w : W) : r • w = (r : ℂ) • w := (algebraMap_smul ℂ r w).symm
-  have hexp (k : κ₁) : L (e k) • M (e k) =
-      ∑ i, ∑ j, ((⟪b i, e k⟫ * ⟪b j, e k⟫ : ℝ) : ℂ) • (L (b i) • M (b j)) := by
-    conv_lhs => rw [← b.sum_repr' (e k)]
-    simp only [map_sum, map_smul, hsmul, Complex.real_smul, Finset.smul_sum, smul_smul,
-      Finset.sum_mul, Finset.sum_smul, Complex.ofReal_mul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    congr 1
-    ring
-  simp_rw [hexp]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finset.sum_comm]
-  simp_rw [← Finset.sum_smul, ← Complex.ofReal_sum]
-  have hinner (j : κ₂) : ∑ k, ⟪b i, e k⟫ * ⟪b j, e k⟫ = if i = j then 1 else 0 := by
-    have h := e.sum_inner_mul_inner (b i) (b j)
-    rw [orthonormal_iff_ite.1 b.orthonormal i j] at h
-    simpa only [real_inner_comm (e _)] using h
-  simp [hinner, apply_ite (fun r : ℝ ↦ (r : ℂ))]
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
 
@@ -177,15 +149,12 @@ exactly when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(
 theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
       ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  obtain ⟨e, -, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by simp [Fact.out (p := finrank ℝ V = 4)]⟩)
+  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
   refine ⟨fun hψ ↦ AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ), fun h ↦ ?_⟩
-  refine cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ ?_
-  rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, map_mul, map_mul,
-    LinearMap.add_apply, mul_apply_eq_comp, mul_apply_eq_comp, ← h₀, ← h₂, h, h, map_smul,
-    map_smul, e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ]
-  module
+    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ), fun h ↦
+    cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
+      (AlmostComplexStructure.bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply
+        hQ h₀ h₂ (h₀ ▸ h (e 0)) (h₂ ▸ h (e 2)))⟩
 
 /-- **On the canonical eigenspace, Clifford multiplication turns `J` into `i`**: if
 `P_α ψ = ψ`, then `c(J v) ψ = i c(v) ψ`
@@ -201,17 +170,15 @@ every `v`. -/
 theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm β = 0 ↔
       ∀ v, ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
-  obtain ⟨e, -, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by simp [Fact.out (p := finrank ℝ V = 4)]⟩)
+  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
   refine ⟨fun hβ v ↦ ?_, fun h ↦ ?_⟩
   · have h := AlmostComplexStructure.two_smul_ι_apply_apply_of_bivectorExterior_apply_eq_smul
       hQ h₀ h₂ (by simp) (bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hβ) v
     linear_combination (norm := module) (2⁻¹ : ℂ) • h
-  · refine cliffordProjection_apply_eq_zero_of_bivectorExterior_apply o ρ ?_
-    rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, map_mul, map_mul,
-      LinearMap.add_apply, mul_apply_eq_comp, mul_apply_eq_comp, ← h₀, ← h₂, h, h, map_smul,
-      map_smul, e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ]
-    module
+  · have hβ := AlmostComplexStructure.bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply
+      hQ h₀ h₂ (h₀ ▸ h (e 0)) (h₂ ▸ h (e 2))
+    rw [neg_mul_neg] at hβ
+    exact cliffordProjection_apply_eq_zero_of_bivectorExterior_apply o ρ hβ
 
 /-- On the complementary eigenspace, Clifford multiplication turns `J` into `-i`: if
 `P_α β = 0`, then `c(J v) β = -i c(v) β`
@@ -325,12 +292,14 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     {e : OrthonormalBasis κ ℝ V} {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →ₗ[ℝ] ℂ) :
     ∑ k, L (e k) • ρ (ι Q (e k)) ψ = 0 ↔ (ψ : W) = 0 ∨ ∀ v, L (J v) = Complex.I * L v := by
-  obtain ⟨b, -, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by simp [Fact.out (p := finrank ℝ V = 4)]⟩)
+  obtain ⟨b, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
   -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is independent of the orthonormal basis `e`.
   have hsum : ∑ k, L (e k) • ρ (ι Q (e k)) ψ = ∑ j, L (b j) • ρ (ι Q (b j)) ψ :=
-    sum_apply_smul_apply_eq_of_orthonormalBasis e b L
-      ((LinearMap.applyₗ' ℝ (ψ : W)).comp (ρ.toLinearMap.comp (ι Q)))
+    e.sum_bilin_eq b (LinearMap.mk₂ ℝ (fun u v ↦ L u • ρ (ι Q v) ψ)
+      (fun _ _ _ ↦ by rw [map_add, add_smul])
+      (fun _ _ _ ↦ by rw [map_smul, smul_assoc])
+      (fun _ _ _ ↦ by rw [map_add, map_add, LinearMap.add_apply, smul_add])
+      (fun _ _ _ ↦ by rw [map_smul, map_smul, LinearMap.smul_apply, smul_comm]))
   have h₁ : J (b 1) = -b 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (b 3) = -b 2 := by rw [← h₂, J.apply_apply]
   rw [hsum, sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hψ
@@ -381,9 +350,8 @@ together with `u₀` it gives a unitary frame of `W⁺` when `W⁺` has rank two
 def pairedSpinor (u₀ : positiveHalfSpinors o ρ) : positiveHalfSpinors o ρ :=
   ⟨ρ (ι Q (e 2)) (ρ (ι Q (e 0)) u₀), by
     simpa [map_mul, mul_apply_eq_comp] using
-      mapsTo_positiveHalfSpinors o ρ (a := ι Q (e 2) * ι Q (e 0)) (by
-        rw [Commute, SemiconjBy, ← mul_assoc, chirality_mul_ι, neg_mul, mul_assoc,
-          chirality_mul_ι, mul_neg, neg_neg, ← mul_assoc]) u₀ u₀.property⟩
+      mapsTo_positiveHalfSpinors o ρ
+        (commute_chirality_of_mem_even o (ι_mul_ι_mem_evenOdd_zero Q (e 2) (e 0))) u₀ u₀.property⟩
 
 /-- The paired spinor as a vector of `W`. -/
 @[simp]

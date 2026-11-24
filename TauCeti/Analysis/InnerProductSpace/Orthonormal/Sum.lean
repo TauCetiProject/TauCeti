@@ -40,6 +40,9 @@ curvature:
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 * `OrthonormalBasis.real_sum_inner_mul_inner`: Parseval's identity over `ℝ` with both inner
   products taken against the basis vector on the right, `∑ i, ⟪x, b i⟫ ⟪y, b i⟫ = ⟪x, y⟫`.
+* `OrthonormalBasis.sum_sesq_eq` and `OrthonormalBasis.sum_bilin_eq`: contracting a sesquilinear
+  map (over `RCLike 𝕜`) or a real bilinear map over an orthonormal basis does not depend on the
+  choice of orthonormal basis.
 * `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
   `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
 * `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
@@ -101,6 +104,38 @@ theorem real_sum_inner_mul_inner {V : Type*} [NormedAddCommGroup V] [InnerProduc
     (b : OrthonormalBasis ι ℝ V) (x y : V) : ∑ i, ⟪x, b i⟫_ℝ * ⟪y, b i⟫_ℝ = ⟪x, y⟫_ℝ := by
   rw [← b.sum_inner_mul_inner x y]
   simp_rw [real_inner_comm y]
+
+/-- **Orthonormal-basis invariance of a sesquilinear contraction.** For any two finite orthonormal
+bases `e` and `b` of an inner product space `E` over `𝕜` and any sesquilinear map
+`B : E →ₗ⋆[𝕜] E →ₗ[𝕜] X`, `∑ i, B (e i) (e i) = ∑ j, B (b j) (b j)`. -/
+theorem sum_sesq_eq {κ X : Type*} [Fintype κ] [AddCommMonoid X] [Module 𝕜 X]
+    (e : OrthonormalBasis ι 𝕜 E) (b : OrthonormalBasis κ 𝕜 E) (B : E →ₗ⋆[𝕜] E →ₗ[𝕜] X) :
+    ∑ i, B (e i) (e i) = ∑ j, B (b j) (b j) := by
+  classical
+  have hexp (i : ι) : B (e i) (e i) =
+      ∑ j, ∑ k, (⟪b k, e i⟫_𝕜 * ⟪e i, b j⟫_𝕜) • B (b j) (b k) := by
+    conv_lhs => rw [← b.sum_repr' (e i)]
+    simp only [map_sum, LinearMap.sum_apply, map_smulₛₗ, RingHom.id_apply, LinearMap.smul_apply,
+      smul_smul, Finset.smul_sum, inner_conj_symm]
+    exact Finset.sum_comm
+  simp_rw [hexp]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.sum_smul, e.sum_inner_mul_inner, orthonormal_iff_ite.1 b.orthonormal]
+  simp
+
+/-- **Orthonormal-basis invariance of a real bilinear contraction.** For any two finite orthonormal
+bases `e` and `b` of a real inner product space `V` and any `ℝ`-bilinear map
+`B : V →ₗ[ℝ] V →ₗ[ℝ] X`, `∑ i, B (e i) (e i) = ∑ j, B (b j) (b j)`. -/
+theorem sum_bilin_eq {V κ X : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fintype κ]
+    [AddCommMonoid X] [Module ℝ X] (e : OrthonormalBasis ι ℝ V) (b : OrthonormalBasis κ ℝ V)
+    (B : V →ₗ[ℝ] V →ₗ[ℝ] X) :
+    ∑ i, B (e i) (e i) = ∑ j, B (b j) (b j) :=
+  e.sum_sesq_eq b
+    { toFun := B
+      map_add' := B.map_add
+      map_smul' := fun r x ↦ by simp }
 
 /-- The real inner product in the two coordinates of an orthonormal basis `b` of a plane:
 `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`. -/

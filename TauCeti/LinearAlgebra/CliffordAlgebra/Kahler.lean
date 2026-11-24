@@ -48,10 +48,12 @@ where `c(e₀) c(e₂) ψ` lies in the `2i`-eigenspace.
 
 * `TauCeti.AlmostComplexStructure.bivectorExterior_kahlerForm`:
   `c₂(ω) = c(e₀) c(e₁) + c(e₂) c(e₃)` in a unitary frame.
-* `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`
+* `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`,
+  `TauCeti.AlmostComplexStructure.bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply`,
   and `TauCeti.AlmostComplexStructure.two_smul_ι_apply_apply_of_bivectorExterior_apply_eq_smul`:
   `c(e₁) ψ = -(μ / 2) c(e₀) ψ`, `c(e₃) ψ = -(μ / 2) c(e₂) ψ` and `2 c(J v) ψ = -μ c(v) ψ` for
-  `c₂(ω) ψ = μ ψ` with `μ ≠ 0`.
+  `c₂(ω) ψ = μ ψ` with `μ ≠ 0`, and conversely `c(e₁) ψ = μ c(e₀) ψ`, `c(e₃) ψ = μ c(e₂) ψ` imply
+  `c₂(ω) ψ = (-2 μ) ψ`.
 * `TauCeti.AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply`:
   `c(e₁) ψ = i c(e₀) ψ` and `c(e₃) ψ = i c(e₂) ψ` for `c₂(ω) ψ = -2i ψ`, with the resulting
   frame products `TauCeti.AlmostComplexStructure.ι_apply_ι_zero_apply_of_bivectorExterior_apply`,
@@ -153,6 +155,18 @@ theorem ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul {μ : 
     (μ / 2) • ψ by linear_combination (norm := module) (2⁻¹ : ℂ) • (hab - heq))
   rw [e.map_ι_apply_map_ι_apply hQ ρ, map_smul] at h01 h23
   exact ⟨by linear_combination (norm := module) -h01, by linear_combination (norm := module) -h23⟩
+
+include hQ h₀ h₂ in
+/-- Conversely to `ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul`, if
+`c(e₁) ψ = μ c(e₀) ψ` and `c(e₃) ψ = μ c(e₂) ψ` in a unitary frame, then
+`c₂(ω) ψ = (-2 μ) ψ`. No chirality or orientation is needed. -/
+theorem bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply {μ : ℂ} {ψ : W}
+    (h1 : ρ (ι Q (e 1)) ψ = μ • ρ (ι Q (e 0)) ψ)
+    (h3 : ρ (ι Q (e 3)) ψ = μ • ρ (ι Q (e 2)) ψ) :
+    ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * μ) • ψ := by
+  rw [map_bivectorExterior_kahlerForm_apply hQ h₀ h₂, h1, h3, map_smul, map_smul,
+    e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ]
+  module
 
 include hQ h₀ h₂ in
 /-- On a `-2i`-eigenvector `ψ ∈ W` of `c₂(ω)`, `c(e₁) ψ = i c(e₀) ψ` and `c(e₃) ψ = i c(e₂) ψ`
