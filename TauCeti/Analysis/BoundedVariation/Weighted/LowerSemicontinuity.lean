@@ -67,13 +67,8 @@ theorem weightedVariation_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Fi
   -- The factor `g = e^{−W} div_μ X` is bounded and vanishes off the compact `tsupport X`.
   set g : E → ℝ := fun x => (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x)
   have hK : IsCompact (tsupport X) := X.hasCompactSupport
-  have hg : Continuous g := ((divergenceCLM X).continuous.sub
-    ((hW.continuous_fderiv one_ne_zero).clm_apply X.continuous)).mul hW.continuous.neg.rexp
-  have hg0 (x : E) (hx : x ∉ tsupport X) : g x = 0 := by
-    simp only [g]
-    rw [divergenceCLM_apply, fderiv_of_notMem_tsupport ℝ hx,
-      image_eq_zero_of_notMem_tsupport hx]
-    simp
+  have hg : Continuous g := continuous_weightedDivergence hW X
+  have hg0 (x : E) (hx : x ∉ tsupport X) : g x = 0 := weightedDivergence_eq_zero X hx
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg.continuousOn
   have hbound (x : E) : ‖g x‖ ≤ max C 0 := by
     by_cases hx : x ∈ tsupport X

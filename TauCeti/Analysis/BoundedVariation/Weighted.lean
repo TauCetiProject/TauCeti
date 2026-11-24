@@ -45,6 +45,9 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   variation pairs `u` with the divergences of the fields `e^{−W} X`.
 * `TauCeti.integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero`: for a `C¹` weight, the weighted
   divergence of a test vector field has `μ`-integral zero.
+* `TauCeti.weightedDivergence_eq_zero`, `TauCeti.continuous_weightedDivergence`: the weighted
+  divergence of a test vector field vanishes off its support and, for a `C¹` weight, is
+  continuous.
 * `TauCeti.weightedVariation_congr_ae`, `TauCeti.weightedVariation_mono`,
   `TauCeti.weightedVariation_smul` and `TauCeti.weightedVariation_add_le`: locality,
   monotonicity in the open set, absolute homogeneity and subadditivity.
@@ -173,14 +176,14 @@ theorem weightedVariation_eq_iSup_trace_fderiv (hW : Differentiable ℝ W) :
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The weighted divergence of a test vector field vanishes off its support. -/
-private theorem weightedDivergence_eq_zero (X : 𝓓(Ω, E)) {x : E} (hx : x ∉ tsupport X) :
+theorem weightedDivergence_eq_zero (X : 𝓓(Ω, E)) {x : E} (hx : x ∉ tsupport X) :
     (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) = 0 := by
   rw [divergenceCLM_apply, fderiv_of_notMem_tsupport ℝ hx, image_eq_zero_of_notMem_tsupport hx]
   simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- For a `C¹` weight, the weighted divergence of a test vector field is continuous. -/
-private theorem continuous_weightedDivergence (hW : ContDiff ℝ 1 W) (X : 𝓓(Ω, E)) :
+theorem continuous_weightedDivergence (hW : ContDiff ℝ 1 W) (X : 𝓓(Ω, E)) :
     Continuous fun x => (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) :=
   ((divergenceCLM X).continuous.sub ((hW.continuous_fderiv one_ne_zero).clm_apply
     X.continuous)).mul hW.continuous.neg.rexp
