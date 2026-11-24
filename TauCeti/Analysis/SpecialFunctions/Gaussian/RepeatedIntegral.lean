@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 
 import TauCeti.Analysis.Complex.IteratedDeriv
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper

@@ -17,7 +17,7 @@ Mathlib’s Gaussian probability density and records that its total mass is one.
 This file also records the complex Gaussian estimates needed to differentiate integrals against
 the translated kernel `z ↦ exp (-(c (t - z))²)` under the integral sign: a Gaussian bound in `t`,
 uniform for `z` in a ball. The complex derivative in `z` is the case `a = -c²`, `b = t` of
-`Complex.hasDerivAt_cexp_mul_sub_sq` in `TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv`.
+`Complex.hasDerivAt_cexp_mul_sub_sq` in `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main definitions
 
