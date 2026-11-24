@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Probability.Process.Filtration.Ray
 public import TauCeti.Probability.Process.Progressive
-public import TauCeti.Probability.Process.Stopping
 public import TauCeti.Topology.Order.Cadlag.OscillationExit
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Topology.Metrizable.Urysohn
-import TauCeti.Probability.Process.StochasticInterval
 
 /-!
 # Oscillation exit stopping times and step-process ray measurability
@@ -31,10 +29,7 @@ and specializing immediately to adapted càdlàg processes
 (`MeasureTheory.Adapted.isStoppingTime_oscillationExitAfter`,
 `MeasureTheory.Adapted.isStoppingTime_oscillationExit`).
 
-Any process on a linearly ordered time index agreeing on each half-open interval
-`[τ n, τ (n + 1))` of a covering sequence of stopping times with a `(τ n)`-measurable coefficient
-into an arbitrary measurable space is measurable for `MeasureTheory.Filtration.rayMeasurableSpace ℱ`
-(`MeasureTheory.measurable_rayMeasurableSpace_of_eq_on_Ico`). Specializing to the
+Specializing `MeasureTheory.Filtration.measurable_rayMeasurableSpace_of_eq_on_Ico` to the
 deterministic step approximation `TauCeti.oscillationApprox` (defined in
 `TauCeti.Topology.Order.Cadlag.OscillationExit`) yields joint ray measurability of
 `oscillationApprox`
@@ -120,54 +115,6 @@ theorem Adapted.isStoppingTime_oscillationExit
 
 end StoppingTime
 
-/-- A process on a linearly ordered time index that agrees with `Y n` on each half-open
-stochastic interval `[τ n, τ (n + 1))` is measurable with respect to `ℱ.rayMeasurableSpace`,
-whenever the intervals `[τ n, τ (n + 1))` cover `ι × Ω` and each `Y n` is `(τ n)`-measurable into
-an arbitrary measurable target. -/
-theorem measurable_rayMeasurableSpace_of_eq_on_Ico
-    {ι Ω E : Type*} [LinearOrder ι] {m : MeasurableSpace Ω} [MeasurableSpace E]
-    {ℱ : Filtration ι m} {τ : ℕ → Ω → WithTop ι}
-    (hτ : ∀ n, IsStoppingTime ℱ (τ n))
-    (hcov : ∀ (t : ι) ω, ∃ n, τ n ω ≤ (t : WithTop ι) ∧ (t : WithTop ι) < τ (n + 1) ω)
-    {Y : ℕ → Ω → E} (hY : ∀ n, Measurable[(hτ n).measurableSpace] (Y n))
-    {Z : ι → Ω → E}
-    (hZ : ∀ n (t : ι) ω, τ n ω ≤ (t : WithTop ι) → (t : WithTop ι) < τ (n + 1) ω →
-      Z t ω = Y n ω) :
-    Measurable[ℱ.rayMeasurableSpace] (Function.uncurry Z) := by
-  classical
-  intro U hU
-  -- Restrict each `τ n` to the `(τ n)`-measurable event `A n = (Y n)⁻¹(U)`, turning
-  -- `[τ n, τ (n + 1)) × A n` into the difference of two closed stopping-time rays.
-  let A (n : ℕ) : Set Ω := Y n ⁻¹' U
-  have hA (n : ℕ) : MeasurableSet[(hτ n).measurableSpace] (A n) := hY n hU
-  let σ (n : ℕ) : Ω → WithTop ι := (A n).piecewise (τ n) (fun _ ↦ ⊤)
-  have hσ (n : ℕ) : IsStoppingTime ℱ (σ n) := (hτ n).piecewise_top (hA n)
-  have hpre : Function.uncurry Z ⁻¹' U =
-      ⋃ n : ℕ, ({p : ι × Ω | σ n p.2 ≤ p.1} \ {p : ι × Ω | τ (n + 1) p.2 ≤ p.1}) := by
-    simp_rw [← TauCeti.stochasticIco_eq_sdiff]
-    ext ⟨t, ω⟩
-    simp only [mem_preimage, Function.uncurry_apply_pair, mem_iUnion, mem_ofPred_eq]
-    constructor
-    · intro hmem
-      obtain ⟨n, hle, hlt⟩ := hcov t ω
-      rw [hZ n t ω hle hlt] at hmem
-      refine ⟨n, ?_, hlt⟩
-      simpa only [σ, Set.piecewise_eq_of_mem (A n) (τ n) _ hmem] using hle
-    · rintro ⟨n, hσ_le, hlt⟩
-      have hωA : ω ∈ A n := by
-        by_contra hnot
-        dsimp only [σ] at hσ_le
-        rw [Set.piecewise_eq_of_notMem (A n) (τ n) _ hnot] at hσ_le
-        exact WithTop.not_top_le_coe t hσ_le
-      have hle : τ n ω ≤ (t : WithTop ι) := by
-        simpa only [σ, Set.piecewise_eq_of_mem (A n) (τ n) _ hωA] using hσ_le
-      rw [hZ n t ω hle hlt]
-      exact hωA
-  rw [hpre]
-  exact MeasurableSet.iUnion fun n ↦
-    (ℱ.measurableSet_rayMeasurableSpace (hσ n)).diff
-      (ℱ.measurableSet_rayMeasurableSpace (hτ (n + 1)))
-
 /-- For a strongly adapted càdlàg process in a pseudometric Borel space and `ε > 0`, the pathwise
 step approximation `fun p ↦ TauCeti.oscillationApprox (X · p.2) ε p.1` is measurable with respect
 to `ℱ.rayMeasurableSpace` on the raw filtration `ℱ`. -/
@@ -184,7 +131,7 @@ theorem StronglyAdapted.measurable_rayMeasurableSpace_oscillationApprox
     hX.isStronglyProgressive_of_isRightContinuous fun ω ↦ (hc ω).isRightContinuous
   let τ (n : ℕ) (ω : Ω) : WithTop ι := TauCeti.oscillationExit (X · ω) ε n
   have hτ (n : ℕ) : IsStoppingTime ℱ (τ n) := hX.isStoppingTime_oscillationExit hc hε n
-  exact measurable_rayMeasurableSpace_of_eq_on_Ico hτ
+  exact Filtration.measurable_rayMeasurableSpace_of_eq_on_Ico hτ
     (fun t ω ↦ (hc ω).exists_mem_Ico_oscillationExit hε t)
     (fun n ↦ measurable_stoppedValue hprog (hτ n))
     (Z := fun t ω ↦ TauCeti.oscillationApprox (X · ω) ε t)
