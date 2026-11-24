@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The Möbius line bundle over the circle
@@ -183,17 +185,6 @@ theorem isPreconnected_moebiusBaseSet (i : Bool) : IsPreconnected (moebiusBaseSe
     ext z
     simp [Circle.ext_iff, Circle.coe_exp, Complex.exp_pi_mul_I]
 
-/-- The coordinate change of the Möbius line bundle from the chart `true` to the chart `false`, at
-a point of their overlap, has determinant the transition function. -/
-private theorem det_coordChangeL_moebiusCore {z : Circle} (h₁ : z ∈ moebiusBaseSet true)
-    (h₀ : z ∈ moebiusBaseSet false) :
-    LinearMap.det (((moebiusCore.localTriv true).coordChangeL ℝ
-      (moebiusCore.localTriv false) z).toLinearEquiv : ℝ →ₗ[ℝ] ℝ) = moebiusSign z := by
-  rw [LinearMap.det_ring]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, LinearEquiv.coe_coe]
-  rw [VectorBundleCore.localTriv_coordChange_eq _ _ _ ⟨h₁, h₀⟩]
-  simp
-
 /-- **The Möbius line bundle is not orientable.** -/
 theorem isEmpty_vectorBundleOrientation_moebiusCore :
     IsEmpty (VectorBundleOrientation ℝ moebiusCore.Fiber (Fin 1)) := by
@@ -213,9 +204,9 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
     (moebiusCore.localTriv true) (moebiusCore.localTriv false) (isPreconnected_moebiusBaseSet true)
     (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
     (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
-  · rw [det_coordChangeL_moebiusCore (hmem hp.ne' true) (hmem hp.ne' false), moebiusSign_of_pos hp]
-    exact one_pos
-  · rw [det_coordChangeL_moebiusCore (hmem hq.ne true) (hmem hq.ne false), moebiusSign_of_neg hq]
-    norm_num
+  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hp.ne' true) (hmem hp.ne' false)]
+    simp [moebiusSign_of_pos hp]
+  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hq.ne true) (hmem hq.ne false)]
+    simp [moebiusSign_of_neg hq]
 
 end TauCeti

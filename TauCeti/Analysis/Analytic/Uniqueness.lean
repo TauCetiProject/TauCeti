@@ -43,6 +43,12 @@ near `p` if and only if `iteratedFDeriv 𝕜 n f p = 0` for every `n : ℕ`, and
 principle extends this pointwise jet condition along any preconnected set on which `f` is analytic
 on neighbourhoods.
 
+The identity principle also shows that an analytic function on a preconnected set which does not
+vanish identically does not vanish on a dense subset: otherwise it would vanish on an open set.
+Combined with continuity, the nonvanishing set of an entire function such as a polynomial in the
+entries of a matrix is open and dense, which is how genericity statements for finitely many
+polynomial conditions are proved.
+
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives. The linear general-position corollary (generalized to finite families over any nontrivially
 normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
@@ -60,6 +66,9 @@ normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 * `AnalyticOnNhd.eqOn_zero_of_preconnected_of_forall_iteratedFDeriv_eq_zero`,
   `AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`: the corresponding identity
   principles on preconnected sets.
+* `AnalyticOnNhd.subset_closure_setOf_ne_zero`: on a preconnected set, an analytic function not
+  vanishing at some point does not vanish on a dense subset.
+* `AnalyticOnNhd.dense_setOf_ne_zero`: the same for a function analytic on the whole space.
 
 ## References
 
@@ -202,5 +211,35 @@ theorem AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq
     (((hf z₀ h₀).eventuallyEq_iff_forall_iteratedFDeriv_eq (hg z₀ h₀)).2 hfg)
 
 end IteratedFDeriv
+
+section NonvanishingSet
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **The nonvanishing set of an analytic function is dense.** If `f` is analytic on a
+preconnected set `U` and does not vanish at some point of `U`, then every point of `U` is a limit
+of points where `f` does not vanish. Otherwise `f` would vanish on a neighbourhood of a point of
+`U`, hence on all of `U` by the identity principle. -/
+theorem AnalyticOnNhd.subset_closure_setOf_ne_zero {f : E → F} {U : Set E}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U) {z₀ : E} (hz₀U : z₀ ∈ U)
+    (hz₀ : f z₀ ≠ 0) : U ⊆ closure {x | f x ≠ 0} := by
+  intro x hx
+  by_contra hcl
+  have hzero : f =ᶠ[𝓝 x] 0 := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hcl] with y hy
+    by_contra hfy
+    exact hy (subset_closure hfy)
+  exact hz₀ (hf.eqOn_zero_of_preconnected_of_eventuallyEq_zero hU hx hzero hz₀U)
+
+/-- **The nonvanishing set of an entire function is dense.** A function analytic on a preconnected
+space that does not vanish at some point does not vanish on a dense set. Preconnectedness holds for
+real and complex normed spaces; over a totally disconnected field such as `ℚ_[p]` the indicator
+function of a ball is analytic, and the statement fails. -/
+theorem AnalyticOnNhd.dense_setOf_ne_zero [PreconnectedSpace E] {f : E → F}
+    (hf : AnalyticOnNhd 𝕜 f Set.univ) {z₀ : E} (hz₀ : f z₀ ≠ 0) : Dense {x | f x ≠ 0} := fun x ↦
+  hf.subset_closure_setOf_ne_zero isPreconnected_univ (Set.mem_univ z₀) hz₀ (Set.mem_univ x)
+
+end NonvanishingSet
 
 end

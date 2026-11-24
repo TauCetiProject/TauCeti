@@ -12,16 +12,16 @@ import Mathlib.Algebra.Ring.GeomSum
 /-!
 # Telescoping strings in a group algebra
 
-Let `g` and `y` be commuting elements of a group `G`. Multiplying the string
-`y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` of basis elements of `R[G]` by `1 - g⁻¹` telescopes to
-`y - y g⁻ⁿ`, and multiplying `y g + ⋯ + y gⁿ` by `1 - g⁻¹` telescopes to `y gⁿ - y`. In additive
-notation, with `e^x` for the basis element at `x`, these are the identities
-`(1 - e^{-α}) (e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}) = e^y - e^{y - n α}` and
-`(1 - e^{-α}) (e^{y + α} + ⋯ + e^{y + n α}) = e^{y + n α} - e^y` for root strings in the group
-algebra of a weight lattice.
+Let `g` and `y` be commuting elements of a group `G` and let `r : R`. Multiplying the string
+`r y + r y g⁻¹ + ⋯ + r y g⁻⁽ⁿ⁻¹⁾` of elements of `R[G]` by `1 - g⁻¹` telescopes to
+`r y - r y g⁻ⁿ`, and multiplying `r y g + ⋯ + r y gⁿ` by `1 - g⁻¹` telescopes to `r y gⁿ - r y`.
+In additive notation, with `e^x` for the basis element at `x`, these are the identities
+`(1 - e^{-α}) (r e^y + r e^{y - α} + ⋯ + r e^{y - (n - 1) α}) = r e^y - r e^{y - n α}` and
+`(1 - e^{-α}) (r e^{y + α} + ⋯ + r e^{y + n α}) = r e^{y + n α} - r e^y` for root strings in the
+group algebra of a weight lattice.
 
 Both are instances of the geometric-sum identities `mul_neg_geom_sum` and `mul_geom_sum` in the
-ring `R[G]`: the summands are `g⁻ʲ * y`, respectively `g * gʲ * y`, as products of basis elements.
+ring `R[G]`: the summands are `g⁻ʲ * (r y)`, respectively `g * gʲ * (r y)`, as products in `R[G]`.
 
 ## Main statements
 
@@ -39,39 +39,39 @@ variable {R : Type*} [Ring R] {G : Type*} [Group G]
 
 namespace Commute
 
-/-- For commuting `g` and `y`, multiplying the descending string `y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` by
-`1 - g⁻¹` telescopes. -/
+/-- For commuting `g` and `y`, multiplying the descending string
+`r y + r y g⁻¹ + ⋯ + r y g⁻⁽ⁿ⁻¹⁾` by `1 - g⁻¹` telescopes. -/
 @[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_sub
   /-- For commuting `α` and `y`, multiplying the descending string
-  `e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}` by `1 - e^{-α}` telescopes. -/]
-theorem one_sub_single_inv_mul_sum_div {g y : G} (hgy : Commute g y) (n : ℕ) :
-    (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1 =
-      single y 1 - single (y / g ^ n) 1 := by
-  have hterm (j : ℕ) : single (y / g ^ j) (1 : R) = single g⁻¹ 1 ^ j * single y 1 := by
+  `r e^y + r e^{y - α} + ⋯ + r e^{y - (n - 1) α}` by `1 - e^{-α}` telescopes. -/]
+theorem one_sub_single_inv_mul_sum_div {g y : G} (hgy : Commute g y) (n : ℕ) (r : R) :
+    (1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single (y / g ^ j) r =
+      single y r - single (y / g ^ n) r := by
+  have hterm (j : ℕ) : single (y / g ^ j) r = single g⁻¹ 1 ^ j * single y r := by
     simp [single_pow, (hgy.pow_left j).inv_left.eq, div_eq_mul_inv]
-  calc (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1
-      = ((1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single g⁻¹ 1 ^ j) * single y 1 := by
+  calc (1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single (y / g ^ j) r
+      = ((1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single g⁻¹ 1 ^ j) * single y r := by
         simp only [hterm, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    _ = single y 1 - single (y / g ^ n) 1 := by
+    _ = single y r - single (y / g ^ n) r := by
         rw [mul_neg_geom_sum, sub_mul, one_mul, hterm]
 
-/-- For commuting `g` and `y`, multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹`
-telescopes. -/
+/-- For commuting `g` and `y`, multiplying the ascending string `r y g + ⋯ + r y gⁿ` by
+`1 - g⁻¹` telescopes. -/
 @[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_add
   /-- For commuting `α` and `y`, multiplying the ascending string
-  `e^{y + α} + ⋯ + e^{y + n α}` by `1 - e^{-α}` telescopes. -/]
-theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) :
-    (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1 =
-      single (y * g ^ n) 1 - single y 1 := by
-  have hterm (j : ℕ) : single (y * g ^ j) (1 : R) = single g 1 ^ j * single y 1 := by
+  `r e^{y + α} + ⋯ + r e^{y + n α}` by `1 - e^{-α}` telescopes. -/]
+theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) (r : R) :
+    (1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) r =
+      single (y * g ^ n) r - single y r := by
+  have hterm (j : ℕ) : single (y * g ^ j) r = single g 1 ^ j * single y r := by
     simp [single_pow, (hgy.pow_left j).eq]
   have hg : (1 - single g⁻¹ (1 : R)) * single g 1 = single g 1 - 1 := by
     simp [sub_mul, one_def]
-  calc (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1
+  calc (1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) r
       = (1 - single g⁻¹ 1) * single g 1 * (∑ j ∈ Finset.range n, single g 1 ^ j) *
-          single y 1 := by
+          single y r := by
         simp_rw [hterm, pow_succ', mul_assoc, Finset.sum_mul, Finset.mul_sum]
-    _ = single (y * g ^ n) 1 - single y 1 := by
+    _ = single (y * g ^ n) r - single y r := by
         rw [hg, mul_geom_sum, sub_mul, one_mul, hterm]
 
 end Commute
