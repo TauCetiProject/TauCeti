@@ -26,9 +26,10 @@ API applies to them. For instance, `TauCeti.AlgebraicGeometry.toGraphClosure_gra
 `π_2 ∘ γ_f = g`, and `TauCeti.AlgebraicGeometry.isIso_graphClosureFst_restrict` shows that `π_1`
 is an isomorphism over `V` when `Y` is separated and `V → X` is quasi-compact.
 
-When `X` is a Noetherian topological space, `γ_f` is quasi-compact, so `Γ_f` is supported on the
-closure of the image of `V`, the factorization `V → Γ_f` is dominant, and `Γ_f` is integral when
-`X` is integral.
+When `X` is a Noetherian topological space, `γ_f` is quasi-compact. Then Mathlib's
+scheme-theoretic image API applies: `Scheme.Hom.range_imageι` shows that `Γ_f` is supported on the
+closure of the image of `V`, Mathlib's instances make the factorization `V → Γ_f` quasi-compact
+and dominant, and `Γ_f` is integral when `X` is integral.
 
 ## Main definitions
 
@@ -41,8 +42,6 @@ closure of the image of `V`, the factorization `V → Γ_f` is dominant, and `Γ
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.range_graphι`: the graph is supported on the closure of
-  the image of `γ_f`.
 * `AlgebraicGeometry.Scheme.RationalMap.isIntegral_graph`: the graph of a rational map out of a
   Noetherian integral scheme is integral.
 
@@ -51,8 +50,6 @@ closure of the image of `V`, the factorization `V → Γ_f` is dominant, and `Γ
 * [T.-C. Dinh and N. Sibony, *Une borne supérieure pour l'entropie topologique d'une application
   rationnelle*, Ann. of Math. 161 (2005)](https://arxiv.org/abs/math/0303271), the graph of a
   rational map and its projections.
-* [Stacks Project, Lemma 29.6.3](https://stacks.math.columbia.edu/tag/01R8), the underlying set of
-  the scheme-theoretic image of a quasi-compact morphism, used for `range_graphι`.
 -/
 
 public section
@@ -110,23 +107,6 @@ instance quasiCompact_graphLift : QuasiCompact (graphLift f) :=
   have : NoetherianSpace f.representative.domain.toScheme :=
     NoetherianSpace.set (f.representative.domain : Set X)
   quasiCompact_of_noetherianSpace_source _
-
-/-- Out of a Noetherian space, the factorization of `γ_f` through the graph is quasi-compact. -/
-instance quasiCompact_toGraph : QuasiCompact (toGraph f) := by
-  have : QuasiCompact (toGraph f ≫ graphι f) := by
-    rw [Scheme.Hom.toImage_imageι]
-    infer_instance
-  exact QuasiCompact.of_comp (toGraph f) (graphι f)
-
-/-- The graph is supported on the closure of the image of `γ_f`. -/
-theorem range_graphι : Set.range (graphι f) = closure (Set.range (graphLift f)) :=
-  (graphLift f).range_imageι
-
-/-- The factorization of `γ_f` through the graph is dominant. -/
-instance isDominant_toGraph : IsDominant (toGraph f) :=
-  have : IsSchemeTheoreticallyDominant (toGraph f) :=
-    (graphLift f).isSchemeTheoreticallyDominant_toImage
-  inferInstance
 
 /-- The graph of a rational map out of a Noetherian integral scheme is integral. -/
 instance isIntegral_graph [IsIntegral X] : IsIntegral (graph f) :=
