@@ -60,6 +60,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt` — the inverse square root whitens `S`:
   `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`, with the transpose form
   `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` over a field with trivial star such as `ℝ`;
+* `Matrix.PosDef.rank_mul_mul_conjTranspose` — `M * S * Mᴴ` has the rank of `M` when `S` is
+  positive definite;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -252,6 +254,20 @@ theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) 
   rw [hS.posDef_inv_sub_iff (c • Θ), Matrix.mul_smul, Matrix.smul_mul]
 
 end PosDef
+
+open scoped Classical in
+/-- Congruence of a positive-definite matrix `S` by `M` has the rank of `M`:
+`(M * S * Mᴴ).rank = M.rank`. -/
+theorem PosDef.rank_mul_mul_conjTranspose {m : Type*} [Finite m] {S : Matrix ι ι 𝕜}
+    (hS : S.PosDef) (M : Matrix m ι 𝕜) : (M * S * Mᴴ).rank = M.rank := by
+  have hh : (CFC.sqrt S).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian
+  calc (M * S * Mᴴ).rank = (M * CFC.sqrt S * (M * CFC.sqrt S)ᴴ).rank := by
+        conv_lhs => rw [← CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg]
+        rw [conjTranspose_mul, hh.eq]
+        simp only [Matrix.mul_assoc]
+    _ = (M * CFC.sqrt S).rank := rank_self_mul_conjTranspose _
+    _ = M.rank := rank_mul_eq_left_of_isUnit_det _ _ hS.isUnit_det_sqrt
 
 /-! ### The square-root factorization over the reals -/
 

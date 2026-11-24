@@ -54,11 +54,22 @@ angular frequency `k` of a character of `ℂˣ` from its restriction to the unit
   classification of the continuous characters of `ℂˣ`.
 * `TauCeti.realUnitsCharacter_map_normSq`, `TauCeti.complexUnitsCharacter_map_conj`: the
   pullbacks of these characters along the norm `ℂˣ → ℝˣ` and along complex conjugation.
+* `TauCeti.existsUnique_norm_coe_realUnits_eq_rpow`,
+  `TauCeti.existsUnique_norm_coe_complexUnits_eq_rpow`: every quasi-character has a unique real
+  exponent `σ` with `‖ω(x)‖ = |x| ^ σ`, for the normalized absolute values `|x|` of `ℝ` and
+  `z conj(z)` of `ℂ`.
+* `TauCeti.existsUnique_realUnits_eq_zpow_mul_abs_cpow`,
+  `TauCeti.existsUnique_complexUnits_eq_zpow_mul_zpow_mul_normSq_cpow`: Kudla's normal forms
+  `x ^ (-a) |x| ^ s` with `a ∈ {0, 1}` on `ℝˣ`, and `z ^ (-a) conj(z) ^ (-b) (z conj(z)) ^ s`
+  with `min a b = 0` on `ℂˣ`, each with unique parameters.
+* `TauCeti.coe_realSignCharacter_eq_zpow_mul_abs`: the sign character is `x ↦ x ^ (-1) |x|`.
 
 ## References
 
 * J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, in J. W. S. Cassels and
   A. Fröhlich, eds., *Algebraic Number Theory*, §2.3.
+* S. S. Kudla, *Tate's thesis*, in J. Bernstein and S. Gelbart, eds., *An Introduction to the
+  Langlands Program*, §3, (3.18) and (3.20).
 -/
 
 public section
@@ -438,5 +449,119 @@ character. -/
 theorem complexUnitsCharacterEquiv_symm_apply (s : ℂ) (k : ℤ) :
     complexUnitsCharacterEquiv.symm (complexUnitsCharacter s k) = .ofAdd (s, k) :=
   (MulEquiv.symm_apply_eq complexUnitsCharacterEquiv).2 rfl
+
+/-! ### Exponents and the normal forms of Weil and Kudla
+
+The normalized absolute value of `ℝ` is `|x|`, and that of `ℂ` is `|z|_ℂ = z conj(z) = normSq z`.
+Every quasi-character `ω` has a unique real exponent `σ` with `‖ω(x)‖ = |x| ^ σ` for the
+normalized absolute value. In terms of the integral algebraic characters, every quasi-character
+of `ℝˣ` is uniquely `x ↦ x ^ (-a) |x| ^ s` with `a ∈ {0, 1}`, and every quasi-character of `ℂˣ`
+is uniquely `z ↦ z ^ (-a) conj(z) ^ (-b) (z conj(z)) ^ s` with `a, b ∈ ℕ` and `min a b = 0`.
+In these forms the sign character is `x ↦ x ^ (-1) |x|`. -/
+
+/-- **The exponent of a quasi-character of `ℝˣ`.** For every continuous character `χ` of `ℝˣ`
+there is a unique real `σ` with `‖χ(x)‖ = |x| ^ σ`. -/
+theorem existsUnique_norm_coe_realUnits_eq_rpow (χ : ℝˣ →ₜ* ℂˣ) :
+    ∃! σ : ℝ, ∀ x : ℝˣ, ‖(χ x : ℂ)‖ = |(x : ℝ)| ^ σ := by
+  obtain ⟨s, ε, rfl⟩ := exists_eq_realUnitsCharacter χ
+  refine ⟨s.re, norm_coe_realUnitsCharacter_apply s ε, fun σ hσ ↦ ?_⟩
+  have h := (hσ (Units.mk0 2 two_ne_zero)).symm
+  rw [norm_coe_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
+
+/-- **The exponent of a quasi-character of `ℂˣ`.** For every continuous character `χ` of `ℂˣ`
+there is a unique real `σ` with `‖χ(z)‖ = |z|_ℂ ^ σ`, for the normalized absolute value
+`|z|_ℂ = z conj(z) = normSq z`. -/
+theorem existsUnique_norm_coe_complexUnits_eq_rpow (χ : ℂˣ →ₜ* ℂˣ) :
+    ∃! σ : ℝ, ∀ z : ℂˣ, ‖(χ z : ℂ)‖ = normSq (z : ℂ) ^ σ := by
+  have hnormSq (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
+    rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
+  obtain ⟨s, k, rfl⟩ := exists_eq_complexUnitsCharacter χ
+  refine ⟨s.re / 2, fun z ↦ ?_, fun σ hσ ↦ ?_⟩
+  · rw [norm_coe_complexUnitsCharacter_apply, hnormSq, mul_div_cancel₀ _ two_ne_zero]
+  · have h := (hσ (Units.mk0 2 two_ne_zero)).symm
+    rw [norm_coe_complexUnitsCharacter_apply, hnormSq, Units.val_mk0, norm_ofNat] at h
+    linarith [(Real.rpow_right_inj two_pos (by norm_num)).1 h]
+
+/-- In Kudla's normal form, `realUnitsCharacter (s - a) a` is `x ↦ x ^ (-a) |x| ^ s` with
+`a ∈ {0, 1}` the value of the parity. -/
+theorem coe_realUnitsCharacter_sub_val_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
+    (realUnitsCharacter (s - ε.val) ε x : ℂ) =
+      ((x : ℝ) : ℂ) ^ (-(ε.val : ℤ)) * ((|(x : ℝ)| : ℝ) : ℂ) ^ s := by
+  have hε : ε = ((-(ε.val : ℤ) : ℤ) : ZMod 2) + 0 := by
+    rw [add_zero, Int.cast_neg, Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.neg_eq_self_mod_two]
+  have hs : s - ε.val = ((-(ε.val : ℤ) : ℤ) : ℂ) + s := by push_cast; ring
+  rw [hs, hε, realUnitsCharacter_add, ← hε, ContinuousMonoidHom.mul_apply, Units.val_mul,
+    coe_realUnitsCharacter_intCast]
+  simp
+
+/-- The sign character is `x ↦ x ^ (-1) |x|`: in Kudla's normal form it has `a = 1` and
+`s = 1`. -/
+theorem coe_realSignCharacter_eq_zpow_mul_abs (x : ℝˣ) :
+    (realSignCharacter x : ℂ) = ((x : ℝ) : ℂ) ^ (-1 : ℤ) * ((|(x : ℝ)| : ℝ) : ℂ) := by
+  have h := coe_realUnitsCharacter_sub_val_apply 1 1 x
+  rw [ZMod.val_one, Nat.cast_one, sub_self, realUnitsCharacter_zero_left, ZMod.val_one,
+    pow_one, cpow_one] at h
+  exact_mod_cast h
+
+/-- **Kudla's normal form for `ℝˣ`.** Every continuous character of `ℝˣ` is uniquely
+`x ↦ x ^ (-a) |x| ^ s` with `a ∈ {0, 1}`, recorded as `ZMod 2` through its value, and `s : ℂ`. -/
+theorem existsUnique_realUnits_eq_zpow_mul_abs_cpow (χ : ℝˣ →ₜ* ℂˣ) :
+    ∃! p : ZMod 2 × ℂ, ∀ x : ℝˣ,
+      (χ x : ℂ) = ((x : ℝ) : ℂ) ^ (-(p.1.val : ℤ)) * ((|(x : ℝ)| : ℝ) : ℂ) ^ p.2 := by
+  have hχ (p : ZMod 2 × ℂ) (hp : ∀ x : ℝˣ,
+      (χ x : ℂ) = ((x : ℝ) : ℂ) ^ (-(p.1.val : ℤ)) * ((|(x : ℝ)| : ℝ) : ℂ) ^ p.2) :
+      χ = realUnitsCharacter (p.2 - p.1.val) p.1 :=
+    ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
+      rw [hp, coe_realUnitsCharacter_sub_val_apply]
+  obtain ⟨s, ε, rfl⟩ := exists_eq_realUnitsCharacter χ
+  refine ⟨(ε, s + ε.val), fun x ↦ ?_, fun p hp ↦ ?_⟩
+  · rw [← coe_realUnitsCharacter_sub_val_apply, add_sub_cancel_right]
+  · obtain ⟨h₁, h₂⟩ := realUnitsCharacter_inj.1 (hχ p hp)
+    ext
+    · exact h₂.symm
+    · rw [h₁, h₂, sub_add_cancel]
+
+/-- In Kudla's normal form, `complexUnitsCharacter (2 s - (a + b)) (b - a)` is
+`z ↦ z ^ (-a) conj(z) ^ (-b) (z conj(z)) ^ s`. -/
+theorem coe_complexUnitsCharacter_two_mul_sub_apply (a b : ℕ) (s : ℂ) (z : ℂˣ) :
+    (complexUnitsCharacter (2 * s - (a + b)) (b - a) z : ℂ) =
+      (z : ℂ) ^ (-(a : ℤ)) * (starRingEnd ℂ) (z : ℂ) ^ (-(b : ℤ)) *
+        ((normSq (z : ℂ) : ℝ) : ℂ) ^ s := by
+  have hs : 2 * s - (a + b) = ((-(a : ℤ) + -(b : ℤ) : ℤ) : ℂ) + 2 * s := by push_cast; ring
+  have hk : (b : ℤ) - a = (-(a : ℤ) - -(b : ℤ)) + 0 := by ring
+  have hz : 0 < normSq (z : ℂ) := normSq_pos.2 z.ne_zero
+  rw [hs, hk, complexUnitsCharacter_add, ContinuousMonoidHom.mul_apply, Units.val_mul,
+    coe_complexUnitsCharacter_intCast, ← realUnitsCharacter_map_normSq s 0,
+    coe_realUnitsCharacter_apply]
+  simp [abs_of_pos hz]
+
+/-- **Kudla's normal form for `ℂˣ`.** Every continuous character of `ℂˣ` is uniquely
+`z ↦ z ^ (-a) conj(z) ^ (-b) (z conj(z)) ^ s` with `a, b ∈ ℕ`, `min a b = 0` and `s : ℂ`. -/
+theorem existsUnique_complexUnits_eq_zpow_mul_zpow_mul_normSq_cpow (χ : ℂˣ →ₜ* ℂˣ) :
+    ∃! p : ℕ × ℕ × ℂ, min p.1 p.2.1 = 0 ∧ ∀ z : ℂˣ,
+      (χ z : ℂ) = (z : ℂ) ^ (-(p.1 : ℤ)) * (starRingEnd ℂ) (z : ℂ) ^ (-(p.2.1 : ℤ)) *
+        ((normSq (z : ℂ) : ℝ) : ℂ) ^ p.2.2 := by
+  have hχ (p : ℕ × ℕ × ℂ) (hp : ∀ z : ℂˣ,
+      (χ z : ℂ) = (z : ℂ) ^ (-(p.1 : ℤ)) * (starRingEnd ℂ) (z : ℂ) ^ (-(p.2.1 : ℤ)) *
+        ((normSq (z : ℂ) : ℝ) : ℂ) ^ p.2.2) :
+      χ = complexUnitsCharacter (2 * p.2.2 - (p.1 + p.2.1)) (p.2.1 - p.1) :=
+    ContinuousMonoidHom.ext fun z ↦ Units.ext <| by
+      rw [hp, coe_complexUnitsCharacter_two_mul_sub_apply]
+  obtain ⟨t, k, rfl⟩ := exists_eq_complexUnitsCharacter χ
+  -- The exponents are `a = max (-k) 0` and `b = max k 0`, so that `b - a = k`.
+  have hab : (k.toNat : ℤ) - (-k).toNat = k := by omega
+  refine ⟨((-k).toNat, k.toNat, (t + ((-k).toNat + k.toNat)) / 2),
+    ⟨by dsimp only; omega, fun z ↦ ?_⟩, fun p ⟨hmin, hp⟩ ↦ ?_⟩
+  · rw [← coe_complexUnitsCharacter_two_mul_sub_apply, hab, mul_div_cancel₀ _ two_ne_zero,
+      add_sub_cancel_right]
+  · obtain ⟨h₁, h₂⟩ := complexUnitsCharacter_inj.1 (hχ p hp)
+    -- `min a b = 0` and `b - a = k` determine `a` and `b`.
+    have hmin' : p.1 = 0 ∨ p.2.1 = 0 := Nat.min_eq_zero_iff.1 hmin
+    have ha : p.1 = (-k).toNat := by omega
+    have hb : p.2.1 = k.toNat := by omega
+    refine Prod.ext ha (Prod.ext hb ?_)
+    rw [h₁, ha, hb]
+    ring
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Real powers
@@ -150,6 +150,7 @@ with the corresponding integral of `q`-th powers.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.rpow_eq_rpow_sub_one_mul`: `t ^ s = t ^ (s - 1) t` for `0 ≤ t` and `s ≠ 0`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
   and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
@@ -417,6 +418,12 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   rw [← exp_mul]
   ring_nf
 
+/-- Peeling one factor off a real power: `t ^ s = t ^ (s - 1) * t` for `0 ≤ t` and `s ≠ 0`. Unlike
+`Real.rpow_sub_one`, it needs no `t ≠ 0`: at `t = 0` both sides are `0`. -/
+theorem rpow_eq_rpow_sub_one_mul {t s : ℝ} (ht : 0 ≤ t) (hs : s ≠ 0) :
+    t ^ s = t ^ (s - 1) * t := by
+  rw [← rpow_add_one' ht (by rwa [sub_add_cancel]), sub_add_cancel]
+
 /-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
 the second factor: for `t < 0` both sides carry the same factor `cos (z π)`. -/
 theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
@@ -580,7 +587,8 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
       simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
-  have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
+  have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
 
