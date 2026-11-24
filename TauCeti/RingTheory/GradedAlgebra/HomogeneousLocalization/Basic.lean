@@ -37,6 +37,7 @@ localization is.
 * `HomogeneousLocalization.Away.mkLinearMap_promoteNumerator`: raising numerator and denominator
   by the same power does not change a homogeneous fraction.
 
+* `HomogeneousLocalization.Away.mk_self`: the homogeneous fraction `f / f` is one.
 * `HomogeneousLocalization.Away.algHom_ext`: algebra homomorphisms out of `A_{(f)}` are
   determined by their values on the homogeneous fractions `a / fⁿ`.
 * `HomogeneousLocalization.Away.lift_mk`: `lift` sends `a / fⁿ` to `φ a * ((φ f)ⁿ)⁻¹`.
@@ -76,6 +77,14 @@ namespace HomogeneousLocalization
 variable {ι A B R σ τ : Type*} [CommRing A] [CommRing B] [CommRing R] [SetLike σ A]
   [AddSubgroupClass σ A] [SetLike τ B] [AddSubgroupClass τ B] [AddCommMonoid ι] [DecidableEq ι]
   {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- The homogeneous fraction `f / f` is one. -/
+@[simp]
+theorem Away.mk_self {f : A} {d : ι} (hf : f ∈ 𝒜 d) (h : f ∈ 𝒜 (1 • d)) :
+    Away.mk 𝒜 hf 1 f h = 1 := by
+  apply val_injective
+  rw [Away.val_mk, val_one]
+  simpa only [pow_one] using Localization.mk_self (⟨f ^ 1, 1, rfl⟩ : Submonoid.powers f)
 
 variable (𝒜) in
 /-- The ring homomorphism `A_{(f)} →+* R`, `a / fⁿ ↦ φ a / (φ f)ⁿ`, induced by a ring

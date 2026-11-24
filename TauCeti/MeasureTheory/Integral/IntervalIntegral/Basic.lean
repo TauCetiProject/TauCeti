@@ -58,6 +58,8 @@ not belong to any particular application.
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
 * `TauCeti.intervalIntegral.abs_integral_norm_le`: for `M` integrable on `[a, b]`, the integral
   of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`.
+* `TauCeti.intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le`: if `‖M‖ ≤ m` almost
+  everywhere between `c` and `d`, then `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
@@ -551,6 +553,16 @@ theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G}
     ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
   exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
     (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
+
+/-- For a function `M` into a normed group and `m` integrable between `c` and `d` with
+`‖M r‖ ≤ m r` for almost every `r` between them, `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`. -/
+theorem abs_integral_norm_le_abs_integral_of_norm_le {G : Type*} [NormedAddCommGroup G]
+    {M : ℝ → G} {m : ℝ → ℝ} {c d : ℝ} (hm : IntervalIntegrable m volume c d)
+    (hMm : ∀ᵐ r, r ∈ Ι c d → ‖M r‖ ≤ m r) :
+    |∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r| := by
+  simpa only [Real.norm_eq_abs] using
+    _root_.intervalIntegral.norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖M r‖)
+      ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hMm)) hm
 
 end TauCeti.intervalIntegral
 
