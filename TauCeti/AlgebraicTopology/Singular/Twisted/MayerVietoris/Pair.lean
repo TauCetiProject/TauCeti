@@ -101,23 +101,19 @@ def pairTwistedMayerVietorisToBiprod (n : ℕ) :
         (TopPair.ofInclusion hDB).twistedHomology
           ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) n :=
   biprod.lift
-    (HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L _ hCA
-      Set.inter_subset_left Set.inter_subset_left) n)
-    (-HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L _ hDB
-      Set.inter_subset_right Set.inter_subset_right) n)
+    (subsetPairTwistedHomologyMap L _ hCA Set.inter_subset_left Set.inter_subset_left n)
+    (-subsetPairTwistedHomologyMap L _ hDB Set.inter_subset_right Set.inter_subset_right n)
 
 @[reassoc (attr := simp)]
 lemma pairTwistedMayerVietorisToBiprod_fst (n : ℕ) :
     pairTwistedMayerVietorisToBiprod L hCA hDB n ≫ biprod.fst =
-      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L _ hCA
-        Set.inter_subset_left Set.inter_subset_left) n :=
+      subsetPairTwistedHomologyMap L _ hCA Set.inter_subset_left Set.inter_subset_left n :=
   biprod.lift_fst _ _
 
 @[reassoc (attr := simp)]
 lemma pairTwistedMayerVietorisToBiprod_snd (n : ℕ) :
     pairTwistedMayerVietorisToBiprod L hCA hDB n ≫ biprod.snd =
-      -HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L _ hDB
-        Set.inter_subset_right Set.inter_subset_right) n :=
+      -subsetPairTwistedHomologyMap L _ hDB Set.inter_subset_right Set.inter_subset_right n :=
   biprod.lift_snd _ _
 
 /-- The second map `Hₙ(A, C; L) ⊞ Hₙ(B, D; L) ⟶ Hₙ(A ∪ B, C ∪ D; L)` of the Mayer–Vietoris
@@ -131,23 +127,19 @@ def pairTwistedMayerVietorisFromBiprod (n : ℕ) :
       (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).twistedHomology
         ((pullback (X := TopCat.of ↥(A ∪ B)) (ContinuousMap.subtypeVal (A ∪ B))).obj L) n :=
   biprod.desc
-    (HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hCA _
-      Set.subset_union_left Set.subset_union_left) n)
-    (HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hDB _
-      Set.subset_union_right Set.subset_union_right) n)
+    (subsetPairTwistedHomologyMap L hCA _ Set.subset_union_left Set.subset_union_left n)
+    (subsetPairTwistedHomologyMap L hDB _ Set.subset_union_right Set.subset_union_right n)
 
 @[reassoc (attr := simp)]
 lemma inl_pairTwistedMayerVietorisFromBiprod (n : ℕ) :
     biprod.inl ≫ pairTwistedMayerVietorisFromBiprod L hCA hDB n =
-      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hCA _
-        Set.subset_union_left Set.subset_union_left) n :=
+      subsetPairTwistedHomologyMap L hCA _ Set.subset_union_left Set.subset_union_left n :=
   biprod.inl_desc _ _
 
 @[reassoc (attr := simp)]
 lemma inr_pairTwistedMayerVietorisFromBiprod (n : ℕ) :
     biprod.inr ≫ pairTwistedMayerVietorisFromBiprod L hCA hDB n =
-      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hDB _
-        Set.subset_union_right Set.subset_union_right) n :=
+      subsetPairTwistedHomologyMap L hDB _ Set.subset_union_right Set.subset_union_right n :=
   biprod.inr_desc _ _
 
 /-- The composite of the first two maps of the Mayer–Vietoris sequence of two pairs vanishes. -/
@@ -398,8 +390,8 @@ private lemma biprod_desc_homologyMap_comp_homologyIsoUnion_hom (n : ℕ) :
 
 private lemma pairTwistedMayerVietorisToBiprod_eq (n : ℕ) :
     pairTwistedMayerVietorisToBiprod L hCA hDB n =
-      biprod.lift (HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L _ hCA
-          Set.inter_subset_left Set.inter_subset_left) n)
+      biprod.lift
+        (subsetPairTwistedHomologyMap L _ hCA Set.inter_subset_left Set.inter_subset_left n)
         (HomologicalComplex.homologyMap (-subsetPairTwistedChainComplexMap L _ hDB
           Set.inter_subset_right Set.inter_subset_right) n) := by
   rw [pairTwistedMayerVietorisToBiprod, HomologicalComplex.homologyMap_neg]

@@ -33,7 +33,10 @@ any base column to any other column; the least number of steps is the traversal 
 the target column.
 
 Row relabeling leaves the component permutation unchanged, while column relabeling conjugates it.
-Both relabelings induce equivalences of component indices.
+Both relabelings induce equivalences of component indices. Diagonal reflection inverts the
+component permutation up to conjugation by the `O`-marking permutation, so it also induces an
+equivalence of component indices, sending the component of a column `c` to that of the column
+`G.O c` of the reflected diagram.
 Consequently the cycle type, component count, and knot predicate are preserved by both
 relabelings, as well as by diagonal reflection, half-turn rotation, and exchanging `O` with `X`.
 
@@ -48,6 +51,8 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentOfColumn`: the component containing a column.
 * `TauCeti.GridDiagram.componentsRelabelRowsEquiv`,
   `TauCeti.GridDiagram.componentsRelabelColumnsEquiv`: component equivalences under relabeling.
+* `TauCeti.GridDiagram.componentsTransposeEquiv`: the component equivalence under diagonal
+  reflection.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
 * `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
   component permutation from a base column to a column.
@@ -177,6 +182,10 @@ abbrev Components := Quotient (Equiv.Perm.SameCycle.setoid G.componentPerm)
 
 /-- The link component containing the `O`-marking in a column. -/
 def componentOfColumn (c : Fin n) : G.Components := Quotient.mk _ c
+
+/-- The component of a column is its orbit class under the component permutation. -/
+theorem componentOfColumn_def (c : Fin n) : G.componentOfColumn c = Quotient.mk _ c :=
+  (rfl)
 
 /-- Two columns index the same component exactly when they lie in the same component cycle. -/
 @[simp]
@@ -491,6 +500,38 @@ theorem componentPerm_transpose :
       G.X.toPerm * G.componentPerm⁻¹ * G.X.toPerm⁻¹ := by
   ext c
   simp [componentPerm, GridState.transpose]
+
+/-- Diagonal reflection inverts the component permutation transported along the `O`-marking
+permutation, which carries each column to the row of its `O`-marking. -/
+theorem componentPerm_transpose_eq_inv_permCongr :
+    G.transpose.componentPerm = (G.O.toPerm.permCongr G.componentPerm)⁻¹ := by
+  rw [componentPerm_transpose, componentPerm_def]
+  ext c
+  simp
+
+/-- Diagonal reflection carries the component of a column to the component of the row of its
+`O`-marking, which is a column of the reflected diagram. -/
+def componentsTransposeEquiv : G.Components ≃ G.transpose.Components :=
+  Quotient.congr G.O.toPerm fun a b ↦ by
+    have h := Equiv.Perm.sameCycle_permCongr G.componentPerm G.O.toPerm (x := a) (y := b)
+    rw [← Equiv.Perm.sameCycle_inv, ← componentPerm_transpose_eq_inv_permCongr] at h
+    exact h.symm
+
+/-- Diagonal reflection sends the component of `c` to the component of the column `G.O c` of the
+reflected diagram. -/
+@[simp]
+theorem componentsTransposeEquiv_componentOfColumn (c : Fin n) :
+    G.componentsTransposeEquiv (G.componentOfColumn c) = G.transpose.componentOfColumn (G.O c) :=
+  (rfl)
+
+/-- The inverse reflection equivalence sends the component of a column of the reflected diagram to
+the component of the column whose `O`-marking lies in that row. -/
+@[simp]
+theorem componentsTransposeEquiv_symm_componentOfColumn (c : Fin n) :
+    G.componentsTransposeEquiv.symm (G.transpose.componentOfColumn c) =
+      G.componentOfColumn (G.O.toPerm.symm c) := by
+  rw [Equiv.symm_apply_eq, componentsTransposeEquiv_componentOfColumn]
+  exact congrArg _ (G.O.toPerm.apply_symm_apply c).symm
 
 /-- Diagonal reflection transports component cycles by inversion and conjugation. -/
 theorem mem_componentCycles_transpose (c : Equiv.Perm (Fin n)) :

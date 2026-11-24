@@ -32,6 +32,7 @@ also preserves it. The theorems
 `LinearMap.BilinForm.nondegenerate_baseChange_iff`, and the computations behind them,
 `LinearMap.BilinForm.toMatrix_baseChange` and `LinearMap.BilinForm.det_toMatrix_baseChange`, say
 that base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
+`IsBaseChange.nondegenerate_bilinForm_iff` transfers the latter to `IsBaseChange.bilinForm`.
 
 When the scalar algebra is free over the original semiring, the left kernel of the base-changed
 form is the base change of the left kernel, so base change preserves left separation
@@ -77,6 +78,7 @@ compared with its real extension.
   domain is, with no hypothesis on the structure map.
 * `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `IsBaseChange.nondegenerate_bilinForm_iff`: the same equivalence for `IsBaseChange.bilinForm`.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
@@ -475,6 +477,27 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
 end Nondegenerate
 
 end LinearMap.BilinForm
+
+namespace IsBaseChange
+
+section Nondegenerate
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N] [Module A N]
+  [IsScalarTower R A N] {f : M →ₗ[R] N}
+
+/-- **Nondegeneracy is preserved and reflected by an injective abstract base change to an integral
+domain.** On a finite free module, `IsBaseChange.bilinForm` is a transport of Mathlib's tensor base
+change, to which `LinearMap.BilinForm.nondegenerate_baseChange_iff` applies. -/
+theorem nondegenerate_bilinForm_iff [Module.Free R M] [Module.Finite R M] [IsDomain A]
+    [FaithfulSMul R A] (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    (h.bilinForm B).Nondegenerate ↔ B.Nondegenerate := by
+  rw [bilinForm_def, LinearMap.BilinForm.nondegenerate_congr_iff,
+    LinearMap.BilinForm.nondegenerate_baseChange_iff B (Module.Free.chooseBasis R M)]
+
+end Nondegenerate
+
+end IsBaseChange
 
 namespace TauCeti
 
