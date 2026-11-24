@@ -129,8 +129,10 @@ only if every summand vanishes on it. -/
 theorem tsum_apply_eq_zero_iff {f : ι → E₁ →P[𝕜] E₂} (hf : Summable fun i => (f i : E₁ →L[𝕜] E₂))
     {a : E₁} (ha : 0 ≤ a) :
     tsum f a = 0 ↔ ∀ i, f i a = 0 := by
-  refine ⟨fun h i => le_antisymm (h ▸ le_tsum_apply hf ha i) ((f i).map_nonneg ha), fun h => ?_⟩
-  rw [tsum_apply hf]
-  simp [h]
+  have h := hasSum_tsum_apply hf a
+  have h0 : HasSum (fun i => f i a) 0 ↔ ∀ i, f i a = 0 := by
+    rw [hasSum_zero_iff_of_nonneg fun i => (f i).map_nonneg ha]
+    exact ⟨fun hf0 => congrFun hf0, fun hf0 => funext hf0⟩
+  exact ⟨fun ha0 => h0.1 (ha0 ▸ h), fun ha0 => h.unique (h0.2 ha0)⟩
 
 end PositiveContinuousLinearMap

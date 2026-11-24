@@ -10,11 +10,10 @@ public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Algebra.Order.Module.PositiveLinearMap
-import TauCeti.Algebra.Star.StarAlgHom
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
-import TauCeti.Analysis.CStarAlgebra.Representation.Ampliation
+import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
 import TauCeti.Analysis.CStarAlgebra.State.Series
-import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Lp
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
@@ -31,18 +30,19 @@ the GNS representation also carries a canonical cyclic vector, of norm one when 
 `TauCeti.exists_injective_starAlgHom_unit_cyclic_separable`).
 
 For every nontrivial separable complex C⋆-algebra `A` (including finite-dimensional ones such as
-`ℂ` or `Mₙ(ℂ)`), amplifying a faithful nondegenerate representation on a nonzero separable Hilbert
-space `H` onto the countable Hilbert sum `lp (fun _ : ℕ => H) 2` produces a faithful nondegenerate
-representation on an infinite-dimensional separable Hilbert space. Transporting along the
-coordinate unitary of a Hilbert basis indexed by `ℕ` (`lp.exists_hilbertBasis_nat`) yields a
-faithful nondegenerate representation directly on `lp (fun _ : ℕ => ℂ) 2`
+`ℂ` or `Mₙ(ℂ)`), taking the countable Hilbert sum `NonUnitalStarAlgHom.hilbertSum (fun _ : ℕ => π)`
+of a faithful nondegenerate representation on a nonzero separable Hilbert space `H` produces a
+faithful nondegenerate representation on the infinite-dimensional separable Hilbert space
+`lp (fun _ : ℕ => H) 2`. Transporting along a unitary equivalence with `lp (fun _ : ℕ => ℂ) 2`
+(`TauCeti.nonempty_linearIsometryEquiv_lp_nat`) yields a faithful nondegenerate representation
+directly on `lp (fun _ : ℕ => ℂ) 2`
 (`TauCeti.exists_injective_nondegenerate_representation_lp`), and a faithful unital representation
 when `A` is unital (`TauCeti.exists_injective_starAlgHom_lp`).
 
 For a zero algebra (`Subsingleton A`), because `lp (fun _ : ℕ => ℂ) 2` is nontrivial
 (`lp.instNontrivial`), no representation on it is nondegenerate
 (`NonUnitalStarAlgHom.not_isNondegenerate_of_subsingleton_domain`), and no unital representation
-into any nontrivial algebra exists (`StarAlgHom.instIsEmptyOfSubsingletonOfNontrivial`), so the
+into any nontrivial algebra exists (any unital homomorphism forces `1 = 0` in the codomain), so the
 nontriviality assumption is sharp.
 
 ## Main declarations
@@ -152,11 +152,22 @@ theorem exists_injective_nondegenerate_representation_lp (A : Type*)
     haveI : Subsingleton H := h
     haveI : Subsingleton A := hinj.subsingleton
     false_of_nontrivial_of_subsingleton A
-  let ρ := π.ampliation ℕ
-  have hρ_inj : Function.Injective ρ := (π.ampliation_injective_iff ℕ).2 hinj
-  have hρ_nondeg : ρ.IsNondegenerate := hnondeg.ampliation ℕ
-  obtain ⟨b⟩ := lp.exists_hilbertBasis_nat (ι := ℕ) (𝕜 := ℂ) (E := fun _ => H)
-  let U : lp (fun _ : ℕ => H) 2 ≃ₗᵢ[ℂ] lp (fun _ : ℕ => ℂ) 2 := b.repr
+  let ρ := NonUnitalStarAlgHom.hilbertSum fun _ : ℕ => π
+  have hρ_inj : Function.Injective ρ :=
+    (NonUnitalStarAlgHom.injective_hilbertSum_iff _).2 fun a ha => hinj (by simpa using ha 0)
+  have hρ_nondeg : ρ.IsNondegenerate :=
+    (NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff _).2 fun _ => hnondeg
+  have : TopologicalSpace.SeparableSpace (lp (fun _ : ℕ => H) 2) := lp.separableSpace (by norm_num)
+  have hnotfin : ¬ FiniteDimensional ℂ (lp (fun _ : ℕ => H) 2) := fun _ => by
+    obtain ⟨v, hv⟩ := exists_ne (0 : H)
+    have hli : LinearIndependent ℂ (fun n : ℕ => lp.single (E := fun _ => H) 2 n v) := by
+      refine LinearIndependent.of_comp
+        ({ toFun := (⇑), map_add' := fun _ _ => rfl, map_smul' := fun _ _ => rfl } :
+          lp (fun _ : ℕ => H) 2 →ₗ[ℂ] (ℕ → H)) ?_
+      convert Pi.linearIndependent_single_of_ne_zero (R := ℂ) (M := H) fun _ => hv
+      exact lp.coeFn_single (E := fun _ => H) 2 _ v
+    exact Module.Finite.not_linearIndependent_of_infinite _ hli
+  obtain ⟨U⟩ := nonempty_linearIsometryEquiv_lp_nat ℂ (lp (fun _ : ℕ => H) 2) hnotfin
   exact ⟨U.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp ρ,
     U.conjStarAlgEquiv.injective.comp hρ_inj,
     (ρ.isNondegenerate_conjStarAlgEquiv_comp_iff U).2 hρ_nondeg⟩
@@ -168,7 +179,9 @@ theorem exists_injective_starAlgHom_lp (A : Type*)
     ∃ π : A →⋆ₐ[ℂ] (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2),
       Function.Injective π := by
   obtain ⟨π, hinj, hnondeg⟩ := exists_injective_nondegenerate_representation_lp A
-  exact ⟨π.toStarAlgHom hnondeg.map_one,
-    (NonUnitalStarAlgHom.coe_toStarAlgHom π hnondeg.map_one).symm ▸ hinj⟩
+  have h1 : π 1 = 1 := hnondeg.map_one
+  exact ⟨{ π with
+    map_one' := h1
+    commutes' r := by simp [Algebra.algebraMap_eq_smul_one, h1] }, hinj⟩
 
 end TauCeti
