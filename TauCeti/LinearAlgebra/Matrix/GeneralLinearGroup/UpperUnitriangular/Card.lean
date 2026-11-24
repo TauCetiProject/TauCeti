@@ -53,7 +53,6 @@ determined by its `(Fintype.card ι).choose 2` entries strictly above the diagon
 infinite ring `R` both sides equal `1` in size at most one and `0` in larger sizes. -/
 theorem natCard_upperUnitriangularGroup :
     Nat.card (upperUnitriangularGroup ι R) = Nat.card R ^ (Fintype.card ι).choose 2 := by
-  classical
   rw [Nat.card_congr (upperUnitriangularGroupEquiv ι R), Nat.card_fun, Fintype.natCard_subtype_lt]
 
 section Field
