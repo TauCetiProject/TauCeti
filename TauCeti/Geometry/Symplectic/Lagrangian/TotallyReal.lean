@@ -91,7 +91,7 @@ theorem IsLagrangian.isMaximalTotallyReal_of_tames (hL : ω.IsLagrangian L) (hta
     IsMaximalTotallyReal J.toLinearMap L :=
   IsTotallyReal.isMaximalTotallyReal
     ((isTotallyReal_iff _ _).2 (hL.isIsotropic.disjoint_map_of_tames htame))
-    (J.injective.comp L.subtype_injective) hL.two_mul_finrank
+    (J.injective_domRestrict L) hL.two_mul_finrank
 
 /-- A Lagrangian subspace of a compatible pair on a finite-dimensional space is maximal totally
 real. -/

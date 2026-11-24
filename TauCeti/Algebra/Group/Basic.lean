@@ -8,11 +8,13 @@ module
 public import Mathlib.Algebra.Group.Basic
 
 /-!
-# Conditional indicators of order-at-most-two elements
+# Basic identities in groups
 
-When an element `t` satisfies `t * t = 1` (or `t + t = 0` additively), the conditional values
-`if p then t else 1` form a parity algebra governed by `Xor`:
+## Main results
 
+* `TauCeti.inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv`: in a group, `b⁻¹ * a = d⁻¹ * c` if and only
+  if `a * c⁻¹ = b * d⁻¹`. In a commutative group, Mathlib's
+  `inv_mul_eq_inv_mul_iff_mul_eq_mul` gives the equivalent `a * d = c * b`.
 * `TauCeti.ite_inv_of_mul_self` and `TauCeti.ite_neg_of_add_self`: inverting `if p then t else 1`
   leaves it unchanged when `t * t = 1`.
 * `TauCeti.ite_mul_ite_of_mul_self` and `TauCeti.ite_add_ite_of_add_self`: multiplying two
@@ -24,6 +26,19 @@ When an element `t` satisfies `t * t = 1` (or `t + t = 0` additively), the condi
 public section
 
 namespace TauCeti
+
+section
+
+variable {G : Type*} [Group G] {a b c d : G}
+
+/-- Two left quotients `b⁻¹ * a` and `d⁻¹ * c` are equal exactly when the right quotients
+`a * c⁻¹` and `b * d⁻¹` are. -/
+@[to_additive /-- Two left differences `-b + a` and `-d + c` are equal exactly when the right
+differences `a + -c` and `b + -d` are. -/]
+theorem inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv : b⁻¹ * a = d⁻¹ * c ↔ a * c⁻¹ = b * d⁻¹ := by
+  rw [inv_mul_eq_iff_eq_mul, mul_inv_eq_iff_eq_mul, mul_assoc]
+
+end
 
 /-- When `t * t = 1` in a group, inverting `if p then t else 1` returns `if p then t else 1`. -/
 @[to_additive (attr := simp) /-- When `t + t = 0` in an additive group, negating

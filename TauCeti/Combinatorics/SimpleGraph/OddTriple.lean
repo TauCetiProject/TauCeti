@@ -252,10 +252,10 @@ theorem card_filter_lt_xor_adj_triple_eq_card_powersetCard_three_odd :
   · let u := Set.powersetCard.ofLtTriple.symm ⟨s, (mem_oddTripleFinset.mp hs).1⟩
     have hval : (Set.powersetCard.ofLtTriple u).val = s :=
       congrArg Subtype.val (Set.powersetCard.ofLtTriple.apply_symm_apply _)
-    refine ⟨u.1, mem_filter.mpr ⟨mem_univ _, u.2.1, u.2.2, ?_⟩, hval⟩
+    refine ⟨u.val, mem_filter.mpr ⟨mem_univ _, u.property.1, u.property.2, ?_⟩, hval⟩
     have hmem : (Set.powersetCard.ofLtTriple u).val ∈ G.oddTripleFinset := hval.symm ▸ hs
     rwa [Set.powersetCard.val_ofLtTriple, triple_mem_oddTripleFinset_iff,
-      xor_comm (G.Adj u.1.1 u.1.2.2), G.adj_comm u.1.1 u.1.2.2] at hmem
+      xor_comm (G.Adj u.val.1 u.val.2.2), G.adj_comm u.val.1 u.val.2.2] at hmem
 
 end LinearOrder
 
