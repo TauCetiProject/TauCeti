@@ -599,11 +599,33 @@ noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Comp
 theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
   (rfl)
 
+/-- The distinguished first root of unity is `1`. -/
+@[simp]
+theorem complexRoot_one : complexRoot 1 = 1 := by
+  rw [complexRoot_def, Nat.cast_one, div_one, Complex.exp_two_pi_mul_I]
+
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding
 `TauCeti.Cyclotomic.complexEmbedding` is, is fixed by the definition `exp (2πi/e)`. -/
 theorem isPrimitiveRoot_complexRoot [NeZero e] : IsPrimitiveRoot (complexRoot e) e :=
   Complex.isPrimitiveRoot_exp e (NeZero.ne e)
+
+/-- A power of a distinguished root of unity: `complexRoot (m * n) ^ m = complexRoot n`. -/
+theorem complexRoot_mul_pow {m : ℕ} (hm : m ≠ 0) (n : ℕ) :
+    complexRoot (m * n) ^ m = complexRoot n := by
+  rw [complexRoot_def, complexRoot_def, ← Complex.exp_natCast_mul]
+  congr 1
+  push_cast
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  field_simp
+
+/-- The power of `complexRoot e` by the `p`-part of `e` is `complexRoot e'`, with `e'` the part
+of `e` prime to `p`. -/
+theorem complexRoot_pow_ordProj (e p : ℕ) :
+    complexRoot e ^ ordProj[p] e = complexRoot (ordCompl[p] e) := by
+  have := complexRoot_mul_pow (Nat.ordProj_pos e p).ne' (ordCompl[p] e)
+  rwa [Nat.ordProj_mul_ordCompl_eq_self] at this
 
 /-- Complex conjugation sends the distinguished root `complexRoot e` to its inverse.  The root is
 primitive for `e ≠ 0` (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`), and `complexRoot 0 = 1`.

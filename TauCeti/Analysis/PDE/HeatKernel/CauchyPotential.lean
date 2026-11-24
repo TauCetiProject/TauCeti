@@ -17,6 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Cauchy heat potential, its derivatives and its parabolic Hölder estimate

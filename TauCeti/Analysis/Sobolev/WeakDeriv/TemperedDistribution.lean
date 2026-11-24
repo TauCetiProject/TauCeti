@@ -58,7 +58,7 @@ theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
   have hderiv : ∀ x, ∂_{v} (φ.postcompCLM Complex.ofRealCLM) x =
       Complex.ofReal (lineDeriv ℝ (φ : E → ℝ) x v) := by
     intro x
-    simp only [lineDerivOp_postcompCLM, SchwartzMap.postcompCLM_apply,
+    simp only [SchwartzMap.lineDerivOp_postcompCLM, SchwartzMap.postcompCLM_apply,
       Complex.ofRealCLM_apply, SchwartzMap.lineDerivOp_apply]
   simp only [TemperedDistribution.lineDerivOp_apply_apply, Lp.toTemperedDistribution_apply,
     neg_apply, hderiv, SchwartzMap.postcompCLM_apply, Complex.ofRealCLM_apply,
@@ -83,7 +83,7 @@ theorem hasWeakLineDerivOn_of_lineDerivOp_toTemperedDistribution_eq
   have hderiv : ∀ x, ∂_{v} (ψ.postcompCLM Complex.ofRealCLM) x =
       Complex.ofReal (lineDeriv ℝ φ x v) := by
     intro x
-    simp only [lineDerivOp_postcompCLM, SchwartzMap.postcompCLM_apply,
+    simp only [SchwartzMap.lineDerivOp_postcompCLM, SchwartzMap.postcompCLM_apply,
       Complex.ofRealCLM_apply, SchwartzMap.lineDerivOp_apply]
     -- `toSchwartzMap` bundles exactly `φ`, with no change to its values.
     rfl

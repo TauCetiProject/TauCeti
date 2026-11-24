@@ -496,7 +496,7 @@ variable (ι) in
 /-- **Matrix Morita invariance of cyclic cohomology** over a `ℚ`-algebra `R`. -/
 theorem bijective_matrixExtension (n : ℕ) :
     Function.Bijective (matrixExtension (R := R) (A := A) M ι n) :=
-  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one q
+  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one ℚ q
 variable (M ι) in
 /-- **Matrix Morita equivalence on cyclic cohomology** over a `ℚ`-algebra `R`. -/
 noncomputable def matrixExtensionEquiv (n : ℕ) :
