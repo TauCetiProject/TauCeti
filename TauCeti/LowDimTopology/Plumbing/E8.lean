@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+public import TauCeti.LowDimTopology.Plumbing.Covector.Square
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 public import TauCeti.LowDimTopology.Plumbing.Tower
 import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
@@ -37,11 +38,17 @@ for checking computations on this example.
   weight has minimum zero, attained only at the zero lattice point.
 * `TauCeti.e8Plumbing_not_isZero_latticeHomology`: its characteristic-two lattice homology is
   nonzero in every spin^c structure.
+* `TauCeti.e8Plumbing_latticeCorrectionTerm_canonical`: the canonical characteristic covector is
+  `0`, with square `0` and minimal weight `0`, so its lattice correction term is `8 / 4 = 2`. This
+  is the value `d = 2` of the correction term of the Poincaré homology sphere, oriented as the
+  boundary of the plumbing, computed by Ozsváth and Szabó.
 
 ## References
 
 The plumbing convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841),
-Section 2.
+Section 2. The correction term `d = 2` of the Poincaré homology sphere is computed in P. Ozsváth
+and Z. Szabó, *Absolutely graded Floer homologies and intersection forms for four-manifolds with
+boundary*, [arXiv:math/0110169](https://arxiv.org/abs/math/0110169).
 -/
 
 public section
@@ -234,5 +241,18 @@ Heegaard Floer homology of the Poincaré homology sphere. -/
 theorem e8Plumbing_not_isZero_latticeHomology (k : e8Plumbing.characteristicVectors) :
     ¬ CategoryTheory.Limits.IsZero (e8Plumbing.latticeHomology k) :=
   e8Plumbing.not_isZero_latticeHomology e8Plumbing_isNegativeDefinite k
+
+/-- The lattice correction term `(k² + |V|) / 4 - 2 m_k` of the canonical characteristic covector
+of the `E₈` plumbing is `2`: the covector is `0`, so `k² = 0`, the minimal weight is `0`, and
+`|V| = 8`. -/
+theorem e8Plumbing_latticeCorrectionTerm_canonical :
+    e8Plumbing.latticeCorrectionTerm
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ = 2 := by
+  rw [PlumbingGraph.latticeCorrectionTerm_def,
+    e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero]
+  simp only [e8Plumbing.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two e8Plumbing_weight,
+    PlumbingGraph.covectorSquare_zero, Fintype.card_fin]
+  norm_num
 
 end TauCeti
