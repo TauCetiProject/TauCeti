@@ -90,6 +90,6 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
     have hDess := precomp_subtypeL_comp_derivation Eess hL_inv hR_inv hD
     obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess
     exact exists_eq_dualAction_sub_dualAction_of_restrict_essential hL hR hLR hl hC D hD
-      ⟨ψ₀, hψ₀⟩
+      ⟨ψ₀, fun a ↦ by simpa only [Dess, comp_apply, precomp_apply] using hψ₀ a⟩
 
 end TauCeti

@@ -218,7 +218,8 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   suffices ∃ ψL : StrongDual 𝕜 EL, ∀ a, DL a = dualAction RL a ψL - dualAction LL a ψL by
     obtain ⟨ψL, hψL⟩ := this
     exact exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential hL hR hLR hC
-      hl.tendsto_mul_left D hD ⟨ψL, hψL⟩
+      hl.tendsto_mul_left D hD
+      ⟨ψL, fun a ↦ by simpa only [DL, comp_apply, precomp_apply] using hψL a⟩
   -- Step 2: reduce `EL` to its right-essential part `ELR`, which maps into
   -- `essentialBimoduleSubmodule L R`.
   refine exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential hLL hRL hLRL hC
