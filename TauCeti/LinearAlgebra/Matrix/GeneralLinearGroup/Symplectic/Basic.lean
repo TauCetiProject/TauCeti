@@ -1216,6 +1216,10 @@ inductive RootSubgroupIndex (m : ℕ)
   | positiveSum (i j : Fin m) (hij : i < j)
   | negativeSum (i j : Fin m) (hij : i < j)
 
+/-- There are no root subgroups for `m = 0`. -/
+instance instIsEmptyRootSubgroupIndexZero : IsEmpty (RootSubgroupIndex 0) :=
+  ⟨fun i => by cases i <;> exact Fin.elim0 ‹_›⟩
+
 namespace RootSubgroupIndex
 
 /-- The canonical root index for a short-root family and two distinct indices. Sum roots are
