@@ -51,10 +51,10 @@ Two degenerate pairs recover known groups. In degree `0` the relative cohomology
 functions on `M` with zero differential that vanish on `W`
 (`TauCeti.relativeDeRhamCohomology.classZero_bijective`), that is, the locally constant functions
 on `M` vanishing on `W`
-(`TauCeti.relativeDeRhamCohomology.mem_cocyclesZero_iff_isLocallyConstant`). For empty `W` the
-first projection of the cocone is an isomorphism onto the extended de Rham complex of `M`
-(`TauCeti.relativeDeRhamComplex.isIso_fst_of_isEmpty`), so it identifies `H^k(M, ∅)` with the de
-Rham cohomology of `M`.
+(`TauCeti.relativeDeRhamCohomology.mem_cocyclesZero_iff_isLocallyConstant_and_forall_eq_zero`).
+For empty `W` the first projection of the cocone is an isomorphism onto the extended de Rham
+complex of `M` (`TauCeti.relativeDeRhamComplex.isIso_fst_of_isEmpty`), so it identifies
+`H^k(M, ∅)` with the de Rham cohomology of `M`.
 
 The construction needs no finite dimensionality, separation or countability of `M`.
 
@@ -439,14 +439,15 @@ theorem map_inr (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
   rw [relativeCoordinates_map_f, relativeCoordinates_inr, relativeCoordinates_inr]
   rw [extendMap_deRhamComplexMap_f_symm_apply, map_zero]
 
-
 /-- The identity of the pair `(M, W)` induces the identity cochain map. -/
 @[simp]
 theorem map_id :
     map I W (I' := I) (W' := W) (f := id) (g := id) contMDiff_id (fun _ ↦ rfl) = 𝟙 _ := by
-  simp only [map, deRhamComplex.map_id, extendMap_id]
-  rw [CochainComplex.mappingCone.map_id, CategoryTheory.Functor.map_id]
-  rfl
+  -- `map` is the `⟦-1⟧` shift of `mappingCone.map`, between the cocones
+  -- `mappingCocone _ = (mappingCone _)⟦-1⟧`.
+  unfold map relativeDeRhamComplex CochainComplex.mappingCocone
+  simp only [deRhamComplex.map_id, extendMap_id, CochainComplex.mappingCone.map_id,
+    CategoryTheory.Functor.map_id]
 
 variable {E'' : Type u} {H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} {M'' : Type v} [TopologicalSpace M'']
@@ -459,10 +460,11 @@ theorem map_comp (hf : ContMDiff I I' ∞ f) (hfg : ∀ x, (g x : M') = f x)
     map I W (f := f' ∘ f) (g := g' ∘ g) (hf'.comp hf)
         (fun x ↦ (hfg' (g x)).trans (congrArg f' (hfg x))) =
       map I' W' hf' hfg' ≫ map I W hf hfg := by
-  refine Eq.trans ?_ ((CategoryTheory.shiftFunctor _ (-1 : ℤ)).map_comp _ _)
-  rw [← CochainComplex.mappingCone.map_comp]
+  -- As in `map_id`, unfold `map` to the shift of `mappingCone.map` between mapping cones.
+  unfold map relativeDeRhamComplex CochainComplex.mappingCocone
+  rw [← CategoryTheory.Functor.map_comp, ← CochainComplex.mappingCone.map_comp]
+  -- Fold the composite pullbacks back into pullbacks along the composites on both sides.
   simp only [← extendMap_comp, ← deRhamComplex.map_comp]
-  rfl
 
 end Map
 
@@ -657,7 +659,7 @@ theorem mem_cocyclesZero_iff (α : SmoothForm I M ℝ 0) :
 
 /-- A smooth function on `M` is a relative cocycle of degree `0` exactly when it is locally
 constant and vanishes on `W`. -/
-theorem mem_cocyclesZero_iff_isLocallyConstant (α : SmoothForm I M ℝ 0) :
+theorem mem_cocyclesZero_iff_isLocallyConstant_and_forall_eq_zero (α : SmoothForm I M ℝ 0) :
     α ∈ cocyclesZero I W ↔ IsLocallyConstant (fun x ↦ α.val x 0) ∧ ∀ x ∈ W, α.val x 0 = 0 := by
   rw [cocyclesZero, Submodule.mem_inf, mem_closedForms_zero_iff, LinearMap.mem_ker]
   refine and_congr_right fun _ ↦ ⟨fun h x hx ↦ ?_, fun h ↦ ?_⟩
