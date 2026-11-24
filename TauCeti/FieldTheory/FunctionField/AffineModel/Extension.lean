@@ -272,26 +272,29 @@ noncomputable def restrictOfPrimeEquivPrimesOver :
     {P' : Place k' F' // P'.restrict k F = ofPrime k F 𝔭} ≃ 𝔭.asIdeal.primesOver S :=
   have := FaithfulSMul.of_field_isFractionRing R S F F'
   { toFun P' :=
-      ⟨(P'.1.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 P'.2)).asIdeal,
-        inferInstance, center_liesOver_of_restrict_eq_ofPrime k F 𝔭 P'.2⟩
+      ⟨(P'.val.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S
+          := S) k F 𝔭 P'.property)).asIdeal,
+        inferInstance, center_liesOver_of_restrict_eq_ofPrime k F 𝔭 P'.property⟩
     invFun 𝔓 :=
-      ⟨ofPrime k' F' ⟨𝔓.1, 𝔓.2.1, Ideal.ne_bot_of_mem_primesOver (A := R) 𝔭.ne_bot 𝔓.2⟩,
-        have := 𝔓.2.2
+      ⟨ofPrime k' F' ⟨𝔓.val, 𝔓.property.1, Ideal.ne_bot_of_mem_primesOver (A
+          := R) 𝔭.ne_bot 𝔓.property⟩,
+        have := 𝔓.property.2
         restrict_ofPrime k F 𝔭 _⟩
-    left_inv P' := Subtype.ext (ofPrime_center k' F' P'.1 _)
+    left_inv P' := Subtype.ext (ofPrime_center k' F' P'.val _)
     right_inv _𝔓 := Subtype.ext (congrArg HeightOneSpectrum.asIdeal (center_ofPrime k' F' _)) }
 
 @[simp]
 theorem restrictOfPrimeEquivPrimesOver_apply_coe
     (P' : {P' : Place k' F' // P'.restrict k F = ofPrime k F 𝔭}) :
-    (restrictOfPrimeEquivPrimesOver k F 𝔭 P').1 =
-      (P'.1.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 P'.2)).asIdeal :=
+    (restrictOfPrimeEquivPrimesOver k F 𝔭 P').val =
+      (P'.val.center (algebraMap_mem_integers_of_restrict_eq_ofPrime (S
+          := S) k F 𝔭 P'.property)).asIdeal :=
   (rfl)
 
 @[simp]
 theorem restrictOfPrimeEquivPrimesOver_symm_apply_coe (𝔓 : HeightOneSpectrum S)
     (h𝔓 : 𝔓.asIdeal ∈ 𝔭.asIdeal.primesOver S) :
-    ((restrictOfPrimeEquivPrimesOver k F 𝔭).symm ⟨𝔓.asIdeal, h𝔓⟩).1 = ofPrime k' F' 𝔓 :=
+    ((restrictOfPrimeEquivPrimesOver k F 𝔭).symm ⟨𝔓.asIdeal, h𝔓⟩).val = ofPrime k' F' 𝔓 :=
   (rfl)
 
 section Sum
@@ -311,13 +314,14 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank {s : Finset (Place k' 
   have : Fintype (𝔭.asIdeal.primesOver S) :=
     (Algebra.QuasiFinite.finite_primesOver (S := S) 𝔭.asIdeal).fintype
   have key : ∑ P' ∈ s, ramificationIdx F P' * relativeDegree k F P'
-      = ∑ 𝔓 : 𝔭.asIdeal.primesOver S, 𝔓.1.ramificationIdx R * 𝔓.1.inertiaDeg R := by
+      = ∑ 𝔓 : 𝔭.asIdeal.primesOver S, 𝔓.val.ramificationIdx R * 𝔓.val.inertiaDeg R := by
     rw [← Finset.sum_coe_sort s fun P' ↦ ramificationIdx F P' * relativeDegree k F P']
     refine Fintype.sum_equiv
       ((Equiv.subtypeEquivRight hs).trans (restrictOfPrimeEquivPrimesOver k F 𝔭)) _ _ fun P' ↦ ?_
-    have hSint := algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 ((hs P'.1).mp P'.2)
-    rw [ramificationIdx_eq_ramificationIdx_center (R := R) k F P'.1 hSint,
-      relativeDegree_eq_inertiaDeg_center (R := R) k F P'.1 hSint]
+    have hSint := algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭
+        ((hs P'.val).mp P'.property)
+    rw [ramificationIdx_eq_ramificationIdx_center (R := R) k F P'.val hSint,
+      relativeDegree_eq_inertiaDeg_center (R := R) k F P'.val hSint]
     simp
   rw [key, Ideal.sum_ramification_inertia_eq_finrank 𝔭.asIdeal S]
   exact (IsFractionRing.finrank_eq R F S F').symm

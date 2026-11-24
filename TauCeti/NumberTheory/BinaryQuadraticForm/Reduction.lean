@@ -55,7 +55,8 @@ reduced form in the class.
   forms of discriminant `-D` contains exactly one reduced form (Cohen, §5.3).
 * `TauCeti.BinaryQuadraticForm.orbit_mk_reducedForms_bijective`: so the reduced forms of
   discriminant `-D` are in bijection with the classes, and there are finitely many classes
-  (`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_posDef`).
+  (`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_posDef`), as many as reduced forms
+  (`TauCeti.BinaryQuadraticForm.nat_card_orbitRel_quotient_posDef`).
 * `TauCeti.hurwitzClassNumber_eq_finsum`: for `D ≠ 0`, `H D` is the sum over the classes of
   `2 / |Stab|`.
 
@@ -81,37 +82,38 @@ variable {D : ℕ} [NeZero D]
 
 /-- The root `τ` of a positive definite form `a x² + b x y + c y²` has `|re τ| ≤ 1/2` exactly when
 `|b| ≤ a`, as `re τ = -b / (2 a)`. -/
-theorem abs_re_root_le_half_iff (f : posDef D) : |(root f).re| ≤ 1 / 2 ↔ |f.1.b| ≤ f.1.a := by
-  have ha : (0 : ℝ) < 2 * f.1.a := by have := (mem_posDef.1 f.2).2; positivity
+theorem abs_re_root_le_half_iff (f : posDef D) : |(root f).re| ≤ 1 / 2 ↔ |f.val.b| ≤ f.val.a := by
+  have ha : (0 : ℝ) < 2 * f.val.a := by have := (mem_posDef.1 f.property).2; positivity
   rw [re_root, abs_div, abs_neg, abs_of_pos ha, div_le_iff₀ ha, one_div_mul_eq_div,
     mul_div_cancel_left₀ _ two_ne_zero]
   norm_cast
 
 /-- The root `τ` of a positive definite form `a x² + b x y + c y²` has `re τ < 1/2` exactly when
 `-a < b`. -/
-theorem re_root_lt_half_iff (f : posDef D) : (root f).re < 1 / 2 ↔ -f.1.a < f.1.b := by
-  have ha : (0 : ℝ) < 2 * f.1.a := by have := (mem_posDef.1 f.2).2; positivity
+theorem re_root_lt_half_iff (f : posDef D) : (root f).re < 1 / 2 ↔ -f.val.a < f.val.b := by
+  have ha : (0 : ℝ) < 2 * f.val.a := by have := (mem_posDef.1 f.property).2; positivity
   rw [re_root, div_lt_iff₀ ha, one_div_mul_eq_div, mul_div_cancel_left₀ _ two_ne_zero, neg_lt]
   norm_cast
 
 /-- The root `τ` of a positive definite form `a x² + b x y + c y²` has `re τ ≤ 0` exactly when
 `0 ≤ b`. -/
-theorem re_root_nonpos_iff (f : posDef D) : (root f).re ≤ 0 ↔ 0 ≤ f.1.b := by
-  have ha : (0 : ℝ) < 2 * f.1.a := by have := (mem_posDef.1 f.2).2; positivity
+theorem re_root_nonpos_iff (f : posDef D) : (root f).re ≤ 0 ↔ 0 ≤ f.val.b := by
+  have ha : (0 : ℝ) < 2 * f.val.a := by have := (mem_posDef.1 f.property).2; positivity
   rw [re_root, div_le_iff₀ ha, zero_mul, neg_nonpos]
   norm_cast
 
 /-- The root `τ` of a positive definite form `a x² + b x y + c y²` has `|τ|² ≥ 1` exactly when
 `a ≤ c`, as `|τ|² = c / a`. -/
-theorem one_le_normSq_root_iff (f : posDef D) : 1 ≤ Complex.normSq (root f) ↔ f.1.a ≤ f.1.c := by
-  have ha : (0 : ℝ) < f.1.a := mod_cast (mem_posDef.1 f.2).2
+theorem one_le_normSq_root_iff (f : posDef D) : 1 ≤ Complex.normSq (root f) ↔ f.val.a ≤ f.val.c
+    := by
+  have ha : (0 : ℝ) < f.val.a := mod_cast (mem_posDef.1 f.property).2
   rw [normSq_root, one_le_div ha]
   norm_cast
 
 /-- The root `τ` of a positive definite form `a x² + b x y + c y²` lies on the unit circle exactly
 when `a = c`. -/
-theorem norm_root_eq_one_iff (f : posDef D) : ‖(root f : ℂ)‖ = 1 ↔ f.1.a = f.1.c := by
-  have ha : (0 : ℝ) < f.1.a := mod_cast (mem_posDef.1 f.2).2
+theorem norm_root_eq_one_iff (f : posDef D) : ‖(root f : ℂ)‖ = 1 ↔ f.val.a = f.val.c := by
+  have ha : (0 : ℝ) < f.val.a := mod_cast (mem_posDef.1 f.property).2
   rw [Complex.norm_def, Real.sqrt_eq_one, normSq_root, div_eq_one_iff_eq ha.ne', eq_comm]
   norm_cast
 
@@ -122,19 +124,19 @@ theorem norm_root_eq_one_iff (f : posDef D) : ‖(root f : ℂ)‖ = 1 ↔ f.1.a
 `|b| ≤ a` is `|re τ| ≤ 1/2`, `a ≤ c` is `|τ| ≥ 1`, and the sign conditions of a reduced form rule
 out the right vertical edge and the part of the unit arc right of `i`. -/
 theorem isReducedForm_iff_root_mem (f : posDef D) :
-    IsReducedForm f.1 ↔
+    IsReducedForm f.val ↔
       root f ∈ 𝒟 ∧ (root f).re < 1 / 2 ∧ (‖(root f : ℂ)‖ = 1 → (root f).re ≤ 0) := by
   simp only [isReducedForm_iff, ModularGroup.fd, Set.mem_ofPred_eq, one_le_normSq_root_iff,
     abs_re_root_le_half_iff, re_root_lt_half_iff, norm_root_eq_one_iff, re_root_nonpos_iff]
-  grind [(mem_posDef.1 f.2).2]
+  grind [(mem_posDef.1 f.property).2]
 
 /-- The root of a positive definite form is `i` exactly for the multiples `⟨a, 0, a⟩` of
 `x² + y²`. -/
 @[simp]
-theorem root_eq_I_iff (f : posDef D) : root f = I ↔ f.1.b = 0 ∧ f.1.a = f.1.c := by
+theorem root_eq_I_iff (f : posDef D) : root f = I ↔ f.val.b = 0 ∧ f.val.a = f.val.c := by
   -- `a i² + b i + c = b i + (c - a)`
   rw [eq_comm, eq_root_iff]
-  convert ofReal_mul_add_eq_zero_iff I (m := f.1.b) (n := f.1.c - f.1.a) using 1
+  convert ofReal_mul_add_eq_zero_iff I (m := f.val.b) (n := f.val.c - f.val.a) using 1
   · push_cast [coe_I, Complex.I_sq]
     ring_nf
   · norm_cast
@@ -143,10 +145,11 @@ theorem root_eq_I_iff (f : posDef D) : root f = I ↔ f.1.b = 0 ∧ f.1.a = f.1.
 /-- The root of a positive definite form is `ρ = (-1 + i √3) / 2` exactly for the multiples
 `⟨a, a, a⟩` of `x² + x y + y²`. -/
 @[simp]
-theorem root_eq_ρ_iff (f : posDef D) : root f = ρ ↔ f.1.a = f.1.b ∧ f.1.b = f.1.c := by
+theorem root_eq_ρ_iff (f : posDef D) : root f = ρ ↔ f.val.a = f.val.b ∧ f.val.b = f.val.c := by
   -- `a ρ² + b ρ + c = (b - a) (ρ + 1) + (c - b)`, as `ρ² = -ρ - 1`
   rw [eq_comm, eq_root_iff]
-  convert ofReal_mul_add_eq_zero_iff ((1 : ℝ) +ᵥ ρ) (m := f.1.b - f.1.a) (n := f.1.c - f.1.b)
+  convert ofReal_mul_add_eq_zero_iff ((1 : ℝ) +ᵥ ρ) (m := f.val.b - f.val.a) (n
+      := f.val.c - f.val.b)
     using 1
   · push_cast [coe_vadd_one_ρ, ρ_sq]
     ring_nf
@@ -157,8 +160,8 @@ theorem root_eq_ρ_iff (f : posDef D) : root f = ρ ↔ f.1.a = f.1.b ∧ f.1.b 
 the forms `⟨a, 0, a⟩`, whose root is `i` and whose stabiliser has order `4`, `1/3` for the forms
 `⟨a, a, a⟩`, whose root is `ρ` and whose stabiliser has order `6`, and `1` for every other reduced
 form, whose stabiliser is `±1`. -/
-theorem reducedFormWeight_eq_two_div_card_stabilizer (f : posDef D) (hf : IsReducedForm f.1) :
-    reducedFormWeight f.1 = 2 / Nat.card (stabilizer SL(2, ℤ) f) := by
+theorem reducedFormWeight_eq_two_div_card_stabilizer (f : posDef D) (hf : IsReducedForm f.val) :
+    reducedFormWeight f.val = 2 / Nat.card (stabilizer SL(2, ℤ) f) := by
   obtain ⟨hfd, hre, -⟩ := (isReducedForm_iff_root_mem f).1 hf
   rw [← stabilizer_root, reducedFormWeight]
   split_ifs with hI hρ
@@ -182,7 +185,7 @@ theorem mem_posDef_of_mem_reducedForms {f : BinaryQuadraticForm ℤ} (hf : f ∈
 
 /-- **Every class contains a reduced form**: for each positive definite form `f` there is
 `γ ∈ SL(2, ℤ)` with `γ • f` reduced. -/
-theorem exists_smul_isReducedForm (f : posDef D) : ∃ γ : SL(2, ℤ), IsReducedForm (γ • f).1 :=
+theorem exists_smul_isReducedForm (f : posDef D) : ∃ γ : SL(2, ℤ), IsReducedForm (γ • f).val :=
   -- move the root of `f` into the left part of `𝒟`, and use that `root` is equivariant
   (ModularGroup.exists_smul_mem_fd_left (root f)).imp fun γ hγ ↦
     (isReducedForm_iff_root_mem _).2 <| by rwa [root_smul]
@@ -191,7 +194,7 @@ theorem exists_smul_isReducedForm (f : posDef D) : ∃ γ : SL(2, ℤ), IsReduce
 `SL(2, ℤ)`-class are equal. -/
 theorem orbit_mk_injOn_isReducedForm :
     Set.InjOn (fun f : posDef D ↦ (Quotient.mk'' f : orbitRel.Quotient SL(2, ℤ) (posDef D)))
-      {f | IsReducedForm f.1} := by
+      {f | IsReducedForm f.val} := by
   intro f hf g hg h
   obtain ⟨γ, rfl⟩ := Quotient.exact' h
   -- the roots lie in the left part of `𝒟` and, as `root` is equivariant, in one orbit
@@ -203,21 +206,29 @@ theorem orbit_mk_injOn_isReducedForm :
 of discriminant `-D` (Cohen, §5.3). -/
 theorem orbit_mk_reducedForms_bijective :
     Function.Bijective fun f : reducedForms D ↦
-      (Quotient.mk'' ⟨f, mem_posDef_of_mem_reducedForms f.2⟩ :
+      (Quotient.mk'' ⟨f, mem_posDef_of_mem_reducedForms f.property⟩ :
         orbitRel.Quotient SL(2, ℤ) (posDef D)) := by
-  have hr (f : reducedForms D) : IsReducedForm f.1 := ((mem_reducedForms (NeZero.ne D)).1 f.2).2
+  have hr (f : reducedForms D) : IsReducedForm f.val := ((mem_reducedForms
+      (NeZero.ne D)).1 f.property).2
   -- `by exact` defers the two memberships until `h` has fixed the forms: checked first, they make
   -- the unifier solve for the forms inside `IsReducedForm`, which is slow
   refine ⟨fun f g h ↦ Subtype.ext <| Subtype.mk.inj <|
     orbit_mk_injOn_isReducedForm (by exact hr f) (by exact hr g) h, Quotient.ind' fun f ↦ ?_⟩
   obtain ⟨γ, hγ⟩ := exists_smul_isReducedForm f
-  exact ⟨⟨(γ • f).1, (mem_reducedForms (NeZero.ne D)).2 ⟨(mem_posDef.1 (γ • f).2).1, hγ⟩⟩,
+  exact ⟨⟨(γ • f).val, (mem_reducedForms (NeZero.ne D)).2 ⟨(mem_posDef.1 (γ • f).property).1, hγ⟩⟩,
     Quotient.sound' ⟨γ, rfl⟩⟩
 
 /-- There are finitely many `SL(2, ℤ)`-classes of positive definite forms of discriminant `-D`. -/
 instance finite_orbitRel_quotient_posDef : Finite (orbitRel.Quotient SL(2, ℤ) (posDef D)) :=
   -- the finitely many reduced forms represent them all
   .of_surjective _ orbit_mk_reducedForms_bijective.2
+
+/-- **The number of classes of positive definite forms** of discriminant `-D` is the number of
+reduced forms of discriminant `-D`. -/
+theorem nat_card_orbitRel_quotient_posDef :
+    Nat.card (orbitRel.Quotient SL(2, ℤ) (posDef D)) = (reducedForms D).card :=
+  (Nat.card_eq_of_bijective _ orbit_mk_reducedForms_bijective).symm.trans
+    (Nat.card_eq_finsetCard _)
 
 end BinaryQuadraticForm
 
@@ -236,7 +247,7 @@ theorem hurwitzClassNumber_eq_finsum (D : ℕ) [NeZero D] :
     ← finsum_eq_sum_of_fintype]
   refine finsum_eq_of_bijective _ orbit_mk_reducedForms_bijective fun f ↦ ?_
   rw [cardStabilizerOnOrbit_mk]
-  exact reducedFormWeight_eq_two_div_card_stabilizer ⟨f, mem_posDef_of_mem_reducedForms f.2⟩
-    ((mem_reducedForms (NeZero.ne D)).1 f.2).2
+  exact reducedFormWeight_eq_two_div_card_stabilizer ⟨f, mem_posDef_of_mem_reducedForms f.property⟩
+    ((mem_reducedForms (NeZero.ne D)).1 f.property).2
 
 end TauCeti

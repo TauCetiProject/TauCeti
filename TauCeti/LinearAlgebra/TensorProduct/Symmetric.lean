@@ -262,14 +262,14 @@ theorem _root_.LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricT
   have hpos : (F.restrict (hmaps true) : symmetricTensors K M →ₗ[K] symmetricTensors K M)
       = f.symmetricTensorsRestrict := by
     ext x
-    exact congrArg (TensorProduct.map f f) (mem_symmetricTensors.1 x.2)
+    exact congrArg (TensorProduct.map f f) (mem_symmetricTensors.1 x.property)
   have hneg : LinearMap.trace K (antisymmetricTensors K M) (F.restrict (hmaps false))
       = -LinearMap.trace K (antisymmetricTensors K M) f.antisymmetricTensorsRestrict := by
     have h : (F.restrict (hmaps false) :
         antisymmetricTensors K M →ₗ[K] antisymmetricTensors K M)
           = -f.antisymmetricTensorsRestrict := by
       ext x
-      exact (congrArg (TensorProduct.map f f) (mem_antisymmetricTensors.1 x.2)).trans
+      exact (congrArg (TensorProduct.map f f) (mem_antisymmetricTensors.1 x.property)).trans
         (map_neg (TensorProduct.map f f) _)
     rw [h]
     exact map_neg (LinearMap.trace K (antisymmetricTensors K M)) _

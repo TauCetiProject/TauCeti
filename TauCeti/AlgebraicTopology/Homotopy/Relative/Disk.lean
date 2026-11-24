@@ -95,9 +95,9 @@ private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
   have hbd := hasHomotopyExtensionProperty_cubeBoundary (N := N)
   obtain ⟨K, hK₀, hK⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
     (⟨fun y ↦ ⟨g (0, y), hg (Cube.mk_zero_mem_prodBoundary y)⟩, by fun_prop⟩ : C(I^N, B))
-    ⟨fun q ↦ ⟨g (R q.1 (0, q.2)), hg (hRJ (.inr q.2.2) _)⟩,
+    ⟨fun q ↦ ⟨g (R q.1 (0, q.2)), hg (hRJ (.inr q.2.property) _)⟩,
       (g.continuous.comp (hR.comp (continuous_fst.prodMk (continuous_const.prodMk
-        (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
+        (continuous_subtypeVal.comp continuous_snd))))).subtype_mk _⟩
     fun a ↦ by simp [hR₀]
   let h : I × (I × I^N) → Y := fun q ↦
     if q.2.1 = 0 then (K (q.1, q.2.2) : Y) else g (R q.1 q.2)
@@ -114,13 +114,13 @@ private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
     refine ContinuousOn.union_of_isClosed ?_ ?_ (isClosed_eq (by fun_prop) continuous_const)
       ((isClosed_eq (by fun_prop) continuous_const).union
         (hbd.isClosed.preimage (by fun_prop)))
-    · refine (continuous_subtype_val.comp (K.continuous.comp
+    · refine (continuous_subtypeVal.comp (K.continuous.comp
         (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))).continuousOn.congr ?_
       intro q hq
       simp [h, show q.2.1 = 0 from hq]
     · exact (g.continuous.comp hR).continuousOn.congr hS
   have hmem (q : I × Cube.prodBoundary N) : (q.1, (q.2 : I × I^N)) ∈ {q | q.2.1 = 0} ∪ S := by
-    rcases Cube.mem_prodBoundary_iff.1 q.2.2 with (hs | hs) | hy
+    rcases Cube.mem_prodBoundary_iff.1 q.2.property with (hs | hs) | hy
     exacts [.inl hs, .inr (.inl hs), .inr (.inr hy)]
   have hS' {z : I × I^N} (hz : z ∈ Cube.prodBoundary N) (hs : z.1 ≠ 0) :
       z.1 = 1 ∨ z.2 ∈ Cube.boundary N :=
@@ -133,9 +133,9 @@ private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
     · simp [h, hz, hR₀]
   · by_cases hs : (z : I × I^N).1 = 0
     · simp only [ContinuousMap.coe_mk, h, hs, ite_true]
-      exact (K (t, (z : I × I^N).2)).2
-    · rw [ContinuousMap.coe_mk, hS (show (t, (z : I × I^N)) ∈ S from hS' z.2 hs)]
-      exact hg (hRJ (hS' z.2 hs) t)
+      exact (K (t, (z : I × I^N).2)).property
+    · rw [ContinuousMap.coe_mk, hS (show (t, (z : I × I^N)) ∈ S from hS' z.property hs)]
+      exact hg (hRJ (hS' z.property hs) t)
 
 /-- **A map of pairs is homotopic to a relative cube along a contraction of the open box.** Let
 `R` be a deformation of the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` inside the boundary of the
@@ -148,7 +148,7 @@ theorem exists_homotopyWith_relGenLoop_of_openBox (R : I → I × (I^N) → I ×
     {v : I × I^N} (hR₁ : ∀ {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) → R 1 z = v)
     (g : C(I × I^N, Y)) (hg : MapsTo g (Cube.prodBoundary N) B) :
     ∃ b : B, (b : Y) = g v ∧ ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
-      ∃ G : g.HomotopyWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B,
+      ∃ G : g.HomotopyWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B,
         ∀ t {z : I × I^N}, (z.1 = 1 ∨ z.2 ∈ Cube.boundary N) →
           G.toContinuousMap (t, z) = g (R t z) := by
   -- Extend the homotopy of `g` on the boundary of the cube over the whole cube.
@@ -180,7 +180,7 @@ relative cube.** Its basepoint `b ∈ B` is the value of the given map at the ce
 theorem exists_homotopicWith_relGenLoop (g : C(I × I^N, Y))
     (hg : MapsTo g (Cube.prodBoundary N) B) :
     ∃ b : B, (b : Y) = g (1, cubeCenter) ∧ ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
-      g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
+      g.HomotopicWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
   let ⟨b, hb, p, G, _⟩ := exists_homotopyWith_relGenLoop_of_openBox openBoxContraction
     continuous_openBoxContraction openBoxContraction_zero
     (fun hz t ↦ openBoxContraction_mem_prodBoundary hz t) (fun _ ↦ openBoxContraction_one _) g hg
@@ -220,7 +220,7 @@ theorem exists_homotopicRel_range_subset_of_subsingleton {n : ℕ}
        map_one_left x := (H.apply_one (e x)).trans (RelGenLoop.const_apply (e x))
        prop' t x hx := H.prop t ((closedBallHomeomorphProd_mem_prodBoundary_iff x).2 hx) }⟩ ?_
   rintro _ ⟨_, rfl⟩
-  exact b.2
+  exact b.property
 
 /-! ### The compression lemma -/
 

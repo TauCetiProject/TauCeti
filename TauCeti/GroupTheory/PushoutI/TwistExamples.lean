@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.PushoutI.DehnTwist
+import Mathlib.Data.Fin.VecNotation
 
 /-!
 # Examples of Dehn twists of amalgamated products

@@ -84,7 +84,7 @@ theorem flat_restrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y) (U : Y.Opens) :
       (morphismRestrictStalkMap f U ⟨x, hx⟩)).mp (h ⟨x, hx⟩)
   · intro h x
     exact (CommRingCat.flat.arrow_mk_iso_iff
-      (morphismRestrictStalkMap f U x)).mpr (h x.1 x.2)
+      (morphismRestrictStalkMap f U x)).mpr (h x.val x.property)
 
 /-- Flatness of stalk maps descends along flat morphisms: if `g` has flat stalk map at `x'` and
 `g ≫ f` has flat stalk map at `x'`, then `f` has flat stalk map at `g x'`. -/
@@ -123,7 +123,7 @@ theorem flat_stalkMap_iff {f : X ⟶ Y} {x : X} (U : Y.Opens) (hU : IsAffineOpen
   rw [RingHom.Flat.respectsIso.arrow_mk_iso_iff
     (IsAffineOpen.arrowStalkMapIso f U hU V hV hVU hx)]
   exact Localization.flat_localRingHom_iff _ _
-    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hx).1).symm
+    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hx).asIdeal).symm
 
 /-- The stalk map of `Spec S ⟶ Spec R` at `q` is flat iff `S_q` is flat over `R`. -/
 theorem flat_stalkMap_specMap_iff {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]

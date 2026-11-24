@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
-public import TauCeti.NumberTheory.QuadraticForm.Global.TernaryObstruction
+public import TauCeti.NumberTheory.QuadraticForm.Global.Ternary.Obstruction
 import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 
 /-!

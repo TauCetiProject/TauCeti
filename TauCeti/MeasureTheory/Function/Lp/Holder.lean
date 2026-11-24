@@ -22,7 +22,14 @@ Hölder multiplication also preserves compactness. If `V : X → L^q` is a compa
 `1/p + 1/s = 1/q` the operator `u ↦ B(a, ι u) : X → L^q` is compact, although `ι` itself need not
 be. For a simple function `a`, which lies in `L^∞`, the operator factors through `V`. Simple
 functions are dense in `L^p`, the operator depends continuously on `a`, and compact operators form
-a closed set.
+a closed set. For a bounded coefficient `α ∈ L^∞` the composite `u ↦ (V u) α` is compact directly,
+since Hölder multiplication `L^∞ × L^q → L^q` is bounded.
+
+Pointwise application `f ↦ (x ↦ Φ x (f x))` of an `L^∞` function `Φ` of operators `E →L F` is
+Hölder multiplication `L^∞ × L^p → L^p`. Where `Ψ Φ = 1` almost everywhere it is undone by
+application of `Ψ` (`ContinuousLinearMap.holder_holder_of_comp_eq_id`), so for a two-sided
+pointwise inverse it is a continuous linear equivalence `MeasureTheory.Lp.pointwiseApplyEquiv`
+from `L^p(E)` to `L^p(F)`.
 -/
 
 public section
@@ -83,7 +90,66 @@ theorem isCompactOperator_holderL_comp_of_ae_eq {α 𝕜 X E F G : Type*} [Measu
   rw [hfac]
   exact hV.clm_comp (B.holderL μ ∞ q q g)
 
+/-- Pointwise application of an `L^∞` function `Ψ` of operators undoes pointwise application of
+`Φ` on `L^p` where `Ψ Φ = 1` almost everywhere. -/
+theorem holder_holder_of_comp_eq_id {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {p : ℝ≥0∞} {Φ : Lp (E →L[𝕜] F) ∞ μ} {Ψ : Lp (F →L[𝕜] E) ∞ μ}
+    (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E) (f : Lp E p μ) :
+    (ContinuousLinearMap.id 𝕜 (F →L[𝕜] E)).holder p Ψ
+      ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holder p Φ f) = f := by
+  apply Lp.ext
+  filter_upwards [(ContinuousLinearMap.id 𝕜 (F →L[𝕜] E)).coeFn_holder (r := p) Ψ
+      ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holder p Φ f),
+    (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).coeFn_holder (r := p) Φ f, hΨΦ] with x h₁ h₂ hx
+  rw [h₁, h₂]
+  simpa using congrArg (fun T : E →L[𝕜] E ↦ T (f x)) hx
+
 end ContinuousLinearMap
+
+namespace MeasureTheory.Lp
+
+variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : Lp (E →L[𝕜] F) ∞ μ} {Ψ : Lp (F →L[𝕜] E) ∞ μ}
+
+variable (p) in
+/-- **Pointwise application of an invertible `L^∞` function of operators** `Φ x : E →L F` as an
+equivalence `L^p(E) ≃ L^p(F)`, `f ↦ (x ↦ Φ x (f x))`, with inverse the pointwise application of
+the pointwise inverse `Ψ`. -/
+noncomputable def pointwiseApplyEquiv
+    (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 F) : Lp E p μ ≃L[𝕜] Lp F p μ :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p Φ)
+    ((ContinuousLinearMap.id 𝕜 (F →L[𝕜] E)).holderL μ ∞ p p Ψ)
+    (ContinuousLinearMap.ext (ContinuousLinearMap.holder_holder_of_comp_eq_id hΦΨ))
+    (ContinuousLinearMap.ext (ContinuousLinearMap.holder_holder_of_comp_eq_id hΨΦ))
+
+/-- The equivalence `pointwiseApplyEquiv` is pointwise application of `Φ`. -/
+@[simp]
+theorem pointwiseApplyEquiv_apply (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 F) (f : Lp E p μ) :
+    pointwiseApplyEquiv p hΨΦ hΦΨ f = (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holder p Φ f :=
+  (rfl)
+
+/-- As a continuous linear map, `pointwiseApplyEquiv` is Hölder multiplication by `Φ`. -/
+theorem coe_pointwiseApplyEquiv (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 F) :
+    (pointwiseApplyEquiv p hΨΦ hΦΨ : Lp E p μ →L[𝕜] Lp F p μ) =
+      (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p Φ :=
+  (rfl)
+
+/-- The inverse of `pointwiseApplyEquiv` is pointwise application of `Ψ`. -/
+@[simp]
+theorem pointwiseApplyEquiv_symm_apply
+    (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 F) (f : Lp F p μ) :
+    (pointwiseApplyEquiv p hΨΦ hΦΨ).symm f =
+      (ContinuousLinearMap.id 𝕜 (F →L[𝕜] E)).holder p Ψ f :=
+  (rfl)
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -109,3 +175,23 @@ theorem tendsto_setLIntegral_enorm_bilin_sub {E F G H ι : Type*} [MeasurableSpa
   · exact B.holderL_ae_eq_of_measure_le Measure.restrict_le_self A₀ C₀ ha₀ hc₀
 
 end TauCeti
+
+namespace IsCompactOperator
+
+/-- **Compact multiplication by a bounded coefficient.** For a compact operator `V : X → L^q(ν)`
+and `α ∈ L^∞(ν, G)`, the operator `u ↦ (V u) α : X → L^q(ν, G)` is compact: it is Hölder
+multiplication `L^∞ × L^q → L^q` composed with `V`. -/
+theorem exists_isCompactOperator_smul_of_memLp_top {𝕜 X Y G : Type*}
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X] [NormedSpace 𝕜 X] [MeasurableSpace Y]
+    {ν : Measure Y} [NormedAddCommGroup G] [NormedSpace 𝕜 G] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {V : X →L[𝕜] Lp 𝕜 q ν} (hV : IsCompactOperator V) {α : Y → G} (hα : MemLp α ∞ ν) :
+    ∃ M : X →L[𝕜] Lp G q ν, (∀ u, M u =ᵐ[ν] fun x => V u x • α x) ∧ IsCompactOperator M := by
+  let B : G →L[𝕜] 𝕜 →L[𝕜] G := (ContinuousLinearMap.lsmul 𝕜 𝕜).flip
+  refine ⟨(B.holderL ν ∞ q q (hα.toLp α)).comp V, fun u => ?_, ?_⟩
+  · filter_upwards [B.coeFn_holder (r := q) (hα.toLp α) (V u), hα.coeFn_toLp] with x h₁ h₂
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
+    simp [B]
+  · rw [ContinuousLinearMap.coe_comp]
+    exact hV.clm_comp _
+
+end IsCompactOperator

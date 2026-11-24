@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Nat.Factorial.NatCast
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 
@@ -103,6 +103,18 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_of_rowSubgroup_eq_top (t : Y
   exact Finset.sum_congr rfl fun σ _ => by
     rw [permTensorActionAlgHom_of, permTensorAction_apply]
 
+/-- On a shape with at most one row the Young symmetrizer multiplies a symmetric tensor by
+`d!`: each of the `d!` permutations in the symmetrization fixes it. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_of_colLen_le_one (t : YoungTableau μ)
+    (h : μ.colLen 0 ≤ 1) {x : ⨂[k]^μ.card (Fin n → k)}
+    (hx : ∀ σ : Equiv.Perm (Fin μ.card), permTensorAction k n μ.card σ x = x) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) x =
+      (μ.card.factorial : k) • x := by
+  rw [permTensorActionAlgHom_youngSymmetrizerOver_of_rowSubgroup_eq_top k n t
+    ((rowSubgroup_eq_top_iff t).mpr h)]
+  simp_rw [LinearMap.sum_apply, ← permTensorAction_apply, hx]
+  simp [Fintype.card_perm, ← Nat.cast_smul_eq_nsmul k]
+
 end Semiring
 
 section Ring
@@ -124,6 +136,22 @@ theorem permTensorActionAlgHom_youngSymmetrizerOver_of_colSubgroup_eq_top (t : Y
   rw [youngSymmetrizerOver_eq_sum_of_colSubgroup_eq_top k t h, map_sum]
   exact Finset.sum_congr rfl fun σ _ => by
     rw [map_zsmul, permTensorActionAlgHom_of, permTensorAction_apply]
+
+/-- On a shape with at most one column every permutation of the tensor factors scales the
+image of the Young symmetrizer by its sign. -/
+theorem permTensorAction_permTensorActionAlgHom_youngSymmetrizerOver_of_rowLen_le_one
+    (t : YoungTableau μ) (h : μ.rowLen 0 ≤ 1) (σ : Equiv.Perm (Fin μ.card))
+    (x : ⨂[k]^μ.card (Fin n → k)) :
+    permTensorAction k n μ.card σ
+        (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) x) =
+      (Equiv.Perm.sign σ : ℤ) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) x := by
+  have hq := congrArg (MonoidAlgebra.mapAlgHom (Equiv.Perm (Fin μ.card)) (Algebra.ofId ℚ k))
+    (single_mul_youngSymmetrizer_of_colSubgroup_eq_top t ((colSubgroup_eq_top_iff t).mpr h) σ)
+  rw [map_mul, map_smul, ← youngSymmetrizerOver_def] at hq
+  simp only [MonoidAlgebra.mapAlgHom_single, map_one, Int.cast_smul_eq_zsmul] at hq
+  have := LinearMap.congr_fun (congrArg (permTensorActionAlgHom k n μ.card) hq) x
+  rwa [map_mul, ← MonoidAlgebra.of_apply, permTensorActionAlgHom_of, mul_apply_eq_comp,
+    map_zsmul] at this
 
 end Ring
 

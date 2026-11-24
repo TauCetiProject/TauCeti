@@ -354,7 +354,7 @@ private lemma upperSemicontinuous_sliceCount_of_isClosed {Z : Type*} [Topologica
 `N`-level subgraph `E = {(z, k) | (k + 1) / N ≤ f z}` of a `[0, 1]`-valued function `f`. -/
 private lemma sliceCount_subgraph_bounds {Z : Type*} {N : ℕ} (hN_pos : 0 < N)
     {f : Z → ℝ≥0∞} (hf_le : ∀ z, f z ≤ 1) (z : Z) :
-    let E : Set (Z × Fin N) := {p | ((p.2.1 + 1 : ℕ) : ℝ≥0∞) / N ≤ f p.1}
+    let E : Set (Z × Fin N) := {p | ((p.2.val + 1 : ℕ) : ℝ≥0∞) / N ≤ f p.1}
     sliceCount N E z ≤ (N : ℝ≥0∞) * f z ∧ (N : ℝ≥0∞) * f z ≤ sliceCount N E z + 1 := by
   intro E
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN_pos.ne'
@@ -370,13 +370,13 @@ private lemma sliceCount_subgraph_bounds {Z : Type*} {N : ℕ} (hN_pos : 0 < N)
   have hm_le_N : m ≤ N := by
     have : (m : ℝ≥0∞) ≤ N := (ENNReal.coe_le_coe.2 hm_le_r).trans (hr_coe.trans_le hNf_le)
     exact_mod_cast this
-  have hmem_iff (k : Fin N) : (z, k) ∈ E ↔ k.1 < m := by
+  have hmem_iff (k : Fin N) : (z, k) ∈ E ↔ k.val < m := by
     simp only [E, mem_ofPred_eq]
     rw [ENNReal.div_le_iff_le_mul (Or.inl hN0) (Or.inl hNtop), mul_comm _ (N : ℝ≥0∞), ← hr_coe]
     refine ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
-    · have hk' : ((k.1 + 1 : ℕ) : ℝ≥0) ≤ r := by exact_mod_cast hk
+    · have hk' : ((k.val + 1 : ℕ) : ℝ≥0) ≤ r := by exact_mod_cast hk
       exact Nat.lt_of_succ_le (Nat.le_floor hk')
-    · have hk' : ((k.1 + 1 : ℕ) : ℝ≥0) ≤ (m : ℝ≥0) := by exact_mod_cast hk
+    · have hk' : ((k.val + 1 : ℕ) : ℝ≥0) ≤ (m : ℝ≥0) := by exact_mod_cast hk
       exact ENNReal.coe_le_coe.2 (hk'.trans hm_le_r)
   have hcount : sliceCount N E z = m := by
     simp only [sliceCount, indicator_apply, Pi.one_apply, hmem_iff, Finset.sum_boole,
@@ -571,9 +571,9 @@ private lemma dualUpperValue_one_eq_primalMaxValue_of_measurable
     (primalMaxValue_le_dualUpperValue f)
   obtain ⟨N, hN_lt, hN_pos⟩ := ((ENNReal.tendsto_inv_nat_nhds_zero.eventually
     (gt_mem_nhds (ENNReal.coe_pos.2 hε))).and (eventually_gt_atTop 0)).exists
-  let E : Set ((X × Y) × Fin N) := {p | ((p.2.1 + 1 : ℕ) : ℝ≥0∞) / N ≤ f p.1}
+  let E : Set ((X × Y) × Fin N) := {p | ((p.2.val + 1 : ℕ) : ℝ≥0∞) / N ≤ f p.1}
   have hE_meas : MeasurableSet E := measurableSet_le
-    ((measurable_of_countable fun k : Fin N ↦ ((k.1 + 1 : ℕ) : ℝ≥0∞) / N).comp measurable_snd)
+    ((measurable_of_countable fun k : Fin N ↦ ((k.val + 1 : ℕ) : ℝ≥0∞) / N).comp measurable_snd)
     (hf_meas.comp measurable_fst)
   have hE_le : dualUpperValue (N : ℝ≥0) μ ν (sliceCount N E) ≤
       primalMaxValue μ ν (sliceCount N E) := by

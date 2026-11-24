@@ -52,10 +52,13 @@ directions of `E` would cross the same values near `p`, contradicting injectivit
 ## Main results
 
 * `IsOpen.image_of_continuousOn_of_injOn`: **invariance of domain** for manifolds without
-  boundary modelled on finite-dimensional real normed spaces of the same dimension.
+  boundary modelled on finite-dimensional real normed spaces of the same dimension, and
+  `IsOpen.image_of_continuousOn_of_injOn_of_isRCLikeNormedField` its form over `ℝ` or `ℂ`.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
   open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
   a map continuous and injective on an open set.
+* `IsOpen.image_of_continuousOn_of_injOn_of_mapsTo`: invariance of domain for maps into an open
+  subset of an arbitrary space which is homeomorphic to such a manifold.
 * `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
   connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
@@ -96,9 +99,9 @@ private theorem isOpen_image_ball_zero_one (hEF : finrank ℝ E = finrank ℝ F)
   let j : F → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 := Φ ∘ (↑)
   have hj : IsOpenEmbedding j := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
   have hcont {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Continuous fun y : s ↦ j (f y) :=
-    hj.continuous.comp (hf.comp_continuous continuous_subtype_val fun y ↦ hs y.2)
+    hj.continuous.comp (hf.comp_continuous continuous_subtypeVal fun y ↦ hs y.property)
   have hinj' {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Injective fun y : s ↦ j (f y) :=
-    fun y z h ↦ Subtype.ext <| hinj (hs y.2) (hs z.2) (hj.injective h)
+    fun y z h ↦ Subtype.ext <| hinj (hs y.property) (hs z.property) (hj.injective h)
   have hjf : InjOn (j ∘ f) (closedBall 0 1) := hj.injective.injOn.comp hinj (mapsTo_univ _ _)
   have hAeq : ((j ∘ f) '' sphere 0 1)ᶜ = (range fun y : sphere (0 : E) 1 ↦ j (f y))ᶜ :=
     congrArg compl (image_eq_range _ _)
@@ -257,10 +260,40 @@ theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N
     hinj.injective fun s hs ↦ ?_
   have hsU : ((↑) '' s : Set M) ⊆ U := by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   rw [domRestrict_eq, image_comp]
-  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+  exact (hU.isOpenMap_subtypeVal s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
     (hinj.mono hsU) hEF
+
+omit [FiniteDimensional ℝ E] in
+/-- **Invariance of domain into an open copy of a manifold.** Let `U` be an open subset of a
+topological space `X` which is homeomorphic to a topological manifold `N` without boundary, and
+let `f` map an open set `W` of a topological manifold `M` without boundary into `U`, continuously
+and injectively, where `M` and `N` are charted on real normed spaces of the same `finrank`, the
+second finite dimensional. Then `f '' W` is open in `X`. Nothing is assumed about `X` away from
+`U`. -/
+theorem IsOpen.image_of_continuousOn_of_injOn_of_mapsTo {X : Type*} [TopologicalSpace X]
+    {f : M → X} {W : Set M} (hW : IsOpen W) {U : Set X} (hU : IsOpen U) (e : U ≃ₜ N)
+    (hf : ContinuousOn f W) (hinj : InjOn f W) (hfW : MapsTo f W U)
+    (hEF : finrank ℝ E = finrank ℝ F) : IsOpen (f '' W) := by
+  -- Read `f` on the open submanifold `W` through `e`, as a continuous injection into `N`.
+  let W' : TopologicalSpace.Opens M := ⟨W, hW⟩
+  let g : W' → N := fun y ↦ e ⟨f y, hfW y.property⟩
+  have hg : Continuous g :=
+    e.continuous.comp
+      ((continuousOn_iff_continuous_domRestrict.1 hf).subtype_mk fun y ↦ hfW y.property)
+  have hginj : Injective g := fun y z h ↦
+    Subtype.ext (hinj y.property z.property (congrArg Subtype.val (e.injective h)))
+  have himage : f '' W = Subtype.val '' (e ⁻¹' range g) := by
+    ext p
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨⟨f y, hfW hy⟩, ⟨⟨y, hy⟩, rfl⟩, rfl⟩
+    · rintro ⟨u, ⟨y, hy⟩, rfl⟩
+      exact ⟨y, y.property, congrArg Subtype.val (e.injective hy)⟩
+  rw [himage]
+  exact hU.isOpenMap_subtypeVal _
+    ((hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range.preimage e.continuous)
 
 omit [FiniteDimensional ℝ E] in
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
@@ -286,12 +319,12 @@ private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = f
     (hx : (x : M) ∈ interior A) : (e x : N) ∈ interior B := by
   -- On the open submanifold `interior A`, `e` is a continuous injection into `N`.
   let U : TopologicalSpace.Opens M := ⟨interior A, isOpen_interior⟩
-  let g : U → N := fun y ↦ e ⟨y, interior_subset y.2⟩
+  let g : U → N := fun y ↦ e ⟨y, interior_subset y.property⟩
   have hg : Continuous g :=
-    continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion interior_subset))
+    continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion interior_subset))
   have hginj : Injective g := fun y z hyz ↦
     Subtype.ext (Subtype.mk.inj (e.injective (Subtype.ext hyz)))
-  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).2)
+  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).property)
     (hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range ⟨⟨x, hx⟩, rfl⟩
 
 /-- **Invariance of interior points.** Let `A` and `B` be homeomorphic subsets of topological
@@ -309,7 +342,8 @@ dimension. Then a point of `A` lies in the frontier of `A` exactly when its imag
 frontier of `B`. -/
 theorem coe_apply_mem_frontier_iff (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F) (x : A) :
     (e x : N) ∈ frontier B ↔ (x : M) ∈ frontier A := by
-  simp only [frontier, mem_sdiff, subset_closure (e x).2, subset_closure x.2, true_and,
+  simp only [frontier, mem_sdiff, subset_closure (e x).property, subset_closure x.property,
+      true_and,
     e.coe_apply_mem_interior_iff hEF]
 
 end Homeomorph
@@ -356,6 +390,32 @@ theorem finrank_eq [Nonempty X] {f : X → E} (hf : IsOpenEmbedding f) {g : X �
     hf.isEmbedding)
 
 end Topology.IsOpenEmbedding
+
+section IsRCLikeNormedField
+
+variable {𝕜 : Type*} [NormedField 𝕜] [IsRCLikeNormedField 𝕜] {E F M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [FiniteDimensional 𝕜 F] [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N]
+  [ChartedSpace F N]
+
+/-- **Invariance of domain over `ℝ` or `ℂ`.** Let `M` and `N` be topological manifolds without
+boundary, charted on normed spaces `E` and `F` over `ℝ` or `ℂ`, with `F` finite dimensional and
+`finrank 𝕜 E = finrank 𝕜 F`. If `f : M → N` is continuous and injective on an open set `U`, then
+`f '' U` is open. This is `IsOpen.image_of_continuousOn_of_injOn` after restricting scalars to
+`ℝ`, as in Mathlib's `MDifferentiableAt.isInteriorPoint_of_surjective_mfderiv`. -/
+theorem IsOpen.image_of_continuousOn_of_injOn_of_isRCLikeNormedField {f : M → N} {U : Set M}
+    (hU : IsOpen U) (hf : ContinuousOn f U) (hinj : InjOn f U) (hEF : finrank 𝕜 E = finrank 𝕜 F) :
+    IsOpen (f '' U) := by
+  let _ := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let _ : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
+  have _ : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+  have _ : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+  have _ : FiniteDimensional ℝ F := .trans ℝ 𝕜 F
+  refine hU.image_of_continuousOn_of_injOn (E := E) (F := F) hf hinj ?_
+  rw [← Module.finrank_mul_finrank ℝ 𝕜 E, ← Module.finrank_mul_finrank ℝ 𝕜 F, hEF]
+
+end IsRCLikeNormedField
 
 section InverseSet
 

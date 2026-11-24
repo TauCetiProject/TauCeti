@@ -88,7 +88,7 @@ theorem nonneg_relation_of_mem_hull_natCast_relations
   | add x y _ _ hx hy =>
     exact ⟨add_nonneg hx.1 hy.1, by simp [add_smul, Finset.sum_add_distrib, hx.2, hy.2]⟩
   | smul r x _ hx =>
-    refine ⟨fun j ↦ mul_nonneg r.2 (hx.1 j), ?_⟩
+    refine ⟨fun j ↦ mul_nonneg r.property (hx.1 j), ?_⟩
     simp [← Nonneg.coe_smul, mul_smul, ← Finset.smul_sum, hx.2]
 
 end AddMonoidHom
@@ -108,7 +108,7 @@ theorem exists_nonneg_relation_of_mem_inf_hull_range
   obtain ⟨⟨cσ, hcσ⟩, cτ, hcτ⟩ := (Submodule.mem_inf.1 hx).imp
     (Submodule.mem_span_range_iff_exists_fun _).1 (Submodule.mem_span_range_iff_exists_fun _).1
   refine ⟨Sum.elim (fun j ↦ (cσ j : R)) fun j ↦ (cτ j : R),
-    Sum.forall.2 ⟨fun j ↦ (cσ j).2, fun j ↦ (cτ j).2⟩, ?_, ?_⟩
+    Sum.forall.2 ⟨fun j ↦ (cσ j).property, fun j ↦ (cτ j).property⟩, ?_, ?_⟩
   · simp [Fintype.sum_sum_type, hcσ, hcτ]
   · simp [hcσ]
 
@@ -129,10 +129,10 @@ theorem hull_image_image_le_inf
   · rw [SetLike.mem_coe, map_sum]
     exact Submodule.sum_mem _ fun a _ ↦ by
       rw [map_nsmul]
-      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨a, a.2, rfl⟩)
+      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨a, a.property, rfl⟩)
   · rw [SetLike.mem_coe, hrel k hk, map_sum]
     exact Submodule.sum_mem _ fun b _ ↦ by
       rw [map_nsmul]
-      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨b, b.2, rfl⟩)
+      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨b, b.property, rfl⟩)
 
 end PointedCone

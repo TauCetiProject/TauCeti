@@ -51,9 +51,11 @@ namespace TauCeti
 
 variable {E M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [FiniteDimensional ℂ E] [TopologicalSpace M] [ChartedSpace E M]
-  [IsManifold 𝓘(ℂ, E) 2 M] [NormalSpace M] [ParacompactSpace M]
 
-omit [IsManifold 𝓘(ℂ, E) 2 M] in
+section ChartFamily
+
+variable [NormalSpace M] [ParacompactSpace M]
+
 /-- A strongly `q`-pseudoconvex real `C²` function admits a single positive continuous perturbation
 tolerance for all charts in any locally finite closed chart family. At a point of an assigned
 closed set, controlling the second derivative in that chart suffices; the perturbing function
@@ -101,6 +103,12 @@ theorem exists_continuous_pos_forall_isManifoldStronglyPseudoconvexAt
   exact hδ i (g ∘ (e i).symm) (e i x) ((e i).map_source (hKe i hx))
     (hclose.trans (hεδ i x hx))
 
+end ChartFamily
+
+section Cover
+
+variable [IsManifold 𝓘(ℂ, E) 2 M] [NormalSpace M] [ParacompactSpace M]
+
 /-- Every holomorphic chart cover admits a locally finite closed refinement and a positive
 continuous tolerance preserving strong `q`-pseudoconvexity of a real `C²` function. Any real `C²`
 perturbation satisfying the coordinate second-derivative bounds retains the real Morse-index
@@ -136,5 +144,7 @@ theorem
   obtain ⟨i, hi⟩ := hKcover x
   have h := hpert g i x hi hg.contMDiffAt (hclose i x hi)
   exact ⟨h, h.manifoldMorseIndex_le hg.contMDiffAt⟩
+
+end Cover
 
 end TauCeti

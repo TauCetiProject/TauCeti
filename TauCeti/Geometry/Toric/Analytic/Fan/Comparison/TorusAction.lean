@@ -85,14 +85,14 @@ variable {Φ}
 
 /-- Equal representatives in two affine charts remain equal after torus translation. -/
 private theorem ofAffinePoint_smul_eq_of_eq {σ τ : Φ.cones}
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
-    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.1))
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
+    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.val))
     (t : ComplexTorus N) (h : ofAffinePoint σ x = ofAffinePoint τ y) :
     ofAffinePoint σ (t • x) = ofAffinePoint τ (t • y) := by
   obtain ⟨z, rfl, rfl⟩ := (ofAffinePoint_eq_ofAffinePoint_iff x y).1 h
   refine (ofAffinePoint_eq_ofAffinePoint_iff _ _).2 ⟨t • z, ?_, ?_⟩
-  · exact faceAffinePointMap_smul Φ.lattice (Φ.inf_isFaceOf_left σ.2 τ.2) t z
-  · exact faceAffinePointMap_smul Φ.lattice (Φ.inf_isFaceOf_right σ.2 τ.2) t z
+  · exact faceAffinePointMap_smul Φ.lattice (Φ.inf_isFaceOf_left σ.property τ.property) t z
+  · exact faceAffinePointMap_smul Φ.lattice (Φ.inf_isFaceOf_right σ.property τ.property) t z
 
 /-- The coordinate-free complex torus acts on the complex points of the toric scheme of a fan by
 translating affine chart representatives. -/
@@ -105,7 +105,7 @@ noncomputable instance : SMul (ComplexTorus N) Φ.AlgebraicComplexPoint where
 the coordinate-free complex torus. -/
 @[simp]
 theorem smul_ofAffinePoint (t : ComplexTorus N) (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     t • ofAffinePoint σ x = ofAffinePoint σ (t • x) := by
   let h := exists_ofAffinePoint_eq (ofAffinePoint σ x)
   exact ofAffinePoint_smul_eq_of_eq h.choose_spec.choose x t h.choose_spec.choose_spec
@@ -115,15 +115,15 @@ theorem smul_ofAffinePoint (t : ComplexTorus N) (σ : Φ.cones)
 scheme point are paired by the fibre-product universal property over `Spec ℂ`. -/
 @[simp]
 theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
-    (t • p).1 =
+    (t • p).val =
       pullback.lift (f := Spec.map (CommRingCat.ofHom
           (algebraMap ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V)))))
         (g := Φ.algebraicRealizationStructureMap)
         (Spec.map (CommRingCat.ofHom
           (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice ⊥))).toRingHom))
-        p.1 (by
-          have hp : p.1 ≫ Φ.algebraicRealizationStructureMap = 𝟙 _ := by
-            simpa [Φ.algebraicRealization_over, specOverSpec_over] using p.2.comp_over
+        p.val (by
+          have hp : p.val ≫ Φ.algebraicRealizationStructureMap = 𝟙 _ := by
+            simpa [Φ.algebraicRealization_over, specOverSpec_over] using p.property.comp_over
           rw [hp, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
           simp) ≫ Φ.algebraicRealizationAction := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
@@ -159,7 +159,7 @@ theorem continuous_const_smul (t : ComplexTorus N) :
     Continuous fun p : Φ.AlgebraicComplexPoint ↦ t • p := by
   refine continuous_iSup_dom.2 fun σ ↦ continuous_coinduced_dom.2 ?_
   let f : Φ.analyticAffineChart σ → Φ.analyticAffineChart σ :=
-    fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) ↦ t • x
+    fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) ↦ t • x
   have h : (fun p : Φ.AlgebraicComplexPoint ↦ t • p) ∘
       (fun x : Φ.analyticAffineChart σ ↦ ofAffinePoint σ x) =
       (fun x : Φ.analyticAffineChart σ ↦ ofAffinePoint σ x) ∘ f :=
@@ -168,9 +168,9 @@ theorem continuous_const_smul (t : ComplexTorus N) :
   have hc : Continuous f := by
     let g := Φ.analyticChartGenerators σ
     change Continuous[affinePointTopology g.2, affinePointTopology g.2]
-      fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) ↦ t • x
+      fun x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) ↦ t • x
     exact AffineSemigroupComplexPoint.continuous_const_smul_affinePointTopology g.2
-      (t.compAddMonoidHom (dualSemigroup Φ.lattice σ.1).subtype)
+      (t.compAddMonoidHom (dualSemigroup Φ.lattice σ.val).subtype)
   exact (continuous_ofAffinePoint σ).comp hc
 
 instance : ContinuousConstSMul (ComplexTorus N) Φ.AlgebraicComplexPoint :=
@@ -179,12 +179,12 @@ instance : ContinuousConstSMul (ComplexTorus N) Φ.AlgebraicComplexPoint :=
 /-- The distinguished complex point of a cone `σ` in the toric scheme: the image of the
 distinguished point of the top face of `σ` in the affine chart of `σ`. -/
 noncomputable def distinguishedPoint (σ : Φ.cones) : Φ.AlgebraicComplexPoint :=
-  ofAffinePoint σ (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.1.Face))
+  ofAffinePoint σ (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.val.Face))
 
 /-- The distinguished point of a cone is the image of the distinguished point of its top face. -/
 theorem distinguishedPoint_def (σ : Φ.cones) :
     distinguishedPoint σ =
-      ofAffinePoint σ (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) :=
+      ofAffinePoint σ (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.val.Face)) :=
   (rfl)
 
 /-- A face inclusion in the fan sends the distinguished point of the face to itself in the larger
@@ -192,10 +192,10 @@ chart. -/
 theorem ofAffinePoint_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ σ) :
     ofAffinePoint σ (TauCeti.Toric.distinguishedPoint Φ.lattice (Φ.orbitFace h)) =
       distinguishedPoint τ := by
-  have hd : faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h)
-      (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : τ.1.Face)) =
+  have hd : faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h)
+      (TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : τ.val.Face)) =
         TauCeti.Toric.distinguishedPoint Φ.lattice (Φ.orbitFace h) :=
-    faceAffinePointMap_distinguishedPoint Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h)
+    faceAffinePointMap_distinguishedPoint Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h)
       (by rw [Φ.coe_orbitFace h]; rfl)
   rw [distinguishedPoint_def, ← hd, ofAffinePoint_faceAffinePointMap]
 
@@ -204,20 +204,20 @@ toric scheme of a nonempty fan, obtained by translating the distinguished point 
 cone. -/
 noncomputable def torusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     Φ.AlgebraicComplexPoint :=
-  t • distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.2⟩
+  t • distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.property⟩
 
 theorem torusι_def (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
-    torusι hΦ0 t = t • distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.2⟩ :=
+    torusι hΦ0 t = t • distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.property⟩ :=
   (rfl)
 
 /-- In every affine chart, the canonical torus inclusion is translation of the point `default`
 where every monomial takes the value `1`. -/
 theorem torusι_eq_ofAffinePoint (hΦ0 : Nonempty Φ.cones) (σ : Φ.cones) (t : ComplexTorus N) :
     torusι hΦ0 t = ofAffinePoint σ
-      (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))) := by
-  let τ : Φ.cones := ⟨⊥, Φ.bot_mem hΦ0.some.2⟩
+      (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))) := by
+  let τ : Φ.cones := ⟨⊥, Φ.bot_mem hΦ0.some.property⟩
   have hle : τ ≤ σ := Subtype.coe_le_coe.1 bot_le
-  have hface : Φ.orbitFace hle = (⊥ : σ.1.Face) := by
+  have hface : Φ.orbitFace hle = (⊥ : σ.val.Face) := by
     apply le_antisymm
     · rw [← PointedCone.Face.toPointedCone_le_toPointedCone, Φ.coe_orbitFace]
       exact bot_le
@@ -227,7 +227,7 @@ theorem torusι_eq_ofAffinePoint (hΦ0 : Nonempty Φ.cones) (σ : Φ.cones) (t :
 
 @[simp]
 theorem torusι_one (hΦ0 : Nonempty Φ.cones) :
-    torusι hΦ0 (1 : ComplexTorus N) = distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.2⟩ :=
+    torusι hΦ0 (1 : ComplexTorus N) = distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.property⟩ :=
   one_smul (ComplexTorus N) _
 
 @[simp]
@@ -235,15 +235,15 @@ theorem torusι_mul (hΦ0 : Nonempty Φ.cones) (s t : ComplexTorus N) :
     torusι hΦ0 (s * t) = s • torusι hΦ0 t := by
   rw [torusι_def, torusι_def]
   exact @mul_smul (ComplexTorus N) Φ.AlgebraicComplexPoint inferInstance inferInstance s t
-    (distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.2⟩)
+    (distinguishedPoint ⟨⊥, Φ.bot_mem hΦ0.some.property⟩)
 
 /-! ### Global character functions on algebraic complex points -/
 
 private theorem chartCharacter_eq_of_ofAffinePoint_eq
-    (m : IntegralCharacter N) (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1)
+    (m : IntegralCharacter N) (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val)
     {σ τ : Φ.cones}
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
-    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.1))
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
+    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.val))
     (h : ofAffinePoint σ x = ofAffinePoint τ y) :
     x (MonoidAlgebra.single (ofAdd ⟨m, hm σ⟩) 1) =
       y (MonoidAlgebra.single (ofAdd ⟨m, hm τ⟩) 1) := by
@@ -256,7 +256,7 @@ variable (Φ) in
 the complex points of the toric scheme, evaluating each affine chart point on the monomial of
 `m`. -/
 noncomputable def character (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1) :
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val) :
     C(Φ.AlgebraicComplexPoint, ℂ) where
   toFun p :=
     let h := exists_ofAffinePoint_eq p
@@ -268,7 +268,7 @@ noncomputable def character (m : IntegralCharacter N)
           (MonoidAlgebra.single (ofAdd ⟨m, hm (exists_ofAffinePoint_eq p).choose⟩) 1)) ∘
         (fun x : Φ.analyticAffineChart σ ↦ ofAffinePoint σ x) =
         fun x : Φ.analyticAffineChart σ ↦
-          DFunLike.coe (F := AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) x
+          DFunLike.coe (F := AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) x
             (MonoidAlgebra.single (ofAdd ⟨m, hm σ⟩) 1) := by
       funext x
       exact chartCharacter_eq_of_ofAffinePoint_eq m hm _ _
@@ -282,8 +282,8 @@ noncomputable def character (m : IntegralCharacter N)
 corresponding monomial. -/
 @[simp]
 theorem character_ofAffinePoint (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1) (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val) (σ : Φ.cones)
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     character Φ m hm (ofAffinePoint σ x) = x (MonoidAlgebra.single (ofAdd ⟨m, hm σ⟩) 1) :=
   chartCharacter_eq_of_ofAffinePoint_eq m hm _ _
     (exists_ofAffinePoint_eq (ofAffinePoint σ x)).choose_spec.choose_spec
@@ -292,7 +292,7 @@ theorem character_ofAffinePoint (m : IntegralCharacter N)
 translation. -/
 @[simp]
 theorem character_smul (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1)
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val)
     (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
     character Φ m hm (t • p) = (t m : ℂ) * character Φ m hm p := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
@@ -302,7 +302,7 @@ theorem character_smul (m : IntegralCharacter N)
 /-- The zero character defines the constant function `1` on algebraic complex points. -/
 @[simp]
 theorem character_zero (p : Φ.AlgebraicComplexPoint) :
-    character Φ 0 (fun σ ↦ (dualSemigroup Φ.lattice σ.1).zero_mem) p = 1 := by
+    character Φ 0 (fun σ ↦ (dualSemigroup Φ.lattice σ.val).zero_mem) p = 1 := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
   rw [character_ofAffinePoint]
   convert x.map_one using 1
@@ -311,10 +311,10 @@ theorem character_zero (p : Φ.AlgebraicComplexPoint) :
 points. -/
 @[simp]
 theorem character_add (m m' : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1)
-    (hm' : ∀ σ : Φ.cones, m' ∈ dualSemigroup Φ.lattice σ.1)
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val)
+    (hm' : ∀ σ : Φ.cones, m' ∈ dualSemigroup Φ.lattice σ.val)
     (p : Φ.AlgebraicComplexPoint) :
-    character Φ (m + m') (fun σ ↦ (dualSemigroup Φ.lattice σ.1).add_mem (hm σ) (hm' σ)) p =
+    character Φ (m + m') (fun σ ↦ (dualSemigroup Φ.lattice σ.val).add_mem (hm σ) (hm' σ)) p =
       character Φ m hm p * character Φ m' hm' p := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
   rw [character_ofAffinePoint, character_ofAffinePoint, character_ofAffinePoint]
@@ -324,7 +324,7 @@ theorem character_add (m m' : IntegralCharacter N)
 of the character. -/
 @[simp]
 theorem character_torusι (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1)
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val)
     (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     character Φ m hm (torusι hΦ0 t) = (t m : ℂ) := by
   rw [torusι_eq_ofAffinePoint hΦ0 hΦ0.some t, character_ofAffinePoint]
@@ -336,16 +336,16 @@ variable (Φ) in
 /-- The torus orbit of a cone `σ` in the complex points of the toric scheme: the image of the
 stratum of the top face of `σ` in the affine chart of `σ`. -/
 noncomputable def coneOrbit (σ : Φ.cones) : Set Φ.AlgebraicComplexPoint :=
-  ofAffinePoint σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face)
+  ofAffinePoint σ '' affineConeOrbit Φ.lattice (⊤ : σ.val.Face)
 
 theorem coneOrbit_def (σ : Φ.cones) :
-    coneOrbit Φ σ = ofAffinePoint σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face) :=
+    coneOrbit Φ σ = ofAffinePoint σ '' affineConeOrbit Φ.lattice (⊤ : σ.val.Face) :=
   (rfl)
 
 /-- The distinguished point of a cone lies in its algebraic orbit. -/
 theorem distinguishedPoint_mem_coneOrbit (σ : Φ.cones) :
     distinguishedPoint σ ∈ coneOrbit Φ σ :=
-  ⟨TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.1.Face),
+  ⟨TauCeti.Toric.distinguishedPoint Φ.lattice (⊤ : σ.val.Face),
     distinguishedPoint_mem_affineConeOrbit Φ.lattice _, rfl⟩
 
 /-- The torus preserves the algebraic orbit of every cone. -/
@@ -455,7 +455,7 @@ theorem algebraicAnalyticEquiv_symm_analyticTorusι (hΦ0 : Nonempty Φ.cones) (
 through the algebraic–analytic comparison. -/
 @[simp]
 theorem analyticCharacter_algebraicAnalyticEquiv (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1) (p : Φ.AlgebraicComplexPoint) :
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val) (p : Φ.AlgebraicComplexPoint) :
     Φ.analyticCharacter hΦ m hm (algebraicAnalyticEquiv hΦ p) =
       AlgebraicComplexPoint.character Φ m hm p := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
@@ -466,7 +466,7 @@ theorem analyticCharacter_algebraicAnalyticEquiv (m : IntegralCharacter N)
 `analyticCharacter`. -/
 @[simp]
 theorem character_algebraicAnalyticEquiv_symm (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1) (x : Φ.analyticRealization hΦ) :
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val) (x : Φ.analyticRealization hΦ) :
     AlgebraicComplexPoint.character Φ m hm ((algebraicAnalyticEquiv hΦ).symm x) =
       Φ.analyticCharacter hΦ m hm x := by
   simpa using (analyticCharacter_algebraicAnalyticEquiv hΦ m hm
@@ -474,7 +474,7 @@ theorem character_algebraicAnalyticEquiv_symm (m : IntegralCharacter N)
 
 /-- On a regular fan, the global character function on algebraic complex points is holomorphic. -/
 theorem contMDiff_character_algebraicComplexPoint (m : IntegralCharacter N)
-    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1) (n : ℕ∞ω) :
+    (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val) (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, ℂ) n
       (AlgebraicComplexPoint.character Φ m hm) := by
@@ -592,10 +592,10 @@ homomorphism induced by the lattice map. -/
 theorem algebraicComplexPointMap_torusι (hΦ0 : Nonempty Φ.cones) (t : ComplexTorus N) :
     f.algebraicComplexPointMap (Fan.AlgebraicComplexPoint.torusι hΦ0 t) =
       Fan.AlgebraicComplexPoint.torusι
-        ⟨⟨f.leastCone hΦ0.some.2, f.leastCone_mem hΦ0.some.2⟩⟩
+        ⟨⟨f.leastCone hΦ0.some.property, f.leastCone_mem hΦ0.some.property⟩⟩
         (complexTorusMap f.latticeMap t) := by
   let σ := hΦ0.some
-  let τ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
+  let τ : Ψ.cones := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
   rw [Fan.AlgebraicComplexPoint.torusι_eq_ofAffinePoint hΦ0 σ,
     Fan.AlgebraicComplexPoint.torusι_eq_ofAffinePoint ⟨τ⟩ τ,
     algebraicComplexPointMap_ofAffinePoint]
@@ -607,7 +607,7 @@ theorem algebraicComplexPointMap_torusι (hΦ0 : Nonempty Φ.cones) (t : Complex
 precomposes the character with the integral lattice map. -/
 @[simp]
 theorem character_algebraicComplexPointMap (m : IntegralCharacter N')
-    (hm : ∀ τ : Ψ.cones, m ∈ dualSemigroup Ψ.lattice τ.1) (p : Φ.AlgebraicComplexPoint) :
+    (hm : ∀ τ : Ψ.cones, m ∈ dualSemigroup Ψ.lattice τ.val) (p : Φ.AlgebraicComplexPoint) :
     Fan.AlgebraicComplexPoint.character Ψ m hm (f.algebraicComplexPointMap p) =
       Fan.AlgebraicComplexPoint.character Φ (m.comp f.latticeMap)
         (fun σ ↦ by
@@ -615,7 +615,8 @@ theorem character_algebraicComplexPointMap (m : IntegralCharacter N')
             f.latticeMap f.realMap f.map_lattice]
           intro v hv
           exact (mem_dualSemigroup Ψ.lattice m).1
-            (hm ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (f.mapsTo_leastCone σ.2 hv)) p := by
+            (hm ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) (f.mapsTo_leastCone σ.property
+                hv)) p := by
   obtain ⟨σ, x, rfl⟩ := Fan.AlgebraicComplexPoint.exists_ofAffinePoint_eq p
   rw [algebraicComplexPointMap_ofAffinePoint, Fan.AlgebraicComplexPoint.character_ofAffinePoint]
   erw [Fan.AlgebraicComplexPoint.character_ofAffinePoint, analyticChartMap_apply,
@@ -624,7 +625,7 @@ theorem character_algebraicComplexPointMap (m : IntegralCharacter N')
   apply Subtype.ext
   ext n
   exact dualSemigroupMap_apply Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-    (f.mapsTo_leastCone σ.2) _ n
+    (f.mapsTo_leastCone σ.property) _ n
 
 end FanHom
 

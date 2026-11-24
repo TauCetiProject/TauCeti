@@ -57,6 +57,9 @@ statements are in one variable, as in the sources.
   radical is the normal closure of the equation.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_orientableCoeff_zero_one`: the same for the
   standard quadratic equation of type (2) with genus `0` and one coefficient.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.centralizerEquation`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.mem_V_centralizerEquation`: the standard quadratic
+  equation `x⁻¹ c x c⁻¹ = 1`, whose solutions are the elements commuting with `c`.
 
 ## References
 
@@ -91,7 +94,7 @@ theorem mem_V_conjugacy_iff {ι : G →* H} {c d b : G} (hb : d⁻¹ = b⁻¹ * 
     group
   simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_mul, map_inv, eval_inl, eval_inr,
     FreeGroup.lift_apply_of, hd, h, conj_eq_one_iff, commutatorElement_eq_one_iff_commute,
-    mem_centralizer_singleton_iff, ← commute_iff_eq]
+    mem_centralizer_singleton_iff]
   exact Commute.symm_iff
 
 /-- **The conjugacy equation is equivalent to a system of commutators.** In a
@@ -105,7 +108,7 @@ theorem V_conjugacy_eq_V_commutator_centralizer {ι : G →* H} (hH : IsCommTran
   ext v
   simp only [mem_V_conjugacy_iff hb, mem_V, Set.forall_mem_image, SetLike.mem_coe,
     map_commutatorElement, map_mul, map_inv, eval_inl, eval_inr, FreeGroup.lift_apply_of,
-    commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff, ← commute_iff_eq]
+    commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff]
   exact ⟨fun hv h hh => (isCommTransitive_iff H).1 hH _ _ _ hc hv (hh.symm.map ι),
     fun hv => hv (Commute.refl c)⟩
 
@@ -178,9 +181,9 @@ theorem Rad_conjugacy_eq_normalClosure_self [Subsingleton X] (hBP : IsBP G) (hG 
   rintro _ ⟨_, hh, rfl⟩
   obtain ⟨k, rfl⟩ := hC hh
   -- The generic point of `G_S` solves `S`, so there `z b⁻¹` commutes with `c`, hence with `c ^ k`.
-  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).2
+  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).property
   simp only [SystemGroup.homEquiv_apply_coe, GHom.coe_id, id_eq, SystemGroup.coeff_apply,
-    mem_centralizer_singleton_iff, ← commute_iff_eq] at hv
+    mem_centralizer_singleton_iff] at hv
   simp only [SetLike.mem_coe]
   rw [← QuotientGroup.eq_one_iff, ← QuotientGroup.mk'_apply, map_commutatorElement,
     commutatorElement_eq_one_iff_commute]
@@ -207,6 +210,32 @@ theorem Rad_toWord_orientableCoeff_zero_one [Subsingleton X] (hBP : IsBP G) (hG 
       normalClosure ((fun h => ⁅inr (FreeGroup.of (z 0)) * inl b⁻¹, inl h⁆) ''
         (centralizer {c 0} : Set G)) := by
   rw [toWord_orientableCoeff_zero_one, Rad_conjugacy_eq_normalClosure hBP hG (hc 0) hb]
+
+end Standard
+
+/-! ### The equation `x⁻¹ c x c⁻¹ = 1` -/
+
+namespace Standard
+
+variable {c : G} (x : X) (hc : c ≠ 1)
+
+/-- The standard quadratic equation `x⁻¹ c x c⁻¹ = 1` in the variable `x`, for `c ≠ 1`: the
+conjugacy equation with `d = c⁻¹`, whose solutions are the elements commuting with `c`. -/
+def centralizerEquation : Standard G X :=
+  .orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ x)
+    (Function.injective_of_subsingleton _) (fun _ ↦ c) (fun _ ↦ hc) c⁻¹ (inv_ne_one.2 hc)
+
+/-- The word of `x⁻¹ c x c⁻¹ = 1`. -/
+theorem toWord_centralizerEquation : (centralizerEquation x hc).toWord =
+    (inr (FreeGroup.of x))⁻¹ * inl c * inr (FreeGroup.of x) * inl c⁻¹ :=
+  toWord_orientableCoeff_zero_one
+
+variable {x hc} in
+/-- The solutions of `x⁻¹ c x c⁻¹ = 1` are the points whose value at `x` commutes with `c`. -/
+theorem mem_V_centralizerEquation {ι : G →* H} {v : X → H} :
+    v ∈ V ι {(centralizerEquation x hc).toWord} ↔ Commute (v x) (ι c) := by
+  rw [toWord_centralizerEquation, mem_V_conjugacy_iff (b := 1) (by simp)]
+  simp [mem_centralizer_singleton_iff, commute_iff_eq]
 
 end Standard
 

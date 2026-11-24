@@ -158,8 +158,8 @@ theorem exists_gaussCode_reverse_eq_relabel_reverse (hs : poly.IsSimple ℝ)
   have hpartner (j) :
       D'.partner.val (Fin.cast h2 j) = Fin.cast h2 (Fin.rev (D.partner.val (Fin.rev j))) := by
     simpa only [Fin.revPerm_symm, Fin.revPerm_apply] using
-      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b hs' hπ' (injOn_id _)
-        (fun _ hx ↦ hb ▸ doublePoints_subset_boundary hx) (fun _ _ _ _ hxy ↦ hxy) h2 Fin.revPerm
+      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b hs' hπ' (g := id)
+        (fun _ _ _ _ hxy ↦ hxy) h2 Fin.revPerm
         (fun j ↦ by rw [Fin.revPerm_apply, hbp, id_eq]) j
   have hvisit (i j) : D.visit (Fin.rev i) = D.visit (Fin.rev j) ↔
       D'.visit (Fin.cast h2 i) = D'.visit (Fin.cast h2 j) := by

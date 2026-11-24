@@ -242,7 +242,7 @@ private def homeomorphTopSublevel (hd : 1 ≤ d) :
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop
-  continuous_invFun := continuous_subtype_val
+  continuous_invFun := continuous_subtypeVal
 
 /-- **A band crossing the top level in positive degrees.** For `0 ≤ c < 1 ≤ d`, the lower sublevel
 `{f ≤ c}` is contractible, so in every positive degree the relative homology of the band

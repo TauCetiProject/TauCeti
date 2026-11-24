@@ -29,8 +29,6 @@ additive fact underlying the compactness of the norm-one idele class group.
 * `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`.
 * `TauCeti.GlobalNumberFields.isClosed_principalSubgroup`: `K` is closed in `𝔸[K]`.
 * `TauCeti.GlobalNumberFields.t3Space_quotient_principalSubgroup`: `𝔸[K] / K` is Hausdorff.
-* `TauCeti.GlobalNumberFields.principalSubalgebra`: the diagonal `K`-subalgebra of `𝔸[K]`, with its
-  discrete topology and closed inclusion into `𝔸[K]`.
 
 ## References
 
@@ -78,7 +76,7 @@ instance discreteTopology_principalSubgroup :
         (continuous_norm.comp ((continuous_apply w).comp continuous_fst)) continuous_const
     · exact (FiniteAdeleRing.isOpen_integralAdeles (𝓞 K) K).preimage continuous_snd
   rw [discreteTopology_iff_isOpen_singleton_zero]
-  convert hU.preimage continuous_subtype_val
+  convert hU.preimage continuous_subtypeVal
   ext ⟨_, x, rfl⟩
   simp only [Set.mem_singleton_iff, Set.mem_preimage, Set.mem_inter_iff, Set.mem_iInter,
     Set.mem_ofPred_eq, U]
@@ -107,58 +105,4 @@ instance t3Space_quotient_principalSubgroup :
   haveI := isClosed_principalSubgroup K
   inferInstance
 
-/-- The diagonal copy of `K` in its adele ring `𝔸[K]`, packaged as a `K`-subalgebra (the range of
-`Algebra.ofId K 𝔸[K]`). Its underlying set coincides with
-`NumberField.AdeleRing.principalSubgroup (𝓞 K) K`. -/
-noncomputable def principalSubalgebra : Subalgebra K 𝔸[K] :=
-  (Algebra.ofId K 𝔸[K]).range
-
-/-- The underlying set of `principalSubalgebra K` is that of
-`AdeleRing.principalSubgroup (𝓞 K) K`. -/
-@[simp]
-theorem coe_principalSubalgebra :
-    (principalSubalgebra K : Set 𝔸[K]) = (AdeleRing.principalSubgroup (𝓞 K) K : Set 𝔸[K]) := by
-  ext x
-  simp [principalSubalgebra]
-
-variable {K} in
-@[simp]
-theorem mem_principalSubalgebra_iff {x : 𝔸[K]} :
-    x ∈ principalSubalgebra K ↔ ∃ c : K, algebraMap K 𝔸[K] c = x := by
-  simp [principalSubalgebra, Algebra.mem_bot]
-
-/-- Canonical `K`-algebra isomorphism between `K` and its diagonal copy `principalSubalgebra K` in
-`𝔸[K]`. -/
-noncomputable def principalSubalgebraEquiv : K ≃ₐ[K] principalSubalgebra K :=
-  AlgEquiv.ofInjective (Algebra.ofId K 𝔸[K])
-    (fun _ _ h ↦ AdeleRing.algebraMap_injective (𝓞 K) K h)
-
-@[simp]
-theorem coe_principalSubalgebraEquiv_apply (c : K) :
-    (principalSubalgebraEquiv K c : 𝔸[K]) = algebraMap K 𝔸[K] c := by
-  have h : (principalSubalgebra K).val.comp (principalSubalgebraEquiv K).toAlgHom =
-      Algebra.ofId K 𝔸[K] := by ext
-  exact AlgHom.congr_fun h c
-
-/-- The diagonal `K`-subalgebra `principalSubalgebra K` is discrete in `𝔸[K]`. -/
-instance discreteTopology_principalSubalgebra :
-    DiscreteTopology (principalSubalgebra K) := by
-  rw [← SetLike.isDiscrete_iff_discreteTopology, coe_principalSubalgebra,
-    SetLike.isDiscrete_iff_discreteTopology]
-  infer_instance
-
-/-- The diagonal `K`-subalgebra `principalSubalgebra K` is closed in `𝔸[K]`. -/
-theorem isClosed_principalSubalgebra :
-    IsClosed (principalSubalgebra K : Set 𝔸[K]) := by
-  rw [coe_principalSubalgebra]
-  exact isClosed_principalSubgroup K
-
-/-- The inclusion `(principalSubalgebra K).val : principalSubalgebra K →ₐ[K] 𝔸[K]` is a closed
-topological embedding. -/
-theorem isClosedEmbedding_principalSubalgebra_val :
-    Topology.IsClosedEmbedding (principalSubalgebra K).val := by
-  rw [Subalgebra.coe_val]
-  exact Topology.IsClosedEmbedding.subtypeVal (isClosed_principalSubalgebra K)
-
 end TauCeti.GlobalNumberFields
-

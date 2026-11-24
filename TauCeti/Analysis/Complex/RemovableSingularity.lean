@@ -36,6 +36,12 @@ tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`
 holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
 (`HasCompactSupport.contDiff_update_comp_inv`).
 
+Finally, it provides one-variable removable-singularity patching across a relatively closed
+discrete subset `E` (`Eᶜ ∈ codiscreteWithin Ω`): a function `f : ℂ → F` complex-differentiable on
+`Ω \ E` that agrees on `𝓝[≠] a` with a function analytic at `a` for every `a ∈ Ω ∩ E` agrees on
+`Ω \ E` with a function complex-differentiable on all of `Ω`
+(`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`).
+
 ## Main results
 
 * `TauCeti.exists_analyticOnNhd_prod_eqOn`: **the Riemann extension theorem across a coordinate
@@ -47,6 +53,8 @@ holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
 * `TauCeti.bddAbove_slice_of_local`, `TauCeti.extension_ne_zero_of_local`: the transverse slices
   of a function locally equal off the hyperplane to a function continuous on it are bounded, and
   an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
+* `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`: removable-singularity patching across
+  a relatively closed discrete subset.
 
 ## References
 
@@ -268,5 +276,51 @@ theorem _root_.HasCompactSupport.contDiff_update_comp_inv {G : Type*} [NormedAdd
       (update_comp_inv_eventuallyEq hs)
 
 end Infinity
+
+/-! ### Patching removable singularities across a relatively closed discrete subset -/
+
+/-- **Removable-singularity patching across a relatively closed discrete subset.** If `f : ℂ → F` is
+complex-differentiable on `Ω \ E` with `Eᶜ ∈ codiscreteWithin Ω` and agrees on `𝓝[≠] a` with a
+function analytic at `a` for each `a ∈ Ω ∩ E`, then `f` agrees on `Ω \ E` with a function
+complex-differentiable on all of `Ω`. Neither openness of `Ω`, completeness of `F`, nor `E ⊆ Ω` is
+required. -/
+theorem exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    {Ω E : Set ℂ} (hE : Eᶜ ∈ codiscreteWithin Ω) {f : ℂ → F}
+    (hf : DifferentiableOn ℂ f (Ω \ E))
+    (hg : ∀ a ∈ Ω ∩ E, ∃ g : ℂ → F, AnalyticAt ℂ g a ∧ f =ᶠ[𝓝[≠] a] g) :
+    ∃ h : ℂ → F, DifferentiableOn ℂ h Ω ∧ EqOn f h (Ω \ E) := by
+  classical
+  let h : ℂ → F := fun z ↦ if hz : z ∈ Ω ∩ E then (hg z hz).choose z else f z
+  have hfh : EqOn f h (Ω \ E) := fun z hz ↦ by simp [h, hz.2]
+  refine ⟨h, fun z₀ hz₀ ↦ ?_, hfh⟩
+  have hcod : ∀ᶠ z in 𝓝[Ω \ {z₀}] z₀, z ∉ E :=
+    mem_codiscreteWithin_iff_forall_mem_nhdsWithin.mp hE z₀ hz₀
+  by_cases hz₀E : z₀ ∈ E
+  · have hz₀' : z₀ ∈ Ω ∩ E := ⟨hz₀, hz₀E⟩
+    obtain ⟨hgan, hfg⟩ := (hg z₀ hz₀').choose_spec
+    have hev : h =ᶠ[𝓝[Ω] z₀] (hg z₀ hz₀').choose := by
+      have hcod' := eventually_nhdsWithin_iff.mp hcod
+      have hfg' := eventuallyEq_nhdsWithin_iff.mp hfg
+      refine eventuallyEq_nhdsWithin_iff.mpr ?_
+      filter_upwards [hcod', hfg'] with z hzE hzf hzΩ
+      rcases eq_or_ne z z₀ with rfl | hne
+      · simp [h, hz₀, hz₀E]
+      · have hzE' : z ∉ E := hzE ⟨hzΩ, hne⟩
+        simp [h, hzE', hzf hne]
+    exact hgan.differentiableAt.differentiableWithinAt.congr_of_eventuallyEq hev
+      (by simp [h, hz₀, hz₀E])
+  · have hE_nhds : Eᶜ ∈ 𝓝[Ω] z₀ := by
+      obtain ⟨V, hVopen, hz₀V, hVsub⟩ := mem_nhdsWithin.mp hcod
+      refine mem_nhdsWithin.mpr ⟨V, hVopen, hz₀V, fun z hz ↦ ?_⟩
+      rcases eq_or_ne z z₀ with rfl | hne
+      · exact hz₀E
+      · exact hVsub ⟨hz.1, hz.2, hne⟩
+    have hev : h =ᶠ[𝓝[Ω] z₀] f := by
+      filter_upwards [self_mem_nhdsWithin, hE_nhds] with z hzΩ hzE using (hfh ⟨hzΩ, hzE⟩).symm
+    have hdiff : DifferentiableWithinAt ℂ f Ω z₀ :=
+      (hf z₀ ⟨hz₀, hz₀E⟩).mono_of_mem_nhdsWithin
+        (by rw [Set.sdiff_eq]; exact inter_mem self_mem_nhdsWithin hE_nhds)
+    exact hdiff.congr_of_eventuallyEq hev (hfh ⟨hz₀, hz₀E⟩).symm
 
 end TauCeti

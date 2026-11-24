@@ -302,7 +302,7 @@ theorem isClosedGradedTrace_trace (φ : cyclicCocycles k A M n) :
       (trace ((φ : cyclicCochains k A M n) : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦
           A) M)) :=
   (isClosedGradedTrace_trace_iff _).2
-    ⟨(φ : cyclicCochains k A M n).2, (mem_cyclicCocycles_iff k A M).1 φ.2⟩
+    ⟨(φ : cyclicCochains k A M n).property, (mem_cyclicCocycles_iff k A M).1 φ.property⟩
 
 /-- **Every cyclic cocycle is the character of a universal-form cycle**: the cyclic cocycle of the
 cycle `(⨁ m, Ωᵐ, d, ∫_φ, ι)` is `φ`. -/

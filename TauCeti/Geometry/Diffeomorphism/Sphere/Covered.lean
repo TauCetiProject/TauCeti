@@ -133,15 +133,15 @@ to a linear isometry of `ℝ^(n + 2)`, depends continuously on the rotation. -/
 private theorem continuous_firstToLastIsometry_conj :
     Continuous fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦
       (((firstToLastIsometry n).symm.trans ((UnitaryGroup.toLinearIsometryEquiv
-        ⟨A.1, A.2.1⟩).trans (firstToLastIsometry n))).toContinuousLinearEquiv :
+        ⟨A.val, A.property.1⟩).trans (firstToLastIsometry n))).toContinuousLinearEquiv :
           EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 2))) := by
   let f := ((firstToLastIsometry n).toContinuousLinearEquiv :
     EuclideanSpace ℝ (Fin (1 + (n + 1))) →L[ℝ] EuclideanSpace ℝ (Fin (n + 2)))
   let g := ((firstToLastIsometry n).symm.toContinuousLinearEquiv :
     EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (1 + (n + 1))))
   have h := UnitaryGroup.continuous_toLinearIsometryEquiv.comp
-    (continuous_subtype_val.subtype_mk
-      fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦ A.2.1)
+    (continuous_subtypeVal.subtype_mk
+      fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦ A.property.1)
   refine ((continuous_const (y := f)).clm_comp (h.clm_comp (continuous_const (y := g)))).congr
     fun A ↦ ?_
   ext x : 1
@@ -153,7 +153,7 @@ private def rotationToDiffSphere (m : ℕ∞ω) :
     C(specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ,
       Diff (𝓡 (n + 1)) (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) m) where
   toFun A := LinearIsometryEquiv.unitSphereDiffHom m ((firstToLastIsometry n).symm.trans
-    ((UnitaryGroup.toLinearIsometryEquiv ⟨A.1, A.2.1⟩).trans (firstToLastIsometry n)))
+    ((UnitaryGroup.toLinearIsometryEquiv ⟨A.val, A.property.1⟩).trans (firstToLastIsometry n)))
   continuous_toFun := by
     refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
     simpa only [LinearIsometryEquiv.unitSphereDiffHom_apply] using
@@ -251,7 +251,7 @@ private theorem exists_ne_zero_isCoveredByDiffeomorphisms_sphereNorthPole [NeZer
     ∃ ℓ : ℤ, ℓ ≠ 0 ∧
       o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin m (sphereNorthPole (n + 1)) ℓ := by
   have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
+    connectedSpace_euclideanSphere (by rw [Fintype.card_fin]; omega)
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   obtain ⟨k, hk, b, hb⟩ := exists_map_rotationOrbitMap_eq_pow h
   -- The Hurewicz class of the generator is a multiple `c • [Sⁿ⁺¹]` of the fundamental class.

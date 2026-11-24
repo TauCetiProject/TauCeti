@@ -49,10 +49,10 @@ a topological semiring `R`. -/
 noncomputable def baseChangePointsContinuousMulEquiv :
     WithConv (A →ₐ[k] R) ≃ₜ* WithConv (K ⊗[k] A →ₐ[K] R) where
   toMulEquiv := baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
-  continuous_toFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+  continuous_toFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.mpr <|
     ((baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous).congr
       fun f ↦ Algebra.TensorProduct.ext' fun c a ↦ by simp
-  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.mpr <|
     ((baseChangeHomeomorph k K A R).continuous.comp isHomeomorph_ofConv.continuous).congr
       fun f ↦ AlgHom.ext fun a ↦ by simp
 
