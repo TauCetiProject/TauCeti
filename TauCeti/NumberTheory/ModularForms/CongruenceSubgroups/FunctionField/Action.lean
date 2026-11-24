@@ -54,7 +54,9 @@ theorem unop_modularFunctionActionZMod_mem_coeffSubfield {K : Subfield ℂ}
       exact compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K
     · rw [unop_modularFunctionActionZMod_frickeMeromorphicFunction]
       exact mem_coeffIntermediateField.mpr (frickeMeromorphicFunction_mem_coeffSubfield hK _)
-  exact mem_coeffIntermediateField.mp (hle (mem_coeffIntermediateField.mpr hF))
+  have hσ := hle (mem_coeffIntermediateField.mpr hF)
+  rw [IntermediateField.mem_comap, AlgEquiv.coe_toAlgHom, AlgEquiv.restrictScalars_apply] at hσ
+  exact mem_coeffIntermediateField.mp hσ
 
 /-- If `K` contains the `N`-th roots of unity, a substituted function has Laurent coefficients
 at infinity in `K` if and only if the original function does. -/
@@ -95,6 +97,7 @@ private theorem modularFunctionActionZMod_compHom_smul (g : (SL(2, ZMod N))ᵐ�
 private instance modularFunctionFieldInvariant :
     IsInvariantSubring (SL(2, ZMod N))ᵐᵒᵖ (modularFunctionField N).toSubring :=
   ⟨fun g _ hF ↦ by
+    rw [Subfield.mem_toSubring] at hF ⊢
     rw [modularFunctionActionZMod_compHom_smul]
     exact (unop_modularFunctionActionZMod_mem_modularFunctionField_iff (unop g)).mpr hF⟩
 
@@ -169,23 +172,16 @@ theorem forall_unop_modularFunctionFieldActionZMod_apply_eq_iff {F : modularFunc
       modularFunctionField N ⊓
         (IntermediateField.fixedField (modularFunctionActionZMod N).range.unop).toSubfield := by
     rw [modularFunctionField_inf_fixedField_eq_closure, RingHom.map_field_closure,
-      Set.image_insert_eq, ← Set.range_comp, Subfield.subtype_apply,
-      coe_modularFunctionFieldMapOfLevelOne_apply]
-    simp only [Function.comp_def, Subfield.subtype_apply, coe_modularFunctionFieldConst_apply,
-      Set.range_comp' (algebraMap ℂ _), Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq]
+      image_subtype_insert_range_modularFunctionFieldConst]
   rw [← Subfield.map_comap_subtype] at hmap
   have hclosure := Subfield.map_injective (f := (modularFunctionField N).subtype) hmap
   rw [hclosure, Subfield.mem_comap, IntermediateField.mem_toSubfield,
     IntermediateField.mem_fixedField_iff]
-  constructor
-  · rintro h σ ⟨g, hg⟩
-    rw [← unop_op σ, ← hg, Subfield.subtype_apply,
-      ← coe_unop_modularFunctionFieldActionZMod_apply]
-    exact congrArg Subtype.val (h g)
-  · intro h g
-    apply Subtype.ext
-    rw [coe_unop_modularFunctionFieldActionZMod_apply]
-    exact h _ ⟨g, op_unop _⟩
+  conv_rhs => rw [MulOpposite.unop_surjective.forall]
+  simp_rw [Subgroup.mem_unop, MulOpposite.op_unop, ← SetLike.mem_coe, MonoidHom.coe_range,
+    Set.forall_mem_range]
+  refine forall_congr' fun g ↦ ?_
+  rw [Subtype.ext_iff, coe_unop_modularFunctionFieldActionZMod_apply, Subfield.subtype_apply]
 
 /-- Opposite scalar signs induce the same arithmetic modular substitution. -/
 @[simp]

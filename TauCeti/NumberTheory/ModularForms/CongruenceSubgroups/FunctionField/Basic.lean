@@ -256,6 +256,21 @@ theorem modularFunctionFieldMap_comp_modularFunctionFieldMapOfLevelOne (h : M �
       modularFunctionFieldMapOfLevelOne N :=
   RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_trans _ _ _).symm
 
+/-- As meromorphic functions, `j` and the cyclotomic constants in `F_N` are the pullback of `j`
+and the constant functions with values in `ℚ(ζ_N)`. -/
+theorem image_subtype_insert_range_modularFunctionFieldConst :
+    (modularFunctionField N).subtype '' insert (modularFunctionFieldMapOfLevelOne N
+        ⟨ModularGroup.jMeromorphicFunction,
+          ModularGroup.jMeromorphicFunction_mem_coeffSubfield ⊥⟩)
+      (Set.range (modularFunctionFieldConst N)) =
+      insert (Subgroup.compactifiedQuotientComap
+          (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
+        (algebraMap ℂ _ '' Subfield.closure {z : ℂ | z ^ N = 1}) := by
+  rw [Set.image_insert_eq, ← Set.range_comp, Subfield.subtype_apply,
+    coe_modularFunctionFieldMapOfLevelOne_apply]
+  simp only [Function.comp_def, Subfield.subtype_apply, coe_modularFunctionFieldConst_apply,
+    Set.range_comp' (algebraMap ℂ _), Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq]
+
 /-! ### The action of `SL(2, ℤ)` on the function field of `X(N)` -/
 
 section Action
