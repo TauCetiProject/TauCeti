@@ -54,6 +54,8 @@ in addition that `𝕜` be a normed `ℝ`-algebra compatible with `E`, as `ℝ` 
 * `TauCeti.volterra_solution_unique`: two continuous solutions that are `O(P)` at infinity agree
   on `(a, ∞)`; consequently every such solution satisfies the bound
   (`TauCeti.norm_volterra_solution_le`).
+* `TauCeti.existsUnique_volterra_solution`: on `(a, ∞)` there is exactly one continuous solution
+  that is `O(P)` at infinity.
 * `TauCeti.norm_volterra_solution_le_exp_sub_one`: the bound
   `‖h x‖ ≤ exp (P₀ * ∫ v in Ioi x, Q v * ‖ψ v‖) - 1` for a constant `P = P₀`, `‖J‖ ≤ ‖ψ‖` and
   `h` bounded at infinity, which sharpens the general bound when `J = ψ`.
@@ -606,6 +608,30 @@ theorem norm_volterra_solution_le [CompleteSpace E]
   rw [volterra_solution_unique hK hJ hψ hQ hP0 hQ0 hKle hΦ hΨ h_cont h₀_cont h_eq h₀_eq h_isBigO
     (isBigO_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ h₀_le) hx]
   exact h₀_le x hx
+
+/-- **Volterra integral equations, existence and uniqueness.** Under the hypotheses of
+`exists_volterra_solution`, the equation `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` has, on
+`(a, ∞)`, exactly one solution that is continuous there and `O(P)` at infinity: the restrictions
+to `(a, ∞)` of all such solutions `h : ℝ → E` coincide. Values outside `(a, ∞)` are not
+constrained by the equation, so uniqueness is stated for the restriction. -/
+theorem existsUnique_volterra_solution [CompleteSpace E]
+    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
+    (hP : ContinuousOn P (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+    (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
+    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) :
+    ∃! g : Ioi a → E, ∃ h : ℝ → E, (Ioi a).domRestrict h = g ∧ ContinuousOn h (Ioi a) ∧
+      (∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)) ∧ h =O[atTop] P := by
+  obtain ⟨h, hh_cont, hh_eq, hh_le⟩ :=
+    exists_volterra_solution hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ
+  have hh_isBigO := isBigO_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ hh_le
+  refine ⟨(Ioi a).domRestrict h, ⟨h, rfl, hh_cont, hh_eq, hh_isBigO⟩, ?_⟩
+  rintro _ ⟨h', rfl, hh'_cont, hh'_eq, hh'_isBigO⟩
+  funext x
+  exact volterra_solution_unique hK hJ hψ hQ hP0 hQ0 hKle hΦ hΨ hh'_cont hh_cont hh'_eq hh_eq
+    hh'_isBigO hh_isBigO x.property
 
 end Uniqueness
 
