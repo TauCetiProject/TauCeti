@@ -29,7 +29,7 @@ ordered bases, these are the matrices that preserve the unordered pair of coordi
 `𝔽_ℓ` these are the levels of the modular curves `X_s(ℓ)` and `X_s⁺(ℓ)`.
 
 The split Cartan subgroup has index `2` in the monomial subgroup over every nontrivial
-commutative ring (`TauCeti.GL2SplitCartanNormalizer.relIndex_diagonalTorus`). When `R` has no
+commutative ring (`TauCeti.relIndex_diagonalTorus_GL2SplitCartanNormalizer`). When `R` has no
 zero divisors (`IsCancelMulZero R`) and a unit other than `1`, the monomial subgroup is the
 normalizer of the split Cartan subgroup
 (`TauCeti.GL2SplitCartanNormalizer.eq_normalizer`). Over `𝔽₂` this fails: there the split Cartan
@@ -49,9 +49,7 @@ Over a finite field with `q` elements, `|C_s| = (q - 1)²` (`TauCeti.natCard_dia
 
 * `TauCeti.mem_diagonalTorus_two_iff`, `TauCeti.GL2SplitCartanNormalizer.mem_iff`: membership in
   terms of matrix entries.
-* `TauCeti.neg_one_mem_diagonalTorus`, `TauCeti.map_det_diagonalTorus`: the diagonal torus
-  contains `-1` and maps onto the units under the determinant.
-* `TauCeti.GL2SplitCartanNormalizer.relIndex_diagonalTorus`: `[C_s⁺ : C_s] = 2`.
+* `TauCeti.relIndex_diagonalTorus_GL2SplitCartanNormalizer`: `[C_s⁺ : C_s] = 2`.
 * `TauCeti.GL2SplitCartanNormalizer.eq_normalizer`: if `R` has no zero divisors and a unit other
   than `1`, the monomial subgroup is the normalizer of the split Cartan subgroup.
 * `TauCeti.index_diagonalTorus_two`, `TauCeti.GL2SplitCartanNormalizer.natCard`,
@@ -72,31 +70,6 @@ namespace TauCeti
 open Matrix
 
 universe u
-
-section Semiring
-
-variable {k : Type u} {n : ℕ}
-
-/-- `-1` lies in the diagonal torus. -/
-theorem neg_one_mem_diagonalTorus [Ring k] : (-1 : GL (Fin n) k) ∈ diagonalTorus k n := by
-  rw [mem_diagonalTorus_iff, Units.val_neg, Units.val_one]
-  exact Matrix.isDiag_one.neg
-
-/-- The determinant maps the diagonal torus onto the units, for `n ≥ 1`: the diagonal matrix with
-entries `u, 1, …, 1` has determinant `u`. -/
-theorem map_det_diagonalTorus [CommRing k] [NeZero n] :
-    (diagonalTorus k n).map GeneralLinearGroup.det = ⊤ :=
-  eq_top_iff.mpr fun u _ ↦
-    ⟨diagGL (Pi.mulSingle 0 u), mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩, by simp⟩
-
-/-- Over a semiring with only one unit, such as `𝔽₂`, the diagonal torus is trivial, so its
-normalizer is the whole group. -/
-theorem normalizer_diagonalTorus_eq_top [Semiring k] [Subsingleton kˣ] :
-    Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
-  rw [diagonalTorus_eq_bot, Subgroup.normalizer_eq_top_iff]
-  infer_instance
-
-end Semiring
 
 section CommRing
 
@@ -131,6 +104,7 @@ variable {R}
 
 namespace GL2SplitCartanNormalizer
 
+@[simp]
 theorem mem_iff {g : GL (Fin 2) R} :
     g ∈ GL2SplitCartanNormalizer R ↔
       ((g : Matrix (Fin 2) (Fin 2) R) 0 1 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0) ∨
@@ -150,7 +124,7 @@ theorem map_det : (GL2SplitCartanNormalizer R).map GeneralLinearGroup.det = ⊤ 
 
 /-- **`[C_s⁺ : C_s] = 2`** over a nontrivial commutative ring: right multiplication by the
 antidiagonal matrix `!![0, 1; 1, 0]` exchanges diagonal and antidiagonal matrices. -/
-theorem relIndex_diagonalTorus [Nontrivial R] :
+theorem _root_.TauCeti.relIndex_diagonalTorus_GL2SplitCartanNormalizer [Nontrivial R] :
     (diagonalTorus R 2).relIndex (GL2SplitCartanNormalizer R) = 2 := by
   let w : GL (Fin 2) R := ⟨!![0, 1; 1, 0], !![0, 1; 1, 0], by simp [one_fin_two],
     by simp [one_fin_two]⟩
@@ -219,15 +193,15 @@ namespace GL2SplitCartanNormalizer
 theorem natCard :
     Nat.card (GL2SplitCartanNormalizer F) = 2 * (Nat.card F - 1) ^ 2 := by
   have h := (diagonalTorus F 2).relIndex_mul_card (GL2SplitCartanNormalizer F)
-  rwa [inf_of_le_left diagonalTorus_le, relIndex_diagonalTorus, natCard_diagonalTorus,
-    eq_comm] at h
+  rwa [inf_of_le_left diagonalTorus_le, relIndex_diagonalTorus_GL2SplitCartanNormalizer,
+    natCard_diagonalTorus, eq_comm] at h
 
 /-- **`2 [GL₂(𝔽_q) : C_s⁺] = q (q + 1)`**: the degree of `X_s⁺(ℓ)` over the `j`-line is
 `ℓ (ℓ + 1) / 2`. -/
 theorem two_mul_index [Finite F] :
     2 * (GL2SplitCartanNormalizer F).index = Nat.card F * (Nat.card F + 1) := by
   rw [← index_diagonalTorus_two, ← Subgroup.relIndex_mul_index diagonalTorus_le,
-    relIndex_diagonalTorus]
+    relIndex_diagonalTorus_GL2SplitCartanNormalizer]
 
 /-- **Over `𝔽₂` the monomial subgroup has order `2` and index `3`**, while the normalizer of the
 trivial split Cartan subgroup is all of `GL₂(𝔽₂)`, of order `6`. -/

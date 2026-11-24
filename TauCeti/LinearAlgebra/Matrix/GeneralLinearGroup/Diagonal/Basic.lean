@@ -21,6 +21,8 @@ public import Mathlib.SetTheory.Cardinal.Finite
 -- `Nat.card_units`, the number of units of a `GroupWithZero`.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+-- `Matrix.det_diagonal`: the determinant of a diagonal matrix is the product of its entries.
+import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
@@ -77,8 +79,10 @@ element (`TauCeti.diagGL_const`).
   centralizes a family of diagonal elements exactly when its entries vanish between the
   coordinates the family separates; for a family separating all coordinates, exactly when it is
   diagonal.
-* `TauCeti.centralizer_diagonalTorus_eq_top`: over a semiring with a single unit the centralizer
-  is instead the whole group.
+* `TauCeti.centralizer_diagonalTorus_eq_top`, `TauCeti.normalizer_diagonalTorus_eq_top`: over a
+  semiring with a single unit the centralizer and the normalizer are instead the whole group.
+* `TauCeti.neg_one_mem_diagonalTorus`, `TauCeti.map_det_diagonalTorus`: the torus contains `-1`
+  and, for `n ≥ 1`, maps onto the units under the determinant.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
   centralizer is the whole group.
 * `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
@@ -245,9 +249,29 @@ theorem centralizer_diagonalTorus_eq_top :
     Subgroup.centralizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
   simp [diagonalTorus_eq_bot, Subgroup.centralizer_eq_top_iff_subset]
 
+/-- Over a semiring with only one unit, such as `𝔽₂`, the diagonal torus is trivial, so its
+normalizer is the whole group. -/
+theorem normalizer_diagonalTorus_eq_top :
+    Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
+  rw [diagonalTorus_eq_bot, Subgroup.normalizer_eq_top_iff]
+  infer_instance
+
 end Subsingleton
 
 end Semiring
+
+/-- `-1` lies in the diagonal torus. -/
+theorem neg_one_mem_diagonalTorus [Ring k] : (-1 : GL (Fin n) k) ∈ diagonalTorus k n := by
+  rw [mem_diagonalTorus_iff, Units.val_neg, Units.val_one]
+  exact Matrix.isDiag_one.neg
+
+/-- The determinant maps the diagonal torus onto the units, for `n ≥ 1`: the diagonal matrix with
+entries `u, 1, …, 1` has determinant `u`. -/
+theorem map_det_diagonalTorus [CommRing k] [NeZero n] :
+    (diagonalTorus k n).map GeneralLinearGroup.det = ⊤ :=
+  eq_top_iff.mpr fun u _ ↦
+    ⟨diagGL (Pi.mulSingle 0 u), mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩,
+      Units.ext (by simp [diagGL_coe, det_diagonal, Pi.mulSingle_apply, apply_ite Units.val])⟩
 
 section CommSemiring
 

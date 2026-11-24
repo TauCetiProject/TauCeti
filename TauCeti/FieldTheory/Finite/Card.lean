@@ -22,6 +22,8 @@ characteristic: multiplication by `q` is injective on such torsion.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
+* `TauCeti.FiniteField.ne_zero_or_two_ne_zero_of_forall_sq_ne`: over a finite field, a quadratic
+  `X² - t X - n` without roots is separable, that is `t ≠ 0` or `2 ≠ 0`.
 -/
 
 public section
@@ -52,5 +54,17 @@ theorem ringChar_ne_two_of_odd_card (hodd : Odd (Nat.card F)) : ringChar F ≠ 2
   rw [Nat.card_eq_fintype_card, Nat.odd_iff] at hodd
   intro h
   simp [FiniteField.even_card_of_char_two h] at hodd
+
+/-- **An irreducible quadratic over a finite field is separable.** If `X² - t X - n` has no root
+in the finite field `F`, then `t ≠ 0` or `2 ≠ 0`: in characteristic `2` every element is a square,
+so `X² - n` has a root. -/
+theorem ne_zero_or_two_ne_zero_of_forall_sq_ne {t n : F} (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
+    t ≠ 0 ∨ (2 : F) ≠ 0 := by
+  by_contra! h
+  let := Fintype.ofFinite F
+  have : CharP F 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h.2
+  have hchar : ringChar F = 2 := ringChar.eq F 2
+  obtain ⟨x, hx⟩ := FiniteField.isSquare_of_char_two hchar n
+  exact hirr x (by rw [h.1, hx, sq]; ring)
 
 end TauCeti.FiniteField

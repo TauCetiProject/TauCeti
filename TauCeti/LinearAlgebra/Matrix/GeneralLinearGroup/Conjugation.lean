@@ -10,6 +10,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- The conjugation action `ConjAct (GL n R)` on matrices occurs in a statement below.
 public import Mathlib.GroupTheory.GroupAction.ConjAct
+-- The pointwise conjugation action on subgroups occurs in a statement below.
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 -- Non-public: `Matrix.GeneralLinearGroup.center_eq_range_scalar`, that the centre of `GL n R`
 -- is the scalars, is used only in a proof.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
@@ -41,6 +43,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   `Rˣ → GL n R` is injective.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
   exactly when their linear maps are conjugate by a linear automorphism of `n → R`.
+* `Subgroup.map_det_pointwise_smul`: conjugation preserves the determinant image of a subgroup of
+  `GL n R`.
 -/
 
 public section
@@ -130,3 +134,23 @@ theorem mem_orbit_conjAct_iff_exists_linearEquiv_conj {A B : Matrix n n R} :
     ConjAct.ofConjAct_toConjAct, ψ.surjective.exists, key, toLin'.injective.eq_iff]
 
 end Matrix
+
+namespace Subgroup
+
+open scoped Pointwise
+
+/-- **Conjugation preserves the determinant image** of a subgroup of `GL_n(R)`, since
+`det (g h g⁻¹) = det h`. With `Subgroup.index_smul` and `Subgroup.projectiveIndex_pointwise_smul`
+this says that conjugate levels have the same index, projective index and determinant image. -/
+theorem map_det_pointwise_smul {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (H : Subgroup (GL ι R)) (g : ConjAct (GL ι R)) :
+    (g • H).map Matrix.GeneralLinearGroup.det = H.map Matrix.GeneralLinearGroup.det := by
+  ext u
+  simp only [mem_map, mem_smul_pointwise_iff_exists]
+  constructor
+  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    exact ⟨y, hy, by simp [ConjAct.smul_def, mul_comm]⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨g • y, ⟨y, hy, rfl⟩, by simp [ConjAct.smul_def, mul_comm]⟩
+
+end Subgroup

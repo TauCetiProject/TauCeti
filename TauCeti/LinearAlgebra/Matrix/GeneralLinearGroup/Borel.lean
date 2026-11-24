@@ -56,7 +56,8 @@ subgroup `TauCeti.GL2Gamma1Mu` of matrices `!![a, b; 0, 1]`, of the same relativ
 `ℤ / N`, the congruence subgroups `Γ₀(N)` and `Γ₁(N)` are the preimages of `B` and
 `TauCeti.GL2Gamma1` under the reduction `SL(2, ℤ) → GL₂(ℤ / N)`, and these are the levels of the
 modular curves `X₀(N)` and `X₁(N)`; `TauCeti.GL2Gamma1Mu` is the level of the curve classifying
-embeddings `μ_N ↪ E[N]`. All three map onto the units under the determinant.
+embeddings `μ_N ↪ E[N]`, following Calegari and Geraghty. All three map onto the units under the
+determinant.
 
 ## Main definitions
 
@@ -104,6 +105,8 @@ general upper-triangular predicate.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* F. Calegari and D. Geraghty, arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`;
+  the attribution is that of the Tau Ceti roadmap ModularCurvesPartII, §3.8.
 -/
 
 public section
@@ -478,7 +481,8 @@ end GL2Gamma1
 diagonal coordinate of the Borel subgroup. Under the right action
 `(P, Q) • !![a, b; c, d] = (a P + c Q, b P + d Q)` on ordered pairs it fixes the line through `P`
 and the class of `Q` modulo that line. Over `ℤ / N` its level structures are the embeddings
-`μ_N ↪ E[N]`, and its preimage in `SL(2, ℤ)` is again the congruence subgroup `Γ₁(N)`. -/
+`μ_N ↪ E[N]` (the convention of Calegari and Geraghty), and its preimage in `SL(2, ℤ)` is again
+the congruence subgroup `Γ₁(N)`. -/
 def GL2Gamma1Mu : Subgroup (GL (Fin 2) R) :=
   ((MonoidHom.snd Rˣ Rˣ).comp (GL2Borel.diag (R := R))).ker.map (GL2Borel R).subtype
 
