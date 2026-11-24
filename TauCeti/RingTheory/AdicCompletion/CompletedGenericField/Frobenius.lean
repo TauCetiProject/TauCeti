@@ -1,0 +1,336 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.AdicCompletion.CompletedGenericField.Map
+public import TauCeti.RingTheory.Dagger.WeakCompletion.Quotient
+import TauCeti.RingTheory.AdicCompletion.AlgHom
+import TauCeti.RingTheory.Ideal.Maps
+
+/-!
+# Weak-completion Frobenius on the completed generic field
+
+The Monsky–Washnitzer weak completion maps canonically to the ring of integers of the
+completed generic field. A Frobenius lift on the weak completion induces a Frobenius on
+the completed generic field, with the prescribed power map on its residue field.
+
+## References
+
+* [N. Tsuzuki, *Minimal slope conjecture of F-isocrystals*](https://arxiv.org/abs/1910.03871v3),
+  §3.1.
+-/
+
+public section
+
+open IsLocalRing
+open scoped WithZero
+
+namespace TauCeti.AdicCompletion
+
+variable {O A : Type*} [CommRing O] [CommRing A] [Algebra O A]
+  (ϖ : O) [Algebra.FiniteType O A] [(Ideal.span {algebraMap O A ϖ}).IsPrime]
+
+local notation "π" => algebraMap O A ϖ
+local notation "C" => completedGenericIntegers π
+local notation "W" => Dagger.weakCompletion ϖ A
+
+omit [Algebra.FiniteType O A] in
+private theorem parameter_le_comap_genericLocalRing :
+    Ideal.span {π} ≤ (maximalIdeal (genericLocalRing π)).comap
+      (IsScalarTower.toAlgHom O A (genericLocalRing π)) := by
+  rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap]
+  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff (genericLocalRing π) (Ideal.span {π}) π).mpr
+    (Ideal.subset_span rfl)
+
+/-- The canonical map from the weak completion of an affine lift to the ring of integers
+of the completed generic field. -/
+noncomputable def weakCompletionToGenericIntegers : W →ₐ[O] C :=
+  (_root_.AdicCompletion.mapₐ (IsScalarTower.toAlgHom O A (genericLocalRing π))
+    (parameter_le_comap_genericLocalRing ϖ)).comp (Dagger.weakCompletion ϖ A).val
+
+/-- The canonical weak-completion map agrees with the structural map on the affine algebra. -/
+@[simp]
+theorem weakCompletionToGenericIntegers_of (a : A) :
+    weakCompletionToGenericIntegers ϖ (Dagger.weakCompletion.of ϖ A a) =
+      algebraMap A C a := by
+  simp [weakCompletionToGenericIntegers, Dagger.weakCompletion.coe_of,
+    _root_.AdicCompletion.mapₐ_of, _root_.AdicCompletion.algebraMap_apply]
+
+/-- Reduction of a weakly completed element in the generic residue field is the inclusion of
+its reduction modulo the parameter into the special-fibre function field. -/
+theorem weakCompletionToGenericIntegers_residue (z : W) :
+    completedGenericResidueEquiv π (residue C (weakCompletionToGenericIntegers ϖ z)) =
+      algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π}))
+        (Ideal.quotEquivOfEq (pow_one (Ideal.span {π}))
+          (Dagger.weakCompletion.eval ϖ 1 z)) := by
+  obtain ⟨a, ha⟩ := Dagger.weakCompletion.exists_sub_mem_span_pow ϖ z 1
+  have hmap : weakCompletionToGenericIntegers ϖ (z - Dagger.weakCompletion.of ϖ A a) ∈
+      maximalIdeal C := by
+    rw [maximalIdeal_completedGenericIntegers]
+    apply Ideal.apply_mem_span_algebraMap_pow (weakCompletionToGenericIntegers ϖ) at ha
+    simpa only [pow_one, IsScalarTower.algebraMap_apply O A C] using ha
+  have hres : residue C (weakCompletionToGenericIntegers ϖ z) =
+      residue C (algebraMap A C a) := by
+    apply sub_eq_zero.mp
+    rw [← map_sub, ← weakCompletionToGenericIntegers_of, ← map_sub]
+    exact (Ideal.Quotient.eq_zero_iff_mem).mpr hmap
+  have heval : Dagger.weakCompletion.eval ϖ 1 z = Ideal.Quotient.mk _ a := by
+    have hz : Dagger.weakCompletion.eval ϖ 1
+        (z - Dagger.weakCompletion.of ϖ A a) = 0 := by
+      apply RingHom.mem_ker.mp
+      rw [Dagger.weakCompletion.ker_eval]
+      exact ha
+    simpa only [map_sub, Dagger.weakCompletion.eval_of, sub_eq_zero] using hz
+  rw [hres, completedGenericResidueEquiv_residue_algebraMap, heval,
+    Ideal.quotEquivOfEq_mk]
+
+/-- The canonical map detects reduction modulo the parameter through the generic residue
+field. -/
+theorem weakCompletionToGenericIntegers_mem_maximalIdeal_iff (z : W) :
+    weakCompletionToGenericIntegers ϖ z ∈ maximalIdeal C ↔
+      Dagger.weakCompletion.eval ϖ 1 z = 0 := by
+  rw [← IsLocalRing.residue_eq_zero_iff,
+    ← (completedGenericResidueEquiv π).map_eq_zero_iff,
+    weakCompletionToGenericIntegers_residue]
+  rw [map_eq_zero_iff _ (IsFractionRing.injective (A ⧸ Ideal.span {π})
+    (FractionRing (A ⧸ Ideal.span {π})))]
+  exact (Ideal.quotEquivOfEq (pow_one (Ideal.span {π}))).map_eq_zero_iff
+
+/-- A weak-completion Frobenius lift contracts the generic maximal ideal to the affine
+special fibre, without requiring preservation of the affine algebra. -/
+theorem weakCompletionFrobenius_comap_maximalIdeal (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) :
+    (maximalIdeal C).comap ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+      (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom)) = Ideal.span {π} := by
+  let : (Ideal.span {π} ^ 1).IsPrime := by simpa only [pow_one] using
+    (inferInstance : (Ideal.span {π}).IsPrime)
+  ext a
+  simp only [Ideal.mem_comap, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe,
+    weakCompletionToGenericIntegers_mem_maximalIdeal_iff, hφ,
+    Dagger.weakCompletion.eval_of, pow_eq_zero_iff hq, Ideal.Quotient.eq_zero_iff_mem,
+    pow_one]
+
+/-- A parameter-adically continuous map of the weak completion agrees everywhere with the
+extension constructed from its restriction to the affine algebra. -/
+theorem completedGenericIntegersLift_weakCompletion (φ : W →+* W)
+    (hf : (maximalIdeal C).comap ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+      (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom)) = Ideal.span {π})
+    (hφ : φ (algebraMap O W ϖ) ∈ Ideal.span {algebraMap O W ϖ}) (z : W) :
+    completedGenericIntegersLift π
+      ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+        (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom)) hf
+      (weakCompletionToGenericIntegers ϖ z) = weakCompletionToGenericIntegers ϖ (φ z) := by
+  let f := (weakCompletionToGenericIntegers ϖ).toRingHom.comp
+    (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom)
+  let F := completedGenericIntegersLift π f hf
+  have := isAdicComplete_completedGenericIntegers π
+  apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {algebraMap A C π})).mpr
+  intro n
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  obtain ⟨a, ha⟩ := Dagger.weakCompletion.exists_sub_mem_span_pow ϖ z n
+  have hi := Ideal.apply_mem_span_algebraMap_pow (weakCompletionToGenericIntegers ϖ) ha
+  have hF : Ideal.span {algebraMap O C ϖ} ≤
+      (Ideal.span {algebraMap O C ϖ}).comap F := by
+    simpa only [IsScalarTower.algebraMap_apply O A C,
+      ← maximalIdeal_completedGenericIntegers] using
+      (Ideal.map_le_iff_le_comap.mp (IsLocalRing.map_maximalIdeal_le F))
+  have hleft := Ideal.map_mem_pow_of_le_comap F hF hi
+  have hφle : Ideal.span {algebraMap O W ϖ} ≤
+      (Ideal.span {algebraMap O W ϖ}).comap φ := by
+    rw [Ideal.span_singleton_le_iff_mem]
+    exact hφ
+  have hright := Ideal.apply_mem_span_algebraMap_pow (weakCompletionToGenericIntegers ϖ)
+    (Ideal.map_mem_pow_of_le_comap φ hφle ha)
+  have h := Ideal.sub_mem _ hleft hright
+  have hbase : F (weakCompletionToGenericIntegers ϖ (Dagger.weakCompletion.of ϖ A a)) =
+      weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a)) := by
+    rw [weakCompletionToGenericIntegers_of, completedGenericIntegersLift_algebraMap]
+    rfl
+  simpa only [map_sub, hbase, sub_sub_sub_cancel_right,
+    IsScalarTower.algebraMap_apply O A C] using h
+
+/-- A Frobenius lift on the weak completion extends canonically to the completed generic
+integers. Its restriction to the affine algebra need only take values in the weak completion. -/
+noncomputable def completedGenericIntegersFrobenius (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) : C →+* C :=
+  completedGenericIntegersLift π ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+    (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom))
+    (weakCompletionFrobenius_comap_maximalIdeal ϖ φ q hq hφ)
+
+/-- The weak-completion Frobenius extension is a local homomorphism. -/
+instance completedGenericIntegersFrobenius_isLocalHom (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) :
+    IsLocalHom (completedGenericIntegersFrobenius ϖ φ q hq hφ) := by
+  unfold completedGenericIntegersFrobenius
+  infer_instance
+
+/-- The generic integral Frobenius agrees with the given map on the whole weak completion. -/
+@[simp]
+theorem completedGenericIntegersFrobenius_weakCompletion (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) (z : W) :
+    completedGenericIntegersFrobenius ϖ φ q hq hφ (weakCompletionToGenericIntegers ϖ z) =
+      weakCompletionToGenericIntegers ϖ (φ z) := by
+  apply completedGenericIntegersLift_weakCompletion
+  rw [← pow_one (Ideal.span {algebraMap O W ϖ}),
+    ← Dagger.weakCompletion.ker_eval ϖ 1, RingHom.mem_ker, hφ]
+  have hparam := Dagger.weakCompletion.eval_parameter_pow ϖ (S := A) 1
+  simp only [pow_one] at hparam
+  rw [hparam, zero_pow hq]
+
+/-- On the affine algebra the generic integral Frobenius is computed through the weak lift. -/
+@[simp]
+theorem completedGenericIntegersFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) (a : A) :
+    completedGenericIntegersFrobenius ϖ φ q hq hφ (algebraMap A C a) =
+      weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a)) := by
+  rw [completedGenericIntegersFrobenius, completedGenericIntegersLift_algebraMap]
+  rfl
+
+/-- The generic integral Frobenius acts as the q-th power on the residue function field. -/
+theorem completedGenericIntegersFrobenius_residue (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q) (x : C) :
+    completedGenericResidueEquiv π
+      (residue C (completedGenericIntegersFrobenius ϖ φ q hq hφ x)) =
+        completedGenericResidueEquiv π (residue C x) ^ q := by
+  let E := completedGenericResidueEquiv π
+  let F := completedGenericIntegersFrobenius ϖ φ q hq hφ
+  let g := E.toRingHom.comp ((ResidueField.map F).comp E.symm.toRingHom)
+  have hg (a : A ⧸ Ideal.span {π}) :
+      g (algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π})) a) =
+        algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π})) a ^ q := by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+    rw [← completedGenericResidueEquiv_residue_algebraMap]
+    simp only [g, E, F, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      RingEquiv.symm_apply_apply, ResidueField.map_residue,
+      completedGenericIntegersFrobenius_algebraMap]
+    rw [weakCompletionToGenericIntegers_residue, hφ, Dagger.weakCompletion.eval_of,
+      map_pow, Ideal.quotEquivOfEq_mk,
+      completedGenericResidueEquiv_residue_algebraMap]
+    exact map_pow _ _ _
+  have hgall (y : FractionRing (A ⧸ Ideal.span {π})) : g y = y ^ q := by
+    obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A ⧸ Ideal.span {π}) y
+    rw [map_div₀, hg, hg, div_pow]
+  simpa only [g, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    RingEquiv.symm_apply_apply, ResidueField.map_residue] using hgall (E (residue C x))
+
+variable [IsNoetherianRing A]
+
+/-- A weak-completion Frobenius lift whose parameter has nonzero generic image extends to
+the completed generic field. -/
+noncomputable def completedGenericFieldFrobenius (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q)
+    (hπ : π ∈ nonZeroDivisors A)
+    (hzero : weakCompletionToGenericIntegers ϖ
+      (φ (algebraMap O W ϖ)) ≠ 0) :
+    completedGenericField π hπ →+* completedGenericField π hπ :=
+  completedGenericFieldLift π ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+    (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom))
+    (weakCompletionFrobenius_comap_maximalIdeal ϖ φ q hq hφ) hπ
+    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgHom.commutes] using hzero)
+
+/-- The generic-field Frobenius restricts to the integral Frobenius on the valuation ring. -/
+@[simp]
+theorem completedGenericFieldFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q)
+    (hπ : π ∈ nonZeroDivisors A)
+    (hzero : weakCompletionToGenericIntegers ϖ
+      (φ (algebraMap O W ϖ)) ≠ 0) (x : C) :
+    completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero
+      (algebraMap C (completedGenericField π hπ) x) =
+        algebraMap C (completedGenericField π hπ)
+          (completedGenericIntegersFrobenius ϖ φ q hq hφ x) := by
+  rw [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap]
+  rfl
+
+/-- If the Frobenius image of the parameter is a uniformizer of the generic integers, the
+field extension preserves the normalized generic-field valuation. -/
+theorem completedGenericFieldFrobenius_valuation (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q)
+    (hπ : π ∈ nonZeroDivisors A)
+    (hzero : weakCompletionToGenericIntegers ϖ
+      (φ (algebraMap O W ϖ)) ≠ 0)
+    (hassoc : Associated (weakCompletionToGenericIntegers ϖ
+      (φ (algebraMap O W ϖ))) (algebraMap A C π))
+    (x : completedGenericField π hπ) :
+    Valued.v (completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero x) = Valued.v x :=
+  completedGenericFieldLift_valuation π _ _ hπ
+    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgHom.commutes] using hzero)
+    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgHom.commutes] using hassoc) x
+
+variable (φ : Dagger.weakCompletion ϖ A →+* Dagger.weakCompletion ϖ A) (q : ℕ) (hq : q ≠ 0)
+  (hφ : ∀ z : Dagger.weakCompletion ϖ A, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+    Dagger.weakCompletion.eval ϖ 1 z ^ q)
+  (hπ : algebraMap O A ϖ ∈ nonZeroDivisors A)
+  (hzero : weakCompletionToGenericIntegers ϖ
+    (φ (algebraMap O (Dagger.weakCompletion ϖ A) ϖ)) ≠ 0)
+
+local notation "E" => completedGenericField π hπ
+
+/-- The generic Frobenius extends the coefficient-field endomorphism induced by its action
+on the coefficient ring. -/
+theorem completedGenericFieldFrobenius_scalarHom {K : Type*} [CommRing K] [Algebra O K]
+    [IsLocalization.Away ϖ K] (σ₀ : O →+* O) (σ : K →+* K)
+    (hσ₀ : ∀ a : O, σ (algebraMap O K a) = algebraMap O K (σ₀ a))
+    (hφ₀ : ∀ a : O, φ (algebraMap O W a) = algebraMap O W (σ₀ a))
+    (x : K) :
+    completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero
+      (completedGenericFieldScalarHom ϖ hπ x) = completedGenericFieldScalarHom ϖ hπ (σ x) := by
+  let F := completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero
+  let s : K →ₐ[O] E := completedGenericFieldScalarHom ϖ hπ
+  let j := weakCompletionToGenericIntegers ϖ (A := A)
+  have hcoeff (a : O) : algebraMap C E (j (algebraMap O W a)) = s (algebraMap O K a) := by
+    rw [j.commutes, ← IsScalarTower.algebraMap_apply, s.commutes]
+  have h : F.comp s.toRingHom = s.toRingHom.comp σ := by
+    refine IsLocalization.ringHom_ext (Submonoid.powers ϖ) (RingHom.ext fun a ↦ ?_)
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    rw [← hcoeff a, hσ₀]
+    simp only [F, j, completedGenericFieldFrobenius_algebraMap,
+      completedGenericIntegersFrobenius_weakCompletion, hφ₀, ← hcoeff]
+  exact DFunLike.congr_fun h x
+
+/-- The generic Frobenius is continuous if the Frobenius image of the parameter remains a
+uniformizer. -/
+theorem completedGenericFieldFrobenius_continuous
+    (hassoc : Associated (weakCompletionToGenericIntegers ϖ (φ (algebraMap O W ϖ)))
+      (algebraMap A C π)) :
+    Continuous (completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero) := by
+  let F := completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero
+  refine (uniformContinuous_of_continuousAt_zero F ?_).continuous
+  simp_rw [ContinuousAt, map_zero, (Valued.hasBasis_nhds_zero E ℤᵐ⁰).tendsto_iff
+    (Valued.hasBasis_nhds_zero E ℤᵐ⁰), true_and, forall_const]
+  intro γ
+  refine ⟨γ, fun x hx ↦ ?_⟩
+  simp only [Set.mem_ofPred_eq] at hx ⊢
+  have hv : (Valued.v : Valuation E ℤᵐ⁰) (F x) = Valued.v x :=
+    completedGenericFieldFrobenius_valuation ϖ φ q hq hφ hπ hzero hassoc x
+  rwa [((Valued.v : Valuation E ℤᵐ⁰).restrict_inj).mpr hv]
+
+/-- A valuation-preserving field endomorphism extending the weak-completion Frobenius
+is the generic Frobenius. -/
+theorem completedGenericFieldFrobenius_unique (g : E →+* E) (hg : ∀ x, Valued.v (g x) = Valued.v x)
+    (hweak : ∀ z : W, g (algebraMap C E (weakCompletionToGenericIntegers ϖ z)) =
+      algebraMap C E (weakCompletionToGenericIntegers ϖ (φ z))) :
+    g = completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero := by
+  unfold completedGenericFieldFrobenius
+  apply completedGenericFieldLift_unique _ _ _ _ _ g hg
+  intro a
+  rw [IsScalarTower.algebraMap_apply A C E, ← weakCompletionToGenericIntegers_of]
+  exact hweak (Dagger.weakCompletion.of ϖ A a)
+
+end TauCeti.AdicCompletion
