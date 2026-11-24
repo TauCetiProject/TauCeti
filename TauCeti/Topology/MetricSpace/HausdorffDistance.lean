@@ -20,6 +20,10 @@ Hausdorff convergence to zero passes along chains of sets: if `A i` approaches `
 approaches `Z` in the Hausdorff extended distance, then `A i` approaches `Z`
 (`Metric.tendsto_hausdorffEDist_of_tendsto_of_tendsto`). If sets `A i` approach a closed set `Z`,
 every limit of points `y i ∈ A i` lies in `Z` (`Metric.mem_of_tendsto_hausdorffEDist`).
+
+A continuous map from a nonempty compact space into a pseudometric space has a nearest point to
+every point: some value of the map minimises the distance to it
+(`Continuous.exists_isMinOn_dist`).
 -/
 
 public section
@@ -78,3 +82,12 @@ theorem mem_of_tendsto_hausdorffEDist [l.NeBot] {A : ι → Set X} {Z : Set X} (
     (add_le_add le_rfl (infEDist_le_hausdorffEDist_of_mem hi))
 
 end Metric
+
+/-- A continuous map `g` from a nonempty compact space into a pseudometric space has a nearest point
+to every `y`: some value `g x` minimises the distance from `y` to the values of `g`. -/
+theorem Continuous.exists_isMinOn_dist {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [Nonempty X] [PseudoMetricSpace Y] {g : X → Y} (hg : Continuous g) (y : Y) :
+    ∃ x, IsMinOn (fun z => dist y (g z)) univ x := by
+  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty
+    ((continuous_const (y := y)).dist hg).continuousOn
+  exact ⟨x, hx⟩

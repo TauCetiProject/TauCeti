@@ -36,6 +36,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
   covering map is injective on fundamental groups.
 * `IsCoveringMap.eq_of_joined`: over a simply connected space, two points of the total space
   that are joined by a path and lie over the same point are equal.
+* `IsCoveringMap.coe_monodromy_inv_mk`: monodromy along the inverse of a path class is the
+  endpoint of the lift of the reversed path.
 * `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
   space is injective.
 * `IsCoveringMapOn.injective_of_range_subset`: the same for a covering map over a set, when its
@@ -102,6 +104,18 @@ theorem _root_.IsCoveringMap.eq_of_joined [SimplyConnectedSpace X] (hp : IsCover
     (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
   rw [hδ, hrefl] at key
   simpa [γ] using key.symm
+
+/-- **Monodromy along a reversed path**: the monodromy of the inverse of the class of a path `γ`
+from `x` to `y` sends a point `e` over `y` to the endpoint of the lift of `γ.symm` starting at
+`e`. -/
+theorem _root_.IsCoveringMap.coe_monodromy_inv_mk (hp : IsCoveringMap p) {y : X} (γ : Path x y)
+    (e : p ⁻¹' {y}) :
+    (hp.monodromy (CategoryTheory.inv (Path.Homotopic.Quotient.mk γ :
+      FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) :
+        FundamentalGroupoid.mk y ⟶ FundamentalGroupoid.mk x) e : E) =
+      hp.liftPath γ.symm e (γ.symm.source.trans e.property.symm) 1 := by
+  rw [← CategoryTheory.Groupoid.inv_eq_inv]
+  exact hp.monodromy_eq_apply_one (hp.liftPath_lifts ..) (hp.liftPath_zero ..)
 
 /-- **A covering map from a path-connected space to a simply connected space is injective.** -/
 theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]

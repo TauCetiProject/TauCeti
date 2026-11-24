@@ -57,6 +57,8 @@ and the volume formula `vol(M) = (2π)^n vol(Δ)` for a symplectic toric manifol
 * `TauCeti.Toric.IsIntegralLattice.covolume_weightLattice`: the weight lattice has covolume one.
 * `TauCeti.Toric.IsIntegralLattice.measurePreserving_dualBasis_equivFun`: dual coordinates carry
   `dualMeasure` to Lebesgue measure.
+* `TauCeti.Toric.IsIntegralLattice.dualMeasure_preimage_dualBasis_equivFun`: so the measure of a
+  set described in dual coordinates is the Lebesgue measure of its coordinate description.
 * `TauCeti.Toric.IsIntegralLattice.map_comp_dualMeasure`: naturality under lattice isomorphisms.
 * `TauCeti.Toric.IsIntegralLattice.dualMeasure_prod`: products.
 
@@ -154,6 +156,16 @@ theorem measurePreserving_dualBasis_equivFun (b : Basis κ ℤ N) :
     funext fun x ↦ funext fun j ↦ by rw [Basis.equivFunL_apply, Basis.equivFun_apply]
   rw [← hcoe]
   exact ⟨(h.dualBasis b).equivFunL.continuous.measurable, hmap⟩
+
+/-- **Volumes in dual coordinates.** The lattice-normalized measure of the set of functionals whose
+coordinates `(x (i (b j)))_j` in the dual basis of an integral basis `b` lie in `S ⊆ ℝ^κ` is the
+Lebesgue measure of `S`, for every set `S`. -/
+theorem dualMeasure_preimage_dualBasis_equivFun (b : Basis κ ℤ N) (S : Set (κ → ℝ)) :
+    h.dualMeasure ((h.dualBasis b).equivFun ⁻¹' S) = volume S := by
+  have := (h.dualBasis b).finiteDimensional_of_finite
+  have hemb : MeasurableEmbedding (h.dualBasis b).equivFun := by
+    simpa using (h.dualBasis b).equivFun.toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
+  exact (h.measurePreserving_dualBasis_equivFun b).measure_preimage_emb hemb S
 
 /-! ### Naturality and products -/
 

@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
-import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The graph of a loop of symplectic matrices and its Maslov index
@@ -144,7 +143,8 @@ theorem graphFrame_mul_map_ofReal_of_mul_eq_one {A B : Matrix (n ⊕ n) (n ⊕ n
   -- the columns rather than `id`.
   change _ = ((graphFrame A).map star *ᵥ fun k ↦ (x k : ℂ)) (Sum.swap i)
   -- Conjugating the entries of the frame conjugates its values on real points.
-  rw [map_star_mulVec_of_star_eq _ (funext fun k ↦ Complex.conj_ofReal (x k)), Pi.star_apply,
+  have hxs : star (fun k ↦ (x k : ℂ)) = fun k ↦ (x k : ℂ) := funext fun k ↦ conj_ofReal (x k)
+  rw [← conjTranspose_transpose, mulVec_transpose, vecMul_conjTranspose, hxs, Pi.star_apply,
     graphFrame_mulVec]
   rcases i with i | i <;> simp
 

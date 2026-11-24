@@ -37,6 +37,8 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
+* `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
+  nonempty open interval of a densely ordered space takes a value in it.
 -/
 
 public section
@@ -141,5 +143,14 @@ theorem monotone_of_tendsto_section [Preorder ι] [LinearOrder κ] [Preorder α]
       (Eventually.of_forall fun y ↦ hθ y hij)
 
 end BoundarySection
+
+/-- A family whose values are dense in a nonempty open interval of a densely ordered space takes a
+value in that interval. -/
+theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder α] [DenselyOrdered α]
+    [TopologicalSpace α] [OrderClosedTopology α] {c : ι → α} {a b : α} (hab : a < b)
+    (h : Set.Ioo a b ⊆ closure (Set.range c)) : ∃ i, c i ∈ Set.Ioo a b := by
+  obtain ⟨y, hy⟩ := Set.nonempty_Ioo.2 hab
+  obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
+  exact ⟨i, hy'⟩
 
 end TauCeti

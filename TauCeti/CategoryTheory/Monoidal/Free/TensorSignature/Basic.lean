@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Free.Basic
+public import TauCeti.CategoryTheory.Monoidal.Free.Basic
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.CategoryTheory.Monoidal.Free.ProjectObj
 
@@ -221,6 +221,30 @@ instance : MonoidalCategory S.FreeMonoidal where
     exact Quotient.sound (ρ_naturality _)
   pentagon _ _ _ _ := Quotient.sound pentagon
   triangle _ _ := Quotient.sound triangle
+
+/-- The word underlying the interpretation of a tensor word by objects `h` of the free monoidal
+category on a signature is its interpretation by the words underlying those objects. -/
+theorem as_projectObj {A : Type*} (h : A → S.FreeMonoidal) (X : FreeMonoidalCategory A) :
+    (projectObj h X).as = projectObj (fun a ↦ (h a).as) X := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y hX hY => exact congrArg₂ FreeMonoidalCategory.tensor hX hY
+
+/-- Interpreting a tensor word by its own generating objects recovers the word; this is
+`FreeMonoidalCategory.projectObj_of` for the free monoidal category on a signature. -/
+@[simp]
+theorem projectObj_of (X : FreeMonoidalCategory S.Obj) : projectObj (of (S := S)) X = ⟨X⟩ :=
+  congrArg FreeMonoidal.mk ((as_projectObj of X).trans (FreeMonoidalCategory.projectObj_of X))
+
+/-- Interpreting a tensor word after replacing its generating objects by tensor words `h` is
+interpreting it by the interpretations of those words; this is
+`FreeMonoidalCategory.projectObj_projectObj` for the free monoidal category on a signature. -/
+theorem projectObj_projectObj {T : TensorSignature.{u', v'}} {D : Type*} [Category D]
+    [MonoidalCategory D] (f : T.Obj → D) (h : S.Obj → T.FreeMonoidal)
+    (X : FreeMonoidalCategory S.Obj) :
+    projectObj f (projectObj h X).as = projectObj (fun a ↦ projectObj f (h a).as) X := by
+  rw [as_projectObj, FreeMonoidalCategory.projectObj_projectObj]
 
 /-- The morphism of the free monoidal category represented by a formal morphism. -/
 abbrev homMk {X Y : S.FreeMonoidal} (f : Hom X.as Y.as) : X ⟶ Y := ⟦f⟧
