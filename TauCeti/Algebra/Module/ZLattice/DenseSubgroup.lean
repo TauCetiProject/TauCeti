@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.Baire.Lemmas
 import Mathlib.Topology.MetricSpace.Sequences
@@ -25,9 +24,9 @@ spanning `E` the vectors `α` with `H + ℤ α` dense are themselves dense
 the level sets of the functionals with integer coefficients in a basis of `E` taken inside `H`,
 and the Baire category theorem applies.
 
-The proof uses the structure of closed subgroups. A closed subgroup `G` containing no line
-through the origin is discrete
-(`AddSubgroup.discreteTopology_of_isClosed_of_forall_smul_mem`). In general, the vectors `v`
+The proof uses the structure of closed subgroups. A closed subgroup `G` is discrete exactly when
+it contains no line through the origin
+(`AddSubgroup.discreteTopology_iff_forall_smul_mem_imp_eq_zero`). In general, the vectors `v`
 with `ℝ v ⊆ G` form a subspace `V ⊆ G`, and `G` is the sum of `V` and its trace on a
 complement `W` of `V`, which is discrete. If `G ≠ E` spans `E`, that trace is a lattice in
 `W ≠ 0`, and a coordinate functional of a lattice basis, composed with the projection onto `W`,
@@ -37,8 +36,8 @@ is integer-valued on `G` (`AddSubgroup.exists_dual_ne_zero_of_isClosed`).
 
 * `ZLattice.exists_dual_ne_zero`: a full lattice in a nonzero space admits a nonzero linear
   functional with integer values on it.
-* `AddSubgroup.discreteTopology_of_isClosed_of_forall_smul_mem`: a closed subgroup containing
-  no line through the origin is discrete.
+* `AddSubgroup.discreteTopology_iff_forall_smul_mem_imp_eq_zero`: a closed subgroup is discrete
+  if and only if it contains no line through the origin.
 * `AddSubgroup.exists_dual_ne_zero_of_isClosed`: a proper closed subgroup admits a nonzero linear
   functional with integer values on it.
 * `AddSubgroup.dense_iff_forall_dual_eq_zero`: a subgroup is dense if and only if every linear
@@ -61,11 +60,15 @@ namespace AddSubgroup
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- A closed additive subgroup of a finite-dimensional real normed space that contains no line
-through the origin is discrete. -/
-theorem discreteTopology_of_isClosed_of_forall_smul_mem {G : AddSubgroup E}
-    (hG : IsClosed (G : Set E))
-    (hline : ∀ v : E, (∀ t : ℝ, t • v ∈ G) → v = 0) : DiscreteTopology G := by
+/-- A closed additive subgroup of a finite-dimensional real normed space is discrete if and only
+if it contains no line through the origin. -/
+theorem discreteTopology_iff_forall_smul_mem_imp_eq_zero {G : AddSubgroup E}
+    (hG : IsClosed (G : Set E)) :
+    DiscreteTopology G ↔ ∀ v : E, (∀ t : ℝ, t • v ∈ G) → v = 0 := by
+  refine ⟨fun _ v hv ↦ ?_, fun hline ↦ ?_⟩
+  · -- The line `t ↦ t • v`, as a continuous map from `ℝ` to the discrete space `G`, is constant.
+    have hc : Continuous fun t : ℝ ↦ (⟨t • v, hv t⟩ : G) := by fun_prop
+    simpa using congrArg Subtype.val (hc.isConst_of_preconnectedSpace 1 0)
   rw [discreteTopology_iff_isOpen_singleton_zero, Metric.isOpen_singleton_iff]
   by_contra! h
   -- Nonzero elements `g k` of norm `r k < 1 / (k + 1)`, with unit vectors `u k = g k / r k`.
@@ -94,7 +97,7 @@ theorem discreteTopology_of_isClosed_of_forall_smul_mem {G : AddSubgroup E}
     simpa using (hdiff.comp hφ.tendsto_atTop).add (hlim.const_smul t)
   refine hG.mem_of_tendsto hmem (Eventually.of_forall fun k ↦ ?_)
   rw [Int.cast_smul_eq_zsmul]
-  exact G.zsmul_mem (g (φ k)).2 _
+  exact G.zsmul_mem (g (φ k)).property _
 
 /-- A full lattice `L` in a nonzero finite-dimensional real normed space admits a nonzero real
 linear functional taking integer values on `L`, for instance a coordinate functional of a
@@ -116,11 +119,8 @@ theorem exists_dual_ne_zero_of_isClosed {G : AddSubgroup E} (hG : IsClosed (G : 
   by_cases hspan : span ℝ (G : Set E) = ⊤
   swap
   · -- A functional vanishing on the span of `G` will do.
-    obtain ⟨f, hf, hmap⟩ := exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hspan)
-      inferInstance
-    refine ⟨f, hf, fun g hg ↦ ⟨0, ?_⟩⟩
-    have : f g ∈ (span ℝ (G : Set E)).map f := Submodule.mem_map_of_mem (subset_span hg)
-    simpa [hmap] using this
+    obtain ⟨f, hf, hker⟩ := (span ℝ (G : Set E)).exists_le_ker_of_lt_top (lt_top_iff_ne_top.2 hspan)
+    exact ⟨f, hf, fun g hg ↦ ⟨0, by simpa using hker (subset_span hg)⟩⟩
   -- The subspace `V` of vectors whose whole line lies in `G`, and a complement `W`.
   let V : Submodule ℝ E :=
     { carrier := {v | ∀ t : ℝ, t • v ∈ G}
@@ -140,21 +140,19 @@ theorem exists_dual_ne_zero_of_isClosed {G : AddSubgroup E} (hG : IsClosed (G : 
   have hLmem : ∀ w : W, w ∈ L ↔ (w : E) ∈ G := fun _ ↦ by
     simp [L, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule]
   have : DiscreteTopology L := by
-    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtype_val
+    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtypeVal
     -- `L` and `L.toAddSubgroup` have the same underlying subtype.
-    refine discreteTopology_of_isClosed_of_forall_smul_mem (G := L.toAddSubgroup) hL fun w hw ↦ ?_
+    refine (discreteTopology_iff_forall_smul_mem_imp_eq_zero (G := L.toAddSubgroup) hL).2
+      fun w hw ↦ ?_
     have hwV : (w : E) ∈ V := fun t ↦ (hLmem _).1 (hw t)
-    exact Subtype.ext ((Submodule.disjoint_def.1 hVW.disjoint) _ hwV w.2)
+    exact Subtype.ext ((Submodule.disjoint_def.1 hVW.disjoint) _ hwV w.property)
   have : IsZLattice ℝ L := by
     refine ⟨eq_top_iff.2 ?_⟩
     rw [← LinearMap.range_eq_top.2 (projectionOnto_surjective hVW.symm), LinearMap.range_eq_map,
       ← hspan, map_span]
     exact span_mono (Set.image_subset_iff.2 fun g hg ↦ (hLmem _).2 (hπ g hg))
-  have : Nontrivial W := by
-    refine Submodule.nontrivial_iff_ne_bot.2 fun hW ↦ hne (eq_top_iff.2 fun x _ ↦ hVG x ?_)
-    have htop := hVW.sup_eq_top
-    rw [hW, sup_bot_eq] at htop
-    exact htop ▸ Submodule.mem_top
+  have : Nontrivial W := Submodule.nontrivial_iff_ne_bot.2 fun hW ↦
+    hne (eq_top_iff.2 fun x _ ↦ hVG x (by simp [eq_top_of_isCompl_bot (hW ▸ hVW)]))
   -- A functional with integer values on the lattice, composed with the projection onto `W`.
   obtain ⟨f, hf, hfL⟩ := ZLattice.exists_dual_ne_zero L
   refine ⟨f.comp π, fun h ↦ hf (LinearMap.ext fun w ↦ ?_), fun g hg ↦ hfL _ (hπ g hg)⟩
@@ -169,29 +167,21 @@ theorem dense_iff_forall_dual_eq_zero {H : AddSubgroup E} :
   · intro hd f hf
     -- By continuity `f` is integer-valued on the closure of `H`, which is everything.
     have hint : ∀ x, f x ∈ Set.range ((↑) : ℤ → ℝ) := fun x ↦
-      Real.isClosed_range_intCast.closure_subset_iff.2
-        (Set.image_subset_iff.2 fun h hh ↦ hf h hh |>.imp fun _ ↦ Eq.symm)
-        (map_mem_closure (LinearMap.continuous_of_finiteDimensional f) (hd x)
-          fun _ hh ↦ Set.mem_image_of_mem f hh)
+      Real.isClosed_range_intCast.closure_subset <|
+        map_mem_closure (LinearMap.continuous_of_finiteDimensional f) (hd x)
+          fun h hh ↦ (hf h hh).imp fun _ ↦ Eq.symm
+    -- A nonzero functional is surjective, but `1 / 2` is not an integer.
     by_contra hf0
-    obtain ⟨x, hx⟩ : ∃ x, f x ≠ 0 := by simpa [LinearMap.ext_iff] using hf0
-    obtain ⟨k, hk⟩ := hint ((2 * f x)⁻¹ • x)
-    have : (k : ℝ) = 1 / 2 := by rw [hk, map_smul, smul_eq_mul]; field_simp
-    have h2 : (2 * k : ℝ) = 1 := by rw [this]; norm_num
-    exact absurd (by exact_mod_cast h2 : 2 * k = 1) (by omega)
+    obtain ⟨x, hx⟩ := LinearMap.surjective_iff_ne_zero.2 hf0 (1 / 2)
+    obtain ⟨k, hk⟩ := hint x
+    have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk, hx]; norm_num
+    exact absurd (Int.cast_eq_one.1 h2) (by omega)
   · intro h
     rw [← dense_closure, ← H.topologicalClosure_coe]
     by_contra hd
     have hne : H.topologicalClosure ≠ ⊤ := fun htop ↦ hd (by simp [htop])
     obtain ⟨f, hf, hfG⟩ := exists_dual_ne_zero_of_isClosed H.isClosed_topologicalClosure hne
     exact hf (h f fun x hx ↦ hfG x (H.le_topologicalClosure hx))
-
-/-- The complement of a level set of a nonzero functional is open and dense. -/
-private theorem isOpen_and_dense_preimage_compl_singleton {f : Dual ℝ E} (hf : f ≠ 0) (a : ℝ) :
-    IsOpen (f ⁻¹' {a}ᶜ) ∧ Dense (f ⁻¹' {a}ᶜ) :=
-  ⟨(isClosed_singleton.preimage (LinearMap.continuous_of_finiteDimensional f)).isOpen_compl,
-    (dense_compl_singleton _).preimage
-      (f.isOpenMap_of_finiteDimensional (LinearMap.surjective_iff_ne_zero.mpr hf))⟩
 
 /-- **Generic vectors are dense**: for an additive subgroup `H` spanning `E`, the vectors `x` such
 that `H + ℤ x` is dense form a dense set. -/
@@ -200,29 +190,28 @@ theorem dense_setOfPred_dense_sup {H : AddSubgroup E} (hH : span ℝ (H : Set E)
   classical
   let b := Basis.ofSpan hH.ge
   have := Module.Finite.finite_basis b
-  have hb : ∀ i, b i ∈ H := fun i => Basis.ofSpan_subset hH.ge (Set.mem_range_self i)
+  have hb : ∀ i, b i ∈ H := fun i ↦ Basis.ofSpan_subset hH.ge (Set.mem_range_self i)
   -- The functionals with integer values on `H` have integer coefficients in the coordinates of
   -- `b`; `x` is generic when none of them, except `0`, takes an integer value at `x`, which
   -- excludes countably many affine hyperplanes.
-  let F : (_ → ℤ) → Dual ℝ E := fun c => b.constr ℝ fun i => (c i : ℝ)
-  have hF : ∀ (f : Dual ℝ E), (∀ y ∈ H, ∃ k : ℤ, f y = k) → ∃ c, F c = f := fun f hf => by
-    have hk : ∀ i, ∃ k : ℤ, f (b i) = k := fun i => hf _ (hb i)
+  let F : (_ → ℤ) → Dual ℝ E := fun c ↦ b.constr ℝ fun i ↦ (c i : ℝ)
+  have hF : ∀ (f : Dual ℝ E), (∀ y ∈ H, ∃ k : ℤ, f y = k) → ∃ c, F c = f := fun f hf ↦ by
+    have hk : ∀ i, ∃ k : ℤ, f (b i) = k := fun i ↦ hf _ (hb i)
     choose c hc using hk
-    exact ⟨c, b.ext fun i => by rw [Basis.constr_basis, hc]⟩
-  let U : (_ → ℤ) × ℤ → Set E := fun p => {x | F p.1 ≠ 0 → F p.1 x ≠ p.2}
-  -- Each `U p` is everything or the complement of an affine hyperplane: open and dense.
-  have hU : ∀ p, IsOpen (U p) ∧ Dense (U p) := fun p => by
-    by_cases hc : F p.1 = 0
-    · simp [U, hc]
-    · have : U p = F p.1 ⁻¹' {(p.2 : ℝ)}ᶜ := by ext x; simp [U, hc]
-      rw [this]
-      exact isOpen_and_dense_preimage_compl_singleton hc _
-  refine (dense_iInter_of_isOpen (fun p => (hU p).1) (fun p => (hU p).2)).mono fun x hx => ?_
+    exact ⟨c, b.ext fun i ↦ by rw [Basis.constr_basis, hc]⟩
+  -- The complement of each affine hyperplane `F c = k` with `F c ≠ 0` is open and dense.
+  let U : {p : (_ → ℤ) × ℤ // F p.1 ≠ 0} → Set E := fun p ↦ F p.val.1 ⁻¹' {(p.val.2 : ℝ)}ᶜ
+  refine (dense_iInter_of_isOpen (f := U)
+    (fun p ↦ isOpen_compl_singleton.preimage (LinearMap.continuous_of_finiteDimensional _))
+    (fun p ↦ (dense_compl_singleton _).preimage
+      ((F p.val.1).isOpenMap_of_finiteDimensional (LinearMap.surjective_iff_ne_zero.2
+          p.property)))).mono
+    fun x hx ↦ ?_
   rw [Set.mem_iInter] at hx
-  refine dense_iff_forall_dual_eq_zero.mpr fun f hf => ?_
-  obtain ⟨c, rfl⟩ := hF f fun y hy => hf y (mem_sup_left hy)
+  refine dense_iff_forall_dual_eq_zero.mpr fun f hf ↦ ?_
+  obtain ⟨c, rfl⟩ := hF f fun y hy ↦ hf y (mem_sup_left hy)
   obtain ⟨k, hk⟩ := hf x (mem_sup_right (mem_zmultiples x))
   by_contra hne
-  exact hx (c, k) hne hk
+  exact hx ⟨(c, k), hne⟩ hk
 
 end AddSubgroup

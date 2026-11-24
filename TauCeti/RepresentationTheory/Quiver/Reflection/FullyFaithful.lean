@@ -188,7 +188,7 @@ private theorem functorObj_map_reflectArrowOfNeOfNe (hi : IsSink i) {a b : Q} (h
 `θ` at the source of `e`. -/
 private theorem homKer_coe_apply (f : LinearMap.ker (incomingSum M i))
     (e : Σ b : Q, (b ⟶ i)) :
-    (homKer θ f).1 e = homAway θ (hi.ne_of_hom e.2) (f.1 e) := by
+    (homKer θ f).val e = homAway θ (hi.ne_of_hom e.2) (f.val e) := by
   have hnat := θ.naturality (reflectArrow i e.2).toPath
   rw [functorObj_map_reflectArrow M hi e.2, functorObj_map_reflectArrow N hi e.2] at hnat
   have hstrip := eqToHom_conjugate_vertical_square_of_horizontal_square (reflectObj_self M hi)
@@ -211,7 +211,7 @@ private theorem homPi_apply (f : (e : Σ b : Q, (b ⟶ i)) → M.obj e.1) (e : �
 /-- On the kernel of the incoming sum of `M`, `homPi` is the map between the kernels, so in
 particular it lands in the kernel of the incoming sum of `N`. -/
 private theorem homPi_coe (f : LinearMap.ker (incomingSum M i)) :
-    homPi θ f.1 = (homKer θ f).1 :=
+    homPi θ f.val = (homKer θ f).val :=
   funext fun e ↦ (homKer_coe_apply θ f e).symm
 
 /-- A linear section of the incoming sum, chosen once; a vector space is projective, so a
@@ -243,7 +243,7 @@ private theorem homSink_incomingSum (hs : Function.Surjective (incomingSum M i))
     rw [LinearMap.mem_ker, map_sub, hgdef, incomingSum_sinkSection, sub_self]
   have h0 : incomingSum N i (homPi θ (g - f)) = 0 := by
     rw [homPi_coe θ ⟨g - f, hmem⟩]
-    exact (homKer θ ⟨g - f, hmem⟩).2
+    exact (homKer θ ⟨g - f, hmem⟩).property
   have hsub : incomingSum N i (homPi θ g) - incomingSum N i (homPi θ f) = 0 := by
     rw [← map_sub, ← map_sub]
     exact h0

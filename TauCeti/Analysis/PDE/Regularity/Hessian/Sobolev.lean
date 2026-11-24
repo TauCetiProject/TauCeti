@@ -11,11 +11,11 @@ public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Analysis.PDE.Regularity.Hessian.ConstantCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Trace
 
 /-!
 # The Calderón–Zygmund estimate for strong solutions in `W^{2,p}` of the whole space
@@ -40,6 +40,10 @@ operator norm, so that `⟪D²u(x) eᵢ, eⱼ⟫` is the weak second derivative 
   agree by `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`. Stating this on a general
   `V` rather than on `ℝⁿ` lets it apply on products such as `ℝ × E`, where half-spaces are
   described.
+
+On an open set `Ω ⊆ V`, a non-divergence-form operator `u ↦ tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u` with
+bounded measurable coefficients is a bounded operator `W^{2,p}(Ω) → Lᵖ(Ω)`
+(`TauCeti.exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul`).
 
 ## The argument
 
@@ -89,8 +93,7 @@ private theorem contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
   rw [hx, Matrix.contraction_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
     iteratedGradientTestFunction_def]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [smul_eq_mul, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
-    inner_hessianOperator_left]
+  rw [smul_eq_mul, inner_iteratedGradientChain_one_apply]
 
 /-- An `Lᵖ` bound on the classical Hessian of a test function `φ` bounds the weak Hessian of `φ`,
 regarded as an element of `W^{2,p}(ℝⁿ)`. -/
@@ -258,6 +261,45 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq
   filter_upwards [(traceCLM ℝ V).coeFn_compLpL (Wkp.iteratedGradient 1 u),
     (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
   rw [hx, traceCLM_apply, htr]
+
+/-- **A non-divergence-form operator with bounded measurable coefficients is bounded on
+`W^{2,p}`.** Let `A`, `b` and `c` be almost everywhere strongly measurable on `Ω`, with
+`‖A x‖ ≤ Λ`, `‖b x‖ ≤ β` and `|c x| ≤ γ` almost everywhere. Then
+`u ↦ tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u` is a continuous linear map `W^{2,p}(Ω) → Lᵖ(Ω)`. -/
+theorem exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul {μ : Measure V}
+    [μ.IsAddHaarMeasure] {Omega : Opens V} {A : V → V →L[ℝ] V} {b : V → V} {c : V → ℝ}
+    {Λ β γ : ℝ} (hA : AEStronglyMeasurable A (μ.restrict Omega))
+    (hAΛ : ∀ᵐ x ∂μ.restrict Omega, ‖A x‖ ≤ Λ) (hb : AEStronglyMeasurable b (μ.restrict Omega))
+    (hbβ : ∀ᵐ x ∂μ.restrict Omega, ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c (μ.restrict Omega))
+    (hcγ : ∀ᵐ x ∂μ.restrict Omega, |c x| ≤ γ) :
+    ∃ T : Wkp μ Omega p 2 →L[ℝ] Lp ℝ p (μ.restrict Omega),
+      ∀ u, ∀ᵐ x ∂μ.restrict Omega,
+        T u x = traceCLM ℝ V (A x ∘L Wkp.iteratedGradient 1 u x) +
+          ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x := by
+  obtain ⟨T₁, hT₁⟩ := exists_continuousLinearMap_traceCLM_comp (p := p) hA hAΛ
+  -- The lower-order terms are pointwise pairings with the `L^∞` classes of `b` and `c`.
+  have hb' := memLp_top_of_bound hb β hbβ
+  have hc' := memLp_top_of_bound hc γ (hcγ.mono fun x hx => by rwa [Real.norm_eq_abs])
+  set B := (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).holderL (μ.restrict Omega) ∞ p p (hb'.toLp b)
+  set M := (ContinuousLinearMap.mul ℝ ℝ).holderL (μ.restrict Omega) ∞ p p (hc'.toLp c)
+  refine ⟨T₁.comp (Wkp.iteratedGradientL 1) +
+    B.comp ((Wkp.iteratedGradientL 0).comp (Wkp.lowerOrderL 1)) + M.comp (Wkp.valueL 2),
+    fun u => ?_⟩
+  filter_upwards [Lp.coeFn_add (T₁ (Wkp.iteratedGradientL 1 u) +
+      B (Wkp.iteratedGradientL 0 (Wkp.lowerOrderL 1 u))) (M (Wkp.valueL 2 u)),
+    Lp.coeFn_add (T₁ (Wkp.iteratedGradientL 1 u))
+      (B (Wkp.iteratedGradientL 0 (Wkp.lowerOrderL 1 u))),
+    hT₁ (Wkp.iteratedGradientL 1 u),
+    (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).coeFn_holder (r := p) (hb'.toLp b)
+      (Wkp.iteratedGradientL 0 (Wkp.lowerOrderL 1 u)),
+    (ContinuousLinearMap.mul ℝ ℝ).coeFn_holder (r := p) (hc'.toLp c) (Wkp.valueL 2 u),
+    hb'.coeFn_toLp, hc'.coeFn_toLp] with x h1 h2 h3 h4 h5 h6 h7
+  simp only [add_apply, ContinuousLinearMap.comp_apply, B, M,
+    ContinuousLinearMap.holderL_apply_apply, Wkp.iteratedGradientL_apply 1 u,
+    Wkp.lowerOrderL_apply 1 u, Wkp.iteratedGradientL_apply 0 (Wkp.lowerOrder 1 u),
+    Wkp.valueL_apply 2 u] at h1 h2 h3 h4 h5 ⊢
+  simp only [h1, Pi.add_apply, h2, h3, h4, h5, h6, h7, ContinuousLinearMap.mul_apply']
+  rw [innerSL_apply_apply]
 
 end InnerProductSpace
 
