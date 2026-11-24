@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.SchemeProperties
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Infinitesimal
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Smooth
+public import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Group schemes that are not abelian schemes
@@ -73,27 +74,17 @@ example [Fact p.Prime] : ¬ Smooth (RootsOfUnityGroup.groupScheme (ZMod p) p).X.
 example [Fact p.Prime] (K : Type) [Field K] [CharP K p] [Algebra (ZMod p) K] :
     Subsingleton ((Spec (CommRingCat.of K)).asOver (Spec (CommRingCat.of (ZMod p))) ⟶
       (RootsOfUnityGroup.groupScheme (ZMod p) p).X) :=
-  DiagonalizableGroup.subsingleton_schemePoints_of_isReduced p _ fun g ↦
-    ULift.down_injective ((ULift.pow_down g p).trans (Multiplicative.toAdd.injective (by simp)))
+  DiagonalizableGroup.subsingleton_schemePoints_of_isReduced p 1 _ fun g ↦
+    ULift.down_injective ((ULift.pow_down g _).trans (Multiplicative.toAdd.injective (by simp)))
 
-/-- The unit `1 + ε` of `𝔽_p[ε]/(ε²)`, a unit because `ε` is nilpotent. -/
-noncomputable def dualNumberUnit : (DualNumber (ZMod p))ˣ :=
-  (IsNilpotent.isUnit_one_add ⟨2, DualNumber.eps_pow_two⟩).unit
-
-/-- The unit `1 + ε` of `𝔽_p[ε]/(ε²)` is a `p`th root of unity. -/
-theorem dualNumberUnit_mem_rootsOfUnity :
-    dualNumberUnit p ∈ rootsOfUnity p (DualNumber (ZMod p)) := by
-  rw [mem_rootsOfUnity, Units.ext_iff]
-  ext <;> simp [dualNumberUnit]
-
-/-- The point of `μ_p` over `𝔽_p[ε]/(ε²)` given by the root of unity `1 + ε` is not the
+/-- The point of `μ_p` over `𝔽_p[ε]/(ε²)` given by the `p`th root of unity `1 + ε` is not the
 identity. -/
 example [Fact (1 < p)] :
     (RootsOfUnityGroup.schemePointsMulEquiv (R := ZMod p) (A := DualNumber (ZMod p)) p).symm
-      ⟨dualNumberUnit p, dualNumberUnit_mem_rootsOfUnity p⟩ ≠ 1 := by
+      ⟨dualNumberUnit 1, by rw [mem_rootsOfUnity, dualNumberUnit_pow]; ext <;> simp⟩ ≠ 1 := by
   rw [MulEquiv.map_ne_one_iff, Ne, Subtype.ext_iff, Units.ext_iff]
   intro h
-  simpa [dualNumberUnit] using congr_arg TrivSqZeroExt.snd h
+  simpa using congr_arg TrivSqZeroExt.snd h
 
 end RootsOfUnity
 
