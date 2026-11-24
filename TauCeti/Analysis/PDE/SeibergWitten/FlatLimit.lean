@@ -323,6 +323,15 @@ theorem fderiv_comp_baseCoord_normalCoord_apply {F : Type*} [NormedAddCommGroup 
   rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hc]
 
+/-- The squared norm of a vector is the sum of the squared norms of its base and normal
+coordinates. -/
+theorem norm_baseCoord_sq_add_norm_normalCoord_sq (y : V) :
+    ‖baseCoord e y‖ ^ 2 + ‖normalCoord e y‖ ^ 2 = ‖y‖ ^ 2 := by
+  rw [← e.sum_sq_inner_right, Fin.sum_univ_four, ← Complex.normSq_eq_norm_sq,
+    ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.normSq_apply, baseCoord_re,
+    baseCoord_im, normalCoord_re, normalCoord_im]
+  ring
+
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled
 back from a plane vortex field `x = (b₁, b₂, p, q)` along the normal coordinate
