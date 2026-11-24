@@ -25,7 +25,8 @@ the reconstruction step in a small coordinate presentation of finite-rank bundle
 No compactness, separation, or finite-dimensionality assumption is needed.
 
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
-`VectorBundleCore` gluing construction.
+`VectorBundleCore` gluing construction. For any core, `VectorBundleCore.mk_eq_mk_iff` compares
+points of its total space by base point and vector in the model fibre.
 -/
 
 public section
@@ -101,8 +102,8 @@ noncomputable def pointIndexedCoreFiberEquiv (b : B) :
 
 private noncomputable def pointIndexedCoreTotalEquiv :
     (pointIndexedCore 𝕜 F E).TotalSpace ≃ TotalSpace F E where
-  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩
-  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩
+  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩
   left_inv p := by
     dsimp only
     rw [ContinuousLinearEquiv.symm_apply_apply]
@@ -121,7 +122,7 @@ private theorem trivializationAt_pointIndexedCoreTotalEquiv (b : B)
   rw [VectorBundleCore.localTriv_apply, pointIndexedCore_coordChange,
     pointIndexedCore_indexAt]
   exact ((trivializationAt F E p.proj).mk_coordChangeL (trivializationAt F E b)
-    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.2).symm
+    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.snd).symm
 
 private theorem continuous_pointIndexedCoreTotalEquiv :
     Continuous (pointIndexedCoreTotalEquiv 𝕜 F E) := by
@@ -129,7 +130,7 @@ private theorem continuous_pointIndexedCoreTotalEquiv :
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(FiberBundle.continuous_proj F (pointIndexedCore 𝕜 F E).Fiber).continuousAt, ?_⟩
   have hp : p ∈ ((pointIndexedCore 𝕜 F E).localTriv p.proj).source :=
-    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.2
+    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.snd
   have hc := (((pointIndexedCore 𝕜 F E).localTriv p.proj).continuousOn.continuousAt
     (((pointIndexedCore 𝕜 F E).localTriv p.proj).open_source.mem_nhds hp)).snd
   refine hc.congr_of_eventuallyEq ?_
@@ -165,11 +166,11 @@ noncomputable def pointIndexedCoreHomeomorph :
 
 @[simp] theorem pointIndexedCoreHomeomorph_apply (p : (pointIndexedCore 𝕜 F E).TotalSpace) :
     pointIndexedCoreHomeomorph 𝕜 F E p =
-      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩ := (rfl)
+      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem pointIndexedCoreHomeomorph_symm_apply (p : TotalSpace F E) :
     (pointIndexedCoreHomeomorph 𝕜 F E).symm p =
-      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩ := (rfl)
 
 /-- The reconstruction homeomorphism intertwines every core chart with its
 original chart, wherever that chart is defined. -/
@@ -181,3 +182,22 @@ theorem trivializationAt_pointIndexedCoreHomeomorph (b : B)
   trivializationAt_pointIndexedCoreTotalEquiv 𝕜 F E b p hp
 
 end TauCeti
+
+namespace VectorBundleCore
+
+variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Points of the total space of a vector bundle core agree exactly when their base points and
+their vectors in the model fibre do. Unlike `Bundle.TotalSpace.mk_inj`, the base points may
+differ, since every fibre of a core is the model fibre. -/
+theorem mk_eq_mk_iff (Z : VectorBundleCore 𝕜 B F ι) {x y : B} {v w : F} :
+    (⟨x, v⟩ : Z.TotalSpace) = ⟨y, w⟩ ↔ x = y ∧ v = w := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+end VectorBundleCore

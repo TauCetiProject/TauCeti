@@ -181,7 +181,7 @@ theorem one_add_exp_mul_weightedLogSpotPricingOperatorL
   have hw := weightedLogSpotPricingOperatorL_apply hα a r v (slabMk x t)
   simp only [space_slabMk] at hw
   have hd := ((v.hasTimeDerivWithinAt x t).const_mul (1 + exp x)).derivWithin
-    (uniqueDiffOn_Icc ht t t.2)
+    (uniqueDiffOn_Icc ht t t.property)
   simp [parabolicOperatorL_apply, weightFirstOrderCoeff_apply,
     weightZerothOrderCoeff_apply, space_slabMk] at h
   rw [hw]
@@ -213,7 +213,7 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
         rw [timeExtension_of_mem ht.le v x ⟨s, hs⟩]
         exact (hC x ⟨s, hs⟩).symm)
       (by rw [timeExtension_of_mem ht.le v x t]; exact (hC x t).symm)]
-    exact hCt.derivWithin (uniqueDiffOn_Icc ht t t.2)
+    exact hCt.derivWithin (uniqueDiffOn_Icc ht t t.property)
   have hsecond : fderiv ℝ (fderiv ℝ fun y ↦ C (exp y) t) x 1 1 =
       deriv (deriv fun y ↦ C (exp y) t) x := by
     simpa [_root_.iteratedFDeriv_two_apply, iteratedDeriv_succ, iteratedDeriv_one] using
@@ -337,7 +337,7 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
       simpa only [sub_zero, projIcc_right, mul_zero, Real.exp_zero, zero_mul, add_zero,
         one_mul] using hterm y)
   have hp : t₁ - slabTime p ∈ Icc 0 (t₁ - t₀) :=
-    ⟨by linarith [(slabTime p).2.2], by linarith [(slabTime p).2.1]⟩
+    ⟨by linarith [(slabTime p).property.2], by linarith [(slabTime p).property.1]⟩
   have hτ : projIcc t₀ t₁ ht.le (t₁ - (t₁ - slabTime p)) = slabTime p := by
     rw [sub_sub_cancel, projIcc_val]
   simpa only [hτ, slabMk_space_slabTime] using key hp (p : ParabolicSpaceTime ℝ).space

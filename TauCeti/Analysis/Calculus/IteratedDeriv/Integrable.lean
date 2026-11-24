@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Module.Completion
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Integrability and Landau–Kolmogorov `L¹` inequality for the first derivative
@@ -42,6 +44,8 @@ proves `Integrable (deriv f)` and the sharp real-valued `L¹` bounds. Passing to
   for every `C²` function and step size `h ≥ 0`, with no integrability or completeness assumptions.
 * `ContDiff.integrable_deriv`: if `f` is `C²` and `f`, `iteratedDeriv 2 f` are integrable on `ℝ`,
   then `deriv f` is integrable on `ℝ`.
+* `ContDiff.integrable_deriv_of_norm_le_div_one_add_sq`: if `f` is `C²` and `f`,
+  `iteratedDeriv 2 f` are dominated by `A / (1 + t ^ 2)`, then `deriv f` is integrable on `ℝ`.
 * `ContDiff.integrable_iteratedDeriv_of_le_two`: convenience form bundling integrability of
   `iteratedDeriv k f` for all `k ≤ 2`.
 * `ContDiff.integral_norm_deriv_le`: step-parameterized `L¹` bound for `h > 0`.
@@ -64,21 +68,6 @@ open MeasureTheory Set UniformSpace
 open scoped ENNReal
 
 namespace ContDiff
-
-private theorem lintegral_Ioc_ofReal {h : ℝ} (hh : 0 ≤ h) :
-    ∫⁻ α in Ioc (0 : ℝ) h, ENNReal.ofReal α = ENNReal.ofReal (h ^ 2 / 2) := by
-  have hint : IntervalIntegrable (fun α : ℝ ↦ α) volume 0 h :=
-    continuous_id.intervalIntegrable _ _
-  have h1 : ∫ α in (0 : ℝ)..h, α = h ^ 2 / 2 := by
-    have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt (a := (0 : ℝ)) (b := h)
-      (f := fun α : ℝ ↦ α ^ 2 / 2) (f' := fun α : ℝ ↦ α)
-      (fun α _ ↦ by
-        have hd := ((hasDerivAt_id α).fun_mul (hasDerivAt_id α)).div_const (2 : ℝ)
-        simpa [sq, two_mul, add_halves] using hd) hint
-    simpa using hftc
-  rw [← h1, intervalIntegral.integral_of_le hh]
-  exact (ofReal_integral_eq_lintegral_ofReal hint.1 (by
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with α hα using hα.1.le)).symm
 
 private theorem measurable_lintegral_Ioc_add_sub {g : ℝ → ℝ≥0∞} (hg : Measurable g) :
     Measurable fun p : ℝ × ℝ ↦ ∫⁻ β in Ioc (0 : ℝ) p.2, (g (p.1 + β) + g (p.1 - β)) := by
@@ -123,6 +112,10 @@ private theorem lintegral_double_Ioc_add_sub {g : ℝ → ℝ≥0∞} (hg : Meas
       rw [hsub, two_mul]
     simp_rw [hshift]
     rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm]
+  have hint_id : ∫⁻ α in Ioc (0 : ℝ) h, ENNReal.ofReal α = ENNReal.ofReal (h ^ 2 / 2) := by
+    rw [← ofReal_integral_eq_lintegral_ofReal (continuous_id'.intervalIntegrable 0 h).1
+      (by filter_upwards [ae_restrict_mem measurableSet_Ioc] with _ hα using hα.1.le),
+      ← intervalIntegral.integral_of_le hh, integral_id, zero_pow two_ne_zero, sub_zero]
   calc
     ∫⁻ α in Ioc (0 : ℝ) h, ∫⁻ t, ∫⁻ β in Ioc (0 : ℝ) α, (g (t + β) + g (t - β))
       = ∫⁻ α in Ioc (0 : ℝ) h, ENNReal.ofReal α * (2 * ∫⁻ t, g t) := by
@@ -130,7 +123,7 @@ private theorem lintegral_double_Ioc_add_sub {g : ℝ → ℝ≥0∞} (hg : Meas
     _ = (∫⁻ α in Ioc (0 : ℝ) h, ENNReal.ofReal α) * (2 * ∫⁻ t, g t) :=
           lintegral_mul_const _ ENNReal.measurable_ofReal
     _ = ENNReal.ofReal (h ^ 2 / 2) * (2 * ∫⁻ t, g t) := by
-          rw [lintegral_Ioc_ofReal hh]
+          rw [hint_id]
     _ = (ENNReal.ofReal (h ^ 2 / 2) * ENNReal.ofReal 2) * ∫⁻ t, g t := by
           rw [ENNReal.ofReal_ofNat, mul_assoc]
     _ = ENNReal.ofReal (h ^ 2) * ∫⁻ t, g t := by
@@ -269,29 +262,6 @@ private theorem two_mul_lintegral_eNorm_deriv_le_complete {E : Type*} [NormedAdd
     simpa only [sub_eq_add_neg] using lintegral_add_right_eq_self (fun t ↦ ‖f t‖ₑ) (-h)
   rw [hsub, ← two_mul, lintegral_double_Ioc_add_sub hc2.measurable hh]
 
-private theorem sq_le_two_mul_of_forall_pos {A B C : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (hC : 0 ≤ C)
-    (h : ∀ r > 0, C ≤ r⁻¹ * A + r / 2 * B) : C ^ 2 ≤ 2 * A * B := by
-  by_cases hC0 : C = 0
-  · rw [hC0, zero_pow two_ne_zero]
-    positivity
-  · have hCpos : 0 < C := lt_of_le_of_ne hC (Ne.symm hC0)
-    by_cases hB0 : B = 0
-    · exfalso
-      have hr : 0 < (A + 1) / C := by positivity
-      have hbound := h ((A + 1) / C) hr
-      rw [hB0, mul_zero, add_zero] at hbound
-      have hmul := mul_le_mul_of_nonneg_left hbound hr.le
-      rw [← mul_assoc, mul_inv_cancel₀ hr.ne', one_mul, mul_comm,
-        mul_div_cancel₀ _ hCpos.ne'] at hmul
-      linarith
-    · have hBpos : 0 < B := lt_of_le_of_ne hB (Ne.symm hB0)
-      have hbound := h (C / B) (div_pos hCpos hBpos)
-      have heq : ((C / B)⁻¹ * A + C / B / 2 * B) * (2 * C) = 2 * A * B + C ^ 2 := by
-        field_simp
-      have hmul := mul_le_mul_of_nonneg_right hbound (by positivity : 0 ≤ 2 * C)
-      rw [heq] at hmul
-      linarith
-
 section General
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -346,6 +316,21 @@ theorem integrable_deriv {f : ℝ → E} (hf : ContDiff ℝ 2 f)
   exact hstep.trans_lt
     (ENNReal.add_lt_top.mpr ⟨h0.2, ENNReal.mul_lt_top ENNReal.ofReal_lt_top h2.2⟩)
 
+/-- If a `C²` function `f : ℝ → E` into a real normed space satisfies
+`‖f t‖, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)` for all `t : ℝ`, then `deriv f` is integrable
+on `ℝ` (first part of Kontorovich–Tao, Lemma 3.1.7). -/
+theorem integrable_deriv_of_norm_le_div_one_add_sq {f : ℝ → E} (hf : ContDiff ℝ 2 f) {A : ℝ}
+    (h0 : ∀ t : ℝ, ‖f t‖ ≤ A / (1 + t ^ 2))
+    (h2 : ∀ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)) :
+    Integrable (deriv f) := by
+  have hdom : Integrable (fun t : ℝ ↦ A / (1 + t ^ 2)) := by
+    simpa only [div_eq_mul_inv] using integrable_inv_one_add_sq.const_mul A
+  have hf0 : Integrable f :=
+    hdom.mono' hf.continuous.aestronglyMeasurable (ae_of_all _ h0)
+  have hf2 : Integrable (iteratedDeriv 2 f) :=
+    hdom.mono' (hf.continuous_iteratedDeriv 2 le_rfl).aestronglyMeasurable (ae_of_all _ h2)
+  exact hf.integrable_deriv hf0 hf2
+
 /-- Convenience form bundling integrability of `iteratedDeriv k f` for all `k ≤ 2` from
 integrability of `f` and `iteratedDeriv 2 f`. -/
 theorem integrable_iteratedDeriv_of_le_two {f : ℝ → E} (hf : ContDiff ℝ 2 f)
@@ -387,9 +372,7 @@ theorem integral_norm_deriv_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
 theorem integral_norm_deriv_sq_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
     (h0 : Integrable f) (h2 : Integrable (iteratedDeriv 2 f)) :
     (∫ t, ‖deriv f t‖) ^ 2 ≤ 2 * (∫ t, ‖f t‖) * (∫ t, ‖iteratedDeriv 2 f t‖) :=
-  sq_le_two_mul_of_forall_pos
-    (integral_nonneg fun _ ↦ norm_nonneg _)
-    (integral_nonneg fun _ ↦ norm_nonneg _)
+  TauCeti.sq_le_two_mul_of_forall_pos
     (integral_nonneg fun _ ↦ norm_nonneg _)
     (fun _ hr ↦ hf.integral_norm_deriv_le h0 h2 hr)
 

@@ -136,14 +136,6 @@ section MeasureLimits
 
 variable {α E : Type*} [LinearOrder α] [MeasurableSpace α] [SeminormedAddCommGroup E]
 
-omit [LinearOrder α] in
-private theorem integrableAtFilter_completion_coe {μ : Measure α} {l : Filter α} {f : α → E}
-    (hint : IntegrableAtFilter f l μ) :
-    IntegrableAtFilter (fun x ↦ (f x : Completion E)) l μ := by
-  rcases hint with ⟨u, hu, hfu⟩
-  refine ⟨u, hu, (Completion.continuous_coe E).comp_aestronglyMeasurable hfu.1, ?_⟩
-  simpa only [HasFiniteIntegral, Completion.eNorm_coe] using hfu.2
-
 /-- A function of bounded variation on a set `s ∈ atTop` that is integrable along `atTop` with
 respect to a measure giving every tail infinite measure must tend to `0` at `+∞`. -/
 theorem tendsto_zero_atTop_of_measure_eq_top {μ : Measure α} {f : α → E} {s : Set α}
@@ -152,33 +144,24 @@ theorem tendsto_zero_atTop_of_measure_eq_top {μ : Measure α} {f : α → E} {s
     Tendsto f atTop (𝓝 0) := by
   have hlip : LipschitzWith 1 ((↑) : E → Completion E) :=
     (Isometry.of_dist_eq Completion.dist_eq).lipschitzWith
-  have hbv : BoundedVariationOn (fun x ↦ (f x : Completion E)) s :=
-    hlip.comp_boundedVariationOn hf
-  obtain ⟨c, hc⟩ := hbv.exists_tendsto_atTop
+  obtain ⟨c, hc⟩ := (hlip.comp_boundedVariationOn hf).exists_tendsto_atTop
   rw [inf_of_le_right (le_principal_iff.mpr hs)] at hc
-  have hc0 : c = 0 :=
-    (integrableAtFilter_completion_coe hint).eq_zero_of_tendsto hμ hc
+  rcases hint with ⟨u, hu, hfu⟩
+  have hc0 : c = 0 := IntegrableAtFilter.eq_zero_of_tendsto
+    ⟨u, hu, (Completion.continuous_coe E).comp_aestronglyMeasurable hfu.1,
+      by simpa only [HasFiniteIntegral, Function.comp_apply, Completion.eNorm_coe] using hfu.2⟩
+    hμ hc
   rw [hc0] at hc
   exact tendsto_zero_iff_norm_tendsto_zero.mpr <| by
-    simpa only [Completion.norm_coe, norm_zero] using hc.norm
+    simpa only [Function.comp_apply, Completion.norm_coe, norm_zero] using hc.norm
 
 /-- A function of bounded variation on a set `s ∈ atBot` that is integrable along `atBot` with
 respect to a measure giving every tail infinite measure must tend to `0` at `-∞`. -/
 theorem tendsto_zero_atBot_of_measure_eq_top {μ : Measure α} {f : α → E} {s : Set α}
     (hf : BoundedVariationOn f s) (hs : s ∈ atBot) (hint : IntegrableAtFilter f atBot μ)
     (hμ : ∀ t ∈ atBot, μ t = ∞) :
-    Tendsto f atBot (𝓝 0) := by
-  have hlip : LipschitzWith 1 ((↑) : E → Completion E) :=
-    (Isometry.of_dist_eq Completion.dist_eq).lipschitzWith
-  have hbv : BoundedVariationOn (fun x ↦ (f x : Completion E)) s :=
-    hlip.comp_boundedVariationOn hf
-  obtain ⟨c, hc⟩ := hbv.exists_tendsto_atBot
-  rw [inf_of_le_right (le_principal_iff.mpr hs)] at hc
-  have hc0 : c = 0 :=
-    (integrableAtFilter_completion_coe hint).eq_zero_of_tendsto hμ hc
-  rw [hc0] at hc
-  exact tendsto_zero_iff_norm_tendsto_zero.mpr <| by
-    simpa only [Completion.norm_coe, norm_zero] using hc.norm
+    Tendsto f atBot (𝓝 0) :=
+  hf.ofDual.tendsto_zero_atTop_of_measure_eq_top hs hint hμ
 
 end MeasureLimits
 

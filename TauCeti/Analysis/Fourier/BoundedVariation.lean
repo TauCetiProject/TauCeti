@@ -53,25 +53,26 @@ zeroth and second derivatives are integrable (in particular, dominated by `A / (
   `Real.one_add_sq_mul_norm_fourier_le` with the `L¹` Landau–Kolmogorov theorem
   `ContDiff.integrable_iteratedDeriv_of_le_two` removes the intermediate hypothesis
   `Integrable (deriv f)`. In particular, if `‖f t‖, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)`,
-  then `deriv f` is integrable and `(1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (π + 1 / (4 * π)) * A`.
+  then `deriv f` is integrable (`ContDiff.integrable_deriv_of_norm_le_div_one_add_sq`) and
+  `(1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (π + 1 / (4 * π)) * A`.
 
 ## Main declarations
 
-* `TauCeti.smul_fourier_eq_integral_vectorMeasure`: exact integration-by-parts identity relating
-  `(2 * π * I * ξ) • 𝓕 f ξ` to the vector-measure integral against `hbv.vectorMeasure`.
-* `TauCeti.two_pi_abs_mul_norm_fourier_le_eVariationOn` and
-  `TauCeti.norm_fourier_le_eVariationOn_div`: `O(1 / |ξ|)` Fourier decay for integrable BV
-  functions.
-* `TauCeti.fourier_eq_smul_fourier_of_eq_add_integral`: `𝓕 g ξ = (2 * π * I * ξ) • 𝓕 f ξ` for
-  integrable `f, g` with `f x = f a + ∫ t in a..x, g t`.
-* `TauCeti.two_pi_abs_sq_mul_norm_fourier_le_eVariationOn`,
-  `TauCeti.norm_fourier_le_eVariationOn_div_sq`, and
-  `TauCeti.one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv`: `O(1 / ξ²)` decay for a
-  primitive whose derivative has bounded variation.
-* `TauCeti.one_add_sq_mul_norm_fourier_le_of_contDiff_two`: quadratic decay for `C²` functions
+* `MeasureTheory.Integrable.smul_fourier_eq_integral_vectorMeasure`: exact integration-by-parts
+  identity relating `(2 * π * I * ξ) • 𝓕 f ξ` to the vector-measure integral against
+  `hbv.vectorMeasure`.
+* `MeasureTheory.Integrable.two_pi_abs_mul_norm_fourier_le_eVariationOn` and
+  `MeasureTheory.Integrable.norm_fourier_le_eVariationOn_div`: `O(1 / |ξ|)` Fourier decay for
+  integrable BV functions.
+* `MeasureTheory.Integrable.fourier_eq_smul_fourier_of_eq_add_integral`:
+  `𝓕 g ξ = (2 * π * I * ξ) • 𝓕 f ξ` for integrable `f, g` with `f x = f a + ∫ t in a..x, g t`.
+* `MeasureTheory.Integrable.two_pi_abs_sq_mul_norm_fourier_le_eVariationOn`,
+  `MeasureTheory.Integrable.norm_fourier_le_eVariationOn_div_sq`, and
+  `MeasureTheory.Integrable.one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv`:
+  `O(1 / ξ²)` decay for a primitive whose derivative has bounded variation.
+* `ContDiff.one_add_sq_mul_norm_fourier_le_of_contDiff_two`: quadratic decay for `C²` functions
   requiring only integrability of `f` and `iteratedDeriv 2 f`.
-* `TauCeti.integrable_deriv_of_norm_le_div_one_add_sq` and
-  `TauCeti.one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`: `1 / (1 + t²)` decay form
+* `ContDiff.one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`: `1 / (1 + t²)` decay form
   yielding `(1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (π + 1 / (4 * π)) * A`.
 
 ## References
@@ -85,11 +86,7 @@ public section
 open Complex Filter MeasureTheory Set Topology
 open scoped FourierTransform Real
 
-namespace TauCeti
-
 /-! ### Bounded variation Fourier decay -/
-
-section BoundedVariation
 
 private noncomputable def fourierPhase (ξ x : ℝ) : ℂ :=
   Complex.exp ((↑(-2 * π * (x * ξ)) : ℂ) * I)
@@ -123,18 +120,6 @@ private theorem fourier_eq_integral_phase {E : Type*} [NormedAddCommGroup E] [No
   rw [Real.fourier_eq']
   congr 1 with x
   simp [fourierPhase, mul_comm]
-
-private theorem hasCompactSupport_bump_div (χ : ContDiffBump (0 : ℝ)) {R : ℝ} (hR : 0 < R) :
-    HasCompactSupport (fun x : ℝ ↦ χ (x / R)) := by
-  refine HasCompactSupport.of_support_subset_isCompact
-    (isCompact_closedBall (0 : ℝ) (χ.rOut * R)) ?_
-  intro x hx
-  have hmem : x / R ∈ Metric.ball (0 : ℝ) χ.rOut := by
-    rw [← χ.support_eq]
-    exact hx
-  rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_div, abs_of_pos hR, div_lt_iff₀ hR] at hmem
-  rw [Metric.mem_closedBall, Real.dist_eq, sub_zero]
-  exact hmem.le
 
 private theorem hasDerivAt_cutoff_phase (χ : ContDiffBump (0 : ℝ)) (R ξ x : ℝ) :
     HasDerivAt (fun t : ℝ ↦ (χ (t / R) : ℂ) * fourierPhase ξ t)
@@ -182,24 +167,8 @@ private theorem tendsto_cutoff_deriv_integral {E : Type*} [NormedAddCommGroup E]
     tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
   simpa using hdiv.mul_const (∫ x, ‖f x‖)
 
-private theorem eventually_cutoff_eq_one (χ : ContDiffBump (0 : ℝ)) (hχ : 0 < χ.rIn) (x : ℝ) :
-    ∀ᶠ n : ℕ in atTop, χ (x / ((n : ℝ) + 1)) = 1 := by
-  obtain ⟨N, hN⟩ := exists_nat_gt (|x| / χ.rIn)
-  filter_upwards [eventually_ge_atTop N] with n hn
-  have hR : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-  have hx_le : |x / ((n : ℝ) + 1)| ≤ χ.rIn := by
-    rw [abs_div, abs_of_pos hR, div_le_iff₀ hR]
-    have hlt : |x| / χ.rIn < (n : ℝ) + 1 :=
-      hN.trans_le (by exact_mod_cast (by omega : N ≤ n + 1))
-    calc |x| = (|x| / χ.rIn) * χ.rIn := by field_simp [hχ.ne']
-      _ ≤ ((n : ℝ) + 1) * χ.rIn := by gcongr
-      _ = χ.rIn * ((n : ℝ) + 1) := mul_comm _ _
-  exact χ.one_of_mem_closedBall (by
-    rw [Metric.mem_closedBall, Real.dist_eq, sub_zero]
-    exact hx_le)
-
 private theorem tendsto_cutoff_phase_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    (χ : ContDiffBump (0 : ℝ)) (hχ : 0 < χ.rIn) {f : ℝ → E} (hf : Integrable f) (ξ : ℝ) :
+    (χ : ContDiffBump (0 : ℝ)) {f : ℝ → E} (hf : Integrable f) (ξ : ℝ) :
     Tendsto (fun n : ℕ ↦
       ∫ x, ((χ (x / ((n : ℝ) + 1)) : ℂ) * ((-2 * π * I * ξ) * fourierPhase ξ x)) • f x)
       atTop (𝓝 ((-2 * π * I * ξ) • 𝓕 f ξ)) := by
@@ -218,7 +187,9 @@ private theorem tendsto_cutoff_phase_integral {E : Type*} [NormedAddCommGroup E]
         Real.norm_eq_abs, abs_of_nonneg χ.nonneg]
       exact mul_le_of_le_one_left (norm_nonneg _) χ.le_one
     · refine ae_of_all _ fun x ↦ tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_cutoff_eq_one χ hχ x] with n hn
+      have hlim : Tendsto (fun n : ℕ ↦ x / ((n : ℝ) + 1)) atTop (𝓝 0) :=
+        tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+      filter_upwards [hlim.eventually χ.eventuallyEq_one] with n hn
       simp [hn]
   have heq (n : ℕ) :
       ∫ x, ((χ (x / ((n : ℝ) + 1)) : ℂ) * ((-2 * π * I * ξ) * fourierPhase ξ x)) • f x =
@@ -232,7 +203,7 @@ private theorem tendsto_cutoff_phase_integral {E : Type*} [NormedAddCommGroup E]
   exact hmain.const_smul (-2 * π * I * ξ)
 
 private theorem tendsto_cutoff_vectorMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] (χ : ContDiffBump (0 : ℝ)) (hχ : 0 < χ.rIn) {f : ℝ → E}
+    [CompleteSpace E] (χ : ContDiffBump (0 : ℝ)) {f : ℝ → E}
     (hbv : BoundedVariationOn f univ) (ξ : ℝ) :
     Tendsto (fun n : ℕ ↦
       ∫ᵛ x, (χ (x / ((n : ℝ) + 1)) : ℂ) * fourierPhase ξ x
@@ -248,7 +219,9 @@ private theorem tendsto_cutoff_vectorMeasure {E : Type*} [NormedAddCommGroup E] 
       Real.norm_eq_abs, abs_of_nonneg χ.nonneg]
     exact χ.le_one
   · refine ae_of_all _ fun x ↦ tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_cutoff_eq_one χ hχ x] with n hn
+    have hlim : Tendsto (fun n : ℕ ↦ x / ((n : ℝ) + 1)) atTop (𝓝 0) :=
+      tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+    filter_upwards [hlim.eventually χ.eventuallyEq_one] with n hn
     simp [hn]
 
 private theorem cutoff_ibp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -265,8 +238,11 @@ private theorem cutoff_ibp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
   have hφ_cd : ContDiff ℝ 1 φ :=
     (ofRealCLM.contDiff.comp ((χ.contDiff (n := 1)).comp (contDiff_id.div_const _))).mul
       (contDiff_fourierPhase ξ)
+  have hχ_cs : HasCompactSupport (fun x : ℝ ↦ χ (x / ((n : ℝ) + 1))) := by
+    simpa only [div_eq_inv_mul, smul_eq_mul] using
+      χ.hasCompactSupport.comp_smul (inv_ne_zero hR.ne')
   have hφ_cs : HasCompactSupport φ :=
-    ((hasCompactSupport_bump_div χ hR).comp_left Complex.ofReal_zero).mul_right
+    (hχ_cs.comp_left Complex.ofReal_zero).mul_right
   have h1 : Integrable (fun x ↦ (((deriv χ (x / ((n : ℝ) + 1)) / ((n : ℝ) + 1) : ℝ) : ℂ) *
       fourierPhase ξ x) • f x) := by
     have hcont : Continuous (fun x : ℝ ↦
@@ -301,6 +277,16 @@ private theorem cutoff_ibp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
   congr 1 with x
   rw [(hasDerivAt_cutoff_phase χ ((n : ℝ) + 1) ξ x).deriv, add_smul]
 
+private theorem integrable_fourierPhase_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {h : ℝ → E} (hh : Integrable h) (ξ : ℝ) :
+    Integrable (fun x ↦ fourierPhase ξ x • h x) := by
+  refine hh.norm.mono'
+    ((contDiff_fourierPhase ξ).continuous.aestronglyMeasurable.smul hh.aestronglyMeasurable)
+    (ae_of_all _ fun x ↦ ?_)
+  rw [norm_smul, norm_fourierPhase, one_mul]
+
+namespace MeasureTheory.Integrable
+
 /-- **Integration by parts for the Fourier transform of a function of bounded variation.**
 For an integrable function `f : ℝ → E` of bounded variation into a complex Banach space, multiplying
 its Fourier transform by `2 * π * I * ξ` yields the integral of `x ↦ exp (-2πi x ξ)` against its
@@ -313,9 +299,9 @@ theorem smul_fourier_eq_integral_vectorMeasure {E : Type*} [NormedAddCommGroup E
         ∂[ContinuousLinearMap.lsmul ℝ ℂ; hbv.vectorMeasure] := by
   let χ : ContDiffBump (0 : ℝ) := ⟨1, 2, zero_lt_one, one_lt_two⟩
   have hLHS := (tendsto_cutoff_deriv_integral χ hf ξ).add
-    (tendsto_cutoff_phase_integral χ zero_lt_one hf ξ)
+    (tendsto_cutoff_phase_integral χ hf ξ)
   simp only [zero_add] at hLHS
-  have hRHS := (tendsto_cutoff_vectorMeasure χ zero_lt_one hbv ξ).neg
+  have hRHS := (tendsto_cutoff_vectorMeasure χ hbv ξ).neg
   have heq : (-2 * π * I * ξ) • 𝓕 f ξ =
       -∫ᵛ x, fourierPhase ξ x ∂[ContinuousLinearMap.lsmul ℝ ℂ; hbv.vectorMeasure] :=
     tendsto_nhds_unique (hLHS.congr (cutoff_ibp χ hf hbv ξ)) hRHS
@@ -338,7 +324,7 @@ theorem two_pi_abs_mul_norm_fourier_le_eVariationOn {E : Type*} [NormedAddCommGr
   · have hnorm_lhs : ‖(2 * π * I * ξ) • 𝓕 f ξ‖ = 2 * π * |ξ| * ‖𝓕 f ξ‖ := by
       rw [norm_smul]
       simp [abs_of_pos Real.pi_pos, mul_assoc]
-    rw [← hnorm_lhs, smul_fourier_eq_integral_vectorMeasure hf hbv ξ]
+    rw [← hnorm_lhs, hf.smul_fourier_eq_integral_vectorMeasure hbv ξ]
     have hconst : ∀ᵐ x ∂hbv.vectorMeasure.variation,
         ‖Complex.exp ((↑(-2 * π * (x * ξ)) : ℂ) * I)‖ ≤ 1 :=
       ae_of_all _ fun x ↦ by
@@ -368,21 +354,9 @@ theorem norm_fourier_le_eVariationOn_div {E : Type*} [NormedAddCommGroup E] [Nor
     ‖𝓕 f ξ‖ ≤ (eVariationOn f univ).toReal / (2 * π * |ξ|) := by
   have hpos : 0 < 2 * π * |ξ| := mul_pos (mul_pos two_pos Real.pi_pos) (abs_pos.mpr hξ)
   rw [le_div_iff₀' hpos]
-  exact two_pi_abs_mul_norm_fourier_le_eVariationOn hf hbv ξ
-
-end BoundedVariation
+  exact hf.two_pi_abs_mul_norm_fourier_le_eVariationOn hbv ξ
 
 /-! ### Absolutely continuous primitives and derivatives of bounded variation -/
-
-section Primitive
-
-private theorem integrable_fourierPhase_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {h : ℝ → E} (hh : Integrable h) (ξ : ℝ) :
-    Integrable (fun x ↦ fourierPhase ξ x • h x) := by
-  refine hh.norm.mono'
-    ((contDiff_fourierPhase ξ).continuous.aestronglyMeasurable.smul hh.aestronglyMeasurable)
-    (ae_of_all _ fun x ↦ ?_)
-  rw [norm_smul, norm_fourierPhase, one_mul]
 
 /-- **Fourier transform of an almost-everywhere derivative via an indefinite integral.**
 If `f, g : ℝ → E` are integrable and `f x = f a + ∫ t in a..x, g t` for all `x : ℝ`, then
@@ -450,8 +424,8 @@ theorem two_pi_abs_sq_mul_norm_fourier_le_eVariationOn {E : Type*} [NormedAddCom
     [NormedSpace ℂ E] {f g : ℝ → E} {a : ℝ} (hf : Integrable f) (hg : Integrable g)
     (hg_bv : BoundedVariationOn g univ) (hfg : ∀ x, f x = f a + ∫ t in a..x, g t) (ξ : ℝ) :
     (2 * π * |ξ|) ^ 2 * ‖𝓕 f ξ‖ ≤ (eVariationOn g univ).toReal := by
-  have h1 := two_pi_abs_mul_norm_fourier_le_eVariationOn hg hg_bv ξ
-  rw [fourier_eq_smul_fourier_of_eq_add_integral hf hg hfg ξ, norm_smul] at h1
+  have h1 := hg.two_pi_abs_mul_norm_fourier_le_eVariationOn hg_bv ξ
+  rw [hf.fourier_eq_smul_fourier_of_eq_add_integral hg hfg ξ, norm_smul] at h1
   have hnorm : ‖(2 * π * I * ξ : ℂ)‖ = 2 * π * |ξ| := by
     simp [abs_of_pos Real.pi_pos, mul_assoc]
   rw [hnorm] at h1
@@ -468,7 +442,7 @@ theorem norm_fourier_le_eVariationOn_div_sq {E : Type*} [NormedAddCommGroup E]
   have hpos : 0 < (2 * π * |ξ|) ^ 2 :=
     sq_pos_of_pos (mul_pos (mul_pos two_pos Real.pi_pos) (abs_pos.mpr hξ))
   rw [le_div_iff₀' hpos]
-  exact two_pi_abs_sq_mul_norm_fourier_le_eVariationOn hf hg hg_bv hfg ξ
+  exact hf.two_pi_abs_sq_mul_norm_fourier_le_eVariationOn hg hg_bv hfg ξ
 
 /-- Combined `(1 + ξ²)` Fourier decay bound when the integrable derivative `g` of `f` has bounded
 variation on `ℝ` (Kontorovich–Tao, Lemma 3.1.6). Holds for every real `ξ`, including `ξ = 0`. -/
@@ -479,7 +453,7 @@ theorem one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv {E : Type*}
     (1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤ (∫ x, ‖f x‖) + (eVariationOn g univ).toReal / (4 * π ^ 2) := by
   rw [add_mul, one_mul]
   refine add_le_add (Real.norm_fourier_le_integral_norm f ξ) ?_
-  have h2 := two_pi_abs_sq_mul_norm_fourier_le_eVariationOn hf hg hg_bv hfg ξ
+  have h2 := hf.two_pi_abs_sq_mul_norm_fourier_le_eVariationOn hg hg_bv hfg ξ
   have h4pi : (0 : ℝ) < 4 * π ^ 2 := by positivity
   rw [le_div_iff₀' h4pi]
   have heq : (4 * π ^ 2) * (ξ ^ 2 * ‖𝓕 f ξ‖) = (2 * π * |ξ|) ^ 2 * ‖𝓕 f ξ‖ := by
@@ -488,11 +462,11 @@ theorem one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv {E : Type*}
   rw [heq]
   exact h2
 
-end Primitive
+end MeasureTheory.Integrable
 
 /-! ### `C²` decay forms -/
 
-section ContDiffTwo
+namespace ContDiff
 
 /-- Quadratic Fourier decay for a `C²` function requiring only integrability of `f` and
 `iteratedDeriv 2 f`. Compared to Mathlib's `Real.one_add_sq_mul_norm_fourier_le`, integrability
@@ -504,22 +478,6 @@ theorem one_add_sq_mul_norm_fourier_le_of_contDiff_two {E : Type*} [NormedAddCom
     (1 + ξ ^ 2) * ‖𝓕 f ξ‖ ≤
       (∫ x, ‖f x‖) + (4 * π ^ 2)⁻¹ * ∫ x, ‖iteratedDeriv 2 f x‖ :=
   Real.one_add_sq_mul_norm_fourier_le hf (hf.integrable_iteratedDeriv_of_le_two h0 h2) ξ
-
-/-- If a `C²` function `f : ℝ → E` into a real normed space satisfies
-`‖f t‖, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)` for all `t : ℝ`, then `deriv f` is integrable
-on `ℝ` (first part of Kontorovich–Tao, Lemma 3.1.7). -/
-theorem integrable_deriv_of_norm_le_div_one_add_sq {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : ℝ → E} (hf : ContDiff ℝ 2 f) {A : ℝ}
-    (h0 : ∀ t : ℝ, ‖f t‖ ≤ A / (1 + t ^ 2))
-    (h2 : ∀ t : ℝ, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)) :
-    Integrable (deriv f) := by
-  have hdom : Integrable (fun t : ℝ ↦ A / (1 + t ^ 2)) := by
-    simpa only [div_eq_mul_inv] using integrable_inv_one_add_sq.const_mul A
-  have hf0 : Integrable f :=
-    hdom.mono' hf.continuous.aestronglyMeasurable (ae_of_all _ h0)
-  have hf2 : Integrable (iteratedDeriv 2 f) :=
-    hdom.mono' (hf.continuous_iteratedDeriv 2 le_rfl).aestronglyMeasurable (ae_of_all _ h2)
-  exact hf.integrable_deriv hf0 hf2
 
 /-- **`C²` decay bound under quadratic decay of `f` and `f''`** (Kontorovich–Tao, Lemma 3.1.7).
 If `f : ℝ → E` is `C²` and `‖f t‖, ‖iteratedDeriv 2 f t‖ ≤ A / (1 + t ^ 2)` for all `t : ℝ`,
@@ -547,14 +505,14 @@ theorem one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq {E : Type*} [No
   calc
     (1 + ξ ^ 2) * ‖𝓕 f ξ‖
       ≤ (∫ t, ‖f t‖) + (4 * π ^ 2)⁻¹ * ∫ t, ‖iteratedDeriv 2 f t‖ :=
-        one_add_sq_mul_norm_fourier_le_of_contDiff_two hf hf0 hf2 ξ
+        hf.one_add_sq_mul_norm_fourier_le_of_contDiff_two hf0 hf2 ξ
     _ ≤ A * π + (4 * π ^ 2)⁻¹ * (A * π) := by
         gcongr
     _ = (π + 1 / (4 * π)) * A := by
         have hpi : π ≠ 0 := Real.pi_ne_zero
         field_simp
 
-end ContDiffTwo
+end ContDiff
 
 /-! ### Sharpness and boundary checks -/
 
@@ -582,26 +540,6 @@ private theorem eVariationOn_inter_Ici_of_const {f : ℝ → ℂ} {s : Set ℝ} 
   rw [eVariationOn.eVariationOn_on_inter_Ici_eq_Ioi_add_edist hne ha hlim,
     eVariationOn_eq_zero_of_eq h, zero_add]
 
-private theorem integral_cexp_neg_pi_I (a b : ℝ) :
-    ∫ x in a..b, Complex.exp ((↑(-π * x) : ℂ) * I) =
-      (Complex.exp ((↑(-π * b) : ℂ) * I) - Complex.exp ((↑(-π * a) : ℂ) * I)) /
-        (-(π : ℂ) * I) := by
-  have hne : -(π : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, Complex.I_ne_zero]
-  have hderiv (x : ℝ) : HasDerivAt
-      (fun t : ℝ ↦ Complex.exp ((↑(-π * t) : ℂ) * I) / (-(π : ℂ) * I))
-      (Complex.exp ((↑(-π * x) : ℂ) * I)) x := by
-    have hlin : HasDerivAt (fun t : ℝ ↦ (-π * t : ℝ)) (-π) x := by
-      simpa using (hasDerivAt_id x).const_mul (-π)
-    have h1 := ((hlin.ofReal_comp).mul_const I).cexp.div_const (-(π : ℂ) * I)
-    refine h1.congr_deriv ?_
-    push_cast
-    field_simp [hne]
-  have hint : IntervalIntegrable (fun x : ℝ ↦ Complex.exp ((↑(-π * x) : ℂ) * I)) volume a b := by
-    refine Continuous.intervalIntegrable ?_ _ _
-    exact (Complex.continuous_ofReal.comp (continuous_const.mul continuous_id) |>.mul
-      continuous_const).cexp
-  rw [_root_.intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ ↦ hderiv x) hint, sub_div]
-
 private theorem eVariationOn_indicator_Icc_zero_one :
     eVariationOn ((Icc (0 : ℝ) 1).indicator (fun _ ↦ (1 : ℂ))) univ = 2 := by
   let f : ℝ → ℂ := (Icc (0 : ℝ) 1).indicator (fun _ ↦ (1 : ℂ))
@@ -627,7 +565,8 @@ private theorem eVariationOn_indicator_Icc_zero_one :
   rw [← Iic_union_Ici (a := (1 : ℝ)), eVariationOn.union f isGreatest_Iic isLeast_Ici, h01, hright]
   norm_num
 
-/-- Sharpness and `ξ ≠ 0` necessity check for `norm_fourier_le_eVariationOn_div`:
+/-- Sharpness and `ξ ≠ 0` necessity check for
+`MeasureTheory.Integrable.norm_fourier_le_eVariationOn_div`:
 for `f = 1_[0,1]`, `eVariationOn f univ = 2`, at `ξ = 1 / 2` both sides equal `2 / π`, and at
 `ξ = 0` we have `𝓕 f 0 = 1` while the right-hand side evaluates to the junk value `0`. -/
 example :
@@ -642,21 +581,21 @@ example :
   have hf_half : 𝓕 f (1 / 2) = 2 / (π * I) := by
     rw [fourier_eq_integral_phase]
     have heq : (fun x : ℝ ↦ fourierPhase (1 / 2) x • f x) =
-        (Icc (0 : ℝ) 1).indicator (fun x ↦ Complex.exp ((↑(-π * x) : ℂ) * I)) := by
+        (Icc (0 : ℝ) 1).indicator (fun x ↦ Complex.exp ((-(π : ℂ) * I) * x)) := by
       ext x
       by_cases hx : x ∈ Icc (0 : ℝ) 1
       · simp only [f, indicator_of_mem hx, smul_eq_mul, mul_one, fourierPhase]
-        have harg : (-2 * π * (x * (1 / 2)) : ℝ) = -π * x := by ring
-        rw [harg]
+        congr 1; push_cast; ring
       · simp [f, hx]
+    have hcne : -(π : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, Complex.I_ne_zero]
     rw [heq, integral_indicator measurableSet_Icc, integral_Icc_eq_integral_Ioc,
-      ← _root_.intervalIntegral.integral_of_le zero_le_one, integral_cexp_neg_pi_I]
-    have hexp : Complex.exp ((↑(-π * (1 : ℝ)) : ℂ) * I) = -1 := by
-      have h1 : (↑(-π * (1 : ℝ)) : ℂ) * I = -(π * I) := by push_cast; ring
+      ← _root_.intervalIntegral.integral_of_le zero_le_one, integral_exp_mul_complex hcne]
+    have hexp : Complex.exp (-(π : ℂ) * I * (1 : ℝ)) = -1 := by
+      have h1 : -(π : ℂ) * I * (1 : ℝ) = -(π * I) := by push_cast; ring
       rw [h1, Complex.exp_neg, Complex.exp_pi_mul_I]
       norm_num
     rw [hexp]
-    simp only [mul_zero, ofReal_zero, zero_mul, Complex.exp_zero]
+    simp only [ofReal_zero, mul_zero, Complex.exp_zero]
     have hne : (π : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, Complex.I_ne_zero]
     field_simp [hne]
     ring
@@ -748,30 +687,25 @@ private theorem tentDeriv_integrable : Integrable tentDeriv := by
       (integrableOn_const (by rw [Real.volume_Ico]; exact ENNReal.ofReal_ne_top))
   exact h1.sub h2
 
-private theorem intervalIntegral_eq_of_eq_on_Ioo {f : ℝ → ℂ} {a b : ℝ} (hab : a ≤ b) {c : ℂ}
-    (hf : ∀ t ∈ Ioo a b, f t = c) :
-    ∫ t in a..b, f t = ((b - a : ℝ) : ℂ) * c := by
-  rw [_root_.intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
-    setIntegral_congr_fun measurableSet_Ioo hf, setIntegral_const, Complex.real_smul,
-    measureReal_def, Real.volume_Ioo, ENNReal.toReal_ofReal (sub_nonneg.mpr hab)]
-
 private theorem tent_eq_add_integral (x : ℝ) :
     ((max (0 : ℝ) (1 - |x|) : ℝ) : ℂ) =
       ((max (0 : ℝ) (1 - |(0 : ℝ)|) : ℝ) : ℂ) + ∫ t in (0 : ℝ)..x, tentDeriv t := by
   have hf0 : ((max (0 : ℝ) (1 - |(0 : ℝ)|) : ℝ) : ℂ) = 1 := by simp
   have h0_1 (y : ℝ) (hy0 : 0 ≤ y) (hy1 : y ≤ 1) : ∫ t in (0 : ℝ)..y, tentDeriv t = -(y : ℂ) := by
-    rw [intervalIntegral_eq_of_eq_on_Ioo hy0 (c := -1) fun _ ht ↦
-      tentDeriv_of_mem_Ico_pos ht.1.le (ht.2.trans_le hy1)]
+    rw [_root_.intervalIntegral.integral_congr_Ioo_of_le (g := fun _ ↦ (-1 : ℂ)) hy0 fun _ ht ↦
+      tentDeriv_of_mem_Ico_pos ht.1.le (ht.2.trans_le hy1),
+      _root_.intervalIntegral.integral_const, Complex.real_smul]
     push_cast; ring
   have hm1_0 (y : ℝ) (hym : -1 ≤ y) (hy0 : y ≤ 0) : ∫ t in y..(0 : ℝ), tentDeriv t = -(y : ℂ) := by
-    rw [intervalIntegral_eq_of_eq_on_Ioo hy0 (c := 1) fun _ ht ↦
-      tentDeriv_of_mem_Ico_neg (hym.trans ht.1.le) ht.2]
+    rw [_root_.intervalIntegral.integral_congr_Ioo_of_le (g := fun _ ↦ (1 : ℂ)) hy0 fun _ ht ↦
+      tentDeriv_of_mem_Ico_neg (hym.trans ht.1.le) ht.2,
+      _root_.intervalIntegral.integral_const, Complex.real_smul]
     push_cast; ring
   rw [hf0]
   by_cases h1 : 1 ≤ x
   · have htail : ∫ t in (1 : ℝ)..x, tentDeriv t = 0 := by
-      rw [intervalIntegral_eq_of_eq_on_Ioo h1 (c := 0) fun _ ht ↦ tentDeriv_of_one_le ht.1.le]
-      simp
+      rw [_root_.intervalIntegral.integral_congr_Ioo_of_le (g := fun _ ↦ (0 : ℂ)) h1 fun _ ht ↦
+        tentDeriv_of_one_le ht.1.le, _root_.intervalIntegral.integral_const, smul_zero]
     have hadd := _root_.intervalIntegral.integral_add_adjacent_intervals
       (a := (0 : ℝ)) (b := 1) (c := x)
       tentDeriv_integrable.intervalIntegrable tentDeriv_integrable.intervalIntegrable
@@ -786,9 +720,9 @@ private theorem tent_eq_add_integral (x : ℝ) :
           abs_of_neg (lt_of_not_ge h0), max_eq_right (by linarith)]
         push_cast; ring
       · have htail : ∫ t in x..(-1 : ℝ), tentDeriv t = 0 := by
-          rw [intervalIntegral_eq_of_eq_on_Ioo (le_of_not_ge hm) (c := 0) fun _ ht ↦
-            tentDeriv_of_lt_neg_one ht.2]
-          simp
+          rw [_root_.intervalIntegral.integral_congr_Ioo_of_le (g := fun _ ↦ (0 : ℂ))
+            (le_of_not_ge hm) fun _ ht ↦ tentDeriv_of_lt_neg_one ht.2,
+            _root_.intervalIntegral.integral_const, smul_zero]
         have hadd := _root_.intervalIntegral.integral_add_adjacent_intervals
           (a := x) (b := -1) (c := 0)
           tentDeriv_integrable.intervalIntegrable tentDeriv_integrable.intervalIntegrable
@@ -799,40 +733,39 @@ private theorem tent_eq_add_integral (x : ℝ) :
 private theorem fourier_tentDeriv_half : 𝓕 tentDeriv (1 / 2) = 4 / (-(π : ℂ) * I) := by
   rw [fourier_eq_integral_phase]
   have hsplit : (fun x : ℝ ↦ fourierPhase (1 / 2) x • tentDeriv x) =
-      fun x ↦ (Ico (-1 : ℝ) 0).indicator (fun t ↦ Complex.exp ((↑(-π * t) : ℂ) * I)) x -
-        (Ico (0 : ℝ) 1).indicator (fun t ↦ Complex.exp ((↑(-π * t) : ℂ) * I)) x := by
+      fun x ↦ (Ico (-1 : ℝ) 0).indicator (fun t ↦ Complex.exp ((-(π : ℂ) * I) * t)) x -
+        (Ico (0 : ℝ) 1).indicator (fun t ↦ Complex.exp ((-(π : ℂ) * I) * t)) x := by
     ext x
-    have hp : fourierPhase (1 / 2) x = Complex.exp ((↑(-π * x) : ℂ) * I) := by
+    have hp : fourierPhase (1 / 2) x = Complex.exp ((-(π : ℂ) * I) * x) := by
       simp only [fourierPhase]
-      have harg : (-2 * π * (x * (1 / 2)) : ℝ) = -π * x := by ring
-      rw [harg]
+      congr 1; push_cast; ring
     simp only [tentDeriv, Pi.sub_apply, smul_eq_mul, mul_sub, hp]
     by_cases h1 : x ∈ Ico (-1 : ℝ) 0 <;> by_cases h2 : x ∈ Ico (0 : ℝ) 1 <;> simp [h1, h2]
-  have hcont : Continuous (fun x : ℝ ↦ Complex.exp ((↑(-π * x) : ℂ) * I)) :=
-    ((Complex.continuous_ofReal.comp (continuous_const.mul continuous_id)).mul
-      continuous_const).cexp
+  have hcont : Continuous (fun x : ℝ ↦ Complex.exp ((-(π : ℂ) * I) * x)) :=
+    (continuous_const.mul Complex.continuous_ofReal).cexp
   have hi1 : Integrable ((Ico (-1 : ℝ) 0).indicator (fun x ↦
-      Complex.exp ((↑(-π * x) : ℂ) * I))) :=
+      Complex.exp ((-(π : ℂ) * I) * x))) :=
     (integrable_indicator_iff measurableSet_Ico).mpr
       (hcont.integrableOn_Icc.mono_set Ico_subset_Icc_self)
   have hi2 : Integrable ((Ico (0 : ℝ) 1).indicator (fun x ↦
-      Complex.exp ((↑(-π * x) : ℂ) * I))) :=
+      Complex.exp ((-(π : ℂ) * I) * x))) :=
     (integrable_indicator_iff measurableSet_Ico).mpr
       (hcont.integrableOn_Icc.mono_set Ico_subset_Icc_self)
+  have hcne : -(π : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, Complex.I_ne_zero]
   rw [hsplit, integral_sub hi1 hi2, integral_indicator measurableSet_Ico,
     integral_indicator measurableSet_Ico, integral_Ico_eq_integral_Ioc,
     integral_Ico_eq_integral_Ioc,
     ← _root_.intervalIntegral.integral_of_le (by norm_num : (-1 : ℝ) ≤ 0),
     ← _root_.intervalIntegral.integral_of_le zero_le_one,
-    integral_cexp_neg_pi_I, integral_cexp_neg_pi_I]
-  have hexp_pos : Complex.exp ((↑(-π * (1 : ℝ)) : ℂ) * I) = -1 := by
-    have h1 : (↑(-π * (1 : ℝ)) : ℂ) * I = -(π * I) := by push_cast; ring
+    integral_exp_mul_complex hcne, integral_exp_mul_complex hcne]
+  have hexp_pos : Complex.exp (-(π : ℂ) * I * (1 : ℝ)) = -1 := by
+    have h1 : -(π : ℂ) * I * (1 : ℝ) = -(π * I) := by push_cast; ring
     rw [h1, Complex.exp_neg, Complex.exp_pi_mul_I]; norm_num
-  have hexp_neg : Complex.exp ((↑(-π * (-1 : ℝ)) : ℂ) * I) = -1 := by
-    have h1 : (↑(-π * (-1 : ℝ)) : ℂ) * I = π * I := by push_cast; ring
+  have hexp_neg : Complex.exp (-(π : ℂ) * I * (-1 : ℝ)) = -1 := by
+    have h1 : -(π : ℂ) * I * (-1 : ℝ) = π * I := by push_cast; ring
     rw [h1, Complex.exp_pi_mul_I]
   rw [hexp_pos, hexp_neg]
-  simp only [mul_zero, ofReal_zero, zero_mul, Complex.exp_zero]
+  simp only [ofReal_zero, mul_zero, Complex.exp_zero]
   ring
 
 private theorem integral_tent_eq_one : ∫ x : ℝ, max (0 : ℝ) (1 - |x|) = 1 := by
@@ -875,10 +808,10 @@ private theorem integral_tent_eq_one : ∫ x : ℝ, max (0 : ℝ) (1 - |x|) = 1 
     rw [hftc]; norm_num
   rw [hL, hR]; norm_num
 
-/-- Sharpness check for `norm_fourier_le_eVariationOn_div_sq` and
-`one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv`: for the tent function
-`f x = max 0 (1 - |x|)` with derivative `g` of total variation `4`, both sides of the quadratic
-decay bound equal `4 / π ^ 2` at `ξ = 1 / 2`, and `𝓕 f 0 = 1`, `∫ x, ‖f x‖ = 1`. -/
+/-- Sharpness check for `MeasureTheory.Integrable.norm_fourier_le_eVariationOn_div_sq` and
+`MeasureTheory.Integrable.one_add_sq_mul_norm_fourier_le_of_boundedVariationOn_deriv`: for the tent
+function `f x = max 0 (1 - |x|)` with derivative `g` of total variation `4`, both sides of the
+quadratic decay bound equal `4 / π ^ 2` at `ξ = 1 / 2`, and `𝓕 f 0 = 1`, `∫ x, ‖f x‖ = 1`. -/
 example :
     let f : ℝ → ℂ := fun t ↦ ((max (0 : ℝ) (1 - |t|) : ℝ) : ℂ)
     let g : ℝ → ℂ :=
@@ -900,7 +833,7 @@ example :
     have habs : 1 < |x| := lt_of_not_ge fun h ↦ hnot (abs_le.mp h)
     exact hx (max_eq_left (by linarith))
   have hf_int : Integrable f := hf_cont.integrable_of_hasCompactSupport hf_supp
-  have hrel := fourier_eq_smul_fourier_of_eq_add_integral hf_int tentDeriv_integrable
+  have hrel := hf_int.fourier_eq_smul_fourier_of_eq_add_integral tentDeriv_integrable
     tent_eq_add_integral (1 / 2)
   have hf_half : 𝓕 f (1 / 2) = (4 / π ^ 2 : ℝ) := by
     have hne : (π : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, Complex.I_ne_zero]
@@ -961,7 +894,7 @@ private theorem iteratedDeriv_two_lorentzian (t : ℝ) :
   rw [iteratedDeriv_succ, iteratedDeriv_one, hf1]
   exact hr_d2.ofReal_comp.deriv
 
-/-- Check for `one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`:
+/-- Check for `ContDiff.one_add_sq_mul_norm_fourier_le_of_norm_le_div_one_add_sq`:
 the Lorentzian `f t = (1 + t ^ 2)⁻¹` is `C²` and satisfies `‖f t‖ ≤ 2 / (1 + t ^ 2)` and
 `‖iteratedDeriv 2 f t‖ ≤ 2 / (1 + t ^ 2)` for all `t : ℝ`, with `𝓕 f 0 = π`. -/
 example :
@@ -997,5 +930,3 @@ example :
   exact ⟨hf_cd, h0, h2, hf0⟩
 
 end Checks
-
-end TauCeti
