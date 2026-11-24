@@ -13,14 +13,10 @@ public import TauCeti.RingTheory.Derivation.PPow
 /-!
 # The restricted Lie algebra structure on derivations
 
-For an `R`-algebra `A` of exponential characteristic `p`, `Derivation.pPow p` (defined in
-`TauCeti.RingTheory.Derivation.PPow`, together with `R`-homogeneity and Hochschild's `A`-scaling
-formula `Derivation.pPow_smul`) satisfies Jacobson's additivity formula (`Derivation.pPow_add`):
-
-`(D + E).pPow p = D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E`.
-
-When `R` is a commutative ring and `A` is a commutative `R`-algebra of prime characteristic `p`,
-this equips `Derivation R A A` with a canonical restricted Lie algebra structure
+For an `R`-algebra `A` of prime characteristic `p`, `Derivation.pPow p` (defined in
+`TauCeti.RingTheory.Derivation.PPow`, together with `R`-homogeneity `pPow_const_smul`,
+Hochschild's `A`-scaling formula `pPow_smul`, `ad_pPow`, and Jacobson's additivity formula
+`pPow_add`) equips `Derivation R A A` with a canonical restricted Lie algebra structure
 (`Derivation.instRestrictedLieAlgebra`), and the canonical inclusion
 `Derivation.toEndRestrictedLieHom` into `Module.End R A` is an injective morphism of restricted
 Lie algebras extending `Derivation.toLinearMapLieHom`.
@@ -34,7 +30,6 @@ Lie algebras extending `Derivation.toLinearMapLieHom`.
 
 ## Main results
 
-* `Derivation.pPow_add`: Jacobson's formula for `(D + E).pPow p`.
 * `Derivation.pMap_eq_pPow`: rewrite exposing `RestrictedLieAlgebra.pMap D = D.pPow p`.
 * `Derivation.toEndRestrictedLieHom_injective`: injectivity of `Derivation.toEndRestrictedLieHom`.
 
@@ -57,23 +52,6 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 section EndHom
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- Jacobson's formula for the `p`-th power of a sum of derivations in exponential
-characteristic `p`. -/
-theorem pPow_add (D E : Derivation R A A) (p : ℕ) [ExpChar A p] :
-    (D + E).pPow p = D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E := by
-  refine toLinearMapLieHom_injective ?_
-  have : ExpChar (Module.End R A) p := inferInstance
-  calc
-    (toLinearMapLieHom R A ((D + E).pPow p) : Module.End R A)
-      = ((toLinearMapLieHom R A D : Module.End R A) + toLinearMapLieHom R A E) ^ p := by
-        rw [toLinearMapLieHom_apply, toLinearMap_pPow, ← map_add, toLinearMapLieHom_apply]
-    _ = (toLinearMapLieHom R A D : Module.End R A) ^ p +
-          (toLinearMapLieHom R A E : Module.End R A) ^ p +
-          TauCeti.LieAlgebra.jacobson p (toLinearMapLieHom R A D) (toLinearMapLieHom R A E) :=
-        TauCeti.LieAlgebra.add_pow_eq_jacobson p _ _
-    _ = toLinearMapLieHom R A (D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E) := by
-        simp only [map_add, toLinearMapLieHom_apply, toLinearMap_pPow, LieHom.map_jacobson]
 
 /-- Derivations of a commutative `R`-algebra of prime characteristic `p` form a restricted Lie
 algebra with `p`-map `D ↦ D.pPow p`. -/
@@ -147,10 +125,5 @@ example (p : ℕ) [Fact p.Prime] (D : Derivation ℤ (ZMod p)[X] (ZMod p)[X]) :
     TauCeti.RestrictedLieHom.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) p D =
       LieAlgebra.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) D :=
   TauCeti.RestrictedLieHom.ad_apply _ _ _ D
-
--- Witness: `Derivation.pPow_add` also holds in exponential characteristic `1` (characteristic `0`).
-example (D E : Derivation ℚ ℚ[X] ℚ[X]) :
-    (D + E).pPow 1 = D.pPow 1 + E.pPow 1 := by
-  rw [Derivation.pPow_add, TauCeti.LieAlgebra.jacobson_one, add_zero]
 
 end Examples

@@ -22,7 +22,6 @@ import Mathlib.Algebra.Algebra.Basic
 -- transfers its exponential characteristic to `Module.End R A`.
 import Mathlib.Algebra.Algebra.Bilinear
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Algebra.CharP.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 
 /-!
@@ -40,8 +39,6 @@ Mathlib records the characteristic of an endomorphism algebra in
 along a non-torsion element; the exponential characteristic of a vector space needs no such element.
 The same holds for an `R`-algebra `A` acting on itself: left multiplication `Algebra.lmul` embeds
 `A` into `Module.End R A`, so the two have the same characteristic and exponential characteristic.
-Similarly, any nontrivial module annihilated pointwise by a prime `p` has endomorphism ring of
-characteristic `p` (`Module.End.charP_of_forall_nsmul_eq_zero`).
 
 ## Main results
 
@@ -49,8 +46,6 @@ characteristic `p` (`Module.End.charP_of_forall_nsmul_eq_zero`).
   characteristic of `A`.
 * `Module.End.instExpChar`: the endomorphisms `Module.End R A` of an `R`-algebra `A` have the
   exponential characteristic of `A`.
-* `Module.End.charP_of_forall_nsmul_eq_zero`: if a prime `p` annihilates a nontrivial `R`-module
-  `M` pointwise, then `Module.End R M` has characteristic `p`.
 * `Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one`: an endomorphism of `p`-power order of
   a vector space over a field of exponential characteristic `p` is unipotent.
 -/
@@ -70,16 +65,6 @@ since left multiplication `Algebra.lmul` embeds `A` into `Module.End R A`. -/
 instance instExpChar {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] (p : ℕ)
     [ExpChar A p] : ExpChar (Module.End R A) p :=
   expChar_of_injective_ringHom (f := (Algebra.lmul R A).toRingHom) Algebra.lmul_injective p
-
-/-- If a prime `p` annihilates a nontrivial `R`-module `M` pointwise, then `Module.End R M` has
-characteristic `p`. -/
-theorem charP_of_forall_nsmul_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [Nontrivial M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
-    CharP (Module.End R M) p := by
-  have hp0 : (p : Module.End R M) = 0 := by
-    ext m
-    simp [hM m]
-  exact (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr hp0
 
 variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
 

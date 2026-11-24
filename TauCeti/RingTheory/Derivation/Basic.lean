@@ -192,10 +192,12 @@ section Rescale
 ### Triangular rescaling expansion
 
 The coefficients `hochschildCoeff` and the triangular expansion
-`iterate_smul_eq_sum_hochschildCoeff` generalize the rescaling expansion introduced for Wronskians
-in `TauCeti/RingTheory/Derivation/Wronskian/Rescale.lean` (after D. M. Goldschmidt, *Algebraic
-Functions and Projective Curves*, GTM 215, Springer, 2003), allowing an arbitrary target
-derivation over independent scalars `S` intertwined via a ring homomorphism `f`.
+`iterate_smul_eq_sum_hochschildCoeff` give the general triangular rescaling expansion of
+`(a • D)^[n]` (after D. M. Goldschmidt, *Algebraic Functions and Projective Curves*, GTM 215,
+Springer, 2003), used by `Derivation.wronskian_smul` in
+`TauCeti/RingTheory/Derivation/Wronskian/Rescale.lean` and by Hochschild's formula in
+`TauCeti/RingTheory/Derivation/PPow.lean`, allowing an arbitrary target derivation over
+independent scalars `S` intertwined via a ring homomorphism `f`.
 -/
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
@@ -213,10 +215,8 @@ theorem hochschildCoeff_eq_zero_of_lt (D : Derivation R A A) (a : A) :
     ∀ {n k : ℕ}, n < k → hochschildCoeff D a n k = 0
   | 0, _ + 1, _ => rfl
   | n + 1, k + 1, h => by
-    have h1 : n < k + 1 := Nat.lt_trans (Nat.lt_of_succ_lt_succ h) (Nat.lt_succ_self k)
-    have h2 : n < k := Nat.lt_of_succ_lt_succ h
-    simp [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a h1,
-      hochschildCoeff_eq_zero_of_lt D a h2]
+    simp [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a (by omega : n < k + 1),
+      hochschildCoeff_eq_zero_of_lt D a (by omega : n < k)]
 
 /-- The diagonal Hochschild coefficient `hochschildCoeff D a n n` equals `a ^ n`. -/
 @[simp]
@@ -228,8 +228,8 @@ theorem hochschildCoeff_self (D : Derivation R A A) (a : A) :
       map_zero, mul_zero, zero_add, hochschildCoeff_self D a n, pow_succ']
 
 /-- For `0 < n`, the zeroth Hochschild coefficient `hochschildCoeff D a n 0` vanishes. -/
-theorem hochschildCoeff_zero_of_pos (D : Derivation R A A) (a : A) {n : ℕ} (hn : 0 < n) :
-    hochschildCoeff D a n 0 = 0 := by
+theorem hochschildCoeff_zero_right_eq_zero_of_pos (D : Derivation R A A) (a : A) {n : ℕ}
+    (hn : 0 < n) : hochschildCoeff D a n 0 = 0 := by
   cases n with
   | zero => omega
   | succ m => rfl
@@ -240,8 +240,9 @@ theorem hochschildCoeff_one (D : Derivation R A A) (a : A) :
     ∀ n : ℕ, hochschildCoeff D a (n + 1) 1 = (⇑(a • D))^[n] a
   | 0 => by simp [hochschildCoeff]
   | n + 1 => by
-    rw [hochschildCoeff, hochschildCoeff_zero_of_pos D a (Nat.succ_pos n), mul_zero, add_zero,
-      hochschildCoeff_one D a n, Function.iterate_succ_apply', smul_apply, smul_eq_mul]
+    rw [hochschildCoeff, hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n),
+      mul_zero, add_zero, hochschildCoeff_one D a n, Function.iterate_succ_apply', smul_apply,
+      smul_eq_mul]
 
 private theorem map_hochschildCoeff_zero (D : Derivation R A A) (a : A) (n : ℕ) :
     D (hochschildCoeff D a n 0) = 0 := by
@@ -259,31 +260,36 @@ theorem iterate_smul_eq_sum_hochschildCoeff {S B : Type*} [CommSemiring S] [Comm
         ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y
   | 0, y => by simp [hochschildCoeff]
   | n + 1, y => by
-    rw [Function.iterate_succ_apply', iterate_smul_eq_sum_hochschildCoeff D E f hf a n y]
-    rw [smul_apply, smul_eq_mul, map_sum, Finset.mul_sum]
-    have hstep : ∀ k ∈ Finset.range (n + 1),
-        f a * E (f (hochschildCoeff D a n k) * E^[k] y) =
-          f (a * D (hochschildCoeff D a n k)) * E^[k] y +
-            f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
-      intro k _
-      rw [E.leibniz, smul_eq_mul, smul_eq_mul, hf, map_mul, map_mul, Function.iterate_succ_apply']
-      ring
-    rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib]
-    have hsum1 : ∑ k ∈ Finset.range (n + 1),
-          f (a * D (hochschildCoeff D a n k)) * E^[k] y =
-        ∑ k ∈ Finset.range (n + 1),
-          f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y := by
-      rw [Finset.sum_range_succ' (fun k => f (a * D (hochschildCoeff D a n k)) * E^[k] y) n,
-        map_hochschildCoeff_zero, mul_zero, map_zero, zero_mul, add_zero]
-      rw [Finset.sum_range_succ (fun k =>
-        f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y) n]
-      rw [hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n), map_zero, mul_zero, map_zero,
-        zero_mul, add_zero]
-    rw [hsum1, ← Finset.sum_add_distrib]
-    rw [Finset.sum_range_succ' (fun k => f (hochschildCoeff D a (n + 1) k) * E^[k] y) (n + 1)]
-    rw [hochschildCoeff_zero_of_pos D a (Nat.succ_pos n), map_zero, zero_mul, add_zero]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [hochschildCoeff, map_add, add_mul]
+    calc
+      (⇑(f a • E))^[n + 1] y
+        = f a * E (∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y) := by
+            rw [Function.iterate_succ_apply',
+              iterate_smul_eq_sum_hochschildCoeff D E f hf a n y, smul_apply, smul_eq_mul]
+      _ = (∑ k ∈ Finset.range (n + 1), f (a * D (hochschildCoeff D a n k)) * E^[k] y) +
+            ∑ k ∈ Finset.range (n + 1), f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
+            simp only [map_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+            refine Finset.sum_congr rfl fun k _ => ?_
+            simp only [E.leibniz, smul_eq_mul, hf, map_mul, Function.iterate_succ_apply']
+            ring
+      _ = (∑ k ∈ Finset.range (n + 1), f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y) +
+            ∑ k ∈ Finset.range (n + 1), f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
+            congr 1
+            calc
+              _ = ∑ k ∈ Finset.range n,
+                    f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y := by
+                  rw [Finset.sum_range_succ']
+                  simp [map_hochschildCoeff_zero]
+              _ = _ := by
+                  rw [Finset.sum_range_succ]
+                  simp [hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n)]
+      _ = ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a (n + 1) (k + 1)) * E^[k + 1] y := by
+            rw [← Finset.sum_add_distrib]
+            refine Finset.sum_congr rfl fun k _ => ?_
+            simp [hochschildCoeff, add_mul]
+      _ = ∑ k ∈ Finset.range (n + 2), f (hochschildCoeff D a (n + 1) k) * E^[k] y := by
+            symm
+            rw [Finset.sum_range_succ']
+            simp [hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n)]
 
 end Rescale
 

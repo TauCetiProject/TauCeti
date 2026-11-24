@@ -10,12 +10,13 @@ import Mathlib.Data.Nat.Choose.Dvd
 public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.Restricted.Jacobson
 public import TauCeti.RingTheory.Derivation.Basic
 public import TauCeti.RingTheory.Derivation.BaseChange
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.Kaehler.DualDerivation
--- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` into
--- the associative algebra `Module.End R A`; `TauCeti.Algebra.CharP.Lemmas` and
+-- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` and
+-- `pPow_add` into the associative algebra `Module.End R A`; `TauCeti.Algebra.CharP.Lemmas` and
 -- `TauCeti.RingTheory.Derivation.MapCoeffs` support Hochschild's formula.
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.CharP.LinearMaps
@@ -46,15 +47,16 @@ the correction term vanishes whenever `D a = 0`; for `p = 1`, the scaling identi
 (`Derivation.pPow_smul_of_apply_eq_zero`).
 
 The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algebra in the sense of
-Jacobson (for additivity `pPow_add` and the restricted Lie algebra structure on derivations of a
-ring, see `TauCeti.RingTheory.Derivation.Restricted`), and it is the correction term in the
-`p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection (Katz). This file proves its homogeneity for
-scalars of `R`, Hochschild's formula for scalars of `A`, the identity `ad (D^[p]) = (ad D)^p` in
-the Lie algebra of derivations, its compatibility with scalar extension and with localization, its
-vanishing in prime characteristic `p` on the derivations dual to a basis of exact Kähler
-differentials, and its compatibility with conjugation by a unit `u`: the `p`-th power of the
-operator `D - u⁻¹ D(u)` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from
-`D^[p]`. In the language of connections, the rank-one connection `d - du/u` on `A`, whose
+Jacobson: it satisfies Jacobson's additivity formula (`Derivation.pPow_add`), and the resulting
+`RestrictedLieAlgebra` instance and embedding into `Module.End R A` are constructed in
+`TauCeti.RingTheory.Derivation.Restricted`. It is also the correction term in the `p`-curvature
+`(∇_D)^p - ∇_{D^[p]}` of a connection (Katz). This file proves its homogeneity for scalars of `R`,
+Hochschild's formula for scalars of `A`, Jacobson's additivity formula `pPow_add`, the identity
+`ad (D^[p]) = (ad D)^p` in the Lie algebra of derivations, its compatibility with scalar extension
+and with localization, its vanishing in prime characteristic `p` on the derivations dual to a basis
+of exact Kähler differentials, and its compatibility with conjugation by a unit `u`: the `p`-th
+power of the operator `D - u⁻¹ D(u)` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way
+from `D^[p]`. In the language of connections, the rank-one connection `d - du/u` on `A`, whose
 horizontal section is `u`, has vanishing `p`-curvature.
 
 ## Main declarations
@@ -68,6 +70,7 @@ horizontal section is `u`, has vanishing `p`-curvature.
 * `Derivation.pPow_smul`: Hochschild's formula for `(a • D).pPow p`.
 * `Derivation.pPow_smul_of_apply_eq_zero`: `(a • D).pPow p = a ^ p • D.pPow p` when `D a = 0`.
 * `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A`.
+* `Derivation.pPow_add`: Jacobson's formula `(D + E).pPow p = D.pPow p + E.pPow p + jacobson p D E`.
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
 * `Derivation.pPow_dualDerivation_eq_zero`: in prime characteristic `p`, the `p`-th powers of the
@@ -177,49 +180,59 @@ section Hochschild
 open Polynomial
 open scoped Nat
 
+private lemma mapCoeffs_add_derivative_iterate_X_pow (D : Derivation R A A) (m k : ℕ) :
+    (⇑(D.mapCoeffsToPolynomial + (Polynomial.derivative' (R := A)).restrictScalars R))^[k]
+        (Polynomial.X ^ m : A[X]) =
+      Polynomial.derivative^[k] (Polynomial.X ^ m : A[X]) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, Function.iterate_succ_apply']
+    have hcoeff :
+        D.mapCoeffsToPolynomial (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])) = 0 := by
+      ext n
+      rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_mapCoeffsToPolynomial,
+        Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, Polynomial.coeff_zero]
+      split_ifs <;> simp
+    simp [hcoeff]
+
+private lemma coeff_zero_iterate_derivative_X_pow (m k : ℕ) :
+    (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])).coeff 0 =
+      if k = m then (m ! : A) else 0 := by
+  rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+  rcases lt_trichotomy k m with hlt | rfl | hgt
+  · have : 0 ≠ m - k := by omega
+    simp [this, hlt.ne]
+  · simp [Nat.descFactorial_self]
+  · simp [Nat.descFactorial_of_lt hgt, hgt.ne']
+
 /-- In prime characteristic `p`, all intermediate Hochschild coefficients
 `hochschildCoeff D a p m` (`2 ≤ m < p`) vanish, over any commutative semiring `A`. -/
 theorem hochschildCoeff_eq_zero_of_two_le_of_lt (D : Derivation R A A) (a : A) (p : ℕ)
     [Fact p.Prime] [CharP A p] {m : ℕ} (hm2 : 2 ≤ m) (hmp : m < p) :
     hochschildCoeff D a p m = 0 := by
+  -- Lift `D` to `D' = D.mapCoeffsToPolynomial + d/dX` on `A[X]`, and compute the constant
+  -- coefficient of `((C a • D').pPow p) (X ^ m)` in two ways: by the Leibniz rule it vanishes
+  -- (since `2 ≤ m`), while the triangular expansion (`iterate_smul_eq_sum_hochschildCoeff`)
+  -- isolates `hochschildCoeff D a p m * m!`; finally cancel the unit `m!`.
   let D' : Derivation R A[X] A[X] :=
     D.mapCoeffsToPolynomial + (Polynomial.derivative' (R := A)).restrictScalars R
   have hD'C (b : A) : D' (Polynomial.C b) = Polynomial.C (D b) := by
     simp [D']
-  have hD'X (k : ℕ) : (⇑D')^[k] (Polynomial.X ^ m : A[X]) =
-      Polynomial.derivative^[k] (Polynomial.X ^ m : A[X]) := by
-    induction k with
-    | zero => rfl
-    | succ k ih =>
-      rw [Function.iterate_succ_apply', ih, Function.iterate_succ_apply']
-      have hcoeff :
-          D.mapCoeffsToPolynomial (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])) = 0 := by
-        ext n
-        rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_mapCoeffsToPolynomial,
-          Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, Polynomial.coeff_zero]
-        split_ifs <;> simp
-      simp [D', hcoeff]
   let E : Derivation R A[X] A[X] := (Polynomial.C a • D').pPow p
   have hlhs : (E (Polynomial.X ^ m : A[X])).coeff 0 = 0 := by
     rw [E.leibniz_pow, smul_eq_mul, nsmul_eq_mul, Polynomial.coeff_natCast_mul]
     have hm1 : m - 1 = (m - 2) + 1 := by omega
     rw [hm1, pow_succ', mul_assoc, Polynomial.mul_coeff_zero, Polynomial.coeff_X_zero, zero_mul,
       mul_zero]
-  have hcoeff0 (b : A) (k : ℕ) :
-      (Polynomial.C b * Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])).coeff 0 =
-        if k = m then b * (m ! : A) else 0 := by
-    rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, ← mul_assoc, ← Polynomial.C_mul,
-      Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
-    rcases lt_trichotomy k m with hlt | rfl | hgt
-    · have : 0 ≠ m - k := by omega
-      simp [this, hlt.ne]
-    · simp [Nat.descFactorial_self]
-    · simp [Nat.descFactorial_of_lt hgt, hgt.ne']
   have hrhs : (E (Polynomial.X ^ m : A[X])).coeff 0 = hochschildCoeff D a p m * (m ! : A) := by
     dsimp only [E]
     rw [pPow_apply, iterate_smul_eq_sum_hochschildCoeff D D' Polynomial.C hD'C a p,
       Polynomial.finsetSum_coeff]
-    simp [hD'X, hcoeff0, Finset.mem_range.mpr (Nat.lt_succ_of_lt hmp)]
+    have hD'X (k : ℕ) : (⇑D')^[k] (Polynomial.X ^ m : A[X]) =
+        Polynomial.derivative^[k] (Polynomial.X ^ m : A[X]) :=
+      mapCoeffs_add_derivative_iterate_X_pow D m k
+    simp [hD'X, coeff_zero_iterate_derivative_X_pow, Finset.mem_range.mpr (Nat.lt_succ_of_lt hmp)]
   exact (TauCeti.isUnit_natCast_factorial_of_lt p hmp).mul_left_inj.mp
     (by rw [hrhs.symm.trans hlhs, zero_mul])
 
@@ -240,7 +253,7 @@ theorem pPow_smul (D : Derivation R A A) (p : ℕ) [Fact p.Prime] [CharP A p] (a
     rw [Function.iterate_one, ← hp1, hochschildCoeff_one, Nat.add_sub_cancel]
   · intro k hk hk1
     rcases eq_or_ne k 0 with rfl | hk0
-    · rw [hochschildCoeff_zero_of_pos D a hp.pos, zero_mul]
+    · rw [hochschildCoeff_zero_right_eq_zero_of_pos D a hp.pos, zero_mul]
     · have hk2 : 2 ≤ k := by omega
       rw [hochschildCoeff_eq_zero_of_two_le_of_lt D a p hk2 (Finset.mem_range.mp hk), zero_mul]
 
@@ -270,7 +283,26 @@ section CommRing
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (p : ℕ) [ExpChar A p]
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- Jacobson's formula for the `p`-th power of a sum of derivations in exponential
+characteristic `p`. -/
+theorem pPow_add (D E : Derivation R A A) (p : ℕ) [ExpChar A p] :
+    (D + E).pPow p = D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E := by
+  refine toLinearMapLieHom_injective ?_
+  have : ExpChar (Module.End R A) p := inferInstance
+  calc
+    (toLinearMapLieHom R A ((D + E).pPow p) : Module.End R A)
+      = ((toLinearMapLieHom R A D : Module.End R A) + toLinearMapLieHom R A E) ^ p := by
+        rw [toLinearMapLieHom_apply, toLinearMap_pPow, ← map_add, toLinearMapLieHom_apply]
+    _ = (toLinearMapLieHom R A D : Module.End R A) ^ p +
+          (toLinearMapLieHom R A E : Module.End R A) ^ p +
+          TauCeti.LieAlgebra.jacobson p (toLinearMapLieHom R A D) (toLinearMapLieHom R A E) :=
+        TauCeti.LieAlgebra.add_pow_eq_jacobson p _ _
+    _ = toLinearMapLieHom R A (D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E) := by
+        simp only [map_add, toLinearMapLieHom_apply, toLinearMap_pPow, LieHom.map_jacobson]
+
+variable (p : ℕ) [ExpChar A p]
 
 /-- **The `p`-th power and the adjoint action.** In the Lie algebra of derivations,
 `ad (D^[p]) = (ad D) ^ p`, that is, `⁅D^[p], E⁆` is the `p`-fold iterated bracket of `D`
@@ -388,5 +420,10 @@ example :
   intro h
   have h0 := congrArg (Polynomial.eval 0) h
   simp [Polynomial.coe_derivative', Function.iterate_succ_apply'] at h0
+
+-- Witness: `Derivation.pPow_add` also holds in exponential characteristic `1` (characteristic `0`).
+example (D E : Derivation ℚ ℚ[X] ℚ[X]) :
+    (D + E).pPow 1 = D.pPow 1 + E.pPow 1 := by
+  rw [Derivation.pPow_add, TauCeti.LieAlgebra.jacobson_one, add_zero]
 
 end Examples

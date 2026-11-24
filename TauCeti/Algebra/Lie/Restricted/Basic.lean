@@ -201,6 +201,22 @@ theorem coe_toLieHom (f : RestrictedLieHom R p L L') : ⇑f.toLieHom = f :=
 theorem toLieHom_apply (f : RestrictedLieHom R p L L') (x : L) : f.toLieHom x = f x :=
   (rfl)
 
+/-- Coercing a `RestrictedLieHom` built with `mk` returns the underlying `LieHom`. -/
+@[simp]
+theorem coe_mk (f : L →ₗ⁅R⁆ L')
+    (h : ∀ x : L, f (RestrictedLieAlgebra.pMap (R := R) (p := p) x) =
+      RestrictedLieAlgebra.pMap (R := R) (p := p) (f x)) :
+    ⇑(mk f h : RestrictedLieHom R p L L') = f :=
+  (rfl)
+
+/-- The underlying `LieHom` of `RestrictedLieHom.mk f h` is `f`. -/
+@[simp]
+theorem toLieHom_mk (f : L →ₗ⁅R⁆ L')
+    (h : ∀ x : L, f (RestrictedLieAlgebra.pMap (R := R) (p := p) x) =
+      RestrictedLieAlgebra.pMap (R := R) (p := p) (f x)) :
+    (mk f h : RestrictedLieHom R p L L').toLieHom = f :=
+  (rfl)
+
 /-- A restricted Lie algebra morphism commutes with the `p`-map `RestrictedLieAlgebra.pMap`. -/
 @[simp]
 theorem map_pMap (f : RestrictedLieHom R p L L') (x : L) :
@@ -681,18 +697,10 @@ instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R p L) :
   pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.property⟩
   pMap_smul c x := Subtype.ext (RestrictedLieAlgebra.pMap_smul c (x : L))
   ad_pMap x := by
-    have had : ∀ (k : ℕ) (y : I),
-        ((LieAlgebra.ad R I x ^ k) y : L) = (LieAlgebra.ad R L (x : L) ^ k) (y : L) := by
-      intro k
-      induction k with
-      | zero => intro y; rfl
-      | succ k ih =>
-        intro y
-        simpa [pow_succ, LieAlgebra.ad_apply] using ih ⁅x, y⁆
     refine LinearMap.ext fun y => Subtype.ext ?_
     rw [LieAlgebra.ad_apply, coe_lie]
     exact (RestrictedLieAlgebra.pMap_lie (R := R) (p := p) (x : L) (y : L)).trans
-      (had p y).symm
+      (LieSubalgebra.coe_ad_pow (R := R) (L := L) I.toLieIdeal.toLieSubalgebra x y p).symm
   pMap_add x y := by
     refine Subtype.ext ?_
     have hincl : ((LieAlgebra.jacobson p x y : I) : L) = LieAlgebra.jacobson p (x : L) (y : L) :=
@@ -899,6 +907,14 @@ def RestrictedLieAlgebra.ofModuleEnd (R M : Type*) [CommRing R] [AddCommGroup M]
     (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
     RestrictedLieAlgebra R (Module.End R M) p :=
   ofAssociative R (Module.End R M) p (by ext m; simp [hM m])
+
+/-- The `p`-map of `ofModuleEnd` is the ordinary `p`-th power `f ↦ f ^ p`.
+Not tagged `@[simp]` because `ofModuleEnd` is `@[instance_reducible]` and `simp` already reduces
+this via `ofAssociative_pMap`. -/
+theorem RestrictedLieAlgebra.ofModuleEnd_pMap (R M : Type*) [CommRing R] [AddCommGroup M]
+    [Module R M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) (f : Module.End R M) :
+    (ofModuleEnd R M p hM).pMap f = f ^ p :=
+  (rfl)
 
 /-- The adjoint representation `LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L` of a restricted Lie
 algebra, as a morphism of restricted Lie algebras into `ofModuleEnd`. -/
