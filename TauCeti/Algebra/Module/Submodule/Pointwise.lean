@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import Mathlib.Algebra.Order.Group.Action
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
@@ -22,7 +23,9 @@ of a submodule, since a submodule is closed under negation. A unit of a ring sta
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
 inverse both preserve it.
 
-Membership in a pointwise translate under a group action is tested by the inverse action.
+Membership in a pointwise translate under a group action is tested by the inverse action, and a
+group acts on submodules by order automorphisms. Pointwise actions of commuting monoids on
+submodules commute.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
 `s⁻¹ t` is a unit of `C`.
 
@@ -39,6 +42,11 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.pointwise_smul_le_pointwise_smul_iff`,
+  `Submodule.pointwise_smul_lt_pointwise_smul_iff`: a group acts on submodules by order
+  automorphisms.
+* `Submodule.pointwiseSMulCommClass`: pointwise actions of commuting monoids on submodules
+  commute.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -63,6 +71,33 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- A group acts on submodules by order automorphisms: translating two submodules by the same
+element preserves and reflects inclusion. -/
+@[simp]
+theorem pointwise_smul_le_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S ≤ g • T ↔ S ≤ T :=
+  ⟨fun h => by simpa using smul_le_smul_left g⁻¹ h, smul_le_smul_left g⟩
+
+/-- Translating two submodules by the same element of a group preserves and reflects strict
+inclusion. -/
+@[simp]
+theorem pointwise_smul_lt_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S < g • T ↔ S < T := by
+  simp only [lt_iff_le_not_ge, pointwise_smul_le_pointwise_smul_iff]
+
+/-- The pointwise actions on submodules of two monoids acting by commuting linear maps
+commute. -/
+instance pointwiseSMulCommClass {R M α β : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Monoid α] [Monoid β] [DistribMulAction α M] [DistribMulAction β M] [SMulCommClass α R M]
+    [SMulCommClass β R M] [SMulCommClass α β M] : SMulCommClass α β (Submodule R M) :=
+  ⟨fun a b S => by
+    simp only [pointwise_smul_def, ← map_comp]
+    congr 1
+    ext x
+    exact smul_comm a b x⟩
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
