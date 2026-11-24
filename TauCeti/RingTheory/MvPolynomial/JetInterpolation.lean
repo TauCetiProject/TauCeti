@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
-public import TauCeti.RingTheory.MvPolynomial.DoublePoint
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -59,9 +58,6 @@ when `d + 1 ≤ 2 * card ι` and surjective when `2 * card ι ≤ d + 1`; under 
 
 * `TauCeti.firstJetMap_surjective_iff`: the first-jet map is onto iff the value map is onto and
   the derivative map on its kernel is onto.
-* `TauCeti.mem_ker_firstJetMap_iff_mem_doubleIdeal`: for points with pairwise unit coordinate
-  differences, the kernel of `firstJetMap P d` consists of the bounded-degree polynomials in
-  `doubleIdeal P`.
 * `TauCeti.firstJetMatrix_mulVec`, `TauCeti.toLin_firstJetMatrix`: the matrix represents the
   first-jet map in monomial coordinates.
 * `TauCeti.firstJetMap_surjective_iff_mulVec_surjective`: the first-jet map is onto iff
@@ -277,8 +273,8 @@ the first-jet matrix of the image configuration `fun i s ↦ φ (P i s)`. -/
 @[simp]
 theorem firstJetMatrix_map {S : Type*} [CommSemiring S] (φ : R →+* S) :
     (firstJetMatrix P d).map φ = firstJetMatrix (fun i s ↦ φ (P i s)) d := by
-  ext ⟨i, z⟩ a
-  cases z <;> simp [Matrix.map_apply, Finsupp.prod, map_prod]
+  simp only [firstJetMatrix]
+  exact (jetMatrix_map _ _ _ φ).symm
 
 /-- In the monomial basis `basisRestrictTotalDegree σ R d` and the standard row basis
 `Pi.basisFun R (ι × Option σ)`, `firstJetMatrix P d` represents `firstJetMap P d` (up to
@@ -405,14 +401,6 @@ section CommRing
 
 variable [CommRing R] {P : ι → σ → R} {d : ℕ}
 
-/-- Over a commutative ring, for finitely many points with pairwise unit coordinate differences,
-the kernel of `firstJetMap P d` consists of the polynomials of total degree at most `d` lying in
-`doubleIdeal P`. -/
-theorem mem_ker_firstJetMap_iff_mem_doubleIdeal [Finite ι]
-    (hP : Pairwise fun i j ↦ ∃ s, IsUnit (P i s - P j s)) (f : restrictTotalDegree σ R d) :
-    f ∈ LinearMap.ker (firstJetMap P d) ↔ (f : MvPolynomial σ R) ∈ doubleIdeal P := by
-  rw [mem_ker_firstJetMap_iff, mem_doubleIdeal_iff_of_pairwise_isUnit hP]
-
 /-- The first-jet map is onto iff the values can be prescribed and the derivatives of the
 polynomials vanishing at the points can be prescribed. -/
 theorem firstJetMap_surjective_iff :
@@ -442,20 +430,21 @@ theorem firstJetMap_surjective_iff :
 theorem wellPoised_of_subsingleton [Finite σ] [Subsingleton ι] (P : ι → σ → R) (hd : 1 ≤ d) :
     WellPoised P d := by
   classical
+  have := Fintype.ofFinite σ
   refine WellPoised.mono (fun t ↦ ?_) hd
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
   · exact ⟨0, funext hι.elim⟩
-  obtain ⟨f, hf_deg, hf_jet⟩ :=
-    exists_totalDegree_le_one_jetAlgebra_eq (P i₀) ⟨t i₀ none, fun j ↦ t i₀ (some j)⟩
-  refine ⟨⟨f, (mem_restrictTotalDegree σ 1 f).2 hf_deg⟩, ?_⟩
+  have hX (j : σ) : (X j : MvPolynomial σ R) ∈ restrictTotalDegree σ R 1 := by
+    rw [← one_mul (X j), ← C_1, C_mul_X_eq_monomial]
+    exact monomial_mem_restrictTotalDegree (by simp) 1
+  have hC (a : R) : (C a : MvPolynomial σ R) ∈ restrictTotalDegree σ R 1 :=
+    (mem_restrictTotalDegree σ 1 _).2 (by simp)
+  refine ⟨⟨C (t i₀ none) + ∑ j, t i₀ (some j) • (X j - C (P i₀ j)),
+    add_mem (hC _) (Submodule.sum_mem _ fun j _ ↦
+      Submodule.smul_mem _ _ (sub_mem (hX j) (hC _)))⟩, ?_⟩
   funext i z
   obtain rfl := Subsingleton.elim i i₀
-  cases z with
-  | none =>
-    simpa using (fst_jetAlgebra (P i) f).symm.trans (congrArg TrivSqZeroExt.fst hf_jet)
-  | some j =>
-    simpa using (snd_jetAlgebra_apply (P i) f j).symm.trans
-      (congrFun (congrArg TrivSqZeroExt.snd hf_jet) j)
+  cases z <;> simp [Pi.single_apply]
 
 /-- Over a field, points are well poised iff their first-jet matrix has full row rank. -/
 theorem wellPoised_iff_rank {k : Type*} [Field k] [Fintype ι] [Fintype σ] {P : ι → σ → k} :
@@ -577,7 +566,8 @@ theorem wellPoised_iff_of_unique [CommRing R] [Nontrivial R] [Unique σ] [Fintyp
 private theorem pairwise_isUnit_sub_default_of_injective {k : Type*} [Field k] [Unique σ]
     {P : ι → σ → k} (hP : Function.Injective P) :
     Pairwise fun i j ↦ IsUnit (P i default - P j default) :=
-  (pairwise_exists_isUnit_sub_of_injective hP).mono fun _ _ ⟨s, hs⟩ ↦ Unique.eq_default s ▸ hs
+  fun _ _ hij ↦
+    (sub_ne_zero.2 fun h ↦ hij (hP (funext fun s ↦ by rw [Unique.eq_default s, h]))).isUnit
 
 /-- Over any field, for distinct univariate points `P : ι → σ → k` (`[Unique σ]`), the monomial
 first-jet matrix in degree `d` has exact rank `min (d + 1) (2 * card ι)`. -/

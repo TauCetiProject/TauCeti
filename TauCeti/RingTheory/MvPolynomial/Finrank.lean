@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
+import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Data.Finsupp.Weight
 
@@ -24,17 +26,6 @@ dimension `(m + d choose d)`, the number of rows of an interpolation matrix buil
 -/
 
 public section
-
-namespace MvPolynomial
-
-variable (σ R) in
-/-- The polynomials of total degree at most `m` are those supported on exponents of degree at
-most `m`. -/
-theorem restrictTotalDegree_eq_restrictSupport [CommSemiring R] (m : ℕ) :
-    restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
-  simp only [restrictTotalDegree, Finsupp.sum, Finsupp.degree_apply]
-
-end MvPolynomial
 
 namespace TauCeti
 
@@ -152,8 +143,17 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
     Module.finrank R (restrictTotalDegree σ R m) =
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  rw [restrictTotalDegree_eq_restrictSupport, finrank_restrictSupport, Set.coe_ofPred,
-    Nat.card_eq_fintype_card, Finsupp.card_degree_le, Nat.add_comm, Nat.choose_symm_add]
+  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} =
+      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
+    ext s
+    simp [Finset.mem_finsuppAntidiag, Finsupp.sum_fintype]
+  rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _), hset,
+    Nat.card_coe_set_eq, Set.ncard_coe_finset, Finset.card_biUnion]
+  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
+  · intro k _ l _ hkl
+    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
+    rw [Finset.mem_finsuppAntidiag] at hk hl
+    exact hk.1.symm.trans hl.1
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]
