@@ -19,61 +19,112 @@ import TauCeti.Analysis.Calculus.FDeriv.Comp
 /-!
 # Manifold derivatives and regularity read in charts
 
-This file collects results relating `HasMFDerivAt`, `MDifferentiableAt`, `mfderiv`, `mvfderiv`,
-and `ContMDiffAt` to their coordinate expressions in preferred extended charts (`extChartAt`),
-charts of a maximal atlas (`e.extend I`), self-model charts (`chartAt`), composite charts, and
-product charts.
-
 A map `f : M → M'` with manifold derivative `f'` at `x'` becomes, in the extended charts centred at
-any `x` and `y` whose sources contain `x'` and `f x'`, a map between model vector spaces whose
-Fréchet derivative within `range I` is `f'` conjugated by the derivatives of the two charts. On a
-boundaryless manifold, the preferred coordinate expression of a map into a normed space is an honest
-function on the model space whose Fréchet derivative at `extChartAt I x x` is `mvfderiv I f x`.
+any `x` and `y` whose sources contain `x'` and `f x'`, a map between model vector spaces. Its
+Fréchet derivative within `range I` is `f'` conjugated by the derivatives of the two charts.
+Mathlib's `mdifferentiableAt_iff_of_mem_source` records differentiability in such charts, but not
+the value of the derivative. Change-of-variables arguments on a manifold need that value, because
+they integrate the absolute Jacobian determinant of `f` read in fixed charts.
+
+For a map into a normed space on a boundaryless manifold, the coordinate expression in the
+preferred extended chart at `x` is an honest function on the model space, `C^n` or differentiable
+whenever `f` is, and its Fréchet derivative at the chart image of `x` is the vector-valued
+manifold derivative `mvfderiv I f x`. This is how critical points defined through the preferred
+chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
 * **Preferred charts without atlas smoothness**:
-  `ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq`,
-  `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt`,
-  `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`,
-  `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`,
-  `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`,
-  `TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target`,
-  `TauCeti.hasMFDerivAt_extChartAt_self`, `TauCeti.mfderiv_extChartAt_eq_id`, and
-  `TauCeti.hasMFDerivAt_extChartAt_symm_self`.
-* **Charts of the maximal atlas**: `TauCeti.mdifferentiable_of_mem_maximalAtlas`,
-  `TauCeti.isInvertible_mvfderiv_extend`, `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`,
-  `OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior`,
-  `OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior`, and
-  `OpenPartialHomeomorph.contDiffOn_extend_comp`.
-* **Boundaryless manifolds**: `ContMDiffAt.contDiffAt_writtenInExtChartAt`,
-  `MDifferentiableAt.differentiableAt_writtenInExtChartAt`,
-  `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`,
-  `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`,
-  `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`,
-  `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm`,
-  `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`,
-  `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`,
-  `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`,
-  `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`,
-  `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`, and the cast, range, injectivity,
-  and product-chart consequences.
+  - `ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq` and
+    `TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target`: infer `HasMFDerivAt`
+    from local linearity or a Fréchet derivative on the chart target (including corners).
+  - `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt` and
+    `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`: transfer `C^n` regularity
+    between model spaces and manifolds (into a boundaryless target, or at an interior point).
+  - `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq` and
+    `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: differentiability and `mfderiv` at a point depend
+    only on its preferred chart.
+  - `TauCeti.hasMFDerivAt_extChartAt_self`, `TauCeti.mfderiv_extChartAt_eq_id`, and
+    `TauCeti.hasMFDerivAt_extChartAt_symm_self`: the preferred extended chart (and, without
+    boundary, its inverse) has the identity as its derivative at its centre.
+* **Charts of the maximal atlas**:
+  - `TauCeti.mdifferentiable_of_mem_maximalAtlas` and `TauCeti.isInvertible_mvfderiv_extend`:
+    differentiability and invertibility of the differential for charts of the `C¹` maximal atlas.
+  - `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`,
+    `OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior`,
+    `OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior`, and
+    `OpenPartialHomeomorph.contDiffOn_extend_comp`: nonvanishing Jacobian determinant, interior
+    differentiability, and `C^n` coordinate-expression regularity on chart overlaps.
+* **Boundaryless manifolds**:
+  - `ContMDiffAt.contDiffAt_writtenInExtChartAt`,
+    `MDifferentiableAt.differentiableAt_writtenInExtChartAt`,
+    `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`, and
+    `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: regularity and derivative formulas
+    for maps between manifolds in preferred extended charts, with product-chart forms
+    `ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm` and
+    `MDifferentiableAt.differentiableAt_comp_prod_extChartAt_symm`.
+  - `TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm`,
+    `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`,
+    `ContMDiffAt.contDiffAt_comp_extChartAt_symm`,
+    `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`, and
+    `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: `C^n` and
+    differentiability equivalences for maps into a normed space in preferred or maximal-atlas
+    charts.
+  - `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`,
+    `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`,
+    `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`,
+    `TauCeti.mvfderiv_comp_tangentSpaceCastModel_symm`,
+    `TauCeti.mvfderiv_apply_eq_fderiv_comp_extChartAt_symm`,
+    `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, and
+    `TauCeti.injective_fderiv_comp_extChartAt_symm_iff`: identify `mvfderiv` with the Fréchet
+    derivative of the coordinate expression and transfer zeros, range, and injectivity.
 * **Arbitrary charts on `C¹` and `C^n` manifolds**:
-  `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`,
-  `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt`,
-  `TauCeti.fderivWithin_comp_extChartAt_symm`,
-  `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`,
-  `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`,
-  `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`,
-  `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`,
-  `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`, `TauCeti.contDiffAt_ext_coord_change`,
-  and `TauCeti.exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm`.
-* **Self-model, composite, and `M × 𝕜` charts**: `ContMDiffAt.contDiffAt_comp_chartAt_symm`,
-  `TauCeti.fderiv_comp_chartAt_symm`, `ContinuousAt.fderiv_chartAt_comp`,
-  `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt`,
-  `TauCeti.hasMFDerivAt_chartAt_comp`, `TauCeti.contMDiffAt_chartAt_comp`,
-  `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`, `ContMDiff.contMDiff_deriv_prodMk`,
-  `ContMDiff.continuous_deriv_prodMk`, and `ContMDiffAt.hasStrictFDerivAt_extChartAt_conj`.
+  - `TauCeti.hasFDerivWithinAt_extChartAt_coordChange`,
+    `TauCeti.mfderivWithin_extChartAt_symm_of_subset`, and
+    `TauCeti.tangentCoordChange_tangentCoordChange`: derivatives of coordinate changes, inverse
+    charts on subsets, and inverse tangent coordinate changes.
+  - `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt`,
+    `TauCeti.fderiv_comp_extChartAt_symm_injective`,
+    `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`,
+    `TauCeti.mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq`,
+    `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`, and
+    `TauCeti.exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm`: compare
+    differentials, zeros, injectivity, critical points, and norms across arbitrary charts for
+    maps into a normed space.
+  - `TauCeti.fderivWithin_comp_extChartAt_symm`,
+    `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`,
+    `HasMFDerivAt.hasFDerivAt_extChartAt_comp`, `ContinuousAt.fderiv_extChartAt_comp_apply`, and
+    `ContinuousAt.symmL_fderiv_extChartAt_comp_apply`: chart-coordinate derivatives and compact-set
+    bounds for maps out of or into a manifold.
+  - `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`,
+    `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`,
+    `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`, and
+    `MDifferentiableAt.differentiableWithinAt_and_fderivWithin_extChartAt_comp_eq_zero`:
+    coordinate derivatives within `range I` and zero-differential transfer for maps between `C¹`
+    manifolds.
+  - `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`,
+    `TauCeti.contDiffAt_ext_coord_change`, `TauCeti.contDiffAt_ext_coord_change_extChartAt`, and
+    `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: `C^n` regularity of maps,
+    coordinate changes, and open coordinate domains on `C^n` manifolds.
+* **Self-model, composite, and `M × 𝕜` charts**:
+  - `ContMDiffAt.contDiffAt_comp_chartAt_symm`, `MDifferentiableAt.differentiableAt_chartAt_comp`,
+    `ContinuousAt.fderiv_chartAt_comp`, `TauCeti.fderiv_comp_chartAt_symm`,
+    `TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm`,
+    `TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm`,
+    `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt`, and
+    `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
+    regularity, derivatives, kernels, and product-chart differentiability for manifolds modelled on
+    their model space.
+  - `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp`,
+    and `TauCeti.contMDiffAt_chartAt_comp`: preferred charts of a composite charted space read as
+    the identity near their centre.
+  - `TauCeti.fderiv_comp_extChartAt_symm_apply_zero_one`,
+    `TauCeti.deriv_prodMk_eventuallyEq_fderiv`, `ContMDiff.contMDiff_deriv_prodMk`, and
+    `ContMDiff.continuous_deriv_prodMk`: derivatives along the scalar factor of `M × 𝕜` in
+    coordinates and their `C^n` / continuity regularity.
+* **Strict differentiability over `ℝ` or `ℂ`**: `ContMDiffAt.hasStrictFDerivAt_extChartAt_conj`
+  gives strict differentiability of the preferred coordinate expression of a `C¹` map on a
+  boundaryless manifold over an `RCLike` field.
 -/
 
 public section
@@ -398,7 +449,7 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
   swap
   · rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
       fderiv_zero_of_not_differentiableAt (mt hiff.mpr hf), ContinuousLinearMap.comp_zero]
-    exact Iff.rfl
+    exact iff_of_true rfl rfl
   have hg := hiff.mp hf
   have hfg : f =ᶠ[𝓝 x] (f ∘ (e.extend I).symm) ∘ e.extend I := by
     filter_upwards [e.open_source.mem_nhds hx] with y hy
@@ -723,6 +774,7 @@ differentiable at the point. -/
 theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
     (hx : x ∈ (extChartAt I α).source) :
     fderivWithin 𝕜 (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) =
+      -- `TangentSpace I x` and `TangentSpace 𝓘(𝕜, F) (f x)` unfold to `E` and `F`.
       (mfderiv I 𝓘(𝕜, F) f x ∘L tangentCoordChange I α x x : E →L[𝕜] F) := by
   have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
   by_cases hf : MDifferentiableAt I 𝓘(𝕜, F) f x
@@ -734,6 +786,7 @@ theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
         |>.uniqueMDiffWithinAt)
     rw [(extChartAt I α).left_inv hx, ← TangentBundle.symmL_trivializationAt hx',
       TangentBundle.symmL_trivializationAt_eq_core hx', mfderivWithin_eq_fderivWithin] at h
+    -- The tangent spaces `TangentSpace 𝓘(𝕜, E) _` and `TangentSpace 𝓘(𝕜, F) _` unfold to `E` / `F`.
     exact h
   · -- Off the differentiable locus both sides are `0`.
     have hiff : MDifferentiableAt I 𝓘(𝕜, F) f x ↔ DifferentiableWithinAt 𝕜
@@ -1046,9 +1099,7 @@ theorem ContinuousAt.fderiv_chartAt_comp {g : F → N} {x : F} (hc : ContinuousA
     -- spaces have the canonical identity equivalence with their underlying spaces.
     rw [hg.mfderiv]
     ext v
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-      PartialEquiv.refl_coe, Function.comp_id, modelWithCornersSelf_coe, range_id,
-      fderivWithin_univ]
+    simp [writtenInExtChartAt, fderivWithin_univ]
     rfl
   · have hd : ¬ DifferentiableAt 𝕜 (chartAt E (g x) ∘ g) x := fun hd ↦ hg
       ((mdifferentiableAt_iff g x).2 ⟨hc, by
