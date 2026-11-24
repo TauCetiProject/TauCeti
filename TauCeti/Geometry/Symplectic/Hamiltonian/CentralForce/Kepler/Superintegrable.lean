@@ -157,14 +157,11 @@ private theorem finrank_range_fderiv_keplerFirstIntegrals_le_three_of_ne_zero (h
       have hrel := keplerFirstIntegrals_two_mul_fderiv_add_three_mul_fderiv b (κ := κ) hm hq v
       simp only [ContinuousLinearMap.coe_coe] at hv
       rwa [hv] at hrel
-    have h0 := hall (Pi.single 0 1)
-    have h2 := hall (Pi.single 2 1)
-    have h3 := hall (Pi.single 3 1)
-    simp only [ne_eq, Fin.reduceEq, not_false_eq_true, Pi.single_eq_of_ne, mul_zero, add_zero,
-      Pi.single_eq_same, mul_one, one_ne_zero, zero_eq_mul, OfNat.ofNat_ne_zero, pow_eq_zero_iff,
-      zero_add] at h0 h2 h3
+    have h0 : m * F x 1 ^ 2 = 0 := by simpa using (hall (Pi.single 0 1)).symm
+    have h2 : F x 2 = 0 := by simpa using hall (Pi.single 2 1)
+    have h3 : F x 3 = 0 := by simpa using hall (Pi.single 3 1)
     rcases h with h | h | h
-    · exact h (h0.resolve_left hm)
+    · exact h (pow_eq_zero_iff two_ne_zero |>.1 ((mul_eq_zero.1 h0).resolve_left hm))
     · exact h h2
     · exact h h3
   have hlt := Submodule.finrank_lt hne
@@ -205,7 +202,7 @@ theorem finrank_range_fderiv_keplerFirstIntegrals_eq_three (hm : m ≠ 0) {x : V
       (fderiv ℝ f x : V × V →ₗ[ℝ] ℝ) ∈
         LinearMap.range (fderiv ℝ F x).toLinearMap.dualMap := by
     rw [hf, (c.hasFDerivAt.comp x hF.hasFDerivAt).fderiv]
-    exact ⟨c, rfl⟩
+    exact ⟨c, by rw [LinearMap.dualMap_apply', ContinuousLinearMap.toLinearMap_comp]⟩
   -- Energy, angular momentum and a Runge–Lenz component have independent differentials.
   obtain ⟨e, hli⟩ := exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero b hm hq hA
   have hli' := hli.map' (ContinuousLinearMap.coeLM ℝ)
@@ -281,15 +278,21 @@ theorem stdSymplecticForm_poissonBracket_keplerFirstIntegrals (hm : m ≠ 0) {x 
     (hq : x.1 ≠ 0) (i : Fin 4) :
     (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ keplerFirstIntegrals b m κ y i)
       (centralForceHamiltonian m fun r ↦ -κ / r) x = 0 := by
-  fin_cases i <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, keplerFirstIntegrals_zero,
-      keplerFirstIntegrals_one, keplerFirstIntegrals_two, keplerFirstIntegrals_three]
-  · exact SymplecticForm.poissonBracket_self _ _ _
-  · have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
+  match i with
+  | 0 =>
+    simp only [keplerFirstIntegrals_zero]
+    exact SymplecticForm.poissonBracket_self _ _ _
+  | 1 =>
+    simp only [keplerFirstIntegrals_one]
+    have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
       (m := m) (U := fun r ↦ -κ / r) (x := x) (b 0) (b 1)
     rw [← SymplecticForm.neg_poissonBracket] at h
     exact neg_eq_zero.1 h
-  · exact stdSymplecticForm_poissonBracket_inner_rungeLenz hm κ (b 0) hq
-  · exact stdSymplecticForm_poissonBracket_inner_rungeLenz hm κ (b 1) hq
+  | 2 =>
+    simp only [keplerFirstIntegrals_two]
+    exact stdSymplecticForm_poissonBracket_inner_rungeLenz hm κ (b 0) hq
+  | 3 =>
+    simp only [keplerFirstIntegrals_three]
+    exact stdSymplecticForm_poissonBracket_inner_rungeLenz hm κ (b 1) hq
 
 end TauCeti
