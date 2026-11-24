@@ -149,6 +149,7 @@ theorem newtonPolygon_zero : (0 : R⟦X⟧).newtonPolygon v = ⊤ := by
 
 /-- The Newton polygon of a constant power series `C c` is the single point `(0, v c)`, and is
 empty when `v c = ⊤`. -/
+@[simp]
 theorem newtonPolygon_C (c : R) :
     (C c : R⟦X⟧).newtonPolygon v = fun n => if n = 0 then v c else ⊤ := by
   have h : (fun n => v (coeff n (C c : R⟦X⟧))) = fun n => if n = 0 then v c else ⊤ := by
@@ -161,6 +162,7 @@ theorem newtonPolygon_C (c : R) :
   | coe r => simpa using isConvexSeq_affine_ite (s := {0}) Set.ordConnected_singleton r 0
 
 /-- The Newton polygon of the power series `1` is the single point `(0, 0)`. -/
+@[simp]
 theorem newtonPolygon_one : (1 : R⟦X⟧).newtonPolygon v = fun n => if n = 0 then 0 else ⊤ := by
   simpa using newtonPolygon_C v (1 : R)
 
@@ -306,11 +308,13 @@ theorem newtonPolygon_zero : (0 : R[X]).newtonPolygon v = ⊤ := by
 
 /-- The Newton polygon of a constant polynomial `C c` is the single point `(0, v c)`, and is
 empty when `v c = ⊤`. -/
+@[simp]
 theorem newtonPolygon_C (c : R) :
     (C c).newtonPolygon v = fun n => if n = 0 then v c else ⊤ := by
   rw [← newtonPolygon_coe, coe_C, PowerSeries.newtonPolygon_C]
 
 /-- The Newton polygon of the polynomial `1` is the single point `(0, 0)`. -/
+@[simp]
 theorem newtonPolygon_one : (1 : R[X]).newtonPolygon v = fun n => if n = 0 then 0 else ⊤ := by
   rw [← newtonPolygon_coe, coe_one, PowerSeries.newtonPolygon_one]
 
