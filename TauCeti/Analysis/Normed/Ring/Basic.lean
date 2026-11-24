@@ -33,7 +33,7 @@ the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 
 and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
 (`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
 
-Multiplying by an element `q` with `‖q‖ ≤ 1` on the left, on the right or on both sides does not
+Multiplying by elements of norm at most one on the left, on the right or on both sides does not
 increase the norm (`TauCeti.norm_mul_le_of_norm_le_one_left`,
 `TauCeti.norm_mul_le_of_norm_le_one_right`, `TauCeti.norm_mul_mul_le_of_norm_le_one`).
 -/
@@ -88,7 +88,7 @@ theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : 
 
 section NormLeOne
 
-variable {R : Type*} [NonUnitalSeminormedRing R] {q : R}
+variable {R : Type*} [NonUnitalSeminormedRing R] {p q : R}
 
 /-- Left multiplication by an element of norm at most one does not increase the norm. -/
 theorem norm_mul_le_of_norm_le_one_left (hq : ‖q‖ ≤ 1) (x : R) : ‖q * x‖ ≤ ‖x‖ :=
@@ -98,9 +98,11 @@ theorem norm_mul_le_of_norm_le_one_left (hq : ‖q‖ ≤ 1) (x : R) : ‖q * x�
 theorem norm_mul_le_of_norm_le_one_right (hq : ‖q‖ ≤ 1) (x : R) : ‖x * q‖ ≤ ‖x‖ :=
   (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hq)
 
-/-- Multiplying on both sides by an element of norm at most one does not increase the norm. -/
-theorem norm_mul_mul_le_of_norm_le_one (hq : ‖q‖ ≤ 1) (x : R) : ‖q * x * q‖ ≤ ‖x‖ :=
-  (norm_mul_le_of_norm_le_one_right hq _).trans (norm_mul_le_of_norm_le_one_left hq x)
+/-- Multiplying on the left and on the right by elements of norm at most one does not increase
+the norm. -/
+theorem norm_mul_mul_le_of_norm_le_one (hp : ‖p‖ ≤ 1) (hq : ‖q‖ ≤ 1) (x : R) :
+    ‖p * x * q‖ ≤ ‖x‖ :=
+  (norm_mul_le_of_norm_le_one_right hq _).trans (norm_mul_le_of_norm_le_one_left hp x)
 
 end NormLeOne
 

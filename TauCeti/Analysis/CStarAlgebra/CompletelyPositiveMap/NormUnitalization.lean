@@ -97,7 +97,7 @@ theorem norm_compress_map_mul_sub_le [DecidableEq n] {Q : CStarMatrix n n ℂ}
       _ ≤ (‖a‖ ^ 2 * ε) * (‖b‖ ^ 2 * ε) := mul_le_mul ha hb (by positivity) (by positivity)
       _ = (ε * ‖a‖ * ‖b‖) ^ 2 := by ring
   rw [hQ.isIdempotentElem.compress_sub_compress_mul_compress]
-  refine (norm_add_le _ _).trans (add_le_add (norm_mul_mul_le_of_norm_le_one hQn _) ?_)
+  refine (norm_add_le _ _).trans (add_le_add (norm_mul_mul_le_of_norm_le_one hQn hQn _) ?_)
   calc ‖Q * φ a * (1 - Q) * ((1 - Q) * φ b * Q)‖
       ≤ ‖Q * φ a * (1 - Q)‖ * ‖(1 - Q) * φ b * Q‖ := norm_mul_le _ _
     _ ≤ ‖φ a * (1 - Q)‖ * ‖(1 - Q) * φ b‖ := by
