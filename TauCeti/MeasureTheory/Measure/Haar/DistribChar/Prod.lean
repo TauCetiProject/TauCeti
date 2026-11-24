@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Group.Prod
+public import TauCeti.Algebra.Group.Action.Pointwise.Set.Units
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 
 /-!
@@ -18,8 +19,8 @@ left multiplication, and `μ (x • s) = distribHaarChar R x * μ s` for every r
 measure `μ` on `R` and every set `s`. This file computes that character on products.
 
 * A unit of `R × S` acts on a product set `s ×ˢ t` coordinatewise
-  (`MeasureTheory.units_smul_prod`), and a unit of `Π i, T i` acts on a box `univ.pi C`
-  coordinatewise (`MeasureTheory.units_smul_pi`).
+  (`Units.smul_set_prod`), and a unit of `Π i, T i` acts on a box `univ.pi C`
+  coordinatewise (`Units.smul_set_univ_pi`).
 * Product Haar measures are products on boxes, so on a product `R × S` the character of a unit is
   the product of the characters of its two components, and on a finite product `Π i, T i` it is
   the product of the characters of the coordinates. Each formula is read off one box of compact
@@ -46,27 +47,6 @@ open scoped NNReal ENNReal Pointwise
 
 namespace MeasureTheory
 
-section Monoid
-
-/-- A unit of `R × S` acts on a product set coordinatewise. -/
-theorem units_smul_prod {R S : Type*} [Monoid R] [Monoid S] (x : (R × S)ˣ) (s : Set R)
-    (t : Set S) :
-    x • s ×ˢ t =
-      (Units.map (MonoidHom.fst R S) x • s) ×ˢ (Units.map (MonoidHom.snd R S) x • t) := by
-  ext p
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, Set.mem_prod]
-  simp [Units.smul_def]
-
-/-- A unit of `Π i, T i` acts on a box coordinatewise. -/
-theorem units_smul_pi {ι : Type*} {T : ι → Type*} [∀ i, Monoid (T i)] (x : (Π i, T i)ˣ)
-    (C : ∀ i, Set (T i)) :
-    x • univ.pi C = univ.pi fun i ↦ Units.map (Pi.evalMonoidHom T i) x • C i := by
-  ext p
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, Set.mem_univ_pi]
-  simp [Units.smul_def]
-
-end Monoid
-
 section Ring
 
 variable {R S : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [LocallyCompactSpace R]
@@ -89,7 +69,7 @@ theorem distribHaarChar_prod [SecondCountableTopology R] [SecondCountableTopolog
     exact mul_ne_zero (K.measure_ne_zero μ) (L.measure_ne_zero ν)
   · rw [prod_prod]
     exact ENNReal.mul_ne_top (K.measure_ne_top μ) (L.measure_ne_top ν)
-  · rw [units_smul_prod, prod_prod, prod_prod, ← distribHaarChar_mul, ← distribHaarChar_mul,
+  · rw [Units.smul_set_prod, prod_prod, prod_prod, ← distribHaarChar_mul, ← distribHaarChar_mul,
       ENNReal.coe_mul]
     ring
 
@@ -111,7 +91,8 @@ theorem distribHaarChar_pi [∀ i, SecondCountableTopology (T i)] (x : (Π i, T 
     exact Finset.prod_ne_zero_iff.mpr fun i _ ↦ (K i).measure_ne_zero (μ i)
   · rw [pi_pi]
     exact ENNReal.prod_ne_top fun i _ ↦ (K i).measure_ne_top (μ i)
-  · rw [units_smul_pi, pi_pi, pi_pi, ENNReal.ofNNReal_finsetProd, ← Finset.prod_mul_distrib]
+  · rw [Units.smul_set_univ_pi, pi_pi, pi_pi, ENNReal.ofNNReal_finsetProd,
+      ← Finset.prod_mul_distrib]
     exact Finset.prod_congr rfl fun i _ ↦ (distribHaarChar_mul (μ i) _ _).symm
 
 end Ring

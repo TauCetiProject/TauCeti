@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import TauCeti.RingTheory.Noetherian.Countable
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
@@ -37,7 +38,7 @@ ideals over any integral domain, with injectivity in the exponent over a Dedekin
 `Ideal.eventually_isPrimeTo_compl` records that a nonzero ideal is supported on every sufficiently
 large finite set of primes. These constructions use only ideal arithmetic, independently of norms.
 A countable Dedekind domain has countably many height-one primes
-(`IsDedekindDomain.HeightOneSpectrum.countable_of_countable`).
+(`IsDedekindDomain.HeightOneSpectrum.instCountable`).
 
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
@@ -253,17 +254,12 @@ theorem primeIdealPow_injective {R : Type*} [CommRing R] [IsDedekindDomain R]
   pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
     (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
 
-/-- A countable Dedekind domain has countably many height-one primes (its nonzero prime ideals):
-every ideal is spanned by a finite subset, and an ideal is determined by any finite set spanning
-it. -/
-theorem countable_of_countable (R : Type*) [CommRing R] [IsDedekindDomain R] [Countable R] :
-    Countable (HeightOneSpectrum R) := by
-  classical
-  have hfg (v : HeightOneSpectrum R) : v.asIdeal.FG := IsNoetherian.noetherian v.asIdeal
-  refine Function.Injective.countable (f := fun v ↦ (hfg v).choose) fun v w h ↦ ?_
-  refine HeightOneSpectrum.ext ?_
-  rw [← (hfg v).choose_spec, ← (hfg w).choose_spec]
-  exact congrArg (fun s : Finset R ↦ Submodule.span R (s : Set R)) h
+/-- A countable Dedekind domain has countably many height-one primes (its nonzero prime ideals),
+since a countable Noetherian ring has countably many ideals
+(`Submodule.instCountableOfIsNoetherian`). -/
+instance instCountable {R : Type*} [CommRing R] [IsDedekindDomain R] [Countable R] :
+    Countable (HeightOneSpectrum R) :=
+  Function.Injective.countable (f := asIdeal) fun _ _ ↦ HeightOneSpectrum.ext
 
 section Comap
 

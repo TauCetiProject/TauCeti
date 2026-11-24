@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Real
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Borel
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
 import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 
 /-!
@@ -40,8 +40,20 @@ a unit `x` scales Haar measure by `‖x‖ ^ m_w`, the multiplicity `m_w` being 
   `x ∈ K_vˣ` is `‖x‖₊`.
 * `IsDedekindDomain.HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers`: the normalized Haar
   measure of the local field `K_v` gives `𝒪_v` mass `1`.
+* `NumberField.InfinitePlace.Completion.instSecondCountableTopology`: `K_w` is second countable.
 * `NumberField.InfinitePlace.distribHaarChar_completion`: the Haar character of `x ∈ K_wˣ` is
   `‖x‖₊ ^ m_w`.
+
+## References
+
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
+  2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism).
+* The FLT project (`ImperialCollegeLondon/FLT`, Apache 2.0) computes the Haar characters of `ℝ`
+  and `ℂ` in `FLT/HaarMeasure/HaarChar/RealComplex.lean` (by Yaël Dillies and Javier
+  López-Contreras), and uses them place by place at the infinite places in
+  `FLT/HaarMeasure/HaarChar/AdeleRing.lean` (by Kevin Buzzard, Bryan Wang Peng Jun, Salvatore
+  Mercuri, Pietro Monticone and Ruben Van de Velde); `distribHaarChar_completion` follows that
+  computation, transported along the isometries of `K_w` with `ℝ` or `ℂ`.
 -/
 
 public section
@@ -79,6 +91,15 @@ end IsDedekindDomain.HeightOneSpectrum
 namespace NumberField.InfinitePlace
 
 variable {K : Type*} [Field K]
+
+/-- The completion `K_w` of a number field at an infinite place is second countable, being
+isometric to `ℝ` or `ℂ`. -/
+instance Completion.instSecondCountableTopology (w : InfinitePlace K) :
+    SecondCountableTopology w.Completion := by
+  by_cases hw : w.IsReal
+  · exact (Completion.isometryEquivRealOfIsReal hw).toHomeomorph.secondCountableTopology
+  · exact (Completion.isometryEquivComplexOfIsComplex
+      (not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
 
 /-- **The Haar character at an infinite place.** Multiplication by `x ∈ K_wˣ` scales Haar measure
 on `K_w` by `‖x‖ ^ m_w`, where `m_w` is `1` at a real place and `2` at a complex place. -/

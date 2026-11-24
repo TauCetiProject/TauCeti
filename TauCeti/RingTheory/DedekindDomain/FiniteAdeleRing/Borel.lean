@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.NumberTheory.LocalField.Topology
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
@@ -16,12 +18,15 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 # Second countability and Borel structures on finite adele rings
 
 Let `R` be a Dedekind domain with fraction field `K`. This file registers the Borel σ-algebras on
-the adic completions `K_v`, on the finite adele ring `FiniteAdeleRing R K` and on its unit group
-(the finite ideles), on which the Haar measures of finite adeles and finite ideles live.
+the finite adele ring `FiniteAdeleRing R K`, on its unit group (the finite ideles) and on
+`GL_n(FiniteAdeleRing R K) = (Matrix n n (FiniteAdeleRing R K))ˣ`, on which the Haar measures of
+finite adeles and finite ideles live. The unit groups carry the Borel σ-algebras of their native
+units topologies. The completions `K_v` get their Borel σ-algebras in
+`TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel`.
 
 If `R` is countable and all its residue fields are finite, the finite adele ring is second
 countable: it is the restricted product over the countably many height-one primes of `R`
-(`IsDedekindDomain.HeightOneSpectrum.countable_of_countable`) of the completions `K_v`, which are
+(`IsDedekindDomain.HeightOneSpectrum.instCountable`) of the completions `K_v`, which are
 nonarchimedean local fields and hence second countable, with respect to the open integer rings
 `𝒪_v`.
 
@@ -29,9 +34,9 @@ nonarchimedean local fields and hence second countable, with respect to the open
 
 * `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: second countability of the
   finite adele ring of a countable Dedekind domain with finite residue fields.
-* `IsDedekindDomain.HeightOneSpectrum.instBorelSpaceAdicCompletion`,
-  `IsDedekindDomain.FiniteAdeleRing.instBorelSpace`,
-  `IsDedekindDomain.FiniteAdeleRing.instBorelSpaceUnits`: the Borel structures.
+* `IsDedekindDomain.FiniteAdeleRing.instBorelSpace`,
+  `IsDedekindDomain.FiniteAdeleRing.instBorelSpaceUnits`,
+  `IsDedekindDomain.FiniteAdeleRing.instBorelSpaceMatrixUnits`: the Borel structures.
 
 ## References
 
@@ -45,18 +50,6 @@ noncomputable section
 
 open IsDedekindDomain MeasureTheory TopologicalSpace
 
-namespace IsDedekindDomain.HeightOneSpectrum
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
-  [IsFractionRing R K] (v : HeightOneSpectrum R)
-
-/-- The Borel σ-algebra on the completion `K_v`. -/
-instance instMeasurableSpaceAdicCompletion : MeasurableSpace (v.adicCompletion K) := borel _
-
-instance instBorelSpaceAdicCompletion : BorelSpace (v.adicCompletion K) := ⟨rfl⟩
-
-end IsDedekindDomain.HeightOneSpectrum
-
 namespace IsDedekindDomain.FiniteAdeleRing
 
 variable (R K : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
@@ -67,7 +60,6 @@ countable. -/
 instance instSecondCountableTopology [Countable R]
     [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
     SecondCountableTopology (FiniteAdeleRing R K) :=
-  have : Countable (HeightOneSpectrum R) := HeightOneSpectrum.countable_of_countable R
   RestrictedProduct.instSecondCountableTopology
     (R := fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
     (A := fun v ↦ (v.adicCompletionIntegers K : Set (v.adicCompletion K)))
@@ -82,5 +74,14 @@ instance instBorelSpace : BorelSpace (FiniteAdeleRing R K) := ⟨rfl⟩
 instance instMeasurableSpaceUnits : MeasurableSpace (FiniteAdeleRing R K)ˣ := borel _
 
 instance instBorelSpaceUnits : BorelSpace (FiniteAdeleRing R K)ˣ := ⟨rfl⟩
+
+variable (n : Type*) [Fintype n] [DecidableEq n]
+
+/-- The Borel σ-algebra on `GL_n` of the finite adeles, for the native topology of the units of the
+matrix ring. -/
+instance instMeasurableSpaceMatrixUnits : MeasurableSpace (Matrix n n (FiniteAdeleRing R K))ˣ :=
+  borel _
+
+instance instBorelSpaceMatrixUnits : BorelSpace (Matrix n n (FiniteAdeleRing R K))ˣ := ⟨rfl⟩
 
 end IsDedekindDomain.FiniteAdeleRing

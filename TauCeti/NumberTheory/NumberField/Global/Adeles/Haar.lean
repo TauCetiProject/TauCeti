@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Prod
@@ -178,9 +177,8 @@ theorem map_finiteAdeleHaar_mul (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     (finiteAdeleHaar K).map ((a : FiniteAdeleRing (𝓞 K) K) * ·) =
       (∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(a : FiniteAdeleRing (𝓞 K) K) v‖₊)⁻¹ •
         finiteAdeleHaar K := by
-  have h : ((a : FiniteAdeleRing (𝓞 K) K) * ·) = (a • ·) :=
-    funext fun y ↦ by rw [Units.smul_def, smul_eq_mul]
-  rw [h, map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_finiteAdeleRing]
+  simp_rw [← smul_eq_mul, ← Units.smul_def]
+  rw [map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_finiteAdeleRing]
 
 /-! ### The infinite adeles -/
 
@@ -189,12 +187,6 @@ theorem map_finiteAdeleHaar_mul (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
 theorem distribHaarChar_infiniteAdeleRing (x : (InfiniteAdeleRing K)ˣ) :
     distribHaarChar (InfiniteAdeleRing K) x =
       ∏ w : InfinitePlace K, ‖(x : InfiniteAdeleRing K) w‖₊ ^ w.mult := by
-  have (w : InfinitePlace K) : SecondCountableTopology w.Completion := by
-    by_cases hw : w.IsReal
-    · exact (InfinitePlace.Completion.isometryEquivRealOfIsReal hw).toHomeomorph
-        |>.secondCountableTopology
-    · exact (InfinitePlace.Completion.isometryEquivComplexOfIsComplex
-        (InfinitePlace.not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
   exact (distribHaarChar_pi (T := fun w : InfinitePlace K ↦ w.Completion) x).trans
     (Finset.prod_congr rfl fun w _ ↦ InfinitePlace.distribHaarChar_completion w _)
 
@@ -238,9 +230,6 @@ instance isAddHaarMeasure_infiniteAdeleHaar : (infiniteAdeleHaar K).IsAddHaarMea
   rw [infiniteAdeleHaar_def]
   exact IsAddHaarMeasure.smul _ (by simp) (by simp)
 
-instance regular_infiniteAdeleHaar : (infiniteAdeleHaar K).Regular :=
-  inferInstance
-
 /-! ### The adeles and the ideles -/
 
 /-- **The normalized Haar measure on the adeles**: the product `μ_∞ × μ_f` of
@@ -262,9 +251,6 @@ instance isAddHaarMeasure_adeleHaar : (adeleHaar K).IsAddHaarMeasure :=
   inferInstanceAs <|
     ((infiniteAdeleHaar K).prod (finiteAdeleHaar K)).IsAddHaarMeasure
 
-instance regular_adeleHaar : (adeleHaar K).Regular := by
-  infer_instance
-
 /-- **The idele norm is the Haar character of the adeles.** Multiplication by an idele `x`
 scales additive Haar measure on `𝔸_K` by the idele norm `‖x‖`: `μ (x • s) = ‖x‖ * μ s` for
 regular additive Haar measures `μ`. -/
@@ -282,16 +268,12 @@ theorem distribHaarChar_adeleRing (x : IdeleGroup (𝓞 K) K) :
       (finprod_congr fun v ↦ ?_)
     simp [HeightOneSpectrum.coe_ideleFiniteCoord]
 
-/-- Multiplication by an idele is its action on the adeles. -/
-private theorem ideleMul_eq_smul (x : IdeleGroup (𝓞 K) K) :
-    ((x : AdeleRing (𝓞 K) K) * ·) = (x • ·) :=
-  funext fun y ↦ by rw [Units.smul_def, smul_eq_mul]
-
 /-- **Pushforward of the adelic Haar measure.** Multiplication by an idele `x` pushes `adeleHaar`
 forward to `‖x‖⁻¹ • adeleHaar`. -/
 theorem map_adeleHaar_mul (x : IdeleGroup (𝓞 K) K) :
     (adeleHaar K).map ((x : AdeleRing (𝓞 K) K) * ·) = (ideleNorm x : ℝ≥0)⁻¹ • adeleHaar K := by
-  rw [ideleMul_eq_smul, map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_adeleRing]
+  simp_rw [← smul_eq_mul, ← Units.smul_def]
+  rw [map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_adeleRing]
 
 /-- The kernel of the Haar character of the adeles is the norm-one subgroup of the ideles. -/
 theorem distribHaarChar_adeleRing_eq_one_iff (x : IdeleGroup (𝓞 K) K) :
@@ -301,8 +283,8 @@ theorem distribHaarChar_adeleRing_eq_one_iff (x : IdeleGroup (𝓞 K) K) :
 /-- An idele preserves `adeleHaar` under multiplication exactly when its idele norm is `1`. -/
 theorem map_adeleHaar_mul_eq_self_iff (x : IdeleGroup (𝓞 K) K) :
     (adeleHaar K).map ((x : AdeleRing (𝓞 K) K) * ·) = adeleHaar K ↔ ideleNorm x = 1 := by
-  rw [ideleMul_eq_smul, map_smul_eq_self_iff_distribHaarChar_eq_one,
-    distribHaarChar_adeleRing_eq_one_iff]
+  simp_rw [← smul_eq_mul, ← Units.smul_def]
+  rw [map_smul_eq_self_iff_distribHaarChar_eq_one, distribHaarChar_adeleRing_eq_one_iff]
 
 /-- **The product formula, measure-theoretically.** Multiplication by a principal idele preserves
 `adeleHaar`. -/
