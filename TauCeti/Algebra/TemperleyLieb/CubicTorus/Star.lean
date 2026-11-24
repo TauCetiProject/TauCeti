@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Star
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Algebra.TemperleyLieb.Star
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.RingTheory.TraceFunctional.Positive
 
 /-!
