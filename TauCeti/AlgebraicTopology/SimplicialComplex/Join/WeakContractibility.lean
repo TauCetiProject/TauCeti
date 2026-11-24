@@ -101,7 +101,6 @@ theorem subsingleton_homotopyGroup_realization_indexedJoin
     (hA : {i | Nonempty (A i)}.Infinite) (N : Type*) [Finite N] [Nonempty N]
     (x : (indexedJoin A).Realization) :
     Subsingleton (HomotopyGroup N (indexedJoin A).Realization x) :=
-  letI := simplyConnectedSpace_realization_indexedJoin hA
   subsingleton_homotopyGroup_of_compact_nullhomotopic N x fun f =>
     ContinuousMap.nullhomotopic_to_indexedJoin f (isCompact_range f.continuous) hA
 

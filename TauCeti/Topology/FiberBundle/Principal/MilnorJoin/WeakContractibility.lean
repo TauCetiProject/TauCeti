@@ -178,8 +178,9 @@ theorem exists_gt_half_partialWeightSum_of_isCompact_range {X : Type v} [Topolog
     (directed_of_isDirected_le fun _ _ h _ hp ↦ lt_of_lt_of_le hp (partialWeightSum_mono h _))
   exact ⟨N, fun x ↦ hN (Set.mem_range_self x)⟩
 
-theorem exists_gt_half_partialWeightSum_comp {X : Type v} [TopologicalSpace X] [CompactSpace X]
-    (f : C(X, MilnorTotalSpace G)) : ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) :=
+theorem exists_gt_half_partialWeightSum_of_compactSpace {X : Type v} [TopologicalSpace X]
+    [CompactSpace X] (f : C(X, MilnorTotalSpace G)) :
+    ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) :=
   exists_gt_half_partialWeightSum_of_isCompact_range (isCompact_range f.continuous)
 
 end PartialWeightSum

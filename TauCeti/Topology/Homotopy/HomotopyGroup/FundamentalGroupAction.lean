@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # The action of the fundamental group on the higher homotopy groups
@@ -64,9 +65,8 @@ monodromy action `IsCoveringMap.fundamentalGroupMulAction` a left action.
 * `TauCeti.fundamentalGroup_smul_eq_self`: on a simply connected space the action is trivial.
 * `TauCeti.one_mem_orbit_of_forall_mem_of_nullhomotopic`: a generalized loop staying in a set
   whose inclusion is null-homotopic is freely homotopic to the constant loop.
-* `TauCeti.subsingleton_homotopyGroup_of_compact_nullhomotopic`: a space with trivial fundamental
-  group at `x` in which every map from a compact space is null-homotopic has trivial finite
-  positive-dimensional homotopy groups at `x`.
+* `TauCeti.subsingleton_homotopyGroup_of_compact_nullhomotopic`: a space in which every map from a
+  compact space is null-homotopic has trivial finite positive-dimensional homotopy groups at `x`.
 
 ## References
 
@@ -399,14 +399,23 @@ theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N
   exact (homotopyGroup_mem_orbit_iff_exists_homotopyAlong rfl rfl).2
     ⟨γ.trans γ.symm, ⟨Hforward.trans Hback⟩⟩
 
-/-- On a space with trivial fundamental group at `x` in which every continuous map from a compact
-space is null-homotopic, every finite positive-dimensional homotopy group at `x` is trivial. -/
+/-- On a space in which every continuous map from a compact space is null-homotopic, every finite
+positive-dimensional homotopy group at `x` is trivial. -/
 theorem subsingleton_homotopyGroup_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
-    (N : Type*) [Finite N] [Nonempty N] (x : X) [Subsingleton (FundamentalGroup X x)]
+    (N : Type*) [Finite N] [Nonempty N] (x : X)
     (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic) :
     Subsingleton (HomotopyGroup N X x) := by
   classical
   let _ : Fintype N := Fintype.ofFinite N
+  have hpi1_one : ∀ g : FundamentalGroup X x, g = 1 := fun g ↦ by
+    obtain ⟨γ, hγ⟩ := Quotient.exists_rep g.toPath
+    have : CompactSpace (Set.range γ) :=
+      isCompact_iff_compactSpace.mp (isCompact_range γ.continuous)
+    have hq : g.toPath = Path.Homotopic.Quotient.refl x :=
+      hγ.symm.trans <| Quotient.sound <| Path.Homotopic.refl_of_forall_mem_of_nullhomotopic
+        (hnull ⟨Subtype.val, continuous_subtypeVal⟩) γ Set.mem_range_self
+    exact CategoryTheory.End.ext hq
+  have : Subsingleton (FundamentalGroup X x) := ⟨fun a b ↦ (hpi1_one a).trans (hpi1_one b).symm⟩
   have h_one : ∀ a : HomotopyGroup N X x, a = 1 := fun a ↦ by
     induction a using Quotient.inductionOn with | h p =>
     have : CompactSpace (Set.range p) :=

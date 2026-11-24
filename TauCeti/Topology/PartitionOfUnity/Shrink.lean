@@ -24,8 +24,6 @@ of `X`, nor openness of the sets `U i`, is used.
 
 ## Main definitions and results
 
-* `TauCeti.ciSup_eq_ciSup_of_notMem_le`, `TauCeti.continuous_ciSup_of_eventually_le`:
-  eventually-finitely-dominated real-valued `iSup` reduction and continuity.
 * `PartitionOfUnity.ofExistsPos`: normalize a locally finite nonnegative family positive at every
   point into a partition of unity.
 * `PartitionOfUnity.halfMaxTrunc` and `PartitionOfUnity.shrinkOfMax`: truncate a family of
@@ -48,36 +46,6 @@ of `X`, nor openness of the sets `U i`, is used.
 public section
 
 open Function Set Filter Topology
-
-namespace TauCeti
-
-/-- If a bounded, nonnegative real-valued family `f : ι → ℝ` is dominated outside a finite set
-`I : Finset ι` by the finite supremum `⨆ i : I, f i`, then its supremum `⨆ i, f i` equals
-`⨆ i : I, f i`. -/
-theorem ciSup_eq_ciSup_of_notMem_le {ι : Type*} {f : ι → ℝ} (hbdd : BddAbove (range f))
-    (hnn : ∀ i, 0 ≤ f i) {I : Finset ι} (hI : ∀ j ∉ I, f j ≤ ⨆ i : I, f i) :
-    ⨆ i, f i = ⨆ i : I, f i := by
-  have hnonneg : 0 ≤ ⨆ i : I, f i := Real.iSup_nonneg fun i ↦ hnn i.val
-  refine le_antisymm (Real.iSup_le (fun j ↦ ?_) hnonneg)
-    (Real.iSup_le (fun i : I ↦ le_ciSup hbdd i.val) (Real.iSup_nonneg hnn))
-  by_cases hj : j ∈ I
-  · exact le_ciSup (finite_range (fun i : I ↦ f i)).bddAbove ⟨j, hj⟩
-  · exact hI j hj
-
-/-- The pointwise supremum of a pointwise bounded, nonnegative family of continuous real-valued
-functions is continuous if around every point it is eventually dominated outside a finite index
-set by the supremum over that finite set. -/
-theorem continuous_ciSup_of_eventually_le {ι X : Type*} [TopologicalSpace X] {f : ι → X → ℝ}
-    (hf : ∀ i, Continuous (f i)) (hbdd : ∀ x, BddAbove (range fun i ↦ f i x))
-    (hnn : ∀ i x, 0 ≤ f i x)
-    (hevent : ∀ x₀, ∃ I : Finset ι, ∀ᶠ x in 𝓝 x₀, ∀ j ∉ I, f j x ≤ ⨆ i : I, f i x) :
-    Continuous fun x ↦ ⨆ i, f i x := by
-  refine continuous_iff_continuousAt.mpr fun x₀ ↦ ?_
-  obtain ⟨I, hI⟩ := hevent x₀
-  exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ hf i.val).continuousAt.congr
-    (hI.mono fun x hx ↦ (ciSup_eq_ciSup_of_notMem_le (hbdd x) (fun i ↦ hnn i x) hx).symm)
-
-end TauCeti
 
 namespace PartitionOfUnity
 

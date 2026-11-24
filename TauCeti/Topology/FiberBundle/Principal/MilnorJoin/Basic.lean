@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.Algebra.MulAction
@@ -536,14 +537,14 @@ section Homomorphism
 variable {G : Type u} {H : Type v} [Monoid G] [Monoid H] [TopologicalSpace G] [TopologicalSpace H]
 
 /-- A continuous monoid homomorphism preserves the base point of `MilnorTotalSpace`. -/
-@[simp] theorem map_basepoint (φ : G →* H) (hφ : Continuous φ) :
-    map ⟨φ, hφ⟩ (basepoint G) = basepoint H := by
+@[simp] theorem map_basepoint (φ : G →ₜ* H) :
+    map (φ : C(G, H)) (basepoint G) = basepoint H := by
   simp [basepoint]
 
 /-- A continuous monoid homomorphism is equivariant with respect to the right `G`-action on
 `MilnorTotalSpace`. -/
-@[simp] theorem map_op_smul (φ : G →* H) (hφ : Continuous φ) (g : G) (p : MilnorTotalSpace G) :
-    map ⟨φ, hφ⟩ (op g • p) = op (φ g) • map ⟨φ, hφ⟩ p := by
+@[simp] theorem map_op_smul (φ : G →ₜ* H) (g : G) (p : MilnorTotalSpace G) :
+    map (φ : C(G, H)) (op g • p) = op (φ g) • map (φ : C(G, H)) p := by
   apply ext_val
   simp only [val_map, val_op_smul, ← Finsupp.mapDomain_comp]
   congr 1; funext ⟨_, _⟩; simp
