@@ -53,7 +53,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
 * `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
-  `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`
+  `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`,
+  `IsCompact.exists_le_norm_one_sub_ofReal_mul`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -76,9 +77,10 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.forall_natCast_add_mem_slitPlane_iff`,
   `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
-* `TauCeti.ne_neg_natCast_of_mem_slitPlane`
+* `TauCeti.ne_neg_natCast_of_mem_slitPlane`, `TauCeti.natCast_add_ne_zero_of_mem_slitPlane`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
   `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
@@ -308,6 +310,13 @@ theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
     z + (t : ℂ) ∈ slitPlane := by
   simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
 
+/-- Every nonnegative-integer shift `n + z` lies in the slit plane if and only if `z` itself lies
+in the slit plane. -/
+theorem forall_natCast_add_mem_slitPlane_iff {z : ℂ} :
+    (∀ n : ℕ, (n : ℂ) + z ∈ slitPlane) ↔ z ∈ slitPlane :=
+  ⟨fun h => by simpa using h 0, fun hz n => by
+    simpa only [Complex.ofReal_natCast] using ofReal_add_mem_slitPlane hz (Nat.cast_nonneg n)⟩
+
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
@@ -338,6 +347,11 @@ theorem ne_neg_natCast_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) (n : �
   refine ne_of_mem_of_not_mem hz ?_
   rw [← ofReal_natCast, neg_ofReal_mem_slitPlane]
   exact (Nat.cast_nonneg n).not_gt
+
+/-- For `c ∈ slitPlane` and `n : ℕ`, `(n : ℂ) + c ≠ 0`. -/
+theorem natCast_add_ne_zero_of_mem_slitPlane {c : ℂ} (hc : c ∈ slitPlane) (n : ℕ) :
+    (n : ℂ) + c ≠ 0 :=
+  slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr hc n)
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/
@@ -484,6 +498,16 @@ theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
     {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - t * z ∈ slitPlane := by
   rw [mul_comm]
   exact one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- On a compact subset `K` of `{z : ℂ | 1 - z ∈ Complex.slitPlane}`, the factors `1 - t * z`
+with `t ∈ [0, 1]` stay uniformly away from zero. -/
+theorem _root_.IsCompact.exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : IsCompact K)
+    (hKΩ : K ⊆ {z : ℂ | 1 - z ∈ slitPlane}) :
+    ∃ δ > 0, ∀ z ∈ K, ∀ t ∈ Set.Icc (0 : ℝ) 1, δ ≤ ‖1 - (t : ℂ) * z‖ := by
+  have hpos : ∀ p ∈ Set.Icc (0 : ℝ) 1 ×ˢ K, 0 < ‖1 - (p.1 : ℂ) * p.2‖ := fun p hp =>
+    norm_pos_iff.2 (slitPlane_ne_zero (one_sub_ofReal_mul_mem_slitPlane (hKΩ hp.2) hp.1))
+  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc.prod hK).exists_forall_le' (by fun_prop) hpos
+  exact ⟨δ, hδ, fun z hz t ht => h (t, z) ⟨ht, hz⟩⟩
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
