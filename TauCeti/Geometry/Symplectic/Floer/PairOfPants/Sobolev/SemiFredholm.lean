@@ -220,60 +220,29 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_esti
           J Ks Kt u x‖ +
         ‖restrictWeightedValue V thricePuncturedSphereReal
           (Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1)) x‖) := by
-  set S := thricePuncturedSphereReal
-  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1)
-  have hK : IsCompact K := isCompact_preimage_truncation _
-  have hKS : K ⊆ S := preimage_truncation_subset_thricePuncturedSphereReal _
-  have hρ := isWeight_cylindricalWeight
   obtain ⟨A, hA, hW⟩ :=
     exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add (V := V) hT
-  -- On `K` the `L²` norm of a section is controlled by its weighted value.
-  obtain ⟨B, hB⟩ :=
-    exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V) hρ hK hKS
-  set k := A * max C 0 * (1 + |B|)
-  refine ⟨√k, fun x hx ↦ ?_⟩
-  obtain ⟨ξ, hξ, hxξ⟩ := mem_jetSubmodule_iff.1 hx
-  obtain ⟨hξ2, hξc, hξS⟩ := mem_testSection_iff.1 hξ
-  set D := ω.floerConformalSobolevOperator S cylindricalWeight J Ks Kt u
-  set R := restrictWeightedValue V S K
-  have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
-    (hB hξ2.continuous hxξ).trans (by gcongr; exact le_abs_self B)
-  -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
-  have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
-    have h₁ := (sq_norm_le_integral hρ hξ hxξ).trans (hW (hξ2.of_le one_le_two) hξc hξS)
-    have h₂ := mul_le_mul_of_nonneg_left (hest hξ2 hξc hξS) hA
-    have h₃ : C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2) ≤
-        max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) := by
-      rw [← norm_floerConformalSobolevOperator_sq ω hρ hM hξ hxξ]
-      exact mul_le_mul (le_max_left C 0) (by linarith)
-        (add_nonneg (sq_nonneg _) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _))
-        (le_max_right C 0)
-    have h₄ : ‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2 ≤ (1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2 := by
-      nlinarith [norm_nonneg (D x), norm_nonneg (R x), abs_nonneg B,
-        mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x)),
-        mul_nonneg (abs_nonneg B) (mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x))),
-        mul_nonneg (abs_nonneg B) (sq_nonneg ‖D x‖)]
-    calc ‖x‖ ^ 2 ≤ A * (max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2)) :=
-          h₁.trans (h₂.trans (mul_le_mul_of_nonneg_left h₃ hA))
-      _ ≤ A * (max C 0 * ((1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2)) := by gcongr
-      _ = k * (‖D x‖ + ‖R x‖) ^ 2 := by ring
-  calc ‖x‖ = √(‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
-    _ ≤ √(k * (‖D x‖ + ‖R x‖) ^ 2) := Real.sqrt_le_sqrt hx2
-    _ = √k * (‖D x‖ + ‖R x‖) := by
-      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
+  -- The weighted energy is at most `A` times the left side of the semi-Fredholm estimate.
+  exact ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
+    isWeight_cylindricalWeight hM (isCompact_preimage_truncation _)
+    (preimage_truncation_subset_thricePuncturedSphereReal _) (C := A * C) fun ξ hξ ↦ by
+      obtain ⟨hξ2, hξc, hξS⟩ := mem_testSection_iff.1 hξ
+      rw [mul_assoc]
+      exact (hW (hξ2.of_le one_le_two) hξc hξS).trans
+        (mul_le_mul_of_nonneg_left (hest hξ2 hξc hξS) hA)
 
 /-- **The coefficients of the linearized operator of a Floer pair of pants are bounded on the
 jets of `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` on the ends
 (jointly `C²` period-one Hamiltonians `H_q`, almost complex structures equal far out on each end to
 `C¹` families `J_q(t)`, and a `C¹` Floer pair of pants `u` whose loops in each positive end chart
-converge uniformly to continuous loops `x_q` while the slice defects tend uniformly to zero), the
-coefficient field of the linearized Floer operator on the conformal jets of the cylindrical weight
-is essentially bounded on `S`. -/
+converge uniformly on `[0, 1]` to loops `x_q` continuous on `[0, 1]`, while the slice defects tend
+uniformly to zero), the coefficient field of the linearized Floer operator on the conformal jets of
+the cylindrical weight is essentially bounded on `S`. -/
 theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {x : Puncture → ℝ → V}
-    (hx : ∀ q, Continuous (x q)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hx : ∀ q, ContinuousOn (x q) (Icc 0 1)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
@@ -302,7 +271,7 @@ theorem memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn (ω : Sym
     (Metric.tendstoUniformlyOn_iff.1 (hux q) 1 one_pos).and
       (Metric.tendstoUniformlyOn_iff.1 (hδ q) 1 one_pos))
   choose Mx hMx using fun q ↦
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q).continuousOn
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn (hx q)
   have hT₁ : R₁ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_left _ _)
   have hT₀ : S₀ ≤ max 2 (max R₁ S₀) := le_max_of_le_right (le_max_right _ _)
   refine ω.memLp_floerConformalJetCoeff_pairOfPants hH hHs hJ
@@ -373,9 +342,13 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add (ω : S
           ‖restrictWeightedValue V thricePuncturedSphereReal K y‖) := by
   obtain ⟨C, -, T, hT, hest⟩ :=
     ω.exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add hH hHs
-      hX hx hnd hJe hJex hJeq hJ hu hc hF hux hδ
+      hX hx hnd hJe hJex hJeq (fun _ _ _ _ ↦ ⟨rfl, rfl⟩) hJ
+      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
+      (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hc
+      (fun _ z hz _ ↦ hF z hz) hux hδ
   have hM := ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs
-    (fun q ↦ continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt) hJe hJeq hJ hu hF hux hδ
+    (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe hJeq
+    hJ hu hF hux hδ
   obtain ⟨C', hC'⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_estimate hM hT hest
   exact ⟨_, isCompact_preimage_truncation _, preimage_truncation_subset_thricePuncturedSphereReal _,

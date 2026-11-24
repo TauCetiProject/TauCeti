@@ -42,9 +42,10 @@ the almost complex structure (`integral_associatedBilinForm_floerLinearization_i
   The end pieces control the energy beyond `R₀ + 1` and the core piece the energy on `S_{R₀}`;
   patching at the two heights `R₀` and `R₀ + 1` covers all of `S`.
 * `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` is the
-  estimate along a Floer pair of pants for the pair-of-pants perturbation
-  (`TauCeti.Floer.pairOfPantsPerturbation`) whose ends converge to nondegenerate orbits, with
-  almost complex structures that are cylindrical far out on the ends. In the positive end chart the
+  estimate along a Floer pair of pants whose ends converge to nondegenerate orbits, for Floer data
+  which far out on the ends are the pair-of-pants perturbation
+  (`TauCeti.Floer.pairOfPantsPerturbation`) and almost complex structures that are cylindrical,
+  and which are arbitrary elsewhere on `S`. In the positive end chart the
   end is a Floer half-cylinder of the end Hamiltonian, where the end estimate
   `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq` holds. The operator
   of the end chart is `a D_u ξ - b J D_u ξ` for the complex derivative `a + i b` of the chart
@@ -613,18 +614,22 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
 period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end Hamiltonians
 `H'_q(t, x) = ±H_q(±t, x)` have globally Lipschitz suspended vector fields, and let `x_q` be orbits
 of `H'_q` starting at nondegenerate fixed points of the time-one maps, as for nondegenerate
-one-periodic orbits. Let `J(z)` be a family of almost complex structures, `C¹` along `u`, that is
-cylindrical far out on each end, `J(φ'_q(s, t)) = J_q(t)` for `s ≥ R₁` with `C¹` families `J_q`
-compatible along `x_q`. Let `u` be a `C¹` solution on `S` of the Floer equation for the
-pair-of-pants perturbation of `H`, along which `J` is compatible, whose loops in each positive end
-chart `φ'_q` converge uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend
-uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` section `ξ` with
-compact support in `S` satisfies
+one-periodic orbits. Let `(J, K_s, K_t)` be Floer data on `S`, with `J` `C¹` and `K_s`, `K_t` `C²`
+along `u`, which far out on each end, beyond a height `R₁`, are cylindrical,
+`J(φ'_q(s, t)) = J_q(t)` for `C¹` families `J_q` compatible along `x_q`, with perturbation the
+pair-of-pants perturbation of `H`. Let `u` be a `C¹` map on `S`, along which `J` is compatible,
+that solves the Floer equation for these data beyond `R₁` on each end, whose loops in each positive
+end chart `φ'_q` converge uniformly to `x_q` while the slice defects `∂t (u ∘ φ'_q) - X_{H'_q}` tend
+uniformly to zero. Then
+there are `C ≥ 0` and `T ≥ 0` such that every `C²` section `ξ` with compact support in `S` satisfies
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ φ'_q)‖² + ‖∂t (ξ ∘ φ'_q)‖² + ‖ξ ∘ φ'_q‖²)`
 `  + ∫_{S_T} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{S_{T + 1}} ‖ξ‖²)`
 
-for the linearized Floer operator `D_u` of the pair-of-pants perturbation. -/
+for the linearized Floer operator `D_u` of the data `(J, K_s, K_t)`. The pair-of-pants perturbation
+itself is the case `K_s`, `K_t` equal to its components on all of `S`; the pair-of-pants data with
+continuation necks of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation.SemiFredholm`
+only change it away from the ends. -/
 theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
@@ -640,16 +645,20 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
       (Icc 0 1))
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
@@ -660,15 +669,13 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
       (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
         C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u ξ z‖ ^ 2) +
+          Ks Kt u ξ z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
   choose C R hend using fun q ↦
     ω.exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization hH hHs q
-      (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) hJ hu hF (hux q) (hδ q)
+      (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q) (hK q) hJ hu (hF q)
+      (hux q) (hδ q)
   exact exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends
-    ω hJ (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
-    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hc hend
+    ω hJ hKs hKt hu hc hend
 
 end TauCeti.SymplecticForm

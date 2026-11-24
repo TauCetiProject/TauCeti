@@ -115,9 +115,8 @@ theorem exists_balance {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ 
   obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLInf c hQ
   -- A family realizing the successive minima, each of which is positive.
   obtain ⟨x, hx, hxB⟩ := Λ.exists_linearIndependent_mem_smul_successiveMinimum hB
-  have hμ (l : Fin (Fintype.card ι)) : 0 < μ l := by
-    have h := Λ.successiveMinimum_pos hB l.isLt
-    rwa [hcoe] at h
+  have hμ (l : Fin (Fintype.card ι)) : 0 < μ l :=
+    successiveMinimum_approx_pos hLInf hLFin c hQ l.isLt
   rw [hcoe] at hxB
   -- Membership in `μ l • approxBody L c Q`, read at the infinite places.
   have hxL (l : Fin (Fintype.card ι)) (v : InfinitePlace K) (i : ι) :
