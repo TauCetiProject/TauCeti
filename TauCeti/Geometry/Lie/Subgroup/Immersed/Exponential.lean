@@ -140,7 +140,7 @@ theorem isLocalDiffeomorph_lieExp_of_diffeomorph (he : ⇑e = lieExp) :
 /-- The ambient exponential image of the differential range of the presentation is closed. -/
 private theorem isClosed_image_lieExp_range (he : ⇑e = lieExp) :
     IsClosed (lieExp '' (d.lieMapToHom.range : Set (LeftInvariantDerivation I G))) := by
-  rw [← he, ← Diffeomorph.coe_toHomeomorph]
+  rw [← he, ← Diffeomorph.coe_toHomeomorph, ← LieSubalgebra.coe_toSubmodule]
   exact e.toHomeomorph.isClosedMap _ (Submodule.isClosed_of_finiteDimensional _)
 
 /-- The presentation maps the range of the intrinsic exponential onto the ambient exponential
@@ -213,8 +213,9 @@ theorem isClosedEmbedding_toHom_of_diffeomorph (he : ⇑e = lieExp) :
     rw [← comp_assoc, ← toHom_comp_lieExp d e he, comp_apply, comp_apply,
       ← lieExpDiffeomorphOfDiffeomorph_apply d e he, Diffeomorph.apply_symm_apply]
   rw [hfun]
-  have hlin : Topology.IsClosedEmbedding (lieMapCLM d) :=
-    LinearMap.isClosedEmbedding_of_injective (f := d.lieMapToHom.toLinearMap)
+  have hlin : Topology.IsClosedEmbedding (lieMapCLM d) := by
+    rw [coe_lieMapCLM, ← LieHom.coe_toLinearMap]
+    exact LinearMap.isClosedEmbedding_of_injective
       (LinearMap.ker_eq_bot.mpr d.injective_lieMapToHom)
   exact e.toHomeomorph.isClosedEmbedding.comp
     (hlin.comp (d.lieExpDiffeomorphOfDiffeomorph e he).symm.toHomeomorph.isClosedEmbedding)
