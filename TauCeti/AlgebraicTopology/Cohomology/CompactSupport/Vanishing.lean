@@ -80,6 +80,9 @@ theorem isZero_compactSupportCohomology_of_disjoint {U V : Opens X} (hUV : U ⊔
     (hV : IsZero (((toTopCat X).obj V).compactSupportCohomology R k M n)) :
     IsZero (X.compactSupportCohomology R k M n) := by
   have := isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint R k M U V hUV hd n
+  -- The source of this map is `Hⁿ_c(TopCat.of ↥U) ⊞ Hⁿ_c(TopCat.of ↥V)`, which is
+  -- `Hⁿ_c((toTopCat X).obj U) ⊞ Hⁿ_c((toTopCat X).obj V)` only after unfolding `Opens.toTopCat`.
+  -- Instance search does not unfold it, so the instance `this` is passed to `asIso` explicitly.
   exact ((biprod_isZero_iff _ _).2 ⟨hU, hV⟩).of_iso (@asIso _ _ _ _ _ this).symm
 
 /-- **Cohomology with compact supports of a directed union.** If a Hausdorff space `X` is the union
