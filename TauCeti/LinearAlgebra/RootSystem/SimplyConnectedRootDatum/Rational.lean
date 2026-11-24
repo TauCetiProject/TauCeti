@@ -160,6 +160,12 @@ theorem posRoots_rationalRootSystem :
   ext i
   simp only [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
 
+/-- The rational and integral pinned bases define the same set of negative root indices. -/
+theorem negRoots_rationalRootSystem :
+    negRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      negRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
+  rw [← compl_posRoots, posRoots_rationalRootSystem, compl_posRoots]
+
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 

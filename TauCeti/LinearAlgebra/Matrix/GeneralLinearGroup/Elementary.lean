@@ -469,6 +469,19 @@ theorem eq_fromBlocksGL_mul_upperBlockGL (g : GL (m ⊕ k) A)
 
 end Ring
 
+section CommRing
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+
+/-- In size at most one, an invertible matrix of determinant one is the identity. -/
+theorem ker_det_eq_bot_of_subsingleton [Subsingleton n] :
+    (det : GL n R →* Rˣ).ker = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun g hg ↦ ?_
+  obtain ⟨s, rfl⟩ := (SpecialLinearGroup.range_toGL_eq_ker_det (n := n) (R := R)).ge hg
+  rw [Subsingleton.elim s 1, map_one]
+
+end CommRing
+
 end Matrix.GeneralLinearGroup
 
 namespace TauCeti

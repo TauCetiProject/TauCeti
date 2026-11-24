@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
-import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -51,9 +50,10 @@ subsequence every bubbling point `z` carries a mass `m z ≥ δ`: for small `ε 
 the discs `B_ε(z)` converge to `m z` plus the energy of `v` on the punctured disc. Moreover
 `∫_{Ω \ Z} e(v) + ∑ m z ≤ E`
 (`SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`,
-from `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le`). The mass of
-`z` is the energy available to the bubbles at `z`: the area of a bubble obtained by rescaling at
-`z` is at most the lower limit of the energies of every disc about `z`
+from
+`TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration`).
+The mass of `z` is the energy available to the bubbles at `z`: the area of a bubble obtained by
+rescaling at `z` is at most the lower limit of the energies of every disc about `z`
 (`TauCeti.SymplecticForm.lintegral_symplecticForm_le_liminf_of_tendsto_rescale`). Since the
 masses are at least `δ`, this accounting also gives the bound `∫_{Ω \ Z} e(v) ≤ E` of the `C¹`
 theorem, which is read off from it.
@@ -249,20 +249,12 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
   have hdens := ω.tendstoLocallyUniformlyOn_floerEnergyDensity hS hv.continuousOn
     (hv.continuousOn_fderiv_of_isOpen hS le_rfl)
     (fun z hz ↦ hX.continuousAt (hW.mem_nhds (hvW z hz))) hlim hdlim
-  -- The energy of `v` over `S` is finite, and the bubbling points carry masses.
-  obtain ⟨ψ, m, hψ, hint_v, hm, hmE⟩ :=
-    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le hΩ hZΩ hnn
-      (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hdens
-  have hconcψ (z : ℝ × ℝ) (hz : z ∈ Z) (ε : ℝ) (hε : 0 < ε) : ∀ᶠ n in atTop,
-      δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ (ψ n))) y :=
-    hψ.tendsto_atTop.eventually (hconc z hz ε hε)
-  refine ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK, hlim.comp_tendsto hψ.tendsto_atTop,
-    hdlim.comp_tendsto hψ.tendsto_atTop, hveq, hint_v, fun z hz ↦ ?_, hm, hmE⟩
-  -- A punctured disc about `z` avoids the other bubbling points, so `v` has finite energy there.
-  obtain ⟨r, hr, -, hrS⟩ :=
-    exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff hΩ Z.finite_toSet (hZΩ hz)
-  exact le_of_tendsto_setIntegral_ball hΩ (hZΩ hz) hr (hint_v.mono_set hrS) (hm z hz)
-    (hconcψ z hz)
+  -- The energy of `v` over `S` is finite, and the bubbling points carry masses at least `δ`.
+  obtain ⟨ψ, m, hψ, hint_v, hconcψ, hδm, hm, hmE⟩ :=
+    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration hΩ hZΩ
+      hnn (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hdens hconc
+  exact ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK, hlim.comp_tendsto hψ.tendsto_atTop,
+    hdlim.comp_tendsto hψ.tendsto_atTop, hveq, hint_v, hδm, hm, hmE⟩
 
 /-- **Floer solutions of bounded energy converge in `C¹` off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
