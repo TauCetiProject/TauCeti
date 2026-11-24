@@ -19,6 +19,9 @@ submodules directly, without passing through the underlying `Submodule`.
 
 * `ClosedSubmodule.instAddSubgroupClass`: a closed submodule over a ring is closed under
   negation, hence an additive subgroup class.
+* `ClosedSubmodule.instCompleteSpaceToSubmodule`,
+  `ClosedSubmodule.instCompleteSpaceInfToSubmodule`: the underlying submodule of a closed
+  submodule (and the intersection of two) in a complete space is complete.
 * `Submodule.toSubmodule_closure`: the underlying submodule of `s.closure` is
   `s.topologicalClosure`.
 -/
@@ -33,6 +36,27 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [TopologicalSpace M] [Module R 
 because its underlying submodule is. -/
 instance instAddSubgroupClass : AddSubgroupClass (ClosedSubmodule R M) M where
   neg_mem {s} _ hx := s.toSubmodule.neg_mem hx
+
+section CompleteSpace
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [AddCommMonoid E] [UniformSpace E] [Module 𝕜 E]
+  [CompleteSpace E]
+
+/-- The underlying submodule of a closed submodule of a complete space is complete. -/
+instance instCompleteSpaceToSubmodule (K : ClosedSubmodule 𝕜 E) :
+    CompleteSpace K.toSubmodule := by
+  refine IsComplete.completeSpace_coe ?_
+  rw [coe_toSubmodule]
+  exact K.isClosed.isComplete
+
+/-- The intersection of the underlying submodules of two closed submodules of a complete space is
+complete. -/
+instance instCompleteSpaceInfToSubmodule (U V : ClosedSubmodule 𝕜 E) :
+    CompleteSpace ↥(U.toSubmodule ⊓ V.toSubmodule) := by
+  rw [← toSubmodule_inf]
+  infer_instance
+
+end CompleteSpace
 
 end ClosedSubmodule
 

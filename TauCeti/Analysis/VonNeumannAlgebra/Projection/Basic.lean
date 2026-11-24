@@ -389,9 +389,6 @@ theorem coe_inf (p q : M.Projection) :
 theorem starProjection_orthogonal_ker_one_sub_mul (p q : M.Projection) :
     ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
       (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) := by
-  have hcomplete : CompleteSpace ↥(p.closedRange ⊓ q.closedRange).toSubmodule :=
-    inferInstanceAs (CompleteSpace ↥(p.closedRange ⊓ q.closedRange))
-  rw [ClosedSubmodule.toSubmodule_inf] at hcomplete
   have h : ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
       ((1 - p.closedRange.toSubmodule.starProjection) *
         q.closedRange.toSubmodule.starProjection).kerᗮ.starProjection := by

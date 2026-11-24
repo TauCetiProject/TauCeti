@@ -28,7 +28,7 @@ subspace, it also contains the linear span and norm-closed linear span of any su
 
 public section
 
-open scoped InnerProduct
+open scoped ComplexStarModule InnerProduct
 
 namespace VonNeumannAlgebra
 
@@ -37,6 +37,18 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 /-- Concrete von Neumann algebras are closed under complex scalar multiplication. -/
 instance instSMulMemClass : SMulMemClass (VonNeumannAlgebra H) ℂ (H →L[ℂ] H) where
   smul_mem {M} c {_} ha := SMulMemClass.smul_mem (s := M.toStarSubalgebra) c ha
+
+/-- The real part of an operator in `M` belongs to `M`. -/
+theorem realPart_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
+    (ℜ x : H →L[ℂ] H) ∈ M := by
+  rw [realPart_apply_coe, ← Complex.coe_smul]
+  exact SMulMemClass.smul_mem _ (add_mem hx (star_mem hx))
+
+/-- The imaginary part of an operator in `M` belongs to `M`. -/
+theorem imaginaryPart_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
+    (ℑ x : H →L[ℂ] H) ∈ M := by
+  rw [imaginaryPart_apply_coe, ← Complex.coe_smul]
+  exact SMulMemClass.smul_mem _ (SMulMemClass.smul_mem _ (sub_mem hx (star_mem hx)))
 
 /-- A concrete von Neumann algebra is closed in the operator norm topology. -/
 instance isClosed (M : VonNeumannAlgebra H) : IsClosed (M : Set (H →L[ℂ] H)) := by

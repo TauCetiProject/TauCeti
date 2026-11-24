@@ -9,6 +9,7 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 public import TauCeti.Analysis.VonNeumannAlgebra.Projection.Basic
 import Mathlib.Algebra.Order.Star.Projection
 import TauCeti.Analysis.VonNeumannAlgebra.Density
+import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
@@ -214,12 +215,9 @@ theorem centralSupportProjection_unitary_conj {M : VonNeumannAlgebra H} {u a : H
   have hz : Φ z = z := by
     rw [Unitary.conjStarAlgAut_apply, ← hzu, mul_assoc, hu.2, mul_one]
   rw [← Unitary.conjStarAlgAut_apply (S := ℂ) ⟨u, hu⟩ a]
-  conv_lhs =>
-    lhs
-    lhs
-    rw [← hz]
-  rw [← map_mul Φ]
-  exact Φ.injective.eq_iff
+  calc (z : H →L[ℂ] H) * Φ a = Φ a
+      ↔ Φ ((z : H →L[ℂ] H) * a) = Φ a := by rw [map_mul, hz]
+    _ ↔ (z : H →L[ℂ] H) * a = a := Φ.injective.eq_iff
 
 /-- Conjugating an operator by a unitary in `M` preserves its central support. -/
 @[simp]
@@ -227,6 +225,39 @@ theorem centralSupport_unitary_conj {M : VonNeumannAlgebra H} {u a : H →L[ℂ]
     (huM : u ∈ M) (hu : u ∈ unitary (H →L[ℂ] H)) :
     M.centralSupport (u * a * star u) = M.centralSupport a :=
   congrArg Projection.val (M.centralSupportProjection_unitary_conj huM hu)
+
+/-- The orthogonal projection onto the closed span of the `M`-orbits `{x (a ξ) | x ∈ M, ξ ∈ H}`
+belongs to `M.commutant`. -/
+private theorem starProjection_closure_span_orbit_mem_commutant (M : VonNeumannAlgebra H)
+    (a : H →L[ℂ] H) :
+    (Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}).topologicalClosure.starProjection ∈
+      M.commutant := by
+  set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} with hW_def
+  let A := M.toStarSubalgebra.toNonUnitalStarSubalgebra
+  let O : H → Submodule ℂ H := fun ξ =>
+    A.toNonUnitalSubalgebra.toSubmodule.map (ContinuousLinearMap.apply ℂ H (a ξ)).toLinearMap
+  have hW_eq : W = ⨆ ξ, O ξ := by
+    have hset : {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = ⋃ ξ, (O ξ : Set H) := by
+      ext η
+      simp only [Set.mem_ofPred_eq, Set.mem_iUnion, SetLike.mem_coe, O, Submodule.mem_map,
+        NonUnitalSubalgebra.mem_toSubmodule, ContinuousLinearMap.coe_coe,
+        ContinuousLinearMap.apply_apply, A]
+      exact ⟨fun ⟨x, hx, ξ, h⟩ => ⟨ξ, x, hx, h⟩, fun ⟨ξ, x, hx, h⟩ => ⟨x, hx, ξ, h⟩⟩
+    rw [hW_def, hset, Submodule.span_iUnion]
+    simp only [Submodule.span_eq]
+  have hK_eq :
+      W.topologicalClosure = (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
+    have gc : GaloisConnection (Submodule.closure : Submodule ℂ H → ClosedSubmodule ℂ H)
+        ClosedSubmodule.toSubmodule := fun _ _ => Submodule.closure_le
+    have hcl : W.closure = ⨆ ξ, (O ξ).closure := by
+      rw [hW_eq]
+      exact gc.l_iSup
+    exact congrArg ClosedSubmodule.toSubmodule hcl
+  rw [Submodule.starProjection_inj.2 hK_eq]
+  refine starProjection_topologicalClosure_iSup_mem (fun ξ => (O ξ).closure) fun ξ => ?_
+  rw [Submodule.starProjection_inj.2 (Submodule.toSubmodule_closure (O ξ)),
+    ← SetLike.mem_coe, coe_commutant, ← coe_toStarSubalgebra]
+  exact A.starProjection_topologicalClosure_map_apply_mem_centralizer (a ξ)
 
 /-- **Geometric formula for the central support.** For `a ∈ M`, `M.centralSupport a` is the
 orthogonal projection onto the closure of the linear span of `{x (a ξ) | x ∈ M, ξ ∈ H}`. -/
@@ -238,8 +269,7 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
   set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}
   set K : Submodule ℂ H := W.topologicalClosure
   -- Step 1: `W` is invariant under `M.commutant` (so `K.starProjection ∈ M`) and is the span of
-  -- the orbits `M (a ξ)` (so `K.starProjection ∈ M.commutant` by
-  -- `starProjection_topologicalClosure_iSup_mem`).
+  -- the orbits `M (a ξ)` (so `K.starProjection ∈ M.commutant`).
   have hW_comm : ∀ y ∈ M.commutant, W ∈ Module.End.invtSubmodule y := by
     intro y hy
     rw [Module.End.mem_invtSubmodule, Submodule.span_le]
@@ -251,33 +281,8 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
   have hKM : K.starProjection ∈ M := by
     rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection]
     exact fun y hy => Submodule.topologicalClosure_mem_invtSubmodule (hW_comm y hy)
-  have hKC : K.starProjection ∈ M.commutant := by
-    let A := M.toStarSubalgebra.toNonUnitalStarSubalgebra
-    let O : H → Submodule ℂ H := fun ξ =>
-      A.toNonUnitalSubalgebra.toSubmodule.map (ContinuousLinearMap.apply ℂ H (a ξ)).toLinearMap
-    have hW_eq : W = ⨆ ξ, O ξ := by
-      have hset : {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = ⋃ ξ, (O ξ : Set H) := by
-        ext η
-        simp only [Set.mem_ofPred_eq, Set.mem_iUnion, SetLike.mem_coe, O, Submodule.mem_map,
-          NonUnitalSubalgebra.mem_toSubmodule, ContinuousLinearMap.coe_coe,
-          ContinuousLinearMap.apply_apply, A]
-        exact ⟨fun ⟨x, hx, ξ, h⟩ => ⟨ξ, x, hx, h⟩, fun ⟨ξ, x, hx, h⟩ => ⟨x, hx, ξ, h⟩⟩
-      change Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = _
-      rw [hset, Submodule.span_iUnion]
-      simp only [Submodule.span_eq]
-    have hK_eq : K = (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
-      have gc : GaloisConnection (Submodule.closure : Submodule ℂ H → ClosedSubmodule ℂ H)
-          ClosedSubmodule.toSubmodule := fun _ _ => Submodule.closure_le
-      have hcl : W.closure = ⨆ ξ, (O ξ).closure := by
-        rw [hW_eq]
-        exact gc.l_iSup
-      exact congrArg ClosedSubmodule.toSubmodule hcl
-    rw [Submodule.starProjection_inj.2 hK_eq]
-    refine starProjection_topologicalClosure_iSup_mem (fun ξ => (O ξ).closure) fun ξ => ?_
-    rw [Submodule.starProjection_inj.2
-        (rfl : (O ξ).closure.toSubmodule = (O ξ).topologicalClosure),
-      ← SetLike.mem_coe, coe_commutant, ← coe_toStarSubalgebra]
-    exact A.starProjection_topologicalClosure_map_apply_mem_centralizer (a ξ)
+  have hKC : K.starProjection ∈ M.commutant :=
+    M.starProjection_closure_span_orbit_mem_commutant a
   -- Step 2: `K.starProjection * a = a` since `a ξ = 1 (a ξ) ∈ W ≤ K`.
   have hKa : K.starProjection * a = a := by
     rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
