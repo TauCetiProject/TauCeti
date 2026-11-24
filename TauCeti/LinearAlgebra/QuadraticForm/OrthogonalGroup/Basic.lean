@@ -879,6 +879,12 @@ theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
 
+/-- In characteristic two the reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflection_apply_of_charTwo [CharP R 2] (y : M) :
+    reflection Q v y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [reflection_apply, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq]
+
 /-- Rescaling a vector of invertible norm by a scalar that keeps the norm invertible does not
 change its quadratic reflection. -/
 @[simp]
