@@ -41,6 +41,9 @@ chord is at most `√2` times the sine.
   University Press, 2019, Theorem 8.5, whose bound has `2` in place of `√2`.
 * C. Davis, W. M. Kahan, *The rotation of eigenvectors by a perturbation. III*,
   SIAM J. Numer. Anal. **7** (1970), 1–46.
+* The main theorem is adapted from lean-CKSD (<https://github.com/bjbraams/lean-CKSD>),
+  `CKSD/Nonparametric/HighDimensional/EigenvectorPerturbation.lean`,
+  `exists_eigenvector_norm_sub_le_of_rayleigh_gap` (with constant `2`).
 -/
 
 public section
@@ -57,12 +60,14 @@ orthogonal to `u` is at most `m - δ`, then `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A 
 is the residual Davis–Kahan theorem for the invariant line `ℝ u`. -/
 theorem mul_norm_sub_inner_smul_le_norm_apply_sub_smul {A : E →L[ℝ] E} {u : E}
     (hu : (A : E →ₗ[ℝ] E).IsLeadingUnitEigenvector u) (hA : (A : E →ₗ[ℝ] E).IsSymmetric)
-    {m δ : ℝ} (h : ∀ {y : E}, y ≠ 0 → ⟪y, u⟫ = 0 → ∀ μ : ℝ, A y = μ • y → μ ≤ m - δ) (x : E) :
+    {m δ : ℝ}
+    (h : ∀ {y : E}, y ≠ 0 → ⟪y, u⟫ = 0 → ∀ μ : ℝ, (A : E →ₗ[ℝ] E) y = μ • y → μ ≤ m - δ)
+    (x : E) :
     δ * ‖x - ⟪u, x⟫ • u‖ ≤ ‖A x - m • x‖ := by
   have hU : ∀ y ∈ ℝ ∙ u, A y ∈ ℝ ∙ u := by
     intro y hy
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
-    rw [map_smul, show A u = ⟪u, A u⟫ • u from hu.apply_eq_smul hA, smul_smul]
+    rw [map_smul, ← ContinuousLinearMap.coe_coe A, hu.apply_eq_smul hA, smul_smul]
     exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u)
   have hspec : Module.End.PointSpectrumIn (A : E →ₗ[ℝ] E) (ℝ ∙ u)ᗮ
       (Set.Ioo (m - δ) (m + δ))ᶜ := by

@@ -19,7 +19,9 @@ every `v`. For a symmetric `M` such a vector is an eigenvector for the largest e
 
 ## Main declarations
 
-* `LinearMap.IsLeadingUnitEigenvector`: `u` is a unit maximizer of the quadratic form of `M`.
+* `LinearMap.IsLeadingUnitEigenvector`: `u` is a unit maximizer of the quadratic form of `M`,
+  with `LinearMap.isLeadingUnitEigenvector_iff` and the constructor
+  `LinearMap.IsLeadingUnitEigenvector.of_norm_eq_one_of_le`.
 * `LinearMap.IsLeadingUnitEigenvector.inner_apply_add_inner_apply`: the first variation
   `⟪w, M u⟫ + ⟪u, M w⟫ = 2 ⟪u, M u⟫ ⟪w, u⟫`.
 * `LinearMap.IsLeadingUnitEigenvector.apply_eq_smul`: for symmetric `M`,
@@ -30,6 +32,14 @@ every `v`. For a symmetric `M` such a vector is an eigenvector for the largest e
   eigenvector orthogonal to a leading unit eigenvector is at most `c`.
 * `LinearMap.IsLeadingUnitEigenvector.eq_or_eq_neg`: if no nonzero eigenvector for the largest
   eigenvalue is orthogonal to `u`, the leading unit eigenvector is unique up to sign.
+
+## References
+
+* Existence and uniqueness up to sign are adapted from lean-CKSD
+  (<https://github.com/bjbraams/lean-CKSD>),
+  `CKSD/Nonparametric/HighDimensional/EigenvectorPerturbation.lean`:
+  `exists_unit_eigenvector_rayleigh_le` and
+  `mem_span_singleton_of_eigenvector_of_forall_inner_eq_zero`.
 -/
 
 public section
@@ -45,18 +55,32 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {M : E →
 def IsLeadingUnitEigenvector (M : E →ₗ[ℝ] E) (u : E) : Prop :=
   ‖u‖ = 1 ∧ ∀ v, ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2
 
+/-- `u` is a leading unit eigenvector of `M` if and only if `‖u‖ = 1` and
+`⟪v, M v⟫ ≤ ⟪u, M u⟫ ‖v‖²` for every `v`. -/
+theorem isLeadingUnitEigenvector_iff :
+    M.IsLeadingUnitEigenvector u ↔ ‖u‖ = 1 ∧ ∀ v, ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2 :=
+  Iff.rfl
+
 namespace IsLeadingUnitEigenvector
 
+/-- A unit vector `u` with `⟪v, M v⟫ ≤ ⟪u, M u⟫ ‖v‖²` for every `v` is a leading unit
+eigenvector of `M`. -/
+theorem of_norm_eq_one_of_le (h1 : ‖u‖ = 1) (h : ∀ v, ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2) :
+    M.IsLeadingUnitEigenvector u :=
+  isLeadingUnitEigenvector_iff.mpr ⟨h1, h⟩
+
 /-- A leading unit eigenvector has norm one. -/
-theorem norm_eq_one (hu : M.IsLeadingUnitEigenvector u) : ‖u‖ = 1 := hu.1
+theorem norm_eq_one (hu : M.IsLeadingUnitEigenvector u) : ‖u‖ = 1 :=
+  (isLeadingUnitEigenvector_iff.mp hu).1
 
 /-- The quadratic form of `M` is bounded by `⟪u, M u⟫ ‖v‖²` at a leading unit eigenvector `u`. -/
 theorem inner_apply_self_le (hu : M.IsLeadingUnitEigenvector u) (v : E) :
-    ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2 := hu.2 v
+    ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2 :=
+  (isLeadingUnitEigenvector_iff.mp hu).2 v
 
 /-- The negative of a leading unit eigenvector is a leading unit eigenvector. -/
 theorem neg (hu : M.IsLeadingUnitEigenvector u) : M.IsLeadingUnitEigenvector (-u) := by
-  refine ⟨by rw [norm_neg, hu.norm_eq_one], fun v ↦ ?_⟩
+  refine of_norm_eq_one_of_le (by rw [norm_neg, hu.norm_eq_one]) fun v ↦ ?_
   simpa only [map_neg, inner_neg_neg] using hu.inner_apply_self_le v
 
 /-- Two leading unit eigenvectors of `M` have the same Rayleigh quotient. -/
@@ -79,14 +103,15 @@ theorem inner_apply_add_inner_apply (hu : M.IsLeadingUnitEigenvector u) (w : E) 
   have hK : 0 ≤ K := by linarith [hu.inner_apply_self_le w]
   have hquad (t : ℝ) : t * a ≤ t ^ 2 * K := by
     have h := hu.inner_apply_self_le (u + t • w)
-    rw [norm_add_sq_real, inner_smul_right, norm_smul, hu.norm_eq_one, mul_pow, Real.norm_eq_abs,
-      sq_abs, map_add, map_smul, inner_add_left, inner_add_right, inner_add_right,
-      inner_smul_left, inner_smul_right, inner_smul_right, inner_smul_left, ← real_inner_comm u w]
-      at h
-    simp only [conj_trivial] at h
+    simp only [map_add, map_smul, inner_add_left, inner_add_right, inner_smul_left,
+      inner_smul_right, conj_trivial, norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow,
+      sq_abs, hu.norm_eq_one, one_pow] at h
+    rw [real_inner_comm w u] at h
     nlinarith
-  obtain ⟨t, ht⟩ : ∃ t, t = a / (K + 1) := ⟨_, rfl⟩
-  have hat : a = t * (K + 1) := by rw [ht, div_mul_cancel₀ _ (by positivity)]
+  -- `t * a ≤ t ^ 2 * K` for all `t` forces `a = 0`: at `t = a / (K + 1)`, so that
+  -- `a = t (K + 1)`, it reads `t ^ 2 (K + 1) ≤ t ^ 2 K`, hence `t = 0`.
+  set t := a / (K + 1)
+  have hat : a = t * (K + 1) := by simp only [t]; rw [div_mul_cancel₀ _ (by positivity)]
   have h := hquad t
   rw [hat] at h
   have ht0 : t = 0 := pow_eq_zero_iff two_ne_zero |>.mp (le_antisymm (by nlinarith) (sq_nonneg t))
@@ -182,7 +207,7 @@ theorem exists_isLeadingUnitEigenvector [FiniteDimensional ℝ E] [Nontrivial E]
   obtain ⟨u, hu, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
     ⟨‖x‖⁻¹ • x, by simp [norm_smul, hx]⟩ hcont.continuousOn
   have hu1 : ‖u‖ = 1 := by simpa using hu
-  refine ⟨u, hu1, fun v ↦ ?_⟩
+  refine ⟨u, .of_norm_eq_one_of_le hu1 fun v ↦ ?_⟩
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   have hv' : 0 < ‖v‖ := norm_pos_iff.mpr hv

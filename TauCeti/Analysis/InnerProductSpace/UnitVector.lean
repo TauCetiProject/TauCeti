@@ -47,8 +47,8 @@ theorem norm_sub_le_sqrt_two_mul_norm_sub_inner_smul {F : Type*} [NormedAddCommG
     rw [norm_sub_sq_real, hx, hξ, real_inner_comm]
     ring
   have h₂ : ‖x - ⟪ξ, x⟫_ℝ • ξ‖ ^ 2 = 1 - ⟪ξ, x⟫_ℝ ^ 2 := by
-    rw [norm_sub_sq_real, hx, inner_smul_right, real_inner_comm, norm_smul, hξ, Real.norm_eq_abs,
-      mul_one, sq_abs]
+    simp only [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
+      hx, hξ, real_inner_comm x ξ]
     ring
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
   rw [mul_pow, Real.sq_sqrt zero_le_two, h₁, h₂]
