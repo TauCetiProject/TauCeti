@@ -25,7 +25,11 @@ rectangles.
   corners.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
+* `Complex.notMem_frontier_rectangle_of_mem_Ioo`: conversely, a point of the open rectangle is
+  not on its frontier.
 * `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
+* `Complex.frontier_rectangle_subset_sdiff`: the frontier of a rectangle avoids every set contained
+  in the open rectangle.
 * `Complex.dist_le_of_mem_rectangle`: two points of `Rectangle z w` are at distance at most
   `dist z w`.
 * `Complex.smul_integral_lineMap_of_im_eq`, `Complex.smul_integral_lineMap_of_re_eq`: the contour
@@ -100,9 +104,23 @@ theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ 
   rw [← interior_rectangle hre him, ← self_sdiff_frontier]
   exact ⟨hs, hfr⟩
 
+/-- A point of the open rectangle `Ioo z.re w.re ×ℂ Ioo z.im w.im` is not on the frontier of
+`Rectangle z w`. -/
+theorem notMem_frontier_rectangle_of_mem_Ioo {s : ℂ}
+    (hs : s ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im) : s ∉ frontier (Rectangle z w) := by
+  rw [← interior_rectangle (hs.1.1.trans hs.1.2).le (hs.2.1.trans hs.2.2).le] at hs
+  exact disjoint_left.1 disjoint_interior_frontier hs
+
 /-- The closed rectangle is closed. -/
 theorem isClosed_rectangle (z w : ℂ) : IsClosed (Rectangle z w) :=
   isClosed_uIcc.reProdIm isClosed_uIcc
+
+/-- The frontier of `Rectangle z w` lies in the rectangle and avoids every set `P` contained in the
+open rectangle `Ioo z.re w.re ×ℂ Ioo z.im w.im`. -/
+theorem frontier_rectangle_subset_sdiff {P : Set ℂ} (hP : P ⊆ Ioo z.re w.re ×ℂ Ioo z.im w.im) :
+    frontier (Rectangle z w) ⊆ Rectangle z w \ P :=
+  fun _ hs ↦ ⟨(isClosed_rectangle z w).frontier_subset hs,
+    fun hsP ↦ notMem_frontier_rectangle_of_mem_Ioo (hP hsP) hs⟩
 
 /-- The closed rectangle is compact. -/
 theorem isCompact_rectangle (z w : ℂ) : IsCompact (Rectangle z w) :=
