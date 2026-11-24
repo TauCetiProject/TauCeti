@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Extension
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.SmoothSeries
 
 /-!
 # Smooth functions are dense in `W^{k,p}(Ω)` (Meyers–Serrin)
@@ -278,7 +279,7 @@ private theorem exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (k : ℕ) (u : Wk
   let f : E → ℝ := fun x => ∑' j, Psi j x
   have hf : ContDiffOn ℝ ∞ f Omega := fun x hx => by
     obtain ⟨m, hm⟩ := hfin x hx
-    refine (contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
+    refine (Finset.contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
       (fun j _ => (Psi j).contDiff.contDiffAt) (hm.mono fun y hy j hj => ?_)).contDiffWithinAt
     exact hPsi_zero j y (hy.1 j (by simpa using hj))
   -- at each point of `Ω`, the partial sums of `Psi` and `zeta` are eventually `f` and `1`

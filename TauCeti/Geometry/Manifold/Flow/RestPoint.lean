@@ -42,6 +42,8 @@ constant orbits of `ε F` for small `ε > 0`.
 
 * `TauCeti.mem_flowDomain_of_eq_zero`, `TauCeti.flowOf_eq_self_of_eq_zero`: the flow is defined at
   a rest point for all time and fixes it.
+* `TauCeti.apply_ne_zero_of_forall_flowOf_ne`: a closed orbit of positive least period is not a
+  rest point.
 * `TauCeti.mdifferentiableAt_flowOf_of_eq_zero`: the time-`t` maps are differentiable at a rest
   point.
 * `TauCeti.hasDerivAt_mfderiv_flowOf_of_eq_zero`: the differentials of the time-`t` maps at a rest
@@ -81,6 +83,14 @@ theorem flowOf_eq_self_of_eq_zero [IsManifold I 1 M] [BoundarylessManifold I M]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hp : v p = 0) (t : ℝ) :
     flowOf v t p = p :=
   flowOf_eq_of_isMIntegralCurve hv (isMIntegralCurve_const hp) t
+
+/-- **A closed orbit of positive least period is not a rest point.** If the flow of a `C¹` field
+does not return to `p` at any time in `(0, T₀)`, with `T₀ > 0`, then the field does not vanish at
+`p`. -/
+theorem apply_ne_zero_of_forall_flowOf_ne [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {T₀ : ℝ} (hT₀ : 0 < T₀)
+    (hmin : ∀ t ∈ Ioo 0 T₀, flowOf v t p ≠ p) : v p ≠ 0 := fun h0 ↦
+  hmin (T₀ / 2) ⟨by positivity, by linarith⟩ (flowOf_eq_self_of_eq_zero hv h0 _)
 
 /-- **The time-`t` maps of the flow are differentiable at a rest point.** For a `C¹` field `v` on a
 boundaryless manifold modelled on a Banach space, every time-`t` map of the flow is differentiable
