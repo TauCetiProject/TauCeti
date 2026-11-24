@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.RingTheory.AdjoinRoot.Basic
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.Kummer.Extension
 
 /-!

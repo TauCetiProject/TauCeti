@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.KrullTopology
 
 /-!

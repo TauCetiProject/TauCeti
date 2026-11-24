@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Classificat
 public import TauCeti.FieldTheory.Galois.SquareRoot.Character
 
 import TauCeti.Algebra.CharP.Lemmas
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
 # Quadratic twists by a character of the absolute Galois group
@@ -149,21 +149,13 @@ theorem isQuadraticTwistBy_iff_exists_smul_eq {W E : WeierstrassCurve K}
 isomorphic to `W` over `K`. -/
 theorem isQuadraticTwistBy_one_iff {W E : WeierstrassCurve K} (h2 : (2 : K) ≠ 0) :
     W.IsQuadraticTwistBy E 1 ↔ ∃ C : VariableChange K, C • W = E := by
-  refine ⟨fun ⟨d, a, ha, hη, C, hC⟩ ↦ ?_, fun ⟨C, hC⟩ ↦ ?_⟩
-  · -- a square root of `d` fixed by every automorphism is `c ∈ K`, so `d = c²` is a square
-    obtain ⟨c, rfl⟩ := TauCeti.mem_range_algebraMap_of_sq_eq_of_forall_apply_eq ha h2
-      fun g ↦ by simpa using hη g
-    have hd : (d : K) = c ^ 2 := (algebraMap K (AlgebraicClosure K)).injective (by
-      rw [map_pow]
-      exact ha.symm)
-    have hc : c ≠ 0 := by
-      rintro rfl
-      exact d.ne_zero (by simp [hd])
-    obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_zero_neg_sq h2 hc
-    exact ⟨C * C₁, by rw [mul_smul, hC₁, ← hC, hd]⟩
-  · obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_zero_neg_sq h2 one_ne_zero
-    rw [one_pow] at hC₁
-    refine ⟨1, 1, by simp, fun g ↦ by simp, C * C₁⁻¹, ?_⟩
+  obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_quadraticTwistOf_zero_neg_sq h2 one_ne_zero
+  rw [one_pow] at hC₁
+  refine ⟨fun h ↦ ?_, fun ⟨C, hC⟩ ↦ ?_⟩
+  · -- the trivial character acts trivially on the square root `1` of `1`
+    obtain ⟨C, hC⟩ := h.exists_smul_eq h2 1 (a' := 1) (by simp) (by simp)
+    exact ⟨C * C₁, by rw [mul_smul, hC₁, ← hC, Units.val_one]⟩
+  · refine ⟨1, 1, by simp, fun g ↦ by simp, C * C₁⁻¹, ?_⟩
     rw [mul_smul, Units.val_one, ← hC₁, inv_smul_smul, hC]
 
 variable (W : WeierstrassCurve K) [W.IsElliptic]
