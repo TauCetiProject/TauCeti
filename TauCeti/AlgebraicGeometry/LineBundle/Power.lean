@@ -47,9 +47,11 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
   of isomorphic line bundles are isomorphic.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowTrivialIso X n`: the isomorphism
   `𝒪_X^{⊗n} ≅ 𝒪_X`.
-* `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
-  `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_iso`: the exponent laws
-  `L^{⊗(m + n)} ≅ L^{⊗m} ⊗ L^{⊗n}` and `(L^{⊗m})^{⊗n} ≅ L^{⊗(m * n)}`.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso`,
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_iso`, and
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_obj_iso`: the exponent
+  laws `L^{⊗(m + n)} ≅ L^{⊗m} ⊗ L^{⊗n}`, `(L^{⊗m})^{⊗n} ≅ L^{⊗(m * n)}`, and their monoidal
+  tensor-power counterpart.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_pullback_tensorPow_iso`: pullback commutes
   with tensor powers up to isomorphism.
 
@@ -246,6 +248,14 @@ lemma tensorPowObjIso_succ (L : InvertibleSheaf X) (n : ℕ) :
         tensorPowSuccIso L.obj n :=
   (rfl)
 
+/-- The underlying morphism of an `eqToHom` in a full subcategory is `eqToHom` on the
+underlying objects. -/
+private lemma fullSubcategory_eqToHom_hom {C : Type*} [Category C] {P : ObjectProperty C}
+    {a b : P.FullSubcategory} (h : a = b) :
+    (eqToHom h).hom = eqToHom (congrArg (·.obj) h) := by
+  subst h
+  rfl
+
 /-- Read through `tensorPowObjIso`, the induced isomorphism `tensorPowCongr e n` corresponds to
 the monoidal map `TauCeti.tensorPowMap e.hom.hom n`. -/
 @[reassoc]
@@ -259,22 +269,32 @@ lemma tensorPowCongr_hom_hom_comp_tensorPowObjIso_hom {L K : InvertibleSheaf X} 
   | succ n ih =>
     rw [tensorPowCongr_succ, tensorPowObjIso_succ, tensorPowObjIso_succ]
     simp only [ObjectProperty.FullSubcategory.comp_hom, Iso.trans_hom, Category.assoc,
-      whiskerRightIso_hom, eqToIso.hom]
-    have hL : (eqToHom (L.tensorPow_succ n)).hom =
-        eqToHom (congrArg (·.obj) (L.tensorPow_succ n)) := by
-      cases L.tensorPow_succ n
-      rfl
-    have hK : (eqToHom (K.tensorPow_succ n).symm).hom =
-        eqToHom (congrArg (·.obj) (K.tensorPow_succ n).symm) := by
-      cases (K.tensorPow_succ n).symm
-      rfl
-    rw [hL, hK, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    congr 1
-    rw [tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc,
-      tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc,
-      ← whisker_exchange_assoc, ← comp_whiskerRight_assoc, ih, comp_whiskerRight_assoc,
-      whisker_exchange_assoc, ← tensorHom_def'_assoc,
-      TauCeti.tensorPowSuccIso_hom_naturality]
+      whiskerRightIso_hom, eqToIso.hom, fullSubcategory_eqToHom_hom, eqToHom_trans_assoc,
+      eqToHom_refl, Category.id_comp,
+      tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc,
+      tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc]
+    congr 2
+    calc (tensorPowCongr e n).hom.hom ▷ L.obj ≫ (K.tensorPow n).obj ◁ e.hom.hom ≫
+          (K.tensorPowObjIso n).hom ▷ K.obj ≫ (TauCeti.tensorPowSuccIso K.obj n).hom
+        = (tensorPowCongr e n).hom.hom ▷ L.obj ≫ (K.tensorPowObjIso n).hom ▷ L.obj ≫
+            TauCeti.tensorPow K.obj n ◁ e.hom.hom ≫ (TauCeti.tensorPowSuccIso K.obj n).hom := by
+          rw [whisker_exchange_assoc]
+      _ = (L.tensorPowObjIso n).hom ▷ L.obj ≫ (TauCeti.tensorPowMap e.hom.hom n ⊗ₘ e.hom.hom) ≫
+            (TauCeti.tensorPowSuccIso K.obj n).hom := by
+          rw [← comp_whiskerRight_assoc, ih, comp_whiskerRight_assoc, ← tensorHom_def_assoc]
+      _ = _ := by
+          rw [TauCeti.tensorPowSuccIso_hom_naturality]
+
+/-- For an invertible sheaf `L`, the nested monoidal tensor power `(L^{⊗ m})^{⊗ n}` is isomorphic
+to `L^{⊗ (m * n)}`. -/
+theorem nonempty_tensorPow_tensorPow_obj_iso (L : InvertibleSheaf X) (m n : ℕ) :
+    Nonempty
+      (TauCeti.tensorPow (TauCeti.tensorPow L.obj m) n ≅ TauCeti.tensorPow L.obj (m * n)) := by
+  let M : InvertibleSheaf X := ⟨TauCeti.tensorPow L.obj m, inferInstance⟩
+  obtain ⟨e₁⟩ := nonempty_tensorPow_obj_iso
+    (L := M) (K := L.tensorPow m) ⟨(L.tensorPowObjIso m).symm⟩ n
+  obtain ⟨e₂⟩ := nonempty_tensorPow_tensorPow_iso L m n
+  exact ⟨(M.tensorPowObjIso n).symm ≪≫ e₁ ≪≫ e₂ ≪≫ L.tensorPowObjIso (m * n)⟩
 
 end InvertibleSheaf
 

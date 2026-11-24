@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
-import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # Serre's theorem on twists of quasi-coherent sheaves on `Proj`
@@ -95,22 +95,45 @@ theorem eventually_exists_epi_free_tensor_twistingSheaf [CompactSpace (Proj 𝒜
     (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∀ᶠ n : ℕ in Filter.atTop, ∃ (I : Type u) (_ : Finite I)
       (π : (SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ twistingSheaf 𝒜 (-n) ⟶ F), Epi π := by
-  filter_upwards [eventually_exists_generatingSections_tensor_twistingSheaf f hf hcover F]
-    with n ⟨σ, _⟩
-  -- Tensor `𝒪^{⊕I} → F(n)` with `𝒪(-n)` and cancel `𝒪(n) ⊗ 𝒪(-n) ≅ 𝒪(0) ≅ 𝒪`.
-  let μ : twistingSheaf 𝒜 n ⊗ twistingSheaf 𝒜 (-n) ≅ 𝟙_ (Proj 𝒜).Modules :=
-    twistingSheaf.tensorObjIso f hf hcover n (-n) ≪≫
-      eqToIso (congrArg (twistingSheaf 𝒜) (add_neg_cancel (n : ℤ))) ≪≫
-      (unitIsoTwistingSheafZero 𝒜).symm
-  -- The surjection `𝒪^{⊕I} → F(n)`, as a morphism of `𝒪_{Proj A}`-modules.
-  let P : (Proj 𝒜).Modules := SheafOfModules.free σ.I
-  let p : P ⟶ F ⊗ twistingSheaf 𝒜 n := σ.π
-  have : Epi p := σ.epi
-  -- Tensoring on the right is a left adjoint, as `𝒪_{Proj A}`-modules are braided and closed.
-  have : Epi (p ▷ twistingSheaf 𝒜 (-n)) := (tensorRight _).map_epi p
-  let e : (F ⊗ twistingSheaf 𝒜 n) ⊗ twistingSheaf 𝒜 (-n) ≅ F :=
-    α_ F (twistingSheaf 𝒜 n) (twistingSheaf 𝒜 (-n)) ≪≫ whiskerLeftIso F μ ≪≫ ρ_ F
-  exact ⟨σ.I, inferInstance, p ▷ twistingSheaf 𝒜 (-n) ≫ e.hom,
-    epi_comp' this (IsIso.epi_of_iso e.hom)⟩
+  have hf' (a : Set.range f) : (a : A) ∈ 𝒜 1 := by
+    obtain ⟨_, i, rfl⟩ := a
+    exact hf i
+  have hcover' : ⨆ a : Set.range f, basicOpen 𝒜 (a : A) = ⊤ :=
+    (iSup_range' (basicOpen 𝒜) f).trans hcover
+  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
+    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' 1⟩
+  have hL : (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple :=
+    isAmple_twistingSheaf _ hf' hcover' Nat.one_pos
+  obtain ⟨n₀, hn₀⟩ := F.exists_epi_biproduct_of_isAmple L hL
+  refine Filter.eventually_atTop.mpr ⟨n₀, fun n hn ↦ ?_⟩
+  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
+    ⟨twistingSheaf 𝒜 (-n), isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' (-n)⟩
+  have hK : TauCeti.AlgebraicGeometry.LineBundleClass.mk K =
+      (TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ n)⁻¹ := by
+    rw [lineBundleClass_twistingSheaf_eq_zpow _ hf' hcover' (-n), ← zpow_natCast, ← zpow_neg]
+  obtain ⟨k, p, hp⟩ := hn₀ n hn K hK
+  have : MonoidalPreadditive (Proj 𝒜).Modules :=
+    TauCeti.SheafOfModules.monoidalPreadditive (Proj 𝒜).sheaf
+  let M : (Proj 𝒜).Modules := K.obj
+  let e1 : Limits.biproduct (C := (Proj 𝒜).Modules)
+      (fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules) ≅
+      (SheafOfModules.free (R := (Proj 𝒜).ringCatSheaf) (ULift.{u} (Fin k)) :
+        (Proj 𝒜).Modules) :=
+    TauCeti.SheafOfModules.biproductIsoFree (R := (Proj 𝒜).sheaf) (ULift.{u} (Fin k))
+  let e2 : Limits.biproduct (C := (Proj 𝒜).Modules)
+      (fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules) ≅
+      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) :=
+    Limits.biproduct.whiskerEquiv
+      (f := fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules)
+      (g := fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) Equiv.ulift (fun _ ↦ Iso.refl _)
+  let e3 : (Limits.biproduct (C := (Proj 𝒜).Modules)
+      (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules)) ⊗ M ≅
+      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules ⊗ M) :=
+    rightDistributor (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) M
+  let e4 : Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules ⊗ M) ≅
+      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ M) :=
+    Limits.biproduct.mapIso fun _ ↦ λ_ M
+  let e := whiskerRightIso (e1.symm ≪≫ e2) M ≪≫ e3 ≪≫ e4
+  exact ⟨ULift.{u} (Fin k), inferInstance, e.hom ≫ p, epi_comp e.hom p⟩
 
 end AlgebraicGeometry.Proj

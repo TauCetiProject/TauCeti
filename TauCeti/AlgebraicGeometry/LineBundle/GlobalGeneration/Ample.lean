@@ -75,17 +75,6 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
-/-- For an invertible sheaf `L`, the nested monoidal tensor power `(L^{⊗ m})^{⊗ n}` is isomorphic
-to `L^{⊗ (m * n)}`. -/
-private theorem nonempty_tensorPow_tensorPow_obj_iso (L : InvertibleSheaf X) (m n : ℕ) :
-    Nonempty
-      (TauCeti.tensorPow (TauCeti.tensorPow L.obj m) n ≅ TauCeti.tensorPow L.obj (m * n)) := by
-  let M : InvertibleSheaf X := ⟨TauCeti.tensorPow L.obj m, inferInstance⟩
-  obtain ⟨e₁⟩ := InvertibleSheaf.nonempty_tensorPow_obj_iso
-    (L := M) (K := L.tensorPow m) ⟨(L.tensorPowObjIso m).symm⟩ n
-  obtain ⟨e₂⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L m n
-  exact ⟨(M.tensorPowObjIso n).symm ≪≫ e₁ ≪≫ e₂ ≪≫ L.tensorPowObjIso (m * n)⟩
-
 /-- **Common affine cover by sections of a single power of an ample line bundle.** If `L` is an
 ample line bundle on `X`, then there exist a positive integer `d` and finitely many global sections
 of `L^{⊗ d}` whose nonvanishing loci are affine and cover `X`. -/
@@ -119,7 +108,7 @@ theorem LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvani
     let k : ℕ := d / n x.val
     have hnk : n x.val * k = d := Nat.mul_div_cancel' hdvd
     have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hnk; omega
-    obtain ⟨e0⟩ := nonempty_tensorPow_tensorPow_obj_iso L (n x.val) k
+    obtain ⟨e0⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_obj_iso L (n x.val) k
     let e := e0 ≪≫ eqToIso (congrArg (TauCeti.tensorPow L.obj) hnk)
     refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t x.val) k), ?_⟩
     rw [Scheme.Modules.nonvanishingLocus_hom_app,
@@ -179,7 +168,7 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     simpa only [mul_comm] using hn
   obtain ⟨σ, hσ⟩ := hN r q ((Finset.le_sup (f := N) (Finset.mem_univ r)).trans hq)
   -- Identify `(F ⊗ L^{⊗ r}) ⊗ (L^{⊗ d})^{⊗ q}` with `F ⊗ L^{⊗ n}` via `tensorPowAddIso`.
-  obtain ⟨emul⟩ := nonempty_tensorPow_tensorPow_obj_iso L d q
+  obtain ⟨emul⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_obj_iso L d q
   let eL : tensorPow L.obj r.val ⊗ tensorPow (tensorPow L.obj d) q ≅ tensorPow L.obj n :=
     whiskerLeftIso (tensorPow L.obj r.val) emul ≪≫
       TauCeti.tensorPowAddIso L.obj r.val (d * q) ≪≫

@@ -382,9 +382,8 @@ lemma higherDirectImageGlobalSectionsLinearEquiv_apply (M : X.Modules) [M.IsQuas
     (n : ℕ) (x : Cohomology M n) :
     (f.higherDirectImageGlobalSectionsLinearEquiv M n x :
         Γ((f.higherDirectImage n).obj M, ⊤)) =
-      f.higherDirectImageGlobalSectionsAddEquiv M n x := by
-  simp only [higherDirectImageGlobalSectionsLinearEquiv]
-  rfl
+      f.higherDirectImageGlobalSectionsAddEquiv M n x :=
+  (rfl)
 
 end AffineGlobalSections
 
@@ -393,6 +392,46 @@ end AlgebraicGeometry.Scheme.Hom
 namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti.AlgebraicGeometry.Scheme.Modules
+
+/-- Scalar multiplication under `Module.compHom` acts through the ring homomorphism. -/
+private lemma module_compHom_smul {R S M : Type*} [Ring R] [Ring S] [AddCommMonoid M]
+    [Module S M] (φ : R →+* S) (r : R) (x : M) :
+    letI : Module R M := Module.compHom M φ
+    r • x = φ r • x :=
+  (rfl)
+
+/-- For `Spec R` viewed as a scheme over itself, `baseRingToGlobalSections` is
+`(Scheme.ΓSpecIso (.of R)).inv`. -/
+private lemma baseRingToGlobalSections_eq_ΓSpecIso_inv (R : Type u) [CommRing R] (r : R) :
+    baseRingToGlobalSections R (Spec (.of R)) r = (Scheme.ΓSpecIso (.of R)).inv r := by
+  rw [baseRingToGlobalSections_apply]
+  -- `Spec (.of R) ↘ Spec (.of R)` is the identity morphism `𝟙 (Spec (.of R))`.
+  change Scheme.Hom.appTop (𝟙 (Spec (.of R))) ((Scheme.ΓSpecIso (.of R)).inv r) = _
+  simp
+
+/-- The `R`-module structures on global sections of an `𝒪_{Spec R}`-module from
+`globalSectionsBaseModule` and from `moduleSpecΓFunctor` coincide. -/
+private def globalSectionsBaseEquivSpecΓ (R : Type u) [CommRing R]
+    (N : (Spec (.of R)).Modules) :
+    Γ(N, ⊤) ≃ₗ[R] moduleSpecΓFunctor.obj N where
+  __ := AddEquiv.refl _
+  map_smul' r y := by
+    rw [base_smul_globalSections, baseRingToGlobalSections_eq_ΓSpecIso_inv]
+    -- Cast `y` to the presheaf carrier `N.val.obj (.op ⊤)`, where `(Spec R).ringCatSheaf` acts
+    -- directly; `modulesSpecToSheaf` twists that action by the terminal-open map `⊤ ⟶ ⊤`.
+    have h := congrArg (fun g : _ →+* _ ↦ g ((Scheme.ΓSpecIso (.of R)).inv r) •
+        (show N.val.obj (.op ⊤) from y))
+      (show ((Spec (.of R)).ringCatSheaf.obj.map
+          ((Limits.initialOpOfTerminal Limits.isTerminalTop).to (.op ⊤))).hom =
+          RingHom.id _ by
+        rw [Limits.IsInitial.to_self, CategoryTheory.Functor.map_id, RingCat.hom_id])
+    exact h.symm
+
+@[simp]
+private lemma globalSectionsBaseEquivSpecΓ_apply (R : Type u) [CommRing R]
+    (N : (Spec (.of R)).Modules) (y : Γ(N, ⊤)) :
+    (globalSectionsBaseEquivSpecΓ R N y : Γ(N, ⊤)) = y :=
+  (rfl)
 
 /-- **Cohomology as global sections of the higher direct image over `Spec R`.** For a
 quasi-compact, quasi-separated scheme `X` over `Spec R` and a quasi-coherent `𝒪_X`-module `M`,
@@ -408,31 +447,14 @@ def cohomologyEquivHigherDirectImageSections (R : Type u) [CommRing R] {X : Sche
     Module.compHom (Cohomology M n) f.appTop.hom
   letI : IsScalarTower R Γ(Spec (.of R), ⊤) (Cohomology M n) :=
     .of_algebraMap_smul fun r x ↦ by
-      rw [RingHom.algebraMap_toAlgebra, base_smul_cohomology, baseRingToGlobalSections_apply]
-      rfl
-  have hBase (r : R) :
-      baseRingToGlobalSections R (Spec (.of R)) r = (Scheme.ΓSpecIso (.of R)).inv r := by
-    rw [baseRingToGlobalSections_apply]
-    change Scheme.Hom.appTop (𝟙 (Spec (.of R))) ((Scheme.ΓSpecIso (.of R)).inv r) = _
-    simp
+      rw [RingHom.algebraMap_toAlgebra, base_smul_cohomology, baseRingToGlobalSections_apply,
+        module_compHom_smul]
   letI : IsScalarTower R Γ(Spec (.of R), ⊤) Γ((f.higherDirectImage n).obj M, ⊤) :=
     .of_algebraMap_smul fun r y ↦ by
-      rw [RingHom.algebraMap_toAlgebra, base_smul_globalSections, hBase]
-  let e : Γ((f.higherDirectImage n).obj M, ⊤) ≃ₗ[R]
-      moduleSpecΓFunctor.obj ((f.higherDirectImage n).obj M) :=
-    { AddEquiv.refl _ with
-      map_smul' := fun r y ↦ by
-        have h : ((Spec (.of R)).ringCatSheaf.obj.map
-            ((Limits.initialOpOfTerminal Limits.isTerminalTop).to (.op ⊤))).hom =
-            RingHom.id _ := by
-          rw [Limits.IsInitial.to_self, CategoryTheory.Functor.map_id]
-          rfl
-        have h1 := congrArg (fun g : _ →+* _ ↦ g ((Scheme.ΓSpecIso (.of R)).inv.hom r) •
-            (show ((f.higherDirectImage n).obj M).val.obj (.op ⊤) from y)) h
-        have h2 : (r : R) • y = (Scheme.ΓSpecIso (.of R)).inv.hom r • y := by
-          rw [base_smul_globalSections, hBase]
-        exact h2.trans h1.symm }
-  ((f.higherDirectImageGlobalSectionsLinearEquiv M n).restrictScalars R).trans e
+      rw [RingHom.algebraMap_toAlgebra, base_smul_globalSections,
+        baseRingToGlobalSections_eq_ΓSpecIso_inv]
+  ((f.higherDirectImageGlobalSectionsLinearEquiv M n).restrictScalars R).trans
+    (globalSectionsBaseEquivSpecΓ R ((f.higherDirectImage n).obj M))
 
 /-- `cohomologyEquivHigherDirectImageSections` agrees on elements with
 `higherDirectImageGlobalSectionsAddEquiv`. -/
@@ -444,10 +466,10 @@ theorem cohomologyEquivHigherDirectImageSections_apply (R : Type u) [CommRing R]
     (cohomologyEquivHigherDirectImageSections R M n x :
         Γ(((X ↘ Spec (.of R)).higherDirectImage n).obj M, ⊤)) =
       (X ↘ Spec (.of R)).higherDirectImageGlobalSectionsAddEquiv M n x := by
-  simp only [cohomologyEquivHigherDirectImageSections, LinearEquiv.trans_apply]
-  change ((X ↘ Spec (.of R)).higherDirectImageGlobalSectionsLinearEquiv M n x :
-      Γ(((X ↘ Spec (.of R)).higherDirectImage n).obj M, ⊤)) = _
-  exact (X ↘ Spec (.of R)).higherDirectImageGlobalSectionsLinearEquiv_apply M n x
+  simp only [cohomologyEquivHigherDirectImageSections, LinearEquiv.trans_apply,
+    globalSectionsBaseEquivSpecΓ_apply, LinearEquiv.restrictScalars_apply,
+    Scheme.Hom.higherDirectImageGlobalSectionsLinearEquiv_apply]
+  exact rfl
 
 /-- `cohomologyEquivHigherDirectImageSections` is natural in the coefficient sheaf `M`. -/
 theorem cohomologyEquivHigherDirectImageSections_naturality (R : Type u) [CommRing R]
@@ -500,21 +522,38 @@ theorem tildeCohomologyIsoHigherDirectImage_naturality (R : Type u) [CommRing R]
         (tilde.functor (.of R)).map
             (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫
           (tilde.functor (.of R)).map
-            ((moduleSpecΓFunctor (R := .of R)).map ((f.higherDirectImage n).map φ)) :=
-    ((tilde.functor (.of R)).map_comp _ _).symm.trans
-      ((congrArg (tilde.functor (.of R)).map hΓ).trans
-        ((tilde.functor (.of R)).map_comp _ _))
+            ((moduleSpecΓFunctor (R := .of R)).map ((f.higherDirectImage n).map φ)) := by
+    rw [← Functor.map_comp, hΓ, Functor.map_comp]
   have h2 :
       (tilde.functor (.of R)).map
             ((moduleSpecΓFunctor (R := .of R)).map ((f.higherDirectImage n).map φ)) ≫
           ((f.higherDirectImage n).obj N).fromTildeΓ =
         ((f.higherDirectImage n).obj M).fromTildeΓ ≫ (f.higherDirectImage n).map φ :=
     (tilde.adjunction (R := .of R)).counit.naturality ((f.higherDirectImage n).map φ)
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ ((f.higherDirectImage n).obj N).fromTildeΓ) h1).trans
-      ((Category.assoc _ _ _).trans
-        ((congrArg ((tilde.functor (.of R)).map
-          (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫ ·) h2).trans
-          (Category.assoc _ _ _).symm)))
+  have h := calc
+    (tilde.functor (.of R)).map (ModuleCat.ofHom (cohomologyMapBaseLinear R X φ n)) ≫
+        ((tilde.functor (.of R)).map
+            (cohomologyEquivHigherDirectImageSections R N n).toModuleIso.hom ≫
+          ((f.higherDirectImage n).obj N).fromTildeΓ)
+      = ((tilde.functor (.of R)).map (ModuleCat.ofHom (cohomologyMapBaseLinear R X φ n)) ≫
+          (tilde.functor (.of R)).map
+            (cohomologyEquivHigherDirectImageSections R N n).toModuleIso.hom) ≫
+          ((f.higherDirectImage n).obj N).fromTildeΓ :=
+        (Category.assoc _ _ _).symm
+    _ = ((tilde.functor (.of R)).map
+            (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫
+          (tilde.functor (.of R)).map
+            ((moduleSpecΓFunctor (R := .of R)).map ((f.higherDirectImage n).map φ))) ≫
+          ((f.higherDirectImage n).obj N).fromTildeΓ :=
+        congrArg (· ≫ ((f.higherDirectImage n).obj N).fromTildeΓ) h1
+    _ = (tilde.functor (.of R)).map
+            (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫
+          (((f.higherDirectImage n).obj M).fromTildeΓ ≫ (f.higherDirectImage n).map φ) :=
+        (Category.assoc _ _ _).trans (congrArg _ h2)
+    _ = ((tilde.functor (.of R)).map
+            (cohomologyEquivHigherDirectImageSections R M n).toModuleIso.hom ≫
+          ((f.higherDirectImage n).obj M).fromTildeΓ) ≫ (f.higherDirectImage n).map φ :=
+        (Category.assoc _ _ _).symm
+  exact h
 
 end AlgebraicGeometry.Scheme.Modules
