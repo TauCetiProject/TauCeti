@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.CoordinateChange
+public import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Basic
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 public import TauCeti.Analysis.Pseudodifferential.SmoothKernel
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Extension
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Pseudodifferential.Symbol.ClassicalSmulLeft
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.SmulLeft
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -30,7 +30,7 @@ needed between the compressions of an operator on a manifold to two overlapping 
 shows that the principal symbol transforms as a function on the cotangent bundle.
 
 `TauCeti.ClassicalSymbol.exists_quantizeSchwartzValue_comp_eq` in
-`TauCeti.Analysis.Pseudodifferential.CoordinateChange` proves this for a diffeomorphism of the
+`TauCeti.Analysis.Pseudodifferential.CoordinateChange.Basic` proves this for a diffeomorphism of the
 whole space whose averaged derivatives `∫₀¹ Dκ(y + t (x - y)) dt` (`hadamardFactor`) are
 invertible on the relevant sets. The theorem here applies to every diffeomorphism between open
 sets, with no condition on its averaged derivatives.

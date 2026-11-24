@@ -91,7 +91,7 @@ only assumed additive, so that it applies to bounded linear maps over any normed
 
 Mathlib's `ApproximatesLinearOn.surjOn_closedBall_of_nonlinearRightInverse` gives existence of
 some zero in a ball, and `ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le` (in
-`TauCeti.Analysis.Calculus.ApproximatesLinearOn`) a unique zero when the linearization is an
+`TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic`) a unique zero when the linearization is an
 equivalence. Here the linearization only has a right inverse, and the
 solution is singled out by lying in the range of `Q`; for linear `D` this range is a complement of
 the kernel of `D`, chosen by the construction. The a priori estimate compares the solution with
