@@ -175,21 +175,8 @@ end AuxUniversal
 private theorem lieSpan_auxGenerators_eq_top :
     LieSubalgebra.lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
-  have hrange : Set.range (fun g : Generator I H => (auxIdeal R).mkQ (FreeLieAlgebra.of K g)) =
-      Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R) := by
-    ext y
-    simp only [Set.mem_range]
-    constructor
-    · rintro ⟨g, rfl⟩
-      cases g with
-      | cartan x => exact Or.inl (Or.inl ⟨x, (auxMk_of_cartan R x).symm⟩)
-      | positive i => exact Or.inl (Or.inr ⟨i, rfl⟩)
-      | negative i => exact Or.inr ⟨i, rfl⟩
-    · rintro ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
-      · exact ⟨.cartan x, auxMk_of_cartan R x⟩
-      · exact ⟨.positive i, rfl⟩
-      · exact ⟨.negative i, rfl⟩
-  rw [← hrange]
+  rw [← range_generator (fun g => auxMk R (FreeLieAlgebra.of K g))
+    (auxMk_of_cartan R) (auxMk_of_pos R) (auxMk_of_neg R)]
   exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
 
 private noncomputable def auxChevalleyHom : AuxLieAlgebra R →ₗ⁅K⁆ AuxLieAlgebra R :=
@@ -377,10 +364,6 @@ private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : 
     · rw [lie_auxNeg_auxPos_of_ne R hkj]
       exact zero_mem _
 
-private theorem lie_auxNeg_serreRelator_eq_zero (hA : A.IsGeneralizedCartan) (k i j : I) :
-    ⁅auxNeg R k, (ad K _ (auxPos R i) ^ (-A i j).toNat) ⁅auxPos R i, auxPos R j⁆⁆ = 0 :=
-  lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k
-
 private noncomputable def auxSerrePosSubmodule : Submodule K (AuxLieAlgebra R) :=
   (serreIdeal K A).toSubmodule.map (auxPosHom R).toLinearMap
 
@@ -424,7 +407,7 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
   simp only [LieHom.coe_toLinearMap]
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [auxPosHom_serreRelator, lie_auxNeg_serreRelator_eq_zero R hA]
+    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k]
     exact zero_mem _
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add, lie_add] using add_mem hu hv

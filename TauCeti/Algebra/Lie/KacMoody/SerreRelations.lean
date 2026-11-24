@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 
 import TauCeti.Algebra.Lie.AdjointAction.Basic
-import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!

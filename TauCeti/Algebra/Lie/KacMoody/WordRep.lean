@@ -70,26 +70,30 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) (μ : Module.Dual K H)
 
 /-- The sum of the simple roots along a word. -/
-def rootSum (w : FreeMonoid I) : Module.Dual K H := (w.toList.map R.root).sum
+def rootSum (w : FreeMonoid I) : Module.Dual K H :=
+  (FreeMonoid.lift (Multiplicative.ofAdd ∘ R.root) w).toAdd
 
 /-- The root sum of the empty word is zero. -/
 @[simp]
 theorem rootSum_one : rootSum R (1 : FreeMonoid I) = 0 := by
-  simp [rootSum]
+  rw [rootSum, map_one, toAdd_one]
 
 /-- Prepending a letter adds its simple root to the root sum. -/
 theorem rootSum_of_mul (i : I) (w : FreeMonoid I) :
     rootSum R (.of i * w) = R.root i + rootSum R w := by
-  simp [rootSum]
+  rw [rootSum, map_mul, toAdd_mul, FreeMonoid.lift_eval_of]
+  rfl
 
 /-- The root sum of a single-letter word is its simple root. -/
 theorem rootSum_of (i : I) : rootSum R (.of i) = R.root i := by
-  simp [rootSum]
+  rw [rootSum, FreeMonoid.lift_eval_of]
+  rfl
 
 /-- The root sum is additive under word concatenation. -/
 theorem rootSum_mul (w w' : FreeMonoid I) :
     rootSum R (w * w') = rootSum R w + rootSum R w' := by
-  simp [rootSum]
+  rw [rootSum, map_mul, toAdd_mul]
+  rfl
 
 /-- The derivation of the tensor algebra multiplying each word by the value at `x` of the sum of
 the simple roots along it, as a linear function of `x ∈ H`. -/

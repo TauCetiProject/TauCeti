@@ -23,9 +23,9 @@ a symmetrizer (`TauCeti.SymmetrizableDatum`).
 ## Main results
 
 * `Matrix.isGeneralizedCartan_transpose`: transposition preserves generalized Cartan matrices.
-* `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_reindex`,
+* `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_submatrix_equiv`,
   `Matrix.IsGeneralizedCartan.fromBlocks`: closure under principal submatrices along an embedding,
-  reindexing along an equivalence, and block-diagonal direct sums.
+  restriction along an equivalence, and block-diagonal direct sums.
 
 ## References
 
@@ -47,7 +47,7 @@ instance instDecidablePredIsGeneralizedCartan {ι : Type*} [Fintype ι] [Decidab
 
 namespace IsGeneralizedCartan
 
-variable {I J I' : Type*} {M : Matrix I I ℤ} {N : Matrix J J ℤ}
+variable {I J : Type*} {M : Matrix I I ℤ} {N : Matrix J J ℤ}
 
 /-- On an empty index type, every matrix is vacuously a generalized Cartan matrix. -/
 theorem of_isEmpty [IsEmpty I] (M : Matrix I I ℤ) : M.IsGeneralizedCartan where
@@ -68,11 +68,6 @@ theorem submatrix (hM : M.IsGeneralizedCartan) (f : J ↪ I) :
   diag i := hM.diag (f i)
   offDiag_nonpos i j hij := hM.offDiag_nonpos (f i) (f j) (f.injective.ne hij)
   zero_comm i j := hM.zero_comm (f i) (f j)
-
-/-- Reindexing a generalized Cartan matrix along a bijection gives a generalized Cartan matrix. -/
-theorem reindex (hM : M.IsGeneralizedCartan) (e : I ≃ I') :
-    (M.reindex e e).IsGeneralizedCartan :=
-  hM.submatrix e.symm.toEmbedding
 
 /-- The block-diagonal direct sum of two generalized Cartan matrices is a generalized Cartan
 matrix. -/
@@ -95,11 +90,13 @@ theorem isGeneralizedCartan_transpose {I : Type*} {M : Matrix I I ℤ} :
     Mᵀ.IsGeneralizedCartan ↔ M.IsGeneralizedCartan :=
   ⟨fun h => h.transpose, IsGeneralizedCartan.transpose⟩
 
-/-- Reindexing a matrix along an equivalence preserves and reflects the generalized Cartan
-property. -/
-theorem isGeneralizedCartan_reindex {I I' : Type*} {M : Matrix I I ℤ} (e : I ≃ I') :
-    (M.reindex e e).IsGeneralizedCartan ↔ M.IsGeneralizedCartan :=
-  ⟨fun h => by simpa using h.reindex e.symm, fun h => h.reindex e⟩
+/-- Restricting a matrix along an equivalence of index types preserves and reflects the
+generalized Cartan property. -/
+@[simp]
+theorem isGeneralizedCartan_submatrix_equiv {I I' : Type*} {M : Matrix I I ℤ} (e : I' ≃ I) :
+    (M.submatrix e e).IsGeneralizedCartan ↔ M.IsGeneralizedCartan :=
+  ⟨fun h => by simpa [Matrix.submatrix_submatrix] using h.submatrix e.symm.toEmbedding,
+    fun h => h.submatrix e.toEmbedding⟩
 
 end Matrix
 

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
+public import TauCeti.Algebra.Lie.Presentation.Serre.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
+
+import TauCeti.Data.Set.Image
 
 /-!
 # The Kac–Moody algebra of a realization, by generators and relations
@@ -92,6 +95,23 @@ inductive Generator (I H : Type*)
   | positive : I → Generator I H
   /-- The lowering generator `fᵢ`. -/
   | negative : I → Generator I H
+
+/-- The range of a map out of `TauCeti.KacMoody.Generator I H` splits into the union of its
+values on the Cartan, raising, and lowering constructors. -/
+theorem range_generator {I H α : Type*} (f : Generator I H → α)
+    {c : H → α} {p n : I → α}
+    (hc : ∀ x, f (.cartan x) = c x)
+    (hp : ∀ i, f (.positive i) = p i)
+    (hn : ∀ i, f (.negative i) = n i) :
+    Set.range f = Set.range c ∪ Set.range p ∪ Set.range n :=
+  TauCeti.range_eq_union_three f c p n
+    (fun
+      | .cartan x => Or.inl ⟨x, (hc x).symm⟩
+      | .positive i => Or.inr (Or.inl ⟨i, (hp i).symm⟩)
+      | .negative i => Or.inr (Or.inr ⟨i, (hn i).symm⟩))
+    (fun x => ⟨.cartan x, hc x⟩)
+    (fun i => ⟨.positive i, hp i⟩)
+    (fun i => ⟨.negative i, hn i⟩)
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
@@ -571,23 +591,8 @@ as a Lie algebra. -/
 theorem lieSpan_generators_eq_top :
     LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (cartanElement R) ∪
       Set.range (positiveGenerator R) ∪ Set.range (negativeGenerator R)) = ⊤ := by
-  have hrange : Set.range (fun g : Generator I H =>
-        (presentationIdeal R).mkQ (FreeLieAlgebra.of K g)) =
-      Set.range (cartanElement R) ∪ Set.range (positiveGenerator R) ∪
-        Set.range (negativeGenerator R) := by
-    ext y
-    simp only [Set.mem_range]
-    constructor
-    · rintro ⟨g, rfl⟩
-      cases g with
-      | cartan x => exact Or.inl (Or.inl ⟨x, rfl⟩)
-      | positive i => exact Or.inl (Or.inr ⟨i, rfl⟩)
-      | negative i => exact Or.inr ⟨i, rfl⟩
-    · rintro ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
-      · exact ⟨.cartan x, rfl⟩
-      · exact ⟨.positive i, rfl⟩
-      · exact ⟨.negative i, rfl⟩
-  rw [← hrange]
+  rw [← range_generator (fun g => presentationMk R (FreeLieAlgebra.of K g))
+    (presentationMk_of_cartan R) (presentationMk_of_positive R) (presentationMk_of_negative R)]
   exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (presentationIdeal R)
 
 /-- A Cartan vector annihilated by every simple root is central in the presented algebra. -/

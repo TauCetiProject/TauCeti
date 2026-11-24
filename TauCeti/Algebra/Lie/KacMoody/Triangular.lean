@@ -51,8 +51,6 @@ All results hold over an arbitrary field `K`, with no characteristic or finitene
 * `TauCeti.KacMoody.negativeProjection`, `TauCeti.KacMoody.cartanProjection`, and
   `TauCeti.KacMoody.positiveProjection`: the bundled linear projections out of
   `PresentedLieAlgebra R`.
-* `TauCeti.KacMoody.serreEquivRange`: the Lie algebra isomorphism from `Matrix.ToLieAlgebra K A`
-  onto `(serreHom R).range = ⁅𝔤, 𝔤⁆`.
 
 ## Main results
 
@@ -597,19 +595,6 @@ theorem serreHom_injective (hA : A.IsGeneralizedCartan) :
   have hc0 : c = 0 := R.coroot_linearIndependent.finsuppLinearCombination_injective
     (hc.trans (map_zero _).symm)
   simp [hc0]
-
-/-- The Lie algebra isomorphism between `Matrix.ToLieAlgebra K A` and `(serreHom R).range`, the
-derived subalgebra `⁅𝔤, 𝔤⁆` of `PresentedLieAlgebra R`. -/
-noncomputable def serreEquivRange (hA : A.IsGeneralizedCartan) :
-    Matrix.ToLieAlgebra K A ≃ₗ⁅K⁆ (serreHom R).range :=
-  LieEquiv.ofInjective (serreHom R) (serreHom_injective R hA)
-
-/-- Coercing the image of `z` under `TauCeti.KacMoody.serreEquivRange` back to
-`PresentedLieAlgebra R` recovers `serreHom R z`. -/
-@[simp]
-theorem coe_serreEquivRange_apply (hA : A.IsGeneralizedCartan) (z : Matrix.ToLieAlgebra K A) :
-    (serreEquivRange R hA z : PresentedLieAlgebra R) = serreHom R z := by
-  rw [serreEquivRange, LieEquiv.ofInjective_apply]
 
 /-- **Intersection of the derived subalgebra with the Cartan subalgebra.** For a generalized Cartan
 matrix `A`, `⁅𝔤, 𝔤⁆ ∩ H` is the image of `R.corootSpan` under `cartanElement R`. -/
