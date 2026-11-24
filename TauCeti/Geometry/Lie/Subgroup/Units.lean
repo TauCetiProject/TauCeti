@@ -207,6 +207,9 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
       leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply,
       leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
       EmbeddedLieSubgroupData.lieMapSubtypeVal_apply]
+    -- Both sides evaluate `d.lieMapSubtypeVal D` through
+    -- `leftInvariantDerivationEquivGroupLieAlgebra`, differing only in the proof-irrelevant
+    -- interior-point witness `IsInteriorPoint 1` on `Rˣ`.
     rfl
   ext v
   simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, LieSubalgebra.mem_toSubmodule,

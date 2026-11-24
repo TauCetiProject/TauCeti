@@ -246,22 +246,6 @@ theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i 
   simp only [h] at hX
   exact hX.unique (hasDerivAt_const 0 0)
 
-/-- If the exponential line `t ↦ exp (t • X)` stays inside the union of two closed sets `U` and
-`V` whose preimages are disjoint, and `1 ∈ U`, then `exp (t • X) ∈ U` for every `t : ℝ`. -/
-theorem forall_exp_smul_mem_of_isClosed_union (X : Matrix m m 𝕜) {U V : Set (Matrix m m 𝕜)}
-    (hU : IsClosed U) (hV : IsClosed V) (hcov : ∀ t : ℝ, exp (t • X) ∈ U ∪ V)
-    (hdisj : ∀ t : ℝ, ¬(exp (t • X) ∈ U ∧ exp (t • X) ∈ V)) (h1 : (1 : Matrix m m 𝕜) ∈ U) :
-    ∀ t : ℝ, exp (t • X) ∈ U := by
-  let f : ℝ → Matrix m m 𝕜 := fun t ↦ exp (t • X)
-  have hf : Continuous f := continuous_exp_smul X
-  have hsub := (isPreconnected_iff_subset_of_fully_disjoint_closed isClosed_univ).1
-    isPreconnected_univ (f ⁻¹' U) (f ⁻¹' V) (hU.preimage hf) (hV.preimage hf)
-    (fun t _ ↦ hcov t) (Set.disjoint_left.2 fun t htU htV ↦ hdisj t ⟨htU, htV⟩)
-  have h0 : (0 : ℝ) ∈ f ⁻¹' U := by simpa [f] using h1
-  rcases hsub with hU' | hV'
-  · exact fun t ↦ hU' (Set.mem_univ t)
-  · exact False.elim (hdisj 0 ⟨h0, hV' (Set.mem_univ 0)⟩)
-
 end EntryDerivative
 
 end Matrix

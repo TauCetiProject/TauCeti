@@ -46,6 +46,8 @@ cone at `0` of `{Y : exp Y ∈ G}`. That cone lies in `𝔤` by the limit criter
 * `ClosedSubgroup.mem_matrixTangentSpace_iff`: `V ∈ g 𝔤` exactly when `g⁻¹ V ∈ 𝔤`.
 * `ClosedSubgroup.matrixTangentSpace_eq_map_mulRight`: `g 𝔤 = 𝔤 g`.
 * `ClosedSubgroup.tangentConeAt_eq_matrixTangentSpace`: the tangent cone of `G` at `g` is `g 𝔤`.
+* `ClosedSubgroup.range_mvfderiv_matrixInclusion`: the manifold differential of the matrix
+  inclusion `G → Matrix n n 𝕜` at `g ∈ G` has range `g 𝔤`.
 
 ## References
 
@@ -118,6 +120,7 @@ theorem matrixTangentSpace_eq_map_mulRight (g : G) :
       G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
   have h := map_mulLeft_unitsLieSubalgebra_eq_map_mulRight
     (Subgroup.le_normalizer (G.equivToGL g).property)
+  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
   simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
 
 end
@@ -251,6 +254,7 @@ theorem range_mvfderiv_matrixInclusion (g : G) :
     (mvfderiv 𝓘(ℝ, E) (fun k : toGL G ↦ ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜))
       (G.equivToGL g)).range = G.matrixTangentSpace g := by
   have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal (G.equivToGL g)
+  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
   simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
 
 end EmbeddedLieSubgroup

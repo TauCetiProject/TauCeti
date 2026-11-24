@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.LinearAlgebra.Matrix.Hermitian
 import TauCeti.LinearAlgebra.Matrix.Unique
 import TauCeti.RepresentationTheory.SU2.StandardBasis
 import TauCeti.Topology.Algebra.Group.Subgroup
@@ -57,7 +58,9 @@ This file records the basic concrete examples of compact matrix structure groups
   `TauCeti.YangMills.innerForm_su2J_su2K`, `TauCeti.YangMills.innerForm_su2K_su2I`,
   `TauCeti.YangMills.lie_su2I_su2J`, `TauCeti.YangMills.lie_su2J_su2K`,
   `TauCeti.YangMills.lie_su2K_su2I`.
-* `TauCeti.YangMills.matrixLieAlgebra_pmOne`,
+* `TauCeti.YangMills.pmOne_innerForm`,
+  `TauCeti.YangMills.matrixLieAlgebra_pmOneSubgroup`,
+  `TauCeti.YangMills.matrixLieAlgebra_pmOne`,
   `TauCeti.YangMills.subsingleton_matrixLieAlgebra_pmOne`.
 * `TauCeti.YangMills.mem_matrixLieAlgebra_torusSemidirectZ2_iff`,
   `TauCeti.YangMills.weightedDiagBilinForm_lieInvariant`,
@@ -91,11 +94,7 @@ theorem mem_matrixLieAlgebra_unitary_fin_one_iff (X : Matrix (Fin 1) (Fin 1) ℂ
   rw [CompactMatrixStructureGroup.unitary_group, ClosedSubgroup.mem_matrixLieAlgebra_unitary_iff]
   constructor
   · intro h
-    have h00 := congrFun (congrFun h 0) 0
-    simp only [Matrix.conjTranspose_apply, Matrix.neg_apply, Complex.star_def] at h00
-    have hre := congrArg Complex.re h00
-    simp only [Complex.conj_re, Complex.neg_re] at hre
-    linarith
+    simpa using Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg h 0
   · intro hre
     ext i j
     fin_cases i
@@ -126,11 +125,11 @@ theorem matrixAdjointRepresentation_unitary_fin_one
   have hmul : (g.val : Matrix (Fin 1) (Fin 1) ℂ) * X.val =
       (X.val : Matrix (Fin 1) (Fin 1) ℂ) * g.val :=
     Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
-  rw [hmul, mul_assoc, Unitary.mul_star_self_of_mem g.val.property, mul_one]
-  rfl
+  rw [hmul, mul_assoc, Unitary.mul_star_self_of_mem g.val.property, mul_one, LinearMap.id_apply]
 
 /-- Every symmetric positive-definite real bilinear form on `𝔲(1)` is automatically
 `Ad(U(1))`-invariant and therefore defines a `CompactMatrixStructureGroup (Fin 1)`. -/
+-- The type of `innerForm` depends on `group`, so its value can only be stated once `group` reduces.
 @[expose]
 def unitaryOneOfBilinForm
     (B : LinearMap.BilinForm ℝ (ClosedSubgroup.unitary (Fin 1) ℂ).matrixLieAlgebra)
@@ -185,13 +184,15 @@ private theorem innerForm_su2OfCoord (x y : Fin 3 → ℝ) :
     simp
     ring
 
+private theorem coe_su2OfCoord (x : Fin 3 → ℝ) :
+    (su2OfCoord x : Matrix (Fin 2) (Fin 2) ℂ) = SU2.toMatrix (suTwoEquiv x) :=
+  rfl
+
 private theorem lie_su2OfCoord (x y : Fin 3 → ℝ) :
     ⁅su2OfCoord x, su2OfCoord y⁆ = su2OfCoord (x ⨯₃ y) := by
   apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, ← Ring.lie_def]
-  change ⁅SU2.toMatrix (suTwoEquiv x), SU2.toMatrix (suTwoEquiv y)⁆ = _
-  rw [← LieHom.map_lie, lie_suTwoEquiv]
-  rfl
+  rw [LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, ← Ring.lie_def,
+    coe_su2OfCoord, coe_su2OfCoord, coe_su2OfCoord, ← LieHom.map_lie, lie_suTwoEquiv]
 
 private theorem smul_su2OfCoord (c : ℝ) (x : Fin 3 → ℝ) :
     c • su2OfCoord x = su2OfCoord (c • x) :=
@@ -317,10 +318,25 @@ def pmOneSubgroup : ClosedSubgroup (Matrix.unitaryGroup (Fin 1) ℂ) where
     have : Finite (Subgroup.zpowers pmOneGen) := isOfFinOrder_pmOneGen.finite_zpowers
     (Set.toFinite _).isClosed
 
+/-- The underlying subgroup of `pmOneSubgroup` is `Subgroup.zpowers pmOneGen`. -/
+private theorem toSubgroup_pmOneSubgroup :
+    pmOneSubgroup.toSubgroup = Subgroup.zpowers pmOneGen := by
+  unfold pmOneSubgroup
+  rfl
+
+@[simp]
+private theorem mem_pmOneSubgroup_iff_mem_zpowers {U : Matrix.unitaryGroup (Fin 1) ℂ} :
+    U ∈ pmOneSubgroup ↔ U ∈ Subgroup.zpowers pmOneGen := by
+  have hmem : U ∈ pmOneSubgroup ↔ U ∈ pmOneSubgroup.toSubgroup := Iff.rfl
+  rw [hmem, toSubgroup_pmOneSubgroup]
+
 /-- `{±1} ⊂ U(1)` is finite. -/
 theorem finite_pmOneSubgroup :
     (pmOneSubgroup : Set (Matrix.unitaryGroup (Fin 1) ℂ)).Finite := by
-  change (Subgroup.zpowers pmOneGen : Set (Matrix.unitaryGroup (Fin 1) ℂ)).Finite
+  have hset : (pmOneSubgroup : Set (Matrix.unitaryGroup (Fin 1) ℂ)) =
+      (Subgroup.zpowers pmOneGen : Set (Matrix.unitaryGroup (Fin 1) ℂ)) :=
+    Set.ext fun _ ↦ mem_pmOneSubgroup_iff_mem_zpowers
+  rw [hset]
   have : Finite (Subgroup.zpowers pmOneGen) := isOfFinOrder_pmOneGen.finite_zpowers
   exact Set.toFinite _
 
@@ -328,12 +344,12 @@ theorem finite_pmOneSubgroup :
 theorem mem_pmOneSubgroup_iff {U : Matrix.unitaryGroup (Fin 1) ℂ} :
     U ∈ pmOneSubgroup ↔
       (U : Matrix (Fin 1) (Fin 1) ℂ) = 1 ∨ (U : Matrix (Fin 1) (Fin 1) ℂ) = -1 := by
-  change U ∈ Subgroup.zpowers pmOneGen ↔ _
-  rw [Subgroup.mem_zpowers_iff_of_sq_eq_one pmOneGen_sq]
+  rw [mem_pmOneSubgroup_iff_mem_zpowers, Subgroup.mem_zpowers_iff_of_sq_eq_one pmOneGen_sq]
   exact ⟨fun h ↦ h.imp (congrArg Subtype.val) (congrArg Subtype.val),
     fun h ↦ h.imp Subtype.ext Subtype.ext⟩
 
 /-- `{±1} ⊂ U(1)` as a compact matrix structure group. -/
+-- The type of `innerForm` depends on `group`, so `pmOne_innerForm` needs `group` to reduce.
 @[expose]
 def pmOne : CompactMatrixStructureGroup (Fin 1) :=
   CompactMatrixStructureGroup.ofTraceForm pmOneSubgroup
@@ -343,11 +359,21 @@ def pmOne : CompactMatrixStructureGroup (Fin 1) :=
 theorem pmOne_group : pmOne.group = pmOneSubgroup :=
   (rfl)
 
-/-- The Lie algebra of `{±1} ⊂ U(1)` is trivial (`⊥`). -/
-theorem matrixLieAlgebra_pmOne : pmOne.group.matrixLieAlgebra = ⊥ :=
-  ClosedSubgroup.matrixLieAlgebra_eq_bot_of_finite (by rw [pmOne_group]; exact finite_pmOneSubgroup)
+/-- The inner product of `pmOne` is the trace form on `pmOneSubgroup`. -/
+@[simp]
+theorem pmOne_innerForm : pmOne.innerForm = pmOneSubgroup.matrixTraceForm :=
+  (rfl)
 
-/-- `pmOne.group.matrixLieAlgebra` is a subsingleton (every `pmOne`-valued connection vanishes). -/
+/-- The Lie algebra of `{±1} ⊂ U(1)` is trivial (`⊥`). -/
+@[simp]
+theorem matrixLieAlgebra_pmOneSubgroup : pmOneSubgroup.matrixLieAlgebra = ⊥ :=
+  ClosedSubgroup.matrixLieAlgebra_eq_bot_of_countable finite_pmOneSubgroup.countable
+
+/-- The Lie algebra of `pmOne` is trivial (`⊥`). -/
+theorem matrixLieAlgebra_pmOne : pmOne.group.matrixLieAlgebra = ⊥ := by
+  rw [pmOne_group, matrixLieAlgebra_pmOneSubgroup]
+
+/-- The Lie algebra `pmOne.group.matrixLieAlgebra` has a single element. -/
 theorem subsingleton_matrixLieAlgebra_pmOne : Subsingleton pmOne.group.matrixLieAlgebra := by
   rw [matrixLieAlgebra_pmOne]
   exact LieSubalgebra.subsingleton_bot
@@ -368,13 +394,26 @@ def torusSemidirectZ2Subgroup : ClosedSubgroup (Matrix.unitaryGroup (Fin 2) ℂ)
       Set.ext fun _ ↦ mem_unitaryTorus_iff_exists_unitaryTorusHom.trans (by simp [eq_comm])]
     exact (isCompact_range (continuous_unitaryTorusHom (n := Fin 2))).isClosed
 
+private theorem toSubgroup_torusSemidirectZ2Subgroup :
+    torusSemidirectZ2Subgroup.toSubgroup =
+      Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) := by
+  unfold torusSemidirectZ2Subgroup
+  rfl
+
+@[simp]
+private theorem mem_torusSemidirectZ2Subgroup_iff_mem_normalizer
+    {U : Matrix.unitaryGroup (Fin 2) ℂ} :
+    U ∈ torusSemidirectZ2Subgroup ↔
+      U ∈ Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) := by
+  have hmem : U ∈ torusSemidirectZ2Subgroup ↔ U ∈ torusSemidirectZ2Subgroup.toSubgroup := Iff.rfl
+  rw [hmem, toSubgroup_torusSemidirectZ2Subgroup]
+
 /-- Membership in `torusSemidirectZ2Subgroup` means being diagonal or anti-diagonal. -/
 theorem mem_torusSemidirectZ2Subgroup_iff {U : Matrix.unitaryGroup (Fin 2) ℂ} :
     U ∈ torusSemidirectZ2Subgroup ↔
       ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0) ∨
         ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0) := by
-  change U ∈ Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) ↔ _
-  rw [mem_normalizer_unitaryTorus_iff]
+  rw [mem_torusSemidirectZ2Subgroup_iff_mem_normalizer, mem_normalizer_unitaryTorus_iff]
   constructor
   · rintro ⟨z, σ, rfl⟩
     have hperm : ∀ τ : Equiv.Perm (Fin 2), τ = 1 ∨ τ = Equiv.swap 0 1 := by decide
@@ -402,6 +441,58 @@ theorem mem_torusSemidirectZ2Subgroup_iff {U : Matrix.unitaryGroup (Fin 2) ℂ} 
         _ = (U * P) * P := (mul_assoc _ _ _).symm
         _ = unitaryTorusHom (Fin 2) z * Matrix.permutationUnitary (Equiv.swap 0 1) := by rw [hz]
 
+/-- A skew-Hermitian `2 × 2` complex matrix has unitary exponential line. -/
+private theorem exp_smul_mem_unitaryGroup_of_conjTranspose_eq_neg
+    {X : Matrix (Fin 2) (Fin 2) ℂ} (hskew : Xᴴ = -X) (t : ℝ) :
+    NormedSpace.exp (t • X) ∈ Matrix.unitaryGroup (Fin 2) ℂ := by
+  have hX : X ∈ (ClosedSubgroup.unitary (Fin 2) ℂ).matrixLieAlgebra :=
+    ClosedSubgroup.mem_matrixLieAlgebra_unitary_iff.mpr hskew
+  obtain ⟨u, -, hu⟩ := ClosedSubgroup.mem_matrixLieAlgebra_iff.mp hX t
+  exact hu ▸ u.property
+
+/-- An exponential line staying in `torusSemidirectZ2Subgroup` remains in the diagonal torus. -/
+private theorem exp_smul_diag_of_mem_torusSemidirectZ2Subgroup
+    {X : Matrix (Fin 2) (Fin 2) ℂ} (hX : X ∈ torusSemidirectZ2Subgroup.matrixLieAlgebra)
+    (t : ℝ) :
+    NormedSpace.exp (t • X) 0 1 = 0 ∧ NormedSpace.exp (t • X) 1 0 = 0 := by
+  have hexp := ClosedSubgroup.mem_matrixLieAlgebra_iff.mp hX
+  let D : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 1 = 0 ∧ M 1 0 = 0}
+  let A : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 0 = 0 ∧ M 1 1 = 0}
+  have hD_closed : IsClosed D :=
+    (isClosed_eq ((continuous_apply 1).comp (continuous_apply 0)) continuous_const).inter
+      (isClosed_eq ((continuous_apply 0).comp (continuous_apply 1)) continuous_const)
+  have hA_closed : IsClosed A :=
+    (isClosed_eq ((continuous_apply 0).comp (continuous_apply 0)) continuous_const).inter
+      (isClosed_eq ((continuous_apply 1).comp (continuous_apply 1)) continuous_const)
+  -- Every point on the exponential line lies in `D ∪ A`, and no unitary matrix lies in `D ∩ A`.
+  have hcov : Set.range (fun s : ℝ ↦ NormedSpace.exp (s • X)) ⊆ D ∪ A := by
+    rintro _ ⟨s, rfl⟩
+    obtain ⟨u, hu, hEq⟩ := hexp s
+    simpa [← hEq, D, A] using mem_torusSemidirectZ2Subgroup_iff.mp hu
+  have hdisj : Set.range (fun s : ℝ ↦ NormedSpace.exp (s • X)) ∩ (D ∩ A) = ∅ := by
+    rw [Set.eq_empty_iff_forall_notMem]
+    rintro M ⟨⟨s, rfl⟩, hsD, hsA⟩
+    obtain ⟨u, -, hEq⟩ := hexp s
+    have hzero : (u : Matrix (Fin 2) (Fin 2) ℂ) = 0 := by
+      ext i j
+      fin_cases i <;> fin_cases j
+      · exact hEq.symm ▸ hsA.1
+      · exact hEq.symm ▸ hsD.1
+      · exact hEq.symm ▸ hsD.2
+      · exact hEq.symm ▸ hsA.2
+    have h1 := Matrix.mem_unitaryGroup_iff.1 u.property
+    rw [hzero, zero_mul] at h1
+    have h00 := congrFun (congrFun h1 0) 0
+    simp at h00
+  -- Connectedness of `ℝ` forces the range into `D` because `exp 0 = 1 ∈ D \ A`.
+  have hsub := (isPreconnected_iff_subset_of_disjoint_closed.1
+    (isPreconnected_range (Matrix.continuous_exp_smul X)) D A hD_closed hA_closed hcov
+      hdisj).resolve_right fun hA ↦ by
+    have h1A : (1 : Matrix (Fin 2) (Fin 2) ℂ) ∈ A := by
+      simpa using hA ⟨0, rfl⟩
+    simpa [A] using h1A.1
+  exact hsub ⟨t, rfl⟩
+
 /-- The Lie algebra of `T² ⋊ ℤ/2 ⊂ U(2)` is the abelian algebra of purely imaginary diagonal
 `2 × 2` matrices. -/
 theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) ℂ) :
@@ -409,54 +500,21 @@ theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) �
       X 0 1 = 0 ∧ X 1 0 = 0 ∧ (X 0 0).re = 0 ∧ (X 1 1).re = 0 := by
   constructor
   · intro hX
+    -- Skew-Hermitianness gives purely imaginary diagonal entries; connectedness keeps off-diagonal
+    -- entries of `exp (t • X)` zero for all `t`, forcing off-diagonal entries of `X` to vanish.
     have hskew := ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra hX
     have hre0 : (X 0 0).re = 0 := by
-      have h00 := congrFun (congrFun hskew 0) 0
-      simp only [Matrix.conjTranspose_apply, Matrix.neg_apply, Complex.star_def] at h00
-      have := congrArg Complex.re h00
-      simp only [Complex.conj_re, Complex.neg_re] at this
-      linarith
+      simpa using Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg hskew 0
     have hre1 : (X 1 1).re = 0 := by
-      have h11 := congrFun (congrFun hskew 1) 1
-      simp only [Matrix.conjTranspose_apply, Matrix.neg_apply, Complex.star_def] at h11
-      have := congrArg Complex.re h11
-      simp only [Complex.conj_re, Complex.neg_re] at this
-      linarith
-    rw [ClosedSubgroup.mem_matrixLieAlgebra_iff] at hX
-    let D : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 1 = 0 ∧ M 1 0 = 0}
-    let A : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 0 = 0 ∧ M 1 1 = 0}
-    have hD_closed : IsClosed D :=
-      (isClosed_eq ((continuous_apply 1).comp (continuous_apply 0)) continuous_const).inter
-        (isClosed_eq ((continuous_apply 0).comp (continuous_apply 1)) continuous_const)
-    have hA_closed : IsClosed A :=
-      (isClosed_eq ((continuous_apply 0).comp (continuous_apply 0)) continuous_const).inter
-        (isClosed_eq ((continuous_apply 1).comp (continuous_apply 1)) continuous_const)
-    have hD : ∀ t : ℝ, NormedSpace.exp (t • X) ∈ D :=
-      Matrix.forall_exp_smul_mem_of_isClosed_union X hD_closed hA_closed
-        (fun t ↦ by
-          obtain ⟨u, hu, hEq⟩ := hX t
-          rw [← hEq]
-          exact mem_torusSemidirectZ2Subgroup_iff.mp hu)
-        (fun t ⟨htD, htA⟩ ↦ by
-          obtain ⟨u, -, hEq⟩ := hX t
-          have hzero : (u : Matrix (Fin 2) (Fin 2) ℂ) = 0 := by
-            ext i j
-            fin_cases i <;> fin_cases j
-            · exact hEq.symm ▸ htA.1
-            · exact hEq.symm ▸ htD.1
-            · exact hEq.symm ▸ htD.2
-            · exact hEq.symm ▸ htA.2
-          have h1 := Matrix.mem_unitaryGroup_iff.1 u.property
-          rw [hzero, zero_mul] at h1
-          have h00 := congrFun (congrFun h1 0) 0
-          simp at h00)
-        ⟨by simp, by simp⟩
+      simpa using Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg hskew 1
+    have hD := exp_smul_diag_of_mem_torusSemidirectZ2Subgroup hX
     have h01 : X 0 1 = 0 :=
       Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ (hD t).1
     have h10 : X 1 0 = 0 :=
       Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ (hD t).2
     exact ⟨h01, h10, hre0, hre1⟩
   · rintro ⟨h01, h10, hre0, hre1⟩
+    -- Purely imaginary diagonal matrices have diagonal skew-Hermitian exponential line in `U(2)`.
     have hskew : Xᴴ = -X := by
       ext i j
       fin_cases i <;> fin_cases j <;> simp [Complex.ext_iff, h01, h10, hre0, hre1]
@@ -465,17 +523,7 @@ theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) �
     have hdiag : t • X = Matrix.diagonal (fun i ↦ (t : ℂ) * X i i) := by
       ext i j
       fin_cases i <;> fin_cases j <;> simp [Complex.real_smul, h01, h10]
-    have hunit : NormedSpace.exp (t • X) ∈ Matrix.unitaryGroup (Fin 2) ℂ := by
-      open scoped Matrix.Norms.Operator in
-      let _ : SeminormedAddCommGroup (Matrix (Fin 2) (Fin 2) ℂ) :=
-        NormedAddCommGroup.toSeminormedAddCommGroup
-      let _ := Matrix.linftyOpTopologicalSpace (Fin 2) (Fin 2) ℂ
-      let _ := Matrix.linftyOpContinuousStar (Fin 2) ℂ
-      have hskew_t : t • X ∈ skewAdjoint (Matrix (Fin 2) (Fin 2) ℂ) := by
-        rw [skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_smul,
-          star_trivial, hskew, smul_neg]
-      exact NormedSpace.exp_mem_unitary_of_mem_skewAdjoint hskew_t
-    refine ⟨⟨NormedSpace.exp (t • X), hunit⟩,
+    refine ⟨⟨NormedSpace.exp (t • X), exp_smul_mem_unitaryGroup_of_conjTranspose_eq_neg hskew t⟩,
       mem_torusSemidirectZ2Subgroup_iff.mpr (Or.inl ?_), rfl⟩
     dsimp only
     rw [hdiag, Matrix.exp_diagonal]

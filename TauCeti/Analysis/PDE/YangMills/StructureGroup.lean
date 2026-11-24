@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
-import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Compact matrix structure groups
@@ -51,6 +51,11 @@ groups.
   `⟨[X, Y], Z⟩ = -⟨Y, [X, Z]⟩`.
 * `TauCeti.CompactMatrixStructureGroup.ofTraceForm_neg_trace_mul`: for the trace form,
   `-tr (X Y)` is real and equals the inner product.
+* `TauCeti.CompactMatrixStructureGroup.unitary_innerForm`,
+  `TauCeti.CompactMatrixStructureGroup.specialUnitary_innerForm`: the inner forms of `U(n)` and
+  `SU(n)` are the matrix trace forms.
+* `TauCeti.CompactMatrixStructureGroup.reindex_refl`,
+  `TauCeti.CompactMatrixStructureGroup.reindex_trans`: functoriality of `reindex`.
 
 ## References
 
@@ -166,6 +171,7 @@ theorem ofTraceForm_neg_trace_mul (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ
 variable (n) in
 /-- The full unitary group `U(n)` as a compact matrix structure group with the trace form
 `⟨X, Y⟩ = -Re tr (X Y)`. -/
+-- The type of `innerForm` depends on `group`, so `unitary_innerForm` needs `group` to reduce.
 @[expose]
 def unitary : CompactMatrixStructureGroup n :=
   ofTraceForm (ClosedSubgroup.unitary n ℂ)
@@ -174,15 +180,25 @@ def unitary : CompactMatrixStructureGroup n :=
 theorem unitary_group : (unitary n).group = ClosedSubgroup.unitary n ℂ :=
   (rfl)
 
+@[simp]
+theorem unitary_innerForm : (unitary n).innerForm = (ClosedSubgroup.unitary n ℂ).matrixTraceForm :=
+  (rfl)
+
 variable (n) in
 /-- The special unitary group `SU(n)` as a compact matrix structure group with the trace form
 `⟨X, Y⟩ = -Re tr (X Y)`. -/
+-- The type of `innerForm` depends on `group`, so its value needs `group` to reduce.
 @[expose]
 def specialUnitary : CompactMatrixStructureGroup n :=
   ofTraceForm (ClosedSubgroup.specialUnitary n ℂ)
 
 @[simp]
 theorem specialUnitary_group : (specialUnitary n).group = ClosedSubgroup.specialUnitary n ℂ :=
+  (rfl)
+
+@[simp]
+theorem specialUnitary_innerForm :
+    (specialUnitary n).innerForm = (ClosedSubgroup.specialUnitary n ℂ).matrixTraceForm :=
   (rfl)
 
 end OfTraceForm
@@ -233,6 +249,7 @@ section Reindex
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
 /-- Transport a compact matrix structure group along a bijection of index types `e : n ≃ m`. -/
+-- The type of `innerForm` depends on `group`, so its value can only be stated once `group` reduces.
 @[expose]
 def reindex (S : CompactMatrixStructureGroup n) (e : n ≃ m) :
     CompactMatrixStructureGroup m where
@@ -273,6 +290,50 @@ theorem reindex_innerForm_map (e : n ≃ m) (X Y : S.group.matrixLieAlgebra) :
     (S.reindex e).innerForm (S.group.matrixLieAlgebraReindexEquiv e X)
       (S.group.matrixLieAlgebraReindexEquiv e Y) = S.innerForm X Y := by
   simp
+
+private theorem ext {k : Type*} [Fintype k] [DecidableEq k]
+    {S₁ S₂ : CompactMatrixStructureGroup k} (hg : S₁.group = S₂.group)
+    (hform : ∀ (X Y : Matrix k k ℂ)
+      (hX₁ : X ∈ S₁.group.matrixLieAlgebra) (hY₁ : Y ∈ S₁.group.matrixLieAlgebra)
+      (hX₂ : X ∈ S₂.group.matrixLieAlgebra) (hY₂ : Y ∈ S₂.group.matrixLieAlgebra),
+      S₁.innerForm ⟨X, hX₁⟩ ⟨Y, hY₁⟩ = S₂.innerForm ⟨X, hX₂⟩ ⟨Y, hY₂⟩) :
+    S₁ = S₂ := by
+  cases S₁ with | mk g₁ f₁ s₁ p₁ i₁ =>
+  cases S₂ with | mk g₂ f₂ s₂ p₂ i₂ =>
+  dsimp at hg
+  subst hg
+  congr
+  ext X Y
+  exact hform (X : Matrix k k ℂ) (Y : Matrix k k ℂ) X.property Y.property X.property Y.property
+
+/-- Reindexing along the identity equivalence leaves a structure group unchanged. -/
+@[simp]
+theorem reindex_refl : S.reindex (Equiv.refl n) = S := by
+  refine ext (ClosedSubgroup.reindex_refl S.group) fun X Y hX₁ hY₁ hX₂ hY₂ ↦ ?_
+  refine (reindex_innerForm_apply S (Equiv.refl n) ⟨X, hX₁⟩ ⟨Y, hY₁⟩).trans ?_
+  have ha : (S.group.matrixLieAlgebraReindexEquiv (Equiv.refl n)).symm ⟨X, hX₁⟩ = ⟨X, hX₂⟩ :=
+    Subtype.ext (by simp [Matrix.reindex_apply])
+  have hb : (S.group.matrixLieAlgebraReindexEquiv (Equiv.refl n)).symm ⟨Y, hY₁⟩ = ⟨Y, hY₂⟩ :=
+    Subtype.ext (by simp [Matrix.reindex_apply])
+  exact (congrArg (S.innerForm · _) ha).trans (congrArg (S.innerForm _) hb)
+
+/-- Reindexing along `e.trans f` equals reindexing along `e` followed by `f`. -/
+@[simp]
+theorem reindex_trans {p : Type*} [Fintype p] [DecidableEq p] (e : n ≃ m) (f : m ≃ p) :
+    S.reindex (e.trans f) = (S.reindex e).reindex f := by
+  refine ext (ClosedSubgroup.reindex_trans S.group e f) fun X Y hX₁ hY₁ hX₂ hY₂ ↦ ?_
+  refine (reindex_innerForm_apply S (e.trans f) ⟨X, hX₁⟩ ⟨Y, hY₁⟩).trans ?_
+  refine Eq.trans ?_ (reindex_innerForm_apply (S.reindex e) f ⟨X, hX₂⟩ ⟨Y, hY₂⟩).symm
+  refine Eq.trans ?_ (reindex_innerForm_apply S e _ _).symm
+  have ha : (S.group.matrixLieAlgebraReindexEquiv (e.trans f)).symm ⟨X, hX₁⟩ =
+      (S.group.matrixLieAlgebraReindexEquiv e).symm
+        (((S.group.reindex e).matrixLieAlgebraReindexEquiv f).symm ⟨X, hX₂⟩) :=
+    Subtype.ext (by simp [Matrix.reindex_apply])
+  have hb : (S.group.matrixLieAlgebraReindexEquiv (e.trans f)).symm ⟨Y, hY₁⟩ =
+      (S.group.matrixLieAlgebraReindexEquiv e).symm
+        (((S.group.reindex e).matrixLieAlgebraReindexEquiv f).symm ⟨Y, hY₂⟩) :=
+    Subtype.ext (by simp [Matrix.reindex_apply])
+  exact (congrArg (S.innerForm · _) ha).trans (congrArg (S.innerForm _) hb)
 
 end Reindex
 
@@ -337,6 +398,7 @@ section BlockProd
 
 /-- The block-diagonal product of structure groups on `Fin N₁` and `Fin N₂`, landing on
 `Fin (N₁ + N₂)` via `finSumFinEquiv`. -/
+-- The type of `innerForm` depends on `group`, so its value can only be stated once `group` reduces.
 @[expose]
 def blockProd {N₁ N₂ : ℕ} (S₁ : CompactMatrixStructureGroup (Fin N₁))
     (S₂ : CompactMatrixStructureGroup (Fin N₂)) : CompactMatrixStructureGroup (Fin (N₁ + N₂)) :=
