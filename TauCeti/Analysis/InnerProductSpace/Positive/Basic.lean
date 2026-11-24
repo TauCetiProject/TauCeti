@@ -257,6 +257,7 @@ private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 
     exact hTT.conj_of_isSymmetric (isSymmetric_pow hT k)
 
 /-- The powers of a positive operator are positive. -/
+@[aesop safe apply]
 theorem IsPositive.pow {T : E →L[𝕜] E} (hT : T.IsPositive) (n : ℕ) : (T ^ n).IsPositive := by
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
   · simpa [← pow_add, ← two_mul] using isPositive_one.conj_of_isSymmetric (isSymmetric_pow hT k)

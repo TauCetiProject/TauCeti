@@ -187,8 +187,10 @@ theorem tendsto_toPointwiseConvergenceCLM_ciSup {ι : Type*} [Preorder ι] {f : 
     exact tendsto_bot
   obtain ⟨h₁, h₂⟩ := atTop_neBot_iff.mp ⟨h⟩
   obtain ⟨T, hT, hlim⟩ := exists_isLUB_tendsto_of_monotone hf hbdd
-  rw [(hf.directed_le.isLUB_ciSup hbdd).unique hT]
-  exact PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr hlim
+  rw [(hf.directed_le.isLUB_ciSup hbdd).unique hT,
+    PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  simp only [toPointwiseConvergenceCLM_apply]
+  exact hlim
 
 /-- **Vigier's theorem** for decreasing nets: an antitone net of operators bounded below in the
 Loewner order converges in the strong operator topology to its infimum. -/
@@ -201,7 +203,9 @@ theorem tendsto_toPointwiseConvergenceCLM_ciInf {ι : Type*} [Preorder ι] {f : 
     exact tendsto_bot
   obtain ⟨h₁, h₂⟩ := atTop_neBot_iff.mp ⟨h⟩
   obtain ⟨T, hT, hlim⟩ := exists_isGLB_tendsto_of_antitone hf hbdd
-  rw [(hf.directed_ge.isGLB_ciInf hbdd).unique hT]
-  exact PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr hlim
+  rw [(hf.directed_ge.isGLB_ciInf hbdd).unique hT,
+    PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  simp only [toPointwiseConvergenceCLM_apply]
+  exact hlim
 
 end ContinuousLinearMap

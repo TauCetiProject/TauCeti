@@ -50,13 +50,17 @@ private theorem tendsto_pow_of_forall_mem_iff {T : E →L[𝕜] E} (h0 : 0 ≤ T
       (𝓝 (toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E K.starProjection)) := by
   have hsa : IsSelfAdjoint T := (nonneg_iff_isPositive.mp h0).isSelfAdjoint
   set P := ⨅ n, T ^ n
-  have hlim : ∀ x, Tendsto (fun n => (T ^ n) x) atTop (𝓝 (P x)) :=
-    PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
+  have hlim : ∀ x, Tendsto (fun n => (T ^ n) x) atTop (𝓝 (P x)) := by
+    have h := PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
       (tendsto_toPointwiseConvergenceCLM_ciInf (fun _ _ => pow_le_pow_of_le_one h0 h1)
         ⟨0, by
           rintro _ ⟨n, rfl⟩
           exact nonneg_iff_isPositive.mpr ((nonneg_iff_isPositive.mp h0).pow n)⟩)
-  refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr fun x => ?_
+    simp only [toPointwiseConvergenceCLM_apply] at h
+    exact h
+  rw [PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  simp only [toPointwiseConvergenceCLM_apply]
+  intro x
   -- The strong limit `P x` is fixed by `T` and has the same inner products with fixed vectors
   -- as `x`, which characterises the orthogonal projection of `x` onto `K`.
   have hP : K.starProjection x = P x := by
@@ -146,15 +150,19 @@ theorem tendsto_toPointwiseConvergenceCLM_starProjection_mul_pow :
       starProjection_comp_starProjection_of_le inf_le_right]
   have hlim : ∀ y, Tendsto
       (fun n => ((K.starProjection * L.starProjection * K.starProjection) ^ n) y) atTop
-      (𝓝 ((K ⊓ L).starProjection y)) := PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
-    (tendsto_toPointwiseConvergenceCLM_starProjection_mul_mul_pow K L)
+      (𝓝 ((K ⊓ L).starProjection y)) := by
+    have h := PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
+      (tendsto_toPointwiseConvergenceCLM_starProjection_mul_mul_pow K L)
+    simp only [toPointwiseConvergenceCLM_apply] at h
+    exact h
   have key : ∀ x, Tendsto (fun n => ((K.starProjection * L.starProjection) ^ n) x) atTop
       (𝓝 ((K ⊓ L).starProjection x)) := fun x => by
     have h := hlim (K.starProjection (L.starProjection x))
     rw [hR] at h
     refine (tendsto_add_atTop_iff_nat 1).mp (h.congr fun n => ?_)
     rw [hpow, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp]
-  -- As for `hlim`, evaluating `toPointwiseConvergenceCLM … A` at `x` is `A x` by definition.
-  exact PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr key
+  rw [PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  simp only [toPointwiseConvergenceCLM_apply]
+  exact key
 
 end Submodule
