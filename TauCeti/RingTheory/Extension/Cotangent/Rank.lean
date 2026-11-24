@@ -26,10 +26,11 @@ number of generators of `I` near that point. This file compares it across presen
   of any presentation; in particular a presentation of `S` by `n + c'` generators and `c'`
   relations forces `I` to need at most `m - n` generators near every point.
 * When the conormal module of a composite presentation `R[X, Y] → T` splits as
-  `T ⊗[S] I/I² × K/K²`, the dimensions of the fibres add
-  (`Algebra.Generators.finrank_tensor_cotangent_comp_of_linearEquiv`). For instance, inverting an
-  element `g` of `S` by one more generator `y` and one more relation `g y - 1` raises the dimension
-  of the fibre by one (`Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway`).
+  `T ⊗[S] I/I² × K/K²`, and the fibres of `I/I²` and `K/K²` are finite-dimensional, the
+  dimensions of the fibres add (`Algebra.Generators.finrank_tensor_cotangent_comp_of_linearEquiv`).
+  For instance, when `I/I²` is a finite `S`-module, inverting an element `g` of `S` by one more
+  generator `y` and one more relation `g y - 1` raises the dimension of the fibre by one
+  (`Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway`).
 * The fibre of `I/I²` over `S` is the fibre of `I` over `R[x₁, …, x_m]`
   (`Algebra.Generators.finrank_tensor_cotangent`).
 
@@ -189,9 +190,10 @@ theorem finrank_tensor_cotangent_comp_of_linearEquiv {ι' : Type*} (Q : Generato
   rw [(e.baseChange T F _ _).finrank_eq, (TensorProduct.prodRight T F F _ _).finrank_eq,
     Module.finrank_prod, (AlgebraTensorModule.cancelBaseChange S T F F _).finrank_eq]
 
-/-- Presenting the localization `T = S[1/g]` by the generators of `P` and one more generator
-`y`, subject to one more relation `g y - 1`, raises the dimension of the fibre of the conormal
-module at a field-valued point of `T` by one. -/
+/-- If the conormal module of `P` is a finite `S`-module, then presenting the localization
+`T = S[1/g]` by the generators of `P` and one more generator `y`, subject to one more relation
+`g y - 1`, raises the dimension of the fibre of the conormal module at a field-valued point of `T`
+by one. -/
 theorem finrank_tensor_cotangent_comp_localizationAway (g : S) [IsLocalization.Away g T]
     (P : Generators R S ι) [Module.Finite S P.toExtension.Cotangent] :
     Module.finrank F (F ⊗[T] ((localizationAway T g).comp P).toExtension.Cotangent) =

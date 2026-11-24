@@ -13,7 +13,7 @@ import Mathlib.RingTheory.Ideal.Height
 
 An algebra over a field `k` which is locally standard syntomic of relative dimension `n` has Krull
 dimension at most `n` (`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`):
-every prime lies in a standard syntomic chart, and a nonzero chart has dimension exactly `n`.
+every prime lies in a standard syntomic chart, and such a chart has dimension at most `n`.
 -/
 
 public section
@@ -24,7 +24,6 @@ universe u
 
 variable {n : ℕ}
 
-open TensorProduct in
 /-- An algebra over a field which is locally standard syntomic of relative dimension `n` has Krull
 dimension at most `n`. -/
 theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : Type u} [Field k]
@@ -37,14 +36,9 @@ theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : 
     exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally h P hP.ne_top
   have hPt : (P.map (algebraMap A (Localization.Away t))).IsPrime :=
     IsLocalization.isPrime_of_isPrime_disjoint _ _ P hP hdisj.symm
-  -- The chart is nonzero, so over the field `k` its Krull dimension is exactly `n`.
-  let e := Algebra.TensorProduct.lid k (Localization.Away t)
-  have : Nontrivial (Localization.Away t) := PrimeSpectrum.nontrivial ⟨_, hPt⟩
-  have : Nontrivial (k ⊗[k] Localization.Away t) := e.toEquiv.nontrivial
   rw [← IsLocalization.height_map_of_disjoint (S := Localization.Away t) (.powers t) P
     hdisj.symm]
-  refine Ideal.height_le_ringKrullDim_of_isPrime.trans_eq ?_
-  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
-    Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field (n := n) k]
+  exact Ideal.height_le_ringKrullDim_of_isPrime.trans
+    (Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_le_of_field n k _)
 
 end TauCeti

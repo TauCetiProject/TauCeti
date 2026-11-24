@@ -104,19 +104,14 @@ private theorem SyntomicOfRelativeDimension.of_comp_surjective_of_field {K : Typ
   have : Algebra.FiniteType K A := by
     rw [← RingHom.finiteType_algebraMap]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mp ‹_›
-  -- Each point `x` of `Spec A` has a standard syntomic basic open neighbourhood `D(a x)`.
-  have key (x : Spec A) : ∃ a : A, a ∉ x.asIdeal ∧
-      Algebra.IsStandardSyntomicOfRelativeDimension n K (Localization.Away a) := by
-    obtain ⟨x', rfl⟩ := u.surjective x
-    exact exists_notMem_isStandardSyntomicOfRelativeDimension_of_etale u x'
-  choose a ha hstd using key
-  refine IsZariskiLocalAtSource.of_iSup_eq_top (fun x ↦ PrimeSpectrum.basicOpen (a x))
-    (top_unique fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, ha x⟩) fun x ↦ ?_
-  rw [← basicOpenIsoSpecAway_hom_SpecMap, Category.assoc,
-    MorphismProperty.cancel_left_of_respectsIso (P := @SyntomicOfRelativeDimension n),
-    ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
-  have := hstd x
-  infer_instance
+  -- Each maximal ideal of `A` lies under a point of `X'`, so it avoids some `a` with `A[1/a]`
+  -- standard syntomic.
+  rw [syntomicOfRelativeDimension_SpecMap_iff, CommRingCat.hom_ofHom]
+  refine locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal fun m hm ↦ ?_
+  obtain ⟨x', hx'⟩ := u.surjective ⟨m, hm.isPrime⟩
+  obtain ⟨a, ha, hstd⟩ :=
+    exists_notMem_isStandardSyntomicOfRelativeDimension_of_etale (n := n) (K := K) u x'
+  exact ⟨a, by rwa [hx'] at ha, hstd⟩
 
 /-- **Syntomicity of a morphism locally of finite presentation descends along étale surjections of
 the source.** If `f` is locally of finite presentation, `u : X' ⟶ X` is étale and surjective, and

@@ -10,16 +10,15 @@ import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Extension.Cotangent.Rank
 import TauCeti.RingTheory.Extension.Cotangent.StandardEtale
 import TauCeti.RingTheory.KrullDimension.GoingDown
-import TauCeti.RingTheory.Syntomic.KrullDimension
 import TauCeti.RingTheory.Syntomic.LocalCriterion
 
 /-!
 # Descent of standard syntomic algebras along étale maps of the source
 
 Being a local complete intersection over a field descends along étale maps of the source. If `A`
-is of finite type over a field `k` and `B` is an étale `A`-algebra which is locally standard
-syntomic of relative dimension `n` over `k`, then every prime of `A` under a prime of `B` has a
-standard syntomic neighbourhood
+is of finite type over a field `k` and `B` is an `A`-algebra which is locally standard syntomic of
+relative dimension `n` over `k`, then every prime of `A` under a prime of `B` at which `B` is étale
+over `A` has a standard syntomic neighbourhood
 (`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`). When
 `B` is faithfully flat over `A`, it follows that `A` is locally standard syntomic of relative
 dimension `n` over `k`
@@ -35,7 +34,7 @@ of `I` (`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`), 
 the standard syntomic presentation of `B` bounds the fibre of `I` at `Q` by `m - n`. The image of
 `Spec B → Spec A` is an open neighbourhood of `Q ∩ A`, and on it heights are at most
 `dim B ≤ n`, since flat maps satisfy going down
-(`TauCeti.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown`).
+(`Ideal.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown`).
 The presentation criterion
 `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le`
 then gives the standard syntomic neighbourhood.
@@ -43,8 +42,8 @@ then gives the standard syntomic neighbourhood.
 ## Main results
 
 * `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`: every
-  prime of `A` under a prime of an étale, locally standard syntomic `A`-algebra has a standard
-  syntomic neighbourhood.
+  prime of `A` under a prime of the étale locus of a locally standard syntomic `A`-algebra has a
+  standard syntomic neighbourhood.
 * `TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_etale_of_faithfullyFlat`: local
   complete intersections over a field descend along faithfully flat étale maps.
 
@@ -99,24 +98,26 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
       Pe.toSubmersivePresentation F, P.toGenerators.finrank_tensor_cotangent F] at h1
     simp only [Nat.card_eq_fintype_card, Fintype.card_sum, Fintype.card_fin, hP'] at h1 ⊢
     omega
-  have hdimB : ringKrullDim B ≤ n :=
-    ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
-      (isStandardSyntomicOfRelativeDimension_respectsIso n) (algebraMap k B)
-      (isStandardSyntomicOfRelativeDimension_algebraMap.mpr inferInstance))
-  obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown (A := A) Q
+  obtain ⟨a, ha, hdim⟩ :=
+    Ideal.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown (A := A) Q
   exact exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le
-    P.toGenerators _ F hF hfin ha fun p hp hap ↦ WithBot.coe_le_coe.mp ((hdim p hp hap).trans hdimB)
+    P.toGenerators _ F hF hfin ha fun p hp hap ↦ WithBot.coe_le_coe.mp ((hdim p hp hap).trans
+      (Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_le_of_field n k B))
 
 /-- **Local complete intersections descend along étale maps.** Let `A` be a finite type algebra
-over a field `k`, and `B` an étale `A`-algebra which is locally standard syntomic of relative
-dimension `n` over `k`. Then every prime of `A` under a prime `Q` of `B` has a neighbourhood
-`A[1/g]` which is standard syntomic of relative dimension `n` over `k`. -/
+over a field `k`, and `B` an `A`-algebra which is locally standard syntomic of relative dimension
+`n` over `k`. Then every prime of `A` under a prime `Q` of `B` at which `B` is étale over `A` has
+a neighbourhood `A[1/g]` which is standard syntomic of relative dimension `n` over `k`. -/
 theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale
-    [Algebra.FiniteType k A] [Algebra.Etale A B]
+    [Algebra.FiniteType k A]
     (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap k B))
-    (Q : Ideal B) [Q.IsPrime] :
+    (Q : Ideal B) [Q.IsPrime] [Algebra.IsEtaleAt A Q] :
     ∃ g ∉ Q.comap (algebraMap A B),
       Algebra.IsStandardSyntomicOfRelativeDimension n k (Localization.Away g) := by
+  -- `B` is finitely presented over `k`, hence over `A`.
+  have : Algebra.FinitePresentation k B := RingHom.finitePresentation_algebraMap.mp
+    (finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension h)
+  have : Algebra.FinitePresentation A B := .of_restrict_scalars_finitePresentation k A B
   -- A standard étale neighbourhood `B₁ = B[1/t₁]` of `Q`, still locally standard syntomic.
   obtain ⟨t₁, ht₁, _⟩ := Algebra.IsEtaleAt.exists_isStandardEtale (R := A) Q
   let B₁ := Localization.Away t₁

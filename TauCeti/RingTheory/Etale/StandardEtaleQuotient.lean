@@ -21,7 +21,7 @@ canonical map `A ⧸ J → P.Ring ⧸ J P.Ring` is bijective
 (`StandardEtalePair.algebraMap_quotient_bijective_of_hasMap`).
 
 A standard étale algebra `B` over a quotient `A = S ⧸ I` lifts to a flat `S`-algebra `C` with
-`C ⧸ I C ≅ B` (`Algebra.IsStandardEtale.exists_flat_lift`): if `B = (A[X] ⧸ (f))[1/g]` with `f`
+`C ⧸ I C ≅ B` (`TauCeti.exists_flat_lift_of_isStandardEtale`): if `B = (A[X] ⧸ (f))[1/g]` with `f`
 monic, lift `f` to a monic polynomial `F` and `g` to a polynomial `G` over `S`, and take
 `C = (S[X] ⧸ (F))[1/G]`. The surjection `C → B` has kernel `I C`, and flatness of `C` over `S`
 identifies its conormal module as `I C/(I C)² ≃ B ⊗[A] I/I²`.
@@ -66,22 +66,24 @@ theorem algebraMap_quotient_bijective_of_hasMap (P : StandardEtalePair A) (J : I
 
 end StandardEtalePair
 
-namespace Algebra.IsStandardEtale
+namespace TauCeti
 
-open Polynomial
+open Algebra Polynomial
 
 universe u
 
 /-- A standard étale algebra `B` over a quotient `A` of `S` lifts to a flat `S`-algebra: there is a
 flat `S`-algebra `C` with a surjection `C → B`, compatible with `S → A → B`, whose kernel is the
 extension of the kernel of `S → A`. -/
-theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [CommRing B]
-    [Algebra S A] [Algebra A B] (hS : Function.Surjective (algebraMap S A)) [IsStandardEtale A B] :
+theorem exists_flat_lift_of_isStandardEtale {S : Type u} {A B : Type*} [CommRing S] [CommRing A]
+    [CommRing B] [Algebra S A] [Algebra A B] (hS : Function.Surjective (algebraMap S A))
+    [IsStandardEtale A B] :
     ∃ (C : Type u) (_ : CommRing C) (_ : Algebra S C) (_ : Module.Flat S C) (φ : C →+* B),
       Function.Surjective φ ∧
       (∀ s, φ (algebraMap S C s) = algebraMap A B (algebraMap S A s)) ∧
       RingHom.ker φ = (RingHom.ker (algebraMap S A)).map (algebraMap S C) := by
-  obtain ⟨⟨⟨f, hfm, g, hcond⟩, x, hx, hbij⟩⟩ := nonempty_standardEtalePresentation (R := A) (S := B)
+  obtain ⟨⟨⟨f, hfm, g, hcond⟩, x, hx, hbij⟩⟩ :=
+    IsStandardEtale.nonempty_standardEtalePresentation (R := A) (S := B)
   let π := algebraMap S A
   obtain ⟨f, rfl, -, hf⟩ := lifts_and_natDegree_eq_and_monic (mem_lifts_of_surjective hS f) hfm
   obtain ⟨g, rfl⟩ := Polynomial.map_surjective π hS g
@@ -117,4 +119,4 @@ theorem exists_flat_lift {S : Type u} {A B : Type*} [CommRing S] [CommRing A] [C
       AdjoinRoot.ker_map_map_of_surjective hS, Ideal.map_map, ← AdjoinRoot.algebraMap_eq,
       ← IsScalarTower.algebraMap_eq]
 
-end Algebra.IsStandardEtale
+end TauCeti

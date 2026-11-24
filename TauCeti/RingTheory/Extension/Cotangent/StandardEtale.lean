@@ -34,7 +34,7 @@ Injectivity is the base change of a flatness statement. It holds whenever `B` li
 `R[X]`-algebra `C` with `C ⧸ I C ≅ B`
 (`Algebra.Generators.liftBaseChange_injective_of_flat_lift`, in
 `TauCeti.RingTheory.Extension.Cotangent.FlatLift`), and standard étale algebras lift in this way
-(`Algebra.IsStandardEtale.exists_flat_lift`).
+(`TauCeti.exists_flat_lift_of_isStandardEtale`).
 
 The splitting and its simp lemmas follow Mathlib's
 `Algebra.Generators.cotangentCompLocalizationAwayEquiv`
@@ -68,7 +68,7 @@ theorem liftBaseChange_injective_of_isStandardEtale
     Function.Injective
       ((Extension.Cotangent.map (Q.toComp P).toExtensionHom).liftBaseChange B) := by
   obtain ⟨C, _, _, _, φ, hφ, hφalg, hker⟩ :=
-    Algebra.IsStandardEtale.exists_flat_lift (S := P.Ring) (B := B) P.algebraMap_surjective
+    TauCeti.exists_flat_lift_of_isStandardEtale (S := P.Ring) (B := B) P.algebraMap_surjective
   exact liftBaseChange_injective_of_flat_lift Q P φ hφ hφalg hker
 
 variable [Algebra.IsStandardEtale A B]

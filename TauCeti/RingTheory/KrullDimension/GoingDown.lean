@@ -6,51 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FinitePresentation
-public import Mathlib.RingTheory.Ideal.GoingDown
 public import Mathlib.RingTheory.Ideal.Height
+public import TauCeti.RingTheory.Ideal.GoingDown
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 
 /-!
 # Heights near the image of a going-down map
 
-Going down does not lower heights: it lifts every chain of primes of `A` ending at `P ∩ A` to a
-chain of the same length ending at a prime `P` of `B`, so `ht (P ∩ A) ≤ ht P`, and the same holds
-for every ideal `P` by passing to its minimal primes
-(`Ideal.height_under_le_height_of_hasGoingDown`). Now let `B` be a finitely presented
-`A`-algebra satisfying going down, for instance a flat one. Chevalley's theorem makes the image of
-`Spec B → Spec A` constructible, and going down makes it stable under generalization, so it is
-open. Hence every prime of `A` under a prime of `B` has a basic open neighbourhood on which all
-heights are at most `dim B`
-(`TauCeti.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown`).
+Going down does not lower heights: `ht (P ∩ A) ≤ ht P` for every ideal `P` of `B`
+(`Ideal.height_under_le_height_of_hasGoingDown`, in `TauCeti.RingTheory.Ideal.GoingDown`). Now let
+`B` be a finitely presented `A`-algebra satisfying going down, for instance a flat one.
+Chevalley's theorem makes the image of `Spec B → Spec A` constructible, and going down makes it
+stable under generalization, so it is open. Hence every prime of `A` under a prime of `B` has a
+basic open neighbourhood on which all heights are at most `dim B`
+(`Ideal.exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown`).
 -/
 
 public section
 
-namespace TauCeti
+namespace Ideal
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-
-/-- Going down does not lower heights: every ideal `P` of `B` has height at least that of
-`P ∩ A`. -/
-theorem _root_.Ideal.height_under_le_height_of_hasGoingDown [Algebra.HasGoingDown A B]
-    (P : Ideal B) : (P.under A).height ≤ P.height := by
-  -- It suffices to treat the minimal primes `Q` of `P`, which lie over primes containing `P ∩ A`.
-  rw [P.height_eq_inf_minimalPrimes]
-  refine le_iInf₂ fun Q hQ ↦ ?_
-  have := hQ.1.1
-  have hPQ : P.under A ≤ Q.under A := by
-    rw [Ideal.under_def, Ideal.under_def]
-    exact Ideal.comap_mono hQ.1.2
-  refine (Ideal.height_mono hPQ).trans ?_
-  rw [PrimeSpectrum.height_eq_orderHeight (⟨Q.under A, inferInstance⟩ : PrimeSpectrum A),
-    PrimeSpectrum.height_eq_orderHeight (⟨Q, ‹_›⟩ : PrimeSpectrum B)]
-  -- Going down lifts a chain of primes ending at `Q ∩ A` to a chain of the same length ending
-  -- at `Q`.
-  refine Order.height_le fun l hl ↦ ?_
-  have : Q.LiesOver l.last.asIdeal := ⟨by rw [hl]⟩
-  obtain ⟨L, hlen, hlast, -⟩ := Ideal.exists_ltSeries_of_hasGoingDown l Q
-  rw [← hlen, ← hlast]
-  exact Order.length_le_height_last
 
 /-- Near a prime of `A` under a prime `Q` of a finitely presented `A`-algebra `B` which satisfies
 going down, every prime of `A` has height at most `dim B`: the image of `Spec B → Spec A` is an
@@ -73,4 +49,4 @@ theorem exists_notMem_forall_height_le_ringKrullDim_of_hasGoingDown [Algebra.Has
   exact (WithBot.coe_le_coe.mpr (Ideal.height_under_le_height_of_hasGoingDown P.asIdeal)).trans
     Ideal.height_le_ringKrullDim_of_isPrime
 
-end TauCeti
+end Ideal
