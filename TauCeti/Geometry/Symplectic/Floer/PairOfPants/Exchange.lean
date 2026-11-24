@@ -44,9 +44,8 @@ rotation of the end at `∞` under `σ`. The main results are:
 * `TauCeti.Floer.exchangePerturbation_zero`: at `c = 0` the family is the pair-of-pants datum.
 * `TauCeti.Floer.exchangePerturbation_one`: at `c = 1` it is the pullback along `σ` of the
   pair-of-pants datum with exchanged inputs, `σ^*K'(w) = -K'(1 - w)`, since `dσ = -1`;
-  `TauCeti.Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData` states this
-  for the components in real coordinates, the form used by
-  `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`.
+  applied to this identity, `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_one_sub`
+  transfers solutions of the Floer equation for the exchanged datum to this end.
 * `TauCeti.Floer.exchangePerturbation_cylindricalEndLift` and
   `TauCeti.Floer.exchangePerturbation_add_cylindricalEndLift_inf`: for `0 ≤ c ≤ 1` every member
   is `H_q(t) dt` far out on the input end `q`, in the end lift `φ_q`, and `H_∞(t) dt` far out on
@@ -187,23 +186,6 @@ theorem exchangePerturbation_one (hH : Periodic (H inf) 1) (w : ℂ) (x : M) :
     pairOfPantsPerturbation_update_exchangeEndData_one_sub, exchangeEndData_inf,
     hplane, exchangePerturbation_def, Complex.ofReal_one]
   abel
-
-/-- **The end of the family in real coordinates.** In the real coordinates `ℝ × ℝ ≃ ℂ`, the
-exchange is `σ(s, t) = (1 - s, -t)`, and the pullback along `σ` of the components of the
-pair-of-pants datum with exchanged Hamiltonians (`TauCeti.Floer.perturbationPullback`) is the end
-`c = 1` of the family. Since `σ` is holomorphic,
-`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback` turns solutions of
-the Floer equation for the exchanged datum, composed with `σ`, into solutions for this end. -/
-theorem perturbationPullback_pairOfPantsPerturbation_exchangeEndData
-    (hH : Periodic (H inf) 1) (v z : ℝ × ℝ) (x : M) :
-    perturbationPullback (fun z => (1, 0) - z)
-        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
-          (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
-      exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x
-        (Complex.equivRealProdCLM.symm v) := by
-  rw [perturbationPullback_one_sub, exchangePerturbation_one hH, neg_apply]
 
 /-! ### The ends of the family -/
 

@@ -353,11 +353,8 @@ theorem isComplexLinearMap_perturbedFDeriv_cappedExchange_one (h₀ : ω.Compati
   rw [cappedExchangeAlmostComplex_one h₀ hJp hJ', ← hσ]
   -- The exchanged capping perturbation is differentiable in the target point at `σ(z)`, which is
   -- the capped puncture `1` or a point of `ℂ ∖ {0, 1}`.
-  have hS : e ((1, 0) - z) = one.endCenter ∨ e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
-    rw [hσ, endCenter_one]
-    by_cases h1 : 1 - e z = 1
-    · exact Or.inl h1
-    · exact Or.inr ⟨fun h0 => hz (by linear_combination -h0), h1⟩
+  have hS := eq_endCenter_one_or_of_ne_zero (w := e ((1, 0) - z))
+    (by rw [hσ]; exact fun h0 => hz (by linear_combination -h0))
   have hK (v : ℂ) : DifferentiableAt ℝ
       (fun x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
         (e ((1, 0) - z)) x v) (u ((1, 0) - z)) := by
