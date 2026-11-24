@@ -382,6 +382,12 @@ theorem assignmentEquiv_le_assignmentEquiv_iff {R : Type w'} [LE R] (e : N ≃�
     obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
     simpa using h x y a
 
+/-- Pointwise order is preserved when evaluating transported assignments. -/
+theorem assignmentEquiv_le_apply {R : Type w'} [LE R] (e : N ≃ₙ N')
+    (f g : N.Assignment R) (h : f ≤ g) {x y} (a : N'.Hom x y) :
+    e.assignmentEquiv R f a ≤ e.assignmentEquiv R g a :=
+  (e.assignmentEquiv_le_assignmentEquiv_iff f g).2 h x y a
+
 /-- Assignment transport preserves arbitrary pointwise order intervals. -/
 theorem assignmentEquiv_mem_Icc_map_iff {R : Type w'} [Preorder R] (e : N ≃ₙ N')
     (lo hi f : N.Assignment R) :
