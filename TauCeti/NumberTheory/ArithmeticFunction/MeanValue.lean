@@ -44,11 +44,6 @@ local densities of the twin-prime and Goldbach sieves) this is their denominator
   with prime values in `[0, k]` and every `z ≥ 1`.
 * `TauCeti.exists_pos_mul_prod_one_sub_div_inv_le_sum_moebius_sq_mul_div`: the same lower bound
   against `∏_{d < p ≤ z} (1 - g(p) / p)⁻¹` for prime values in `[0, d]`.
-* `TauCeti.sum_primesLE_div_mul_exp_sub_one_le`: the Rankin perturbation
-  `∑_{p ≤ y} (f(p) / p) (p^{1 / log y} - 1)` is at most `k e (1 + (log 4 + 4) / log 2)` when
-  `f(p) ≤ k`.
-* `TauCeti.summable_ite_div_sq_div_one_sub`: the quadratic local corrections
-  `(d / n)² / (1 - (d / n)²)` over `n > d` are summable.
 
 ## References
 
@@ -127,7 +122,7 @@ private theorem sum_powerset_filter_le_sum_moebius_sq_mul_div {f : ArithmeticFun
 /-- With `σ = 1 / log y` for `y ≥ 2`, the perturbation `∑_{p ≤ y} (f(p) / p) (p^σ - 1)` caused by
 the Rankin weight is at most `k e (1 + (log 4 + 4) / log 2)` when `f(p) ≤ k`, by Mertens's first
 theorem. -/
-theorem sum_primesLE_div_mul_exp_sub_one_le {f : ℕ → ℝ} {k : ℝ}
+private theorem sum_primesLE_div_mul_exp_sub_one_le {f : ℕ → ℝ} {k : ℝ}
     (hk : 0 ≤ k) (hfk : ∀ p : ℕ, p.Prime → f p ≤ k) {y : ℝ} (hy : 2 ≤ y) :
     ∑ p ∈ Nat.primesLE ⌊y⌋₊, f p / p * (Real.exp ((Real.log y)⁻¹ * Real.log p) - 1) ≤
       k * Real.exp 1 * (1 + (Real.log 4 + 4) / Real.log 2) := by
@@ -297,7 +292,7 @@ theorem exists_pos_mul_prod_one_add_div_le_sum_moebius_sq_mul_div (k : ℝ) :
 
 /-- The quadratic local corrections `(d / n)² / (1 - (d / n)²)` over `n > d` form a summable
 sequence. -/
-theorem summable_ite_div_sq_div_one_sub (d : ℝ) :
+private theorem summable_ite_div_sq_div_one_sub (d : ℝ) :
     Summable fun n : ℕ ↦ if d < n then (d / n) ^ 2 / (1 - (d / n) ^ 2) else 0 := by
   refine Summable.of_norm_bounded_eventually_nat
     ((Real.summable_nat_pow_inv.2 one_lt_two).mul_left (2 * d ^ 2)) ?_
