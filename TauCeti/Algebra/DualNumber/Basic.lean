@@ -26,7 +26,8 @@ Artinian ring are also Artinian, and dual numbers over a finite or free module a
 or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
 `1 + inr c` is a unit with inverse `1 - inr c`; these units multiply by adding the
-infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`.
+infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`, and `1 + inr c`
+determines `c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
 are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
@@ -50,10 +51,20 @@ theorem coe_dualNumberUnit {R : Type*} [Ring R] (c : R) :
     (dualNumberUnit c : DualNumber R) = 1 + TrivSqZeroExt.inr c := (rfl)
 
 /-- The underlying dual number of the inverse of `dualNumberUnit c` is `1 - inr c`. -/
-@[simp]
 theorem coe_dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
     (((dualNumberUnit c)⁻¹ : (DualNumber R)ˣ) : DualNumber R) =
       1 - TrivSqZeroExt.inr c := (rfl)
+
+/-- `dualNumberUnit` is injective. -/
+theorem dualNumberUnit_injective {R : Type*} [Ring R] :
+    Function.Injective (dualNumberUnit : R → (DualNumber R)ˣ) := fun c d h ↦ by
+  simpa using congr_arg (fun u : (DualNumber R)ˣ ↦ TrivSqZeroExt.snd (u : DualNumber R)) h
+
+/-- `dualNumberUnit c = dualNumberUnit d` exactly when `c = d`. -/
+@[simp]
+theorem dualNumberUnit_inj {R : Type*} [Ring R] {c d : R} :
+    dualNumberUnit c = dualNumberUnit d ↔ c = d :=
+  dualNumberUnit_injective.eq_iff
 
 /-- `dualNumberUnit 0` is the identity unit. -/
 @[simp]
@@ -65,6 +76,17 @@ theorem dualNumberUnit_zero {R : Type*} [Ring R] : dualNumberUnit (0 : R) = 1 :=
 theorem dualNumberUnit_mul {R : Type*} [Ring R] (c d : R) :
     dualNumberUnit c * dualNumberUnit d = dualNumberUnit (c + d) := by
   ext <;> simp [TrivSqZeroExt.snd_mul, add_comm]
+
+/-- `dualNumberUnit c` is the identity unit exactly when `c = 0`. -/
+@[simp]
+theorem dualNumberUnit_eq_one_iff {R : Type*} [Ring R] {c : R} : dualNumberUnit c = 1 ↔ c = 0 := by
+  rw [← dualNumberUnit_zero, dualNumberUnit_inj]
+
+/-- The inverse of `dualNumberUnit c` is `dualNumberUnit (-c)`. -/
+@[simp]
+theorem dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
+    (dualNumberUnit c)⁻¹ = dualNumberUnit (-c) := by
+  rw [inv_eq_iff_mul_eq_one, dualNumberUnit_mul, add_neg_cancel, dualNumberUnit_zero]
 
 /-- The `n`th power of `dualNumberUnit c` is `dualNumberUnit (n • c)`. -/
 @[simp]

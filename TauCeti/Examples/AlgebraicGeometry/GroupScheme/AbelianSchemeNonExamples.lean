@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.SchemeProperties
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Infinitesimal
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Smooth
 public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Group schemes that are not abelian schemes
@@ -74,17 +74,15 @@ example [Fact p.Prime] : ¬ Smooth (RootsOfUnityGroup.groupScheme (ZMod p) p).X.
 example [Fact p.Prime] (K : Type) [Field K] [CharP K p] [Algebra (ZMod p) K] :
     Subsingleton ((Spec (CommRingCat.of K)).asOver (Spec (CommRingCat.of (ZMod p))) ⟶
       (RootsOfUnityGroup.groupScheme (ZMod p) p).X) :=
-  DiagonalizableGroup.subsingleton_schemePoints_of_isReduced p 1 _ fun g ↦
-    ULift.down_injective ((ULift.pow_down g _).trans (Multiplicative.toAdd.injective (by simp)))
+  (RootsOfUnityGroup.schemePointsMulEquiv (R := ZMod p) (A := K) p).toEquiv.subsingleton_congr.mpr
+    (by simpa using subsingleton_rootsOfUnity_prime_pow (R := K) p 1)
 
 /-- The point of `μ_p` over `𝔽_p[ε]/(ε²)` given by the `p`th root of unity `1 + ε` is not the
 identity. -/
 example [Fact (1 < p)] :
     (RootsOfUnityGroup.schemePointsMulEquiv (R := ZMod p) (A := DualNumber (ZMod p)) p).symm
       ⟨dualNumberUnit 1, by rw [mem_rootsOfUnity, dualNumberUnit_pow]; ext <;> simp⟩ ≠ 1 := by
-  rw [MulEquiv.map_ne_one_iff, Ne, Subtype.ext_iff, Units.ext_iff]
-  intro h
-  simpa using congr_arg TrivSqZeroExt.snd h
+  simp [Ne, Subtype.ext_iff]
 
 end RootsOfUnity
 
