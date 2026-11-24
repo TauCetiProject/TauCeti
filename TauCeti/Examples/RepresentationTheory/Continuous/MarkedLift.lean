@@ -16,6 +16,7 @@ public import Mathlib.Algebra.Field.ZMod
   representation on `k^n`; in fact every marking does.
 * Over `𝔽₃[ε]`, multiplying a basis vector by `1 + ε` does not change its residual class, so the
   new basis lifts the same marked residual basis.
+* Two bases lifting the same residual basis differ by a matrix reducing to `1`.
 * A marking matters: if `ρbar g` is `diag(1, -1)` in a basis `e₀, e₁` of a residual
   representation in which `e₁ ≠ -e₁` (for instance over `𝔽₃`), then `ρ` cannot be a lift of
   `ρbar` both for a marking `ι` and for `ι` followed by the swap `e₀ ↔ e₁`.
@@ -42,8 +43,14 @@ example {M : Type*} [AddCommGroup M] [Module (ZMod 3)[ε] M] (m : M) :
   have hε : residue (ZMod 3)[ε] ε = 0 := by
     rw [residue_eq_zero_iff, DualNumber.maximalIdeal_eq_span_singleton_eps]
     exact Ideal.subset_span rfl
-  rw [← TensorProduct.smul_tmul, Algebra.smul_def, mul_one, ResidueField.algebraMap_eq, map_add,
-    map_one, hε, add_zero]
+  rw [← TensorProduct.smul_tmul]
+  simp [Algebra.smul_def, hε]
+
+/-- Two bases of `M` lifting the same residual basis differ by a matrix reducing to `1`. -/
+example {M n : Type*} [AddCommGroup M] [Module A M] [DecidableEq n] (b b' : Module.Basis n A M)
+    (h : ∀ i, (1 : ResidueField A) ⊗ₜ[A] b i = 1 ⊗ₜ b' i) :
+    (b.toMatrix b').map (residue A) = 1 := by
+  simpa [ResidueField.algebraMap_eq] using b.toMatrix_map_algebraMap_eq_one b' h
 
 /-- A swap of the residual basis of `diag(1, -1)` is not a second marking of the same lift. -/
 example {M V : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M] [AddCommGroup V]
@@ -53,8 +60,8 @@ example {M V : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M] [AddCom
     (h₁ : ρbar g e₁ = -e₁) (he : e₁ ≠ -e₁) :
     ¬ (IsLiftOf ρ ρbar ι ∧ IsLiftOf ρ ρbar (ι.trans s)) := by
   rintro ⟨h, h'⟩
-  have := h.apply_comm h' g e₀
-  rw [h₀, hs, h₁] at this
+  have := (h.trans_iff.1 h').isIntertwining g e₀
+  simp only [coe_toRepresentation, LinearEquiv.coe_coe, h₀, hs, h₁] at this
   exact he this
 
 end TauCeti.Examples.MarkedLift
