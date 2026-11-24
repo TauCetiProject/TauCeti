@@ -26,8 +26,9 @@ proves the elementary consequences of the definition. A nonzero polynomial `g �
 adjoined to any family through the linear polynomial `Y - 1/g`, whose Hilbert set is exactly the
 set where `g` does not vanish. Hence over a Hilbertian field the Hilbert set of a family meets
 the complement of the zeros of any nonzero `g` and of any finite set, so it is infinite, and a
-Hilbertian field is infinite. The Hilbert set of `Y ^ n - T` consists of parameters that are not
-`n`-th powers, so a separably closed field is not Hilbertian.
+Hilbertian field is infinite. The Hilbert set of `Y ^ n - T` is contained in the set of
+parameters that are not `n`-th powers (and equals it for prime `n`), so a separably closed field is
+not Hilbertian.
 
 ## Main definitions
 
@@ -94,7 +95,7 @@ theorem hilbertSet_empty : hilbertSet (∅ : Set (RatFunc K)[X]) = Set.univ := b
   ext; simp
 
 /-- Enlarging the family shrinks its Hilbert set. -/
-theorem hilbertSet_anti : Antitone (hilbertSet (K := K)) :=
+theorem hilbertSet_antitone : Antitone (hilbertSet (K := K)) :=
   fun _ _ hst _ ht p hp ↦ ht p (hst hp)
 
 theorem hilbertSet_union (s s' : Set (RatFunc K)[X]) :
@@ -265,9 +266,9 @@ theorem isHilbertian_iff_forall_infinite_hilbertSet : IsHilbertian K ↔
       (hilbertSet (s : Set (RatFunc K)[X])).Infinite :=
   ⟨fun hK _ hs ↦ hK.infinite_hilbertSet hs, fun h s hs ↦ (h s hs).nonempty⟩
 
-/-- A separably closed field is not Hilbertian: every element is an `n`-th power for `n = 2` or
-`n = 3`, one of which is invertible in it, so the Hilbert set of `Y ^ n - T` is empty. In
-particular algebraically closed fields such as `ℂ` are not Hilbertian. -/
+/-- A separably closed field is not Hilbertian; in particular algebraically closed fields such as
+`ℂ` are not. Every element of a separably closed field is an `n`-th power for each `n` invertible in
+it, so the Hilbert set of `Y ^ n - T` is empty for such `n ≠ 1`. -/
 theorem not_isHilbertian_of_isSepClosed [IsSepClosed K] : ¬ IsHilbertian K := by
   intro hK
   -- One of `2` and `3` is invertible in `K`, since `3 - 2 = 1`.
