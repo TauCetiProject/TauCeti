@@ -113,18 +113,15 @@ theorem exists_isPseudoUniformizer_mem_fixedPoints :
 
 /-- **The fixed subring of a finite group acting on a Tate ring is a Tate ring** for the subspace
 topology. If `ϖ` is a pseudouniformiser of `A`, its orbit product `N(ϖ) = ∏ g, g • ϖ` is a
-pseudouniformiser of `A` lying in `Aᴳ`, and its inverse is the orbit product of `ϖ⁻¹`. No
-hypothesis is made on the order of `G`. -/
+pseudouniformiser of `A` and of `Aᴳ` (`IsPseudoUniformizer.orbitProd_fixedPoints`). No hypothesis
+is made on the order of `G`. -/
 instance isTateRing_fixedPoints : IsTateRing (FixedPoints.subring A G) := by
   have := Fintype.ofFinite G
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  have hN := hϖ.orbitProd G
-  have hinv : (↑(hN.isUnit.unit⁻¹) : A) = TauCeti.orbitProd G (↑(hϖ.isUnit.unit⁻¹) : A) :=
-    Units.inv_eq_of_mul_eq_one_right (TauCeti.orbitProd_units_mul_inv G hϖ.isUnit.unit)
-  refine (FixedPoints.subring A G).isTateRing_of_isPseudoUniformizer hN.isUnit.unit hN
-    (TauCeti.orbitProd_mem_subring G ϖ) ?_
-  rw [hinv]
-  exact TauCeti.orbitProd_mem_subring G _
+  let v := (hϖ.orbitProd_fixedPoints G).isUnit.unit
+  exact (FixedPoints.subring A G).isTateRing_of_isPseudoUniformizer
+    (Units.map (FixedPoints.subring A G).subtype.toMonoidHom v) (hϖ.orbitProd G)
+    (v : FixedPoints.subring A G).2 (↑v⁻¹ : FixedPoints.subring A G).2
 
 /-- **Power-bounded invariants** (`(Aᴳ)° = A° ∩ Aᴳ`): an invariant element is power-bounded in
 `Aᴳ` exactly when it is power-bounded in `A`. -/
