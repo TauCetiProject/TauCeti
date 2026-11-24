@@ -18,12 +18,13 @@ import TauCeti.LinearAlgebra.Dimension.Basis
 For a module `X` over a commutative ring `R`, the product `X × X*` of `X` with its dual
 `X* = Module.Dual R X` carries the alternating form
 `polarizationForm R X ((x, y), (x', y')) = y' x - y x'`.
-It is the model of a symplectic space with a chosen *full polarization*: the two factors
-`X × {0}` and `{0} × X*` are complementary Lagrangians, and `(x, 0)` pairs with `(0, y)` to
-`y x`. Over a field every finite-dimensional nondegenerate alternating space of dimension
-`2 * dim X` is isometric to it, so a statement about symplectic spaces may be proved in these
-coordinates and transported. This is the space on whose functions `X → ℂ` the Schrödinger and
-Weil representations of a finite symplectic space act.
+It is the model of a symplectic space with a chosen *full polarization*: the factor `X × {0}` is
+always Lagrangian, and when `X` is projective `{0} × X*` is Lagrangian too, so the two factors
+are complementary Lagrangians; `(x, 0)` pairs with `(0, y)` to `y x`. Over a field every
+finite-dimensional nondegenerate alternating space of dimension `2 * dim X` is isometric to it, so
+a statement about symplectic spaces may be proved in these coordinates and transported. This is
+the space on whose functions `X → ℂ` the Schrödinger and Weil representations of a finite
+symplectic space act.
 
 In block form with respect to `X × X*`, three families of linear automorphisms preserve the form:
 
@@ -36,13 +37,12 @@ In block form with respect to `X × X*`, three families of linear automorphisms 
   identification `e : X ≃ₗ[R] X*`; in coordinates `X = Rⁿ` with `e` the dot product this is
   `(x, y) ↦ (y, -x)`, and `J² = -1`.
 
-The sign convention `y' x - y x'` makes `J (1, 0) = (0, -1)` an isometry on `X = R`; the Gram
-matrix of `polarizationForm` in the basis `(eᵢ, 0)`, `(0, eⱼ*)` is the negative of Mathlib's
-`Matrix.J`, so the basis `(eᵢ, 0)`, `(0, -eⱼ*)` has Gram matrix `Matrix.J`
-(`Module.Basis.toMatrix_polarizationBasis`).
+The sign convention `y' x - y x'` fixes the sign of the Gram matrix relative to Mathlib's
+`Matrix.J`: in the basis `(eᵢ, 0)`, `(0, eⱼ*)` the Gram matrix of `polarizationForm` is the
+negative of `Matrix.J`, so the basis `(eᵢ, 0)`, `(0, -eⱼ*)` has Gram matrix `Matrix.J`
+(`TauCeti.toMatrix_polarizationForm`).
 
-The form has the same formula as `TauCeti.cotangentSymplecticForm`, which is stated only for real
-vector spaces as a `SymplecticForm`; here the base is an arbitrary commutative ring.
+Over the reals this form, packaged as a `SymplecticForm`, is `TauCeti.cotangentSymplecticForm`.
 
 ## Main definitions
 
@@ -59,7 +59,7 @@ vector spaces as a `SymplecticForm`; here the base is an arbitrary commutative r
   alternating, and nondegenerate when `X` is projective (for instance a vector space).
 * `TauCeti.orthogonal_range_inl_polarizationForm`,
   `TauCeti.orthogonal_range_inr_polarizationForm`: `X × {0}` and `{0} × X*` are Lagrangian.
-* `Module.Basis.toMatrix_polarizationBasis`: the Gram matrix in `polarizationBasis b` is `Matrix.J`.
+* `TauCeti.toMatrix_polarizationForm`: the Gram matrix in `polarizationBasis b` is `Matrix.J`.
 * `LinearMap.BilinForm.IsAlt.nonempty_isometryEquiv_polarizationForm`: a nondegenerate
   alternating form on a space of dimension `2 * dim X` is isometric to `polarizationForm K X`.
 
@@ -80,9 +80,10 @@ section CommRing
 
 variable (R X : Type*) [CommRing R] [AddCommGroup X] [Module R X]
 
-/-- The standard alternating form on `X × X*`, `((x, y), (x', y')) ↦ y' x - y x'`. The two factors
-`X × {0}` and `{0} × X*` are complementary Lagrangians for it; over a field every
-finite-dimensional nondegenerate alternating space of dimension `2 * dim X` is isometric to it. -/
+/-- The standard alternating form on `X × X*`, `((x, y), (x', y')) ↦ y' x - y x'`. The factor
+`X × {0}` is Lagrangian for it, and when `X` is projective so is `{0} × X*`, making the two factors
+complementary Lagrangians; over a field every finite-dimensional nondegenerate alternating space of
+dimension `2 * dim X` is isometric to it. -/
 def polarizationForm : BilinForm R (X × Dual R X) :=
   LinearMap.mk₂ R (fun v w ↦ w.2 v.1 - v.2 w.1)
     (fun v v' w ↦ by simp only [Prod.fst_add, Prod.snd_add, map_add, LinearMap.add_apply]; abel)
@@ -113,8 +114,8 @@ theorem orthogonal_range_inl_polarizationForm :
     forall_exists_index, forall_apply_eq_imp_iff, polarizationForm_apply, sub_zero,
     LinearMap.zero_apply]
   refine ⟨fun h ↦ ⟨v.1, Prod.ext rfl (LinearMap.ext fun x ↦ (h x).symm)⟩, ?_⟩
-  rintro ⟨x', rfl⟩ x
-  rfl
+  rintro ⟨x', rfl⟩ _
+  simp
 
 variable [Projective R X]
 
@@ -155,7 +156,7 @@ variable {R X ι : Type*} [CommRing R] [AddCommGroup X] [Module R X] [DecidableE
 /-- The basis `(bᵢ, 0)`, `(0, -bⱼ*)` of `X × X*` built from a finite basis `b` of `X` and its dual
 basis. The vectors `(bᵢ, 0)` span the Lagrangian `X × {0}` and occupy the positions `Sum.inl i`;
 the sign on the dual vectors makes the Gram matrix of `polarizationForm` equal to `Matrix.J`
-(`Module.Basis.toMatrix_polarizationBasis`). -/
+(`TauCeti.toMatrix_polarizationForm`). -/
 noncomputable def polarizationBasis [Finite ι] (b : Basis ι R X) : Basis (ι ⊕ ι) R (X × Dual R X) :=
   b.prod (b.dualBasis.map (LinearEquiv.neg R))
 
@@ -169,16 +170,17 @@ theorem polarizationBasis_inr [Finite ι] (b : Basis ι R X) (i : ι) :
     polarizationBasis b (Sum.inr i) = (0, -b.dualBasis i) := by
   simp [polarizationBasis]
 
-/-- **The standard polarized space has a symplectic basis**: the Gram matrix of `polarizationForm`
-in `polarizationBasis b` is Mathlib's standard symplectic matrix `Matrix.J`. -/
-theorem toMatrix_polarizationBasis [Fintype ι] (b : Basis ι R X) :
-    BilinForm.toMatrix b.polarizationBasis (polarizationForm R X) = Matrix.J ι R := by
-  ext (i | i) (j | j) <;>
-    simp [BilinForm.toMatrix_apply, Matrix.J, Matrix.one_apply, Finsupp.single_apply, eq_comm]
-
 end Module.Basis
 
 namespace TauCeti
+
+/-- **The standard polarized space has a symplectic basis**: the Gram matrix of `polarizationForm`
+in `polarizationBasis b` is Mathlib's standard symplectic matrix `Matrix.J`. -/
+theorem toMatrix_polarizationForm {R X ι : Type*} [CommRing R] [AddCommGroup X] [Module R X]
+    [DecidableEq ι] [Fintype ι] (b : Basis ι R X) :
+    BilinForm.toMatrix b.polarizationBasis (polarizationForm R X) = Matrix.J ι R := by
+  ext (i | i) (j | j) <;>
+    simp [BilinForm.toMatrix_apply, Matrix.J, Matrix.one_apply, Finsupp.single_apply, eq_comm]
 
 section Isometries
 
@@ -189,8 +191,8 @@ variable (R X : Type*) [CommRing R] [AddCommGroup X] [Module R X]
 `polarizationForm R X`. The assignment `A ↦ m(A)` is a group homomorphism. -/
 def polarizationLevi : (X ≃ₗ[R] X) →* isometryGroup (polarizationForm R X) where
   toFun A := ⟨A.prodCongr A.symm.dualMap, mem_isometryGroup_iff.mpr fun v w ↦ by simp⟩
-  map_one' := by ext <;> rfl
-  map_mul' _ _ := by ext <;> rfl
+  map_one' := by ext <;> simp [LinearEquiv.one_eq_refl]
+  map_mul' _ _ := by ext <;> simp [LinearEquiv.mul_eq_trans]
 
 variable {R X}
 
@@ -217,7 +219,7 @@ def polarizationShear :
   map_one' := by ext <;> simp
   map_mul' C C' := by
     ext v
-    · rfl
+    · simp [mul_apply_eq_comp]
     · simp only [toAdd_mul, Submodule.coe_add, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
         LinearMap.add_apply, Subgroup.coe_mul, mul_apply_eq_comp]
       abel
@@ -287,6 +289,6 @@ theorem IsAlt.nonempty_isometryEquiv_polarizationForm {K V X : Type*} [Field K] 
     omega
   let c : Basis (Fin m) K X := Module.finBasisOfFinrankEq K X hm
   exact ⟨b.isometryEquivOfToMatrixEq c.polarizationBasis
-    (hb.trans c.toMatrix_polarizationBasis.symm)⟩
+    (hb.trans (toMatrix_polarizationForm c).symm)⟩
 
 end LinearMap.BilinForm
