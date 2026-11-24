@@ -300,7 +300,7 @@ theorem exists_nsmul_add_mem_coneDivisorWeights {sigma tau : Phi.cones} {m : N �
   · have huτ := mem_coneDivisorWeights.1 (hs hu) rho hρτ
     have hmρ := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hρ
     exact huτ.trans (le_add_of_nonneg_left (mul_nonneg (Int.natCast_nonneg _) hmρ))
-  · have hpos := Phi.primitiveGenerator_pos_of_face_eq_inf_ker hm htau hρ hρτ
+  · have hpos := Phi.apply_primitiveGenerator_pos_of_inf_ker_eq_face hm htau hρ hρτ
     let p : (↑s : Set (N →+ ℤ)) × Phi.Ray := (⟨u, hu⟩, rho)
     have hbound : (-a rho - u rho.primitiveGenerator).toNat ≤ n :=
       hn (Set.mem_range_self p)

@@ -177,7 +177,7 @@ theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ)
 
 /-- A character exposing a face is strictly positive on the primitive generator of every ray
 of the larger cone outside the face. -/
-theorem primitiveGenerator_pos_of_face_eq_inf_ker {sigma tau : Phi.cones} {m : N →+ ℤ}
+theorem apply_primitiveGenerator_pos_of_inf_ker_eq_face {sigma tau : Phi.cones} {m : N →+ ℤ}
     (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
     (htau : sigma.val ⊓
       PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
@@ -188,15 +188,12 @@ theorem primitiveGenerator_pos_of_face_eq_inf_ker {sigma tau : Phi.cones} {m : N
   have hgen : i rho.primitiveGenerator ∈ tau.val := by
     rw [← htau]
     exact ⟨hσ rho.primitiveGenerator_mem, by simp [Phi.lattice.realCharacter_apply, ← hz]⟩
-  have htoric := Phi.isToricCone rho.toCone.property
-  have hRay := (rho.toToricRay Phi rho.toCone le_rfl).eq_hull_singleton
-    (htoric.salient.anti (rho.toToricRay Phi rho.toCone le_rfl).val.isFaceOf.le)
-    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem (by
-      simpa only [map_zero] using
-        (Phi.lattice.injective.ne (a₂ := 0) rho.primitiveGenerator_isPrimitive.ne_zero))
-  apply Subtype.coe_le_coe.mp
-  rw [← Ray.toPointedCone_toToricRay Phi rho rho.toCone le_rfl, hRay]
-  exact Submodule.span_le.2 (Set.singleton_subset_iff.2 hgen)
+  let r := rho.toToricRay Phi rho.toCone le_rfl
+  exact r.toPointedCone_le_of_mem
+    ((Phi.isToricCone rho.toCone.property).salient.anti r.val.isFaceOf.le)
+    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem
+    (by simpa only [map_zero] using
+      Phi.lattice.injective.ne rho.primitiveGenerator_isPrimitive.ne_zero) hgen
 
 /-- The fan rays contained in a cone are exactly the toric rays of that cone. -/
 def rayEquiv (sigma : Phi.cones) :

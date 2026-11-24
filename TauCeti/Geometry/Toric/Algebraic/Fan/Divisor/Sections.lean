@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Supported
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.Weights
@@ -34,7 +33,7 @@ public section
 noncomputable section
 
 open AddMonoidAlgebra
-open scoped Pointwise
+open scoped Pointwise TensorProduct
 
 namespace TauCeti.Toric.Fan
 
@@ -89,6 +88,25 @@ theorem coe_coneDivisorSectionsRestrict {sigma tau : Phi.cones} (h : tau ≤ sig
     (coneDivisorSectionsRestrict h a f : AddMonoidAlgebra R (N →+ ℤ)) = f :=
   (rfl)
 
+/-- Changing coefficients commutes with restriction from the fan to a chart. -/
+@[simp]
+theorem supportedMap_divisorSectionsRestrict {S : Type*} [Semiring S] (φ : R →+* S)
+    (sigma : Phi.cones) {a : Phi.Ray → ℤ} (f : Phi.divisorSections R a) :
+    supportedMap _ φ (divisorSectionsRestrict sigma a f) =
+      divisorSectionsRestrict sigma a (supportedMap _ φ f) := by
+  apply Subtype.ext
+  simp only [coe_supportedMap, coe_divisorSectionsRestrict]
+
+/-- Changing coefficients commutes with restriction from a cone to a face. -/
+@[simp]
+theorem supportedMap_coneDivisorSectionsRestrict {S : Type*} [Semiring S] (φ : R →+* S)
+    {sigma tau : Phi.cones} (h : tau ≤ sigma) {a : Phi.Ray → ℤ}
+    (f : Phi.coneDivisorSections R sigma a) :
+    supportedMap _ φ (coneDivisorSectionsRestrict h a f) =
+      coneDivisorSectionsRestrict h a (supportedMap _ φ f) := by
+  apply Subtype.ext
+  simp only [coe_supportedMap, coe_coneDivisorSectionsRestrict]
+
 @[simp]
 theorem coneDivisorSectionsRestrict_refl (sigma : Phi.cones) (a : Phi.Ray → ℤ) :
     coneDivisorSectionsRestrict (R := R) (le_refl sigma) a = LinearMap.id := by
@@ -137,18 +155,25 @@ theorem existsUnique_divisorSections_of_agree [Nonempty Phi.cones] {a : Phi.Ray 
 
 end Sections
 
-variable {Phi R} [CommSemiring R]
+variable {Phi R}
 
 /-- The global section modules multiply by addition of divisors, with the unit in the zero
 divisor's module. This gives associative products on the graded monoid of sections. -/
-instance instGradedMonoidDivisorSections (Phi : Fan i) :
-    SetLike.GradedMonoid (Phi.divisorSections R) where
-  one_mem := by
-    have hzero : 0 ∈ Phi.divisorWeights 0 := zero_mem_divisorWeights_iff.2 le_rfl
-    simpa only [mem_supported, one_def, coeff_single, Finsupp.mem_supported] using
-      Finsupp.single_mem_supported R (1 : R) hzero
-  mul_mem _ _ _ _ hf hg :=
-    mul_mem_supported_of_add_subset (Phi.divisorWeights_add_subset _ _) hf hg
+instance instGradedMonoidDivisorSections [Semiring R] (Phi : Fan i) :
+    SetLike.GradedMonoid (Phi.divisorSections R) :=
+  gradedMonoid_supported _ (zero_mem_divisorWeights_iff.2 le_rfl) Phi.divisorWeights_add_subset
+
+/-- The chart section modules multiply by addition of divisors, with the unit in the zero
+divisor's module. -/
+instance instGradedMonoidConeDivisorSections [Semiring R] (sigma : Phi.cones) :
+    SetLike.GradedMonoid (Phi.coneDivisorSections R sigma) :=
+  gradedMonoid_supported _ (by
+    rw [coneDivisorWeights_zero]
+    exact (dualSemigroup Phi.lattice sigma.val).zero_mem) (Phi.coneDivisorWeights_add_subset sigma)
+
+section Multiplication
+
+variable [CommSemiring R]
 
 /-- Convolution of global monomial sections adds the ray coefficients of the divisors. -/
 def divisorSectionsMul (a b : Phi.Ray → ℤ) :
@@ -161,19 +186,6 @@ theorem coe_divisorSectionsMul {a b : Phi.Ray → ℤ}
     (divisorSectionsMul a b f g : AddMonoidAlgebra R (N →+ ℤ)) = f.val * g.val :=
   coe_supportedMul _ _ _
 
-/-- The chart section modules multiply by addition of divisors, with the unit in the zero
-divisor's module. -/
-instance instGradedMonoidConeDivisorSections (sigma : Phi.cones) :
-    SetLike.GradedMonoid (Phi.coneDivisorSections R sigma) where
-  one_mem := by
-    have hzero : 0 ∈ Phi.coneDivisorWeights sigma 0 := by
-      rw [coneDivisorWeights_zero]
-      exact (dualSemigroup Phi.lattice sigma.val).zero_mem
-    simpa only [mem_supported, one_def, coeff_single, Finsupp.mem_supported] using
-      Finsupp.single_mem_supported R (1 : R) hzero
-  mul_mem _ _ _ _ hf hg :=
-    mul_mem_supported_of_add_subset (Phi.coneDivisorWeights_add_subset sigma _ _) hf hg
-
 /-- Convolution on one chart adds the ray coefficients of the divisors. -/
 def coneDivisorSectionsMul (sigma : Phi.cones) (a b : Phi.Ray → ℤ) :
     Phi.coneDivisorSections R sigma a →ₗ[R] Phi.coneDivisorSections R sigma b →ₗ[R]
@@ -185,6 +197,29 @@ theorem coe_coneDivisorSectionsMul {sigma : Phi.cones} {a b : Phi.Ray → ℤ}
     (f : Phi.coneDivisorSections R sigma a) (g : Phi.coneDivisorSections R sigma b) :
     (coneDivisorSectionsMul sigma a b f g : AddMonoidAlgebra R (N →+ ℤ)) = f.val * g.val :=
   coe_supportedMul _ _ _
+
+/-- Multiplication of sections as a linear map on the tensor product of global modules. -/
+def divisorSectionsTensorMul (a b : Phi.Ray → ℤ) :
+    Phi.divisorSections R a ⊗[R] Phi.divisorSections R b →ₗ[R] Phi.divisorSections R (a + b) :=
+  TensorProduct.lift (divisorSectionsMul a b)
+
+@[simp]
+theorem divisorSectionsTensorMul_tmul {a b : Phi.Ray → ℤ}
+    (f : Phi.divisorSections R a) (g : Phi.divisorSections R b) :
+    divisorSectionsTensorMul a b (f ⊗ₜ[R] g) = divisorSectionsMul a b f g :=
+  TensorProduct.lift.tmul ..
+
+/-- Multiplication of sections as a linear map on the tensor product of two chart modules. -/
+def coneDivisorSectionsTensorMul (sigma : Phi.cones) (a b : Phi.Ray → ℤ) :
+    Phi.coneDivisorSections R sigma a ⊗[R] Phi.coneDivisorSections R sigma b →ₗ[R]
+      Phi.coneDivisorSections R sigma (a + b) :=
+  TensorProduct.lift (coneDivisorSectionsMul sigma a b)
+
+@[simp]
+theorem coneDivisorSectionsTensorMul_tmul {sigma : Phi.cones} {a b : Phi.Ray → ℤ}
+    (f : Phi.coneDivisorSections R sigma a) (g : Phi.coneDivisorSections R sigma b) :
+    coneDivisorSectionsTensorMul sigma a b (f ⊗ₜ[R] g) = coneDivisorSectionsMul sigma a b f g :=
+  TensorProduct.lift.tmul ..
 
 /-- Restriction to a chart commutes with convolution of monomial sections. -/
 @[simp]
@@ -207,6 +242,12 @@ theorem coneDivisorSectionsRestrict_coneDivisorSectionsMul {sigma tau : Phi.cone
   apply Subtype.ext
   simp
 
+end Multiplication
+
+section Chart
+
+variable [Semiring R]
+
 /-! ### Modules over the chart rings -/
 
 /-- The chart ring acts on the local section module by multiplication in the Laurent character
@@ -214,7 +255,19 @@ algebra. The weights of a local section are stable under adding exponents of the
 instance instModuleConeDivisorSections (sigma : Phi.cones) (a : Phi.Ray → ℤ) :
     Module (AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
       (Phi.coneDivisorSections R sigma a) :=
-  supportedModule _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
+  AddSubmonoid.supportedModule _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
+
+/-- Changing coefficients commutes with the action of the chart ring on sections. -/
+@[simp]
+theorem supportedMap_smul_coneDivisorSections {S : Type*} [Semiring S] (φ : R →+* S)
+    {sigma : Phi.cones} {a : Phi.Ray → ℤ}
+    (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
+    (f : Phi.coneDivisorSections R sigma a) :
+    supportedMap (Phi.coneDivisorWeights sigma a) φ (g • f) =
+      mapRingHom _ φ g • supportedMap _ φ f := by
+  apply Subtype.ext
+  simp only [coe_supportedMap, AddSubmonoid.coe_smul_supportedModule, ← coe_mapRingHom, map_mul]
+  rw [← RingHom.comp_apply, mapRingHom_comp_mapDomainRingHom, RingHom.comp_apply]
 
 /-- Multiplication by the Cartier character trivializes the local section module over the chart
 ring. The character has value `-a ρ` on each ray of the chart. -/
@@ -223,7 +276,9 @@ def coneDivisorSectionsCartierEquiv {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m
     AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val) ≃ₗ[
       AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)]
       Phi.coneDivisorSections R sigma a :=
-  supportedVAddEquiv _ (coneDivisorWeights_eq_vadd hm)
+  (dualSemigroup Phi.lattice sigma.val).supportedAddSingletonEquiv (m := m) (by
+    rw [coneDivisorWeights_eq_vadd hm, ← Set.image_vadd, add_comm, Set.singleton_add]
+    simp only [vadd_eq_add])
 
 /-- The Cartier frame sends a chart function to its product with the frame monomial. -/
 @[simp]
@@ -233,7 +288,7 @@ theorem coe_coneDivisorSectionsCartierEquiv
     (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)) :
     (coneDivisorSectionsCartierEquiv hm g : AddMonoidAlgebra R (N →+ ℤ)) =
       mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * single m 1 :=
-  coe_supportedVAddEquiv _ _ g
+  AddSubmonoid.coe_supportedAddSingletonEquiv _ _ g
 
 /-- The inverse Cartier frame recovers the chart coordinate by multiplying by the inverse
 monomial in the character algebra. -/
@@ -244,7 +299,7 @@ theorem mapDomain_coneDivisorSectionsCartierEquiv_symm
     (f : Phi.coneDivisorSections R sigma a) :
     mapDomain Subtype.val
         ((coneDivisorSectionsCartierEquiv hm).symm f) = f.val * single (-m) 1 :=
-  mapDomain_supportedVAddEquiv_symm _ _ f
+  AddSubmonoid.mapDomain_supportedAddSingletonEquiv_symm _ _ f
 
 /-! ### Clearing denominators on a face -/
 
@@ -265,6 +320,18 @@ theorem exists_pow_mul_mem_coneDivisorSections {sigma tau : Phi.cones} {m : N �
     (support_coeff_single_mul_subset f.val 1 (n • m) hu)
   exact hn v hv
 
+/-- Restricting a scalar multiple sends the chart scalar along the inclusion of dual semigroups. -/
+@[simp]
+theorem coneDivisorSectionsRestrict_smul {sigma tau : Phi.cones} (h : tau ≤ sigma)
+    {a : Phi.Ray → ℤ} (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
+    (f : Phi.coneDivisorSections R sigma a) :
+    coneDivisorSectionsRestrict h a (g • f) =
+      mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h)) g •
+        coneDivisorSectionsRestrict h a f := by
+  apply Subtype.ext
+  simp only [coe_coneDivisorSectionsRestrict, AddSubmonoid.coe_smul_supportedModule]
+  rw [← RingHom.comp_apply, ← mapDomainRingHom_comp, AddSubmonoid.subtype_comp_inclusion]
+
 /-- Face restriction is linear over the larger cone's chart ring, acting on the face module
 through the inclusion of dual semigroups. -/
 def coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : tau ≤ sigma)
@@ -273,20 +340,19 @@ def coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : tau ≤ si
       (mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h)))
     Phi.coneDivisorSections R sigma a →ₗ[AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)]
       Phi.coneDivisorSections R tau a := by
-  let e := mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h))
-  let _ := Module.compHom (Phi.coneDivisorSections R tau a) e
-  refine ⟨⟨coneDivisorSectionsRestrict h a, map_add _⟩, fun g f ↦ Subtype.ext ?_⟩
-  -- The local scalar action on the face is definitionally restriction of scalars along `e`.
-  change ((coneDivisorSectionsRestrict h a (g • f)).val) =
-    ((e g • coneDivisorSectionsRestrict h a f).val)
-  simp only [coe_coneDivisorSectionsRestrict, coe_smul_supportedModule]
-  rw [← RingHom.comp_apply, ← mapDomainRingHom_comp, AddSubmonoid.subtype_comp_inclusion]
+  letI := Module.compHom (Phi.coneDivisorSections R tau a)
+    (mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h)))
+  exact ⟨⟨coneDivisorSectionsRestrict h a, map_add _⟩, coneDivisorSectionsRestrict_smul h⟩
 
 @[simp]
 theorem coe_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : tau ≤ sigma)
     {a : Phi.Ray → ℤ} (f : Phi.coneDivisorSections R sigma a) :
     (coneDivisorSectionsRestrictOverChart h a f).val = f.val :=
   (rfl)
+
+end Chart
+
+variable [CommSemiring R]
 
 /-- Restriction to the face cut out by a character is localization of the section module at
 the corresponding monomial in the chart ring. -/
@@ -327,7 +393,7 @@ theorem isLocalizedModule_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.
     refine ⟨⟨⟨_, hn⟩, ⟨_, ⟨n, rfl⟩⟩⟩, Subtype.ext ?_⟩
     -- Compute the scalar action using the face ring and then its inclusion into characters.
     change (e (single m 1 ^ n) • f).val = _
-    rw [coe_smul_supportedModule]
+    rw [AddSubmonoid.coe_smul_supportedModule]
     simp [e, mapDomainRingHom_apply]
   · have := congrArg Subtype.val hxy
     simpa only [one_smul, coe_coneDivisorSectionsRestrictOverChart, Subtype.val_inj] using this

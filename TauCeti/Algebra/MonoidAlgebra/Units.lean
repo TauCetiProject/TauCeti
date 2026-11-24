@@ -195,6 +195,13 @@ end MonoidAlgebra
 
 namespace AddMonoidAlgebra
 
+/-- Monomials with coefficient one at opposite exponents multiply to one. The priority lets
+`simp` cancel them before `single_mul_single` rewrites the product to a single monomial. -/
+@[simp high]
+theorem single_mul_single_neg {R G : Type*} [Semiring R] [AddGroup G] (g : G) :
+    (single g (1 : R) : AddMonoidAlgebra R G) * single (-g) 1 = 1 := by
+  simp [single_mul_single, one_def]
+
 variable {R M : Type*} [Semiring R] [AddMonoid M]
 
 -- The bundled maps are stated separately: to_additive does not insert Multiplicative
