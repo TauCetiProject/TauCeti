@@ -40,8 +40,10 @@ is transverse to it (`TauCeti.isTransverseAlong_liouvilleGraph`). Indeed the dif
 of a Liouville domain `W`, along which `Z` points outwards, transversality along `ι` is automatic
 (`TauCeti.IsLiouvilleDomain.isTransverseAlong`), and the graph is of restricted contact type with
 the same primitive and the same Liouville field
-(`TauCeti.IsLiouvilleDomain.isRestrictedContactType_liouvilleGraph`). For `f > 1` it lies outside
-`W` (`TauCeti.IsLiouvilleDomain.liouvilleGraph_notMem`), it is injective when `ι` is
+(`TauCeti.IsLiouvilleDomain.isRestrictedContactType_liouvilleGraph`); on a completion of `W` the
+restriction of the primitive to it is a contact form
+(`TauCeti.IsLiouvilleCompletion.isContactForm_mpullback_liouvilleGraph`). For `f > 1` it lies
+outside `W` (`TauCeti.IsLiouvilleDomain.liouvilleGraph_notMem`), it is injective when `ι` is
 (`TauCeti.IsLiouvilleDomain.injective_liouvilleGraph`), hence a closed embedding when `S` is
 compact (`TauCeti.IsLiouvilleDomain.isClosedEmbedding_liouvilleGraph`). On a completion of `W`,
 the graph over a boundary point `ι s` with `f s ≥ 1` lies on the level `f s` of the radial
@@ -65,6 +67,8 @@ to join each closed characteristic of `j_f(S)` to the corresponding closed Reeb 
   graph of an immersion transverse to `Z` is an immersion transverse to `Z`.
 * `TauCeti.IsLiouvilleDomain.isRestrictedContactType_liouvilleGraph`: a graph over the boundary of
   a Liouville domain is of restricted contact type.
+* `TauCeti.IsLiouvilleCompletion.isContactForm_mpullback_liouvilleGraph`: on a completion, the
+  primitive restricts to a contact form on a graph over the boundary.
 * `TauCeti.IsLiouvilleDomain.liouvilleGraph_notMem`,
   `TauCeti.IsLiouvilleDomain.injective_liouvilleGraph`,
   `TauCeti.IsLiouvilleDomain.isClosedEmbedding_liouvilleGraph`: for `f > 1` it is an injective map
@@ -312,5 +316,41 @@ theorem isClosedEmbedding_liouvilleGraph [CompactSpace S] (h : IsLiouvilleDomain
     hf₀).isClosedEmbedding (h.injective_liouvilleGraph hZ hc hιi hιW)
 
 end IsLiouvilleDomain
+
+namespace IsLiouvilleCompletion
+
+variable [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M}
+
+/-- The Liouville graph of a smooth nowhere vanishing function over a smooth map is smooth, on a
+completion of a Liouville domain, whose Liouville field is smooth and complete. -/
+theorem contMDiff_liouvilleGraph (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) :
+    ContMDiff J I (⊤ : ℕ∞) (liouvilleGraph Z ι f) :=
+  TauCeti.contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
+    (h.isCompleteVectorField hZ) hι hf hf₀
+
+/-- **A graph over the boundary of a Liouville domain is a contact hypersurface.** Let `ι` be a
+smooth immersion into the frontier of a Liouville domain `W`, from a manifold of one dimension
+less, on a completion of `W`. For every smooth nowhere vanishing function `f`, the restriction
+`j^* α` of the primitive to the Liouville graph `j` of `f` over `ι` is a contact form; for positive
+`f` it is `f ι^* α` (`TauCeti.mpullback_liouvilleGraph_apply`). -/
+theorem isContactForm_mpullback_liouvilleGraph [IsManifold J (⊤ : ℕ∞) S]
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
+    (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf₀ : ∀ s, f s ≠ 0) :
+    (SmoothForm.mpullback (liouvilleGraph Z ι f) (h.contMDiff_liouvilleGraph hZ hι hf hf₀)
+      α).IsContactForm := by
+  have hZs := h.contMDiff_of_interior_eq hZ
+  have hc := h.isCompleteVectorField hZ
+  exact (h.isRestrictedContactType_liouvilleGraph hZ hc (hι.mdifferentiable (by simp)) hιs hιW
+    (hf.mdifferentiable (by simp)) hf₀).isContactType.isContactForm_mpullback h.isNondegenerate _
+    (fun s ↦ injective_mfderiv_liouvilleGraph (hZs.of_le (by simp)) hc
+      ((hι s).mdifferentiableAt (by simp)) ((hf s).mdifferentiableAt (by simp)) (hf₀ s) (hιs s)
+      (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW)) hdim
+
+end IsLiouvilleCompletion
 
 end TauCeti
