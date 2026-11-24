@@ -129,8 +129,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.comp_uncurry'_eq_comp_dualHomUni
     (s : 𝟙_ X.Modules ⟶ M) (D : 𝟙_ X.Modules ⟶ (ihom M).obj (𝟙_ X.Modules)) :
     s ≫ uncurry' D = D ≫ (Scheme.Modules.dualHomUnitEquiv M).symm s := by
   rw [Scheme.Modules.dualHomUnitEquiv_symm_apply, uncurry', uncurry_eq,
-    rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc,
-    leftUnitor_inv_naturality_assoc, unitors_inv_equal]
+    rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc]
+  simp [unitors_equal]
 
 /-- The section of a functional precomposed with the dual of `b : M ⟶ N` is the image under `b`
 of the section of the functional. -/
