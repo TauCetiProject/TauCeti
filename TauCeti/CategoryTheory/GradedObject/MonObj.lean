@@ -44,7 +44,9 @@ passes to sheaves along sheafification.
 * `CategoryTheory.GradedObject.Monoidal.toTensorUnitOfDegreeZero`: the morphism `X ⟶ 𝟙_`
   determined by a morphism `X 0 ⟶ 𝟙_ C`, when `C` has zero morphisms;
 * `CategoryTheory.GradedObject.monObjOfHomogeneous`: the monoid object structure defined by
-  homogeneous data satisfying the graded associativity and unit laws;
+  homogeneous data satisfying the graded associativity and unit laws, whose homogeneous unit and
+  multiplications are the given ones (`CategoryTheory.Mon.one_mk_monObjOfHomogeneous`,
+  `CategoryTheory.Mon.mul_mk_monObjOfHomogeneous`);
 * `CategoryTheory.GradedObject.isCommMonObj_monObjOfHomogeneous`: commutativity of that monoid
   object from graded commutativity of the homogeneous multiplications;
 * `CategoryTheory.GradedObject.isMonHom_of_homogeneous`: a morphism of graded objects between
@@ -635,6 +637,34 @@ theorem mul_one (A : Mon (GradedObject I C)) (n : I) :
   rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.X (add_zero n)))]
   simpa only [one_eq, GradedObject.categoryOfGradedObjects_id, id_tensorHom, whiskerLeft_comp,
     Category.assoc, Category.comp_id, eqToHom_trans, eqToHom_refl] using h
+
+section Homogeneous
+
+variable (X : GradedObject I C) (one : 𝟙_ C ⟶ X 0) (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j))
+  (one_mul : ∀ n, (one ▷ X n) ≫ mul 0 n = (λ_ (X n)).hom ≫ eqToHom (congrArg X (zero_add n).symm))
+  (mul_one : ∀ n, (X n ◁ one) ≫ mul n 0 = (ρ_ (X n)).hom ≫ eqToHom (congrArg X (add_zero n).symm))
+  (mul_assoc : ∀ i j k, (mul i j ▷ X k) ≫ mul (i + j) k =
+    (α_ _ _ _).hom ≫ (X i ◁ mul j k) ≫ mul i (j + k) ≫
+      eqToHom (congrArg X (add_assoc i j k).symm))
+
+/-- The homogeneous multiplications of the monoid object defined by homogeneous data are the
+given ones. -/
+theorem mul_mk_monObjOfHomogeneous (i j : I) :
+    letI := GradedObject.monObjOfHomogeneous X one mul one_mul mul_one mul_assoc
+    (Mon.mk X).mul i j = mul i j :=
+  (mul_eq _ _ _).trans
+    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous X mul i j (i + j) rfl).trans
+      (Category.comp_id _))
+
+/-- The homogeneous unit of the monoid object defined by homogeneous data is the given unit. -/
+theorem one_mk_monObjOfHomogeneous :
+    letI := GradedObject.monObjOfHomogeneous X one mul one_mul mul_one mul_assoc
+    (Mon.mk X).one = one :=
+  (one_eq _).trans
+    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
+      (GradedObject.Monoidal.oneOfDegreeZero_zero X one)).trans (Iso.inv_hom_id_assoc _ _))
+
+end Homogeneous
 
 end CategoryTheory.Mon
 

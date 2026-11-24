@@ -69,18 +69,21 @@ theorem veroneseMul_eq (i j : ℕ) :
   (rfl)
 
 /-- The unit of the `d`-th Veronese subalgebra is a left identity. -/
+@[reassoc (attr := simp)]
 theorem veroneseOne_whiskerRight_veroneseMul (n : ℕ) :
     (A.veroneseOne d ▷ A.X (d * n)) ≫ A.veroneseMul d 0 n =
       (λ_ (A.X (d * n))).hom ≫ eqToHom (congrArg (fun k ↦ A.X (d * k)) (zero_add n).symm) := by
   simp [veroneseOne_eq, veroneseMul_eq]
 
 /-- The unit of the `d`-th Veronese subalgebra is a right identity. -/
+@[reassoc (attr := simp)]
 theorem whiskerLeft_veroneseOne_veroneseMul (n : ℕ) :
     (A.X (d * n) ◁ A.veroneseOne d) ≫ A.veroneseMul d n 0 =
       (ρ_ (A.X (d * n))).hom ≫ eqToHom (congrArg (fun k ↦ A.X (d * k)) (add_zero n).symm) := by
   simp [veroneseOne_eq, veroneseMul_eq]
 
 /-- The homogeneous multiplications of the `d`-th Veronese subalgebra are associative. -/
+@[reassoc]
 theorem veroneseMul_assoc (i j k : ℕ) :
     (A.veroneseMul d i j ▷ A.X (d * k)) ≫ A.veroneseMul d (i + j) k =
       (α_ _ _ _).hom ≫ (A.X (d * i) ◁ A.veroneseMul d j k) ≫ A.veroneseMul d i (j + k) ≫
@@ -109,17 +112,12 @@ theorem veronese_X (k : ℕ) : (A.veronese d).X k = A.X (d * k) :=
 /-- The homogeneous multiplications of the `d`-th Veronese subalgebra are those of `A`. -/
 @[simp]
 theorem veronese_mul (i j : ℕ) : (A.veronese d).mul i j = A.veroneseMul d i j :=
-  Mon.mul_eq _ _ _ |>.trans
-    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous _ (A.veroneseMul d) i j (i + j)
-      rfl).trans (Category.comp_id _))
+  mul_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d) i j
 
 /-- The unit of the `d`-th Veronese subalgebra is that of `A`. -/
 @[simp]
 theorem veronese_one : (A.veronese d).one = A.veroneseOne d :=
-  Mon.one_eq _ |>.trans
-    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
-      (GradedObject.Monoidal.oneOfDegreeZero_zero (fun k ↦ A.X (d * k)) (A.veroneseOne d))).trans
-        (Iso.inv_hom_id_assoc _ _))
+  one_mk_monObjOfHomogeneous _ _ _ _ _ (A.veroneseMul_assoc d)
 
 end CategoryTheory.Mon
 
@@ -137,6 +135,7 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- The homogeneous multiplications of the `d`-th Veronese subalgebra of a commutative graded
 monoid object are commutative. -/
+@[reassoc]
 theorem veroneseMul_comm (i j : ℕ) :
     (β_ (A.toMon.X (d * i)) (A.toMon.X (d * j))).hom ≫ A.toMon.veroneseMul d j i =
       A.toMon.veroneseMul d i j ≫
