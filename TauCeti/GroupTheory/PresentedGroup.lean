@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.PresentedGroup
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Basic
@@ -18,13 +19,19 @@ to a presented group. The corresponding formulas for free groups are in
 `TauCeti.GroupTheory.FreeGroup.Basic`.
 
 Equality of the normal closures of two relator sets gives a canonical isomorphism of the
-presented groups, preserving the image of every word.
+presented groups, preserving the image of every word. Imposing further relators `S` on the group
+presented by `R` is the quotient by the normal closure of their images.
 
 Generators that occur in no relator span a free factor of the presented group.
+
+A group presented on finitely many generators is finitely generated.
 
 ## Main results
 
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
+* `PresentedGroup.fg`: a group presented on finitely many generators is finitely generated.
+* `PresentedGroup.unionEquivQuotient`: the group presented by `R ∪ S` is the quotient of the
+  group presented by `R` by the normal closure of the images of `S`.
 * `PresentedGroup.emptyEquivFreeGroup`: the group presented without relators is free.
 * `PresentedGroup.equivCoprodFreeGroup`: if the relators only involve the generators from a part
   `α` of the generators `α ⊕ β`, the presented group is the free product of the group presented
@@ -129,6 +136,61 @@ theorem mk_mk {α : Type*} (S : Set (FreeGroup α)) (L : List (α × Bool)) :
     mk S (FreeGroup.mk L) =
       (L.map fun p => cond p.2 (of p.1) (of p.1)⁻¹).prod :=
   (mk S).apply_freeGroup_mk L
+
+/-- A group presented on finitely many generators is finitely generated. -/
+instance fg {α : Type*} [Finite α] (rels : Set (FreeGroup α)) : Group.FG (PresentedGroup rels) :=
+  Group.fg_of_surjective (mk_surjective rels)
+
+section Union
+
+variable {α : Type*} (R S : Set (FreeGroup α))
+
+/-- **Imposing further relators is passing to a quotient.** The group presented by the relators
+`R ∪ S` is the quotient of the group presented by `R` by the normal closure of the images of the
+relators `S`; every word is sent to the class of its image. It is an instance of Noether's third
+isomorphism theorem for the normal closures of `R` and of `R ∪ S`. -/
+def unionEquivQuotient :
+    PresentedGroup (R ∪ S) ≃* PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S) :=
+  (QuotientGroup.quotientQuotientEquivQuotient _ _
+    (Subgroup.normalClosure_mono Set.subset_union_left)).symm.trans <|
+    QuotientGroup.quotientMulEquivOfEq
+      (N := Subgroup.normalClosure (QuotientGroup.mk' (Subgroup.normalClosure R) '' S)) <| by
+      rw [Subgroup.normalClosure_union, Subgroup.map_sup, QuotientGroup.map_mk'_self, bot_sup_eq,
+        Subgroup.map_normalClosure _ _ (QuotientGroup.mk'_surjective _)]
+
+/-- The quotient description of `PresentedGroup (R ∪ S)` sends a word to the class of its
+image in `PresentedGroup R`. -/
+@[simp]
+theorem unionEquivQuotient_mk (w : FreeGroup α) :
+    unionEquivQuotient R S (mk (R ∪ S) w) =
+      ((mk R w : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) :=
+  (rfl)
+
+/-- The quotient description sends a generator to the class of the generator. -/
+@[simp]
+theorem unionEquivQuotient_of (a : α) :
+    unionEquivQuotient R S (of a) =
+      ((of a : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) :=
+  unionEquivQuotient_mk R S (FreeGroup.of a)
+
+/-- The inverse of the quotient description sends the class of the image of a word to the class
+of the word. -/
+@[simp]
+theorem unionEquivQuotient_symm_mk (w : FreeGroup α) :
+    (unionEquivQuotient R S).symm
+        ((mk R w : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) =
+      mk (R ∪ S) w :=
+  (rfl)
+
+/-- The inverse of the quotient description sends the class of a generator to the generator. -/
+@[simp]
+theorem unionEquivQuotient_symm_of (a : α) :
+    (unionEquivQuotient R S).symm
+        ((of a : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) =
+      of a :=
+  unionEquivQuotient_symm_mk R S (FreeGroup.of a)
+
+end Union
 
 section CoprodFreeGroup
 

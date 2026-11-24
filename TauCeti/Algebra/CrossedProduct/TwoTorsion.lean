@@ -138,7 +138,7 @@ private theorem h2ToTwoTorsion_bijective : Function.Bijective (h2ToTwoTorsion K)
     simpa only [coe_toMul_h2ToTwoTorsion, EmbeddingLike.apply_eq_iff_eq] using h'
   · intro x
     obtain ⟨y, hy⟩ := (h2MuToUnits_range K _).2
-      ((mem_twoTorsion_iff_brauerCohomologyEquiv_add_self K _).1 x.toMul.2)
+      ((mem_twoTorsion_iff_brauerCohomologyEquiv_add_self K _).1 x.toMul.property)
     refine ⟨y, ?_⟩
     apply Additive.toMul.injective
     ext

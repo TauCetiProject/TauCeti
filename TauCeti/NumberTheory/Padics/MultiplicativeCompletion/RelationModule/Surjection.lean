@@ -105,7 +105,7 @@ private abbrev IsRelationModuleMapOfPresentation
         ⟨φ r, by
           rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom,
             MonoidHom.mem_ker, hφ]
-          exact MonoidHom.mem_ker.mp r.2⟩
+          exact MonoidHom.mem_ker.mp r.property⟩
 
 /-- On the relation module, the equivariant map induced by `β` is the map of abelianizations
 induced by `φ`. -/

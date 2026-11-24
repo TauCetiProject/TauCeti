@@ -239,7 +239,7 @@ with its integral coordinate lattice and fundamental-weight torus coordinates. -
       ext v
       simp only [mem_lattice_iff, mem_coordinateLattice_iff]
     simpa only [Submodule.coe_toAddSubgroup, hlattice] using
-      (instIsLatticeCoordinateLattice (Fin 7)).span_eq_top
+      (instIsFullLatticeCoordinateLattice (Fin 7)).span_eq_top
   dim := 7
   basis := latticeBasis
   weight := weight

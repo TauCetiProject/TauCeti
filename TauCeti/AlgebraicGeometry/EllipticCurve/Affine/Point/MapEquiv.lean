@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 
 /-!
-# Transport of elliptic-curve points along an algebra equivalence
+# Transport of points of a Weierstrass curve along an algebra equivalence
 
 Let `W` be a Weierstrass curve over a field `F`. Mathlib's `WeierstrassCurve.Affine.Point.map`
 carries the points of `W` over one `F`-algebra to its points over another along an algebra
@@ -37,9 +37,9 @@ namespace WeierstrassCurve.Affine.Point
 
 variable {F K L M : Type*} [Field F] [Field K] [Field L] [Field M]
   [DecidableEq K] [DecidableEq L] [DecidableEq M]
-  [Algebra F K] [Algebra F L] [Algebra F M] (W : _root_.WeierstrassCurve F) [W.IsElliptic]
+  [Algebra F K] [Algebra F L] [Algebra F M] (W : _root_.WeierstrassCurve F)
 
-/-- **Transport of elliptic-curve points along an algebra equivalence.** This is Mathlib's
+/-- **Transport of points of a Weierstrass curve along an algebra equivalence.** This is Mathlib's
 additive point map, with inverse induced by the inverse algebra equivalence. -/
 noncomputable def mapEquiv (e : K ≃ₐ[F] L) :
     (W⁄K).toAffine.Point ≃+ (W⁄L).toAffine.Point where
@@ -57,27 +57,23 @@ noncomputable def mapEquiv (e : K ≃ₐ[F] L) :
       congr <;> exact e.apply_symm_apply _
   map_add' := map_add (Point.map e.toAlgHom)
 
-omit [W.IsElliptic] in
 /-- `mapEquiv W e` applies Mathlib's point map along `e`. -/
 @[simp]
 theorem mapEquiv_apply (e : K ≃ₐ[F] L) (P : (W⁄K).toAffine.Point) :
     mapEquiv W e P = Point.map e.toAlgHom P :=
   by rw [mapEquiv]; rfl
 
-omit [W.IsElliptic] in
 /-- The inverse of `mapEquiv W e` applies Mathlib's point map along `e.symm`. -/
 theorem mapEquiv_symm_apply (e : K ≃ₐ[F] L) (P : (W⁄L).toAffine.Point) :
     (mapEquiv W e).symm P = Point.map e.symm.toAlgHom P :=
   by rw [mapEquiv]; rfl
 
-omit [W.IsElliptic] in
 /-- Transport along the identity algebra equivalence is the identity. -/
 @[simp]
 theorem mapEquiv_refl : mapEquiv W (AlgEquiv.refl : K ≃ₐ[F] K) = AddEquiv.refl _ := by
   ext P
   exact Point.map_id P
 
-omit [W.IsElliptic] in
 /-- Transport along a composite algebra equivalence is the composite of the transports. -/
 @[simp]
 theorem mapEquiv_trans (e : K ≃ₐ[F] L) (f : L ≃ₐ[F] M) :
@@ -85,7 +81,6 @@ theorem mapEquiv_trans (e : K ≃ₐ[F] L) (f : L ≃ₐ[F] M) :
   ext P
   exact (Point.map_map e.toAlgHom f.toAlgHom P).symm
 
-omit [W.IsElliptic] in
 /-- The inverse of the transport along `e` is the transport along `e.symm`. -/
 @[simp]
 theorem mapEquiv_symm (e : K ≃ₐ[F] L) :

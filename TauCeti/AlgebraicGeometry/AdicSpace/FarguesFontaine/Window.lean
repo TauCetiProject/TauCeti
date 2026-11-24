@@ -200,7 +200,7 @@ private theorem valuation_natCast_pos_and_lt_one
     {v : Spv (WittVector p R)} (hv : v ∈ spaY p ϖ) :
     0 < v.valuation (p : WittVector p R) ∧ v.valuation (p : WittVector p R) < 1 := by
   obtain ⟨hspa, hp, -⟩ := (mem_spaY_iff p ϖ v).mp hv
-  refine ⟨zero_lt_iff.mpr fun h ↦ hp ?_, ?_⟩
+  refine ⟨pos_iff_ne_zero.mpr fun h ↦ hp ?_, ?_⟩
   · rwa [supp_eq_valuation_supp, Valuation.mem_supp_iff]
   · exact ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hspa).1).lt_one_of_isTopologicallyNilpotent
       (IsAdic.isTopologicallyNilpotent_of_mem hI (Ideal.subset_span (by simp)))
@@ -396,7 +396,7 @@ private theorem isOpen_val_preimage_of_mem_spaRationalFamily
   let j : spaY p ϖ → spa (⊤ : Subring (WittVector p R)) := fun v ↦
     ⟨v.val, ((mem_spaY_iff p ϖ v.val).mp v.property).1⟩
   exact ((isTopologicalBasis_spaRationalFamily _).isOpen hSrat).preimage
-    (continuous_subtype_val.subtype_mk _ : Continuous j)
+    (continuous_subtypeVal.subtype_mk _ : Continuous j)
 
 /-- **The window `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` is open in `𝒴`**, for `q ≠ 0`, being a rational subset
 of `Spa(𝕎 R, 𝕎 R)`. -/
@@ -434,8 +434,8 @@ private theorem isCompact_val_preimage_of_mem_spaRationalFamily
     Huber.isHuberRing_of_isAdic _ hI (Submodule.fg_span (by simp))
   let j : spaY p ϖ → spa (⊤ : Subring (WittVector p R)) := fun v ↦
     ⟨v.val, ((mem_spaY_iff p ϖ v.val).mp v.property).1⟩
-  have hc : Continuous j := continuous_subtype_val.subtype_mk _
-  have hj : IsInducing j := .of_comp hc continuous_subtype_val .subtypeVal
+  have hc : Continuous j := continuous_subtypeVal.subtype_mk _
+  have hj : IsInducing j := .of_comp hc continuous_subtypeVal .subtypeVal
   exact hj.isCompact_preimage' (isCompact_of_mem_spaRationalFamily hSrat)
     (fun v hv ↦ ⟨⟨v.val, hS hv⟩, Subtype.ext rfl⟩)
 
@@ -469,15 +469,15 @@ def spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}
 @[simp]
 theorem mem_spaYWindow_iff (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
     {n : ℕ} {v : spaY p ϖ} :
-    v ∈ spaYWindow ϖ hI n ↔ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v.1 ∧
-      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v.1 :=
-  ⟨fun h ↦ h.2, fun h ↦ ⟨v.2, h⟩⟩
+    v ∈ spaYWindow ϖ hI n ↔ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v.val ∧
+      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v.val :=
+  ⟨fun h ↦ h.2, fun h ↦ ⟨v.property, h⟩⟩
 
 /-- **The windows increase**: `W_m ⊆ W_n` for `m ≤ n`. -/
 theorem monotone_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
     Monotone (spaYWindow ϖ hI) := fun m n hmn v hv ↦ by
   have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
-  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
+  have hspa := ((mem_spaY_iff p ϖ v.val).mp v.property).1
   rw [mem_spaYWindow_iff] at hv ⊢
   exact ⟨hv.1.of_le hspa (zpow_le_zpow_right₀ hp (neg_le_neg (Nat.cast_le.mpr hmn))),
     hv.2.of_le hspa (zpow_le_zpow_right₀ hp (Nat.cast_le.mpr hmn))⟩
@@ -487,8 +487,8 @@ theorem iSup_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmul
     ⨆ n, spaYWindow ϖ hI n = ⊤ := by
   refine eq_top_iff.mpr fun v _ ↦ ?_
   have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
-  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
-  obtain ⟨m, hm, hm'⟩ := exists_isRadiusLowerBound_zpow hI v.2
+  have hspa := ((mem_spaY_iff p ϖ v.val).mp v.property).1
+  obtain ⟨m, hm, hm'⟩ := exists_isRadiusLowerBound_zpow hI v.property
   exact Opens.mem_iSup.mpr ⟨m.natAbs + 1, (mem_spaYWindow_iff hI).mpr
     ⟨hm.of_le hspa (zpow_le_zpow_right₀ hp (by omega)),
       hm'.of_le hspa (zpow_le_zpow_right₀ hp (by omega))⟩⟩

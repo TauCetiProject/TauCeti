@@ -172,14 +172,15 @@ noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
     (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     {P : Place k F // P.degree = 1} ≃ (Divisor.degreeClass hF).ker :=
   Equiv.ofBijective
-    (fun P ↦ ⟨(Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀), by
+    (fun P ↦ ⟨(Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.val P₀), by
       rw [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass, WeilDivisor.pointDifference,
-        Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, P.2, hP₀, sub_self]⟩)
-    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF (by omega) P.2
+        Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, P.property, hP₀,
+            sub_self]⟩)
+    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF (by omega) P.property
         (congrArg Subtype.val h)),
       fun c ↦ by
         obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hg hP₀
-          (c := (c : (Place.orderSystem hF).ClassGroup)) c.2
+          (c := (c : (Place.orderSystem hF).ClassGroup)) c.property
         exact ⟨⟨P, hP⟩, Subtype.ext hc⟩⟩
 
 /-- The class attached to a degree-one place by the bijection onto `Cl⁰(F)`. -/
@@ -188,7 +189,7 @@ theorem val_degreeOneEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
     (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P : {P : Place k F // P.degree = 1}) :
     (degreeOneEquivDegreeZeroClassGroup hF hg hP₀ P : (Place.orderSystem hF).ClassGroup) =
-      (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀) := by
+      (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.val P₀) := by
   -- the bijection is `Equiv.ofBijective` applied to this function; unfold it to see that.
   rw [degreeOneEquivDegreeZeroClassGroup]
   rfl
@@ -238,17 +239,17 @@ theorem degreeOneEquivDegreeZeroClassGroup_add_eq_iff (hF : IsFunctionField k F)
         degreeOneEquivDegreeZeroClassGroup hF hg hP₀ Q =
       degreeOneEquivDegreeZeroClassGroup hF hg hP₀ R ↔
       (Place.orderSystem hF).LinearlyEquivalent
-        (WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1)
-        (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
+        (WeilDivisor.ofPoint P.val + WeilDivisor.ofPoint Q.val)
+        (WeilDivisor.ofPoint R.val + WeilDivisor.ofPoint P₀) := by
   rw [Subtype.ext_iff, AddMemClass.coe_add, val_degreeOneEquivDegreeZeroClassGroup_apply,
     val_degreeOneEquivDegreeZeroClassGroup_apply, val_degreeOneEquivDegreeZeroClassGroup_apply,
     ← map_add, WeilDivisor.OrderSystem.divisorClass_eq_iff,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff]
-  have hdiff : WeilDivisor.pointDifference P.1 P₀ + WeilDivisor.pointDifference Q.1 P₀ -
-      WeilDivisor.pointDifference R.1 P₀ =
-      WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1 -
-        (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
+  have hdiff : WeilDivisor.pointDifference P.val P₀ + WeilDivisor.pointDifference Q.val P₀ -
+      WeilDivisor.pointDifference R.val P₀ =
+      WeilDivisor.ofPoint P.val + WeilDivisor.ofPoint Q.val -
+        (WeilDivisor.ofPoint R.val + WeilDivisor.ofPoint P₀) := by
     rw [WeilDivisor.pointDifference, WeilDivisor.pointDifference, WeilDivisor.pointDifference]
     abel
   rw [hdiff]
@@ -300,8 +301,8 @@ theorem degreeOneAddCommGroup_add_eq_iff (hF : IsFunctionField k F)
     (P Q R : {P : Place k F // P.degree = 1}) :
     letI := degreeOneAddCommGroup hF hg hP₀
     P + Q = R ↔ (Place.orderSystem hF).LinearlyEquivalent
-      (WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1)
-      (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
+      (WeilDivisor.ofPoint P.val + WeilDivisor.ofPoint Q.val)
+      (WeilDivisor.ofPoint R.val + WeilDivisor.ofPoint P₀) := by
   let := degreeOneAddCommGroup hF hg hP₀
   rw [← (degreeOneAddEquivDegreeZeroClassGroup hF hg hP₀).injective.eq_iff, map_add,
     degreeOneAddEquivDegreeZeroClassGroup_apply, degreeOneAddEquivDegreeZeroClassGroup_apply,

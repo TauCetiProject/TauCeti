@@ -71,17 +71,17 @@ variable (C : GridDiagram.ColumnTurn n)
 /-- Each terminal-side coefficient monomial compensates for the grading change of its target, up
 to the bidegree of the turn. -/
 private theorem monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficient
-    (x y : GridState n) (w : Fin n →₀ ℕ) (hw : w ∈ (G.1.pentagonCoefficient R C x y).support)
+    (x y : GridState n) (w : Fin n →₀ ℕ) (hw : w ∈ (G.val.pentagonCoefficient R C x y).support)
     (d : Fin n →₀ ℕ) :
     (G.swapColumns C).monomialBidegree y
       (Finsupp.mapDomain (Equiv.swap C.column (finRotate n C.column)) d + w) =
-      G.monomialBidegree x d + G.1.commutationBidegree C := by
+      G.monomialBidegree x d + G.val.commutationBidegree C := by
   classical
   rw [GridDiagram.pentagonCoefficient_def] at hw
   obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
   rw [GridDiagram.pentagonWeight_eq_monomial] at hwP
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-  have hM := G.1.maslovOℤ_swapColumns_of_isEmpty C ((G.1.mem_pentagons P).mp hP).1
+  have hM := G.val.maslovOℤ_swapColumns_of_isEmpty C ((G.val.mem_pentagons P).mp hP).1
   have hA := G.alexanderℤ_swapColumns_of_mem_pentagons C hP
   exact G.monomialBidegree_mapDomain_add_sum_eq_add (G.swapColumns C) _ d _ _
     (by rw [val_swapColumns, hM]; ring) (by rw [hA]; ring)
@@ -90,17 +90,17 @@ private theorem monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficien
 to the bidegree of the turn. -/
 private theorem monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoefficient
     (x y : GridState n) (w : Fin n →₀ ℕ)
-    (hw : w ∈ (G.1.initialPentagonCoefficient R C x y).support) (d : Fin n →₀ ℕ) :
+    (hw : w ∈ (G.val.initialPentagonCoefficient R C x y).support) (d : Fin n →₀ ℕ) :
     (G.swapColumns C).monomialBidegree y
       (Finsupp.mapDomain (Equiv.swap C.column (finRotate n C.column)) d + w) =
-      G.monomialBidegree x d + G.1.commutationBidegree C := by
+      G.monomialBidegree x d + G.val.commutationBidegree C := by
   classical
   rw [GridDiagram.initialPentagonCoefficient_def] at hw
   obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
   rw [GridDiagram.initialPentagonWeight_eq_monomial] at hwP
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-  have hM := G.1.maslovOℤ_swapColumns_initialPentagon_of_isEmpty C
-    ((G.1.mem_initialPentagons P).mp hP).1
+  have hM := G.val.maslovOℤ_swapColumns_initialPentagon_of_isEmpty C
+    ((G.val.mem_initialPentagons P).mp hP).1
   have hA := G.alexanderℤ_swapColumns_of_mem_initialPentagons C hP
   exact G.monomialBidegree_mapDomain_add_sum_eq_add (G.swapColumns C) _ d _ _
     (by rw [val_swapColumns, hM]; ring) (by rw [hA]; ring)
@@ -110,20 +110,20 @@ private theorem monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoe
 columns of `C` exchanged that is homogeneous of bidegree `g + G.commutationBidegree C`. -/
 theorem pentagonMap_mem_bigradedChainMinusPiece_add {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.pentagonMap R C c ∈
-      (G.swapColumns C).bigradedChainMinusPiece R (g + G.1.commutationBidegree C) :=
+    G.val.pentagonMap R C c ∈
+      (G.swapColumns C).bigradedChainMinusPiece R (g + G.val.commutationBidegree C) :=
   G.matrixMap_mem_bigradedChainMinusPiece_add R (G.swapColumns C) _ _ _
-    (G.1.pentagonMap_apply_apply R C) _
+    (G.val.pentagonMap_apply_apply R C) _
     (G.monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficient R C) hc
 
 /-- The pentagon map of a column turn `C` sends a chain of `GC⁻(G)` of Alexander degree `a` to a
 chain of Alexander degree `a` plus the Alexander component of `G.commutationBidegree C`. -/
 theorem pentagonMap_mem_alexanderChainMinusPiece_add {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.pentagonMap R C c ∈
-      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.1.commutationBidegree C).2) :=
+    G.val.pentagonMap R C c ∈
+      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.val.commutationBidegree C).2) :=
   G.matrixMap_mem_alexanderChainMinusPiece_add R (G.swapColumns C) _ _ _
-    (G.1.pentagonMap_apply_apply R C) _
+    (G.val.pentagonMap_apply_apply R C) _
     (fun x y w hw d => congrArg Prod.snd
       (G.monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficient R C x y w hw d)) hc
 
@@ -131,20 +131,20 @@ theorem pentagonMap_mem_alexanderChainMinusPiece_add {a : ℤ} {c : GridChainMin
 by `G.commutationBidegree C`. -/
 theorem initialPentagonMap_mem_bigradedChainMinusPiece_add {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.initialPentagonMap R C c ∈
-      (G.swapColumns C).bigradedChainMinusPiece R (g + G.1.commutationBidegree C) :=
+    G.val.initialPentagonMap R C c ∈
+      (G.swapColumns C).bigradedChainMinusPiece R (g + G.val.commutationBidegree C) :=
   G.matrixMap_mem_bigradedChainMinusPiece_add R (G.swapColumns C) _ _ _
-    (G.1.initialPentagonMap_apply_apply R C) _
+    (G.val.initialPentagonMap_apply_apply R C) _
     (G.monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoefficient R C) hc
 
 /-- The initial-side pentagon map of a column turn `C` raises the Alexander degree of homogeneous
 chains by the Alexander component of `G.commutationBidegree C`. -/
 theorem initialPentagonMap_mem_alexanderChainMinusPiece_add {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.initialPentagonMap R C c ∈
-      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.1.commutationBidegree C).2) :=
+    G.val.initialPentagonMap R C c ∈
+      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.val.commutationBidegree C).2) :=
   G.matrixMap_mem_alexanderChainMinusPiece_add R (G.swapColumns C) _ _ _
-    (G.1.initialPentagonMap_apply_apply R C) _
+    (G.val.initialPentagonMap_apply_apply R C) _
     (fun x y w hw d => congrArg Prod.snd
       (G.monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoefficient R C
         x y w hw d)) hc
@@ -154,8 +154,8 @@ both kinds of pentagon, sends a chain of `GC⁻(G)` homogeneous of bidegree `g` 
 of the diagram with the two columns of `C` exchanged of bidegree `g + G.commutationBidegree C`. -/
 theorem commutationMap_mem_bigradedChainMinusPiece_add {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.commutationMap R C c ∈
-      (G.swapColumns C).bigradedChainMinusPiece R (g + G.1.commutationBidegree C) := by
+    G.val.commutationMap R C c ∈
+      (G.swapColumns C).bigradedChainMinusPiece R (g + G.val.commutationBidegree C) := by
   rw [GridDiagram.commutationMap_apply]
   exact Submodule.add_mem _ (G.pentagonMap_mem_bigradedChainMinusPiece_add R C hc)
     (G.initialPentagonMap_mem_bigradedChainMinusPiece_add R C hc)
@@ -164,8 +164,8 @@ theorem commutationMap_mem_bigradedChainMinusPiece_add {g : ℤ × ℤ} {c : Gri
 the Alexander component of `G.commutationBidegree C`. -/
 theorem commutationMap_mem_alexanderChainMinusPiece_add {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.commutationMap R C c ∈
-      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.1.commutationBidegree C).2) := by
+    G.val.commutationMap R C c ∈
+      (G.swapColumns C).alexanderChainMinusPiece R (a + (G.val.commutationBidegree C).2) := by
   rw [GridDiagram.commutationMap_apply]
   exact Submodule.add_mem _ (G.pentagonMap_mem_alexanderChainMinusPiece_add R C hc)
     (G.initialPentagonMap_mem_alexanderChainMinusPiece_add R C hc)
@@ -175,61 +175,62 @@ theorem commutationMap_mem_alexanderChainMinusPiece_add {a : ℤ} {c : GridChain
 /-- **The pentagon map preserves the bigrading.** The pentagon map of a validated column
 commutation `C` sends a chain of `GC⁻(G)` that is homogeneous of bidegree `g` to a chain of
 `GC⁻` of the commuted diagram that is homogeneous of the same bidegree. -/
-theorem pentagonMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem pentagonMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.val)
     (R : Type*) [CommSemiring R] {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.pentagonMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
+    G.val.pentagonMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
   simpa using G.pentagonMap_mem_bigradedChainMinusPiece_add R C hc
 
 /-- **The pentagon map preserves the Alexander grading.** The pentagon map of a validated column
 commutation `C` sends a chain of `GC⁻(G)` of Alexander degree `a` to a chain of `GC⁻` of the
 commuted diagram of the same Alexander degree. -/
-theorem pentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem pentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData G.val)
     (R : Type*) [CommSemiring R] {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.pentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
+    G.val.pentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   simpa using G.pentagonMap_mem_alexanderChainMinusPiece_add R C hc
 
 /-- The initial-side pentagon map sends a chain of `GC⁻(G)` homogeneous of bidegree `g` to a
 chain of `GC⁻` of the commuted diagram homogeneous of the same bidegree. -/
-theorem initialPentagonMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem initialPentagonMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.val)
     (R : Type*) [CommSemiring R] {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.initialPentagonMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
+    G.val.initialPentagonMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
   simpa using G.initialPentagonMap_mem_bigradedChainMinusPiece_add R C hc
 
 /-- The initial-side pentagon map sends a chain of `GC⁻(G)` of Alexander degree `a` to a chain of
 `GC⁻` of the commuted diagram of the same Alexander degree. -/
-theorem initialPentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem initialPentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData
+    G.val)
     (R : Type*) [CommSemiring R] {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.initialPentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
+    G.val.initialPentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   simpa using G.initialPentagonMap_mem_alexanderChainMinusPiece_add R C hc
 
 /-- The full commutation map, counting both kinds of pentagon, sends a chain of `GC⁻(G)`
 homogeneous of bidegree `g` to a chain of `GC⁻` of the commuted diagram of the same bidegree. -/
-theorem commutationMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem commutationMap_mem_bigradedChainMinusPiece (C : GridDiagram.ColumnCommutationData G.val)
     (R : Type*) [CommSemiring R] {g : ℤ × ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.commutationMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
+    G.val.commutationMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
   simpa using G.commutationMap_mem_bigradedChainMinusPiece_add R C hc
 
 /-- The full commutation map, counting both kinds of pentagon, sends a chain of `GC⁻(G)` of
 Alexander degree `a` to a chain of `GC⁻` of the commuted diagram of the same Alexander degree. -/
-theorem commutationMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData G.1)
+theorem commutationMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutationData G.val)
     (R : Type*) [CommSemiring R] {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.commutationMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
+    G.val.commutationMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   simpa using G.commutationMap_mem_alexanderChainMinusPiece_add R C hc
 
 /-- The fully blocked pentagon map has no matrix entries between states of different bidegrees:
 a pentagon carrying no markings preserves both the `O`-Maslov and the Alexander grading. -/
 theorem fullyBlockedCommutationMap_single_apply_eq_zero_of_bidegree_ne
-    (C : GridDiagram.ColumnCommutationData G.1) (R : Type*) [CommSemiring R]
+    (C : GridDiagram.ColumnCommutationData G.val) (R : Type*) [CommSemiring R]
     {x y : GridState n} (h : (G.swapColumns C).bidegree y ≠ G.bidegree x) :
-    G.1.fullyBlockedCommutationMap R C (Finsupp.single x 1) y = 0 := by
+    G.val.fullyBlockedCommutationMap R C (Finsupp.single x 1) y = 0 := by
   rw [GridDiagram.fullyBlockedCommutationMap_single_apply, one_mul,
-    ← G.1.commutationMap_single_apply, constantCoeff_eq]
+    ← G.val.commutationMap_single_apply, constantCoeff_eq]
   by_contra hne
   have hx := G.single_monomial_mem_bigradedChainMinusPiece R x 0 1
   rw [monomial_zero', C_1] at hx

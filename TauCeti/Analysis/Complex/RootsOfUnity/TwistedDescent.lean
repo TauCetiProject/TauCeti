@@ -75,7 +75,7 @@ private theorem pow_sub_smul_invariant {f : ℂ → E} {u : ℂ} (hr : r ≤ m)
     (hf : ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u) (ζ : rootsOfUnity m ℂ) :
     (ζ • u) ^ (m - r) • f (ζ • u) = u ^ (m - r) • f u := by
   have hζ : ((ζ : ℂˣ) : ℂ) ^ m = 1 := by
-    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity m (ζ : ℂˣ)).mp ζ.2, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity m (ζ : ℂˣ)).mp ζ.property, Units.val_one]
   rw [hf, rootsOfUnity.smul_eq_mul, smul_smul, mul_pow, mul_assoc, mul_comm (u ^ (m - r)),
     ← mul_assoc, ← pow_add, Nat.sub_add_cancel hr, hζ, one_mul]
 
@@ -205,7 +205,8 @@ theorem apply_rootsOfUnity_two_smul_of_apply_neg {f : ℂ → E} {u : ℂ}
     (hf : f (-u) = (-1 : ℂ) ^ r • f u) (ζ : rootsOfUnity 2 ℂ) :
     f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u := by
   have hζ : ((ζ : ℂˣ) : ℂ) * ((ζ : ℂˣ) : ℂ) = 1 := by
-    rw [← sq, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity 2 (ζ : ℂˣ)).mp ζ.2, Units.val_one]
+    rw [← sq, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity 2 (ζ : ℂˣ)).mp ζ.property,
+        Units.val_one]
   rw [rootsOfUnity.smul_eq_mul]
   rcases mul_self_eq_one_iff.mp hζ with h | h <;> rw [h]
   · simp

@@ -19,13 +19,30 @@ identified with the identity and with composites of base changes by `pullbackId`
 identifications are coherent: `pullbackComp x (𝟙 S)` is the base change of `pullbackId`
 (`pullbackComp_id_inv_app_comp_eqToHom`), and the two identifications of base change along a
 triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equalities
-`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`.
+`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`. In particular, base change along a scheme
+isomorphism is an equivalence of categories (`pullbackIsoEquiv`).
 
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
 finite set attached to `X ×_S Spec Ω` by the classification of finite étale schemes over a
-separably closed field. This is the functor on finite étale covers whose automorphisms define
-the étale fundamental group based at `x`.
+separably closed field. Its automorphism group is the étale fundamental group `π₁(S, x)`
+(`FiniteEtaleScheme.EtaleFundamentalGroup x`), and an étale path from `x` to a geometric point
+`y : Spec Ω' ⟶ S` (`FiniteEtaleScheme.EtalePath x y`) is a natural isomorphism
+`fiber x ≅ fiber y`. Paths are not required to stay in a connected component and no base points
+are chosen, so the paths between all geometric points of `S` form a groupoid whose identity,
+inverse and composition are `Iso.refl`, `Iso.symm` and `Iso.trans`.
+
+Further structure on these is developed elsewhere. `TauCeti.CategoryTheory.Aut.Torsor` makes
+`π₁(S, y)` act simply transitively on the paths from `x` to `y` by postcomposition, and
+`π₁(S, x)ᵐᵒᵖ` by precomposition; a path `γ` from `x` to `y` identifies `π₁(S, x)` with
+`π₁(S, y)` by conjugation, `Iso.conjAut γ`, which is a homeomorphism for the profinite topologies
+(`CategoryTheory.Iso.continuousConjAut`, in `TauCeti.CategoryTheory.Galois.Topology`). Over a
+connected base any two geometric points are joined by a path
+(`TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`, in
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category`), so the paths from `x` to `y` form a
+torsor under `π₁(S, y)`; over a disconnected base,
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Component` describes which geometric points are
+joined by paths.
 
 The fibre functor is corepresented by the geometric point itself:
 `FiniteEtaleScheme.fiberCompInclIso` identifies `fiber x` with the set of lifts of `x` to
@@ -36,11 +53,19 @@ Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`
 identities and composites (`pullbackCompFiberIso_id_hom_app`, `pullbackCompFiberIso_comp_hom_app`).
 These compatibilities make the étale fundamental group functorial in the scheme.
 
+## Main definitions
+
+* `TauCeti.FiniteEtaleScheme.pullback`: base change of finite étale schemes.
+* `TauCeti.FiniteEtaleScheme.fiber`: the geometric fibre functor at a geometric point.
+* `TauCeti.FiniteEtaleScheme.EtaleFundamentalGroup x`: the étale fundamental group `π₁(S, x)`.
+* `TauCeti.FiniteEtaleScheme.EtalePath x y`: étale paths from `x` to `y`.
+
 ## References
 
 * A. Grothendieck, *SGA 1*, Exposé V, §§4–7.
-* H. W. Lenstra, *Galois theory for schemes*.
-* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*).
+* H. W. Lenstra, *Galois theory for schemes*, Section 5.
+* The Stacks Project, Section 58.5 (*Finite étale covers of schemes*) and Section 58.6
+  (tag 0BND, *Fundamental groups of schemes*).
 -/
 
 public section
@@ -140,6 +165,81 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
   -- As above, the identity is checked in `Over V`.
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
 
+private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
+    (X : FiniteEtaleScheme S) :
+    ((eqToIso (congrArg pullback h)).hom.app X).hom =
+      eqToHom (congrArg (fun k ↦ (Over.pullback k).obj X.obj) h) := by
+  subst h; rfl
+
+/-- Base change of finite étale schemes along a scheme isomorphism is an equivalence, with unit and
+counit given directly by `pullbackId` and `pullbackComp`. -/
+noncomputable def pullbackIsoEquiv (e : T ≅ S) :
+    FiniteEtaleScheme S ≌ FiniteEtaleScheme T where
+  functor := pullback e.hom
+  inverse := pullback e.inv
+  unitIso := pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+    pullbackComp e.inv e.hom
+  counitIso := (pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫
+    pullbackId
+  functor_unitIso_comp X := by
+    apply ObjectProperty.hom_ext
+    simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+      ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom, pullbackId_inv_app_hom,
+      pullbackId_hom_app_hom, pullbackComp_hom_app_hom, pullbackComp_inv_app_hom,
+      ObjectProperty.FullSubcategory.id_hom]
+    rw [eqToIso_congrArg_pullback_hom_app_hom e.inv_hom_id.symm,
+      eqToIso_congrArg_pullback_hom_app_hom e.hom_inv_id]
+    exact Over.pullback_iso_triangle e X.obj
+
+/-- The forward functor of `pullbackIsoEquiv e` is base change along `e.hom`. -/
+@[simp]
+theorem pullbackIsoEquiv_functor (e : T ≅ S) :
+    (pullbackIsoEquiv e).functor = pullback e.hom :=
+  (rfl)
+
+/-- The inverse functor of `pullbackIsoEquiv e` is base change along `e.inv`. -/
+@[simp]
+theorem pullbackIsoEquiv_inverse (e : T ≅ S) :
+    (pullbackIsoEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
+/-- The unit of `pullbackIsoEquiv e` is built from `pullbackId` and `pullbackComp e.inv e.hom`. -/
+@[simp]
+theorem pullbackIsoEquiv_unitIso (e : T ≅ S) :
+    (pullbackIsoEquiv e).unitIso ≪≫ eqToIso (by
+      rw [pullbackIsoEquiv_functor, pullbackIsoEquiv_inverse]) =
+      pullbackId.symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+        pullbackComp e.inv e.hom := by
+  apply Iso.ext; apply NatTrans.ext; funext X
+  exact Category.comp_id _
+
+/-- The counit of `pullbackIsoEquiv e` is built from `pullbackComp e.hom e.inv` and `pullbackId`. -/
+@[simp]
+theorem pullbackIsoEquiv_counitIso (e : T ≅ S) :
+    eqToIso (by rw [pullbackIsoEquiv_functor, pullbackIsoEquiv_inverse]) ≪≫
+      (pullbackIsoEquiv e).counitIso =
+      (pullbackComp e.hom e.inv).symm ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫
+        pullbackId := by
+  apply Iso.ext; apply NatTrans.ext; funext X
+  exact Category.id_comp _
+
+/-- Base change of finite étale schemes along an isomorphism is an equivalence of categories. -/
+instance isEquivalence_pullback (f : T ⟶ S) [IsIso f] : (pullback f).IsEquivalence := by
+  rw [← asIso_hom f, ← pullbackIsoEquiv_functor]
+  exact (pullbackIsoEquiv (asIso f)).isEquivalence_functor
+
+/-- Faithfulness of `FiniteEtaleScheme.pullback` composes along any factorization `h ≫ f = g` of
+base morphisms. -/
+theorem faithful_pullback_of_fac (h : T ⟶ S) (f : S ⟶ U) (g : T ⟶ U) (hfac : h ≫ f = g)
+    [(pullback h).Faithful] [(pullback f).Faithful] : (pullback g).Faithful :=
+  Functor.Faithful.of_iso (eqToIso (congrArg pullback hfac.symm) ≪≫ pullbackComp h f).symm
+
+/-- Fullness of `FiniteEtaleScheme.pullback` composes along any factorization `h ≫ f = g` of base
+morphisms. -/
+theorem full_pullback_of_fac (h : T ⟶ S) (f : S ⟶ U) (g : T ⟶ U) (hfac : h ≫ f = g)
+    [(pullback h).Full] [(pullback f).Full] : (pullback g).Full :=
+  Functor.Full.of_iso (eqToIso (congrArg pullback hfac.symm) ≪≫ pullbackComp h f).symm
+
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
 /-- The geometric fibre functor at a geometric point `x : Spec Ω ⟶ S`, for `Ω` separably
@@ -152,6 +252,19 @@ classification of finite étale schemes over a separably closed field. -/
 theorem fiber_def (x : Spec (.of Ω) ⟶ S) :
     fiber x = pullback x ⋙ (equivOfIsSepClosed Ω).functor :=
   (rfl)
+
+/-- The **étale fundamental group** `π₁(S, x)` of a scheme `S` at a geometric point
+`x : Spec Ω ⟶ S`: the group of automorphisms of the geometric fibre functor at `x` on finite
+étale `S`-schemes. Its profinite topology is Mathlib's topology on automorphism groups of
+functors to finite sets, available by importing `Mathlib.CategoryTheory.Galois.Topology`. -/
+abbrev EtaleFundamentalGroup (x : Spec (.of Ω) ⟶ S) :=
+  Aut (fiber x)
+
+/-- The **étale paths** from a geometric point `x` to a geometric point `y` of a scheme `S`: the
+natural isomorphisms between their geometric fibre functors on finite étale `S`-schemes. -/
+abbrev EtalePath (x : Spec (.of Ω) ⟶ S) {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+    (y : Spec (.of Ω') ⟶ S) :=
+  fiber x ≅ fiber y
 
 /-- The geometric fibre functor at `x` is corepresented by `x`: the fibre of `X` is naturally
 the set of lifts of `x` to `X`, that is, of morphisms `Over.mk x ⟶ X` over `S`. -/

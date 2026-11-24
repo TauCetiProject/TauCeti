@@ -54,7 +54,7 @@ theorem isClosed_ineffectiveArrows
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2) (hn : 1 ≤ n) :
+      p.val.1.comp p.val.2 p.property) (hn : 1 ≤ n) :
     IsClosed (ineffectiveArrows C) := by
   have : T2Space C :=
     (Function.LeftInverse.isEmbedding (fun _ ↦ rfl) hs.isLocalHomeomorph.continuous hu).t2Space

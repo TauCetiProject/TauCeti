@@ -61,6 +61,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
   `H²`.
 * `TauCeti.ContCohomology.nsmul_H1_eq_zero` and `nsmul_H2_eq_zero`: `H¹(G, M)` and `H²(G, M)`
   are killed by whatever kills the coefficients `M`.
+* `TauCeti.ContCohomology.natCard_nsmul_H1_eq_zero` and `natCard_nsmul_H2_eq_zero`: `H¹(G, M)` and
+  `H²(G, M)` are killed by `Nat.card G`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -369,7 +371,7 @@ def explicitMap0 {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N] [DistribMul
     (φ : H →* G) (f : M →+ N) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
     H0 G M →+ H0 H N where
   toFun m := ⟨f (m : M), (FixedPoints.mem_addSubgroup H N (f (m : M))).2 fun h => by
-    rw [← hequiv h (m : M), (FixedPoints.mem_addSubgroup G M (m : M)).1 m.2 (φ h)]⟩
+    rw [← hequiv h (m : M), (FixedPoints.mem_addSubgroup G M (m : M)).1 m.property (φ h)]⟩
   map_zero' := Subtype.ext (map_zero f)
   map_add' _ _ := Subtype.ext (map_add f _ _)
 
@@ -394,7 +396,7 @@ theorem explicitMap0_bijective {H : Type*} [Monoid H] {N : Type*} [AddCommGroup 
   · obtain ⟨m, hm⟩ := hf.2 (n : N)
     refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
     · obtain ⟨h, rfl⟩ := hφ g
-      rw [hequiv, hm, (FixedPoints.mem_addSubgroup H N n).1 n.2]
+      rw [hequiv, hm, (FixedPoints.mem_addSubgroup H N n).1 n.property]
     · simpa only [coe_explicitMap0] using hm
 
 /-- Pullback along the identity compatible pair is the identity on degree-zero cohomology. -/
@@ -947,6 +949,62 @@ theorem nsmul_H2_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H2 G M) : n
 
 end CohomologyDegree2
 
+section GroupExponent
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+/-- **`H¹(G, M)` is killed by `Nat.card G`.** When `G` is finite, summing the `1`-cocycle identity
+over `G` exhibits `Nat.card G • f` as a `1`-coboundary; when `G` is infinite, `Nat.card G = 0`. -/
+theorem natCard_nsmul_H1_eq_zero (x : H1 G M) : Nat.card G • x = 0 := by
+  cases finite_or_infinite G with
+  | inl _ =>
+    cases nonempty_fintype G
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      rw [← QuotientAddGroup.mk_nsmul, H1pi_eq_zero_iff, mem_B1_iff]
+      refine ⟨-∑ h : G, (f : G → M) h, fun g ↦ ?_⟩
+      have hf := (mem_Z1_iff.mp f.property).2
+      have hshift : (∑ h : G, (f : G → M) (g * h)) = ∑ h : G, (f : G → M) h :=
+        Fintype.sum_bijective _ (Group.mulLeft_bijective g) _ _ fun _ ↦ rfl
+      have hsum : (∑ h : G, (f : G → M) (g * h)) =
+          g • (∑ h : G, (f : G → M) h) + Nat.card G • (f : G → M) g := by
+        simp [hf g, Finset.sum_add_distrib, Finset.smul_sum, Nat.card_eq_fintype_card]
+      have heq := hshift.symm.trans hsum
+      rw [smul_neg, sub_neg_eq_add, AddSubgroup.coe_nsmul, Pi.smul_apply]
+      nth_rw 2 [heq]
+      abel
+  | inr _ => rw [Nat.card_eq_zero_of_infinite, zero_nsmul]
+
+/-- **`H²(G, M)` is killed by `Nat.card G`.** When `G` is finite, summing the `2`-cocycle identity
+over its third argument exhibits `Nat.card G • f` as the `2`-coboundary of a continuous `1`-cochain;
+when `G` is infinite, `Nat.card G = 0`. -/
+theorem natCard_nsmul_H2_eq_zero [ContinuousMul G] (x : H2 G M) : Nat.card G • x = 0 := by
+  cases finite_or_infinite G with
+  | inl _ =>
+    cases nonempty_fintype G
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      rw [← QuotientAddGroup.mk_nsmul, H2pi_eq_zero_iff, mem_B2_iff']
+      refine ⟨∑ k : G, fun u ↦ (f : G × G → M) (u, k), mem_C1_iff.mp <|
+        sum_mem (t := (Finset.univ : Finset G)) fun k _ ↦
+          mem_C1_iff.mpr ((mem_Z2_iff.mp f.property).1.comp (Continuous.prodMk_left k)),
+              fun g h ↦ ?_⟩
+      have hshift : (∑ k : G, (f : G × G → M) (g, h * k)) = ∑ k : G, (f : G × G → M) (g, k) :=
+        Fintype.sum_bijective _ (Group.mulLeft_bijective h) _ _ fun _ ↦ rfl
+      have hsum : (∑ k : G, (f : G × G → M) (g * h, k)) + Nat.card G • (f : G × G → M) (g, h) =
+          g • (∑ k : G, (f : G × G → M) (h, k)) + ∑ k : G, (f : G × G → M) (g, h * k) := by
+        simpa [Finset.sum_add_distrib, Finset.smul_sum, Nat.card_eq_fintype_card] using
+          Finset.sum_congr (s₁ := Finset.univ) rfl fun k _ ↦ (mem_Z2_iff.mp f.property).2 g h k
+      rw [hshift, add_comm] at hsum
+      simp only [Finset.sum_apply, AddSubgroup.coe_nsmul, Pi.smul_apply,
+        eq_sub_iff_add_eq.mpr hsum]
+      abel
+  | inr _ => rw [Nat.card_eq_zero_of_infinite, zero_nsmul]
+
+end GroupExponent
+
 section TrivialGroup
 
 variable (G : Type u) [Monoid G] [TopologicalSpace G] [Subsingleton G]
@@ -956,7 +1014,7 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G] [Subsingleton G]
 /-- **A trivial group has vanishing `H¹`.** -/
 instance subsingleton_H1_of_subsingleton : Subsingleton (H1 G M) :=
   have : Subsingleton (Z1 G M) := ⟨fun f f' => Subtype.ext <| funext fun g => by
-    rw [Subsingleton.elim g 1, map_one_of_mem_Z1 f.2, map_one_of_mem_Z1 f'.2]⟩
+    rw [Subsingleton.elim g 1, map_one_of_mem_Z1 f.property, map_one_of_mem_Z1 f'.property]⟩
   QuotientAddGroup.mk_surjective.subsingleton
 
 /-- **A trivial group has vanishing `H²`.** -/
@@ -1019,8 +1077,8 @@ def Z1EquivOfSmulEqSelf : Z1 G M ≃+ Additive (ContinuousMonoidHom G (Multiplic
   toFun f := Additive.ofMul
     { toMonoidHom :=
         MonoidHom.mk' (fun g => Multiplicative.ofAdd ((f : G → M) g)) fun a b => by
-          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.2 a b, ofAdd_add]
-      continuous_toFun := (mem_Z1_iff.1 f.2).1 }
+          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.property a b, ofAdd_add]
+      continuous_toFun := (mem_Z1_iff.1 f.property).1 }
   invFun φ :=
     ⟨fun g => Multiplicative.toAdd ((Additive.toMul φ) g),
       mem_Z1_of_smul_eq_self_of_continuousMonoidHom htriv (Additive.toMul φ)⟩

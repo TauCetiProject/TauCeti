@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -187,7 +188,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 vanish.** If `α_x ≠ 0`, then on an open neighbourhood of `x` the distribution `ker α` has a `C^n`
 local frame of `dim E - 1` vector fields. -/
 theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {n : ℕ∞ω}
-    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hx : α.1 x ≠ 0) :
+    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hx : α.val x ≠ 0) :
     ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ X : Fin (finrank ℝ E - 1) → Π y : M, TangentSpace I y,
       IsDistributionFrameOn I n α.kerDistribution X U := by
   classical
@@ -198,11 +199,11 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   set F := e.localFrame (Module.finBasis ℝ E)
   have hF := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ E)
   -- The coefficients `α (F i)` are `C^n` on the domain of the frame.
-  set a : Fin (finrank ℝ E) → M → ℝ := fun i y ↦ α.1 y ![F i y]
+  set a : Fin (finrank ℝ E) → M → ℝ := fun i y ↦ α.val y ![F i y]
   have ha (i) : ContMDiffOn I 𝓘(ℝ) n (a i) e.baseSet := fun y hy ↦ by
-    have h := ((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn.clm_bundle_apply
-      (E₂ := Trivial M ℝ) (hF.contMDiffOn i) y hy
-    simpa [a, ← Matrix.vec_single_eq_const] using (contMDiffWithinAt_totalSpace_iff.1 h).2
+    have h := (((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn y
+      hy).clm_bundle_apply_scalar (hF.contMDiffOn i y hy)
+    simpa [a, ← Matrix.vec_single_eq_const] using h
   -- Some member of the frame is not in the kernel of `α_x`.
   obtain ⟨j, hj⟩ : ∃ j, a j x ≠ 0 := by
     by_contra! h
@@ -244,7 +245,7 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
 /-- **The kernel of a nowhere vanishing one-form is a smooth hyperplane field**: a `C^n`
 distribution of rank `dim E - 1`. -/
 theorem isContMDiffDistribution_kerDistribution [FiniteDimensional ℝ E] {n : ℕ∞ω}
-    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hα : ∀ x, α.1 x ≠ 0) :
+    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hα : ∀ x, α.val x ≠ 0) :
     IsContMDiffDistribution I n (finrank ℝ E - 1) α.kerDistribution :=
   isContMDiffDistribution_iff.2 fun x ↦ exists_isDistributionFrameOn_kerDistribution (hα x)
 
@@ -259,11 +260,11 @@ theorem IsContactForm.isContMDiffDistribution_kerDistribution [FiniteDimensional
 /-- **A one-form carries the Levi form of its kernel to its exterior derivative.** If `α_x ≠ 0`,
 the linear map `T_x M ⧸ ker α_x → ℝ` induced by `α_x` sends the Levi form
 `L(u, v) = -[U, V] mod ker α` of the distribution `ker α` to `dα_x (u, v)`. -/
-theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx : α.1 x ≠ 0)
+theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx : α.val x ≠ 0)
     (u v : α.kerDistribution x) :
     (α.kerDistribution x).liftQ (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
         (kerDistribution_def α x).le (distributionLeviForm α.kerDistribution x u v) =
-      mextDeriv α.1 x ![u, v] := by
+      mextDeriv α.val x ![u, v] := by
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) le_rfl
   obtain ⟨U, hU, hxU, X, hX⟩ := exists_isDistributionFrameOn_kerDistribution (n := 1) hx
   obtain ⟨w, hw⟩ := (α.kerDistribution x).mkQ_surjective
@@ -277,9 +278,9 @@ theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx
 form at `x` exactly when `α_x ≠ 0` and the Levi form of `ξ = ker α` is nondegenerate at `x`: the
 map `u ↦ L_ξ (u, ·)` is an isomorphism from `ξ_x` onto `Hom(ξ_x, T_x M ⧸ ξ_x)`. -/
 theorem isContactFormAt_iff_bijective_distributionLeviForm [FiniteDimensional ℝ E] :
-    IsContactFormAt α.1 x ↔
-      α.1 x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
-  by_cases hx : α.1 x = 0
+    IsContactFormAt α.val x ↔
+      α.val x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
+  by_cases hx : α.val x = 0
   · exact ⟨fun h ↦ absurd hx h.ne_zero, fun h ↦ absurd hx h.1⟩
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) le_rfl
   obtain ⟨U, hU, hxU, X, hX⟩ := exists_isDistributionFrameOn_kerDistribution (n := 1) hx
@@ -291,7 +292,7 @@ one-form `α` is a contact form exactly when it vanishes nowhere and, at every p
 form of `ξ = ker α` induces an isomorphism `ξ_x ≃ Hom(ξ_x, T_x M ⧸ ξ_x)`. -/
 theorem isContactForm_iff_forall_bijective_distributionLeviForm [FiniteDimensional ℝ E] :
     α.IsContactForm ↔
-      ∀ x, α.1 x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
+      ∀ x, α.val x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
   rw [isContactForm_iff_forall_isContactFormAt]
   exact forall_congr' fun _ ↦ isContactFormAt_iff_bijective_distributionLeviForm
 

@@ -92,7 +92,7 @@ private lemma isZero_compl_image_hemisphere {h : sphere (0 : E) 1 → Y} (hc : C
       Subtype.range_coe_subtype]
   rw [← hrange]
   exact isZero_reducedSingularHomologyFunctor_compl_range_closedBall M hY
-    (hc.comp (continuous_subtype_val.comp (hemisphereHomeomorph p).symm.continuous))
+    (hc.comp (continuous_subtypeVal.comp (hemisphereHomeomorph p).symm.continuous))
     (hi.comp (Subtype.val_injective.comp (hemisphereHomeomorph p).symm.injective)) n
 
 /-- The image of a closed hemisphere is closed, so the complement of its image is open. -/

@@ -100,16 +100,16 @@ theorem surjective_cotangentMap_prod_cotangentRestrict_extend (P : Generators R 
       exact Sum.inl_ne_inr hi
   -- Elements `y` of `I` give elements `y'` of the kernel of `E` with no `d z_j` components.
   obtain ⟨incl, hincl⟩ : ∃ incl : P.ker → (P.extend v).ker,
-      ∀ y, (incl y).1 = rename Sum.inl y.1 :=
-    ⟨fun y ↦ ⟨rename Sum.inl y.1, by
+      ∀ y, (incl y).val = rename Sum.inl y.val :=
+    ⟨fun y ↦ ⟨rename Sum.inl y.val, by
       rw [ker_eq_ker_aeval_val, RingHom.mem_ker, MvPolynomial.aeval_rename]
-      exact P.aeval_val_eq_zero y.2⟩, fun _ ↦ rfl⟩
+      exact P.aeval_val_eq_zero y.property⟩, fun _ ↦ rfl⟩
   have h1 : ∀ y, Extension.Cotangent.map r.toExtensionHom (Extension.Cotangent.mk (incl y)) =
       Extension.Cotangent.mk y := fun y ↦ by
     refine (Extension.Cotangent.map_mk _ _).trans (congrArg _ (Subtype.ext ?_))
     rw [Subtype.coe_mk, Hom.toExtensionHom_toAlgHom_apply, Hom.toAlgHom, hincl,
       MvPolynomial.aeval_rename]
-    exact congrArg (aeval · y.1) (funext hr) |>.trans (aeval_X_left_apply _)
+    exact congrArg (aeval · y.val) (funext hr) |>.trans (aeval_X_left_apply _)
   have h1' : ∀ y, (P.extend v).cotangentRestrict Sum.inr_injective
       (Extension.Cotangent.mk (incl y)) = 0 := fun y ↦ by
     ext j

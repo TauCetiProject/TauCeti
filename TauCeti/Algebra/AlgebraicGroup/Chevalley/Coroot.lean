@@ -30,6 +30,10 @@ The additional content here is its comparison with the coordinates of the datum'
 `simpleCorootParameter_eq_fullWeightTorusRestriction` identifies the simple coroot with restriction
 of a single full-weight coordinate.
 
+The coroot of an arbitrary root `γ`, `corootPoints`, is the actual torus evaluated at the
+restriction of the full-weight parameter `i ↦ s ^ γ^∨(i)`;
+`simpleCorootPoints_eq_corootPoints` identifies it with `simpleCorootPoints` at simple roots.
+
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Lemma 28(c).
@@ -127,6 +131,34 @@ theorem torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints
     simp [List.prod_ofFn, fullWeightTorusRestriction_apply, torusCharacter_def]
   rw [hp, map_list_prod]
   simp only [List.map_ofFn, Function.comp_def, simpleCorootPoints_eq_torusPoints]
+
+/-- The coroot of a root `γ` as a homomorphism into the points of the datum: the actual torus
+evaluated at the restriction of the full-weight parameter `i ↦ s ^ γ^∨(i)` to the weight lattice
+of the datum. -/
+def corootPoints (γ : Fin t.numRoots) (A : Type v) [CommRing A] : Aˣ →* D.points A :=
+  (D.torusPoints A).comp ((D.fullWeightTorusRestriction A).comp
+    (GeneralLinear.weightDiagonalUnits fun i => (t.simplyConnectedRootDatum ht).coroot γ i))
+
+theorem corootPoints_apply (γ : Fin t.numRoots) (A : Type v) [CommRing A] (s : Aˣ) :
+    D.corootPoints γ A s = D.torusPoints A (D.fullWeightTorusRestriction A
+      (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot γ i)) := by
+  rw [corootPoints, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  congr 2
+  funext i
+  exact GeneralLinear.weightDiagonalUnits_apply _ s i
+
+/-- At a simple root, the coroot points are the simple coroot points. -/
+theorem simpleCorootPoints_eq_corootPoints (i : Fin t.rank) (A : Type v) [CommRing A] :
+    D.simpleCorootPoints i A = D.corootPoints (t.simpleIndex ht i) A := by
+  ext1 s
+  rw [simpleCorootPoints_eq_torusPoints, simpleCorootParameter_eq_fullWeightTorusRestriction,
+    corootPoints_apply, coroot_simpleIndex]
+  congr 2
+  funext j
+  by_cases hj : j = i
+  · subst hj
+    simp
+  · simp [hj]
 
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]

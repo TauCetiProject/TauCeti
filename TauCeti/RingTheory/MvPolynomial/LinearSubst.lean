@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
+import Mathlib.Algebra.MvPolynomial.Coeff
+import TauCeti.Algebra.MvPolynomial.Monomial
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -26,11 +30,21 @@ acts by `cⁿ`. Restricted to the forms of a fixed degree `n` it is the represen
 In two variables this is the action `P ↦ P(aX + bY, cX + dY)` of `2 × 2` matrices on binary
 forms of degree `n`, through which the modular group acts on period polynomials.
 
+Its transpose `TauCeti.polynomialAction g` substitutes the standard vectors instead: the variable
+`X j`, the `j`-th standard vector of `Rˢ`, goes to its image `∑ᵢ gᵢⱼ X i` under `g`. In two
+variables, with `x = X 0` and `y = X 1`, the matrix `!![a, b; c, d]` substitutes `x ↦ a x + c y`
+and `y ↦ b x + d y`. It is a left action,
+`polynomialAction (g * h) = polynomialAction g ∘ polynomialAction h`, and restricted to the forms of
+degree `d` it is the representation `TauCeti.polynomialRep` of the general linear group.
+
 ## Main definitions
 
 * `MvPolynomial.linearSubst`: the substitution `Xᵢ ↦ ∑ⱼ Mᵢⱼ Xⱼ`.
 * `MvPolynomial.linearSubstRep`: its restriction to forms of degree `n`, as a representation of
   `(Matrix σ σ R)ᵐᵒᵖ`.
+* `TauCeti.polynomialAction`: the substitution of standard vectors by a square matrix.
+* `TauCeti.polynomialRep`: its restriction to forms of degree `d`, as a representation of
+  `GL σ R`.
 
 ## Main results
 
@@ -47,13 +61,20 @@ forms of degree `n`, through which the modular group acts on period polynomials.
   diagonal entries.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
+* `MvPolynomial.coeff_linearSubst_X_pow_mul_X_pow`: the coefficients of a linear change of
+  variables of a monomial in two variables.
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
   substitution in two variables, the coefficient of `X₀ᵏ X₁ˡ` in its own image is `aᵏ dˡ`.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
+* `MvPolynomial.homogeneousComponent_linearSubst`: the substitution commutes with taking
+  homogeneous components.
 * `MvPolynomial.eq_zero_of_add_self_eq_zero`: a polynomial is zero if adding it to itself is
   zero and multiplication by `2` is injective on coefficients.
+* `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
+* `TauCeti.polynomialAction_sum_C_mul_X`: on linear forms it is matrix-vector multiplication of
+  the coefficient vector.
 -/
 
 public section
@@ -109,48 +130,46 @@ theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ �
       (s.prod fun i k => v i ^ k) • monomial s 1 := by
   rw [linearSubst_diagonal, rescale_monomial, smul_eq_C_mul, C_mul_monomial]
 
+/-- The coefficients of a linear change of variables of a monomial in two variables: the
+coefficient of `X₀ʲ X₁ⁱ⁺ᵏ⁻ʲ` in `(A₀₀ X₀ + A₀₁ X₁)ⁱ (A₁₀ X₀ + A₁₁ X₁)ᵏ` is
+`∑ₗ C(i, l) C(k, j - l) A₀₀ˡ A₀₁ⁱ⁻ˡ A₁₀ʲ⁻ˡ A₁₁ᵏ⁻⁽ʲ⁻ˡ⁾`, the sum over `l ≤ i` with `l ≤ j` and
+`j - l ≤ k`. -/
+theorem coeff_linearSubst_X_pow_mul_X_pow (A : Matrix (Fin 2) (Fin 2) R) (i k j : ℕ) :
+    (linearSubst A (X 0 ^ i * X 1 ^ k)).coeff
+        (Finsupp.single 0 j + Finsupp.single 1 (i + k - j)) =
+      ∑ l ∈ Finset.range (i + 1), if l ≤ j ∧ j - l ≤ k then
+        i.choose l * k.choose (j - l) * A 0 0 ^ l * A 0 1 ^ (i - l) * A 1 0 ^ (j - l) *
+          A 1 1 ^ (k - (j - l)) else 0 := by
+  have hsingle {a b c d : ℕ} : Finsupp.single (0 : Fin 2) a + Finsupp.single 1 b =
+      Finsupp.single 0 c + Finsupp.single 1 d ↔ a = c ∧ b = d := by
+    simp [Finsupp.ext_iff, Fin.forall_fin_two]
+  simp only [map_mul, map_pow, linearSubst_X, Fin.sum_univ_two, C_mul_X_add_C_mul_X_pow,
+    Finset.sum_mul_sum, monomial_mul_monomial, coeff_sum, coeff_monomial, add_add_add_comm,
+    ← Finsupp.single_add, hsingle]
+  refine Finset.sum_congr rfl fun l hl ↦ ?_
+  split_ifs with h
+  · rw [Finset.sum_eq_single_of_mem (j - l) (by grind) fun m _ hm ↦ ite_eq_right (by omega),
+      ite_eq_left (by grind)]
+    grind
+  · exact Finset.sum_eq_zero fun _ hm ↦ ite_eq_right (by grind)
+
 /-- An upper-triangular change of variables in two variables is triangular on monomials: the
 coefficient of `X₀ᵏ X₁ˡ` in the image of `X₀ᵏ X₁ˡ` is `aᵏ dˡ`, independently of `b`. -/
 theorem coeff_linearSubst_upperTriangular_monomial (a b d : R) (s : Fin 2 →₀ ℕ) :
     (linearSubst !![a, b; 0, d] (monomial s 1)).coeff s = a ^ s 0 * d ^ s 1 := by
-  have hCX (r : R) (i : Fin 2) :
-      C r * X i = monomial (Finsupp.single i 1) r := by
-    rw [X, C_mul_monomial, mul_one]
-  have hMC (u : Fin 2 →₀ ℕ) (r q : R) :
-      monomial u r * C q = monomial u (r * q) := by
-    rw [mul_comm, C_mul_monomial, mul_comm]
-  have hnat (m : ℕ) : (m : MvPolynomial (Fin 2) R) = C (m : R) := by
-    simp
-  have hexp (x : ℕ) (hx : x ≤ s 0) :
-      Finsupp.single (0 : Fin 2) x +
-          (Finsupp.single (1 : Fin 2) (s 0) - Finsupp.single (1 : Fin 2) x) +
-          Finsupp.single (1 : Fin 2) (s 1) = s ↔
-        x = s 0 := by
-    constructor
-    · intro h
-      have h0 := DFunLike.congr_fun h (0 : Fin 2)
-      simpa using h0
-    · rintro rfl
-      ext i
-      fin_cases i <;> simp
-  have hsplit :
-      Finsupp.single (0 : Fin 2) (s 0) + Finsupp.single (1 : Fin 2) (s 1) = s := by
+  have hs : Finsupp.single 0 (s 0) + Finsupp.single 1 (s 0 + s 1 - s 0) = s := by
     ext i
     fin_cases i <;> simp
-  rw [linearSubst_eq_aeval, aeval_monomial, map_one, one_mul,
-    s.prod_fintype _ (by simp), Fin.prod_univ_two]
-  simp only [Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
-    cons_val_fin_one, Fin.isValue, C_0, zero_mul, zero_add]
-  rw [hCX, hCX, hCX, add_pow, Finset.sum_mul]
-  simp_rw [monomial_pow, monomial_mul_monomial, hnat]
-  rw [coeff_sum]
-  simp_rw [hMC, monomial_mul_monomial]
-  simp only [coeff_monomial]
-  rw [Finset.sum_eq_single (s 0)]
-  · simp [hsplit]
-  · intro x hx hne
-    simp [hexp _ (Nat.le_of_lt_succ (Finset.mem_range.mp hx)), hne]
+  have hm : monomial s (1 : R) = X 0 ^ s 0 * X 1 ^ s 1 := by
+    simpa using monomial_fin_two s (1 : R)
+  have h := coeff_linearSubst_X_pow_mul_X_pow !![a, b; 0, d] (s 0) (s 1) (s 0)
+  rw [hs] at h
+  rw [hm, h, Finset.sum_eq_single (s 0) (fun l _ hne ↦ ?_) (by simp)]
   · simp
+  · split_ifs with hl'
+    · have hsub : s 0 - l ≠ 0 := by grind
+      simp [hsub]
+    · rfl
 
 /-- Evaluating `linearSubst M p` at `x` is evaluating `p` at `M *ᵥ x`. -/
 theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix σ σ R)
@@ -237,6 +256,12 @@ theorem IsHomogeneous.linearSubst_neg {R : Type*} [CommRing R] {p : MvPolynomial
     MvPolynomial.linearSubst (-M) p = (-1 : R) ^ n • MvPolynomial.linearSubst M p := by
   rw [← neg_one_smul R M, hp.linearSubst_smul]
 
+/-- A linear change of variables commutes with taking homogeneous components. -/
+theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvPolynomial σ R) :
+    homogeneousComponent n (linearSubst M p) = linearSubst M (homogeneousComponent n p) :=
+  weightedHomogeneousComponent_aeval (w := 1)
+    (fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j) p n
+
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation
 of the opposite matrix monoid: `op M` acts by `p ↦ linearSubst M p`. -/
@@ -253,3 +278,91 @@ theorem coe_linearSubstRep_apply [DecidableEq σ] {n : ℕ} (M : (Matrix σ σ R
   (rfl)
 
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+section Action
+
+variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+/-- The substitution of standard vectors by a square matrix `g`: the variable `X j`, the `j`-th
+standard vector, goes to its image `∑ᵢ gᵢⱼ X i` under `g`. In two variables the matrix
+`!![a, b; c, d]` substitutes `X 0 ↦ a X 0 + c X 1` and `X 1 ↦ b X 0 + d X 1`. -/
+noncomputable def polynomialAction (g : Matrix σ σ R) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
+  linearSubst gᵀ
+
+/-- The substitution of standard vectors is the change of variables along the transpose. -/
+theorem polynomialAction_eq_linearSubst_transpose (g : Matrix σ σ R) :
+    polynomialAction g = linearSubst gᵀ :=
+  (rfl)
+
+@[simp]
+theorem polynomialAction_X (g : Matrix σ σ R) (j : σ) :
+    polynomialAction g (X j) = ∑ i, C (g i j) * X i := by
+  simp [polynomialAction_eq_linearSubst_transpose]
+
+@[simp]
+theorem polynomialAction_one [DecidableEq σ] :
+    polynomialAction (1 : Matrix σ σ R) = AlgHom.id R _ := by
+  simp [polynomialAction_eq_linearSubst_transpose]
+
+/-- The substitution of standard vectors is a left action of the matrix monoid. -/
+theorem polynomialAction_mul (g h : Matrix σ σ R) :
+    polynomialAction (g * h) = (polynomialAction g).comp (polynomialAction h) := by
+  rw [polynomialAction_eq_linearSubst_transpose, transpose_mul, linearSubst_mul]
+  rfl
+
+theorem polynomialAction_mul_apply (g h : Matrix σ σ R) (p : MvPolynomial σ R) :
+    polynomialAction (g * h) p = polynomialAction g (polynomialAction h p) := by
+  rw [polynomialAction_mul, AlgHom.comp_apply]
+
+/-- On linear forms the substitution of standard vectors is matrix-vector multiplication of the
+coefficient vector: the linear form with coefficients `v` goes to the one with coefficients
+`g *ᵥ v`. -/
+theorem polynomialAction_sum_C_mul_X (g : Matrix σ σ R) (v : σ → R) :
+    polynomialAction g (∑ j, C (v j) * X j) = ∑ i, C ((g *ᵥ v) i) * X i := by
+  simp only [map_sum, map_mul, polynomialAction_X, algHom_C, algebraMap_eq, Finset.mul_sum,
+    mulVec, dotProduct, map_sum C, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+/-- A diagonal matrix rescales each variable by its diagonal entry. -/
+theorem polynomialAction_diagonal [DecidableEq σ] (t : σ → R) :
+    polynomialAction (diagonal t) = rescale t := by
+  rw [polynomialAction_eq_linearSubst_transpose, diagonal_transpose, linearSubst_diagonal]
+
+/-- The substitution of standard vectors preserves homogeneity. -/
+theorem _root_.MvPolynomial.IsHomogeneous.polynomialAction {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (g : Matrix σ σ R) :
+    (TauCeti.polynomialAction g p).IsHomogeneous n :=
+  hp.linearSubst gᵀ
+
+/-- The substitution of standard vectors commutes with taking homogeneous components. -/
+theorem homogeneousComponent_polynomialAction (g : Matrix σ σ R) (n : ℕ) (p : MvPolynomial σ R) :
+    homogeneousComponent n (polynomialAction g p) = polynomialAction g (homogeneousComponent n p) :=
+  homogeneousComponent_linearSubst gᵀ n p
+
+/-- Evaluating `polynomialAction g p` at `x` is evaluating `p` at `gᵀ *ᵥ x`. -/
+theorem eval_polynomialAction (g : Matrix σ σ R) (x : σ → R) (p : MvPolynomial σ R) :
+    eval x (polynomialAction g p) = eval (gᵀ *ᵥ x) p :=
+  eval_linearSubst gᵀ x p
+
+variable (σ R) in
+/-- The substitution of standard vectors restricted to the forms of degree `d`, as a
+representation of the general linear group. -/
+noncomputable def polynomialRep [DecidableEq σ] (d : ℕ) :
+    Representation R (GL σ R) (homogeneousSubmodule σ R d) :=
+  (linearSubstRep σ R d).comp ((transposeRingEquiv σ R).toMonoidHom.comp (Units.coeHom _))
+
+@[simp]
+theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
+    (p : homogeneousSubmodule σ R d) :
+    (polynomialRep σ R d g p : MvPolynomial σ R) = polynomialAction (g : Matrix σ σ R) p := by
+  simp [polynomialRep, polynomialAction_eq_linearSubst_transpose]
+
+end Action
+
+end TauCeti

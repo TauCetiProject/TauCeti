@@ -77,20 +77,19 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
       cov (X t) (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x v) := by
   have hX₁ := hX.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
   have hopen := isOpen_timeDependentFlowDomain hX₁
-  have hflow := contMDiffOn_timeDependentFlowOf (n := 2) (by norm_num) hX
   -- Realize `v` as the velocity at `0` of a `C²` curve `c` through `x`.
-  obtain ⟨c, rfl, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (I := I) (n := 2)
-    (by norm_num) x v 0
+  obtain ⟨c, rfl, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (I := I) (n := 2) x
+    BoundarylessManifold.isInteriorPoint v 0
   -- The variation `F (r, u) = φ_{s,u}(c r)` is `C²` near `(0, t)`.
   set F : ℝ → ℝ → M := fun r u ↦ timeDependentFlowOf X s u (c r)
-  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) 2
-      (fun z : ℝ × ℝ ↦ ((s, z.2), c z.1)) (0, t) := by
-    refine ContMDiffAt.prodMk ?_ (hc.comp (0, t) (contMDiff_iff_contDiff.mpr
-      (contDiff_fst : ContDiff ℝ 2 (Prod.fst : ℝ × ℝ → ℝ))).contMDiffAt)
-    exact contMDiffAt_const.prodMk (contMDiff_iff_contDiff.mpr
-      (contDiff_snd : ContDiff ℝ 2 (Prod.snd : ℝ × ℝ → ℝ))).contMDiffAt
+  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ).prod I) 2
+      (fun z : ℝ × ℝ ↦ (z.2, c z.1)) (0, t) :=
+    (contMDiff_iff_contDiff.mpr
+      (contDiff_snd : ContDiff ℝ 2 (Prod.snd : ℝ × ℝ → ℝ))).contMDiffAt.prodMk
+      (hc.comp (0, t) (contMDiff_iff_contDiff.mpr
+        (contDiff_fst : ContDiff ℝ 2 (Prod.fst : ℝ × ℝ → ℝ))).contMDiffAt)
   have hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
-    (hflow.contMDiffAt (hopen.mem_nhds h)).comp (0, t) hg
+    (contMDiffAt_uncurry_timeDependentFlowOf (n := 2) (by norm_num) hX h).comp (0, t) hg
   -- Each curve `F r` is an integral curve of `X` at the time `t`.
   have hcurve : ∀ᶠ r in 𝓝 0, curveVelocity I (F r) t = X t (F r t) := by
     have hdom : ∀ᶠ r in 𝓝 (0 : ℝ), ((s, t), c r) ∈ timeDependentFlowDomain X :=
@@ -109,8 +108,7 @@ theorem alongCurve_mfderiv_timeDependentFlowOf
         (hopen.mem_nhds h)
     filter_upwards [hdom] with u hu
     have hφ : MDifferentiableAt I I (timeDependentFlowOf X s u) (c 0) :=
-      (((hflow.contMDiffAt (hopen.mem_nhds hu)).comp (c 0)
-        (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt (by norm_num))
+      mdifferentiableAt_timeDependentFlowOf hX₁ hu
     have hmap := curveVelocityWithin_map hφ uniqueDiffWithinAt_univ
       (hc.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
     rw [curveVelocityWithin_univ, curveVelocityWithin_univ, hcv] at hmap

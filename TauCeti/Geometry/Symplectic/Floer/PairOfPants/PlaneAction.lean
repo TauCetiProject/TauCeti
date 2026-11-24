@@ -145,7 +145,7 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     linarith
   have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.piSingle_apply inf)
     (hHs.uncurry_piSingle_apply inf)
-    ⟨hw₀, hw₁⟩ hs x
+    ⟨hw₀, hw₁⟩ (hs.trans_eq (fst_positiveEndCoord inf z).symm) x
   rwa [pairOfPantsPerturbation_single_inf] at h
 
 /-- For `R ≥ 2`, the curvature integral over the disc `‖w‖ ≤ 2 exp (2πR)` is the curvature

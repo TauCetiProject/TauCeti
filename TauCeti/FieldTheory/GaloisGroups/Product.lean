@@ -260,7 +260,7 @@ theorem Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
   have hex : ∀ x : (∏ i, g i).rootSet E, ∃ i, (x : E) ∈ (g i).rootSet E := by
     intro x
     obtain ⟨i, -, hi⟩ := Finset.prod_eq_zero_iff.mp
-      ((map_prod (aeval (x : E)) g Finset.univ).symm.trans (mem_rootSet.mp x.2).2)
+      ((map_prod (aeval (x : E)) g Finset.univ).symm.trans (mem_rootSet.mp x.property).2)
     exact ⟨i, mem_rootSet.mpr ⟨hg0 i, hi⟩⟩
   have huniq : ∀ (y : E) i j, y ∈ (g i).rootSet E → y ∈ (g j).rootSet E → i = j :=
     fun y i j hi hj => by_contra fun hij => Set.disjoint_left.mp
@@ -278,8 +278,8 @@ theorem Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
   refine Finset.sum_congr rfl fun i _ => ?_
   -- The fibre of `π` over `i` is the root set of `g i`, and `ϕ` acts on both by evaluation.
   let e : {x : (∏ i, g i).rootSet E // π x = i} ≃ (g i).rootSet E :=
-    { toFun := fun x => ⟨x.1, (hπ _ _).mp x.2⟩
-      invFun := fun y => ⟨⟨y, hmem i y y.2⟩, (hπ _ _).mpr y.2⟩
+    { toFun := fun x => ⟨x.val, (hπ _ _).mp x.property⟩
+      invFun := fun y => ⟨⟨y, hmem i y y.property⟩, (hπ _ _).mpr y.property⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl }
   rw [← Equiv.Perm.fullCycleType_permCongr e]

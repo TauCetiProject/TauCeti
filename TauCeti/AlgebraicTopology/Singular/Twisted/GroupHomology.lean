@@ -102,21 +102,20 @@ private def coinvariantsTensorMkLocalSystem (a : A) :
 
 /-- The action of an element of `G` on the permutation local system, translating the sheets. -/
 private def permutationLocalSystemSMul (g : G) :
-    hG.isCoveringMap.permutationLocalSystem k ⟶ hG.isCoveringMap.permutationLocalSystem k where
-  app x := ModuleCat.ofHom (hG.fiberRepresentation k x.as g)
-  naturality _ _ γ :=
-    ModuleCat.hom_ext (((hG.permutationRepFunctor k).map γ).hom.isIntertwining' g).symm
+    hG.isCoveringMap.permutationLocalSystem k ⟶ hG.isCoveringMap.permutationLocalSystem k :=
+  haveI := hG.toContinuousConstSMul
+  hG.isCoveringMap.permutationLocalSystemFiberMap k ⟨(g • ·), continuous_const_smul g⟩
+    (funext fun _ ↦ hG.map_smul g)
 
-private lemma permutationLocalSystemSMul_app_single (g : G) (x : FundamentalGroupoid B)
-    (e : p ⁻¹' {x.as}) (r : k) :
-    letI := hG.mulActionFiber x.as
-    ((permutationLocalSystemSMul hG k g).app x).hom
-        ((hG.isCoveringMap.permutationLocalSystemSingle k x e).hom r) =
-      (hG.isCoveringMap.permutationLocalSystemSingle k x (g • e)).hom r :=
-  (congrArg ((permutationLocalSystemSMul hG k g).app x).hom
-    (hG.isCoveringMap.permutationLocalSystemSingle_hom_apply k x e r)).trans
-    ((hG.fiberRepresentation_single k x.as g e r).trans
-      (hG.isCoveringMap.permutationLocalSystemSingle_hom_apply k x _ r).symm)
+/-- Translating the sheets by `g` is the permutation representation of `g` on the fibre. -/
+private lemma permutationLocalSystemSMul_app_hom (g : G) (x : FundamentalGroupoid B) :
+    ((permutationLocalSystemSMul hG k g).app x).hom = hG.fiberRepresentation k x.as g := by
+  let := hG.mulActionFiber x.as
+  exact Finsupp.lhom_ext fun e r ↦
+    ((IsCoveringMap.permutationLocalSystemFiberMap_app_apply _ k _ _ x _).trans
+      (Finsupp.mapDomain_single.trans (congrArg (Finsupp.single · r)
+        (Subtype.ext (Function.fiberMap_apply_coe _ _ _ e))))).trans
+      (hG.fiberRepresentation_single k x.as g e r).symm
 
 /-- Translating the sheets by `g` and then sending `v` to the class of `g a ⊗ v` agrees with
 sending `v` to the class of `a ⊗ v`. -/
@@ -124,6 +123,8 @@ private lemma permutationLocalSystemSMul_comp_coinvariantsTensorMkLocalSystem (g
     permutationLocalSystemSMul hG k g ≫ coinvariantsTensorMkLocalSystem hG k (A.ρ g a) =
       coinvariantsTensorMkLocalSystem hG k a := by
   refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun v ↦ ?_))
+  rw [NatTrans.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply,
+    permutationLocalSystemSMul_app_hom]
   exact Representation.Coinvariants.mk_self_apply
     (A.ρ.tprod (hG.fiberRepresentation k x.as)) g (a ⊗ₜ[k] (v : p ⁻¹' {x.as} →₀ k))
 
@@ -152,19 +153,13 @@ private lemma permIso_hom_smul (n : ℕ) (g : G) (c : ((singularChains k).obj E)
       ((twistedChainComplexCoefficientMap.{u, u, u} (permutationLocalSystemSMul hG k g)).f n).hom
         (((permIso hG k).hom.f n).hom c) := by
   have := hG.toContinuousConstSMul
-  refine LinearMap.congr_fun (singularChains_linearMap_ext
-    (L := ((permIso hG k).hom.f n).hom ∘ₗ singularChainsRepresentation k E G n g)
-    (L' := ((twistedChainComplexCoefficientMap.{u, u, u} (permutationLocalSystemSMul hG k g)).f
-      n).hom ∘ₗ ((permIso hG k).hom.f n).hom) fun τ ↦ ?_) c
-  let := hG.mulActionFiber (initialVertex ((TopCat.toSSet.map p).app _ τ)).as
-  simp only [LinearMap.comp_apply, singularChainsRepresentation_simplexChain,
-    permIso_hom_simplexChain, twistedChainComplexCoefficientMap_f_ι_apply]
-  -- `simp` does not apply this lemma here, while `rw` matches it up to unfolding.
-  rw [permutationLocalSystemSMul_app_single]
-  -- Translating `τ` does not change `p ∘ τ`, and translates its initial sheet.
-  exact congrArg (fun f ↦ f.hom 1)
-    (IsCoveringMap.single_initialSheet_ιTwistedChainComplex hG.isCoveringMap k
-      ((hG.toSSet_map_app_eq_iff (g • τ) τ).2 ⟨g, rfl⟩) (e := g • initialSheet τ) rfl)
+  rw [singularChainsRepresentation_apply, singularChainComplexFunctor_obj_map, permIso,
+    permutationLocalSystemSMul]
+  -- The lemma is an equation of composite chain maps; evaluating the components of a composite
+  -- at `n` and applying them to `c` is the composite of the applications, by definition.
+  exact congrArg (fun f ↦ (f.f n).hom c)
+    (hG.isCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom k
+      ⟨(g • ·), continuous_const_smul g⟩ (funext fun _ ↦ hG.map_smul g))
 
 /-- On twisted chains, translating the sheets by `g` and then sending `v` to the class of
 `g a ⊗ v` agrees with sending `v` to the class of `a ⊗ v`. -/
@@ -246,7 +241,7 @@ private def liftRepHom (n : ℕ) (σ : (TopCat.toSSet.obj B) _⦋n⦌) :
           ((twistedChainComplexCoefficientMap.{u, u, u}
             (permutationLocalSystemSMul hG k g)).f n).hom
           (ModuleCat.hom_inv_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _)
-        rw [twistedChainComplexCoefficientMap_f_ι_apply] at h
+        rw [twistedChainComplexCoefficientMap_f_ι_apply, permutationLocalSystemSMul_app_hom] at h
         exact (congrArg ((permIso hG k).inv.f n).hom h.symm).trans
           (ModuleCat.inv_hom_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _) }
 

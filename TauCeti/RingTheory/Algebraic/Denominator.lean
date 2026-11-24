@@ -28,9 +28,6 @@ elements algebraic over `ℤ` (`Algebra.natDenominator_ne_zero_iff_isAlgebraic`)
 * `Algebra.natDenominator_eq_one_iff`: `natDenominator x = 1` iff `x` is integral over `ℤ`.
 * `Algebra.natDenominator_ne_zero_of_isAlgebraic_rat`: the denominator of an element of a
   `ℚ`-algebra that is algebraic over `ℚ` is nonzero.
-* `Algebra.natDenominator_pos_of_isAlgebraic_rat`: the denominator of an element of a `ℚ`-algebra
-  that is algebraic over `ℚ` is positive.
-* `Algebra.isIntegral_natDenominator_mul`: `(natDenominator x : S) * x` is integral over `ℤ`.
 * `Algebra.natDenominator_ne_zero_iff_isAlgebraic`: the denominator of `x` is nonzero exactly when
   `x` is algebraic over `ℤ`.
 * `Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat`: in a `ℚ`-algebra, the denominator of `x`
@@ -53,16 +50,6 @@ algebraic over `ℚ` and being algebraic over `ℤ` are equivalent. -/
 theorem natDenominator_ne_zero_of_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S}
     (hx : IsAlgebraic ℚ x) : natDenominator x ≠ 0 :=
   IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ S).2 hx)
-
-/-- The denominator of `x` is positive when `x` is algebraic over `ℚ`. -/
-theorem natDenominator_pos_of_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S}
-    (hx : IsAlgebraic ℚ x) : 0 < natDenominator x :=
-  Nat.pos_of_ne_zero (natDenominator_ne_zero_of_isAlgebraic_rat hx)
-
-/-- Multiplying `x` by its cast natural denominator yields an element integral over `ℤ`. -/
-theorem isIntegral_natDenominator_mul {S : Type*} [CommRing S] (x : S) :
-    IsIntegral ℤ ((natDenominator x : S) * x) := by
-  simpa only [nsmul_eq_mul] using isIntegral_natDenominator_smul x
 
 /-- The denominator of `x` is nonzero exactly when `x` is algebraic over `ℤ`; a transcendental
 element has denominator `0`. -/

@@ -75,7 +75,7 @@ theorem classGroupMk0_mem_closure_of_map_eq_self (hmin : minpoly ℤ θ = X ^ 2 
   classical
   obtain ⟨m, hm0, s, hs, hIeq⟩ :=
     exists_eq_span_singleton_mul_prod_of_map_eq_self hmin hgen hprime hover
-      (mem_nonZeroDivisors_iff_ne_zero.mp I.2) hI
+      (mem_nonZeroDivisors_iff_ne_zero.mp I.property) hI
   have hmne : (m : 𝓞 K) ≠ 0 := Nat.cast_ne_zero.mpr hm0.ne'
   -- The rational factor, as an element of the monoid of nonzero ideals.
   set A : (Ideal (𝓞 K))⁰ := ⟨span {(m : 𝓞 K)}, mem_nonZeroDivisors_iff_ne_zero.mpr (by
@@ -85,7 +85,7 @@ theorem classGroupMk0_mem_closure_of_map_eq_self (hmin : minpoly ℤ θ = X ^ 2 
     rw [Submonoid.coe_mul, hA, Submonoid.coe_finsetProd]
     exact hIeq
   have hAone : ClassGroup.mk0 A = 1 :=
-    (ClassGroup.mk0_eq_one_iff A.2).mpr ⟨(m : 𝓞 K), (submodule_span_eq).symm⟩
+    (ClassGroup.mk0_eq_one_iff A.property).mpr ⟨(m : 𝓞 K), (submodule_span_eq).symm⟩
   rw [hIfact, map_mul, map_prod, hAone, one_mul]
   exact Subgroup.prod_mem _ fun p hp =>
     Subgroup.subset_closure ⟨p, hs (by exact_mod_cast hp), rfl⟩

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.Isomorphism.Basic
+public import TauCeti.Combinatorics.Network.Isomorphism.Walk
 public import TauCeti.Combinatorics.Network.Subnetwork
 
 /-!
@@ -160,6 +160,18 @@ theorem subnetworkOrderIso_deleteArrows (e : N ≃ₙ N') (S : N.Subnetwork)
   · simp
   · simp only [subnetworkOrderIso_arrowSet, Subnetwork.arrowSet_deleteArrows,
       Set.image_sdiff e.totalHomEquiv.injective]
+
+/-- The subnetwork traced by a transported walk is the image of its traced subnetwork. -/
+@[simp]
+theorem toSubnetwork_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
+    (e.mapPath p).toSubnetwork = e.subnetworkOrderIso p.toSubnetwork := by
+  apply Subnetwork.ext
+  · ext z
+    simp only [ArrowWalk.toSubnetwork_vertexSet, subnetworkOrderIso_vertexSet,
+      vertices_mapPath, Set.mem_ofPred_eq, List.mem_map, Set.mem_image]
+  · ext a
+    simp only [ArrowWalk.toSubnetwork_arrowSet, subnetworkOrderIso_arrowSet,
+      arrows_mapPath, Set.mem_ofPred_eq, List.mem_map, Set.mem_image]
 
 /-- Restriction of a network isomorphism to a subnetwork and its image. The vertex type consists
 only of selected vertices, and each selected arrow keeps both of its original bounds. -/

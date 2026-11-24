@@ -44,18 +44,16 @@ of bounded degree and bounded house.
 ## Main results
 
 * `TauCeti.norm_le_house_of_mem_rootSet`, `TauCeti.house_le_iff`,
-  `TauCeti.house_le_iff_forall_mem_aroots`, `TauCeti.exists_mem_rootSet_norm_eq_house`: the house
-  is the maximum of the moduli of the complex conjugates; in particular `‖x‖ ≤ ⌈x⌉` for algebraic
-  `x ∈ ℂ` (`TauCeti.norm_le_house`).
+  `TauCeti.exists_mem_rootSet_norm_eq_house`: the house is the maximum of the moduli of the
+  complex conjugates; in particular `‖x‖ ≤ ⌈x⌉` for algebraic `x ∈ ℂ` (`TauCeti.norm_le_house`).
 * `TauCeti.house_eq_numberField_house`: on a number field the house is `NumberField.house`.
 * `NumberField.house_le_exp_logHeight₁`, `NumberField.logHeight₁_le_finrank_mul_posLog_house`:
   `house x ≤ exp h(x)` for the relative height `h` over a number field `K`, and conversely
   `h(x) ≤ [K : ℚ] log⁺ (house x)` for an algebraic integer `x` of `K`.
 * `TauCeti.house_map`, `TauCeti.house_eq_of_minpoly_eq`: invariance under field embeddings and
   conjugation.
-* `TauCeti.house_mul_le`, `TauCeti.house_add_le`, `TauCeti.house_neg`, `TauCeti.house_sub_le`,
-  `TauCeti.house_sum_le_sum_house`, `TauCeti.house_pow`: the house is sub-multiplicative,
-  sub-additive, invariant under negation, and multiplicative on powers.
+* `TauCeti.house_mul_le`, `TauCeti.house_add_le`, `TauCeti.house_pow`: the house is
+  sub-multiplicative, sub-additive and multiplicative on powers.
 * `TauCeti.one_le_house`, `TauCeti.house_eq_one_iff`: a nonzero algebraic integer has house at
   least `1`, and Kronecker's theorem, an algebraic integer has house `1` exactly when it is a root
   of unity.
@@ -131,14 +129,7 @@ modulus at most `C`. -/
 theorem house_le_iff {x : F} {C : ℝ} (hC : 0 ≤ C) :
     house x ≤ C ↔ ∀ z ∈ (minpoly ℚ x).rootSet ℂ, ‖z‖ ≤ C :=
   ⟨fun h _ hz ↦ (norm_le_house_of_mem_rootSet hz).trans h,
-    fun h ↦ Real.iSup_le (fun z ↦ h z z.2) hC⟩
-
-/-- For `C ≥ 0`, the house of `x` is at most `C` exactly when every root of `minpoly ℚ x` in `ℂ`
-(viewed in `aroots ℂ`) has modulus at most `C`. -/
-theorem house_le_iff_forall_mem_aroots {x : F} {C : ℝ} (hC : 0 ≤ C) :
-    house x ≤ C ↔ ∀ z ∈ (minpoly ℚ x).aroots ℂ, ‖z‖ ≤ C := by
-  rw [house_le_iff hC]
-  simp only [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset]
+    fun h ↦ Real.iSup_le (fun z ↦ h z z.property) hC⟩
 
 /-- The house of an algebraic element is attained: it is the modulus of some complex conjugate. -/
 theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
@@ -148,7 +139,7 @@ theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
   have : Nonempty ((minpoly ℚ x).rootSet ℂ) :=
     ⟨⟨z, (mem_rootSet_of_ne (minpoly.ne_zero hint)).2 hz⟩⟩
   obtain ⟨w, hw⟩ := exists_eq_ciSup_of_finite (f := fun z : (minpoly ℚ x).rootSet ℂ ↦ ‖(z : ℂ)‖)
-  exact ⟨w, w.2, hw⟩
+  exact ⟨w, w.property, hw⟩
 
 /-- On a number field, the house is Mathlib's `NumberField.house`: the largest modulus of the
 image of `x` under a complex embedding. -/
@@ -265,35 +256,29 @@ theorem house_add_le {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y)
 /-- Negation preserves the house. -/
 @[simp]
 theorem house_neg (x : F) : house (-x) = house x := by
-  by_cases hx : IsAlgebraic ℚ x
-  · obtain ⟨K, _, a, -, rfl, -⟩ := exists_numberField_mem hx hx
-    rw [← IntermediateField.coe_neg, house_coe, house_coe, NumberField.house, NumberField.house,
-      map_neg, norm_neg]
-  · have hnx : ¬IsAlgebraic ℚ (-x) := fun h ↦ hx <| by
-      simpa only [neg_neg] using h.isIntegral.neg.isAlgebraic
-    rw [house_of_not_isAlgebraic hx, house_of_not_isAlgebraic hnx]
-
-/-- The house of a difference of algebraic elements is at most the sum of their houses. -/
-theorem house_sub_le {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y) :
-    house (x - y) ≤ house x + house y := by
-  rw [sub_eq_add_neg, ← house_neg y]
-  exact house_add_le hx hy.isIntegral.neg.isAlgebraic
+  have hle (y : F) : house (-y) ≤ house y := by
+    by_cases hy : IsAlgebraic ℚ y
+    · have h1 : IsAlgebraic ℚ (-1 : F) := by simpa using isAlgebraic_intCast (R := ℚ) (-1 : ℤ)
+      have hmul := house_mul_le h1 hy
+      have hh1 : house (-1 : F) = 1 := by simpa using house_intCast (F := F) (-1 : ℤ)
+      simpa [neg_one_mul, hh1] using hmul
+    · have hny : ¬IsAlgebraic ℚ (-y) := fun h ↦ hy (by simpa using h.neg)
+      simp [hy, hny]
+  exact le_antisymm (hle x) (by simpa using hle (-x))
 
 /-- The house of a finite sum of algebraic elements is at most the sum of their houses. -/
-theorem house_sum_le_sum_house {ι : Type*} (s : Finset ι) {f : ι → F}
+theorem house_sum_le {ι : Type*} (s : Finset ι) {f : ι → F}
     (hf : ∀ i ∈ s, IsAlgebraic ℚ (f i)) :
     house (∑ i ∈ s, f i) ≤ ∑ i ∈ s, house (f i) := by
   induction s using Finset.cons_induction with
   | empty => simp
-  | cons a s _ ih =>
+  | cons a s ha ih =>
+    have halg_sum : IsAlgebraic ℚ (∑ i ∈ s, f i) := by
+      rw [← mem_algebraicClosure_iff]
+      exact sum_mem fun i hi ↦ mem_algebraicClosure_iff.mpr (hf i (Finset.mem_cons_of_mem hi))
     rw [Finset.sum_cons, Finset.sum_cons]
-    have ha : IsAlgebraic ℚ (f a) := hf a (Finset.mem_cons_self a s)
-    have hs : ∀ i ∈ s, IsAlgebraic ℚ (f i) := fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
-    have hsum : IsAlgebraic ℚ (∑ i ∈ s, f i) :=
-      (Subalgebra.sum_mem (integralClosure ℚ F) fun i hi ↦ (hs i hi).isIntegral).isAlgebraic
-    refine (house_add_le ha hsum).trans ?_
-    gcongr
-    exact ih hs
+    linarith [house_add_le (hf a (Finset.mem_cons_self a s)) halg_sum,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
 
 /-- The house is multiplicative on powers. For transcendental `x` and `n ≠ 0` both sides are
 `0`. -/
@@ -324,7 +309,7 @@ theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimen
     ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
   have : NumberField L := ⟨⟩
   obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
-    fun h ↦ h0 congr($h.1)
+    fun h ↦ h0 congr(Subtype.val $h)
   refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
   -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
   have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
@@ -464,7 +449,7 @@ theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [F
     rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
   have hlt :
       Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_natCast_mul, ← Real.exp_add]
     exact Real.exp_lt_one_iff.2 (by linarith)
   refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
   exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
