@@ -189,9 +189,8 @@ omit [Algebra k F] [IsScalarTower k F F'] in
 @[simp]
 theorem tameCharacterGraded_mk (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
     tameCharacterGraded F P ht (QuotientGroup.mk g) = tameCharacter F P ht g := by
-  rw [tameCharacterGraded, tameCharacter, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, ramificationGroupGradedZeroEquiv_mk,
-    TauCeti.IsDiscreteValuationRing.tameCharacterGraded_mk]
+  simpa [tameCharacterGraded, tameCharacter, ramificationGroupGradedZeroEquiv_mk] using
+    TauCeti.IsDiscreteValuationRing.tameCharacterGraded_mk _ _
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character does not depend on the choice of uniformizer. -/

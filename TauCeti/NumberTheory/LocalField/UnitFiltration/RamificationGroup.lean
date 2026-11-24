@@ -175,10 +175,9 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
     ((uniformizerRatio i hϖ σ : Lˣ) : L) = (σ : G) • (ϖ : L) / (ϖ : L) := by
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   apply mul_left_cancel₀ hϖ0
-  rw [mul_div_cancel₀ _ hϖ0, ← unitFiltrationEquivInteger_symm_uniformizerRatio,
-    coe_unitFiltrationEquivInteger_symm, Units.coe_map, MonoidHom.coe_ofClass,
-    Subring.coe_subtype, ← Subring.coe_mul,
-    TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio, coe_smul_integer]
+  rw [mul_div_cancel₀ _ hϖ0]
+  simp [uniformizerRatio, -unitFiltrationEquivInteger_symm_uniformizerRatio,
+    ← Subring.coe_mul, TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio, coe_smul_integer]
 
 /-- For `σ` in the `i`-th ramification group and `ϖ` a uniformizer, the ratio `σ ϖ / ϖ` lies in
 the `i`-th step `U(L,i)` of the unit filtration. -/

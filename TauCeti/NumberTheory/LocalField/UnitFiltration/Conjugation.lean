@@ -68,8 +68,7 @@ private theorem residue_uniformizerChangeUnit_inv_smul
       ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) := by
   have ha : (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) * π =
       (σ⁻¹ : ramificationGroup G 𝒪[L] 0) • π := by
-    rw [mul_comm, mul_uniformizerChangeUnit, hπ'eq]
-    rfl
+    rw [mul_comm, mul_uniformizerChangeUnit, hπ'eq, Subgroup.smul_def, Subgroup.coe_inv]
   calc
     residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L])
         = (tameCharacter hπ σ⁻¹ : ResidueField 𝒪[L]) :=
@@ -86,16 +85,14 @@ theorem ramificationGroupGradedConj_zero
     ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
   apply TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective (i := 0) hπ
+  apply (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).injective
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
-    simp only [ramificationGroupGradedConj_mk]
-    rw [TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk (i := 0),
-      TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk (i := 0),
-      ← TauCeti.ramificationGroupToUnitFiltrationGraded_apply (i := 0),
-      ← TauCeti.ramificationGroupToUnitFiltrationGraded_apply (i := 0),
-      MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, map_inv,
-      mul_comm _ (TauCeti.ramificationGroupToUnitFiltrationGraded 0 hπ τ), mul_assoc,
-      mul_inv_cancel, mul_one]
+    have hconj : MulAut.conjNormal (σ : G) τ = σ * τ * σ⁻¹ :=
+      Subtype.ext (by simp [MulAut.conjNormal_apply])
+    rw [ramificationGroupGradedConj_mk, hconj]
+    simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv]
+    apply mul_inv_cancel_comm
 
 /-- The residue coordinate of a conjugate of `τ` at the uniformizer `π`: if `τ` moves `g⁻¹ • π` by
 `y * (g⁻¹ • π) ^ (n + 2)`, then `g τ g⁻¹` moves `π` by `g • y * π ^ (n + 2)`. -/
