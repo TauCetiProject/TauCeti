@@ -74,6 +74,8 @@ bounds when any finite set of primes is removed from the product.
   `|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ e^γ A e^(A / log 2)` for `x ≥ 2`, where
   `A = 2 (log 4 + 4) + 2`, with existential form
   `TauCeti.exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`.
+* `TauCeti.exists_pos_prod_primesLE_one_sub_inv_inv_bounds`: two-sided `log x` comparison
+  `c₁ log x ≤ ∏_{p ≤ x} (1 - p⁻¹)⁻¹ ≤ c₂ log x` on `x ≥ 2`.
 * `TauCeti.exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds`: two-sided `1 / log y`
   comparison for `∏_{p ≤ y, p ∉ T} (1 - p⁻¹)` on `y ≥ 2` for any finite set `T`.
 
@@ -621,9 +623,10 @@ theorem tendsto_prod_primesLE_one_sub_inv_inv_div_log :
   have hlog : Real.log x ≠ 0 := (Real.log_pos hx).ne'
   rw [sub_mul, mul_assoc, mul_inv_cancel₀ hlog, mul_one, sub_add_cancel, div_eq_mul_inv]
 
-/-- Two-sided `log x` comparison for the full reciprocal Euler product on `[2, ∞)`, derived from
-`exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`. -/
-private theorem exists_pos_prod_primesLE_one_sub_inv_inv_bounds :
+/-- **Two-sided `log x` comparison for the full reciprocal Euler product.** There exist positive
+constants `c₁, c₂ > 0` such that for all `x ≥ 2`,
+`c₁ * log x ≤ ∏_{p ≤ x} (1 - p⁻¹)⁻¹ ≤ c₂ * log x`. -/
+theorem exists_pos_prod_primesLE_one_sub_inv_inv_bounds :
     ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ x : ℝ, 2 ≤ x →
       c₁ * Real.log x ≤ (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) ∧
         (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) ≤ c₂ * Real.log x := by
@@ -735,20 +738,6 @@ private theorem prod_filter_prime_one_sub_inv_le (T : Finset ℕ) (n : ℕ) :
   exact prod_le_prod_of_subset_of_le_one₀ hsub
     (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p)) (fun _ _ _ ↦ sub_le_self 1 (by positivity))
 
-private theorem prod_primes_one_sub_inv_pos (S : Finset ℕ) (hS : ∀ p ∈ S, p.Prime) :
-    0 < ∏ p ∈ S, (1 - (p : ℝ)⁻¹) :=
-  prod_pos fun p hp ↦ sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast (hS p hp).one_lt))
-
-private theorem inv_le_mul_iff_div_le {c L P : ℝ} (hc : 0 < c) (hL : 0 < L) (hP : 0 < P) :
-    P⁻¹ ≤ c * L ↔ c⁻¹ / L ≤ P := by
-  rw [inv_le_comm₀ hP (mul_pos hc hL)]
-  simp [div_eq_mul_inv, mul_comm]
-
-private theorem mul_le_inv_iff_le_div {c L P : ℝ} (hc : 0 < c) (hL : 0 < L) (hP : 0 < P) :
-    c * L ≤ P⁻¹ ↔ P ≤ c⁻¹ / L := by
-  rw [le_inv_comm₀ (mul_pos hc hL) hP]
-  simp [div_eq_mul_inv, mul_comm]
-
 /-- **Universal lower bound for partial Euler products with omitted primes.** There is an absolute
 positive constant `c₁ > 0` such that for every finite set `T : Finset ℕ` and every real `y ≥ 2`,
 `c₁ / log y ≤ ∏_{p ≤ y, p ∉ T} (1 - p⁻¹)`. -/
@@ -758,14 +747,15 @@ theorem exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv :
   obtain ⟨_, c₂, _, hc₂, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
   refine ⟨c₂⁻¹, inv_pos.mpr hc₂, fun T y hy ↦ ?_⟩
   have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hprod_pos := prod_primes_one_sub_inv_pos (Nat.primesLE ⌊y⌋₊) fun _ ↦
-    Nat.prime_of_mem_primesLE
+  have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) :=
+    prod_pos fun p hp ↦ sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast Nat.one_lt_of_mem_primesLE hp))
   have hle : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ ≤ c₂ * Real.log y := by
     simpa [prod_inv_distrib] using (hB y hy).2
-  exact ((inv_le_mul_iff_div_le hc₂ hlog hprod_pos).mp hle).trans
-    (prod_le_prod_of_subset_of_le_one₀ (filter_subset _ _)
-      (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p))
-      (fun _ _ _ ↦ sub_le_self 1 (by positivity)))
+  have hfull : c₂⁻¹ / Real.log y ≤ ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := by
+    rw [div_eq_mul_inv, ← mul_inv]
+    exact (inv_le_comm₀ hprod_pos (mul_pos hc₂ hlog)).mp hle
+  exact hfull.trans (prod_le_prod_of_subset_of_le_one₀ (filter_subset _ _)
+    (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p)) (fun _ _ _ ↦ sub_le_self 1 (by positivity)))
 
 /-- **Two-sided `1 / log y` comparison for partial Euler products with omitted primes.** For every
 finite set `T : Finset ℕ`, there exist positive constants `c₁, c₂ > 0` such that for all `y ≥ 2`,
@@ -777,14 +767,17 @@ theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds (T : Finset �
   obtain ⟨c₁, hc₁, hlo⟩ := exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv
   obtain ⟨c₁', _, hc₁', _, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
   set P := ∏ p ∈ T with p.Prime, (1 - (p : ℝ)⁻¹)
-  have hPpos := prod_primes_one_sub_inv_pos (T.filter Nat.Prime) fun _ hp ↦ (mem_filter.mp hp).2
+  have hPpos : 0 < P := prod_pos fun p hp ↦
+    sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast (mem_filter.mp hp).2.one_lt))
   refine ⟨c₁, c₁'⁻¹ / P, hc₁, div_pos (inv_pos.mpr hc₁') hPpos, fun y hy ↦ ⟨hlo T y hy, ?_⟩⟩
   have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hprod_pos := prod_primes_one_sub_inv_pos (Nat.primesLE ⌊y⌋₊) fun _ ↦
-    Nat.prime_of_mem_primesLE
+  have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) :=
+    prod_pos fun p hp ↦ sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast Nat.one_lt_of_mem_primesLE hp))
   have hle : c₁' * Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ := by
     simpa [prod_inv_distrib] using (hB y hy).1
-  have hfull := (mul_le_inv_iff_le_div hc₁' hlog hprod_pos).mp hle
+  have hfull : ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) ≤ c₁'⁻¹ / Real.log y := by
+    rw [div_eq_mul_inv, ← mul_inv]
+    exact (le_inv_comm₀ (mul_pos hc₁' hlog) hprod_pos).mp hle
   have hmul : P * (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ≤ c₁'⁻¹ / Real.log y :=
     (mul_le_mul_of_nonneg_right (prod_filter_prime_one_sub_inv_le T ⌊y⌋₊)
       (prod_nonneg fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p))).trans

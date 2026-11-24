@@ -108,7 +108,8 @@ yields the additive `O(1)` product estimate.
 * `TauCeti.LFunctions.mertensConstant_eq` and
   `TauCeti.LFunctions.mertensConstant_lt_eulerMascheroniConstant_add_log_dedekindZeta_residue`:
   `B_K = γ + log κ_K + ∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹) < γ + log κ_K`.
-* `TauCeti.LFunctions.isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm`,
+* `TauCeti.LFunctions.summable_neg_log_one_sub_sub_inv_absNorm`,
+  `TauCeti.LFunctions.isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm`,
   `TauCeti.LFunctions.isBigO_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log_sub`, and
   `TauCeti.LFunctions.tendsto_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log`:
   `∑_{N𝔭 ≤ x} -log (1 - N𝔭⁻¹) = log log x + γ + log κ_K + O(1 / log x)`.
@@ -788,7 +789,7 @@ theorem mertensConstant_eq :
 
 /-- The quadratic Euler-product remainder series `∑_𝔭 (-log (1 - N𝔭⁻¹) - N𝔭⁻¹)` is
 summable. -/
-private theorem summable_neg_log_one_sub_sub_inv_absNorm :
+theorem summable_neg_log_one_sub_sub_inv_absNorm :
     Summable fun v : HeightOneSpectrum (𝓞 K) ↦
       -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
   simpa only [Real.rpow_neg_one] using
@@ -834,7 +835,8 @@ theorem isBigO_tsum_sub_primeSummatory_neg_log_one_sub_sub_inv_absNorm :
   refine IsBigO.of_bound (∑' v : HeightOneSpectrum (𝓞 K),
       (Ideal.absNorm v.asIdeal : ℝ) ^ (-(3 / 2 : ℝ))) ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx0
-  have htail := hasSum_ite_not_le (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) hr x
+  have htail := hasSum_ite_le_zero_tsum_sub_summatory
+    (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal) hr x
   have hnonneg : 0 ≤ (∑' v, r v) - primeSummatory K r x := htail.nonneg fun v ↦ by
     split_ifs
     · exact le_rfl

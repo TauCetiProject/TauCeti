@@ -244,7 +244,7 @@ theorem finprod_ite_le_eq_prod_normLE {M : Type*} [CommMonoid M] (w : ι → M) 
 
 /-- For a summable weight `w`, zeroing out the terms of `N`-value at most `x` leaves a series with
 sum `(∑' i, w i) - summatory N w x`. -/
-theorem hasSum_ite_not_le {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+theorem hasSum_ite_le_zero_tsum_sub_summatory {G : Type*} [AddCommGroup G] [TopologicalSpace G]
     [IsTopologicalAddGroup G] {w : ι → G} (hw : Summable w) (x : ℝ) :
     HasSum (fun i : ι ↦ if (N i : ℝ) ≤ x then 0 else w i) ((∑' i, w i) - summatory N w x) := by
   have hcompl :
