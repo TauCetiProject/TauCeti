@@ -25,7 +25,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
