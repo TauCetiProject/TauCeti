@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 public import TauCeti.ModelTheory.RelationalConfiguration.LopezEscobar
 public import TauCeti.MeasureTheory.MeasurableSpace.Invariants
 
@@ -31,7 +30,7 @@ López–Escobar's theorem (`exists_modelsOf_eq_iff`) in its action form.
 * R. L. Vaught, *Invariant sets in topology and logic*, Fundamenta Mathematicae **82** (1974),
   269–294, Corollary 3.3.
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46, Cambridge University
-  Press, 2016, Theorem 4.26.
+  Press, 2016, Theorem 4.2.7.
 -/
 
 public section

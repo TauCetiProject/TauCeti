@@ -42,11 +42,12 @@ under isomorphism of `f` need not be cut out by a sentence.
   separating analytic sets with no isomorphic pair (or disjoint analytic sets with one side
   isomorphism invariant) by an `L_{ω₁ω}` sentence, for relational languages of arbitrary
   cardinality.
-* `TauCeti.RelationalConfiguration.lopezEscobar_action_iff`: the same, with isomorphism invariance
-  as being a fixed block of the logic action.
 * `TauCeti.RelationalConfiguration.exists_modelsOf_eq_iff`: **López–Escobar's theorem**,
   characterizing model classes of `L_{ω₁ω}` sentences on a countable carrier as the
   isomorphism-invariant measurable sets, for relational languages of arbitrary cardinality.
+* `TauCeti.RelationalConfiguration.lopezEscobar_action_iff`: López–Escobar's theorem in action form:
+  on a countable carrier the measurable fixed blocks of the logic action are exactly the model
+  classes `modelsOf φ`.
 * `TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`: **relative López–Escobar**
   along a measurable family parametrized by a standard Borel space, in a countable relational
   vocabulary.
