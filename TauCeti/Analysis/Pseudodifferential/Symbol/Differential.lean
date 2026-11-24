@@ -724,12 +724,12 @@ theorem coefficient_principal_ofDifferentialOperatorMatrix {x ξ : CoordinateSpa
     (ofDifferentialOperatorMatrix D).principal.coefficient (x, ξ) u i =
       ∑ j, (Complex.I ^ m * smoothPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) (x := x)
         BoundarylessManifold.isInteriorPoint (D i j) (innerSL ℝ ξ) : ℂ) * u j := by
-  have h (i' : κ) (j : ι) :
-      ((ofDifferentialOperator ℂ (D i' j)).term 0).coefficient (x, ξ) =
-        (ofDifferentialOperator ℂ (D i' j)).principal.coefficient (x, ξ) := by
-    rw [coefficient_principal]
-  simp [ofDifferentialOperatorMatrix, coefficient_principal, HomogeneousSymbol.coefficient_sum,
-    matrixEntryMap_apply, Pi.single_apply, h, coefficient_principal_ofDifferentialOperator _ hξ]
+  -- Move `principal` inside the sums and the maps, so that each entry is the principal symbol of
+  -- `ofDifferentialOperator`; `coefficient_principal` is dropped so that `simp` keeps that form.
+  simp only [ofDifferentialOperatorMatrix, principal_sum, principal_map]
+  simp [-coefficient_principal, HomogeneousSymbol.coefficient_sum,
+    HomogeneousSymbol.coefficient_map, coefficient_principal_ofDifferentialOperator _ hξ,
+    matrixEntryMap_apply, Pi.single_apply]
 
 /-- The full symbol of `ofDifferentialOperatorMatrix D` vanishes at every position `x` at which
 every output of every entry of `D` vanishes. -/

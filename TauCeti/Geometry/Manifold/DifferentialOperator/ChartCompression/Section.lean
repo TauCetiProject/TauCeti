@@ -285,7 +285,7 @@ theorem sectionChartCompression_mem_differentialOperators [FiniteDimensional ℝ
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ m) :
     e.sectionChartCompression he tV hV tW hW φ ψ ℓ v P ∈ differentialOperators ℝ
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   exact comp_comp_mem_differentialOperators
     (fun g ↦ ⟨_, smul_intertwining he tV hV tW hW hχ.self_of_nhdsSet ℓ v g⟩) hP
 
@@ -339,7 +339,7 @@ theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
       φ x * ψ x * ℓ (tW.continuousLinearMapAt ℝ (e.symm x)
         (sectionPrincipalSymbol 𝓘(ℝ, E) (x := e.symm x) BoundarylessManifold.isInteriorPoint P
           (η.comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e (e.symm x))) (tV.symmL ℝ (e.symm x) v))) := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   obtain ⟨g, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) η
   -- The `m`-fold commutator of the entry with `g` is the same entry of the compression of the
   -- `m`-fold commutator `Q` of `P` with the pullback of `g`, an operator of order zero.

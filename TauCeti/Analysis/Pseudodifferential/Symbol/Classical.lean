@@ -442,6 +442,11 @@ theorem principal_neg : (-a).principal = -a.principal :=
 theorem principal_sub : (a - b).principal = a.principal - b.principal := by
   simp [principal, castDegree_sub]
 
+@[simp]
+theorem principal_sum {ι : Type*} (s : Finset ι) (f : ι → ClassicalSymbol n V W m) :
+    (∑ i ∈ s, f i).principal = ∑ i ∈ s, (f i).principal :=
+  map_sum (AddMonoidHom.mk' principal principal_add) f s
+
 end Principal
 
 /-! ### Smoothing symbols and single homogeneous terms -/
