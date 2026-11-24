@@ -31,7 +31,8 @@ Jacobson radical of a finite-dimensional algebra is the kernel of this form
 is the base change of that of `A` (`Algebra.regularTraceForm_baseChange`), and the kernel of a
 bilinear form commutes with extension of scalars (`LinearMap.BilinForm.ker_baseChange`).
 
-Characteristic zero is essential. Over `K = 𝔽_p(t)`, the field `A = K(t^{1/p})` has zero radical,
+The trace-form argument needs characteristic zero, and the statement fails over imperfect fields.
+Over `K = 𝔽_p(t)`, the field `A = K(t^{1/p})` has zero radical,
 but `A ⊗[K] A` contains the nonzero nilpotent `t^{1/p} ⊗ 1 - 1 ⊗ t^{1/p}`, whose `p`-th power is
 `t ⊗ 1 - 1 ⊗ t = 0`.
 

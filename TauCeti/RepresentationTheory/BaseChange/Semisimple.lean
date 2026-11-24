@@ -11,7 +11,9 @@ public import TauCeti.RepresentationTheory.BaseChange
 -- Non-public: the semisimplicity of base change for modules over an algebra, and the action of
 -- `L ⊗[k] B` on `L ⊗[k] V`, are used only inside the proof.
 import TauCeti.Algebra.TensorProduct.Module
+import TauCeti.RingTheory.TensorProduct.MonoidAlgebra
 import TauCeti.RingTheory.Semisimple.BaseChange
+import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
 # Semisimple representations stay semisimple under base change over a perfect field
@@ -39,33 +41,14 @@ namespace Representation
 variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
   (L : Type*) [Field L] [Algebra k L]
 
-/-- The `L`-algebra map `L[G] → L ⊗[k] B` sending `g` to `1 ⊗ ψ g`, for a `k`-algebra map
-`ψ : k[G] → B`. -/
+/-- The `k`-algebra map `L[G] → L ⊗[k] B` sending `c • g` to `c ⊗ ψ g`, for a `k`-algebra map
+`ψ : k[G] → B`: the identification `L[G] ≃ k[G] ⊗[k] L ≃ L ⊗[k] k[G]` followed by the tensor map
+of `ψ`. -/
 private noncomputable abbrev liftBaseChange {B : Type*} [Ring B] [Algebra k B]
-    (ψ : k[G] →ₐ[k] B) : L[G] →ₐ[L] L ⊗[k] B :=
-  MonoidAlgebra.lift L _ G ((Algebra.TensorProduct.includeRight : B →ₐ[k] L ⊗[k] B).toMonoidHom.comp
-    (ψ.toMonoidHom.comp (MonoidAlgebra.of k G)))
-
-/-- `L[G] → L ⊗[k] B` is surjective when `ψ : k[G] → B` is. -/
-private theorem liftBaseChange_surjective {B : Type*} [Ring B] [Algebra k B] (ψ : k[G] →ₐ[k] B)
-    (hψ : Function.Surjective ψ) : Function.Surjective (liftBaseChange L ψ) := by
-  intro t
-  induction t using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a + b, map_add _ _ _⟩
-  | tmul l b =>
-    obtain ⟨a, rfl⟩ := hψ b
-    induction a using MonoidAlgebra.induction_on generalizing l with
-    | of g => exact ⟨l • MonoidAlgebra.of L G g, by simp [TensorProduct.smul_tmul']⟩
-    | add a b ha hb =>
-      obtain ⟨x, hx⟩ := ha l
-      obtain ⟨y, hy⟩ := hb l
-      exact ⟨x + y, by rw [map_add, hx, hy, map_add, TensorProduct.tmul_add]⟩
-    | smul c a ha =>
-      obtain ⟨x, hx⟩ := ha (c • l)
-      exact ⟨x, by rw [hx, map_smul, TensorProduct.smul_tmul]⟩
+    (ψ : k[G] →ₐ[k] B) : L[G] →ₐ[k] L ⊗[k] B :=
+  (Algebra.TensorProduct.map (AlgHom.id k L) ψ).comp
+    ((Algebra.TensorProduct.comm k k[G] L).toAlgHom.comp
+      (MonoidAlgebra.tensorAlgEquiv k L G).symm.toAlgHom)
 
 /-- `r ∈ L[G]` acts on `L ⊗[k] V` through `L ⊗[k] B`, for `B` the image of `k[G]` in `End_k(V)`,
 as it does through the base-changed representation. -/
@@ -74,25 +57,13 @@ private theorem tensorPairAction_liftBaseChange_apply (ρ : Representation k G V
     TauCeti.BialgebraModule.tensorPairAction k L V (A := L) (B := ρ.asAlgebraHom.range)
       (liftBaseChange L ρ.asAlgebraHom.rangeRestrict r) x =
       (ρ.baseChange L).asAlgebraHom r x := by
-  set act := TauCeti.BialgebraModule.tensorPairAction k L V (A := L) (B := ρ.asAlgebraHom.range)
-  have hscalar (c : L) (x : L ⊗[k] V) : act (c ⊗ₜ 1) x = c • x := by
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => rw [map_add, hx, hy, smul_add]
-    | tmul l v => simp [act, TensorProduct.smul_tmul']
-  induction r using MonoidAlgebra.induction_on generalizing x with
-  | of g =>
-    rw [asAlgebraHom_of]
+  induction r using MonoidAlgebra.induction_linear generalizing x with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
+  | single g c =>
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => rw [map_add, map_add, hx, hy]
-    | tmul l v =>
-      simp only [act, MonoidAlgebra.lift_of]
-      simp [Subalgebra.smul_def]
-  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
-  | smul c a ha =>
-    rw [map_smul (liftBaseChange L _) c a, Algebra.smul_def c, map_mul act, mul_apply_eq_comp, ha,
-      map_smul (ρ.baseChange L).asAlgebraHom c a, LinearMap.smul_apply,
-      Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-    exact hscalar c _
+    | tmul l v => simp [Subalgebra.smul_def, TensorProduct.smul_tmul']
 
 /-- **Semisimplicity is preserved by base change over a perfect field.** A finite-dimensional
 semisimple representation of a monoid over a perfect field `k` remains semisimple after extending
@@ -102,11 +73,12 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
     (ρ.baseChange L).IsSemisimpleRepresentation := by
   rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule] at *
   set ψ := ρ.asAlgebraHom.rangeRestrict
+  -- `ρ.asModule` is a type synonym for `V`; its `range`- and `L ⊗[k] range`-module structures are
+  -- those of `V`, through which `asModule`'s own actions factor.
   let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
-  have : RingHomSurjective ψ.toRingHom := ⟨AlgHom.rangeRestrict_surjective _⟩
   have : IsSemisimpleModule ρ.asAlgebraHom.range V :=
-    (LinearMap.isSemisimpleModule_iff_of_bijective (M' := ρ.asModule) (N' := ρ.asModule)
-      (σ := ψ.toRingHom) ⟨⟨id, fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩ Function.bijective_id).mp ‹_›
+    (TauCeti.isSemisimpleModule_iff_of_surjective (M := ρ.asModule) ψ.toRingHom
+      (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
   let act := TauCeti.BialgebraModule.tensorPairAction k L V (A := L) (B := ρ.asAlgebraHom.range)
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V) := Module.compHom _ act.toRingHom
   have hss := TauCeti.isSemisimpleModule_tensorProduct_of_perfectField (k := k)
@@ -116,11 +88,12 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
       simp [act]
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (ρ.baseChange L).asModule :=
     (inferInstance : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V))
-  have : RingHomSurjective (liftBaseChange L ψ).toRingHom :=
-    ⟨liftBaseChange_surjective L ψ (AlgHom.rangeRestrict_surjective _)⟩
-  exact (LinearMap.isSemisimpleModule_iff_of_bijective (M' := (ρ.baseChange L).asModule)
-    (N' := (ρ.baseChange L).asModule) (σ := (liftBaseChange L ψ).toRingHom)
-    ⟨⟨id, fun _ _ ↦ rfl⟩, fun r x ↦ by exact (tensorPairAction_liftBaseChange_apply L ρ r x).symm⟩
-    Function.bijective_id).mpr hss
+  exact (TauCeti.isSemisimpleModule_iff_of_surjective (M := (ρ.baseChange L).asModule)
+    (liftBaseChange L ψ).toRingHom
+    ((Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
+      (AlgHom.rangeRestrict_surjective _)).comp
+        ((Algebra.TensorProduct.comm k k[G] L).surjective.comp
+          (MonoidAlgebra.tensorAlgEquiv k L G).symm.surjective))
+    fun r x ↦ tensorPairAction_liftBaseChange_apply L ρ r x).mpr hss
 
 end Representation

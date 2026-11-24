@@ -47,6 +47,8 @@ finite-generation hypothesis.
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
 * `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`: vanishing of all linear maps
   to the regular module detects the zero module over a semisimple ring.
+* `TauCeti.isSemisimpleModule_iff_of_surjective`: semisimplicity is unchanged by pulling the
+  action back along a surjective ring map.
 * `TauCeti.isSemisimpleRing_range_lsmul`: the image of an algebra in the endomorphisms of a finite
   semisimple module is a semisimple ring.
 -/
@@ -152,6 +154,19 @@ theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisi
   have he0 : e = 0 := by simpa only [h.elim f 0, LinearMap.zero_apply] using hf.symm
   simpa only [he0, zero_smul] using hex.symm
 
+/-! ### Semisimplicity along a surjective ring map -/
+
+/-- **Semisimplicity along a surjective ring map.** If `σ : R →+* S` is surjective and compatible
+with the actions of `R` and `S` on `M`, then `M` is semisimple over `R` exactly when it is
+semisimple over `S`. -/
+theorem isSemisimpleModule_iff_of_surjective {R S M : Type*} [Ring R] [Ring S] [AddCommGroup M]
+    [Module R M] [Module S M] (σ : R →+* S) (hσ : Function.Surjective σ)
+    (h : ∀ (r : R) (m : M), σ r • m = r • m) :
+    IsSemisimpleModule R M ↔ IsSemisimpleModule S M := by
+  have : RingHomSurjective σ := ⟨hσ⟩
+  exact LinearMap.isSemisimpleModule_iff_of_bijective (M' := M) (N' := M) (σ := σ)
+    ⟨⟨id, fun _ _ ↦ rfl⟩, fun r m ↦ (h r m).symm⟩ Function.bijective_id
+
 /-! ### The image of an algebra acting on a semisimple module -/
 
 section Range
@@ -165,12 +180,10 @@ semisimple ring: `M` is semisimple over the image, which embeds into a finite po
 evaluation at generators. -/
 theorem isSemisimpleRing_range_lsmul [Module.Finite k M] [IsSemisimpleModule A M] :
     IsSemisimpleRing (Algebra.lsmul k (A := A) k M).range := by
-  have : RingHomSurjective (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom :=
-    ⟨AlgHom.rangeRestrict_surjective _⟩
   have : IsSemisimpleModule (Algebra.lsmul k (A := A) k M).range M :=
-    (LinearMap.isSemisimpleModule_iff_of_bijective (M' := M) (N' := M)
-      (σ := (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom) ⟨⟨id, fun _ _ ↦ rfl⟩,
-        fun _ _ ↦ rfl⟩ Function.bijective_id).mp ‹_›
+    (isSemisimpleModule_iff_of_surjective (M := M)
+      (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom
+      (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := k) (M := M)
   let f : (Algebra.lsmul k (A := A) k M).range →ₗ[(Algebra.lsmul k (A := A) k M).range]
       (Fin n → M) := LinearMap.pi fun i ↦ LinearMap.toSpanSingleton _ M (s i)
