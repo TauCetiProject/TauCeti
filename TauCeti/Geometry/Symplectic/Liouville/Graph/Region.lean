@@ -284,10 +284,7 @@ theorem frontier_liouvilleGraphRegion [IsManifold J (⊤ : ℕ∞) S] [Boundaryl
 Let `ι : S → M` be a smooth injective immersion onto the boundary of `W` of a boundaryless manifold
 of one dimension less, and `f > 1`. Then there is a retraction `r` of the region bounded
 by the Liouville graph of `f` onto `W`, and a homotopy from its composite with the inclusion to the
-identity that fixes `W` pointwise.
-
-The proof constructs the homotopy by moving a point `φ_t(ι s)` outside `W` along its trajectory,
-through `φ_{τ t}(ι s)`, `τ ∈ [0, 1]`; the statement does not record this. -/
+identity that fixes `W` pointwise. -/
 theorem exists_liouvilleGraphRegion_deformation [IsManifold J (⊤ : ℕ∞) S]
     [BoundarylessManifold J S] (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι) (hιW : range ι = frontier W)
@@ -302,7 +299,7 @@ theorem exists_liouvilleGraphRegion_deformation [IsManifold J (⊤ : ℕ∞) S]
   have hΦW (p : ℝ × S) : flowOf Z p.1 (ι p.2) ∈ W ↔ p.1 ≤ 0 :=
     h.flowOf_mem_iff_of_mem_frontier hZ hc (hιW' p.2)
   have hts : {p : ℝ × S | p.1 ≤ 0} ⊆ {p | p.1 < Real.log (f p.2)} :=
-    fun p hp ↦ (show p.1 ≤ 0 from hp).trans_lt (Real.log_pos (hf₁ p.2))
+    fun p hp ↦ mem_ofPred.2 <| (mem_ofPred.1 hp).trans_lt (Real.log_pos (hf₁ p.2))
   -- Along the flow-out the region is the set of times `t < log f(s)`, and `W` that of `t ≤ 0`.
   have hs : (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) ⁻¹' liouvilleGraphRegion Z W ι f =
       {p | p.1 < Real.log (f p.2)} := by
@@ -315,24 +312,25 @@ theorem exists_liouvilleGraphRegion_deformation [IsManifold J (⊤ : ℕ∞) S]
       interior W := fun x hx ↦
     ((liouvilleGraphRegion_eq_interior_union hιW hf₁).subset hx.1).resolve_right
       fun hx' ↦ hx.2 (image_subset_range _ _ hx')
-  -- In the coordinates `(t, s)` of the flow-out, a time `t > 0` is pulled back to `τ t`.
+  -- In the coordinates `(t, s)` of the flow-out, a time `t > 0` is pulled back to `τ t`: a point
+  -- `φ_t(ι s)` outside `W` moves along its trajectory through `φ_{τ t}(ι s)`, `τ ∈ [0, 1]`.
   have hD : Continuous fun q : unitInterval × (ℝ × S) ↦ (min q.2.1 ((q.1 : ℝ) * q.2.1), q.2.2) := by
     fun_prop
   refine hemb.exists_deformation_of_preimage subset_liouvilleGraphRegion hts hs (Set.ext hΦW)
     isOpen_interior hSV (fun _ hx ↦ interior_subset hx.2)
-    ⟨fun p ↦ ⟨(min p.val.1 0, p.val.2), show min _ _ ≤ _ from min_le_right _ _⟩,
+    ⟨fun p ↦ ⟨(min p.val.1 0, p.val.2), mem_ofPred.2 (min_le_right _ _)⟩,
       (((continuous_fst.min continuous_const).prodMk continuous_snd).comp
         continuous_subtypeVal).subtype_mk _⟩
     { toFun := fun q ↦ ⟨(min q.2.val.1 ((q.1 : ℝ) * q.2.val.1), q.2.val.2),
-        show min _ _ < _ from (min_le_left _ _).trans_lt q.2.property⟩
+        mem_ofPred.2 ((min_le_left _ _).trans_lt (mem_ofPred.1 q.2.property))⟩
       continuous_toFun :=
         (hD.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
       map_zero_left := fun p ↦ Subtype.ext (Prod.ext (by simp) rfl)
       map_one_left := fun p ↦ Subtype.ext (Prod.ext (by simp) rfl)
       prop' := fun τ p hp ↦ ?_ }
-  have hp : p.val.1 ≤ 0 := hp
+  have hp : p.val.1 ≤ 0 := mem_ofPred.1 hp
   refine Subtype.ext (Prod.ext ?_ rfl)
-  change min p.val.1 ((τ : ℝ) * p.val.1) = min p.val.1 0
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.inclusion_apply_coe]
   rw [min_eq_left hp, min_eq_left (by nlinarith [unitInterval.le_one τ])]
 
 /-- **The inclusion of the Liouville domain into the region bounded by a Liouville graph is a
