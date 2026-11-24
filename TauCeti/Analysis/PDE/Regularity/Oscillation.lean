@@ -195,7 +195,7 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hI : I ≤ (M - l) ^ 2 * A :=
-    MeasureTheory.integral_max_sub_sq_le_mul_measureReal (Lp.stronglyMeasurable _).measurable
+    MeasureTheory.integral_max_sub_sq_le_mul_measureReal (measure_ne_top _ _)
       (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hM)
   -- The scale factor of local boundedness cancels the volume of the ball.
   set P := R ^ (-(Fintype.card ι : ℝ) / 2)
@@ -278,10 +278,8 @@ theorem exists_ae_value_le_sub_mul_sub_drift [Nonempty ι] {θ : ℝ} (hθ : 0 <
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hmono : mu.restrict U ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
   set w : W1p mu U 2 := W1p.restrictL hU u + W1p.const (-k)
-  have hw : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value w x = W1p.value u x - k := by
-    filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) (-k),
-      W1p.value_restrictL_ae hU u] with x h1 h2
-    rw [h1, h2, sub_eq_add_neg]
+  have hw : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value w x = W1p.value u x - k :=
+    (W1p.value_restrictL_add_const_ae hU u (-k)).mono fun x hx => by rw [hx, sub_eq_add_neg]
   have hwR : ∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value w x = W1p.value u x - k :=
     ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hw
   have hred' := hred (Omega := U) (b := b) (c := 0) (gamma := 0) (u := w) (k := 0) (M := M - k)
@@ -647,8 +645,8 @@ everywhere on `B(x₀, r)` the function `u` takes values in an interval of lengt
 
 No bound on `u` is assumed: the oscillation of `u` on `B(x₀, R/2)` is controlled by its `L²`
 norm through De Giorgi's local boundedness theorem
-(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`), and the
-power law `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` propagates it to
+(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`),
+and the power law `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` propagates it to
 smaller balls. -/
 theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift [Nonempty ι]
     (σ : ℝ) :
@@ -666,7 +664,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift
         W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (R ^ (-(Fintype.card ι : ℝ) / 2) *
           √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu))) := by
   obtain ⟨D₀, hD₀, hbound⟩ :=
-    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg (mu := mu)
       (lam := lam) (Lam := Lam)
   obtain ⟨α, C, hα, hα1, hC, hpow⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) σ

@@ -81,7 +81,7 @@ theorem meromorphicGermsEquiv_mem_range_iff (e : OpenPartialHomeomorph ℂ ℂ)
   constructor
   · rintro ⟨t, ht⟩
     obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_pullback e.symm he' (e.left_inv ha)
-      (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha)) t
+      (e.tendsto_symm_nhdsNE ha) t
     refine ⟨s, ?_⟩
     rw [hs, ← meromorphicGermsEquiv_symm_apply e ha he he', ht]
     exact (e.meromorphicGermsEquiv ha he he').symm_apply_apply φ

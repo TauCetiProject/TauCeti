@@ -22,7 +22,7 @@ restriction to a subgroup can be degenerate.
 
 ## References
 
-* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.2.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
 
 ## Main definitions
@@ -32,6 +32,15 @@ restriction to a subgroup can be degenerate.
 * `TauCeti.FiniteBilinearModule.IsNondegenerate`: bijectivity of the adjoint pairing.
 * `TauCeti.FiniteBilinearModule.Hom`: a pairing-preserving additive homomorphism.
 * `TauCeti.FiniteBilinearModule.Isometry`: a pairing-preserving additive equivalence.
+* `TauCeti.FiniteBilinearModule.adjointEquiv`: the adjoint pairing of a nondegenerate module as an
+  additive equivalence with its character module.
+* `TauCeti.FiniteBilinearModule.restrict`: the restriction of the pairing to a subgroup, with
+  `TauCeti.FiniteBilinearModule.restrictHom` the inclusion into the ambient module.
+* `TauCeti.FiniteBilinearModule.neg`: the module with the negated pairing.
+* `TauCeti.FiniteBilinearModule.prod`: the orthogonal direct sum of two modules.
+* `TauCeti.FiniteBilinearModule.radical`: the kernel of the adjoint pairing.
+* `TauCeti.FiniteBilinearModule.Isometry.restrict`: an isometry carrying one subgroup onto another
+  restricts to an isometry of the restrictions.
 * `TauCeti.FiniteBilinearModule.Isometry.prod`: the orthogonal direct sum of two isometries.
 * `TauCeti.FiniteBilinearModule.orthogonalComplement`: the orthogonal complement of a subgroup.
 * `TauCeti.FiniteBilinearModule.IsIsotropicElem`: vanishing of the self-pairing on an element.
@@ -316,8 +325,8 @@ theorem toHom_toAddMonoidHom (f : Isometry A B) :
 
 /-- The underlying morphism of an isometry is bijective. -/
 theorem toHom_bijective (f : Isometry A B) : Function.Bijective f.toHom := by
-  simpa only [Function.Bijective, Function.Injective, Function.Surjective, toHom_apply,
-    coe_toAddEquiv] using f.toAddEquiv.bijective
+  rw [show ⇑f.toHom = ⇑f from funext (toHom_apply f)]
+  exact EquivLike.bijective f
 
 /-- Two isometries are equal when they agree on all elements. -/
 @[ext]
@@ -448,11 +457,11 @@ degenerate restricted pairing. -/
 abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
   carrier := H
   pairing := (A.pairing.comp H.subtype).compl₂ H.subtype
-  pairing_comm x y := A.pairing_comm x.1 y.1
+  pairing_comm x y := A.pairing_comm x.val y.val
 
 /-- The restricted pairing pairs elements of the subgroup as elements of the whole module. -/
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
-    (restrict A H).pairing x y = A.pairing x.1 y.1 := (rfl)
+    (restrict A H).pairing x y = A.pairing x.val y.val := (rfl)
 
 /-- The inclusion of a restricted finite bilinear module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
@@ -462,6 +471,27 @@ def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
 /-- The inclusion of a restricted module sends an element of the subgroup to itself. -/
 @[simp]
 theorem restrictHom_apply (H : AddSubgroup A) (x : H) : A.restrictHom H x = x := (rfl)
+
+variable {A} in
+/-- **Restriction of an isometry.** An isometry `f : A ≃ B` carrying the subgroup `H` onto the
+subgroup `K`, in the sense that `f x ∈ K ↔ x ∈ H`, restricts to an isometry of the restrictions to
+`H` and `K`. -/
+def Isometry.restrict {B : FiniteBilinearModule.{v}} (f : Isometry A B) {H : AddSubgroup A}
+    {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) : Isometry (A.restrict H) (B.restrict K) where
+  toAddEquiv :=
+    -- `f` maps `H` onto `K`: every `y ∈ K` is the image of `f.symm y ∈ H`.
+    have hHK : H.map f.toAddEquiv.toAddMonoidHom = K := AddSubgroup.ext fun y ↦ by
+      rw [AddSubgroup.mem_map_equiv, ← h]
+      exact Iff.of_eq (congrArg (· ∈ K) (f.toAddEquiv.apply_symm_apply y))
+    (f.toAddEquiv.addSubgroupMap H).trans (AddEquiv.addSubgroupCongr hHK)
+  map_pairing' x y := f.map_pairing x.val y.val
+
+variable {A} in
+/-- The restriction of an isometry acts as the isometry on the underlying elements. -/
+@[simp]
+theorem Isometry.restrictHom_restrict_apply {B : FiniteBilinearModule.{v}} (f : Isometry A B)
+    {H : AddSubgroup A} {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) (x : A.restrict H) :
+    B.restrictHom K (f.restrict h x) = f (A.restrictHom H x) := (rfl)
 
 /-- Negate the pairing of a finite bilinear module. -/
 abbrev neg : FiniteBilinearModule where
@@ -476,16 +506,10 @@ theorem neg_pairing (x y : A) : A.neg.pairing x y = -A.pairing x y := (rfl)
 @[simp]
 theorem isNondegenerate_neg : A.neg.IsNondegenerate ↔ A.IsNondegenerate := by
   rw [A.neg.isNondegenerate_iff_injective, A.isNondegenerate_iff_injective]
-  constructor
-  · intro h x y hxy
-    apply h
-    ext z
-    exact congrArg Neg.neg (DFunLike.congr_fun hxy z)
-  · intro h x y hxy
-    apply h
-    ext z
-    have := DFunLike.congr_fun hxy z
-    exact neg_inj.mp this
+  refine ⟨fun h x y hxy ↦ h ?_, fun h x y hxy ↦ h ?_⟩ <;> ext z
+  · rw [neg_pairing, neg_pairing, hxy]
+  · have := DFunLike.congr_fun hxy z
+    rwa [neg_pairing, neg_pairing, neg_inj] at this
 
 /-- The orthogonal direct sum of two finite bilinear modules. -/
 abbrev prod (B : FiniteBilinearModule) : FiniteBilinearModule where
@@ -528,12 +552,7 @@ def radical : AddSubgroup A := A.pairing.ker
 @[simp]
 theorem mem_radical_iff (x : A) : x ∈ A.radical ↔ ∀ y, A.pairing x y = 0 := by
   rw [radical, AddMonoidHom.mem_ker]
-  constructor
-  · intro hx y
-    exact DFunLike.congr_fun hx y
-  · intro hx
-    ext y
-    exact hx y
+  exact DFunLike.ext_iff
 
 /-- A finite bilinear module is nondegenerate if and only if its radical is trivial. -/
 theorem isNondegenerate_iff_radical_eq_bot : A.IsNondegenerate ↔ A.radical = ⊥ :=
@@ -596,7 +615,7 @@ theorem radical_restrict (S : AddSubgroup A) :
   ext x
   rw [mem_radical_iff, AddSubgroup.mem_addSubgroupOf, A.mem_orthogonalComplement_iff]
   exact ⟨fun hx y hy ↦ by simpa only [A.restrict_pairing S] using hx ⟨y, hy⟩,
-    fun hx y ↦ by simpa only [A.restrict_pairing S] using hx y.1 y.2⟩
+    fun hx y ↦ by simpa only [A.restrict_pairing S] using hx y.val y.property⟩
 
 /-- Orthogonal complements reverse inclusions. -/
 theorem orthogonalComplement_anti {H K : AddSubgroup A} (h : H ≤ K) :
@@ -660,9 +679,7 @@ theorem Isometry.isIsotropicElem_iff {B : FiniteBilinearModule} (f : Isometry A 
 /-- Form negation preserves isotropic elements. -/
 @[simp]
 theorem isIsotropicElem_neg_module (x : A) : A.neg.IsIsotropicElem x ↔ A.IsIsotropicElem x := by
-  constructor
-  · exact neg_eq_zero.mp
-  · exact neg_eq_zero.mpr
+  rw [isIsotropicElem_def, isIsotropicElem_def, neg_pairing, neg_eq_zero]
 
 /-- An element in an orthogonal product is isotropic if and only if the sum of its component
 pairings vanishes. -/
@@ -684,20 +701,6 @@ theorem isIsotropicElem_of_mem_isIsotropic {H : AddSubgroup A} (hH : A.IsIsotrop
     (hx : x ∈ H) : A.IsIsotropicElem x :=
   hH x hx x hx
 
-/-- The cyclic subgroup generated by `x` is isotropic if and only if `x` is isotropic. -/
-theorem isIsotropic_zmultiples_iff (x : A) :
-    A.IsIsotropic (AddSubgroup.zmultiples x) ↔ A.IsIsotropicElem x := by
-  constructor
-  · intro h
-    exact isIsotropicElem_of_mem_isIsotropic A h (AddSubgroup.mem_zmultiples x)
-  · intro h u hu v hv
-    obtain ⟨m, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hu
-    obtain ⟨n, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hv
-    have h1 : A.pairing (m • x) (n • x) = m • n • A.pairing x x := by
-      rw [A.pairing_comm (m • x) (n • x), map_zsmul, A.pairing_comm (n • x) x, map_zsmul]
-    rw [isIsotropicElem_def] at h
-    rw [h1, h, smul_zero, smul_zero]
-
 /-- Isotropy is equivalently inclusion in the orthogonal complement. -/
 theorem isIsotropic_iff_le_orthogonalComplement (H : AddSubgroup A) :
     A.IsIsotropic H ↔ H ≤ A.orthogonalComplement H := by
@@ -715,6 +718,12 @@ theorem isIsotropic_closure_iff {S : Set A} :
   intro y hy
   exact AddMonoidHom.mem_ker.mp <| (AddSubgroup.closure_le (AddMonoidHom.ker (A.pairing x))).mpr
     (fun y hy ↦ AddMonoidHom.mem_ker.mpr (h x hx y hy)) hy
+
+/-- The cyclic subgroup generated by `x` is isotropic if and only if `x` is isotropic. -/
+theorem isIsotropic_zmultiples_iff (x : A) :
+    A.IsIsotropic (AddSubgroup.zmultiples x) ↔ A.IsIsotropicElem x := by
+  rw [AddSubgroup.zmultiples_eq_closure, A.isIsotropic_closure_iff]
+  simp only [Set.mem_singleton_iff, forall_eq, isIsotropicElem_def]
 
 /-- Isotropy passes to additive subgroups. -/
 theorem IsIsotropic.mono {H K : AddSubgroup A} (hK : A.IsIsotropic K) (h : H ≤ K) :
@@ -756,6 +765,17 @@ theorem IsLagrangian.isIsotropic {H : AddSubgroup A} (hH : A.IsLagrangian H) :
     A.IsIsotropic H := by
   rw [A.isIsotropic_iff_le_orthogonalComplement, ← hH]
 
+variable {A} in
+/-- A morphism whose image of `H` contains `K` carries every element of `H^⊥` into `K^⊥`. -/
+theorem Hom.map_mem_orthogonalComplement_of_le_map {B : FiniteBilinearModule}
+    (f : Hom A B) {H : AddSubgroup A} {K : AddSubgroup B}
+    (h : K ≤ H.map f.toAddMonoidHom) {x : A} (hx : x ∈ A.orthogonalComplement H) :
+    f x ∈ B.orthogonalComplement K := by
+  rw [B.mem_orthogonalComplement_iff]
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := h hy
+  exact (f.map_pairing x z).trans ((A.mem_orthogonalComplement_iff H x).mp hx z hz)
+
 /-- An isometry carries orthogonal complements to orthogonal complements. -/
 @[simp]
 theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isometry A B)
@@ -763,12 +783,14 @@ theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isomet
     (A.orthogonalComplement H).map f.toAddEquiv =
       B.orthogonalComplement (H.map f.toAddEquiv) := by
   ext y
-  rw [AddSubgroup.mem_map, B.mem_orthogonalComplement_iff]
+  rw [AddSubgroup.mem_map]
   constructor
-  · rintro ⟨x, hx, rfl⟩ w hw
-    obtain ⟨z, hz, rfl⟩ := AddSubgroup.mem_map.mp hw
-    exact (f.map_pairing x z).trans ((A.mem_orthogonalComplement_iff H x).mp hx z hz)
+  · rintro ⟨x, hx, rfl⟩
+    have := f.toHom.map_mem_orthogonalComplement_of_le_map (K := H.map f.toAddEquiv)
+      (by rw [toHom_toAddMonoidHom]) hx
+    rwa [toHom_apply] at this
   · intro hy
+    rw [B.mem_orthogonalComplement_iff] at hy
     refine ⟨f.symm y, ?_, f.apply_symm_apply y⟩
     rw [A.mem_orthogonalComplement_iff]
     intro z hz
@@ -830,8 +852,8 @@ theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModul
     (f : Isometry A B) {H : AddSubgroup A} {K : AddSubgroup B}
     (h : H.map f.toAddEquiv = K) {x : A} (hx : x ∈ A.orthogonalComplement H) :
     f x ∈ B.orthogonalComplement K := by
-  rw [← h, ← f.map_orthogonalComplement (H := H)]
-  exact AddSubgroup.mem_map_of_mem _ hx
+  rw [← toHom_apply]
+  exact f.toHom.map_mem_orthogonalComplement_of_le_map (by rw [toHom_toAddMonoidHom]; exact h.ge) hx
 
 /-- The image of a subgroup under a morphism of finite bilinear modules is isotropic exactly
 when the subgroup is. -/

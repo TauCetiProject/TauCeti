@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -24,7 +27,8 @@ is Mathlib's Lie bracket of vector fields `VectorField.mlieBracket` (in a chart,
 antihomomorphism into the Lie algebra of vector fields. Infinitesimal actions are the input of
 moment maps (`TauCeti.SmoothTwoForm.IsMomentMap`).
 
-An infinitesimal action restricts along a Lie algebra homomorphism `𝔥 → 𝔤`
+The trivial action `0` generates the zero vector field from every element. An infinitesimal action
+restricts along a Lie algebra homomorphism `𝔥 → 𝔤`
 (`TauCeti.InfinitesimalAction.comp`), for instance to a Lie subalgebra. Two infinitesimal actions of
 the same Lie algebra on `M` and on `N` give the diagonal action `Z ↦ (Z_M, Z_N)` on `M × N`
 (`TauCeti.InfinitesimalAction.prod`), because Lie brackets of product vector fields are computed
@@ -39,24 +43,38 @@ At a point `x`, an infinitesimal action has an **orbit tangent space** `𝔤 · 
 (`TauCeti.InfinitesimalAction.orbitTangent`) and an **isotropy algebra** `𝔤_x = {Z | Z_M(x) = 0}`
 (`TauCeti.InfinitesimalAction.isotropy`), the range and the kernel of the linear map
 `Z ↦ Z_M(x)` (`TauCeti.InfinitesimalAction.eval`). The isotropy algebra is a Lie subalgebra, since
-the Lie bracket of two vector fields vanishing at `x` vanishes at `x`, and rank–nullity gives
-`dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. For the fundamental vector fields of a Lie group action, `𝔤 · x`
-and `𝔤_x` are the image and the kernel of the differential at the identity of the orbit map
-`g ↦ g • x`. These are the pointwise data entering the differential of a moment map.
+the Lie bracket of two vector fields vanishing at `x` vanishes at `x`. The orbit map identifies
+`𝔤 ⧸ 𝔤_x` with `𝔤 · x` (`TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent`), and more
+generally `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with `𝔨 · x` for a subspace `𝔨` of `𝔤`
+(`TauCeti.InfinitesimalAction.quotIsotropyEquivMap`); rank–nullity gives
+`dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. Where the action is locally free, that is `𝔤_x = 0`, the orbit
+map embeds `𝔤` into the tangent space at `x`, so `𝔤` is finite-dimensional when `M` is
+(`TauCeti.InfinitesimalAction.finiteDimensional_of_isotropy_eq_bot`). For the fundamental vector
+fields of a Lie group action, `𝔤 · x` and `𝔤_x` are the image and the kernel of the differential at
+the identity of the orbit map `g ↦ g • x`. These are the pointwise data entering the differential
+of a moment map.
 
 ## Main definitions
 
 * `TauCeti.InfinitesimalAction 𝔤 I M`: infinitesimal actions of `𝔤` on `M`.
 * `TauCeti.InfinitesimalAction.comp`: the restriction of an infinitesimal action along a Lie
   algebra homomorphism.
+* `TauCeti.InfinitesimalAction.toSectionLinearMap`: the action viewed as an `ℝ`-linear map into
+  smooth tangent sections.
 * `TauCeti.InfinitesimalAction.prod`: the diagonal action on a product of two manifolds.
 * `TauCeti.InfinitesimalAction.eval a x`: the linear map `Z ↦ Z_M(x)`.
 * `TauCeti.InfinitesimalAction.orbitTangent a x`: the orbit tangent space `𝔤 · x`.
 * `TauCeti.InfinitesimalAction.isotropy a x`: the isotropy Lie subalgebra `𝔤_x`.
+* `TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent a x`: the identification
+  `𝔤 ⧸ 𝔤_x ≃ 𝔤 · x`.
+* `TauCeti.InfinitesimalAction.quotIsotropyEquivMap a x 𝔨`: the identification
+  `𝔨 ⧸ (𝔨 ∩ 𝔤_x) ≃ 𝔨 · x`.
 * `TauCeti.InfinitesimalAction.linear V`: the action of `Module.End ℝ V` on `V` by linear vector
   fields.
 * `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
   space by the constant vector fields of a linear map `τ`.
+* `TauCeti.InfinitesimalAction.affineLine`: the action of `LieAlgebra.AffineLine ℝ` on `ℝ` by
+  affine vector fields `x ↦ u.1 * x + u.2`.
 
 ## References
 
@@ -131,6 +149,22 @@ theorem map_lie (a : InfinitesimalAction 𝔤 I M) (Z Z' : 𝔤) :
     a ⁅Z, Z'⁆ = -mlieBracket I (a Z) (a Z') :=
   a.toLinearMap_lie' Z Z'
 
+/-- The trivial infinitesimal action, generating the zero vector field from every element. -/
+instance : Zero (InfinitesimalAction 𝔤 I M) where
+  zero :=
+    { toLinearMap := 0
+      contMDiff_toLinearMap' _ := by
+        simp only [LinearMap.zero_apply, Pi.zero_apply]
+        -- The zero section of the tangent bundle is `x ↦ ⟨x, 0⟩`.
+        exact Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _)
+      toLinearMap_lie' Z Z' := by
+        ext x
+        simp }
+
+@[simp]
+theorem zero_apply (Z : 𝔤) : (0 : InfinitesimalAction 𝔤 I M) Z = 0 :=
+  (rfl)
+
 section comp
 
 variable {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
@@ -150,6 +184,20 @@ theorem comp_apply (a : InfinitesimalAction 𝔤 I M) (f : 𝔥 →ₗ⁅ℝ⁆ 
   (rfl)
 
 end comp
+
+section toSectionLinearMap
+variable (a : InfinitesimalAction 𝔤 I M)
+
+/-- An infinitesimal action viewed as an `ℝ`-linear map into smooth tangent sections. -/
+def toSectionLinearMap : 𝔤 →ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
+  ⟨⟨fun ξ ↦ ⟨a ξ, a.contMDiff ξ⟩, fun _ _ ↦ by ext; simp⟩, fun _ _ ↦ by ext; simp⟩
+
+@[simp] theorem toSectionLinearMap_apply (ξ : 𝔤) (x : M) : a.toSectionLinearMap ξ x = a ξ x := (rfl)
+
+@[simp] theorem comp_toSectionLinearMap {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
+    (a.comp ψ).toSectionLinearMap = a.toSectionLinearMap.comp ψ.toLinearMap := by ext; simp
+
+end toSectionLinearMap
 
 section orbit
 
@@ -207,10 +255,40 @@ theorem finrank_orbitTangent_add_finrank_isotropy [FiniteDimensional ℝ 𝔤] :
       Module.finrank ℝ 𝔤 :=
   LinearMap.finrank_range_add_finrank_ker (a.eval x)
 
+/-- The orbit map `Z ↦ Z_M(x)` identifies `𝔤 ⧸ 𝔤_x` with the orbit tangent space `𝔤 · x`. -/
+def quotIsotropyEquivOrbitTangent :
+    (𝔤 ⧸ (a.isotropy x).toSubmodule) ≃ₗ[ℝ] a.orbitTangent x :=
+  (Submodule.quotEquivOfEq _ _ (a.isotropy_toSubmodule x)).trans
+    ((a.eval x).quotKerEquivRange.trans (LinearEquiv.ofEq _ _ (a.orbitTangent_eq_range x).symm))
+
+@[simp]
+theorem coe_quotIsotropyEquivOrbitTangent_mk (Z : 𝔤) :
+    (a.quotIsotropyEquivOrbitTangent x (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivOrbitTangent]
+
+/-- For a subspace `𝔨` of `𝔤`, the orbit map `Z ↦ Z_M(x)` identifies `𝔨 ⧸ (𝔨 ∩ 𝔤_x)` with the
+subspace `𝔨 · x` of the orbit tangent space. -/
+def quotIsotropyEquivMap (p : Submodule ℝ 𝔤) :
+    (p ⧸ (a.isotropy x).toSubmodule.comap p.subtype) ≃ₗ[ℝ] p.map (a.eval x) :=
+  (Submodule.quotEquivOfEq _ _ (by rw [LinearMap.ker_domRestrict, a.isotropy_toSubmodule x])).trans
+    (((a.eval x).domRestrict p).quotKerEquivRange.trans
+      (LinearEquiv.ofEq _ _ (LinearMap.range_domRestrict p (a.eval x))))
+
+@[simp]
+theorem coe_quotIsotropyEquivMap_mk (p : Submodule ℝ 𝔤) (Z : p) :
+    (a.quotIsotropyEquivMap x p (Submodule.Quotient.mk Z) : TangentSpace I x) = a Z x := by
+  simp [quotIsotropyEquivMap]
+
 /-- Where the action is locally free, the orbit tangent space has the dimension of `𝔤`. -/
 theorem finrank_orbitTangent_of_isotropy_eq_bot (h : a.isotropy x = ⊥) :
     Module.finrank ℝ (a.orbitTangent x) = Module.finrank ℝ 𝔤 :=
   LinearMap.finrank_range_of_inj ((a.isotropy_eq_bot_iff x).1 h)
+
+/-- **A Lie algebra acting locally freely at a point of a finite-dimensional manifold is
+finite-dimensional.** If `𝔤_x` vanishes, `Z ↦ Z_M(x)` embeds `𝔤` into the tangent space at `x`. -/
+theorem finiteDimensional_of_isotropy_eq_bot [FiniteDimensional ℝ E] (h : a.isotropy x = ⊥) :
+    FiniteDimensional ℝ 𝔤 :=
+  FiniteDimensional.of_injective (a.eval x) ((a.isotropy_eq_bot_iff x).1 h)
 
 /-- The isotropy algebra of a restricted action is the preimage of the isotropy algebra. -/
 @[simp]
@@ -223,7 +301,26 @@ theorem orbitTangent_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
   ext v
   simp
 
+/-- Every element of `𝔤` lies in the isotropy algebra of the trivial action. -/
+@[simp]
+theorem isotropy_zero : (0 : InfinitesimalAction 𝔤 I M).isotropy x = ⊤ :=
+  LieSubalgebra.ext _ _ fun _ ↦ by simp
+
+/-- The orbit tangent spaces of the trivial action vanish. -/
+@[simp]
+theorem orbitTangent_zero : (0 : InfinitesimalAction 𝔤 I M).orbitTangent x = ⊥ := by
+  ext v
+  simp [eq_comm]
+
 end orbit
+
+/-- Where an infinitesimal action is locally free (`𝔤_x = 0`), the dimension of `𝔤` is at most the
+dimension of `M`. -/
+theorem finrank_le_of_isotropy_eq_bot [FiniteDimensional ℝ E] (a : InfinitesimalAction 𝔤 I M)
+    {x : M} (hx : a.isotropy x = ⊥) : Module.finrank ℝ 𝔤 ≤ Module.finrank ℝ E := by
+  have hle : Module.finrank ℝ (a.orbitTangent x) ≤ Module.finrank ℝ (TangentSpace I x) :=
+    Submodule.finrank_le _
+  rwa [a.finrank_orbitTangent_of_isotropy_eq_bot x hx, finrank_tangentSpace] at hle
 
 section prod
 
@@ -331,6 +428,36 @@ theorem translation_apply (τ : 𝔤 →ₗ[ℝ] V) (Z : 𝔤) (x : V) : transla
 
 end translation
 
-end InfinitesimalAction
+section affineLine
 
+/-- The standard infinitesimal action of `LieAlgebra.AffineLine ℝ` on `ℝ`, sending the dilation
+`(1, 0)` to `x ↦ x` (`x ∂_x`) and the translation `(0, 1)` to `x ↦ 1` (`∂_x`). -/
+def affineLine : InfinitesimalAction (LieAlgebra.AffineLine ℝ) 𝓘(ℝ, ℝ) ℝ :=
+  let f (u : LieAlgebra.AffineLine ℝ) (x : ℝ) : ℝ := u.1 * x + u.2
+  let V (u : LieAlgebra.AffineLine ℝ) : ∀ x : ℝ, TangentSpace 𝓘(ℝ, ℝ) x := f u
+  have hV (u x) : NormedSpace.fromTangentSpace (𝕜 := ℝ) x (V u x) = f u x :=
+    NormedSpace.fromTangentSpace_apply x (V u x)
+  ⟨⟨⟨V, fun _ _ ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
+      simp only [Pi.add_apply, map_add, hV, f, Prod.fst_add, Prod.snd_add]; ring⟩,
+    fun _ _ ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
+      simp only [Pi.smul_apply, map_smul, hV, f, RingHom.id_apply, smul_eq_mul,
+        Prod.smul_fst, Prod.smul_snd]; ring⟩,
+    fun _ ↦
+      contMDiff_vectorSpace_iff_contDiff.2 ((contDiff_const.mul contDiff_id).add contDiff_const),
+    fun u v ↦ funext fun x ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).injective <| by
+      have hu (w : LieAlgebra.AffineLine ℝ) : HasFDerivAt (f w) (w.1 • .id ℝ ℝ) x := by
+        simpa [f] using ((hasFDerivAt_id x).const_mul w.1).add_const w.2
+      have hmlie : NormedSpace.fromTangentSpace (𝕜 := ℝ) x (mlieBracket 𝓘(ℝ, ℝ) (V u) (V v) x) =
+          lieBracket ℝ (f u) (f v) x :=
+        (NormedSpace.fromTangentSpace_apply x _).trans (congrFun mlieBracket_eq_lieBracket x)
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, Pi.neg_apply, map_neg, hV, hmlie,
+        congrFun lieBracket_eq x, (hu u).fderiv, (hu v).fderiv, f,
+        LieAlgebra.AffineLine.fst_lie, LieAlgebra.AffineLine.snd_lie,
+        _root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]; ring⟩
+
+@[simp] theorem affineLine_apply (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :
+    affineLine u x = u.1 * x + u.2 := (rfl)
+
+end affineLine
+end InfinitesimalAction
 end TauCeti

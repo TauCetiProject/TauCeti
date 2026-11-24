@@ -71,14 +71,14 @@ theorem exists_stabilizer_eq_top_of_finrank_prime [IsGalois K L]
     (hL : (Module.finrank K L).Prime) :
     ∃ (v : HeightOneSpectrum (𝓞 K))
       (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}),
-      MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊤ := by
+      MulAction.stabilizer Gal(L/K) w.val.asIdeal = ⊤ := by
   let _ : Fact (Nat.card Gal(L/K)).Prime := ⟨by
     rwa [IsGalois.card_aut_eq_finrank K L]⟩
   let _ : IsCyclic Gal(L/K) := isCyclic_of_prime_card (p := Nat.card Gal(L/K)) rfl
   let _ : IsMulCommutative Gal(L/K) := IsCyclic.isMulCommutative
   have hnot : ¬ ∀ v : HeightOneSpectrum (𝓞 K),
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        MulAction.stabilizer Gal(L/K) w.1.asIdeal = ⊥ := fun h ↦
+        MulAction.stabilizer Gal(L/K) w.val.asIdeal = ⊥ := fun h ↦
     hL.ne_one (finrank_eq_one_of_stabilizer_eq_bot (∅ : Finset _) fun v _ ↦ h v)
   push Not at hnot
   obtain ⟨v, hv⟩ := hnot
@@ -87,7 +87,7 @@ theorem exists_stabilizer_eq_top_of_finrank_prime [IsGalois K L]
     ⟨w₀, hw₀ ▸ inferInstance⟩
   refine ⟨v, w, ?_⟩
   exact (Subgroup.eq_bot_or_eq_top_of_prime_card
-    (MulAction.stabilizer Gal(L/K) w.1.asIdeal)).resolve_left (hv w)
+    (MulAction.stabilizer Gal(L/K) w.val.asIdeal)).resolve_left (hv w)
 
 end TauCeti.ClassFieldTheory
 
@@ -177,7 +177,7 @@ end OpenNormalSubgroup
 
 namespace TauCeti.ClassFieldTheory.NormalLayer
 
-open TauCeti IntermediateField
+open TauCeti _root_.IntermediateField
 
 /-- **A prime-degree layer has a surjective decomposition map at some finite place.** Let
 `V ◁ U` be a finite normal layer of `G_K` of prime degree. There are a finite place `v` of `K` and

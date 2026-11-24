@@ -165,7 +165,7 @@ at the real places of `𝔪`. -/
 theorem exists_induced_eq_iff_of_finitePart_eq (h : 𝔪 ∣ 𝔫) (hfin : 𝔪.finitePart = 𝔫.finitePart)
     (η : RayClassCharacter 𝔫) :
     (∃ ψ : RayClassCharacter 𝔪, ψ.induced h = η) ↔
-      ∀ s : 𝔫.infinitePart → ℤˣ, (∀ w : 𝔫.infinitePart, w.1 ∈ 𝔪.infinitePart → s w = 1) →
+      ∀ s : 𝔫.infinitePart → ℤˣ, (∀ w : 𝔫.infinitePart, w.val ∈ 𝔪.infinitePart → s w = 1) →
         η (residueSignRayClass 𝔫 (1, s)) = 1 := by
   constructor
   · rintro ⟨ψ, rfl⟩ s hs

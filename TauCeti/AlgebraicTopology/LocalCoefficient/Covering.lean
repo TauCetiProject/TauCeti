@@ -28,6 +28,12 @@ the fibres are finite, the transfer `IsCoveringMap.permutationLocalSystemTransfe
 sum of all sheets with coefficient `r`. On singular chains they induce the projection and the
 transfer of the covering (`TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem`).
 
+A continuous map `σ : E → E` over the base commutes with monodromy, so moving each sheet by `σ`
+is an endomorphism of the permutation local system
+(`IsCoveringMap.permutationLocalSystemFiberMap`). On singular chains it induces `σ_*`. Likewise
+monodromy follows a continuous section `s` of `p`, so `r ↦ r • s x` is a morphism from the
+constant system (`IsCoveringMap.permutationLocalSystemSection`), which induces `s_*`.
+
 The local-system viewpoint follows Hatcher, *Algebraic Topology*, Section 3.H; the covering
 monodromy is Mathlib's `IsCoveringMap.monodromyFunctor`.
 -/
@@ -138,6 +144,24 @@ noncomputable def permutationLocalSystemAugmentation :
     ext e
     simp
 
+/-- The augmentation sends a formal sum of sheets to the sum of its coefficients. -/
+theorem permutationLocalSystemAugmentation_app_apply (x : FundamentalGroupoid B)
+    (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemAugmentation R).app x).hom f = f.sum fun _ r ↦ r := by
+  -- The codomain is the fibre `((constantFunctor B).obj (ModuleCat.of R R)).obj x`, which is `R`
+  -- only after unfolding the constant functor, so no `R`-module instance or `Finsupp` lemma applies
+  -- to the component as stated. `change` restates it as the linear combination it is defined as.
+  change Finsupp.linearCombination R (fun _ ↦ (1 : R)) f = _
+  simp [Finsupp.linearCombination_apply]
+
+/-- Over a finite fibre, the augmentation sends a formal sum of sheets to the sum of its
+coefficients over all the sheets. -/
+theorem permutationLocalSystemAugmentation_app_apply_eq_sum (x : FundamentalGroupoid B)
+    [Fintype (p ⁻¹' {x.as})] (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemAugmentation R).app x).hom f = ∑ e, f e :=
+  (hp.permutationLocalSystemAugmentation_app_apply R x f).trans
+    (Finsupp.sum_fintype _ _ fun _ ↦ rfl)
+
 /-- The augmentation of the permutation local system is the identity on the coefficients at each
 sheet. -/
 @[reassoc (attr := simp)]
@@ -181,6 +205,85 @@ theorem permutationLocalSystemTransfer_app (hfin : ∀ b, Finite ↥(p ⁻¹' {b
   refine LinearMap.ext_ring ?_
   simp [Finsupp.equivFunOnFinite_symm_eq_sum]
 
+/-- The transfer of the permutation local system has coefficient `r` at every sheet. -/
+theorem permutationLocalSystemTransfer_app_hom_apply_apply (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
+    (x : FundamentalGroupoid B) (r : R) (e : p ⁻¹' {x.as}) :
+    DFunLike.coe (F := (p ⁻¹' {x.as}) →₀ R)
+      (((hp.permutationLocalSystemTransfer R hfin).app x).hom r) e = r := by
+  have := hfin x.as
+  -- The fibres of the constant and permutation systems are `R` and formal sums of sheets only
+  -- after unfolding their definitions, so `change` states the component as the multiple of the
+  -- formal sum of all sheets that it is defined as.
+  change (r • Finsupp.equivFunOnFinite.symm (1 : p ⁻¹' {x.as} → R)) e = r
+  simp
+
 end Transfer
+
+section Section
+
+variable (hp : IsCoveringMap p) (R : Type u) [Ring R] (s : C(B, E)) (hs : ∀ b, s b ∈ p ⁻¹' {b})
+
+/-- The morphism from the constant system to the permutation local system given by a continuous
+section `s` of `p`: on the fibre over `x` it sends `r` to the formal sum `r • s x`. It commutes
+with transport because monodromy follows continuous sections. -/
+noncomputable def permutationLocalSystemSection :
+    (TauCeti.LocalCoefficientSystem.constantFunctor B).obj (ModuleCat.of R R) ⟶
+      hp.permutationLocalSystem R where
+  app x := hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩
+  naturality x y γ := by
+    dsimp only [TauCeti.LocalCoefficientSystem.constantFunctor, Functor.const_obj_map,
+      Functor.const_obj_obj]
+    rw [Category.id_comp, permutationLocalSystemSingle_map]
+    exact congrArg _ (hp.monodromy_section s.continuous hs γ).symm
+
+/-- The morphism given by a section `s` is, over `x`, the inclusion of the coefficients at the
+sheet `s x`. -/
+@[simp]
+theorem permutationLocalSystemSection_app (x : FundamentalGroupoid B) :
+    (hp.permutationLocalSystemSection R s hs).app x =
+      hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩ :=
+  (rfl)
+
+end Section
+
+section FiberMap
+
+variable (hp : IsCoveringMap p) (R : Type u) [Ring R] (σ : C(E, E)) (hσ : ⇑p ∘ ⇑σ = ⇑p)
+
+/-- The endomorphism of the permutation local system of `p` moving each sheet by a map `σ` over
+the base: on the fibre over `x` it is the linear extension of `σ` restricted to that fibre. It
+commutes with transport because `σ` commutes with monodromy. -/
+noncomputable def permutationLocalSystemFiberMap :
+    hp.permutationLocalSystem R ⟶ hp.permutationLocalSystem R where
+  app x := ModuleCat.ofHom (Finsupp.lmapDomain R R (Function.fiberMap σ hσ x.as))
+  naturality x y γ := by
+    dsimp only [permutationLocalSystem]
+    rw [← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp]
+    congr 1
+    refine Finsupp.lhom_ext' fun e ↦ LinearMap.ext_ring ?_
+    simp [hp.fiberMap_monodromy hp σ hσ]
+
+/-- The endomorphism moving the sheets by `σ` is the linear extension of `σ` on each fibre. -/
+@[simp]
+theorem permutationLocalSystemFiberMap_app_apply (x : FundamentalGroupoid B)
+    (f : (p ⁻¹' {x.as}) →₀ R) :
+    ((hp.permutationLocalSystemFiberMap R σ hσ).app x).hom f =
+      Finsupp.mapDomain (Function.fiberMap σ hσ x.as) f :=
+  (rfl)
+
+/-- The endomorphism moving the sheets by `σ` sends the coefficients at a sheet `e` to the
+coefficients at `σ e`. -/
+@[reassoc (attr := simp)]
+theorem permutationLocalSystemSingle_fiberMap_app (x : FundamentalGroupoid B)
+    (e : p ⁻¹' {x.as}) :
+    hp.permutationLocalSystemSingle R x e ≫ (hp.permutationLocalSystemFiberMap R σ hσ).app x =
+      hp.permutationLocalSystemSingle R x (Function.fiberMap σ hσ x.as e) := by
+  ext : 1
+  refine LinearMap.ext_ring ?_
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, permutationLocalSystemSingle_hom_apply,
+    permutationLocalSystemSingle_hom_apply, permutationLocalSystemFiberMap_app_apply,
+    Finsupp.mapDomain_single]
+
+end FiberMap
 
 end IsCoveringMap

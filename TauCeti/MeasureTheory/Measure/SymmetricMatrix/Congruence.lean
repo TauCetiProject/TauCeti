@@ -5,16 +5,18 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.Permutation
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Congruence and the change of variables on the symmetric subspace
@@ -39,6 +41,10 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   `Mᵀ` for the Frobenius pairing.
 * `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
   transformation rule for characteristic functions.
+* `Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero` and
+  `MeasureTheory.Measure.mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue` —
+  congruence by a matrix of deficient rank lands in the singular matrices, so every congruence
+  image by it is singular with respect to `symmetricLebesgue`.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.det_coe_symmetricCongruenceLinearMap_apply` — congruence by a square matrix `M`
   multiplies the determinant of a symmetric matrix by `(det M) ^ 2`.
@@ -52,7 +58,9 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain trace.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
-  together with its lower- and Bochner-integral forms.
+  together with its lower-integral form. The Bochner-integral form
+  (`Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence`) is the case of
+  `LinearMap.integral_preimage_affine` for congruence on the cone.
 
 ## References
 
@@ -129,6 +137,18 @@ theorem det_coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) �
   rw [coe_symmetricCongruenceLinearMap_apply, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
   ring
 
+/-- Congruence by a `q × p` matrix of rank less than `q` lands in the singular matrices. -/
+theorem det_coe_symmetricCongruenceLinearMap_apply_eq_zero {M : Matrix (Fin q) (Fin p) ℝ}
+    (hM : M.rank < q) (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ).det = 0 := by
+  rw [coe_symmetricCongruenceLinearMap_apply]
+  by_contra h
+  have hrank := rank_of_det_ne_zero h
+  have hle := (rank_mul_le_left (M * (A : Matrix (Fin p) (Fin p) ℝ)) Mᵀ).trans
+    (rank_mul_le_left M (A : Matrix (Fin p) (Fin p) ℝ))
+  rw [hrank, Fintype.card_fin] at hle
+  omega
+
 /-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
 congruating the test matrix with the transpose. -/
 theorem trace_mul_coe_symmetricCongruenceLinearMap (M : Matrix (Fin q) (Fin p) ℝ)
@@ -176,8 +196,8 @@ theorem symmetricCongruenceLinearMap_zero :
 /-- Counting how often each index occurs in an on-or-above-diagonal pair: the index `i` occurs
 `p - i` times as the first entry and `i + 1` times as the second, so `p + 1` times in all. -/
 private theorem prod_upperTriangle_mul (d : Fin p → ℝ) :
-    ∏ c : upperTriangle p, d c.1.1 * d c.1.2 = (∏ i, d i) ^ (p + 1) := by
-  have key : ∏ c : upperTriangle p, d c.1.1 * d c.1.2 =
+    ∏ c : upperTriangle p, d c.val.1 * d c.val.2 = (∏ i, d i) ^ (p + 1) := by
+  have key : ∏ c : upperTriangle p, d c.val.1 * d c.val.2 =
       ∏ i : Fin p, ∏ j ∈ Finset.Ici i, d i * d j := by
     rw [← Finset.prod_subtype (Finset.univ.filter fun ij : Fin p × Fin p => ij.1 ≤ ij.2)
       (by simp) fun ij => d ij.1 * d ij.2]
@@ -206,8 +226,8 @@ there, symmetrized off the diagonal. -/
 private theorem coe_symmetricBasis_eq_single_add (p : ℕ) (c : upperTriangle p) :
     ((symmetricBasis p c : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) =
-      Matrix.single c.1.1 c.1.2 1 +
-        (if c.1.1 = c.1.2 then 0 else Matrix.single c.1.2 c.1.1 1) := by
+      Matrix.single c.val.1 c.val.2 1 +
+        (if c.val.1 = c.val.2 then 0 else Matrix.single c.val.2 c.val.1 1) := by
   obtain ⟨⟨i, j⟩, hij⟩ := c
   by_cases hd : i = j
   · subst hd
@@ -227,11 +247,11 @@ private theorem toMatrix_symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p
     (r c : upperTriangle p) :
     LinearMap.toMatrix (symmetricBasis p) (symmetricBasis p)
         (symmetricCongruenceLinearMap M) r c =
-      M r.1.1 c.1.1 * M r.1.2 c.1.2 +
-        (if c.1.1 = c.1.2 then 0 else M r.1.1 c.1.2 * M r.1.2 c.1.1) := by
+      M r.val.1 c.val.1 * M r.val.2 c.val.2 +
+        (if c.val.1 = c.val.2 then 0 else M r.val.1 c.val.2 * M r.val.2 c.val.1) := by
   rw [LinearMap.toMatrix_apply, symmetricBasis_repr, coe_symmetricCongruenceLinearMap_apply,
     coe_symmetricBasis_eq_single_add]
-  by_cases hd : c.1.1 = c.1.2
+  by_cases hd : c.val.1 = c.val.2
   · rw [ite_eq_left hd, ite_eq_left hd, add_zero, add_zero, mul_single_mul_transpose_apply]
   · rw [ite_eq_right hd, ite_eq_right hd, Matrix.mul_add, Matrix.add_mul, Matrix.add_apply,
       mul_single_mul_transpose_apply, mul_single_mul_transpose_apply]
@@ -240,16 +260,16 @@ private theorem toMatrix_symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p
 monotone for the componentwise order on positions, which is what makes the coordinate matrix of
 a triangular congruence triangular. -/
 private theorem injective_upperRank (p : ℕ) :
-    Function.Injective fun c : upperTriangle p => p * c.1.1.1 + c.1.2.1 := by
+    Function.Injective fun c : upperTriangle p => p * c.val.1.val + c.val.2.val := by
   rintro ⟨⟨i, j⟩, hij⟩ ⟨⟨i', j'⟩, hij'⟩ heq
-  have heq' : p * i.1 + j.1 = p * i'.1 + j'.1 := heq
+  have heq' : p * i.val + j.val = p * i'.val + j'.val := heq
   have hj := j.isLt
   have hj' := j'.isLt
   have hp : 0 < p := lt_of_le_of_lt (Nat.zero_le _) hj
-  have hi : i.1 = i'.1 := by
+  have hi : i.val = i'.val := by
     have h := congrArg (· / p) heq'
     simpa [Nat.mul_add_div hp, Nat.div_eq_of_lt hj, Nat.div_eq_of_lt hj'] using h
-  have hj2 : j.1 = j'.1 := by
+  have hj2 : j.val = j'.val := by
     have h := congrArg (· % p) heq'
     simpa [Nat.mul_add_mod, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hj'] using h
   simp only [Subtype.mk.injEq, Prod.mk.injEq]
@@ -262,12 +282,12 @@ weakly below the input position `c` in both components. In the second case this 
 pairs are ordered, `r.1.1 ≤ r.1.2` and `c.1.1 ≤ c.1.2`. -/
 private theorem le_of_congruence_products_ne_zero {M : Matrix (Fin p) (Fin p) ℝ}
     (hle : ∀ i j : Fin p, M i j ≠ 0 → i ≤ j) {r c : upperTriangle p}
-    (h : M r.1.1 c.1.1 * M r.1.2 c.1.2 ≠ 0 ∨ M r.1.2 c.1.1 ≠ 0) :
-    r.1.1 ≤ c.1.1 ∧ r.1.2 ≤ c.1.2 := by
+    (h : M r.val.1 c.val.1 * M r.val.2 c.val.2 ≠ 0 ∨ M r.val.2 c.val.1 ≠ 0) :
+    r.val.1 ≤ c.val.1 ∧ r.val.2 ≤ c.val.2 := by
   rcases h with h | h
   · exact ⟨hle _ _ (left_ne_zero_of_mul h), hle _ _ (right_ne_zero_of_mul h)⟩
-  · have h2 : r.1.2 ≤ c.1.1 := hle _ _ h
-    exact ⟨r.2.trans h2, h2.trans c.2⟩
+  · have h2 : r.val.2 ≤ c.val.1 := hle _ _ h
+    exact ⟨r.property.trans h2, h2.trans c.property⟩
 
 /-- If a coordinate of the congruence matrix is nonzero, then so is one of the two entry products
 making it up. -/
@@ -282,8 +302,8 @@ private theorem ne_zero_or_ne_zero_of_add_ite_ne_zero {x y : ℝ} {P : Prop} [De
 carries the products `d i * d j` on its diagonal. -/
 private theorem det_eq_of_blockTriangular_upperRank
     {N : Matrix (upperTriangle p) (upperTriangle p) ℝ} (d : Fin p → ℝ)
-    (hN : N.BlockTriangular fun c : upperTriangle p => p * c.1.1.1 + c.1.2.1)
-    (hdiag : ∀ r : upperTriangle p, N r r = d r.1.1 * d r.1.2) :
+    (hN : N.BlockTriangular fun c : upperTriangle p => p * c.val.1.val + c.val.2.val)
+    (hdiag : ∀ r : upperTriangle p, N r r = d r.val.1 * d r.val.2) :
     N.det = (∏ i, d i) ^ (p + 1) := by
   rw [hN.det_eq_prod_diag (injective_upperRank p),
     Finset.prod_congr rfl fun r _ => hdiag r, prod_upperTriangle_mul d]
@@ -303,9 +323,9 @@ private theorem det_symmetricCongruenceLinearMap_of_isUpperTriangular
       ((ne_zero_or_ne_zero_of_add_ite_ne_zero hne).imp_right right_ne_zero_of_mul)
     exact absurd (Nat.add_le_add (Nat.mul_le_mul_left p h1) h2) (not_le.2 hlt)
   · rw [toMatrix_symmetricCongruenceLinearMap]
-    by_cases hd : r.1.1 = r.1.2
+    by_cases hd : r.val.1 = r.val.2
     · rw [ite_eq_left hd, add_zero]
-    · rw [ite_eq_right hd, hM (lt_of_le_of_ne r.2 hd), mul_zero, add_zero]
+    · rw [ite_eq_right hd, hM (lt_of_le_of_ne r.property hd), mul_zero, add_zero]
 
 /-- The lower-triangular counterpart: now the transposed coordinate matrix is the triangular one
 for the same ranking of positions, and it has the same diagonal. -/
@@ -323,9 +343,10 @@ private theorem det_symmetricCongruenceLinearMap_of_isLowerTriangular
       ((ne_zero_or_ne_zero_of_add_ite_ne_zero hne).imp_right left_ne_zero_of_mul)
     exact absurd (Nat.add_le_add (Nat.mul_le_mul_left p h1) h2) (not_le.2 hlt)
   · rw [Matrix.transpose_apply, toMatrix_symmetricCongruenceLinearMap]
-    by_cases hd : r.1.1 = r.1.2
+    by_cases hd : r.val.1 = r.val.2
     · rw [ite_eq_left hd, add_zero]
-    · rw [ite_eq_right hd, hM (OrderDual.toDual_lt_toDual.2 (lt_of_le_of_ne r.2 hd)), zero_mul,
+    · rw [ite_eq_right hd, hM (OrderDual.toDual_lt_toDual.2 (lt_of_le_of_ne r.property hd)),
+        zero_mul,
         add_zero]
 
 private theorem det_symmetricCongruenceLinearMap_mul {A B : Matrix (Fin p) (Fin p) ℝ}
@@ -545,7 +566,9 @@ theorem lintegral_posDef_symmetricCongruence
   rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
   rw [← h, map_symmetricCongruence_restrict_posDef, lintegral_smul_measure, smul_eq_mul]
 
-/-- The congruence change of variables for Bochner integrals over the positive-definite cone. -/
+/-- The congruence change of variables for Bochner integrals over the positive-definite cone: the
+case of `LinearMap.integral_preimage_affine` for congruence by `C`, whose preimage of
+the cone is the cone. -/
 theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -554,15 +577,11 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
       (|Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1))⁻¹ •
         ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p := by
-  have hJ : (0 : ℝ) < |Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1) :=
-    pow_pos (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C)) _
-  have h := integral_map_equiv (μ := (symmetricLebesgue p).restrict
+  have h := LinearMap.integral_preimage_affine (symmetricCongruence C : _ →ₗ[ℝ] _) 0 f
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef})
-    (symmetricCongruence C).toHomeomorph.toMeasurableEquiv f
-  rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
-  rw [← h, map_symmetricCongruence_restrict_posDef, integral_smul_measure,
-    ENNReal.toReal_inv, ← ENNReal.ofReal_pow (abs_nonneg _), ENNReal.toReal_ofReal hJ.le]
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p)
+  simp only [zero_add, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at h
+  rwa [preimage_symmetricCongruence_posDef, det_symmetricCongruence, abs_pow] at h
 
 end Cone
 
@@ -621,5 +640,18 @@ theorem charFun_map_symmetricCongruenceLinearMap
   refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
   exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
     (Matrix.inner_symmetricCongruenceLinearMap M A Θ)
+
+/-- **A congruence image by a matrix of deficient rank has no density.** Mapping any measure by
+congruence with a `q × p` matrix `M` of rank less than `q` gives a measure carried by the singular
+symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
+theorem mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    {M : Matrix (Fin q) (Fin p) ℝ} (hM : M.rank < q) :
+    (μ.map (Matrix.symmetricCongruenceLinearMap M)).MutuallySingular (symmetricLebesgue q) :=
+  mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero <|
+    (ae_map_iff (LinearMap.continuous_of_finiteDimensional
+        (Matrix.symmetricCongruenceLinearMap M)).aemeasurable
+      (measurableSet_setOfPred_det_eq_zero q)).2
+      (ae_of_all _ (Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero hM))
 
 end MeasureTheory.Measure

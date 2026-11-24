@@ -116,13 +116,13 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
     intro hn
     by_cases hdm : d ≤ m
     · exact absurd ((tsub_eq_iff_eq_add_of_le hdm).1 hn.symm).symm h
-    · simp [prod_choose_eq_zero hdm]
+    · simp [prod_choose_eq_zero_iff.2 hdm]
 
 /-- Every Hasse derivative of positive order kills constants. -/
 @[simp]
 theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
   rw [← monomial_zero_eq_C_apply, hasseDeriv_monomial,
-    prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
+    prod_choose_eq_zero_iff.2 (by simpa [nonpos_iff_eq_zero] using hd)]
   simp
 
 /-- Every Hasse derivative of positive order kills the constant series `1`. -/
@@ -150,8 +150,8 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   have key := congrArg (fun p : MvPolynomial σ ℕ ↦ p.coeff m) <| LinearMap.congr_fun
     (MvPolynomial.hasseDeriv_comp (R := ℕ) a b) (MvPolynomial.monomial (m + a + b) 1)
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, MvPolynomial.hasseDeriv_coeff,
-    MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial, Nat.cast_id, add_assoc, ite_true,
-    mul_one, smul_eq_mul] at key
+    AddMonoidAlgebra.coeff_smul_apply, MvPolynomial.coeff_monomial, Nat.cast_id, add_assoc,
+    ite_true, mul_one, smul_eq_mul] at key
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv]
   rw [nsmul_eq_mul, ← mul_assoc, ← mul_assoc, add_assoc]
   exact_mod_cast congrArg (fun c : ℕ ↦ (c : R) * coeff (m + (a + b)) f) key

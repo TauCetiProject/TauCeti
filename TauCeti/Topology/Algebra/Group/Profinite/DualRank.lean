@@ -69,7 +69,7 @@ theorem rank_continuousZModDual_le_of_convergesToOne {s : Set G} (hs : Converges
     refine ((convergesToOne_iff.mp hs _
       ((hopen x).mem_nhds (Subgroup.one_mem _))).preimage
         Subtype.val_injective.injOn).subset fun y hy ↦ ?_
-    exact ⟨y.2, fun hmem ↦ hy (by simpa [MonoidHom.mem_ker] using hmem)⟩
+    exact ⟨y.property, fun hmem ↦ hy (by simpa [MonoidHom.mem_ker] using hmem)⟩
   let R : continuousZModDual p G →ₗ[ZMod p] (s →₀ ZMod p) :=
     AddMonoidHom.toZModLinearMap p
       { toFun := fun x ↦ Finsupp.ofSupportFinite _ (hsupp x)

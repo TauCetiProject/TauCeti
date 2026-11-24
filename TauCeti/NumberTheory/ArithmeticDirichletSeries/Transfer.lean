@@ -89,20 +89,8 @@ theorem primeCount_sub_mul_logIntegral_eq (S : Set (HeightOneSpectrum (𝓞 K)))
       (primeTheta K S x - δ * x) / Real.log x +
         (∫ t in (2 : ℝ)..x, (primeTheta K S t - δ * t) / (t * Real.log t ^ 2)) +
         2 * δ / Real.log 2 := by
-  have hsplit : (∫ t in (2 : ℝ)..x, primeTheta K S t / (t * Real.log t ^ 2)) =
-      (∫ t in (2 : ℝ)..x, (primeTheta K S t - δ * t) / (t * Real.log t ^ 2)) +
-        δ * ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹ := by
-    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_add
-      (Real.intervalIntegrable_div_mul_log_sq one_lt_two (by linarith)
-        (intervalIntegrable_primeTheta_sub_const_mul S δ 2 x))
-      ((Real.intervalIntegrable_inv_log_pow 2 one_lt_two (by linarith)).const_mul δ)]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [Set.uIcc_of_le hx] at ht
-    have h2t : (2 : ℝ) ≤ t := ht.1
-    have ht0 : t ≠ 0 := by linarith
-    have hlt : Real.log t ≠ 0 := (Real.log_pos (by linarith)).ne'
-    field_simp
-    ring
+  have hsplit := Real.integral_div_mul_log_sq_eq_sub_add δ one_lt_two (by linarith)
+    (primeTheta_mono S).intervalIntegrable
   rw [primeCount_eq_primeTheta_div_log_add_integral, ← intervalIntegral.integral_of_le hx, hsplit,
     Real.logIntegral_eq_div_log_sub_add hx, sub_div]
   ring

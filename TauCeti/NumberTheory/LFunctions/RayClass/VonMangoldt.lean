@@ -168,11 +168,11 @@ theorem rayClassPrimeCount_eq_card_filter (𝔪 : Modulus K) (c : RayClassGroup 
   classical
   rw [rayClassPrimeCount_def, ← Set.ncard_coe_finset]
   refine Set.ncard_congr (fun I hI ↦ ⟨(I : Ideal (𝓞 K)), hI.1,
-      (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1⟩) ?_ ?_ ?_
+      (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)).1⟩) ?_ ?_ ?_
   · intro I hI
     exact Finset.mem_coe.mpr (Finset.mem_filter.mpr
       ⟨(mem_normLE (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal)).mpr hI.2.1,
-        Modulus.mem_integralIdealsPrimeTo.mp I.2, hI.2.2⟩)
+        Modulus.mem_integralIdealsPrimeTo.mp I.property, hI.2.2⟩)
   · intro I J _ _ hIJ
     exact Subtype.ext (congrArg HeightOneSpectrum.asIdeal hIJ)
   · intro 𝔭 h𝔭
