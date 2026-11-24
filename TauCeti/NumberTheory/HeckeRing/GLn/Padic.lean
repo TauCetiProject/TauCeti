@@ -16,7 +16,7 @@ public import TauCeti.NumberTheory.Padics.GeneralLinearGroup.Integral
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.Commensurable
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.Matrix
 
 /-!
 # The local `p`-adic Hecke rings of `GL_n`
@@ -57,8 +57,8 @@ By `Subgroup.Commensurable.commensurator_eq_top_iff` this one inclusion for ever
 
 * `HeckeRing.GLn.mem_padicIntEntries_iff`, `HeckeRing.GLn.mem_padicIntEntries_iff_norm_le_one`:
   membership in `Δ_p` is integrality of the entries.
-* `HeckeRing.GLn.mem_glPadicInt_iff_mem_padicIntEntries`: `g ∈ GL_n(ℤ_p)` exactly when `g` and
-  `g⁻¹` lie in `Δ_p`.
+* `HeckeRing.GLn.mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem`: `g ∈ GL_n(ℤ_p)` exactly
+  when `g` and `g⁻¹` lie in `Δ_p`.
 * `HeckeRing.GLn.commensurator_glPadicInt_eq_top`: the commensurator of `GL_n(ℤ_p)` in `GL_n(ℚ_p)`
   is the whole group.
 * the `IsHeckeTriple` instances for `(Δ_p, GL_n(ℤ_p))` and `(GL_n(ℚ_p), GL_n(ℤ_p))`.
@@ -127,7 +127,7 @@ theorem mem_padicIntEntries_iff_norm_le_one {g : GL ι ℚ_[p]} :
 
 /-- **`GL_n(ℤ_p)` inside `GL_n(ℚ_p)`**: an invertible `p`-adic matrix lies in `GL_n(ℤ_p)`
 exactly when both it and its inverse have entries in `ℤ_p`. -/
-theorem mem_glPadicInt_iff_mem_padicIntEntries {g : GL ι ℚ_[p]} :
+theorem mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem {g : GL ι ℚ_[p]} :
     g ∈ GLPadicInt ι p ↔ g ∈ padicIntEntries ι p ∧ g⁻¹ ∈ padicIntEntries ι p := by
   simp_rw [mem_padicIntEntries_iff_norm_le_one]
   exact GLPadicInt.mem_iff_inv
@@ -135,7 +135,7 @@ theorem mem_glPadicInt_iff_mem_padicIntEntries {g : GL ι ℚ_[p]} :
 /-- `GL_n(ℤ_p) ≤ M_n(ℤ_p) ∩ GL_n(ℚ_p)`. -/
 theorem glPadicInt_le_padicIntEntries :
     (GLPadicInt ι p).toSubmonoid ≤ padicIntEntries ι p :=
-  fun _ hg ↦ (mem_glPadicInt_iff_mem_padicIntEntries.mp hg).1
+  fun _ hg ↦ (mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem.mp hg).1
 
 end Subgroups
 
@@ -192,7 +192,7 @@ theorem commensurator_glPadicInt_eq_top : commensurator (GLPadicInt ι p) = ⊤ 
   -- and it lies in `g GL_n(ℤ_p) g⁻¹`
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply,
-    mem_glPadicInt_iff_mem_padicIntEntries]
+    mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem]
   refine ⟨inv_mul_map_mul_mem_padicIntEntries hA hB hγ, ?_⟩
   have hinv : (g⁻¹ * φ γ * g)⁻¹ = g⁻¹ * φ γ⁻¹ * g := by rw [map_inv]; group
   rw [hinv]

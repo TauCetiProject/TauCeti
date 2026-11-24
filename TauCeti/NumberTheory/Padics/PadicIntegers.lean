@@ -97,8 +97,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
-  `p`-adic numbers into `ℤ_[p]`; in particular some `p ^ k M` of a matrix `M` over `ℚ_p` has
-  entries in `ℤ_p` (`Matrix.exists_map_padicInt_eq_pow_smul`).
+  `p`-adic numbers into `ℤ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -511,17 +510,3 @@ theorem exists_forall_norm_pow_mul_le_one {ι : Type*} [Finite ι] (x : ι → �
   exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (x j)) (Finset.mem_univ i)).trans hk.le
 
 end Padic
-
-namespace Matrix
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- **Clearing denominators in a `p`-adic matrix**: some `p ^ k M` is the entrywise image of a
-matrix over `ℤ_[p]`. -/
-theorem exists_map_padicInt_eq_pow_smul {m n : Type*} [Finite m] [Finite n]
-    (M : Matrix m n ℚ_[p]) :
-    ∃ (k : ℕ) (A : Matrix m n ℤ_[p]), A.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ k • M := by
-  obtain ⟨k, hk⟩ := Padic.exists_forall_norm_pow_mul_le_one fun ij : m × n ↦ M ij.1 ij.2
-  exact ⟨k, of fun i j ↦ ⟨_, hk (i, j)⟩, by ext; rfl⟩
-
-end Matrix
