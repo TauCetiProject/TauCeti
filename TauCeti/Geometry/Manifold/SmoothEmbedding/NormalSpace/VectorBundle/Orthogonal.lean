@@ -61,28 +61,6 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimension
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
   [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
 
-omit [FiniteDimensional ℝ V] [IsManifold J 1 N] in
-/-- For an embedding, the quotient comparison takes a normal vector to its normal class. -/
-private theorem orthogonalNormalSpaceEquivQuotient_eq_normalClass (f : SmoothEmbedding I J n M N)
-    (x : M) (hn : n ≠ 0) (w : orthogonalNormalSpace I J f x) :
-    (orthogonalNormalSpaceEquivQuotient (f : M → N) x w : f.NormalSpace x hn) =
-      f.normalClass x hn w := by
-  rw [normalClass_def]
-  exact orthogonalNormalSpaceEquivQuotient_apply (I := I) (f : M → N) x w
-
-omit [IsManifold J 1 N] in
-/-- For an embedding, the inverse quotient comparison takes a normal class to its normal
-representative. -/
-private theorem coe_orthogonalNormalSpaceEquivQuotient_symm (f : SmoothEmbedding I J n M N)
-    (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
-    ((orthogonalNormalSpaceEquivQuotient (f : M → N) x).symm v : TangentSpace J (f x)) =
-      f.normalRepresentative x hn v := by
-  symm
-  rw [normalRepresentative_eq_iff, orthogonal_tangentRange_eq_orthogonalNormalSpace]
-  refine ⟨Subtype.coe_prop _, ?_⟩
-  rw [← orthogonalNormalSpaceEquivQuotient_eq_normalClass]
-  exact (orthogonalNormalSpaceEquivQuotient (f : M → N) x).apply_symm_apply v
-
 /-- The map `w ↦ [w]` from the orthogonal normal bundle `ν_f` of a `C^n` embedding to its intrinsic
 normal bundle `f*TN / df(TM)` is `C^m`, for `m + 1 ≤ n` and a `C^m` ambient metric. -/
 theorem contMDiff_orthogonalNormalSpaceEquivQuotient {r : ℕ} (f : SmoothEmbedding I J n M N)

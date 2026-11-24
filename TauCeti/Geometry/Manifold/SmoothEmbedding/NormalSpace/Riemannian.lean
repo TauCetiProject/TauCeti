@@ -168,6 +168,35 @@ theorem normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace
       (orthogonalNormalSpace I J f x).starProjection v := by
   simp only [normalRepresentative_normalClass, orthogonal_tangentRange_eq_orthogonalNormalSpace]
 
+section QuotientComparison
+
+variable [FiniteDimensional ℝ E]
+
+omit [FiniteDimensional ℝ V] in
+/-- The quotient comparison `TauCeti.orthogonalNormalSpaceEquivQuotient` takes a normal vector to
+its normal class. -/
+theorem orthogonalNormalSpaceEquivQuotient_eq_normalClass (f : SmoothEmbedding I J n M N)
+    (x : M) (hn : n ≠ 0) (w : orthogonalNormalSpace I J f x) :
+    (orthogonalNormalSpaceEquivQuotient (f : M → N) x w : f.NormalSpace x hn) =
+      f.normalClass x hn w := by
+  rw [normalClass_def]
+  exact orthogonalNormalSpaceEquivQuotient_apply (I := I) (f : M → N) x w
+
+/-- The inverse quotient comparison `TauCeti.orthogonalNormalSpaceEquivQuotient` takes a normal
+class to its normal representative. -/
+@[simp]
+theorem coe_orthogonalNormalSpaceEquivQuotient_symm (f : SmoothEmbedding I J n M N)
+    (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
+    ((orthogonalNormalSpaceEquivQuotient (f : M → N) x).symm v : TangentSpace J (f x)) =
+      f.normalRepresentative x hn v := by
+  symm
+  rw [normalRepresentative_eq_iff, orthogonal_tangentRange_eq_orthogonalNormalSpace]
+  refine ⟨Subtype.coe_prop _, ?_⟩
+  rw [← orthogonalNormalSpaceEquivQuotient_eq_normalClass]
+  exact (orthogonalNormalSpaceEquivQuotient (f : M → N) x).apply_symm_apply v
+
+end QuotientComparison
+
 omit [FiniteDimensional ℝ V] in
 /-- The quotient norm on the normal space at `x`, induced by the Riemannian norm of the ambient
 tangent space. Its topology is by definition the quotient topology of the normal space, and its
