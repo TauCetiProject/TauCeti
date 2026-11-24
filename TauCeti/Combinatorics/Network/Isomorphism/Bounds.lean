@@ -60,22 +60,23 @@ def replaceBoundsWith :
   map_lower := map_lower
   map_upper := map_upper
 
-private theorem replaceBoundsWith_vertexEquiv :
+/-- Arbitrary corresponding bound replacements retain the original vertex equivalence. -/
+@[simp]
+theorem replaceBoundsWith_vertexEquiv :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).vertexEquiv =
       e.vertexEquiv :=
   (rfl)
 
-private theorem replaceBoundsWith_homEquiv_apply (x y : V) (a : N.Hom x y) :
-    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _
-      ((replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).homEquiv x y a)
-      (congrArg (fun f : V ≃ W => f x)
-        (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper))
-      (congrArg (fun f : V ≃ W => f y)
-        (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper)) =
-        e.homEquiv x y a := by
-  exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
+/-- Arbitrary corresponding bound replacements retain the original arrow equivalences. -/
+@[simp]
+theorem replaceBoundsWith_homEquiv_apply (x y : V) (a : N.Hom x y) :
+    (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).homEquiv x y a =
+      e.homEquiv x y a :=
+  (rfl)
 
-private theorem replaceBoundsWith_toPrefunctor :
+/-- Arbitrary corresponding bound replacements retain the induced prefunctor. -/
+@[simp]
+theorem replaceBoundsWith_toPrefunctor :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).toPrefunctor =
       e.toPrefunctor := by
   refine e.eq_toPrefunctor_of_obj_map _ ?_ ?_
@@ -90,7 +91,9 @@ private theorem replaceBoundsWith_toPrefunctor :
         (replaceBoundsWith_homEquiv_apply e lower upper h lower' upper' h' map_lower map_upper
           x y a)
 
-private theorem replaceBoundsWith_totalHomEquiv :
+/-- Arbitrary corresponding bound replacements retain total arrow transport. -/
+@[simp]
+theorem replaceBoundsWith_totalHomEquiv :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).totalHomEquiv =
       e.totalHomEquiv := by
   apply e.eq_totalHomEquiv_of_apply
@@ -98,21 +101,35 @@ private theorem replaceBoundsWith_totalHomEquiv :
   let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
   exact f.totalHomEquiv_apply ⟨x, y, a⟩
 
-private theorem replaceBoundsWith_mapPath {x y : V} (p : ArrowWalk N.Hom x y) :
+/-- Arbitrary corresponding bound replacements retain transport of directed paths. -/
+@[simp]
+theorem replaceBoundsWith_mapPath {x y : V} (p : ArrowWalk N.Hom x y) :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).mapPath p =
       e.mapPath p := by
   let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
+  have hF : f.toPrefunctor = e.toPrefunctor :=
+    replaceBoundsWith_toPrefunctor e lower upper h lower' upper' h' map_lower map_upper
+  have cast_mapPath_eq (F : @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom))
+      (h_obj : ∀ z,
+        @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F z = e.vertexEquiv z)
+      (hF : F = e.toPrefunctor) :
+      @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (h_obj x) (h_obj y)
+        (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x y p) =
+          e.mapPath p := by
+    subst F
+    exact e.mapPath_eq_toPrefunctor_mapPath p
   exact
     (f.mapPath_eq_toPrefunctor_mapPath p).symm.trans
-      (e.cast_mapPath_eq_of_eq_toPrefunctor
-        f.toPrefunctor
-        (fun x ↦ by
+      (cast_mapPath_eq f.toPrefunctor
+        (fun z ↦ by
           simpa only [toPrefunctor_obj] using
-            congrArg (fun f : V ≃ W => f x)
+            congrArg (fun g : V ≃ W => g z)
               (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper))
-        (replaceBoundsWith_toPrefunctor e lower upper h lower' upper' h' map_lower map_upper) p)
+        hF)
 
-private theorem replaceBoundsWith_assignmentEquiv (R : Type w') :
+/-- Arbitrary corresponding bound replacements retain assignment transport. -/
+@[simp]
+theorem replaceBoundsWith_assignmentEquiv (R : Type w') :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).assignmentEquiv R =
       e.assignmentEquiv R := by
   let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
@@ -145,15 +162,11 @@ theorem replaceBounds_vertexEquiv (e : N ≃ₙ N') (lower upper : N.Assignment 
   replaceBoundsWith_vertexEquiv e lower upper h _ _
     (e.assignmentEquiv_le_apply lower upper (fun _ _ b ↦ h b)) _ _
 
-/-- Replacing both bounds retains the arrow equivalences of the original isomorphism, after
-identifying their endpoints using `replaceBounds_vertexEquiv`. -/
+/-- Replacing both bounds retains the arrow equivalences of the original isomorphism. -/
 @[simp]
 theorem replaceBounds_homEquiv_apply (e : N ≃ₙ N') (lower upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ upper a) (x y : V) (a : N.Hom x y) :
-    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceBounds lower upper h).homEquiv x y a)
-      (congrArg (fun f : V ≃ W => f x) (e.replaceBounds_vertexEquiv lower upper h))
-      (congrArg (fun f : V ≃ W => f y) (e.replaceBounds_vertexEquiv lower upper h)) =
-        e.homEquiv x y a := by
+    (e.replaceBounds lower upper h).homEquiv x y a = e.homEquiv x y a := by
   exact replaceBoundsWith_homEquiv_apply e lower upper h _ _
     (e.assignmentEquiv_le_apply lower upper (fun _ _ b ↦ h b)) _ _ x y a
 
@@ -191,7 +204,8 @@ theorem replaceBounds_assignmentEquiv (e : N ≃ₙ N') (lower upper : N.Assignm
     exact replaceBoundsWith_assignmentEquiv e lower upper h _ _
       (e.assignmentEquiv_le_apply lower upper (fun _ _ b ↦ h b)) _ _ R
 
-private theorem assignmentEquiv_le_upper (e : N ≃ₙ N') (lower : N.Assignment K)
+/-- A transported lower bound remains below the target network's upper bound. -/
+theorem assignmentEquiv_le_upper (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     ∀ {x y} (a : N'.Hom x y), e.assignmentEquiv K lower a ≤ N'.upper a := by
   intro x y a
@@ -205,15 +219,9 @@ The induced isomorphism retains the vertex and arrow equivalences of `e`. -/
 def replaceLower (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     N.replaceLower lower h ≃ₙ
-      N'.replaceLower (e.assignmentEquiv K lower) (by
-        intro x y a
-        rw [← e.assignmentEquiv_upper]
-        exact e.assignmentEquiv_le_apply lower N.upper (fun _ _ b ↦ h b) a) :=
+      N'.replaceLower (e.assignmentEquiv K lower) (assignmentEquiv_le_upper e lower h) :=
   replaceBoundsWith e lower N.upper h _ N'.upper
-    (by
-      intro x y a
-      rw [← e.assignmentEquiv_upper]
-      exact e.assignmentEquiv_le_apply lower N.upper (fun _ _ b ↦ h b) a)
+    (assignmentEquiv_le_upper e lower h)
     (e.assignmentEquiv_apply K lower) e.map_upper
 
 /-- Replacing lower bounds retains the vertex equivalence of the original isomorphism. -/
@@ -225,15 +233,11 @@ theorem replaceLower_vertexEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (assignmentEquiv_le_upper e lower h)
     (e.assignmentEquiv_apply K lower) e.map_upper
 
-/-- Replacing lower bounds retains the arrow equivalences of the original isomorphism, after
-identifying their endpoints using `replaceLower_vertexEquiv`. -/
+/-- Replacing lower bounds retains the arrow equivalences of the original isomorphism. -/
 @[simp]
 theorem replaceLower_homEquiv_apply (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) (x y : V) (a : N.Hom x y) :
-    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceLower lower h).homEquiv x y a)
-      (congrArg (fun f : V ≃ W => f x) (e.replaceLower_vertexEquiv lower h))
-      (congrArg (fun f : V ≃ W => f y) (e.replaceLower_vertexEquiv lower h)) =
-        e.homEquiv x y a := by
+    (e.replaceLower lower h).homEquiv x y a = e.homEquiv x y a := by
   exact replaceBoundsWith_homEquiv_apply e lower N.upper h (e.assignmentEquiv K lower) N'.upper
     (assignmentEquiv_le_upper e lower h)
     (e.assignmentEquiv_apply K lower) e.map_upper x y a
@@ -277,7 +281,8 @@ theorem replaceLower_assignmentEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
       (assignmentEquiv_le_upper e lower h)
       (e.assignmentEquiv_apply K lower) e.map_upper R
 
-private theorem lower_le_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
+/-- The target network's lower bound remains below a transported upper bound. -/
+theorem lower_le_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     ∀ {x y} (a : N'.Hom x y), N'.lower a ≤ e.assignmentEquiv K upper a := by
   intro x y a
@@ -291,15 +296,9 @@ The induced isomorphism retains the vertex and arrow equivalences of `e`. -/
 def replaceUpper (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     N.replaceUpper upper h ≃ₙ
-      N'.replaceUpper (e.assignmentEquiv K upper) (by
-        intro x y a
-        rw [← e.assignmentEquiv_lower]
-        exact e.assignmentEquiv_le_apply N.lower upper (fun _ _ b ↦ h b) a) :=
+      N'.replaceUpper (e.assignmentEquiv K upper) (lower_le_assignmentEquiv e upper h) :=
   replaceBoundsWith e N.lower upper h N'.lower _
-    (by
-      intro x y a
-      rw [← e.assignmentEquiv_lower]
-      exact e.assignmentEquiv_le_apply N.lower upper (fun _ _ b ↦ h b) a)
+    (lower_le_assignmentEquiv e upper h)
     e.map_lower (e.assignmentEquiv_apply K upper)
 
 /-- Replacing upper bounds retains the vertex equivalence of the original isomorphism. -/
@@ -311,15 +310,11 @@ theorem replaceUpper_vertexEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (lower_le_assignmentEquiv e upper h)
     e.map_lower (e.assignmentEquiv_apply K upper)
 
-/-- Replacing upper bounds retains the arrow equivalences of the original isomorphism, after
-identifying their endpoints using `replaceUpper_vertexEquiv`. -/
+/-- Replacing upper bounds retains the arrow equivalences of the original isomorphism. -/
 @[simp]
 theorem replaceUpper_homEquiv_apply (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) (x y : V) (a : N.Hom x y) :
-    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceUpper upper h).homEquiv x y a)
-      (congrArg (fun f : V ≃ W => f x) (e.replaceUpper_vertexEquiv upper h))
-      (congrArg (fun f : V ≃ W => f y) (e.replaceUpper_vertexEquiv upper h)) =
-        e.homEquiv x y a := by
+    (e.replaceUpper upper h).homEquiv x y a = e.homEquiv x y a := by
   exact replaceBoundsWith_homEquiv_apply e N.lower upper h N'.lower
     (e.assignmentEquiv K upper)
     (lower_le_assignmentEquiv e upper h)

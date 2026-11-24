@@ -553,19 +553,6 @@ theorem mapPath_eq_toPrefunctor_mapPath (e : N ≃ₙ N') {x y : V}
         e.mapPath p := by
   simp only [mapPath, toPrefunctor, Quiver.Path.cast_rfl_rfl]
 
-/-- A prefunctor equal to the one induced by a network isomorphism has the same path map, after
-transporting its endpoints. -/
-theorem cast_mapPath_eq_of_eq_toPrefunctor (e : N ≃ₙ N')
-    (F : @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom))
-    (h_obj : ∀ x,
-      @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x = e.vertexEquiv x)
-    (hF : F = e.toPrefunctor)
-    {x y : V} (p : ArrowWalk N.Hom x y) :
-    @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (h_obj x) (h_obj y)
-      (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x y p) = e.mapPath p := by
-  subst F
-  exact e.mapPath_eq_toPrefunctor_mapPath p
-
 /-- Path transport preserves the empty path. -/
 @[simp]
 theorem mapPath_nil (e : N ≃ₙ N') (x : V) :
