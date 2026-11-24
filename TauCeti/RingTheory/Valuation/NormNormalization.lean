@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Tactic.Linarith
 public import Mathlib.RingTheory.Valuation.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.Analysis.Normed.Ring.UnitBall
 
 /-!
 # Real additive valuations attached to ultrametric norms and base-change comparisons
@@ -310,13 +311,9 @@ theorem ofNorm_map_eq_addVal {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteVa
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
-  -- Units of `O` map to elements of norm one, since both `u` and `u⁻¹` land in the unit ball.
   have hu : ofNorm b hb (φ u) = ((0 : ℝ) : WithTop ℝ) := by
     rw [ofNorm_eq_coe_iff, neg_zero, Real.rpow_zero]
-    refine le_antisymm (hφ u) ?_
-    calc (1 : ℝ) = ‖φ u‖ * ‖φ ↑u⁻¹‖ := by
-          rw [← norm_mul, ← _root_.map_mul, Units.mul_inv, _root_.map_one, norm_one]
-      _ ≤ ‖φ u‖ := mul_le_of_le_one_right (norm_nonneg _) (hφ _)
+    exact TauCeti.norm_map_eq_one_of_isUnit hφ u.isUnit
   have hπ' : ofNorm b hb (φ π) = ((1 : ℝ) : WithTop ℝ) := by
     rw [ofNorm_eq_coe_iff, Real.rpow_neg_one, hπb]
   rw [IsDiscreteValuationRing.addVal_def' u hπ n, _root_.map_mul, _root_.map_pow,

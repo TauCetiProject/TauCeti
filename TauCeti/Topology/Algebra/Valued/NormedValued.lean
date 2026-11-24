@@ -37,7 +37,8 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 * `TauCeti.NormedField.v_eq_valuation`: `Valued.v x = NormedField.valuation x` for any ultrametric
   normed field `K`, without requiring the norm to be nontrivial.
 * `Valuation.Integers.norm_algebraMap_le_one` and `Valuation.Integers.norm_algebraMap_lt_one_iff`:
-  `O` is the closed unit ball, and its nonunits are the elements of norm less than one.
+  `O` maps into the closed unit ball, and its nonunits are exactly the elements of norm less than
+  one.
 * `Valuation.Integers.mem_span_singleton_pow_iff_norm_le`: `x ∈ (ϖ) ^ n` exactly when
   `‖x‖ ≤ ‖ϖ‖ ^ n`.
 * `Valuation.Integers.radical_span_singleton_eq_of_norm_lt_one`: any two pseudouniformisers,
