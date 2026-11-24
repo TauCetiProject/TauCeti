@@ -12,6 +12,8 @@ import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
@@ -84,18 +86,13 @@ private theorem exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
     (eX.isWeakHomotopyEquivalence.isAspherical_iff (incl x)).1
       (isEilenbergMacLaneSpaceOne_killHomotopyGroups (TopCat.of X) x).isAspherical
   -- The inclusion `ι` induces an isomorphism of fundamental groups.
-  have hι : Function.Bijective (mapOfEq ι (rfl : ι x = ι x)) := by
-    have h := (eX.isWeakHomotopyEquivalence.mapOfEq_bijective (x := incl x) rfl).comp
-      (killHomotopyGroupsFundamentalGroupMulEquiv 2 (TopCat.of X) x one_lt_two).bijective
-    have hcomp : mapOfEq (eX : C(X', ULift.{v} X')) rfl ∘
-        killHomotopyGroupsFundamentalGroupMulEquiv 2 (TopCat.of X) x one_lt_two =
-          mapOfEq ι (rfl : ι x = ι x) :=
-      funext fun a ↦ by
-        rw [Function.comp_apply, killHomotopyGroupsFundamentalGroupMulEquiv_apply]
-        exact mapOfEq_mapOfEq_eq_mapOfEq rfl rfl rfl rfl a
-    exact hcomp ▸ h
   let ιπ : FundamentalGroup X x ≃* FundamentalGroup (ULift.{v} X') (ι x) :=
-    MulEquiv.ofBijective (mapOfEq ι (rfl : ι x = ι x)) hι
+    (killHomotopyGroupsFundamentalGroupMulEquiv 2 (TopCat.of X) x one_lt_two).trans
+      (homeomorphMulEquiv eX (incl x))
+  have hιπ (a : FundamentalGroup X x) : ιπ a = mapOfEq ι (rfl : ι x = ι x) a := by
+    rw [MulEquiv.trans_apply, killHomotopyGroupsFundamentalGroupMulEquiv_apply,
+      homeomorphMulEquiv_apply]
+    exact mapOfEq_mapOfEq_eq_mapOfEq rfl rfl rfl rfl a
   -- The cellular classifying space `C` of a presentation of `π₁(X, x)`, in the universe `max u v`.
   obtain ⟨R, -, -, hC⟩ := exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace
     (ULift.{v} (FundamentalGroup X x))
@@ -111,7 +108,7 @@ private theorem exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
   obtain ⟨ℓ, ⟨H⟩⟩ := heW.exists_comp_homotopic ι
   obtain ⟨γ, hγ⟩ := H.exists_path_fundamentalGroupMulEquivOfPath_map_comp_eq_mapOfEq he hg rfl
     (φ.comp ιπ.symm.toMonoidHom) (MonoidHom.ext fun a ↦ by simp [heπ, hgπ])
-  exact ⟨g.comp ℓ, γ, fun a ↦ (hγ a).trans (congrArg φ (ιπ.symm_apply_apply a))⟩
+  exact ⟨g.comp ℓ, γ, fun a ↦ (hγ a).trans (congrArg φ (ιπ.symm_apply_eq.2 (hιπ a).symm))⟩
 
 /-- **Homomorphisms into the fundamental group of a space with vanishing higher homotopy groups
 are induced by maps, up to a change of base point** (the existence half of Hatcher, Proposition
@@ -132,20 +129,19 @@ theorem exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_of_subsinglet
   have he := e.isWeakHomotopyEquivalence
   have : PathConnectedSpace D := he.pathConnectedSpace_iff.1 inferInstance
   let eπ : FundamentalGroup X x ≃* FundamentalGroup D (e.toFun x) :=
-    MulEquiv.ofBijective (map e.toFun x) (mapOfEq_rfl e.toFun ▸ he.mapOfEq_bijective rfl)
+    MulEquiv.ofBijective (map e.toFun x) (e.fundamentalGroup_map_bijective x)
   -- Replace `Y` by `ULift Y`, in the universe `max u v`.
   let eY : Y ≃ₜ ULift.{u} Y := Homeomorph.ulift.symm
-  let up : C(Y, ULift.{u} Y) := eY
   let down : C(ULift.{u} Y, Y) := eY.symm
-  have hdown : down.comp up = ContinuousMap.id Y := ContinuousMap.ext fun _ ↦ rfl
   obtain ⟨f, γ, hγ⟩ := exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
     (fun k hk ↦ (HomotopyGroup.homeomorphEquiv eY y).subsingleton_congr.1 (hY k hk)) (e.toFun x)
-    ((mapOfEq up (rfl : up y = up y)).comp (φ.comp eπ.symm.toMonoidHom))
+    ((homeomorphMulEquiv eY y).toMonoidHom.comp (φ.comp eπ.symm.toMonoidHom))
   refine ⟨down.comp (f.comp e.toFun), γ.map down.continuous, fun a ↦ ?_⟩
   have h := map_fundamentalGroupMulEquivOfPath down γ (map f (e.toFun x) (eπ a))
   simp only [hγ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at h
   rw [← mapOfEq_rfl down] at h
   simp only [map_comp, MonoidHom.comp_apply]
-  exact h.symm.trans (mapOfEq_mapOfEq_of_comp_eq_id down up rfl rfl hdown (φ a))
+  exact h.symm.trans ((homeomorphMulEquiv_symm_apply eY y _).symm.trans
+    ((homeomorphMulEquiv eY y).symm_apply_apply (φ a)))
 
 end TauCeti
