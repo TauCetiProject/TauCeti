@@ -168,24 +168,20 @@ theorem exists_isOpenImmersion_pullbackMap [∀ i, CompactSpace (D.obj i)]
   let gl := pullback.map (D.map l.hom) p (D.map l.hom) q (𝟙 _) g (𝟙 _) (by simp) (by simp [hg])
   have hgl : gl ≫ pullback.fst _ _ = pullback.fst _ _ := by simp [gl]
   -- These isomorphisms `e` identify the second projection with the projection to `Dₗ ×_{Dᵢ} Y`.
-  let e {Z : Scheme.{u}} (s : Z ⟶ D.obj i) :
-      pullback (c.π.app l.left) (pullback.fst (D.map l.hom) s) ≅ pullback (c.π.app i) s :=
-    pullbackRightPullbackFstIso (D.map l.hom) s (c.π.app l.left) ≪≫
-      pullback.congrHom (c.w l.hom) rfl
-  -- Base changing `gl` to the limit gives `φ` up to these isomorphisms, so it is an open
-  -- immersion.
-  have hφ : pullback.map (c.π.app l.left) (pullback.fst (D.map l.hom) p) (c.π.app l.left)
-      (pullback.fst (D.map l.hom) q) (𝟙 _) gl (𝟙 _) (by simp) (by simp [hgl]) =
-      (e p).hom ≫ φ ≫ (e q).inv := by
-    rw [← Category.assoc, Iso.eq_comp_inv]
-    apply pullback.hom_ext <;> simp [e, gl, φ]
+  let e {Z : Scheme.{u}} (s : Z ⟶ D.obj i) := c.pullbackOverIso l.hom s
+  have hcompat :
+      pullback.map (c.π.app i) p (D.map l.hom) p (c.π.app l.left) (𝟙 _) (𝟙 _)
+          (by simp) (by simp) ≫ gl =
+        φ ≫ pullback.map (c.π.app i) q (D.map l.hom) q (c.π.app l.left) (𝟙 _) (𝟙 _)
+          (by simp) (by simp) := by
+    apply pullback.hom_ext <;> simp [gl, φ]
+  have hφ := c.pullbackMap_eq_of_pullbackMap_comp_eq l.hom (a := φ) (by simp [φ]) hgl hcompat
   have : IsOpenImmersion (pullback.map (c.π.app l.left) (pullback.fst (D.map l.hom) p)
       (c.π.app l.left) (pullback.fst (D.map l.hom) q) (𝟙 _) gl (𝟙 _) (by simp)
-      (by simp [hgl])) := by
-    rw [hφ]; infer_instance
-  have hsnd : (e q).hom ≫ pullback.map (c.π.app i) q (D.map l.hom) q (c.π.app l.left) (𝟙 _)
-      (𝟙 _) (by simp) (by simp) = pullback.snd _ _ := by
-    apply pullback.hom_ext <;> simp [e, pullback.condition]
+      (by simp [hgl])) :=
+    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq @IsOpenImmersion l.hom
+      (a := φ) (by simp [φ]) hgl hcompat).mpr inferInstance
+  have hsnd := c.pullbackOverIso_hom_π_app l.hom q
   obtain ⟨j, hjl, hj⟩ := hc.exists_isOpenImmersion_pullbackMap_of_le_opensRange gl hgl V hVc hgV
     (by
       intro z hz
