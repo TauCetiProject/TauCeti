@@ -25,6 +25,8 @@ whenever the original variables have the same law.
 * `TauCeti.Probability.ae_forall_eq_of_identDistrib` — a countable family of random variables,
   each identically distributed with an almost surely constant random variable, is almost surely
   equal to that constant at every index simultaneously.
+* `TauCeti.Probability.identDistrib_comp_of_map_eq` — a map that preserves `μ` and commutes with
+  a measurable map `g` preserves the distribution of any random variable with law `μ.map g`.
 * `ProbabilityTheory.IdentDistrib.integral_indicator_setOf_norm_le_eq` — identically distributed
   variables have equal integrals after cutting off the values of norm greater than `R`.
 -/
@@ -45,6 +47,15 @@ theorem ae_forall_eq_of_identDistrib {ι : Sort*} [Countable ι] {Ω Ω' Z : Typ
     (hid : ∀ i, IdentDistrib (T i) X P Q) {c : Z} (h : X =ᵐ[Q] fun _ ↦ c) :
     ∀ᵐ ω ∂P, ∀ i, T i ω = c :=
   ae_all_iff.2 fun i ↦ (hid i).symm.ae_mem_snd (measurableSet_singleton c) h
+
+/-- If a measurable map `f` preserves `μ` and commutes with a measurable map `g`, then any random
+variable `X` with law `μ.map g` is identically distributed with `fun ω ↦ f (X ω)`. -/
+theorem identDistrib_comp_of_map_eq {Ω E : Type*} [MeasurableSpace Ω] [MeasurableSpace E]
+    {P : Measure Ω} {μ : Measure E} {X : Ω → E} (f : E → E) {g : E → E}
+    (hf : Measurable f) (hmap : μ.map f = μ) (hg : Measurable g)
+    (hcomm : ∀ x, g (f x) = f (g x)) (hX : HasLaw X (μ.map g) P) :
+    IdentDistrib (fun ω ↦ f (X ω)) X P P :=
+  (((hg.measurePreserving μ).of_semiconj ⟨hf, hmap⟩ hcomm hf).fun_comp_hasLaw hX).identDistrib hX
 
 end TauCeti.Probability
 
