@@ -21,10 +21,10 @@ the coordinates of `a`. Two lifts differ by a tuple of sections in the kernel of
 * `TauCeti.AffineSpaceLifts.Lifts i g a`: the lifts of `a` along `i` over `S`.
 * `TauCeti.AffineSpaceLifts.instAddTorsorLifts`: when a lift exists, the lifts form a torsor under
   `n → ker (Γ(T', ⊤) → Γ(T, ⊤))`.
-* `TauCeti.AffineSpaceLifts.nonempty_lifts`: a lift exists when `i` is a closed immersion and `T'`
-  is affine.
-* `TauCeti.AffineSpaceLifts.ker_appTop_eq_ideal_ker`: for `T'` affine, the kernel is `Γ(T', I)`
-  for the ideal sheaf `I = i.ker`.
+* `TauCeti.AffineSpaceLifts.nonempty_lifts`: a lift exists when `i` is a closed immersion, `T'`
+  is affine and `a` lies over `i ≫ g`.
+* `AlgebraicGeometry.Scheme.Hom.ker_appTop_eq_ideal_ker`: for `T'` affine, the kernel is
+  `Γ(T', I)` for the ideal sheaf `I = i.ker`.
 
 For `n` a singleton and `T'` affine, the lifts of `T ⟶ 𝔸¹_S` along a closed immersion `T ⟶ T'`
 form a torsor under `Γ(T', I)`.
@@ -57,6 +57,7 @@ namespace Lifts
 def coords (b : Lifts i g a) (j : n) : Γ(T', ⊤) := b.hom.appTop (AffineSpace.coord S j)
 
 /-- The coordinates of a lift are the pullbacks of the coordinates of `𝔸(n; S)`. -/
+@[simp]
 theorem hom_appTop_coord (b : Lifts i g a) (j : n) :
     b.hom.appTop (AffineSpace.coord S j) = b.coords j :=
   (rfl)
@@ -135,10 +136,14 @@ theorem nonempty_lifts [IsAffine T'] [IsClosedImmersion i] (ha : a ≫ 𝔸(n; S
   choose v hv using fun j ↦ hsurj (a.appTop (AffineSpace.coord S j))
   exact ⟨Lifts.mk' v hv ha⟩
 
-/-- For `T'` affine, the kernel of `Γ(T', ⊤) → Γ(T, ⊤)` is the module of global sections of the
-ideal sheaf of `i`. -/
-theorem ker_appTop_eq_ideal_ker [IsAffine T'] :
-    RingHom.ker i.appTop.hom = i.ker.ideal ⟨⊤, isAffineOpen_top T'⟩ := by
+end TauCeti.AffineSpaceLifts
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- For `Y` affine, the kernel of `Γ(Y, ⊤) → Γ(X, ⊤)` is the module of global sections of the
+ideal sheaf of `f`. -/
+theorem ker_appTop_eq_ideal_ker {X Y : Scheme} (f : X ⟶ Y) [IsAffine Y] :
+    RingHom.ker f.appTop.hom = f.ker.ideal ⟨⊤, isAffineOpen_top Y⟩ := by
   simp [Scheme.ker_of_isAffine]
 
-end TauCeti.AffineSpaceLifts
+end AlgebraicGeometry.Scheme.Hom
