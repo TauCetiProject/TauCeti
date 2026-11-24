@@ -504,8 +504,9 @@ instance : LocallyFiniteOrder (NoncrossingPartition s) :=
 
 /-- A noncrossing partition of the empty set is the partition into no parts. -/
 theorem eq_bot_of_eq_empty (hs : s = ∅) (P : NoncrossingPartition s) : P = ⊥ := by
+  rw [← Finset.bot_eq_empty] at hs
   subst hs
-  exact Subtype.ext (Subsingleton.elim (α := Finpartition (⊥ : Finset α)) _ _)
+  exact Subtype.ext (Subsingleton.elim _ _)
 
 /-- The partition of the empty set into no parts is its only noncrossing partition. -/
 instance : Unique (NoncrossingPartition (∅ : Finset α)) where
