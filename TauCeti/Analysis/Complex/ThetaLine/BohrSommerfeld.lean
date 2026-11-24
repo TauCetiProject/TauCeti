@@ -9,14 +9,13 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Data.Set.Card
 public import TauCeti.Analysis.Complex.ThetaLine.Basic
-import Mathlib.Algebra.Order.Round
+import Mathlib.Algebra.Order.Floor.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.Order.Interval.Set.Infinite
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.Calculus.MeanValue
 
@@ -50,8 +49,8 @@ they are the leaves `p = (m - α) / k` with `⌈α⌉ ≤ m < ⌈α⌉ + k`
 (`TauCeti.thetaBohrSommerfeldLeaves_eq_image`), so changing the characteristic `α`, a flat twist of
 the line, shifts them. The Bohr–Sommerfeld quantization, the direct sum of the parallel lines over
 the Bohr–Sommerfeld leaves, therefore has dimension `|k|`
-(`TauCeti.finrank_thetaBohrSommerfeldQuantization`), the same as the Kähler quantization
-`TauCeti.thetaSections`.
+(`TauCeti.finrank_thetaBohrSommerfeldQuantization`); for `k > 0` and `Im τ > 0` this is the
+dimension `k` of the Kähler quantization `TauCeti.thetaSections` (`TauCeti.finrank_thetaSections`).
 
 In contrast, a continuous section of the theta line that is parallel along every leaf vanishes
 (`TauCeti.eq_zero_of_forall_mem_thetaLeafSections`): it vanishes on every leaf with nontrivial
@@ -109,13 +108,18 @@ theorem thetaConnectionForm_ofReal_add (q : ℝ) (z : ℂ) :
     thetaConnectionForm k τ (q + z) = thetaConnectionForm k τ z := by
   simp [thetaConnectionForm_def]
 
+/-- At the point `pτ` of the leaf through `p`, the connection form is `2πikp`. -/
+theorem thetaConnectionForm_ofReal_mul (hτ : τ.im ≠ 0) (p : ℝ) :
+    thetaConnectionForm k τ (p * τ) = 2 * π * I * k * p := by
+  have : (τ.im : ℂ) ≠ 0 := ofReal_ne_zero.mpr hτ
+  rw [thetaConnectionForm_def]
+  simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, ofReal_mul]
+  field_simp
+
 /-- On the leaf through `p`, the connection form is the constant `2πikp`. -/
 theorem thetaConnectionForm_ofReal_add_ofReal_mul (hτ : τ.im ≠ 0) (q p : ℝ) :
     thetaConnectionForm k τ (q + p * τ) = 2 * π * I * k * p := by
-  have : (τ.im : ℂ) ≠ 0 := ofReal_ne_zero.mpr hτ
-  rw [thetaConnectionForm_ofReal_add, thetaConnectionForm_def]
-  simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, ofReal_mul]
-  field_simp
+  rw [thetaConnectionForm_ofReal_add, thetaConnectionForm_ofReal_mul hτ]
 
 /-- **Parallel sections along a leaf.** A function `f` on the leaf through `p` that is parallel for
 the Chern connection, `f' q = -A (q + pτ) f q`, is the multiple `f q = f 0 exp (-A (pτ) q)` of a
@@ -188,7 +192,7 @@ theorem thetaLeafHolonomy_mul_apply_zero (hτ : τ.im ≠ 0) {f : ℝ → ℂ}
     (hf : ∀ q : ℝ, HasDerivAt f (-thetaConnectionForm k τ (q + p * τ) * f q) q) :
     thetaLeafHolonomy k α p * f 0 = cexp (-(2 * π * I * α)) * f 1 := by
   have h := apply_eq_apply_zero_mul_cexp_of_hasDerivAt_thetaConnectionForm hf 1
-  rw [← zero_add ((p : ℂ) * τ), ← ofReal_zero, thetaConnectionForm_ofReal_add_ofReal_mul hτ] at h
+  rw [thetaConnectionForm_ofReal_mul hτ] at h
   rw [h, thetaLeafHolonomy_def, mul_left_comm, ← Complex.exp_add, mul_comm]
   congr 2
   push_cast
@@ -209,6 +213,14 @@ theorem thetaLeafHolonomy_eq_one_iff : thetaLeafHolonomy k α p = 1 ↔ ∃ m : 
     push_cast
     ring
 
+/-- For `k ≠ 0` the leaves with trivial holonomy are the leaves `p = (m - α) / k`, `m ∈ ℤ`. -/
+theorem setOf_thetaLeafHolonomy_eq_one (hk : k ≠ 0) :
+    {p | thetaLeafHolonomy k α p = 1} = range fun m : ℤ ↦ (m - α) / k := by
+  have hk' : (k : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hk
+  ext p
+  simp only [mem_ofPred_eq, thetaLeafHolonomy_eq_one_iff, mem_range, div_eq_iff hk']
+  exact exists_congr fun m ↦ ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
+
 /-- The leaf holonomy is unchanged by `p ↦ p + 1`: the leaves `p` and `p + 1` are the same leaf of
 the torus. -/
 @[simp]
@@ -219,8 +231,7 @@ theorem thetaLeafHolonomy_add_one : thetaLeafHolonomy k α (p + 1) = thetaLeafHo
 /-- On a Bohr–Sommerfeld leaf the parallel sections are the multiples of `q ↦ exp (-2πikpq)`. -/
 theorem thetaLeafSections_eq_span (hτ : τ.im ≠ 0) (h : thetaLeafHolonomy k α p = 1) :
     thetaLeafSections k τ α p = ℂ ∙ fun q : ℝ ↦ cexp (-(2 * π * I * k * p * q)) := by
-  have hA := thetaConnectionForm_ofReal_add_ofReal_mul (k := k) hτ 0 p
-  rw [ofReal_zero, zero_add] at hA
+  have hA := thetaConnectionForm_ofReal_mul (k := k) hτ p
   refine le_antisymm
     (by simpa [hA] using thetaLeafSections_le_span (k := k) (τ := τ) (α := α) (p := p)) ?_
   rw [Submodule.span_singleton_le_iff_mem]
@@ -240,7 +251,7 @@ theorem thetaLeafSections_eq_span (hτ : τ.im ≠ 0) (h : thetaLeafHolonomy k �
     convert this using 1
     · funext y
       simp
-    · simp
+    · simp only [id_eq, ofReal_one, neg_mul]
       ring
 
 /-- **A leaf carries a nonzero parallel section exactly when its holonomy is trivial.** -/
@@ -254,8 +265,7 @@ theorem thetaLeafSections_eq_bot_iff (hτ : τ.im ≠ 0) :
     have h := thetaLeafHolonomy_mul_apply_zero (α := α) hτ hf.2
     have h1 := hf.1 0
     rw [zero_add] at h1
-    rw [h1, ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero,
-      one_mul] at h
+    rw [h1, ← mul_assoc, ← Complex.exp_add] at h
     have h0 : f 0 = 0 := by
       by_contra hne
       exact hhol (by simpa [hne] using h)
@@ -340,15 +350,15 @@ variable (k τ α) in
 abbrev ThetaBohrSommerfeldQuantization : Type :=
   ⨁ p : thetaBohrSommerfeldLeaves k α, thetaLeafSections k τ α p
 
-/-- **The Bohr–Sommerfeld quantization of the torus has dimension `|k|`**, the dimension of its
-Kähler quantization `TauCeti.thetaSections`. -/
+/-- **The Bohr–Sommerfeld quantization of the torus has dimension `|k|`.** For `k > 0` and
+`Im τ > 0` this is the dimension `k` of the Kähler quantization `TauCeti.thetaSections`
+(`TauCeti.finrank_thetaSections`). -/
 theorem finrank_thetaBohrSommerfeldQuantization (hk : k ≠ 0) (hτ : τ.im ≠ 0) :
     Module.finrank ℂ (ThetaBohrSommerfeldQuantization k τ α) = k.natAbs := by
   have := (finite_thetaBohrSommerfeldLeaves (α := α) hk).fintype
   rw [Module.finrank_directSum,
-    Finset.sum_congr rfl fun p _ ↦ finrank_thetaLeafSections hτ p.property.2,
-    Finset.sum_const, smul_eq_mul, mul_one, Finset.card_univ, ← Nat.card_eq_fintype_card,
-    Nat.card_coe_set_eq, ncard_thetaBohrSommerfeldLeaves hk]
+    Finset.sum_congr rfl fun p _ ↦ finrank_thetaLeafSections hτ p.property.2]
+  simp [← Nat.card_eq_fintype_card, ncard_thetaBohrSommerfeldLeaves hk]
 
 /-! ### Global polarized sections -/
 
@@ -360,14 +370,8 @@ theorem eq_zero_of_forall_mem_thetaLeafSections (hk : k ≠ 0) (hτ : τ.im ≠ 
     (hs : Continuous s) (h : ∀ p : ℝ, (fun q : ℝ ↦ s (q + p * τ)) ∈ thetaLeafSections k τ α p) :
     s = 0 := by
   have hBS : {p : ℝ | thetaLeafHolonomy k α p = 1}.Countable := by
-    have hk' : (k : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hk
-    refine (countable_range fun m : ℤ ↦ (m - α) / k).mono fun p hp ↦ ?_
-    obtain ⟨m, hm⟩ := thetaLeafHolonomy_eq_one_iff.mp hp
-    refine ⟨m, ?_⟩
-    beta_reduce
-    rw [← hm]
-    field_simp
-    ring
+    rw [setOf_thetaLeafHolonomy_eq_one hk]
+    exact countable_range _
   have hzero (q : ℝ) : (fun p : ℝ ↦ s (q + p * τ)) = 0 := by
     refine Continuous.ext_on (hBS.dense_compl ℝ) (by fun_prop) continuous_const fun p hp ↦ ?_
     have h0 := (thetaLeafSections_eq_bot_iff hτ).mpr hp ▸ h p
