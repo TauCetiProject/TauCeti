@@ -26,7 +26,7 @@ public section
 namespace Int
 
 /-- Multiplication by a positive integer as an order embedding of `ℤ`. -/
-@[expose] def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
+def mulOrderEmbedding (d : ℕ+) : ℤ ↪o ℤ :=
   OrderEmbedding.ofStrictMono (fun k ↦ (d : ℤ) * k)
     (strictMono_mul_left_of_pos (by exact_mod_cast d.pos))
 
