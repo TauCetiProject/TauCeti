@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Adjunction
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
+public import TauCeti.Topology.CWComplex.Classical.DiscBundle.Attachment
 public import TauCeti.Topology.CWComplex.Classical.Image
-public import TauCeti.Topology.CWComplex.Classical.ThomSpace
 
 /-!
 # The cells of a Morse–Bott critical level form a relative CW complex
