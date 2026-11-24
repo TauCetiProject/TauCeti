@@ -34,8 +34,9 @@ If moreover `ι : Kbar →ₐ[K] Ω` embeds a separably closed field over `K`, t
 their values on `ι(Kbar)`, and every finite separable extension of `L` inside `Ω` is `L⟮ι β⟯` for
 some `β ∈ Kbar`. For a number field `F`, a finite place `v`, `L = F_v`, `Ω = F_v^alg` and
 `Kbar = F^alg` this is the comparison of the global and local algebraic closures: an
-`F_v`-automorphism of `F_v^alg` fixing `ι(F^alg)` is the identity, which identifies the absolute
-Galois group of `F_v` with a decomposition group of `F`.
+`F_v`-automorphism of `F_v^alg` fixing `ι(F^alg)` is the identity, so restriction along `ι` from
+the absolute Galois group of `F_v` to that of `F` is injective. This is the key step towards
+identifying the former with a decomposition group of `F`, which is not done here.
 
 ## Main results
 
