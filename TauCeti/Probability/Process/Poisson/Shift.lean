@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Independence.Process.HasIndepIncrements
 public import Mathlib.Probability.Distributions.Poisson.Basic
 public import Mathlib.Probability.HasLaw
+import TauCeti.Order.Filter.Basic
 
 /-!
 # Deterministic shifts of Poisson counts
@@ -44,7 +45,7 @@ theorem HasIndepIncrements.identDistrib_shift_of_hasLaw_poissonMeasure (hN : Has
   have hmZ (s : ℝ≥0) : Measurable (Z s) :=
     (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hm s)
   have hZ : HasIndepIncrements Z P :=
-    hN.natCast (fun _ _ hsu ↦ hmono.mono fun _ hω ↦ hω hsu)
+    hN.natCast hmono.monotone_apply_le
   have h0Z : ∀ᵐ ω ∂P, Z 0 ω = 0 := by
     filter_upwards [h0] with ω hω using by simp [Z, hω]
   have hinclaw : ∀ s u : ℝ≥0, s ≤ u →
@@ -58,8 +59,8 @@ theorem HasIndepIncrements.identDistrib_shift_of_hasLaw_poissonMeasure (hN : Has
         (fun ω ↦ N u ω - N s ω) P P :=
       ⟨h1.aemeasurable, h2.aemeasurable, h1.map_eq.trans h2.map_eq.symm⟩
     exact hNat.natCast_sub_of_le
-      (hmono.mono fun _ hω ↦ hω (add_le_add le_rfl hsu))
-      (hmono.mono fun _ hω ↦ hω hsu)
+      (hmono.monotone_apply_le _ _ (add_le_add le_rfl hsu))
+      (hmono.monotone_apply_le _ _ hsu)
   have hdist := hZ.identDistrib_shift hmZ h0Z t hinclaw
   have htoNat : Measurable (fun (z : ℝ≥0 → ℤ) s ↦ (z s).toNat) := by fun_prop
   convert hdist.comp htoNat using 1 <;> ext ω s <;> simp [Z]

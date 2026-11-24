@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Temporal
 public import TauCeti.Probability.Process.Poisson.Microscopic
 import TauCeti.MeasureTheory.Measure.Interval
+import TauCeti.Order.Filter.Basic
 import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
@@ -117,8 +118,7 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_small_time
   rw [isPoissonRandomMeasure_smul_nnvolume_iff_count_increments hM hcount]
   exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
     hind.hasLaw_sub_poissonMeasure_iff_stationary_small_time h0
-      (fun _ _ hst ↦
-        (ae_monotone_of_ae_forall_measure_Iic_eq hcount).mono fun _ hmono ↦ hmono hst) r
+      (ae_monotone_of_ae_forall_measure_Iic_eq hcount).monotone_apply_le r
 
 /-- **Microscopic characterization of homogeneous temporal Poisson point processes (`o(h)`
 form).** For a measurable random measure `M` on `ℝ≥0` represented almost surely by cumulative
@@ -138,7 +138,6 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
   rw [isPoissonRandomMeasure_smul_nnvolume_iff_count_increments hM hcount]
   exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
     hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0
-      (fun _ _ hst ↦
-        (ae_monotone_of_ae_forall_measure_Iic_eq hcount).mono fun _ hmono ↦ hmono hst) r
+      (ae_monotone_of_ae_forall_measure_Iic_eq hcount).monotone_apply_le r
 
 end TauCeti.Probability

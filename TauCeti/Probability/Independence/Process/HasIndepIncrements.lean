@@ -379,11 +379,11 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
     filter_upwards [h0X] with ω hω using by simp [hω]
   have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
     filter_upwards [h0Y] with ω hω using by simp [hω]
-  have hdist := (hX.natCast (fun _ _ hst ↦ hmonoX.mono fun _ hω ↦ hω hst)).identDistrib
-    (hY.natCast (fun _ _ hst ↦ hmonoY.mono fun _ hω ↦ hω hst))
+  have hdist := (hX.natCast hmonoX.monotone_apply_le).identDistrib
+    (hY.natCast hmonoY.monotone_apply_le)
     hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
       (hlaw s t hst).natCast_sub_of_le
-        (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
+        (hmonoX.monotone_apply_le s t hst) (hmonoY.monotone_apply_le s t hst))
   simpa only [Function.comp_def, Int.toNat_natCast] using
     hdist.comp (Measurable.of_eval fun _ ↦
       (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))
@@ -428,7 +428,7 @@ theorem HasIndepIncrements.indepFun_shift_nat (hN : HasIndepIncrements N P)
     filter_upwards [h0] with ω hω using by simp [hω]
   -- The local bottom is zero, so the history theorem's initial-time hypothesis is h0Z.
   have hbotZ : ∀ᵐ ω ∂P, (N (⊥ : T) ω : ℤ) = 0 := h0Z
-  have h := (hN.natCast (fun _ _ hsu ↦ hmono.mono fun _ hω ↦ hω hsu)).indepFun_future_past
+  have h := (hN.natCast hmono.monotone_apply_le).indepFun_future_past
     hmZ hbotZ t
   have hf : Measurable (fun (z : Ici t → ℤ) (s : T) ↦
       (z ⟨t + s, by simp only [Set.mem_Ici]; exact le_self_add⟩).toNat) := by fun_prop

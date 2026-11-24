@@ -12,10 +12,10 @@ public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.Topology.Order.Cadlag
 public import Mathlib.Probability.IdentDistrib
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.IdentDistrib
+import TauCeti.Topology.Order.Cadlag
 
 /-!
 # Cumulative coordinates of random measures on the half-line
@@ -264,26 +264,17 @@ theorem monotone_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
 right-continuous in `t`, without assuming integrality. -/
 theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
     IsRightContinuous fun t : ℝ≥0 ↦ ⌊(μ (Iic t)).toNNReal⌋₊ := by
-  intro t
-  have htend_enn : Tendsto (fun s : ℝ≥0 ↦ μ (Iic s)) (𝓝[>] t) (𝓝 (μ (Iic t))) :=
-    tendsto_measure_Iic_nhdsGT ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩
-  have htend_real : Tendsto (fun s : ℝ≥0 ↦ ((μ (Iic s)).toNNReal : ℝ))
-      (𝓝[>] t) (𝓝[≥] ((μ (Iic t)).toNNReal : ℝ)) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · exact (NNReal.continuous_coe.tendsto _).comp
-        ((ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp htend_enn)
-    · filter_upwards [self_mem_nhdsWithin] with s hts
-      exact NNReal.coe_le_coe.2 (ENNReal.toNNReal_mono (measure_Iic_lt_top (μ := μ)).ne
-        (measure_mono (Iic_subset_Iic.2 hts.le)))
-  have hfloor := (tendsto_floor_right_pure_floor ((μ (Iic t)).toNNReal : ℝ)).comp htend_real
-  have htoNat : Tendsto (fun s : ℝ≥0 ↦ ⌊((μ (Iic s)).toNNReal : ℝ)⌋.toNat)
-      (𝓝[>] t) (pure ⌊((μ (Iic t)).toNNReal : ℝ)⌋.toNat) :=
-    (tendsto_pure_pure Int.toNat _).comp hfloor
-  have hcoe (x : ℝ≥0) : ⌊(x : ℝ)⌋₊ = ⌊x⌋₊ :=
-    (Nat.floor_eq_iff x.coe_nonneg).2
-      ⟨by exact_mod_cast Nat.floor_le zero_le, by exact_mod_cast Nat.lt_floor_add_one x⟩
-  rw [ContinuousWithinAt, nhds_discrete]
-  simpa only [Int.floor_toNat, hcoe] using htoNat
+  refine TauCeti.isRightContinuous_iff_eventually_eq.2 fun t ↦ ?_
+  have htend : Tendsto (fun s : ℝ≥0 ↦ (μ (Iic s)).toNNReal) (𝓝[>] t)
+      (𝓝 (μ (Iic t)).toNNReal) :=
+    (ENNReal.tendsto_toNNReal (measure_Iic_lt_top (μ := μ)).ne).comp
+      (tendsto_measure_Iic_nhdsGT ⟨t + 1, lt_add_one t, (measure_Iic_lt_top (μ := μ)).ne⟩)
+  have hlt : ∀ᶠ s in 𝓝[>] t, (μ (Iic s)).toNNReal < (⌊(μ (Iic t)).toNNReal⌋₊ : ℝ≥0) + 1 :=
+    htend.eventually (eventually_lt_nhds (Nat.lt_floor_add_one _))
+  filter_upwards [self_mem_nhdsWithin, hlt] with s hts hs
+  have hle : (μ (Iic t)).toNNReal ≤ (μ (Iic s)).toNNReal :=
+    ENNReal.toNNReal_mono (measure_Iic_lt_top (μ := μ)).ne (measure_mono (Iic_subset_Iic.2 hts.le))
+  exact (Nat.floor_eq_iff zero_le).2 ⟨(Nat.floor_le zero_le).trans hle, hs⟩
 
 /-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
 monotone in `t`. -/

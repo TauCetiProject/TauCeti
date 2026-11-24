@@ -111,23 +111,14 @@ theorem measurable_pathOccurrenceTime (n : ℕ) :
     Measurable fun N : ℝ≥0 → ℕ ↦ pathOccurrenceTime N n :=
   measurable_pathOccurrenceTime_of_nnrat (fun q ↦ measurable_pi_apply (q : ℝ≥0)) n
 
-private theorem exists_nnrat_btwn_lt {t : ℝ≥0} {b : ℝ≥0∞} (h : (t : ℝ≥0∞) < b) :
-    ∃ q : ℚ≥0, t < (q : ℝ≥0) ∧ ((q : ℝ≥0) : ℝ≥0∞) < b := by
-  obtain ⟨r, hr0, htr, hrb⟩ := ENNReal.lt_iff_exists_rat_btwn.1 h
-  let q : ℚ≥0 := ⟨r, hr0⟩
-  have hcoe : Real.toNNReal r = (q : ℝ≥0) := by
-    simpa [q] using NNRat.toNNReal_cast q
-  rw [hcoe] at htr hrb
-  exact ⟨q, ENNReal.coe_lt_coe.1 htr, hrb⟩
-
 /-- If `f` stays at least `n + 1` throughout a nonempty open interval `(t, δ)`, then
 `pathOccurrenceTime f n ≤ t`, without global monotonicity or right-continuity assumptions. -/
 theorem pathOccurrenceTime_le_of_forall_Ioo {f : ℝ≥0 → ℕ} {t δ : ℝ≥0} (hδ : t < δ) {n : ℕ}
     (h : ∀ s ∈ Ioo t δ, n + 1 ≤ f s) : pathOccurrenceTime f n ≤ t := by
   refine le_of_forall_gt fun b hb ↦ ?_
-  obtain ⟨q, htq, hqb⟩ := exists_nnrat_btwn_lt (lt_min hb (ENNReal.coe_lt_coe.2 hδ))
-  exact (pathOccurrenceTime_le_nnrat
-    (h q ⟨htq, ENNReal.coe_lt_coe.1 (hqb.trans_le (min_le_right _ _))⟩)).trans_lt
+  obtain ⟨q, htq, hqb⟩ := ENNReal.lt_iff_exists_nnrat_btwn.1 (lt_min hb (ENNReal.coe_lt_coe.2 hδ))
+  exact (pathOccurrenceTime_le_nnrat (h q ⟨ENNReal.coe_lt_coe.1 htq,
+    ENNReal.coe_lt_coe.1 (hqb.trans_le (min_le_right _ _))⟩)).trans_lt
     (hqb.trans_le (min_le_left _ _))
 
 /-- On a monotone path, reaching `n + 1` at any real time `t` bounds `pathOccurrenceTime f n` by

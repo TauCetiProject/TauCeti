@@ -94,9 +94,7 @@ theorem pathOccurrenceTime_eq_iInf_of_monotone {f : ℝ≥0 → ℕ} (hf : Monot
 theorem pathOccurrenceTime_le_of_continuousWithinAt_of_le {f : ℝ≥0 → ℕ} {t : ℝ≥0}
     (hrc : ContinuousWithinAt f (Ioi t) t) {n : ℕ} (ht : n + 1 ≤ f t) :
     pathOccurrenceTime f n ≤ t := by
-  have hev : ∀ᶠ s in 𝓝[>] t, f s = f t :=
-    tendsto_pure.1 (by simpa only [ContinuousWithinAt, nhds_discrete] using hrc)
-  obtain ⟨δ, hδt, hδ⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hev
+  obtain ⟨δ, hδt, hδ⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hrc.eventually_eq
   exact pathOccurrenceTime_le_of_forall_Ioo hδt fun s hs ↦ (hδ hs).symm ▸ ht
 
 /-- On a right-continuous path, `pathOccurrenceTime` agrees with the infimum over all `t : ℝ≥0`,

@@ -24,11 +24,12 @@ The canonical coercions `ℚ≥0 → ℝ≥0` and `ℚ≥0 → ℝ` are isometri
   under `ℚ≥0 → ℝ`.
 * `NNRat.toNNReal_cast`, `Rat.toNNReal_cast`: compatibility of `Real.toNNReal` with coercions from
   `ℚ≥0` and `ℚ`.
+* `ENNReal.lt_iff_exists_nnrat_btwn`: strict order density of `ℚ≥0` in `ℝ≥0∞`.
 -/
 
 public section
 
-open scoped NNReal
+open scoped ENNReal NNReal
 
 namespace NNRat
 
@@ -84,10 +85,10 @@ theorem edist_cast_real (x y : ℚ≥0) : edist (x : ℝ) (y : ℝ) = edist x y 
 
 /-- Applying `Real.toNNReal` to a nonnegative rational coerced to `ℝ` recovers `(r : ℝ≥0)`. -/
 @[simp, norm_cast]
-theorem toNNReal_cast (r : ℚ≥0) : Real.toNNReal (r : ℝ) = (r : ℝ≥0) := by
-  apply NNReal.eq
-  rw [Real.coe_toNNReal _ (NNRat.cast_nonneg r), NNRat.cast_def (K := ℝ),
-    NNRat.cast_def (K := ℝ≥0), NNReal.coe_div, NNReal.coe_natCast, NNReal.coe_natCast]
+theorem toNNReal_cast (r : ℚ≥0) : Real.toNNReal (r : ℝ) = (r : ℝ≥0) :=
+  NNReal.eq <| by
+    rw [Real.coe_toNNReal _ (NNRat.cast_nonneg r)]
+    exact (map_nnratCast (Rat.castHom ℝ) r).trans (map_nnratCast NNReal.toRealHom r).symm
 
 end NNRat
 
@@ -105,3 +106,22 @@ theorem toNNReal_cast (q : ℚ) : Real.toNNReal (q : ℝ) = (q.toNNRat : ℝ≥0
       NNRat.cast_zero]
 
 end Rat
+
+namespace ENNReal
+
+open scoped NNRat
+
+/-- An extended nonnegative real `a` is strictly less than `b` if and only if some nonnegative
+rational lies strictly between them. -/
+theorem lt_iff_exists_nnrat_btwn {a b : ℝ≥0∞} :
+    a < b ↔ ∃ q : ℚ≥0, a < (q : ℝ≥0) ∧ ((q : ℝ≥0) : ℝ≥0∞) < b := by
+  rw [ENNReal.lt_iff_exists_rat_btwn]
+  constructor
+  · rintro ⟨r, hr0, har, hrb⟩
+    let q : ℚ≥0 := ⟨r, hr0⟩
+    have hcoe : Real.toNNReal r = (q : ℝ≥0) := NNRat.toNNReal_cast q
+    exact ⟨q, hcoe ▸ har, hcoe ▸ hrb⟩
+  · rintro ⟨q, haq, hqb⟩
+    exact ⟨q, q.property, (NNRat.toNNReal_cast q).symm ▸ haq, (NNRat.toNNReal_cast q).symm ▸ hqb⟩
+
+end ENNReal
