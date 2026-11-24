@@ -103,7 +103,8 @@ private theorem integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_mul_sub
     Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value u z) - 1) * (W1p.value v z - W1p.value u z) := by
   simpa only [backgroundWeight_def, Pi.mul_def, Pi.sub_apply] using
-    (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).integrable_mul
+    (memLp_backgroundWeight_mul_exp_two_mul_sub_one
+      (continuous_backgroundWeight P.continuous).aestronglyMeasurable u).integrable_mul
       ((W1p.memLp_value v).sub (W1p.memLp_value u))
 
 /-- The zeroth-order term of the weak reduced equation in the direction `v - u` splits as

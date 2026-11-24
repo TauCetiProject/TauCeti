@@ -113,15 +113,16 @@ theorem reducedSource_eq_exp_mul_sub_one_div_eight_add (P : Polynomial ℂ) (w :
   simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
   ring
 
-/-- For `w ∈ H¹(ℂ)` and continuous `f`, `h (exp (2w) - 1) ∈ L²(ℂ)`, where
-`h = ‖f‖² / (1 + ‖f‖²) = TauCeti.Vortex.backgroundWeight f`: `exp (2w) - 1 ∈ L²(ℂ)` and
+/-- For `w ∈ H¹(ℂ)` and `f` such that `h = ‖f‖² / (1 + ‖f‖²) = TauCeti.Vortex.backgroundWeight f`
+is almost everywhere strongly measurable, `h (exp (2w) - 1) ∈ L²(ℂ)`: `exp (2w) - 1 ∈ L²(ℂ)` and
 `0 ≤ h ≤ 1`. -/
-theorem memLp_backgroundWeight_mul_exp_two_mul_sub_one {f : ℂ → ℂ} (hf : Continuous f)
+theorem memLp_backgroundWeight_mul_exp_two_mul_sub_one {f : ℂ → ℂ}
+    (hh : AEStronglyMeasurable (backgroundWeight f) volume)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (fun z ↦ backgroundWeight f z * (Real.exp (2 * W1p.value u z) - 1)) 2 volume := by
   have hexp := W1p.memLp_exp_mul_value_sub_one volume Complex.finrank_real_complex 2 u
   have htop : MemLp (backgroundWeight f) ⊤ volume :=
-    memLp_top_of_bound (continuous_backgroundWeight hf).aestronglyMeasurable 1
+    memLp_top_of_bound hh 1
       (Eventually.of_forall fun z ↦ by
         rw [Real.norm_of_nonneg (backgroundWeight_nonneg f z)]
         exact (backgroundWeight_lt_one f z).le)
@@ -134,7 +135,8 @@ degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
 theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (reducedSource P (W1p.value u)) 2 volume := by
   have hfirst :=
-    (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).const_mul (1 / 8)
+    (memLp_backgroundWeight_mul_exp_two_mul_sub_one
+      (continuous_backgroundWeight P.continuous).aestronglyMeasurable u).const_mul (1 / 8)
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
   simp only [Pi.add_apply, reducedSource_eq_add_sub_inv_div_eight, backgroundWeight_def]

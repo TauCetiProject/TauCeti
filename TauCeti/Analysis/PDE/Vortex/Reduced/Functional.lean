@@ -40,14 +40,15 @@ This is formally the Euler–Lagrange equation of Taubes's functional
 
 (`TauCeti.Vortex.reducedFunctional`): the derivative in `w` of the last two integrands is
 `(exp (2w) h - 1) / 8 + g`, because `(h - 1) / 8 = -(1 + ‖P‖²)⁻¹ / 8`. The middle integrand is
-nonnegative and convex in `w`, and the coefficient `(h - 1) / 8 + g` of the linear term is square
-integrable (`TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`). Taubes
+nonnegative and convex in `w`, and when `P` has degree at least one the coefficient
+`(h - 1) / 8 + g` of the linear term is square integrable
+(`TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`). Taubes
 obtains the vortex with prescribed zeros as the minimizer of `I`.
 
 The direct method minimizes `I` on `H¹(ℂ) = W^{1,2}(ℂ)`. There `I` is
 `TauCeti.Vortex.sobolevReducedFunctional`, with values in `EReal`: the Dirichlet energy
-`‖∇u‖₂² / 2` and the linear term are finite, and the potential is an extended nonnegative integral,
-so a priori `I(u)` could be `⊤`. Since `exp (2u) - 1 ∈ L²(ℂ)` for `u ∈ H¹(ℂ)`
+`‖∇u‖₂² / 2` and the linear term are real numbers, and the potential is an extended nonnegative
+integral, so a priori `I(u)` could be `⊤`. Since `exp (2u) - 1 ∈ L²(ℂ)` for `u ∈ H¹(ℂ)`
 (`TauCeti.W1p.memLp_exp_mul_value_sub_one`), the potential is always integrable
 (`TauCeti.Vortex.integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul`) and `I` is
 finite on `H¹(ℂ)` (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
@@ -168,8 +169,11 @@ private theorem le_div_two_add_of_pow_four_le {x D M : ℝ} (hD : 0 ≤ D) (hM :
 
 `I(u) = ‖∇u‖₂² / 2 + ∫ (g - (1 + ‖P‖²)⁻¹ / 8) u + (1 / 16) ∫⁻ h (exp (2u) - 1 - 2u)`,
 
-where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. The first two terms are finite for
-every `u`. The potential is a nonnegative extended integral, which is also finite for every `u`
+where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. The first two terms are real
+numbers. When `P` has degree at least one the integrand of the linear term is integrable for every
+`u` (`TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`); for constant
+`P` the linear term is the Bochner integral, which is `0` when its integrand is not integrable.
+The potential is a nonnegative extended integral, which is also finite for every `u`
 (`TauCeti.Vortex.integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul`), so `I` is
 always a real number (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
 `TauCeti.Vortex.sobolevReducedFunctional_ne_top`). On compactly supported `C¹` functions this
