@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.TangentSpace
 import TauCeti.Geometry.Lie.Subgroup.Embedded
+import TauCeti.Geometry.Lie.Subgroup.Unitary.Retraction
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NearestPoint
@@ -37,6 +38,15 @@ The last property uses that the image of the differential of the inclusion of `G
 tangent cone of `G`, which is `g 𝔤` (`ClosedSubgroup.tangentConeAt_eq_matrixTangentSpace`), so a
 vector orthogonal to `g 𝔤` is normal in the sense of the tubular neighbourhood theorem.
 
+It follows (`ClosedSubgroup.fderiv_matrixNearestPoint`) that the derivative of `π_G` at `g ∈ G` is
+the orthogonal projection onto `g 𝔤`: `π_G` is the identity on `G`, and constant along short
+segments normal to `g 𝔤`, which is what `ClosedSubgroup.fderiv_eq_starProjection_matrixTangentSpace`
+needs. For every matrix `M`, the residual `M - π_G M` is orthogonal to the tangent space of `G` at
+`π_G M` (`ClosedSubgroup.inner_sub_matrixNearestPoint_eq_zero`). For `G = U(n)` the derivative at
+`1` is the skew-Hermitian part `H ↦ (H - Hᴴ) / 2`
+(`ClosedSubgroup.fderiv_matrixNearestPoint_one_of_forall_mem`), and for a finite `G`, such as
+`{±1}`, it vanishes (`ClosedSubgroup.fderiv_matrixNearestPoint_eq_zero_of_finite`).
+
 Every point of `G` has Frobenius norm `√(card n)`, so every point of `G` is a nearest point of `G`
 to `0`. Hence, as soon as `G` is not the trivial group, `0` has no unique nearest point and lies
 outside `𝒰` (`ClosedSubgroup.zero_notMem_thickening`).
@@ -58,8 +68,10 @@ public section
 
 noncomputable section
 
-open Set Metric Function
-open scoped Matrix Manifold ContDiff InnerProductSpace
+open Set Metric Function Filter
+open scoped Matrix Manifold ContDiff InnerProductSpace Topology
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace ClosedSubgroup
 
@@ -240,6 +252,77 @@ theorem exists_pos_contDiffOn_matrixNearestPoint :
     exact congrArg G.coeUnits hrk
 
 end Manifold
+
+/-- **The derivative of `π_G` on `G`.** At `g ∈ G`, the derivative of the nearest-point
+retraction is the orthogonal projection onto the tangent space `g 𝔤`. -/
+theorem fderiv_matrixNearestPoint (g : G) :
+    fderiv ℝ G.matrixNearestPoint g = (G.matrixTangentSpace g).starProjection := by
+  obtain ⟨ε, hε, hsmooth, -, hnormal⟩ := G.exists_pos_contDiffOn_matrixNearestPoint
+  have hg : (g : Matrix n n 𝕜) ∈
+      thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) :=
+    self_subset_thickening hε _ ⟨g, g.property, rfl⟩
+  refine fderiv_eq_starProjection_matrixTangentSpace
+    ((hsmooth.contDiffAt (isOpen_thickening.mem_nhds hg)).differentiableAt (by simp))
+    (fun _ hh ↦ G.matrixNearestPoint_coe hh) fun v hv ↦ ?_
+  -- `π_G (g + t v) = g` once `‖t v‖ < ε`.
+  have hlim : Tendsto (fun t : ℝ ↦ ‖t‖ * ‖v‖) (𝓝 0) (𝓝 0) :=
+    (continuous_norm.mul continuous_const).tendsto' 0 0 (by simp)
+  filter_upwards [hlim.eventually (gt_mem_nhds hε)] with t ht
+  exact hnormal g _ (Submodule.smul_mem _ t hv) ((norm_smul t v).trans_lt ht)
+
+/-- **The residual of `π_G` is normal to `G`.** For every matrix `M`, `M - π_G M` is orthogonal to
+the tangent space `g 𝔤` of `G` at `g = π_G M`. -/
+theorem inner_sub_matrixNearestPoint_eq_zero (M : Matrix n n 𝕜) {g : G}
+    (hg : G.matrixNearestPoint M = g) {V : Matrix n n 𝕜} (hV : V ∈ G.matrixTangentSpace g) :
+    ⟪M - G.matrixNearestPoint M, V⟫_ℝ = 0 := by
+  rw [hg]
+  exact inner_sub_eq_zero_of_isLocalMinOn (hg ▸ (G.isMinOn_matrixNearestPoint M).isLocalMinOn) hV
+
+variable {G}
+
+/-- **The derivative of `π_{U(n)}` at `1`.** For `G = U(n)`, the derivative of the nearest-point
+retraction at `1` is the skew-Hermitian part `H ↦ (H - Hᴴ) / 2`, the orthogonal projection onto the
+Lie algebra of skew-Hermitian matrices. For `n = 1` and `𝕜 = ℂ` this is `a + i b ↦ i b`. -/
+theorem fderiv_matrixNearestPoint_one_of_forall_mem (hG : ∀ g, g ∈ G) (H : Matrix n n 𝕜) :
+    fderiv ℝ G.matrixNearestPoint 1 H = (2⁻¹ : ℝ) • (H - Hᴴ) := by
+  have h1 : (((1 : G) : Matrix.unitaryGroup n 𝕜) : Matrix n n 𝕜) = 1 := rfl
+  rw [← h1, fderiv_matrixNearestPoint, matrixTangentSpace_one]
+  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun W hW ↦ ?_
+  · rw [LieSubalgebra.mem_toSubmodule, mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG,
+      Matrix.conjTranspose_smul, Matrix.conjTranspose_sub, Matrix.conjTranspose_conjTranspose]
+    simp [smul_sub]
+  -- The remainder `A = (H + Hᴴ) / 2` is Hermitian, so `tr (Aᴴ W)` is imaginary for a
+  -- skew-Hermitian `W`.
+  have hW' := (mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG).mp hW
+  have hre (A B : Matrix n n 𝕜) : ⟪A, B⟫_ℝ = RCLike.re ⟪A, B⟫_𝕜 := by
+    simp [Matrix.frobenius_inner_def, map_sum, real_inner_eq_re_inner 𝕜]
+  rw [hre, Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
+  set A := H - (2⁻¹ : ℝ) • (H - Hᴴ)
+  have hA : Aᴴ = A := by
+    simp only [A, Matrix.conjTranspose_sub, Matrix.conjTranspose_smul,
+      Matrix.conjTranspose_conjTranspose, star_trivial]
+    module
+  have hz : star (Aᴴ * W).trace = -(Aᴴ * W).trace := by
+    rw [← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul, hW', hA, hA, Matrix.neg_mul,
+      Matrix.trace_neg, Matrix.trace_mul_comm]
+  have h := congrArg RCLike.re hz
+  rw [RCLike.star_def, RCLike.conj_re, map_neg] at h
+  linarith
+
+/-- **The derivative of `π_G` for a finite `G`.** If `G` is finite, such as `{±1}`, its Lie
+algebra is `0`, so the derivative of the nearest-point retraction at every `g ∈ G` is `0`, the
+projection onto the zero space. -/
+theorem fderiv_matrixNearestPoint_eq_zero_of_finite
+    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Finite) (g : G) :
+    fderiv ℝ G.matrixNearestPoint g = 0 := by
+  have hbot : G.matrixTangentSpace g = ⊥ := by
+    rw [eq_bot_iff]
+    intro V hV
+    have h0 := eq_zero_of_mem_matrixLieAlgebra_of_finite hG (mem_matrixTangentSpace_iff.mp hV)
+    have hV' : V = (g : Matrix n n 𝕜) * (star (g : Matrix n n 𝕜) * V) := by simp [← mul_assoc]
+    rw [Submodule.mem_bot, hV', h0, mul_zero]
+  rw [fderiv_matrixNearestPoint, hbot, Submodule.starProjection_bot]
+  rfl
 
 /-- **`0` lies outside `𝒰` for a nontrivial `G`.** Every point of `G` has Frobenius norm
 `√(card n)`, so every point of `G` is a nearest point to `0`. If nearest points are unique on the

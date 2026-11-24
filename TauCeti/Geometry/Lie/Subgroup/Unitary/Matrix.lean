@@ -62,6 +62,10 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
   `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
   skew-Hermitian matrices.
+* `ClosedSubgroup.mem_matrixLieAlgebra_iff_conjTranspose_eq_neg`: the Lie algebra of all of `U(n)`
+  is the skew-Hermitian matrices.
+* `ClosedSubgroup.eq_zero_of_mem_matrixLieAlgebra_of_finite`: a finite closed subgroup has Lie
+  algebra `0`.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
 * `ClosedSubgroup.lieInvariant_of_isInvariantForm`: an `Ad(G)`-invariant bilinear form is
   `ad`-invariant, `B ⁅X, Y⁆ Z = -B Y ⁅X, Z⁆`.
@@ -212,6 +216,40 @@ theorem mem_matrixLieAlgebra_of_tendsto {X : Matrix n n 𝕜} {t : ℕ → ℝ} 
 theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}
     (hX : X ∈ G.matrixLieAlgebra) : Xᴴ = -X :=
   conjTranspose_eq_neg_of_forall_exp_mem G hX
+
+section OperatorNorm
+
+open scoped Matrix.Norms.Operator
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
+
+/-- **The Lie algebra of `U(n)`.** If `G` is all of `U(n)`, its Lie algebra is the
+skew-Hermitian matrices. -/
+theorem mem_matrixLieAlgebra_iff_conjTranspose_eq_neg (hG : ∀ g, g ∈ G) {X : Matrix n n 𝕜} :
+    X ∈ G.matrixLieAlgebra ↔ Xᴴ = -X :=
+  ⟨conjTranspose_eq_neg_of_mem_matrixLieAlgebra, fun hX t ↦
+    ⟨⟨_, exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t (skewAdjoint.mem_iff.mpr hX))⟩,
+      hG _, rfl⟩⟩
+
+/-- **A finite closed subgroup has Lie algebra `0`.** An exponential line in a finite subgroup is
+constant, since `ℝ` is connected, so its generator, the derivative at `0`, vanishes. -/
+theorem eq_zero_of_mem_matrixLieAlgebra_of_finite
+    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Finite) {X : Matrix n n 𝕜}
+    (hX : X ∈ G.matrixLieAlgebra) : X = 0 := by
+  have hd (t : ℝ) := hasDerivAt_exp_smul_const' (𝕂 := ℝ) X t
+  have hconst (t : ℝ) : exp (t • X) = 1 := by
+    simpa using isPreconnected_univ.constant_of_mapsTo
+      ((hG.image ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜)).isDiscrete)
+      (fun t _ ↦ (hd t).continuousAt.continuousWithinAt)
+      (fun t _ ↦ by obtain ⟨g, hg, h⟩ := hX t; exact ⟨g, hg, h⟩) (Set.mem_univ t)
+      (Set.mem_univ 0)
+  have h0 := hd 0
+  simp only [zero_smul, exp_zero, mul_one, hconst] at h0
+  exact h0.unique (hasDerivAt_const 0 1)
+
+end OperatorNorm
 
 /-- A larger closed subgroup has a larger Lie algebra. -/
 theorem matrixLieAlgebra_mono (h : G ≤ H) : G.matrixLieAlgebra ≤ H.matrixLieAlgebra :=
