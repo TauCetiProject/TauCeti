@@ -107,6 +107,18 @@ theorem fg_kerIdeal [Module.Finite R M] : (kerIdeal R M).FG := by
         exact Ideal.mul_mem_left _ _ ha
     exact key x.snd (hs ▸ trivial)
 
+/-- The kernel of `(fstHom R R M).toRingHom` has square zero. -/
+theorem ker_fstHom_mul_self_eq_bot :
+    RingHom.ker (fstHom R R M).toRingHom * RingHom.ker (fstHom R R M).toRingHom = ⊥ := by
+  rw [ker_fstHom_toRingHom]
+  exact (pow_two _).symm.trans (kerIdeal_sq R M)
+
+/-- When `M` is a finite `R`-module, the kernel of `(fstHom R R M).toRingHom` is finitely
+generated. -/
+theorem ker_fstHom_fg [Module.Finite R M] : (RingHom.ker (fstHom R R M).toRingHom).FG := by
+  rw [ker_fstHom_toRingHom]
+  exact fg_kerIdeal
+
 end KerIdeal
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M]

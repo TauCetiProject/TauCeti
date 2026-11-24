@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Basic
 
 /-!
 # Complements on power series
@@ -14,9 +13,8 @@ public import TauCeti.RingTheory.MvPowerSeries.Basic
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
 `A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
-coefficients `map f` acts on the constant coefficient, how `MvPowerSeries.liftOfSurjective`
-maps back under `PowerSeries.map`, and how multiplication splits into constant and positive-degree
-terms.
+coefficients `map f` acts on the constant coefficient, and how multiplication splits into constant
+and positive-degree terms.
 
 ## Main definitions
 
@@ -28,8 +26,6 @@ terms.
   inclusion of constants.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
-* `PowerSeries.map_liftOfSurjective`: mapping `MvPowerSeries.liftOfSurjective hπ f` back along `π`
-  recovers `f` as a univariate power series.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 -/
@@ -78,13 +74,6 @@ variable {R S : Type*} [Semiring R] [Semiring S]
 theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
     constantCoeff (map f φ) = f (constantCoeff φ) := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
-
-/-- Mapping `MvPowerSeries.liftOfSurjective hπ f` back along `π` recovers `f` as a univariate
-power series. -/
-@[simp]
-theorem map_liftOfSurjective {π : R →+* S} (hπ : Function.Surjective π) (f : S⟦X⟧) :
-    PowerSeries.map π (MvPowerSeries.liftOfSurjective hπ f) = f :=
-  MvPowerSeries.map_liftOfSurjective hπ f
 
 end Map
 

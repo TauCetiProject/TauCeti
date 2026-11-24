@@ -222,7 +222,7 @@ theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ 
   have hdeg : d 0 + d 1 < 2 := by
     have : d.degree < 2 := by exact_mod_cast hd
     rwa [Finsupp.degree_finTwo] at this
-  rw [Finsupp.eq_single_zero_add_single_one d]
+  rw [(Finsupp.univ_sum_single d).symm.trans (Fin.sum_univ_two _)]
   rcases h0 : d 0 with _ | _ | _ <;> rcases h1 : d 1 with _ | _ | _ <;>
     first | omega | simp [hΦ₀, hΦ.coeff_single_one_eq_zero, hΦ.coeff_single_zero_eq_zero]
 

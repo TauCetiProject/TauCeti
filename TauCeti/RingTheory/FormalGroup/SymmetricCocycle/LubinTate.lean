@@ -45,6 +45,7 @@ invariant differential `ω = P(T) dT` (`P(T) = F_X(0, T)⁻¹`), and let `I ⊆ 
   characterising `I`-congruent coordinate equivalence via coboundaries `F.homDefect 𝔾ₐ g`.
 * `FormalGroup.lubinTateCocycle`, `FormalGroup.lubinTateIndex`,
   `FormalGroup.homogeneousComponent_lubinTateCocycle`,
+  `FormalGroup.sum_smul_lubinTateCocycle_eq_homDefect_𝔾ₐ_iff`,
   `FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_𝔾ₐ`:
   Lubin–Tate Lemma 1.3, constructing canonical symmetric 2-cocycles in degree `n + 1` via
   `DualNumber LazardRing` and establishing the Lubin–Tate cocycle basis decomposition.
@@ -125,11 +126,11 @@ private theorem sub_toPowerSeries_eq_mul_deformationCocycle (F G : FormalGroup A
 since `P(F(X, Y))` is a unit in `A⟦X, Y⟧`. -/
 theorem deformationCocycle_injective (F : FormalGroup A) :
     Function.Injective F.deformationCocycle := by
-  intro G₁ G₂ h; ext d
+  intro G₁ G₂ h
   have hsub : G₁.toPowerSeries - F.toPowerSeries = G₂.toPowerSeries - F.toPowerSeries := by
     rw [F.sub_toPowerSeries_eq_mul_deformationCocycle G₁,
       F.sub_toPowerSeries_eq_mul_deformationCocycle G₂, h]
-  exact sub_left_inj.mp hsub ▸ rfl
+  exact FormalGroup.ext (sub_left_inj.mp hsub)
 
 /-- The deformation cocycle `F.deformationCocycle G` has coefficients in an ideal `I` if and only
 if `G - F` has coefficients in `I`. -/
@@ -618,7 +619,7 @@ private theorem le_order_universalShiftSeries (n : ℕ+) :
 private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2 ≤ d.degree)
     (haxis : d 0 = 0 ∨ d 1 = 0) : coeff d formalGroup.toPowerSeries = 0 := by
   rw [Finsupp.degree_finTwo] at hd
-  have hd_eq := Finsupp.eq_single_zero_add_single_one d
+  have hd_eq := (Finsupp.univ_sum_single d).symm.trans (Fin.sum_univ_two _)
   rcases haxis with h0 | h1
   · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, formalGroup.coeff_single_one,
       ite_eq_right (by omega)]
@@ -646,7 +647,8 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
       have hi0 : 0 < d 0 := Nat.pos_of_ne_zero haxis.1
       have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0) := by
         have hd1 : d 1 = (n : ℕ) + 1 - d 0 := by omega
-        exact hd1 ▸ Finsupp.eq_single_zero_add_single_one d
+        rw [← hd1]
+        exact (Finsupp.univ_sum_single d).symm.trans (Fin.sum_univ_two _)
       set z := coeff (Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0))
           formalGroup.toPowerSeries -
         (((n : ℕ) + 1).choose (d 0) / TauCeti.lazardGcd ((n : ℕ) + 1)) • generator n
@@ -783,6 +785,32 @@ theorem coe_lubinTateIndex_add_one {p : ℕ} (hp : p.Prime) (j : ℕ) :
     (lubinTateIndex hp j : ℕ) + 1 = p ^ (j + 1) :=
   Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.pos)
 
+private theorem le_order_lubinTateCocycle_index {R : Type*} [CommRing R] (F : FormalGroup R)
+    [F.IsComm] {p : ℕ} (hp : p.Prime) (j : ℕ) :
+    ((p ^ (j + 1) : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle (lubinTateIndex hp j)).order := by
+  simpa using F.le_order_lubinTateCocycle (lubinTateIndex hp j)
+
+private theorem homogeneousComponent_lubinTateCocycle_index {R : Type*} [CommRing R]
+    (F : FormalGroup R) [F.IsComm] {p : ℕ} (hp : p.Prime) (j : ℕ) :
+    homogeneousComponent (p ^ (j + 1)) (F.lubinTateCocycle (lubinTateIndex hp j)) =
+      ↑((1 : R) • TauCeti.lazardCocycle (p ^ (j + 1)) R) := by
+  simpa using F.homogeneousComponent_lubinTateCocycle (lubinTateIndex hp j)
+
+/-- **Linear independence of the canonical Lubin–Tate cocycles modulo coboundaries.** Let `p` be
+a prime and let `[p]_F` have order at least `pʰ`. A linear combination
+`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (FormalGroup.lubinTateIndex hp j.val)` is a
+coboundary `F.homDefect 𝔾ₐ g` if and only if `c = 0`. -/
+theorem sum_smul_lubinTateCocycle_eq_homDefect_𝔾ₐ_iff
+    {R : Type*} [CommRing R] {F : FormalGroup R} [F.IsComm] {p h : ℕ} (hp : p.Prime)
+    (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order) {c : Fin (h - 1) → R} :
+    (∃ g : PowerSeries R,
+      ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp j.val) =
+        F.homDefect 𝔾ₐ g) ↔ c = 0 :=
+  F.sum_smul_eq_homDefect_𝔾ₐ_iff hp hF (u := fun _ ↦ 1)
+    (fun j ↦ F.le_order_lubinTateCocycle_index hp j.val)
+    (fun j ↦ F.homogeneousComponent_lubinTateCocycle_index hp j.val)
+    (fun _ ↦ isUnit_one)
+
 /-- **Canonical Lubin–Tate decomposition of symmetric 2-cocycles.** Let `p` be a prime with `p = 0`
 in `R`, and let `F` be a commutative formal group law over `R` whose `p`-series has order at least
 `pʰ` and a unit coefficient of `X^(pʰ)`. Then every symmetric 2-cocycle `Φ` of `F` without constant
@@ -799,9 +827,9 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_
       Φ = ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp j.val) +
         F.homDefect 𝔾ₐ g :=
   hΦ.existsUnique_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (u := fun _ ↦ 1)
-    (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle _)
-    (fun j ↦ by simpa using F.le_order_lubinTateCocycle (lubinTateIndex hp j.val))
-    (fun j ↦ by simpa using F.homogeneousComponent_lubinTateCocycle (lubinTateIndex hp j.val))
+    (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle (lubinTateIndex hp j.val))
+    (fun j ↦ F.le_order_lubinTateCocycle_index hp j.val)
+    (fun j ↦ F.homogeneousComponent_lubinTateCocycle_index hp j.val)
     (fun _ ↦ isUnit_one) hΦ₀
 
 end LubinTateCocycle
