@@ -82,7 +82,7 @@ def resolutionDegeneracy : ∀ n, Fin (n + 1) →
 
 variable (C) in
 /-- Every face of the resolution of the identity comonad is an identity morphism. -/
-lemma id_resolutionFace_app (n : ℕ) (i : Fin (n + 1)) (X : C) :
+@[simp] lemma id_resolutionFace_app (n : ℕ) (i : Fin (n + 1)) (X : C) :
     ((Comonad.id C).resolutionFace n i).app X = 𝟙 _ := by
   -- All iterates of the identity comonad have object `X` by definition, so the identities
   -- produced below agree up to unfolding `resolutionStage`.
