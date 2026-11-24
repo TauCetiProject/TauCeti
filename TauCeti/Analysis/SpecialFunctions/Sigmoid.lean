@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -193,7 +193,7 @@ theorem hasDerivAt_two_mul_sigmoid (u : ℝ) :
 /-- For every real `u`, `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`. -/
 theorem abs_sqrt_two_mul_sigmoid_sub_one_le (u : ℝ) :
     |sqrt (2 * sigmoid (2 * u)) - 1| ≤ |u| := by
-  refine abs_sqrt_sub_one_le_abs_sub_one.trans ?_
+  refine (abs_sqrt_sub_one_le_abs_sub_one _).trans ?_
   have hd : ∀ y ∈ Set.univ, DifferentiableAt ℝ (fun x ↦ 2 * sigmoid (2 * x)) y :=
     fun y _ ↦ (hasDerivAt_two_mul_sigmoid y).differentiableAt
   have hb : ∀ y ∈ Set.univ, ‖deriv (fun x ↦ 2 * sigmoid (2 * x)) y‖ ≤ 1 := fun y _ ↦ by

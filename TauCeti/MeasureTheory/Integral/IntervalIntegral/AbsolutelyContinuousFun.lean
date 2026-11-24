@@ -58,11 +58,16 @@ fundamental-theorem results to curves.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
 * `IntervalIntegrable.integral_mul_pow_integral`: for a real `g` with primitive `G` based at `c`,
-  `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`.
-* `TauCeti.continuous_of_eq_integral`, `TauCeti.absolutelyContinuousOnInterval_of_eq_integral`, and
+  `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`;
+  `IntervalIntegrable.abs_integral_mul_abs_pow_integral` is its form with `|G|` for nonnegative `g`.
+* `TauCeti.abs_integral_norm_mul_abs_pow`: with `Λ s = ∫ r in t₀..s, ‖M r‖`,
+  `|∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n| = |Λ t| ^ (n + 1) / (n + 1)`, and
+  `TauCeti.norm_integral_le_abs_integral_norm_pow_div_factorial_mul`, the resulting inductive step
+  of factorial bounds on iterated integrals.
+* `TauCeti.absolutelyContinuousOnInterval_of_eq_integral` and
   `TauCeti.ae_hasDerivAt_of_eq_integral`: a function represented as an indefinite interval integral
-  is continuous, is absolutely continuous on every subinterval, and is differentiable almost
-  everywhere with the integrand as its derivative.
+  is absolutely continuous on every subinterval and is differentiable almost everywhere with the
+  integrand as its derivative.
 
 ## References
 
@@ -391,6 +396,74 @@ theorem IntervalIntegrable.integral_mul_pow_integral {g : ℝ → ℝ} {c d : �
   rw [← h]
   field_simp
 
+/-- For `g` interval integrable and almost everywhere nonnegative between `c` and `d`, with
+primitive `G s = ∫ u in c..s, g u`, the integral of `g * |G| ^ k` over `c..d` has absolute value
+`|G d| ^ (k + 1) / (k + 1)`, whatever the order of `c` and `d`. -/
+theorem IntervalIntegrable.abs_integral_mul_abs_pow_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : IntervalIntegrable g volume c d) (hg₀ : ∀ᵐ s ∂volume.restrict (uIcc c d), 0 ≤ g s)
+    (k : ℕ) :
+    |∫ s in c..d, g s * |∫ u in c..s, g u| ^ k| = |∫ u in c..d, g u| ^ (k + 1) / (k + 1) := by
+  set G : ℝ → ℝ := fun s ↦ ∫ u in c..s, g u
+  -- `G` has a constant sign `σ` between `c` and `d`.
+  obtain ⟨σ, hσ, hG⟩ : ∃ σ : ℝ, |σ| = 1 ∧ ∀ s ∈ uIcc c d, |G s| = σ * G s := by
+    rcases le_total c d with h | h
+    · rw [uIcc_of_le h] at hg₀
+      refine ⟨1, abs_one, fun s hs ↦ ?_⟩
+      rw [uIcc_of_le h] at hs
+      rw [one_mul, abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hs.1
+        (ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_right hs.2) hg₀))]
+    · rw [uIcc_of_ge h] at hg₀
+      refine ⟨-1, by simp, fun s hs ↦ ?_⟩
+      rw [uIcc_of_ge h] at hs
+      rw [neg_one_mul, abs_of_nonpos]
+      simp only [G]
+      rw [intervalIntegral.integral_symm, neg_nonpos]
+      exact intervalIntegral.integral_nonneg_of_ae_restrict hs.2
+        (ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_left hs.1) hg₀)
+  have h : ∫ s in c..d, g s * |G s| ^ k = σ ^ k * ∫ s in c..d, g s * G s ^ k := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    simp only [hG s hs, mul_pow]
+    ring
+  rw [h, hg.integral_mul_pow_integral]
+  simp [abs_mul, abs_div, abs_pow, hσ, abs_of_pos (by positivity : (0 : ℝ) < k + 1)]
+
+namespace TauCeti
+
+open intervalIntegral
+open scoped Nat
+
+/-- With `Λ s = ∫ r in t₀..s, ‖M r‖` for a function `M` into a normed group, the integral of
+`‖M‖ |Λ| ^ n` from `t₀` to `t` is `|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
+theorem abs_integral_norm_mul_abs_pow {G : Type*} [NormedAddCommGroup G] {M : ℝ → G} {t₀ t : ℝ}
+    (hM : IntervalIntegrable (fun s ↦ ‖M s‖) volume t₀ t) (n : ℕ) :
+    |∫ s in t₀..t, ‖M s‖ * |∫ r in t₀..s, ‖M r‖| ^ n| =
+      |∫ s in t₀..t, ‖M s‖| ^ (n + 1) / (n + 1) :=
+  hM.abs_integral_mul_abs_pow_integral (.of_forall fun _ ↦ norm_nonneg _) n
+
+/-- **The inductive step of a factorial bound.** With `Λ r = ∫ u in t₀..r, ‖M u‖` for a function
+`M` into a normed group, if `‖f r‖ ≤ ‖M r‖ * (|Λ r| ^ n / n! * K)` for almost every `r` between
+`t₀` and `t`, with `0 ≤ K`, then `‖∫ r in t₀..t, f r‖ ≤ |Λ t| ^ (n + 1) / (n + 1)! * K`. -/
+theorem norm_integral_le_abs_integral_norm_pow_div_factorial_mul {F G : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] {f : ℝ → F} {M : ℝ → G}
+    {t₀ t K : ℝ} (hK : 0 ≤ K) (hM : IntervalIntegrable (fun s ↦ ‖M s‖) volume t₀ t) {n : ℕ}
+    (hf : ∀ᵐ r ∂volume.restrict (uIoc t₀ t),
+      ‖f r‖ ≤ ‖M r‖ * (|∫ u in t₀..r, ‖M u‖| ^ n / n ! * K)) :
+    ‖∫ r in t₀..t, f r‖ ≤ |∫ r in t₀..t, ‖M r‖| ^ (n + 1) / (n + 1)! * K := by
+  refine (norm_integral_le_abs_of_norm_le hf (hM.mul_continuousOn
+    ((((continuousOn_primitive_interval' hM left_mem_uIcc).abs.pow n).div_const _).mul
+      continuousOn_const))).trans_eq ?_
+  have : (fun s ↦ ‖M s‖ * (|∫ r in t₀..s, ‖M r‖| ^ n / n ! * K)) =
+      fun s ↦ K / n ! * (‖M s‖ * |∫ r in t₀..s, ‖M r‖| ^ n) := by
+    ext s
+    ring
+  rw [this, intervalIntegral.integral_const_mul, abs_mul, abs_of_nonneg (by positivity),
+    abs_integral_norm_mul_abs_pow hM, Nat.factorial_succ]
+  push_cast
+  field_simp
+
+end TauCeti
+
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/
 theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
@@ -425,13 +498,6 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   abel
 
 namespace TauCeti
-
-/-- A function represented globally as an indefinite integral `f x = f c + ∫ t in c..x, f' t` of an
-interval-integrable function `f'` is continuous. -/
-theorem continuous_of_eq_integral {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f f' : ℝ → F} {c : ℝ} (hf' : ∀ a b, IntervalIntegrable f' volume a b)
-    (heq : ∀ x, f x = f c + ∫ t in c..x, f' t) : Continuous f :=
-  (continuous_const.add (intervalIntegral.continuous_primitive hf' c)).congr fun x ↦ (heq x).symm
 
 /-- A function `f` that agrees on `uIcc a b` with `f c + ∫ t in c..x, f' t` (with `f'` interval
 integrable on `c..a` and `a..b`) is absolutely continuous on `uIcc a b`. -/

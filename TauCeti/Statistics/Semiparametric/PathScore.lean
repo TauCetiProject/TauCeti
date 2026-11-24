@@ -20,8 +20,8 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Sigmoid
-import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Translation
@@ -55,6 +55,10 @@ right-hand limit `𝓝[>] 0` allows submodels whose parameter lies on a boundary
 
 ## Main statements
 
+* `TauCeti.HasPathScore.congr_ae`, `TauCeti.HasPathScore.congr_path`,
+  `TauCeti.hasPathScore_const_zero_iff`, and `TauCeti.HasPathScore.comp_mul_left`: congruence under
+  `Q 0`-almost-everywhere score equality and eventual right-hand path agreement, constant paths, and
+  nonnegative left parameter rescaling.
 * `TauCeti.HasPathScore.memLp_mul_sqrt_rnDeriv`, `TauCeti.HasPathScore.memLp`,
   `TauCeti.HasPathScore.tendsto_eLpNorm_sqrt_rnDeriv_sub`,
   `TauCeti.hasPathScore_iff_hasDerivWithinAt_sqrt_rnDeriv_toLp`,
@@ -239,7 +243,7 @@ theorem HasPathScore.memLp {ν : Measure X} {Q : ℝ → Measure X} [∀ t, IsFi
     {g : X → ℝ} (h : HasPathScore ν Q g) :
     MemLp g 2 (Q 0) := by
   have := h.haveLebesgueDecomposition 0
-  exact (memLp_mul_sqrt_rnDeriv_iff (h.1 0)).mp h.memLp_mul_sqrt_rnDeriv
+  exact (Measure.memLp_mul_sqrt_rnDeriv_iff (h.1 0)).mp h.memLp_mul_sqrt_rnDeriv
 
 /-- Along a path of finite measures with a path score, the square-root densities `√(d(Q t)/dν)`
 converge to `√(d(Q 0)/dν)` in `L²(ν)` as `t → 0⁺`. -/
@@ -339,7 +343,7 @@ theorem HasPathScore.integral_eq_zero {ν : Measure X} {Q : ℝ → Measure X}
       (inner ℝ (S 0) ((1 / 2 : ℝ) • G) + inner ℝ ((1 / 2 : ℝ) • G) (S 0)) (Ici 0) 0 :=
     h.hasDerivWithinAt_sqrt_rnDeriv_toLp.inner ℝ h.hasDerivWithinAt_sqrt_rnDeriv_toLp
   have hconst : (fun t ↦ inner ℝ (S t) (S t)) = fun _ ↦ (1 : ℝ) := funext fun t ↦ by
-    rw [real_inner_self_eq_norm_sq, Lp.norm_toLp, eLpNorm_sqrt_rnDeriv_eq_one (Q t) ν (h.1 t)]
+    rw [real_inner_self_eq_norm_sq, Lp.norm_toLp, (Q t).eLpNorm_sqrt_rnDeriv_eq_one ν (h.1 t)]
     norm_num
   have hd0 : HasDerivWithinAt (fun t ↦ inner ℝ (S t) (S t)) 0 (Ici 0) 0 := by
     rw [hconst]; exact hasDerivWithinAt_const 0 (Ici 0) (1 : ℝ)
@@ -375,7 +379,7 @@ theorem hasPathScore_iff_of_absolutelyContinuous {ν ν' : Measure X} [SigmaFini
       eLpNorm (fun x ↦
         Real.sqrt ((Q t).rnDeriv μ x).toReal - Real.sqrt ((Q 0).rnDeriv μ x).toReal
           - t / 2 * g x * Real.sqrt ((Q 0).rnDeriv μ x).toReal) 2 μ := by
-    rw [← eLpNorm_mul_sqrt_rnDeriv hρμ]
+    rw [← Measure.eLpNorm_mul_sqrt_rnDeriv hρμ]
     refine eLpNorm_congr_ae ?_
     filter_upwards [Measure.rnDeriv_mul_rnDeriv (κ := μ) (hQρ t),
       Measure.rnDeriv_mul_rnDeriv (κ := μ) (hQρ 0)] with x hqt hq0
@@ -420,7 +424,7 @@ theorem HasPathScore.ae_eq {ν : Measure X} {Q : ℝ → Measure X}
       Real.eNorm_eq_ofReal (inv_nonneg.mpr ht.le)]
   have hae_ν : (fun x ↦ (1 / 2 : ℝ) * (g' x - g x) * s₀ x) =ᵐ[ν] 0 :=
     (eLpNorm_eq_zero_iff two_ne_zero).mp hdiff_zero
-  filter_upwards [(h.1 0) hae_ν, ae_sqrt_rnDeriv_pos (h.1 0)] with x hx hs₀_pos
+  filter_upwards [(h.1 0) hae_ν, Measure.ae_sqrt_rnDeriv_pos (h.1 0)] with x hx hs₀_pos
   simp only [Pi.zero_apply, mul_eq_zero] at hx
   rcases hx with (h12 | hsub) | hs0
   · norm_num at h12
@@ -944,7 +948,7 @@ private theorem integral_halfScore_eq_sqrt_sub_sqrt {η η' s'₀ : ℝ → ℝ}
   exact (hac_int.sqrt_sub_sqrt_eq_intervalIntegral (fun y _ ↦ hη y) hint_deriv).symm
 
 private theorem ae_location_remainder_eq {η η' s'₀ : ℝ → ℝ} (hη : ∀ x, 0 ≤ η x)
-    (hη' : ∀ a b, IntervalIntegrable η' volume a b)
+    (hη_meas : Measurable η) (hη' : ∀ a b, IntervalIntegrable η' volume a b)
     (hac : ∀ x, η x = η 0 + ∫ t in (0 : ℝ)..x, η' t)
     (hs'₀_ae : (fun y ↦ η' y / (2 * Real.sqrt (η y))) =ᵐ[volume] s'₀)
     (hs'₀_mem : MemLp s'₀ 2 volume) (θ : ℝ) {t : ℝ} (ht0 : 0 < t) :
@@ -958,7 +962,6 @@ private theorem ae_location_remainder_eq {η η' s'₀ : ℝ → ℝ} (hη : ∀
             (((volume.withDensity fun y ↦ ENNReal.ofReal (η (y - θ))).rnDeriv volume x).toReal))
       =ᵐ[volume] fun x ↦ ∫ u in Ioc (0 : ℝ) 1, (s'₀ (x - θ) - s'₀ (x - θ - t * u)) := by
   -- Step 1: Identify the shifted Radon–Nikodym derivatives almost everywhere with `η(· - c)`.
-  have hη_meas : Measurable η := (continuous_of_eq_integral hη' hac).measurable
   have hd (c : ℝ) : (volume.withDensity fun y ↦ ENNReal.ofReal (η (y - c))).rnDeriv volume
       =ᵐ[volume] fun x ↦ ENNReal.ofReal (η (x - c)) :=
     Measure.rnDeriv_withDensity volume (by fun_prop)
@@ -1042,7 +1045,9 @@ theorem hasPathScore_location (η η' : ℝ → ℝ) (hη : ∀ x, 0 ≤ η x)
   -- Step 1: Place the half-score `η' / (2 √η)` in `L²(ℝ)` from finite Fisher information and pick a
   -- measurable representative `s'₀`.
   refine ⟨fun _ ↦ withDensity_absolutelyContinuous _ _, inferInstance, ?_⟩
-  have hη_meas : Measurable η := (continuous_of_eq_integral hη' hac).measurable
+  have hη_meas : Measurable η :=
+    ((continuous_const.add (intervalIntegral.continuous_primitive hη' 0)).congr
+      fun x ↦ (hac x).symm).measurable
   have hη'_asm : AEStronglyMeasurable η' volume :=
     (locallyIntegrable_iff_forall_intervalIntegrable.mpr hη').aestronglyMeasurable
   have hs' : MemLp (fun y ↦ η' y / (2 * Real.sqrt (η y))) 2 volume := by
@@ -1065,7 +1070,7 @@ theorem hasPathScore_location (η η' : ℝ → ℝ) (hη : ∀ x, 0 ≤ η x)
   filter_upwards [self_mem_nhdsWithin] with t (ht0 : 0 < t)
   simp only [add_zero]
   rw [← Real.eNorm_eq_ofReal (inv_nonneg.mpr ht0.le), ← eLpNorm_const_smul,
-    eLpNorm_congr_ae (ae_location_remainder_eq hη hη' hac hs'₀_ae hs'₀_mem θ ht0)]
+    eLpNorm_congr_ae (ae_location_remainder_eq hη hη_meas hη' hac hs'₀_ae hs'₀_mem θ ht0)]
   exact eLpNorm_location_remainder_le hs'₀_meas θ t
 
 end Location
