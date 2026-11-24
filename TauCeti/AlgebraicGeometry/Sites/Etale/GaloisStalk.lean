@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Action.Concrete
 public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+public import TauCeti.AlgebraicGeometry.RationalPoint.Geometric
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint
 
@@ -95,6 +96,12 @@ noncomputable def galoisGeometricPointIso (σ : Gal(Ω/K)) :
 theorem galoisGeometricPointIso_hom_hom (σ : Gal(Ω/K)) :
     (galoisGeometricPointIso K Ω σ).hom.hom = Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) :=
   GeometricPoint.isoMk_hom_hom _ _
+
+/-- The inverse of the automorphism of the geometric point given by `σ` is `Spec σ⁻¹`. -/
+@[simp]
+theorem galoisGeometricPointIso_inv_hom (σ : Gal(Ω/K)) :
+    (galoisGeometricPointIso K Ω σ).inv.hom = Spec.map (CommRingCat.ofHom (σ.symm : Ω →+* Ω)) :=
+  GeometricPoint.isoMk_inv_hom _ _
 
 /-- `σ ↦ Spec σ` as a homomorphism from `Gal(Ω/K)` to the automorphisms of the geometric point
 `Spec Ω ⟶ Spec K`. Since `Spec (σ * τ) = Spec σ ≫ Spec τ` and `Aut` multiplies in the order of

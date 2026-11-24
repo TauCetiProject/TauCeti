@@ -7,7 +7,6 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang,
 module
 
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
-public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
@@ -57,9 +56,6 @@ of the chart is mapped into a hypersurface.
   locally quasi-finite morphism onto a normal scheme. Over a normal base the inequality between
   coheights becomes an equality; the ring-level input is
   `Ideal.height_eq_height_of_quasiFiniteAt`.
-* `AlgebraicGeometry.Scheme.Hom.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq`:
-  a point with values in a field `Ω` of a locally quasi-finite scheme over a field `K` is fixed by
-  the elements of `Gal(Ω/K)` fixing a finite extension of `K` in `Ω`.
 
 ## References
 
@@ -214,57 +210,6 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}
   have := f.irreducibleSpace_of_isDominant
   have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
-
-/-- **A point of a locally quasi-finite `K`-scheme with values in `Ω` is fixed by the fixing
-subgroup of a finite extension of `K` in `Ω`.** If `f : X ⟶ Spec K` is locally quasi-finite and
-`t : Spec Ω ⟶ X` lifts `Spec Ω ⟶ Spec K` along `f`, then there is a finite-dimensional
-intermediate field `L` of `Ω/K` such that `Spec σ ≫ t = t` for every `σ ∈ L.fixingSubgroup`. -/
-theorem Scheme.Hom.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq
-    {K Ω : Type u} [Field K] [Field Ω] [Algebra K Ω] {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [LocallyQuasiFinite f] (t : Spec (.of Ω) ⟶ X)
-    (ht : t ≫ f = Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :
-    ∃ L : IntermediateField K Ω, FiniteDimensional K L ∧
-      ∀ σ ∈ L.fixingSubgroup, Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) ≫ t = t := by
-  -- The lift `t` is a point `y` of `X` together with an embedding `φ : κ(y) → Ω`; the image of
-  -- `φ` is the required finite extension `L`.
-  obtain ⟨⟨y, φ⟩, rfl⟩ := (X.SpecToEquivOfField Ω).symm.surjective t
-  simp only [SpecToEquivOfField_symm_apply] at ht ⊢
-  -- The embedding `φ` restricted to the residue field of `Spec K` at the image of `y` is the
-  -- algebra map of `K`, after identifying that residue field with `K`.
-  have := (f y).isPrime
-  have h : CommRingCat.ofHom (algebraMap K (f y).asIdeal.ResidueField) ≫
-      (Spec.residueFieldIso (.of K) (f y)).inv ≫ f.residueFieldMap y ≫ φ =
-        CommRingCat.ofHom (algebraMap K Ω) := by
-    apply Spec.map_injective
-    rw [← ht]
-    simp only [Spec.map_comp, Category.assoc]
-    rw [Spec.map_residueFieldIso_inv_eq_fromSpecResidueField,
-      Hom.SpecMap_residueFieldMap_fromSpecResidueField]
-  have hφ (k : K) : φ (f.residueFieldMap y ((Spec.residueFieldIso (.of K) (f y)).inv
-      (algebraMap K (f y).asIdeal.ResidueField k))) = algebraMap K Ω k := by
-    simpa only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom] using congr($h k)
-  -- Make `κ(y)` a `K`-algebra through the residue field of `Spec K` at the image of `y`, which is
-  -- finite over `K`. Then `κ(y)` is finite over `K`, because `f` is locally quasi-finite, and `φ`
-  -- is a `K`-algebra map.
-  let ψ : K →+* (Spec (.of K)).residueField (f y) :=
-    (Spec.residueFieldIso (.of K) (f y)).inv.hom.comp (algebraMap K (f y).asIdeal.ResidueField)
-  have hψ : Function.Surjective ψ := by
-    rw [RingHom.coe_comp]
-    exact (ConcreteCategory.bijective_of_isIso
-      (Spec.residueFieldIso (.of K) (f y)).inv).surjective.comp
-        (f y).asIdeal.algebraMap_residueField_surjective
-  algebraize [ψ, (f.residueFieldMap y).hom, (f.residueFieldMap y).hom.comp ψ]
-  have : Module.Finite K ((Spec (.of K)).residueField (f y)) :=
-    Module.Finite.of_surjective (Algebra.linearMap K _) hψ
-  have : Module.Finite K (X.residueField y) :=
-    Module.Finite.trans ((Spec (.of K)).residueField (f y)) _
-  let φ' : X.residueField y →ₐ[K] Ω := { φ.hom with commutes' := hφ }
-  -- Every `σ` fixing the image of `φ` fixes `t`.
-  refine ⟨φ'.fieldRange, φ'.equivFieldRange.toLinearEquiv.finiteDimensional, fun σ hσ ↦ ?_⟩
-  rw [← Category.assoc, ← Spec.map_comp]
-  congr 2
-  ext a
-  exact (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _ ⟨a, rfl⟩
 
 /-- **Proper closed subsets map into the zero locus of a nonzero element.** Let `π : V ⟶ Spec R`
 be a locally quasi-finite morphism from an integral affine scheme, for instance an étale morphism
