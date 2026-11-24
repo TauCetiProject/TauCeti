@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -43,12 +44,15 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `eq_constituentForm_iff`, `isPerfPair_constituentForm`, `isSymm_constituentForm`,
   `constituentCharVec`, `isCharacteristic_constituentCharVec`: canonical unimodular rescaling and
   characteristic vector for each Jordan constituent.
+* `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_two`, `forall_two_mul_pow_dvd_iff_two`:
+  rank and parity-type invariance across dyadic Jordan splittings of `B`.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign`, `constituentOddity`,
   `constituentSignBool`, `constituentSign_eq`, `constituentOddity_eq`: definition and independence
   of choices.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_one_or_neg_one`,
   `sum_if_constituentSign_eq_neg_one`, `prod_constituentSign_eq_ite`: sign values and products.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_of_eq`, `constituentOddity_eq_of_eq`,
+  `constituentSignBool_eq_of_eq`, `constituentSignBool_and_oddity_eq_of_eq`,
   `constituentSign_of_eq_bot`, `constituentOddity_of_eq_bot`, `constituentOddity_of_even`:
   agreement on equal constituents, zero constituents, and type-II constituents.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_mul_of_isSquare_det`,
@@ -113,6 +117,20 @@ private theorem transport_constituentForm {N' : ℕ → Submodule ℤ_[2] M}
   simpa using LinearMap.congr_fun₂ (h.two_pow_smul_constituentForm i)
     (LinearEquiv.ofEq _ _ hEq x) (LinearEquiv.ofEq _ _ hEq y)
 
+/-- Two dyadic Jordan splittings of `B` have the same constituent ranks. -/
+theorem IsJordanSplitting.finrank_eq_two [Module.Finite ℤ_[2] M]
+    {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
+    (j : ℕ) : finrank ℤ_[2] (N j) = finrank ℤ_[2] (N' j) :=
+  h.finrank_eq h' two_ne_zero PadicInt.not_isUnit_two j
+
+/-- Two dyadic Jordan splittings of `B` have the same constituent parity type at every scale. -/
+theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff_two
+    {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
+    (j : ℕ) :
+    (∀ w ∈ N j, 2 * 2 ^ j ∣ B w w) ↔ ∀ w ∈ N' j, 2 * 2 ^ j ∣ B w w :=
+  h.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h' (mem_nonZeroDivisors_of_ne_zero two_ne_zero)
+    dvd_rfl j
+
 section FreeFinite
 
 variable [Module.Free ℤ_[2] M] [Module.Finite ℤ_[2] M]
@@ -162,12 +180,7 @@ theorem IsJordanSplitting.constituentSign_eq (h : B.IsJordanSplitting 2 N) {i : 
   unfold IsJordanSplitting.constituentSign; dsimp only
   let d' := d.reindex (Fintype.equivFinOfCardEq (finrank_eq_card_basis d).symm)
   rw [← det_toMatrix_reindex d (Fintype.equivFinOfCardEq (finrank_eq_card_basis d).symm),
-    det_toMatrix_eq_det_sq_mul_det d' (Module.finBasis ℤ_[2] (N i)), map_mul, map_pow, map_mul,
-    map_pow]
-  have hP := Matrix.isUnit_det_of_right_inverse
-    (d'.toMatrix_mul_toMatrix_flip (Module.finBasis ℤ_[2] (N i)))
-  rw [(by decide : ∀ x : ZMod (2 ^ 3), x * x = 1 → χ₈ x ^ 2 = 1) _
-    (PadicInt.isUnit_iff_toZModPow_three_mul_self.mp hP), one_mul]
+    (h.constituentForm i).χ₈_toZModPow_three_det_toMatrix_eq (Module.finBasis ℤ_[2] (N i)) d']
 
 /-- Every constituent sign of a dyadic Jordan splitting is `1` or `-1`. -/
 theorem IsJordanSplitting.constituentSign_eq_one_or_neg_one
@@ -285,7 +298,7 @@ theorem IsJordanSplitting.constituentSign_eq_mul_of_isSquare_det {N' : ℕ → S
       IsSquare (c * ((B.restrict (N k)).toMatrix d).det * ((B.restrict (N' k)).toMatrix d').det)) :
     h'.constituentSign k = χ₈ (PadicInt.toZModPow 3 c) * h.constituentSign k := by
   have := h.free k; have := h.finite k; have := h'.free k; have := h'.finite k
-  have hrank := h.finrank_eq h' two_ne_zero PadicInt.not_isUnit_two k
+  have hrank := h.finrank_eq_two h' k
   let d := Module.finBasis ℤ_[2] (N k)
   let d' := (Module.finBasis ℤ_[2] (N' k)).reindex (finCongr hrank.symm)
   have hC := h.two_pow_smul_constituentForm k
@@ -383,6 +396,20 @@ theorem IsJordanSplitting.constituentSignBool_eq_not_of_constituentSign_eq_neg
     h'.constituentSignBool k = !h.constituentSignBool k := by
   unfold IsJordanSplitting.constituentSignBool
   rcases h.constituentSign_eq_one_or_neg_one k with hk | hk <;> simp [hneg, hk]
+
+/-- Equal constituents of two Jordan splittings of `B` have equal boolean signs. -/
+theorem IsJordanSplitting.constituentSignBool_eq_of_eq {N' : ℕ → Submodule ℤ_[2] M}
+    (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N') {i : ℕ} (hEq : N' i = N i) :
+    h'.constituentSignBool i = h.constituentSignBool i :=
+  (h'.constituentSign_eq_iff_constituentSignBool_eq h i).mp (h.constituentSign_eq_of_eq h' hEq)
+
+/-- Equal constituents of two Jordan splittings of `B` have equal boolean signs and oddities. -/
+theorem IsJordanSplitting.constituentSignBool_and_oddity_eq_of_eq {N' : ℕ → Submodule ℤ_[2] M}
+    (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N') (hB : B.IsSymm) {i : ℕ}
+    (hEq : N' i = N i) :
+    h'.constituentSignBool i = h.constituentSignBool i ∧
+      h'.constituentOddity hB i = h.constituentOddity hB i :=
+  ⟨h.constituentSignBool_eq_of_eq h' hEq, h.constituentOddity_eq_of_eq h' hB hEq⟩
 
 end FreeFinite
 

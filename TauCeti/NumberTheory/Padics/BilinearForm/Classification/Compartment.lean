@@ -453,16 +453,19 @@ private theorem exists_move_odd_odd (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm
   obtain ⟨x, hx, u, hu, hxx, humod⟩ := (isValidOdd_constituent_and_exists_mem h hB hodd0).2 a ha
   obtain ⟨y, hy, v, hv, hyy, hvmod⟩ := (isValidOdd_constituent_and_exists_mem h hB hodd1).2 b hb
   have h2v : PadicInt.toZModPow 3 (2 * v) = if b then 6 else 2 := by
-    obtain ⟨r, hr⟩ := PadicInt.four_dvd_sub_iff_toZModPow_two_eq.mpr
-      (by cases b <;> simpa [map_ofNat] using hvmod.symm :
-        PadicInt.toZModPow 2 (if b then 3 else 1) = PadicInt.toZModPow 2 v)
-    have h8 : (8 : ℤ_[2]) ∣ 2 * v - (if b then 6 else 2) :=
-      ⟨r, by cases b <;> simp only [↓reduceIte, Bool.false_eq_true] at hr ⊢ <;>
-        linear_combination 2 * hr⟩
-    have := (PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp h8).symm
-    cases b <;> simpa [map_ofNat] using this
+    cases b
+    · have hv' : PadicInt.toZModPow 2 v = PadicInt.toZModPow 2 1 := by simpa using hvmod
+      simp only [Bool.false_eq_true, ↓reduceIte]
+      simpa [map_ofNat] using PadicInt.toZModPow_succ_mul_eq_of_toZModPow_eq hv'
+    · have hv' : PadicInt.toZModPow 2 v = PadicInt.toZModPow 2 3 := by
+        simpa [map_ofNat] using hvmod
+      simp only [↓reduceIte]
+      simpa using (PadicInt.toZModPow_succ_mul_eq_of_toZModPow_eq hv').trans
+        (by rw [map_mul, map_natCast, map_ofNat]; decide)
   by_cases hab : a = b
-  · have huv : (4 : ℤ_[2]) ∣ u - v := by
+  · -- When `a = b`, apply an adjacent sign walk (`exists_signWalk_succ_of_odd_of_odd`): both
+    -- constituent signs flip and both oddities shift by `+δ = 2v mod 8`, matching `pairStep`.
+    have huv : (4 : ℤ_[2]) ∣ u - v := by
       rw [PadicInt.four_dvd_sub_iff_toZModPow_two_eq, humod, hvmod, hab]
     obtain ⟨N', h', hagree, hdk, hdl, hok, hol⟩ :=
       h.exists_signWalk_succ_of_odd_of_odd hB hx hy hu hv hxx hyy huv
@@ -478,7 +481,9 @@ private theorem exists_move_odd_odd (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm
         h.constituentSignBool_eq_not_of_constituentSign_eq_neg h' hsl,
         h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 2 * v) hok,
         h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 2 * v) hol, h2v]⟩
-  · have huv : (4 : ℤ_[2]) ∣ u + v := by
+  · -- When `a ≠ b`, apply oddity fusion (`exists_oddityFusion_succ`): both constituent signs stay
+    -- fixed and the oddities shift by `(+δ, -δ)` for `δ = 2v mod 8`, matching `pairStep`.
+    have huv : (4 : ℤ_[2]) ∣ u + v := by
       rw [← sub_neg_eq_add, PadicInt.four_dvd_sub_iff_toZModPow_two_eq, map_neg, humod, hvmod]
       cases a <;> cases b <;>
         first | exact absurd rfl hab | (simp only [↓reduceIte, Bool.false_eq_true]; decide)
@@ -517,9 +522,8 @@ private theorem exists_isJordanSplitting_of_pairValidPath (hB : B.IsSymm) {k : �
     intro N h hodd0 hodd1 hp
     simp only [pairValidPath, pairCanStep, Bool.and_eq_true] at hp
     obtain ⟨N1, h1, hagree1, hu1⟩ := exists_move_odd_odd h hB hodd0 hodd1 s.1 s.2 hp.1.1 hp.1.2
-    have hrank (i) := h1.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i
-    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h
-      (mem_nonZeroDivisors_of_ne_zero two_ne_zero) dvd_rfl i
+    have hrank (i) := h1.finrank_eq_two h i
+    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_two h i
     obtain ⟨N2, h2, hagree2, hu2⟩ := ih h1 (by rwa [hpar k]) (by rwa [hpar (k + 1)])
       (by rw [hrank k, hrank (k + 1), hu1]; exact hp.2)
     exact ⟨N2, h2, fun i h1' h2' ↦ (hagree2 i h1' h2').trans (hagree1 i h1' h2'), hu2⟩
@@ -540,9 +544,7 @@ private theorem exists_move_stateJ_step (h : B.IsJordanSplitting 2 N) (hB : B.Is
   obtain ⟨b, hb⟩ := exists_canRepMod4 _ _ _ (isValidOdd_constituent_and_exists_mem h hB hodd1).1
   obtain ⟨N1, h1, hagree1, hu1⟩ := exists_move_odd_odd h hB hodd0 hodd1 a b ha hb
   have hTS := compartmentOddity_and_compS_eq_of_pairStep (c := c) (d := d) (k := c) le_rfl hcd
-    (fun i h1' h2' ↦ ⟨(h1.constituentSign_eq_iff_constituentSignBool_eq h i).mp
-      (h.constituentSign_eq_of_eq h1 (hagree1 i h1' h2')),
-      h.constituentOddity_eq_of_eq h1 hB (hagree1 i h1' h2')⟩) hu1
+    (fun i h1' h2' ↦ h.constituentSignBool_and_oddity_eq_of_eq h1 hB (hagree1 i h1' h2')) hu1
   have hf := congrArg (fun p ↦ stateJ p.1.1 p.1.2) hu1
   rw [stateJ_pairStep_fst] at hf
   exact ⟨N1, h1, hagree1, hf, hTS.1, hTS.2⟩
@@ -560,7 +562,6 @@ private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodu
       compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) c d =
         compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d ∧
       compS h1.constituentSignBool c d = compS h.constituentSignBool c d := by
-  have h2nz : (2 : ℤ_[2]) ∈ nonZeroDivisors ℤ_[2] := mem_nonZeroDivisors_of_ne_zero two_ne_zero
   rcases exists_steps_stateJ (rankClass (finrank ℤ_[2] (N c))) (h.constituentSignBool c)
       (h.constituentOddity hB c) (s' c) (t' c)
       (isValidOdd_constituent_and_exists_mem h hB hodd0).1 hvalid' with
@@ -571,8 +572,8 @@ private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodu
     exact ⟨N1, h1, hagree1, hf1.trans hJ1, hT1, hS1⟩
   · obtain ⟨N1, h1, hagree1, hf1, hT1, hS1⟩ :=
       exists_move_stateJ_step h hB (d := d) (by omega) a1 hodd0 hodd1 ha1
-    have hrank1 := h1.finrank_eq h two_ne_zero PadicInt.not_isUnit_two c
-    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i
+    have hrank1 := h1.finrank_eq_two h c
+    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_two h i
     have hodd0' : ¬∀ x ∈ N1 c, 2 * 2 ^ c ∣ B x x := by rwa [hpar1 c]
     obtain ⟨N2, h2, hagree2, hf2, hT2, hS2⟩ :=
       exists_move_stateJ_step h1 hB (d := d) (by omega) a2 hodd0' (by rwa [hpar1 (c + 1)])
@@ -607,9 +608,8 @@ private theorem exists_match_state_at_left_of_stateJ_eq (hB : B.IsSymm)
     have hsc := h1.constituentSignBool_eq_not_of_constituentSign_eq_neg h2 hsk
     have hsl := h1.constituentSignBool_eq_not_of_constituentSign_eq_neg h2 hslk
     have hTS2 := compartmentOddity_and_compS_eq_of_flip_add_two (c := c) (d := d) (k := c) le_rfl
-      hcd (fun i h1' h2' ↦ ⟨(h2.constituentSign_eq_iff_constituentSignBool_eq h1 i).mp
-        (h1.constituentSign_eq_of_eq h2 (hagree2 i h1' h2')),
-        h1.constituentOddity_eq_of_eq h2 hB (hagree2 i h1' h2')⟩) hsc htc hsl htl
+      hcd (fun i h1' h2' ↦ h1.constituentSignBool_and_oddity_eq_of_eq h2 hB (hagree2 i h1' h2'))
+      hsc htc hsl htl
     exact ⟨N2, h2, fun i hi ↦ by
         simp only [Finset.mem_Icc] at hi
         exact hagree2 i (by omega) (by omega),
@@ -660,13 +660,12 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
     · exact hproj.2
   | len + 2, c, N, h, hodd, hvalid', hT, hS => by
     set d := c + (len + 2)
-    have h2nz : (2 : ℤ_[2]) ∈ nonZeroDivisors ℤ_[2] := mem_nonZeroDivisors_of_ne_zero two_ne_zero
     -- Step 1: match `stateJ` at index `c` using at most `2` moves on `(c, c + 1)`.
     obtain ⟨N1, h1, hagree1, hJ1, hT1, hS1⟩ :=
       exists_match_stateJ_at_left hB h (c := c) (d := d) (by omega)
         (hodd c (by simp [d])) (hodd (c + 1) (by simp [d])) (hvalid' c (by simp [d]))
     -- Step 2: if `(s c, t c) ≠ (s' c, t' c)`, flip `(c, c + 2)` by a distance-2 sign walk.
-    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i
+    have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_two h i
     obtain ⟨N2, h2, hagree2, hsc2, htc2, hT2, hS2⟩ :=
       exists_match_state_at_left_of_stateJ_eq hB h1 (c := c) (d := d) (by omega)
         (by rw [hpar1 c]; exact hodd c (by simp [d]))
@@ -681,10 +680,10 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
     obtain ⟨N3, h3, hagree3, hmatch3⟩ := exists_isJordanSplitting_matching_compartment hB s' t'
       (len + 1) (c + 1) N2 h2
       (fun i hi ↦ by
-        rw [h2.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i]
+        rw [h2.forall_two_mul_pow_dvd_iff_two h i]
         exact hodd i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (fun i hi ↦ by
-        rw [h2.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i]
+        rw [h2.finrank_eq_two h i]
         exact hvalid' i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (by
         have hT2' := hT2.trans (hT1.trans hT)
@@ -703,9 +702,8 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
         ((hagree2 i hi).trans (hagree1 i hi1.1 hi1.2))
     · rw [hIcc_split, Finset.mem_insert] at hi
       rcases hi with rfl | hi'
-      · exact ⟨((h3.constituentSign_eq_iff_constituentSignBool_eq h2 i).mp
-            (h2.constituentSign_eq_of_eq h3 (hagree3 i hc_notMem))).trans hsc2,
-          (h2.constituentOddity_eq_of_eq h3 hB (hagree3 i hc_notMem)).trans htc2⟩
+      · have hpair := h2.constituentSignBool_and_oddity_eq_of_eq h3 hB (hagree3 i hc_notMem)
+        exact ⟨hpair.1.trans hsc2, hpair.2.trans htc2⟩
       · exact hmatch3 i hi'
 
 /-- **Compartment normalization for dyadic Jordan splittings.** Let `B` and `B'` be symmetric

@@ -47,7 +47,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
-  difference; `PadicInt.four_dvd_sub_iff_toZModPow_two_eq` and
+  difference; `PadicInt.toZModPow_succ_mul_eq_of_toZModPow_eq` lifts a congruence modulo `p ^ n` to
+  `p`-multiples modulo `p ^ (n + 1)`; `PadicInt.four_dvd_sub_iff_toZModPow_two_eq` and
   `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` are its cases `p ^ n = 4` and `p ^ n = 8`.
 * `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
   `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
@@ -197,6 +198,16 @@ their difference. -/
 theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
     toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
   rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
+
+/-- Elements of `ℤ_[p]` congruent modulo `p ^ n` have congruent `p`-multiples modulo
+`p ^ (n + 1)`. -/
+theorem toZModPow_succ_mul_eq_of_toZModPow_eq {n : ℕ} {v w : ℤ_[p]}
+    (h : toZModPow n v = toZModPow n w) :
+    toZModPow (n + 1) ((p : ℤ_[p]) * v) = toZModPow (n + 1) ((p : ℤ_[p]) * w) := by
+  obtain ⟨r, hr⟩ := (toZModPow_eq_iff_dvd_sub n).mp h
+  refine (toZModPow_eq_iff_dvd_sub (n + 1)).mpr ⟨r, ?_⟩
+  rw [pow_succ', ← mul_sub, hr]
+  ring
 
 /-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
 noncomputable def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : TopologicalSpace.Clopens ℤ_[p] :=
