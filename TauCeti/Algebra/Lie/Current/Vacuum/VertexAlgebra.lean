@@ -21,7 +21,7 @@ The current fields are translation covariant, `[T, J^x(z)] = ∂_z J^x(z)`, and 
 order `2`. They also generate `V` from the vacuum: an `R`-submodule containing `|0⟩` and stable
 under every mode `xₙ` is all of `V`
 (`TauCeti.CurrentAlgebra.eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem`). So when
-`V` has unique divisibility, for instance over a field of characteristic zero, the reconstruction
+`V` has unique divisibility, for instance over a `ℚ`-algebra, the reconstruction
 theorem `TauCeti.existsUnique_formalVertexAxioms` gives a unique formal vertex algebra on `V` with
 vacuum `|0⟩`, translation `T` and
 
@@ -33,16 +33,18 @@ vacuum `|0⟩`, translation `T` and
 field of every PBW monomial `x¹ₙ₁ ⋯ xᵏₙₖ|0⟩` is obtained from the current fields by `k` such
 products.
 
-The products of the generating states `x₋₁|0⟩` are computed by the commutator relations of `ĝ`:
+In particular the products of the generating states `x₋₁|0⟩` in this vertex algebra are the
+vacuum module identities of `TauCeti.Algebra.Lie.Current.Vacuum.Basic`:
 
-* `x₀ y₋₁|0⟩ = [x, y]₋₁|0⟩`;
-* `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩`;
-* `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`.
+* `x₀ y₋₁|0⟩ = [x, y]₋₁|0⟩`
+  (`TauCeti.CurrentAlgebra.ncoeff_zero_currentField_ncoeff_currentField_vacuum`);
+* `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩`
+  (`TauCeti.CurrentAlgebra.ncoeff_one_currentField_ncoeff_currentField_vacuum`);
+* `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`
+  (`TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le`).
 
 With `Φ = -κ` and `a = 1` these are the operator product expansion
 `J^x(z) J^y(w) ∼ κ(x, y) / (z - w)² + J^{[x, y]}(w) / (z - w)` of the affine vertex algebra.
-These products hold over every commutative ring and at every central value, including the critical
-level and `a = 0`.
 
 ## Main definitions
 
@@ -51,12 +53,6 @@ level and `a = 0`.
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem`: the
-  vacuum generates the vacuum module under the modes of the current fields.
-* `TauCeti.CurrentAlgebra.ncoeff_zero_currentField_ncoeff_currentField_vacuum`,
-  `TauCeti.CurrentAlgebra.ncoeff_one_currentField_ncoeff_currentField_vacuum` and
-  `TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le`: the
-  nonnegative products of the generating states.
 * `TauCeti.CurrentAlgebra.vacuumFormalVertexAxioms_field_ncoeff_currentField_vacuum`:
   `Y(x₋₁|0⟩, z) = J^x(z)`.
 * `TauCeti.CurrentAlgebra.vacuumFormalVertexAxioms_field_ncoeff_currentField_apply`:
@@ -94,61 +90,6 @@ local notation "J" => currentField (envelopingAction (M := VacuumModule Φ hΦ h
   (Iff.mpr (isSmooth_envelopingAction_iff Φ hΦ hΦs a)
     (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0))
 
-/-! ### Generation by the current fields -/
-
-variable {Φ hΦ hΦs a} in
-/-- **The vacuum generates the vacuum module under the current modes.** An `R`-submodule of the
-vacuum module containing `|0⟩` and stable under every mode `xₙ = J^x[[n]]` is everything. -/
-theorem eq_top_of_vacuum_mem_of_forall_ncoeff_currentField_apply_mem
-    {W : Submodule R (VacuumModule Φ hΦ hΦs a)} (hvac : vacuum Φ hΦ hΦs a ∈ W)
-    (hW : ∀ (x : L) (n : ℤ), ∀ v ∈ W, ((J x)[[n]]) v ∈ W) : W = ⊤ := by
-  refine eq_top_iff.2 fun v _ ↦ ?_
-  obtain ⟨u, rfl⟩ := exists_smul_vacuum_eq v
-  exact smul_mem_of_forall_ncoeff_currentField_apply_mem
-    (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0) hW u hvac
-
-/-! ### Products of the generating states -/
-
-/-- A nonnegative mode on a generating state is its commutator with `y₋₁` on the vacuum:
-`xₙ y₋₁|0⟩ = [x, y]ₙ₋₁|0⟩ + δ_{n, 1} (-a Φ(x, y)) |0⟩` for `n ≥ 0`. -/
-private theorem ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg (x y : L) {n : ℤ}
-    (hn : 0 ≤ n) :
-    ((J x)[[n]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) =
-      ((J ⁅x, y⁆)[[n - 1]]) (vacuum Φ hΦ hΦs a) +
-        (if n - 1 = 0 then -(a * Φ x y) else 0) • vacuum Φ hΦ hΦs a := by
-  have h := LinearMap.congr_fun (ncoeff_currentField_mul_sub_mul Φ a
-    ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2
-      (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0))
-    (envelopingAction_mul_sub_mul Φ hΦ hΦs a) x y n (-1)) (vacuum Φ hΦ hΦs a)
-  -- The commutator applied to the vacuum, where `xₙ|0⟩ = 0`.
-  simp only [LinearMap.sub_apply, mul_apply_eq_comp, ncoeff_currentField_vacuum_eq_zero x hn,
-    map_zero, sub_zero, LinearMap.add_apply, Module.algebraMap_end_apply, ← sub_eq_add_neg] at h
-  rw [h]
-  split_ifs <;> simp
-
--- Not a simp lemma: the simp normal form of a mode `J^x[[n]]` is the action of its current
--- (`ncoeff_currentField`).
-/-- **The zeroth product of generating states is the bracket:** `x₀ y₋₁|0⟩ = [x, y]₋₁|0⟩`. -/
-theorem ncoeff_zero_currentField_ncoeff_currentField_vacuum (x y : L) :
-    ((J x)[[0]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) =
-      ((J ⁅x, y⁆)[[-1]]) (vacuum Φ hΦ hΦs a) := by
-  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y le_rfl,
-    -ncoeff_currentField]
-
-/-- **The first product of generating states is the level:** `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩`.
-For `Φ = -κ` and `a = 1` this is `κ(x, y) |0⟩`. -/
-theorem ncoeff_one_currentField_ncoeff_currentField_vacuum (x y : L) :
-    ((J x)[[1]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) = -(a * Φ x y) • vacuum Φ hΦ hΦs a := by
-  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y zero_le_one,
-    ncoeff_currentField_vacuum_eq_zero _ le_rfl, -ncoeff_currentField]
-
-/-- **The higher products of generating states vanish:** `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`. -/
-theorem ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le (x y : L) {n : ℤ}
-    (hn : 2 ≤ n) : ((J x)[[n]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) = 0 := by
-  simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y (by omega : 0 ≤ n),
-    ncoeff_currentField_vacuum_eq_zero _ (by omega : 0 ≤ n - 1), show n - 1 ≠ 0 by omega,
-    -ncoeff_currentField]
-
 /-! ### The affine vertex algebra -/
 
 variable [HasUniqueDiv (VacuumModule Φ hΦ hΦs a)]
@@ -156,7 +97,7 @@ variable [HasUniqueDiv (VacuumModule Φ hΦ hΦs a)]
 /-- The **affine vertex algebra** structure on the vacuum module: the formal vertex algebra
 reconstructed from the current fields, with vacuum `|0⟩`, translation `T = -d/dt` and
 `Y(x₋₁|0⟩, z) = J^x(z)`. It exists when the vacuum module has unique divisibility, for instance
-over a field of characteristic zero. -/
+over a `ℚ`-algebra. -/
 def vacuumFormalVertexAxioms : FormalVertexAxioms R (VacuumModule Φ hΦ hΦs a) :=
   FormalVertexAxioms.ofGeneratingFields (F := J) vacuumTranslation_vacuum
     (fun x n ↦ by
@@ -206,14 +147,19 @@ theorem eq_vacuumFormalVertexAxioms {A : FormalVertexAxioms R (VacuumModule Φ h
 
 end Vacuum
 
-/-! ### Fields of characteristic zero -/
+/-! ### `ℚ`-algebras -/
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
+variable {R L : Type*} [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-/-- Over a field of characteristic zero the vacuum module has unique divisibility, so it carries
-the affine vertex algebra structure `vacuumFormalVertexAxioms`. -/
-instance : HasUniqueDiv (VacuumModule Φ hΦ hΦs a) :=
-  .of_isTorsionFree K _
+/-- Over a `ℚ`-algebra the vacuum module has unique divisibility, so it carries the affine vertex
+algebra structure `vacuumFormalVertexAxioms`. -/
+instance : HasUniqueDiv (VacuumModule Φ hΦ hΦs a) where
+  nsmul_right_injective n hn v w h := by
+    have hu : IsUnit (n : R) := by
+      simpa using (isUnit_iff_ne_zero.2 (Nat.cast_ne_zero.2 hn : (n : ℚ) ≠ 0)).map
+        (algebraMap ℚ R)
+    simp only [← Nat.cast_smul_eq_nsmul R] at h
+    exact hu.smul_left_cancel.1 h
 
 end TauCeti.CurrentAlgebra
