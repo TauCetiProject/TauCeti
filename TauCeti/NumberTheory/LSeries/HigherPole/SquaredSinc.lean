@@ -112,6 +112,11 @@ theorem squaredSinc_intCast_mul_pi_div (ell : ℝ) {n : ℤ} (hn : n ≠ 0) :
   have hne : (n : ℝ) * π ≠ 0 := mul_ne_zero (Int.cast_ne_zero.2 hn) pi_ne_zero
   simp [squaredSinc_def, harg, sinc_of_ne_zero hne, sin_int_mul_pi]
 
+/-- The kernel vanishes at `π / λ`. -/
+@[simp]
+theorem squaredSinc_pi_div (ell : ℝ) : squaredSinc ell (π / ell) = 0 := by
+  simpa using squaredSinc_intCast_mul_pi_div ell one_ne_zero
+
 /-- The kernel is continuous for every bandwidth. -/
 @[fun_prop]
 theorem continuous_squaredSinc (ell : ℝ) : Continuous (squaredSinc ell) := by
