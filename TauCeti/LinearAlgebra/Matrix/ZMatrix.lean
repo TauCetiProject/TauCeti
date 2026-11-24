@@ -115,11 +115,10 @@ theorem PosSemidef.mulVec_abs_eq_zero {R : Type*} [CommRing R] [LinearOrder R]
 
 /-- **A positive definite matrix is somewhere positive on each nonzero nonnegative vector.** If
 `M` is positive definite over a linearly ordered ring with trivial star, then for every nonzero
-vector `x` with nonnegative entries some coordinate of `M x` is positive; otherwise every term of
-`xᵀ M x` would be nonpositive. -/
-theorem PosDef.exists_mulVec_pos {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
-    [StarRing R] [TrivialStar R] {M : Matrix n n R} (hM : M.PosDef) {x : n → R} (hx0 : 0 ≤ x)
-    (hx : x ≠ 0) : ∃ i, 0 < (M *ᵥ x) i := by
+vector `x` with nonnegative entries some coordinate of `M x` is positive. -/
+theorem PosDef.exists_mulVec_pos {R : Type*} [Ring R] [LinearOrder R] [IsOrderedAddMonoid R]
+    [PosMulMono R] [StarRing R] [TrivialStar R] {M : Matrix n n R} (hM : M.PosDef) {x : n → R}
+    (hx0 : 0 ≤ x) (hx : x ≠ 0) : ∃ i, 0 < (M *ᵥ x) i := by
   by_contra! h
   have hpos := hM.dotProduct_mulVec_pos hx
   rw [star_trivial] at hpos

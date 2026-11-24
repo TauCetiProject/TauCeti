@@ -23,8 +23,9 @@ and away from the copy it is zero. These are the local relations of the signless
 algebra, so a representation of the signless preprojective algebra of `H` by such a family extends
 by zero to one of `G`.
 
-Along a copy, the neighbours of a vertex map to neighbours of its image, so a nonnegative weight
-on `G` sums to at least as much over the neighbours of `f x` as over the images of those of `x`.
+Along a copy, the neighbours of a vertex map to neighbours of its image, so a weight on `G` that is
+nonnegative at the extra neighbours sums to at least as much over the neighbours of `f x` as over
+the images of those of `x`.
 
 ## Main definitions
 
@@ -35,7 +36,7 @@ on `G` sums to at least as much over the neighbours of `f x` as over the images 
 
 * `SimpleGraph.Copy.map_neighborFinset_subset` and `SimpleGraph.Copy.sum_neighborFinset_comp_le`:
   neighbours map to neighbours along a copy, and the resulting bound on neighbour sums of a
-  nonnegative weight.
+  weight that is nonnegative at the extra neighbours.
 * `SimpleGraph.Copy.extendByZero_apply_apply`: along the copy, the extension is the original
   family on edges of `H` and zero elsewhere.
 * `SimpleGraph.Copy.sum_extendByZero_mul_extendByZero`: the local sums
@@ -60,13 +61,14 @@ theorem map_neighborFinset_subset (f : H.Copy G) (x : W) :
   rw [mem_neighborFinset] at hy ⊢
   exact f.toHom.map_adj hy
 
-/-- Along a copy `f`, not necessarily induced, a nonnegative weight on `G` sums to at least as much
-over the neighbours of `f x` as over the images of the neighbours of `x`. -/
-theorem sum_neighborFinset_comp_le [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
-    (f : H.Copy G) {a : V → M} (ha0 : 0 ≤ a) (x : W) :
+/-- Along a copy `f`, not necessarily induced, a weight on `G` that is nonnegative at the neighbours
+of `f x` outside the image of those of `x` sums to at least as much over the neighbours of `f x` as
+over the images of the neighbours of `x`. -/
+theorem sum_neighborFinset_comp_le [AddCommMonoid M] [Preorder M] [AddLeftMono M]
+    (f : H.Copy G) {a : V → M} {x : W}
+    (ha0 : ∀ w ∈ G.neighborFinset (f x), w ∉ (H.neighborFinset x).map f.toEmbedding → 0 ≤ a w) :
     ∑ y ∈ H.neighborFinset x, a (f y) ≤ ∑ w ∈ G.neighborFinset (f x), a w := by
-  have h := Finset.sum_le_sum_of_subset_of_nonneg (f.map_neighborFinset_subset x)
-    fun w _ _ => ha0 w
+  have h := Finset.sum_le_sum_of_subset_of_nonneg (f.map_neighborFinset_subset x) ha0
   rwa [Finset.sum_map] at h
 
 end neighborFinset

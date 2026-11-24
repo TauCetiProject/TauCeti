@@ -504,7 +504,8 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     have h₁ : ∑ w, δ w * ∑ u ∈ G.neighborFinset w, a (f u) <
         ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y :=
       sum_lt_sum
-        (fun w _ ↦ mul_le_mul_of_nonneg_left (f.sum_neighborFinset_comp_le ha0 w) (hδpos w).le)
+        (fun w _ ↦ mul_le_mul_of_nonneg_left (f.sum_neighborFinset_comp_le fun z _ _ ↦ ha0 z)
+          (hδpos w).le)
         ⟨v, mem_univ v, mul_lt_mul_of_pos_left hlt (hδpos v)⟩
     have h₂ : ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y ≤ ∑ w, δ w * (2 * a (f w)) :=
       sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_left (hle (f w)) (hδpos w).le

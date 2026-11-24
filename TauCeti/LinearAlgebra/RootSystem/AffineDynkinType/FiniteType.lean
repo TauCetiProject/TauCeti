@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
-import TauCeti.LinearAlgebra.Matrix.ZMatrix
+import TauCeti.Combinatorics.SimpleGraph.CoefficientGame
 
 /-!
 # Affine simply-laced diagrams are not of finite type
@@ -28,9 +28,9 @@ exclusion of `Ã₁` is necessary: its graph is a single edge, the diagram of `A
 matrix `!![2, -2; -2, 2]` records the double edge.
 
 More strongly, a graph whose `2I - A` is positive definite contains no copy of the graph of such
-a diagram, induced or not. Extending the marks by zero along a copy gives a nonzero vector at
-which the form of `2I - A` is nonpositive: an extra edge only lowers the form, since the marks are
-positive.
+a diagram, induced or not. Extending the marks by zero along a copy gives a nonzero nonnegative
+vector with no positive coordinate under `2I - A`: an extra edge only lowers the coordinates, since
+the marks are positive (`SimpleGraph.not_isContained_of_posDef_of_two_mul_le_sum`).
 
 ## Main results
 
@@ -66,59 +66,28 @@ theorem not_isFiniteType_cartanMatrix (ht : t.Valid) : ¬ IsFiniteType t.cartanM
   have hpos : (0 : ℚ) < t.marks 0 := by exact_mod_cast marks_pos 0
   exact hpos.ne' (congrFun h0 0)
 
+open SimpleGraph in
+/-- **A graph with positive definite `2I - A` contains no graph of a valid affine diagram other
+than `Ã₁`.** If `2I - A` is positive definite over a linearly ordered ring, then `G` contains no
+copy, induced or not, of the graph of a valid affine simply-laced diagram other than `Ã₁`. In
+particular no finite simply-laced Dynkin diagram contains one
+(`SimpleGraph.posDef_graphCartanMatrix_of_iso`). -/
+theorem not_isContained_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [StarRing R] [TrivialStar R] {V : Type*} [Finite V] [DecidableEq V] {G : SimpleGraph V}
+    [DecidableRel G.Adj] (ht : t.Valid) (hg : t.IsGraphical)
+    (hC : (G.graphCartanMatrix R).PosDef) : ¬ t.graph ⊑ G :=
+  G.not_isContained_of_posDef_of_two_mul_le_sum hC (m := fun u ↦ (t.marks u : R))
+    (fun u ↦ (Int.cast_pos.mpr (marks_pos u)).le)
+    (fun h ↦ (Int.cast_pos.mpr (marks_pos 0)).ne' (congrFun h 0))
+    fun u ↦ by exact_mod_cast (sum_marks_neighborFinset_eq_two_mul ht hg u).ge
+
 /-- **The graph of an affine diagram is not a finite Dynkin diagram.** For a valid affine
 simply-laced diagram other than `Ã₁`, the underlying graph is not isomorphic to the diagram of any
 valid Dynkin type. -/
 theorem not_exists_dynkinType_iso (ht : t.Valid) (hg : t.IsGraphical) :
-    ¬ ∃ s : DynkinType, s.Valid ∧ Nonempty (t.graph ≃g diagramGraph s.cartanMatrix) := by
-  intro h
-  have hpd := (SimpleGraph.posDef_graphCartanMatrix_iff (graph_connected ht)).2
-    ((SimpleGraph.exists_valid_isSimplyLaced_dynkinType_iso_iff t.graph).2 h)
-  have hft := SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef hpd
-  rw [← cartanMatrix_eq_graphCartanMatrix hg] at hft
-  exact not_isFiniteType_cartanMatrix ht hft
-
-open SimpleGraph in
-/-- **A graph with positive definite `2I - A` contains no affine graph.** If `2I - A` is positive
-definite over a linearly ordered ring, then `G` contains no copy, induced or not, of the graph of
-a valid affine simply-laced diagram other than `Ã₁`. In particular no finite simply-laced Dynkin
-diagram contains one (`SimpleGraph.posDef_graphCartanMatrix_of_iso`). -/
-theorem not_isContained_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-    [StarRing R] [TrivialStar R] {V : Type*} [Finite V] [DecidableEq V] {G : SimpleGraph V}
-    [DecidableRel G.Adj] (ht : t.Valid) (hg : t.IsGraphical)
-    (hC : (G.graphCartanMatrix R).PosDef) : ¬ t.graph ⊑ G := by
-  classical
-  have := Fintype.ofFinite V
-  rintro ⟨f⟩
-  -- Extend the marks by zero along the copy.
-  set m : Fin t.nodes → R := fun u ↦ (t.marks u : R)
-  set x : V → R := Function.extend f m 0
-  have hx (u : Fin t.nodes) : x (f u) = m u := f.injective.extend_apply m 0 u
-  have hx0 (v : V) (hv : v ∉ Set.range f) : x v = 0 := Function.extend_apply' m (0 : V → R) v hv
-  have hm (u : Fin t.nodes) : 0 < m u := Int.cast_pos.mpr (marks_pos u)
-  have hx0le (v : V) : 0 ≤ x v := by
-    by_cases hv : v ∈ Set.range f
-    · obtain ⟨u, rfl⟩ := hv
-      rw [hx]
-      exact (hm u).le
-    · exact (hx0 v hv).ge
-  -- `2I - A` is nonpositive at `x`, which contradicts positive definiteness.
-  obtain ⟨v, hv⟩ := hC.exists_mulVec_pos hx0le fun h ↦
-    (hm 0).ne' (by rw [← hx, h, Pi.zero_apply])
-  refine hv.not_ge ?_
-  rw [graphCartanMatrix_mulVec_apply, sub_nonpos]
-  by_cases hv' : v ∈ Set.range f
-  · -- At a vertex of the copy, the neighbours in `G` include the images of the neighbours in the
-    -- affine graph, whose marks already sum to twice the mark of the vertex.
-    obtain ⟨u, rfl⟩ := hv'
-    have hsum : ∑ w ∈ t.graph.neighborFinset u, x (f w) = 2 * m u := by
-      simp only [hx, m]
-      exact_mod_cast sum_marks_neighborFinset_eq_two_mul ht hg u
-    rw [hx, ← hsum]
-    exact f.sum_neighborFinset_comp_le hx0le u
-  · -- Off the copy, `x` vanishes and its neighbour sum is nonnegative.
-    rw [hx0 v hv', mul_zero]
-    exact Finset.sum_nonneg fun w _ ↦ hx0le w
+    ¬ ∃ s : DynkinType, s.Valid ∧ Nonempty (t.graph ≃g diagramGraph s.cartanMatrix) :=
+  fun ⟨_, _, ⟨φ⟩⟩ ↦ not_isContained_of_posDef ht hg
+    (SimpleGraph.posDef_graphCartanMatrix_of_iso φ) (.refl _)
 
 end AffineDynkinType
 
