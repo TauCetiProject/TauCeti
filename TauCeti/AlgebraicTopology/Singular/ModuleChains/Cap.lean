@@ -100,6 +100,20 @@ def IsSemiInvariantCocycle {G : Type u} [Monoid G] [MulAction G P.fst] [Continuo
     (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
         (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
 
+variable {P n} in
+/-- Characterization of `TopPair.IsSemiInvariantCocycle`: the pull-back of `φ` to the ambient space
+satisfies `φ(g • c) = χ(g) φ(c)`. -/
+theorem isSemiInvariantCocycle_iff {G : Type u} [Monoid G] [MulAction G P.fst]
+    [ContinuousConstSMul G P.fst] (χ : G →* kˣ)
+    (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n) :
+    IsSemiInvariantCocycle χ φ ↔ ∀ g : G, ((singularChains k).map
+      (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
+      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
+    (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ) :=
+  Iff.rfl
+
 /-- The relative cocycle `φ` pulled back to a cocycle of the ambient space along the quotient onto
 the relative chains. -/
 private def pulledCocycle :
@@ -191,7 +205,7 @@ private theorem capComponent_smul {G : Type u} [Group G] [MulAction G P.fst]
       (χ g : k) • (((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj
           k (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ) := by
     rw [iCycles_pulledCocycle]
-    exact hφ g
+    exact (isSemiInvariantCocycle_iff χ φ).1 hφ g
   have := ChainComplex.capChain_naturality (k := k)
     (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
