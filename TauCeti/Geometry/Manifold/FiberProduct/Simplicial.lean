@@ -29,7 +29,8 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
   `face_castSucc_comp_degeneracy_succ_of_le`, `face_castSucc_comp_degeneracy` and
   `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
   `degeneracy_castSucc_comp_degeneracy`), transferred from `SimplexCategory` via contravariant
-  functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`.
+  functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`, packaged as the `SimplexCategory`
+  action `TauCeti.IteratedFiberProduct.mapSimplex`.
 
 When `π` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional boundaryless real manifolds and
 each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChartedSpace`:
@@ -42,7 +43,9 @@ each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChar
   `TauCeti.IteratedFiberProduct.surjective_face`);
 * every degeneracy map `degeneracy i` is a `C^n` smooth embedding (`TauCeti.contMDiff_degeneracy`,
   `TauCeti.isSmoothEmbedding_degeneracy`), and a closed topological embedding when `Y` is
-  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`).
+  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
+* the diagonal inclusion `IteratedFiberProduct.const (m + 1) : Y → Y^[m + 1]` is a `C^n` smooth
+  embedding (`TauCeti.isSmoothEmbedding_constDiagonal`).
 
 ## References
 
@@ -237,6 +240,16 @@ open scoped Simplicial
 def mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
     IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1) :=
   reindex θ.toOrderHom
+
+/-- `mapSimplex θ` is reindexing along `θ.toOrderHom`. -/
+theorem mapSimplex_eq_reindex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    (mapSimplex θ : IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1)) =
+      reindex θ.toOrderHom := (rfl)
+
+/-- The underlying tuple of `mapSimplex θ y` is `y.1 ∘ θ.toOrderHom`. -/
+@[simp]
+theorem coe_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    (mapSimplex θ y : Fin (a + 1) → Y) = y.val ∘ θ.toOrderHom := (rfl)
 
 /-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
 @[simp]
@@ -642,7 +655,7 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
 
 /-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
 embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
-theorem isSmoothEmbedding_const (m : ℕ) :
+theorem isSmoothEmbedding_constDiagonal (m : ℕ) :
     letI := iteratedFiberProductChartedSpace hn hπ m
     Manifold.IsSmoothEmbedding IY
       𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n

@@ -46,7 +46,10 @@ variable {𝕜 E E' E'' F₁ F₂ H H' H'' M N P : Type*} [NontriviallyNormedFie
   [TopologicalSpace N] [ChartedSpace H' N] [TopologicalSpace P] [ChartedSpace H'' P]
   {f : M → N} {g : N → P} {x : M}
 
-/-- **Aligning a submersion normal form over a prescribed base chart.** -/
+/-- **Aligning a submersion normal form over a prescribed base chart.** Given a point `x` where
+`f` is a submersion with complement `F₁` and any maximal-atlas chart `ψ` at `f x`, returns a
+maximal-atlas chart `φ` at `x` with `φ.source ⊆ f ⁻¹' ψ.source` in which `f` reads as
+`w ↦ (hf.equiv w).1` into `ψ.extend J` (retaining the same linear splitting `hf.equiv`). -/
 theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
     (hf : IsSubmersionAtOfComplement F₁ I J n f x) {ψ : OpenPartialHomeomorph N H'}
     (hfx : f x ∈ ψ.source) (hψ : ψ ∈ IsManifold.maximalAtlas J n N) :
@@ -56,6 +59,9 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
         (hf.equiv w).1 ∈ (ψ.extend J).target ∧
         f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧
         ψ.extend J (f ((φ.extend I).symm w)) = (hf.equiv w).1 := by
+  -- Transport `d₁` to `E' × F₁` via `hf.equiv`, apply the codomain transition `τ = Ψ₁⁻¹ ≫ Φ₂`
+  -- on the base factor (`τ × id`), pull back by `hf.equiv⁻¹`, and compose with `I.interiorChart⁻¹`
+  -- to obtain `φ = (Φ₁ ≫ (τ × id)) ≫ L⁻¹ ≫ I⁻¹`.
   let d₁ := hf.domChart; let c₁ := hf.codChart
   let Φ₁ := d₁.extendTrans I hf.equiv.toHomeomorph
   let Ψ₁ := c₁.extendTrans J (Homeomorph.refl E')
@@ -101,34 +107,44 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
     refine ⟨hxΦ₁, Ψ₁.map_source hfxΨ₁, ?_⟩
     rw [Ψ₁.left_inv hfxΨ₁]
     simpa [Φ₂] using hfx
-  have hmain : ∀ w ∈ (φ.extend I).target,
-      (hf.equiv w).1 ∈ (ψ.extend J).target ∧
-      f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧
-      ψ.extend J (f ((φ.extend I).symm w)) = (hf.equiv w).1 := fun w hw ↦ by
+  -- Membership in `(φ.extend I).target` unfolds directly to `Θ.target` (landing in `τ.target`
+  -- and `(d₁.extend I).target`), while `(φ.extend I).symm` factors through `d₁.extend I` via `τ⁻¹`.
+  have hΘ_target : ∀ {w}, w ∈ (φ.extend I).target →
+      ((hf.equiv w).1 ∈ Φ₂.target ∧ Φ₂.symm (hf.equiv w).1 ∈ Ψ₁.source) ∧
+      hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ (d₁.extend I).target := by
+    intro w hw
     have hIw : I (I.symm w) = w := I.right_inv (I.range_eq_univ.symm ▸ mem_univ w)
     have hwΘ : w ∈ Θ.target := by
       simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIw,
         I.range_eq_univ] using hw
-    set u' : E' := (hf.equiv w).1; set z : E := hf.equiv.symm (τ.symm u', (hf.equiv w).2)
-    have heq : hf.equiv.symm.toHomeomorph.symm = hf.equiv.toHomeomorph := rfl
-    simp only [Θ, τF, Φ₁, heq, transHomeomorph_target, trans_target, prod_target, refl_target,
-      prod_symm, refl_symm, OpenPartialHomeomorph.prod_apply, refl_apply, extendTrans_target,
-      ContinuousLinearEquiv.coe_toHomeomorph, mem_inter_iff,
-      mem_preimage, mem_prod, mem_univ, and_true] at hwΘ
-    have hzΦ₁ : z ∈ (hf.domChart.extend I).target := by
-      rw [extend_target, I.range_eq_univ, inter_univ]
-      simpa [z] using hwΘ.2
-    have hsymm : (φ.extend I).symm w = (hf.domChart.extend I).symm z := by
-      simp [φ, Θ, τF, Φ₁, d₁, z, u', hIw]
-    have hf_eq : hf.codChart.extend J (f ((hf.domChart.extend I).symm z)) = τ.symm u' := by
-      simpa [z] using hf.writtenInCharts hzΦ₁
-    have hfz_mem : f ((hf.domChart.extend I).symm z) ∈ (hf.codChart.extend J).source := by
-      rw [extend_source]; exact hf.source_subset_preimage_source <|
-        by rw [← hf.domChart.extend_source (I := I)]; exact (hf.domChart.extend I).map_target hzΦ₁
-    have hu'τ : u' ∈ Φ₂.target ∧ Φ₂.symm u' ∈ Ψ₁.source := by simpa [τ] using hwΘ.1
+    simp only [Θ, τF, Φ₁, ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
+      transHomeomorph_target, trans_target, prod_target, refl_target, prod_symm, refl_symm,
+      OpenPartialHomeomorph.prod_apply, refl_apply, extendTrans_target,
+      ContinuousLinearEquiv.coe_toHomeomorph, mem_inter_iff, mem_preimage, mem_prod, mem_univ,
+      and_true] at hwΘ
+    refine ⟨by simpa [τ] using hwΘ.1, ?_⟩
+    rw [extend_target, I.range_eq_univ, inter_univ]
+    exact hwΘ.2
+  have hφ_symm (w : E) : (φ.extend I).symm w =
+      (d₁.extend I).symm (hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2)) := by
+    have hIw : I (I.symm w) = w := I.right_inv (I.range_eq_univ.symm ▸ mem_univ w)
+    simp [φ, Θ, τF, Φ₁, hIw]
+  have hmain : ∀ w ∈ (φ.extend I).target,
+      (hf.equiv w).1 ∈ (ψ.extend J).target ∧
+      f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧
+      ψ.extend J (f ((φ.extend I).symm w)) = (hf.equiv w).1 := fun w hw ↦ by
+    obtain ⟨hu'τ, hzΦ₁⟩ := hΘ_target hw
+    set u' : E' := (hf.equiv w).1
+    set z : E := hf.equiv.symm (τ.symm u', (hf.equiv w).2)
+    have hf_eq : c₁.extend J (f ((d₁.extend I).symm z)) = τ.symm u' := by
+      simpa [d₁, c₁, z] using hf.writtenInCharts hzΦ₁
+    have hfz_mem : f ((d₁.extend I).symm z) ∈ (c₁.extend J).source := by
+      rw [extend_source]
+      exact hf.source_subset_preimage_source <|
+        by rw [← d₁.extend_source (I := I)]; exact (d₁.extend I).map_target hzΦ₁
     have hf_val : f ((φ.extend I).symm w) = (ψ.extend J).symm u' := by
-      rw [hsymm, ← (hf.codChart.extend J).left_inv hfz_mem, hf_eq]
-      exact (by simp [Ψ₁, c₁] : (hf.codChart.extend J).symm (τ.symm u') = Ψ₁.symm (τ.symm u')).trans
+      rw [hφ_symm, ← (c₁.extend J).left_inv hfz_mem, hf_eq]
+      exact (by simp [Ψ₁] : (c₁.extend J).symm (τ.symm u') = Ψ₁.symm (τ.symm u')).trans
         ((Ψ₁.left_inv hu'τ.2).trans (by simp [Φ₂]))
     have hu'ψ : u' ∈ (ψ.extend J).target := by
       simpa [Φ₂, extend_target, J.range_eq_univ] using hu'τ.1
@@ -154,14 +170,21 @@ theorem IsSubmersionAtOfComplement.comp (hg : IsSubmersionAtOfComplement F₂ J 
   obtain ⟨hu', hfw, -⟩ := hmain w hw; dsimp only [comp_apply]; rw [hfw]
   exact (hg.writtenInCharts hu').trans (by simp [L])
 
+/-- **Composition of submersions at a point.** The composition `g ∘ f` of a submersion `f` at `x`
+and a submersion `g` at `f x` is a submersion at `x`. -/
 theorem IsSubmersionAt.comp (hg : IsSubmersionAt J K n g (f x)) (hf : IsSubmersionAt I J n f x) :
     IsSubmersionAt I K n (g ∘ f) x :=
   (hg.isSubmersionAtOfComplement_complement.comp
     hf.isSubmersionAtOfComplement_complement).isSubmersionAt
+
+/-- **Composition of submersions with complements.** If `f` is a submersion with complement `F₁`
+and `g` is a submersion with complement `F₂`, then `g ∘ f` is a submersion with complement
+`F₁ × F₂`. -/
 theorem IsSubmersionOfComplement.comp (hg : IsSubmersionOfComplement F₂ J K n g)
     (hf : IsSubmersionOfComplement F₁ I J n f) :
     IsSubmersionOfComplement (F₁ × F₂) I K n (g ∘ f) :=
   isSubmersionOfComplement_iff.mpr fun x ↦ (hg.isSubmersionAt (f x)).comp (hf.isSubmersionAt x)
+
 /-- **Composition of submersions.** -/
 theorem IsSubmersion.comp (hg : IsSubmersion J K n g) (hf : IsSubmersion I J n f) :
     IsSubmersion I K n (g ∘ f) :=

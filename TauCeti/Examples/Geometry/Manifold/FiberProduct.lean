@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.FiberProduct.Simplicial
 import TauCeti.Geometry.Manifold.Gluing.Double
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # Examples: iterated submersion fibre products and local sections
@@ -157,6 +158,8 @@ example :
       IsOpen U → x₀ ∈ U → IsOpen V → IsEmpty (U ≃ₜ V) := by
   intro X x₀ n U V hU hx₀ hV
   refine ⟨fun e ↦ ?_⟩
+  -- Step 1: Transfer an open ball `B ⊆ U` around `x₀` from `V`, and place a point `xpt k` in each
+  -- of the four branches `(±ε/2, ±ε/2)` inside the punctured open neighbourhood `S₀`.
   let y₀ : Fin n → ℝ := (e ⟨x₀, hx₀⟩).val
   obtain ⟨r, hr, hballV⟩ := Metric.isOpen_iff.mp hV y₀ (e ⟨x₀, hx₀⟩).property
   let B : Set U := (fun u ↦ (e u).val) ⁻¹' Metric.ball y₀ r
@@ -165,18 +168,14 @@ example :
   have hu₀ : ⟨x₀, hx₀⟩ ∈ B := Metric.mem_ball_self hr
   let W : Set X := Subtype.val '' B
   have hW_open : IsOpen W := hU.isOpenMap_subtypeVal B hB_open
-  have hx₀W : x₀ ∈ W := ⟨⟨x₀, hx₀⟩, hu₀, rfl⟩
-  obtain ⟨ε, hε, hεW⟩ := Metric.isOpen_iff.mp hW_open x₀ hx₀W
+  obtain ⟨ε, hε, hεW⟩ := Metric.isOpen_iff.mp hW_open x₀ ⟨⟨x₀, hx₀⟩, hu₀, rfl⟩
   let xpt : Fin 4 → X := fun k ↦
     ⟨![if k.val = 0 ∨ k.val = 3 then ε / 2 else -(ε / 2),
        if k.val = 0 ∨ k.val = 1 then ε / 2 else -(ε / 2)], by
-      intro i j
-      fin_cases i <;> fin_cases j <;> fin_cases k <;> simp⟩
+      intro i j; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp⟩
   have hxpt_mem : ∀ k : Fin 4, xpt k ∈ W := fun k ↦ hεW <| by
     rw [Metric.mem_ball, Subtype.dist_eq, dist_pi_lt_iff hε]
-    intro i
-    fin_cases i <;> fin_cases k <;>
-      simp [xpt, x₀, abs_of_pos hε, half_lt_self hε]
+    intro i; fin_cases i <;> fin_cases k <;> simp [xpt, x₀, abs_of_pos hε, half_lt_self hε]
   have hxpt_ne : ∀ k : Fin 4, xpt k ≠ x₀ := fun k hk ↦ by
     have h0 := congrArg (fun x : X ↦ x.val 0) hk
     fin_cases k <;> simp [xpt, x₀] at h0 <;> linarith
@@ -184,101 +183,80 @@ example :
   have hxpt_S₀ : ∀ k : Fin 4, xpt k ∈ S₀ := fun k ↦ by
     obtain ⟨u, huB, hu_eq⟩ := hxpt_mem k
     refine ⟨u, ⟨huB, fun hu ↦ hxpt_ne k (hu_eq.symm.trans (congrArg Subtype.val hu))⟩, hu_eq⟩
+  -- Step 2: `S₀` avoids `x₀`, so it is covered by four pairwise disjoint open quadrants `Q k`, and
+  -- any preconnected subset of `S₀` must lie in a single quadrant.
   let Q : Fin 4 → Set X := fun k ↦
-    {x : X | (if k.val = 0 ∨ k.val = 3 then 0 < x.val 0 else x.val 0 < 0) ∧
-             (if k.val = 0 ∨ k.val = 1 then 0 < x.val 1 else x.val 1 < 0)}
-  have hc0 : Continuous (fun x : X ↦ x.val 0) := (continuous_apply 0).comp continuous_subtypeVal
-  have hc1 : Continuous (fun x : X ↦ x.val 1) := (continuous_apply 1).comp continuous_subtypeVal
+    {x | (if k.val = 0 ∨ k.val = 3 then 0 < x.val 0 else x.val 0 < 0) ∧
+         (if k.val = 0 ∨ k.val = 1 then 0 < x.val 1 else x.val 1 < 0)}
   have hQ_open : ∀ k, IsOpen (Q k) := fun k ↦ by
+    have hc0 : Continuous (fun x : X ↦ x.val 0) := (continuous_apply 0).comp continuous_subtypeVal
+    have hc1 : Continuous (fun x : X ↦ x.val 1) := (continuous_apply 1).comp continuous_subtypeVal
     dsimp [Q]
     split_ifs <;> [exact (isOpen_lt continuous_const hc0).inter (isOpen_lt continuous_const hc1);
       exact (isOpen_lt continuous_const hc0).inter (isOpen_lt hc1 continuous_const);
       exact (isOpen_lt hc0 continuous_const).inter (isOpen_lt continuous_const hc1);
       exact (isOpen_lt hc0 continuous_const).inter (isOpen_lt hc1 continuous_const)]
-  have hQ_disj : Pairwise fun a b ↦ Disjoint (Q a) (Q b) := fun a b hab ↦
-    Set.disjoint_left.mpr fun x hxa hxb ↦ by
-      fin_cases a <;> fin_cases b <;> simp_all [Q] <;> linarith
+  have hQ_disj : Pairwise (Disjoint on Q) := fun a b hab ↦ Set.disjoint_left.mpr fun _ hxa hxb ↦ by
+    fin_cases a <;> fin_cases b <;> simp_all [Q] <;> linarith
   have hxpt_Q : ∀ k, xpt k ∈ Q k := fun k ↦ by
-    fin_cases k <;> simp [Q, xpt, half_pos hε, neg_lt_zero.mpr (half_pos hε)]
+    fin_cases k <;> exact ⟨by simp [xpt]; linarith, by simp [xpt]; linarith⟩
   have hS₀_sub : S₀ ⊆ ⋃ k, Q k := by
-    rintro x ⟨u, ⟨-, hune⟩, rfl⟩
-    have hne : u.val ≠ x₀ := fun h ↦ hune (Subtype.ext h)
-    have hx0 : u.val.val 0 ≠ 0 := by
-      intro h0
-      apply hne
-      apply Subtype.ext
-      ext i
+    rintro _ ⟨u, ⟨-, hune⟩, rfl⟩
+    have hx0 : u.val.val 0 ≠ 0 := fun h0 ↦ hune <| Subtype.ext <| Subtype.ext <| funext fun i ↦ by
       fin_cases i
       · exact h0
-      · have hsq := u.val.property 0 1
-        simp [h0] at hsq
-        exact sq_eq_zero_iff.mp hsq.symm
-    have hx1 : u.val.val 1 ≠ 0 := by
-      intro h1
-      have hsq := u.val.property 0 1
-      rw [h1] at hsq
-      exact hx0 (sq_eq_zero_iff.mp (by simpa using hsq))
+      · exact sq_eq_zero_iff.mp (by simpa [h0] using (u.val.property 0 1).symm)
+    have hx1 : u.val.val 1 ≠ 0 := fun h1 ↦
+      hx0 (sq_eq_zero_iff.mp (by simpa [h1] using u.val.property 0 1))
     rcases lt_or_gt_of_ne hx0 with h0 | h0 <;> rcases lt_or_gt_of_ne hx1 with h1 | h1
     · exact mem_iUnion.mpr ⟨2, by simp [Q, h0, h1]⟩
     · exact mem_iUnion.mpr ⟨1, by simp [Q, h0, h1]⟩
     · exact mem_iUnion.mpr ⟨3, by simp [Q, h0, h1]⟩
     · exact mem_iUnion.mpr ⟨0, by simp [Q, h0, h1]⟩
-  have hpre_sub : ∀ {C : Set X}, IsPreconnected C → C ⊆ ⋃ k, Q k → ∃ k, C ⊆ Q k := by
-    intro C hC hsub
-    have hunion : (⋃ k, Q k) = Q 0 ∪ (Q 1 ∪ (Q 2 ∪ Q 3)) := by
-      ext x; simp [Fin.exists_fin_succ]
-    rw [hunion] at hsub
-    rcases hC.subset_or_subset (hQ_open 0)
-      ((hQ_open 1).union ((hQ_open 2).union (hQ_open 3)))
-      (by simp [hQ_disj (by decide : (0 : Fin 4) ≠ 1),
-        hQ_disj (by decide : (0 : Fin 4) ≠ 2), hQ_disj (by decide : (0 : Fin 4) ≠ 3)])
-      hsub with h0 | h123
-    · exact ⟨0, h0⟩
-    · rcases hC.subset_or_subset (hQ_open 1) ((hQ_open 2).union (hQ_open 3))
-        (by simp [hQ_disj (by decide : (1 : Fin 4) ≠ 2),
-          hQ_disj (by decide : (1 : Fin 4) ≠ 3)]) h123 with h1 | h23
-      · exact ⟨1, h1⟩
-      · rcases hC.subset_or_subset (hQ_open 2) (hQ_open 3)
-          (hQ_disj (by decide : (2 : Fin 4) ≠ 3)) h23 with h2 | h3
-        · exact ⟨2, h2⟩
-        · exact ⟨3, h3⟩
+  have hpre_sub : ∀ {C : Set X}, IsPreconnected C → C ⊆ S₀ → ∃ k, C ⊆ Q k := by
+    intro C hC hCS
+    by_cases hne : C.Nonempty
+    · obtain ⟨x, hx⟩ := hne
+      obtain ⟨k, hk⟩ := mem_iUnion.mp (hS₀_sub (hCS hx))
+      exact ⟨k, hC.subset_of_subset_iUnion hQ_open hQ_disj (hCS.trans hS₀_sub) ⟨x, hx, hk⟩⟩
+    · rw [Set.not_nonempty_iff_eq_empty.mp hne]
+      exact ⟨0, empty_subset _⟩
   have hS₀_eq :
       S₀ = Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀}) : Set V)) := by
     have hpre : (e.symm.symm ⁻¹' (Subtype.val ⁻¹' {y₀} : Set V)) = {⟨x₀, hx₀⟩} := by
-      ext u
-      simp [y₀, Subtype.val_inj, e.injective.eq_iff]
+      ext u; simp [y₀, Subtype.val_inj, e.injective.eq_iff]
     rw [e.symm.image_eq_preimage_symm, Set.preimage_sdiff, Set.preimage_sdiff, hpre]
     rfl
+  -- Step 3: Split on dimension `n` to contradict the four occupied branches of `S₀`.
   rcases lt_trichotomy n 1 with hn0 | rfl | hn2
-  · obtain rfl : n = 0 := Nat.lt_one_iff.mp hn0
+  · -- `n = 0`: `V` is a subsingleton, contradicting `xpt 0 ≠ x₀` inside `U`.
+    obtain rfl : n = 0 := Nat.lt_one_iff.mp hn0
     have hsub0 : Subsingleton (Fin 0 → ℝ) := inferInstance
     have hsubV : Subsingleton V := ⟨fun a b ↦ Subtype.ext (hsub0.elim a.val b.val)⟩
     obtain ⟨u, -, hu_eq⟩ := hxpt_mem 0
     exact hxpt_ne 0 (hu_eq.symm.trans (congrArg Subtype.val
       (e.injective (hsubV.elim (e u) (e ⟨x₀, hx₀⟩)))))
-  · let φ := IsometryEquiv.funUnique (Fin 1) ℝ
+  · -- `n = 1`: the punctured ball in `ℝ` has 2 connected pieces, which cannot cover 4 quadrants.
+    let φ := IsometryEquiv.funUnique (Fin 1) ℝ
     let z₀ : ℝ := φ y₀
-    have hball : φ.symm '' Metric.ball z₀ r = Metric.ball y₀ r := by
-      simp [z₀]
+    have hball : φ.symm '' Metric.ball z₀ r = Metric.ball y₀ r := by simp [z₀]
     let C : Set ℝ → Set X := fun I ↦ Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (φ.symm '' I)))
     have hpiece : ∀ I : Set ℝ, I ⊆ Metric.ball z₀ r → z₀ ∉ I → IsPreconnected I →
         ∃ i : Fin 4, C I ⊆ Q i := by
       intro I hI hz₀ hIconn
       have hIV : φ.symm '' I ⊆ V := (image_mono hI).trans (hball.symm ▸ hballV)
-      have himg : Subtype.val '' (Subtype.val ⁻¹' (φ.symm '' I) : Set V) = φ.symm '' I :=
-        (Subtype.image_preimage_val V (φ.symm '' I)).trans (inter_eq_right.mpr hIV)
-      have hA : IsPreconnected (Subtype.val ⁻¹' (φ.symm '' I) : Set V) := by
-        rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg]
-        exact hIconn.image _ φ.symm.continuous.continuousOn
+      have hA : IsPreconnected (Subtype.val ⁻¹' (φ.symm '' I) : Set V) :=
+        (hIconn.image _ φ.symm.continuous.continuousOn).preimage_of_isOpenMap
+          Subtype.val_injective hV.isOpenMap_subtypeVal (Subtype.range_coe_subtype ▸ hIV)
       have hC_pre : IsPreconnected (C I) :=
         (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
       have hC_sub : C I ⊆ S₀ := by
         rw [hS₀_eq]
         refine image_mono (image_mono (preimage_mono ?_))
         rw [← hball, ← φ.symm_apply_apply y₀]
-        exact Set.subset_sdiff_singleton (image_mono hI) fun ⟨t, ht, htv⟩ ↦
+        exact Set.subset_sdiff_singleton (image_mono hI) fun ⟨t, _, htv⟩ ↦
           hz₀ (by dsimp [z₀]; rwa [← φ.symm.injective htv])
-      exact hpre_sub hC_pre (hC_sub.trans hS₀_sub)
+      exact hpre_sub hC_pre hC_sub
     let J₁ : Set ℝ := Ioo (z₀ - r) z₀
     let J₂ : Set ℝ := Ioo z₀ (z₀ + r)
     obtain ⟨i₁, hi₁⟩ := hpiece J₁
@@ -296,26 +274,23 @@ example :
         rw [hJ, Set.image_sdiff φ.symm.injective, image_singleton, φ.symm_apply_apply]
       rw [hdiff]
       simp only [C, image_union, preimage_union, subset_rfl]
-    obtain ⟨k, hk₁, hk₂⟩ : ∃ k : Fin 4, k ≠ i₁ ∧ k ≠ i₂ := by
-      fin_cases i₁ <;> fin_cases i₂ <;> decide
+    obtain ⟨k, hk₁, hk₂⟩ := Fin.exists_ne_and_ne_of_two_lt i₁ i₂ (by decide)
     rcases hS₀_cover (hxpt_S₀ k) with hkC | hkC
     · exact Set.disjoint_left.mp (hQ_disj hk₁) (hxpt_Q k) (hi₁ hkC)
     · exact Set.disjoint_left.mp (hQ_disj hk₂) (hxpt_Q k) (hi₂ hkC)
-  · have hrank : 1 < Module.rank ℝ (Fin n → ℝ) := by
+  · -- `n ≥ 2`: the punctured ball in `ℝ^n` is connected, so `S₀` cannot hit 4 disjoint quadrants.
+    have hrank : 1 < Module.rank ℝ (Fin n → ℝ) := by
       rw [← finrank_eq_rank, finrank_fintype_fun_eq_card, Fintype.card_fin]
       exact_mod_cast hn2
-    let A : Set V := Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀})
-    have himg : Subtype.val '' A = Metric.ball y₀ r \ {y₀} :=
-      (Subtype.image_preimage_val V (Metric.ball y₀ r \ {y₀})).trans
-        (inter_eq_right.mpr (sdiff_subset.trans hballV))
-    have hA : IsPreconnected A := by
-      rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg]
-      exact (TauCeti.isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected
+    have hA : IsPreconnected (Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀}) : Set V) :=
+      (TauCeti.isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected.preimage_of_isOpenMap
+        Subtype.val_injective hV.isOpenMap_subtypeVal
+        (Subtype.range_coe_subtype ▸ sdiff_subset.trans hballV)
     have hS₀_pre : IsPreconnected S₀ := by
       rw [hS₀_eq]
       exact (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
-    obtain ⟨i, hi⟩ := hpre_sub hS₀_pre hS₀_sub
-    obtain ⟨k, hki⟩ : ∃ k : Fin 4, k ≠ i := by fin_cases i <;> decide
+    obtain ⟨i, hi⟩ := hpre_sub hS₀_pre Subset.rfl
+    obtain ⟨k, hki⟩ := exists_ne i
     exact Set.disjoint_left.mp (hQ_disj hki) (hxpt_Q k) (hi (hxpt_S₀ k))
 
 end

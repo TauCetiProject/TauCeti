@@ -254,10 +254,9 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
   have huΞ : u ∈ Ξ.target := by
     simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIu,
       I.range_eq_univ] using hu
-  have hL₀ : L₀.symm.toHomeomorph.symm = L₀.toHomeomorph := rfl
-  simp only [Ξ, hL₀, trans_target, extendTrans_target, extendTrans_symm_apply,
-    PartialDiffeomorph.toOpenPartialHomeomorph_target, ContinuousLinearEquiv.coe_toHomeomorph,
-    mem_inter_iff, mem_preimage] at huΞ
+  simp only [Ξ, ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm, trans_target,
+    extendTrans_target, extendTrans_symm_apply, PartialDiffeomorph.toOpenPartialHomeomorph_target,
+    ContinuousLinearEquiv.coe_toHomeomorph, mem_inter_iff, mem_preimage] at huΞ
   have huΨ : L₀ u ∈ (ψ.extend J).target := by simpa [extend_target, J.range_eq_univ] using huΞ.1
   have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.target := by simpa using huΞ.2
   have hsymm : (φ.extend I).symm u = Θ.toPartialEquiv.symm ((ψ.extend J).symm (L₀ u)) := by

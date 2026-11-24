@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Logic.Function.Const
@@ -221,17 +220,20 @@ theorem _root_.ContMDiffOn.exists_domChart_mem_maximalAtlas_of_surjective_mfderi
   obtain ⟨V, hVc, hV, hxV⟩ := mem_nhds_iff.1 <|
     hf.continuousAt.preimage_mem_nhds (chart_source_mem_nhds G (f x))
   let φ₀ := Φ.toOpenPartialHomeomorph.restrOpen V hV
-  let φ := φ₀.trans I.interiorChart.symm
-  have hφ : φ ∈ IsManifold.maximalAtlas I n M :=
-    OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas
-      (Φ.contMDiffOn.mono inter_subset_left) (Φ.symm.contMDiffOn.mono inter_subset_left)
+  let φ := φ₀.transHomeomorph I.toHomeomorph.symm
+  have hIsymm : ContMDiff 𝓘(𝕜, E) I n I.symm :=
+    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
+  have hφ : φ ∈ IsManifold.maximalAtlas I n M := by
+    apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+    · exact hIsymm.comp_contMDiffOn (Φ.contMDiffOn.mono inter_subset_left)
+    · exact (Φ.symm.contMDiffOn.mono inter_subset_left).comp I.contMDiff.contMDiffOn
+        (fun y hy ↦ hy)
   -- A fixed standard complement lets the pointwise constructions assemble globally.
   let K : D.ker ≃L[𝕜] (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜) :=
     ContinuousLinearEquiv.ofFinrankEq <| by
       rw [D.toLinearMap.finrank_ker_eq_sub_of_surjective hs, Module.finrank_fin_fun]
-  refine ⟨φ, L.trans ((ContinuousLinearEquiv.refl 𝕜 F).prodCongr K),
-    ⟨⟨hxΦ, hxV⟩, by simp [I.range_eq_univ]⟩, hφ,
-    fun y hy ↦ hVc hy.1.2, fun v hv ↦ ?_⟩
+  refine ⟨φ, L.trans ((ContinuousLinearEquiv.refl 𝕜 F).prodCongr K), ⟨hxΦ, hxV⟩, hφ,
+    fun y hy ↦ hVc hy.2, fun v hv ↦ ?_⟩
   have hIv : I (I.symm v) = v := I.right_inv (I.range_eq_univ.symm ▸ mem_univ v)
   have hv₀ : v ∈ φ₀.target := by simpa [φ, hIv, I.range_eq_univ] using hv
   have hgv : g (φ₀.symm v) = v := hlocal.localInverse_right_inv hv₀.1
