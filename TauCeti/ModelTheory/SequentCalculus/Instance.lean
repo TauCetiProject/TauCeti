@@ -128,7 +128,7 @@ theorem mem_freeVarFinset_inst [DecidableEq α] (φ : L.BoundedFormula α k)
     x ∈ (φ.inst ts).freeVarFinset ↔
       x ∈ φ.freeVarFinset ∨ ∃ i, Sum.inr i ∈ φ.toFormula.freeVarFinset ∧ x ∈ (ts i).varFinset := by
   simp only [inst_def, freeVarFinset_subst, Finset.mem_biUnion, Sum.exists, Sum.elim_inl,
-    Sum.elim_inr, Term.varFinset, Finset.mem_singleton, mem_freeVarFinset_toFormula_inl]
+    Sum.elim_inr, Term.varFinset, Finset.mem_singleton, inl_mem_freeVarFinset_toFormula]
   exact or_congr ⟨fun ⟨_, h, rfl⟩ => h, fun h => ⟨x, h, rfl⟩⟩ Iff.rfl
 
 /-! ### Depth -/
@@ -174,21 +174,20 @@ theorem depth_not (φ : L.BoundedFormula α n) : φ.not.depth = φ.depth + 1 := 
   simp [BoundedFormula.not]
 
 @[simp]
-theorem depth_top : (⊤ : L.BoundedFormula α n).depth = 1 :=
-  (rfl)
+theorem depth_top : (⊤ : L.BoundedFormula α n).depth = 1 := by
+  simp [top_def]
 
 /-- Disjunction `φ ⊔ ψ`, which is `¬φ → ψ`. -/
 @[simp]
 theorem depth_sup (φ ψ : L.BoundedFormula α n) :
     (φ ⊔ ψ).depth = max (φ.depth + 1) ψ.depth + 1 := by
-  rw [← depth_not]
-  exact depth_imp φ.not ψ
+  simp [sup_def]
 
 /-- Conjunction `φ ⊓ ψ`, which is `¬(φ → ¬ψ)`. -/
 @[simp]
 theorem depth_inf (φ ψ : L.BoundedFormula α n) :
-    (φ ⊓ ψ).depth = max φ.depth (ψ.depth + 1) + 2 :=
-  (depth_not (φ.imp ψ.not)).trans (by simp)
+    (φ ⊓ ψ).depth = max φ.depth (ψ.depth + 1) + 2 := by
+  simp [inf_def]
 
 /-- The existential quantifier `∃'φ`, which is `¬∀'¬φ`, adds three to the depth. -/
 @[simp]

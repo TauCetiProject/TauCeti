@@ -26,13 +26,16 @@ already computed.
 * `FirstOrder.Language.BoundedFormula.subst_falsum`, `subst_equal`, `subst_rel`, `subst_imp` and
   `subst_all`: substitution on each constructor.
 * `FirstOrder.Language.BoundedFormula.subst_subst`: two substitutions compose to one.
+* `FirstOrder.Language.BoundedFormula.relabelAux_inl`: `relabelAux` on a free variable.
+* `FirstOrder.Language.BoundedFormula.relabel_subst_eq_subst_relabel`: substitution commutes with
+  relabelling when the two agree on each variable.
 * `FirstOrder.Language.BoundedFormula.toFormula_subst`: opening the bound positions of a
   substituted formula is substituting in the opened formula.
 * `FirstOrder.Language.BoundedFormula.freeVarFinset_subst`: the free variables after a
   substitution are the variables of the terms substituted for the free variables.
 * `FirstOrder.Language.BoundedFormula.mem_freeVarFinset_relabel`: the free variables after a
   relabelling.
-* `FirstOrder.Language.BoundedFormula.mem_freeVarFinset_toFormula_inl`: opening the bound
+* `FirstOrder.Language.BoundedFormula.inl_mem_freeVarFinset_toFormula`: opening the bound
   positions keeps the free variables, as the left summand.
 -/
 
@@ -96,7 +99,8 @@ theorem subst_subst (φ : L.BoundedFormula α n) (f : α → L.Term β) (g : β 
 
 /-- `BoundedFormula.relabelAux` sends a free variable `x` where `g` sends it, with the old bound
 positions placed after the new ones. -/
-private theorem relabelAux_inl {δ ε : Type*} {m : ℕ} (g : δ → ε ⊕ Fin m) (k : ℕ) (x : δ) :
+@[simp]
+theorem relabelAux_inl {δ ε : Type*} {m : ℕ} (g : δ → ε ⊕ Fin m) (k : ℕ) (x : δ) :
     relabelAux g k (Sum.inl x) = Sum.map id (Fin.castAdd k) (g x) := by
   rcases hx : g x with y | j <;> simp [relabelAux, hx]
 
@@ -104,7 +108,7 @@ private theorem relabelAux_inl {δ ε : Type*} {m : ℕ} (g : δ → ε ⊕ Fin 
 relabelling along `g'` and then substituting `F'`, provided the two agree on each variable. A
 variable that `g'` sends to a new bound position `j` must be sent by `F` to a term that `g`
 relabels to that bound position. -/
-private theorem relabel_subst_eq_subst_relabel {δ ε γ' : Type*} {m : ℕ} (F : γ → L.Term δ)
+theorem relabel_subst_eq_subst_relabel {δ ε γ' : Type*} {m : ℕ} (F : γ → L.Term δ)
     (g : δ → ε ⊕ Fin m) (g' : γ → γ' ⊕ Fin m) (F' : γ' → L.Term ε)
     (h : ∀ c, (F c).relabel g =
       Sum.elim (fun c' => (F' c').relabel Sum.inl) (fun j => Term.var (Sum.inr j)) (g' c)) :
@@ -172,7 +176,7 @@ theorem mem_freeVarFinset_relabel [DecidableEq α] [DecidableEq β] {m : ℕ} (g
 
 /-- Opening the bound positions of a formula keeps its free variables, as the left summand. -/
 @[simp]
-theorem mem_freeVarFinset_toFormula_inl [DecidableEq α] (φ : L.BoundedFormula α n) {a : α} :
+theorem inl_mem_freeVarFinset_toFormula [DecidableEq α] (φ : L.BoundedFormula α n) {a : α} :
     Sum.inl a ∈ φ.toFormula.freeVarFinset ↔ a ∈ φ.freeVarFinset := by
   induction φ with
   | falsum => simp
