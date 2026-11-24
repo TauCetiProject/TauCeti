@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.EvenRepresentation
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Smooth half-spin representations of the Spinᶜ quotient and their Lie-algebra actions
@@ -23,6 +24,12 @@ The central determinant half-parameter path has operator-norm derivative `(ia/2)
 identity. No choice of orientation of the frame is needed to descend the action on a fixed
 eigenspace; identifying the two coordinate SU(2) factors with positive and negative chirality
 requires a positively oriented frame separately.
+
+The type synonym `Orientation.SpinCHalfSpinor` of a chirality eigenspace carries the descended
+action as a smooth `Spinᶜ(4)`-action. In complex rank two every alternating two-form on it, with
+values in the determinant representation `CliffordAlgebra.spinCGroup.DetFiber`, is equivariant
+(`Orientation.SpinCHalfSpinor.alternatingMap_apply_smul`). When the Clifford generators act
+skew-adjointly the action is isometric (`Orientation.SpinCHalfSpinor.isIsometricSMul`).
 
 Viewing the smooth half-spin action as a unit-valued homomorphism via
 `AlgHom.realSpinCEvenSmoothHom` differentiates it to `Orientation.realSpinCHalfSpinLieLinearMap` on
@@ -145,14 +152,6 @@ theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift (a t : 
     push_cast
     ring
 
-/-- At the identity the determinant ray acts infinitesimally by `(ia/2) Id`. -/
-theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
-      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
-      ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
-  simpa using
-    hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
-
 end DeterminantDerivative
 
 /-- Restriction to Spin is the half-spin action in the selected frame. -/
@@ -195,6 +194,117 @@ theorem det_realSpinCHalfSpinSmoothHom (h₂ : finrank ℂ S = 2) (x : SpinC) :
   rw [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
     LinearMap.coe_toContinuousLinearMap, det_spinCGroupHalfSpinRep o ρ ε hQ₀ hQ h₂,
     OrthonormalBasis.det_realSpinCGroupHom]
+
+/-! ### The half-spinor representation spaces -/
+
+/-- The `ε`-eigenspace of the chirality element on the Clifford module `W`, on which `Spinᶜ(4)`
+acts by the weight-one half-spin representation `[s, z] ↦ z ρ(s)`
+(`Orientation.realSpinCHalfSpinSmoothHom`), compared with the geometric Clifford model through
+the orthonormal frame `b`. It is the model fiber of the spinor bundle `W^ε`. -/
+def SpinCHalfSpinor (_o : Orientation ℝ V (Fin 4)) (_hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (_b : OrthonormalBasis (Fin 4) ℝ V) (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ) :
+    Type _ :=
+  eigenspace (ρ (chirality Q _o)) ε
+
+namespace SpinCHalfSpinor
+
+instance : NormedAddCommGroup (SpinCHalfSpinor o hQ b ρ ε) :=
+  inferInstanceAs (NormedAddCommGroup S)
+
+instance : NormedSpace ℂ (SpinCHalfSpinor o hQ b ρ ε) :=
+  inferInstanceAs (NormedSpace ℂ S)
+
+instance : FiniteDimensional ℂ (SpinCHalfSpinor o hQ b ρ ε) :=
+  inferInstanceAs (FiniteDimensional ℂ S)
+
+/-- The half-spinor model is the `ε`-eigenspace of the chirality element. -/
+def linearEquiv : SpinCHalfSpinor o hQ b ρ ε ≃ₗ[ℂ] S :=
+  LinearEquiv.refl ℂ _
+
+omit [FiniteDimensional ℂ W] in
+/-- The identification of the half-spinor model with the chirality eigenspace of `W` preserves
+norms. -/
+@[simp]
+theorem norm_linearEquiv (ψ : SpinCHalfSpinor o hQ b ρ ε) :
+    ‖(linearEquiv o hQ b ρ ε ψ : W)‖ = ‖ψ‖ :=
+  (rfl)
+
+omit [FiniteDimensional ℂ W] in
+/-- The half-spinor model has the dimension of the chirality eigenspace. -/
+theorem finrank_eq : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = finrank ℂ S :=
+  (linearEquiv o hQ b ρ ε).finrank_eq
+
+/-- `Spinᶜ(4)` acts on the half-spinor model by the half-spin representation. -/
+instance : DistribMulAction SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
+  letI : DistribMulAction SpinC S :=
+    DistribMulAction.compHom S (realSpinCHalfSpinSmoothHom o hQ b ρ ε).toMonoidHom
+  inferInstanceAs (DistribMulAction SpinC S)
+
+/-- Under the identification with the chirality eigenspace, `Spinᶜ(4)` acts on the half-spinor
+model by the half-spin representation. -/
+@[simp]
+theorem linearEquiv_smul (x : SpinC) (ψ : SpinCHalfSpinor o hQ b ρ ε) :
+    linearEquiv o hQ b ρ ε (x • ψ) =
+      realSpinCHalfSpinSmoothHom o hQ b ρ ε x (linearEquiv o hQ b ρ ε ψ) := (rfl)
+
+/-- The action of `Spinᶜ(4)` on the half-spinor model, transported from the chirality
+eigenspace. -/
+theorem smul_def (x : SpinC) (ψ : SpinCHalfSpinor o hQ b ρ ε) :
+    x • ψ = (linearEquiv o hQ b ρ ε).symm
+      (realSpinCHalfSpinSmoothHom o hQ b ρ ε x (linearEquiv o hQ b ρ ε ψ)) := by
+  rw [LinearEquiv.eq_symm_apply, linearEquiv_smul]
+
+instance : SMulCommClass SpinC ℂ (SpinCHalfSpinor o hQ b ρ ε) where
+  smul_comm x c ψ := (linearEquiv o hQ b ρ ε).injective <| by
+    simp only [linearEquiv_smul, map_smul]
+
+instance : SMulCommClass SpinC ℝ (SpinCHalfSpinor o hQ b ρ ε) where
+  smul_comm x c ψ := by
+    rw [← Complex.coe_smul, ← Complex.coe_smul, smul_comm]
+
+/-- The half-spin action is smooth. -/
+instance : ContMDiffSMul I 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε) ∞ SpinC
+    (SpinCHalfSpinor o hQ b ρ ε) where
+  contMDiff_smul := by
+    let e : SpinCHalfSpinor o hQ b ρ ε ≃L[ℝ] S :=
+      ((linearEquiv o hQ b ρ ε).toContinuousLinearEquiv).restrictScalars ℝ
+    have he : ContMDiff (ModelWithCorners.prod I 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε))
+        (ModelWithCorners.prod I 𝓘(ℝ, S)) ∞
+        (fun p : SpinC × SpinCHalfSpinor o hQ b ρ ε ↦ (p.1, e p.2)) :=
+      contMDiff_fst.prodMk (e.contDiff.contMDiff.comp contMDiff_snd)
+    simp only [smul_def]
+    exact e.symm.contDiff.contMDiff.comp
+      ((contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).comp he)
+
+instance : ContinuousSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
+  ContMDiffSMul.continuousSMul («I» := I) (I' := 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε)) ∞
+
+/-- The action of `g` on the half-spinor model, as a linear map, has the determinant of the
+half-spin representation at `g`. -/
+theorem det_toLinearMap (g : SpinC) :
+    LinearMap.det (DistribSMul.toLinearMap ℂ (SpinCHalfSpinor o hQ b ρ ε) g) =
+      LinearMap.det (realSpinCHalfSpinSmoothHom o hQ b ρ ε g).toLinearMap :=
+  LinearMap.det_eq_of_comp_eq (linearEquiv o hQ b ρ ε)
+    (LinearMap.ext fun ψ ↦ linearEquiv_smul o hQ b ρ ε g ψ)
+
+/-- If the half-spinor model is two-dimensional, every alternating two-form on it with values
+in the model determinant fiber is `Spinᶜ(4)`-equivariant: the half-spin action has determinant
+`[s, z] ↦ z²`, the determinant character. -/
+theorem alternatingMap_apply_smul (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (g : SpinC)
+    (v : Fin 2 → SpinCHalfSpinor o hQ b ρ ε) :
+    η (fun i ↦ g • v i) = g • η v := by
+  have h := congrArg (fun η' ↦ η' v) (AlternatingMap.compLinearMap_eq_det_smul
+    (Module.finBasisOfFinrankEq ℂ (SpinCHalfSpinor o hQ b ρ ε) h₂) η
+    (DistribSMul.toLinearMap ℂ _ g))
+  simp only [AlternatingMap.compLinearMap_apply, DistribSMul.toLinearMap_apply,
+    smul_apply, det_toLinearMap,
+    det_realSpinCHalfSpinSmoothHom o hQ b ρ ε ((finrank_eq o hQ b ρ ε).symm.trans h₂)] at h
+  rw [h, spinCGroup.DetFiber.smul_def]
+
+end SpinCHalfSpinor
+
+/-! ### Differentiated Lie-algebra action -/
 
 section LieRepresentation
 
@@ -308,6 +418,15 @@ theorem realSpinCHalfSpinLieLinearMap_realDetLieLift (a : ℝ) :
       (Complex.I * (a / 2)) • (1 : S →L[ℂ] S) := by
   simp only [realSpinCHalfSpinLieLinearMap_eq, AlgHom.realSpinCEvenLieLinearMap_realDetLieLift]
 
+/-- At the identity the determinant ray acts infinitesimally by `(ia/2) Id`. -/
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+      ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
+  simpa only [realSpinCHalfSpinLieLinearMap_realDetLieLift] using
+    hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero o hQ b ρ ε
+      (spinCGroup.realDetLieLift 4 hpos a)
+
 /-- On the canonical orthogonal Lie lift `realSpinOrthogonalLieLift 4 hpos Ω`, the differentiated
 half-spin action is the framed even Clifford action on the quadratic Clifford lift of `Ω`. -/
 @[simp]
@@ -396,6 +515,36 @@ theorem inner_realSpinCHalfSpinSmoothHom_apply
   simp only [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
     LinearMap.coe_toContinuousLinearMap']
   exact inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply o ε hρ hQ₀ _ ψ χ
+
+/-- The half-spinor model of a Hermitian Clifford module is a complex inner product space. -/
+instance : InnerProductSpace ℂ (SpinCHalfSpinor o hQ b ρ ε) :=
+  inferInstanceAs (InnerProductSpace ℂ S)
+
+omit [FiniteDimensional ℂ W] in
+/-- The identification of the half-spinor model with the chirality eigenspace of `W` preserves
+inner products. -/
+@[simp]
+theorem SpinCHalfSpinor.inner_linearEquiv_linearEquiv (ψ χ : SpinCHalfSpinor o hQ b ρ ε) :
+    ⟪(SpinCHalfSpinor.linearEquiv o hQ b ρ ε ψ : W),
+      (SpinCHalfSpinor.linearEquiv o hQ b ρ ε χ : W)⟫_ℂ = ⟪ψ, χ⟫_ℂ :=
+  (rfl)
+
+/-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts unitarily on the
+half-spinor model. -/
+theorem SpinCHalfSpinor.inner_smul_smul (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (g : SpinC) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) : ⟪g • ψ, g • χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
+  rw [← SpinCHalfSpinor.inner_linearEquiv_linearEquiv, SpinCHalfSpinor.linearEquiv_smul,
+    SpinCHalfSpinor.linearEquiv_smul, ← Submodule.coe_inner,
+    inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ, Submodule.coe_inner,
+    SpinCHalfSpinor.inner_linearEquiv_linearEquiv]
+
+/-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts isometrically on the
+half-spinor model. -/
+theorem SpinCHalfSpinor.isIsometricSMul (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) :
+    IsIsometricSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
+  ⟨fun g ↦ AddMonoidHomClass.isometry_of_norm (DistribSMul.toAddMonoidHom _ g) fun ψ ↦ by
+    rw [DistribSMul.toAddMonoidHom_apply, @norm_eq_sqrt_re_inner ℂ,
+      @norm_eq_sqrt_re_inner ℂ, SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ]⟩
 
 section SkewAdjoint
 
