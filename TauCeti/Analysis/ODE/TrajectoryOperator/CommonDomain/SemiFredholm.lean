@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # The semi-Fredholm estimate for the trajectory operator over a compactly embedded domain
@@ -39,11 +38,12 @@ the Aubin–Lions lemma `TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_c
 lemma gives that `D_A` has finite-dimensional kernel
 (`TauCeti.WeakDerivStep.finiteDimensional_ker_familyDomainTrajectoryOperator`) and closed range
 (`TauCeti.WeakDerivStep.isClosed_range_familyDomainTrajectoryOperator`). These are the first two
-of the three properties making `D_A` Fredholm. Under the stronger hypotheses of a global bound
-`‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s` and `ι`-symmetry of `A(s)` for almost every `s`,
-its cokernel is identified with the kernel of the formal adjoint, and `D_A` is shown to be
-Fredholm, in `TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Cokernel`
-(`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`).
+of the three properties making `D_A` Fredholm; the third, a finite-dimensional cokernel, comes
+from a parametrix in `TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm`
+(`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`). Under the stronger
+hypotheses of a global bound `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s` and `ι`-symmetry of
+`A(s)` for almost every `s`, the cokernel is identified with the kernel of the formal adjoint in
+`TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Cokernel`.
 
 The estimate is spliced from three pieces by smooth cutoffs `χ₋`, `χ₀ = 1 - χ₋ - χ₊` and `χ₊`
 supported in `(-∞, -a]`, `[-a - 1, a + 1]` and `[a, ∞)`
@@ -123,39 +123,7 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace
 /-- Almost everywhere for `μ₀` is almost everywhere on the line. -/
 private theorem ae_top_iff {P : ℝ → Prop} : (∀ᵐ s ∂μ₀, P s) ↔ ∀ᵐ s ∂volume, P s := by simp
 
-/-! ### The window term -/
-
-omit [CompleteSpace D] in
-/-- An `L²` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off the window `(-b, b)` has norm
-at most `c` times the `L²` norm of `ι ∘ u` on the window. -/
-theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) {f : Lp H 2 μ₀}
-    (hf : ∀ᵐ s ∂volume, ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
-    (hf₀ : ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → f s = 0) :
-    ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
-  have hμW : Measure.restrict μ₀ (Ioo (-b) b) = volume.restrict (Ioo (-b) b) := by simp
-  -- The `L²` norm of `f` is its `L²` norm on the window, where it is dominated by `ι ∘ u`.
-  have hR : ∀ᵐ s ∂volume.restrict (Ioo (-b) b), ‖f s‖ ≤
-      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u s‖ := by
-    have h₂ := ae_restrict_of_ae (s := Ioo (-b) b) (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
-    rw [hμW] at h₂
-    filter_upwards [restrictBaseL_apply_ae (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) _ le_top u, h₂,
-      ae_restrict_of_ae hf] with s h₁ h₂ h₃
-    rwa [h₁, h₂]
-  have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR 2
-  rw [Lp.norm_def, Lp.norm_def, ← eLpNorm_restrict_eq_of_ae_compl_eq_zero
-    measurableSet_Ioo.nullMeasurableSet (ae_top_iff.2 hf₀), hμW]
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
-    hle).trans_eq ?_
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
-
 /-! ### Multiplication by a cutoff -/
-
-/-- The derivative bound of a cutoff on the line, in the form taken by `smulLeftCLM`. -/
-private theorem exists_forall_norm_fderiv_le {χ : ℝ → ℝ} {C₁ : ℝ} (h : ∀ s, |deriv χ s| ≤ C₁) :
-    ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C :=
-  ⟨C₁, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv]; exact h s⟩
 
 omit [CompleteSpace D] in
 /-- **The error of a cutoff.** If `|χ| ≤ C₀`, `|χ'| ≤ C₁` and `χ'` vanishes off the window
@@ -188,7 +156,7 @@ theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ → ℝ}
         ae_top_iff.1 (familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hχ h₀ h₁ u),
         ae_top_iff.1 hm] with s h₁ h₂ h₃
       rw [h₁, Pi.sub_apply, h₂, h₃, add_sub_cancel_left]
-    refine norm_le_mul_norm_restrictBaseL hC₁ u ?_ ?_
+    refine norm_le_mul_norm_restrictBaseL hC₁ le_top u (ae_top_iff.2 ?_) (ae_top_iff.2 ?_)
     · filter_upwards [hfm] with s hs
       rw [hs, norm_smul, Real.norm_eq_abs]
       exact mul_le_mul_of_nonneg_right (hχ₁ s) (norm_nonneg _)
@@ -233,7 +201,7 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
       c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
     have hm := ae_top_iff.1
       (familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B w)
-    refine norm_le_mul_norm_restrictBaseL hc₀ u ?_ ?_
+    refine norm_le_mul_norm_restrictBaseL hc₀ le_top u (ae_top_iff.2 ?_) (ae_top_iff.2 ?_)
     · filter_upwards [hm, ae_top_iff.1 hAL, hc, hw] with s h₁ h₂ h₃ h₄
       rw [h₁, h₂, h₄, map_smul, norm_smul, Real.norm_eq_abs]
       by_cases hsW : s ∈ Ioo (-b) b
@@ -311,14 +279,18 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     rcases hs with hs | hs
     · exact Or.inl (by linarith)
     · exact Or.inr (by linarith)
-  set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩ (exists_forall_norm_fderiv_le hpL)
+  set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hpL s)
     ι.compLpL_multiplicationOperator u
-  set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩ (exists_forall_norm_fderiv_le hmL)
+  set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hmL s)
     ι.compLpL_multiplicationOperator u
   have hptop := ae_top_iff.1 (prev_smulLeftCLM_ae hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
-    (exists_forall_norm_fderiv_le hpL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hpL s)
+    ι.compLpL_multiplicationOperator u)
   have hpbot := ae_top_iff.1 (prev_smulLeftCLM_ae hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
-    (exists_forall_norm_fderiv_le hmL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hmL s)
+    ι.compLpL_multiplicationOperator u)
   -- The two ends `w₊ = βp u` and `w₋ = βm u`.
   have hDtop : ‖familyDomainTrajectoryOperator ι AL wtop‖ ≤ N + L * R :=
     (norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL

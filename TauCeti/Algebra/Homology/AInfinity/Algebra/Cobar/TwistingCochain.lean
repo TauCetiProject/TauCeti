@@ -148,7 +148,7 @@ private theorem koszulTwist_twistingSum (g : ReducedTensorWords R A →ₗ[R] D)
         map_neg, neg_mul]
     | add x y hx hy => simp only [map_add, hx, hy, neg_add]
   rw [taylor_coalgHom_apply hD, map_add, map_add, hq, LinearMap.comp_apply, LinearMap.comp_apply,
-    InternalGrading.koszulTwist_koszulTwist, hD.koszulTwist_map,
+    InternalGrading.koszulTwist_koszulTwist, hD.koszulTwist_one_map,
     InternalGrading.koszulTwist_koszulTwist]
   abel
 

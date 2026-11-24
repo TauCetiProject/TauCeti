@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
+import TauCeti.Analysis.Fourier.NonstationaryPhase.Quadratic
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
