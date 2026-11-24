@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 
 /-!
@@ -14,8 +13,9 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 A morphism of schemes `f : X ⟶ Y` is an *alteration* if it is proper, dominant, and finite over
 some nonempty open `U ⊆ Y` (Stacks, Definition 29.52.12 (0AB0), where `X` and `Y` are integral).
 For integral schemes this says that `f` is proper and surjective and that the function field of
-`X` is a finite extension of that of `Y`. Alterations generalize modifications, which are the
-alterations of generic degree one; de Jong's theorem resolves singularities up to alterations.
+`X` is a finite extension of that of `Y`. Alterations generalize modifications; when `X` and `Y`
+are integral, the modifications are exactly the alterations of generic degree one. De Jong's
+theorem resolves singularities up to alterations.
 
 ## Main definitions
 
@@ -24,6 +24,8 @@ alterations of generic degree one; de Jong's theorem resolves singularities up t
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.isAlteration_iff`: unfolds `IsAlteration f` into its defining
+  conditions.
 * `TauCeti.AlgebraicGeometry.IsModification.isAlteration`: a modification of a nonempty scheme is
   an alteration.
 * `TauCeti.AlgebraicGeometry.isAlteration_of_isFinite`: a finite dominant morphism to a nonempty
@@ -54,6 +56,14 @@ integral. -/
 class IsAlteration (f : X ⟶ Y) : Prop extends IsProper f, IsDominant f where
   exists_isFinite_morphismRestrict : ∃ U : Y.Opens, (U : Set Y).Nonempty ∧ IsFinite (f ∣_ U)
 
+/-- `f` is an alteration if and only if it is proper, dominant, and finite over some nonempty open
+of its target. -/
+theorem isAlteration_iff (f : X ⟶ Y) :
+    IsAlteration f ↔
+      IsProper f ∧ IsDominant f ∧ ∃ U : Y.Opens, (U : Set Y).Nonempty ∧ IsFinite (f ∣_ U) :=
+  ⟨fun _ ↦ ⟨inferInstance, inferInstance, IsAlteration.exists_isFinite_morphismRestrict⟩,
+    fun ⟨_, _, h⟩ ↦ { exists_isFinite_morphismRestrict := h }⟩
+
 /-- A modification of a nonempty scheme is an alteration: it is an isomorphism, hence finite,
 over a dense open, which is nonempty. -/
 instance (priority := 100) IsModification.isAlteration (f : X ⟶ Y) [IsModification f]
@@ -66,6 +76,7 @@ instance (priority := 100) IsModification.isAlteration (f : X ⟶ Y) [IsModifica
 target. -/
 instance (priority := 100) isAlteration_of_isFinite (f : X ⟶ Y) [IsFinite f] [IsDominant f]
     [Nonempty Y] : IsAlteration f where
-  exists_isFinite_morphismRestrict := ⟨⊤, Set.univ_nonempty, inferInstance⟩
+  exists_isFinite_morphismRestrict :=
+    ⟨⊤, by rw [TopologicalSpace.Opens.coe_top]; exact Set.univ_nonempty, inferInstance⟩
 
 end TauCeti.AlgebraicGeometry

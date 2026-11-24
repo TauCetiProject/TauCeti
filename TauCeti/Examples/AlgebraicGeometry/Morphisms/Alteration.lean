@@ -23,14 +23,12 @@ open CategoryTheory AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
-/-- `Spec ℂ ⟶ Spec ℝ` is an alteration of generic degree two. -/
+/-- `Spec ℂ ⟶ Spec ℝ` is an alteration. -/
 theorem isAlteration_Spec_algebraMap_real_complex :
     IsAlteration (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) := by
   have : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) := by
     rw [IsFinite.SpecMap_iff]
     exact RingHom.finite_algebraMap.mpr inferInstance
-  have : Surjective (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) :=
-    ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
   infer_instance
 
 end TauCeti.AlgebraicGeometry
