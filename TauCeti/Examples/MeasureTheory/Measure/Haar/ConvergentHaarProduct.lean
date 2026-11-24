@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
+public import TauCeti.MeasureTheory.Measure.Count.Topology
 public import Mathlib.Topology.Instances.ZMod
 import TauCeti.Topology.Algebra.InfiniteSum.Group
 
@@ -125,20 +126,27 @@ namespace TauCeti.ConvergentHaarProductExamples
 
 /-! ### Counting measure on `C₄ = ZMod 4` -/
 
-/-- Counting measure is a Haar measure on the finite discrete group `ZMod 4`. -/
-local instance isAddHaarMeasure_count_zmodFour : IsAddHaarMeasure (count : Measure (ZMod 4)) where
-  lt_top_of_isCompact _ _ := measure_lt_top _ _
-  open_pos _ _ hU := count_ne_zero_iff.2 hU
-
 /-- The subgroup `2ℤ/4 = {0, 2}` of `ZMod 4`. -/
 local notation "twoZMod4" => AddSubgroup.zmultiples (2 : ZMod 4)
 
 /-- `2ℤ/4 = {0, 2}` has counting measure `2`. -/
 lemma count_zmultiples_two : count (twoZMod4 : Set (ZMod 4)) = 2 := by
+  have h : addOrderOf (2 : ZMod 4) = 2 := by
+    simpa using ZMod.addOrderOf_coe (n := 4) 2 four_ne_zero
   rw [count_apply (MeasurableSet.of_discrete), ← Set.Finite.cast_ncard_eq (Set.toFinite _),
-    ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, Nat.card_zmultiples,
-    show (2 : ZMod 4) = ((2 : ℕ) : ZMod 4) from rfl, ZMod.addOrderOf_coe _ (by norm_num)]
-  rfl
+    ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, Nat.card_zmultiples, h]
+  norm_num
+
+/-- Every index outside `Finset.univ` satisfies any predicate, since there is no such index. -/
+lemma forall_notMem_univ {ι : Type*} [Fintype ι] {p : ι → Prop} :
+    ∀ i ∉ (Finset.univ : Finset ι), p i :=
+  fun i hi ↦ absurd (Finset.mem_univ i) hi
+
+/-- No index lies outside `Finset.univ`. -/
+local instance isEmpty_notMem_univ {ι : Type*} [Fintype ι] :
+    IsEmpty {i // i ∉ (Finset.univ : Finset ι)} :=
+  ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
+
 
 /-- Every subset of `ZMod 4` is open. -/
 local instance factIsOpenZModFour {ι : Type} (U : ι → AddSubgroup (ZMod 4)) :
@@ -150,25 +158,21 @@ measures on copies of `ZMod 4` gives the restricted product total mass `4 ^ card
 family of restricting subgroups. -/
 lemma convergentAddHaarProduct_count_univ {ι : Type} [Fintype ι]
     (U : ι → AddSubgroup (ZMod 4)) :
-    convergentAddHaarProduct U Finset.univ (fun i hi ↦ absurd (Finset.mem_univ i) hi)
+    convergentAddHaarProduct U Finset.univ forall_notMem_univ
       (fun _ ↦ count) (.of_finite) univ = 4 ^ Fintype.card ι := by
-  have : IsEmpty {i // i ∉ (Finset.univ : Finset ι)} := ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
   have hbox : (univ : Set (Πʳ i, [ZMod 4, (U i : Set (ZMod 4))])) =
       box fun _ ↦ (univ : Set (ZMod 4)) := by
     ext x
     simp
-  rw [hbox, convergentAddHaarProduct_box _ _ _ _ _ subset_rfl fun i hi ↦
-    absurd (Finset.mem_univ i) hi]
+  rw [hbox, convergentAddHaarProduct_box _ _ _ _ _ subset_rfl forall_notMem_univ]
   simp [count_univ]
 
 -- One copy of `C₄` with counting measure, `B = {0, 2}` and the whole index set exceptional: the
 -- tail is empty and the integral box has mass `2`.
 example : convergentAddHaarProduct (fun _ : Unit ↦ twoZMod4) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)
+      forall_notMem_univ (fun _ ↦ count) (.of_finite)
       (box fun _ ↦ (twoZMod4 : Set (ZMod 4))) = 2 := by
-  have : IsEmpty {i // i ∉ (Finset.univ : Finset Unit)} := ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
-  rw [convergentAddHaarProduct_box _ _ _ _ _ subset_rfl fun i hi ↦
-    absurd (Finset.mem_univ i) hi]
+  rw [convergentAddHaarProduct_box _ _ _ _ _ subset_rfl forall_notMem_univ]
   simp [count_zmultiples_two]
 
 /-- `{0, 2}` has mass `1` for half counting measure. -/
@@ -191,7 +195,8 @@ example : convergentAddHaarProduct (fun _ : Unit ↦ twoZMod4) ∅
         (.of_forall fun _ ↦ half_count_zmultiples_two) := by
   rw [convergentAddHaarProduct_eq_smul_restrictedAddHaar _ _ _ _ _ (fun _ ↦ (2 : ℝ≥0)⁻¹ • count)
     (fun _ h ↦ absurd h (Finset.notMem_empty _))
-    (fun _ _ ↦ by rw [count_zmultiples_two]; rfl) (.of_forall fun _ ↦ half_count_zmultiples_two)]
+    (fun _ _ ↦ by rw [count_zmultiples_two, ENNReal.toNNReal_ofNat])
+    (.of_forall fun _ ↦ half_count_zmultiples_two)]
   congr
   rw [tprod_eq_mulSingle ⟨(), Finset.notMem_empty _⟩ fun b hb ↦ absurd (Subsingleton.elim _ _) hb,
     count_zmultiples_two]
@@ -199,28 +204,26 @@ example : convergentAddHaarProduct (fun _ : Unit ↦ twoZMod4) ∅
 
 -- On one copy of `C₄`, the identity change of restricting subgroup preserves total mass `4`.
 example : convergentAddHaarProduct (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)
+      forall_notMem_univ (fun _ ↦ count) (.of_finite)
       univ = 4 := by
   simpa using convergentAddHaarProduct_count_univ (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4)))
 
 -- On one copy of `C₄`, changing the restricting subgroup from `C₄` to `{0}` transports counting
 -- measure of total mass `4` to a measure of total mass `4`.
 example : ((convergentAddHaarProduct (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)).map
-      (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by
-        rw [Filter.cofinite_eq_bot]; exact Filter.eventually_bot))) univ = 4 := by
+      forall_notMem_univ (fun _ ↦ count) (.of_finite)).map
+      (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by simp))) univ = 4 := by
   rw [map_addRestrictedProductCongr_convergentAddHaarProduct _ _ Finset.univ Finset.univ _ _
-    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (.of_finite)]
+    forall_notMem_univ _ _ (.of_finite)]
   simpa using convergentAddHaarProduct_count_univ (fun _ : Unit ↦ (⊥ : AddSubgroup (ZMod 4)))
 
 -- On two copies of `C₄`, changing both restricting subgroups from `C₄` to `{0}` preserves total
 -- mass `16`.
 example : ((convergentAddHaarProduct (fun _ : Fin 2 ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)).map
-      (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by
-        rw [Filter.cofinite_eq_bot]; exact Filter.eventually_bot))) univ = 16 := by
+      forall_notMem_univ (fun _ ↦ count) (.of_finite)).map
+      (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by simp))) univ = 16 := by
   rw [map_addRestrictedProductCongr_convergentAddHaarProduct _ _ Finset.univ Finset.univ _ _
-    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (.of_finite)]
+    forall_notMem_univ _ _ (.of_finite)]
   rw [convergentAddHaarProduct_count_univ]
   norm_num
 
