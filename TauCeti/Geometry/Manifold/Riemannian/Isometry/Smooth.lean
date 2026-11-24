@@ -16,6 +16,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
+import TauCeti.Geometry.Manifold.Riemannian.Restriction.Distance
+import TauCeti.Topology.MetricSpace.Isometry.Restrict
 
 /-!
 # Smoothness of distance-preserving maps of Riemannian manifolds
@@ -32,12 +34,15 @@ Riemannian isometry
 Two complementary arguments are combined:
 
 1. **Palais's radial-geodesic argument for complete targets of arbitrary codimension.** When `N` is
-   a complete metric Riemannian manifold, distance-preserving maps send short radial geodesics to
-   radial geodesics (`Isometry.apply_riemannianExp_smul`), so `A v = log_{f p} (f (exp_p v))`
-   preserves norms and scales along rays. Exponential and logarithmic distortion bounds near the
-   origin (`exists_isNormalDomain_ball_dist_riemannianExp_bounds`) together with ray scaling show
-   that `A` preserves distances on a ball, hence agrees there with a linear isometry `L`
-   (`TauCeti.exists_linearIsometry_eqOn_ball`), giving `f = exp_{f p} ∘ L ∘ log_p` near `p`.
+   a complete Riemannian manifold with finite distances, distance-preserving maps send short radial
+   geodesics to radial geodesics (`Isometry.apply_riemannianExp_smul`), so
+   `A v = log_{f p} (f (exp_p v))` preserves norms and scales along rays. Exponential and
+   logarithmic distortion bounds near the origin
+   (`exists_isNormalDomain_ball_dist_riemannianExp_bounds`) together with ray scaling show that `A`
+   preserves distances on a ball, hence agrees there with a linear isometry `L`
+   (`TauCeti.exists_linearIsometry_eqOn_ball`), giving `f = exp_{f p} ∘ L ∘ log_p` near `p`. For
+   extended distances, `f` restricts to the finite-distance components of `p` and `f p`, which are
+   open submanifolds with finite distances to which this argument applies.
 
 2. **Squared-distance coordinate charts without completeness.** Near `p ∈ M` at which `f` restricts
    to an isometry on an open neighbourhood `U` with `f '' U ∈ 𝓝 (f p)`, choosing a squared-distance
@@ -64,8 +69,9 @@ Two complementary arguments are combined:
 
 * `Isometry.exists_linearIsometry_apply_riemannianExp_eq`: `f (exp_p v) = exp_{f p} (L v)` on a
   normal ball for a linear isometry `L : T_p M →ₗᵢ[ℝ] T_{f p} N`, when `N` is complete.
-* `Isometry.contMDiff`, `Isometry.inner_mfderiv`: a distance-preserving map into a complete
-  Riemannian manifold is smooth and its differential preserves inner products.
+* `Isometry.contMDiff`, `Isometry.inner_mfderiv`: a distance-preserving map between
+  extended-metric Riemannian manifolds into a complete one is smooth and its differential preserves
+  inner products; no connectedness, completeness or surjectivity is needed on the source.
 * `MDifferentiableAt.norm_mfderiv_eq_of_eventually_edist_eq`,
   `MDifferentiableAt.inner_mfderiv_eq_of_eventually_edist_eq`: a map differentiable at `p` that
   preserves extended distances from `p` near `p` preserves norms and inner products on `T_p M`.
@@ -281,9 +287,9 @@ theorem exists_linearIsometry_apply_riemannianExp_eq (hf : Isometry f) (p : M) :
   exact ⟨min r₁ r₂, hρ, hn₂.ball (ball_subset_ball (min_le_right _ _)) hρ, L,
     fun v hv ↦ by rw [hexp v hv, hL hv]⟩
 
-/-- **Myers–Steenrod: a distance-preserving map is smooth.** A map between Riemannian manifolds
-which preserves their Riemannian distances, into a complete manifold, is smooth. -/
-theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
+/-- A distance-preserving map between Riemannian manifolds with finite distances, into a complete
+manifold, is smooth. `Isometry.contMDiff` extends this to extended distances. -/
+private theorem contMDiff_of_metricSpace (hf : Isometry f) : ContMDiff I J ∞ f := by
   intro p
   obtain ⟨ρ, -, hn, L, hL⟩ := hf.exists_linearIsometry_apply_riemannianExp_eq (I := I) (J := J) p
   -- Near `p`, `f` is `exp_{f p} ∘ L ∘ log_p`.
@@ -301,6 +307,49 @@ theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
   have hL' := L.toContinuousLinearMap.contMDiff.contMDiffAt.comp p hlog
   exact (hexp.comp p hL').congr_of_eventuallyEq heq
 
+end Isometry
+
+end CompleteTarget
+
+/-! ### Palais's smoothness theorem for extended distances -/
+
+section CompleteTargetEMetric
+
+open scoped TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {N : Type*} [EMetricSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] [IsRiemannianManifold J N]
+  [CompleteSpace N]
+
+namespace Isometry
+
+variable {f : M → N}
+
+/-- **Myers–Steenrod: a distance-preserving map between Riemannian manifolds is smooth.** The
+manifolds are finite-dimensional and without boundary, their extended distances are the
+Riemannian distances, and the target is complete; no connectedness, completeness, compactness or
+surjectivity is needed on the source. -/
+theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
+  intro p
+  -- Restrict `f` to the finite-distance components of `p` and `f p`, open submanifolds with
+  -- finite distances (`TauCeti.eballTopOpens`).
+  let g : TauCeti.eballTopOpens p → TauCeti.eballTopOpens (f p) :=
+    (hf.mapsTo_eball p ∞).restrict _ _ _
+  have h : ContMDiffAt I J ∞ (Subtype.val ∘ g)
+      (⟨p, Metric.mem_eball_self ENNReal.zero_lt_top⟩ : TauCeti.eballTopOpens p) :=
+    (contMDiff_subtypeVal.comp (hf.mapsToRestrict _).contMDiff_of_metricSpace) _
+  rw [show Subtype.val ∘ g = f ∘ Subtype.val from Set.MapsTo.restrict_commutes ..] at h
+  exact contMDiffAt_subtype_iff.1 h
+
 /-- **A distance-preserving map preserves the Riemannian metric.** The differential of a map
 between Riemannian manifolds which preserves their Riemannian distances, into a complete
 manifold, preserves inner products of tangent vectors. -/
@@ -311,7 +360,7 @@ theorem inner_mfderiv (hf : Isometry f) (x : M) (v w : TangentSpace I x) :
 
 end Isometry
 
-end CompleteTarget
+end CompleteTargetEMetric
 
 /-! ### Local smoothness and metric equivalences without completeness -/
 
@@ -515,6 +564,12 @@ def toRiemannianIsometry (e : M ≃ᵢ N) : TauCeti.RiemannianIsometry I J M N w
 /-- Promoting a metric equivalence to a smooth Riemannian isometry preserves the underlying map. -/
 @[simp]
 theorem coe_toRiemannianIsometry (e : M ≃ᵢ N) : ⇑(e.toRiemannianIsometry I J) = ⇑e :=
+  (rfl)
+
+/-- The underlying equivalence of `e.toRiemannianIsometry I J` is that of `e`. -/
+@[simp]
+theorem toEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
+    (e.toRiemannianIsometry I J).toEquiv = e.toEquiv :=
   (rfl)
 
 /-- Applying `e.toRiemannianIsometry I J` evaluates `e`. -/
