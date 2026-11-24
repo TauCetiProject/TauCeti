@@ -76,8 +76,6 @@ theorem mapInjectiveLinearEquiv_single (φ : G →* K) (hφ : Function.Injective
 `(H₁.map φ, H₂.map φ, H₃.map φ)`. -/
 theorem mapInjectiveLinearEquiv_structureConstants (φ : G →* K) (hφ : Function.Injective φ)
     [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
-    [IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ)]
-    [IsHeckeTriple (Δ.map φ) (H₂.map φ) (H₃.map φ)]
     (D₁ : HeckeCoset Δ H₁ H₂) (D₂ : HeckeCoset Δ H₂ H₃) :
     mapInjectiveLinearEquiv R φ hφ (structureConstants R H₁ H₂ H₃ D₁.rep D₂.rep) =
       structureConstants R (H₁.map φ) (H₂.map φ) (H₃.map φ)
@@ -96,8 +94,6 @@ theorem mapInjectiveLinearEquiv_structureConstants (φ : G →* K) (hφ : Functi
 `HeckeCosetModule.mul`. -/
 theorem mapInjectiveLinearEquiv_mul (φ : G →* K) (hφ : Function.Injective φ)
     [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]
-    [IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ)]
-    [IsHeckeTriple (Δ.map φ) (H₂.map φ) (H₃.map φ)]
     (f : HeckeCosetModule Δ H₁ H₂ R) (g : HeckeCosetModule Δ H₂ H₃ R) :
     mapInjectiveLinearEquiv R φ hφ (mul R f g) =
       mul R (mapInjectiveLinearEquiv R φ hφ f) (mapInjectiveLinearEquiv R φ hφ g) :=
@@ -111,7 +107,7 @@ theorem mapInjectiveLinearEquiv_mul (φ : G →* K) (hφ : Function.Injective φ
 `φ : G →* K` induces a ring isomorphism `𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R` over any coefficient
 semiring `R`. -/
 noncomputable def mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)] :
+    [IsHeckeTriple Δ H H] :
     𝕋 Δ H R ≃+* 𝕋 (Δ.map φ) (H.map φ) R :=
   { mapInjectiveLinearEquiv R φ hφ with
     map_mul' := mapInjectiveLinearEquiv_mul R φ hφ }
@@ -120,14 +116,14 @@ noncomputable def mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injectiv
 -- Deliberately not `@[simp]`: rewriting `⇑(mapInjectiveRingEquiv …)` to a `LinearEquiv` prevents
 -- generic ring-homomorphism simp lemmas (`map_mul`, `map_one`) from firing.
 theorem coe_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)] :
+    [IsHeckeTriple Δ H H] :
     ⇑(mapInjectiveRingEquiv R (Δ := Δ) (H := H) φ hφ) =
       mapInjectiveLinearEquiv R φ hφ := (rfl)
 
 /-- `mapInjectiveRingEquiv` sends each basis element `single R D b` to `single R (D.mapHom φ) b`. -/
 @[simp]
 theorem mapInjectiveRingEquiv_single (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)]
+    [IsHeckeTriple Δ H H]
     (D : HeckeCoset Δ H H) (b : R) :
     mapInjectiveRingEquiv R φ hφ (single R D b) = single R (D.mapHom φ) b :=
   mapInjectiveLinearEquiv_single R φ hφ D b
@@ -136,7 +132,7 @@ theorem mapInjectiveRingEquiv_single (φ : G →* K) (hφ : Function.Injective �
 `single R D b`. -/
 @[simp]
 theorem mapInjectiveRingEquiv_symm_single_mapHom (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)]
+    [IsHeckeTriple Δ H H]
     (D : HeckeCoset Δ H H) (b : R) :
     (mapInjectiveRingEquiv R φ hφ).symm (single R (D.mapHom φ) b) = single R D b :=
   (mapInjectiveRingEquiv R φ hφ).injective (by simp)
@@ -144,7 +140,7 @@ theorem mapInjectiveRingEquiv_symm_single_mapHom (φ : G →* K) (hφ : Function
 /-- `mapInjectiveRingEquiv` preserves the degree homomorphism `LeftCosetModule.deg`. -/
 @[simp]
 theorem deg_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)]
+    [IsHeckeTriple Δ H H]
     (f : 𝕋 Δ H R) :
     LeftCosetModule.deg (Δ.map φ) (H.map φ) R (mapInjectiveRingEquiv R φ hφ f) =
       LeftCosetModule.deg Δ H R f := by
@@ -157,7 +153,7 @@ theorem deg_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
 `LeftCosetModule.deg`. -/
 @[simp]
 theorem deg_comp_mapInjectiveRingEquiv (φ : G →* K) (hφ : Function.Injective φ)
-    [IsHeckeTriple Δ H H] [IsHeckeTriple (Δ.map φ) (H.map φ) (H.map φ)] :
+    [IsHeckeTriple Δ H H] :
     (LeftCosetModule.deg (Δ.map φ) (H.map φ) R).comp
         ↑(mapInjectiveRingEquiv R (Δ := Δ) (H := H) φ hφ) =
       LeftCosetModule.deg Δ H R :=

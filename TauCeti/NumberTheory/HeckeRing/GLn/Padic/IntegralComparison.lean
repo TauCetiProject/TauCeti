@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.Degree
 public import TauCeti.NumberTheory.HeckeRing.GLn.PPrimary
-public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.Basic
+public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.Cosets
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Presentation
 public import TauCeti.NumberTheory.HeckeRing.Map.InjectiveHom
 public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
@@ -95,7 +95,7 @@ theorem castGLPadic_mem_GLPadicInt_of_mem_SLnZ {g : GL (Fin n) ℚ} (hg : g ∈ 
 /-- `castGLPadic` sends `intEntries n` into `padicIntEntries (Fin n) p`. -/
 theorem castGLPadic_mem_padicIntEntries_of_mem_intEntries {g : GL (Fin n) ℚ}
     (hg : g ∈ intEntries n) : castGLPadic (Fin n) p g ∈ padicIntEntries (Fin n) p :=
-  castGLPadic_mem_padicIntEntries_of_exists_int_matrix (Fin n) p
+  castGLPadic_mem_padicIntEntries_of_exists_int_matrix
     ((hasIntEntries_iff n).mp ((mem_intEntries n).mp hg))
 
 /-- `castGLPadic` sends `posDetInt n` into `padicIntEntries (Fin n) p`. -/
@@ -121,7 +121,7 @@ private theorem hasIntEntries_of_mem_pLocalPosGL_of_padicInt {g : GL (Fin n) ℚ
   obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp
     ((mem_posDetInt_iff n).mp (pPrimaryPosDetInt_le_posDetInt n p hk)).1
   have hp_pos : 0 < p := (Fact.out : p.Prime).pos
-  have hnorm := (mem_padicIntEntries_iff_norm_le_one (Fin n) p).mp hpadic
+  have hnorm := mem_padicIntEntries_iff_norm_le_one.mp hpadic
   have hden : ∀ i j : Fin n, ((↑g : Matrix (Fin n) (Fin n) ℚ) i j).den = 1 := fun i j ↦ by
     have hmul : (p : ℚ) ^ k * (↑g : Matrix (Fin n) (Fin n) ℚ) i j = A i j := by
       simpa [Units.val_mul, natDiagGL_coe n _ fun _ ↦ pow_pos hp_pos k, Matrix.diagonal_mul]
@@ -140,7 +140,7 @@ theorem map_SLnZ_eq_GLPadicInt_inf_map_pLocalPosGL :
   · rintro _ ⟨g, hg, rfl⟩
     exact ⟨castGLPadic_mem_GLPadicInt_of_mem_SLnZ n p hg, ⟨g, SLnZ_le_pLocalPosGL n p hg, rfl⟩⟩
   · rintro _ ⟨hZp, ⟨g, hg, rfl⟩⟩
-    obtain ⟨hpadic, hpadic_inv⟩ := (GLPadicInt.mem_iff_mem_padicIntEntries_and_inv (Fin n) p).mp hZp
+    obtain ⟨hpadic, hpadic_inv⟩ := mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem.mp hZp
     rw [← map_inv] at hpadic_inv
     obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp
       (hasIntEntries_of_mem_pLocalPosGL_of_padicInt n p hg hpadic)
@@ -169,7 +169,7 @@ private theorem exists_mem_pPrimaryPosDetInt_of_int_matrix {D : Matrix (Fin n) (
           (D.map (Int.castRingHom ℤ_[p])).map (PadicInt.Coe.ringHom (p := p)) := by
   let DQ : Matrix (Fin n) (Fin n) ℚ := D.map (Int.cast : ℤ → ℚ)
   have hdetQ : DQ.det = (p : ℚ) ^ m := by
-    rw [← Int.cast_det D, hD]; push_cast; rfl
+    rw [← Int.cast_det D, hD]; simp
   have hpos : 0 < DQ.det := hdetQ ▸ pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) m
   let g : GL (Fin n) ℚ := Matrix.GeneralLinearGroup.mk'' DQ (isUnit_iff_ne_zero.mpr hpos.ne')
   have hg_coe : (↑g : Matrix (Fin n) (Fin n) ℚ) = DQ := Matrix.GeneralLinearGroup.val_mk'' _ _
@@ -186,7 +186,7 @@ theorem exists_mem_GLPadicInt_mul_mem_map_pPrimaryPosDetInt (δ' : padicIntEntri
       u * (δ' : GL (Fin n) ℚ_[p]) ∈ (pPrimaryPosDetInt n p).map (castGLPadic (Fin n) p) := by
   let B := padicIntMatrix (Fin n) p δ'
   obtain ⟨D, m, U, hDm, hBTU⟩ := TauCeti.exists_det_eq_pow_and_mul_eq_map n p Bᵀ
-    (by rw [Matrix.det_transpose]; exact det_padicIntMatrix_ne_zero (Fin n) p δ')
+    (by rw [Matrix.det_transpose]; exact det_padicIntMatrix_ne_zero δ')
   obtain ⟨g, hg, -, hg_padic⟩ :=
     exists_mem_pPrimaryPosDetInt_of_int_matrix n p (by rw [Matrix.det_transpose, hDm])
   let UT : GL (Fin n) ℤ_[p] := (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) U).unop
@@ -252,12 +252,12 @@ theorem exists_mem_map_SLnZ_inv_mul_mem_conj_GLPadicInt
       x⁻¹ * u ∈ ConjAct.toConjAct (g : GL (Fin n) ℚ_[p]) • GLPadicInt (Fin n) p := by
   obtain ⟨g₀, hg₀, hg_eq⟩ := g.property
   have hug_mem : u * (g : GL (Fin n) ℚ_[p]) ∈ padicIntEntries (Fin n) p :=
-    (padicIntEntries (Fin n) p).mul_mem (GLPadicInt.le_padicIntEntries (Fin n) p hu)
+    (padicIntEntries (Fin n) p).mul_mem (glPadicInt_le_padicIntEntries hu)
       (hg_eq ▸ castGLPadic_mem_padicIntEntries_of_mem_posDetInt n p
         (pPrimaryPosDetInt_le_posDetInt n p hg₀))
   let B := padicIntMatrix (Fin n) p ⟨u * (g : GL (Fin n) ℚ_[p]), hug_mem⟩
   obtain ⟨D, m, V, hDm, hBV⟩ :=
-    TauCeti.exists_det_eq_pow_and_mul_eq_map n p B (det_padicIntMatrix_ne_zero (Fin n) p _)
+    TauCeti.exists_det_eq_pow_and_mul_eq_map n p B (det_padicIntMatrix_ne_zero _)
   obtain ⟨g', hg', -, hg'_padic⟩ := exists_mem_pPrimaryPosDetInt_of_int_matrix n p hDm
   have hmul_padic : (u * (g : GL (Fin n) ℚ_[p])) *
       GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) V = castGLPadic (Fin n) p g' := by
@@ -302,12 +302,6 @@ private theorem castGLPadic_pPrimary_le_map_pLocalPosGL :
       ((pLocalPosGL n p).map (castGLPadic (Fin n) p)).toSubmonoid := by
   rintro _ ⟨g, hg, rfl⟩
   exact ⟨g, pPrimaryPosDetInt_le_pLocalPosGL n p hg, rfl⟩
-
-/-- Hecke-triple instance on the `castGLPadic`-image of `(pPrimaryPosDetInt n p, SLnZ n)`. -/
-noncomputable instance instIsHeckeTripleMapCastPPrimary :
-    IsHeckeTriple ((pPrimaryPosDetInt n p).map (castGLPadic (Fin n) p))
-      ((SLnZ n).map (castGLPadic (Fin n) p)) ((SLnZ n).map (castGLPadic (Fin n) p)) :=
-  IsHeckeTriple.map (castGLPadic (Fin n) p)
 
 /-- Bijection between `p`-primary `SL_n(ℤ)` double cosets and integral `p`-adic `GL_n(ℤ_p)` double
 cosets. -/

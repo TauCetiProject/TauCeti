@@ -90,10 +90,6 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
   isometry_subtypeVal.isEmbedding
 
-/-- The inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is injective. -/
-theorem coe_ringHom_injective : Function.Injective (Coe.ringHom (p := p)) :=
-  isEmbedding_coe_ringHom.injective
-
 /-- A `ℚ_[p]`-linear form whose values on a set `s` have absolute value at most `r` has values of
 absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/
 theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]

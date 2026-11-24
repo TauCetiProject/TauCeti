@@ -1064,7 +1064,7 @@ instance {Δ : Submonoid G} {H₁ H₂ : Subgroup G} [IsHeckeTriple Δ H₁ H₂
 
 /-- Pushing a Hecke triple `(Δ, H₁, H₂)` forward along a group homomorphism `φ : G →* K` yields a
 Hecke triple `(Δ.map φ, H₁.map φ, H₂.map φ)`. -/
-theorem map {K : Type*} [Group K] {Δ : Submonoid G} {H₁ H₂ : Subgroup G}
+instance map {K : Type*} [Group K] {Δ : Submonoid G} {H₁ H₂ : Subgroup G}
     [IsHeckeTriple Δ H₁ H₂] (φ : G →* K) :
     IsHeckeTriple (Δ.map φ) (H₁.map φ) (H₂.map φ) where
   left_le := by

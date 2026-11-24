@@ -200,7 +200,7 @@ private theorem inv_mem_pLocalPosGL_aux {g : GL (Fin n) ℚ} (hg : g ∈ Matrix.
   refine ⟨m, ⟨(mem_posDetInt_iff n).mpr ⟨(hasIntEntries_iff n).mpr ⟨B, hBmat⟩, hdet_pos⟩, r, ?_⟩⟩
   rw [← hBdet_Q, show B.det = (p : ℤ) ^ r from by
     rw [← Int.natAbs_of_nonneg hBdet_pos.le, hr, Nat.cast_pow]]
-  push_cast; rfl
+  simp
 
 /-- The `p`-local positive-determinant subgroup of `GL_n(ℚ)`: elements of `GL_n^+(ℚ)` whose
 entries clear to `pPrimaryPosDetInt n p` under a scalar power of `p`. -/

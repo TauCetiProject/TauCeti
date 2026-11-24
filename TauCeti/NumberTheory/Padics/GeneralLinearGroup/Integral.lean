@@ -7,12 +7,17 @@ module
 
 -- `ℤ_[p]`, `ℚ_[p]` and the inclusion `PadicInt.Coe.ringHom` occur in the statements below.
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+-- The reduction `PadicInt.toZModPow` occurs in the statement of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+public import Mathlib.NumberTheory.Padics.RingHoms
 -- `Matrix.GeneralLinearGroup.map` and the `GL` notation occur in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- The topology of `GL n ℚ_[p]` as the unit group of the matrix ring occurs in the statements of
 -- `TauCeti.GLPadicInt.isOpen` and `TauCeti.GLPadicInt.isCompact`.
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Instances.Matrix
+-- `TauCeti.diagGL` occurs in the statement of `TauCeti.GLPadicInt.diagGL_map_mem`.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- Non-public: the compactness of `ℤ_[p]` is used only in the compactness proof, and the
 -- ultrametric determinant bound only in `TauCeti.GLPadicInt.mem_iff_inv`.
 import Mathlib.NumberTheory.Padics.ProperSpace
@@ -20,6 +25,9 @@ import TauCeti.Analysis.Matrix.Ultra
 -- Non-public: injectivity of `Matrix.GeneralLinearGroup.map` along an injective ring hom, used only
 -- to build `TauCeti.GLPadicInt.mulEquiv`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- Non-public: `PadicInt.toZModPow_eq_iff_dvd_sub`, used only in the proof of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The integral subgroup `GLₙ(ℤ_p)` of `GLₙ(ℚ_p)`
@@ -40,10 +48,6 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 * `TauCeti.GLPadicInt n p`: the subgroup `GLₙ(ℤ_p)` of `GL n ℚ_[p]`.
 * `TauCeti.GLPadicInt.mulEquiv`: the isomorphism `GL n ℤ_[p] ≃* GLPadicInt n p`.
 * `TauCeti.castGLPadic n p`: the injective entrywise embedding `GL n ℚ →* GL n ℚ_[p]`.
-* `TauCeti.padicIntEntries`: the submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of invertible `p`-adic matrices
-  with integral entries.
-* `TauCeti.padicIntMatrix`: the underlying `ℤ_p`-matrix of an element of `padicIntEntries n p`,
-  bundled as a monoid homomorphism.
 
 ## Main results
 
@@ -52,12 +56,13 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 * `TauCeti.GLPadicInt.mem_iff_inv`: `g ∈ GLₙ(ℤ_p)` if and only if `g` and `g⁻¹` have integral
   entries.
 * `TauCeti.GLPadicInt.isOpen`, `TauCeti.GLPadicInt.isCompact`: `GLₙ(ℤ_p)` is open and compact.
-* `TauCeti.GLPadicInt.neg_one_mem`, `TauCeti.GLPadicInt.le_padicIntEntries`,
-  `TauCeti.GLPadicInt.mem_iff_mem_padicIntEntries_and_inv`: basic subgroup and integral-entry
-  membership properties of `GLₙ(ℤ_p)`.
-* `TauCeti.castGLPadic_injective`, `TauCeti.GLPadicInt.castGLPadic_map_intCast_mem`,
-  `TauCeti.castGLPadic_mem_padicIntEntries_of_exists_int_matrix`: properties of the rational
-  embedding `GL_n(ℚ) ↪ GL_n(ℚ_p)`.
+* `TauCeti.GLPadicInt.neg_one_mem`, `TauCeti.GLPadicInt.diagGL_map_mem`,
+  `TauCeti.GLPadicInt.transpose_mem`: closure of `GLₙ(ℤ_p)` under `-1`, diagonal `ℤ_pˣ`-matrices,
+  and transposition.
+* `TauCeti.castGLPadic_injective`, `TauCeti.GLPadicInt.castGLPadic_map_intCast_mem`: properties of
+  the rational embedding `GL_n(ℚ) ↪ GL_n(ℚ_p)`.
+* `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`: an invertible matrix over `ℤ_p` that reduces
+  to `1` modulo `p ^ m` is `1 + p ^ m C` for a matrix `C` over `ℤ_p`.
 
 ## References
 
@@ -180,11 +185,6 @@ theorem coe_mulEquiv_apply (γ : GL n ℤ_[p]) :
       GeneralLinearGroup.map PadicInt.Coe.ringHom γ :=
   (rfl)
 
-variable (n p) in
-/-- Defining equation for `GLPadicInt`. -/
-theorem eq_range :
-    GLPadicInt n p = (GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p))).range := (rfl)
-
 /-- Matrix coercion of the canonical embedding `GL n ℤ_[p] →* GL n ℚ_[p]`. -/
 theorem map_coe (u : GL n ℤ_[p]) :
     ((GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) u : GL n ℚ_[p]) : Matrix n n ℚ_[p]) =
@@ -192,15 +192,22 @@ theorem map_coe (u : GL n ℤ_[p]) :
   ext i j; simp
 
 variable (n p) in
-/-- The entrywise inclusion `GL n ℤ_[p] →* GL n ℚ_[p]` is injective. -/
-theorem map_injective :
-    Function.Injective (GeneralLinearGroup.map (n := n) (PadicInt.Coe.ringHom (p := p))) :=
-  GeneralLinearGroup.map_injective Subtype.val_injective
-
-variable (n p) in
 /-- `-1` belongs to `GLₙ(ℤ_p)`. -/
 theorem neg_one_mem : (-1 : GL n ℚ_[p]) ∈ GLPadicInt n p :=
   ⟨-1, by rw [GeneralLinearGroup.map_neg, map_one]⟩
+
+/-- Every diagonal matrix of `ℤ_pˣ`-units belongs to `GLₙ(ℤ_p)`. -/
+theorem diagGL_map_mem (u : n → ℤ_[p]ˣ) :
+    TauCeti.diagGL (fun i ↦ Units.map (PadicInt.Coe.ringHom (p := p) : ℤ_[p] →* ℚ_[p]) (u i)) ∈
+      GLPadicInt n p :=
+  TauCeti.map_diagGL (PadicInt.Coe.ringHom (p := p)) u ▸ map_mem (TauCeti.diagGL u)
+
+/-- `GLₙ(ℤ_p)` is closed under matrix transposition. -/
+theorem transpose_mem {g : GL n ℚ_[p]} (hg : g ∈ GLPadicInt n p) :
+    (GeneralLinearGroup.transposeMulEquiv n g).unop ∈ GLPadicInt n p := by
+  obtain ⟨u, rfl⟩ := mem_iff_exists_map.mp hg
+  exact mem_iff_exists_map.mpr
+    ⟨(GeneralLinearGroup.transposeMulEquiv n u).unop, Units.ext (by ext i j; simp)⟩
 
 end GLPadicInt
 
@@ -233,82 +240,29 @@ theorem GLPadicInt.castGLPadic_map_intCast_mem (γ : GL n ℤ) :
 
 end Embedding
 
-section PadicIntEntries
-
-/-- The submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of invertible `p`-adic matrices with `ℤ_p`-entries. -/
-def padicIntEntries : Submonoid (GL n ℚ_[p]) where
-  carrier := {g | ∃ A : Matrix n n ℤ_[p],
-    (g : Matrix n n ℚ_[p]) = A.map (PadicInt.Coe.ringHom (p := p))}
-  one_mem' := ⟨1, (Matrix.map_one (PadicInt.Coe.ringHom (p := p)) (map_zero _) (map_one _)).symm⟩
-  mul_mem' := by rintro g h ⟨A, hA⟩ ⟨B, hB⟩; exact ⟨A * B, by simp [hA, hB]⟩
-
-/-- Membership in `padicIntEntries n p` is having a `ℤ_p`-matrix lift. -/
-theorem mem_padicIntEntries_iff {g : GL n ℚ_[p]} :
-    g ∈ padicIntEntries n p ↔
-      ∃ A : Matrix n n ℤ_[p],
-        (g : Matrix n n ℚ_[p]) = A.map (PadicInt.Coe.ringHom (p := p)) := Iff.rfl
-
-/-- `g ∈ GL n ℚ_[p]` lies in `padicIntEntries n p` iff every entry has `p`-adic norm `≤ 1`. -/
-theorem mem_padicIntEntries_iff_norm_le_one {g : GL n ℚ_[p]} :
-    g ∈ padicIntEntries n p ↔ ∀ i j, ‖(g : Matrix n n ℚ_[p]) i j‖ ≤ 1 :=
-  ⟨fun ⟨A, hA⟩ i j ↦ hA ▸ Matrix.map_apply.symm ▸ (A i j).property,
-    fun h ↦ ⟨Matrix.of fun i j ↦ ⟨(g : Matrix n n ℚ_[p]) i j, h i j⟩, by ext i j; rfl⟩⟩
-
-/-- Every element of `GLₙ(ℤ_p)` has `ℤ_p`-entries. -/
-theorem GLPadicInt.le_padicIntEntries : (GLPadicInt n p).toSubmonoid ≤ padicIntEntries n p := by
-  rintro g ⟨u, rfl⟩
-  exact ⟨u, GLPadicInt.map_coe u⟩
-
-/-- `g ∈ GLₙ(ℤ_p)` iff both `g` and `g⁻¹` lie in `padicIntEntries n p`. -/
-theorem GLPadicInt.mem_iff_mem_padicIntEntries_and_inv {g : GL n ℚ_[p]} :
-    g ∈ GLPadicInt n p ↔ g ∈ padicIntEntries n p ∧ g⁻¹ ∈ padicIntEntries n p := by
-  rw [GLPadicInt.mem_iff_inv, mem_padicIntEntries_iff_norm_le_one,
-    mem_padicIntEntries_iff_norm_le_one]
-
-/-- The `ℤ_p`-matrix underlying an element of `padicIntEntries n p`, as a monoid homomorphism. -/
-noncomputable def padicIntMatrix : padicIntEntries n p →* Matrix n n ℤ_[p] where
-  toFun g := Classical.choose g.property
-  map_one' := Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective (by
-    dsimp only; rw [(Classical.choose_spec (1 : padicIntEntries n p).property).symm,
-      Matrix.map_one _ (map_zero _) (map_one _)]; rfl)
-  map_mul' g h := Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective
-    (by
-      dsimp only
-      rw [(Classical.choose_spec (g * h).property).symm, Matrix.map_mul,
-        (Classical.choose_spec g.property).symm, (Classical.choose_spec h.property).symm]
-      rfl)
-
-/-- Casting `padicIntMatrix n p g` to `ℚ_p` recovers the matrix of `g`. -/
-@[simp]
-theorem map_padicIntMatrix (g : padicIntEntries n p) :
-    (padicIntMatrix n p g).map (PadicInt.Coe.ringHom (p := p)) =
-      ((g : GL n ℚ_[p]) : Matrix n n ℚ_[p]) :=
-  (Classical.choose_spec g.property).symm
-
-/-- `padicIntMatrix n p g = A` if and only if `A` casts to the matrix of `g`. -/
-theorem padicIntMatrix_eq_iff {g : padicIntEntries n p} {A : Matrix n n ℤ_[p]} :
-    padicIntMatrix n p g = A ↔
-      ((g : GL n ℚ_[p]) : Matrix n n ℚ_[p]) = A.map (PadicInt.Coe.ringHom (p := p)) :=
-  ⟨fun h ↦ h ▸ (map_padicIntMatrix n p g).symm,
-    fun h ↦ Matrix.map_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.val_injective
-      ((map_padicIntMatrix n p g).trans h)⟩
-
-/-- The `ℤ_p`-matrix of an invertible element has nonzero determinant. -/
-theorem det_padicIntMatrix_ne_zero (g : padicIntEntries n p) :
-    (padicIntMatrix n p g).det ≠ 0 := by
-  intro h0
-  have hdet := (g : GL n ℚ_[p]).det_ne_zero
-  rw [← map_padicIntMatrix n p g, ← RingHom.mapMatrix_apply, ← RingHom.map_det, h0, map_zero]
-    at hdet
-  exact hdet rfl
-
-/-- If `g ∈ GL n ℚ` has integer entries, then `castGLPadic n p g` lies in `padicIntEntries n p`. -/
-theorem castGLPadic_mem_padicIntEntries_of_exists_int_matrix {g : GL n ℚ}
-    (h : ∃ A : Matrix n n ℤ, (g : Matrix n n ℚ) = A.map (Int.cast : ℤ → ℚ)) :
-    castGLPadic n p g ∈ padicIntEntries n p := by
-  obtain ⟨A, hA⟩ := h
-  exact ⟨A.map (Int.castRingHom ℤ_[p]), by rw [castGLPadic_coe, hA]; ext i j; simp⟩
-
-end PadicIntEntries
-
 end TauCeti
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- An invertible matrix over `ℤ_[p]` that reduces to `1` modulo `p ^ m`, that is, an element of
+the principal congruence subgroup of level `p ^ m`, is `1 + p ^ m C` for a matrix `C` over
+`ℤ_[p]`. -/
+theorem exists_eq_one_add_pow_smul_of_mem_ker {n : Type*} [Fintype n] [DecidableEq n] {m : ℕ}
+    {γ : GL n ℤ_[p]} (hγ : γ ∈ (Matrix.GeneralLinearGroup.map (toZModPow (p := p) m)).ker) :
+    ∃ C : Matrix n n ℤ_[p], (γ : Matrix n n ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
+  have hentry (i j : n) :
+      (p : ℤ_[p]) ^ m ∣ (γ : Matrix n n ℤ_[p]) i j - (1 : Matrix n n ℤ_[p]) i j := by
+    have h := congrArg (fun x : GL n (ZMod (p ^ m)) ↦ (x : Matrix n n (ZMod (p ^ m))) i j)
+      (MonoidHom.mem_ker.mp hγ)
+    simp only [Matrix.GeneralLinearGroup.map_apply, Units.val_one] at h
+    refine (toZModPow_eq_iff_dvd_sub m).mp ?_
+    rw [h, Matrix.one_apply, Matrix.one_apply]
+    split_ifs <;> simp
+  choose C hC using hentry
+  refine ⟨Matrix.of C, ?_⟩
+  ext i j
+  rw [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← hC, add_sub_cancel]
+
+end PadicInt

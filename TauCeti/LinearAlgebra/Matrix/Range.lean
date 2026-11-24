@@ -120,20 +120,19 @@ end RowRange
 
 section RightCoset
 
-variable {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+variable {n R : Type*} [DecidableEq n] [Fintype n] [CommSemiring R]
 
 /-- Precomposing a linear map out of `n → R` with `(U : Matrix n n R).mulVecLin` for `U ∈ GL n R`
 preserves its range. -/
 @[simp]
 theorem range_comp_mulVecLin_unit {M : Type*} [AddCommMonoid M] [Module R M]
     (f : (n → R) →ₗ[R] M) (U : GL n R) :
-    LinearMap.range (f ∘ₗ (↑U : Matrix n n R).mulVecLin) = LinearMap.range f := by
-  refine le_antisymm (LinearMap.range_comp_le_range _ _) ?_
-  rintro _ ⟨v, rfl⟩
-  refine ⟨(↑U⁻¹ : Matrix n n R) *ᵥ v, ?_⟩
-  have hU : (↑U : Matrix n n R) * (↑U⁻¹ : Matrix n n R) = 1 :=
-    (Units.val_mul U U⁻¹).symm.trans (by simp)
-  rw [LinearMap.comp_apply, mulVecLin_apply, mulVec_mulVec, hU, one_mulVec]
+    LinearMap.range (f ∘ₗ (↑U : Matrix n n R).mulVecLin) = LinearMap.range f :=
+  LinearMap.range_comp_of_range_eq_top f <| LinearMap.range_eq_top_of_surjective _ <|
+    Function.RightInverse.surjective (g := (↑U⁻¹ : Matrix n n R).mulVecLin) fun v ↦ by
+      have hU : (↑U : Matrix n n R) * (↑U⁻¹ : Matrix n n R) = 1 :=
+        (Units.val_mul U U⁻¹).symm.trans (by simp)
+      simp [mulVec_mulVec, hU]
 
 /-- Right-multiplying a matrix by a `GL n R` unit preserves the `R`-submodule spanned by its
 columns. -/
@@ -145,7 +144,7 @@ theorem range_mulVecLin_mul_unit {m : Type*} (B : Matrix m n R) (U : GL n R) :
 
 /-- Over a commutative domain, two nonsingular square matrices span the same column `R`-submodule if
 and only if they lie in the same right `GL n R`-coset. -/
-theorem range_mulVecLin_eq_iff [IsDomain R] {B₁ B₂ : Matrix n n R}
+theorem range_mulVecLin_eq_iff {R : Type*} [CommRing R] [IsDomain R] {B₁ B₂ : Matrix n n R}
     (h₁ : B₁.det ≠ 0) (h₂ : B₂.det ≠ 0) :
     LinearMap.range B₁.mulVecLin = LinearMap.range B₂.mulVecLin ↔
       ∃ U : GL n R, B₁ * (↑U : Matrix n n R) = B₂ := by
