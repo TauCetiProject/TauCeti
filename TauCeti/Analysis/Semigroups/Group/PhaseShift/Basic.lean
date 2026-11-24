@@ -58,18 +58,10 @@ def phaseShift (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLine
     (U.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b))
     (fun t ↦ by
       ext x
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-        StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
-      rw [U.map_smul_of_isComplexLinear hU, U.map_apply_map_neg_apply, Complex.ofReal_neg,
-        neg_mul (↑b : ℂ), neg_neg, neg_mul, Complex.exp_neg,
-        inv_smul_smul₀ (Complex.exp_ne_zero _)])
+      simp [U.map_smul_of_isComplexLinear hU, smul_smul, ← Complex.exp_add])
     (fun t ↦ by
       ext x
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-        StronglyContinuousSemigroup.phaseShift_apply_apply, toSemigroup_apply, reflect_apply]
-      rw [U.map_smul_of_isComplexLinear hU, U.map_neg_apply_map_apply, Complex.ofReal_neg,
-        neg_mul (↑b : ℂ), neg_neg, neg_mul, Complex.exp_neg,
-        smul_inv_smul₀ (Complex.exp_ne_zero _)])
+      simp [U.map_smul_of_isComplexLinear hU, smul_smul, ← Complex.exp_add])
 
 /-- The operator at real time `t` of a phase-shifted C₀-group. -/
 @[simp]

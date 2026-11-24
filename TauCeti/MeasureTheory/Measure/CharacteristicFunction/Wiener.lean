@@ -108,10 +108,12 @@ theorem tendsto_average_norm_charFun_sq_zero_iff (σ : Measure ℝ) [IsFiniteMea
   · intro h0 ξ
     have htsum : ∑' x : ℝ, σ.real {x} ^ 2 = 0 :=
       tendsto_nhds_unique (tendsto_average_norm_charFun_sq σ) h0
-    simp_rw [sq] at htsum
-    rw [← Measure.prod_real_diagonal σ σ, measureReal_eq_zero_iff (measure_ne_top _ _),
-      Measure.prod_diagonal, tsum_eq_zero_iff] at htsum
-    exact mul_self_eq_zero.mp (htsum ξ)
+    have hsum : Summable fun x : ℝ ↦ σ.real {x} ^ 2 := by
+      simpa only [sq] using (Measure.hasSum_prod_real_diagonal σ σ).summable
+    have hzero : σ.real {ξ} ^ 2 = 0 :=
+      le_antisymm (htsum ▸ hsum.le_tsum ξ fun _ _ ↦ sq_nonneg _) (sq_nonneg _)
+    exact (measureReal_eq_zero_iff (measure_ne_top _ _)).mp
+      ((pow_eq_zero_iff (by norm_num)).mp hzero)
   · intro hnull
     have htsum : ∑' ξ : ℝ, σ.real {ξ} ^ 2 = 0 := by
       simp [measureReal_def, hnull]
