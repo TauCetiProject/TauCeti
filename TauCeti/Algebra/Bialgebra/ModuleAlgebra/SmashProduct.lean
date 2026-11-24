@@ -141,7 +141,8 @@ private theorem regH_eq_reg (h : H) : μ.regH h = μ.reg (1 ⊗ₜ[R] h) := by
 
 /-- The smash product realised by operators: the image of the left regular representation
 `a ⊗ h ↦ L_a L_h`, a subalgebra of `End_R (A ⊗ H)` which evaluation at `1 ⊗ 1` identifies with
-`A ⊗ H`. -/
+`A ⊗ H`. This is an implementation detail of `SmashProduct`: it is public only because the
+instances on `SmashProduct` unfold to it, and should be accessed through the `SmashProduct` API. -/
 noncomputable def smashSubalgebra : Subalgebra R (Module.End R (A ⊗[R] H)) :=
   (LinearMap.range μ.reg).toSubalgebra ⟨1 ⊗ₜ[R] 1, by simp [reg_tmul]⟩ <| by
     rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩
@@ -160,8 +161,15 @@ noncomputable instance : Semiring (SmashProduct μ) :=
 noncomputable instance : Algebra R (SmashProduct μ) :=
   inferInstanceAs (Algebra R μ.smashSubalgebra)
 
-noncomputable instance {R H A : Type*} [CommRing R] [Semiring H] [Bialgebra R H]
+noncomputable instance {R H A : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
     [Ring A] [Algebra R A] (μ : LeftModuleAlgebra R H A) : Ring (SmashProduct μ) :=
+  letI : Neg μ.smashSubalgebra := ⟨fun f => ⟨-f, by
+    obtain ⟨x, hx⟩ := f.property
+    exact ⟨-x, by rw [map_neg, hx]⟩⟩⟩
+  letI : Ring μ.smashSubalgebra :=
+    { (inferInstance : Semiring μ.smashSubalgebra) with
+      zsmul := zsmulRec
+      neg_add_cancel := fun f => Subtype.ext (neg_add_cancel (f : Module.End R (A ⊗[R] H))) }
   inferInstanceAs (Ring μ.smashSubalgebra)
 
 /-- The underlying `R`-module of `A # H` is `A ⊗ H`. -/
@@ -176,18 +184,30 @@ private theorem coe_linearEquivTensor_symm (x : A ⊗[R] H) :
     (((linearEquivTensor μ).symm x : SmashProduct μ) : μ.smashSubalgebra).val = μ.reg x :=
   rfl
 
+/-- The product of `A # H` is the composition of operators. -/
+private theorem val_mul (x y : SmashProduct μ) :
+    ((x * y : SmashProduct μ) : μ.smashSubalgebra).val =
+      (x : μ.smashSubalgebra).val * (y : μ.smashSubalgebra).val :=
+  rfl
+
 private theorem linearEquivTensor_mul (x y : SmashProduct μ) :
     linearEquivTensor μ (x * y) = μ.reg (linearEquivTensor μ x) (linearEquivTensor μ y) := by
   obtain ⟨x', rfl⟩ := (linearEquivTensor μ).symm.surjective x
   obtain ⟨y', rfl⟩ := (linearEquivTensor μ).symm.surjective y
   have h : (linearEquivTensor μ).symm x' * (linearEquivTensor μ).symm y' =
       (linearEquivTensor μ).symm (μ.reg x' y') :=
-    Subtype.ext (μ.reg_reg x' y').symm
+    Subtype.ext <| by
+      rw [val_mul, coe_linearEquivTensor_symm, coe_linearEquivTensor_symm,
+        coe_linearEquivTensor_symm, μ.reg_reg]
   simp only [h, LinearEquiv.apply_symm_apply]
 
 /-- The element `a # h` of the smash product. -/
 noncomputable def pure (a : A) (h : H) : SmashProduct μ :=
   (linearEquivTensor μ).symm (a ⊗ₜ[R] h)
+
+private theorem val_pure (a : A) (h : H) :
+    ((pure a h : SmashProduct μ) : μ.smashSubalgebra).val = μ.reg (a ⊗ₜ[R] h) :=
+  coe_linearEquivTensor_symm _
 
 @[simp]
 theorem linearEquivTensor_pure (a : A) (h : H) :
@@ -213,8 +233,16 @@ theorem pure_mul_pure {h : H} {ι : Type*} (r : Repr R h ι) (a b : A) (l : H) :
 @[simp]
 theorem pure_one_one : pure (μ := μ) 1 1 = 1 :=
   Subtype.ext (by
-    rw [pure, coe_linearEquivTensor_symm, reg_tmul, map_one, map_one, one_mul]
+    rw [val_pure, reg_tmul, map_one, map_one, one_mul]
     exact (Subalgebra.coe_one _).symm)
+
+@[simp]
+theorem pure_zero_left (h : H) : pure (μ := μ) 0 h = 0 := by
+  simp only [← linearEquivTensor_symm_tmul, TensorProduct.zero_tmul, map_zero]
+
+@[simp]
+theorem pure_zero_right (a : A) : pure (μ := μ) a 0 = 0 := by
+  simp only [← linearEquivTensor_symm_tmul, TensorProduct.tmul_zero, map_zero]
 
 @[simp]
 theorem pure_add_left (a b : A) (h : H) : pure (μ := μ) (a + b) h = pure a h + pure b h := by
@@ -240,16 +268,25 @@ noncomputable def includeA : A →ₐ[R] SmashProduct μ :=
 noncomputable def includeH : H →ₐ[R] SmashProduct μ :=
   μ.regH.codRestrict μ.smashSubalgebra fun h => ⟨1 ⊗ₜ[R] h, (μ.regH_eq_reg h).symm⟩
 
+private theorem val_includeA (a : A) :
+    ((includeA a : SmashProduct μ) : μ.smashSubalgebra).val = regA a :=
+  AlgHom.coe_codRestrict _ _ _ a
+
+private theorem val_includeH (h : H) :
+    ((includeH h : SmashProduct μ) : μ.smashSubalgebra).val = μ.regH h :=
+  AlgHom.coe_codRestrict _ _ _ h
+
 theorem includeA_eq_pure (a : A) : includeA (μ := μ) a = pure a 1 :=
-  Subtype.ext (μ.regA_eq_reg a)
+  Subtype.ext <| by rw [val_includeA, val_pure, regA_eq_reg]
 
 theorem includeH_eq_pure (h : H) : includeH (μ := μ) h = pure 1 h :=
-  Subtype.ext (μ.regH_eq_reg h)
+  Subtype.ext <| by rw [val_includeH, val_pure, regH_eq_reg]
 
 @[simp]
 theorem includeA_mul_includeH (a : A) (h : H) :
     includeA (μ := μ) a * includeH h = pure a h :=
-  Subtype.ext (μ.reg_tmul a h).symm
+  Subtype.ext <| by
+    rw [val_mul, val_includeA, val_includeH, val_pure, reg_tmul]
 
 @[simp]
 theorem linearEquivTensor_includeA (a : A) :
@@ -303,6 +340,8 @@ theorem SmashCompatible.mul_eq_sum {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
     fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
   simp [hc h a, ← r.eq, map_sum]
 
+/-- Smash compatibility is the covariance relation in the chosen representation `ℛ R h` of
+`Δ h`. -/
 theorem smashCompatible_iff {fA : A →ₐ[R] C} {fH : H →ₐ[R] C} :
     μ.SmashCompatible fA fH ↔ ∀ h a,
       fH h * fA a = ∑ i ∈ (ℛ R h).index, fA (μ.action ((ℛ R h).left i) a) * fH ((ℛ R h).right i) :=
@@ -390,6 +429,8 @@ theorem algHom_ext {f g : SmashProduct μ →ₐ[R] C} (hA : f.comp includeA = g
     exact congr($(congr($hA a)) * $(congr($hH h)))
   | add x y hx hy => rw [map_add, map_add, hx, hy]
 
+/-- Uniqueness in the universal property: an algebra map out of `A # H` whose restrictions to
+`A` and `H` are `fA` and `fH` is `lift fA fH hc`. -/
 theorem lift_unique {fA : A →ₐ[R] C} {fH : H →ₐ[R] C} (hc : μ.SmashCompatible fA fH)
     (f : SmashProduct μ →ₐ[R] C) (hA : f.comp includeA = fA) (hH : f.comp includeH = fH) :
     f = lift fA fH hc :=
@@ -467,6 +508,7 @@ theorem map_includeH (f : Hom μ ν) (h : H) : map f (includeH h) = includeH h :
 theorem map_id : map (Hom.id μ) = AlgHom.id R (SmashProduct μ) := by
   ext <;> simp
 
+@[simp]
 theorem map_comp {E : Type*} [Semiring E] [Algebra R E] {ξ : LeftModuleAlgebra R H E}
     (g : Hom ν ξ) (f : Hom μ ν) : map (g.comp f) = (map g).comp (map f) := by
   ext <;> simp
