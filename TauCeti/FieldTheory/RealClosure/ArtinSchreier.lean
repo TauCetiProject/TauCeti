@@ -21,7 +21,8 @@ import TauCeti.FieldTheory.Separable.PerfectField
 # The Artin–Schreier theorem
 
 If an algebraically closed field `C` has finite degree greater than one over a subfield `F`, then
-`[C : F] = 2` and `F` is real closed (`TauCeti.RealClosure.finrank_eq_two_of_isAlgClosed` and
+`[C : F] = 2` and `F` is real closed
+(`TauCeti.RealClosure.finrank_eq_two_of_isAlgClosed_of_one_lt_finrank` and
 `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_of_one_lt_finrank`). Consequently a nontrivial
 automorphism of finite order of an algebraically closed field has order two and a real closed fixed
 field (`TauCeti.RealClosure.orderOf_eq_two_of_isOfFinOrder` and
@@ -51,7 +52,7 @@ in `E` and `C` is an algebraically closed quadratic extension of `E`, which is i
 
 ## Main results
 
-* `TauCeti.RealClosure.finrank_eq_two_of_isAlgClosed` and
+* `TauCeti.RealClosure.finrank_eq_two_of_isAlgClosed_of_one_lt_finrank` and
   `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_of_one_lt_finrank`: the Artin–Schreier theorem.
 * `TauCeti.RealClosure.orderOf_eq_two_of_isOfFinOrder` and
   `TauCeti.RealClosure.isRealClosed_fixedField_zpowers`: automorphisms of finite order of an
@@ -86,12 +87,11 @@ private theorem exists_pow_sub_self_eq [FiniteDimensional F C] (p : ℕ) [Fact p
   obtain ⟨x, hx⟩ := IsAlgClosed.exists_root _ hdeg
   have hx' : x ^ p - x = a • θ := by simpa [sub_eq_zero] using hx
   -- The trace commutes with `p`-th powers: both are sums over the Galois group.
-  have htr (z : C) : algebraMap F C (Algebra.trace F C (z ^ p)) =
-      algebraMap F C (Algebra.trace F C z) ^ p := by
-    simp_rw [trace_eq_sum_automorphisms, sum_pow_char, map_pow]
-  refine ⟨Algebra.trace F C x, (algebraMap F C).injective ?_⟩
-  rw [map_sub, map_pow, ← htr, ← map_sub, ← map_sub, hx', LinearMap.map_smul, hθ, smul_eq_mul,
-    mul_one]
+  have htr : Algebra.trace F C (x ^ p) = Algebra.trace F C x ^ p := (algebraMap F C).injective <| by
+    simp_rw [map_pow, trace_eq_sum_automorphisms, sum_pow_char, map_pow]
+  refine ⟨Algebra.trace F C x, ?_⟩
+  rw [← htr, ← map_sub, hx']
+  simp [hθ]
 
 /-- An algebraically closed field `C` does not have degree `p` over a subfield `F` of
 characteristic `p`. -/
@@ -109,15 +109,16 @@ private theorem finrank_ne_of_charP (p : ℕ) [hp : Fact p.Prime] [CharP F p] : 
   have hgy : g y = y + 1 := by rw [← hy, add_sub_cancel]
   -- So `y ^ p - y` is fixed by `g`, hence lies in `F`, and so it is `c ^ p - c` with `c` in `F`.
   have hmem : y ^ p - y ∈ (⊥ : IntermediateField F C) := by
-    rw [← IsGalois.fixedField_top, ← eq_top_iff.2 fun σ _ ↦ hg σ, mem_fixedField_zpowers_iff,
-      map_sub, map_pow, hgy, add_pow_char, one_pow, add_sub_add_right_eq_sub]
+    rw [← IsGalois.fixedField_top, ← eq_top_iff.2 fun σ _ ↦ hg σ, mem_fixedField_zpowers_iff]
+    simp [hgy, add_pow_char]
   obtain ⟨a, ha⟩ := mem_bot.1 hmem
   obtain ⟨c, hc⟩ := exists_pow_sub_self_eq (C := C) p a
   -- Then `z = y - c` is fixed by Frobenius, so it lies in the prime field and is fixed by `g`.
   set z := y - algebraMap F C c
   have hz : z ^ Fintype.card (ZMod p) = z := by
-    rw [ZMod.card, ← sub_eq_zero, sub_pow_char, sub_sub_sub_comm, ← map_pow, ← map_sub, hc, ha,
-      sub_self]
+    have hc' : algebraMap F C c ^ p - algebraMap F C c = algebraMap F C a := by simp [← hc]
+    rw [ZMod.card, sub_pow_char]
+    linear_combination -ha - hc'
   let := ZMod.algebra C p
   obtain ⟨k, hk⟩ := (FiniteField.pow_card_eq_self_iff_mem_range_algebraMap z).1 hz
   have hgz : g z = z := by
@@ -125,8 +126,7 @@ private theorem finrank_ne_of_charP (p : ℕ) [hp : Fact p.Prime] [CharP F p] : 
     exact DFunLike.congr_fun (RingHom.ext_zmod ((g : C →+* C).comp (algebraMap (ZMod p) C))
       (algebraMap (ZMod p) C)) k
   -- But `g z = z + 1`.
-  rw [map_sub, AlgEquiv.commutes, hgy, add_sub_right_comm, add_eq_left] at hgz
-  exact one_ne_zero hgz
+  simp [z, hgy] at hgz
 
 /-- If an algebraically closed field `C` has prime degree `ℓ` over a subfield `F` in which `ℓ` is
 invertible, then `F` contains a primitive `ℓ`-th root of unity. -/
@@ -205,7 +205,8 @@ private theorem finrank_eq_one_of_isSquare_neg_one [FiniteDimensional F C]
 
 /-- **The Artin–Schreier theorem.** If an algebraically closed field `C` has finite degree greater
 than one over a subfield `F`, then this degree is two. -/
-theorem finrank_eq_two_of_isAlgClosed (h : 1 < finrank F C) : finrank F C = 2 := by
+theorem finrank_eq_two_of_isAlgClosed_of_one_lt_finrank (h : 1 < finrank F C) :
+    finrank F C = 2 := by
   have : FiniteDimensional F C := Module.finite_of_finrank_pos (by omega)
   obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : C) two_pos
   -- Over `F(i)`, in which `-1` is a square, `C` has degree one.
@@ -223,7 +224,7 @@ theorem finrank_eq_two_of_isAlgClosed (h : 1 < finrank F C) : finrank F C = 2 :=
 /-- **The Artin–Schreier theorem.** A field over which an algebraically closed field has finite
 degree greater than one is real closed. -/
 theorem isRealClosed_of_isAlgClosed_of_one_lt_finrank (h : 1 < finrank F C) : IsRealClosed F :=
-  have : Algebra.IsQuadraticExtension F C := ⟨finrank_eq_two_of_isAlgClosed h⟩
+  have : Algebra.IsQuadraticExtension F C := ⟨finrank_eq_two_of_isAlgClosed_of_one_lt_finrank h⟩
   isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := C)
 
 omit [IsAlgClosed C] in
@@ -243,7 +244,7 @@ theorem orderOf_eq_two_of_isOfFinOrder {k : Type*} [Field k] [Algebra k C] {σ :
     (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) : orderOf σ = 2 := by
   have : Finite (Subgroup.zpowers σ) := finite_zpowers.2 hσ
   rw [← finrank_fixedField_zpowers_eq_orderOf]
-  exact finrank_eq_two_of_isAlgClosed (one_lt_finrank_fixedField_zpowers hσ h1)
+  exact finrank_eq_two_of_isAlgClosed_of_one_lt_finrank (one_lt_finrank_fixedField_zpowers hσ h1)
 
 /-- The fixed field of a nontrivial automorphism of finite order of an algebraically closed field is
 real closed. -/

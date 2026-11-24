@@ -38,6 +38,6 @@ theorem IsSemireal.exists_linearOrder {K : Type*} [Field K] [IsSemireal K] :
   exact ⟨o, ho⟩
 
 /-- A semireal field is formally real: a sum of squares vanishes only when every term does. -/
-theorem IsSemireal.isFormallyReal {K : Type*} [Field K] [IsSemireal K] : IsFormallyReal K := by
+instance IsSemireal.isFormallyReal {K : Type*} [Field K] [IsSemireal K] : IsFormallyReal K := by
   obtain ⟨o, _⟩ := IsSemireal.exists_linearOrder (K := K)
   infer_instance

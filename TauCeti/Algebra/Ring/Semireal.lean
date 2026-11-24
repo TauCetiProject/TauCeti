@@ -30,8 +30,9 @@ instance {R : Type*} [AddGroup R] [One R] [Mul R] [IsSemireal R] :
 end TauCeti
 
 /-- A ring homomorphism sends sums of squares to sums of squares. -/
-theorem IsSumSq.map {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
-    [FunLike F R S] [RingHomClass F R S] (f : F) {s : R} (hs : IsSumSq s) : IsSumSq (f s) := by
+theorem IsSumSq.map {R S F : Type*} [NonUnitalNonAssocSemiring R]
+    [NonUnitalNonAssocSemiring S] [FunLike F R S] [NonUnitalRingHomClass F R S] (f : F)
+    {s : R} (hs : IsSumSq s) : IsSumSq (f s) := by
   induction hs with
   | zero => simp
   | sq_add a _ ih => simpa using IsSumSq.sq_add (f a) ih

@@ -26,7 +26,8 @@ to be applied to absolute Galois groups.
 
 ## Main results
 
-* `Field.absoluteGaloisGroup.orderOf_eq_two`: a nontrivial element of finite order has order two.
+* `Field.absoluteGaloisGroup.orderOf_eq_two_of_isOfFinOrder`: a nontrivial element of finite order
+  has order two.
 * `Field.absoluteGaloisGroup.isFormallyReal_of_isOfFinOrder`: if there is one, the field is
   formally real.
 
@@ -48,8 +49,8 @@ variable {k : Type*} [Field k]
 
 /-- **Artin–Schreier.** A nontrivial element of finite order of the absolute Galois group of a field
 has order two. -/
-theorem orderOf_eq_two (g : absoluteGaloisGroup k) (hg : IsOfFinOrder g) (h1 : g ≠ 1) :
-    orderOf g = 2 :=
+theorem orderOf_eq_two_of_isOfFinOrder (g : absoluteGaloisGroup k) (hg : IsOfFinOrder g)
+    (h1 : g ≠ 1) : orderOf g = 2 :=
   -- `absoluteGaloisGroup k` is by definition the group of `k`-automorphisms of
   -- `AlgebraicClosure k`, with the same multiplication.
   TauCeti.RealClosure.orderOf_eq_two_of_isOfFinOrder (C := AlgebraicClosure k) hg h1
@@ -58,9 +59,12 @@ theorem orderOf_eq_two (g : absoluteGaloisGroup k) (hg : IsOfFinOrder g) (h1 : g
 finite order, then `k` is formally real. -/
 theorem isFormallyReal_of_isOfFinOrder (g : absoluteGaloisGroup k) (hg : IsOfFinOrder g)
     (h1 : g ≠ 1) : IsFormallyReal k := by
-  -- `k` embeds in the real closed field fixed by `g`.
-  have := TauCeti.RealClosure.isRealClosed_fixedField_zpowers (C := AlgebraicClosure k) hg h1
-  have : IsSemireal k := .of_ringHom (algebraMap k (fixedField (Subgroup.zpowers g)))
-  exact IsSemireal.isFormallyReal
+  -- `absoluteGaloisGroup k` is by definition the group of `k`-automorphisms of
+  -- `AlgebraicClosure k`, with the same multiplication.
+  let σ : AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k := g
+  -- `k` embeds in the real closed field fixed by `σ`.
+  have := TauCeti.RealClosure.isRealClosed_fixedField_zpowers (σ := σ) hg h1
+  have : IsSemireal k := .of_ringHom (algebraMap k (fixedField (Subgroup.zpowers σ)))
+  infer_instance
 
 end Field.absoluteGaloisGroup
