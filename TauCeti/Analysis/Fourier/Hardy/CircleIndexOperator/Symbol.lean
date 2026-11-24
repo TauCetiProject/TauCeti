@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator
+public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fredholm.FiniteRank
@@ -23,8 +23,9 @@ The samples of the full Hardy symbol at `2πn` are the indicator of the positive
 The corresponding multiplier is the projection onto the strictly positive Fourier modes.
 For every cutoff the full circle index symbol sends mode `n` to mode `n + 1` for `n > 0`
 and fixes the other modes. The operator `circleFourierIndexSymbolOperator` realizes this action
-on the Fourier basis. Its difference from the original operator is supported on the constant
-input mode, and the finite-rank perturbation preserves the index `-1`.
+on the Fourier basis. Its output coefficient at frequency `1` vanishes for every input.
+Its difference from the original operator is supported on the constant input mode, and the
+finite-rank perturbation preserves the index `-1`.
 
 The circle projection and operator come from Atiyah–Singer, *The Index of Elliptic Operators: I*,
 §8, pp. 525–526. The homogeneous branch arguments are adapted from `PeriodicFourierSymbol.lean`
@@ -220,7 +221,7 @@ theorem memℓp_circleHardyProjectionSample (ρ : FrequencyCutoff (CoordinateSpa
     simpa using norm_indicator_le_norm_self (s := Set.Ioi (0 : ℤ)) (1 : ℤ → ℂ) n
 
 /-- The positive Fourier projection is the diagonal multiplier with the full symbol samples. -/
-theorem projection_Ioi_eq_diagonal_circleHardyProjectionSample
+theorem fourierBasis_projection_Ioi_eq_diagonal_circleHardyProjectionSample
     (ρ : FrequencyCutoff (CoordinateSpace 1)) :
     Q = (fourierBasis (T := 1)).diagonal
       ⟨circleHardyProjectionSample ρ, memℓp_circleHardyProjectionSample ρ⟩ := by
@@ -264,8 +265,19 @@ theorem circleFourierIndexSymbolOperator_fourierLp (n : ℤ) :
   rw [circleFourierIndexSymbolOperator_apply, fourierBasis_projection_fourierLp]
   by_cases hn : 0 < n <;> simp [hn, fourierLp_smul_fourierLp, add_comm 1 n]
 
+/-- On any circle `L²` input, the sampled operator preserves nonpositive Fourier coefficients
+and shifts the positive coefficients up by one. The output coefficient at frequency `1` is zero. -/
+@[simp]
+theorem fourierCoeff_circleFourierIndexSymbolOperator (f : L²) (n : ℤ) :
+    fourierCoeff (circleFourierIndexSymbolOperator f) n =
+      if n ≤ 0 then fourierCoeff f n else if n = 1 then 0 else fourierCoeff f (n - 1) := by
+  rw [circleFourierIndexSymbolOperator_apply, ← inner_fourierBasis_left _ n]
+  simp only [inner_add_right, inner_sub_right, inner_fourierBasis_left, fourierCoeff_fourierLp_smul,
+    fourierCoeff_fourierBasis_projection, Set.indicator_apply, Set.mem_Ioi]
+  split_ifs <;> first | omega | simp
+
 /-- The Hardy projection and the strictly positive projection differ by the constant mode. -/
-theorem hardySubmodule_starProjection_sub_projection_Ioi :
+theorem hardySubmodule_starProjection_sub_fourierBasis_projection_Ioi :
     hardySubmodule.starProjection - Q =
       InnerProductSpace.rankOne ℂ (fourierBasis (T := 1) 0) (fourierBasis (T := 1) 0) := by
   ext1 f
@@ -299,7 +311,7 @@ theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator :
         ContinuousLinearMap.id_apply, M, Lp.multiplicationOperator_apply]
       abel
     _ = _ := by
-      rw [hardySubmodule_starProjection_sub_projection_Ioi,
+      rw [hardySubmodule_starProjection_sub_fourierBasis_projection_Ioi,
         InnerProductSpace.comp_rankOne]
       simp only [sub_apply, M, Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis,
         add_zero, ContinuousLinearMap.id_apply]
@@ -311,17 +323,6 @@ theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply (f
       fourierCoeff f 0 • (fourierBasis (T := 1) 1 - fourierBasis (T := 1) 0) := by
   rw [circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator,
     InnerProductSpace.rankOne_apply, inner_fourierBasis_left]
-
-/-- The original circle operator agrees with the sampled symbol on every nonconstant mode and
-sends the constant mode to the first mode. -/
-theorem circleFourierIndexOperator_fourierBasis_eq_fourierLp_add (n : ℤ) :
-    circleFourierIndexOperator (fourierBasis (T := 1) n) =
-      fourierLp (T := 1) 2 (if 0 < n then n + 1 else n) +
-        (if n = 0 then fourierBasis (T := 1) 1 - fourierBasis (T := 1) 0 else 0) := by
-  have h := circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator_apply (fourierBasis n)
-  rw [sub_apply, sub_eq_iff_eq_add'] at h
-  simpa only [coe_fourierBasis, circleFourierIndexSymbolOperator_fourierLp, fourierCoeff_fourierLp,
-    eq_comm (a := (0 : ℤ)) (b := n), ite_smul, one_smul, zero_smul] using h
 
 /-- The difference of the original and sampled circle index operators has complex rank one. -/
 theorem rank_circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator :
