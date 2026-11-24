@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Liouville.Collar
 public import TauCeti.Geometry.Symplectic.Liouville.Graph.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Reeb
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The Liouville graph as a level set
@@ -35,8 +34,8 @@ is `ψ_t(ι s)` for exactly one `s ∈ S` and one `t > 0`, and the **defining fu
 
 where `r` is the radial coordinate of the end. Its level `1` is exactly `Σ_f`
 (`TauCeti.IsLiouvilleCompletion.liouvilleGraphFunction_eq_one_iff`). It is smooth on `M \ W`, since
-the Liouville flow map `(t, s) ↦ ψ_t(ι s)` is a local diffeomorphism, injective on `(0, ∞) × S`
-with image `M \ W`, so that its inverse is smooth
+the Liouville flow map `(t, s) ↦ ψ_t(ι s)` is a diffeomorphism from `(0, ∞) × S` onto `M \ W`
+(`TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph`), whose inverse reads off `s`
 (`TauCeti.IsLiouvilleCompletion.contMDiffAt_liouvilleGraphFunction`). It is homogeneous of degree
 one along the Liouville flow, `F(ψ_τ x) = e^τ F(x)`, so `dF(Z) = F`
 (`TauCeti.IsLiouvilleCompletion.mvfderiv_liouvilleGraphFunction_apply`) and `α(X_F) = -F`. On
@@ -45,9 +44,12 @@ one along the Liouville flow, `F(ψ_τ x) = e^τ F(x)`, so `dF(Z) = F`
 
 `dj(R_{j^* α}) = -X_F`
 
-(`TauCeti.IsLiouvilleCompletion.mfderiv_liouvilleGraph_reebVectorField`). So `j` carries the Reeb
-orbits of `f ι^* α`, run backwards, to the orbits of `X_F` on `Σ_f`, and when `S` is compact the
-periodic orbits correspond with the same periods
+(`TauCeti.IsLiouvilleCompletion.mfderiv_liouvilleGraph_reebVectorField`), where `j^* α` is a
+contact form (`TauCeti.IsLiouvilleCompletion.isContactForm_mpullback_liouvilleGraph`). So `j`
+carries the Reeb orbits of `f ι^* α`, run backwards, to the orbits of `X_F` on `Σ_f`, which are
+determined by their initial point since `F` is smooth near `Σ_f`
+(`TauCeti.IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem`), and
+when `S` is compact the periodic orbits correspond with the same periods
 (`TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_liouvilleGraphFunction_iff`).
 For constant `f = c` the defining function is `r / c` and this is the correspondence on the levels
 of the radial coordinate
@@ -119,40 +121,14 @@ namespace IsLiouvilleCompletion
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I (⊤ : ℕ∞) M] [T2Space M]
   {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1}
 
-/-- The Liouville flow out of an injective parametrization of the boundary is injective on
-`(0, ∞) × S`. -/
-private theorem injOn_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W) (hinj : Injective ι) :
-    InjOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) := by
-  rintro ⟨t, s⟩ ⟨ht, -⟩ ⟨t', s'⟩ ⟨ht', -⟩ hq
-  have := (h.bijOn_flowOf_Ioi_prod_frontier hZ).injOn (x₁ := (t, ι s)) (x₂ := (t', ι s'))
-    ⟨ht, hιW s⟩ ⟨ht', hιW s'⟩ hq
-  simp only [Prod.mk.injEq] at this ⊢
-  exact ⟨this.1, hinj this.2⟩
-
-/-- The Liouville flow out of a parametrization of the boundary maps `(0, ∞) × S` onto the
-complement of the Liouville domain. -/
-private theorem image_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W)
-    (hWι : frontier W ⊆ range ι) :
-    (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) '' (Ioi 0 ×ˢ univ) = Wᶜ := by
-  rw [← (h.bijOn_flowOf_Ioi_prod_frontier hZ).image_eq]
-  ext x
-  constructor
-  · rintro ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩
-    exact ⟨(t, ι s), ⟨ht, hιW s⟩, rfl⟩
-  · rintro ⟨⟨t, y⟩, ⟨ht, hy⟩, rfl⟩
-    obtain ⟨s, rfl⟩ := hWι hy
-    exact ⟨(t, s), ⟨ht, mem_univ s⟩, rfl⟩
-
 /-- **The defining function of the Liouville graph on the cylindrical end.** At the point
 `ψ_t(ι s)`, `t > 0`, the defining function of the Liouville graph of `f` is `e^t / f(s)`. -/
 theorem liouvilleGraphFunction_flowOf [Nonempty S] (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W) (hinj : Injective ι)
     {t : ℝ} (ht : 0 < t) (s : S) :
     liouvilleGraphFunction Z W ι f (flowOf Z t (ι s)) = Real.exp t / f s := by
-  have hp := (h.injOn_flowOf_comp hZ hιW hinj).leftInvOn_invFunOn
-    (show (t, s) ∈ Ioi 0 ×ˢ (univ : Set S) from ⟨ht, mem_univ s⟩)
+  have hp := (h.injective_flowOf_comp hZ (h.isCompleteVectorField hZ) hinj hιW).injOn
+    |>.leftInvOn_invFunOn (show (t, s) ∈ Ioi 0 ×ˢ (univ : Set S) from ⟨ht, mem_univ s⟩)
   rw [liouvilleGraphFunction_def, h.liouvilleRadialCoordinate_flowOf hZ (hιW s) ht.le]
   simp only at hp
   rw [hp]
@@ -179,65 +155,67 @@ parametrization of the boundary of the Liouville domain and `f > 1`. A point lie
 of the defining function of the Liouville graph of `f` exactly when it is a point
 `ψ_{log f(s)}(ι s)` of the graph. -/
 theorem liouvilleGraphFunction_eq_one_iff [Nonempty S] (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W) (hinj : Injective ι)
-    (hWι : frontier W ⊆ range ι) (hf : ∀ s, 1 < f s) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hf : ∀ s, 1 < f s) :
     liouvilleGraphFunction Z W ι f x = 1 ↔ x ∈ range (liouvilleGraph Z ι f) := by
+  have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hxW : x ∈ Wᶜ := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf hxW).ne hx
-    rw [← h.image_flowOf_comp hZ hιW hWι] at hxW
+    rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
     obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
     have hfs : 0 < f s := one_pos.trans (hf s)
-    rw [h.liouvilleGraphFunction_flowOf hZ hιW hinj ht, div_eq_one_iff_eq hfs.ne'] at hx
+    rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht, div_eq_one_iff_eq hfs.ne'] at hx
     exact ⟨s, by rw [liouvilleGraph_apply, ← hx, Real.log_exp]⟩
   · rintro ⟨s, rfl⟩
-    exact h.liouvilleGraphFunction_liouvilleGraph hZ hιW hinj (hf s)
+    exact h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf s)
 
 /-- **The defining function is homogeneous along the Liouville flow.** On the cylindrical end,
 the Liouville flow multiplies the defining function of the Liouville graph by `e^τ`:
 `F(ψ_τ x) = e^τ F(x)` whenever `x` and `ψ_τ x` both lie outside the Liouville domain. -/
 theorem liouvilleGraphFunction_flowOf_eq_exp_mul [Nonempty S] (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W) (hinj : Injective ι)
-    (hWι : frontier W ⊆ range ι) (hx : x ∉ W) {τ : ℝ} (hτ : flowOf Z τ x ∉ W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hx : x ∉ W) {τ : ℝ} (hτ : flowOf Z τ x ∉ W) :
     liouvilleGraphFunction Z W ι f (flowOf Z τ x) =
       Real.exp τ * liouvilleGraphFunction Z W ι f x := by
+  have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   have hxW : x ∈ Wᶜ := hx
-  rw [← h.image_flowOf_comp hZ hιW hWι] at hxW
+  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
   obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
   rw [h.flowOf_flowOf hZ] at hτ ⊢
   have hτt : 0 < τ + t :=
-    not_le.1 fun hle ↦ hτ ((h.flowOf_mem_iff_of_mem_frontier hZ (hιW s)).2 hle)
-  rw [h.liouvilleGraphFunction_flowOf hZ hιW hinj hτt,
-    h.liouvilleGraphFunction_flowOf hZ hιW hinj ht, Real.exp_add, mul_div_assoc]
+    not_le.1 fun hle ↦ hτ ((h.flowOf_mem_iff_of_mem_frontier hZ (hιW' s)).2 hle)
+  rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj hτt,
+    h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht, Real.exp_add, mul_div_assoc]
 
 section Smooth
 
-variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S]
-  [ChartedSpace H' S] [IsManifold J (⊤ : ℕ∞) S]
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
+  [IsManifold J (⊤ : ℕ∞) S]
 
 /-- **The defining function of the Liouville graph is smooth on the cylindrical end.** Let
 `ι : S → M` be a smooth injective immersion onto the frontier of the Liouville domain, from a
 manifold of one dimension less, and let `f` be smooth and nowhere zero. Then the defining function
-of the Liouville graph of `f` is smooth at every point outside the Liouville domain: there the
-Liouville flow map `(t, s) ↦ ψ_t(ι s)` has a smooth inverse. -/
+of the Liouville graph of `f` is smooth at every point outside the Liouville domain: there its
+`S`-coordinate is read off by the inverse of the diffeomorphism
+`TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph` from `(0, ∞) × S` onto `M \ W`. -/
 theorem contMDiffAt_liouvilleGraphFunction [Nonempty S] (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
-    (hιW : ∀ s, ι s ∈ frontier W) (hιs : ∀ s, Injective (mfderiv J I ι s))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hinj : Injective ι) (hWι : frontier W ⊆ range ι)
-    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
     ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleGraphFunction Z W ι f) x := by
-  have hZα : (mextDeriv α.val).interior Z = α.val := by rw [h.mextDeriv_eq]; exact hZ
-  -- The Liouville flow map is a local diffeomorphism, injective on `(0, ∞) × S` with image
-  -- `Wᶜ`, so its inverse there is smooth.
-  have hloc : IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I (⊤ : ℕ∞)
-      (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) := fun q ↦
-    isLocalDiffeomorphAt_flowOf_comp (h.contMDiff_of_interior_eq hZ) hι hdim hZα
-      (h.isContactForm_mpullback hZ hι hιW hιs hdim)
-      ((h.isCompleteVectorField hZ).mem_flowDomain _ _)
-  have hp := hloc.contMDiffOn_invFunOn (isOpen_Ioi.prod isOpen_univ)
-    (h.injOn_flowOf_comp hZ hιW hinj)
-  rw [h.image_flowOf_comp hZ hιW hWι] at hp
-  have hpx := hp.contMDiffAt (h.isClosed.isOpen_compl.mem_nhds hx)
+  -- The `S`-coordinate of the defining function is that of the inverse of the diffeomorphism
+  -- `(t, s) ↦ ψ_t(ι s)` from `(0, ∞) × S` onto `Wᶜ`, which is smooth there.
+  have hF : liouvilleGraphFunction Z W ι f = fun y ↦ liouvilleRadialCoordinate Z W y /
+      f ((h.cylindricalEndPartialDiffeomorph hZ hι hιs hinj hιW hdim.symm).symm y).2 := by
+    rw [coe_cylindricalEndPartialDiffeomorph_symm]
+    exact funext liouvilleGraphFunction_def
+  rw [hF]
+  set Φ := h.cylindricalEndPartialDiffeomorph hZ hι hιs hinj hιW hdim.symm
+  have hxt : x ∈ Φ.target := by rwa [cylindricalEndPartialDiffeomorph_target]
+  have hpx : ContMDiffAt I (𝓘(ℝ).prod J) (⊤ : ℕ∞) Φ.symm x :=
+    Φ.symm.contMDiffOn.contMDiffAt (Φ.symm.open_source.mem_nhds hxt)
   exact (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).div₀
     ((hf _).comp x (contMDiffAt_snd.comp x hpx)) (hf₀ _)
 
@@ -246,26 +224,27 @@ domain, `dF(Z) = F` for the defining function `F` of the Liouville graph of `f`:
 infinitesimal form of `F(ψ_τ x) = e^τ F(x)`. -/
 theorem mvfderiv_liouvilleGraphFunction_apply [Nonempty S] (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
-    (hιW : ∀ s, ι s ∈ frontier W) (hιs : ∀ s, Injective (mfderiv J I ι s))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hinj : Injective ι) (hWι : frontier W ⊆ range ι)
-    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
     mvfderiv I (liouvilleGraphFunction Z W ι f) x (Z x) = liouvilleGraphFunction Z W ι f x := by
   set F := liouvilleGraphFunction Z W ι f
   have hF : MDifferentiableAt I 𝓘(ℝ) F (flowOf Z 0 x) := by
     rw [flowOf_zero Z]
-    exact (h.contMDiffAt_liouvilleGraphFunction hZ hι hιW hιs hdim hinj hWι hf hf₀
+    exact (h.contMDiffAt_liouvilleGraphFunction hZ hι hιs hinj hιW hdim hf hf₀
       hx).mdifferentiableAt (by simp)
   have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
     ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hF
   rw [flowOf_zero Z] at hcurve
   -- Along the trajectory `x = ψ_t(ι s)`, the flow stays outside `W` for times `τ > -t`.
   have hxW : x ∈ Wᶜ := hx
-  rw [← h.image_flowOf_comp hZ hιW hWι] at hxW
+  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
   obtain ⟨⟨t, s⟩, ⟨ht, -⟩, hts⟩ := hxW
   have heq : (F ∘ fun τ ↦ flowOf Z τ x) =ᶠ[𝓝 0] fun τ ↦ Real.exp τ * F x := by
     filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 (mem_Ioi.1 ht))] with τ hτ
-    refine h.liouvilleGraphFunction_flowOf_eq_exp_mul hZ hιW hinj hWι hx ?_
-    rw [← hts, h.flowOf_flowOf hZ, h.flowOf_mem_iff_of_mem_frontier hZ (hιW s), not_le]
+    refine h.liouvilleGraphFunction_flowOf_eq_exp_mul hZ hinj hιW hx ?_
+    rw [← hts, h.flowOf_flowOf hZ,
+      h.flowOf_mem_iff_of_mem_frontier hZ (range_subset_iff.1 hιW.le s), not_le]
     linarith [mem_Ioi.1 hτ]
   refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
   simpa using (Real.hasDerivAt_exp 0).mul_const (F x)
@@ -275,10 +254,9 @@ primitive takes the value `-F` on the Hamiltonian vector field `X_F` of the defi
 of the Liouville graph: `α(X_F) = ω(Z, X_F) = -dF(Z) = -F`. -/
 theorem apply_hamiltonianVectorField_liouvilleGraphFunction [Nonempty S]
     (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
-    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
-    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
-    (hinj : Injective ι) (hWι : frontier W ⊆ range ι) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
-    (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
+    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hinj : Injective ι) (hιW : range ι = frontier W) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
     α.val x ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x] =
       -liouvilleGraphFunction Z W ι f x := by
   have hα : α.val x ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x] =
@@ -286,7 +264,7 @@ theorem apply_hamiltonianVectorField_liouvilleGraphFunction [Nonempty S]
         (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x) := by
     rw [← hZ, RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
   rw [hα, SmoothBundleForm.eval₂_swap, h.isNondegenerate.eval₂_hamiltonianVectorField,
-    h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιW hιs hdim hinj hWι hf hf₀ hx]
+    h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιs hinj hιW hdim hf hf₀ hx]
 
 /-- **The Liouville graph is a level of its defining function, infinitesimally.** Let `ι` be a
 smooth injective immersion onto the frontier of the Liouville domain, from a manifold of one
@@ -294,60 +272,31 @@ dimension less, and `f > 1` smooth. The image of the differential of the Liouvil
 `f` at `s` is the kernel of the differential of its defining function at `j(s)`. -/
 theorem range_mfderiv_liouvilleGraph [Nonempty S] (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
-    (hιW : ∀ s, ι s ∈ frontier W) (hιs : ∀ s, Injective (mfderiv J I ι s))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hinj : Injective ι) (hWι : frontier W ⊆ range ι)
-    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf1 : ∀ s, 1 < f s) (s : S) :
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf1 : ∀ s, 1 < f s) (s : S) :
     (mfderiv J I (liouvilleGraph Z ι f) s).range =
       (mvfderiv I (liouvilleGraphFunction Z W ι f) (liouvilleGraph Z ι f s)).ker := by
-  set F := liouvilleGraphFunction Z W ι f
-  set j := liouvilleGraph Z ι f
+  have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   have hf₀ : ∀ s, f s ≠ 0 := fun s ↦ (one_pos.trans (hf1 s)).ne'
   have hZs := h.contMDiff_of_interior_eq hZ
   have hc := h.isCompleteVectorField hZ
-  have hx : j s ∉ W := h.liouvilleGraph_notMem hZ (hc.mem_flowDomain _ _) (hιW s).2 (hf1 s)
-  have hFx : MDifferentiableAt I 𝓘(ℝ) F (j s) :=
-    (h.contMDiffAt_liouvilleGraphFunction hZ hι hιW hιs hdim hinj hWι hf hf₀
-      hx).mdifferentiableAt (by simp)
-  have hg : MDifferentiableAt J I j s :=
-    (contMDiff_liouvilleGraph le_top hZs hc hι hf hf₀ s).mdifferentiableAt (by simp)
-  -- `F ∘ j` is the constant `1`, so the image of the differential lies in `ker dF`.
-  have hle : (mfderiv J I j s).range ≤ (mvfderiv I F (j s)).ker := by
-    rintro _ ⟨w, rfl⟩
-    have hconst : F ∘ j = fun _ ↦ 1 :=
-      funext fun s' ↦ h.liouvilleGraphFunction_liouvilleGraph hZ hιW hinj (hf1 s')
-    have hcomp := mfderiv_comp s hFx hg
-    rw [hconst, mfderiv_const] at hcomp
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply]
-    exact (congrArg (· w) hcomp).symm
-  -- Both sides have dimension `dim E - 1`: `dF(Z) = F = 1` does not vanish.
-  have hne : (mvfderiv I F (j s) : TangentSpace I (j s) →ₗ[ℝ] ℝ) ≠ 0 := fun h0 ↦ by
-    have hZx := h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιW hιs hdim hinj hWι hf hf₀ hx
-    rw [← ContinuousLinearMap.coe_coe, h0, LinearMap.zero_apply,
-      h.liouvilleGraphFunction_liouvilleGraph hZ hιW hinj (hf1 s)] at hZx
-    exact zero_ne_one hZx
-  refine Submodule.eq_of_le_of_finrank_eq hle ?_
-  have hker := Module.Dual.finrank_ker_add_one_of_ne_zero hne
-  rw [LinearMap.finrank_range_of_inj (injective_mfderiv_liouvilleGraph (hZs.of_le (by simp)) hc
-    ((hι s).mdifferentiableAt (by simp)) ((hf s).mdifferentiableAt (by simp)) (hf₀ s) (hιs s)
-    (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW))]
-  exact Nat.add_right_cancel (hdim.trans hker.symm)
-
-omit [FiniteDimensional ℝ E'] [J.Boundaryless] in
-/-- The restriction `j^* α` of the primitive to the Liouville graph `j` is a contact form. -/
-private theorem isContactForm_mpullback_liouvilleGraph (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
-    (hιW : ∀ s, ι s ∈ frontier W) (hιs : ∀ s, Injective (mfderiv J I ι s))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
-    (hf₀ : ∀ s, f s ≠ 0) :
-    (SmoothForm.mpullback (liouvilleGraph Z ι f) (contMDiff_liouvilleGraph le_top
-      (h.contMDiff_of_interior_eq hZ) (h.isCompleteVectorField hZ) hι hf hf₀) α).IsContactForm := by
-  have hZs := h.contMDiff_of_interior_eq hZ
-  have hc := h.isCompleteVectorField hZ
-  exact (h.isRestrictedContactType_liouvilleGraph hZ hc (hι.mdifferentiable (by simp)) hιs hιW
-    (hf.mdifferentiable (by simp)) hf₀).isContactType.isContactForm_mpullback h.isNondegenerate _
-    (fun s ↦ injective_mfderiv_liouvilleGraph (hZs.of_le (by simp)) hc
+  have hx : liouvilleGraph Z ι f s ∉ W :=
+    h.liouvilleGraph_notMem hZ (hc.mem_flowDomain _ _) (hιW' s).2 (hf1 s)
+  -- `F ∘ j` is the constant `1`, and `dF(Z) = F = 1` does not vanish.
+  have hreg : IsRegularPoint I 𝓘(ℝ) (liouvilleGraphFunction Z W ι f) (liouvilleGraph Z ι f s) :=
+    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ by
+      have hZx := h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιs hinj hιW hdim hf hf₀ hx
+      rw [h0, zero_apply, h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 s)] at hZx
+      exact zero_ne_one hZx
+  rw [ker_mvfderiv]
+  exact hreg.range_mfderiv_eq_ker_mfderiv
+    (Filter.Eventually.of_forall fun s' ↦
+      h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 s'))
+    (injective_mfderiv_liouvilleGraph (hZs.of_le (by simp)) hc
       ((hι s).mdifferentiableAt (by simp)) ((hf s).mdifferentiableAt (by simp)) (hf₀ s) (hιs s)
-      (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW)) hdim
+      (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW'))
+    (by rwa [Module.finrank_self])
 
 /-- **The Reeb field of the Liouville graph is minus the field of its defining function.** Let `ι`
 be a smooth injective immersion onto the frontier of the Liouville domain, from a manifold of one
@@ -356,32 +305,32 @@ Reeb vector field of the contact form `j^* α`, which is `f ι^* α`, to `-X_F` 
 is the defining function of the graph. -/
 theorem mfderiv_liouvilleGraph_reebVectorField [Nonempty S] (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
-    (hιW : ∀ s, ι s ∈ frontier W) (hιs : ∀ s, Injective (mfderiv J I ι s))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hinj : Injective ι) (hWι : frontier W ⊆ range ι)
-    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf1 : ∀ s, 1 < f s) (s : S) :
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+    (hf1 : ∀ s, 1 < f s) (s : S) :
     mfderiv J I (liouvilleGraph Z ι f) s
-        ((SmoothForm.mpullback (liouvilleGraph Z ι f) (contMDiff_liouvilleGraph le_top
-          (h.contMDiff_of_interior_eq hZ) (h.isCompleteVectorField hZ) hι hf
-          fun s ↦ (one_pos.trans (hf1 s)).ne') α).reebVectorField s) =
+        ((SmoothForm.mpullback (liouvilleGraph Z ι f)
+          (h.contMDiff_liouvilleGraph hZ hι hf fun s ↦ (one_pos.trans (hf1 s)).ne')
+          α).reebVectorField s) =
       -ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) (liouvilleGraph Z ι f s) := by
+  have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   have hf₀ : ∀ s, f s ≠ 0 := fun s ↦ (one_pos.trans (hf1 s)).ne'
-  have hj := contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
-    (h.isCompleteVectorField hZ) hι hf hf₀
-  have hα₀ := h.isContactForm_mpullback_liouvilleGraph hZ hι hιW hιs hdim hf hf₀
+  have hα₀ := h.isContactForm_mpullback_liouvilleGraph hZ hι hιW' hιs hdim hf hf₀
   have hx : liouvilleGraph Z ι f s ∉ W := h.liouvilleGraph_notMem hZ
-    ((h.isCompleteVectorField hZ).mem_flowDomain _ _) (hιW s).2 (hf1 s)
+    ((h.isCompleteVectorField hZ).mem_flowDomain _ _) (hιW' s).2 (hf1 s)
   -- Apply the energy-hypersurface identity to `θ = -α`, for which `θ(X_F) = F = 1`.
   have hθ : (-α).val (liouvilleGraph Z ι f s)
       ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) (liouvilleGraph Z ι f s)] =
         1 := by
     rw [Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
-      h.apply_hamiltonianVectorField_liouvilleGraphFunction hZ hι hιW hιs hdim hinj hWι hf hf₀ hx,
-      neg_neg, h.liouvilleGraphFunction_liouvilleGraph hZ hιW hinj (hf1 s)]
-  have key := h.isNondegenerate.mfderiv_reebVectorField_mpullback hj
+      h.apply_hamiltonianVectorField_liouvilleGraphFunction hZ hι hιs hinj hιW hdim hf hf₀ hx,
+      neg_neg, h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 s)]
+  have key := h.isNondegenerate.mfderiv_reebVectorField_mpullback
+    (h.contMDiff_liouvilleGraph hZ hι hf hf₀)
     (by rw [map_neg, SmoothForm.isContactForm_neg_iff]; exact hα₀)
     (K := liouvilleGraphFunction Z W ι f) (s := s)
     (by rw [Submodule.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply])
-    (h.range_mfderiv_liouvilleGraph hZ hι hιW hιs hdim hinj hWι hf hf1 s)
+    (h.range_mfderiv_liouvilleGraph hZ hι hιs hinj hιW hdim hf hf1 s)
   rw [hθ, inv_one, one_smul, map_neg, hα₀.reebVectorField_neg, map_neg] at key
   exact neg_eq_iff_eq_neg.1 key
 
@@ -392,84 +341,42 @@ form `j^* α = f ι^* α` of the Liouville graph `j` of `f`. Then `τ ↦ j(γ(-
 the defining function `F` of the graph, is an integral curve of `X_F`. -/
 theorem isMIntegralCurve_liouvilleGraph_reebVectorField [Nonempty S]
     (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
-    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
-    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
-    (hinj : Injective ι) (hWι : frontier W ⊆ range ι) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
-    (hf1 : ∀ s, 1 < f s) {γ : ℝ → S}
+    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hinj : Injective ι) (hιW : range ι = frontier W) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf1 : ∀ s, 1 < f s) {γ : ℝ → S}
     (hγ : IsMIntegralCurve γ (SmoothForm.mpullback (liouvilleGraph Z ι f)
-      (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ) (h.isCompleteVectorField hZ)
-        hι hf fun s ↦ (one_pos.trans (hf1 s)).ne') α).reebVectorField) :
+      (h.contMDiff_liouvilleGraph hZ hι hf fun s ↦ (one_pos.trans (hf1 s)).ne')
+      α).reebVectorField) :
     IsMIntegralCurve (fun τ ↦ liouvilleGraph Z ι f (γ (-τ)))
       (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f)) := by
   have hγ' := hγ.comp_mul (-1)
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ' ⊢
   have hmap := hγ'.map_of_mfderiv_eq (f := liouvilleGraph Z ι f)
-    (fun τ _ ↦ (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
-      (h.isCompleteVectorField hZ) hι hf (fun s ↦ (one_pos.trans (hf1 s)).ne') _).mdifferentiableAt
-      (by simp))
+    (fun τ _ ↦ (h.contMDiff_liouvilleGraph hZ hι hf (fun s ↦ (one_pos.trans (hf1 s)).ne')
+      _).mdifferentiableAt (by simp))
     (fun τ _ ↦ by
-      rw [Pi.smul_apply, map_smul, h.mfderiv_liouvilleGraph_reebVectorField hZ hι hιW hιs hdim hinj
-        hWι hf hf1, neg_one_smul, neg_neg, comp_apply])
+      rw [Pi.smul_apply, map_smul, h.mfderiv_liouvilleGraph_reebVectorField hZ hι hιs hinj hιW
+        hdim hf hf1, neg_one_smul, neg_neg, comp_apply])
   simpa [comp_def] using hmap
 
 /-- **The orbits of the defining function on the Liouville graph are determined by their initial
-point.** Let `ι` be a smooth injective immersion from a compact manifold of one dimension less
-onto the frontier of the Liouville domain, and `f > 1` smooth. Two integral curves of `X_F` on the
-level `1` of the defining function `F` of the Liouville graph of `f` which agree at time `0` are
-equal. -/
-theorem eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleGraphFunction [CompactSpace S]
-    [Nonempty S] (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
-    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
-    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
-    (hinj : Injective ι) (hWι : frontier W ⊆ range ι) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
-    (hf1 : ∀ s, 1 < f s) {δ δ' : ℝ → M}
+point.** Let `ι` be a smooth injective immersion onto the frontier of the Liouville domain, from
+a manifold of one dimension less, and `f > 1` smooth. Two integral curves of `X_F`, for the
+defining function `F` of the Liouville graph of `f`, which agree at time `0` are equal, as soon as
+the first stays on the level `1`. That level lies outside the Liouville domain, where `F` is
+smooth (`eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem`). -/
+theorem eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleGraphFunction [Nonempty S]
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιs : ∀ s, Injective (mfderiv J I ι s))
+    (hinj : Injective ι) (hιW : range ι = frontier W) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf1 : ∀ s, 1 < f s) {δ δ' : ℝ → M}
     (hδ : IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f)))
     (hδ' : IsMIntegralCurve δ' (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f)))
-    (hδc : ∀ τ, liouvilleGraphFunction Z W ι f (δ τ) = 1)
-    (hδ'c : ∀ τ, liouvilleGraphFunction Z W ι f (δ' τ) = 1) (h0 : δ 0 = δ' 0) : δ = δ' := by
-  set F := liouvilleGraphFunction Z W ι f
-  have hf₀ : ∀ s, f s ≠ 0 := fun s ↦ (one_pos.trans (hf1 s)).ne'
-  have hr : Continuous (liouvilleRadialCoordinate Z W) := h.continuous_liouvilleRadialCoordinate hZ
-  -- On the compact `S`, `f` is bounded below by its minimum `m > 1`, and `r ≥ m` on the level.
-  obtain ⟨s₀, -, hs₀⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuous.continuousOn
-  have hlev : ∀ y, F y = 1 → f s₀ ≤ liouvilleRadialCoordinate Z W y := fun y hy ↦ by
-    obtain ⟨s, rfl⟩ := (h.liouvilleGraphFunction_eq_one_iff hZ hιW hinj hWι hf1).1 hy
-    exact (hs₀ (mem_univ s)).trans
-      (h.liouvilleRadialCoordinate_liouvilleGraph hZ (hιW s) (hf1 s).le).ge
-  obtain ⟨ε, hε, hεc⟩ : ∃ ε : ℝ, 0 < ε ∧ 1 + 2 * ε < f s₀ :=
-    ⟨(f s₀ - 1) / 4, div_pos (sub_pos.2 (hf1 s₀)) four_pos, by linarith [hf1 s₀]⟩
-  -- A smooth `φ` with `φ(u) = 0` for `u ≤ 1 + ε` and `φ(u) = 1` for `u ≥ 1 + 2ε`.
-  set φ : ℝ → ℝ := fun u ↦ Real.smoothTransition ((u - (1 + ε)) / ε)
-  have hφ : ContDiff ℝ (⊤ : ℕ∞) φ :=
-    Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const ε)
-  have hφ0 : ∀ u ≤ 1 + ε, φ u = 0 := fun u hu ↦
-    Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith) hε.le)
-  have hφ1 : ∀ u, 1 + 2 * ε ≤ u → φ u = 1 := fun u hu ↦
-    Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hε]; linarith)
-  -- `G = (φ ∘ r) F`, for the radial coordinate `r`, is smooth: it vanishes near the Liouville
-  -- domain, where `r = 1`.
-  set G : M → ℝ := fun y ↦ φ (liouvilleRadialCoordinate Z W y) * F y
-  have hG : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) G := fun y ↦ by
-    by_cases hy : y ∈ W
-    · have hry : liouvilleRadialCoordinate Z W y < 1 + ε := by
-        rw [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hy]
-        linarith
-      refine contMDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt hr continuous_const).mem_nhds hry] with z hz
-      simp [G, hφ0 _ hz.le]
-    · exact (hφ.contDiffAt.comp_contMDiffAt (h.contMDiffAt_liouvilleRadialCoordinate hZ hy)).mul
-        (h.contMDiffAt_liouvilleGraphFunction hZ hι hιW hιs hdim hinj hWι hf hf₀ hy)
-  -- Near the level `1`, `G = F`, so the two Hamiltonian fields agree there.
-  have hXG : ∀ y, F y = 1 → ω.hamiltonianVectorField F y = ω.hamiltonianVectorField G y :=
-    fun y hy ↦ Filter.EventuallyEq.hamiltonianVectorField_eq ω <| by
-      filter_upwards [(isOpen_lt continuous_const hr).mem_nhds (hεc.trans_le (hlev y hy))]
-        with z hz
-      simp [G, hφ1 _ hz.le]
-  have hv : ContMDiff I I.tangent 1 (T% (ω.hamiltonianVectorField G)) :=
-    h.isNondegenerate.contMDiff_hamiltonianVectorField (by simp) (hG.of_le (by simp))
-  exact isMIntegralCurve_eq_of_contMDiff (fun _ ↦ BoundarylessManifold.isInteriorPoint) hv
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδc τ)).1 hδ)
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδ'c τ)).1 hδ') h0
+    (hδc : ∀ τ, liouvilleGraphFunction Z W ι f (δ τ) = 1) (h0 : δ 0 = δ' 0) : δ = δ' :=
+  h.eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem
+    (fun _ hy ↦ (h.contMDiffAt_liouvilleGraphFunction hZ hι hιs hinj hιW hdim hf
+      (fun s ↦ (one_pos.trans (hf1 s)).ne') hy).of_le (by simp)) hδ hδ'
+    (fun τ hτ ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hτ).ne (hδc τ)) h0
 
 /-- **The periods of the defining function on the Liouville graph are the Reeb periods of
 `f ι^* α`.** Let `ι : S → M` be a smooth injective immersion from a compact boundaryless manifold
@@ -478,47 +385,45 @@ Hamiltonian vector field `X_F` of the defining function `F` of the Liouville gra
 a `T`-periodic integral curve on the level `1` exactly when the Reeb field of the contact form
 `j^* α = f ι^* α` has a `T`-periodic integral curve: `j` carries the reversed Reeb orbits onto the
 orbits of `X_F` on the graph. -/
-theorem exists_periodic_hamiltonianVectorField_liouvilleGraphFunction_iff [CompactSpace S]
-    [Nonempty S] (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
-    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W)
-    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
-    (hinj : Injective ι) (hWι : frontier W ⊆ range ι) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
+theorem exists_periodic_hamiltonianVectorField_liouvilleGraphFunction_iff
+    [FiniteDimensional ℝ E'] [CompactSpace S] [Nonempty S] (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hinj : Injective ι) (hιW : range ι = frontier W)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f)
     (hf1 : ∀ s, 1 < f s) {T : ℝ} :
     (∃ δ : ℝ → M, IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f)) ∧
         Periodic δ T ∧ ∀ τ, liouvilleGraphFunction Z W ι f (δ τ) = 1) ↔
       ∃ γ : ℝ → S, IsMIntegralCurve γ (SmoothForm.mpullback (liouvilleGraph Z ι f)
-        (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
-          (h.isCompleteVectorField hZ) hι hf fun s ↦ (one_pos.trans (hf1 s)).ne')
+        (h.contMDiff_liouvilleGraph hZ hι hf fun s ↦ (one_pos.trans (hf1 s)).ne')
           α).reebVectorField ∧
         Periodic γ T := by
   have : T2Space S := T2Space.of_injective_continuous hinj hι.continuous
+  have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   have hf₀ : ∀ s, f s ≠ 0 := fun s ↦ (one_pos.trans (hf1 s)).ne'
   have hlevel (γ : ℝ → S) (τ : ℝ) :
       liouvilleGraphFunction Z W ι f (liouvilleGraph Z ι f (γ (-τ))) = 1 :=
-    h.liouvilleGraphFunction_liouvilleGraph hZ hιW hinj (hf1 _)
+    h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 _)
   constructor
   · rintro ⟨δ, hδ, hδT, hδc⟩
     -- The orbit of `X_F` through `δ 0` starts at a graph point `j s₀`.
-    obtain ⟨s₀, hs₀⟩ := (h.liouvilleGraphFunction_eq_one_iff hZ hιW hinj hWι hf1).1 (hδc 0)
+    obtain ⟨s₀, hs₀⟩ := (h.liouvilleGraphFunction_eq_one_iff hZ hinj hιW hf1).1 (hδc 0)
     -- The Reeb field of the compact `S` is complete; follow its orbit through `s₀`.
     have hR : ContMDiff J J.tangent 1 (T% (SmoothForm.mpullback (liouvilleGraph Z ι f)
-        (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
-          (h.isCompleteVectorField hZ) hι hf hf₀) α).reebVectorField) :=
-      (h.isContactForm_mpullback_liouvilleGraph hZ hι hιW hιs hdim hf
+        (h.contMDiff_liouvilleGraph hZ hι hf hf₀) α).reebVectorField) :=
+      (h.isContactForm_mpullback_liouvilleGraph hZ hι hιW' hιs hdim hf
         hf₀).contMDiff_reebVectorField.of_le (by simp)
     set γ := fun τ ↦ globalFlow _ hR (isCompleteVectorField_of_compactSpace hR) τ s₀
     have hγ : IsMIntegralCurve γ (SmoothForm.mpullback (liouvilleGraph Z ι f)
-        (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ)
-          (h.isCompleteVectorField hZ) hι hf hf₀) α).reebVectorField :=
+        (h.contMDiff_liouvilleGraph hZ hι hf hf₀) α).reebVectorField :=
       isMIntegralCurve_globalFlow _ _ s₀
     have heq : (fun τ ↦ liouvilleGraph Z ι f (γ (-τ))) = δ :=
-      h.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleGraphFunction hZ hι hιW hιs hdim
-        hinj hWι hf hf1
-        (h.isMIntegralCurve_liouvilleGraph_reebVectorField hZ hι hιW hιs hdim hinj hWι hf hf1 hγ)
-        hδ (hlevel γ) hδc (by simp only [neg_zero, γ, Flow.map_zero_apply, hs₀])
+      h.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleGraphFunction hZ hι hιs hinj hιW
+        hdim hf hf1
+        (h.isMIntegralCurve_liouvilleGraph_reebVectorField hZ hι hιs hinj hιW hdim hf hf1 hγ)
+        hδ (hlevel γ) (by simp only [neg_zero, γ, Flow.map_zero_apply, hs₀])
     -- The graph is injective, so the periodicity of `δ` passes to `γ`.
     have hinjg : Injective (liouvilleGraph Z ι f) :=
-      h.injective_liouvilleGraph hZ (h.isCompleteVectorField hZ) hinj hιW
+      h.injective_liouvilleGraph hZ (h.isCompleteVectorField hZ) hinj hιW'
     refine ⟨γ, hγ, fun τ ↦ hinjg ?_⟩
     have e₁ := congrFun heq (-(τ + T))
     have e₂ := congrFun heq (-τ)
@@ -526,7 +431,7 @@ theorem exists_periodic_hamiltonianVectorField_liouvilleGraphFunction_iff [Compa
     rw [e₁, e₂, ← hδT (-(τ + T)), neg_add, neg_add_cancel_right]
   · rintro ⟨γ, hγ, hγT⟩
     refine ⟨fun τ ↦ liouvilleGraph Z ι f (γ (-τ)),
-      h.isMIntegralCurve_liouvilleGraph_reebVectorField hZ hι hιW hιs hdim hinj hWι hf hf1 hγ,
+      h.isMIntegralCurve_liouvilleGraph_reebVectorField hZ hι hιs hinj hιW hdim hf hf1 hγ,
       fun τ ↦ ?_, hlevel γ⟩
     simp only [neg_add, ← sub_eq_add_neg, hγT.sub_eq]
 
