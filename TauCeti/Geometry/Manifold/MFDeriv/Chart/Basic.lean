@@ -47,6 +47,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   - `TauCeti.hasMFDerivAt_extChartAt_self`, `TauCeti.mfderiv_extChartAt_eq_id`, and
     `TauCeti.hasMFDerivAt_extChartAt_symm_self`: the preferred extended chart (and, without
     boundary, its inverse) has the identity as its derivative at its centre.
+  - `TauCeti.writtenInExtChartAt_self_eq` and `MDifferentiableAt.mfderiv_eq_fderivWithin_self`: a
+    map of model spaces reads in charts as `I' ∘ g ∘ I.symm`, with `mfderiv` its derivative within
+    `range I`.
 * **Charts of the maximal atlas**:
   - `TauCeti.mdifferentiable_of_mem_maximalAtlas` and `TauCeti.isInvertible_mvfderiv_extend`:
     differentiability and invertibility of the differential for charts of the `C¹` maximal atlas.
@@ -273,7 +276,25 @@ theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
       fun _ h ↦ (extChartAt I x).right_inv h)
     ((extChartAt I x).right_inv (mem_extChartAt_target x))
 
+/-- A map between model spaces, read in their preferred extended charts at `z` and at `g z`, is the
+map read through the models, `I' ∘ g ∘ I.symm`. -/
+theorem writtenInExtChartAt_self_eq (g : H → H') (z : H) :
+    writtenInExtChartAt I I' z g = I' ∘ g ∘ I.symm := rfl
+
+end TauCeti
+
+/-- The manifold derivative at `z` of a map between model spaces, differentiable at `z`, is the
+Fréchet derivative at `I z` within `range I` of `I' ∘ g ∘ I.symm`, the map read in the models. -/
+theorem MDifferentiableAt.mfderiv_eq_fderivWithin_self {g : H → H'} {z : H}
+    (hg : MDifferentiableAt I I' g z) :
+    mfderiv I I' g z = fderivWithin 𝕜 (I' ∘ g ∘ I.symm) (range I) (I z) := by
+  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
+  rw [hg.mfderiv, TauCeti.writtenInExtChartAt_self_eq, extChartAt_self_apply]
+  rfl
+
 /-! ### Charts of the maximal atlas -/
+
+namespace TauCeti
 
 /-- `mdifferentiable_of_mem_atlas` for the maximal atlas: a chart of the `C^1` maximal atlas is
 differentiable on its source, and its inverse on its target. -/
