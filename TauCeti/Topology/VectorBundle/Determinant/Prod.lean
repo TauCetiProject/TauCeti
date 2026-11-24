@@ -23,11 +23,15 @@ are allowed.
 
 * `TauCeti.DetBundle.prodEquiv` and `TauCeti.DetBundle.prodHomeomorph` give the fibrewise
   continuous linear equivalence and total-space homeomorphism.
+* `TauCeti.DetBundle.fiberDetLineEquiv_prodEquiv` reads the Whitney comparison as
+  `TauCeti.detLineProdEquiv` on the intrinsic top exterior powers of the fibres.
 * `TauCeti.DetBundle.congrModelEquiv_prodEquiv` gives naturality for fibrewise families of
   continuous linear equivalences between arbitrary model presentations.
 * `TauCeti.DetBundle.prodCommEquiv_prodEquiv` and `TauCeti.DetBundle.prodAssocEquiv_prodEquiv`
   give the rank-dependent swap sign and the sign-free associativity law.
-* `TauCeti.DetBundle.prodPullbackEquiv_prodEquiv` is the native pullback square.
+* `TauCeti.DetBundle.prodPullbackEquiv` is the canonical determinant pullback of the product
+  bundle, read on the product of the pulled-back bundles, and
+  `TauCeti.DetBundle.prodPullbackEquiv_prodEquiv` is the native pullback square.
 * `TauCeti.DetBundle.chartCoord_prodPullbackEquiv` and
   `TauCeti.DetBundle.coe_prodPullbackEquiv` characterize its arbitrary-chart and intrinsic action.
 * `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_left_eq_zero` and
@@ -45,32 +49,6 @@ open scoped Bundle TensorProduct
 universe u v₁ v₂ w w₁ w₂
 
 namespace TauCeti.DetBundle
-
-section ExteriorDegrees
-
-variable (K : Type u) [Field K] (U : Type w₁) (V : Type w₂)
-  [AddCommGroup U] [Module K U] [FiniteDimensional K U]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-
-private def exteriorProdLinearEquiv (r s t : ℕ) (hr : r = finrank K U)
-    (hs : s = finrank K V) (ht : t = finrank K (U × V)) :
-    ⋀[K]^r U ⊗[K] ⋀[K]^s V ≃ₗ[K] ⋀[K]^t (U × V) :=
-  (TensorProduct.congr (LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· U) hr))
-      (LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· V) hs))).trans
-    ((detLineProdEquiv K U V).trans
-      (LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· (U × V)) ht)).symm)
-
-private theorem coe_exteriorProdLinearEquiv_tmul (r s t : ℕ) (hr : r = finrank K U)
-    (hs : s = finrank K V) (ht : t = finrank K (U × V))
-    (a : ⋀[K]^r U) (b : ⋀[K]^s V) :
-    (exteriorProdLinearEquiv K U V r s t hr hs ht (a ⊗ₜ b) : ExteriorAlgebra K (U × V)) =
-      ExteriorAlgebra.map (LinearMap.inl K U V) a *
-        ExteriorAlgebra.map (LinearMap.inr K U V) b := by
-  simp only [exteriorProdLinearEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    coe_detLineProdEquiv_tmul_eq_mul]
-
-end ExteriorDegrees
 
 section Models
 
@@ -119,12 +97,10 @@ private def prodLinearEquiv (x : B) :
       DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) x := by
   letI : FiniteDimensional K (E₁ x) := VectorBundle.finiteDimensional K F₁ E₁ x
   letI : FiniteDimensional K (E₂ x) := VectorBundle.finiteDimensional K F₂ E₂ x
-  exact (TensorProduct.congr (linearEquiv K F₁ E₁ x) (linearEquiv K F₂ E₂ x)).trans
-    ((exteriorProdLinearEquiv K (E₁ x) (E₂ x)
-      (finrank K F₁) (finrank K F₂) (finrank K (F₁ × F₂))
-      (VectorBundle.finrank_eq K F₁ E₁ x).symm (VectorBundle.finrank_eq K F₂ E₂ x).symm
-      (VectorBundle.finrank_eq K (F₁ × F₂) (E₁ ×ᵇ E₂) x).symm).trans
-        (linearEquiv K (F₁ × F₂) (E₁ ×ᵇ E₂) x).symm)
+  exact (TensorProduct.congr (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x)
+      (fiberDetLineEquiv (K := K) (F₁ := F₂) (E₁ := E₂) x)).trans
+    ((detLineProdEquiv K (E₁ x) (E₂ x)).trans
+      (fiberDetLineEquiv (K := K) (F₁ := F₁ × F₂) (E₁ := E₁ ×ᵇ E₂) x).symm)
 
 variable [∀ x, TopologicalSpace (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
   [∀ x, IsModuleTopology K (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
@@ -137,6 +113,19 @@ def prodEquiv (x : B) : DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x �
   LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
     (prodLinearEquiv (K := K) (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) x)
 
+/-- Read in the intrinsic top exterior powers of the fibres, the Whitney comparison is the
+determinant-line product `TauCeti.detLineProdEquiv` on every element of the tensor fibre. -/
+theorem fiberDetLineEquiv_prodEquiv (x : B)
+    [FiniteDimensional K (E₁ x)] [FiniteDimensional K (E₂ x)]
+    (t : DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x) :
+    fiberDetLineEquiv (K := K) (F₁ := F₁ × F₂) (E₁ := E₁ ×ᵇ E₂) x
+      (prodEquiv K F₁ E₁ F₂ E₂ x t) =
+      detLineProdEquiv K (E₁ x) (E₂ x)
+        (TensorProduct.congr (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x)
+          (fiberDetLineEquiv (K := K) (F₁ := F₂) (E₁ := E₂) x) t) := by
+  simp only [prodEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
+    prodLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+
 /-- In the exterior algebra, the Whitney comparison is the exterior product of the images of
 its two determinant-line factors. This description includes the empty exterior product. -/
 theorem coe_prodEquiv_tmul (x : B) (a : DetBundle K F₁ E₁ x) (b : DetBundle K F₂ E₂ x) :
@@ -146,29 +135,8 @@ theorem coe_prodEquiv_tmul (x : B) (a : DetBundle K F₁ E₁ x) (b : DetBundle 
         ExteriorAlgebra.map (LinearMap.inr K (E₁ x) (E₂ x)) (linearEquiv K F₂ E₂ x b) := by
   let : FiniteDimensional K (E₁ x) := VectorBundle.finiteDimensional K F₁ E₁ x
   let : FiniteDimensional K (E₂ x) := VectorBundle.finiteDimensional K F₂ E₂ x
-  simp only [prodEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
-  simp only [prodLinearEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    LinearEquiv.apply_symm_apply]
-  exact coe_exteriorProdLinearEquiv_tmul K (E₁ x) (E₂ x)
-    (finrank K F₁) (finrank K F₂) (finrank K (F₁ × F₂))
-    (VectorBundle.finrank_eq K F₁ E₁ x).symm (VectorBundle.finrank_eq K F₂ E₂ x).symm
-    (VectorBundle.finrank_eq K (F₁ × F₂) (E₁ ×ᵇ E₂) x).symm
-    (linearEquiv K F₁ E₁ x a) (linearEquiv K F₂ E₂ x b)
-
-private theorem fiberDetLineEquiv_prodEquiv (x : B)
-    [FiniteDimensional K (E₁ x)] [FiniteDimensional K (E₂ x)]
-    (t : DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x) :
-    fiberDetLineEquiv (K := K) (F₁ := F₁ × F₂) (E₁ := E₁ ×ᵇ E₂) x
-      (prodEquiv K F₁ E₁ F₂ E₂ x t) =
-      detLineProdEquiv K (E₁ x) (E₂ x)
-        (TensorProduct.congr (fiberDetLineEquiv (K := K) (F₁ := F₁) (E₁ := E₁) x)
-          (fiberDetLineEquiv (K := K) (F₁ := F₂) (E₁ := E₂) x) t) := by
-  induction t using TensorProduct.inductionOn with
-  | add s t hs ht => simp only [map_add, hs, ht]
-  | tmul a b =>
-    apply Subtype.ext
-    simp only [coe_fiberDetLineEquiv, coe_prodEquiv_tmul, TensorProduct.congr_tmul,
-      coe_detLineProdEquiv_tmul_eq_mul]
+  rw [← coe_fiberDetLineEquiv, fiberDetLineEquiv_prodEquiv, TensorProduct.congr_tmul,
+    coe_detLineProdEquiv_tmul_eq_mul, coe_fiberDetLineEquiv, coe_fiberDetLineEquiv]
 
 variable [CompleteSpace K]
 
@@ -224,10 +192,7 @@ theorem prodEquiv_inCoordinates (a x : B)
   have hs : x ∈ (trivializationAt (ProjectiveTensor K K K)
       (fun y ↦ DetBundle K F₁ E₁ y ⊗[K] DetBundle K F₂ E₂ y) a).baseSet := by
     simpa only [tensorProduct_trivializationAt_baseSet, Set.mem_inter_iff] using And.intro hd₁ hd₂
-  have hp : trivializationAt (F₁ × F₂) (E₁ ×ᵇ E₂) a =
-      (trivializationAt F₁ E₁ a).prod (trivializationAt F₂ E₂ a) := by
-    simpa only [trivializationAt] using
-      (FiberBundle.prod_trivializationAt' (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) a)
+  have hp := FiberBundle.trivializationAt_prod F₁ E₁ F₂ E₂ a
   have ht : x ∈ (trivializationAt K (DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂)) a).baseSet := by
     simpa only [trivializationAt_eq, trivialization_baseSet, hp] using
       (Trivialization.mem_prod_baseSet hx₁ hx₂)
@@ -587,53 +552,77 @@ theorem prodPullbackTensorEquiv_tmul (y : B')
   unfold prodPullbackTensorEquiv
   apply bundleTensorCongr_tmul
 
-private def prodPullbackLinearEquiv (y : B') :
-    DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y) ≃ₗ[K]
-      DetBundle K (F₁ × F₂) (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y := by
-  let e₁ := trivializationAt F₁ E₁ (f y)
-  let e₂ := trivializationAt F₂ E₂ (f y)
-  have hx : f y ∈ (e₁.prod e₂).baseSet :=
-    mem_baseSet_trivializationAt (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)
-  have hy : y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet :=
-    mem_baseSet_trivializationAt (F₁ × F₂)
-      (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y
-  exact (chartCoord (e₁.prod e₂) hx).trans
-    (chartCoord ((e₁.pullback f).prod (e₂.pullback f)) hy).symm
-
 variable (K F₁ E₁ F₂ E₂) in
-/-- The determinant comparison for reindexing a product bundle. The target is the product of
-the pulled-back bundles, with its native module data. Original product coordinates and the
-product of their pullback charts define the map. -/
+/-- The canonical determinant pullback `TauCeti.DetBundle.pullbackEquiv` of the product bundle
+`E₁ ×ᵇ E₂`, with target the determinant fibre of the product `(f *ᵖ E₁) ×ᵇ (f *ᵖ E₂)` of the
+pulled-back bundles. Both target fibres are `⋀ (E₁ (f y) × E₂ (f y))`, but their module
+structures are the pullback of the product structure and the product of the pullback structures,
+which agree only after unfolding `Bundle.Pullback`. -/
 def prodPullbackEquiv (y : B') :
     DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y) ≃L[K]
       DetBundle K (F₁ × F₂) (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y :=
-  LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
-    (prodPullbackLinearEquiv (K := K) (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) f y)
+  pullbackEquiv (𝕜 := K) (F := F₁ × F₂) (E := E₁ ×ᵇ E₂) (f : B' → B) y
 
-
-omit [CompleteSpace K]
+omit [CompleteSpace K] [TopologicalSpace B]
+  [FiniteDimensional K F₁] [∀ x, TopologicalSpace (E₁ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [FiberBundle F₁ E₁] [VectorBundle K F₁ E₁]
+  [FiniteDimensional K F₂] [∀ x, TopologicalSpace (E₂ x)]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [FiberBundle F₂ E₂] [VectorBundle K F₂ E₂]
+  [TopologicalSpace B'] [ContinuousMapClass T B' B]
   [∀ x, IsModuleTopology K (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
   [∀ x, TopologicalSpace (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
   [∀ y, IsModuleTopology K (DetBundle K F₁ ((f : B' → B) *ᵖ E₁) y ⊗[K]
     DetBundle K F₂ ((f : B' → B) *ᵖ E₂) y)]
   [∀ y, TopologicalSpace (DetBundle K F₁ ((f : B' → B) *ᵖ E₁) y ⊗[K]
     DetBundle K F₂ ((f : B' → B) *ᵖ E₂) y)] in
-/-- The product pullback map identifies original product coordinates with the product of the
-pulled-back coordinates. -/
-theorem prodPullbackEquiv_apply (y : B') (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
-    let e₁ := trivializationAt F₁ E₁ (f y)
-    let e₂ := trivializationAt F₂ E₂ (f y)
-    let hx : f y ∈ (e₁.prod e₂).baseSet :=
-      mem_baseSet_trivializationAt (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)
-    let hy : y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet :=
-      mem_baseSet_trivializationAt (F₁ × F₂)
+/-- The native product-pullback comparison preserves the intrinsic exterior-algebra image
+of every determinant vector. Pullback fibres are the original fibres at the image point. -/
+theorem coe_prodPullbackEquiv (y : B')
+    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
+    (linearEquiv K (F₁ × F₂)
       (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y
-    prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v =
-      (chartCoord ((e₁.pullback f).prod (e₂.pullback f)) hy).symm
-        (chartCoord (e₁.prod e₂) hx v) := by
-  dsimp only
-  simp only [prodPullbackEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
-    prodPullbackLinearEquiv, LinearEquiv.trans_apply]
+      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) :
+      ExteriorAlgebra K (((f : B' → B) *ᵖ E₁) y × ((f : B' → B) *ᵖ E₂) y)) =
+      (linearEquiv K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y) v :
+        ExteriorAlgebra K (E₁ (f y) × E₂ (f y))) :=
+  coe_linearEquiv_pullbackEquiv (𝕜 := K) (F := F₁ × F₂) (E := E₁ ×ᵇ E₂) (f : B' → B) y v
+
+omit [CompleteSpace K] [VectorBundle K F₁ E₁] [VectorBundle K F₂ E₂]
+  [∀ x, IsModuleTopology K (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
+  [∀ x, TopologicalSpace (DetBundle K F₁ E₁ x ⊗[K] DetBundle K F₂ E₂ x)]
+  [∀ y, IsModuleTopology K (DetBundle K F₁ ((f : B' → B) *ᵖ E₁) y ⊗[K]
+    DetBundle K F₂ ((f : B' → B) *ᵖ E₂) y)]
+  [∀ y, TopologicalSpace (DetBundle K F₁ ((f : B' → B) *ᵖ E₁) y ⊗[K]
+    DetBundle K F₂ ((f : B' → B) *ᵖ E₂) y)] in
+/-- Every linear product chart reads the product-pullback comparison in the original
+coordinates, on an arbitrary determinant vector. No preferred chart is part of the statement. -/
+theorem chartCoord_prodPullbackEquiv
+    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
+    [e₁.IsLinear K] [e₂.IsLinear K] {y : B'}
+    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet)
+    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
+    chartCoord ((e₁.pullback f).prod (e₂.pullback f))
+      (Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂)
+      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) =
+      chartCoord (e₁.prod e₂) (Trivialization.mem_prod_baseSet hx₁ hx₂) v := by
+  have hy₁ : y ∈ (e₁.pullback f).baseSet := by
+    simpa only [Trivialization.pullback_baseSet, Set.mem_preimage] using hx₁
+  have hy₂ : y ∈ (e₂.pullback f).baseSet := by
+    simpa only [Trivialization.pullback_baseSet, Set.mem_preimage] using hx₂
+  -- Restate the membership proof so the pulled-back product chart uses the standard fibre
+  -- instances rather than the local ones of `Trivialization.mem_prod_pullback_baseSet`.
+  change chartCoord ((e₁.pullback f).prod (e₂.pullback f))
+      (Trivialization.mem_prod_baseSet hy₁ hy₂) (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) = _
+  rw [chartCoord_apply, chartCoord_apply, Trivialization.linearEquivAt_prod _ _ hy₁ hy₂,
+    Trivialization.linearEquivAt_prod _ _ hx₁ hx₂, Trivialization.linearEquivAt_pullback,
+    Trivialization.linearEquivAt_pullback]
+  apply congrArg (modelCoord (F₁ × F₂))
+  apply Subtype.ext
+  rw [LinearEquiv.coe_exteriorPower_apply, LinearEquiv.coe_exteriorPower_apply,
+    coe_prodPullbackEquiv]
+  -- Both sides apply the product of the fibre equivalences of `e₁` and `e₂` at `f y`; they
+  -- differ only in whether its source is written with pulled-back or original fibres.
+  rfl
 
 /-- The Whitney square commutes with pullback between the native product and tensor fibres. -/
 theorem prodPullbackEquiv_prodEquiv (y : B')
@@ -647,58 +636,13 @@ theorem prodPullbackEquiv_prodEquiv (y : B')
   have hx₂ : f y ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ (f y)
   have hy : y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet :=
     Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂
+  apply (chartCoord ((e₁.pullback f).prod (e₂.pullback f)) hy).injective
+  rw [chartCoord_prodPullbackEquiv f e₁ e₂ hx₁ hx₂]
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [map_add, hs, ht]
   | tmul a b =>
     rw [prodPullbackTensorEquiv_tmul]
-    apply (chartCoord ((e₁.pullback f).prod (e₂.pullback f)) hy).injective
-    have hc := prodPullbackEquiv_apply f y
-      (prodEquiv K F₁ E₁ F₂ E₂ (f y) (a ⊗ₜ b))
-    dsimp only at hc
-    rw [hc, LinearEquiv.apply_symm_apply]
     exact (chartCoord_pullback_prodEquiv_tmul f e₁ e₂ hx₁ hx₂ a b).symm
-
-/-- Every linear product chart reads the product-pullback comparison in the original
-coordinates, on an arbitrary determinant vector. No preferred chart is part of the statement. -/
-theorem chartCoord_prodPullbackEquiv
-    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
-    [e₁.IsLinear K] [e₂.IsLinear K] {y : B'}
-    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet)
-    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
-    chartCoord ((e₁.pullback f).prod (e₂.pullback f))
-      (Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂)
-      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) =
-      chartCoord (e₁.prod e₂) (Trivialization.mem_prod_baseSet hx₁ hx₂) v := by
-  obtain ⟨t, rfl⟩ := (prodEquiv K F₁ E₁ F₂ E₂ (f y)).surjective v
-  rw [prodPullbackEquiv_prodEquiv]
-  induction t using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | tmul a b =>
-    rw [prodPullbackTensorEquiv_tmul]
-    exact chartCoord_pullback_prodEquiv_tmul f e₁ e₂ hx₁ hx₂ a b
-
-/-- The native product-pullback comparison preserves the intrinsic exterior-algebra image
-of every determinant vector. Pullback fibres are the original fibres at the image point. -/
-theorem coe_prodPullbackEquiv (y : B')
-    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
-    (linearEquiv K (F₁ × F₂)
-      (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y
-      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) :
-      ExteriorAlgebra K (((f : B' → B) *ᵖ E₁) y × ((f : B' → B) *ᵖ E₂) y)) =
-      (linearEquiv K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y) v :
-        ExteriorAlgebra K (E₁ (f y) × E₂ (f y))) := by
-  obtain ⟨t, rfl⟩ := (prodEquiv K F₁ E₁ F₂ E₂ (f y)).surjective v
-  rw [prodPullbackEquiv_prodEquiv]
-  induction t using TensorProduct.inductionOn with
-  | add a b ha hb =>
-    simp only [map_add, Submodule.coe_add]
-    exact congrArg₂ (· + ·) ha hb
-  | tmul a b =>
-    rw [prodPullbackTensorEquiv_tmul, coe_prodEquiv_tmul, coe_prodEquiv_tmul]
-    -- The input vectors use the original fibres; `erw` aligns the pullback aliases.
-    erw [coe_linearEquiv_pullbackEquiv (𝕜 := K) (F := F₁) (E := E₁) (f : B' → B) y a,
-      coe_linearEquiv_pullbackEquiv (𝕜 := K) (F := F₂) (E := E₂) (f : B' → B) y b]
-    rfl
 
 end Pullback
 

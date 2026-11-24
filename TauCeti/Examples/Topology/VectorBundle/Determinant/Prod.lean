@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Determinant.Prod
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Native determinant Whitney clients

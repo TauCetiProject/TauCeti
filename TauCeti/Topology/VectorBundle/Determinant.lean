@@ -66,7 +66,8 @@ homeomorphic to that of `det E`, linearly on each fibre
   indexed by the actual fibre rank.
 * `TauCeti.DetBundle.congrModelEquiv`: fibrewise transport between independent model presentations,
   without a continuity hypothesis in the base.
-* `TauCeti.DetBundle.zeroEquiv`: the canonical empty-product coordinate for a rank-zero model.
+* `TauCeti.DetBundle.zeroEquiv`: the canonical scalar coordinate of the degree-zero exterior power
+  when the model has rank zero.
 
 ## References
 
@@ -569,6 +570,9 @@ theorem coe_linearEquiv_pullbackEquiv (f : B' → B) (y : B')
       ExteriorAlgebra 𝕜 ((f *ᵖ E) y)) =
       (linearEquiv 𝕜 F E (f y) v : ExteriorAlgebra 𝕜 (E (f y))) := by
   rw [linearEquiv_pullbackEquiv]
+  -- `pullbackFiberEquiv f y` is the identity of `E (f y)`, with target written as the pullback
+  -- fibre `(f *ᵖ E) y`. Rewriting its exterior power to the identity therefore needs `erw` to see
+  -- through that alias, and the two sides then agree by definition.
   dsimp only [pullbackFiberEquiv]
   erw [LinearEquiv.exteriorPower_refl (R := 𝕜) (M := E (f y)) (finrank 𝕜 F)]
   rfl
@@ -811,8 +815,10 @@ theorem congrModelEquiv_eq_congrEquiv (e : ∀ x, E₁ x ≃L[K] E₁' x) (x : B
 end SameModel
 
 variable (K F₁ E₁) in
-/-- A rank-zero determinant fibre has its canonical empty-exterior-product coordinate. This
-unit coordinate uses no choice of a basis of a positive-rank determinant line. -/
+/-- When the model `F₁` has rank zero, each determinant fibre is the degree-zero exterior power
+of the fibre, and this is its canonical scalar coordinate (the coefficient of the empty exterior
+product). Only the model rank is assumed: without a vector-bundle identification the fibre itself
+may have positive dimension. No basis is chosen. -/
 def zeroEquiv (h : finrank K F₁ = 0) (x : B) : DetBundle K F₁ E₁ x ≃L[K] K :=
   LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
     ((linearEquiv K F₁ E₁ x).trans
@@ -822,7 +828,9 @@ def zeroEquiv (h : finrank K F₁ = 0) (x : B) : DetBundle K F₁ E₁ x ≃L[K]
 omit [FiniteDimensional K F₁] [VectorBundle K F₁ E₁]
   [TopologicalSpace B] [∀ x, TopologicalSpace (E₁ x)]
   [TopologicalSpace (TotalSpace F₁ E₁)] [FiberBundle F₁ E₁] in
-/-- In rank zero, the native exterior-algebra image is the scalar empty product. -/
+/-- When the model `F₁` has rank zero, the image of a determinant vector, a degree-zero exterior
+vector, in the fibre exterior algebra is the scalar `zeroEquiv` coordinate times the empty
+product `1`. -/
 theorem coe_linearEquiv_zeroEquiv (h : finrank K F₁ = 0) (x : B)
     (a : DetBundle K F₁ E₁ x) :
     (linearEquiv K F₁ E₁ x a : ExteriorAlgebra K (E₁ x)) =
