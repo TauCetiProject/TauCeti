@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.HopfAlgebra.TensorShear
-import Mathlib.Algebra.Group.Submonoid.Units
+import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
 
 /-!
 # Comodule algebras and Hopf–Galois extensions
@@ -153,18 +153,11 @@ theorem mem_coinvariants {a : A} :
   simp [coinvariants, AlgHom.mem_equalizer]
 
 /-- A coinvariant is a unit of the coinvariants exactly when it is a unit of `A`: the
-coinvariants are the equalizer of two multiplicative maps, so the inverse of a coinvariant unit
-is coinvariant. -/
-theorem isUnit_coinvariants_iff {a : coinvariants R H A} : IsUnit a ↔ IsUnit (a : A) := by
-  have h : (coinvariants R H A).toSubmonoid = (coactAlgHom R H A).toMonoidHom.eqLocusM
-      (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] H).toMonoidHom :=
-    Submonoid.ext fun _ ↦ AlgHom.mem_equalizer _ _ _
-  -- `coinvariants R H A` is by definition `AlgHom.equalizer`, whose underlying submonoid has the
-  -- same carrier and coercion as the equalizer `eqLocusM` of the underlying monoid maps. Hence `a`
-  -- is an element of both, and `MulEquiv.submonoidCongr h` sends `a` to `⟨↑a, _⟩`, the element of
-  -- `eqLocusM` to which `MonoidHom.isUnit_eqLocusM_mk_iff` applies.
-  exact (MulEquiv.isUnit_map (MulEquiv.submonoidCongr h)).symm.trans
-    (MonoidHom.isUnit_eqLocusM_mk_iff _ _ (AlgHom.mem_equalizer _ _ _ |>.1 a.property))
+coinvariants are the equalizer of two algebra maps, so the inverse of a coinvariant unit is
+coinvariant. -/
+theorem isUnit_coinvariants_iff {a : coinvariants R H A} : IsUnit a ↔ IsUnit (a : A) :=
+  -- `coinvariants R H A` is by definition `AlgHom.equalizer (coactAlgHom R H A) includeLeft`.
+  AlgHom.isUnit_equalizer_mk_iff _ _ ((AlgHom.mem_equalizer _ _ _).1 a.property)
 
 theorem coe_coinvariants :
     (coinvariants R H A : Set A) = Comodule.fixedSubcomodule R H A := by
