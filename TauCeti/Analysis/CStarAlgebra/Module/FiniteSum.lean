@@ -404,12 +404,26 @@ variable {A ι : Type*} {E : ι → Type*}
   [∀ i, AddCommGroup (E i)] [∀ i, Norm (E i)] [∀ i, Module ℂ (E i)]
   [∀ i, SMul A (E i)] [∀ i, CStarModule A (E i)]
 
+variable (A E) in
+/-- Equip each summand `E i` with `CStarModule.normedAddCommGroup A` so that Mathlib's
+`WithCStarModule` finite-product `Norm` and `CStarModule` instances (which require
+`[∀ i, NormedAddCommGroup (E i)]`) apply under `[∀ i, AddCommGroup (E i)]` and `[∀ i, Norm (E i)]`.
+
+Both `CStarModule.normedAddCommGroup` and `NormedAddCommGroup.ofCore` are `abbrev`s extending
+`SeminormedAddCommGroup.ofCore`, which retains the preexisting `AddCommGroup` and `Norm` instances
+without replacing them. Consequently, `(coordNormedAddCommGroup A E i).toAddCommGroup` and
+`(coordNormedAddCommGroup A E i).toNorm` are definitionally equal to the given
+`[AddCommGroup (E i)]` and `[Norm (E i)]` instances, so `[CStarModule A (E i)]`, `inner A`, and
+`+` on `E i` remain definitionally unchanged when this instance is installed locally. -/
+private abbrev coordNormedAddCommGroup (i : ι) : NormedAddCommGroup (E i) :=
+  CStarModule.normedAddCommGroup A
+
 /-- Finite-sum Cauchy–Schwarz inequality for a family of C⋆-modules:
 `‖∑ i ∈ s, ⟪x i, y i⟫_A‖ ≤ √‖∑ i ∈ s, ⟪x i, x i⟫_A‖ * √‖∑ i ∈ s, ⟪y i, y i⟫_A‖`. -/
 theorem norm_sum_inner_le (s : Finset ι) (x y : ∀ i, E i) :
     ‖∑ i ∈ s, inner A (x i) (y i)‖ ≤
       √‖∑ i ∈ s, inner A (x i) (x i)‖ * √‖∑ i ∈ s, inner A (y i) (y i)‖ := by
-  let _ (i : ι) : NormedAddCommGroup (E i) := .ofCore (CStarModule.normedSpaceCore A)
+  let _ := coordNormedAddCommGroup A E
   simpa only [inner_restrictFinset, norm_restrictFinset] using
     norm_inner_le (A := A) (C⋆ᵐᵒᵈ(A, ∀ i : s, E i))
       (x := restrictFinset (A := A) s x) (y := restrictFinset (A := A) s y)
@@ -419,7 +433,7 @@ theorem norm_sum_inner_le (s : Finset ι) (x y : ∀ i, E i) :
 theorem sqrt_norm_sum_inner_add_le (s : Finset ι) (x y : ∀ i, E i) :
     √‖∑ i ∈ s, inner A (x i + y i) (x i + y i)‖ ≤
       √‖∑ i ∈ s, inner A (x i) (x i)‖ + √‖∑ i ∈ s, inner A (y i) (y i)‖ := by
-  let _ (i : ι) : NormedAddCommGroup (E i) := .ofCore (CStarModule.normedSpaceCore A)
+  let _ := coordNormedAddCommGroup A E
   simpa only [restrictFinset_add, norm_restrictFinset] using
     CStarModule.norm_triangle A (restrictFinset (A := A) s x) (restrictFinset (A := A) s y)
 
