@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction
-public import TauCeti.Geometry.Manifold.Boundary.DefiningFunctionComparison
+public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Basic
+public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Comparison
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 
 /-!

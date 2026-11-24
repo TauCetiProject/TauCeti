@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction
+public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Basic
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Calculus.HadamardHalfSpace
+import TauCeti.Analysis.Calculus.Hadamard.HalfSpace
 
 /-!
 # Comparing two boundary defining functions
@@ -72,7 +72,8 @@ private theorem exists_eq_normal_mul (hρ : IsBoundaryDefiningFunctionOn n ρ U)
   have hφ (y : M) : ℓ (φ y) = (e y).val 0 := by simp [ℓ, φ, e]
   have hrange : range (𝓡∂ (n + 1)) = {y | 0 ≤ ℓ y} := by
     rw [range_modelWithCornersEuclideanHalfSpace]
-    rfl
+    ext y
+    simp [ℓ]
   -- `ρ` read in the chart is smooth on the chart target over `U`.
   set T := φ.target ∩ φ.symm ⁻¹' U
   have hT : T ∈ 𝓝[range (𝓡∂ (n + 1))] φ q₀ := by
@@ -92,7 +93,8 @@ private theorem exists_eq_normal_mul (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     refine hρ.eq_zero _ hyT.2 ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hsrc).mpr ?_)
     rw [← hφ, φ.right_inv hyT.1, hy0]
   obtain ⟨g, t, ht, hqt, hg, hfg⟩ :=
-    exists_contDiffOn_eq_smul_of_eq_zero (hs.mem_nhds hqs) (hf.mono hsT') h0
+    exists_contDiffOn_eq_smul_of_eq_zero (k := ⊤) (hs.mem_nhds hqs)
+      (by simpa using hf.mono hsT') h0
   have hsrc : φ.source = e.source := extChartAt_source (I := 𝓡∂ (n + 1)) q₀
   have hH {y : M} (hy : y ∈ φ.source) : φ y ∈ {y | 0 ≤ ℓ y} :=
     hrange ▸ extChartAt_target_subset_range q₀ (φ.map_source hy)

@@ -9,21 +9,20 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.TangentCone.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.Normed.Module.Convex
-import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.Analysis.Calculus.ParametricIntegral.Segment
-import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Hadamard division on a half-space
 
 Let `ℓ` be a continuous linear functional on a real normed space `E` and `v` a vector with
-`ℓ v = 1`, so that `{ℓ ≥ 0}` is a closed half-space with boundary hyperplane `{ℓ = 0}`. A function
-`f` that is smooth on `{ℓ ≥ 0}` near a point `q` of the hyperplane and vanishes on the hyperplane
-there is divisible by `ℓ`: near `q`, `f = ℓ • g` on the half-space for a function `g` smooth on the
-half-space (`TauCeti.exists_contDiffOn_eq_smul_of_eq_zero`). The quotient is the average
+`ℓ v = 1`, so that `{ℓ ≥ 0}` is a closed half-space with boundary hyperplane `{ℓ = 0}`; it has
+unique derivatives (`ContinuousLinearMap.uniqueDiffOn_halfSpace`). A function `f` that is `C^(k+1)`
+on `{ℓ ≥ 0}` near a point `q` of the hyperplane and vanishes on the hyperplane there is divisible by
+`ℓ`: near `q`, `f = ℓ • g` on the half-space for a function `g` that is `C^k` on the half-space
+(`TauCeti.exists_contDiffOn_eq_smul_of_eq_zero`). The quotient is the average
 `g y = ∫₀¹ ∂_v f(y - (1 - τ) ℓ(y) v) dτ` of the derivative of `f` in the direction `v` along the
 segment from the foot `y - ℓ(y) v` on the hyperplane to `y`. These segments stay in the half-space,
 so only the derivative of `f` within the half-space enters, and no smooth extension of `f` across
@@ -36,33 +35,29 @@ public section
 noncomputable section
 
 open Set Metric Filter MeasureTheory AffineMap
-open scoped Topology ContDiff unitInterval
-
-namespace TauCeti
+open scoped Topology ContDiff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- The intersection of a closed half-space `{ℓ ≥ 0}` with an open ball centred on its boundary
-hyperplane is convex with unique derivatives. -/
-private theorem convex_uniqueDiffOn_halfSpace_inter_ball {ℓ : E →L[ℝ] ℝ} {v : E} (hv : ℓ v = 1)
-    {q : E} (hq : ℓ q = 0) {r : ℝ} (hr : 0 < r) :
-    Convex ℝ ({y | 0 ≤ ℓ y} ∩ ball q r) ∧ UniqueDiffOn ℝ ({y | 0 ≤ ℓ y} ∩ ball q r) := by
-  have hconv : Convex ℝ ({y | 0 ≤ ℓ y} ∩ ball q r) :=
-    ((convex_Ici 0).linear_preimage ℓ.toLinearMap).inter (convex_ball q r)
-  refine ⟨hconv, uniqueDiffOn_convex hconv ?_⟩
-  -- The point `q + c v` with `0 < c` small lies in the open set `{ℓ > 0} ∩ ball q r`.
-  set c : ℝ := r / (2 * (‖v‖ + 1))
-  have hc : 0 < c := by positivity
-  have hcv : c * ‖v‖ < r := by
-    have h1 : c * ‖v‖ < c * (2 * (‖v‖ + 1)) := by nlinarith [norm_nonneg v]
-    rwa [div_mul_cancel₀ _ (by positivity)] at h1
-  refine ⟨q + c • v, mem_interior.2 ⟨{y | 0 < ℓ y} ∩ ball q r,
-    inter_subset_inter_left _ fun y (hy : 0 < ℓ y) ↦ show 0 ≤ ℓ y from hy.le,
-    (isOpen_lt continuous_const ℓ.continuous).inter isOpen_ball, ?_, ?_⟩⟩
-  · simp [hq, hv, hc]
-  · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hc.le]
-    exact hcv
+/-- A closed half-space `{x | a ≤ ℓ x}` of a real normed space has unique derivatives, including
+on its boundary hyperplane. -/
+theorem ContinuousLinearMap.uniqueDiffOn_halfSpace (ℓ : E →L[ℝ] ℝ) (a : ℝ) :
+    UniqueDiffOn ℝ {x | a ≤ ℓ x} := by
+  by_cases hℓ : ℓ = 0
+  · by_cases ha : a ≤ 0
+    · simp [hℓ, ha]
+    · simp [hℓ, ha, uniqueDiffOn_empty]
+  obtain ⟨w, hw⟩ : ∃ w, ℓ w ≠ 0 := by
+    by_contra! h
+    exact hℓ (ContinuousLinearMap.ext h)
+  -- The point `((a + 1) / ℓ w) • w` lies in the open half-space `{a < ℓ}`.
+  refine uniqueDiffOn_convex ((convex_Ici a).linear_preimage ℓ.toLinearMap)
+    ⟨((a + 1) / ℓ w) • w, mem_interior_iff_mem_nhds.2 <| mem_of_superset
+      ((isOpen_lt continuous_const ℓ.continuous).mem_nhds ?_) fun x (hx : a < ℓ x) ↦ hx.le⟩
+  simp [div_mul_cancel₀ _ hw]
+
+namespace TauCeti
 
 /-- Radii for Hadamard division: for `w ∈ ball q δ` and `0 ≤ a < ε`, the foot `w - ℓ(w) v` of `w`
 moved by `a v` lies in `{ℓ ≥ 0} ∩ ball q r`, and `ℓ < ε` on `ball q δ`. -/
@@ -108,17 +103,17 @@ private theorem exists_radii_mapsTo {ℓ : E →L[ℝ] ℝ} {v : E} (hv : ℓ v 
     _ = δ * C := by ring
     _ < r := hδC
 
-/-- **Hadamard's lemma along the segment from the foot.** If `f` is smooth on a convex set `S` with
+/-- **Hadamard's lemma along the segment from the foot.** If `f` is `C¹` on a convex set `S` with
 unique derivatives containing `y` and its foot `y - ℓ(y) v`, and `f` vanishes at the foot, then
 `f y = ℓ(y) • ∫₀¹ ∂_v f(y - ℓ(y) v + τ ℓ(y) v) dτ`, with the derivative taken within `S`. -/
 private theorem eq_smul_intervalIntegral_fderivWithin {ℓ : E →L[ℝ] ℝ} {v : E} {S : Set E}
-    (hSc : Convex ℝ S) (hSu : UniqueDiffOn ℝ S) {f : E → F} (hf : ContDiffOn ℝ ∞ f S) {y : E}
+    (hSc : Convex ℝ S) (hSu : UniqueDiffOn ℝ S) {f : E → F} (hf : ContDiffOn ℝ 1 f S) {y : E}
     (hy : y ∈ S) (hc : y - ℓ y • v ∈ S) (h0 : f (y - ℓ y • v) = 0) :
     f y = ℓ y • ∫ τ in (0 : ℝ)..1, fderivWithin ℝ f S (y - ℓ y • v + (τ * ℓ y) • v) v := by
   have hderiv (z : E) (hz : z ∈ S) : HasFDerivWithinAt f (fderivWithin ℝ f S z) S z :=
-    ((hf.differentiableOn (by simp)) z hz).hasFDerivWithinAt
+    (hf.differentiableOn_one z hz).hasFDerivWithinAt
   have hFTC := (hSc.starConvex hc).sub_eq_intervalIntegral_lineMap_apply
-    (hf.fderivWithin hSu (m := 0) (by simp)).continuousOn hderiv hy
+    (hf.fderivWithin hSu (m := 0) le_rfl).continuousOn hderiv hy
   have hyc : y - (y - ℓ y • v) = ℓ y • v := by simp
   rw [h0, sub_zero, hyc] at hFTC
   rw [hFTC, ← intervalIntegral.integral_smul]
@@ -128,39 +123,38 @@ private theorem eq_smul_intervalIntegral_fderivWithin {ℓ : E →L[ℝ] ℝ} {v
 
 /-- Hadamard division on a half-space, at a point `q` of the boundary hyperplane, given a vector
 `v` with `ℓ v = 1`. -/
-private theorem exists_contDiffOn_eq_smul_of_apply_eq_zero {ℓ : E →L[ℝ] ℝ} {v : E}
+private theorem exists_contDiffOn_eq_smul_of_apply_eq_zero {k : ℕ∞} {ℓ : E →L[ℝ] ℝ} {v : E}
     (hv : ℓ v = 1) {q : E} (hq : ℓ q = 0) {s : Set E} (hs : s ∈ 𝓝 q) {f : E → F}
-    (hf : ContDiffOn ℝ ∞ f ({y | 0 ≤ ℓ y} ∩ s)) (h0 : ∀ y ∈ s, ℓ y = 0 → f y = 0) :
-    ∃ g : E → F, ∃ t, IsOpen t ∧ q ∈ t ∧ ContDiffOn ℝ ∞ g ({y | 0 ≤ ℓ y} ∩ t) ∧
+    (hf : ContDiffOn ℝ (k + 1) f ({y | 0 ≤ ℓ y} ∩ s)) (h0 : ∀ y ∈ s, ℓ y = 0 → f y = 0) :
+    ∃ g : E → F, ∃ t, IsOpen t ∧ q ∈ t ∧ ContDiffOn ℝ k g ({y | 0 ≤ ℓ y} ∩ t) ∧
       ∀ y ∈ {y | 0 ≤ ℓ y} ∩ t, f y = ℓ y • g y := by
   obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 hs
   set H : Set E := {y | 0 ≤ ℓ y}
   set S : Set E := H ∩ ball q r
-  obtain ⟨hSc, hSu⟩ := convex_uniqueDiffOn_halfSpace_inter_ball hv hq hr
-  have hfS : ContDiffOn ℝ ∞ f S := hf.mono (inter_subset_inter_right _ hrs)
+  have hHc : Convex ℝ H := (convex_Ici 0).linear_preimage ℓ.toLinearMap
+  have hHu : UniqueDiffOn ℝ H := ℓ.uniqueDiffOn_halfSpace 0
+  have hSc : Convex ℝ S := hHc.inter (convex_ball q r)
+  have hSu : UniqueDiffOn ℝ S := hHu.inter isOpen_ball
+  have hfS : ContDiffOn ℝ (k + 1) f S := hf.mono (inter_subset_inter_right _ hrs)
   obtain ⟨δ, hδ, ε, hε, hℓε, hΦD⟩ := exists_radii_mapsTo hv hq hr
   set Φ : ℝ × E → E := fun p ↦ (p.2 - ℓ p.2 • v) + p.1 • v
   set D : Set (ℝ × E) := Ico 0 ε ×ˢ ball q δ
   -- The derivative of `f` in the direction `v`, at the points `Φ (a, w)`.
   let φ : ℝ × E → F := fun p ↦ fderivWithin ℝ f S (Φ p) v
-  have hφ : ContDiffOn ℝ ∞ φ D :=
-    ((hfS.fderivWithin hSu (by simp)).comp (by fun_prop) hΦD).clm_apply contDiffOn_const
+  have hφ : ContDiffOn ℝ k φ D :=
+    ((hfS.fderivWithin hSu le_rfl).comp (by fun_prop) hΦD).clm_apply contDiffOn_const
   set t : Set E := ball q δ
-  obtain ⟨hHtc, hHtu⟩ := convex_uniqueDiffOn_halfSpace_inter_ball hv hq hδ
   have hmemD {y : E} (hy : y ∈ H ∩ t) {τ : ℝ} (hτ : τ ∈ Icc (0 : ℝ) 1) : (τ * ℓ y, y) ∈ D :=
     ⟨⟨mul_nonneg hτ.1 hy.1, lt_of_le_of_lt (mul_le_of_le_one_left hy.1 hτ.2) (hℓε y hy.2)⟩, hy.2⟩
   refine ⟨fun y ↦ ∫ τ in (0 : ℝ)..1, φ (τ * ℓ y, y), t, isOpen_ball, mem_ball_self hδ, ?_, ?_⟩
   · -- Smoothness of the average, by differentiation under the integral sign.
-    have hone : Integrable (fun _ : I ↦ (1 : ℝ)) volume :=
-      continuous_const.integrable_of_hasCompactSupport (.of_compactSpace _)
-    have hF : ContDiffOn ℝ ∞ (fun p : E × ℝ ↦ φ (p.2 * ℓ p.1, p.1))
+    have hF : ContDiffOn ℝ k (fun p : E × ℝ ↦ φ (p.2 * ℓ p.1, p.1))
         ((H ∩ t) ×ˢ Icc (0 : ℝ) 1) :=
       hφ.comp (by fun_prop) fun p hp ↦ hmemD hp.1 hp.2
-    refine (hHtc.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I)) hone
-      continuous_subtypeVal hHtu (hHtu.prod uniqueDiffOn_Icc_zero_one) hF
-      fun y hy τ ↦ ⟨hy, τ.property⟩).congr fun y _ ↦ ?_
-    simp only [one_smul]
-    exact intervalIntegral_eq_integral_unitInterval _
+    exact (Convex.contDiffOn_parametric_primitive (hHc.inter (convex_ball q δ)) (convex_Icc 0 1)
+      (hHu.inter isOpen_ball) (left_mem_Icc.2 zero_le_one) hF).comp
+      (contDiffOn_id.prodMk (contDiffOn_const (c := (1 : ℝ))))
+      fun y hy ↦ ⟨hy, right_mem_Icc.2 zero_le_one⟩
   · -- The fundamental theorem of calculus along the segment from the foot of `y` to `y`.
     intro y hy
     have hc : y - ℓ y • v ∈ S := by
@@ -169,16 +163,16 @@ private theorem exists_contDiffOn_eq_smul_of_apply_eq_zero {ℓ : E →L[ℝ] �
     have hyS : y ∈ S := by
       have hΦy : Φ (1 * ℓ y, y) = y := by simp [Φ]
       exact hΦy ▸ hΦD (hmemD hy (right_mem_Icc.2 zero_le_one))
-    exact eq_smul_intervalIntegral_fderivWithin hSc hSu hfS hyS hc
+    exact eq_smul_intervalIntegral_fderivWithin hSc hSu (hfS.of_le le_add_self) hyS hc
       (h0 _ (hrs hc.2) (by simp [hv]))
 
-/-- **Hadamard division on a half-space.** If `f` is smooth on the half-space `{ℓ ≥ 0}` near `q`
-and vanishes on the hyperplane `{ℓ = 0}` near `q`, then on the half-space near `q`, `f = ℓ • g`
-for a function `g` smooth on the half-space. -/
-theorem exists_contDiffOn_eq_smul_of_eq_zero {ℓ : E →L[ℝ] ℝ} {q : E} {s : Set E} (hs : s ∈ 𝓝 q)
-    {f : E → F} (hf : ContDiffOn ℝ ∞ f ({y | 0 ≤ ℓ y} ∩ s))
+/-- **Hadamard division on a half-space.** If `f` is `C^(k+1)` on the half-space `{ℓ ≥ 0}` near
+`q` and vanishes on the hyperplane `{ℓ = 0}` near `q`, then on the half-space near `q`,
+`f = ℓ • g` for a function `g` that is `C^k` on the half-space. -/
+theorem exists_contDiffOn_eq_smul_of_eq_zero {k : ℕ∞} {ℓ : E →L[ℝ] ℝ} {q : E} {s : Set E}
+    (hs : s ∈ 𝓝 q) {f : E → F} (hf : ContDiffOn ℝ (k + 1) f ({y | 0 ≤ ℓ y} ∩ s))
     (h0 : ∀ y ∈ s, ℓ y = 0 → f y = 0) :
-    ∃ g : E → F, ∃ t, IsOpen t ∧ q ∈ t ∧ ContDiffOn ℝ ∞ g ({y | 0 ≤ ℓ y} ∩ t) ∧
+    ∃ g : E → F, ∃ t, IsOpen t ∧ q ∈ t ∧ ContDiffOn ℝ k g ({y | 0 ≤ ℓ y} ∩ t) ∧
       ∀ y ∈ {y | 0 ≤ ℓ y} ∩ t, f y = ℓ y • g y := by
   have hqs : q ∈ interior s := mem_interior_iff_mem_nhds.2 hs
   rcases lt_trichotomy (ℓ q) 0 with hq | hq | hq
@@ -204,6 +198,6 @@ theorem exists_contDiffOn_eq_smul_of_eq_zero {ℓ : E →L[ℝ] ℝ} {q : E} {s 
       fun y hy ↦ (smul_inv_smul₀ hy.2.2.ne' _).symm⟩
     exact (ℓ.contDiff.contDiffOn.inv fun y (hy : y ∈ {y | 0 ≤ ℓ y} ∩ (interior s ∩ {y | 0 < ℓ y})) ↦
       hy.2.2.ne').smul
-      (hf.mono fun y hy ↦ ⟨hy.1, interior_subset hy.2.1⟩)
+      (hf.of_succ.mono fun y hy ↦ ⟨hy.1, interior_subset hy.2.1⟩)
 
 end TauCeti
