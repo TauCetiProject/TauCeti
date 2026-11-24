@@ -30,6 +30,7 @@ reparametrization of the class along surjections.
 ## Main results
 
 * `ENNReal.ofReal_posPart`: `ENNReal.ofReal (x⁺) = ENNReal.ofReal x`.
+* `ENNReal.toNNReal_ofReal`: `(ENNReal.ofReal r).toNNReal = r.toNNReal`.
 * `ENNReal.ofReal_div_sub_one`:
   `ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1)` for `1 < p`.
 * `ENNReal.ne_top_of_pos_mul_toReal`: `q ≠ ∞` whenever `0 < a * q.toReal`.
@@ -53,6 +54,11 @@ public section
 open scoped ENNReal
 
 namespace ENNReal
+
+/-- The positive part of a real number, through `ℝ≥0∞`, is `Real.toNNReal`. -/
+@[simp]
+theorem toNNReal_ofReal (r : ℝ) : (ENNReal.ofReal r).toNNReal = r.toNNReal :=
+  toNNReal_coe r.toNNReal
 
 /-- `ENNReal.ofReal` absorbs the positive part since it already vanishes on `(-∞, 0]`. -/
 @[simp]
