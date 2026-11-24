@@ -79,7 +79,7 @@ bounded bilinear operator. -/
 def smulContinuousLinearMap : C(K, 𝕜) →L[𝕜] C(K, E) →L[𝕜] C(K, E) := by
   let L : C(K, 𝕜) →ₗ[𝕜] C(K, E) →ₗ[𝕜] C(K, E) :=
     { toFun := fun g =>
-        { toFun := fun f => ⟨fun x => g x • f x, by fun_prop⟩
+        { toFun := fun f => g • f
           map_add' := fun _ _ => by ext x; simp
           map_smul' := fun _ _ => by ext x; simp [smul_comm (g x)] }
       map_add' := fun _ _ => by ext f x; simp [add_smul]
@@ -90,11 +90,16 @@ def smulContinuousLinearMap : C(K, 𝕜) →L[𝕜] C(K, E) →L[𝕜] C(K, E) :
     exact (norm_smul_le (g x) (f x)).trans <|
       mul_le_mul (norm_coe_le_norm g x) (norm_coe_le_norm f x) (norm_nonneg _) (norm_nonneg _)
 
+/-- `smulContinuousLinearMap g f` is the action `g • f` of `C(K, 𝕜)` on `C(K, E)`. -/
+theorem smulContinuousLinearMap_apply_eq_smul (g : C(K, 𝕜)) (f : C(K, E)) :
+    smulContinuousLinearMap g f = g • f := by
+  simp [smulContinuousLinearMap]
+
 /-- Evaluating `smulContinuousLinearMap g f` at `x` multiplies `f x` by `g x`. -/
 @[simp]
 theorem smulContinuousLinearMap_apply (g : C(K, 𝕜)) (f : C(K, E)) (x : K) :
     smulContinuousLinearMap g f x = g x • f x := by
-  simp [smulContinuousLinearMap]
+  rw [smulContinuousLinearMap_apply_eq_smul, smul_apply']
 
 /-- Pointwise scalar multiplication has operator norm at most one. -/
 theorem norm_smulContinuousLinearMap_le :

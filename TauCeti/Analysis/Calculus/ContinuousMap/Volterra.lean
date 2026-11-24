@@ -43,6 +43,8 @@ causality: the value at time `t` depends only on the path up to time `t`.
   `ContinuousMap.volterraTransform_symm_comp_inclusion`: restriction to `[a, c]` for `c ≤ b`.
 * `ContinuousMap.volterraTransform_apply_eq_of_eqOn_Iic`,
   `ContinuousMap.volterraTransform_symm_apply_eq_of_eqOn_Iic`: causality.
+* `intervalIntegral.integral_mul_exp_smul_add_primitive`: the integrating-factor identity on the
+  real line behind the inverse formula.
 -/
 
 public section
@@ -51,19 +53,17 @@ open MeasureTheory Set
 
 noncomputable section
 
-namespace ContinuousMap
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
 section Auxiliary
 
 /-! ### Integrating-factor identities on the real line -/
 
-variable {k : ℝ → ℝ} {u : ℝ → E} {a : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {k : ℝ → ℝ} {u : ℝ → E} {a : ℝ}
 
 /-- If `P = ∫ₐ k • u`, then `exp (∫ₐ k) • P` is the primitive of
-`(k * exp (∫ₐ k)) • (u + P)`. This is the identity `T_K⁻¹ (T_K x) = x`. -/
-private theorem integral_smul_add_primitive (hk : Continuous k) (hu : Continuous u) (t : ℝ) :
+`(k * exp (∫ₐ k)) • (u + P)`. This integrating-factor identity underlies `T_K⁻¹ (T_K x) = x`
+(`ContinuousMap.volterraTransform`). -/
+theorem intervalIntegral.integral_mul_exp_smul_add_primitive (hk : Continuous k)
+    (hu : Continuous u) (t : ℝ) :
     ∫ s in a..t, (k s * Real.exp (∫ r in a..s, k r)) • (u s + ∫ r in a..s, k r • u r) =
       Real.exp (∫ r in a..t, k r) • ∫ r in a..t, k r • u r := by
   by_cases hE : CompleteSpace E; swap
@@ -84,6 +84,10 @@ private theorem integral_smul_add_primitive (hk : Continuous k) (hu : Continuous
   simp
 
 end Auxiliary
+
+namespace ContinuousMap
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 variable {a b : ℝ} (hab : a ≤ b)
 
@@ -166,7 +170,7 @@ private theorem volterraBackward_volterraForward (K : C(Icc a b, ℝ)) (x : C(Ic
       ∫ s in a..t, (k s * Real.exp (∫ r in a..s, k r)) • (u s + ∫ r in a..s, k r • u r) := by
     refine intervalIntegral.integral_congr fun s hs ↦ ?_
     simp only [volterraForward_apply, coe_projIcc_of_mem_uIcc hab t.property hs, u, k]
-  rw [hcongr, integral_smul_add_primitive hk hu, smul_smul, ← Real.exp_add]
+  rw [hcongr, intervalIntegral.integral_mul_exp_smul_add_primitive hk hu, smul_smul, ← Real.exp_add]
   simp [k, u]
 
 /-- Conjugating by the integrating factor turns `volterraForward (-K)` into the inverse map. -/
@@ -257,7 +261,7 @@ theorem norm_volterraTransform_le :
       1 + (b - a) * ‖K‖ := by
   have hK : ‖smulContinuousLinearMap (E := E) K‖ ≤ ‖K‖ :=
     (ContinuousLinearMap.le_of_opNorm_le _ norm_smulContinuousLinearMap_le K).trans_eq (one_mul _)
-  change ‖volterraForward (E := E) hab K‖ ≤ _
+  rw [volterraTransform, ContinuousLinearEquiv.toContinuousLinearMap_ofContinuousLinearMap]
   exact (ContinuousLinearMap.opNorm_add_le _ _).trans <|
     add_le_add ContinuousLinearMap.norm_id_le <| (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
       mul_le_mul (norm_intervalIntegralOperator_le a b hab) hK (norm_nonneg _) (sub_nonneg.2 hab)
@@ -297,6 +301,15 @@ theorem norm_volterraTransform_symm_le :
           (hint.trans (mul_le_mul_of_nonneg_left ht (by positivity))))
     _ = (1 + (b - a) * ‖K‖ * Real.exp ((b - a) * ‖K‖)) * ‖y‖ := by ring
 
+omit [NormedSpace ℝ E] in
+/-- Paths that agree on `[a, t]` agree at the projections of points of `[a, t]`. -/
+private theorem apply_projIcc_eq_of_eqOn_Iic {x y : C(Icc a b, E)} {t : Icc a b}
+    (h : EqOn x y (Iic t)) {s : ℝ} (hs : s ∈ uIcc a t) :
+    x (projIcc a b hab s) = y (projIcc a b hab s) := by
+  refine h ?_
+  rw [mem_Iic, ← Subtype.coe_le_coe, coe_projIcc_of_mem_uIcc hab t.property hs]
+  exact (uIcc_of_le t.property.1 ▸ hs).2
+
 /-- **Causality** of the Volterra transform: its value at time `t` depends only on the path on
 `[a, t]`. -/
 theorem volterraTransform_apply_eq_of_eqOn_Iic {x y : C(Icc a b, E)} {t : Icc a b}
@@ -304,10 +317,8 @@ theorem volterraTransform_apply_eq_of_eqOn_Iic {x y : C(Icc a b, E)} {t : Icc a 
     volterraTransform hab K x t = volterraTransform hab K y t := by
   simp only [volterraTransform_apply, h (mem_Iic.2 le_rfl)]
   congr 1
-  refine intervalIntegral.integral_congr fun s hs ↦ ?_
-  rw [h]
-  rw [mem_Iic, ← Subtype.coe_le_coe, coe_projIcc_of_mem_uIcc hab t.property hs]
-  exact (uIcc_of_le t.property.1 ▸ hs).2
+  exact intervalIntegral.integral_congr fun s hs ↦ by
+    rw [apply_projIcc_eq_of_eqOn_Iic hab h hs]
 
 /-- **Causality** of the inverse Volterra transform: its value at time `t` depends only on the
 path on `[a, t]`. -/
@@ -316,10 +327,8 @@ theorem volterraTransform_symm_apply_eq_of_eqOn_Iic {x y : C(Icc a b, E)} {t : I
     (volterraTransform hab K).symm x t = (volterraTransform hab K).symm y t := by
   simp only [volterraTransform_symm_apply, h (mem_Iic.2 le_rfl)]
   congr 1
-  refine intervalIntegral.integral_congr fun s hs ↦ ?_
-  rw [h]
-  rw [mem_Iic, ← Subtype.coe_le_coe, coe_projIcc_of_mem_uIcc hab t.property hs]
-  exact (uIcc_of_le t.property.1 ▸ hs).2
+  exact intervalIntegral.integral_congr fun s hs ↦ by
+    rw [apply_projIcc_eq_of_eqOn_Iic hab h hs]
 
 /-! ### Restriction to shorter horizons -/
 
