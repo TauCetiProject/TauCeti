@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
+public import Mathlib.Topology.Sets.Compacts
 
 /-!
 # Fibers of a locally constant function as clopen sets
@@ -21,6 +22,12 @@ This file also packages the fibers of `f : LocallyConstant X α` as elements of 
 (`LocallyConstant.fiberClopens`). Their underlying open sets `(f.fiberClopens a).toOpens` can
 index restrictions of sheaves, and they cover `X`. Their preimages under a continuous map `g` are
 the fibers of `f ∘ g` (`LocallyConstant.comap_toOpens_fiberClopens`).
+
+When `f` takes a constant value `b₀` off a compact set, its fibers over the other values are compact
+open, and `IsLocallyConstant.fiberCompactOpens` packages them as pairwise disjoint elements of
+`CompactOpens X`. A compact open set `K ⊆ X × Y` whose slice at `x` is `π (f x)`, with `π b₀ = ⊥`,
+is then the union of the rectangles over these fibers
+(`IsLocallyConstant.mem_iff_exists_fiberCompactOpens`).
 -/
 
 public section
@@ -53,6 +60,47 @@ theorem continuous_iff₂ {X α β T : Type*} [TopologicalSpace X] [TopologicalS
      fun h => h.comp ((continuous_subtypeVal
         (p := fun x => (fun y => (f₁ y, f₂ y)) x = (a, b))).subtype_mk
         fun x => ⟨congrArg Prod.fst x.property, congrArg Prod.snd x.property⟩)⟩
+
+section CompactOpens
+
+variable {X β : Type*} [TopologicalSpace X] {f : X → β} (hf : IsLocallyConstant f) {c : Set X}
+  (hc : IsCompact c) {b₀ : β} (hfc : ∀ x ∉ c, f x = b₀)
+
+/-- The fiber of a locally constant function `f` over a value `b` other than the value `b₀` that
+`f` takes off a compact set `c`, as a compact open set; it is empty for `b = b₀`. -/
+def fiberCompactOpens (b : β) : CompactOpens X where
+  carrier := {x | f x = b ∧ b ≠ b₀}
+  isCompact' := hc.of_isClosed_subset ((hf.isClosed_fiber b).inter isClosed_const)
+    fun x hx ↦ by_contra fun hxc ↦ hx.2 (hx.1 ▸ hfc x hxc)
+  isOpen' := (hf.isOpen_fiber b).inter isOpen_const
+
+@[simp]
+theorem mem_fiberCompactOpens {b : β} {x : X} :
+    x ∈ hf.fiberCompactOpens hc hfc b ↔ f x = b ∧ b ≠ b₀ :=
+  Iff.rfl
+
+theorem pairwiseDisjoint_fiberCompactOpens (s : Set β) :
+    s.PairwiseDisjoint fun b ↦ (hf.fiberCompactOpens hc hfc b : Set X) :=
+  fun _ _ _ _ hbb' ↦ Set.disjoint_left.2 fun _ hx hx' ↦
+    hbb' (((hf.mem_fiberCompactOpens hc hfc).1 hx).1.symm.trans
+      ((hf.mem_fiberCompactOpens hc hfc).1 hx').1)
+
+/-- If a compact open set `K ⊆ X × Y` has slice `π (f x)` at each `x`, with `π b₀ = ⊥`, then `K` is
+the union of the rectangles `hf.fiberCompactOpens hc hfc p ×ˢ π p` over any finite set `P` of
+values containing `f '' c`. -/
+theorem mem_iff_exists_fiberCompactOpens {Y : Type*} [TopologicalSpace Y]
+    (π : β → CompactOpens Y) (hπ : π b₀ = ⊥) {K : CompactOpens (X × Y)}
+    (hK : ∀ x y, (x, y) ∈ K ↔ y ∈ π (f x)) {P : Finset β} (hP : ∀ x ∈ c, f x ∈ P) (x : X) (y : Y) :
+    (x, y) ∈ K ↔ ∃ p ∈ P, x ∈ hf.fiberCompactOpens hc hfc p ∧ y ∈ π p := by
+  rw [hK]
+  refine ⟨fun hy ↦ ?_, fun ⟨p, _, hxp, hy⟩ ↦ (hf.mem_fiberCompactOpens hc hfc).1 hxp |>.1 ▸ hy⟩
+  have hb : f x ≠ b₀ := fun hb ↦ by
+    rw [hb, hπ, ← SetLike.mem_coe, CompactOpens.coe_bot] at hy
+    exact Set.notMem_empty y hy
+  exact ⟨f x, hP x (by_contra fun hx ↦ hb (hfc x hx)),
+    (hf.mem_fiberCompactOpens hc hfc).2 ⟨rfl, hb⟩, hy⟩
+
+end CompactOpens
 
 end IsLocallyConstant
 
