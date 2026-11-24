@@ -265,7 +265,7 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
         ofAdd_zero, map_one, mul_one, MonoidHom.one_apply] at h1
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_five, toAdd_ofAdd, ofAdd_zero,
         map_one, one_mul, MonoidHom.one_apply] at h5
-      rw [zmodPairing_eq_one_iff, ofAdd_eq_one] at h1 h5
+      rw [zmodPairing_eq_one_iff, toAdd_ofAdd, toAdd_ofAdd, mul_one] at h1 h5
       apply (ZMod.unitsTwoPowEquiv e).injective
       rw [map_one, ← toAdd_eq_zero]
       exact Prod.ext h1 h5
@@ -306,7 +306,7 @@ theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
   apply (ZMod.unitsEquivPi hN).injective
   ext1 p
   rw [map_one, Pi.one_apply, ZMod.unitsEquivPi_apply,
-    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.2)]
+    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.property)]
   ext u : 1
   -- Pair `m` with the unit that is `u` modulo `p ^ v` and `1` modulo the other prime powers.
   let v : Π q : N.primeFactors, (ZMod (q ^ N.factorization q))ˣ := Pi.mulSingle p u

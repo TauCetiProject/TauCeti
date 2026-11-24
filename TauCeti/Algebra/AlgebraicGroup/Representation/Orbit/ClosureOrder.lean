@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.FieldTheory.IsAlgClosed.Basic
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
+import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Translation
+import TauCeti.RingTheory.GradedAlgebra.Homogenization
 import TauCeti.Topology.Constructible.Jacobson
 
 /-!
@@ -29,9 +30,13 @@ and even distinct closures. The *closure order* on orbits,
   `O ≤ O'` if and only if `O ⊆ closure O'`,
 
 is therefore a partial order. An orbit lies strictly below another exactly when its vectors lie
-in the boundary `closure O' \ O'`, and then it has strictly smaller dimension. Moreover, if an
-orbit is stable under nonzero scaling (`mk (c • v) = mk v` for all `c : kˣ`), then the zero orbit
-lies in its closure (`mk 0 ≤ mk v`).
+in the boundary `closure O' \ O'`, and then it has strictly smaller dimension. Moreover, the
+orbit of `w` lies below the orbit of `v` exactly when every polynomial function in `Sym(M*)` that
+vanishes on every rational translate of `v` also vanishes at `w`. Consequently, any orbit stable
+under nonzero scalar multiplication contains the zero orbit in its closure. When an orbit has only
+finitely many lower orbits in the closure order, its geometric closure and boundary inside the
+affine chart `{t ≠ 0}` of `P(M × k)` decompose as the finite unions of the geometric images of its
+lower (respectively strictly lower) orbits, as full sets of scheme points.
 
 Applied to the adjoint representation of `G` on its Lie algebra, this is the closure order on
 adjoint orbits, in particular on nilpotent orbits.
@@ -39,18 +44,25 @@ adjoint orbits, in particular on nilpotent orbits.
 ## Main declarations
 
 * `TauCeti.Comodule.VectorOrbit.image_injective`,
-  `TauCeti.Comodule.VectorOrbit.closure_image_injective`: orbits are determined by their images,
-  and even by the closures of their images.
-* `TauCeti.Comodule.VectorOrbit.disjoint_image_of_ne`: distinct orbits have disjoint geometric
-  images in `P(M × k)`.
+  `TauCeti.Comodule.VectorOrbit.closure_image_injective`,
+  `TauCeti.Comodule.VectorOrbit.disjoint_image_of_ne`: orbits have pairwise disjoint geometric
+  images and distinct closures.
 * `TauCeti.Comodule.VectorOrbit.instPartialOrder`: the closure order.
 * `TauCeti.Comodule.VectorOrbit.mk_le_mk_iff`, `TauCeti.Comodule.VectorOrbit.mk_lt_mk_iff`:
   the orbit of `w` lies below the orbit of `v` when `w` lies in the closure of the orbit of
   `v`, and strictly below when `w` lies in its boundary.
 * `TauCeti.Comodule.VectorOrbit.strictMono_topologicalKrullDim_image`: strictly smaller orbits
   have strictly smaller dimension.
+* `lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero` in
+  `TauCeti.Comodule.VectorOrbit`: polynomials vanishing on all rational translates of `v` vanish
+  at every `w` with `mk w ≤ mk v`.
+* `TauCeti.Comodule.VectorOrbit.mk_le_mk_iff_forall_lift_eval_eq_zero`: conversely, the closure
+  order is cut out by these polynomials.
 * `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_forall_smul`: a scaling-invariant orbit contains
   the zero orbit in its closure.
+* `TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion` and
+  `TauCeti.Comodule.VectorOrbit.closure_diff_image_inter_basicOpen_snd_eq_biUnion`: finite
+  scheme-point closure and boundary decompositions in the affine chart `{t ≠ 0}` of `P(M × k)`.
 
 ## References
 
@@ -61,7 +73,7 @@ adjoint orbits, in particular on nilpotent orbits.
 
 public section
 
-open AlgebraicGeometry Topology WithConv
+open AlgebraicGeometry TopologicalSpace Topology WithConv
 
 namespace TauCeti.Comodule
 
@@ -96,7 +108,7 @@ theorem disjoint_image_of_ne {O₁ O₂ : VectorOrbit k H M} (hne : O₁ ≠ O�
   obtain ⟨x, ⟨hx₁, hx₂⟩, hxc⟩ :=
     ((isConstructible_range_projectiveOrbitMap (H := H) ((v₁, 1) : M × k) _).inter
       (isConstructible_range_projectiveOrbitMap (H := H) ((v₂, 1) : M × k) _))
-      |>.nonempty_inter_closedPoints (Set.nonempty_iff_ne_empty.mpr hne')
+      |>.nonempty_inter_closedPoints (Set.ne_empty_iff_nonempty.mp hne')
   obtain ⟨g₁, rfl⟩ :=
     (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H)
       ((v₁, 1) : M × k) _).ge ⟨hx₁, hxc⟩
@@ -176,63 +188,211 @@ theorem strictMono_topologicalKrullDim_image :
   rw [image_mk, image_mk]
   exact Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt _ _ (mk_lt_mk_iff.mp h)
 
+/-- **Polynomials vanishing on a rational orbit vanish on its closure.** Over an algebraically
+closed field, if the rational orbit of `w` lies in the closure of the rational orbit of `v`, and a
+polynomial `p ∈ Sym(M*)` vanishes on `g • v` for every rational point `g ∈ G(k)`, then `p` vanishes
+at `w`. -/
+theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero
+    {v w : M} (h : (mk w : VectorOrbit k H M) ≤ mk v)
+    {p : SymmetricAlgebra k (Module.Dual k M)}
+    (hp : ∀ g : WithConv (H →ₐ[k] k),
+      SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g v)) p = 0) :
+    SymmetricAlgebra.lift (Module.Dual.eval k M w) p = 0 := by
+  -- Homogenize `p` against the trivial projective coordinate on `M × k`.
+  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
+  obtain ⟨d, P, hP, hPeval⟩ :=
+    TauCeti.GradedAlgebra.exists_mem_grade_and_forall_map_eq_of_mem_one 𝒜
+      (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule k _ (LinearMap.snd k M k))
+      (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap p)
+  have heval (u : M) :
+      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P =
+        SymmetricAlgebra.lift (Module.Dual.eval k M u) p := by
+    exact (hPeval (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).toRingHom
+      (by simp)).trans (SymmetricAlgebra.lift_eval_map_dualMap k (LinearMap.fst k M k) (u, 1) p)
+  have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v)) ⊆ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ := by
+    rintro _ ⟨x, rfl⟩
+    refine (denseRange_kernelPoint (k := k) (A := H)).induction_on
+      (p := fun x ↦ projectiveOrbitMap (H := H) ((v, 1) : M × k)
+        (Module.isUnimodular_mk_one v) x ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ) x
+      ((Proj.basicOpen 𝒜 P).isOpen.isClosed_compl.preimage
+        (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+          (Module.isUnimodular_mk_one v)).continuous) ?_
+    intro g
+    rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not]
+    have hmem := (mem_projectiveOrbitMap_kernelPoint_iff ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v) (WithConv.toConv g) hP).mpr
+    rw [WithConv.ofConv_toConv] at hmem
+    exact hmem (by rw [basePointsRepresentation_prodTrivial, heval]; exact hp (WithConv.toConv g))
+  have hw_mem : projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
+      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ :=
+    closure_minimal hrange (Proj.basicOpen 𝒜 P).isOpen.isClosed_compl (mk_le_mk_iff.mp h)
+  rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not] at hw_mem
+  rw [← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hw_mem
+  have h0 := (mem_projectiveOrbitMap_kernelPoint_iff ((w, 1) : M × k)
+    (Module.isUnimodular_mk_one w) 1 hP).mp hw_mem
+  simpa [heval] using h0
+
+/-- **The closure order is cut out by polynomials.** Over an algebraically closed field, the
+rational orbit of `w` lies below the rational orbit of `v` exactly when every polynomial
+`p ∈ Sym(M*)` vanishing on all rational translates `g • v` also vanishes at `w`. -/
+theorem mk_le_mk_iff_forall_lift_eval_eq_zero {v w : M} :
+    (mk w : VectorOrbit k H M) ≤ mk v ↔
+      ∀ p : SymmetricAlgebra k (Module.Dual k M),
+        (∀ g : WithConv (H →ₐ[k] k),
+          SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g v)) p = 0) →
+        SymmetricAlgebra.lift (Module.Dual.eval k M w) p = 0 := by
+  refine ⟨fun h _ hp ↦
+    lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero h hp,
+    fun h ↦ ?_⟩
+  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
+  -- Restriction of polynomial functions on `M × k` to the affine chart `M × {1}`: translate by
+  -- the point `(0, 1)`, then restrict along `M → M × k`.
+  let D : SymmetricAlgebra k (Module.Dual k (M × k)) →ₐ[k]
+      SymmetricAlgebra k (Module.Dual k M) :=
+    (SymmetricAlgebra.map k (LinearMap.inl k M k).dualMap).comp
+      (SymmetricAlgebra.translation (Module.Dual.eval k (M × k) (0, 1))).toAlgHom
+  have hD (u : M) (P : SymmetricAlgebra k (Module.Dual k (M × k))) :
+      SymmetricAlgebra.lift (Module.Dual.eval k M u) (D P) =
+        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P := by
+    rw [AlgHom.comp_apply, SymmetricAlgebra.lift_eval_map_dualMap, AlgEquiv.toAlgHom_apply,
+      SymmetricAlgebra.lift_translation]
+    congr 1
+    ext φ
+    simpa using (map_add φ (u, 0) (0, 1)).symm
+  -- Otherwise a homogeneous basic open set around the line through `(w, 1)` avoids the orbit.
+  rw [mk_le_mk_iff]
+  by_contra hw
+  obtain ⟨_, ⟨f, rfl⟩, hwf, hf⟩ :=
+    TopologicalSpace.Opens.isBasis_iff_nbhd.mp (Proj.isBasis_basicOpen 𝒜)
+      (U := ⟨_, isClosed_closure.isOpen_compl⟩)
+      (TopologicalSpace.Opens.mem_mk.mpr (Set.mem_compl_iff _ _ |>.mpr hw))
+  rw [Proj.basicOpen_eq_iSup_proj] at hwf hf
+  obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hwf
+  have hP : GradedRing.proj 𝒜 i f ∈ 𝒜 i := by
+    rw [GradedRing.proj_apply]
+    exact SetLike.coe_mem _
+  -- Its dehomogenization vanishes on the orbit of `v` but not at `w`.
+  have hvanish (g : WithConv (H →ₐ[k] k)) : SymmetricAlgebra.lift
+      (Module.Dual.eval k M (basePointsRepresentation M g v)) (D (GradedRing.proj 𝒜 i f)) = 0 := by
+    rw [hD, ← basePointsRepresentation_prodTrivial]
+    refine (mem_projectiveOrbitMap_kernelPoint_iff ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v) g hP).mp ?_
+    by_contra hn
+    have hx := (le_iSup _ i).trans hf ((Proj.mem_basicOpen 𝒜 _ _).mpr hn)
+    rw [TopologicalSpace.Opens.mem_mk, Set.mem_compl_iff] at hx
+    exact hx (subset_closure (Set.mem_range_self _))
+  have hwP := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((w, 1) : M × k)
+    (Module.isUnimodular_mk_one w) 1 hP).mpr (by simpa [hD] using h _ hvanish)
+  rw [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hwP
+  exact (Proj.mem_basicOpen 𝒜 _ _).mp hi hwP
+
 /-- **Scaling-invariant orbits contain the zero orbit in their closure.** If every nonzero scalar
 multiple of `v` lies in the same rational orbit as `v`, then `mk 0 ≤ mk v` in the closure order. -/
 theorem mk_zero_le_mk_of_forall_smul {v : M}
     (hscale : ∀ c : kˣ, (mk ((c : k) • v) : VectorOrbit k H M) = mk v) :
     (mk (0 : M) : VectorOrbit k H M) ≤ mk v := by
   classical
-  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
-  rw [mk_le_mk_iff, mem_closure_iff]
-  intro U hU h0U
-  obtain ⟨_, ⟨f, rfl⟩, h0f, hfU⟩ :=
-    (ProjectiveSpectrum.isTopologicalBasis_basic_opens 𝒜).exists_subset_of_mem_open h0U hU
-  change _ ∈ (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜)) at h0f
-  rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f, TopologicalSpace.Opens.coe_iSup]
-    at h0f
-  obtain ⟨_, ⟨n, rfl⟩, h0n⟩ := Set.mem_sUnion.mp h0f
-  let s := GradedRing.proj 𝒜 n f
-  have hs : s ∈ 𝒜 n := SetLike.coe_mem _
-  have hs_ne : SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (0, 1)) s ≠ 0 := by
-    have hiff := mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((0, 1) : M × k)
-      (Module.isUnimodular_mk_one 0) 1 hs
-    simp only [map_one, one_apply_eq_self] at hiff
-    simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at hiff
-    exact hiff.not.mp h0n
-  let α : Module.Dual k (M × k) →ₗ[k] Polynomial k :=
-    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.C (φ (v, 0)) * Polynomial.X
-      map_add' := fun φ ψ ↦ by simp only [LinearMap.add_apply, map_add]; ring
-      map_smul' := fun r φ ↦ by
-        simp only [LinearMap.smul_apply, smul_eq_mul, map_mul, RingHom.id_apply,
-          Polynomial.smul_eq_C_mul]; ring }
-  set p : Polynomial k := SymmetricAlgebra.lift α s
-  have hpeval (t : k) :
-      p.eval t = SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) s := by
+  rw [mk_le_mk_iff_forall_lift_eval_eq_zero]
+  intro p hp
+  let α : Module.Dual k M →ₗ[k] Polynomial k :=
+    { toFun := fun φ ↦ Polynomial.C (φ v) * Polynomial.X
+      map_add' := fun φ ψ ↦ by simp [add_mul]
+      map_smul' := fun r φ ↦ by simp [Polynomial.smul_eq_C_mul, mul_assoc] }
+  set q : Polynomial k := SymmetricAlgebra.lift α p
+  have hqeval (t : k) : q.eval t = SymmetricAlgebra.lift (Module.Dual.eval k M (t • v)) p := by
     have hhom : (Polynomial.aeval t).comp (SymmetricAlgebra.lift α) =
-        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
-      refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ ?_)
-      simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-        AlgHom.comp_apply, SymmetricAlgebra.lift_ι_apply, Module.Dual.eval_apply, α,
-        LinearMap.coe_mk, AddHom.coe_mk, map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
-        Algebra.algebraMap_self, RingHom.id_apply]
-      rw [show (t • v, (1 : k)) = (0, 1) + t • (v, 0) by ext <;> simp, map_add, map_smul,
-        smul_eq_mul, mul_comm]
-    simpa [p, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, Polynomial.map_id] using
-      AlgHom.congr_fun hhom s
-  have hp0 : p ≠ 0 := fun hp ↦ hs_ne (by simpa [hp] using (hpeval 0).symm)
-  obtain ⟨c, hc⟩ := Infinite.exists_notMem_finset (insert (0 : k) p.roots.toFinset)
-  have hc0 : c ≠ 0 := fun h ↦ hc (by simp [h])
-  have hpc : p.eval c ≠ 0 := fun h ↦
-    hc (Finset.mem_insert_of_mem (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hp0).mpr h)))
-  obtain ⟨g, hg⟩ := mk_eq_mk_iff.mp (hscale (Units.mk0 c hc0)).symm
-  refine ⟨_, hfU ?_, Set.mem_range_self (AlgHom.kernelPoint g.ofConv)⟩
-  change _ ∈ (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜))
-  rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f, TopologicalSpace.Opens.coe_iSup]
-  refine Set.mem_sUnion.mpr ⟨_, ⟨n, rfl⟩,
-    (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, 1) : M × k)
-      (Module.isUnimodular_mk_one v) g hs).not.mpr ?_⟩
-  rw [basePointsRepresentation_prodTrivial, hg]
-  simpa [Units.val_mk0, ← hpeval c] using hpc
+        SymmetricAlgebra.lift (Module.Dual.eval k M (t • v)) :=
+      SymmetricAlgebra.algHom_ext <| LinearMap.ext fun φ ↦ by simp [α]; ring
+    simpa [q, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, Polynomial.map_id] using
+      AlgHom.congr_fun hhom p
+  have hq0 : q = 0 := by
+    by_contra hne
+    obtain ⟨c, hc⟩ := Infinite.exists_notMem_finset (insert (0 : k) q.roots.toFinset)
+    have hc0 : c ≠ 0 := fun h ↦ hc (by simp [h])
+    obtain ⟨g, hg⟩ := mk_eq_mk_iff.mp (hscale (Units.mk0 c hc0)).symm
+    rw [Units.val_mk0] at hg
+    have hroot : q.eval c = 0 := by
+      rw [hqeval c, ← hg]
+      exact hp g
+    exact hc (Finset.mem_insert_of_mem
+      (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hne).mpr hroot)))
+  simpa [hq0] using (hqeval 0).symm
+
+/-- **Scheme-point closure decomposition of an orbit with finitely many lower orbits.** In the
+affine chart `U = {t ≠ 0}` of `P(M × k)`, when `{O' | O' ≤ O}` is finite, `closure O.image ∩ U` is
+the union of the geometric orbit images `O'.image` for `O' ≤ O`, including nonclosed points. -/
+theorem closure_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
+    (hf : {O' : VectorOrbit k H M | O' ≤ O}.Finite) :
+    closure O.image ∩
+        (Proj.basicOpen (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
+          (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _) =
+      ⋃ O' ∈ {O' : VectorOrbit k H M | O' ≤ O}, O'.image := by
+  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
+  let U : Set (Proj 𝒜) :=
+    (Proj.basicOpen 𝒜 (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _)
+  have hlhs_cons : IsConstructible (closure O.image ∩ U) :=
+    (IsRetrocompact.isConstructible isClosed_closure.isOpen_compl
+      fun _ _ _ ↦ NoetherianSpace.isCompact _).of_compl.inter
+      (IsRetrocompact.isConstructible (Proj.basicOpen 𝒜 _).isOpen
+        fun _ _ _ ↦ NoetherianSpace.isCompact _)
+  have hrhs_cons : IsConstructible (⋃ O' ∈ {O' : VectorOrbit k H M | O' ≤ O}, O'.image) :=
+    IsConstructible.biUnion hf fun O' _ ↦ by
+      induction O' using VectorOrbit.ind with | h v
+      rw [image_mk]
+      exact isConstructible_range_projectiveOrbitMap _ _
+  -- Constructible subsets of the Jacobson scheme `Proj 𝒜` are determined by their closed points.
+  refine (hlhs_cons.eq_iff_inter_closedPoints_eq hrhs_cons).mpr (Set.Subset.antisymm ?_ ?_)
+  · rintro x ⟨⟨hxcl, hxU⟩, hxc⟩
+    obtain ⟨⟨v, c⟩, hvc, rfl⟩ :=
+      (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) x).mp hxc
+    have hc0 : c ≠ 0 := by
+      have hiff := ι_mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, c) : M × k) hvc
+        1 (LinearMap.snd k M k)
+      simpa [AlgHom.convOne_def] using hiff.not.mp hxU
+    let y : M := c⁻¹ • v
+    have hspan : k ∙ ((v, c) : M × k) = k ∙ ((y, 1) : M × k) :=
+      Submodule.span_singleton_eq_span_singleton.mpr ⟨Units.mk0 c⁻¹ (inv_ne_zero hc0), by
+        ext <;> simp [y, Units.smul_def, inv_mul_cancel₀ hc0]⟩
+    have hpt : projectiveOrbitMap (H := H) ((v, c) : M × k) hvc
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) =
+        projectiveOrbitMap (H := H) ((y, 1) : M × k) (Module.isUnimodular_mk_one y)
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
+      have hiff := projectiveOrbitMap_kernelPoint_eq_iff_span_eq (H := H) ((v, c) : M × k) hvc
+        ((y, 1) : M × k) (Module.isUnimodular_mk_one y) 1 1
+      simp only [map_one, one_apply_eq_self] at hiff
+      rw [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hiff
+      exact hiff.mpr hspan
+    have hle : (mk y : VectorOrbit k H M) ≤ O := by
+      induction O using VectorOrbit.ind with | h e
+      rw [image_mk] at hxcl
+      rwa [mk_le_mk_iff, ← hpt]
+    refine ⟨Set.mem_iUnion₂.mpr ⟨mk y, hle, ?_⟩, hxc⟩
+    rw [hpt, image_mk]
+    exact Set.mem_range_self _
+  · rintro x ⟨hx, hxc⟩
+    obtain ⟨O', hle, hxO'⟩ := Set.mem_iUnion₂.mp hx
+    refine ⟨⟨le_iff_image_subset_closure.mp hle hxO', ?_⟩, hxc⟩
+    induction O' using VectorOrbit.ind with | h v
+    rw [image_mk] at hxO'
+    exact range_projectiveOrbitMap_subset_basicOpen_snd v hxO'
+
+/-- **Scheme-point boundary decomposition of an orbit with finitely many lower orbits.** In the
+affine chart `U = {t ≠ 0}` of `P(M × k)`, when `{O' | O' ≤ O}` is finite, the boundary
+`(closure O.image \ O.image) ∩ U` is the union of `O'.image` over all strictly smaller `O' < O`. -/
+theorem closure_diff_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
+    (hf : {O' : VectorOrbit k H M | O' ≤ O}.Finite) :
+    (closure O.image \ O.image) ∩
+        (Proj.basicOpen (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
+          (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _) =
+      ⋃ O' ∈ {O' : VectorOrbit k H M | O' < O}, O'.image := by
+  rw [Set.sdiff_eq, Set.inter_right_comm, ← Set.sdiff_eq,
+    closure_image_inter_basicOpen_snd_eq_biUnion hf]
+  ext x
+  simp only [Set.mem_sdiff, Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop]
+  exact ⟨fun ⟨⟨O', hle, hxO'⟩, hxO⟩ ↦ ⟨O', lt_of_le_of_ne hle (fun h ↦ hxO (h ▸ hxO')), hxO'⟩,
+    fun ⟨O', hlt, hxO'⟩ ↦ ⟨⟨O', hlt.le, hxO'⟩,
+      Set.disjoint_left.mp (disjoint_image_of_ne hlt.ne) hxO'⟩⟩
 
 end VectorOrbit
 

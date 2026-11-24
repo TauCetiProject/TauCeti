@@ -131,6 +131,74 @@ theorem eventually_approximateIdentityLp_ae_eq_zero {S : Set G} (hS : S ∈ 𝓝
   filter_upwards [μ.approximateIdentityLp_ae_eq_zero U] with x hx hxS
   exact hx fun hxU => hxS (hV (hU hxU))
 
+/-- Each continuous kernel `μ.approximateIdentity U` belongs to `Lᵖ(G, μ; ℝ)` for every
+`p : ℝ≥0∞` (in particular to `L¹ ∩ L²`). -/
+theorem memLp_approximateIdentity (U : OpenNhdsOf (1 : G)) (p : ℝ≥0∞) :
+    MemLp (μ.approximateIdentity U) p μ :=
+  (μ.approximateIdentity U).continuous.memLp_of_hasCompactSupport
+    (μ.approximateIdentity U).hasCompactSupport
+
+/-- Coerced to an `RCLike` scalar field `𝕜`, `μ.approximateIdentity U` belongs to `Lᵖ(G, μ; 𝕜)`
+for every `p : ℝ≥0∞` (in particular to `L¹ ∩ L²`). -/
+theorem memLp_ofReal_approximateIdentity {𝕜 : Type*} [RCLike 𝕜] (U : OpenNhdsOf (1 : G))
+    (p : ℝ≥0∞) : MemLp (fun x => (μ.approximateIdentity U x : 𝕜)) p μ :=
+  (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).comp_memLp' (μ.memLp_approximateIdentity U p)
+
+/-- Coerced to an `RCLike` scalar field `𝕜`, each `L¹` kernel has integral one. -/
+@[simp]
+theorem integral_ofRealCLM_compLp_approximateIdentityLp {𝕜 : Type*} [RCLike 𝕜]
+    (U : OpenNhdsOf (1 : G)) :
+    ∫ x, ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (μ.approximateIdentityLp U)) x ∂μ = 1 := by
+  have hcomm := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).integral_comp_comm
+    (L1.integrable_coeFn (μ.approximateIdentityLp U))
+  refine (integral_congr_ae ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp _)).trans ?_
+  rw [hcomm, μ.integral_approximateIdentityLp, RCLike.ofRealCLM_apply, RCLike.ofReal_one]
+
+/-- Integrating the inverted kernel `z ↦ μ.approximateIdentity U z⁻¹` equals integrating
+`μ.approximateIdentity U` against the modular character. -/
+theorem integral_approximateIdentity_inv (U : OpenNhdsOf (1 : G)) :
+    ∫ z, μ.approximateIdentity U z⁻¹ ∂μ =
+      ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ := by
+  simpa only [smul_eq_mul] using TauCeti.integral_inv_eq_integral_modularCharacter_smul (μ := μ)
+    (map_continuous (μ.approximateIdentity U)) (μ.approximateIdentity U).hasCompactSupport
+
+/-- Integrating the modular character against the shrinking kernels `μ.approximateIdentity U`
+tends to `1` along `atBot`. -/
+theorem tendsto_integral_modularCharacter_mul_approximateIdentity :
+    Tendsto (fun U => ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ)
+      atBot (𝓝 1) := by
+  have hmeas (U : OpenNhdsOf (1 : G)) :
+      AEStronglyMeasurable
+        (fun z => μ.approximateIdentityLp U z • (modularCharacter z : ℝ)) μ := by
+    have hcont : Continuous fun z =>
+        μ.approximateIdentity U z • (modularCharacter z : ℝ) :=
+      (map_continuous (μ.approximateIdentity U)).smul
+        (NNReal.continuous_coe.comp TauCeti.continuous_modularCharacter)
+    have hsupp : HasCompactSupport fun z =>
+        μ.approximateIdentity U z • (modularCharacter z : ℝ) :=
+      (μ.approximateIdentity U).hasCompactSupport.smul_right
+    exact (hcont.integrable_of_hasCompactSupport hsupp).aestronglyMeasurable.congr <| by
+      filter_upwards [μ.coeFn_approximateIdentityLp U] with z hz
+      rw [hz]
+  have hcont1 : Tendsto (fun z : G => (modularCharacter z : ℝ)) (𝓝 1) (𝓝 1) := by
+    simpa [Function.comp_def] using
+      (NNReal.continuous_coe.comp (TauCeti.continuous_modularCharacter (G := G))).tendsto 1
+  have ht := TauCeti.tendsto_integral_smul_of_tendsto (𝕜 := ℝ) (C := 1)
+    (.of_forall μ.integral_approximateIdentityLp)
+    (.of_forall fun U => (μ.norm_approximateIdentityLp U).le)
+    (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS)
+    (.of_forall hmeas) hcont1
+  refine ht.congr fun U => integral_congr_ae ?_
+  filter_upwards [μ.coeFn_approximateIdentityLp U] with z hz
+  rw [hz, smul_eq_mul, mul_comm]
+
+/-- On non-unimodular groups, `∫ z, μ.approximateIdentity U z⁻¹ ∂μ` need not equal `1` at finite
+stage, but converges to `1` along `atBot`. -/
+theorem tendsto_integral_approximateIdentity_inv :
+    Tendsto (fun U => ∫ z, μ.approximateIdentity U z⁻¹ ∂μ) atBot (𝓝 1) := by
+  simp_rw [μ.integral_approximateIdentity_inv]
+  exact μ.tendsto_integral_modularCharacter_mul_approximateIdentity
+
 /-- The shrinking continuous kernels form a left approximate identity on Banach-valued `Lᵖ`
 for every `1 ≤ p < ∞`. -/
 theorem tendsto_approximateIdentityLp_convolutionL [μ.InnerRegularCompactLTTop]
@@ -144,6 +212,18 @@ theorem tendsto_approximateIdentityLp_convolutionL [μ.InnerRegularCompactLTTop]
     (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS) f
 
 variable [μ.Regular]
+
+/-- The same shrinking kernels form a right approximate identity on `L¹(G, μ; 𝕜)` over any
+`RCLike` scalar field `𝕜`. -/
+theorem tendsto_convolutionL_ofRealCLM_compLp_approximateIdentityLp {𝕜 : Type*} [RCLike 𝕜]
+    (f : Lp 𝕜 1 μ) :
+    Tendsto (fun U =>
+      Lp.convolutionL μ 1 ENNReal.one_ne_top f
+        ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (μ.approximateIdentityLp U)))
+      atBot (𝓝 f) :=
+  Lp.tendsto_convolutionL_ofRealCLM_compLp_right (μ.approximateIdentityLp_nonneg)
+    (μ.integral_approximateIdentityLp)
+    (fun _ hS => μ.eventually_approximateIdentityLp_ae_eq_zero hS) f
 
 /-- The same shrinking kernels form a right approximate identity on real `L¹`. -/
 theorem tendsto_convolutionL_approximateIdentityLp (f : Lp ℝ 1 μ) :

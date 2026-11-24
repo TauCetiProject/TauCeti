@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
@@ -119,38 +120,6 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le {ι : Type*} [Finty
     pow_le_pow_left₀ (norm_nonneg _) (hB i) 2).trans_eq ?_)
   rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- On a function vanishing outside `closedBall 0 t`, multiplication by a continuous linear
-functional `L` costs at most the factor `t ‖L‖`. -/
-private theorem norm_clm_smul_le_of_tsupport_subset {g : V → H} {t : ℝ}
-    (hg : tsupport g ⊆ closedBall 0 t) (L : V →L[ℝ] ℝ) (ξ : V) :
-    ‖L ξ • g ξ‖ ≤ t * ‖L‖ * ‖g ξ‖ := by
-  by_cases hξ : ξ ∈ tsupport g
-  · rw [norm_smul]
-    gcongr
-    refine (L.le_opNorm ξ).trans ?_
-    rw [mul_comm t]
-    gcongr
-    simpa using hg hξ
-  · simp [image_eq_zero_of_notMem_tsupport hξ]
-
-omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
-/-- For `σ` vanishing outside `closedBall 0 t` and `‖v‖ ≤ 1`, the Leibniz rule bounds the
-`(k + 1)`-st derivative of `L σ` along `v` by
-`t ‖L‖ ‖∂_v^(k+1) σ‖ + (k + 1) ‖L‖ ‖∂_v^k σ‖`. -/
-private theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t : ℝ}
-    (hσ : tsupport σ ⊆ closedBall 0 t) {v : V} (hv : ‖v‖ ≤ 1) (L : V →L[ℝ] ℝ) (k : ℕ) (ξ : V) :
-    ‖(∂_{v})^[k + 1] (smulLeftCLM H L σ) ξ‖ ≤
-      t * ‖L‖ * ‖(∂_{v})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{v})^[k] σ ξ‖ := by
-  rw [iterate_lineDerivOp_smulLeftCLM_clm, add_apply, smul_apply,
-    smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_add_le _ _).trans (add_le_add (norm_clm_smul_le_of_tsupport_subset
-    ((iteratedLineDerivOp_const_eq_iter_lineDerivOp (k + 1) v σ ▸
-      tsupport_iteratedLineDerivOp_subset _ σ).trans hσ) L ξ) ?_)
-  rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  gcongr
-  exact (L.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg _) hv)
-
 /-- If `σ` is bounded by `M` and vanishes outside `closedBall 0 t`, then multiplying it by a
 continuous linear functional `L` gives `L²` norm at most `t ‖L‖ M √|B(0, 1)| t ^ (n/2)`. -/
 private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht : 0 ≤ t)
@@ -160,7 +129,8 @@ private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht :
   refine norm_toLp_two_le_of_support_subset_closedBall _ ht ((subset_tsupport _).trans
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ))) fun ξ ↦ ?_
   rw [smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_clm_smul_le_of_tsupport_subset hσ L ξ).trans ?_
+  refine (L.norm_apply_smul_le_of_support_subset_closedBall
+    ((subset_tsupport _).trans hσ) ξ).trans ?_
   gcongr
   exact hσM ξ
 
@@ -179,8 +149,10 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le {ι
   refine sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b _ (k + 1) ht.le (by positivity)
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ)) fun i ξ ↦ ?_
   calc ‖(∂_{b i})^[k + 1] (smulLeftCLM H L σ) ξ‖
-      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ :=
-        norm_iterate_lineDerivOp_smulLeftCLM_clm_le σ hσ (b.orthonormal.1 i).le L k ξ
+      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ := by
+        simpa only [b.norm_eq_one, mul_one] using
+          norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall σ L
+            ((subset_tsupport _).trans hσ) (b i) k ξ
     _ ≤ t * ‖L‖ * (A / t ^ (k + 1)) + (k + 1) * ‖L‖ * (A / t ^ k) := by
         gcongr
         exacts [hσk' i ξ, hσk i ξ]
@@ -193,9 +165,8 @@ end Real
 
 section Hilbert
 
-variable [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
-omit [CompleteSpace H] in
 /-- **The tail of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of the
 `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t` and its `N`-th derivatives along `b` are
@@ -234,7 +205,6 @@ theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fi
   rw [Real.mul_rpow ht.le hR.le, hte]
   ring
 
-omit [CompleteSpace H] in
 /-- **The `L¹` norm of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of
 the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t`, is bounded by `A` and its `N`-th
@@ -267,7 +237,6 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
   refine le_of_eq ?_
   field_simp
 
-omit [CompleteSpace H] in
 /-- **The smoothness of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of
 the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of order `k ≤ N` along
@@ -320,7 +289,6 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
   field_simp
   ring
 
-omit [CompleteSpace H] in
 /-- **Hörmander's condition for the kernel of a band-limited symbol.** Let `b` be an orthonormal
 basis of the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever
 a Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of order `k ≤ N`
@@ -380,7 +348,6 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
           gcongr
           exact le_max_left _ _
 
-omit [CompleteSpace H] in
 /-- **Hörmander's condition for dyadic sums of band-limited symbols.** Let `b` be an orthonormal
 basis of the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` with the following
 property. Let `σ j` be Schwartz functions, for `j` in a finite set `s ⊆ ℤ`, such that `σ j`

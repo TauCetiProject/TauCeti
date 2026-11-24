@@ -27,7 +27,9 @@ canonical pivotal structure (`TauCeti.symmetricPivotalCategory`), composing with
   monoidal category;
 * `TauCeti.tensorPowShiftIso_zero` and `TauCeti.tensorPowShiftIso_succ_hom`: base case and
   recursive decomposition of the cyclic shift;
-* `TauCeti.tensorPowShiftIso_hom_naturality`: naturality with respect to `tensorPowMap`.
+* `TauCeti.tensorPowShiftIso_hom_naturality`: naturality with respect to `tensorPowMap`;
+* `TauCeti.tensorPowTensorIso`: distributing a tensor power over a tensor product in a braided
+  monoidal category (`tensorPow (X ⊗ Y) n ≅ tensorPow X n ⊗ tensorPow Y n`).
 -/
 
 public section
@@ -79,5 +81,41 @@ theorem tensorPowShiftIso_hom_naturality {X Y : C} (f : X ⟶ Y) (n : ℕ) :
       (tensorPowShiftIso X n).hom ≫ tensorPowMap f (n + 1) := by
   rw [tensorPowShiftIso_hom, tensorPowShiftIso_hom, tensorPowMap_succ,
     braiding_naturality_assoc, tensorPowSuccIso_hom_naturality, tensorPowMap_succ, Category.assoc]
+
+/-- Distributing a tensor power over a tensor product in a braided monoidal category:
+`tensorPow (X ⊗ Y) n ≅ tensorPow X n ⊗ tensorPow Y n`. -/
+def tensorPowTensorIso (X Y : C) : (n : ℕ) → tensorPow (X ⊗ Y) n ≅ tensorPow X n ⊗ tensorPow Y n
+  | 0 => (λ_ (𝟙_ C)).symm
+  | n + 1 =>
+    whiskerLeftIso (X ⊗ Y) (tensorPowTensorIso X Y n) ≪≫
+      ⟨tensorμ X Y (tensorPow X n) (tensorPow Y n), tensorδ X Y (tensorPow X n) (tensorPow Y n),
+        tensorμ_tensorδ _ _ _ _, tensorδ_tensorμ _ _ _ _⟩
+
+/-- At exponent `0`, distributing a tensor power over a tensor product is the inverse left
+unitor. -/
+@[simp]
+theorem tensorPowTensorIso_zero (X Y : C) :
+    tensorPowTensorIso X Y 0 = (λ_ (𝟙_ C)).symm :=
+  (rfl)
+
+/-- Recursive step of `tensorPowTensorIso`. -/
+theorem tensorPowTensorIso_succ (X Y : C) (n : ℕ) :
+    tensorPowTensorIso X Y (n + 1) =
+      whiskerLeftIso (X ⊗ Y) (tensorPowTensorIso X Y n) ≪≫
+        ⟨tensorμ X Y (tensorPow X n) (tensorPow Y n), tensorδ X Y (tensorPow X n) (tensorPow Y n),
+          tensorμ_tensorδ _ _ _ _, tensorδ_tensorμ _ _ _ _⟩ :=
+  (rfl)
+
+/-- Recursive step of `tensorPowTensorIso`, on forward morphisms. -/
+theorem tensorPowTensorIso_succ_hom (X Y : C) (n : ℕ) :
+    (tensorPowTensorIso X Y (n + 1)).hom =
+      (X ⊗ Y) ◁ (tensorPowTensorIso X Y n).hom ≫ tensorμ X Y (tensorPow X n) (tensorPow Y n) :=
+  (rfl)
+
+/-- Recursive step of `tensorPowTensorIso`, on inverse morphisms. -/
+theorem tensorPowTensorIso_succ_inv (X Y : C) (n : ℕ) :
+    (tensorPowTensorIso X Y (n + 1)).inv =
+      tensorδ X Y (tensorPow X n) (tensorPow Y n) ≫ (X ⊗ Y) ◁ (tensorPowTensorIso X Y n).inv :=
+  (rfl)
 
 end TauCeti

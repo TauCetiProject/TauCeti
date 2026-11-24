@@ -31,6 +31,8 @@ The main example is a biholomorphism between complex manifolds modelled on `𝓘
 * `Diffeomorph.restrictScalars_refl`, `Diffeomorph.restrictScalars_symm`,
   `Diffeomorph.restrictScalars_trans`: restriction of scalars commutes with the identity, inverses,
   and composition.
+* `Diffeomorph.contMDiff_modelWithCornersSelf_restrictScalars`: for models `𝓘(𝕜', E)`, the
+  diffeomorphism is `C^n` for `𝓘(𝕜, E)`.
 -/
 
 public section
@@ -102,5 +104,14 @@ theorem restrictScalars_symm : (Φ.restrictScalars 𝕜).symm = Φ.symm.restrict
 theorem restrictScalars_trans (Ψ : N ≃ₘ^n⟮I', J⟯ P) :
     (Φ.trans Ψ).restrictScalars 𝕜 = (Φ.restrictScalars 𝕜).trans (Ψ.restrictScalars 𝕜) :=
   (rfl)
+
+/-- A `C^n` diffeomorphism between manifolds modelled on the `𝕜'`-normed spaces `E` and `E'` is
+`C^n` for the models `𝓘(𝕜, E)` and `𝓘(𝕜, E')`. For instance, a biholomorphism of Riemann surfaces
+is smooth as a map of the underlying real surfaces. -/
+theorem contMDiff_modelWithCornersSelf_restrictScalars {M N : Type*} [TopologicalSpace M]
+    [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace E' N]
+    (Φ : M ≃ₘ^n⟮𝓘(𝕜', E), 𝓘(𝕜', E')⟯ N) : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E') n Φ := by
+  simpa only [modelWithCornersSelf_restrictScalars, coe_restrictScalars] using
+    (Φ.restrictScalars 𝕜).contMDiff
 
 end Diffeomorph

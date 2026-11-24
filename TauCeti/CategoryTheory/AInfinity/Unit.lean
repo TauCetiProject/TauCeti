@@ -96,7 +96,7 @@ theorem pathOperation_eq_zero_of_eq_unit (h : 𝒞.StrictUnit e) {n : ℕ} (hn :
     (X : Fin (n + 1) → C) (d : Fin n → ℤ)
     (x : ∀ i, grHom R (X i.rev.castSucc) (X i.rev.succ) (d i))
     {i : Fin n} {U : C}
-    (hi : homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).1 =
+    (hi : homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).val =
       homInclusion U U (e U)) :
     𝒞.pathOperation X d x = 0 := by
   apply Subtype.ext

@@ -8,11 +8,9 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
-import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
-# Making an integral coweight dominant and uniqueness in a Weyl orbit
+# Making an integral coweight dominant
 
 Let `P` be a reduced crystallographic root system over a field of characteristic zero, and let
 `x` be a coweight on which every root takes an integer value. This file proves that some base of
@@ -26,12 +24,9 @@ the proof of `RootPairing.nonempty_base`.
 Since the Weyl group acts simply transitively on the bases
 (`RootPairing.Base.existsUnique_map_eq`), the base may instead be fixed in advance and the coweight
 moved: some element of the Weyl group carries `x` to a coweight that is dominant for the given base
-(`RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`), and this dominant
-representative is unique over any integral domain of characteristic zero
-(`RootPairing.Base.coweightEquiv_eq_self_of_forall_exists_nat_root'`, proved by induction on the
-inversion count of `w`). For integral coweights this is the counterpart, over a field of
-characteristic zero carrying no order, of the ordered-field fundamental-domain theorem
-`TauCeti.existsUnique_mem_orbit_inter_dominantChamber`.
+(`RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`). For integral coweights
+this is the counterpart, over a field of characteristic zero carrying no order, of the
+ordered-field statement `RootPairing.exists_mem_dominantChamber`.
 
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, and a base making `h` dominant puts the
@@ -43,15 +38,10 @@ nilpositive element of the triple into the positive nilradical.
   integer value is dominant for some base.
 * `RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`: such a coweight is
   carried by the Weyl group to a coweight that is dominant for a given base.
-* `RootPairing.Base.coweightEquiv_eq_self_of_forall_exists_nat_root'`,
-  `RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat_root'`, and
-  `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat_root'`: uniqueness and existence
-  of the dominant representative in a Weyl orbit of integral coweights.
 
 ## References
 
 * J.-P. Serre, *Algèbres de Lie semi-simples complexes*, Benjamin, 1966, Ch. V, §8.
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Ch. V, §3.
 -/
 
 public section
@@ -139,98 +129,3 @@ theorem Base.exists_forall_exists_nat_root'_coweightEquiv_apply (b : P.Base) (x 
   simp
 
 end RootPairing
-
-namespace RootPairing.Base
-
-open TauCeti
-
-section Unique
-
-variable {ι R M N : Type*} [AddCommGroup M] [AddCommGroup N] [CommRing R] [CharZero R]
-  [Module R M] [Module R N] {P : RootPairing ι R M N} (b : P.Base)
-
-private theorem exists_nat_neg_root'_of_mem_negRoots {x : N}
-    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n) {i : ι} (hi : i ∈ negRoots P b) :
-    ∃ m : ℕ, P.root' i x = -(m : R) := by
-  classical
-  have hpos : P.reflectionPerm i i ∈ posRoots P b :=
-    (mem_posRoots P b _).mpr ((isPos_reflectionPerm_self_iff_mem_negRoots P b i).mpr hi)
-  obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp (root_mem_posRootCone_of_mem_posRoots P b hpos)
-  choose g hg using hx
-  refine ⟨∑ j ∈ b.support.attach, f j.1 * g j.1 j.2, neg_eq_iff_eq_neg.mp ?_⟩
-  have hneg : -P.root' i x = P.root' (P.reflectionPerm i i) x := by
-    simp [root', RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
-  rw [hneg, root', hf, map_sum, LinearMap.sum_apply, ← Finset.sum_attach b.support]
-  push_cast
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_nsmul, LinearMap.smul_apply, nsmul_eq_mul, ← root', hg j.1 j.2]
-
-variable [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
-
-/-- **A Weyl-group element carrying a dominant integral coweight to a dominant integral coweight
-fixes it.** Holds over any integral domain of characteristic zero, with no order on `R`. -/
-theorem coweightEquiv_eq_self_of_forall_exists_nat_root' (w : P.weylGroup) {x : N}
-    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n)
-    (hw : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n) :
-    (w : P.Aut).coweightEquiv x = x := by
-  suffices ∀ n (w : P.weylGroup), (inversions P b w).ncard ≤ n →
-      (∀ i ∈ b.support, ∃ m : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = m) →
-      (w : P.Aut).coweightEquiv x = x from this (inversions P b w).ncard w le_rfl hw
-  intro n
-  induction n with
-  | zero =>
-    intro w hn _
-    rw [eq_one_of_inversions_eq_empty ((Set.ncard_eq_zero (Set.toFinite _)).mp (Nat.le_zero.mp hn))]
-    simp
-  | succ n ih =>
-    intro w hn hw
-    rcases eq_or_ne w 1 with rfl | hne
-    · simp
-    obtain ⟨i, hi, hiw⟩ := exists_mem_support_mem_inversions_of_ne_one P b hne
-    have hneg : P.weylGroupToPerm w i ∈ negRoots P b :=
-      (mem_negRoots P b _).mpr ((mem_inversions P b w i).mp hiw).2
-    have heval : P.root' i ((w : P.Aut).coweightEquiv x) = P.root' (P.weylGroupToPerm w i) x := by
-      simpa using ((w : P.Aut).root'_coweightEquiv i ((w : P.Aut).coweightEquiv x)).symm
-    obtain ⟨a, ha⟩ := hw i hi
-    obtain ⟨c, hc⟩ := exists_nat_neg_root'_of_mem_negRoots b hx hneg
-    have hsum : ((a + c : ℕ) : R) = 0 := by push_cast; rw [← ha, heval, hc, neg_add_cancel]
-    have hri : P.root' i ((w : P.Aut).coweightEquiv x) = 0 := by
-      have := Nat.cast_eq_zero.mp hsum; rw [ha, show a = 0 by omega, Nat.cast_zero]
-    have hmul : ((w * weylGroup.ofIdx P i : P.weylGroup) : P.Aut).coweightEquiv x =
-        (w : P.Aut).coweightEquiv x := by
-      rw [show ((w * weylGroup.ofIdx P i : P.weylGroup) : P.Aut).coweightEquiv =
-          (w : P.Aut).coweightEquiv ≪≫ₗ P.coreflection i by
-        simp [RootPairing.Equiv.mul_eq_comp, RootPairing.Equiv.reflection_coweightEquiv],
-        LinearEquiv.trans_apply, RootPairing.coreflection_apply, hri, zero_smul, sub_zero]
-    have hcount := ncard_inversions_mul_ofIdx_of_mem P w b hi hiw
-    rw [← hmul]
-    exact ih (w * weylGroup.ofIdx P i) (by omega) fun j hj ↦ hmul.symm ▸ hw j hj
-
-/-- **Two dominant integral coweights in the same Weyl orbit are equal.** -/
-theorem eq_of_coweightEquiv_eq_of_forall_exists_nat_root' {w : P.weylGroup} {x y : N}
-    (hxy : (w : P.Aut).coweightEquiv x = y)
-    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n)
-    (hy : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n) :
-    x = y :=
-  hxy ▸ (coweightEquiv_eq_self_of_forall_exists_nat_root' b w hx (hxy.symm ▸ hy)).symm
-
-end Unique
-
-/-- **Every integral coweight has a unique dominant representative in its Weyl orbit.** Over a field
-of characteristic zero carrying no order, this is the integral counterpart of
-`TauCeti.existsUnique_mem_orbit_inter_dominantChamber`. -/
-theorem existsUnique_coweightEquiv_forall_exists_nat_root' {ι R M N : Type*} [Finite ι]
-    [AddCommGroup M] [AddCommGroup N] [Field R] [CharZero R] [Module R M] [Module R N]
-    {P : RootPairing ι R M N} [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced]
-    (b : P.Base) (x : N) (hx : ∀ i, ∃ z : ℤ, P.root' i x = z) :
-    ∃! y : N, (∃ w : P.weylGroup, (w : P.Aut).coweightEquiv x = y) ∧
-      ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n := by
-  obtain ⟨w, hw⟩ := b.exists_forall_exists_nat_root'_coweightEquiv_apply x hx
-  refine ⟨(w : P.Aut).coweightEquiv x, ⟨⟨w, rfl⟩, hw⟩, ?_⟩
-  rintro y ⟨⟨v, rfl⟩, hy⟩
-  have hrel : ((v⁻¹ * w : P.weylGroup) : P.Aut).coweightEquiv ((v : P.Aut).coweightEquiv x) =
-      (w : P.Aut).coweightEquiv x := by
-    simp [RootPairing.Equiv.mul_eq_comp]
-  exact b.eq_of_coweightEquiv_eq_of_forall_exists_nat_root' hrel hy hw
-
-end RootPairing.Base

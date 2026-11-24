@@ -43,6 +43,9 @@ comparing smooth with continuous singular homology.
   compatible with the inclusions (`TauCeti.subcomplexSmallHomologyIso_naturality`).
 * `TauCeti.quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex`: that inclusion is a
   quasi-isomorphism.
+* `TauCeti.quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex`: the chains of `S`
+  include into all singular chains by a quasi-isomorphism exactly when this holds for the chains
+  subordinate to the cover.
 
 ## References
 
@@ -221,5 +224,25 @@ theorem quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex [CategoryWi
       (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) := by
   rw [← subcomplexSmallChainHomotopyEquiv_hom R S U hU hcov]
   exact (subcomplexSmallChainHomotopyEquiv R S U hU hcov).quasiIso_hom
+
+/-- The inclusion of the chains of an affinely stable subcomplex `S` into all singular chains is a
+quasi-isomorphism exactly when, for an open cover `U`, the inclusion of the chains of the simplices
+of `S` subordinate to `U` into all singular chains subordinate to `U` is one. Both inclusions of
+chains subordinate to `U` are quasi-isomorphisms by the small-chain theorems. -/
+theorem quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex
+    [CategoryWithHomology C] :
+    QuasiIso (SSet.chainComplexMap S.ι R) ↔
+      QuasiIso (SSet.chainComplexMap (homOfLE (inf_le_right :
+        S ⊓ X.smallSingularSubcomplex U ≤ X.smallSingularSubcomplex U)) R) := by
+  have := quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex R S U hU hcov
+  have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι R U hU hcov
+  have hcomp : SSet.chainComplexMap (homOfLE (inf_le_left :
+        S ⊓ X.smallSingularSubcomplex U ≤ S)) R ≫ SSet.chainComplexMap S.ι R =
+      SSet.chainComplexMap (homOfLE (inf_le_right :
+        S ⊓ X.smallSingularSubcomplex U ≤ X.smallSingularSubcomplex U)) R ≫
+        SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := by
+    rw [← Functor.map_comp, ← Functor.map_comp, homOfLE_ι, homOfLE_ι]
+  rw [← quasiIso_iff_comp_left (SSet.chainComplexMap (homOfLE (inf_le_left :
+    S ⊓ X.smallSingularSubcomplex U ≤ S)) R), hcomp, quasiIso_iff_comp_right]
 
 end TauCeti

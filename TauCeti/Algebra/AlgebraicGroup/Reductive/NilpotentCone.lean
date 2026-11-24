@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Lie
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
 
 /-!
 # The nilpotent cone of a reductive group
@@ -88,5 +88,27 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
   have := hH.geometricallyConnected.connectedSpace
   have := hH.hasCentralRadical_dual_cotangentSpace
   TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval
+
+attribute [local instance] Derivation.adjointComodule in
+/-- **Reductive nilpotent-cone orbit criterion.** For a reductive affine group over an
+algebraically closed field of characteristic zero, the rational adjoint orbit of `x ∈ 𝔤` lies in
+`TauCeti.nilpotentConeOrbits` iff `x ∈ ⁅𝔤, 𝔤⁆` and `ad x` is nilpotent. -/
+theorem mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad
+    (hH : reductiveCommHopfAlgProperty k H) {x : 𝔤} :
+    (Comodule.VectorOrbit.mk x : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H ↔
+      x ∈ LieAlgebra.derivedSeries k 𝔤 1 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 x) :=
+  have := hH.geometricallyConnected.connectedSpace
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  TauCeti.mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad
+
+attribute [local instance] Derivation.adjointComodule in
+/-- **Decomposition of `ad`-nilpotent orbits of a reductive group.** Adding a central element to an
+orbit in the nilpotent cone gives `Z(𝔤) × nilpotentConeOrbits k H ≃ {O // O.IsNilpotentAd}`. -/
+noncomputable def centerProdNilpotentConeOrbitsEquiv (hH : reductiveCommHopfAlgProperty k H) :
+    LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H ≃
+      {O : Comodule.VectorOrbit k H 𝔤 // O.IsNilpotentAd} :=
+  have := hH.geometricallyConnected.connectedSpace
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  TauCeti.centerProdNilpotentConeOrbitsEquiv
 
 end TauCeti.reductiveCommHopfAlgProperty

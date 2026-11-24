@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 
@@ -35,7 +34,6 @@ differential of inversion at the identity is `-1`.
   fixed-object dictionary.
 * `TauCeti.HopfAlgebra.PointRepresentation.ofComodule_dual_action_evaluation_invariant`:
   same-point invariance of evaluation.
-* `TauCeti.Comodule.basePointsRepresentation_dual_apply`: adjointness for rational base points.
 * `TauCeti.Comodule.differential_dual_apply`: the differentiated dual representation.
 
 ## References
@@ -116,18 +114,6 @@ variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 variable [AddCommGroup M] [Module R M] [Comodule R H M] [Module.Finite R M] [Module.Projective R M]
 
 attribute [local instance] dual
-
-/-- Applying a rational point to the dual comodule is adjoint to the inverse point action. -/
-theorem basePointsRepresentation_dual_apply (g : WithConv (H →ₐ[R] R)) (φ : Module.Dual R M)
-    (m : M) :
-    basePointsRepresentation (H := H) (Module.Dual R M) g φ m =
-      φ (basePointsRepresentation (H := H) M g⁻¹ m) := by
-  have h := baseChangeEvaluation_dual_endOfPoint (R := R) (H := H) (M := M) (A := R)
-    g (1 ⊗ₜ[R] φ) (1 ⊗ₜ[R] m)
-  rw [endOfPoint_tmul, endOfPoint_tmul, one_smul, one_smul,
-    endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
-    endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation] at h
-  simpa [TauCeti.Module.Dual.baseChangeEvaluation_tmul] using h
 
 /-- **The differentiated contragredient representation.** A tangent vector at the identity acts
 on the dual comodule by the negative transpose of its action on the comodule:
