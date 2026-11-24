@@ -136,13 +136,16 @@ theorem exp_mul_smoothWeightedLaplacian_apply (φ f : C^∞⟮I, M; ℝ⟯) (x :
     (ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff).mdifferentiableAt (by simp)
   have hgrad := (contMDiff_mgradient_infty (I := I) f.contMDiff).mdifferentiableAt
     (x := x) (by simp)
-  rw [show (fun y ↦ Real.exp (φ y) • mgradient I f y) =
-      (Real.exp ∘ φ : M → ℝ) • mgradient I f from rfl,
-    divergence_smul_function I _ _ x hρ hgrad,
-    mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
-    smoothWeightedLaplacian_apply, laplaceBeltrami_def, smul_apply, smul_eq_mul,
-    Function.comp_apply, ← inner_mgradient_right (f := f), ← inner_mgradient_right (f := φ),
-    real_inner_comm]
+  -- Write the vector field as a function times a vector field, the form of
+  -- `divergence_smul_function`.
+  have hX : (fun y ↦ Real.exp (φ y) • mgradient I f y) =
+      (Real.exp ∘ φ : M → ℝ) • mgradient I f :=
+    funext fun y ↦ by simp
+  rw [hX, divergence_smul_function I _ _ x hρ hgrad,
+    mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt]
+  simp only [smoothWeightedLaplacian_apply, laplaceBeltrami_def, Function.comp_apply,
+    Real.deriv_exp, smul_apply, smul_eq_mul]
+  rw [← inner_mgradient_right (f := φ), inner_mgradient (f := f)]
   ring
 
 variable [T2Space M]
@@ -172,10 +175,9 @@ theorem neg_smoothWeightedLaplacian_apply_eq (φ f : C^∞⟮I, M; ℝ⟯) (x : 
   have hgrad := (contMDiff_mgradient_infty (I := I) φ.contMDiff).mdifferentiableAt
     (x := x) (by simp)
   rw [roughLaplacian_trivialAddInner _ f.contMDiff, ContMDiffSection.coe_smul,
-    coe_smoothGradient, divergence_smul I _ _ x hgrad, smoothWeightedLaplacian_apply,
-    laplaceBeltrami_def I φ]
-  simp only [Pi.smul_apply, map_smul, smul_eq_mul, inner_smul_left, inner_smul_right,
-    RCLike.conj_to_real]
+    coe_smoothGradient, divergence_smul I _ _ x hgrad]
+  simp only [smoothWeightedLaplacian_apply, laplaceBeltrami_def I φ, Pi.smul_apply, map_smul,
+    smul_eq_mul, inner_smul_left, inner_smul_right, RCLike.conj_to_real]
   ring
 
 /-- **The Bochner connection of the weighted Laplacian is not metric.** If a connection
