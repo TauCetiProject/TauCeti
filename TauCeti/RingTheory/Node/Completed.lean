@@ -44,6 +44,8 @@ For `R = ℤ_p` and `a = p` the ring is identified with a ring of two-sided seri
 ## Main definitions
 
 * `TauCeti.CompletedNodeAlgebra R a`: the quotient `R⟦X, Y⟧ ⧸ (XY - a)`.
+* `TauCeti.CompletedNodeAlgebra.coord a i`: the two coordinates, the images of `X` and `Y`, with
+  `coord a 0 * coord a 1 = a` (`CompletedNodeAlgebra.coord_zero_mul_coord_one`).
 
 ## Main results
 
@@ -76,6 +78,29 @@ abbrev CompletedNodeAlgebra (R : Type*) [CommRing R] (a : R) :=
 namespace CompletedNodeAlgebra
 
 variable {R : Type*} [CommRing R]
+
+section Coord
+
+variable (a : R)
+
+/-- The two coordinates of the completed node, the images of `X 0` and `X 1`. -/
+def coord (i : Fin 2) : CompletedNodeAlgebra R a :=
+  Ideal.Quotient.mk _ (X i)
+
+/-- The quotient map sends each power series variable to its coordinate. -/
+@[simp]
+theorem mk_X (i : Fin 2) :
+    Ideal.Quotient.mk (Ideal.span {X 0 * X 1 - C a}) (X i) = coord a i := (rfl)
+
+/-- The defining equation `xy = a` of the completed node. -/
+@[simp]
+theorem coord_zero_mul_coord_one :
+    coord a 0 * coord a 1 = algebraMap R (CompletedNodeAlgebra R a) a := by
+  rw [← sub_eq_zero, ← mk_X, ← mk_X, ← map_mul, ← Ideal.Quotient.mk_algebraMap,
+    ← c_eq_algebraMap, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.subset_span rfl
+
+end Coord
 
 /-- The exponent of the monomial `X 0 * X 1`. -/
 private def diag : Fin 2 →₀ ℕ := Finsupp.single 0 1 + Finsupp.single 1 1
@@ -181,6 +206,15 @@ section Reduction
 
 variable {ϖ : R} {e : ℕ} (he : e ≠ 0) (u : Rˣ)
 
+/-- Rescaling multiplies each variable by its scalar. -/
+private theorem rescaleAlgHom_X (a : Fin 2 → R) (i : Fin 2) :
+    rescaleAlgHom a (X i) = C (a i) * X i := by
+  ext n
+  rw [rescaleAlgHom_apply, coeff_rescale, coeff_X, coeff_C_mul, coeff_X]
+  split_ifs with h
+  · simp [h]
+  · simp
+
 /-- The substitution `X 0 ↦ (X 0) ^ e`, `X 1 ↦ u (X 1) ^ e`. -/
 private def expandRescale : MvPowerSeries (Fin 2) R →ₐ[R] MvPowerSeries (Fin 2) R :=
   (expand e he).comp (rescaleAlgHom ![1, (u : R)])
@@ -196,16 +230,12 @@ private theorem coeff_expandRescale_of_not_dvd (F : MvPowerSeries (Fin 2) R)
 /-- The substitution sends `XY - u ϖᵉ` to `u ((XY)ᵉ - ϖᵉ)`, a multiple of `XY - ϖ`. -/
 private theorem expandRescale_mem_span :
     expandRescale he u (X 0 * X 1 - C (u * ϖ ^ e)) ∈ Ideal.span {X 0 * X 1 - C ϖ} := by
-  have hX (i : Fin 2) :
-      rescaleAlgHom ![1, (u : R)] (X i) = C (![1, (u : R)] i) * X i := by
-    rw [rescaleAlgHom, substAlgHom_apply, subst_X (HasSubst.smul_X _), Pi.smul_apply',
-      smul_eq_C_mul]
   have hC (r : R) : expandRescale he u (C r) = C r := by
     rw [c_eq_algebraMap]
     exact AlgHom.commutes _ r
-  have hX0 : expandRescale he u (X 0) = X 0 ^ e := by simp [expandRescale, hX]
+  have hX0 : expandRescale he u (X 0) = X 0 ^ e := by simp [expandRescale, rescaleAlgHom_X]
   have hX1 : expandRescale he u (X 1) = C (u : R) * X 1 ^ e := by
-    simp [expandRescale, hX, expand_C]
+    simp [expandRescale, rescaleAlgHom_X, expand_C]
   have h : expandRescale he u (X 0 * X 1 - C (u * ϖ ^ e)) =
       C (u : R) * ((X 0 * X 1) ^ e - C ϖ ^ e) := by
     rw [map_sub, map_mul, hC, hX0, hX1, map_mul C, map_pow]
