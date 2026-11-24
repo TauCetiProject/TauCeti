@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 import TauCeti.LinearAlgebra.Matrix.Gram.Basic
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
@@ -417,7 +418,8 @@ theorem gcd_plucker_eq_one [IsDomain R] [IsPrincipalIdealRing R] [NormalizedGCDM
     Finset.univ.gcd (plucker fun i ↦ (b i : ι → R)) = 1 := by
   classical
   -- Saturation makes the finitely generated quotient torsion-free, hence free over the PID.
-  have : Module.IsTorsionFree R ((ι → R) ⧸ N) := N.isTorsionFree_quotient_of_smul_mem hN
+  have : Module.IsTorsionFree R ((ι → R) ⧸ N) :=
+    Submodule.isTorsionFree_quotient_iff.mpr fun c z hc ↦ hN c z hc.ne_zero
   obtain ⟨P, hP⟩ := N.exists_isCompl_iff_isTorsionFree_quotient.mpr inferInstance
   let π := b.repr.toLinearMap ∘ₗ N.projectionOnto P hP
   let y : Fin p → ι → R := fun i j ↦ π (Pi.single j 1) i

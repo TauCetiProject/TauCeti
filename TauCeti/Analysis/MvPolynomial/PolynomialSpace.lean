@@ -292,9 +292,9 @@ theorem comp_affineMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
   have hdeg (i : ι) : (g i).totalDegree ≤ 1 :=
     (totalDegree_add _ _).trans <| max_le (by simp) <| (totalDegree_finsetSum _ _).trans <|
       Finset.sup_le fun j _ ↦ (totalDegree_mul _ _).trans (by simp [totalDegree_X])
-  refine (mem_polynomialsDegLE_iff κ).2 ⟨aeval g p,
-    (mem_restrictTotalDegree κ m _).1
-      (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  refine (mem_polynomialsDegLE_iff κ).2 ⟨aeval g p, (mem_restrictTotalDegree κ m _).1
+      (aeval_mem_restrictTotalDegree p (fun i _ ↦ hdeg i)
+        ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
   ext x
   simp only [Function.comp_apply, polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply]
   congr 1; ext i

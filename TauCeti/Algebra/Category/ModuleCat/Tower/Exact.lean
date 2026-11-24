@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.Algebra.Exact.Pi
+import TauCeti.Algebra.Exact.Ladder
 
 /-!
 # The six-term sequence of `lim` and `lim¹`
@@ -118,17 +119,17 @@ theorem mem_range_limMap_of_subsingleton_limOne
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
     [Subsingleton F.limOne] (z : H.lim) (y : G.Product) (hy : productMap g y = z) :
     z ∈ LinearMap.range (limMap g) := by
-  have hyshift : productMap g (G.shift y) = 0 := by
-    rw [← shift_natural_apply, hy]
-    exact LinearMap.mem_ker.mp (H.lim_eq_ker ▸ z.property)
-  obtain ⟨x, hx⟩ := (exact_productMap hfg (G.shift y)).mp hyshift
-  -- The shift of `y` comes from `x`, which is itself a shift since `lim¹ A = 0`.
-  -- Then `y - f w` is compatible and still maps to `z`.
-  obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
-  have hlim : y - productMap f w ∈ G.lim := by
-    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, hx, sub_self]
-  refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
-  rw [coe_limMap_apply, map_sub, hy, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
+  -- The shift of `y` comes from `A`, and is the image of a shift since `lim¹ A = 0`, so `y` can be
+  -- corrected by the image of a family of `A` to a compatible family that still maps to `z`.
+  obtain ⟨w, hw, hgw⟩ := Function.Exact.exists_apply_eq_zero_and_apply_eq_of_surjective
+    (f := (productMap f).toAddMonoidHom) (g := (productMap g).toAddMonoidHom)
+    (f' := (productMap f).toAddMonoidHom) (g' := (productMap g).toAddMonoidHom)
+    (α := F.shift.toAddMonoidHom) (β := G.shift.toAddMonoidHom) (γ := H.shift.toAddMonoidHom)
+    (exact_productMap hfg) (exact_productMap hfg).apply_apply_eq_zero
+    (F.subsingleton_limOne_iff.1 ‹_›) (shift_natural_apply f) (shift_natural_apply g) (y := y) <| by
+      simpa [hy] using LinearMap.mem_ker.mp (H.lim_eq_ker ▸ z.property)
+  refine ⟨⟨y + productMap f w, by rwa [lim_eq_ker, LinearMap.mem_ker]⟩, Subtype.ext ?_⟩
+  simpa [hy] using hgw
 
 /-- If `lim¹ A` vanishes, then for a levelwise exact sequence `A → B → C → 0` the map
 `lim B → lim C` is surjective. -/

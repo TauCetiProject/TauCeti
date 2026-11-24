@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 public import TauCeti.Analysis.Sobolev.Wkp.Embedding
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # Higher-order Sobolev embeddings on bounded Lipschitz domains
@@ -198,7 +198,9 @@ theorem Wkp.exists_eLpNorm_value_le_of_isLipschitzDomainWith (k : ℕ) {q : ℝ�
   have hμ : volume.restrict (Ω : Set (WithLp 2 (ℝ × E))) univ ≠ ∞ := by
     rw [Measure.restrict_apply_univ]
     exact hb.measure_lt_top.ne
-  exact exists_eLpNorm_le_mul_enorm_of_ae_eq hμ hr T hT
+  refine exists_eLpNorm_le_mul_enorm_of_eLpNorm_le hμ hr (K := ‖T‖₊) fun u ↦ ?_
+  rw [← eLpNorm_congr_ae (hT u), ← Lp.eNorm_def, ← eNorm_eq_nnNorm]
+  exact T.le_opENorm u
 
 /-- **Integrability on bounded Lipschitz domains at higher order.** If `Ω ⊆ ℝ × E` is a bounded
 Lipschitz domain of dimension `n`, every `u ∈ W^{k,p}(Ω)` lies in `L^r(Ω)` for every `r ≤ q`,

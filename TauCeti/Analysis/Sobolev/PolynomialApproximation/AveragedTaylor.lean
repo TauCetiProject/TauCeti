@@ -806,7 +806,7 @@ theorem averagedTaylorPolynomial_sq_one_of_even
       hφ.continuous).integrable_of_hasCompactSupport hsupp.mul_left
   rw [integral_sub hint1 hint2,
     MeasureTheory.integral_eq_zero_of_odd (g := fun y : EuclideanSpace ℝ ι ↦ 2 * x i * y i * φ y)
-      fun y ↦ by simp [heven y], zero_sub]
+      (ae_of_all _ fun y ↦ by simp [heven y]), zero_sub]
 
 /-- Limit of polynomial reproduction: on `Metric.ball 0 ρ` (`0 < ρ`) in `EuclideanSpace ℝ ι`
 with cutoff `(ballBump 0 hρ).normed μ` and any coordinate `i : ι`, the order-`1` averaged Taylor

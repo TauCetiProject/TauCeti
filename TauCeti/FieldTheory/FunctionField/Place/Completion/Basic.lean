@@ -92,6 +92,10 @@ noncomputable def completionPlace : Place k P.Completion where
 theorem completionPlace_valuation (x : P.Completion) :
     P.completionPlace.valuation x = Valued.v x := (rfl)
 
+/-- The valuation of the completed place is the completed valuation `Valued.v`. -/
+theorem completionPlace_valuation_eq : P.completionPlace.valuation = Valued.v :=
+  Valuation.ext P.completionPlace_valuation
+
 /-- Completion preserves the order of every function, including the junk value at zero. -/
 @[simp]
 theorem ord_completionEmbedding (x : F) :

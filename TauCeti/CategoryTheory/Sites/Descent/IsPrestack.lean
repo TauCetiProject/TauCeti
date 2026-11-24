@@ -20,6 +20,14 @@ given by `φ : M ⟶ N` to `(Y, f)` gives `f^* φ`
 amalgamation of a family of local morphisms exactly when its pullbacks are the members of the
 family, which is how the sheaf condition of `presheafHom M N` (the prestack condition) is checked.
 
+The restriction maps of `presheafHom` are Mathlib's `Pseudofunctor.LocallyDiscreteOpToCat.pullHom`.
+This file also shows that `pullHom` is compatible with composition and identities
+(`CategoryTheory.Pseudofunctor.pullHom_comp`, `CategoryTheory.Pseudofunctor.pullHom_id_self`),
+hence sends isomorphisms to isomorphisms
+(`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
+pullback `f^* φ` of a morphism `φ` to its pullback along the composite
+(`CategoryTheory.Pseudofunctor.pullHom_map`).
+
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
 is pulling back along `p.map g` for `F`
@@ -174,6 +182,38 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (f₀₂ := (f ≫ p).op.toLoc) (f₁₃ := (g ≫ f).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
+
+namespace LocallyDiscreteOpToCat
+
+/-- `pullHom` sends an isomorphism to an isomorphism. -/
+instance isIso_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) [IsIso φ]
+    ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁)
+    (hgf₂ : g ≫ f₂ = gf₂) : IsIso (pullHom φ g gf₁ gf₂ hgf₁ hgf₂) :=
+  ⟨pullHom (inv φ) g gf₂ gf₁ hgf₂ hgf₁, by simp [← pullHom_comp], by simp [← pullHom_comp]⟩
+
+/-- `pullHom φ g` is an isomorphism exactly when the pullback `g^* φ` is. -/
+lemma isIso_pullHom_iff ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂)
+    ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁)
+    (hgf₂ : g ≫ f₂ = gf₂) :
+    IsIso (pullHom φ g gf₁ gf₂ hgf₁ hgf₂) ↔ IsIso ((F.map g.op.toLoc).toFunctor.map φ) := by
+  rw [map_eq_pullHom φ g gf₁ gf₂ hgf₁ hgf₂]
+  simp only [isIso_comp_left_iff, isIso_comp_right_iff]
+
+/-- `pullHom` commutes with taking inverses. -/
+@[simp]
+lemma inv_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) [IsIso φ]
+    ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁)
+    (hgf₂ : g ≫ f₂ = gf₂) :
+    inv (pullHom φ g gf₁ gf₂ hgf₁ hgf₂) = pullHom (inv φ) g gf₂ gf₁ hgf₂ hgf₁ :=
+  IsIso.inv_eq_of_hom_inv_id (by simp [← pullHom_comp])
+
+end LocallyDiscreteOpToCat
 
 namespace IsPrestack
 

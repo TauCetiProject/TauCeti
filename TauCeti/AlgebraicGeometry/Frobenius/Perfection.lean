@@ -102,9 +102,8 @@ theorem IsUniversalHomeomorphism.SpecMap_of_isPRadical [IsPRadical φ.hom p] (hB
   -- A field receiving a map from `B` has characteristic `p`, and is reduced, so two maps into it
   -- agreeing on `A` agree.
   have : CharP K p :=
-    (CharP.charP_iff_prime_eq_zero Fact.out).2 (by rw [← map_natCast g₁.hom, hB, map_zero])
-  ext1
-  exact IsPRadical.injective_comp K φ.hom p (congrArg CommRingCat.Hom.hom hg)
+    (CharP.charP_iff_prime_eq_zero Fact.out).2 (by rw [← map_natCast g₁, hB, map_zero])
+  exact IsPRadical.injective_comp K φ.hom p hg
 
 /-- **The perfection of an affine scheme is a universal homeomorphism**: for a ring `A` of
 characteristic `p`, the map `Spec (PerfectClosure A p) ⟶ Spec A` is a universal homeomorphism. -/
