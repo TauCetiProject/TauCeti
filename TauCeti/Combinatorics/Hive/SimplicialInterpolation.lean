@@ -82,11 +82,13 @@ def triangleGradient (S : Type*) {n : ℕ} {R : Type*} [Semiring S] [AddCommGrou
 @[simp] theorem triangleGradient_up (S : Type*) [Semiring S] [Module S R]
     (f : Vertex (m + 1) → R) (b : Vertex m) (s : Fin 3) :
     triangleGradient S f (UnitTriangle.up b) s =
-      f ((UnitTriangle.up b).vertex (s + 1)) - f ((UnitTriangle.up b).vertex s) := (rfl)
+      f ((UnitTriangle.up b).vertex (s + 1)) - f ((UnitTriangle.up b).vertex s) := by
+  simp [triangleGradient]
 @[simp] theorem triangleGradient_down (S : Type*) [Semiring S] [Module S R]
     (f : Vertex (m + 2) → R) (b : Vertex m) (s : Fin 3) :
     triangleGradient S f (UnitTriangle.down b) s =
-      f ((UnitTriangle.down b).vertex s) - f ((UnitTriangle.down b).vertex (s + 1)) := (rfl)
+      f ((UnitTriangle.down b).vertex s) - f ((UnitTriangle.down b).vertex (s + 1)) := by
+  simp [triangleGradient]
 @[simp] theorem sum_triangleGradient (S : Type*) [Semiring S] [Module S R]
     (f : Vertex n → R) (T : UnitTriangle n) :
     ∑ s : Fin 3, triangleGradient S f T s = 0 := by
@@ -556,7 +558,7 @@ noncomputable def planarInterpolate {n : ℕ} :
   (LinearMap.funLeft ℝ ℝ (planeInvAffine n)).comp interpolate
 
 theorem planarInterpolate_def (f : Vertex n → ℝ) (u : EuclideanSpace ℝ (Fin 2)) :
-    planarInterpolate f u = interpolate f (planeInvAffine n u) := (rfl)
+    planarInterpolate f u = interpolate f (planeInvAffine n u) := by simp [planarInterpolate]
 @[simp] theorem planarInterpolate_plane (f : Vertex n → ℝ) (p : Vertex n) :
     planarInterpolate f p.plane = f p := by simp [planarInterpolate]
 theorem planarInterpolate_planeLinear (f : Vertex n → ℝ) {x : Fin 3 → ℝ}

@@ -125,14 +125,9 @@ private theorem barycentricSimplex_eq_smul (n : ℕ) :
 `(0, n, 0)`, `(0, 0, n)`. -/
 theorem barycentricSimplex_eq_convexHull_corners (n : ℕ) : barycentricSimplex n =
     convexHull ℝ (Set.range fun s : Fin 3 => (Vertex.edgePoint n s 0).barycentric) := by
-  rw [barycentricSimplex_eq_smul, barycentricSimplex_one_eq_convexHull, ← convexHull_smul]
-  congr 1; ext x
-  simp only [Set.mem_smul_set, Set.mem_range]
-  constructor
-  · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-    exact ⟨s, by ext i; fin_cases s <;> fin_cases i <;> simp⟩
-  · rintro ⟨s, rfl⟩
-    exact ⟨Pi.single s 1, ⟨s, rfl⟩, by ext i; fin_cases s <;> fin_cases i <;> simp⟩
+  rw [barycentricSimplex_eq_smul, barycentricSimplex_one_eq_convexHull, ← convexHull_smul,
+    Set.smul_set_range]
+  congr 2; ext s i; fin_cases s <;> fin_cases i <;> simp
 
 theorem barycentricSimplex_eq_convexHull (n : ℕ) :
     barycentricSimplex n = convexHull ℝ (Set.range (Vertex.barycentric (n := n))) :=
