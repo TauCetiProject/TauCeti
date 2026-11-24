@@ -15,8 +15,8 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
-import TauCeti.Analysis.ODE.Gronwall.Discrete
 import TauCeti.Analysis.ODE.Gronwall.Uniqueness
+import TauCeti.Analysis.SpecificLimits.DiscreteGronwall.Polynomial
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!

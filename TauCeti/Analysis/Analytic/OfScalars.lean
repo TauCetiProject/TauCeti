@@ -56,6 +56,7 @@ translated punctured-disc variants
 (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt`,
+`FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt`,
 `FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt`); in particular, a scalar series
 whose sum has no zero in a disk about the origin converges on that disk, because the sum is `0`
 wherever the series diverges.
@@ -567,6 +568,15 @@ theorem analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt {𝕜 : Type*} [Densely
       simp [Metric.ball_eq_empty.mpr (not_lt.mp hr)]
     rw [hemp]
     exact fun _ hx ↦ False.elim hx
+
+/-- Over a densely normed field, if `∑ c n * (z - z₀) ^ n` is summable on the punctured open disc
+`0 < ‖z - z₀‖ < r`, then `∑ c n * u ^ n` is absolutely summable for `‖u‖ < r`. -/
+theorem summable_norm_mul_pow_of_norm_sub_lt {𝕜 : Type*} [DenselyNormedField 𝕜]
+    (c : ℕ → 𝕜) (z₀ : 𝕜) {r : ℝ}
+    (hc : ∀ z : 𝕜, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun n : ℕ ↦ c n * (z - z₀) ^ n)
+    {u : 𝕜} (hu : ‖u‖ < r) : Summable fun n : ℕ ↦ ‖c n * u ^ n‖ :=
+  (hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt c z₀ ((norm_nonneg u).trans_lt hu)
+    hc).summable_norm_mul_pow_ofScalars (TauCeti.eNorm_lt_ofReal_iff.mpr hu)
 
 /-- Over a densely normed field, if `∑ c n * (z - z₀) ^ n` is summable on the punctured open disc
 `0 < ‖z - z₀‖ < r`, then `‖c n‖ * ρ ^ n` is uniformly bounded for every `0 ≤ ρ < r`. -/

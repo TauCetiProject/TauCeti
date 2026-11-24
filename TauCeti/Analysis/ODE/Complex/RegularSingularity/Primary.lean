@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Data.Nat.Choose.Sum
 
@@ -47,7 +48,7 @@ of convergence of the coefficient series, `|aₛ| tˢ` is then bounded by `|a₀
 coefficient `C(s + m, m)` for a fixed `m`. The equation is verified on coefficients: in terms of
 the Euler operator `ζ d/dζ`, `(z - z₀)^{2 - ρ}` times the left-hand side is the power series whose
 coefficient of index `s` is `Q(ρ + s) aₛ + ∑_{k < s} ((ρ + k) f_{s-k} + g_{s-k}) aₖ`, a Cauchy
-product of absolutely convergent series.
+product of absolutely convergent series (`TauCeti.hasSum_eulerOperator_ofScalars`).
 
 ## References
 
@@ -197,33 +198,55 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs a : ℕ → ℂ
 
 /-! ### The Frobenius series solves the equation -/
 
-/-- The coefficient of `ζⁿ` in the Euler-operator form of the equation vanishes, by the
-recursion and, for `n = 0`, by the indicial equation. -/
-private theorem euler_form_coeff_eq_zero {ρ ζ : ℂ} {fs gs a : ℕ → ℂ}
-    (hρ : ρ * (ρ - 1) + fs 0 * ρ + gs 0 = 0)
-    (ha : ∀ s : ℕ, 1 ≤ s → ((ρ + s) * (ρ + s - 1) + fs 0 * (ρ + s) + gs 0) * a s =
-      -∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) (n : ℕ) :
-    ρ * (ρ - 1) * (a n * ζ ^ n) + 2 * ρ * (n * a n * ζ ^ n) + n * (n - 1) * a n * ζ ^ n +
-        ∑ k ∈ range (n + 1), (ρ + k) * a k * ζ ^ k * (fs (n - k) * ζ ^ (n - k)) +
-      ∑ k ∈ range (n + 1), a k * ζ ^ k * (gs (n - k) * ζ ^ (n - k)) = 0 := by
-  have hsum (u v : ℕ → ℂ) : ∑ k ∈ range (n + 1), u k * ζ ^ k * (v (n - k) * ζ ^ (n - k)) =
-      ζ ^ n * ∑ k ∈ range (n + 1), u k * v (n - k) := by
-    rw [mul_sum]
-    refine sum_congr rfl fun k hk ↦ ?_
-    rw [← pow_mul_pow_sub ζ (mem_range_succ_iff.mp hk)]
+/-- Coefficient expansion for the Euler–Frobenius operator applied to `S(ζ) = ∑ c_s ζ^s`:
+inside the radii of convergence of `S`, `fs`, and `gs`,
+`σ (σ - 1) S(ζ) + 2 σ ζ S'(ζ) + ζ² S''(ζ) + F (σ S(ζ) + ζ S'(ζ)) + G S(ζ)`
+is the sum of the series with `s`-th coefficient
+`((σ + s)(σ + s - 1) + fs 0 (σ + s) + gs 0) c_s +`
+`∑_{k < s} ((σ + k) fs_{s - k} + gs_{s - k}) c_k`. -/
+theorem hasSum_eulerOperator_ofScalars {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    {σ ζ F G : 𝕜} {fs gs c : ℕ → 𝕜} {S : 𝕜 → 𝕜} {R : ℝ≥0∞}
+    (hS : HasFPowerSeriesOnBall S (ofScalars 𝕜 c) 0 R) (hζ : ‖ζ‖ₑ < R)
+    (hζf : ‖ζ‖ₑ < (ofScalars 𝕜 fs).radius) (hζg : ‖ζ‖ₑ < (ofScalars 𝕜 gs).radius)
+    (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) (hG : HasSum (fun s ↦ gs s * ζ ^ s) G) :
+    HasSum (fun s : ℕ ↦ (((σ + s) * (σ + s - 1) + fs 0 * (σ + s) + gs 0) * c s +
+        ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * ζ ^ s)
+      (σ * (σ - 1) * S ζ + 2 * σ * (ζ * deriv S ζ) + ζ ^ 2 * deriv (deriv S) ζ +
+        F * (σ * S ζ + ζ * deriv S ζ) + G * S ζ) := by
+  -- the series of `S`, of `ζ S'` and of `ζ² S''`
+  have h0 : HasSum (fun n ↦ c n * ζ ^ n) (S ζ) := by
+    simpa [ofScalars_apply_eq, mul_comm] using hS.hasSum (mem_eball_zero_iff.mpr hζ)
+  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
+  have h2 := hS.hasSum_sq_mul_deriv_deriv_ofScalars hζ
+  -- absolute convergence of the factors of the two Cauchy products
+  have hA := summable_norm_mul_pow_of_lt_radius c (hζ.trans_le hS.r_le)
+  have hP : Summable fun n : ℕ ↦ ‖(σ + n) * c n * ζ ^ n‖ := by
+    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+      ((hA.mul_left ‖σ‖).add (summable_norm_natCast_mul_ofScalars c (hζ.trans_le hS.r_le)))
+    rw [add_mul, add_mul]
+    refine (norm_add_le _ _).trans_eq ?_
+    rw [mul_assoc σ, norm_mul]
+  have hfN := summable_norm_mul_pow_of_lt_radius fs hζf
+  have hgN := summable_norm_mul_pow_of_lt_radius gs hζg
+  have hPsum : HasSum (fun n : ℕ ↦ (σ + n) * c n * ζ ^ n) (σ * S ζ + ζ * deriv S ζ) := by
+    convert (h0.mul_left σ).add h1 using 1
+    ext n
     ring
-  have hrec : ((ρ + n) * (ρ + n - 1) + fs 0 * (ρ + n) + gs 0) * a n +
-      ∑ k ∈ range n, ((ρ + k) * fs (n - k) + gs (n - k)) * a k = 0 := by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simpa using congrArg (· * a 0) hρ
-    · rw [ha n hn, neg_add_cancel]
-  have hsplit : ∑ k ∈ range n, ((ρ + k) * fs (n - k) + gs (n - k)) * a k =
-      ∑ k ∈ range n, (ρ + k) * a k * fs (n - k) + ∑ k ∈ range n, a k * gs (n - k) := by
+  have hC1 := hasSum_sum_range_mul_of_summable_norm hP hfN
+  have hC2 := hasSum_sum_range_mul_of_summable_norm hA hgN
+  rw [hPsum.tsum_eq, hF.tsum_eq] at hC1
+  rw [h0.tsum_eq, hG.tsum_eq] at hC2
+  -- combine the Euler-operator terms and Cauchy products into the shifted coefficient sum
+  have htotal := ((((h0.mul_left (σ * (σ - 1))).add (h1.mul_left (2 * σ))).add h2).add hC1).add hC2
+  rw [mul_comm (σ * S ζ + ζ * deriv S ζ) F, mul_comm (S ζ) G] at htotal
+  refine htotal.congr_fun fun s ↦ ?_
+  rw [sum_range_succ_mul_pow (fun k ↦ (σ + k) * c k) fs ζ s, sum_range_succ_mul_pow c gs ζ s]
+  have hsum : ((∑ k ∈ range s, (σ + k) * c k * fs (s - k)) +
+      ∑ k ∈ range s, c k * gs (s - k)) * ζ ^ s =
+      (∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * ζ ^ s := by
     rw [← sum_add_distrib]
-    exact sum_congr rfl fun k _ ↦ by ring
-  rw [hsplit] at hrec
-  rw [hsum (fun k ↦ (ρ + k) * a k), hsum a, sum_range_succ, sum_range_succ, Nat.sub_self]
-  linear_combination ζ ^ n * hrec
+    exact congrArg (· * ζ ^ s) (sum_congr rfl fun _ _ ↦ by ring)
+  linear_combination -hsum
 
 /-- The Euler-operator form of the equation, at a point `ζ` of the disc: with `S = ∑ aₛ ζˢ`,
 `F = ∑ fₛ ζˢ` and `G = ∑ gₛ ζˢ`, the expression below, which is `ζ^{2 - ρ}` times the left-hand
@@ -237,34 +260,11 @@ private theorem euler_form_eq_zero {ρ ζ F G : ℂ} {fs gs a : ℕ → ℂ} {S 
       -∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) :
     ρ * (ρ - 1) * S ζ + 2 * ρ * (ζ * deriv S ζ) + ζ ^ 2 * deriv (deriv S) ζ +
       F * (ρ * S ζ + ζ * deriv S ζ) + G * S ζ = 0 := by
-  -- the series of `S`, of `ζ S'` and of `ζ² S''`
-  have h0 : HasSum (fun n ↦ a n * ζ ^ n) (S ζ) := by
-    simpa [ofScalars_apply_eq, mul_comm] using hS.hasSum (mem_eball_zero_iff.mpr hζ)
-  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
-  have h2 := hS.hasSum_sq_mul_deriv_deriv_ofScalars hζ
-  -- absolute convergence of the factors of the two Cauchy products
-  have hA := summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le)
-  have hP : Summable fun n : ℕ ↦ ‖(ρ + n) * a n * ζ ^ n‖ := by
-    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-      ((hA.mul_left ‖ρ‖).add (summable_norm_natCast_mul_ofScalars a
-        (hζ.trans_le hS.r_le)))
-    rw [add_mul, add_mul]
-    refine (norm_add_le _ _).trans_eq ?_
-    rw [mul_assoc ρ, norm_mul]
-  have hfN := summable_norm_mul_pow_of_lt_radius fs hζf
-  have hgN := summable_norm_mul_pow_of_lt_radius gs hζg
-  have hPsum : HasSum (fun n : ℕ ↦ (ρ + n) * a n * ζ ^ n) (ρ * S ζ + ζ * deriv S ζ) := by
-    convert (h0.mul_left ρ).add h1 using 1
-    ext n
-    ring
-  have hC1 := hasSum_sum_range_mul_of_summable_norm hP hfN
-  have hC2 := hasSum_sum_range_mul_of_summable_norm hA hgN
-  rw [hPsum.tsum_eq, hF.tsum_eq] at hC1
-  rw [h0.tsum_eq, hG.tsum_eq] at hC2
-  -- the combined series has all coefficients zero
-  have htotal := ((((h0.mul_left (ρ * (ρ - 1))).add (h1.mul_left (2 * ρ))).add h2).add hC1).add hC2
-  rw [mul_comm (ρ * S ζ + ζ * deriv S ζ) F, mul_comm (S ζ) G] at htotal
-  exact htotal.unique ((hasSum_zero).congr_fun fun n ↦ euler_form_coeff_eq_zero (ζ := ζ) hρ ha n)
+  refine (hasSum_eulerOperator_ofScalars (σ := ρ) hS hζ hζf hζg hF hG).unique
+    (hasSum_zero.congr_fun fun s ↦ ?_)
+  rcases Nat.eq_zero_or_pos s with rfl | hs
+  · simp [hρ]
+  · simp [ha s hs]
 
 /-- The derivative of `y ↦ y ^ ρ * S y` on the slit disc of convergence of `S`. -/
 private theorem hasDerivAt_cpow_mul {ρ y : ℂ} {S : ℂ → ℂ} {p : FormalMultilinearSeries ℂ ℂ ℂ}

@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
