@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Analysis.Complex.Coordinates
-import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -116,15 +115,13 @@ private theorem mFourierCoeff_torusOp (hω : (conj ω₁ * ω₂).im ≠ 0)
   have hint (w : Fin 2 → ℝ) : Integrable (lineDeriv g w) :=
     integrable_of_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hg w)
   have hD : ((conj ω₁ * ω₂).im : ℂ) ≠ 0 := mod_cast hω
-  rw [torusOp, mFourierCoeff_smul,
+  simp only [torusOp, mFourierCoeff_smul,
     mFourierCoeff_add (((hint _).smul _).add ((hint _).smul _))
       ((integrable_of_mem_smoothFunctions hg).smul _),
-    mFourierCoeff_add ((hint _).smul _) ((hint _).smul _), mFourierCoeff_smul, mFourierCoeff_smul,
-    mFourierCoeff_smul, mFourierCoeff_lineDeriv hg, mFourierCoeff_lineDeriv hg]
-  simp only [Fin.sum_univ_two, Pi.single_apply, smul_eq_mul]
-  simp only [Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one, ofReal_zero, mul_one,
-    mul_zero, zero_add, add_zero]
-  rw [torusMultiplier]
+    mFourierCoeff_add ((hint _).smul _) ((hint _).smul _), mFourierCoeff_lineDeriv hg,
+    Fin.sum_univ_two, Pi.single_eq_same, Pi.single_eq_of_ne, ne_eq, one_ne_zero, zero_ne_one,
+    not_false_eq_true, ofReal_one, ofReal_zero, mul_one, mul_zero, zero_add, add_zero, smul_eq_mul,
+    torusMultiplier]
   field_simp
   ring
 
@@ -228,7 +225,9 @@ private def phaseCLM (θ₁ θ₂ : ℝ) : (Fin 2 → ℝ) →L[ℝ] ℂ :=
 
 private theorem phaseCLM_apply (p : Fin 2 → ℝ) :
     phaseCLM θ₁ θ₂ p = 2 * π * I * (θ₁ * p 0 + θ₂ * p 1) := by
-  simp [phaseCLM]
+  simp only [phaseCLM, ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smulₛₗ,
+    RingHom.id_apply, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, ofRealCLM_apply, real_smul, smul_eq_mul]
   ring
 
 /-- Translating by a lattice vector multiplies the phase by the corresponding holonomy. -/
@@ -237,7 +236,9 @@ private theorem exp_phaseCLM_add_single (p : Fin 2 → ℝ) :
       exp (phaseCLM θ₁ θ₂ (p + Pi.single 1 1)) =
         exp (2 * π * θ₂ * I) * exp (phaseCLM θ₁ θ₂ p) := by
   constructor <;> rw [map_add, Complex.exp_add, mul_comm] <;> congr 2 <;>
-    simp [phaseCLM_apply] <;> ring
+    simp only [phaseCLM_apply, Pi.single_eq_same, Pi.single_eq_of_ne, ne_eq, one_ne_zero,
+      zero_ne_one, not_false_eq_true, ofReal_one, ofReal_zero, mul_one, mul_zero, add_zero,
+      zero_add] <;> ring
 
 /-- The section of the flat line corresponding to a function on the torus: in lattice coordinates
 `p`, it is `exp (2πi (θ₁ p₀ + θ₂ p₁)) g p`. -/
@@ -253,22 +254,18 @@ private theorem ofTorus_periodCoordEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
   rw [ofTorus, Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTorus (Fin 2) → ℂ}
-    (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ := by
+    (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ := by
   refine mem_flatLineSections.2 ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
     (mem_smoothFunctions.1 hg)).comp (periodCoordEquiv hω).symm.contDiff, fun z ↦ ?_,
     fun z ↦ ?_⟩ <;>
     obtain ⟨p, rfl⟩ := (periodCoordEquiv hω).surjective z
   · have hz : periodCoordEquiv hω p + ω₁ = periodCoordEquiv hω (p + Pi.single 0 1) := by
-      simp only [periodCoordEquiv_apply, Pi.add_apply]
-      simp
-      ring
+      rw [map_add, ← periodCoordEquiv_symm_apply_ω₁ hω, ContinuousLinearEquiv.apply_symm_apply]
     rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).1,
       coe_add_single]
     ring
   · have hz : periodCoordEquiv hω p + ω₂ = periodCoordEquiv hω (p + Pi.single 1 1) := by
-      simp only [periodCoordEquiv_apply, Pi.add_apply]
-      simp
-      ring
+      rw [map_add, ← periodCoordEquiv_symm_apply_ω₂ hω, ContinuousLinearEquiv.apply_symm_apply]
     rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).2,
       coe_add_single]
     ring
@@ -304,7 +301,7 @@ private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
 
 /-- Every smooth section of the flat line comes from a smooth function on the torus. -/
 private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
+    (hu : u ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     ∃ g ∈ smoothFunctions (Fin 2), ofTorus hω θ₁ θ₂ g = u := by
   obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
   set L := periodCoordEquiv hω
@@ -384,13 +381,13 @@ line. Its inverse `(flatLineConjWirtingerDerivEquiv hω hθ).symm` is the leadin
 solving `∂bar u = f`. -/
 def flatLineConjWirtingerDerivEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) :
-    flatLineSections ω₁ ω₂ θ₁ θ₂ ≃ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ :=
+    flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ ≃ₗ[ℂ] flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ :=
   LinearEquiv.ofBijective _ (bijective_flatLineConjWirtingerDerivₗ hω hθ)
 
 @[simp]
 theorem flatLineConjWirtingerDerivEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
-    (u : flatLineSections ω₁ ω₂ θ₁ θ₂) :
+    (u : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     flatLineConjWirtingerDerivEquiv hω hθ u = flatLineConjWirtingerDerivₗ ω₁ ω₂ θ₁ θ₂ u :=
   (rfl)
 
@@ -399,7 +396,7 @@ theorem flatLineConjWirtingerDerivEquiv_apply (hω : (conj ω₁ * ω₂).im ≠
 @[simp]
 theorem conjWirtingerDeriv_flatLineConjWirtingerDerivEquiv_symm_apply
     (hω : (conj ω₁ * ω₂).im ≠ 0) (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
-    (f : flatLineSections ω₁ ω₂ θ₁ θ₂) (z : ℂ) :
+    (f : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) (z : ℂ) :
     conjWirtingerDeriv ((flatLineConjWirtingerDerivEquiv hω hθ).symm f : ℂ → ℂ) z 1 =
       (f : ℂ → ℂ) z := by
   have h := congrFun (congrArg Subtype.val
@@ -412,7 +409,7 @@ coordinates, `π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω
 `‖θ‖ℤ = |θ - round θ|`. -/
 theorem mul_setIntegral_norm_sq_flatLineConjWirtingerDerivEquiv_symm_apply_le
     (hω : (conj ω₁ * ω₂).im ≠ 0) (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
-    (f : flatLineSections ω₁ ω₂ θ₁ θ₂) :
+    (f : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2) *
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
           ‖((flatLineConjWirtingerDerivEquiv hω hθ).symm f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤

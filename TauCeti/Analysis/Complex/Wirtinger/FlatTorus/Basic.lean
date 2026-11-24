@@ -33,10 +33,11 @@ with holonomy `χ`. Its sections are the functions `u : ℂ → ℂ` with
 
 and its holomorphic structure is the Cauchy–Riemann operator `∂bar u`
 (`TauCeti.conjWirtingerDeriv u z 1`). The line bundle is trivial as a flat bundle exactly when
-`θ₁` and `θ₂` are integers. The smooth sections form the submodule `TauCeti.flatLineSections`,
-which `∂bar` preserves (`TauCeti.conjWirtingerDeriv_mem_flatLineSections`); on it `∂bar` is the
-complex-linear map `TauCeti.flatLineConjWirtingerDerivₗ`. This file proves the a priori estimate
-behind the invertibility of `∂bar` on every nontrivial flat line: for every `C²` section `u`,
+`θ₁` and `θ₂` are integers. The `Cⁿ` sections form the submodule `TauCeti.flatLineSections`;
+`∂bar` preserves the smooth ones (`TauCeti.conjWirtingerDeriv_mem_flatLineSections`), on which
+it is the complex-linear map `TauCeti.flatLineConjWirtingerDerivₗ`. This file proves the a priori
+estimate behind the invertibility of `∂bar` on every nontrivial flat line: for every `C²` section
+`u`,
 
 `π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω₂|²) ∫_P |u|² ≤ ∫_P |∂bar u|²`
 
@@ -125,11 +126,11 @@ section Sections
 
 open scoped ContDiff
 
-/-- The smooth sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
-`exp (2πiθ₂)` along `ω₁`, `ω₂`: the smooth functions `u : ℂ → ℂ` with
+/-- The `Cⁿ` sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
+`exp (2πiθ₂)` along `ω₁`, `ω₂`: the `Cⁿ` functions `u : ℂ → ℂ` with
 `u (z + ω₁) = exp (2πiθ₁) u z` and `u (z + ω₂) = exp (2πiθ₂) u z`. -/
-def flatLineSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
-  carrier := {u | ContDiff ℝ ∞ u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
+@[expose] def flatLineSections (n : WithTop ℕ∞) (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
+  carrier := {u | ContDiff ℝ n u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
     ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
   add_mem' {u v} hu hv :=
     ⟨hu.1.add hv.1, fun z ↦ by simp [hu.2.1, hv.2.1, mul_add],
@@ -140,15 +141,15 @@ def flatLineSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (�
       fun z ↦ by simp [hu.2.2, mul_left_comm]⟩
 
 /-- Membership in `flatLineSections`, unfolded. -/
-theorem mem_flatLineSections :
-    u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ ∞ u ∧
+theorem mem_flatLineSections {n : WithTop ℕ∞} :
+    u ∈ flatLineSections n ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ n u ∧
       (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
       ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z :=
   Iff.rfl
 
 /-- `∂bar` maps smooth sections of a flat line to smooth sections of the same line. -/
-theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
-    (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ :=
+theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
+    (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ :=
   ⟨contDiff_iff_contDiffAt.2 fun z ↦ hu.1.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
     conjWirtingerDeriv_add_apply_one_eq_mul hu.2.1,
     conjWirtingerDeriv_add_apply_one_eq_mul hu.2.2⟩
@@ -156,16 +157,16 @@ theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω�
 /-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
 noncomputable def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatLineSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ where
+    flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ] flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ where
   toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.property⟩
   map_add' u v := Subtype.ext <| funext fun z ↦ by
-    have hd (w : flatLineSections ω₁ ω₂ θ₁ θ₂) : DifferentiableAt ℝ (w : ℂ → ℂ) z :=
+    have hd (w : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) : DifferentiableAt ℝ (w : ℂ → ℂ) z :=
       (w.property.1.differentiable (by simp)) z
     simp [conjWirtingerDeriv_add (hd u) (hd v)]
   map_smul' c u := Subtype.ext <| funext fun z ↦ by simp [conjWirtingerDeriv_const_smul]
 
 @[simp]
-theorem coe_flatLineConjWirtingerDerivₗ_apply (u : flatLineSections ω₁ ω₂ θ₁ θ₂) :
+theorem coe_flatLineConjWirtingerDerivₗ_apply (u : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     (flatLineConjWirtingerDerivₗ ω₁ ω₂ θ₁ θ₂ u : ℂ → ℂ) = fun z ↦ conjWirtingerDeriv u z 1 :=
   (rfl)
 

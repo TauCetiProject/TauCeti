@@ -78,8 +78,6 @@ with irrational holonomy, where the leading operator acts on the divisor bundle
 
 ## Main definitions
 
-* `TauCeti.flatLineTestSections`: the `C²` sections of a flat line, the test sections of the weak
-  formulation.
 * `TauCeti.flatLineCRInverse`: the inverse of `∂bar` on square-integrable sections of a flat line
   with nontrivial holonomy.
 * `TauCeti.flatLineBeurling`: the Beurling transform `∂bar u ↦ ∂u` of a flat line.
@@ -180,27 +178,6 @@ end IntegrationByParts
 
 section WeakInverse
 
-/-- The `C²` sections of the flat line with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)` along `ω₁`,
-`ω₂`: the test sections of the weak formulation. -/
-def flatLineTestSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
-  carrier := {u | ContDiff ℝ 2 u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
-    ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
-  add_mem' := by
-    rintro u v ⟨hu, hu₁, hu₂⟩ ⟨hv, hv₁, hv₂⟩
-    exact ⟨hu.add hv, fun z ↦ by simp [hu₁, hv₁, mul_add], fun z ↦ by simp [hu₂, hv₂, mul_add]⟩
-  zero_mem' := ⟨contDiff_const, by simp, by simp⟩
-  smul_mem' := by
-    rintro c u ⟨hu, hu₁, hu₂⟩
-    exact ⟨hu.const_smul c, fun z ↦ by simp [hu₁, mul_left_comm],
-      fun z ↦ by simp [hu₂, mul_left_comm]⟩
-
-@[simp]
-theorem mem_flatLineTestSections_iff :
-    u ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ 2 u ∧
-      (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
-        ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z :=
-  Iff.rfl
-
 /-- A continuous function read in lattice coordinates is square integrable over the fundamental
 domain. -/
 private theorem memLp_comp_latticeCoord {g : ℂ → ℂ} (hg : Continuous g) :
@@ -212,7 +189,7 @@ private theorem memLp_comp_latticeCoord {g : ℂ → ℂ} (hg : Continuous g) :
 
 /-- The inclusion of the test sections into `L²` of the fundamental domain. -/
 private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
+    flatLineSections 2 ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) u.property.1.continuous).toLp _
   map_add' u v := by
@@ -222,7 +199,7 @@ private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp)
 
-private theorem sectionToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+private theorem sectionToLp_apply (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     sectionToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord u.property.1.continuous).toLp
       (fun p : ℝ × ℝ ↦ (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)) :=
   rfl
@@ -230,7 +207,7 @@ private theorem sectionToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ
 /-- The Wirtinger derivative `∂` on test sections, with values in `L²` of the fundamental
 domain. -/
 private noncomputable def wirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
+    flatLineSections 2 ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂)
     ((u.property.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1)).toLp _
@@ -243,7 +220,7 @@ private noncomputable def wirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) 
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp [wirtingerDeriv_const_smul])
 
-private theorem wirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+private theorem wirtingerToLp_apply (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     wirtingerToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord
       ((u.property.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1)).toLp
       (fun p : ℝ × ℝ ↦ wirtingerDeriv (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂) 1) :=
@@ -251,7 +228,7 @@ private theorem wirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ 
 
 /-- The coercivity estimate of `∂` in `L²` of the fundamental domain. -/
 private theorem sqrt_mul_norm_sectionToLp_le (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     √(π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2)) *
         ‖sectionToLp ω₁ ω₂ θ₁ θ₂ u‖ ≤ ‖wirtingerToLp ω₁ ω₂ θ₁ θ₂ u‖ := by
   refine le_of_sq_le_sq ?_ (norm_nonneg _)
@@ -272,7 +249,7 @@ theorem exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq
     ∃ Q : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) →L[ℂ]
         Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)),
       ‖Q‖ ≤ (√(π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2)))⁻¹ ∧
-      ∀ f, ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
+      ∀ f, ∀ φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂,
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
             Q f p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
           -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
@@ -330,10 +307,10 @@ private theorem cexp_dualCoeff_mul_sub_conj_mul_conj_latticeCoord (hω : (conj �
 /-- The twisted exponential `exp (a z - conj a conj z)`, with coefficient
 `a = dualCoeff ω₁ ω₂ (k₁ + θ₁) (k₂ + θ₂)`, is a smooth section of the flat line with holonomy
 `exp (2πiθ₁)`, `exp (2πiθ₂)` along `ω₁`, `ω₂`. -/
-private theorem cexp_dualCoeff_mem_flatLineTestSections (hω : (conj ω₁ * ω₂).im ≠ 0) (k₁ k₂ : ℤ) :
+private theorem cexp_dualCoeff_mem_flatLineSections (hω : (conj ω₁ * ω₂).im ≠ 0) (k₁ k₂ : ℤ) :
     (fun z ↦ cexp (dualCoeff ω₁ ω₂ (k₁ + θ₁) (k₂ + θ₂) * z -
       conj (dualCoeff ω₁ ω₂ (k₁ + θ₁) (k₂ + θ₂)) * conj z)) ∈
-        flatLineTestSections ω₁ ω₂ θ₁ θ₂ := by
+        flatLineSections 2 ω₁ ω₂ θ₁ θ₂ := by
   obtain ⟨ha₁, ha₂⟩ := im_dualCoeff_mul hω (k₁ + θ₁) (k₂ + θ₂)
   exact ⟨contDiff_cexp_mul_sub_conj_mul_conj _,
     cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq _ ha₁,
@@ -391,14 +368,14 @@ square-integrable section in lattice coordinates which is a weak solution of `�
 theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
     (hω : (conj ω₁ * ω₂).im ≠ 0) (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))}
-    (hy : ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
+    (hy : ∀ φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂,
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         y p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) = 0) :
     y = 0 := by
   refine eq_zero_of_forall_setIntegral_mul_conj_cexp_dualCoeff_eq_zero (θ₁ := θ₁) (θ₂ := θ₂) hω
     fun k₁ k₂ ↦ ?_
   -- The twisted exponential `e` with coefficient `a ≠ 0` satisfies `∂e = a e`.
-  have h := hy _ (cexp_dualCoeff_mem_flatLineTestSections hω k₁ k₂)
+  have h := hy _ (cexp_dualCoeff_mem_flatLineSections hω k₁ k₂)
   simpa only [wirtingerDeriv_cexp_mul_sub_conj_mul_conj, map_mul, mul_left_comm (y _) (conj _),
     integral_const_mul, mul_eq_zero, map_eq_zero, dualCoeff_ne_zero hω hθ, false_or] using h
 
@@ -455,7 +432,7 @@ theorem norm_flatLineCRInverse_le (hω : (conj ω₁ * ω₂).im ≠ 0)
 theorem setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
-    (hφ : φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (hφ : φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
       -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
@@ -469,7 +446,7 @@ theorem setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv (hω : (conj ω₁
 theorem flatLineCRInverse_apply_eq_iff (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {f y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))} :
-    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y ↔ ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
+    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y ↔ ∀ φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂,
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
           y p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
         -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
@@ -570,7 +547,7 @@ theorem setIntegral_norm_wirtingerDeriv_sq_eq_setIntegral_norm_conjWirtingerDeri
 /-- The conjugate Wirtinger derivative `∂bar` on test sections, with values in `L²` of the
 fundamental domain. -/
 private noncomputable def conjWirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
+    flatLineSections 2 ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂)
     ((u.property.1.of_le one_le_two).continuous_conjWirtingerDeriv_apply 1)).toLp _
@@ -583,7 +560,7 @@ private noncomputable def conjWirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : �
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp [conjWirtingerDeriv_const_smul])
 
-private theorem conjWirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+private theorem conjWirtingerToLp_apply (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord
       ((u.property.1.of_le one_le_two).continuous_conjWirtingerDeriv_apply 1)).toLp
       (fun p : ℝ × ℝ ↦ conjWirtingerDeriv (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂) 1) :=
@@ -591,7 +568,7 @@ private theorem conjWirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ
 
 /-- The energy identity in `L²`: `‖∂u‖ = ‖∂bar u‖` for every test section `u`. -/
 private theorem norm_wirtingerToLp (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     ‖wirtingerToLp ω₁ ω₂ θ₁ θ₂ u‖ = ‖conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ u‖ := by
   refine (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
   rw [wirtingerToLp_apply, conjWirtingerToLp_apply, MemLp.norm_toLp_sq, MemLp.norm_toLp_sq]
@@ -609,7 +586,7 @@ private theorem topologicalClosure_range_conjWirtingerToLp (hω : (conj ω₁ * 
   intro y hy
   refine eq_zero_of_forall_setIntegral_mul_conj_cexp_dualCoeff_eq_zero (θ₁ := θ₁) (θ₂ := θ₂) hω
     fun k₁ k₂ ↦ ?_
-  have hmem := cexp_dualCoeff_mem_flatLineTestSections (θ₁ := θ₁) (θ₂ := θ₂) hω k₁ k₂
+  have hmem := cexp_dualCoeff_mem_flatLineSections (θ₁ := θ₁) (θ₂ := θ₂) hω k₁ k₂
   have h : ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, y p * conj (conjWirtingerDeriv
       (fun z ↦ cexp (dualCoeff ω₁ ω₂ (k₁ + θ₁) (k₂ + θ₂) * z -
         conj (dualCoeff ω₁ ω₂ (k₁ + θ₁) (k₂ + θ₂)) * conj z)) (p.1 * ω₁ + p.2 * ω₂) 1) = 0 := by
@@ -643,7 +620,7 @@ noncomputable def flatLineBeurling (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     (LinearMap.range (conjWirtingerToLp ω₁ ω₂ θ₁ θ₂)).subtypeL
 
 private theorem flatLineBeurling_conjWirtingerToLp (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (u : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     flatLineBeurling ω₁ ω₂ θ₁ θ₂ (conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ u) =
       wirtingerToLp ω₁ ω₂ θ₁ θ₂ u :=
   ContinuousLinearMap.factorThru_compLeftInverse_apply (exists_norm_wirtingerToLp_le hω) u
@@ -706,7 +683,7 @@ theorem norm_smul_flatLineBeurling_add_smul_le (hω : (conj ω₁ * ω₂).im �
 /-- Integration by parts for test sections in inner product form:
 `⟪∂bar φ, u⟫ + ⟪φ, ∂u⟫ = 0`. -/
 private theorem inner_conjWirtingerToLp_add_inner_wirtingerToLp (hω : (conj ω₁ * ω₂).im ≠ 0)
-    (u φ : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (u φ : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     inner ℂ (conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ φ) (sectionToLp ω₁ ω₂ θ₁ θ₂ u) +
       inner ℂ (sectionToLp ω₁ ω₂ θ₁ θ₂ φ) (wirtingerToLp ω₁ ω₂ θ₁ θ₂ u) = 0 := by
   have e₁ : inner ℂ (conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ φ) (sectionToLp ω₁ ω₂ θ₁ θ₂ u) =
@@ -738,7 +715,7 @@ product form. -/
 private theorem inner_conjWirtingerToLp_flatLineCRInverse (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
-    (φ : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (φ : flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     inner ℂ (conjWirtingerToLp ω₁ ω₂ θ₁ θ₂ φ) (flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f) =
       -inner ℂ (sectionToLp ω₁ ω₂ θ₁ θ₂ φ) (flatLineBeurling ω₁ ω₂ θ₁ θ₂ f) := by
   rw [← add_eq_zero_iff_eq_neg]
@@ -775,7 +752,7 @@ integrable, with `‖∂ (Q f)‖ = ‖∂bar (Q f)‖ = ‖f‖` (`TauCeti.norm
 theorem setIntegral_flatLineCRInverse_mul_conj_conjWirtingerDeriv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
-    (hφ : φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
+    (hφ : φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f p * conj (conjWirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
       -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
@@ -796,7 +773,7 @@ lies in `H¹`. -/
 theorem setIntegral_flatLineCRInverse_mul_conj_fderiv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
-    (hφ : φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂) (v : ℂ) :
+    (hφ : φ ∈ flatLineSections 2 ω₁ ω₂ θ₁ θ₂) (v : ℂ) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f p * conj (fderiv ℝ φ (p.1 * ω₁ + p.2 * ω₂) v) =
       -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
