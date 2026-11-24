@@ -52,6 +52,8 @@ K-injective replacement of `L`, precomposition identifies `Hom(P, I)` with `RHom
 
 * `TauCeti.nonempty_derivedTensorHomAdj`: the functor `T(-, L)` is left adjoint to
   `RHom_A(L, -)`.
+* `TauCeti.exists_derivedTensorHomAdj_eq`: `TauCeti.derivedTensorHomAdj` is
+  `TauCeti.derivedTensorHomAdjOfQuasiIso` for some K-flat model.
 * `TauCeti.derivedTensorHomAdjOfIsKFlat_homEquiv` and
   `TauCeti.derivedTensorHomAdjOfQuasiIso_homEquiv`: the bijections of these adjunctions, in terms
   of currying on homotopy categories.
@@ -166,6 +168,15 @@ def derivedTensorHomAdj (L : DerivedCategory (ModuleCat.{u} A)) :
   have : h.choose.IsKFlat := h.choose_spec.choose_spec.2
   have : QuasiIso h.choose_spec.choose := h.choose_spec.choose_spec.1
   derivedTensorHomAdjOfQuasiIso T α L h.choose_spec.choose
+
+/-- The adjunction `derivedTensorHomAdj` is `derivedTensorHomAdjOfQuasiIso` for some K-flat
+complex `P` with a quasi-isomorphism `p` to the K-injective replacement of `L`, so its bijection
+is described by `derivedTensorHomAdjOfQuasiIso_homEquiv`. -/
+lemma exists_derivedTensorHomAdj_eq (L : DerivedCategory (ModuleCat.{u} A)) :
+    ∃ (P : CochainComplex (ModuleCat.{u} A) ℤ) (_ : P.IsKFlat)
+      (p : P ⟶ ((kInjectiveReplacement _).obj L).as) (_ : QuasiIso p),
+      derivedTensorHomAdj T α L = derivedTensorHomAdjOfQuasiIso T α L p :=
+  ⟨_, _, _, _, rfl⟩
 
 /-- **The derived tensor–Hom adjunction.** For every left derived bifunctor `T` of the tensor
 product of complexes of `A`-modules and every `L` in `D(A)`, the functor `K ↦ T(K, L)` is left
