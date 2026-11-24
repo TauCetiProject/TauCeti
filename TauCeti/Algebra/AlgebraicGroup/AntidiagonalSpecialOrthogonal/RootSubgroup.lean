@@ -23,16 +23,18 @@ Then `N_ij J_l` is antisymmetric, `N_ij J_l N_ijᵀ = 0` and `N_ij² = 0`, so `x
 `J_l`, has determinant one, and `a ↦ x_ij(a)` is a homomorphism `𝔾ₐ → SO_l^J`. This file promotes
 it to a morphism of affine group schemes over every commutative ring. For `i, j < l / 2`, `x_ij` is
 the root subgroup of the root `ε_i - ε_j` of the diagonal torus
-(`TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorus`); for `i < l / 2 ≤ j'` it is that of
-`ε_i + ε_{j'}`, and the remaining pairs give the negatives. In the `1`-indexed notation of the
-roadmap, `x_{ε_i - ε_j}(a) = I + a(E_ij - E_{l+1-j, l+1-i})`.
+(`TauCeti.AntidiagonalSpecialOrthogonal.diagonalTorus`); for `i < l / 2 ≤ j` (so `j' < l / 2`) it
+is that of `ε_i + ε_{j'}`, and the remaining pairs give the negatives. In `1`-indexed notation,
+`x_{ε_i - ε_j}(a) = I + a(E_ij - E_{l+1-j, l+1-i})`.
 
-For `i < j` the matrix `x_ij(a)` is upper triangular, and the root subgroup factors through the
-upper triangular subgroup of `SO_l^J` as a closed subgroup scheme.
+Each root subgroup is a closed subgroup scheme of `SO_l^J`. For `i < j` the matrix `x_ij(a)` is
+upper triangular, and the root subgroup factors through the upper triangular subgroup of `SO_l^J`
+as a closed subgroup scheme.
 
 The construction follows `TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic`: the
 natural homomorphism on algebra-valued points determines the coordinate Hopf-algebra morphism by
-full faithfulness of the functor of points.
+full faithfulness of the functor of points. The factorization through the upper triangular
+subgroup follows `TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSubgroup`.
 
 ## Main declarations
 
@@ -41,7 +43,8 @@ full faithfulness of the functor of points.
   `rootMatrix_mul_formMatrix_mul_transpose` and `det_rootMatrix`.
 * `TauCeti.AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap` and
   `TauCeti.AntidiagonalSpecialOrthogonal.rootSubgroup`: the coordinate morphism and the
-  group-scheme morphism `𝔾ₐ → SO_l^J`, with `pointsMulEquiv_rootSubgroupPoints` on points.
+  group-scheme morphism `𝔾ₐ → SO_l^J`, a closed immersion, with
+  `pointsMulEquiv_rootSubgroupPoints` on points.
 * `TauCeti.AntidiagonalSpecialOrthogonal.UpperTriangular.rootSubgroup`: for `i < j`, the factored
   morphism `𝔾ₐ → B`, a closed immersion, with `rootSubgroup_comp_inclusion`.
 
@@ -252,8 +255,7 @@ theorem pointsSubgroupMap_rootPoints {B : Type v} [CommRing B] (f : A →+* B)
   rw [coe_pointsSubgroupMap, coe_rootPoints, coe_rootPoints]
   ext p q
   rw [Matrix.GeneralLinearGroup.map_apply, coe_rootHom, coe_rootHom, toAdd_ofAdd,
-    ← map_rootMatrix]
-  rfl
+    ← map_rootMatrix, Matrix.map_apply]
 
 end Points
 
@@ -281,8 +283,7 @@ theorem pointsMulEquiv_rootSubgroupPoints
     pointsMulEquiv R l (A := A) (rootSubgroupPoints r q) =
       rootPoints r (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A) q) := by
   rw [rootSubgroupPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.apply_symm_apply]
-  rfl
+    MulEquiv.apply_symm_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
 
 /-- The root subgroup on Hopf points is natural in the value algebra. -/
 theorem mapValue_rootSubgroupPoints (φ : A →ₐ[R] B)
@@ -294,8 +295,7 @@ theorem mapValue_rootSubgroupPoints (φ : A →ₐ[R] B)
     pointsMulEquiv_rootSubgroupPoints, pointsSubgroupMap_rootPoints]
   congr 1
   apply Multiplicative.toAdd.injective
-  rw [toAdd_ofAdd, AdditiveGroup.toAdd_gaPointsMulEquiv_mapValue]
-  rfl
+  rw [toAdd_ofAdd, AdditiveGroup.toAdd_gaPointsMulEquiv_mapValue, AlgHom.coe_toRingHom]
 
 /-- The natural transformation of group-valued points given by the root subgroup. -/
 noncomputable def rootSubgroupPointsMap :
@@ -333,15 +333,27 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap :
       rootSubgroupPointsMap.{u, u} r :=
   CommHopfAlgCat.mapPointsFunctor_homOfPointsMap _
 
-/-- On an algebra in the universe of the base ring, the root coordinate morphism induces the root
-point homomorphism. -/
-@[simp]
-theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (A : CommAlgCat.{u} R)
+/-- Over any value-algebra universe, the root coordinate morphism induces the root point
+homomorphism. -/
+@[simp↓]
+theorem mapPointsFunctor_rootSubgroupCoordinateMap_app (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     (CommHopfAlgCat.Hom.mapPointsFunctor (rootSubgroupCoordinateMap (R := R) r)).app A q =
       rootSubgroupPoints r q := by
-  rw [mapPointsFunctor_rootSubgroupCoordinateMap, rootSubgroupPointsMap_app]
-  rfl
+  let q₀ := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
+  have hgeneric := congrArg
+    (fun τ => τ.app (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q₀)
+    (mapPointsFunctor_rootSubgroupCoordinateMap (R := R) r)
+  rw [rootSubgroupPointsMap_app, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    AlgHom.id_comp] at hgeneric
+  -- Expose the monoid hom beneath `GrpCat.ofHom` so naturality can rewrite the point.
+  change toConv (rootSubgroupCoordinateMap (R := R) r).hom.toAlgHom =
+    rootSubgroupPoints r q₀ at hgeneric
+  have h := mapValue_rootSubgroupPoints r q.ofConv q₀
+  rw [← hgeneric] at h
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  simp only [AlgHom.mapValue_apply, toConv_ofConv, q₀, AlgHom.comp_id] at h
+  exact h
 
 /-- **The root subgroup `x_ij : 𝔾ₐ → SO_l^J`**, as a morphism of affine group schemes over the
 base ring. -/
@@ -377,20 +389,38 @@ theorem pointToGeneralLinear_coordinateMap_comp_rootSubgroupCoordinateMap :
       (pointsMulEquiv R l (A := AdditiveGroup.coordinateHopfAlgebra R)
         (rootSubgroupPoints r q₀) : GL (Fin l) _) := by
     rw [← pointsMulEquiv_coe, ← happ, CommHopfAlgCat.quotientPointsHom_apply,
-      ← GeneralLinear.pointsMulEquiv_apply, coordinateMap_def]
-    rfl
+      ← GeneralLinear.pointsMulEquiv_apply, coordinateMap_def, CommHopfAlgCat.hom_comp,
+      BialgHom.comp_toAlgHom, WithConv.ofConv_toConv]
   rw [hpt, pointsMulEquiv_rootSubgroupPoints, coe_rootPoints, coe_rootHom]
   simp [q₀]
 
 /-- The root coordinate morphism sends the coordinate at `(a, b)` to the `(a, b)` entry of the root
 matrix of the coordinate of `𝔾ₐ`. -/
+@[simp↓]
 theorem rootSubgroupCoordinateMap_coordinateMap_genericMatrix (a b : Fin l) :
     (rootSubgroupCoordinateMap r).hom
         ((coordinateMap R l).hom (GeneralLinear.genericMatrix R l a b)) =
       rootMatrix r (SymmetricAlgebra.ι R R 1) a b := by
   rw [← pointToGeneralLinear_coordinateMap_comp_rootSubgroupCoordinateMap,
-    GeneralLinear.pointToGeneralLinear_apply, GeneralLinear.genericMatrix_apply]
-  rfl
+    GeneralLinear.pointToGeneralLinear_apply, GeneralLinear.genericMatrix_apply,
+    WithConv.ofConv_toConv, CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
+    BialgHom.coe_toAlgHom, BialgHom.coe_toAlgHom]
+
+/-- The root coordinate morphism is surjective: the entry at `(i, j)` restricts to the coordinate
+of `𝔾ₐ`. -/
+theorem rootSubgroupCoordinateMap_surjective :
+    Function.Surjective (rootSubgroupCoordinateMap (R := R) r).hom := by
+  apply (rootSubgroupCoordinateMap (R := R) r).hom.toAlgHom.surjective_of_ι_one_mem_range
+  exact ⟨_, (rootSubgroupCoordinateMap_coordinateMap_genericMatrix r r.i r.j).trans
+    (rootMatrix_apply_i_j r _)⟩
+
+/-- **The root subgroup is a closed subgroup scheme of `SO_l^J`.** -/
+instance isClosedImmersion_rootSubgroup :
+    IsClosedImmersion (rootSubgroup (R := R) r).hom.hom.left := by
+  rw [rootSubgroup_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def R) (groupScheme_def R l) _).mpr
+    (rootSubgroupCoordinateMap_surjective r)
 
 end Scheme
 
@@ -433,16 +463,13 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (h : r.i < r.j) :
     (by rw [AntidiagonalSpecialOrthogonal.coordinateMap_def])
 
 /-- The coordinate morphism of a positive root subgroup of the upper triangular subgroup is
-surjective: the entry at `(i, j)` restricts to the coordinate of `𝔾ₐ`. -/
+surjective, since its composite with restriction from `SO_l^J` is. -/
 theorem rootSubgroupCoordinateMap_surjective (h : r.i < r.j) :
     Function.Surjective (rootSubgroupCoordinateMap R r h).hom := by
-  apply (rootSubgroupCoordinateMap R r h).hom.toAlgHom.surjective_of_ι_one_mem_range
-  refine ⟨Ideal.Quotient.mkₐ R (definingHopfIdeal R l).toIdeal
-    (GeneralLinear.genericMatrix R l r.i r.j), ?_⟩
-  change (rootSubgroupCoordinateMap R r h).hom (Ideal.Quotient.mkₐ R _ _) = _
-  rw [rootSubgroupCoordinateMap, CommHopfAlgCat.liftQuotient_mk,
-    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply,
-    rootSubgroupCoordinateMap_coordinateMap_genericMatrix, rootMatrix_apply_i_j]
+  have hs := AntidiagonalSpecialOrthogonal.rootSubgroupCoordinateMap_surjective (R := R) r
+  rw [← coordinateMap_comp_rootSubgroupCoordinateMap R r h, _root_.CommHopfAlgCat.hom_comp,
+    BialgHom.coe_comp] at hs
+  exact hs.of_comp
 
 /-- **The positive root subgroup `x_ij : 𝔾ₐ → B`**, for `i < j`, where `B` is the upper
 triangular subgroup of `SO_l^J`. -/

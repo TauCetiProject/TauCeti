@@ -49,7 +49,8 @@ connectedness or Borel maximality is claimed here.
   triangular Borel subgroup of the orthogonal groups in the antidiagonal model.
 
 The construction follows `TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Basic`,
-which forms `SO_l^J` itself as a join of Hopf ideals.
+which forms `SO_l^J` itself as a join of Hopf ideals. The diagonal-torus factorization follows
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`.
 -/
 
 public section

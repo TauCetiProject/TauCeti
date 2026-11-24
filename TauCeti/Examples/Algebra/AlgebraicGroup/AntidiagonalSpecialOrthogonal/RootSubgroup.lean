@@ -30,7 +30,7 @@ variable {A : Type*} [CommRing A]
 
 /-- `δ⁻¹ x_{ε₁}(a) δ` for `l = 3`, with `δ = diag(2, 1, 1)`, is the matrix with rows
 `(1, a, -a²/2)`, `(0, 1, -a)`, `(0, 0, 1)`. -/
-theorem diagonal_mul_shortRootMatrix_mul_diagonal [Invertible (2 : A)] (a : A) :
+example [Invertible (2 : A)] (a : A) :
     diagonal ![⅟2, 1, 1] * !![1, 2 * a, -a ^ 2; 0, 1, -a; 0, 0, 1] * diagonal ![2, 1, 1] =
       !![1, a, -(a ^ 2 * ⅟2); 0, 1, -a; 0, 0, 1] := by
   ext i j
