@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ZetaValues
+import TauCeti.NumberTheory.Bernoulli.Values
 
 /-!
 # Bernoulli polynomials and Bernoulli functions
 
 Mathlib's `bernoulliFun` is the real-variable Bernoulli polynomial. This file records how it
 relates to the Bernoulli polynomial over `ℚ`, together with the sign and extremality properties of
-the even Bernoulli numbers `B_{2k}` and even Bernoulli functions `B_{2k}(x)` on `[0, 1]`, deduced
-from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`).
+the even Bernoulli functions `B_{2k}(x)` on `[0, 1]`, deduced from their cosine Fourier series
+(`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`) and
+`TauCeti.neg_one_pow_mul_bernoulli_two_mul_pos`.
 
 ## Main results
 
@@ -21,8 +23,6 @@ from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_z
   over `ℚ` evaluated there, mapped into `ℝ`.
 * `TauCeti.hasSum_one_sub_cos_div_nat_pow`: exact cosine Fourier series for `B_{2k} - B_{2k}(x)`
   on `[0, 1]`.
-* `TauCeti.neg_one_pow_succ_mul_bernoulli_even_pos`: for `k ≥ 1`, `(-1) ^ (k + 1) * B_{2k} > 0`.
-* `TauCeti.bernoulli_even_ne_zero`: for every `k : ℕ`, `B_{2k} ≠ 0`.
 * `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_nonneg`,
   `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos`:
   `(-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))` is nonnegative on `[0, 1]` for all `k` and strictly
@@ -79,26 +79,6 @@ theorem hasSum_one_sub_cos_div_nat_pow {k : ℕ} (hk : k ≠ 0) {x : ℝ}
   · ext n; ring
   · ring
 
-/-- The even Bernoulli numbers alternate strictly in sign: for `k ≥ 1`,
-`(-1) ^ (k + 1) * B_{2k} > 0`. -/
-theorem neg_one_pow_succ_mul_bernoulli_even_pos {k : ℕ} (hk : k ≠ 0) :
-    0 < (-1 : ℚ) ^ (k + 1) * bernoulli (2 * k) := by
-  suffices h : 0 < (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) by exact_mod_cast h
-  have h0 := hasSum_one_div_nat_pow_bernoulli hk
-  have hlt : 0 < ∑' n : ℕ, 1 / (n : ℝ) ^ (2 * k) :=
-    h0.summable.tsum_pos (fun _ ↦ by positivity) 1 (by norm_num)
-  rw [h0.tsum_eq] at hlt
-  exact pos_of_mul_pos_right (by linarith :
-      0 < ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
-        ((-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ))) (by positivity)
-
-/-- Every even Bernoulli number `B_{2k}` is nonzero. -/
-@[simp]
-theorem bernoulli_even_ne_zero (k : ℕ) : bernoulli (2 * k) ≠ 0 := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · intro h; simpa [h] using neg_one_pow_succ_mul_bernoulli_even_pos hk
-
 /-- For `x ∈ [0, 1]`, the difference `B_{2k} - B_{2k}(x)` satisfies
 `0 ≤ (-1) ^ (k + 1) * (B_{2k} - B_{2k}(x))`. -/
 theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_nonneg (k : ℕ) {x : ℝ}
@@ -146,7 +126,7 @@ theorem abs_bernoulliFun_even_le (k : ℕ) {x : ℝ} (hx : x ∈ Set.Icc (0 : �
   · have h0 := hasSum_one_div_nat_pow_bernoulli hk
     have hx' := hasSum_cos_div_nat_pow_bernoulliFun hk hx
     have hpos : 0 < (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) := by
-      exact_mod_cast neg_one_pow_succ_mul_bernoulli_even_pos hk
+      exact_mod_cast neg_one_pow_mul_bernoulli_two_mul_pos hk
     have hc : 0 < (2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ) := by positivity
     have hle : |(-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
         bernoulliFun (2 * k) x| ≤
