@@ -384,11 +384,16 @@ theorem periodFrobenius_smul [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : 
       periodFrobenius_eq_mk hp0 hp1 hr hi hx hxa (frobLift_spec hx), map_mul, map_pow]
   · simp [periodFrobenius_eq_zero_of_lt hi]
 
-/-- `φᵢ 0 = 0`. -/
+/-- `φᵢ 0 = 0`: the chosen representative of `0` lies in the period ideal, and so does its
+image `x ^ p / (-p) ^ i`. -/
 @[simp]
-theorem periodFrobenius_zero [hp : Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
-    (hr : r + 1 < p) {i : ℕ} : v.periodFrobenius p r i 0 = 0 := by
-  simpa [zero_pow hp.out.ne_zero] using periodFrobenius_smul hp0 hp1 hr 0 0 (i := i)
+theorem periodFrobenius_zero [Fact p.Prime] (hp0 : (p : E) ≠ 0) {i : ℕ} :
+    v.periodFrobenius p r i 0 = 0 := by
+  rcases le_or_gt i r with hi | hi
+  · obtain ⟨-, hx0⟩ := (exists_mk_eq (0 : v.periodFiltration p r i)).choose_spec
+    simp only [periodFrobenius, hi, ↓reduceIte, Ideal.Quotient.eq_zero_iff_mem]
+    exact frobLift_mem_periodIdeal hp0 hi (Ideal.Quotient.eq_zero_iff_mem.1 hx0)
+  · exact periodFrobenius_eq_zero_of_lt hi 0
 
 variable (v p r) in
 /-- The divided Frobenius `φᵢ : Filⁱ A → A` bundled as an additive map. -/
@@ -396,7 +401,7 @@ variable (v p r) in
 noncomputable def periodFrobeniusAddHom [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
     (hr : r + 1 < p) (i : ℕ) : v.periodFiltration p r i →+ v.PeriodTruncation p r where
   toFun := v.periodFrobenius p r i
-  map_zero' := periodFrobenius_zero hp0 hp1 hr
+  map_zero' := periodFrobenius_zero hp0
   map_add' := periodFrobenius_add hp0 hp1 hr
 
 /-- The divided Frobenius vanishes on `Filⁱ⁺¹ A`: for `[x]` with `v x ^ p ≤ v p ^ (i + 1)`, the
