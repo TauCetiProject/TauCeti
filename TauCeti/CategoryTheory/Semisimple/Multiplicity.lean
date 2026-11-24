@@ -258,7 +258,7 @@ theorem exists_chosenSimple_decompIso (S : C) [Simple S] :
     (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 (he' default), ?_⟩
   refine ⟨⟨SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default,
     SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default, ?_, ?_⟩, rfl, rfl⟩
-  · simpa using SimpleClasses.sum_comp_classOfReprIso_eq_id
+  · simpa using SimpleClasses.sum_decompProj_comp_decompIncl_eq_id
       (chosenSimpleFamily S) (chosenSimpleIso S)
   · exact SimpleClasses.decompIncl_comp_decompProj_self
       (chosenSimpleFamily S) (chosenSimpleIso S) default

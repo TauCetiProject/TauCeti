@@ -49,7 +49,8 @@ structure, so its global dimension is `p = 0`.
 * `TauCeti.endAlgEquivOfSimple_leftDim_eq_sum` and `TauCeti.endAlgEquivOfSimple_rightDim_eq_sum`:
   the left and right dimensions of an arbitrary object, read in `k`, expanded by simple
   multiplicities;
-* `TauCeti.globalDim_eq_sum_leftDimChar_smul`: the global dimension as a scalar;
+* `TauCeti.globalDim_eq_sum_leftDimChar_smul` and `TauCeti.endAlgEquivOfSimple_globalDim_eq_sum`:
+  the global dimension as a scalar;
 * `TauCeti.SplitK0.rightDimChar_apply_eq_conj` and `TauCeti.norm_rightDim_eq_norm_leftDim`: over
   `ℂ`, the right dimension character of a fusion category is the complex conjugate of the left
   one, so the two categorical dimensions of an object have the same absolute value;
@@ -183,6 +184,26 @@ theorem globalDim_eq_sum_leftDimChar_smul :
 
 end GlobalDim
 
+section GlobalDimScalar
+
+variable (k : Type w') [Field k] [IsAlgClosed k]
+variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
+  [Preadditive C] [Linear k C] [HasKernels C] [Simple (𝟙_ C)]
+  [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] [Fintype (SimpleClasses C)]
+
+/-- The global dimension of a pivotal category, read in `k`, is the sum of the products of the
+left and right dimensions of its simple isomorphism classes. -/
+theorem endAlgEquivOfSimple_globalDim_eq_sum :
+    endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) =
+      ∑ S : SimpleClasses C,
+        endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) *
+          endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
+  rw [globalDim_eq_sum_leftDim_comp_rightDim, endAlgEquivOfSimple_sum]
+  refine Finset.sum_congr rfl fun S _ ↦ ?_
+  rw [End.of_comp, map_mul, mul_comm]
+
+end GlobalDimScalar
+
 section Multiplicity
 
 variable (k : Type w') [Field k] [IsAlgClosed k]
@@ -197,13 +218,9 @@ theorem endAlgEquivOfSimple_leftDim_eq_sum (X : C) :
       ∑ S : SimpleClasses C,
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) := by
-  let φ : (𝟙_ C ⟶ 𝟙_ C) →+ k :=
-    (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k).comp
-      (End.addEquiv (X := 𝟙_ C)).symm.toAddMonoidHom
-  change φ (leftDim X) = _
-  rw [leftDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp), map_sum]
-  simp [φ, nsmul_eq_mul]
-  rfl
+  rw [leftDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp),
+    endAlgEquivOfSimple_sum]
+  simp only [endAlgEquivOfSimple_nsmul]
 
 /-- The right dimension of an object, read in `k`, is the multiplicity-weighted sum of the right
 dimensions of the simple classes. -/
@@ -212,13 +229,9 @@ theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
       ∑ S : SimpleClasses C,
         (simpleMultiplicities X S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
-  let φ : (𝟙_ C ⟶ 𝟙_ C) →+ k :=
-    (endAlgEquivOfSimple k (𝟙_ C) : End (𝟙_ C) →+ k).comp
-      (End.addEquiv (X := 𝟙_ C)).symm.toAddMonoidHom
-  change φ (rightDim X) = _
-  rw [rightDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp), map_sum]
-  simp [φ, nsmul_eq_mul]
-  rfl
+  rw [rightDim_eq_sum_simpleMultiplicities, Finsupp.sum_fintype _ _ (by simp),
+    endAlgEquivOfSimple_sum]
+  simp only [endAlgEquivOfSimple_nsmul]
 
 end Multiplicity
 

@@ -31,8 +31,8 @@ On any simple object `S`, composing the coend coprojection `inductionCoendι X S
 projection `inductionEndπ X S` gives the identity of `S ⊗ X ⊗ Sᘁ`
 (`CategoryTheory.Center.inductionCoendι_comp_inductionEndπ_of_simple`). Applied to a simple tensor
 unit `𝟙_ C`, this exhibits `X` as a canonical retract of `inductionObj X` and underpins the left
-adjunction `Center.forget C ⊣ Center.induction k C` (its dual left adjunction
-`Center.induction k C ⊣ Center.forget C`).
+adjunction `Center.induction k C ⊣ Center.forget C` (`inductionForgetAdjunction`), dual to the
+right adjunction `forgetInductionAdjunction : Center.forget C ⊣ Center.induction k C`.
 
 ## Main declarations
 
@@ -129,9 +129,9 @@ private theorem coendιAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [F
     (X : C) (g : Y ⟶ Y') :
     g ▷ (X ⊗ Y'ᘁ) ≫ coendιAux b e' X = Y ◁ X ◁ gᘁ ≫ coendιAux a e X := by
   have hY : ∑ i : ι, SimpleClasses.decompProj a e i ≫ SimpleClasses.decompIncl a e i = 𝟙 Y :=
-    SimpleClasses.sum_comp_classOfReprIso_eq_id a e
+    SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e
   have hY' : ∑ j : ι', SimpleClasses.decompProj b e' j ≫ SimpleClasses.decompIncl b e' j = 𝟙 Y' :=
-    SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
+    SimpleClasses.sum_decompProj_comp_decompIncl_eq_id b e'
   have hgL (i : ι) : SimpleClasses.decompIncl a e i ≫ g =
       ∑ j, (SimpleClasses.decompIncl a e i ≫ g ≫ SimpleClasses.decompProj b e' j) ≫
         SimpleClasses.decompIncl b e' j := by
@@ -446,7 +446,7 @@ theorem map_coendι_comp_inductionMapDesc {D : Type*} [Category* D] [Preadditive
             ← Category.assoc, ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
           rw [← Preadditive.sum_comp, ← F.map_sum, ← sum_whiskerRight,
-            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
+            SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e, id_whiskerRight, F.map_id,
             Category.id_comp]
 
 /-- Precomposing `biproduct.desc fun S ↦ w S.repr` with `inductionCoendι X Y` recovers `w Y`

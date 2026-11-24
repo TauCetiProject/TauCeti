@@ -38,8 +38,8 @@ distinct simple classes hom orthogonal.
   `TauCeti.SimpleClasses.decompProj_def`, `TauCeti.SimpleClasses.decompIncl_def`,
   `TauCeti.SimpleClasses.decompIncl_comp_decompProj_self`,
   `TauCeti.SimpleClasses.decompIncl_comp_decompProj_ne`, and
-  `TauCeti.SimpleClasses.sum_comp_classOfReprIso_eq_id`: projections and inclusions through the
-  chosen representatives of a biproduct decomposition into simple objects, their orthogonality,
+  `TauCeti.SimpleClasses.sum_decompProj_comp_decompIncl_eq_id`: projections and inclusions through
+  the chosen representatives of a biproduct decomposition into simple objects, their orthogonality,
   and the resolution of the identity.
 -/
 
@@ -220,7 +220,7 @@ theorem decompIncl_comp_decompProj_ne {Y : C} {ι : Type*} (a : ι → C) [∀ i
 
 /-- A biproduct decomposition `e : Y ≅ ⨁ a` into simple objects resolves `𝟙 Y` through the chosen
 representatives `(classOf (a i)).repr` of their isomorphism classes. -/
-theorem sum_comp_classOfReprIso_eq_id {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+theorem sum_decompProj_comp_decompIncl_eq_id {D : Type u₁} [Category.{v₁} D] [Preadditive D]
     {Y : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
     (e : Y ≅ ⨁ a) :
     ∑ i : ι, decompProj a e i ≫ decompIncl a e i = 𝟙 Y := by

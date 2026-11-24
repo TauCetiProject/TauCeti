@@ -120,8 +120,8 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
   let q := SimpleClasses.decompIncl a e
   let p' := SimpleClasses.decompProj b e'
   let q' := SimpleClasses.decompIncl b e'
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_comp_classOfReprIso_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
+  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e
+  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_decompProj_comp_decompIncl_eq_id b e'
   have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
     simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
   have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
@@ -173,6 +173,13 @@ def inductionEndπ (X Y : C) : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ :=
   endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
     (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X
 
+omit [MonoidalPreadditive C] in
+private theorem inductionEndπ_eq_endπAux (X Y : C) :
+    inductionEndπ X Y =
+      endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
+        (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X :=
+  rfl
+
 include k in
 /-- Dinaturality of `inductionEndπ`: right-whiskering by `g : Y ⟶ Y'` on the first factor
 agrees with left-whiskering by `gᘁ : Y'ᘁ ⟶ Yᘁ` on the third factor. -/
@@ -189,8 +196,7 @@ theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
   obtain ⟨i, hi, _, u, hu_hom, hu_inv⟩ :=
     IsFiniteSemisimpleCategory.exists_chosenSimple_decompIso S.repr
-  change endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr)
-    (IsFiniteSemisimpleCategory.chosenSimpleIso S.repr) X = biproduct.π (inductionSummand X) S
+  rw [inductionEndπ_eq_endπAux]
   dsimp only [endπAux]
   rw [Finset.sum_eq_single i (fun j _ hj ↦ absurd (hi j) hj)
       (fun hi' ↦ absurd (Finset.mem_univ i) hi'),
@@ -322,8 +328,7 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
   let e := IsFiniteSemisimpleCategory.chosenSimpleIso Y
   let p := SimpleClasses.decompProj a e
   let q := SimpleClasses.decompIncl a e
-  -- Unfold `inductionEndπ X Y` to `endπAux` for the chosen decomposition of `Y`.
-  change inductionMapLift w ≫ F.map (endπAux a e X) = w Y
+  rw [inductionEndπ_eq_endπAux]
   dsimp only [endπAux]
   rw [F.map_sum, Preadditive.comp_sum]
   calc ∑ i, inductionMapLift w ≫ F.map (biproduct.π (inductionSummand X)
@@ -340,7 +345,7 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
             ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
           rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight,
-            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
+            SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e, id_whiskerRight, F.map_id,
             Category.comp_id]
 
 /-- Composing `inductionLift w` with `inductionEndπ X Y` recovers `w Y` whenever `w` is

@@ -16,23 +16,25 @@ public import TauCeti.CategoryTheory.Semisimple.Finrank
 public import TauCeti.CategoryTheory.Semisimple.Split
 
 /-!
-# The Drinfeld centre of a fusion category is a fusion category
+# The Drinfeld centre of a pivotal fusion category is a fusion category
 
 This file establishes the fusion structure, ribbon structure, and global dimension of the Drinfeld
 centre `Center C` of a pivotal fusion category `C` over an algebraically closed field `k`
-(Müger; Etingof–Nikshych–Ostrik):
+(Müger; Etingof–Nikshych–Ostrik), along with the pivot-free `averagingScalar` criterion:
 
 * **Averaging identity**: the composite
   `(forgetInductionAdjunction k C).unit.app Z ≫ (inductionForgetAdjunction k C).counit.app Z` of
   the unit of the right adjunction `forget C ⊣ induction k C` with the counit of the left
   adjunction `induction k C ⊣ forget C` acts on every `Z : Center C` as scalar multiplication by
-  `globalDim C` (read in `k` via `endAlgEquivOfSimple k (𝟙_ C)`), making each component of the
-  unit of `forgetInductionAdjunction` a split monomorphism whenever `globalDim C ≠ 0`.
-* **Fusion and ribbon structure on `Center C`**: when `globalDim C ≠ 0`, and unconditionally when
-  `CharZero k`, `Center C` is finite semisimple with finitely many simple isomorphism classes
-  (supplementing the existing `Abelian (Center C)`, `instFiniteDimensionalHom`, and
-  `instSimpleUnit` instances). If `C` is moreover spherical, `Center C` is a ribbon category for
-  its canonical twist.
+  `averagingScalar k C` (which equals `globalDim C`, read in `k` via `endAlgEquivOfSimple k (𝟙_ C)`,
+  when `C` is pivotal), making each component of the unit of `forgetInductionAdjunction` a split
+  monomorphism whenever `averagingScalar k C ≠ 0` (in particular whenever `globalDim C ≠ 0` for
+  pivotal `C`).
+* **Fusion and ribbon structure on `Center C`**: when `averagingScalar k C ≠ 0` (and, for pivotal
+  `C`, when `globalDim C ≠ 0`, hence unconditionally when `CharZero k`), `Center C` is finite
+  semisimple with finitely many simple isomorphism classes (supplementing the existing
+  `Abelian (Center C)`, `instFiniteDimensionalHom`, and `instSimpleUnit` instances). If `C` is
+  moreover spherical, `Center C` is a ribbon category for its canonical twist.
 * **Multiplicities and dimensions**: when `C` has finitely many simple classes and `Center C` is
   finite semisimple, `Center C` also has finitely many simple classes and Frobenius reciprocity
   identifies the multiplicity of a simple class `Z` of `Center C` in `(induction k C).obj S.repr`
@@ -60,11 +62,11 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
   `CategoryTheory.Center.finite_simpleClasses_of_averagingScalar_ne_zero`: pivot-free splitting,
   semisimplicity, and finiteness of `Center C` whenever `averagingScalar k C ≠ 0`;
 * `CategoryTheory.Center.isFiniteSemisimpleCategory_of_globalDim_ne_zero` and
-  `CategoryTheory.Center.finite_simpleClasses_of_globalDim_ne_zero`: `Center C` is a fusion
-  category whenever `globalDim C ≠ 0`;
+  `CategoryTheory.Center.finite_simpleClasses_of_globalDim_ne_zero`: for pivotal `C`, `Center C`
+  is a fusion category whenever `globalDim C ≠ 0`;
 * `CategoryTheory.Center.isFiniteSemisimpleCategory` and
-  `CategoryTheory.Center.finite_simpleClasses`: `Center C` is a fusion category in characteristic
-  zero;
+  `CategoryTheory.Center.finite_simpleClasses`: for pivotal `C`, `Center C` is a fusion category in
+  characteristic zero;
 * `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero` and
   `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_charZero`: Müger's ribbon theorem
   on `Center C` under `globalDim C ≠ 0` and unconditionally in characteristic zero;
@@ -209,9 +211,6 @@ theorem forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul
   -- `inductionObj Z.1`; convert through the typed aliases `u` and `v` so `Category.id_comp` and
   -- `biproduct.total` apply.
   change u ≫ v = _
-  set s : 𝟙_ C ⟶ 𝟙_ C := ∑ S : SimpleClasses C,
-    η_ S.repr S.reprᘁ ≫
-      @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)
   rw [← Category.id_comp v, ← biproduct.total]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
   have hsum :
@@ -226,12 +225,15 @@ theorem forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul
     refine Finset.sum_congr rfl fun S _ ↦ ?_
     rw [← Category.assoc u]
     exact hterm S
-  have hs : s = averagingScalar k C • 𝟙 (𝟙_ C) := by
+  have hs :
+      (∑ S : SimpleClasses C,
+        η_ S.repr S.reprᘁ ≫
+          @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleSwapExactPairing S.repr)) =
+      averagingScalar k C • 𝟙 (𝟙_ C) := by
     rw [averagingScalar_def]
-    exact (endAlgEquivOfSimple_smul_id (k := k) (End.of s)).symm
-  rw [hsum, ← Preadditive.comp_sum, ← Preadditive.sum_comp, ← whiskerLeft_sum]
-  change (ρ_ Z.1).inv ≫ Z.1 ◁ s ≫ (ρ_ Z.1).hom = averagingScalar k C • 𝟙 Z.1
-  rw [hs, MonoidalLinear.whiskerLeft_smul, whiskerLeft_id, Linear.smul_comp, Linear.comp_smul,
+    exact (endAlgEquivOfSimple_smul_id (k := k) _).symm
+  rw [hsum, ← Preadditive.comp_sum, ← Preadditive.sum_comp, ← whiskerLeft_sum, hs,
+    MonoidalLinear.whiskerLeft_smul, whiskerLeft_id, Linear.smul_comp, Linear.comp_smul,
     Category.id_comp, Iso.inv_hom_id]
 
 /-- **Pivot-free averaging identity for the Drinfeld centre**: composing the unit of
@@ -257,7 +259,7 @@ theorem isSplitMono_forgetInductionAdjunction_unit_of_averagingScalar_ne_zero
   rw [Linear.comp_smul,
     forgetInductionAdjunction_unit_comp_counit_eq_averagingScalar_smul,
     smul_smul, inv_mul_cancel₀ h, one_smul]
-  rfl
+  simp only [Functor.id_obj]
 
 /-- **Semisimplicity of the Drinfeld centre (pivot-free criterion)**: if `averagingScalar k C ≠ 0`,
 then `Center C` is a split finite semisimple category. -/
@@ -438,23 +440,6 @@ private theorem endAlgEquivOfSimple_leftDim_mul_globalDim
   refine h.trans (Finset.sum_congr rfl fun Z _ ↦ ?_)
   rw [endAlgEquivOfSimple_tensorUnit_apply, leftDim_f]
 
-private theorem endAlgEquivOfSimple_globalDim_eq_sum
-    {D : Type*} [Category* D] [MonoidalCategory D] [RigidCategory D] [PivotalCategory D]
-    [Preadditive D] [Linear k D] [HasKernels D] [Simple (𝟙_ D)]
-    [FiniteDimensional k (𝟙_ D ⟶ 𝟙_ D)] [Fintype (SimpleClasses D)] :
-    endAlgEquivOfSimple k (𝟙_ D) (End.of (globalDim D)) =
-      ∑ S : SimpleClasses D,
-        endAlgEquivOfSimple k (𝟙_ D) (End.of (leftDim S.repr)) *
-          endAlgEquivOfSimple k (𝟙_ D) (End.of (rightDim S.repr)) := by
-  let φ : (𝟙_ D ⟶ 𝟙_ D) →+ k :=
-    { toFun := fun f ↦ endAlgEquivOfSimple k (𝟙_ D) (End.of f)
-      map_zero' := by simp [End.of_zero]
-      map_add' := fun f g ↦ by simp [End.of_add] }
-  have hsum := map_sum φ (fun S : SimpleClasses D ↦ leftDim S.repr ≫ rightDim S.repr) Finset.univ
-  rw [← globalDim_eq_sum_leftDim_comp_rightDim] at hsum
-  refine hsum.trans (Finset.sum_congr rfl fun S _ ↦ ?_)
-  simp [φ, End.of_comp, map_mul, mul_comm]
-
 variable (C)
 
 /-- **Global dimension of the Drinfeld centre (scalar form)**: whenever `Center C` is finite
@@ -465,7 +450,7 @@ theorem endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory
     endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C))) =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 := by
   let e := endAlgEquivOfSimple k (𝟙_ C)
-  rw [endAlgEquivOfSimple_globalDim_eq_sum k (D := Center C)]
+  rw [TauCeti.endAlgEquivOfSimple_globalDim_eq_sum k (Center C)]
   calc (∑ Z : SimpleClasses (Center C),
           endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (leftDim Z.repr)) *
             endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (rightDim Z.repr)))
@@ -495,7 +480,7 @@ theorem endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory
           refine Finset.sum_congr rfl fun S _ ↦ ?_
           ring
     _ = e (End.of (globalDim C)) ^ 2 := by
-          rw [← endAlgEquivOfSimple_globalDim_eq_sum k (D := C), sq]
+          rw [← TauCeti.endAlgEquivOfSimple_globalDim_eq_sum k C, sq]
 
 /-- **Global dimension of the Drinfeld centre (scalar multiplication form)**: whenever `Center C`
 is finite semisimple with finitely many simple classes, `globalDim (Center C)` acts on

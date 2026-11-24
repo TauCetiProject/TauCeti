@@ -337,7 +337,7 @@ private theorem tensorLeftHomEquiv_counitTerm (U : C) (S T : SimpleClasses C)
   have hφ : (f ⊗ₘ h) ≫ (α_ U T.repr T.reprᘁ).hom ≫ U ◁ swapEval T.repr ≫ (ρ_ U).hom =
       S.repr ◁ h ≫ φ := by
     rw [tensorHom_def', Category.assoc]
-    rfl
+    dsimp only [φ, tensorRightHomEquiv, Equiv.coe_fn_symm_mk]
   rw [hφ]
   apply (@tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
     (simpleSwapExactPairing S.repr)).symm.injective
@@ -436,7 +436,8 @@ private theorem sum_counitTerm_eq [Fintype (SimpleClasses C)]
       ∑ T : SimpleClasses C, ∑ i, (c T).homDual i ≫ c T i := by
     refine Finset.sum_congr rfl fun T _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
     rw [← map_counitDualEquiv_homDual k U S T]
-    rfl
+    dsimp only [c]
+    rw [Basis.map_apply]
   rw [h1, ← Equiv.sum_comp SimpleClasses.dual_involutive.toPerm]
   let e (R : SimpleClasses C) : R.repr ≅ R.dual.reprᘁ :=
     (nonempty_iso_rightDual_rightDual R.repr).some ≪≫ (SimpleClasses.dualReprIso R).rightAdjointMate
@@ -550,8 +551,11 @@ private theorem inductionβComponent_rightDual_classOf_unit_self (X : C) (S : Si
     (Basis.singleton (Fin 1) k).map eqv'.symm
   have hb0 : b 0 = v := by
     rw [Basis.map_apply, Basis.singleton_apply, eqv'.symm_apply_eq]
-    change 1 = endAlgEquivOfSimple k S.repr (End.of (eqv v))
-    rw [hfv, End.of_id, map_one]
+    simp only [eqv', LinearEquiv.trans_apply, AlgEquiv.toLinearEquiv_apply,
+      End.linearEquiv_symm_apply, hfv]
+    symm
+    rw [endAlgEquivOfSimple_apply_eq_iff, one_smul]
+    exact End.addEquiv.right_inv (𝟙 S.repr)
   have hd : b.homDual 0 = w :=
     ((b.eq_homDual_iff _ 0).2 fun i ↦ by simp [Fin.fin_one_eq_zero i, hb0, hvw]).symm
   rw [inductionβComponent_eq k X S.reprᘁ S₀ S b, Fin.sum_univ_one, hd, hb0]
