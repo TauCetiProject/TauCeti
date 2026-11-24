@@ -20,6 +20,8 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
 * replacing the base `c ≥ 0` by `max 1 c ≥ 1` allows raising the exponent (`c ^ m ≤ max 1 c ^ n`
   for `m ≤ n`) and re-basing shifted or rescaled geometric bounds (`c ^ m ≤ (max 1 c ^ k) ^ n`
   for `m ≤ k * n`);
+* trading one factor `c` for two factors `b ≥ 0` with `c ≤ b ^ 2` does not decrease
+  `c ^ s * b ^ (L - 2 * s)`; this needs only a preorder;
 * in a `MulArchimedean` `LinearOrderedCommGroupWithZero` admitting a largest element strictly
   below `1`, no nonzero element other than `1` is a `k`-th power for arbitrarily large `k : ℕ`
   (`TauCeti.eq_one_of_forall_exists_le_pow_eq`).
@@ -30,6 +32,8 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
   `(m, n)` and `(m', n')` are proportional.
 * `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
 * `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
+* `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
+  `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
 * `TauCeti.eq_one_of_forall_exists_le_pow_eq`: in a `MulArchimedean`
   `LinearOrderedCommGroupWithZero Γ` admitting a largest element strictly below `1`, a nonzero
   element that is a `k`-th power for arbitrarily large `k : ℕ` equals `1`.
@@ -70,6 +74,24 @@ theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder
     c ^ m ≤ (max 1 c ^ k) ^ n := by
   rw [← pow_mul]
   exact pow_le_max_one_pow hc h
+
+/-- Trading one factor `c` for two factors `b`: in an ordered monoid with zero, if
+`0 ≤ c ≤ b ^ 2` and `0 ≤ b`, then `c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r)` for
+`r ≤ s` and `2 * s ≤ L`. -/
+theorem pow_mul_pow_sub_two_mul_le {M₀ : Type*} [MonoidWithZero M₀] [Preorder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] [MulPosMono M₀] {b c : M₀} (hb : 0 ≤ b) (hc : 0 ≤ c)
+    (hcb : c ≤ b ^ 2) {r s L : ℕ} (hrs : r ≤ s) (hs : 2 * s ≤ L) :
+    c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r) := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hrs
+  calc c ^ (r + d) * b ^ (L - 2 * (r + d)) = c ^ r * (c ^ d * b ^ (L - 2 * (r + d))) := by
+        rw [pow_add, mul_assoc]
+    _ ≤ c ^ r * ((b ^ 2) ^ d * b ^ (L - 2 * (r + d))) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hc hcb d)
+          (pow_nonneg hb _)) (pow_nonneg hc r)
+    _ = c ^ r * b ^ (L - 2 * r) := by
+        rw [← pow_mul, ← pow_add]
+        congr 2
+        omega
 
 /-- A nonzero element of a discrete archimedean ordered group with zero that admits `k`-th roots
 for arbitrarily large `k : ℕ` is at least `1`. -/

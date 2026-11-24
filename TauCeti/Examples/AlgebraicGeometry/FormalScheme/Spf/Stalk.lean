@@ -62,7 +62,7 @@ local instance padicPowerSeriesIsAdicRing : IsAdicRing ℤ_[p]⟦X⟧ :=
 def padicPowerSeriesClosedPoint : carrier ℤ_[p]⟦X⟧ :=
   ⟨⟨maximalIdeal ℤ_[p]⟦X⟧, inferInstance⟩,
     mem_carrier_of_isMaximal (I := maximalIdeal ℤ_[p]⟦X⟧) rfl (IsAdicComplete.le_jacobson _)
-      (maximalIdeal ℤ_[p]⟦X⟧)⟩
+      (maximalIdeal.isMaximal ℤ_[p]⟦X⟧)⟩
 
 /-- `Spf ℤ_[p]⟦X⟧` has a single underlying point. -/
 example : Subsingleton (carrier ℤ_[p]⟦X⟧) :=
@@ -74,8 +74,8 @@ example : Subsingleton (carrier ℤ_[p]⟦X⟧) :=
 
 /-- The unique point of `Spf ℤ_[p]⟦X⟧` is closed. -/
 example : IsClosed ({padicPowerSeriesClosedPoint p} : Set (carrier ℤ_[p]⟦X⟧)) :=
-  (isClosed_singleton_iff_isMaximal (I := maximalIdeal ℤ_[p]⟦X⟧) rfl
-    (padicPowerSeriesClosedPoint p)).mpr (maximalIdeal.isMaximal ℤ_[p]⟦X⟧)
+  (isClosed_singleton_iff_isMaximal (I := maximalIdeal ℤ_[p]⟦X⟧) rfl).mpr
+    (maximalIdeal.isMaximal ℤ_[p]⟦X⟧)
 
 /-- At the closed point of `Spf ℤ_[p]⟦X⟧`, all three canonical maps are bijective: the localisation,
 the formal stalk, and the completed localisation are all `ℤ_[p]⟦X⟧` itself. -/
@@ -149,7 +149,7 @@ example :
     IsClosed ({polyOrigin k} : Set (carrier k[X])) ∧
     ¬ IsClosed ({polyGeneric k} : Set (carrier k[X])) := by
   have hbot : IsAdic (⊥ : Ideal k[X]) := is_bot_adic_iff.mpr inferInstance
-  refine ⟨(isClosed_singleton_iff_isMaximal hbot (polyOrigin k)).mpr
+  refine ⟨(isClosed_singleton_iff_isMaximal hbot).mpr
       (PrincipalIdealRing.isMaximal_of_irreducible Polynomial.irreducible_X), ?_⟩
   rw [isClosed_singleton_iff_isMaximal hbot]
   intro hmax

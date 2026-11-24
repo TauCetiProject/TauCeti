@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.Spectrum.Maximal.Topology
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
@@ -45,6 +46,8 @@ exactly when `f` is nilpotent modulo `I`.
 * `TauCeti.FormalScheme.Spf.basicOpen f`: the basic open set `D(f)` of the underlying space.
 * `TauCeti.FormalScheme.Spf.comap`: the continuous map of underlying spaces induced by a
   continuous ring homomorphism.
+* `TauCeti.FormalScheme.Spf.pointOfIsMaximal`: the point of `Spf A` given by a maximal ideal of
+  an adic ring `A`.
 
 ## Main results
 
@@ -54,8 +57,9 @@ exactly when `f` is nilpotent modulo `I`.
   `TauCeti.FormalScheme.Spf.compactSpace_carrier`: the underlying space is the Zariski closed set
   `V(I)`, hence quasi-compact.
 * `TauCeti.FormalScheme.Spf.isClosed_singleton_iff_isMaximal`,
-  `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: closed points of `Spf A` are the open
-  maximal ideals, and when `I ≤ Ring.jacobson A` every maximal ideal is open.
+  `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: the closed points are the maximal ideals,
+  and when `I ≤ Ring.jacobson A` (in particular for a complete adic ring) every maximal ideal is
+  a point.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
 * `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
@@ -116,6 +120,42 @@ theorem isClosed_carrier (hI : IsAdic I) : IsClosed (carrier A) :=
 theorem compactSpace_carrier (hI : IsAdic I) : CompactSpace (carrier A) :=
   isCompact_iff_compactSpace.mp (isClosed_carrier hI).isCompact
 
+/-- If `I` defines the topology of `A`, a point of the formal spectrum is closed exactly when it
+is a maximal ideal of `A`: the underlying space is closed in `Spec A`. -/
+theorem isClosed_singleton_iff_isMaximal (hI : IsAdic I) {p : carrier A} :
+    IsClosed ({p} : Set (carrier A)) ↔ (p : PrimeSpectrum A).asIdeal.IsMaximal := by
+  rw [(isClosed_carrier hI).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
+    Set.image_singleton, PrimeSpectrum.isClosed_singleton_iff_isMaximal]
+
+/-- If `I` defines the topology of `A` and lies in the Jacobson radical of `A`, every maximal
+ideal of `A` is open. This applies when `A` is `I`-adically complete, by
+`IsAdicComplete.le_jacobson`. Together with `isClosed_singleton_iff_isMaximal`, the closed
+points of `Spf A` are then exactly the maximal ideals of `A`. -/
+theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIJ : I ≤ Ring.jacobson A)
+    {m : PrimeSpectrum A} (hm : m.asIdeal.IsMaximal) : m ∈ carrier A :=
+  have := hm
+  (mem_carrier_iff_le hI).mpr (hIJ.trans (Ring.jacobson_le_of_isMaximal _))
+
+section IsAdicRing
+
+variable [IsTopologicalRing A] [IsAdicRing A]
+
+/-- The point of the formal spectrum of an adic ring `A` given by a maximal ideal `m` of `A`,
+which is open since `A` is complete for an ideal of definition (`mem_carrier_of_isMaximal`).
+The body is exposed so the point's ideal is `m` by definition, matching its local ring with
+`Localization.AtPrime m`. -/
+@[expose] def pointOfIsMaximal (m : Ideal A) [hm : m.IsMaximal] : carrier A :=
+  have hI := IsAdicRing.ideal_spec A
+  have : IsAdicComplete (IsAdicRing.ideal A) A := hI.2.2
+  ⟨⟨m, hm.isPrime⟩, mem_carrier_of_isMaximal hI.2.1 (IsAdicComplete.le_jacobson _) hm⟩
+
+@[simp]
+theorem pointOfIsMaximal_asIdeal (m : Ideal A) [m.IsMaximal] :
+    (pointOfIsMaximal m : PrimeSpectrum A).asIdeal = m :=
+  rfl
+
+end IsAdicRing
+
 /-- For a discrete ring every prime is open, so the formal spectrum has the same points as the
 spectrum. -/
 @[simp]
@@ -147,27 +187,14 @@ theorem carrier_nonempty [T1Space A] [Nontrivial A] (hI : IsAdic I) : (carrier A
 
 section ClosedPoints
 
-/-- If `I` defines the topology of `A`, a point of `Spf A` is closed if and only if the
-corresponding prime ideal of `A` is maximal. -/
-theorem isClosed_singleton_iff_isMaximal (hI : IsAdic I) (p : carrier A) :
-    IsClosed ({p} : Set (carrier A)) ↔ (p : PrimeSpectrum A).asIdeal.IsMaximal := by
-  rw [(isClosed_carrier hI).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
-    Set.image_singleton, PrimeSpectrum.isClosed_singleton_iff_isMaximal]
-
-/-- If `I` is an ideal of definition of `A` contained in the Jacobson radical of `A`, then every
-maximal ideal of `A` is open and defines a point of `Spf A`. -/
-theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIjac : I ≤ Ring.jacobson A) (m : Ideal A)
-    [m.IsMaximal] : (⟨m, inferInstance⟩ : PrimeSpectrum A) ∈ carrier A :=
-  (mem_carrier_iff_le hI).mpr (hIjac.trans (Ring.jacobson_le_of_isMaximal m))
-
 /-- For an ideal of definition `I` of `A` contained in the Jacobson radical of `A`, the closed
 points of `Spf A` are homeomorphic to `MaximalSpectrum A`. -/
 def maximalSpectrumHomeomorphClosedPoints (hI : IsAdic I) (hIjac : I ≤ Ring.jacobson A) :
     MaximalSpectrum A ≃ₜ {p : carrier A // IsClosed ({p} : Set (carrier A))} where
-  toFun m := ⟨⟨m.toPrimeSpectrum, mem_carrier_of_isMaximal hI hIjac m.asIdeal⟩,
-    (isClosed_singleton_iff_isMaximal hI _).mpr m.isMaximal⟩
+  toFun m := ⟨⟨m.toPrimeSpectrum, mem_carrier_of_isMaximal hI hIjac m.isMaximal⟩,
+    (isClosed_singleton_iff_isMaximal hI).mpr m.isMaximal⟩
   invFun p :=
-    ⟨(p.val : PrimeSpectrum A).asIdeal, (isClosed_singleton_iff_isMaximal hI p.val).mp p.property⟩
+    ⟨(p.val : PrimeSpectrum A).asIdeal, (isClosed_singleton_iff_isMaximal hI).mp p.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun :=

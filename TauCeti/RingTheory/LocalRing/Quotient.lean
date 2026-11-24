@@ -53,6 +53,10 @@ is bijective.
   `RingHom.quotientMap_maximalIdeal_pow_bijective`: bijective quotient maps modulo
   ideals inside `𝔪_R` or `𝔪_R ^ n` force `𝔪_R S = 𝔪_S`, locality of `f`, and bijectivity modulo
   `𝔪 ^ n`.
+* `TauCeti.IsLocalRing.isLocalRing_quotient_maximalIdeal_pow`: the truncation `R ⧸ 𝔪_R ^ (n + 1)`
+  of a local ring is a local ring.
+* `TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_ker`: a local homomorphism to an Artinian local
+  ring kills a power of the maximal ideal of the source.
 -/
 
 public section
@@ -300,3 +304,38 @@ theorem quotientMap_maximalIdeal_pow_bijective (f : R →+* S) {K : Ideal R} {n 
       (f.quotientMap_bijective_of_le hK hbij (HJ := Ideal.le_comap_map))
 
 end RingHom
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing
+
+variable {R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- A positive power of the maximal ideal of a local ring is a proper ideal, so the quotient by it
+is a nontrivial ring. No Noetherian or completeness hypothesis is needed. -/
+instance nontrivial_quotient_maximalIdeal_pow (n : ℕ) :
+    Nontrivial (R ⧸ maximalIdeal R ^ (n + 1)) :=
+  Ideal.Quotient.nontrivial_iff.mpr
+    ((Ideal.pow_le_self n.succ_ne_zero).trans_lt (maximalIdeal.isMaximal R).ne_top.lt_top).ne
+
+/-- The quotient of a local ring by a positive power of its maximal ideal is a local ring. No
+Noetherian or completeness hypothesis is needed. -/
+instance isLocalRing_quotient_maximalIdeal_pow (n : ℕ) :
+    IsLocalRing (R ⧸ maximalIdeal R ^ (n + 1)) :=
+  .of_surjective' _ Ideal.Quotient.mk_surjective
+
+/-- A local homomorphism from a local ring `R` to an Artinian local ring kills a power of the
+maximal ideal of `R`, as the maximal ideal of the target is nilpotent. So it factors through a
+truncation `R ⧸ 𝔪_R ^ (n + 1)`. -/
+theorem exists_maximalIdeal_pow_le_ker {S : Type*} [CommRing S] [IsLocalRing S] [IsArtinianRing S]
+    (f : R →+* S) [IsLocalHom f] : ∃ n, maximalIdeal R ^ (n + 1) ≤ RingHom.ker f := by
+  obtain ⟨n, hn⟩ : IsNilpotent (maximalIdeal S) := by
+    rw [← ringJacobson_eq_maximalIdeal]
+    exact IsArtinianRing.isNilpotent_jacobson _
+  refine ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans ?_⟩
+  calc maximalIdeal R ^ n
+      ≤ ((maximalIdeal S).comap f) ^ n := Ideal.pow_right_mono (maximalIdeal_comap f).ge n
+    _ ≤ (maximalIdeal S ^ n).comap f := Ideal.le_comap_pow _ n
+    _ = RingHom.ker f := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
+
+end TauCeti.IsLocalRing

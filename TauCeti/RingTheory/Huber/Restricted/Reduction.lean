@@ -987,8 +987,7 @@ theorem restrictedCompletionReduction_pow_succ_injective (hI : IsAdic I) (hfg : 
       restrictedCompletionReduction (I ^ (m + 1)) (hI.isOpen_pow (m + 1)) x) := fun _ _ hxy ↦ by
   let J := I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A))
   have : IsAdicComplete J (restrictedMvPowerSeriesCompletion k A) :=
-    (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg).isAdicComplete_iff.mpr
-      ⟨inferInstance, inferInstance⟩
+    isAdicComplete_restrictedMvPowerSeriesCompletion k hI hfg
   refine (IsHausdorff.eq_iff_smodEq (I := J)).mpr fun m ↦
     SModEq.mono (Submodule.pow_smul_top_le J _ m.le_succ) ?_
   rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
@@ -1028,8 +1027,7 @@ noncomputable def liftRestrictedCompletionReductionPowSucc {S : Type*} [NonAssoc
     S →+* restrictedMvPowerSeriesCompletion k A :=
   letI : IsAdicComplete (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)))
       (restrictedMvPowerSeriesCompletion k A) :=
-    (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg).isAdicComplete_iff.mpr
-      ⟨inferInstance, inferInstance⟩
+    isAdicComplete_restrictedMvPowerSeriesCompletion k hI hfg
   IsAdicComplete.StrictMono.liftRingHom (a := (· + 1)) _ (strictMono_id.add_const 1)
     (fun m ↦ (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := k) hI hfg
       (m + 1)).symm.toRingHom.comp (φ m))
@@ -1049,8 +1047,7 @@ theorem restrictedCompletionReduction_pow_succ_liftRestrictedCompletionReduction
         (liftRestrictedCompletionReductionPowSucc hI hfg φ hφ s) = φ m s := by
   have : IsAdicComplete (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)))
       (restrictedMvPowerSeriesCompletion k A) :=
-    (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg).isAdicComplete_iff.mpr
-      ⟨inferInstance, inferInstance⟩
+    isAdicComplete_restrictedMvPowerSeriesCompletion k hI hfg
   let e := quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := k) hI hfg (m + 1)
   have hmk : Ideal.Quotient.mk
       (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) ^ (m + 1))
