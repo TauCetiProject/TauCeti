@@ -375,8 +375,8 @@ variable {R B : Type*} [Monoid R] [NonUnitalNonAssocSemiring B] [StarAddMonoid B
 
 variable (R B) in
 /-- The corner embedding `x ↦ diag(0, …, x, …, 0)` of `CStarMatrix (n i) (n i) B` as the `i`-th
-diagonal block of `CStarMatrix (Σ i, n i) (Σ i, n i) B`. Each field is the corresponding identity
-for `Matrix.blockDiagonal'` and `Pi.single`. -/
+diagonal block of `CStarMatrix (Σ i, n i) (Σ i, n i) B`, as a non-unital star algebra
+homomorphism. -/
 def blockDiagonalSingle [Fintype ι] (i : ι) :
     CStarMatrix (n i) (n i) B →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
   toFun x := ofMatrix (Matrix.blockDiagonal' (Pi.single i (ofMatrix.symm x)))

@@ -25,9 +25,8 @@ fixed linear combination of polynomials in `a`, with coefficients the values of 
 * `TauCeti.cfc_eq_sum_smul_aeval_lagrangeBasis`: if the spectrum of `a` lies in the finite set `s`,
   then `cfc f a = ∑ μ ∈ s, f μ • ℓ_μ(a)` for the Lagrange basis polynomials `ℓ_μ` of `s`.
 * `TauCeti.exists_support_projection_of_finite_spectrum`: a positive element `x` of a unital
-  C⋆-algebra with finite spectrum has a support projection `p` and an inverse `g` of `x^{1/2}` on
-  the range of `p`, both functions of `x`, with `x^{1/2} g = g x^{1/2} = g x g = p` and
-  `x (1 - p) = 0`.
+  C⋆-algebra with finite spectrum has a star projection `p` and a self-adjoint `g` with
+  `x^{1/2} g = g x^{1/2} = g x g = p` and `x^{1/2} (1 - p) = x (1 - p) = 0`.
 -/
 
 public section
@@ -53,15 +52,15 @@ section SupportProjection
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- **The support projection of a positive element with finite spectrum.** The support projection
-`p` of a positive element `x` with finite spectrum and the inverse `g` of `x^{1/2}` on its range,
-as functions of `x`: `x^{1/2} g = g x^{1/2} = g x g = p`, and `1 - p` is annihilated by `x` and
-`x^{1/2}`. The spectrum is finite, so the continuous functional calculus applies to the
-discontinuous functions `[t ≠ 0]` and `[t ≠ 0] t^{-1/2}`. -/
+/-- **The support projection of a positive element with finite spectrum.** A positive element `x`
+with finite spectrum has a star projection `p` and a self-adjoint `g` with
+`x^{1/2} g = g x^{1/2} = g x g = p` and `x^{1/2} (1 - p) = x (1 - p) = 0`. -/
 theorem exists_support_projection_of_finite_spectrum {x : B} (hx : 0 ≤ x)
     (hfin : (spectrum ℝ x).Finite) :
     ∃ p g : B, IsStarProjection p ∧ IsSelfAdjoint g ∧ CFC.sqrt x * g = p ∧ g * CFC.sqrt x = p ∧
       g * x * g = p ∧ CFC.sqrt x * (1 - p) = 0 ∧ x * (1 - p) = 0 := by
+  -- The spectrum is finite, so the continuous functional calculus applies to the discontinuous
+  -- functions `[t ≠ 0]` and `[t ≠ 0] t^{-1/2}`, which give `p` and `g`.
   have hspec : ∀ t ∈ spectrum ℝ x, 0 ≤ t := fun t ht => spectrum_nonneg_of_nonneg hx ht
   have hc (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ x) := hfin.continuousOn f
   have hh : CFC.sqrt x = cfc Real.sqrt x := by rw [CFC.sqrt_eq_real_sqrt x hx, cfcₙ_eq_cfc]

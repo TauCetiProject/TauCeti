@@ -14,11 +14,12 @@ import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.State.Space
 
 /-!
-# Completely positive contractions into matrix algebras
+# Completely positive maps into matrix algebras
 
-This file supplies the operations on completely positive contractions (c.p.c. maps) into the
-matrix algebras `M_k = CStarMatrix (Fin k) (Fin k) ℂ` that are used in matrix approximation
-arguments for traces on C⋆-algebras.
+This file supplies operations on completely positive maps into the matrix algebras
+`CStarMatrix n n B` over a C⋆-algebra `B`, indexed by finite types, that are used in matrix
+approximation arguments for traces on C⋆-algebras, and the Choi–Effros factorization of a
+completely positive map into a unital C⋆-algebra.
 
 * `CompletelyPositiveMap.blockDiagonal`: the block-diagonal sum `a ↦ diag(φ_i(a))` of completely
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
@@ -142,13 +143,14 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
   {n : Type*} [Fintype n]
 
 /-- The **compression** of `B(H)` by a finite family of vectors `e : n → H`: the matrix
-`(⟪e i, T e j⟫)ᵢⱼ`, which is the matrix of `V⋆TV` for `V x = Σ xᵢ eᵢ`. Its quadratic forms are those
-of `T` at the vectors `Σ_a v_a e_a`, so it is completely positive. -/
+`(⟪e i, T e j⟫)ᵢⱼ`, as a completely positive map; it is the matrix of `V⋆TV` for
+`V x = Σ xᵢ eᵢ`. -/
 def compression (e : n → H) : (H →L[ℂ] H) →CP CStarMatrix n n ℂ where
   toLinearMap :=
     { toFun T := ofMatrix (Matrix.of fun i j => ⟪e i, T (e j)⟫_ℂ)
       map_add' S T := by ext i j; simp
       map_smul' c T := by ext i j; simp }
+  -- The quadratic forms of the compression are those of `T` at the vectors `Σ_a v_a e_a`.
   map_cstarMatrix_nonneg' k M hM := by
     rw [← map_le_map_iff (CStarMatrix.compStarAlgEquiv ℂ (Fin k) n ℂ), map_zero]
     refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun v => ?_
@@ -192,9 +194,9 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- **The Choi–Effros factorization**, for a codomain in which `φ 1` has finite spectrum. A
-completely positive map `φ` from a nonzero unital C⋆-algebra factors as `φ(a) = h ψ(a) h` with
-`h = φ(1)^{1/2}` and `ψ` unital completely positive: `ψ(a) = h⁺ φ(a) h⁺ + ω(a)(1 - p)` for the
-support projection `p` of `h`, the inverse `h⁺` of `h` on the range of `p`, and a state `ω`. -/
+completely positive map `φ` from a nonzero unital C⋆-algebra into a unital C⋆-algebra, with
+`φ 1` of finite spectrum, factors as `φ(a) = h ψ(a) h` with `h = φ(1)^{1/2}` for some unital
+completely positive `ψ`. -/
 theorem exists_unital_eq_sqrt_mul_mul_sqrt_of_finite_spectrum [Nontrivial A] (φ : A →CP B)
     (hφ : (spectrum ℝ (φ 1)).Finite) :
     ∃ ψ : A →CP B, ψ 1 = 1 ∧ ∀ a, φ a = CFC.sqrt (φ 1) * ψ a * CFC.sqrt (φ 1) := by
@@ -207,6 +209,8 @@ theorem exists_unital_eq_sqrt_mul_mul_sqrt_of_finite_spectrum [Nontrivial A] (φ
   have hω1 : ω 1 = 1 := by
     rw [← (TauCeti.mem_stateSpace_iff_map_one.mp hf).2, ← hω]
     simp
+  -- `ψ(a) = g φ(a) g + ω(a)(1 - p)` for the support projection `p` of `h`, the inverse `g` of `h`
+  -- on the range of `p`, and a state `ω`.
   let ψ : A →CP B := (conj g).comp φ + (conj (1 - p)).comp
     ((CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (StarAlgHom.ofId ℂ B)).comp
       ω.toCompletelyPositiveMap)
@@ -232,9 +236,9 @@ theorem exists_unital_eq_sqrt_mul_mul_sqrt_of_finite_spectrum [Nontrivial A] (φ
       simp [hψ, mul_add, hsp]
 
 /-- **The Choi–Effros factorization.** A completely positive map `φ` from a nonzero unital
-C⋆-algebra into a matrix algebra factors as `φ(a) = h ψ(a) h` with `h = φ(1)^{1/2}` and `ψ`
-unital completely positive. For `φ(a) = diag(a₁, 0)` on `ℂ²`, `h = e₁₁` and
-`ψ(a) = diag(a₁, ω(a))` for a state `ω`. -/
+C⋆-algebra into a matrix algebra factors as `φ(a) = h ψ(a) h` with `h = φ(1)^{1/2}` for some
+unital completely positive `ψ`. For example, for `φ(a) = diag(a₁, 0)` on `ℂ²`, `h = e₁₁` and one
+such `ψ` is `ψ(a) = diag(a₁, ω(a))` for a state `ω`. -/
 theorem exists_unital_eq_sqrt_mul_mul_sqrt [Nontrivial A] {n : Type*} [Fintype n] [DecidableEq n]
     (φ : A →CP CStarMatrix n n ℂ) :
     ∃ ψ : A →CP CStarMatrix n n ℂ, ψ 1 = 1 ∧ ∀ a, φ a = CFC.sqrt (φ 1) * ψ a * CFC.sqrt (φ 1) :=

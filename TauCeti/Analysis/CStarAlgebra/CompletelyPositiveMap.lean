@@ -379,10 +379,11 @@ theorem IsNPositive.star_map_mul_map_le_of_norm_map_one_le_one (hφ : IsNPositiv
         smul_le_smul_of_nonneg_right h (hφ.map_nonneg two_pos (star_mul_self_nonneg a))
     _ = φ (star a * a) := one_smul ℝ _
 
-/-- If `φ 1 q = 0` for a `2`-positive map `φ` with unital domain, then `φ a q = 0` for every `a`:
-by the Kadison–Schwarz inequality, `q⋆ φ(a)⋆ φ(a) q ≤ ‖φ 1‖ ‖a⋆a‖ q⋆ φ(1) q = 0`. -/
+/-- If `φ 1 q = 0` for a `2`-positive map `φ` with unital domain, then `φ a q = 0` for every
+`a`. -/
 theorem IsNPositive.map_mul_eq_zero_of_map_one_mul_eq_zero (hφ : IsNPositive 2 φ) {q : B}
     (h : φ 1 * q = 0) (a : A) : φ a * q = 0 := by
+  -- By the Kadison–Schwarz inequality, `q⋆ φ(a)⋆ φ(a) q ≤ ‖φ 1‖ ‖a⋆a‖ q⋆ φ(1) q = 0`.
   have hle : φ (star a * a) ≤ ‖star a * a‖ • φ 1 := by
     simpa [Complex.coe_smul] using (hφ.toPositiveLinearMap two_pos).map_le_norm_smul_map_one
       (star_mul_self_nonneg a)

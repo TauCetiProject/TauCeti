@@ -67,10 +67,10 @@ theorem nonneg_iff_forall_sum_inner_nonneg {n H : Type*} [Fintype n]
         ContinuousLinearMap.adjoint_inner_right] using hξ fun i => X i v
     exact ⟨(Complex.eq_re_of_ofReal_le hv).symm, (RCLike.nonneg_iff.mp hv).1⟩
 
-/-- A complex C⋆-matrix has finite real spectrum, transported from
-`Matrix.finite_real_spectrum` along `CStarMatrix.ofMatrixStarAlgEquiv`. -/
+/-- A complex C⋆-matrix has finite real spectrum. -/
 theorem finite_real_spectrum {n : Type*} [Fintype n] [DecidableEq n] (x : CStarMatrix n n ℂ) :
     (spectrum ℝ x).Finite := by
+  -- transport `Matrix.finite_real_spectrum` along `CStarMatrix.ofMatrixStarAlgEquiv`
   have h := AlgEquiv.spectrum_eq
     ((ofMatrixStarAlgEquiv (n := n) (A := ℂ)).toAlgEquiv.restrictScalars ℝ) (ofMatrix.symm x)
   simp only [AlgEquiv.coe_restrictScalars, StarAlgEquiv.coe_toAlgEquiv,
