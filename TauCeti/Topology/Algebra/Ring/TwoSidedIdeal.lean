@@ -171,14 +171,14 @@ end ClosedKer
 section ClosedComap
 
 variable {F R S : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S] [TopologicalSpace R]
-  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S] [ContinuousMapClass F R S]
+  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S]
 
 /-- The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed. -/
-theorem isClosed_comap (φ : F) {J : TwoSidedIdeal S} (hJ : IsClosed (J : Set S)) :
-    IsClosed (J.comap φ : Set R) := by
+theorem isClosed_comap {φ : F} (hφ : Continuous φ) {J : TwoSidedIdeal S}
+    (hJ : IsClosed (J : Set S)) : IsClosed (J.comap φ : Set R) := by
   have : (J.comap φ : Set R) = φ ⁻¹' J := Set.ext fun _ => mem_comap φ
   rw [this]
-  exact hJ.preimage (map_continuous φ)
+  exact hJ.preimage hφ
 
 end ClosedComap
 

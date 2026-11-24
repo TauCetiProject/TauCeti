@@ -98,7 +98,8 @@ theorem forall_isClosed_eq_bot_or_eq_top
     have hrange (k : ι) : Set.range (of A f k) ⊆ J := by
       obtain ⟨j, hij, hkj⟩ := exists_ge_ge i k
       have hj : J.comap (of A f j) = ⊤ := by
-        refine (hA j _ (J.isClosed_comap (of A f j) hJ)).resolve_left fun hbot => hne ?_
+        refine (hA j _ (J.isClosed_comap (map_continuous (of A f j)) hJ)).resolve_left
+          fun hbot => hne ?_
         ext a
         have ha : f i j hij a ∈ J.comap (of A f j) := by
           rw [TwoSidedIdeal.mem_comap, of_f]
@@ -117,7 +118,7 @@ theorem forall_isClosed_eq_bot_or_eq_top
     left
     have hzero (i : ι) : of A f i '' (J.comap (of A f i) : Set (A i)) ⊆ {0} := by
       rintro _ ⟨b, hb, rfl⟩
-      rcases hA i _ (J.isClosed_comap (of A f i) hJ) with hbot | htop
+      rcases hA i _ (J.isClosed_comap (map_continuous (of A f i)) hJ) with hbot | htop
       · rw [hbot, TwoSidedIdeal.coe_bot] at hb
         simp [Set.mem_singleton_iff.1 hb]
       · simp [h i htop]

@@ -505,7 +505,7 @@ then for every `a ∈ A` and `ε > 0` there is `b` in the preimage of `J` under 
 theorem exists_mem_comap_norm_sub_lt (φ : F) (J : TwoSidedIdeal B) [IsClosed (J : Set B)]
     {x : B} (hx : x ∈ J) (a : A) {ε : ℝ} (hε : 0 < ε) :
     ∃ b ∈ J.comap φ, ‖a - b‖ < ‖φ a - x‖ + ε := by
-  have : IsClosed (J.comap φ : Set A) := J.isClosed_comap φ ‹_›
+  have : IsClosed (J.comap φ : Set A) := J.isClosed_comap (map_continuous φ) ‹_›
   let χ := (TwoSidedIdeal.Quotient.mkStarAlgHom J).comp (ofClass φ)
   let ψ := TwoSidedIdeal.Quotient.mkStarAlgHom (J.comap φ)
   have hker : TwoSidedIdeal.ker χ ≤ TwoSidedIdeal.ker ψ := fun c hc => by
