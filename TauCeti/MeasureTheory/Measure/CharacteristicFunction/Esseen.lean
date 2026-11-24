@@ -17,10 +17,11 @@ import TauCeti.MeasureTheory.Integral.OddSymmetric
 For a finite measure `μ` on `ℝ`, every closed ball of radius `ε > 0` has mass at most
 `2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`
 (`MeasureTheory.measureReal_closedBall_le_integral_norm_charFun`). The bound is uniform in the
-centre, so it bounds the Lévy concentration function `sup_v μ (closedBall v ε)`. A law whose
-characteristic function decays on `[-ε⁻¹, ε⁻¹]` therefore puts little mass on every interval of
-length `2 ε`. This is the analytic input of small-ball estimates for sums of independent random
-variables, whose characteristic function is a product.
+centre, so it bounds the Lévy concentration function `sup_v μ (closedBall v ε)`. The bound is
+four times the average of `‖charFun μ t‖` over `[-ε⁻¹, ε⁻¹]`, so it is small when that average
+modulus is small; then every interval of length `2 ε` has small mass. This is the analytic input
+of small-ball estimates for sums of independent random variables, whose characteristic function is
+a product.
 
 The proof smooths `μ` with the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`. Its integral
 against `μ` is the oriented interval integral from `0` to `T`, weighted by `1 - t / T`, of the
