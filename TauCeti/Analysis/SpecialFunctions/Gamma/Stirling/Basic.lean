@@ -29,9 +29,11 @@ it to the derivative of the Stieltjes integral via
 
 Sharp `1 / 12` slit-plane and closed-sector bounds (and the resulting bound for `log ‖Γ s‖`)
 are proved via the periodic Bernoulli expansion in
-`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Envelope.lean`, whose consequences on vertical
+`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`, whose consequences on vertical
 strips are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher
-derivatives and positive-axis sign alternation for `stirlingRemainder` are in
+derivatives of `stirlingRemainder` are in
+`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean`, and their positive-axis sign
+alternation and asymptotic bounds are in
 `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.
 
 ## Main declarations

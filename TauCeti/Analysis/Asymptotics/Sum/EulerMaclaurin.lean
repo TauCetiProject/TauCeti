@@ -88,12 +88,6 @@ theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
 
 namespace TauCeti
 
-/-- For every `k : ℕ`, the periodic Bernoulli function `x ↦ bernoulliFun k (Int.fract x)` is
-measurable. -/
-theorem measurable_bernoulliFun_fract (k : ℕ) :
-    Measurable (fun x : ℝ => bernoulliFun k (Int.fract x)) :=
-  (continuous_bernoulliFun k).measurable.comp measurable_fract
-
 /-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
 value at most `1/2`. -/
 theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by

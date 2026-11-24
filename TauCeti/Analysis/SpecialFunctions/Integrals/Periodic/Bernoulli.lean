@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 import TauCeti.NumberTheory.ZetaValues
 
@@ -20,16 +21,21 @@ This file records Lebesgue integrability on `(0, ∞)` for the periodic Bernoull
 `(B_{2n} - B_{2n}({u})) / (u + z)^k` and `B_{2n}({u}) / (u + z)^k` (`z ∈ Complex.slitPlane`,
 `k ≥ 2`), obtained by specializing `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le` with the
 uniform bound `|B_{2n}({u})| ≤ |B_{2n}|` (`TauCeti.abs_bernoulliFun_even_fract_le`), as well as the
-positive-real specialization `(B_{2n} - B_{2n}({u})) / (u + x)^k` (`x > 0`, `k ≥ 2`).
+positive-real specialization `(B_{2n} - B_{2n}({u})) / (u + x)^k` (`x > 0`, `k ≥ 2`) and the
+signed kernel's integrability and strict positivity.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi`: integrability of
-  `(B_{2n} - B_{2n}({u})) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
 * `TauCeti.integrableOn_bernoulliFun_fract_div_pow_Ioi`: integrability of
   `B_{2n}({u}) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
+* `TauCeti.integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi`: integrability of
+  `(B_{2n} - B_{2n}({u})) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
 * `TauCeti.integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi`: real-variable integrability
   of `(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`.
+* `TauCeti.integrableOn_signed_bernoulli_sub_div_pow_Ioi`: real-variable integrability of the
+  signed kernel `(-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0`, `k ≥ 2`.
+* `TauCeti.integral_signed_bernoulli_sub_div_pow_pos`: strict positivity of
+  `∫_{u > 0} (-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` for `n ≥ 1`, `k ≥ 2`, `x > 0`.
 -/
 
 public section
@@ -37,46 +43,6 @@ public section
 open Filter MeasureTheory Set Complex
 
 namespace TauCeti
-
-/-- Integrability of the periodic Bernoulli integrand `(B_{2n} - B_{2n}({u})) / (u + z)^k` on
-`(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`. -/
-theorem integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
-    {z : ℂ} (hz : z ∈ slitPlane) :
-    IntegrableOn (fun u : ℝ ↦
-      (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
-        ((u : ℂ) + z) ^ k) (Ioi 0) := by
-  let g : ℝ → ℂ := fun u ↦
-    (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ)
-  have hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0)) :=
-    (Complex.continuous_ofReal.measurable.comp
-      (measurable_const.sub (measurable_bernoulliFun_fract (2 * n)))).aestronglyMeasurable
-  have hg_bdd : ∀ᵐ u ∂(volume.restrict (Ioi 0)), ‖g u‖ ≤ 2 * |(bernoulli (2 * n) : ℝ)| :=
-    Eventually.of_forall fun u ↦ by
-      have htri : |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)| ≤
-          |(bernoulli (2 * n) : ℝ)| + |bernoulliFun (2 * n) (Int.fract u)| := by
-        simpa using abs_sub_le (bernoulli (2 * n) : ℝ) 0 (bernoulliFun (2 * n) (Int.fract u))
-      have hle : |(bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)| ≤
-          2 * |(bernoulli (2 * n) : ℝ)| := by
-        linarith [abs_bernoulliFun_even_fract_le n u]
-      simpa only [g, Complex.norm_real, Real.norm_eq_abs] using hle
-  exact integrableOn_div_ofReal_add_pow_of_norm_le hg_meas hg_bdd hz hk
-
-/-- Real-variable integrability of the periodic Bernoulli integrand
-`(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`. -/
-theorem integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
-    {x : ℝ} (hx : 0 < x) :
-    IntegrableOn (fun u : ℝ ↦
-      ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) / (u + x) ^ k)
-      (Ioi 0) := by
-  have h := Complex.reCLM.integrable_comp
-    (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk (Complex.ofReal_mem_slitPlane.mpr hx))
-  refine h.congr (Eventually.of_forall fun u ↦ ?_)
-  have heq : (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
-      ((u : ℂ) + (x : ℂ)) ^ k =
-      ((((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-        (u + x) ^ k : ℝ) : ℂ) := by
-    rw [← Complex.ofReal_add, ← Complex.ofReal_pow, ← Complex.ofReal_div]
-  simp only [Complex.reCLM_apply, heq, Complex.ofReal_re]
 
 /-- Integrability of Olver's periodic Bernoulli integrand `B_{2n}({u}) / (u + z)^k` on `(0, ∞)`
 for `z ∈ slitPlane` and `k ≥ 2`. -/
@@ -92,5 +58,71 @@ theorem integrableOn_bernoulliFun_fract_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 
     Eventually.of_forall fun u ↦ by
       simpa [g, Complex.norm_real, Real.norm_eq_abs] using abs_bernoulliFun_even_fract_le n u
   exact integrableOn_div_ofReal_add_pow_of_norm_le hg_meas hg_bdd hz hk
+
+/-- Integrability of the periodic Bernoulli integrand `(B_{2n} - B_{2n}({u})) / (u + z)^k` on
+`(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`. -/
+theorem integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
+    {z : ℂ} (hz : z ∈ slitPlane) :
+    IntegrableOn (fun u : ℝ ↦
+      (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
+        ((u : ℂ) + z) ^ k) (Ioi 0) := by
+  have hk2 : k - 2 + 2 = k := Nat.sub_add_cancel hk
+  have hconst : IntegrableOn (fun u : ℝ ↦ ((bernoulli (2 * n) : ℝ) : ℂ) / ((u : ℂ) + z) ^ k)
+      (Ioi 0) :=
+    ((integrableOn_Ioi_one_div_ofReal_add_pow hz (k - 2)).const_mul
+      ((bernoulli (2 * n) : ℝ) : ℂ)).congr
+      (Eventually.of_forall fun _ ↦ by dsimp only; rw [mul_one_div, hk2])
+  exact (hconst.sub (integrableOn_bernoulliFun_fract_div_pow_Ioi n hk hz)).congr
+    (Eventually.of_forall fun _ ↦ by simp only [Pi.sub_apply, Complex.ofReal_sub, sub_div])
+
+/-- Real-variable integrability of the periodic Bernoulli integrand
+`(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`. -/
+theorem integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
+    {x : ℝ} (hx : 0 < x) :
+    IntegrableOn (fun u : ℝ ↦
+      ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) / (u + x) ^ k)
+      (Ioi 0) := by
+  have h := Complex.reCLM.integrable_comp
+    (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk (Complex.ofReal_mem_slitPlane.mpr hx))
+  refine h.congr (Eventually.of_forall fun u ↦ ?_)
+  simp only [Complex.reCLM_apply, ← Complex.ofReal_add, ← Complex.ofReal_pow,
+    ← Complex.ofReal_div, Complex.ofReal_re]
+
+/-- Signed real-variable integrability of the periodic Bernoulli integrand
+`(-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`. -/
+theorem integrableOn_signed_bernoulli_sub_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
+    {x : ℝ} (hx : 0 < x) :
+    IntegrableOn (fun u : ℝ ↦
+      (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+        (u + x) ^ k) (Ioi 0) :=
+  ((integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk hx).const_mul
+    ((-1 : ℝ) ^ (n + 1))).congr (Eventually.of_forall fun _ ↦ (mul_div_assoc _ _ _).symm)
+
+/-- Strict positivity of the signed periodic Bernoulli integral on `(0, ∞)`: for `n ≥ 1`, `k ≥ 2`,
+and `x > 0`,
+`0 < ∫ u in Ioi (0 : ℝ), (-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k`. -/
+theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 ≤ n) (hk : 2 ≤ k)
+    {x : ℝ} (hx : 0 < x) :
+    0 < ∫ u in Ioi (0 : ℝ),
+      (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+        (u + x) ^ k := by
+  let f : ℝ → ℝ := fun u ↦
+    (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+      (u + x) ^ k
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioi (0 : ℝ))] f := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+    have hu0 : 0 < u := mem_Ioi.mp hu
+    exact div_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u)
+      (by positivity)
+  rw [setIntegral_pos_iff_support_of_nonneg_ae hnn
+    (integrableOn_signed_bernoulli_sub_div_pow_Ioi n hk hx)]
+  have hsub : Ioo (0 : ℝ) 1 ⊆ Function.support f ∩ Ioi (0 : ℝ) := fun u hu ↦ by
+    have hnum : 0 < (-1 : ℝ) ^ (n + 1) *
+        ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
+      rw [Int.fract_eq_self.mpr ⟨hu.1.le, hu.2⟩]
+      exact neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos (by omega : n ≠ 0) hu
+    have hu0 : 0 < u := hu.1
+    exact ⟨(div_pos hnum (by positivity)).ne', hu.1⟩
+  exact lt_of_lt_of_le (by rw [Real.volume_Ioo]; norm_num) (measure_mono hsub)
 
 end TauCeti

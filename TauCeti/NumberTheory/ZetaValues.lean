@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.MeasurableSpace.Defs
 public import Mathlib.NumberTheory.ZetaValues
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Bernoulli polynomials and Bernoulli functions
@@ -13,12 +15,15 @@ public import Mathlib.NumberTheory.ZetaValues
 Mathlib's `bernoulliFun` is the real-variable Bernoulli polynomial. This file records how it
 relates to the Bernoulli polynomial over `ℚ`, together with the sign and extremality properties of
 the even Bernoulli numbers `B_{2k}` and even Bernoulli functions `B_{2k}(x)` on `[0, 1]`, deduced
-from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`).
+from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_zeta_nat`), as well
+as measurability of the periodic Bernoulli functions `x ↦ bernoulliFun k (Int.fract x)`.
 
 ## Main results
 
 * `TauCeti.bernoulliFun_ratCast`: `bernoulliFun` at a rational point is the Bernoulli polynomial
   over `ℚ` evaluated there, mapped into `ℝ`.
+* `TauCeti.hasSum_one_sub_cos_div_nat_pow`: exact cosine Fourier series for `B_{2k} - B_{2k}(x)`
+  on `[0, 1]`.
 * `TauCeti.neg_one_pow_succ_mul_bernoulli_even_pos`: for `k ≥ 1`, `(-1) ^ (k + 1) * B_{2k} > 0`.
 * `TauCeti.bernoulli_even_ne_zero`: for every `k : ℕ`, `B_{2k} ≠ 0`.
 * `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_nonneg`,
@@ -28,6 +33,7 @@ from their cosine Fourier series (`hasSum_one_div_nat_pow_mul_cos` and `hasSum_z
 * `TauCeti.abs_bernoulliFun_even_le`: for all `k` and `x ∈ [0, 1]`, `|B_{2k}(x)| ≤ |B_{2k}|`.
 * `TauCeti.neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg`,
   `TauCeti.abs_bernoulliFun_even_fract_le`: the corresponding periodic statements at `Int.fract u`.
+* `TauCeti.measurable_bernoulliFun_fract`: measurability of `x ↦ bernoulliFun k (Int.fract x)`.
 -/
 
 public section
@@ -63,7 +69,11 @@ private theorem hasSum_cos_div_nat_pow_bernoulliFun {k : ℕ} (hk : k ≠ 0) {x 
   rw [← bernoulliFun]
   ring
 
-private theorem hasSum_one_sub_cos_div_nat_pow {k : ℕ} (hk : k ≠ 0) {x : ℝ}
+/-- Exact cosine Fourier series for the Bernoulli endpoint difference `B_{2k} - B_{2k}(x)` on
+`[0, 1]`: for `k ≠ 0` and `x ∈ [0, 1]`,
+`∑' n : ℕ, (1 - cos (2π n x)) / n^{2k} = (-1)^{k+1} ((2π)^{2k} / (2 (2k)!)) (B_{2k} - B_{2k}(x))`.
+-/
+theorem hasSum_one_sub_cos_div_nat_pow {k : ℕ} (hk : k ≠ 0) {x : ℝ}
     (hx : x ∈ Set.Icc (0 : ℝ) 1) :
     HasSum (fun n : ℕ ↦ (1 - Real.cos (2 * π * n * x)) / (n : ℝ) ^ (2 * k))
       ((-1 : ℝ) ^ (k + 1) * ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
@@ -80,14 +90,14 @@ theorem neg_one_pow_succ_mul_bernoulli_even_pos {k : ℕ} (hk : k ≠ 0) :
   suffices h : 0 < (-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ) by exact_mod_cast h
   have h0 := hasSum_one_div_nat_pow_bernoulli hk
   have hlt : 0 < ∑' n : ℕ, 1 / (n : ℝ) ^ (2 * k) :=
-    lt_of_lt_of_le (by norm_num : (0 : ℝ) < 1 / ((1 : ℕ) : ℝ) ^ (2 * k))
-      (h0.summable.le_tsum 1 fun _ _ ↦ by positivity)
+    h0.summable.tsum_pos (fun _ ↦ by positivity) 1 (by norm_num)
   rw [h0.tsum_eq] at hlt
   exact pos_of_mul_pos_right (by linarith :
       0 < ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
         ((-1 : ℝ) ^ (k + 1) * (bernoulli (2 * k) : ℝ))) (by positivity)
 
 /-- Every even Bernoulli number `B_{2k}` is nonzero. -/
+@[simp]
 theorem bernoulli_even_ne_zero (k : ℕ) : bernoulli (2 * k) ≠ 0 := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
@@ -116,17 +126,15 @@ theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos {k : ℕ} (hk : k �
     0 < (-1 : ℝ) ^ (k + 1) * ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) x) := by
   have hsum := hasSum_one_sub_cos_div_nat_pow hk (Set.Ioo_subset_Icc_self hx)
   have hcos : Real.cos (2 * π * x) < 1 := by
-    refine lt_of_le_of_ne (Real.cos_le_one _) fun h ↦ ?_
-    obtain ⟨m, hm⟩ := (Real.cos_eq_one_iff _).mp h
-    have hmx : (m : ℝ) = x := mul_right_cancel₀ (by positivity : (2 : ℝ) * π ≠ 0) (by linarith)
-    have : (0 : ℤ) < m := by exact_mod_cast hmx.symm ▸ hx.1
-    have : m < 1 := by exact_mod_cast hmx.symm ▸ hx.2
-    omega
+    have hx0 : 0 < x := hx.1
+    refine (Real.cos_le_one _).lt_of_ne fun h ↦ ?_
+    have hzero := (Real.cos_eq_one_iff_of_lt_of_lt
+      (by nlinarith [Real.pi_pos, hx.1]) (by nlinarith [Real.pi_pos, hx.2])).mp h
+    exact (by positivity : (0 : ℝ) < 2 * π * x).ne' hzero
   have hgt : 0 < ∑' n : ℕ, (1 - Real.cos (2 * π * n * x)) / (n : ℝ) ^ (2 * k) :=
-    lt_of_lt_of_le (by simpa using hcos :
-        0 < (1 - Real.cos (2 * π * ((1 : ℕ) : ℝ) * x)) / ((1 : ℕ) : ℝ) ^ (2 * k))
-      (hsum.summable.le_tsum 1 fun _ _ ↦
-        div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity))
+    hsum.summable.tsum_pos
+      (fun _ ↦ div_nonneg (sub_nonneg.mpr (Real.cos_le_one _)) (by positivity))
+      1 (by simpa using hcos)
   rw [hsum.tsum_eq] at hgt
   exact pos_of_mul_pos_right (by linarith :
       0 < ((2 * π) ^ (2 * k) / 2 / ((2 * k)! : ℝ)) *
@@ -171,5 +179,11 @@ theorem neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg (k : ℕ) (
 theorem abs_bernoulliFun_even_fract_le (k : ℕ) (u : ℝ) :
     |bernoulliFun (2 * k) (Int.fract u)| ≤ |(bernoulli (2 * k) : ℝ)| :=
   abs_bernoulliFun_even_le k ⟨Int.fract_nonneg u, (Int.fract_lt_one u).le⟩
+
+/-- For every `k : ℕ`, the periodic Bernoulli function `x ↦ bernoulliFun k (Int.fract x)` is
+measurable. -/
+theorem measurable_bernoulliFun_fract (k : ℕ) :
+    Measurable (fun x : ℝ ↦ bernoulliFun k (Int.fract x)) :=
+  (continuous_bernoulliFun k).measurable.comp measurable_fract
 
 end TauCeti

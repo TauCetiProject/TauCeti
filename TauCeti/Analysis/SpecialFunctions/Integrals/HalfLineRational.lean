@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
 /-!
@@ -224,8 +225,6 @@ theorem integrableOn_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.sl
 theorem integral_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPlane) (j : ℕ) :
     ∫ u in Ioi (0 : ℝ), 1 / ((u : ℂ) + z) ^ (j + 2) =
       1 / (((j + 1 : ℕ) : ℂ) * z ^ (j + 1)) := by
-  obtain ⟨c, hc, hbound⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hz
-  have hj1 : (0 : ℝ) < ((j + 1 : ℕ) : ℝ) := by positivity
   let F : ℝ → ℂ := fun t ↦ -(((j + 1 : ℕ) : ℂ))⁻¹ / ((t : ℂ) + z) ^ (j + 1)
   have hderiv : ∀ u ∈ Ici (0 : ℝ),
       HasDerivAt F (1 / ((u : ℂ) + z) ^ (j + 2)) u := fun u hu ↦ by
@@ -237,17 +236,15 @@ theorem integral_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPl
     rw [Nat.add_assoc]
     field_simp
   have htend : Tendsto F atTop (𝓝 0) := by
-    refine squeeze_zero_norm' (a := fun t : ℝ ↦
-        1 / (((j + 1 : ℕ) : ℝ) * (c * (1 + t)) ^ (j + 1))) ?_ ?_
-    · filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-      rw [norm_div, norm_neg, norm_inv, Complex.norm_natCast, norm_pow, inv_eq_one_div, div_div]
-      exact one_div_le_one_div_of_le (by positivity)
-        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) (hbound t ht) _)
-          (Nat.cast_nonneg _))
-    · have hlin : Tendsto (fun t : ℝ ↦ c * (1 + t)) atTop atTop :=
-        Tendsto.const_mul_atTop hc (tendsto_atTop_add_const_left _ 1 tendsto_id)
-      exact tendsto_const_nhds.div_atTop (Tendsto.const_mul_atTop hj1
-        ((tendsto_pow_atTop (Nat.succ_ne_zero j)).comp hlin))
+    have hF : F = fun t : ℝ ↦
+        (-(((j + 1 : ℕ) : ℂ))⁻¹) * ((t : ℂ) + z) ^ (-(((j + 1 : ℕ) : ℝ) : ℂ)) := by
+      ext t
+      simp only [F, Complex.ofReal_natCast, Complex.cpow_neg, Complex.cpow_natCast,
+        div_eq_mul_inv]
+    rw [hF]
+    simpa using (Complex.tendsto_ofReal_add_cpow_neg z
+      (by exact_mod_cast Nat.succ_pos j : (0 : ℝ) < ((j + 1 : ℕ) : ℝ))).const_mul
+      (-(((j + 1 : ℕ) : ℂ))⁻¹)
   have h := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
     (integrableOn_Ioi_one_div_ofReal_add_pow hz j) htend
   simpa [F, div_eq_mul_inv, mul_comm] using h

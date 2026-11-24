@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Envelope
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Sector
 import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
@@ -31,7 +31,7 @@ the entire reciprocal `Γ⁻¹` across the whole strip; Cauchy's estimate on uni
 the derivative of `Γ⁻¹` across the strip and uniformly on unit balls.
 
 The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_lt`
-(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Envelope.lean`) at the angle `π / 4`.
+(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`) at the angle `π / 4`.
 Once `|σ| ≤ |t|` the point `σ + i t` has `|arg| ≤ 3π/4`, and the sector main term
 `(σ - 1/2) log ‖s‖ - t arg s - σ` differs from the vertical one by two terms of size `O(1 / |t|)`:
 

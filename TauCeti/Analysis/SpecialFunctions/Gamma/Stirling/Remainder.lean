@@ -5,54 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Envelope
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Sector
 
 /-!
-# Stieltjes representation and higher derivatives of the Stirling remainder
+# Sector bounds, asymptotics, and positive-axis sign alternation for the Stirling remainder
 
-On the slit plane `ℂ ∖ (-∞, 0]`, the remainder
-`stirlingRemainder z = logGamma z - ((z - 1 / 2) * log z - z + log (2π) / 2)`
-in Stirling's formula is given by the periodic-quadratic Stieltjes integral
-`stirlingRemainder z = ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ 2 dt`.
+This file collects downstream corollaries for `TauCeti.stirlingRemainder` from the exact integral
+representations in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Series.lean` and the sharp
+`1 / 12` half-angle bounds in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`:
 
-Specializing `TauCeti.iteratedDeriv_stirlingSeriesRemainder` at `n = 1` yields, for every `j : ℕ`
-and `z ∈ slitPlane`,
-`iteratedDeriv j stirlingRemainder z =
-  (-1) ^ j * (j + 1)! * ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ (j + 2) dt`.
-
-Combined with the sharp `1 / 12` half-angle bounds
-`TauCeti.norm_iteratedDeriv_stirlingRemainder_lt` and
-`TauCeti.norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le`
-(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Envelope.lean`), on any closed sector
-`|arg z| ≤ π - δ` (`0 < δ`, `z ≠ 0`) this gives
-`‖iteratedDeriv j stirlingRemainder z‖ < j! / (12 * sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`,
-and hence `iteratedDeriv j stirlingRemainder =O ‖z‖ ^ (-(j + 1))` as `z → ∞` in the sector.
-Along the positive real axis `(0, ∞)`, `iteratedDeriv j stirlingRemainder` is real-valued and
-strictly alternates in sign: `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re <
-j! / (12 * x ^ (j + 1))`; in particular `(stirlingRemainder x).re > 0` and
-`(deriv stirlingRemainder x).re < 0` for `x > 0`.
+* the `j = 1` derivative bound `‖deriv stirlingRemainder z‖ < 1 / (12 * cos (arg z / 2)^3 * ‖z‖^2)`,
+  existential closed-sector bounds, and the asymptotic `O(‖z‖^{-(j+1)})` estimate on every closed
+  sector `|arg z| ≤ π - δ` (`0 < δ`);
+* strict sign alternation and sharp `1 / 12` upper bounds along `(0, ∞)`:
+  `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re < j! / (12 * x ^ (j + 1))`; in
+  particular `(stirlingRemainder x).re > 0` and `(deriv stirlingRemainder x).re < 0` for `x > 0`.
 
 ## Main declarations
 
-* `TauCeti.iteratedDeriv_stirlingRemainder`, `TauCeti.iteratedDeriv_succ_stirlingRemainder`,
-  `TauCeti.deriv_stirlingRemainder_eq_integral`: integral representation of all iterated
-  derivatives of `stirlingRemainder` (extending `TauCeti.stirlingRemainder_eq_integral`) and
-  identification with iterated derivatives of `digamma z - log z + (2 * z)⁻¹`.
 * `TauCeti.norm_deriv_stirlingRemainder_lt`,
   `TauCeti.exists_norm_iteratedDeriv_stirlingRemainder_le`,
   `TauCeti.isBigO_iteratedDeriv_stirlingRemainder`: `j = 1` specialization of
   `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt`, existential sector bound, and asymptotic
   `O(‖z‖ ^ (-(j + 1)))` bound for all `j : ℕ`.
-* `TauCeti.iteratedDeriv_stirlingRemainder_ofReal_im`,
-  `TauCeti.iteratedDeriv_stirlingRemainder_ofReal_re`,
-  `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos`,
+* `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos`,
   `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_lt`,
   `TauCeti.stirlingRemainder_ofReal_re_pos`, `TauCeti.stirlingRemainder_ofReal_re_lt`,
-  `TauCeti.deriv_stirlingRemainder_ofReal_re_neg`: real-valuedness, strict sign alternation, and
-  sharp `1 / 12` upper bounds on `(0, ∞)`.
+  `TauCeti.deriv_stirlingRemainder_ofReal_re_neg`: strict sign alternation and sharp `1 / 12`
+  upper bounds on `(0, ∞)`.
 
 ## References
 
@@ -68,48 +48,6 @@ public section
 open Complex Real Filter Set Topology MeasureTheory Asymptotics Bornology
 
 namespace TauCeti
-
-/-! ### Iterated derivatives of `stirlingRemainder` -/
-
-/-- Integral representation of all higher derivatives of the Stirling remainder on the slit plane:
-for every `j : ℕ` and `z ∈ slitPlane`,
-`iteratedDeriv j stirlingRemainder z =
-  (-1) ^ j * (j + 1)! * ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ (j + 2) dt`. -/
-theorem iteratedDeriv_stirlingRemainder (j : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
-    iteratedDeriv j stirlingRemainder z = (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) *
-      ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2) := by
-  rw [← stirlingSeriesRemainder_one, iteratedDeriv_stirlingSeriesRemainder le_rfl j hz]
-  have hidx : 2 * 1 + j - 1 = j + 1 := by omega
-  have hpow : 2 * 1 + j = j + 2 := by omega
-  rw [hidx, hpow, Nat.mul_one]
-  have hcoe : (-1 : ℂ) ^ j * (((j + 1).factorial : ℂ) / ((2 : ℕ).factorial : ℂ)) *
-      ∫ u in Ioi (0 : ℝ),
-        (((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u) : ℝ) : ℂ) / ((u : ℂ) + z) ^ (j + 2) =
-      (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) *
-        ((2 : ℂ)⁻¹ * ∫ u in Ioi (0 : ℝ),
-          (((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u) : ℝ) : ℂ) /
-            ((u : ℂ) + z) ^ (j + 2)) := by
-    rw [Nat.factorial_two, Nat.cast_ofNat]; ring
-  rw [hcoe, ← MeasureTheory.integral_const_mul]
-  refine congr_arg (_ * ·) (setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_)
-  rw [bernoulli_two, bernoulliFun_two]
-  push_cast
-  rw [add_comm (t : ℂ) z]
-  ring
-
-/-- For `j : ℕ` and `z ∈ slitPlane`, the `(j + 1)`-st derivative of `stirlingRemainder` coincides
-with the `j`-th derivative of `w ↦ digamma w - log w + (2 * w)⁻¹`. -/
-theorem iteratedDeriv_succ_stirlingRemainder (j : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
-    iteratedDeriv (j + 1) stirlingRemainder z =
-      iteratedDeriv j (fun w ↦ Complex.digamma w - Complex.log w + (2 * w)⁻¹) z := by
-  rw [iteratedDeriv_succ']
-  exact EqOn.iteratedDeriv_of_isOpen (fun _ hw ↦ deriv_stirlingRemainder hw) isOpen_slitPlane j hz
-
-/-- Explicit Stieltjes integral formula for `deriv stirlingRemainder` on the slit plane. -/
-theorem deriv_stirlingRemainder_eq_integral {z : ℂ} (hz : z ∈ slitPlane) :
-    deriv stirlingRemainder z =
-      -2 * ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ 3 := by
-  simpa [iteratedDeriv_one] using iteratedDeriv_stirlingRemainder 1 hz
 
 /-! ### Sector bounds and asymptotics for `stirlingRemainder` and its derivatives -/
 
@@ -147,30 +85,7 @@ theorem isBigO_iteratedDeriv_stirlingRemainder (j : ℕ) {δ : ℝ} (hδ : 0 < �
   rw [Real.norm_of_nonneg (inv_nonneg.mpr (pow_nonneg (norm_nonneg z) _)), ← div_eq_mul_inv]
   exact hC z hz (norm_pos_iff.mp hz0)
 
-/-! ### Positive real axis: real-valuedness and strict sign alternation -/
-
-/-- For every `j : ℕ` and `0 < x`, `iteratedDeriv j stirlingRemainder x` is real-valued. -/
-theorem iteratedDeriv_stirlingRemainder_ofReal_im (j : ℕ) {x : ℝ} (hx : 0 < x) :
-    (iteratedDeriv j stirlingRemainder x).im = 0 := by
-  rw [← stirlingSeriesRemainder_one, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_im]
-
-/-- Real integral representation of `(iteratedDeriv j stirlingRemainder x).re` for `0 < x`. -/
-theorem iteratedDeriv_stirlingRemainder_ofReal_re (j : ℕ) {x : ℝ} (hx : 0 < x) :
-    (iteratedDeriv j stirlingRemainder x).re =
-      (-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
-        ∫ t : ℝ in Ioi 0, ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) := by
-  rw [iteratedDeriv_stirlingRemainder j (ofReal_mem_slitPlane.mpr hx)]
-  have hint :
-      ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2) =
-        ((∫ t : ℝ in Ioi 0,
-          ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) := by
-    rw [setIntegral_congr_fun measurableSet_Ioi fun t _ ↦
-      show (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2) =
-          ((((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) by
-        simp only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_add]]
-    exact integral_ofReal
-  rw [hint]
-  norm_cast
+/-! ### Positive real axis: strict sign alternation and sharp upper bounds -/
 
 /-- Strict sign alternation of the Stirling remainder and its derivatives on `(0, ∞)`:
 for every `j : ℕ` and `0 < x`, `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re`. -/

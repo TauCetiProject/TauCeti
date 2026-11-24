@@ -26,6 +26,8 @@ This file collects general results about `iteratedDeriv`:
   (`TauCeti.iteratedDerivInr_apply`, `TauCeti.iteratedDerivInr_zero`,
   `TauCeti.iteratedDerivInr_sumElim`, `TauCeti.iteratedDerivInr_const_pi`) and the
   Fréchet-derivative step (`DifferentiableAt.iteratedDerivInr_succ_eq_fderiv`).
+* `ContDiffOn.differentiableOn_iteratedDeriv`: on an open set, every iterated derivative of order
+  `< n` of a `C^n` function is differentiable.
 -/
 
 public section
@@ -153,3 +155,12 @@ theorem DifferentiableAt.iteratedDerivInr_succ_eq_fderiv [Finite σ] {f : (σ �
   simpa [hφz, Function.comp_def] using (hGφ.comp_hasDerivAt (z (.inr default)) hφ_deriv).deriv
 
 end IteratedDerivInr
+
+/-- On an open set `s`, every iterated derivative of order `< n` of a `C^n` function is
+differentiable on `s`. -/
+theorem ContDiffOn.differentiableOn_iteratedDeriv {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {s : Set 𝕜} {n : ℕ∞ω} {m : ℕ}
+    (hf : ContDiffOn 𝕜 n f s) (hmn : m < n) (hs : IsOpen s) :
+    DifferentiableOn 𝕜 (iteratedDeriv m f) s :=
+  (hf.differentiableOn_iteratedDerivWithin hmn hs.uniqueDiffOn).congr
+    fun _ hz ↦ (iteratedDerivWithin_of_isOpen hs hz).symm

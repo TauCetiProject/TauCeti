@@ -8,8 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
-import TauCeti.Analysis.Calculus.Deriv.Complex
-import TauCeti.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
 # Real-parameter smoothness and higher derivatives of `Complex.log`
@@ -49,22 +50,13 @@ theorem iteratedDeriv_log_ofReal_add {k : ℕ} (hk : 1 ≤ k) {u : ℝ} {z : ℂ
     iteratedDeriv k (fun t : ℝ ↦ log ((t : ℂ) + z)) u =
       (-1 : ℂ) ^ (k - 1) * ((k - 1)! : ℂ) / ((u : ℂ) + z) ^ k := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  clear hk
-  induction m generalizing u with
-  | zero =>
-    have hd := (TauCeti.hasDerivAt_ofReal_add u z).clog_real h
-    rw [zero_add, iteratedDeriv_one, hd.deriv]
-    simp [one_div]
-  | succ m ih =>
-    have hs : {t : ℝ | (t : ℂ) + z ∈ slitPlane} ∈ 𝓝 u :=
-      (isOpen_slitPlane.preimage (continuous_ofReal.add continuous_const)).mem_nhds h
-    have hev : iteratedDeriv (m + 1) (fun t : ℝ ↦ log ((t : ℂ) + z)) =ᶠ[𝓝 u]
-        fun t : ℝ ↦ (-1 : ℂ) ^ m * (m ! : ℂ) / ((t : ℂ) + z) ^ (m + 1) :=
-      Filter.eventually_of_mem hs fun _ ht ↦ ih ht
-    have hpow := (TauCeti.hasDerivAt_ofReal_add u z).const_div_pow (slitPlane_ne_zero h)
-      ((-1 : ℂ) ^ m * (m ! : ℂ)) (m + 1)
-    rw [iteratedDeriv_succ, hev.deriv_eq, hpow.deriv]
-    simp only [Nat.add_sub_cancel, Nat.factorial_succ, Nat.cast_mul, pow_succ]
-    ring
+  have hU : IsOpen {w : ℂ | w + z ∈ slitPlane} :=
+    isOpen_slitPlane.preimage (continuous_id.add continuous_const)
+  have hf : DifferentiableOn ℂ (fun w : ℂ ↦ log (w + z)) {w : ℂ | w + z ∈ slitPlane} :=
+    fun w hw ↦ ((hasDerivAt_log hw).comp_add_const w z).differentiableAt.differentiableWithinAt
+  simp only [hf.iteratedDeriv_comp_ofReal hU (m + 1) h, iteratedDeriv_comp_add_const,
+    _root_.iteratedDeriv_succ_log h, Nat.add_sub_cancel]
+  have hexp : -(m : ℤ) - 1 = -((m + 1 : ℕ) : ℤ) := by omega
+  rw [hexp, zpow_neg, zpow_natCast, div_eq_mul_inv]
 
 end Complex
