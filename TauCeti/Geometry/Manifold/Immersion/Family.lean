@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Stability of injective differentials in `C¹` families
@@ -44,15 +45,10 @@ theorem ContMDiffAt.eventually_injective_mfderiv
     (hF : ContMDiffAt (IP.prod I) J n (uncurry F) (t₀, x)) (hn : 1 ≤ n)
     (hinj : Injective (mfderiv I J (F t₀) x)) :
     ∀ᶠ p : P × M in 𝓝 (t₀, x), Injective (mfderiv I J (F p.1) p.2) := by
-  have hG : ContMDiffAt ((IP.prod I).prod I) J 1
-      (uncurry fun (p : P × M) (y : M) ↦ F p.1 y) ((t₀, x), x) :=
-    (hF.of_le hn).comp ((t₀, x), x)
-      ((contMDiffAt_fst.comp ((t₀, x), x) contMDiffAt_fst).prodMk contMDiffAt_snd)
   let A := inTangentCoordinates I J (fun p : P × M ↦ p.2) (uncurry F)
     (fun p ↦ mfderiv I J (F p.1) p.2) (t₀, x)
   have hA : ContinuousAt A (t₀, x) :=
-    (hG.mfderiv (fun (p : P × M) (y : M) ↦ F p.1 y) (fun p ↦ p.2)
-      contMDiffAt_snd (m := 0) (by norm_num)).continuousAt
+    (hF.mfderiv_right (m := 0) (by simpa using hn)).continuousAt
   have hcoord (p : P × M)
       (hx : p.2 ∈ (trivializationAt E (TangentSpace I) x).baseSet)
       (hy : F p.1 p.2 ∈ (trivializationAt E' (TangentSpace J) (F t₀ x)).baseSet) :

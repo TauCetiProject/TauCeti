@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Reductive
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.MultiplicativeType
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive.Basic

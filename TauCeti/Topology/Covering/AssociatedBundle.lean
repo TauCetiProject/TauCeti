@@ -632,7 +632,7 @@ deck group, `L_χ ⊗ L_ψ` is canonically isomorphic in `FiniteRankBundleCore �
 noncomputable def characterFiniteRankCoreMulIso (χ ψ : G →* 𝕜ˣ) :
     hp.characterFiniteRankCore χ ⊗ hp.characterFiniteRankCore ψ ≅
       hp.characterFiniteRankCore (χ * ψ) :=
-  FiniteRankBundleCore.constIso (fun _ ↦ Set.inter_self _) (hp.characterMulFiberEquiv χ ψ)
+  FiniteRankBundleCore.constIso (fun _ ↦ (Set.inter_self _).le) (hp.characterMulFiberEquiv χ ψ)
     fun i j x _ _ ↦ hp.characterFiniteRankCore_mul_intertwine χ ψ i j x
 
 @[simp] theorem fiberMap_characterFiniteRankCoreMulIso_hom (χ ψ : G →* 𝕜ˣ) (x : X) :
