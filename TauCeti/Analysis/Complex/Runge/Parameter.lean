@@ -35,7 +35,8 @@ such an operator, fibrewise, to families of functions depending on parameters.
   form of the operator estimate (`TauCeti.norm_sub_sum_smul_le_of_scalar`) applies to them.
 
 These estimates control all parameter derivatives of the Runge corrections when solutions of
-`∂̄ u = f` depending smoothly or holomorphically on parameters are built by exhaustion.
+the inhomogeneous Cauchy–Riemann equation depending smoothly or holomorphically on parameters
+are built by exhaustion.
 
 ## References
 
