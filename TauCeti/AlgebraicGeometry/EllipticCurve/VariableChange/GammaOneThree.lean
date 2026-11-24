@@ -29,7 +29,7 @@ The arrow ring is `Γ = B[r, s, t] / (a₂, a₄, a₆)`
 (`TauCeti.GammaOneThreeHopfAlgebroid.ArrowRing`), the quotient by the coefficients `a₂`, `a₄`, `a₆`
 of the image of `W` under `(1, r, s, t)`, computed with Mathlib's
 `WeierstrassCurve.variableChange_def`. Its `B`-algebra maps to `D` classify the coordinate changes
-`(1, r, s, t)` over `D` carrying `W` to a curve of the same form (`ArrowRing.homEquiv`). The
+`(1, r, s, t)` over `D` carrying `W` to a curve of the same form (`ArrowRing.arrowEquiv`). The
 universal arrow carries `W` to `gammaOneThreeForm (a₁ + 2s) (a₃ + r a₁ + 2t)`
 (`ArrowRing.target_eq`); in the universal case these two coefficients are the right unit `η_R(a₁)`
 and `η_R(a₃)`.
@@ -115,30 +115,6 @@ theorem map_strictChange_smul {D : Type*} [CommRing D] [Algebra B D]
   · ext <;> simp [strictChange, VariableChange.map]
   · simp
 
-section
-
-variable (r s t : B)
-
-/-- The coefficient `a₂` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-private theorem smul_gammaOneThreeForm_a₂ :
-    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₂ = 3 * r - s ^ 2 - s * a₁ := by
-  simp [variableChange_def]
-  ring
-
-/-- The coefficient `a₄` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-private theorem smul_gammaOneThreeForm_a₄ :
-    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₄ =
-      -(s * a₃) - (t + r * s) * a₁ + 3 * r ^ 2 - 2 * s * t := by
-  simp [variableChange_def]
-
-/-- The coefficient `a₆` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-private theorem smul_gammaOneThreeForm_a₆ :
-    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₆ =
-      r ^ 3 - t * a₃ - t ^ 2 - r * t * a₁ := by
-  simp [variableChange_def]
-
-end
-
 /-- The ring `Γ = B[r, s, t] / (a₂, a₄, a₆)` of coordinate changes `(1, r, s, t)` that carry
 `Y² + a₁XY + a₃Y = X³` to a curve of the same form. -/
 abbrev ArrowRing : Type _ := MvPolynomial (Fin 3) B ⧸ arrowIdeal a₁ a₃
@@ -210,9 +186,9 @@ theorem target_eq : target a₁ a₃ = gammaOneThreeForm
     rw [target_eq_map, map_a₆, Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.subset_span (by simp)
   ext
-  · simp [target, variableChange_def]
+  · rw [target_eq_smul, smul_gammaOneThreeForm_a₁, gammaOneThreeForm_a₁]
   · rw [gammaOneThreeForm_a₂]; exact h₂
-  · simp [target, variableChange_def]
+  · rw [target_eq_smul, smul_gammaOneThreeForm_a₃, gammaOneThreeForm_a₃]
   · rw [gammaOneThreeForm_a₄]; exact h₄
   · rw [gammaOneThreeForm_a₆]; exact h₆
 
@@ -221,7 +197,7 @@ variable (a₁ a₃) in
 `(1, r, s, t)` over `D` carrying `Y² + a₁XY + a₃Y = X³` to a curve with `a₂ = a₄ = a₆ = 0`, that is,
 to a curve of the same form; the correspondence sends `φ` to the image of
 `universalChange a₁ a₃`. -/
-def homEquiv (D : Type*) [CommRing D] [Algebra B D] :
+def arrowEquiv (D : Type*) [CommRing D] [Algebra B D] :
     (ArrowRing a₁ a₃ →ₐ[B] D) ≃ {C : VariableChange D // C.u = 1 ∧
       (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₂ = 0 ∧
       (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₄ = 0 ∧
@@ -266,23 +242,23 @@ def homEquiv (D : Type*) [CommRing D] [Algebra B D] :
       simp
 
 variable (a₁ a₃) in
-/-- `homEquiv` sends `φ` to the image of the universal arrow under `φ`. -/
+/-- `arrowEquiv` sends `φ` to the image of the universal arrow under `φ`. -/
 @[simp]
-theorem coe_homEquiv_apply (D : Type*) [CommRing D] [Algebra B D] (φ : ArrowRing a₁ a₃ →ₐ[B] D) :
-    (homEquiv a₁ a₃ D φ : VariableChange D) =
+theorem coe_arrowEquiv_apply (D : Type*) [CommRing D] [Algebra B D] (φ : ArrowRing a₁ a₃ →ₐ[B] D) :
+    (arrowEquiv a₁ a₃ D φ : VariableChange D) =
       (universalChange a₁ a₃).map (φ : ArrowRing a₁ a₃ →+* D) :=
   (rfl)
 
 variable (a₁ a₃) in
 /-- The `B`-algebra map classifying `C` sends the universal arrow to `C`. -/
 @[simp]
-theorem map_universalChange_homEquiv_symm_apply (D : Type*) [CommRing D] [Algebra B D]
+theorem map_universalChange_arrowEquiv_symm_apply (D : Type*) [CommRing D] [Algebra B D]
     (C : {C : VariableChange D // C.u = 1 ∧
       (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₂ = 0 ∧
       (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₄ = 0 ∧
       (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₆ = 0}) :
-    (universalChange a₁ a₃).map ((homEquiv a₁ a₃ D).symm C : ArrowRing a₁ a₃ →+* D) = C :=
-  congrArg Subtype.val ((homEquiv a₁ a₃ D).apply_symm_apply C)
+    (universalChange a₁ a₃).map ((arrowEquiv a₁ a₃ D).symm C : ArrowRing a₁ a₃ →+* D) = C :=
+  congrArg Subtype.val ((arrowEquiv a₁ a₃ D).apply_symm_apply C)
 
 section
 
@@ -290,22 +266,22 @@ variable (a₁ a₃) (D : Type*) [CommRing D] [Algebra B D]
 
 /-- The `B`-algebra map classifying `C` sends `r` to the coordinate `r` of `C`. -/
 @[simp]
-theorem homEquiv_symm_apply_r (C : _) : (homEquiv a₁ a₃ D).symm C r = C.val.r := by
-  have h := congrArg VariableChange.r (map_universalChange_homEquiv_symm_apply a₁ a₃ D C)
+theorem arrowEquiv_symm_apply_r (C : _) : (arrowEquiv a₁ a₃ D).symm C r = C.val.r := by
+  have h := congrArg VariableChange.r (map_universalChange_arrowEquiv_symm_apply a₁ a₃ D C)
   rw [VariableChange.map_r, universalChange_r] at h
   exact h
 
 /-- The `B`-algebra map classifying `C` sends `s` to the coordinate `s` of `C`. -/
 @[simp]
-theorem homEquiv_symm_apply_s (C : _) : (homEquiv a₁ a₃ D).symm C s = C.val.s := by
-  have h := congrArg VariableChange.s (map_universalChange_homEquiv_symm_apply a₁ a₃ D C)
+theorem arrowEquiv_symm_apply_s (C : _) : (arrowEquiv a₁ a₃ D).symm C s = C.val.s := by
+  have h := congrArg VariableChange.s (map_universalChange_arrowEquiv_symm_apply a₁ a₃ D C)
   rw [VariableChange.map_s, universalChange_s] at h
   exact h
 
 /-- The `B`-algebra map classifying `C` sends `t` to the coordinate `t` of `C`. -/
 @[simp]
-theorem homEquiv_symm_apply_t (C : _) : (homEquiv a₁ a₃ D).symm C t = C.val.t := by
-  have h := congrArg VariableChange.t (map_universalChange_homEquiv_symm_apply a₁ a₃ D C)
+theorem arrowEquiv_symm_apply_t (C : _) : (arrowEquiv a₁ a₃ D).symm C t = C.val.t := by
+  have h := congrArg VariableChange.t (map_universalChange_arrowEquiv_symm_apply a₁ a₃ D C)
   rw [VariableChange.map_t, universalChange_t] at h
   exact h
 
@@ -825,6 +801,7 @@ variable (a₁ a₃) in
 def basis : Module.Basis (Fin 8) B (ArrowRing a₁ a₃) :=
   Module.Basis.mk linearIndependent_basisVec span_basisVec
 
+@[simp]
 theorem coe_basis :
     ⇑(basis a₁ a₃) = ![1, s, s ^ 2, s ^ 3, t, s * t, s ^ 2 * t, s ^ 3 * t] :=
   Module.Basis.coe_mk _ _
@@ -861,34 +838,37 @@ theorem trace_basis (k : Fin 8) :
       ![8, -4 * a₁, 2 * a₁ ^ 2, -a₁ ^ 3, a₁ ^ 3 * ⅟3 - 4 * a₃, -2 * a₁ * a₃,
       -(a₁ ^ 5 * ⅟3) + 9 * a₁ ^ 2 * a₃, a₁ ^ 6 * ⅟3 - 7 * a₁ ^ 3 * a₃ - 27 * a₃ ^ 2] k := by
   have h3 : (3 : B) * ⅟3 = 1 := mul_invOf_self 3
+  have h9 := invOf_three_sq_mul_nine (B := B)
   rw [Algebra.trace_eq_matrix_trace (basis a₁ a₃)]
-  fin_cases k
-  · simp [coe_basis, Matrix.trace_one]
-  all_goals
-    simp only [coe_basis, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val, map_mul, map_pow,
-      leftMulMatrix_s, leftMulMatrix_t]
-    -- make `⅟3` opaque, so that `simp` leaves the traces as polynomials in `i` with `3 * i = 1`
-    generalize ⅟(3 : B) = i at h3 ⊢
-    simp only [Matrix.trace, mulS, pow_succ, pow_zero, one_mul, neg_mul, Matrix.diag_apply,
-      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_fin_one, Fin.sum_univ_eight, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_one, add_zero, Matrix.cons_val, zero_add,
-      Matrix.cons_mul, Nat.succ_eq_add_one, Nat.reduceAdd, Matrix.vecMul_cons, Matrix.head_cons,
-      zero_smul, Matrix.tail_cons, Matrix.empty_vecMul, Matrix.symm_of, one_smul, Matrix.smul_cons,
-      smul_eq_mul, mul_zero, mul_one, mul_neg, Matrix.smul_empty, Matrix.add_cons,
-      Matrix.empty_add_empty, neg_smul, Matrix.neg_cons, neg_zero, neg_neg, Matrix.neg_empty,
-      Matrix.empty_mul, Matrix.coe_rowEquiv, Matrix.row_of, Pi.zero_apply, Matrix.zero_vecMul,
-      mulT₉, Matrix.smul_of]
-  case «4» => linear_combination (a₁ ^ 3 * i - 12 * a₃ * i - 4 * a₃) * h3
-  case «5» => linear_combination (-6 * a₁ * a₃ * i - 2 * a₁ * a₃) * h3
-  case «6» => linear_combination (-a₁ ^ 5 * i + 27 * a₁ ^ 2 * a₃ * i + 9 * a₁ ^ 2 * a₃) * h3
-  case «7» =>
-    linear_combination (a₁ ^ 6 * i - 21 * a₁ ^ 3 * a₃ * i - 7 * a₁ ^ 3 * a₃ - 81 * a₃ ^ 2 * i -
-      27 * a₃ ^ 2) * h3
-  all_goals ring
+  -- `leftMulMatrix (sᵏ t) = ⅟3² • (mulS ^ k * mulT₉)`: pull out the scalar `⅟3²`
+  fin_cases k <;> simp only [coe_basis, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val,
+    map_one, map_mul, map_pow, leftMulMatrix_s, leftMulMatrix_t, Matrix.mul_smul, Matrix.trace_smul,
+    smul_eq_mul]
+  · simp [Matrix.trace_one]
+  · simp [Matrix.trace, Fin.sum_univ_eight, mulS]; ring
+  · simp [Matrix.trace, Fin.sum_univ_eight, mulS, sq]; ring
+  · simp [Matrix.trace, Fin.sum_univ_eight, mulS, pow_succ]; ring
+  · have h : Matrix.trace (mulT₉ a₁ a₃) = 3 * a₁ ^ 3 - 36 * a₃ := by
+      simp [Matrix.trace, Fin.sum_univ_eight, mulT₉]; ring
+    rw [h]
+    linear_combination a₁ ^ 3 * ⅟3 * h3 - 4 * a₃ * h9
+  · have h : Matrix.trace (mulS a₁ a₃ * mulT₉ a₁ a₃) = -18 * a₁ * a₃ := by
+      simp [Matrix.trace, Fin.sum_univ_eight, mulS, mulT₉]; ring
+    rw [h]
+    linear_combination -2 * a₁ * a₃ * h9
+  · have h : Matrix.trace (mulS a₁ a₃ ^ 2 * mulT₉ a₁ a₃) = -3 * a₁ ^ 5 + 81 * a₁ ^ 2 * a₃ := by
+      simp [Matrix.trace, Fin.sum_univ_eight, mulS, mulT₉, sq]; ring
+    rw [h]
+    linear_combination -a₁ ^ 5 * ⅟3 * h3 + 9 * a₁ ^ 2 * a₃ * h9
+  · have h : Matrix.trace (mulS a₁ a₃ ^ 3 * mulT₉ a₁ a₃) =
+        3 * a₁ ^ 6 - 63 * a₁ ^ 3 * a₃ - 243 * a₃ ^ 2 := by
+      simp [Matrix.trace, Fin.sum_univ_eight, mulS, mulT₉, pow_succ]; ring
+    rw [h]
+    linear_combination a₁ ^ 6 * ⅟3 * h3 - (7 * a₁ ^ 3 * a₃ + 27 * a₃ ^ 2) * h9
 
 /-- The trace of `1` is the rank `8`, the degree of the transfer. -/
 theorem trace_one : Algebra.trace B (ArrowRing a₁ a₃) 1 = 8 := by
-  simpa [coe_basis] using trace_basis (a₁ := a₁) (a₃ := a₃) 0
+  simpa using trace_basis (a₁ := a₁) (a₃ := a₃) 0
 
 omit [Invertible (3 : B)] in
 /-- The element `c₀ + c₁s + c₂s² + c₃s³ + c₄t + c₅st + c₆s²t + c₇s³t` of `Γ`. -/
@@ -906,7 +886,7 @@ private theorem trace_eq_of_eq {x : ArrowRing a₁ a₃} {c₀ c₁ c₂ c₃ c�
       (a₁ ^ 3 * ⅟3 - 4 * a₃) * c₄ - 2 * a₁ * a₃ * c₅ + (-(a₁ ^ 5 * ⅟3) + 9 * a₁ ^ 2 * a₃) * c₆ +
       (a₁ ^ 6 * ⅟3 - 7 * a₁ ^ 3 * a₃ - 27 * a₃ ^ 2) * c₇ := by
   rw [h, sum_mul_basisVec_eq, map_sum]
-  simp [Fin.sum_univ_eight, trace_basis]
+  simp [Fin.sum_univ_eight, trace_basis, -coe_basis]
   ring
 
 /-- The trace of `η_R(a₁) = a₁ + 2s` vanishes: there are no level-one forms of weight `1`. -/
@@ -991,7 +971,7 @@ theorem trace_target_a₁_pow_four :
   rw [trace_eq_of_eq hx, gammaOneThreeForm_c₄]
   linear_combination (16 * a₁ ^ 4) * mul_invOf_self (3 : B)
 
-/-- `Tr(η_R(a₁)³ η_R(a₃)) = 2c₆`, an identity needing no denominator. -/
+/-- `Tr(η_R(a₁)³ η_R(a₃)) = 2c₆`. -/
 theorem trace_target_a₁_pow_three_mul_target_a₃ :
     Algebra.trace B (ArrowRing a₁ a₃) ((target a₁ a₃).a₁ ^ 3 * (target a₁ a₃).a₃) =
       2 * (gammaOneThreeForm a₁ a₃).c₆ := by

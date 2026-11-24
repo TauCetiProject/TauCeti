@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # The `Γ₁(3)` normal form `Y² + a₁XY + a₃Y = X³`
@@ -20,7 +20,8 @@ This file records its coefficients, its invariants
 
   `c₄ = a₁⁴ - 24a₁a₃`, `c₆ = -a₁⁶ + 36a₁³a₃ - 216a₃²`, `Δ = a₁³a₃³ - 27a₃⁴`,
 
-with Mathlib's sign conventions, and its base change.
+with Mathlib's sign conventions, its base change, and the coefficients of its image under a
+coordinate change `(1, r, s, t)`.
 
 ## References
 
@@ -79,5 +80,39 @@ theorem gammaOneThreeForm_Δ : (gammaOneThreeForm a₁ a₃).Δ = a₁ ^ 3 * a�
 theorem map_gammaOneThreeForm {C : Type*} [CommRing C] (φ : B →+* C) :
     (gammaOneThreeForm a₁ a₃).map φ = gammaOneThreeForm (φ a₁) (φ a₃) := by
   ext <;> simp [gammaOneThreeForm]
+
+section VariableChange
+
+variable (r s t : B)
+
+/-- The coefficient `a₁` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
+theorem smul_gammaOneThreeForm_a₁ :
+    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₁ = a₁ + 2 * s := by
+  simp [variableChange_a₁]
+
+/-- The coefficient `a₂` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
+theorem smul_gammaOneThreeForm_a₂ :
+    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₂ = 3 * r - s ^ 2 - s * a₁ := by
+  simp [variableChange_a₂]
+  ring
+
+/-- The coefficient `a₃` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
+theorem smul_gammaOneThreeForm_a₃ :
+    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₃ = a₃ + r * a₁ + 2 * t := by
+  simp [variableChange_a₃]
+
+/-- The coefficient `a₄` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
+theorem smul_gammaOneThreeForm_a₄ :
+    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₄ =
+      -(s * a₃) - (t + r * s) * a₁ + 3 * r ^ 2 - 2 * s * t := by
+  simp [variableChange_a₄]
+
+/-- The coefficient `a₆` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
+theorem smul_gammaOneThreeForm_a₆ :
+    ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₆ =
+      r ^ 3 - t * a₃ - t ^ 2 - r * t * a₁ := by
+  simp [variableChange_a₆]
+
+end VariableChange
 
 end WeierstrassCurve
