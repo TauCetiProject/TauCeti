@@ -23,8 +23,7 @@ cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute no
 `(n)` is `|n|`.
 
 The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
-image of `N` in `p`, as additive subgroups of the ambient module, and it is unchanged by
-transporting a submodule along a linear equivalence.
+image of `N` in `p`, as additive subgroups of the ambient module.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -33,8 +32,6 @@ have nonnegative product generate principal ideals with congruent absolute norms
 
 * `Submodule.cardQuot_eq_relIndex_map_subtype`: for a submodule `N` of a submodule `p`,
   `#(p ⧸ N)` is the index of the image of `N` in `p`.
-* `Submodule.cardQuot_map_linearEquiv`: `#(M ⧸ p)` is unchanged by transporting `p` along a
-  linear equivalence.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -68,14 +65,6 @@ theorem cardQuot_eq_relIndex_map_subtype {R M : Type*} [Ring R] [AddCommGroup M]
     simp
   rw [cardQuot, ← AddSubgroup.relIndex_top_right, map_toAddSubgroup, ← hp,
     AddSubgroup.relIndex_map_map_of_injective _ _ p.injective_subtype]
-
-/-- The cardinality of the quotient by a submodule is unchanged by transporting the submodule along
-a linear equivalence. -/
-theorem cardQuot_map_linearEquiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (p : Submodule R M) :
-    (p.map (e : M →ₗ[R] N)).cardQuot = p.cardQuot := by
-  rw [cardQuot_apply, cardQuot_apply]
-  exact Nat.card_congr (Quotient.equiv _ _ e rfl).symm.toEquiv
 
 end Submodule
 
