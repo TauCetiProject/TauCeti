@@ -221,6 +221,14 @@ theorem add_mem_coneDivisorWeights {sigma : Phi.cones} {a : Phi.Ray → ℤ} {u 
   rw [AddMonoidHom.add_apply]
   omega
 
+/-- The sum of the dual semigroup and the divisor weights is contained in the weights. -/
+theorem dualSemigroup_add_coneDivisorWeights_subset (sigma : Phi.cones)
+    (a : Phi.Ray → ℤ) :
+    (dualSemigroup Phi.lattice sigma.val : Set (N →+ ℤ)) + Phi.coneDivisorWeights sigma a ⊆
+      Phi.coneDivisorWeights sigma a :=
+  Set.add_subset_iff.2 fun u hu w hw ↦ by
+    simpa only [add_comm] using add_mem_coneDivisorWeights hw hu
+
 /-- The character weights of the zero divisor on a cone are its dual semigroup. -/
 @[simp]
 theorem coneDivisorWeights_zero (sigma : Phi.cones) :
@@ -273,5 +281,31 @@ theorem sub_mem_dualSemigroup_inf {sigma tau : Phi.cones} {a : Phi.Ray → ℤ} 
   rw [mem_dualSemigroup_iff_forall_ray_le]
   intro rho hrho
   simp [hm rho (hrho.trans inf_le_left), hn rho (hrho.trans inf_le_right)]
+
+/-- Finite sets of weights on a face can all be moved into the larger cone's weight set by
+adding the same nonnegative multiple of a character exposing the face. -/
+theorem exists_nsmul_add_mem_coneDivisorWeights {sigma tau : Phi.cones} {m : N →+ ℤ}
+    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
+    {a : Phi.Ray → ℤ} (s : Finset (N →+ ℤ))
+    (hs : (s : Set (N →+ ℤ)) ⊆ Phi.coneDivisorWeights tau a) :
+    ∃ n : ℕ, ∀ u ∈ s, n • m + u ∈ Phi.coneDivisorWeights sigma a := by
+  -- Bound all the deficits at once, using that each positive pairing is at least one.
+  obtain ⟨n, hn⟩ := Finite.bddAbove_range fun p : (↑s : Set (N →+ ℤ)) × Phi.Ray ↦
+    (-a p.2 - p.1.val p.2.primitiveGenerator).toNat
+  refine ⟨n, fun u hu ↦ mem_coneDivisorWeights.2 fun rho hρ ↦ ?_⟩
+  simp only [AddMonoidHom.add_apply, AddMonoidHom.nsmul_apply, nsmul_eq_mul]
+  by_cases hρτ : rho.toCone ≤ tau
+  · have huτ := mem_coneDivisorWeights.1 (hs hu) rho hρτ
+    have hmρ := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hρ
+    exact huτ.trans (le_add_of_nonneg_left (mul_nonneg (Int.natCast_nonneg _) hmρ))
+  · have hpos := Phi.primitiveGenerator_pos_of_face_eq_inf_ker hm htau hρ hρτ
+    let p : (↑s : Set (N →+ ℤ)) × Phi.Ray := (⟨u, hu⟩, rho)
+    have hbound : (-a rho - u rho.primitiveGenerator).toNat ≤ n :=
+      hn (Set.mem_range_self p)
+    have hmul : (n : ℤ) ≤ (n : ℤ) * m rho.primitiveGenerator :=
+      le_mul_of_one_le_right (Int.natCast_nonneg _) (by omega)
+    omega
 
 end TauCeti.Toric.Fan

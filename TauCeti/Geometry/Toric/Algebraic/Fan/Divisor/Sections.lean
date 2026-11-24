@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Supported
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.Weights
 
-import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Face
 
 /-!
@@ -146,8 +145,8 @@ instance instGradedMonoidDivisorSections (Phi : Fan i) :
     SetLike.GradedMonoid (Phi.divisorSections R) where
   one_mem := by
     have hzero : 0 ∈ Phi.divisorWeights 0 := zero_mem_divisorWeights_iff.2 le_rfl
-    simpa only [coe_supportedBasis, ← one_def] using
-      (supportedBasis (R := R) (Phi.divisorWeights 0) ⟨0, hzero⟩).property
+    simpa only [mem_supported, one_def, coeff_single, Finsupp.mem_supported] using
+      Finsupp.single_mem_supported R (1 : R) hzero
   mul_mem _ _ _ _ hf hg :=
     mul_mem_supported_of_add_subset (Phi.divisorWeights_add_subset _ _) hf hg
 
@@ -201,31 +200,8 @@ theorem coneDivisorSectionsRestrict_mul {sigma tau : Phi.cones} (h : tau ≤ sig
 algebra. The weights of a local section are stable under adding exponents of the chart ring. -/
 instance instModuleConeDivisorSections (sigma : Phi.cones) (a : Phi.Ray → ℤ) :
     Module (AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
-      (Phi.coneDivisorSections R sigma a) := by
-  let E := AddMonoidAlgebra R (N →+ ℤ)
-  let P := dualSemigroup Phi.lattice sigma.val
-  let e : AddMonoidAlgebra R P →+* E := mapDomainRingHom R P.subtype
-  letI : Module (AddMonoidAlgebra R P) E := Module.compHom E e
-  letI : SMul (AddMonoidAlgebra R P) (Phi.coneDivisorSections R sigma a) :=
-    ⟨fun g f ↦ ⟨e g * f.val, by
-      have hg : e g ∈ supported R R (P : Set (N →+ ℤ)) := by
-        refine mem_supported.2 fun u hu ↦ ?_
-        obtain ⟨v, rfl⟩ := (mem_range_mapDomain_iff (f := P.subtype) (e g)).1 ⟨g, rfl⟩ u hu
-        exact v.property
-      refine mul_mem_supported_of_add_subset (Set.add_subset_iff.2 ?_) hg f.property
-      intro u hu w hw
-      simpa only [add_comm] using add_mem_coneDivisorWeights hw hu⟩⟩
-  exact Function.Injective.module _ (Phi.coneDivisorSections R sigma a).subtype.toAddMonoidHom
-    Subtype.val_injective (fun _ _ ↦ rfl)
-
-/-- Chart scalars multiply local sections through the inclusion of exponents. -/
-@[simp]
-theorem coe_smul_coneDivisorSections (sigma : Phi.cones) (a : Phi.Ray → ℤ)
-    (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val))
-    (f : Phi.coneDivisorSections R sigma a) :
-    (↑(g • f) : AddMonoidAlgebra R (N →+ ℤ)) =
-      mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * f.val :=
-  (rfl)
+      (Phi.coneDivisorSections R sigma a) :=
+  supportedModule _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
 
 /-- Multiplication by the Cartier character trivializes the local section module over the chart
 ring. The character has value `-a ρ` on each ray of the chart. -/
@@ -233,42 +209,9 @@ def coneDivisorSectionsCartierEquiv {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m
     (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho) :
     AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val) ≃ₗ[
       AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)]
-      Phi.coneDivisorSections R sigma a := by
-  refine LinearEquiv.ofBijective (LinearMap.toSpanSingleton _ _
-    (supportedBasis (Phi.coneDivisorWeights sigma a)
-      ⟨m, mem_coneDivisorWeights.2 fun rho h ↦ (hm rho h).ge⟩)) ?_
-  let P := dualSemigroup Phi.lattice sigma.val
-  let K := AddMonoidAlgebra R P
-  let e : K →+* AddMonoidAlgebra R (N →+ ℤ) := mapDomainRingHom R P.subtype
-  have hinv : (single (-m) (1 : R) : AddMonoidAlgebra R (N →+ ℤ)) * single m 1 = 1 := by
-    simp [single_mul_single, one_def]
-  refine ⟨?_, ?_⟩
-  · intro g h hgh
-    apply mapDomain_injective (R := R) (f := P.subtype) Subtype.val_injective
-    have hprod : e g * single m 1 = e h * single m 1 := by
-      simpa only [LinearMap.toSpanSingleton_apply, coe_smul_coneDivisorSections, coe_supportedBasis]
-        using congrArg Subtype.val hgh
-    have hunit : IsUnit (single m (1 : R) : AddMonoidAlgebra R (N →+ ℤ)) :=
-      IsUnit.of_mul_eq_one _ ((mul_comm _ _).trans hinv)
-    exact hunit.mul_right_cancel hprod
-  · intro f
-    have hs : Phi.coneDivisorWeights sigma a + {-m} ⊆ (P : Set (N →+ ℤ)) := by
-      refine Set.add_subset_iff.2 fun v hv w hw ↦ ?_
-      subst w
-      rw [coneDivisorWeights_eq_vadd hm, Set.mem_vadd_set_iff_neg_vadd_mem] at hv
-      simpa only [vadd_eq_add, add_comm] using hv
-    have hsingle : single (-m) (1 : R) ∈ supported R R ({-m} : Set (N →+ ℤ)) := by
-      simpa only [coe_supportedBasis] using
-        (supportedBasis (R := R) ({-m} : Set (N →+ ℤ)) ⟨-m, Set.mem_singleton _⟩).property
-    have hs' : f.val * single (-m) 1 ∈ supported R R (P : Set (N →+ ℤ)) :=
-      mul_mem_supported_of_add_subset hs f.property hsingle
-    obtain ⟨g, hg⟩ :=
-      (mem_range_mapDomain_iff (f := P.subtype) (f.val * single (-m) 1)).2 fun u hu ↦
-        ⟨⟨u, mem_supported.1 hs' hu⟩, rfl⟩
-    have hge : mapDomainRingHom R P.subtype g = f.val * single (-m) 1 := hg
-    refine ⟨g, Subtype.ext ?_⟩
-    rw [LinearMap.toSpanSingleton_apply, coe_smul_coneDivisorSections, coe_supportedBasis, hge,
-      mul_assoc, hinv, mul_one]
+      Phi.coneDivisorSections R sigma a :=
+  supportedVAddEquiv _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
+    (coneDivisorWeights_eq_vadd hm)
 
 /-- The Cartier frame sends a chart function to its product with the frame monomial. -/
 @[simp]
@@ -277,71 +220,33 @@ theorem coe_coneDivisorSectionsCartierEquiv
     (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
     (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)) :
     (coneDivisorSectionsCartierEquiv hm g : AddMonoidAlgebra R (N →+ ℤ)) =
-      mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * single m 1 := by
-  -- The forward map of the equivalence is the scalar action on the generator.
-  let generator : Phi.coneDivisorSections R sigma a :=
-    supportedBasis (Phi.coneDivisorWeights sigma a)
-      ⟨m, mem_coneDivisorWeights.2 fun rho h ↦ (hm rho h).ge⟩
-  change (g • generator).val = _
-  simp only [generator, coe_smul_coneDivisorSections, coe_supportedBasis]
+      mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * single m 1 :=
+  coe_supportedVAddEquiv _ _ _ g
+
+/-- The inverse Cartier frame recovers the chart coordinate by multiplying by the inverse
+monomial in the character algebra. -/
+@[simp]
+theorem mapDomain_coneDivisorSectionsCartierEquiv_symm
+    {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m : N →+ ℤ}
+    (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
+    (f : Phi.coneDivisorSections R sigma a) :
+    mapDomain Subtype.val
+        ((coneDivisorSectionsCartierEquiv hm).symm f) = f.val * single (-m) 1 := by
+  calc
+    _ = (coneDivisorSectionsCartierEquiv hm ((coneDivisorSectionsCartierEquiv hm).symm f)).val *
+        single (-m) 1 := by
+      simp only [coe_coneDivisorSectionsCartierEquiv, mul_assoc, single_mul_single, add_neg_cancel,
+        mul_one, ← one_def, mapDomainRingHom_apply, AddSubmonoid.coe_subtype]
+    _ = _ := by rw [LinearEquiv.apply_symm_apply]
 
 /-! ### Clearing denominators on a face -/
-
-/-- A character exposing a face is strictly positive on the primitive generator of every ray
-of the larger cone outside the face. -/
-private theorem ray_eval_pos_of_face_eq_inf_ker {sigma tau : Phi.cones} {m : N →+ ℤ}
-    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
-    (htau : tau.val =
-      sigma.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)))
-    {rho : Phi.Ray} (hσ : rho.toCone ≤ sigma) (hτ : ¬rho.toCone ≤ tau) :
-    0 < m rho.primitiveGenerator := by
-  have hnonneg := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hσ
-  refine lt_of_le_of_ne hnonneg fun hz ↦ hτ ?_
-  have hgen : i rho.primitiveGenerator ∈ tau.val := by
-    rw [htau]
-    exact ⟨hσ rho.primitiveGenerator_mem, by simp [Phi.lattice.realCharacter_apply, ← hz]⟩
-  have htoric := Phi.isToricCone rho.toCone.property
-  have hRay := (rho.toToricRay Phi rho.toCone le_rfl).eq_hull_singleton
-    (htoric.salient.anti (rho.toToricRay Phi rho.toCone le_rfl).val.isFaceOf.le)
-    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem (by
-      simpa only [map_zero] using
-        (Phi.lattice.injective.ne (a₂ := 0) rho.primitiveGenerator_isPrimitive.ne_zero))
-  apply Subtype.coe_le_coe.mp
-  rw [← Ray.toPointedCone_toToricRay Phi rho rho.toCone le_rfl, hRay]
-  exact Submodule.span_le.2 (Set.singleton_subset_iff.2 hgen)
-
-/-- Finite sets of weights on a face can all be moved into the larger cone's weight set by
-adding the same nonnegative multiple of a character exposing the face. -/
-theorem exists_nsmul_add_mem_coneDivisorWeights {sigma tau : Phi.cones} {m : N →+ ℤ}
-    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
-    (htau : tau.val =
-      sigma.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)))
-    {a : Phi.Ray → ℤ} (s : Finset (N →+ ℤ))
-    (hs : (s : Set (N →+ ℤ)) ⊆ Phi.coneDivisorWeights tau a) :
-    ∃ n : ℕ, ∀ u ∈ s, n • m + u ∈ Phi.coneDivisorWeights sigma a := by
-  -- Bound all the deficits at once, using that each positive pairing is at least one.
-  obtain ⟨n, hn⟩ := Finite.bddAbove_range fun p : (↑s : Set (N →+ ℤ)) × Phi.Ray ↦
-    (-a p.2 - p.1.val p.2.primitiveGenerator).toNat
-  refine ⟨n, fun u hu ↦ mem_coneDivisorWeights.2 fun rho hρ ↦ ?_⟩
-  simp only [AddMonoidHom.add_apply, AddMonoidHom.nsmul_apply, nsmul_eq_mul]
-  by_cases hρτ : rho.toCone ≤ tau
-  · have huτ := mem_coneDivisorWeights.1 (hs hu) rho hρτ
-    have hmρ := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hρ
-    exact huτ.trans (le_add_of_nonneg_left (mul_nonneg (Int.natCast_nonneg _) hmρ))
-  · have hpos := ray_eval_pos_of_face_eq_inf_ker hm htau hρ hρτ
-    let p : (↑s : Set (N →+ ℤ)) × Phi.Ray := (⟨u, hu⟩, rho)
-    have hbound : (-a rho - u rho.primitiveGenerator).toNat ≤ n :=
-      hn (Set.mem_range_self p)
-    have hmul : (n : ℤ) ≤ (n : ℤ) * m rho.primitiveGenerator :=
-      le_mul_of_one_le_right (Int.natCast_nonneg _) (by omega)
-    omega
 
 /-- A section on a face becomes a section on the larger chart after multiplication by a
 sufficiently large power of the monomial exposing the face. -/
 theorem exists_pow_mul_mem_coneDivisorSections {sigma tau : Phi.cones} {m : N →+ ℤ}
     (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
-    (htau : tau.val =
-      sigma.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)))
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
     {a : Phi.Ray → ℤ} (f : Phi.coneDivisorSections R tau a) :
     ∃ n : ℕ, single m (1 : R) ^ n * f.val ∈ Phi.coneDivisorSections R sigma a := by
   classical
@@ -367,9 +272,8 @@ def coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : tau ≤ si
   -- The local scalar action on the face is definitionally restriction of scalars along `e`.
   change ((coneDivisorSectionsRestrict h a (g • f)).val) =
     ((e g • coneDivisorSectionsRestrict h a f).val)
-  simp only [coe_coneDivisorSectionsRestrict, coe_smul_coneDivisorSections]
-  rw [← RingHom.comp_apply, ← mapDomainRingHom_comp]
-  rfl
+  simp only [coe_coneDivisorSectionsRestrict, coe_smul_supportedModule]
+  rw [← RingHom.comp_apply, ← mapDomainRingHom_comp, AddSubmonoid.subtype_comp_inclusion]
 
 @[simp]
 theorem coe_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : tau ≤ sigma)
@@ -381,8 +285,8 @@ theorem coe_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones} (h : ta
 the corresponding monomial in the chart ring. -/
 theorem isLocalizedModule_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.cones}
     (h : tau ≤ sigma) (m : dualSemigroup Phi.lattice sigma.val)
-    (htau : tau.val =
-      sigma.val ⊓ PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)))
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
     (a : Phi.Ray → ℤ) :
     letI := Module.compHom (Phi.coneDivisorSections R tau a)
       (mapDomainRingHom R (AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h)))
@@ -395,13 +299,14 @@ theorem isLocalizedModule_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.
   let _ := Module.compHom (Phi.coneDivisorSections R tau a) e
   have hneg : -(m : N →+ ℤ) ∈ Q := by
     dsimp only [Q]
-    rw [htau]
+    rw [← htau]
     exact neg_mem_dualSemigroup_inf_ker Phi.lattice sigma.val m
   have hunit : IsUnit (e (single m 1)) := by
-    refine IsUnit.of_mul_eq_one (single ⟨-m.val, hneg⟩ 1) ?_
-    simp only [e, mapDomainRingHom_apply, mapDomain_single, single_mul_single, one_mul, one_def]
-    congr 1
-    exact Subtype.ext (add_neg_cancel _)
+    let j := AddSubmonoid.inclusion (dualSemigroup_anti Phi.lattice h)
+    have hj : IsUnit (Multiplicative.ofAdd (j m)) :=
+      IsUnit.of_mul_eq_one (Multiplicative.ofAdd (⟨-m.val, hneg⟩ : Q)) <|
+        congrArg Multiplicative.ofAdd (Subtype.ext (add_neg_cancel m.val))
+    simpa [e, j] using hj.map (AddMonoidAlgebra.of R Q)
   refine ⟨?_, ?_, fun hxy ↦ ⟨1, ?_⟩⟩
   · rintro ⟨_, n, rfl⟩
     rw [Module.End.isUnit_iff]
@@ -415,7 +320,7 @@ theorem isLocalizedModule_coneDivisorSectionsRestrictOverChart {sigma tau : Phi.
     refine ⟨⟨⟨_, hn⟩, ⟨_, ⟨n, rfl⟩⟩⟩, Subtype.ext ?_⟩
     -- Compute the scalar action using the face ring and then its inclusion into characters.
     change (e (single m 1 ^ n) • f).val = _
-    rw [coe_smul_coneDivisorSections]
+    rw [coe_smul_supportedModule]
     simp [e, mapDomainRingHom_apply]
   · have := congrArg Subtype.val hxy
     simpa only [one_smul, coe_coneDivisorSectionsRestrictOverChart, Subtype.val_inj] using this

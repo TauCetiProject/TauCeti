@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Support
 public import Mathlib.RingTheory.TensorProduct.Free
 
 import Mathlib.Algebra.Algebra.Bilinear
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Support submodules of additive monoid algebras
@@ -16,7 +17,8 @@ import Mathlib.Algebra.Algebra.Bilinear
 Mathlib's `AddMonoidAlgebra.supported` fixes the set of allowed exponents in a monoid algebra.
 The supported characters form a basis, so extending scalars changes only their coefficients.
 Convolution restricts to a bilinear map whenever addition of exponents lands in the target
-support set.
+support set. An additive submonoid acts on a support submodule when its exponents preserve
+the support set, and a translate of the submonoid gives a free module of rank one.
 -/
 
 public section
@@ -32,21 +34,21 @@ section Basis
 variable [Semiring R] (s : Set M)
 
 /-- The monomial basis of the submodule supported on `s`, indexed by the elements of `s`. -/
-noncomputable def supportedBasis : Module.Basis s R (supported R R s) :=
+noncomputable def basisSupported : Module.Basis s R (supported R R s) :=
   Module.Basis.ofRepr (supportedEquivFinsupp s)
 
 /-- The coordinates in the supported monomial basis are the corresponding coefficients. -/
 @[simp]
-theorem supportedBasis_repr_apply (f : supported R R s) (m : s) :
-    (supportedBasis s).repr f m = (f : R[M]).coeff m :=
+theorem basisSupported_repr_apply (f : supported R R s) (m : s) :
+    (basisSupported s).repr f m = (f : R[M]).coeff m :=
   (rfl)
 
 /-- A supported monomial basis vector is the monomial with coefficient one at its index. -/
 @[simp]
-theorem coe_supportedBasis (m : s) :
-    (supportedBasis (R := R) s m : R[M]) = single (m : M) 1 := by
+theorem coe_basisSupported (m : s) :
+    (basisSupported (R := R) s m : R[M]) = single (m : M) 1 := by
   classical
-  simp [supportedBasis, supportedEquivFinsupp]
+  simp [basisSupported, supportedEquivFinsupp]
 
 end Basis
 
@@ -67,8 +69,8 @@ theorem coeff_supportedMap (φ : R →+* S) (f : supported R R s) (m : M) :
   classical
   by_cases hm : m ∈ s
   · let j : s := ⟨m, hm⟩
-    rw [← supportedBasis_repr_apply s _ j, ← supportedBasis_repr_apply s f j]
-    simp [supportedMap, supportedBasis]
+    rw [← basisSupported_repr_apply s _ j, ← basisSupported_repr_apply s f j]
+    simp [supportedMap, basisSupported]
   · rw [mem_supported'.1 (supportedMap s φ f).property m hm, mem_supported'.1 f.property m hm,
       map_zero]
 
@@ -102,16 +104,16 @@ variable [CommSemiring R] [Semiring S] [Algebra R S] (s : Set M)
 exponents over the new coefficient semiring. -/
 noncomputable def supportedBaseChange :
     S ⊗[R] supported R R s ≃ₗ[S] supported S S s :=
-  (Algebra.TensorProduct.basis S (supportedBasis s)).repr.trans
+  (Algebra.TensorProduct.basis S (basisSupported s)).repr.trans
     (supportedEquivFinsupp s).symm
 
 /-- On pure tensors the scalar extension is coefficient change followed by scalar multiplication. -/
 @[simp]
 theorem supportedBaseChange_tmul (c : S) (f : supported R R s) :
     supportedBaseChange s (c ⊗ₜ[R] f) = c • supportedMap s (algebraMap R S) f := by
-  apply (supportedBasis s).repr.injective
+  apply (basisSupported s).repr.injective
   ext m
-  simp [supportedBaseChange, supportedBasis, supportedMap]
+  simp [supportedBaseChange, basisSupported, supportedMap]
 
 end BaseChange
 
@@ -130,6 +132,89 @@ theorem mul_mem_supported_of_add_subset (h : s + t ⊆ u) {f g : R[M]}
   exact Set.add_mem_add (mem_supported.1 hf ha) (mem_supported.1 hg hb)
 
 end Multiplication
+
+section Submonoid
+
+variable [Semiring R] [AddMonoid M] (P : AddSubmonoid M) {s : Set M}
+
+/-- The submonoid algebra has image equal to the submodule supported on the submonoid. -/
+theorem mem_range_mapDomainRingHom_subtype {f : R[M]} :
+    f ∈ Set.range (mapDomainRingHom R P.subtype) ↔ f ∈ supported R R (P : Set M) := by
+  -- The application lemma for the bundled map does not rewrite under `Set.range`.
+  change f ∈ Set.range (mapDomain (R := R) P.subtype) ↔ _
+  simp only [mem_range_mapDomain_iff, ← AddMonoidHom.coe_mrange,
+    AddSubmonoid.mrange_subtype, mem_supported, Set.subset_def, Finset.mem_coe]
+
+/-- A submonoid algebra acts by convolution on a support set stable under adding exponents
+from the submonoid on the left. -/
+@[instance_reducible]
+noncomputable def supportedModule (h : (P : Set M) + s ⊆ s) :
+    Module (AddMonoidAlgebra R P) (supported R R s) := by
+  let e := mapDomainRingHom R P.subtype
+  letI := Module.compHom R[M] e
+  letI : SMul (AddMonoidAlgebra R P) (supported R R s) :=
+    ⟨fun g f ↦ ⟨e g * f.val, mul_mem_supported_of_add_subset h
+      ((mem_range_mapDomainRingHom_subtype P).1 ⟨g, rfl⟩) f.property⟩⟩
+  exact Function.Injective.module _ (supported R R s).subtype.toAddMonoidHom
+    Subtype.val_injective (fun _ _ ↦ rfl)
+
+/-- Scalar multiplication is convolution in the ambient monoid algebra. -/
+@[simp]
+theorem coe_smul_supportedModule (h : (P : Set M) + s ⊆ s)
+    (g : AddMonoidAlgebra R P) (f : supported R R s) :
+    letI := supportedModule (R := R) P h
+    (↑(g • f) : R[M]) = mapDomainRingHom R P.subtype g * f.val :=
+  (rfl)
+
+end Submonoid
+
+section Translate
+
+variable [Semiring R] [AddCommGroup M] (P : AddSubmonoid M) {s : Set M} {m : M}
+
+/-- Multiplying by the monomial at `m` identifies the submonoid algebra with the module
+supported on its translate by `m`. -/
+noncomputable def supportedVAddEquiv (h : (P : Set M) + s ⊆ s)
+    (hs : s = m +ᵥ (P : Set M)) :
+    letI := supportedModule (R := R) P h
+    AddMonoidAlgebra R P ≃ₗ[AddMonoidAlgebra R P] supported R R s := by
+  letI := supportedModule (R := R) P h
+  have hm : m ∈ s := by rw [hs]; simpa using Set.vadd_mem_vadd_set (a := m) P.zero_mem
+  refine LinearEquiv.ofBijective (LinearMap.toSpanSingleton _ _ (basisSupported s ⟨m, hm⟩)) ?_
+  have hinv : (single (-m) (1 : R) : R[M]) * single m 1 = 1 := by
+    simp [single_mul_single, one_def]
+  refine ⟨?_, ?_⟩
+  · intro g k hgk
+    apply mapDomain_injective (R := R) (f := P.subtype) P.subtype_injective
+    have hprod := congrArg (fun f : supported R R s ↦ f.val * single (-m) 1) hgk
+    simpa only [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported,
+      mul_assoc, single_mul_single, add_neg_cancel, mul_one, ← one_def, mapDomainRingHom_apply]
+      using hprod
+  · intro f
+    have hsub : s + {-m} ⊆ (P : Set M) := by
+      refine Set.add_subset_iff.2 fun v hv w hw ↦ ?_
+      subst w
+      rw [hs, Set.mem_vadd_set_iff_neg_vadd_mem] at hv
+      simpa only [vadd_eq_add, add_comm] using hv
+    have hsingle : single (-m) (1 : R) ∈ supported R R ({-m} : Set M) := by
+      simpa only [mem_supported, coeff_single, Finsupp.mem_supported] using
+        Finsupp.single_mem_supported R (1 : R) (Set.mem_singleton (-m))
+    obtain ⟨g, hg⟩ := (mem_range_mapDomainRingHom_subtype P).2
+      (mul_mem_supported_of_add_subset hsub f.property hsingle)
+    refine ⟨g, Subtype.ext ?_⟩
+    rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported, hg,
+      mul_assoc, hinv, mul_one]
+
+/-- The translate frame sends a scalar to its product with the frame monomial. -/
+@[simp]
+theorem coe_supportedVAddEquiv (h : (P : Set M) + s ⊆ s)
+    (hs : s = m +ᵥ (P : Set M)) (g : AddMonoidAlgebra R P) :
+    (supportedVAddEquiv P h hs g : R[M]) = mapDomainRingHom R P.subtype g * single m 1 := by
+  rw [supportedVAddEquiv]
+  erw [LinearEquiv.ofBijective_apply]
+  rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported]
+
+end Translate
 
 variable [CommSemiring R] [AddMonoid M] {s t u : Set M}
 
