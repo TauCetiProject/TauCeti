@@ -269,10 +269,13 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
     exists_primitive_mulVec_eq_zero_of_ker_map_eq_span A hA hp' hXvec hker
   let Q : Matrix n n ℤ := (Equiv.ofBijective _ vec_bijective).symm v
   have hQv : Q.vec = v := Equiv.ofBijective_apply_symm_apply _ vec_bijective v
+  -- `vec` is column-major: the entry `Q i j` sits at index `(j, i)` of `v`.
+  have hQij (i j : n) : Q i j = v (j, i) := by
+    rw [← hQv, vec_eq_uncurry, Function.uncurry_apply_pair]
   have hQ : Q.map (Int.castRingHom (ZMod p)) = c • X := by
     rw [← vec_inj, vec_map, hQv, vec_smul, ← hv, Int.coe_castRingHom, Function.comp_def]
-  refine ⟨Q, hQv ▸ hAv, fun d hd ↦ hprim d fun ij ↦ hQv ▸ hd ij.2 ij.1,
-    fun i j ↦ by rw [← hQv] at hbound; exact hbound (j, i), ⟨c, hc, hQ⟩, ?_⟩
+  refine ⟨Q, hQv ▸ hAv, fun d hd ↦ hprim d fun ⟨j, i⟩ ↦ by rw [← hQij]; exact hd i j,
+    fun i j ↦ by rw [hQij]; exact hbound (j, i), ⟨c, hc, hQ⟩, ?_⟩
   rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_det, ← Int.coe_castRingHom, hQ, det_smul]
   exact mul_ne_zero (pow_ne_zero _ hc) hX
 
