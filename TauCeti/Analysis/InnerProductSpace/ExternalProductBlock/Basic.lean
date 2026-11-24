@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Lp.ProdLp
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 

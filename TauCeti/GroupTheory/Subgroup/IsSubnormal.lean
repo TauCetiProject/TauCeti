@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.IsSubnormal
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Solvable
 import TauCeti.GroupTheory.QuotientGroup.Subquotient
+import TauCeti.GroupTheory.Solvable
 
 /-!
 # Subnormal sections and simple composition factors of groups
@@ -166,7 +167,7 @@ theorem isMulCommutative_of_isSolvable [Group.IsSolvable G] [IsSimpleGroup S]
     (h : HasSubnormalSection G S) : IsMulCommutative S := by
   rcases h with ⟨H, K, _, _, _, ⟨e⟩⟩
   have : Group.IsSolvable S := Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective
-  exact IsMulCommutative.of_comm (IsSimpleGroup.comm_iff_isSolvable.mpr this)
+  exact IsSimpleGroup.isMulCommutative_of_isSolvable S
 
 /-- Every nontrivial subnormal section of a simple group is isomorphic to that group. -/
 theorem nonempty_mulEquiv_of_isSimpleGroup [IsSimpleGroup G] [Nontrivial S]

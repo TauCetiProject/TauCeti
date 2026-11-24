@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Obstructions
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient
 
 /-!
@@ -44,8 +44,10 @@ theorem card_fin_two_zmod_eight :
     Nat.card SL(2, ZMod 8) = 384 ∧
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 ∧
       Nat.card PSL(2, ZMod 8) = 96 := by
-  have hsl : Nat.card SL(2, ZMod 8) = 384 :=
-    card_fin_two_zmod_prime_pow (p := 2) (k := 3) Nat.prime_two (by omega)
+  have hsl : Nat.card SL(2, ZMod 8) = 384 := by
+    rw [show (8 : ℕ) = 2 ^ 3 by norm_num, Matrix.natCard_SL_zmod_pow three_ne_zero,
+      TauCeti.natCard_SL_fin_two_zmod, Fintype.card_fin]
+    norm_num
   have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 := by
     have h := TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (N := 8) (by omega)
     rw [hsl] at h; omega
@@ -64,8 +66,9 @@ theorem card_fin_two_zmod_twelve :
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 ∧
       Nat.card PSL(2, ZMod 12) = 288 := by
   have hsl : Nat.card SL(2, ZMod 12) = 1152 := by
-    rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, card_zmod_mul_of_coprime (Fin 2) (by decide),
-      card_fin_two_zmod_prime_pow Nat.prime_two (by omega), card_fin_two_zmod_prime Nat.prime_three]
+    rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+      Matrix.natCard_SL_zmod_pow two_ne_zero, TauCeti.natCard_SL_fin_two_zmod,
+      TauCeti.natCard_SL_fin_two_zmod, Fintype.card_fin]
     norm_num
   have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 := by
     have h := TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (N := 12) (by omega)
@@ -83,7 +86,8 @@ theorem card_fin_two_zmod_twelve :
 
 private theorem gammaProjective_index_eleven : (GammaProjective 11).index = 660 := by
   have h := two_mul_index_map_Gamma (N := 11) (by omega)
-  rw [← GammaProjective_def, card_fin_two_zmod_prime (by decide)] at h
+  have : Fact (Nat.Prime 11) := ⟨by decide⟩
+  rw [← GammaProjective_def, TauCeti.natCard_SL_fin_two_zmod] at h
   omega
 
 /-- Projective indices `(GammaProjective N).index` at `N ∈ {6, 8, 10, 11, 12}` and
@@ -94,22 +98,10 @@ theorem gammaProjective_index_checks :
       ((GammaProjective 10).index = 360 ∧ ¬ 7 ∣ (GammaProjective 10).index) ∧
       (GammaProjective 11).index = 660 ∧
       ((GammaProjective 12).index = 576 ∧ ¬ 7 ∣ (GammaProjective 12).index) := by
-  have h6 : (GammaProjective 6).index = 72 := by
-    have h := two_mul_index_map_Gamma (N := 6) (by omega)
-    rw [← GammaProjective_def, show (6 : ℕ) = 2 * 3 by norm_num,
-      card_zmod_mul_of_coprime (Fin 2) (by decide),
-      card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_three] at h
-    norm_num at h; omega
-  have h8 : (GammaProjective 8).index = 192 :=
-    GammaProjective_index_eq_card 8 ▸ card_fin_two_zmod_eight.2.1
-  have h10 : (GammaProjective 10).index = 360 := by
-    have h := two_mul_index_map_Gamma (N := 10) (by omega)
-    rw [← GammaProjective_def, show (10 : ℕ) = 2 * 5 by norm_num,
-      card_zmod_mul_of_coprime (Fin 2) (by decide),
-      card_fin_two_zmod_prime Nat.prime_two, card_fin_two_zmod_prime Nat.prime_five] at h
-    norm_num at h; omega
-  have h12 : (GammaProjective 12).index = 576 :=
-    GammaProjective_index_eq_card 12 ▸ card_fin_two_zmod_twelve.2.1
+  have h6 : (GammaProjective 6).index = 72 := GammaProjective_def 6 ▸ index_map_Gamma_six
+  have h8 : (GammaProjective 8).index = 192 := GammaProjective_def 8 ▸ index_map_Gamma_eight
+  have h10 : (GammaProjective 10).index = 360 := GammaProjective_def 10 ▸ index_map_Gamma_ten
+  have h12 : (GammaProjective 12).index = 576 := GammaProjective_def 12 ▸ index_map_Gamma_twelve
   refine ⟨⟨h6, ?_⟩, h8, ⟨h10, ?_⟩, gammaProjective_index_eleven, ⟨h12, ?_⟩⟩ <;> omega
 
 /-- Separation of the composition-factor obstruction from the order obstruction (`N = 11`,

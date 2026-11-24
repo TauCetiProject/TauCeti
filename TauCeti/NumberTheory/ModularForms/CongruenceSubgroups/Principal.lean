@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 
 /-!
 # Principal congruence quotients, index formulas, and order obstructions
@@ -113,24 +113,33 @@ theorem index_Gamma_eq_card_zmod_mul_Gamma1_index (N : ℕ) :
 /-- For a prime `p`, `[SL₂(ℤ) : Γ(p)] = p(p² - 1)`. -/
 theorem index_Gamma_prime {p : ℕ} (hp : p.Prime) :
     (Gamma p).index = p * (p ^ 2 - 1) := by
-  rw [index_Gamma, card_fin_two_zmod_prime hp]
+  have : Fact p.Prime := ⟨hp⟩
+  rw [index_Gamma, TauCeti.natCard_SL_fin_two_zmod]
 
 /-- For a prime `p` and `1 ≤ k`, `[SL₂(ℤ) : Γ(p^k)] = p^{3k - 2}(p² - 1)`. -/
 theorem index_Gamma_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
     (Gamma (p ^ k)).index = p ^ (3 * k - 2) * (p ^ 2 - 1) := by
-  rw [index_Gamma, card_fin_two_zmod_prime_pow hp hk]
+  have : Fact p.Prime := ⟨hp⟩
+  rw [index_Gamma, Matrix.natCard_SL_zmod_pow (by omega), Fintype.card_fin,
+    TauCeti.natCard_SL_fin_two_zmod, ← mul_assoc, ← pow_succ]
+  congr 1; exact congrArg (p ^ ·) (by omega)
 
 /-- For `N ≠ 0`, `[SL₂(ℤ) : Γ(N)] = ∏_{p^k ∥ N} p^{3k - 2}(p² - 1)`. -/
 theorem index_Gamma_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
     (Gamma N).index = N.factorization.prod fun p k ↦ p ^ (3 * k - 2) * (p ^ 2 - 1) := by
-  rw [index_Gamma, card_fin_two_zmod_eq_prod_factorization hN]
+  rw [index_Gamma, Matrix.natCard_SL_zmod_eq_prod_factorization hN]
+  refine Finsupp.prod_congr fun p hp ↦ ?_
+  have : Fact p.Prime := ⟨Nat.prime_of_mem_primeFactors hp⟩
+  have hk : 1 ≤ N.factorization p := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hp)
+  rw [Fintype.card_fin, TauCeti.natCard_SL_fin_two_zmod, ← mul_assoc, ← pow_succ]
+  congr 1; exact congrArg (p ^ ·) (by omega)
 
 /-- **Cleared Euler product for `[SL₂(ℤ) : Γ(N)]`** (valid for every `N : ℕ`):
 `[SL₂(ℤ) : Γ(N)] · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`. -/
 theorem index_Gamma_mul_prod_primeFactors_sq (N : ℕ) :
     (Gamma N).index * ∏ p ∈ N.primeFactors, p ^ 2 =
       N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
-  rw [index_Gamma, card_fin_two_zmod_mul_prod_primeFactors_sq]
+  rw [index_Gamma, TauCeti.natCard_SL_fin_two_zmod_mul_prod_primeFactors]
 
 /-! ### Order obstructions in `SL₂(ℤ)` -/
 

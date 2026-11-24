@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
 import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Bounding prime torsion by the topological genus
@@ -97,7 +98,7 @@ private abbrev intersectionMod (T : NumericalType.{u}) (ℓ : ℕ) :
 private lemma intCast_vecMul (y : T.Component → ℤ) (j : T.Component) :
     (((y ᵥ* T.intersection) j : ℤ) : ZMod ℓ) =
       ((fun i ↦ (y i : ZMod ℓ)) ᵥ* intersectionMod T ℓ) j :=
-  RingHom.map_vecMul (Int.castRingHom (ZMod ℓ)) T.intersection y j
+  (congrFun (map_intCast_vecMul y T.intersection) j).symm
 
 private lemma dvd_intLift_vecMul {x : T.Component → ZMod ℓ}
     (hx : x ∈ LinearMap.ker (intersectionMod T ℓ).vecMulLinear) (j : T.Component) :

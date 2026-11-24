@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.P
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.FinTwo.Solvable
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CompositionFactors
 import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 

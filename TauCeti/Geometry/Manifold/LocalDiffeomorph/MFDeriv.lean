@@ -61,6 +61,9 @@ at `f x`.
 * `PartialDiffeomorph.mfderiv_symm_trans_apply_mfderiv_apply`: for partial diffeomorphisms `Φ₁`,
   `Φ₂` out of the same manifold, the differential of `Φ₂ ∘ Φ₁⁻¹` carries that of `Φ₁` to that of
   `Φ₂`.
+* `PartialDiffeomorph.mfderiv_trans`: the chain rule for composites of partial diffeomorphisms.
+* `PartialDiffeomorph.mfderiv_trans_symm_apply`: if `Φ₁` and `Φ₂` have the same value and
+  differential at `x`, the comparison `Φ₂⁻¹ ∘ Φ₁` has the identity as differential there.
 * `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
   differential read in that space is bijective at a point of the source.
 * `PartialDiffeomorph.hasDerivAt_comp_symm_of_mfderiv_eq_zero`: at a critical point of a map into a
@@ -68,6 +71,10 @@ at `f x`.
   curve `t ↦ φ⁻¹ (L t)` vanishes.
 * `OpenPartialHomeomorph.hasFDerivAt_comp_symm_trans`: the chain rule for transitions
   `ψ₀ ∘ ψ₂⁻¹ = (ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)` of open partial homeomorphisms into normed spaces.
+* `OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn`: the transition `ψ₂ ∘ ψ₁⁻¹` is
+  `C^n` on its source when `ψ₂` and `ψ₁⁻¹` are.
+* `OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn`: the transition
+  `ψ₂ ∘ ψ₁⁻¹` and its inverse are `C^n` when `ψ₁`, `ψ₂` and their inverses are.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -164,6 +171,29 @@ theorem hasFDerivAt_comp_symm_trans (ψ₀ : OpenPartialHomeomorph M V₀)
   filter_upwards [hsource] with z hz
   simp [ψ₁.left_inv hz]
 
+/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into normed spaces is
+`C^n` on its source when `ψ₂` is `C^n` on its source and `ψ₁⁻¹` is `C^n` on its target. -/
+theorem contDiffOn_symm_trans_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V₁}
+    {ψ₂ : OpenPartialHomeomorph M V₂} (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₂) n ψ₂ ψ₂.source)
+    (hψ₁ : ContMDiffOn 𝓘(𝕜, V₁) I n ψ₁.symm ψ₁.target) :
+    ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂) (ψ₁.symm.trans ψ₂).source := by
+  rw [trans_source, coe_trans]
+  exact contMDiffOn_iff_contDiffOn.1 (hψ₂.comp (hψ₁.mono Set.inter_subset_left) fun _ hy ↦ hy.2)
+
+/-- The transition `ψ₂ ∘ ψ₁⁻¹` between open partial homeomorphisms from `M` into normed spaces is
+`C^n` on its source, and its inverse `ψ₁ ∘ ψ₂⁻¹` is `C^n` on its target, when `ψ₁`, `ψ₂` and their
+inverses are `C^n`. -/
+theorem contDiffOn_symm_trans_and_symm_of_contMDiffOn {ψ₁ : OpenPartialHomeomorph M V₁}
+    {ψ₂ : OpenPartialHomeomorph M V₂} (hψ₁ : ContMDiffOn I 𝓘(𝕜, V₁) n ψ₁ ψ₁.source)
+    (hψ₁s : ContMDiffOn 𝓘(𝕜, V₁) I n ψ₁.symm ψ₁.target)
+    (hψ₂ : ContMDiffOn I 𝓘(𝕜, V₂) n ψ₂ ψ₂.source)
+    (hψ₂s : ContMDiffOn 𝓘(𝕜, V₂) I n ψ₂.symm ψ₂.target) :
+    ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂) (ψ₁.symm.trans ψ₂).source ∧
+      ContDiffOn 𝕜 n (ψ₁.symm.trans ψ₂).symm (ψ₁.symm.trans ψ₂).target := by
+  refine ⟨contDiffOn_symm_trans_of_contMDiffOn hψ₂ hψ₁s, ?_⟩
+  rw [trans_symm_eq_symm_trans_symm, symm_symm]
+  exact contDiffOn_symm_trans_of_contMDiffOn hψ₁ hψ₂s
+
 end Transition
 
 /-- **The chain rule for a change of chart into a normed space.** Let `ψ₁` and `ψ₂` be open
@@ -254,6 +284,30 @@ theorem mfderiv_symm_trans_apply_mfderiv_apply {G : Type*} [NormedAddCommGroup G
   rw [coe_trans, mfderiv_comp_apply_of_eq (Φ₁ x) (Φ₂.mdifferentiableAt hn h₂)
     (Φ₁.symm.mdifferentiableAt hn (Φ₁.map_source h₁)) (Φ₁.left_inv h₁),
     Φ₁.mfderiv_symm_apply_mfderiv_apply hn h₁]
+
+/-- **The chain rule for partial diffeomorphisms.** At a point of the source of `Ψ ∘ Φ`, its
+differential is the differential of `Ψ` at `Φ x` composed with that of `Φ` at `x`. -/
+theorem mfderiv_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] {H'' : Type*}
+    [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''} {P : Type*} [TopologicalSpace P]
+    [ChartedSpace H'' P] (Φ : PartialDiffeomorph I J M N n) (Ψ : PartialDiffeomorph J K N P n)
+    (hn : n ≠ 0) {x : M} (hx : x ∈ (Φ.trans Ψ).source) :
+    mfderiv I K (Φ.trans Ψ) x = (mfderiv J K Ψ (Φ x)).comp (mfderiv I J Φ x) := by
+  rw [trans_source] at hx
+  rw [coe_trans]
+  exact mfderiv_comp x (Ψ.mdifferentiableAt hn hx.2) (Φ.mdifferentiableAt hn hx.1)
+
+/-- **Comparing two partial diffeomorphisms with the same first-order data.** If `Φ₁` and `Φ₂`
+take the same value and have the same differential at a point `x` of both sources, then the
+comparison `Φ₂⁻¹ ∘ Φ₁` has the identity as differential at `x`. -/
+theorem mfderiv_trans_symm_apply (Φ₁ Φ₂ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
+    (h₁ : x ∈ Φ₁.source) (h₂ : x ∈ Φ₂.source) (h : Φ₁ x = Φ₂ x)
+    (hd : mfderiv I J Φ₁ x = mfderiv I J Φ₂ x) (v : TangentSpace I x) :
+    mfderiv I I (Φ₁.trans Φ₂.symm) x v = v := by
+  rw [coe_trans, mfderiv_comp_apply_of_eq x
+    (Φ₂.symm.mdifferentiableAt hn (Φ₂.map_source h₂)) (Φ₁.mdifferentiableAt hn h₁) h, hd]
+  -- The rewrite by `hd` leaves the tangent space at `Φ₁ x` as the codomain of `dΦ₂`; both are the
+  -- model space, so the inverse law at `Φ₂ x` applies.
+  exact Φ₂.mfderiv_symm_apply_mfderiv_apply hn h₂ v
 
 /-- The differential of a partial diffeomorphism into a normed space, read in that space, is
 bijective at a point of the source. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 import Mathlib.Algebra.Field.ZMod
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient
 
 /-!
@@ -35,8 +35,6 @@ open scoped MatrixGroups
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
-open Matrix.SpecialLinearGroup
-
 /-- Over `𝔽₂`, the center of `SL₂(𝔽₂)` is trivial, so `|PSL₂(𝔽₂)| = |SL₂(𝔽₂)| = 6`. -/
 theorem card_fin_two_zmod_two : Nat.card PSL(2, ZMod 2) = 6 := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
@@ -49,7 +47,7 @@ theorem two_mul_card_fin_two_zmod_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
   have : Fact p.Prime := ⟨hp⟩
   rw [← Nat.card_congr (TauCeti.Matrix.SignedQuotient.equivPSL (ZMod p)).toEquiv,
     TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (by have := hp.two_le; omega),
-    card_fin_two_zmod_prime hp]
+    TauCeti.natCard_SL_fin_two_zmod]
 
 /-- **Distinct primes have non-isomorphic projective special linear groups `PSL₂(𝔽_p)`:** if
 `PSL₂(𝔽_p) ≃* PSL₂(𝔽_q)` with `p, q` prime, then `p = q`. -/

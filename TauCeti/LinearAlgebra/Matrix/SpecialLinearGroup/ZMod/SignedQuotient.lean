@@ -8,15 +8,15 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 
 /-!
 # Orders of `{±I}` and the signed quotient `SL₂(ℤ/Nℤ) ⧸ {±I}`
 
 When `N ∣ 2` (`N = 1` or `N = 2`), `-I = I` modulo `N`, so `{±I}` is trivial and the signed
-quotient `Q_N = TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)` has order `|SL₂(ℤ/Nℤ)|` (`1` at
-`N = 1`, `6` at `N = 2`). For `¬ N ∣ 2` — in particular for all `N ≥ 3` — `{±I}` has order `2`,
-giving `2 · |Q_N| = |SL₂(ℤ/Nℤ)|` and the cleared Euler product
-`2 · |Q_N| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`.
+quotient `Q_N = TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)` has order `|SL₂(ℤ/Nℤ)|` (`6` at
+`N = 2`). For `¬ N ∣ 2` — in particular for all `N ≥ 3` — `{±I}` has order `2`, giving
+`2 · |Q_N| = |SL₂(ℤ/Nℤ)|`.
 
 ## References
 
@@ -67,22 +67,11 @@ theorem two_mul_card_fin_two_zmod {N : ℕ} (hN : 3 ≤ N) :
     2 * Nat.card (SignedQuotient (Fin 2) (ZMod N)) = Nat.card SL(2, ZMod N) :=
   two_mul_card_fin_two_zmod_of_not_dvd_two fun h ↦ by have := Nat.le_of_dvd two_pos h; omega
 
-/-- **Cleared Euler product for `|Q_N|` at `N ≥ 3`:**
-`2 · |Q_N| · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`. -/
-theorem two_mul_card_fin_two_zmod_mul_prod_primeFactors_sq {N : ℕ} (hN : 3 ≤ N) :
-    2 * Nat.card (SignedQuotient (Fin 2) (ZMod N)) * ∏ p ∈ N.primeFactors, p ^ 2 =
-      N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
-  rw [two_mul_card_fin_two_zmod hN, card_fin_two_zmod_mul_prod_primeFactors_sq]
-
-/-- At level `1`, the signed quotient `Q_1 = SL₂(ℤ/1ℤ) ⧸ {±I}` is trivial of order `1`. -/
-@[simp]
-theorem card_fin_two_zmod_one : Nat.card (SignedQuotient (Fin 2) (ZMod 1)) = 1 := by
-  rw [card_fin_two_zmod_of_dvd_two (one_dvd 2), card_zmod_one]
-
 /-- At level `2`, `-I = I` modulo `2`, so the signed quotient `Q_2 = SL₂(ℤ/2ℤ) ⧸ {±I}` has order
 `6 = |SL₂(𝔽₂)|`. -/
 @[simp]
 theorem card_fin_two_zmod_two : Nat.card (SignedQuotient (Fin 2) (ZMod 2)) = 6 := by
-  rw [card_fin_two_zmod_of_dvd_two dvd_rfl, card_fin_two_zmod_prime Nat.prime_two]; norm_num
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rw [card_fin_two_zmod_of_dvd_two dvd_rfl, TauCeti.natCard_SL_fin_two_zmod]; norm_num
 
 end TauCeti.Matrix.SignedQuotient

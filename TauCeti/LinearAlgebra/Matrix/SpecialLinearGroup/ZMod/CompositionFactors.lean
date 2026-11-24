@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Alternating
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.FinTwo.Solvable
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Solvable
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CongruenceKernel
 import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 

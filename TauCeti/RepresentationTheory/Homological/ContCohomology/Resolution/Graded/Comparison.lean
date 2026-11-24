@@ -81,7 +81,7 @@ variable {k : Type u} [Ring k] [TopologicalSpace k]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
   {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
-  {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+  {hd : LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
   {X : TopRep.{max v w} k G} (c : ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd))
 
 /-- The comparison on the piece `ℳ p`: the degree-`n` component of `c.comparison`, included in
@@ -167,10 +167,10 @@ theorem gradedComparison_apply_of_mem_of_neg {p : ℤ} (hp : p < 0) {v : M.V} (h
 
 /-- The comparison on total modules has degree zero. -/
 theorem isHomogeneous_gradedComparison :
-    TauCeti.LinearMap.IsHomogeneous (c.gradedComparison).hom.toLinearMap ℳ
+    LinearMap.IsHomogeneous (c.gradedComparison).hom.toLinearMap ℳ
       X.gradedResolutionPiece 0 := by
   classical
-  refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
+  refine LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
   rw [add_zero]
   rcases lt_or_ge p 0 with hp | hp
   · exact (c.gradedComparison_apply_of_mem_of_neg hp hv).symm ▸ zero_mem _
