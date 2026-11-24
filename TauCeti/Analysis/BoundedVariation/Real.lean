@@ -369,12 +369,8 @@ theorem perimeter_Iio (x : ℝ) (Ω : Opens ℝ) :
   have h := perimeter_setOf_inner_lt (F := ℝ) (ν := 1) (by simp) x Ω
   have hlt : {y : ℝ | ⟪y, (1 : ℝ)⟫ < x} = Iio x := by ext y; simp
   have heq : {y : ℝ | ⟪y, (1 : ℝ)⟫ = x} = {x} := by ext y; simp
-  rw [hlt, heq, Module.finrank_self, tsub_self, Measure.euclideanHausdorffMeasure_zero] at h
-  rw [h]
-  by_cases hx : x ∈ (Ω : Set ℝ)
-  · rw [inter_singleton_of_mem hx, Measure.hausdorffMeasure_zero_singleton,
-      indicator_of_mem hx, Pi.one_apply]
-  · rw [inter_singleton_eq_empty.2 hx, measure_empty, indicator_of_notMem hx]
+  rw [hlt, heq] at h
+  by_cases hx : x ∈ (Ω : Set ℝ) <;> simpa [hx] using h
 
 /-- **The perimeter of a half-line starting at a point**: the perimeter of `(x, ∞)` in an open
 set `Ω` is `1` if `x ∈ Ω` and `0` otherwise. -/

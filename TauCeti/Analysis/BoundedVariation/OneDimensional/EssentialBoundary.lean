@@ -174,11 +174,7 @@ theorem perimeter_le_encard_essentialBoundary_inter (hs : NullMeasurableSet s) (
           (hs.mono Measure.restrict_le_self) (1 : ℝ))
     _ ≤ ∑' x : (Ω : Set ℝ), ((Ω : Set ℝ) ↓∩ (B ∩ Ω)).indicator 1 x := by
         refine tsum_le_tsum fun x => (perimeter_ball_le_indicator hs (hεB x)).trans (le_of_eq ?_)
-        by_cases hx : (x : ℝ) ∈ B
-        · rw [indicator_of_mem hx, indicator_of_mem
-            (Set.mem_preimage.2 ⟨hx, x.property⟩ : x ∈ (Ω : Set ℝ) ↓∩ (B ∩ Ω)),
-            Pi.one_apply, Pi.one_apply]
-        · rw [indicator_of_notMem hx, indicator_of_notMem (by exact fun h => hx h.1)]
+        classical simp [B, indicator_apply]
     _ = ((Ω : Set ℝ) ↓∩ (B ∩ Ω)).encard := ENNReal.tsum_indicator_one _
     _ ≤ (B ∩ Ω).encard := by
         exact_mod_cast encard_preimage_val_le_encard_right _ _

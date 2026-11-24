@@ -37,9 +37,9 @@ namespace intervalIntegral
 measure of `s ∩ (a, b]`. -/
 theorem integral_indicator_one (hs : NullMeasurableSet s μ) {a b : ℝ} (hab : a ≤ b) :
     ∫ t in a..b, s.indicator (1 : ℝ → ℝ) t ∂μ = μ.real (s ∩ Ioc a b) := by
-  rw [_root_.intervalIntegral.integral_of_le hab,
-    integral_indicator₀ (hs.mono Measure.restrict_le_self), Pi.one_def, setIntegral_const,
-    smul_eq_mul, mul_one, measureReal_restrict_apply₀ (hs.mono Measure.restrict_le_self)]
+  have h : NullMeasurableSet s (μ.restrict (Ioc a b)) := hs.mono Measure.restrict_le_self
+  simp [_root_.intervalIntegral.integral_of_le hab, integral_indicator₀ h,
+    measureReal_restrict_apply₀ h]
 
 end intervalIntegral
 

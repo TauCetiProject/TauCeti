@@ -69,16 +69,14 @@ private theorem hasDerivAt_integral_indicator_of_hasDensityAt_zero_aux (hs : Mea
   -- So `|s ∩ B(x, |h|)| < c |h|`.
   have hm : volume (s ∩ closedBall x |h|) ≤ ENNReal.ofReal (c * |h|) := by
     rw [hB, ENNReal.div_lt_iff (Or.inl (ENNReal.ofReal_pos.2 (by positivity)).ne')
-      (Or.inl ENNReal.ofReal_ne_top), ← ENNReal.ofReal_mul (by positivity)]
-      at hlt
-    refine hlt.le.trans (ENNReal.ofReal_le_ofReal (le_of_eq ?_))
-    ring
+      (Or.inl ENNReal.ofReal_ne_top), ← ENNReal.ofReal_mul (by positivity)] at hlt
+    exact hlt.le.trans_eq (by ring_nf)
   have hsub : Ι x (x + h) ⊆ closedBall x |h| := by
     refine (uIoc_subset_uIcc.trans (uIcc_subset_Icc ?_ ?_)).trans Real.closedBall_eq_Icc.ge
     · constructor <;> linarith [abs_nonneg h]
     · constructor <;> linarith [neg_abs_le h, le_abs_self h]
-  rw [intervalIntegral.norm_integral_eq_norm_integral_uIoc, integral_indicator_one hs,
-    measureReal_restrict_apply hs, Real.norm_of_nonneg measureReal_nonneg, Real.norm_eq_abs]
+  simp only [intervalIntegral.norm_integral_eq_norm_integral_uIoc, integral_indicator_one hs,
+    measureReal_restrict_apply hs, Real.norm_of_nonneg measureReal_nonneg]
   calc volume.real (s ∩ Ι x (x + h)) ≤ volume.real (s ∩ closedBall x |h|) :=
         measureReal_mono (inter_subset_inter_right _ hsub)
           (measure_ne_top_of_subset inter_subset_right
