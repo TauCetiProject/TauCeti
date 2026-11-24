@@ -459,7 +459,7 @@ pointwise left inverse of `DΦ` on `s`. If `x ↦ a(x)` is `r`-Hölder with cons
 by `M` on `t` in the operator norm of its bilinear forms, `Φ` is `KΦ`-Lipschitz on `s`, `T` is
 `r`-Hölder with constant `KT` and bounded by `L` on `s`, and the Jacobian `|det DΦ|` is `r`-Hölder
 with constant `KJ` and bounded by `J` on `s`, then the transformed principal coefficient
-`a'(x) = |det DΦ(x)| M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` is `r`-Hölder on `s` with constant
+`a'(x) = |det DΦ(x)| DΦ(x)⁻¹ a(Φ x) DΦ(x)⁻ᵀ` is `r`-Hölder on `s` with constant
 `Ka KΦ^r J L² + M (J KT + L KJ) L + M J L KT`. For `r = 1` this says that Lipschitz principal
 coefficients stay Lipschitz under a change of variables with Lipschitz derivative. -/
 theorem holderOnWith_matrixBilinearForm_pullbackPrincipal
@@ -499,7 +499,7 @@ theorem holderOnWith_matrixBilinearForm_pullbackPrincipal
 inverse of `DΦ` on `s`. If `b` is `r`-Hölder with constant `Kb` and bounded by `M` on `t`, `Φ` is
 `KΦ`-Lipschitz on `s`, `T` is `r`-Hölder with constant `KT` and bounded by `L` on `s`, and the
 Jacobian `|det DΦ|` is `r`-Hölder with constant `KJ` and bounded by `J` on `s`, then the
-transformed vector field `b'(x) = |det DΦ(x)| M(x)⁻¹ b(Φ x)` is `r`-Hölder on `s` with constant
+transformed vector field `b'(x) = |det DΦ(x)| DΦ(x)⁻¹ b(Φ x)` is `r`-Hölder on `s` with constant
 `J (L Kb KΦ^r + M KT) + L M KJ`. A vector field `G` in a divergence datum `div G` transforms in
 the same way (`TauCeti.PDE.setIntegral_inner_pullbackDrift_gradient_compL`). -/
 theorem holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}

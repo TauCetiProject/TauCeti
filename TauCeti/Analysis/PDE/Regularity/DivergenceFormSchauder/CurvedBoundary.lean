@@ -228,7 +228,7 @@ private theorem norm_preciseRepresentative_le_of_holderOnWith {H B : Opens
       (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
         (((Lp.memLp (W1p.gradient v)).mono_measure
           (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
-    (y := y) (M := K * R ^ (β : ℝ)) (C := ‖W1p.gradient v‖ ^ 2) (by positivity)
+    (y := y) (M := K * R ^ (β : ℝ)) (C := ‖W1p.gradient v‖ ^ 2)
     (fun z hz => by
       rw [← dist_eq_norm]
       refine (hP.dist_le (hAS hz) hy).trans ?_
@@ -913,7 +913,7 @@ theorem exists_holderOnWith_gradient_of_graph {E : Type*} [NormedAddCommGroup E]
     exact hmem.1
   -- `DΨ` is `α`-Hölder: it is the derivative of graph flattening, conjugated by isometries.
   have hT : HolderOnWith Kγ α (fderiv ℝ Ψ) U :=
-    (AffineIsometryEquiv.holderWith_fderiv_comp_comp e e.symm
+    (AffineIsometry.holderWith_fderiv_comp_comp e.toAffineIsometry e.symm.toAffineIsometry
       ((contDiff_graphFlattening hγ).differentiable one_ne_zero)
       (holderWith_fderiv_graphFlattening (hγ.differentiable one_ne_zero) hγK)).holderOnWith _
   have h := exists_holderOnWith_gradient_of_isChangeOfVariables hβ hβ1 hβα hq hβq hΦ hΨ hΨΦ hΦΨ

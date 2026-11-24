@@ -25,8 +25,8 @@ an affine isometry equivalence preserves the norms of its iterated derivatives: 
 every order, and on the left in every positive order, since the translation part only shifts
 the values. These are the affine forms of Mathlib's
 `LinearIsometryEquiv.norm_iteratedFDeriv_comp_right` and
-`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`. Likewise, conjugating a map by affine
-isometry equivalences keeps the Hölder constant of its derivative.
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`. Likewise, composing a map with affine
+isometries on both sides keeps the Hölder constant of its derivative.
 
 ## Main declarations
 
@@ -38,8 +38,8 @@ isometry equivalences keeps the Hölder constant of its derivative.
 * `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
   `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
   equivalence preserves the norms of iterated derivatives.
-* `AffineIsometryEquiv.holderWith_fderiv_comp_comp`: conjugating a map by affine isometry
-  equivalences keeps the Hölder constant of its derivative.
+* `AffineIsometry.holderWith_fderiv_comp_comp`: composing a map with affine isometries on both
+  sides keeps the Hölder constant of its derivative.
 -/
 
 public section
@@ -83,6 +83,10 @@ theorem norm_iteratedFDeriv_comp_right (g : E ≃ᵃⁱ[𝕜] F) (f : F → G) (
 
 end IteratedFDeriv
 
+end AffineIsometryEquiv
+
+namespace AffineIsometry
+
 section Holder
 
 open scoped NNReal
@@ -91,24 +95,24 @@ variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGro
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
   [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-/-- Conjugating a differentiable map by affine isometry equivalences keeps the Hölder constant of
-its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`, since
+/-- Composing a differentiable map with affine isometries on both sides keeps the Hölder constant
+of its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`, since
 `D(g ∘ f ∘ e)(x)` is `Df(e x)` composed on both sides with linear maps of norm at most one. -/
-theorem holderWith_fderiv_comp_comp (e : E ≃ᵃⁱ[𝕜] F) (g : G ≃ᵃⁱ[𝕜] H) {f : F → G}
+theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G}
     (hf : Differentiable 𝕜 f) {K α : ℝ≥0} (hK : HolderWith K α (fderiv 𝕜 f)) :
     HolderWith K α (fderiv 𝕜 (g ∘ f ∘ e)) := by
-  set A := e.toAffineIsometry.toContinuousAffineMap
-  set B := g.toAffineIsometry.toContinuousAffineMap
+  set A := e.toContinuousAffineMap
+  set B := g.toContinuousAffineMap
   have hd (x : E) : fderiv 𝕜 (g ∘ f ∘ e) x =
       B.contLinear.comp ((fderiv 𝕜 f (e x)).comp A.contLinear) :=
     ((B.hasFDerivAt (x := f (e x))).comp x
       ((hf (e x)).hasFDerivAt.comp x (A.hasFDerivAt (x := x)))).fderiv
   have hAn : ‖A.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
     rw [one_mul]
-    exact (e.linearIsometryEquiv.norm_map y).le
+    exact (e.linearIsometry.norm_map y).le
   have hBn : ‖B.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
     rw [one_mul]
-    exact (g.linearIsometryEquiv.norm_map y).le
+    exact (g.linearIsometry.norm_map y).le
   refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
   rw [hd, hd, dist_eq_norm, ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
   calc ‖B.contLinear.comp ((fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)).comp A.contLinear)‖
@@ -125,7 +129,7 @@ theorem holderWith_fderiv_comp_comp (e : E ≃ᵃⁱ[𝕜] F) (g : G ≃ᵃⁱ[�
 
 end Holder
 
-end AffineIsometryEquiv
+end AffineIsometry
 
 namespace TauCeti
 
