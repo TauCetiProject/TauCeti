@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
+import all TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!
 # Continuous nonabelian first cohomology for the trivial action
@@ -83,18 +84,13 @@ theorem Cocycle.equiv_iff_of_trivial (h : ∀ (g : G) (a : A), g • a = a) {f f
 /-- **`H¹` for the trivial action**: when `G` acts trivially on `A`, `H¹(G, A)` is the set of
 continuous homomorphisms `G → A` modulo conjugation by `A`. -/
 def equivOfTrivial (h : ∀ (g : G) (a : A), g • a = a) :
-    NonabelianH1 G A ≃ Quotient (conjSetoid G A) where
-  toFun := lift (fun f ↦ Quotient.mk _ (Cocycle.equivOfTrivial h f)) fun _ _ hff' ↦
-    Quotient.sound ((Cocycle.equiv_iff_of_trivial h).mp hff')
-  invFun := Quotient.lift (fun φ ↦ mk ((Cocycle.equivOfTrivial h).symm φ)) fun _ _ ⟨a, ha⟩ ↦
-    mk_eq_mk_iff.mpr ⟨a, fun g ↦ by simp [ha, h]⟩
-  left_inv c := induction_on c fun f ↦ by simp
-  right_inv φ := Quotient.inductionOn φ fun φ ↦ by simp
+    NonabelianH1 G A ≃ Quotient (conjSetoid G A) :=
+  Quotient.congr (Cocycle.equivOfTrivial h) fun _ _ ↦ Cocycle.equiv_iff_of_trivial h
 
 @[simp]
 theorem equivOfTrivial_mk (h : ∀ (g : G) (a : A), g • a = a) (f : Cocycle G A) :
     equivOfTrivial h (mk f) = Quotient.mk _ (Cocycle.equivOfTrivial h f) :=
-  lift_mk _ _ f
+  (rfl)
 
 @[simp]
 theorem equivOfTrivial_symm_mk (h : ∀ (g : G) (a : A), g • a = a) (φ : G →ₜ* A) :
