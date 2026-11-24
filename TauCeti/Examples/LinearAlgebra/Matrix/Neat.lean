@@ -89,10 +89,7 @@ private theorem hasEigenvalue_twoMulOrderSix {r : ℂ} (hr : r ^ 2 - r + 1 = 0)
   ext i
   fin_cases i
   · simp [val_mkOfDetNeZero, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  · simp only [coe_toLin, Matrix.mulVecLin_apply, val_mkOfDetNeZero, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_two, Fin.mk_one, Fin.isValue, Matrix.of_apply, Matrix.cons_val',
-      Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val_fin_one,
-      Pi.smul_apply, smul_eq_mul]
+  · simp [val_mkOfDetNeZero, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
     linear_combination 2 * hr
 
 /-- The matrix `2 • (0, -1; 1, 1) = (0, -2; 2, 2)` in `GL₂(ℂ)` is not neat: its eigenvalues are
