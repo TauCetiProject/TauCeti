@@ -320,7 +320,7 @@ theorem zpow_mem_powerBoundedSubring {m : ℤ} (hm : 0 ≤ m) (n : ℕ) :
     (ϖ.zpow m n : R) ∈ powerBoundedSubring R := by
   lift m to ℕ using hm
   rw [coe_zpow_natCast, ← coe_rootPB]
-  exact pow_mem (ϖ.rootPB n).2 m
+  exact pow_mem (ϖ.rootPB n).property m
 
 /-- For `m > 0`, `ϖ ^ (m / p ^ n)` is a pseudouniformiser. -/
 theorem isPseudoUniformizer_zpow {m : ℤ} (hm : 0 < m) (n : ℕ) :
@@ -361,7 +361,7 @@ noncomputable def equivOfPerfectRing :
   toFun ϖ := ⟨ϖ.root 0, ϖ.isPseudoUniformizer⟩
   invFun ϖ :=
     { roots := Perfection.liftMonoidHom p R R (MonoidHom.id R) ϖ
-      isPseudoUniformizer := by simpa using ϖ.2
+      isPseudoUniformizer := by simpa using ϖ.property
       pow_dvd := by
         have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
         rw [hp]

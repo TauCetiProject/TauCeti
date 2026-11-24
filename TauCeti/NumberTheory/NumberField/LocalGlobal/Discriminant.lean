@@ -61,7 +61,7 @@ theorem discriminantExponent_adicCompletion :
   rw [TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent,
     TauCeti.inertiaDegree_def, finrank_residueField_adicCompletion,
     differentExponent_adicCompletion_eq_multiplicity_differentIdeal,
-    multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal]
+    multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w]
 
 /-- **The relative discriminant of a Galois extension from one completion.** For `L/K` Galois and
 a finite place `w` of `L` above the finite place `v` of `K`, the coefficient at `v` of the relative

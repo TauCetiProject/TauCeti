@@ -142,19 +142,7 @@ theorem exists_computable_isModulus_of_stages (hA : Monotone A)
   · exact (Primrec.option_getD.comp
       (Primrec.option_map Primrec.id (Code.Halt.primrec_output.comp Primrec.snd).to₂)
       (Primrec.const 0)).to_comp.comp hrun
-  · -- The certificate is an oracle-decidable test; totality follows from visibility.
-    have htest := computableIn_certifiedStage hAc (c := c)
-    have hzero : ComputableIn₂ {(stageLimit A).oracle} (fun x s =>
-        bif certifiedStage A c x s then 0 else 1) :=
-      (Primrec.cond Primrec.id (Primrec.const 0) (Primrec.const 1)).computableIn.comp htest
-    apply RecursiveIn.iff_nat.2
-    refine (ComputableIn₂.iff_nat.1 hzero).rfind.of_eq_tot fun x => ?_
-    apply Nat.mem_rfind.2
-    constructor
-    · simp [m, Nat.find_spec (hex x)]
-    · intro s hs
-      have hnot : certifiedStage A c x s ≠ true := Nat.find_min (hex x) hs
-      simp [Bool.eq_false_iff.2 hnot]
+  · exact ComputableIn.find (by simpa using computableIn_certifiedStage hAc (c := c)) hex
   · apply isModulus_iff.2
     intro x s hs
     obtain ⟨d, -, hd, hout⟩ := evaln_eq_some_of_certifiedStage hA (Nat.find_spec (hex x)) hs

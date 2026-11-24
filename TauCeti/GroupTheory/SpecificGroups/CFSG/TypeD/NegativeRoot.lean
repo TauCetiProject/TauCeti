@@ -29,16 +29,16 @@ public section
 
 namespace TauCeti.TypeTwistedDLieIndex
 
-variable (d : TypeTwistedDLieIndex) (i : Fin d.1.rank) (u : Multiplicative d.1.Closure)
+variable (d : TypeTwistedDLieIndex) (i : Fin d.val.rank) (u : Multiplicative d.val.Closure)
 
 /-- The fork-exchange graph factor permutes negative simple roots without changing their
 additive parameters. -/
 @[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (TypeDSpinCarrier.rootSubgroupPoints d.1.rank
-      d.toTypeDDiagramLieIndex.four_le_rank (.inr i) d.1.Closure u) =
-      TypeDSpinCarrier.rootSubgroupPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank
-        (.inr (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)) d.1.Closure u := by
+    d.graphAut (TypeDSpinCarrier.rootSubgroupPoints d.val.rank
+      d.toTypeDDiagramLieIndex.four_le_rank (.inr i) d.val.Closure u) =
+      TypeDSpinCarrier.rootSubgroupPoints d.val.rank d.toTypeDDiagramLieIndex.four_le_rank
+        (.inr (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)) d.val.Closure u := by
   rw [graphAut_def, TypeDSpinCarrier.graphAutPoints_rootSubgroupPoints,
     TypeDSpinCarrier.graphRootPerm_inr, diagramPerm_toGraphTwistedIndex]
 
@@ -46,13 +46,13 @@ theorem graphAut_rootSubgroupPoints_inr :
 their additive parameters to `q`. -/
 @[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (TypeDSpinCarrier.rootSubgroupPoints d.1.rank
-      d.toTypeDDiagramLieIndex.four_le_rank (.inr i) d.1.Closure u) =
-      TypeDSpinCarrier.rootSubgroupPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank
-        (.inr (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)) d.1.Closure
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+    d.steinberg (TypeDSpinCarrier.rootSubgroupPoints d.val.rank
+      d.toTypeDDiagramLieIndex.four_le_rank (.inr i) d.val.Closure u) =
+      TypeDSpinCarrier.rootSubgroupPoints d.val.rank d.toTypeDDiagramLieIndex.four_le_rank
+        (.inr (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)) d.val.Closure
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     TypeDDiagramLieIndex.frobenius_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
-    ← d.1.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
+    ← d.val.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
 
 end TauCeti.TypeTwistedDLieIndex

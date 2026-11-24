@@ -96,8 +96,8 @@ private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
     have hj := j.isLt
     have hi' : (i : ℕ) ≤ n + 2 := by omega
     have hj' : (j : ℕ) ≤ n + 2 := by omega
-    exact hr.getVert_injOn (by simpa only [Set.mem_ofPred_eq, hlen] using hi')
-      (by simpa only [Set.mem_ofPred_eq, hlen] using hj') hij
+    exact hr.getVert_injOn (by simpa only [Set.mem_Iic, hlen] using hi')
+      (by simpa only [Set.mem_Iic, hlen] using hj') hij
 
 omit [DecidableEq B] in
 /-- A forked path ending in an oriented double edge is bounded above by the affine `B` matrix. -/

@@ -30,6 +30,7 @@ the compact perturbations of Fredholm modules.
 
 * `IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`: products of a compact operator
   with a bounded operator, on either side, are compact.
+* `ContinuousLinearMap.isCompactOperator_sub_comm`: `f - g` is compact exactly when `g - f` is.
 * `ContinuousLinearMap.isCompactOperator_add_commutator`,
   `ContinuousLinearMap.isCompactOperator_add_mul_self_sub_one_mul`: the conditions `[F, T]` and
   `(F² - 1) T` compact survive perturbing `F` by an operator `K` compact relative to `T`.
@@ -116,6 +117,22 @@ end Quotient
 end IsCompactOperator
 
 namespace ContinuousLinearMap
+
+section Sub
+
+variable {R₁ R₂ : Type*} [Ring R₁] [Ring R₂] {σ₁₂ : R₁ →+* R₂} {M₁ M₂ : Type*}
+  [TopologicalSpace M₁] [AddCommGroup M₁] [Module R₁ M₁] [TopologicalSpace M₂]
+  [AddCommGroup M₂] [IsTopologicalAddGroup M₂] [Module R₂ M₂]
+
+/-- Whether a difference of continuous linear maps is compact does not depend on the order of
+subtraction. -/
+theorem isCompactOperator_sub_comm {f g : M₁ →SL[σ₁₂] M₂} :
+    IsCompactOperator (f - g) ↔ IsCompactOperator (g - f) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;>
+  · rw [← neg_sub, FunLike.coe_neg]
+    exact h.neg
+
+end Sub
 
 section Perturbation
 

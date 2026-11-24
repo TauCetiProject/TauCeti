@@ -163,10 +163,6 @@ variable {E : Type*} [Category* E] [MonoidalLeftAction C E] (F : E ⥤ D) (hF : 
 the lineators of `F`. -/
 instance laxLeftLinearLift [F.LaxLeftLinear C] : (P.lift F hF).LaxLeftLinear C where
   μₗ c X := homMk (μₗ F c X)
-  μₗ_naturality_left f X := by ext; exact μₗ_naturality_left F f X
-  μₗ_naturality_right c _ _ f := by ext; exact μₗ_naturality_right F c f
-  μₗ_associativity c c' X := by ext; exact μₗ_associativity F c c' X
-  μₗ_unitality X := by ext; exact μₗ_unitality F X
 
 @[simp]
 lemma lift_μₗ_hom [F.LaxLeftLinear C] (c : C) (X : E) :
@@ -177,10 +173,6 @@ lemma lift_μₗ_hom [F.LaxLeftLinear C] (c : C) (X : E) :
 with the lineators of `F`. -/
 instance oplaxLeftLinearLift [F.OplaxLeftLinear C] : (P.lift F hF).OplaxLeftLinear C where
   δₗ c X := homMk (δₗ F c X)
-  δₗ_naturality_left f X := by ext; exact δₗ_naturality_left F f X
-  δₗ_naturality_right c _ _ f := by ext; exact δₗ_naturality_right F c f
-  δₗ_associativity c c' X := by ext; exact δₗ_associativity F c c' X
-  δₗ_unitality_inv X := by ext; exact δₗ_unitality_inv F X
 
 @[simp]
 lemma lift_δₗ_hom [F.OplaxLeftLinear C] (c : C) (X : E) :

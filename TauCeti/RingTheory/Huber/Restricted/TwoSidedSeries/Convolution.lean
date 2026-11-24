@@ -98,21 +98,21 @@ noncomputable def twoSidedRestrictedMul :
       twoSidedRestrictedSubmodule A A →ₗ[A] twoSidedRestrictedSubmodule A A :=
   LinearMap.mk₂ A
     (fun f g ↦ ⟨(f : ℤ → A) ⋆ᵣ₊ (g : ℤ → A),
-      addRingConvolution_mem_twoSidedRestrictedSubmodule f.2 g.2⟩)
+      addRingConvolution_mem_twoSidedRestrictedSubmodule f.property g.property⟩)
     (fun f₁ f₂ g ↦ Subtype.ext <| DiscreteConvolution.add_addRingConvolution
       (f₁ : ℤ → A) (f₂ : ℤ → A) (g : ℤ → A)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₁.2 g.2)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₂.2 g.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₁.property g.property)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f₂.property g.property))
     (fun c f g ↦ Subtype.ext <| DiscreteConvolution.smul_addRingConvolution c
       (f : ℤ → A) (g : ℤ → A)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property g.property))
     (fun f g₁ g₂ ↦ Subtype.ext <| DiscreteConvolution.addRingConvolution_add
       (f : ℤ → A) (g₁ : ℤ → A) (g₂ : ℤ → A)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g₁.2)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g₂.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property g₁.property)
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property g₂.property))
     (fun c f g ↦ Subtype.ext <| DiscreteConvolution.addRingConvolution_smul c
       (f : ℤ → A) (g : ℤ → A)
-      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.2 g.2))
+      (addConvolutionExists_of_mem_twoSidedRestrictedSubmodule f.property g.property))
 
 include hA hComplete in
 /-- The coefficient family of `twoSidedRestrictedMul f g` is the additive ring convolution of
@@ -130,7 +130,7 @@ to `n`. -/
 theorem coe_twoSidedRestrictedMul_apply (f g : twoSidedRestrictedSubmodule A A) (n : ℤ) :
     ((twoSidedRestrictedMul f g : twoSidedRestrictedSubmodule A A) : ℤ → A) n =
       ∑' p : DiscreteConvolution.addFiber n,
-        (f : ℤ → A) p.1.1 * (g : ℤ → A) p.1.2 := by
+        (f : ℤ → A) p.val.1 * (g : ℤ → A) p.val.2 := by
   rw [coe_twoSidedRestrictedMul, DiscreteConvolution.addRingConvolution_apply]
 
 include hA hComplete in

@@ -107,15 +107,16 @@ map `B`. The forward map takes complementary coordinates and the inverse takes t
 of `B w`. -/
 noncomputable def quotientRangeEquiv (A : E →L[R] F) (B : G →L[R] F)
     (h : (A.coprod B).IsInvertible) : (F ⧸ A.range) ≃L[R] G :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (A.range.liftQL (A.quotientRangeCoordinate B)
       (ker_quotientRangeCoordinate h).ge)
     (A.range.mkQL ∘L B)
-    (fun z => by
+    (ContinuousLinearMap.ext fun w => by simp [quotientRangeCoordinate_apply_right h])
+    (ContinuousLinearMap.ext fun z => by
       obtain ⟨y, rfl⟩ := A.range.mkQ_surjective z
-      simp only [comp_apply, Submodule.liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply]
+      simp only [comp_apply, Submodule.liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply,
+        id_apply]
       exact ((Submodule.Quotient.eq _).mpr (sub_apply_quotientRangeCoordinate_mem_range h y)).symm)
-    (fun w => by simp [quotientRangeCoordinate_apply_right h])
 
 /-- On an ambient representative, the quotient equivalence reads the second inverse
 coordinate. -/

@@ -108,7 +108,7 @@ converges for `s > 1`: a subfamily of a summable family is summable.
 This is the family `NumberField.Set.primeIdealZetaSum` sums, so it is the summability its
 consumers need in order to denote a genuine sum rather than the `tsum` junk value. -/
 theorem summable_absNorm_rpow_subtype_of_one_lt (S : Set (HeightOneSpectrum (𝓞 K))) {s : ℝ}
-    (hs : 1 < s) : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) :=
+    (hs : 1 < s) : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s) :=
   (summable_absNorm_rpow_primes_of_one_lt hs).subtype (· ∈ S)
 
 end TauCeti
@@ -134,7 +134,7 @@ can be summable well outside the half-line on which the all-prime series converg
 Summability is not decoration: `tsum` returns `0` on a family that is not summable, so an
 inequality between two such sums can fail with a positive left-hand side and a vanishing right. -/
 theorem primeIdealZetaSum_mono_set {S T : Set (HeightOneSpectrum (𝓞 K))} (hST : S ⊆ T) {s : ℝ}
-    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hT : Summable fun 𝔭 : T ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s := by
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
   -- Enlarging the set of primes adds nonnegative terms to a convergent sum: `Set.inclusion hST`
@@ -152,7 +152,7 @@ theorem primeIdealZetaSum_mono_set_of_one_lt {S T : Set (HeightOneSpectrum (𝓞
 /-- **A summable prime ideal zeta sum over a nonempty set of primes is positive.** Every term is
 positive; summability ensures that the sum is genuine rather than the `tsum` junk value `0`. -/
 theorem primeIdealZetaSum_pos {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Nonempty) {s : ℝ}
-    (h : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (h : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     0 < S.primeIdealZetaSum s := by
   obtain ⟨𝔭, h𝔭⟩ := hS
   rw [primeIdealZetaSum_def]
@@ -170,7 +170,7 @@ theorem primeIdealZetaSum_pos_of_one_lt {S : Set (HeightOneSpectrum (𝓞 K))} (
 prime. -/
 theorem primeIdealZetaSum_univ_pos {s : ℝ}
     (h : Summable fun 𝔭 : (Set.univ : Set (HeightOneSpectrum (𝓞 K))) ↦
-      (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+      (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     0 < (Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s := by
   obtain ⟨𝔭, -⟩ := (HeightOneSpectrum.ideal_ne_top_iff_exists
     (RingOfIntegers.not_isField K) (⊥ : Ideal (𝓞 K))).1 bot_ne_top

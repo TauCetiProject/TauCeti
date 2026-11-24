@@ -142,7 +142,7 @@ theorem cokernelFunctor_map_objIso_hom {X Y : MatrixFactorization S w} (g : X �
       (cokernelFunctorObjIso X).hom ≫
         cokernel.map _ _ g.hom.f₀.hom
           g.hom.f₁.hom
-          (congrArg (fun k => k.hom) g.hom.comm₀).symm := by
+          (congrArg (fun k => k.hom) g.hom.comm₀) := by
   apply (cancel_epi (cokernelπ X)).mp
   rw [← Category.assoc, cokernelπ_naturality, Category.assoc,
     cokernelπ_objIso_hom, cokernelπ_objIso_hom_assoc]

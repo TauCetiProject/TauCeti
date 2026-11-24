@@ -307,8 +307,6 @@ end Coordinates
 
 section Signature
 
-variable [FiniteDimensional ℝ E]
-
 /-- The signature of the metrics of a smooth nondegenerate family is locally constant jointly in
 the parameter and the point. -/
 theorem isLocallyConstant_signature_metric :

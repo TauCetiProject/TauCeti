@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
 public import TauCeti.NumberTheory.ClassGroup.Equiv
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
+public import TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient
 
 /-!
 # Quadratic conjugation acts on the class group by inversion
@@ -78,10 +78,10 @@ inversion (as `I · σI` is principal), the induced `ZMod 2`-linear map on the m
 quotient is the identity. This is the capstone reduction feeding the genus-field 2-rank theorems. -/
 @[simp] theorem elementaryTwoQuotientCongr_ringOfIntegersQuadraticConj_apply_eq_self
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (x : TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)) :
-    TauCeti.ClassGroup.elementaryTwoQuotientCongr
+    (x : ClassGroup.ElementaryTwoQuotient (𝓞 K)) :
+    ClassGroup.elementaryTwoQuotientCongr
       (ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen)) x = x :=
-  TauCeti.ClassGroup.elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv
+  ClassGroup.elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv
     (ClassGroup.mulEquiv (ringOfIntegersQuadraticConj hmin hgen))
     (mulEquiv_ringOfIntegersQuadraticConj_apply_eq_inv hmin hgen) x
 

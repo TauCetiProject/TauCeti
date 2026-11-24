@@ -64,8 +64,8 @@ private lemma strictMonoCechComplexMap_f_π_eq
     (a : {a : Fin (n + 1) → ι // StrictMono a}) :
     (strictMonoCechComplexMap P φ).f n ≫ strictMonoCechComplexπ U P a =
       (((fromStrictMonoCechComplex V).app P).f n ≫
-        Pi.π _ (φ.f ∘ a.1)) ≫
-          P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op := by
+        Pi.π _ (φ.f ∘ a.val)) ≫
+          P.map (Limits.Pi.map fun j ↦ φ.φ (a.val j)).op := by
   -- Rewriting after the projection identity fails at implicit transparency: the product's
   -- index type is presented through FormalCoproduct.cech rather than Fin (n + 1) → ι.
   -- Compose the explicitly typed identities instead; reassociation alone does not fix this.
@@ -74,24 +74,24 @@ private lemma strictMonoCechComplexMap_f_π_eq
   exact (congrArg (fun f ↦ ((fromStrictMonoCechComplex V).app P).f n ≫
     (cechComplexMap P φ).f n ≫ f) (toStrictMonoCechComplex_app_f_π U P n a)).trans
       ((congrArg (fun f ↦ ((fromStrictMonoCechComplex V).app P).f n ≫ f)
-        (cechComplexMap_f_π P φ n a.1)).trans (Category.assoc _ _ _).symm)
+        (cechComplexMap_f_π P φ n a.val)).trans (Category.assoc _ _ _).symm)
 
 /-- On an increasing tuple whose image has no repetitions, refinement sorts the image tuple,
 multiplies by its inversion sign, and restricts the resulting section. -/
 @[reassoc]
 theorem strictMonoCechComplexMap_f_π
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
-    (a : {a : Fin (n + 1) → ι // StrictMono a}) (ha : Function.Injective (φ.f ∘ a.1)) :
+    (a : {a : Fin (n + 1) → ι // StrictMono a}) (ha : Function.Injective (φ.f ∘ a.val)) :
     (strictMonoCechComplexMap P φ).f n ≫ strictMonoCechComplexπ U P a =
-      (-1 : ℤ) ^ (Finset.univ.inversions (φ.f ∘ a.1)).card •
+      (-1 : ℤ) ^ (Finset.univ.inversions (φ.f ∘ a.val)).card •
         (strictMonoCechComplexπ V P
-          ⟨(φ.f ∘ a.1) ∘ Tuple.sort (φ.f ∘ a.1), Tuple.strictMono_comp_sort ha⟩ ≫
-          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ V ((φ.f ∘ a.1) j))
-            (Tuple.sort (φ.f ∘ a.1) j)).op ≫
-          P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op) := by
+          ⟨(φ.f ∘ a.val) ∘ Tuple.sort (φ.f ∘ a.val), Tuple.strictMono_comp_sort ha⟩ ≫
+          P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ V ((φ.f ∘ a.val) j))
+            (Tuple.sort (φ.f ∘ a.val) j)).op ≫
+          P.map (Limits.Pi.map fun j ↦ φ.φ (a.val j)).op) := by
   -- As in the preceding lemma, compose typed identities to avoid the opaque product indices.
   exact (strictMonoCechComplexMap_f_π_eq P φ n a).trans
-    ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op)
+    ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.val j)).op)
       (fromStrictMonoCechComplex_app_f_π V P n ha)).trans
         ((Preadditive.zsmul_comp _ _ _).trans (congrArg _ (Category.assoc _ _ _))))
 
@@ -99,11 +99,11 @@ theorem strictMonoCechComplexMap_f_π
 @[simp, reassoc]
 theorem strictMonoCechComplexMap_f_π_of_not_injective
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
-    (a : {a : Fin (n + 1) → ι // StrictMono a}) (ha : ¬Function.Injective (φ.f ∘ a.1)) :
+    (a : {a : Fin (n + 1) → ι // StrictMono a}) (ha : ¬Function.Injective (φ.f ∘ a.val)) :
     (strictMonoCechComplexMap P φ).f n ≫ strictMonoCechComplexπ U P a = 0 := by
   -- The same opaque product indices prevent rewriting the zero-coordinate identity in place.
   exact (strictMonoCechComplexMap_f_π_eq P φ n a).trans
-    ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op)
+    ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.val j)).op)
       (fromStrictMonoCechComplex_app_f_π_of_not_injective V P n ha)).trans zero_comp)
 
 /-- Ordered refinement is natural in the coefficient presheaf. -/

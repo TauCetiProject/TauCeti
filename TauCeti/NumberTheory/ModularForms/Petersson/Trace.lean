@@ -114,14 +114,14 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
   have hwc : Γ'.withCenter ≤ Γ.withCenter :=
     Subgroup.withCenter_le_iff.mpr ⟨hle.trans Γ.le_withCenter, Γ.center_le_withCenter⟩
   set j : ι → Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter :=
-    fun i ↦ QuotientGroup.mk ⟨γ i, Γ.le_withCenter (γ i).2⟩
+    fun i ↦ QuotientGroup.mk ⟨γ i, Γ.le_withCenter (γ i).property⟩
   have hj : Function.Bijective j := by
     refine ⟨fun i i' hii' ↦ hγ.1 (QuotientGroup.eq.mpr ?_), fun q ↦ ?_⟩
     · have hx : (γ i : SL(2, ℤ))⁻¹ * γ i' ∈ Γ ⊓ Γ'.withCenter :=
-        ⟨Γ.mul_mem (Γ.inv_mem (γ i).2) (γ i').2,
+        ⟨Γ.mul_mem (Γ.inv_mem (γ i).property) (γ i').property,
           Subgroup.mem_subgroupOf.mp ((QuotientGroup.eq (s := Γ'.withCenter.subgroupOf _)).mp hii')⟩
       rwa [Subgroup.inf_withCenter_eq_of_le hle hneg] at hx
-    · obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp q.out.2
+    · obtain ⟨x, hx, hsign⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp q.out.property
       obtain ⟨i, hi⟩ := hγ.2 (QuotientGroup.mk ⟨x, hx⟩)
       have hix : (γ i : SL(2, ℤ))⁻¹ * x ∈ Γ' := by
         have := (QuotientGroup.eq (s := Γ'.subgroupOf Γ)).mp hi
@@ -144,7 +144,7 @@ theorem peterssonInnerCosets_sum_slash_left {Γ Γ' : Subgroup SL(2, ℤ)} [Γ.F
   -- `g ∣ (γ i)⁻¹ = g`
   have hsummand : ∀ i, (⇑g ∣[k] (p.out)⁻¹) = (⇑g ∣[k] ((γ i : SL(2, ℤ))⁻¹ * (p.out)⁻¹)) :=
     fun i ↦ by
-      rw [SlashAction.slash_mul, SlashInvariantFormClass.SL_slash_eq g _ (Γ.inv_mem (γ i).2)]
+      rw [SlashAction.slash_mul, SlashInvariantFormClass.SL_slash_eq g _ (Γ.inv_mem (γ i).property)]
   rw [hF, SlashAction.sum_slash, UpperHalfPlane.peterssonInner_sum_left k fd Finset.univ _ _
     fun i _ ↦ by
       rw [hsummand i, ← SlashAction.slash_mul]
@@ -184,7 +184,7 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
     have hy : mapGL ℝ ((e.symm y : Γ) : SL(2, ℤ)) = y := by
       rw [← Subgroup.coe_equivMapOfInjective_apply Γ (mapGL ℝ) hinj, MulEquiv.apply_symm_apply]
     rw [← Subgroup.mem_map_iff_mem hinj, hΓ', Subgroup.mem_inf, hy]
-    exact and_iff_left y.2
+    exact and_iff_left y.property
   -- the instance `CuspForm.trace` sums with
   let : Fintype (Γ.map (mapGL ℝ) ⧸ 𝒢.subgroupOf (Γ.map (mapGL ℝ))) := Fintype.ofFinite _
   -- the coset spaces of the trace and of `Γ / Γ'` correspond along `e`

@@ -20,6 +20,8 @@ A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and 
 lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
 `A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is needed,
 because the bound on the partial sums passes to their limit through the closed sublevel set.
+In the same way, a bound `g (u i) ≤ c + ε i` along a family `u`, with errors `ε i` tending to `0`,
+passes to every cluster point of `u` (`MapClusterPt.le_of_eventually_le_add`).
 -/
 
 public section
@@ -56,3 +58,22 @@ theorem le_tsum_of_hasSum (hA : LowerSemicontinuous A) (h0 : A 0 = 0)
     (Finset.le_sum_of_subadditive A h0.le hadd t f).trans (sum_le_tsum t)
 
 end LowerSemicontinuous
+
+namespace MapClusterPt
+
+open Filter
+
+variable {X β ι : Type*} [TopologicalSpace X] [AddCommGroup β] [LinearOrder β]
+  [IsOrderedAddMonoid β] [DenselyOrdered β] [TopologicalSpace β] [OrderTopology β]
+
+/-- **Bounds with vanishing errors pass to cluster points.** If a lower semicontinuous `g`
+satisfies `g (u i) ≤ c + ε i` eventually along `l`, with errors `ε i` tending to `0`, then
+`g x ≤ c` at every cluster point `x` of `u` along `l`. -/
+theorem le_of_eventually_le_add {l : Filter ι} {u : ι → X} {x : X} (hx : MapClusterPt x l u)
+    {g : X → β} (hg : LowerSemicontinuous g) {c : β} {ε : ι → β} (hε : Tendsto ε l (𝓝 0))
+    (hu : ∀ᶠ i in l, g (u i) ≤ c + ε i) : g x ≤ c := by
+  refine le_of_forall_pos_le_add fun δ hδ ↦ (hg.isClosed_preimage (c + δ)).mem_of_mapClusterPt hx ?_
+  filter_upwards [hu, hε.eventually (eventually_le_nhds hδ)] with i hi hεi
+  exact hi.trans (add_le_add_right hεi c)
+
+end MapClusterPt

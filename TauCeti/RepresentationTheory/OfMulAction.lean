@@ -295,7 +295,7 @@ private noncomputable def invariantsEquivFun :
     (ofMulAction k I X).invariants ≃ₗ[k] (orbitRel.Quotient I X → k) where
   toFun v ω := Quotient.liftOn' ω (v : k[X]).coeff fun _ _ ⟨g, hg⟩ ↦ by
     rw [← hg]
-    exact coeff_smul_of_forall_ofMulAction_eq v.2 g _
+    exact coeff_smul_of_forall_ofMulAction_eq v.property g _
   map_add' v w := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
   map_smul' r v := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
   invFun c := ⟨ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ c ⟦x⟧),

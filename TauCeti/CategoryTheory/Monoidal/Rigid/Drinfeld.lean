@@ -40,7 +40,7 @@ the canonical pivotal structure.
   and `Y`, followed by the tensor comparison of the double right dual functor;
 * `TauCeti.drinfeldNatIso_isMonoidal`: in a symmetric category, `drinfeldNatIso` is monoidal.
 
-The construction uses Mathlib's `CategoryTheory.ExactPairing.rightDualIso` and
+The construction uses Mathlib's `CategoryTheory.rightDualIso` and
 `CategoryTheory.BraidedCategory.exactPairing_swap`. The name `drinfeldIso` follows
 J. McKoen's Mathlib pull request #42192.
 
@@ -61,6 +61,8 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- The Drinfeld isomorphism identifies `X` with its double right dual by comparing
 its braided pairing with `Xᘁ` to the chosen right pairing of `Xᘁ`. -/
+-- Exposed so strict quotient functors with descended pairings compute this comparison.
+@[expose]
 def drinfeldIso (X : C) [HasRightDual X] [HasRightDual Xᘁ] : X ≅ ((Xᘁ : C)ᘁ : C) :=
   rightDualIso (exactPairing_swap X Xᘁ) HasRightDual.exact
 
@@ -119,7 +121,8 @@ theorem drinfeldIso_inv_eq :
       monoidal
     -- Braiding `Xᘁᘁ` past the coevaluation of `X` and back under `Xᘁ` moves it to the right of
     -- the coevaluation.
-    _ = _ := by rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc]; monoidal
+    _ = _ := by
+      rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc, braiding_tensorUnit_right]; monoidal
 
 /-- Coevaluation into the double dual is obtained by applying the Drinfeld isomorphism
 after the braided swapped coevaluation. -/
@@ -174,6 +177,8 @@ variable [BraidedCategory C] [RightRigidCategory C]
 
 /-- The Drinfeld isomorphisms `X ≅ Xᘁᘁ` of a braided right rigid category, as a natural
 isomorphism from the identity functor to the double right dual functor. -/
+-- Exposed so the canonical symmetric pivotal structure agrees with strict quotient descent.
+@[expose]
 noncomputable def drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C :=
   NatIso.ofComponents (fun X => drinfeldIso X) fun f => drinfeldIso_hom_naturality f
 

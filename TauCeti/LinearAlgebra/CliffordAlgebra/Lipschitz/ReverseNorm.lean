@@ -93,13 +93,14 @@ private theorem exists_reverse_mul_self_eq_algebraMap (x : (CliffordAlgebra Q)ˣ
       rw [Units.val_mul, reverse_mul_mul_self_mul hr, hs, Units.val_mul, map_mul]
 
 private noncomputable def cliffordNormUnit (Q : QuadraticForm R M) (x : lipschitzGroup Q) : Rˣ :=
-  Classical.choose (exists_reverse_mul_self_eq_algebraMap (x : (CliffordAlgebra Q)ˣ) x.2)
+  Classical.choose (exists_reverse_mul_self_eq_algebraMap (x : (CliffordAlgebra Q)ˣ) x.property)
 
 private theorem reverse_mul_self_eq_cliffordNormUnit (x : lipschitzGroup Q) :
     reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
         ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) (cliffordNormUnit Q x : R) :=
-  Classical.choose_spec (exists_reverse_mul_self_eq_algebraMap (x : (CliffordAlgebra Q)ˣ) x.2)
+  Classical.choose_spec (exists_reverse_mul_self_eq_algebraMap (x :
+      (CliffordAlgebra Q)ˣ) x.property)
 
 variable (Q) in
 /-- The **Clifford norm** `x ↦ reverse x * x` on the Lipschitz group, as a unit-valued
@@ -261,7 +262,7 @@ theorem cliffordNorm_pinToLipschitz_spinToPin (x : spinGroup Q) :
     cliffordNorm Q (pinToLipschitz Q (spinToPin Q x)) = 1 := by
   refine ((mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one _).1 ?_).2
   rw [coe_pinToLipschitz_apply, coe_spinToPin_apply]
-  exact x.2
+  exact x.property
 
 /-- **Rescaling a Lipschitz element into the Spin group.** A Lipschitz element can be multiplied
 by a scalar unit into `spinGroup Q` exactly when it is even and its Clifford norm is a square.

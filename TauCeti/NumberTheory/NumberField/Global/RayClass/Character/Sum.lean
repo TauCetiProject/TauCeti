@@ -76,7 +76,7 @@ theorem rayClassCharacterPartialSum_eq_sum (𝔪 : Modulus K) [Fintype (RayClass
   refine Finset.sum_congr rfl fun c _ ↦ ?_
   -- on the fibre over `c` the character is constantly `χ c`, so the block is a multiple of it
   simp only [RayClassCharacter.onIdeals_apply, idealClassSigmaEquiv_apply_coe]
-  rw [Finset.sum_eq_card_nsmul fun p _ ↦ by rw [p.2.1]]
+  rw [Finset.sum_eq_card_nsmul fun p _ ↦ by rw [p.property.1]]
   simp [rayClassIdealCountingFunction_def, mul_comm]
 
 end TauCeti.GlobalNumberFields
