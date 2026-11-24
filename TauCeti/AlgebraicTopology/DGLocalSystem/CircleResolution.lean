@@ -146,8 +146,7 @@ theorem loopCellCocycle_m_eq_zero_of_le (γ : MooreLoopSpace B b) {x y : Unit �
 `TauCeti.loopCellCocycle R γ` is well-founded, since the cocycle is one-sided. -/
 theorem wellFounded_mem_support_loopCellCocycle (γ : MooreLoopSpace B b) :
     WellFounded fun y x ↦ y ∈ ((loopCellCocycle R γ).m x).support :=
-  (loopCellCocycle R γ).wellFounded_mem_support (fun _ _ ↦ loopCellCocycle_m_eq_zero_of_le γ)
-    (p₀ := 0) (by rintro (_ | _) <;> simp)
+  wellFounded_mem_support_cycleCellCocycle _ _
 
 /-- The differential of the free module of `TauCeti.loopCellCocycle R γ` on `α e₀ + β e₁`: the
 coefficient of `e₀` is `dα + κ(β) ([γ] - [1])`, with `κ` the Koszul sign twist, and the coefficient
