@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Sheaves.Stalks
+import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
 import Mathlib.Topology.Sheaves.LocallySurjective
 import TauCeti.CategoryTheory.Sites.EpiMono

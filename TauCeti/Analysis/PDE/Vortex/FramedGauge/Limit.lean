@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Regularity
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 

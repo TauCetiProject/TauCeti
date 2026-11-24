@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
 public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
-import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.Algebra.Category.ModuleCat.Finrank
 
 /-!
 # The Morse–Bott inequalities with coefficients twisted by the negative orientation
@@ -42,7 +40,8 @@ in place of the mod `2` one. The homology of a band with one critical value `c` 
 of the homologies of the Thom pairs of the negative normal bundles of the pieces on the level `c`
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`), so its
 dimension is the sum of their contributions
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`),
+(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair`, here
+`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`),
 and the inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
 (`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) give the result.
 
@@ -191,43 +190,19 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦
-    (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
-  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
-    fun j ↦ subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦
+      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
+    fun j ↦ subbundleTopology (P j)
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-  let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
-  have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
-  -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
-  -- The band has the homology of the direct sum of the Thom pairs of the pieces on the level `c`.
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim
-    g hr (ModuleCat.of K K) n
-  let W (j : {j // ∀ s, f (i j s) = c}) : ModuleCat K :=
-    (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n
-  let e' := e ≪≫ (biproduct.isoCoproduct W).symm
-  have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
-    h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  have := Module.Finite.equiv e'.toLinearEquiv
-  have := ModuleCat.finite_of_finite_biproduct (R := K) W
-  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
-  -- Each Thom pair has the twisted homology of its base, shifted by the rank.
-  have hW (j : {j // ∀ s, f (i j s) = c}) : finrank K (W j) =
-      if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0 := by
-    split_ifs with hrn
-    · rw [twistedBettiNumber_def]
-      exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ _
-        (by rw [finrank_fin_fun]; omega)
-    · have hz := isZero_singularHomology_thomPair (F := Fin (r j) → ℝ) (E := V j)
-        (ModuleCat.of K K) (n := n) (by rw [finrank_fin_fun]; omega)
-      have := ModuleCat.isZero_iff_subsingleton.1 hz
-      exact Module.finrank_zero_of_subsingleton
-  simp only [hW]
-  rw [← Finset.filter_filter, Finset.sum_filter]
-  exact (Finset.sum_subtype _ (fun j ↦ by simp) fun j ↦
-    if r j ≤ n then h.twistedBettiNumber hn hdim g hV K j (n - r j) else 0).symm
+  let _ (j : ι) := (hV j).fiberBundle
+  have (j : ι) := (hV j).vectorBundle
+  -- By the twisted Thom isomorphism, each Thom pair has the twisted homology of its piece shifted
+  -- by the index.
+  refine h.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair hn K hdim g hV
+    (h.twistedBettiNumber hn hdim g hV K) (fun j p ↦ ?_) hac hcb hcrit n
+  rw [twistedBettiNumber_def]
+  exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ K
+    (by rw [finrank_fin_fun])
 
 open scoped Classical in
 /-- **A cut of the values of a Morse–Bott function, with twisted coefficients.** Under the

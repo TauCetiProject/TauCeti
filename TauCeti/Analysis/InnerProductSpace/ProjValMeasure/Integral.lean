@@ -15,6 +15,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.FinMeasAdditive
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Integration of bounded Borel symbols against a projection-valued measure
@@ -50,13 +51,17 @@ continuous extension `LinearMap.extendOfNorm`.
   composing a projection with an integral restricts the symbol to that set.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
-* `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
-  integrals against the diagonal measures.
+* `ProjValMeasure.integral_diag_eq_inner_integral` and `ProjValMeasure.inner_integral_star_left`:
+  diagonal matrix elements of the integral and moving `P.integral (star g)` across the inner
+  product.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
 * `ProjValMeasure.norm_integral_diag_sub_le` and `ProjValMeasure.abs_integral_diag_sub_le`:
   Lipschitz bounds for integrals against `P.diag` as a function of the vector.
-* `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
-  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.norm_sq_integral_apply`, `ProjValMeasure.enorm_sq_integral_apply`, and
+  `ProjValMeasure.enorm_integral_apply_eq_eLpNorm`: the vector norm identities
+  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`,
+  `‖(∫ f dP) ξ‖ₑ ^ 2 = ∫⁻ ‖f x‖ₑ ^ 2 d(P.diag ξ)(x)`, and
+  `‖(∫ f dP) ξ‖ₑ = eLpNorm f 2 (P.diag ξ)`.
 * `ProjValMeasure.diag_integral`: the diagonal measure of `(∫ f dP) ξ` is `P.diag ξ` with density
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
@@ -339,6 +344,12 @@ theorem integral_diag_eq_inner_integral (P : ProjValMeasure X H) (f : BoundedBor
   · rw [Function.comp_apply, integral_ofSimpleFunc_eq_simpleIntegral,
       integral_diag_eq_inner_simpleIntegral]
 
+/-- Moving `P.integral` with conjugated symbol across the inner product. -/
+theorem inner_integral_star_left (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (y x : H) :
+    ⟪P.integral (star g) y, x⟫_ℂ = ⟪y, P.integral g x⟫_ℂ := by
+  rw [map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+
 /-- A pointwise bound `‖f x‖ ≤ M` on a symbol bounds the operator norm of its integral. This
 includes an empty space, where every symbol and every operator integral has norm zero. -/
 theorem norm_integral_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {M : ℝ}
@@ -428,10 +439,27 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       rw [← P.norm_sq_proj_apply B hB, P.proj_integral_apply hB g ξ, P.norm_sq_integral_apply,
         hind, MeasureTheory.integral_indicator hB]
     _ = ∫⁻ x in B, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn (ae_of_all _ fun _ => sq_nonneg _)]
-      refine lintegral_congr fun x => ?_
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+      simpa only [ENNReal.rpow_two] using
+        MeasureTheory.ofReal_setIntegral_norm_sq_eq hint.integrableOn
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- The squared extended norm of `(∫ g dP) ξ` is the second moment of `‖g‖ₑ` against
+`P.diag ξ`. -/
+theorem enorm_sq_integral_apply (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (ξ : H) :
+    ‖P.integral g ξ‖ₑ ^ 2 = ∫⁻ x, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
+  rw [← P.diag_univ, P.diag_integral, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
+
+/-- The extended norm of `(∫ g dP) ξ` is the `L²` seminorm `eLpNorm g 2 (P.diag ξ)`. -/
+theorem enorm_integral_apply_eq_eLpNorm (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (ξ : H) :
+    ‖P.integral g ξ‖ₑ = eLpNorm g 2 (P.diag ξ) := by
+  refine ENNReal.rpow_left_injective (show (2 : ℝ) ≠ 0 by norm_num) ?_
+  dsimp only
+  rw [ENNReal.rpow_two, P.enorm_sq_integral_apply,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal (by norm_num) (by norm_num)
+      g.measurable.aestronglyMeasurable, ← ENNReal.rpow_mul]
+  simp
 
 end ProjValMeasure
 end TauCeti

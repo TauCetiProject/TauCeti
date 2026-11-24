@@ -6,6 +6,7 @@ Authors: OpenAI Codex, Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.MellinTransform
+import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
 # Basic identities for Mellin transforms
@@ -19,8 +20,13 @@ The substitution `t = e^{-u}` turns the Mellin integrand of `f` at `s` into
 `e^{-su} f(e^{-u})` on the whole real line, and the substitution `t ↦ 1/t` relates the Mellin
 transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
 
+The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
+transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
+with their unextended forms this way.
+
 ## Main results
 
+* `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -29,6 +35,10 @@ transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
   Mellin transform of a real function is the real integral `∫_{(0,∞)} f(x) dx/x`.
 * `MellinConvergent.of_support_subset_Icc`: for a function supported in a compact interval of
   `(0, ∞)`, convergence at one exponent gives convergence at every exponent.
+* `MeasureTheory.LocallyIntegrableOn.mellinConvergent_of_isCompact_tsupport_inter_Ioi`,
+  `MeasureTheory.LocallyIntegrableOn.differentiable_mellin_of_isCompact_tsupport_inter_Ioi`: a
+  function locally integrable on `(0, ∞)` with compact positive closed support
+  `tsupport f ∩ Ioi 0` is Mellin convergent at every exponent, and its Mellin transform is entire.
 * `TauCeti.mellinConvergent_ofReal_of_support_subset_Icc`: a real function supported in a compact
   interval of `(0, ∞)` with `x ↦ f x / x` integrable on `(0, ∞)` converges at every exponent.
 * `TauCeti.mellinConvergent_iff_integrable_exp_smul`, `TauCeti.mellin_eq_integral_exp_smul`:
@@ -44,6 +54,15 @@ open Set MeasureTheory Complex
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
+theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} :
+    HasMellin f s m ↔ HasMellin g s m := by
+  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
+      (Ioi 0) := fun t ht ↦ by simp only [h ht]
+  simp only [HasMellin, MellinConvergent, mellin,
+    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
+    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
 
 /-- For `0 ≤ a`, the Mellin transform of `(Ioi a).indicator f` converges at `s` exactly when the
 upper Mellin integrand `u ^ (s - 1) • f u` is integrable on `Ioi a`. -/
@@ -156,6 +175,30 @@ theorem MellinConvergent.of_support_subset_Icc {E : Type*} [NormedAddCommGroup E
     measurableSet_Ioi fun t ht ↦ ?_
   · rw [smul_smul, ← cpow_add _ _ (ofReal_ne_zero.mpr (ha.trans_le ht.1).ne'), sub_add_sub_cancel]
   · rw [Function.notMem_support.mp fun h ↦ ht.2 (hf h), smul_zero]
+
+/-- A function locally integrable on `(0, ∞)` whose positive closed support `tsupport f ∩ Ioi 0`
+is compact is Mellin convergent at every exponent. -/
+theorem MeasureTheory.LocallyIntegrableOn.mellinConvergent_of_isCompact_tsupport_inter_Ioi
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℝ → E}
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0)) (s : ℂ) :
+    MellinConvergent f s :=
+  mellinConvergent_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1) hf
+    (hc.eventuallyEq_zero_atTop_of_tsupport_inter_Ioi.trans_isBigO
+      (Asymptotics.isBigO_zero _ _)) (by linarith)
+    (hc.eventuallyEq_zero_nhdsGT_of_tsupport_inter_Ioi.trans_isBigO
+      (Asymptotics.isBigO_zero _ _)) (by linarith)
+
+/-- The Mellin transform of a function locally integrable on `(0, ∞)` with compact positive closed
+support is entire. -/
+theorem MeasureTheory.LocallyIntegrableOn.differentiable_mellin_of_isCompact_tsupport_inter_Ioi
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℝ → E}
+    (hf : LocallyIntegrableOn f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0)) :
+    Differentiable ℂ (mellin f) := fun s ↦
+  mellin_differentiableAt_of_isBigO_rpow (a := s.re + 1) (b := s.re - 1) hf
+    (hc.eventuallyEq_zero_atTop_of_tsupport_inter_Ioi.trans_isBigO
+      (Asymptotics.isBigO_zero _ _)) (by linarith)
+    (hc.eventuallyEq_zero_nhdsGT_of_tsupport_inter_Ioi.trans_isBigO
+      (Asymptotics.isBigO_zero _ _)) (by linarith)
 
 namespace TauCeti
 

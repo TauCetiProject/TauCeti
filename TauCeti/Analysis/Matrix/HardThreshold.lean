@@ -64,6 +64,24 @@ theorem IsHermitian.hardThreshold [SeminormedAddCommGroup 𝕜] [StarAddMonoid �
   refine IsHermitian.ext fun i j ↦ ?_
   simp only [hardThreshold_apply, apply_ite star, star_zero, ← norm_star (A j i), hA.apply]
 
+open scoped Matrix.Norms.L2Operator in
+/-- If each row has at most `s` retained entries and each has norm at most `M`,
+the hard-thresholded Hermitian matrix has Euclidean operator norm at most `s * M`. -/
+theorem IsHermitian.l2_opNorm_hardThreshold_le [RCLike 𝕜] [Fintype n] [DecidableEq n]
+    {A : Matrix n n 𝕜} (hA : A.IsHermitian) (t : ℝ) {s : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hs : ∀ i, (Finset.univ.filter fun j ↦ t < ‖A i j‖).card ≤ s)
+    (hentry : ∀ i j, t < ‖A i j‖ → ‖A i j‖ ≤ M) :
+    ‖A.hardThreshold t‖ ≤ s * M := by
+  apply (hA.hardThreshold t).l2_opNorm_le_of_row_sum_le (mul_nonneg (Nat.cast_nonneg _) hM)
+  intro i
+  calc
+    _ ≤ ∑ _j ∈ Finset.univ.filter (fun j ↦ t < ‖A i j‖), M := by
+      simp_rw [hardThreshold_apply, apply_ite norm, norm_zero, ← Finset.sum_filter]
+      exact Finset.sum_le_sum fun j hj ↦ hentry i j (Finset.mem_filter.1 hj).2
+    _ ≤ _ := by
+      rw [Finset.sum_const, nsmul_eq_mul]
+      exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 (hs i)) hM
+
 /-- Hard thresholding is measurable in the matrix at any fixed threshold. -/
 @[fun_prop]
 theorem measurable_hardThreshold [SeminormedAddGroup 𝕜] [MeasurableSpace 𝕜]

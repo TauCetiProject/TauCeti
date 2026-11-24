@@ -30,7 +30,10 @@ manifold (`TauCeti.morse_inequalities`), the function is perfect exactly when `Q
 (`TauCeti.IsMorse.isPerfectMorse_iff_eq_zero`). The Betti number `bⱼ` of a perfect Morse
 function vanishes exactly when it has no critical point of index `j`
 (`TauCeti.IsPerfectMorse.bettiNumber_eq_zero_iff`), and the sum of the Betti numbers is the number
-of critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount`). Whether a
+of critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount`). As
+cardinalities of finite sets, `bⱼ` is the number of critical points of index `j`
+(`TauCeti.IsPerfectMorse.bettiNumber_eq_ncard`) and the sum of the Betti numbers is the number of
+critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_ncard`). Whether a
 perfect Morse function exists depends on the coefficients, as projective spaces show.
 
 * **Spheres.** The height function on `Sⁿ` has one critical point of index `0` and one of index
@@ -136,6 +139,22 @@ theorem IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount (hf : IsPerfectMors
       totalCriticalCount I f := by
   rw [← sum_criticalCount_eq_totalCriticalCount, Nat.cast_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hf.criticalCount_eq j, bettiNumber_def]
+
+variable {k : Type u} [DivisionRing k] in
+/-- **Betti numbers of a perfect Morse function count critical points.** If `f` is a perfect Morse
+function, the Betti number `bⱼ(M; k)` is the number of critical points of `f` of index `j`. -/
+theorem IsPerfectMorse.bettiNumber_eq_ncard (hf : IsPerfectMorse I k f) (j : ℕ) :
+    bettiNumber k M j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.ncard := by
+  rw [ncard_def, ← criticalCount_def, hf.criticalCount_eq j, bettiNumber_def, ENat.toNat_natCast]
+
+variable {k : Type u} [DivisionRing k] in
+/-- **The total Betti number of a perfect Morse function, as a number of points.** If `f` is a
+perfect Morse function on a manifold, the sum of the Betti numbers of the manifold is the number
+of critical points of `f`. -/
+theorem IsPerfectMorse.sum_bettiNumber_eq_ncard (hf : IsPerfectMorse I k f) :
+    ∑ j ∈ Finset.range (finrank ℝ E + 1), bettiNumber k M j = (criticalPoints I f).ncard := by
+  rw [ncard_def, ← totalCriticalCount_def, ← hf.sum_bettiNumber_eq_totalCriticalCount,
+    ENat.toNat_natCast]
 
 section Compact
 

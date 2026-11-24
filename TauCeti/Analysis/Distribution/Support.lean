@@ -46,6 +46,8 @@ near the support.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
+* `Distribution.dsupport_comp_subset_of_disjoint`: the support of `T ∘ P` lies in a closed set `S`
+  when `P` takes tests supported off `S` to tests supported off the support of `T`.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values;
   by `Distribution.map_eq_map_of_forall_eventuallyEq` it suffices that they agree near each point
   of the support in `Ω`.
@@ -59,6 +61,8 @@ near the support.
   `Distribution.isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: support under
   smooth multiples and cutoffs, open/regularity restriction, existence of a test cutoff equal to
   one near the support, and compactness of point-evaluation support.
+* `Distribution.exists_cutoff_abs_le_one`: a cutoff equal to one near the support of `T` can be
+  replaced by one with `|ψ| ≤ 1` and the same germ along the support of `T`.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
@@ -205,6 +209,20 @@ theorem map_eq_zero_of_disjoint_dsupport {φ : 𝓓^{n}(Ω, F)}
     (h : Disjoint (tsupport φ) (dsupport T)) : T φ = 0 :=
   isVanishingOn_compl_dsupport T φ h.subset_compl_right
 
+/-- **The support of a composition**: if `P` takes every test function on `Ω'` supported off a
+closed set `S` to a test function supported off the support of `T`, then the support of `T ∘ P`
+lies in `S`. -/
+theorem dsupport_comp_subset_of_disjoint {E' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω' : Opens E'} {m : ℕ∞}
+    {P : 𝓓^{m}(Ω', G) → 𝓓^{n}(Ω, F)} {S : Set E'} (hS : IsClosed S)
+    (hP : ∀ φ : 𝓓^{m}(Ω', G), Disjoint (tsupport φ) S →
+      Disjoint (tsupport (P φ)) (dsupport T)) :
+    dsupport (T ∘ P) ⊆ S := by
+  have hvan : IsVanishingOn (T ∘ P) Sᶜ := fun φ hφ ↦
+    map_eq_zero_of_disjoint_dsupport T (hP φ (subset_compl_iff_disjoint_right.1 hφ))
+  have h := (hvan.disjoint_dsupport hS.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
+
 /-- An additive map on test functions vanishes exactly when its support is empty. -/
 theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=
   ⟨fun h ↦ funext fun φ ↦ map_eq_zero_of_disjoint_dsupport T (by simp [h]),
@@ -315,6 +333,29 @@ theorem dsupport_comp_subset {W : Type*} [Zero W] (f : 𝓓^{n}(Ω, F) → V) {g
   sInter_subset_sInter fun _ hs ↦ ⟨fun φ hφ ↦ by simp [hs.1 φ hφ, hg], hs.2⟩
 
 end SmoothMultiple
+
+section Cutoff
+
+variable [FiniteDimensional ℝ E] [Zero V]
+
+/-- A cutoff equal to one near the support of `T` can be replaced by one `ψ` with `|ψ| ≤ 1`, equal
+to one near the support of `T` and supported in the support of the original cutoff. The two
+cutoffs have the same germ along the support of `T`. -/
+theorem exists_cutoff_abs_le_one {β : Type*} [Zero β] [FunLike 𝓕 E β] {T : 𝓕 → V}
+    {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
+      tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
+  have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
+    have h : χ x = 1 := interior_subset hx
+    exact subset_tsupport _ (by simp [h])
+  have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
+  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := n)
+    (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
+    hTW (hW.trans χ.tsupport_subset)
+  exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
+    (hχ.and hψ1).mono fun x hx ↦ hx.1.trans hx.2.symm⟩
+
+end Cutoff
 
 section Augmentation
 

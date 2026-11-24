@@ -82,15 +82,15 @@ theorem isClosedUnderIsomorphisms_of_containsZero {C : Type u₁} [Category.{v�
   exact P.isClosedUnderIsomorphisms_of_isTerminal hZ.isTerminal hZP
 
 /-- **For a replete property, closure under binary products only has to be checked on
-biproducts**, since in a category with binary biproducts every binary product is one. -/
+biproducts**, since in a category with binary biproducts every binary product is one. This is
+`CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_exists_isLimit` for the biproduct
+fans `CategoryTheory.Limits.BinaryBiproduct.isLimit`. -/
 theorem isClosedUnderBinaryProducts_of_prop_biprod {C : Type u₁} [Category.{v₁} C]
     [HasZeroMorphisms C] [HasBinaryBiproducts C] (P : ObjectProperty C)
     [P.IsClosedUnderIsomorphisms] (h : ∀ X Y : C, P X → P Y → P (X ⊞ Y)) :
-    P.IsClosedUnderBinaryProducts := by
-  refine IsClosedUnderLimitsOfShape.mk' ?_
-  rintro _ ⟨F, hF⟩
-  refine P.prop_of_iso ?_ (h _ _ (hF ⟨WalkingPair.left⟩) (hF ⟨WalkingPair.right⟩))
-  exact (biprod.isoProd _ _).trans (HasLimit.isoOfNatIso (diagramIsoPair F)).symm
+    P.IsClosedUnderBinaryProducts :=
+  P.isClosedUnderBinaryProducts_of_exists_isLimit fun X Y hX hY ↦
+    ⟨_, ⟨BinaryBiproduct.isLimit X Y⟩, h X Y hX hY⟩
 
 /-- **A property closed under binary products holds for binary biproducts.** In a category with
 binary biproducts the biproduct is a binary product, so this is

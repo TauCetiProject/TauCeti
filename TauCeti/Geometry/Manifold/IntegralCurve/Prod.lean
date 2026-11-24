@@ -61,19 +61,11 @@ theorem isMIntegralCurveOn_prodVectorField_iff {s : Set ℝ} :
       fun t _ ↦ by rw [mfderiv_fst]; exact prodVectorField_fst X Y (γ t)
   · exact h.map_of_mfderiv_eq (f := Prod.snd) (fun _ _ ↦ mdifferentiableAt_snd)
       fun t _ ↦ by rw [mfderiv_snd]; exact prodVectorField_snd X Y (γ t)
-  · have key : ((1 : ℝ →L[ℝ] ℝ).smulRight (X (γ t).1)).prod
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (Y (γ t).2)) =
-          (1 : ℝ →L[ℝ] ℝ).smulRight (prodVectorField X Y (γ t)) := by
-      rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
-      -- The scalar action on the tangent space of `M × N` is not syntactically that of the
-      -- product of the tangent spaces, so `toSpanSingleton_apply` and `one_smul` need `erw` there.
-      ext <;> simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.toSpanSingleton_apply,
-        one_smul] <;> erw [ContinuousLinearMap.toSpanSingleton_apply, one_smul]
-      · exact (prodVectorField_fst X Y (γ t)).symm
-      · exact (prodVectorField_snd X Y (γ t)).symm
-    exact key ▸ (h₁ t ht).prodMk (h₂ t ht)
+  · refine HasMFDerivWithinAt.prodMk_curve (v := prodVectorField X Y (γ t)) ?_ ?_
+    · rw [prodVectorField_fst]
+      exact h₁ t ht
+    · rw [prodVectorField_snd]
+      exact h₂ t ht
 
 /-- **Integral curves of a product field** are the pairs of integral curves of the two factors. -/
 theorem isMIntegralCurve_prodVectorField_iff :

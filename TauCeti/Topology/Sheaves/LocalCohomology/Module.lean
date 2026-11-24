@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
+import TauCeti.Topology.Sheaves.Stalks
 
 /-!
 # Local cohomology sheaves with module coefficients

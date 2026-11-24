@@ -312,7 +312,6 @@ integer-order Sobolev space into itself. -/
 def referenceMulCLM (a : Fin 4) : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
   mapCLM (TemperedDistribution.smulLeftCLM ℂ fun z ↦ (referenceField f m z a : ℂ)) fun u ↦
     u.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by norm_num)
-      (hasTemperateGrowth_ofReal_referenceField_apply f m a)
       fun n _ ↦ exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a n
 
 /-- `referenceMulCLM f m k a` multiplies the underlying tempered distribution by the coordinate

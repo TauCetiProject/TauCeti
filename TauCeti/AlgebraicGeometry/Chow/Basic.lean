@@ -95,6 +95,12 @@ lemma mem_cyclesOfDimension_iff {k : ℤ} {α : AlgebraicCycle X ℤ} :
     α ∈ cyclesOfDimension X k ↔ α.support ⊆ pointsOfDimension X k :=
   Iff.rfl
 
+variable {X} in
+/-- A `k`-cycle has coefficient zero at every point that is not of dimension `k`. -/
+lemma apply_eq_zero_of_notMem_pointsOfDimension {k : ℤ} {α : AlgebraicCycle X ℤ}
+    (hα : α ∈ cyclesOfDimension X k) {x : X} (hx : x ∉ pointsOfDimension X k) : α x = 0 :=
+  Function.notMem_support.mp fun h ↦ hx (mem_cyclesOfDimension_iff.mp hα h)
+
 /-- There are no nonzero cycles of negative dimension. -/
 lemma cyclesOfDimension_eq_bot_of_neg {k : ℤ} (hk : k < 0) : cyclesOfDimension X k = ⊥ := by
   ext α

@@ -311,7 +311,7 @@ theorem rank_discriminantGroup_le : AddGroup.rank (DiscriminantGroup L) ≤ finr
   calc AddGroup.rank (DiscriminantGroup L)
       ≤ AddGroup.rank (dual L) := AddGroup.rank_le_of_surjective
         (Submodule.mkQ (L.submoduleOf (dual L))).toAddMonoidHom (Submodule.mkQ_surjective _)
-    _ ≤ finrank ℤ (dual L) := AddGroup.rank_le_finrank (dual L)
+    _ ≤ finrank ℤ (dual L) := (AddGroup.rank_eq_finrank (dual L)).le
     _ = finrank ℝ E := ZLattice.rank ℝ (dual L)
 
 end FiniteDimensional

@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Normalization
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.RingTheory.UniversallyJapanese
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 

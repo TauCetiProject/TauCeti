@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Toric.WeightedCircle.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!

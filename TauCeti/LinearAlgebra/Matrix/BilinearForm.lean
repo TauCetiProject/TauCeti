@@ -58,6 +58,9 @@ the diagonal condition remains necessary in characteristic two.
 ## Main results
 
 * `Matrix.isAlt_toBilin'_transpose_mul_mul`: rectangular pullback preserves alternation.
+* `Matrix.sum_sum_transpose_mul_mul_apply_mul`: a bilinear map summed against the entries of
+  `Wᵀ A W` on vectors `eₖ` is the bilinear map summed against the entries of `A` on the vectors
+  `∑ₖ Wᵢₖ eₖ`.
 * `Matrix.isAlt_toBilin'_iff`: alternation is skew-symmetry and a zero diagonal over any
   commutative ring.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
@@ -177,6 +180,33 @@ theorem apply_self_eq_zero_of_isAlt_toBilin' {Λ : Matrix I I R}
   simpa using hΛ.self_eq_zero (Pi.single i 1)
 
 end BilinearAlternation
+
+section BilinearSum
+
+/-- Summing a bilinear map `B` against the entries of `Wᵀ A W` on a family of vectors `e` is
+summing it against the entries of `A` on the vectors `∑ₖ Wᵢₖ eₖ`. -/
+theorem sum_sum_transpose_mul_mul_apply_mul {R M I J : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype I] [Fintype J] (A : Matrix I I R) (W : Matrix I J R)
+    (B : M →ₗ[R] M →ₗ[R] R) (e : J → M) :
+    ∑ k, ∑ l, (Wᵀ * A * W) k l * B (e k) (e l) =
+      ∑ i, ∑ j, A i j * B (∑ k, W i k • e k) (∑ l, W j l • e l) := by
+  have hcomm (f : J → J → I → I → R) :
+      ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i :=
+    calc ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ k, ∑ l, ∑ i, ∑ j, f k l j i :=
+          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ k, ∑ i, ∑ l, ∑ j, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ i, ∑ k, ∑ l, ∑ j, f k l j i := Finset.sum_comm
+      _ = ∑ i, ∑ k, ∑ j, ∑ l, f k l j i :=
+          Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      _ = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    smul_eq_mul, Matrix.mul_apply, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
+  rw [hcomm]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+end BilinearSum
 
 section BilinearAlternationRing
 

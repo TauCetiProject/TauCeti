@@ -19,7 +19,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Homogeneous symbols
@@ -164,7 +164,9 @@ theorem coefficient_eq_zero_of_norm_le {m' : ℝ} (hm : m' < m) (a : Homogeneous
       rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
     have h' := (h (t • ξ) (le_of_max_le_left htξ)).trans
       (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity))
-    have hw := one_add_norm_sq_rpow_le_norm_rpow (le_of_max_le_right htξ) m'
+    have hw := Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow (t := ‖t • ξ‖)
+      (by rw [abs_norm]; exact le_of_max_le_right htξ) m'
+    rw [abs_norm] at hw
     rw [a.norm_homogeneous x ξ ht0] at h'
     simp only [norm_smul, Real.norm_of_nonneg ht0.le, Real.mul_rpow ht0.le hξ0.le] at h' hw
     refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
@@ -1241,8 +1243,9 @@ theorem exists_norm_iteratedFDeriv_smul_coefficient_le [ProperSpace E] (χ : Fre
     rw [mul_assoc]
     refine mul_le_mul_of_nonneg_right ?_ hprod
     calc C₂ * ‖ξ‖ ^ (m - l) ≤ C₂ * (2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
-          mul_le_mul_of_nonneg_left
-            (norm_rpow_le_one_add_norm_sq_rpow (by linarith) (m - l)) hC₂
+          mul_le_mul_of_nonneg_left (by
+            simpa only [abs_norm] using Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖)
+              (by rw [abs_norm]; linarith) (m - l)) hC₂
       _ = C₂ * 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by ring
       _ ≤ max C₁ (C₂ * 2 ^ (|m - l| / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)

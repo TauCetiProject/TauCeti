@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.MixedNorm
-import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # Strichartz estimates for the wave equation with Besov data
@@ -170,12 +170,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_neg_le_tsum (hq : 2 < q)
   have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
   have h := hC m hm f (fun t ↦ G (-t)) (hG.comp_quasiMeasurePreserving hneg.quasiMeasurePreserving)
     (by simpa only [neg_neg] using hWG.comp_neg)
-  have hnorm : eLpNorm (fun t ↦ eLpNorm (G (-t)) r' volume) p volume =
-      eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-    simpa only [Function.comp_def] using eLpNorm_comp_measurePreserving
-      (g := fun t ↦ eLpNorm (G t) r' volume)
-      (hG.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable hneg
-  rw [← integral_neg_eq_self, hnorm] at h
+  rw [← integral_neg_eq_self, hG.eLpNorm_eLpNorm_comp_neg] at h
   simpa only [neg_neg] using h
 
 /-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` for a strongly continuous
@@ -270,29 +265,10 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum (
             ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
               Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
                 ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
-  rcases eq_or_ne r 0 with rfl | hr0
-  · exact ⟨0, fun _ _ _ _ ↦ by simp_rw [eLpNorm_exponent_zero (Lp.aestronglyMeasurable _)]; simp⟩
-  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr Module.finrank_pos
   obtain ⟨C₁, h₁⟩ := φ.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum hq hqr
   obtain ⟨C₂, h₂⟩ := φ.exists_eLpNorm_eLpNorm_waveSinPropagator_le_tsum hq hqr
-  refine ⟨C₁ + C₂, fun m hm f g ↦ ?_⟩
-  have hu : Continuous fun t ↦ waveCosPropagator ℂ t f + waveSinPropagator ℂ t g :=
-    (continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)
-  calc _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume +
-          eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
-        eLpNorm_mono_eNorm
-          (hu.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun t ↦ by
-            simp only [eNorm_eq_self]
-            rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
-            exact eLpNorm_add_le (one_le_two.trans hr2)
-    _ ≤ eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f) r volume) q volume +
-          eLpNorm (fun t ↦ eLpNorm (waveSinPropagator ℂ t g) r volume) q volume :=
-        eLpNorm_add_le (by exact_mod_cast one_le_two.trans hq.le)
-    _ ≤ _ := by
-        grw [h₁ m hm f, h₂ m hm g, ENNReal.coe_add, add_mul, mul_add, mul_add]
-        gcongr
-        · exact le_self_add
-        · exact le_add_self
+  exact ⟨C₁ + C₂, fun m hm f g ↦
+    eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le hq hqr (h₁ m hm f) (h₂ m hm g)⟩
 
 /-- **The Strichartz estimate for strong solutions of the free wave equation.** Under the
 hypotheses of `ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_le_tsum`, there is `C` such
@@ -316,15 +292,7 @@ theorem exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn (hq : 2 < q)
                 ‖Lp.fourierMultiplierCLM ℂ (m j) (u' 0)‖ₑ) := by
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
-  refine ⟨C, fun m hm s _ h0 u u' u'' hu ↦ ?_⟩
-  -- By Duhamel's formula with no forcing, `u(t) = cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` on `s`.
-  have hrep : ∀ᵐ t ∂volume.restrict s, eLpNorm (u t) r volume =
-      eLpNorm (waveCosPropagator ℂ t (u 0) + waveSinPropagator ℂ t (u' 0)) r volume :=
-    ae_restrict_of_forall_mem (Set.OrdConnected.measurableSet ‹_›) fun t ht ↦ by
-      rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht
-        intervalIntegrable_const]
-      simp
-  rw [eLpNorm_congr_ae hrep]
-  exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hC m hm _ _)
+  exact ⟨C, fun m hm s _ h0 u u' u'' hu ↦
+    (hu.eLpNorm_eLpNorm_restrict_le h0).trans (hC m hm _ _)⟩
 
 end ContDiffBump

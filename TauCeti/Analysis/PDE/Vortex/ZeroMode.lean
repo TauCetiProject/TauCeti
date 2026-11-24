@@ -238,7 +238,7 @@ private theorem integrable_and_integral_principalPart_mul_laplacian_sub_mul (hx 
   -- Integrability of the pieces.
   have i₁ : Integrable (fun z ↦ Δ φ z • η₀ z) volume :=
     (hη₀.continuousOn.locallyIntegrableOn hΩm).integrable_smul_left_of_hasCompactSupport
-      hφ2.continuous_laplacian
+      hφ2.continuous_laplacian.continuousOn
       (hφc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _)))
       ((tsupport_laplacian_subset _).trans hφΩ)
   have i₂ : Integrable (fun z ↦ φ z • (P z • η₀ z)) volume :=

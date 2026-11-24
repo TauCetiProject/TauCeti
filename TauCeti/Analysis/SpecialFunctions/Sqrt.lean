@@ -25,8 +25,9 @@ positive operators close to the identity. The file also records that the square 
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
 to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
-`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
-the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. It describes
+the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays. Finally, it
+records the Gaussian normalization `√(4/π) = 2/√π`.
 
 ## Main results
 
@@ -64,6 +65,7 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
 * `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
+* `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
 
@@ -425,5 +427,15 @@ theorem setOf_le_sq_eq_union (a : ℝ) :
   rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
 
 end Real
+
+namespace TauCeti
+
+/-- The Gaussian normalization `√(4/π) = 2/√π`. It relates the constant `4/π` in the Mills-ratio
+bounds of DLMF 7.8.2 to the prefactor `2/√π` of the error function. -/
+theorem sqrt_four_div_pi : √(4 / Real.pi) = 2 / √Real.pi := by
+  rw [Real.sqrt_div' _ Real.pi_pos.le,
+    (Real.sqrt_eq_iff_mul_self_eq_of_pos two_pos).2 (by norm_num)]
+
+end TauCeti
 
 end

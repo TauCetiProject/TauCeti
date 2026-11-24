@@ -39,7 +39,9 @@ glue by `ContinuousMap.liftCoherent`.
 Read through Mathlib's identification `TopCat.sigmaIsoSigma` of coproducts in `TopCat` with
 disjoint unions, the map of coproducts `Limits.Sigma.map φ` of a family of maps is the map
 `Sigma.map id φ` of disjoint unions (`TauCeti.TopCat.coe_sigmaMap`). Hence a coproduct of
-embeddings is an embedding (`TauCeti.TopCat.isEmbedding_sigmaMap`).
+embeddings is an embedding (`TauCeti.TopCat.isEmbedding_sigmaMap`). Likewise a map out of a
+coproduct is the map `ContinuousMap.sigma` glued from its restrictions to the summands
+(`TauCeti.TopCat.hom_eq_sigma_comp_sigmaIsoSigma_hom`).
 -/
 
 public section
@@ -173,6 +175,17 @@ theorem isEmbedding_sigmaMap (hφ : ∀ i, Topology.IsEmbedding (φ i)) :
   exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm).isEmbedding.comp
     (((Topology.isEmbedding_sigmaMap Function.injective_id).2 hφ).comp
       (TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)).isEmbedding)
+
+/-- Read through the homeomorphism `TopCat.sigmaIsoSigma` with the disjoint union, a map `χ` out
+of a coproduct in `TopCat` is the map `ContinuousMap.sigma` glued from its restrictions
+`Limits.Sigma.ι X i ≫ χ` to the summands. -/
+theorem hom_eq_sigma_comp_sigmaIsoSigma_hom {Y : TopCat.{u}} (χ : ∐ X ⟶ Y) :
+    χ.hom = (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom).comp
+      (TopCat.sigmaIsoSigma X).hom.hom := by
+  refine congrArg TopCat.Hom.hom (Limits.Sigma.hom_ext χ ((TopCat.sigmaIsoSigma X).hom ≫
+    TopCat.ofHom (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom)) fun i ↦ ?_)
+  rw [TopCat.sigmaIsoSigma_hom_ι_assoc]
+  exact TopCat.ext fun _ ↦ by simp
 
 end Sigma
 

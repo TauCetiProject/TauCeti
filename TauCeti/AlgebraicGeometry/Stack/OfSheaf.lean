@@ -63,7 +63,7 @@ lemma ofSheaf.objEquiv_map_toFunctor_obj (F : Sheaf Scheme.fppfTopology (Type u)
     {T T' : Scheme.{u}} (f : T' ⟶ T) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
     ofSheaf.objEquiv F T' (((ofSheaf F).toSchPseudofunctor.map f.op.toLoc).toFunctor.obj M) =
       F.obj.map f.op (ofSheaf.objEquiv F T M) :=
-  Pseudofunctor.ofPresheaf.objEquiv_map_toFunctor_obj f.op M
+  Pseudofunctor.ofPresheaf.objEquiv_map_toFunctor_obj f.op.toLoc M
 
 /-- The morphism of stacks in setoids induced by a morphism of fppf sheaves: on the fibre over
 `T` it applies `α` at `T`. -/
