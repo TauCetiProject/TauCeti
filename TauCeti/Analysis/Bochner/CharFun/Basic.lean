@@ -14,7 +14,11 @@ The complex exponential kernel of a characteristic function is integrable agains
 measure (`TauCeti.integrable_exp_inner_mul_I`). The characteristic function of a measure that is
 not finite is zero (`TauCeti.charFun_of_not_isFiniteMeasure`). On a real inner product space whose
 open sets are measurable (`[OpensMeasurableSpace E]`), the characteristic function of every
-measure is continuous (`TauCeti.continuous_charFun_of_opensMeasurableSpace`). These facts support
+measure is continuous (`TauCeti.continuous_charFun_of_opensMeasurableSpace`). On the real line,
+the integral of `cos (t * x)` against a finite measure is the real part of its characteristic
+function at `t` (`TauCeti.integral_cos_mul_eq_re_charFun`), and the integral of
+`cos (t * (x - v))` is the real part of its characteristic function at `t` after rotation by the
+phase `-t * v` (`TauCeti.integral_cos_mul_sub_eq_re_exp_mul_charFun`). These facts support
 integral manipulations in characteristic-function formulas and positive-definiteness proofs.
 -/
 
@@ -70,5 +74,31 @@ theorem integrable_exp_inner_mul_I (a : E) :
   ((innerProbChar a).integrable μ).congr (.of_forall (innerProbChar_apply a))
 
 end InnerProductSpace
+
+section Real
+
+variable {μ : Measure ℝ} [IsFiniteMeasure μ]
+
+/-- The integral of `cos (t * x)` against a finite measure `μ` on `ℝ` is the real part of the
+characteristic function of `μ` at `t`. -/
+theorem integral_cos_mul_eq_re_charFun (t : ℝ) : ∫ x, Real.cos (t * x) ∂μ = (charFun μ t).re := by
+  have h : Integrable (fun x : ℝ ↦ cexp (t * x * I)) μ := by
+    simpa [mul_comm] using integrable_exp_inner_mul_I (μ := μ) t
+  rw [charFun_apply_real, ← RCLike.re_eq_complex_re, ← integral_re h]
+  simp [Complex.exp_re]
+
+/-- The integral of `cos (t * (x - v))` against a finite measure `μ` on `ℝ` is the real part of
+the characteristic function of `μ` at `t` after rotation by the phase `-t * v`. -/
+theorem integral_cos_mul_sub_eq_re_exp_mul_charFun (v t : ℝ) :
+    ∫ x, Real.cos (t * (x - v)) ∂μ = (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
+  -- Translating `μ` by `-v` rotates its characteristic function by the phase `-t * v`
+  -- (Mathlib's `MeasureTheory.charFun_map_add_const`).
+  have hmap : ∫ x, Real.cos (t * (x - v)) ∂μ = ∫ y, Real.cos (t * y) ∂(μ.map (· + -v)) := by
+    rw [integral_map (by fun_prop) (by fun_prop)]
+    simp [sub_eq_add_neg]
+  rw [hmap, integral_cos_mul_eq_re_charFun t, charFun_map_add_const]
+  simp [mul_comm]
+
+end Real
 
 end TauCeti
