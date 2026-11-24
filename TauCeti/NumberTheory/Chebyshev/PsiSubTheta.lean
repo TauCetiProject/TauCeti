@@ -51,15 +51,17 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   `∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`.
 * `Chebyshev.psiSubThetaTailBound`: the uniform dyadic envelope
   `max (psiSubThetaTailCoeff X) (psiSubThetaTailCoeff (2 ^ (⌊log X / log 2⌋₊ + 1)))`.
+* `Chebyshev.psiSubThetaSqrtCoeff`: the square-root coefficient in Theorem 5 of Broadbent et al.,
+  `1 + ε (log x₁)` for `b ≤ 2 * log x₁` and `1 + ε (b / 2)` otherwise.
+* `Chebyshev.psiSubThetaCbrtCoeff`: the cube-root coefficient
+  `(1 + ε (log x₁)) * psiSubThetaTailBound (exp b)` in Theorem 5 of Broadbent et al.
 
 ## Main results
 
-* `Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum`, `Chebyshev.psi_sub_theta_eq_sum_theta`:
-  the exact decompositions of `ψ(x)` and `ψ(x) − θ(x)`.
+* `Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum`, `Chebyshev.psi_sub_theta_eq_theta_sqrt_add_sum`,
+  `Chebyshev.psi_sub_theta_eq_sum_theta`: the exact decompositions of `ψ(x)` and `ψ(x) − θ(x)`.
 * `Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta`, `Chebyshev.theta_sqrt_le_psi_sub_theta`:
   unconditional lower bounds on `ψ(x) − θ(x)`.
-* `Chebyshev.sum_rpow_one_div_le`:
-  `∑_{3 ≤ k ≤ log x / log 2} x^{1/k} ≤ (log x / log 2 − 2)⁺ x^{1/3}`.
 * `Chebyshev.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by
   `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
 * `Chebyshev.psiSubThetaTailCoeff_eq_zero_iff`,
@@ -87,6 +89,9 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
   `Chebyshev.psi_sub_theta_le_add_psiSubThetaTailBound`,
   `Chebyshev.mul_sqrt_add_theta_cbrt_le_psi_sub_theta`,
   `Chebyshev.theta_le_of_theta_le_self_of_psi_le`,
+  `Chebyshev.psiSubThetaSqrtCoeff_of_le`, `Chebyshev.psiSubThetaSqrtCoeff_of_lt`,
+  `Chebyshev.psiSubThetaSqrtCoeff_eq_one_add_max`,
+  `Chebyshev.psiSubThetaCbrtCoeff_eq_mul_max`,
   `Chebyshev.psi_sub_theta_le_of_psi_le_exp`, `Chebyshev.psi_sub_theta_le_mul_rpow_sum`,
   `Chebyshev.psi_sub_theta_le_mul_exp_sum`, `Chebyshev.le_theta_of_le_psi_rpow`,
   `Chebyshev.le_theta_of_le_psi_exp`: general-input transfer bounds of Broadbent, Kadiri, Lumley,
@@ -145,34 +150,27 @@ theorem psi_eq_theta_add_theta_sqrt_add_sum {x : ℝ} (hx : 0 ≤ x) :
     ψ x = θ x + θ √x + ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) :=
   psi_eq_theta_add_theta_sqrt_add_sum' hx le_rfl
 
+/-- For `x ≥ 0` and every `N ≥ log x / log 2`,
+`ψ(x) − θ(x) = θ(√x) + ∑_{3 ≤ k ≤ N} θ(x^{1/k})`. -/
+theorem psi_sub_theta_eq_theta_sqrt_add_sum' {x : ℝ} (hx : 0 ≤ x) {N : ℕ}
+    (hN : ⌊log x / log 2⌋₊ ≤ N) :
+    ψ x - θ x = θ √x + ∑ k ∈ Icc 3 N, θ (x ^ ((1 : ℝ) / k)) := by
+  rw [psi_eq_theta_add_theta_sqrt_add_sum' hx hN, add_assoc, add_sub_cancel_left]
+
+/-- For `x ≥ 0`, `ψ(x) − θ(x) = θ(√x) + ∑_{3 ≤ k ≤ log x / log 2} θ(x^{1/k})`. -/
+theorem psi_sub_theta_eq_theta_sqrt_add_sum {x : ℝ} (hx : 0 ≤ x) :
+    ψ x - θ x = θ √x + ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) :=
+  psi_sub_theta_eq_theta_sqrt_add_sum' hx le_rfl
+
 /-- The square-root and cube-root terms of the decomposition bound `ψ − θ` from below:
 `θ(√x) + θ(x^{1/3}) ≤ ψ(x) − θ(x)` for `x ≥ 0`. -/
 theorem theta_sqrt_add_theta_rpow_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
     θ √x + θ (x ^ ((1 : ℝ) / 3)) ≤ ψ x - θ x := by
-  rw [psi_eq_theta_add_theta_sqrt_add_sum' hx (le_max_left _ 3)]
+  rw [psi_sub_theta_eq_theta_sqrt_add_sum' hx (le_max_left _ 3)]
   have h3 := single_le_sum (f := fun k : ℕ ↦ θ (x ^ ((1 : ℝ) / k))) (fun _ _ ↦ theta_nonneg _)
     (mem_Icc.mpr ⟨le_rfl, le_max_right ⌊log x / log 2⌋₊ 3⟩)
   simp only [Nat.cast_ofNat] at h3
   linarith
-
-/-- The roots `x^{1/k}` with `3 ≤ k ≤ log x / log 2` add up to at most
-`(log x / log 2 − 2)⁺ x^{1/3}`, for `x ≥ 0`. -/
-theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
-    ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) ≤
-      max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
-  rcases lt_or_ge x 1 with hx1 | hx1
-  · have : ⌊log x / log 2⌋₊ = 0 :=
-      Nat.floor_eq_zero.mpr ((div_nonpos_of_nonpos_of_nonneg
-        (log_nonpos hx hx1.le) (log_nonneg one_le_two)).trans_lt one_pos)
-    simp only [this, Icc_eq_empty_of_lt (by norm_num : 0 < 3), sum_empty]
-    positivity
-  refine (TauCeti.sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
-    (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_).trans_eq ?_
-  · have : (3 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
-    gcongr
-  · congr 2
-    push_cast
-    ring
 
 /-- The terms with `k ≥ 3` of the decomposition: if `θ(y) ≤ c y` for every `y ≥ 2`, then
 `∑_{3 ≤ k ≤ N} θ(x^{1/k}) ≤ c ∑_{3 ≤ k ≤ N} x^{1/k}` for `x ≥ 0`. -/
@@ -191,9 +189,9 @@ theorem psi_sub_theta_le_log_four_mul {x : ℝ} (hx : 0 ≤ x) :
     ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) := by
   have hsq := theta_le_log4_mul_x (sqrt_nonneg x)
   have hsum := (sum_theta_rpow_le_mul_sum_rpow (fun _ hy ↦ theta_le_log4_mul_x (by linarith))
-    hx ⌊log x / log 2⌋₊).trans (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le hx)
+    hx ⌊log x / log 2⌋₊).trans (mul_le_mul_of_nonneg_left (Real.sum_rpow_one_div_le hx)
     (log_nonneg (by norm_num)))
-  rw [psi_eq_theta_add_theta_sqrt_add_sum hx]
+  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
   linarith
 
 /-- A linear upper bound for `ψ` gives a lower bound for `θ` through Costa Pereira's comparison
@@ -326,7 +324,7 @@ theorem psi_sub_theta_eq_sum_theta {x : ℝ} (hx : 0 ≤ x) :
 /-- Unconditional square-root lower bound: `θ √x ≤ ψ x - θ x` for every real `x`. -/
 theorem theta_sqrt_le_psi_sub_theta (x : ℝ) : θ √x ≤ ψ x - θ x := by
   rcases le_or_gt 0 x with hx | hx
-  · rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left]
+  · rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
     exact le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ Chebyshev.theta_nonneg _)
   · rw [Real.sqrt_eq_zero_of_nonpos hx.le, Chebyshev.theta_eq_zero_of_lt_two (by norm_num),
       Chebyshev.psi_eq_zero_of_lt_two (by linarith),
@@ -757,7 +755,7 @@ theorem psi_sub_theta_le_add_max_mul_cbrt {c c' y₀ x : ℝ} (hyx : y₀ ^ 2 �
     ψ x - θ x ≤ c' * √x + c * max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
   have hx : 0 ≤ x := le_trans (sq_nonneg y₀) hyx
   have hc : 0 < c := pos_of_theta_le hθ
-  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left]
+  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
   have h1 : θ √x ≤ c' * √x := hθ' √x (Real.le_sqrt_of_sq_le hyx)
   have h2 : ∑ k ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) ≤
       c * max (Real.log x / Real.log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) :=
@@ -774,8 +772,8 @@ theorem psi_sub_theta_le_of_theta_le {c x : ℝ} (hx : 0 ≤ x)
   have hc := pos_of_theta_le hθ
   have hsq := theta_le_mul_of_two_le (Real.sqrt_nonneg x) hθ
   have hsum := (Chebyshev.sum_theta_rpow_le_mul_sum_rpow hθ hx ⌊Real.log x / Real.log 2⌋₊).trans
-    (mul_le_mul_of_nonneg_left (Chebyshev.sum_rpow_one_div_le hx) hc.le)
-  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx]
+    (mul_le_mul_of_nonneg_left (Real.sum_rpow_one_div_le hx) hc.le)
+  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
   linarith
 
 /-- Upper transfer from `θ`-bounds for `x ≥ max 4 (y₀ ^ 2)`:
@@ -907,8 +905,7 @@ theorem psi_sub_theta_sub_theta_sqrt_le {c X x : ℝ} (hX : (2 : ℝ) ^ 8 ≤ X)
     ψ x - θ x - θ √x ≤ c * psiSubThetaTailBound X * x ^ ((1 : ℝ) / 3) := by
   have hx : 0 ≤ x := le_trans (le_trans (by positivity) hX) hXx
   have hc : 0 < c := pos_of_theta_le hθ
-  rw [Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum hx, add_assoc, add_sub_cancel_left,
-    add_sub_cancel_left]
+  rw [psi_sub_theta_eq_theta_sqrt_add_sum hx, add_sub_cancel_left]
   exact (sum_theta_rpow_le hx hθ).trans (by
     gcongr
     exact psiSubThetaTailCoeff_le_psiSubThetaTailBound hX hXx)
@@ -946,19 +943,70 @@ theorem theta_le_of_theta_le_self_of_psi_le {c x₁ x : ℝ} (hc : 1 ≤ c) (hx 
     · exact (hθ x hx2 hxx₁).trans (by nlinarith)
   · exact (Chebyshev.theta_le_psi x).trans (hψ x hx₁x.le)
 
+/-- The square-root coefficient in Theorem 5 of Broadbent, Kadiri, Lumley, Ng, and Wilk:
+`1 + ε (log x₁)` for `b ≤ 2 * log x₁` and `1 + ε (b / 2)` otherwise. -/
+noncomputable def psiSubThetaSqrtCoeff (ε : ℝ → ℝ) (x₁ b : ℝ) : ℝ :=
+  if b ≤ 2 * Real.log x₁ then 1 + ε (Real.log x₁) else 1 + ε (b / 2)
+
+/-- Definitional equation for `psiSubThetaSqrtCoeff`. -/
+theorem psiSubThetaSqrtCoeff_def (ε : ℝ → ℝ) (x₁ b : ℝ) :
+    psiSubThetaSqrtCoeff ε x₁ b =
+      if b ≤ 2 * Real.log x₁ then 1 + ε (Real.log x₁) else 1 + ε (b / 2) :=
+  (rfl)
+
+/-- Evaluation of `psiSubThetaSqrtCoeff` in the small-`b` regime `b ≤ 2 * log x₁`. -/
+theorem psiSubThetaSqrtCoeff_of_le {ε : ℝ → ℝ} {x₁ b : ℝ} (h : b ≤ 2 * Real.log x₁) :
+    psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (Real.log x₁) := by
+  simp [psiSubThetaSqrtCoeff_def, h]
+
+/-- Evaluation of `psiSubThetaSqrtCoeff` in the large-`b` regime `2 * log x₁ < b`. -/
+theorem psiSubThetaSqrtCoeff_of_lt {ε : ℝ → ℝ} {x₁ b : ℝ} (h : 2 * Real.log x₁ < b) :
+    psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (b / 2) := by
+  simp [psiSubThetaSqrtCoeff_def, h.not_ge]
+
+/-- Maximum-argument evaluation of `psiSubThetaSqrtCoeff`:
+`psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (max (log x₁) (b / 2))`. -/
+theorem psiSubThetaSqrtCoeff_eq_one_add_max (ε : ℝ → ℝ) (x₁ b : ℝ) :
+    psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (max (Real.log x₁) (b / 2)) := by
+  rcases le_or_gt b (2 * Real.log x₁) with h | h
+  · rw [psiSubThetaSqrtCoeff_of_le h, max_eq_left (by linarith)]
+  · rw [psiSubThetaSqrtCoeff_of_lt h, max_eq_right (by linarith)]
+
+/-- The cube-root coefficient `(1 + ε (log x₁)) * psiSubThetaTailBound (exp b)` in Theorem 5 of
+Broadbent, Kadiri, Lumley, Ng, and Wilk. -/
+noncomputable def psiSubThetaCbrtCoeff (ε : ℝ → ℝ) (x₁ b : ℝ) : ℝ :=
+  (1 + ε (Real.log x₁)) * psiSubThetaTailBound (Real.exp b)
+
+/-- Definitional equation for `psiSubThetaCbrtCoeff`. -/
+theorem psiSubThetaCbrtCoeff_def (ε : ℝ → ℝ) (x₁ b : ℝ) :
+    psiSubThetaCbrtCoeff ε x₁ b =
+      (1 + ε (Real.log x₁)) * psiSubThetaTailBound (Real.exp b) :=
+  (rfl)
+
+/-- Explicit evaluation of `psiSubThetaCbrtCoeff` in terms of `psiSubThetaTailCoeff`. -/
+theorem psiSubThetaCbrtCoeff_eq_mul_max (ε : ℝ → ℝ) (x₁ b : ℝ) :
+    psiSubThetaCbrtCoeff ε x₁ b =
+      (1 + ε (Real.log x₁)) * max (psiSubThetaTailCoeff (Real.exp b))
+        (psiSubThetaTailCoeff ((2 : ℝ) ^ (⌊b / Real.log 2⌋₊ + 1))) := by
+  rw [psiSubThetaCbrtCoeff_def, psiSubThetaTailBound_exp]
+
+/-- Nonnegativity of `psiSubThetaCbrtCoeff` when `0 ≤ 1 + ε (log x₁)`. -/
+theorem psiSubThetaCbrtCoeff_nonneg {ε : ℝ → ℝ} {x₁ : ℝ}
+    (hε : 0 ≤ 1 + ε (Real.log x₁)) (b : ℝ) :
+    0 ≤ psiSubThetaCbrtCoeff ε x₁ b :=
+  mul_nonneg hε (psiSubThetaTailBound_nonneg _)
+
 /-- General-input `ψ - θ` upper bound from a `ψ`-table and a finite verification `θ y ≤ y`
 up to `x₁` (Broadbent, Kadiri, Lumley, Ng, and Wilk, Theorem 5): for `x₁ > 0`, `8 * log 2 ≤ b`
 (in particular for every `b ≥ 6`), and `x ≥ exp b`,
-`ψ x - θ x ≤ a₁ * √x + (1 + ε (log x₁)) * psiSubThetaTailBound (exp b) * x ^ (1 / 3)`
-where `a₁ = 1 + ε (log x₁)` for `b ≤ 2 * log x₁` and `a₁ = 1 + ε (b / 2)` otherwise. -/
+`ψ x - θ x ≤ psiSubThetaSqrtCoeff ε x₁ b * √x + psiSubThetaCbrtCoeff ε x₁ b * x ^ (1 / 3)`. -/
 theorem psi_sub_theta_le_of_psi_le_exp {ε : ℝ → ℝ} {x₁ b x : ℝ}
     (hx₁ : 0 < x₁) (hb : 8 * Real.log 2 ≤ b) (hbx : Real.exp b ≤ x)
     (hε : 0 ≤ ε (Real.log x₁))
     (hθ : ∀ y, 2 ≤ y → y ≤ x₁ → θ y ≤ y)
     (hψ : ∀ b', Real.log x₁ ≤ b' → ∀ y, Real.exp b' ≤ y → ψ y ≤ (1 + ε b') * y) :
     ψ x - θ x ≤
-      (if b ≤ 2 * Real.log x₁ then 1 + ε (Real.log x₁) else 1 + ε (b / 2)) * √x +
-        (1 + ε (Real.log x₁)) * psiSubThetaTailBound (Real.exp b) * x ^ ((1 : ℝ) / 3) := by
+      psiSubThetaSqrtCoeff ε x₁ b * √x + psiSubThetaCbrtCoeff ε x₁ b * x ^ ((1 : ℝ) / 3) := by
   have hX : (2 : ℝ) ^ 8 ≤ Real.exp b := by
     calc (2 : ℝ) ^ 8
         = Real.exp (Real.log ((2 : ℝ) ^ (8 : ℕ))) := (Real.exp_log (by positivity)).symm
@@ -967,10 +1015,13 @@ theorem psi_sub_theta_le_of_psi_le_exp {ε : ℝ → ℝ} {x₁ b x : ℝ}
   have hθ_all : ∀ y, 2 ≤ y → θ y ≤ (1 + ε (Real.log x₁)) * y := fun y hy ↦
     theta_le_of_theta_le_self_of_psi_le (by linarith) (by linarith) hθ fun t ht ↦
       hψ (Real.log x₁) le_rfl t (by rwa [Real.exp_log hx₁])
+  rw [psiSubThetaCbrtCoeff_def]
   refine psi_sub_theta_le_add_psiSubThetaTailBound hX hbx hθ_all fun y hy ↦ ?_
-  split_ifs with hble
-  · exact theta_le_mul_of_two_le (le_trans (Real.sqrt_nonneg _) hy) hθ_all
-  · rw [← Real.exp_half] at hy
+  rcases le_or_gt b (2 * Real.log x₁) with hble | hblt
+  · rw [psiSubThetaSqrtCoeff_of_le hble]
+    exact theta_le_mul_of_two_le (le_trans (Real.sqrt_nonneg _) hy) hθ_all
+  · rw [psiSubThetaSqrtCoeff_of_lt hblt]
+    rw [← Real.exp_half] at hy
     exact (Chebyshev.theta_le_psi y).trans (hψ (b / 2) (by linarith) y hy)
 
 /-- Upper bound on `ψ x - θ x` from Costa Pereira's inequality

@@ -34,6 +34,7 @@ convergence estimates.
 * `Real.mem_Ico_pow_natFloor_logb`, `Real.natFloor_logb_eq_iff_mem_Ico`,
   `Real.natFloor_logb_eq_of_mem_Ico`: interval `[b ^ n, b ^ (n + 1))` characterizations of
   `⌊logb b x⌋₊`.
+* `Real.natFloor_logb_pow_self`: `⌊logb b (b ^ n)⌋₊ = n` for `1 < b` and `n : ℕ`.
 -/
 
 public section
@@ -123,5 +124,10 @@ theorem natFloor_logb_eq_of_mem_Ico (hb : 1 < b)
     (hx : x ∈ Set.Ico (b ^ n) (b ^ (n + 1))) :
     ⌊logb b x⌋₊ = n :=
   (natFloor_logb_eq_iff_mem_Ico hb ((one_le_pow₀ hb.le).trans hx.1)).2 hx
+
+/-- For `b > 1` and `n : ℕ`, `⌊logb b (b ^ n)⌋₊ = n`. -/
+@[simp]
+theorem natFloor_logb_pow_self (hb : 1 < b) (n : ℕ) : ⌊logb b (b ^ n)⌋₊ = n :=
+  natFloor_logb_eq_of_mem_Ico hb ⟨le_rfl, pow_lt_pow_right₀ hb (Nat.lt_succ_self n)⟩
 
 end Real
