@@ -42,6 +42,8 @@ one: `d (Xᵢ dXⱼ) = dXᵢ ∧ dXⱼ ≠ 0` for `i ≠ j`.
 
 * `TauCeti.Dagger.Omega.extDeriv`: the exterior derivative on
   `ExteriorAlgebra A (Omega K A)`, a `K`-linear endomorphism.
+* `TauCeti.Dagger.Omega.extDerivPow`: its restriction `⋀ⁿ_A Ω¹_A → ⋀ⁿ⁺¹_A Ω¹_A` to each
+  degree `n`, with `TauCeti.Dagger.Omega.extDerivPow_comp_extDerivPow`.
 
 ## Main results
 
@@ -149,30 +151,14 @@ private theorem preExtDerivOne_eq_zero {ω : Ω[A⁄K]} (hω : ofKaehler K A ω 
   have : Module.Finite A (LinearMap.ker (ofKaehler K A) ⧸ LinearMap.ker preExtDerivOneKer) :=
     .equiv preExtDerivOneKer.quotKerEquivRange.symm
   -- `Ω[A⁄K] ⧸ L` is an extension of `Ω¹_A` by a quotient of that range, hence finite.
-  let f := (LinearMap.ker preExtDerivOneKer).liftQ
-    (L.mkQ ∘ₗ (LinearMap.ker (ofKaehler K A)).subtype) fun η hη ↦
-      LinearMap.mem_ker.mpr <| (Submodule.Quotient.mk_eq_zero L).mpr
-        ⟨LinearMap.mem_ker.mp η.property, LinearMap.mem_ker.mp hη⟩
-  let g := L.liftQ (ofKaehler K A) fun η hη ↦ hη.1
-  have hf (z : LinearMap.ker (ofKaehler K A)) :
-      f (Submodule.Quotient.mk z) = Submodule.Quotient.mk z.val :=
-    Submodule.liftQ_apply _ _ _
-  have hg (η : Ω[A⁄K]) : g (Submodule.Quotient.mk η) = ofKaehler K A η :=
-    Submodule.liftQ_apply _ _ _
-  have hexact : Function.Exact f g := by
-    intro y
-    induction y using Submodule.Quotient.induction_on with | H η => ?_
-    refine ⟨fun hη ↦ ⟨Submodule.Quotient.mk ⟨η, LinearMap.mem_ker.mpr ((hg η).symm.trans hη)⟩,
-      hf _⟩, ?_⟩
-    rintro ⟨z, hz⟩
-    induction z using Submodule.Quotient.induction_on with | H z => ?_
-    rw [← hz, hf, hg]
-    exact LinearMap.mem_ker.mp z.property
-  have hg_surj : Function.Surjective g := by
-    intro ω
+  have hexact := ((LinearMap.exact_subtype_ker_map (ofKaehler K A)).exact_mapQ_iff
+    (p := LinearMap.ker preExtDerivOneKer) (q := L) (r := ⊥)
+    (fun η hη ↦ ⟨LinearMap.mem_ker.mp η.property, LinearMap.mem_ker.mp hη⟩)
+    (fun _ hη ↦ (Submodule.mem_bot A).mpr hη.1)).mpr (by simp)
+  have : Module.Finite A (Ω[A⁄K] ⧸ L) := .of_exact hexact fun y ↦ by
+    obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective _ y
     obtain ⟨η, rfl⟩ := ofKaehler_surjective K A ω
-    exact ⟨Submodule.Quotient.mk η, hg η⟩
-  have : Module.Finite A (Ω[A⁄K] ⧸ L) := .of_exact hexact hg_surj
+    exact ⟨Submodule.Quotient.mk η, rfl⟩
   exact (ofKaehler_eq_zero_iff.mp hω L this).2
 
 variable (K A) in
@@ -196,16 +182,6 @@ private theorem extDerivOne_mem (ω : Omega K A) : extDerivOne K A ω ∈ ⋀[A]
   rw [extDerivOne_ofKaehler]
   exact preExtDerivOne_mem ω
 
-private theorem extDerivOne_mul_ι_add_involute_ι_mul (ω : Omega K A) :
-    extDerivOne K A ω * ExteriorAlgebra.ι A ω +
-      involute (Q := (0 : QuadraticForm A (Omega K A))) (ExteriorAlgebra.ι A ω) *
-        extDerivOne K A ω = 0 := by
-  have hinv : involute (Q := (0 : QuadraticForm A (Omega K A))) (extDerivOne K A ω) =
-      extDerivOne K A ω := by
-    rw [TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (extDerivOne_mem ω)]
-    simp
-  rw [involute_ι, neg_mul, ExteriorAlgebra.ι_mul_eq_involute_mul, hinv, add_neg_cancel]
-
 end DegreeOne
 
 /-! ### The exterior derivative -/
@@ -226,7 +202,8 @@ noncomputable def extDeriv : ExteriorAlgebra A (Omega K A) →ₗ[K] ExteriorAlg
       simpa using ExteriorAlgebra.ι_mul_eq_involute_mul (d K A a) (ExteriorAlgebra.ι A ω))
     (extDerivOne K A)
     (fun a ω ↦ by simpa using extDerivOne_smul a ω)
-    extDerivOne_mul_ι_add_involute_ι_mul
+    (fun ω ↦ ExteriorAlgebra.mul_ι_add_involute_ι_mul_of_mem_exteriorPower even_two
+      (extDerivOne_mem ω) ω)
 
 variable {K A}
 
@@ -308,11 +285,8 @@ theorem map_ofKaehler_extDeriv (x : ExteriorAlgebra A Ω[A⁄K]) :
   | algebraMap a => simp
   | ι_D a => simp
   | mul x y ihx ihy =>
-    rw [KaehlerDeRham.extDeriv_mul, map_add, map_mul, map_mul, ihx, ihy, map_mul, extDeriv_mul]
-    -- The grade involution commutes with the map of exterior algebras.
-    rw [show ExteriorAlgebra.map (ofKaehler K A) (involute x) =
-        involute (ExteriorAlgebra.map (ofKaehler K A) x) from
-      CliffordAlgebra.map_involute { ofKaehler K A with map_app' := fun _ ↦ rfl } x]
+    rw [KaehlerDeRham.extDeriv_mul, map_add, map_mul, map_mul, ihx, ihy, map_mul, extDeriv_mul,
+      ExteriorAlgebra.map_involute]
   | add x y ihx ihy => rw [map_add, map_add, ihx, ihy, map_add, map_add]
 
 /-- **The exterior derivative squares to zero.** -/
@@ -344,6 +318,35 @@ theorem extDeriv_unique {D : ExteriorAlgebra A (Omega K A) →ₗ[K] ExteriorAlg
   | ι_d a => rw [← h_alg a, h_sq a, h_alg a, extDeriv_ι_d]
   | mul x y ihx ihy => rw [h_mul, extDeriv_mul, ihx, ihy]
   | add x y ihx ihy => rw [map_add, map_add, ihx, ihy]
+
+/-! ### The exterior derivative in each degree -/
+
+variable (K A) in
+/-- **The exterior derivative in degree `n`**: the `K`-linear map `⋀ⁿ_A Ω¹_A → ⋀ⁿ⁺¹_A Ω¹_A`
+obtained by restricting `extDeriv`. -/
+noncomputable def extDerivPow (n : ℕ) : ⋀[A]^n (Omega K A) →ₗ[K] ⋀[A]^(n + 1) (Omega K A) where
+  toFun x := ⟨extDeriv K A x, extDeriv_mem_exteriorPower x.property⟩
+  map_add' x y := Subtype.ext (map_add (extDeriv K A) (x : ExteriorAlgebra A (Omega K A)) y)
+  map_smul' r x := Subtype.ext (map_smul (extDeriv K A) r (x : ExteriorAlgebra A (Omega K A)))
+
+/-- The exterior derivative in degree `n` is `extDeriv` on the underlying exterior algebra. -/
+@[simp]
+theorem coe_extDerivPow_apply {n : ℕ} (x : ⋀[A]^n (Omega K A)) :
+    (extDerivPow K A n x : ExteriorAlgebra A (Omega K A)) = extDeriv K A x :=
+  (rfl)
+
+/-- **The exterior derivative of an elementary form in degree `n`**:
+`d (a • db₁ ∧ ⋯ ∧ dbₙ) = da ∧ db₁ ∧ ⋯ ∧ dbₙ`. -/
+theorem extDerivPow_smul_ιMulti (a : A) {n : ℕ} (b : Fin n → A) :
+    extDerivPow K A n (a • exteriorPower.ιMulti A n fun i ↦ d K A (b i)) =
+      exteriorPower.ιMulti A (n + 1) (Fin.cons (d K A a) fun i ↦ d K A (b i)) :=
+  Subtype.ext (extDeriv_smul_ιMulti a b)
+
+/-- **The exterior derivatives in consecutive degrees compose to zero.** -/
+@[simp]
+theorem extDerivPow_comp_extDerivPow (n : ℕ) :
+    extDerivPow K A (n + 1) ∘ₗ extDerivPow K A n = 0 :=
+  LinearMap.ext fun x ↦ Subtype.ext (extDeriv_extDeriv (x : ExteriorAlgebra A (Omega K A)))
 
 end ExtDeriv
 
