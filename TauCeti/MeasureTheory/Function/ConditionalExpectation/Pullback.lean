@@ -41,8 +41,9 @@ measure spaces, `condExpOperator` maps `L²₀(η)` onto `L²₀(η.map m)`.
 
 ## Main results
 
-* `MeasureTheory.Measure.isometry_pullbackL2`, `MeasureTheory.Measure.norm_pullbackL2`,
-  `MeasureTheory.Measure.inner_pullbackL2`: `pullbackL2` is an `L²` isometry.
+* `MeasureTheory.Measure.pullbackL2_apply`, `MeasureTheory.Measure.isometry_pullbackL2`,
+  `MeasureTheory.Measure.norm_pullbackL2`, `MeasureTheory.Measure.inner_pullbackL2`:
+  `pullbackL2` evaluates to `Lp.compMeasurePreserving` and is an `L²` isometry.
 * `MeasureTheory.Measure.pullbackL2_id`, `MeasureTheory.Measure.pullbackL2_comp`,
   `MeasureTheory.Measure.condExpOperator_id`, `MeasureTheory.Measure.condExpOperator_comp`:
   operator-level identity and composition laws via `TauCeti.castLpₗᵢ` for `Measure.map_id` and
@@ -102,7 +103,8 @@ theorem pullbackL2_def (η : Measure Y) (𝕜 : Type*) {E : Type*} [NormedRing �
       (Lp.compMeasurePreservingₗᵢ 𝕜 m (hm.measurePreserving η)).toContinuousLinearMap :=
   (rfl)
 
-private theorem pullbackL2_apply (η : Measure Y) (𝕜 : Type*) {E : Type*} [NormedRing 𝕜]
+/-- `pullbackL2` evaluates to `MeasureTheory.Lp.compMeasurePreserving`. -/
+theorem pullbackL2_apply (η : Measure Y) (𝕜 : Type*) {E : Type*} [NormedRing 𝕜]
     [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (m : Y → X) (hm : Measurable m)
     (g : Lp E 2 (η.map m)) :
     pullbackL2 η 𝕜 m hm g = Lp.compMeasurePreserving m (hm.measurePreserving η) g := by
@@ -149,16 +151,6 @@ theorem pullbackL2_const (η : Measure Y) [IsFiniteMeasure η] (𝕜 : Type*) {E
   rw [← indicatorConstLp_univ, ← indicatorConstLp_univ]
   exact pullbackL2_indicatorConstLp η 𝕜 m hm .univ (measure_ne_top _ _) c
 
-private theorem compMeasurePreserving_castLpₗᵢ_eq (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
-    [IsBoundedSMul 𝕜 E] {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
-    {ν₁ ν₂ : Measure β} (h : ν₁ = ν₂) (f : α → β)
-    (hf₁ : MeasurePreserving f μ ν₁) (hf₂ : MeasurePreserving f μ ν₂) (g : Lp E 2 ν₁) :
-    Lp.compMeasurePreserving f hf₁ g =
-      Lp.compMeasurePreserving f hf₂ (TauCeti.castLpₗᵢ (𝕜 := 𝕜) h g) := by
-  subst h
-  simp only [TauCeti.castLpₗᵢ_apply]
-  rfl
-
 /-- Pullback along the identity map is the canonical measure-transport equivalence along
 `Measure.map_id`. -/
 theorem pullbackL2_id (η : Measure Y) (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E]
@@ -167,10 +159,9 @@ theorem pullbackL2_id (η : Measure Y) (𝕜 E : Type*) [NormedRing 𝕜] [Norme
       (TauCeti.castLpₗᵢ (𝕜 := 𝕜) (E := E) (p := 2) (Measure.map_id (μ := η)) :
         Lp E 2 (η.map id) →L[𝕜] Lp E 2 η) := by
   ext1 g
-  rw [pullbackL2_apply, compMeasurePreserving_castLpₗᵢ_eq 𝕜 (Measure.map_id (μ := η)) id
+  rw [pullbackL2_apply, Lp.compMeasurePreserving_castLpₗᵢ_eq 𝕜 (Measure.map_id (μ := η)) id
     (measurable_id.measurePreserving η) (MeasurePreserving.id η) g,
-    Lp.compMeasurePreserving_id_apply]
-  rfl
+    Lp.compMeasurePreserving_id_apply, LinearIsometryEquiv.coe_coe'']
 
 /-- Pullback along a composite map factors as composition of the two pullbacks after transporting
 along `Measure.map_map`. -/
@@ -183,12 +174,11 @@ theorem pullbackL2_comp {Z : Type*} [MeasurableSpace Z] (η : Measure Y) (𝕜 E
           Lp E 2 (η.map (m₂ ∘ m₁)) →L[𝕜] Lp E 2 ((η.map m₁).map m₂)) := by
   ext1 g
   simp only [ContinuousLinearMap.comp_apply, pullbackL2_apply]
-  rw [compMeasurePreserving_castLpₗᵢ_eq 𝕜 (Measure.map_map (μ := η) hm₂ hm₁).symm (m₂ ∘ m₁)
+  rw [Lp.compMeasurePreserving_castLpₗᵢ_eq 𝕜 (Measure.map_map (μ := η) hm₂ hm₁).symm (m₂ ∘ m₁)
     ((hm₂.comp hm₁).measurePreserving η)
     ((hm₂.measurePreserving (η.map m₁)).comp (hm₁.measurePreserving η)) g,
     Lp.compMeasurePreserving_comp_apply _ (hm₂.measurePreserving (η.map m₁))
-      (hm₁.measurePreserving η)]
-  rfl
+      (hm₁.measurePreserving η), LinearIsometryEquiv.coe_coe'']
 
 /-- `pullbackL2` preserves integrals for arbitrary measures. -/
 @[simp]
@@ -253,10 +243,9 @@ theorem condExpOperator_comp {Z : Type*} [MeasurableSpace Z] (η : Measure Y) (�
       (TauCeti.castLpₗᵢ (𝕜 := 𝕜) (E := E) (p := 2) (Measure.map_map (μ := η) hm₂ hm₁) :
           Lp E 2 ((η.map m₁).map m₂) →L[𝕜] Lp E 2 (η.map (m₂ ∘ m₁))) ∘L
         condExpOperator (η.map m₁) 𝕜 m₂ hm₂ ∘L condExpOperator η 𝕜 m₁ hm₁ := by
-  rw [condExpOperator_def, pullbackL2_comp, ContinuousLinearMap.adjoint_comp,
-    ContinuousLinearMap.adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
-    TauCeti.castLpₗᵢ_symm, ContinuousLinearMap.comp_assoc]
-  rfl
+  simp_rw [condExpOperator_def]
+  rw [pullbackL2_comp, ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.adjoint_comp,
+    LinearIsometryEquiv.adjoint_eq_symm, TauCeti.castLpₗᵢ_symm, ContinuousLinearMap.comp_assoc]
 
 /-- Adjoint identity for `condExpOperator` on the right argument of the inner product. -/
 theorem inner_condExpOperator_right (η : Measure Y) (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
@@ -336,10 +325,8 @@ theorem pullbackL2_condExpOperator_eq_condExpL2 (η : Measure Y) (𝕜 : Type*) 
       (condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η) := by
   have : Fact (MeasurableSpace.comap m inferInstance ≤ (inferInstance : MeasurableSpace Y)) :=
     ⟨hm.comap_le⟩
-  let := ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp
-    ((ContinuousLinearMap.isometry_iff_adjoint_comp_self
-        (pullbackL2 η 𝕜 (E := E) m hm)).1 (isometry_pullbackL2 η 𝕜 m hm) ▸
-      isUnit_one)
+  let := ContinuousLinearMap.hasOrthogonalProjection_range_of_isometry
+    (isometry_pullbackL2 η 𝕜 (E := E) m hm)
   have hproj : pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) =
       (pullbackL2 η 𝕜 m hm).range.starProjection b := by
     simpa only [condExpOperator_def, ContinuousLinearMap.comp_apply] using

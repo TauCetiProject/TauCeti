@@ -17,6 +17,9 @@ The matrix of the inner product `innerₛₗ 𝕜` in a basis `b`, as computed b
 space. Over `ℝ` it reads `LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix.gram ℝ b`
 (`LinearMap.BilinForm.toMatrix_innerₗ`), which is the form in which Gram matrices enter the
 bilinear-form API, for instance through dual bases.
+
+The Gram matrix of the sum of two families that are pairwise orthogonal across the two families is
+the sum of their Gram matrices (`Matrix.gram_add_of_inner_eq_zero`).
 -/
 
 public section
@@ -36,3 +39,14 @@ theorem Module.Basis.toMatrix₂_innerₛₗ [RCLike 𝕜] [SeminormedAddCommGro
 theorem LinearMap.BilinForm.toMatrix_innerₗ [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     (b : Module.Basis ι ℝ E) : toMatrix b (innerₗ E) = Matrix.gram ℝ b :=
   b.toMatrix₂_innerₛₗ
+
+/-- The Gram matrix of a sum of two families of vectors that are pairwise orthogonal across the two
+families is the sum of their Gram matrices. -/
+theorem Matrix.gram_add_of_inner_eq_zero {ι 𝕜 E : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] {u v : ι → E}
+    (h : ∀ i j, ⟪u i, v j⟫_𝕜 = 0) :
+    Matrix.gram 𝕜 (u + v) = Matrix.gram 𝕜 u + Matrix.gram 𝕜 v := by
+  ext i j
+  have h' : ⟪v i, u j⟫_𝕜 = 0 := by
+    rw [← inner_conj_symm, h j i, map_zero]
+  simp [Pi.add_apply, inner_add_left, inner_add_right, h i j, h']

@@ -28,8 +28,6 @@ inner product space, where no coordinate matrix is given.
 ## Main results
 
 * `LinearIsometry.gram_comp`: a linear isometry preserves the Gram matrix of any indexed family.
-* `Matrix.gram_add_of_inner_eq_zero`: the Gram matrix of a sum of two pairwise orthogonal families
-  is the sum of their Gram matrices.
 * `Matrix.gram_sum_smul`: the Gram matrix of `fun k ↦ ∑ j, U k j • v j` is
   `U.map conj * gram 𝕜 v * Uᵀ`, for a possibly rectangular `U`.
 * `Matrix.det_gram_sum_smul`: its determinant is `‖det U‖ ^ 2 * det (gram 𝕜 v)`.
@@ -63,18 +61,6 @@ end LinearIsometry
 namespace Matrix
 
 open Finset
-
-open scoped InnerProductSpace in
-/-- The Gram matrix of a sum of two families of vectors that are pairwise orthogonal across the two
-families is the sum of their Gram matrices. -/
-theorem gram_add_of_inner_eq_zero {ι 𝕜 E : Type*} [RCLike 𝕜]
-    [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] {u v : ι → E}
-    (h : ∀ i j, ⟪u i, v j⟫_𝕜 = 0) :
-    gram 𝕜 (u + v) = gram 𝕜 u + gram 𝕜 v := by
-  ext i j
-  have h' : ⟪v i, u j⟫_𝕜 = 0 := by
-    rw [← inner_conj_symm, h j i, map_zero]
-  simp [Pi.add_apply, inner_add_left, inner_add_right, h i j, h']
 
 variable {ι 𝕜 E : Type*} [Fintype ι] [RCLike 𝕜] [SeminormedAddCommGroup E]
   [InnerProductSpace 𝕜 E]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 public import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 
 /-!
 # Gram determinants of a family completed by a second family

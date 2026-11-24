@@ -14,7 +14,9 @@ A subspace that admits an orthogonal projection is the range of a continuous ide
 therefore closed. In a complete ambient inner-product space, such a subspace is itself complete.
 Closedness, completeness and existence of an orthogonal projection are equivalent there. The
 orthogonal projection onto a projected subspace `U` sends any dense set to a set with closure `U`
-(`Submodule.closure_image_starProjection_of_dense`).
+(`Submodule.closure_image_starProjection_of_dense`). Orthogonality of submodules is invariant under
+topological closure (`Submodule.isOrtho_topologicalClosure_left`,
+`Submodule.isOrtho_topologicalClosure_right`).
 
 The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
 `(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
@@ -33,6 +35,20 @@ public section
 namespace Submodule
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A submodule is orthogonal to the topological closure of another if and only if it is orthogonal
+to the submodule itself. -/
+@[simp]
+theorem isOrtho_topologicalClosure_right {U V : Submodule 𝕜 E} :
+    U ⟂ V.topologicalClosure ↔ U ⟂ V := by
+  simp only [isOrtho_iff_le, orthogonal_closure]
+
+/-- The topological closure of a submodule is orthogonal to another submodule if and only if the
+submodule itself is orthogonal to it. -/
+@[simp]
+theorem isOrtho_topologicalClosure_left {U V : Submodule 𝕜 E} :
+    U.topologicalClosure ⟂ V ↔ U ⟂ V :=
+  isOrtho_comm.trans <| isOrtho_topologicalClosure_right.trans isOrtho_comm
 
 /-- A subspace admitting an orthogonal projection is closed. -/
 theorem isClosed_of_hasOrthogonalProjection (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :

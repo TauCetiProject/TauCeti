@@ -41,13 +41,16 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 * `ContinuousLinearMap.isClosed_range_of_isUnit_adjoint_comp`,
   `ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp`: an operator with
   invertible Gram operator `B† B` has closed range and admits an orthogonal projection onto it.
-* `ContinuousLinearMap.hasOrthogonalProjection_range_of_adjoint_comp_self_comp`,
-  `ContinuousLinearMap.starProjection_range_eq_comp_comp_adjoint`: if `B† B G B† = B†`, the
-  range of `B` admits an orthogonal projection and that projection is `B G B†`.
+* `ContinuousLinearMap.sub_comp_comp_adjoint_mem_orthogonal_range`,
+  `ContinuousLinearMap.hasOrthogonalProjection_range_of_adjoint_comp_self_comp`,
+  `ContinuousLinearMap.starProjection_range_eq_comp_comp_adjoint`: if `B† B G B† = B†`, then
+  `v - (B G B†) v ∈ B.rangeᗮ`, the range of `B` admits an orthogonal projection, and that
+  projection is `B G B†`.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
-* `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
-  `B B†`.
+* `ContinuousLinearMap.hasOrthogonalProjection_range_of_isometry`,
+  `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B`, `B.range` admits
+  an orthogonal projection and that projection is `B B†`.
 * `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
   (`ContinuousLinearMap.gramLeftInverse_def`) of `A` when `A† A` is invertible
   (`ContinuousLinearMap.gramLeftInverse_comp_self`,
@@ -168,7 +171,8 @@ theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
   Function.LeftInverse.isClosed_range (gramLeftInverse_apply_apply hB)
     (gramLeftInverse B).continuous B.continuous
 
-private theorem sub_comp_comp_adjoint_mem_orthogonal_range {B : F →L[𝕜] V} {G : F →L[𝕜] F}
+/-- If `B† B G B† = B†`, then `v - (B G B†) v` is orthogonal to the range of `B`. -/
+theorem sub_comp_comp_adjoint_mem_orthogonal_range {B : F →L[𝕜] V} {G : F →L[𝕜] F}
     (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) (v : V) :
     v - (B ∘L G ∘L adjoint B) v ∈ B.rangeᗮ := by
   rw [ContinuousLinearMap.orthogonal_range, LinearMap.mem_ker, coe_coe, map_sub]
@@ -188,6 +192,13 @@ theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V
     (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection :=
   hasOrthogonalProjection_range_of_adjoint_comp_self_comp
     (adjoint_comp_self_comp_gramLeftInverse hB)
+
+/-- The range of an isometry admits an orthogonal projection. -/
+theorem hasOrthogonalProjection_range_of_isometry {B : F →L[𝕜] V} (hB : Isometry B) :
+    B.range.HasOrthogonalProjection :=
+  hasOrthogonalProjection_range_of_isUnit_adjoint_comp (by
+    rw [(isometry_iff_adjoint_comp_self B).1 hB]
+    exact isUnit_one)
 
 /-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
 theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V} {G : F →L[𝕜] F}
@@ -211,8 +222,7 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} (hB : IsUnit (adjoint B ∘
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B) :
-    letI := hasOrthogonalProjection_range_of_isUnit_adjoint_comp
-      ((isometry_iff_adjoint_comp_self B).1 hB ▸ isUnit_one)
+    letI := hasOrthogonalProjection_range_of_isometry hB
     B ∘L adjoint B = B.range.starProjection := by
   have h := (isometry_iff_adjoint_comp_self B).1 hB
   rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h, Ring.inverse_one,

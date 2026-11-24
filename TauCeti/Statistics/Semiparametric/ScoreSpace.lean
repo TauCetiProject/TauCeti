@@ -170,8 +170,8 @@ theorem tangentSpace_le_meanZeroL2 {P : Measure X} [IsFiniteMeasure P] {T : Set 
 of `T`. -/
 theorem mem_orthogonal_tangentSpace_iff {P : Measure X} {T : Set (Lp ℝ 2 P)} {f : Lp ℝ 2 P} :
     f ∈ (tangentSpace P T).toSubmoduleᗮ ↔ ∀ g ∈ T, ⟪g, f⟫_ℝ = 0 := by
-  rw [toSubmodule_tangentSpace, Submodule.orthogonal_closure,
-    ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+  rw [← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    toSubmodule_tangentSpace, Submodule.isOrtho_topologicalClosure_right,
     Submodule.isOrtho_comm, Submodule.isOrtho_span]
   simp
 
@@ -180,10 +180,9 @@ orthogonal to every element of the second. -/
 theorem isOrtho_tangentSpace_iff {P : Measure X} {T T' : Set (Lp ℝ 2 P)} :
     (tangentSpace P T).toSubmodule.IsOrtho (tangentSpace P T').toSubmodule ↔
       ∀ g ∈ T, ∀ g' ∈ T', ⟪g, g'⟫_ℝ = 0 := by
-  rw [toSubmodule_tangentSpace, toSubmodule_tangentSpace, Submodule.isOrtho_iff_le,
-    Submodule.orthogonal_closure, ← Submodule.isOrtho_iff_le, Submodule.isOrtho_comm,
-    Submodule.isOrtho_iff_le, Submodule.orthogonal_closure, ← Submodule.isOrtho_iff_le,
-    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  rw [toSubmodule_tangentSpace, toSubmodule_tangentSpace,
+    Submodule.isOrtho_topologicalClosure_left, Submodule.isOrtho_topologicalClosure_right,
+    Submodule.isOrtho_span]
 
 /-- The tangent space of a union is the join of the two tangent spaces in `ClosedSubmodule` (the
 closure of their sum). -/
