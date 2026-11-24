@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
@@ -53,18 +54,6 @@ namespace MeasureTheory
 open scoped ENNReal NNReal
 
 variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E] {p : ℝ≥0∞}
-
-/-- Finite-measure simple functions are in `L²` at every finite exponent `p ≥ 1`. -/
-theorem Lp.simpleFunc.memLp_two [Fact (1 ≤ p)] (hp : p ≠ ∞) (f : Lp.simpleFunc E p μ) :
-    MemLp (f : α → E) 2 μ := by
-  refine Lp.simpleFunc.induction (by exact (zero_lt_one.trans_le Fact.out).ne') hp ?_ ?_ f
-  · intro c s hs hμ
-    have h : MemLp (s.indicator fun _ : α => c) 2 μ :=
-      memLp_indicator_const 2 hs.nullMeasurableSet c (.inr hμ.ne)
-    exact h.ae_eq (by simpa only [Lp.simpleFunc.coe_indicatorConst] using
-      (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμ.ne) (c := c)).symm)
-  · intro f g hf hg _ hmf hmg
-    exact (hmf.add hmg).ae_eq (Lp.coeFn_add (f.toLp hf : Lp E p μ) (g.toLp hg)).symm
 
 variable [NormedSpace ℝ E]
 
@@ -192,7 +181,8 @@ theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
     Dense (lpTwoSubmodule (E := E) (p := p) (μ := μ) : Set (Lp E p μ)) := by
   apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
   intro f hf
-  exact Lp.simpleFunc.memLp_two hp ⟨f, hf⟩
+  exact Lp.simpleFunc.memLp_of_ne_zero_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp
+    ⟨f, hf⟩ 2
 
 /-- A function `φ`, truncated to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b| ≤ k}`, lies in every
 `Lʳ`, and so does its product with `b`: both are bounded and vanish off a set of finite measure.

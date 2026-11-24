@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.Analysis.Normed.Interpolation.Regular
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
 
 /-!
 # The Lebesgue couple `(L^{p₀}, L^{p₁})`
@@ -34,7 +34,7 @@ so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
 Any almost everywhere splitting `f₀ + f₁` of a function representing an element `v` of the sum
 bounds the `K`-functional: `K(t, v) ≤ ‖f₀‖_{p₀} + t ‖f₁‖_{p₁}` for `t > 0`
 (`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul`). For finite exponents
-the couple is regular (`TauCeti.CompatibleCouple.lebesgue_isRegular`): the simple functions with
+the couple is regular (`TauCeti.CompatibleCouple.isRegular_lebesgue`): the simple functions with
 support of finite measure lie in the intersection and are dense in both endpoints.
 
 For `p₀ ≤ p ≤ p₁` the space `Lᵖ` is an intermediate space of the couple: there are continuous
@@ -196,23 +196,18 @@ theorem mem_range_lebesgue_interSnd {f : Lp E p₁ μ} (hf : MemLp f p₀ μ) :
     f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interSnd :=
   ⟨⟨(hf.toLp f, f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp⟩, interSnd_apply _ _⟩
 
-/-- A simple function in `Lᵖ` for a finite exponent `p` has support of finite measure, so it lies
-in every `L^q`. -/
-private theorem memLp_coe_simpleFunc {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
-    (g : Lp.simpleFunc E p μ) (q : ℝ≥0∞) : MemLp (g : Lp E p μ) q μ :=
-  (SimpleFunc.memLp_of_finite_measure_preimage q
-    (SimpleFunc.measure_preimage_lt_top_of_memLp (zero_lt_one.trans_le Fact.out).ne' hp _
-      (Lp.simpleFunc.memLp g))).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun g)
-
 /-- For finite exponents the Lebesgue couple `(L^{p₀}, L^{p₁})` is regular: the simple functions
 with support of finite measure lie in `L^{p₀} ∩ L^{p₁}` and are dense in `L^{p₀}` and in
-`L^{p₁}`. Finiteness is needed: for Lebesgue measure on `ℝ` and `p₁ = ∞`, every element of the
-intersection is at `L^∞` distance at least `1 / 2` from the constant function `1`. -/
-theorem lebesgue_isRegular (hp₀ : p₀ ≠ ∞) (hp₁ : p₁ ≠ ∞) : (lebesgue 𝕜 E μ p₀ p₁).IsRegular :=
+`L^{p₁}`. The hypotheses cannot be dropped in general: for Lebesgue measure on `ℝ` with
+`p₀ < ∞` and `p₁ = ∞`, every element of the intersection is at `L^∞` distance at least `1 / 2`
+from the constant function `1`. -/
+theorem isRegular_lebesgue (hp₀ : p₀ ≠ ∞) (hp₁ : p₁ ≠ ∞) : (lebesgue 𝕜 E μ p₀ p₁).IsRegular :=
   ⟨(Lp.simpleFunc.denseRange hp₀).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interFst (memLp_coe_simpleFunc hp₀ g p₁),
+      mem_range_lebesgue_interFst <| Lp.simpleFunc.memLp_of_ne_zero_of_ne_top
+        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' hp₀ g p₁,
     (Lp.simpleFunc.denseRange hp₁).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interSnd (memLp_coe_simpleFunc hp₁ g p₀)⟩
+      mem_range_lebesgue_interSnd <| Lp.simpleFunc.memLp_of_ne_zero_of_ne_top
+        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne' hp₁ g p₀⟩
 
 end Regular
 
