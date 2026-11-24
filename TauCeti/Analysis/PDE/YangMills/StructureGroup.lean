@@ -276,6 +276,11 @@ theorem lieBracketNorm_prod (S₁ : CompactMatrixStructureGroup n)
       (S₁.innerForm.toQuadraticMap.prod S₂.innerForm.toQuadraticMap).comp
         (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group).toLinearEquiv.toLinearMap := by
     ext X
+    -- The right side is a quadratic map on the carrier of `S₁.group.fromBlocksProd S₂.group`,
+    -- which is that of `(S₁.prod S₂).group` only after unfolding `prod` (`prod_group` is `rfl`),
+    -- so `QuadraticMap.comp_apply` and `QuadraticMap.prod_apply` cannot rewrite it. Pointwise,
+    -- `toQuadraticMap`, `QuadraticMap.comp` and `QuadraticMap.prod` unfold both sides to the two
+    -- sides of `prod_innerForm_apply` at `X X`.
     exact prod_innerForm_apply S₁ S₂ X X
   rw [h]
   exact (QuadraticMap.lieBracketNorm_comp_lieEquiv _).trans

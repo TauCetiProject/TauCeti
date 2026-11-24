@@ -84,6 +84,11 @@ theorem lieBracketNorm_def :
 
 variable {Q}
 
+/-- Homogeneity of the norm `|X| = √(Q X)`: `|a • Z| = |a| |Z|`. -/
+private theorem sqrt_apply_smul (a : ℝ) (Z : L) : √(Q (a • Z)) = |a| * √(Q Z) := by
+  rw [QuadraticMap.map_smul, smul_eq_mul, Real.sqrt_mul (mul_self_nonneg a),
+    Real.sqrt_mul_self_eq_abs]
+
 /-- The norm of the Lie bracket is nonnegative. -/
 theorem lieBracketNorm_nonneg (Q : QuadraticForm ℝ L) : 0 ≤ Q.lieBracketNorm :=
   Real.sSup_nonneg (by rintro _ ⟨p, -, rfl⟩; exact Real.sqrt_nonneg _)
@@ -128,6 +133,32 @@ theorem lieBracketNorm_comp_lieEquiv (e : L' ≃ₗ⁅ℝ⁆ L) :
   · rintro ⟨⟨X, Y⟩, ⟨hX, hY⟩, rfl⟩
     exact ⟨(e.symm X, e.symm Y), ⟨by simpa using hX, by simpa using hY⟩,
       by simp [LieEquiv.map_lie]⟩
+
+/-- **Scaling of the norm of the Lie bracket**: `γ₀(L, c Q) = c^{-1/2} γ₀(L, Q)` for `c > 0`. -/
+theorem lieBracketNorm_smul (Q : QuadraticForm ℝ L) {c : ℝ} (hc : 0 < c) :
+    (c • Q).lieBracketNorm = (√c)⁻¹ * Q.lieBracketNorm := by
+  have hs : 0 < √c := Real.sqrt_pos.mpr hc
+  -- `(X, Y) ↦ (√c • X, √c • Y)` maps the unit balls of `c • Q` onto those of `Q`, and rescales
+  -- the bracket values by `√c⁻¹`.
+  have hball (Z : L) : (c • Q) Z = Q (√c • Z) := by
+    rw [smul_apply, QuadraticMap.map_smul, smul_eq_mul, smul_eq_mul, Real.mul_self_sqrt hc.le]
+  have hval (X Y : L) : √((c • Q) ⁅X, Y⁆) = (√c)⁻¹ * √(Q ⁅√c • X, √c • Y⁆) := by
+    rw [smul_lie, lie_smul, sqrt_apply_smul, sqrt_apply_smul, hball, sqrt_apply_smul,
+      abs_of_pos hs]
+    field_simp
+  rw [lieBracketNorm_def, lieBracketNorm_def, ← smul_eq_mul,
+    ← Real.sSup_smul_of_nonneg (inv_nonneg.mpr hs.le), ← image_smul, image_image]
+  congr 1
+  ext r
+  constructor
+  · rintro ⟨⟨X, Y⟩, ⟨hX, hY⟩, rfl⟩
+    exact ⟨(√c • X, √c • Y), ⟨by rwa [← hball], by rwa [← hball]⟩, (hval X Y).symm⟩
+  · rintro ⟨⟨X, Y⟩, ⟨hX, hY⟩, rfl⟩
+    refine ⟨((√c)⁻¹ • X, (√c)⁻¹ • Y), ⟨?_, ?_⟩, ?_⟩
+    · rwa [hball, smul_inv_smul₀ hs.ne']
+    · rwa [hball, smul_inv_smul₀ hs.ne']
+    · dsimp only
+      rw [hval, smul_inv_smul₀ hs.ne', smul_inv_smul₀ hs.ne', smul_eq_mul]
 
 variable [FiniteDimensional ℝ L]
 
@@ -199,14 +230,16 @@ theorem sqrt_apply_lie_le (hQ : Q.PosDef) (X Y : L) :
   have ha : 0 < √(Q X) := Real.sqrt_pos.mpr (hQ X hX)
   have hb : 0 < √(Q Y) := Real.sqrt_pos.mpr (hQ Y hY)
   -- Normalize `X` and `Y` to unit length.
-  have hunit {Z : L} (hZ : Z ≠ 0) : Q ((√(Q Z))⁻¹ • Z) = 1 := by
-    rw [QuadraticMap.map_smul, smul_eq_mul, ← mul_inv, Real.mul_self_sqrt (hQ.nonneg Z),
-      inv_mul_cancel₀ (hQ Z hZ).ne']
-  have h := sqrt_apply_lie_le_lieBracketNorm hQ (hunit hX).le (hunit hY).le
-  rw [smul_lie, lie_smul, smul_smul, QuadraticMap.map_smul, smul_eq_mul,
-    Real.sqrt_mul (mul_self_nonneg _), Real.sqrt_mul_self (by positivity), ← mul_inv,
-    inv_mul_le_iff₀ (by positivity)] at h
-  linarith
+  have hunit {Z : L} (hZ : 0 < √(Q Z)) : Q ((√(Q Z))⁻¹ • Z) ≤ 1 := by
+    rw [← Real.sqrt_le_one, sqrt_apply_smul, abs_of_pos (inv_pos.mpr hZ), inv_mul_cancel₀ hZ.ne']
+  have h := sqrt_apply_lie_le_lieBracketNorm hQ (hunit ha) (hunit hb)
+  rw [smul_lie, lie_smul, sqrt_apply_smul, sqrt_apply_smul, abs_of_pos (inv_pos.mpr ha),
+    abs_of_pos (inv_pos.mpr hb)] at h
+  -- `h : |X|⁻¹ (|Y|⁻¹ |⁅X, Y⁆|) ≤ γ₀`; clear the denominators.
+  calc √(Q ⁅X, Y⁆) = √(Q X) * √(Q Y) * ((√(Q X))⁻¹ * ((√(Q Y))⁻¹ * √(Q ⁅X, Y⁆))) := by
+        field_simp
+    _ ≤ √(Q X) * √(Q Y) * Q.lieBracketNorm := by gcongr
+    _ = Q.lieBracketNorm * √(Q X) * √(Q Y) := by ring
 
 /-- The squared form of the bracket bound, `|⁅X, Y⁆|² ≤ γ₀² |X|² |Y|²`. -/
 theorem apply_lie_le (hQ : Q.PosDef) (X Y : L) :
@@ -262,26 +295,6 @@ theorem lieBracketNorm_eq_zero_iff (hQ : Q.PosDef) : Q.lieBracketNorm = 0 ↔ Is
 /-- The norm of the Lie bracket is positive exactly on non-abelian Lie algebras. -/
 theorem lieBracketNorm_pos_iff (hQ : Q.PosDef) : 0 < Q.lieBracketNorm ↔ ¬IsLieAbelian L := by
   rw [← lieBracketNorm_eq_zero_iff hQ, (lieBracketNorm_nonneg Q).lt_iff_ne', ne_eq]
-
-private theorem lieBracketNorm_smul_le (hQ : Q.PosDef) {c : ℝ} (hc : 0 < c) :
-    (c • Q).lieBracketNorm ≤ (√c)⁻¹ * Q.lieBracketNorm := by
-  have : 0 < √c := Real.sqrt_pos.mpr hc
-  refine lieBracketNorm_le_of_forall_le (by have := lieBracketNorm_nonneg Q; positivity)
-    fun X Y ↦ ?_
-  simp only [smul_apply, smul_eq_mul, Real.sqrt_mul hc.le]
-  have := sqrt_apply_lie_le hQ X Y
-  calc √c * √(Q ⁅X, Y⁆) ≤ √c * (Q.lieBracketNorm * √(Q X) * √(Q Y)) := by gcongr
-    _ = (√c)⁻¹ * Q.lieBracketNorm * (√c * √(Q X)) * (√c * √(Q Y)) := by
-      field_simp
-
-/-- **Scaling of the norm of the Lie bracket**: `γ₀(L, c Q) = c^{-1/2} γ₀(L, Q)` for `c > 0`. -/
-theorem lieBracketNorm_smul (hQ : Q.PosDef) {c : ℝ} (hc : 0 < c) :
-    (c • Q).lieBracketNorm = (√c)⁻¹ * Q.lieBracketNorm := by
-  refine le_antisymm (lieBracketNorm_smul_le hQ hc) ?_
-  have h := lieBracketNorm_smul_le (hQ.smul hc) (inv_pos.mpr hc)
-  rw [smul_smul, inv_mul_cancel₀ hc.ne', one_smul, Real.sqrt_inv, inv_inv] at h
-  rw [inv_mul_le_iff₀ (Real.sqrt_pos.mpr hc)]
-  exact h
 
 /-- The norm of the Lie bracket does not increase under pullback along a Lie algebra
 homomorphism: `γ₀(L', Q ∘ f) ≤ γ₀(L, Q)`. -/
