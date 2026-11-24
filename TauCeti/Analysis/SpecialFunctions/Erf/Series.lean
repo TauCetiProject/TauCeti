@@ -42,10 +42,19 @@ Laplace-type integrals without losing integrability near the origin.
   `Real.tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp`: summability, strict positivity, and the
   sharp polynomial-free Gaussian upper bound `0 < ∑_{m ≥ 0} x^m / Γ(m / 2 + 1) < 2 exp(x²)` on all
   of `ℝ`.
-* `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
+* `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_le_tsum_abs`,
+  `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
+  `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp`,
+  `Real.abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one`,
+  `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp`,
   `Real.tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le`: for all `x : ℝ`, shifted tails of the
-  half-Gamma series satisfy both the uniform polynomial-free bound `< 2 exp(x²)` and the
-  vanishing-order factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
+  half-Gamma series are bounded in absolute value by the shifted tail at `|x|`, satisfy the
+  uniform polynomial-free bound `|·| < 2 exp(x²)`, the scaled small-argument bound
+  `|·| ≤ 2 exp(x²) |u|^M` for `|u| ≤ 1`, the global arbitrary-shift bound
+  `|·| ≤ 2 e |x|^M exp(x²)`, and the `2L`-shifted factorial bound `≤ 2 x^{2L} / L! * exp(x²)`.
+* `Real.continuous_tsum_pow_div_Gamma_div_two_add_one`,
+  `Real.continuous_tsum_pow_add_div_Gamma_div_two_add_one`: continuity on `ℝ` of the half-Gamma
+  series and its `M`-shifted tails.
 
 ## References
 
@@ -247,16 +256,27 @@ theorem tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) :
   have h1 : 1 + TauCeti.Real.erf x < 2 := by linarith [TauCeti.Real.erf_lt_one x]
   nlinarith [Real.exp_pos (x ^ 2)]
 
+/-- Triangle inequality for `M`-shifted tails of the half-Gamma series: for every `x : ℝ` and
+shift `M : ℕ`, `|∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1)|` is bounded by the `M`-shifted tail at
+`|x|`. -/
+theorem abs_tsum_pow_add_div_Gamma_div_two_add_one_le_tsum_abs (x : ℝ) (M : ℕ) :
+    |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| ≤
+      ∑' k : ℕ, |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := by
+  have hnorm : (fun k : ℕ => ‖x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)‖) =
+      fun k : ℕ => |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := by
+    ext k
+    rw [norm_div, norm_pow, Real.norm_eq_abs,
+      Real.norm_of_nonneg (Real.Gamma_pos_of_pos (by positivity)).le]
+  have hsum : Summable fun k : ℕ => ‖x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)‖ :=
+    hnorm ▸ (summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one |x|)
+  have hle := norm_tsum_le_tsum_norm hsum
+  rwa [hnorm, Real.norm_eq_abs] at hle
+
 /-- Every shifted tail of the half-Gamma series obeys the same polynomial-free Gaussian majorant
 `< 2 exp(x²)` as the full series, for every `x : ℝ` and shift `M : ℕ`. -/
 theorem tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) (M : ℕ) :
     (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) < 2 * rexp (x ^ 2) := by
-  have hle : (∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) ≤
-      ∑' k : ℕ, |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
-    ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one x)).tsum_le_tsum
-      (fun k => div_le_div_of_nonneg_right (abs_pow x (k + M) ▸ le_abs_self _)
-        (Real.Gamma_pos_of_pos (by positivity)).le)
-      ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one |x|))
+  have hle := (le_abs_self _).trans (abs_tsum_pow_add_div_Gamma_div_two_add_one_le_tsum_abs x M)
   have hsplit := (summable_pow_div_Gamma_div_two_add_one |x|).sum_add_tsum_nat_add M
   have hpref : 0 ≤ ∑ m ∈ Finset.range M, |x| ^ m / Real.Gamma ((m : ℝ) / 2 + 1) :=
     Finset.sum_nonneg fun m _ => div_nonneg (by positivity)
@@ -264,6 +284,52 @@ theorem tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) (M : ℕ
   have hexp := tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|
   rw [sq_abs] at hexp
   linarith
+
+/-- Every shifted tail of the half-Gamma series has absolute value strictly less than `2 exp(x²)`,
+for every `x : ℝ` and shift `M : ℕ`. -/
+theorem abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp (x : ℝ) (M : ℕ) :
+    |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| < 2 * rexp (x ^ 2) :=
+  calc |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)|
+      ≤ ∑' k : ℕ, |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+        abs_tsum_pow_add_div_Gamma_div_two_add_one_le_tsum_abs x M
+    _ < 2 * rexp (|x| ^ 2) := tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp |x| M
+    _ = 2 * rexp (x ^ 2) := by rw [sq_abs]
+
+/-- For `|u| ≤ 1`, every `M`-shifted tail of the scaled half-Gamma series at `x * u` is bounded in
+absolute value by `2 exp(x²) |u|^M`, extracting `O(|u|^M)` vanishing near `u = 0` uniformly in
+`M`. -/
+theorem abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one (x : ℝ) {u : ℝ}
+    (hu : |u| ≤ 1) (M : ℕ) :
+    |∑' k : ℕ, (x * u) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| ≤
+      2 * rexp (x ^ 2) * |u| ^ M := by
+  have hterm : ∀ k : ℕ,
+      |x * u| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) ≤
+        |u| ^ M * (|x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) := fun k => by
+    have hpow : |x * u| ^ (k + M) ≤ |u| ^ M * |x| ^ (k + M) := by
+      rw [abs_mul, mul_pow, pow_add |u| k M]
+      calc |x| ^ (k + M) * (|u| ^ k * |u| ^ M)
+          ≤ |x| ^ (k + M) * (1 * |u| ^ M) := by
+            gcongr
+            exact pow_le_one₀ (abs_nonneg u) hu
+        _ = |u| ^ M * |x| ^ (k + M) := by ring
+    exact (div_le_div_of_nonneg_right hpow
+      (Real.Gamma_pos_of_pos (by positivity)).le).trans_eq (mul_div_assoc _ _ _)
+  have hsum₁ : Summable fun k : ℕ =>
+      |x * u| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+    (summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one |x * u|)
+  have hsum₂ : Summable fun k : ℕ =>
+      |u| ^ M * (|x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
+    ((summable_nat_add_iff M).2 (summable_pow_div_Gamma_div_two_add_one |x|)).mul_left (|u| ^ M)
+  calc |∑' k : ℕ, (x * u) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)|
+      ≤ ∑' k : ℕ, |x * u| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
+        abs_tsum_pow_add_div_Gamma_div_two_add_one_le_tsum_abs (x * u) M
+    _ ≤ ∑' k : ℕ, |u| ^ M * (|x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
+        hsum₁.tsum_le_tsum hterm hsum₂
+    _ = |u| ^ M * ∑' k : ℕ, |x| ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := tsum_mul_left
+    _ ≤ |u| ^ M * (2 * rexp (|x| ^ 2)) := by
+        gcongr
+        exact (tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp |x| M).le
+    _ = 2 * rexp (x ^ 2) * |u| ^ M := by rw [sq_abs]; ring
 
 /-- For every `x : ℝ` and `L : ℕ`, the `2L`-shifted tail of the half-Gamma series is bounded by
 `2 x^{2L} / L! * exp(x²)`, combining `O(x^{2L})` vanishing at `x = 0` with factorial decay in `L`
@@ -305,5 +371,45 @@ theorem tsum_pow_add_two_mul_div_Gamma_div_two_add_one_le (x : ℝ) (L : ℕ) :
           gcongr
           exact (tsum_pow_div_Gamma_div_two_add_one_lt_two_mul_exp |x|).le
     _ = 2 * x ^ (2 * L) / L ! * rexp (x ^ 2) := by rw [sq_abs]; ring
+
+/-- For every `x : ℝ` and any shift `M : ℕ` (even or odd), the `M`-shifted tail of the half-Gamma
+series satisfies `|∑_{k ≥ 0} x^{k + M} / Γ((k + M) / 2 + 1)| ≤ 2 e |x|^M exp(x²)`. -/
+theorem abs_tsum_pow_add_div_Gamma_div_two_add_one_le_mul_exp (x : ℝ) (M : ℕ) :
+    |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)| ≤
+      2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by
+  rcases le_total |x| 1 with hx | hx
+  · have h := abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one 1 hx M
+    simp only [one_mul, one_pow] at h
+    exact h.trans (le_mul_of_one_le_right (by positivity) (Real.one_le_exp (sq_nonneg x)))
+  · have h1 : (1 : ℝ) ≤ rexp 1 * |x| ^ M :=
+      calc (1 : ℝ) = 1 * 1 := by ring
+        _ ≤ rexp 1 * |x| ^ M :=
+            mul_le_mul (Real.one_le_exp zero_le_one) (one_le_pow₀ hx) zero_le_one
+              (Real.exp_nonneg 1)
+    calc |∑' k : ℕ, x ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)|
+        ≤ 2 * rexp (x ^ 2) := (abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp x M).le
+      _ = 2 * 1 * rexp (x ^ 2) := by ring
+      _ ≤ 2 * (rexp 1 * |x| ^ M) * rexp (x ^ 2) := by gcongr
+      _ = 2 * rexp 1 * |x| ^ M * rexp (x ^ 2) := by ring
+
+/-- Continuity on `ℝ` of the `M`-shifted half-Gamma series
+`z ↦ ∑_{k ≥ 0} z^{k + M} / Γ((k + M) / 2 + 1)`. -/
+theorem continuous_tsum_pow_add_div_Gamma_div_two_add_one (M : ℕ) :
+    Continuous fun z : ℝ => ∑' k : ℕ, z ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := by
+  have heq : (fun z : ℝ => ∑' k : ℕ, z ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) =
+      fun z : ℝ => rexp (z ^ 2) * (1 + TauCeti.Real.erf z) -
+        ∑ m ∈ Finset.range M, z ^ m / Real.Gamma ((m : ℝ) / 2 + 1) := by
+    ext z
+    have hsplit := (summable_pow_div_Gamma_div_two_add_one z).sum_add_tsum_nat_add M
+    rw [TauCeti.Real.tsum_pow_div_Gamma_div_two_add_one] at hsplit
+    linarith
+  rw [heq]
+  exact ((Real.continuous_exp.comp (continuous_pow 2)).mul
+    (continuous_const.add TauCeti.Real.continuous_erf)).sub (by fun_prop)
+
+/-- Continuity on `ℝ` of the half-Gamma series `z ↦ ∑_{m ≥ 0} z^m / Γ(m / 2 + 1)`. -/
+theorem continuous_tsum_pow_div_Gamma_div_two_add_one :
+    Continuous fun z : ℝ => ∑' m : ℕ, z ^ m / Real.Gamma ((m : ℝ) / 2 + 1) := by
+  simpa using continuous_tsum_pow_add_div_Gamma_div_two_add_one 0
 
 end Real

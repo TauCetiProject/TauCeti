@@ -143,8 +143,8 @@ theorem exists_paths_setEdgeSeparator_card_eq [Finite V(G)] [Finite E(G)] {A B :
   let _ : Fintype V(G) := Fintype.ofFinite _
   let _ : Fintype E(G) := Fintype.ofFinite _
   let _ (x y : V(G)) : Fintype (G.BidirectedHom x y) := Fintype.ofFinite _
-  let A' : Finset V(G) := {v | v.1 ∈ A}
-  let B' : Finset V(G) := {v | v.1 ∈ B}
+  let A' : Finset V(G) := {v | v.val ∈ A}
+  let B' : Finset V(G) := {v | v.val ∈ B}
   have hAB' : Disjoint A' B' := by
     rw [disjoint_left]
     intro v hvA hvB
@@ -162,7 +162,7 @@ theorem exists_paths_setEdgeSeparator_card_eq [Finite V(G)] [Finite E(G)] {A B :
   -- The edges underlying the cut arrows separate the terminal sets.
   let C : Finset (Σ x y, G.BidirectedHom x y) := {e | e.1 ∈ S ∧ e.2.1 ∈ Sᶜ}
   refine ⟨k, fun i ↦ a i, fun i ↦ b i, fun i ↦ (P i).toGraphWalk,
-    C.image fun e ↦ e.2.2.1, fun i ↦ by simpa [A'] using ha i,
+    C.image fun e ↦ e.2.2.val, fun i ↦ by simpa [A'] using ha i,
     fun i ↦ by simpa [B'] using hb i,
     fun i ↦ (ArrowWalk.isPath_toGraphWalk_iff _).2 (hP i), ?_, ?_, ?_, ?_, ?_⟩
   · intro i v hv hva hvb
@@ -173,14 +173,14 @@ theorem exists_paths_setEdgeSeparator_card_eq [Finite V(G)] [Finite E(G)] {A B :
   · exact hPdisj
   · rintro e he
     obtain ⟨a, -, rfl⟩ := mem_image.1 he
-    exact a.2.2.2.edge_mem
+    exact a.2.2.property.edge_mem
   · intro x hx y hy hxy
     have hxG : x ∈ V(G) := by simpa using hxy.left_mem
     have hyG : y ∈ V(G) := by simpa using hxy.right_mem
     obtain ⟨-, p, hp⟩ := reachable_deleteEdges_iff_exists_walk.1 hxy
     have hC : ReachableWithout (C : Set (Σ x y, G.BidirectedHom x y))
         (⟨x, hxG⟩ : V(G)) ⟨y, hyG⟩ := reachableWithout_def.2
-      ⟨p.toBidirected hxG, fun e he heC ↦ hp e.2.2.1
+      ⟨p.toBidirected hxG, fun e he heC ↦ hp e.2.2.val
         (p.edges_toBidirected hxG ▸ List.mem_map_of_mem he)
         (mem_coe.2 (mem_image_of_mem _ heC))⟩
     exact hS.not_reachableWithout_of_cut_subset

@@ -54,8 +54,8 @@ attribute [local instance] Classical.decEq
 
 /-- A face is nonempty, so the reciprocal of its cardinality is positive. -/
 private theorem inv_card_pos (K : AbstractSimplicialComplex ι) (σ : Face K) :
-    0 < (σ.1.card : ℝ)⁻¹ := by
-  have : 0 < σ.1.card := Finset.card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem σ.2)
+    0 < (σ.val.card : ℝ)⁻¹ := by
+  have : 0 < σ.val.card := Finset.card_pos.mpr (K.isRelLowerSet_faces.prop_of_mem σ.property)
   positivity
 
 /-- The greatest face of a nonnegative chain-supported combination is exactly the coordinate
@@ -63,7 +63,7 @@ support of its image under the barycentric-subdivision linear map. -/
 theorem support_barycentricSubdivisionLinearMap_eq_greatest
     (K : AbstractSimplicialComplex ι) {a : Face K →₀ ℝ} (ha : ∀ σ, 0 ≤ a σ)
     {σ : Face K} (hσ : σ ∈ a.support) (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
-    (barycentricSubdivisionLinearMap K a).support = σ.1 := by
+    (barycentricSubdivisionLinearMap K a).support = σ.val := by
   ext v
   simp only [Finsupp.mem_support_iff]
   constructor
@@ -73,10 +73,10 @@ theorem support_barycentricSubdivisionLinearMap_eq_greatest
     rw [barycentricSubdivisionLinearMap_apply]
     apply Finset.sum_eq_zero
     intro τ hτ
-    have hvτ : v ∉ τ.1 := fun h => hvσ (hmax τ hτ h)
+    have hvτ : v ∉ τ.val := fun h => hvσ (hmax τ hτ h)
     simp [hvτ]
   · intro hvσ
-    have hcard : 0 < (σ.1.card : ℝ)⁻¹ := inv_card_pos K σ
+    have hcard : 0 < (σ.val.card : ℝ)⁻¹ := inv_card_pos K σ
     have hapos : 0 < a σ := lt_of_le_of_ne (ha σ) (Finsupp.mem_support_iff.mp hσ).symm
     apply ne_of_gt
     rw [barycentricSubdivisionLinearMap_apply]
@@ -93,7 +93,7 @@ private theorem barycentricSubdivisionLinearMap_ne_zero (K : AbstractSimplicialC
   obtain ⟨σ, hσ, hσmax⟩ :=
     hchain.exists_isGreatest a.support.finite_toSet (Finsupp.support_nonempty_iff.mpr ha0)
   intro hzero
-  have hne := K.isRelLowerSet_faces.prop_of_mem σ.2
+  have hne := K.isRelLowerSet_faces.prop_of_mem σ.property
   rw [← support_barycentricSubdivisionLinearMap_eq_greatest K ha hσ hσmax, hzero,
     Finsupp.support_zero] at hne
   simp at hne
@@ -101,33 +101,33 @@ private theorem barycentricSubdivisionLinearMap_ne_zero (K : AbstractSimplicialC
 private theorem exists_mem_greatest_not_mem_of_ne_face (K : AbstractSimplicialComplex ι)
     {a : Face K →₀ ℝ} (hchain : IsChain (· ≤ ·) (a.support : Set (Face K)))
     {σ : Face K} (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
-    ∃ v ∈ σ.1, ∀ τ ∈ a.support, v ∈ τ.1 → τ = σ := by
+    ∃ v ∈ σ.val, ∀ τ ∈ a.support, v ∈ τ.val → τ = σ := by
   by_cases herase : (a.support.erase σ).Nonempty
   · obtain ⟨τ, hτerase, hτmax⟩ := (hchain.mono (by simp)).exists_isGreatest
       (a.support.erase σ).finite_toSet herase
     have hτa : τ ∈ a.support := Finset.mem_of_mem_erase hτerase
-    have hτσ : τ.1 ⊂ σ.1 := (Finset.ssubset_iff_subset_ne).2
+    have hτσ : τ.val ⊂ σ.val := (Finset.ssubset_iff_subset_ne).2
       ⟨hmax τ hτa, fun h => Finset.ne_of_mem_erase hτerase (Subtype.ext h)⟩
     obtain ⟨v, hvσ, hvτ⟩ := Finset.exists_of_ssubset hτσ
     refine ⟨v, hvσ, fun ρ hρa hvρ => ?_⟩
     by_contra hρσ
     have hρerase : ρ ∈ a.support.erase σ := Finset.mem_erase.2 ⟨hρσ, hρa⟩
     exact hvτ (hτmax hρerase hvρ)
-  · obtain ⟨v, hvσ⟩ := K.isRelLowerSet_faces.prop_of_mem σ.2
+  · obtain ⟨v, hvσ⟩ := K.isRelLowerSet_faces.prop_of_mem σ.property
     refine ⟨v, hvσ, fun τ hτ _ => ?_⟩
     by_contra hτσ
     exact herase ⟨τ, Finset.mem_erase.2 ⟨hτσ, hτ⟩⟩
 
 private theorem barycentricSubdivisionLinearMap_apply_eq_of_exposed
     (K : AbstractSimplicialComplex ι) {a : Face K →₀ ℝ} {σ : Face K} {v : ι}
-    (hσ : σ ∈ a.support) (hvσ : v ∈ σ.1)
-    (hv : ∀ τ ∈ a.support, v ∈ τ.1 → τ = σ) :
-    barycentricSubdivisionLinearMap K a v = a σ * (σ.1.card : ℝ)⁻¹ := by
+    (hσ : σ ∈ a.support) (hvσ : v ∈ σ.val)
+    (hv : ∀ τ ∈ a.support, v ∈ τ.val → τ = σ) :
+    barycentricSubdivisionLinearMap K a v = a σ * (σ.val.card : ℝ)⁻¹ := by
   rw [barycentricSubdivisionLinearMap_apply]
   rw [Finset.sum_eq_single σ]
   · simp [hvσ]
   · intro τ hτ hτσ
-    have hvτ : v ∉ τ.1 := fun h => hτσ (hv τ hτ h)
+    have hvτ : v ∉ τ.val := fun h => hτσ (hv τ hτ h)
     simp [hvτ]
   · exact fun h => (h hσ).elim
 
@@ -146,7 +146,7 @@ private theorem coeff_le_of_barycentricSubdivisionLinearMap_eq
   rw [← barycentricSubdivisionLinearMap_apply_eq_of_exposed K hσa hvσ hva, hab,
     barycentricSubdivisionLinearMap_apply]
   have hsum := Finset.single_le_sum (s := b.support)
-    (f := fun ρ => b ρ * if v ∈ ρ.1 then (ρ.1.card : ℝ)⁻¹ else 0)
+    (f := fun ρ => b ρ * if v ∈ ρ.val then (ρ.val.card : ℝ)⁻¹ else 0)
     (fun ρ _ => mul_nonneg (hb ρ) (by positivity)) hσb
   simpa [hvσ] using hsum
 
@@ -225,7 +225,7 @@ theorem barycentricSubdivisionRealizationMap_injective (K : AbstractSimplicialCo
     Function.Injective (barycentricSubdivisionRealizationMap K) := by
   intro x y hxy
   apply Subtype.ext
-  apply barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain K x.1 y.1
+  apply barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain K x.val y.val
   · exact Realization.nonneg _ x
   · exact Realization.nonneg _ y
   · exact (TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp

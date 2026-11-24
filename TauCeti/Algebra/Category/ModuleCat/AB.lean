@@ -16,8 +16,9 @@ varying coefficients and to commute cohomology with products of cochain complexe
 category or type must be small in the universe of the modules.
 
 The arguments follow Mathlib's AB instances for `ModuleCat`, by Dagur Asgeirsson: transfer
-exactness from abelian groups along the forgetful functor. For products, the index type is first
-replaced by a small copy. In both cases the ring universe is independent of the module universe.
+exactness from abelian groups along the forgetful functor. For products and coproducts indexed by
+a small type, the index type is first replaced by a small copy. In all cases the ring universe is
+independent of the module universe.
 -/
 
 public section
@@ -32,17 +33,21 @@ namespace TauCeti
 the universe of the coefficient ring. -/
 instance moduleCat_ab5OfSize (R : Type u) [Ring R] [UnivLE.{w, v}] [UnivLE.{w', v}] :
     AB5OfSize.{w, w'} (ModuleCat.{v} R) where
-  ofShape J _ _ := by
-    have : AB5OfSize.{w, w'} AddCommGrpCat.{v} :=
-      AB5OfSize_of_univLE.{w, w', v, v, v, v + 1} _
-    exact HasExactColimitsOfShape.domain_of_functor J
-      (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+  ofShape J _ _ :=
+    HasExactColimitsOfShape.domain_of_functor J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
 
-/-- Coproducts of modules are exact, with no restriction on the universe of the coefficient
-ring. -/
-instance moduleCat_ab4OfSize (R : Type u) [Ring R] : AB4OfSize.{v} (ModuleCat.{v} R) := by
+/-- Coproducts of modules indexed by types in a universe that embeds in the universe of the
+modules are exact, with no restriction on the universe of the coefficient ring. -/
+instance moduleCat_ab4OfSize (R : Type u) [Ring R] [UnivLE.{w, v}] :
+    AB4OfSize.{w} (ModuleCat.{v} R) := by
   have : HasFiniteBiproducts (ModuleCat.{v} R) := Abelian.hasFiniteBiproducts
   exact AB4.of_AB5 _
+
+/-- Coproducts of modules indexed by a small type are exact, with no restriction on the universe
+of the coefficient ring. -/
+instance moduleCat_hasExactColimitsOfShape_discrete (R : Type u) [Ring R]
+    (ι : Type w) [Small.{v} ι] : HasExactColimitsOfShape (Discrete ι) (ModuleCat.{v} R) :=
+  HasExactColimitsOfShape.of_domain_equivalence _ (Discrete.equivalence (equivShrink.{v} ι)).symm
 
 /-- Products of modules indexed by a small type are exact, with no restriction on the universe
 of the coefficient ring. -/

@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Tensor.External
 public import TauCeti.RepresentationTheory.CharacterTable.External.Product
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.FDRep.Basic
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Irreducible representations of product groups
@@ -105,9 +106,11 @@ omit [Fintype G] [Fintype H] [FiniteDimensional k V] [FiniteDimensional k W]
   [FiniteDimensional k V'] [FiniteDimensional k W'] in
 /-- External products of irreducibles are equivalent exactly when their factors are equivalent. -/
 @[simp]
-theorem nonempty_equiv_externalTensor_iff [Finite G] [Finite H] :
+theorem nonempty_equiv_externalTensor_iff :
     Nonempty ((ρ.externalTensor σ).Equiv (ρ'.externalTensor σ')) ↔
       Nonempty (ρ.Equiv ρ') ∧ Nonempty (σ.Equiv σ') := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card H : k))
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite H
   have := ρ.asModuleEquiv.finiteDimensional
@@ -146,7 +149,7 @@ end Pairing
 
 section Classification
 
-variable {k G H : Type*} [Field k] [Group G] [Group H] [Finite G] [Finite H]
+variable {k G H : Type*} [Field k] [Group G] [Group H]
   [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
 
 /-- External products of native irreducible models are equivalent only for equal index pairs. -/
@@ -170,6 +173,8 @@ theorem existsUnique_nonempty_equiv_externalTensor {U : Type*} [AddCommGroup U] 
     ∃! p : Fin (Nat.card (ConjClasses G)) × Fin (Nat.card (ConjClasses H)),
       Nonempty (τ.Equiv ((irreducibleRepresentation k p.1).externalTensor
         (irreducibleRepresentation k p.2))) := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card H : k))
   let R := fun p : Fin (Nat.card (ConjClasses G)) × Fin (Nat.card (ConjClasses H)) =>
     (irreducibleRepresentation k p.1).externalTensor (irreducibleRepresentation k p.2)
   have : ∀ p, (R p).IsIrreducible := fun p =>
@@ -196,7 +201,7 @@ namespace FDRep
 
 open CategoryTheory
 
-variable {k G H : Type*} [Field k] [Group G] [Group H] [Finite G] [Finite H]
+variable {k G H : Type*} [Field k] [Group G] [Group H]
   [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
 
 /-- Every simple representation of a product group is an external tensor product of simple
@@ -242,7 +247,7 @@ section ProductTable
 
 open scoped Kronecker
 
-variable (k : Type*) {G H : Type*} [Field k] [Group G] [Group H] [Finite G] [Finite H]
+variable (k : Type*) {G H : Type*} [Field k] [Group G] [Group H]
   [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
 
 /-- The product of the `i`-th irreducible character of `G` and the `j`-th one of `H` is an

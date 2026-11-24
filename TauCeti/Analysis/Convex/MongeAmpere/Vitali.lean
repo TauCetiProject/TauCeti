@@ -11,7 +11,7 @@ import Mathlib.MeasureTheory.Covering.Vitali
 /-!
 # The Vitali covering lemma for sections of Monge–Ampère solutions
 
-Let `E` be a real inner product space of finite dimension `n ≥ 1` with an additive Haar measure
+Let `E` be a real inner product space of finite dimension `n` with an additive Haar measure
 `μ`, and let `u` be convex on an open set `Ω` with `λ μ ≤ MA_u ≤ Λ μ` on `Ω`, where `MA_u` is the
 Aleksandrov Monge–Ampère measure of `u` and `0 < λ`. Write
 `S(x, h) = {y ∈ Ω | u y < u x + ℓ (y - x) + h}` for the section of `u` at `x` with a supporting
@@ -74,7 +74,37 @@ open MeasureTheory Measure Set Module
 open scoped ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- Doubling of sections in dimension zero: a section of positive height is the whole space, and
+`λ ≤ Λ` because both bounds hold on `Ω = univ`, so the constant `1` works. -/
+private theorem measure_convexSection_le_of_subsingleton [Subsingleton E] {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u : E → ℝ} {x : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ} {K lam Lam : ℝ≥0}
+    (hx : x ∈ Ω) (hℓ : ∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) (hlam : 0 < lam)
+    (hMA : (lam : ℝ≥0∞) • μ.restrict Ω ≤
+      mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤))
+    (hMA' : mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤) ≤
+      (Lam : ℝ≥0∞) • μ.restrict Ω) :
+    μ (convexSection Ω u x ℓ (K * h)) ≤
+      NNReal.sqrt (1 * K ^ finrank ℝ E * Lam / lam) * μ (convexSection Ω u x ℓ h) := by
+  rcases le_or_gt h 0 with hh | hh
+  · rw [(convexSection_eq_empty_iff hx hℓ).2
+      (mul_nonpos_of_nonneg_of_nonpos K.coe_nonneg hh), measure_empty]
+    exact zero_le
+  have hΩ : Ω = univ := Subsingleton.eq_univ_of_nonempty ⟨x, hx⟩
+  have hS : convexSection Ω u x ℓ h = univ :=
+    Subsingleton.eq_univ_of_nonempty ((convexSection_nonempty_iff hx hℓ).2 hh)
+  have hle : (lam : ℝ≥0∞) ≤ Lam := by
+    refine (ENNReal.mul_le_mul_iff_left (isOpen_univ.measure_pos μ univ_nonempty).ne'
+      (measure_ne_top μ univ)).1 ?_
+    simpa [hΩ] using Measure.le_iff'.1 (hMA.trans hMA') univ
+  calc μ (convexSection Ω u x ℓ (K * h)) ≤ 1 * μ (convexSection Ω u x ℓ h) := by
+        rw [hS, one_mul]
+        exact measure_mono (subset_univ _)
+    _ ≤ _ := by
+        gcongr
+        simp only [finrank_zero_of_subsingleton, pow_zero, one_mul]
+        exact_mod_cast NNReal.one_le_sqrt.2 ((one_le_div hlam).2 (ENNReal.coe_le_coe.1 hle))
 
 /-- **Doubling of sections.** There is a constant `C`, depending only on `E` and `μ`, with the
 following property. Let `u` be convex on an open set `Ω`, with `λ μ ≤ MA_u ≤ Λ μ` on `Ω` for the
@@ -93,6 +123,9 @@ theorem exists_measure_convexSection_le_sqrt_mul :
         (Lam : ℝ≥0∞) • μ.restrict Ω →
       μ (convexSection Ω u x ℓ (K * h)) ≤
         NNReal.sqrt (C * K ^ finrank ℝ E * Lam / lam) * μ (convexSection Ω u x ℓ h) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact ⟨1, fun Ω _ u x ℓ h K lam Lam _ _ hx hℓ _ _ _ hlam hMA hMA' =>
+      measure_convexSection_le_of_subsingleton μ hx hℓ hlam hMA hMA'⟩
   obtain ⟨C₁, hC₁⟩ := exists_mul_measure_convexSection_sq_le_mul_ofReal_pow μ (E := E)
   obtain ⟨C₂, hC₂⟩ := exists_ofReal_pow_le_mul_measure_convexSection_mul_mongeAmpereMeasure μ
     (E := E)
@@ -298,7 +331,7 @@ theorem exists_countable_pairwiseDisjoint_convexSection_measure_le :
         measure_biUnion_le μ hs _
     _ ≤ ∑' j : s, (NNReal.sqrt (A * K ^ finrank ℝ E * Lam / lam) : ℝ≥0∞) *
           μ (convexSection Ω u (c j) (ℓ j) (h j)) :=
-        tsum_le_tsum fun j => hdbl j j.2
+        tsum_le_tsum fun j => hdbl j j.property
     _ = _ := by rw [ENNReal.tsum_mul_left, measure_biUnion hs hdisj hmeas]
 
 end TauCeti

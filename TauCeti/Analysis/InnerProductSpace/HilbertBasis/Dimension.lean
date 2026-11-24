@@ -5,367 +5,617 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.SetTheory.Cardinal.Continuum
-public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import Mathlib.SetTheory.Cardinal.Arithmetic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Reindex
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Countable
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
+public import TauCeti.Analysis.Normed.Lp.Basic
 import Mathlib.Analysis.Real.Cardinality
-import TauCeti.Analysis.Normed.Lp.Basic
-import TauCeti.Analysis.Normed.Lp.Support
 
 /-!
-# Hilbert dimension and the unitary classification of Hilbert spaces
+# Hilbert dimension and unitary classification of Hilbert spaces
 
-Any two Hilbert bases `b : HilbertBasis ι 𝕜 H` and `c : HilbertBasis κ 𝕜 H` of the same
-inner-product space `H` over `𝕜` (`ℝ` or `ℂ`) have equinumerous index types
-(`HilbertBasis.mk_eq`, `HilbertBasis.lift_mk_eq`):
+In an inner product space `E` over `𝕜` (`ℝ` or `ℂ`), any orthonormal family `v : ι → E` has index
+cardinality at most that of any Hilbert basis `c : HilbertBasis κ 𝕜 E` (`Orthonormal.lift_mk_le`,
+`Orthonormal.mk_le`), so any two Hilbert bases of `E` have index types of equal cardinality
+(`HilbertBasis.lift_mk_eq`, `HilbertBasis.mk_eq`):
 
-* If `κ` is finite, `H` is finite-dimensional (`HilbertBasis.finite_iff_finiteDimensional`) and
-  both index types have cardinality `Module.finrank 𝕜 H` (`HilbertBasis.card_eq_finrank`).
-* If `κ` is infinite, so is `ι`. For each `j : κ`, the coordinate sequence `b.repr (c j)` lies in
-  `ℓ²(ι, 𝕜)` and therefore has countable support `S j = {i | ⟪b i, c j⟫ ≠ 0}`
-  (`lp.countable_dsupport`). Every `i : ι` lies in some `S j`, since a unit vector `b i` cannot be
-  orthogonal to all of `c` (`HilbertBasis.exists_inner_ne_zero`); hence
-  `#ι ≤ ∑ j, #(S j) ≤ #κ * ℵ₀ = #κ`, and symmetry gives `#ι = #κ`.
+* When `κ` is finite, `c.toOrthonormalBasis` identifies `E` as finite-dimensional of dimension
+  `Module.finrank 𝕜 E = Fintype.card κ`, bounding `Fintype.card ι` by linear independence
+  (`HilbertBasis.finiteDimensional_iff_finite`, `HilbertBasis.finrank_eq_card`).
+* When `κ` is infinite, each basis vector `c j` has countable Fourier support in `v`
+  (`Orthonormal.countable_support_inner_left`), and the union of those supports over `j : κ` covers
+  `ι` (`Orthonormal.iUnion_support_inner_eq_univ`) because any omitted `v i` would be orthogonal to
+  every `c j` and hence zero. Thus `#ι ≤ #κ * ℵ₀ = #κ`.
 
-Combining basis-cardinality invariance with `HilbertBasis.equiv` and `HilbertBasis.mapₗᵢ` yields
-the **unitary classification of Hilbert spaces**
-(`HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`,
-`TauCeti.nonempty_linearIsometryEquiv_iff_lift_hilbertDimension_eq`): two Hilbert spaces over `𝕜`
-are linearly isometrically equivalent if and only if they have the same Hilbert dimension
-`TauCeti.hilbertDimension 𝕜 H`, defined as the cardinality of any Hilbert basis of `H`.
+Consequently, two spaces carrying Hilbert bases `b : HilbertBasis ι 𝕜 E` and
+`c : HilbertBasis κ 𝕜 F` admit a linear isometric equivalence `E ≃ₗᵢ[𝕜] F` if and only if their
+basis index types have the same lifted cardinality
+(`HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`): a unitary equivalence transports `b`
+to a Hilbert basis of `F` via `HilbertBasis.mapₗᵢ`, and an index equivalence `e : ι ≃ κ` produces a
+basis-preserving unitary `b.equiv c e : E ≃ₗᵢ[𝕜] F`.
 
-Separability corresponds to countable Hilbert dimension, `hilbertDimension 𝕜 H ≤ ℵ₀`
-(`TauCeti.separableSpace_iff_hilbertDimension_le_aleph0`), and separable infinite-dimensional
-Hilbert spaces are precisely those unitarily equivalent to `ℓ²(ℕ, 𝕜)`
-(`TauCeti.nonempty_linearIsometryEquiv_lp_nat_iff`). Separability alone does not classify finite
-dimensions (`𝕜` and `𝕜²` have Hilbert dimensions `1` and `2`), whereas `ℓ²(ℕ, 𝕜)` and `ℓ²(ℤ, 𝕜)`
-both have Hilbert dimension `ℵ₀` and are unitarily equivalent, while `ℓ²(ℕ, 𝕜)` and `ℓ²(ℝ, 𝕜)`
-have Hilbert dimensions `ℵ₀` and `𝔠` and are not.
+For any complete inner product space `E`, `TauCeti.hilbertDim 𝕜 E : Cardinal.{u}` is the common
+cardinality of all Hilbert bases of `E` (defined from `exists_hilbertBasis 𝕜 E`). Unlike the
+algebraic Hamel rank `Module.rank 𝕜 E` — which equals `2 ^ ℵ₀` on `ℓ²(ℕ, 𝕜)` — the Hilbert
+dimension of `ℓ²(ι, 𝕜)` is `#ι` (up to universe lift), bounds every orthonormal family
+(`Orthonormal.cardinal_lift_le_hilbertDim`), is monotone along linear isometries and complete
+subspaces (`LinearIsometry.lift_hilbertDim_le`, `Submodule.hilbertDim_le`), agrees with
+`Module.finrank 𝕜 E` in finite dimension, is at most `ℵ₀` if and only if `E` is separable
+(`TauCeti.hilbertDim_le_aleph0_iff`), equals `ℵ₀` if and only if `E` is separable and
+infinite-dimensional (`TauCeti.hilbertDim_eq_aleph0_iff`), and classifies Hilbert spaces over `𝕜` up
+to linear isometric equivalence (`TauCeti.nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq`, and
+`TauCeti.nonempty_linearIsometryEquiv_iff_finrank_eq` in finite dimension). In particular, separable
+Hilbert spaces have Hilbert dimension `0`, a positive natural number, or `ℵ₀`, and separable
+infinite-dimensional Hilbert spaces are precisely those admitting a `ℕ`-indexed Hilbert basis or a
+unitary equivalence to `ℓ²(ℕ, 𝕜)` (`TauCeti.nonempty_hilbertBasis_nat_iff`,
+`TauCeti.nonempty_linearIsometryEquiv_lp_nat_iff`): thus `ℓ²(ℕ, 𝕜)` and `ℓ²(ℤ, 𝕜)` are unitarily
+equivalent (`TauCeti.nonempty_linearIsometryEquiv_lp_nat_int`), whereas `ℓ²(ℕ, 𝕜)` and `ℓ²(ℝ, 𝕜)`
+are not (`TauCeti.isEmpty_linearIsometryEquiv_lp_nat_real`).
+
+## Main declarations
+
+* `HilbertBasis.separableSpace_iff_countable`: a space with a Hilbert basis `b` is separable iff
+  its index type is countable.
+* `HilbertBasis.finiteDimensional_iff_finite`, `HilbertBasis.finrank_eq_card`: `E` is
+  finite-dimensional iff the index type is finite, with `finrank 𝕜 E = Fintype.card ι`.
+* `Orthonormal.lift_mk_le`, `HilbertBasis.lift_mk_eq`: orthonormal cardinality bound and
+  basis-cardinality invariance for `HilbertBasis`.
+* `HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`: unitary classification in terms of
+  given Hilbert bases.
+* `TauCeti.hilbertDim`: the Hilbert dimension of a complete inner product space.
+* `Orthonormal.cardinal_lift_le_hilbertDim`, `LinearIsometry.lift_hilbertDim_le`,
+  `Submodule.hilbertDim_le`: orthonormal upper bound and monotonicity of `hilbertDim`.
+* `TauCeti.nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq`,
+  `TauCeti.nonempty_linearIsometryEquiv_iff_finrank_eq`: unitary classification of general and
+  finite-dimensional Hilbert spaces.
+* `TauCeti.hilbertDim_le_aleph0_iff`, `TauCeti.hilbertDim_eq_aleph0_iff`,
+  `TauCeti.nonempty_hilbertBasis_nat_iff`, `TauCeti.nonempty_linearIsometryEquiv_lp_nat_iff`:
+  separability, countably infinite Hilbert dimension, and characterization of `ℓ²(ℕ, 𝕜)` up to
+  unitary equivalence.
 
 ## References
 
-* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Theorems I.4.17 and I.4.19.
-* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.2.
+* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Chapter I, §§4–5.
 * P. R. Halmos, *A Hilbert Space Problem Book*, 2nd ed., Problem 9.
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.3.
 -/
 
 public section
 
-universe u v w
-
 open scoped Cardinal InnerProductSpace lp
+
+universe u v w
 
 namespace HilbertBasis
 
-variable {𝕜 : Type*} [RCLike 𝕜]
-  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-  {K : Type*} [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
+section Structure
 
-/-- A finite Hilbert basis has cardinality equal to `Module.finrank 𝕜 H`. -/
-theorem card_eq_finrank {ι : Type*} [Fintype ι] (b : HilbertBasis ι 𝕜 H) :
-    Fintype.card ι = Module.finrank 𝕜 H :=
-  (Module.finrank_eq_card_basis b.toOrthonormalBasis.toBasis).symm
+variable {ι : Type*} {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- An inner-product space admitting a Hilbert basis over a finite index type is
-finite-dimensional. -/
-theorem finiteDimensional_of_finite {ι : Type*} [Finite ι] (b : HilbertBasis ι 𝕜 H) :
-    FiniteDimensional 𝕜 H := by
-  cases nonempty_fintype ι
-  exact Module.Finite.of_basis b.toOrthonormalBasis.toBasis
-
-/-- The index type of a Hilbert basis of `H` is finite if and only if `H` is finite-dimensional. -/
-theorem finite_iff_finiteDimensional {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
-    Finite ι ↔ FiniteDimensional 𝕜 H :=
-  ⟨fun _ ↦ b.finiteDimensional_of_finite, fun _ ↦ b.orthonormal.linearIndependent.finite⟩
-
-/-- The index type of a Hilbert basis of `H` is infinite if and only if `H` is
-infinite-dimensional. -/
-theorem infinite_iff {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
-    Infinite ι ↔ ¬ FiniteDimensional 𝕜 H := by
-  rw [← not_finite_iff_infinite, b.finite_iff_finiteDimensional]
-
-/-- `H` is trivial if and only if the index type of a Hilbert basis of `H` is empty. -/
-theorem subsingleton_iff_isEmpty {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
-    Subsingleton H ↔ IsEmpty ι :=
+/-- An inner product space carrying a Hilbert basis indexed by `ι` is trivial if and only if `ι` is
+empty. -/
+theorem subsingleton_iff_isEmpty (b : HilbertBasis ι 𝕜 E) : Subsingleton E ↔ IsEmpty ι :=
   ⟨fun _ ↦ ⟨fun i ↦ b.orthonormal.ne_zero i (Subsingleton.elim _ _)⟩,
-    fun _ ↦ b.repr.injective.subsingleton⟩
+   fun _ ↦ b.repr.toEquiv.subsingleton⟩
 
-/-- `H` is nontrivial if and only if the index type of a Hilbert basis of `H` is nonempty. -/
-theorem nontrivial_iff_nonempty {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
-    Nontrivial H ↔ Nonempty ι := by
+/-- An inner product space carrying a Hilbert basis indexed by `ι` is nontrivial if and only if `ι`
+is nonempty. -/
+theorem nontrivial_iff_nonempty (b : HilbertBasis ι 𝕜 E) : Nontrivial E ↔ Nonempty ι := by
   rw [← not_subsingleton_iff_nontrivial, b.subsingleton_iff_isEmpty, not_isEmpty_iff]
 
-/-- Auxiliary bound for `HilbertBasis.mk_eq`: if `κ` is infinite in the same universe as `ι`, then
-`#ι ≤ #κ`, because each `c j` has countable `b`-support and these supports cover `ι`. -/
-private theorem mk_le_of_infinite {ι κ : Type w} [Infinite κ] (b : HilbertBasis ι 𝕜 H)
-    (c : HilbertBasis κ 𝕜 H) : #ι ≤ #κ := by
-  let S : κ → Set ι := fun j ↦ {i : ι | b.repr (c j) i ≠ 0}
-  have hcover : (Set.univ : Set ι) ⊆ ⋃ j : κ, S j := fun i _ ↦ by
-    obtain ⟨j, hj⟩ := c.exists_inner_ne_zero (b.orthonormal.ne_zero i)
-    exact Set.mem_iUnion.2 ⟨j, by rwa [Set.mem_ofPred_eq, b.repr_apply_apply, ne_eq,
-      inner_eq_zero_symm]⟩
-  calc #ι = #(Set.univ : Set ι) := Cardinal.mk_univ.symm
-    _ ≤ #(⋃ j : κ, S j) := Cardinal.mk_le_mk_of_subset hcover
-    _ ≤ Cardinal.sum fun j : κ ↦ #(S j) := Cardinal.mk_iUnion_le_sum_mk
-    _ ≤ Cardinal.sum fun _ : κ ↦ ℵ₀ := Cardinal.sum_le_sum _ _ fun j ↦ by
-          have := (lp.countable_dsupport (b.repr (c j)) (by simp)).to_subtype
-          exact Cardinal.mk_le_aleph0
-    _ = #κ * ℵ₀ := by simp
-    _ = #κ := Cardinal.mul_aleph0_eq (Cardinal.aleph0_le_mk κ)
+/-- An inner product space carrying a Hilbert basis indexed by `ι` is finite-dimensional if and
+only if `ι` is finite. -/
+theorem finiteDimensional_iff_finite (b : HilbertBasis ι 𝕜 E) :
+    FiniteDimensional 𝕜 E ↔ Finite ι := by
+  refine ⟨fun _ ↦ b.orthonormal.linearIndependent.finite, fun _ ↦ ?_⟩
+  cases nonempty_fintype ι
+  exact b.toOrthonormalBasis.toBasis.finiteDimensional_of_finite
 
-/-- **Basis-cardinality invariance (same universe).** Any two Hilbert bases of `H` indexed by types
-in the same universe have equal cardinalities. -/
-theorem mk_eq {ι κ : Type w} (b : HilbertBasis ι 𝕜 H) (c : HilbertBasis κ 𝕜 H) :
-    #ι = #κ := by
-  rcases finite_or_infinite κ with hfin | hinf
-  · have : FiniteDimensional 𝕜 H := c.finiteDimensional_of_finite
-    have : Finite ι := b.finite_iff_finiteDimensional.2 ‹_›
+/-- The index type of a Hilbert basis of `E` is infinite if and only if `E` is not
+finite-dimensional. -/
+theorem infinite_iff_not_finiteDimensional (b : HilbertBasis ι 𝕜 E) :
+    Infinite ι ↔ ¬ FiniteDimensional 𝕜 E := by
+  rw [← not_finite_iff_infinite, b.finiteDimensional_iff_finite]
+
+/-- For a finite Hilbert basis, `Module.finrank 𝕜 E` equals `Fintype.card ι`. -/
+theorem finrank_eq_card [Fintype ι] (b : HilbertBasis ι 𝕜 E) :
+    Module.finrank 𝕜 E = Fintype.card ι :=
+  Module.finrank_eq_card_basis b.toOrthonormalBasis.toBasis
+
+/-- For any Hilbert basis `b : HilbertBasis ι 𝕜 E`, `Module.finrank 𝕜 E` equals `Nat.card ι`
+(both sides being `0` in infinite dimension). -/
+theorem finrank_eq_nat_card (b : HilbertBasis ι 𝕜 E) :
+    Module.finrank 𝕜 E = Nat.card ι := by
+  by_cases h : Finite ι
+  · cases nonempty_fintype ι
+    rw [b.finrank_eq_card, Nat.card_eq_fintype_card]
+  · have : Infinite ι := not_finite_iff_infinite.1 h
+    rw [Module.finrank_of_not_finite (mt b.finiteDimensional_iff_finite.1 h),
+      Nat.card_eq_zero_of_infinite]
+
+/-- **Separability in terms of a Hilbert basis.** An inner product space carrying a Hilbert basis
+`b : HilbertBasis ι 𝕜 E` is separable if and only if the index type `ι` is countable. -/
+theorem separableSpace_iff_countable (b : HilbertBasis ι 𝕜 E) :
+    TopologicalSpace.SeparableSpace E ↔ Countable ι := by
+  refine ⟨fun _ ↦ b.orthonormal.countable_of_separableSpace, fun _ ↦ ?_⟩
+  have : TopologicalSpace.SeparableSpace ℓ²(ι, 𝕜) := lp.separableSpace (by norm_num)
+  exact b.repr.symm.surjective.denseRange.separableSpace b.repr.symm.continuous
+
+/-- The index type of a Hilbert basis of a separable infinite-dimensional Hilbert space is
+countably infinite, hence equivalent to `ℕ`. -/
+theorem nonempty_equiv_nat (b : HilbertBasis ι 𝕜 E) [TopologicalSpace.SeparableSpace E]
+    (hE : ¬ FiniteDimensional 𝕜 E) : Nonempty (ι ≃ ℕ) := by
+  have : Countable ι := b.separableSpace_iff_countable.1 ‹_›
+  have : Infinite ι := b.infinite_iff_not_finiteDimensional.2 hE
+  exact nonempty_equiv_of_countable
+
+end Structure
+
+end HilbertBasis
+
+namespace Orthonormal
+
+variable {𝕜 : Type*} {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Every member `v i` of an orthonormal family pairs nontrivially with at least one member `c j` of
+any Hilbert basis of `E`, so the supports of `i ↦ ⟪v i, c j⟫_𝕜` cover `ι`. -/
+theorem iUnion_support_inner_eq_univ {ι : Type*} {κ : Type*} {v : ι → E}
+    (hv : Orthonormal 𝕜 v) (c : HilbertBasis κ 𝕜 E) :
+    (⋃ j : κ, Function.support fun i : ι ↦ ⟪v i, c j⟫_𝕜) = Set.univ := by
+  refine Set.eq_univ_of_forall fun i ↦ Set.mem_iUnion.2 ?_
+  obtain ⟨j, hj⟩ := c.exists_inner_ne_zero (hv.ne_zero i)
+  exact ⟨j, Function.mem_support.2 (mt inner_eq_zero_symm.1 hj)⟩
+
+/-- Any orthonormal family in `E` has index cardinality at most that of any Hilbert basis of `E` in
+the same universe. -/
+theorem mk_le {ι κ : Type u} {v : ι → E} (hv : Orthonormal 𝕜 v) (c : HilbertBasis κ 𝕜 E) :
+    #ι ≤ #κ := by
+  by_cases hκ : Finite κ
+  · have : FiniteDimensional 𝕜 E := c.finiteDimensional_iff_finite.2 hκ
+    have : Finite ι := hv.linearIndependent.finite
     cases nonempty_fintype ι
     cases nonempty_fintype κ
-    simp [Cardinal.mk_fintype, b.card_eq_finrank, c.card_eq_finrank]
-  · have : Infinite ι := b.infinite_iff.2 (c.infinite_iff.1 hinf)
-    exact le_antisymm (b.mk_le_of_infinite c) (c.mk_le_of_infinite b)
+    rw [Cardinal.mk_fintype, Cardinal.mk_fintype, ← c.finrank_eq_card]
+    exact mod_cast hv.linearIndependent.fintype_card_le_finrank
+  · have : Infinite κ := not_finite_iff_infinite.1 hκ
+    set s : κ → Set ι := fun j ↦ Function.support fun i : ι ↦ ⟪v i, c j⟫_𝕜
+    calc #ι = #(Set.univ : Set ι) := Cardinal.mk_univ.symm
+      _ = #(⋃ j : κ, s j) := by rw [hv.iUnion_support_inner_eq_univ c]
+      _ ≤ #κ * ⨆ j : κ, #(s j) := Cardinal.mk_iUnion_le s
+      _ ≤ #κ * ℵ₀ := mul_le_mul_of_nonneg_left (ciSup_le fun j ↦
+          Cardinal.le_aleph0_iff_set_countable.2
+            (hv.countable_support_inner_left (c j))) zero_le
+      _ = #κ := Cardinal.mul_eq_left (Cardinal.aleph0_le_mk κ) (Cardinal.aleph0_le_mk κ)
+          Cardinal.aleph0_ne_zero
 
-/-- **Basis-cardinality invariance.** Any two Hilbert bases of `H`, across arbitrary index
-universes, have equal lifted cardinalities. -/
-theorem lift_mk_eq {ι : Type u} {κ : Type v} (b : HilbertBasis ι 𝕜 H) (c : HilbertBasis κ 𝕜 H) :
-    Cardinal.lift.{v} #ι = Cardinal.lift.{u} #κ := by
-  simpa only [Cardinal.mk_uLift] using
-    (b.reindex Equiv.ulift.{v, u}.symm).mk_eq (c.reindex Equiv.ulift.{u, v}.symm)
+/-- Any orthonormal family `v : ι → E` has lifted index cardinality at most that of any Hilbert
+basis `c : HilbertBasis κ 𝕜 E`. -/
+theorem lift_mk_le {ι : Type u} {κ : Type v} {v : ι → E} (hv : Orthonormal 𝕜 v)
+    (c : HilbertBasis κ 𝕜 E) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ := by
+  have h := (hv.comp (Equiv.ulift : ULift.{v} ι ≃ ι) Equiv.ulift.injective).mk_le
+    (c.reindexOfRepr (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
+  rwa [Cardinal.mk_uLift, Cardinal.mk_uLift] at h
 
-/-- Any two Hilbert bases of `H` have equinumerous index types. -/
-theorem nonempty_equiv {ι : Type u} {κ : Type v} (b : HilbertBasis ι 𝕜 H)
-    (c : HilbertBasis κ 𝕜 H) : Nonempty (ι ≃ κ) :=
+end Orthonormal
+
+namespace HilbertBasis
+
+section Cardinality
+
+variable {𝕜 : Type*} {E : Type*} {F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Invariance of Hilbert basis cardinality (same universe).** Any two Hilbert bases of `E`
+indexed by types in the same universe have equal index cardinalities. -/
+theorem mk_eq {ι κ : Type u} (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 E) :
+    #ι = #κ :=
+  le_antisymm (b.orthonormal.mk_le c) (c.orthonormal.mk_le b)
+
+/-- **Invariance of Hilbert basis cardinality.** Any two Hilbert bases `b : HilbertBasis ι 𝕜 E` and
+`c : HilbertBasis κ 𝕜 E` of the same inner product space have index types of equal lifted
+cardinality. -/
+theorem lift_mk_eq {ι : Type u} {κ : Type v} (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 E) :
+    Cardinal.lift.{v} #ι = Cardinal.lift.{u} #κ :=
+  le_antisymm (b.orthonormal.lift_mk_le c) (c.orthonormal.lift_mk_le b)
+
+/-- Any two Hilbert bases of the same space have equivalent index types. -/
+theorem nonempty_equiv {ι : Type u} {κ : Type v} (b : HilbertBasis ι 𝕜 E)
+    (c : HilbertBasis κ 𝕜 E) : Nonempty (ι ≃ κ) :=
   Cardinal.lift_mk_eq'.1 (b.lift_mk_eq c)
 
 /-- **Unitary classification of Hilbert spaces via Hilbert bases.** Two spaces carrying Hilbert
-bases `b : HilbertBasis ι 𝕜 H` and `c : HilbertBasis κ 𝕜 K` are linearly isometrically equivalent
-if and only if `ι` and `κ` have the same lifted cardinality. -/
+bases `b : HilbertBasis ι 𝕜 E` and `c : HilbertBasis κ 𝕜 F` are linearly isometric if and only if
+their basis index types have the same lifted cardinality. -/
 theorem nonempty_linearIsometryEquiv_iff_lift_mk_eq {ι : Type u} {κ : Type v}
-    (b : HilbertBasis ι 𝕜 H) (c : HilbertBasis κ 𝕜 K) :
-    Nonempty (H ≃ₗᵢ[𝕜] K) ↔ Cardinal.lift.{v} #ι = Cardinal.lift.{u} #κ :=
+    (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Cardinal.lift.{v} #ι = Cardinal.lift.{u} #κ :=
   ⟨fun ⟨U⟩ ↦ (b.mapₗᵢ U).lift_mk_eq c,
-    fun h ↦ let ⟨e⟩ := Cardinal.lift_mk_eq'.1 h; ⟨b.equiv c e⟩⟩
+   fun h ↦ let ⟨e⟩ := Cardinal.lift_mk_eq'.1 h; ⟨b.equiv c e⟩⟩
 
-/-- Same-universe specialization of `HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`. -/
-theorem nonempty_linearIsometryEquiv_iff_mk_eq {ι κ : Type w}
-    (b : HilbertBasis ι 𝕜 H) (c : HilbertBasis κ 𝕜 K) :
-    Nonempty (H ≃ₗᵢ[𝕜] K) ↔ #ι = #κ := by
+/-- Same-universe form of `HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`. -/
+theorem nonempty_linearIsometryEquiv_iff_mk_eq {ι κ : Type u}
+    (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ #ι = #κ := by
   simpa using b.nonempty_linearIsometryEquiv_iff_lift_mk_eq c
 
-/-- A space carrying a Hilbert basis `b : HilbertBasis ι 𝕜 H` is separable if and only if the
-index type `ι` is countable. -/
-theorem separableSpace_iff_countable {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
-    TopologicalSpace.SeparableSpace H ↔ Countable ι := by
-  refine ⟨fun _ ↦ b.orthonormal.countable_of_separableSpace, fun _ ↦ ?_⟩
-  have : TopologicalSpace.SeparableSpace ℓ²(ι, 𝕜) :=
-    (lp.separableSpace_iff_countable (G := 𝕜) (p := 2) (by simp)).2 ‹_›
-  exact b.repr.symm.surjective.denseRange.separableSpace b.repr.symm.continuous
+/-- Two spaces carrying Hilbert bases `b` and `c` are linearly isometric if and only if the index
+types of `b` and `c` are equivalent. -/
+theorem nonempty_linearIsometryEquiv_iff_nonempty_equiv {ι : Type u} {κ : Type v}
+    (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Nonempty (ι ≃ κ) := by
+  rw [b.nonempty_linearIsometryEquiv_iff_lift_mk_eq c, Cardinal.lift_mk_eq']
+
+end Cardinality
 
 end HilbertBasis
 
 namespace TauCeti
 
-/-- **Hilbert dimension** of a Hilbert space `H` over `𝕜` (`ℝ` or `ℂ`): the cardinality of any
-Hilbert basis of `H`. Unlike the algebraic Hamel rank `Module.rank`, this uses complete orthonormal
-bases, so `hilbertDimension 𝕜 ℓ²(ℕ, 𝕜) = ℵ₀`. -/
-noncomputable def hilbertDimension (𝕜 : Type*) [RCLike 𝕜] (H : Type u)
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] : Cardinal.{u} :=
-  #(exists_hilbertBasis 𝕜 H).choose
+/-- The **Hilbert dimension** (or orthogonal dimension) of a complete inner product space `E` over
+`𝕜`: the cardinality of any Hilbert basis of `E`. Unlike the algebraic Hamel rank
+`Module.rank 𝕜 E`, `hilbertDim 𝕜 E` is `ℵ₀` on `ℓ²(ℕ, 𝕜)` and classifies Hilbert spaces up to
+linear isometric equivalence (`TauCeti.nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq`). -/
+noncomputable def hilbertDim (𝕜 : Type*) (E : Type u) [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] : Cardinal.{u} :=
+  #(exists_hilbertBasis 𝕜 E).choose
 
 end TauCeti
 
-/-- Every Hilbert basis of `H` has lifted cardinality equal to `TauCeti.hilbertDimension 𝕜 H`. -/
-theorem HilbertBasis.lift_mk_eq_hilbertDimension {𝕜 : Type*} [RCLike 𝕜] {H : Type u}
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] {ι : Type w}
-    (b : HilbertBasis ι 𝕜 H) :
-    Cardinal.lift.{u} #ι = Cardinal.lift.{w} (TauCeti.hilbertDimension 𝕜 H) :=
-  b.lift_mk_eq (exists_hilbertBasis 𝕜 H).choose_spec.choose
+namespace HilbertBasis
 
-/-- Every Hilbert basis of `H` indexed in the same universe as `H` has cardinality equal to
-`TauCeti.hilbertDimension 𝕜 H`. -/
-theorem HilbertBasis.mk_eq_hilbertDimension {𝕜 : Type*} [RCLike 𝕜] {H : Type u}
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] {ι : Type u}
-    (b : HilbertBasis ι 𝕜 H) :
-    #ι = TauCeti.hilbertDimension 𝕜 H :=
-  b.mk_eq (exists_hilbertBasis 𝕜 H).choose_spec.choose
+/-- Every Hilbert basis `b : HilbertBasis ι 𝕜 E` has lifted index cardinality equal to
+`TauCeti.hilbertDim 𝕜 E`. -/
+theorem lift_hilbertDim_eq {𝕜 : Type*} {E : Type u} {ι : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (b : HilbertBasis ι 𝕜 E) :
+    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} #ι := by
+  rw [TauCeti.hilbertDim]
+  exact (exists_hilbertBasis 𝕜 E).choose_spec.choose.lift_mk_eq b
 
-/-- A linear isometric equivalence between Hilbert spaces preserves lifted Hilbert dimension. -/
-theorem LinearIsometryEquiv.lift_hilbertDimension_eq {𝕜 : Type*} [RCLike 𝕜]
-    {H : Type u} {K : Type v}
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-    [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
-    (U : H ≃ₗᵢ[𝕜] K) :
-    Cardinal.lift.{v} (TauCeti.hilbertDimension 𝕜 H) =
-      Cardinal.lift.{u} (TauCeti.hilbertDimension 𝕜 K) := by
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  rw [← b.mk_eq_hilbertDimension]
-  exact (b.mapₗᵢ U).lift_mk_eq_hilbertDimension
+/-- Same-universe form of `HilbertBasis.lift_hilbertDim_eq`. -/
+theorem hilbertDim_eq {𝕜 : Type*} {E ι : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (b : HilbertBasis ι 𝕜 E) :
+    TauCeti.hilbertDim 𝕜 E = #ι := by
+  simpa using b.lift_hilbertDim_eq
 
-/-- Same-universe specialization of `LinearIsometryEquiv.lift_hilbertDimension_eq`. -/
-theorem LinearIsometryEquiv.hilbertDimension_eq {𝕜 : Type*} [RCLike 𝕜] {H K : Type u}
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-    [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
-    (U : H ≃ₗᵢ[𝕜] K) :
-    TauCeti.hilbertDimension 𝕜 H = TauCeti.hilbertDimension 𝕜 K := by
-  simpa using U.lift_hilbertDimension_eq
+end HilbertBasis
+
+namespace Orthonormal
+
+/-- Every orthonormal family in a Hilbert space `E` has lifted index cardinality at most
+`TauCeti.hilbertDim 𝕜 E`. -/
+theorem cardinal_lift_le_hilbertDim {𝕜 : Type*} {E : Type u} {ι : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    {v : ι → E} (hv : Orthonormal 𝕜 v) :
+    Cardinal.lift.{u} #ι ≤ Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  simpa only [← b.hilbertDim_eq] using hv.lift_mk_le b
+
+/-- Same-universe form of `Orthonormal.cardinal_lift_le_hilbertDim`. -/
+theorem cardinal_le_hilbertDim {𝕜 : Type*} {E ι : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    {v : ι → E} (hv : Orthonormal 𝕜 v) :
+    #ι ≤ TauCeti.hilbertDim 𝕜 E := by
+  simpa using hv.cardinal_lift_le_hilbertDim
+
+end Orthonormal
+
+namespace LinearIsometry
+
+/-- A linear isometry between Hilbert spaces does not increase the lifted Hilbert dimension. -/
+theorem lift_hilbertDim_le {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (f : E →ₗᵢ[𝕜] F) :
+    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) ≤ Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq]
+  exact (b.orthonormal.comp_linearIsometry f).cardinal_lift_le_hilbertDim
+
+/-- Same-universe form of `LinearIsometry.lift_hilbertDim_le`. -/
+theorem hilbertDim_le {𝕜 : Type*} {E F : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (f : E →ₗᵢ[𝕜] F) :
+    TauCeti.hilbertDim 𝕜 E ≤ TauCeti.hilbertDim 𝕜 F := by
+  simpa using f.lift_hilbertDim_le
+
+end LinearIsometry
+
+namespace Submodule
+
+/-- A complete subspace of a Hilbert space has Hilbert dimension at most that of the ambient
+space. -/
+theorem hilbertDim_le {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (K : Submodule 𝕜 E) [CompleteSpace K] :
+    TauCeti.hilbertDim 𝕜 K ≤ TauCeti.hilbertDim 𝕜 E :=
+  K.subtypeₗᵢ.hilbertDim_le
+
+end Submodule
+
+namespace LinearIsometryEquiv
+
+/-- Linearly isometric Hilbert spaces have equal lifted Hilbert dimensions. -/
+theorem lift_hilbertDim_eq {𝕜 : Type*} {E : Type u} {F : Type v} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (e : E ≃ₗᵢ[𝕜] F) :
+    Cardinal.lift.{v} (TauCeti.hilbertDim 𝕜 E) = Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq, (b.mapₗᵢ e).lift_hilbertDim_eq]
+
+/-- Linearly isometric Hilbert spaces in the same universe have equal Hilbert dimensions. -/
+theorem hilbertDim_eq {𝕜 : Type*} {E F : Type u} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (e : E ≃ₗᵢ[𝕜] F) :
+    TauCeti.hilbertDim 𝕜 E = TauCeti.hilbertDim 𝕜 F := by
+  simpa using e.lift_hilbertDim_eq
+
+end LinearIsometryEquiv
 
 namespace TauCeti
 
 section Classification
 
-variable (𝕜 : Type*) [RCLike 𝕜]
+variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- **Unitary classification of Hilbert spaces.** Two Hilbert spaces over `𝕜` (`ℝ` or `ℂ`) are
-linearly isometrically equivalent if and only if their Hilbert dimensions agree up to universe
-lift. -/
-theorem nonempty_linearIsometryEquiv_iff_lift_hilbertDimension_eq
-    (H : Type u) (K : Type v)
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-    [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K] :
-    Nonempty (H ≃ₗᵢ[𝕜] K) ↔
-      Cardinal.lift.{v} (hilbertDimension 𝕜 H) = Cardinal.lift.{u} (hilbertDimension 𝕜 K) := by
-  obtain ⟨_, bH, -⟩ := exists_hilbertBasis 𝕜 H
-  obtain ⟨_, bK, -⟩ := exists_hilbertBasis 𝕜 K
-  rw [← bH.mk_eq_hilbertDimension, ← bK.mk_eq_hilbertDimension]
-  exact bH.nonempty_linearIsometryEquiv_iff_lift_mk_eq bK
+/-- **Unitary classification of Hilbert spaces.** Two Hilbert spaces `E` and `F` over `𝕜` admit a
+linear isometric equivalence if and only if their lifted Hilbert dimensions are equal. -/
+theorem nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq {E : Type u} {F : Type v}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔
+      Cardinal.lift.{v} (hilbertDim 𝕜 E) = Cardinal.lift.{u} (hilbertDim 𝕜 F) := by
+  obtain ⟨_, bE, -⟩ := exists_hilbertBasis 𝕜 E
+  obtain ⟨_, bF, -⟩ := exists_hilbertBasis 𝕜 F
+  rw [bE.hilbertDim_eq, bF.hilbertDim_eq]
+  exact bE.nonempty_linearIsometryEquiv_iff_lift_mk_eq bF
 
-/-- **Unitary classification of Hilbert spaces (same universe).** Two Hilbert spaces in the same
-universe over `𝕜` are linearly isometrically equivalent if and only if they have equal Hilbert
-dimension. -/
-theorem nonempty_linearIsometryEquiv_iff_hilbertDimension_eq
-    (H K : Type u)
-    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-    [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K] :
-    Nonempty (H ≃ₗᵢ[𝕜] K) ↔ hilbertDimension 𝕜 H = hilbertDimension 𝕜 K := by
-  simpa using nonempty_linearIsometryEquiv_iff_lift_hilbertDimension_eq 𝕜 H K
+/-- Two Hilbert spaces in the same universe are linearly isometric if and only if they have the
+same Hilbert dimension. -/
+theorem nonempty_linearIsometryEquiv_iff_hilbertDim_eq {E F : Type u}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ hilbertDim 𝕜 E = hilbertDim 𝕜 F := by
+  simpa using nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq (𝕜 := 𝕜) (E := E) (F := F)
 
-/-- The Hilbert dimension of `ℓ²(ι, 𝕜)` is the cardinality of `ι` (lifted to `max v w`). -/
+/-- Two Hilbert spaces with distinct lifted Hilbert dimensions admit no linear isometric
+equivalence. -/
+theorem isEmpty_linearIsometryEquiv_of_lift_hilbertDim_ne {E : Type u} {F : Type v}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (h : Cardinal.lift.{v} (hilbertDim 𝕜 E) ≠ Cardinal.lift.{u} (hilbertDim 𝕜 F)) :
+    IsEmpty (E ≃ₗᵢ[𝕜] F) :=
+  ⟨fun e ↦ h e.lift_hilbertDim_eq⟩
+
+/-- Two Hilbert spaces in the same universe with distinct Hilbert dimensions admit no linear
+isometric equivalence. -/
+theorem isEmpty_linearIsometryEquiv_of_hilbertDim_ne {E F : Type u}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (h : hilbertDim 𝕜 E ≠ hilbertDim 𝕜 F) :
+    IsEmpty (E ≃ₗᵢ[𝕜] F) :=
+  ⟨fun e ↦ h e.hilbertDim_eq⟩
+
+/-- The Hilbert dimension of `ℓ²(ι, 𝕜)` is the lifted cardinality of `ι`. -/
 @[simp]
-theorem hilbertDimension_lp {𝕜 : Type w} [RCLike 𝕜] (ι : Type v) :
-    hilbertDimension 𝕜 ℓ²(ι, 𝕜) = Cardinal.lift.{w} #ι :=
-  Cardinal.lift_injective <| by
-    simpa using (lp.hilbertBasisFun ι 𝕜).lift_mk_eq_hilbertDimension.symm
+theorem hilbertDim_lp (𝕜 : Type w) (ι : Type v) [RCLike 𝕜] :
+    hilbertDim 𝕜 ℓ²(ι, 𝕜) = Cardinal.lift.{w} #ι := by
+  have h := (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).lift_hilbertDim_eq
+  rw [Cardinal.lift_id'.{v, w}, Cardinal.lift_umax.{v, w}] at h
+  exact h
 
-/-- On a finite-dimensional Hilbert space, Hilbert dimension agrees with `Module.finrank`. -/
-theorem hilbertDimension_eq_finrank (H : Type u) [NormedAddCommGroup H]
-    [InnerProductSpace 𝕜 H] [CompleteSpace H] [FiniteDimensional 𝕜 H] :
-    hilbertDimension 𝕜 H = Module.finrank 𝕜 H := by
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  have : Finite s := b.finite_iff_finiteDimensional.2 inferInstance
-  cases nonempty_fintype s
-  rw [← b.mk_eq_hilbertDimension, Cardinal.mk_fintype, b.card_eq_finrank]
+/-- When `ι` and `𝕜` lie in the same universe, `hilbertDim 𝕜 ℓ²(ι, 𝕜) = #ι`. -/
+theorem hilbertDim_lp' (𝕜 ι : Type u) [RCLike 𝕜] :
+    hilbertDim 𝕜 ℓ²(ι, 𝕜) = #ι := by
+  simp
 
-/-- The Hilbert dimension of `EuclideanSpace 𝕜 ι` over a finite index type is `Fintype.card ι`. -/
+/-- The Hilbert dimension of `EuclideanSpace 𝕜 ι` is `Fintype.card ι`. -/
 @[simp]
-theorem hilbertDimension_euclideanSpace (ι : Type*) [Fintype ι] :
-    hilbertDimension 𝕜 (EuclideanSpace 𝕜 ι) = Fintype.card ι := by
-  rw [hilbertDimension_eq_finrank, finrank_euclideanSpace]
-
-/-- The scalar field `𝕜` viewed as a one-dimensional Hilbert space over itself has Hilbert
-dimension `1`. -/
-@[simp]
-theorem hilbertDimension_self : hilbertDimension 𝕜 𝕜 = 1 := by
-  rw [hilbertDimension_eq_finrank, Module.finrank_self, Nat.cast_one]
+theorem hilbertDim_euclideanSpace (𝕜 : Type w) (ι : Type v) [RCLike 𝕜] [Fintype ι] :
+    hilbertDim 𝕜 (EuclideanSpace 𝕜 ι) = Fintype.card ι := by
+  simpa using (EuclideanSpace.basisFun ι 𝕜).toHilbertBasis.lift_hilbertDim_eq
 
 end Classification
 
 section Properties
 
-variable {𝕜 : Type*} [RCLike 𝕜] {H : Type u}
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 
-/-- A Hilbert space has Hilbert dimension `0` if and only if it is trivial. -/
+/-- A trivial Hilbert space has Hilbert dimension `0`. -/
 @[simp]
-theorem hilbertDimension_eq_zero_iff : hilbertDimension 𝕜 H = 0 ↔ Subsingleton H := by
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  rw [← b.mk_eq_hilbertDimension, Cardinal.mk_eq_zero_iff, b.subsingleton_iff_isEmpty]
+theorem hilbertDim_of_subsingleton [Subsingleton E] : hilbertDim 𝕜 E = 0 := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  have : IsEmpty w := b.subsingleton_iff_isEmpty.1 ‹_›
+  rw [b.hilbertDim_eq, Cardinal.mk_eq_zero]
 
-/-- A Hilbert space has positive Hilbert dimension if and only if it is nontrivial. -/
-theorem hilbertDimension_pos_iff : 0 < hilbertDimension 𝕜 H ↔ Nontrivial H := by
-  rw [pos_iff_ne_zero, ne_eq, hilbertDimension_eq_zero_iff, not_subsingleton_iff_nontrivial]
+/-- The Hilbert dimension of `E` vanishes if and only if `E` is trivial. -/
+theorem hilbertDim_eq_zero_iff : hilbertDim 𝕜 E = 0 ↔ Subsingleton E := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq, Cardinal.mk_eq_zero_iff, b.subsingleton_iff_isEmpty]
 
-/-- A Hilbert space has finite Hilbert dimension (`< ℵ₀`) if and only if it is
-finite-dimensional. -/
-theorem hilbertDimension_lt_aleph0_iff :
-    hilbertDimension 𝕜 H < ℵ₀ ↔ FiniteDimensional 𝕜 H := by
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  rw [← b.mk_eq_hilbertDimension, Cardinal.lt_aleph0_iff_finite, b.finite_iff_finiteDimensional]
+/-- The Hilbert dimension of `E` is positive if and only if `E` is nontrivial. -/
+theorem hilbertDim_pos_iff : 0 < hilbertDim 𝕜 E ↔ Nontrivial E := by
+  rw [pos_iff_ne_zero, ne_eq, hilbertDim_eq_zero_iff, not_subsingleton_iff_nontrivial]
 
-/-- A Hilbert space has infinite Hilbert dimension (`ℵ₀ ≤ hilbertDimension 𝕜 H`) if and only if it
-is infinite-dimensional. -/
-theorem aleph0_le_hilbertDimension_iff :
-    ℵ₀ ≤ hilbertDimension 𝕜 H ↔ ¬ FiniteDimensional 𝕜 H := by
-  rw [← not_lt, hilbertDimension_lt_aleph0_iff]
+/-- In finite dimension, `hilbertDim 𝕜 E` agrees with `Module.finrank 𝕜 E`. -/
+theorem hilbertDim_eq_finrank [FiniteDimensional 𝕜 E] :
+    hilbertDim 𝕜 E = Module.finrank 𝕜 E := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  have : Finite w := b.finiteDimensional_iff_finite.1 ‹_›
+  cases nonempty_fintype w
+  rw [b.hilbertDim_eq, b.finrank_eq_card, Cardinal.mk_fintype]
 
-variable (𝕜 H) in
-/-- **Separability via Hilbert dimension.** A Hilbert space is separable if and only if its Hilbert
-dimension is at most `ℵ₀`. -/
-theorem separableSpace_iff_hilbertDimension_le_aleph0 :
-    TopologicalSpace.SeparableSpace H ↔ hilbertDimension 𝕜 H ≤ ℵ₀ := by
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  rw [b.separableSpace_iff_countable, ← b.mk_eq_hilbertDimension, Cardinal.mk_le_aleph0_iff]
+/-- Every Hilbert basis is linearly independent, so the Hilbert dimension never exceeds the
+algebraic Hamel rank `Module.rank 𝕜 E`. -/
+theorem hilbertDim_le_rank : hilbertDim 𝕜 E ≤ Module.rank 𝕜 E := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq]
+  exact b.orthonormal.linearIndependent.cardinal_le_rank
+
+/-- In finite dimension, the Hilbert dimension agrees with the algebraic rank `Module.rank 𝕜 E`. -/
+theorem hilbertDim_eq_rank_of_finiteDimensional [FiniteDimensional 𝕜 E] :
+    hilbertDim 𝕜 E = Module.rank 𝕜 E := by
+  rw [hilbertDim_eq_finrank, Module.finrank_eq_rank]
+
+/-- Viewing a scalar field `𝕜` (`ℝ` or `ℂ`) as a one-dimensional Hilbert space over itself gives
+`hilbertDim 𝕜 𝕜 = 1`. -/
+@[simp]
+theorem hilbertDim_self (𝕜 : Type u) [RCLike 𝕜] : hilbertDim 𝕜 𝕜 = 1 := by
+  rw [hilbertDim_eq_finrank, Module.finrank_self, Nat.cast_one]
+
+/-- A Hilbert space is finite-dimensional if and only if its Hilbert dimension is strictly less
+than `ℵ₀`. -/
+theorem hilbertDim_lt_aleph0_iff : hilbertDim 𝕜 E < ℵ₀ ↔ FiniteDimensional 𝕜 E := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq, Cardinal.lt_aleph0_iff_finite, b.finiteDimensional_iff_finite]
+
+/-- A Hilbert space is infinite-dimensional if and only if its Hilbert dimension is at least `ℵ₀`.
+-/
+theorem aleph0_le_hilbertDim_iff : ℵ₀ ≤ hilbertDim 𝕜 E ↔ ¬ FiniteDimensional 𝕜 E := by
+  rw [← not_lt, hilbertDim_lt_aleph0_iff]
+
+/-- **Hilbert-dimension characterization of separability.** A Hilbert space `E` is separable if and
+only if `hilbertDim 𝕜 E ≤ ℵ₀`. -/
+theorem hilbertDim_le_aleph0_iff :
+    hilbertDim 𝕜 E ≤ ℵ₀ ↔ TopologicalSpace.SeparableSpace E := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [b.hilbertDim_eq, Cardinal.mk_le_aleph0_iff, b.separableSpace_iff_countable]
 
 /-- A Hilbert space has Hilbert dimension `ℵ₀` if and only if it is separable and
 infinite-dimensional. -/
-theorem hilbertDimension_eq_aleph0_iff :
-    hilbertDimension 𝕜 H = ℵ₀ ↔
-      TopologicalSpace.SeparableSpace H ∧ ¬ FiniteDimensional 𝕜 H := by
-  rw [le_antisymm_iff, separableSpace_iff_hilbertDimension_le_aleph0 𝕜 H,
-    aleph0_le_hilbertDimension_iff]
+theorem hilbertDim_eq_aleph0_iff :
+    hilbertDim 𝕜 E = ℵ₀ ↔ TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
+  rw [le_antisymm_iff, hilbertDim_le_aleph0_iff, aleph0_le_hilbertDim_iff]
 
-/-- A Hilbert space admits a `ℕ`-indexed Hilbert basis if and only if it is separable and
-infinite-dimensional. -/
-theorem nonempty_hilbertBasis_nat_iff :
-    Nonempty (HilbertBasis ℕ 𝕜 H) ↔
-      TopologicalSpace.SeparableSpace H ∧ ¬ FiniteDimensional 𝕜 H := by
-  refine ⟨fun ⟨b⟩ ↦ ⟨b.separableSpace_iff_countable.2 inferInstance,
-      b.infinite_iff.1 inferInstance⟩, fun h ↦ ?_⟩
-  obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 H
-  have hs : #s = ℵ₀ := by
-    rw [b.mk_eq_hilbertDimension, hilbertDimension_eq_aleph0_iff]
-    exact h
-  have hl : Cardinal.lift.{0} #s = Cardinal.lift.{u} #ℕ := by simp [hs]
-  obtain ⟨e⟩ := Cardinal.lift_mk_eq'.1 hl
-  exact ⟨b.reindex e⟩
-
-/-- **Classification of separable infinite-dimensional Hilbert spaces.** A Hilbert space `H` over
-`𝕜` is linearly isometrically equivalent to `ℓ²(ℕ, 𝕜)` if and only if `H` is separable and
-infinite-dimensional. -/
-theorem nonempty_linearIsometryEquiv_lp_nat_iff :
-    Nonempty (H ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) ↔
-      TopologicalSpace.SeparableSpace H ∧ ¬ FiniteDimensional 𝕜 H := by
-  rw [← nonempty_hilbertBasis_nat_iff (𝕜 := 𝕜) (H := H)]
-  exact ⟨fun ⟨U⟩ ↦ ⟨(lp.hilbertBasisFun ℕ 𝕜).mapₗᵢ U.symm⟩, fun ⟨b⟩ ↦ ⟨b.repr⟩⟩
+/-- **Classification of separable Hilbert spaces by Hilbert dimension.** Every separable Hilbert
+space has Hilbert dimension `0` (the trivial space), a positive natural number `n` (finite
+dimension `n`), or `ℵ₀` (separable infinite-dimensional). -/
+theorem hilbertDim_eq_zero_or_pos_natCast_or_aleph0 [TopologicalSpace.SeparableSpace E] :
+    hilbertDim 𝕜 E = 0 ∨ (∃ n : ℕ, 0 < n ∧ hilbertDim 𝕜 E = n) ∨ hilbertDim 𝕜 E = ℵ₀ := by
+  by_cases hfin : FiniteDimensional 𝕜 E
+  · by_cases hsub : Subsingleton E
+    · exact Or.inl hilbertDim_of_subsingleton
+    · have : Nontrivial E := not_subsingleton_iff_nontrivial.1 hsub
+      exact Or.inr (Or.inl ⟨Module.finrank 𝕜 E, Module.finrank_pos, hilbertDim_eq_finrank⟩)
+  · exact Or.inr (Or.inr (hilbertDim_eq_aleph0_iff.2 ⟨‹_›, hfin⟩))
 
 end Properties
 
-section Examples
+end TauCeti
 
-variable (𝕜 : Type*) [RCLike 𝕜]
+namespace Submodule
 
-/-- `𝕜` and `𝕜²` are both separable Hilbert spaces, yet have distinct Hilbert dimensions `1` and `2`
-and therefore admit no linear isometric equivalence. -/
-theorem isEmpty_linearIsometryEquiv_self_euclideanSpace_fin_two :
-    IsEmpty (𝕜 ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin 2)) := by
-  rw [← not_nonempty_iff, nonempty_linearIsometryEquiv_iff_lift_hilbertDimension_eq]
-  simp
+/-- A complete subspace of an inner product space has Hilbert dimension `0` if and only if it is
+`⊥`. -/
+@[simp]
+theorem hilbertDim_eq_zero {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    {K : Submodule 𝕜 E} [CompleteSpace K] :
+    TauCeti.hilbertDim 𝕜 K = 0 ↔ K = ⊥ := by
+  rw [TauCeti.hilbertDim_eq_zero_iff, Submodule.subsingleton_iff_eq_bot]
+
+end Submodule
+
+namespace TauCeti
+
+section Separable
+
+/-- Two finite-dimensional inner product spaces over `𝕜` admit a linear isometric equivalence if and
+only if they have the same `Module.finrank`. -/
+theorem nonempty_linearIsometryEquiv_iff_finrank_eq {𝕜 : Type*} {E : Type u} {F : Type v}
+    [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] :
+    Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Module.finrank 𝕜 E = Module.finrank 𝕜 F :=
+  ⟨fun ⟨e⟩ ↦ e.toLinearEquiv.finrank_eq,
+   fun h ↦ ⟨(stdOrthonormalBasis 𝕜 E).equiv (stdOrthonormalBasis 𝕜 F) (finCongr h)⟩⟩
+
+/-- Two finite-dimensional inner product spaces over `𝕜` admit no linear isometric equivalence if
+and only if their `Module.finrank`s differ. -/
+theorem isEmpty_linearIsometryEquiv_iff_finrank_ne {𝕜 : Type*} {E : Type u} {F : Type v}
+    [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] :
+    IsEmpty (E ≃ₗᵢ[𝕜] F) ↔ Module.finrank 𝕜 E ≠ Module.finrank 𝕜 F := by
+  rw [← not_nonempty_iff, nonempty_linearIsometryEquiv_iff_finrank_eq]
+
+example (𝕜 : Type u) (ι : Type v) [RCLike 𝕜] [Fintype ι] (hι : Fintype.card ι ≠ 1) :
+    IsEmpty (𝕜 ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+  isEmpty_linearIsometryEquiv_iff_finrank_ne.2 (by simpa using hι.symm)
+
+/-- Every separable infinite-dimensional Hilbert space admits a Hilbert basis indexed by `ℕ`. -/
+theorem nonempty_hilbertBasis_nat (𝕜 : Type*) (E : Type*) [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [TopologicalSpace.SeparableSpace E]
+    (hE : ¬ FiniteDimensional 𝕜 E) : Nonempty (HilbertBasis ℕ 𝕜 E) := by
+  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
+  obtain ⟨e⟩ := b.nonempty_equiv_nat hE
+  exact ⟨b.reindex e⟩
+
+/-- Every separable infinite-dimensional Hilbert space over `𝕜` is linearly isometric to
+`ℓ²(ℕ, 𝕜)`. -/
+theorem nonempty_linearIsometryEquiv_lp_nat (𝕜 : Type*) (E : Type*) [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [TopologicalSpace.SeparableSpace E] (hE : ¬ FiniteDimensional 𝕜 E) :
+    Nonempty (E ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) :=
+  let ⟨b⟩ := nonempty_hilbertBasis_nat 𝕜 E hE
+  ⟨b.repr⟩
+
+/-- Any two separable infinite-dimensional Hilbert spaces over the same scalar field `𝕜` are
+linearly isometric. -/
+theorem nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
+    {𝕜 : Type*} {E : Type*} {F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [TopologicalSpace.SeparableSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    [TopologicalSpace.SeparableSpace F]
+    (hE : ¬ FiniteDimensional 𝕜 E) (hF : ¬ FiniteDimensional 𝕜 F) :
+    Nonempty (E ≃ₗᵢ[𝕜] F) := by
+  obtain ⟨eE⟩ := nonempty_linearIsometryEquiv_lp_nat 𝕜 E hE
+  obtain ⟨eF⟩ := nonempty_linearIsometryEquiv_lp_nat 𝕜 F hF
+  exact ⟨eE.trans eF.symm⟩
+
+/-- A Hilbert space admits a Hilbert basis indexed by `ℕ` if and only if it is separable and
+infinite-dimensional. -/
+theorem nonempty_hilbertBasis_nat_iff {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    Nonempty (HilbertBasis ℕ 𝕜 E) ↔
+      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E :=
+  ⟨fun ⟨b⟩ ↦ ⟨b.separableSpace_iff_countable.2 inferInstance,
+      b.infinite_iff_not_finiteDimensional.1 inferInstance⟩,
+   fun ⟨_, hE⟩ ↦ nonempty_hilbertBasis_nat 𝕜 E hE⟩
+
+/-- **Classification of separable infinite-dimensional Hilbert spaces.** A Hilbert space `E` over
+`𝕜` is linearly isometric to `ℓ²(ℕ, 𝕜)` if and only if `E` is separable and
+infinite-dimensional. -/
+theorem nonempty_linearIsometryEquiv_lp_nat_iff {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    Nonempty (E ≃ₗᵢ[𝕜] ℓ²(ℕ, 𝕜)) ↔
+      TopologicalSpace.SeparableSpace E ∧ ¬ FiniteDimensional 𝕜 E := by
+  rw [← nonempty_hilbertBasis_nat_iff (𝕜 := 𝕜) (E := E)]
+  exact ⟨fun ⟨U⟩ ↦ ⟨(lp.hilbertBasisFun ℕ 𝕜).mapₗᵢ U.symm⟩, fun ⟨b⟩ ↦ ⟨b.repr⟩⟩
 
 /-- `ℓ²(ℕ, 𝕜)` and `ℓ²(ℤ, 𝕜)` both have Hilbert dimension `ℵ₀` and are linearly isometrically
 equivalent. -/
-theorem nonempty_linearIsometryEquiv_lp_nat_int :
+theorem nonempty_linearIsometryEquiv_lp_nat_int (𝕜 : Type*) [RCLike 𝕜] :
     Nonempty (ℓ²(ℕ, 𝕜) ≃ₗᵢ[𝕜] ℓ²(ℤ, 𝕜)) := by
-  rw [nonempty_linearIsometryEquiv_iff_hilbertDimension_eq]
+  rw [nonempty_linearIsometryEquiv_iff_hilbertDim_eq]
   simp
 
 /-- `ℓ²(ℕ, 𝕜)` (Hilbert dimension `ℵ₀`) and `ℓ²(ℝ, 𝕜)` (Hilbert dimension `𝔠`) admit no linear
 isometric equivalence. -/
-theorem isEmpty_linearIsometryEquiv_lp_nat_real :
+theorem isEmpty_linearIsometryEquiv_lp_nat_real (𝕜 : Type*) [RCLike 𝕜] :
     IsEmpty (ℓ²(ℕ, 𝕜) ≃ₗᵢ[𝕜] ℓ²(ℝ, 𝕜)) := by
-  rw [← not_nonempty_iff, nonempty_linearIsometryEquiv_iff_hilbertDimension_eq]
+  refine isEmpty_linearIsometryEquiv_of_hilbertDim_ne ?_
   simp [Cardinal.mk_real, Cardinal.aleph0_lt_continuum.ne]
 
-end Examples
+end Separable
 
 end TauCeti

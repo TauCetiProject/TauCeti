@@ -77,7 +77,7 @@ theorem contMDiff_hemisphereChord :
   apply contMDiff_iff_comp_subtypeVal_closedBall.mpr
   have hx : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) 𝓘(ℝ, E) ω
       (fun q : hemisphereOpens p × Icc (-1 : ℝ) 1 => (q.1 : E)) :=
-    contMDiff_coe_sphere.comp (contMDiff_subtype_val.comp contMDiff_fst)
+    contMDiff_coe_sphere.comp (contMDiff_subtypeVal.comp contMDiff_fst)
   have ht : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) 𝓘(ℝ) ω
       (fun q : hemisphereOpens p × Icc (-1 : ℝ) 1 => (q.2 : ℝ)) :=
     (contMDiff_subtypeVal_Icc (x := -1) (y := 1)).comp contMDiff_snd
@@ -87,7 +87,7 @@ theorem contMDiff_hemisphereChord :
   convert hx.sub (((contMDiff_const (c := (1 : ℝ)).sub ht).mul hi).smul
     (contMDiff_const (c := (p : E)))) using 1
   funext q
-  exact (coe_hemisphereChord_apply p q).trans (chordPoint_def p q.1.1 q.2)
+  exact (coe_hemisphereChord_apply p q).trans (chordPoint_def p q.1.val q.2)
 
 /-- The upper chord endpoint and normalized height depend analytically on the point off the
 equator. -/
@@ -96,7 +96,7 @@ theorem contMDiff_hemisphereChord_symm :
       (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) ω (hemisphereChord p).symm := by
   have hy : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, E) ω
       (fun y : chordBallOpens p => (y : E)) :=
-    contMDiff_subtypeVal_closedBall.comp contMDiff_subtype_val
+    contMDiff_subtypeVal_closedBall.comp contMDiff_subtypeVal
   have hi : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ω
       (fun y : chordBallOpens p => ⟪(y : E), (p : E)⟫) :=
     contDiff_inner.contMDiff.comp (hy.prodMk_space contMDiff_const)
@@ -113,7 +113,7 @@ theorem contMDiff_hemisphereChord_symm :
       ((contMDiff_const (c := (1 : ℝ)).sub ((contDiff_norm_sq ℝ).contMDiff.comp hy)).add
         (hi.pow 2)).contMDiffAt
   have hx : ContMDiff (𝓡∂ (n + 1)) (𝓡 n) ω
-      (fun y : chordBallOpens p => ((hemisphereChord p).symm y).1.1) := by
+      (fun y : chordBallOpens p => ((hemisphereChord p).symm y).1.val) := by
     apply ContMDiff.codRestrict_sphere
     convert hy.add ((hr.sub hi).smul (contMDiff_const (c := (p : E)))) using 1
     funext y

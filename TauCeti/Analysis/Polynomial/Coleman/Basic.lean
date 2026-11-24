@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 public import TauCeti.RingTheory.PowerSeries.Entire.Majorant
-import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.GapCrossing
 import TauCeti.RingTheory.PowerSeries.TateAlgebra

@@ -63,11 +63,11 @@ private theorem exists_continuousOn_isRoot_powerSubstitution
       ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
         Injective (fun i => r i b) ∧ ∀ i, (F (b.1, b.2 ^ n)).IsRoot (r i b) := by
   -- Restrict the family to the punctured product, where the root covering is available.
-  let incl : U × ↥(ball (0 : ℂ) R \ {0}) → E × ℂ := fun b => (b.1.1, b.2.1)
-  have hincl : ∀ b, incl b ∈ U ×ˢ (ball 0 R \ {0}) := fun b => ⟨b.1.2, b.2.2⟩
+  let incl : U × ↥(ball (0 : ℂ) R \ {0}) → E × ℂ := fun b => (b.1.val, b.2.val)
+  have hincl : ∀ b, incl b ∈ U ×ˢ (ball 0 R \ {0}) := fun b => ⟨b.1.property, b.2.property⟩
   have hic : Continuous incl :=
-    (continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)
+    (continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd)
   have : Nonempty (U × ↥(ball (0 : ℂ) R' \ {0})) := by
     obtain ⟨x, hx, hxR⟩ := NormedField.exists_norm_lt ℂ hR'
     exact ⟨(Classical.ofNonempty, ⟨x, mem_ball_zero_iff.2 hxR, norm_pos_iff.1 hx⟩)⟩
@@ -75,7 +75,7 @@ private theorem exists_continuousOn_isRoot_powerSubstitution
     (fun i hi => (hF i hi).comp_continuous hic hincl) (fun b => hdeg _ (hincl b))
     (fun b => hsep _ (hincl b)) hn hR hdvd
   let sub : U ×ˢ (ball (0 : ℂ) R' \ {0}) → U × ↥(ball (0 : ℂ) R' \ {0}) := fun b =>
-    (⟨b.1.1, b.2.1⟩, ⟨b.1.2, b.2.2⟩)
+    (⟨b.val.1, b.property.1⟩, ⟨b.val.2, b.property.2⟩)
   have hsub : Continuous sub := by fun_prop
   choose r hr hrs using fun i => ((s i).continuous.comp hsub).exists_continuousOn_eq
   refine ⟨r, hr, fun b hb => ?_⟩

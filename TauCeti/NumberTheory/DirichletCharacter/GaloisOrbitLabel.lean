@@ -180,7 +180,7 @@ theorem range_galoisOrbitIndex :
   rw [← card_galoisOrbitKeys]
   ext n
   refine ⟨fun ⟨χ, hχ⟩ ↦ hχ ▸ Fin.isLt _, fun hn ↦ ?_⟩
-  obtain ⟨χ, hχ⟩ := (Set.Finite.mem_toFinset _).mp (galoisOrbitKeysIso N ⟨n, hn⟩).2
+  obtain ⟨χ, hχ⟩ := (Set.Finite.mem_toFinset _).mp (galoisOrbitKeysIso N ⟨n, hn⟩).property
   -- The key of `χ`, as an element of the set of keys, is the `n`-th key.
   have hχ' : (⟨χ.galoisOrbitKey, galoisOrbitKey_mem_galoisOrbitKeys χ⟩ : galoisOrbitKeys N) =
       galoisOrbitKeysIso N ⟨n, hn⟩ :=

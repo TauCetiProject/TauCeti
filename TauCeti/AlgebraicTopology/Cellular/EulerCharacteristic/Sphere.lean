@@ -76,7 +76,7 @@ theorem eulerChar_sphere_eq_one_sub {E : Type u} [NormedAddCommGroup E] [NormedS
     [FiniteDimensional ℝ E] : eulerChar (sphere (0 : E) 1) = 1 - (-1) ^ finrank ℝ E := by
   rcases (finrank ℝ E).eq_zero_or_pos with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) := ⟨fun x ↦ by
-      simpa [finrank_zero_iff_forall_zero.1 hE x] using x.2⟩
+      simpa [finrank_zero_iff_forall_zero.1 hE x] using x.property⟩
     simp [eulerChar_of_discreteTopology, hE]
   · obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
     rw [eulerChar_sphere hn, hn, pow_succ]

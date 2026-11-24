@@ -283,7 +283,7 @@ noncomputable def robinsonSchenstedEquiv :
       p.1.IsTableauRows ∧ p.2.IsLatticeWord ∧ ∀ i, (p.1.getD i []).length = p.2.count i} :=
   Equiv.ofBijective (fun w => ⟨robinsonSchensted w, exists_robinsonSchensted_eq_iff.mp ⟨w, rfl⟩⟩)
     ⟨fun _ _ h => robinsonSchensted_injective (congrArg Subtype.val h),
-      fun p => (exists_robinsonSchensted_eq_iff.mpr p.2).imp fun _ hw => Subtype.ext hw⟩
+      fun p => (exists_robinsonSchensted_eq_iff.mpr p.property).imp fun _ hw => Subtype.ext hw⟩
 
 /-- `robinsonSchenstedEquiv` sends a word to its insertion tableau and recording word. -/
 @[simp]

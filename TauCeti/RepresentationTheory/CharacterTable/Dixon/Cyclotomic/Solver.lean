@@ -149,7 +149,7 @@ private def canonicalModularRow (q : DixonPrimeData G)
 
 /-- The canonical modular row is the value of the equivalence enumerating the modular search. -/
 private theorem modularCentralRowsEquiv_apply (q : DixonPrimeData G) (i : Fin d.numClasses) :
-    (d.modularCentralRowsEquiv q i).1 = d.canonicalModularRow q i := by
+    (d.modularCentralRowsEquiv q i).val = d.canonicalModularRow q i := by
   let _ : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
   simp only [modularCentralRowsEquiv, Equiv.trans_apply, Equiv.subtypeEquivRight_apply]
@@ -270,8 +270,7 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
     {degree : Fin d.numClasses → ℕ} (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (hcoeff : ∀ i k (l : Fin e.totient), 2 * ((omega i k).coeff l).natAbs < q.p)
-    (hrows : ∀ i, d.canonicalModularRow q i =
-      fun k ↦ Cyclotomic.reduce q.p q.root (omega i k)) :
+    (hrows : ∀ i, d.canonicalModularRow q i = fun k ↦ Cyclotomic.reduce q.p q.root (omega i k)) :
     ⟨omega, table, degree⟩ ∈ d.dixonCyclotomicCharacterTableCandidates e q := by
   have _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   have hroot : IsPrimitiveRoot q.root e := he ▸ q.isPrimitiveRoot_root

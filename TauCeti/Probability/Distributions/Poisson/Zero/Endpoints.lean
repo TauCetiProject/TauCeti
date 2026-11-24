@@ -57,9 +57,9 @@ theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsGT_zero
     Tendsto (fun u ↦ (((Po(r).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
   have hmass : 0 < (w : ℝ) + (1 - (w : ℝ)) * exp (-(r : ℝ)) := by
-    rcases eq_or_lt_of_le w.2.1 with hw | hw
+    rcases eq_or_lt_of_le w.property.1 with hw | hw
     · simp [← hw, exp_pos]
-    · exact add_pos_of_pos_of_nonneg hw (mul_nonneg (sub_nonneg.mpr w.2.2) (exp_pos _).le)
+    · exact add_pos_of_pos_of_nonneg hw (mul_nonneg (sub_nonneg.mpr w.property.2) (exp_pos _).le)
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min hmass zero_lt_one)] with u hu
   have hq := (quantile_map_cast_poissonMeasure_atomMixture_zero_eq_zero_iff r w
@@ -77,7 +77,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsLT_one
   · rcases h with hr | hw
     · have heq : (Measure.dirac (0 : ℕ)).atomMixture 0 w = Measure.dirac 0 := by
         rw [Measure.atomMixture_def, ← add_smul,
-          ← ENNReal.ofReal_add w.2.1 (sub_nonneg.mpr w.2.2)]
+          ← ENNReal.ofReal_add w.property.1 (sub_nonneg.mpr w.property.2)]
         simp
       simp [hr, poissonMeasure_zero, heq]
     · simp [hw]
@@ -111,7 +111,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zer
     have hwpos : 0 < (w : ℝ) :=
       unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hw0)
     filter_upwards [Ioo_mem_nhdsGT hwpos] with u hu
-    have hu1 : u < 1 := hu.2.trans_le w.2.2
+    have hu1 : u < 1 := hu.2.trans_le w.property.2
     have hq := (Measure.quantile_map_natCast_cond_compl_zero_atomMixture_zero_eq_zero_iff
       Po(r) w (poissonMeasure_singleton_zero_eq_one_iff.not.mpr hr) ⟨hu.1, hu1⟩).2 hu.2.le
     simpa using congrArg (fun x : ℝ ↦ (x : EReal)) hq.symm

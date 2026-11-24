@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Schur complements and rank-one inverse updates
@@ -69,11 +68,8 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
     (hP : P.IsHermitian) (hPDP : P * D * P = P) :
     (A - B * P * Bᴴ).PosSemidef := by
   classical
-  refine TauCeti.posSemidef_of_support_posSemidef (fun a b ↦ (A - B * P * Bᴴ) a b)
-    ((isHermitian_fromBlocks_iff.1 h.1).1.sub
-      (by simp [IsHermitian, conjTranspose_mul, hP.eq, Matrix.mul_assoc]))
-    fun x ↦ ?_
-  let e : x.support → m := (↑)
+  refine posSemidef_iff_submatrix_finset.mpr fun s ↦ ?_
+  let e : s → m := (↑)
   have hmat : (fromBlocks A B Bᴴ D).submatrix (Sum.map e id) (Sum.map e id) =
       fromBlocks (A.submatrix e e) (B.submatrix e id) (B.submatrix e id)ᴴ D := by
     ext (i | i) (j | j) <;> simp [conjTranspose_apply]
@@ -96,9 +92,6 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
       Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
       ← Matrix.mul_assoc, hcancel]
     abel
-  -- The support helper states its goal for `Matrix.of fun a b ↦ (A - B * P * Bᴴ) a b`, which is
-  -- `(A - B * P * Bᴴ).submatrix e e` by definition (both are `fun a b ↦ _ (e a) (e b)`).
-  change ((A - B * P * Bᴴ).submatrix e e).PosSemidef
   rw [← hcompress, ← hmat]
   exact (h.submatrix _).mul_mul_conjTranspose_same _
 

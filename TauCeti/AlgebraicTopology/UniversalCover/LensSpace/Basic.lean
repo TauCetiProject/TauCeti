@@ -159,7 +159,7 @@ instance : Finite (lensGroup m ℓ) :=
 
 /-- The lens group acts on the unit sphere by isometries. -/
 instance : IsIsometricSMul (lensGroup m ℓ) (sphere (0 : EuclideanSpace ℂ (Fin k)) 1) :=
-  ⟨fun g => g.1.isometry_unitSphereEquiv⟩
+  ⟨fun g => g.val.isometry_unitSphereEquiv⟩
 
 /-- **The lens group acts freely on the unit sphere**: a nontrivial rotation moves every unit
 vector, because each weight is a unit modulo `m` and a unit vector has a nonzero coordinate. -/
@@ -169,7 +169,7 @@ instance lensGroup_isCancelSMul :
   obtain ⟨i, hi⟩ : ∃ i, (x : EuclideanSpace ℂ (Fin k)) i ≠ 0 := by
     by_contra! h
     have hx0 : (x : EuclideanSpace ℂ (Fin k)) = 0 := PiLp.ext h
-    simpa [hx0] using x.2
+    simpa [hx0] using x.property
   have h := congrArg
     (fun y : sphere (0 : EuclideanSpace ℂ (Fin k)) 1 => (y : EuclideanSpace ℂ (Fin k)) i) hx
   simp only [Subgroup.smul_def, LinearIsometryEquiv.coe_smul_unitSphere] at h

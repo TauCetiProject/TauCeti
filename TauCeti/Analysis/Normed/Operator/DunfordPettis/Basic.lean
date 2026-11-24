@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Basic
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -51,6 +52,8 @@ Dunford–Pettis property.
 
 * `ContinuousLinearMap.isDunfordPettis_iff_tendsto_zero`: it suffices to test weakly null
   sequences.
+* `ContinuousLinearMap.IsDunfordPettis.isSeqClosed_toWeakSpace_preimage`: preimages of closed
+  sets under Dunford–Pettis operators are weakly sequentially closed.
 * `ContinuousLinearMap.isDunfordPettis_iff_forall_isCompact_image`: an operator is Dunford–Pettis
   iff it maps weakly compact sets to norm-compact sets.
 * `IsCompactOperator.isDunfordPettis`: compact operators are Dunford–Pettis.
@@ -114,7 +117,15 @@ theorem isDunfordPettis_iff_seqContinuous {T : E →L[𝕜] F} :
       (a := (toWeakSpace 𝕜 E).symm a) (by simpa using hx)
   · simpa [Function.comp_def] using hT hx
 
+/-- The preimage of a closed set under a Dunford–Pettis operator is weakly sequentially closed. -/
+theorem IsDunfordPettis.isSeqClosed_toWeakSpace_preimage {T : E →L[𝕜] F}
+    (hT : T.IsDunfordPettis) {C : Set F} (hC : IsClosed C) :
+    IsSeqClosed (toWeakSpace 𝕜 E '' (T ⁻¹' C)) := by
+  rw [(toWeakSpace 𝕜 E).image_eq_preimage_symm]
+  exact hC.isSeqClosed.preimage (isDunfordPettis_iff_seqContinuous.1 hT)
+
 /-- The zero operator is Dunford–Pettis. -/
+@[simp]
 theorem isDunfordPettis_zero : (0 : E →L[𝕜] F).IsDunfordPettis := fun _ _ _ ↦ by
   simpa using tendsto_const_nhds
 
@@ -280,7 +291,7 @@ theorem HasDunfordPettisProperty.tendsto_apply (h : HasDunfordPettisProperty �
   obtain ⟨e₀, he₀⟩ := exists_ne (0 : E)
   set e : E := (‖e₀‖⁻¹ : 𝕜) • e₀
   have he : ‖e‖ = 1 := norm_smul_inv_norm he₀
-  let ι : 𝕜 →L[𝕜] Completion E := (1 : 𝕜 →L[𝕜] 𝕜).smulRight (e : Completion E)
+  let ι : 𝕜 →L[𝕜] Completion E := ContinuousLinearMap.toSpanSingleton 𝕜 (e : Completion E)
   let T : E →L[𝕜] C₀(ℕ, Completion E) := (compLeft ι ⟨‖ι‖, ι.le_opNorm⟩).comp T₀
   have hT : Tendsto (fun n ↦ T (x n)) atTop (𝓝 0) :=
     ContinuousLinearMap.isDunfordPettis_iff_tendsto_zero.1

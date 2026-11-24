@@ -66,17 +66,17 @@ public instance : TopologicalSpace (BasedPath x₀) :=
   inferInstanceAs (TopologicalSpace { γ : C(I, X) // γ 0 = x₀ })
 
 public instance : FunLike (BasedPath x₀) I X where
-  coe γ := γ.1
+  coe γ := γ.val
   coe_injective _ _ h := Subtype.ext (DFunLike.coe_injective h)
 
 /-- Evaluation `BasedPath x₀ × I → X` is jointly continuous. -/
 public instance : ContinuousEval (BasedPath x₀) I X :=
-  .of_continuous_forget continuous_subtype_val
+  .of_continuous_forget continuous_subtypeVal
 
 @[simp] public theorem mk_apply (γ : C(I, X)) (h : γ 0 = x₀) (t : I) :
     (show BasedPath x₀ from ⟨γ, h⟩) t = γ t := rfl
 
-@[simp] public theorem val_apply (γ : BasedPath x₀) (t : I) : γ.1 t = γ t := rfl
+@[simp] public theorem val_apply (γ : BasedPath x₀) (t : I) : γ.val t = γ t := rfl
 
 /-- A map into `BasedPath x₀` is continuous iff its uncurried form is. -/
 public theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → BasedPath x₀} :
@@ -84,7 +84,7 @@ public theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → BasedP
   ⟨fun hf ↦ continuous_eval.comp (hf.prodMap continuous_id),
     fun h ↦ Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ h) _⟩
 
-@[simp] public theorem source (γ : BasedPath x₀) : γ 0 = x₀ := γ.2
+@[simp] public theorem source (γ : BasedPath x₀) : γ 0 = x₀ := γ.property
 
 /-- The endpoint of a based path. -/
 @[expose] public def endpoint (γ : BasedPath x₀) : X := γ 1
@@ -95,8 +95,8 @@ public theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → BasedP
 
 /-- View a based path as a path to its endpoint. -/
 @[expose] public def toPath (γ : BasedPath x₀) : Path x₀ (endpoint γ) where
-  toContinuousMap := γ.1
-  source' := γ.2
+  toContinuousMap := γ.val
+  source' := γ.property
   target' := rfl
 
 /-- Definitional unfolding of `endpoint`. Not a global simp lemma: it overlaps with
@@ -105,7 +105,7 @@ explicitly at each site that wants to pass from the named `endpoint γ` to the e
 `γ 1`. -/
 public theorem endpoint_def (γ : BasedPath x₀) : endpoint γ = γ 1 := rfl
 @[simp] public theorem toPath_apply (γ : BasedPath x₀) (t : I) : toPath γ t = γ t := rfl
-public theorem toPath_source (γ : BasedPath x₀) : toPath γ 0 = x₀ := γ.2
+public theorem toPath_source (γ : BasedPath x₀) : toPath γ 0 = x₀ := γ.property
 public theorem toPath_target (γ : BasedPath x₀) : toPath γ 1 = endpoint γ := rfl
 
 @[ext] public theorem ext {γ γ' : BasedPath x₀} (h : ∀ t, γ t = γ' t) : γ = γ' :=
@@ -197,7 +197,7 @@ public noncomputable def deformTerminal (ha : 0 ≤ a) (hab : a < b) (hb : b < 1
       simp [div_self (sub_ne_zero.2 hab.ne')]
     · rintro t rfl
       simp [hab.le]
-  ⟨⟨fun t ↦ f t, hf.comp continuous_subtype_val⟩, by simp [f, ha]⟩
+  ⟨⟨fun t ↦ f t, hf.comp continuous_subtypeVal⟩, by simp [f, ha]⟩
 
 variable (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) {t : I}
 
@@ -228,7 +228,8 @@ public theorem deformTerminal_apply_mem_of_lt {W : Set X}
     have h₁ : (t - a) / (b - a) ≤ 1 := (div_le_one (by linarith)).2 (by linarith)
     exact hγW ⟨by nlinarith, by nlinarith⟩
   · rw [deformTerminal_apply_of_lt γ δ ha hab hb (not_le.1 htb), Path.extend_apply _
-      ⟨div_nonneg (by linarith) (by linarith), (div_le_one (by linarith)).2 (by linarith [t.2.2])⟩]
+      ⟨div_nonneg (by linarith) (by linarith), (div_le_one (by linarith)).2 (by linarith
+          [t.property.2])⟩]
     exact hδW (mem_range_self _)
 
 end deformTerminal
@@ -262,7 +263,7 @@ private theorem exists_deformTerminal_mapsTo [LocallyPathConnectedSpace X] (γ :
     exact fun _ _ h ↦ h
   obtain ⟨a₀, ⟨-, ha₀⟩, hIoc⟩ := exists_Ioc_subset_of_mem_nhds' hN (show (0 : I) < 1 by simp)
   have ha₀' : (a₀ : ℝ) < 1 := ha₀
-  have ha : 0 ≤ ((a₀ : ℝ) + 1) / 2 := by linarith [a₀.2.1]
+  have ha : 0 ≤ ((a₀ : ℝ) + 1) / 2 := by linarith [a₀.property.1]
   have hab : ((a₀ : ℝ) + 1) / 2 < (((a₀ : ℝ) + 1) / 2 + 1) / 2 := by linarith
   have hb : (((a₀ : ℝ) + 1) / 2 + 1) / 2 < 1 := by linarith
   refine ⟨W, hW_open, hW, hW_pc, _, _, ha, hab, hb, fun v _ δ hδ K U hKU t ht ↦ ?_⟩
@@ -270,7 +271,7 @@ private theorem exists_deformTerminal_mapsTo [LocallyPathConnectedSpace X] (γ :
   · rw [deformTerminal_apply_of_le γ δ ha hab hb hta]
     exact (hS K U hKU).2.2 ht
   · rw [not_le] at hta
-    have htIoc : t ∈ Ioc a₀ 1 := ⟨show (a₀ : ℝ) < t by linarith, t.2.2⟩
+    have htIoc : t ∈ Ioc a₀ 1 := ⟨show (a₀ : ℝ) < t by linarith, t.property.2⟩
     -- `t` avoids every `K` not containing `1`, so `1 ∈ K` and hence `W ⊆ U`.
     have h1K : (1 : I) ∈ K := by
       by_contra h1K
@@ -419,7 +420,7 @@ public theorem exists_open_nhds_pathComponent_preimage
     rw [Function.update_self]
     exact pathComponentIn_subset.trans inter_subset_right
   refine ⟨{β | Path.IsInTube β.toPath part T'},
-    (T'.isOpen_setOf_isInTube part).preimage continuous_subtype_val, hα_tube', fun β hβ ↦ ?_⟩
+    (T'.isOpen_setOf_isInTube part).preimage continuous_subtypeVal, hα_tube', fun β hβ ↦ ?_⟩
   obtain ⟨ρ, hρ, h⟩ := hα_tube'.exists_trans_homotopic hβ
   exact (joinedIn_preimage_of_append α ρ (hρ.trans hW_U)).trans
     (joinedIn_endpoint_preimage_of_homotopic (hρ.trans hW_U ρ.target_mem_range) h)
@@ -445,7 +446,7 @@ public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial {U : Set X}
     (α.toPath.cast rfl heq.symm).Homotopic β.toPath := by
   obtain ⟨F, hF⟩ := hαβ
   -- The free homotopy `H : α ∼ β` given by `H (t, s) = F t s`.
-  let H : ContinuousMap.Homotopy α.1 β.1 :=
+  let H : ContinuousMap.Homotopy α.val β.val :=
     { toFun := fun ts ↦ F ts.1 ts.2
       continuous_toFun := continuous_iff.mp F.continuous
       map_zero_left := fun s ↦ by simp
@@ -457,9 +458,10 @@ public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial {U : Set X}
     exact hF t)
   -- Naturality of `H`: `α · L` is homotopic to `H.evalAt 0 · β`, and `H.evalAt 0` is constant.
   have key : ((α.toPath.cast rfl heq.symm).trans L).Homotopic ((Path.refl x₀).trans β.toPath) := by
-    have h := (Path.Homotopic.map_trans_evalAt H Path.id).pathCast α.2.symm
-      (show endpoint β = β.1 1 from rfl)
-    have h0 : H.evalAt 0 = (Path.refl x₀).cast α.2 β.2 := Path.ext <| funext fun t ↦ (F t).2
+    have h := (Path.Homotopic.map_trans_evalAt H Path.id).pathCast α.property.symm
+      (show endpoint β = β.val 1 from rfl)
+    have h0 : H.evalAt 0 = (Path.refl x₀).cast α.property β.property := Path.ext <| funext fun t ↦
+        (F t).property
     rw [h0] at h
     convert h using 1 <;> exact Path.ext rfl
   exact (Path.Homotopic.trans_right_of_nullhomotopic hL).symm.trans

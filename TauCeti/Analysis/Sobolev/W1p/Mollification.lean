@@ -79,7 +79,7 @@ theorem Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule (hp : p ≠ ∞) (phi : Cont
     rw [← LinearIsometry.integral_comp_comm, normedBumpLp_apply]
     simp only [g, Submodule.coe_subtypeₗᵢ, Submodule.coe_subtype]
   rw [hint]
-  exact (∫ t, g t ∂nu).2
+  exact (∫ t, g t ∂nu).property
 
 /-- **Mollification on `W^{1,p}(ℝⁿ)`**: averaging the translates of a Sobolev function against
 the normalized form of a smooth bump, as a continuous linear operator.  The value and the weak
@@ -90,7 +90,7 @@ def W1p.normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
     ((normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E))).comp
       (w1pSubmodule mu ⊤ p).toSubmodule.subtypeL)
     (w1pSubmodule mu ⊤ p).toSubmodule
-    fun u => Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule hp phi u.2
+    fun u => Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule hp phi u.property
 
 /-- The jet of the mollification is the mollification of the jet. -/
 theorem W1p.coe_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W1p mu ⊤ p) :
@@ -159,7 +159,7 @@ theorem W1p.normedBumpL_mem_range_of_ae_eq_zero (hp : p ≠ ∞) (phi : ContDiff
       (u : Sobolev1JetLp mu ⊤ p) x = 0) :
     W1p.normedBumpL hp phi u ∈ LinearMap.range (W1p.ofTestFunctionₗ mu ⊤ p) := by
   set nu := mu.restrict ((⊤ : Opens E) : Set E)
-  set J : Sobolev1JetLp mu ⊤ p := u.1 with hJdef
+  set J : Sobolev1JetLp mu ⊤ p := u.val with hJdef
   let Jt : E → Sobolev1Jet E := K.indicator J
   have hJt_mem : MemLp Jt p nu := (Lp.memLp J).indicator hK.measurableSet.nullMeasurableSet
   have hJt_cpt : HasCompactSupport Jt :=

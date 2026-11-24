@@ -46,7 +46,7 @@ noncomputable def f4ShortRootBaseChangeAdjointMatrixLinearMap :
       LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootBaseChangeAdjoint x) := by
-  simp [f4ShortRootBaseChangeAdjointMatrixLinearMap]
+  rfl
 
 /-- On a pure tensor, the scalar-extended adjoint matrix is the entrywise scalar extension of the
 modular adjoint matrix. -/
