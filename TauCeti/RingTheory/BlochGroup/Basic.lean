@@ -40,11 +40,14 @@ group `𝔽₅ˣ` is zero, so the boundary into it vanishes on all of `P(𝔽₅
 ## Main results
 
 * `TauCeti.preBloch.boundary_preBlochSymbol`: `∂[x] = x ∧ (1 - x)` for an exceptional unit `x`.
+* `TauCeti.preBloch.toExterior_boundary_preBlochSymbol_coe`: the same value after projecting onto
+  the exterior square.
 * `TauCeti.preBloch.boundary_comp_map`: the boundary commutes with the maps induced by a ring
   homomorphism.
 * `TauCeti.preBloch.boundary_preBlochSymbol_add_preBlochSymbol_inv`: over a field,
   `∂([u] + [u⁻¹]) = u ∧ (-u)` for every unit `u`.
-* `TauCeti.preBlochSymbol_add_preBlochSymbol_one_sub_mem_blochGroup`: `[x] + [1 - x] ∈ B(A)`.
+* `TauCeti.preBlochSymbol_add_preBlochSymbol_one_sub_mem_blochGroup`: `[x] + [1 - x] ∈ B(A)` for
+  every `x`.
 
 ## References
 
@@ -143,6 +146,13 @@ theorem boundary_preBlochSymbol_coe {u v : Aˣ} (huv : (u : A) + v = 1) :
     boundary A (preBlochSymbol (u : A)) = antisymSquare.mk ℤ _ (ofMul u) (ofMul v) := by
   rw [boundary, lift_preBlochSymbol, boundaryAux_eq rfl huv]
 
+/-- Followed by the projection onto the exterior square, the boundary of the symbol of a unit `u`
+whose complement `1 - u` is the unit `v` is the exterior product `u ∧ v`. -/
+theorem toExterior_boundary_preBlochSymbol_coe {u v : Aˣ} (huv : (u : A) + v = 1) :
+    antisymSquare.toExterior ℤ _ (boundary A (preBlochSymbol (u : A))) =
+      exteriorPower.ιMulti ℤ 2 ![ofMul u, ofMul v] := by
+  rw [boundary_preBlochSymbol_coe huv, antisymSquare.toExterior_mk]
+
 /-- The boundary of the symbol of an exceptional unit `x` is `x ∧ (1 - x)`. -/
 theorem boundary_preBlochSymbol {x : A} (hx : IsUnit x) (hx1 : IsUnit (1 - x)) :
     boundary A (preBlochSymbol x) =
@@ -222,10 +232,15 @@ noncomputable def blochGroup : AddSubgroup (preBloch A) :=
 theorem mem_blochGroup {z : preBloch A} : z ∈ blochGroup A ↔ preBloch.boundary A z = 0 :=
   Iff.rfl
 
-/-- The class `[x] + [1 - x]` of an exceptional unit `x` lies in the Bloch group. -/
-theorem preBlochSymbol_add_preBlochSymbol_one_sub_mem_blochGroup {x : A}
-    (hx : x ∈ exceptionalUnits A) :
+/-- The class `[x] + [1 - x]` lies in the Bloch group, for every `x`. -/
+theorem preBlochSymbol_add_preBlochSymbol_one_sub_mem_blochGroup (x : A) :
     preBlochSymbol x + preBlochSymbol (1 - x) ∈ blochGroup A := by
+  by_cases hx : x ∈ exceptionalUnits A
+  swap
+  · rw [preBlochSymbol_eq_zero_of_notMem_exceptionalUnits hx,
+      preBlochSymbol_eq_zero_of_notMem_exceptionalUnits (one_sub_mem_exceptionalUnits.not.2 hx),
+      add_zero]
+    exact zero_mem _
   obtain ⟨hx, hx1⟩ := mem_exceptionalUnits.1 hx
   have h := preBloch.boundary_preBlochSymbol_coe (u := hx1.unit) (v := hx.unit) (by simp)
   rw [IsUnit.unit_spec] at h
