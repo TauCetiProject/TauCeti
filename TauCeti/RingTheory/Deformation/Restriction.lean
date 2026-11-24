@@ -154,14 +154,14 @@ theorem restrict_mk (ι : H →ₜ* G) (ρ : Lift ρbar A) : (mk ρ).restrict ι
 theorem restrict_id (c : StrictClass ρbar A) : c.restrict (ContinuousMonoidHom.id G) = c := by
   obtain ⟨ρ, rfl⟩ := mk_surjective c
   rw [restrict_mk]
-  rfl
+  exact congrArg mk (Lift.restrict_id ρ)
 
 /-- Restricting strict classes along `ι` and then along `ι'` is restricting along `ι ∘ ι'`. -/
 theorem restrict_restrict (ι : H →ₜ* G) (ι' : H' →ₜ* H) (c : StrictClass ρbar A) :
     (c.restrict ι).restrict ι' = c.restrict (ι.comp ι') := by
   obtain ⟨ρ, rfl⟩ := mk_surjective c
   rw [restrict_mk, restrict_mk, restrict_mk]
-  rfl
+  exact congrArg mk (Lift.restrict_restrict ι ι' ρ)
 
 /-- The strict class of a framed restricted lift is the restriction of the strict class of the
 underlying lift: the frame only selects a representative. -/
