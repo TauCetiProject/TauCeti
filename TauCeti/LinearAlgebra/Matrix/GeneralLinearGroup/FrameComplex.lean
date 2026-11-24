@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 public import TauCeti.RingTheory.StableRange
 
@@ -90,9 +91,9 @@ open CategoryTheory Matrix
 
 namespace TauCeti
 
-universe u v w
+universe u u' v w
 
-variable {R : Type u} [Ring R] {m : Type u} [Fintype m] [DecidableEq m] {G : Type v} [Monoid G]
+variable {R : Type u} [Ring R] {m : Type u'} [Fintype m] [DecidableEq m] {G : Type v} [Monoid G]
 
 /-- A family of matrices with rows indexed by `m`, one set of `m × p` matrices for each number `p`
 of columns, closed under deleting a column and under left multiplication by the image of
@@ -163,17 +164,15 @@ variable (k : Type w) [Ring k]
 /-- The `i`-th face as a morphism of permutation representations. -/
 def faceHom {p : ℕ} (i : Fin (p + 1)) :
     Rep.ofMulAction k G (F.carrier (p + 1)) ⟶ Rep.ofMulAction k G (F.carrier p) :=
-  Rep.ofHom
-    { toLinearMap := MonoidAlgebra.mapDomainLinearMap k k (F.face i)
-      isIntertwining' g := by
-        refine MonoidAlgebra.lhom_ext' fun A => LinearMap.ext_ring ?_
-        simp [Representation.ofMulAction_single, F.face_smul] }
+  (⟨F.face i, F.face_smul i⟩ : F.carrier (p + 1) →ₑ[MonoidHom.id G] F.carrier p).toRepRes
 
+-- `faceHom` is stated between permutation representations rather than through `Rep.res`, so
+-- `MulActionHom.toRepRes_hom_single` is restated at this type for `simp`.
 @[simp]
 theorem faceHom_hom_single {p : ℕ} (i : Fin (p + 1)) (A : F.carrier (p + 1)) (r : k) :
     (dsimp% only ((F.faceHom k i).hom (MonoidAlgebra.single A r))) =
-      MonoidAlgebra.single (F.face i A) r := by
-  simp [faceHom]
+      MonoidAlgebra.single (F.face i A) r :=
+  MulActionHom.toRepRes_hom_single _ A r
 
 /-- The semi-simplicial identities for the face morphisms. -/
 theorem faceHom_comp_faceHom {p : ℕ} {i j : Fin (p + 1)} (hij : i ≤ j) :
@@ -208,7 +207,7 @@ out of degree `1` is the augmentation. -/
 -- The body is exposed so that the objects of the complex are the permutation representations
 -- `Rep.ofMulAction k G (F.carrier p)` by definition.
 @[expose]
-def chainComplex : ChainComplex (Rep.{max w u} k G) ℕ :=
+def chainComplex : ChainComplex (Rep.{max w u u'} k G) ℕ :=
   ChainComplex.of (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) (F.d_comp_d k)
 
 theorem chainComplex_X (p : ℕ) :
@@ -220,13 +219,9 @@ theorem chainComplex_d (p : ℕ) : (F.chainComplex k).d (p + 1) p = F.d k p :=
   ChainComplex.of_d (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) p
 
 /-- Two members with one column are **adjacent** when they are the two faces of a member with two
-columns: the second and the first column of it. -/
+columns: `x` is its first column and `y` its second, `x = face 1 e` and `y = face 0 e`. -/
 def Adjacent (x y : F.carrier 1) : Prop :=
   ∃ e : F.carrier 2, F.face 1 e = x ∧ F.face 0 e = y
-
-/-- There is at most one member without columns, the empty `m × 0` matrix. -/
-instance : Subsingleton (F.carrier 0) :=
-  ⟨fun _ _ => Subtype.ext <| Matrix.ext fun _ j => j.elim0⟩
 
 /-- The augmented chain complex is exact in degree `0`, its augmentation onto the chains on the
 empty member is onto, as soon as some member has one column. -/
@@ -338,8 +333,7 @@ theorem mul_mem_unimodularFrames {p : ℕ} (g : GL m R) {A : Matrix m (Fin p) R}
     (hA : A ∈ unimodularFrames R m p) : (g : Matrix m m R) * A ∈ unimodularFrames R m p := by
   obtain ⟨B, hB⟩ := hA
   exact ⟨B * ((g⁻¹ : GL m R) : Matrix m m R), by
-    rw [Matrix.mul_assoc, ← Matrix.mul_assoc _ (g : Matrix m m R), ← Units.val_mul, inv_mul_cancel,
-      Units.val_one, Matrix.one_mul, hB]⟩
+    simp [Matrix.mul_assoc, ← Matrix.mul_assoc _ (g : Matrix m m R), hB]⟩
 
 /-- The standard frame `(e_(f 0), …, e_(f (p - 1)))` of an injective `f`. -/
 theorem one_submatrix_mem_unimodularFrames {p : ℕ} {f : Fin p → m} (hf : Function.Injective f) :
@@ -368,6 +362,7 @@ def affineFrameSystem : ColumnSystem (fromBlocksGL.comp (MonoidHom.inl (GL m R) 
   mul_mem g A hA := ⟨mul_mem_unimodularFrames _ hA.1, fun j => by
     simpa [Matrix.mul_apply, Fintype.sum_sum_type] using hA.2 j⟩
 
+@[simp]
 theorem mem_affineFrameSystem_carrier_iff {p : ℕ} {A : Matrix (m ⊕ Unit) (Fin p) R} :
     A ∈ (affineFrameSystem R m).carrier p ↔
       A ∈ unimodularFrames R (m ⊕ Unit) p ∧ ∀ j, A (.inr ()) j = 1 :=
@@ -375,22 +370,34 @@ theorem mem_affineFrameSystem_carrier_iff {p : ℕ} {A : Matrix (m ⊕ Unit) (Fi
 
 /-! ### Exactness in low degrees -/
 
-omit [DecidableEq m] in
-private theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
-    (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m 1 :=
-  ⟨of ![b], by ext i j; fin_cases i; fin_cases j; simp [vecMul, Function.swap, hb]⟩
+omit [Ring R] [Fintype m] [DecidableEq m] in
+/-- A matrix with one column is the matrix whose single column is its column `0`. -/
+theorem _root_.Matrix.eq_transpose_of_cons (A : Matrix m (Fin 1) R) :
+    A = (of ![fun r => A r 0])ᵀ := by
+  ext r c
+  fin_cases c
+  rfl
 
 omit [DecidableEq m] in
-private theorem transpose_of_cons_cons_mem_unimodularFrames {v w : m → R} (r₁ r₂ : m → R)
+/-- A vector `v` with `b ⬝ᵥ v = 1` for some functional `b` is a unimodular `1`-frame. -/
+theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
+    (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m 1 :=
+  ⟨of ![b], by ext i j; fin_cases i; fin_cases j; rw [mul_apply', one_apply_eq]; exact hb⟩
+
+omit [DecidableEq m] in
+/-- Two vectors `v, w` with a dual pair of functionals `r₁, r₂` form a unimodular `2`-frame. -/
+theorem transpose_of_cons_cons_mem_unimodularFrames {v w : m → R} (r₁ r₂ : m → R)
     (h₁₁ : r₁ ⬝ᵥ v = 1) (h₁₂ : r₁ ⬝ᵥ w = 0) (h₂₁ : r₂ ⬝ᵥ v = 0) (h₂₂ : r₂ ⬝ᵥ w = 1) :
     (of ![v, w])ᵀ ∈ unimodularFrames R m 2 :=
   ⟨of ![r₁, r₂], by
+    rw [one_fin_two]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [vecMul, Function.swap, *]⟩
+    fin_cases i <;> fin_cases j <;> rw [mul_apply']
+    exacts [h₁₁, h₁₂, h₂₁, h₂₂]⟩
 
 /-- Two columns `v` and `w` are adjacent in a column system containing the matrix with columns
 `v, w`. -/
-private theorem ColumnSystem.adjacent_of_mem {φ : G →* GL m R} (F : ColumnSystem φ)
+theorem ColumnSystem.adjacent_of_mem {φ : G →* GL m R} (F : ColumnSystem φ)
     {v w : m → R} (hv : (of ![v])ᵀ ∈ F.carrier 1) (hw : (of ![w])ᵀ ∈ F.carrier 1)
     (h : (of ![v, w])ᵀ ∈ F.carrier 2) : F.Adjacent ⟨_, hv⟩ ⟨_, hw⟩ :=
   ⟨⟨_, h⟩, Subtype.ext <| by ext r c; fin_cases c; simp,
@@ -431,7 +438,9 @@ theorem affineFrameSystem_chainComplex_exactAt_one (hm : 1 < Fintype.card m) :
   refine F.chainComplex_exactAt_one k ⟨_, hvert 0⟩ fun ⟨A, hA⟩ => ?_
   set u : m → R := fun r => A (.inl r) 0
   have hA' : A = (of ![Sum.elim u 1])ᵀ := by
-    ext (r | r) c <;> fin_cases c
+    rw [Matrix.eq_transpose_of_cons A]
+    congr 3
+    ext (r | r)
     · rfl
     · simpa using hA.2 0
   rw [show (⟨A, hA⟩ : F.carrier 1) = ⟨_, hvert u⟩ from Subtype.ext hA']
@@ -461,7 +470,7 @@ theorem frameSystem_chainComplex_exactAt_one {R : Type u} [CommRing R] {s : ℕ}
   refine F.chainComplex_exactAt_one k ⟨_, hvert (Pi.single i₀ 1) (Pi.single i₀ 1) (by simp)⟩
     fun ⟨A, hA⟩ => ?_
   set v : m → R := fun r => A r 0
-  have hA' : A = (of ![v])ᵀ := by ext r c; fin_cases c; rfl
+  have hA' : A = (of ![v])ᵀ := Matrix.eq_transpose_of_cons A
   obtain ⟨B, hB⟩ := id hA
   have hb : (fun r => B 0 r) ⬝ᵥ v = 1 := by
     have h := congrFun (congrFun hB 0) 0
