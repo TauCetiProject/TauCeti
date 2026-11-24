@@ -26,9 +26,9 @@ ideal of `R`. This file checks two properties of the levels `K(N) ≤ K₁(N)` o
 
 public section
 
-open Matrix.GeneralLinearGroup
+open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing Matrix.GeneralLinearGroup
 
-namespace IsDedekindDomain.FiniteAdeleRing
+namespace TauCeti.Examples.CongruenceLevel
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
@@ -67,4 +67,4 @@ theorem not_isOpen_principalLevel_bot [∀ v : HeightOneSpectrum R, Finite (R �
         injective_upperRightHom (congrArg Subtype.val h)
   exact hR (Finite.isField_of_domain R)
 
-end IsDedekindDomain.FiniteAdeleRing
+end TauCeti.Examples.CongruenceLevel
