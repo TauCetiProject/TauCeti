@@ -60,6 +60,9 @@ needed for the statements below.
   the projection `M × Y → M` exactly when `α ≠ 0`, since the local orientation generates
   `Hₙ(M, M ∖ {b}; ℤ)` and the integral relative cross product is injective
   (`HomologicalOrientation.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff`
+  in namespace `TauCeti`); similarly, the relative cross product of a local orientation pulled
+  back along an open embedding with any nonzero integral class is nonzero
+  (`HomologicalOrientation.singularHomologyCrossRel_localHomologyIsoOfIsOpenEmbedding_inv_ne_zero`
   in namespace `TauCeti`).
 * **Products of two maps.** For `p : E → M` and `q : Y → N`, the fibre of
   `p × q : E × Y → M × N` over `(b, c)` is `p⁻¹(b) × q⁻¹(c)`. If `α × β` lives over the fundamental
@@ -666,6 +669,37 @@ end ProdMap
 namespace HomologicalOrientation
 
 open AlgebraicTopology
+
+section LocalCross
+
+variable {M V : Type} [TopologicalSpace M] [T2Space M]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [ChartedSpace V M]
+  {n : ℕ} (o : HomologicalOrientation M V n)
+
+/-- **The relative cross product with a local orientation pulled back along an open embedding is
+nonzero.** For an open embedding `j : U → M`, a point `x ∈ U`, and a nonzero integral class
+`β ∈ Hₖ(Y; ℤ)`, the relative cross product of the local orientation `o (j x)`, read in `U` via
+`TauCeti.localHomologyIsoOfIsOpenEmbedding`, with `β` is nonzero: its image in `M × Y` is the
+relative cross product of `o (j x)`, a free generator, with `β`. -/
+theorem singularHomologyCrossRel_localHomologyIsoOfIsOpenEmbedding_inv_ne_zero
+    (hn : Module.finrank ℝ V = n) {U Y : Type} [TopologicalSpace U] [TopologicalSpace Y]
+    {j : U → M} (hj : Topology.IsOpenEmbedding j) (x : U) {k m : ℕ} (h : n + k = m)
+    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) k :
+      ModuleCat.{0} ℤ)} (hβ : β ≠ 0) :
+    (TopCat.singularHomologyCrossRel (TopCat.of U) (TopCat.of Y) {x}ᶜ
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k m h).hom
+        ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hj x n).inv.hom
+          (o (j x)).val ⊗ₜ β) ≠ 0 := by
+  intro hX0
+  have h₁ : (⟨j, hj.continuous⟩ : C(U, M)) ⁻¹' {j x} ⊆ {x} := fun _ hz ↦ hj.injective hz
+  have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ ⟨j, hj.continuous⟩ h₁ h
+    ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hj x n).inv.hom
+      (o (j x)).val) β
+  rw [localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_apply _ hj x h₁ n] at hincl
+  exact (map_ne_zero_iff _ ((ModuleCat.mono_iff_injective _).1 inferInstance)).2
+    (o.apply_tmul_ne_zero hn (j x) hβ) (hincl.trans ((congrArg _ hX0).trans (map_zero _)))
+
+end LocalCross
 
 variable {M E V : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [ChartedSpace V M]

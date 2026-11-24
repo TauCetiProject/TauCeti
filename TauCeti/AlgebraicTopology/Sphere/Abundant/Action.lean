@@ -450,32 +450,6 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   {M : Type} [TopologicalSpace M] [T2Space M] [ChartedSpace V M]
   (o : HomologicalOrientation M V d)
 
-/-- **The relative cross product with the local orientation is injective.** For `x₀` in an open set
-`U ⊆ M` and a nonzero class `β` of a space `N`, the relative cross product of the local orientation
-at `x₀`, read in `U`, with `β` is nonzero: its image in `M × N` is the relative cross product of
-the local orientation of `M`, a free generator, with `β`. -/
-private theorem singularHomologyCrossRel_localOrientation_ne_zero (hd : finrank ℝ V = d)
-    {U : Set M} (hU : IsOpen U) (x₀ : U) {N : Type} [TopologicalSpace N] {k : ℕ}
-    {β : ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) k :
-      ModuleCat.{0} ℤ)} (hβ : β ≠ 0) :
-    (TopCat.singularHomologyCrossRel (TopCat.of U) (TopCat.of N) {x₀}ᶜ
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
-        ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
-          hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val ⊗ₜ β) ≠ 0 := by
-  intro hX0
-  let incl : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  have h₁ : incl ⁻¹' {(x₀ : M)} ⊆ {x₀} := fun _ hz ↦ Subtype.ext hz
-  have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ incl h₁ rfl
-    ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
-      hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val) β
-  have hoU := ConcreteCategory.congr_hom
-    (localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
-      hU.isOpenEmbedding_subtypeVal x₀ h₁ d) (o x₀).val
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] at hoU
-  rw [hoU] at hincl
-  exact (map_ne_zero_iff _ ((ModuleCat.mono_iff_injective _).1 inferInstance)).2
-    (o.apply_tmul_ne_zero hd x₀ hβ) (hincl.trans ((congrArg _ hX0).trans (map_zero _)))
-
 /-- **The image of `c × α` for a class `c` of the stabilizer covering `ℓ • [M]`.** Let `s : U → G`
 be a section of the orbit map over an open set `U ∋ x₀`, and `o_U` the local orientation at `x₀`
 read in `U`. If every element of the stabilizer of `x₀` fixes the class `α` of the based mapping
@@ -648,7 +622,8 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
               (localHomologyMap_comp R₂ (sU.prodMap (ContinuousMap.id F)) Φ hsF hΦS (d + k)) X)
   rw [livesOverFundamentalClass_iff, key]
   exact (map_ne_zero_iff _ ((ModuleCat.mono_iff_injective _).1 inferInstance)).2
-    (o.singularHomologyCrossRel_localOrientation_ne_zero hd hU x₀ hα)
+    (o.singularHomologyCrossRel_localHomologyIsoOfIsOpenEmbedding_inv_ne_zero hd
+      hU.isOpenEmbedding_subtypeVal x₀ rfl hα)
 
 /-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
 `x₀` when `π_* A = ℓ • [M]`, `ℓ • α ≠ 0` and `α` is fixed by the stabilizer of `x₀`. -/
