@@ -46,7 +46,7 @@ Over a field `K` and a finite-dimensional `V`, these are the lattice and finite-
   comparisons at `a` and `a + k` differ by the lattice shift `powerSeriesLatticeShift a k`.
 * `TauCeti.HahnModule.tensorProductLatticeQuotientEquiv_mk_tmul`: the jet of `p` tensored with
   `v` maps to the jet of `p X ^ a v`.
-* `TauCeti.HahnModule.tensorProductLatticeQuotientEquiv_symm_apply`: the inverse jet comparison
+* `TauCeti.HahnModule.tensorProductLatticeQuotientEquiv_symm_mk`: the inverse jet comparison
   reads off the coefficients at `a, …, a + n - 1`.
 -/
 
@@ -176,9 +176,8 @@ theorem powerSeriesLatticeShift_tensorProductPowerSeriesLatticeEquiv [Module.Fre
   induction z using TensorProduct.inductionOn with
   | tmul p v =>
     refine Subtype.ext ?_
-    rw [powerSeriesLatticeShift_apply, coe_tensorProductPowerSeriesLatticeEquiv_tmul,
-      coe_tensorProductPowerSeriesLatticeEquiv_tmul, smul_comm, single_smul_single, one_smul,
-      add_comm]
+    simp [coe_tensorProductPowerSeriesLatticeEquiv_tmul, smul_comm (single k (1 : R)) p,
+      single_smul_single, add_comm k]
   | add z w hz hw => rw [map_add, map_add, map_add, hz, hw]
 
 end Lattice
@@ -216,19 +215,29 @@ private theorem tensorProductToLatticeQuotient_mk_tmul (a : ℤ) (n : ℕ) (p : 
   rw [tensorProductToLatticeQuotient, AlgebraTensorModule.lift_tmul]
   exact smul_latticeQuotient_mk R V a (a + n) p _
 
+/-- The exponents `a, …, a + n - 1` of a jet of length `n`, indexed by `k ↦ a + k`. -/
+private def finEquivIco (a : ℤ) (n : ℕ) : Fin n ≃ Finset.Ico a (a + n) where
+  toFun k := ⟨a + k, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩
+  invFun j := ⟨(j - a).toNat, by have := Finset.mem_Ico.1 j.property; omega⟩
+  left_inv k := Fin.ext (by simp)
+  right_inv j := Subtype.ext (by have := Finset.mem_Ico.1 j.property; simp; omega)
+
+private theorem coe_finEquivIco (a : ℤ) (n : ℕ) (k : Fin n) :
+    (finEquivIco a n k : ℤ) = a + k :=
+  rfl
+
 /-- The coefficients of a jet at `a, …, a + n - 1`, as a tensor of truncated power series. -/
 private def latticeQuotientToTensorProduct (a : ℤ) (n : ℕ) :
     latticeQuotient R V a (a + n) →ₗ[R]
       (R⟦X⟧ ⧸ Ideal.span {(PowerSeries.X ^ n : R⟦X⟧)}) ⊗[R] V :=
   ∑ k : Fin n, TensorProduct.mk R _ V (Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ))) ∘ₗ
-    LinearMap.proj ⟨a + k, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩ ∘ₗ
-      (latticeQuotientEquiv R V a (a + n)).toLinearMap
+    LinearMap.proj (finEquivIco a n k) ∘ₗ (latticeQuotientEquiv R V a (a + n)).toLinearMap
 
 private theorem latticeQuotientToTensorProduct_apply (a : ℤ) (n : ℕ)
     (q : latticeQuotient R V a (a + n)) :
     latticeQuotientToTensorProduct R V a n q = ∑ k : Fin n,
       Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ)) ⊗ₜ[R]
-        latticeQuotientEquiv R V a (a + n) q ⟨a + k, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩ := by
+        latticeQuotientEquiv R V a (a + n) q (finEquivIco a n k) := by
   simp [latticeQuotientToTensorProduct]
 
 private theorem leftInverse_latticeQuotientToTensorProduct (a : ℤ) (n : ℕ) :
@@ -241,29 +250,21 @@ private theorem leftInverse_latticeQuotientToTensorProduct (a : ℤ) (n : ℕ) :
     obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
     rw [tensorProductToLatticeQuotient_mk_tmul, latticeQuotientToTensorProduct_apply,
       PowerSeries.mk_span_X_pow_eq_sum, sum_tmul]
-    simp [smul_tmul]
+    simp [coe_finEquivIco, smul_tmul]
 
 private theorem rightInverse_latticeQuotientToTensorProduct (a : ℤ) (n : ℕ) :
     Function.RightInverse (latticeQuotientToTensorProduct R V a n)
       (tensorProductToLatticeQuotient R V a n) := by
   intro q
   let e := latticeQuotientEquiv R V a (a + n)
-  let σ : Fin n → Finset.Ico a (a + n) := fun k ↦ ⟨a + k, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩
-  have hσ : Function.Bijective σ := by
-    refine ⟨fun k l h ↦ Fin.ext ?_, fun j ↦ ?_⟩
-    · have := congrArg Subtype.val h
-      simp only [σ] at this
-      omega
-    · obtain ⟨j, hj⟩ := j
-      rw [Finset.mem_Ico] at hj
-      exact ⟨⟨(j - a).toNat, by omega⟩, Subtype.ext (by simp only [σ]; omega)⟩
   have hφ (k : Fin n) (v : V) : tensorProductToLatticeQuotient R V a n
-      (Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ)) ⊗ₜ[R] v) = e.symm (Pi.single (σ k) v) := by
+      (Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ)) ⊗ₜ[R] v) =
+        e.symm (Pi.single (finEquivIco a n k) v) := by
     rw [tensorProductToLatticeQuotient_mk_tmul, latticeQuotientEquiv_symm_single]
     exact congrArg Submodule.Quotient.mk (Subtype.ext (X_pow_smul_single k a v))
   rw [latticeQuotientToTensorProduct_apply, map_sum]
   simp only [hφ, ← map_sum]
-  rw [Fintype.sum_bijective σ hσ _ (fun j ↦ Pi.single j (e q j)) (fun _ ↦ rfl),
+  rw [Fintype.sum_equiv (finEquivIco a n) _ (fun j ↦ Pi.single j (e q j)) (fun _ ↦ rfl),
     Finset.univ_sum_single, LinearEquiv.symm_apply_apply]
 
 /-- The jets `U_a(V) / U_(a+n)(V)` of length `n` of `V`-valued Laurent series are the scalar
@@ -292,13 +293,15 @@ theorem tensorProductLatticeQuotientEquiv_one_tmul (a : ℤ) (n : ℕ) (v : V) :
   exact congrArg Submodule.Quotient.mk (Subtype.ext (one_smul _ _))
 
 /-- The inverse jet comparison reads off the coefficients of a jet at `a, …, a + n - 1`. -/
-theorem tensorProductLatticeQuotientEquiv_symm_apply (a : ℤ) (n : ℕ)
-    (q : latticeQuotient R V a (a + n)) :
-    (tensorProductLatticeQuotientEquiv R V a n).symm q = ∑ k : Fin n,
+theorem tensorProductLatticeQuotientEquiv_symm_mk (a : ℤ) (n : ℕ) (f : lattice R V a) :
+    (tensorProductLatticeQuotientEquiv R V a n).symm (Submodule.Quotient.mk f) = ∑ k : Fin n,
       Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ)) ⊗ₜ[R]
-        latticeQuotientEquiv R V a (a + n) q ⟨a + k, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩ := by
-  rw [← latticeQuotientToTensorProduct_apply, LinearEquiv.symm_apply_eq]
-  exact (rightInverse_latticeQuotientToTensorProduct R V a n q).symm
+        ((of R).symm (f : HahnModule ℤ R V)).coeff (a + k) := by
+  have h := rightInverse_latticeQuotientToTensorProduct R V a n (Submodule.Quotient.mk f)
+  rw [latticeQuotientToTensorProduct_apply] at h
+  simp only [latticeQuotientEquiv_mk, coe_finEquivIco] at h
+  rw [LinearEquiv.symm_apply_eq]
+  exact h.symm
 
 end CommRing
 

@@ -54,8 +54,9 @@ open HahnSeries in
 @[simp]
 theorem coeff_powerSeries_smul_single_add (p : R⟦X⟧) (a : ℤ) (v : V) (k : ℕ) :
     ((of R).symm (p • of R (single a v))).coeff (a + k) = PowerSeries.coeff k p • v := by
-  have hv : of R (single a v) = single a (1 : R) • of R (single 0 v) := by simp
-  rw [powerSeries_smul, hv, smul_smul]
+  have hv := single_smul_single a 0 (1 : R) v
+  rw [add_zero, one_smul] at hv
+  rw [powerSeries_smul, ← hv, smul_smul]
   simp [add_comm a, coeff_mul_single_add]
 
 open HahnSeries in
