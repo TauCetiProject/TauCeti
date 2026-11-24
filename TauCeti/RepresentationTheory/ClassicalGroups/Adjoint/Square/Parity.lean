@@ -25,7 +25,7 @@ variable {K : Type*} [Field K] {n : ℕ} [NeZero (n : K)]
 local notation "V" => LieAlgebra.SpecialLinear.sl (Fin n) K
 
 /-- The tensor flip negates the image of the transposed Lie bracket. -/
-theorem comm_alternatingEmbeddingMap (X : V) :
+theorem comm_alternatingEmbeddingMap_eq_neg (X : V) :
     TensorProduct.comm K V V (alternatingEmbeddingMap K n X) = -alternatingEmbeddingMap K n X := by
   apply squareTrace.injective
   apply LinearMap.ext

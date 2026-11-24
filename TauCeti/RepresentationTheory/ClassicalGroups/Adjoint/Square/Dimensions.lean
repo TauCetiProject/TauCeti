@@ -34,7 +34,7 @@ theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 
   obtain ⟨hxAlt, hxSymm⟩ := Submodule.mem_inf.mp hx
   obtain ⟨u, hu⟩ := LinearMap.mem_range.mp hxAlt
   obtain ⟨v, hv⟩ := LinearMap.mem_range.mp hxSymm
-  have ha := comm_alternatingEmbeddingMap u
+  have ha := comm_alternatingEmbeddingMap_eq_neg u
   have hs := comm_symmetricEmbeddingMap v
   rw [Representation.IntertwiningMap.toLinearMap_apply] at hu hv
   rw [hu] at ha
