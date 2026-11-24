@@ -947,10 +947,8 @@ theorem exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
     ∃ U ∈ 𝓝 x, ∃ g : SobolevFieldSpace f m k → SobolevTopologicalGaugeGroup hs,
       ContinuousOn g U ∧ g x = 1 ∧ ∀ y ∈ U, g y • y ∈ coulombSlice x := by
-  have hs₀ : 1 < (k : ℝ) := by exact_mod_cast (by omega : 1 < k)
   obtain ⟨U, hU, hxU, Φ, hΦc, hΦ0, hΦ, -⟩ := exists_isOpen_contDiffOn_coulombPhase hs hk x
-  have hc : Continuous (realSubRef (f := f) (m := m) (Nat.cast_nonneg k)) := by
-    simpa using (realSubRefHomeomorph (f := f) (m := m) hs₀ (h := Nat.cast_nonneg k)).continuous
+  have hc := continuous_realSubRef (f := f) (m := m) (Nat.cast_nonneg k)
   refine ⟨realSubRef (Nat.cast_nonneg k) ⁻¹' U, hc.continuousAt.preimage_mem_nhds
     (hU.mem_nhds hxU), fun y ↦ expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))), ?_, ?_,
     fun y hy ↦ hΦ y hy⟩

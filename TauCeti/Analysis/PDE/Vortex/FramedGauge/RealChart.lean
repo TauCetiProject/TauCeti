@@ -252,6 +252,15 @@ theorem continuousRepField_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFie
   conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x, coe_ofRealSubRef]
   exact (add_sub_cancel_left _ _).symm
 
+/-- The field with real coordinates `u` depends continuously on `u`, for `s > 1`. -/
+theorem continuous_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} :
+    Continuous (ofRealSubRef (f := f) (m := m) hs (h := h)) := by
+  refine (isEmbedding_subRef h).continuous_iff.2 (continuous_pi fun j ↦ ?_)
+  have : (fun u ↦ subRef (ofRealSubRef (f := f) (m := m) hs u) j) =
+      fun u : Fin 4 → realSubmodule ℂ h ↦ (u j : H^{s}(ℂ)) := funext fun u ↦ by
+    rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
+  exact this ▸ continuous_subtypeVal.comp (continuous_apply j)
+
 /-- **The real chart of `A_m^s`**, `s > 1`: the real coordinates of `x - x_m` identify the
 continuous fields of `A_m^s` with the real Hilbert space `(H^s_ℝ)⁴`, as topological spaces. -/
 def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
@@ -261,12 +270,7 @@ def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
   left_inv := ofRealSubRef_realSubRef hs
   right_inv := realSubRef_ofRealSubRef hs
   continuous_toFun := continuous_realSubRef h
-  continuous_invFun := by
-    refine (isEmbedding_subRef h).continuous_iff.2 (continuous_pi fun j ↦ ?_)
-    have : (fun u ↦ subRef (ofRealSubRef (f := f) (m := m) hs u) j) =
-        fun u : Fin 4 → realSubmodule ℂ h ↦ (u j : H^{s}(ℂ)) := funext fun u ↦ by
-      rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
-    exact this ▸ continuous_subtypeVal.comp (continuous_apply j)
+  continuous_invFun := continuous_ofRealSubRef hs
 
 @[simp]
 theorem coe_realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :

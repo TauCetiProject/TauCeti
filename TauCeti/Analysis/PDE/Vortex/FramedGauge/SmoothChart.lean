@@ -136,13 +136,16 @@ coordinates `realSubRef` of the fields of `A_m^k`:
 
 The transition between two such charts is smooth (`IsSmoothVortexModuliChart.contDiffOn_trans`),
 and there is one at the orbit of every smooth vortex (`exists_isSmoothVortexModuliChart`). -/
-def IsSmoothVortexModuliChart
-    (e : OpenPartialHomeomorph (vortexModuli f m hs) (Fin (2 * m) → ℝ)) : Prop :=
-  (∃ σ : (Fin (2 * m) → ℝ) → SobolevFieldSpace f m k,
+structure IsSmoothVortexModuliChart
+    (e : OpenPartialHomeomorph (vortexModuli f m hs) (Fin (2 * m) → ℝ)) : Prop where
+  /-- The inverse of the chart lifts to vortices depending smoothly on the coordinates. -/
+  exists_contDiffOn_lift : ∃ σ : (Fin (2 * m) → ℝ) → SobolevFieldSpace f m k,
       ContDiffOn ℝ ∞ (fun v ↦ (σ v).realSubRef (Nat.cast_nonneg k)) e.target ∧
       ∀ v ∈ e.target, ∃ hv : ∀ z, equation (σ v) z = 0,
-        e.symm v = ⟨Quotient.mk _ (σ v), mk_mem_vortexModuli hv⟩) ∧
-    ∀ (y : SobolevFieldSpace f m k) (hy : ∀ z, equation y z = 0),
+        e.symm v = ⟨Quotient.mk _ (σ v), mk_mem_vortexModuli hv⟩
+  /-- Near every vortex whose orbit lies in the source, the chart is the restriction of a map
+  smooth at the coordinates of that vortex. -/
+  exists_contDiffAt_eventually_eq : ∀ (y : SobolevFieldSpace f m k) (hy : ∀ z, equation y z = 0),
       (⟨Quotient.mk _ y, mk_mem_vortexModuli hy⟩ : vortexModuli f m hs) ∈ e.source →
       ∃ F : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) →
           Fin (2 * m) → ℝ,
@@ -161,14 +164,14 @@ theorem IsSmoothVortexModuliChart.contDiffOn_trans
   intro v hv
   have hvt : v ∈ e.target := hv.1
   obtain ⟨hσv, hev⟩ := hσ v hvt
-  obtain ⟨F, hF, hFev⟩ := he'.2 (σ v) hσv (hev ▸ hv.2)
+  obtain ⟨F, hF, hFev⟩ := he'.exists_contDiffAt_eventually_eq (σ v) hσv (hev ▸ hv.2)
   have hσd : ContDiffAt ℝ ∞ (fun v ↦ (σ v).realSubRef (Nat.cast_nonneg k)) v :=
     hσc.contDiffAt (e.open_target.mem_nhds hvt)
   -- `σ` is continuous at `v`, being smooth in the real chart of `A_m^(k+1)`.
   have hσcont : ContinuousAt σ v := by
-    have h := (realSubRefHomeomorph (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k))
-      (h := Nat.cast_nonneg k)).symm.continuous.continuousAt.comp hσd.continuousAt
-    simpa only [Function.comp_def, coe_realSubRefHomeomorph_symm, ofRealSubRef_realSubRef] using h
+    have h := (continuous_ofRealSubRef (f := f) (m := m) (by exact_mod_cast (Fact.out : 1 < k))
+      (h := Nat.cast_nonneg k)).continuousAt.comp hσd.continuousAt
+    simpa only [Function.comp_def, ofRealSubRef_realSubRef] using h
   -- Near `v`, the transition is `F` applied to the coordinates of `σ`.
   have hev' : (e.symm.trans e') =ᶠ[𝓝 v] fun w ↦ F ((σ w).realSubRef (Nat.cast_nonneg k)) := by
     filter_upwards [hσcont.eventually hFev, (e.symm.trans e').open_source.mem_nhds hv]
@@ -181,6 +184,19 @@ theorem IsSmoothVortexModuliChart.contDiffOn_trans
 end IsSmoothVortexModuliChart
 
 /-! ### Existence of smooth charts -/
+
+/-- The real coordinates, at the order `↑k + 1` of the slice equation, of the fields of
+`A_m^(k+1)`. -/
+private noncomputable def sliceCoords (hk : 2 ≤ k) :
+    SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
+      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
+  (congrOrder (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
+    (realSubRefHomeomorph (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]))
+
+/-- The slice coordinates of `y` are the real coordinates of `y` at the order `↑k + 1`. -/
+private theorem sliceCoords_apply (hk : 2 ≤ k) (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
+    sliceCoords hk y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by
+  simp [sliceCoords]
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
@@ -220,9 +236,7 @@ private theorem exists_contDiffAt_eventually_eq_of_smul_mem_coulombSlice
   set ρ : SobolevFieldSpace f m (k + 1 : ℕ) → _ := realSubRef (Nat.cast_nonneg (k + 1))
   set ι := ofRealSubRef (f := f) (m := m) hX (h := Nat.cast_nonneg (k + 1))
   have hρ : Continuous ρ := continuous_realSubRef _
-  have hι : Continuous ι := by
-    simpa using
-      (realSubRefHomeomorph (f := f) (m := m) hX (h := Nat.cast_nonneg (k + 1))).symm.continuous
+  have hι : Continuous ι := continuous_ofRealSubRef hX
   have hιρ (z) : ι (ρ z) = z := ofRealSubRef_realSubRef hX z
   -- The coordinates `w` of `g · z` and `τ` of `exp (i Φ (g · z)) · g · z`, as functions of the
   -- coordinates of `z`.
@@ -284,16 +298,14 @@ private theorem exists_vortexModuliChart_forall_mem (hk : 2 ≤ k)
           (coe_congrOrder _ x₀ ▸ hmem) (coe_congrOrder _ x₀ ▸ hsol)
         (⟨Quotient.mk _ y, mk_mem_vortexModuli hy⟩ : vortexModuli f m hs) ∈ e.source →
           p ∈ c.source ∧ e ⟨Quotient.mk _ y, mk_mem_vortexModuli hy⟩ = c p := by
-  have hs' : 1 < (k : ℝ) + 1 := by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]
   obtain ⟨V, hV, hx₀V, e, hsrc, heq⟩ :=
     exists_isOpen_openPartialHomeomorph_vortexModuli_eq (hs := hs) hk x₀ hmem hsol
   set c := coulombSliceChart hk (congrOrder (Nat.cast_succ k) x₀) (coe_congrOrder _ x₀ ▸ hmem)
     (coe_congrOrder _ x₀ ▸ hsol)
   -- The coordinates `φ` of the slice equation, and the chart `e'` of the orbits whose slice
   -- representative lies in `V ∩ B`.
-  set φ := (congrOrder (f := f) (m := m) (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
-    (realSubRefHomeomorph hs' (h := (k.cast_add_one_pos (α := ℝ)).le))
-  have hφ (y) : φ y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by simp [φ]
+  set φ := sliceCoords (f := f) (m := m) hk
+  have hφ := sliceCoords_apply (f := f) (m := m) hk
   set T := c '' (c.source ∩ {p | φ.symm p.val ∈ V ∩ B})
   have hT : IsOpen T := (c.isOpen_image_iff_of_subset_source Set.inter_subset_left).2
     (c.open_source.inter ((hV.inter hB).preimage (φ.symm.continuous.comp continuous_subtypeVal)))
@@ -339,7 +351,6 @@ theorem exists_isSmoothVortexModuliChart (hk : 2 ≤ k) (x₀ : SobolevFieldSpac
       IsSmoothVortexModuliChart f m hs e ∧
       (⟨Quotient.mk _ x₀, mk_mem_vortexModuli hsol⟩ : vortexModuli f m hs) ∈ e.source ∧
       e ⟨Quotient.mk _ x₀, mk_mem_vortexModuli hsol⟩ = 0 := by
-  have hs' : 1 < (k : ℝ) + 1 := by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]
   have hmem' : ∀ j : ℕ, ⇑(congrOrder (Nat.cast_succ k) x₀) ∈ framedFieldSpace f m j :=
     coe_congrOrder _ x₀ ▸ hmem
   have hsol' : ∀ z, equation (congrOrder (Nat.cast_succ k) x₀) z = 0 := coe_congrOrder _ x₀ ▸ hsol
@@ -351,11 +362,10 @@ theorem exists_isSmoothVortexModuliChart (hk : 2 ≤ k) (x₀ : SobolevFieldSpac
   -- The real coordinates `ρ` of `A_m^(k+1)`, the coordinates `φ` of the slice equation at the
   -- order `↑k + 1`, and their comparison `κ`.
   set ρ : SobolevFieldSpace f m (k + 1 : ℕ) → _ := realSubRef (Nat.cast_nonneg (k + 1))
-  set φ := (congrOrder (f := f) (m := m) (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
-    (realSubRefHomeomorph hs' (h := (k.cast_add_one_pos (α := ℝ)).le))
+  set φ := sliceCoords (f := f) (m := m) hk
   set κ := ContinuousLinearEquiv.piCongrRight fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
     (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le
-  have hφ (y) : φ y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by simp [φ]
+  have hφ := sliceCoords_apply (f := f) (m := m) hk
   have hφκ (y) : φ y = κ (ρ y) := (hφ y).trans (funext fun j ↦ realSubRef_congrOrder _ _ _ y j)
   have hρφ (u) : (φ.symm u).realSubRef (Nat.cast_nonneg (k + 1)) = κ.symm u :=
     κ.injective ((hφκ (φ.symm u)).symm.trans (by rw [φ.apply_symm_apply, κ.apply_symm_apply]))
