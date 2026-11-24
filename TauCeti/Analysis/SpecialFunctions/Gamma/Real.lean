@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -179,11 +179,7 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
 /-- Real digamma is differentiable at every regular real point. -/
 theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
     DifferentiableAt ℝ digamma x := by
-  have hc := Complex.ofReal_ne_neg_nat hx
-  have hG := Complex.analyticAt_Gamma hc
-  have hd : DifferentiableAt ℂ Complex.digamma x := by
-    rw [Complex.digamma_def]
-    exact hG.deriv.differentiableAt.div hG.differentiableAt (Complex.Gamma_ne_zero hc)
+  have hd := (Complex.analyticAt_digamma (Complex.ofReal_ne_neg_nat hx)).differentiableAt
   simpa [Complex.digamma_ofReal] using hd.hasDerivAt.real_of_complex.differentiableAt
 
 /-- The derivative of the digamma recurrence: `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²` at

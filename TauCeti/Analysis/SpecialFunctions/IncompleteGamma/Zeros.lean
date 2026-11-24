@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
-public import Mathlib.Analysis.Calculus.ParametricIntegral
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-public import Mathlib.MeasureTheory.Integral.ExpDecay
-import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
+import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Complementary
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Integral.ExpDecay
 
 /-!
 # Zeros of Tricomi's function in its parameter
@@ -38,10 +36,11 @@ strictly decreasing there, which gives uniqueness. Existence follows from the in
 theorem applied to `γ*(·, x)` on `[−(k + 1), −k]`, since `γ*(−n, x) = xⁿ` (DLMF 8.4.12) has
 opposite signs at the two endpoints.
 
-For real `a` and `x > 0`, `x^a γ*(a, x)` has `x`-derivative `x^{a-1} e^{-x} / Γ(a)` and tends to
-`1` as `x → ∞`, so `γ*(a, x) = x^{-a} (1 - Γ(a, x) / Γ(a))` with
-`Γ(a, x) = ∫_x^∞ t^{a-1} e^{-t} dt`. On the band `Γ(a) > 0`, so the sign of `γ*(a, x)` is the sign
-of the log-gap `D(a, x) = log Γ(a) - log Γ(a, x)`, which is strictly increasing in `x`.
+For real `a` and `x > 0`, the complementary relation `1 - x^a γ*(a, x) = Γ(a, x) / Γ(a)`
+(DLMF 8.2.4–8.2.5, with the entire reciprocal of `Γ`) gives
+`γ*(a, x) = x^{-a} (1 - Γ(a, x) / Γ(a))` with `Γ(a, x) = ∫_x^∞ t^{a-1} e^{-t} dt`. On the band
+`Γ(a) > 0`, so the sign of `γ*(a, x)` is the sign of the log-gap `D(a, x) = log Γ(a) - log Γ(a, x)`,
+which is strictly increasing in `x`.
 
 The log-gap is strictly convex in `a` on the band. Indeed `(log Γ)'' = ψ'` and
 `ψ'(a) ≥ 1/a² + 1/(a + 2n - 1)²` there, from the shifted recurrence of `ψ'`. On the other side,
@@ -313,18 +312,20 @@ private theorem momentIntegrand_nonneg {x t : ℝ} (hx : 0 < x) (ht : x ≤ t) (
   have : 0 ≤ log t - log x := by linarith
   positivity
 
+/-- For `x ≥ 0` the upper incomplete Gamma function `Γ(a, x)` is the real zeroth moment. -/
+private theorem upperIncompleteGamma_ofReal_eq {x : ℝ} (hx : 0 ≤ x) (a : ℝ) :
+    Complex.upperIncompleteGamma a x = ((upperMoment x 0 a : ℝ) : ℂ) := by
+  rw [Complex.upperIncompleteGamma_ofReal, upperMoment, ← integral_complex_ofReal]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rw [momentIntegrand, pow_zero, one_mul, Complex.ofReal_mul,
+    Complex.ofReal_cpow (hx.trans (le_of_lt ht)), Complex.ofReal_exp]
+  push_cast
+  ring
+
 /-- For `x ≥ 0` the zeroth moment is the upper incomplete Gamma function `Γ(a, x)`. -/
 private theorem re_upperIncompleteGamma_ofReal {x : ℝ} (hx : 0 ≤ x) (a : ℝ) :
     (Complex.upperIncompleteGamma a x).re = upperMoment x 0 a := by
-  have h : ∫ t in Ioi x, (t : ℂ) ^ ((a : ℂ) - 1) * Complex.exp (-(t : ℂ)) =
-      ((upperMoment x 0 a : ℝ) : ℂ) := by
-    rw [upperMoment, ← integral_complex_ofReal]
-    refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-    rw [momentIntegrand, pow_zero, one_mul, Complex.ofReal_mul,
-      Complex.ofReal_cpow (hx.trans (le_of_lt ht)), Complex.ofReal_exp]
-    push_cast
-    ring
-  rw [Complex.upperIncompleteGamma_ofReal, h, Complex.ofReal_re]
+  rw [upperIncompleteGamma_ofReal_eq hx, Complex.ofReal_re]
 
 /-- The moments are nonnegative. -/
 private theorem upperMoment_nonneg {x : ℝ} (hx : 0 < x) (k : ℕ) (a : ℝ) : 0 ≤ upperMoment x k a :=
@@ -407,104 +408,20 @@ private theorem upperMoment_variance_le {x : ℝ} (hx : 0 < x) {a : ℝ} (ha : a
 /-! ### The regularized function `P(a, x)` on the positive axis -/
 
 open Complex in
-/-- The `x`-derivative of `P(a, x) = x^a γ*(a, x)` along the positive axis is
-`x^{a-1} e^{-x} / Γ(a)`, with the entire reciprocal of `Γ`. -/
-private theorem hasDerivAt_regularizedGamma_ofReal (a : ℝ) {t : ℝ} (ht : 0 < t) :
-    HasDerivAt (fun s : ℝ => Complex.regularizedGamma a s)
-      ((t ^ (a - 1) * Real.exp (-t) * (Real.Gamma a)⁻¹ : ℝ) : ℂ) t := by
-  have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht.ne'
-  have h := ((hasDerivAt_id (t : ℂ)).cpow_const (c := (a : ℂ))
-    (ofReal_mem_slitPlane.2 ht)).comp_ofReal.mul
-    (hasDerivAt_tricomiIncompleteGamma a t).comp_ofReal
-  convert h using 1
-  · funext s
-    simp only [Complex.regularizedGamma_def, Pi.mul_apply, id]
-  -- `a t^{a-1} (γ*(a, t) - t γ*(a + 1, t)) = a t^{a-1} e^{-t} / Γ(a + 1) = t^{a-1} e^{-t} / Γ(a)`
-  have hrec := tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a : ℂ) t
-  have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (a : ℂ)
-  have hpow : (t : ℂ) ^ (a : ℂ) = (t : ℂ) ^ ((a : ℂ) - 1) * t := by
-    rw [cpow_sub _ _ ht', cpow_one, div_mul_cancel₀ _ ht']
-  rw [ofReal_mul, ofReal_mul, ofReal_cpow ht.le, ofReal_exp, ofReal_inv, ← Gamma_ofReal]
-  simp only [id] at hG ⊢
-  push_cast
-  rw [hG, hpow]
-  linear_combination -(a : ℂ) * (t : ℂ) ^ ((a : ℂ) - 1) * hrec
-
-open Complex in
-/-- For `a > 0` and `x > 0`, the complex `P(a, x)` is Tau Ceti's real regularized lower
-incomplete Gamma function. -/
-private theorem regularizedGamma_ofReal_of_pos {a t : ℝ} (ha : 0 < a) (ht : 0 < t) :
-    Complex.regularizedGamma a t = (TauCeti.regularizedGamma a t : ℂ) := by
-  have ha' : 0 < (a : ℂ).re := by rwa [ofReal_re]
-  -- DLMF 8.2.1 at `r = 1` identifies the complex `γ(a, t)` with the real one
-  have h := intervalIntegral_cpow_mul_exp_neg_mul ha' one_ne_zero ht.le
-  simp only [one_mul, one_cpow] at h
-  have hlow : Complex.lowerIncompleteGamma a t = (TauCeti.lowerIncompleteGamma a t : ℂ) := by
-    rw [← h, ofReal_lowerIncompleteGamma_eq_partialGamma ht.le, Complex.partialGamma]
-    exact intervalIntegral.integral_congr fun s _ => by push_cast; ring
-  rw [regularizedGamma_eq_div, ofReal_div, ← hlow, Complex.lowerIncompleteGamma_def, ← Gamma_ofReal,
-    mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero_of_re_pos ha')]
-
-open Complex in
-/-- `P(a, x) → 1` as `x → ∞`, for every real `a`. For `a > 0` this is the limit of the real
-regularized Gamma function; the recurrence `P(a, x) = P(a + 1, x) + x^a e^{-x} / Γ(a + 1)`
-lowers the parameter one step at a time. -/
-private theorem tendsto_regularizedGamma_ofReal_atTop (a : ℝ) :
-    Tendsto (fun t : ℝ => Complex.regularizedGamma a t) atTop (𝓝 1) := by
-  obtain ⟨n, hn⟩ := exists_nat_gt (-a)
-  induction n generalizing a with
-  | zero =>
-    have ha : 0 < a := by simpa using hn
-    have h := (continuous_ofReal.tendsto 1).comp (tendsto_regularizedGamma_atTop ha)
-    rw [ofReal_one] at h
-    refine h.congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with t ht
-    exact (regularizedGamma_ofReal_of_pos ha ht).symm
-  | succ n ih =>
-    have h1 := ih (a + 1) (by push_cast at hn; linarith)
-    have h2 : Tendsto (fun t : ℝ => ((t ^ a * Real.exp (-1 * t) / Real.Gamma (a + 1) : ℝ) : ℂ))
-        atTop (𝓝 0) := by
-      have h := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero a 1 one_pos).div_const
-        (Real.Gamma (a + 1))
-      rw [zero_div] at h
-      have h' := (continuous_ofReal.tendsto 0).comp h
-      rwa [ofReal_zero] at h'
-    have h := h1.add h2
-    rw [add_zero] at h
-    refine h.congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with t ht
-    have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht.ne'
-    rw [Complex.regularizedGamma_def, Complex.regularizedGamma_def,
-      tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a : ℂ) t, ofReal_div,
-      ofReal_mul, ofReal_cpow ht.le, ofReal_exp, ← Gamma_ofReal]
-    push_cast
-    rw [cpow_add _ _ ht', cpow_one]
-    ring_nf
-
-open Complex in
 /-- For real `a` and `x > 0`: `P(a, x) = 1 - Γ(a, x) / Γ(a)`, with the entire reciprocal of `Γ`;
 hence `γ*(a, x) = x^{-a} (1 - Γ(a, x) / Γ(a))`. -/
 private theorem tricomi_ofReal_eq (a : ℝ) {x : ℝ} (hx : 0 < x) :
     tricomiIncompleteGamma a x =
       ((x ^ (-a) * (1 - (Complex.upperIncompleteGamma a x).re * (Real.Gamma a)⁻¹) : ℝ) : ℂ) := by
-  rw [re_upperIncompleteGamma_ofReal hx.le]
-  have h0 : IntegrableOn (fun t => momentIntegrand x 0 a t * (Real.Gamma a)⁻¹) (Ioi x) :=
-    (integrableOn_momentIntegrand hx 0 a).mul_const _
-  have hint : IntegrableOn (fun t => t ^ (a - 1) * Real.exp (-t) * (Real.Gamma a)⁻¹) (Ioi x) :=
-    h0.congr_fun (fun t _ => by simp [momentIntegrand]) measurableSet_Ioi
-  have hftc := integral_Ioi_of_hasDerivAt_of_tendsto
-    (hasDerivAt_regularizedGamma_ofReal a hx).continuousAt.continuousWithinAt
-    (fun t ht => hasDerivAt_regularizedGamma_ofReal a (hx.trans ht)) hint.ofReal
-    (tendsto_regularizedGamma_ofReal_atTop a)
-  rw [integral_complex_ofReal, integral_mul_const] at hftc
-  have hV : ∫ t in Ioi x, t ^ (a - 1) * Real.exp (-t) = upperMoment x 0 a :=
-    setIntegral_congr_fun measurableSet_Ioi fun t _ => by simp [momentIntegrand]
-  rw [hV, ofReal_mul, Complex.regularizedGamma_def] at hftc
+  have hQ := regularizedGammaQ_eq_upperIncompleteGamma_div a (ofReal_mem_slitPlane.2 hx)
+  rw [regularizedGammaQ_def, regularizedGamma_def, upperIncompleteGamma_ofReal_eq hx.le,
+    Gamma_ofReal] at hQ
   have hx' : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 hx.ne'
   have hpow : (x : ℂ) ^ (-(a : ℂ)) * (x : ℂ) ^ (a : ℂ) = 1 := by
     rw [cpow_neg, inv_mul_cancel₀ (cpow_ne_zero_iff.2 (Or.inl hx'))]
-  rw [ofReal_mul, ofReal_cpow hx.le, ofReal_neg, ofReal_sub, ofReal_one, ofReal_mul]
-  linear_combination (x : ℂ) ^ (-(a : ℂ)) * hftc - tricomiIncompleteGamma a x * hpow
+  rw [re_upperIncompleteGamma_ofReal hx.le, ofReal_mul, ofReal_cpow hx.le, ofReal_neg, ofReal_sub,
+    ofReal_one, ofReal_mul, ofReal_inv]
+  linear_combination -(x : ℂ) ^ (-(a : ℂ)) * hQ - tricomiIncompleteGamma a x * hpow
 
 /-- The log-gap `D(a, x) = log Γ(a) - log Γ(a, x)`. On the band it has the sign of `γ*(a, x)`. -/
 private def logGap (x a : ℝ) : ℝ :=

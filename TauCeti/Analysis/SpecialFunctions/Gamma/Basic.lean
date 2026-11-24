@@ -60,7 +60,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 * `Real.neg_one_pow_mul_Gamma_pos_of_mem_Ioo` — the sign of `Γ` between consecutive poles:
   `(-1)ᵏ Γ s > 0` on `(-k, -k + 1)`, with the even and odd cases `Real.Gamma_pos_of_mem_Ioo` and
   `Real.Gamma_neg_of_mem_Ioo`.
-* `Real.pi_div_factorial_le_Gamma_of_mem_Ioo` — `π / (2n)! ≤ Γ s` on `(-2n, -2n + 1)`, `n ≥ 1`.
+* `Real.pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo` — `π / k! ≤ (-1)ᵏ Γ s` on
+  `(-k, -k + 1)`, `k ≥ 1`, with the even case `Real.pi_div_factorial_le_Gamma_of_mem_Ioo`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
@@ -224,28 +225,41 @@ theorem Gamma_neg_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : 
   simpa [pow_succ, pow_mul] using neg_one_pow_mul_Gamma_pos_of_mem_Ioo (k := 2 * n + 1)
     (by push_cast; constructor <;> linarith [hs.1, hs.2])
 
-/-- `Γ s ≥ π / (2n)!` between the poles `-2n` and `-2n + 1`, for `n ≥ 1`: in the reflection formula
-`Γ(s) Γ(1 - s) sin(π s) = π` the factor `Γ(1 - s)` is at most `Γ(2n + 1) = (2n)!`. -/
-theorem pi_div_factorial_le_Gamma_of_mem_Ioo {n : ℕ} (hn : 1 ≤ n) {s : ℝ}
-    (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) : π / ((2 * n).factorial : ℝ) ≤ Gamma s := by
-  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-  have hG := Gamma_pos_of_mem_Ioo hs
+/-- `(-1)ᵏ Γ s ≥ π / k!` between the poles `-k` and `-k + 1`, for `k ≥ 1`: in the reflection
+formula `Γ(s) Γ(1 - s) sin(π s) = π` the factor `Γ(1 - s)` is at most `Γ(k + 1) = k!` and
+`(-1)ᵏ sin(π s)` is at most `1`. -/
+theorem pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo {k : ℕ} (hk : 1 ≤ k) {s : ℝ}
+    (hs : s ∈ Set.Ioo (-(k : ℝ)) (-k + 1)) : π / (k ! : ℝ) ≤ (-1) ^ k * Gamma s := by
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hG := neg_one_pow_mul_Gamma_pos_of_mem_Ioo hs
   have hG1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  -- `Γ` is convex on `[1, k + 1]`, with `Γ 1 = 1 ≤ k! = Γ (k + 1)`
+  have hle : Gamma (1 - s) ≤ (k ! : ℝ) := by
+    have h := convexOn_Gamma.le_max_of_mem_Icc (Set.mem_Ioi.2 one_pos)
+      (Set.mem_Ioi.2 (by positivity : (0 : ℝ) < k + 1)) (z := 1 - s)
+      ⟨by linarith [hs.2], by linarith [hs.1]⟩
+    rwa [Gamma_one, Gamma_nat_eq_factorial, max_eq_right (Nat.one_le_cast.2 k.factorial_pos)] at h
+  have hsin : (-1) ^ k * sin (π * s) ≤ 1 := by
+    rw [← sin_add_nat_mul_pi]
+    exact sin_le_one _
   have h := Gamma_mul_Gamma_one_sub s
-  have hsin : 0 < sin (π * s) := by
-    have : 0 < π / sin (π * s) := by rw [← h]; positivity
-    exact (div_pos_iff_of_pos_left pi_pos).1 this
-  have hle : Gamma (1 - s) ≤ ((2 * n).factorial : ℝ) := by
-    rw [← Gamma_nat_eq_factorial]
-    exact Gamma_strictMonoOn_Ici.monotoneOn (Set.mem_Ici.2 (by linarith [hs.2]))
-      (Set.mem_Ici.2 (by push_cast; linarith)) (by push_cast; linarith [hs.1])
+  have hsin0 : sin (π * s) ≠ 0 := fun h0 => by
+    rw [h0, div_zero] at h
+    exact mul_ne_zero (fun h' => by simp [h'] at hG) hG1.ne' h
   rw [div_le_iff₀ (by positivity)]
-  calc π = Gamma s * Gamma (1 - s) * sin (π * s) := by
-        rw [h, div_mul_cancel₀ _ hsin.ne']
-    _ ≤ Gamma s * ((2 * n).factorial : ℝ) * 1 := by
+  calc π = (-1) ^ k * Gamma s * (Gamma (1 - s) * ((-1) ^ k * sin (π * s))) := by
+        rw [show (-1) ^ k * Gamma s * (Gamma (1 - s) * ((-1) ^ k * sin (π * s))) =
+          ((-1) ^ k) ^ 2 * (Gamma s * Gamma (1 - s)) * sin (π * s) by ring, h, ← pow_mul,
+          pow_mul', neg_one_sq, one_pow, one_mul, div_mul_cancel₀ _ hsin0]
+    _ ≤ (-1) ^ k * Gamma s * (k ! : ℝ) := by
         gcongr
-        exact sin_le_one _
-    _ = _ := by ring
+        exact (mul_le_of_le_one_right hG1.le hsin).trans hle
+
+/-- `Γ s ≥ π / (2n)!` between the poles `-2n` and `-2n + 1`, for `n ≥ 1`. -/
+theorem pi_div_factorial_le_Gamma_of_mem_Ioo {n : ℕ} (hn : 1 ≤ n) {s : ℝ}
+    (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) : π / ((2 * n) ! : ℝ) ≤ Gamma s := by
+  simpa [pow_mul] using pi_div_factorial_le_neg_one_pow_mul_Gamma_of_mem_Ioo (k := 2 * n)
+    (by omega) (by push_cast; constructor <;> linarith [hs.1, hs.2])
 
 /-- The real Gamma function is at most `1` on `[1, 2]`: it is convex there, with
 `Γ 1 = Γ 2 = 1`. -/
