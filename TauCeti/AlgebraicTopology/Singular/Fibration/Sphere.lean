@@ -37,6 +37,15 @@ These are the first-page computations of the skeletal filtration of a Serre fibr
 sphere, read on the sphere itself rather than on the ambient Euclidean space
 (`TauCeti.toRelativeCWComplex` and its classical round trip).
 
+## Main definitions
+
+* `TauCeti.TopCat.sphereRelCWComplex`: the CW structure of the sphere on the sphere itself, with
+  its skeleta `TauCeti.TopCat.skeletonLT_sphereRelCWComplex`,
+  `TauCeti.TopCat.skeletonLT_succ_sphereRelCWComplex` and its single top cell
+  `TauCeti.TopCat.uniqueCellSphereRelCWComplex`.
+* `TauCeti.TopCat.spherePreimageSkeletonPairIso`: the pair of the two stages of the skeletal
+  filtration of `E` is the pair `(E, F)`.
+
 ## Main results
 
 * `TauCeti.TopCat.sphereFibrationSingularHomologyIso`: `Hq+n(E, F; R) ≅ Hq(p⁻¹(x₁); R)`.
@@ -77,7 +86,7 @@ variable (h : Fintype.card ι = n + 1)
 /-- The CW structure of the unit sphere `Sⁿ`, transported from the ambient Euclidean space to the
 sphere itself by the classical round trip `TauCeti.toRelativeCWComplex`. -/
 @[instance_reducible]
-private def sphereRelCWComplex :
+def sphereRelCWComplex :
     letI := sphereCWComplex h
     RelCWComplex (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1))
       (range (ContinuousMap.inclusion (base_subset_complex
@@ -88,7 +97,7 @@ private def sphereRelCWComplex :
 section Skeleton
 
 /-- For `1 ≤ k ≤ n`, `skeletonLT k` of the CW structure on the sphere is the pole. -/
-private lemma skeletonLT_sphereRelCWComplex {k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) :
+lemma skeletonLT_sphereRelCWComplex {k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) k :
       Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = {spherePolePoint h} := by
@@ -110,7 +119,7 @@ private def sphereRelCWComplexCellEquiv (m : ℕ) :
 
 /-- The CW structure on the sphere has no cells above dimension `n`, so `skeletonLT (n + 1)` is the
 whole sphere. -/
-private lemma skeletonLT_succ_sphereRelCWComplex :
+lemma skeletonLT_succ_sphereRelCWComplex :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) ((n + 1 : ℕ) : ℕ∞) :
       Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = univ :=
@@ -122,7 +131,7 @@ private lemma skeletonLT_succ_sphereRelCWComplex :
 
 /-- The CW structure on `Sⁿ`, `n ≥ 1`, has exactly one `n`-cell. -/
 @[instance_reducible]
-private def uniqueCellSphereRelCWComplex (hn : 1 ≤ n) :
+def uniqueCellSphereRelCWComplex (hn : 1 ≤ n) :
     letI := sphereRelCWComplex h
     Unique (cell (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n) :=
   letI := sphereCWComplex h
@@ -157,7 +166,7 @@ variable {E : _root_.TopCat.{u}} {p : E ⟶ _root_.TopCat.of (sphere (0 : Euclid
 
 /-- The pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` of the two stages of the skeletal filtration of `E` is the pair
 `(E, F)` of `E` and the fibre over the pole. -/
-private def preimageSkeletonPairIso (hn : 1 ≤ n) :
+def spherePreimageSkeletonPairIso (hn : 1 ≤ n) :
     letI := sphereRelCWComplex h
     preimageSkeletonPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n ≅
       TopPair.ofSubset (p ⁻¹' {spherePolePoint h}) :=
@@ -165,6 +174,25 @@ private def preimageSkeletonPairIso (hn : 1 ≤ n) :
   TopPair.ofInclusionIsoOfSubset _
     (fun x ↦ by rw [mem_preimage, skeletonLT_succ_sphereRelCWComplex h]; exact mem_univ _)
     (fun x ↦ by rw [mem_preimage, mem_preimage, skeletonLT_sphereRelCWComplex h hn le_rfl])
+
+@[simp]
+lemma spherePreimageSkeletonPairIso_hom_fst_apply (hn : 1 ≤ n)
+    (x : letI := sphereRelCWComplex h
+      (preimageSkeletonPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom x = x.val :=
+  TopPair.ofInclusionIsoOfSubset_hom_fst_apply ..
+
+/-- The projection of the pullback over the top cell, read in the pair `(E, F)`, sends a point of
+the pullback to its point of `E`. -/
+@[simp]
+lemma spherePreimageSkeletonPairIso_hom_fst_cellPullbackPairMap_fst_apply (hn : 1 ≤ n)
+    (x : letI := sphereRelCWComplex h
+      (cellPullbackPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
+    letI := sphereRelCWComplex h
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom
+      (TopPair.Hom.fst (cellPullbackPairMap p univ n) x) = x.val.2 :=
+  letI := sphereRelCWComplex h
+  (spherePreimageSkeletonPairIso_hom_fst_apply ..).trans (coe_cellPullbackPairMap_fst_apply ..)
 
 variable (hp : serreFibrations p) (R : Type u) [Ring R]
 
@@ -179,7 +207,8 @@ def sphereFibrationSingularHomologyIso (hn : 1 ≤ n) (q : ℕ) :
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
   letI := sphereRelCWComplex h
   letI := uniqueCellSphereRelCWComplex h hn
-  (TopPair.singularHomologyMapIso (ModuleCat.of R R) (preimageSkeletonPairIso h hn) (q + n)).symm ≪≫
+  (TopPair.singularHomologyMapIso (ModuleCat.of R R) (spherePreimageSkeletonPairIso h hn)
+      (q + n)).symm ≪≫
     preimageSkeletonPairSingularHomologyIsoSigma _ hp R n q ≪≫ coproductUniqueIso _ ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (Homeomorph.setCongr (by
@@ -196,8 +225,8 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   refine (isZero_singularHomology_preimage_skeletonLT (C := univ) hp R
     (k := ((i + 1 + 1 : ℕ) : ℕ∞)) (by norm_cast; omega) (by omega : m ≤ i)).of_iso ?_
   -- `(i : ℕ∞) + 1` and `((i + 1 : ℕ) : ℕ∞)` are defeq, so the pair is `preimageSkeletonPair p _ n`.
-  exact (TopPair.singularHomologyMapIso (ModuleCat.of R R) (preimageSkeletonPairIso h (by omega))
-    m).symm
+  exact (TopPair.singularHomologyMapIso (ModuleCat.of R R)
+    (spherePreimageSkeletonPairIso h (by omega)) m).symm
 
 section Contractible
 

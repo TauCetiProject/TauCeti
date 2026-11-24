@@ -115,7 +115,7 @@ def ιCategorySimplicial (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
   Limits.Sigma.ι (fun (τ : ComposableArrows C n) ↦ M.obj (τ.obj 0)) σ
 
 lemma ιCategorySimplicial_congr (M : C ⥤ A) {n : ℕ} {σ₁ σ₂ : ComposableArrows C n} (h : σ₁ = σ₂)
-    (h0 : σ₁.obj 0 = σ₂.obj 0 := by exact congrArg (fun τ ↦ τ.obj 0) h) :
+    (h0 : σ₁.obj 0 = σ₂.obj 0 := by rw [h]) :
     ιCategorySimplicial M σ₁ = eqToHom (congrArg M.obj h0) ≫ ιCategorySimplicial M σ₂ := by
   subst h; simp
 
@@ -279,7 +279,7 @@ lemma ιCategoryChainComplex_eq (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C
     ιCategoryChainComplex M σ = ιCategorySimplicial M σ := (rfl)
 
 lemma ιCategoryChainComplex_congr (M : C ⥤ A) {n : ℕ} {σ₁ σ₂ : ComposableArrows C n}
-    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by exact congrArg (fun τ ↦ τ.obj 0) h) :
+    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by rw [h]) :
     ιCategoryChainComplex M σ₁ = eqToHom (congrArg M.obj h0) ≫ ιCategoryChainComplex M σ₂ :=
   ιCategorySimplicial_congr M h h0
 

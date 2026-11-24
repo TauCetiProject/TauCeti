@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.ExpLog
-import TauCeti.NumberTheory.Padics.ExponentialDisc
+import TauCeti.NumberTheory.Padics.Exp.Log
+import TauCeti.NumberTheory.Padics.Exp.Disc
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
 
 /-!
@@ -127,14 +127,24 @@ private theorem norm_coe_sub_one_le (u : unitsPrincipal p (padicUnitsDepth p)) :
 private theorem norm_q : ‖(p : ℚ_[p]) ^ padicUnitsDepth p‖ = (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) :=
   Padic.norm_p_pow _
 
-private theorem q_ne_zero : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
+/-- The modulus `q = p ^ k` is nonzero in `ℚ_[p]`. -/
+theorem pow_padicUnitsDepth_ne_zero : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
   pow_ne_zero _ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
 
-private theorem norm_q_mul_le (s : ℤ_[p]) :
+/-- Multiples `q s` of the modulus `q = p ^ k` by `s ∈ ℤ_p` lie in the disc `‖y‖ ≤ p ^ (-k)`. -/
+theorem norm_pow_padicUnitsDepth_mul_le (s : ℤ_[p]) :
     ‖(p : ℚ_[p]) ^ padicUnitsDepth p * s‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) := by
   rw [norm_mul, norm_q]
   exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
     (PadicInt.norm_le_one s)
+
+/-- Conversely, an element of the disc `‖y‖ ≤ p ^ (-k)` is `q` times an element of `ℤ_p`. -/
+theorem div_pow_padicUnitsDepth_mem_subring {y : ℚ_[p]}
+    (hy : ‖y‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ))) :
+    y / (p : ℚ_[p]) ^ padicUnitsDepth p ∈ PadicInt.subring p := by
+  rw [PadicInt.mem_subring_iff, norm_div, norm_q,
+    div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
+  exact hy
 
 /-! ### The logarithm on `1 + qℤ_p` -/
 
@@ -170,10 +180,9 @@ private noncomputable def unitsPrincipalEquivUnitFiltration :
 
 /-- `x / q` for `x ∈ 𝓂 ^ k`, as an element of `ℤ_[p]`. -/
 private noncomputable def divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) : ℤ_[p] :=
-  ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p, by
-    rw [PadicInt.mem_subring_iff, norm_div, norm_q,
-      div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
-    exact TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property⟩
+  ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p,
+    div_pow_padicUnitsDepth_mem_subring
+      (TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property)⟩
 
 private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) :
     (divQ x : ℚ_[p]) = ((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
@@ -183,9 +192,9 @@ private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[�
 private noncomputable def mulQ (s : ℤ_[p]) : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]]) :=
   ⟨⟨(p : ℚ_[p]) ^ padicUnitsDepth p * s, by
     rw [Padic.integerRing_eq_subring, PadicInt.mem_subring_iff]
-    exact (norm_q_mul_le s).trans
+    exact (norm_pow_padicUnitsDepth_mul_le s).trans
       (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
-    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr (norm_q_mul_le s)⟩
+    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr (norm_pow_padicUnitsDepth_mul_le s)⟩
 
 private theorem coe_mulQ (s : ℤ_[p]) :
     ((mulQ s : 𝒪[ℚ_[p]]) : ℚ_[p]) = (p : ℚ_[p]) ^ padicUnitsDepth p * s :=
@@ -200,10 +209,12 @@ private noncomputable def maximalIdealPowEquiv :
   invFun s := .ofAdd (mulQ s.toAdd)
   left_inv x := by
     refine Multiplicative.toAdd.injective (Subtype.ext (Subtype.ext ?_))
-    rw [toAdd_ofAdd, coe_mulQ, toAdd_ofAdd, coe_divQ, mul_div_cancel₀ _ q_ne_zero]
+    rw [toAdd_ofAdd, coe_mulQ, toAdd_ofAdd, coe_divQ,
+      mul_div_cancel₀ _ pow_padicUnitsDepth_ne_zero]
   right_inv s := by
     refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
-    rw [toAdd_ofAdd, coe_divQ, toAdd_ofAdd, coe_mulQ, mul_div_cancel_left₀ _ q_ne_zero]
+    rw [toAdd_ofAdd, coe_divQ, toAdd_ofAdd, coe_mulQ,
+      mul_div_cancel_left₀ _ pow_padicUnitsDepth_ne_zero]
   map_mul' x y := by
     refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
     simp only [toAdd_mul, toAdd_ofAdd, PadicInt.coe_add, coe_divQ, Submodule.coe_add,
@@ -288,7 +299,7 @@ theorem unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (u : ℤ_[p]ˣ) :
   simp only [toAdd_ofAdd] at hu
   have hlog := norm_log_of_norm_sub_one_lt
     (hu.trans_lt (zpow_neg_lt_amiceRadius_zero (one_lt_sub_one_mul_padicUnitsDepth_add 1)))
-  rw [log_exp_of_norm_lt ((norm_q_mul_le (p := p) (u : ℤ_[p])).trans_lt
+  rw [log_exp_of_norm_lt ((norm_pow_padicUnitsDepth_mul_le (p := p) (u : ℤ_[p])).trans_lt
       (zpow_neg_lt_amiceRadius_zero one_lt_sub_one_mul_padicUnitsDepth)), norm_mul,
     norm_q, ← PadicInt.norm_def, PadicInt.norm_units, mul_one] at hlog
   have := hlog.trans_le hu

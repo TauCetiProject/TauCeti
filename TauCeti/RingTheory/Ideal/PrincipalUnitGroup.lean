@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.Topology.Algebra.Constructions
+public import Mathlib.Topology.Algebra.Group.Defs
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
@@ -53,7 +55,10 @@ so `1 + I` is an iterated extension of additive groups.
   is the kernel of the induced map on units.
 * `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal in the Jacobson
   radical is surjective.
+* `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
+  proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
+* `Ideal.isOpen_principalUnitGroup`: the principal unit group of an open ideal is open.
 
 ## References
 
@@ -117,6 +122,12 @@ theorem principalUnitGroup_pow_antitone (I : Ideal R) :
     Antitone fun n : ℕ ↦ (I ^ n).principalUnitGroup :=
   fun _ _ h ↦ principalUnitGroup_mono (pow_le_pow_right h)
 
+/-- In a ring with continuous subtraction, the principal unit group of an open ideal is open in
+the units, which carry the topology of `Units.embedProduct`. -/
+theorem isOpen_principalUnitGroup [TopologicalSpace R] [ContinuousSub R] {I : Ideal R}
+    (hI : IsOpen (I : Set R)) : IsOpen (I.principalUnitGroup : Set Rˣ) :=
+  (hI.preimage (continuous_id.sub continuous_const)).preimage Units.continuous_val
+
 section CommRing
 
 variable {R : Type*} [CommRing R]
@@ -131,6 +142,13 @@ theorem unitsMap_quotientMk_surjective {I : Ideal R} (hI : I ≤ jacobson ⊥) :
     Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
   IsLocalRing.surjective_units_map_of_local_ringHom _ Quotient.mk_surjective
     (_root_.isLocalHom_of_le_jacobson (by simpa only [Ideal.jacobson_bot] using hI))
+
+/-- Over a local ring, reduction of units modulo a proper ideal is surjective: a proper ideal lies
+in the maximal ideal, which is the Jacobson radical. -/
+theorem unitsMap_quotientMk_surjective_of_ne_top [IsLocalRing R] {I : Ideal R} (hI : I ≠ ⊤) :
+    Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
+  unitsMap_quotientMk_surjective ((IsLocalRing.le_maximalIdeal hI).trans_eq
+    (IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).symm)
 
 /-- For an ideal `I` contained in the Jacobson radical, the units of `R` modulo the principal
 unit group of `I` are the units of `R ⧸ I`. -/
