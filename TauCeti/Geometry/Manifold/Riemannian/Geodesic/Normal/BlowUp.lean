@@ -67,11 +67,10 @@ the inner product of `T_p M`. -/
 theorem blowUp_normalCoordinateMetric_zero_inner [T2Space M] [I.Boundaryless]
     (hU : IsNormalDomain I M p U) (v : hU.opens) (u w : TangentSpace I p) :
     (hU.normalCoordinateMetric.blowUp hU.starConvex_opens 0).inner v u w = inner ℝ u w := by
-  rw [ContMDiffRiemannianMetric.blowUp_zero_inner]
-  refine (normalCoordinateMetric_inner hU _ u w).trans ?_
-  refine (congrArg₂ (inner ℝ) (hU.mfderiv_riemannianExp_comp_val_zero_apply u)
-    (hU.mfderiv_riemannianExp_comp_val_zero_apply w)).trans ?_
-  rw [Function.comp_apply, riemannianExp_zero]
+  rw [ContMDiffRiemannianMetric.blowUp_zero_inner, normalCoordinateMetric_inner]
+  -- The origin of `hU.opens` is `0` as a vector of `T_p M`.
+  exact (DFunLike.congr_fun (DFunLike.congr_fun (riemannianExpPullbackMetric_zero p) u) w).trans
+    (innerSL_apply_apply ℝ u w)
 
 /-- For `t > 0`, the blow-up at scale `t` of the metric in normal coordinates has scalar
 curvature `t² Scal(g)(exp_p (t • v))` at `v`. -/

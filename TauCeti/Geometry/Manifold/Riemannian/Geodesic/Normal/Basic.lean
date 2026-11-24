@@ -57,9 +57,7 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   differential of the exponential map along a fixed vector is smooth on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.opens`: a normal domain as an open subset of `T_p M`, on which
   the exponential map is smooth with invertible differential
-  (`TauCeti.Manifold.IsNormalDomain.isInvertible_mfderiv_riemannianExp_comp_val`), equal to the
-  identity at the origin
-  (`TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_val_zero_apply`).
+  (`TauCeti.Manifold.IsNormalDomain.isInvertible_mfderiv_riemannianExp_comp_val`).
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
@@ -238,17 +236,6 @@ theorem isInvertible_mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U)
     ContinuousLinearMap.isInvertible_equiv
 
 variable [I.Boundaryless] [T2Space M]
-
-/-- At the origin of a normal domain, the differential of the exponential map read on the open
-subset sends every tangent vector to itself. -/
-theorem mfderiv_riemannianExp_comp_val_zero_apply (h : IsNormalDomain I M p U)
-    (z : TangentSpace 𝓘(ℝ, TangentSpace I p) (⟨0, h.zero_mem_opens⟩ : h.opens)) :
-    mfderiv 𝓘(ℝ, TangentSpace I p) I
-      (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) ⟨0, h.zero_mem_opens⟩ z =
-        z := by
-  rw [h.mfderiv_riemannianExp_comp_val, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, tangentSpaceOpenEquiv_apply]
-  exact mfderiv_riemannianExp_apply_zero (I := I) (M := M) p z
 
 /-- **The radial segment of a normal domain is a geodesic on `[0, 1]`.** -/
 theorem isGeodesicCurveOn_riemannianExp_smul_Icc (h : IsNormalDomain I M p U) (hv : v ∈ U) :

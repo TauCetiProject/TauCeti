@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Expansion
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
 /-!
@@ -19,8 +20,9 @@ subset `U` of the tangent space `T_p M`: the metric `g` read in normal coordinat
 
 * `TauCeti.Manifold.IsNormalDomain.normalCoordinateMetric`: the metric `exp_p^* g` on a normal
   domain.
-* `TauCeti.Manifold.IsNormalDomain.normalCoordinateMetric_inner`: it pairs two vectors as `g`
-  pairs their images under the differential of `exp_p`.
+* `TauCeti.Manifold.IsNormalDomain.normalCoordinateMetric_inner`: at `v` it is the bilinear form
+  `TauCeti.Manifold.riemannianExpPullbackMetric`, pairing two vectors as `g` pairs their images
+  under the differential of `exp_p` at `v`.
 -/
 
 public section
@@ -64,19 +66,19 @@ theorem normalCoordinateMetric_eq_pullback (hU : IsNormalDomain I M p U) :
           fun v ↦ (hU.isInvertible_mfderiv_riemannianExp_comp_val v).injective :=
   (rfl)
 
-/-- The metric in normal coordinates pairs two vectors as `g` pairs their images under the
-differential of the exponential map. -/
-theorem normalCoordinateMetric_inner (hU : IsNormalDomain I M p U) (v : hU.opens)
-    (u w : TangentSpace 𝓘(ℝ, TangentSpace I p) v) :
-    hU.normalCoordinateMetric.inner v u w =
-      inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I
-          (riemannianExp I M p ∘ (Subtype.val : hU.opens → TangentSpace I p)) v u)
-        (mfderiv 𝓘(ℝ, TangentSpace I p) I
-          (riemannianExp I M p ∘ (Subtype.val : hU.opens → TangentSpace I p)) v w) := by
+/-- At `v`, the metric in normal coordinates is the exponential pullback metric
+`riemannianExpPullbackMetric I M p v`: it pairs two vectors as `g` pairs their images under the
+differential of the exponential map at `v`. -/
+theorem normalCoordinateMetric_inner (hU : IsNormalDomain I M p U) (v : hU.opens) :
+    hU.normalCoordinateMetric.inner v = riemannianExpPullbackMetric I M p v := by
+  ext u w
   rw [normalCoordinateMetric_eq_pullback, ContMDiffRiemannianMetric.pullback_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
+    hU.mfderiv_riemannianExp_comp_val, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, tangentSpaceOpenEquiv_apply,
+    tangentSpaceOpenEquiv_apply]
   -- The bundle metric of the `RiemannianBundle` instance is its fibrewise `inner ℝ`.
-  rfl
+  exact (riemannianExpPullbackMetric_apply (I := I) (M := M) p v u w).symm
 
 end IsNormalDomain
 
