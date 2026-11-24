@@ -142,7 +142,7 @@ variable {K : Type u} [Field K]
 
 /-- The **orthogonal sum** `E ⊕ F` of hermitian vector bundles: the module `E × F` with the
 orthogonal sum metric. -/
-def prod (E F : HermitianBundle.{u, v} K) : HermitianBundle.{u, v} K where
+@[expose] def prod (E F : HermitianBundle.{u, v} K) : HermitianBundle.{u, v} K where
   carrier := E × F
   metric := E.metric.prod F.metric
 

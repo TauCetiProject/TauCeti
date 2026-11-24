@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
-
-import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
-import Mathlib.LinearAlgebra.TensorProduct.Projective
 
 /-!
 # Tensor products of hermitian vector bundles
@@ -80,14 +79,22 @@ def tmul : HermitianMetric K (E ⊗[𝓞 K] F) where
           Codomain.tensorProductEquiv_tmul, LinearMap.sesqTmul_tmul_tmul, map_mul,
           h.form_conjugate_tmul, h'.form_conjugate_tmul]
 
+/-- The tensor product form at `σ`, read through the identification
+`(E ⊗ F)_σ = E_σ ⊗_ℂ F_σ`, is the tensor product of the forms `h_σ` and `h'_σ`. -/
+theorem tmul_form_apply (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] (E ⊗[𝓞 K] F)) :
+    (h.tmul h').form σ u v =
+      (h.form σ).sesqTmul (h'.form σ) (Codomain.tensorProductEquiv σ E F u)
+        (Codomain.tensorProductEquiv σ E F v) :=
+  (rfl)
+
 /-- On pure tensors, the tensor product form is
 `(h ⊗ h')_σ(x ⊗ y, x' ⊗ y') = h_σ(x, x') h'_σ(y, y')`. -/
 @[simp]
 theorem tmul_form_tmul_tmul (σ : K →+* ℂ) (x x' : E) (y y' : F) :
     (h.tmul h').form σ (1 ⊗ₜ (x ⊗ₜ y)) (1 ⊗ₜ (x' ⊗ₜ y')) =
       h.form σ (1 ⊗ₜ x) (1 ⊗ₜ x') * h'.form σ (1 ⊗ₜ y) (1 ⊗ₜ y') := by
-  simp only [tmul, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Codomain.tensorProductEquiv_tmul, LinearMap.sesqTmul_tmul_tmul]
+  rw [tmul_form_apply, Codomain.tensorProductEquiv_tmul, Codomain.tensorProductEquiv_tmul,
+    LinearMap.sesqTmul_tmul_tmul]
 
 /-- In the tensor product, `‖x ⊗ y‖_σ = ‖x‖_σ ‖y‖_σ`. -/
 @[simp]
@@ -221,7 +228,7 @@ variable {K : Type u} [Field K]
 
 /-- The **tensor product** `E ⊗ F` of hermitian vector bundles: the module `E ⊗[𝓞 K] F` with the
 tensor product metric. -/
-def tmul (E F : HermitianBundle.{u, v} K) : HermitianBundle.{u, v} K where
+@[expose] def tmul (E F : HermitianBundle.{u, v} K) : HermitianBundle.{u, v} K where
   carrier := E ⊗[𝓞 K] F
   metric := E.metric.tmul F.metric
 
