@@ -114,7 +114,7 @@ theorem piLeft_symm_single (i : ι) (a : A i) (b : B) :
 /-- The `i`-th coordinate of `piLeft R A B x` is the image of `x` under the coordinate projection
 `∀ i, A i → A i` tensored with the identity of `B`. -/
 @[simp]
-theorem piLeft_apply (x : (∀ i, A i) ⊗[R] B) (i : ι) :
+theorem piLeft_apply (i : ι) (x : (∀ i, A i) ⊗[R] B) :
     piLeft R A B x i =
       Algebra.TensorProduct.map (Pi.evalAlgHom R A i) (AlgHom.id R B) x := by
   induction x with

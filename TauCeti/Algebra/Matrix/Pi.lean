@@ -278,8 +278,8 @@ theorem piLeftMatrixEquiv_apply (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n 
 
 /-- The inverse of `piLeftMatrixEquiv e` sends a matrix `M` over the product to the preimage
 under `piLeft` of the family whose `i`-th member is the preimage under `e i` of the `i`-th
-coordinate matrix `M.map fun x ↦ x i`. -/
-@[simp]
+coordinate matrix `M.map fun x ↦ x i`. It is not a simp lemma, so that `simp` can cancel
+`piLeftMatrixEquiv e ((piLeftMatrixEquiv e).symm M)`. -/
 theorem piLeftMatrixEquiv_symm_apply (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i))
     (M : Matrix n n (∀ i, A i)) :
     (piLeftMatrixEquiv e).symm M =
