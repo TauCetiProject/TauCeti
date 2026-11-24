@@ -1,0 +1,50 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Category.Profinite.Extend
+
+/-!
+# Common refinements of maps from a profinite set to finite sets
+
+Limits over `StructuredArrow S FintypeCat.toProfinite`, the category of maps from a profinite set
+`S` to finite sets, are computed by comparing maps through a common refinement. This file shows
+that any two such maps factor through a common surjection onto a finite set
+(`Profinite.exists_structuredArrow_surjective_refinement`); the surjection is the projection of
+`S` onto a discrete quotient, as an object `(Profinite.Extend.functor S.asLimitCone).obj Q`.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory
+
+namespace Profinite
+
+/-- Any two maps from a profinite set `S` to finite sets factor through a common surjection from
+`S` onto a finite set. -/
+theorem exists_structuredArrow_surjective_refinement (S : Profinite.{u})
+    (j₁ j₂ : StructuredArrow S FintypeCat.toProfinite) :
+    ∃ (j : StructuredArrow S FintypeCat.toProfinite) (_ : j ⟶ j₁) (_ : j ⟶ j₂),
+      Function.Surjective j.hom := by
+  have := FintypeCat.discreteTopology j₁.right
+  have := FintypeCat.discreteTopology j₂.right
+  let f : LocallyConstant S
+      (FintypeCat.toProfinite.obj j₁.right × FintypeCat.toProfinite.obj j₂.right) :=
+    ⟨fun x ↦ (j₁.hom x, j₂.hom x),
+      ((IsLocallyConstant.iff_continuous _).mpr j₁.hom.hom.hom.continuous).prodMk
+        ((IsLocallyConstant.iff_continuous _).mpr j₂.hom.hom.hom.continuous)⟩
+  refine ⟨(Extend.functor S.asLimitCone).obj f.discreteQuotient,
+    StructuredArrow.homMk (FintypeCat.homMk fun q ↦ (f.lift q).1) ?_,
+    StructuredArrow.homMk (FintypeCat.homMk fun q ↦ (f.lift q).2) ?_,
+    f.discreteQuotient.proj_surjective⟩
+  · ext x
+    rfl
+  · ext x
+    rfl
+
+end Profinite

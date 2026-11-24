@@ -62,6 +62,8 @@ noncomputable def fintypeToCondensedIso :
 
 theorem fintypeToCondensedIso_hom_app_hom_app_apply (F : FintypeCat.{u}) (T : CompHaus.{u})
     (f : ULift.{u + 1} (T ⟶ profiniteToCompHaus.obj (FintypeCat.toProfinite.obj F))) (t : T) :
+    -- The section is an element of the sections of a discrete condensed set, which elaboration
+    -- does not unfold to `LocallyConstant T (ULift F)`; the explicit `F` lets it be applied to `t`.
     DFunLike.coe (F := LocallyConstant T (ULift.{u + 1} F))
       ((fintypeToCondensedIso.hom.app F).hom.app (op T) f) t =
       ULift.up (f.down t) :=

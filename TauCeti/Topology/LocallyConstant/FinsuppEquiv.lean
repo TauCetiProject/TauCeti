@@ -67,8 +67,12 @@ noncomputable def locallyConstantFinsuppEquiv :
     classical
     ext t ⟨y⟩
     simp only [LocallyConstant.charFn, LocallyConstant.finsetSum_apply, Finset.sum_apply']
-    simp [locallyConstantFinsuppPairing_apply_apply, Finsupp.single_apply, ULift.ext_iff,
-      Pi.single_apply]
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LocallyConstant.map_apply,
+      Function.comp_apply, locallyConstantFinsuppPairing_apply_apply,
+      LocallyConstant.indicator_apply, LocallyConstant.coe_one, Set.indicator_singleton,
+      Pi.one_apply, Pi.single_apply, Int.cast_ite, Int.cast_one, Int.cast_zero, mul_ite, mul_one,
+      mul_zero, Finsupp.single_apply, ULift.ext_iff, Finset.sum_ite_eq', Finset.mem_univ,
+      ↓reduceIte]
     rw [Finsupp.sum_eq_single ⟨y⟩ (fun b _ hb ↦ by simp [ULift.ext_iff] at hb; simp [hb]) (by simp)]
     simp
   right_inv ψ := by
