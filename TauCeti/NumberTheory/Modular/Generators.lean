@@ -116,6 +116,7 @@ theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
   decide
 
 /-- The negative `-U = [[0, 1], [-1, 1]]` of `U` has order six: its cube is `-1`. -/
+@[simp]
 theorem neg_U_pow_three : (-U) ^ 3 = (-1 : SL(2, ℤ)) := by
   rw [Odd.neg_pow (by decide), U_pow_three]
 

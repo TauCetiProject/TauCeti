@@ -315,6 +315,12 @@ theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
     rw [JFin_eq_submatrix, det_submatrix_equiv_self]
     exact (isUnit_det_J _ _).mem_nonZeroDivisors
 
+/-- The transported alternating form of `Sp₂`, written out. -/
+theorem JFin_one_eq : JFin 1 R = !![0, -1; 1, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [JFin, Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
+
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
   ext i j

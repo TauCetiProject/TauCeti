@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Transvection.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transvection
 public import TauCeti.NumberTheory.Modular.Abelianization
 import Mathlib.LinearAlgebra.Matrix.ToLin
 
@@ -20,15 +21,21 @@ twist about a simple closed curve of primitive class `v` acts by `x ↦ x + (v �
 `τ_v` (Farb–Margalit, Proposition 6.3). In particular `τ_a = T = [[1, 1], [0, 1]]` and
 `τ_b = S T S⁻¹ = [[1, 0], [-1, 1]]`, in column convention.
 
-Conjugation moves the vector: `g τ_v g⁻¹ = τ_{g v}`. Since every primitive vector is the first
-column of a matrix in `SL(2, ℤ)`, every `τ_v` with `v` primitive is conjugate to `T`, so its class
-in the abelianization `SL(2, ℤ)ᵃᵇ ≅ ℤ/12` is `1`. Hence a positive factorization of the identity
-into such twists has length divisible by `12`. The bound is attained: `τ_a τ_b = -U` has order
-six, so `(τ_a τ_b)⁶ = 1` is a positive factorization of length `12`, while `(τ_a τ_b)³ = -1`.
+Since `SL(2, ℤ) = Sp(2, ℤ)`, `τ_v` is the case `m = 1`, `c = -1` of the general symplectic
+transvection `TauCeti.GLSymplecticFin.symplecticTransvection`, and its laws specialize those of
+the general one. Conjugation moves the vector: `g τ_v g⁻¹ = τ_{g v}`. Since every primitive vector
+is the first column of a matrix in `SL(2, ℤ)`, every `τ_v` with `v` primitive is conjugate to `T`,
+so its class in the abelianization `SL(2, ℤ)ᵃᵇ ≅ ℤ/12` is `1`. Hence a positive factorization of
+the identity into such twists has length divisible by `12`. The bound is attained: `τ_a τ_b = -U`
+has order six, so `(τ_a τ_b)⁶ = 1` is a positive factorization of length `12`, while
+`(τ_a τ_b)³ = -1`.
 
 ## Main declarations
 
 * `TauCeti.ModularGroup.symplecticTransvection`: the transvection `τ_v ∈ SL(2, ℤ)`.
+* `TauCeti.ModularGroup.toGL_symplecticTransvection`: `τ_v` is the general symplectic
+  transvection `TauCeti.GLSymplecticFin.symplecticTransvection v (-1)` of `Sp(2, ℤ) = SL(2, ℤ)`,
+  whose laws give the action on vectors and the conjugation law below.
 * `TauCeti.ModularGroup.toLin'_symplecticTransvection`: `τ_v` is `LinearMap.transvection`.
 * `TauCeti.ModularGroup.mul_symplecticTransvection_mul_inv`: `g τ_v g⁻¹ = τ_{g v}`.
 * `TauCeti.ModularGroup.isConj_T_symplecticTransvection`: for primitive `v`, `τ_v` is conjugate
@@ -62,18 +69,45 @@ def symplecticTransvection (v : Fin 2 → ℤ) : SL(2, ℤ) :=
     rw [Matrix.det_fin_two_of]; ring)
 
 /-- The matrix of the symplectic transvection `τ_v`. -/
+@[simp]
 theorem coe_symplecticTransvection (v : Fin 2 → ℤ) :
     (symplecticTransvection v : Matrix (Fin 2) (Fin 2) ℤ) =
       !![1 - v 0 * v 1, v 0 ^ 2; -v 1 ^ 2, 1 + v 0 * v 1] :=
   Matrix.SpecialLinearGroup.coe_mk _
 
+/-- The special linear group `SL(2, R)` is the symplectic group `Sp(2, R)`: every matrix of
+determinant one preserves the alternating form `J = [[0, -1], [1, 0]]`, since `Aᵀ J A = det A • J`
+for `2 × 2` matrices. -/
+private theorem toGL_mem_GLSymplecticFin {R : Type*} [CommRing R] (g : SL(2, R)) :
+    Matrix.SpecialLinearGroup.toGL g ∈ GLSymplecticFin 1 R := by
+  have h (A : Matrix (Fin 2) (Fin 2) R) :
+      Aᵀ * !![0, -1; 1, 0] * A = A.det • (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) R) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [Matrix.det_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+  rw [GLSymplecticFin.mem_iff', JFin_one_eq, Matrix.SpecialLinearGroup.coe_GL_coe_matrix, h,
+    g.prop, one_smul]
+
+/-- The symplectic transvection `τ_v` is the general symplectic transvection
+`TauCeti.GLSymplecticFin.symplecticTransvection v (-1)` of `Sp(2, ℤ)`. The parameter is `-1`
+because the general one is built from the form `vᵀ J x = v₁ x₀ - v₀ x₁ = -ω(v, x)`. -/
+theorem toGL_symplecticTransvection (v : Fin 2 → ℤ) :
+    Matrix.SpecialLinearGroup.toGL (symplecticTransvection v) =
+      (GLSymplecticFin.symplecticTransvection (m := 1) v (-1) : GL (Fin (1 + 1)) ℤ) := by
+  ext i j
+  rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, GLSymplecticFin.coe_symplecticTransvection,
+    JFin_one_eq]
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.vecHead, Matrix.vecTail] <;> ring
+
 /-- The symplectic transvection acts by `x ↦ x + ω(v, x) v`. -/
 theorem symplecticTransvection_mulVec (v x : Fin 2 → ℤ) :
     (symplecticTransvection v : Matrix (Fin 2) (Fin 2) ℤ) *ᵥ x =
       x + (v 0 * x 1 - v 1 * x 0) • v := by
-  ext i
-  fin_cases i <;>
-    simp [coe_symplecticTransvection, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+  rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix, toGL_symplecticTransvection,
+    GLSymplecticFin.coe_symplecticTransvection_mulVec, JFin_one_eq]
+  simp [dotProduct, Fin.sum_univ_two]
+  ring
 
 /-- The symplectic transvection `τ_v` is Mathlib's transvection for the linear form
 `ω(v, ·) = v₀ x₁ - v₁ x₀` and the vector `v`. -/
@@ -84,27 +118,22 @@ theorem toLin'_symplecticTransvection (v : Fin 2 → ℤ) :
   rw [Matrix.toLin'_apply, symplecticTransvection_mulVec, LinearMap.transvection.apply]
   simp
 
-/-- **Conjugating a transvection moves its vector**: `g τ_v g⁻¹ = τ_{g v}` in `SL(2, ℤ)`. -/
+/-- **Conjugating a transvection moves its vector**: `g τ_v g⁻¹ = τ_{g v}` in `SL(2, ℤ)`. This is
+`TauCeti.GLSymplecticFin.mul_symplecticTransvection_mul_inv`, since `SL(2, ℤ) = Sp(2, ℤ)`. -/
 theorem mul_symplecticTransvection_mul_inv (g : SL(2, ℤ)) (v : Fin 2 → ℤ) :
     g * symplecticTransvection v * g⁻¹ =
       symplecticTransvection ((g : Matrix (Fin 2) (Fin 2) ℤ) *ᵥ v) := by
-  rw [mul_inv_eq_iff_eq_mul]
-  have hdet : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
-    rw [← Matrix.det_fin_two]
-    exact g.prop
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [coe_symplecticTransvection, Matrix.mul_apply, Fin.sum_univ_two]
-  · linear_combination v 1 * (g 0 0 * v 0 + g 0 1 * v 1) * hdet
-  · linear_combination -v 0 * (g 0 0 * v 0 + g 0 1 * v 1) * hdet
-  · linear_combination v 1 * (g 1 0 * v 0 + g 1 1 * v 1) * hdet
-  · linear_combination -v 0 * (g 1 0 * v 0 + g 1 1 * v 1) * hdet
+  refine Matrix.SpecialLinearGroup.toGL_injective ?_
+  have h := GLSymplecticFin.mul_symplecticTransvection_mul_inv
+    (⟨Matrix.SpecialLinearGroup.toGL g, toGL_mem_GLSymplecticFin g⟩ : GLSymplecticFin 1 ℤ) v (-1)
+  rw [map_mul, map_mul, map_inv, toGL_symplecticTransvection, toGL_symplecticTransvection]
+  exact congrArg Subtype.val h
 
 /-- The transvection along the first basis vector is `T = [[1, 1], [0, 1]]`. -/
 @[simp]
 theorem symplecticTransvection_one_zero : symplecticTransvection ![1, 0] = T := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coe_symplecticTransvection]
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- The transvection along the second basis vector is `S T S⁻¹ = [[1, 0], [-1, 1]]`. -/
 theorem symplecticTransvection_zero_one : symplecticTransvection ![0, 1] = S * T * S⁻¹ := by
