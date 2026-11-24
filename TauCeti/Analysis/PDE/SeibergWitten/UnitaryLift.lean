@@ -78,7 +78,7 @@ negative half-spinors with determinant its determinant character
 
 On the positive half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u`
 (`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). With the formula
-for `c(v) c(w) u` in `TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line`
+for `c(v) c(w) u` in `TauCeti.LinearAlgebra.CliffordAlgebra.Kahler`
 (`TauCeti.AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply`), this gives the
 Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
 
