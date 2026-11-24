@@ -62,7 +62,8 @@ equality. -/
 theorem norm_gradient_mul_norm_sq_add_sq (x : E) :
     ‖∇ (fun y : E ↦ (K : ℝ) / 2 * ‖y‖ ^ 2 + c) x‖ ^ 2 =
       2 * K * ((K : ℝ) / 2 * ‖x‖ ^ 2 + c - c) := by
-  rw [gradient_mul_norm_sq_add, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+  rw [gradient_mul_norm_sq_add]
+  simp only [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
   ring
 
 /-- For `y ↦ K / 2 * ‖y‖ ^ 2 + c` the sufficient decrease inequality is an equality, for every
@@ -71,8 +72,7 @@ theorem mul_norm_sq_add_sub_smul_gradient (x : E) (η : ℝ) :
     (K : ℝ) / 2 * ‖x - η • ∇ (fun y : E ↦ (K : ℝ) / 2 * ‖y‖ ^ 2 + c) x‖ ^ 2 + c =
       K / 2 * ‖x‖ ^ 2 + c -
         η * (1 - K * η / 2) * ‖∇ (fun y : E ↦ (K : ℝ) / 2 * ‖y‖ ^ 2 + c) x‖ ^ 2 := by
-  have hstep : x - η • (K : ℝ) • x = (1 - η * K) • x := by
-    rw [sub_smul, one_smul, mul_smul]
+  have hstep : x - η • (K : ℝ) • x = (1 - η * K) • x := by module
   rw [gradient_mul_norm_sq_add, hstep]
   simp only [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
   ring
@@ -93,8 +93,7 @@ theorem lipschitzSmoothWith_const_add_inner :
 theorem const_add_inner_eq_add_inner_gradient (x y : E) :
     c + ⟪a, y⟫ = c + ⟪a, x⟫ + ⟪∇ (fun x : E ↦ c + ⟪a, x⟫) x, y - x⟫ +
       ((0 : ℝ≥0) : ℝ) / 2 * ‖y - x‖ ^ 2 := by
-  rw [gradient_const_add, gradient_inner_const_left, inner_sub_right]
-  simp
+  simp [inner_sub_right]
 
 /-- A `0`-smooth function that is bounded below has gradient `0` everywhere. -/
 theorem gradient_eq_zero_of_lipschitzSmoothWith_zero {f : E → ℝ} {m : ℝ}

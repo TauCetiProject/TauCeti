@@ -115,7 +115,8 @@ theorem ContinuousLinearMap.lipschitzSmoothWith_inner_div_two (A : E →L[ℝ] E
       ContinuousLinearMap.id_apply, fderivInnerCLM_apply, map_sub, inner_sub_left,
       inner_sub_right, smul_eq_mul]
     ring
-  rw [key, norm_div, Real.norm_eq_abs, Real.norm_ofNat, coe_nnNorm, dist_eq_norm']
+  rw [key]
+  simp only [norm_div, Real.norm_eq_abs, Nat.abs_ofNat, coe_nnNorm, dist_eq_norm']
   calc |⟪A (y - x), y - x⟫| / 2 ≤ ‖A‖ * ‖y - x‖ * ‖y - x‖ / 2 := by
         gcongr
         exact (abs_real_inner_le_norm _ _).trans (by gcongr; exact A.le_opNorm _)
@@ -133,7 +134,7 @@ theorem TauCeti.lipschitzSmoothWith_mul_norm_sq_add (a c : ℝ) :
   rw [hfun]
   refine ((a • ContinuousLinearMap.id ℝ E).lipschitzSmoothWith_inner_div_two.weaken
     (NNReal.coe_le_coe.1 ?_)).add_const c
-  rw [coe_nnNorm, coe_nnNorm]
+  simp only [coe_nnNorm]
   calc ‖a • ContinuousLinearMap.id ℝ E‖
       ≤ ‖a‖ * ‖ContinuousLinearMap.id ℝ E‖ := ContinuousLinearMap.opNorm_smul_le _ _
     _ ≤ ‖a‖ * 1 := by
