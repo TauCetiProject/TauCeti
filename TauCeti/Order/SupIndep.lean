@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.CompleteSublattice
 public import Mathlib.Order.SupIndep
 
 /-!
@@ -22,6 +23,8 @@ individual members.
   complemented by the supremum of the other members.
 * `iSupIndep.sum_elim`: in a modular lattice, two independent families with disjoint suprema
   combine into an independent family indexed by the sum type.
+* `CompleteSublattice.iSupIndep_coe_iff`: a family in a complete sublattice is independent exactly
+  when it is independent in the ambient lattice.
 -/
 
 public section
@@ -57,3 +60,9 @@ theorem iSupIndep.sum_elim {ι κ L : Type*} [CompleteLattice L] [IsModularLatti
   · rw [sup_comm]
     refine (hg j).disjoint_sup_right_of_disjoint_sup_left (hfg.symm.mono_left ?_)
     exact sup_le (le_iSup g j) (iSup₂_le fun j' _ ↦ le_iSup g j')
+
+/-- A family in a complete sublattice is independent exactly when it is independent in the ambient
+complete lattice. -/
+theorem CompleteSublattice.iSupIndep_coe_iff {ι α : Type*} [CompleteLattice α]
+    {L : CompleteSublattice α} {f : ι → L} : iSupIndep (fun i ↦ (f i : α)) ↔ iSupIndep f := by
+  simp only [iSupIndep_def, CompleteSublattice.disjoint_iff, CompleteSublattice.coe_iSup]
