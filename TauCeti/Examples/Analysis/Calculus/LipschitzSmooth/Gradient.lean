@@ -43,8 +43,9 @@ theorem lipschitzSmoothWith_coe_mul_norm_sq_add :
 theorem mul_norm_sq_add_eq_add_inner_gradient_add (x y : E) :
     (K : ℝ) / 2 * ‖y‖ ^ 2 + c = K / 2 * ‖x‖ ^ 2 + c +
       ⟪∇ (fun y : E ↦ (K : ℝ) / 2 * ‖y‖ ^ 2 + c) x, y - x⟫ + K / 2 * ‖y - x‖ ^ 2 := by
-  rw [gradient_mul_norm_sq_add, real_inner_smul_left, inner_sub_right, norm_sub_sq_real,
-    real_inner_self_eq_norm_sq, real_inner_comm x y]
+  rw [gradient_mul_norm_sq_add]
+  simp only [real_inner_smul_left, inner_sub_right, norm_sub_sq_real, real_inner_self_eq_norm_sq,
+    real_inner_comm x y]
   ring
 
 /-- For `y ↦ K / 2 * ‖y‖ ^ 2 + c` the quadratic lower bound misses by exactly
@@ -72,8 +73,8 @@ theorem mul_norm_sq_add_sub_smul_gradient (x : E) (η : ℝ) :
         η * (1 - K * η / 2) * ‖∇ (fun y : E ↦ (K : ℝ) / 2 * ‖y‖ ^ 2 + c) x‖ ^ 2 := by
   have hstep : x - η • (K : ℝ) • x = (1 - η * K) • x := by
     rw [sub_smul, one_smul, mul_smul]
-  rw [gradient_mul_norm_sq_add, hstep, norm_smul, norm_smul, mul_pow, mul_pow, Real.norm_eq_abs,
-    Real.norm_eq_abs, sq_abs, sq_abs]
+  rw [gradient_mul_norm_sq_add, hstep]
+  simp only [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
   ring
 
 end Quadratic

@@ -66,10 +66,9 @@ by at most `-η * (1 - K * η / 2) * ‖∇ f x‖ ^ 2`, for every real `η`. -/
 theorem apply_sub_smul_gradient_le (hf : LipschitzSmoothWith ℝ K f) (x : E) (η : ℝ) :
     f (x - η • ∇ f x) ≤ f x - η * (1 - K * η / 2) * ‖∇ f x‖ ^ 2 := by
   have h := hf.le_add_inner_gradient_add x (x - η • ∇ f x)
-  rw [sub_sub_cancel_left, inner_neg_right, real_inner_smul_right, real_inner_self_eq_norm_sq,
-    norm_neg, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs] at h
-  calc f (x - η • ∇ f x) ≤ f x + -(η * ‖∇ f x‖ ^ 2) + K / 2 * (η ^ 2 * ‖∇ f x‖ ^ 2) := h
-    _ = f x - η * (1 - K * η / 2) * ‖∇ f x‖ ^ 2 := by ring
+  simp only [sub_sub_cancel_left, inner_neg_right, real_inner_smul_right,
+    real_inner_self_eq_norm_sq, norm_neg, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs] at h
+  linarith
 
 /-- **The gradient bound at a lower bound.** If a `K`-smooth function is bounded below by `m`,
 then `‖∇ f x‖ ^ 2 ≤ 2 * K * (f x - m)`. -/
