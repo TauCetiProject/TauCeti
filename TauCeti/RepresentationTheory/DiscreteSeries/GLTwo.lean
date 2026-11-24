@@ -639,8 +639,8 @@ theorem glTwoCasimir_lieSubmodule
     (N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)) (v : N) :
     glTwoCasimir N v = (k * (k - 2) / 4) • v := by
   ext
-  rw [coe_glTwoCasimir_lieSubmodule, glTwoCasimir_compactWeightModule, LieSubmodule.coe_smul]
-  rfl
+  rw [coe_glTwoCasimir_lieSubmodule, glTwoCasimir_compactWeightModule, LieSubmodule.coe_smul,
+    LinearMap.smul_apply, one_apply_eq_self]
 
 /-- The identity matrix acts by `μ` on every Lie submodule of `TauCeti.CompactWeightModule k μ`. -/
 theorem one_lie_lieSubmodule
@@ -916,6 +916,8 @@ theorem equivFinsupp_reflection_apply (v : CompactWeightModule k μ) (ℓ : ℤ)
 @[simp]
 theorem reflection_weightVector (ℓ : ℤ) :
     reflection k μ (weightVector k μ ℓ) = weightVector k μ (-ℓ) :=
+  -- `reflection` is `Finsupp.domLCongr` and `weightVector` is `Finsupp.single` on the type
+  -- synonym, so this unfolds both to cite `Finsupp.domLCongr_single`.
   Finsupp.domLCongr_single _ _ _
 
 /-- The reflection is an involution. -/
