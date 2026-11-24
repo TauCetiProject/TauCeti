@@ -46,8 +46,8 @@ divisors.
   `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow_mul`: for integer bases `0 < b < a`,
   `1 < Φ_n(a, b)` when `n ≥ 2`, and `p < Φ_n(a, b)` for every prime `p ∣ n ≠ 0` when `2 ≤ a - b`
   or when `p ^ 2 ∣ n`.
-* `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
-  `TauCeti.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
+* `Nat.Prime.natCast_le_homogeneousCyclotomic_prime`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
   `a > 1`, in an ordered commutative ring.
 * `Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow`,
   `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow`: the same bounds for `Φ_{p ^ k}(a, b)`,
@@ -165,8 +165,8 @@ variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
 
 /-- For a prime `p` and `a, b ≥ 1` in an ordered commutative ring, `p ≤ Φ_p(a, b)`: each of the
 `p` terms of `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `1`. -/
-theorem natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R} (ha : 1 ≤ a)
-    (hb : 1 ≤ b) : (p : R) ≤ homogeneousCyclotomic p a b := by
+theorem _root_.Nat.Prime.natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R}
+    (ha : 1 ≤ a) (hb : 1 ≤ b) : (p : R) ≤ homogeneousCyclotomic p a b := by
   rw [homogeneousCyclotomic_prime hp]
   calc (p : R) = ∑ _i ∈ Finset.range p, (1 : R) := by simp
     _ ≤ _ := Finset.sum_le_sum fun i _ => one_le_mul_of_one_le_of_one_le (one_le_pow₀ ha)
@@ -175,8 +175,8 @@ theorem natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R
 /-- For a prime `p`, `1 < a` and `1 ≤ b` in an ordered commutative ring, `p < Φ_p(a, b)`: the term
 `a ^ (p - 1)` of `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` exceeds `1`. Since `Φ_p` is
 symmetric, the same holds for `1 ≤ a` and `1 < b`; at `a = b = 1`, `Φ_p(1, 1) = p`. -/
-theorem natCast_lt_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R} (ha : 1 < a)
-    (hb : 1 ≤ b) : (p : R) < homogeneousCyclotomic p a b := by
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R}
+    (ha : 1 < a) (hb : 1 ≤ b) : (p : R) < homogeneousCyclotomic p a b := by
   rw [homogeneousCyclotomic_prime hp]
   calc (p : R) = ∑ _i ∈ Finset.range p, (1 : R) := by simp
     _ < _ := Finset.sum_lt_sum
@@ -191,7 +191,7 @@ theorem _root_.Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow {p k : ℕ} 
     (p : R) ≤ homogeneousCyclotomic (p ^ k) a b := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
   rw [homogeneousCyclotomic_prime_pow hp]
-  exact natCast_le_homogeneousCyclotomic_prime hp (one_le_pow₀ ha) (one_le_pow₀ hb)
+  exact hp.natCast_le_homogeneousCyclotomic_prime (one_le_pow₀ ha) (one_le_pow₀ hb)
 
 /-- For a prime `p`, `k ≠ 0`, `1 < a` and `1 ≤ b` in an ordered commutative ring,
 `p < Φ_{p ^ k}(a, b)`. -/
@@ -200,7 +200,7 @@ theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow {p k : ℕ} 
     (p : R) < homogeneousCyclotomic (p ^ k) a b := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
   rw [homogeneousCyclotomic_prime_pow hp]
-  exact natCast_lt_homogeneousCyclotomic_prime hp
+  exact hp.natCast_lt_homogeneousCyclotomic_prime
     (one_lt_pow₀ ha (pow_ne_zero _ hp.ne_zero)) (one_le_pow₀ hb)
 
 end TauCeti
