@@ -523,8 +523,9 @@ that restricts to `χ` on the copy of `M` and is trivial on the canonical sectio
 theorem eq_extendHom (f : α.Extension →* A) (hf : ∀ a, f (inl α a) = χ a)
     (hs : ∀ g, f (α.canonicalSection g) = 1) : f = α.extendHom h χ hχ := by
   ext x
-  rw [← inl_mul_canonicalSection α x, map_mul, map_mul, hf, hs, extendHom_canonicalSection,
-    extendHom_apply, inl_left]
+  rw [← inl_mul_canonicalSection α x]
+  simp only [map_mul, hf, hs]
+  simp
 
 end ExtendHom
 
