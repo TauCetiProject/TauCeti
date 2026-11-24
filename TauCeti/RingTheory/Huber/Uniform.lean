@@ -40,6 +40,13 @@ a nonzero nilpotent element is not uniform.
 * `TauCeti.Huber.isUniform_of_isReduced_quotient`: if `B` is an open bounded subring and `ϖ ∈ B`
   is topologically nilpotent and regular in `A` with `B ⧸ ϖB` reduced, then `A` is uniform, since
   `A° = B` by `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`.
+* `TauCeti.Huber.mem_of_pow_mem_of_pow_dvd_pow`,
+  `TauCeti.Huber.mul_mem_of_isPowerBounded_of_pow_dvd_pow`,
+  `TauCeti.Huber.isUniform_of_pow_dvd_pow`: if `B` is an open subring and `ϖ ∈ B` a
+  pseudouniformiser of `A` such that `ϖ ^ n ∣ y ^ n` forces `ϖ ∣ y` in `B` (injectivity of
+  Frobenius `B ⧸ ϖ → B ⧸ ϖ ^ n`), then `B` is closed under `n`-th roots in `A`, and for `n > 1`
+  `ϖ A° ⊆ B`; so `A` is uniform when `B` is moreover bounded (Bhatt–Morrow–Scholze, *Integral
+  `p`-adic Hodge theory*, Lemma 3.21).
 * `TauCeti.Huber.IsUniform.isAdicComplete_span_singleton`: in a complete Hausdorff uniform Huber
   ring, `A°` is `a`-adically complete for every pseudouniformiser `a ∈ A°`.
 
@@ -54,6 +61,7 @@ division rings, by `TauCeti.Huber.IsUniform.of_normedDivisionRing` in
   (2018).
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 6.2 and Corollary 6.4.
 * K. Fujiwara, F. Kato, *Foundations of Rigid Geometry I*, Appendix B, Proposition B.1.3(1).
+* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.21 and its proof.
 -/
 
 public section
@@ -131,6 +139,69 @@ theorem isUniform_of_isReduced_quotient (hBo : IsOpen (B : Set A)) (hBb : IsBoun
     (isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred).mp hx
 
 end ReducedQuotient
+
+section RootClosed
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A] {B : Subring A}
+  {ϖ : B} {n : ℕ}
+
+/-- **An open subring with injective Frobenius modulo a pseudouniformiser is root closed.** Let `B`
+be an open subring of `A` and `ϖ ∈ B` a pseudouniformiser of `A` such that `ϖ ^ n ∣ y ^ n` forces
+`ϖ ∣ y` in `B`. Then `x ^ n ∈ B` implies `x ∈ B` for every `x ∈ A`. -/
+theorem mem_of_pow_mem_of_pow_dvd_pow (hBo : IsOpen (B : Set A))
+    (hϖ : IsPseudoUniformizer (ϖ : A)) (hinj : ∀ y : B, ϖ ^ n ∣ y ^ n → ϖ ∣ y) {x : A}
+    (hx : x ^ n ∈ B) : x ∈ B := by
+  obtain ⟨N, hN⟩ :=
+    exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent hBo x
+  -- if `x ϖ ^ (N + 1) ∈ B`, then `ϖ ^ n` divides its `n`-th power, so `x ϖ ^ N ∈ B`
+  induction N with
+  | zero => simpa using hN
+  | succ N ih =>
+    refine ih ?_
+    have hmem : x ^ n * (ϖ : A) ^ (n * N) ∈ B := B.mul_mem hx (B.pow_mem ϖ.property _)
+    have hpow : (⟨_, hN⟩ : B) ^ n = ϖ ^ n * ⟨_, hmem⟩ := Subtype.ext <| by
+      simp only [Subring.coe_pow, Subring.coe_mul]
+      ring
+    obtain ⟨w, hw⟩ := hinj ⟨_, hN⟩ ⟨_, hpow⟩
+    have hw' : (ϖ : A) * (x * (ϖ : A) ^ N) = ϖ * w := by
+      rw [← Subring.coe_mul, ← hw]
+      ring
+    exact hϖ.isUnit.mul_left_cancel hw' ▸ w.property
+
+/-- Under the hypotheses of `TauCeti.Huber.mem_of_pow_mem_of_pow_dvd_pow`, `x ^ (n ^ k) ∈ B`
+implies `x ∈ B`. -/
+theorem mem_of_pow_pow_mem_of_pow_dvd_pow (hBo : IsOpen (B : Set A))
+    (hϖ : IsPseudoUniformizer (ϖ : A)) (hinj : ∀ y : B, ϖ ^ n ∣ y ^ n → ϖ ∣ y) {x : A} {k : ℕ}
+    (hx : x ^ n ^ k ∈ B) : x ∈ B := by
+  induction k with
+  | zero => simpa using hx
+  | succ k ih =>
+    exact ih (mem_of_pow_mem_of_pow_dvd_pow hBo hϖ hinj (by rwa [← pow_mul, ← pow_succ]))
+
+/-- **`ϖ A° ⊆ B`** for an open subring `B` of `A` and a pseudouniformiser `ϖ ∈ B` of `A` such that
+`ϖ ^ n ∣ y ^ n` forces `ϖ ∣ y` in `B`, for some `n > 1`. -/
+theorem mul_mem_of_isPowerBounded_of_pow_dvd_pow (hBo : IsOpen (B : Set A))
+    (hϖ : IsPseudoUniformizer (ϖ : A)) (hn : 1 < n) (hinj : ∀ y : B, ϖ ^ n ∣ y ^ n → ϖ ∣ y)
+    {x : A} (hx : IsPowerBounded x) : (ϖ : A) * x ∈ B := by
+  have ht : ∀ᶠ m in atTop, ((ϖ : A) * x) ^ m ∈ B := by
+    rw [mul_comm]
+    exact (hx.isTopologicallyNilpotent_mul hϖ.isTopologicallyNilpotent)
+      (hBo.mem_nhds B.zero_mem)
+  obtain ⟨k, hk⟩ := eventually_atTop.mp ht
+  exact mem_of_pow_pow_mem_of_pow_dvd_pow hBo hϖ hinj (hk _ (Nat.lt_pow_self hn).le)
+
+/-- **A topological ring with a bounded open subring with injective Frobenius modulo a
+pseudouniformiser is uniform.** If `B` is an open bounded subring of `A` and `ϖ ∈ B` a
+pseudouniformiser of `A` such that `ϖ ^ n ∣ y ^ n` forces `ϖ ∣ y` in `B` for some `n > 1`, then
+`A° ⊆ ϖ⁻¹ B` is bounded. -/
+theorem isUniform_of_pow_dvd_pow (hBo : IsOpen (B : Set A)) (hBb : IsBounded (B : Set A))
+    (hϖ : IsPseudoUniformizer (ϖ : A)) (hn : 1 < n) (hinj : ∀ y : B, ϖ ^ n ∣ y ^ n → ϖ ∣ y) :
+    IsUniform A :=
+  isUniform_iff.mpr <| ((isBounded_singleton (↑hϖ.isUnit.unit⁻¹ : A)).mul hBb).subset
+    fun x hx ↦ ⟨_, rfl, _, mul_mem_of_isPowerBounded_of_pow_dvd_pow hBo hϖ hn hinj hx,
+      hϖ.isUnit.unit.inv_mul_cancel_left x⟩
+
+end RootClosed
 
 section Huber
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormResidueSymbol.Basic
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Kummer.Degree
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified

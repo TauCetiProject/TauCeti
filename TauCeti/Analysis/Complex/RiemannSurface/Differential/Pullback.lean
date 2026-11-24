@@ -105,6 +105,19 @@ theorem pullback_const_smul (c : ℂ) (ω : OneForm Y) (f : X → Y) :
   intro v
   rfl
 
+/-- Pullback is injective if each target point has a preimage where the derivative is surjective.
+Critical points elsewhere do not affect the conclusion. -/
+theorem pullback_injective {f : X → Y}
+    (hf : ∀ y, ∃ x, f x = y ∧ Surjective (mfderiv 𝓘(ℂ) 𝓘(ℂ) f x)) :
+    Injective fun ω : OneForm Y ↦ ω.pullback f := by
+  intro ω η h
+  funext y
+  obtain ⟨x, rfl, hx⟩ := hf y
+  apply ContinuousLinearMap.ext
+  intro v
+  obtain ⟨w, rfl⟩ := hx v
+  simpa only [pullback_apply] using DFunLike.congr_fun (congrFun h x) w
+
 /-- Pullback reverses composition of differentiable maps. -/
 theorem pullback_comp (ω : OneForm Z) {f : X → Y} {g : Y → Z}
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hg : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) g) :
