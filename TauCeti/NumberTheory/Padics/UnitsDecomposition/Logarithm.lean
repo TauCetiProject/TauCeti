@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.ExpLog
-import TauCeti.NumberTheory.Padics.ExponentialDisc
+import TauCeti.NumberTheory.Padics.Exp.Log
+import TauCeti.NumberTheory.Padics.Exp.Disc
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
 
 /-!
