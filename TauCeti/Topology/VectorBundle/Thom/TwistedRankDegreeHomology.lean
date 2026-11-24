@@ -888,6 +888,30 @@ def fiberThomPairSignIso (b : B) (o : Orientation ℝ (E b) ι) :
     fiberSignIso hι (mem_univ b) o
 
 omit [FiniteDimensional ℝ F] in
+/-- The components of `fiberThomPairSignIso` are the transports between the pull-backs along the
+two descriptions of the fibre inclusion, followed by the trivialization `fiberSignIso` of the fibre
+over `b` as a fibre of the pair over the whole base: the comparison `TopPair.fstPullbackCompIso`
+between them is the identity on each fibre. -/
+private theorem fiberThomPairSignIso_hom_app_eq (b : B) (o : Orientation ℝ (E b) ι)
+    (x : FundamentalGroupoid (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).fst) :
+    (fiberThomPairSignIso F E R hι b o).hom.app x =
+      (eqToHom (congrArg (fun g : _ ⟶ (thomPair F E).fst ↦
+          (LocalCoefficientSystem.pullback g.hom).obj (thomPairSignLocalSystem F E R hι))
+          (congrArg TopPair.Hom.fst
+            (fiberThomPairOverMap_comp_thomPairOverUnivIso_hom F E b)).symm)).app x ≫
+        ((LocalCoefficientSystem.pullback
+            (TopPair.Hom.fst (fiberThomPairOverMap F E (mem_univ b))).hom).map
+          (eqToHom (congrArg (fun g : C((thomPairOver F E univ).fst, (thomPair F E).fst) ↦
+            (LocalCoefficientSystem.pullback g).obj (thomPairSignLocalSystem F E R hι))
+              (thomPairOverUnivIso_hom_fst_eq F E)))).app x ≫
+        (fiberSignIso hι (mem_univ b) o).hom.app x :=
+  -- A term rather than `rw`: `fstPullbackCompIso` pulls back `thomPairSignLocalSystem` along maps
+  -- into `(thomPair F E).fst`, which is the total space only after unfolding.
+  congrArg (_ ≫ ·) ((congrArg (· ≫ _) (TopPair.fstPullbackCompIso_hom_app
+    (fiberThomPairOverMap F E (mem_univ b)) (thomPairOverUnivIso F E).hom
+    (thomPairSignLocalSystem F E R hι) x)).trans (Category.id_comp _))
+
+omit [FiniteDimensional ℝ F] in
 /-- The components of `fiberThomPairSignIso` at `o` are evaluation at the orientation `o` of the
 fibre `E_b` over the projection `b` of each point. -/
 theorem fiberThomPairSignIso_hom_app (b : B) (o : Orientation ℝ (E b) ι)
@@ -898,14 +922,12 @@ theorem fiberThomPairSignIso_hom_app (b : B) (o : Orientation ℝ (E b) ι)
         (VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
           (congrArg TotalSpace.proj
             (fiberThomPairMap_fst_apply F E b x.as)).symm).toModuleIso.hom := by
-  rw [fiberThomPairSignIso]
-  simp only [Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app]
-  -- `erw`: the components live over the fibre pair, whose coefficient systems are pull-backs of
-  -- `thomPairSignLocalSystem` only after unfolding; every component except the evaluation at `o`
-  -- is an identity or a transport between fibres of `o(E)` over equal points.
-  erw [Iso.trans_hom, NatTrans.comp_app, TopPair.fstPullbackCompIso_hom_app, Functor.mapIso_hom,
-    eqToIso.hom, eqToHom_map, eqToHom_app, eqToHom_map, eqToHom_app, Category.id_comp,
-    eqToHom_trans_assoc, fiberSignIso_hom_app]
+  -- Every component except the evaluation at `o` is an identity or a transport between fibres of
+  -- `o(E)` over equal points.
+  simp only [fiberThomPairSignIso_hom_app_eq, eqToHom_map, eqToHom_app, fiberSignIso_hom_app]
+  -- The two transports compose; their middle fibres agree only after unfolding, out of `simp`'s
+  -- reach.
+  refine (eqToHom_trans_assoc _ _ _).trans ?_
   -- Both sides evaluate at the orientation `o`, after transporting along `π (j x) = b`.
   refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ ?_)
   refine (VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply (R := R) hι o _).trans ?_
