@@ -51,14 +51,16 @@ Its *connection* is `S(t) = J₀ Φ(t)⁻¹ Φ'(t)` (`TauCeti.frameConnection`).
 
 * `D (Φ w) = Φ (∂s w + J₀ ∂t w + S w)` (`TauCeti.orbitTorusVerticalOperator_frame_apply`);
 * `S` is `d`-periodic, and symmetric because `Φ(t)` is symplectic
-  (`TauCeti.frameConnection_periodic`, `TauCeti.isSymmetric_frameConnection`);
+  (`TauCeti.frameConnection_periodic`, `TauCeti.isSymmetric_frameConnection`), so `J₀ S` is a
+  loop on `ℝ / dℤ` (`TauCeti.exists_continuousMap_addCircle_eq_comp_frameConnection`);
 * the propagator `Ψ` of `w' = J₀ S(t) w` satisfies `Φ(t) Ψ(t) = Φ(0)`
   (`TauCeti.comp_dysonSeriesLeft_frameConnection`), so the model return map
   `Ψ(d) = Φ(d)⁻¹ P Φ(d)` is conjugate to the actual return map `P`
   (`TauCeti.comp_dysonSeriesLeft_frameConnection_eq_comp`), and
-  `det (c ∓ Ψ(d) ^ n) = det (c ∓ P ^ n)`
-  (`TauCeti.det_smul_one_sub_dysonSeriesLeft_frameConnection_pow`,
-  `TauCeti.det_smul_one_add_dysonSeriesLeft_frameConnection_pow`);
+  `det p(Ψ(d)) = det p(P)` for every real polynomial `p`
+  (`TauCeti.det_aeval_dysonSeriesLeft_frameConnection`), in particular
+  `det (c - Ψ(d) ^ n) = det (c - P ^ n)`
+  (`TauCeti.det_smul_one_sub_dysonSeriesLeft_frameConnection_pow`);
 * for a unitary frame from `ℂ`, the loop `i S(t)` is infinitesimally symplectic for the Hermitian
   product (`TauCeti.im_inner_comp_frameConnection_add_eq_zero`).
 
@@ -82,9 +84,12 @@ and the resulting monodromy across the seam is a rotation `exp (i θ)`, removed 
 `TauCeti.forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_of_finrank_eq_two`).
 
 These are statements about classical `C²` sections over the parameter plane, with the twists
-recorded as quasi-periodicity conditions. The determinant signs of the twisted operators, which
-need a Fredholm realization and a homotopy to a complex-linear reference, are read off from the
-return map in `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.FrameOrientation`.
+recorded as quasi-periodicity conditions. The determinant signs of the twisted operators need a
+Fredholm realization and a homotopy to a complex-linear reference.
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.FrameOrientation` reads off from the return
+map the signs of the Sobolev model operators in a frame, for the two twists periodic along the
+circle factor; identifying these model operators with a Fredholm realization of the actual normal
+operator is not done.
 
 ## References
 
@@ -259,6 +264,19 @@ theorem frameConnection_periodic {P : V →L[ℝ] V} {d : ℝ} (hΦd : Different
   rw [(hΦ t).self_apply_inverse, ← comp_deriv_add_eq (hΦd _) (hΦd t).hasDerivAt hseam, ← hseam t,
     coe_comp, Function.comp_apply, (hΦ (t + d)).self_apply_inverse, coe_comp, Function.comp_apply]
 
+/-- **The loop of a frame.** For a `C¹` path of isomorphisms `Φ` compatible with the seam,
+`P Φ(t + d) = Φ(t)`, the path `t ↦ J₀ S(t)`, `S` the connection of `Φ`, is continuous and
+`d`-periodic, so it is a loop on `ℝ / dℤ`. -/
+theorem exists_continuousMap_addCircle_eq_comp_frameConnection [CompleteSpace W] {P : V →L[ℝ] V}
+    {d : ℝ} (hΦ1 : ContDiff ℝ 1 Φ) (hΦ : ∀ t, (Φ t).IsInvertible)
+    (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) :
+    ∃ S : C(AddCircle d, W →L[ℝ] W), ∀ t : ℝ, S t = J₀ ∘L frameConnection J₀ Φ t := by
+  have hper : Function.Periodic (fun t ↦ J₀ ∘L frameConnection J₀ Φ t) d := fun t ↦ by
+    simp only [frameConnection_periodic (hΦ1.differentiable one_ne_zero) hΦ hseam t]
+  exact ⟨⟨hper.lift, continuous_coinduced_dom.2
+    (continuous_const.clm_comp (contDiff_frameConnection (m := 0) hΦ1 hΦ).continuous)⟩,
+    fun t ↦ by simp [Function.Periodic.lift_coe]⟩
+
 /-- Iterating the seam identity: `P ^ n Φ(t + n d) = Φ(t)`. -/
 private theorem pow_comp_add_natCast_mul {P : V →L[ℝ] V} {d : ℝ}
     (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) (n : ℕ) (t : ℝ) : (P ^ n) ∘L Φ (t + n * d) = Φ t := by
@@ -290,10 +308,22 @@ private theorem exists_conjAlgEquiv_dysonSeriesLeft_frameConnection [CompleteSpa
   simp only [← he, coe_comp, Function.comp_apply] at h
   simpa [LinearEquiv.conjAlgEquiv_apply] using h
 
-/-- **`det (c - Ψ(d) ^ n) = det (c - P ^ n)`.** Under the hypotheses of
-`TauCeti.comp_dysonSeriesLeft_frameConnection_eq_comp`, the return map `Ψ(d)` of
-`w' = J₀ S(t) w` is conjugate to `P`, so `c - Ψ(d) ^ n` and `c - P ^ n` have the same determinant
-for every scalar `c`. -/
+/-- **The return map of the connection and the seam map have the same characteristic
+determinants.** Under the hypotheses of `TauCeti.comp_dysonSeriesLeft_frameConnection_eq_comp`,
+the return map `Ψ(d)` of `w' = J₀ S(t) w` is conjugate to `P`, so `p(Ψ(d))` and `p(P)` have the
+same determinant for every real polynomial `p`. -/
+theorem det_aeval_dysonSeriesLeft_frameConnection [CompleteSpace W] {P : V →L[ℝ] V} {d : ℝ}
+    (hΦ1 : ContDiff ℝ 1 Φ) (hΦ : ∀ t, (Φ t).IsInvertible) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
+    (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) (p : Polynomial ℝ) :
+    LinearMap.det (Polynomial.aeval
+      ((dysonSeriesLeft (fun t => J₀ ∘L frameConnection J₀ Φ t) d : W →L[ℝ] W) : W →ₗ[ℝ] W) p) =
+      LinearMap.det (Polynomial.aeval (P : V →ₗ[ℝ] V) p) := by
+  obtain ⟨e, he⟩ := exists_conjAlgEquiv_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam
+  rw [← LinearMap.det_conj _ e, ← he, Polynomial.aeval_algEquiv, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply]
+
+/-- **`det (c - Ψ(d) ^ n) = det (c - P ^ n)`.** The case `p = c - X ^ n` of
+`TauCeti.det_aeval_dysonSeriesLeft_frameConnection`. -/
 theorem det_smul_one_sub_dysonSeriesLeft_frameConnection_pow [CompleteSpace W] {P : V →L[ℝ] V}
     {d : ℝ} (hΦ1 : ContDiff ℝ 1 Φ) (hΦ : ∀ t, (Φ t).IsInvertible) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
     (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) (c : ℝ) (n : ℕ) :
@@ -301,30 +331,11 @@ theorem det_smul_one_sub_dysonSeriesLeft_frameConnection_pow [CompleteSpace W] {
       ((c • 1 - dysonSeriesLeft (fun t => J₀ ∘L frameConnection J₀ Φ t) d ^ n : W →L[ℝ] W) :
         W →ₗ[ℝ] W) =
       LinearMap.det ((c • 1 - P ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V) := by
-  obtain ⟨e, he⟩ := exists_conjAlgEquiv_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam
-  rw [← LinearMap.det_conj _ e]
-  congr 1
-  simp only [toLinearMap_sub, toLinearMap_smul, toLinearMap_one, toLinearMap_pow,
-    ← LinearEquiv.conjAlgEquiv_apply (R := ℝ),
-    map_sub, map_smul, map_one, map_pow, he]
-
-/-- **`det (c + Ψ(d) ^ n) = det (c + P ^ n)`.** Under the hypotheses of
-`TauCeti.comp_dysonSeriesLeft_frameConnection_eq_comp`, the return map `Ψ(d)` of
-`w' = J₀ S(t) w` is conjugate to `P`, so `c + Ψ(d) ^ n` and `c + P ^ n` have the same determinant
-for every scalar `c`. -/
-theorem det_smul_one_add_dysonSeriesLeft_frameConnection_pow [CompleteSpace W] {P : V →L[ℝ] V}
-    {d : ℝ} (hΦ1 : ContDiff ℝ 1 Φ) (hΦ : ∀ t, (Φ t).IsInvertible) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
-    (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) (c : ℝ) (n : ℕ) :
-    LinearMap.det
-      ((c • 1 + dysonSeriesLeft (fun t => J₀ ∘L frameConnection J₀ Φ t) d ^ n : W →L[ℝ] W) :
-        W →ₗ[ℝ] W) =
-      LinearMap.det ((c • 1 + P ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V) := by
-  obtain ⟨e, he⟩ := exists_conjAlgEquiv_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam
-  rw [← LinearMap.det_conj _ e]
-  congr 1
-  simp only [toLinearMap_add, toLinearMap_smul, toLinearMap_one, toLinearMap_pow,
-    ← LinearEquiv.conjAlgEquiv_apply (R := ℝ),
-    map_add, map_smul, map_one, map_pow, he]
+  have h := det_aeval_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam
+    (Polynomial.C c - Polynomial.X ^ n)
+  simp only [map_sub, map_pow, Polynomial.aeval_C, Polynomial.aeval_X,
+    Algebra.algebraMap_eq_smul_one] at h
+  simpa only [toLinearMap_sub, toLinearMap_smul, toLinearMap_one, toLinearMap_pow] using h
 
 end Frame
 

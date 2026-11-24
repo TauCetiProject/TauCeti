@@ -39,14 +39,13 @@ This file identifies these with the signs of the actual return map.
 * **The return map.** The propagator of `ζ' = M ζ` undoes the frame, so the seam identity gives
   `Φ(d) Ψ(d) = P Φ(d)` (`TauCeti.comp_dysonSeriesLeft_frameConnection_eq_comp`): `Ψ(d)` is
   conjugate to `P`, and `det (1 ∓ Ψ(d)) = det (1 ∓ P)`
-  (`TauCeti.det_smul_one_sub_dysonSeriesLeft_frameConnection_pow`,
-  `TauCeti.det_smul_one_add_dysonSeriesLeft_frameConnection_pow`).
+  (`TauCeti.det_aeval_dysonSeriesLeft_frameConnection`).
 * **The signs.** Along any path of infinitesimally symplectic loops from a complex-linear loop to
   `M`, the complex orientation transports to an orientation of the determinant line of the
   untwisted operator of sign `sgn det (1 - P)`
   (`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det_of_frame`), and to
-  one of the operator twisted along the orbit of sign `sgn det (1 + P)`
-  (`TauCeti.sign_detLineEquivOfBijective_antiperiodicGaugeLoop_eq_sign_det_of_frame`).
+  one of the operator twisted along the orbit of sign `sgn det (1 + P)`, by
+  `sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det_of_frame`.
 
 So the signs of the two operators periodic along the circle factor do not depend on the frame,
 and they are the signs `TauCeti.orbitTorusTwistSign` attaches to the return map on the two sign
@@ -55,13 +54,14 @@ characters trivial on the circle factor, which label the orbit tori in the orbit
 The two characters nontrivial on the circle factor have positive sign for every loop
 (`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.AntiperiodicOrientation`). The operators
 here are the Sobolev realizations of the model operators in the frame; the conjugation by `Φ` is
-the pointwise identity `TauCeti.orbitTorusVerticalOperator_frame_apply` on classical sections.
+only the pointwise identity `TauCeti.orbitTorusVerticalOperator_frame_apply` on classical
+sections. Identifying these model operators with a Fredholm realization of the actual normal
+operator of the orbit torus is not done here.
 
 ## Main results
 
-* `TauCeti.exists_continuousMap_addCircle_eq_comp_frameConnection`: the loop `J₀ S` on `ℝ / dℤ`.
 * `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det_of_frame` and
-  `TauCeti.sign_detLineEquivOfBijective_antiperiodicGaugeLoop_eq_sign_det_of_frame`:
+  `sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det_of_frame`:
   the determinant signs `sgn det (1 - P)` and `sgn det (1 + P)`.
 
 ## References
@@ -85,26 +85,6 @@ open scoped Real lp
 namespace TauCeti
 
 open CircleSobolev
-
-section Loop
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
-  [NormedSpace ℝ W] [CompleteSpace W] {J₀ : W →L[ℝ] W} {Φ : ℝ → W →L[ℝ] V} {P : V →L[ℝ] V}
-  {d : ℝ}
-
-/-- **The loop of a frame.** For a `C¹` path of isomorphisms `Φ` compatible with the seam,
-`P Φ(t + d) = Φ(t)`, the path `t ↦ J₀ S(t)`, `S` the connection of `Φ`, is continuous and
-`d`-periodic, so it is a loop on `ℝ / dℤ`. -/
-theorem exists_continuousMap_addCircle_eq_comp_frameConnection (hΦ1 : ContDiff ℝ 1 Φ)
-    (hΦ : ∀ t, (Φ t).IsInvertible) (hseam : ∀ t, P ∘L Φ (t + d) = Φ t) :
-    ∃ S : C(AddCircle d, W →L[ℝ] W), ∀ t : ℝ, S t = J₀ ∘L frameConnection J₀ Φ t := by
-  have hper : Function.Periodic (fun t ↦ J₀ ∘L frameConnection J₀ Φ t) d := fun t ↦ by
-    simp only [frameConnection_periodic (hΦ1.differentiable one_ne_zero) hΦ hseam t]
-  exact ⟨⟨hper.lift, continuous_coinduced_dom.2
-    (continuous_const.clm_comp (contDiff_frameConnection (m := 0) hΦ1 hΦ).continuous)⟩,
-    fun t ↦ by simp [Function.Periodic.lift_coe]⟩
-
-end Loop
 
 section Sign
 
@@ -155,7 +135,9 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det_of_frame 
   rw [sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det d hℓ hM hMs hMa hf hz hb hx
     hxz, funext hMb]
   congr 1
-  simpa using det_smul_one_sub_dysonSeriesLeft_frameConnection_pow hΦ1 hΦ hJ₀sq hseam 1 1
+  have h := det_aeval_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam (1 - Polynomial.X)
+  simpa only [map_sub (Polynomial.aeval _), map_one (Polynomial.aeval _), Polynomial.aeval_X]
+    using h
 
 /-- **The orbit-torus operator twisted along the orbit has determinant sign `sgn det (1 + P)`.**
 In the situation of
@@ -164,7 +146,8 @@ periodic in `s` and antiperiodic along the orbit, realized in the periodic gauge
 `TauCeti.CircleSobolev.antiperiodicGaugeLoop d (M τ)`: if the operator at `b` is bijective, every
 element of its determinant line in the orientation transported from the complex orientation at `a`
 reads, in the trivialization given by bijectivity, with the sign of `det (1 + P)`. -/
-theorem sign_detLineEquivOfBijective_antiperiodicGaugeLoop_eq_sign_det_of_frame
+theorem
+    sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det_of_frame
     (hℓ : ℓ ≠ 0) (hΦ1 : ContDiff ℝ 1 Φ) (hΦ : ∀ t, (Φ t).IsInvertible)
     (hJ₀sq : ∀ x, J₀ (J₀ x) = -x) (hseam : ∀ t, P ∘L Φ (t + d) = Φ t)
     (hM : ContinuousOn M (uIcc a b))
@@ -198,7 +181,9 @@ theorem sign_detLineEquivOfBijective_antiperiodicGaugeLoop_eq_sign_det_of_frame
   rw [sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det d hℓ
     hM hMs hMa hf hz hb hx hxz, funext hMb]
   congr 1
-  simpa using det_smul_one_add_dysonSeriesLeft_frameConnection_pow hΦ1 hΦ hJ₀sq hseam 1 1
+  have h := det_aeval_dysonSeriesLeft_frameConnection hΦ1 hΦ hJ₀sq hseam (1 + Polynomial.X)
+  simpa only [map_add (Polynomial.aeval _), map_one (Polynomial.aeval _), Polynomial.aeval_X]
+    using h
 
 end Sign
 
