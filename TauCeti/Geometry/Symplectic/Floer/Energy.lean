@@ -74,8 +74,6 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   (`SymplecticForm.setIntegral_floerEnergyDensity_mono_set`).
 * `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
   solution vanishes exactly where the perturbed derivative does.
-* `SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_self_eq_floerEnergyDensity`: for
-  `K = Kt dt`, the energy density of a solution is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`.
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
@@ -564,20 +562,6 @@ theorem floerEnergyDensity_eq_of_isComplexLinearMap (ω : SymplecticForm V)
         (J (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)) := by
   rw [floerEnergyDensity_def]
   exact congrArg _ h.apply_stdComplexLineImag
-
-/-- **The energy density as a quadratic form in `∂s u`.** For the perturbation `K = Kt dt` and
-a solution of the Floer equation at `z` for an almost complex structure `J`, the Floer energy
-density at `z` is `g_J(∂s u, ∂s u)` for the bilinear form `g_J = ω(·, J ·)`. When `ω` tames `J`
-this is the squared length of `∂s u` in the inner product given by the symmetrization of
-`g_J`. -/
-theorem associatedBilinForm_fderiv_stdComplexLineReal_self_eq_floerEnergyDensity
-    (ω : SymplecticForm V) {J : AlmostComplexStructure V}
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.associatedBilinForm J (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineReal) =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z := by
-  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal,
-    hamiltonianVectorField_const, Pi.zero_apply, sub_zero, associatedBilinForm_apply]
 
 /-- For a solution of the Floer equation with `J` tamed by `ω`, the Floer energy density at `z`
 vanishes exactly when the perturbed derivative `du - X_K` vanishes at `z`. -/

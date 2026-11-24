@@ -31,20 +31,11 @@ whose data do not depend on `s`, with `v = (1, 0)`: the derivative `∂ₛu` of 
 solves the linearized equation along `u`
 (`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). It is the
 infinitesimal generator of the translation action of `ℝ` on Floer cylinders, along which their
-moduli spaces are divided out. Data that do not depend on `t`, such as an autonomous Hamiltonian
-and a domain-independent `J`, are invariant under the rotations of the cylinder, and `∂ₜu`
-solves the linearized equation
-(`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`).
+moduli spaces are divided out.
 
 The kernel element `∂ₛu` is not zero away from the stationary cylinders: a map differentiable at
 every point of the strip `ℝ × [0, 1]` has `∂ₛu = 0` there exactly when `u(s, t) = u(0, t)`
-(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂ₛu` is `du` applied to `(1, 0)`). Its size is
-measured by the energy density: for the perturbation `K = K_t dt` and a solution of the Floer
-equation for an almost complex structure `J`, the Floer energy density at each point is the
-quadratic form `g_J(∂ₛu, ∂ₛu)` for the bilinear form `g_J = ω(·, J ·)`
-(`TauCeti.SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_self_eq_floerEnergyDensity`).
-This is a pointwise identity; when `ω` tames `J` the form `g_J(v, v)` is positive for `v ≠ 0`, so
-`∂ₛu` vanishes exactly where the energy density does.
+(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂ₛu` is `du` applied to `(1, 0)`).
 
 Unique continuation for the linearized operator
 (`TauCeti.SymplecticForm.setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero`)
@@ -61,10 +52,8 @@ moduli spaces of Floer trajectories.
 
 * `TauCeti.SymplecticForm.floerLinearization_fderiv_apply_eq_zero`: the infinitesimal translation
   `du(v)` of a solution solves the linearized equation.
-* `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero` and
-  `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`: for data that do
-  not depend on `s`, respectively `t`, the derivative `∂ₛu`, respectively `∂ₜu`, of a solution
-  solves the linearized equation.
+* `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`: for data that do
+  not depend on `s`, the derivative `∂ₛu` of a solution solves the linearized equation.
 * `TauCeti.SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`:
   the zeros of `du(v)` are isolated in a connected domain unless `du(v)` vanishes identically.
 * `TauCeti.SymplecticForm.finite_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero`: a
@@ -78,8 +67,7 @@ moduli spaces of Floer trajectories.
 * A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
   575–611, on the translation action on connecting trajectories.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
-  Math. Ser. 7 (1999), Lectures 1 and 2, on the energy of Floer cylinders and the linearized
-  operator.
+  Math. Ser. 7 (1999), Lectures 1 and 2, on the translation action and the linearized operator.
 -/
 
 public section
@@ -154,22 +142,6 @@ theorem floerLinearization_fderiv_stdComplexLineReal_eq_zero {J : ℝ → V → 
   floerLinearization_fderiv_apply_eq_zero (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
     (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
     (.of_forall fun c ↦ by simp [stdComplexLineReal_eq]) hJ hKs hKt hu hF
-
-/-- **The rotation generator is in the kernel of the linearized operator.** For data `J_s(y)` and
-`K = K_{s,s} ds + K_{t,s} dt` that do not depend on `t`, such as an autonomous Hamiltonian, the
-`t`-derivative `∂ₜu` of a solution of the Floer equation near `z` that is `C²` at `z` solves the
-linearized equation `D_u (∂ₜu) = 0` at `z`. -/
-theorem floerLinearization_fderiv_stdComplexLineImag_eq_zero {J : ℝ → V → V →L[ℝ] V}
-    {Ks Kt : ℝ → V → ℝ} {z : ℝ × ℝ} (hJ : DifferentiableAt ℝ (J z.1) (u z))
-    (hKs : ContDiffAt ℝ 2 (Ks z.1) (u z)) (hKt : ContDiffAt ℝ 2 (Kt z.1) (u z))
-    (hu : ContDiffAt ℝ 2 u z)
-    (hF : ∀ᶠ y in 𝓝 z,
-      ω.floerOperator (fun y ↦ J y.1) (fun y ↦ Ks y.1) (fun y ↦ Kt y.1) u y = 0) :
-    ω.floerLinearization (fun y ↦ J y.1) (fun y ↦ Ks y.1) (fun y ↦ Kt y.1) u
-      (fun y ↦ fderiv ℝ u y stdComplexLineImag) z = 0 :=
-  floerLinearization_fderiv_apply_eq_zero (.of_forall fun c ↦ by simp [stdComplexLineImag_eq])
-    (.of_forall fun c ↦ by simp [stdComplexLineImag_eq])
-    (.of_forall fun c ↦ by simp [stdComplexLineImag_eq]) hJ hKs hKt hu hF
 
 /-- Under the hypotheses of the unique continuation theorems for the linearized Floer operator,
 with `u` of class `C²` on `Ω`, the infinitesimal translation `du(v)` solves the linearized
