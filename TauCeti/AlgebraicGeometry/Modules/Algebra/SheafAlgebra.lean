@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Composition
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Identity
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.Monoidal.Subcategory
 
 /-!
