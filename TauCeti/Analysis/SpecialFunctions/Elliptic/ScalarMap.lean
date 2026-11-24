@@ -15,20 +15,20 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 Let `L` and `L'` be period pairs with lattices `Λ` and `Λ'`, and let `α ∈ ℂ` with `α Λ ⊆ Λ'`.
 Multiplication by `α` induces a group homomorphism `ℂ / Λ → ℂ / Λ'`. Through the complex
 uniformizations `ℂ / Λ ≃+ E_Λ(ℂ)` (`PeriodPair.weierstrassPointEquiv`), induced by the point maps
-`P(z) = (℘(z), ℘'(z) / 2)`, this is a group homomorphism between the points of the two Weierstrass
-curves,
+with `P(z) = (℘(z), ℘'(z) / 2)` for `z ∉ Λ` and `P(z) = 0` for `z ∈ Λ`, this is a group
+homomorphism between the points of the two Weierstrass curves,
 
   `PeriodPair.scalarPointHom α h : E_Λ(ℂ) →+ E_Λ'(ℂ)`,   `P_Λ(z) ↦ P_Λ'(α z)`.
 
-These are the analytic isogenies of the complex uniformization. This file proves the basic
-dictionary between them and the lattices:
+For `α ≠ 0` these are the analytic isogenies of the complex uniformization. This file proves the
+basic dictionary between them and the lattices:
 
 * the identity and composition laws: `α = 1` gives the identity and `β ∘ α` is `β α`;
 * integer scalars give the multiplication-by-`n` maps of the group law;
 * the kernel of the map of `α ≠ 0` is the image of `α⁻¹ Λ'`, and its cardinality (the degree) is
   the index `[Λ' : α Λ]`, which is finite and nonzero;
-* the **dual**: if `n = [Λ' : α Λ]` then `(n / α) Λ' ⊆ Λ`, and the two composites of the maps of
-  `α` and of `n / α` are multiplication by `n`.
+* the **dual**: for `α ≠ 0`, if `n = [Λ' : α Λ]` then `(n / α) Λ' ⊆ Λ`, and the two composites
+  of the maps of `α` and of `n / α` are multiplication by `n`.
 
 ## Main definitions
 
@@ -114,8 +114,8 @@ lemma scalarPointHom_surjective {α : ℂ} (hα : α ≠ 0) (h : ∀ z ∈ L.lat
   obtain ⟨w, rfl⟩ := L'.weierstrassPoint_surjective P
   exact ⟨L.weierstrassPoint (α⁻¹ * w), by simp [mul_inv_cancel_left₀ hα]⟩
 
-/-- The homomorphism `Λ' →+ E_Λ(ℂ)`, `l' ↦ P_Λ(α⁻¹ l')`, whose range is the kernel of the map
-induced by `α` and whose kernel is `α Λ`. -/
+/-- The homomorphism `Λ' →+ E_Λ(ℂ)`, `l' ↦ P_Λ(α⁻¹ l')`. For `α ≠ 0` its kernel is `α Λ ∩ Λ'`,
+and if moreover `α Λ ⊆ Λ'` then its range is the kernel of the map induced by `α`. -/
 private def kerParam (α : ℂ) : L'.lattice.toAddSubgroup →+ L.weierstrassCurve.toAffine.Point :=
   (L.weierstrassPointHom.comp (AddMonoidHom.mulLeft α⁻¹)).comp
     L'.lattice.toAddSubgroup.subtype
@@ -144,7 +144,7 @@ private lemma range_kerParam {α : ℂ} (hα : α ≠ 0) (h : ∀ z ∈ L.lattic
   · intro hz
     exact ⟨⟨α * z, hz⟩, by simp [kerParam_apply, inv_mul_cancel_left₀ hα]⟩
 
-/-- The kernel of `kerParam` is `c Λ`, inside `Λ'`. -/
+/-- The kernel of `kerParam` is `c Λ ∩ Λ'`, as a subgroup of `Λ'`. -/
 private lemma ker_kerParam (c : ℂˣ) :
     (kerParam (L := L) (L' := L') (c : ℂ)).ker =
       (c • L).lattice.toAddSubgroup.addSubgroupOf L'.lattice.toAddSubgroup := by

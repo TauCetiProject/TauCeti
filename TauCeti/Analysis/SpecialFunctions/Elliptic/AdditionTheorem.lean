@@ -517,7 +517,7 @@ lemma weierstrassPointEquiv_symm_weierstrassPoint (z : ℂ) :
 
 /-- Two homomorphisms out of the points of the Weierstrass curve of `L` agree if they agree on
 every `P(z)`. -/
-lemma pointHom_ext {G : Type*} [AddCommGroup G] {f g : L.weierstrassCurve.toAffine.Point →+ G}
+lemma pointHom_ext {G : Type*} [AddZeroClass G] {f g : L.weierstrassCurve.toAffine.Point →+ G}
     (h : ∀ z, f (L.weierstrassPoint z) = g (L.weierstrassPoint z)) : f = g := by
   ext P
   obtain ⟨z, rfl⟩ := L.weierstrassPoint_surjective P
