@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -35,7 +36,9 @@ Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this acti
 `R`-action on `M`, the analogue for `x • ⊤` of Mathlib's `Module.Quotient.mk_smul_mk` for `I • ⊤`.
 
 Reductions of cyclic modules commute: `(R ⧸ (s)) ⧸ r (R ⧸ (s))` and `(R ⧸ (r)) ⧸ s (R ⧸ (r))` are
-both `R ⧸ (r, s)`. For an `R`-algebra `A` and an `A`-module `N`, reducing modulo the image of
+both `R ⧸ (r, s)`. Multiplication by `xᵏ` and the projection give a sequence
+`0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0`, exact except possibly at `M ⧸ x M`, where it is exact
+when `x` is `M`-regular. For an `R`-algebra `A` and an `A`-module `N`, reducing modulo the image of
 `r : R` in `A` is reducing the underlying `R`-module modulo `r`. A finite free `R`-module of rank
 `d` reduces modulo `r` to `(R ⧸ (r)) ^ d`, so it has `#(R ⧸ (r)) ^ d` elements. Finally, in a
 domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ m)`.
@@ -49,6 +52,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
+* `QuotSMulTop.mulPow`: multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`.
 
 ## Main results
 
@@ -56,6 +60,10 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
 * `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
   multiplication by `x` on `M` is surjective.
+* `QuotSMulTop.exact_mulPow`: the sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, multiplication by
+  `xᵏ` followed by the projection, is exact in the middle. The projection is surjective
+  (`Submodule.factor_surjective`), and `QuotSMulTop.mulPow_injective` gives injectivity of
+  multiplication by `xᵏ` when `x` is `M`-regular.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -216,6 +224,52 @@ theorem map_comp_quotEquivOfEq (x : R) (f : M →ₗ[R] N) :
       (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toLinearMap ∘ₗ
         ((Ideal.span {x}).mapQSMulTop f).restrictScalars R :=
   Submodule.linearMap_qext _ rfl
+
+variable (M) in
+/-- Multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`. -/
+noncomputable def mulPow (x : R) (k : ℕ) :
+    QuotSMulTop x M →ₗ[R] QuotSMulTop (x ^ (k + 1)) M :=
+  Submodule.mapQ _ _ (LinearMap.lsmul R M (x ^ k)) fun _ hm ↦ by
+    obtain ⟨m, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hm
+    simpa [smul_smul, ← pow_succ'] using
+      Submodule.smul_mem_pointwise_smul m (x ^ (k + 1)) (⊤ : Submodule R M) Submodule.mem_top
+
+@[simp]
+theorem mulPow_mk (x : R) (k : ℕ) (m : M) :
+    mulPow M x k (Submodule.Quotient.mk m) = Submodule.Quotient.mk (x ^ k • m) :=
+  (rfl)
+
+/-- If `x` is regular on `M`, multiplication by `xᵏ` is injective from `M ⧸ x M` to
+`M ⧸ xᵏ⁺¹ M`. -/
+theorem mulPow_injective {x : R} (hx : IsSMulRegular M x) (k : ℕ) :
+    Injective (mulPow M x k) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro y hy
+  induction y using Submodule.Quotient.induction_on with | H m => ?_
+  rw [mulPow_mk, Submodule.Quotient.mk_eq_zero] at hy
+  obtain ⟨m', -, hm'⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
+  rw [pow_succ, mul_smul] at hm'
+  rw [(hx.pow k).eq_iff.1 hm'.symm, Submodule.Quotient.mk_eq_zero]
+  exact Submodule.smul_mem_pointwise_smul _ _ ⊤ Submodule.mem_top
+
+/-- The sequence `M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M`, whose first map is multiplication by `xᵏ`
+and whose second map is the projection, is exact at `M ⧸ xᵏ⁺¹ M`. -/
+theorem exact_mulPow (x : R) (k : ℕ) :
+    Exact (mulPow M x k) (Submodule.factor
+      (Submodule.smul_top_le_smul_top_of_dvd (M := M) (pow_dvd_pow x (k.le_add_right 1)))) := by
+  intro y
+  induction y using Submodule.Quotient.induction_on with | H m => ?_
+  rw [← Submodule.mkQ_apply, Submodule.factor_mk, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero]
+  refine ⟨fun hm ↦ ?_, ?_⟩
+  · obtain ⟨m', -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hm
+    exact ⟨Submodule.Quotient.mk m', mulPow_mk x k m'⟩
+  · rintro ⟨y, hy⟩
+    induction y using Submodule.Quotient.induction_on with | H m' => ?_
+    rw [mulPow_mk, Submodule.mkQ_apply, Submodule.Quotient.eq] at hy
+    have := sub_mem (Submodule.smul_mem_pointwise_smul m' (x ^ k) ⊤ Submodule.mem_top)
+      (Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow x (k.le_add_right 1)) hy)
+    rwa [sub_sub_cancel] at this
 
 /-- If `b` kills the cokernel of `f`, it kills the cokernel of the reduction of `f` modulo `x`. -/
 theorem mem_annihilator_range_map (x : R) {f : M →ₗ[R] N} {b : R}
