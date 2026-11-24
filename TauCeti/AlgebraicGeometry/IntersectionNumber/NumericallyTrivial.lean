@@ -209,8 +209,10 @@ theorem numericallyTrivial_iff_of_finiteDimensional [FiniteDimensional k K] :
   refine ⟨fun h C _ _ i _ hi hC ↦ ?_, NumericallyTrivial.restrictScalars⟩
   let : C.Over (Spec (.of k)) :=
     ⟨(C ↘ Spec (.of K)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K))⟩
-  have h₀ := h.intersectionNumber_eq_zero i
-    (show (C ↘ Spec (.of K)) ≫ _ = _ by rw [hi, Category.assoc]) hC
+  -- Under the local `Over` instance, `C ↘ Spec k` is by definition `(C ↘ Spec K) ≫ Spec.map _`.
+  have hk : C ↘ Spec (.of k) =
+      (C ↘ Spec (.of K)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K)) := rfl
+  have h₀ := h.intersectionNumber_eq_zero i (by rw [hk, hi, Category.assoc]) hC
   rw [intersectionNumber_eq_finrank_mul i rfl] at h₀
   exact (mul_eq_zero.mp h₀).resolve_left (by exact_mod_cast Module.finrank_pos.ne')
 
@@ -337,6 +339,7 @@ theorem relNumericallyTrivial_iff_numericallyTrivial {k : Type u} [Field k]
       isIso_SpecMap_iff.mp this
     have : FiniteDimensional k ((Spec (.of k)).residueField s) :=
       .of_surjective (Algebra.linearMap k _) hbij.surjective
+    -- `fiberι` is defined as the first projection of the pullback along `fromSpecResidueField`.
     have : IsIso (x.fiberι s) :=
       inferInstanceAs (IsIso (pullback.fst x ((Spec (.of k)).fromSpecResidueField s)))
     rw [← numericallyTrivial_iff_of_finiteDimensional (k := k), he, ← Scheme.Hom.fiber_fac,
