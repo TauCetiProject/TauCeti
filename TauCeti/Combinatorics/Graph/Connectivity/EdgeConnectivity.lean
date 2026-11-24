@@ -399,8 +399,9 @@ theorem edgeReachability_le_nonloopIncidenceCount (hxy : x ≠ y)
     (((isEdgeReachable_iff_le_edgeReachability _).mpr hk).le_nonloopIncidenceCount hxy hfin)
 
 /-- When `x` has finitely many incident nonloop edges, its local edge reachability to `y` is `⊤`
-exactly when `x` and `y` are the same actual vertex. The actual-vertex condition is needed because
-a multigraph's ambient vertex type may contain points outside its vertex set. -/
+exactly when `x` and `y` are the same actual vertex. This is the multigraph counterpart of
+`SimpleGraph.edgeReachability_eq_top_iff`. The actual-vertex condition is needed because a
+multigraph's ambient vertex type may contain points outside its vertex set. -/
 @[simp]
 theorem edgeReachability_eq_top_iff
     (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
