@@ -23,12 +23,14 @@ import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 # The isometry group of a bilinear form
 
 An endomorphism `f` of a module `M` is an *isometry* of a bilinear form `B` when
-`B (f x) (f y) = B x y`. Starting from the predicate `TauCeti.BilinForm.IsIsometry` defined in the
-dependency-light module `TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic`, this file builds the
-group it cuts out inside the linear automorphisms of `M`, the isometry group
-`LinearMap.isometryGroup B` of `B` as a sesquilinear form, together with the API a consumer of the
-group needs: a Gram-matrix criterion, the resulting constraint `(det f) ^ 2 = 1`, functoriality in
-the module and in the base ring, and stability of orthogonal complements.
+`B (f x) (f y) = B x y`. The isometry group of `B` is `LinearMap.isometryGroup B`, the isometry
+group of `B` as a sesquilinear form, defined in
+`TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup`. This file links it to the predicate
+`TauCeti.BilinForm.IsIsometry` from the dependency-light module
+`TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic` (`LinearMap.BilinForm.mem_isometryGroup`) and
+adds the bilinear-specific API a consumer of the group needs: a Gram-matrix criterion, the resulting
+constraint `(det f) ^ 2 = 1`, functoriality in the module and in the base ring, and stability of
+orthogonal complements.
 
 Mathlib has the notion in three forms: as a bundled map, `B₁ →bᵢ B₂`, as a bundled equivalence,
 `LinearMap.BilinForm.IsometryEquiv B₁ B₂`, and as the unbundled predicate `LinearMap.IsOrthogonal`
@@ -37,11 +39,12 @@ predicate here is stated over a commutative semiring and an additive commutative
 to the bundled map (`TauCeti.BilinForm.IsIsometry.toIsometry`,
 `TauCeti.BilinForm.isIsometry_toLinearMap`) lives with the predicate; the bridge to the bundled
 equivalence is `LinearMap.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types*
-between the subgroup and `B.IsometryEquiv B`. What this file adds is the group structure on the
-isometric automorphisms, needed as soon as one wants subgroups of it, group homomorphisms into it,
-or a group action, none of which a bare type of bundled equivalences provides, together with the
+between the subgroup and `B.IsometryEquiv B`. The group structure on the isometric automorphisms,
+needed as soon as one wants subgroups of it, group homomorphisms into it, or a group action, none of
+which a bare type of bundled equivalences provides, comes from the subgroup
+`LinearMap.isometryGroup B`. What this file adds is this equivalence with `B.IsometryEquiv B`, the
 automatic-invertibility theorem below, which turns "preserves `B`" on an endomorphism one already
-has into membership of the group.
+has into membership of the group, and the bilinear API above.
 
 Two statements are worth singling out.
 

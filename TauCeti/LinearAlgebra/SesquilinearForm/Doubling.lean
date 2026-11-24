@@ -264,15 +264,23 @@ variable (S : Type*) [Monoid S] [DistribMulAction S N]
 /-- The equal-multiplier fibre product of the similitude groups of `B` and `-B`: the pairs of
 similitudes of `B` and of `-B` with the same multiplier. For a hermitian form on `V` this is the
 group `G(U(V) × U(-V))` of the doubling method. -/
-abbrev doubledSimilitudeDomain : Subgroup (B.similitudeGroup S × (-B).similitudeGroup S) :=
+def doubledSimilitudeDomain : Subgroup (B.similitudeGroup S × (-B).similitudeGroup S) :=
   ((B.similitudeMultiplier S).comp (MonoidHom.fst _ _)).eqLocus
     (((-B).similitudeMultiplier S).comp (MonoidHom.snd _ _))
+
+/-- A pair of similitudes of `B` and of `-B` lies in the equal-multiplier fibre product exactly
+when the two multipliers agree. -/
+@[simp]
+theorem mem_doubledSimilitudeDomain_iff {p : B.similitudeGroup S × (-B).similitudeGroup S} :
+    p ∈ B.doubledSimilitudeDomain S ↔
+      B.similitudeMultiplier S p.1 = (-B).similitudeMultiplier S p.2 :=
+  Iff.rfl
 
 /-- The two similitudes in an element of the equal-multiplier fibre product have the same
 multiplier. -/
 theorem similitudeMultiplier_eq_of_doubledSimilitudeDomain (p : B.doubledSimilitudeDomain S) :
     B.similitudeMultiplier S p.val.1 = (-B).similitudeMultiplier S p.val.2 :=
-  p.property
+  (B.mem_doubledSimilitudeDomain_iff S).1 p.property
 
 /-- The blockwise embedding `((f, λ), (g, λ)) ↦ (f × g, λ)` of the equal-multiplier fibre product
 of the similitude groups of `B` and `-B` into the similitude group of the doubled form. For a
