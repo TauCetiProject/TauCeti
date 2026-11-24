@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
 # Lowering the exponent of `Lᵖ` functions on a finite measure space
@@ -15,7 +16,8 @@ import TauCeti.Data.ENNReal.Inv
 On a finite measure space `ν`, `L^q(ν) ⊆ Lᵖ(ν)` for `p ≤ q` (Mathlib's
 `MeasureTheory.Lp.antitone`), with `‖f‖_p ≤ ν(univ) ^ (1/p - 1/q) ‖f‖_q`
 (`MeasureTheory.eLpNorm_le_eLpNorm_mul_rpow_measure_univ`). This file bundles the inclusion as a
-continuous linear map, which does not change the underlying almost everywhere equivalence class.
+continuous linear map, which does not change the underlying almost everywhere equivalence class,
+and lowers the exponent of uniform `Lᵖ` bounds on families of functions.
 
 ## Main definitions
 
@@ -29,8 +31,14 @@ continuous linear map, which does not change the underlying almost everywhere eq
 * `MeasureTheory.Lp.ofExponentLEL_injective`: the inclusion is injective.
 * `MeasureTheory.Lp.opNorm_ofExponentLEL_le`, `MeasureTheory.Lp.norm_ofExponentLEL_apply_le`: the
   bound `ν(univ) ^ (1/p - 1/q)` on the operator norm.
+* `MeasureTheory.Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms of the inclusions
+  are logarithmically convex in `1 / p`.
 * `MeasureTheory.Lp.ofExponentLEL_self`, `MeasureTheory.Lp.ofExponentLEL_ofExponentLEL`: the
   identity at `p = q` and transitivity.
+* `ContinuousLinearMap.compLpL_ofExponentLEL`: the inclusion commutes with postcomposition by a
+  continuous linear map.
+* `MeasureTheory.exists_eLpNorm_le_mul_enorm_of_eLpNorm_le`: a bound `‖v u‖_p ≤ K ‖u‖` for every
+  `u` gives, for each `q ≤ p`, a constant `C` with `‖v u‖_q ≤ C ‖u‖` for every `u`.
 
 ## References
 
@@ -51,12 +59,12 @@ variable {α 𝕜 F : Type*} [MeasurableSpace α] {ν : Measure α} [IsFiniteMea
 omit [Fact (1 ≤ q)] in
 /-- The norm bound of the inclusion `L^q(ν) → Lᵖ(ν)`, on the underlying class. -/
 private theorem norm_mk_le (hpq : p ≤ q) (f : Lp F q ν) :
-    ‖(⟨f, Lp.antitone hpq f.2⟩ : Lp F p ν)‖ ≤
+    ‖(⟨f, Lp.antitone hpq f.property⟩ : Lp F p ν)‖ ≤
       (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ := by
   have hc : ν Set.univ ^ (1 / p.toReal - 1 / q.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
       (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq) (measure_ne_top ν _)
-  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.2), Lp.norm_def, mul_comm,
+  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.property), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f) hc)
     (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpq (Lp.aestronglyMeasurable f))
@@ -71,14 +79,14 @@ most `ν(univ) ^ (1/p - 1/q)`; it does not change the underlying almost everywhe
 class. -/
 def ofExponentLEL (hpq : p ≤ q) : Lp F q ν →L[𝕜] Lp F p ν :=
   LinearMap.mkContinuous
-    { toFun f := ⟨f, Lp.antitone hpq f.2⟩
+    { toFun f := ⟨f, Lp.antitone hpq f.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
     (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal (norm_mk_le hpq)
 
 /-- Lowering the exponent keeps the underlying almost everywhere equivalence class. -/
 theorem ofExponentLEL_apply (hpq : p ≤ q) (f : Lp F q ν) :
-    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.2⟩ :=
+    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.property⟩ :=
   (rfl)
 
 /-- Lowering the exponent does not change the underlying function. -/
@@ -102,6 +110,16 @@ theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) (f : Lp F q ν) :
     ‖ofExponentLEL 𝕜 F hpq f‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ :=
   norm_mk_le hpq f
 
+/-- **Logarithmic convexity of the `Lᵖ` norms under lowering the exponent.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then
+`‖f‖_q ≤ ‖f‖_p ^ (1 - θ) ‖f‖_r ^ θ` for every `f ∈ L^r(ν)`. -/
+theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹) (f : Lp F r ν) :
+    ‖ofExponentLEL 𝕜 F hqr f‖ ≤ ‖ofExponentLEL 𝕜 F hpr f‖ ^ (1 - θ) * ‖f‖ ^ θ :=
+  Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq hθ hq
+    (.of_eq (by rw [coeFn_ofExponentLEL, coeFn_ofExponentLEL])) (.of_eq (coeFn_ofExponentLEL _ _))
+
 /-- Lowering the exponent from `p` to itself is the identity. -/
 @[simp]
 theorem ofExponentLEL_self (f : Lp F p ν) : ofExponentLEL 𝕜 F le_rfl f = f :=
@@ -120,4 +138,45 @@ theorem opNorm_ofExponentLEL_le [NontriviallyNormedField 𝕜] [NormedSpace 𝕜
     ‖ofExponentLEL (ν := ν) 𝕜 F hpq‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal :=
   LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
 
+/-- Lowering the exponent commutes with postcomposition by a continuous (semi)linear map. -/
+theorem _root_.ContinuousLinearMap.compLpL_ofExponentLEL {𝕜' E : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ] (L : E →SL[σ] F)
+    (hpq : p ≤ q) (f : Lp E q ν) :
+    L.compLpL p ν (ofExponentLEL 𝕜 E hpq f) = ofExponentLEL 𝕜' F hpq (L.compLpL q ν f) := by
+  ext1
+  filter_upwards [L.coeFn_compLpL (ofExponentLEL 𝕜 E hpq f), L.coeFn_compLpL f] with x hp hq
+  rw [hp, coeFn_ofExponentLEL, coeFn_ofExponentLEL, hq]
+
 end MeasureTheory.Lp
+
+namespace MeasureTheory
+
+open scoped ENNReal NNReal
+
+/-- **Lowering the exponent of a uniform bound.** Let `μ` be a finite measure and `q ≤ p`. If
+`‖v u‖_{Lᵖ(μ)} ≤ K ‖u‖` for every `u`, then there is a constant `C`, depending on `q` but not on
+`u`, with `‖v u‖_{L^q(μ)} ≤ C ‖u‖` for every `u`, by Hölder's inequality. -/
+theorem exists_eLpNorm_le_mul_enorm_of_eLpNorm_le {α X F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [ENorm X] [TopologicalSpace F] [ContinuousENorm F] {p q : ℝ≥0∞}
+    (hμ : μ Set.univ ≠ ∞) (hq : q ≤ p) {v : X → α → F} {K : ℝ≥0}
+    (hv : ∀ u, eLpNorm (v u) p μ ≤ K * ‖u‖ₑ) :
+    ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q μ ≤ C * ‖u‖ₑ := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · -- `eLpNorm f 0 μ` vanishes for an a.e. strongly measurable `f`; otherwise both sides are `∞`.
+    refine ⟨K, fun u ↦ le_trans ?_ (hv u)⟩
+    by_cases hf : AEStronglyMeasurable (v u) μ
+    · simp [hf]
+    · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  set c := μ Set.univ ^ (1 / q.toReal - 1 / p.toReal)
+  have hc : c ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq) hμ
+  refine ⟨K * c.toNNReal, fun u ↦ ?_⟩
+  calc eLpNorm (v u) q μ ≤ eLpNorm (v u) p μ * c :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
+    _ ≤ K * ‖u‖ₑ * c := by gcongr; exact hv u
+    _ = ↑(K * c.toNNReal) * ‖u‖ₑ := by
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc]
+        ring
+
+end MeasureTheory

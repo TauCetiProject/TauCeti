@@ -33,7 +33,10 @@ statements for the spectral sequence of an exhaustive filtration.
   `F_b H^n = H^n(K)` (`CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive`). If
   moreover `H^{n+1}(F_{q-r+2})` vanishes (for instance if `F_{q-r+2} = ⊥`), the object at `(p, q)`
   with `p + q = n` on page `r` is the corresponding graded piece of `H^n(K)`
-  (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive`). If the cohomology of
+  (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive`), naturally in morphisms
+  of filtrations
+  (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive_hom_naturality`). If the
+  cohomology of
   the stages `F_i` and `G_i` of two filtrations vanishes in degrees `n` and `n + 1` for all `i ≤ a`
   (for instance if `F_a = G_a = ⊥`), a morphism of such filtered complexes which is an isomorphism
   on some page induces an isomorphism on `H^n`
@@ -80,7 +83,7 @@ lemma isZero_homology_cokernel_ofLE_of_isZero {b m : ℤ}
     exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) m).isZero_homology
   | succ i hi ih =>
     -- The short exact sequence `F_i/F_b ⟶ F_{i+1}/F_b ⟶ F_{i+1}/F_i`.
-    have hS := TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+    have hS := TauCeti.cokernelCompSequence_shortExact
       (Subobject.ofLE (F b) (F i) (hF hi)) (Subobject.ofLE (F i) (F (i + 1))
         (hF (Int.le_add_one le_rfl)))
     refine IsZero.of_iso ?_ (HomologicalComplex.homologyMapIso
@@ -124,7 +127,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
     IsZero ((cokernel (F b).arrow).homology m) := by
   -- The quotients `F_j/F_b` form a directed family of subcomplexes of `K/F_b`.
   let φ (j : {j // b ≤ j}) :
-      cokernel (Subobject.ofLE (F b) (F j) (hF j.2)) ⟶ cokernel (F b).arrow :=
+      cokernel (Subobject.ofLE (F b) (F j) (hF j.property)) ⟶ cokernel (F b).arrow :=
     cokernel.map _ _ (𝟙 _) (F j).arrow (by simp)
   have hφ (j : {j // b ≤ j}) : Mono (φ j) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by simp⟩)
@@ -145,7 +148,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
   intro z
   obtain ⟨j, y, rfl⟩ := HomologicalComplex.exists_homologyMap_eq_of_injective m φ
     (fun j ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) hcover z
-  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.2)).elim y 0, map_zero]
+  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.property)).elim y 0, map_zero]
 
 /-- **The quotient by a stage of an exhaustive filtration.** If every element of `K^m` lies in
 some `F_q` and the graded pieces `F_{i+1}/F_i` have vanishing `H^m` for all `i ≥ b`, then so does
@@ -190,6 +193,39 @@ noncomputable def filtrationSpectralSequencePageXIsoGradedOfExhaustive (r : ℤ)
   filtrationSpectralSequencePageXIsoEInfty F hF r hr pq _ rfl h₀
       (isZero_homology_cokernel_arrow_of_exhaustive F hF hex h₃) ≪≫
     (spectralObject _).EInftyIsoCokernel _ _
+
+/-- **Strong convergence for exhaustive filtrations is natural.** Let `α` be a morphism between the
+functors of increasing filtrations `F` of `K` and `G` of `L`, both satisfying the hypotheses of
+`filtrationSpectralSequencePageXIsoGradedOfExhaustive` at `pq = (p, q)` on page `r ≥ 2`. Through
+these isomorphisms, the morphism of spectral sequences induced by `α` is, on the object at `pq`,
+the map induced by `α` on the graded pieces `F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtrations of
+the abutments. -/
+@[reassoc]
+lemma filtrationSpectralSequencePageXIsoGradedOfExhaustive_hom_naturality
+    {L : CochainComplex (ModuleCat.{v} R) ℤ} (G : ℤ → Subobject L) (hG : Monotone G)
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (hFex : ∀ x : K.X (pq.1 + pq.2 - 1), ∃ i,
+      x ∈ LinearMap.range ((F i).arrow.f (pq.1 + pq.2 - 1)).hom)
+    (hGex : ∀ x : L.X (pq.1 + pq.2 - 1), ∃ i,
+      x ∈ LinearMap.range ((G i).arrow.f (pq.1 + pq.2 - 1)).hom)
+    (hF₀ : IsZero ((F (pq.2 - r + 2) : CochainComplex (ModuleCat R) ℤ).homology
+      (pq.1 + pq.2 + 1)))
+    (hG₀ : IsZero ((G (pq.2 - r + 2) : CochainComplex (ModuleCat R) ℤ).homology
+      (pq.1 + pq.2 + 1)))
+    (hF₃ : ∀ i, pq.2 + r - 1 ≤ i →
+      IsZero ((cokernel (Subobject.ofLE (F i) (F (i + 1)) (hF (Int.le_add_one le_rfl)))).homology
+        (pq.1 + pq.2 - 1)))
+    (hG₃ : ∀ i, pq.2 + r - 1 ≤ i →
+      IsZero ((cokernel (Subobject.ofLE (G i) (G (i + 1)) (hG (Int.le_add_one le_rfl)))).homology
+        (pq.1 + pq.2 - 1))) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        (filtrationSpectralSequencePageXIsoGradedOfExhaustive G hG r hr pq hGex hG₀ hG₃).hom =
+      (filtrationSpectralSequencePageXIsoGradedOfExhaustive F hF r hr pq hFex hF₀ hF₃).hom ≫
+        abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
+  simp only [filtrationSpectralSequencePageXIsoGradedOfExhaustive, Iso.trans_hom,
+    filtrationSpectralSequencePageXIsoEInfty_hom, spectralSequenceMap_hom,
+    spectralSequencePageMap_f]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 /-- **The comparison theorem for exhaustive filtrations.** Let `α` be a morphism between the
 functors of filtrations `F` of `K` and `G` of `L`, and let `n` be a degree. Suppose that the

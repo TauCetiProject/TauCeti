@@ -55,6 +55,10 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
   `d ∣ n`.
 * `TauCeti.homogeneousCyclotomic_mul_prod_properDivisors`:
   `Φ_n(a, b) ∏_{d ∣ n, d < n} Φ_d(a, b) = a ^ n - b ^ n` for `0 < n`.
+* `TauCeti.pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow`,
+  `TauCeti.homogeneousCyclotomic_dvd_pow_sub_pow_div`: for a proper divisor `d` of `n`,
+  `(a ^ d - b ^ d) Φ_n(a, b) ∣ a ^ n - b ^ n`, so that in a Euclidean domain `Φ_n(a, b)` divides
+  `(a ^ n - b ^ n) / (a ^ d - b ^ d)`.
 * `TauCeti.homogeneousCyclotomic_pos`: in an ordered ring, `0 < Φ_n(a, b)` for `0 ≤ b < a`.
 
 ## References
@@ -317,6 +321,27 @@ theorem homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ} (h : d ∣ n) (a b : R
   · simp
   rw [← prod_homogeneousCyclotomic_eq_pow_sub_pow hn]
   exact Finset.dvd_prod_of_mem _ (Nat.mem_divisors.2 ⟨h, hn.ne'⟩)
+
+/-- For a proper divisor `d` of `n`, `(a ^ d - b ^ d) Φ_n(a, b)` divides `a ^ n - b ^ n`: the
+factors `Φ_e(a, b)` of `a ^ d - b ^ d` have indices `e ∣ d`, all proper divisors of `n`. -/
+theorem pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ}
+    (h : d ∈ n.properDivisors) (a b : R) :
+    (a ^ d - b ^ d) * homogeneousCyclotomic n a b ∣ a ^ n - b ^ n := by
+  obtain ⟨hdn, hlt⟩ := Nat.mem_properDivisors.1 h
+  have hd : 0 < d := Nat.pos_of_mem_properDivisors h
+  have hn : 0 < n := hd.trans hlt
+  rw [← homogeneousCyclotomic_mul_prod_properDivisors hn, mul_comm,
+    ← prod_homogeneousCyclotomic_eq_pow_sub_pow hd]
+  exact mul_dvd_mul_left _ (Finset.prod_dvd_prod_of_subset _ _ _
+    (Nat.divisors_subset_properDivisors hn.ne' hdn hlt.ne))
+
+/-- For a proper divisor `d` of `n`, in a Euclidean domain such as `ℤ`, `Φ_n(a, b)` divides the
+quotient `(a ^ n - b ^ n) / (a ^ d - b ^ d)`. No condition `a ^ d ≠ b ^ d` is needed, since
+division by zero returns zero. -/
+theorem homogeneousCyclotomic_dvd_pow_sub_pow_div {R : Type*} [EuclideanDomain R] {d n : ℕ}
+    (h : d ∈ n.properDivisors) (a b : R) :
+    homogeneousCyclotomic n a b ∣ (a ^ n - b ^ n) / (a ^ d - b ^ d) :=
+  EuclideanDomain.dvd_div_of_mul_dvd (pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow h a b)
 
 /-! ### Positivity -/
 

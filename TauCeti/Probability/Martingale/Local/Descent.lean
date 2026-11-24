@@ -101,8 +101,6 @@ theorem StronglyAdapted.locally_martingale_of_le_completion (hX : StronglyAdapte
     (hlocal : @Locally ℝ≥0 (NullMeasurableSpace Ω P) E _ _ _ _ _ _
       (fun Y ↦ Martingale Y 𝒢 P.completion) 𝒢 X P.completion) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P := by
-  let : @IsFiniteMeasure (NullMeasurableSpace Ω P) _ P.completion :=
-    ⟨lt_of_eq_of_lt (Measure.completion_apply P univ) (measure_lt_top P univ)⟩
   apply ProbabilityTheory.Locally.martingale_completion_iff.mp
   exact StronglyAdapted.locally_martingale_of_le (P := P.completion) (𝒢 := 𝒢)
     ((stronglyAdapted_monoAmbient_iff _).mpr hX)

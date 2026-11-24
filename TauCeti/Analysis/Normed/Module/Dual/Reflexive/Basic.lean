@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Normed.Module.Dual.Adjoint
+import TauCeti.Analysis.Normed.Module.Annihilator
 
 /-!
 # Reflexivity and the continuous dual
@@ -24,6 +25,11 @@ a proper dense subspace of a Hilbert space can have a reflexive continuous dual.
 The converse uses `ContinuousLinearMap.surjective_of_norm_le_norm_comp`, the
 surjectivity criterion for an operator whose adjoint is bounded below. The bidual
 isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`.
+
+Finally, `LinearIsometry.surjective_of_surjective_inclusionInDoubleDual` is the standard
+surjectivity criterion for representing the dual of a reflexive space: a linear isometry from a
+Banach space into the continuous dual of a reflexive space is onto when its functionals separate
+points.
 
 ## References
 
@@ -139,3 +145,30 @@ theorem surjective_inclusionInDoubleDual_iff (e : E ≃L[𝕜] F) :
     Surjective.of_comp_iff _ e.surjective]
 
 end ContinuousLinearEquiv
+
+namespace LinearIsometry
+
+variable {𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- A linear isometry `T` from a Banach space into the continuous dual of a reflexive space `Y` is
+onto when the functionals `T x` separate the points of `Y`: a functional on `Y⋆` annihilating the
+closed range of `T` is evaluation at some `y ∈ Y`, which must vanish. -/
+theorem surjective_of_surjective_inclusionInDoubleDual (T : X →ₗᵢ[𝕜] StrongDual 𝕜 Y)
+    (hY : Surjective (inclusionInDoubleDual 𝕜 Y)) (h : ∀ y, (∀ x, T x y = 0) → y = 0) :
+    Surjective T := by
+  let S := T.toLinearMap.range
+  have hS : IsClosed (S : Set (StrongDual 𝕜 Y)) := T.isometry.isClosedEmbedding.isClosed_range
+  intro Λ
+  suffices Λ ∈ S.topologicalClosure by
+    rw [hS.submodule_topologicalClosure_eq] at this
+    exact this
+  apply (S.mem_topologicalClosure_iff_forall_dual_eq_zero Λ).2
+  intro Ψ hΨ
+  obtain ⟨y, rfl⟩ := hY Ψ
+  have hy : y = 0 := h y fun x ↦ by
+    rw [← dual_def]
+    exact hΨ (T x) (LinearMap.mem_range_self T.toLinearMap x)
+  simp [hy]
+
+end LinearIsometry
