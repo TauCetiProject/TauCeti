@@ -220,58 +220,6 @@ theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ �
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).property
 
 variable (K L) in
-/-- The norm of a uniformizer of `𝒪[L]` is associated to the residue-degree power of a
-uniformizer of `𝒪[K]`: both have normalized valuation `f(L/K)`. -/
-private theorem associated_norm_irreducible_pow {π : 𝒪[K]} {ϖ : 𝒪[L]} (hπ : Irreducible π)
-    (hϖ : Irreducible ϖ) :
-    Associated (Algebra.norm 𝒪[K] ϖ) (π ^ inertiaDegree K L) := by
-  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
-  have hϖ' : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have hπ' : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  -- the norm of the uniformizer of `L` has residue-degree valuation in `K`, and so does the
-  -- residue-degree power of the uniformizer of `K`
-  have hn' : (normalizedValuation K (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).toAdd
-      = (inertiaDegree K L : ℤ) := by
-    have hn := toAdd_normalizedValuation_norm (K := K) (L := L) (Units.mk0 (ϖ : L) hϖ')
-    simpa only [Units.val_mk0, normalizedValuation_irreducible hϖ, toAdd_ofAdd,
-      nsmul_eq_mul, mul_one] using hn
-  have hb : (normalizedValuation K (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)).toAdd
-      = (inertiaDegree K L : ℤ) := by
-    rw [map_pow, toAdd_pow, normalizedValuation_irreducible hπ, toAdd_ofAdd,
-      nsmul_eq_mul, mul_one]
-  have hle : (normalizedValuation K (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)).toAdd
-      ≤ (normalizedValuation K (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).toAdd :=
-    by rw [hb, hn']
-  have hle' : (normalizedValuation K (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).toAdd
-      ≤ (normalizedValuation K (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)).toAdd :=
-    by rw [hn', hb]
-  -- in the discrete valuation ring `𝒪[K]`, divisibility is comparison of valuations
-  have hA : ((Algebra.norm 𝒪[K] ϖ : 𝒪[K]) : K)
-      = ((Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ') : Kˣ) : K) := by
-    rw [coe_norm_integerRing]
-    exact (Algebra.coe_normUnits (R := K) (Units.mk0 (ϖ : L) hϖ')).symm
-  have hB : ((π ^ inertiaDegree K L : 𝒪[K]) : K)
-      = ((Units.mk0 (π : K) hπ' ^ inertiaDegree K L : Kˣ) : K) := by
-    push_cast
-    exact (Units.val_pow_eq_pow_val (Units.mk0 (π : K) hπ') (inertiaDegree K L)).symm
-  have hco : (algebraMap 𝒪[K] K : 𝒪[K] → K) = ((↑) : 𝒪[K] → K) :=
-    Algebra.coe_algebraMap_ofSubsemiring 𝒪[K]
-  have hval := Valuation.integer.integers (valuation K)
-  have h₁ : (Algebra.norm 𝒪[K] ϖ) ∣ (π ^ inertiaDegree K L : 𝒪[K]) := by
-    refine hval.dvd_iff_le.mpr ?_
-    rw [hco, hB, hA]
-    exact (toAdd_normalizedValuation_le_iff_valuation_le
-      (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))
-      (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)).1 hle'
-  have h₂ : (π ^ inertiaDegree K L : 𝒪[K]) ∣ (Algebra.norm 𝒪[K] ϖ) := by
-    refine hval.dvd_iff_le.mpr ?_
-    rw [hco, hB, hA]
-    exact (toAdd_normalizedValuation_le_iff_valuation_le
-      (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)
-      (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).1 hle
-  exact associated_of_dvd_dvd h₁ h₂
-
-variable (K L) in
 /-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
 maximal ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`, in the form of Mathlib's
 `Ideal.relNorm`.
@@ -286,7 +234,12 @@ theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
   let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  have hass := associated_norm_irreducible_pow K L hπ hϖ
+  -- both sides have valuation `f(L/K)`, by the valuation of a norm
+  have hass : Associated (Algebra.norm 𝒪[K] ϖ) (π ^ inertiaDegree K L) :=
+    (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).1 <| by
+      rw [IsDiscreteValuationRing.addVal_norm, IsDiscreteValuationRing.addVal_uniformizer hϖ,
+        IsDiscreteValuationRing.addVal_pow, IsDiscreteValuationRing.addVal_uniformizer hπ,
+        inertiaDegree_eq_inertiaDeg]
   calc Ideal.relNorm 𝒪[K] 𝓂[L]
       = Ideal.relNorm 𝒪[K] (Ideal.span {↑ϖ} : Ideal 𝒪[L]) := by rw [hϖ.maximalIdeal_eq]
     _ = Ideal.span {Algebra.intNorm 𝒪[K] 𝒪[L] ϖ} := Ideal.relNorm_singleton 𝒪[K] ϖ
