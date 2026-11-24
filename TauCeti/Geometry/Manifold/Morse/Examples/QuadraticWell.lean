@@ -213,10 +213,13 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ t s : ℝ) :
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀) t s =
       ENNReal.ofReal (|x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s)))) := by
   rcases lt_or_ge s t with hst | hts
-  · rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
-      Measure.restrict_empty, lintegral_zero_measure, eq_comm, ENNReal.ofReal_eq_zero]
-    exact mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _)
-      (sub_nonpos.2 (Real.exp_le_exp.2 (by linarith)))
+  · -- Before time `t` the length difference is negative, so its positive part is `0`.
+    have : |x₀| * (Real.exp (-(2 * t)) - Real.exp (-(2 * s))) ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _)
+        (sub_nonpos.2 (Real.exp_le_exp.2 (by linarith)))
+    rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc, Icc_eq_empty hst.not_ge,
+      ENNReal.ofReal_of_nonpos this]
+    simp
   -- The speed of the trajectory at time `u` is `2 |x₀| exp (-2 u)`.
   have hspeed : ∀ u, ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u ↦ x₀ * Real.exp (-(2 * u))) u 1‖ₑ =
       ENNReal.ofReal (2 * |x₀| * Real.exp (-(2 * u))) := by
