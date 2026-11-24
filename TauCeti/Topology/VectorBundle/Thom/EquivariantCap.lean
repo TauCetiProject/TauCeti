@@ -41,9 +41,9 @@ where `L_D` and `L_{D ⊗ k_χ}` are the local systems associated to `D` and to 
 (`TauCeti.quotientTwistedHomologyThomIso`). For `D` the trivial representation `k` this reads
 `H_{q + r}(Q, Q₀; k) ≅ H_q(Z; L_{k_χ})` (`TauCeti.quotientSingularHomologyThomIso`). For the
 pull-back to the orientation double cover, `(Q, Q₀)` is the Thom pair of the original bundle and `Z`
-its base. These results are stated for `L_{k_χ}` with `χ = sign`, that is, for the representation
-`Rep.of (Representation.ofLinearCharacter sign)`, while the orientation local system is associated
-to `Rep.ofDistribMulAction k ℤˣ k`
+its base. In this orientation-cover application (`G = ℤˣ`, `χ = sign`) the coefficient system
+`L_{k_χ}` is the one associated to `Rep.of (Representation.ofLinearCharacter sign)`, while the
+orientation local system is associated to `Rep.ofDistribMulAction k ℤˣ k`
 (`TauCeti.VectorBundleOrientationCover.associatedLocalSystemSignIso`); the identification of these
 two sign representations is not part of this file.
 
