@@ -16,7 +16,8 @@ subtriad tests used in hypergraph regularity; restricting the three vertex cells
 special case, supplied by `Subpolyad3.ofSubcells`.
 
 Subpolyads are extensional in their three selected pair graphs and form a finite type, even
-without a finite pair palette. Their supports lie in the parent support. Nonempty finite
+without a finite pair palette, with at most `2 ^ (3 * |V|²)` subpolyads per polyad
+(`TauCeti.card_subpolyad3_le`). Their supports lie in the parent support. Nonempty finite
 intersections are formed coordinatewise and their supports are the intersections of the supports.
 The subcell constructor accepts arbitrary vertex sets and intersects with the parent pair supports,
 so no containment hypotheses are needed. `Subpolyad3.unionSupport` collects the supports
@@ -105,6 +106,30 @@ private theorem pairData_injective : Function.Injective
 /-- A finite host admits only finitely many subpolyads of any fixed polyad. -/
 @[no_expose] noncomputable instance : Fintype (Subpolyad3 P) :=
   Fintype.ofInjective _ pairData_injective
+
+end Subpolyad3
+
+/-- The number of subpolyads of a polyad on a host `V` is at most `2 ^ (3 * |V|²)`. -/
+theorem card_subpolyad3_le (P : Polyad3 S) :
+    Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * Fintype.card V ^ 2) := by
+  have hcard : Fintype.card (Subpolyad3 P) ≤
+      Fintype.card (Finset {p : V × V // p.1 ≠ p.2}) ^ 3 := by
+    have h := Fintype.card_le_of_injective _ (Subpolyad3.pairData_injective (P := P))
+    simpa [Fintype.card_prod, pow_succ, mul_assoc] using h
+  have hp : Fintype.card {p : V × V // p.1 ≠ p.2} ≤ Fintype.card V ^ 2 := by
+    calc
+      Fintype.card {p : V × V // p.1 ≠ p.2} ≤ Fintype.card (V × V) := Fintype.card_subtype_le _
+      _ = Fintype.card V ^ 2 := by rw [Fintype.card_prod, sq]
+  calc
+    Fintype.card (Subpolyad3 P) ≤ (2 ^ Fintype.card {p : V × V // p.1 ≠ p.2}) ^ 3 := by
+      simpa [Fintype.card_finset] using hcard
+    _ = 2 ^ (3 * Fintype.card {p : V × V // p.1 ≠ p.2}) := by rw [← pow_mul, mul_comm]
+    _ ≤ 2 ^ (3 * Fintype.card V ^ 2) :=
+      Nat.pow_le_pow_right (by decide : 0 < 2) (Nat.mul_le_mul_left 3 hp)
+
+namespace Subpolyad3
+
+variable {P : Polyad3 S}
 
 /-- The injective triples whose three coordinate pairs belong to the selected pair graphs. -/
 noncomputable def support (Q : Subpolyad3 P) :
@@ -195,9 +220,9 @@ theorem support_finsetInter {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
 /-- Restrict a polyad to three vertex sets, intersecting each parent pair graph with the
 corresponding vertex rectangle. The sets need not be contained in the parent cells. -/
 noncomputable def ofSubcells (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) : Subpolyad3 P where
-  pair₀₁ := P.pairSupport₀₁.filter fun p ↦ p.1.1 ∈ a₀ ∧ p.1.2 ∈ a₁
-  pair₀₂ := P.pairSupport₀₂.filter fun p ↦ p.1.1 ∈ a₀ ∧ p.1.2 ∈ a₂
-  pair₁₂ := P.pairSupport₁₂.filter fun p ↦ p.1.1 ∈ a₁ ∧ p.1.2 ∈ a₂
+  pair₀₁ := P.pairSupport₀₁.filter fun p ↦ p.val.1 ∈ a₀ ∧ p.val.2 ∈ a₁
+  pair₀₂ := P.pairSupport₀₂.filter fun p ↦ p.val.1 ∈ a₀ ∧ p.val.2 ∈ a₂
+  pair₁₂ := P.pairSupport₁₂.filter fun p ↦ p.val.1 ∈ a₁ ∧ p.val.2 ∈ a₂
   pair₀₁_sub := filter_subset _ _
   pair₀₂_sub := filter_subset _ _
   pair₁₂_sub := filter_subset _ _
@@ -207,7 +232,7 @@ noncomputable def ofSubcells (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) : Subpo
 theorem mem_ofSubcells_pair₀₁ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
     (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ (ofSubcells P a₀ a₁ a₂).pair₀₁ ↔
-      p ∈ P.pairSupport₀₁ ∧ p.1.1 ∈ a₀ ∧ p.1.2 ∈ a₁ := by
+      p ∈ P.pairSupport₀₁ ∧ p.val.1 ∈ a₀ ∧ p.val.2 ∈ a₁ := by
   simp [ofSubcells]
 
 /-- The selected zero-two pairs of a vertex restriction. -/
@@ -215,7 +240,7 @@ theorem mem_ofSubcells_pair₀₁ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
 theorem mem_ofSubcells_pair₀₂ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
     (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ (ofSubcells P a₀ a₁ a₂).pair₀₂ ↔
-      p ∈ P.pairSupport₀₂ ∧ p.1.1 ∈ a₀ ∧ p.1.2 ∈ a₂ := by
+      p ∈ P.pairSupport₀₂ ∧ p.val.1 ∈ a₀ ∧ p.val.2 ∈ a₂ := by
   simp [ofSubcells]
 
 /-- The selected one-two pairs of a vertex restriction. -/
@@ -223,7 +248,7 @@ theorem mem_ofSubcells_pair₀₂ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
 theorem mem_ofSubcells_pair₁₂ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
     (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ (ofSubcells P a₀ a₁ a₂).pair₁₂ ↔
-      p ∈ P.pairSupport₁₂ ∧ p.1.1 ∈ a₁ ∧ p.1.2 ∈ a₂ := by
+      p ∈ P.pairSupport₁₂ ∧ p.val.1 ∈ a₁ ∧ p.val.2 ∈ a₂ := by
   simp [ofSubcells]
 
 /-- A vertex restriction keeps exactly the parent triples landing in the three given sets. -/
@@ -232,7 +257,7 @@ theorem mem_ofSubcells_pair₁₂ (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
 theorem mem_ofSubcells_support (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
     (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ (ofSubcells P a₀ a₁ a₂).support ↔
-      x ∈ P.support ∧ x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂ := by
+      x ∈ P.support ∧ x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂ := by
   rw [mem_support]
   simp only [mem_ofSubcells_pair₀₁, mem_ofSubcells_pair₀₂, mem_ofSubcells_pair₁₂,
     coe_coordPair]
@@ -246,7 +271,7 @@ theorem mem_ofSubcells_support (P : Polyad3 S) (a₀ a₁ a₂ : Finset V)
 /-- The support of a vertex restriction, as a filter of the parent support. -/
 theorem support_ofSubcells (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) :
     (ofSubcells P a₀ a₁ a₂).support =
-      {x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} := by
+      {x ∈ P.support | x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂} := by
   ext x
   rw [mem_ofSubcells_support, mem_filter]
 
@@ -404,8 +429,8 @@ theorem exists_unionSupport_eq_of_card_le {r : ℕ} (Q : ι → Subpolyad3 P)
     · exact ⟨_, hj⟩
     · simp at hj
   · rintro ⟨i, hi⟩
-    refine ⟨⟨e i, (e i).2.trans_le hr⟩, ?_⟩
-    simpa [(e i).2] using hi
+    refine ⟨⟨e i, (e i).isLt.trans_le hr⟩, ?_⟩
+    simpa [(e i).isLt] using hi
 
 /-- Including every member of a family of subpolyads does not change its union support. -/
 @[simp]

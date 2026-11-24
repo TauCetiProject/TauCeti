@@ -69,7 +69,7 @@ theorem sum_apply_out_mem_invariants {π : ContRepresentation R G V} {f : C(G, V
     ⟨⟨(g * q.out)⁻¹ * (g • q).out, QuotientGroup.eq.mp (QuotientGroup.mk_out_smul g q).symm⟩,
       by simp [mul_assoc]⟩
   rw [hπ, ← hu]
-  exact ((TauCeti.mem_rightTranslationStabilizer.mp (hU u.2)) (g * q.out)).symm
+  exact ((TauCeti.mem_rightTranslationStabilizer.mp (hU u.property)) (g * q.out)).symm
 
 end ContRepresentation
 

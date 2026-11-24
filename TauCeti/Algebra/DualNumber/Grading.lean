@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
-public import TauCeti.Algebra.Module.GradedModule.Dual.Basic
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 
 /-!
@@ -24,8 +23,8 @@ the usual ungraded dual-number algebra.
 * `TauCeti.dualNumberGrade`: the degree pieces of the dual numbers.
 * `TauCeti.dualNumberGradedAlgebra`: the corresponding graded-algebra structure.
 * `TauCeti.dualNumberIntegerGrade`, `TauCeti.dualNumberIntegerGradedAlgebra`, and
-  `TauCeti.dualNumberInternalGrading`: the same grading extended by zero to integer degrees and
-  packaged as an `InternalGrading`.
+  `TauCeti.dualNumberIntegerInternalGrading`: the same grading extended by zero to integer degrees
+  and packaged as an `InternalGrading`.
 
 ## Main results
 
@@ -38,7 +37,7 @@ the usual ungraded dual-number algebra.
   the two nonzero pieces are linearly equivalent to the base ring.
 * `TauCeti.dualNumberIntegerGrade_zero_eq_span_one`: in the integer grading, degree zero is the
   line through `1`.
-* `TauCeti.parityGrading_dualNumberIntegerGrade_one_eq_bot` and `TauCeti.isHomogeneous_sndHom`:
+* `TauCeti.parityGrading_dualNumberIntegerGrade_one` and `TauCeti.isHomogeneous_sndHom`:
   even support of the integer grading and degree `-2` homogeneity of `TrivSqZeroExt.sndHom R R`.
 
 ## Implementation notes
@@ -111,13 +110,13 @@ theorem eps_mem_dualNumberGrade_two :
 
 /-- The degree-zero piece of the dual numbers is linearly equivalent to the base ring. -/
 noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R where
-  toFun x := x.1.fst
+  toFun x := x.val.fst
   invFun r := ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩
   left_inv x := by
     apply Subtype.ext
     apply TrivSqZeroExt.ext
     · simp
-    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.2]
+    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.property]
   right_inv r := by simp
   map_add' x y := by simp
   map_smul' r x := by simp
@@ -125,7 +124,7 @@ noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R whe
 /-- The degree-zero equivalence reads the scalar coordinate. -/
 @[simp]
 theorem dualNumberGradeZeroEquiv_apply (x : dualNumberGrade R 0) :
-    dualNumberGradeZeroEquiv R x = x.1.fst := by
+    dualNumberGradeZeroEquiv R x = x.val.fst := by
   unfold dualNumberGradeZeroEquiv
   rfl
 
@@ -139,12 +138,12 @@ theorem dualNumberGradeZeroEquiv_symm_apply (r : R) :
 
 /-- The degree-two piece of the dual numbers is linearly equivalent to the base ring. -/
 noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R where
-  toFun x := x.1.snd
+  toFun x := x.val.snd
   invFun r := ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩
   left_inv x := by
     apply Subtype.ext
     apply TrivSqZeroExt.ext
-    · simp [(mem_dualNumberGrade_two (R := R)).mp x.2]
+    · simp [(mem_dualNumberGrade_two (R := R)).mp x.property]
     · simp
   right_inv r := by simp
   map_add' x y := by simp
@@ -153,7 +152,7 @@ noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R wher
 /-- The degree-two equivalence reads the infinitesimal coordinate. -/
 @[simp]
 theorem dualNumberGradeTwoEquiv_apply (x : dualNumberGrade R 2) :
-    dualNumberGradeTwoEquiv R x = x.1.snd := by
+    dualNumberGradeTwoEquiv R x = x.val.snd := by
   unfold dualNumberGradeTwoEquiv
   rfl
 
@@ -262,7 +261,8 @@ private theorem decompose_coeAddMonoidHom (x : DirectSum ℕ (fun n => dualNumbe
         have hzero : degreeZeroPart R x = 0 := Subtype.ext (by simp [hx])
         have htwo : degreeTwoPart R x = x := Subtype.ext (TrivSqZeroExt.ext (by simp [hx]) rfl)
         simp [decompose, hzero, htwo, DirectSum.lof_eq_of]
-      · obtain rfl : x = 0 := Subtype.ext (by simpa [dualNumberGrade_eq_bot R hn0 hn2] using x.2)
+      · obtain rfl : x = 0 := Subtype.ext (by simpa [dualNumberGrade_eq_bot R hn0 hn2] using
+          x.property)
         simp
 
 /-- The coordinate decomposition of the dual numbers into their degree pieces. -/
@@ -334,58 +334,58 @@ noncomputable def dualNumberIntegerGradedAlgebra : GradedAlgebra (dualNumberInte
   let _ := dualNumberGradedAlgebra R
   Graded.gradedAlgebraExtendByZero (dualNumberGrade R)
 
-/-- The standard degree-two integer grading on `DualNumber R` packaged as an `InternalGrading`. -/
-noncomputable def dualNumberInternalGrading : InternalGrading R (DualNumber R) ℤ :=
-  letI := dualNumberIntegerGradedAlgebra R
-  InternalGrading.ofDecomposition (dualNumberIntegerGrade R)
-
-/-- The homogeneous pieces of `dualNumberInternalGrading R` are `dualNumberIntegerGrade R`. -/
-@[simp]
-theorem dualNumberInternalGrading_piece :
-    (dualNumberInternalGrading R).piece = dualNumberIntegerGrade R := by
-  let := dualNumberIntegerGradedAlgebra R
-  simp [dualNumberInternalGrading]
-
-/-- Graded-monoid instance on `(dualNumberInternalGrading R).piece`. -/
-instance instGradedMonoidDualNumberInternalGrading :
-    SetLike.GradedMonoid (dualNumberInternalGrading R).piece where
-  one_mem := by
-    rw [dualNumberInternalGrading_piece]
-    exact one_mem_dualNumberIntegerGrade_zero R
-  mul_mem i j x y hx hy := by
-    let := dualNumberIntegerGradedAlgebra R
-    rw [dualNumberInternalGrading_piece] at hx hy ⊢
-    exact SetLike.mul_mem_graded hx hy
-
-/-- The degree-two integer grading on `DualNumber R` is supported in even degrees. -/
-theorem parityGrading_dualNumberIntegerGrade_one_eq_bot :
-    parityGrading (dualNumberIntegerGrade R) 1 = ⊥ := by
-  rw [parityGrading_one_eq_bot_iff]
-  intro k
-  by_cases hk : 2 * k + 1 < 0
-  · exact dualNumberIntegerGrade_eq_bot_of_neg R hk
-  · obtain ⟨n, hn⟩ : ∃ n : ℕ, 2 * k + 1 = n := Int.eq_ofNat_of_zero_le (by omega)
-    rw [hn, dualNumberIntegerGrade_ofNat]
+/-- In the integer grading of the dual numbers, every piece outside degrees zero and two
+vanishes. -/
+theorem dualNumberIntegerGrade_eq_bot {d : ℤ} (h0 : d ≠ 0) (h2 : d ≠ 2) :
+    dualNumberIntegerGrade R d = ⊥ := by
+  rcases lt_or_ge d 0 with hd | hd
+  · exact dualNumberIntegerGrade_eq_bot_of_neg R hd
+  · lift d to ℕ using hd
+    rw [dualNumberIntegerGrade_ofNat]
     exact dualNumberGrade_eq_bot R (by omega) (by omega)
+
+/-- The integer grading of the dual numbers is concentrated in even degrees (`0` and `2`). -/
+@[simp]
+theorem parityGrading_dualNumberIntegerGrade_one :
+    parityGrading (dualNumberIntegerGrade R) 1 = ⊥ :=
+  parityGrading_one_eq_bot_iff.mpr fun _ => dualNumberIntegerGrade_eq_bot R (by omega) (by omega)
+
+/-- `TauCeti.dualNumberIntegerGrade` packaged as an `InternalGrading`. -/
+noncomputable def dualNumberIntegerInternalGrading : InternalGrading R (DualNumber R) ℤ where
+  piece := dualNumberIntegerGrade R
+  isInternal := by
+    let _ := dualNumberIntegerGradedAlgebra R
+    exact DirectSum.Decomposition.isInternal (dualNumberIntegerGrade R)
+
+/-- The homogeneous pieces of `TauCeti.dualNumberIntegerInternalGrading` are
+`TauCeti.dualNumberIntegerGrade`. -/
+@[simp]
+theorem dualNumberIntegerInternalGrading_piece :
+    (dualNumberIntegerInternalGrading R).piece = dualNumberIntegerGrade R :=
+  (rfl)
+
+/-- Graded-monoid instance on `(dualNumberIntegerInternalGrading R).piece`. -/
+instance instGradedMonoidDualNumberIntegerInternalGrading :
+    SetLike.GradedMonoid (dualNumberIntegerInternalGrading R).piece where
+  one_mem := by
+    rw [dualNumberIntegerInternalGrading_piece]
+    exact one_mem_dualNumberIntegerGrade_zero R
+  mul_mem _ _ _ _ hx hy := by
+    let := dualNumberIntegerGradedAlgebra R
+    rw [dualNumberIntegerInternalGrading_piece] at hx hy ⊢
+    exact SetLike.mul_mem_graded hx hy
 
 /-- With `deg 1 = 0` and `deg ε = 2`, the trace `sndHom R R` is homogeneous of degree `-2`. -/
 theorem isHomogeneous_sndHom :
     LinearMap.IsHomogeneous (TrivSqZeroExt.sndHom R R) (dualNumberIntegerGrade R)
-      (trivialGrading R R) (-2) := by
-  rw [← dualNumberInternalGrading_piece,
-    (dualNumberInternalGrading R).isHomogeneous_trivialGrading_iff_mem_dualPiece,
-    InternalGrading.mem_dualPiece_iff]
-  intro q x hx hq
-  by_cases hqneg : q < 0
-  · rw [dualNumberInternalGrading_piece, dualNumberIntegerGrade_eq_bot_of_neg R hqneg,
-      Submodule.mem_bot] at hx
-    simp [hx]
-  · obtain ⟨n, rfl⟩ : ∃ n : ℕ, q = n := Int.eq_ofNat_of_zero_le (by omega)
-    rw [dualNumberInternalGrading_piece, dualNumberIntegerGrade_ofNat] at hx
-    rcases eq_or_ne n 0 with rfl | hn0
-    · exact (mem_dualNumberGrade_zero R).mp hx
-    · have hn2 : n ≠ 2 := by omega
-      rw [dualNumberGrade_eq_bot R hn0 hn2, Submodule.mem_bot] at hx
-      simp [hx]
+      (trivialGrading R R) (-2) :=
+  LinearMap.isHomogeneous_def.mpr fun p x hx => by
+    by_cases hp2 : p = 2
+    · subst hp2; simp
+    · by_cases hp0 : p = 0
+      · subst hp0
+        rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
+        simp [hx]
+      · rw [dualNumberIntegerGrade_eq_bot R hp0 hp2, Submodule.mem_bot] at hx; simp [hx]
 
 end TauCeti

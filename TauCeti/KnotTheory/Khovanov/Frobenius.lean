@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Coalgebra.Equiv
 public import Mathlib.RingTheory.Coalgebra.IsFrobenius
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
-public import TauCeti.Algebra.Algebra.Frobenius.Transport
+public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Transport
 public import TauCeti.Algebra.DualNumber.TensorProduct
 public import TauCeti.Algebra.DualNumber.Trace
 
@@ -41,18 +41,22 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
   `Coalgebra.IsFrobenius.left_eq_comul_comp_mul'` and
   `Coalgebra.IsFrobenius.right_eq_comul_comp_mul'` this identifies `Δ ∘ m` with both mixed
   composites `(m ⊗ id) ∘ (id ⊗ Δ)` and `(id ⊗ m) ∘ (Δ ⊗ id)`.
+* `TauCeti.Khovanov.frobeniusCoalgebra_sndHom`: reconstructing the Frobenius coalgebra from the
+  perfect trace `sndHom R R` recovers `TauCeti.Khovanov.coalgebra`.
 * `TauCeti.Khovanov.mul_compr₂_counit`: the Frobenius form `(a, b) ↦ counit (a * b)` is the
   perfect pairing `TauCeti.dualNumberTracePairing`.
-* `TauCeti.Khovanov.counit_basis_mul_basis_rev`: the basis `ε, 1` is dual to the basis `1, ε`
-  for that pairing; `DualNumber.khovanov_counit_eps_mul_smul_one_add_counit_smul_eps` is the
+* `TauCeti.Khovanov.counit_basis_mul_basis_rev` and
+  `TauCeti.Khovanov.traceDualBasis_dualNumberBasis_apply`: the basis `ε, 1` is dual to the basis
+  `1, ε` for that pairing; `DualNumber.khovanov_counit_eps_mul_smul_one_add_counit_smul_eps` is the
   resulting expansion `a = counit (ε * a) • 1 + counit a • ε`.
-* `TauCeti.Khovanov.baseChangeCoalgEquiv`: for a commutative `R`-algebra `S`, the algebra
-  isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras, so the Khovanov
-  Frobenius algebra over `S` is the base change of the one over `R`.
-* `TauCeti.Khovanov.frobeniusCoalgebra_sndHom_eq_coalgebra`,
-  `TauCeti.Khovanov.frobeniusCoalgebra_baseChange_sndHom_eq`,
-  `TauCeti.Khovanov.handle_eq_two_smul_eps`: comparison of `coalgebra` and its base change with
-  `LinearMap.frobeniusCoalgebra`, together with the handle element `2 • ε`.
+* `TauCeti.Khovanov.handleElem_eq`, `TauCeti.Khovanov.counit_handleElem_eq_two`, and
+  `TauCeti.Khovanov.handleElem_sq`: the handle element is `2 • ε`, with counit `2` and square `0`.
+* `TauCeti.Khovanov.baseChangeCoalgEquiv`,
+  `TauCeti.Khovanov.toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv`, and
+  `TauCeti.Khovanov.frobeniusCoalgebra_dualBaseChange_sndHom`: for a commutative `R`-algebra `S`,
+  the algebra isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras agreeing with
+  `AlgEquiv.toFrobeniusCoalgEquiv`, and `Module.Dual.baseChange S (sndHom R R)` reconstructs the
+  base-changed Khovanov coalgebra.
 
 ## References
 
@@ -120,6 +124,12 @@ scoped instance isFrobenius : Coalgebra.IsFrobenius R R[ε] where
       refine dualNumber_linearMap_ext ?_ ?_ <;>
       simp [Coalgebra.IsFrobenius.left_def, Coalgebra.IsFrobenius.right_def, tmul_add, add_tmul]
 
+/-- **Reconstructing the Frobenius coalgebra from the trace `sndHom R R` recovers the Khovanov
+coalgebra.** -/
+theorem frobeniusCoalgebra_sndHom :
+    (sndHom R R).frobeniusCoalgebra = coalgebra R :=
+  (sndHom R R).frobeniusCoalgebra_eq (coalgebra R) rfl (isFrobenius R)
+
 /-- The Frobenius form `(a, b) ↦ counit (a * b)` of the Khovanov coalgebra is the perfect trace
 pairing of the dual numbers. -/
 theorem mul_compr₂_counit :
@@ -133,6 +143,30 @@ theorem counit_basis_mul_basis_rev (i j : Fin 2) :
       if i = j then 1 else 0 := by
   fin_cases i <;> fin_cases j <;> simp
 
+/-- The trace-dual basis of `(1, ε)` with respect to `sndHom R R` is `(ε, 1)`. -/
+@[simp]
+theorem traceDualBasis_dualNumberBasis_apply (i : Fin 2) :
+    (sndHom R R).traceDualBasis (dualNumberBasis R) i = dualNumberBasis R i.rev := by
+  refine ((LinearMap.mul R R[ε]).compr₂ (sndHom R R)).toPerfPair.injective
+    ((dualNumberBasis R).ext fun j => ?_)
+  simp only [LinearMap.toPerfPair_apply, LinearMap.compr₂_apply,
+    LinearMap.mul_apply_apply, LinearMap.traceDualBasis_mul, Module.Basis.repr_self_apply]
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- The handle element `m (Δ 1)` of the Khovanov Frobenius algebra is `2 • ε`. -/
+@[simp]
+theorem handleElem_eq : Coalgebra.handleElem R R[ε] = (2 : R) • (ε : R[ε]) := by
+  simp [Coalgebra.handleElem_def, comul_one, two_smul]
+
+/-- Evaluating the Khovanov counit on the handle element gives `2`. -/
+theorem counit_handleElem_eq_two :
+    Coalgebra.counit (R := R) (Coalgebra.handleElem R R[ε]) = 2 := by
+  simp
+
+/-- In the Khovanov Frobenius algebra, the square of the handle element vanishes. -/
+theorem handleElem_sq : Coalgebra.handleElem R R[ε] ^ 2 = 0 := by
+  ext <;> simp [handleElem_eq, sq]
+
 variable {R}
 
 /-- Expansion of a dual number in the basis `1, ε` with coefficients computed by the Frobenius
@@ -140,41 +174,6 @@ form against the dual basis `ε, 1`. -/
 theorem _root_.DualNumber.khovanov_counit_eps_mul_smul_one_add_counit_smul_eps (a : R[ε]) :
     Coalgebra.counit (R := R) (ε * a) • (1 : R[ε]) + Coalgebra.counit (R := R) a • ε = a := by
   ext <;> simp
-
-section Reconstruction
-
-variable (R)
-
-/-- The Frobenius coalgebra reconstructed from the trace `sndHom R R` equals the Khovanov
-coalgebra on `R[ε]`. -/
-theorem frobeniusCoalgebra_sndHom_eq_coalgebra :
-    (sndHom R R : R[ε] →ₗ[R] R).frobeniusCoalgebra = coalgebra R :=
-  TauCeti.Coalgebra.IsFrobenius.frobeniusCoalgebra_counit_eq
-
-/-- The coproduct reconstructed from `sndHom R R` equals the Khovanov coproduct on `R[ε]`. -/
-theorem frobeniusCoalgebra_sndHom_comul_eq :
-    ((sndHom R R : R[ε] →ₗ[R] R).frobeniusCoalgebra).comul =
-      Coalgebra.comul (R := R) (A := R[ε]) :=
-  congrArg (fun c => c.toCoalgebraStruct.comul) (frobeniusCoalgebra_sndHom_eq_coalgebra R)
-
-/-- The handle element `m (Δ 1)` of the Khovanov coalgebra is `2 • ε`. -/
-@[simp]
-theorem handle_eq_two_smul_eps :
-    TauCeti.Coalgebra.handle R R[ε] = (2 : R) • (ε : R[ε]) := by
-  rw [TauCeti.Coalgebra.handle_def, comul_one, map_add, LinearMap.mul'_apply, LinearMap.mul'_apply,
-    one_mul, mul_one, two_smul]
-
-/-- The Khovanov counit evaluates to `2` on the handle element. -/
-theorem counit_handle :
-    Coalgebra.counit (R := R) (TauCeti.Coalgebra.handle R R[ε]) = 2 := by
-  simp
-
-/-- The handle element of the Khovanov coalgebra squares to zero. -/
-theorem handle_sq :
-    TauCeti.Coalgebra.handle R R[ε] ^ 2 = 0 := by
-  simp [sq, smul_mul_smul_comm]
-
-end Reconstruction
 
 section BaseChange
 
@@ -184,7 +183,7 @@ variable (R) (S : Type*) [CommSemiring S] [Algebra R S]
 `S ⊗[R] R[ε]` carries the base change of the Khovanov coalgebra over `R`. Its underlying map is
 the algebra isomorphism `TauCeti.dualNumberAlgebraTensorAlgEquiv`. -/
 noncomputable def baseChangeCoalgEquiv : S ⊗[R] R[ε] ≃ₗc[S] S[ε] :=
-  { (dualNumberAlgebraTensorAlgEquiv R S).toLinearEquiv with
+  { (dualNumberAlgebraTensorAlgEquiv R S S).toLinearEquiv with
     counit_comp := by
       refine ((dualNumberBasis R).baseChange S).ext fun i => ?_
       fin_cases i <;> simp
@@ -196,17 +195,25 @@ noncomputable def baseChangeCoalgEquiv : S ⊗[R] R[ε] ≃ₗc[S] S[ε] :=
 `TauCeti.dualNumberAlgebraTensorAlgEquiv`. -/
 @[simp]
 theorem coe_baseChangeCoalgEquiv :
-    ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S := (rfl)
+    ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S S := (rfl)
+
+/-- `baseChangeCoalgEquiv` coincides with the general Frobenius transport
+`AlgEquiv.toFrobeniusCoalgEquiv` applied to `dualNumberAlgebraTensorAlgEquiv`. -/
+theorem toFrobeniusCoalgEquiv_dualNumberAlgebraTensorAlgEquiv :
+    (dualNumberAlgebraTensorAlgEquiv R S S).toFrobeniusCoalgEquiv
+        (fun x => by simpa using CoalgHomClass.counit_comp_apply (baseChangeCoalgEquiv R S) x) =
+      baseChangeCoalgEquiv R S :=
+  CoalgEquiv.ext fun _ => by simp
 
 /-- Reconstructing the `S`-coalgebra on `S ⊗[R] R[ε]` from `Module.Dual.baseChange S (sndHom R R)`
 recovers the base change of the Khovanov coalgebra over `R`. -/
-theorem frobeniusCoalgebra_baseChange_sndHom_eq :
+theorem frobeniusCoalgebra_dualBaseChange_sndHom :
     LinearMap.frobeniusCoalgebra (R := S) (A := S ⊗[R] R[ε])
         (Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R)) =
       (inferInstance : Coalgebra S (S ⊗[R] R[ε])) :=
-  (LinearMap.frobeniusCoalgebra_baseChange (A := R[ε]) S (sndHom R R : R[ε] →ₗ[R] R)).trans
+  (LinearMap.frobeniusCoalgebra_dualBaseChange (B := R[ε]) S (sndHom R R : R[ε] →ₗ[R] R)).trans
     (congrArg (fun c : Coalgebra R R[ε] ↦ (letI := c; (inferInstance : Coalgebra S (S ⊗[R] R[ε]))))
-      (frobeniusCoalgebra_sndHom_eq_coalgebra R))
+      (frobeniusCoalgebra_sndHom R))
 
 end BaseChange
 

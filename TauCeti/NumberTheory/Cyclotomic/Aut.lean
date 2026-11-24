@@ -22,6 +22,8 @@ containing `K` by exactly one `K`-algebra map.
 
 * `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n` when `Φ_n` is irreducible.
 * `IsCyclotomicExtension.isCyclic_aut`: the group is cyclic when `(ZMod n)ˣ` is.
+* `IsCyclotomicExtension.autEquivPow_symm_inv_unitOfCoprime_apply`: the inverse of the
+  arithmetic Frobenius `x ↦ x ^ ℓ` raises `n`-th roots of unity to the power `(ℓ⁻¹ : ZMod n).val`.
 * `IsCyclotomicExtension.neZero_of_nontrivial_aut`: a nontrivial Galois group forces `n ≠ 0`.
 * `IsPrimitiveRoot.existsUnique_algHom_apply_eq`: exactly one `K`-algebra map sends a given
   primitive root to any other when `Φ_n` is irreducible.
@@ -72,6 +74,15 @@ theorem card_aut_eq_totient (h : Irreducible (cyclotomic n K)) :
   have : NeZero n := ⟨by rintro rfl; simp at h⟩
   rw [Nat.card_congr (autEquivPow L h).toEquiv, Nat.card_eq_fintype_card,
     ZMod.card_units_eq_totient]
+
+/-- The inverse of the arithmetic Frobenius `σ_ℓ : x ↦ x ^ ℓ`, the image of
+`(ZMod.unitOfCoprime ℓ hcop)⁻¹` under `(autEquivPow L h).symm`, raises `n`-th roots of
+unity to the power `(ℓ⁻¹ : ZMod n).val`. -/
+theorem autEquivPow_symm_inv_unitOfCoprime_apply [NeZero n] (h : Irreducible (cyclotomic n K))
+    {ℓ : ℕ} (hcop : ℓ.Coprime n) {x : L} (hx : x ^ n = 1) :
+    (autEquivPow L h).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹ x = x ^ ((ℓ : ZMod n)⁻¹).val := by
+  rw [autEquivPow_apply_of_pow_eq_one L h _ hx, MulEquiv.apply_symm_apply, ← ZMod.inv_coe_unit,
+    ZMod.coe_unitOfCoprime]
 
 /-- **A cyclotomic Galois group is cyclic when the unit group is.** The hypothesis holds at every
 power of an odd prime, where it is `ZMod.isCyclic_units_of_prime_pow`. -/

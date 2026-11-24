@@ -65,19 +65,19 @@ theorem dualDistrib_tmul_mem_dualPiece (G : InternalGrading R M ℤ) (H : Intern
 functional of degree `p + q` on `M ⊗[R] N`. -/
 theorem isHomogeneous_dualDistrib_tmul (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     {φ : Module.Dual R M} {ψ : Module.Dual R N} {p q : ℤ}
-    (hφ : TauCeti.LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) p)
-    (hψ : TauCeti.LinearMap.IsHomogeneous ψ H.piece (trivialGrading R R) q) :
-    TauCeti.LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N (φ ⊗ₜ[R] ψ))
+    (hφ : LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) p)
+    (hψ : LinearMap.IsHomogeneous ψ H.piece (trivialGrading R R) q) :
+    LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N (φ ⊗ₜ[R] ψ))
       (G.tensorProduct H).piece (trivialGrading R R) (p + q) := by
-  rw [isHomogeneous_trivialGrading_iff_mem_dualPiece] at hφ hψ ⊢
+  rw [← mem_dualPiece_iff_isHomogeneous_trivialGrading] at hφ hψ ⊢
   exact G.dualDistrib_tmul_mem_dualPiece H hφ hψ
 
 /-- Mathlib's ordinary tensor-dual map preserves the internal total degree. -/
 theorem isHomogeneous_dualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hG : {p | G.dualPiece p ≠ ⊥}.Finite) (hH : {p | H.dualPiece p ≠ ⊥}.Finite) :
-    TauCeti.LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N)
+    LinearMap.IsHomogeneous (TensorProduct.dualDistrib R M N)
       ((G.dual hG).tensorProduct (H.dual hH)).piece (G.tensorProduct H).dualPiece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro n z hz
   rw [add_zero]
   have hle : ((G.dual hG).tensorProduct (H.dual hH)).piece n ≤
@@ -132,9 +132,9 @@ theorem signedDualDistrib_tmul_tmul_of_mem_dualPiece (G : InternalGrading R M �
 /-- The signed tensor-dual map preserves degree; this does not require projectivity. -/
 theorem isHomogeneous_signedDualDistrib (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hG : {p | G.dualPiece p ≠ ⊥}.Finite) (hH : {p | H.dualPiece p ≠ ⊥}.Finite) :
-    TauCeti.LinearMap.IsHomogeneous (G.signedDualDistrib H)
+    LinearMap.IsHomogeneous (G.signedDualDistrib H)
       ((G.dual hG).tensorProduct (H.dual hH)).piece (G.tensorProduct H).dualPiece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p w hw
   rw [add_zero, mem_dualPiece_iff]
   intro q z hz hq
@@ -170,13 +170,13 @@ theorem signedDualDistribEquiv_apply (G : InternalGrading R M ℤ) (H : Internal
 /-- The signed tensor-dual equivalence preserves the internal grading. -/
 theorem isHomogeneous_signedDualDistribEquiv (G : InternalGrading R M ℤ)
     (H : InternalGrading R N ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).toLinearMap
+    LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).toLinearMap
       ((G.dual (G.finite_dualPiece_ne_bot G.finite_piece_ne_bot)).tensorProduct
         (H.dual (H.finite_dualPiece_ne_bot H.finite_piece_ne_bot))).piece
       ((G.tensorProduct H).dual
         ((G.tensorProduct H).finite_dualPiece_ne_bot
           (G.tensorProduct H).finite_piece_ne_bot)).piece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p w hw
   simpa only [dual_piece, signedDualDistribEquiv_toLinearMap] using
     (G.isHomogeneous_signedDualDistrib H (G.finite_dualPiece_ne_bot G.finite_piece_ne_bot)
@@ -185,7 +185,7 @@ theorem isHomogeneous_signedDualDistribEquiv (G : InternalGrading R M ℤ)
 /-- The inverse tensor-dual comparison preserves degree as well. -/
 theorem isHomogeneous_signedDualDistribEquiv_symm (G : InternalGrading R M ℤ)
     (H : InternalGrading R N ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).symm.toLinearMap
+    LinearMap.IsHomogeneous (G.signedDualDistribEquiv H).symm.toLinearMap
       ((G.tensorProduct H).dual
         ((G.tensorProduct H).finite_dualPiece_ne_bot (G.tensorProduct H).finite_piece_ne_bot)).piece
       ((G.dual (G.finite_dualPiece_ne_bot G.finite_piece_ne_bot)).tensorProduct

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # The trivial grading of an algebra
@@ -14,12 +15,17 @@ public import TauCeti.Algebra.Module.GradedModule.Trivial
 The trivial grading `TauCeti.trivialGrading` of `TauCeti.Algebra.Module.GradedModule.Trivial`,
 concentrated in degree zero, is an internal `GradedAlgebra` when the module is an algebra.  This
 file records that instance, whose decomposition and degree projection come from the module-level
-file.  This grading is the canonical target for augmentations of integer-graded algebras and the
-grading of coefficients in degree-zero examples.
+file, and shows that the unit map `Algebra.linearMap R A` from `trivialGrading R R` into any
+`ℤ`-indexed family `𝒜` with `1 ∈ 𝒜 0` has degree `0`.  This grading is the canonical target for
+augmentations of integer-graded algebras and the grading of coefficients in degree-zero examples.
 
 ## Main results
 
 * `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading of an algebra is a graded algebra.
+* `TauCeti.isHomogeneous_algebraLinearMap_of_one_mem`,
+  `TauCeti.isHomogeneous_algebraLinearMap`: `Algebra.linearMap R A` is homogeneous of degree `d`
+  from `trivialGrading R R` to `𝒜` whenever `(1 : A) ∈ 𝒜 d` (hence of degree `0` under
+  `[SetLike.GradedOne 𝒜]`).
 -/
 
 public section
@@ -42,5 +48,24 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
   __ := instDecompositionTrivialGrading R A
 
 end Algebra
+
+/-- If `1 ∈ 𝒜 d`, then the algebra unit map `Algebra.linearMap R A` is homogeneous of degree `d`
+from the trivially graded base ring `trivialGrading R R` into `𝒜`. -/
+theorem isHomogeneous_algebraLinearMap_of_one_mem {R A σ : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [SetLike σ A] [ZeroMemClass σ A] [SMulMemClass σ R A]
+    {𝒜 : ℤ → σ} {d : ℤ} (h1 : (1 : A) ∈ 𝒜 d) :
+    LinearMap.IsHomogeneous (Algebra.linearMap R A) (trivialGrading R R) 𝒜 d :=
+  LinearMap.isHomogeneous_def.mpr fun _ r hr => by
+    rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
+    · rw [zero_add, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one]
+      exact SMulMemClass.smul_mem r h1
+    · simp
+
+/-- The algebra unit map `Algebra.linearMap R A` is homogeneous of degree `0` from the trivially
+graded base ring `trivialGrading R R` into any `ℤ`-indexed family `𝒜` with `1 ∈ 𝒜 0`. -/
+theorem isHomogeneous_algebraLinearMap {R A σ : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [SetLike σ A] [ZeroMemClass σ A] [SMulMemClass σ R A] (𝒜 : ℤ → σ) [SetLike.GradedOne 𝒜] :
+    LinearMap.IsHomogeneous (Algebra.linearMap R A) (trivialGrading R R) 𝒜 0 :=
+  isHomogeneous_algebraLinearMap_of_one_mem (SetLike.one_mem_graded 𝒜)
 
 end TauCeti

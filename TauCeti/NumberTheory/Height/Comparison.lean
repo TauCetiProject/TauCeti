@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.Naive
+import TauCeti.Analysis.Polynomial.SupNorm.MahlerMeasure
 
 /-!
 # Comparison of naive height and Mahler measure
@@ -53,12 +54,11 @@ theorem naiveHeight_le_choose_natDegree_div_two_mul_mahlerMeasure (x : F) :
 /-- The naive height is at most `2 ^ d` times the Mahler measure, where `d` is the degree of the
 rational minimal polynomial. -/
 theorem naiveHeight_le_two_pow_mul_mahlerMeasure (x : F) :
-    naiveHeight x ≤ 2 ^ (minpoly ℚ x).natDegree * mahlerMeasure x :=
-  (naiveHeight_le_choose_natDegree_div_two_mul_mahlerMeasure x).trans <| by
-    apply mul_le_mul_of_nonneg_right
-    · exact_mod_cast (Nat.choose_le_two_pow
-        (minpoly ℚ x).natDegree ((minpoly ℚ x).natDegree / 2))
-    · exact zero_le_one.trans (one_le_mahlerMeasure x)
+    naiveHeight x ≤ 2 ^ (minpoly ℚ x).natDegree * mahlerMeasure x := by
+  rw [naiveHeight_def, mahlerMeasure_def,
+    ← supNorm_map _ (Int.castRingHom ℂ),
+    ← natDegree_map_primitiveMinpoly x]
+  exact supNorm_le_two_pow_natDegree_mul_mahlerMeasure _
 
 /-- Landau's inequality for an algebraic number: its Mahler measure is at most its naive height
 times the square root of one plus the degree of its rational minimal polynomial. -/

@@ -7,9 +7,12 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
+public import TauCeti.Analysis.Complex.UnitDisc.Manifold
+public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
 
 /-!
 # The fundamental class of a compact Riemann surface
@@ -62,6 +65,8 @@ surfaces carries fundamental class to fundamental class
   pull canonical homological orientations back to canonical homological orientations.
 * `TauCeti.comap_subtypeVal_complexHomologicalOrientation`: the canonical homological orientation
   restricts to that of each open subset.
+* `TauCeti.comap_coe_comp_subdisc_complexHomologicalOrientation`: the round subdisc maps of the
+  open unit disc preserve the restriction of the canonical homological orientation of `ℂ`.
 * `Diffeomorph.mapFundamentalClass_complexHomologicalOrientation`,
   `Diffeomorph.singularHomologyFunctor_map_complexFundamentalClass`: biholomorphisms carry
   fundamental classes to fundamental classes.
@@ -183,6 +188,25 @@ theorem comap_subtypeVal_complexHomologicalOrientation {U : TopologicalSpace.Ope
     (hj : IsOpenEmbedding (Subtype.val : U → M)) :
     (complexHomologicalOrientation M).comap hj = complexHomologicalOrientation U :=
   comap_complexHomologicalOrientation (k := 1) hj isLocalDiffeomorph_subtype_val
+
+/-- The round subdisc maps `z ↦ c + r z`, `r > 0`, of the open unit disc
+(`TauCeti.Complex.UnitDisc.subdisc`), read in `ℂ`, pull the canonical homological orientation of
+`ℂ` back to its restriction to `𝔻`: they are restrictions of the affine map `w ↦ c + r w`, a
+holomorphic diffeomorphism of `ℂ`. -/
+theorem comap_coe_comp_subdisc_complexHomologicalOrientation {c : ℂ} {r : ℝ} {hc : ‖c‖ + r ≤ 1}
+    {hr : 0 < r} :
+    (complexHomologicalOrientation ℂ).comap
+        (Complex.UnitDisc.isOpenEmbedding_coe_comp_subdisc (hc := hc) (hr := hr)) =
+      (complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe := by
+  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
+  set A := affineHomeomorph (r : ℂ) c hr0
+  have hA : ⇑A = fun w ↦ r * w + c := funext (affineHomeomorph_apply _ _ hr0)
+  have hloc : IsLocalDiffeomorph 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) 1 A :=
+    isLocalDiffeomorph_of_deriv_ne_zero (by rw [hA]; fun_prop) le_rfl fun w ↦ by
+      simpa [hA] using hr0
+  refine (HomologicalOrientation.comap_comap_of_comp_eq _ A.isOpenEmbedding
+    Complex.UnitDisc.isOpenEmbedding_coe _ Complex.UnitDisc.coe_comp_subdisc.symm).symm.trans ?_
+  rw [comap_complexHomologicalOrientation A.isOpenEmbedding hloc]
 
 section CompactSpace
 

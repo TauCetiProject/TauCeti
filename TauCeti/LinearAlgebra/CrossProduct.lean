@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CrossProduct
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Complements on the cross product
@@ -23,6 +25,10 @@ multiple of `w`; the coefficient is the triple product of `u`, `v` and `w`. Over
 triple product `x ⬝ᵥ u ⨯₃ v` is the determinant of the matrix with rows `x`, `u` and `v`, so for
 linearly independent `u` and `v` it vanishes exactly when `x` lies in the plane they span.
 
+Over a linearly ordered commutative ring, Lagrange's identity
+`(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = (u ⬝ᵥ u) (w ⬝ᵥ w) - (u ⬝ᵥ w) ^ 2` shows that two vectors of equal squared
+length whose cross product has zero square are equal or opposite.
+
 ## Main results
 
 * `TauCeti.exists_eq_units_smul_of_crossProduct_eq_zero`: if `v ⨯₃ w = 0` and `v` and `w` each
@@ -30,6 +36,8 @@ linearly independent `u` and `v` it vanishes exactly when `x` lies in the plane 
 * `TauCeti.cross_cross_cross_eq_smul`: `(u ⨯₃ w) ⨯₃ (v ⨯₃ w) = (u ⬝ᵥ v ⨯₃ w) • w`.
 * `TauCeti.triple_product_eq_zero_iff_mem_span_pair`: for linearly independent `u` and `v`,
   `x ⬝ᵥ u ⨯₃ v = 0` exactly when `x` lies in the span of `u` and `v`.
+* `TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`: over a linearly ordered commutative ring, two
+  vectors of equal squared length whose cross product has zero square are equal or opposite.
 
 ## Provenance
 
@@ -85,5 +93,20 @@ theorem triple_product_eq_zero_iff_mem_span_pair {K : Type*} [Field K] {u v x : 
     exact not_isUnit_zero hdet
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hx
     simp [add_dotProduct, dot_self_cross, dot_cross_self]
+
+/-- Two vectors of `R³` of equal squared length, over a linearly ordered commutative ring `R`
+such as `ℝ`, whose cross product has zero square are equal or opposite. -/
+theorem eq_or_eq_neg_of_cross_dotProduct_eq_zero [LinearOrder R] [IsStrictOrderedRing R]
+    {u w : Fin 3 → R} (h : u ⬝ᵥ u = w ⬝ᵥ w) (huw : (u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = 0) :
+    w = u ∨ w = -u := by
+  rw [cross_dot_cross, dotProduct_comm w u] at huw
+  -- By Lagrange's identity, the product of the squares of `w - u` and `w + u` is
+  -- `4 ((u ⬝ᵥ u) (w ⬝ᵥ w) - (u ⬝ᵥ w) ^ 2) + (u ⬝ᵥ u - w ⬝ᵥ w) ^ 2 = 0`.
+  have hprod : ((w - u) ⬝ᵥ (w - u)) * ((w + u) ⬝ᵥ (w + u)) = 0 := by
+    simp only [sub_dotProduct, dotProduct_sub, add_dotProduct, dotProduct_add, dotProduct_comm w u]
+    linear_combination 4 * huw + (u ⬝ᵥ u - w ⬝ᵥ w) * h
+  rcases mul_eq_zero.mp hprod with h | h
+  · exact .inl (sub_eq_zero.mp (dotProduct_self_eq_zero.mp h))
+  · exact .inr (eq_neg_of_add_eq_zero_left (dotProduct_self_eq_zero.mp h))
 
 end TauCeti
