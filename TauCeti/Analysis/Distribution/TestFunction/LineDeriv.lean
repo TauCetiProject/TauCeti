@@ -230,8 +230,8 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
 /-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
 on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
-open sets cover `E`. The multiplier may take values in any normed `ℝ`-algebra `𝕜` acting on `F`,
-such as `ℂ` acting on a complex test function. -/
+open sets cover `E`. The multiplier may take values in any nontrivially normed field `𝕜` that is
+a normed `ℝ`-algebra acting on `F`, such as `ℂ` acting on a complex test function. -/
 theorem exists_coe_eq_smul_of_contDiffOn {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {g : E → 𝕜}
     (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
