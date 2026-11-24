@@ -256,7 +256,7 @@ theorem bijective_dualityMap_of_sup_eq_top (hUV : U ⊔ V = ⊤)
     exact LinearMap.bijective_of_surjective_of_bijective_of_right_exact _ _ _ _ _ _ _
       (o.toBiprod_comp_dualityMap hn L h) (o.fromBiprod_comp_dualityMap hn L h) (hexact hc₁)
       (hexact (TopCat.mayerVietoris_exact₂ L U.isOpen V.isOpen hUV' 0)) (hDUV n 0 h).2
-      (bijective_biprodMap_dualityMap hn L h (hDU n 0 h) (hDV n 0 h))
+      (ModuleCat.bijective_biprod_map _ _ (hDU n 0 h) (hDV n 0 h))
       ((ModuleCat.epi_iff_surjective _).1 (hc₂.epi_f (hzero.eq_of_tgt _ _)))
       ((ModuleCat.epi_iff_surjective _).1 (TopCat.epi_mayerVietorisFromBiprod_zero L hUV'))
   · -- Otherwise the five lemma applies to the rows from `Hᵖ_c(U ∩ V)` to `Hᵖ⁺¹_c(U) ⊞ Hᵖ⁺¹_c(V)`
@@ -272,10 +272,10 @@ theorem bijective_dualityMap_of_sup_eq_top (hUV : U ⊔ V = ⊤)
       (hexact (TopCat.mayerVietoris_exact₂ L U.isOpen V.isOpen hUV' (q + 1)))
       (hexact (TopCat.mayerVietoris_exact₃ L U.isOpen V.isOpen hUV' (q + 1) q))
       (hexact (TopCat.mayerVietoris_exact₁ L U.isOpen V.isOpen hUV' (q + 1) q))
-      (hDUV p (q + 1) h).2 (bijective_biprodMap_dualityMap hn L h (hDU _ _ h) (hDV _ _ h))
+      (hDUV p (q + 1) h).2 (ModuleCat.bijective_biprod_map _ _ (hDU _ _ h) (hDV _ _ h))
       (((isUnit_neg_one (α := ℤ)).pow (p + 1)).smul_bijective.comp (hDUV (p + 1) q h'))
       (((isUnit_neg_one (α := ℤ)).pow (p + 1)).smul_bijective.1.comp
-        (bijective_biprodMap_dualityMap hn L h' (hDU _ _ h') (hDV _ _ h')).1)
+        (ModuleCat.bijective_biprod_map _ _ (hDU _ _ h') (hDV _ _ h')).1)
 
 /-- **Poincaré duality for the union of two open subsets.** If the duality maps of open subsets
 `U`, `V` and `U ∩ V` of `M`, for the orientations pulled back from `M`, are bijective in every

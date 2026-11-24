@@ -522,20 +522,6 @@ private lemma compactSupportCohomologyExtend_dualityMap_of_le {U V : Opens M} (h
     (j := ι) hι p q h
   rwa [o.comap_comap_of_comp_eq V.isOpenEmbedding' hι U.isOpenEmbedding' rfl] at key
 
-/-- If the duality maps of two oriented manifolds `U` and `V` are bijective, so is the map
-`Hᵖ_c(U; L) ⊞ Hᵖ_c(V; L) ⟶ H_q(U; L) ⊞ H_q(V; L)` that they form, the map between the middle terms
-of two Mayer–Vietoris sequences. -/
-theorem bijective_biprodMap_dualityMap {U V : Type} [TopologicalSpace U] [T2Space U]
-    [ChartedSpace E U] [TopologicalSpace V] [T2Space V] [ChartedSpace E V]
-    {oU : HomologicalOrientation U E n} {oV : HomologicalOrientation V E n}
-    (hU : Function.Bijective (oU.dualityMap hn L p q h))
-    (hV : Function.Bijective (oV.dualityMap hn L p q h)) :
-    Function.Bijective (biprod.map (oU.dualityMap hn L p q h) (oV.dualityMap hn L p q h)).hom := by
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hU
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hV
-  have := isIso_of_mono_of_epi (biprod.map (oU.dualityMap hn L p q h) (oV.dualityMap hn L p q h))
-  exact ConcreteCategory.bijective_of_isIso _
-
 /-- **Poincaré duality for a disjoint union of two open sets.** If `M` is the union of two
 disjoint open sets `U` and `V` whose duality maps, for the pulled-back orientations, are bijective,
 then the duality map `Hᵖ_c(M; L) ⟶ H_q(M; L)` is bijective. -/
@@ -559,7 +545,7 @@ theorem bijective_dualityMap_of_disjoint {U V : Opens M} (hUV : U ⊔ V = ⊤) (
   have hFh : IsIso Fh := TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint
     (X := TopCat.of M) L U.isOpen V.isOpen (by rw [← Opens.coe_sup, hUV, Opens.coe_top])
     (Opens.coe_disjoint.2 hd) q
-  have := (ConcreteCategory.isIso_iff_bijective _).2 (bijective_biprodMap_dualityMap hn L h hU hV)
+  have := (ConcreteCategory.isIso_iff_bijective _).2 (ModuleCat.bijective_biprod_map _ _ hU hV)
   -- The duality maps commute with them, by naturality along the inclusions.
   have hsq : Fc ≫ o.dualityMap hn L p q h =
       biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
