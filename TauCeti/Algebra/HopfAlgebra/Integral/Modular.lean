@@ -38,18 +38,21 @@ sum into `∑ φ(Λ y₁) S(y₂) = ∑ α(y₁) S(y₂)`.
 
 ## Main definitions
 
-* `TauCeti.mulRightLeftIntegral`: right multiplication on the space of left integrals.
-* `TauCeti.modularCharacter`: the modular character `α`, as a linear functional on `H`.
-* `TauCeti.modularCharacterAlgHom`: the modular character as an algebra map `H →ₐ[k] k`, when
-  the left integrals form a line.
+* `TauCeti.HopfAlgebra.mulRightLeftIntegral`: right multiplication on the space of left
+  integrals.
+* `TauCeti.HopfAlgebra.modularCharacter`: the modular character `α`, as a linear functional on
+  `H`.
+* `TauCeti.HopfAlgebra.modularCharacterAlgHom`: the modular character as an algebra map
+  `H →ₐ[k] k`, when the left integrals form a line.
 
 ## Main results
 
-* `TauCeti.mul_eq_modularCharacter_smul`: `t * h = α h • t` for every left integral `t`.
-* `TauCeti.modularCharacter_eq_of_mul_eq_smul`: `α h` is the only scalar `c` with
+* `TauCeti.HopfAlgebra.mul_eq_modularCharacter_smul`: `t * h = α h • t` for every left integral
+  `t`.
+* `TauCeti.HopfAlgebra.modularCharacter_eq_of_mul_eq_smul`: `α h` is the only scalar `c` with
   `Λ * h = c • Λ` for a nonzero left integral `Λ`.
-* `TauCeti.modularCharacter_eq_counit_iff`: `α` is the counit exactly when every left integral
-  is a right integral.
+* `TauCeti.HopfAlgebra.modularCharacter_eq_counit_iff`: `α` is the counit exactly when every left
+  integral is a right integral.
 * `LinearMap.IsRightInvariantIntegral.nakayamaAut_symm_eq_winding`: the inverse of the Nakayama
   automorphism of a nonzero right cointegral is `y ↦ ∑ α(y₁) S²(y₂)`.
 * `LinearMap.IsRightInvariantIntegral.apply_mul_eq_sum_modularCharacter`: the twisted trace
@@ -69,7 +72,7 @@ public section
 
 open Coalgebra HopfAlgebra Module
 
-namespace TauCeti
+namespace TauCeti.HopfAlgebra
 
 section Bialgebra
 
@@ -91,7 +94,7 @@ theorem coe_mulRightLeftIntegral_apply (h : H) (t : leftIntegral k H) :
 /-- The **modular character** of a bialgebra `H` over a field: `modularCharacter k H h` is the
 trace of right multiplication by `h` on the space of left integrals. When the left integrals form
 a line spanned by `Λ`, it is the scalar `α h` with `Λ * h = α h • Λ`
-(`TauCeti.mul_eq_modularCharacter_smul`). -/
+(`TauCeti.HopfAlgebra.mul_eq_modularCharacter_smul`). -/
 noncomputable def modularCharacter : H →ₗ[k] k :=
   LinearMap.trace k (leftIntegral k H) ∘ₗ mulRightLeftIntegral k H
 
@@ -184,11 +187,11 @@ theorem modularCharacter_antipode_antipode (hH : finrank k (leftIntegral k H) = 
 
 end Hopf
 
-end TauCeti
+end TauCeti.HopfAlgebra
 
 namespace LinearMap
 
-open TauCeti
+open TauCeti TauCeti.HopfAlgebra
 
 variable {k H : Type*} [Field k] [Ring H]
 
