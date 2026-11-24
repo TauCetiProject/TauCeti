@@ -51,6 +51,7 @@ theorem coefficient_lineSpatialDeriv (v : CoordinateSpace n) (a : Symbol n V W m
     fderiv_coefficient_single, Complex.coe_smul]
 
 /-- Along the `j`-th basis vector `eⱼ`, `∂_{x, eⱼ} a` is the coordinate derivative `∂_{x_j} a`. -/
+@[simp]
 theorem lineSpatialDeriv_single (j : Fin n) (a : Symbol n V W m) :
     lineSpatialDeriv (EuclideanSpace.single j 1) a = spatialDeriv j a := by
   refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
