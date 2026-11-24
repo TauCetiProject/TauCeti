@@ -110,16 +110,13 @@ series. -/
 theorem isUnit_evalAt_one_colemanDSeries_one_sub_C_mul_reverse_iff (hc : c * Q.leadingCoeff = 1)
     (hF : F.IsEntire) (hF₀ : PowerSeries.constantCoeff F = 1) :
     IsUnit (((1 - C c * Q.reverse).colemanDSeries F).evalAt (1 : R)) ↔
-      IsCoprime (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R)
-        ⟨F, IsEntire.mem_subring.mpr hF⟩ := by
+      IsCoprime (IsEntire.polynomialHom Q) ⟨F, IsEntire.mem_subring.mpr hF⟩ := by
   rw [evalAt_one_colemanDSeries_one_sub_C_mul_reverse hc hF hF₀,
     isUnit_entireResultant_iff (monic_C_mul_of_mul_leadingCoeff_eq_one hc) hF]
   -- `c Q` is the unit `c` times `Q` in the ring of entire series
-  have hunit : IsUnit (⟨C c, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩ :
-      IsEntire.subring R) :=
-    IsUnit.of_mul_eq_one ⟨C Q.leadingCoeff, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe _)⟩
-      (Subtype.ext (by simpa using congrArg PowerSeries.C hc))
-  convert isCoprime_mul_unit_left_left hunit _ _ using 2
-  exact Subtype.ext (by simp)
+  have hunit : IsUnit (IsEntire.polynomialHom (C c)) :=
+    IsUnit.of_mul_eq_one (IsEntire.polynomialHom (C Q.leadingCoeff))
+      (by rw [← map_mul, ← C_mul, hc, C_1, map_one])
+  simpa only [map_mul] using isCoprime_mul_unit_left_left hunit (IsEntire.polynomialHom Q) _
 
 end Polynomial

@@ -217,8 +217,8 @@ private theorem continuousRepField_mem_gaugeFixedKernel (hk : 2 ≤ k)
   -- Classical `L²` solutions of `L_x y = 0` are smooth.
   have hsmooth := contDiff_of_gaugeFixedOperator_eq (f := 0)
     (contDiff_of_forall_mem_framedFieldSpace x.continuous hmem)
-    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace x.continuous i n
-      (hmem (n + 2))) hy₁ hyL (fun _ ↦ zero_mem _) heq
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace x.continuous hmem) hy₁ hyL
+    (fun _ ↦ zero_mem _) heq
   exact mem_gaugeFixedKernel.2 ⟨hsmooth.of_le (by simp), hyL, heq⟩
 
 /-- Every element of the classical kernel of `L_x` at a vortex is the field of real coordinates
@@ -234,8 +234,9 @@ private theorem exists_continuousRepField_eq (hk : 2 ≤ k)
   -- `y` is a weak solution of `L_x y = 0`, so it lies in `H^(k+1)`.
   have hyk : y ∈ sobolevFields ((k : ℝ) + 1) := by
     refine mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
-      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace x.continuous i n
-        (hmem (n + 2))) hyL (zero_mem _) fun η hη hηc ↦ ?_
+      (fun i n _ ↦
+        exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace x.continuous hmem i n)
+      hyL (zero_mem _) fun η hη hηc ↦ ?_
     exact (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) x.continuous
       (hy₂.of_le (by norm_num)) continuous_zero).2 heq η hη hηc
   set Y : SobolevFieldSpace f m ((k : ℝ) + 1) :=
