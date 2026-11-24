@@ -36,13 +36,15 @@ on invertible operators and does not change under composition with equivalences 
 representations on either side. For unitary representations on Hilbert spaces, the cokernel is the
 kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - ind_G T`.
 
-The multiplicity of a finite-dimensional continuous representation `σ` in `ind_G T`, read through
-the Hom rank `TauCeti.SplitK0.homFinrank 𝕜 σ`, is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. For
-strongly continuous unitary representations of a group on Hilbert spaces, this difference is the
-index of the action of `T` on the multiplicity spaces of `σ`, so it is constant along a
-norm-continuous family of equivariant Fredholm operators over a preconnected parameter set: the
-multiplicities of the equivariant index are homotopy invariant, with no compactness assumption on
-the group.
+The Hom rank `TauCeti.SplitK0.homFinrank 𝕜 σ` of a finite-dimensional continuous representation
+`σ` takes `ind_G T` to `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `G` is compact and `σ`
+is irreducible with only scalar self-intertwiners (always the case over `ℂ`), this is the
+multiplicity of `σ` in `ind_G T`; for any irreducible `σ` of a compact group it is that
+multiplicity times the dimension of the self-intertwiners of `σ`. For strongly continuous unitary
+representations of a group on Hilbert spaces, this difference is the index of the action of `T`
+on the multiplicity spaces of `σ`, so it is constant along a norm-continuous family of equivariant
+Fredholm operators over a preconnected parameter set: every Hom rank of the equivariant index is
+homotopy invariant, with no compactness assumption on the group.
 
 For a compact group acting unitarily on Hilbert spaces, the equivariant index is a homotopy
 invariant: it is constant along a norm-continuous family of equivariant Fredholm operators over a
@@ -67,8 +69,8 @@ character, and characters detect the representation ring of a compact group
   is the difference of the characters of the kernel and the cokernel.
 * `ContIntertwiningMap.repRingCharacter_equivariantIndex_one`: evaluated at the identity, the
   character is the Fredholm index.
-* `ContIntertwiningMap.homFinrank_equivariantIndex`: the multiplicity of `σ` in the
-  equivariant index is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
+* `ContIntertwiningMap.homFinrank_equivariantIndex`: the Hom rank of `σ` on the equivariant
+  index is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
 * `ContIntertwiningMap.equivariantIndex_eq_zero_of_bijective`: bijective intertwining maps have
   equivariant index zero.
 * `ContIntertwiningMap.equivariantIndex_comp_equiv` and
@@ -78,8 +80,9 @@ character, and characters detect the representation ring of a compact group
   spaces, `ind_G T = [ker T] - [ker T†]`.
 * `ContIntertwiningMap.equivariantIndex_adjoint`: taking the adjoint negates the equivariant index.
 * `ContinuousOn.homFinrank_equivariantIndex_eq`: for unitary representations of a
-  group on Hilbert spaces, homotopy invariance of the multiplicities of the equivariant index over
-  a preconnected parameter set.
+  group on Hilbert spaces, homotopy invariance of the Hom ranks of the equivariant index (its
+  multiplicities, for irreducible `σ` with scalar self-intertwiners) over a preconnected parameter
+  set.
 * `ContinuousOn.equivariantIndex_eq`: **homotopy invariance**, the equivariant index is constant
   along a norm-continuous family of equivariant Fredholm operators on a preconnected set.
 * `ContIntertwiningMap.exists_pos_equivariantIndex_eq_of_norm_sub_lt`: **local constancy**, the
@@ -160,9 +163,10 @@ theorem repRingCharacter_equivariantIndex_one :
   have := hT.finite_coker
   simp [repRingCharacter_equivariantIndex, ContinuousLinearMap.index_eq_finrank_sub]
 
-/-- The multiplicity of a finite-dimensional continuous representation `σ` in the equivariant
-index is the dimension of the intertwiners from `σ` into the kernel minus that into the
-cokernel. -/
+/-- The Hom rank of a finite-dimensional continuous representation `σ` on the equivariant index
+is the dimension of the intertwiners from `σ` into the kernel minus that into the cokernel. When
+`G` is compact and `σ` is irreducible with only scalar self-intertwiners (as over `ℂ`), this is
+the multiplicity of `σ` in the equivariant index. -/
 @[simp]
 theorem homFinrank_equivariantIndex {V : Type*} [NormedAddCommGroup V]
     [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] (σ : ContRepresentation 𝕜 G V)
@@ -361,11 +365,12 @@ theorem equivariantIndex_adjoint :
   exact of_kerRepresentation_eq_of_ker_eq _ _ (by rw [adjoint_adjoint]) _ _
 
 include hπu hρu in
-/-- **Homotopy invariance of the multiplicities of the equivariant index.** Along a family of
+/-- **Homotopy invariance of the Hom ranks of the equivariant index.** Along a family of
 intertwining maps between strongly continuous unitary representations of a group on Hilbert
-spaces, continuous in operator norm and Fredholm on a preconnected set `s`, the multiplicity of
-every finite-dimensional continuous representation `σ` in the equivariant index is the same at
-every point of `s`. -/
+spaces, continuous in operator norm and Fredholm on a preconnected set `s`, the Hom rank of every
+finite-dimensional continuous representation `σ` on the equivariant index is the same at every
+point of `s`. This is the multiplicity of `σ` when `G` is compact and `σ` is irreducible with only
+scalar self-intertwiners (as over `ℂ`). -/
 theorem _root_.ContinuousOn.homFinrank_equivariantIndex_eq {X : Type*}
     [TopologicalSpace X] (σ : ContFDRep 𝕜 G)
     {A : X → π →ⁱL ρ} {s : Set X} (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)

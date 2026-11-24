@@ -380,21 +380,18 @@ theorem exists_iso_ofContRepresentation (X : ContFDRep 𝕜 G) :
   let σ : ContRepresentation 𝕜 G (Fin (Module.finrank 𝕜 X.obj) → 𝕜) :=
     .ofMonoidHom ((Module.End.toContinuousLinearMap _).toMonoidHom.comp
       (b.equivFun.conjRingEquiv.toMonoidHom.comp X.obj.ρ))
+  -- `σ g` is `X.obj.ρ g` conjugated by `b.equivFun`, by construction.
+  have hσ_apply (g : G) (v) : σ g v = b.equivFun (X.obj.ρ g (b.equivFun.symm v)) := rfl
   have hσ : Continuous σ := continuous_clm_apply.2 fun v ↦ continuous_pi fun i ↦
-    (X.property (b.coord i) (b.equivFun.symm v)).congr fun _ ↦ rfl
-  let E : X.obj ≃ₗ[𝕜] FDRep.ofShrink σ.toRepresentation :=
-    b.equivFun ≪≫ₗ (FDRep.ofShrinkEquiv σ.toRepresentation).toLinearEquiv.symm
-  refine ⟨σ, hσ, ⟨ObjectProperty.isoMk _ (E.toFDRepIso fun g x ↦ ?_)⟩⟩
-  let e := FDRep.ofShrinkEquiv σ.toRepresentation
-  apply e.toLinearEquiv.injective
-  have he := Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g (E x)
-  simp only [E, LinearEquiv.trans_apply] at he ⊢
-  rw [LinearEquiv.apply_symm_apply]
-  refine Eq.trans ?_ he.symm
-  change b.equivFun (X.obj.ρ g x) = σ g (e.toLinearEquiv (e.toLinearEquiv.symm (b.equivFun x)))
-  rw [LinearEquiv.apply_symm_apply]
-  change _ = b.equivFun (X.obj.ρ g (b.equivFun.symm (b.equivFun x)))
-  rw [LinearEquiv.symm_apply_apply]
+    (X.property (b.coord i) (b.equivFun.symm v)).congr fun g ↦ by
+      simp [hσ_apply, Module.Basis.equivFun_apply]
+  have hb (g : G) (x : X.obj) : σ g (b.equivFun x) = b.equivFun (X.obj.ρ g x) := by
+    rw [hσ_apply, LinearEquiv.symm_apply_apply]
+  let E := (Representation.Equiv.mk (ρ := X.obj.ρ) (σ := σ.toRepresentation) b.equivFun
+    fun g ↦ LinearMap.ext fun x ↦ (hb g x).symm).trans
+      (FDRep.ofShrinkEquiv σ.toRepresentation).symm
+  exact ⟨σ, hσ, ⟨ObjectProperty.isoMk _ <| E.toLinearEquiv.toFDRepIso fun g x ↦
+    Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g x⟩⟩
 
 end ContFDRep
 
