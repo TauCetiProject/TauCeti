@@ -30,7 +30,9 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
 
 ## Main definitions
 
-* `TauCeti.IsLieAction Ad`: `K` acts on `𝔤` by Lie algebra endomorphisms.
+* `TauCeti.IsLieAction Ad`: `K` acts on `𝔤` by Lie algebra endomorphisms. By
+  `TauCeti.IsLieAction.of_lieEquiv`, this holds when every `Ad g` underlies a Lie algebra
+  automorphism.
 * `TauCeti.GKModule Ad V`: a `(𝔤, K)`-module structure on the `𝔤`-module `V`.
 * `TauCeti.GKSubmodule M`: a `(𝔤, K)`-submodule, a Lie submodule stable under `K`.
 * `TauCeti.GKModule.submodule`, `TauCeti.GKModule.quotient`: the `(𝔤, K)`-module structures on a
@@ -90,6 +92,22 @@ endomorphisms** when every `Ad g` preserves the Lie bracket. -/
 class IsLieAction (Ad : Representation k K 𝔤) : Prop where
   /-- Every `Ad g` preserves the Lie bracket. -/
   map_lie (g : K) (x y : 𝔤) : Ad g ⁅x, y⁆ = ⁅Ad g x, Ad g y⁆
+
+/-- A representation whose operators are the linear maps underlying Lie algebra endomorphisms
+`φ g` acts by Lie algebra endomorphisms. -/
+theorem IsLieAction.of_lieHom {Ad : Representation k K 𝔤} (φ : K → 𝔤 →ₗ⁅k⁆ 𝔤)
+    (h : ∀ g x, φ g x = Ad g x) : IsLieAction Ad where
+  map_lie g x y := by simp only [← h, LieHom.map_lie]
+
+/-- A representation whose operators are the linear maps underlying Lie algebra automorphisms
+`φ g` acts by Lie algebra endomorphisms. -/
+theorem IsLieAction.of_lieEquiv {Ad : Representation k K 𝔤} (φ : K → 𝔤 ≃ₗ⁅k⁆ 𝔤)
+    (h : ∀ g x, φ g x = Ad g x) : IsLieAction Ad :=
+  .of_lieHom (fun g ↦ (φ g : 𝔤 →ₗ⁅k⁆ 𝔤)) h
+
+/-- The trivial representation acts by Lie algebra endomorphisms. -/
+instance IsLieAction.instTrivial : IsLieAction (Representation.trivial k K 𝔤) :=
+  .of_lieHom (fun _ ↦ 1) fun _ _ ↦ rfl
 
 /-- A **`(𝔤, K)`-module** structure on a `𝔤`-module `V`, for a monoid `K` acting on the Lie algebra
 `𝔤` by Lie algebra endomorphisms through `Ad`: a representation `ρ` of `K` on `V` with

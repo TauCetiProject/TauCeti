@@ -13,7 +13,10 @@ public import TauCeti.RepresentationTheory.GKModule.Basic
 
 Let `K` be a Lie group modelled on `I` over `ℝ`, let `𝔤` be a Lie algebra over a normed field
 extension `k` of `ℝ` (in the analytic theory `k = ℂ` and `𝔤` is a complexified Lie algebra) and let
-`ι : Lie K → 𝔤` be the differentiated inclusion. A `(𝔤, K)`-module `M` in the sense of harmonic
+`ι : Lie K → 𝔤` be the differentiated inclusion: for a Lie group `G` containing `K` through
+`j : K →* G`, this is `TauCeti.GKModule.lieInclusion j c`, the differential of `j` at `1` followed
+by a linear map `c : Lie G → 𝔤` (in the analytic theory, the inclusion of `Lie G` into its
+complexification). A `(𝔤, K)`-module `M` in the sense of harmonic
 analysis is a `TauCeti.GKModule` whose `K`-action is smooth on each finite-dimensional `K`-stable
 subspace, with differential the action of `Lie K` through `ι`.
 
@@ -30,6 +33,8 @@ harmonic analysis is a `TauCeti.GKModule` `M` with `M.IsCompatible ι` and
 
 ## Main definitions
 
+* `TauCeti.GKModule.lieInclusion j c`: the differentiated inclusion `Lie K → 𝔤` of a Lie group
+  homomorphism `j : K →* G`, followed by `c : Lie G → 𝔤`.
 * `TauCeti.GKModule.IsCompatible M ι`: the `K`-action of `M` is smooth on finite-dimensional
   `K`-stable subspaces, with differential the action of `Lie K` through `ι`.
 
@@ -63,5 +68,25 @@ structure IsCompatible (M : GKModule Ad V) (ι : GroupLieAlgebra I K →ₗ[ℝ]
   /-- The differential of the `K`-action at `1` is the action of `Lie K` through `ι`. -/
   mfderiv_apply (f : Module.Dual k V) (v : V) (X : GroupLieAlgebra I K) :
     mfderiv I 𝓘(ℝ, k) (fun g ↦ f (M.ρ g v)) 1 X = f ⁅ι X, v⁆
+
+section LieInclusion
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} {G : Type*} [TopologicalSpace G] [ChartedSpace H' G] [Group G]
+
+/-- The **differentiated inclusion** `Lie K → 𝔤` of a Lie group pair: the differential at `1` of
+a homomorphism `j : K →* G` (the inclusion of `K` in the Lie group `G`), followed by a linear map
+`c : Lie G → 𝔤`, such as the inclusion of `Lie G` into its complexification. A `(𝔤, K)`-module in
+the sense of harmonic analysis for the pair `(G, K)` is one with
+`M.IsCompatible (lieInclusion j c)`. -/
+noncomputable def lieInclusion (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤) :
+    GroupLieAlgebra I K →ₗ[ℝ] 𝔤 :=
+  c ∘ₗ (show E →L[ℝ] E' from mfderiv I I' j 1).toLinearMap
+
+theorem lieInclusion_apply (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤)
+    (X : GroupLieAlgebra I K) : lieInclusion j c X = c (mfderiv I I' j 1 X) :=
+  (rfl)
+
+end LieInclusion
 
 end TauCeti.GKModule
