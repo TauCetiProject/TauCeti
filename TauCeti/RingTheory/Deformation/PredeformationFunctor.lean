@@ -106,11 +106,10 @@ variable {A' A'' A : ArtinLocalAlg Λ k} (f : A' ⟶ A) (g : A'' ⟶ A)
 /-- The comparison map `θ : F(A' ×_A A'') → F(A') ×_{F(A)} F(A'')` for morphisms `f : A' ⟶ A` and
 `g : A'' ⟶ A` of `C_Λ` with `g` surjective, induced by the two projections of the fibre product.
 Schlessinger's conditions ask for this map to be surjective or bijective. -/
-def fiberProductMap (x : F.obj.obj (pullback f g hg)) :
-    Types.PullbackObj (F.obj.map f) (F.obj.map g) :=
-  ⟨(F.obj.map (pullbackFst f g hg) x, F.obj.map (pullbackSnd f g hg) x), by
-    rw [← types_comp_apply, ← types_comp_apply, ← F.obj.map_comp, ← F.obj.map_comp,
-      pullback_condition]⟩
+def fiberProductMap :
+    F.obj.obj (pullback f g hg) → Types.PullbackObj (F.obj.map f) (F.obj.map g) :=
+  (PullbackCone.mk (F.obj.map (pullbackFst f g hg)) (F.obj.map (pullbackSnd f g hg))
+    (by rw [← F.obj.map_comp, ← F.obj.map_comp, pullback_condition])).toPullbackObj
 
 /-- The first component of `θ x` is the image of `x` under the first projection. -/
 @[simp]
@@ -129,16 +128,9 @@ and `g` to a pullback square of types. -/
 theorem bijective_fiberProductMap_iff :
     Function.Bijective (F.fiberProductMap f g hg) ↔
       IsPullback (F.obj.map (pullbackFst f g hg)) (F.obj.map (pullbackSnd f g hg))
-        (F.obj.map f) (F.obj.map g) := by
-  rw [Types.isPullback_iff]
-  refine ⟨fun ⟨hinj, hsurj⟩ ↦ ⟨?_, fun x y ⟨h₁, h₂⟩ ↦ hinj (Subtype.ext (Prod.ext h₁ h₂)),
-    fun x₂ x₃ h ↦ ?_⟩, fun ⟨_, hinj, hsurj⟩ ↦ ⟨fun x y h ↦ hinj x y ?_, fun p ↦ ?_⟩⟩
-  · rw [← F.obj.map_comp, ← F.obj.map_comp, pullback_condition]
-  · obtain ⟨x, hx⟩ := hsurj ⟨(x₂, x₃), h⟩
-    exact ⟨x, congrArg (·.val.1) hx, congrArg (·.val.2) hx⟩
-  · exact ⟨congrArg (·.val.1) h, congrArg (·.val.2) h⟩
-  · obtain ⟨x, h₁, h₂⟩ := hsurj p.val.1 p.val.2 p.property
-    exact ⟨x, Subtype.ext (Prod.ext h₁ h₂)⟩
+        (F.obj.map f) (F.obj.map g) :=
+  ⟨fun h ↦ .of_isLimit ((PullbackCone.isLimitEquivBijective _).symm h),
+    fun h ↦ PullbackCone.isLimitEquivBijective _ h.isLimit⟩
 
 end FiberProduct
 
@@ -220,6 +212,7 @@ theorem smul_def (c : k) (v : F.TangentSpace) : c • v = F.obj.map (dualNumbers
   (rfl)
 
 /-- The image of the point of `F(k)` under `k → k[ε]` is the zero tangent vector. -/
+@[simp]
 theorem map_residueToDualNumbers (x : F.obj.obj (residue Λ k)) :
     F.obj.map (residueToDualNumbers Λ k) x = (0 : F.TangentSpace) :=
   congrArg _ (Subsingleton.elim _ _)
@@ -232,7 +225,7 @@ theorem map_comp_residueToDualNumbers {B : ArtinLocalAlg Λ k} (ψ : B ⟶ resid
 
 /-- Scalar multiplication of an image of a point of `F(B)` is its image under the composite with
 the scaling of `k[ε]`. -/
-private theorem smul_map {B : ArtinLocalAlg Λ k} (c : k) (φ : B ⟶ dualNumbers Λ k)
+theorem smul_map {B : ArtinLocalAlg Λ k} (c : k) (φ : B ⟶ dualNumbers Λ k)
     (x : F.obj.obj B) :
     c • (F.obj.map φ x : F.TangentSpace) = F.obj.map (φ ≫ dualNumbersSMul Λ k c) x := by
   rw [smul_def, F.obj.map_comp, types_comp_apply]
@@ -313,16 +306,13 @@ noncomputable instance : AddCommGroup F.TangentSpace where
     obtain ⟨rfl, rfl⟩ := hz
     simp only [← types_comp_apply, ← F.obj.map_comp, map_add_map]
     exact congrArg (F.obj.map · _) (dualNumbers_hom_ext fun b ↦ by simp [add_assoc])
-  -- In the next three fields, `simp` must not split composites with `FullSubcategory.comp_hom`:
-  -- the composite through `k` then no longer exposes `residueToDualNumbers` to
-  -- `epsCoeff_residueToDualNumbers_hom_left_hom_apply`.
   zero_add v := by
     have h := F.map_add_map_eq (toResidue _ ≫ residueToDualNumbers Λ k) (𝟙 _) (𝟙 _) v
-      fun b ↦ by simp [-ObjectProperty.FullSubcategory.comp_hom]
+      fun b ↦ by rw [epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply, zero_add]
     rwa [map_comp_residueToDualNumbers, F.obj.map_id, types_id_apply] at h
   add_zero v := by
     have h := F.map_add_map_eq (𝟙 _) (toResidue _ ≫ residueToDualNumbers Λ k) (𝟙 _) v
-      fun b ↦ by simp [-ObjectProperty.FullSubcategory.comp_hom]
+      fun b ↦ by rw [epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply, add_zero]
     rwa [map_comp_residueToDualNumbers, F.obj.map_id, types_id_apply] at h
   add_comm v w := by
     obtain ⟨x, rfl, rfl⟩ := F.exists_map_pullbackFst_eq_and v w
@@ -332,7 +322,7 @@ noncomputable instance : AddCommGroup F.TangentSpace where
   neg_add_cancel v := by
     have h := F.map_add_map_eq (dualNumbersSMul Λ k (-1)) (𝟙 _)
       (toResidue _ ≫ residueToDualNumbers Λ k) v fun b ↦ by
-        simp [-ObjectProperty.FullSubcategory.comp_hom]
+        rw [epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply]; simp
     rwa [map_comp_residueToDualNumbers, F.obj.map_id, types_id_apply] at h
   nsmul := nsmulRec
   zsmul := zsmulRec
@@ -360,9 +350,8 @@ noncomputable instance : Module k F.TangentSpace where
       F.map_add_map_eq _ _ (dualNumbersSMul Λ k (c + d)) v fun b ↦ by simp [add_mul]]
   zero_smul v := by
     rw [smul_def, ← F.map_comp_residueToDualNumbers (toResidue _) v]
-    -- As above, `simp` must keep the composite through `k`.
     exact congrArg (F.obj.map · v) (dualNumbers_hom_ext fun b ↦ by
-      simp [-ObjectProperty.FullSubcategory.comp_hom])
+      rw [epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply]; simp)
 
 end TangentSpace
 
@@ -388,6 +377,15 @@ maps `R → A` compatible with the maps to `k`. -/
 @[simp]
 theorem prorep_obj_map_apply {A B : ArtinLocalAlg Λ k} (φ : A ⟶ B) (x : (prorep R).obj.obj A) :
     (prorep R).obj.map φ x = x ≫ φ.hom :=
+  (rfl)
+
+/-- The algebra map of the image of a point `x` of `h_R` under `φ` is the composite of the algebra
+maps of `x` and `φ`. Not a `simp` lemma, as `prorep_obj_map_apply` rewrites its left side; it is
+used before that rewrite, because `Over.comp_left` does not apply to `x ≫ φ.hom`, in which `x` is
+an `Over` morphism only after unfolding `prorep`. -/
+theorem prorep_obj_map_left_hom_apply {A B : ArtinLocalAlg Λ k} (φ : A ⟶ B)
+    (x : (prorep R).obj.obj A) (r : R.left) :
+    ((prorep R).obj.map φ x).left.hom r = φ.hom.left.hom (x.left.hom r) :=
   (rfl)
 
 /-- A point of `h_R` at `A` is a `Λ`-algebra map `R → A` compatible with the maps to `k`. -/
@@ -427,6 +425,9 @@ variable {Λ k} (R : Type v) [CommRing R] [Algebra Λ R] [Algebra R k] [IsScalar
 private def prorepTangentSpaceEquivAux :
     (prorep (Over.mk (CommAlgCat.ofHom (IsScalarTower.toAlgHom Λ R k)))).TangentSpace ≃
       Derivation Λ R k :=
+  -- After `augmentation_dualNumbers`, the two sides differ only by unfolding `Over.mk` (whose
+  -- left object is `R`) and `CommAlgCat.ofHom`. `Over.mk_hom` and `CommAlgCat.hom_ofHom` handle
+  -- the structure map, but cannot change the carrier `(Over.mk _).left`, so `rfl` closes it.
   (prorepObjEquiv _ _).trans <| (Equiv.subtypeEquivRight fun _ ↦ by
     rw [augmentation_dualNumbers]; rfl).trans
       (derivationToTrivSqZeroExtEquivLift Λ R k (M := k)).symm
@@ -451,17 +452,16 @@ noncomputable def prorepTangentSpaceEquiv :
     ext r
     rw [PredeformationFunctor.map_add_map, _root_.add_apply, Equiv.toFun_as_coe,
       prorepTangentSpaceEquivAux_apply, prorepTangentSpaceEquivAux_apply,
-      prorepTangentSpaceEquivAux_apply]
-    -- Both sides are `ε`-coefficients of values of composites with `x`.
-    have h := epsCoeff_dualNumbersAdd_hom_left_hom_apply (Λ := Λ) (k := k)
-      ((liftResidue (pullbackFst _ _ (toResidue_surjective (dualNumbers Λ k)))
-        (pullbackSnd _ _ (toResidue_surjective _))).hom.left.hom (x.left.hom r))
-    rwa [liftResidue_hom_left_hom_apply_fst, liftResidue_hom_left_hom_apply_snd] at h
+      prorepTangentSpaceEquivAux_apply, prorep_obj_map_left_hom_apply,
+      prorep_obj_map_left_hom_apply, prorep_obj_map_left_hom_apply, comp_hom_left_hom_apply,
+      epsCoeff_dualNumbersAdd_hom_left_hom_apply, liftResidue_hom_left_hom_apply_fst,
+      liftResidue_hom_left_hom_apply_snd]
   map_smul' c v := by
     ext r
     rw [PredeformationFunctor.smul_def, _root_.smul_apply, Equiv.toFun_as_coe,
-      prorepTangentSpaceEquivAux_apply, prorepTangentSpaceEquivAux_apply]
-    exact epsCoeff_dualNumbersSMul_hom_left_hom_apply _ _ c _
+      prorepTangentSpaceEquivAux_apply, prorepTangentSpaceEquivAux_apply,
+      prorep_obj_map_left_hom_apply, epsCoeff_dualNumbersSMul_hom_left_hom_apply, smul_eq_mul,
+      RingHom.id_apply]
 
 /-- The derivation of a tangent vector `v : R → k[ε]` of `h_R` takes `r` to the `ε`-coefficient of
 `v r`. -/

@@ -489,32 +489,31 @@ variable {B A' A'' : ArtinLocalAlg Λ k} (φ : B ⟶ A') (ψ : B ⟶ A'')
 
 /-- The morphism `B ⟶ A' ×_k A''` with components `φ` and `ψ`. As `k` is terminal, any two
 morphisms out of `B` agree over `k`, so `A' ×_k A''` is a product of `A'` and `A''` in `C_Λ`. -/
-def liftResidue : B ⟶ pullback (toResidue A') (toResidue A'') (toResidue_surjective A'') :=
-  homMk' ((φ.hom.left.hom.prod ψ.hom.left.hom).codRestrict _ fun b ↦
-    (augmentation_hom_apply φ b).trans (augmentation_hom_apply ψ b).symm)
-    (AlgHom.ext fun b ↦ augmentation_hom_apply φ b)
-
-/-- The first component of `liftResidue φ ψ b` is `φ b`. -/
-@[simp]
-theorem liftResidue_hom_left_hom_apply_fst (b : B.obj.left) :
-    ((liftResidue φ ψ).hom.left.hom b).val.1 = φ.hom.left.hom b :=
-  (rfl)
-
-/-- The second component of `liftResidue φ ψ b` is `ψ b`. -/
-@[simp]
-theorem liftResidue_hom_left_hom_apply_snd (b : B.obj.left) :
-    ((liftResidue φ ψ).hom.left.hom b).val.2 = ψ.hom.left.hom b :=
-  (rfl)
+noncomputable def liftResidue :
+    B ⟶ pullback (toResidue A') (toResidue A'') (toResidue_surjective A'') :=
+  (isPullback _ _ _).lift φ ψ ((isTerminalResidue Λ k).hom_ext _ _)
 
 /-- The first projection recovers the first component of `liftResidue φ ψ`. -/
 @[reassoc (attr := simp)]
 theorem liftResidue_pullbackFst : liftResidue φ ψ ≫ pullbackFst _ _ _ = φ :=
-  (rfl)
+  IsPullback.lift_fst _ _ _ _
 
 /-- The second projection recovers the second component of `liftResidue φ ψ`. -/
 @[reassoc (attr := simp)]
 theorem liftResidue_pullbackSnd : liftResidue φ ψ ≫ pullbackSnd _ _ _ = ψ :=
-  (rfl)
+  IsPullback.lift_snd _ _ _ _
+
+/-- The first component of `liftResidue φ ψ b` is `φ b`. -/
+@[simp]
+theorem liftResidue_hom_left_hom_apply_fst (b : B.obj.left) :
+    ((liftResidue φ ψ).hom.left.hom b).val.1 = φ.hom.left.hom b := by
+  rw [← pullbackFst_hom_left_hom_apply, ← comp_hom_left_hom_apply, liftResidue_pullbackFst]
+
+/-- The second component of `liftResidue φ ψ b` is `ψ b`. -/
+@[simp]
+theorem liftResidue_hom_left_hom_apply_snd (b : B.obj.left) :
+    ((liftResidue φ ψ).hom.left.hom b).val.2 = ψ.hom.left.hom b := by
+  rw [← pullbackSnd_hom_left_hom_apply, ← comp_hom_left_hom_apply, liftResidue_pullbackSnd]
 
 end LiftResidue
 
@@ -561,6 +560,13 @@ theorem residueToDualNumbers_hom_left_hom_apply (a : k) :
 theorem epsCoeff_residueToDualNumbers_hom_left_hom_apply (a : (residue Λ k).obj.left) :
     epsCoeff ((residueToDualNumbers Λ k).hom.left.hom a) = 0 :=
   snd_inl k a
+
+/-- A morphism `B ⟶ k[ε]` factoring through `k` takes values with `ε`-coefficient zero. Not a
+`simp` lemma: `simp` first splits the composite with `ObjectProperty.FullSubcategory.comp_hom`. -/
+theorem epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply {B : ArtinLocalAlg Λ k}
+    (ψ : B ⟶ residue Λ k) (b : B.obj.left) :
+    epsCoeff ((ψ ≫ residueToDualNumbers Λ k).hom.left.hom b) = 0 :=
+  epsCoeff_residueToDualNumbers_hom_left_hom_apply Λ k _
 
 /-- The scaling `a + bε ↦ a + cbε` of the dual numbers by `c ∈ k`, as a morphism of `C_Λ`. -/
 def dualNumbersSMul (c : k) : dualNumbers Λ k ⟶ dualNumbers Λ k :=
