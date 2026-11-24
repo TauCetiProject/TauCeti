@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Eigenvalue
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.LinearAlgebra.Eigenspace.AlgHom
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # Eigenvalues of points in faithful representations
@@ -134,21 +135,10 @@ theorem exists_mem_closure_hasEigenvalue_of_isFaithful {k H V : Type u} [Field k
     have hu : Units.mk0 μ (ne_zero_of_hasEigenvalue_endOfPoint g hμ) ∈ Γ :=
       Subgroup.subset_closure hμ
     exact ⟨⟨_, hu, rfl⟩, ⟨_, Γ.inv_mem hu, by simp⟩⟩
-  -- An eigenvector of right translation for `ν` would otherwise be independent of the
-  -- generalized eigenspaces for eigenvalues in `S`, which span everything.
-  obtain ⟨z, hz⟩ := (hasEigenvalue_endOfPoint_regular g.ofConv hν).exists_hasEigenvector
-  by_contra! hνS
-  have hle : ⨆ μ ∈ S, Module.End.maxGenEigenspace (endOfPoint H g.ofConv) μ ≤
-      ⨆ (μ) (_ : μ ≠ ν), Module.End.maxGenEigenspace (endOfPoint H g.ofConv) μ :=
-    iSup₂_le fun μ hμ ↦ le_iSup₂_of_le μ (by
-      rintro rfl
-      obtain ⟨u, hu, rfl⟩ := hμ
-      exact hνS u hu rfl) le_rfl
-  rw [iSup_maxGenEigenspace_endOfPoint_regular_eq_top hV g hS, top_le_iff] at hle
-  refine hz.2 (Submodule.disjoint_def.mp
-    (Module.End.independent_maxGenEigenspace (endOfPoint H g.ofConv) ν) z
-    (Module.End.eigenspace_le_maxGenEigenspace hz.1) ?_)
-  exact hle ▸ Submodule.mem_top
+  obtain ⟨u, hu, rfl⟩ := Module.End.mem_of_hasEigenvalue_of_iSup_maxGenEigenspace_eq_top
+    (S := (S : Set Ω)) _ (iSup_maxGenEigenspace_endOfPoint_regular_eq_top hV g hS)
+    (hasEigenvalue_endOfPoint_regular g.ofConv hν)
+  exact ⟨u, hu, rfl⟩
 
 /-- **Eigenvalues of a rational point.** Let `V` be a faithful comodule and `W` a
 finite-dimensional comodule of a commutative Hopf algebra over a field `k`, and let `γ` be a

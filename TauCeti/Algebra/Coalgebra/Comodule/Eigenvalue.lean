@@ -20,8 +20,8 @@ translation on the scalar extension of the regular comodule `H`, so every eigenv
 `W` is an eigenvalue of right translation, and, when `W` is finite-dimensional and `Ω` is
 algebraically closed, the matrix coefficients of `W` are sums of generalized eigenvectors of
 right translation for eigenvalues of `g` on `W`. Over a Hopf algebra the eigenvalues of points are
-nonzero, and the eigenvalues on the dual comodule are the inverses of the eigenvalues on the
-comodule.
+nonzero, and the eigenvalues of the inverse point, and of the point on the dual comodule, are the
+inverses of the eigenvalues of the point on the comodule.
 
 ## Main declarations
 
@@ -31,6 +31,8 @@ comodule.
   of a finite-dimensional comodule is a sum of generalized eigenvectors of right translation, for
   eigenvalues of the point on the comodule.
 * `TauCeti.Comodule.ne_zero_of_hasEigenvalue_endOfPoint`: eigenvalues of points are nonzero.
+* `TauCeti.Comodule.hasEigenvalue_inv_of_hasEigenvalue_endOfPoint_inv`: the inverse of an
+  eigenvalue of the inverse point is an eigenvalue of the point.
 * `TauCeti.Comodule.hasEigenvalue_inv_of_hasEigenvalue_endOfPoint_dual`: every eigenvalue of a
   point on the dual comodule is the inverse of an eigenvalue on the comodule.
 -/
@@ -114,6 +116,29 @@ theorem ne_zero_of_hasEigenvalue_endOfPoint {V : Type*} [AddCommGroup V] [Module
 
 end Nonzero
 
+section Inverse
+
+variable {k H Ω : Type*} [CommRing k] [Semiring H] [HopfAlgebra k H] [Field Ω] [Algebra k Ω]
+
+/-- **Eigenvalues of the inverse point.** If the inverse `g⁻¹` of a point has the eigenvalue `ν`
+on a comodule, then `g` has the eigenvalue `ν⁻¹`. -/
+theorem hasEigenvalue_inv_of_hasEigenvalue_endOfPoint_inv {V : Type*} [AddCommGroup V]
+    [Module k V] [Comodule k H V] (g : WithConv (H →ₐ[k] Ω)) {ν : Ω}
+    (hν : Module.End.HasEigenvalue (endOfPoint V (g⁻¹).ofConv) ν) :
+    Module.End.HasEigenvalue (endOfPoint V g.ofConv) ν⁻¹ := by
+  obtain ⟨z, hz⟩ := hν.exists_hasEigenvector
+  have hν0 : ν ≠ 0 := ne_zero_of_hasEigenvalue_endOfPoint g⁻¹ hν
+  -- Applying `g` to `g⁻¹ z = ν • z` gives `z = ν • g z`.
+  have hgz : z = ν • endOfPoint V g.ofConv z := by
+    rw [← map_smul, ← hz.apply_eq_smul, ← LinearMap.comp_apply, endOfPoint_comp_inv,
+      LinearMap.id_apply]
+  refine Module.End.hasEigenvalue_of_hasEigenvector (x := z) ⟨?_, hz.2⟩
+  rw [Module.End.mem_eigenspace_iff]
+  conv_rhs => rw [hgz]
+  rw [smul_smul, inv_mul_cancel₀ hν0, one_smul]
+
+end Inverse
+
 section HopfAlgebra
 
 variable {k H Ω : Type*} [Field k] [Semiring H] [HopfAlgebra k H] [Field Ω] [Algebra k Ω]
@@ -136,20 +161,9 @@ theorem hasEigenvalue_inv_of_hasEigenvalue_endOfPoint_dual {V : Type*} [AddCommG
     rw [hξ.apply_eq_smul, map_smul, LinearMap.smul_apply] at this
     simp only [ψ, TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply, LinearMap.dualMap_apply,
       LinearMap.smul_apply, G, ← this]
-  have hG : Module.End.HasEigenvalue G ν := (Module.End.hasEigenvalue_dualMap_iff G ν).mp <|
-    Module.End.hasEigenvalue_of_hasEigenvector
+  exact hasEigenvalue_inv_of_hasEigenvalue_endOfPoint_inv g <|
+    (Module.End.hasEigenvalue_dualMap_iff G ν).mp <| Module.End.hasEigenvalue_of_hasEigenvector
       ⟨Module.End.mem_eigenspace_iff.mpr hψ, (LinearEquiv.map_ne_zero_iff _).mpr hξ.2⟩
-  obtain ⟨z, hz⟩ := hG.exists_hasEigenvector
-  have hGz : G z = ν • z := hz.apply_eq_smul
-  have hz0 : z ≠ 0 := hz.2
-  -- Applying `g` to `G z = ν • z` gives `z = ν • g z`.
-  have hgz : z = ν • endOfPoint V g.ofConv z := by
-    rw [← map_smul, ← hGz, ← LinearMap.comp_apply, endOfPoint_comp_inv, LinearMap.id_apply]
-  have hν0 : ν ≠ 0 := fun h ↦ hz0 (by rw [hgz, h, zero_smul])
-  refine Module.End.hasEigenvalue_of_hasEigenvector (x := z) ⟨?_, hz0⟩
-  rw [Module.End.mem_eigenspace_iff]
-  conv_rhs => rw [hgz]
-  rw [smul_smul, inv_mul_cancel₀ hν0, one_smul]
 
 end HopfAlgebra
 
