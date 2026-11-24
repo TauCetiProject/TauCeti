@@ -35,6 +35,8 @@ global functions of the base change.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
+  open is preserved by base change.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
@@ -103,6 +105,15 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `h` is passed explicitly: the source of the composite in its type is written
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
+
+/-- If `φ : S' ⟶ Y` is an isomorphism over `U`, then the projection `X ×_Y S' ⟶ X` is an
+isomorphism over `f⁻¹(U)`: it is the base change of `φ⁻¹(U) ≅ U` along `f⁻¹(U) ⟶ U`. -/
+theorem Scheme.Hom.isIso_pullbackFst_morphismRestrict {S' : Scheme.{u}} (φ : S' ⟶ Y)
+    {U : Y.Opens} (hU : IsIso (φ ∣_ U)) : IsIso (Limits.pullback.fst f φ ∣_ (f ⁻¹ᵁ U)) := by
+  have s := (isPullback_morphismRestrict (Limits.pullback.fst f φ) (f ⁻¹ᵁ U)).flip.paste_horiz
+    (IsPullback.of_hasPullback f φ).flip
+  rw [← morphismRestrict_ι] at s
+  exact (s.of_right' (isPullback_morphismRestrict φ U).flip).isIso_snd_of_isIso
 
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for

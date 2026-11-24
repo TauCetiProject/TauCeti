@@ -210,7 +210,6 @@ theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 
     (fun _ hy => ball_subset_closedBall hy.2) subset_rfl hS₀
   -- The mean itself, by Hölder's inequality.
   have h₂ := enorm_setAverage_le (f := u) (mu := μ) (s := Ω') (p := p) (by exact_mod_cast hp1)
-    ENNReal.coe_ne_top
   rw [ENNReal.coe_toReal] at h₂
   have hinv : (μ Ω')⁻¹ ≤ m⁻¹ := ENNReal.inv_le_inv.2 hm'
   have hpow : μ Ω' ^ (-(p : ℝ)⁻¹) ≤ m ^ (-(p : ℝ)⁻¹) :=
