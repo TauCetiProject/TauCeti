@@ -102,6 +102,8 @@ estimates do not see the boundary.
   terms is the integral of `⟨a ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
+* `TauCeti.PDE.energyFormH1_const_right`: with no drift and no mass term, the form vanishes on a
+  constant right argument.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -140,6 +142,8 @@ estimates do not see the boundary.
   lower bound `λ‖∇u‖²_{L²} ≤ a(u, u)` when the drift vanishes, and
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
+* `TauCeti.PDE.mul_norm_gradient_sq_le_energyFormH1_self`: the same bound `λ‖∇u‖²_{L²} ≤ a(u, u)`
+  with no drift, from almost-everywhere bounds `λ‖ξ‖² ≤ ξ ⬝ a ξ` and `0 ≤ c` alone.
 * `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
   when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
@@ -619,6 +623,19 @@ theorem energyFormH1_add_const_left [IsFiniteMeasure (mu.restrict Omega)]
     energyFormH1 a b 0 (u + W1p.const δ) v = energyFormH1 a b 0 u v := by
   simp [energyFormH1_def, driftForm_apply, massForm_apply]
 
+/-- **Constants are invisible to the form `∫_Ω ⟨a ∇u, ∇v⟩`.** On a domain of finite measure, the
+energy form with no drift and no mass vanishes when its right argument is a constant, since that
+argument enters only through its gradient. This is what makes the Neumann problem for
+`-∂ᵢ(aⁱʲ ∂ⱼu)` require the compatibility condition that the datum vanishes on constants. -/
+@[simp]
+theorem energyFormH1_const_right [IsFiniteMeasure (mu.restrict Omega)]
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (u : W1p mu Omega 2) (δ : ℝ) :
+    energyFormH1 a 0 0 u (W1p.const δ) = 0 := by
+  rw [energyFormH1_zero_zero_eq_setIntegral, W1p.gradient_const]
+  refine (integral_congr_ae ?_).trans (integral_zero _ ℝ)
+  filter_upwards [Lp.coeFn_zero (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)] with x hx
+  rw [hx, Pi.zero_apply, map_zero, zero_apply]
+
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
 theorem energyFormH1_smul_right (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
@@ -707,6 +724,25 @@ theorem integrable_energyIntegrand_jetField
     (Lp.memLp (jetLpL v))).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
+
+/-- **The drift-free energy dominates the Dirichlet energy.** If the principal coefficient
+satisfies `λ‖ξ‖² ≤ ξ ⬝ a(x) ξ` and the mass coefficient satisfies `0 ≤ c(x)` for almost every
+`x ∈ Ω`, and the energy density is essentially bounded, then
+`λ‖∇u‖²_{L²} ≤ ∫_Ω ⟨a ∇u, ∇u⟩ + c u²` for every `u ∈ H¹(Ω)`. Only the lower quadratic bound on
+`a` enters, with no symmetry; for an inverse-coercive `a` it is part of
+`TauCeti.PDE.IsUniformlyEllipticAE.ae_bounds`. -/
+theorem mul_norm_gradient_sq_le_energyFormH1_self
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (mu.restrict Omega))
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (hc : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x) (u : W1p mu Omega 2) :
+    lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a 0 c u u := by
+  have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
+    (μ := mu.restrict Omega) (a := a) (c := c) (U := jetField u) ha hc
+    ((integrable_norm_jetField_snd_sq u).const_mul lam)
+    (integrable_energyIntegrand_jetField (b := 0) hcoeff u u)
+  rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u, ← integral_const_mul,
+    energyFormH1_def]
+  exact key.trans_eq (energyFormIntegral_def _ _ _ _ _ _)
 
 /-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
 pairing `∫_Ω c' u v` to the Sobolev energy form. No boundary or coercivity assumption is needed. -/

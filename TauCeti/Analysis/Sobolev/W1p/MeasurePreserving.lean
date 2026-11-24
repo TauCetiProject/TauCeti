@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 
 /-!
@@ -52,6 +53,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.norm_gradient_compAffineIsometryEquivL`), and it does not increase the norm. It
   preserves and reflects zero boundary values
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+* `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
+  `W^{1,p} → Lᵖ` transfers along an affine isometry.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -376,6 +379,33 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
   refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule g hUV⟩
   rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
   exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule g.symm hVU hu
+
+/-- **Rellich compactness is invariant under rigid changes of coordinates.** For `U = g⁻¹(V)`, if
+the value map `W^{1,p}(V) → Lᵖ(V)` is a compact operator, so is `W^{1,p}(U) → Lᵖ(U)`: the value
+of `u` is the value of `u ∘ g⁻¹` composed with `g`. -/
+theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V)
+    (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) := by
+  have hVU : (V : Set F') = g.symm ⁻¹' U := by
+    rw [hUV, ← Set.preimage_comp]
+    ext x
+    simp
+  have hmp : MeasurePreserving g (volume.restrict (U : Set F)) (volume.restrict (V : Set F')) := by
+    rw [hUV]
+    exact g.measurePreserving.restrict_preimage V.isOpen.measurableSet
+  let C : Lp ℝ p (volume.restrict (V : Set F')) →L[ℝ] Lp ℝ p (volume.restrict (U : Set F)) :=
+    (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap
+  convert (hK.clm_comp C).comp_clm (W1p.compAffineIsometryEquivL g.symm hVU) using 1
+  ext1 u
+  refine Lp.ext ?_
+  have hv := hmp.quasiMeasurePreserving.ae_eq_comp
+    (W1p.value_compAffineIsometryEquivL_ae g.symm hVU u)
+  filter_upwards [Lp.coeFn_compMeasurePreserving
+    (W1p.value (W1p.compAffineIsometryEquivL g.symm hVU u)) hmp, hv] with x h1 h2
+  simp only [Function.comp_apply, W1p.valueL_apply, C, LinearIsometry.coe_toContinuousLinearMap,
+    Lp.compMeasurePreservingₗᵢ_apply] at h1 h2 ⊢
+  rw [h1, h2, AffineIsometryEquiv.symm_apply_apply]
 
 open scoped Distributions Gradient in
 /-- **The Dirichlet pairing under a linear isometry.** For a linear isometry equivalence `e` and
