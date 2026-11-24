@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # The energy form against a flux with weak divergence
@@ -23,14 +24,16 @@ let `u ∈ H¹(Ω)`. If every component `Fᵢ = ∑ⱼ aⁱʲ ∂ⱼu` of the fl
 that is, `∫_Ω ⟨∇v, a ∇u⟩ = -∫_Ω (∑ᵢ dᵢ) v` for every `v ∈ H¹₀(Ω)`
 (`TauCeti.PDE.energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn`). This is integration
 by parts against `H¹₀(Ω)`, proved on test functions from the definition of the weak derivative and
-extended by density. No boundary condition on `u` is needed. When `u ∈ H¹₀(Ω)`, it places `u` in
-the domain of the Dirichlet realization of `-∂ᵢ(aⁱʲ ∂ⱼ ·)` and computes the operator there.
+extended by density. No boundary condition on `u` is needed. When `u ∈ H¹₀(Ω)` and the energy
+form is coercive on `H¹₀(Ω)`, it places `u` in the domain of `TauCeti.PDE.dirichletOperator`
+via `TauCeti.PDE.mem_domain_dirichletOperator_iff` and computes the operator there.
 
 For `u ∈ H²(Ω)` and `a` with `C¹` entries whose values and gradients are bounded on `Ω`, the
 weak derivatives `dᵢ ∈ L²(Ω)` exist by the weak Leibniz rule, and the identity holds with them
 (`TauCeti.PDE.exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two`); in particular the
 right-hand side is some `g ∈ L²(Ω)` (`TauCeti.PDE.exists_energyFormH1_eq_setIntegral_of_wkp_two`).
-This is the inclusion `H²(Ω) ∩ H¹₀(Ω) ⊆ dom L`, with the formula `L u = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`.
+Under the same coercivity condition, this gives the inclusion `H²(Ω) ∩ H¹₀(Ω) ⊆ dom L`, with
+the formula `L u = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`.
 -/
 
 public noncomputable section
@@ -60,9 +63,8 @@ theorem energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
       ∫ x in Omega, (-∑ i, d i x) * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   set e := EuclideanSpace.basisFun ι ℝ
   set g : Lp ℝ 2 (mu.restrict Omega) := -∑ i, d i
-  have hg : ∀ᵐ x ∂mu.restrict Omega, g x = -∑ i, d i x := by
-    filter_upwards [Lp.coeFn_neg (∑ i, d i), Lp.coeFn_fun_finsetSum Finset.univ d] with x h₁ h₂
-    rw [h₁, Pi.neg_apply, h₂]
+  have hg : ∀ᵐ x ∂mu.restrict Omega, g x = -∑ i, d i x :=
+    Lp.coeFn_neg_ae_eq_of_ae_eq (Lp.coeFn_fun_finsetSum Finset.univ d)
   have key := (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction (b := 0) (c := 0)
     hcoeff g u).2 fun φ ↦ ?_
   · rw [key v]
@@ -81,10 +83,7 @@ theorem energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
         rw [smul_eq_mul, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
           inner_gradient_left]
         congr 1
-        classical
-        simp only [e, EuclideanSpace.inner_basisFun_real]
-        simp [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, EuclideanSpace.basisFun_apply,
-          PiLp.single_apply]
+        exact matrixBilinearForm_basisFun_left i (W1p.gradient u x)
     _ = ∑ i, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (e i) •
           ∑ j, a x i j * ⟪W1p.gradient u x, e j⟫_ℝ ∂mu := by
         rw [integral_finsetSum _ fun i _ ↦
@@ -112,9 +111,9 @@ Let the entries of `a` be `C¹` on `Ω`, with values and gradients bounded by `M
 `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω (-∑ᵢ dᵢ) v` for every `v ∈ H¹₀(Ω)`.
 
 Weak derivatives are unique almost everywhere (`TauCeti.HasWeakLineDerivOn.ae_eq`), so the
-right-hand side is `-∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. With `u ∈ H¹₀(Ω)` this is the inclusion
-`H² ∩ H¹₀ ⊆ dom L` for the Dirichlet realization of `L = -∂ᵢ(aⁱʲ ∂ⱼ ·)`, with
-`L u = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. -/
+right-hand side is `-∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. If the energy form is coercive on `H¹₀(Ω)`, then
+with `u ∈ H¹₀(Ω)` this gives `H² ∩ H¹₀ ⊆ dom L` for `L = TauCeti.PDE.dirichletOperator`, via
+`TauCeti.PDE.mem_domain_dirichletOperator_iff`, with `L u = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. -/
 theorem exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two
     (ha : ∀ i j, ContDiffOn ℝ 1 (fun x ↦ a x i j) Omega) {M : ℝ}
     (haM : ∀ i j, ∀ x ∈ Omega, |a x i j| ≤ M ∧ ‖∇ (fun y ↦ a y i j) x‖ ≤ M)
@@ -177,8 +176,9 @@ theorem exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two
 `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω g v` for every `v ∈ H¹₀(Ω)`.
 
 This is `TauCeti.PDE.exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two` without the
-formula `g = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. With `u ∈ H¹₀(Ω)` it is the inclusion `H² ∩ H¹₀ ⊆ dom L` for
-the Dirichlet realization of `L = -∂ᵢ(aⁱʲ ∂ⱼ ·)`. -/
+formula `g = -∑ᵢ ∂ᵢ(∑ⱼ aⁱʲ ∂ⱼu)`. If the energy form is coercive on `H¹₀(Ω)`, then with
+`u ∈ H¹₀(Ω)` it gives `H² ∩ H¹₀ ⊆ dom L` for `L = TauCeti.PDE.dirichletOperator`, via
+`TauCeti.PDE.mem_domain_dirichletOperator_iff`. -/
 theorem exists_energyFormH1_eq_setIntegral_of_wkp_two
     (ha : ∀ i j, ContDiffOn ℝ 1 (fun x ↦ a x i j) Omega) {M : ℝ}
     (haM : ∀ i j, ∀ x ∈ Omega, |a x i j| ≤ M ∧ ‖∇ (fun y ↦ a y i j) x‖ ≤ M)
@@ -188,7 +188,7 @@ theorem exists_energyFormH1_eq_setIntegral_of_wkp_two
         ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   obtain ⟨d, -, hd⟩ := exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two ha haM U
   exact ⟨-∑ i, d i, fun v ↦ (hd v).trans (integral_congr_ae (by
-    filter_upwards [Lp.coeFn_neg (∑ i, d i), Lp.coeFn_fun_finsetSum Finset.univ d] with x h₁ h₂
-    rw [h₁, Pi.neg_apply, h₂]))⟩
+    filter_upwards [Lp.coeFn_neg_ae_eq_of_ae_eq (Lp.coeFn_fun_finsetSum Finset.univ d)] with x hx
+    rw [hx, Pi.neg_apply]))⟩
 
 end TauCeti.PDE
