@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Compact.BilinearForm
+public import TauCeti.RepresentationTheory.Stabilizer
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -53,6 +54,10 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
   are infinitesimally invariant exactly when they are Ad-invariant.
 * `TauCeti.Lie.lieInvariant_of_isInvariantForm_adjointRepresentation`: a bilinear form invariant
   under `TauCeti.Lie.adjointRepresentation` is invariant under the tangent Lie algebra.
+* `TauCeti.Lie.coadjointRepresentation_apply_bilinForm`: through an invariant form `B`, the
+  coadjoint action is the adjoint action, `Ad*_g (B a) = B (Ad_g a)`.
+* `TauCeti.Lie.orbitMap_coadjointRepresentation_bilinForm_mk`: through an invariant form `B`, the
+  orbit map of the coadjoint orbit of `B (e μ)` sends `[g]` to `B (e (Ad_g μ))`.
 
 * `TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant`:
   a continuous symmetric positive adjoint-invariant form on the tangent Lie algebra of a compact
@@ -423,5 +428,42 @@ theorem lieInvariant_iff_adjoint_invariant [PreconnectedSpace G] :
       ∀ (g : G) (Y Z : GroupLieAlgebra I G),
         b (adjointContinuousLinearMap g Y) (adjointContinuousLinearMap g Z) = b Y Z :=
   ⟨adjoint_invariant_of_lieInvariant, lieInvariant_of_adjoint_invariant⟩
+
+end TauCeti.Lie
+
+/-! ### The coadjoint action through an invariant form -/
+
+namespace TauCeti.Lie
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [LieGroup I ∞ G] {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+/-- **The coadjoint action through an invariant form.** For an `Ad`-invariant form `B`, the
+coadjoint action on covectors `B a` is the adjoint action: `Ad*_g (B a) = B (Ad_g a)`. This is
+`TauCeti.Representation.IsInvariantForm.dual_apply` for the adjoint representation, whose dual is
+the coadjoint representation. -/
+theorem coadjointRepresentation_apply_bilinForm
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) (g : G)
+    (a : GroupLieAlgebra I G) :
+    coadjointRepresentation ℝ I G g (B a) = B (adjointContinuousLinearMap (I := I) g a) := by
+  rw [coadjointRepresentation_def, ← adjointRepresentation_apply]
+  exact hB.dual_apply g a
+
+/-- **The coadjoint orbit map through an invariant form.** For an invariant form `B` and a
+left-invariant derivation `μ`, the orbit map of the coadjoint orbit of `B (e μ)` sends `[g]` to
+`B (e (Ad_g μ))`, where `e` is evaluation at the identity. -/
+theorem orbitMap_coadjointRepresentation_bilinForm_mk [FiniteDimensional ℝ E] [I.Boundaryless]
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (μ : LeftInvariantDerivation I G) (g : G) :
+    (coadjointRepresentation ℝ I G).orbitMap
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint μ)) (g : G ⧸ _) =
+      B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint (Ad (I := I) g μ)) := by
+  rw [Representation.orbitMap_mk, coadjointRepresentation_apply_bilinForm hB,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, tangentAd_apply]
 
 end TauCeti.Lie

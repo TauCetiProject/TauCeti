@@ -8,17 +8,20 @@ module
 public import Mathlib.CategoryTheory.Simple
 
 /-!
-# Witnesses of non-simplicity
+# Simple objects: non-simplicity witnesses and simple summands
 
 Mathlib's `CategoryTheory.Simple X` says that a monomorphism into `X` is an isomorphism exactly
 when it is nonzero. This file records the contrapositive used to split a non-simple object: a
 nonzero object which is not simple receives a nonzero monomorphism that is not an isomorphism,
-that is, it has a nonzero proper subobject.
+that is, it has a nonzero proper subobject. It also shows that a nonzero object decomposed as a
+coproduct of simple objects receives a nonzero morphism from one of the summands.
 
 ## Main results
 
 * `TauCeti.exists_mono_ne_zero_not_isIso_of_not_simple`: a nonzero object which is not simple is
   the target of a nonzero monomorphism which is not an isomorphism.
+* `TauCeti.exists_simple_hom_ne_zero_of_iso_sigma`: a nonzero object that decomposes as a
+  coproduct of simple objects receives a nonzero morphism from a simple object.
 -/
 
 public section
@@ -36,5 +39,19 @@ theorem exists_mono_ne_zero_not_isIso_of_not_simple {X : C} (hX : ¬IsZero X) (h
   by_contra! h
   -- A zero isomorphism into `X` is a zero epimorphism, which forces `X` to be a zero object.
   exact hs ⟨fun f _ => ⟨fun _ hf => hX (.of_epi_eq_zero f hf), h _ f inferInstance⟩⟩
+
+/-- A nonzero object isomorphic to a coproduct of simple objects receives a nonzero morphism from
+a simple object: the inclusion of a summand. -/
+theorem exists_simple_hom_ne_zero_of_iso_sigma {Y : C} (hY : ¬IsZero Y) {ι : Type*}
+    {a : ι → C} [HasCoproduct a] (ha : ∀ i, Simple (a i)) (e : Y ≅ ∐ a) :
+    ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
+  classical
+  -- The decomposition of `Y` has a summand, since a coproduct over an empty type is zero.
+  obtain ⟨i⟩ : Nonempty ι := by
+    by_contra! h
+    exact hY (((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e)
+  -- The inclusion of a summand is nonzero: the projection `Sigma.π a i` is a retraction of it.
+  refine ⟨a i, ha i, Sigma.ι a i ≫ e.inv, fun h ↦ CategoryTheory.id_ne_zero (a i) ?_⟩
+  simpa using h =≫ (e.hom ≫ Sigma.π a i)
 
 end TauCeti
