@@ -40,7 +40,7 @@ symplectic loop becomes nondegenerate after some real shift `S - δ J₀`.
 * **Eigenbasis.** Suppose the loop is nondegenerate, that is, `L_S ζ = ζ' - S ζ` is invertible
   (by `CircleSobolev.isInvertible_loopOperator_iff`, exactly when `ζ' = S ζ` has no nonzero
   periodic solution). Then `A` is invertible, and the compact-resolvent spectral theorem
-  (`ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion`)
+  (`ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective`)
   applied to the compact inclusion `H¹ → H⁰` (Rellich) and `A` gives a Hilbert basis of `H⁰` of
   eigenvectors of `A` lying in `H¹`, with real eigenvalues uniformly bounded away from `0`
   (`CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul`).
@@ -158,7 +158,7 @@ theorem exists_hilbertBasis_I_smul_loopOperator_eq_smul
         c ≤ |lam i| ∧ I • loopOperator T S (a i) = lam i • b i := by
   have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨s, b, a, lam, c, hc, hinc, hgap, hev⟩ :=
-    ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion
+    ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective
       (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
       (A := I • loopOperator T S)
       (isCompactOperator_inclusion (E := F) zero_lt_one)

@@ -45,12 +45,14 @@ After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, mode 
 intertwining with `trajectoryOperator` under `postcompBaseL`, classical derivative agreement, and
 time reflection `reflectEvolutionEquiv` (`s ↦ u(-s)` conjugating `∂s - A` to `-(∂s + A)`) over
 Banach spaces, the second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for
-Hilbert `H` and `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by
-parts `⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫`, the Pythagorean identity
-`‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι`,
-invertibility of `∂s ± A` with improved upper bound `≤ max ‖A⁻¹‖ 1` for invertible `A`, failure of
-closed range when `A.ker ≠ ⊥`, equivalence of closed range / Fredholmness / invertibility with
-`A.IsInvertible` for index-`0` Fredholm `A`, and compact-family perturbation stability
+Hilbert `H`, `[CompleteSpace D]` (inferred from `A.IsInvertible` when `A` is invertible), and
+`ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by parts
+`⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫`, the Pythagorean identity
+`‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι` and
+`[CompleteSpace D]`, invertibility of `∂s ± A` with improved upper bound `≤ max ‖A⁻¹‖ 1` for
+invertible `A`, and (for injective `ι` and `[CompleteSpace D]`) failure of closed range when
+`A.ker ≠ ⊥` and equivalence of closed range / Fredholmness / invertibility with `A.IsInvertible`
+for index-`0` Fredholm `A`, together with compact-family perturbation stability
 (`exists_pos_isInvertible_domainTrajectoryOperator_sub_smul_norm_inverse_le`).
 Adapts `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
 `TauCeti/Analysis/Sobolev/GraphStep/Coordinates.lean`,

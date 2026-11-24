@@ -138,8 +138,7 @@ theorem gradient_toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F
       (scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u) := by
   simp only [toW1pL, realToW1pL, ContinuousLinearMap.comp_apply, LinearMap.mkContinuous_apply,
     LinearMap.coe_mk, AddHom.coe_mk, W1p.gradient_mk, weakFDeriv_postcompBaseL,
-    ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.compLp_compLp]
-  rfl
+    ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.compLp_compLp, scalarGradientL]
 
 /-- The scalar-projected field has the Riesz representative of its projected weak derivative
 as weak gradient. -/

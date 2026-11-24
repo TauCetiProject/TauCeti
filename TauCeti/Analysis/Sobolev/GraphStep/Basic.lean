@@ -480,7 +480,7 @@ theorem hasWeakFDerivOn_of_hasSum [IsLocallyFiniteMeasure (mu.restrict Omega)]
 
 /-- Postcomposing the field of a weak-derivative graph element with `T : F →L[ℝ] G` preserves weak
 differentiability on `Omega`. -/
-theorem hasWeakFDerivOn_postcompBase [IsLocallyFiniteMeasure (mu.restrict Omega)]
+theorem hasWeakFDerivOn_compLp_base_prev [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (T : F →L[ℝ] G)
     (u : WeakDerivStep mu Omega p base) :
     HasWeakFDerivOn mu Omega
@@ -501,7 +501,8 @@ def postcompBaseL [IsLocallyFiniteMeasure (mu.restrict Omega)]
       (((T.compLpL p (mu.restrict Omega)).comp (base.comp (prevL base))).prod
         (((ContinuousLinearMap.compL ℝ E F G T).compLpL p (mu.restrict Omega)).comp
           (weakFDerivL base)))).codRestrict _ fun u ↦
-    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).2 (hasWeakFDerivOn_postcompBase base T u)
+    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).2
+      (hasWeakFDerivOn_compLp_base_prev base T u)
 
 /-- The base field of `postcompBaseL base T u` is `T` postcomposed with `base (prev base u)`. -/
 @[simp]

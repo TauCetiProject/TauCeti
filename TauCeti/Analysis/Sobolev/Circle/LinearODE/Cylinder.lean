@@ -27,10 +27,12 @@ exponential weight shifts `e^{±δ s}` on cylindrical ends, feeding
 When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
 (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and index-`0`
 Fredholm, yielding unconditional injectivity, equivalence of closed range / Fredholmness /
-invertibility (for either sign `∂s ± I • loopOperator T S`) with `loopOperator T S` invertibility
-— equivalently nondegeneracy of the periodic orbit — the Pythagorean identity and improved inverse
-bound `max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over compact families (adapting
-`TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode intertwining (`w' + λ w`).
+invertibility of `cylinderOperator T S` (`∂s + I • loopOperator T S`) with `loopOperator T S`
+invertibility — equivalently nondegeneracy of the periodic orbit — invertibility of
+`∂s - I • loopOperator T S` when `loopOperator T S` is invertible, the Pythagorean identity and
+improved inverse bound `max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over compact
+families (adapting `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode
+intertwining (`w' + λ w`).
 
 ## References
 
@@ -242,16 +244,15 @@ theorem norm_inverse_cylinderOperator_le_max {S : C(AddCircle T, F →L[ℝ] F)}
       ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 
 /-- Invertibility of the opposite-sign stationary Floer cylinder operator
-`∂s ∘ ι + (-I) • loopOperator T S` for infinitesimally symplectic nondegenerate `S`. -/
+`∂s ∘ ι - I • loopOperator T S` for infinitesimally symplectic nondegenerate `S`. -/
 theorem isInvertible_domainTrajectoryOperator_neg_I_smul_loopOperator
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
     (WeakDerivStep.domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2)
       ((inclusion (E := F) zero_le_one).restrictScalars ℝ)
-      ((-I) • loopOperator T S)).IsInvertible := by
-  rw [neg_smul]
-  exact WeakDerivStep.isInvertible_domainTrajectoryOperator_neg
+      (-(I • loopOperator T S))).IsInvertible :=
+  WeakDerivStep.isInvertible_domainTrajectoryOperator_neg
     (real_inner_I_smul_loopOperator_comm T S hS)
     ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 

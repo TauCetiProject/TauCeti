@@ -11,7 +11,6 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
-import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.RankOne
 
@@ -28,6 +27,8 @@ orthogonal decomposition in `L²(μ; E)` without separability of `E`, countabili
 * `MeasureTheory.Lp.inner_compLp_toSpanSingleton`,
   `MeasureTheory.Lp.inner_compLp_toSpanSingleton_left`: inner products and adjointness of rank-one
   functions `x ↦ f x • v` in `L²`.
+* `Orthonormal.summable_norm_sq_compLp_innerSL`, `Orthonormal.tsum_norm_sq_compLp_innerSL_le`:
+  Bessel's inequality in `L²(μ; E)`.
 * `Orthonormal.pairwise_inner_compLp_toSpanSingleton_eq_zero`,
   `Orthonormal.summable_compLp_toSpanSingleton_iff`,
   `Orthonormal.hasSum_norm_sq_tsum_compLp_toSpanSingleton`,
@@ -90,6 +91,40 @@ theorem pairwise_inner_compLp_toSpanSingleton_eq_zero {v : ι → E} (hv : Ortho
     Pairwise fun i j ↦
       ⟪(toSpanSingleton 𝕜 (v i)).compLp (g i), (toSpanSingleton 𝕜 (v j)).compLp (g j)⟫_𝕜 = 0 :=
   fun _ _ hij ↦ by dsimp only; rw [Lp.inner_compLp_toSpanSingleton, hv.2 hij, mul_zero]
+
+private theorem sum_norm_sq_compLp_innerSL_le {v : ι → E} (hv : Orthonormal 𝕜 v)
+    (f : Lp E 2 μ) (s : Finset ι) :
+    ∑ i ∈ s, ‖(innerSL 𝕜 (v i)).compLp f‖ ^ 2 ≤ ‖f‖ ^ 2 := by
+  let g : ι → Lp 𝕜 2 μ := fun i ↦ (innerSL 𝕜 (v i)).compLp f
+  have hae : ∀ᵐ x ∂μ, ∑ i ∈ s, ‖g i x‖ ^ 2 ≤ ‖f x‖ ^ 2 := by
+    have hall : ∀ i : s, ∀ᵐ x ∂μ, g i x = ⟪v i, f x⟫_𝕜 := fun i ↦ by
+      filter_upwards [(innerSL 𝕜 (v (i : ι))).coeFn_compLp f] with x hx
+      simpa only [g, innerSL_apply_apply] using hx
+    filter_upwards [ae_all_iff.mpr hall] with x hx
+    calc ∑ i ∈ s, ‖g i x‖ ^ 2
+        = ∑ i ∈ s, ‖⟪v i, f x⟫_𝕜‖ ^ 2 :=
+          Finset.sum_congr rfl fun i hi ↦ by rw [hx ⟨i, hi⟩]
+      _ ≤ ‖f x‖ ^ 2 := hv.sum_inner_products_le (f x)
+  have hint : Integrable (fun x ↦ ∑ i ∈ s, ‖g i x‖ ^ 2) μ :=
+    integrable_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq
+  calc ∑ i ∈ s, ‖g i‖ ^ 2
+      = ∑ i ∈ s, ∫ x, ‖g i x‖ ^ 2 ∂μ := by simp_rw [Lp.integral_norm_sq_eq_norm_sq]
+    _ = ∫ x, ∑ i ∈ s, ‖g i x‖ ^ 2 ∂μ :=
+        (integral_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq).symm
+    _ ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := integral_mono_ae hint (Lp.memLp f).norm.integrable_sq hae
+    _ = ‖f‖ ^ 2 := Lp.integral_norm_sq_eq_norm_sq f
+
+/-- **Bessel's inequality in `L²(μ; E)`.** Along an orthonormal family `v`, the squared `L²` norms
+of the scalar projections `x ↦ ⟪v i, f x⟫` are summable. -/
+theorem summable_norm_sq_compLp_innerSL {v : ι → E} (hv : Orthonormal 𝕜 v) (f : Lp E 2 μ) :
+    Summable fun i ↦ ‖(innerSL 𝕜 (v i)).compLp f‖ ^ 2 :=
+  summable_of_sum_le (fun _ ↦ sq_nonneg _) (sum_norm_sq_compLp_innerSL_le hv f)
+
+/-- **Bessel's inequality in `L²(μ; E)` (sum bound).** Along an orthonormal family `v`, the
+squared `L²` norms of the scalar projections `x ↦ ⟪v i, f x⟫` sum to at most `‖f‖²`. -/
+theorem tsum_norm_sq_compLp_innerSL_le {v : ι → E} (hv : Orthonormal 𝕜 v) (f : Lp E 2 μ) :
+    ∑' i, ‖(innerSL 𝕜 (v i)).compLp f‖ ^ 2 ≤ ‖f‖ ^ 2 :=
+  (hv.summable_norm_sq_compLp_innerSL f).tsum_le_of_sum_le (sum_norm_sq_compLp_innerSL_le hv f)
 
 section CompleteSpace
 
@@ -187,25 +222,7 @@ theorem hasSum_compLp_toSpanSingleton_innerSL (b : HilbertBasis ι 𝕜 E) (f : 
   have := b.completeSpace
   let g : ι → Lp 𝕜 2 μ := fun i ↦ (innerSL 𝕜 (b i)).compLp f
   let v : ι → Lp E 2 μ := fun i ↦ (toSpanSingleton 𝕜 (b i)).compLp (g i)
-  have hsq : Summable fun i ↦ ‖g i‖ ^ 2 := by
-    refine summable_of_sum_le (c := ‖f‖ ^ 2) (fun _ ↦ sq_nonneg _) fun s ↦ ?_
-    have hae : ∀ᵐ x ∂μ, ∑ i ∈ s, ‖g i x‖ ^ 2 ≤ ‖f x‖ ^ 2 := by
-      have hall : ∀ i : s, ∀ᵐ x ∂μ, g i x = ⟪b i, f x⟫_𝕜 := fun i ↦ by
-        filter_upwards [(innerSL 𝕜 (b (i : ι))).coeFn_compLp f] with x hx
-        simpa only [g, innerSL_apply_apply] using hx
-      filter_upwards [ae_all_iff.mpr hall] with x hx
-      calc ∑ i ∈ s, ‖g i x‖ ^ 2
-          = ∑ i ∈ s, ‖⟪b i, f x⟫_𝕜‖ ^ 2 :=
-            Finset.sum_congr rfl fun i hi ↦ by rw [hx ⟨i, hi⟩]
-        _ ≤ ‖f x‖ ^ 2 := b.orthonormal.sum_inner_products_le (f x)
-    have hint : Integrable (fun x ↦ ∑ i ∈ s, ‖g i x‖ ^ 2) μ :=
-      integrable_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq
-    calc ∑ i ∈ s, ‖g i‖ ^ 2
-        = ∑ i ∈ s, ∫ x, ‖g i x‖ ^ 2 ∂μ := by simp_rw [Lp.integral_norm_sq_eq_norm_sq]
-      _ = ∫ x, ∑ i ∈ s, ‖g i x‖ ^ 2 ∂μ :=
-          (integral_finsetSum s fun i _ ↦ (Lp.memLp (g i)).norm.integrable_sq).symm
-      _ ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := integral_mono_ae hint (Lp.memLp f).norm.integrable_sq hae
-      _ = ‖f‖ ^ 2 := Lp.integral_norm_sq_eq_norm_sq f
+  have hsq : Summable fun i ↦ ‖g i‖ ^ 2 := b.orthonormal.summable_norm_sq_compLp_innerSL f
   have hsum : HasSum v (∑' i, v i) :=
     ((b.orthonormal.summable_compLp_toSpanSingleton_iff g).mpr hsq).hasSum
   rwa [b.ext_compLp_innerSL fun j ↦

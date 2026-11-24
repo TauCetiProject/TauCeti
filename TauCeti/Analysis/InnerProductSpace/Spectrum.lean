@@ -69,7 +69,7 @@ eigenvectors for distinct eigenvalues of any operator `A` symmetric with respect
   specialization of the preceding result.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`: for an injective compact
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
-* `ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion`:
+* `ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective`:
   for an invertible operator `A : D →L[𝕜] E` symmetric with respect to an injective compact map
   `ι : D →L[𝕜] E`, a Hilbert basis of `E` of eigenvectors of `A` with real eigenvalues uniformly
   bounded away from `0`.
@@ -223,7 +223,7 @@ a Hilbert space `E`, and let `A : D →L[𝕜] E` be an invertible operator symm
 `ι` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`). Then `E` admits a Hilbert basis `b` of eigenvectors of `A` in
 the range of `ι` (`ι (a i) = b i` and `A (a i) = lam i • b i`) with real eigenvalues uniformly
 bounded away from `0`: `c ≤ |lam i|` for a positive constant `c`. -/
-theorem exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_inclusion
+theorem exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective
     {D : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
     {ι A : D →L[𝕜] E} (hιc : IsCompactOperator ι) (hιi : Function.Injective ι)
     (hsym : ∀ x y : D, ⟪A x, ι y⟫_𝕜 = ⟪ι x, A y⟫_𝕜) (hA : A.IsInvertible) :
