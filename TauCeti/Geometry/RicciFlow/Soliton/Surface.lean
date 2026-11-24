@@ -6,7 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.PureTrace
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -167,7 +167,7 @@ theorem mvfderiv_hamilton_of_surface_soliton (hn : Module.finrank ℝ E = 2)
   rw [real_inner_comm (mgradient I f x)] at hm
   simp only [inner_mgradient] at hm
   have hh := hessian_eq_of_surface_soliton hn (hsol x) v (mgradient I f x)
-  simp only [hessian_def, inner_mgradient_right] at hh
+  simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient, inner_mgradient_right] at hh
   rw [mvfderiv_scalarCurvature_of_surface_soliton hn hf hsol]
   nlinarith [hm, hh]
 

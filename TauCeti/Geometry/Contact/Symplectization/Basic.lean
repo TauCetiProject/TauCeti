@@ -207,6 +207,17 @@ private theorem bilinFormAt_mextDerivₗ_symplectization (α : SmoothForm I M �
     ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_symm,
     ContinuousLinearEquiv.coe_refl', id_eq]
 
+/-- **The symplectization is nondegenerate over the contact points.** At a point `(t, x)`, the
+exterior derivative `d(eᵗ α)` of the symplectization form is nondegenerate exactly when `α` is a
+contact form at `x`. -/
+theorem nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff (α : SmoothForm I M ℝ 1)
+    (p : ℝ × M) :
+    ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate ↔
+      IsContactFormAt α.val p.2 := by
+  rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
+    TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
+    isContactFormAt_iff_isContact, Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
+
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
 symplectization form is nondegenerate exactly when `α` is a contact form. -/
 theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M ℝ 1} :
@@ -215,16 +226,12 @@ theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M �
   have key (p : ℝ × M) :
       (∀ v, (∀ w, SmoothBundleForm.eval₂
         (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p v w = 0) → v = 0) ↔
-        Module.Dual.IsContact (degreeOneEquiv α p.2 : TangentSpace I p.2 →ₗ[ℝ] ℝ)
-          ((mextDerivₗ I 1 α).bilinFormAt p.2) := by
-    trans ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate
-    · rw [LinearMap.BilinForm.Nondegenerate,
-        (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
-      simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
-    rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
-      TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
-      Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
-  rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_def]
+        IsContactFormAt α.val p.2 := by
+    rw [← nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff,
+      LinearMap.BilinForm.Nondegenerate,
+      (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
+    simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
+  rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_iff_forall_isContactFormAt]
   exact ⟨fun h x ↦ (key ((0 : ℝ), x)).1 (h ((0 : ℝ), x)), fun h p ↦ (key p).2 (h p.2)⟩
 
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the

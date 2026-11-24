@@ -52,16 +52,6 @@ variable {Ω Ω' p n 𝕜 : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
   {P : Measure Ω} [IsProbabilityMeasure P] {Q : Measure Ω'}
   {X Y : Ω → Matrix p n 𝕜} {Z : Ω' → 𝕜}
 
-private theorem integrable_integral_comp_sqrt_covariance (hX : AEMeasurable X P)
-    (f : ℝ →ᵇ ℝ) :
-    Integrable (fun ω ↦ ∫ x, f (Real.sqrt x) ∂((X ω).sampleCovariance.spectralMeasure
-      (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)) P := by
-  let g := f.compContinuous ⟨Real.sqrt, Real.continuous_sqrt⟩
-  have hmeas := (ProbabilityMeasure.continuous_integral_boundedContinuousFunction g).measurable
-    |>.comp_aemeasurable (Matrix.measurable_spectralMeasure_sampleCovariance.comp_aemeasurable hX)
-  refine (integrable_const ‖g‖).mono' hmeas.aestronglyMeasurable (.of_forall fun ω ↦ ?_)
-  exact g.norm_integral_le_norm _
-
 /-- The expected covariance measures of two coupled matrices with a common entrywise error
 law differ on a Lipschitz square-root statistic by at most its Lipschitz constant times the
 root mean square error of that law. Independence is unnecessary and empty samples are allowed. -/
@@ -82,23 +72,24 @@ theorem norm_integral_comp_sqrt_expectedCovarianceSpectralMeasure_sub_le
     refine (memLp_two_iff_integrable_sq_norm hm.aestronglyMeasurable).2 ?_
     simpa only [Real.norm_of_nonneg (norm_nonneg _)] using
       integrable_frobenius_norm_sq (X := Δ) (fun i j ↦ (hid i j).memLp_iff.2 hZ)
-  let fX (ω : Ω) := ∫ x, f (Real.sqrt x) ∂((X ω).sampleCovariance.spectralMeasure
-    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)
-  let fY (ω : Ω) := ∫ x, f (Real.sqrt x) ∂((Y ω).sampleCovariance.spectralMeasure
-    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)
   let g := f.compContinuous ⟨Real.sqrt, Real.continuous_sqrt⟩
+  let fX (ω : Ω) := ∫ x, g x ∂((X ω).sampleCovariance.spectralMeasure
+    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)
+  let fY (ω : Ω) := ∫ x, g x ∂((Y ω).sampleCovariance.spectralMeasure
+    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)
   have hmix {W : Ω → Matrix p n 𝕜} (hW : AEMeasurable W P) :
       (∫ x, f (Real.sqrt x) ∂(expectedCovarianceSpectralMeasure hW : Measure ℝ)) =
-        ∫ ω, ∫ x, f (Real.sqrt x) ∂((W ω).sampleCovariance.spectralMeasure
+        ∫ ω, ∫ x, g x ∂((W ω).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) ∂P := by
     simpa only [g, BoundedContinuousFunction.compContinuous_apply, ContinuousMap.coe_mk] using
       integral_expectedCovarianceSpectralMeasure hW (g.integrable _)
-  rw [hmix hX, hmix hY, ← integral_sub (integrable_integral_comp_sqrt_covariance hX f)
-    (integrable_integral_comp_sqrt_covariance hY f)]
+  rw [hmix hX, hmix hY, ← integral_sub (integrable_integral_spectralMeasure_sampleCovariance hX g)
+    (integrable_integral_spectralMeasure_sampleCovariance hY g)]
   have hdiff (ω : Ω) :
       ‖fX ω - fY ω‖ ≤ ((K : ℝ) / Real.sqrt (Fintype.card p * Fintype.card n)) * ‖Δ ω‖ := by
     rw [div_mul_eq_mul_div]
-    exact Matrix.norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_le (X ω) (Y ω) hf
+    simpa only [fX, fY, g, BoundedContinuousFunction.compContinuous_apply, ContinuousMap.coe_mk]
+      using Matrix.norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_le (X ω) (Y ω) hf
   have : Fact (1 ≤ (2 : ℝ≥0∞)) := ⟨by norm_num⟩
   have hnorm := Lp.norm_integral_le_of_ae_norm_le_mul
     (hΔ.toLp _) (g := fun ω ↦ fX ω - fY ω)

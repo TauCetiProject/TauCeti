@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 import TauCeti.Probability.Process.ElementaryDensity
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Sample-space transport of the predictable L² Brownian integral

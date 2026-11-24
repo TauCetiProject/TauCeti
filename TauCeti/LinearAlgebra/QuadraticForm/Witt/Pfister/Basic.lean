@@ -313,6 +313,10 @@ theorem pfisterClass_two (a b : Kˣ) :
     pfisterClass ![a, b] = oneFoldPfisterClass a * oneFoldPfisterClass b := by
   simp [pfisterClass_eq_prod, Fin.prod_univ_two]
 
+/-- The two-fold Pfister class `⟨⟨-1, -1⟩⟩ = ⟨1, 1, 1, 1⟩` is four copies of `⟨1⟩`. -/
+theorem pfisterClass_neg_one_neg_one : pfisterClass ![-1, -1] = 4 • (1 : WittRing K) := by
+  rw [pfisterClass_two, oneFoldPfisterClass_neg_one, smul_mul_smul_comm, mul_one]
+
 /-- Every `n`-fold Pfister class belongs to `I(K)^n`. -/
 @[simp]
 theorem pfisterClass_mem_fundamentalIdeal_pow {n : ℕ} (a : Fin n → Kˣ) :

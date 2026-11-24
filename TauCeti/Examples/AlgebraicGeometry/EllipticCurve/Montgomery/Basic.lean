@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.WorkedExamples
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of the monic Montgomery model
@@ -40,7 +41,7 @@ public section
 
 namespace TauCeti.Examples.Montgomery
 
-open TauCeti.Montgomery WeierstrassCurve
+open TauCeti.Montgomery WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 /-! ### Discriminants, coefficients and the Montgomery equation -/
 
@@ -134,42 +135,15 @@ private theorem card_point_seven : Nat.card (model (0 : ZMod 7) 1).toAffine.Poin
 example : Nat.card (model (0 : ZMod 7) 1).toAffine.Point = 8 :=
   card_point_seven
 
-/-- The point `(3, 3)` is nonsingular on `y² = x³ + x` over `𝔽₇`. -/
-theorem nonsingular_three_three_seven : (model (0 : ZMod 7) 1).toAffine.Nonsingular 3 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-/-- The point `(1, 3)` is nonsingular on `y² = x³ + x` over `𝔽₇`. -/
-theorem nonsingular_one_three_seven : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-/-- The point `(1, 4)` is nonsingular on `y² = x³ + x` over `𝔽₇`. -/
-theorem nonsingular_one_four_seven : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
 /-- The point `(5, 5)` is nonsingular on `y² = x³ + x` over `𝔽₇`. -/
 theorem nonsingular_five_five_seven : (model (0 : ZMod 7) 1).toAffine.Nonsingular 5 5 := by
   simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
     model_a₄, model_a₆]
   decide
 
-/-- The generator `(3, 3)` of the native group of `y² = x³ + x` over `𝔽₇`. -/
-noncomputable def generatorSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 3 3 nonsingular_three_three_seven
-
-/-- The generator `generatorSeven` is the affine point `(3, 3)` of `y² = x³ + x` over `𝔽₇`. -/
-theorem generatorSeven_def :
-    generatorSeven = .some 3 3 nonsingular_three_three_seven :=
-  (rfl)
-
 /-- Over `𝔽₇`, `[2](3, 3) = (1, 4)` on `y² = x³ + x`. -/
-theorem two_nsmul_generatorSeven :
-    (2 : ℕ) • generatorSeven = .some 1 4 nonsingular_one_four_seven := by
+theorem two_nsmul_pointThreeThreeSeven :
+    (2 : ℕ) • pointThreeThreeSeven = .some 1 4 nonsingular_one_four_seven := by
   have hne : (3 : ZMod 7) ≠ (model (0 : ZMod 7) 1).toAffine.negY 3 3 := by
     simp only [Affine.negY, model_a₁, model_a₃]
     decide
@@ -179,62 +153,62 @@ theorem two_nsmul_generatorSeven :
       decide
     · simp only [Affine.negY, model_a₁, model_a₃]
       decide
-  rw [two_nsmul, generatorSeven_def, Affine.Point.add_self_of_Y_ne hne]
+  rw [two_nsmul, pointThreeThreeSeven, Affine.Point.add_self_of_Y_ne hne]
   simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
     Affine.negY, model_a₁, model_a₂, model_a₃]
   decide
 
 /-- Over `𝔽₇`, `[3](3, 3) = (5, 5)` on `y² = x³ + x`. -/
-theorem three_nsmul_generatorSeven :
-    (3 : ℕ) • generatorSeven = .some 5 5 nonsingular_five_five_seven := by
+theorem three_nsmul_pointThreeThreeSeven :
+    (3 : ℕ) • pointThreeThreeSeven = .some 5 5 nonsingular_five_five_seven := by
   have hxne : (1 : ZMod 7) ≠ 3 := by decide
   have hsl : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
     rw [Affine.slope_of_X_ne hxne, div_eq_iff (by decide)]
     decide
-  rw [succ_nsmul, two_nsmul_generatorSeven, generatorSeven_def, Affine.Point.add_of_X_ne hxne]
+  rw [succ_nsmul, two_nsmul_pointThreeThreeSeven, pointThreeThreeSeven,
+    Affine.Point.add_of_X_ne hxne]
   simp only [Affine.Point.some.injEq, Affine.addX, Affine.addY, Affine.negAddY, hsl,
     Affine.negY, model_a₁, model_a₂, model_a₃]
   decide
 
 /-- Two doublings of `(3 : 1)` with `(N, D) = (2, 4)` give `(4 : 4)` and then `(0 : 2)`, the
 projective `x`-coordinate of the distinguished `2`-torsion point, so `[4](3, 3) = (0, 0)`. -/
-theorem four_nsmul_generatorSeven :
-    (4 : ℕ) • generatorSeven = twoTorsionPoint 0 one_ne_zero := by
+theorem four_nsmul_pointThreeThreeSeven :
+    (4 : ℕ) • pointThreeThreeSeven = twoTorsionPoint 0 one_ne_zero := by
   have h₁ := double_coordinates (N := (2 : ZMod 7)) (D := 4) (by decide)
-    (by decide) generatorSeven
+    (by decide) pointThreeThreeSeven
   obtain ⟨-, h₂⟩ := double_coordinates_of_cross_eq_zero (N := (2 : ZMod 7)) (D := 4)
     (by decide) (by decide) h₁.1 h₁.2
   have e : double (2 : ZMod 7) 4 (double 2 4 ⟨3, 1⟩) = ⟨0, 2⟩ := by
     ext <;> simp only [double_x, double_z] <;> decide
-  have hcoord : coordinates 0 1 generatorSeven = ⟨3, 1⟩ := by
-    rw [generatorSeven_def, coordinates_some]
-  rw [hcoord, e, Pair.cross_def] at h₂
+  rw [show coordinates 0 1 pointThreeThreeSeven = ⟨3, 1⟩ from coordinates_some _ _ _, e,
+    Pair.cross_def] at h₂
   rw [show (4 : ℕ) = 2 * 2 from rfl, mul_nsmul, two_nsmul, two_nsmul]
   simpa [show (2 : ZMod 7) ≠ 0 by decide] using h₂
 
 /-- The generator `(3, 3)` of `y² = x³ + x` over `𝔽₇` has additive order `8`. -/
-theorem addOrderOf_generatorSeven : addOrderOf generatorSeven = 8 := by
+theorem addOrderOf_pointThreeThreeSeven : addOrderOf pointThreeThreeSeven = 8 := by
   refine addOrderOf_eq_prime_pow (p := 2) (n := 2) ?_ ?_
   · norm_num only
-    rw [four_nsmul_generatorSeven]
+    rw [four_nsmul_pointThreeThreeSeven]
     exact twoTorsionPoint_ne_zero 0 one_ne_zero
   · norm_num only
     rw [← card_point_seven]
     exact card_nsmul_eq_zero'
 
 -- The multiples of `(3, 3)` exhaust the native group over `𝔽₇`.
-example : AddSubgroup.zmultiples generatorSeven = ⊤ := by
+example : AddSubgroup.zmultiples pointThreeThreeSeven = ⊤ := by
   have : Finite (model (0 : ZMod 7) 1).toAffine.Point :=
     Nat.finite_of_card_ne_zero (by rw [card_point_seven]; decide)
   exact AddSubgroup.eq_top_of_card_eq _ <| by
-    rw [Nat.card_zmultiples, addOrderOf_generatorSeven, card_point_seven]
+    rw [Nat.card_zmultiples, addOrderOf_pointThreeThreeSeven, card_point_seven]
 
 -- The native group over `𝔽₇` is cyclic, generated by `(3, 3)`.
 example : IsAddCyclic (model (0 : ZMod 7) 1).toAffine.Point := by
   have : Finite (model (0 : ZMod 7) 1).toAffine.Point :=
     Nat.finite_of_card_ne_zero (by rw [card_point_seven]; decide)
-  exact isAddCyclic_of_addOrderOf_eq_card generatorSeven
-    (by rw [addOrderOf_generatorSeven, card_point_seven])
+  exact isAddCyclic_of_addOrderOf_eq_card pointThreeThreeSeven
+    (by rw [addOrderOf_pointThreeThreeSeven, card_point_seven])
 
 end Seven
 

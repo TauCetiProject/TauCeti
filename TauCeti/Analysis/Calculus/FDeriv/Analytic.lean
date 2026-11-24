@@ -7,15 +7,20 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Scalar derivatives of functions represented by formal power series on balls
+# Derivatives of analytic functions and of power series on balls
 
 Mathlib's `HasFPowerSeriesOnBall.fderiv` shows that the Fréchet derivative of an analytic function
 into a complete normed space is represented on the same open extended ball by `p.derivSeries`.
 Specializing to one-dimensional domain `𝕜` and evaluating at `1 : 𝕜` gives the scalar-derivative
 power series `∑ₙ (n + 1) • p.coeff (n + 1) • zⁿ` on `Metric.eball z₀ r`
 (`HasFPowerSeriesOnBall.deriv`).
+
+Mathlib's `AnalyticAt.fderiv` says that the derivative `fderiv 𝕜 f` of a function analytic at `x`
+is analytic at `x`. Evaluating it on a vector field `ξ` analytic at `x` gives the derivative of
+`f` along `ξ`, `z ↦ f'(z) (ξ z)`, which is again analytic at `x` (`AnalyticAt.fderiv_apply`).
 -/
 
 public section
@@ -40,5 +45,15 @@ theorem HasFPowerSeriesOnBall.deriv
     congr 1
     ext n
     simp [← Nat.cast_smul_eq_nsmul 𝕜]
+
+/-- The derivative of a function analytic at `x` along a vector field analytic at `x` is analytic
+at `x`. -/
+theorem AnalyticAt.fderiv_apply
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] {f : E → F} {ξ : E → E} {x : E}
+    (hf : AnalyticAt 𝕜 f x) (hξ : AnalyticAt 𝕜 ξ x) :
+    AnalyticAt 𝕜 (fun z ↦ fderiv 𝕜 f z (ξ z)) x :=
+  ((ContinuousLinearMap.apply 𝕜 F : E →L[𝕜] (E →L[𝕜] F) →L[𝕜] F).analyticAt_bilinear _).comp
+    (hξ.prod hf.fderiv)
 
 end

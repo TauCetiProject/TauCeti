@@ -46,6 +46,7 @@ with that property to one that extends homotopies with values in a space in any 
   homeomorphism, inside one universe and, for a closed subset, across universes.
 * `TauCeti.HasHomotopyExtensionProperty.image_of_isEmbedding`: cofibrations compose, the image of
   a subset with the property under an embedding whose image has the property has it too.
+* `TauCeti.HasHomotopyExtensionProperty.sigma`: disjoint unions of cofibrations are cofibrations.
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
   homotopy which retraces it at the points of a subset with the homotopy extension property can
   be replaced by a homotopy relative to that subset.
@@ -310,6 +311,23 @@ theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [Topolog
   obtain ⟨_, a, ha, rfl⟩ := b
   rw [hG' t ⟨j a, mem_range_self a⟩]
   simp [hG t ⟨a, ha⟩]
+
+/-- **Disjoint unions of cofibrations are cofibrations.** If `A i` has the homotopy extension
+property in `X i` for every `i`, then `Set.univ.sigma A`, the union of the copies of the `A i`, has
+the homotopy extension property in the disjoint union `Σ i, X i`: a homotopy extension problem
+splits into one on each summand, and the solutions glue because the summands are open. -/
+theorem HasHomotopyExtensionProperty.sigma {ι : Type u} {X : ι → Type u}
+    [∀ i, TopologicalSpace (X i)] {A : ∀ i, Set (X i)}
+    (h : ∀ i, HasHomotopyExtensionProperty (A i)) :
+    HasHomotopyExtensionProperty (univ.sigma A) := by
+  intro Y _ f H hH
+  choose G hG₀ hG using fun i ↦ h i (f.comp (ContinuousMap.sigmaMk i))
+    (H.comp ⟨fun q ↦ (q.1, ⟨⟨i, q.2⟩, mem_univ i, q.2.property⟩), by fun_prop⟩)
+    fun a ↦ hH ⟨⟨i, a⟩, mem_univ i, a.property⟩
+  -- Glue the extensions over the summands of `I × Σ i, X i ≃ₜ Σ i, X i × I`.
+  refine ⟨(ContinuousMap.sigma fun i ↦ (G i).comp ⟨Prod.swap, continuous_swap⟩).comp
+    ⟨fun q ↦ Homeomorph.sigmaProdDistrib (q.2, q.1), by fun_prop⟩, fun ⟨i, x⟩ ↦ hG₀ i x,
+    fun t ⟨⟨i, x⟩, hx⟩ ↦ hG i t ⟨x, hx.2⟩⟩
 
 section Retracing
 

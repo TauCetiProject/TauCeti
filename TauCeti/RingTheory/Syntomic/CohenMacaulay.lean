@@ -52,13 +52,7 @@ theorem isCohenMacaulay_localization (p : Ideal A) [p.IsPrime] :
     rw [_root_.Algebra.Presentation.dimension, hP, Nat.add_sub_cancel]
   apply P.isCohenMacaulay_localization (by omega)
   rw [hdim]
-  cases subsingleton_or_nontrivial A with
-  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
-  | inr _ =>
-    let e := _root_.Algebra.TensorProduct.lid k A
-    have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
-    rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
-      hA.ringKrullDim_tensorProduct_of_field k]
+  exact ringKrullDim_le_of_field n k A
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
     [h : IsStandardSyntomicOfRelativeDimension n R S]

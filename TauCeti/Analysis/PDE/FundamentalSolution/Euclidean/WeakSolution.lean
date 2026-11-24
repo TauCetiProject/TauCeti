@@ -9,9 +9,9 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.CompactSupport
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
@@ -106,7 +106,8 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hf : Integrable f)
       (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) :=
   hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub
     (locallyIntegrable_newtonianKernel n) (locallyIntegrable_fderiv_newtonianKernel n)
-    (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub hg hgc v t) hf hfc Ω
+    (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub (hg.of_le (by simp)) hgc v t)
+    hf hfc Ω
 
 /-- **The Newtonian potential solves Poisson's equation in the sense of distributions.** For
 `n = 1` or `n ≥ 3` and `f` integrable with compact support, `-Δ(Gₙ ⋆ f) = f` weakly: for every
@@ -114,10 +115,10 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hf : Integrable f)
 theorem integral_laplacian_mul_newtonianKernel_convolution (hn : n ≠ 2) (hn0 : n ≠ 0)
     (hf : Integrable f) (hfc : HasCompactSupport f) {φ : EuclideanSpace ℝ (Fin n) → ℝ}
     (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    ∫ x, Δ φ x * (newtonianKernel n ⋆ f) x = -∫ x, φ x * f x := by
-  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
-    hφc.laplacian (locallyIntegrable_newtonianKernel n) hf hfc, ← integral_neg]
-  simp_rw [integral_laplacian_mul_newtonianKernel_sub hn hn0 hφ hφc, mul_neg, mul_comm]
+    ∫ x, Δ φ x * (newtonianKernel n ⋆ f) x = -∫ x, φ x * f x :=
+  integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub
+    (locallyIntegrable_newtonianKernel n) hφ hφc
+    (integral_laplacian_mul_newtonianKernel_sub hn hn0 hφ hφc) hf hfc
 
 namespace PDE
 

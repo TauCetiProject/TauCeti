@@ -63,6 +63,8 @@ active, non-active, parametric and constant sections.
 * `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_forall_isOpenBoundary`: in a
   solution, the word of a section whose inner boundaries are all open, for instance of a closed
   section, is reduced as written.
+* `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_isOpenBoundary`: under a solution,
+  reduced substituted segments meeting at an open boundary glue without cancellation.
 
 ## References
 
@@ -613,6 +615,25 @@ theorem isReduced_substituteVars_segment_of_forall_isOpenBoundary
         simp only at hseg
         rw [← him, hseg, FreeGroup.substituteVars_singleton_inl]
         exact U.isReduced_word _
+
+/-- If a boundary `j` is open and the substituted segments `U[i, j] ^ ±1` and `U[j, k] ^ ±1`
+(with the same sign `s`) of a solution `U` are reduced, then `U[i, k] ^ ±1` is reduced: some
+variable base crosses `j`, preventing cancellation across the junction. -/
+theorem isReduced_substituteVars_segment_of_isOpenBoundary {i k : ℕ}
+    {j : Fin (Ω.numItems + 1)} {s : Bool} (hj : Ω.IsOpenBoundary j)
+    (h₁ : IsReduced (substituteVars U.word (Ω.segment i j s)))
+    (h₂ : IsReduced (substituteVars U.word (Ω.segment j k s))) :
+    IsReduced (substituteVars U.word (Ω.segment i k s)) := by
+  rw [Ω.isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  obtain ⟨β, hβ⟩ := Ω.isOpenBoundary_iff.1 hj
+  obtain ⟨hβ₁, hβ₂⟩ := Ω.crosses_iff.1 hβ
+  have hstep := Ω.isReduced_substituteVars_segment_of_overlap h₁
+    (U.isReduced_substituteVars_segment β)
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := j.is_le; omega)))
+  exact Ω.isReduced_substituteVars_segment_of_overlap hstep h₂
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := (Ω.right β).is_le; omega)))
 
 end Solution
 

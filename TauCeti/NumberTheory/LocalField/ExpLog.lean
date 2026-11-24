@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Logarithm
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 
@@ -80,7 +81,7 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
   · simp
   have hfac : (m.factorial : K) ≠ 0 := Nat.cast_ne_zero.mpr m.factorial_ne_zero
   have hcoeff : PowerSeries.coeff m (PowerSeries.exp K - 1) * x ^ m * m.factorial = x ^ m := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm]
+    rw [PowerSeries.coeff_exp_sub_one_of_ne_zero hm]
     field_simp
   have hv : valuation K (m.factorial : K) ≠ 0 := by simpa using hfac
   simp only [powValuation_apply]
@@ -119,8 +120,8 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
   have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hcoeff :
       valuation K (PowerSeries.coeff n (PowerSeries.log K)) * valuation K (n : K) = 1 := by
-    rw [← map_mul]
-    simp [PowerSeries.coeff_log, hn, hnK]
+    rw [← map_mul, PowerSeries.coeff_log_eq_neg_one_pow_div]
+    simp [hnK]
   have hv : valuation K (n : K) ≠ 0 := by simpa using hnK
   -- `(p - 1) * v_p(n) < n`, since `p ^ v_p(n)` divides `n`.
   have hq : (p - 1) * padicValNat p n < n := by
@@ -160,9 +161,8 @@ private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero K]
       (exp (x : K) - 1) := by
   convert (hasSum_exp_of_mem_maximalIdeal_pow x hi).sub (hasSum_ite_eq 0 (1 : K)) using 1
   funext m
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm, div_eq_inv_mul]
+  rw [PowerSeries.coeff_exp_sub_one_mul_pow]
+  split_ifs with hm <;> simp [hm]
 
 /-- The valuation of an element of `𝓂[K] ^ i`, for a uniformizer `π`, is at most `v(π) ^ i`. -/
 private theorem valuation_le_pow_of_mem_maximalIdeal_pow {π : 𝒪[K]} (hπ : Irreducible π)
@@ -183,7 +183,7 @@ theorem valuation_exp_sub_one (hi : absoluteRamificationIndex K p < (p - 1) * i)
   set f := fun m => PowerSeries.coeff m (PowerSeries.exp K - 1) * (x : K) ^ m with hf_def
   have hf := hasSum_coeff_exp_sub_one_mul_pow hi x
   have hf1 : PowerSeries.coeff 1 (PowerSeries.exp K - 1) * (x : K) ^ 1 = x := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one]
+    simp [PowerSeries.coeff_exp_sub_one_of_ne_zero]
   have hS1 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) < 1 :=
     pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) (by omega)
   have hS0 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) ≠ 0 :=
@@ -295,8 +295,8 @@ private theorem powValuation_eval_trunc_log_exp_sub_one_sub_le [CharZero K] {π 
   -- The truncations of `exp - 1` at `x` converge to `exp x - 1`.
   have hE : Tendsto (fun N => (PowerSeries.trunc N (PowerSeries.exp K - 1)).eval (x : K)) atTop
       (𝓝 (exp (x : K) - 1)) := by
-    refine (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
+    exact (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N =>
+      (PowerSeries.eval_trunc N _ _).symm
   have hlim : Tendsto (fun N => F.eval ((PowerSeries.trunc N (PowerSeries.exp K - 1)).eval
       (x : K)) - x) atTop (𝓝 (F.eval (exp (x : K) - 1) - x)) :=
     ((F.continuous.tendsto _).comp hE).sub_const _
@@ -327,11 +327,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
       (unitFiltration_antitone (Nat.one_le_iff_ne_zero.mpr (by rintro rfl; simp at hi)) hu)
     rw [hux] at h
     refine h.tendsto_sum_nat.congr fun M => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
-    refine Finset.sum_congr rfl fun n _ => ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_log, hn]
+    simp only [PowerSeries.eval_trunc, PowerSeries.coeff_log_eq_neg_one_pow_div]
   -- A nonzero `log (exp x) - x` would violate the bound `A * S ^ M` for large `M`.
   by_contra hne
   have hy : log (exp (x : K)) - x ≠ 0 := sub_ne_zero.mpr hne

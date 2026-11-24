@@ -238,9 +238,7 @@ private theorem timeReverseLIE_slabMk_left
     timeReverseLIE (t₀ + t₁) left_eq_add_sub right_eq_add_sub u
         (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩) =
       u (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  rw [timeReverseLIE_apply, slabTimeReverse_slabMk, iccTimeReverse_apply]
-  congr
-  ring
+  rw [timeReverseLIE_apply, slabTimeReverse_slabMk, iccTimeReverse_left _ _ _ ht.le]
 
 /-- The time reversal of `u` about `t₀ + t₁`, evaluated at the reversal of `p`, is `u p`. -/
 private theorem timeReverseLIE_symm_apply

@@ -16,6 +16,7 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -29,6 +30,7 @@ concrete p-adic norm and valuation APIs.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`; `Padic.toAdd_normalizedValuation_mk0_natCast_pow` computes
   it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
+  Consequently `Padic.continuous_valuation_units`: the valuation is continuous on `ℚ_[p]ˣ`.
 * `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
   `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
   on `ℚ_[p]` with Mathlib's norm.
@@ -50,8 +52,9 @@ concrete p-adic norm and valuation APIs.
   `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
-  with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
-  uniformizer of `ℚ_[p]`.
+  with an integer prime to `p`. `TauCeti.padicPrimeUnit p` is `p` as a unit of `ℚ_[p]`,
+  `TauCeti.isUniformizer_padicPrimeUnit` shows that it is a uniformizer of `ℚ_[p]`, and
+  `TauCeti.normalizedValuation_padicPrimeUnit` records that its normalized valuation is one.
 * `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
@@ -112,6 +115,13 @@ theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]
     (ha : (a : ℚ_[p]) = u) : (TauCeti.normalizedValuation ℚ_[p] a).toAdd = 0 := by
   rw [toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
     PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
+
+variable {p} in
+/-- The `p`-adic valuation is continuous on `ℚ_pˣ`: it is the normalized valuation, which is
+locally constant. -/
+theorem continuous_valuation_units : Continuous fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p]).valuation := by
+  simp_rw [← toAdd_normalizedValuation_eq_valuation]
+  exact continuous_of_discreteTopology.comp (TauCeti.continuous_normalizedValuation ℚ_[p])
 
 variable {p} in
 /-- On `ℚ_[p]` the valuation of the valuative relation and the norm induce the same order. -/
@@ -278,6 +288,24 @@ theorem irreducible_X_sq_add_X_add_one : Irreducible (X ^ 2 + X + 1 : ℚ_[5][X]
 
 end Padic
 
+namespace TauCeti
+
+/-- The residue prime `p` as a unit of `ℚ_[p]`. -/
+noncomputable def padicPrimeUnit : ℚ_[p]ˣ :=
+  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+
+/-- The unit `TauCeti.padicPrimeUnit p` is `p`. -/
+@[simp]
+theorem coe_padicPrimeUnit : (padicPrimeUnit p : ℚ_[p]) = p :=
+  (rfl)
+
+/-- The unit `TauCeti.padicPrimeUnit p` is `Units.mk0 p`. -/
+theorem padicPrimeUnit_eq_mk0 :
+    padicPrimeUnit p = Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero) :=
+  (rfl)
+
+end TauCeti
+
 namespace TauCeti.Padic
 
 /-- The residue prime `p` is a uniformizer of the integer ring of `ℚ_[p]`. -/
@@ -302,15 +330,6 @@ theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m)
   (irreducible_isUnit_mul (_root_.Padic.isUnit_intCast_integerRing hm)).2
     (irreducible_natCast_self p)
 
-/-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
-theorem isUniformizer_natCast_self :
-    IsUniformizer ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
-  rw [isUniformizer_def]
-  apply Multiplicative.toAdd.injective
-  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
-    toAdd_ofAdd]
-
 variable {p} in
 /-- A unit of `ℤ_[p]` has valuation one in `ℚ_[p]`. -/
 theorem valuation_eq_one_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]ˣ} (ha : (a : ℚ_[p]) = u) :
@@ -328,3 +347,20 @@ theorem spanSingleton_natCast_pow_eq_maximalIdeal_zpow (n : ℕ) :
     ← Units.spanSingleton_eq_maximalIdeal_zpow, Units.val_mk0]
 
 end TauCeti.Padic
+
+namespace TauCeti
+
+/-- The unit `TauCeti.padicPrimeUnit p` is a uniformizer of `ℚ_[p]`. -/
+theorem isUniformizer_padicPrimeUnit : IsUniformizer ℚ_[p] (padicPrimeUnit p) := by
+  rw [isUniformizer_def]
+  apply Multiplicative.toAdd.injective
+  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, coe_padicPrimeUnit,
+    _root_.Padic.valuation_p, toAdd_ofAdd]
+
+/-- The unit `p` of `ℚ_[p]` has normalized valuation one. -/
+@[simp]
+theorem normalizedValuation_padicPrimeUnit :
+    normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 :=
+  (isUniformizer_def _).1 (isUniformizer_padicPrimeUnit p)
+
+end TauCeti

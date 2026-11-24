@@ -131,7 +131,7 @@ def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
   map_mul' g h := by
     refine Subtype.ext (Units.ext (Matrix.ext fun i j ↦ ?_))
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+      simp [add_comm]
 
 @[simp]
 theorem coe_affineGroupMulEquiv_apply (g : AffineGroup R) :

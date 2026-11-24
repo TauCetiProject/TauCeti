@@ -893,6 +893,19 @@ instance (v : segment.V) : Unique {e : segment.E // segment.src e = v} where
   default := ⟨v, segment_src v⟩
   uniq e := Subtype.ext ((segment_src e.val).symm.trans e.property)
 
+/-- The dart of the segment leaving the vertex `b`, the dart with the same Boolean label, as an
+arrow from `b` to the other vertex. Its source is `b` itself, rather than `segment.src b` as for
+`SerreGraph.dart`, so that it extends paths ending at `b` without a cast. -/
+def segmentArrow (b : segment.V) : b ⟶ segment.tgt b :=
+  ⟨b, rfl, rfl⟩
+
+theorem segmentArrow_val (b : segment.V) : (segmentArrow b).val = b :=
+  (rfl)
+
+/-- A vertex of the segment other than `b` is the target of the dart leaving `b`. -/
+theorem segment_tgt_eq_of_ne {b v : segment.V} (h : b ≠ v) : segment.tgt b = v := by
+  cases b <;> cases v <;> first | rfl | exact absurd rfl h
+
 end SerreGraph
 
 end TauCeti

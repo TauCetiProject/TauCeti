@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
+import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.ENat
@@ -34,6 +35,13 @@ with a finite limit `f (u n) → r` satisfy `f x ≤ r`. Finally, on a nonempty 
 set, a sequentially lower semicontinuous function taking values in a first-countable conditionally
 complete linear order attains its minimum whenever bounded below (and automatically when `atBot` is
 countably generated, as for `ℝ`).
+
+A sequence is minimizing for `f` on a set `t` when its values are eventually below every number
+exceeding a value of `f` on `t`; for real values this holds when they converge to the infimum of
+`f` on `t`, or tend to `-∞`, and minimizing sequences of points of a nonempty `t` always exist
+(`TauCeti.exists_seq_forall_gt_eventually_lt`). For any linearly ordered codomain, a limit in `s`
+of a minimizing sequence of points of `s` minimizes a function sequentially lower semicontinuous
+on `s` (`TauCeti.SeqLowerSemicontinuousOn.isMinOn_of_tendsto`).
 -/
 
 public section
@@ -720,5 +728,56 @@ theorem SeqLowerSemicontinuousOn.exists_isMinOn_of_isSeqCompact
   hf.exists_isMinOn_of_isSeqCompact_of_bddBelow hne hs (hf.bddBelow_of_isSeqCompact hs)
 
 end SeqCompact
+
+section MinimizingSequence
+
+variable {X β : Type*} [TopologicalSpace X] [LinearOrder β] {f : X → β} {s : Set X} {x : X}
+  {u : ℕ → X}
+
+/-- If the values of a sequentially lower semicontinuous function along a sequence in `s`
+converging to `x ∈ s` are eventually below every number exceeding `b`, that is, if their upper
+limit is at most `b`, then `f x ≤ b`. -/
+theorem SeqLowerSemicontinuousOn.le_of_forall_gt_eventually_lt
+    (hf : SeqLowerSemicontinuousOn f s) (hx : x ∈ s) (hu : ∀ n, u n ∈ s)
+    (hlim : Tendsto u atTop (𝓝 x)) {b : β} (hb : ∀ c > b, ∀ᶠ n in atTop, f (u n) < c) :
+    f x ≤ b := by
+  by_contra! hbx
+  -- Some value `c = f (u n)` lies strictly between `b` and `f x`; the values along the sequence
+  -- are then eventually both above and below `c`.
+  obtain ⟨n, hbn, hnx⟩ := ((hf x hx hu hlim b hbx).and (hb _ hbx)).exists
+  obtain ⟨m, hm⟩ := ((hf x hx hu hlim _ hnx).and (hb _ hbn)).exists
+  exact lt_asymm hm.1 hm.2
+
+/-- **Limits of minimizing sequences are minimizers.** If a sequence in `s` converges to a point
+`x ∈ s` and is minimizing for `f` on `t`, that is, its values are eventually below every number
+exceeding a value of `f` on `t`, then `x` minimizes `f` on `t`. -/
+theorem SeqLowerSemicontinuousOn.isMinOn_of_tendsto (hf : SeqLowerSemicontinuousOn f s)
+    (hx : x ∈ s) (hu : ∀ n, u n ∈ s) (hlim : Tendsto u atTop (𝓝 x)) {t : Set X}
+    (hmin : ∀ v ∈ t, ∀ c > f v, ∀ᶠ n in atTop, f (u n) < c) : IsMinOn f t x :=
+  isMinOn_iff.2 fun _ hv ↦ hf.le_of_forall_gt_eventually_lt hx hu hlim (hmin _ hv)
+
+end MinimizingSequence
+
+/-- Every real function on a nonempty set admits a minimizing sequence of points of the set: its
+values are eventually below every number exceeding a value of the function on the set. -/
+theorem exists_seq_forall_gt_eventually_lt {X : Type*} {E : X → ℝ} {S : Set X}
+    (hS : S.Nonempty) :
+    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ ∀ v ∈ S, ∀ c > E v, ∀ᶠ n in atTop, E (u n) < c := by
+  by_cases hbdd : BddBelow (E '' S)
+  · -- The values converge to the infimum, which lies below every value.
+    obtain ⟨w, -, hw, hwS⟩ := exists_seq_tendsto_sInf (hS.image E) hbdd
+    choose u hu hEu using hwS
+    refine ⟨u, hu, fun v hv c hc ↦ ?_⟩
+    simpa only [hEu] using
+      hw.eventually (Iio_mem_nhds ((csInf_le hbdd (mem_image_of_mem E hv)).trans_lt hc))
+  · -- The values tend to `-∞`.
+    have hlt (n : ℕ) : ∃ x ∈ S, E x < -n := by
+      obtain ⟨_, ⟨x, hx, rfl⟩, hlt⟩ := not_bddBelow_iff.1 hbdd (-n)
+      exact ⟨x, hx, hlt⟩
+    choose u hu hEu using hlt
+    have hbot : Tendsto (fun n ↦ E (u n)) atTop atBot :=
+      tendsto_atBot_mono (fun n ↦ (hEu n).le)
+        (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
+    exact ⟨u, hu, fun _ _ c _ ↦ hbot.eventually_lt_atBot c⟩
 
 end TauCeti

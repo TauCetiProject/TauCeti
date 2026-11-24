@@ -74,6 +74,8 @@ of Mathlib's `evenOdd`, whose definition is the analogous supremum over the `i` 
   `CliffordAlgebra.map_mem_filtration`: the filtration is preserved by the grade
   involution, by reversal, and by an isometry of quadratic forms, which sends each generator into
   the first step (`CliffordAlgebra.map_apply_ι_mem_filtration_one`).
+* `CliffordAlgebra.forall_filtration_map_eq_iff`: an algebra map preserves every step if and
+  only if it preserves the first one.
 * `CliffordAlgebra.contractLeft_mem_filtration_succ` and
   `CliffordAlgebra.contractLeft_mem_filtration`,
   `CliffordAlgebra.changeForm_mem_filtration`, and
@@ -447,6 +449,15 @@ theorem map_mem_filtration (f : Q →qᵢ Q') {k : ℕ} {x : CliffordAlgebra Q}
   intro m
   rw [CliffordAlgebra.map_apply_ι]
   exact TauCeti.Algebra.apply_mem_wordFiltration_one (ι Q') (f m)
+
+variable {Q} in
+/-- **An algebra map preserves every step of the degree filtration as soon as it preserves the
+first.** Each step `filtration Q k` is the `k`-th power of the first one. -/
+theorem forall_filtration_map_eq_iff (g : CliffordAlgebra Q →ₐ[R] CliffordAlgebra Q') :
+    (∀ k, (filtration Q k).map g.toLinearMap = filtration Q' k) ↔
+      (filtration Q 1).map g.toLinearMap = filtration Q' 1 := by
+  refine ⟨fun h ↦ h 1, fun h k ↦ TauCeti.Algebra.map_wordFiltration_eq (ι Q) g (ι Q') ?_ k⟩
+  rwa [← TauCeti.Algebra.wordFiltration_one, ← TauCeti.Algebra.wordFiltration_one]
 
 end Map
 

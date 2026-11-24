@@ -86,8 +86,7 @@ theorem hasInjectiveDimensionLE_torsionBy_of_surjective_smul {x : R} (hx : x ∈
       simpa [fK, gK] using TauCeti.exact_torsionByMap hSex hf_inj
     have hT : (shortComplexOfCompEqZero fK gK hexK.linearMap_comp_eq_zero).ShortExact :=
       shortComplex_shortExact _ hexK (by simpa [fK] using TauCeti.injective_torsionByMap hf_inj)
-        (by simpa [gK] using
-          TauCeti.surjective_torsionByMap_of_surjective_smul hSex hf_inj hg_surj hC₁)
+        (by simpa [gK] using TauCeti.surjective_torsionByMap_of_surjective_smul hSex hg_surj hC₁)
     have hRes := hT.hasInjectiveDimensionLT_X₁ (n + 1) ‹_›
       (hasInjectiveDimensionLT_of_ge _ 1 (n + 2) (by omega))
     dsimp only [shortComplexOfCompEqZero, ShortComplex.moduleCatMk] at hRes

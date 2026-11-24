@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Topology.PiCurry
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi
@@ -15,15 +16,18 @@ import Mathlib.Order.Interval.Set.Pi
 # Continuous linear regrouping of coordinate families
 
 `ContinuousLinearEquiv.piOptionEquivProd` splits a dependent family indexed by `Option ι`
-into its `none` coordinate and its `some` coordinates. It supplies product coordinates
+into its `none` coordinate and its `some` coordinates, and
+`ContinuousLinearEquiv.piProdEquivPiOption` reassembles a family on `ι` paired with a
+distinguished coordinate into a family on `Option ι`. Both supply product coordinates
 for linear charts, with no finiteness or norm assumptions.
 
 The construction combines `LinearEquiv.piOptionEquivProd` with
 `TauCeti.piOptionEquivProdHomeomorph`.
 
-For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
-into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
-`ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+For Mathlib's `ContinuousLinearEquiv.piCongrLeft` and `ContinuousLinearEquiv.sumPiEquivProdPi`,
+`@[simp]` lemmas evaluate the equivalences and their inverses and record reflexivity of
+`piCongrLeft`, and `ContinuousLinearEquiv.piProdEquivPiSumUnique` identifies `(σ → M) × M` with
+`σ ⊕ τ → M` for any unique index type `τ`.
 `ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
 the remaining coordinates fixed; `TauCeti.image_single_add_negCoord_univ_pi`,
 `TauCeti.image_single_add_negCoord_Icc`, and `TauCeti.image_single_add_negCoord_pi_Ioo` record
@@ -39,7 +43,11 @@ public section
 
 namespace ContinuousLinearEquiv
 
-variable (R : Type*) [Semiring R] {ι : Type*} {M : Option ι → Type*}
+variable (R : Type*) [Semiring R]
+
+section OptionPi
+
+variable {ι : Type*} {M : Option ι → Type*}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, TopologicalSpace (M i)]
 
 /-- Split a family indexed by `Option ι` into its distinguished coordinate and the rest. -/
@@ -65,6 +73,60 @@ def piOptionEquivProd : ((i : Option ι) → M i) ≃L[R] M none × ((i : ι) �
   funext i
   cases i <;> rfl
 
+/-- Identify a family indexed by `ι` paired with a distinguished coordinate as a family indexed by
+`Option ι`, placing the distinguished coordinate at `none`. -/
+def piProdEquivPiOption :
+    (((i : ι) → M (some i)) × M none) ≃L[R] ((i : Option ι) → M i) :=
+  (prodComm R ((i : ι) → M (some i)) (M none)).trans (piOptionEquivProd R).symm
+
+/-- Applying `piProdEquivPiOption` places the distinguished coordinate at `none` and the remaining
+coordinates at `some i`. -/
+@[simp] theorem piProdEquivPiOption_apply (q : ((i : ι) → M (some i)) × M none) :
+    piProdEquivPiOption R q = (fun i => match i with
+      | none => q.2
+      | some j => q.1 j) := by
+  funext i
+  cases i <;> rfl
+
+/-- The inverse of `piProdEquivPiOption` extracts the `some` coordinates and the `none`
+coordinate. -/
+@[simp] theorem piProdEquivPiOption_symm_apply (x : (i : Option ι) → M i) :
+    (piProdEquivPiOption R).symm x = (fun i => x (some i), x none) := (rfl)
+
+end OptionPi
+
+section PiCongrLeft
+
+variable {ι ι' : Type*} (φ : ι → Type*) [∀ i, AddCommMonoid (φ i)] [∀ i, Module R (φ i)]
+  [∀ i, TopologicalSpace (φ i)]
+
+/-- Reindexing along the identity equivalence gives the identity continuous linear equivalence. -/
+@[simp] theorem piCongrLeft_refl :
+    piCongrLeft R φ (.refl ι) = .refl R ((i : ι) → φ i) := (rfl)
+
+/-- The inverse of `ContinuousLinearEquiv.piCongrLeft` precomposes with the index equivalence. -/
+@[simp] theorem piCongrLeft_symm_apply (e : ι' ≃ ι) (g : (i : ι) → φ i) (i' : ι') :
+    (piCongrLeft R φ e).symm g i' = g (e i') := (rfl)
+
+/-- Evaluating `ContinuousLinearEquiv.piCongrLeft` at an image index `e i'` returns the `i'`th
+coordinate. -/
+@[simp] theorem piCongrLeft_apply_apply (e : ι' ≃ ι) (f : (i' : ι') → φ (e i')) (i' : ι') :
+    piCongrLeft R φ e f (e i') = f i' :=
+  Equiv.piCongrLeft_apply_apply φ e f i'
+
+end PiCongrLeft
+
+section PiCongrLeftConst
+
+variable {ι ι' : Type*} (N : Type*) [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+
+/-- On a non-dependent family, `ContinuousLinearEquiv.piCongrLeft` precomposes with `e.symm`. -/
+@[simp] theorem piCongrLeft_const_apply (e : ι' ≃ ι) (f : ι' → N) (i : ι) :
+    piCongrLeft R (fun _ : ι ↦ N) e f i = f (e.symm i) := by
+  obtain ⟨i', rfl⟩ := e.surjective i; simp
+
+end PiCongrLeftConst
+
 section SumPi
 
 variable {S T : Type*} {A : S ⊕ T → Type*} [∀ st, AddCommMonoid (A st)] [∀ st, Module R (A st)]
@@ -81,11 +143,33 @@ to `T`. -/
     (p : ((s : S) → A (.inl s)) × ((t : T) → A (.inr t))) :
     (sumPiEquivProdPi R S T A).symm p = Sum.rec p.1 p.2 := (rfl)
 
+/-- Identify a family indexed by `σ` paired with a single value in `N` as a family indexed by
+`σ ⊕ τ` for any unique index type `τ`. -/
+def piProdEquivPiSumUnique (σ τ N : Type*) [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] :
+    ((σ → N) × N) ≃L[R] (σ ⊕ τ → N) :=
+  ((ContinuousLinearEquiv.refl R (σ → N)).prodCongr (funUnique τ R N).symm).trans
+    (sumPiEquivProdPi R σ τ (fun _ ↦ N)).symm
+
+/-- Applying `piProdEquivPiSumUnique` combines the `σ`-indexed family with the constant value on
+`τ` via `Sum.elim`. -/
+@[simp] theorem piProdEquivPiSumUnique_apply {σ τ N : Type*} [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] (q : (σ → N) × N) :
+    piProdEquivPiSumUnique R σ τ N q = Sum.elim q.1 (fun _ ↦ q.2) := by
+  funext x
+  cases x <;> rfl
+
+/-- The inverse of `piProdEquivPiSumUnique` restricts to `σ` and evaluates at `Sum.inr default`. -/
+@[simp] theorem piProdEquivPiSumUnique_symm_apply {σ τ N : Type*} [Unique τ]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] (p : σ ⊕ τ → N) :
+    (piProdEquivPiSumUnique R σ τ N).symm p = (p ∘ Sum.inl, p (.inr default)) :=
+  (rfl)
+
 end SumPi
 
 section NegCoord
 
-variable {R} [DecidableEq ι] {N P : ι → Type*}
+variable {R} {ι : Type*} [DecidableEq ι] {N P : ι → Type*}
   [∀ i, TopologicalSpace (N i)] [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
   [∀ i, TopologicalSpace (P i)] [∀ i, AddCommMonoid (P i)] [∀ i, Module R (P i)]
 

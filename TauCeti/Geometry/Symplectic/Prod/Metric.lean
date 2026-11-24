@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Prod.Basic
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.TameMetric
 
 /-!
@@ -36,6 +38,11 @@ either inner-product core.
   summands are orthogonal for the direct-sum tame metric.
 * `TauCeti.SymplecticForm.Compatible.prod_innerProductCore_inner`: the analogous formula for
   compatible metrics.
+* `TauCeti.SymplecticForm.prodL2` and `TauCeti.AlmostComplexStructure.prodL2`: the direct sums
+  on the Euclidean product `WithLp 2 (V × W)` of two inner product spaces.
+* `TauCeti.SymplecticForm.prodL2_apply_prodL2_eq_inner`: if the inner products of `V` and `W`
+  are the metrics `ω₁(·, J₁ ·)` and `ω₂(·, J₂ ·)`, the inner product of `WithLp 2 (V × W)` is
+  the metric of the direct sums.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: products of compatible triples carry the product metric.
@@ -171,5 +178,42 @@ lemma prod_innerProductCore_inner_inr_inl (w : W) (v : V) :
 end Compatible
 
 end SymplecticForm
+
+section L2
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
+  [InnerProductSpace ℝ W]
+
+/-- The direct-sum almost complex structure `(v, w) ↦ (J₁ v, J₂ w)` on the Euclidean product
+`WithLp 2 (V × W)`. -/
+noncomputable def AlmostComplexStructure.prodL2 (J₁ : AlmostComplexStructure V)
+    (J₂ : AlmostComplexStructure W) : AlmostComplexStructure (WithLp 2 (V × W)) :=
+  (J₁.prod J₂).transport (WithLp.linearEquiv 2 ℝ (V × W)).symm
+
+@[simp]
+theorem AlmostComplexStructure.prodL2_apply (J₁ : AlmostComplexStructure V)
+    (J₂ : AlmostComplexStructure W) (p : WithLp 2 (V × W)) :
+    J₁.prodL2 J₂ p = WithLp.toLp 2 (J₁ p.fst, J₂ p.snd) := by
+  simp [AlmostComplexStructure.prodL2]
+
+/-- The direct-sum symplectic form `ω₁ ⊕ ω₂` on the Euclidean product `WithLp 2 (V × W)`. -/
+noncomputable def SymplecticForm.prodL2 (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+    SymplecticForm (WithLp 2 (V × W)) :=
+  (ω₁.prod ω₂).transport (WithLp.linearEquiv 2 ℝ (V × W)).symm
+
+@[simp]
+theorem SymplecticForm.prodL2_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W)
+    (p q : WithLp 2 (V × W)) : ω₁.prodL2 ω₂ p q = ω₁ p.fst q.fst + ω₂ p.snd q.snd := by
+  simp [SymplecticForm.prodL2]
+
+/-- If the inner products of `V` and `W` are the metrics `ω₁(·, J₁ ·)` and `ω₂(·, J₂ ·)`, the
+inner product of the Euclidean product `WithLp 2 (V × W)` is the metric of the direct sums. -/
+theorem SymplecticForm.prodL2_apply_prodL2_eq_inner {ω₁ : SymplecticForm V}
+    {ω₂ : SymplecticForm W} {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
+    (h₁ : ∀ v v', ω₁ v (J₁ v') = inner ℝ v v') (h₂ : ∀ w w', ω₂ w (J₂ w') = inner ℝ w w')
+    (p q : WithLp 2 (V × W)) : ω₁.prodL2 ω₂ p (J₁.prodL2 J₂ q) = inner ℝ p q := by
+  simp [h₁, h₂, WithLp.prod_inner_apply]
+
+end L2
 
 end TauCeti
