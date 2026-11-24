@@ -238,14 +238,15 @@ private theorem exists_weights_single (P Q : ι → Prop) [DecidablePred P]
 /-- A point over `∑ i, w i • v i`, for barycentric weights `w`, whose excess
 `p.2 - ∑ i, w i * a (v i)` over the lower boundary lies between the sums of the weighted height
 differences `w i * (b (v i) - a (v i))` over `k < i` and over `k ≤ i`, lies in the `k`-th staircase
-simplex. It lies on the vertical segment between the two points with weights `w` on the graphs
-through the vertices of that simplex. -/
+simplex. -/
 theorem mem_convexHull_staircaseSimplex {k : ι} {p : E × ℝ} {w : ι → ℝ} (hw0 : ∀ i, 0 ≤ w i)
     (hw1 : ∑ i, w i = 1) (hwv : ∑ i, w i • v i = p.1)
     (hlo : ∑ i with k < i, w i * (b (v i) - a (v i)) ≤ p.2 - ∑ i, w i * a (v i))
     (hhi : p.2 - ∑ i, w i * a (v i) ≤ ∑ i with k ≤ i, w i * (b (v i) - a (v i))) :
     p ∈ convexHull ℝ (staircaseSimplex v a b k : Set (E × ℝ)) := by
   classical
+  -- `p` lies on the vertical segment between the two points with weights `w` on the graphs
+  -- through the vertices of the `k`-th staircase simplex
   have hmem (P : ι → Prop) [DecidablePred P] (hP : ∀ i, P i → k ≤ i)
       (hP' : ∀ i, ¬ P i → i ≤ k) :
       (p.1, ∑ i, w i * a (v i) + ∑ i with P i, w i * (b (v i) - a (v i))) ∈
@@ -385,9 +386,11 @@ section Complex
 variable [AddCommGroup E] [Module ℝ E] {v : ι → E} {a b : E → ℝ}
 
 variable (v a b) in
-/-- The **staircase triangulation** of the band between the heights `a` and `b` over the simplex
-with ordered affinely independent vertices `v`: its faces are the nonempty subsets of the staircase
-simplices. -/
+/-- The **staircase triangulation** over the simplex with ordered affinely independent vertices
+`v`: its faces are the nonempty subsets of the staircase simplices. It triangulates the band
+between the affine interpolations of the vertex heights `a (v i) ≤ b (v i)`; for affine `a` and
+`b` this is `TauCeti.closedRegionBetween a b (convexHull ℝ (range v))`
+(`TauCeti.space_staircaseComplex`). -/
 noncomputable def staircaseComplex (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v i) ≤ b (v i)) :
     Geometry.SimplicialComplex ℝ (E × ℝ) :=
   .ofSimplices (staircaseSimplex v a b) (affineIndependent_staircaseSimplex hv)
@@ -411,10 +414,9 @@ theorem staircaseSimplex_mem_staircaseComplex_faces (k : ι) :
 theorem vertices_staircaseComplex :
     (staircaseComplex v a b hv hab).vertices =
       range (fun i ↦ (v i, a (v i))) ∪ range fun i ↦ (v i, b (v i)) := by
+  rw [staircaseComplex, Geometry.SimplicialComplex.vertices_ofSimplices]
   ext p
-  simp only [Geometry.SimplicialComplex.mem_vertices, mem_staircaseComplex_faces,
-    Finset.singleton_nonempty, true_and, Finset.singleton_subset_iff, mem_staircaseSimplex,
-    Set.mem_union, Set.mem_range]
+  simp only [Set.mem_iUnion, mem_coe, mem_staircaseSimplex, Set.mem_union, Set.mem_range]
   constructor
   · rintro ⟨k, ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩⟩
     exacts [.inl ⟨i, rfl⟩, .inr ⟨i, rfl⟩]
@@ -491,26 +493,20 @@ theorem space_staircaseComplex (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v
   classical
   have hband := closedRegionBetween_convexHull (a := a) (b := b) (s := range v)
     (by rintro _ ⟨i, rfl⟩; exact hab i)
-  ext p
-  rw [Geometry.SimplicialComplex.mem_space_iff, hband]
-  constructor
-  · rintro ⟨t, ht, hp⟩
-    obtain ⟨-, k, htk⟩ := (mem_staircaseComplex_faces hv hab).1 ht
-    refine convexHull_mono (fun q hq ↦ ?_) (convexHull_mono (by exact_mod_cast htk) hp)
-    rcases mem_staircaseSimplex.1 hq with ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩
+  rw [staircaseComplex, Geometry.SimplicialComplex.space_ofSimplices, hband]
+  refine Set.Subset.antisymm (Set.iUnion_subset fun k ↦ convexHull_mono fun q hq ↦ ?_) fun p hp ↦ ?_
+  · rcases mem_staircaseSimplex.1 hq with ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩
     exacts [.inl (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩), .inr (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩)]
-  · intro hp
-    -- the band consists of the points with excess between `0` and the weighted height difference
-    obtain ⟨w, hw0, hw1, hwv, hlo, hhi⟩ := convexHull_min (fun q hq ↦ by
-        rcases hq with ⟨_, ⟨i, rfl⟩, rfl⟩ | ⟨_, ⟨i, rfl⟩, rfl⟩
-        · exact exists_weights_single _ _ i False.elim (fun _ ↦ le_rfl)
-            (fun _ ↦ hab i) (absurd trivial)
-        · exact exists_weights_single _ _ i False.elim (fun _ ↦ hab i)
-            (fun _ ↦ le_rfl) (absurd trivial))
-      (convex_setOf_exists_weights (v := v) (a := a) (b := b) (fun _ ↦ False) fun _ ↦ True) hp
-    simp only [filter_false, sum_empty, filter_true] at hlo hhi
-    obtain ⟨k, hk⟩ := exists_mem_convexHull_staircaseSimplex hw0 hw1 hwv hlo hhi
-    exact ⟨_, staircaseSimplex_mem_staircaseComplex_faces hv hab k, hk⟩
+  -- the band consists of the points with excess between `0` and the weighted height difference
+  obtain ⟨w, hw0, hw1, hwv, hlo, hhi⟩ := convexHull_min (fun q hq ↦ by
+      rcases hq with ⟨_, ⟨i, rfl⟩, rfl⟩ | ⟨_, ⟨i, rfl⟩, rfl⟩
+      · exact exists_weights_single _ _ i False.elim (fun _ ↦ le_rfl)
+          (fun _ ↦ hab i) (absurd trivial)
+      · exact exists_weights_single _ _ i False.elim (fun _ ↦ hab i)
+          (fun _ ↦ le_rfl) (absurd trivial))
+    (convex_setOf_exists_weights (v := v) (a := a) (b := b) (fun _ ↦ False) fun _ ↦ True) hp
+  simp only [filter_false, sum_empty, filter_true] at hlo hhi
+  exact Set.mem_iUnion.2 (exists_mem_convexHull_staircaseSimplex hw0 hw1 hwv hlo hhi)
 
 end Space
 

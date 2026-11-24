@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyFinite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.Analysis.Convex.SimplicialComplex.Restrict
 import Mathlib.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Extreme
@@ -45,11 +46,15 @@ coning a triangulation of its boundary, and the pieces are glued.
 * `Geometry.SimplicialComplex.glue`: the simplicial complex whose faces are the faces of a
   family of pairwise compatible complexes.
 * `Geometry.SimplicialComplex.ofSimplices`: the simplicial complex whose faces are the faces of
-  a family of affinely independent simplices meeting pairwise in common faces.
+  a family of affinely independent simplices meeting pairwise in common faces, generated as
+  `TauCeti.PreAbstractSimplicialComplex.ofGenerators`.
 
 ## Main results
 
 * `Geometry.SimplicialComplex.space_glue`: `|glue K h| = ⋃ i, |K i|`.
+* `Geometry.SimplicialComplex.space_ofSimplices`, `Geometry.SimplicialComplex.vertices_ofSimplices`:
+  the underlying space and the vertices of `ofSimplices σ indep inter` are the unions of the convex
+  hulls and of the vertex sets of the simplices `σ k`.
 * `Geometry.SimplicialComplex.glue_le_iff`: the glued complex is the least complex containing
   every `K i`.
 * `Geometry.SimplicialComplex.locallyFinite_convexHull_glue`: gluing a locally finite family of
@@ -325,16 +330,16 @@ def ofSimplices (σ : ι → Finset E) (indep : ∀ k, AffineIndependent 𝕜 ((
     (inter : ∀ k l, convexHull 𝕜 ↑(σ k) ∩ convexHull 𝕜 ↑(σ l) ⊆
       convexHull 𝕜 ((σ k : Set E) ∩ σ l)) :
     SimplicialComplex 𝕜 E where
-  faces := {t | t.Nonempty ∧ ∃ k, t ⊆ σ k}
-  isRelLowerSet_faces := by
-    rintro t ⟨ht, k, htk⟩
-    exact ⟨ht, fun u hut hu => ⟨hu, k, hut.trans htk⟩⟩
+  toPreAbstractSimplicialComplex := TauCeti.PreAbstractSimplicialComplex.ofGenerators (range σ)
   indep := by
-    rintro t ⟨-, k, htk⟩
+    intro t ht
+    obtain ⟨-, _, ⟨k, rfl⟩, htk⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 ht
     exact (indep k).mono (coe_subset.2 htk)
   inter_subset_convexHull := by
     classical
-    rintro s t ⟨-, k, hsk⟩ ⟨-, l, htl⟩ x ⟨hxs, hxt⟩
+    intro s t hs ht x ⟨hxs, hxt⟩
+    obtain ⟨-, _, ⟨k, rfl⟩, hsk⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 hs
+    obtain ⟨-, _, ⟨l, rfl⟩, htl⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 ht
     set U := σ k ∩ σ l
     have hU : x ∈ convexHull 𝕜 (U : Set E) := by
       rw [coe_inter]
@@ -355,7 +360,25 @@ def ofSimplices (σ : ι → Finset E) (indep : ∀ k, AffineIndependent 𝕜 ((
 @[simp]
 theorem mem_ofSimplices_faces {σ : ι → Finset E} {indep} {inter} :
     s ∈ (ofSimplices (𝕜 := 𝕜) σ indep inter).faces ↔ s.Nonempty ∧ ∃ k, s ⊆ σ k :=
-  Iff.rfl
+  TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.trans (by simp)
+
+/-- The underlying space of `ofSimplices σ indep inter` is the union of the convex hulls of the
+simplices `σ k`. -/
+theorem space_ofSimplices {σ : ι → Finset E} {indep} {inter} :
+    (ofSimplices (𝕜 := 𝕜) σ indep inter).space = ⋃ k, convexHull 𝕜 (σ k : Set E) := by
+  ext x
+  simp only [mem_space_iff, mem_ofSimplices_faces, Set.mem_iUnion]
+  constructor
+  · rintro ⟨s, ⟨-, k, hsk⟩, hx⟩
+    exact ⟨k, convexHull_mono (coe_subset.2 hsk) hx⟩
+  · rintro ⟨k, hx⟩
+    exact ⟨σ k, ⟨by simpa using Set.nonempty_of_mem hx, k, subset_rfl⟩, hx⟩
+
+/-- The vertices of `ofSimplices σ indep inter` are the vertices of the simplices `σ k`. -/
+theorem vertices_ofSimplices {σ : ι → Finset E} {indep} {inter} :
+    (ofSimplices (𝕜 := 𝕜) σ indep inter).vertices = ⋃ k, (σ k : Set E) := by
+  ext x
+  simp [mem_vertices]
 
 end LinearOrderedField
 
