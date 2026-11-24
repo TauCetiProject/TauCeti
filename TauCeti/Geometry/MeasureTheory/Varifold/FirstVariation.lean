@@ -192,7 +192,7 @@ theorem hasCompactSupport_tangentialDivergence {X : E → E} (hX : HasCompactSup
 /-- The tangential divergence of a `C¹` test vector field, as a compactly supported continuous
 function on `W × G(E, k)`, the test function through which varifold convergence acts on the first
 variation. -/
-@[expose] def tangentialDivergenceCc (X : 𝓓^{1}(W, E)) : C_c(W × grassmannian E k, ℝ) where
+def tangentialDivergenceCc (X : 𝓓^{1}(W, E)) : C_c(W × grassmannian E k, ℝ) where
   toFun p := tangentialDivergence X p.1 p.2
   continuous_toFun := (continuous_tangentialDivergence X.contDiff).comp
     ((continuous_subtypeVal.comp continuous_fst).prodMk
@@ -204,7 +204,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 @[simp]
 theorem coe_tangentialDivergenceCc (X : 𝓓^{1}(W, E)) :
     ⇑(tangentialDivergenceCc (k := k) X) = fun p ↦ tangentialDivergence X p.1 p.2 :=
-  rfl
+  (rfl)
 
 /-- The integrand of the first variation of a `C¹` test vector field is integrable. -/
 theorem integrable_tangentialDivergence [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
