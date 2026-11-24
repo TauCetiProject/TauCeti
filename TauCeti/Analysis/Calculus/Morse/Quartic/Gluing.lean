@@ -358,10 +358,9 @@ theorem exp_neg_mul_mul_quarticGluingEarly_div_sqrt_one_sub_sq {p r q : ι → �
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     Real.exp (-u i) * (q i * quarticGluingEarly p r q ρ u i /
       √(1 - quarticGluingEarly p r q ρ u i ^ 2)) = ρ := by
-  have hq2 : q i * q i = 1 := by rw [← abs_mul_abs_self, (abs_eq zero_le_one).2 hq.symm, one_mul]
-  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr, ← mul_assoc, hq2, one_mul,
-    mul_pow (q i), sq (q i), hq2, one_mul, Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq,
-    Real.exp_neg, inv_mul_cancel_left₀ (Real.exp_pos _).ne']
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr]
+  rcases hq with h | h <;> simp only [h, neg_one_mul, neg_neg, neg_sq, one_mul] <;>
+    simp [Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq, Real.exp_neg]
 
 /-- On a coordinate `i` moving between `p` and `r` towards `q i = ±1`, the absolute value of the
 gluing parameter is recovered from the late point `y` and the time coordinate as
@@ -370,12 +369,11 @@ theorem exp_mul_sqrt_one_sub_quarticGluingLate_sq_div_abs {p r q : ι → ℝ} {
     (hpq : p i ≠ q i) (hpr : p i ≠ r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     Real.exp (u i) * (√(1 - quarticGluingLate p r q ρ u i ^ 2) /
       |quarticGluingLate p r q ρ u i|) = |ρ| := by
-  have hq1 : |q i| = 1 := (abs_eq zero_le_one).2 hq.symm
-  have hs : 0 ≤ (√(1 + (Real.exp (-u i) * ρ) ^ 2))⁻¹ := by positivity
-  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_right hpr, mul_pow, ← sq_abs (q i), hq1,
-    one_pow, one_mul, abs_mul, hq1, one_mul, abs_of_nonneg hs,
-    Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq, abs_mul, Real.abs_exp, Real.exp_neg,
-    mul_inv_cancel_left₀ (Real.exp_pos _).ne']
+  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_right hpr]
+  rcases hq with h | h <;>
+  · simp only [h, neg_one_mul, neg_sq, one_mul, abs_neg]
+    rw [abs_of_pos (by positivity), Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq]
+    simp [abs_mul, Real.exp_neg]
 
 /-- **The glued pair determines its parameters.** For gluing parameters `ρ₁, ρ₂ ≥ 0`, the glued
 pairs agree exactly when the time coordinates agree on every moving coordinate with `q i ≠ 0`,
