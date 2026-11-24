@@ -23,7 +23,7 @@ and records its basic properties:
   then
   `u x - T^m_y u x = (1/m!) ∫₀¹ (1 - t)^m D^(m+1) u(y + t (x - y)) (x - y, …, x - y) dt`;
 * on `EuclideanSpace ℝ ι`, `T^m_y u` is a polynomial function of total degree at most `m`, for
-  every `u` and `y`;
+  every real-valued `u : EuclideanSpace ℝ ι → ℝ` and every `y`;
 * a polynomial function of total degree at most `m` is its own Taylor polynomial of degree `m` at
   every centre. As a consequence, the space `TauCeti.polynomialsDegLE ι m` of such functions is
   invariant under translations.
@@ -130,31 +130,28 @@ theorem comp_add_mem_polynomialsDegLE [Finite ι] {m : ℕ}
     {q : EuclideanSpace ℝ ι → ℝ} (hq : q ∈ polynomialsDegLE ι m) (c : EuclideanSpace ℝ ι) :
     (fun x ↦ q (x + c)) ∈ polynomialsDegLE ι m := by
   let := Fintype.ofFinite ι
-  -- Expand `q` around `c`: `q (x + c) = ∑_{k ≤ m} (1/k!) D^k q(c) (x, …, x)`.
-  have hexp : (fun x ↦ q (x + c)) =
-      ∑ k ∈ Finset.range (m + 1), (k ! : ℝ)⁻¹ • fun x ↦ iteratedFDeriv ℝ k q c fun _ ↦ x := by
+  -- Expand `q` around `c` as a partial sum of the series `k ↦ (1/k!) D^k q(c)`.
+  let p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ ι) ℝ :=
+    fun k ↦ (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k q c
+  have hexp : (fun x ↦ q (x + c)) = p.partialSum (m + 1) := by
     ext x
     conv_lhs => rw [← taylorPolynomial_eq_of_mem_polynomialsDegLE hq c]
-    simp [taylorPolynomial_apply]
-  rw [hexp]
-  exact Submodule.sum_mem _ fun k hk ↦ Submodule.smul_mem _ _ <|
-    polynomialsDegLE_mono ι (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) <| by
-      simpa using (iteratedFDeriv ℝ k q c).toMultilinearMap.apply_const_mem_polynomialsDegLE
+    simp [taylorPolynomial_apply, FormalMultilinearSeries.partialSum, p]
+  simpa [hexp] using p.partialSum_mem_polynomialsDegLE (m + 1)
 
-/-- On `EuclideanSpace ℝ ι`, the Taylor polynomial of degree `m` of any function, at any centre,
-is a polynomial function of total degree at most `m`. -/
+/-- On `EuclideanSpace ℝ ι`, the Taylor polynomial of degree `m` of any real-valued function, at
+any centre, is a polynomial function of total degree at most `m`. -/
 theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ ι → ℝ)
     (y : EuclideanSpace ℝ ι) :
     taylorPolynomial m u y ∈ polynomialsDegLE ι m := by
-  have hexp : taylorPolynomial m u y = ∑ k ∈ Finset.range (m + 1),
-      (k ! : ℝ)⁻¹ • fun x ↦ iteratedFDeriv ℝ k u y fun _ ↦ x + -y := by
+  let p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ ι) ℝ :=
+    fun k ↦ (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k u y
+  have hexp : taylorPolynomial m u y = fun x ↦ p.partialSum (m + 1) (x + -y) := by
     ext x
-    simp [taylorPolynomial_apply, sub_eq_add_neg]
+    simp [taylorPolynomial_apply, FormalMultilinearSeries.partialSum, p, sub_eq_add_neg]
   rw [hexp]
-  exact Submodule.sum_mem _ fun k hk ↦ Submodule.smul_mem _ _ <|
-    polynomialsDegLE_mono ι (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) <|
-      comp_add_mem_polynomialsDegLE (by
-        simpa using (iteratedFDeriv ℝ k u y).toMultilinearMap.apply_const_mem_polynomialsDegLE) (-y)
+  exact comp_add_mem_polynomialsDegLE
+    (by simpa using p.partialSum_mem_polynomialsDegLE (m + 1)) (-y)
 
 end Euclidean
 
