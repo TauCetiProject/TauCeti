@@ -37,9 +37,9 @@ difference of `a`. Since every statement here is an equality of morphisms, it ho
 values in every `S`-scheme, nonreduced ones included.
 
 Both maps commute with a functor `F : C ⥤ D` (for instance base change along `S' ⟶ S`) through
-the canonical product comparison maps `prodComparison` and `piComparison`; for the shifted map,
-`F` is monoidal and `F.obj G` carries the image monoid structure. The comparisons need not be
-isomorphisms for this.
+the canonical product comparison maps `prodComparison` and `piComparison`. For the Faltings–Zhang
+morphism `F` is arbitrary, so the comparisons need not be isomorphisms. For the shifted map `F` is
+monoidal, equivalently finite-product-preserving, and `F.obj G` carries the image monoid structure.
 
 ## Main definitions
 

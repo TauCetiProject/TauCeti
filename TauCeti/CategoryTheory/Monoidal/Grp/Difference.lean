@@ -22,9 +22,9 @@ Jacobian, working in `Over S` (where `⊗` is the fibre product over `S`), the d
 the curve difference `j(x, y) = [y] − [x]`. Since every statement here is an equality of
 morphisms, it holds on points with values in every `S`-scheme, nonreduced ones included.
 
-The difference commutes with a monoidal functor `F : C ⥤ D` (for instance base change along
-`S' ⟶ S`) through the product comparison map `prodComparison`, with `F.obj G` carrying the image
-group structure; the comparison need not be an isomorphism for this.
+The difference commutes with a monoidal, equivalently finite-product-preserving, functor
+`F : C ⥤ D` (for instance base change along `S' ⟶ S`) through the product comparison map
+`prodComparison`, with `F.obj G` carrying the image group structure.
 
 ## Main definitions
 
