@@ -53,6 +53,31 @@ abbrev K := QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0
 /-- The real quadratic field `ℚ(√2)`. -/
 abbrev L := QuadraticAlgebra ℚ ((2 : ℤ) : ℚ) 0
 
+/-- `1 + √d` is a nonzero element of `ℤ[√d] ⊆ 𝓞 ℚ(√d)`. -/
+private theorem coe_ringOfIntegersEquiv_symm_one_one_ne_zero {d : ℤ} [Fact (¬ IsSquare d)]
+    (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
+    ((QuadraticAlgebra.ringOfIntegersEquiv hsf hd4).symm ⟨1, 1⟩ :
+      QuadraticAlgebra ℚ (d : ℚ) 0) ≠ 0 := by
+  rw [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe]
+  intro h
+  simpa using congrArg QuadraticAlgebra.re h
+
+/-- The ideal `(2)` of `𝓞 F` has index `2 ^ [F : ℚ]`. -/
+private theorem cardQuot_span_two (F : Type*) [Field F] [NumberField F] :
+    ((Submodule.span (𝓞 F) {(2 : 𝓞 F)}).cardQuot : ℝ) = 2 ^ Module.finrank ℚ F := by
+  rw [← Ideal.absNorm_apply, ← Nat.cast_ofNat (R := 𝓞 F) (n := 2), Ideal.absNorm_span_natCast,
+    RingOfIntegers.rank]
+  norm_num
+
+/-- The embedding `√2 ↦ √2` sends `1 + √2 ∈ 𝓞 ℚ(√2)` to the real number `1 + √2`. -/
+private theorem sqrtEmbedding_ringOfIntegersEquiv_symm_one_one :
+    QuadraticAlgebra.sqrtEmbedding ((2 : ℤ) : ℚ)
+        ((QuadraticAlgebra.ringOfIntegersEquiv (d := 2) Int.prime_two.squarefree (by norm_num)).symm
+          ⟨1, 1⟩ : L) = ((1 + √2 : ℝ) : ℂ) := by
+  rw [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe, QuadraticAlgebra.sqrtEmbedding_apply,
+    QuadraticAlgebra.sqrtRadicand_of_nonneg (by norm_num)]
+  norm_num
+
 /-! ### Degrees of hermitian lines -/
 
 /-- `(ℤ, r |·|)` over `ℚ`, the trivial line with every norm multiplied by `r = e^{log r}`, has
@@ -80,11 +105,7 @@ example :
   have hmem : (e.symm ⟨1, 1⟩ : K) ∈ (((Ideal.span {e.symm ⟨1, 1⟩} : Ideal (𝓞 K)) :
       FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) :=
     (FractionalIdeal.mem_coeIdeal _).2 ⟨_, Ideal.subset_span rfl, rfl⟩
-  have hne : (e.symm ⟨1, 1⟩ : K) ≠ 0 := by
-    simp only [e]
-    rw [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe]
-    intro h
-    simpa using congrArg QuadraticAlgebra.re h
+  have hne : (e.symm ⟨1, 1⟩ : K) ≠ 0 := coe_ringOfIntegersEquiv_symm_one_one_ne_zero _ _
   have hI : ((Ideal.span {e.symm ⟨1, 1⟩} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 := by
     rw [Ne, FractionalIdeal.coeIdeal_eq_zero, Ideal.span_singleton_eq_bot]
     exact fun h ↦ hne (by rw [h, RingOfIntegers.coe_eq_algebraMap, map_zero])
@@ -107,10 +128,7 @@ example :
       ∑ σ : ℚ →+* ℂ, Real.log ((HermitianMetric.trivial ℚ).norm σ (1 ⊗ₜ (2 : 𝓞 ℚ))) =
         Real.log 2 := by
   constructor
-  · rw [← Ideal.absNorm_apply, Ideal.absNorm_span_singleton]
-    have : (2 : 𝓞 ℚ) = algebraMap ℤ (𝓞 ℚ) 2 := by simp
-    rw [this, Algebra.norm_algebraMap, NumberField.RingOfIntegers.rank, Module.finrank_self]
-    norm_num
+  · rw [cardQuot_span_two, Module.finrank_self, pow_one]
   · simp [HermitianMetric.norm_trivial_tmul, NumberField.Embeddings.card, map_ofNat]
 
 /-- In `ℚ(√2)`, replacing the section `1` of `Ō_K` by the unit `1 + √2` leaves the finite term
@@ -133,26 +151,17 @@ example :
       Ideal.absNorm_span_singleton]
     norm_num [e, QuadraticAlgebra.norm_ringOfIntegersEquiv_symm]
   · simp only [HermitianMetric.norm_trivial_tmul]
-    have hu : (e.symm ⟨1, 1⟩ : L) ≠ 0 := by
-      simp only [e]
-      rw [QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe]
-      intro h
-      simpa using congrArg QuadraticAlgebra.re h
+    have hu : (e.symm ⟨1, 1⟩ : L) ≠ 0 := coe_ringOfIntegersEquiv_symm_one_one_ne_zero _ _
     rw [← Real.log_prod (fun σ _ ↦ norm_ne_zero_iff.2 ((map_ne_zero σ).2 hu)),
       ← Real.log_prod (fun σ _ ↦ by simp)]
     rw [NumberField.prod_norm_embedding_eq_abs_norm, NumberField.prod_norm_embedding_eq_abs_norm,
       ← Algebra.coe_norm_int, ← Algebra.coe_norm_int]
     norm_num [e, QuadraticAlgebra.norm_ringOfIntegersEquiv_symm]
   · rw [HermitianMetric.norm_trivial_tmul, HermitianMetric.norm_trivial_tmul, RingHom.coe_coe,
-      RingOfIntegers.coe_eq_algebraMap (1 : 𝓞 L), map_one, map_one, norm_one]
-    rw [← Complex.abs_re_eq_norm.mpr (QuadraticAlgebra.im_sqrtEmbedding
-      (by norm_num : (0 : ℚ) ≤ ((2 : ℤ) : ℚ)) _)]
-    norm_num [e, QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe,
-      QuadraticAlgebra.sqrtEmbedding_apply,
-      QuadraticAlgebra.sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 2)]
-    rw [abs_of_pos (by positivity)]
-    intro h
-    linarith [Real.sqrt_pos.2 (two_pos : (0 : ℝ) < 2)]
+      sqrtEmbedding_ringOfIntegersEquiv_symm_one_one, RingOfIntegers.coe_eq_algebraMap (1 : 𝓞 L),
+      map_one, map_one, norm_one, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+    have : 0 < √2 := by positivity
+    linarith
 
 /-- On the trivial line over `ℚ(i)`, replacing the section `1` by `2` raises the finite term by
 `log 4` and the sum over the two complex embeddings by `2 log 2`, so the degree is unchanged.
@@ -165,21 +174,17 @@ example :
         ∑ σ : K →+* ℂ, Real.log ((HermitianMetric.trivial K).norm σ (1 ⊗ₜ 1)) + 2 * Real.log 2 ∧
       ∑ v : InfinitePlace K, Real.log ((HermitianMetric.trivial K).placeNorm v 2) =
         Real.log 2 := by
+  have h2 : ((2 : 𝓞 K) : K) = 2 := by rw [RingOfIntegers.coe_eq_algebraMap, map_ofNat]
   refine ⟨?_, ?_, ?_⟩
-  · rw [← Ideal.absNorm_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_singleton,
+  · rw [cardQuot_span_two, QuadraticAlgebra.finrank_eq_two, ← Ideal.absNorm_apply,
       Ideal.absNorm_span_singleton]
-    have : (2 : 𝓞 K) = algebraMap ℤ (𝓞 K) 2 := by simp
-    rw [this, Algebra.norm_algebraMap, NumberField.RingOfIntegers.rank,
-      QuadraticAlgebra.finrank_eq_two]
     norm_num
   · simp only [HermitianMetric.norm_trivial_tmul (K := K)]
-    have h2 : ((2 : 𝓞 K) : K) = 2 := by rw [RingOfIntegers.coe_eq_algebraMap, map_ofNat]
     have h1 : ((1 : 𝓞 K) : K) = 1 := by rw [RingOfIntegers.coe_eq_algebraMap, map_one]
     simp only [h1, h2, map_ofNat, map_one, norm_one, Real.log_one, Finset.sum_const_zero,
       zero_add, Finset.sum_const, Finset.card_univ, NumberField.Embeddings.card,
       QuadraticAlgebra.finrank_eq_two, nsmul_eq_mul, Nat.cast_ofNat, Complex.norm_ofNat]
   · simp only [HermitianMetric.placeNorm_trivial (K := K)]
-    have h2 : ((2 : 𝓞 K) : K) = 2 := by rw [RingOfIntegers.coe_eq_algebraMap, map_ofNat]
     have hv (v : InfinitePlace K) : v 2 = 2 := by simpa using v.map_natCast 2
     have := QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num : ((-1 : ℤ) : ℚ) < 0)
     have hcard : Fintype.card (InfinitePlace K) = 1 := by
