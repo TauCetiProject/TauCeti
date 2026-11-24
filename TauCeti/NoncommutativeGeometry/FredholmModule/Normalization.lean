@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ContractionDilation
+public import TauCeti.Analysis.InnerProductSpace.Contraction.Dilation
 public import TauCeti.Analysis.InnerProductSpace.Spectral.BlockSum
 public import TauCeti.Analysis.Normed.Operator.Compact.EssentialCommutant
 public import TauCeti.NoncommutativeGeometry.FredholmModule.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Intertwining
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Tactic.NoncommRing
