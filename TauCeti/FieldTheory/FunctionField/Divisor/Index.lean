@@ -135,7 +135,7 @@ theorem index_eq_one_iff : index k F = 1 ↔ ∃ D : Divisor k F, Divisor.degree
     have := index_le_of_degree_eq Nat.one_pos (by rw [hD, Nat.cast_one])
     omega
 
-/-- **A rational place gives index one.** The converse fails in genus at least two. -/
+/-- **A rational place gives index one.** The converse can fail in genus at least two. -/
 theorem Place.index_eq_one_of_degree_eq_one {P : Place k F} (hP : P.degree = 1) :
     index k F = 1 :=
   index_eq_one_iff.mpr ⟨WeilDivisor.ofPoint P, by rw [Divisor.degree_ofPoint, hP, Nat.cast_one]⟩
