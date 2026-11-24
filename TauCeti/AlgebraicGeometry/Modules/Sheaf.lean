@@ -116,6 +116,13 @@ source is the category `X.Modules`; compare `AlgebraicGeometry.Scheme.Modules.to
 def toSheaf : X.Modules ⥤ Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u} :=
   _root_.SheafOfModules.toSheaf X.ringCatSheaf
 
+variable {X} in
+/-- The morphism of abelian sheaves underlying the image of `φ` under `toSheaf X` is the morphism
+of underlying presheaves `φ.mapPresheaf`. -/
+@[simp]
+lemma toSheaf_map_hom {M N : X.Modules} (φ : M ⟶ N) : ((toSheaf X).map φ).hom = φ.mapPresheaf :=
+  (rfl)
+
 instance : (toSheaf X).Additive :=
   inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Additive
 
