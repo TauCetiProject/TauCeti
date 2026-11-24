@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.Meromorphic.TrailingCoefficient
 
 /-!
 # Leading coefficients of the archimedean gamma factors at nonpositive integers
@@ -46,7 +47,7 @@ zeta function at a negative integer.
 
 public section
 
-open Real Filter Topology
+open Real
 open scoped Nat
 
 namespace Complex
@@ -67,37 +68,16 @@ theorem meromorphicTrailingCoeffAt_Gammaℂ_neg_nat (m : ℕ) :
 @[simp]
 theorem meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat (m : ℕ) :
     meromorphicTrailingCoeffAt Gammaℝ (-(2 * m : ℂ)) = 2 * π ^ m * (-1) ^ m / m ! := by
-  set g : ℂ → ℂ := fun z ↦ z / 2
   have ha := analyticAt_pi_cpow_neg_div_two (-(2 * m : ℂ))
-  have hg : AnalyticAt ℂ g (-(2 * m : ℂ)) := by fun_prop
-  have hgx : g (-(2 * m : ℂ)) = -(m : ℂ) := by simp only [g]; ring
-  have hg' : deriv g (-(2 * m : ℂ)) ≠ 0 := by
-    simp [g, deriv_div_const]
-  have hgo : analyticOrderAt (fun z ↦ g z - g (-(2 * m : ℂ))) (-(2 * m : ℂ)) = 1 :=
-    hg.analyticOrderAt_sub_eq_one_of_deriv_ne_zero hg'
-  have hnc : ¬EventuallyConst g (𝓝 (-(2 * m : ℂ))) := by
-    simp [eventuallyConst_iff_analyticOrderAt_sub_eq_top, hgo]
-  -- The linear factor `z / 2 + m` has leading coefficient `1 / 2` at `-2m`.
-  have hlin : meromorphicTrailingCoeffAt (fun z ↦ g z - g (-(2 * m : ℂ))) (-(2 * m : ℂ)) =
-      1 / 2 := by
-    have hfun : (fun z ↦ g z - g (-(2 * m : ℂ))) =
-        (fun _ : ℂ ↦ (1 / 2 : ℂ)) * (· - (-(2 * m : ℂ))) := by
-      funext z
-      simp only [g, Pi.mul_apply]
-      ring
-    classical
-    rw [hfun, analyticAt_const.meromorphicAt.meromorphicTrailingCoeffAt_mul (by fun_prop),
-      meromorphicTrailingCoeffAt_const, meromorphicTrailingCoeffAt_id_sub_const]
-    simp
-  have hcomp := (Meromorphic.Gamma (g (-(2 * m : ℂ)))).meromorphicTrailingCoeffAt_comp hg hnc
-  rw [hlin, hgx, meromorphicOrderAt_Gamma_neg_nat, meromorphicTrailingCoeffAt_Gamma_neg_nat]
-    at hcomp
-  rw [Gammaℝ_eq_cpow_mul_Gamma_comp, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul
-      ((Meromorphic.Gamma _).comp_analyticAt hg),
-    ha.meromorphicTrailingCoeffAt_of_ne_zero (by simp [pi_ne_zero]), hcomp]
-  rw [show -(-(2 * m : ℂ)) / 2 = (m : ℂ) by ring, cpow_natCast]
-  rw [show (-1 : WithTop ℤ).untop₀ = -1 by simp]
-  simp only [zpow_neg, zpow_one, smul_eq_mul]
+  have hdiv : (Gamma ∘ fun z : ℂ ↦ z / 2) = Gamma ∘ (· * 2⁻¹) := by simp only [div_eq_mul_inv]
+  rw [Gammaℝ_eq_cpow_mul_Gamma_comp, hdiv, ha.meromorphicAt.meromorphicTrailingCoeffAt_mul
+      ((Meromorphic.Gamma _).comp_analyticAt (by fun_prop)),
+    ha.meromorphicTrailingCoeffAt_of_ne_zero (by simp [pi_ne_zero]),
+    TauCeti.meromorphicTrailingCoeffAt_comp_mul_const (by norm_num),
+    show -(2 * m : ℂ) * 2⁻¹ = -(m : ℂ) by ring, meromorphicOrderAt_Gamma_neg_nat,
+    meromorphicTrailingCoeffAt_Gamma_neg_nat, show -(-(2 * m : ℂ)) / 2 = (m : ℂ) by ring,
+    cpow_natCast, show (-1 : WithTop ℤ).untop₀ = -1 by simp]
+  simp only [zpow_neg, zpow_one, inv_inv, smul_eq_mul]
   ring
 
 /-- At a nonpositive even integer `-2m`, the value of `Gammaℝ` at `2m + 1` divided by the leading
@@ -127,10 +107,8 @@ theorem Gammaℝ_two_mul_natCast_div_meromorphicTrailingCoeffAt (k : ℕ) :
       neg_add_rev, add_re, neg_re, one_re] at this
     linarith [(k.cast_nonneg : (0 : ℝ) ≤ k), (j.cast_nonneg : (0 : ℝ) ≤ j)]
   have hne := Gammaℝ_one_sub_two_mul_natCast_ne_zero k
-  have ha : AnalyticAt ℂ Gammaℝ (1 - 2 * k) := by
-    have := (differentiable_Gammaℝ_inv.analyticAt (1 - 2 * k : ℂ)).inv (inv_ne_zero hne)
-    simpa only [Pi.inv_def, inv_inv] using this
-  rw [ha.meromorphicTrailingCoeffAt_of_ne_zero hne, Gammaℝ_div_Gammaℝ_one_sub hodd,
+  rw [(analyticAt_Gammaℝ hne).meromorphicTrailingCoeffAt_of_ne_zero hne,
+    Gammaℝ_div_Gammaℝ_one_sub hodd,
     show (π : ℂ) * (2 * k) / 2 = ((k * π : ℝ) : ℂ) by push_cast; ring, ← ofReal_cos,
     cos_nat_mul_pi]
   push_cast
@@ -244,19 +222,17 @@ theorem exists_rat_meromorphicTrailingCoeffAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_
   obtain ⟨qR, hqR, hR⟩ := exists_rat_Gammaℝ_div_meromorphicTrailingCoeffAt_one_sub hn
   obtain ⟨qC, hqC, hC⟩ := exists_rat_Gammaℂ_div_meromorphicTrailingCoeffAt_one_sub hn
   refine ⟨qR ^ r₁ * qC ^ r₂, mul_ne_zero (pow_ne_zero _ hqR) (pow_ne_zero _ hqC), ?_⟩
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr pi_ne_zero
+  have he : (((if Even n then 0 else r₁) + r₂ : ℕ) : ℤ) - (r₁ + 2 * r₂) * n =
+      ((if Even n then 0 else 1 : ℤ) - n) * r₁ + (1 - 2 * n) * r₂ := by
+    split_ifs <;> push_cast <;> ring
   rw [MeromorphicAt.meromorphicTrailingCoeffAt_fun_mul (by fun_prop) (by fun_prop),
     MeromorphicAt.meromorphicTrailingCoeffAt_fun_pow (by fun_prop),
     MeromorphicAt.meromorphicTrailingCoeffAt_fun_pow (by fun_prop),
     meromorphicTrailingCoeffAt_fun_inv, meromorphicTrailingCoeffAt_fun_inv,
     show ∀ a b c d : ℂ, a⁻¹ ^ r₁ * b⁻¹ ^ r₂ * (c ^ r₁ * d ^ r₂) = (c / a) ^ r₁ * (d / b) ^ r₂
-      from fun a b c d ↦ by ring, hR, hC, mul_pow, mul_pow,
-    ← zpow_natCast ((π : ℂ) ^ ((if Even n then 0 else 1 : ℤ) - n)) r₁,
-    ← zpow_natCast ((π : ℂ) ^ (1 - 2 * n : ℤ)) r₂, ← zpow_mul, ← zpow_mul]
+      from fun a b c d ↦ by ring, hR, hC, he, zpow_add₀ (ofReal_ne_zero.mpr pi_ne_zero),
+    zpow_mul, zpow_mul, zpow_natCast, zpow_natCast]
   push_cast
-  rw [show ∀ a b c d : ℂ, a * b * (c * d) = a * c * (b * d) from fun a b c d ↦ by ring,
-    ← zpow_add₀ hπ]
-  congr 2
-  split_ifs <;> ring
+  ring
 
 end TauCeti
