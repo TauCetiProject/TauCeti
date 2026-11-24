@@ -52,7 +52,10 @@ transfer to the norm of `H1`. Pointwise, the weight is at least `|w - c_q|⁻²`
 of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
 `TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
-center of the end is, up to the constant `2π`, the conformal factor of the end chart.
+center of the end is, up to the constant `2π`, the conformal factor of the end chart. Conversely,
+on the part `±s > 0` of the end `q`, `|w - c_q|² ≤ 5 ρ(w)⁻¹`
+(`TauCeti.Floer.norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight`), so `ρ⁻¹` is comparable to the
+Jacobian of the end chart there.
 
 ## References
 
@@ -196,6 +199,32 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
   have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
   rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
   simpa using inv_anti₀ (inv_pos.2 hd) h
+
+/-- **The inverse weight on an end.** On the part `±s > 0` of the end `q`, the squared distance
+`|z - c_q|²` to the center of the end is at most `5` times the inverse cylindrical weight. Since
+`4π² |z - c_q|²` is the Jacobian of the end chart, this bounds the Jacobian above by a multiple of
+`ρ⁻¹` there; together with `inv_norm_sub_endCenter_sq_le_cylindricalWeight`, the two are
+comparable. -/
+theorem norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight {q : Puncture} {z : ℝ × ℝ}
+    (hz : 0 < (positiveEndCoord q z).1) :
+    ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤ 5 * (cylindricalWeight z)⁻¹ := by
+  have hzc : Complex.equivRealProdCLM.symm z ≠ q.endCenter := by
+    refine q.ne_endCenter_of_endSign_mul_re_endCoord_pos ?_
+    rwa [← fst_positiveEndCoord]
+  -- `z` is the point `ζ = ±(s, t)` of the end chart, with `±(±s) = s > 0`.
+  set ζ := q.endSign • positiveEndCoord q z
+  have hzζ : endChart q ζ = z := by
+    rw [← positiveEndChart_apply, positiveEndChart_positiveEndCoord q hzc]
+  have hζ : 0 < q.endSign * ζ.1 := by
+    simpa [ζ, ← mul_assoc] using hz
+  have hρ : 0 < cylindricalWeight z := by
+    rw [← hzζ]
+    exact isWeight_cylindricalWeight.pos _ (endChart_mem_thricePuncturedSphereReal hζ)
+  have h := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hζ.le).2
+  rw [det_fderiv_endChart, hzζ] at h
+  rw [← div_eq_mul_inv, le_div_iff₀ hρ]
+  refine le_of_mul_le_mul_left ?_ (by positivity : (0 : ℝ) < 4 * π ^ 2)
+  linarith
 
 /-- **The `W^{1,2}` density on the ends, from the weighted density.** On the part `±s ≥ 0` of the
 end `q`, the `W^{1,2}` density `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates

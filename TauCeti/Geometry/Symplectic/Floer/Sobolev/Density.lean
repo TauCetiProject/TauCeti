@@ -36,6 +36,8 @@ records the derivatives of a section cut off by a function of `s`.
   densities of `ξ₁` and `ξ₂`.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
+* `TauCeti.Floer.integrableOn_sobolevDensity_of_eventuallyEq_zero`: the density of a `C¹` map that
+  vanishes beyond some `N` in the first coordinate is integrable over every half-cylinder.
 -/
 
 public section
@@ -125,5 +127,18 @@ theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
+/-- A `C¹` map vanishing near every point beyond `N` in the first coordinate has integrable
+`W^{1,2}` energy density over every half-cylinder `(a, ∞) × [0, 1]`. -/
+theorem integrableOn_sobolevDensity_of_eventuallyEq_zero {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ)
+    {N : ℝ} (hN : ∀ ζ : ℝ × ℝ, N < ζ.1 → ξ =ᶠ[𝓝 ζ] 0) (a : ℝ) :
+    IntegrableOn (sobolevDensity ξ) (Ioi a ×ˢ Icc 0 1) := by
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (((continuous_sobolevDensity hξ).continuousOn).integrableOn_compact
+    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hN ζ hζN), sobolevDensity_zero]
 
 end TauCeti.Floer

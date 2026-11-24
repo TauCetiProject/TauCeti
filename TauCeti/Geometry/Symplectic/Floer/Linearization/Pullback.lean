@@ -124,6 +124,13 @@ theorem covectorPullback_eq_add (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ
   rw [covectorPullback_apply, ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smul,
     ContinuousLinearMap.comp_smul, ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
 
+/-- Multiplying the covector field `η` by a function `f` multiplies its pullback along `φ` by
+`f ∘ φ`. -/
+theorem covectorPullback_fun_smul (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (f : ℝ × ℝ → ℝ) (w : ℝ × ℝ) :
+    covectorPullback φ J u (fun z ↦ f z • η z) w = f (φ w) • covectorPullback φ J u η w := by
+  simp only [covectorPullback_apply, ContinuousLinearMap.smul_comp]
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm

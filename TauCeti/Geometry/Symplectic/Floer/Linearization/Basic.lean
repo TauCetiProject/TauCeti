@@ -415,19 +415,10 @@ theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_left (norm_nonneg _) hf₁
   rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
-  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
-    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
-    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
-      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
-    nlinarith
   calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
         gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
-          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
+        exact (norm_add_le _ _).trans (add_le_add h₀ ((norm_add_le _ _).trans (by linarith)))
+    _ ≤ _ := add_sq_le.trans_eq (by ring)
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
