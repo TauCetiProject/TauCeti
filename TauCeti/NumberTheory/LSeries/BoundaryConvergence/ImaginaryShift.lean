@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Analysis.Complex.BranchLogRoot
-import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Endpoint
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Asymptotics
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
@@ -38,15 +36,14 @@ can be weakened to data at the real boundary point or to radial Abel limits:
   analytically across every point of `re z = 0` *except* `u * I`, takes the nonzero value `I / u`
   at `z = 0`, and has radial limit `I / u` as `σ → 0⁺`. Yet its truncated integrals
   `∫ t in 0..T, exp (u * I * t)` oscillate on a circle and fail to converge as `T → ∞`.
-* **Bounded Dirichlet series (`n ↦ n ^ (u * I)`).** First, identifying `stepCorrection 1 z` with
-  `-riemannZeta₀ (z + 1)` on `-1 < re z` yields the critical-strip partial-sum asymptotic
-  `(∑ n ∈ Icc 1 N, n ^ (-s)) - N ^ (1 - s) / (1 - s) → ζ(s)` for `0 < re s`, `s ≠ 1`. Specializing
-  to `s = 1 - u * I` (`u ≠ 0`) shows that the unimodular coefficients `n ^ (u * I)` have `L`-series
-  `ζ(s - u * I)`, analytic across every boundary point of `re s = 1` except `1 + u * I`, nonzero at
-  `s = 1`, with radial Abel limit `ζ(1 - u * I)` as `σ → 1⁺`; yet the ordered partial sums
-  `∑ n ∈ Icc 1 N, n ^ (u * I) / n` differ from `ζ(1 - u * I)` by `N ^ (u * I) / (u * I) + o(1)` and
-  diverge. In particular, the Abelian theorem `tendsto_LSeries_nhdsGT_one` has no
-  bounded-coefficient Tauberian converse from radial limits or local analyticity at `s = 1` alone.
+* **Bounded Dirichlet series (`n ↦ n ^ (u * I)`).** Specializing the critical-strip partial-sum
+  asymptotic `TauCeti.tendsto_sum_Icc_cpow_neg_sub_riemannZeta` to `s = 1 - u * I` (`u ≠ 0`) shows
+  that the unimodular coefficients `n ^ (u * I)` have `L`-series `ζ(s - u * I)`, analytic across
+  every boundary point of `re s = 1` except `1 + u * I`, nonzero at `s = 1`, with radial Abel limit
+  `ζ(1 - u * I)` as `σ → 1⁺`; yet the ordered partial sums `∑ n ∈ Icc 1 N, n ^ (u * I) / n` differ
+  from `ζ(1 - u * I)` by `N ^ (u * I) / (u * I) + o(1)` and diverge. In particular, the Abelian
+  theorem `tendsto_LSeries_nhdsGT_one` has no bounded-coefficient Tauberian converse from radial
+  limits or local analyticity at `s = 1` alone.
 * **Euler logarithms (`recipZetaEulerLogCoeff u`).** The regularized reciprocal
   `s ↦ (s - 1 - u * I) * (riemannZeta₁ (s - u * I))⁻¹` of `ζ(s - u * I)` is holomorphic on an open
   neighbourhood of the *entire* closed half-plane `1 ≤ re s` and, for `u ≠ 0`, is nonzero at every
@@ -58,10 +55,6 @@ can be weakened to data at the real boundary point or to radial Abel limits:
 
 ## Main declarations
 
-* `TauCeti.LSeries.stepCorrection_one_eq_neg_riemannZeta₀`,
-  `TauCeti.LSeries.stepCorrection_one_zero`, and
-  `TauCeti.LSeries.tendsto_sum_Icc_cpow_neg_sub_riemannZeta`: the step correction of constant `1`
-  and the partial-sum asymptotic of `riemannZeta` on `0 < re s`, `s ≠ 1`.
 * `TauCeti.LSeries.integral_Ici_cexp_mul_I_mul_cexp_neg_mul`,
   `TauCeti.LSeries.tendsto_integral_Ici_cexp_mul_I_nhdsGT_zero`,
   `TauCeti.LSeries.not_tendsto_intervalIntegral_cexp_mul_I`, and
@@ -73,7 +66,7 @@ can be weakened to data at the real boundary point or to radial Abel limits:
   `TauCeti.LSeries.not_tendsto_sum_Icc_natCast_cpow_mul_I_div`, and
   `TauCeti.LSeries.not_continuousOn_of_LSeriesHasSum_natCast_cpow_mul_I`: bounded Dirichlet and
   radial-Abel-converse sharpness.
-* `TauCeti.LSeries.recipZetaEulerLogCoeff`, `TauCeti.LSeries.riemannZeta₁_ne_zero_of_one_le_re`,
+* `TauCeti.LSeries.recipZetaEulerLogCoeff`,
   `TauCeti.LSeries.exists_analyticAt_LSeries_recipZetaEulerLogCoeff`,
   `TauCeti.LSeries.exists_analyticAt_one_LSeries_recipZetaEulerLogCoeff`,
   `TauCeti.LSeries.exists_tendsto_LSeries_recipZetaEulerLogCoeff_nhdsGT_one`,
@@ -96,151 +89,6 @@ open ArithmeticFunction Complex Filter Finset MeasureTheory Set
 open scoped Topology Interval
 
 namespace TauCeti.LSeries
-
-/-! ### Step correction of `1` and partial-sum asymptotics of `riemannZeta` -/
-
-/-- On `0 < re z`, the Laplace transform of the constant function `1` on `[0, ∞)` is `z⁻¹`. -/
-private theorem integral_Ici_cexp_neg_mul {z : ℂ} (hz : 0 < z.re) :
-    ∫ t in Ici (0 : ℝ), cexp (-z * t) = z⁻¹ := by
-  have hre : (-z).re < 0 := by simpa using hz
-  rw [integral_Ici_eq_integral_Ioi, integral_exp_mul_complex_Ioi hre 0]
-  simp [div_eq_mul_inv, inv_neg]
-
-/-- **The step correction of constant coefficients `1`.** On `-1 < re z`,
-`stepCorrection 1 z = -riemannZeta₀ (z + 1)`, where `riemannZeta₀` is the entire completion of
-`ζ(s) - (s - 1)⁻¹`. -/
-theorem stepCorrection_one_eq_neg_riemannZeta₀ {z : ℂ} (hz : -1 < z.re) :
-    stepCorrection 1 z = -riemannZeta₀ (z + 1) := by
-  have hbound : ∀ n : ℕ, 1 ≤ n → ‖(1 : ℕ → ℂ) n‖ ≤ 1 := fun _ _ ↦ by simp
-  have hdiff₁ : DifferentiableOn ℂ (stepCorrection 1) {w : ℂ | -1 < w.re} :=
-    differentiableOn_stepCorrection hbound
-  have hdiff₂ : DifferentiableOn ℂ (fun w : ℂ ↦ -riemannZeta₀ (w + 1)) {w : ℂ | -1 < w.re} :=
-    (differentiable_riemannZeta₀.comp (differentiable_id.add_const 1)).neg.differentiableOn
-  refine hdiff₁.eqOn_of_eqOn_re_gt hdiff₂ (b := 0) (fun w (hw : 0 < w.re) ↦ ?_) hz
-  have hlap := integral_floor_exp_mul_cexp_neg_mul hbound (z := w) hw
-  simp only [Pi.one_apply, one_mul] at hlap
-  have hw1 : w + 1 ≠ 1 := fun h ↦ by
-    have hw0 : w = 0 := by simpa using h
-    simp [hw0] at hw
-  rw [integral_Ici_cexp_neg_mul hw, LSeries_one_eq_riemannZeta (by simpa using hw),
-    riemannZeta_eq_inv_sub_add hw1, add_sub_cancel_right] at hlap
-  linear_combination -hlap
-
-/-- At `z = 0`, the step correction `∑' n, (log (1 + 1 / n) - 1 / n)` equals `-γ`. -/
-theorem stepCorrection_one_zero :
-    stepCorrection 1 0 = -(Real.eulerMascheroniConstant : ℂ) := by
-  rw [stepCorrection_one_eq_neg_riemannZeta₀ (by norm_num), zero_add, riemannZeta₀_one]
-
-/-- On `-1 < re z` away from `z = 0`, `riemannZeta (z + 1)` equals `z⁻¹ - stepCorrection 1 z`. -/
-theorem riemannZeta_eq_inv_sub_stepCorrection_one {z : ℂ} (hz : -1 < z.re) (hz₀ : z ≠ 0) :
-    riemannZeta (z + 1) = z⁻¹ - stepCorrection 1 z := by
-  have hz1 : z + 1 ≠ 1 := fun h ↦ hz₀ (by simpa using h)
-  rw [riemannZeta_eq_inv_sub_add hz1, stepCorrection_one_eq_neg_riemannZeta₀ hz,
-    add_sub_cancel_right, sub_neg_eq_add]
-
-/-- Finite Euler–Maclaurin identity at cutoff `N + 1`: for `z ≠ 0`, the partial sum of
-`n ^ (-(z + 1))` over `1 ≤ n ≤ N` minus `(N + 1) ^ (-z) / (-z)` equals `z⁻¹` minus the partial sum
-of `stepCorrectionTerm 1 · z`. -/
-private theorem sum_Icc_cpow_neg_add_one_sub {z : ℂ} (hz : z ≠ 0) (N : ℕ) :
-    (∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-(z + 1))) - (N + 1 : ℂ) ^ (-z) / (-z) =
-      z⁻¹ - ∑ n ∈ Finset.range (N + 1), stepCorrectionTerm 1 n z := by
-  have hstep := intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ 1 N z
-  simp only [Pi.one_apply, one_mul, Finset.sum_add_distrib] at hstep
-  have hint : ∫ t in (0 : ℝ)..Real.log (N + 1), cexp (-z * t) =
-      ((N + 1 : ℂ) ^ (-z) - 1) / (-z) := by
-    rw [integral_exp_mul_complex (neg_ne_zero.mpr hz)]
-    have hpos : (0 : ℝ) < N + 1 := by positivity
-    have hpow : cexp (-z * (Real.log (N + 1) : ℂ)) = (N + 1 : ℂ) ^ (-z) := by
-      rw [cpow_def_of_ne_zero (by exact_mod_cast hpos.ne'), mul_comm (-z),
-        ← ofReal_natCast, ← ofReal_one, ← ofReal_add, ← ofReal_log hpos.le]
-    rw [hpow]
-    simp
-  have hsum : ∑ n ∈ Finset.range (N + 1), LSeries.term 1 (z + 1) n =
-      ∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-(z + 1)) := by
-    rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot N.succ_pos, LSeries.term_zero,
-      zero_add, Nat.succ_eq_add_one, Finset.Ico_add_one_right_eq_Icc]
-    refine Finset.sum_congr rfl fun n hn ↦ ?_
-    have hn0 : n ≠ 0 := Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1
-    rw [LSeries.term_of_ne_zero hn0, Pi.one_apply, one_div, cpow_neg]
-  rw [hint, hsum] at hstep
-  have hdiv : ((N + 1 : ℂ) ^ (-z) - 1) / (-z) = (N + 1 : ℂ) ^ (-z) / (-z) + z⁻¹ := by
-    rw [sub_div, one_div, inv_neg, sub_neg_eq_add]
-  rw [hdiv] at hstep
-  linear_combination -hstep
-
-/-- **Partial-sum asymptotic of `riemannZeta` on `0 < re s`, `s ≠ 1` (shifted cutoff `N + 1`).** -/
-theorem tendsto_sum_Icc_cpow_neg_sub_succ_riemannZeta {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
-    Tendsto (fun N : ℕ ↦ (∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s)) -
-      (N + 1 : ℂ) ^ (1 - s) / (1 - s)) atTop (𝓝 (riemannZeta s)) := by
-  have hz : -1 < (s - 1).re := by simp; linarith
-  have hz₀ : s - 1 ≠ 0 := sub_ne_zero.mpr hs₁
-  have hbound : ∀ n : ℕ, 1 ≤ n → ‖(1 : ℕ → ℂ) n‖ ≤ 1 := fun _ _ ↦ by simp
-  have hcorr := ((hasSum_stepCorrection (z := s - 1) hbound hz).tendsto_sum_nat).comp
-    (tendsto_add_atTop_nat 1)
-  have hlim := tendsto_const_nhds (x := (s - 1)⁻¹).sub hcorr
-  have hζ : (s - 1)⁻¹ - stepCorrection 1 (s - 1) = riemannZeta s := by
-    have h := riemannZeta_eq_inv_sub_stepCorrection_one hz hz₀
-    rw [sub_add_cancel] at h
-    exact h.symm
-  rw [hζ] at hlim
-  refine hlim.congr fun N ↦ ?_
-  have hN := sum_Icc_cpow_neg_add_one_sub hz₀ N
-  have hexp₁ : -(s - 1 + 1) = -s := by ring
-  have hexp₂ : -(s - 1) = 1 - s := by ring
-  simp only [Function.comp_apply]
-  rw [hexp₁, hexp₂] at hN
-  exact hN.symm
-
-/-- For `0 < re s` and `s ≠ 1`, the endpoint shift `((N + 1) ^ (1 - s) - N ^ (1 - s)) / (1 - s)`
-tends to `0` as `N → ∞`. -/
-private theorem tendsto_succ_cpow_sub_div_atTop {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
-    Tendsto (fun N : ℕ ↦ ((N + 1 : ℂ) ^ (1 - s) - (N : ℂ) ^ (1 - s)) / (1 - s))
-      atTop (𝓝 0) := by
-  have h1s : 1 - s ≠ 0 := sub_ne_zero.mpr hs₁.symm
-  refine squeeze_zero_norm' (a := fun N : ℕ ↦ (N : ℝ) ^ (-s.re)) ?_
-    ((tendsto_rpow_neg_atTop hs).comp tendsto_natCast_atTop_atTop)
-  filter_upwards [eventually_ge_atTop 1] with N hN
-  have hN_pos : (0 : ℝ) < N := Nat.cast_pos.mpr hN
-  -- Express `((N + 1) ^ (1 - s) - N ^ (1 - s)) / (1 - s)` as `∫ x in N..N+1, x ^ (-s)`.
-  have hint_eq : ((N + 1 : ℂ) ^ (1 - s) - (N : ℂ) ^ (1 - s)) / (1 - s) =
-      ∫ x in (N : ℝ)..N + 1, (x : ℂ) ^ (-s) := by
-    have hsub := TauCeti.intervalIntegral_ofReal_cpow_neg_sub_one hN_pos (v := N + 1)
-      (by positivity) (s - 1)
-    have hexp : -(s - 1) - 1 = -s := by ring
-    have hexp' : -(s - 1) = 1 - s := by ring
-    rw [hexp, hexp'] at hsub
-    rw [hsub, integral_exp_mul_complex h1s]
-    have hpow₁ : cexp ((1 - s) * (Real.log (N + 1) : ℂ)) = (N + 1 : ℂ) ^ (1 - s) := by
-      have hp : (0 : ℝ) < N + 1 := by positivity
-      rw [cpow_def_of_ne_zero (by exact_mod_cast hp.ne'), mul_comm (1 - s),
-        ← ofReal_natCast, ← ofReal_one, ← ofReal_add, ← ofReal_log hp.le]
-    have hpow₂ : cexp ((1 - s) * (Real.log N : ℂ)) = (N : ℂ) ^ (1 - s) := by
-      rw [cpow_def_of_ne_zero (by exact_mod_cast hN_pos.ne'), mul_comm (1 - s),
-        ← ofReal_natCast, ← ofReal_log hN_pos.le]
-    rw [hpow₁, hpow₂]
-  rw [hint_eq]
-  have hbound : ∀ x ∈ Ι (N : ℝ) (N + 1), ‖(x : ℂ) ^ (-s)‖ ≤ (N : ℝ) ^ (-s.re) := by
-    intro x hx
-    rw [uIoc_of_le (by linarith)] at hx
-    have hx_pos : 0 < x := hN_pos.trans hx.1
-    rw [norm_cpow_eq_rpow_re_of_pos hx_pos, neg_re]
-    exact Real.rpow_le_rpow_of_nonpos hN_pos hx.1.le (neg_nonpos.mpr hs.le)
-  calc ‖∫ x in (N : ℝ)..N + 1, (x : ℂ) ^ (-s)‖
-      ≤ (N : ℝ) ^ (-s.re) * |(N + 1 : ℝ) - N| :=
-        intervalIntegral.norm_integral_le_of_norm_le_const hbound
-    _ = (N : ℝ) ^ (-s.re) := by simp
-
-/-- **Partial-sum asymptotic of `riemannZeta` on `0 < re s`, `s ≠ 1`.** For every `s` in the right
-half-plane `0 < re s` other than the pole `s = 1`,
-`(∑ n ∈ Icc 1 N, n ^ (-s)) - N ^ (1 - s) / (1 - s)` converges to `riemannZeta s` as `N → ∞`. -/
-theorem tendsto_sum_Icc_cpow_neg_sub_riemannZeta {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
-    Tendsto (fun N : ℕ ↦ (∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s)) -
-      (N : ℂ) ^ (1 - s) / (1 - s)) atTop (𝓝 (riemannZeta s)) := by
-  have h := (tendsto_sum_Icc_cpow_neg_sub_succ_riemannZeta hs hs₁).add
-    (tendsto_succ_cpow_sub_div_atTop hs hs₁)
-  rw [add_zero] at h
-  refine h.congr fun N ↦ ?_
-  ring
 
 /-! ### Bounded Laplace boundary sharpness (`t ↦ exp (u * I * t)`) -/
 
@@ -385,7 +233,7 @@ theorem tendsto_sum_Icc_natCast_cpow_mul_I_div_sub {u : ℝ} (hu : u ≠ 0) :
       (N : ℂ) ^ ((u : ℂ) * I) / ((u : ℂ) * I)) atTop (𝓝 (riemannZeta (1 - (u : ℂ) * I))) := by
   have hs_re : 0 < ((1 : ℂ) - (u : ℂ) * I).re := by simp
   have hs₁ : (1 : ℂ) - (u : ℂ) * I ≠ 1 := by simp [hu]
-  have h := tendsto_sum_Icc_cpow_neg_sub_riemannZeta hs_re hs₁
+  have h := TauCeti.tendsto_sum_Icc_cpow_neg_sub_riemannZeta hs_re hs₁
   have hexp : (1 : ℂ) - ((1 : ℂ) - (u : ℂ) * I) = (u : ℂ) * I := by ring
   rw [hexp] at h
   refine h.congr fun N ↦ ?_
@@ -469,14 +317,6 @@ theorem not_differentiableOn_of_LSeriesHasSum_natCast_cpow_mul_I (u : ℝ) {Ω :
 
 /-! ### Imaginary-shifted reciprocal-zeta Euler logarithm: whole-line nonvanishing sharpness -/
 
-/-- The entire regularized factor `riemannZeta₁` of `(s - 1) ζ(s)` has no zeros on the closed
-half-plane `1 ≤ re s`: at `s = 1` it equals `1`, and away from `s = 1` it is `(s - 1) ζ(s)`. -/
-theorem riemannZeta₁_ne_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) : riemannZeta₁ s ≠ 0 := by
-  rcases eq_or_ne s 1 with rfl | hs₁
-  · simp
-  · intro h0
-    exact riemannZeta_ne_zero_of_one_le_re hs (by rw [riemannZeta_eq_inv_sub_mul hs₁, h0, mul_zero])
-
 /-- The coefficients `-(Λ n / log n) * n ^ (u * I)` of the logarithm of the shifted reciprocal
 Euler product `∏ p, (1 - p ^ (u * I) * p ^ (-s)) = (ζ(s - u * I))⁻¹` on `1 < re s`. -/
 noncomputable def recipZetaEulerLogCoeff (u : ℝ) (n : ℕ) : ℂ :=
@@ -484,8 +324,8 @@ noncomputable def recipZetaEulerLogCoeff (u : ℝ) (n : ℕ) : ℂ :=
 
 /-- Defining formula for `recipZetaEulerLogCoeff`. -/
 theorem recipZetaEulerLogCoeff_apply (u : ℝ) (n : ℕ) :
-    recipZetaEulerLogCoeff u n = -(Λ n / Real.log n : ℂ) * (n : ℂ) ^ ((u : ℂ) * I) := by
-  rfl
+    recipZetaEulerLogCoeff u n = -(Λ n / Real.log n : ℂ) * (n : ℂ) ^ ((u : ℂ) * I) :=
+  (rfl)
 
 /-- Express `recipZetaEulerLogCoeff u` as the negative `n ^ (u * I)`-twist of the level-`1`
 Euler-logarithm coefficients `(1 : DirichletCharacter ℂ 1).eulerLogCoeff`. -/
@@ -519,12 +359,7 @@ theorem recipZetaEulerLogCoeff_prime_pow (u : ℝ) {p : ℕ} (hp : p.Prime) (k :
     DirichletCharacter.eulerLogCoeff_prime_pow _ hp,
     MulChar.one_apply (isUnit_of_subsingleton _), one_pow]
   have hpow : ((p ^ k : ℕ) : ℂ) ^ ((u : ℂ) * I) = ((p : ℂ) ^ ((u : ℂ) * I)) ^ k := by
-    rw [TauCeti.natCast_cpow_ofReal_mul (pow_ne_zero k hp.ne_zero) u I,
-      TauCeti.natCast_cpow_ofReal_mul hp.ne_zero u I, ← Complex.exp_nat_mul]
-    congr 1
-    simp only [Nat.cast_pow, Real.log_pow]
-    push_cast
-    ring
+    rw [Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul]
   rw [hpow]
   ring
 
@@ -595,26 +430,23 @@ theorem differentiableOn_sub_mul_inv_riemannZeta₁ (u : ℝ) :
   exact ((differentiable_riemannZeta₁.comp (differentiable_id.sub_const _)).differentiableOn).inv
     fun _ hs ↦ hs
 
-/-- At every point `s₀` with `1 ≤ re s₀` and `s₀ ≠ 1 + u * I`, the regularized reciprocal
-`s ↦ (s - 1 - u * I) * (riemannZeta₁ (s - u * I))⁻¹` is analytic at `s₀`, equals
-`(riemannZeta (s₀ - u * I))⁻¹`, and is nonzero. -/
-private theorem analyticAt_and_eq_inv_riemannZeta {u : ℝ} {s₀ : ℂ} (hs₀ : 1 ≤ s₀.re)
+/-- At every point `s₀` with `1 ≤ re s₀`, the regularized reciprocal
+`s ↦ (s - 1 - u * I) * (riemannZeta₁ (s - u * I))⁻¹` is analytic at `s₀`. -/
+theorem analyticAt_sub_mul_inv_riemannZeta₁ (u : ℝ) {s₀ : ℂ} (hs₀ : 1 ≤ s₀.re) :
+    AnalyticAt ℂ (fun s : ℂ ↦ (s - 1 - (u : ℂ) * I) * (riemannZeta₁ (s - (u : ℂ) * I))⁻¹) s₀ :=
+  (differentiableOn_sub_mul_inv_riemannZeta₁ u).analyticAt
+    ((isOpen_riemannZeta₁_sub_ne_zero u).mem_nhds
+      (TauCeti.riemannZeta₁_ne_zero_of_one_le_re (by simpa using hs₀)))
+
+/-- Away from `1 + u * I`, the regularized reciprocal
+`(s₀ - 1 - u * I) * (riemannZeta₁ (s₀ - u * I))⁻¹` equals `(riemannZeta (s₀ - u * I))⁻¹`. -/
+private theorem sub_mul_inv_riemannZeta₁_eq_inv_riemannZeta {u : ℝ} {s₀ : ℂ}
     (hne : s₀ ≠ 1 + (u : ℂ) * I) :
-    AnalyticAt ℂ (fun s : ℂ ↦ (s - 1 - (u : ℂ) * I) * (riemannZeta₁ (s - (u : ℂ) * I))⁻¹) s₀ ∧
-      (s₀ - 1 - (u : ℂ) * I) * (riemannZeta₁ (s₀ - (u : ℂ) * I))⁻¹ =
-        (riemannZeta (s₀ - (u : ℂ) * I))⁻¹ ∧
-      (riemannZeta (s₀ - (u : ℂ) * I))⁻¹ ≠ 0 := by
-  have hre : 1 ≤ (s₀ - (u : ℂ) * I).re := by simpa using hs₀
-  have hmem : s₀ ∈ {s : ℂ | riemannZeta₁ (s - (u : ℂ) * I) ≠ 0} :=
-    riemannZeta₁_ne_zero_of_one_le_re hre
-  have hne' : s₀ - (u : ℂ) * I ≠ 1 := fun h ↦ hne (by linear_combination h)
-  have heq : (s₀ - 1 - (u : ℂ) * I) * (riemannZeta₁ (s₀ - (u : ℂ) * I))⁻¹ =
+    (s₀ - 1 - (u : ℂ) * I) * (riemannZeta₁ (s₀ - (u : ℂ) * I))⁻¹ =
       (riemannZeta (s₀ - (u : ℂ) * I))⁻¹ := by
-    rw [inv_riemannZeta_eq_sub_mul_of_ne_one hne']
-    ring
-  exact ⟨(differentiableOn_sub_mul_inv_riemannZeta₁ u).analyticAt
-    ((isOpen_riemannZeta₁_sub_ne_zero u).mem_nhds hmem),
-    heq, inv_ne_zero (riemannZeta_ne_zero_of_one_le_re hre)⟩
+  have hne' : s₀ - (u : ℂ) * I ≠ 1 := fun h ↦ hne (by linear_combination h)
+  rw [inv_riemannZeta_eq_sub_mul_of_ne_one hne']
+  ring
 
 /-- **Boundary analyticity of the shifted reciprocal-zeta Euler logarithm away from `1 + u * I`.**
 At every point `s₀` on `re s₀ = 1` other than `1 + u * I`, `LSeries (recipZetaEulerLogCoeff u)`
@@ -624,8 +456,11 @@ theorem exists_analyticAt_LSeries_recipZetaEulerLogCoeff {u : ℝ} {s₀ : ℂ} 
     (hne : s₀ ≠ 1 + (u : ℂ) * I) :
     ∃ L : ℂ → ℂ, AnalyticAt ℂ L s₀ ∧ Complex.exp (L s₀) = (riemannZeta (s₀ - (u : ℂ) * I))⁻¹ ∧
       ∀ᶠ s in 𝓝[{s : ℂ | 1 < s.re}] s₀, L s = LSeries (recipZetaEulerLogCoeff u) s := by
-  obtain ⟨hga, hgeq, hgnz⟩ := analyticAt_and_eq_inv_riemannZeta hs₀.ge hne
-  obtain ⟨L, hLa, hLexp, hLf⟩ := TauCeti.exists_analyticAt_eq_exp_of_re_eq hs₀ hga
+  have hgeq := sub_mul_inv_riemannZeta₁_eq_inv_riemannZeta hne
+  have hgnz : (riemannZeta (s₀ - (u : ℂ) * I))⁻¹ ≠ 0 :=
+    inv_ne_zero (riemannZeta_ne_zero_of_one_le_re (by simp [hs₀]))
+  obtain ⟨L, hLa, hLexp, hLf⟩ := TauCeti.exists_analyticAt_eq_exp_of_re_eq hs₀
+    (analyticAt_sub_mul_inv_riemannZeta₁ u hs₀.ge)
     (hgeq.symm ▸ hgnz) (differentiableOn_LSeries_recipZetaEulerLogCoeff u)
     (fun s hs ↦ exp_LSeries_recipZetaEulerLogCoeff_eq_sub_mul u hs)
   exact ⟨L, hLa, hLexp.self_of_nhds.trans hgeq, hLf⟩
@@ -644,10 +479,12 @@ As `σ → 1⁺`, `LSeries (recipZetaEulerLogCoeff u) σ` converges to a finite 
 theorem exists_tendsto_LSeries_recipZetaEulerLogCoeff_nhdsGT_one {u : ℝ} (hu : u ≠ 0) :
     ∃ w : ℂ, Complex.exp w = (riemannZeta (1 - (u : ℂ) * I))⁻¹ ∧
       Tendsto (fun σ : ℝ ↦ LSeries (recipZetaEulerLogCoeff u) σ) (𝓝[>] 1) (𝓝 w) := by
-  obtain ⟨hga, hgeq, hgnz⟩ :=
-    analyticAt_and_eq_inv_riemannZeta (u := u) (s₀ := (1 : ℂ)) (by simp) (by simp [hu])
+  have hgeq := sub_mul_inv_riemannZeta₁_eq_inv_riemannZeta (u := u) (s₀ := 1) (by simp [hu])
+  have hgnz : (riemannZeta (1 - (u : ℂ) * I))⁻¹ ≠ 0 :=
+    inv_ne_zero (riemannZeta_ne_zero_of_one_le_re (by simp))
   obtain ⟨w, hw, hlim⟩ := TauCeti.exists_tendsto_nhdsWithin_Ioi_of_analyticAt_of_ne_zero (a := 1)
-    (by simpa only [ofReal_one] using hga) (by rw [ofReal_one, hgeq]; exact hgnz)
+    (by simpa only [ofReal_one] using analyticAt_sub_mul_inv_riemannZeta₁ u (s₀ := 1) (by simp))
+    (by rw [ofReal_one, hgeq]; exact hgnz)
     (differentiableOn_LSeries_recipZetaEulerLogCoeff u)
     (fun s hs ↦ exp_LSeries_recipZetaEulerLogCoeff_eq_sub_mul u hs)
   exact ⟨w, hw.trans (by rw [ofReal_one, hgeq]), hlim⟩
@@ -664,7 +501,7 @@ theorem not_continuousOn_of_LSeriesHasSum_recipZetaEulerLogCoeff (u : ℝ) {F : 
   intro hF
   set g : ℂ → ℂ := fun s ↦ (s - 1 - (u : ℂ) * I) * (riemannZeta₁ (s - (u : ℂ) * I))⁻¹
   have hcover : {s : ℂ | 1 ≤ s.re} ⊆ {s : ℂ | riemannZeta₁ (s - (u : ℂ) * I) ≠ 0} := fun s hs ↦
-    riemannZeta₁_ne_zero_of_one_le_re (by simpa using hs)
+    TauCeti.riemannZeta₁_ne_zero_of_one_le_re (by simpa using hs)
   have hFf : EqOn F (LSeries (recipZetaEulerLogCoeff u)) {s : ℂ | 1 < s.re} := fun s hs ↦
     (hseries s hs).LSeries_eq.symm
   have hnz := (TauCeti.exists_continuousOn_eqOn_le_re_iff (isOpen_riemannZeta₁_sub_ne_zero u) hcover

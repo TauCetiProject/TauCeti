@@ -32,6 +32,8 @@ is less than the distance `|Im c|` from its centre `c` to the real axis avoids t
 * `TauCeti.analyticOnNhd_riemannZeta_closedBall`: analyticity on `closedBall c r` for
   `r < |Im c|`.
 * `TauCeti.re_lt_one_of_riemannZeta_eq_zero`: every zero of `riemannZeta` has `Re s < 1`.
+* `TauCeti.riemannZeta₁_ne_zero_of_one_le_re` and `TauCeti.re_lt_one_of_riemannZeta₁_eq_zero`:
+  the entire factor `riemannZeta₁` of `(s - 1) ζ(s)` has no zeros on `1 ≤ Re s`.
 
 ## References
 
@@ -93,5 +95,19 @@ theorem analyticOnNhd_riemannZeta_closedBall {c : ℂ} {r : ℝ} (hr : r < |c.im
 /-- Every zero of the Riemann zeta function lies in the open half-plane `Re s < 1`. -/
 theorem re_lt_one_of_riemannZeta_eq_zero {s : ℂ} (h : riemannZeta s = 0) : s.re < 1 :=
   not_le.mp fun hs ↦ riemannZeta_ne_zero_of_one_le_re hs h
+
+/-- The entire regularized factor `riemannZeta₁` of `(s - 1) ζ(s)` has no zeros on the closed
+half-plane `1 ≤ Re s`: at `s = 1` it equals `1`, and away from `s = 1` it is `(s - 1) ζ(s)`. -/
+theorem riemannZeta₁_ne_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) : riemannZeta₁ s ≠ 0 := by
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp
+  · intro h0
+    exact riemannZeta_ne_zero_of_one_le_re hs
+      (by rw [riemannZeta_eq_inv_sub_mul hs₁, h0, mul_zero])
+
+/-- Every zero of the entire regularized factor `riemannZeta₁` lies in the open half-plane
+`Re s < 1`. -/
+theorem re_lt_one_of_riemannZeta₁_eq_zero {s : ℂ} (h : riemannZeta₁ s = 0) : s.re < 1 :=
+  not_le.mp fun hs ↦ riemannZeta₁_ne_zero_of_one_le_re hs h
 
 end TauCeti

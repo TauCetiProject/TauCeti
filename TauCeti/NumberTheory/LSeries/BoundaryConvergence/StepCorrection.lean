@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.Analysis.LaplaceTransform.Truncated
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.PSeriesComplex
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Complex.HalfPlaneIdentity
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
@@ -26,7 +31,8 @@ When `a` is bounded, the Dirichlet series is only guaranteed to converge absolut
 `‖a n‖ ‖z + 1‖ n ^ (-re z - 2)`. This is what lets the bounded-Laplace (Newman) Tauberian theorem
 for the step function transfer to ordered partial sums `∑ n ≤ N, a n / n` of the Dirichlet series
 at `s = 1`, where the step correction takes the absolutely convergent value
-`∑ n ≥ 1, a n (log (1 + 1 / n) - 1 / n)`.
+`∑ n ≥ 1, a n (log (1 + 1 / n) - 1 / n)`. For the constant sequence `a = 1`, the step correction
+equals `-riemannZeta₀ (z + 1)` throughout `-1 < re z` (in particular `-γ` at `z = 0`).
 
 ## Main declarations
 
@@ -36,7 +42,10 @@ at `s = 1`, where the step correction takes the absolutely convergent value
 * `TauCeti.LSeries.norm_stepCorrectionTerm_le`: the mean value bound on the terms;
 * `TauCeti.LSeries.hasSum_stepCorrection`: absolute convergence for `-1 < re z`;
 * `TauCeti.LSeries.differentiableOn_stepCorrection`: holomorphy on `-1 < re z`;
-* `TauCeti.LSeries.stepCorrection_zero`: the value `∑ a n (log (1 + 1 / n) - 1 / n)` at `0`.
+* `TauCeti.LSeries.stepCorrection_zero`: the value `∑ a n (log (1 + 1 / n) - 1 / n)` at `0`;
+* `TauCeti.LSeries.stepCorrection_one_eq_neg_riemannZeta₀`,
+  `TauCeti.LSeries.stepCorrection_one_zero`, and
+  `TauCeti.LSeries.riemannZeta_eq_inv_sub_stepCorrection_one`: the step correction of constant `1`.
 
 ## References
 
@@ -243,5 +252,68 @@ theorem stepCorrectionTerm_apply_zero (a : ℕ → ℂ) (n : ℕ) :
 theorem stepCorrection_zero (a : ℕ → ℂ) :
     stepCorrection a 0 = ∑' n : ℕ, a n * (Real.log (1 + 1 / n) - 1 / n : ℝ) :=
   tsum_congr (stepCorrectionTerm_apply_zero a)
+
+/-- **The step correction of constant coefficients `1`.** On `-1 < re z`,
+`stepCorrection 1 z = -riemannZeta₀ (z + 1)`, where `riemannZeta₀` is the entire completion of
+`ζ(s) - (s - 1)⁻¹`. -/
+theorem stepCorrection_one_eq_neg_riemannZeta₀ {z : ℂ} (hz : -1 < z.re) :
+    stepCorrection 1 z = -riemannZeta₀ (z + 1) := by
+  have hbound : ∀ n : ℕ, 1 ≤ n → ‖(1 : ℕ → ℂ) n‖ ≤ 1 := fun _ _ ↦ by simp
+  refine (differentiableOn_stepCorrection hbound).eqOn_of_eqOn_re_gt
+    ((differentiable_riemannZeta₀.comp (differentiable_id.add_const 1)).neg.differentiableOn)
+    (b := 0) (fun w (hw : 0 < w.re) ↦ ?_) hz
+  have hw0 : w ≠ 0 := fun h ↦ by simp [h] at hw
+  have hw1 : w + 1 ≠ 1 := fun h ↦ hw0 (by linear_combination h)
+  have hS : Summable fun k : ℕ ↦ 1 / ((k : ℂ) + 1) ^ (w + 1) :=
+    ((summable_nat_add_iff 1).mpr
+      (Complex.summable_one_div_nat_cpow (p := w + 1) |>.mpr (by simpa using hw))).congr
+      fun k ↦ by simp
+  have htel : Tendsto (fun N : ℕ ↦ (((N : ℂ) + 1) ^ (-w) - 1) / (-w)) atTop (𝓝 w⁻¹) := by
+    have hpow : Tendsto (fun N : ℕ ↦ ((N : ℂ) + 1) ^ (-w)) atTop (𝓝 0) := by
+      simpa [Function.comp_def] using
+        (Complex.tendsto_natCast_cpow_neg_atTop hw).comp (tendsto_add_atTop_nat 1)
+    simpa [div_eq_mul_inv] using (hpow.sub_const 1).div_const (-w)
+  have hrhs : Tendsto (fun N : ℕ ↦ (((N : ℂ) + 1) ^ (-w) - 1) / (-w) -
+      ∑ k ∈ Finset.range N, 1 / ((k : ℂ) + 1) ^ (w + 1)) atTop
+        (𝓝 (-riemannZeta₀ (w + 1))) := by
+    have h := htel.sub hS.hasSum.tendsto_sum_nat
+    rw [← zeta_eq_tsum_one_div_nat_add_one_cpow (by simpa using hw),
+      riemannZeta_eq_inv_sub_add hw1, add_sub_cancel_right] at h
+    simpa [sub_add_eq_sub_sub] using h
+  refine tendsto_nhds_unique (((hasSum_stepCorrection hbound (by linarith)).tendsto_sum_nat).comp
+    (tendsto_add_atTop_nat 1)) (hrhs.congr fun N ↦ ?_)
+  have hsum_int : ∑ k ∈ Finset.range N, (((k + 1 : ℕ) + 1 : ℂ) ^ (-w) / (-w) -
+      ((k + 1 : ℕ) : ℂ) ^ (-w) / (-w)) = (((N : ℂ) + 1) ^ (-w) - 1) / (-w) := by
+    simpa [sub_div] using Finset.sum_range_sub (fun k : ℕ ↦ ((k + 1 : ℕ) : ℂ) ^ (-w) / (-w)) N
+  rw [Function.comp_apply, Finset.sum_range_succ', stepCorrectionTerm_zero, Pi.zero_apply, add_zero,
+    ← hsum_int, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  have hnot0 : (0 : ℝ) ∉ [[((k + 1 : ℕ) : ℝ), (k + 1 : ℕ) + 1]] := by
+    rw [uIcc_of_le (by linarith)]
+    intro h0
+    have hk_pos : (0 : ℝ) < (k + 1 : ℕ) := by positivity
+    linarith [h0.1]
+  have hint := integral_cpow (a := ((k + 1 : ℕ) : ℝ)) (b := (k + 1 : ℕ) + 1) (r := -w - 1)
+    (Or.inr ⟨fun h ↦ hw0 (by linear_combination -h), hnot0⟩)
+  have hterm : ((k + 1 : ℕ) : ℂ) ^ (-w - 1) = 1 / ((k : ℂ) + 1) ^ (w + 1) := by
+    have hexp2 : -w - 1 = -(w + 1) := by ring
+    rw [hexp2, Complex.cpow_neg, one_div, Nat.cast_add, Nat.cast_one]
+  rw [stepCorrectionTerm_of_ne_zero 1 k.succ_ne_zero, Pi.one_apply, one_mul, hint, hterm]
+  have hexp1 : -w - 1 + 1 = -w := by ring
+  rw [hexp1, sub_div]
+  push_cast
+  rfl
+
+/-- At `z = 0`, the step correction `∑' n, (log (1 + 1 / n) - 1 / n)` equals `-γ`. -/
+theorem stepCorrection_one_zero :
+    stepCorrection 1 0 = -(Real.eulerMascheroniConstant : ℂ) := by
+  rw [stepCorrection_one_eq_neg_riemannZeta₀ (by norm_num), zero_add, riemannZeta₀_one]
+
+/-- On `-1 < re z` away from `z = 0`, `riemannZeta (z + 1)` equals `z⁻¹ - stepCorrection 1 z`. -/
+theorem riemannZeta_eq_inv_sub_stepCorrection_one {z : ℂ} (hz : -1 < z.re) (hz₀ : z ≠ 0) :
+    riemannZeta (z + 1) = z⁻¹ - stepCorrection 1 z := by
+  have hz1 : z + 1 ≠ 1 := fun h ↦ hz₀ (by simpa using h)
+  rw [riemannZeta_eq_inv_sub_add hz1, stepCorrection_one_eq_neg_riemannZeta₀ hz,
+     add_sub_cancel_right, sub_neg_eq_add]
 
 end TauCeti.LSeries

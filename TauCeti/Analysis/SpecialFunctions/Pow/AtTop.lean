@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Order.Filter.AtTopBot
 
@@ -24,7 +26,10 @@ Composing with `exp` transfers this dichotomy to real-base principal powers `x �
 comparing `t ↦ ⌊exp t⌋₊` with `exp t` transfers it further to natural-number principal powers
 `n ↦ (n : ℂ) ^ s`: each converges to a finite complex limit at `atTop` if and only if
 `re s < 0 ∨ s = 0` (`TauCeti.exists_tendsto_ofReal_cpow_atTop_iff`,
-`TauCeti.exists_tendsto_natCast_cpow_atTop_iff`).
+`TauCeti.exists_tendsto_natCast_cpow_atTop_iff`). Finally, integrating `t ↦ (t : ℂ) ^ (z - 1)`
+across `[x, x + c]` shows that forward differences `((x + c : ℝ) : ℂ) ^ z - (x : ℂ) ^ z` and
+`(N + 1 : ℂ) ^ z - (N : ℂ) ^ z` tend to `0` whenever `re z < 1`
+(`TauCeti.tendsto_ofReal_add_cpow_sub_atTop`, `TauCeti.tendsto_natCast_add_one_cpow_sub_atTop`).
 
 ## Main results
 
@@ -37,12 +42,14 @@ comparing `t ↦ ⌊exp t⌋₊` with `exp t` transfers it further to natural-nu
 * `TauCeti.tendsto_natCast_cpow_atTop_zero`, `TauCeti.not_tendsto_natCast_cpow_atTop`,
   `TauCeti.exists_tendsto_natCast_cpow_atTop_iff`: convergence dichotomy for `n ↦ (n : ℂ) ^ s`
   as `n → ∞`.
+* `TauCeti.tendsto_ofReal_add_cpow_sub_atTop`, `TauCeti.tendsto_natCast_add_one_cpow_sub_atTop`:
+  forward differences of principal powers tend to `0` when `re z < 1`.
 -/
 
 public section
 
 open Complex Filter
-open scoped Topology
+open scoped Topology Interval
 
 namespace TauCeti
 
@@ -131,34 +138,6 @@ theorem tendsto_natCast_cpow_atTop_zero {s : ℂ} (hs : s.re < 0) :
     Tendsto (fun n : ℕ ↦ (n : ℂ) ^ s) atTop (𝓝 0) :=
   (tendsto_ofReal_cpow_atTop_zero hs).comp tendsto_natCast_atTop_atTop
 
-/-- The logarithmic rounding error `t - log ⌊exp t⌋₊` tends to `0` as `t → +∞`. -/
-private theorem tendsto_sub_log_floor_exp_atTop :
-    Tendsto (fun t : ℝ ↦ t - Real.log ⌊Real.exp t⌋₊) atTop (𝓝 0) := by
-  have hupper : Tendsto (fun m : ℕ ↦ Real.log (1 + 1 / (m : ℝ))) atTop (𝓝 0) := by
-    have h1 : Tendsto (fun m : ℕ ↦ (1 : ℝ) + 1 / (m : ℝ)) atTop (𝓝 (1 + 0)) :=
-      tendsto_const_nhds.add tendsto_one_div_atTop_nhds_zero_nat
-    rw [add_zero] at h1
-    simpa [Function.comp_def] using (Real.continuousAt_log one_ne_zero).tendsto.comp h1
-  have hupper_exp : Tendsto (fun t : ℝ ↦ Real.log (1 + 1 / (⌊Real.exp t⌋₊ : ℝ))) atTop (𝓝 0) :=
-    (tendsto_comp_natFloor_iff.mpr hupper).comp Real.tendsto_exp_atTop
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper_exp ?_ ?_
-  · filter_upwards [eventually_ge_atTop 0] with t ht
-    have hm1 : 1 ≤ ⌊Real.exp t⌋₊ := Nat.le_floor (by simpa using Real.one_le_exp ht)
-    have hm_pos : (0 : ℝ) < ⌊Real.exp t⌋₊ := Nat.cast_pos.mpr hm1
-    have hle : Real.log ⌊Real.exp t⌋₊ ≤ t :=
-      (Real.log_le_iff_le_exp hm_pos).mpr (Nat.floor_le (Real.exp_nonneg t))
-    linarith
-  · filter_upwards [eventually_ge_atTop 0] with t ht
-    have hm1 : 1 ≤ ⌊Real.exp t⌋₊ := Nat.le_floor (by simpa using Real.one_le_exp ht)
-    have hm_pos : (0 : ℝ) < ⌊Real.exp t⌋₊ := Nat.cast_pos.mpr hm1
-    have hlt : t ≤ Real.log (⌊Real.exp t⌋₊ + 1) := by
-      simpa only [Real.log_exp] using
-        Real.log_le_log (Real.exp_pos t) (Nat.lt_floor_add_one (Real.exp t)).le
-    have hlog : Real.log (⌊Real.exp t⌋₊ + 1) - Real.log ⌊Real.exp t⌋₊ =
-        Real.log (1 + 1 / (⌊Real.exp t⌋₊ : ℝ)) := by
-      rw [← Real.log_div (by positivity) hm_pos.ne', add_div, div_self hm_pos.ne']
-    linarith
-
 /-- When `0 ≤ re s` and `s ≠ 0`, `(n : ℂ) ^ s` has no finite limit in `ℂ` as `n → ∞`. -/
 theorem not_tendsto_natCast_cpow_atTop {s L : ℂ} (hre : 0 ≤ s.re) (hs : s ≠ 0) :
     ¬ Tendsto (fun n : ℕ ↦ (n : ℂ) ^ s) atTop (𝓝 L) := by
@@ -194,5 +173,56 @@ theorem exists_tendsto_natCast_cpow_atTop_iff {s : ℂ} :
   · rintro (hs | rfl)
     · exact ⟨0, tendsto_natCast_cpow_atTop_zero hs⟩
     · exact ⟨1, by simp⟩
+
+/-- When `re z < 1`, the forward difference `((x + c : ℝ) : ℂ) ^ z - (x : ℂ) ^ z` tends to `0` as
+`x → +∞` for every real shift `c`. -/
+theorem tendsto_ofReal_add_cpow_sub_atTop (c : ℝ) {z : ℂ} (hz : z.re < 1) :
+    Tendsto (fun x : ℝ ↦ ((x + c : ℝ) : ℂ) ^ z - (x : ℂ) ^ z) atTop (𝓝 0) := by
+  rcases eq_or_ne z 0 with rfl | hz₀
+  · simp
+  have hbound_lim : Tendsto (fun x : ℝ ↦ ‖z‖ * ((x + min 0 c) ^ (z.re - 1) * |c|)) atTop (𝓝 0) := by
+    have hrpow : Tendsto (fun x : ℝ ↦ (x + min 0 c) ^ (z.re - 1)) atTop (𝓝 0) := by
+      simpa [Function.comp_def, neg_sub] using (tendsto_rpow_neg_atTop (sub_pos.mpr hz)).comp
+        (tendsto_atTop_add_const_right atTop (min 0 c) tendsto_id)
+    simpa using (hrpow.mul_const |c|).const_mul ‖z‖
+  refine squeeze_zero_norm' ?_ hbound_lim
+  filter_upwards [eventually_gt_atTop (max 0 (-c))] with x hx
+  have hx₀ : 0 < x := (le_max_left 0 (-c)).trans_lt hx
+  have hxc₀ : 0 < x + c := by linarith [le_max_right 0 (-c)]
+  have hnot0 : (0 : ℝ) ∉ [[x, x + c]] := fun h0 ↦ by
+    linarith [h0.1, lt_min hx₀ hxc₀]
+  have hint : ((x + c : ℝ) : ℂ) ^ z - (x : ℂ) ^ z =
+      z * ∫ t in x..(x + c), (t : ℂ) ^ (z - 1) := by
+    have hc_int := integral_cpow (a := x) (b := x + c) (r := z - 1)
+      (Or.inr ⟨fun h ↦ hz₀ (by linear_combination h), hnot0⟩)
+    rw [sub_add_cancel] at hc_int
+    rw [hc_int, mul_div_cancel₀ _ hz₀]
+  rw [hint, norm_mul]
+  have hm_pos : 0 < x + min 0 c := by
+    rcases le_total 0 c with hc0 | hc0
+    · simpa [min_eq_left hc0] using hx₀
+    · simpa [min_eq_right hc0] using hxc₀
+  have hle : ∀ t ∈ Ι x (x + c), ‖(t : ℂ) ^ (z - 1)‖ ≤ (x + min 0 c) ^ (z.re - 1) := by
+    intro t ht
+    have ht_ge : x + min 0 c ≤ t := by
+      have hmin : min x (x + c) = x + min 0 c := by
+        rcases le_total 0 c with hc0 | hc0
+        · rw [min_eq_left hc0, add_zero, min_eq_left (by linarith)]
+        · rw [min_eq_right hc0, min_eq_right (by linarith)]
+      linarith [ht.1]
+    rw [Complex.norm_cpow_eq_rpow_re_of_pos (hm_pos.trans_le ht_ge), sub_re, one_re]
+    exact Real.rpow_le_rpow_of_nonpos hm_pos ht_ge (sub_nonpos.mpr hz.le)
+  calc ‖z‖ * ‖∫ t in x..(x + c), (t : ℂ) ^ (z - 1)‖
+      ≤ ‖z‖ * ((x + min 0 c) ^ (z.re - 1) * |(x + c) - x|) :=
+        mul_le_mul_of_nonneg_left (intervalIntegral.norm_integral_le_of_norm_le_const hle)
+          (norm_nonneg z)
+    _ = ‖z‖ * ((x + min 0 c) ^ (z.re - 1) * |c|) := by simp
+
+/-- When `re z < 1`, the unit-step power difference `(N + 1 : ℂ) ^ z - (N : ℂ) ^ z` tends to `0` as
+`N → ∞`. -/
+theorem tendsto_natCast_add_one_cpow_sub_atTop {z : ℂ} (hz : z.re < 1) :
+    Tendsto (fun N : ℕ ↦ (N + 1 : ℂ) ^ z - (N : ℂ) ^ z) atTop (𝓝 0) := by
+  simpa [Function.comp_def] using
+    (tendsto_ofReal_add_cpow_sub_atTop 1 hz).comp tendsto_natCast_atTop_atTop
 
 end TauCeti
