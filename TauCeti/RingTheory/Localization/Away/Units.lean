@@ -185,7 +185,7 @@ variable {R S : Type*} [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Al
 `p` is a unit if and only if `x` is associated to `p ^ n` for some `n : ℕ`. -/
 theorem isUnit_algebraMap_away_iff (hp : Prime p) :
     IsUnit (algebraMap R S x) ↔ ∃ n : ℕ, Associated x (p ^ n) :=
-  hp.isUnit_awayMap_iff (IsLocalization.toLocalizationMap (.powers p) S)
+  hp.isUnit_map_awayMap_iff (IsLocalization.toLocalizationMap (.powers p) S)
 
 /-- Inverting a prime element can only make its multiples into new units. -/
 theorem isUnit_of_isUnit_away_of_not_dvd (hp : Prime p)
@@ -199,7 +199,7 @@ theorem isUnit_away_iff (hp : Prime p) {y : S} :
       ∃ (u : Rˣ) (m : ℤ),
         algebraMap R S (u : R) *
             ((TauCeti.Localization.awayUnitOfDvd S (dvd_rfl : p ∣ p) ^ m : Sˣ) : S) = y :=
-  hp.isUnit_of_awayMap_iff (IsLocalization.toLocalizationMap (.powers p) S)
+  hp.isUnit_awayMap_iff (IsLocalization.toLocalizationMap (.powers p) S)
 
 /-- In a cancellative commutative semiring `R`, the units of a localization `S` away from a prime
 `p` are canonically isomorphic to `Rˣ × Multiplicative ℤ`, sending `(u, m)` to `u * p ^ m`. -/

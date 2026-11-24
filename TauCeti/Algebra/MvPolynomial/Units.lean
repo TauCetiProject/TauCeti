@@ -112,7 +112,11 @@ theorem isUnit_iff_eq_C {σ R : Type*} [CommSemiring R] [IsReduced R]
       apply eq_zero_of_pow_eq_zero (n := 2)
       have hcoeff : m.leadingCoeff r = a * q.coeff (m.degree r) := by
         simp [MonomialOrder.leadingCoeff, r]
-      rw [sq, hcoeff, mul_right_comm, ← hcoeff, hzero, zero_mul]
+      calc
+        m.leadingCoeff r ^ 2 = m.leadingCoeff r * m.leadingCoeff r := sq _
+        _ = (a * q.coeff (m.degree r)) * m.leadingCoeff r := by nth_rw 1 [hcoeff]
+        _ = a * m.leadingCoeff r * q.coeff (m.degree r) := mul_right_comm _ _ _
+        _ = 0 := by rw [hzero, zero_mul]
     have hdeg : m.degree p + m.degree r = 0 := by
       rw [← m.degree_mul_of_mul_leadingCoeff_ne_zero hmul, hpr, m.degree_C]
     have hp_eq : p = C (m.leadingCoeff p) :=
