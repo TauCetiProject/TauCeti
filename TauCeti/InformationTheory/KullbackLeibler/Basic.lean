@@ -21,8 +21,6 @@ divergence.
   the two real singleton masses.
 * `MeasureTheory.Measure.klDiv_map_measurableEquiv`: relative entropy between σ-finite measures
   is invariant under a measurable equivalence.
-* `MeasureTheory.Measure.llr_withDensity_ofReal_ae_eq`: the log-likelihood ratio of two measures
-  with real densities `p`, `q` against a common reference measure is `log p - log q`.
 -/
 
 public section
@@ -63,35 +61,5 @@ theorem klDiv_map_measurableEquiv (μ ν : Measure α) [SigmaFinite μ] [SigmaFi
       klDiv_of_ac_of_integrable hac hi, integral_map_equiv, integral_congr_ae hllr]
     simp [measureReal_def, e.map_apply]
   · rw [klDiv_of_not_integrable hi, klDiv_of_not_integrable (mt hint.1 hi)]
-
-/-- The log-likelihood ratio of two measures with real densities `p` and `q` against a common
-reference measure `R` is `log p - log q`, almost everywhere for the first measure, when `q` is
-almost everywhere positive. No σ-finiteness of `R` is needed, only of the second measure (for
-instance when `q` is integrable). Adapted from `llr_ae_eq_log_sub_log` in the lean-CKSD project
-(<https://github.com/bjbraams/lean-CKSD>, `CKSD/Bayes/Evidence/Bounds.lean`), which assumes a
-σ-finite reference measure. -/
-theorem llr_withDensity_ofReal_ae_eq {R : Measure α} {p q : α → ℝ}
-    [SigmaFinite (R.withDensity fun x ↦ ENNReal.ofReal (q x))] (hp : AEMeasurable p R)
-    (hq : AEMeasurable q R) (hq0 : ∀ᵐ x ∂R, 0 < q x) :
-    llr (R.withDensity fun x ↦ ENNReal.ofReal (p x))
-        (R.withDensity fun x ↦ ENNReal.ofReal (q x)) =ᵐ[R.withDensity fun x ↦ ENNReal.ofReal (p x)]
-      fun x ↦ Real.log (p x) - Real.log (q x) := by
-  set Q := R.withDensity fun x ↦ ENNReal.ofReal (q x)
-  have hr : AEMeasurable (fun x ↦ ENNReal.ofReal (p x / q x)) R := (hp.div hq).ennreal_ofReal
-  have hP : (R.withDensity fun x ↦ ENNReal.ofReal (p x)) =
-      Q.withDensity fun x ↦ ENNReal.ofReal (p x / q x) := by
-    rw [← withDensity_mul₀ hq.ennreal_ofReal hr]
-    refine withDensity_congr_ae ?_
-    filter_upwards [hq0] with x hx
-    rw [Pi.mul_apply, ← ENNReal.ofReal_mul hx.le, mul_div_cancel₀ _ hx.ne']
-  have hd := rnDeriv_withDensity₀ Q (hr.mono_ac (withDensity_absolutelyContinuous _ _))
-  rw [hP]
-  filter_upwards [(withDensity_absolutelyContinuous _ _).ae_le hd,
-    rnDeriv_pos (withDensity_absolutelyContinuous _ _),
-    (withDensity_absolutelyContinuous _ _).ae_le ((withDensity_absolutelyContinuous _ _).ae_le hq0)]
-    with x hx hx0 hqx
-  rw [hx, ENNReal.ofReal_pos] at hx0
-  rw [llr, hx, ENNReal.toReal_ofReal hx0.le,
-    Real.log_div ((div_pos_iff_of_pos_right hqx).1 hx0).ne' hqx.ne']
 
 end MeasureTheory.Measure
