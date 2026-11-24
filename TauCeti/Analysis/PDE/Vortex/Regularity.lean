@@ -130,7 +130,7 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq_neg (hE :
       (W1p.integrableOn_exp_mul_abs_value (by rw [hE]; norm_cast) (by omega) w hK hKO 4)
       (hexp.pow 2) (ae_of_all _ fun x => ?_)
     rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-      ← Real.exp_nat_mul]
+      ← Real.exp_natCast_mul]
     exact Real.exp_le_exp.2 (by push_cast; linarith [le_abs_self (W1p.value w x)])
   have hfK : AEStronglyMeasurable f (volume.restrict K) := by
     have h1 := (hh.mono hKO).aestronglyMeasurable (μ := volume) hK.measurableSet
@@ -218,7 +218,7 @@ private theorem memLp_nonlinearity (hh : Continuous h) (hk : Continuous k)
   have hE : MemLp (fun x => Real.exp (2 * |u x|)) 2 (volume.restrict (ball c ρ)) := by
     refine (memLp_two_iff_integrable_sq he).2 (hexp.congr_fun_ae (ae_of_all _ fun x => ?_))
     simp only
-    rw [← Real.exp_nat_mul]
+    rw [← Real.exp_natCast_mul]
     ring_nf
   have hG : MemLp (fun x => |Mh| / 8 * (Real.exp (2 * |u x|) + 1) + |Mk|) 2
       (volume.restrict (ball c ρ)) :=
@@ -322,7 +322,7 @@ private theorem exists_contDiffOn_ball (hh : ContDiff ℝ 1 h) (hk : ContDiff �
   rw [hu] at hHα
   have hβ0 : 0 < α / 2 := half_pos hα
   have hβ1 : α / 2 < 1 := (half_lt_self hα).trans_le hα1
-  obtain ⟨Cβ, hHβ⟩ := HolderOnWith.exists_holderOnWith_of_le ⟨_, hHα⟩ (half_le_self α.2)
+  obtain ⟨Cβ, hHβ⟩ := HolderOnWith.exists_holderOnWith_of_le ⟨_, hHα⟩ (half_le_self α.property)
     isBounded_ball
   have huM : ∀ x ∈ ball c 1, |u x| ≤ |u c| + Cβ := fun x hx => by
     have hd := hHβ.dist_le_mul_rpow_of_mem_ball hx

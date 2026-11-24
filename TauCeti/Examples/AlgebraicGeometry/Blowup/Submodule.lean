@@ -69,7 +69,8 @@ example (R : Type) [CommRing R] :
     · obtain ⟨⟨_, n, rfl⟩, hc⟩ := (IsLocalization.eq_iff_exists
         (Submonoid.powers (∏ g ∈ ({1} : Finset R), g)) L).mp (congr_arg Subtype.val h)
       simpa using hc
-    · obtain ⟨n, y, -, hy⟩ := (mem_fractionSubalgebra_iff (Finset.coe_singleton (1 : R)).le).mp z.2
+    · obtain ⟨n, y, -, hy⟩ := (mem_fractionSubalgebra_iff (Finset.coe_singleton
+        (1 : R)).le).mp z.property
       exact ⟨y, Subtype.ext (by simpa using hy.symm)⟩
   have : IsIso (CommRingCat.ofHom (algebraMap R (fractionSubalgebra R ({1} : Set R) {1} L))) :=
     (ConcreteCategory.isIso_iff_bijective _).mpr hbij

@@ -58,6 +58,8 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 * `TauCeti.UqSl2.LadderModule.isSimpleModule`: `L_m^ε` is simple at a generic parameter.
 * `TauCeti.UqSl2.LadderModule.hom_ext`: at a generic parameter, module maps out of `L_m^ε` are
   determined by their value at `v₀`.
+* `TauCeti.UqSl2.LadderModule.apply_eq_basis_repr_zero_smul`: at a generic parameter, an
+  invariant functional on `L_m^ε` is determined by its value at `v₀`.
 * `TauCeti.UqSl2.LadderModule.lift_vec_zero`: `lift` sends `v₀` to the given vector.
 * `TauCeti.UqSl2.LadderModule.lift_injective`: the map induced by a nonzero vector is injective.
 * `TauCeti.UqSl2.LadderModule.algebraMap_end_bijective`: Schur's lemma for `L_m^ε`.
@@ -575,6 +577,25 @@ theorem lift_injective (hv0 : v ≠ 0) : Function.Injective (lift hq hv he hf) :
   LinearMap.injective_of_ne_zero fun h0 => hv0 <| by
     rw [← lift_vec_zero hq hv he hf, h0, LinearMap.zero_apply]
 
+include hq in
+/-- An invariant functional on `L_m^ε`, that is a module map to the trivial module, is determined
+by its value on `v₀`: it kills every lower ladder vector, since `F` acts by `0` on the trivial
+module. -/
+theorem apply_eq_basis_repr_zero_smul
+    (g : LadderModule q m ε →ₗ[UqSl2 q] BialgebraModule.Trivial ℂ (UqSl2 q))
+    (x : LadderModule q m ε) : g x = (basis q m ε).repr x 0 • g (vec q m ε 0) := by
+  have hvec (l : ℕ) : g (vec q m ε ((l : ℤ) + 1)) = 0 := by
+    have h1 := congrArg (BialgebraModule.trivialEquiv ℂ (UqSl2 q)) (g.map_smul (f q) (vec q m ε l))
+    rw [f_smul_vec, LinearMapClass.map_smul_of_tower, map_smul,
+      BialgebraModule.trivialEquiv_smul, counit_f, zero_mul, smul_eq_mul] at h1
+    apply (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).injective
+    rw [map_zero]
+    exact (mul_eq_zero.mp h1).resolve_left (quantumInteger_ne_zero hq (by omega))
+  conv_lhs => rw [← (basis q m ε).sum_repr x]
+  rw [map_sum, Fin.sum_univ_succ, Finset.sum_eq_zero fun i _ => ?_, add_zero]
+  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_zero, Nat.cast_zero]
+  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_succ, Nat.cast_succ, hvec, smul_zero]
+
 /-! ### Schur's lemma and pairwise non-isomorphism -/
 
 /-- Schur's lemma for `L_m^ε`: at a generic parameter, every `UqSl2 q`-endomorphism of `L_m^ε`
@@ -627,6 +648,13 @@ theorem nonempty_linearEquiv_iff (hq : IsGenericQuantumParameter q) {n : ℕ} {�
   rw [hconj, trace_rep_kInv hq.sub_inv_ne_zero, trace_rep_kInv hq.sub_inv_ne_zero] at htr
   have hδε : ((δ : ℤ) : ℂ) = ε := mul_right_cancel₀ (quantumInteger_ne_zero hq (by omega)) htr
   exact Units.ext (Int.cast_injective hδε).symm
+
+/-- At a generic parameter, signed ladder modules `L_m^ε` with distinct labels `(m, ε)` are not
+isomorphic. -/
+theorem eq_of_nonempty_linearEquiv (hq : IsGenericQuantumParameter q)
+    {p p' : ℕ × ℤˣ}
+    (h : Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] LadderModule q p'.1 p'.2)) : p = p' :=
+  Prod.ext_iff.mpr ((nonempty_linearEquiv_iff hq).mp h)
 
 /-- At a generic parameter, no module isomorphism exists between `L_m^ε` and `L_n^δ` when
 `m ≠ n` or `ε ≠ δ`. -/

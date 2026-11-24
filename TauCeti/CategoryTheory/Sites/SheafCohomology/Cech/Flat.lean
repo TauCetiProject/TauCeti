@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.CategoryTheory.Sites.SheafCohomology.Cech
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import TauCeti.CategoryTheory.Limits.Lattice
 public import TauCeti.RingTheory.Flat.Pi
 
@@ -59,11 +59,7 @@ theorem flat_cechComplexFunctor_obj_X {ι : Type v} [Finite ι] (U : ι → α)
   have (a : Fin (n + 1) → ι) : Module.Flat R (P.obj (op (∏ᶜ fun j ↦ U (a j)))) :=
     CompleteLattice.finite_product_of_forall_finset_inf (p := fun W ↦ Module.Flat R (P.obj (op W)))
       U hP a
-  -- The degree `n` term of `cechComplexFunctor` is, by definition, this product of values of `P`,
-  -- as in `cechComplexFunctor_map_f_π`.
-  let e : ((cechComplexFunctor U).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
-    Iso.refl _
+  let e := cechXIso U P n
   exact Module.Flat.of_linearEquiv
     (e ≪≫ ModuleCat.piIsoPi fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))).toLinearEquiv
 
