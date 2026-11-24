@@ -224,8 +224,8 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (v : M)
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (stabilizerHopfIdeal k H v) (CommAlgCat.of k A) ↔
       endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← stabilizerHopfIdeal_le_ker_iff]
-  exact ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
+    ← stabilizerHopfIdeal_le_ker_iff]
 
 /-- A rational point lies in the stabilizer of `v` exactly when it fixes `v`. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (v : M)

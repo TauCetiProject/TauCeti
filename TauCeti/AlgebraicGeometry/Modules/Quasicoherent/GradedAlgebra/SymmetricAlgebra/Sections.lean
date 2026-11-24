@@ -20,7 +20,6 @@ import all TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 import all TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 import all TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 import all TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Mul
-import all TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 
 /-!
 # Affine sections of graded symmetric algebras
@@ -99,6 +98,7 @@ private lemma sectionsDegreeIso_mul (hU : IsAffineOpen U) (i j : ℕ)
   -- The graded components are the symmetric powers. Their defining transports are identities;
   -- the tensor comparison of sections is the sectionwise tensor comparison of `forget`.
   erw [CommMon.sections_gMul_def, mul_gradedSymmetricAlgebra]
+  rw [← TauCeti.SymmetricAlgebra.homogeneousSubmoduleMul_tmul]
   exact hv.symm
 
 /-- The direct sum of the affine symmetric-power comparisons. -/

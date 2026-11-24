@@ -198,6 +198,13 @@ theorem coe_homogeneousSubmoduleMul_tmul {i j : ℕ} (x : homogeneousSubmodule R
     (homogeneousSubmoduleMul R M i j (x ⊗ₜ[R] y) : SymmetricAlgebra R M) = (x : _) * (y : _) :=
   (rfl)
 
+/-- Multiplication of homogeneous submodules agrees with the graded-monoid multiplication. -/
+theorem homogeneousSubmoduleMul_tmul {i j : ℕ} (x : homogeneousSubmodule R M i)
+    (y : homogeneousSubmodule R M j) :
+    homogeneousSubmoduleMul R M i j (x ⊗ₜ[R] y) =
+      GradedMonoid.GMul.mul (A := fun n ↦ ↥(homogeneousSubmodule R M n)) x y :=
+  (rfl)
+
 /-- A derivation of the symmetric algebra sending every generator into degree one preserves every
 homogeneous submodule. -/
 theorem derivation_mem_homogeneousSubmodule
