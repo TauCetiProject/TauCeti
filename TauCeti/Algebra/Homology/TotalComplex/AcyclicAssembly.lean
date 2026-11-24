@@ -47,6 +47,10 @@ does not change the total complex in these degrees.
 * `HomologicalComplex₂.shiftIsoTotalOfIsZero`, `HomologicalComplex₂.acyclic_total_of_isZero`: the
   total complex of a double complex concentrated in one column is that column, shifted, so it is
   acyclic when that column is.
+* `HomologicalComplex₂.isIso_total_map_ιStupidTrunc_f`,
+  `HomologicalComplex₂.isIso_total_map_πStupidTrunc_f`: brutally truncating a double complex in
+  its columns does not change its total complex in the degrees whose antidiagonal vanishes in the
+  removed columns.
 * `HomologicalComplex₂.hasTotal_of_finite_antidiagonals`,
   `HomologicalComplex₂.hasTotal_of_isZero_X`: the total complex exists when every antidiagonal
   has finitely many nonzero terms, for instance when only finitely many columns are nonzero.
@@ -221,6 +225,47 @@ lemma acyclic_total_of_isZero (hc : (L.X c).Acyclic) :
     (L.total (ComplexShape.up ℤ)).Acyclic := fun n ↦
   ((CochainComplex.acyclic_shift_iff _ (-c)).2 hc n).of_iso (L.shiftIsoTotalOfIsZero c hL)
 
+/-- The inclusion of the brutal truncation of a double complex in the columns `≥ a` induces an
+isomorphism of total complexes in a degree `m` whose antidiagonal vanishes in the columns `< a`. -/
+lemma isIso_total_map_ιStupidTrunc_f [HasZeroObject C]
+    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (a m : ℤ)
+    [K.HasTotal (ComplexShape.up ℤ)]
+    [HasTotal (K.stupidTrunc (ComplexShape.embeddingUpIntGE a)) (ComplexShape.up ℤ)]
+    (h : ∀ p, p < a → IsZero ((K.X p).X (m - p))) :
+    IsIso ((total.map (K.ιStupidTrunc (ComplexShape.embeddingUpIntGE a)) (ComplexShape.up ℤ)).f
+      m) :=
+  isIso_total_map_f _ _ _ fun p q hpq ↦ by
+    simp only [ComplexShape.π_def] at hpq
+    obtain rfl : q = m - p := by omega
+    by_cases hp : a ≤ p
+    · have := K.isIso_ιStupidTrunc_f (ComplexShape.embeddingUpIntGE a) (i' := p)
+        (i := (p - a).toNat) (by simp; omega)
+      infer_instance
+    · exact isIso_of_source_target_iso_zero _
+        ((HomologicalComplex.eval C _ _).map_isZero
+          (CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K a (by omega))).isoZero
+        (h p (by omega)).isoZero
+
+/-- The projection of a double complex onto its brutal truncation in the columns `≤ b` induces an
+isomorphism of total complexes in a degree `m` whose antidiagonal vanishes in the columns `> b`. -/
+lemma isIso_total_map_πStupidTrunc_f [HasZeroObject C]
+    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (b m : ℤ)
+    [K.HasTotal (ComplexShape.up ℤ)]
+    [HasTotal (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (ComplexShape.up ℤ)]
+    (h : ∀ p, b < p → IsZero ((K.X p).X (m - p))) :
+    IsIso ((total.map (K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) (ComplexShape.up ℤ)).f
+      m) :=
+  isIso_total_map_f _ _ _ fun p q hpq ↦ by
+    simp only [ComplexShape.π_def] at hpq
+    obtain rfl : q = m - p := by omega
+    by_cases hp : p ≤ b
+    · have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b) (i' := p)
+        (i := (b - p).toNat) (by simp; omega)
+      infer_instance
+    · exact isIso_of_source_target_iso_zero _ (h p (by omega)).isoZero
+        ((HomologicalComplex.eval C _ _).map_isZero
+          (CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X K b (by omega))).isoZero
+
 end Int
 
 section Abelian
@@ -260,47 +305,6 @@ private lemma acyclic_total_of_isZero_X (k : ℕ) :
       fun p q ↦ (CochainComplex.stupidTruncShortComplexSplitting L a p).map _).acyclic_X₂
       (ih (a + 1) _ h₁ (L.acyclic_stupidTrunc_X _ hc))
       (acyclic_total_of_isZero _ a h₃ (L.acyclic_stupidTrunc_X _ hc a))
-
-/-- The inclusion of the brutal truncation of a double complex in the columns `≥ a` induces an
-isomorphism of total complexes in a degree `m` whose antidiagonal vanishes in the columns `< a`. -/
-private lemma isIso_total_map_ιStupidTrunc_f
-    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (a m : ℤ)
-    [K.HasTotal (ComplexShape.up ℤ)]
-    [HasTotal (K.stupidTrunc (ComplexShape.embeddingUpIntGE a)) (ComplexShape.up ℤ)]
-    (h : ∀ p, p < a → IsZero ((K.X p).X (m - p))) :
-    IsIso ((total.map (K.ιStupidTrunc (ComplexShape.embeddingUpIntGE a)) (ComplexShape.up ℤ)).f
-      m) :=
-  isIso_total_map_f _ _ _ fun p q hpq ↦ by
-    simp only [ComplexShape.π_def] at hpq
-    obtain rfl : q = m - p := by omega
-    by_cases hp : a ≤ p
-    · have := K.isIso_ιStupidTrunc_f (ComplexShape.embeddingUpIntGE a) (i' := p)
-        (i := (p - a).toNat) (by simp; omega)
-      infer_instance
-    · exact isIso_of_source_target_iso_zero _
-        ((HomologicalComplex.eval C _ _).map_isZero
-          (CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K a (by omega))).isoZero
-        (h p (by omega)).isoZero
-
-/-- The projection of a double complex onto its brutal truncation in the columns `≤ b` induces an
-isomorphism of total complexes in a degree `m` whose antidiagonal vanishes in the columns `> b`. -/
-private lemma isIso_total_map_πStupidTrunc_f
-    (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) (b m : ℤ)
-    [K.HasTotal (ComplexShape.up ℤ)]
-    [HasTotal (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (ComplexShape.up ℤ)]
-    (h : ∀ p, b < p → IsZero ((K.X p).X (m - p))) :
-    IsIso ((total.map (K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) (ComplexShape.up ℤ)).f
-      m) :=
-  isIso_total_map_f _ _ _ fun p q hpq ↦ by
-    simp only [ComplexShape.π_def] at hpq
-    obtain rfl : q = m - p := by omega
-    by_cases hp : p ≤ b
-    · have := K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE b) (i' := p)
-        (i := (b - p).toNat) (by simp; omega)
-      infer_instance
-    · exact isIso_of_source_target_iso_zero _ (h p (by omega)).isoZero
-        ((HomologicalComplex.eval C _ _).map_isZero
-          (CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X K b (by omega))).isoZero
 
 /-- The acyclic assembly lemma for finite antidiagonals and exact columns. -/
 private lemma acyclic_total_of_finite_antidiagonals_of_columns
