@@ -7,12 +7,11 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.SchemeProperties
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Infinitesimal
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Smooth
+public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Smooth
 
 /-!
 # Group schemes that are not abelian schemes
@@ -66,60 +65,35 @@ section RootsOfUnity
 
 variable (p : ℕ)
 
-/-- The character group `ℤ/p` of `μ_p`. -/
-abbrev muCharacters [NeZero p] : FGCommGrpCat.{0} := FGCommGrpCat.of (Multiplicative (ZMod p))
-
-/-- Every element of the character group `ℤ/p` of `μ_p` is killed by `p`. -/
-private theorem muCharacters_pow_self (g : Multiplicative (ZMod p)) : g ^ p = 1 :=
-  Multiplicative.toAdd.injective (by simp)
-
-/-- The generator of the character group `ℤ/p` of `μ_p` is not the identity. -/
-private theorem ofAdd_one_ne_one [Nontrivial (ZMod p)] :
-    Multiplicative.ofAdd (1 : ZMod p) ≠ 1 := by
-  simp
-
 /-- `μ_p` over `𝔽_p` is not smooth. -/
-example [Fact p.Prime] :
-    ¬ Smooth (DiagonalizableGroup.groupScheme (ZMod p) (muCharacters p)).X.hom := by
-  rw [DiagonalizableGroup.smooth_groupScheme_iff (ZMod p) p]
-  exact fun h ↦ ofAdd_one_ne_one p (h _ (muCharacters_pow_self p _))
+example [Fact p.Prime] : ¬ Smooth (RootsOfUnityGroup.groupScheme (ZMod p) p).X.hom :=
+  RootsOfUnityGroup.groupScheme_not_smooth p
 
 /-- Over a field of characteristic `p`, the only point of `μ_p` is the identity. -/
 example [Fact p.Prime] (K : Type) [Field K] [CharP K p] [Algebra (ZMod p) K] :
     Subsingleton ((Spec (CommRingCat.of K)).asOver (Spec (CommRingCat.of (ZMod p))) ⟶
-      (DiagonalizableGroup.groupScheme (ZMod p) (muCharacters p)).X) :=
-  DiagonalizableGroup.subsingleton_schemePoints_of_isReduced p _ (muCharacters_pow_self p)
+      (RootsOfUnityGroup.groupScheme (ZMod p) p).X) :=
+  DiagonalizableGroup.subsingleton_schemePoints_of_isReduced p _ fun g ↦
+    ULift.down_injective ((ULift.pow_down g p).trans (Multiplicative.toAdd.injective (by simp)))
 
-/-- The unit `1 + n ε` of `𝔽_p[ε]/(ε²)`. -/
-def dualNumberUnit (n : ZMod p) : (DualNumber (ZMod p))ˣ where
-  val := 1 + n • DualNumber.eps
-  inv := 1 - n • DualNumber.eps
-  val_inv := by ext <;> simp
-  inv_val := by ext <;> simp
+/-- The unit `1 + ε` of `𝔽_p[ε]/(ε²)`, a unit because `ε` is nilpotent. -/
+noncomputable def dualNumberUnit : (DualNumber (ZMod p))ˣ :=
+  (IsNilpotent.isUnit_one_add ⟨2, DualNumber.eps_pow_two⟩).unit
 
-/-- The character `ℤ/p → 𝔽_p[ε]ˣ`, `n ↦ 1 + n ε`. -/
-def dualNumberCharacter : Multiplicative (ZMod p) →* (DualNumber (ZMod p))ˣ where
-  toFun n := dualNumberUnit p n.toAdd
-  map_one' := by ext <;> simp [dualNumberUnit]
-  map_mul' m n := by ext <;> simp [dualNumberUnit, add_smul, add_comm]
+/-- The unit `1 + ε` of `𝔽_p[ε]/(ε²)` is a `p`th root of unity. -/
+theorem dualNumberUnit_mem_rootsOfUnity :
+    dualNumberUnit p ∈ rootsOfUnity p (DualNumber (ZMod p)) := by
+  rw [mem_rootsOfUnity, Units.ext_iff]
+  ext <;> simp [dualNumberUnit]
 
-/-- The point of `μ_p` over `𝔽_p[ε]/(ε²)` given by the character `n ↦ 1 + n ε`, which sends the
-generator to `1 + ε`, is not the identity. -/
-example [NeZero p] [Fact (1 < p)] :
-    (DiagonalizableGroup.groupSchemePointsMulEquiv (R := ZMod p) (A := DualNumber (ZMod p))
-      (muCharacters p)).symm (WithConv.toConv (DiagonalizableGroup.point (dualNumberCharacter p)))
-      ≠ 1 := by
-  rw [Ne, MulEquiv.symm_apply_eq, map_one]
+/-- The point of `μ_p` over `𝔽_p[ε]/(ε²)` given by the root of unity `1 + ε` is not the
+identity. -/
+example [Fact (1 < p)] :
+    (RootsOfUnityGroup.schemePointsMulEquiv (R := ZMod p) (A := DualNumber (ZMod p)) p).symm
+      ⟨dualNumberUnit p, dualNumberUnit_mem_rootsOfUnity p⟩ ≠ 1 := by
+  rw [MulEquiv.map_ne_one_iff, Ne, Subtype.ext_iff, Units.ext_iff]
   intro h
-  -- Evaluate both points at the generator `1` of `ℤ/p` and take the `ε`-coefficient.
-  let g : muCharacters p := Multiplicative.ofAdd (1 : ZMod p)
-  have := congr_arg (fun x : WithConv (MonoidAlgebra (ZMod p) (muCharacters p) →ₐ[ZMod p]
-    DualNumber (ZMod p)) ↦ TrivSqZeroExt.snd (x.ofConv (MonoidAlgebra.single g 1))) h
-  dsimp only at this
-  rw [WithConv.ofConv_toConv, DiagonalizableGroup.point_single, AlgHom.convOne_apply,
-    MonoidAlgebra.counit_single] at this
-  have hg : g = 1 := by simpa [dualNumberCharacter, dualNumberUnit] using this
-  exact ofAdd_one_ne_one p hg
+  simpa [dualNumberUnit] using congr_arg TrivSqZeroExt.snd h
 
 end RootsOfUnity
 
