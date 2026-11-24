@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
-import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!

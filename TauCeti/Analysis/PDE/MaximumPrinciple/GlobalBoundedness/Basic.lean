@@ -492,11 +492,11 @@ theorem exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top [Non
   obtain ⟨K, -, hK⟩ := exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow (mu := mu)
     (inv_pos.2 (by linarith)) (inv_strictAnti₀ (by exact_mod_cast Fintype.card_pos) hn) hδ2
   refine ⟨_, ?_, _, fun v hv ↦ hK hOmega v hv⟩
-  -- With `δ = 1/r`, the exponent `q = (1/2 - δ)⁻¹` has `1/q = 1/2 - 1/r`, computed in `ℝ`.
-  rw [ENNReal.ofNNReal_toNNReal, ← ENNReal.ofReal_inv_of_pos (inv_pos.2 (by linarith)), inv_inv,
-    ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (by positivity)), ENNReal.toReal_inv,
-    ← ENNReal.ofReal_add (by positivity) (by linarith), add_sub_cancel,
-    ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+  -- With `δ = 1/r`, the exponent `q = (1/2 - δ)⁻¹` has `1/q = 1/2 - 1/r`; check it in `ℝ`.
+  have hr0 : r ≠ 0 := by rintro rfl; norm_num at hr2'
+  rw [← ENNReal.toReal_eq_toReal_iff' (by simp [hr0, hδ2]) (by simp),
+    ENNReal.toReal_add (by simpa) (by simpa)]
+  simp [Real.coe_toNNReal _ (inv_nonneg.2 (sub_pos.2 hδ2).le)]
 
 /-- The Sobolev exponents used in the scale-invariant bounds: for `0 ≤ θ < min (1/n) (1/2)` there
 are `δ` with `θ < δ < min (1/n) (1/2)`, and then `s = (1/2 - δ)⁻¹` satisfies `1/s = 1/2 - δ` and
