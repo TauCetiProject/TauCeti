@@ -134,7 +134,7 @@ tangent space at `x`. -/
 theorem orientationAt_orientation (x : M) :
     (J.orientation hk).orientationAt x = (J.almostComplexStructureAt x).orientation hk := by
   rw [orientation, Manifold.Orientation.orientationAt_ofVectorBundleOrientation,
-    Bundle.ContinuousComplexStructure.orientation_apply _ _ _ hk,
+    Bundle.ContinuousComplexStructure.orientation_apply,
     ContMDiffAlmostComplexStructure.toContinuousComplexStructure_almostComplexStructureAt]
   -- Changing the regularity of `J` leaves its pointwise structures unchanged.
   congr 1
@@ -185,8 +185,10 @@ theorem isOrientationPreservingAt_orientation (hk₂ : finrank ℝ E₂ = k) {f 
   let e := (LinearEquiv.ofInjectiveOfFinrankEq (mfderiv I I₂ f x).toLinearMap hinj
     (hk.trans hk₂.symm)).toContinuousLinearEquiv
   have he : (e : TangentSpace I x →L[ℝ] TangentSpace I₂ (f x)) = mfderiv I I₂ f x :=
-    ContinuousLinearMap.ext fun v ↦
-      LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq _ hinj (hk.trans hk₂.symm)) v
+    ContinuousLinearMap.ext fun v ↦ by
+      rw [ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_toContinuousLinearEquiv']
+      exact LinearMap.congr_fun
+        (LinearEquiv.coe_ofInjectiveOfFinrankEq _ hinj (hk.trans hk₂.symm)) v
   rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ f x e he,
     orientationAt_orientation, orientationAt_orientation]
   -- The differential intertwines the two almost complex structures.

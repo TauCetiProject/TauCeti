@@ -11,8 +11,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.Basic
 
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Analysis.Normed.Module.Alternating.Tame
 import TauCeti.Geometry.Symplectic.ExistsCompatible
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The complex orientation of a complex vector bundle
@@ -39,8 +39,6 @@ induces its complex orientation (`TauCeti.AlmostComplexStructure.orientation_eq_
 
 * `TauCeti.Bundle.ContinuousComplexStructure.orientation_apply`: its orientation of the fibre over
   `b` is the complex orientation of `J b`.
-* `TauCeti.Bundle.ContinuousComplexStructure.transport_almostComplexStructureAt_apply`: read in the
-  trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`.
 
 ## References
 
@@ -61,20 +59,6 @@ variable {B : Type*} [TopologicalSpace B]
   [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousSMul ℝ (V b)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
   (J : ContinuousComplexStructure F V) {k : ℕ} (hk : finrank ℝ F = k)
-
-omit [FiniteDimensional ℝ F] in
-/-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
-theorem transport_almostComplexStructureAt_apply {b₀ b : B}
-    (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
-    (J.almostComplexStructureAt b).transport ((trivializationAt F V b₀).linearEquivAt ℝ b hb) w =
-      J.coord b₀ b w := by
-  -- On the base set, the trivialization's linear equivalence is its continuous linear map.
-  have he (v : V b) : (trivializationAt F V b₀).linearEquivAt ℝ b hb v =
-      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v :=
-    ((trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v).symm
-  obtain ⟨v, rfl⟩ := ((trivializationAt F V b₀).linearEquivAt ℝ b hb).surjective w
-  rw [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply,
-    almostComplexStructureAt_apply, he, he, coord_apply J hb]
 
 /-- The fibre complex orientations are locally constant in the preferred trivializations of `V`. -/
 private theorem eventually_mapOrientation_orientation_eq (b : B) :
@@ -125,9 +109,11 @@ noncomputable def orientation : VectorBundleOrientation F V (Fin k) :=
 
 /-- The complex orientation of `V` orients the fibre over `b` by the complex orientation of
 `J b`. -/
-theorem orientation_apply (b : B) (hb : finrank ℝ (V b) = k) :
+@[simp]
+theorem orientation_apply (b : B) :
     haveI := VectorBundle.finiteDimensional ℝ F V b
-    J.orientation hk b = (J.almostComplexStructureAt b).orientation hb :=
+    J.orientation hk b =
+      (J.almostComplexStructureAt b).orientation ((VectorBundle.finrank_eq ℝ F V b).trans hk) :=
   (rfl)
 
 end TauCeti.Bundle.ContinuousComplexStructure

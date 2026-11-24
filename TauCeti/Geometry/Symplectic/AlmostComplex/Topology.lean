@@ -14,7 +14,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.Analysis.Normed.Module.Alternating.Tame
 import TauCeti.Geometry.Symplectic.Duality
 
 /-!
