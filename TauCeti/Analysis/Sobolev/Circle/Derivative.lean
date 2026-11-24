@@ -88,17 +88,17 @@ private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) :
 `n`-th Fourier coefficient by `2πin/T`, the factor by which differentiation multiplies the
 monomial `e^{2πinx/T}`. -/
 def derivative (h : s + 1 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
-  fourierMultiplier (fun n ↦ (2 * π * I * n / T : ℂ)) (weight_mul_norm_derivFactor_le T h)
+  fourierMultiplierOfBound (fun n ↦ (2 * π * I * n / T : ℂ)) (weight_mul_norm_derivFactor_le T h)
 
 @[simp]
 theorem coeff_derivative (h : s + 1 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
     (derivative T h a).coeff n = (2 * π * I * n / T : ℂ) • a.coeff n :=
-  coeff_fourierMultiplier _ a n
+  coeff_fourierMultiplierOfBound _ a n
 
 /-- Differentiation costs one order of regularity: `‖derivative T h a‖ ≤ 2π/T ‖a‖`. -/
 theorem norm_derivative_le (h : s + 1 ≤ t) (a : CircleSobolev t E) :
     ‖derivative T h a‖ ≤ 2 * π / T * ‖a‖ :=
-  norm_fourierMultiplier_le _ a
+  norm_fourierMultiplierOfBound_le _ a
 
 theorem opNorm_derivative_le (h : s + 1 ≤ t) :
     ‖(derivative T h : CircleSobolev t E →L[ℂ] CircleSobolev s E)‖ ≤ 2 * π / T :=
@@ -132,7 +132,7 @@ theorem norm_sq_le_of_derivative (h : s + 1 = t) (a : CircleSobolev t E) :
 @[simp]
 theorem derivative_single (h : s + 1 ≤ t) (n : ℤ) (x : E) :
     derivative T h (single n x) = single n ((2 * π * I * n / T : ℂ) • x) :=
-  fourierMultiplier_single _ n x
+  fourierMultiplierOfBound_single _ n x
 
 @[simp]
 theorem derivative_inclusion {u : ℝ} (h : s + 1 ≤ t) (htu : t ≤ u) (a : CircleSobolev u E) :

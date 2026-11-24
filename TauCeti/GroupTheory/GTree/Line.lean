@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Line
+public import TauCeti.GroupTheory.GTree.Hom
 public import TauCeti.GroupTheory.GTree.OrbitHull
 
 /-!
@@ -16,14 +17,15 @@ the infinite cyclic group, the free group of rank one; it is the Cayley tree of 
 a minimal tree, so the convex hull of every orbit of the integers is the whole line. The
 translation by `k` moves every vertex by `|k|`, so that it has translation length `|k|` and is
 hyperbolic when `k ≠ 0`. The integers act freely on its darts, and the line is not dominated by
-the one-vertex tree, although it dominates it.
+the one-vertex tree, although it dominates it. Its identity is unfolded at every vertex, so it
+has at most one parallel class of edges.
 
 ## Main declarations
 
 * `TauCeti.GTree.line`: the line as a tree for `Multiplicative ℤ`.
 * `TauCeti.GTree.line_dist_smul`, `TauCeti.GTree.line_translationLength`,
   `TauCeti.GTree.line_isMinimal`, `TauCeti.GTree.line_orbitHull_top`,
-  `TauCeti.GTree.not_point_dominates_line`.
+  `TauCeti.GTree.not_point_dominates_line`, `TauCeti.GTree.Hom.isUnfoldedAt_id_line`.
 
 ## References
 
@@ -124,6 +126,22 @@ theorem not_point_dominates_line : ¬(point.{u, v} (Multiplicative ℤ)).Dominat
   rw [point_dominates_iff]
   exact fun h => not_isHyperbolic_iff.mpr (h.isElliptic (Subgroup.mem_top _))
     (line_isHyperbolic (k := Multiplicative.ofAdd 1) (by decide))
+
+/-- The identity of the line is unfolded at every vertex: exactly two darts start at each
+vertex, one in each direction. So the identity of the line has at most one parallel class, by
+`GTree.Hom.subsingleton_parallelClass_of_forall_isUnfoldedAt`. -/
+theorem Hom.isUnfoldedAt_id_line (x : line.V) : (Hom.id line).IsUnfoldedAt x := by
+  -- The darts from `x` are `(x, true)`, to `x + 1`, and `(x - 1, false)`, back to `x - 1`.
+  refine (Hom.id line).isUnfoldedAt_iff.mpr ⟨(lineVertexEquiv x, true),
+    (lineVertexEquiv x - 1, false), ?_, fun e => ⟨fun he => ?_, ?_⟩⟩
+  · rw [Hom.id_toHom, SerreGraph.Hom.id_mapE]
+    exact fun h => Bool.noConfusion (congrArg Prod.snd h)
+  · have h := (lineVertexEquiv_line_src e).symm.trans (congrArg lineVertexEquiv he)
+    rcases e with ⟨n, _ | _⟩
+    · exact .inr (Prod.ext (by simp at h ⊢; lia) rfl)
+    · exact .inl (Prod.ext (by simpa using h) rfl)
+  · rintro (rfl | rfl) <;>
+      exact lineVertexEquiv.injective ((lineVertexEquiv_line_src _).trans (by simp))
 
 end GTree
 

@@ -80,6 +80,12 @@ theorem mem_standardMonomials_iff :
   Iff.rfl
 
 variable (m I) in
+/-- The standard monomials of `I` form a lower set: a divisor of a standard monomial is
+standard. -/
+theorem isLowerSet_standardMonomials : IsLowerSet (m.standardMonomials I) :=
+  fun _ _ hle hc p hp hp0 hpc ↦ hc p hp hp0 (hpc.trans hle)
+
+variable (m I) in
 /-- An ideal and its ideal of leading terms have the same standard monomials. -/
 @[simp]
 theorem standardMonomials_span_leadingTerm :

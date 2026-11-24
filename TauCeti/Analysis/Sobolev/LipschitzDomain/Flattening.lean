@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -40,6 +41,13 @@ compactness, which bounds those of the shear.
 * `TauCeti.exists_isChangeOfVariables_of_contDiff`: a `Cᵏ` boundary graph gives a flattening
   change of variables of order `k` between a convex neighbourhood on the flat side and a
   neighbourhood of the boundary point, mapping the half-space part onto the domain.
+* `TauCeti.exists_isChangeOfVariables_normalHalfSpace_of_contDiff`: for a domain in `ℝ × E` itself,
+  the flattening chart `e⁻¹ ∘ G⁻¹` maps the normal half-space `{0 < x.fst}`, in standard position,
+  onto the domain near the boundary point, which is the form the half-space estimates are stated
+  in.
+* `TauCeti.exists_isChangeOfVariables_halfSpace_of_contDiff_graph`: the flattening chart fixes the
+  boundary point, which lies in the closure of the flat half-space, and maps the part of a
+  neighbourhood in that half-space onto the domain near the boundary point.
 
 ## References
 
@@ -56,6 +64,7 @@ noncomputable section
 namespace TauCeti
 
 open Metric Set TopologicalSpace
+open scoped InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -104,25 +113,22 @@ theorem isChangeOfVariables_graphFlattening_symm {k : ℕ} (hk : 1 ≤ k) {γ : 
 
 end Wkp
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- **Flattening a `Cᵏ` boundary graph.** Let `k ≥ 1`, and suppose that inside the normal
-cylinder of radius `b` and half-height `a`, in rigid coordinates `e` centred at a boundary point
-`e.symm 0`, the set `Ω` is the region above the graph of a `Cᵏ` function `γ` with `γ 0 = 0`. Let
-`Φ = e⁻¹ ∘ G⁻¹ ∘ e` and `Ψ = e⁻¹ ∘ G ∘ e`, where `G` is graph flattening by `γ`; they are mutually
-inverse. Then there are an open convex set `U'`, an open neighbourhood `U` of `e.symm 0` and a
-constant `L` such that `Φ` is a change of variables of order `k` from `U'` into `U` and `Ψ` one
-from `U` into `U'`, both with Jacobian determinant one, and `Φ` maps the part of `U'` in the
-half-space `0 < (e x).fst` onto `Ω ∩ U`. -/
-theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
-    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a)
+/-- **Flattening a `Cᵏ` boundary graph, in flat coordinates.** Let `k ≥ 1`, and suppose that
+inside the normal cylinder of radius `b` and half-height `a` the set `Ω` is the region above the
+graph of a `Cᵏ` function `γ` with `γ 0 = 0`. Let `G` be graph flattening by `γ`. Then there are an
+open convex neighbourhood `W` of `0`, an open set `W₁` and a constant `L` such that `G⁻¹` is a
+change of variables of order `k` from `W` into `W₁` and `G` one from `W₁` into `W`, both with
+Jacobian determinant one, and `G⁻¹` maps the part of `W` in the half-space `{0 < x.fst}` onto
+`Ω ∩ W₁`. Both flattening theorems below transport this along rigid coordinates. -/
+private theorem exists_isChangeOfVariables_graphFlattening_of_contDiff
+    {Omega : Set (WithLp 2 (ℝ × E))} {γ : E → ℝ} {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a)
     (hb : 0 < b) (hγ0 : γ 0 = 0) (hγ : ContDiff ℝ k γ)
-    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
-    ∃ (U' U : Opens F) (L : ℝ), e.symm 0 ∈ U ∧ Convex ℝ (U' : Set F) ∧
-      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) L 1 ∧
-      Wkp.IsChangeOfVariables k U U' (e.symm ∘ graphFlattening γ hγ.continuous ∘ e) L 1 ∧
-      (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) ''
-        ({x | 0 < (e x).fst} ∩ U') = Omega ∩ U := by
+    (hgraph : ∀ z ∈ normalCylinder a b, (z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (W W₁ : Opens (WithLp 2 (ℝ × E))) (L : ℝ), 0 ∈ W ∧
+      Convex ℝ (W : Set (WithLp 2 (ℝ × E))) ∧
+      Wkp.IsChangeOfVariables k W W₁ (graphFlattening γ hγ.continuous).symm L 1 ∧
+      Wkp.IsChangeOfVariables k W₁ W (graphFlattening γ hγ.continuous) L 1 ∧
+      (graphFlattening γ hγ.continuous).symm '' ({x | 0 < x.fst} ∩ W) = Omega ∩ W₁ := by
   set G := graphFlattening γ hγ.continuous
   -- A tangential radius `b' ≤ b` on which the graph stays within `a / 2` of zero.
   obtain ⟨δ, hδ, hγδ⟩ :=
@@ -161,42 +167,148 @@ theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
   have hΨG : Wkp.IsChangeOfVariables k W₁ W G (1 + M) 1 :=
     Wkp.isChangeOfVariables_graphFlattening hk hγ (fun _ hx ↦ hx)
       fun i _ hik x hx ↦ by simpa [G] using hMb i hik _ (hWsnd _ hx)
+  refine ⟨W, W₁, 1 + M, (hW 0).2 ?_, convex_normalCylinder _ _, hΦG, hΨG, ?_⟩
+  · simp [ha, hb']
+  · ext y
+    constructor
+    · rintro ⟨x, ⟨hxH, hxW⟩, rfl⟩
+      refine ⟨(hgraph _ (hcyl x hxW)).2 (by simpa [G] using hxH), (hW₁ _).2 ?_⟩
+      rwa [G.apply_symm_apply]
+    · rintro ⟨hyΩ, hyW₁⟩
+      have hz : y ∈ normalCylinder a b := by simpa using hcyl (G y) ((hW₁ y).1 hyW₁)
+      refine ⟨G y, ⟨?_, (hW₁ y).1 hyW₁⟩, G.symm_apply_apply y⟩
+      simpa [G] using (hgraph _ hz).1 hyΩ
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **Flattening a `Cᵏ` boundary graph.** Let `k ≥ 1`, and suppose that inside the normal
+cylinder of radius `b` and half-height `a`, in rigid coordinates `e` centred at a boundary point
+`e.symm 0`, the set `Ω` is the region above the graph of a `Cᵏ` function `γ` with `γ 0 = 0`. Let
+`Φ = e⁻¹ ∘ G⁻¹ ∘ e` and `Ψ = e⁻¹ ∘ G ∘ e`, where `G` is graph flattening by `γ`; they are mutually
+inverse. Then there are an open convex set `U'`, an open neighbourhood `U` of `e.symm 0` and a
+constant `L` such that `Φ` is a change of variables of order `k` from `U'` into `U` and `Ψ` one
+from `U` into `U'`, both with Jacobian determinant one, and `Φ` maps the part of `U'` in the
+half-space `0 < (e x).fst` onto `Ω ∩ U`. -/
+theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a)
+    (hb : 0 < b) (hγ0 : γ 0 = 0) (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens F) (L : ℝ), e.symm 0 ∈ U ∧ Convex ℝ (U' : Set F) ∧
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) L 1 ∧
+      Wkp.IsChangeOfVariables k U U' (e.symm ∘ graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) ''
+        ({x | 0 < (e x).fst} ∩ U') = Omega ∩ U := by
+  set G := graphFlattening γ hγ.continuous
+  obtain ⟨W, W₁, L, hW0, hWc, hΦG, hΨG, himage⟩ :=
+    exists_isChangeOfVariables_graphFlattening_of_contDiff (Omega := e.symm ⁻¹' Omega) hk ha hb
+      hγ0 hγ hgraph
   -- Pull everything back to `F` along the rigid coordinates.
   let U' : Opens F := ⟨e ⁻¹' W, W.isOpen.preimage e.continuous⟩
   let U : Opens F := ⟨e ⁻¹' W₁, W₁.isOpen.preimage e.continuous⟩
   have hU'mem (x : F) : x ∈ (U' : Set F) ↔ e x ∈ (W : Set _) := Iff.rfl
-  have hUmem (x : F) : x ∈ (U : Set F) ↔ G (e x) ∈ (W : Set _) := Iff.rfl
+  have hUmem (x : F) : x ∈ (U : Set F) ↔ e x ∈ (W₁ : Set _) := Iff.rfl
   have hUe : MapsTo e.symm (W₁ : Set _) (U : Set F) := fun x hx ↦ by
     rwa [hUmem, e.apply_symm_apply]
   have hU'e : MapsTo e.symm (W : Set _) (U' : Set F) := fun x hx ↦ by
     rwa [hU'mem, e.apply_symm_apply]
-  refine ⟨U', U, 1 + M, ?_, ?_, hΦG.conj e (fun _ hx ↦ hx) hUe,
-    hΨG.conj e (fun _ hx ↦ hx) hU'e, ?_⟩
+  refine ⟨U', U, L, ?_, hWc.affine_preimage e.toAffineEquiv.toAffineMap,
+    hΦG.conj e (fun _ hx ↦ hx) hUe, hΨG.conj e (fun _ hx ↦ hx) hU'e, ?_⟩
   · -- The boundary point is flattened to the origin, which lies in `W`.
-    refine (hUmem _).2 ?_
-    rw [e.apply_symm_apply, hW]
-    simp [G, hγ0, ha, hb']
-  · -- `U'` is the preimage of a product of an interval and a ball under an affine map.
-    exact (convex_normalCylinder _ _).affine_preimage e.toAffineEquiv.toAffineMap
-  · ext y
-    constructor
-    · rintro ⟨x, ⟨hxH, hxU'⟩, rfl⟩
-      have hz := hcyl (e x) ((hU'mem x).1 hxU')
-      refine ⟨?_, ?_⟩
-      · simp only [Function.comp_apply]
-        rw [hgraph _ hz]
-        simpa [G] using hxH
-      · rw [hUmem, Function.comp_apply, Function.comp_apply, e.apply_symm_apply,
-          G.apply_symm_apply]
-        exact (hU'mem x).1 hxU'
-    · rintro ⟨hyΩ, hyU⟩
-      have hz : e y ∈ normalCylinder a b := by
-        simpa using hcyl (G (e y)) ((hUmem y).1 hyU)
-      have hlt : γ (e y).snd < (e y).fst := (hgraph _ hz).1 (by simpa using hyΩ)
-      refine ⟨e.symm (G (e y)), ⟨?_, ?_⟩, ?_⟩
-      · simpa [G] using hlt
-      · rw [hU'mem, e.apply_symm_apply]
-        exact (hUmem y).1 hyU
-      · simp
+    have h0 : G.symm 0 = 0 := by simp [G, hγ0]
+    exact hUe (h0 ▸ hΦG.mapsTo hW0)
+  · -- `e` carries the half-space part of `U'` to that of `W`, which `G⁻¹` maps onto `Ω ∩ W₁`.
+    have hpre : {x | 0 < (e x).fst} ∩ (U' : Set F) = e ⁻¹' ({x | 0 < x.fst} ∩ W) := rfl
+    rw [hpre, image_comp, image_comp, e.surjective.image_preimage, himage, image_preimage_inter,
+      image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
+    rfl
+
+/-- **Flattening a `Cᵏ` boundary graph onto the normal half-space.** Let `k ≥ 1`, and suppose that
+inside the normal cylinder of radius `b` and half-height `a`, in rigid coordinates `e` of `ℝ × E`
+centred at a boundary point `e.symm 0`, the set `Ω` is the region above the graph of a `Cᵏ`
+function `γ` with `γ 0 = 0`. Let `G` be graph flattening by `γ`. Then there are an open convex
+neighbourhood `U'` of `0`, an open set `U` and a constant `L` such that `e⁻¹ ∘ G⁻¹` is a change of
+variables of order `k` from `U'` into `U` and its inverse `G ∘ e` one from `U` into `U'`, both with
+Jacobian determinant one, and `e⁻¹ ∘ G⁻¹` maps the part of `U'` in the normal half-space
+`{0 < x.fst}` onto `Ω ∩ U`. Unlike `TauCeti.exists_isChangeOfVariables_of_contDiff`, the flat side
+is the half-space in standard position, not its image under `e⁻¹`. -/
+theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
+    {Omega : Set (WithLp 2 (ℝ × E))} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a) (hb : 0 < b) (hγ0 : γ 0 = 0)
+    (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens (WithLp 2 (ℝ × E))) (L : ℝ), 0 ∈ U' ∧
+      Convex ℝ (U' : Set (WithLp 2 (ℝ × E))) ∧
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm) L 1 ∧
+      Wkp.IsChangeOfVariables k U U' (graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
+        ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U') = Omega ∩ U := by
+  set G := graphFlattening γ hγ.continuous
+  obtain ⟨W, W₁, L, hW0, hWc, hΦG, hΨG, himage⟩ :=
+    exists_isChangeOfVariables_graphFlattening_of_contDiff (Omega := e.symm ⁻¹' Omega) hk ha hb
+      hγ0 hγ hgraph
+  -- The curved side is `U = e⁻¹(W₁)`; `W` stays in standard position.
+  let U : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W₁, W₁.isOpen.preimage e.continuous⟩
+  let W' : Opens (WithLp 2 (ℝ × E)) := ⟨e ⁻¹' W, W.isOpen.preimage e.continuous⟩
+  have hUe : MapsTo e.symm (W₁ : Set _) (U : Set _) := fun x hx ↦ by
+    simpa only [U, SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
+  have hW'e : MapsTo e.symm (W : Set _) (W' : Set _) := fun x hx ↦ by
+    simpa only [W', SetLike.mem_coe, Opens.mem_mk, mem_preimage, e.apply_symm_apply] using hx
+  -- `G ∘ e = e ∘ (e⁻¹ ∘ G ∘ e)`, the conjugate of `G` followed by `e`.
+  have hΨe : e ∘ (e.symm ∘ G ∘ e) = G ∘ e := by
+    funext x
+    simp
+  refine ⟨W, U, L, hW0, hWc, hΦG.affineIsometryEquiv_comp e.symm hUe,
+    hΨe ▸ (hΨG.conj e (fun _ hx ↦ hx) hW'e).affineIsometryEquiv_comp e fun _ hx ↦ hx, ?_⟩
+  -- `G⁻¹` maps the half-space part of `W` onto `e⁻¹' Ω ∩ W₁`, which `e⁻¹` carries to `Ω ∩ U`.
+  rw [coe_normalHalfSpace, image_comp, himage, image_preimage_inter,
+    image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
+  rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- **Flattening a boundary graph.** Let `F` be finite-dimensional, and suppose that in rigid
+coordinates `e : F ≃ ℝ × E` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height
+`h₀` and radius `r₀`, `Ω` is the region above the graph of a `Cᵏ` function `γ`, `k ≥ 1`, with
+`γ 0 = 0`. Let `G` be the graph flattening of `γ`. Then `Φ = e⁻¹ ∘ G⁻¹ ∘ e` and
+`Ψ = e⁻¹ ∘ G ∘ e` are mutually inverse changes of variables of order `k` between open sets
+`U' ∋ x₀` and `U`, with Jacobian determinants at least one in absolute value; `Φ` fixes `x₀` and
+maps the part of `U'` in a half-space `H`, whose closure contains `x₀`, onto `Ω ∩ U`. -/
+theorem exists_isChangeOfVariables_halfSpace_of_contDiff_graph [FiniteDimensional ℝ F]
+    {Omega : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {h₀ r₀ : ℝ} {k : ℕ} (hk : 1 ≤ k) (hh₀ : 0 < h₀) (hr₀ : 0 < r₀) (hγ0 : γ 0 = 0)
+    (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens F) (L : ℝ) (ν : F) (c₀ : ℝ),
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) L 1 ∧
+      Wkp.IsChangeOfVariables k U U' (e.symm ∘ graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      ν ≠ 0 ∧ (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) ''
+        ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = Omega ∩ U ∧ e.symm 0 ∈ U' ∧
+      e.symm 0 ∈ closure {x | c₀ < ⟪x, ν⟫_ℝ} ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) (e.symm 0) = e.symm 0 := by
+  -- `E` is finite-dimensional, being a factor of `ℝ × E ≃ F`.
+  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
+    e.linearIsometryEquiv.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ E := Module.Finite.of_surjective (WithLp.sndₗ 2 ℝ ℝ E)
+    fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
+  obtain ⟨U', U, L, hx₀U, -, hΦ, hΨ, himage⟩ :=
+    exists_isChangeOfVariables_of_contDiff hk hh₀ hr₀ hγ0 hγ hgraph
+  set G := graphFlattening γ hγ.continuous
+  -- `Ψ` fixes `x₀`, hence so does its inverse `Φ`.
+  have hΨx₀ : (e.symm ∘ G ∘ e) (e.symm 0) = e.symm 0 := by simp [G, hγ0]
+  have hΦx₀ : (e.symm ∘ G.symm ∘ e) (e.symm 0) = e.symm 0 := by
+    conv_lhs => rw [← hΨx₀]
+    simp
+  -- In rigid coordinates the flat side is the half-space `{-(e 0).fst < ⟪x, ν⟫}`.
+  set ν := e.linearIsometryEquiv.symm (WithLp.toLp 2 (1, 0))
+  have hHν (x : F) : 0 < (e x).fst ↔ -(e 0).fst < ⟪x, ν⟫_ℝ := by
+    rw [e.fst_apply_eq_inner_add]
+    constructor <;> intro h <;> linarith
+  have hH : {x | 0 < (e x).fst} = {x | -(e 0).fst < ⟪x, ν⟫_ℝ} := Set.ext hHν
+  refine ⟨U', U, L, ν, -(e 0).fst, hΦ, hΨ, by simp [ν], hH ▸ himage,
+    hΨx₀ ▸ hΨ.mapsTo hx₀U, ?_, hΦx₀⟩
+  -- `x₀` is a limit of the points `e⁻¹ (t, 0)`, `t > 0`, of the flat side.
+  refine Metric.mem_closure_iff.2 fun ε hε => ⟨e.symm (WithLp.toLp 2 (ε / 2, 0)), ?_, ?_⟩
+  · exact (hHν _).1 (by simpa using half_pos hε)
+  · rw [dist_comm, e.symm.dist_map, dist_zero_right]
+    simpa [WithLp.prod_norm_eq_of_L2, abs_of_pos hε] using half_lt_self hε
 
 end TauCeti

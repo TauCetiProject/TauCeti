@@ -321,8 +321,6 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   -- The square root of `S` gives the affine substitution `x ↦ m + √S x` carrying the standard
   -- Gaussian to this one; `Measure.map_affine_withDensity` transports the density along it, and
   -- the inverse square root turns the isotropic quadratic form into the one of `S⁻¹`.
-  have hR : (CFC.sqrt S).PosSemidef := Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)
-  have hRR : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
   have hdetS : 0 < S.det := hS.det_pos
   have hdetR : (CFC.sqrt S).det = √S.det := by simpa using hS.posSemidef.det_sqrt
   have hdetRpos : 0 < (CFC.sqrt S).det := by rw [hdetR]; positivity
@@ -331,15 +329,6 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   have hAfun : (fun x : EuclideanSpace ℝ ι => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x)
       = fun x => m + Matrix.toEuclideanCLE (CFC.sqrt S) hRunit x :=
     funext fun x => by rw [Matrix.toEuclideanCLM_apply, Matrix.toEuclideanCLE_apply]
-  -- the inverse square root pulls the isotropic quadratic form back to the one of `S⁻¹`
-  have hconj : ((CFC.sqrt S)⁻¹).conjTranspose * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
-    rw [mul_one, hR.isHermitian.inv.eq, ← Matrix.mul_inv_rev, hRR]
-  have hnorm : ∀ z : EuclideanSpace ℝ ι,
-      ‖(CFC.sqrt S)⁻¹.toEuclideanLin z‖ ^ 2 = ⟪z, S⁻¹.toEuclideanLin z⟫ :=
-    fun z => by
-      rw [← real_inner_self_eq_norm_sq, ← hconj,
-        ← Matrix.inner_toEuclideanLin_toEuclideanLin (CFC.sqrt S)⁻¹ 1 z]
-      simp
   have hrpow : S.det ^ (-(1 : ℝ) / 2) = (√S.det)⁻¹ := by
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hdetS.le]
     congr 1
@@ -349,7 +338,8 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,
     Matrix.toEuclideanCLE_symm_apply]
-  rw [← ENNReal.ofReal_mul (by positivity), hnorm, abs_of_pos (by positivity), hdetR, hrpow]
+  rw [← ENNReal.ofReal_mul (by positivity), hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt,
+    abs_of_pos (by positivity), hdetR, hrpow]
   congr 1
   ring
 

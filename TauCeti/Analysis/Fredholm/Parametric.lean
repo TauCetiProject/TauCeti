@@ -110,6 +110,8 @@ spaces or of the scalar field is required.
 * `ContinuousLinearMap.index_coprod`: finite-dimensional domain extension increases the index
   by the dimension of the added variables.
 * `ContinuousLinearMap.kerEquivKerParameterProj`: the kernel of the projection is `ker D₁`.
+* `ContinuousLinearMap.kerCoprodEquivOfRightInverse`: when `D₂` has a continuous linear right
+  inverse, the kernel of the total linearization is `E × ker D₂`.
 * `ContinuousLinearMap.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
 * `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization
   is onto exactly when the parameter directions span the cokernel of `D₁`.
@@ -603,6 +605,62 @@ theorem coe_kerCoprodProdMapEquiv_symm_apply_snd
 
 end DirectSum
 
+section SplitParameters
+
+/-! ### Split parameter directions -/
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [IsTopologicalAddGroup Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F) {σ : F →L[𝕜] Λ}
+
+/-- When the parameter directions `D₂` have a continuous linear right inverse `σ`, the kernel of
+the total linearization `D₁.coprod D₂` is `E × ker D₂`: the pair `(x, l)` corresponds to
+`(x, l + σ (D₁ x))`. Since `D₂` is then onto, the total linearization is onto whatever `D₁` is,
+and this identifies its kernel with one model however `D₁` varies. -/
+def kerCoprodEquivOfRightInverse (hσ : Function.RightInverse σ D₂) :
+    (D₁.coprod D₂).ker ≃L[𝕜] E × D₂.ker :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((fst 𝕜 E Λ ∘L (D₁.coprod D₂).ker.subtypeL).prod
+      (codRestrict ((snd 𝕜 E Λ + σ ∘L D₁ ∘L fst 𝕜 E Λ) ∘L (D₁.coprod D₂).ker.subtypeL) D₂.ker
+        fun v ↦ by
+          have h := v.property
+          rw [LinearMap.mem_ker] at h
+          simp only [coe_coe, coprod_apply] at h
+          simp [LinearMap.mem_ker, hσ _, add_comm, h]))
+    (codRestrict ((fst 𝕜 E D₂.ker).prod
+        (D₂.ker.subtypeL ∘L snd 𝕜 E D₂.ker - σ ∘L D₁ ∘L fst 𝕜 E D₂.ker))
+      (D₁.coprod D₂).ker fun p ↦ by simp [LinearMap.mem_ker, hσ _])
+    (ContinuousLinearMap.ext fun p ↦ by ext <;> simp)
+    (ContinuousLinearMap.ext fun v ↦ by ext <;> simp)
+
+/-- The identification of `ker (D₁.coprod D₂)` with `E × ker D₂` keeps the first component. -/
+@[simp]
+theorem kerCoprodEquivOfRightInverse_apply_fst (hσ : Function.RightInverse σ D₂)
+    (v : (D₁.coprod D₂).ker) :
+    (kerCoprodEquivOfRightInverse D₁ D₂ hσ v).1 = (v : E × Λ).1 :=
+  (rfl)
+
+/-- The identification of `ker (D₁.coprod D₂)` with `E × ker D₂` sends `(x, l)` to
+`l + σ (D₁ x)` in the second component. -/
+@[simp]
+theorem coe_kerCoprodEquivOfRightInverse_apply_snd (hσ : Function.RightInverse σ D₂)
+    (v : (D₁.coprod D₂).ker) :
+    ((kerCoprodEquivOfRightInverse D₁ D₂ hσ v).2 : Λ) = (v : E × Λ).2 + σ (D₁ (v : E × Λ).1) :=
+  (rfl)
+
+/-- The inverse identification sends `(x, l)` with `l ∈ ker D₂` to `(x, l - σ (D₁ x))`. -/
+@[simp]
+theorem coe_kerCoprodEquivOfRightInverse_symm_apply (hσ : Function.RightInverse σ D₂)
+    (p : E × D₂.ker) :
+    (((kerCoprodEquivOfRightInverse D₁ D₂ hσ).symm p : (D₁.coprod D₂).ker) : E × Λ) =
+      (p.1, (p.2 : Λ) - σ (D₁ p.1)) :=
+  (rfl)
+
+end SplitParameters
+
 section Dimension
 
 variable {𝕜 : Type*} [DivisionRing 𝕜]
@@ -632,6 +690,12 @@ theorem finiteDimensional_quotient_range_parameterProj
     [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
     FiniteDimensional 𝕜 (Λ ⧸ (parameterProj D₁ D₂).range) :=
   (quotientRangeParameterProjEquivRange D₁ D₂).symm.finiteDimensional
+
+/-- The cokernel of `D₁.coprod D₂` is finite dimensional as soon as that of `D₁` is, since the
+cokernel of `D₁` maps onto it (`ContinuousLinearMap.cokerCoprodHom_surjective`). -/
+theorem finiteDimensional_quotient_range_coprod [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
+    FiniteDimensional 𝕜 (F ⧸ (D₁.coprod D₂).range) :=
+  Module.Finite.of_surjective _ (cokerCoprodHom_surjective D₁ D₂)
 
 /-- Kernel growth is the dimension of the extra variables minus the
 number of independent old obstructions they remove. -/

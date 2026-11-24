@@ -227,8 +227,7 @@ theorem congruenceClosure_eq_sup_Gamma_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : �
     (congruenceClosure_le
       (isCongruenceSubgroup_trans _ _ le_sup_right (Gamma_is_cong_sub N)) le_sup_left)
     (sup_le Γ.le_congruenceClosure fun γ hγ ↦ mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦ ?_)
-  exact hΔ.Gamma_strictLevel_le
-    (Gamma_le_Gamma_of_dvd ((strictLevel_dvd_of_le hle).trans hdvd) hγ)
+  exact hΔ.Gamma_le_iff_strictLevel_dvd.mpr ((strictLevel_dvd_of_le hle).trans hdvd) hγ
 
 /-- When `Γ` has nonzero strict level (in particular, when `Γ` has finite index), its congruence
 closure is `Γ ⊔ Γ(Γ.strictLevel)`. -/

@@ -42,7 +42,8 @@ theorem spectralFlow_tanh {a b : ℝ} (ha : a < 0) (hb : 0 ≤ b) :
     spectralFlow (fun s ↦ algebraMap ℝ (H →L[ℝ] H) (Real.tanh s)) a b =
       (Module.finrank ℝ H : ℤ) :=
   spectralFlow_algebraMap_comp_of_monotoneOn (ha.le.trans hb) Real.continuous_tanh.continuousOn
-    (Real.tanh_strictMono.monotone.monotoneOn _) (Real.tanh_neg_iff.2 ha) (Real.tanh_nonneg hb)
+    (Real.tanh_strictMono.monotone.monotoneOn _) (Real.tanh_neg_iff.2 ha)
+    (Real.tanh_nonneg_iff.2 hb)
 
 /-- The reversed path `s ↦ tanh (-s) • 1` from `a ≤ 0` to `b > 0` has spectral flow minus the
 dimension of `H`. -/
@@ -52,7 +53,7 @@ theorem spectralFlow_tanh_neg {a b : ℝ} (ha : a ≤ 0) (hb : 0 < b) :
   spectralFlow_algebraMap_comp_of_antitoneOn (ha.trans hb.le)
     (Real.continuous_tanh.comp continuous_neg).continuousOn
     (fun _ _ _ _ h ↦ Real.tanh_strictMono.monotone (neg_le_neg h))
-    (Real.tanh_neg_iff.2 (neg_neg_of_pos hb)) (Real.tanh_nonneg (neg_nonneg.2 ha))
+    (Real.tanh_neg_iff.2 (neg_neg_of_pos hb)) (Real.tanh_nonneg_iff.2 (neg_nonneg.2 ha))
 
 /-- For `A(s) = tanh s • 1`, the trajectory operator `d/ds - A` from `W^{1,2}(ℝ, H)` to `L²(ℝ, H)`
 has index minus the spectral flow of `A` from any `a < 0` to any `b ≥ 0`: both are computed, as
