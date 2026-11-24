@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.Projection.Stability
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Analysis.Normed.Algebra.Star
+import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Norm stability of matrix units in C⋆-algebras
@@ -96,6 +97,27 @@ private lemma norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ 
   have h3 : ‖x * p₂ - x‖ ≤ ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ :=
     norm_mul_sub_le_left x p₂ a₂ x
   nlinarith [norm_nonneg p₂]
+private lemma norm_proj_mul_sub_lt [NonUnitalCStarAlgebra A] {δ η : ℝ}
+    (hδ_η : δ ≤ η / 200) {x : ∀ r : κ, n r → n r → A} (hx : IsApproxMatrixUnitSystem δ x)
+    {p : ∀ r : κ, n r → A} (hp_proj : ∀ r i, IsStarProjection (p r i))
+    (hp_dist : ∀ r i, ‖p r i - x r i i‖ < η / 200) {r : κ} {i i₀ : n r}
+    (hx_le : ‖x r i i₀‖ ≤ 3) :
+    ‖p r i * x r i i₀ * p r i₀ - x r i i₀‖ < (8 / 200) * η := by
+  have hcomp := norm_mul_mul_sub_le (p r i) (x r i i) (x r i i₀) (x r i₀ i₀) (p r i₀)
+  have h1 : ‖p r i - x r i i‖ * ‖x r i i₀‖ < (3 / 200) * η := by
+    nlinarith [norm_nonneg (p r i - x r i i), hp_dist r i]
+  have h2 : ‖x r i i * x r i i₀ - x r i i₀‖ < (1 / 200) * η :=
+    (hx.norm_mul_same_sub_lt r i i i₀).trans_le (hδ_η.trans_eq (by ring))
+  have h3 : (‖p r i - x r i i‖ * ‖x r i i₀‖ + ‖x r i i * x r i i₀ - x r i i₀‖) * ‖p r i₀‖ ≤
+      (4 / 200) * η := by
+    have hp0 := (hp_proj r i₀).norm_le _
+    nlinarith [norm_nonneg (p r i₀), norm_nonneg (p r i - x r i i),
+      norm_nonneg (x r i i * x r i i₀ - x r i i₀)]
+  have h4 : ‖x r i i₀‖ * ‖p r i₀ - x r i₀ i₀‖ < (3 / 200) * η := by
+    nlinarith [norm_nonneg (p r i₀ - x r i₀ i₀), hp_dist r i₀]
+  have h5 : ‖x r i i₀ * x r i₀ i₀ - x r i i₀‖ < (1 / 200) * η :=
+    (hx.norm_mul_same_sub_lt r i i₀ i₀).trans_le (hδ_η.trans_eq (by ring))
+  linarith
 private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlgebra A] [Monoid 𝕜']
     [MulAction 𝕜' A] [SetLike S A] [NonUnitalSubringClass S A] [SMul ℝ 𝕜']
     [IsScalarTower ℝ 𝕜' A] [SMulMemClass S 𝕜' A] [StarMemClass S A] {s : S}
@@ -106,27 +128,16 @@ private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlg
     (hp_dist : ∀ r i, ‖p r i - x r i i‖ < η / 200) (r : κ) (i i₀ : n r) :
     ∃ v ∈ s, IsPartialIsometry v ∧ star v * v = p r i₀ ∧ v * star v = p r i ∧
       ‖v - x r i i₀‖ < 11 * η := by
+  -- Step 1: Compress `x r i i₀` by `p r i` and `p r i₀`, bounding `‖z‖` and `‖z - x r i i₀‖`.
   have hη_pos : 0 < η := by linarith [hp_dist r i, norm_nonneg (p r i - x r i i)]
   have hδ_half : δ ≤ 1 / 2 := hδ_η.trans (by linarith)
   have hx_le (a b : n r) : ‖x r a b‖ ≤ 3 := (hx.norm_lt_three hδ_half r a b).le
   set z : A := p r i * x r i i₀ * p r i₀
   have hz_norm : ‖z‖ ≤ 3 := (norm_mul_le_of_le (norm_mul_le_of_le ((hp_proj r i).norm_le _)
     (hx_le i i₀)) ((hp_proj r i₀).norm_le _)).trans_eq (by norm_num)
-  have hz_sub_x : ‖z - x r i i₀‖ < (8 / 200) * η := by
-    have hcomp := norm_mul_mul_sub_le (p r i) (x r i i) (x r i i₀) (x r i₀ i₀) (p r i₀)
-    have h1 : ‖p r i - x r i i‖ * ‖x r i i₀‖ < (3 / 200) * η := by
-      nlinarith [norm_nonneg (p r i - x r i i), hp_dist r i, hx_le i i₀]
-    have h2 : ‖x r i i * x r i i₀ - x r i i₀‖ < (1 / 200) * η :=
-      (hx.norm_mul_same_sub_lt r i i i₀).trans_le (hδ_η.trans_eq (by ring))
-    have h3 : (‖p r i - x r i i‖ * ‖x r i i₀‖ + ‖x r i i * x r i i₀ - x r i i₀‖) * ‖p r i₀‖ ≤
-        (4 / 200) * η := by
-      have hp0 := (hp_proj r i₀).norm_le _
-      nlinarith [norm_nonneg (p r i₀)]
-    have h4 : ‖x r i i₀‖ * ‖p r i₀ - x r i₀ i₀‖ < (3 / 200) * η := by
-      nlinarith [norm_nonneg (p r i₀ - x r i₀ i₀), hp_dist r i₀, hx_le i i₀]
-    have h5 : ‖x r i i₀ * x r i₀ i₀ - x r i i₀‖ < (1 / 200) * η :=
-      (hx.norm_mul_same_sub_lt r i i₀ i₀).trans_le (hδ_η.trans_eq (by ring))
-    linarith
+  have hz_sub_x : ‖z - x r i i₀‖ < (8 / 200) * η :=
+    norm_proj_mul_sub_lt hδ_η hx hp_proj hp_dist (hx_le i i₀)
+  -- Step 2: Estimate the initial and final defects `‖star z * z - p r i₀‖`, `‖z * star z - p r i‖`.
   have hz_init : ‖star z * z - p r i₀‖ < η :=
     (norm_star_mul_self_sub_lt_of_norm_le hz_norm (hx_le i i₀) hz_sub_x.le
       (hx.norm_star_sub_lt r i i₀) (hx.norm_mul_same_sub_lt r i₀ i i₀)
@@ -141,6 +152,7 @@ private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlg
     simpa only [star_star] using (norm_star_mul_self_sub_lt_of_norm_le (z := star z)
       ((norm_star z).le.trans hz_norm) (hx_le i₀ i) hstar_z_sub (hx.norm_star_sub_lt r i₀ i)
       (hx.norm_mul_same_sub_lt r i i₀ i) (hp_dist r i)).trans_le (by linarith)
+  -- Step 3: Apply polar perturbation to `z` to obtain the partial isometry `v`.
   obtain ⟨v, hv_mem, hv_pi, hv_init, hv_fin, hv_dist_z⟩ :=
     exists_isPartialIsometry_mem_of_approx (𝕜' := 𝕜') (s := s) (z := z) hη_le (hp_proj r i₀)
       (hp_proj r i) (mul_mem (mul_mem (hp_mem r i) (hx_mem r i i₀)) (hp_mem r i₀))
@@ -232,10 +244,10 @@ theorem exists_pos_forall_exists_isMatrixUnitSystem_norm_sub_lt {κ : Type*} (n 
       IsApproxMatrixUnitSystem δ x →
       ∃ e : ∀ r : κ, n r → n r → A, IsMatrixUnitSystem e ∧ ∀ r i j, ‖e r i j - x r i j‖ < ε :=
   let ⟨δ, hδ_pos, hδ⟩ := exists_pos_forall_exists_isMatrixUnitSystem_mem_norm_sub_lt n hε
-  ⟨δ, hδ_pos, fun {A} _ {_} hx ↦ by
-    have : IsClosed ((⊤ : NonUnitalStarSubalgebra ℝ A) : Set A) := by simp
-    obtain ⟨e, -, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
-      (fun _ _ _ ↦ NonUnitalStarAlgebra.mem_top) hx; exact ⟨e, h⟩⟩
+  ⟨δ, hδ_pos, fun {A} _ {_} hx ↦
+    let ⟨e, _, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
+      (fun _ _ _ ↦ NonUnitalStarAlgebra.mem_top) hx
+    ⟨e, h⟩⟩
 /-- **Uniform norm stability of unital finite matrix-unit systems in closed `𝕜'`-`⋆`-subalgebras**
 (scalar monoid `𝕜'` over `ℝ`): for `ε > 0` and finite `n`, some `δ > 0` (independent of `A, s`)
 puts `δ`-approx systems in `s` with `‖matrixUnitSupport x - 1‖ < δ` within `ε` of a unital one. -/
@@ -271,8 +283,8 @@ theorem exists_pos_forall_exists_isUnitalMatrixUnitSystem_norm_sub_lt {κ : Type
       IsApproxMatrixUnitSystem δ x → ‖matrixUnitSupport x - 1‖ < δ →
       ∃ e : ∀ r : κ, n r → n r → A, IsUnitalMatrixUnitSystem e ∧ ∀ r i j, ‖e r i j - x r i j‖ < ε :=
   let ⟨δ, hδ_pos, hδ⟩ := exists_pos_forall_exists_isUnitalMatrixUnitSystem_mem_norm_sub_lt n hε
-  ⟨δ, hδ_pos, fun {A} _ {_} hx hsupp ↦ by
-    have : IsClosed ((⊤ : NonUnitalStarSubalgebra ℝ A) : Set A) := by simp
-    obtain ⟨e, -, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
-      (fun _ _ _ ↦ NonUnitalStarAlgebra.mem_top) hx hsupp; exact ⟨e, h⟩⟩
+  ⟨δ, hδ_pos, fun {A} _ {_} hx hsupp ↦
+    let ⟨e, _, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
+      (fun _ _ _ ↦ NonUnitalStarAlgebra.mem_top) hx hsupp
+    ⟨e, h⟩⟩
 end TauCeti

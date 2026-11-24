@@ -335,7 +335,7 @@ def nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r 
     simp only [star_sum, star_smul, he.star_eq]
     refine Finset.sum_congr rfl fun r _ ↦ ?_
     rw [Finset.sum_comm]
-    rfl
+    simp [Pi.star_apply, Matrix.star_apply]
 
 /-- Unfold `IsMatrixUnitSystem.nonUnitalStarAlgHom`. -/
 theorem nonUnitalStarAlgHom_apply [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
@@ -378,15 +378,18 @@ theorem toSubmodule_range_nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R]
       Submodule.span 𝕜 {e r i j | (r : κ) (i : n r) (j : n r)} := by
   classical
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
-  · rintro _ ⟨x, rfl⟩
-    change he.nonUnitalStarAlgHom 𝕜 x ∈ _
+  · intro y hy
+    rw [NonUnitalSubalgebra.mem_toSubmodule, NonUnitalStarSubalgebra.mem_toNonUnitalSubalgebra,
+      NonUnitalStarAlgHom.mem_range] at hy
+    rcases hy with ⟨x, rfl⟩
     rw [he.nonUnitalStarAlgHom_apply]
     exact Submodule.sum_mem _ fun r _ ↦ Submodule.sum_mem _ fun i _ ↦
       Submodule.sum_mem _ fun j _ ↦
         Submodule.smul_mem _ _ (Submodule.subset_span ⟨r, i, j, rfl⟩)
   · rintro _ ⟨r, i, j, rfl⟩
-    exact (NonUnitalStarAlgHom.mem_range _).2
-      ⟨Pi.single r (Matrix.single i j 1), he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j⟩
+    rw [SetLike.mem_coe, NonUnitalSubalgebra.mem_toSubmodule,
+      NonUnitalStarSubalgebra.mem_toNonUnitalSubalgebra, NonUnitalStarAlgHom.mem_range]
+    exact ⟨Pi.single r (Matrix.single i j 1), he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j⟩
 
 /-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
 theorem injective_nonUnitalStarAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
@@ -490,10 +493,10 @@ theorem toSubmodule_range_starAlgHom {𝕜 : Type*} [CommSemiring 𝕜] [StarRin
       Submodule.span 𝕜 {e r i j | (r : κ) (i : n r) (j : n r)} := by
   rw [← he.toIsMatrixUnitSystem.toSubmodule_range_nonUnitalStarAlgHom 𝕜]
   ext x
-  simp only [Subalgebra.mem_toSubmodule, NonUnitalSubalgebra.mem_toSubmodule,
-    NonUnitalStarSubalgebra.mem_toNonUnitalSubalgebra, NonUnitalStarAlgHom.mem_range]
-  change x ∈ (he.starAlgHom 𝕜).toAlgHom.range ↔ _
-  simp only [AlgHom.mem_range, StarAlgHom.coe_toAlgHom, ← StarAlgHom.coe_toNonUnitalStarAlgHom,
+  simp only [Subalgebra.mem_toSubmodule, StarSubalgebra.mem_toSubalgebra,
+    StarAlgHom.range_eq_map_top, StarSubalgebra.mem_map, StarSubalgebra.mem_top, true_and,
+    NonUnitalSubalgebra.mem_toSubmodule, NonUnitalStarSubalgebra.mem_toNonUnitalSubalgebra,
+    NonUnitalStarAlgHom.mem_range, ← StarAlgHom.coe_toNonUnitalStarAlgHom,
     he.toNonUnitalStarAlgHom_starAlgHom]
 
 /-- Over a field, `he.starAlgHom 𝕜` is injective iff no nonempty block vanishes. -/

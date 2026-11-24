@@ -67,17 +67,15 @@ with `q * z = z`, `z * p = z`, `‖star z * z - p‖ < η`, `‖z * star z - q�
 partial isometry `v ∈ s` has `star v * v = p`, `v * star v = q`, `‖v - z‖ < 10 * η`. -/
 theorem exists_isPartialIsometry_mem_of_approx {𝕜' S : Type*} [Monoid 𝕜'] [MulAction 𝕜' A]
     [SetLike S A] [NonUnitalSubringClass S A] [SMul ℝ 𝕜'] [IsScalarTower ℝ 𝕜' A]
-    [SMulMemClass S 𝕜' A] [StarMemClass S A] {s : S} [hs : IsClosed (s : Set A)] {η : ℝ}
+    [SMulMemClass S 𝕜' A] [StarMemClass S A] {s : S} [IsClosed (s : Set A)] {η : ℝ}
     (hη : η ≤ 1 / 32) {p q z : A} (hp : IsStarProjection p) (hq : IsStarProjection q)
     (hzs : z ∈ s) (hqz : q * z = z) (hzp : z * p = z) (hinit : ‖star z * z - p‖ < η)
     (hfin : ‖z * star z - q‖ < η) :
     ∃ v ∈ s, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q ∧ ‖v - z‖ < 10 * η := by
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜' A
-  let s' : NonUnitalStarSubalgebra ℝ A := NonUnitalStarSubalgebra.ofClass s
-  have hs'_coe : (s' : Set A) = (s : Set A) := Set.ext fun _ ↦ mem_ofClass
-  have : IsClosed (s' : Set A) := hs'_coe ▸ hs
   obtain ⟨w, hw_mem_s', hw_sa, hwp, hwhw, hw_sub_p⟩ :=
-    corner_spectral_round hη hp (mem_ofClass.mpr hzs) hzp hinit
+    corner_spectral_round (s' := NonUnitalStarSubalgebra.ofClass s) hη hp (mem_ofClass.mpr hzs)
+      hzp hinit
   set v : A := z * w
   have hv_init : star v * v = p := by
     simpa only [v, star_mul, hw_sa.star_eq, mul_assoc] using hwhw
@@ -111,8 +109,9 @@ a partial isometry `v` has `star v * v = p`, `v * star v = q`, `‖v - z‖ < 10
 theorem exists_isPartialIsometry_of_approx {η : ℝ} (hη : η ≤ 1 / 32) {p q z : A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hqz : q * z = z) (hzp : z * p = z)
     (hinit : ‖star z * z - p‖ < η) (hfin : ‖z * star z - q‖ < η) :
-    ∃ v : A, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q ∧ ‖v - z‖ < 10 * η := by
-  let t : NonUnitalStarSubalgebra ℝ A := ⊤; have : IsClosed (t : Set A) := by simp [t]
-  obtain ⟨v, -, h⟩ := exists_isPartialIsometry_mem_of_approx (𝕜' := ℝ) (s := t)
-    hη hp hq NonUnitalStarAlgebra.mem_top hqz hzp hinit hfin; exact ⟨v, h⟩
+    ∃ v : A, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q ∧ ‖v - z‖ < 10 * η :=
+  let ⟨v, _, h⟩ := exists_isPartialIsometry_mem_of_approx (𝕜' := ℝ)
+    (s := (⊤ : NonUnitalStarSubalgebra ℝ A)) hη hp hq NonUnitalStarAlgebra.mem_top hqz hzp
+    hinit hfin
+  ⟨v, h⟩
 end TauCeti

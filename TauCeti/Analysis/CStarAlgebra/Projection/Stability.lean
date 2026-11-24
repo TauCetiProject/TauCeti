@@ -107,10 +107,10 @@ theorem exists_pos_forall_exists_isStarProjection_norm_sub_lt {ε : ℝ} (hε : 
     ∃ δ > 0, ∀ {A : Type*} [NonUnitalCStarAlgebra A] {e : A},
       ‖e - star e‖ < δ → ‖e * e - e‖ < δ → ∃ p : A, IsStarProjection p ∧ ‖p - e‖ < ε :=
   let ⟨δ, hδ_pos, hδ⟩ := exists_pos_forall_exists_isStarProjection_mem_norm_sub_lt hε
-  ⟨δ, hδ_pos, fun {A} _ {_} hsa hidem ↦ by
-    have : IsClosed ((⊤ : NonUnitalStarSubalgebra ℝ A) : Set A) := by simp
-    obtain ⟨p, -, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
-      NonUnitalStarAlgebra.mem_top hsa hidem; exact ⟨p, h⟩⟩
+  ⟨δ, hδ_pos, fun {A} _ {_} hsa hidem ↦
+    let ⟨p, _, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
+      NonUnitalStarAlgebra.mem_top hsa hidem
+    ⟨p, h⟩⟩
 section
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 private lemma orthoCorner_compress {s : NonUnitalStarSubalgebra ℝ A} {m : ℕ} {p₀ d₀ : Fin m → A}
@@ -235,14 +235,12 @@ theorem exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_mem_norm_
   cases nonempty_fintype ι; let σ := Fintype.equivFin ι
   obtain ⟨δ, hδ_pos, hδ⟩ :=
     exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_fin (Fintype.card ι) hε
-  refine ⟨δ, hδ_pos, fun {A 𝕜' S} _ _ _ _ _ _ _ _ _ {s} hs {d} hd_mem hd_sa hd_idem hd_ortho ↦ ?_⟩
+  refine ⟨δ, hδ_pos, fun {A 𝕜' S} _ _ _ _ _ _ _ _ _ {s} _ {d} hd_mem hd_sa hd_idem hd_ortho ↦ ?_⟩
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜' A
-  let s' : NonUnitalStarSubalgebra ℝ A := NonUnitalStarSubalgebra.ofClass s
-  have hs'_coe : (s' : Set A) = (s : Set A) := Set.ext fun _ ↦ NonUnitalStarSubalgebra.mem_ofClass
-  have : IsClosed (s' : Set A) := hs'_coe ▸ hs
-  obtain ⟨p, hp_mem, hp_proj, hp_ortho, hp_dist⟩ := hδ (s := s') (d := fun k ↦ d (σ.symm k))
-    (fun _ ↦ NonUnitalStarSubalgebra.mem_ofClass.mpr (hd_mem _))
-    (fun _ ↦ hd_sa _) (fun _ ↦ hd_idem _) (fun _ _ hkl ↦ hd_ortho _ _ (σ.symm.injective.ne hkl))
+  obtain ⟨p, hp_mem, hp_proj, hp_ortho, hp_dist⟩ :=
+    hδ (s := NonUnitalStarSubalgebra.ofClass s) (d := fun k ↦ d (σ.symm k))
+      (fun _ ↦ NonUnitalStarSubalgebra.mem_ofClass.mpr (hd_mem _))
+      (fun _ ↦ hd_sa _) (fun _ ↦ hd_idem _) (fun _ _ hkl ↦ hd_ortho _ _ (σ.symm.injective.ne hkl))
   exact ⟨fun i ↦ p (σ i), fun _ ↦ NonUnitalStarSubalgebra.mem_ofClass.mp (hp_mem _),
     fun _ ↦ hp_proj _, fun _ _ hij ↦ hp_ortho (σ.injective.ne hij),
     fun i ↦ by simpa using hp_dist (σ i)⟩
@@ -257,8 +255,8 @@ theorem exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_norm_sub_
         Pairwise (IsStarOrtho on p) ∧ ∀ i, ‖p i - d i‖ < ε :=
   let ⟨δ, hδ_pos, hδ⟩ :=
     exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_mem_norm_sub_lt ι hε
-  ⟨δ, hδ_pos, fun {A} _ {_} hd_sa hd_idem hd_ortho ↦ by
-    have : IsClosed ((⊤ : NonUnitalStarSubalgebra ℝ A) : Set A) := by simp
-    obtain ⟨p, -, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
-      (fun _ ↦ NonUnitalStarAlgebra.mem_top) hd_sa hd_idem hd_ortho; exact ⟨p, h⟩⟩
+  ⟨δ, hδ_pos, fun {A} _ {_} hd_sa hd_idem hd_ortho ↦
+    let ⟨p, _, h⟩ := hδ (𝕜' := ℝ) (s := (⊤ : NonUnitalStarSubalgebra ℝ A))
+      (fun _ ↦ NonUnitalStarAlgebra.mem_top) hd_sa hd_idem hd_ortho
+    ⟨p, h⟩⟩
 end TauCeti

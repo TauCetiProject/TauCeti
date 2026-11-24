@@ -150,10 +150,14 @@ private def mulCorner (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSelfAdjo
     by rw [smul_mul_assoc, ha.2.2, smul_comm]⟩
   star_mem' ha := ⟨star_mem ha.1, by rw [← hp.star_eq, ← star_mul, ha.2.2, star_nsmul],
     by rw [← hp.star_eq, ← star_mul, ha.2.1, star_nsmul]⟩
+private theorem mem_mulCorner {s : NonUnitalStarSubalgebra R A} {p : A} {hp : IsSelfAdjoint p}
+    {c : ℕ} {a : A} :
+    a ∈ s.mulCorner hp c ↔ a ∈ s ∧ p * a = c • a ∧ a * p = c • a := Iff.rfl
 /-- Fixed corner `{a ∈ s | p * a = a ∧ a * p = a}` (`p s p` when `p ∈ s` is a star projection). -/
 def corner (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSelfAdjoint p) :
     NonUnitalStarSubalgebra R A :=
-  (s.mulCorner hp 1).copy {a : A | a ∈ s ∧ p * a = a ∧ a * p = a} (by ext; simp [mulCorner]; rfl)
+  (s.mulCorner hp 1).copy {a : A | a ∈ s ∧ p * a = a ∧ a * p = a}
+    (Set.ext fun _ ↦ by simp [mem_mulCorner])
 /-- Underlying set of `NonUnitalStarSubalgebra.corner`. -/
 theorem coe_corner (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSelfAdjoint p) :
     (s.corner hp : Set A) = {a : A | a ∈ s ∧ p * a = a ∧ a * p = a} := (rfl)
@@ -185,7 +189,8 @@ theorem coe_corner_eq_image (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSt
 ring when `p ∈ s` is a star projection and `s` is closed under subtraction). -/
 def orthoCorner (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSelfAdjoint p) :
     NonUnitalStarSubalgebra R A :=
-  (s.mulCorner hp 0).copy {a : A | a ∈ s ∧ p * a = 0 ∧ a * p = 0} (by ext; simp [mulCorner]; rfl)
+  (s.mulCorner hp 0).copy {a : A | a ∈ s ∧ p * a = 0 ∧ a * p = 0}
+    (Set.ext fun _ ↦ by simp [mem_mulCorner])
 /-- Underlying set of `NonUnitalStarSubalgebra.orthoCorner`. -/
 theorem coe_orthoCorner (s : NonUnitalStarSubalgebra R A) {p : A} (hp : IsSelfAdjoint p) :
     (s.orthoCorner hp : Set A) = {a : A | a ∈ s ∧ p * a = 0 ∧ a * p = 0} := (rfl)
