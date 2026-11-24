@@ -11,6 +11,8 @@ import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Path-connected exteriors of closed balls and of unions of bounded closed convex sets
@@ -70,39 +72,6 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
 
-/-- In a real normed space of dimension at least two, any two continuous linear functionals admit a
-nonzero vector on which both are nonpositive. -/
-private theorem exists_ne_zero_continuousLinearMap_nonpos
-    (h : 1 < Module.rank ℝ E) (f₁ f₂ : E →L[ℝ] ℝ) :
-    ∃ v : E, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
-  have hnot_inj : ¬Function.Injective f₁.toLinearMap := fun hinj => by
-    have hrank := f₁.toLinearMap.lift_rank_le_of_injective hinj
-    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
-    exact h.not_ge hrank
-  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
-    (mt LinearMap.ker_eq_bot.mp hnot_inj)
-  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
-  rcases le_total (f₂ v₀) 0 with h2 | h2
-  · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
-  · exact ⟨-v₀, neg_ne_zero.mpr hv₀_ne, by simp [hv₀_f₁], by simpa using h2⟩
-
-/-- Along any nonzero direction `v`, a sufficiently large positive ray parameter pushes `z` outside
-the closed ball `closedBall 0 R`. -/
-private theorem exists_pos_add_smul_notMem_closedBall
-    (z : E) {v : E} (hv : v ≠ 0) {R : ℝ} (hR : 0 ≤ R) :
-    ∃ T : ℝ, 0 < T ∧ z + T • v ∈ (closedBall (0 : E) R)ᶜ := by
-  let T : ℝ := (R + ‖z‖ + 1) / ‖v‖
-  have hT_pos : 0 < T := div_pos (by linarith [hR, norm_nonneg z]) (norm_pos_iff.mpr hv)
-  refine ⟨T, hT_pos, ?_⟩
-  rw [mem_compl_iff, mem_closedBall_zero_iff, not_le]
-  have hnorm : T * ‖v‖ = R + ‖z‖ + 1 := by
-    dsimp only [T]
-    exact div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hv)
-  have htri := norm_le_norm_add_norm_sub' (T • v) (-z)
-  rw [sub_neg_eq_add, add_comm (T • v) z, norm_smul, Real.norm_of_nonneg hT_pos.le,
-    norm_neg, hnorm] at htri
-  linarith
-
 /-- **The exterior of a union of two bounded closed convex sets is path-connected** in a real
 normed space of dimension at least two. -/
 theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
@@ -115,7 +84,6 @@ theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
   obtain ⟨R₁, hs₁⟩ := hs_bdd.subset_closedBall (0 : E)
   obtain ⟨R₂, ht₁⟩ := ht_bdd.subset_closedBall (0 : E)
   let R : ℝ := max 0 (max R₁ R₂)
-  have hR_nonneg : 0 ≤ R := le_max_left _ _
   have hRU : (closedBall (0 : E) R)ᶜ ⊆ U := by
     refine compl_subset_compl.mpr (union_subset ?_ ?_)
     · exact hs₁.trans (closedBall_subset_closedBall ((le_max_left R₁ R₂).trans (le_max_right 0 _)))
@@ -130,8 +98,10 @@ theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
   rw [mem_compl_iff, mem_union, not_or] at hz
   obtain ⟨f₁, c₁, hfz₁, hfc₁⟩ := geometric_hahn_banach_point_closed hs hs_closed hz.1
   obtain ⟨f₂, c₂, hfz₂, hfc₂⟩ := geometric_hahn_banach_point_closed ht ht_closed hz.2
-  obtain ⟨v, hv_ne, hv_f₁, hv_f₂⟩ := exists_ne_zero_continuousLinearMap_nonpos h f₁ f₂
-  obtain ⟨T, hT_pos, hzT_R⟩ := exists_pos_add_smul_notMem_closedBall z hv_ne hR_nonneg
+  obtain ⟨v, hv_ne, hv_f₁, hv_f₂⟩ :=
+    Module.Dual.exists_ne_zero_apply_nonpos h f₁.toLinearMap f₂.toLinearMap
+  obtain ⟨T, hT_pos, hzT_R⟩ :=
+    exists_pos_add_smul_notMem_closedBall z 0 (norm_ne_zero_iff.mpr hv_ne) R
   have hjoin_ray : JoinedIn U z (z + T • v) := by
     refine JoinedIn.of_segment_subset ?_
     rw [segment_eq_image_lineMap]
@@ -141,8 +111,8 @@ theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
       simp only [AffineMap.lineMap_apply_module]
       module
     rw [hline, mem_compl_iff, mem_union, not_or]
-    exact ⟨add_smul_notMem_of_continuousLinearMap_lt hfz₁ hfc₁ hv_f₁ hτ0,
-      add_smul_notMem_of_continuousLinearMap_lt hfz₂ hfc₂ hv_f₂ hτ0⟩
+    exact ⟨add_smul_notMem_of_linearMap_lt (fun y hy => hfz₁.trans (hfc₁ y hy)) hv_f₁ hτ0,
+      add_smul_notMem_of_linearMap_lt (fun y hy => hfz₂.trans (hfc₂ y hy)) hv_f₂ hτ0⟩
   exact ((hjoin_ray.trans ((isPathConnected_compl_closedBall h 0 R).joinedIn
     (z + T • v) hzT_R p₀ hp₀R |>.mono hRU)).symm)
 

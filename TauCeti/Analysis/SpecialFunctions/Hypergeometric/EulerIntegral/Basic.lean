@@ -16,6 +16,7 @@ import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -183,44 +184,6 @@ theorem eulerIntegral_zero (a : ℂ) {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c
     eulerIntegral a b c 0 = (Gamma c)⁻¹ := by
   simpa [eulerIntegral_def] using eulerIntegral_zero_left hb hcb 0
 
-/-- When the first upper parameter is `-n` and `0 < b.re < c.re`, the normalized Euler integral
-`eulerIntegral (-n) b c z` equals the terminating series `regularizedGaussHGFun (-n) b c z` at
-every complex `z`, including points on `[1, ∞)` where the non-polynomial kernel has a cut. -/
-theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
-    eulerIntegral (-n) b c z = regularizedGaussHGFun (-n) b c z := by
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  have hbk (k : ℕ) : 0 < (b + k).re := by simp; linarith [k.cast_nonneg (α := ℝ)]
-  rw [eulerIntegral_def, regularizedGaussHGFun_neg_natCast]
-  have hae : EqOn
-      (fun t : ℝ => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
-        (1 - z * (t : ℂ)) ^ (-(-(n : ℂ))))
-      (fun t : ℝ => ∑ k ∈ Finset.range (n + 1),
-        (-1) ^ k * n.choose k * z ^ k *
-          ((t : ℂ) ^ (b + k - 1) * (1 - (t : ℂ)) ^ (c - b - 1))) (uIoc 0 1) := by
-    intro t ht
-    rw [uIoc_of_le zero_le_one] at ht
-    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.1.ne'
-    have h1zt : (1 : ℂ) - z * (t : ℂ) = -z * (t : ℂ) + 1 := by ring
-    dsimp only
-    rw [neg_neg, cpow_natCast, h1zt, (Commute.all (-z * (t : ℂ)) 1).add_pow, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    have hpow : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ k = (t : ℂ) ^ (b + k - 1) := by
-      rw [← cpow_natCast, ← cpow_add _ _ ht0]
-      congr 1; ring
-    rw [one_pow, mul_one, mul_pow, neg_eq_neg_one_mul, mul_pow]
-    linear_combination (-1) ^ k * n.choose k * z ^ k * (1 - (t : ℂ)) ^ (c - b - 1) * hpow
-  rw [intervalIntegral.integral_congr_ae (ae_of_all _ hae),
-    intervalIntegral.integral_finsetSum fun k _ =>
-      (betaIntegral_convergent (hbk k) hcb).const_mul _, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [intervalIntegral.integral_const_mul, ← betaIntegral,
-    betaIntegral_eq_Gamma_mul_div (b + k) (c - b) (hbk k) hcb, add_right_comm b (k : ℂ) (c - b),
-    add_sub_cancel]
-  have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
-  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
-  rw [← Gamma_add_nat_div_Gamma_eq (n := k) b (ne_neg_natCast_of_re_pos hb)]
-  field
-
 private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
     (Gamma b * Gamma (c - b))⁻¹ *
@@ -241,10 +204,7 @@ private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ}
     rw [mul_pow]
     linear_combination Ring.multichoose a n * z ^ n * (1 - (t : ℂ)) ^ (c - b - 1) * hpow
   have hmc : Ring.multichoose a n = (ascPochhammer ℂ n).eval a / n.factorial := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    have hfac : (n.factorial : ℂ) ≠ 0 := mod_cast Nat.factorial_ne_zero n
-    rw [← h, mul_div_cancel_left₀ _ hfac]
+    rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, inv_mul_eq_div]
   have hbn_re : 0 < (b + n).re := by
     simp only [add_re, natCast_re]
     linarith [n.cast_nonneg (α := ℝ)]
@@ -253,6 +213,34 @@ private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ}
   rw [hint, betaIntegral_eq_Gamma_mul_div (b + n) (c - b) hbn_re hcb, hbnc, hmc,
     coeff_regularizedGaussHGFunSeries, ← hpoch]
   field_simp [Gamma_ne_zero_of_re_pos hb, Gamma_ne_zero_of_re_pos hcb]
+
+/-- When the first upper parameter is `-n` and `0 < b.re < c.re`, the normalized Euler integral
+`eulerIntegral (-n) b c z` equals the terminating series `regularizedGaussHGFun (-n) b c z` at
+every complex `z`, including points on `[1, ∞)` where the non-polynomial kernel has a cut. -/
+theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
+    eulerIntegral (-n) b c z = regularizedGaussHGFun (-n) b c z := by
+  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
+  have hmc (k : ℕ) : Ring.multichoose (-(n : ℂ)) k = (-1) ^ k * (n.choose k : ℂ) := by
+    rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+      ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
+      Nat.descFactorial_eq_factorial_mul_choose]
+    push_cast
+    rw [mul_left_comm, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr k.factorial_ne_zero)]
+  have hpoly (t : ℝ) : (1 - z * (t : ℂ)) ^ (-(-(n : ℂ))) =
+      ∑ k ∈ Finset.range (n + 1), Ring.multichoose (-(n : ℂ)) k * (z * (t : ℂ)) ^ k := by
+    rw [neg_neg, cpow_natCast, show (1 : ℂ) - z * (t : ℂ) = -(z * (t : ℂ)) + 1 by ring,
+      (Commute.all (-(z * (t : ℂ))) 1).add_pow]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [hmc k, one_pow, mul_one, neg_eq_neg_one_mul, mul_pow]
+    ring
+  rw [eulerIntegral_def]
+  simp_rw [hpoly, Finset.mul_sum]
+  rw [intervalIntegral.integral_finsetSum fun k _ =>
+      (betaIntegral_convergent hb hcb).mul_continuousOn (by fun_prop),
+    Finset.mul_sum, regularizedGaussHGFun_neg_natCast_eq_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [inv_Gamma_mul_integral_multichoose_mul_pow (-(n : ℂ)) hb hbc z k,
+    coeff_regularizedGaussHGFunSeries]
 
 /-- **Euler's integral representation** (DLMF 15.6.1) on the open unit disk: when
 `0 < b.re < c.re` and `‖z‖ < 1`, `regularizedGaussHGFun a b c z` equals `eulerIntegral a b c z`. -/

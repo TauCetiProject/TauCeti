@@ -62,10 +62,6 @@ with no condition on the lower parameters.
 * `Complex.hasSum_regularizedHGFun_of_card_eq_add_one`,
   `Complex.summable_norm_regularizedHGFun_of_card_eq_add_one` — unit-disk `HasSum` and absolute
   convergence when `a.card = b.card + 1`.
-* `Complex.regularizedGaussHGFun_eq_regularizedHGFun`,
-  `Complex.regularizedGaussHGFunSeries_eq_regularizedHGFunSeries` — identifications of
-  `regularizedGaussHGFun a b c` and its power series with `regularizedHGFun {a, b} {c}` and
-  `regularizedHGFunSeries {a, b} {c}`.
 * `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
   converges to it on the open unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
@@ -143,19 +139,9 @@ theorem regularizedHGFun_of_zero_mem {a b : Multiset ℂ} (h : (0 : ℂ) ∈ a) 
   · intro n hn
     simp [regularizedHGFunCoeff_eq_zero_left a b n 0 (by simpa using h) (Nat.pos_of_ne_zero hn)]
 
-/-- `regularizedGaussHGFunSeries a b c` is `regularizedHGFunSeries {a, b} {c}`. -/
-theorem regularizedGaussHGFunSeries_eq_regularizedHGFunSeries (a b c : ℂ) :
-    regularizedGaussHGFunSeries a b c = regularizedHGFunSeries {a, b} {c} :=
-  rfl
-
-/-- `regularizedGaussHGFun a b c z` is `regularizedHGFun {a, b} {c} z`. -/
-theorem regularizedGaussHGFun_eq_regularizedHGFun (a b c z : ℂ) :
-    regularizedGaussHGFun a b c z = regularizedHGFun {a, b} {c} z :=
-  rfl
-
 private theorem regularizedHGFunCoeff_pair_singleton (a b c : ℂ) (k : ℕ) :
     regularizedHGFunCoeff {a, b} {c} k = (regularizedGaussHGFunSeries a b c).coeff k := by
-  rw [regularizedGaussHGFunSeries_eq_regularizedHGFunSeries, regularizedHGFunSeries_coeff]
+  rw [regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff]
 
 /-- Inside the convergence ball of `regularizedHGFunSeries a b`, the regularized hypergeometric
 series converges to `regularizedHGFun a b z`. -/
@@ -202,8 +188,8 @@ to `regularizedGaussHGFun a b c z`. -/
 theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n)
       (regularizedGaussHGFun a b c z) := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun]
-  simpa only [regularizedHGFunCoeff_pair_singleton] using
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
+  simpa only [regularizedHGFunSeries_coeff] using
     hasSum_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
       (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
 
@@ -470,8 +456,9 @@ theorem hasFPowerSeriesOnBall_regularizedGaussHGFun (a b c : ℂ) :
 point of the open unit disk. -/
 theorem analyticAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     AnalyticAt ℂ (regularizedGaussHGFun a b c) z := by
-  have hfun : regularizedGaussHGFun a b c = regularizedHGFun {a, b} {c} :=
-    funext (regularizedGaussHGFun_eq_regularizedHGFun a b c)
+  have hfun : regularizedGaussHGFun a b c = regularizedHGFun {a, b} {c} := by
+    ext w
+    rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, regularizedHGFun]
   rw [hfun]
   exact analyticAt_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
     (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
@@ -493,7 +480,7 @@ complex parameters `a`, `b`, `c`. -/
 @[simp]
 theorem regularizedGaussHGFun_zero (a b c : ℂ) :
     regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun, regularizedHGFun_zero]
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun, regularizedHGFun_zero]
   simp [regularizedHGFunCoeff]
 
 /-- On the open unit disk, the power series of `regularizedGaussHGFun a b c` is summable. -/
@@ -510,7 +497,7 @@ theorem regularizedGaussHGFun_neg_natCast_eq_sum (b c z : ℂ) (n : ℕ) :
       ∑ k ∈ Finset.range (n + 1),
         (ascPochhammer ℂ k).eval (-(n : ℂ)) * (ascPochhammer ℂ k).eval b /
           (k ! * Gamma (c + k)) * z ^ k := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun]
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
   simpa only [regularizedHGFunCoeff_pair_singleton, coeff_regularizedGaussHGFunSeries] using
     regularizedHGFun_eq_sum_range_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (by simp) z
 
@@ -536,7 +523,8 @@ every complex argument `z`. -/
 @[simp]
 theorem regularizedGaussHGFun_zero_left (b c z : ℂ) :
     regularizedGaussHGFun 0 b c z = (Gamma c)⁻¹ := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun, regularizedHGFun_of_zero_mem (by simp)]
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun,
+    regularizedHGFun_of_zero_mem (by simp)]
   simp
 
 /-- With second upper parameter `0`, `regularizedGaussHGFun a 0 c z` reduces to `(Gamma c)⁻¹` at
@@ -551,8 +539,8 @@ hypergeometric series converges to `regularizedGaussHGFun (-n) b c z` at every c
 theorem hasSum_regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
     HasSum (fun k : ℕ => (regularizedGaussHGFunSeries (-n) b c).coeff k * z ^ k)
       (regularizedGaussHGFun (-n) b c z) := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun]
-  simpa only [← regularizedHGFunCoeff_pair_singleton] using
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
+  simpa only [regularizedHGFunSeries_coeff] using
     hasSum_regularizedHGFun_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (n := n)
       (by simp) z
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
 /-!
@@ -17,11 +18,7 @@ the seminorm is not normalized. The same holds after multiplication by bounded c
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
 test. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. In a normed division ring, if
-the partial sums of a power series at `w` are Cauchy, then multiplying its coefficients by `n ^ k`
-keeps the series absolutely summable at every `z` with `‖z‖ < ‖w‖`
-(`TauCeti.summable_norm_pow_mul_powerSeries_of_norm_lt`), and summable when the ring is complete
-(`TauCeti.summable_pow_mul_powerSeries_of_norm_lt`); in particular, for a real sequence whose
+series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. For a real sequence whose
 weighted series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or `(s + 1)` with
 a shifted exponent preserves summability inside `R`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
@@ -117,52 +114,35 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
 
-/-- If the partial sums of a power series at `w` are Cauchy, then multiplying its coefficients by
-`n ^ k` preserves absolute summability at all `z` of smaller norm, without requiring
-completeness. -/
-theorem summable_norm_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
-    (k : ℕ) {f : ℕ → α} {w z : α}
-    (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
-    Summable fun n : ℕ ↦ ‖(n : α) ^ k * f n * z ^ n‖ := by
-  have hw : 0 < ‖w‖ := (norm_nonneg z).trans_lt hz
-  obtain ⟨C, hC⟩ := exists_norm_le_of_cauchySeq h
-  have hgeom : Summable fun n : ℕ ↦ C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) :=
-    (summable_pow_mul_geometric_of_norm_lt_one k
-      (by rwa [Real.norm_of_nonneg (by positivity), div_lt_one hw])).mul_left C
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hgeom
-  have hn : ‖((n : α) ^ k : α)‖ ≤ (n : ℝ) ^ k := by
-    rw [norm_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using Nat.norm_cast_le (α := α) n) k
-  have hf : ‖f n‖ ≤ C / ‖w‖ ^ n := by
-    have h1 := hC n
-    rwa [norm_mul, norm_pow, ← le_div_iff₀ (pow_pos hw n)] at h1
-  calc ‖(n : α) ^ k * f n * z ^ n‖
-      = ‖(n : α) ^ k‖ * ‖f n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_mul, norm_pow z]
-    _ ≤ (n : ℝ) ^ k * (C / ‖w‖ ^ n) * ‖z‖ ^ n := by gcongr
-    _ = C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) := by rw [div_pow]; ring
-
-/-- If a power series converges at `w` in a complete normed division ring, then multiplying its
-coefficients by `n ^ k` preserves summability at all `z` of smaller norm. -/
-theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
-    [CompleteSpace α] (k : ℕ) {f : ℕ → α} {w z : α}
-    (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
-    Summable fun n : ℕ ↦ (n : α) ^ k * f n * z ^ n :=
-  (summable_norm_pow_mul_powerSeries_of_norm_lt k h hz).of_norm
-
 /-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
 the radius `R`. -/
 theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
     (hf : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun s : ℕ => f s * r ^ s)
     {r : ℝ} (hr0 : 0 ≤ r) (hr : r < R) :
     Summable fun s : ℕ => (s : ℝ) * f s * r ^ s := by
-  let w : ℝ := (r + R) / 2
-  have hwR : w < R := add_div_two_lt_right.mpr hr
-  have hrw_lt : r < w := left_lt_add_div_two.mpr hr
-  have hw0 : 0 ≤ w := hr0.trans hrw_lt.le
-  have hrw : ‖r‖ < ‖w‖ := by
-    rwa [Real.norm_of_nonneg hr0, Real.norm_of_nonneg hw0]
-  simpa only [pow_one] using summable_pow_mul_powerSeries_of_norm_lt 1
-    ((hf w hw0 hwR).hasSum.tendsto_sum_nat.cauchySeq) hrw
+  have hR_pos : 0 < R := hr0.trans_lt hr
+  have hrad : ENNReal.ofReal R ≤ (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine FormalMultilinearSeries.le_radius_ofScalars_of_summable f fun z _ hz => ?_
+    rw [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff hR_pos] at hz
+    let w : ℝ := (‖z‖ + R) / 2
+    have hzw : ‖z‖ < w := left_lt_add_div_two.mpr hz
+    have hwR : w < R := add_div_two_lt_right.mpr hz
+    have hw0 : 0 < w := (norm_nonneg z).trans_lt hzw
+    obtain ⟨C, hC⟩ := bddAbove_def.mp
+      (hf w hw0.le hwR).tendsto_atTop_zero.norm.bddAbove_range
+    refine Summable.of_norm_bounded ((summable_geometric_of_lt_one (by positivity)
+      ((div_lt_one hw0).mpr hzw)).mul_left C) fun s => ?_
+    have hsw : ‖f s‖ * w ^ s ≤ C := by
+      have hs : ‖f s * w ^ s‖ ≤ C := hC _ ⟨s, rfl⟩
+      rwa [norm_mul, norm_pow, Real.norm_of_nonneg hw0.le] at hs
+    calc ‖f s * z ^ s‖ = ‖f s‖ * ‖z‖ ^ s := by rw [norm_mul, norm_pow]
+      _ = (‖f s‖ * w ^ s) * (‖z‖ / w) ^ s := by
+        rw [div_pow ‖z‖ w, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero s hw0.ne')]
+      _ ≤ C * (‖z‖ / w) ^ s := mul_le_mul_of_nonneg_right hsw (by positivity)
+  have hnorm : ‖r‖ₑ < (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine lt_of_lt_of_le ?_ hrad
+    rwa [← ofReal_norm, Real.norm_of_nonneg hr0, ENNReal.ofReal_lt_ofReal_iff hR_pos]
+  exact (FormalMultilinearSeries.summable_norm_natCast_mul_ofScalars f hnorm).of_norm
 
 /-- Summability of `n * f n * r ^ n` and `f n * r ^ n` yields summability of
 `(n + 1) * f n * r ^ (n + 1)`. -/

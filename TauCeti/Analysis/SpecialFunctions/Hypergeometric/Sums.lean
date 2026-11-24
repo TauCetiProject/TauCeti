@@ -84,14 +84,6 @@ namespace Complex
 
 /-! ### DLMF 15.15.1 on the Euler integral range -/
 
-/-- Pointwise norm bound on the factored Euler kernel ratio on `[0, 1]`. -/
-private theorem norm_eulerKernel_ratio_le {z z₀ : ℂ} (hz₀ : z₀ ≠ 0) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) :
-    ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
-  rw [TauCeti.one_sub_inv_mul_mul_inv_one_sub_div hz₀ (t : ℂ), norm_div, norm_sub_rev z₀ z]
-  exact div_le_div_of_nonneg_right (TauCeti.norm_sub_ofReal_le_max_of_mem_Icc z₀ ht)
-    (norm_nonneg _)
-
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
     (hz : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
@@ -105,7 +97,8 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
   have hzz₀ : z ≠ z₀ := dist_pos.mp (by simpa [dist_eq_norm] using hzz₀_pos)
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have hvt_lt : ‖vt‖ < 1 :=
-    (norm_eulerKernel_ratio_le hz₀ ht).trans_lt ((div_lt_one hzz₀_pos).mpr hz)
+    (TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀ ht).trans_lt
+      ((div_lt_one hzz₀_pos).mpr hz)
   let w₁ : ℂ := 1 - z₀ / z
   have hw₁_re : 0 < w₁.re := TauCeti.one_sub_div_re_pos h_ext
   have hw₁a_ne : w₁ ^ a ≠ 0 :=
@@ -141,7 +134,8 @@ private theorem norm_eulerKernel_inv_term_le (a b c : ℂ) {z z₀ : ℂ} (hz₀
   rw [h_rearrange, norm_mul W, norm_mul (_ / _), norm_pow]
   gcongr
   exacts [(norm_nonneg _).trans hpoch_norm,
-    norm_eulerKernel_ratio_le hz₀ (Ioc_subset_Icc_self ht)]
+    TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀
+      (Ioc_subset_Icc_self ht)]
 
 /-- **Inverse-argument expansion of Euler's hypergeometric integral** (DLMF 15.15.1).
 For `0 < b.re < c.re`, `z₀ ≠ 0`, and `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`, the series in terminating
@@ -214,7 +208,10 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z�
       intro t ht
       rw [norm_pow]
       gcongr
-      simpa using norm_eulerKernel_ratio_le (z := 0) hz₀ (Ioc_subset_Icc_self ht)
+      have hrat := TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc
+        (z := 0) hz₀ (Ioc_subset_Icc_self ht)
+      rw [zero_div, sub_zero, inv_one, mul_one, zero_sub, norm_neg] at hrat
+      exact hrat
     calc ‖∫ t : ℝ in 0..1, W t * (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ)))‖
         ≤ ∫ t : ℝ in 0..1, ‖W t‖ * (M / ‖z₀‖) ^ s := by
           refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
@@ -375,7 +372,7 @@ private theorem mem_eball_invExpansionSeries (a b c : ℂ) {z z₀ : ℂ} (hz₀
     (1 - z / z₀)⁻¹ ∈ Metric.eball (0 : ℂ) (invExpansionSeries a b c z₀).radius := by
   have hM0 : 0 < max ‖z₀‖ ‖z₀ - 1‖ := (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
   have hu_norm : ‖(1 - z / z₀)⁻¹‖ < ‖z₀‖ / max ‖z₀‖ ‖z₀ - 1‖ := by
-    rw [TauCeti.inv_one_sub_div hz₀, norm_div, norm_sub_rev z₀ z]
+    rw [one_sub_div hz₀, inv_div, norm_div, norm_sub_rev z₀ z]
     exact div_lt_div_of_pos_left (norm_pos_iff.mpr hz₀) hM0 hz
   refine Metric.eball_subset_eball (le_radius_invExpansionSeries a b c hz₀) ?_
   rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm,
@@ -536,7 +533,9 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
   have hz1 : 1 < ‖z‖ := by linarith [norm_sub_le z z₀]
   have hz_ne : z ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans hz1)
   let u : ℂ := (1 - z / z₀)⁻¹
-  have hu_eq : u = z₀ / (z₀ - z) := TauCeti.inv_one_sub_div hz₀
+  have hu_eq : u = z₀ / (z₀ - z) := by
+    dsimp only [u]
+    rw [one_sub_div hz₀, inv_div]
   have hu_lt : ‖u‖ < 1 := by
     rw [hu_eq, norm_div, norm_sub_rev z₀ z, div_lt_one hzz₀_pos]; linarith
   have hρ_lt : ‖u‖ / (‖z₀‖ * (1 - ‖u‖)) < 1 := by
