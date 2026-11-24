@@ -33,7 +33,8 @@ assume instead that the inclusion `φ⁻¹(U) ⟶ S'` is quasi-compact.
   and agrees with `X ×_S S'` over `φ⁻¹(U)` *as closed subschemes* (its ideal sheaf pulls back to
   `⊥` on `V`) is the strict transform (`strictTransform_unique_of_flat`). The density hypothesis
   holds when `S'` is reduced, for instance integral, and `φ⁻¹(U)` is topologically dense, as for
-  a modification witness (`strictTransform_unique_of_flat_of_dense`). Agreement of supports
+  a modification witness (`strictTransform_unique_of_flat_of_dense`); the quasi-compactness of
+  the inclusion is still assumed there, also for integral `S'`. Agreement of supports
   alone does not suffice: for `X = Spec k[ε]/(ε²)` over `S = S' = Spec k` with `φ` the identity,
   both `X` and its reduced point are flat over `S'` with the same support, and only `X` is the
   strict transform.
@@ -244,7 +245,8 @@ theorem strictTransform_unique_of_flat (I : (pullback f φ).IdealSheafData)
 /-- **Uniqueness of flat closed subschemes, for a dense preimage.** For `S'` reduced, for
 instance integral, and `φ⁻¹(U)` dense in `S'` (as for a modification witness `U` of `φ`) with
 quasi-compact inclusion, a closed subscheme of `X ×_S S'` flat over `S'` that agrees with
-`X ×_S S'` over `φ⁻¹(U)` as closed subschemes is the strict transform. -/
+`X ×_S S'` over `φ⁻¹(U)` as closed subschemes is the strict transform. The quasi-compactness
+hypothesis is not dropped for integral `S'`: it holds for instance when `S'` is noetherian. -/
 theorem strictTransform_unique_of_flat_of_dense [IsReduced S'] (h : Dense (SetLike.coe (φ ⁻¹ᵁ U)))
     [QuasiCompact (φ ⁻¹ᵁ U).ι] (I : (pullback f φ).IdealSheafData)
     [Flat (I.subschemeι ≫ pullback.snd f φ)]
