@@ -12,9 +12,7 @@ public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.AEMeasurableSequence
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # First Riesz sums and their Mellin transforms
@@ -38,6 +36,9 @@ When `LSeriesSummable a s` at `s : ℂ` with `1 < s.re`, the Mellin transform
 
 * H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I*, Chapter 5.
 * E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, §3.12 and §9.
+* L. Alpöge's formalization of the generalized Riemann hypothesis for the Riesz-sum definition and
+  ramp-term Mellin transform (`Deduction.ramp`, `Formalism.HC.An.sumLamChi`, `Formalism.Sz`, and
+  `Deduction.mellin_ramp`).
 -/
 
 public section
@@ -317,9 +318,10 @@ private theorem rampTerm_mul_cpow_ae_eq (a : ℕ → ℂ) (n : ℕ) (s : ℂ) :
         Set.indicator_of_mem (Set.mem_Ioi.mpr hy_gt), mul_assoc]
   · simp [rampTerm, hn1]
 
-private theorem integral_norm_rpow_eq (a : ℕ → ℂ) {n : ℕ} (hn0 : n ≠ 0) {s : ℂ}
-    (hs : 1 < s.re) :
+private theorem integral_norm_rpow_eq (a : ℕ → ℂ) (n : ℕ) {s : ℂ} (hs : 1 < s.re) :
     ∫ y in Set.Ioi (n : ℝ), (‖a n‖ / n) * y ^ (-s.re) = ‖LSeries.term a s n‖ / (s.re - 1) := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp
   have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0
   have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
   have hlt : -s.re < -1 := by linarith
@@ -333,9 +335,11 @@ private theorem integral_norm_rpow_eq (a : ℕ → ℂ) {n : ℕ} (hn0 : n ≠ 0
   rw [h1, Real.rpow_neg hnpos.le, show -s.re + 1 = -(s.re - 1) by ring]
   field_simp
 
-private theorem norm_rampTerm_mul_cpow_ae_le (a : ℕ → ℂ) {n : ℕ} (hn0 : n ≠ 0) (s : ℂ) :
+private theorem norm_rampTerm_mul_cpow_ae_le (a : ℕ → ℂ) (n : ℕ) (s : ℂ) :
     (fun y : ℝ ↦ ‖rampTerm a n y * (y : ℂ) ^ (-s - 1)‖ₑ) ≤ᵐ[volume.restrict (Set.Ioi 1)]
       (Set.Ioi (n : ℝ)).indicator (fun y : ℝ ↦ ENNReal.ofReal ((‖a n‖ / n) * y ^ (-s.re))) := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · exact .of_forall fun y ↦ by simp [rampTerm]
   have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0
   have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
   have hne : ∀ᵐ y : ℝ ∂volume.restrict (Set.Ioi 1), y ≠ (n : ℝ) :=
@@ -383,14 +387,14 @@ private theorem lintegral_norm_rampTerm_mul_cpow_le (a : ℕ → ℂ) (n : ℕ) 
   calc ∫⁻ y in Set.Ioi (1 : ℝ), ‖rampTerm a n y * (y : ℂ) ^ (-s - 1)‖ₑ
       ≤ ∫⁻ y in Set.Ioi (1 : ℝ), (Set.Ioi (n : ℝ)).indicator
           (fun y : ℝ ↦ ENNReal.ofReal ((‖a n‖ / n) * y ^ (-s.re))) y :=
-        lintegral_mono_ae (norm_rampTerm_mul_cpow_ae_le a hn0 s)
+        lintegral_mono_ae (norm_rampTerm_mul_cpow_ae_le a n s)
     _ = ∫⁻ y in Set.Ioi (n : ℝ), ENNReal.ofReal ((‖a n‖ / n) * y ^ (-s.re)) := by
         rw [lintegral_indicator measurableSet_Ioi, Measure.restrict_restrict measurableSet_Ioi,
           Set.inter_eq_left.mpr hsub]
     _ = ENNReal.ofReal (∫ y in Set.Ioi (n : ℝ), (‖a n‖ / n) * y ^ (-s.re)) :=
         (ofReal_integral_eq_lintegral_ofReal hint hnonneg).symm
     _ = ENNReal.ofReal (‖LSeries.term a s n‖ / (s.re - 1)) := by
-        rw [integral_norm_rpow_eq a hn0 hs]
+        rw [integral_norm_rpow_eq a n hs]
 
 private theorem integrableOn_rampTerm_mul_cpow (a : ℕ → ℂ) (n : ℕ) {s : ℂ} (hs : 1 < s.re) :
     IntegrableOn (fun y : ℝ ↦ rampTerm a n y * (y : ℂ) ^ (-s - 1)) (Set.Ioi 1) := by
@@ -418,7 +422,7 @@ private theorem tsum_lintegral_norm_rampTerm_ne_top {a : ℕ → ℂ} {s : ℂ} 
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ div_nonneg (norm_nonneg _) (by linarith)) hsum]
   exact ENNReal.ofReal_lt_top
 
-/-- **Mellin integrability of Riesz sums** (8.4a (a)): if `1 < s.re` and `LSeriesSummable a s`,
+/-- **Mellin integrability of Riesz sums**: if `1 < s.re` and `LSeriesSummable a s`,
 then `y ↦ rieszSum a y * y ^ (-s - 1)` is integrable on `(1, ∞)`. -/
 theorem integrableOn_rieszSum_mul_cpow {a : ℕ → ℂ} {s : ℂ} (hs : 1 < s.re)
     (h : LSeriesSummable a s) :
@@ -448,7 +452,7 @@ theorem integrableOn_rieszSum_mul_cpow {a : ℕ → ℂ} {s : ℂ} (hs : 1 < s.r
         lintegral_tsum fun n ↦ (integrableOn_rampTerm_mul_cpow a n hs).1.eNorm
     _ < ⊤ := (tsum_lintegral_norm_rampTerm_ne_top hs h).lt_top
 
-/-- **Mellin transform of Riesz sums** (8.4a (a)): if `1 < s.re` and `LSeriesSummable a s`,
+/-- **Mellin transform of Riesz sums**: if `1 < s.re` and `LSeriesSummable a s`,
 then `∫ y in Set.Ioi 1, rieszSum a y * y ^ (-s - 1) = LSeries a s / (s * (s - 1))`. -/
 theorem integral_rieszSum_mul_cpow {a : ℕ → ℂ} {s : ℂ} (hs : 1 < s.re)
     (h : LSeriesSummable a s) :
