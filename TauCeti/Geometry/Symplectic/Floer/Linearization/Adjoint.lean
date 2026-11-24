@@ -26,7 +26,8 @@ of `TauCeti.Geometry.Symplectic.Floer.Perturbation.Basic` and
 `TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation` take them: Hamiltonian
 variations of the perturbation, and variations of the almost complex structure at injective
 points, force such an `η` to vanish on an open set. The pairing uses no metric on `V`, so no
-compatibility of `J` with `ω` is needed in this file, and `J` need not square to `-1`.
+compatibility of `J` with `ω` is needed in this file beyond the `ω`-form below, and `J` need not
+square to `-1`.
 
 Integrating by parts against this pairing gives the **formal adjoint**
 
@@ -39,8 +40,11 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_eq_neg`), where `∂t J` is the `t`-derivative of `z ↦ J(z, u z)`.
   So `D^* η = 0` is a first-order real Cauchy–Riemann equation for `η` with leading coefficient
   `θ ↦ θ ∘ J`, which is again a complex structure, on the dual space, when `J` is one: this is the
-  equation on which unique continuation for cokernel elements acts. Two adjoints therefore differ
-  on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`, with `A = ∂t J - C`
+  equation on which unique continuation for cokernel elements acts. Written through `ω` as the
+  vector field `ζ = ω♭⁻¹ ∘ η` (`fderiv_flatEquiv_symm_apply`), at a point where `J` preserves `ω`
+  the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
+  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`). From
+  the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `f` gives `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`
@@ -223,6 +227,44 @@ theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
   rw [floerLinearizationAdjoint_def, fderiv_clm_comp hη hJu]
   simp only [add_apply, comp_apply, compL_apply, flip_apply, comp_sub]
   abel
+
+/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
+field `η`. -/
+theorem fderiv_flatEquiv_symm_apply (ω : SymplecticForm V) (η : ℝ × ℝ → V →L[ℝ] ℝ)
+    (z v : ℝ × ℝ) :
+    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
+  rw [← Function.comp_def ω.flatEquiv.symm η, ContinuousLinearEquiv.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+
+/-- **The formal adjoint through `ω`.** Write a covector field as `η = ω♭ ∘ ζ`, where
+`ω♭ v = ω(v, ·)`. At a point where `J(z, u z)` preserves `ω`, the formal adjoint is `-ω♭` of
+
+`∂s ζ - J(z, u z) ∂t ζ + Aᵀ ζ`,
+
+where `A = ∂t J - C` is the zeroth-order coefficient of `floerLinearizationAdjoint_eq_neg` and `ᵀ`
+is the `ω`-transpose. This is a Cauchy–Riemann operator for `-J`, which is compatible with `-ω`
+when `J` is compatible with `ω`. -/
+theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z)
+    (hc : ω.Invariant (J z (u z))) :
+    ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η
+        z =
+      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
+        (-J z (u z)) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag) +
+        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
+            stdComplexLineImag -
+          ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+            u z) (ω.flatEquiv.symm (η z))) := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, fderiv_flatEquiv_symm_apply,
+    fderiv_flatEquiv_symm_apply]
+  ext w
+  simp only [ContinuousLinearMap.comp_apply, map_neg,
+    flatEquiv_apply, map_add, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply,
+    add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
+    LinearMap.coe_toContinuousLinearMap']
+  ring
 
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at

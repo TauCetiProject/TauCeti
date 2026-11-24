@@ -143,45 +143,6 @@ theorem
 
 /-! ### The formal adjoint -/
 
-/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
-field `η`. -/
-private theorem fderiv_flatEquiv_symm_apply (ω : SymplecticForm V) (η : ℝ × ℝ → V →L[ℝ] ℝ)
-    (z v : ℝ × ℝ) :
-    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
-  rw [show (fun w ↦ ω.flatEquiv.symm (η w)) = ω.flatEquiv.symm ∘ η from rfl,
-    ContinuousLinearEquiv.comp_fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-
-/-- **The formal adjoint through `ω`.** Write a covector field as `η = ω♭ ∘ ζ`, where
-`ω♭ v = ω(v, ·)`. At a point where `J(z, u z)` preserves `ω`, the formal adjoint is `-ω♭` of
-
-`∂s ζ - J(z, u z) ∂t ζ + Aᵀ ζ`,
-
-where `A = ∂t J - C` is the zeroth-order coefficient of `floerLinearizationAdjoint_eq_neg` and `ᵀ`
-is the `ω`-transpose. This is a Cauchy–Riemann operator for `-J`, which is compatible with `-ω`
-when `J` is compatible with `ω`. -/
-private theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z)
-    (hJu : DifferentiableAt ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z)
-    (hc : ω.Invariant (J z (u z))) :
-    ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η
-        z =
-      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
-        (-J z (u z)) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag) +
-        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
-            stdComplexLineImag -
-          ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-            u z) (ω.flatEquiv.symm (η z))) := by
-  rw [floerLinearizationAdjoint_eq_neg hη hJu, fderiv_flatEquiv_symm_apply,
-    fderiv_flatEquiv_symm_apply]
-  ext w
-  simp only [ContinuousLinearMap.comp_apply, map_neg,
-    flatEquiv_apply, map_add, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply,
-    add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
-    LinearMap.coe_toContinuousLinearMap']
-  ring
-
 /-- **The Cauchy–Riemann estimate behind the formal adjoint.** Under the hypotheses of
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint`, the vector
 field `ζ = ω♭⁻¹ ∘ η` of every `C²` covector field `η` supported in `K` satisfies
@@ -262,13 +223,8 @@ theorem
   -- `ω♭` and its inverse change square norms by at most the squares of their norms.
   set c₁ := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
   set c₂ := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
-  have hc₁ (φ : V →L[ℝ] ℝ) : ‖φ‖ ^ 2 ≤ c₁ ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
-    rw [← mul_pow]
-    refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-    simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
-  have hc₂ (φ : V →L[ℝ] ℝ) : ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ c₂ ^ 2 * ‖φ‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
+  have hc₁ := ω.norm_sq_le_norm_flatEquiv_sq_mul_norm_flatEquiv_symm_apply_sq
+  have hc₂ := ω.norm_flatEquiv_symm_apply_sq_le
   refine ⟨c₁ ^ 2 * C * c₂ ^ 2, by positivity, fun η hη hηK ↦ ?_⟩
   set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w)
   have hdζ (z : ℝ × ℝ) (v : ℝ × ℝ) : fderiv ℝ ζ z v = ω.flatEquiv.symm (fderiv ℝ η z v) :=

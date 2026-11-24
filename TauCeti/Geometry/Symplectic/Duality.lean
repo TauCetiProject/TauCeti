@@ -122,6 +122,20 @@ theorem coe_flatEquiv_symm (ω : SymplecticForm V) :
       ω.toBilinForm.toContinuousBilinearMap.inverse := by
   rw [← coe_flatEquiv, ContinuousLinearMap.inverse_equiv]
 
+/-- `‖φ‖² ≤ ‖ω♭‖² ‖ω♭⁻¹ φ‖²`. -/
+theorem norm_sq_le_norm_flatEquiv_sq_mul_norm_flatEquiv_symm_apply_sq (ω : SymplecticForm V)
+    (φ : V →L[ℝ] ℝ) :
+    ‖φ‖ ^ 2 ≤ ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
+  rw [← mul_pow]
+  refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
+  simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
+
+/-- `‖ω♭⁻¹ φ‖² ≤ ‖ω♭⁻¹‖² ‖φ‖²`. -/
+theorem norm_flatEquiv_symm_apply_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
+    ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
+
 omit [FiniteDimensional ℝ V] in
 /-- Two endomorphisms that pair in the same way under `ω` are equal. -/
 theorem continuousLinearMap_ext_of_apply_eq (ω : SymplecticForm V) {L L' : V →L[ℝ] V}

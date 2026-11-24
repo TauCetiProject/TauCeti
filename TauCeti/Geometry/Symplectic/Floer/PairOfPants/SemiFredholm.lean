@@ -156,17 +156,16 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
     fun ζ hζ ↦ (((contDiff_fst.comp hA).contDiffAt.smul contDiffAt_const).add
       ((contDiff_snd.comp hA).contDiffAt.smul
         ((hJ (φ ζ) hζ).comp₂ hφ.contDiffAt ((hu (φ ζ) hζ).comp ζ hφ.contDiffAt)))).contDiffWithinAt
-  have hcp : ContDiff ℝ 1 (covectorPullback φ J u η) := by
-    have h := (ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff_of_tsupport_subset_right hM
-      (hη.comp hφ).contDiffOn hU fun ζ hζ ↦
-        hηS (tsupport_comp_subset_preimage _ hφ.continuous hζ)
-    rwa [funext (covectorPullback_apply φ J u η)]
+  have hcp : ContDiff ℝ 1 (covectorPullback φ J u η) :=
+    contDiff_covectorPullback_of_contDiffOn hU hM (hη.comp hφ) fun ζ hζ ↦
+      hηS (tsupport_comp_subset_preimage _ hφ.continuous hζ)
   -- Beyond some `N` in the end chart, the pulled-back form vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
   refine integrableOn_sobolevDensity_of_eventuallyEq_zero hcp (fun ζ hζN ↦
     (hzero ζ hζN).mono fun ζ' h ↦ ?_) a
+  simp only [Function.comp_apply, Pi.zero_apply] at h
   simp only [covectorPullback_apply, Pi.zero_apply]
-  rw [show η (φ ζ') = 0 from h, ContinuousLinearMap.zero_comp]
+  rw [h, ContinuousLinearMap.zero_comp]
 
 end TauCeti.Floer
 
