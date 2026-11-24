@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.WithFiberMetric
-import TauCeti.Geometry.Manifold.VectorBundle.Section.L2.Density
 
 /-!
 # Smooth forms are dense in geometric L²
@@ -22,8 +21,9 @@ self-adjoint realizations need.
 
 The class of a compactly supported form is the class of its section of the bundle of forms, read
 in the fibres carrying the Gram metric through `TauCeti.WithFiberMetric.contMDiffSectionEquiv`
-(`TauCeti.compactlySupportedForms.toL2Form_eq_toL2`). Density then follows from density of
-compactly supported smooth sections, `ContMDiffSection.denseRange_toL2`.
+(`TauCeti.compactlySupportedForms.toL2Form_eq_ofCompactlySupported`). Density then follows from
+density of compactly supported smooth sections in `Lᵖ` sections for `p < ∞`,
+`TauCeti.LpSection.denseRange_ofCompactlySupported`.
 -/
 
 public noncomputable section
@@ -59,15 +59,14 @@ variable [SecondCountableTopology M] [MeasurableSpace M] [BorelSpace M]
 
 /-- The class of a compactly supported form in `L²Ωᵏ(M)` is the class of its section of the
 bundle of forms, read in the fibres carrying the Gram metric. -/
-theorem toL2Form_eq_toL2 (α : compactlySupportedForms I M k) :
-    toL2Form I M k α = ContMDiffSection.toL2 (riemannianVolume I M)
+theorem toL2Form_eq_ofCompactlySupported (α : compactlySupportedForms I M k) :
+    toL2Form I M k α = LpSection.ofCompactlySupported ℝ I 2 (riemannianVolume I M)
       ⟨_, (contMDiffSectionEquiv_toContMDiffSection_mem_compactlySupported_iff α.val).2
         α.property⟩ := by
-  apply LpSection.ext
-  filter_upwards [coeFn_toL2Form α, ContMDiffSection.coeFn_toL2 (μ := riemannianVolume I M)
-    ⟨_, (contMDiffSectionEquiv_toContMDiffSection_mem_compactlySupported_iff α.val).2
-      α.property⟩] with x hα hs
-  rw [hα, hs, WithFiberMetric.contMDiffSectionEquiv_apply,
+  rw [toL2Form_apply, LpSection.ofCompactlySupported_apply, LpSection.ofCompactlySupported_apply,
+    LpSection.mk_eq_mk_iff]
+  refine .of_forall fun x ↦ ?_
+  rw [toContinuousSection_apply, WithFiberMetric.contMDiffSectionEquiv_apply,
     SmoothForm.toContMDiffSection_apply]
 
 end compactlySupportedForms
@@ -85,8 +84,9 @@ theorem denseRange_toL2Form : DenseRange (toL2Form I M k) := by
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   let : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  refine (ContMDiffSection.denseRange_toL2 (I := I) (F := E [⋀^Fin k]→L[ℝ] ℝ)
-    (V := WithFiberMetric (formMetric I M k)) (μ := riemannianVolume I M)).mono ?_
+  refine (LpSection.denseRange_ofCompactlySupported (𝕜 := ℝ) (I := I) (F := E [⋀^Fin k]→L[ℝ] ℝ)
+    (E := WithFiberMetric (formMetric I M k)) (μ := riemannianVolume I M)
+    (p := 2) ENNReal.ofNat_ne_top).mono ?_
   rintro _ ⟨s, rfl⟩
   let α : SmoothForm I M ℝ k := SmoothForm.ofContMDiffSection
     ((WithFiberMetric.contMDiffSectionEquiv (formMetric I M k)).symm s)
@@ -97,7 +97,7 @@ theorem denseRange_toL2Form : DenseRange (toL2Form I M k) := by
   have hα : α ∈ compactlySupportedForms I M k :=
     (contMDiffSectionEquiv_toContMDiffSection_mem_compactlySupported_iff α).1 (hs ▸ s.property)
   refine ⟨⟨α, hα⟩, ?_⟩
-  rw [toL2Form_eq_toL2]
+  rw [toL2Form_eq_ofCompactlySupported]
   exact congrArg _ (Subtype.ext hs)
 
 end compactlySupportedForms

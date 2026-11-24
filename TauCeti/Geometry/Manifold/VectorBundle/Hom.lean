@@ -154,7 +154,7 @@ theorem contMDiffOn_hom_of_forall_contMDiff {n m : ℕ∞ω} (hn : n ≤ m) (hm 
   let e' := trivializationAt G W x
   let b := Module.Basis.ofVectorSpace ℝ F
   have := FiniteDimensional.fintypeBasisIndex b
-  obtain ⟨s, hs, hse, -⟩ :=
+  obtain ⟨s, hs, hse⟩ :=
     e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := m) b hm
       (mem_baseSet_trivializationAt F V x)
   obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 (Filter.eventually_all.2 hse)

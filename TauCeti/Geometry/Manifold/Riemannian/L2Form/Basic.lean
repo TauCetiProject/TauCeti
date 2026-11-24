@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.L2.Basic
+public import TauCeti.MeasureTheory.Function.LpSection.Dense
 public import TauCeti.Topology.VectorBundle.Riemannian.WithFiberMetric
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -24,7 +24,7 @@ for this metric and the Riemannian volume measure, with inner product
 
 A compactly supported smooth form, read in the fibres carrying the Gram metric, is a compactly
 supported continuous section (`TauCeti.compactlySupportedForms.toContinuousSection`), and so
-defines an element of `L²Ωᵏ(M)` through `ContMDiffSection.toL2`
+defines an element of `L²Ωᵏ(M)` through `TauCeti.LpSection.ofCompactlySupported`
 (`TauCeti.compactlySupportedForms.toL2Form`); this embedding is injective since the Riemannian
 volume charges every nonempty open set. The `L²` adjointness of the codifferential is in
 `TauCeti.Geometry.Manifold.Riemannian.L2Form.Adjoint`.
@@ -139,16 +139,27 @@ variable [MeasurableSpace M] [BorelSpace M] [SecondCountableTopology M]
 variable (I M k) in
 /-- The class in `L²Ωᵏ(M)` of a compactly supported smooth `k`-form: the class of its
 continuous section. -/
-def toL2Form : compactlySupportedForms I M k →ₗ[ℝ] L2Form I M k :=
-  ContMDiffSection.toL2 (riemannianVolume I M) ∘ₗ toContinuousSection I M k
+def toL2Form : compactlySupportedForms I M k →ₗ[ℝ] L2Form I M k where
+  toFun α :=
+    LpSection.ofCompactlySupported ℝ I 2 (riemannianVolume I M) (toContinuousSection I M k α)
+  map_add' α β := by rw [map_add, map_add]
+  map_smul' c α := by
+    rw [map_smul, LpSection.ofCompactlySupported_smul, RingHom.id_apply, RCLike.ofReal_real_eq_id,
+      id_eq]
+
+/-- The class of a compactly supported form is the class of its continuous section. -/
+theorem toL2Form_apply (α : compactlySupportedForms I M k) :
+    toL2Form I M k α =
+      LpSection.ofCompactlySupported ℝ I 2 (riemannianVolume I M) (toContinuousSection I M k α) :=
+  (rfl)
 
 /-- The class of a compactly supported smooth form is represented by the form itself. -/
 theorem coeFn_toL2Form (α : compactlySupportedForms I M k) :
     ∀ᵐ x ∂riemannianVolume I M,
       toL2Form I M k α x = WithFiberMetric.toWithFiberMetric _ x (α.val.val x) := by
-  filter_upwards [ContMDiffSection.coeFn_toL2 (μ := riemannianVolume I M)
-    (toContinuousSection I M k α)] with x hx
-  rw [toL2Form, LinearMap.comp_apply, hx, toContinuousSection_apply]
+  filter_upwards [LpSection.coeFn_ofCompactlySupported (𝕜 := ℝ) (p := 2)
+    (μ := riemannianVolume I M) (toContinuousSection I M k α)] with x hx
+  rw [toL2Form_apply, hx, toContinuousSection_apply]
 
 /-- The `L²` inner product of compactly supported smooth forms is the integral of their
 pointwise Gram inner product against the Riemannian volume. -/
@@ -156,15 +167,12 @@ theorem inner_toL2Form (α β : compactlySupportedForms I M k) :
     ⟪toL2Form I M k α, toL2Form I M k β⟫_ℝ =
       ∫ x, alternatingFormInner (TangentSpace I x) k (α.val.val x) (β.val.val x) ∂riemannianVolume I
           M := by
-  simp only [toL2Form, LinearMap.comp_apply, ContMDiffSection.inner_toL2_left]
-  refine integral_congr_ae
-    ((ContMDiffSection.coeFn_toL2 (toContinuousSection I M k β)).mono fun x hx ↦ ?_)
-  simp [hx]
+  simp [toL2Form_apply, LpSection.ofCompactlySupported_apply]
 
 /-- Distinct compactly supported smooth forms have distinct classes in `L²Ωᵏ(M)`, because the
 Riemannian volume charges every nonempty open set. -/
 theorem toL2Form_injective : Function.Injective (toL2Form I M k) :=
-  ContMDiffSection.toL2_injective.comp toContinuousSection_injective
+  LpSection.ofCompactlySupported_injective.comp toContinuousSection_injective
 
 end compactlySupportedForms
 

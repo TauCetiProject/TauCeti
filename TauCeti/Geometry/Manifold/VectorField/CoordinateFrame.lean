@@ -194,7 +194,7 @@ theorem exists_eventually_sum_smul_mvfderiv_eq (x : M) :
   have he : e.baseSet = (extChartAt I x).source := by
     rw [extChartAt_source, TangentBundle.trivializationAt_baseSet]
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  obtain ⟨X, hXs, hXe, -⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b le_rfl hx
+  obtain ⟨X, hXs, hXe⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b le_rfl hx
   refine ⟨fun j ↦ ⟨fun y ↦ φ j (F y), (φ j).contMDiff.comp F.contMDiff⟩,
     fun j ↦ ⟨X j, hXs j⟩, ?_⟩
   filter_upwards [hF.eventuallyEq_nhds, e.open_baseSet.mem_nhds hx, eventually_all.2 hXe]
