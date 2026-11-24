@@ -34,22 +34,22 @@ refined Gysin maps.
 
 Normal cones in Tau Ceti are defined for immersions through the closed immersion `i.liftCoborder`
 into the open `i.coborderRange`; for a closed immersion this open is all of `Y`
-(`isIso_coborderRange_ι`), and the comparison is stated for closed immersions.
+(`coborderRange_eq_top`), and the comparison is stated for closed immersions.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.reesAlgebraPullbackOfIsPullback h`: for a pullback square `h` of
+* `AlgebraicGeometry.Scheme.Hom.reesAlgebraPullbackHomOfIsPullback h`: for a pullback square `h` of
   a closed immersion `j : X ⟶ U` along `fU : U' ⟶ U`, with base change `j' : X' ⟶ U'` and
   projection `g : X' ⟶ X`, the morphism of graded quasi-coherent algebras
   `g^* j^* (⨁ₙ (ker j)ⁿ) ⟶ j'^* (⨁ₙ (ker j')ⁿ)`, an epimorphism in every degree
-  (`epi_reesAlgebraPullbackOfIsPullback_hom_hom_hom`).
+  (`epi_reesAlgebraPullbackHomOfIsPullback_hom_hom_hom`).
 * `AlgebraicGeometry.Scheme.Hom.normalConeAlgebraPullbackHom h`: for a pullback square `h` of a
   closed immersion `i` along `f`, the comparison `g^* (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ ⨁ₙ I'ⁿ/I'ⁿ⁺¹` of normal cone
   algebras, an epimorphism in every degree
   (`epi_normalConeAlgebraPullbackHom_hom_hom_hom`).
-* `AlgebraicGeometry.Scheme.Hom.normalConePullback h`: the morphism of normal cones
-  `C_{X'} Y' ⟶ X' ×_X C_X Y`, over `X'` (`normalConePullback_snd`), with
-  `isClosedImmersion_normalConePullback`: it is a closed immersion.
+* `AlgebraicGeometry.Scheme.Hom.normalConeToPullback h`: the morphism of normal cones
+  `C_{X'} Y' ⟶ X' ×_X C_X Y`, over `X'` (`normalConeToPullback_snd`), with
+  `isClosedImmersion_normalConeToPullback`: it is a closed immersion.
 
 ## References
 
@@ -68,26 +68,6 @@ open TauCeti.AlgebraicGeometry
 
 noncomputable section
 
-/-- The open `i.coborderRange` of a closed immersion `i : X ⟶ Y` is all of `Y`, so its inclusion
-is an isomorphism. -/
-instance isIso_coborderRange_ι {X Y : Scheme.{u}} (i : X ⟶ Y) [IsClosedImmersion i] :
-    IsIso i.coborderRange.ι := by
-  rw [isIso_iff_isOpenImmersion_and_surjective]
-  refine ⟨inferInstance, ⟨fun y ↦ ?_⟩⟩
-  have hy : y ∈ i.coborderRange := by
-    change y ∈ coborder (Set.range i)
-    rw [coborder_eq_univ_iff.mpr i.isClosedEmbedding.isClosed_range]
-    exact Set.mem_univ y
-  exact ⟨⟨y, hy⟩, rfl⟩
-
-/-- A morphism of graded quasi-coherent algebras that is an isomorphism is an isomorphism in
-every degree. -/
-private lemma isIso_hom_hom_hom_of_isIso {X : Scheme.{u}} {A B : GradedQuasicoherentAlgebra X}
-    (e : A ⟶ B) [IsIso e] (n : ℕ) : IsIso (e.hom.hom.hom n) := by
-  exact ⟨(asIso e).inv.hom.hom.hom n,
-    congrArg (fun φ : A ⟶ A ↦ φ.hom.hom.hom n) (asIso e).hom_inv_id,
-    congrArg (fun φ : B ⟶ B ↦ φ.hom.hom.hom n) (asIso e).inv_hom_id⟩
-
 section Rees
 
 variable {X X' U U' : Scheme.{u}} {j : X ⟶ U} {j' : X' ⟶ U'} {g : X' ⟶ X} {fU : U' ⟶ U}
@@ -99,7 +79,7 @@ quasi-coherent algebras `g^* j^* (⨁ₙ (ker j)ⁿ) ⟶ j'^* (⨁ₙ (ker j')�
 `g^* j^* ≅ (g ≫ j)^* = (j' ≫ fU)^* ≅ j'^* fU^*` followed by the pullback along `j'` of the Rees
 algebra comparison `fU^* (⨁ₙ (ker j)ⁿ) ⟶ ⨁ₙ ((ker j).comap fU)ⁿ`, and the identification
 `(ker j).comap fU = ker j'` (`IdealSheafData.ker_eq_comap_of_isPullback`). -/
-def reesAlgebraPullbackOfIsPullback (h : IsPullback j' g fU j) :
+def reesAlgebraPullbackHomOfIsPullback (h : IsPullback j' g fU j) :
     (GradedQuasicoherentAlgebra.pullback g).obj
         ((GradedQuasicoherentAlgebra.pullback j).obj j.ker.reesAlgebra) ⟶
       (GradedQuasicoherentAlgebra.pullback j').obj j'.ker.reesAlgebra :=
@@ -108,21 +88,21 @@ def reesAlgebraPullbackOfIsPullback (h : IsPullback j' g fU j) :
       (GradedQuasicoherentAlgebra.pullback j').map (j.ker.reesAlgebraPullbackHom fU) ≫
         eqToHom (by rw [IdealSheafData.ker_eq_comap_of_isPullback j h])
 
-/-- The comparison `reesAlgebraPullbackOfIsPullback h` is the pullback along `j'` of the Rees
+/-- The comparison `reesAlgebraPullbackHomOfIsPullback h` is the pullback along `j'` of the Rees
 algebra comparison, between the identifications of the pullbacks and of the ideal sheaves. -/
-theorem reesAlgebraPullbackOfIsPullback_def (h : IsPullback j' g fU j) :
-    reesAlgebraPullbackOfIsPullback h =
+theorem reesAlgebraPullbackHomOfIsPullback_def (h : IsPullback j' g fU j) :
+    reesAlgebraPullbackHomOfIsPullback h =
       (GradedQuasicoherentAlgebra.pullbackComp g j).hom.app _ ≫ eqToHom (by rw [h.w]) ≫
         (GradedQuasicoherentAlgebra.pullbackComp j' fU).inv.app _ ≫
           (GradedQuasicoherentAlgebra.pullback j').map (j.ker.reesAlgebraPullbackHom fU) ≫
             eqToHom (by rw [IdealSheafData.ker_eq_comap_of_isPullback j h]) :=
   (rfl)
 
-/-- The comparison `reesAlgebraPullbackOfIsPullback h` is an epimorphism in every degree: the
+/-- The comparison `reesAlgebraPullbackHomOfIsPullback h` is an epimorphism in every degree: the
 Rees algebra comparison is, pullback of modules preserves epimorphisms, and the other factors
 are isomorphisms. -/
-instance epi_reesAlgebraPullbackOfIsPullback_hom_hom_hom (h : IsPullback j' g fU j) (n : ℕ) :
-    Epi ((reesAlgebraPullbackOfIsPullback h).hom.hom.hom n) := by
+instance epi_reesAlgebraPullbackHomOfIsPullback_hom_hom_hom (h : IsPullback j' g fU j) (n : ℕ) :
+    Epi ((reesAlgebraPullbackHomOfIsPullback h).hom.hom.hom n) := by
   have hmap : Epi (((GradedQuasicoherentAlgebra.pullback j').map
       (j.ker.reesAlgebraPullbackHom fU)).hom.hom.hom n) := by
     rw [GradedQuasicoherentAlgebra.pullback_map_hom_hom_hom]
@@ -133,19 +113,7 @@ instance epi_reesAlgebraPullbackOfIsPullback_hom_hom_hom (h : IsPullback j' g fU
       (epi_comp' (@Functor.map_epi _ _ _ _ (Scheme.Modules.pullback j') _ _ _ _ this)
         (IsIso.epi_of_iso
           (eqToIso (GradedQuasicoherentAlgebra.pullback_obj_obj_X j' _ n).symm).hom))
-  have h₁ := isIso_hom_hom_hom_of_isIso
-    ((GradedQuasicoherentAlgebra.pullbackComp g j).hom.app
-      (j.ker.reesAlgebra)) n
-  have h₂ := isIso_hom_hom_hom_of_isIso
-    (eqToHom (congrArg (fun φ ↦ (GradedQuasicoherentAlgebra.pullback φ).obj j.ker.reesAlgebra)
-      h.w.symm)) n
-  have h₃ := isIso_hom_hom_hom_of_isIso
-    ((GradedQuasicoherentAlgebra.pullbackComp j' fU).inv.app j.ker.reesAlgebra) n
-  have h₄ := isIso_hom_hom_hom_of_isIso
-    (eqToHom (congrArg (fun I ↦ (GradedQuasicoherentAlgebra.pullback j').obj
-      (IdealSheafData.reesAlgebra I))
-      (IdealSheafData.ker_eq_comap_of_isPullback j h).symm)) n
-  rw [reesAlgebraPullbackOfIsPullback_def]
+  rw [reesAlgebraPullbackHomOfIsPullback_def]
   simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom,
     GradedObject.categoryOfGradedObjects_comp]
   infer_instance
@@ -189,11 +157,11 @@ theorem isPullback_liftCoborder (h : IsPullback i' g f i) :
 immersion `i' : X' ⟶ Y'` as the base change of the closed immersion `i : X ⟶ Y` along
 `f : Y' ⟶ Y`, with projection `g : X' ⟶ X`, the morphism `g^* (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ ⨁ₙ I'ⁿ/I'ⁿ⁺¹` from
 the pullback of the normal cone algebra of `i` to that of `i'`, induced by the comparison of
-Rees algebras (`reesAlgebraPullbackOfIsPullback`). -/
+Rees algebras (`reesAlgebraPullbackHomOfIsPullback`). -/
 def normalConeAlgebraPullbackHom (h : IsPullback i' g f i) :
     (GradedQuasicoherentAlgebra.pullback g).obj i.normalConeAlgebra ⟶ i'.normalConeAlgebra :=
   eqToHom (by rw [normalConeAlgebra_def]) ≫
-    reesAlgebraPullbackOfIsPullback (isPullback_liftCoborder h) ≫
+    reesAlgebraPullbackHomOfIsPullback (isPullback_liftCoborder h) ≫
       eqToHom (by rw [normalConeAlgebra_def])
 
 /-- The comparison of normal cone algebras is the comparison of Rees algebras for the closed
@@ -201,16 +169,13 @@ immersions `liftCoborder`. -/
 theorem normalConeAlgebraPullbackHom_def (h : IsPullback i' g f i) :
     normalConeAlgebraPullbackHom h =
       eqToHom (by rw [normalConeAlgebra_def]) ≫
-        reesAlgebraPullbackOfIsPullback (isPullback_liftCoborder h) ≫
+        reesAlgebraPullbackHomOfIsPullback (isPullback_liftCoborder h) ≫
           eqToHom (by rw [normalConeAlgebra_def]) :=
   (rfl)
 
 /-- The comparison of normal cone algebras is an epimorphism in every degree. -/
 instance epi_normalConeAlgebraPullbackHom_hom_hom_hom (h : IsPullback i' g f i) (n : ℕ) :
     Epi ((normalConeAlgebraPullbackHom h).hom.hom.hom n) := by
-  have h₁ := isIso_hom_hom_hom_of_isIso
-    (eqToHom (congrArg (GradedQuasicoherentAlgebra.pullback g).obj (normalConeAlgebra_def i))) n
-  have h₂ := isIso_hom_hom_hom_of_isIso (eqToHom (normalConeAlgebra_def i').symm) n
   rw [normalConeAlgebraPullbackHom_def]
   simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom,
     GradedObject.categoryOfGradedObjects_comp]
@@ -241,12 +206,8 @@ instance epi_normalConeQuasicoherentAlgebraPullbackHom (h : IsPullback i' g f i)
   have : Epi (GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.map
       (normalConeAlgebraPullbackHom h)).hom.hom.hom :=
     GradedQuasicoherentAlgebra.epi_toQuasicoherentAlgebra_map _ fun n _ ↦ inferInstance
-  have : IsIso ((GradedQuasicoherentAlgebra.pullbackToQuasicoherentAlgebraIso g).hom.app
-      i.normalConeAlgebra).hom.hom.hom :=
-    inferInstanceAs (IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).mapIso
-      ((GradedQuasicoherentAlgebra.pullbackToQuasicoherentAlgebraIso g).app
-        i.normalConeAlgebra)).hom)
-  change Epi (_ ≫ _)
+  rw [normalConeQuasicoherentAlgebraPullbackHom_def]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom]
   infer_instance
 
 /-- **Normal cones under base change.** For a pullback square `h` exhibiting the closed immersion
@@ -254,16 +215,16 @@ instance epi_normalConeQuasicoherentAlgebraPullbackHom (h : IsPullback i' g f i)
 projection `g : X' ⟶ X`, the morphism `C_{X'} Y' ⟶ X' ×_X C_X Y` of normal cones: the relative
 spectrum of the comparison `g^* (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ ⨁ₙ I'ⁿ/I'ⁿ⁺¹`, followed by the identification of
 the relative spectrum of the pullback with the fibre product. It is a closed immersion
-(`isClosedImmersion_normalConePullback`) over `X'` (`normalConePullback_snd`). -/
-def normalConePullback (h : IsPullback i' g f i) :
+(`isClosedImmersion_normalConeToPullback`) over `X'` (`normalConeToPullback_snd`). -/
+def normalConeToPullback (h : IsPullback i' g f i) :
     i'.normalCone ⟶ pullback i.normalConeToBase g :=
   CommMon.relativeSpecMap (normalConeQuasicoherentAlgebraPullbackHom h).hom ≫
     (isPullback_relativeSpecPullbackFst _ g).isoPullback.hom
 
 /-- The morphism of normal cones is the relative spectrum of the comparison of algebras, followed
 by the identification of the relative spectrum of the pullback with the fibre product. -/
-theorem normalConePullback_def (h : IsPullback i' g f i) :
-    normalConePullback h =
+theorem normalConeToPullback_def (h : IsPullback i' g f i) :
+    normalConeToPullback h =
       CommMon.relativeSpecMap (normalConeQuasicoherentAlgebraPullbackHom h).hom ≫
         (isPullback_relativeSpecPullbackFst _ g).isoPullback.hom :=
   (rfl)
@@ -272,8 +233,8 @@ theorem normalConePullback_def (h : IsPullback i' g f i) :
 spectrum of the comparison of algebras followed by the projection
 `Spec_{X'} (g^* (⨁ₙ Iⁿ/Iⁿ⁺¹)) ⟶ C_X Y`. -/
 @[reassoc]
-theorem normalConePullback_fst (h : IsPullback i' g f i) :
-    normalConePullback h ≫ pullback.fst _ _ =
+theorem normalConeToPullback_fst (h : IsPullback i' g f i) :
+    normalConeToPullback h ≫ pullback.fst _ _ =
       CommMon.relativeSpecMap (normalConeQuasicoherentAlgebraPullbackHom h).hom ≫
         relativeSpecPullbackFst _ g := by
   exact (Category.assoc _ _ _).trans (congrArg _ (IsPullback.isoPullback_hom_fst _))
@@ -281,22 +242,20 @@ theorem normalConePullback_fst (h : IsPullback i' g f i) :
 /-- The morphism of normal cones lies over `X'`: followed by the projection to `X'` it is the
 projection `C_{X'} Y' ⟶ X'`. -/
 @[reassoc (attr := simp)]
-theorem normalConePullback_snd (h : IsPullback i' g f i) :
-    normalConePullback h ≫ pullback.snd _ _ = i'.normalConeToBase := by
+theorem normalConeToPullback_snd (h : IsPullback i' g f i) :
+    normalConeToPullback h ≫ pullback.snd _ _ = i'.normalConeToBase := by
   exact (Category.assoc _ _ _).trans ((congrArg _ (IsPullback.isoPullback_hom_snd _)).trans
     (CommMon.relativeSpecMap_relativeSpecToBase _))
 
 /-- **The normal cone of a base change embeds in the base change of the normal cone.** For a
 pullback square of closed immersions, `C_{X'} Y' ⟶ X' ×_X C_X Y` is a closed immersion, since
 `g^* (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ ⨁ₙ I'ⁿ/I'ⁿ⁺¹` is surjective. -/
-instance isClosedImmersion_normalConePullback (h : IsPullback i' g f i) :
-    IsClosedImmersion (normalConePullback h) := by
+instance isClosedImmersion_normalConeToPullback (h : IsPullback i' g f i) :
+    IsClosedImmersion (normalConeToPullback h) := by
+  rw [normalConeToPullback_def]
   have := CommMon.isClosedImmersion_relativeSpecMap_of_epi
-    (A := ((QuasicoherentAlgebra.pullback g).obj
-      (GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.obj i.normalConeAlgebra)).obj)
-    (B := (GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.obj i'.normalConeAlgebra).obj)
     (normalConeQuasicoherentAlgebraPullbackHom h).hom
-  rw [normalConePullback]
+  -- Instance search fails on the iso factor of the unfolded composite, so both factors are named.
   have hI : IsClosedImmersion (isPullback_relativeSpecPullbackFst
       (GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.obj i.normalConeAlgebra)
         g).isoPullback.hom :=

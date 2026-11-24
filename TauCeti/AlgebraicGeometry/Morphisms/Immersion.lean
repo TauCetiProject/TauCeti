@@ -32,7 +32,8 @@ The construction uses Mathlib's `Scheme.Hom.liftCoborder`, `IsOpenImmersion.lift
 
 For a quasi-compact immersion `i`, the ideal sheaf of the closed immersion `i.liftCoborder` into
 the open `i.coborderRange` is the restriction of the ideal sheaf `ker i`
-(`Scheme.Hom.ker_liftCoborder`).
+(`Scheme.Hom.ker_liftCoborder`). For a closed immersion, this open is all of `Y`
+(`Scheme.Hom.coborderRange_eq_top`).
 -/
 
 public section
@@ -86,6 +87,16 @@ theorem ker_liftCoborder (i : Z ⟶ Y) [IsImmersion i] [QuasiCompact i] :
   rw [← (IsImmersion.isPullback_toImage_liftCoborder i).flip.isoPullback_hom_fst,
     ker_comp_of_isIso, IdealSheafData.ker_fst_of_isClosedImmersion, imageι,
     IdealSheafData.ker_subschemeι]
+
+/-- The open `i.coborderRange` of a closed immersion `i : Z ⟶ Y` is all of `Y`. -/
+theorem coborderRange_eq_top (i : Z ⟶ Y) [IsClosedImmersion i] : i.coborderRange = ⊤ :=
+  -- The underlying set of `i.coborderRange` is `coborder (Set.range i)` by definition.
+  TopologicalSpace.Opens.ext (coborder_eq_univ_iff.mpr i.isClosedEmbedding.isClosed_range)
+
+/-- The inclusion of the open `i.coborderRange` of a closed immersion `i` is an isomorphism. -/
+instance isIso_coborderRange_ι (i : Z ⟶ Y) [IsClosedImmersion i] : IsIso i.coborderRange.ι := by
+  rw [coborderRange_eq_top, ← Scheme.topIso_hom]
+  infer_instance
 
 end AlgebraicGeometry.Scheme.Hom
 
