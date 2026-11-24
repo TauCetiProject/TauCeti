@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Periodic.Compression.Derived
 public import TauCeti.Algebra.Homology.Periodic.Compression.ZeroDifferential
-public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.Biproducts
 public import TauCeti.CategoryTheory.ObjectProperty.Shift
 
 /-!
@@ -91,16 +91,16 @@ instance : (gradable C n).IsStableUnderShift ℤ :=
     DerivedCategory.Qh C n).essImage.IsStableUnderShift ℤ)
 
 /-- The zero objects of `D_n(C)` are gradable, as the compression of the zero complex. -/
-instance : (gradable C n).ContainsZero where
-  exists_zero := ⟨_, (homotopyCompressionFunctor n ⋙ DerivedCategory.Qh C n).map_isZero
-    (isZero_zero _), Functor.obj_mem_essImage _ _⟩
+instance : (gradable C n).ContainsZero :=
+  inferInstanceAs (homotopyCompressionFunctor (C := C) n ⋙
+    DerivedCategory.Qh C n).essImage.ContainsZero
 
 /-- Gradable objects are closed under binary products, because compression is additive. -/
-instance : (gradable C n).IsClosedUnderBinaryProducts := by
-  let F := homotopyCompressionFunctor (C := C) n ⋙ DerivedCategory.Qh C n
-  have := preservesBinaryBiproducts_of_preservesBiproducts F
-  exact ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _
-    fun _ _ ⟨X₁, ⟨e₁⟩⟩ ⟨X₂, ⟨e₂⟩⟩ ↦ ⟨X₁ ⊞ X₂, ⟨F.mapBiprod X₁ X₂ ≪≫ biprod.mapIso e₁ e₂⟩⟩
+instance : (gradable C n).IsClosedUnderBinaryProducts :=
+  have := preservesBinaryBiproducts_of_preservesBiproducts
+    (homotopyCompressionFunctor (C := C) n ⋙ DerivedCategory.Qh C n)
+  inferInstanceAs (homotopyCompressionFunctor (C := C) n ⋙
+    DerivedCategory.Qh C n).essImage.IsClosedUnderBinaryProducts
 
 instance : (gradable C n).IsClosedUnderFiniteProducts :=
   ObjectProperty.IsClosedUnderFiniteProducts.mk'
