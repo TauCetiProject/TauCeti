@@ -41,6 +41,10 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   homomorphisms compatible with stabilization.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup`: the stable elementary subgroup
   `E_∞(A)`.
+* `TauCeti.StableGeneralLinearGroup.map`: the homomorphism `GL_∞(A) →* GL_∞(B)` induced by a ring
+  homomorphism.
+* `TauCeti.StableGeneralLinearGroup.elementarySubgroupMap`: the induced homomorphism
+  `E_∞(A) →* E_∞(B)` on stable elementary subgroups.
 * `TauCeti.stableTransvection`: the elementary matrix `1 + a E_{ij}` in `GL_∞(A)`.
 * `TauCeti.AlgebraicK1`: algebraic `K₁(A)`, the abelianization of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk`: the class in `K₁(A)` of an invertible matrix.
@@ -66,6 +70,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
+* `TauCeti.StableGeneralLinearGroup.elementarySubgroupMap_surjective`: surjective ring maps
+  induce surjective homomorphisms of stable elementary subgroups.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
 
 ## References
@@ -611,34 +617,153 @@ theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m
   ext i j
   simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
 
+namespace StableGeneralLinearGroup
+
+/-- The homomorphism of stable general linear groups induced by a ring homomorphism `f : A →+* B`,
+applying `f` entrywise to invertible matrices. -/
+def map (f : A →+* B) : StableGeneralLinearGroup A →* StableGeneralLinearGroup B :=
+  lift (fun n ↦ (of B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom))
+    fun _ _ h u ↦ by simp only [MonoidHom.comp_apply, ← stabilizeGL_map, of_stabilizeGL]
+
+/-- The induced homomorphism of `GL_∞` intertwines the stage maps `of`. -/
+theorem map_comp_of (f : A →+* B) (n : ℕ) :
+    (map f).comp (of A n) = (of B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom) :=
+  MonoidHom.ext fun _ ↦ lift_of ..
+
+/-- The induced homomorphism of `GL_∞` acts entrywise on each finite matrix stage. -/
+@[simp]
+theorem map_of (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
+    map f (of A n u) = of B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) :=
+  DFunLike.congr_fun (map_comp_of f n) u
+
+/-- The identity ring homomorphism induces the identity of `GL_∞`. -/
+@[simp]
+theorem map_id : map (RingHom.id A) = MonoidHom.id (StableGeneralLinearGroup A) := by
+  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
+  simp
+
+/-- The stable general linear group is functorial in ring homomorphisms. -/
+theorem map_comp (f : A →+* B) (g : B →+* C) :
+    map (g.comp f) = (map g).comp (map f) := by
+  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
+  simp only [MonoidHom.comp_apply, map_of]
+  refine congrArg _ (Units.ext ?_)
+  simp [Matrix.map_map]
+
+/-- Applying the homomorphisms of `GL_∞` induced by `f` and then `g` is applying the one induced
+by `g.comp f`. -/
+@[simp]
+theorem map_map (f : A →+* B) (g : B →+* C) (x : StableGeneralLinearGroup A) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, MonoidHom.comp_apply]
+
+/-- Ring homomorphisms map the stable elementary subgroup into the stable elementary subgroup. -/
+theorem map_elementarySubgroup_le (f : A →+* B) :
+    (elementarySubgroup A).map (map f) ≤ elementarySubgroup B := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hx
+  rw [map_of]
+  exact of_mem_elementarySubgroup (f.map_elementarySubgroup_le ⟨u, hu, rfl⟩)
+
+/-- The homomorphism on stable elementary subgroups `E_∞(A) →* E_∞(B)` induced by a ring
+homomorphism `f : A →+* B`. -/
+def elementarySubgroupMap (f : A →+* B) : elementarySubgroup A →* elementarySubgroup B :=
+  ((map f).comp (elementarySubgroup A).subtype).codRestrict (elementarySubgroup B)
+    fun x ↦ map_elementarySubgroup_le f ⟨x, x.property, rfl⟩
+
+/-- The stable elementary subgroup inclusion intertwines `elementarySubgroupMap` with
+`StableGeneralLinearGroup.map`. -/
+theorem subtype_comp_elementarySubgroupMap (f : A →+* B) :
+    (elementarySubgroup B).subtype.comp (elementarySubgroupMap f) =
+      (map f).comp (elementarySubgroup A).subtype :=
+  (rfl)
+
+/-- The induced homomorphism on `E_∞` agrees with `StableGeneralLinearGroup.map` on underlying
+elements of `GL_∞`. -/
+@[simp]
+theorem coe_elementarySubgroupMap (f : A →+* B) (x : elementarySubgroup A) :
+    (elementarySubgroupMap f x : StableGeneralLinearGroup B) = map f x :=
+  DFunLike.congr_fun (subtype_comp_elementarySubgroupMap f) x
+
+/-- The identity ring homomorphism induces the identity on `E_∞`. -/
+@[simp]
+theorem elementarySubgroupMap_id :
+    elementarySubgroupMap (RingHom.id A) = MonoidHom.id (elementarySubgroup A) := by
+  ext x
+  simp
+
+/-- The stable elementary subgroup is functorial in ring homomorphisms. -/
+theorem elementarySubgroupMap_comp (f : A →+* B) (g : B →+* C) :
+    elementarySubgroupMap (g.comp f) =
+      (elementarySubgroupMap g).comp (elementarySubgroupMap f) := by
+  ext x
+  simp
+
+/-- Applying the homomorphisms of `E_∞` induced by `f` and then `g` is applying the one induced
+by `g.comp f`. -/
+@[simp]
+theorem elementarySubgroupMap_map (f : A →+* B) (g : B →+* C) (x : elementarySubgroup A) :
+    elementarySubgroupMap g (elementarySubgroupMap f x) = elementarySubgroupMap (g.comp f) x := by
+  rw [elementarySubgroupMap_comp, MonoidHom.comp_apply]
+
+/-- A surjective ring homomorphism induces a surjective homomorphism of stable elementary
+subgroups. -/
+theorem elementarySubgroupMap_surjective (f : A →+* B) (hf : Function.Surjective f) :
+    Function.Surjective (elementarySubgroupMap f) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hy
+  obtain ⟨v, hv⟩ := f.elementarySubgroupMap_surjective hf ⟨u, hu⟩
+  refine ⟨⟨of A n v, of_mem_elementarySubgroup v.property⟩, Subtype.ext ?_⟩
+  simpa only [coe_elementarySubgroupMap, map_of, f.coe_elementarySubgroupMap] using
+    congrArg (fun w : TauCeti.elementarySubgroup (Fin n) B ↦ of B n w) hv
+
+/-- Ring homomorphisms send stable transvections to stable transvections. -/
+@[simp]
+theorem map_stableTransvection (f : A →+* B) (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
+    map f (stableTransvection p a) = stableTransvection p (f a) := by
+  simp only [stableTransvection, map_of, RingHom.toMonoidHom_eq_coe,
+    RingHom.unitsMap_mapMatrix_transvectionUnit]
+
+end StableGeneralLinearGroup
+
 namespace AlgebraicK1
 
 /-- The homomorphism of algebraic `K₁` induced by a ring homomorphism `f : A →+* B`, applying `f`
 to the entries of invertible matrices. -/
 def map (f : A →+* B) : AlgebraicK1 A →* AlgebraicK1 B :=
-  lift (fun n ↦ (mk B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom))
-    fun m n h u ↦ by simp only [MonoidHom.comp_apply, ← stabilizeGL_map, mk_stabilizeGL]
+  Group.Abelianization.map (StableGeneralLinearGroup.map f)
+
+/-- The induced homomorphism of algebraic `K₁` intertwines `Group.Abelianization.of` with
+`StableGeneralLinearGroup.map`. -/
+theorem map_comp_of (f : A →+* B) :
+    (map f).comp Group.Abelianization.of =
+      Group.Abelianization.of.comp (StableGeneralLinearGroup.map f) :=
+  Group.Abelianization.map_comp_of _
+
+/-- The induced homomorphism of algebraic `K₁` sends the class of `x : GL_∞(A)` to the class of
+`StableGeneralLinearGroup.map f x`. -/
+@[simp]
+theorem map_of (f : A →+* B) (x : StableGeneralLinearGroup A) :
+    map f (Group.Abelianization.of x) =
+      Group.Abelianization.of (StableGeneralLinearGroup.map f x) :=
+  Group.Abelianization.map_of _ x
 
 /-- The induced homomorphism of algebraic `K₁` sends the class of an invertible matrix to the
 class of the matrix obtained by applying the ring homomorphism to its entries. -/
 @[simp]
 theorem map_mk (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
-    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) :=
-  lift_mk ..
+    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) := by
+  simp [map, mk]
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₁`. -/
 @[simp]
 theorem map_id : AlgebraicK1.map (RingHom.id A) = MonoidHom.id (AlgebraicK1 A) := by
-  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp
+  rw [map, StableGeneralLinearGroup.map_id, Group.Abelianization.map_id]
 
 /-- Algebraic `K₁` is functorial. -/
 theorem map_comp (f : A →+* B) (g : B →+* C) :
     AlgebraicK1.map (g.comp f) = (AlgebraicK1.map g).comp (AlgebraicK1.map f) := by
-  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp only [MonoidHom.comp_apply, map_mk]
-  refine congrArg _ (Units.ext ?_)
-  simp [Matrix.map_map]
+  simp only [map, StableGeneralLinearGroup.map_comp, Group.Abelianization.map_comp]
 
 /-- Applying the homomorphisms of algebraic `K₁` induced by `f` and then `g` is applying the one
 induced by `g.comp f`. -/
