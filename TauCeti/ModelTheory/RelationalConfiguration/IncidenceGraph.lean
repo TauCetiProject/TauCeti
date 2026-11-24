@@ -113,24 +113,19 @@ theorem color_truth (ι : (Σ n, L.Relations n) → ℕ) (q : Atom L V) : color 
 theorem color_position (ι : (Σ n, L.Relations n) → ℕ) (R : L.Relations n) (x : Fin n → V)
     (j : Fin n) : color ι (position R x j) = 2 * j + 2 := (rfl)
 
+@[simp]
 theorem color_tuple (ι : (Σ n, L.Relations n) → ℕ) (q : Atom L V) :
     color ι (tuple q) = 2 * ι q.symbol + 3 := (rfl)
-
-@[simp]
-theorem color_tuple_atom (ι : (Σ n, L.Relations n) → ℕ) (R : L.Relations n)
-    (x : Fin n → V) :
-    color ι (tuple (atom R x)) = 2 * ι ⟨n, R⟩ + 3 := by
-  rw [color_tuple, Atom.symbol_atom]
 
 /-- The vertices of colour `0` are the points. -/
 private theorem color_eq_zero_iff {v : IncidenceVertex L V} :
     color ι v = 0 ↔ ∃ a, v = point a := by
-  cases v <;> simp [color_tuple]
+  cases v <;> simp
 
 /-- The vertices of colour `1` are the truth vertices. -/
 private theorem color_eq_one_iff {v : IncidenceVertex L V} :
     color ι v = 1 ↔ ∃ q, v = truth q := by
-  cases v <;> simp [color_tuple]
+  cases v <;> simp
 
 /-- The vertices of colour `2 * k + 2` are the vertices of the argument position `k`. -/
 private theorem color_eq_two_mul_add_two_iff {v : IncidenceVertex L V} {k : ℕ} :
@@ -142,7 +137,7 @@ private theorem color_eq_two_mul_add_two_iff {v : IncidenceVertex L V} {k : ℕ}
     rintro ⟨m, S', y', j', h, rfl⟩
     cases h
     rfl
-  | tuple q => simp [color_tuple]; omega
+  | tuple q => simp; omega
   | _ => simp
 
 /-- For injective `ι`, the vertices of colour `2 * ι s + 3` are the tuple vertices of the atoms
@@ -152,7 +147,7 @@ private theorem color_eq_two_mul_add_three_iff (hι : Function.Injective ι)
     color ι v = 2 * ι s + 3 ↔
       ∃ q : Atom L V, v = tuple q ∧ q.symbol = s := by
   cases v with
-  | tuple q => simp [color_tuple, hι.eq_iff]
+  | tuple q => simp [hι.eq_iff]
   | position S y j => simp; omega
   | _ => simp
 
@@ -193,7 +188,7 @@ theorem map_comp (g : W → X) (f : V → W) (v : IncidenceVertex L V) :
 @[simp]
 theorem color_map (ι : (Σ n, L.Relations n) → ℕ) (f : V → W) (v : IncidenceVertex L V) :
     color ι (map f v) = color ι v := by
-  cases v <;> simp [color_tuple]
+  cases v <;> simp
 
 /-! ### Cardinality -/
 
