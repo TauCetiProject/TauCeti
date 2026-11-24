@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.MetricSpace.Pseudo.Prod
 import TauCeti.Topology.Order.Compact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -33,15 +34,15 @@ The translate `z ↦ u(z + (m, n))` of a solution solves the same equation
 (`TauCeti.SymplecticForm.perturbedFDeriv_comp_add_right`), and its energy over the unit disc is at
 most twice the energy over the strip (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`), so the
 threshold of the closed unit disc serves for each of its integer translates, and the open unit
-discs about the integer points cover the plane. A diagonal extraction
+discs about the integer points cover the plane (`Prod.dist_round_le`). A diagonal extraction
 (`TauCeti.extraction_forall_of_antitone`) gives one subsequence that converges on each of these
 countably many discs off finitely many bubbling points. Floer energy at least `δ` concentrates at
 each bubbling point, and the set of such concentration points is invariant under the period
 `(0, 1)`, so it is determined by its points in the fundamental strip. There are at most `2E / δ` of
-them (`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`,
-`TauCeti.finite_of_forall_eventually_le_setIntegral_ball`), so the theorems state the threshold
-`δ / 2`. Off their translates the limit is the pointwise limit, which on each disc is the limit
-given by that disc, and which is again `1`-periodic in `t`.
+them (`TauCeti.card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic`,
+`TauCeti.finite_of_forall_eventually_le_setIntegral_ball_of_periodic`), so the theorems state the
+threshold `δ / 2`. Off their translates the limit is the pointwise limit, which on each disc is
+the limit given by that disc, and which is again `1`-periodic in `t`.
 
 The two results, in the namespace `TauCeti.SymplecticForm`, are:
 
@@ -124,7 +125,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
   set c : ℕ → ℝ × ℝ := fun j ↦ (((e j).1 : ℝ), ((e j).2 : ℝ)) with hc
   set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity Ks Kt (u k)
   set S : Set (ℝ × ℝ) := univ ×ˢ Ico 0 1
-  set W : Set (ℝ × ℝ) := univ ×ˢ Ico (-1) 1 with hW
   have hf0 (k : ℕ) (y : ℝ × ℝ) : 0 ≤ f k y :=
     ω.floerEnergyDensity_nonneg (hJt y _ (huK k y)) (hfl k y)
   have hfc (k : ℕ) : Continuous (f k) :=
@@ -166,27 +166,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
         simpa using hp.int_mul n t
   have hfk (k : ℕ) (s t : ℝ) : f k (s, t + 1) = f k (s, t) := by simpa using hfper k 1 (s, t)
   have hk (k : ℕ) : IntegrableOn (f k) (univ ×ˢ Ico 0 (0 + 1)) := by simpa using hint k
-  -- The energy over two periods of the strip is at most `2 * E`.
-  have hWm : MeasurableSet W := MeasurableSet.univ.prod measurableSet_Ico
-  have hWint (k : ℕ) : IntegrableOn (f k) W ∧ ∫ y in W, f k y ≤ 2 * E := by
-    have h1 := integrableOn_prod_Ico_sub_add_of_periodic (μ := volume) (hfk k) (hk k)
-    have h2 := setIntegral_prod_Ico_sub_add_of_periodic (μ := volume) MeasurableSet.univ (hfk k)
-      (hk k)
-    rw [← Measure.volume_eq_prod] at h1 h2
-    norm_num at h1 h2
-    exact ⟨h1, by rw [hW, h2]; linarith [hE k]⟩
-  -- So the energy of each window is at most `2 * E`.
+  have hEk (k : ℕ) : ∫ z in univ ×ˢ Ico 0 (0 + 1), f k z ≤ E := by simpa using hE k
+  have hS : S ⊆ univ ×ˢ Ico 0 (0 + 1) := by rw [zero_add]
+  -- The energy of each window, a unit disc about an integer point, is at most `2 * E`.
   have hwin (j k : ℕ) : ∫ z in B, f k (z + c j) ≤ 2 * E := by
-    set a : ℝ × ℝ := (((e j).1 : ℝ), 0)
-    have ha (z : ℝ × ℝ) : f k (z + c j) = f k (z + a) := by
-      rw [← hfper k (e j).2 (z + a)]
-      congr 1
-      ext <;> simp [a, hc]
-    calc ∫ z in B, f k (z + c j) = ∫ z in B, f k (z + a) := by simp_rw [ha]
-      _ = ∫ z in ball a 1, f k z := by rw [hB, setIntegral_ball_comp_add_right, zero_add]
-      _ ≤ 2 * ∫ z in univ ×ˢ Ico 0 (0 + 1), f k z :=
-          setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k) _
-      _ ≤ 2 * E := by rw [zero_add]; linarith [hE k]
+    have h := setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k)
+      ((e j).1 : ℝ) (e j).2
+    rw [zero_add, mul_one] at h
+    rw [hB, setIntegral_ball_comp_add_right, zero_add]
+    exact h.trans (mul_le_mul_of_nonneg_left (hEk k) two_pos.le)
   -- On each window, every subsequence has a further subsequence converging off finitely many
   -- bubbling points, and these properties pass to finer filters. A diagonal extraction gives one
   -- subsequence that does so on every window.
@@ -237,40 +225,31 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     filter_upwards [hy ε hε] with k hk
     rw [← setIntegral_ball_comp_add_right (f k) y (0, (n : ℝ)) ε]
     simpa only [show ∀ y, f k (y + (0, (n : ℝ))) = f k y from hfper k n] using hk
-  -- Those in the strip `S` are concentration points of the energy on the two periods `W`, since
-  -- small balls about them lie in the open band `univ ×ˢ (-1, 1) ⊆ W`; so finitely many.
-  have hconcW (z : ℝ × ℝ) (hz : z ∈ Zc ∩ S) (ε : ℝ) (hε : 0 < ε) :
-      ∀ᶠ k in l, δ ≤ ∫ y in ball z ε ∩ W, f k y := by
-    obtain ⟨hzc, -, hz0, hz1⟩ := hz
-    have hzU : z ∈ univ ×ˢ Ioo (-1 : ℝ) 1 := ⟨mem_univ _, by linarith, hz1⟩
-    obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 (isOpen_univ.prod isOpen_Ioo) z hzU
-    filter_upwards [hzc (min ε ρ) (lt_min hε hρ)] with k hk
-    exact hk.trans (setIntegral_mono_set ((hWint k).1.mono_set inter_subset_right)
-      (Eventually.of_forall fun y ↦ hf0 _ _)
-      (subset_inter (ball_subset_ball (min_le_left _ _))
-        ((ball_subset_ball (min_le_right _ _)).trans
-          (hρW.trans (prod_mono subset_rfl Ioo_subset_Ico_self)))).eventuallySubset)
+  -- Finitely many of them lie in the strip `S`.
   have hfin : (Zc ∩ S).Finite :=
-    finite_of_forall_eventually_le_setIntegral_ball (l := l) hδ hWm (fun k y _ ↦ hf0 k y)
-      (fun k ↦ (hWint k).1) (fun k ↦ (hWint k).2) hconcW
+    finite_of_forall_eventually_le_setIntegral_ball_of_periodic (μ := volume) (l := l) hδ hf0
+      hfk hk hEk (inter_subset_right.trans hS) fun z hz ↦ hz.1
   -- Off the translates of the points of `Zc ∩ S`, there are no bubbling points.
   have hgood : {y : ℝ × ℝ | (y.1, Int.fract y.2) ∉ hfin.toFinset} ⊆ Zallᶜ := by
     intro y hy hyZ
     refine hy (hfin.mem_toFinset.2 ⟨?_, mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩)
     convert hZcper y (-⌊y.2⌋) (hZallc hyZ) using 1
-    ext <;> simp [Int.fract, sub_eq_add_neg]
+    rw [← Int.self_sub_floor]
+    refine Prod.ext (add_zero y.1).symm ?_
+    simp only [Prod.snd_add]
+    push_cast
+    ring
   -- The good parts of the windows, carried back to the plane, cover the complement of `Zall`.
   set G : ℕ → Set (ℝ × ℝ) := fun j ↦ (· - c j) ⁻¹' (B \ ↑(Z j)) with hG
   have hGopen (j : ℕ) : IsOpen (G j) :=
     (isOpen_ball.sdiff (Z j).finite_toSet.isClosed).preimage (continuous_sub_right _)
   have hcover (y : ℝ × ℝ) (hy : y ∉ Zall) : ∃ j, y ∈ G j := by
-    -- The integer point nearest to `y` is at distance at most `1 / 2` in each coordinate.
+    -- The integer point nearest to `y` is at distance at most `1 / 2`.
     set m : ℤ × ℤ := (round y.1, round y.2)
     have hm : y - c (e.symm m) ∈ B := by
-      rw [hB, mem_ball_zero_iff, Prod.norm_def]
-      simp only [hc, Equiv.apply_symm_apply, m, Prod.fst_sub, Prod.snd_sub, Real.norm_eq_abs]
-      exact max_lt ((abs_sub_round _).trans_lt (by norm_num))
-        ((abs_sub_round _).trans_lt (by norm_num))
+      rw [hB, mem_ball_zero_iff, ← dist_eq_norm]
+      simp only [hc, Equiv.apply_symm_apply, m]
+      exact (Prod.dist_round_le y).trans_lt (by norm_num)
     refine ⟨e.symm m, hm, fun hZ ↦ hy ?_⟩
     rw [hZall, mem_iUnion]
     exact ⟨e.symm m, y - c (e.symm m), hZ, sub_add_cancel _ _⟩
@@ -288,9 +267,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       (Eventually.of_forall fun k ↦ huK k y),
     fun s t ↦ by simp only [v', hper],
     hlimv.comp_tendsto tendsto_map⟩
-  · have h := card_mul_le_of_forall_eventually_le_setIntegral_ball (l := l) hWm
-      (fun k y _ ↦ hf0 k y) (fun k ↦ (hWint k).1) (fun k ↦ (hWint k).2)
-      fun z hz ↦ hconcW z (hfin.mem_toFinset.1 hz)
+  · have h := card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic
+      (μ := volume) (l := l) hf0 hfk hk hEk (Z := hfin.toFinset)
+      (fun z hz ↦ hS (hfin.mem_toFinset.1 hz).2) fun z hz ↦ (hfin.mem_toFinset.1 hz).1
     linarith
   -- Each point of `C` has a closed disc in a good part of some window, on which that window
   -- eventually bounds the differentials.

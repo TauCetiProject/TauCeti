@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
 /-!
 # Integrals over a strip of functions periodic in the second variable
@@ -22,11 +23,20 @@ band `s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_sub_of_periodic`,
 integral over one period (`TauCeti.integrableOn_prod_Ico_sub_add_of_periodic`,
 `TauCeti.setIntegral_prod_Ico_sub_add_of_periodic`).
 
-When `α` is a metric space, the ball of radius `c` about `(x, a)` lies in these two periods, so the
-integral of a nonnegative such `f` over it is at most twice the integral over one period
-(`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For the energy density of a map on the
-cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is `1`-periodic in `t`, this bounds the energy
-over a disc of radius `1` about a point `(s, 0)` by twice the energy over the strip `ℝ × [0, 1)`.
+When `α` is a metric space, the ball of radius `c` about `(x, a)` lies in these two periods, and
+the integral of `f` over the ball about `(x, a + n * c)`, `n ∈ ℤ`, is the integral over the ball
+about `(x, a)`. So the integral of a nonnegative such `f` over it is at most twice the integral over
+one period (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For the energy density of a map on
+the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is `1`-periodic in `t`, this bounds the
+energy over a disc of radius `1` about an integer point `(s, n)` by twice the energy over the strip
+`ℝ × [0, 1)`.
+
+For densities `e i ≥ 0`, periodic in the second variable with energy at most `M` over one period,
+energy concentrating at a point of that period also concentrates on the two periods about it. So a
+finite set of energy concentration points of threshold `δ` in one period has at most `2 * M / δ`
+elements (`TauCeti.card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic`), and
+for `δ > 0` every set of them is finite
+(`TauCeti.finite_of_forall_eventually_le_setIntegral_ball_of_periodic`).
 The analogue for lower Lebesgue integrals of functions of period one, over a unit ball about any
 point, is `TauCeti.CylinderSobolev.setLIntegral_ball_le_two_mul_of_periodic`.
 -/
@@ -122,21 +132,114 @@ private lemma ball_subset_univ_prod_Ico_sub_add (x : α) :
   rw [← ball_prod_same, Real.ball_eq_Ioo]
   exact prod_mono (subset_univ _) Ioo_subset_Ico_self
 
+/-- A function periodic in the second variable with period `d` has the same integral over the ball
+of radius `r` about `(x, t + d)` as over the ball about `(x, t)`. -/
+private lemma setIntegral_ball_add_of_periodic {d : ℝ} (hf : ∀ x t, f (x, t + d) = f (x, t))
+    (x : α) (t r : ℝ) :
+    ∫ z in Metric.ball (x, t + d) r, f z ∂μ.prod volume =
+      ∫ z in Metric.ball (x, t) r, f z ∂μ.prod volume := by
+  obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ d
+  have h := hm.setIntegral_preimage_emb he f (Metric.ball (x, t + d) r)
+  have hpre : (Prod.map id (· + d) : α × ℝ → α × ℝ) ⁻¹' Metric.ball (x, t + d) r =
+      Metric.ball (x, t) r := by
+    ext z
+    simp [Prod.dist_eq, Real.dist_eq]
+  have hfd (z : α × ℝ) : f (Prod.map id (· + d) z) = f z := hf z.1 z.2
+  rw [hpre] at h
+  simpa only [hfd] using h.symm
+
 /-- The integral of a nonnegative function periodic in the second variable with period `c` over
-the ball of radius `c` about a point `(x, a)` is at most twice its integral over one period
-`univ ×ˢ [a, a + c)`, if it is integrable over one period. -/
+the ball of radius `c` about a point `(x, a + n * c)`, `n ∈ ℤ`, is at most twice its integral over
+one period `univ ×ˢ [a, a + c)`, if it is integrable over one period. -/
 theorem setIntegral_ball_le_two_mul_of_periodic {f : α × ℝ → ℝ} (hf0 : ∀ z, 0 ≤ f z)
     (hf : ∀ x t, f (x, t + c) = f (x, t))
-    (h : IntegrableOn f (univ ×ˢ Ico a (a + c)) (μ.prod volume)) (x : α) :
-    ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume ≤
+    (h : IntegrableOn f (univ ×ˢ Ico a (a + c)) (μ.prod volume)) (x : α) (n : ℤ) :
+    ∫ z in Metric.ball (x, a + n * c) c, f z ∂μ.prod volume ≤
       2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
-  calc ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume
-      ≤ ∫ z in univ ×ˢ Ico (a - c) (a + c), f z ∂μ.prod volume :=
+  -- `n * c` is again a period, so the ball may be moved to `(x, a)`.
+  have hfn (x : α) (t : ℝ) : f (x, t + n * c) = f (x, t) :=
+    Function.Periodic.int_mul (f := fun t ↦ f (x, t)) (hf x) n t
+  calc ∫ z in Metric.ball (x, a + n * c) c, f z ∂μ.prod volume
+      = ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume :=
+        setIntegral_ball_add_of_periodic hfn x a c
+    _ ≤ ∫ z in univ ×ˢ Ico (a - c) (a + c), f z ∂μ.prod volume :=
         setIntegral_mono_set (integrableOn_prod_Ico_sub_add_of_periodic hf h)
           (Filter.Eventually.of_forall hf0) (ball_subset_univ_prod_Ico_sub_add x).eventuallySubset
     _ = 2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
         rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ hf h, two_nsmul, two_mul]
 
 end Ball
+
+section Concentration
+
+open Filter Metric
+
+variable [MetricSpace α] [OpensMeasurableSpace α] {ι : Type*} {l : Filter ι}
+  {e : ι → α × ℝ → ℝ} {δ M : ℝ}
+
+omit [SFinite μ] [OpensMeasurableSpace α] in
+/-- Energy at least `δ` concentrating in the balls about a point `z` of one period
+`univ ×ˢ [a, a + c)` also concentrates in their parts in the two periods
+`univ ×ˢ [a - c, a + c)`, since small balls about `z` lie in the open band
+`univ ×ˢ (a - c, a + c)`. -/
+private lemma eventually_le_setIntegral_ball_inter_prod_Ico_sub_add {z : α × ℝ}
+    (hz : z ∈ univ ×ˢ Ico a (a + c)) (he0 : ∀ i y, 0 ≤ e i y)
+    (hint : ∀ i, IntegrableOn (e i) (univ ×ˢ Ico (a - c) (a + c)) (μ.prod volume))
+    (hconc : ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε, e i y ∂μ.prod volume) (ε : ℝ)
+    (hε : 0 < ε) :
+    ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ univ ×ˢ Ico (a - c) (a + c), e i y ∂μ.prod volume := by
+  obtain ⟨-, hz0, hz1⟩ := hz
+  have hzU : z ∈ univ ×ˢ Ioo (a - c) (a + c) := ⟨mem_univ _, by linarith, hz1⟩
+  obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.1 (isOpen_univ.prod isOpen_Ioo) z hzU
+  filter_upwards [hconc (min ε ρ) (lt_min hε hρ)] with i hi
+  exact hi.trans (setIntegral_mono_set ((hint i).mono_set inter_subset_right)
+    (Eventually.of_forall fun y ↦ he0 _ _)
+    (subset_inter (ball_subset_ball (min_le_left _ _))
+      ((ball_subset_ball (min_le_right _ _)).trans
+        (hρU.trans (prod_mono subset_rfl Ioo_subset_Ico_self)))).eventuallySubset)
+
+variable [l.NeBot]
+
+/-- **Counting periodic energy concentration points.** Let `e i ≥ 0` be periodic in the second
+variable with period `c`, with energy `∫_{univ ×ˢ [a, a + c)} e i ≤ M` over one period. A finite set
+`Z` of points of that period at which energy at least `δ` concentrates, for every `z ∈ Z` and
+`ε > 0` eventually `δ ≤ ∫_{B_ε(z)} e i`, satisfies `#Z * δ ≤ 2 * M`. -/
+theorem card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic
+    (he0 : ∀ i y, 0 ≤ e i y) (hper : ∀ i x t, e i (x, t + c) = e i (x, t))
+    (hint : ∀ i, IntegrableOn (e i) (univ ×ˢ Ico a (a + c)) (μ.prod volume))
+    (hM : ∀ i, ∫ y in univ ×ˢ Ico a (a + c), e i y ∂μ.prod volume ≤ M) {Z : Finset (α × ℝ)}
+    (hZ : (Z : Set (α × ℝ)) ⊆ univ ×ˢ Ico a (a + c))
+    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε, e i y ∂μ.prod volume) :
+    Z.card * δ ≤ 2 * M := by
+  have hint2 (i : ι) := integrableOn_prod_Ico_sub_add_of_periodic (hper i) (hint i)
+  refine card_mul_le_of_forall_eventually_le_setIntegral_ball (l := l)
+    (MeasurableSet.univ.prod measurableSet_Ico) (fun i y _ ↦ he0 i y) hint2 (fun i ↦ ?_)
+    fun z hz ↦ eventually_le_setIntegral_ball_inter_prod_Ico_sub_add (hZ hz) he0 hint2
+      (hconc z hz)
+  rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ (hper i) (hint i), two_nsmul,
+    two_mul]
+  linarith [hM i]
+
+/-- **Finitely many periodic energy concentration points.** Let `e i ≥ 0` be periodic in the
+second variable with period `c`, with energy `∫_{univ ×ˢ [a, a + c)} e i ≤ M` over one period. For
+`δ > 0`, a set `T` of points of that period at which energy at least `δ` concentrates, for every
+`z ∈ T` and `ε > 0` eventually `δ ≤ ∫_{B_ε(z)} e i`, is finite. -/
+theorem finite_of_forall_eventually_le_setIntegral_ball_of_periodic (hδ : 0 < δ)
+    (he0 : ∀ i y, 0 ≤ e i y) (hper : ∀ i x t, e i (x, t + c) = e i (x, t))
+    (hint : ∀ i, IntegrableOn (e i) (univ ×ˢ Ico a (a + c)) (μ.prod volume))
+    (hM : ∀ i, ∫ y in univ ×ˢ Ico a (a + c), e i y ∂μ.prod volume ≤ M) {T : Set (α × ℝ)}
+    (hT : T ⊆ univ ×ˢ Ico a (a + c))
+    (hconc : ∀ z ∈ T, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε, e i y ∂μ.prod volume) :
+    T.Finite := by
+  have hint2 (i : ι) := integrableOn_prod_Ico_sub_add_of_periodic (hper i) (hint i)
+  refine finite_of_forall_eventually_le_setIntegral_ball (l := l) (E := 2 * M) hδ
+    (MeasurableSet.univ.prod measurableSet_Ico) (fun i y _ ↦ he0 i y) hint2 (fun i ↦ ?_)
+    fun z hz ↦ eventually_le_setIntegral_ball_inter_prod_Ico_sub_add (hT hz) he0 hint2
+      (hconc z hz)
+  rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ (hper i) (hint i), two_nsmul,
+    two_mul]
+  linarith [hM i]
+
+end Concentration
 
 end TauCeti
