@@ -29,10 +29,11 @@ for the empty scheme.
 * `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
   with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
 * `PerfectRing.mem_range_lift_iff`: an element lies in the image of a perfection lift along a
-  `p`-radical map from a perfect source iff some `p ^ n`-th power lies in the image of the base
-  map.
-* `PerfectRing.lift_surjective_iff`: a lift along a `p`-radical map from a perfect source is
-  surjective iff every target element has a `p ^ n`-th power in the image of the base map.
+  `p`-radical map `i : K →+* L` into a perfect ring `L`, with perfect target `L'`, iff some
+  `p ^ n`-th power lies in the image of the base map.
+* `PerfectRing.lift_surjective_iff`: a lift along a `p`-radical map `i : K →+* L` into a perfect
+  ring `L`, with perfect target `L'`, is surjective iff every target element has a `p ^ n`-th
+  power in the image of the base map.
 * `PerfectRing.lift_surjective_of_surjective`: a surjective ring homomorphism induces a surjective
   map between perfect closures.
 
