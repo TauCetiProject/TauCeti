@@ -69,8 +69,10 @@ norm. -/
 private theorem norm_neg_one_pow_mul_sub (k : ℕ) (u v : ℂ) :
     ‖(-1) ^ k * u - v‖ = ‖u - (-1) ^ k * v‖ := by
   have h : (-1 : ℂ) ^ k * u - v = (-1) ^ k * (u - (-1) ^ k * v) := by
-    rw [mul_sub, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
-  rw [h, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    rw [mul_sub, ← mul_assoc, ← mul_pow]
+    simp
+  rw [h, norm_mul]
+  simp
 
 /-- A sequence within `M / r' ^ k` of `c / w ^ (k + 1)`, `‖w‖ < r'`, is eventually at least half as
 large as `c / w ^ (k + 1)`. -/
@@ -184,7 +186,7 @@ theorem eventually_le_norm_iteratedDeriv_div_factorial_of_simple_pole
     rw [norm_neg_one_pow_mul_sub, ← mul_div_assoc]
     exact hM k
   filter_upwards [eventually_le_norm_of_norm_sub_div_pow_le hM' hd'] with k hk
-  rwa [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul] at hk
+  simpa using hk
 
 /-- **A real simple pole with positive residue forces large positive Taylor coefficients.** Let
 `y < x` be real and let `Φ` be holomorphic on `ball x r \ {y}`, with `Φ s = c / (s - y) + h s` near
