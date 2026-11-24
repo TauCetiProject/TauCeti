@@ -143,15 +143,11 @@ theorem heckeTheta_mk0 (χ : Grossencharacter K 𝔪) (𝔞 : (Ideal (𝓞 K))�
           χ.harmonicFactor (mixedEmbedding K ((a : 𝓞 K) : K)) *
           archGaussian y (mixedEmbedding K ((a : 𝓞 K) : K)) := by
   let e : (𝔞 : Ideal (𝓞 K)) ≃ (FractionalIdeal.mk0 K 𝔞 : Submodule (𝓞 K) K) :=
-    (idealEquivIdealLattice 𝔞).toEquiv.trans
-      (fractionalIdealEquivIdealLattice (FractionalIdeal.mk0 K 𝔞)).toEquiv.symm
+    (Submodule.equivMapOfInjective (Algebra.linearMap (𝓞 K) K)
+      (IsFractionRing.injective (𝓞 K) K) (𝔞 : Ideal (𝓞 K))).toEquiv
   have he_coe (a : (𝔞 : Ideal (𝓞 K))) :
-      ((e a : (FractionalIdeal.mk0 K 𝔞 : Submodule (𝓞 K) K)) : K) = ((a : 𝓞 K) : K) := by
-    have h := congrArg Subtype.val
-      ((fractionalIdealEquivIdealLattice (FractionalIdeal.mk0 K 𝔞)).apply_symm_apply
-        (idealEquivIdealLattice 𝔞 a))
-    simp only [coe_fractionalIdealEquivIdealLattice, coe_idealEquivIdealLattice] at h
-    exact mixedEmbedding_injective K h
+      ((e a : (FractionalIdeal.mk0 K 𝔞 : Submodule (𝓞 K) K)) : K) = ((a : 𝓞 K) : K) :=
+    rfl
   rw [heckeTheta_def, ← e.tsum_eq]
   congr 1
   refine tsum_congr fun a ↦ ?_
@@ -439,6 +435,8 @@ theorem heckeTheta_ofRayClassCharacter_one (I : (FractionalIdeal (𝓞 K)⁰ K)�
       simp [χ, toHeckeCharacter_ofRayClassCharacter], HeckeCharacter.finiteConductor_one]
   have hcond_fin : χ.conductor.finitePart = ⊤ := by
     rw [finitePart_conductor, hcond_hecke]
+  have : Subsingleton (𝓞 K ⧸ χ.conductor.finitePart) :=
+    Ideal.Quotient.subsingleton_iff.mpr hcond_fin
   have hfin {a : K} (ha : a ≠ 0) :
       (if h : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup χ.conductor then
         (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ) else 0) = 1 := by
@@ -446,11 +444,8 @@ theorem heckeTheta_ofRayClassCharacter_one (I : (FractionalIdeal (𝓞 K)⁰ K)�
       mem_primeToSubgroup.mpr fun v hv ↦
         False.elim (v.prime.not_dvd_one (by simpa [hcond_hecke] using hv))
     split_ifs with h
-    · rw [← χ.primitive.residueCharacter_residue ⟨Units.mk0 a h.1, h.2⟩]
-      have hsub : Subsingleton (𝓞 K ⧸ χ.conductor.finitePart) := by
-        rw [hcond_fin]
-        exact Ideal.Quotient.subsingleton_iff.mpr rfl
-      rw [Subsingleton.elim (residue χ.conductor ⟨Units.mk0 a h.1, h.2⟩) 1, map_one]
+    · rw [χ.primitive.finiteCharacterK_eq_one_of_residueHom_eq_one (Subsingleton.elim _ _),
+        Units.val_one]
     · exact absurd ⟨ha, hmem⟩ h
   rw [χ.heckeTheta_eq_heckeEpsilon_add I y, heckeEpsilon_ofRayClassCharacter_one,
     latticeTheta_eq_one_add _ y hy, ← (neZeroFractionalIdealEquivIdealLattice I).tsum_eq]
