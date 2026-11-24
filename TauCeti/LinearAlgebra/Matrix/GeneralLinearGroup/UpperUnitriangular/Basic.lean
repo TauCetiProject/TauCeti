@@ -41,7 +41,7 @@ matrices whose entries above the diagonal are supported on a prescribed set of p
   element of `Uₙ(R)` is unipotent.
 * `TauCeti.unitriangularGroupEquivFunOfSupported`: the coordinates of a group of
   upper-unitriangular matrices supported on a set of pairs `i < j`.
-* `TauCeti.upperUnitriangularGroupEquiv`: `Uₙ(R)` in bijection with the functions on the pairs
+* `TauCeti.upperUnitriangularGroupEquivFun`: `Uₙ(R)` in bijection with the functions on the pairs
   `i < j`, through `TauCeti.upperUnitriangularEntries` and `TauCeti.upperUnitriangularOfEntries`.
 
 ## References
@@ -322,8 +322,8 @@ theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL �
 /-- `Uₙ(R)` is in bijection with the functions on the pairs `i < j` of indices: an
 upper-unitriangular matrix is determined by its entries strictly above the diagonal, which are
 arbitrary (`TauCeti.upperUnitriangularEntries` and `TauCeti.upperUnitriangularOfEntries`). -/
-noncomputable def upperUnitriangularGroupEquiv (ι : Type*) [Fintype ι] [LinearOrder ι] (R : Type*)
-    [Ring R] :
+noncomputable def upperUnitriangularGroupEquivFun (ι : Type*) [Fintype ι] [LinearOrder ι]
+    (R : Type*) [Ring R] :
     upperUnitriangularGroup ι R ≃ ({p : ι × ι // p.1 < p.2} → R) :=
   unitriangularGroupEquivFunOfSupported _ (fun p => p.1 < p.2) (fun _ hp => hp)
     (fun _ => (UpperUnitriangularGroup.mem_iff).trans
@@ -332,20 +332,20 @@ noncomputable def upperUnitriangularGroupEquiv (ι : Type*) [Fintype ι] [Linear
 /-- The entries strictly above the diagonal of an upper-unitriangular matrix. -/
 noncomputable def upperUnitriangularEntries (g : upperUnitriangularGroup ι R) :
     {p : ι × ι // p.1 < p.2} → R :=
-  upperUnitriangularGroupEquiv ι R g
+  upperUnitriangularGroupEquivFun ι R g
 
 /-- The element of `Uₙ(R)` with prescribed entries strictly above the diagonal. -/
 noncomputable def upperUnitriangularOfEntries (f : {p : ι × ι // p.1 < p.2} → R) :
     upperUnitriangularGroup ι R :=
-  (upperUnitriangularGroupEquiv ι R).symm f
+  (upperUnitriangularGroupEquivFun ι R).symm f
 
 @[simp]
-theorem upperUnitriangularGroupEquiv_apply (g : upperUnitriangularGroup ι R) :
-    upperUnitriangularGroupEquiv ι R g = upperUnitriangularEntries g := (rfl)
+theorem upperUnitriangularGroupEquivFun_apply (g : upperUnitriangularGroup ι R) :
+    upperUnitriangularGroupEquivFun ι R g = upperUnitriangularEntries g := (rfl)
 
 @[simp]
-theorem upperUnitriangularGroupEquiv_symm_apply (f : {p : ι × ι // p.1 < p.2} → R) :
-    (upperUnitriangularGroupEquiv ι R).symm f = upperUnitriangularOfEntries f := (rfl)
+theorem upperUnitriangularGroupEquivFun_symm_apply (f : {p : ι × ι // p.1 < p.2} → R) :
+    (upperUnitriangularGroupEquivFun ι R).symm f = upperUnitriangularOfEntries f := (rfl)
 
 /-- The entries above the diagonal of an upper-unitriangular matrix, read off the matrix. This is
 deliberately not a `simp` lemma: on `upperUnitriangularOfEntries f`, `simp` evaluates
@@ -360,7 +360,7 @@ theorem upperUnitriangularEntries_apply (g : upperUnitriangularGroup ι R)
 theorem coe_upperUnitriangularOfEntries_apply (f : {p : ι × ι // p.1 < p.2} → R) (i j : ι) :
     ((upperUnitriangularOfEntries f : GL ι R) : Matrix ι ι R) i j =
       upperUnitriangularMatrixOfEntries (fun p : ι × ι => p.1 < p.2) f i j := by
-  rw [upperUnitriangularOfEntries, upperUnitriangularGroupEquiv,
+  rw [upperUnitriangularOfEntries, upperUnitriangularGroupEquivFun,
     unitriangularGroupEquivFunOfSupported_symm_apply_coe]
 
 /-- The entries above the diagonal of `upperUnitriangularOfEntries f` are `f`. -/
@@ -368,7 +368,7 @@ theorem coe_upperUnitriangularOfEntries_apply (f : {p : ι × ι // p.1 < p.2} �
 theorem upperUnitriangularEntries_upperUnitriangularOfEntries
     (f : {p : ι × ι // p.1 < p.2} → R) (p : {p : ι × ι // p.1 < p.2}) :
     upperUnitriangularEntries (upperUnitriangularOfEntries f) p = f p :=
-  congrFun (Equiv.apply_symm_apply (upperUnitriangularGroupEquiv ι R) f) p
+  congrFun (Equiv.apply_symm_apply (upperUnitriangularGroupEquivFun ι R) f) p
 
 /-- An upper-unitriangular matrix is recovered from its entries above the diagonal. -/
 @[simp]

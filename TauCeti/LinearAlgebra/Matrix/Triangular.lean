@@ -87,11 +87,11 @@ Lie-algebra theory.
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
   row multiplication when a square column selection is upper triangular with nonzero diagonal.
-* `TauCeti.upperUnitriangularMatrixOfEntries` — the upper-unitriangular matrix with prescribed
-  entries on the pairs satisfying a predicate, with its evaluation lemmas
-  `TauCeti.upperUnitriangularMatrixOfEntries_apply_of_mem`, `_apply_self` and `_apply_of_notMem`,
-  and `TauCeti.isUpperUnitriangular_upperUnitriangularMatrixOfEntries` — it is upper
-  unitriangular when the pairs satisfying the predicate lie above the diagonal.
+* `TauCeti.upperUnitriangularMatrixOfEntries` — the matrix with diagonal entries `1`, prescribed
+  entries at the off-diagonal pairs satisfying a predicate and all other entries `0`, with its
+  evaluation lemmas `TauCeti.upperUnitriangularMatrixOfEntries_apply_of_mem`, `_apply_self` and
+  `_apply_of_notMem`, and `TauCeti.isUpperUnitriangular_upperUnitriangularMatrixOfEntries` — it is
+  upper unitriangular when the pairs satisfying the predicate lie above the diagonal.
 -/
 
 public section
@@ -734,9 +734,10 @@ section UpperUnitriangularMatrixOfEntries
 variable {ι R : Type*} [Zero R] [One R]
 
 open Classical in
-/-- The upper-unitriangular matrix with prescribed entries on the pairs of indices satisfying `P`:
-`upperUnitriangularMatrixOfEntries P f` has the entry `f p` at each pair `p` with `P p`, the entry
-`1` on the diagonal and the entry `0` everywhere else. -/
+/-- The matrix with the entry `1` on the diagonal, the prescribed entry `f p` at each
+off-diagonal pair `p` with `P p`, and the entry `0` everywhere else. When `P` holds only for
+pairs `i < j` it is upper unitriangular
+(`TauCeti.isUpperUnitriangular_upperUnitriangularMatrixOfEntries`). -/
 noncomputable def upperUnitriangularMatrixOfEntries (P : ι × ι → Prop)
     (f : {p : ι × ι // P p} → R) : Matrix ι ι R :=
   Matrix.of fun i j => if i = j then 1 else if h : P (i, j) then f ⟨(i, j), h⟩ else 0

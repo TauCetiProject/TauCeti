@@ -18,7 +18,7 @@ import TauCeti.SetTheory.Cardinal.Finite
 # The order of the upper-unitriangular group
 
 An upper-unitriangular matrix is determined by its entries strictly above the diagonal: over a
-ring `R`, `TauCeti.upperUnitriangularGroupEquiv` identifies the upper-unitriangular group `Uₙ(R)`
+ring `R`, `TauCeti.upperUnitriangularGroupEquivFun` identifies the upper-unitriangular group `Uₙ(R)`
 with the functions on the pairs `i < j`. Hence `|Uₙ(R)| = |R| ^ (n.choose 2)` for every ring `R`
 (`TauCeti.natCard_upperUnitriangularGroup`, stated for any finite linearly ordered index type),
 and over a field `𝔽` with `q` elements the index of `Uₙ(𝔽)` in `GLₙ(𝔽)` is
@@ -53,7 +53,8 @@ determined by its `(Fintype.card ι).choose 2` entries strictly above the diagon
 infinite ring `R` both sides equal `1` in size at most one and `0` in larger sizes. -/
 theorem natCard_upperUnitriangularGroup :
     Nat.card (upperUnitriangularGroup ι R) = Nat.card R ^ (Fintype.card ι).choose 2 := by
-  rw [Nat.card_congr (upperUnitriangularGroupEquiv ι R), Nat.card_fun, Fintype.natCard_subtype_lt]
+  rw [Nat.card_congr (upperUnitriangularGroupEquivFun ι R), Nat.card_fun,
+    Fintype.natCard_subtype_lt]
 
 section Field
 
