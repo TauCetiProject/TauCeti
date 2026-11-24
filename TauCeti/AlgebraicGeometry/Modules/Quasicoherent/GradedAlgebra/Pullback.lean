@@ -30,7 +30,7 @@ The algebra laws of `f^* A` are those of `A`, stated for its unit and homogeneou
 multiplications as morphisms of quasicoherent sheaves (`GradedQuasicoherentAlgebra.one` and
 `GradedQuasicoherentAlgebra.mul`), transported along the strong symmetric monoidal pullback of
 quasicoherent sheaves to modules on `Y`
-(`AlgebraicGeometry.Scheme.Modules.pullbackBraided`), by the transport lemmas
+(`AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided`), by the transport lemmas
 `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`, `mul_one_of_laxMonoidal`,
 `mul_assoc_of_laxMonoidal` and `mul_comm_of_laxBraided`.
 

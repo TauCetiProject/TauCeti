@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Identity
 import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
@@ -20,7 +19,7 @@ of sheaves of modules is an isomorphism. On stalks this is the standard equivale
 extension of scalars over tensor products (Stacks Project, Tag 01CD).
 
 The inverse tensor and unit comparisons make pullback strong symmetric monoidal. The canonical
-identity and composition isomorphisms of pullback are monoidal for these structures.
+composition isomorphisms of pullback are monoidal for these structures.
 
 * `SheafOfModules.pullback_δ_stalk` computes the linear stalk map of the tensor comparison.
 * `SheafOfModules.isIso_pullback_δ` and `SheafOfModules.pullbackBraided` give invertibility
@@ -252,28 +251,6 @@ section Coherence
 
 open _root_.SheafOfModules
 open Functor.OplaxMonoidal Functor.LaxMonoidal
-
--- The canonical comparisons use identity and composite site functors as instance heads.
-/-- Identity pullback has the braided structure of pullback along the identity map of spaces. -/
-instance (priority := 100) _root_.SheafOfModules.pullbackIdBraided
-    {A : Type u} [TopologicalSpace A]
-    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
-    (pullback.{u} (F := 𝟭 (Opens A)) (S := ringCatSheaf R) (R := ringCatSheaf R)
-      (𝟙 (ringCatSheaf R))).Braided :=
-  @pullbackBraided (TopCat.of A) (TopCat.of A) R R (𝟙 _) (𝟙 (ringCatSheaf R))
-    (Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm)
-
-/-- The canonical comparison from identity pullback to the identity functor is monoidal. -/
-instance isMonoidal_pullbackId_hom
-    {A : Type u} [TopologicalSpace A]
-    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
-    NatTrans.IsMonoidal (pullbackId.{u} (ringCatSheaf R)).hom := by
-  refine NatTrans.IsMonoidal.of_oplax (pullbackId.{u} (ringCatSheaf R)).hom ?_ ?_
-  · rw [Functor.OplaxMonoidal.id_η, Category.comp_id]
-    exact (pullback_id_η R).symm
-  · intro M N
-    rw [Functor.OplaxMonoidal.id_δ, Category.comp_id]
-    exact (pullback_id_δ R M N).symm
 
 variable {Z : TopCat.{u}} {𝒪Z : Sheaf (Opens.grothendieckTopology Z) CommRingCat.{u}}
   {g : Z ⟶ Y}
