@@ -24,7 +24,8 @@ is invariant under translation along `ν`, the shear by `-γ` inverts it
 (`TauCeti.real_inner_shearAlong`), so it carries the height `⟪y, ν⟫` to the height
 `⟪x, ν⟫ - γ x` above the graph of `γ` (`TauCeti.real_inner_shearAlong_sub`). So it flattens
 the region above the graph of `γ` over the hyperplane `ν^⊥` to a half-space, without the
-splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`.
+splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`. For continuous `γ`, the closure of the
+region above the graph is the region on or above it (`TauCeti.closure_setOf_lt_real_inner`).
 
 This file records the calculus of this shear. It is `C^m` when `γ` is
 (`TauCeti.contDiff_shearAlong`), its derivative is `id + Dγ(y) ν`
@@ -88,6 +89,20 @@ height `⟪y, ν⟫` to the height `⟪x, ν⟫ - γ x` above the graph of `γ`.
 theorem real_inner_shearAlong_sub (hν : ‖ν‖ = 1) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (y : E) : ⟪shearAlong γ ν y, ν⟫_ℝ - γ (shearAlong γ ν y) = ⟪y, ν⟫_ℝ := by
   rw [real_inner_shearAlong hν, shearAlong_def, hγν, add_sub_cancel_right]
+
+/-- For a unit vector `ν` and a continuous `γ` invariant along `ν`, the closure of the region
+`{x | γ x < ⟪x, ν⟫}` above the graph of `γ` is the region `{x | γ x ≤ ⟪x, ν⟫}` on or above it:
+a point of the graph is the limit of the points `x + t ν`, `t > 0`, above it. -/
+theorem closure_setOf_lt_real_inner (hν : ‖ν‖ = 1) (hγ : Continuous γ)
+    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
+    closure {x | γ x < ⟪x, ν⟫_ℝ} = {x | γ x ≤ ⟪x, ν⟫_ℝ} := by
+  refine (closure_lt_subset_le hγ (continuous_id.inner continuous_const)).antisymm
+    fun x (hx : γ x ≤ ⟪x, ν⟫_ℝ) => mem_closure_of_tendsto (f := fun t : ℝ => x + t • ν)
+      (b := nhdsWithin 0 (Ioi 0)) ?_ (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) => ?_)
+  · have hc : Continuous fun t : ℝ => x + t • ν := by fun_prop
+    exact (hc.tendsto' 0 x (by simp)).mono_left nhdsWithin_le_nhds
+  · simp only [mem_ofPred_eq, id_eq, hγν, real_inner_add_smul_self_of_norm_eq_one hν]
+    linarith
 
 end InnerProduct
 
