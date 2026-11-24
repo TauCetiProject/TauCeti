@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Discrete
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
 # Quotients and images of amenable groups
@@ -22,6 +22,13 @@ range of a continuous homomorphism out of an amenable topological group, with th
 topology, is amenable. Every homomorphism out of a discrete group is continuous, so the range of
 any homomorphism out of an amenable discrete group is amenable.
 
+The range of a continuous homomorphism `φ` is also the image of `G ⧸ φ.ker` under the continuous
+surjective homomorphism `QuotientGroup.rangeKerLift φ`, so amenability of `G ⧸ φ.ker` alone implies
+amenability of `φ.range`, with no amenability assumption on `G`. The quotient carries the quotient
+topology and the range the subspace topology, so the first isomorphism theorem
+`QuotientGroup.quotientKerEquivRange φ` need not be a homeomorphism. It is one exactly when `φ` is a
+strict map (Mathlib's `Topology.IsStrictMap`), and then the two groups are amenable together.
+
 For a homomorphism `φ : G →* H` of discrete groups, the first isomorphism theorem
 `QuotientGroup.quotientKerEquivRange` is an isomorphism of discrete groups. Hence `G ⧸ φ.ker` is
 amenable exactly when the image `φ.range` is, and, for surjective `φ`, exactly when `H` is. These
@@ -32,6 +39,10 @@ statements make no amenability assumption on `G`.
 * `TauCeti.Amenable.quotient`: a quotient of an amenable topological group is amenable.
 * `TauCeti.Amenable.range`: the range of a continuous homomorphism out of an amenable topological
   group is amenable.
+* `TauCeti.Amenable.range_of_quotient_ker`: if `φ` is continuous and `G ⧸ φ.ker` is amenable, then
+  `φ.range` is amenable.
+* `TauCeti.amenable_quotient_ker_iff_range_of_isStrictMap`: for a strict homomorphism `φ`, the
+  groups `G ⧸ φ.ker` and `φ.range` are amenable together.
 * `TauCeti.Amenable.range_of_discreteTopology`: the range of a homomorphism out of an amenable
   discrete group is amenable, for every group topology on the target.
 * `TauCeti.amenable_quotient_ker_iff_range` and
@@ -45,6 +56,8 @@ statements make no amenability assumption on `G`.
 -/
 
 public section
+
+open Topology
 
 namespace TauCeti
 
@@ -62,6 +75,19 @@ topology, is amenable. -/
 theorem Amenable.range [Amenable G] (φ : G →ₜ* H) : Amenable φ.range :=
   .of_denseRange ⟨φ.rangeRestrict, φ.continuous.subtype_mk _⟩
     φ.rangeRestrict_surjective.denseRange
+
+/-- If `φ : G →* H` is continuous and the quotient `G ⧸ φ.ker` is amenable, then the range of `φ`
+is amenable for the subspace topology. -/
+theorem Amenable.range_of_quotient_ker {φ : G →* H} (hφ : Continuous φ) [Amenable (G ⧸ φ.ker)] :
+    Amenable φ.range :=
+  .of_denseRange ⟨QuotientGroup.rangeKerLift φ, QuotientGroup.continuous_rangeKerLift hφ⟩
+    (QuotientGroup.rangeKerLift_surjective φ).denseRange
+
+/-- For a strict homomorphism `φ : G →* H`, the quotient `G ⧸ φ.ker` with the quotient topology is
+amenable exactly when the range of `φ` with the subspace topology is. -/
+theorem amenable_quotient_ker_iff_range_of_isStrictMap {φ : G →* H} (hφ : IsStrictMap φ) :
+    Amenable (G ⧸ φ.ker) ↔ Amenable φ.range :=
+  (ContinuousMulEquiv.quotientKerEquivRange hφ).amenable_iff
 
 section DiscreteTopology
 

@@ -13,7 +13,6 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 import TauCeti.Data.Fin.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -61,11 +60,12 @@ two- or three-variable object can rewrite rather than unfold them.
 
 ## Implementation notes
 
-The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
-`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
-than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
-`finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
-by the declaration types are public.
+The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators` and
+`Mathlib.Data.Fintype.EquivFin` are imported privately rather than re-exported, as is
+`TauCeti.Data.Fin.Basic`, which supplies the value formula for `finRotate`. Only the finite sum,
+finiteness, equivalence, rotation and embedding interfaces needed by the declaration types are
+public; `Mathlib.Logic.Equiv.Fin.Basic`, which provides `finSumFinEquiv`, is re-exported through
+`Mathlib.Logic.Equiv.Fin.Rotate`.
 -/
 
 public section
@@ -248,5 +248,15 @@ theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
     Fin.coe_finRotate_eq_ite]
   simp only [val_finSumFinInterleaveEquiv_inr]
   split_ifs <;> omega
+
+/-- An upper-block and a lower-block index have distinct images under `finSumFinEquiv`. -/
+theorem _root_.Fin.finSumFinEquiv_inl_ne_inr {m n : ℕ} (i : Fin m) (j : Fin n) :
+    finSumFinEquiv (Sum.inl i) ≠ finSumFinEquiv (Sum.inr j) :=
+  finSumFinEquiv.injective.ne Sum.inl_ne_inr
+
+/-- A lower-block and an upper-block index have distinct images under `finSumFinEquiv`. -/
+theorem _root_.Fin.finSumFinEquiv_inr_ne_inl {m n : ℕ} (i : Fin n) (j : Fin m) :
+    finSumFinEquiv (Sum.inr i) ≠ finSumFinEquiv (Sum.inl j) :=
+  finSumFinEquiv.injective.ne Sum.inr_ne_inl
 
 end TauCeti

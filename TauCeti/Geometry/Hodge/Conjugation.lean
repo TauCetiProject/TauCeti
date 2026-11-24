@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Basic.Complex.ConjZPow
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # Conjugation and maps on complexifications
@@ -192,6 +193,14 @@ theorem toEquiv_symm (ω : Conjugation W) : ω.toEquiv.symm = ω.toEquiv := by
 @[simp]
 theorem apply_apply (ω : Conjugation W) (x : W) : ω.toEquiv (ω.toEquiv x) = x :=
   ω.involutive x
+
+/-- In a basis fixed by a conjugation, the coordinates of a conjugate vector are the conjugate
+coordinates. -/
+theorem repr_toEquiv_of_fixed (ω : Conjugation W) {ι : Type*} (e : Module.Basis ι ℂ W)
+    (he : ∀ i, ω.toEquiv (e i) = e i) (x : W) (i : ι) :
+    e.repr (ω.toEquiv x) i = starRingEnd ℂ (e.repr x i) := by
+  have h : ω.toEquiv = e.coordConj := e.ext' fun i ↦ by rw [he, e.coordConj_self]
+  rw [h, e.repr_coordConj, starRingEnd_apply]
 
 section TensorProduct
 

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere.Hopf
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
-import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman.Sphere
+import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -242,8 +242,8 @@ theorem liouvilleMeasure_univ_of_mpullback_hopfMap_eq {Ω : SymplecticForm ℂ²
       SmoothForm.mpullback (fun z : S³ ↦ √(2 * c) • (z : ℂ²))
         (contMDiff_sqrt_two_mul_smul_coe_sphere c) Ω.constSmooth) :
     η.liouvilleMeasure 1 Set.univ = ENNReal.ofReal (2 * π * c) := by
-  rw [(mpullback_hopfMap_eq_iff hΩ hc).1 hη, liouvilleMeasure_smul_sphereAreaForm_univ,
-    abs_of_nonneg (by positivity)]
+  rw [(mpullback_hopfMap_eq_iff hΩ hc).1 hη, sphereAreaForm_eq_sphereVolumeForm,
+    Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ, abs_of_nonneg (by positivity)]
   congr 1
   ring
 

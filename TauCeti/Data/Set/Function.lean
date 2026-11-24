@@ -20,6 +20,8 @@ public import Mathlib.Data.Set.Function
   carries preimages under `q` into preimages under `q'`.
 * `Set.mem_range_comp_subtype_val`: a function `w : α → β` lies in the range of postcomposition
   with `Subtype.val : {b // P b} → β` iff `P (w a)` holds for all `a`.
+* `Set.bijOn_preimage_iff`: a map restricts to a bijection from the preimage of `t` onto `t` if
+  and only if it is injective on that preimage and `t` is contained in its range.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -64,6 +66,13 @@ theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ}
 theorem mem_range_comp_subtype_val {P : β → Prop} {w : α → β} :
     w ∈ range (fun u : α → {b : β // P b} ↦ Subtype.val ∘ u) ↔ ∀ a, P (w a) :=
   ⟨by rintro ⟨u, rfl⟩ a; exact (u a).property, fun h ↦ ⟨Equiv.subtypePiEquivPi ⟨w, h⟩, rfl⟩⟩
+
+/-- A map restricts to a bijection from the preimage of `t` onto `t` if and only if it is
+injective on that preimage and `t` is contained in its range. -/
+theorem bijOn_preimage_iff {t : Set β} :
+    BijOn f (f ⁻¹' t) t ↔ InjOn f (f ⁻¹' t) ∧ t ⊆ range f :=
+  ⟨fun h ↦ ⟨h.injOn, h.surjOn.trans (image_subset_range _ _)⟩, fun ⟨hinj, hsub⟩ ↦ by
+    simpa only [image_preimage_eq_of_subset hsub] using hinj.bijOn_image⟩
 
 end Set
 

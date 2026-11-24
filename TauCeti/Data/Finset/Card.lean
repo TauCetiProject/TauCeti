@@ -12,6 +12,9 @@ import Mathlib.Data.Finset.Basic
 /-!
 # Cardinality bounds for finsets
 
+* `TauCeti.two_le_card_filter_eq_of_no_singleton_fiber`: if every element of a finite type
+  shares its value under a map with another element, every fiber over the image has at least two
+  elements.
 * `TauCeti.two_mul_card_image_le_of_no_singleton_fiber`: a map with no singleton fiber has
   at most half as many image elements as domain elements.
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
@@ -67,16 +70,22 @@ namespace TauCeti
 
 open Finset
 
+variable {ι β : Type*} [Fintype ι] [DecidableEq β] {f : ι → β}
+
+/-- If every element of a finite type shares its value under `f` with another element, then
+every fiber of `f` over its image has at least two elements. -/
+theorem two_le_card_filter_eq_of_no_singleton_fiber (h : ∀ a, ∃ b ≠ a, f b = f a) :
+    ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} := by
+  intro y hy
+  obtain ⟨a, -, rfl⟩ := mem_image.1 hy
+  obtain ⟨b, hba, hb⟩ := h a
+  exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
+
 /-- A map whose fibers contain at least two elements has at most half as many image elements
 as domain elements. -/
-theorem two_mul_card_image_le_of_no_singleton_fiber {ι β : Type*} [Fintype ι]
-    [DecidableEq β] {f : ι → β} (h : ∀ a, ∃ b ≠ a, f b = f a) :
+theorem two_mul_card_image_le_of_no_singleton_fiber (h : ∀ a, ∃ b ≠ a, f b = f a) :
     2 * #(univ.image f) ≤ Fintype.card ι := by
-  have hfiber : ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} := by
-    intro y hy
-    obtain ⟨a, -, rfl⟩ := mem_image.1 hy
-    obtain ⟨b, hba, hb⟩ := h a
-    exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
-  simpa only [card_univ] using mul_card_image_le_card univ 2 hfiber
+  simpa only [card_univ] using
+    mul_card_image_le_card univ 2 (two_le_card_filter_eq_of_no_singleton_fiber h)
 
 end TauCeti
