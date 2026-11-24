@@ -41,7 +41,8 @@ open scoped Topology Real
 
 namespace Complex
 
-/-- The partial sums of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖` on the closed unit disc. -/
+/-- The partial sums of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖` on the closed unit disc away
+from `1`. -/
 theorem norm_sum_range_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) (n : ℕ) :
     ‖∑ i ∈ range n, z ^ (i + 1)‖ ≤ 2 / ‖z - 1‖ := by
   have hpos : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz1)
