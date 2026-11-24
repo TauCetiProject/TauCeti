@@ -64,10 +64,10 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
     simp only [ne_eq, not_not]
     exact cayley_diagMeasure_singleton_one hA.neg_I_mem_resolventSet ξ
   filter_upwards [h1] with w hw
-  simp only [BoundedBorelFunction.coe_mul, Pi.mul_apply,
+  simp only [FunLike.coe_mul, Pi.mul_apply,
     BoundedBorelFunction.ofContinuousMap_apply, pull,
     BoundedBorelFunction.compStarAlgHom'_apply, FunLike.coe_add,
-    BoundedBorelFunction.coe_sub, BoundedBorelFunction.coe_smul, Pi.add_apply,
+    FunLike.coe_sub, FunLike.coe_smul, Pi.add_apply,
     Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
   -- Evaluate the continuous coordinate and the pulled-back symbols in the same scalar form.
   change (w : ℂ) * (g (κ w) + I * f (κ w)) = g (κ w) - I * f (κ w)
@@ -146,11 +146,11 @@ theorem _root_.IsSelfAdjoint.mem_graph_spectralCut (hA : IsSelfAdjoint A) (B : S
   let f := BoundedBorelFunction.indicator B hB 1
   let g := cutSymbol B hB c r hr hcr + (c : ℂ) • f
   have hfg (s : ℝ) : (s : ℂ) * f s = g s := by
-    simp only [g, _root_.add_apply, BoundedBorelFunction.smul_apply,
+    simp only [g, _root_.add_apply, _root_.smul_apply, smul_eq_mul,
       cutSymbol, BoundedBorelFunction.ofFunction_apply, f,
       BoundedBorelFunction.indicator_apply]
     by_cases hs : s ∈ B
-    · simp only [Set.indicator_of_mem hs, BoundedBorelFunction.one_apply,
+    · simp only [Set.indicator_of_mem hs, _root_.one_apply,
         Complex.ofReal_sub, mul_one]
       ring
     · simp only [Set.indicator_of_notMem hs, mul_zero, add_zero]
