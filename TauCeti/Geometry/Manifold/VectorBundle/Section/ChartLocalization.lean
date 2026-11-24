@@ -191,6 +191,7 @@ theorem continuous_chartCoeffLinearMap (hcover : ∀ x : M, ∃ i, x ∈ U i)
         y.property,
       ContMDiffMap.comp_apply, frameCoordinates_apply,
       t.continuousLinearMapAt_apply_of_mem (R := ℝ) (hct (c.map_target y.property))]
+    -- Both sides equal `(t ⟨c.symm y, s.val (c.symm y)⟩).2` after unfolding `j`.
     rfl
 
 /-- **Chart localizations are continuous** from the compact derivative topology of a covering

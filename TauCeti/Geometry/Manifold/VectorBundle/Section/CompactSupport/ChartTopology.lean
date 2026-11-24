@@ -119,6 +119,35 @@ of chart extensions of native test functions. -/
 def chartTestTopology : TopologicalSpace (compactlySupported I F n V) :=
   TauCeti.finalLocallyConvexTopology fun j ↦ (t j).chartTestSection (c j) (hc j) (hct j)
 
+/-- The chart-generated test topology is the final locally convex topology of the generating chart
+extensions. -/
+theorem chartTestTopology_def :
+    chartTestTopology (I := I) (n := n) t c hc hct =
+      TauCeti.finalLocallyConvexTopology fun j ↦
+        (t j).chartTestSection (c j) (hc j) (hct j) :=
+  (rfl)
+
+/-- The chart-generated test topology is a group topology. -/
+theorem isTopologicalAddGroup_chartTestTopology :
+    letI := chartTestTopology (I := I) (n := n) t c hc hct
+    IsTopologicalAddGroup (compactlySupported I F n V) := by
+  rw [chartTestTopology_def]
+  infer_instance
+
+/-- Real scalar multiplication is continuous for the chart-generated test topology. -/
+theorem continuousSMul_chartTestTopology :
+    letI := chartTestTopology (I := I) (n := n) t c hc hct
+    ContinuousSMul ℝ (compactlySupported I F n V) := by
+  rw [chartTestTopology_def]
+  infer_instance
+
+/-- The chart-generated test topology is locally convex. -/
+theorem locallyConvexSpace_chartTestTopology :
+    letI := chartTestTopology (I := I) (n := n) t c hc hct
+    LocallyConvexSpace ℝ (compactlySupported I F n V) := by
+  rw [chartTestTopology_def]
+  infer_instance
+
 /-- Every generating chart extension is continuous for the chart-generated test topology. -/
 theorem continuous_chartTestSection_chartTestTopology (j : κ) :
     letI := chartTestTopology (I := I) (n := n) t c hc hct
@@ -204,6 +233,26 @@ private theorem exists_sum_chartLocalization [FiniteDimensional ℝ E] [IsManifo
   · rw [hρ_sum x hx, one_smul]
   · rw [sec.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 sec.property h),
       smul_zero]
+
+private theorem exists_sum_chartLocalization_apply [FiniteDimensional ℝ E] [IsManifold I n M]
+    (hc_symm : ∀ j, ContMDiffOn 𝓘(ℝ, E) I n (c j).symm (c j).target)
+    (hcover_c : ∀ x : M, ∃ j, x ∈ (c j).source) (s : compactlySupported I F n V) :
+    ∃ (S : Finset κ) (ρ : κ → C^n⟮I, M; ℝ⟯) (L : κ → Compacts E)
+      (hL : ∀ j, (L j : Set E) ⊆ (c j).target)
+      (hψ : ∀ j, MapsTo (c j) (_root_.tsupport (ρ j)) (L j)),
+      s = ∑ j ∈ S, (t j).chartTestSection (c j) (hc j) (hct j)
+        ((TestFunction.ofSupportedInCLM ℝ (hL j))
+          ((t j).chartLocalization (c j) (hc_symm j) (hct j) (ρ j) (L j) (hL j) (hψ j)
+            s.val)) := by
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
+  let σ : supportedIn I F n V K := ⟨s.val, mem_supportedIn.2 subset_rfl⟩
+  obtain ⟨S, ρ, L, hL, hψ, hdecomp⟩ :=
+    exists_sum_chartLocalization t c hc hct hc_symm hcover_c K
+  refine ⟨S, ρ, L, hL, hψ, ?_⟩
+  have hσ := LinearMap.congr_fun hdecomp σ
+  simp only [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.coe_coe, Submodule.coe_subtype] at hσ
+  exact (Subtype.ext (ofSupportedIn_apply K σ).symm).trans hσ
 
 /-- **Reverse comparison via finite partitions of unity.** When the model space is
 finite-dimensional and the charts have `C^n` inverses and cover the manifold, the fixed-compact
@@ -310,19 +359,11 @@ sections is determined by its composites with the chart extensions. -/
 theorem span_iUnion_range_chartTestSection_eq_top :
     Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
-  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
-  let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
   let t₀ : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
   choose c₀ hc₀ hc₀_symm hc₀_sub hc₀_mem using
     TauCeti.exists_chart_source_subset_baseSet F I V (n := (n : ℕ∞ω))
-  obtain ⟨S, ρ, L, hL, hψ, hdecomp⟩ := exists_sum_chartLocalization t₀ c₀
-    hc₀ hc₀_sub hc₀_symm (fun x ↦ ⟨x, hc₀_mem x⟩) K
-  have hs : s = ∑ x ∈ S, (t₀ x).chartTestSection (c₀ x) (hc₀ x) (hc₀_sub x)
-      ((TestFunction.ofSupportedInCLM ℝ (hL x))
-        ((t₀ x).chartLocalization (c₀ x) (hc₀_symm x) (hc₀_sub x) (ρ x) (L x) (hL x) (hψ x)
-          σ)) := by
-    simpa [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply] using
-      (Subtype.ext (ofSupportedIn_apply K σ).symm).trans (LinearMap.congr_fun hdecomp σ)
+  obtain ⟨S, ρ, L, hL, hψ, hs⟩ := exists_sum_chartLocalization_apply t₀ c₀
+    hc₀ hc₀_sub hc₀_symm (fun x ↦ ⟨x, hc₀_mem x⟩) s
   rw [hs]
   refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
     ⟨⟨t₀ x, c₀ x, hc₀ x, hc₀_sub x⟩, mem_range_self _⟩)
@@ -352,13 +393,11 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
       simpa only [p, ChartTestData.chartTestSection_def] using
         TauCeti.FinalLocallyConvexTopology.continuous
           (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n)) (p x)
-  · let := compactlySupportedTopology (I := I) (n := n) e U hU
-    let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
-    let := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
-    let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-    exact (TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun q ↦
-      letI := q.memTrivializationAtlas
-      continuous_chartTestSection _ _ q.contMDiffOn_chart q.source_subset e U hU
+  · have : ∀ q : ChartTestData I F V n, MemTrivializationAtlas q.trivialization :=
+      fun q ↦ q.memTrivializationAtlas
+    exact chartTestTopology_le_compactlySupportedTopology
+      (fun q : ChartTestData I F V n ↦ q.trivialization)
+      (fun q ↦ q.chart) (fun q ↦ q.contMDiffOn_chart) (fun q ↦ q.source_subset) e U hU
 
 /-- **The universal property of bundle tests with respect to charts.** On a boundaryless Hausdorff
 `C^n` manifold with finite-dimensional model, a linear map over any `ℝ`-algebra from compactly

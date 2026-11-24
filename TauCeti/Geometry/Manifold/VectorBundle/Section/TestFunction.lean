@@ -300,6 +300,16 @@ theorem chartCoeff_eq_zero {L₀ L : Compacts E} (hL₀ : (L₀ : Set E) ⊆ c.t
     t.chartCoeff c hc_symm hct hL₀ hL₀L s hs y = 0 :=
   chartCoeffFun_eq_zero t c s hs hy
 
+omit [ContMDiffVectorBundle n F V I] in
+private theorem chartCoeffFun_add (s₁ s₂ : Cₛ^n⟮I; F, V⟯) (y : E) :
+    chartCoeffFun t c (s₁ + s₂) y = chartCoeffFun t c s₁ y + chartCoeffFun t c s₂ y := by
+  by_cases hy : y ∈ c.target <;> simp [chartCoeffFun, hy]
+
+omit [ContMDiffVectorBundle n F V I] in
+private theorem chartCoeffFun_smul (a : ℝ) (s : Cₛ^n⟮I; F, V⟯) (y : E) :
+    chartCoeffFun t c (a • s) y = a • chartCoeffFun t c s y := by
+  by_cases hy : y ∈ c.target <;> simp [chartCoeffFun, hy]
+
 /-- The unweighted chart coefficient map as an `ℝ`-linear map on sections vanishing outside `L₀`
 on the chart target. -/
 def chartCoeffLinearMap {L₀ L : Compacts E} (hL₀ : (L₀ : Set E) ⊆ c.target)
@@ -308,28 +318,10 @@ def chartCoeffLinearMap {L₀ L : Compacts E} (hL₀ : (L₀ : Set E) ⊆ c.targ
   toFun s := t.chartCoeff c hc_symm hct hL₀ hL₀L s.val (mem_zeroOffInChart.1 s.property)
   map_add' s₁ s₂ := by
     ext y
-    by_cases hy : y ∈ c.target
-    · simp only [FunLike.coe_add, Pi.add_apply]
-      rw [chartCoeff_apply_of_mem t c hc_symm hct hL₀ hL₀L (s₁ + s₂).val _ hy,
-        chartCoeff_apply_of_mem t c hc_symm hct hL₀ hL₀L s₁.val _ hy,
-        chartCoeff_apply_of_mem t c hc_symm hct hL₀ hL₀L s₂.val _ hy]
-      simp [map_add]
-    · simp only [FunLike.coe_add, Pi.add_apply]
-      rw [chartCoeff_apply_of_notMem t c hc_symm hct hL₀ hL₀L (s₁ + s₂).val _ hy,
-        chartCoeff_apply_of_notMem t c hc_symm hct hL₀ hL₀L s₁.val _ hy,
-        chartCoeff_apply_of_notMem t c hc_symm hct hL₀ hL₀L s₂.val _ hy,
-        add_zero]
+    exact chartCoeffFun_add t c s₁.val s₂.val y
   map_smul' a s := by
     ext y
-    by_cases hy : y ∈ c.target
-    · simp only [FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply]
-      rw [chartCoeff_apply_of_mem t c hc_symm hct hL₀ hL₀L (a • s).val _ hy,
-        chartCoeff_apply_of_mem t c hc_symm hct hL₀ hL₀L s.val _ hy]
-      simp [map_smul]
-    · simp only [FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply]
-      rw [chartCoeff_apply_of_notMem t c hc_symm hct hL₀ hL₀L (a • s).val _ hy,
-        chartCoeff_apply_of_notMem t c hc_symm hct hL₀ hL₀L s.val _ hy,
-        smul_zero]
+    exact chartCoeffFun_smul t c a s.val y
 
 /-- Evaluation of `chartCoeffLinearMap` agrees with `chartCoeff`. -/
 @[simp]

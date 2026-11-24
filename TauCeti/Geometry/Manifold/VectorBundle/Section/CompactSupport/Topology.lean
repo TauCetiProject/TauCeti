@@ -346,47 +346,67 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCo
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   (hcover : ∀ x : M, ∃ i, x ∈ U i)
 
+private def stageReadback (K : Compacts M) (hK : (K : Set M) ⊆ c.source) :
+    supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+  (TestFunction.ofSupportedInCLM ℝ (c.imageCompact_subset_target hK)).toLinearMap.comp
+    (t.chartTestCoeff c hc hct hK (c.coe_imageCompact hK).symm.subset)
+
+omit [LocallyCompactSpace E] [IsManifold I n M] in
+private theorem chartTestSection_stageReadback (K : Compacts M) (hK : (K : Set M) ⊆ c.source)
+    (sec : supportedIn I F n V K) :
+    t.chartTestSection c hc' hct (stageReadback t c hc hct K hK sec) = ofSupportedIn K sec :=
+  t.chartTestSection_ofSupportedIn_chartTestCoeff c hc hct hc' hK
+    (c.coe_imageCompact hK).symm.subset (c.imageCompact_subset_target hK) sec
+
+private def chartReadback (s : compactlySupported I F n V) :
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+  stageReadback t c hc hct ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
+    (hcsource ▸ subset_univ _) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
+
+omit [LocallyCompactSpace E] [IsManifold I n M] in
+private theorem chartTestSection_chartReadback (s : compactlySupported I F n V) :
+    t.chartTestSection c hc' hct (chartReadback t c hc hct hcsource s) = s :=
+  (chartTestSection_stageReadback t c hc hct hc'
+    ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩ (hcsource ▸ subset_univ _)
+    ⟨s.val, mem_supportedIn.2 Subset.rfl⟩).trans (Subtype.ext (ofSupportedIn_apply _ _))
+
+private def chartTestSectionLinearEquiv :
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃ₗ[ℝ] compactlySupported I F n V where
+  toLinearMap := t.chartTestSection c hc' hct
+  invFun := chartReadback t c hc hct hcsource
+  left_inv _ := t.chartTestSection_injective c hc' hct
+    (chartTestSection_chartReadback t c hc hct hc' hcsource _)
+  right_inv := chartTestSection_chartReadback t c hc hct hc' hcsource
+
+include hcover in
+private theorem continuous_chartTestSectionLinearEquiv_symm :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    Continuous (chartTestSectionLinearEquiv t c hc hct hc' hcsource).symm := by
+  let := frameTopology (I := I) (n := n) e U hU
+  let := compactlySupportedTopology (I := I) (n := n) e U hU
+  refine (continuous_compactlySupportedTopology_iff e U hU
+    (chartTestSectionLinearEquiv t c hc hct hc' hcsource).symm.toLinearMap).2 fun K ↦ ?_
+  have hK : (K : Set M) ⊆ c.source := hcsource ▸ subset_univ _
+  refine ((TestFunction.continuous_ofSupportedIn (c.imageCompact_subset_target hK)).comp
+    (continuous_chartTestCoeff t c hc hct hK (c.coe_imageCompact hK).symm.subset
+      e U hU hcover)).congr fun sec ↦
+    t.chartTestSection_injective c hc' hct <|
+      (chartTestSection_stageReadback t c hc hct hc' K hK sec).trans
+        ((chartTestSectionLinearEquiv t c hc hct hc' hcsource).apply_symm_apply
+          (ofSupportedIn K sec)).symm
+
 /-- **Global-chart equivalence with native test functions.** When a smooth chart with `C^n` inverse
 covers the entire manifold inside a smooth bundle frame (for instance, an open subset of a normed
 space with a trivial bundle), chart extension is a continuous linear equivalence from Mathlib's
 `TestFunction` to compactly supported sections with their fixed-compact inductive topology. -/
 def chartTestSectionEquiv :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
-    𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V := by
-  let := frameTopology (I := I) (n := n) e U hU
-  let := compactlySupportedTopology (I := I) (n := n) e U hU
-  have hsub (K : Compacts M) : (K : Set M) ⊆ c.source := hcsource ▸ subset_univ _
-  let stageReadback (K : Compacts M) :
-      supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
-    (TestFunction.ofSupportedInCLM ℝ (c.imageCompact_subset_target (hsub K))).toLinearMap.comp
-      (t.chartTestCoeff c hc hct (hsub K) (c.coe_imageCompact (hsub K)).symm.subset)
-  have hstage (K : Compacts M) (sec : supportedIn I F n V K) :
-      t.chartTestSection c hc' hct (stageReadback K sec) = ofSupportedIn K sec :=
-    t.chartTestSection_ofSupportedIn_chartTestCoeff c hc hct hc' (hsub K)
-      (c.coe_imageCompact (hsub K)).symm.subset (c.imageCompact_subset_target (hsub K)) sec
-  let invFun (s : compactlySupported I F n V) : 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
-    stageReadback ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
-      ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
-  have hinv_right (s : compactlySupported I F n V) :
-      t.chartTestSection c hc' hct (invFun s) = s :=
-    (hstage ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
-      ⟨s.val, mem_supportedIn.2 Subset.rfl⟩).trans (Subtype.ext (ofSupportedIn_apply _ _))
-  let eqv : 𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃ₗ[ℝ] compactlySupported I F n V :=
-    LinearEquiv.ofBijective (t.chartTestSection c hc' hct)
-      ⟨t.chartTestSection_injective c hc' hct, fun s ↦ ⟨invFun s, hinv_right s⟩⟩
-  refine
-    { toLinearEquiv := eqv
-      continuous_toFun := continuous_chartTestSection t c hc' hct e U hU
-      continuous_invFun := ?_ }
-  refine (continuous_compactlySupportedTopology_iff e U hU eqv.symm.toLinearMap).2 fun K ↦ ?_
-  refine ((TestFunction.continuous_ofSupportedIn (c.imageCompact_subset_target (hsub K))).comp
-    (continuous_chartTestCoeff t c hc hct (hsub K)
-      (c.coe_imageCompact (hsub K)).symm.subset e U hU hcover)).congr fun sec ↦
-    t.chartTestSection_injective c hc' hct <| by
-      dsimp only [stageReadback, LinearMap.coe_comp, Function.comp_apply,
-        ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM,
-        LinearEquiv.coe_toLinearMap]
-      exact (hstage K sec).trans (eqv.apply_symm_apply (ofSupportedIn K sec)).symm
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V :=
+  letI := compactlySupportedTopology (I := I) (n := n) e U hU
+  { toLinearEquiv := chartTestSectionLinearEquiv t c hc hct hc' hcsource
+    continuous_toFun := continuous_chartTestSection t c hc' hct e U hU
+    continuous_invFun :=
+      continuous_chartTestSectionLinearEquiv_symm t c hc hct hc' hcsource e U hU hcover }
 
 /-- The forward map of `chartTestSectionEquiv` is `chartTestSection`. -/
 @[simp]
@@ -401,12 +421,11 @@ theorem chartTestSectionEquiv_symm_apply_of_mem (s : compactlySupported I F n V)
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     (t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).symm s y =
       t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
-  let := compactlySupportedTopology (I := I) (n := n) e U hU
-  have h := congrArg (fun u : compactlySupported I F n V ↦
-    t.continuousLinearMapAt ℝ (c.symm y) (u.val (c.symm y)))
-    ((t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).apply_symm_apply s)
-  simpa only [chartTestSectionEquiv_apply,
-    continuousLinearMapAt_chartTestSection t c hc' hct _ (c.map_target hy), c.right_inv hy] using h
+  change stageReadback t c hc hct ⟨s.val.tsupport, mem_compactlySupported.1 s.property⟩
+    (hcsource ▸ subset_univ _) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩ y = _
+  rw [stageReadback, LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
+    TestFunction.coe_ofSupportedInCLM, TestFunction.coe_ofSupportedIn,
+    chartTestCoeff_apply_of_mem t c hc hct _ _ _ hy]
 
 /-- Outside the chart target, the inverse of `chartTestSectionEquiv` vanishes. -/
 @[simp]
