@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import TauCeti.LinearAlgebra.Dual.Rank
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Duality of Grassmannians
@@ -25,9 +25,9 @@ rank-`l` quotients of `P^∨`. Conversely the coannihilator of a point of `G(l, 
 of `G(k, P; A)` (`Module.Grassmannian.dualCoannihilator`), and the two constructions are inverse
 bijections `G(k, P; A) ≃ G(l, P^∨; A)` (`Module.Grassmannian.dualEquiv`).
 
-Both inverse laws come from `Module.Grassmannian.eq_of_le`: two points of the same Grassmannian,
-one contained in the other, are equal, because the kernel of the induced surjection of quotients
-is a finite projective module of rank zero.
+Both inverse laws come from `Module.Grassmannian.eq_of_le` in
+`TauCeti/RingTheory/Grassmannian/Basic.lean`: two points of the same Grassmannian, one contained in
+the other, are equal.
 
 For a finite projective `R`-module `M` of constant rank `k + l` and an `R`-algebra `A`, composing
 with the identification `A ⊗[R] M^∨ ≃ (A ⊗[R] M)^∨` gives a bijection
@@ -48,9 +48,11 @@ functors underlying the isomorphism of Grassmannian schemes `G(k, M) ≅ G(l, M^
 
 ## Main results
 
-* `Module.Grassmannian.eq_of_le`: points of a Grassmannian are maximal under inclusion.
-* `Module.Grassmannian.rankAtStalk_toSubmodule`: a point of `G(k, P; A)` is a subbundle of rank
-  `l`.
+* `Module.Grassmannian.dualRestrict_surjective`: functionals on a point extend to the ambient
+  module.
+* `Module.Grassmannian.mem_baseChangeDualEquiv_iff` and
+  `Module.Grassmannian.mem_baseChangeDualEquiv_symm_iff`: `baseChangeDualEquiv` and its inverse on
+  points.
 * `Module.Grassmannian.baseChangeDualEquiv_map`: naturality of `baseChangeDualEquiv`.
 
 ## References
@@ -68,100 +70,17 @@ open TensorProduct
 
 namespace Module.Grassmannian
 
-section Split
-
-variable {A : Type*} [CommRing A] {K X Y : Type*} [AddCommGroup K] [Module A K] [AddCommGroup X]
-  [Module A X] [AddCommGroup Y] [Module A Y] [Module.Projective A Y] {f : K →ₗ[A] X}
-  {g : X →ₗ[A] Y}
-
-/-- A short exact sequence `0 → K → X → Y → 0` with `Y` projective splits. -/
-private theorem exists_splitting (hfg : Function.Exact f g) (hf : Function.Injective f)
-    (hg : Function.Surjective g) :
-    ∃ e : X ≃ₗ[A] K × Y, f = e.symm.toLinearMap ∘ₗ LinearMap.inl A K Y ∧
-      g = LinearMap.snd A K Y ∘ₗ e.toLinearMap := by
-  obtain ⟨s, hs⟩ := Module.projective_lifting_property g LinearMap.id hg
-  obtain ⟨e, he⟩ := (hfg.splitSurjectiveEquiv hf) ⟨s, hs⟩
-  exact ⟨e, he⟩
-
-private theorem finite_of_exact [Module.Finite A X] (hfg : Function.Exact f g)
-    (hf : Function.Injective f) (hg : Function.Surjective g) : Module.Finite A K := by
-  obtain ⟨e, -, -⟩ := exists_splitting hfg hf hg
-  exact .of_surjective (LinearMap.fst A K Y ∘ₗ e.toLinearMap)
-    (Prod.fst_surjective.comp e.surjective)
-
-private theorem projective_of_exact [Module.Projective A X] (hfg : Function.Exact f g)
-    (hf : Function.Injective f) (hg : Function.Surjective g) : Module.Projective A K := by
-  obtain ⟨e, -, -⟩ := exists_splitting hfg hf hg
-  exact .of_split (e.symm.toLinearMap ∘ₗ LinearMap.inl A K Y)
-    (LinearMap.fst A K Y ∘ₗ e.toLinearMap) (by ext x; simp)
-
-private theorem rankAtStalk_eq_add [Module.Finite A X] [Module.Projective A X] [Module.Finite A Y]
-    (hfg : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
-    rankAtStalk (R := A) X = rankAtStalk K + rankAtStalk Y := by
-  have := finite_of_exact hfg hf hg
-  have := projective_of_exact hfg hf hg
-  obtain ⟨e, -, -⟩ := exists_splitting hfg hf hg
-  rw [rankAtStalk_eq_of_equiv e, rankAtStalk_prod]
-
-end Split
-
 variable {A : Type*} [CommRing A] {P : Type*} [AddCommGroup P] [Module A P] {k l : ℕ}
 
-/-- **Points of a Grassmannian are maximal under inclusion.** If `N₁, N₂ ∈ G(k, P; A)` and
-`N₁ ≤ N₂`, then `N₁ = N₂`: the kernel of the surjection `P ⧸ N₁ → P ⧸ N₂` is a direct summand of
-`P ⧸ N₁`, hence finite projective, of rank `k - k = 0`, hence zero. -/
-theorem eq_of_le {N₁ N₂ : G(k, P; A)} (h : N₁.toSubmodule ≤ N₂.toSubmodule) : N₁ = N₂ := by
-  let g := Submodule.factor h
-  have hg : Function.Surjective g := fun y ↦ by
-    induction y using Submodule.Quotient.induction_on with
-    | H x => exact ⟨Submodule.Quotient.mk x, rfl⟩
-  have hfg := LinearMap.exact_subtype_ker_map g
-  have hf := (LinearMap.ker g).injective_subtype
-  have := finite_of_exact hfg hf hg
-  have := projective_of_exact hfg hf hg
-  have hK : rankAtStalk (R := A) (LinearMap.ker g) = 0 := by
-    ext p
-    have h₁ := congrFun (rankAtStalk_eq_add hfg hf hg) p
-    simp only [Pi.add_apply, N₁.rankAtStalk_eq, N₂.rankAtStalk_eq] at h₁
-    simp only [Pi.zero_apply]
-    omega
-  have := rankAtStalk_eq_zero_iff_subsingleton.mp hK
-  refine Grassmannian.ext (le_antisymm h fun x hx ↦ ?_)
-  have hx' : N₁.toSubmodule.mkQ x ∈ LinearMap.ker g := by
-    simpa [g, Submodule.Quotient.mk_eq_zero] using hx
-  rw [← Submodule.Quotient.mk_eq_zero]
-  exact congrArg Subtype.val (Subsingleton.elim (⟨_, hx'⟩ : LinearMap.ker g) 0)
-
 section Dual
-
-/-- A point of a Grassmannian of a finite module is a finite module. -/
-theorem finite_toSubmodule [Module.Finite A P] (N : G(k, P; A)) :
-    Module.Finite A N.toSubmodule :=
-  finite_of_exact (LinearMap.exact_subtype_mkQ _) N.toSubmodule.injective_subtype
-    N.toSubmodule.mkQ_surjective
-
-/-- A point of a Grassmannian of a projective module is a projective module. -/
-theorem projective_toSubmodule [Module.Projective A P] (N : G(k, P; A)) :
-    Module.Projective A N.toSubmodule :=
-  projective_of_exact (LinearMap.exact_subtype_mkQ _) N.toSubmodule.injective_subtype
-    N.toSubmodule.mkQ_surjective
-
-/-- **Quotients of rank `k` are subbundles of rank `l`.** If `P` has constant rank `k + l`, a
-point of `G(k, P; A)` has constant rank `l`. -/
-theorem rankAtStalk_toSubmodule [Module.Finite A P] [Module.Projective A P]
-    (h : ∀ p, rankAtStalk (R := A) P p = k + l) (N : G(k, P; A))
-    (p : PrimeSpectrum A) : rankAtStalk (R := A) N.toSubmodule p = l := by
-  have h₁ := congrFun (rankAtStalk_eq_add (LinearMap.exact_subtype_mkQ N.toSubmodule)
-    N.toSubmodule.injective_subtype N.toSubmodule.mkQ_surjective) p
-  simp only [Pi.add_apply, N.rankAtStalk_eq, h] at h₁
-  omega
 
 /-- Every functional on a point `N` of a Grassmannian extends to the ambient module, since `N` is
 a direct summand. -/
 theorem dualRestrict_surjective (N : G(k, P; A)) :
     Function.Surjective N.toSubmodule.dualRestrict := by
-  obtain ⟨e, hf, -⟩ := exists_splitting (LinearMap.exact_subtype_mkQ N.toSubmodule)
-    N.toSubmodule.injective_subtype N.toSubmodule.mkQ_surjective
+  obtain ⟨e, hf, -⟩ :=
+    (LinearMap.exact_subtype_mkQ N.toSubmodule).exists_linearEquiv_prod_of_projective
+      N.toSubmodule.injective_subtype N.toSubmodule.mkQ_surjective
   intro ψ
   refine ⟨ψ ∘ₗ LinearMap.fst A _ _ ∘ₗ e.toLinearMap, LinearMap.ext fun n ↦ ?_⟩
   have hn : (n : P) = e.symm (n, 0) := LinearMap.congr_fun hf n
@@ -235,34 +154,14 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
 
 open TauCeti.Module.Dual
 
-/-- The base change of a finite flat module of constant rank `k + l` has constant rank
-`k + l`. -/
-theorem rankAtStalk_baseChange_eq [Module.Finite R M] [Module.Flat R M]
-    (h : ∀ p, rankAtStalk (R := R) M p = k + l) (p : PrimeSpectrum A) :
-    rankAtStalk (R := A) (A ⊗[R] M) p = k + l := by
-  rw [rankAtStalk_baseChange]
-  exact h _
-
-/-- The pairing of `A ⊗[R] M^∨` with `A ⊗[R] M` commutes with base change along `A → B`. -/
-theorem baseChangeEvaluation_rTensor (f : A →ₐ[R] B) (ξ : A ⊗[R] Module.Dual R M)
-    (x : A ⊗[R] M) :
-    baseChangeEvaluation (R := R) (M := M) (A := B) (f.toLinearMap.rTensor _ ξ)
-        (f.toLinearMap.rTensor M x) =
-      f (baseChangeEvaluation (R := R) (M := M) (A := A) ξ x) := by
-  induction ξ using TensorProduct.inductionOn with
-  | add ξ η hξ hη => simp only [map_add, LinearMap.add_apply, hξ, hη]
-  | tmul a φ =>
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul b m => simp
-
 variable [Module.Finite R M] [Module.Projective R M]
 
 variable (A) in
 /-- **Duality of Grassmannian functors.** If `M` is finite projective of constant rank `k + l`
 over `R`, then for every `R`-algebra `A` the points of `G(k, M)` over `A` correspond to the
 points of `G(l, M^∨)` over `A`: a point `N` goes to its annihilator in
-`(A ⊗[R] M)^∨ ≃ A ⊗[R] M^∨` (`Module.Grassmannian.mem_baseChangeDualEquiv_iff`). The bijection is
+`(A ⊗[R] M)^∨ ≃ A ⊗[R] M^∨` (`Module.Grassmannian.mem_baseChangeDualEquiv_iff`), and its inverse
+takes coannihilators (`Module.Grassmannian.mem_baseChangeDualEquiv_symm_iff`). The bijection is
 natural in `A` (`Module.Grassmannian.baseChangeDualEquiv_map`). -/
 noncomputable def baseChangeDualEquiv (h : ∀ p, rankAtStalk (R := R) M p = k + l) :
     G(k, A ⊗[R] M; A) ≃ G(l, A ⊗[R] Module.Dual R M; A) :=
@@ -280,6 +179,23 @@ theorem mem_baseChangeDualEquiv_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l
     Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearEquiv.symm_symm, dualEquiv_apply,
     toSubmodule_dualAnnihilator, Submodule.mem_dualAnnihilator]
   simp
+
+/-- **The inverse of `baseChangeDualEquiv` on points.** An element `x` of `A ⊗[R] M` lies in the
+point corresponding to `K` exactly when every `ξ ∈ K` kills it under the pairing of `A ⊗[R] M^∨`
+with `A ⊗[R] M`. -/
+theorem mem_baseChangeDualEquiv_symm_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l)
+    (K : G(l, A ⊗[R] Module.Dual R M; A)) (x : A ⊗[R] M) :
+    x ∈ ((baseChangeDualEquiv A h).symm K).toSubmodule ↔
+      ∀ ξ ∈ K.toSubmodule, baseChangeEvaluation (R := R) (M := M) (A := A) ξ x = 0 := by
+  rw [baseChangeDualEquiv, Equiv.symm_trans_apply, LinearEquiv.grassmannianCongr_symm,
+    dualEquiv_symm_apply, toSubmodule_dualCoannihilator, Submodule.mem_dualCoannihilator,
+    LinearEquiv.toSubmodule_grassmannianCongr_apply, LinearEquiv.symm_symm]
+  let e := baseChangeEvaluationEquiv (R := R) (A := A) (M := M)
+  refine ⟨fun H ξ hξ ↦ ?_, fun H φ hφ ↦ ?_⟩
+  · have := H (e ξ) (Submodule.mem_map_of_mem hξ)
+    rwa [baseChangeEvaluationEquiv_apply] at this
+  · have := H (e.symm φ) (by simpa using hφ)
+    rwa [← baseChangeEvaluationEquiv_apply, LinearEquiv.apply_symm_apply] at this
 
 /-- **Naturality of `baseChangeDualEquiv`.** For `f : A →ₐ[R] B`, the point corresponding to the
 base change of `N` is the base change of the point corresponding to `N`. -/

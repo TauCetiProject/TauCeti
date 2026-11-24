@@ -8,6 +8,9 @@ module
 public import Mathlib.RingTheory.Grassmannian
 
 import Mathlib.RingTheory.Flat.LocallyFree
+import TauCeti.Algebra.Module.Projective.Complement
+import TauCeti.LinearAlgebra.Exact
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 -- Proof-only: the body of `Module.Grassmannian.baseChangeMkQ` is not exposed.
 import all Mathlib.RingTheory.Grassmannian
 
@@ -18,7 +21,9 @@ Let `M` be a module over a commutative ring `R`. Mathlib's `Module.Grassmannian 
 `G(k, M; R)`, is the set of submodules `N ≤ M` whose quotient `M ⧸ N` is finite projective of
 constant rank `k`. This file adds general facts about it: the kernel of a surjection onto a
 finite projective module of constant rank `k` is a point of `G(k, M; R)`, a point of the
-Grassmannian of a finite module is finitely generated, extreme-dimension characterisations
+Grassmannian of a finite module is finitely generated, points are maximal under inclusion, a point
+of the Grassmannian of a finite flat module of constant rank `k + l` is a direct summand of
+constant rank `l`, extreme-dimension characterisations
 (`G(0, M; R)` has unique point `⊤`, `G(k, M; R)` is empty when `M` is finite flat of rank `< k` at
 some prime, and `G(n, M; R)` has unique point `⊥` when `M` is finite projective of constant rank
 `n`), field-point dimensions (`finrank_quotient`, `finrank_toSubmodule`), and the behaviour of
@@ -49,6 +54,9 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 ## Main results
 
 * `Module.Grassmannian.fg_toSubmodule`: over a finite module, every point is finitely generated.
+* `Module.Grassmannian.eq_of_le`: points of a Grassmannian are maximal under inclusion.
+* `Module.Grassmannian.rankAtStalk_toSubmodule`: a point of `G(k, M; R)` is a subbundle of rank
+  `l` when `M` is finite flat of constant rank `k + l`.
 * `Module.Grassmannian.toSubmodule_eq_top_zero`, `Module.Grassmannian.isEmpty_of_rankAtStalk_lt`,
   and `Module.Grassmannian.toSubmodule_eq_bot_of_rankAtStalk_eq`: extreme-dimension behaviour of
   `G(k, M; R)`.
@@ -165,6 +173,58 @@ noncomputable def uniqueOfRankAtStalkEq [Module.Finite R M] [Module.Projective R
     (toSubmodule_eq_bot_of_rankAtStalk_eq h N).trans (toSubmodule_eq_bot_of_rankAtStalk_eq h _).symm
 
 end Extreme
+
+section Subbundle
+
+/-- **Points of a Grassmannian are maximal under inclusion.** If `N₁, N₂ ∈ G(k, M; R)` and
+`N₁ ≤ N₂`, then `N₁ = N₂`: the kernel of the surjection `M ⧸ N₁ → M ⧸ N₂` is a direct summand of
+`M ⧸ N₁`, hence finite projective, of rank `k - k = 0`, hence zero. -/
+theorem eq_of_le {N₁ N₂ : G(k, M; R)} (h : N₁.toSubmodule ≤ N₂.toSubmodule) : N₁ = N₂ := by
+  let g := Submodule.factor h
+  have hg : Function.Surjective g := fun y ↦ by
+    induction y using Submodule.Quotient.induction_on with
+    | H x => exact ⟨Submodule.Quotient.mk x, rfl⟩
+  have hfg := LinearMap.exact_subtype_ker_map g
+  have hf := (LinearMap.ker g).injective_subtype
+  have := hfg.moduleFinite_of_projective hf hg
+  have := Module.Projective.of_isCompl (LinearMap.isComplemented_ker_of_surjective g hg).choose_spec
+  have hK : rankAtStalk (R := R) (LinearMap.ker g) = 0 := by
+    ext p
+    have h₁ := congrFun (hfg.rankAtStalk_eq_add hf hg) p
+    simp only [Pi.add_apply, N₁.rankAtStalk_eq, N₂.rankAtStalk_eq] at h₁
+    simp only [Pi.zero_apply]
+    omega
+  have := rankAtStalk_eq_zero_iff_subsingleton.mp hK
+  refine Grassmannian.ext (le_antisymm h fun x hx ↦ ?_)
+  have hx' : N₁.toSubmodule.mkQ x ∈ LinearMap.ker g := by
+    simpa [g, Submodule.Quotient.mk_eq_zero] using hx
+  rw [← Submodule.Quotient.mk_eq_zero]
+  exact congrArg Subtype.val (Subsingleton.elim (⟨_, hx'⟩ : LinearMap.ker g) 0)
+
+/-- A point of a Grassmannian of a finite module is a finite module. -/
+theorem finite_toSubmodule [Module.Finite R M] (N : G(k, M; R)) :
+    Module.Finite R N.toSubmodule :=
+  (LinearMap.exact_subtype_mkQ _).moduleFinite_of_projective N.toSubmodule.injective_subtype
+    N.toSubmodule.mkQ_surjective
+
+/-- A point of a Grassmannian of a projective module is a projective module. -/
+theorem projective_toSubmodule [Module.Projective R M] (N : G(k, M; R)) :
+    Module.Projective R N.toSubmodule := by
+  obtain ⟨T, hT⟩ := N.toSubmodule.mkQ.isComplemented_ker_of_surjective N.toSubmodule.mkQ_surjective
+  rw [Submodule.ker_mkQ] at hT
+  exact .of_isCompl hT
+
+/-- **Quotients of rank `k` are subbundles of rank `l`.** If `M` is finite flat of constant rank
+`k + l`, a point of `G(k, M; R)` has constant rank `l`. -/
+theorem rankAtStalk_toSubmodule [Module.Finite R M] [Module.Flat R M] {l : ℕ}
+    (h : ∀ p, rankAtStalk (R := R) M p = k + l) (N : G(k, M; R))
+    (p : PrimeSpectrum R) : rankAtStalk (R := R) N.toSubmodule p = l := by
+  have h₁ := congrFun ((LinearMap.exact_subtype_mkQ N.toSubmodule).rankAtStalk_eq_add
+    N.toSubmodule.injective_subtype N.toSubmodule.mkQ_surjective) p
+  simp only [Pi.add_apply, N.rankAtStalk_eq, h] at h₁
+  omega
+
+end Subbundle
 
 section Field
 
@@ -288,6 +348,14 @@ theorem rTensor_mem_map_iff_of_injective {f : A →ₐ[R] B} (hf : Function.Inje
   have : FaithfulSMul A B := (faithfulSMul_iff_algebraMap_injective A B).mpr hf
   simpa using map_eq_zero_iff _
     (Module.Flat.tensorProduct_mk_injective (R := A) (S := B) _) (x := N.mkQ x)
+
+/-- The base change of a finite flat module of constant rank `k + l` has constant rank
+`k + l`. -/
+theorem rankAtStalk_baseChange_eq [Module.Finite R M] [Module.Flat R M] {l : ℕ}
+    (h : ∀ p, rankAtStalk (R := R) M p = k + l) (p : PrimeSpectrum A) :
+    rankAtStalk (R := A) (A ⊗[R] M) p = k + l := by
+  rw [rankAtStalk_baseChange]
+  exact h _
 
 /-- **Base change along an injective map is injective on points.** -/
 theorem map_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :

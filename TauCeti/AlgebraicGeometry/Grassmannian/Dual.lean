@@ -25,7 +25,7 @@ to the point classifying its annihilator `N^⊥ ⊆ A ⊗[R] M^∨`, the kernel 
 sends the point classifying `K` to the point classifying the coannihilator of `K`
 (`Module.Grassmannian.toSchemeHom_comp_schemeDualIso_inv`). So under the isomorphism the
 universal rank-`l` quotient of `M^∨` is the dual of the universal rank-`l` subbundle of `M`, and
-the universal rank-`l` subbundle of `M^∨` is the annihilator of that subbundle, the dual of the
+the universal rank-`k` subbundle of `M^∨` is the annihilator of that subbundle, the dual of the
 universal rank-`k` quotient of `M`.
 
 The maps of points are natural in `A` (`Module.Grassmannian.baseChangeDualEquiv_map`), so each is
@@ -63,6 +63,14 @@ variable {R : Type u} [CommRing R] {M M' : Type u} [AddCommGroup M] [Module R M]
   [AddCommGroup M'] [Module R M'] {k l : ℕ}
 
 section OfPoints
+
+/-! The helpers in this section follow the construction of `Module.Grassmannian.baseChangeHom`
+from `baseChangeAux` and `baseChangePoint` in
+`TauCeti/AlgebraicGeometry/Grassmannian/BaseChange.lean`, and repeat
+`Module.Grassmannian.homOfPoints` and `Module.Grassmannian.scheme_hom_ext` of the open
+https://github.com/TauCetiProject/TauCeti/pull/43522 (feat: isomorphism of Grassmannian schemes
+induced by a linear equivalence). They are private so that this file does not depend on that pull
+request, and are to be replaced by its declarations once it is merged. -/
 
 /-- Morphisms out of the Grassmannian agree when they agree on the point classifying every `N`. -/
 private theorem hom_ext_of_points {X : Scheme.{u}} {f g : scheme R M k ⟶ X}
