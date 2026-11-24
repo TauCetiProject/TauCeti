@@ -107,6 +107,7 @@ theorem exists_isPrimitive_chevalleySystem_apply (γ : Fin t.numRoots) :
 
 /-- Every all-root operator on the lattice of a Chevalley datum remains faithful after base change
 to any commutative ring, including nonreduced rings and rings of small characteristic. -/
+@[simp]
 theorem smul_baseChange_kostantRootOperator_chevalleySystem_eq_zero_iff
     (γ : Fin t.numRoots) (A : Type v) [CommRing A] (c : A) :
     c • (kostantRootOperator (t.chevalleySystem ht) (t.lieBasis ht).h
