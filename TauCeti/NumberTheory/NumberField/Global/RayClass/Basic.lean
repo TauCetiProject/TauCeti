@@ -42,6 +42,8 @@ class group (`oneEquivClassGroup`).
   monoid homomorphism out of `integralIdealsPrimeTo 𝔪`.
 * `TauCeti.GlobalNumberFields.classMap`: the transition map, running from the ray class group of a
   larger modulus to that of a divisor of it.
+* `TauCeti.GlobalNumberFields.integralIdealsPrimeToOneEquiv`: at the trivial modulus the nonzero
+  integral ideals prime to the modulus are identified with `(Ideal (𝓞 K))⁰`.
 
 ## Main results
 
@@ -64,7 +66,8 @@ class group (`oneEquivClassGroup`).
   identity (`TauCeti.GlobalNumberFields.classMap_refl`).
 * `TauCeti.GlobalNumberFields.oneEquivClassGroup`: at the trivial modulus the ray class group is
   the class group of `𝓞 K`, carrying a ray class to the class of the same fractional ideal
-  (`TauCeti.GlobalNumberFields.oneEquivClassGroup_rayClassMk`).
+  (`TauCeti.GlobalNumberFields.oneEquivClassGroup_rayClassMk`) and the ray class of an integral
+  ideal to its ordinary ideal class (`TauCeti.GlobalNumberFields.oneEquivClassGroup_idealClass`).
 
 ## References
 
@@ -94,7 +97,7 @@ fractional ideal, viewed inside the ideals prime to `𝔪`. -/
 noncomputable def rayHom (𝔪 : Modulus K) :
     congruenceSubgroup 𝔪 →* idealsPrimeTo 𝔪 :=
   MonoidHom.codRestrict ((toPrincipalIdeal (𝓞 K) K).comp (congruenceSubgroup 𝔪).subtype) _
-    fun x ↦ (mem_congruenceSubgroup.mp x.2).toPrincipalIdeal_mem_idealsPrimeTo
+    fun x ↦ (mem_congruenceSubgroup.mp x.property).toPrincipalIdeal_mem_idealsPrimeTo
 
 @[simp] theorem coe_rayHom (𝔪 : Modulus K) (x : congruenceSubgroup 𝔪) :
     ((rayHom 𝔪 x : idealsPrimeTo 𝔪) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
@@ -109,7 +112,7 @@ noncomputable def ray (𝔪 : Modulus K) : Subgroup (idealsPrimeTo 𝔪) :=
     I ∈ ray 𝔪 ↔ ∃ x : Kˣ, IsCongrOne 𝔪 x ∧
       toPrincipalIdeal (𝓞 K) K x = (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
   rw [ray, MonoidHom.mem_range]
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, mem_congruenceSubgroup.mp x.2, ?_⟩, fun ⟨x, hx, hxI⟩ ↦ ?_⟩
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, mem_congruenceSubgroup.mp x.property, ?_⟩, fun ⟨x, hx, hxI⟩ ↦ ?_⟩
   · rw [← coe_rayHom 𝔪 x, hx]
   · exact ⟨⟨x, mem_congruenceSubgroup.mpr hx⟩, Subtype.ext (Units.ext (by rw [coe_rayHom, hxI]))⟩
 
@@ -340,5 +343,34 @@ fractional ideal.** -/
     ClassGroup.equiv_mk]
   simp only [QuotientGroup.mk'_apply, FractionalIdeal.canonicalEquiv_self,
     RingEquiv.coe_mulEquiv_refl, hmap]
+
+/-- At the trivial modulus the integral ideals prime to the modulus are the nonzero integral
+ideals. -/
+noncomputable def integralIdealsPrimeToOneEquiv :
+    integralIdealsPrimeTo (Modulus.one K) ≃ (Ideal (𝓞 K))⁰ :=
+  Equiv.subtypeEquiv (Equiv.refl _) fun I ↦ by
+    rw [Equiv.refl_apply, Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff,
+      Modulus.support_one, mem_nonZeroDivisors_iff_ne_zero]
+    simp
+
+/-- The equivalence `integralIdealsPrimeToOneEquiv` preserves the underlying ideal. -/
+@[simp] theorem integralIdealsPrimeToOneEquiv_apply_coe
+    (I : integralIdealsPrimeTo (Modulus.one K)) :
+    ((integralIdealsPrimeToOneEquiv I : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = I := (rfl)
+
+/-- The inverse equivalence `integralIdealsPrimeToOneEquiv.symm` preserves the underlying ideal. -/
+@[simp] theorem integralIdealsPrimeToOneEquiv_symm_apply_coe (I : (Ideal (𝓞 K))⁰) :
+    ((integralIdealsPrimeToOneEquiv.symm I : integralIdealsPrimeTo (Modulus.one K)) :
+      Ideal (𝓞 K)) = I := (rfl)
+
+/-- Under `oneEquivClassGroup`, the ray class of an integral ideal at the trivial modulus is its
+ordinary ideal class. -/
+@[simp] theorem oneEquivClassGroup_idealClass (J : integralIdealsPrimeTo (Modulus.one K)) :
+    oneEquivClassGroup (idealClass (Modulus.one K) J) =
+      ClassGroup.mk0 (integralIdealsPrimeToOneEquiv J) := by
+  rw [idealClass_apply, oneEquivClassGroup_rayClassMk, ← ClassGroup.mk_mk0 K]
+  exact congrArg (ClassGroup.mk K) (Units.ext (by
+    rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, FractionalIdeal.coe_mk0,
+      integralIdealsPrimeToOneEquiv_apply_coe]))
 
 end TauCeti.GlobalNumberFields

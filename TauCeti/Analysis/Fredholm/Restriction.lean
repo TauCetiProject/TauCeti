@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -22,6 +23,9 @@ modes.
 
 * `ContinuousLinearMap.index_restrict`: the index formula for the restriction of a
   continuous linear map to closed finite-codimensional subspaces.
+* `ContinuousLinearMap.isInvertible_restrict_map_of_disjoint_ker`: a continuous linear map that is
+  injective on a closed subspace `E₁` of a Banach space, with closed image, restricts to an
+  invertible operator from `E₁` onto its image.
 
 The finite-codimension reduction and index convention follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1. The proof factors `T` through
@@ -56,13 +60,11 @@ theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
     ext x
     exact (congrArg Subtype.val (restrict_apply hT x)).symm
   have hdom : index (T.comp E₁.subtypeL) =
-      index T + index E₁.subtypeL := by
-    simpa only [index_def, toLinearMap_comp] using
-      hTfull.index_comp hιE
+      index T + index E₁.subtypeL :=
+    index_comp hTfull hιE
   have hcod : index (F₁.subtypeL.comp (T.restrict hT)) =
-      index F₁.subtypeL + index (T.restrict hT) := by
-    simpa only [index_def, toLinearMap_comp] using
-      hιF.index_comp hT₁
+      index F₁.subtypeL + index (T.restrict hT) :=
+    index_comp hιF hT₁
   have hEindex : index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
     rw [index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
@@ -72,6 +74,22 @@ theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
   rw [hfactor, hcod, hEindex, hFindex] at hdom
   omega
 
+omit [CompleteSpace K] in
+/-- If a continuous linear map `T` between Banach spaces is injective on a closed subspace `E₁` and
+`T(E₁)` is closed, then `T` restricts to an invertible operator from `E₁` onto `T(E₁)`. -/
+theorem isInvertible_restrict_map_of_disjoint_ker [CompleteSpace E] [CompleteSpace F]
+    (hE₁ : IsClosed (E₁ : Set E)) (hker : Disjoint E₁ T.ker)
+    (hTE₁ : IsClosed (E₁.map (T : E →ₗ[K] F) : Set F)) :
+    (T.restrict (fun _ hx ↦ Submodule.mem_map_of_mem hx :
+      Set.MapsTo T E₁ (E₁.map (T : E →ₗ[K] F)))).IsInvertible := by
+  have : CompleteSpace E₁ := hE₁.isComplete.completeSpace_coe
+  have : CompleteSpace (E₁.map (T : E →ₗ[K] F)) := hTE₁.isComplete.completeSpace_coe
+  refine isInvertible_iff_bijective.2 ⟨(injective_iff_map_eq_zero _).2 fun v h ↦ ?_,
+    fun ⟨y, hy⟩ ↦ ?_⟩
+  · have h' : T v = 0 := by simpa using congr(($h : F))
+    exact Subtype.ext (Submodule.disjoint_def.mp hker v v.property (LinearMap.mem_ker.mpr h'))
+  · obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.mp hy
+    exact ⟨⟨v, hv⟩, restrict_apply _ _⟩
 
 end ContinuousLinearMap
 

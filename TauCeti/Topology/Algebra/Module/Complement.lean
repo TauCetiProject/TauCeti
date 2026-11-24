@@ -26,6 +26,9 @@ continuously complemented; the section is obtained by descending the complementa
 through the quotient.
 A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
 product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
+For a `u`-invariant submodule `p` with topological complement `q`, the restriction of `u` to `p`
+is inclusion into the ambient module, followed by `u`, then projection onto `p` along `q`
+(`ContinuousLinearMap.restrict_eq_projectionOntoL_comp`).
 -/
 
 public section
@@ -92,7 +95,7 @@ theorem ClosedComplemented.restrictScalars {p : Submodule A M} (hp : p.ClosedCom
   obtain ⟨P, hP⟩ := hp
   exact ⟨ContinuousLinearMap.codRestrict
     (ContinuousLinearMap.restrictScalars R (p.subtypeL.comp P)) (p.restrictScalars R)
-    fun x ↦ (P x).2, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.2⟩))⟩
+    fun x ↦ (P x).property, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.property⟩))⟩
 
 end RestrictScalars
 
@@ -101,6 +104,17 @@ end Submodule
 namespace ContinuousLinearMap
 
 open Topology
+
+/-- The restriction of an invariant endomorphism `u` to a topologically complemented submodule `p`
+factors as the projection onto `p` composed with `u` on `p.subtypeL`. -/
+theorem restrict_eq_projectionOntoL_comp {R M : Type*} [Ring R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] (u : M →L[R] M) {p q : Submodule R M} (h : p.IsTopCompl q)
+    (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    u.restrict hu_maps = (p.projectionOntoL q h).comp (u.comp p.subtypeL) := by
+  refine ext fun x ↦ Subtype.ext ?_
+  rw [coe_restrict_apply, comp_apply, comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+    Submodule.coe_projectionOntoL_apply]
+  exact (Submodule.projectionL_apply_left h ⟨u x, hu_maps x x.property⟩).symm
 
 variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
   [AddCommGroup F] [Module R F] [TopologicalSpace F]

@@ -81,7 +81,7 @@ private theorem tprod_one_sub_pow_odd_pow_mul_neg {s : ℂ} (hs : ‖s‖ < 1) :
 
 private theorem exp_neg_pi_I_mul_div_three_pow_three (τ : ℂ) :
     cexp (-(π * I * τ / 3)) ^ 3 = (𝕢 2 τ)⁻¹ := by
-  rw [Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_neg]
+  rw [Function.Periodic.qParam, ← Complex.exp_natCast_mul, ← Complex.exp_neg]
   congr 1
   push_cast
   ring

@@ -185,7 +185,7 @@ private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {
   have hker₀ : (T₀.coprod S.subtypeL).ker = T₀.ker.prod ⊥ := by
     simpa using ker_coprod_of_disjoint_range (f₂ := S.subtypeL) (by simpa [disjoint_comm] using hS₀)
   have hk : Surjective (kerCoprodHom T₀ S.subtypeL) := fun g ↦ by
-    have hg := (hker₀ ▸ g.2 : (g : E × S) ∈ T₀.ker.prod ⊥)
+    have hg := (hker₀ ▸ g.property : (g : E × S) ∈ T₀.ker.prod ⊥)
     exact ⟨⟨(g : E × S).1, hg.1⟩, Subtype.ext <| (kerCoprodHom_apply _ _ _).trans
       (Prod.ext rfl (Submodule.mem_bot 𝕜 |>.mp hg.2).symm)⟩
   refine ⟨(injective_fst_comp_kerSection_coprod hinv hS).comp (kerCoprodHom_injective _ _), ?_⟩
@@ -350,14 +350,14 @@ theorem hasLocalSubbundleFrames_ker_of_isFredholm {W s : Set X} (hT : Continuous
     (hr : ∀ x ∈ s, finrank 𝕜 (T x).ker = r) :
     HasLocalSubbundleFrames E (Fin r) (E := Trivial s E) fun x : s ↦ (T x).ker := by
   refine hasLocalSubbundleFrames_iff.mpr fun x₀ ↦ ?_
-  have := (hfred x₀ x₀.2).finite_ker
+  have := (hfred x₀ x₀.property).finite_ker
   obtain ⟨U, -, hU, hx₀U, κ, hκ, hκU⟩ :=
-    (hfred x₀ x₀.2).exists_continuousOn_ker_parametrization hT hW (hsW x₀.2)
-  have hκU' (x : s) (hx : (x : X) ∈ U) := hκU x hx (by rw [hr x x.2, hr x₀ x₀.2])
-  refine ⟨Subtype.val ⁻¹' U, hU.preimage continuous_subtype_val, hx₀U, _,
+    (hfred x₀ x₀.property).exists_continuousOn_ker_parametrization hT hW (hsW x₀.property)
+  have hκU' (x : s) (hx : (x : X) ∈ U) := hκU x hx (by rw [hr x x.property, hr x₀ x₀.property])
+  refine ⟨Subtype.val ⁻¹' U, hU.preimage continuous_subtypeVal, hx₀U, _,
     Trivialization.isSubbundleFrameOn_symm_comp (Trivial.trivialization s E) (subset_univ _)
-      (hκ.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
-      (finBasisOfFinrankEq 𝕜 _ (hr x₀ x₀.2)) (fun x hx ↦ (hκU' x hx).1) fun x hx v ↦ ?_⟩
+      (hκ.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
+      (finBasisOfFinrankEq 𝕜 _ (hr x₀ x₀.property)) (fun x hx ↦ (hκU' x hx).1) fun x hx v ↦ ?_⟩
   rw [Function.comp_apply, (hκU' x hx).2, Trivial.trivialization_symm_apply]
 
 end TauCeti

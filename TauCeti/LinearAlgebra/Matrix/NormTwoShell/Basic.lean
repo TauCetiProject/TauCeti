@@ -9,11 +9,9 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Order.Group.PosPart
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.LinearAlgebra.Matrix.DotProduct
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
-import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import TauCeti.LinearAlgebra.Matrix.ZMatrix
-import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # The norm-two shell of a simply laced Gram matrix
@@ -51,6 +49,7 @@ it, and `Matrix.mulVec_cramer` identifies its root pairings with determinant tim
 ## Main definitions
 
 * `Matrix.normTwoShell`: the vectors of norm two of an integer Gram matrix.
+* `Matrix.normTwoShellSimple`: the coordinate vectors as elements of the shell, for diagonal `2`.
 * `Matrix.normTwoShellCongr`: the bijection of norm-two shells induced by a relabelling of the
   vertices.
 * `Matrix.normTwoShellEquivOfIsometry`: the bijection of norm-two shells induced by a linear
@@ -65,7 +64,8 @@ it, and `Matrix.mulVec_cramer` identifies its root pairings with determinant tim
   `Matrix.PosDef.dotProduct_mulVec_eq_neg_two_iff`: for `a, b ∈ Φ`, `⟪a, b⟫ = 2 ↔ a = b` and
   `⟪a, b⟫ = -2 ↔ a = -b`.
 * `Matrix.PosDef.dotProduct_mulVec_le_one` and `Matrix.PosDef.neg_one_le_dotProduct_mulVec`: two
-  vectors of `Φ` that are neither equal nor opposite pair into `{-1, 0, 1}`.
+  vectors of `Φ` that are neither equal nor opposite pair to at most `1` and at least `-1`;
+  `Matrix.PosDef.dotProduct_mulVec_cases` combines them: the pairing is `-1`, `0` or `1`.
 * `Matrix.PosDef.finite_normTwoShell`: the shell of a positive definite matrix is finite.
 * `Matrix.PosDef.nonneg_or_nonpos_of_mem_normTwoShell`: with nonpositive off-diagonal entries,
   every vector of `Φ` is nonnegative or nonpositive.
@@ -129,6 +129,30 @@ theorem single_mem_normTwoShell_iff [DecidableEq I] {i : I} :
 theorem single_mem_normTwoShell [DecidableEq I] {i : I} (hi : B i i = 2) :
     Pi.single i 1 ∈ B.normTwoShell :=
   single_mem_normTwoShell_iff.mpr hi
+
+section Simple
+
+variable {I : Type*} [Fintype I] [DecidableEq I] {B : Matrix I I ℤ} (hdiag : ∀ i, B i i = 2)
+
+/-- The coordinate vector `Pi.single i 1`, a vector of the norm-two shell as the diagonal entries
+are `2`. -/
+def normTwoShellSimple (i : I) : B.normTwoShell :=
+  ⟨Pi.single i 1, single_mem_normTwoShell (hdiag i)⟩
+
+@[simp]
+theorem coe_normTwoShellSimple (i : I) : (normTwoShellSimple hdiag i : I → ℤ) = Pi.single i 1 :=
+  (rfl)
+
+theorem normTwoShellSimple_injective : Function.Injective (normTwoShellSimple (B := B) hdiag) :=
+  fun _ _ h ↦ Pi.single_left_injective one_ne_zero (congrArg Subtype.val h)
+
+/-- Equality of coordinate roots is equality of their indices. -/
+@[simp]
+theorem normTwoShellSimple_inj {i j : I} :
+    normTwoShellSimple hdiag i = normTwoShellSimple hdiag j ↔ i = j :=
+  (normTwoShellSimple_injective hdiag).eq_iff
+
+end Simple
 
 /-- Diagonal entries equal to two put a basis in the norm-two shell, so the shell spans. -/
 theorem span_normTwoShell_eq_top_of_diagonal_eq_two (B : Matrix I I ℤ)
@@ -224,12 +248,18 @@ theorem neg_one_le_dotProduct_mulVec (hB : B.PosDef)
   rw [mulVec_neg, dotProduct_neg] at h
   omega
 
+/-- For positive definite `B`, two vectors of the norm-two shell, neither equal nor opposite, pair
+to `-1`, `0` or `1`. -/
+theorem dotProduct_mulVec_cases (hB : B.PosDef) (ha : a ∈ B.normTwoShell)
+    (hb : b ∈ B.normTwoShell) (hne : a ≠ b) (hopp : a ≠ -b) :
+    a ⬝ᵥ B *ᵥ b = -1 ∨ a ⬝ᵥ B *ᵥ b = 0 ∨ a ⬝ᵥ B *ᵥ b = 1 := by
+  have hle := hB.dotProduct_mulVec_le_one ha hb hne
+  have hge := hB.neg_one_le_dotProduct_mulVec ha hb hopp
+  omega
+
 /-- **The norm-two shell of a positive definite integer matrix is finite.** -/
-theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite := by
-  classical
-  refine (hB.toQuadraticForm'.finite_setOf_apply_eq 2).subset fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, toQuadraticForm'_apply]
-  exact ha
+theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite :=
+  (hB.finite_setOfPred_dotProduct_mulVec_le 2).subset fun _ ha ↦ ha.out.le
 
 /-! ### Even diagonal and nonpositive off-diagonal entries -/
 

@@ -20,14 +20,30 @@ generalised kernel at a zero `a` of the Fredholm determinant of `u` carries the 
 Each member of a pairwise commuting finite family commutes with the family's sum, so it preserves
 the eigenvalue equations of that sum.
 
+The product of two elements which anticommute with `b` commutes with `b`.
+
+Powers of an element against an inhomogeneous recurrence: in a semiring, not necessarily
+commutative, let `C` commute with `u` and let `Wₖ` satisfy `C W₀ = d₀` and
+`C Wₖ₊₁ = dₖ₊₁ + u Wₖ` for `k < h`. If `dⱼ = 0` for `j < h`, then `C ^ (h + 1) W_h = C ^ h d_h`.
+For `C = 1 - a • u`, `Wₖ` the values at `a` of the Hasse derivatives of the Fredholm resolvent of
+`u` and `dₖ` the corresponding scalar multiples of `1`, this is the identity behind the Riesz
+projector at a good zero `a` of order `h` of the Fredholm determinant: one where the order-`h`
+Hasse derivative of the determinant at `a` is moreover a unit, so that `C ^ h d_h` can be
+normalised to `C ^ h`.
+
 A square-zero differential commutes with any element `e` satisfying a homotopy identity
 `d * h + h * d = 1 - e`.
 
 ## Main results
 
 * `Commute.one_sub_smul_left`, `Commute.one_sub_smul_right`: commutation with `1 - a • u`.
+* `Commute.pow_succ_mul_eq_pow_mul_of_mul_eq`: `C ^ (h + 1) W_h = C ^ h d_h` when `C` commutes
+  with `u` and `Wₖ` satisfies the inhomogeneous recurrence `C W₀ = d₀`, `C Wₖ₊₁ = dₖ₊₁ + u Wₖ`
+  for `k < h`, with `dⱼ = 0` for `j < h`.
 * `TauCeti.commute_of_sq_zero_of_homotopy`: commutation of a square-zero differential with its
   homotopy projector.
+* `TauCeti.commute_mul_of_mul_eq_neg_mul`: a product of two elements anticommuting with `b`
+  commutes with `b`.
 * `Finset.sum_smul_smul_eq_smul_smul`: if the sum of a pairwise commuting family scales `x` by
   `μ`, it scales `p a • x` by `μ` for each member `p a`. The vector `p a • x` may be zero.
 -/
@@ -35,6 +51,8 @@ A square-zero differential commutes with any element `e` satisfying a homotopy i
 public section
 
 namespace Commute
+
+section OneSubSmul
 
 variable {R A : Type*} [Ring A] [SMul R A] [IsScalarTower R A A] [SMulCommClass R A A] {u x : A}
 
@@ -45,6 +63,27 @@ theorem one_sub_smul_left (h : Commute u x) (a : R) : Commute (1 - a • u) x :=
 /-- An element commuting with `u` commutes with `1 - a • u`, on the right. -/
 theorem one_sub_smul_right (h : Commute x u) (a : R) : Commute x (1 - a • u) :=
   (h.symm.one_sub_smul_left a).symm
+
+end OneSubSmul
+
+/-- Let `C` commute with `u`, and let `Wₖ` satisfy `C W₀ = d₀` and `C Wₖ₊₁ = dₖ₊₁ + u Wₖ` for
+`k < h`. If `dⱼ = 0` for `j < h`, then `C ^ (h + 1) W_h = C ^ h d_h`. -/
+theorem pow_succ_mul_eq_pow_mul_of_mul_eq {A : Type*} [Semiring A] {C u : A} {W d : ℕ → A}
+    (hu : Commute u C) (h0 : C * W 0 = d 0) {h : ℕ}
+    (hsucc : ∀ k < h, C * W (k + 1) = d (k + 1) + u * W k) (hd : ∀ j < h, d j = 0) :
+    C ^ (h + 1) * W h = C ^ h * d h := by
+  induction h with
+  | zero => simpa using h0
+  | succ h ih =>
+    -- `C ^ (h + 1) W_h = 0` by induction, and `u` commutes past `C ^ (h + 1)`
+    have hz : C ^ (h + 1) * W h = 0 := by
+      rw [ih (fun k hk ↦ hsucc k (by omega)) fun j hj ↦ hd j (by omega), hd h (by omega),
+        mul_zero]
+    calc C ^ (h + 1 + 1) * W (h + 1) = C ^ (h + 1) * (d (h + 1) + u * W h) := by
+          rw [pow_succ, mul_assoc, hsucc h (by omega)]
+      _ = C ^ (h + 1) * d (h + 1) + u * (C ^ (h + 1) * W h) := by
+          rw [mul_add, (hu.pow_right (h + 1)).symm.left_comm]
+      _ = C ^ (h + 1) * d (h + 1) := by rw [hz, mul_zero, add_zero]
 
 end Commute
 
@@ -60,6 +99,11 @@ theorem commute_of_sq_zero_of_homotopy {A : Type*} [Ring A] {d h e : A}
     simpa only [mul_assoc, zero_mul] using congrArg (· * h) hd
   rw [commute_iff_eq, he]
   noncomm_ring [hd, hddh]
+
+/-- If `a` and `w` both anticommute with `b`, then their product `a * w` commutes with `b`. -/
+theorem commute_mul_of_mul_eq_neg_mul {A : Type*} [Semigroup A] [HasDistribNeg A] {a w b : A}
+    (ha : a * b = -(b * a)) (hw : w * b = -(b * w)) : Commute (a * w) b := by
+  rw [commute_iff_eq, mul_assoc, hw, mul_neg, ← mul_assoc, ha, neg_mul, neg_neg, mul_assoc]
 
 end TauCeti
 

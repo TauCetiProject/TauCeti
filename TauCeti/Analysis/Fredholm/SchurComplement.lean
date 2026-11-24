@@ -5,57 +5,67 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import TauCeti.Analysis.Fredholm.Prod
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
 
 /-!
-# Block decompositions, Schur complements, and triangular normal forms of Fredholm packages
+# Fredholm block operators, Schur complements, and triangular normal forms
 
-Given a `ContinuousLinearMap.FredholmPackage` `pkg` for a reference operator `T₀ : E →L[𝕜] F`, the
-domain and codomain split topologically into their essential and finite-dimensional summands
-`E = X₁ ⊕ X₀` and `F = Y₁ ⊕ Y₀`. Relative to these fixed splittings, any continuous linear map
-`T : E →L[𝕜] F` decomposes linearly into four continuous linear blocks
+This file develops Schur-complement reductions for Fredholm operators in two settings: explicit
+`2 × 2` block operators on product spaces and operators decomposed relative to a fixed
+`ContinuousLinearMap.FredholmPackage`.
 
-* `pkg.blockA T : X₁ →L[𝕜] Y₁` (at `T₀`, the isomorphism `pkg.equiv`),
-* `pkg.blockB T : X₀ →L[𝕜] Y₁` (zero at `T₀`),
-* `pkg.blockC T : X₁ →L[𝕜] Y₀` (zero at `T₀`),
-* `pkg.blockD T : X₀ →L[𝕜] Y₀` (zero at `T₀`),
+1. **Product block operators (`ContinuousLinearEquiv`).** Let
+   `M = ((A.coprod B).prod (C.coprod D)) : E₁ × E₂ → F₁ × F₂` be a `2 × 2` block operator whose
+   upper left block `A : E₁ ≃L[K] F₁` is invertible, with Schur complement
+   `S = D - C A⁻¹ B = A.schurComplement B C D`. Up to continuous linear equivalences of domain and
+   codomain, `M` is the block-diagonal operator `A ⊕ S`
+   (`ContinuousLinearEquiv.exists_coprod_prod_coprod_eq_comp_prodMap_comp`). Hence `M` is Fredholm
+   exactly when `S` is (`ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff`), and then the
+   two indices agree (`ContinuousLinearEquiv.index_coprod_prod_coprod`).
 
-which reconstruct `T` and determine it uniquely (`block_ext`). Using the totalized operator inverse
-`(pkg.blockA T).inverse : Y₁ →L[𝕜] X₁`, we form for every `T` the finite-dimensional **Schur
-complement**
+2. **Fredholm packages (`ContinuousLinearMap.FredholmPackage`).** Given a `FredholmPackage` `pkg`
+   for a reference operator `T₀ : E →L[𝕜] F`, the domain and codomain split topologically into
+   their essential and finite-dimensional summands `E = X₁ ⊕ X₀` and `F = Y₁ ⊕ Y₀`. Relative to
+   these fixed splittings, any continuous linear map `T : E →L[𝕜] F` decomposes linearly into four
+   blocks `pkg.blockA T`, `pkg.blockB T`, `pkg.blockC T`, and `pkg.blockD T`, which reconstruct `T`
+   and determine it uniquely (`block_ext`). Using the totalized operator inverse
+   `(pkg.blockA T).inverse`, we form for every `T` the finite-dimensional **Schur complement**
+   `pkg.schurComplement T = pkg.blockD T - pkg.blockC T ∘L (pkg.blockA T).inverse ∘L pkg.blockB T`
+   (matching `e.schurComplement` whenever `e` lifts `pkg.blockA T`, see
+   `schurComplement_eq_continuousLinearEquiv_schurComplement`), together with total triangularizing
+   continuous linear equivalences `pkg.domTriangularEquiv T : (X₁ × X₀) ≃L[𝕜] E` and
+   `pkg.codomTriangularEquiv T : F ≃L[𝕜] (Y₁ × Y₀)` built from `ContinuousLinearEquiv.skewProd`.
 
-`pkg.schurComplement T = pkg.blockD T - pkg.blockC T ∘L (pkg.blockA T).inverse ∘L pkg.blockB T`
+   Whenever `(pkg.blockA T).IsInvertible` holds — in particular near any such `T` in operator norm
+   when `E` is complete (`eventually_nhds_isInvertible_blockA_of_isInvertible`) — these
+   equivalences conjugate `T` to `(pkg.blockA T).prodMap (pkg.schurComplement T)`. Consequently:
+   * `T.ker` and `F ⧸ T.range` are continuously linearly equivalent to `(pkg.schurComplement T).ker`
+     and `Y₀ ⧸ (pkg.schurComplement T).range` via `kerEquivKerSchurComplement` and
+     `cokerEquivCokerSchurComplement`,
+   * `T` is Fredholm with `T.index = (pkg.schurComplement T).index = T₀.index`,
+   * when `E` is complete, `(pkg.blockA S).inverse`, `pkg.schurComplement S`, and both directions
+     of `pkg.domTriangularEquiv S` and `pkg.codomTriangularEquiv S` are continuous in operator norm
+     at every `T` where `pkg.blockA T` is invertible.
 
-between `X₀` and `Y₀`, together with total triangularizing continuous linear equivalences
-`pkg.domTriangularEquiv T : (X₁ × X₀) ≃L[𝕜] E` and
-`pkg.codomTriangularEquiv T : F ≃L[𝕜] (Y₁ × Y₀)` built from `ContinuousLinearEquiv.skewProd`.
-
-Whenever `(pkg.blockA T).IsInvertible` holds — in particular near any such `T` in operator norm when
-`E` is complete (`eventually_nhds_isInvertible_blockA_of_isInvertible`) — these equivalences
-conjugate `T` to `(pkg.blockA T).prodMap (pkg.schurComplement T)`. Consequently:
-
-* `T.ker` and `F ⧸ T.range` are continuously linearly equivalent to `(pkg.schurComplement T).ker`
-  and `Y₀ ⧸ (pkg.schurComplement T).range` via `kerEquivKerSchurComplement` and
-  `cokerEquivCokerSchurComplement`,
-* `T` is Fredholm with `T.index = (pkg.schurComplement T).index = T₀.index`,
-* when `E` is complete, `(pkg.blockA S).inverse`, `pkg.schurComplement S`, and both directions of
-  `pkg.domTriangularEquiv S` and `pkg.codomTriangularEquiv S` are continuous in operator norm at
-  every `T` where `pkg.blockA T` is invertible.
-
-Specializing `pkg` to `hT₀.orthogonalFredholmPackage` from
-`TauCeti.Analysis.Fredholm.OrthogonalPackage` places the Schur complement directly between
-`ker T₀` and `ker T₀†`.
+   Specializing `pkg` to `hT₀.orthogonalFredholmPackage` from
+   `TauCeti.Analysis.Fredholm.Orthogonal.Package` places the Schur complement directly between
+   `ker T₀` and `ker T₀†`.
 
 ## Main declarations
 
+* `ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff`,
+  `ContinuousLinearEquiv.index_coprod_prod_coprod`: Fredholmness and index of a `2 × 2` block
+  operator with invertible upper left block via `A.schurComplement B C D`.
 * `ContinuousLinearMap.FredholmPackage.blockA`, `blockB`, `blockC`, `blockD`, `block_ext`: the four
   block operators of `T` with respect to `pkg`, their linearity, and block reconstruction and
   extensionality.
-* `ContinuousLinearMap.FredholmPackage.schurComplement`: the finite-dimensional Schur complement
-  `D - C A⁻¹ B : decDom.X₀ →L[𝕜] decCodom.X₀`.
+* `ContinuousLinearMap.FredholmPackage.schurComplement`,
+  `ContinuousLinearMap.FredholmPackage.schurComplement_eq_continuousLinearEquiv_schurComplement`:
+  the totalized finite-dimensional Schur complement `D - C A⁻¹ B : decDom.X₀ →L[𝕜] decCodom.X₀` and
+  its agreement with `ContinuousLinearEquiv.schurComplement`.
 * `ContinuousLinearMap.FredholmPackage.domTriangularEquiv`,
   `ContinuousLinearMap.FredholmPackage.codomTriangularEquiv`: the triangularizing equivalences on
   domain and codomain.
@@ -78,13 +88,54 @@ Specializing `pkg` to `hT₀.orthogonalFredholmPackage` from
 * M. F. Atiyah, *K-Theory*, Appendix (Atiyah–Jänich theorem).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985, §19.1.
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
+* F. Zhang (ed.), *The Schur Complement and Its Applications*, Numerical Methods and Algorithms 4,
+  Springer, 2005, Chapter 1.
 -/
 
 public section
 
-noncomputable section
+open ContinuousLinearMap Filter Module Submodule Topology
 
-open Filter Module Submodule Topology
+/-! ### Product block operators -/
+
+namespace ContinuousLinearEquiv
+
+variable {K E₁ E₂ F₁ F₂ : Type*} [NontriviallyNormedField K]
+  [TopologicalSpace E₁] [AddCommGroup E₁] [Module K E₁] [IsTopologicalAddGroup E₁]
+  [TopologicalSpace E₂] [AddCommGroup E₂] [Module K E₂] [IsTopologicalAddGroup E₂]
+  [TopologicalSpace F₁] [AddCommGroup F₁] [Module K F₁] [IsTopologicalAddGroup F₁]
+  [TopologicalSpace F₂] [AddCommGroup F₂] [Module K F₂] [IsTopologicalAddGroup F₂]
+
+variable (A : E₁ ≃L[K] F₁) (B : E₂ →L[K] F₁) (C : E₁ →L[K] F₂) (D : E₂ →L[K] F₂)
+
+/-- A block operator with invertible upper left block `A` is Fredholm exactly when its Schur
+complement `D - C A⁻¹ B` is. -/
+theorem isFredholm_coprod_prod_coprod_iff :
+    (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).IsFredholm ↔
+      (A.schurComplement B C D).IsFredholm := by
+  obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
+  have hL : (L.symm : F₁ × F₂ →L[K] F₁ × F₂) ∘L ((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D) =
+      ((A : E₁ →L[K] F₁).prodMap (A.schurComplement B C D)) ∘L
+        (U : E₁ × E₂ →L[K] E₁ × E₂) := by
+    rw [h]
+    ext x <;> simp
+  rw [isFredholm_iff_of_comp_eq U L.symm hL, isFredholm_prodMap_iff, and_iff_right A.isFredholm]
+
+/-- The index of a block operator with invertible upper left block `A` is the index of its Schur
+complement `D - C A⁻¹ B`, when the latter is Fredholm. -/
+theorem index_coprod_prod_coprod (hS : (A.schurComplement B C D).IsFredholm) :
+    (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).index =
+      (A.schurComplement B C D).index := by
+  obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
+  have := A.isFredholm.finite_ker
+  have := A.isFredholm.finite_coker
+  have := hS.finite_ker
+  have := hS.finite_coker
+  rw [h, index_equiv_comp, index_comp_equiv, index_prodMap, A.index_eq_zero, zero_add]
+
+end ContinuousLinearEquiv
+
+noncomputable section
 
 namespace ContinuousLinearMap.FredholmPackage
 
@@ -163,8 +214,8 @@ def domTriangularEquiv (T : E →L[𝕜] F) :
     (pkg.decDom.X₁ × pkg.decDom.X₀) ≃L[𝕜] E :=
   ((ContinuousLinearEquiv.prodComm 𝕜 pkg.decDom.X₁ pkg.decDom.X₀).trans
     (((ContinuousLinearEquiv.refl 𝕜 pkg.decDom.X₀).skewProd
-      (ContinuousLinearEquiv.refl 𝕜 pkg.decDom.X₁)
-      (-((pkg.blockA T).inverse ∘L pkg.blockB T))).trans
+       (ContinuousLinearEquiv.refl 𝕜 pkg.decDom.X₁)
+       (-((pkg.blockA T).inverse ∘L pkg.blockB T))).trans
       (ContinuousLinearEquiv.prodComm 𝕜 pkg.decDom.X₀ pkg.decDom.X₁))).trans
     (pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl)
 
@@ -348,6 +399,15 @@ theorem schurComplement_apply (T : E →L[𝕜] F) (x : pkg.decDom.X₀) :
       pkg.blockD T x - pkg.blockC T ((pkg.blockA T).inverse (pkg.blockB T x)) :=
   (rfl)
 
+/-- When `e` is a continuous linear equivalence lifting `pkg.blockA T`, its block Schur complement
+`e.schurComplement (pkg.blockB T) (pkg.blockC T) (pkg.blockD T)` coincides with
+`pkg.schurComplement T`. -/
+theorem schurComplement_eq_continuousLinearEquiv_schurComplement {T : E →L[𝕜] F}
+    (e : pkg.decDom.X₁ ≃L[𝕜] pkg.decCodom.X₁)
+    (he : (e : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁) = pkg.blockA T) :
+    pkg.schurComplement T = e.schurComplement (pkg.blockB T) (pkg.blockC T) (pkg.blockD T) := by
+  rw [schurComplement_def, ContinuousLinearEquiv.schurComplement_def, ← he, inverse_equiv]
+
 @[simp]
 theorem schurComplement_zero : pkg.schurComplement 0 = 0 := by
   simp [schurComplement_def]
@@ -459,7 +519,7 @@ private theorem prod_domTriangularEquiv_symm_of_mem_ker {T : E →L[𝕜] F}
   apply (pkg.codomTriangularEquiv T).symm.injective
   rw [map_zero, ← pkg.apply_domTriangularEquiv_eq_codomTriangularEquiv_symm_apply hA,
     ContinuousLinearEquiv.apply_symm_apply]
-  exact x.2
+  exact x.property
 
 private theorem proj₀_mem_ker_schurComplement {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInvertible)
     (x : T.ker) : (pkg.decDom.proj₀ ∘L T.ker.subtypeL) x ∈ (pkg.schurComplement T).ker := by
@@ -473,7 +533,7 @@ private theorem domTriangularEquiv_zero_mem_ker {T : E →L[𝕜] F} (hA : (pkg.
     ((pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) ∘L
       ContinuousLinearMap.inr 𝕜 pkg.decDom.X₁ pkg.decDom.X₀ ∘L
       (pkg.schurComplement T).ker.subtypeL) x₀ ∈ T.ker := by
-  have hx₀ : pkg.schurComplement T (x₀ : pkg.decDom.X₀) = 0 := x₀.2
+  have hx₀ : pkg.schurComplement T (x₀ : pkg.decDom.X₀) = 0 := x₀.property
   simp only [comp_apply, inr_apply, Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe]
   rw [LinearMap.mem_ker, coe_coe, pkg.apply_domTriangularEquiv_zero_left hA, hx₀,
     ZeroMemClass.coe_zero]
@@ -482,14 +542,17 @@ private theorem domTriangularEquiv_zero_mem_ker {T : E →L[𝕜] F} (hA : (pkg.
 equivalence `ker T ≃L[𝕜] ker (pkg.schurComplement T)`, with inverse `x₀ ↦ x₀ - A⁻¹ (B x₀)`. -/
 def kerEquivKerSchurComplement {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInvertible) :
     T.ker ≃L[𝕜] (pkg.schurComplement T).ker :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((pkg.decDom.proj₀ ∘L T.ker.subtypeL).codRestrict (pkg.schurComplement T).ker
       (pkg.proj₀_mem_ker_schurComplement hA))
     (((pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) ∘L
         ContinuousLinearMap.inr 𝕜 pkg.decDom.X₁ pkg.decDom.X₀ ∘L
         (pkg.schurComplement T).ker.subtypeL).codRestrict T.ker
       (pkg.domTriangularEquiv_zero_mem_ker hA))
-    (fun x => by
+    (ContinuousLinearMap.ext fun x₀ => by
+      apply Subtype.ext
+      simp)
+    (ContinuousLinearMap.ext fun x => by
       apply Subtype.ext
       apply (pkg.domTriangularEquiv T).symm.injective
       have hprod := pkg.prod_domTriangularEquiv_symm_of_mem_ker hA x
@@ -497,12 +560,9 @@ def kerEquivKerSchurComplement {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInver
         hA.injective ((congrArg Prod.fst hprod).trans (map_zero _).symm)
       have hp₂ : pkg.decDom.proj₀ (x : E) = ((pkg.domTriangularEquiv T).symm (x : E)).2 := by
         simp
-      simp only [coe_codRestrict_apply, comp_apply, inr_apply, Submodule.subtypeL_apply,
+      simp only [comp_apply, id_apply, coe_codRestrict_apply, inr_apply, Submodule.subtypeL_apply,
         ContinuousLinearEquiv.coe_coe, hp₂, ContinuousLinearEquiv.symm_apply_apply]
       exact Prod.ext hp₁.symm rfl)
-    (fun x₀ => by
-      apply Subtype.ext
-      simp)
 
 @[simp]
 theorem coe_kerEquivKerSchurComplement_apply {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInvertible)
@@ -548,18 +608,22 @@ descends to a continuous linear equivalence
 by the inclusion `pkg.decCodom.X₀ ↪ F`. -/
 def cokerEquivCokerSchurComplement {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInvertible) :
     (F ⧸ T.range) ≃L[𝕜] (pkg.decCodom.X₀ ⧸ (pkg.schurComplement T).range) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (T.range.liftQL ((pkg.schurComplement T).range.mkQL ∘L
         ContinuousLinearMap.snd 𝕜 pkg.decCodom.X₁ pkg.decCodom.X₀ ∘L
         (pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀))
       (pkg.range_le_ker_mkQL_codomTriangularEquiv hA))
     ((pkg.schurComplement T).range.liftQL (T.range.mkQL ∘L pkg.decCodom.X₀.subtypeL)
       (pkg.range_schurComplement_le_ker_mkQL_subtypeL hA))
-    (fun z => by
+    (ContinuousLinearMap.ext fun w => by
+      obtain ⟨y₀, rfl⟩ := (pkg.schurComplement T).range.mkQ_surjective w
+      simp [Submodule.projectionOntoL_apply_right pkg.decCodom.isTopCompl,
+        Submodule.projectionOntoL_apply_left pkg.decCodom.isTopCompl.symm])
+    (ContinuousLinearMap.ext fun z => by
       obtain ⟨y, rfl⟩ := T.range.mkQ_surjective z
-      simp only [Submodule.coe_liftQL, Submodule.liftQ_apply, comp_apply, Submodule.coe_mkQL,
-        Submodule.mkQ_apply, coe_snd', ContinuousLinearEquiv.coe_coe, Submodule.subtypeL_apply,
-        coe_coe]
+      simp only [comp_apply, id_apply, Submodule.coe_liftQL, Submodule.liftQ_apply,
+        Submodule.coe_mkQL, Submodule.mkQ_apply, coe_snd', ContinuousLinearEquiv.coe_coe,
+        Submodule.subtypeL_apply, coe_coe]
       set q := pkg.codomTriangularEquiv T y
       symm
       rw [Submodule.Quotient.eq]
@@ -576,10 +640,6 @@ def cokerEquivCokerSchurComplement {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsI
           rw [coe_coe, pkg.apply_domTriangularEquiv_eq_codomTriangularEquiv_symm_apply hA,
             hA.self_apply_inverse, map_zero]⟩
       simpa only [hy, add_sub_cancel_right] using hmem)
-    (fun w => by
-      obtain ⟨y₀, rfl⟩ := (pkg.schurComplement T).range.mkQ_surjective w
-      simp [Submodule.projectionOntoL_apply_right pkg.decCodom.isTopCompl,
-        Submodule.projectionOntoL_apply_left pkg.decCodom.isTopCompl.symm])
 
 @[simp]
 theorem cokerEquivCokerSchurComplement_apply_mk {T : E →L[𝕜] F} (hA : (pkg.blockA T).IsInvertible)

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
+public import TauCeti.LinearAlgebra.Complex.Orientation
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.LinearAlgebra.TotallyReal.QuadraticForm
 
@@ -43,6 +44,9 @@ bilinear, and its contribution to a real Hessian is killed by the Levi form.
   and imaginary parts of the Levi form.
 * `LinearMap.BilinForm.leviForm_apply_self`: for symmetric `B`, the diagonal value is the real
   number `(B v v + B (I • v) (I • v)) / 4`.
+* `LinearMap.BilinForm.sum_re_leviForm_apply_self`: in a complex basis `b`, the real parts of the
+  diagonal of the Levi form sum to a quarter of the diagonal sum of `B` in the real basis
+  `b.complexToReal`.
 * `LinearMap.BilinForm.isSymm_leviForm`: the Levi form of a symmetric form is Hermitian.
 * `LinearMap.BilinForm.leviForm_add`, `LinearMap.BilinForm.leviForm_smul`: the Levi form is real
   linear in `B`.
@@ -128,6 +132,14 @@ theorem leviForm_apply_self {B : LinearMap.BilinForm ℝ V} (hB : IsSymm B) (v :
   · simp
   · simp [hB.eq (I • v) v]
 
+/-- The real parts of the diagonal entries of the Levi form in a complex basis `b` sum to a quarter
+of the sum of the diagonal entries of `B` in the underlying real basis `b.complexToReal`. -/
+theorem sum_re_leviForm_apply_self {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) :
+    ∑ j, (B.leviForm (b j) (b j)).re = (∑ k, B (b.complexToReal k) (b.complexToReal k)) / 4 := by
+  rw [Fintype.sum_prod_type, div_eq_mul_inv, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [Fin.sum_univ_two, div_eq_mul_inv]
+
 /-- The Levi form of a symmetric form is Hermitian. -/
 theorem isSymm_leviForm {B : LinearMap.BilinForm ℝ V} (hB : IsSymm B) : B.leviForm.IsSymm where
   eq v w := by
@@ -209,7 +221,7 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
   let Q : QuadraticForm ℝ P := B.toQuadraticMap.comp ι
   have hQJ : (Q + Q.comp J).PosDef := by
     intro v hv
-    have := hP v v.2 (by simpa using hv)
+    have := hP v v.property (by simpa using hv)
     rw [re_leviForm_apply] at this
     simpa [Q, J, ι] using (by linarith : 0 < B v v + B (I • (v : V)) (I • (v : V)))
   have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef (W := W.comap ι) J hQJ fun v hv ↦ by

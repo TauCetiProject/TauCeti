@@ -12,6 +12,7 @@ import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
 import TauCeti.RepresentationTheory.Maschke
 import Mathlib.RepresentationTheory.Equiv
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Intrinsic multiplicities of the irreducible representations
@@ -89,7 +90,7 @@ namespace Representation
 
 open TauCeti
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   [Invertible (Nat.card G : k)]
 variable {V : Type w} [AddCommGroup V] [Module k V] (ρ : Representation k G V)
 
@@ -155,11 +156,8 @@ theorem intrinsicMultiplicity_prod [FiniteDimensional k V] {W : Type w'} [AddCom
       ρ.intrinsicMultiplicity i + σ.intrinsicMultiplicity i := by
   rw [intrinsicMultiplicity_def, intrinsicMultiplicity_def, intrinsicMultiplicity_def,
     ← finrank_prod]
-  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`, computed on the `k[G]`-modules.
-  exact (IntertwiningMap.equivLinearMapAsModule _ _ ≪≫ₗ
-    LinearEquiv.homCongrRight k (prodAsModuleEquiv ρ σ) ≪≫ₗ (LinearMap.prodEquiv k).symm ≪≫ₗ
-    (IntertwiningMap.equivLinearMapAsModule _ _).symm.prodCongr
-      (IntertwiningMap.equivLinearMapAsModule _ _).symm).finrank_eq
+  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`.
+  exact IntertwiningMap.prodEquiv.symm.finrank_eq
 
 /-- **The intrinsic multiplicities are additive on finite direct sums**
 (`Representation.directSum`) of finite-dimensional representations: an intertwining map into the
@@ -205,6 +203,7 @@ theorem nonempty_regrouping [FiniteDimensional k V] :
       Π₀ i, Fin (ρ.intrinsicMultiplicity i) → (irreducibleRepresentation k i).asModule) := by
   classical
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Module.Finite k[G] ρ.asModule := .of_restrictScalars_finite k k[G] ρ.asModule
   -- Decompose `ρ` into simple submodules and identify each with a model.
   obtain ⟨n, S, e, hS⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp k[G] ρ.asModule
@@ -260,6 +259,7 @@ theorem finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree [FiniteDimensio
 coefficients written as intrinsic multiplicities, for carriers in any universe. -/
 theorem character_eq_sum_intrinsicMultiplicity_nsmul [FiniteDimensional k V] :
     ρ.character = ∑ i, ρ.intrinsicMultiplicity i • irreducibleCharacter k i := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
   funext g
   have h := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -282,6 +282,7 @@ theorem character_eq_iff_forall_intrinsicMultiplicity_modEq (p : ℕ) [CharP k p
     (σ : Representation k G W) :
     ρ.character = σ.character ↔
       ∀ i, ρ.intrinsicMultiplicity i ≡ σ.intrinsicMultiplicity i [MOD p] := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   have : Fintype G := Fintype.ofFinite G
   refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
   · rw [← CharP.natCast_eq_natCast k p,
@@ -300,6 +301,7 @@ representation `k[G]` with multiplicity its degree, in every characteristic not 
 theorem intrinsicMultiplicity_leftRegular (i : Fin (Nat.card (ConjClasses G))) :
     (leftRegular k G).intrinsicMultiplicity i = characterDegree k i := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [intrinsicMultiplicity_def, finrank_intertwiningMap_comm,
     (leftRegularMapEquiv (irreducibleRepresentation k i)).finrank_eq, finrank_fin_fun]
 

@@ -119,15 +119,16 @@ map `B`. The forward map takes complementary coordinates and the inverse takes t
 of `B w`. -/
 noncomputable def quotientRangeEquiv (A : E →L[R] F) (B : G →L[R] F)
     (h : (A.coprod B).IsInvertible) : (F ⧸ A.range) ≃L[R] G :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (A.range.liftQL (A.quotientRangeCoordinate B)
       (ker_quotientRangeCoordinate h).ge)
     (A.range.mkQL ∘L B)
-    (fun z => by
+    (ContinuousLinearMap.ext fun w => by simp [quotientRangeCoordinate_apply_right h])
+    (ContinuousLinearMap.ext fun z => by
       obtain ⟨y, rfl⟩ := A.range.mkQ_surjective z
-      simp only [comp_apply, Submodule.liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply]
+      simp only [comp_apply, Submodule.liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply,
+        id_apply]
       exact ((Submodule.Quotient.eq _).mpr (sub_apply_quotientRangeCoordinate_mem_range h y)).symm)
-    (fun w => by simp [quotientRangeCoordinate_apply_right h])
 
 /-- On an ambient representative, the quotient equivalence reads the second inverse
 coordinate. -/
@@ -248,14 +249,14 @@ noncomputable def domRestrictEquivMap
     V ≃L[R] V.map (T : E →ₗ[R] F) :=
   have hfst (v : V) : (((T.domRestrict V).coprod W.subtypeL).inverse (T v)).1 = v := by
     simpa using congrArg Prod.fst (hinv.inverse_apply_self (v, 0))
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (T.restrict fun _ hx ↦ Submodule.mem_map_of_mem hx)
     (fst R V W ∘L ((T.domRestrict V).coprod W.subtypeL).inverse ∘L
       (V.map (T : E →ₗ[R] F)).subtypeL)
-    (fun v ↦ by simp [hfst])
-    (fun ⟨_, v, hv, rfl⟩ ↦ by
+    (ContinuousLinearMap.ext fun ⟨_, v, hv, rfl⟩ ↦ by
       apply Subtype.ext
       simp [hfst ⟨v, hv⟩])
+    (ContinuousLinearMap.ext fun v ↦ by simp [hfst])
 
 /-- The underlying continuous linear map of `domRestrictEquivMap` is the restriction of `T` to
 `V` and its image `V.map (T : E →ₗ[R] F)`. -/
@@ -263,8 +264,8 @@ noncomputable def domRestrictEquivMap
 theorem toContinuousLinearMap_domRestrictEquivMap
     (hinv : ((T.domRestrict V).coprod W.subtypeL).IsInvertible) :
     (domRestrictEquivMap hinv : V →L[R] V.map (T : E →ₗ[R] F)) =
-      T.restrict fun _ hx ↦ Submodule.mem_map_of_mem hx := by
-  rw [domRestrictEquivMap, ContinuousLinearEquiv.toContinuousLinearMap_equivOfInverse]
+      T.restrict fun _ hx ↦ Submodule.mem_map_of_mem hx :=
+  (rfl)
 
 /-- Applying `domRestrictEquivMap` and coercing to the ambient space recovers `T`. -/
 @[simp]
@@ -325,7 +326,7 @@ theorem isTopCompl_map_of_isInvertible_coprod_domRestrict
       have hself := hinv.self_apply_inverse y
       simp only [coprod_apply, h1, map_zero, zero_add, Submodule.coe_subtypeL,
         Submodule.coe_subtype] at hself
-      exact hself ▸ (((T.domRestrict V).coprod W.subtypeL).inverse y).2.2
+      exact hself ▸ (((T.domRestrict V).coprod W.subtypeL).inverse y).2.property
     · simpa [p] using congrArg Prod.fst (hinv.inverse_apply_self (0, ⟨y, hy⟩))
   simpa [toLinearMap_domRestrict, LinearMap.range_domRestrict, hker] using
     (T.domRestrict V).isTopCompl_range_ker_of_leftInverse p hp

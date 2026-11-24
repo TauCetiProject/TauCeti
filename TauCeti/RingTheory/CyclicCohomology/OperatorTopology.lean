@@ -181,7 +181,7 @@ theorem continuous_continuousCyclicHochschildCoboundary (n : ℕ) :
     Continuous (continuousCyclicHochschildCoboundary 𝕜 A M n) := by
   apply continuous_induced_rng.2
   simpa only [Function.comp_def, coe_continuousCyclicHochschildCoboundary] using
-    (continuous_continuousHochschildCoboundary 𝕜 A M n).comp continuous_subtype_val
+    (continuous_continuousHochschildCoboundary 𝕜 A M n).comp continuous_subtypeVal
 
 end Multiplication
 
@@ -256,7 +256,7 @@ theorem continuous_continuousCyclicCochainsMap (f : A →L[𝕜] B) (n : ℕ) :
     Continuous (continuousCyclicCochainsMap M f n) :=
   continuous_induced_rng.2 <| by
     simpa only [Function.comp_def, coe_continuousCyclicCochainsMap_apply] using
-      (ContinuousMultilinearMap.continuous_precomp fun _ ↦ f).comp continuous_subtype_val
+      (ContinuousMultilinearMap.continuous_precomp fun _ ↦ f).comp continuous_subtypeVal
 
 end PullbackTopology
 
