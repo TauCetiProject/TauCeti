@@ -275,6 +275,13 @@ theorem transposeₗ_apply {m : Type*} [Semiring R] [AddCommMonoid A] [Module R 
     (M : CStarMatrix m n A) : transposeₗ R M = M.transpose :=
   (rfl)
 
+/-- Applying a map entrywise commutes with `reindexₐ`. -/
+theorem reindexₐ_map {m B : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
+    [Star A] [Module R A] [AddCommMonoid B] [Mul B] [Star B] [Module R B] (e : m ≃ n)
+    (M : CStarMatrix m m A) (f : A → B) :
+    reindexₐ R B e (M.map f) = (reindexₐ R A e M).map f :=
+  (rfl)
+
 /-- Applying the zero linear map to every entry gives the zero matrix. -/
 @[simp]
 theorem map_zero_linearMap {m B : Type*} [Semiring R] [AddCommMonoid A] [Module R A]

@@ -122,9 +122,7 @@ theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
+  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), CStarMatrix.reindexₐ_map,
     ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact norm_map_le_cbNorm_mul_fin hφ _
 

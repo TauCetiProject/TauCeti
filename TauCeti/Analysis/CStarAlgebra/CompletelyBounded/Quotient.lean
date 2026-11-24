@@ -94,12 +94,13 @@ private theorem IsCompleteQuotient.norm_map_le_fin {φ : A →ₗ[ℂ] B} (h : I
     {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) : ‖x.map φ‖ ≤ ‖x‖ := by
   refine le_of_forall_gt fun t ht ↦ ?_
   have ht₀ : 0 < t := (norm_nonneg x).trans_lt ht
+  have key (r : ℝ) : ‖(t⁻¹ : ℂ)‖ * r < 1 ↔ r < t := by
+    rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg ht₀.le, inv_mul_lt_one₀ ht₀]
   have hx : (t⁻¹ : ℂ) • x ∈ Metric.ball 0 1 := by
-    rwa [mem_ball_zero_iff, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg ht₀.le,
-      inv_mul_lt_one₀ ht₀]
+    rwa [mem_ball_zero_iff, norm_smul, key]
   have hmem := h n ▸ Set.mem_image_of_mem (fun y : CStarMatrix (Fin n) (Fin n) A ↦ y.map φ) hx
   rwa [← CStarMatrix.mapₗ_apply, map_smul, CStarMatrix.mapₗ_apply, mem_ball_zero_iff, norm_smul,
-    norm_inv, Complex.norm_real, Real.norm_of_nonneg ht₀.le, inv_mul_lt_one₀ ht₀] at hmem
+    key] at hmem
 
 /-- A complete quotient map is completely bounded. -/
 theorem IsCompleteQuotient.isCompletelyBounded {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
@@ -134,8 +135,7 @@ theorem IsCompleteQuotient.exists_map_eq {φ : A →ₗ[ℂ] B} (h : IsCompleteQ
   refine ⟨(CStarMatrix.reindexₐ ℂ A e).symm x', ?_,
     EquivLike.injective (CStarMatrix.reindexₐ ℂ B e) ?_⟩
   · rwa [StarAlgEquiv.norm_map, ← mem_ball_zero_iff]
-  · rw [← hxy]
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := (CStarMatrix.reindexₐ ℂ A e).symm x') (e := e) φ
+  · rw [← hxy, CStarMatrix.reindexₐ_map, StarAlgEquiv.apply_symm_apply]
 
 end LinearMap
 
