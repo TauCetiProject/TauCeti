@@ -48,9 +48,7 @@ coefficients (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEqui
   `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
 * `TauCeti.VectorBundleOrientationCover.coverThomPairMap`: the map of Thom pairs from the pull-back
   bundle to `E`, with `deckThomPairMap_comp_coverThomPairMap` (the lifted deck involution covers
-  the identity of the Thom pair of `E`) and `fiberThomPairMap_comp_coverThomPairMap` (it carries
-  the fibre pair of the pull-back over a point `p` of the cover onto the fibre pair of `E` over the
-  base point of `p`).
+  the identity of the Thom pair of `E`).
 * `TauCeti.VectorBundleOrientationCover.singularCohomologyMap_deckThomPairMap_thomClassOfModel`:
   it negates the Thom class of the tautological orientation.
 * `TauCeti.VectorBundleOrientationCover.singularHomologyMap_deckThomPairMap_comp_homologyThomMap`
@@ -224,15 +222,6 @@ variable (F E ι) in
 theorem deckThomPairMap_comp_coverThomPairMap :
     deckThomPairMap F E ι ≫ coverThomPairMap F E ι = coverThomPairMap F E ι :=
   TopPair.hom_ext_of_fst _ (TopCat.ext coverThomPairMap_fst_deckThomPairMap_fst)
-
-/-- The fibre pair of the pull-back `E'` of `E` to the orientation cover over a point `p` is
-carried by the map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` onto the fibre pair of `E` over `p.proj`. -/
-theorem fiberThomPairMap_comp_coverThomPairMap (p : VectorBundleOrientationCover F E ι) :
-    fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) p ≫
-      coverThomPairMap F E ι = fiberThomPairMap F E p.proj :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (coverThomPairMap_fst_apply _).trans
-    ((congrArg (Pullback.lift _) (fiberThomPairMap_fst_apply F _ p x)).trans
-      (fiberThomPairMap_fst_apply F E p.proj x).symm))
 
 /-- On the fibre pair over a point of the cover, the lift of the deck involution is the inclusion
 of the same fibre pair over the image point. -/

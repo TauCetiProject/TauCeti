@@ -221,18 +221,6 @@ theorem liftFiberEquiv_apply {x : B} (e : VectorBundleOrientationCover F E ι)
         (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, he⟩ :=
   signFiberEquiv_apply _ _ _ _
 
-/-- Evaluation at a point `e` of the orientation cover does not see a transport between the fibres
-of `o(E)` over two equal points of the base: any identification of the fibres given by an
-equality is the identity once both are read at `e`. -/
-theorem liftFiberEquiv_eqToHom_apply {x y : B} (e : VectorBundleOrientationCover F E ι)
-    (hx : e.proj = x) (hy : e.proj = y)
-    (h : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) =
-      (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk y))
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
-    liftFiberEquiv hι e hy ((eqToHom h).hom f) = liftFiberEquiv hι e hx f := by
-  subst hx hy
-  rfl
-
 /-- Evaluation at the image `deck e` of a point `e` of the orientation cover is the negative of
 evaluation at `e`. -/
 theorem liftFiberEquiv_deck {x : B} (e : VectorBundleOrientationCover F E ι) (he : e.proj = x)
@@ -245,6 +233,17 @@ theorem liftFiberEquiv_deck {x : B} (e : VectorBundleOrientationCover F E ι) (h
   rw [liftFiberEquiv_apply, liftFiberEquiv_apply, h,
     ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h), signFiberEquiv_fiberMap,
     signFiberEquiv_apply]
+
+/-- Evaluation at a point of the cover does not see a transport between the fibres of the
+orientation local system over equal base points, nor a change of the point to an equal one. -/
+theorem liftFiberEquiv_eqToHom_apply {x y : B} (h : x = y)
+    (p : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) =
+      (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk y))
+    {e e' : VectorBundleOrientationCover F E ι} (he : e = e') (hx : e.proj = x) (hy : e'.proj = y)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
+    liftFiberEquiv hι e' hy (eqToHom p f) = liftFiberEquiv hι e hx f := by
+  subst h he
+  rw [eqToHom_refl, ModuleCat.id_apply]
 
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
@@ -651,7 +650,8 @@ end
 /-! ### Trivializations of the pulled-back orientation local system
 
 The pulled-back orientation local system and the constant system with fibre `R` must have their
-fibres in the same universe, so the base, the fibres and the ring share a universe here. -/
+fibres in the same universe, so the base and the fibres share a universe here, and the ring lies in
+the larger of it and the universe of the orientation index. -/
 
 noncomputable section
 
@@ -659,10 +659,10 @@ open Bundle CategoryTheory Module
 
 namespace TauCeti.VectorBundleOrientationCover
 
-variable {R : Type u} [Ring R] {B : Type u} [TopologicalSpace B] {F : Type*}
+variable {R : Type (max u uι)} [Ring R] {B : Type u} [TopologicalSpace B] {F : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type u} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
-  [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type} [Fintype ι]
+  [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type uι} [Fintype ι]
   (hι : Fintype.card ι = finrank ℝ F)
 
 /-! ### The trivialization of the orientation local system along a lift into the cover -/

@@ -58,6 +58,8 @@ taking invariants under it.
 
 ## Main results
 
+* `Representation.IntertwiningMap.lcomp_comp_toLinearMap`: following an intertwining map into a
+  conjugation representation by `lcomp u` is `compl₂` with `u` on the underlying bilinear maps.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
   by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.stabilizer_apply_eq_of_injective`: an injective intertwining
@@ -66,6 +68,7 @@ taking invariants under it.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
 * `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
@@ -203,6 +206,14 @@ def lcomp (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) :
 @[simp]
 theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ : V →ₗ[A] W) :
     u.lcomp σ φ = φ ∘ₗ u.toLinearMap :=
+  (rfl)
+
+/-- Composing an intertwining map `q : ρ₀ → linHom ρ σ` into a conjugation representation with
+precomposition by `u` is `q.compl₂ u` on the underlying bilinear maps. -/
+theorem lcomp_comp_toLinearMap {V₀ : Type*} [AddCommMonoid V₀] [Module A V₀]
+    {ρ₀ : Representation A G V₀} (u : IntertwiningMap ρ' ρ) (σ : Representation A G W)
+    (q : IntertwiningMap ρ₀ (linHom ρ σ)) :
+    ((u.lcomp σ).comp q).toLinearMap = q.toLinearMap.compl₂ u.toLinearMap :=
   (rfl)
 
 end lcomp
@@ -421,6 +432,25 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
   (rfl)
 
 end Dual
+
+section Kernel
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- Equivalent representations have the same kernel. -/
+theorem ker_eq (e : Equiv ρ σ) : ρ.ker = σ.ker := by
+  ext g
+  have he := IntertwiningMap.isIntertwining ρ σ e.toIntertwiningMap g
+  simp only [coe_toIntertwiningMap] at he
+  simp only [MonoidHom.mem_ker, LinearMap.ext_iff, one_apply_eq_self]
+  refine ⟨fun h w ↦ ?_, fun h v ↦ EquivLike.injective e ?_⟩
+  · obtain ⟨v, rfl⟩ := EquivLike.surjective e w
+    rw [← he, h]
+  · rw [he, h]
+
+end Kernel
 
 section Congr
 

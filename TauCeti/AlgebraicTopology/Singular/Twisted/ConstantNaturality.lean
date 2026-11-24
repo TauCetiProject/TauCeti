@@ -83,19 +83,6 @@ lemma twistedHomologyConstantIso_hom_pair_naturality (f : P ⟶ Q) (n : ℕ) :
   simpa only [HomologicalComplex.homologyMap_comp, twistedHomologyConstantIso_hom,
     twistedHomologyMap, twistedHomologyCoefficientMap] using h
 
-/-- The inverse constant-system comparison on relative homology is natural in maps of pairs: an
-ordinary relative homology map is the twisted homology map with constant coefficients. -/
-@[reassoc]
-lemma singularHomologyMap_comp_twistedHomologyConstantIso_inv (f : P ⟶ Q) (n : ℕ) :
-    P.singularHomologyMap f M n ≫ (Q.twistedHomologyConstantIso M n).inv =
-      (P.twistedHomologyConstantIso M n).inv ≫
-        P.twistedHomologyCoefficientMap
-          (LocalCoefficientSystem.pullbackConstantIso (Hom.fst f).hom M).inv n ≫
-        twistedHomologyMap f ((LocalCoefficientSystem.constantFunctor Q.fst).obj M) n := by
-  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
-    twistedHomologyConstantIso_hom_pair_naturality, twistedHomologyCoefficientMap_inv_hom_id_assoc,
-    Iso.inv_hom_id_assoc]
-
 variable (P)
 
 /-- The constant-system comparison on relative chains is natural in the coefficient module. -/
