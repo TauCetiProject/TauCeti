@@ -138,17 +138,19 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type
   (hUe : U ⊆ e.baseSet) (C C' : ℝ≥0) (hC : ∀ x ∈ U, ∀ v : F, ‖e.symm x v‖ ≤ C * ‖v‖)
   (hC' : ∀ x ∈ U, ∀ v : F, ‖v‖ ≤ C' * ‖e.symm x v‖)
 
-omit [Fact (1 ≤ p)] in
+omit [SecondCountableTopology B] [Fact (1 ≤ p)] [ContinuousFiberNorm F E] in
 include hU hUe hC' in
-/-- Coordinates in `e` of an `Lᵖ` section, on a set where the fibre norms dominate the norm of the
-model fibre, are `p`-integrable. -/
-private theorem memLp_coord_of_bound (f : LpSection 𝕜 F E p (μ.restrict U)) :
-    MemLp (fun x ↦ (e ⟨x, f x⟩).2) p (μ.restrict U) := by
-  refine f.memLp_norm.of_le_mul (c := C') ?_ ?_
-  · have h := f.aestronglyMeasurableSection.aestronglyMeasurable_coord e
+/-- Coordinates in `e` of a measurable section with `p`-integrable fibre norm, on a set where the
+fibre norms dominate the norm of the model fibre, are `p`-integrable. -/
+theorem memLp_coord_of_bound {s : ∀ x, E x}
+    (hs : AEStronglyMeasurableSection 𝕜 F (μ.restrict U) s)
+    (hsp : MemLp (fun x ↦ ‖s x‖) p (μ.restrict U)) :
+    MemLp (fun x ↦ (e ⟨x, s x⟩).2) p (μ.restrict U) := by
+  refine hsp.of_le_mul (c := C') ?_ ?_
+  · have h := hs.aestronglyMeasurable_coord e
     rwa [Measure.restrict_restrict e.open_baseSet.measurableSet, inter_eq_right.2 hUe] at h
   · filter_upwards [ae_restrict_mem hU] with x hx
-    simpa only [norm_norm, e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, f x⟩).2
+    simpa only [norm_norm, e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, s x⟩).2
 
 omit [Fact (1 ≤ p)] in
 include 𝕜 hU hUe hC in
@@ -167,7 +169,8 @@ the coordinates of `e` is a continuous linear equivalence from `Lᵖ(E, μ|_U)` 
 def lpSectionEquivOfBounds :
     LpSection 𝕜 F E p (μ.restrict U) ≃L[𝕜] Lp F p (μ.restrict U) :=
   LinearEquiv.toContinuousLinearEquivOfBounds
-    { toFun f := (memLp_coord_of_bound e hU hUe C' hC' f).toLp _
+    { toFun f :=
+        (memLp_coord_of_bound e hU hUe C' hC' f.aestronglyMeasurableSection f.memLp_norm).toLp _
       invFun g := LpSection.mk (fun x ↦ e.symm x (g x))
         (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable g))
         (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g)
@@ -188,24 +191,23 @@ def lpSectionEquivOfBounds :
         filter_upwards [LpSection.coeFn_mk
           (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe (Lp.aestronglyMeasurable _))
           (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC _),
-          MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f), ae_restrict_mem hU]
-          with x h1 h2 hx
+          MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f.aestronglyMeasurableSection
+            f.memLp_norm), ae_restrict_mem hU] with x h1 h2 hx
         rw [h1, h2, e.symm_apply_apply_mk (hUe hx)]
-      right_inv g := by
-        refine Lp.ext ?_
-        filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound (𝕜 := 𝕜) e hU hUe C' hC' _),
-          LpSection.coeFn_mk
-            (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe
-              (Lp.aestronglyMeasurable g))
-            (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g), ae_restrict_mem hU]
-          with x h1 h2 hx
+      right_inv g := Lp.ext <| by
+        filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC'
+            (LpSection.aestronglyMeasurableSection (𝕜 := 𝕜) _) (LpSection.memLp_norm _)),
+          LpSection.coeFn_mk (aestronglyMeasurableSection_restrict_symm (𝕜 := 𝕜) hU e hUe
+            (Lp.aestronglyMeasurable g)) (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g),
+          ae_restrict_mem hU] with x h1 h2 hx
         rw [h1, h2, e.apply_mk_symm (hUe hx)] }
     C' C
     (fun f ↦ by
       rw [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, LpSection.norm_eq_norm_toLp]
       refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-      filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f),
-        MemLp.coeFn_toLp f.memLp_norm, ae_restrict_mem hU] with x h1 h2 hx
+      filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC'
+          f.aestronglyMeasurableSection f.memLp_norm), MemLp.coeFn_toLp f.memLp_norm,
+        ae_restrict_mem hU] with x h1 h2 hx
       rw [h1, h2, norm_norm]
       simpa only [e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, f x⟩).2)
     (fun g ↦ by
@@ -219,7 +221,8 @@ def lpSectionEquivOfBounds :
 theorem coeFn_lpSectionEquivOfBounds (f : LpSection 𝕜 F E p (μ.restrict U)) :
     ∀ᵐ x ∂μ.restrict U,
       e.lpSectionEquivOfBounds 𝕜 p μ hU hUe C C' hC hC' f x = (e ⟨x, f x⟩).2 :=
-  MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f)
+  MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC'
+    f.aestronglyMeasurableSection f.memLp_norm)
 
 theorem coeFn_lpSectionEquivOfBounds_symm (g : Lp F p (μ.restrict U)) :
     ∀ᵐ x ∂μ.restrict U,

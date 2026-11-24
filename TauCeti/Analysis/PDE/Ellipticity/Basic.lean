@@ -45,6 +45,8 @@ constants are parameters, not hidden existential data.
 
 * `TauCeti.PDE.UniformlyEllipticOn`: uniform lower and upper ellipticity bounds on a set.
 * `TauCeti.PDE.uniformlyEllipticOn_const_one`: the identity matrix is uniformly elliptic.
+* `TauCeti.PDE.le_of_mul_norm_sq_le_toQuadraticForm'_le`: two-sided bounds
+  `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` force `λ ≤ Λ`.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_constants`: weakening constants preserves the
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
@@ -55,7 +57,12 @@ constants are parameters, not hidden existential data.
   the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
-* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.norm_matrixBilinearForm_transpose`: transposing the coefficient matrix does not
+  change the operator norm of the attached bilinear form.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion of the first argument in the
+  standard orthonormal basis.
+* `TauCeti.PDE.matrixBilinearForm_eq_sum_inner_transpose`: expansion of the second argument,
+  `ηᵀ A ξ = ∑ⱼ ⟪η, cⱼ⟫ ξⱼ` with `cⱼ` the columns of `A`.
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
@@ -64,6 +71,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.holderOnWith_matrixBilinearForm_of_forall` and
   `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_of_contDiffOn`: Hölder entries give Hölder
   bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
+* `TauCeti.PDE.lipschitzWith_matrixBilinearForm_of_forall`: Lipschitz entries give Lipschitz
+  bilinear forms.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.lipschitzOnWith_inv_matrixBilinearForm_self` and
@@ -220,6 +229,16 @@ lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : Euclidean
     matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
 
+/-- Transposing the coefficient matrix does not change the operator norm of the bundled matrix
+bilinear form: the form of `Aᵀ` is the flip of that of `A`. -/
+@[simp]
+lemma norm_matrixBilinearForm_transpose (A : Matrix n n ℝ) :
+    ‖matrixBilinearForm Aᵀ‖ = ‖matrixBilinearForm A‖ := by
+  rw [← ContinuousLinearMap.opNorm_flip (matrixBilinearForm A)]
+  congr 1
+  ext η ξ
+  exact matrixBilinearForm_transpose_apply A η ξ
+
 /-- The bundled bilinear form of the symmetric part is the average of the original bilinear
 form and its transpose. -/
 lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
@@ -270,6 +289,11 @@ lemma matrixBilinearForm_add (A B : Matrix n n ℝ) :
 lemma matrixBilinearForm_smul (c : ℝ) (A : Matrix n n ℝ) :
     matrixBilinearForm (c • A) = c • matrixBilinearForm A := by
   simp only [← matrixBilinearFormLinear_apply, map_smul]
+
+/-- The zero coefficient matrix has the zero bilinear form. -/
+@[simp]
+lemma matrixBilinearForm_zero : matrixBilinearForm (0 : Matrix n n ℝ) = 0 := by
+  simp only [← matrixBilinearFormLinear_apply, map_zero]
 
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
@@ -482,6 +506,13 @@ lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
   rw [Matrix.toQuadraticForm'_apply, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+
+/-- Two-sided bounds `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` on the quadratic form of a square matrix over a
+nonempty index type force `λ ≤ Λ`. -/
+theorem le_of_mul_norm_sq_le_toQuadraticForm'_le [Nonempty n] {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ n, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : lam ≤ Lam := by
+  simpa using (hA (EuclideanSpace.single (Classical.arbitrary n) 1)).trans (hA' _)
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
@@ -1174,12 +1205,34 @@ theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : Euclidean
   conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
   simp [map_sum, map_smul]
 
+/-- Expanding the second argument of a matrix bilinear form in the standard basis:
+`ηᵀ A ξ = ∑ⱼ ⟪η, cⱼ⟫ ξⱼ`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
+theorem matrixBilinearForm_eq_sum_inner_transpose (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ =
+      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * ⟪ξ, EuclideanSpace.basisFun n ℝ j⟫_ℝ := by
+  classical
+  simp only [EuclideanSpace.inner_basisFun_real]
+  simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+    Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
 /-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
 smooth. -/
 theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     {ψ : EuclideanSpace ℝ n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (η : EuclideanSpace ℝ n) :
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
+
+/-- **`Cᵏ` coefficient fields give `Cᵏ` bilinear forms.** If the entries of `a` are `Cᵏ`, then
+`x ↦ η(x)ᵀ a(x) ξ(x)` is `Cᵏ` for `Cᵏ` vector fields `η` and `ξ`. -/
+theorem contDiff_matrixBilinearForm_apply {k : WithTop ℕ∞}
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiff ℝ k fun x => a x i j)
+    {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n} (hη : ContDiff ℝ k η) (hξ : ContDiff ℝ k ξ) :
+    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) := by
+  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
+  exact ContDiff.sum fun i _ => (contDiff_euclidean.1 hη i).mul
+    (ContDiff.sum fun j _ => (ha i j).mul (contDiff_euclidean.1 hξ j))
 
 /-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
 continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz
@@ -1223,6 +1276,24 @@ theorem holderOnWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace
   refine Finset.sum_le_sum fun j _ => ?_
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (ha i j).dist_le hx hy
+
+/-- **Lipschitz entries give a Lipschitz bilinear form.** If every entry of a coefficient field `a`
+is Lipschitz with constant `L i j`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is Lipschitz in the operator
+norm, with constant `∑ᵢⱼ L i j`. -/
+theorem lipschitzWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace X]
+    {a : X → Matrix n n ℝ} {L : n → n → ℝ≥0}
+    (ha : ∀ i j, LipschitzWith (L i j) fun x => a x i j) :
+    LipschitzWith (∑ i, ∑ j, L i j) fun x => matrixBilinearForm (a x) := by
+  refine LipschitzWith.of_dist_le_mul fun y z => ?_
+  rw [dist_eq_norm, ← matrixBilinearForm_sub]
+  refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [Matrix.sub_apply, ← Real.dist_eq]
+  exact (ha i j).dist_le_mul y z
 
 /-- **`C¹` coefficient fields have Hölder bilinear forms on compact sets.** If the entries of `a`
 are continuously differentiable on an open set `s`, then on every compact `S ⊆ s` the map
@@ -1298,20 +1369,8 @@ theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSp
     ext i j
     exact (hgS i j hx).symm
   -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
-  have hLbar : LipschitzWith (∑ i : n, ∑ j : n, K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊)
-      (fun x => matrixBilinearForm (Matrix.of fun i j => g i j x)) := by
-    refine LipschitzWith.of_dist_le_mul fun y z => ?_
-    rw [dist_eq_norm, ← matrixBilinearForm_sub]
-    refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
-    push_cast
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun i _ => ?_
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun j _ => ?_
-    rw [Matrix.sub_apply, ← Real.dist_eq]
-    exact (hgL i j).dist_le_mul y z
-  exact ⟨_, _, habar, hLbar⟩
+  exact ⟨_, _, habar, lipschitzWith_matrixBilinearForm_of_forall (a := fun x => Matrix.of
+    fun i j => g i j x) hgL⟩
 
 /-- The conormal component of a gradient, for a possibly variable coefficient field, is
 supported where the function is. -/

@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Topology.Covering.AddCircle
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
@@ -33,13 +34,20 @@ restriction to time zero lifts to a continuous `f : M → ℝ` has a `C^n` lift 
 for covering maps (`IsCoveringMap.liftHomotopy`) gives a continuous lift, and a continuous lift of
 a `C^n` map through a `C^n` local diffeomorphism is `C^n`.
 
+Near `0` the projection `ℝ → AddCircle T` also has a smooth section defined on the whole circle
+(`AddCircle.exists_contMDiff_coe_eq_of_norm_lt`): the chart at `0`, cut off by a smooth bump
+function.
+
 ## Main declarations
 
 * `AddCircle.deriv_pos_or_deriv_neg_of_lift`: a continuous lift of a `C^n` diffeomorphism of the
   circle, `n ≠ 0`, has degree one and positive derivative, or degree `-1` and negative derivative.
 * `Diffeomorph.exists_addCircle_lift`: every `C^n` diffeomorphism of the circle, `n ≠ 0`, has a
-  `C^n` lift of one of these two kinds.
+  `C^n` lift of one of these two kinds; `Diffeomorph.exists_addCircle_lift_degree` states this
+  with an integer degree `d = ±1`.
 * `AddCircle.exists_contMDiff_lift_unitInterval_prod`: smooth homotopy lifting for the circle.
+* `AddCircle.exists_contMDiff_coe_eq_of_norm_lt`: a smooth real function on the circle which is
+  a section of the projection `ℝ → AddCircle T` near `0`.
 
 ## References
 
@@ -51,7 +59,7 @@ a `C^n` map through a `C^n` local diffeomorphism is `C^n`.
 
 public section
 
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace AddCircle
 
@@ -105,6 +113,24 @@ theorem exists_contMDiff_lift_unitInterval_prod {g : unitInterval × M → AddCi
 
 end Homotopy
 
+/-- **A smooth local section of the projection near zero.** There is a smooth real function `σ` on
+the circle and a radius `δ > 0` such that `σ θ` is a real representative of `θ` whenever
+`‖θ‖ < δ`. -/
+theorem exists_contMDiff_coe_eq_of_norm_lt :
+    ∃ σ : AddCircle T → ℝ, ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ σ ∧
+      ∃ δ > 0, ∀ θ : AddCircle T, ‖θ‖ < δ → ((σ θ : ℝ) : AddCircle T) = θ := by
+  -- Cut off the chart at `0` by a smooth bump function, which is `1` near `0`.
+  let b := Classical.arbitrary (SmoothBumpFunction 𝓘(ℝ) (0 : AddCircle T))
+  have hσ : ∀ᶠ θ in 𝓝 (0 : AddCircle T), ((b θ • chartAt ℝ (0 : AddCircle T) θ : ℝ) :
+      AddCircle T) = θ := by
+    filter_upwards [b.eventuallyEq_one,
+      (chartAt ℝ (0 : AddCircle T)).open_source.mem_nhds (mem_chart_source ℝ 0)] with θ h₁ h₂
+    rw [h₁, Pi.one_apply, one_smul]
+    exact coe_apply_of_mem_atlas (chart_mem_atlas ℝ _) h₂
+  obtain ⟨δ, hδ, h⟩ := Metric.eventually_nhds_iff.1 hσ
+  exact ⟨fun θ ↦ b θ • chartAt ℝ (0 : AddCircle T) θ, b.contMDiff_smul contMDiffOn_chart, δ, hδ,
+    fun θ hθ ↦ h (by rwa [dist_zero_right])⟩
+
 end AddCircle
 
 namespace Diffeomorph
@@ -121,5 +147,17 @@ theorem exists_addCircle_lift (φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)�
   obtain ⟨F, hF, hφ⟩ := AddCircle.exists_continuous_lift φ.continuous
   exact ⟨F, AddCircle.contDiff_of_comp_coe_eq (funext hφ) hF φ.contMDiff, hφ,
     AddCircle.deriv_pos_or_deriv_neg_of_lift hn hF hφ⟩
+
+/-- **Every circle diffeomorphism has a lift of degree `±1`.** A `C^n` diffeomorphism `φ` of
+`AddCircle T`, `n ≠ 0`, has a `C^n` lift `F`, `φ x = F x`, of some degree `d` with `d * d = 1`,
+`F (x + T) = F x + d * T`, whose derivative has the sign of `d`. -/
+theorem exists_addCircle_lift_degree (φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T) (hn : n ≠ 0) :
+    ∃ F : ℝ → ℝ, ContDiff ℝ n F ∧ (∀ x : ℝ, φ x = F x) ∧
+      ∃ d : ℤ, d * d = 1 ∧ (∀ x, F (x + T) = F x + d * T) ∧ ∀ x, 0 < d * deriv F x := by
+  obtain ⟨F, hF, hφ, hlift⟩ := φ.exists_addCircle_lift hn
+  refine ⟨F, hF, hφ, ?_⟩
+  rcases hlift with ⟨hper, hpos⟩ | ⟨hper, hneg⟩
+  · exact ⟨1, rfl, fun x ↦ by simp [hper], fun x ↦ by simpa using hpos x⟩
+  · exact ⟨-1, rfl, fun x ↦ by simp [hper, sub_eq_add_neg], fun x ↦ by simpa using hneg x⟩
 
 end Diffeomorph
