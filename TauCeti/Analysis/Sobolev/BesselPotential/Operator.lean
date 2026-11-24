@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
@@ -33,7 +34,11 @@ distribution in `H^{0,p}` whose derivatives lie in `H^{s,p}` lies in `H^{s+1,p}`
 (`TemperedDistribution.memSobolev_add_one_of_lineDerivOp`, applied one order at a time); the open
 mapping theorem bounds its inverse. In particular elements of `H^{s+1,p}` converge as soon as they
 converge in `Lᵖ` and their first derivatives converge in `H^{s,p}`
-(`BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`).
+(`BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`). For `p = 2` the
+same holds for smooth families: a family that is `C^n` in `H^s` together with its first
+derivatives is `C^n` in `H^{s+1}`
+(`BesselPotentialSpace.exists_contDiff_inclusion_eq_of_lineDerivOp_eq`), since
+`u = (1 - Δ)⁻¹ (u - ∑ᵢ ∂_{b i} ∂_{b i} u)`.
 
 For `s ≥ 0` an element `u` of `H^{s,p}(E)` is an `Lᵖ` function, `BesselPotentialSpace.inclusionLp`.
 The second part of the file describes the operators on these functions when `u` is real-valued:
@@ -61,6 +66,8 @@ The second part of the file describes the operators on these functions when `u` 
 * `BesselPotentialSpace.exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM` and
   `BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`: the norm of
   `H^{s+1,p}` is controlled by the `Lᵖ` norm and the first derivatives.
+* `BesselPotentialSpace.exists_contDiff_inclusion_eq_of_lineDerivOp_eq`: a family that is `C^n`
+  in `H^s` together with its first derivatives is `C^n` in `H^{s+1}`.
 -/
 
 public section
@@ -206,6 +213,40 @@ theorem tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM (hp : 1 < p) (hp_
   simpa only [map_sub] using hC (u a - u₀)
 
 end Gradient
+
+section ContDiff
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ}
+  {ι : Type*} [Fintype ι] {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞}
+
+/-- **Smooth families in `H^{s+1}` from their first derivatives.** Let `b` be an orthonormal basis
+of `E`, and let `w` be a `C^n` map into `H^s(E, F)` whose distributional derivatives `∂_{b i} w`
+are given by `C^n` maps `w' i` into `H^s(E, F)`. Then `w` is a `C^n` map into `H^{s+1}(E, F)`:
+there is a `C^n` map `u` into `H^{s+1}(E, F)` with `u x = w x` in `H^s(E, F)`. Indeed
+`u = (1 - Δ)⁻¹ (w - ∑ᵢ ∂_{b i} w' i)`, where `(1 - Δ)⁻¹` maps `H^{s-1}` boundedly to `H^{s+1}`. -/
+theorem exists_contDiff_inclusion_eq_of_lineDerivOp_eq (b : OrthonormalBasis ι ℝ E)
+    {w : X → H^{s}(E, F)} {w' : ι → X → H^{s}(E, F)} (hw : ContDiff ℝ n w)
+    (hw' : ∀ i, ContDiff ℝ n (w' i)) (hd : ∀ x i, ∂_{b i} (w x).toDistr = (w' i x).toDistr) :
+    ∃ u : X → H^{s + 1}(E, F), ContDiff ℝ n u ∧
+      ∀ x, inclusion (by linarith : s ≤ s + 1) (u x) = w x := by
+  -- `(1 - Δ)⁻¹ : H^s → H^{s+1}`, and `(1 - Δ)⁻¹ ∂_{b i} : H^s → H^{s+1}`.
+  set R₀ : H^{s}(E, F) →L[ℂ] H^{s + 1}(E, F) :=
+    mapCLM (laplacianResolvent F 1) fun v ↦
+      (v.memSobolev_toDistr.laplacianResolvent one_pos).mono (by linarith)
+  set R : ι → H^{s}(E, F) →L[ℂ] H^{s + 1}(E, F) := fun i ↦
+    mapCLM ((laplacianResolvent F 1).comp (LineDeriv.lineDerivOpCLM ℂ 𝓢'(E, F) (b i))) fun v ↦ by
+      have h := (v.memSobolev_toDistr.lineDerivOp_of_one_lt ENNReal.one_lt_two
+        ENNReal.ofNat_ne_top (m := b i)).laplacianResolvent one_pos
+      rw [show s - 1 + 2 = s + 1 by ring] at h
+      simpa using h
+  refine ⟨fun x ↦ R₀ (w x) - ∑ i, R i (w' i x), ((R₀.restrictScalars ℝ).contDiff.comp hw).sub
+    (ContDiff.sum fun i _ ↦ ((R i).restrictScalars ℝ).contDiff.comp (hw' i)), fun x ↦ ext ?_⟩
+  simp only [toDistr_inclusion, toDistr_sub, toDistr_sum, R₀, R, toDistr_mapCLM,
+    ContinuousLinearMap.comp_apply, LineDeriv.lineDerivOpCLM_apply, ← hd, ← map_sum, ← map_sub,
+    ← laplacian_eq_sum b]
+  exact laplacianResolvent_one_sub_laplacian _
+
+end ContDiff
 
 end BesselPotentialSpace
 

@@ -82,7 +82,7 @@ theorem projectionGap_lt_sqrt_two_div_two_of_reflection_spectrum
     rw [htwo, hfour, halpha, hDsq] at hpos
     linarith
   have hnorm : ‖D‖ ≤ Real.sqrt (max ((1 - α) / 2) 0) :=
-    D.opNorm_le_sqrt_of_forall_sq_norm_le (le_max_right _ _) fun x =>
+    D.opNorm_le_sqrt_of_forall_sq_norm_le fun x =>
       (hpoint x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))
   rw [projectionGap_def]
   apply hnorm.trans_lt

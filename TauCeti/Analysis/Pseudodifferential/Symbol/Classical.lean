@@ -105,6 +105,10 @@ and proves:
   (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`). If the full symbol outside a
   compact set repeats its values on that set, the radius is uniform in the position
   (`TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove`).
+* `TauCeti.ClassicalSymbol.pointwiseAdjoint`: between Hilbert spaces, the pointwise adjoint
+  `(x, ξ) ↦ a(x, ξ)†` of a classical symbol is classical of the same order, with the pointwise
+  adjoints of the homogeneous terms of `a` as its terms. This is not the symbol of the formal
+  adjoint of the operator, whose lower order terms also involve derivatives of the symbol.
 
 ## References
 
@@ -700,6 +704,15 @@ theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
 
+variable {k hk b} in
+/-- The principal symbol of `b` is the term of index `k` of its inclusion `inclusion k hk b`. -/
+theorem coefficient_principal_of_inclusion_eq {a : ClassicalSymbol n V W m}
+    (h : inclusion k hk b = a) (z : CoordinateSpace n × CoordinateSpace n) :
+    b.principal.coefficient z = (a.term k).coefficient z := by
+  subst h
+  simpa [coefficient_principal] using
+    (congrArg (fun s => s.coefficient z) (term_inclusion_add k hk b 0)).symm
+
 end Inclusion
 
 /-! ### Removing the leading term -/
@@ -1274,6 +1287,23 @@ private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V
 
 variable [CompleteSpace V]
 
+/-- **Invertibility at large frequencies from the principal symbol.** Let `K` be a compact set of
+positions at which the principal symbol `a_m(x, ξ)` of a classical symbol of order `m` is invertible
+for `‖ξ‖ ≥ 2`, with `‖a_m(x, ξ)⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)`. Then the full symbol `a(x, ξ)` is invertible for
+`x ∈ K` at all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`.
+Nothing is assumed at positions outside `K`. -/
+theorem exists_isInvertible_and_norm_inverse_le_of_principal {a : ClassicalSymbol n V W m}
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) {C₀ : ℝ}
+    (h : ∀ x ∈ K, ∀ ξ, 2 ≤ ‖ξ‖ → (a.principal.coefficient (x, ξ)).IsInvertible ∧
+      ‖(a.principal.coefficient (x, ξ)).inverse‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
+    ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
+      ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
+  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le hK
+  refine ⟨max 2 (2 * C₀ * C₁), 2 * C₀, fun x hx ξ hξ ↦ ?_⟩
+  have h2 : 2 ≤ ‖ξ‖ := (le_max_left _ _).trans hξ
+  exact isInvertible_and_norm_inverse_le_of_norm_sub_le (h x hx ξ h2).1 (by positivity)
+    (le_max_right _ _) hξ (h x hx ξ h2).2 (hC₁ x hx ξ h2)
+
 /-- **Invertibility of an elliptic symbol at large frequencies.** On every compact set `K` of
 positions, the full symbol `a(x, ξ)` of an elliptic classical symbol of order `m` is invertible at
 all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
@@ -1286,14 +1316,19 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
   have ha' := isElliptic_def.1 ha
   obtain ⟨C₀, hC₀⟩ :=
     (cutoffSymbol default (a.principal.inverse ha')).exists_norm_coefficient_le K hK
-  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le hK
-  refine ⟨max 2 (2 * C₀ * C₁), 2 * C₀, fun x hx ξ hξ ↦ ?_⟩
-  have h2 : 2 ≤ ‖ξ‖ := (le_max_left _ _).trans hξ
+  refine exists_isInvertible_and_norm_inverse_le_of_principal hK (C₀ := C₀) fun x hx ξ h2 ↦
+    ⟨isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith)), ?_⟩
   have hM := hC₀ x hx ξ
-  rw [coefficient_cutoffSymbol_of_two_le_norm _ _ h2, HomogeneousSymbol.coefficient_inverse] at hM
-  exact isInvertible_and_norm_inverse_le_of_norm_sub_le
-    (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
-    hM (hC₁ x hx ξ h2)
+  rwa [coefficient_cutoffSymbol_of_two_le_norm _ _ h2, HomogeneousSymbol.coefficient_inverse] at hM
+
+/-- **Ellipticity on compact sets of positions.** On every compact set `K` of positions, an
+elliptic classical symbol is elliptic at the frequencies of norm at least some radius `R`, in the
+sense of `TauCeti.Symbol.IsEllipticOn`. -/
+theorem IsElliptic.exists_isEllipticOn {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
+  obtain ⟨R, C, hC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  exact ⟨R, Symbol.isEllipticOn_iff.2 fun _ _ ↦ ⟨C, fun p hp _ ↦ hC p.1 hp.1 p.2 hp.2⟩⟩
 
 /-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
 symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
@@ -1351,6 +1386,76 @@ theorem isElliptic_iff_forall_isCompact {a : ClassicalSymbol n V W m} :
       (h {x} isCompact_singleton).imp fun _ ↦ .imp fun _ hC ξ ↦ hC x rfl ξ⟩
 
 end Elliptic
+
+/-! ### The pointwise adjoint -/
+
+section PointwiseAdjoint
+
+open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply)
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The pointwise adjoint `(x, ξ) ↦ a(x, ξ)†` of a classical symbol between Hilbert spaces: a
+classical symbol of the same order, whose homogeneous terms are the pointwise adjoints of those of
+`a`. Its quantization is not the formal adjoint of `Op(a)`; that is the quantization of
+`TauCeti.ClassicalSymbol.adjoint`, of which `a†` is the leading term. -/
+def pointwiseAdjoint (a : ClassicalSymbol n V W m) : ClassicalSymbol n W V m :=
+  a.map adjointRealCLM
+
+variable (a b : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_pointwiseAdjoint : a.pointwiseAdjoint.toSymbol = a.toSymbol.map adjointRealCLM :=
+  toSymbol_map _ a
+
+@[simp]
+theorem term_pointwiseAdjoint (j : ℕ) : a.pointwiseAdjoint.term j = (a.term j).adjoint := by
+  ext1
+  funext z
+  simp [pointwiseAdjoint, adjointRealCLM_apply]
+
+/-- The principal symbol of `a†` is the pointwise adjoint of the principal symbol of `a`. -/
+@[simp]
+theorem principal_pointwiseAdjoint : a.pointwiseAdjoint.principal = a.principal.adjoint := by
+  ext1
+  funext z
+  simp
+
+@[simp]
+theorem pointwiseAdjoint_pointwiseAdjoint : a.pointwiseAdjoint.pointwiseAdjoint = a :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_zero : (0 : ClassicalSymbol n V W m).pointwiseAdjoint = 0 :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_add : (a + b).pointwiseAdjoint = a.pointwiseAdjoint + b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_neg : (-a).pointwiseAdjoint = -a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_sub : (a - b).pointwiseAdjoint = a.pointwiseAdjoint - b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+/-- The pointwise adjoint is conjugate linear. -/
+@[simp]
+theorem pointwiseAdjoint_smul (c : ℂ) :
+    (c • a).pointwiseAdjoint = (starRingEnd ℂ c) • a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by
+    simpa [adjointRealCLM_apply] using map_smulₛₗ ContinuousLinearMap.adjoint c _
+
+/-- The pointwise adjoint `a†` is elliptic exactly when `a` is. -/
+@[simp]
+theorem isElliptic_pointwiseAdjoint_iff : a.pointwiseAdjoint.IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_pointwiseAdjoint, HomogeneousSymbol.isElliptic_adjoint_iff,
+    isElliptic_def]
+
+end PointwiseAdjoint
 
 /-! ### The homogeneous terms as a linear map -/
 

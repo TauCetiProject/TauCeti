@@ -11,8 +11,10 @@ public import TauCeti.RingTheory.Valuation.Discrete.AddVal
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 public import TauCeti.RingTheory.Valuation.Extension
 
+import TauCeti.Algebra.GroupWithZero.Range
 import TauCeti.Algebra.Order.Monoid.Unbundled.WithTop
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Extensions of rank-one discrete valuations and ramification scaling
@@ -238,7 +240,7 @@ ring `L` over a field `K`, `w.ramificationIdx K = ordIndex (w.intValuation.comap
 -/
 theorem ramificationIdx_eq_ordIndex :
     w.ramificationIdx K = ordIndex (w.intValuation.comap (algebraMap K L)) := by
-  have htop := valueGroup_eq_top_of_surjective w.intValuation w.intValuation_surjective
+  have htop := w.intValuation.valueGroup_eq_top_of_surjective w.intValuation_surjective
   have hg₀ := IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective w.intValuation_surjective
   have hzpow : Subgroup.zpowers (Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) = ⊤ := by
     rw [← hg₀, IsRankOneDiscrete.generator_zpowers_eq_valueGroup, htop]

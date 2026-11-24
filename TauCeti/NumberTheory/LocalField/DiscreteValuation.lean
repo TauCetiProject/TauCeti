@@ -128,7 +128,7 @@ variable {K L : Type*} [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
 theorem ramificationIdx_valuation_eq_ramificationIndex :
     (valuation L).ramificationIdx K = ramificationIndex K L := by
   have htop : (valuation L).intValuation.valueGroup = ⊤ :=
-    Valuation.valueGroup_eq_top_of_surjective _ (valuation L).intValuation_surjective
+    (valuation L).intValuation.valueGroup_eq_top_of_surjective (valuation L).intValuation_surjective
   have he_comp :
       (intValuationUnitsEquiv : ℤᵐ⁰ˣ →* Multiplicative ℤ).comp
           (Units.map ((valuation L).intValuation : L →* ℤᵐ⁰)) =

@@ -23,7 +23,15 @@ Tensoring each complex `Q.X p` (the row `p` in `ChainComplex.cartanEilenbergReso
 gives the first-quadrant bicomplex `HomologicalComplex.kunnethBicomplex K L` whose column `p` is
 `K ⊗ Q.X p`, and whose row `n` is `p ↦ (K ⊗ Q.X p).X n`. The augmentation
 `Q.X 0 ⟶ L` induces an augmentation of its total complex to `K ⊗ L`
-(`HomologicalComplex.kunnethBicomplexAugmentation`).
+(`HomologicalComplex.kunnethBicomplexAugmentation`). A chain map `f : K ⟶ K'` induces a morphism
+of Künneth bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷ Q.X p` on column
+`p`, compatible with the augmentations
+(`HomologicalComplex.total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation`). A chain map
+`g : L₁ ⟶ L₂` induces a morphism of Künneth bicomplexes
+`HomologicalComplex.kunnethBicomplexMapRight K g`, `K ◁ Q(g).f p` on column `p` for the lift
+`Q(g) = ChainComplex.cartanEilenbergResolutionMap g` of `g` to the Cartan–Eilenberg resolutions,
+which depends on choices; it is compatible with the augmentations
+(`HomologicalComplex.total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation`).
 
 When every term of `K` is flat, this augmentation is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). Indeed, the row `n` of the bicomplex,
@@ -119,6 +127,98 @@ def kunnethBicomplexAugmentation :
 lemma kunnethBicomplexAugmentation_def :
     kunnethBicomplexAugmentation K L = HomologicalComplex₂.totalAugmentation _
       (kunnethBicomplexε K L) (kunnethBicomplex_d_comp_ε K L) := (rfl)
+
+section MapLeft
+
+variable {K₁ K₂ K₃ : ChainComplex (ModuleCat.{u} R) ℕ} (f : K₁ ⟶ K₂) (f' : K₂ ⟶ K₃)
+  (M : ChainComplex (ModuleCat.{u} R) ℕ)
+
+/-- The morphism of Künneth bicomplexes induced by a chain map `f : K₁ ⟶ K₂`: on column `p` it is
+`f ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `M`. It is the natural transformation
+`tensorLeft K₁ ⟶ tensorLeft K₂` induced by `f`, applied to the complexes of `Q`. -/
+def kunnethBicomplexMapLeft : kunnethBicomplex K₁ M ⟶ kunnethBicomplex K₂ M :=
+  (NatTrans.mapHomologicalComplex ((curriedTensor _).map f) _).app
+    (ChainComplex.cartanEilenbergResolution M)
+
+/-- The morphism `HomologicalComplex.kunnethBicomplexMapLeft f M` is `f ▷ Q.X p` on column `p`. -/
+@[simp]
+lemma kunnethBicomplexMapLeft_f (p : ℕ) :
+    (kunnethBicomplexMapLeft f M).f p = f ▷ (ChainComplex.cartanEilenbergResolution M).X p :=
+  (rfl)
+
+@[simp]
+lemma kunnethBicomplexMapLeft_id : kunnethBicomplexMapLeft (𝟙 K₁) M = 𝟙 _ := by
+  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, NatTrans.mapHomologicalComplex_id,
+    NatTrans.id_app]
+  -- `(tensorLeft K₁).mapHomologicalComplex _` applied to `Q` is `kunnethBicomplex K₁ M` by
+  -- definition
+  rfl
+
+@[simp]
+lemma kunnethBicomplexMapLeft_comp :
+    kunnethBicomplexMapLeft (f ≫ f') M =
+      kunnethBicomplexMapLeft f M ≫ kunnethBicomplexMapLeft f' M := by
+  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
+    NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app]
+  -- the composite is that of the morphisms of Künneth bicomplexes, which are morphisms out of
+  -- `kunnethBicomplex K₁ M` only by definition
+  rfl
+
+/-- The morphism of Künneth bicomplexes induced by `f` is compatible with the augmentations of the
+total complexes to `K₁ ⊗ M` and `K₂ ⊗ M`. -/
+@[reassoc]
+lemma total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation :
+    HomologicalComplex₂.total.map (kunnethBicomplexMapLeft f M) (ComplexShape.down ℕ) ≫
+        kunnethBicomplexAugmentation K₂ M =
+      kunnethBicomplexAugmentation K₁ M ≫ f ▷ M := by
+  have e : (kunnethBicomplexMapLeft f M).f 0 ≫ kunnethBicomplexε K₂ M =
+      kunnethBicomplexε K₁ M ≫ f ▷ M := by
+    rw [kunnethBicomplexε_def, kunnethBicomplexε_def, kunnethBicomplexMapLeft_f]
+    -- the column `0` of the Künneth bicomplex is `K₁ ⊗ Q.X 0` only by definition
+    change f ▷ _ ≫ K₂ ◁ _ = K₁ ◁ _ ≫ f ▷ _
+    exact (whisker_exchange _ _).symm
+  rw [kunnethBicomplexAugmentation_def, kunnethBicomplexAugmentation_def,
+    HomologicalComplex₂.total_map_totalAugmentation, HomologicalComplex₂.totalAugmentation_comp]
+  simp only [e]
+
+end MapLeft
+
+section MapRight
+
+variable {L₁ L₂ : ChainComplex (ModuleCat.{u} R) ℕ} (g : L₁ ⟶ L₂)
+
+/-- A morphism of Künneth bicomplexes over a chain map `g : L₁ ⟶ L₂`: on column `p` it is
+`K ◁ Q(g).f p` for the lift `Q(g) = ChainComplex.cartanEilenbergResolutionMap g` of `g` to the
+Cartan–Eilenberg resolutions. It depends on the choice of that lift. -/
+def kunnethBicomplexMapRight : kunnethBicomplex K L₁ ⟶ kunnethBicomplex K L₂ :=
+  ((tensorLeft K).mapHomologicalComplex _).map (ChainComplex.cartanEilenbergResolutionMap g)
+
+/-- The morphism `HomologicalComplex.kunnethBicomplexMapRight K g` is `K ◁ Q(g).f p` on column
+`p`. -/
+@[simp]
+lemma kunnethBicomplexMapRight_f (p : ℕ) :
+    (kunnethBicomplexMapRight K g).f p = K ◁ (ChainComplex.cartanEilenbergResolutionMap g).f p :=
+  (rfl)
+
+/-- The morphism of Künneth bicomplexes over `g` is compatible with the augmentations of the total
+complexes to `K ⊗ L₁` and `K ⊗ L₂`. -/
+@[reassoc]
+lemma total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation :
+    HomologicalComplex₂.total.map (kunnethBicomplexMapRight K g) (ComplexShape.down ℕ) ≫
+        kunnethBicomplexAugmentation K L₂ =
+      kunnethBicomplexAugmentation K L₁ ≫ K ◁ g := by
+  have e : (kunnethBicomplexMapRight K g).f 0 ≫ kunnethBicomplexε K L₂ =
+      kunnethBicomplexε K L₁ ≫ K ◁ g := by
+    rw [kunnethBicomplexε_def, kunnethBicomplexε_def, kunnethBicomplexMapRight_f]
+    -- the column `0` of the Künneth bicomplex is `K ⊗ Q.X 0` only by definition
+    change K ◁ _ ≫ K ◁ _ = K ◁ _ ≫ K ◁ _
+    rw [← MonoidalCategory.whiskerLeft_comp, ← MonoidalCategory.whiskerLeft_comp,
+      ChainComplex.cartanEilenbergResolutionMap_π]
+  rw [kunnethBicomplexAugmentation_def, kunnethBicomplexAugmentation_def,
+    HomologicalComplex₂.total_map_totalAugmentation, HomologicalComplex₂.totalAugmentation_comp]
+  simp only [e]
+
+end MapRight
 
 /-- In degree `n`, the map `K ⊗ Q.X 0 ⟶ K ⊗ L` vanishes on the image of the differential of the
 row `n` of the Künneth bicomplex. -/
