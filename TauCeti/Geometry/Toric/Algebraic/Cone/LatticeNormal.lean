@@ -96,31 +96,20 @@ private theorem exists_generator (hi : IsIntegralLattice i) (hσ : IsLatticeRati
   refine ⟨e, e.property, fun m hm ↦ ⟨b.repr (Submodule.Quotient.mk ⟨m, hm⟩) 0, ?_⟩⟩
   have h := b.sum_repr (Submodule.Quotient.mk ⟨m, hm⟩)
   rw [Fin.sum_univ_one, ← he, ← Submodule.Quotient.mk_smul, eq_comm, Submodule.Quotient.eq] at h
-  exact h
-
-/-- If the span of a lattice-rational cone `σ` is not contained in the span of `τ`, some lattice
-vector of `σ` lies outside `N_τ`. -/
-private theorem exists_mem_notMem_coneSublattice (hσ : IsLatticeRational i σ)
-    (h : ¬ Submodule.span ℝ (σ : Set V) ≤ Submodule.span ℝ (τ : Set V)) :
-    ∃ g : N, i g ∈ σ ∧ g ∉ coneSublattice i τ := by
-  by_contra! hg
-  obtain ⟨s, hs⟩ := isLatticeRational_iff.1 hσ
-  refine h ?_
-  rw [hs, PointedCone.hull, Submodule.span_span_of_tower]
-  refine Submodule.span_le.2 ?_
-  rintro _ ⟨n, hn, rfl⟩
-  exact mem_coneSublattice.1 (hg n (hs ▸ PointedCone.subset_hull ⟨n, hn, rfl⟩))
+  rw [Submodule.mem_comap, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule, SetLike.mem_coe] at h
+  simpa only [Submodule.subtype_apply, Submodule.coe_sub, Submodule.coe_smul] using h
 
 /-- A lattice-rational cone `σ` has a lattice normal along every lattice-rational cone `τ ≤ σ`
-whose real span has one dimension less: the quotient `N_σ / N_τ` is torsion free of rank one, and
-one of its two generators is positive on a lattice vector of `σ` outside `N_τ`. -/
+whose real span has one dimension less. -/
 theorem exists_isLatticeNormal (hi : IsIntegralLattice i) (hσ : IsLatticeRational i σ)
     (hτ : IsLatticeRational i τ) (hτσ : τ ≤ σ)
     (hdim : finrank ℝ (Submodule.span ℝ (τ : Set V)) + 1 =
       finrank ℝ (Submodule.span ℝ (σ : Set V))) :
     ∃ n, IsLatticeNormal i τ σ n := by
+  -- The quotient `N_σ / N_τ` is torsion free of rank one, and one of its two generators is
+  -- positive on a lattice vector of `σ` outside `N_τ`.
   obtain ⟨e, he, hgen⟩ := exists_generator hi hσ hτ hτσ hdim
-  obtain ⟨g, hgσ, hgτ⟩ := exists_mem_notMem_coneSublattice (τ := τ) hσ fun hle ↦ by
+  obtain ⟨g, hgσ, hgτ⟩ := hσ.exists_mem_notMem_coneSublattice (τ := τ) fun hle ↦ by
     have := hi.finiteDimensional
     have := Submodule.finrank_mono hle
     omega

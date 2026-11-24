@@ -75,11 +75,11 @@ section Ring
 variable {S W : Type*} [Ring S] [PartialOrder S] [IsDirectedOrder S] [IsOrderedRing S]
   [AddCommGroup W] [Module S W] {C F : PointedCone S W}
 
-/-- A face of a pointed cone is cut out of the cone by its own linear span: a point `x` of the
-cone in the span of the face is a difference `p - n` of points of the face, so `x + n = p` forces
-`x` into the face. -/
+/-- A face of a pointed cone is cut out of the cone by its own linear span: a point of the cone
+in the span of the face lies in the face. -/
 theorem PointedCone.IsFaceOf.mem_of_mem_span (hF : F.IsFaceOf C) {x : W} (hx : x ∈ C)
     (hxF : x ∈ Submodule.span S (F : Set W)) : x ∈ F := by
+  -- Write `x = p - n` with `p, n` in the face; then `x + n = p` forces `x` into the face.
   obtain ⟨p, hp, n, hn, rfl⟩ := PointedCone.mem_span.1 hxF
   exact hF.mem_of_add_mem_left hx (hF.le hn) (by simpa using hp)
 

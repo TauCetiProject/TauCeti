@@ -23,9 +23,10 @@ Fulton and Sturmfels identify the Minkowski weights of codimension `j` with the 
 group `A^j` of the toric variety, by evaluating a class on the orbit closures of the cones of
 codimension `j`. Weights depend only on the fan, never on a coefficient field.
 
-The balancing condition is the vanishing of finitely many integer linear functionals
-`TauCeti.Toric.Fan.balancing`, so the Minkowski weights form a `ℤ`-submodule of the integer
-functions on the cones of codimension `j`.
+The Minkowski weights of codimension `j` are the joint kernel of the integer linear functionals
+`TauCeti.Toric.Fan.balancing j τ u`, over all cones `τ` of codimension `j + 1` and all characters
+`u` vanishing on `N_τ`, so they form a `ℤ`-submodule of the integer functions on the cones of
+codimension `j`.
 
 ## Main declarations
 
@@ -115,8 +116,7 @@ theorem mem_minkowskiWeights {c : Φ.ConeOfCodim j → ℤ} :
       coneSublattice i τ.val.val ≤ u.ker → Φ.balancing j τ.val.val u c = 0 := by
   simp [minkowskiWeights]
 
-/-- Two Minkowski weights agree exactly when their values on all cones of codimension `j`
-agree. -/
+/-- Two Minkowski weights are equal if their values on all cones of codimension `j` agree. -/
 theorem minkowskiWeights_ext {c d : Φ.minkowskiWeights j}
     (h : ∀ σ : Φ.ConeOfCodim j, (c : Φ.ConeOfCodim j → ℤ) σ = (d : Φ.ConeOfCodim j → ℤ) σ) :
     c = d :=

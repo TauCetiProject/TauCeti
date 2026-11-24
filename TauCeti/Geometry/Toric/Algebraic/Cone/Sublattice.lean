@@ -31,6 +31,9 @@ whose monomials are units along the orbit of `σ`.
   `N ⧸ N_σ` is free.
 * `TauCeti.Toric.IsLatticeRational.finrank_coneSublattice`: for a lattice-rational cone, the rank
   of `N_σ` is the dimension of the real span of `σ`.
+* `TauCeti.Toric.IsLatticeRational.exists_mem_notMem_coneSublattice`: if the span of a
+  lattice-rational cone `σ` is not contained in the span of `τ`, some lattice vector of `σ` lies
+  outside `N_τ`.
 * `TauCeti.Toric.IsLatticeRational.forall_realCharacter_eq_zero_iff_coneSublattice_le_ker`: an
   integral character vanishes on a lattice-rational cone exactly when its kernel contains `N_σ`.
 * `TauCeti.Toric.IsLatticeRational.realCharacter_comp_mk'_eq_zero` and
@@ -142,7 +145,7 @@ theorem IsLatticeRational.span_image_coneSublattice (hσ : IsLatticeRational i �
     Submodule.span ℝ (i '' coneSublattice i σ) = Submodule.span ℝ (σ : Set V) := by
   refine le_antisymm (Submodule.span_le.2 ?_) ?_
   · rintro _ ⟨n, hn, rfl⟩
-    exact hn
+    exact mem_coneSublattice.1 hn
   · obtain ⟨s, hs⟩ := isLatticeRational_iff.1 hσ
     have hsub : i '' (s : Set N) ⊆ i '' coneSublattice i σ := by
       rintro _ ⟨n, hn, rfl⟩
@@ -157,7 +160,20 @@ theorem IsLatticeRational.finrank_coneSublattice (hσ : IsLatticeRational i σ)
     (hi : IsIntegralLattice i) :
     Module.finrank ℤ (coneSublattice i σ).toIntSubmodule =
       Module.finrank ℝ (Submodule.span ℝ (σ : Set V)) := by
-  rw [← hσ.span_image_coneSublattice, ← hi.finrank_span_image]
-  rfl
+  rw [← hσ.span_image_coneSublattice, ← hi.finrank_span_image, AddSubgroup.coe_toIntSubmodule]
+
+/-- If the real span of a lattice-rational cone `σ` is not contained in the real span of `τ`, some
+lattice vector of `σ` lies outside `N_τ`. -/
+theorem IsLatticeRational.exists_mem_notMem_coneSublattice (hσ : IsLatticeRational i σ)
+    {τ : PointedCone ℝ V}
+    (h : ¬ Submodule.span ℝ (σ : Set V) ≤ Submodule.span ℝ (τ : Set V)) :
+    ∃ g : N, i g ∈ σ ∧ g ∉ coneSublattice i τ := by
+  by_contra! hg
+  obtain ⟨s, hs⟩ := isLatticeRational_iff.1 hσ
+  refine h ?_
+  rw [hs, PointedCone.hull, Submodule.span_span_of_tower]
+  refine Submodule.span_le.2 ?_
+  rintro _ ⟨n, hn, rfl⟩
+  exact mem_coneSublattice.1 (hg n (hs ▸ PointedCone.subset_hull ⟨n, hn, rfl⟩))
 
 end TauCeti.Toric

@@ -199,7 +199,7 @@ theorem IsIntegralLattice.linearIndependent_basis {ι : Type*} (h : IsIntegralLa
   exact funext hB ▸ (h.isBaseChange.basis b).linearIndependent
 
 /-- The real span of the image of a sublattice has real dimension equal to the integral rank of
-the sublattice: an integral basis of the sublattice maps to a real basis of that span. -/
+the sublattice. -/
 theorem IsIntegralLattice.finrank_span_image (h : IsIntegralLattice i) (L : Submodule ℤ N) :
     Module.finrank ℝ (Submodule.span ℝ (i '' L)) = Module.finrank ℤ L := by
   have := h.free
@@ -211,21 +211,13 @@ theorem IsIntegralLattice.finrank_span_image (h : IsIntegralLattice i) (L : Subm
       (b.linearIndependent.map' L.subtype (Submodule.ker_subtype L))
   have hL : Submodule.span ℤ (Set.range (L.subtype ∘ b)) = L := by
     rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
-  have hspan : Submodule.span ℝ (Set.range (i ∘ (L.subtype ∘ b))) =
-      Submodule.span ℝ (i '' L) := by
-    refine le_antisymm (Submodule.span_mono ?_) (Submodule.span_le.2 ?_)
-    · rintro _ ⟨j, rfl⟩
-      exact ⟨_, (b j).property, rfl⟩
-    · rintro _ ⟨n, hn, rfl⟩
-      rw [← hL] at hn
-      induction hn using Submodule.span_induction with
-      | mem x hx =>
-        obtain ⟨j, rfl⟩ := hx
-        exact Submodule.subset_span ⟨j, rfl⟩
-      | zero => simp
-      | add x y _ _ hx hy => simpa using add_mem hx hy
-      | smul k x _ hx => simpa [← Int.cast_smul_eq_zsmul ℝ] using Submodule.smul_mem _ (k : ℝ) hx
-  rw [← hspan, finrank_span_eq_card hli, Fintype.card_fin]
+  -- An integral basis of the sublattice maps to a real basis of the real span of its image.
+  have hspan :
+      Submodule.span ℝ (i '' L) = Submodule.span ℝ (Set.range (i ∘ (L.subtype ∘ b))) := by
+    conv_lhs => rw [← hL]
+    rw [← AddMonoidHom.coe_toIntLinearMap i, ← Submodule.map_coe, Submodule.map_span,
+      Submodule.span_span_of_tower, ← Set.range_comp]
+  rw [hspan, finrank_span_eq_card hli, Fintype.card_fin]
 
 end Basic
 
