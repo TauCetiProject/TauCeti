@@ -57,7 +57,7 @@ theorem Ideal.exists_mem_annihilator_sup_isSMulRegular {R : Type*} [CommRing R]
 
 /-- A nilpotent ideal `I` of a nontrivial commutative ring kills a nonzero element: every nonzero
 element of the last nonzero power of `I` will do. -/
-theorem Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent {R : Type*} [CommRing R]
+theorem Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent {R : Type*} [CommSemiring R]
     [Nontrivial R] {I : Ideal R} (hI : IsNilpotent I) : ∃ s ≠ 0, ∀ x ∈ I, x * s = 0 := by
   obtain ⟨s, hsmem, hs⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (pow_pred_nilpotencyClass hI)
   refine ⟨s, hs, fun x hx ↦ ?_⟩
