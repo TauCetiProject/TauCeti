@@ -44,6 +44,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
+  space.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
@@ -52,8 +54,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   algebraic operations.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
-* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
+* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
+  entries of finite sums, of `1 × 1` C⋆-matrices and of reindexed matrices, with
+  `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
   `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
 * `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
   image under a linear map.
@@ -276,6 +279,16 @@ theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star
     (a : A) (i j : n) : toOneByOne n R A a i j = a :=
   rfl
 
+/-- The entries of a reindexed C⋆-matrix. Mathlib's `CStarMatrix.reindexₐ_apply` has right-hand
+side `Matrix.reindex e e M i j` with `M` a `CStarMatrix`, which is not type-correct at instance
+transparency, so neither `simp` nor `rw` can continue from it to `Matrix.reindex_apply`; this
+states the entry directly, and `simp` tries it first. -/
+@[simp high]
+theorem reindexₐ_apply_apply {m : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) (i j : n) :
+    reindexₐ R A e M i j = M (e.symm i) (e.symm j) :=
+  (rfl)
+
 variable (R) in
 /-- The transpose of C⋆-matrices, as a linear map. -/
 def transposeₗ {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A] :
@@ -360,6 +373,12 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+/-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
+instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
+    [TopologicalSpace.SeparableSpace A] :
+    TopologicalSpace.SeparableSpace (CStarMatrix m n A) :=
+  inferInstanceAs (TopologicalSpace.SeparableSpace (m → n → A))
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 

@@ -404,7 +404,7 @@ theorem laplacian_div_add_norm_sub_sq_rpow (t k : ℝ) (b x : E) :
     have h := congrFun (laplacian_comp_add_right (fun z : E ↦ t ^ 2 + ‖z‖ ^ 2) (-b)) x
     simp only [← sub_eq_add_neg] at h
     rw [h, (contDiff_const.add contDiff_id :
-      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).laplacian_comp_norm_sq]
+      ContDiff ℝ 2 fun s : ℝ ↦ t ^ 2 + s).contDiffAt.laplacian_comp_norm_sq]
     simp
   rw [hUF, ContDiffAt.laplacian_comp (q := fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) hFc hqc, hFd, hFdd,
     hgrad, hlap]
