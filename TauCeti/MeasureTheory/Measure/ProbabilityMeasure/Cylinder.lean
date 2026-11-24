@@ -167,8 +167,9 @@ probability measures is the convex combination of their correlation functions. -
 theorem correlationFunction_convexComb {a b : ℝ≥0∞} (hab : a + b = 1)
     (P Q : ProbabilityMeasure X) (F : Finset I) :
     (convexComb hab P Q).correlationFunction F =
-      a.toNNReal * P.correlationFunction F + b.toNNReal * Q.correlationFunction F :=
-  convexComb_apply hab P Q _
+      a.toNNReal * P.correlationFunction F + b.toNNReal * Q.correlationFunction F := by
+  simp only [correlationFunction_def]
+  exact convexComb_apply hab P Q _
 
 end MeasureTheory.ProbabilityMeasure
 
