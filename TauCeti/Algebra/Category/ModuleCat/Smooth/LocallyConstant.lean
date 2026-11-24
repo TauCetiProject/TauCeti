@@ -266,10 +266,10 @@ theorem injective_toCompletePart_comp_subtype :
 /-- For a smooth module `M`, the map `M → M^c` is injective. -/
 theorem injective_toCompletePart_of_smoothModules
     (hM : smoothModules (compactOpenIdeal T Λ) (ModuleCat.of (LocallyConstant T Λ) M)) :
-    Function.Injective (toCompletePart T Λ M) := fun m n h => by
-  have hmem := Submodule.eq_top_iff'.1 ((smoothPart_eq_top_iff directed_compactOpenIdeal).2 hM)
-  exact congrArg Subtype.val
-    (injective_toCompletePart_comp_subtype (a₁ := ⟨m, hmem m⟩) (a₂ := ⟨n, hmem n⟩) h)
+    Function.Injective (toCompletePart T Λ M) := fun m n h =>
+  congrArg Subtype.val <| show (⟨m, mem_smoothPart_of_smoothModules hM m⟩ :
+      smoothPart (compactOpenIdeal T Λ) M) = ⟨n, mem_smoothPart_of_smoothModules hM n⟩ from
+    injective_toCompletePart_comp_subtype h
 
 /-- The smooth part of `M^c` is the image of the smooth part of `M`: `(M^c)^s = M^s`. -/
 theorem smoothPart_completePart :
@@ -287,8 +287,7 @@ noncomputable def smoothPartCompletePartEquiv
   LinearEquiv.ofBijective
     (LinearMap.codRestrict _ (toCompletePart T Λ M) fun m => by
       rw [smoothPart_completePart]
-      exact Submodule.mem_map_of_mem
-        (((smoothPart_eq_top_iff directed_compactOpenIdeal).2 hM).symm ▸ Submodule.mem_top))
+      exact Submodule.mem_map_of_mem (mem_smoothPart_of_smoothModules hM m))
     ⟨fun _ _ h => injective_toCompletePart_of_smoothModules hM (congrArg Subtype.val h),
     fun x => by
       obtain ⟨m, -, hm⟩ := (smoothPart_completePart (T := T) (Λ := Λ) (M := M)).le x.property
