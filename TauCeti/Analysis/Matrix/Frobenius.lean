@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -40,6 +41,9 @@ and the inner product together.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
+* `TauCeti.reTraceForm`, `TauCeti.isSymm_reTraceForm`, `TauCeti.posDef_reTraceForm`: the real
+  part `(X, Y) ↦ Re tr(X Yᴴ)` of the trace pairing as a symmetric positive-definite real bilinear
+  form, for use where a bundled bilinear form rather than an inner product space is needed.
 -/
 
 public section
@@ -163,3 +167,49 @@ theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : 
   simp [trace, Matrix.mul_apply, sq]
 
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable (𝕜 m n : Type*) [RCLike 𝕜] [Fintype m] [Fintype n]
+
+/-- The real bilinear form `(X, Y) ↦ Re tr(X Yᴴ)` on `m × n` matrices over `𝕜`. -/
+def reTraceForm : LinearMap.BilinForm ℝ (Matrix m n 𝕜) :=
+  LinearMap.mk₂ ℝ (fun X Y ↦ RCLike.re (X * Yᴴ).trace)
+    (fun X X' Y ↦ by rw [Matrix.add_mul, trace_add, map_add])
+    (fun r X Y ↦ by rw [Matrix.smul_mul, trace_smul, RCLike.smul_re, smul_eq_mul])
+    (fun X Y Y' ↦ by rw [conjTranspose_add, Matrix.mul_add, trace_add, map_add])
+    (fun r X Y ↦ by
+      rw [conjTranspose_smul, star_trivial, Matrix.mul_smul, trace_smul, RCLike.smul_re,
+        smul_eq_mul])
+
+variable {𝕜 m n}
+
+/-- The value of `reTraceForm`. -/
+@[simp]
+theorem reTraceForm_apply (X Y : Matrix m n 𝕜) :
+    reTraceForm 𝕜 m n X Y = RCLike.re (X * Yᴴ).trace :=
+  (rfl)
+
+variable (𝕜 m n) in
+/-- `Re tr(X Yᴴ)` is symmetric in `X` and `Y`. -/
+theorem isSymm_reTraceForm : (reTraceForm 𝕜 m n).IsSymm := by
+  refine ⟨fun X Y ↦ ?_⟩
+  rw [reTraceForm_apply, reTraceForm_apply, ← RCLike.conj_re, starRingEnd_apply,
+    ← trace_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
+
+variable (𝕜 m n) in
+/-- `Re tr(X Xᴴ)` is positive for `X ≠ 0`. -/
+theorem posDef_reTraceForm : (reTraceForm 𝕜 m n).toQuadraticMap.PosDef := by
+  intro X hX
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, reTraceForm_apply,
+    re_trace_mul_conjTranspose_self]
+  obtain ⟨i, j, hij⟩ : ∃ i j, X i j ≠ 0 := by
+    by_contra! h
+    exact hX (Matrix.ext h)
+  exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ by positivity)
+      ⟨j, Finset.mem_univ _, pow_pos (norm_pos_iff.mpr hij) 2⟩⟩
+
+end TauCeti
