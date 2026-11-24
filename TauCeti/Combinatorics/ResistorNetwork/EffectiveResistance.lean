@@ -39,8 +39,9 @@ the edges carry in total the mass `b₁ / g`, with `b₁` the cyclomatic number.
 * `TauCeti.ResistorNetwork.effectiveResistance_eq_sum`: it is the energy of that potential.
 * `TauCeti.ResistorNetwork.effectiveResistance_le_resistance`: across an edge it is at most the
   resistance of the edge.
-* `TauCeti.ResistorNetwork.effectiveResistance_eq_inv_sum_inv_resistance`: resistors joining the
-  same two vertices combine by the parallel law.
+* `TauCeti.ResistorNetwork.effectiveResistance_eq_inv_sum_inv_resistance`: on a network all of
+  whose edges run from `a` to `b ≠ a`, the effective resistance is the inverse of the total
+  conductance (parallel law).
 * `TauCeti.ResistorNetwork.sum_effectiveResistance_div_resistance`: **Foster's theorem**.
 * `TauCeti.ResistorNetwork.sum_one_sub_effectiveResistance_div_resistance`: the complementary
   edge masses add up to the cyclomatic number.
@@ -82,6 +83,11 @@ theorem effectiveResistance_eq_zero_of_forall_ne {a b : V}
     N.effectiveResistance a b = 0 := by
   rw [effectiveResistance, dite_eq_right (not_exists.2 h)]
 
+/-- Pairing a potential with the unit current from `a` to `b` gives its voltage drop. -/
+private theorem sum_mul_single_sub_single [Fintype V] (g : V → ℝ) (a b : V) :
+    ∑ v, g v * (Pi.single a 1 - Pi.single b 1 : V → ℝ) v = g a - g b := by
+  simp [mul_sub, Finset.sum_sub_distrib, Pi.single_apply]
+
 section Finite
 
 variable [Finite V]
@@ -95,35 +101,38 @@ theorem effectiveResistance_eq {a b : V} {f : V → ℝ}
   have := Fintype.ofFinite V
   rw [effectiveResistance, dite_eq_left h]
   -- Two potentials driving the same current have the same voltage drop, by symmetry of `L`.
-  have hpair (g : V → ℝ) : ∑ v, g v * (Pi.single a 1 - Pi.single b 1 : V → ℝ) v = g a - g b := by
-    simp [mul_sub, Finset.sum_sub_distrib, Pi.single_apply]
-  calc h.choose a - h.choose b = ∑ v, h.choose v * N.laplacian f v := by rw [hf, hpair]
+  calc h.choose a - h.choose b = ∑ v, h.choose v * N.laplacian f v := by
+        rw [hf, sum_mul_single_sub_single]
     _ = ∑ v, f v * N.laplacian h.choose v := N.sum_mul_laplacian_apply_comm _ _
-    _ = f a - f b := by rw [h.choose_spec, hpair]
+    _ = f a - f b := by rw [h.choose_spec, sum_mul_single_sub_single]
+
+/-- On a preconnected network the unit current from `a` to `b` is the Laplacian of a potential. -/
+theorem single_sub_single_mem_range_laplacian (hN : N.toSimpleGraph.Preconnected) (a b : V) :
+    (Pi.single a 1 - Pi.single b 1 : V → ℝ) ∈ LinearMap.range N.laplacian := by
+  have := Fintype.ofFinite V
+  rw [N.mem_range_laplacian_iff hN]
+  simp [Finset.sum_sub_distrib]
 
 /-- On a preconnected network a unit current can be driven between any two vertices. -/
 theorem exists_laplacian_eq_single_sub_single (hN : N.toSimpleGraph.Preconnected) (a b : V) :
-    ∃ f : V → ℝ, N.laplacian f = Pi.single a 1 - Pi.single b 1 := by
-  have := Fintype.ofFinite V
-  have h : (Pi.single a 1 - Pi.single b 1 : V → ℝ) ∈ LinearMap.range N.laplacian := by
-    rw [N.mem_range_laplacian_iff hN]
-    simp [Finset.sum_sub_distrib]
-  exact h
+    ∃ f : V → ℝ, N.laplacian f = Pi.single a 1 - Pi.single b 1 :=
+  LinearMap.mem_range.1 (N.single_sub_single_mem_range_laplacian hN a b)
 
 /-- The effective resistance is the energy dissipated by a unit current from `a` to `b`. -/
 theorem effectiveResistance_eq_sum {a b : V} {f : V → ℝ}
     (hf : N.laplacian f = Pi.single a 1 - Pi.single b 1) :
     N.effectiveResistance a b = ∑ e, (f (N.src e) - f (N.tgt e)) ^ 2 / N.resistance e := by
   have := Fintype.ofFinite V
-  rw [← N.sum_mul_laplacian_apply_self, hf, N.effectiveResistance_eq hf]
-  simp [mul_sub, Finset.sum_sub_distrib, Pi.single_apply]
+  rw [← N.sum_mul_laplacian_apply_self, hf, N.effectiveResistance_eq hf,
+    sum_mul_single_sub_single]
 
 /-- The effective resistance is nonnegative. -/
 theorem effectiveResistance_nonneg (a b : V) : 0 ≤ N.effectiveResistance a b := by
   by_cases h : ∃ f : V → ℝ, N.laplacian f = Pi.single a 1 - Pi.single b 1
   · obtain ⟨f, hf⟩ := h
-    rw [N.effectiveResistance_eq_sum hf]
-    exact Finset.sum_nonneg fun e _ => div_nonneg (sq_nonneg _) (N.resistance_pos e).le
+    have := Fintype.ofFinite V
+    rw [N.effectiveResistance_eq_sum hf, ← N.sum_mul_laplacian_apply_self]
+    exact N.sum_mul_laplacian_apply_self_nonneg f
   · rw [N.effectiveResistance_eq_zero_of_forall_ne (not_exists.1 h)]
 
 /-- The effective resistance between a vertex and itself vanishes. -/
@@ -157,7 +166,7 @@ theorem effectiveResistance_le_resistance (e : E) :
         N.effectiveResistance (N.src e) (N.tgt e) := by
       rw [N.effectiveResistance_eq_sum hf]
       exact Finset.single_le_sum (f := fun e => (f (N.src e) - f (N.tgt e)) ^ 2 / N.resistance e)
-        (fun e _ => div_nonneg (sq_nonneg _) (N.resistance_pos e).le) (Finset.mem_univ e)
+        (fun e _ => N.sq_div_resistance_nonneg _ e) (Finset.mem_univ e)
     rw [← hR, div_le_iff₀ (N.resistance_pos e)] at hle
     have := N.effectiveResistance_nonneg (N.src e) (N.tgt e)
     rw [hR] at this ⊢
@@ -194,8 +203,8 @@ variable [Fintype V]
 each divided by the resistance of its edge, add up to one less than the number of vertices. -/
 theorem sum_effectiveResistance_div_resistance (hN : N.toSimpleGraph.Connected) :
     ∑ e, N.effectiveResistance (N.src e) (N.tgt e) / N.resistance e = Fintype.card V - 1 := by
-  -- A right inverse `G` of the Laplacian on its range makes `T = G ∘ L` an idempotent with the
-  -- kernel of `L`, so the trace of `T` is the rank `n - 1` of `L`. Writing `L` as the sum over
+  -- For a right inverse `G` of the Laplacian on its range, the trace of `T = G ∘ L` is the trace
+  -- of `L ∘ G = id` on the range, that is the rank `n - 1` of `L`. Writing `L` as the sum over
   -- the edges of rank-one maps computes the same trace as the sum of the normalized effective
   -- resistances.
   set L := N.laplacian
@@ -204,24 +213,11 @@ theorem sum_effectiveResistance_div_resistance (hN : N.toSimpleGraph.Connected) 
   have hLG (w : LinearMap.range L) : L (G w) = w :=
     congrArg Subtype.val (LinearMap.congr_fun hG w)
   set T := G ∘ₗ L.rangeRestrict with hT_def
-  -- `T = G ∘ L` is idempotent with the kernel of `L`, so its trace is the rank of `L`.
-  have hT : IsIdempotentElem T := LinearMap.ext fun f => by
-    simp only [Module.End.mul_eq_comp, hT_def, LinearMap.comp_apply]
-    exact congrArg G (LinearMap.congr_fun hG _)
-  have hker : LinearMap.ker T = LinearMap.ker L := by
-    rw [hT_def, LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot_of_inverse hG),
-      LinearMap.ker_rangeRestrict]
-  have hrank : finrank ℝ (LinearMap.range T) = Fintype.card V - 1 := by
-    have h₁ := T.finrank_range_add_finrank_ker
-    have h₂ := L.finrank_range_add_finrank_ker
-    have h₃ : finrank ℝ (LinearMap.range L) = Fintype.card V - 1 := N.finrank_range_laplacian hN
-    rw [hker] at h₁
-    omega
+  have htrace : LinearMap.trace ℝ _ T = (Fintype.card V - 1 : ℕ) := by
+    rw [hT_def, LinearMap.trace_comp_comm', hG, LinearMap.trace_id,
+      N.finrank_range_laplacian hN.preconnected]
   -- Each edge contributes the rank-one map sending `f` to the current through it.
-  have hmem (e : E) : (Pi.single (N.src e) 1 - Pi.single (N.tgt e) 1 : V → ℝ) ∈
-      LinearMap.range L := by
-    rw [N.mem_range_laplacian_iff hN.preconnected]
-    simp [Finset.sum_sub_distrib]
+  have hmem (e : E) := N.single_sub_single_mem_range_laplacian hN.preconnected (N.src e) (N.tgt e)
   have hTsum : T = ∑ e, (N.resistance e)⁻¹ •
       ((LinearMap.proj (N.src e) : (V → ℝ) →ₗ[ℝ] ℝ) - LinearMap.proj (N.tgt e)).smulRight
         (G ⟨_, hmem e⟩) := by
@@ -234,8 +230,7 @@ theorem sum_effectiveResistance_div_resistance (hN : N.toSimpleGraph.Connected) 
     refine Finset.sum_congr rfl fun e _ => ?_
     rw [map_smul, LinearMap.smul_apply, LinearMap.smulRight_apply, smul_smul]
     simp [div_eq_inv_mul]
-  have htrace := (LinearMap.IsIdempotentElem.isProj_range T hT).trace
-  rw [hrank, hTsum, map_sum] at htrace
+  rw [hTsum, map_sum] at htrace
   have hR (e : E) : (G ⟨_, hmem e⟩) (N.src e) - (G ⟨_, hmem e⟩) (N.tgt e) =
       N.effectiveResistance (N.src e) (N.tgt e) :=
     (N.effectiveResistance_eq (hLG _)).symm

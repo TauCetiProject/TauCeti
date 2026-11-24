@@ -94,6 +94,10 @@ theorem apply_eq_apply_of_preconnected {α : Type*} (hN : N.toSimpleGraph.Precon
   | refl => rfl
   | tail _ hxy ih => exact ih.trans (hadj _ _ hxy)
 
+/-- The energy dissipated in an edge by a voltage drop `x` across it is nonnegative. -/
+theorem sq_div_resistance_nonneg (x : ℝ) (e : E) : 0 ≤ x ^ 2 / N.resistance e :=
+  div_nonneg (sq_nonneg x) (N.resistance_pos e).le
+
 variable [Fintype E] [DecidableEq V]
 
 /-- The weighted Laplacian of a finite network: `(L f) v` is the current leaving `v` for the
@@ -147,7 +151,7 @@ theorem sum_mul_laplacian_apply_self (f : V → ℝ) :
 /-- The Dirichlet energy is nonnegative. -/
 theorem sum_mul_laplacian_apply_self_nonneg (f : V → ℝ) : 0 ≤ ∑ v, f v * N.laplacian f v := by
   rw [sum_mul_laplacian_apply_self]
-  exact Finset.sum_nonneg fun e _ => div_nonneg (sq_nonneg _) (N.resistance_pos e).le
+  exact Finset.sum_nonneg fun e _ => N.sq_div_resistance_nonneg _ e
 
 /-- Every Laplacian has total sum zero: the currents leaving the vertices cancel. -/
 @[simp] theorem sum_laplacian_apply (f : V → ℝ) : ∑ v, N.laplacian f v = 0 := by
@@ -163,7 +167,7 @@ theorem laplacian_eq_zero_iff [Finite V] {f : V → ℝ} :
   rw [hf] at h
   simp only [Pi.zero_apply, mul_zero, Finset.sum_const_zero] at h
   have := (Finset.sum_eq_zero_iff_of_nonneg fun e _ =>
-    div_nonneg (sq_nonneg _) (N.resistance_pos e).le).1 h.symm e (Finset.mem_univ e)
+    N.sq_div_resistance_nonneg _ e).1 h.symm e (Finset.mem_univ e)
   rw [div_eq_zero_iff, or_iff_left (N.resistance_ne_zero e), sq_eq_zero_iff, sub_eq_zero] at this
   exact this
 
@@ -190,12 +194,16 @@ theorem finrank_ker_laplacian [Finite V] (hN : N.toSimpleGraph.Connected) :
   rw [N.ker_laplacian hN.preconnected]
   exact finrank_span_singleton one_ne_zero
 
-/-- The Laplacian of a connected network has rank one less than the number of vertices. -/
-theorem finrank_range_laplacian (hN : N.toSimpleGraph.Connected) :
+/-- The Laplacian of a preconnected network has rank one less than the number of vertices. -/
+theorem finrank_range_laplacian (hN : N.toSimpleGraph.Preconnected) :
     finrank ℝ (LinearMap.range N.laplacian) = Fintype.card V - 1 := by
   have h := N.laplacian.finrank_range_add_finrank_ker
-  rw [N.finrank_ker_laplacian hN, Module.finrank_fintype_fun_eq_card] at h
-  omega
+  rw [Module.finrank_fintype_fun_eq_card] at h
+  cases isEmpty_or_nonempty V with
+  | inl _ => simp only [Fintype.card_eq_zero, Nat.zero_sub] at h ⊢; omega
+  | inr _ =>
+    rw [N.finrank_ker_laplacian ⟨hN⟩] at h
+    omega
 
 /-- On a preconnected network, a function is the Laplacian of a potential exactly when its total
 sum vanishes: the Kirchhoff equations are solvable for every external current of total zero. -/
@@ -218,7 +226,7 @@ theorem mem_range_laplacian_iff (hN : N.toSimpleGraph.Preconnected) {g : V → �
     rw [hσ_surj, finrank_top, Module.finrank_self, Module.finrank_fintype_fun_eq_card] at hker
     have heq : LinearMap.range N.laplacian = LinearMap.ker σ :=
       Submodule.eq_of_le_of_finrank_eq hle (by
-        rw [N.finrank_range_laplacian ⟨hN⟩]
+        rw [N.finrank_range_laplacian hN]
         omega)
     rw [heq, LinearMap.mem_ker, hσ]
 
