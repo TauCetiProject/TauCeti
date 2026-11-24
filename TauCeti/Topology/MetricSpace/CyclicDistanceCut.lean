@@ -484,6 +484,17 @@ theorem cutoff_le_of_forall_le_succ_of_lt (hδ : ∀ n i j, δ n i ≤ δ (n + 1
   | base => exact hδ n i j
   | succ m _ ih => exact (ih 0).trans (hδ m 0 j)
 
+/-- For cut-offs which grow from each stage to the next and start nonnegative, the total cut-off
+of the stage `n` is at most `m + 1` times any cut-off of a later stage `m`. -/
+theorem sum_cutoff_le_mul_cutoff (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j)
+    {n m : ℕ} (h : n < m) (j : Fin (m + 1)) : ∑ i, δ n i ≤ ((m + 1 : ℕ) : ℝ) * δ m j := by
+  have hj : 0 ≤ δ m j := h0.trans (cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 j)
+  calc ∑ i, δ n i ≤ ∑ _ : Fin (n + 1), δ m j :=
+        Finset.sum_le_sum fun i _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ h i j
+    _ = ((n + 1 : ℕ) : ℝ) * δ m j := by simp
+    _ ≤ ((m + 1 : ℕ) : ℝ) * δ m j :=
+        mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega)) hj
+
 /-- For cut-offs which grow from each stage to the next, the cut-off of the vertex `q_{j - k}` at
 the stage `n` is at most the cut-off of the position `j` at the stage `n + k`: this is the
 condition under which repeating the first vertex `k` more times maps the cut of the stage `n` into
@@ -557,7 +568,9 @@ theorem coe_cyclicDistanceCutFunctor_map_apply_zero (h0 : 0 ≤ δ 0 0)
 /-- **The sequence of based distance cuts** `𝓛⁰_x X → 𝓛¹_x X → 𝓛²_x X → ⋯`: the based distance
 cut at `x` with cut-offs `δ n` at the stage `n`, and the restrictions of the maps of the sequence
 of distance cuts (`TauCeti.cyclicDistanceCutFunctor`), which keep the first vertex. -/
-@[expose, implicit_reducible]
+-- The `obj` lemma is not `@[simp]`: as an `rfl` lemma, dsimp would rewrite `obj n` inside the
+-- domain of the maps, so `coe_basedCyclicDistanceCutFunctor_map_apply` would fail simpNF.
+@[expose, implicit_reducible, simps -isSimp obj]
 def basedCyclicDistanceCutFunctor (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (x : X) :
     ℕ ⥤ TopCat where
   obj n := TopCat.of (basedCyclicDistanceCut (δ n) x)

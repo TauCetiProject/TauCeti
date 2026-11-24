@@ -142,14 +142,8 @@ theorem exists_comp_homotopic_cyclicDistanceCutFunctor_map (hpos : 0 < δ 0 0)
     fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i
   -- Every cut-off of the stage `n` is at most every cut-off of the stage `n + N + 1`.
   have hm (j : Fin (n + (N + 1) + 1)) :
-      ∑ i, δ n i ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by
-    have hj : 0 ≤ δ (n + (N + 1)) j :=
-      hpos.le.trans (cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 j)
-    calc ∑ i, δ n i ≤ ∑ _ : Fin (n + 1), δ (n + (N + 1)) j :=
-          Finset.sum_le_sum fun i _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) i j
-      _ = ((n + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by simp
-      _ ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j :=
-          mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega)) hj
+      ∑ i, δ n i ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j :=
+    sum_cutoff_le_mul_cutoff hpos.le hδ (by omega) j
   let e : C(L, cyclicDistanceCut (X := M) (δ (n + (N + 1)))) :=
     ⟨fun γ ↦ ⟨_, hmaps γ.property⟩, ((MoorePath.continuous_sample _).comp
       (MooreFreeLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)).subtype_mk _⟩
