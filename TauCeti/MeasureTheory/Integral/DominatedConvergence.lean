@@ -371,7 +371,9 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
 /-- **Integrability of an a.e. series.** If the integrals of the norms of integrable functions
 `G n` are summable and `g x` is the sum of the `G n x` for almost every `x`, then `g` is
 integrable. Mathlib's `MeasureTheory.hasSum_integral_of_summable_integral_norm` computes the
-integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. -/
+integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. When `E` is
+complete the series of the `G n` converges in `L¹`, and the statement also follows from
+`MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`; the proof here does not use completeness. -/
 theorem integrable_of_hasSum_of_summable_integral_norm {E : Type*} [NormedAddCommGroup E]
     {G : ℕ → α → E} {g : α → E} (hG : ∀ n, Integrable (G n) μ)
     (hsum : Summable fun n ↦ ∫ x, ‖G n x‖ ∂μ) (hg : ∀ᵐ x ∂μ, HasSum (fun n ↦ G n x) (g x)) :
