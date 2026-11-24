@@ -113,13 +113,19 @@ instance instFiniteDimensionalNormalSpace [FiniteDimensional 𝕜 F] (hf : IsImm
   inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ hf.tangentRange x hn))
 
 /-- Project an ambient tangent vector to its normal class. -/
-@[expose] noncomputable def normalClass (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
+noncomputable def normalClass (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] hf.NormalSpace x hn :=
   (hf.tangentRange x hn).mkQ
 
 /-- The normal-class map is the linear quotient map by the tangent range. -/
 theorem normalClass_def (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
     hf.normalClass x hn = (hf.tangentRange x hn).mkQ := (rfl)
+
+/-- The normal class of an ambient tangent vector is its class in the quotient by the tangent
+range. -/
+theorem normalClass_apply (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    (v : TangentSpace J (f x)) :
+    hf.normalClass x hn v = (Submodule.Quotient.mk v : hf.NormalSpace x hn) := (rfl)
 
 /-- The kernel of the normal-class map is exactly the tangent range. -/
 @[simp]

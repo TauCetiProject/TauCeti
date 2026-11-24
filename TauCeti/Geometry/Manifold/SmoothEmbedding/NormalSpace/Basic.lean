@@ -80,6 +80,7 @@ theorem normalSpaceEquivOfMapTangentRange_normalClass
     (w : TangentSpace J (f x)) :
     f.normalSpaceEquivOfMapTangentRange g x y hn hm e h (f.isImmersion.normalClass x hn w) =
       g.isImmersion.normalClass y hm (e w) := by
+  rw [Manifold.IsImmersion.normalClass_apply, Manifold.IsImmersion.normalClass_apply]
   exact e.quotientEquiv_mk (f.isImmersion.tangentRange x hn) (g.isImmersion.tangentRange y hm) h w
 
 end Equiv
