@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.LocalIndex
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Degree
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The local index of a section at a holomorphic zero is its order
@@ -135,11 +136,9 @@ theorem eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (hze : z �
     filter_upwards [(φ.continuousAt hzφ).eventually h, hsσ] with x hσx hx
     exact hx.2 hσx
   · -- The chart sends a punctured neighbourhood of `z` into one of `φ z`.
-    have hφ : Tendsto φ (𝓝[≠] z) (𝓝[≠] (φ z)) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-        ((φ.continuousAt hzφ).mono_left nhdsWithin_le_nhds) (φ.eventually_ne_nhdsWithin hzφ)
     right
-    filter_upwards [hφ.eventually h, eventually_nhdsWithin_of_eventually_nhds hsσ] with x hσx hx
+    filter_upwards [(φ.tendsto_nhdsNE hzφ).eventually h,
+      eventually_nhdsWithin_of_eventually_nhds hsσ] with x hσx hx
     exact fun h0 ↦ hσx (hx.1 h0)
 
 end Bundle.Trivialization
@@ -288,13 +287,8 @@ theorem sectionIndex_pos_of_eventually_eq_mul (φ : OpenPartialHomeomorph M ℂ)
     exact (analyticOrderAt_eq_zero.1 h).resolve_left (not_not.2 hσ) (hsσ.self_of_nhds.1 hsz)
   · -- The order is not infinite, since `s` does not vanish near `z` except at `z`: read through
     -- the inverse chart, points near `φ z` other than `φ z` give points near `z` other than `z`.
-    have hcont : Tendsto φ.symm (𝓝 (φ z)) (𝓝 z) := by
-      have := (φ.continuousAt_symm (φ.map_source hzφ)).tendsto
-      rwa [φ.left_inv hzφ] at this
     have htarget : ∀ᶠ y in 𝓝 (φ z), y ∈ φ.target := φ.open_target.mem_nhds (φ.map_source hzφ)
-    have hsym : Tendsto φ.symm (𝓝[≠] (φ z)) (𝓝[≠] z) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ (hcont.mono_left nhdsWithin_le_nhds)
-        (by simpa [φ.left_inv hzφ] using φ.symm.eventually_ne_nhdsWithin (φ.map_source hzφ))
+    have hsym := φ.tendsto_symm_nhdsNE hzφ
     obtain ⟨y, ⟨⟨hσy, hyt⟩, hsy⟩, hsσy⟩ :=
       (((eventually_nhdsWithin_of_eventually_nhds ((analyticOrderAt_eq_top.1 h).and
         htarget)).and (hsym.eventually hiso)).and

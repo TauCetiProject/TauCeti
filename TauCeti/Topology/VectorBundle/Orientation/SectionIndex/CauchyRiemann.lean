@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # The zero count for sections solving a Cauchy–Riemann inequality
@@ -46,16 +47,12 @@ in this file. The section need not be holomorphic, but its zeros behave as if it
   near which it vanishes is open and closed
   (`TauCeti.finite_setOf_eq_zero_of_forall_eventually`).
 
-Together: a section satisfying the inequality everywhere which vanishes at more than `⟨e(E), [M]⟩`
-points vanishes identically
-(`TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`). So, for
-sections satisfying the inequality in coordinates everywhere, evaluation at `⟨e(E), [M]⟩ + 1`
-distinct points is injective, and there are no nonzero such sections when `⟨e(E), [M]⟩ < 0`. This
-file does not identify the Euler class with the first Chern class, nor derive the inequality from a
-bundle operator. Once both are done, this becomes the statement that evaluating the kernel of a
-real Cauchy–Riemann operator on a complex line bundle `L` of degree `d = c₁(L)[M]` at `d + 1`
-distinct points is injective, and that this kernel is zero when `d < 0`: the inputs of automatic
-transversality for line bundles.
+Together: a section satisfying the inequality in coordinates everywhere which vanishes on a finite
+set of more than `⟨e(E), [M]⟩` points vanishes identically
+(`TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`), and no such
+section is nonzero when `⟨e(E), [M]⟩ < 0`. The intended application is to the kernel of a real
+Cauchy–Riemann operator, a linear space whose elements satisfy the inequality: on it, evaluation
+at `⟨e(E), [M]⟩ + 1` distinct points is injective.
 
 ## Main results
 
@@ -74,7 +71,7 @@ transversality for line bundles.
   `TauCeti.finite_setOf_eq_zero_of_forall_eventually`, which needs only that near every point the
   section vanishes identically or has no other zero.
 * `TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`: a section
-  vanishing at more points than the Euler number vanishes identically.
+  vanishing on a finite set of more points than the Euler number vanishes identically.
 
 ## References
 
@@ -124,35 +121,6 @@ end Bundle.Trivialization
 namespace TauCeti
 
 section Finite
-
-/-- **A function which vanishes identically or has no other zero near each point has finitely many
-zeros.** Let `M` be a connected compact space and `s` a dependent function on `M` with values in
-types with a zero, such as a section of a bundle. If near every point `x` either `s` vanishes
-identically, or `s` has no zero other than possibly `x`, and `s` does not vanish identically, then
-`s` has finitely many zeros. -/
-theorem finite_setOf_eq_zero_of_forall_eventually {M : Type*} [TopologicalSpace M] [CompactSpace M]
-    [ConnectedSpace M] {E : M → Type*} [∀ x, Zero (E x)] {s : ∀ x, E x}
-    (hdich : ∀ x, (∀ᶠ y in 𝓝 x, s y = 0) ∨ ∀ᶠ y in 𝓝[≠] x, s y ≠ 0) (hne : ∃ x, s x ≠ 0) :
-    {x | s x = 0}.Finite := by
-  -- The set `A` of points near which `s` vanishes is open, and closed: near a point outside `A`,
-  -- `s` vanishes at most at that point.
-  set A := {x | ∀ᶠ y in 𝓝 x, s y = 0}
-  have hAc : IsOpen Aᶜ := isOpen_iff_mem_nhds.2 fun x hx ↦ by
-    have h := eventually_nhdsWithin_iff.1 ((hdich x).resolve_left hx)
-    filter_upwards [h] with y hy hyA
-    by_cases hyx : y = x
-    · exact hx (hyx ▸ hyA)
-    · exact hy hyx hyA.self_of_nhds
-  -- Since `M` is connected and `s` does not vanish identically, `A` is empty.
-  have hA : A = ∅ := by
-    refine (isClopen_iff.1 ⟨isOpen_compl_iff.1 hAc, isOpen_setOfPred_eventually_nhds⟩).resolve_right
-      fun hA ↦ ?_
-    obtain ⟨x, hx⟩ := hne
-    exact hx (hA ▸ mem_univ x : x ∈ A).self_of_nhds
-  -- So the zeros of `s` are isolated, and a codiscrete subset of a compact space is cofinite.
-  have h : {y | s y ≠ 0} ∈ codiscrete M := mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦
-    (hdich x).resolve_left (show x ∉ A by rw [hA]; exact notMem_empty x)
-  simpa [compl_ofPred] using cofinite_le_codiscrete h
 
 variable {M : Type} [TopologicalSpace M] [CompactSpace M] [ConnectedSpace M] {E : M → Type}
   [TopologicalSpace (TotalSpace ℂ E)] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
@@ -360,9 +328,9 @@ that around every point `z` there are a chart `φ z` and a linear trivialization
 compatibly with `E` and `M` near `z` as in
 `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`, in which `s`, read as
 `f y = (e z (s ((φ z)⁻¹ y))).2`, is of class `C¹` on an open set `Ω z ∋ φ z z` and satisfies
-`‖\bar∂ f‖ ≤ K z ‖f‖` there, for a locally bounded `K z`. If `s` vanishes on a set `S` with more
-elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s` vanishes
-identically. -/
+`‖\bar∂ f‖ ≤ K z ‖f‖` there, for a locally bounded `K z`. If `s` vanishes on a finite set `S` with
+more elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s`
+vanishes identically. -/
 theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard (hze : ∀ z, z ∈ (e z).baseSet)
     (ho : ∀ z, ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
