@@ -32,20 +32,20 @@ a field (`etaFn_mem_congruenceKernel_iff_eq_one`), by Krull's intersection theor
 
 ## Main definitions
 
-* `Matrix.SpecialLinearGroup.principalCongruenceLevel`: the principal congruence subgroup of a
+* `TauCeti.SpecialLinearGroup.principalCongruenceLevel`: the principal congruence subgroup of a
   nonzero level, as a finite-index normal subgroup.
-* `Matrix.SpecialLinearGroup.congruenceKernel`: the congruence kernel, a subgroup of the
+* `TauCeti.SpecialLinearGroup.congruenceKernel`: the congruence kernel, a subgroup of the
   profinite completion of `SL(n, A)`.
 
 ## Main results
 
-* `Matrix.SpecialLinearGroup.isClosed_congruenceKernel`, `congruenceKernel_normal`: the
+* `TauCeti.SpecialLinearGroup.isClosed_congruenceKernel`, `congruenceKernel_normal`: the
   congruence kernel is a closed normal subgroup.
-* `Matrix.SpecialLinearGroup.congruenceKernel_eq_iInf_topologicalClosure`: it is the
+* `TauCeti.SpecialLinearGroup.congruenceKernel_eq_iInf_topologicalClosure`: it is the
   intersection of the closures of the principal congruence subgroups of nonzero level.
-* `Matrix.SpecialLinearGroup.etaFn_mem_congruenceKernel_iff_eq_one`: over a domain that is not a
+* `TauCeti.SpecialLinearGroup.etaFn_mem_congruenceKernel_iff_eq_one`: over a domain that is not a
   field, the image of `SL(n, A)` meets the congruence kernel only in `1`.
-* `Matrix.SpecialLinearGroup.congruenceKernel_eq_bot_iff`: the congruence kernel is trivial
+* `TauCeti.SpecialLinearGroup.congruenceKernel_eq_bot_iff`: the congruence kernel is trivial
   exactly when every finite-index subgroup contains a nonzero principal congruence level.
 
 ## References
@@ -58,9 +58,10 @@ a field (`etaFn_mem_congruenceKernel_iff_eq_one`), by Krull's intersection theor
 
 public section
 
-namespace Matrix.SpecialLinearGroup
+namespace TauCeti.SpecialLinearGroup
 
-open TauCeti
+open Matrix (SpecialLinearGroup)
+open Matrix.SpecialLinearGroup
 
 variable (n : Type*) [Fintype n] [DecidableEq n] (A : Type*) [CommRing A]
   [Ring.HasFiniteQuotients A]
@@ -77,6 +78,12 @@ def principalCongruenceLevel {I : Ideal A} (hI : I ≠ ⊥) :
 theorem toSubgroup_principalCongruenceLevel {I : Ideal A} (hI : I ≠ ⊥) :
     (principalCongruenceLevel n A hI).toSubgroup = (map (Ideal.Quotient.mk I)).ker :=
   (rfl)
+
+@[simp]
+theorem mem_principalCongruenceLevel_iff {I : Ideal A} (hI : I ≠ ⊥)
+    {γ : SpecialLinearGroup n A} :
+    γ ∈ principalCongruenceLevel n A hI ↔ γ ∈ (map (Ideal.Quotient.mk I)).ker :=
+  Iff.rfl
 
 /-- The **congruence kernel** of `SL(n, A)`: the kernel of the comparison from the profinite
 completion of `SL(n, A)` to its congruence completion `lim_{I ≠ 0} SL(n, A) ⧸ Γ(I)`, that is the
@@ -120,8 +127,7 @@ theorem etaFn_mem_congruenceKernel_iff {γ : SpecialLinearGroup n A} :
     ProfiniteGrp.ProfiniteCompletion.etaFn _ γ ∈ congruenceKernel n A ↔
       ∀ I : Ideal A, I ≠ ⊥ → γ ∈ (map (Ideal.Quotient.mk I)).ker := by
   simp only [congruenceKernel, ProfiniteCompletion.etaFn_mem_familyKernel_iff,
-    Set.forall_mem_range, Subtype.forall, ← FiniteIndexNormalSubgroup.mem_toSubgroup_iff,
-    toSubgroup_principalCongruenceLevel]
+    Set.forall_mem_range, Subtype.forall, mem_principalCongruenceLevel_iff]
 
 /-- Over a domain with finite quotients that is not a field, the image of `SL(n, A)` in its
 profinite completion meets the congruence kernel only in the identity. -/
@@ -152,4 +158,4 @@ theorem congruenceKernel_eq_bot_iff [IsDomain A] :
     exact ⟨_, ⟨⟨I * J, mul_ne_zero hI hJ⟩, rfl⟩, ker_map_quotientMk_mono Ideal.mul_le_left,
       ker_map_quotientMk_mono Ideal.mul_le_right⟩
 
-end Matrix.SpecialLinearGroup
+end TauCeti.SpecialLinearGroup

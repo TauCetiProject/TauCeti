@@ -11,17 +11,17 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceKernel
 /-!
 # Degenerate congruence kernels
 
-Two boundary cases of `Matrix.SpecialLinearGroup.congruenceKernel`. In rank one `SL(1, A)` is
-trivial, so its congruence kernel is trivial. Over a finite field the only nonzero level is the
-unit ideal, whose principal congruence subgroup is all of `SL(n, K)`, so the congruence kernel is
-the whole profinite completion. In particular the image of the nontrivial matrix
-`[[1, 1], [0, 1]]` over `ZMod 2` lies in the congruence kernel, which is why
-`etaFn_mem_congruenceKernel_iff_eq_one` excludes fields.
+Two boundary cases of `TauCeti.SpecialLinearGroup.congruenceKernel`. In rank one `SL(1, A)` is
+trivial, so its congruence kernel is trivial. Every field has finite quotients, and over a
+field the only nonzero level is the unit ideal, whose principal congruence subgroup is all of
+`SL(n, K)`, so the congruence kernel is the whole profinite completion. In particular the image
+of the nontrivial matrix `[[1, 1], [0, 1]]` over `ZMod 2` lies in the congruence kernel, which is
+why `etaFn_mem_congruenceKernel_iff_eq_one` excludes fields.
 -/
 
 public section
 
-open Matrix SpecialLinearGroup
+open Matrix Matrix.SpecialLinearGroup TauCeti.SpecialLinearGroup
 
 namespace TauCeti.CongruenceKernelExamples
 
@@ -35,8 +35,8 @@ example {A : Type*} [CommRing A] [IsDomain A] [Ring.HasFiniteQuotients A] :
     simpa [det_fin_one] using γ.det_coe
   exact hγ ▸ H.one_mem
 
-/-- Over a field with finite quotients, that is a finite field, the congruence kernel is the
-whole profinite completion. -/
+/-- Over a field the congruence kernel is the whole profinite completion: the only nonzero level
+is the unit ideal, whose principal congruence subgroup is all of `SL(n, K)`. -/
 theorem congruenceKernel_eq_top_of_field {n : Type*} [Fintype n] [DecidableEq n] {K : Type*}
     [Field K] [Ring.HasFiniteQuotients K] : congruenceKernel n K = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ mem_congruenceKernel_iff.2 fun I hI ↦ ?_
