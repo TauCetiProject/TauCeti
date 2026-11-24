@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 public import TauCeti.Geometry.Euclidean.PolarGraph.Slope
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -34,6 +35,13 @@ def graphOfProd (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) : WithLp 2 (ℂ × ℝ
 /-- Evaluation of the graph on a radius-angle pair. -/
 @[simp] theorem graphOfProd_apply (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) :
     graphOfProd h q = WithLp.toLp 2 (Complex.polarCoord.symm q, h q) := (rfl)
+
+/-- On positive radii, forgetting the Euclidean product norm recovers the graph on the cover. -/
+-- Rewrite before graphOfProd_apply expands the inner graph into Cartesian coordinates.
+@[simp↓] theorem ofLp_graphOfProd_val (h : ℝ × ℝ → ℝ) (p : PolarPoint) :
+    WithLp.ofLp (graphOfProd h p.val) = graph (h ∘ Subtype.val) p := by
+  simp [graphOfProd_apply, graph_def, projection_def, Complex.polarCoord_symm_apply,
+    Circle.coe_exp, Complex.exp_mul_I, radius_def, angle_def]
 
 /-- The graph is the pair of the polar projection and height, transported to the Euclidean
 product by its continuous linear equivalence. -/
