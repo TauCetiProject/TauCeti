@@ -21,7 +21,8 @@ Hence rescaling by elements `uᵢ` by which left multiplication scales every nor
 coefficient norms, and restrictedness, when the weights are changed by the corresponding scalar
 norms. In particular, rescaling by the inverses of multiplicative units `uᵢ` turns the weighted
 coefficient norms at the radii `‖uᵢ‖⁻¹` into plain coefficient norms. Rescaling by a family of
-units and then by their inverses is the identity. Substituting a family into a rescaled
+units and then by their inverses is the identity. Rescaling multiplies each variable by its scalar
+(`MvPowerSeries.rescale_X`). Substituting a family into a rescaled
 power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
 `s • g = f(s X)` gives `s • g(v) = f(s v)`.
 -/
@@ -70,6 +71,23 @@ theorem norm_coeff_rescale_units_inv [CommSemiring R] [Norm R] (u : σ → Rˣ)
       inv_eq_of_mul_eq_one_right (hr i)]
   simpa [Finsupp.prod] using
     norm_coeff_rescale_mul_prod _ (fun i ↦ (hu i).units_inv.norm_mul) hinv f n
+
+/-- Rescaling multiplies each variable by its scalar: `rescale a (X i) = a i * X i`. -/
+@[simp]
+theorem rescale_X {A : Type*} [CommSemiring A] (a : σ → A) (i : σ) :
+    rescale a (X i) = C (a i) * X i := by
+  classical
+  ext n
+  rw [coeff_rescale, coeff_X, coeff_C_mul, coeff_X]
+  split_ifs with h
+  · simp [h]
+  · simp
+
+/-- The algebra-map form of `MvPowerSeries.rescale_X`. -/
+@[simp]
+theorem rescaleAlgHom_X {A : Type*} [CommRing A] (a : σ → A) (i : σ) :
+    rescaleAlgHom a (X i) = C (a i) * X i := by
+  rw [rescaleAlgHom_apply, rescale_X]
 
 /-- Rescaling by a family of units and then by their inverses is the identity. -/
 theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : MvPowerSeries σ A) :
