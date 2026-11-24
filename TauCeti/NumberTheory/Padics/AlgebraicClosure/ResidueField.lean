@@ -39,6 +39,7 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 
 * `TauCeti.PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal
   polynomial over `ℚ_p` with coefficients of norm at most `1`.
+* `TauCeti.PadicAlgCl.isIntegral_padicIntToInteger`: `𝒪[PadicAlgCl p]` is integral over `ℤ_p`.
 * `PadicAlgCl.instIsAlgebraicZModResidueField`: `𝓀[PadicAlgCl p]` is algebraic over `ZMod p`.
 * `PadicAlgCl.instIsAlgClosureZModResidueField`: `𝓀[PadicAlgCl p]` is an algebraic closure of
   `ZMod p`.
@@ -104,24 +105,28 @@ theorem residue_padicIntToInteger (x : ℤ_[p]) :
   conv_rhs => rw [← ZMod.natCast_zmod_val z, map_natCast]
   simp only [hy, map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, zero_add]
 
+/-- The valuation ring `𝒪[PadicAlgCl p]` is integral over `ℤ_p`: the minimal polynomial over `ℚ_p`
+of an element of norm at most `1` has coefficients in `ℤ_p`. -/
+theorem isIntegral_padicIntToInteger : (padicIntToInteger p).IsIntegral := by
+  intro x
+  have hlifts : minpoly ℚ_[p] (x : PadicAlgCl p) ∈ lifts (PadicInt.Coe.ringHom (p := p)) :=
+    lifts_iff_coeff_lifts _ |>.2 fun n ↦
+      ⟨⟨_, norm_coeff_minpoly_le_one (Valued.integer.norm_le_one x) n⟩, rfl⟩
+  obtain ⟨Q, hQ, -, hQm⟩ := lifts_and_natDegree_eq_and_monic hlifts
+    (minpoly.monic (Algebra.IsIntegral.isIntegral _))
+  have hcomp : (𝒪[PadicAlgCl p]).subtype.comp (padicIntToInteger p) =
+      (algebraMap ℚ_[p] (PadicAlgCl p)).comp PadicInt.Coe.ringHom :=
+    RingHom.ext coe_padicIntToInteger
+  refine ⟨Q, hQm, Subring.subtype_injective _ ?_⟩
+  rw [map_zero, hom_eval₂, hcomp, ← eval₂_map, hQ]
+  exact minpoly.aeval ℚ_[p] _
+
 /-- **The residue field of `PadicAlgCl p` is algebraic over `𝔽_p`.** -/
 instance _root_.PadicAlgCl.instIsAlgebraicZModResidueField :
     Algebra.IsAlgebraic (ZMod p) 𝓀[PadicAlgCl p] := by
   refine ⟨fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := residue_surjective y
-  have hx := Valued.integer.norm_le_one x
-  have hlifts : minpoly ℚ_[p] (x : PadicAlgCl p) ∈ lifts (PadicInt.Coe.ringHom (p := p)) :=
-    lifts_iff_coeff_lifts _ |>.2 fun n ↦ ⟨⟨_, norm_coeff_minpoly_le_one hx n⟩, rfl⟩
-  obtain ⟨Q, hQ, -, hQm⟩ := lifts_and_natDegree_eq_and_monic hlifts
-    (minpoly.monic (Algebra.IsIntegral.isIntegral _))
-  have hQx : Q.eval₂ (padicIntToInteger p) x = 0 := by
-    have hι : (𝒪[PadicAlgCl p]).subtype.comp (padicIntToInteger p) =
-        TauCeti.padicIntAlgebraMap p (PadicAlgCl p) :=
-      RingHom.ext fun y ↦ (coe_padicIntToInteger y).trans (padicIntAlgebraMap_apply y).symm
-    apply Subring.subtype_injective
-    have := minpoly.aeval ℚ_[p] (x : PadicAlgCl p)
-    rw [← hQ, aeval_def, eval₂_map] at this
-    rw [map_zero, hom_eval₂, hι, TauCeti.padicIntAlgebraMap_def, Subring.subtype_apply, this]
+  obtain ⟨Q, hQm, hQx⟩ := isIntegral_padicIntToInteger x
   have hcomp : (algebraMap (ZMod p) 𝓀[PadicAlgCl p]).comp PadicInt.toZMod =
       (residue 𝒪[PadicAlgCl p]).comp (padicIntToInteger p) :=
     RingHom.ext fun z ↦ (residue_padicIntToInteger z).symm
