@@ -22,7 +22,10 @@ form a category equivalent to the finitely generated `Λ`-modules.
 
 A finite lisse sheaf has finitely generated stalks, and the stalk at the geometric point
 `𝟙 (Spec Ω)` is the global sections; conversely every sheaf on `Spec Ω` is the constant sheaf on
-its global sections, which is finite lisse when they are finitely generated.
+its global sections, which is finite lisse when they are finitely generated. Consequently, if a
+scheme `S` has a surjective étale geometric point `s : Spec Ω ⟶ S`, as `Spec ℝ` has, a sheaf on
+`S` whose stalk at `s` is finitely generated is finite lisse
+(`CategoryTheory.Sheaf.IsFiniteLisse.of_etale_of_surjective_of_isSepClosed`).
 
 ## Main results
 
@@ -30,6 +33,8 @@ its global sections, which is finite lisse when they are finitely generated.
   lisse exactly when its global sections are a finitely generated `Λ`-module.
 * `CategoryTheory.Sheaf.finiteLisseSepClosedEquivalence`: the finite lisse étale sheaves of
   `Λ`-modules on `Spec Ω` are equivalent to `FGModuleCat Λ`, through the constant sheaf functor.
+* `CategoryTheory.Sheaf.IsFiniteLisse.of_etale_of_surjective_of_isSepClosed`: over a base with a
+  surjective étale geometric point, finite generation of the stalk there suffices.
 
 ## References
 
@@ -88,5 +93,18 @@ theorem finiteLisseSepClosedEquivalence_inverse_obj_obj
     ((finiteLisseSepClosedEquivalence Ω Λ).inverse.obj F).obj =
       (Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ)).obj F.obj := by
   rfl
+
+/-- **Finite lisse sheaves over a base covered by one geometric point.** Let `s : Spec Ω ⟶ S` be
+a surjective étale geometric point, with `Ω` separably closed. An étale sheaf of `Λ`-modules on
+`S` whose stalk at `s` is finitely generated is finite lisse. -/
+theorem IsFiniteLisse.of_etale_of_surjective_of_isSepClosed {Ω : Type u} [Field Ω]
+    [IsSepClosed Ω] {S : Scheme.{u}} (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
+    (s : Spec (.of Ω) ⟶ S) [Etale s] [Surjective s] [Module.Finite Λ ((etaleStalk Λ s).obj F)] :
+    F.IsFiniteLisse := by
+  -- The global sections of the pullback of `F` to `Spec Ω` are its stalk at `s`.
+  rw [isFiniteLisse_iff_of_etale_of_surjective F s, isFiniteLisse_iff_finite_Γ]
+  exact Module.Finite.equiv (((pointSmallEtaleIdSheafFiberIso Ω).app _).symm ≪≫
+    (s.smallEtalePullbackCompEtaleStalkIso Λ (𝟙 _)).app F ≪≫
+    eqToIso (by rw [Category.id_comp])).toLinearEquiv.symm
 
 end CategoryTheory.Sheaf

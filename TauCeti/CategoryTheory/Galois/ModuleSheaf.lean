@@ -23,8 +23,8 @@ continuous `G`-set `S`, the `G`-equivariant maps from `S` to `M` form a `Λ`-mod
 (`ContAction.isSheaf_modulePresheaf`), bundled as `ContAction.moduleSheaf ρ`. When `Λ` is
 Noetherian and `M` is finitely generated, its values are finitely generated. Its sections over a
 point are the invariants of `ρ` (`ContAction.modulePresheafObjEquivInvariants`), and for `G` finite
-discrete and `M ≠ 0` it has a nonzero section over the regular `G`-set
-(`ContAction.nontrivial_modulePresheaf_obj_regular`).
+discrete and `M ≠ 0` it has a nonzero section over the left regular `G`-set
+(`ContAction.nontrivial_modulePresheaf_obj_leftRegular`).
 
 ## Main definitions
 
@@ -39,7 +39,8 @@ discrete and `M ≠ 0` it has a nonzero section over the regular `G`-set
 
 * `ContAction.isSheaf_modulePresheaf`: `G`-maps into a representation form a sheaf of
   `Λ`-modules for the jointly surjective topology.
-* `ContAction.nontrivial_modulePresheaf_obj_regular`: a nonzero section over the regular `G`-set.
+* `ContAction.nontrivial_modulePresheaf_obj_leftRegular`: a nonzero section over the left regular
+  `G`-set.
 -/
 
 public section
@@ -104,6 +105,12 @@ underlying `G`-set of `ρ`. -/
 noncomputable def modulePresheafCompForgetIso :
     modulePresheaf ρ ⋙ forget₂ (ModuleCat.{u} Λ) AddCommGrpCat.{u} ⋙ forget AddCommGrpCat.{u} ≅
       (homPresheaf G).obj ρ.toAction :=
+  -- `ρ.toAction` is `Action.ofMulAction` for `MulAction.compHom M ρ`, so its underlying type is
+  -- `M` and `g` acts on it by `ρ g`, definitionally (`Representation.toAction_V`,
+  -- `Representation.toAction_ρ_apply`). Hence the defining condition of `equivariantMaps ρ` and
+  -- `MulActionHom.map_smul'` for `G`-maps into `ρ.toAction.V` agree, and both directions keep the
+  -- underlying function, so naturality (precomposition on both sides) is `rfl`. The `let` only
+  -- states the type `→[G] ρ.toAction.V` through the `ToType` wrapper of the presheaf's values.
   NatIso.ofComponents (fun S ↦ Equiv.toIso
     { toFun φ := (⟨φ.val, φ.property⟩ : (fiberFunctor G).obj S.unop →[G] ρ.toAction.V)
       invFun φ :=
@@ -166,16 +173,16 @@ theorem coe_modulePresheafObjEquivInvariants_apply {S : ContAction FintypeCat.{u
   rw [Subsingleton.elim s default]
   rfl
 
-/-- **`G`-maps from the regular `G`-set.** For a finite discrete group `G` and `M ≠ 0`, there is
-a nonzero `G`-map from the regular `G`-set into `ρ`: the orbit map `g ↦ ρ g m` of a nonzero
-`m`. -/
-theorem nontrivial_modulePresheaf_obj_regular [Finite G] [DiscreteTopology G] [Nontrivial M] :
-    Nontrivial ((modulePresheaf ρ).obj (op (regular G))) := by
+/-- **`G`-maps from the left regular `G`-set.** For a finite discrete group `G` and `M ≠ 0`, there
+is a nonzero `G`-map from the left regular `G`-set into `ρ`: the orbit map `g ↦ ρ g m` of a
+nonzero `m`. -/
+theorem nontrivial_modulePresheaf_obj_leftRegular [Finite G] [DiscreteTopology G] [Nontrivial M] :
+    Nontrivial ((modulePresheaf ρ).obj (op (leftRegular G))) := by
   obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  let φ : equivariantMaps ρ (regular G) :=
-    ⟨fun x ↦ ρ (regularFiberEquiv G x) m, (mem_equivariantMaps ρ _).2 fun g x ↦ by
-      rw [regularFiberEquiv_smul, map_mul, mul_apply_eq_comp]⟩
+  let φ : equivariantMaps ρ (leftRegular G) :=
+    ⟨fun x ↦ ρ (leftRegularFiberEquiv G x) m, (mem_equivariantMaps ρ _).2 fun g x ↦ by
+      rw [leftRegularFiberEquiv_smul, map_mul, mul_apply_eq_comp]⟩
   refine (modulePresheafObjEquiv ρ _).nontrivial_congr.2 ⟨φ, 0, fun h ↦ hm ?_⟩
-  simpa [φ] using congr(Subtype.val $h ((regularFiberEquiv G).symm 1))
+  simpa [φ] using congr(Subtype.val $h ((leftRegularFiberEquiv G).symm 1))
 
 end ContAction

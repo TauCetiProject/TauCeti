@@ -11,7 +11,6 @@ public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
 public import TauCeti.AlgebraicGeometry.Sites.Etale.LocallyConstant
-public import TauCeti.AlgebraicGeometry.Sites.EtaleSepClosed
 
 /-!
 # Étale sheaves of modules: geometric stalks and finite lisse sheaves
@@ -39,10 +38,7 @@ generated `Λ`-modules, and being finite lisse is stable under pullback along ar
 schemes (`CategoryTheory.Sheaf.IsFiniteLisse.smallEtalePullback`) and satisfies étale and Zariski
 descent (`CategoryTheory.Sheaf.isFiniteLisse_iff_of_etaleCover`,
 `CategoryTheory.Sheaf.isFiniteLisse_iff_of_openCover`). No invertibility hypothesis on `Λ` is
-needed. If `S` has a surjective étale geometric point `s : Spec Ω ⟶ S`, as `Spec ℝ` has, a sheaf
-whose stalk at `s` is finitely generated is finite lisse
-(`CategoryTheory.Sheaf.IsFiniteLisse.of_etale_of_surjective_of_isSepClosed`), since every étale
-sheaf on `Spec Ω` is constant.
+needed.
 
 ## Main declarations
 
@@ -73,8 +69,6 @@ sheaf on `Spec Ω` is constant.
   `CategoryTheory.Sheaf.isFiniteLisse_iff_of_etaleCover`,
   `CategoryTheory.Sheaf.isFiniteLisse_iff_of_openCover`: geometric characterization, base-change
   stability, and étale/Zariski descent for finite lisse sheaves.
-* `CategoryTheory.Sheaf.IsFiniteLisse.of_etale_of_surjective_of_isSepClosed`: over a base with a
-  surjective étale geometric point, finite generation of the stalk there suffices.
 
 ## References
 
@@ -353,24 +347,6 @@ lisse. -/
 theorem isFiniteLisse_iff_of_openCover (𝒰 : S.OpenCover) :
     F.IsFiniteLisse ↔ ∀ i, (((𝒰.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_openCover _ 𝒰
-
-/-- **Finite lisse sheaves over a base covered by one geometric point.** Let `s : Spec Ω ⟶ S` be
-a surjective étale geometric point, with `Ω` separably closed. An étale sheaf of `Λ`-modules on
-`S` whose stalk at `s` is finitely generated is finite lisse. -/
-theorem IsFiniteLisse.of_etale_of_surjective_of_isSepClosed {Ω : Type u} [Field Ω]
-    [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) [Etale s] [Surjective s]
-    [Module.Finite Λ ((etaleStalk Λ s).obj F)] : F.IsFiniteLisse := by
-  -- The pullback of `F` to `Spec Ω` is the constant sheaf on its stalk at `s`.
-  rw [isFiniteLisse_iff_of_etale_of_surjective F s]
-  obtain ⟨N, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
-    (F := constantSheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ))
-    ((s.smallEtalePullback (ModuleCat.{u} Λ)).obj F)
-  -- The value `N` of the constant sheaf is its stalk, which is the stalk of `F` at `s`.
-  have : Module.Finite Λ N :=
-    Module.Finite.equiv (((pointSmallEtale (𝟙 _)).sheafFiberConstantSheafIso N).symm ≪≫
-      (etaleStalk Λ (𝟙 _)).mapIso e ≪≫ (s.smallEtalePullbackCompEtaleStalkIso Λ (𝟙 _)).app F ≪≫
-      eqToIso (by rw [Category.id_comp])).toLinearEquiv.symm
-  exact (isFiniteLisse_constantSheaf N).of_iso e
 
 end Descent
 

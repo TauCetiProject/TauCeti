@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.SmoothSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
+public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisseSepClosed
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.RingTheory.Etale.Field
@@ -195,12 +195,13 @@ theorem subsingleton_galoisModuleSheaf_obj_ofHom_id (hρ : Representation.invari
 
 variable {K Ω} in
 /-- For `Ω` finite over `K` and `M ≠ 0`, the sheaf `galoisModuleSheaf K Ω ρ` has a nonzero
-section over the finite étale `K`-scheme of the regular `Gal(Ω/K)`-set: the orbit map
+section over the finite étale `K`-scheme of the left regular `Gal(Ω/K)`-set: the orbit map
 `g ↦ ρ g m` of a nonzero `m`. -/
-theorem nontrivial_galoisModuleSheaf_obj_regular [FiniteDimensional K Ω] [Nontrivial M] :
+theorem nontrivial_galoisModuleSheaf_obj_leftRegular [FiniteDimensional K Ω] [Nontrivial M] :
     Nontrivial ((galoisModuleSheaf K Ω ρ).obj.obj
-      (op ((toEtale _).obj ((galoisEquivalence K Ω).inverse.obj (ContAction.regular Gal(Ω/K)))))) :=
-  have := ContAction.nontrivial_modulePresheaf_obj_regular ρ
+      (op ((toEtale _).obj
+        ((galoisEquivalence K Ω).inverse.obj (ContAction.leftRegular Gal(Ω/K)))))) :=
+  have := ContAction.nontrivial_modulePresheaf_obj_leftRegular ρ
   (galoisModuleSheafInverseObjIso K Ω ρ _).toLinearEquiv.nontrivial_congr.2 this
 
 variable {K Ω} in
@@ -211,7 +212,7 @@ theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
     (hρ : Representation.invariants ρ = ⊥) :
     ¬ (galoisModuleSheaf K Ω ρ).IsConstant (Scheme.smallEtaleTopology (Spec (.of K))) := by
   -- A constant such sheaf is zero, since its sections over the terminal object `Spec K` vanish;
-  -- but it has a nonzero section over the finite étale `K`-scheme of the regular Galois set.
+  -- but it has a nonzero section over the finite étale `K`-scheme of the left regular Galois set.
   intro _
   have hT : IsTerminal ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))) :=
     (Scheme.Etale.mkIdTerminal _).ofIso (toEtaleObjOfHomIso _ (𝟙 _)).symm
@@ -219,9 +220,10 @@ theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
   have hz := Sheaf.isZero_of_isConstant_of_isZero_obj _ hT (galoisModuleSheaf K Ω ρ)
     (ModuleCat.isZero_of_subsingleton _)
   obtain ⟨a, b, hab⟩ :=
-    (nontrivial_galoisModuleSheaf_obj_regular (K := K) (Ω := Ω) ρ).exists_pair_ne
+    (nontrivial_galoisModuleSheaf_obj_leftRegular (K := K) (Ω := Ω) ρ).exists_pair_ne
   exact hab (@Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero
     (((sheafSections _ _).obj (op ((toEtale _).obj
-      ((galoisEquivalence K Ω).inverse.obj (ContAction.regular Gal(Ω/K)))))).map_isZero hz)) a b)
+      ((galoisEquivalence K Ω).inverse.obj (ContAction.leftRegular Gal(Ω/K)))))).map_isZero hz))
+    a b)
 
 end TauCeti.FiniteEtaleScheme
