@@ -29,8 +29,7 @@ norm (`NonUnitalStarAlgHom.exists_apply_eq_norm_eq`).
 * `LinearMap.IsCompleteQuotient.comp`, `LinearMap.isCompleteQuotient_id`: composition and the
   identity.
 * `LinearMap.IsCompleteQuotient.isCompleteContraction`: a complete quotient map is a complete
-  contraction; `LinearMap.IsCompleteQuotient.norm_map_le`,
-  `LinearMap.IsCompleteQuotient.cbNorm_le_one` restate the consequences.
+  contraction; `LinearMap.IsCompleteQuotient.cbNorm_le_one` restates the consequence.
 * `LinearMap.IsCompleteQuotient.exists_map_eq`: a complete quotient map lifts the open unit ball.
 * `NonUnitalStarAlgHom.isCompleteQuotient`: a surjective star homomorphism is a complete quotient
   map.
@@ -112,12 +111,6 @@ theorem IsCompleteQuotient.isCompletelyBounded {φ : A →ₗ[ℂ] B} (h : IsCom
 theorem IsCompleteQuotient.cbNorm_le_one {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
     cbNorm φ ≤ 1 :=
   (isCompleteContraction_iff.1 h.isCompleteContraction).2
-
-/-- A complete quotient map is a complete contraction: each amplification is contractive, for
-matrices over any finite index type. -/
-theorem IsCompleteQuotient.norm_map_le {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) {κ : Type*}
-    [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ ‖x‖ :=
-  h.isCompleteContraction.norm_map_le x
 
 /-- A complete quotient map lifts the open unit ball: every matrix of norm `< 1` over `B` is the
 amplification of a matrix of norm `< 1` over `A`, for matrices over any finite index type. -/
