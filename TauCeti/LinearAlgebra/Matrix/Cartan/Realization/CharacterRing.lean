@@ -104,12 +104,6 @@ theorem toConeExponent_le_toConeExponent_iff_rootLE {μ ν : Dual K H} :
 
 variable (R)
 
-/-- For a finite index set the positive root cone is finitely generated, so every function on
-weights supported in finitely many cones `λ - Q₊` is a character (`HahnSeries.ofConeBounded`). -/
-instance isAddFG_posRootCone [Finite I] : IsAddFG R.posRootCone.toAddSubmonoid := by
-  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
-  infer_instance
-
 /-! ### Formal exponentials -/
 
 section Semiring
@@ -212,39 +206,6 @@ namespace CoweightLattice
 
 variable {I H : Type*} [AddCommGroup H] [Module ℚ H] {A : Matrix I I ℤ}
   {R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H} (L : R.CoweightLattice)
-
-/-- The positive root cone of the weight lattice: the natural span of the simple roots in `P`. -/
-def posRootCone : Submodule ℕ L.weightLattice :=
-  Submodule.span ℕ (Set.range L.root)
-
-theorem posRootCone_def : L.posRootCone = Submodule.span ℕ (Set.range L.root) := (rfl)
-
-/-- The positive root cone of the weight lattice is pointed. -/
-theorem isPointed_posRootCone : L.posRootCone.toAddSubmonoid.IsPointed :=
-  fun _ h h' ↦
-    (L.linearIndependent_root.restrict_scalars' ℕ).eq_zero_of_mem_natSpan_of_neg_mem h h'
-
-/-- A weight lies in the positive root cone of the weight lattice exactly when it lies in the
-positive root cone of the realization. -/
-theorem coe_mem_posRootCone_iff {φ : L.weightLattice} :
-    (φ : Dual ℚ H) ∈ R.posRootCone ↔ φ ∈ L.posRootCone := by
-  let ι : L.weightLattice →ₗ[ℕ] Dual ℚ H := L.weightLattice.subtype.restrictScalars ℕ
-  have hι : Function.Injective ι := Subtype.val_injective
-  have h : R.posRootCone = L.posRootCone.map ι := by
-    rw [posRootCone_def, CartanRealization.posRootCone_def, ← Submodule.span_image,
-      ← Set.range_comp]
-    congr 2
-    funext i
-    exact (L.coe_root i).symm
-  rw [h]
-  exact ⟨fun ⟨ψ, hψ, he⟩ ↦ hι he ▸ hψ, fun hφ ↦ ⟨φ, hφ, rfl⟩⟩
-
-/-- For a finite index set the positive root cone of the weight lattice is finitely generated, so
-every function on `P` supported in finitely many cones `λ - Q₊` is a character supported on the
-weight lattice (`HahnSeries.ofConeBounded`). -/
-instance isAddFG_posRootCone [Finite I] : IsAddFG L.posRootCone.toAddSubmonoid := by
-  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
-  infer_instance
 
 /-- The exponents of characters supported on the weight lattice: the weights in `P`, ordered by
 `μ ≤ ν ↔ μ - ν ∈ Q₊`. -/
