@@ -281,7 +281,9 @@ def orderedSimplicialChainComplexHomOfLinearMap {n m : ℕ}
     eqToHom (orderedSimplicialChainComplex_X R m).symm
 
 /-- The morphism given by a linear map of ordered chains is that linear map, conjugated by the
-identifications of the objects with the free modules on cells. -/
+identifications of the objects with the free modules on cells. This is the simp normal form, the
+same form in which `orderedSimplicialChainComplex_d` states the differential. -/
+@[simp]
 theorem orderedSimplicialChainComplexHomOfLinearMap_def {n m : ℕ}
     (f : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
     orderedSimplicialChainComplexHomOfLinearMap R f =
@@ -366,7 +368,7 @@ theorem orderedSimplicialChainComplexHomOfLinear_id
       LinearMap.id ∘ₗ OrderedSimplicialChain.boundary (K := K) R n) :
     orderedSimplicialChainComplexHomOfLinear R (fun _ ↦ LinearMap.id) h = 𝟙 _ := by
   ext n : 1
-  simp [orderedSimplicialChainComplexHomOfLinearMap_def]
+  simp
 
 /-- Composing morphisms built from linear maps of chains gives the morphism built from the
 composed linear maps. -/
