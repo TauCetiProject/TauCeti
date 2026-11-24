@@ -13,9 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Complex.Conformal.Laplacian
-import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.Wirtinger.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The hyperbolic Laplacian and the weight-`k` Laplacians on the upper half-plane
@@ -253,14 +253,6 @@ private theorem norm_deriv_coe_smul_ofComplex_sq (hg : 0 < (g : Matrix (Fin 2) (
   rw [deriv_smul hg z, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg hg.le,
     ← Complex.normSq_eq_norm_sq]
 
-/-- Composing `f ∘ ofComplex` with the Möbius transformation read through `ofComplex` gives
-`τ ↦ f (g • τ)` read through `ofComplex`. -/
-private theorem comp_ofComplex_comp_coe_smul_ofComplex (f : ℍ → ℂ) :
-    (f ∘ ofComplex) ∘ (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) =
-      (fun τ ↦ f (g • τ)) ∘ ofComplex := by
-  funext w
-  simp [ofComplex_apply]
-
 /-- **Möbius invariance of the hyperbolic Laplacian**: for `g ∈ GL(2, ℝ)` with positive
 determinant, `Δ (f ∘ g) = (Δ f) ∘ g` at every point where `f` is `C²`. -/
 theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
@@ -275,20 +267,6 @@ theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ)
   rw [Complex.real_smul, Matrix.GeneralLinearGroup.val_det_apply]
   push_cast
   field_simp
-
-/-- Read through `ofComplex`, the slash `f ∣[k] g` is, near each point of `ℍ`, the product of the
-automorphy factor `|det g|^(k - 1) (cw + d)^(-k)` and `f ∘ ofComplex` composed with the Möbius
-transformation. -/
-private theorem slash_comp_ofComplex_eventuallyEq (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
-    (k : ℤ) (f : ℍ → ℂ) (z : ℍ) :
-    (f ∣[k] g) ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] fun w ↦
-      ((|g.det.val| : ℝ) : ℂ) ^ (k - 1) * denom g w ^ (-k) *
-        ((f ∘ ofComplex) ∘ fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) w := by
-  rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
-  filter_upwards with τ
-  simp only [Function.comp_apply, ofComplex_apply, ModularForm.slash_apply,
-    σ_eq_refl_of_det_pos hg, ContinuousAlgEquiv.refl_apply]
-  ring
 
 /-- The first-order coefficients in `Δ_k (f ∣[k] g)` match those of `(Δ_k f) ∣[k] g`: with
 `D = cz + d`, the derivative `det g / D²` of the Möbius transformation and the derivative
@@ -331,7 +309,7 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
     fun_prop
   have hH : ContDiffAt ℝ 2 ((f ∘ ofComplex) ∘ m) z :=
     hFm.comp _ (hm.contDiffAt.restrict_scalars ℝ)
-  have hev := slash_comp_ofComplex_eventuallyEq hg k f z
+  have hev := ModularForm.slash_comp_ofComplex_eventuallyEq hg k f z
   -- The left side: the product rule for the holomorphic factor `J`, then the conformal
   -- covariance of `Δ` and `\bar∂` under `m`.
   have hL : weightLaplacian k (f ∣[k] g) z =
