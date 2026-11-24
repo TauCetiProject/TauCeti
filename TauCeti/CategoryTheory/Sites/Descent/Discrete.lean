@@ -121,9 +121,10 @@ def objEquiv (X : Cᵒᵖ) : (ofPresheaf.{w'} P).obj (.mk X) ≃ P.obj X where
   right_inv _ := rfl
 
 /-- Pulling back an object of the discrete pseudofunctor of `P` applies `P.map`. -/
-lemma objEquiv_map_toFunctor_obj {X Y : Cᵒᵖ} (f : X ⟶ Y) (M : (ofPresheaf.{w'} P).obj (.mk X)) :
-    objEquiv Y (((ofPresheaf.{w'} P).map f.toLoc).toFunctor.obj M) = P.map f (objEquiv X M) :=
-  (rfl)
+lemma objEquiv_map_toFunctor_obj {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y)
+    (M : (ofPresheaf.{w'} P).obj X) :
+    objEquiv Y.as (((ofPresheaf.{w'} P).map f).toFunctor.obj M) = P.map f.as (objEquiv X.as M) :=
+  rfl
 
 variable {X : Cᵒᵖ}
 
