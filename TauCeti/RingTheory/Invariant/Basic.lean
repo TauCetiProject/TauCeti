@@ -608,27 +608,15 @@ theorem exists_pow_succ_smul_eq_of_isIntegral (R : Type*) {S G : Type*}
     [CommRing R] [CommRing S] [Algebra R S] [IsDomain S] [Algebra.IsIntegral R S] [Group G]
     [MulSemiringAction G S] [SMulCommClass G R S] (σ : G) (x : S) :
     ∃ n, (σ ^ (n + 1)) • x = x := by
-  classical
   -- `σ` permutes the finitely many roots in `S` of a monic polynomial over `R` satisfied by `x`.
   obtain ⟨p, hpm, hp⟩ := Algebra.IsIntegral.isIntegral (R := R) x
   rw [← Polynomial.aeval_def] at hp
-  let s := (p.map (algebraMap R S)).roots.toFinset
-  have hmem (k : ℕ) : (σ ^ k) • x ∈ s := by
-    rw [Multiset.mem_toFinset (s := (p.map (algebraMap R S)).roots),
-      Polynomial.mem_roots (hpm.map _).ne_zero, Polynomial.IsRoot,
-      Polynomial.eval_map_algebraMap]
+  have hmem (k : ℕ) : (σ ^ k) • x ∈ p.rootSet S := by
     have := Polynomial.aeval_algHom_apply (MulSemiringAction.toAlgHom R S (σ ^ k)) x p
-    rw [hp, map_zero] at this
-    exact this
-  obtain ⟨i, j, hij, heq⟩ := Finite.exists_ne_map_eq_of_infinite
-    (fun k : ℕ ↦ (⟨(σ ^ k) • x, hmem k⟩ : s))
-  simp only [Subtype.mk.injEq] at heq
-  rcases hij.lt_or_gt with hij | hij
-  · refine ⟨j - i - 1, ?_⟩
-    rw [show j = i + (j - i - 1 + 1) by omega, pow_add, mul_smul] at heq
-    exact (smul_left_cancel_iff _).mp heq.symm
-  · refine ⟨i - j - 1, ?_⟩
-    rw [show i = j + (i - j - 1 + 1) by omega, pow_add, mul_smul] at heq
-    exact (smul_left_cancel_iff _).mp heq
+    exact Polynomial.mem_rootSet'.2 ⟨(hpm.map _).ne_zero, by simpa [hp] using this⟩
+  obtain ⟨i, j, hij, heq⟩ := (p.rootSet_finite S).exists_lt_map_eq_of_forall_mem hmem
+  refine ⟨j - i - 1, ?_⟩
+  rw [show j = i + (j - i - 1 + 1) by omega, pow_add, mul_smul] at heq
+  exact (smul_left_cancel_iff _).mp heq.symm
 
 end TauCeti.MulSemiringAction
