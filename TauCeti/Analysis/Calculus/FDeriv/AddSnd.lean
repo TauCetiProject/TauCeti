@@ -13,12 +13,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # The submersion `(x, y) ↦ f x + y`
 
-For a map `f : E → E'` between real inner product spaces, the map `g (x, y) = f x + y` on the
+For a map `f : E → E'` between real normed spaces, the map `g (x, y) = f x + y` on the
 Euclidean product `WithLp 2 (E × E')` (`TauCeti.addSnd`) factors `f` as `x ↦ g (x, 0)`. If `f` is
 differentiable on an open set `Ω`, then `g` is a submersion on the open set
 `W = {(x, y) | x ∈ Ω, f x + y ∈ Ω'}` (`TauCeti.addSndDomain`) and maps it into `Ω'`. Its
 derivative is `Dg(x, y) (u, v) = Df(x) u + v`, with transpose `η ↦ (Df(x)ᵀ η, η)`. This is how
 Hörmander reduces the pullback of a distribution along `f` to a pullback along a submersion.
+The transpose is stated for inner product spaces, the only place where an inner product enters.
 
 ## Main declarations
 
@@ -43,14 +44,16 @@ open scoped ContDiff
 
 namespace TauCeti
 
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] {Ω : Opens E} {Ω' : Opens E'} {f : E → E'}
+section NormedSpace
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] {Ω : Opens E} {Ω' : Opens E'} {f : E → E'}
 
 /-- The submersion `g (x, y) = f x + y` through which `f` factors as `x ↦ g (x, 0)`. -/
 def addSnd (f : E → E') (p : WithLp 2 (E × E')) : E' :=
   f p.fst + p.snd
 
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℝ E'] in
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℝ E'] in
 /-- The value of `g (x, y) = f x + y`. -/
 @[simp]
 theorem addSnd_apply (f : E → E') (p : WithLp 2 (E × E')) : addSnd f p = f p.fst + p.snd :=
@@ -108,7 +111,12 @@ theorem mapsTo_inl_addSndDomain (hf : ContinuousOn f Ω) (hfΩ : MapsTo f Ω Ω'
     MapsTo (fun x ↦ toLp 2 (x, (0 : E'))) (Ω : Set E) (addSndDomain hf Ω') := fun x hx ↦
   mem_addSndDomain.2 ⟨hx, by simpa using hfΩ hx⟩
 
-variable [CompleteSpace E] [CompleteSpace E']
+end NormedSpace
+
+section InnerProductSpace
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [CompleteSpace E'] {f : E → E'}
 
 /-- The transpose of `Dg(x, y)` is `η ↦ (Df(x)ᵀ η, η)`. -/
 theorem adjoint_fderiv_addSnd_apply {p : WithLp 2 (E × E')} (hf : DifferentiableAt ℝ f p.fst)
@@ -118,5 +126,7 @@ theorem adjoint_fderiv_addSnd_apply {p : WithLp 2 (E × E')} (hf : Differentiabl
     adjoint_sndL]
   refine ofLp_injective 2 ?_
   ext <;> simp
+
+end InnerProductSpace
 
 end TauCeti
