@@ -136,26 +136,6 @@ theorem hasSum_mellinInv_Gamma_mul {ι : Type*} [Countable ι] {a : ι → ℂ} 
   · simp [h]
   · rw [mellinInv_Gamma hσ (mul_pos h hx), neg_mul]
 
-/-- **Smoothed sums of an `LSeries`.** If `f 0 = 0` and the L-series of `f` converges absolutely on
-the line `Re s = σ > 0`, then for `x > 0` the smoothed sum `∑ₙ f(n) e^{-n x}` is the Mellin
-inverse on that line of `Γ(s) L(f, s)`. -/
-theorem LSeries.hasSum_mellinInv_Gamma_mul_LSeries {f : ℕ → ℂ} (hf : f 0 = 0) {σ : ℝ}
-    (hσ : 0 < σ) (hs : LSeriesSummable f σ) {x : ℝ} (hx : 0 < x) :
-    HasSum (fun n : ℕ ↦ f n * rexp (-n * x)) (mellinInv σ (fun s ↦ Gamma s * LSeries f s) x) := by
-  have hp (n : ℕ) : f n = 0 ∨ 0 < (n : ℝ) := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · exact Or.inl hf
-    · exact Or.inr (by positivity)
-  have h_sum : Summable fun n : ℕ ↦ ‖f n‖ / (n : ℝ) ^ σ := by
-    refine hs.norm.congr fun n ↦ ?_
-    rw [_root_.LSeries.norm_term_eq]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [hf]
-    · simp [hn]
-  convert hasSum_mellinInv_Gamma_mul hp hσ h_sum hx using 3 with s
-  rw [LSeries_def₀ hf]
-  simp
-
 /-- **Smoothed sums of an `LSeries`.** If the L-series of `f` converges absolutely on the line
 `Re s = σ` and `F` is integrable on that line, then for `x > 0` the sum `∑ₙ f(n) · w(n x)` with
 the weight `w = mellinInv σ F` is the Mellin inverse on that line of `F(s) L(f, s)`. The value
@@ -181,6 +161,20 @@ theorem LSeries.hasSum_mul_mellinInv {f : ℕ → ℂ} {σ : ℝ} {F : ℂ → �
   · ext n
     rcases eq_or_ne n 0 with rfl | hn <;> simp [a, *]
   · simp only [hL]
+
+/-- **Smoothed sums of an `LSeries`.** If `f 0 = 0` and the L-series of `f` converges absolutely on
+the line `Re s = σ > 0`, then for `x > 0` the smoothed sum `∑ₙ f(n) e^{-n x}` is the Mellin
+inverse on that line of `Γ(s) L(f, s)`. -/
+theorem LSeries.hasSum_mellinInv_Gamma_mul_LSeries {f : ℕ → ℂ} (hf : f 0 = 0) {σ : ℝ}
+    (hσ : 0 < σ) (hs : LSeriesSummable f σ) {x : ℝ} (hx : 0 < x) :
+    HasSum (fun n : ℕ ↦ f n * rexp (-n * x)) (mellinInv σ (fun s ↦ Gamma s * LSeries f s) x) := by
+  have hΓ := verticalIntegrable_Gamma (σ := σ) fun n h ↦ by
+    linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
+  convert LSeries.hasSum_mul_mellinInv hΓ hs hx using 1
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hf]
+  · rw [mellinInv_Gamma hσ (by positivity), neg_mul]
 
 /-- **The smoothed summatory function as an inverse Mellin integral.** Let `ν` be of class `C¹` on
 `(0, ∞)` and supported in `[1/2, 2]`, `ε > 0`, and let the L-series of `f` converge absolutely on

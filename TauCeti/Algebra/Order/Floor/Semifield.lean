@@ -56,7 +56,7 @@ strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most `y - z + 1`.
 * `TauCeti.sum_Icc_floor_le_max_mul`: a sum of terms at most `M ≥ 0` over the integers
   `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`.
 * `TauCeti.card_Ioo_floor_ceil_le`: the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊`
-  number at most `y - z + 1`, for `0 ≤ z ≤ y`.
+  number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
 -/
 
 public section
@@ -236,9 +236,9 @@ theorem sum_Icc_floor_le_max_mul {y M : R} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : �
   · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
     exact le_max_of_le_left (by gcongr; exact Nat.floor_le hy)
 
-/-- For `0 ≤ z ≤ y`, the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most
-`y - z + 1`. -/
-theorem card_Ioo_floor_ceil_le {y z : R} (hz : 0 ≤ z) (hzy : z ≤ y) :
+/-- For `z ≤ y` with `0 ≤ y`, the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊` number at
+most `y - z + 1`. -/
+theorem card_Ioo_floor_ceil_le {y z : R} (hy : 0 ≤ y) (hzy : z ≤ y) :
     ((Finset.Ioo ⌊z⌋₊ ⌈y⌉₊).card : R) ≤ y - z + 1 := by
   rw [Nat.card_Ioo, Nat.sub_sub]
   rcases le_or_gt ⌈y⌉₊ (⌊z⌋₊ + 1) with h | h
@@ -246,7 +246,7 @@ theorem card_Ioo_floor_ceil_le {y z : R} (hz : 0 ≤ z) (hzy : z ≤ y) :
     exact add_nonneg (sub_nonneg.2 hzy) zero_le_one
   · rw [Nat.cast_sub h.le, sub_add_eq_add_sub]
     push_cast
-    exact (sub_lt_sub (Nat.ceil_lt_add_one (hz.trans hzy)) (Nat.lt_floor_add_one z)).le
+    exact (sub_lt_sub (Nat.ceil_lt_add_one hy) (Nat.lt_floor_add_one z)).le
 
 end Ring
 
