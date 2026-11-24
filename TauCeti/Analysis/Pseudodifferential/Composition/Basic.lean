@@ -958,6 +958,16 @@ theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSu
         simp [coefficient_const, Circle.smul_def]
     _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
 
+/-- Composing multiplication by a Schwartz function `ψ` with a symbol `a` multiplies `a` pointwise
+by `ψ`: `(ψ # a)(x, ξ) = ψ(x) a(x, ξ)`. -/
+theorem coefficient_ofSpatial_smul_id_sharp [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ψ : 𝓢(CoordinateSpace n, ℂ)) (x ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) =
+      ψ x • a.coefficient (x, ξ) := by
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := const (ContinuousLinearMap.id ℂ W)) ha
+    (t := ψ x) (fun _ ↦ by simp [coefficient_const]), coefficient_const_id_sharp]
+
 end Sharp
 
 /-! ### The composition of the quantizations -/

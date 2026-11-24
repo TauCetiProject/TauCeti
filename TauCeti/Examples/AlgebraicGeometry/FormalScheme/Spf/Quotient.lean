@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
-public import TauCeti.RingTheory.Huber.Padic.Basic
+public import TauCeti.RingTheory.AdicRing.Padic
 
 /-!
 # Quotient thickenings of formal spectra: examples

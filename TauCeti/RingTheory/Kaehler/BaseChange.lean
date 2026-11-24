@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
+public import Mathlib.RingTheory.Kaehler.TensorProduct
 
 /-!
 # Base-change maps for Kähler differentials
@@ -22,6 +23,10 @@ of `KaehlerDifferential.map R R A B`, gives an extensionality criterion for `B`-
   `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective, and if in addition `B` is faithfully flat over `A` then
   `KaehlerDifferential.map R R A B : Ω[A⁄R] → Ω[B⁄R]` is injective.
 
+For a base change `B = S ⊗[R] A`, Mathlib's isomorphism `B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]`
+(`KaehlerDifferential.tensorKaehlerEquiv`) is the base-change map into `Ω[B⁄R]` followed by the
+map `Ω[B⁄R] → Ω[B⁄S]` sending `d_R b` to `d_S b`.
+
 ## Main results
 
 * `TauCeti.mapBaseChange_eq_liftBaseChange`
@@ -30,6 +35,7 @@ of `KaehlerDifferential.map R R A B`, gives an extensionality criterion for `B`-
 * `TauCeti.range_mapBaseChange_eq_span_image`
 * `TauCeti.injective_mapBaseChange_of_subsingleton_h1Cotangent`
 * `TauCeti.injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent`
+* `TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`
 -/
 
 public section
@@ -103,5 +109,14 @@ theorem injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent
     simpa [mapBaseChange_tmul] using hω
   simpa using
     (map_eq_zero_iff _ (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B)).mp h0
+
+/-- For a base change `B = S ⊗[R] A`, Mathlib's isomorphism
+`KaehlerDifferential.tensorKaehlerEquiv : B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]` is the base-change map
+`B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` followed by `KaehlerDifferential.map R S B B : Ω[B⁄R] → Ω[B⁄S]`, which
+sends `d_R b` to `d_S b`. Neither factor need be an isomorphism. -/
+theorem map_comp_mapBaseChange_eq_tensorKaehlerEquiv (S : Type*) [CommRing S] [Algebra R S]
+    [Algebra S B] [IsScalarTower R S B] [Algebra.IsPushout R S A B] :
+    (map R S B B).comp (mapBaseChange R A B) = (tensorKaehlerEquiv R S A B).toLinearMap :=
+  kaehlerBaseChange_linearMap_ext fun a ↦ by simp
 
 end TauCeti

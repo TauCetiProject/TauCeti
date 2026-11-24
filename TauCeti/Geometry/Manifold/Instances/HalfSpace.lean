@@ -90,6 +90,13 @@ theorem frontier_range_modelWithCornersHalfSpace :
   ext q
   simp
 
+variable {E} in
+/-- The model sends a point to the frontier of its range exactly when its height vanishes. -/
+theorem modelWithCornersHalfSpace_mem_frontier_range_iff (q : {q : E × ℝ | 0 ≤ q.2}) :
+    modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E)) ↔
+      q.val.2 = 0 := by
+  rw [frontier_range_modelWithCornersHalfSpace, modelWithCornersHalfSpace_apply, mem_ofPred_eq]
+
 /-- The range of the model, the closed half-space, is a convex polyhedron: it is cut out by the
 single inequality `-q.2 ≤ 0`. -/
 theorem isConvexPolyhedron_range_modelWithCornersHalfSpace :

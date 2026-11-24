@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Prod.Skew
 public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The native skew graph construction for finite-regularity forcing data
