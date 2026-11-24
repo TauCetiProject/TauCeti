@@ -118,6 +118,7 @@ noncomputable def complexToReal (b : OrthonormalBasis ι ℂ E) : OrthonormalBas
     simp
 
 /-- The basis underlying `b.complexToReal` is the real basis `b.toBasis.complexToReal`. -/
+@[simp]
 theorem toBasis_complexToReal (b : OrthonormalBasis ι ℂ E) :
     b.complexToReal.toBasis = b.toBasis.complexToReal :=
   Basis.toBasis_toOrthonormalBasis _ _
