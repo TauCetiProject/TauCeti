@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.Kaehler.BaseChange
+import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 
 /-!
 # Examples of the base-change map of relative differentials
@@ -26,7 +26,7 @@ forms of two of these maps:
 
 * for a field `k` and the rational function field `k(s)`, with `X = Spec k`: the comparison map
   `k(s) ⊗_k Ω_{k/k} → Ω_{k(s)/k}` is not surjective, since `Ω_{k/k} = 0` while `ds ≠ 0`
-  (`TauCeti.NashBlowups.D_X_ne_zero_ratFunc`); `e` kills `ds`; and `b = e ∘ c` is bijective. So a
+  (`RatFunc.D_X_ne_zero`); `e` kills `ds`; and `b = e ∘ c` is bijective. So a
   base-change map with target the differentials over `R` would not be an isomorphism;
 * for `ℤ → 𝔽₂` and `X = 𝔸¹_ℤ`: `b` sends `1 ⊗ dT` to `dT`, and `e` is already bijective, as
   `Ω_{𝔽₂/ℤ} = 0`.
@@ -47,19 +47,6 @@ section RationalFunctionField
 
 variable (k : Type*) [Field k]
 
-/-- The differential `ds` of the variable of the rational function field `k(s)` is nonzero in
-`Ω_{k(s)/k}`: localization identifies `Ω_{k(s)/k}` with `k(s) ⊗_{k[s]} Ω_{k[s]/k}`, and
-`Ω_{k[s]/k}` is free on `ds`. -/
-theorem D_X_ne_zero_ratFunc : D k (RatFunc k) RatFunc.X ≠ 0 := by
-  have := Algebra.FormallyEtale.of_isLocalization (Rₘ := RatFunc k) (nonZeroDivisors k[X])
-  intro h
-  have h1 := congrArg (tensorKaehlerEquivOfFormallyEtale k k[X] (RatFunc k)).symm h
-  rw [← RatFunc.algebraMap_X, tensorKaehlerEquivOfFormallyEtale_symm_D_algebraMap,
-    map_zero] at h1
-  have h2 := congrArg (LinearMap.liftBaseChange (RatFunc k)
-    (Algebra.linearMap k[X] (RatFunc k) ∘ₗ (polynomialEquiv k).toLinearMap)) h1
-  simp [polynomialEquiv_D] at h2
-
 /-- For `X = Spec k` and `X' = Spec k(s)`, the comparison map
 `c_{g'} : k(s) ⊗_k Ω_{k/k} → Ω_{k(s)/k}` is not surjective: its source vanishes, while
 `ds ≠ 0`. -/
@@ -69,7 +56,7 @@ theorem not_surjective_mapBaseChange_ratFunc :
   intro h
   obtain ⟨x, hx⟩ := h (D k (RatFunc k) RatFunc.X)
   rw [Subsingleton.elim x 0, map_zero] at hx
-  exact D_X_ne_zero_ratFunc k hx.symm
+  exact RatFunc.D_X_ne_zero k hx.symm
 
 /-- The map `e : Ω_{k(s)/k} → Ω_{k(s)/k(s)}` kills `ds`, as `Ω_{k(s)/k(s)} = 0`. -/
 theorem map_D_X_ratFunc :
