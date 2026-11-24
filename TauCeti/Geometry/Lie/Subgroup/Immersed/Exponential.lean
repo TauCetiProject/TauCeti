@@ -143,13 +143,20 @@ private theorem isClosed_image_lieExp_range (he : ⇑e = lieExp) :
   rw [← he, ← Diffeomorph.coe_toHomeomorph]
   exact e.toHomeomorph.isClosedMap _ (Submodule.isClosed_of_finiteDimensional _)
 
+/-- The presentation maps the range of the intrinsic exponential onto the ambient exponential
+image of the differential range. -/
+private theorem range_toHom_comp_lieExp (he : ⇑e = lieExp) :
+    range (⇑d.toHom ∘ (lieExp : LeftInvariantDerivation d.I' d.X → d.X)) =
+      lieExp '' (d.lieMapToHom.range : Set (LeftInvariantDerivation I G)) := by
+  rw [toHom_comp_lieExp d e he, range_comp, he, coe_lieMapCLM, LieHom.coe_range]
+
 /-- The range of the intrinsic exponential is the preimage of the ambient exponential image of
 the differential range. -/
 private theorem range_lieExp_eq_preimage (he : ⇑e = lieExp) :
     range (lieExp : LeftInvariantDerivation d.I' d.X → d.X) =
       d.toHom ⁻¹' (lieExp '' (d.lieMapToHom.range : Set (LeftInvariantDerivation I G))) := by
-  rw [← preimage_image_eq (range lieExp) d.injective, ← range_comp, toHom_comp_lieExp d e he,
-    range_comp, he, coe_lieMapCLM, LieHom.coe_range]
+  rw [← preimage_image_eq (range lieExp) d.injective, ← range_comp,
+    range_toHom_comp_lieExp d e he]
 
 /-- **Exponential coordinates on an immersed subgroup.** If the exponential of `G` is a
 diffeomorphism, then the exponential of every connected immersed Lie subgroup, for its intrinsic
@@ -186,9 +193,9 @@ theorem lieExpDiffeomorphOfDiffeomorph_apply (he : ⇑e = lieExp)
 exponential image of its differential range. -/
 theorem coe_eq_image_lieExp_of_diffeomorph (he : ⇑e = lieExp) :
     (K : Set G) = lieExp '' (d.lieMapToHom.range : Set (LeftInvariantDerivation I G)) := by
-  have hK : (K : Set G) = range d.toHom := by rw [← MonoidHom.coe_range, d.range_eq]
-  rw [hK, ← (d.lieExp_bijective_of_diffeomorph e he).surjective.range_comp (g := ⇑d.toHom),
-    toHom_comp_lieExp d e he, range_comp, he, coe_lieMapCLM, LieHom.coe_range]
+  rw [← d.coe_range_toHom,
+    ← (d.lieExp_bijective_of_diffeomorph e he).surjective.range_comp (g := ⇑d.toHom),
+    range_toHom_comp_lieExp d e he]
 
 include d in
 /-- If the exponential of `G` is a diffeomorphism, every connected immersed Lie subgroup of `G`
@@ -222,9 +229,8 @@ include d in
 is contractible, hence simply connected, in its subspace topology. -/
 theorem contractibleSpace_subgroup_of_diffeomorph (he : ⇑e = lieExp) : ContractibleSpace K := by
   have := d.contractibleSpace_of_diffeomorph e he
-  have hK : range d.toHom = (K : Set G) := by rw [← MonoidHom.coe_range, d.range_eq]
   exact ((d.isClosedEmbedding_toHom_of_diffeomorph e he).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr hK)).symm.contractibleSpace
+    (Homeomorph.setCongr d.coe_range_toHom)).symm.contractibleSpace
 
 end TauCeti.Lie.ImmersedLieSubgroupData
 
