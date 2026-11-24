@@ -99,7 +99,7 @@ theorem norm_iteratedFDeriv_sub_sum_smul_apply_le
     (fun v hv ↦ ?_) hB hhB hz
   have hD := hh.differentiableOn_iteratedFDeriv_slice hs hU hhU hk hx v hv
   exact (ContinuousLinearMap.differentiableAt_comp_of_map_smul
-    (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) W m) (fun _ _ ↦ rfl)
+    (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) W m) (fun _ _ ↦ by simp)
     (hD.differentiableAt (hU.mem_nhds hv))).differentiableWithinAt
 
 /-- **The finite-rank Runge estimate for parameter derivatives.** Under the hypotheses of
@@ -115,8 +115,10 @@ theorem norm_iteratedFDeriv_sub_sum_smul_le
     {x : E} (hx : x ∈ s) {B : ℝ} (hB : 0 ≤ B)
     (hhB : ∀ z ∈ L, ‖iteratedFDeriv ℝ k (fun y ↦ h y z) x‖ ≤ B) {z : ℂ} (hz : z ∈ K) :
     ‖iteratedFDeriv ℝ k (fun y ↦ h y z - ∑ j, (w j * g j z) • h y (ζ j)) x‖ ≤ ε * B := by
-  have hεB : 0 ≤ ε * B := by
-    simpa using hA 0 (differentiableOn_const 0) B hB (by simpa using fun _ _ ↦ hB) z hz
+  -- The vector-valued estimate for the zero function shows that the bound `ε * B` is nonnegative.
+  have hεB : 0 ≤ ε * B := (norm_nonneg _).trans <|
+    norm_sub_sum_smul_le_of_scalar hA (f := (0 : ℂ → W)) (differentiableOn_const 0) hB
+      (fun _ _ ↦ by simpa using hB) hz
   refine ContinuousMultilinearMap.opNorm_le_bound hεB fun m ↦ ?_
   rw [mul_assoc]
   exact norm_iteratedFDeriv_sub_sum_smul_apply_le hA hU hKU hζ hs hh hhU hk hx m (by positivity)

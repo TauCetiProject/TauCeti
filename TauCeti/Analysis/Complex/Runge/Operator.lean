@@ -267,8 +267,9 @@ theorem norm_sub_sum_smul_le_of_scalar {W : Type*} [NormedAddCommGroup W] [Norme
     {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {B : ℝ} (hB : 0 ≤ B)
     (hfB : ∀ z ∈ L, ‖f z‖ ≤ B) {z : ℂ} (hz : z ∈ K) :
     ‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B := by
-  have hεB : 0 ≤ ε * B := by
-    simpa using hA 0 (differentiableOn_const 0) B hB (by simpa using fun _ _ ↦ hB) z hz
+  -- The estimate for the zero function shows that the bound `ε * B` is nonnegative.
+  have hεB : 0 ≤ ε * B := (norm_nonneg _).trans <|
+    hA 0 (differentiableOn_const 0) B hB (fun _ _ ↦ by simpa using hB) z hz
   refine NormedSpace.norm_le_dual_bound ℂ _ hεB fun φ ↦ ?_
   have hφ := hA (fun z ↦ φ (f z)) (φ.differentiable.comp_differentiableOn hf) (‖φ‖ * B)
     (by positivity) (fun z' hz' ↦ (φ.le_opNorm _).trans (by gcongr; exact hfB z' hz')) z hz
