@@ -232,7 +232,17 @@ theorem stalkToCompletedAtPrime_bijective_of_discreteTopology [DiscreteTopology 
     Ideal.map_bot (quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen p (J := ⊥)
       (isOpen_discrete _) (H := map_stalkToCompletedAtPrime_map p ⊥ ▸ Ideal.le_comap_map))
 
-private lemma algebraMap_completedAtPrime_bijective_of_isLocalRing [IsLocalRing A]
+/-- For a discrete ring `A`, `A_𝔭 → Â_𝔭` is bijective. -/
+theorem algebraMap_completedAtPrime_bijective_of_discreteTopology [DiscreteTopology A] :
+    Function.Bijective
+      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) := by
+  rw [← stalkToCompletedAtPrime_comp_localizationToStalk p]
+  exact (stalkToCompletedAtPrime_bijective_of_discreteTopology p).comp
+    (localizationToStalk_bijective_of_discreteTopology p)
+
+/-- For a complete local adic ring `A` at its closed point `p` (with `𝔭 = 𝔪_A`), `A_𝔭 → Â_𝔭`
+is bijective. -/
+theorem algebraMap_completedAtPrime_bijective_of_isLocalRing [IsLocalRing A]
     (hp : (p : PrimeSpectrum A).asIdeal = maximalIdeal A) :
     Function.Bijective
       (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) :=
