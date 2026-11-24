@@ -120,6 +120,17 @@ theorem mem_conjInvariants_iff_commute {H : Subgroup G} {x : MonoidAlgebra R G} 
     x ∈ conjInvariants R H ↔ ∀ h ∈ H, of R G h * x = x * of R G h := by
   simp [conjInvariants, Subalgebra.mem_centralizer_iff]
 
+/-- An element lies in `R[G]^⟨g⟩` exactly when it commutes with `g`. -/
+theorem mem_conjInvariants_zpowers_iff {g : G} {x : MonoidAlgebra R G} :
+    x ∈ conjInvariants R (Subgroup.zpowers g) ↔ of R G g * x = x * of R G g := by
+  rw [mem_conjInvariants_iff_commute, Subgroup.forall_mem_zpowers]
+  refine ⟨fun h => by simpa using h 1, fun h k => ?_⟩
+  -- `g` is a unit of `R[G]`, so its integer powers commute with `x` as well
+  have hc : Commute (((of R G).toHomUnits g : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) x := by
+    rw [MonoidHom.coe_toHomUnits]
+    exact h
+  simpa only [← map_zpow, MonoidHom.coe_toHomUnits] using (hc.units_zpow_left k).eq
+
 /-- An element lies in `R[G]^H` when conjugation by every element of `H` fixes it. -/
 theorem mem_conjInvariants_iff {H : Subgroup G} {x : MonoidAlgebra R G} :
     x ∈ conjInvariants R H ↔ ∀ h ∈ H, conjRepresentation R G h x = x := by

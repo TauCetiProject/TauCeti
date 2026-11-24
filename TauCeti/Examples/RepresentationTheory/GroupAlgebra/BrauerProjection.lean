@@ -12,9 +12,11 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.BrauerProjection
 /-!
 # The Brauer projection and the relative trace on `S₃`
 
-Checks from ModularCharactersAndBlocks §6.1, in the group algebra of the symmetric group
-`S₃ = Equiv.Perm (Fin 3)`, with `r` the `3`-cycle `finRotate 3`, `s` the transposition
-`Equiv.swap 0 1` and `P = ⟨s⟩` of order `2`, so that `s r s = r²` and `C_{S₃}(P) = P`.
+Examples in the group algebra of the symmetric group `S₃ = Equiv.Perm (Fin 3)`. The first ones
+show that each hypothesis of the multiplicativity of the Brauer projection on invariants
+(`TauCeti.brauerProjection_mul`) is needed; the last ones compute relative traces
+(`TauCeti.relTrace`). Throughout, `r` is the `3`-cycle `finRotate 3`, `s` is the transposition
+`Equiv.swap 0 1` and `P = ⟨s⟩` has order `2`, so that `s r s = r²` and `C_{S₃}(P) = P`.
 
 * Over `𝔽₂`, `x = r + r²` is `P`-invariant with `x² = x`, and `Br_P(x²) = 0 = Br_P(x)²`.
 * Invariance is needed: `Br_P(r r²) = Br_P(1) = 1`, but `Br_P(r) Br_P(r²) = 0`.
@@ -40,26 +42,11 @@ abbrev s : Equiv.Perm (Fin 3) := Equiv.swap 0 1
 /-- The subgroup `P = ⟨s⟩` of order `2`. -/
 abbrev P : Subgroup (Equiv.Perm (Fin 3)) := Subgroup.zpowers s
 
-/-- An element of `S₃` commuting with `s` lies in the centralizer of `P`. -/
-private theorem mem_centralizer_P {g : Equiv.Perm (Fin 3)} (hg : s * g = g * s) :
-    g ∈ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) := by
-  rw [Subgroup.mem_centralizer_iff]
-  rintro h ⟨k, rfl⟩
-  exact ((Commute.zpow_left hg k)).eq
-
-/-- An element of `S₃` not commuting with `s` is not in the centralizer of `P`. -/
-private theorem notMem_centralizer_P {g : Equiv.Perm (Fin 3)} (hg : s * g ≠ g * s) :
-    g ∉ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) :=
-  fun h ↦ hg (Subgroup.mem_centralizer_iff.1 h s (Subgroup.mem_zpowers s))
-
-/-- An element of `R[G]` commuting with `g` is invariant under conjugation by `⟨g⟩`. -/
-private theorem mem_conjInvariants_zpowers {R G : Type} [CommRing R] [Group G] {g : G}
-    {y : MonoidAlgebra R G} (h : of R G g * y = y * of R G g) :
-    y ∈ conjInvariants R (Subgroup.zpowers g) := by
-  rw [mem_conjInvariants_iff_commute]
-  rintro _ ⟨k, rfl⟩
-  have hc : Commute ((of R G).toHomUnits g : MonoidAlgebra R G) y := h
-  simpa only [← map_zpow, MonoidHom.coe_toHomUnits] using (hc.units_zpow_left k).eq
+/-- An element of `S₃` not commuting with `a` is not in the centralizer of `⟨a⟩`. -/
+private theorem notMem_centralizer_zpowers {a g : Equiv.Perm (Fin 3)} (hg : g * a ≠ a * g) :
+    g ∉ Subgroup.centralizer (Subgroup.zpowers a : Set (Equiv.Perm (Fin 3))) := by
+  rwa [Subgroup.zpowers_eq_closure, Subgroup.centralizer_closure,
+    Subgroup.mem_centralizer_singleton_iff, commute_iff_eq]
 
 section Coefficients
 
@@ -70,16 +57,16 @@ noncomputable abbrev x : MonoidAlgebra R (Equiv.Perm (Fin 3)) := single r 1 + si
 
 /-- `x = r + r²` is invariant under conjugation by `P`. -/
 theorem x_mem_conjInvariants : x R ∈ conjInvariants R P := by
-  refine mem_conjInvariants_zpowers ?_
+  refine mem_conjInvariants_zpowers_iff.2 ?_
   simp only [of_apply, mul_add, add_mul, single_mul_single, mul_one]
   rw [show s * r = r * r * s by decide, show s * (r * r) = r * s by decide, add_comm]
 
 /-- `r` and `r²` are not in the centralizer of `P`. -/
 private theorem r_notMem : r ∉ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) :=
-  notMem_centralizer_P (by decide)
+  notMem_centralizer_zpowers (by decide)
 
 private theorem r_sq_notMem : r * r ∉ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) :=
-  notMem_centralizer_P (by decide)
+  notMem_centralizer_zpowers (by decide)
 
 /-- `Br_P(x) = 0`, since neither `r` nor `r²` centralizes `P`. -/
 theorem brauerProjection_x : brauerProjection P (x R) = 0 := by
@@ -133,7 +120,7 @@ noncomputable abbrev t : MonoidAlgebra (ZMod 2) (Equiv.Perm (Fin 3)) :=
 
 /-- `t` is invariant under conjugation by `⟨r⟩`. -/
 theorem t_mem_conjInvariants : t ∈ conjInvariants (ZMod 2) C3 := by
-  refine mem_conjInvariants_zpowers ?_
+  refine mem_conjInvariants_zpowers_iff.2 ?_
   simp only [of_apply, mul_add, add_mul, single_mul_single, mul_one]
   rw [show r * Equiv.swap 0 1 = Equiv.swap 1 2 * r by decide,
     show r * Equiv.swap 0 2 = Equiv.swap 0 1 * r by decide,
@@ -144,13 +131,11 @@ theorem t_mem_conjInvariants : t ∈ conjInvariants (ZMod 2) C3 := by
 transpositions has `Br_{C₃}(t) = 0`, while `Br_{C₃}(t²)` has coefficient `1` at the identity: it
 is `1 + r + r²`. -/
 example : brauerProjection C3 t = 0 ∧ (brauerProjection C3 (t * t)).coeff 1 = 1 := by
-  have h (g : Equiv.Perm (Fin 3)) (hg : r * g ≠ g * r) :
-      g ∉ Subgroup.centralizer (C3 : Set (Equiv.Perm (Fin 3))) :=
-    fun h ↦ hg (Subgroup.mem_centralizer_iff.1 h r (Subgroup.mem_zpowers r))
   refine ⟨?_, ?_⟩
-  · rw [map_add, map_add, brauerProjection_single_of_notMem _ (h (Equiv.swap 0 1) (by decide)),
-      brauerProjection_single_of_notMem _ (h (Equiv.swap 0 2) (by decide)),
-      brauerProjection_single_of_notMem _ (h (Equiv.swap 1 2) (by decide)), add_zero, add_zero]
+  · have h (g : Equiv.Perm (Fin 3)) (hg : g * r ≠ r * g) :=
+      brauerProjection_single_of_notMem C3 (notMem_centralizer_zpowers hg) (1 : ZMod 2)
+    rw [map_add, map_add, h (Equiv.swap 0 1) (by decide), h (Equiv.swap 0 2) (by decide),
+      h (Equiv.swap 1 2) (by decide), add_zero, add_zero]
   · rw [coeff_brauerProjection, OneMemClass.coe_one]
     simp only [t, mul_add, add_mul, single_mul_single, mul_one, coeff_add, coeff_single,
       Finsupp.add_apply, Finsupp.single_apply]
@@ -195,7 +180,7 @@ example : (relTrace (ZMod 2) ⊥ P rBot : MonoidAlgebra (ZMod 2) (Equiv.Perm (Fi
     OneMemClass.coe_one, one_mul, inv_one, mul_one, show s * r * s⁻¹ = r * r by decide]
   exact add_comm _ _
 
-/-- `Tr_1^P(r) = r + r²` is `P`-invariant, although `r` is not. -/
+/-- `r` is not `P`-invariant, whereas `Tr_1^P(r) = r + r²` is (`x_mem_conjInvariants`). -/
 example : single r (1 : ZMod 2) ∉ conjInvariants (ZMod 2) P := by
   rw [mem_conjInvariants_iff]
   intro h
@@ -209,11 +194,9 @@ example : single r (1 : ZMod 2) ∉ conjInvariants (ZMod 2) P := by
 /-- **Check.** Over `𝔽₂`, `Tr_1^P(1) = |P| • 1 = 0`. -/
 example : relTrace (ZMod 2) ⊥ P 1 = 0 := by
   ext1
-  rw [relTrace_apply_of_mem (one_mem _), Subgroup.bot_subgroupOf, Subgroup.index_bot,
-    Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide),
-    ← Nat.cast_smul_eq_nsmul (ZMod 2),
-    show ((2 : ℕ) : ZMod 2) = 0 by decide, zero_smul]
-  rfl
+  have hs : orderOf s = 2 := orderOf_eq_prime (by decide) (by decide)
+  rw [relTrace_apply_of_mem (by simp), ← Nat.cast_smul_eq_nsmul (ZMod 2)]
+  simp [Fintype.card_zpowers, hs, show (2 : ZMod 2) = 0 by decide]
 
 /-- **Check.** `Tr_P^P` is the identity of `𝔽₂[S₃]^P`. -/
 example (a : conjInvariants (ZMod 2) P) : relTrace (ZMod 2) P P a = a :=
