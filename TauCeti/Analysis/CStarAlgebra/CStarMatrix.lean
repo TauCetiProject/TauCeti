@@ -58,6 +58,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
   image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
+* `CStarMatrix.matrixUnit`: the matrix units `e_ij` of `M_n(ℂ)`, with
+  `CStarMatrix.star_matrixUnit`, `CStarMatrix.matrixUnit_mul_matrixUnit` and
+  `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
@@ -360,6 +363,55 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+section MatrixUnit
+
+variable {n : Type*} [DecidableEq n]
+
+/-- The matrix unit `e_ij` of `M_n(ℂ)`, with entry `1` at `(i, j)` and `0` elsewhere. -/
+def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
+  ofMatrix (Matrix.single i j 1)
+
+/-- The entries of `e_ij`. -/
+theorem matrixUnit_apply (i j k l : n) :
+    matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 := by
+  simp [matrixUnit, Matrix.single_apply]
+
+/-- The adjoint of `e_ij` is `e_ji`. -/
+@[simp]
+theorem star_matrixUnit (i j : n) : star (matrixUnit i j) = matrixUnit j i := by
+  ext r s
+  simp [matrixUnit_apply, star_apply, and_comm, apply_ite]
+
+variable [Fintype n]
+
+/-- `e_ij` is the image of `Matrix.single i j 1` under `CStarMatrix.ofMatrixStarAlgEquiv`. -/
+theorem matrixUnit_eq_ofMatrixStarAlgEquiv (i j : n) :
+    matrixUnit i j = ofMatrixStarAlgEquiv (Matrix.single i j 1) :=
+  (rfl)
+
+/-- Matrix units multiply as `e_ij e_jk = e_ik`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit (i j k : n) :
+    matrixUnit i j * matrixUnit j k = matrixUnit i k := by
+  rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv,
+    matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul, single_mul_single_same, one_mul]
+
+open scoped ComplexOrder in
+/-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
+@[simp]
+theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
+  have hp : ‖matrixUnit j j‖ = 1 := by
+    have h := CStarRing.norm_star_mul_self (x := matrixUnit j j)
+    rw [star_matrixUnit, matrixUnit_mul_matrixUnit] at h
+    have hne : matrixUnit j j ≠ 0 := fun h0 => by
+      simpa [matrixUnit_apply] using congrFun (congrFun h0 j) j
+    exact mul_left_cancel₀ (norm_ne_zero_iff.mpr hne) (h.symm.trans (mul_one _).symm)
+  have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
+  rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
+  nlinarith [norm_nonneg (matrixUnit i j)]
+
+end MatrixUnit
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 

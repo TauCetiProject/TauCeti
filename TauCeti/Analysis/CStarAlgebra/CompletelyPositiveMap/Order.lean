@@ -18,8 +18,7 @@ Completely positive maps between C⋆-algebras are closed under addition, `ℝ�
 composition, algebra conjugation `CompletelyPositiveMap.conj` (`a ↦ star b * a * b`), and operator
 compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint : T ↦ V† ∘L T ∘L V`). Every positive
 linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`), and so is
-`a ↦ ω a • 1` into any unital C⋆-algebra (`PositiveLinearMap.toCompletelyPositiveMapOfId`,
-specialised to `ℂ →L[ℂ] ℂ` as `PositiveLinearMap.toCompletelyPositiveMapCLM`).
+`a ↦ ω a • 1` into any unital C⋆-algebra (`PositiveLinearMap.toCompletelyPositiveMapOfId`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem.
@@ -304,13 +303,5 @@ theorem norm_toCompletelyPositiveMapOfId_apply [NormOneClass B] (ω : A →ₚ[�
   rw [toCompletelyPositiveMapOfId_apply, norm_smul, norm_one, mul_one]
 
 end OfId
-
-/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` viewed as `A →CP (ℂ →L[ℂ] ℂ)` via `a ↦ ω a • 1`. -/
-noncomputable def toCompletelyPositiveMapCLM (ω : A →ₚ[ℂ] ℂ) : A →CP (ℂ →L[ℂ] ℂ) :=
-  ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)
-
-@[simp] theorem toCompletelyPositiveMapCLM_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapCLM a = ω a • (1 : ℂ →L[ℂ] ℂ) :=
-  ω.toCompletelyPositiveMapOfId_apply a
 
 end PositiveLinearMap

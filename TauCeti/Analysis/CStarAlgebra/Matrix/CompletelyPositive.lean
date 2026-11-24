@@ -29,6 +29,9 @@ This file applies it to two functionals on `M_n = CStarMatrix n n ℂ`:
 * the normalized trace `tr_n` (`CStarMatrix.normalizedTraceMap`), giving
   `CStarMatrix.normalizedTraceCP : M_n → M₁`.
 
+At a unitary `u` the 2-norm defect of the trace is `1 - |tr_n u|²`
+(`CStarMatrix.twoNormDefect_normalizedTraceCP_of_mem_unitary`).
+
 Both maps are contractions (`CStarMatrix.norm_diagEntryCP_apply_le`,
 `CStarMatrix.norm_normalizedTraceCP_apply_le`), so they are completely positive contractions
 into matrices, the maps whose multiplicativity defects are studied in
@@ -137,5 +140,13 @@ theorem norm_normalizedTraceCP_apply_le (x : CStarMatrix n n ℂ) : ‖normalize
   rw [normalizedTraceCP, PositiveLinearMap.norm_toCompletelyPositiveMapOfId_apply,
     PositiveContinuousLinearMap.coe_toPositiveLinearMap, normalizedTraceMap_apply]
   exact norm_normalizedTrace_le_norm x
+
+/-- At a unitary `u`, the 2-norm defect of the normalized trace is `1 - |tr_n u|²`. -/
+theorem twoNormDefect_normalizedTraceCP_of_mem_unitary [DecidableEq n] [Nonempty n]
+    {u : CStarMatrix n n ℂ} (hu : u ∈ unitary (CStarMatrix n n ℂ)) :
+    normalizedTraceCP.twoNormDefect u = 1 - ‖normalizedTrace u‖ ^ 2 := by
+  rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId,
+    Unitary.star_mul_self_of_mem hu]
+  simp
 
 end CStarMatrix
