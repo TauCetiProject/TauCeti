@@ -117,7 +117,7 @@ private def ofSignedEquiv (u : Fin 24 → ℤˣ) (σ : Equiv.Perm (Fin 24))
     · rintro _ ⟨x, hx, rfl⟩
       exact h x hx
     · intro x hx
-      exact ⟨_, h' x hx, by simp⟩
+      exact ⟨_, h' x hx, (signedEquiv u σ).apply_symm_apply x⟩
 
 private theorem ofSignedEquiv_apply (u : Fin 24 → ℤˣ) (σ : Equiv.Perm (Fin 24)) (h h')
     (x : Fin 24 → ℚ) : ofSignedEquiv u σ h h' x = signedEquiv u σ x := (rfl)
@@ -136,8 +136,8 @@ private theorem signedEquiv_wordSign_mem {c : Fin 24 → ZMod 2} (hc : c ∈ Bin
     {x : Fin 24 → ℚ} (hx : x ∈ constructionBLattice.carrier) :
     signedEquiv (wordSign c) (Equiv.refl _) x ∈ constructionBLattice.carrier := by
   rw [constructionBLattice_carrier] at hx ⊢
-  exact ConstructionB.signedEquiv_refl_mem_lattice isDoublyEven_code.isSelfOrthogonal
-    ((wordSign_signWord c).symm ▸ hc) hx
+  exact ConstructionB.signedEquiv_refl_mem_lattice
+    (isDoublyEven_code.isSelfOrthogonal.le_euclideanDual ((wordSign_signWord c).symm ▸ hc)) hx
 
 /-- The sign change by a Golay codeword moves the Leech shift by an element of the Golay
 Construction B lattice: the difference is the integer vector which is `3` at the coordinate `0`
@@ -370,9 +370,9 @@ theorem natCard_monomialSubgroup : Nat.card monomialSubgroup = 1002795171840 := 
   rw [← Nat.card_congr monomialSubgroupEquiv.toEquiv,
     Nat.card_congr SemidirectProduct.equivProd, Nat.card_prod,
     BinaryGolay.natCard_permutationAut_code_toAddSubgroup]
-  have h : Nat.card (Multiplicative BinaryGolay.code.toAddSubgroup) = 4096 :=
-    BinaryGolay.natCard_code
-  rw [h]
+  rw [Nat.card_congr (Multiplicative.toAdd.trans
+      (Equiv.subtypeEquivRight fun _ ↦ Submodule.mem_toAddSubgroup BinaryGolay.code)),
+    BinaryGolay.natCard_code]
 
 /-- **The sign change by the all-ones word is `-1`.** In particular `-1` lies in the monomial
 subgroup. -/
@@ -458,23 +458,24 @@ private theorem signWord_mem {u : Fin 24 → ℤˣ} {σ : Equiv.Perm (Fin 24)}
     funext j
     have hj := congrFun hy j
     simp only [Pi.sub_apply, signedEquiv_apply] at hj
-    rw [leechShift_apply, leechShift_apply] at hj
-    have hval : ∀ n : ℤ, (y j : ℚ) = n → ((y j : ℤ) : ZMod 2) = (n : ZMod 2) := by
-      intro n hn
-      rw [Int.cast_injective hn]
-    simp only [signWord]
-    rcases Int.units_eq_one_or (u (σ.symm j)) with hu | hu <;>
-      simp only [hu, ite_true, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-        show (-1 : ℤˣ) ≠ 1 by decide, ite_false] at hj ⊢ <;>
-      split_ifs at hj
-    · rw [hval 0 (by push_cast; linarith)]; rfl
-    · rw [hval (-2) (by push_cast; linarith)]; decide
-    · rw [hval 2 (by push_cast; linarith)]; decide
-    · rw [hval 0 (by push_cast; linarith)]; rfl
-    · rw [hval 3 (by push_cast; linarith)]; decide
-    · rw [hval 1 (by push_cast; linarith)]; decide
-    · rw [hval 1 (by push_cast; linarith)]; decide
-    · rw [hval (-1) (by push_cast; linarith)]; decide
+    -- Twice a coordinate of the shift is an integer `≡ 1 (mod 4)`, so `2 * y j` is `≡ 0` or
+    -- `≡ 2 (mod 4)` according to the sign at `j`.
+    have h2s : ∀ i, ∃ a : ℤ, 2 * leechShift i = a ∧ (a = -3 ∨ a = 1) := fun i ↦ by
+      rcases eq_or_ne i 0 with rfl | hi
+      · exact ⟨-3, by rw [leechShift_zero]; norm_num, .inl rfl⟩
+      · exact ⟨1, by rw [leechShift_of_ne_zero hi]; norm_num, .inr rfl⟩
+    obtain ⟨a, ha, ha'⟩ := h2s (σ.symm j)
+    obtain ⟨b, hb, hb'⟩ := h2s j
+    have hy2 : 2 * y j = (u (σ.symm j) : ℤ) * a - b := Int.cast_injective (α := ℚ) <| by
+      push_cast
+      rw [← hj, ← ha, ← hb]
+      ring
+    rw [signWord, ← ZMod.intCast_mod, Nat.cast_ofNat]
+    rcases Int.units_eq_one_or (u (σ.symm j)) with hu | hu
+    · rw [hu, Units.val_one, one_mul] at hy2
+      simp [hu, show y j % 2 = 0 by omega]
+    · rw [hu, Units.val_neg, Units.val_one, neg_one_mul] at hy2
+      simp [hu, show y j % 2 = 1 by omega, show (-1 : ℤˣ) ≠ 1 by decide]
 
 /-- **The monomial subgroup is the group of signed coordinate isometries.** An isometry of the
 Leech lattice lies in the monomial subgroup exactly when it is a signed coordinate change: then

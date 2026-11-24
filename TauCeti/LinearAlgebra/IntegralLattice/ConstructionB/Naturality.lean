@@ -12,7 +12,8 @@ public import TauCeti.InformationTheory.Coding.Additive.Equivalence
 # Signed coordinate changes in Construction B
 
 Construction B of a binary code `C` is preserved by the coordinate permutations preserving `C`,
-and, when `C` is self-orthogonal, by the sign changes whose sign word is a codeword. Both are
+and by the sign changes whose sign word lies in the Euclidean dual of `C`, for instance a
+codeword when `C` is self-orthogonal. Both are
 signed coordinate changes `TauCeti.signedEquiv`, so these are the Construction B counterparts of
 the naturality of Construction A in
 `TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Naturality`.
@@ -21,8 +22,8 @@ the naturality of Construction A in
 
 * `TauCeti.ConstructionB.signedEquiv_one_mem_lattice`: a permutation automorphism of `C`
   preserves Construction B.
-* `TauCeti.ConstructionB.signedEquiv_refl_mem_lattice`: for self-orthogonal `C`, a sign change by
-  a codeword preserves Construction B.
+* `TauCeti.ConstructionB.signedEquiv_refl_mem_lattice`: a sign change whose sign word lies in the
+  Euclidean dual of `C` preserves Construction B.
 
 ## References
 
@@ -51,11 +52,13 @@ theorem signedEquiv_one_mem_lattice {σ : Equiv.Perm ι}
   rw [heq, intCast_mem_lattice, Equiv.sum_comp σ.symm z]
   exact ⟨AdditiveCode.comp_symm_mem_of_mem_permutationAut hσ hz, hsum⟩
 
-/-- Construction B of a self-orthogonal code is preserved by a sign change whose sign word, `1`
-at the negated coordinates and `0` elsewhere, is a codeword: the change in the coordinate sum is
-twice the sum over the negated coordinates, which is even by self-orthogonality. -/
-theorem signedEquiv_refl_mem_lattice (hC : C.IsSelfOrthogonal) {u : ι → ℤˣ}
-    (hu : (fun i ↦ if u i = 1 then (0 : ZMod 2) else 1) ∈ C) {x : ι → ℚ} (hx : x ∈ lattice C) :
+/-- Construction B of a binary code is preserved by a sign change whose sign word, `1` at the
+negated coordinates and `0` elsewhere, lies in the Euclidean dual of the code: the change in the
+coordinate sum is twice the sum over the negated coordinates, which is even because the sign word
+is orthogonal to the reduction of the vector modulo two. -/
+theorem signedEquiv_refl_mem_lattice {u : ι → ℤˣ}
+    (hu : (fun i ↦ if u i = 1 then (0 : ZMod 2) else 1) ∈ Submodule.euclideanDual C)
+    {x : ι → ℚ} (hx : x ∈ lattice C) :
     signedEquiv u (Equiv.refl ι) x ∈ lattice C := by
   obtain ⟨z, rfl⟩ := exists_intCast_eq_of_mem hx
   obtain ⟨hz, hsum⟩ := (intCast_mem_lattice C z).mp hx
@@ -74,7 +77,7 @@ theorem signedEquiv_refl_mem_lattice (hC : C.IsSelfOrthogonal) {u : ι → ℤˣ
   · -- The sum over the negated coordinates is the dot product of the sign word with `z` modulo
     -- two.
     have hdot : ((∑ i, if u i = 1 then 0 else z i : ℤ) : ZMod 2) = 0 := by
-      have h := Submodule.isSelfOrthogonal_iff.mp hC _ hu _ hz
+      have h := Submodule.mem_euclideanDual'.mp hu _ hz
       rw [dotProduct] at h
       push_cast
       simpa only [apply_ite (Int.cast : ℤ → ZMod 2), Int.cast_zero, ite_mul, zero_mul, one_mul]
