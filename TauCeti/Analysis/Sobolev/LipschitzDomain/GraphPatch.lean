@@ -94,8 +94,13 @@ theorem exists_isLipschitzChart_of_ball_inter_eq {Ω : Set F} {x ν : F} {γ : F
     exact lt_of_pow_lt_pow_left₀ 2 hr.le h1
   have hmem : e.symm w ∈ Ω ↔ γ (e.symm w) < ⟪e.symm w, ν⟫_ℝ := by
     simpa only [mem_inter_iff, hball, true_and, mem_ofPred_eq] using Set.ext_iff.1 hΩ (e.symm w)
-  rw [hmem, he, inner_add_left, real_inner_comm, inner_add_smul ν hν, add_right_comm, hγν,
-    add_comm]
+  -- `γ` is invariant along `ν`, and the `ν`-coordinate of `e.symm w - x` is `w.fst`.
+  have hγw : γ (((ψ.symm w.snd : (ℝ ∙ ν)ᗮ) : F) + w.fst • ν + x) = γ (x + ψ.symm w.snd) := by
+    rw [show ((ψ.symm w.snd : (ℝ ∙ ν)ᗮ) : F) + w.fst • ν + x = x + ψ.symm w.snd + w.fst • ν by
+      abel, hγν]
+  have hinner : ⟪((ψ.symm w.snd : (ℝ ∙ ν)ᗮ) : F) + w.fst • ν + x, ν⟫_ℝ = w.fst + ⟪x, ν⟫_ℝ := by
+    rw [inner_add_left, real_inner_comm ν, inner_add_smul ν hν]
+  rw [hmem, he, hγw, hinner]
   simp only [φ]
   constructor <;> intro h <;> linarith
 
