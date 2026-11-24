@@ -183,6 +183,13 @@ theorem openDisc_subset_spa (Aplus : Subring A) (T : A) (b : ℕ → A) :
     openDisc Aplus T b ⊆ spa Aplus :=
   Set.iUnion_subset fun j ↦ closedDisc_subset_spa Aplus T (b j)
 
+/-- Every open disc lies in the closed disc of any radius `b'` dominating all the radii `bⱼ` at
+every point of `Spa (A, A⁺)`. -/
+theorem openDisc_subset_closedDisc (Aplus : Subring A) (T : A) (b : ℕ → A) {b' : A}
+    (hb : ∀ j, ∀ v ∈ spa Aplus, v.toValuativeRel.vle (b j) b') :
+    openDisc Aplus T b ⊆ closedDisc Aplus T b' :=
+  Set.iUnion_subset fun j ↦ closedDisc_subset_closedDisc Aplus T (hb j)
+
 /-- **A constant radius family gives the closed disc.** -/
 @[simp]
 theorem openDisc_const (Aplus : Subring A) (T b : A) :
