@@ -48,8 +48,8 @@ Arzelà–Ascoli theorem for locally Hölder families on the open set `U`
 
 ## Main results
 
-* `TauCeti.exists_edist_le_of_contDiffOn_cthickening_of_two_lt`: Morrey's inequality near a set
-  in the plane, with a constant depending only on `p`.
+* `TauCeti.eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le`: an `Lᵖ` bound on `\bar∂u` from an
+  `Lᵖ` bound on `g` and a pointwise bound on `\bar∂u - g`.
 * `TauCeti.exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le`: the uniform interior
   `W^{1,p}` bound.
 * `TauCeti.exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le`: the uniform Hölder bound on
@@ -72,6 +72,34 @@ open MeasureTheory Metric Set Filter
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+omit [CompleteSpace F] in
+/-- **`Lᵖ` bounds on `\bar∂u` up to a bounded error.** Let `1 ≤ p`, let `u` be smooth on an open
+set `U ⊆ ℂ` and let `V ⊆ U` be measurable. If `‖\bar∂u - g‖ ≤ M` on `V` and `‖g‖_{Lᵖ(V)} ≤ B`, then
+`‖\bar∂u‖_{Lᵖ(V)} ≤ vol(V)^(1/p) M + B`. -/
+theorem eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le {p : ℝ≥0∞} (hp : 1 ≤ p) {U V : Set ℂ}
+    (hU : IsOpen U) (hV : MeasurableSet V) (hVU : V ⊆ U) {u g : ℂ → F} {M : ℝ} {B : ℝ≥0}
+    (hu : ContDiffOn ℝ ∞ u U) (hM : ∀ z ∈ V, ‖conjWirtingerDeriv u z 1 - g z‖ ≤ M)
+    (hB : eLpNorm g p (volume.restrict V) ≤ B) :
+    eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V) ≤
+      volume V ^ p.toReal⁻¹ * ENNReal.ofReal M + B := by
+  have hgm : AEStronglyMeasurable g (volume.restrict V) :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (hB.trans_lt ENNReal.coe_lt_top).ne
+  have hdm : AEStronglyMeasurable (fun z ↦ conjWirtingerDeriv u z 1) (volume.restrict V) :=
+    ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono
+      hVU).aestronglyMeasurable hV
+  -- Split `\bar∂u` as the bounded `\bar∂u - g` plus `g`.
+  calc eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V)
+      = eLpNorm ((fun z ↦ conjWirtingerDeriv u z 1 - g z) + g) p (volume.restrict V) := by
+        congr 1
+        ext z
+        simp
+    _ ≤ eLpNorm (fun z ↦ conjWirtingerDeriv u z 1 - g z) p (volume.restrict V) +
+        eLpNorm g p (volume.restrict V) := eLpNorm_add_le hp
+    _ ≤ volume V ^ p.toReal⁻¹ * ENNReal.ofReal M + B := by
+      refine add_le_add ((eLpNorm_le_of_ae_bound (hdm.sub hgm) ((ae_restrict_iff' hV).2
+        (Eventually.of_forall hM))).trans_eq ?_) hB
+      rw [Measure.restrict_apply_univ]
 
 /-- **Uniform interior `W^{1,p}` bounds from `\bar∂` bounds.** Let `1 < p < ∞`, let `U ⊆ ℂ` be
 open and `K ⊆ U` compact, and let `A, M, B ≥ 0`. There is a constant `N` such that every map `u`
@@ -101,52 +129,14 @@ theorem exists_eLpNorm_fderiv_le_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0�
   refine ⟨(C₁ * (S * ENNReal.ofReal M + B + S * ENNReal.ofReal A)).toNNReal,
     fun u g hu hA hM hB ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (by simp [ENNReal.mul_ne_top, hS])]
-  have hgm : AEStronglyMeasurable g (volume.restrict V) :=
-    (aestronglyMeasurable_of_eLpNorm_ne_top (hB.trans_lt ENNReal.coe_lt_top).ne).mono_measure
-      (Measure.restrict_mono hVU le_rfl)
-  have hdm : AEStronglyMeasurable (fun z ↦ conjWirtingerDeriv u z 1) (volume.restrict V) :=
-    ((hu.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono
-      hVU).aestronglyMeasurable hV.measurableSet
-  -- Split `\bar∂u` as the bounded `\bar∂u - g` plus `g`.
   have hderiv : eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V) ≤
       S * ENNReal.ofReal M + B :=
-    calc eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict V)
-        = eLpNorm ((fun z ↦ conjWirtingerDeriv u z 1 - g z) + g) p (volume.restrict V) := by
-          congr 1
-          ext z
-          simp
-      _ ≤ eLpNorm (fun z ↦ conjWirtingerDeriv u z 1 - g z) p (volume.restrict V) +
-          eLpNorm g p (volume.restrict V) := eLpNorm_add_le hp.le
-      _ ≤ S * ENNReal.ofReal M + B :=
-          add_le_add (hbound (hdm.sub hgm) hM)
-            ((eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)).trans hB)
+    eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le hp.le hU hV.measurableSet hVU hu
+      (fun z hz ↦ hM z (hVU hz))
+      ((eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)).trans hB)
   refine (hC₁ u (hu.mono hVU)).trans ?_
   gcongr
   exact hbound (hu.continuousOn.mono hVU |>.aestronglyMeasurable hV.measurableSet) hA
-
-/-- **Morrey's inequality near a set in the plane.** Let `2 < p`. There is a constant `c` such
-that for every set `S ⊆ ℂ`, every map `u` that is `C¹` on the closed `δ`-thickening of `S`, with
-values in a complex Hilbert space, and all `x ∈ S` and `y` with `2 |x - y| ≤ δ`,
-
-`‖u x - u y‖ ≤ c |x - y| ^ (1 - 2 / p) ‖Du‖_{Lᵖ}`,
-
-the `Lᵖ` norm being taken over that thickening. -/
-theorem exists_edist_le_of_contDiffOn_cthickening_of_two_lt {p : ℝ≥0} (hp : 2 < p) :
-    ∃ c : ℝ≥0, ∀ {S : Set ℂ} {δ : ℝ} {u : ℂ → F} {x y : ℂ},
-      ContDiffOn ℝ 1 u (cthickening δ S) → x ∈ S → 2 * dist x y ≤ δ →
-      edist (u x) (u y) ≤ c * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
-        eLpNorm (fderiv ℝ u) p (volume.restrict (cthickening δ S)) := by
-  have hα : ((1 - 2 / p : ℝ≥0) : ℝ) = 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := by
-    rw [Complex.finrank_real_complex, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2
-      hp.le), NNReal.coe_div]
-    norm_num
-  refine ⟨(2 ^ (Module.finrank ℝ ℂ + 1) /
-      (Module.finrank ℝ ℂ * (volume : Measure ℂ).real (ball 0 1)) *
-      (Module.finrank ℝ ℂ * (volume : Measure ℂ).real (ball 0 1) * (p - 1) /
-        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) *
-          2 ^ (1 - Module.finrank ℝ ℂ / (p : ℝ))).toNNReal, fun hu hx hxy ↦ ?_⟩
-  rw [hα]
-  exact edist_le_of_contDiffOn_cthickening_of_finrank_lt hu (by simpa using hp) hx hxy
 
 /-- **Uniform Hölder bounds from `\bar∂` bounds.** Let `2 < p < ∞`, let `U ⊆ ℂ` be open and
 `K ⊆ U` compact, and let `A, M, B ≥ 0`. There is a constant `C` such that every map `u` smooth on
@@ -172,14 +162,12 @@ theorem exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0} (hp 
     rw [hδ'] at hxy
     have h := (hc ((hu.mono hLU).of_le (by simp)) hx (by linarith)).trans
       (mul_le_mul_right (hN u g hu hA hM hB) _)
-    calc dist (u x) (u y) = (edist (u x) (u y)).toReal := dist_edist _ _
-      _ ≤ (c * edist x y ^ (α : ℝ) * N).toReal := ENNReal.toReal_mono (ENNReal.mul_ne_top
-          (ENNReal.mul_ne_top ENNReal.coe_ne_top
-            (ENNReal.rpow_ne_top_of_nonneg α.coe_nonneg (edist_ne_top _ _))) ENNReal.coe_ne_top) h
-      _ = ((c * N : ℝ≥0) : ℝ) * dist x y ^ (α : ℝ) := by
-        rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ← dist_edist,
-          ENNReal.coe_toReal, ENNReal.coe_toReal, NNReal.coe_mul]
-        ring
+    -- Convert the extended-distance bound into a bound on distances.
+    refine (edist_le_ofReal (by positivity)).1 (h.trans_eq ?_)
+    rw [edist_dist, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal,
+      ENNReal.ofReal_rpow_of_nonneg dist_nonneg α.coe_nonneg]
+    push_cast
+    ring
   · -- Points at distance at least `δ / 2` are handled by the sup bound.
     calc dist (u x) (u y) ≤ ‖u x‖ + ‖u y‖ := dist_le_norm_add_norm _ _
       _ ≤ A + A := add_le_add (hA x (hKU hx)) (hA y (hKU hy))

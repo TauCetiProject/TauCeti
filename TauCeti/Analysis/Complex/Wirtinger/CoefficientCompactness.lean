@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Compactness
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -39,8 +40,9 @@ exponent of `W^{1, p_m}` in the plane.
 
 The roots bound the coefficients and the zeroth-order terms of the equation
 (`Multiset.norm_esymm_le`), so `\bar∂ b_j` differs from the remainder by a uniformly bounded
-term. It is therefore bounded in `Lᵖ` on each compact subset of `U`, and each coefficient sequence
-is precompact by `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`.
+term. It is therefore bounded in `Lᵖ` on each compact subset of `U`
+(`TauCeti.eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le`), and each coefficient sequence is
+precompact by `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`.
 A common subsequence for the finitely many coefficients is extracted one coefficient at a time
 (`TauCeti.extraction_forall_mem_finset`).
 
@@ -107,44 +109,6 @@ private theorem norm_conjWirtingerDeriv_sub_le_of_esymm {m j : ℕ} {ρ Λ : ℝ
         · rw [norm_mul]
           gcongr
 
-/-- The conjugate Wirtinger derivative of a coefficient is bounded in `Lᵖ` on a compact set: if,
-on a compact `K ⊆ U`, `b = e_j(R)` with `R` as in `norm_conjWirtingerDeriv_sub_le_of_esymm`, and
-the remainder `r_j = \bar∂b + j ν b + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` has `Lᵖ(K)` norm at most
-`B`, then `\bar∂b` has `Lᵖ(K)` norm at most `vol(K)^(1/p) M + B`, where `M` bounds the zeroth-order
-terms. -/
-private theorem eLpNorm_conjWirtingerDeriv_le_of_esymm {m j : ℕ} {p : ℝ≥0} (hp : 1 ≤ p)
-    {U K : Set ℂ} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) {ρ Λ B : ℝ≥0} {b : ℂ → ℂ}
-    {R : ℂ → Multiset ℂ} {ν μ : ℂ → ℂ →L⋆[ℂ] ℂ} (hb : ContDiffOn ℝ ∞ b U)
-    (hcard : ∀ z ∈ K, Multiset.card (R z) ≤ m) (hbR : ∀ z ∈ K, b z = (R z).esymm j)
-    (hρ : ∀ z ∈ K, ∀ w ∈ R z, ‖w‖ ≤ ρ) (hν : ∀ z ∈ K, ‖ν z‖ ≤ Λ) (hμ : ∀ z ∈ K, ‖μ z‖ ≤ Λ)
-    (hr : eLpNorm (fun z ↦ (conjWirtingerDeriv b z + (j * b z) • ν z +
-      ((R z).map fun w ↦ conj w * ((R z).erase w).esymm (j - 1)).sum • μ z) 1)
-        p (volume.restrict K) ≤ B) :
-    eLpNorm (fun z ↦ conjWirtingerDeriv b z 1) p (volume.restrict K) ≤
-      volume K ^ (p : ℝ≥0∞).toReal⁻¹ * ENNReal.ofReal
-        (j * (m.choose j * ρ ^ j) * Λ + m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) * Λ) + B := by
-  set r : ℂ → ℂ := fun z ↦ (conjWirtingerDeriv b z + (j * b z) • ν z +
-    ((R z).map fun w ↦ conj w * ((R z).erase w).esymm (j - 1)).sum • μ z) 1
-  have hrm : AEStronglyMeasurable r (volume.restrict K) :=
-    aestronglyMeasurable_of_eLpNorm_ne_top (hr.trans_lt ENNReal.coe_lt_top).ne
-  have hdm : AEStronglyMeasurable (fun z ↦ conjWirtingerDeriv b z 1) (volume.restrict K) :=
-    ((hb.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn.mono
-      hKU).aestronglyMeasurable hK.measurableSet
-  -- Split `\bar∂b` as the bounded `\bar∂b - r` plus `r`.
-  calc eLpNorm (fun z ↦ conjWirtingerDeriv b z 1) p (volume.restrict K)
-      = eLpNorm ((fun z ↦ conjWirtingerDeriv b z 1 - r z) + r) p (volume.restrict K) := by
-        congr 1
-        ext z
-        simp
-    _ ≤ eLpNorm (fun z ↦ conjWirtingerDeriv b z 1 - r z) p (volume.restrict K) +
-        eLpNorm r p (volume.restrict K) := eLpNorm_add_le (by exact_mod_cast hp)
-    _ ≤ _ := by
-      refine add_le_add ((eLpNorm_le_of_ae_bound (hdm.sub hrm)
-        ((ae_restrict_iff' hK.measurableSet).2 (Eventually.of_forall fun z hz ↦ ?_))).trans_eq
-          (by rw [Measure.restrict_apply_univ])) hr
-      exact_mod_cast norm_conjWirtingerDeriv_sub_le_of_esymm (hcard z hz) (hbR z hz) (hρ z hz)
-        (hν z hz) (hμ z hz)
-
 /-- **Precompactness of coefficients solving the equation of elementary symmetric functions.**
 Let `2 < p < ∞` and let `U ⊆ ℂ` be open. For each `n` let `R n z` be a multiset of at most `m`
 complex numbers of norm at most `ρ`, for `z ∈ U`, let `b n j` be smooth on `U` and equal to the
@@ -180,10 +144,11 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ�
         ∀ n, eLpNorm (fun z ↦ conjWirtingerDeriv (b (φ n) j) z 1) p (volume.restrict K) ≤ A := by
       obtain ⟨B, hB⟩ := hr K hKU hK
       refine ⟨_, by simp [ENNReal.mul_ne_top, hK.measure_lt_top.ne], fun n ↦
-        eLpNorm_conjWirtingerDeriv_le_of_esymm (one_le_two.trans hp.le) hU hK hKU (hb (φ n) _ hj)
-          (fun z hz ↦ hcard (φ n) z (hKU hz)) (fun z hz ↦ hbR (φ n) _ hj z (hKU hz))
-          (fun z hz ↦ hρ (φ n) z (hKU hz)) (fun z hz ↦ hν (φ n) z (hKU hz))
-          (fun z hz ↦ hμ (φ n) z (hKU hz)) (hB (φ n) j hj)⟩
+        eLpNorm_conjWirtingerDeriv_le_of_norm_sub_le (by exact_mod_cast one_le_two.trans hp.le) hU
+          hK.measurableSet hKU (hb (φ n) _ hj) (fun z hz ↦
+            norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z (hKU hz))
+              (hbR (φ n) _ hj z (hKU hz)) (hρ (φ n) z (hKU hz)) (hν (φ n) z (hKU hz))
+              (hμ (φ n) z (hKU hz))) (hB (φ n) j hj)⟩
     obtain ⟨ψ, hψ, v, -, hv, hvH⟩ :=
       exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le (F := ℂ) hp hU
         (u := fun n ↦ b (φ n) j) (fun n ↦ hb (φ n) _ hj)
