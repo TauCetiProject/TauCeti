@@ -25,6 +25,12 @@ Over `ZMod 15`, scaling `(1, 1)` by the non-unit `5` gives `(5, 5)`. Its cross d
 over a ring, projective equivalence of raw pairs is scaling by a unit, which preserves vanishing
 cross differences by `Pair.smul_cross_eq_zero_iff` and reduces to a unit modulo every prime
 divisor. Scaling `(1, 1)` by the unit `2` keeps its reduction modulo `5` nonzero.
+
+Over a domain such as `ℤ`, nonzero pairs with vanishing cross difference have simultaneously
+vanishing first fields (`Pair.x_eq_zero_iff_of_cross_eq_zero`), simultaneously vanishing second
+fields (`Pair.z_eq_zero_iff_of_cross_eq_zero`), and the same vanishing-cross-difference relation
+(`Pair.cross_eq_zero_congr`). Over `ZMod 6`, zero divisors break these equivalences even for
+nonzero pairs.
 -/
 
 namespace TauCeti.Montgomery
@@ -89,6 +95,31 @@ example : IsUnit (2 : ZMod 15) ∧
   refine ⟨by simpa using (ZMod.isUnit_iff_coprime 2 15).mpr (by decide), ?_⟩
   simp only [Pair.ne_zero_iff, Pair.map_x, Pair.map_z, Pair.smul_x, Pair.smul_z, mul_one,
     map_ofNat]
+  decide
+
+/-! ### Field vanishing and cross congruence over a domain -/
+
+-- Over `ℤ`, nonzero proportional pairs have simultaneously vanishing coordinates.
+example : ((⟨0, 3⟩ : Pair ℤ).x = 0 ↔ (⟨0, -5⟩ : Pair ℤ).x = 0) ∧
+    ((⟨3, 0⟩ : Pair ℤ).z = 0 ↔ (⟨-5, 0⟩ : Pair ℤ).z = 0) :=
+  ⟨Pair.x_eq_zero_iff_of_cross_eq_zero (Pair.ne_zero_iff.mpr (.inr (by decide)))
+      (Pair.ne_zero_iff.mpr (.inr (by decide))) (by norm_num [Pair.cross_def]),
+    Pair.z_eq_zero_iff_of_cross_eq_zero (Pair.ne_zero_iff.mpr (.inl (by decide)))
+      (Pair.ne_zero_iff.mpr (.inl (by decide))) (by norm_num [Pair.cross_def])⟩
+
+-- Replacing `(2, 6)` and `(4, 8)` by `(1, 3)` and `(1, 2)` preserves nonvanishing of `cross`.
+example : (⟨2, 6⟩ : Pair ℤ).cross ⟨4, 8⟩ = 0 ↔ (⟨1, 3⟩ : Pair ℤ).cross ⟨1, 2⟩ = 0 :=
+  Pair.cross_eq_zero_congr (Pair.ne_zero_iff.mpr (.inl (by decide)))
+    (Pair.ne_zero_iff.mpr (.inl (by decide))) (Pair.ne_zero_iff.mpr (.inl (by decide)))
+    (Pair.ne_zero_iff.mpr (.inl (by decide)))
+    (by norm_num [Pair.cross_def]) (by norm_num [Pair.cross_def])
+
+-- Over `ZMod 6`, zero divisors break simultaneous coordinate vanishing even for nonzero pairs:
+-- `(2, 0)` and `(0, 3)` are both nonzero with `2 · 3 - 0 · 0 = 0`, yet `0 = (2, 0).z ≠ (0, 3).z`.
+example : (⟨2, 0⟩ : Pair (ZMod 6)) ≠ 0 ∧ (⟨0, 3⟩ : Pair (ZMod 6)) ≠ 0 ∧
+    (⟨2, 0⟩ : Pair (ZMod 6)).cross ⟨0, 3⟩ = 0 ∧
+    (⟨2, 0⟩ : Pair (ZMod 6)).z = 0 ∧ (⟨0, 3⟩ : Pair (ZMod 6)).z ≠ 0 := by
+  simp only [Pair.ne_zero_iff, Pair.cross_def]
   decide
 
 end TauCeti.Montgomery

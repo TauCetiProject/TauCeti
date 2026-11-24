@@ -118,9 +118,9 @@ private theorem mpullback_homotopyOperator_mpullback_cylinderRescale (τ : Smoot
     (hΘ : Φ.cylinderRescale ∘ Prod.map (fun x ↦ (x, c)) id =
       (fun x ↦ (x, c)) ∘ Θ.cylinderMap) :
     mpullback J (J.prod (𝓡∂ 1)) (fun x ↦ (x, c)) (homotopyOperator
-        (SmoothForm.mpullback Φ.cylinderRescale Φ.contMDiff_cylinderRescale τ).1) =
+        (SmoothForm.mpullback Φ.cylinderRescale Φ.contMDiff_cylinderRescale τ).val) =
       (Θ.fluxForm (SmoothForm.mpullback (fun x ↦ (x, c)) (contMDiff_id.prodMk contMDiff_const)
-        τ)).1 := by
+        τ)).val := by
   have : IsManifold (J.prod (𝓡∂ 1)) 1 (M × unitInterval) := IsManifold.of_le (n := ∞) (by simp)
   have hslice : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, c) :=
     (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
@@ -170,8 +170,8 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
   rw [Ψ.mpullback_slice_zero_mpullback_cylinderMap, fluxForm_refl, Submodule.coe_zero] at hL₀
   -- The slices of `η` in `s` are `F^* τ`, the pullback of `σ` along the motion of the composite,
   -- and `τ`.
-  have hF : mpullback (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun p ↦ (Φ.cylinderMap p, p.2)) τ.1 =
-      (SmoothForm.mpullback (Φ.trans Ψ).cylinderMap (Φ.trans Ψ).contMDiff_cylinderMap σ).1 := by
+  have hF : mpullback (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun p ↦ (Φ.cylinderMap p, p.2)) τ.val =
+      (SmoothForm.mpullback (Φ.trans Ψ).cylinderMap (Φ.trans Ψ).contMDiff_cylinderMap σ).val := by
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, cylinderMap_trans,
       TauCeti.mpullback_comp ((Φ.contMDiff_cylinderMap.prodMk contMDiff_snd).mdifferentiable
         (by simp)) hcyl]
@@ -179,10 +179,10 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
     ← TauCeti.mpullback_comp (hres 0) hG, cylinderRescale_comp_one, cylinderRescale_comp_zero,
     TauCeti.mpullback_id, hF] at key
   -- The primitive is `-h_t L`.
-  have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ (homotopyOperator η.1) :=
+  have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ (homotopyOperator η.val) :=
     IsSmoothForm.homotopyOperator η.isSmoothForm
   rw [exactForms_succ]
-  refine ⟨-⟨homotopyOperator (homotopyOperator η.1),
+  refine ⟨-⟨homotopyOperator (homotopyOperator η.val),
     (IsSmoothForm.homotopyOperator hLs).mem_smoothBundleForms⟩, Subtype.ext ?_⟩
   rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_mk, SmoothForm.coe_mpullback,
     key, Submodule.coe_sub, Submodule.coe_sub, coe_fluxForm, coe_fluxForm, coe_fluxForm]
@@ -191,12 +191,12 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
 /-- **The flux homomorphism.** For a closed two-form `σ` preserved by the final diffeomorphisms
 `φ₁` and `ψ₁`, the flux of the pointwise composite `ψ_t ∘ φ_t` is the sum of the fluxes of `φ`
 and `ψ`. -/
-theorem flux_trans (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (h : (Φ.trans Ψ).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+theorem flux_trans (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Φ.trans Ψ).final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     (Φ.trans Ψ).flux σ h = Ψ.flux σ hΨ + Φ.flux σ hΦ := by
   have key := Φ.fluxForm_trans_sub_sub_mem_exactForms Ψ
-    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2))
+    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property))
   rw [SmoothForm.mem_diffeomorphStabilizer.mp hΨ, sub_sub] at key
   rw [flux_def, flux_def, flux_def, ← map_add, ← sub_eq_zero, ← map_sub,
     deRhamCohomology.mk_eq_zero_iff]
@@ -204,13 +204,13 @@ theorem flux_trans (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffe
 
 /-- **The flux of the reversed diffeotopy.** For a closed two-form `σ` preserved by `φ₁`, the
 diffeotopy `φ_t⁻¹` has the negated flux of `φ`. -/
-theorem flux_symm (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (h : Φ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+theorem flux_symm (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : Φ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     Φ.symm.flux σ h = -Φ.flux σ hΦ := by
-  have hrefl : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.1 := by
+  have hrefl : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.val := by
     rw [final_refl]
-    exact (SmoothForm.diffeomorphStabilizer σ.1).one_mem
-  have hzero : ∀ h' : (Φ.trans Φ.symm).final ∈ SmoothForm.diffeomorphStabilizer σ.1,
+    exact (SmoothForm.diffeomorphStabilizer σ.val).one_mem
+  have hzero : ∀ h' : (Φ.trans Φ.symm).final ∈ SmoothForm.diffeomorphStabilizer σ.val,
       (Φ.trans Φ.symm).flux σ h' = 0 := by
     rw [self_trans_symm]
     exact flux_refl σ
@@ -219,13 +219,13 @@ theorem flux_symm (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeo
 /-- **The flux of a quotient of diffeotopies.** For a closed two-form `σ` preserved by `φ₁` and
 `ψ₁`, the diffeotopy `φ_t ∘ ψ_t⁻¹` has the flux of `φ` minus the flux of `ψ`. -/
 theorem flux_symm_trans (σ : closedForms J M 2)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (h : (Ψ.symm.trans Φ).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (Ψ.symm.trans Φ).final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
     (Ψ.symm.trans Φ).flux σ h = Φ.flux σ hΦ - Ψ.flux σ hΨ := by
-  have hΨs : Ψ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.1 := by
+  have hΨs : Ψ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.val := by
     rw [final_symm, ← Diffeomorph.inv_def]
-    exact (SmoothForm.diffeomorphStabilizer σ.1).inv_mem hΨ
+    exact (SmoothForm.diffeomorphStabilizer σ.val).inv_mem hΨ
   rw [flux_trans Ψ.symm Φ σ hΨs hΦ, flux_symm Ψ σ hΨ, sub_eq_add_neg]
 
 end Diffeotopy

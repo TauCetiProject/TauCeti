@@ -22,9 +22,9 @@ variable [Language.empty.Structure Bool] [Language.empty.Structure Empty]
   [Language.empty.Structure Unit]
 
 -- Three repeated entries yield a one-point partial equivalence, not a three-point bijection.
-example : ∃ (f : Language.empty.FGEquiv Bool Bool) (a : Fin 3 → f.1.dom),
-    (f.1.dom : Set Bool) = {false} ∧
-      (∀ i, (a i : Bool) = false) ∧ (∀ i, f.1.toEmbedding (a i) = true) := by
+example : ∃ (f : Language.empty.FGEquiv Bool Bool) (a : Fin 3 → f.val.dom),
+    (f.val.dom : Set Bool) = {false} ∧
+      (∀ i, (a i : Bool) = false) ∧ (∀ i, f.val.toEmbedding (a i) = true) := by
   have h : SameAtomicType (L := Language.empty)
       (fun _ : Fin 3 => false) (fun _ : Fin 3 => true) := by
     rw [sameAtomicType_iff]

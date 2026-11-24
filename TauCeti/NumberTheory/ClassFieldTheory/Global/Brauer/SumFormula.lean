@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
 /-!
 # The sum of the local invariants of a Brauer class
@@ -48,6 +47,8 @@ the product formula for the local Artin symbols on cyclotomic extensions
   with trivial localizations at all places is zero.
 * `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero`: the local invariants of every
   Brauer class of `K` sum to zero.
+* `TauCeti.ClassFieldTheory.finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero`: the same, written
+  as a `finsum` over the finite places plus a sum over the infinite places.
 
 ## References
 
@@ -131,5 +132,14 @@ theorem sumLocalInv_brLocalization_eq_zero (x : Br K) :
         hx', zsmul_zero]
     rw [show x = (u * a) • x + (v * b) • x by rw [← add_zsmul, huv, one_zsmul], map_add, map_add,
       ihb (by omega) _ hxb, iha (by omega) _ hxa, add_zero]
+
+/-- **The sum formula over all places.** The finite-place local invariants of a Brauer class of
+the number field `K` have finite support (`hasFiniteSupport_finiteInvAt`), so their `finsum` is
+an honest finite sum; together with the archimedean invariants it is zero. -/
+theorem finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero (x : Br K) :
+    ∑ᶠ v, finiteInvAt K v x + ∑ w, infiniteInvAt K w x = 0 := by
+  rw [finsum_eq_sum_of_support_subset _ (s := brauerSupport K x)
+      fun v hv ↦ (mem_brauerSupport K).2 hv,
+    ← sumLocalInv_brLocalization K x subset_rfl, sumLocalInv_brLocalization_eq_zero]
 
 end TauCeti.ClassFieldTheory
