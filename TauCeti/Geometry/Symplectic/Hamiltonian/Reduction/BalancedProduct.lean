@@ -186,10 +186,7 @@ theorem mpullback_quotientMk_liftRightTranslation_sub_proj
     have ha : ContMDiff (I.prod IZ) I' ∞ fun p : G × Z ↦ p.1 • ι p.2 :=
       (contMDiff_fst (J := IZ) (N := Z)).smul (hι.comp (contMDiff_snd (I := I) (M := G)))
     rw [SmoothForm.mpullback_mpullback_of_comp_eq hπ _ hψ ha
-      (funext fun x ↦ by
-        rw [comp_apply, BalancedProduct.quotientMk_eq_mk_toRightTranslation,
-          BalancedProduct.liftRightTranslation_mk]
-        rfl) σ,
+      (by rw [BalancedProduct.liftRightTranslation_comp_quotientMk]; rfl) σ,
       h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hι hιc hc, prod_def, map_add,
       SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
     simp only [Prod.map_fst', Prod.map_snd', id_comp]

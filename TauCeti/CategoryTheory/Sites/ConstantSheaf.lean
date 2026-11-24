@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
+public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
 
 /-!
-# Constant sheaves: vanishing and pullback
+# Constant sheaves: vanishing, pullback and change of coefficients
 
 Let `u : C ⥤ D` be a continuous functor from a site `(C, J)` to a site `(D, K)`, whose sheaf
 pushforward `u_* : Sheaf K A ⥤ Sheaf J A` has the left adjoint `u^* = u.sheafPullback A J K`.
@@ -22,6 +23,9 @@ When `u` is final, which holds for instance when `u` is representably flat
 (`CategoryTheory.Functor.final_of_representablyFlat`), so in particular for a morphism of sites,
 this comparison is an isomorphism: maps out of either side into a sheaf `F` on `(D, K)` are cones
 with apex `X` over `F`, restricted along `u` in the first case.
+
+For a functor `G : A ⥤ B` preserving sheafification, the sheafified composite with `G` sends the
+constant sheaf with value `X` to the constant sheaf with value `G X`, on any site.
 
 Separately, since the constant sheaf functor is left adjoint to sections over a terminal object
 `T`, a constant sheaf whose sections over `T` vanish is zero
@@ -40,6 +44,8 @@ Separately, since the constant sheaf functor is left adjoint to sections over a 
 * `CategoryTheory.Functor.whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv`: the
   inverse comparison `X_K ⟶ u^* (X_J)`, read on sections over objects `u(U)`, is the unit of the
   adjunction `u^* ⊣ u_*` on the constant section `X ⟶ X_J(U)`.
+* `CategoryTheory.Sheaf.constantSheafCompComposeAndSheafifyIso`: `Sheaf.composeAndSheafify J G`
+  sends the constant sheaf with value `X` to the constant sheaf with value `G X`.
 -/
 
 public section
@@ -170,6 +176,43 @@ end CategoryTheory.Functor
 
 namespace CategoryTheory.Sheaf
 
+section
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {A B : Type*} [Category* A]
+  [Category* B] (G : A ⥤ B) [HasWeakSheafify J A] [HasWeakSheafify J B]
+  [J.PreservesSheafification G]
+
+/-- The sheafified composite with a functor `G` that preserves sheafification sends the constant
+sheaf with value `X` to the constant sheaf with value `G X`. -/
+noncomputable def constantSheafCompComposeAndSheafifyIso :
+    constantSheaf J A ⋙ composeAndSheafify J G ≅ G ⋙ constantSheaf J B :=
+  Functor.isoWhiskerLeft (Functor.const Cᵒᵖ) (presheafToSheafCompComposeAndSheafifyIso J G) ≪≫
+    Functor.isoWhiskerRight (Functor.compConstIso Cᵒᵖ G).symm (presheafToSheaf J B)
+
+/-- The component of `constantSheafCompComposeAndSheafifyIso` at `X` is the comparison
+`presheafToSheafCompComposeAndSheafifyIso` at the constant presheaf with value `X`, followed by
+the identification of the composite of that presheaf with `G` with the constant presheaf with
+value `G X`. -/
+@[simp, reassoc]
+lemma constantSheafCompComposeAndSheafifyIso_hom_app (X : A) :
+    (constantSheafCompComposeAndSheafifyIso J G).hom.app X =
+      (presheafToSheafCompComposeAndSheafifyIso J G).hom.app ((Functor.const Cᵒᵖ).obj X) ≫
+        (presheafToSheaf J B).map ((Functor.compConstIso Cᵒᵖ G).inv.app X) :=
+  (rfl)
+
+/-- The inverse component of `constantSheafCompComposeAndSheafifyIso` at `X`; see
+`constantSheafCompComposeAndSheafifyIso_hom_app`. -/
+@[simp, reassoc]
+lemma constantSheafCompComposeAndSheafifyIso_inv_app (X : A) :
+    (constantSheafCompComposeAndSheafifyIso J G).inv.app X =
+      (presheafToSheaf J B).map ((Functor.compConstIso Cᵒᵖ G).hom.app X) ≫
+        (presheafToSheafCompComposeAndSheafifyIso J G).inv.app ((Functor.const Cᵒᵖ).obj X) :=
+  (rfl)
+
+end
+
+section
+
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
   [Preadditive D] [HasWeakSheafify J D]
 
@@ -183,5 +226,7 @@ theorem isZero_of_isConstant {T : C} (hT : IsTerminal T) (F : Sheaf J D) [F.IsCo
   have h := ((constantSheafAdj J D hT).homEquiv N F).injective
     (a₁ := e.hom ≫ 𝟙 F) (a₂ := e.hom ≫ 0) (hF.eq_of_tgt _ _)
   simpa using congr(e.inv ≫ $h)
+
+end
 
 end CategoryTheory.Sheaf

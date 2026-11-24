@@ -206,6 +206,18 @@ theorem eq_zero_iff_of_toFilterGerm_eq {x : X}
     (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : s = 0 ↔ f =ᶠ[𝓝 x] 0 := by
   rw [← (toFilterGerm_nhds_injective x).eq_iff, h, map_zero, ← Germ.coe_zero, Germ.coe_eq]
 
+/-- If a holomorphic germ `s` divides `t`, then near `x` a function representing `t` vanishes at
+every zero of a function representing `s`. -/
+theorem eventually_eq_zero_of_dvd {x : X}
+    {s t : (holomorphicStructureSheaf I X).presheaf.stalk x} {f g : X → ℂ}
+    (hf : toFilterGerm I X x (𝓝 x) le_rfl s = f) (hg : toFilterGerm I X x (𝓝 x) le_rfl t = g)
+    (h : s ∣ t) : ∀ᶠ y in 𝓝 x, f y = 0 → g y = 0 := by
+  obtain ⟨q, rfl⟩ := h
+  obtain ⟨Q, -, hQ⟩ := exists_toFilterGerm_eq x q
+  rw [map_mul, hf, hQ _ le_rfl, ← Germ.coe_mul, Germ.coe_eq] at hg
+  filter_upwards [hg] with y hy h0
+  rw [← hy, Pi.mul_apply, h0, zero_mul]
+
 /-- Transporting a holomorphic germ along an equality of points `x = y` with `RingEquiv.cast`
 keeps its representative. This lets coordinate changes that fix a point only propositionally
 compare germs at the two descriptions of the point. -/
