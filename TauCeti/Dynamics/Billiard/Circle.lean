@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
 public import TauCeti.Dynamics.Billiard.RotationNumber
@@ -16,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Dynamics.Rotation.Orbit
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Circle.Metric
 
@@ -36,7 +38,15 @@ as a test of the general billiard API of `TauCeti.Dynamics.Billiard.NextCollisio
   (`TauCeti.StrictConvexBilliardTable.billiardMap_circle_coe`).
 * **Rotation numbers.** The constant graphs `v = cos α` are invariant graphs of the billiard map
   (`TauCeti.StrictConvexBilliardTable.isInvariantGraph_circle`) with rotation number `α / π`
-  (`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`).
+  (`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`). These are all its invariant graphs
+  (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.exists_eq_const_circle`): along an invariant
+  graph through a level `c` with `arccos c / π` irrational, the level set of `c` contains a dense
+  orbit of the rotation by `2 R arccos c`, so the graph is constant; and a nonconstant graph would
+  pass through such a level. So the constant graphs foliate the open cylinder: every state lies on
+  exactly one invariant graph
+  (`TauCeti.StrictConvexBilliardTable.existsUnique_isInvariantGraph_circle`), and the rotation
+  number `c ↦ arccos c / π` is a homeomorphism from `(-1, 1)` onto `(0, 1)`
+  (`TauCeti.StrictConvexBilliardTable.circleRotationNumberHomeomorph`).
 * **Periodic states.** A state returns after `n` bounces exactly when `n arccos v` is a multiple of
   `π` (`TauCeti.StrictConvexBilliardTable.isPeriodicPt_billiardMap_circle_iff`), so the periodic
   states are those whose angle `arccos v` is a rational multiple of `π`
@@ -545,6 +555,151 @@ theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
       field_simp
       ring
   rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
+
+/-- For `r ∈ (0, 1)`, the height `cos (π r)` lies in `(-1, 1)`. -/
+private theorem cos_pi_mul_mem_Ioo {r : ℝ} (hr : r ∈ Ioo 0 1) : Real.cos (π * r) ∈ Ioo (-1) 1 := by
+  have h₀ : 0 < π * r := mul_pos pi_pos hr.1
+  have h₁ : π * r < π := mul_lt_of_lt_one_right pi_pos hr.2
+  refine ⟨?_, ?_⟩
+  · rw [← Real.cos_pi]
+    exact Real.strictAntiOn_cos ⟨h₀.le, h₁.le⟩ ⟨pi_pos.le, le_rfl⟩ h₁
+  · rw [← Real.cos_zero]
+    exact Real.strictAntiOn_cos ⟨le_rfl, pi_pos.le⟩ ⟨h₀.le, h₁.le⟩ h₀
+
+/-- The rotation number `c ↦ arccos c / π` of the constant invariant graphs of the circular table,
+as a homeomorphism from `(-1, 1)` onto `(0, 1)`, with inverse `r ↦ cos (π r)`. -/
+def circleRotationNumberHomeomorph : Ioo (-1 : ℝ) 1 ≃ₜ Ioo (0 : ℝ) 1 where
+  toFun c := ⟨Real.arccos c / π, div_pos (Real.arccos_pos.2 c.property.2) pi_pos,
+    (div_lt_one pi_pos).2 (Real.arccos_lt_pi.2 c.property.1)⟩
+  invFun r := ⟨Real.cos (π * r), cos_pi_mul_mem_Ioo r.property⟩
+  left_inv c := Subtype.ext <| by
+    simp only [mul_div_cancel₀ _ pi_ne_zero, Real.cos_arccos c.property.1.le c.property.2.le]
+  right_inv r := Subtype.ext <| by
+    simp only [Real.arccos_cos (mul_pos pi_pos r.property.1).le
+      (mul_le_of_le_one_right pi_pos.le r.property.2.le), mul_div_cancel_left₀ _ pi_ne_zero]
+  continuous_toFun :=
+    ((Real.continuous_arccos.comp continuous_subtypeVal).div_const _).subtype_mk _
+  continuous_invFun :=
+    (Real.continuous_cos.comp (continuous_const.mul continuous_subtypeVal)).subtype_mk _
+
+@[simp]
+theorem coe_circleRotationNumberHomeomorph_apply (c : Ioo (-1 : ℝ) 1) :
+    (circleRotationNumberHomeomorph c : ℝ) = Real.arccos c / π :=
+  (rfl)
+
+@[simp]
+theorem coe_circleRotationNumberHomeomorph_symm_apply (r : Ioo (0 : ℝ) 1) :
+    (circleRotationNumberHomeomorph.symm r : ℝ) = Real.cos (π * r) :=
+  (rfl)
+
+/-- The rotation number of the constant graph `v = c` of the circular table is the value of
+`circleRotationNumberHomeomorph` at `c`. -/
+theorem rotationNumber_circle_eq_circleRotationNumberHomeomorph (c : Ioo (-1 : ℝ) 1) :
+    (isInvariantGraph_circle hR c.property).rotationNumber contDiff_circle =
+      circleRotationNumberHomeomorph c := by
+  rw [rotationNumber_circle hR c.property, coe_circleRotationNumberHomeomorph_apply]
+
+/-- Along an invariant graph `ψ` of the circular table, the next collision advances the parameter
+by `2 R arccos (ψ s)` without changing the height: `ψ (s + 2 R arccos (ψ s)) = ψ s`. -/
+theorem IsInvariantGraph.apply_add_circle {ψ : ℝ → ℝ} (h : (circle hR).IsInvariantGraph ψ)
+    (s : ℝ) : ψ (s + 2 * R * Real.arccos (ψ s)) = ψ s := by
+  rw [← nextParam_circle (hR := hR) (h.mem_Ioo s), ← h.nextTangential_eq,
+    nextTangential_circle (h.mem_Ioo s)]
+
+/-- An invariant graph of the circular table that takes a value `c` with `arccos c / π`
+irrational is the constant graph `v = c`: the level set of `c` contains the forward orbit of a
+point under the rotation by `2 R arccos c`, which is dense modulo the period. -/
+theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ}
+    (h : (circle hR).IsInvariantGraph ψ) {s₀ : ℝ} (hirr : Irrational (Real.arccos (ψ s₀) / π)) :
+    ψ = fun _ ↦ ψ s₀ := by
+  set c := ψ s₀
+  set d := 2 * R * Real.arccos c
+  have hL : 0 < 2 * π * R := by positivity
+  have : Fact (0 < 2 * π * R) := ⟨hL⟩
+  have horbit (n : ℕ) : ψ (s₀ + n * d) = c := by
+    induction n with
+    | zero => simp [c]
+    | succ n ih =>
+      have := h.apply_add_circle hR (s₀ + n * d)
+      rw [ih] at this
+      rw [Nat.cast_succ, add_one_mul, ← add_assoc]
+      exact this
+  have hdense := (AddCircle.denseRange_nsmul_coe_iff (p := 2 * π * R) (x := d)).2 <| by
+    rw [show d / (2 * π * R) = Real.arccos c / π by simp only [d]; field_simp]
+    exact hirr
+  funext t
+  by_contra hne
+  have hU : IsOpen ((↑) '' {u : ℝ | ψ (u + s₀) ≠ c} : Set (AddCircle (2 * π * R))) :=
+    QuotientAddGroup.isOpenMap_coe _ <|
+      isOpen_ne_fun (h.continuous.comp (continuous_id.add continuous_const)) continuous_const
+  obtain ⟨n, u, hu, hun⟩ := hdense.exists_mem_open hU ⟨_, t - s₀, by simpa using hne, rfl⟩
+  rw [← AddCircle.coe_nsmul, ← sub_eq_zero, ← AddCircle.coe_sub,
+    AddCircle.coe_eq_zero_iff] at hun
+  obtain ⟨k, hk⟩ := hun
+  have hper := (h.periodic.int_mul k) (s₀ + n * d)
+  rw [period_circle, horbit] at hper
+  refine hu ?_
+  rw [show u + s₀ = s₀ + n * d + k * (2 * π * R) by
+    rw [zsmul_eq_mul, nsmul_eq_mul] at hk
+    linarith]
+  exact hper
+
+/-- **The invariant graphs of the circular table are the constant graphs.** Every invariant graph
+`ψ` of the circular table is constant. If `ψ a ≠ ψ b`, some level `c` between them has
+`arccos c / π` irrational, and `ψ` takes it by the intermediate value theorem. -/
+theorem IsInvariantGraph.exists_eq_const_circle {ψ : ℝ → ℝ}
+    (h : (circle hR).IsInvariantGraph ψ) : ∃ c ∈ Ioo (-1) 1, ψ = fun _ ↦ c := by
+  refine ⟨ψ 0, h.mem_Ioo 0, funext fun t ↦ ?_⟩
+  by_contra hne
+  -- Order the two values and find an irrational rotation number between their angles.
+  obtain ⟨a, b, hab⟩ : ∃ a b, ψ a < ψ b := by
+    rcases lt_or_gt_of_ne hne with h' | h'
+    · exact ⟨t, 0, h'⟩
+    · exact ⟨0, t, h'⟩
+  have ha := h.mem_Ioo a
+  have hb := h.mem_Ioo b
+  have hlt : Real.arccos (ψ b) / π < Real.arccos (ψ a) / π :=
+    div_lt_div_of_pos_right (Real.strictAntiOn_arccos ⟨ha.1.le, ha.2.le⟩ ⟨hb.1.le, hb.2.le⟩ hab)
+      pi_pos
+  obtain ⟨r, hr, hbr, hra⟩ := exists_irrational_btwn hlt
+  have hr₀ : 0 < π * r := mul_pos pi_pos
+    ((div_nonneg (Real.arccos_nonneg _) pi_pos.le).trans_lt hbr)
+  have hr₁ : π * r < π := by
+    rw [lt_div_iff₀ pi_pos, mul_comm] at hra
+    exact hra.trans (Real.arccos_lt_pi.2 ha.1)
+  have hca : ψ a < Real.cos (π * r) := by
+    rw [← Real.cos_arccos ha.1.le ha.2.le]
+    refine Real.strictAntiOn_cos ⟨hr₀.le, hr₁.le⟩
+      ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩ ?_
+    rwa [lt_div_iff₀ pi_pos, mul_comm] at hra
+  have hcb : Real.cos (π * r) < ψ b := by
+    rw [← Real.cos_arccos hb.1.le hb.2.le]
+    refine Real.strictAntiOn_cos ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
+      ⟨hr₀.le, hr₁.le⟩ ?_
+    rwa [div_lt_iff₀ pi_pos, mul_comm] at hbr
+  obtain ⟨s₀, -, hs₀⟩ := intermediate_value_uIcc h.continuous.continuousOn
+    (Set.mem_uIcc.2 (Or.inl ⟨hca.le, hcb.le⟩))
+  have hconst := h.eq_const_circle_of_irrational hR (s₀ := s₀) <| by
+    rwa [hs₀, Real.arccos_cos hr₀.le hr₁.le, mul_div_cancel_left₀ _ pi_ne_zero]
+  have h₁ : ψ a = ψ s₀ := congrFun hconst a
+  linarith
+
+/-- The invariant graphs of the circular table are exactly the constant graphs `v = c`,
+`c ∈ (-1, 1)`. -/
+theorem isInvariantGraph_circle_iff {ψ : ℝ → ℝ} :
+    (circle hR).IsInvariantGraph ψ ↔ ∃ c ∈ Ioo (-1) 1, ψ = fun _ ↦ c := by
+  refine ⟨fun h ↦ h.exists_eq_const_circle hR, ?_⟩
+  rintro ⟨c, hc, rfl⟩
+  exact isInvariantGraph_circle hR hc
+
+/-- **The constant graphs foliate the open cylinder.** Every state `(s, v)`, `v ∈ (-1, 1)`, of the
+circular table lies on exactly one invariant graph, the constant graph `v`. -/
+theorem existsUnique_isInvariantGraph_circle (s : ℝ) {v : ℝ} (hv : v ∈ Ioo (-1) 1) :
+    ∃! ψ : ℝ → ℝ, (circle hR).IsInvariantGraph ψ ∧ ψ s = v := by
+  refine ⟨fun _ ↦ v, ⟨isInvariantGraph_circle hR hv, rfl⟩, ?_⟩
+  rintro ψ ⟨h, hs⟩
+  obtain ⟨c, -, rfl⟩ := h.exists_eq_const_circle hR
+  exact hs ▸ rfl
 
 end RotationNumber
 
