@@ -132,34 +132,56 @@ component at `w` transported along the isomorphism `ℝ ≃ K_w` inverse to the 
 embedding. -/
 def realComponent (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal}) :
     ℝˣ →ₜ* ℂˣ :=
-  (χ.infiniteComponent w.1).comp
-    (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm
+  (χ.infiniteComponent w.val).comp
+    (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.property)).symm
 
 /-- The component of `χ` at a real place `w` evaluates the component of `χ` at `w` on the unit of
 `K_w` corresponding to a real unit. -/
 @[simp]
 theorem realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
     (x : ℝˣ) :
-    χ.realComponent w x = χ.infiniteComponent w.1
-      ((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm x) :=
+    χ.realComponent w x = χ.infiniteComponent w.val
+      ((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.property)).symm x) :=
   (rfl)
+
+/-- On a global unit `x : Kˣ` at a real place `w`, the infinite component of `χ` agrees with
+`χ.realComponent w` evaluated at the real embedding `embedding_of_isReal w.2`. -/
+theorem infiniteComponent_map_algebraMap_eq_realComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) (x : Kˣ) :
+    χ.infiniteComponent w.val (Units.map (algebraMap K w.val.Completion).toMonoidHom x) =
+      χ.realComponent w (Units.map (embedding_of_isReal w.property).toMonoidHom x) := by
+  rw [realComponent_apply]
+  congr 1
+  rw [ContinuousMulEquiv.eq_symm_apply]
+  exact Units.ext <| by simp [algebraMap_apply_eq_coe]
 
 /-- The **component of a Hecke character at a complex place `w`**, as a character of `ℂˣ`: the
 component at `w` transported along the isomorphism `ℂ ≃ K_w` inverse to the extension of
 `w.embedding`. -/
 def complexComponent (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsComplex}) :
     ℂˣ →ₜ* ℂˣ :=
-  (χ.infiniteComponent w.1).comp
-    (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).symm
+  (χ.infiniteComponent w.val).comp
+    (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.property)).symm
 
 /-- The component of `χ` at a complex place `w` evaluates the component of `χ` at `w` on the unit
 of `K_w` corresponding to a complex unit. -/
 @[simp]
 theorem complexComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsComplex})
     (z : ℂˣ) :
-    χ.complexComponent w z = χ.infiniteComponent w.1
-      ((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).symm z) :=
+    χ.complexComponent w z = χ.infiniteComponent w.val
+      ((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.property)).symm z) :=
   (rfl)
+
+/-- On a global unit `x : Kˣ` at a complex place `w`, the infinite component of `χ` agrees with
+`χ.complexComponent w` evaluated at the complex embedding `w.1.embedding`. -/
+theorem infiniteComponent_map_algebraMap_eq_complexComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (x : Kˣ) :
+    χ.infiniteComponent w.val (Units.map (algebraMap K w.val.Completion).toMonoidHom x) =
+      χ.complexComponent w (Units.map w.val.embedding.toMonoidHom x) := by
+  rw [complexComponent_apply]
+  congr 1
+  rw [ContinuousMulEquiv.eq_symm_apply]
+  exact Units.ext <| by simp [algebraMap_apply_eq_coe]
 
 /-- The trivial Hecke character has trivial real components. -/
 @[simp]
@@ -264,9 +286,10 @@ value `(-1) ^ ε` on the idele that is `-1` at `w` and `1` elsewhere, where `ε`
 of its infinity type at `w`. -/
 theorem coe_infiniteComponent_neg_one (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    (χ.infiniteComponent w.1 (-1) : ℂ) = (-1) ^ (χ.infinityType.realParity w).val := by
-  have h : (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm (-1) = -1 :=
-    Units.ext <| (continuousMulEquivRealOfIsReal w.2).symm_apply_eq.mpr (by simp)
+    (χ.infiniteComponent w.val (-1) : ℂ) = (-1) ^ (χ.infinityType.realParity w).val := by
+  have h : (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.property)).symm (-1) = -1
+      :=
+    Units.ext <| (continuousMulEquivRealOfIsReal w.property).symm_apply_eq.mpr (by simp)
   rw [← h, ← realComponent_apply, realComponent_eq, realUnitsCharacter_neg_one]
 
 /-- A Hecke character is trivial on the idele that is `-1` at a real place `w` and `1` elsewhere
@@ -274,7 +297,7 @@ exactly when the real parity of its infinity type at `w` vanishes. Unlike
 `infiniteComponent_eq_one_iff`, this needs no finite-order hypothesis. -/
 theorem infiniteComponent_neg_one_eq_one_iff (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    χ.infiniteComponent w.1 (-1) = 1 ↔ χ.infinityType.realParity w = 0 := by
+    χ.infiniteComponent w.val (-1) = 1 ↔ χ.infinityType.realParity w = 0 := by
   rw [← Units.val_eq_one, coe_infiniteComponent_neg_one,
     neg_one_pow_eq_one_iff_even (by norm_num), ← ZMod.natCast_eq_zero_iff_even,
     ZMod.natCast_zmod_val]
@@ -332,7 +355,7 @@ theorem exists_finiteOrderInfinityType {χ : HeckeCharacter K} (hχ : χ.IsFinit
 is zero.** Its modulus exponents vanish, so its component at `w` is `x ↦ sgn(x) ^ ε_w`. -/
 theorem infiniteComponent_eq_one_iff {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    χ.infiniteComponent w.1 = 1 ↔ χ.infinityType.realParity w = 0 := by
+    χ.infiniteComponent w.val = 1 ↔ χ.infinityType.realParity w = 0 := by
   have hreal : χ.realComponent w = realUnitsCharacter 0 (χ.infinityType.realParity w) := by
     rw [realComponent_eq, infinityType_eq_toContinuous_realParity hχ,
       FiniteOrderInfinityType.toContinuous_realExponent,
@@ -342,7 +365,7 @@ theorem infiniteComponent_eq_one_iff {χ : HeckeCharacter K} (hχ : χ.IsFiniteO
       ContinuousMonoidHom.ext fun x ↦ by simp [h]
     exact (realUnitsCharacter_inj.mp (hreal.symm.trans h1)).2
   · have hu := DFunLike.congr_fun hreal
-      (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) u)
+      (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.property) u)
     rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply] at hu
     simpa [h] using hu
 
@@ -365,7 +388,7 @@ removed from the infinite part: dividing an idele congruent to one modulo the sm
 own component at `w` makes it congruent to one modulo `𝔪`. -/
 theorem mem_range_ofRayClassCharacter_erase {𝔪 : Modulus K} {χ : HeckeCharacter K}
     (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : χ.infiniteComponent w.1 = 1) :
+    (hw : χ.infiniteComponent w.val = 1) :
     χ ∈ (ofRayClassCharacter
       ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, 𝔪.infinitePart.erase w⟩).range := by
   rw [mem_range_ofRayClassCharacter_iff] at hχ ⊢
@@ -373,19 +396,19 @@ theorem mem_range_ofRayClassCharacter_erase {𝔪 : Modulus K} {χ : HeckeCharac
   obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
   obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.mp hx
   -- Dividing `x` by its own component at `w` gives an idele congruent to one modulo `𝔪`.
-  let u : w.1.Completionˣ := w.1.ideleInfiniteCoord x
-  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
+  let u : w.val.Completionˣ := w.val.ideleInfiniteCoord x
+  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
     refine mem_ideleCongruenceSubgroup_iff.mpr
       ⟨fun v hv ↦ by simpa using h₁ v hv, fun v hv ↦ by simpa [Modulus.exponent_def] using h₂ v hv,
         fun w' hw' ↦ ?_⟩
     by_cases hww' : w' = w
     · subst hww'
       simp [u]
-    · have hne : w'.1 ≠ w.1 := fun h ↦ hww' (Subtype.ext h)
+    · have hne : w'.val ≠ w.val := fun h ↦ hww' (Subtype.ext h)
       simpa [hne] using h₃ w' (Finset.mem_erase.mpr ⟨hww', hw'⟩)
   have hsplit : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
-      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹) *
-        IdeleClassGroup.ofCompletion (𝓞 K) K w.1 u := by
+      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.val u)⁻¹) *
+        IdeleClassGroup.ofCompletion (𝓞 K) K w.val u := by
     rw [IdeleClassGroup.ofCompletion_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
       ← QuotientGroup.mk_mul, inv_mul_cancel_right]
   rw [MonoidHom.mem_ker, hsplit, map_mul,
@@ -406,7 +429,7 @@ theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u :
 theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
     (normPow K s).realComponent w = normCpowCharacter ℝ s := by
   ext x
-  simp [completionNormalizedAbsValue_of_isReal _ w.2]
+  simp [completionNormalizedAbsValue_of_isReal _ w.property]
 
 /-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
 since the normalized absolute value of a complex place is the square of the usual one. -/
@@ -414,7 +437,7 @@ since the normalized absolute value of a complex place is the square of the usua
 theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
     (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
   ext z
-  simp [completionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
+  simp [completionNormalizedAbsValue_of_isComplex _ w.property, ofReal_pow_cpow (norm_nonneg _)]
 
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,
@@ -454,7 +477,7 @@ theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace 
 theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
     (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
   rw [realComponent_apply, norm_infiniteComponent_apply,
-    completionNormalizedAbsValue_of_isReal _ w.2]
+    completionNormalizedAbsValue_of_isReal _ w.property]
   simp
 
 /-- **The absolute value of a complex component is the power of `‖z‖` with exponent twice the
@@ -465,7 +488,7 @@ theorem norm_complexComponent_apply (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
     ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
   rw [complexComponent_apply, norm_infiniteComponent_apply,
-    completionNormalizedAbsValue_of_isComplex _ w.2]
+    completionNormalizedAbsValue_of_isComplex _ w.property]
   simp only [Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
     MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv,
     norm_continuousMulEquivComplexOfIsComplex_symm]

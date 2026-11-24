@@ -157,9 +157,10 @@ noncomputable abbrev smoothingComponent (x : Quot (G.SmoothingRel S)) :
     obtain ⟨v, hv⟩ := G.smoothingVertex_surjective S x
     exact ⟨⟨v, hv⟩⟩
   Edge := {e // e ∈ S ∧ G.smoothingVertex S (G.endpoint e 0) = x}
-  endpoint e i := ⟨G.endpoint e.1 i, (G.smoothingVertex_endpoint S e.2.1 i 0).trans e.2.2⟩
+  endpoint e i := ⟨G.endpoint e.val i, (G.smoothingVertex_endpoint S e.property.1 i 0).trans
+      e.property.2⟩
   genus v := G.genus v
-  marking i := ⟨G.marking i, i.2⟩
+  marking i := ⟨G.marking i, i.property⟩
   connected := by
     rintro ⟨v, hv⟩ ⟨w, hw⟩
     have h := (G.smoothingVertex_eq_smoothingVertex_iff S).mp (hv.trans hw.symm)
@@ -178,19 +179,19 @@ noncomputable abbrev smoothingComponent (x : Quot (G.SmoothingRel S)) :
 lemma endpoint_smoothingComponent (x : Quot (G.SmoothingRel S))
     (e : (G.smoothingComponent S x).Edge) (i : Fin 2) :
     (G.smoothingComponent S x).endpoint e i =
-      ⟨G.endpoint e.1 i, (G.smoothingVertex_endpoint S e.2.1 i 0).trans e.2.2⟩ :=
+      ⟨G.endpoint e.val i, (G.smoothingVertex_endpoint S e.property.1 i 0).trans e.property.2⟩ :=
   rfl
 
 @[simp]
 lemma genus_smoothingComponent (x : Quot (G.SmoothingRel S))
     (v : (G.smoothingComponent S x).Vertex) :
-    (G.smoothingComponent S x).genus v = G.genus v.1 :=
+    (G.smoothingComponent S x).genus v = G.genus v.val :=
   rfl
 
 @[simp]
 lemma marking_smoothingComponent (x : Quot (G.SmoothingRel S))
     (i : {i : ι // G.smoothingVertex S (G.marking i) = x}) :
-    (G.smoothingComponent S x).marking i = ⟨G.marking i, i.2⟩ :=
+    (G.smoothingComponent S x).marking i = ⟨G.marking i, i.property⟩ :=
   rfl
 
 /-! ### The smoothed graph -/
@@ -205,12 +206,12 @@ noncomputable abbrev smoothing : DualGraph.{u} ι where
     obtain ⟨v⟩ := G.vertexNonempty
     exact ⟨G.smoothingVertex S v⟩
   Edge := {e // e ∉ S}
-  endpoint e i := G.smoothingVertex S (G.endpoint e.1 i)
+  endpoint e i := G.smoothingVertex S (G.endpoint e.val i)
   genus x := (G.smoothingComponent S x).arithmeticGenus
   marking i := G.smoothingVertex S (G.marking i)
   connected := by
     refine G.connected_of_surjective
-      (f := fun (e : {e // e ∉ S}) i ↦ G.smoothingVertex S (G.endpoint e.1 i))
+      (f := fun (e : {e // e ∉ S}) i ↦ G.smoothingVertex S (G.endpoint e.val i))
       (G.smoothingVertex S) (G.smoothingVertex_surjective S) fun e ↦ ?_
     by_cases he : e ∈ S
     · exact .inl (G.smoothingVertex_endpoint S he 0 1)
@@ -218,7 +219,7 @@ noncomputable abbrev smoothing : DualGraph.{u} ι where
 
 @[simp]
 lemma endpoint_smoothing (e : (G.smoothing S).Edge) (i : Fin 2) :
-    (G.smoothing S).endpoint e i = G.smoothingVertex S (G.endpoint e.1 i) :=
+    (G.smoothing S).endpoint e i = G.smoothingVertex S (G.endpoint e.val i) :=
   rfl
 
 lemma genus_smoothing (x : (G.smoothing S).Vertex) :
@@ -434,7 +435,7 @@ end Singleton
 /-- Smoothing every node leaves a single component, since the graph is connected. -/
 theorem smoothingVertex_univ_eq (v w : G.Vertex) :
     G.smoothingVertex univ v = G.smoothingVertex univ w := by
-  rw [smoothingVertex_eq_smoothingVertex_iff, ← Relation.EqvGen.reflTransGen_symmGen]
+  rw [smoothingVertex_eq_smoothingVertex_iff, ← Relation.reflTransGen_symmGen]
   refine .mono (fun _ _ ⟨e, h⟩ ↦ ?_) _ _ (G.connected v w)
   obtain ⟨h₀, h₁⟩ | ⟨h₀, h₁⟩ := h
   exacts [.inl ⟨e, mem_univ e, h₀, h₁⟩, .inr ⟨e, mem_univ e, h₀, h₁⟩]

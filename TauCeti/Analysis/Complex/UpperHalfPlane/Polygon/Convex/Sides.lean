@@ -346,7 +346,7 @@ theorem nonempty_interior_carrier : (interior P.carrier).Nonempty := by
   have hO : IsOpen (⋂ j : {j : Fin n // j ≠ 0}, leftHalfPlane (P.sideGeodesic j)) :=
     isOpen_iInter_of_finite fun _ ↦ isOpen_leftHalfPlane _
   have hzO : z ∈ ⋂ j : {j : Fin n // j ≠ 0}, leftHalfPlane (P.sideGeodesic j) :=
-    mem_iInter.2 fun j ↦ P.mem_leftHalfPlane_of_mem_side hz hzp hzq j.2
+    mem_iInter.2 fun j ↦ P.mem_leftHalfPlane_of_mem_side hz hzp hzq j.property
   obtain ⟨w, hwO, hw⟩ := mem_closure_iff.1
     (P.carrier_subset_closure_leftHalfPlane 0 (P.side_subset_carrier 0 hz)) _ hO hzO
   refine ⟨w, (P.mem_interior_carrier_iff w).2 fun j ↦ ?_⟩

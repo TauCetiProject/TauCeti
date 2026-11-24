@@ -11,9 +11,11 @@ public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import Mathlib.Algebra.Lie.Cochain
 
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
 
@@ -64,6 +66,9 @@ field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
 tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
 (`TauCeti.SmoothTwoForm.IsMomentMap.mem_ker_differential_iff_of_isHamiltonianVectorField`).
+Hence the moment map is conserved along the integral curves of `X` on which `df` vanishes on every
+`Z_M`, as it does for an invariant `f`
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn`).
 
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
@@ -74,11 +79,16 @@ compatible with restriction of the action. For a closed form, `d(σ(Z_M, Z'_M)) 
 manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie algebra
 `2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`). The cocycle
 vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z, Z'`
-(`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`), and then `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the
-isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
-(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`). For a nondegenerate form, if
-moreover `μ(x)` is coadjoint-fixed, the components of `μ` pairwise Poisson-commute at `x`
-(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
+(`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`). Then the isotropy algebra `𝔤_x` lies in the
+coadjoint stabilizer of `μ(x)`, whether or not `μ` is a moment map
+(`TauCeti.SmoothTwoForm.isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero`), and for a moment
+map `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`. For a nondegenerate form, if moreover `μ(x)` is coadjoint-fixed,
+the components of `μ` pairwise Poisson-commute at `x`
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`). More generally, where the cocycle
+vanishes the moment map is a Poisson map to `𝔤*` with its positive Lie–Poisson structure: functions
+`f` and `g` whose differentials at `x` are `⟨dμ_x(·), Z⟩` and `⟨dμ_x(·), Z'⟩` have Hamiltonian
+vectors `Z_M x` and `Z'_M x`, and `{f, g}(x) = μ(x)(⁅Z, Z'⁆)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_apply_lie_of_mvfderiv_eq`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -101,7 +111,9 @@ has the **Heisenberg cocycle** `c(Z, Z') = ω(τ Z, τ Z')`
 * `TauCeti.SmoothTwoForm.momentCocycle σ a μ x`: the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` at `x`,
   a `2`-cochain of `𝔤` with trivial coefficients.
 * `TauCeti.SymplecticForm.linearMomentMap ω`: the moment map `μ_A(x) = ½ ω(A x, x)` of the linear
-  action of `sp(V, ω)`.
+  action of `sp(V, ω)`. Its components are quadratic forms with polarization `ω(A x, y)`
+  (`TauCeti.SymplecticForm.linearMomentMap_add`), so the moment equation holds along every line
+  without any topology on `V` (`TauCeti.SymplecticForm.hasDerivAt_linearMomentMap_add_smul`).
 * `TauCeti.SymplecticForm.translationMomentMap ω τ`: the moment map `μ_Z(x) = ω(τ Z, x)` of a
   translation action.
 
@@ -263,7 +275,7 @@ theorem hamiltonianVectorField_eq (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegen
 theorem poissonBracket_eq_mvfderiv (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
     (Z : 𝔤) (x : M) :
     σ.poissonBracket f (fun y ↦ μ y Z) x = mvfderiv I f x (a Z x) := by
-  rw [hσ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
+  rw [σ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
 
 /-- The Poisson bracket `{μ_Z, f}` is minus the derivative of `f` along the generated vector field
 `Z_M`. -/
@@ -330,6 +342,37 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
   ext v Z
   simp [h.differential_apply_eq_eval₂]
 
+/-- Two moment maps of the same action have the same differential, since both differentials are
+computed by the moment-map identity `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. -/
+theorem differential_eq_differential (h : σ.IsMomentMap a μ) (h' : σ.IsMomentMap a μ') :
+    h.differential = h'.differential := by
+  funext x
+  ext v Z
+  rw [h.differential_apply_eq_eval₂, h'.differential_apply_eq_eval₂]
+
+/-- Shifting a moment map by a constant `ν ∈ 𝔤*` does not change its differential. -/
+@[simp]
+theorem differential_add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
+    (h.add_const ν).differential = h.differential :=
+  (h.add_const ν).differential_eq_differential h
+
+/-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
+homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
+@[simp]
+theorem differential_comp_apply {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) (v : TangentSpace I x) :
+    (h.comp f).differential x v = (h.differential x v).comp (f : 𝔥 →ₗ[ℝ] 𝔤) :=
+  (rfl)
+
+/-- The level tangent space `ker dμ_x` of a moment map lies in that of its restriction along a Lie
+algebra homomorphism. -/
+theorem ker_differential_le_ker_differential_comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) :
+    LinearMap.ker (h.differential x) ≤ LinearMap.ker ((h.comp f).differential x) := by
+  intro v hv
+  rw [LinearMap.mem_ker] at hv ⊢
+  rw [h.differential_comp_apply, hv, LinearMap.zero_comp]
+
 /-- The kernel of the differential of a moment map at `x` is the `σ`-orthogonal of the orbit
 tangent space: `ker dμ_x = (𝔤 · x)^σ`. -/
 theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
@@ -355,6 +398,21 @@ theorem mem_ker_differential_iff_of_isHamiltonianVectorField (h : σ.IsMomentMap
     X x ∈ LinearMap.ker (h.differential x) ↔ ∀ Z, mvfderiv I f x (a Z x) = 0 := by
   simp only [LinearMap.mem_ker, LinearMap.ext_iff,
     h.differential_apply_of_isHamiltonianVectorField hX, LinearMap.zero_apply, neg_eq_zero]
+
+/-- **Noether's theorem along integral curves.** Let `X` be a Hamiltonian vector field of `f` and
+let `γ` be an integral curve of `X` on a preconnected set `s` of times. If at every time in `s` the
+derivative of `f` vanishes along every generated vector field `Z_M`, as when `f` is invariant, then
+the moment map is constant along `γ` on `s`. -/
+theorem apply_eq_of_isMIntegralCurveOn (h : σ.IsMomentMap a μ) {f : M → ℝ}
+    {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
+    {s : Set ℝ} (hs : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
+    (hf : ∀ t ∈ s, ∀ Z, mvfderiv I f (γ t) (a Z (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s)
+    (ht : t ∈ s) : μ (γ t) = μ (γ t₀) := by
+  ext Z
+  refine hγ.apply_eq_of_mvfderiv_apply_eq_zero (f := fun x ↦ μ x Z) hs
+    (fun u _ ↦ h.mdifferentiableAt Z (γ u)) (fun u hu ↦ ?_) ht₀ ht
+  rw [← h.differential_apply, h.differential_apply_of_isHamiltonianVectorField hX, hf u hu Z,
+    neg_zero]
 
 /-- At a point where the form is nondegenerate, the image of the differential of a moment map is
 the image of the transpose of the orbit map `Z ↦ Z_M(x)`. -/
@@ -482,6 +540,16 @@ private theorem mdifferentiableAt_eval₂ (σ : SmoothTwoForm I M) (a : Infinite
     σ.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![a Z y, a Z' y] i)
       fun i ↦ by fin_cases i <;> exact (a.contMDiff _ x).mdifferentiableAt (by simp)
 
+/-- If the cocycle of `μ` vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
+coadjoint stabilizer of `μ(x)`: for `Z_M x = 0`, `μ(x)(⁅Z, Z'⁆) = σ(Z_M x, Z'_M x) = 0` for all
+`Z'`. No moment map identity is needed. -/
+theorem isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero {x : M}
+    (hc : σ.momentCocycle a μ x = 0) : a.isotropy x ≤ lieAnnihilator ℝ 𝔤 (μ x) := fun Z hZ ↦ by
+  rw [mem_lieAnnihilator]
+  ext Z'
+  rw [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero, ← momentCocycle_eq_zero_iff.1 hc,
+    (a.mem_isotropy_iff x).1 hZ, SmoothBundleForm.eval₂_zero_left]
+
 namespace IsMomentMap
 
 /-- For a nondegenerate form on a finite-dimensional manifold, the cocycle of a moment map is
@@ -510,12 +578,32 @@ theorem differential_apply_of_momentCocycle_eq_zero (h : σ.IsMomentMap a μ) {x
   rw [differential_apply_eq_eval₂, momentCocycle_eq_zero_iff.1 hc, Module.Dual.lie_apply,
     ← lie_skew, map_neg]
 
-/-- If the cocycle of a moment map vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
-coadjoint stabilizer of `μ(x)`. -/
-theorem isotropy_le_lieAnnihilator (h : σ.IsMomentMap a μ) {x : M}
-    (hc : σ.momentCocycle a μ x = 0) : a.isotropy x ≤ lieAnnihilator ℝ 𝔤 (μ x) := fun Z hZ ↦ by
-  rw [mem_lieAnnihilator, ← h.differential_apply_of_momentCocycle_eq_zero hc,
-    (a.mem_isotropy_iff x).1 hZ, map_zero]
+/-- **Hamiltonian vector fields of functions of a moment map.** For a nondegenerate form on a
+finite-dimensional manifold, if the differential of `f` at `x` is `v ↦ ⟨dμ_x(v), Z⟩`, as for the
+composite `F ∘ μ` of a function `F` on `𝔤*` whose derivative at `μ(x)` is evaluation at `Z`, then
+the Hamiltonian vector field of `f` at `x` is `Z_M x`. -/
+theorem hamiltonianVectorField_apply_eq_of_mvfderiv_eq [FiniteDimensional ℝ E]
+    (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) {f : M → ℝ} {x : M} {Z : 𝔤}
+    (hf : ∀ v, mvfderiv I f x v = h.differential x v Z) :
+    σ.hamiltonianVectorField f x = a Z x := by
+  -- Both vectors have flat `df_x`, by the moment map identity `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`.
+  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun v ↦ ?_)
+  rw [hσ.flat_hamiltonianVectorField, flat_apply, hf, h.differential_apply_eq_eval₂]
+
+/-- **A moment map is a Poisson map where its cocycle vanishes.** For a nondegenerate form on a
+finite-dimensional manifold, let the cocycle of `μ` vanish at `x`, and let the differentials of `f`
+and `g` at `x` be `v ↦ ⟨dμ_x(v), Z⟩` and `v ↦ ⟨dμ_x(v), Z'⟩`, as for the composites `F ∘ μ` and
+`G ∘ μ` of functions on `𝔤*` with derivatives `Z` and `Z'` at `μ(x)`. Then
+`{f, g}(x) = μ(x)(⁅Z, Z'⁆)`, the positive Lie–Poisson bracket `{F, G}(ν) = ν ⁅dF_ν, dG_ν⁆` of `F`
+and `G` at `μ(x)`. For the components `f = μ_Z` and `g = μ_Z'` this is `{μ_Z, μ_Z'} = μ_{⁅Z, Z'⁆}`
+at `x`. -/
+theorem poissonBracket_eq_apply_lie_of_mvfderiv_eq [FiniteDimensional ℝ E]
+    (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) {f g : M → ℝ} {x : M} {Z Z' : 𝔤}
+    (hc : σ.momentCocycle a μ x = 0) (hf : ∀ v, mvfderiv I f x v = h.differential x v Z)
+    (hg : ∀ v, mvfderiv I g x v = h.differential x v Z') :
+    σ.poissonBracket f g x = μ x ⁅Z, Z'⁆ := by
+  rw [poissonBracket_def, h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hf,
+    h.hamiltonianVectorField_apply_eq_of_mvfderiv_eq hσ hg, momentCocycle_eq_zero_iff.1 hc]
 
 section Closed
 
@@ -614,6 +702,35 @@ def linearMomentMap (x : V) : Module.Dual ℝ (skewAdjointLieSubalgebra ω.toBil
 theorem linearMomentMap_apply (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
     ω.linearMomentMap x A = ω ((A : Module.End ℝ V) x) x / 2 :=
   (rfl)
+
+/-- **Polarization of the linear moment map.** Each component `μ_A` is a quadratic form with
+polarization `ω(A x, y)`: `μ_A(x + y) = μ_A(x) + ω(A x, y) + μ_A(y)`, since skew-adjointness of `A`
+and skew-symmetry of `ω` give `ω(A y, x) = ω(A x, y)`. -/
+theorem linearMomentMap_add (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (x + y) A =
+      ω.linearMomentMap x A + ω ((A : Module.End ℝ V) x) y + ω.linearMomentMap y A := by
+  have hskew : ω.toBilinForm ((A : Module.End ℝ V) y) x =
+      ω.toBilinForm ((A : Module.End ℝ V) x) y :=
+    (skewAdjointLieSubalgebra.apply_left A y x).trans (ω.neg_eq y _)
+  simp only [linearMomentMap_apply, map_add, LinearMap.add_apply, hskew]
+  ring
+
+/-- Each component of the linear moment map is homogeneous of degree two. -/
+theorem linearMomentMap_smul (c : ℝ) (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (c • x) A = c ^ 2 * ω.linearMomentMap x A := by
+  simp only [linearMomentMap_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  ring
+
+/-- **The moment equation along lines.** The derivative of `μ_A` at `x` in the direction `y` is
+`ω(A x, y)`. No topology on `V` is needed: along the line `t ↦ x + t y` the component `μ_A` is the
+quadratic polynomial `μ_A(x) + t ω(A x, y) + t² μ_A(y)`. -/
+theorem hasDerivAt_linearMomentMap_add_smul (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    HasDerivAt (fun t : ℝ ↦ ω.linearMomentMap (x + t • y) A) (ω ((A : Module.End ℝ V) x) y) 0 := by
+  have h := (((hasDerivAt_id (0 : ℝ)).mul_const (ω ((A : Module.End ℝ V) x) y)).const_add
+    (ω.linearMomentMap x A)).add (((hasDerivAt_id (0 : ℝ)).pow 2).mul_const (ω.linearMomentMap y A))
+  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ ?_)).congr_deriv (by simp)
+  rw [linearMomentMap_add, linearMomentMap_smul]
+  simp only [Pi.add_apply, Pi.pow_apply, id_eq, map_smul, smul_eq_mul]
 
 variable {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (τ : 𝔤 →ₗ[ℝ] V)
 

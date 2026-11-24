@@ -57,7 +57,7 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
     finite_H (Nat.cast_ne_zero.2 (NeZero.ne n)) A Fact.out (by omega)
   have hcard₁ : 0 < Nat.card (continuousCohomology 1 A) := Nat.card_pos
   have hA : 0 < Nat.card A.V := Nat.card_pos
-  have hq := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) h
+  have hq := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.val : ℚ))) h
   simp only [localEulerCharacteristic_coe, localCardNorm_coe] at hq
   rw [padicNorm.eq_zpow_of_ne_zero (by exact_mod_cast hA.ne'),
     ← padicValRat_of_nat] at hq

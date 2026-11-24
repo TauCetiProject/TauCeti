@@ -27,8 +27,8 @@ identity `-Δ G = δ₀`: for every `C²` function `f : ℂ → ℝ` with compac
 `∫ z, Δ f z * G z = -f 0`,
 
 and, with the pole moved to `a`, `∫ z, Δ f z * G (z - a) = -f a`. This is the two-dimensional
-counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n ≥ 3`, and it is the
-identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
+counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n = 1` or `n ≥ 3`, and
+it is the identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
 
 The argument has the same two steps as in higher dimensions.
 
@@ -44,7 +44,8 @@ The argument has the same two steps as in higher dimensions.
 
 ## Main declarations
 
-* `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable.
+* `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable, and
+  `TauCeti.locallyIntegrable_planarNewtonianKernel_comp` in the coordinates of a linear isometry.
 * `TauCeti.locallyIntegrable_fderiv_planarNewtonianKernel`: so is its derivative.
 * `TauCeti.integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts
   against `G`, and `TauCeti.integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul` with
@@ -81,6 +82,15 @@ theorem locallyIntegrable_planarNewtonianKernel : LocallyIntegrable planarNewton
     funext planarNewtonianKernel_def
   rw [h]
   exact locallyIntegrable_log_norm.smul (-(2 * Real.pi)⁻¹)
+
+/-- The planar Newtonian kernel in the coordinates of a linear isometry `e : E ≃ ℂ` is locally
+integrable. -/
+theorem locallyIntegrable_planarNewtonianKernel_comp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (e : E ≃ₗᵢ[ℝ] ℂ) : LocallyIntegrable (planarNewtonianKernel ∘ e) := by
+  have h := locallyIntegrable_planarNewtonianKernel
+  rw [← e.measurePreserving.map_eq] at h
+  exact (locallyIntegrable_map_homeomorph e.toHomeomorph).1 h
 
 /-- The Fréchet derivative of the planar Newtonian kernel is locally integrable: its norm is
 `(2π ‖z‖)⁻¹`, an integrable singularity in two dimensions. -/
@@ -259,7 +269,7 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
   hasWeakFDerivOn_of_forall_integral_fderiv_smul locallyIntegrable_planarNewtonianKernel
     locallyIntegrable_fderiv_planarNewtonianKernel (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
+        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hg.of_le (by simp)) hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)

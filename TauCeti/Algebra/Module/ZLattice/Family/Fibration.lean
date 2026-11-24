@@ -196,7 +196,7 @@ theorem torusFamilyLiftingFunction_lift_mk (y : Y) (v : E) (γ : C(I, Y))
 theorem torusFamilyLiftingFunction_transport_mk {y₀ y₁ : Y} (γ : Path y₀ y₁) (v : E) :
     letI := periodAddAction P
     ((torusFamilyLiftingFunction P hcont hinj).transport γ
-      ⟨Quotient.mk _ (y₀, v), torusFamilyProjection_mk P (y₀, v)⟩).1 =
+      ⟨Quotient.mk _ (y₀, v), torusFamilyProjection_mk P (y₀, v)⟩).val =
       Quotient.mk _ (y₁, torusFamilyParallelTransport P hinj y₀ y₁ v) := by
   let _ := periodAddAction P
   refine (LiftingFunction.transport_apply_coe _ γ _).trans ?_
@@ -231,13 +231,13 @@ theorem torusFamilyLiftingFunction_transport_comp_fiberHomeomorph {y₀ y₁ : Y
       ⟨Quotient.mk _ (y₀, v), torusFamilyProjection_mk P (y₀, v)⟩ := by
     apply Subtype.ext
     -- Unfold the continuous map on `.1` to `torusFamilyFiberMap`.
-    change (torusFamilyFiberHomeomorph P y₀ hcont (Quotient.mk _ v)).1 = Quotient.mk _ (y₀, v)
+    change (torusFamilyFiberHomeomorph P y₀ hcont (Quotient.mk _ v)).val = Quotient.mk _ (y₀, v)
     simp
-  refine (congrArg (fun x ↦ ((torusFamilyLiftingFunction P hcont hinj).transport γ x).1)
+  refine (congrArg (fun x ↦ ((torusFamilyLiftingFunction P hcont hinj).transport γ x).val)
     hsub).trans ?_
   rw [torusFamilyLiftingFunction_transport_mk]
   -- Unfold `.1` on the target fiber homeomorphism to `torusFamilyFiberMap`.
-  change Quotient.mk _ _ = (torusFamilyFiberHomeomorph P y₁ hcont _).1
+  change Quotient.mk _ _ = (torusFamilyFiberHomeomorph P y₁ hcont _).val
   simp
 
 /-- Pointwise form of `TauCeti.torusFamilyLiftingFunction_transport_comp_fiberHomeomorph`. -/

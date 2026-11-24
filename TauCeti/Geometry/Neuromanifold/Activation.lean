@@ -59,7 +59,7 @@ theorem activation_reindex (σ : K → K') (a : κ → ι) (p : PUnit) (x : ι �
 /-- A fixed activation realizes exactly its coordinatewise scalar map. -/
 @[simp] theorem realizedFunctions_activation (σ : K → K') :
     realizedFunctions (activation (ι := ι) σ) = {Pi.map fun _ => σ} := by
-  rw [realizedFunctions_def, Set.range_unique, activation_def]
+  rw [realizedFunctions_unique, activation_def]
 
 /-- The coordinatewise power layer, including exponent zero. -/
 def powerActivation [Pow K ℕ] (r : ℕ) : PUnit → (ι → K) → (ι → K) :=

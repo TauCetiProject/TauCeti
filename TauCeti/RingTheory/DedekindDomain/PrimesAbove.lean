@@ -121,15 +121,15 @@ theorem under_under [IsDomain A] [Algebra.IsIntegral A R] (w : HeightOneSpectrum
 intermediate integral domain. -/
 def liesOverTowerEquiv (v : HeightOneSpectrum A) :
     (Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
-      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.1.asIdeal}) ≃
+      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.val.asIdeal}) ≃
       {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal} where
   toFun p :=
-    have := p.1.2
-    have := p.2.2
-    ⟨p.2.1, .trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal⟩
+    have := p.1.property
+    have := p.2.property
+    ⟨p.2.val, .trans p.2.val.asIdeal p.1.val.asIdeal v.asIdeal⟩
   invFun u :=
-    have := u.2
-    ⟨⟨u.1.under R, .tower_bot u.1.asIdeal _ v.asIdeal⟩, ⟨u.1, inferInstance⟩⟩
+    have := u.property
+    ⟨⟨u.val.under R, .tower_bot u.val.asIdeal _ v.asIdeal⟩, ⟨u.val, inferInstance⟩⟩
   left_inv := by
     rintro ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
     obtain rfl := under_eq_iff_liesOver.mpr hu
@@ -140,22 +140,22 @@ def liesOverTowerEquiv (v : HeightOneSpectrum A) :
 @[simp]
 theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (p : Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
-      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.1.asIdeal}) :
-    (liesOverTowerEquiv (R := R) (C := C) v p).1 = p.2.1 :=
+      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.val.asIdeal}) :
+    (liesOverTowerEquiv (R := R) (C := C) v p).val = p.2.val :=
   by simp [liesOverTowerEquiv]
 
 /-- The inverse of `liesOverTowerEquiv` passes through the contraction of `u` to `R`. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
     (u : {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal}) :
-    ((liesOverTowerEquiv (R := R) v).symm u).1.1 = u.1.under R :=
+    ((liesOverTowerEquiv (R := R) v).symm u).1.val = u.val.under R :=
   by simp [liesOverTowerEquiv]
 
 /-- The inverse of `liesOverTowerEquiv` keeps `u` as the top prime. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_snd (v : HeightOneSpectrum A)
     (u : {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal}) :
-    ((liesOverTowerEquiv (R := R) v).symm u).2.1 = u.1 :=
+    ((liesOverTowerEquiv (R := R) v).symm u).2.val = u.val :=
   by simp [liesOverTowerEquiv]
 
 end UnderTower

@@ -45,8 +45,9 @@ orbits of the action.
   any monoid action.
 * `CategoryTheory.ActionCategory.stabilizerMulEquivAut`: the stabilizer of `x` is the
   automorphism group of `x`, compatibly with Mathlib's `ActionCategory.stabilizerIsoEnd`
-  (`CategoryTheory.ActionCategory.toEnd_stabilizerMulEquivAut`) and with transport along arrows
-  (`CategoryTheory.ActionCategory.autMulEquivOfIso_stabilizerMulEquivAut`).
+  (`CategoryTheory.ActionCategory.toEnd_stabilizerMulEquivAut`), with transport along arrows
+  (`CategoryTheory.ActionCategory.autMulEquivOfIso_stabilizerMulEquivAut`), and with fully faithful
+  functors (`CategoryTheory.ActionCategory.stabilizerMulEquivAutOfFullyFaithful`).
 * `CategoryTheory.ActionCategory.stabilizerMulEquivVertexGroupMulOpposite`: the stabilizer is the
   opposite of the vertex group.
 * `CategoryTheory.ActionCategory.stabilizer_eq_bot_of_faithful`: if `G ⋉ X` has a faithful functor
@@ -162,7 +163,7 @@ theorem coe_stabilizerMulEquivAut_symm_apply (x : X) (e : Aut (objEquiv G X x)) 
 /-- Under the inclusion of automorphisms into endomorphisms, `stabilizerMulEquivAut` restricts
 to Mathlib's `ActionCategory.stabilizerIsoEnd` on the stabilizer submonoid. -/
 theorem toEnd_stabilizerMulEquivAut (x : X) (g : stabilizer G x) :
-    Aut.toEnd (stabilizerMulEquivAut G x g) = stabilizerIsoEnd G x ⟨g, g.2⟩ := (rfl)
+    Aut.toEnd (stabilizerMulEquivAut G x g) = stabilizerIsoEnd G x ⟨g, g.property⟩ := (rfl)
 
 /-- Transport of automorphisms along an arrow `f` of the action groupoid corresponds to
 conjugation of stabilizers by the label of `f`. -/
@@ -174,6 +175,49 @@ theorem autMulEquivOfIso_stabilizerMulEquivAut {x y : X}
   apply Functor.Elements.hom_ext
   simp [stabilizerEquivStabilizer_apply, mul_assoc]
 
+/-- A fully faithful functor out of the action groupoid identifies the stabilizer of `x` with the
+automorphism group of the image object. -/
+noncomputable def stabilizerMulEquivAutOfFullyFaithful {C : Type*} [Category* C]
+    (F : ActionCategory G X ⥤ C) [F.Full] [F.Faithful] {x : X} {z : C}
+    (hz : F.obj (objEquiv G X x) = z) : stabilizer G x ≃* Aut z :=
+  (stabilizerMulEquivAut G x).trans
+    (((Functor.FullyFaithful.ofFullyFaithful F).autMulEquivOfFullyFaithful _).trans
+      (Aut.autMulEquivOfIso (eqToIso hz)))
+
+@[simp]
+theorem stabilizerMulEquivAutOfFullyFaithful_apply_asIso_hom {C : Type*} [Category* C]
+    (F : ActionCategory G X ⥤ C) [F.Full] [F.Faithful] {x : X} {z : C}
+    (hz : F.obj (objEquiv G X x) = z) (g : stabilizer G x) :
+    (stabilizerMulEquivAutOfFullyFaithful F hz g).asIso.hom =
+      eqToHom hz.symm ≫ F.map (stabilizerMulEquivAut G x g).asIso.hom ≫ eqToHom hz := by
+  simp [stabilizerMulEquivAutOfFullyFaithful]
+
+@[simp]
+theorem stabilizerMulEquivAutOfFullyFaithful_apply_asIso_inv {C : Type*} [Category* C]
+    (F : ActionCategory G X ⥤ C) [F.Full] [F.Faithful] {x : X} {z : C}
+    (hz : F.obj (objEquiv G X x) = z) (g : stabilizer G x) :
+    (stabilizerMulEquivAutOfFullyFaithful F hz g).asIso.inv =
+      eqToHom hz.symm ≫ F.map (stabilizerMulEquivAut G x g).asIso.inv ≫ eqToHom hz := by
+  simp [stabilizerMulEquivAutOfFullyFaithful]
+
+@[simp]
+theorem coe_stabilizerMulEquivAutOfFullyFaithful_symm_apply {C : Type*} [Category* C]
+    (F : ActionCategory G X ⥤ C) [F.Full] [F.Faithful] {x : X} {z : C}
+    (hz : F.obj (objEquiv G X x) = z) (e : Aut z) :
+    ((stabilizerMulEquivAutOfFullyFaithful F hz).symm e : G) =
+      (F.preimage (eqToHom hz ≫ e.asIso.hom ≫ eqToHom hz.symm)).hom := by
+  let g := (stabilizerMulEquivAutOfFullyFaithful F hz).symm e
+  have hg : (stabilizerMulEquivAutOfFullyFaithful F hz g).asIso.hom = e.asIso.hom :=
+    congrArg (fun a : Aut z ↦ a.asIso.hom)
+      ((stabilizerMulEquivAutOfFullyFaithful F hz).apply_symm_apply e)
+  rw [stabilizerMulEquivAutOfFullyFaithful_apply_asIso_hom] at hg
+  have hmap : F.map (stabilizerMulEquivAut G x g).asIso.hom =
+      eqToHom hz ≫ e.asIso.hom ≫ eqToHom hz.symm := by
+    rw [← hg]
+    simp
+  simpa [g] using congrArg (fun f ↦ (f.hom : G))
+    ((F.preimage_map _).symm.trans (congrArg F.preimage hmap))
+
 variable (G)
 
 /-- The stabilizer of `x` is the opposite of Mathlib's vertex group at the corresponding object.
@@ -181,7 +225,7 @@ The vertex group multiplies in diagrammatic order, `f * g = f ≫ g`, while stab
 compose as `g * h = h ≫ g`. -/
 def stabilizerMulEquivVertexGroupMulOpposite (x : X) :
     stabilizer G x ≃* (objEquiv G X x ⟶ objEquiv G X x)ᵐᵒᵖ where
-  toFun g := .op (Functor.Elements.homMk (g : G) g.2)
+  toFun g := .op (Functor.Elements.homMk (g : G) g.property)
   invFun f := ⟨f.unop.hom, f.unop.map_val⟩
   left_inv _ := rfl
   right_inv _ := rfl

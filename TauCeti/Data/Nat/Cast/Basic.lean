@@ -8,10 +8,16 @@ module
 public import Mathlib.Data.Nat.Cast.Basic
 
 /-!
-# Casting natural remainders
+# Casting natural remainders and vanishing numerals
 
 The remainder identity `n = c * (n / c) + n % c` can be rearranged using subtraction
-after casting to a ring, including when `c = 0`.
+after casting to a ring, including when `c = 0`. In a semiring without zero divisors, the numeral
+`4 = 2 * 2` vanishes exactly when `2` does.
+
+## Main results
+
+* `Nat.cast_mod_eq_sub_mul_div`: `((n % c : ℕ) : R) = n - c * (n / c : ℕ)`.
+* `TauCeti.four_eq_zero_iff_two_eq_zero`: without zero divisors, `4 = 0` if and only if `2 = 0`.
 -/
 
 public section
@@ -24,3 +30,14 @@ theorem cast_mod_eq_sub_mul_div {R : Type*} [NonAssocRing R] (n c : ℕ) :
   rw [eq_sub_iff_add_eq, ← Nat.cast_mul, ← Nat.cast_add, Nat.mod_add_div]
 
 end Nat
+
+namespace TauCeti
+
+/-- In a semiring without zero divisors, such as a field, `4 = 2 * 2` vanishes exactly when `2`
+does. -/
+@[simp]
+theorem four_eq_zero_iff_two_eq_zero {R : Type*} [NonAssocSemiring R] [NoZeroDivisors R] :
+    (4 : R) = 0 ↔ (2 : R) = 0 := by
+  rw [← two_add_two_eq_four, ← two_mul, mul_self_eq_zero]
+
+end TauCeti

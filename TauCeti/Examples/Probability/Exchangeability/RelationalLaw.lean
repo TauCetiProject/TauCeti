@@ -94,11 +94,11 @@ example
     (n : ℕ) :
     ((ExchangeableGraphLaw.relationalLawEquiv.symm μ).law n).map
         SimpleGraph.toRelationalConfiguration =
-      μ.1.law n := by
+      μ.val.law n := by
   rw [ExchangeableGraphLaw.relationalLawEquiv_symm_law,
     SimpleGraph.measurableEmbedding_toRelationalConfiguration.map_comap,
     SimpleGraph.range_toRelationalConfiguration]
-  exact Measure.restrict_eq_self_of_ae_mem (μ.2 n)
+  exact Measure.restrict_eq_self_of_ae_mem (μ.property n)
 
 -- Decoding an invariant law carried by simple graphs and taking a window agrees with decoding the
 -- corresponding finite law.
@@ -108,13 +108,13 @@ example
     (n : ℕ) :
     (InfiniteExchangeableGraphLaw.relationalLawEquiv.symm μ).law.map (·.restrictFin n) =
       (ExchangeableGraphLaw.relationalLawEquiv.symm
-        ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.1,
+        ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.val,
           (ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff _).1 (by
-            rw [Equiv.apply_symm_apply]; exact μ.2)⟩).law n := by
+            rw [Equiv.apply_symm_apply]; exact μ.property)⟩).law n := by
   set F := ExchangeableGraphLaw.relationalLawEquiv.symm
-    ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.1,
+    ⟨(exchangeableRelationalLawEquivInfinite Language.graph).symm μ.val,
       (ae_isSimpleGraph_exchangeableRelationalLawEquivInfinite_law_iff _).1 (by
-        rw [Equiv.apply_symm_apply]; exact μ.2)⟩ with hF
+        rw [Equiv.apply_symm_apply]; exact μ.property)⟩ with hF
   -- The decoded infinite law is the graph extension of the decoded finite law.
   have hext : exchangeableGraphLawEquivInfinite F =
       InfiniteExchangeableGraphLaw.relationalLawEquiv.symm μ := by

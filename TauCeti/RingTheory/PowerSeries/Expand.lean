@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Finsupp
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Substitution and products of expanded power series
@@ -32,6 +34,8 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
+* `PowerSeries.expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one`: the geometric series `∑ aⁿ Xᵖⁿ`
+  inverts `1 - a Xᵖ`.
 * `Finset.weightedFinsuppAntidiag s m n`: the assignments `l : ι →₀ ℕ` supported in `s` with
   `∑ c ∈ s, m c * l c = n`.
 * `PowerSeries.coeff_prod_expand`: the `n`-th coefficient of `∏ c ∈ s, f c (X ^ m c)` is the sum
@@ -40,6 +44,10 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
   `1` does not change the `n`-th coefficient.
 * `PowerSeries.X_pow_dvd_expand_sub_C_constantCoeff`: an expanded series agrees with its
   constant coefficient modulo the corresponding power of `X`.
+* `PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero`,
+  `PowerSeries.linearIndependent_expand_iff`: over a commutative ring without zero divisors, the
+  expansions `f (X ^ d)` over `d : ℕ+` are linearly independent when `f` has a nonzero coefficient
+  of positive degree, and conversely over an integral domain.
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
@@ -108,45 +116,6 @@ theorem expand_injective (p : ℕ) (hp : p ≠ 0) :
   ext m
   rw [← coeff_expand_mul p hp f, h, coeff_expand_mul]
 
-/-- **Distinct positive dilations of a nonconstant power series are linearly independent.** Over a
-commutative ring without zero divisors, if `P` has a nonzero coefficient of positive degree, then
-the family `i ↦ P.expand (d i)` for pairwise distinct positive integers `d i` is `R`-linearly
-independent. -/
-theorem linearIndependent_expand [NoZeroDivisors R] {P : PowerSeries R}
-    (hP : ∃ n ≠ 0, P.coeff n ≠ 0) {ι : Type*} {d : ι → ℕ} (hd0 : ∀ i, d i ≠ 0)
-    (hd : Function.Injective d) : LinearIndependent R (fun i ↦ P.expand (d i) (hd0 i)) := by
-  classical
-  set n₀ := Nat.find hP
-  obtain ⟨hn₀, hPn₀⟩ : n₀ ≠ 0 ∧ P.coeff n₀ ≠ 0 := Nat.find_spec hP
-  rw [linearIndependent_iff']
-  intro s c hsum i hi
-  by_contra hci
-  obtain ⟨i₀, hi₀, hmin_d⟩ :=
-    Finset.exists_min_image (s.filter fun j ↦ c j ≠ 0) d ⟨i, Finset.mem_filter.mpr ⟨hi, hci⟩⟩
-  obtain ⟨hi₀s, hci₀⟩ := Finset.mem_filter.mp hi₀
-  have hcoeff := congrArg (coeff (R := R) (d i₀ * n₀)) hsum
-  rw [map_sum, map_zero, Finset.sum_eq_single i₀] at hcoeff
-  · rw [coeff_smul, smul_eq_mul, coeff_expand_mul] at hcoeff
-    exact (mul_eq_zero.mp hcoeff).elim hci₀ hPn₀
-  · intro j hjs hji₀
-    rw [coeff_smul, smul_eq_mul]
-    by_cases hcj : c j = 0
-    · rw [hcj, zero_mul]
-    · have hlt : d i₀ < d j := lt_of_le_of_ne (hmin_d j (Finset.mem_filter.mpr ⟨hjs, hcj⟩))
-        fun h ↦ hji₀ (hd h).symm
-      by_cases hdiv : d j ∣ d i₀ * n₀
-      · obtain ⟨m, hm⟩ := hdiv
-        rw [hm, coeff_expand_mul]
-        have hm0 : m ≠ 0 := right_ne_zero_of_mul (hm ▸ mul_ne_zero (hd0 i₀) hn₀)
-        have hmlt : m < n₀ :=
-          lt_of_mul_lt_mul_left' (hm ▸ Nat.mul_lt_mul_of_pos_right hlt (Nat.pos_of_ne_zero hm0))
-        have hPm : P.coeff m = 0 := by
-          by_contra hPm
-          exact Nat.find_min hP hmlt ⟨hm0, hPm⟩
-        rw [hPm, mul_zero]
-      · rw [coeff_expand_of_not_dvd _ (hd0 j) P hdiv, mul_zero]
-  · exact fun h ↦ absurd hi₀s h
-
 /-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ p`:
 `f ((a X) ^ p) = (f (a ^ p X)) (X ^ p)`. -/
 theorem rescale_expand (p : ℕ) (hp : p ≠ 0) (a : R) (f : R⟦X⟧) :
@@ -173,6 +142,13 @@ theorem toMvPowerSeries_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) (i : σ) (f
   rw [toMvPowerSeries_eq_subst, toMvPowerSeries_eq_subst,
     expand_subst p hp (HasSubst.X i), MvPowerSeries.expand_X,
     subst_expand p hp (HasSubst.X i)]
+
+/-- **The geometric series in `a Xᵖ`**: `∑ aⁿ Xᵖⁿ`, the expansion of `∑ aⁿ Xⁿ`, is a
+multiplicative inverse of `1 - a Xᵖ`, for every element `a` of the coefficient ring. -/
+theorem expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one (p : ℕ) (hp : p ≠ 0) (a : R) :
+    expand p hp (mk fun n ↦ a ^ n) * (1 - C a * X ^ p) = 1 := by
+  simpa [expand_C] using congrArg (expand p hp)
+    (TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one a)
 
 /-- **Expansion of a product of expanded power series**: the `n`-th coefficient of
 `∏ c ∈ s, f c (X ^ m c)` is the sum, over all `l ∈ s.weightedFinsuppAntidiag m n`, of the products
@@ -255,6 +231,69 @@ theorem X_pow_dvd_expand_sub_C_constantCoeff (p : ℕ) (hp : p ≠ 0) (f : R⟦X
   obtain ⟨g, hg⟩ := X_dvd_iff.2 (by simp : constantCoeff (f - C (constantCoeff f)) = 0)
   refine ⟨expand p hp g, ?_⟩
   rw [← expand_C p hp, ← map_sub, hg, map_mul, expand_X]
+
+/-- **Linear independence of expanded power series.** Over a commutative ring without zero divisors,
+if `f` has a nonzero coefficient of positive degree, then the expanded series `f (X ^ d)` for
+`d : ℕ+` are `R`-linearly independent. -/
+theorem linearIndependent_expand_of_exists_coeff_ne_zero [NoZeroDivisors R] {f : R⟦X⟧}
+    (hf : ∃ n ≠ 0, coeff n f ≠ 0) :
+    LinearIndependent R (fun d : ℕ+ ↦ expand d d.ne_zero f) := by
+  -- At the product `d₀ * n₀` of the least index in a nontrivial relation and the least positive
+  -- degree of `f`, only `f (X ^ d₀)` contributes.
+  classical
+  let n₀ := Nat.find hf
+  obtain ⟨hn₀, hfn₀⟩ := Nat.find_spec hf
+  rw [linearIndependent_iff]
+  intro c hc
+  by_contra hc0
+  let d₀ := c.support.min' (Finsupp.support_nonempty_iff.mpr hc0)
+  have hd₀ : d₀ ∈ c.support := Finset.min'_mem _ _
+  have hsum : ∑ d ∈ c.support, c d * coeff ((d₀ : ℕ) * n₀) (expand d d.ne_zero f) = 0 := by
+    simpa [Finsupp.linearCombination_apply, Finsupp.sum] using
+      congrArg (coeff ((d₀ : ℕ) * n₀)) hc
+  rw [Finset.sum_eq_single d₀] at hsum
+  · rw [coeff_expand_mul] at hsum
+    exact Finsupp.mem_support_iff.mp hd₀ ((mul_eq_zero.mp hsum).resolve_right hfn₀)
+  · intro d hd hne
+    have hlt : (d₀ : ℕ) < d :=
+      lt_of_le_of_ne (Finset.min'_le _ d hd) (PNat.coe_inj.not.mpr hne.symm)
+    rw [coeff_expand]
+    split_ifs with hdvd
+    · have hm0 : (d₀ : ℕ) * n₀ / d ≠ 0 := by
+        intro hm
+        exact mul_ne_zero d₀.ne_zero hn₀ (by rw [← Nat.mul_div_cancel' hdvd, hm, mul_zero])
+      have hmlt : (d₀ : ℕ) * n₀ / d < n₀ :=
+        Nat.lt_of_mul_lt_mul_left
+          ((Nat.mul_lt_mul_of_pos_right hlt (Nat.pos_of_ne_zero hm0)).trans_eq
+            (Nat.mul_div_cancel' hdvd))
+      have hmin : coeff ((d₀ : ℕ) * n₀ / d) f = 0 :=
+        not_not.mp (not_and.mp (Nat.find_min hf hmlt) hm0)
+      rw [hmin, mul_zero]
+    · rw [mul_zero]
+  · exact fun h ↦ absurd hd₀ h
+
+/-- **Distinct positive dilations of a nonconstant power series are linearly independent.** Over a
+commutative ring without zero divisors, if `P` has a nonzero coefficient of positive degree, then
+the family `i ↦ P.expand (d i)` for pairwise distinct positive integers `d i` is `R`-linearly
+independent. -/
+theorem linearIndependent_expand [NoZeroDivisors R] {P : R⟦X⟧}
+    (hP : ∃ n ≠ 0, coeff n P ≠ 0) {ι : Type*} {d : ι → ℕ} (hd0 : ∀ i, d i ≠ 0)
+    (hd : Function.Injective d) : LinearIndependent R (fun i ↦ expand (d i) (hd0 i) P) :=
+  (linearIndependent_expand_of_exists_coeff_ne_zero hP).comp
+    (fun i ↦ (⟨d i, Nat.pos_of_ne_zero (hd0 i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
+
+/-- Over an integral domain, the expanded series `f (X ^ d)` for `d : ℕ+` are `R`-linearly
+independent if and only if `f` has a nonzero coefficient of positive degree. -/
+theorem linearIndependent_expand_iff [IsDomain R] {f : R⟦X⟧} :
+    LinearIndependent R (fun d : ℕ+ ↦ expand d d.ne_zero f) ↔ ∃ n ≠ 0, coeff n f ≠ 0 := by
+  refine ⟨fun hli ↦ ?_, linearIndependent_expand_of_exists_coeff_ne_zero⟩
+  by_contra! hf
+  have hfC : f = C (constantCoeff f) := by
+    ext n
+    rcases eq_or_ne n 0 with rfl | hn <;> simp [coeff_C, *]
+  have heq : expand (1 : ℕ+) (1 : ℕ+).ne_zero f = expand (2 : ℕ+) (2 : ℕ+).ne_zero f := by
+    rw [hfC, expand_C, expand_C]
+  exact absurd (hli.injective heq) (by decide)
 
 
 open scoped PowerSeries.WithPiTopology

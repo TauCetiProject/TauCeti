@@ -63,14 +63,14 @@ private theorem exists_eq_smul_tmul_self (t : I ⊗[V] I) :
     ∃ (x : I) (s : V), t = s • (x ⊗ₜ[V] x) := by
   induction t using TensorProduct.inductionOn with
   | tmul y z =>
-    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.2 z z.2
+    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.property z z.property
     have hy : y = a • (⟨w, hw⟩ : I) := Subtype.ext (by simp [ha, mul_comm])
     have hz : z = b • (⟨w, hw⟩ : I) := Subtype.ext (by simp [hb, mul_comm])
     exact ⟨⟨w, hw⟩, a * b, by rw [hy, hz, smul_tmul_smul]⟩
   | add t t' ht ht' =>
     obtain ⟨x, s, rfl⟩ := ht
     obtain ⟨x', s', rfl⟩ := ht'
-    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir x x.2 x' x'.2
+    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir x x.property x' x'.property
     refine ⟨⟨w, hw⟩, s * a ^ 2 + s' * b ^ 2, ?_⟩
     rw [tmul_self_eq_pow_smul (z := ⟨w, hw⟩) ha, tmul_self_eq_pow_smul (z := ⟨w, hw⟩) hb,
       smul_smul, smul_smul, add_smul]
@@ -81,7 +81,7 @@ private theorem exists_mul_of_mem_torsionOf_smul_top (z : I) {u : I}
     (hu : u ∈ (Ideal.torsionOf V I z • ⊤ : Submodule V I)) :
     ∃ w ∈ I, w ∣ (z : V) ∧ ∃ j : V, j * z = 0 ∧ (u : V) = j * w := by
   refine smul_induction_on hu (fun j hj y _ ↦ ?_) fun u u' hu hu' ↦ ?_
-  · obtain ⟨w, hw, ⟨b, hb⟩, hwz⟩ := hdir y y.2 z z.2
+  · obtain ⟨w, hw, ⟨b, hb⟩, hwz⟩ := hdir y y.property z z.property
     have hjz : j * (z : V) = 0 := by
       simpa using congrArg Subtype.val ((Ideal.mem_torsionOf_iff z j).mp hj)
     refine ⟨w, hw, hwz, j * b, by rw [mul_right_comm, hjz, zero_mul], ?_⟩
@@ -155,7 +155,7 @@ theorem flat_tilde_of_isFilteredPrincipal (hI : IsIdempotentElem I)
   refine (Module.Flat.iff_forall_smul_eq_zero_of_directed fun t t' ↦ ?_).mpr fun r t hrt ↦ ?_
   · obtain ⟨x, s, rfl⟩ := exists_eq_smul_tmul_self hdir t
     obtain ⟨x', s', rfl⟩ := exists_eq_smul_tmul_self hdir t'
-    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir x x.2 x' x'.2
+    obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir x x.property x' x'.property
     refine ⟨(⟨w, hw⟩ : I) ⊗ₜ[V] ⟨w, hw⟩, ?_, ?_⟩ <;> dsimp only <;>
       rw [span_singleton_le_iff_mem, mem_span_singleton]
     · exact ⟨s * a ^ 2, by rw [tmul_self_eq_pow_smul (z := ⟨w, hw⟩) ha, smul_smul]⟩

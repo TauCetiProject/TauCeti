@@ -13,6 +13,9 @@ import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Matrix.Update
+import TauCeti.LinearAlgebra.Multilinear.CompSplit
+import TauCeti.LinearAlgebra.Multilinear.ContractNth
 
 /-!
 # Ungraded `A∞` right modules over a differential algebra
@@ -33,6 +36,10 @@ relations of a right module over the differential algebra `A`: every Koszul sign
 module `CFA` of a bordered three-manifold. Tau Ceti's `A∞` right modules
 (`TauCeti.AInfinityRightModule`) are `ℤ`-graded with operations of degree `1 - n`, which an ungraded
 differential cannot carry, for the reason recorded in `TauCeti.Algebra.Homology.DG.Ungraded`.
+Each of the three kinds of terms of the relation is multilinear in the algebra inputs
+(`TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+`TauCeti.ungradedStasheffMulMultilinear`), so an identity between relations can be checked on
+tuples drawn from spanning sets.
 
 A differential right module (`TauCeti.IsUngradedDGRightModule`) is an `A∞` module whose
 operations `m_{n+1}` vanish for `n ≥ 2`, over a ring of characteristic two
@@ -66,7 +73,10 @@ Two constructions are developed, together with strict units.
   (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply_inl`,
   `TauCeti.UngradedAInfinityRightModule.matrixAct_sumElim_zero_apply_inr`), and a path from `X` to
   `Y` crosses the off-diagonal block exactly once
-  (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`).
+  (`TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`). On a product
+  `Y × X`, a path is a path in `X` together with one in `Y`, so the matrix module of `Y × X` is
+  the matrix module over `X` of the matrix module of `Y`
+  (`TauCeti.UngradedAInfinityRightModule.matrixAct_prod_apply`).
 
 * **Strict units.** A module is strictly unital for a family `ι` of elements of the algebra
   (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital`) when its operations `m_{n+1}`,
@@ -83,11 +93,14 @@ Two constructions are developed, together with strict units.
   `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
-product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
+product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 ## Main definitions
 
 * `TauCeti.UngradedAInfinityRightModule`: an ungraded `A∞` right module.
+* `TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+  `TauCeti.ungradedStasheffMulMultilinear`: the terms of the `A∞` relations as multilinear maps
+  in the algebra inputs.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential`: the differential twisted by an
   element of the algebra.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct` and
@@ -115,6 +128,8 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   matrix operations restrict along an embedding whose range no path enters, respectively leaves.
 * `TauCeti.UngradedAInfinityRightModule.sum_matrixAct_update_fromBlocks_apply_inr`: along block
   upper-triangular matrices, paths from `X` to `Y` see the off-diagonal block exactly once.
+* `TauCeti.UngradedAInfinityRightModule.matrixAct_prod_apply`: the matrix module of `Y × X` is
+  the matrix module over `X` of the matrix module of `Y`.
 * `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_act`: a unit acting on the output
   of an operation multiplies its last input.
 * `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_twistedDifferential` and
@@ -159,39 +174,144 @@ theorem ungradedStasheffComp_def (n : ℕ) (a : Fin n → A) (m : M) :
 end Stasheff
 
 /-! The differential and product terms make sense for a family of multilinear maps with values in
-`M →ₗ[R] N`; for `N = M` they are those of the `A∞` relations of a module, and for a second module
-`N` those of the relations of a morphism (`TauCeti.UngradedAInfinityRightModuleHom`). -/
+any module `V`. For values in `M →ₗ[R] M` they are those of the `A∞` relations of a module, for
+values in `M →ₗ[R] N` those of the relations of a morphism
+(`TauCeti.UngradedAInfinityRightModuleHom`), and for matrix values those of the structure relations
+of a type `DA` bimodule (`TauCeti.TypeDAStructure`). -/
 
 section StasheffTerms
+
+variable {V : Type*} [AddCommGroup V] [Module R V]
+  (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) V)
+
+/-- The **differential terms** of the `A∞` relation of length `n`:
+`∑_l m_{n+1}(·, a₁, …, d aₗ, …, aₙ)`. -/
+noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) : V :=
+  ∑ l : Fin n, act n (Function.update a l (d (a l)))
+
+theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) :
+    ungradedStasheffDiff act d n a = ∑ l : Fin n, act n (Function.update a l (d (a l))) :=
+  (rfl)
+
+/-- The **product terms** of the `A∞` relation of length `n`:
+`∑_l m_n(·, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over the `n - 1` adjacent pairs. -/
+noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → V
+  | 0, _ => 0
+  | n + 1, a => ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a)
+
+@[simp]
+theorem ungradedStasheffMul_zero (a : Fin 0 → A) : ungradedStasheffMul act 0 a = 0 :=
+  (rfl)
+
+theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) :
+    ungradedStasheffMul act (n + 1) a = ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) :=
+  (rfl)
+
+/-- The product terms of two tuples of equal lengths with equal entries agree. -/
+theorem ungradedStasheffMul_congr {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+    (hab : ∀ l, b l = a (Fin.cast h l)) :
+    ungradedStasheffMul act m b = ungradedStasheffMul act n a := by
+  subst h
+  congr 1
+  exact funext hab
+
+end StasheffTerms
+
+section StasheffTermsApply
 
 variable {N : Type*} [AddCommGroup N] [Module R N]
   (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
 
-/-- The **differential terms** of the `A∞` relation of length `n`:
-`∑_l m_{n+1}(m, a₁, …, d aₗ, …, aₙ)`. -/
-noncomputable def ungradedStasheffDiff (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) : N :=
-  ∑ l : Fin n, act n (Function.update a l (d (a l))) m
-
-theorem ungradedStasheffDiff_def (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+theorem ungradedStasheffDiff_apply (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
     ungradedStasheffDiff act d n a m = ∑ l : Fin n, act n (Function.update a l (d (a l))) m :=
+  LinearMap.sum_apply _ _ _
+
+theorem ungradedStasheffMul_zero_apply (a : Fin 0 → A) (m : M) :
+    ungradedStasheffMul act 0 a m = 0 :=
   (rfl)
 
-/-- The **product terms** of the `A∞` relation of length `n`:
-`∑_l m_n(m, a₁, …, aₗ aₗ₊₁, …, aₙ)`, over the `n - 1` adjacent pairs. -/
-noncomputable def ungradedStasheffMul : (n : ℕ) → (Fin n → A) → M → N
-  | 0, _, _ => 0
-  | n + 1, a, m => ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m
-
-@[simp]
-theorem ungradedStasheffMul_zero (a : Fin 0 → A) (m : M) : ungradedStasheffMul act 0 a m = 0 :=
-  (rfl)
-
-theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
+theorem ungradedStasheffMul_succ_apply (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
     ungradedStasheffMul act (n + 1) a m =
       ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m :=
-  (rfl)
+  LinearMap.sum_apply _ _ _
 
-end StasheffTerms
+/-- The differential terms of a sum of families are the sums of their differential terms. -/
+theorem ungradedStasheffDiff_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff (fun k => act k + act' k) d n a m =
+      ungradedStasheffDiff act d n a m + ungradedStasheffDiff act' d n a m := by
+  simp [ungradedStasheffDiff_def, Finset.sum_add_distrib]
+
+/-- The product terms of a sum of families are the sums of their product terms. -/
+theorem ungradedStasheffMul_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMul (fun k => act k + act' k) n a m =
+      ungradedStasheffMul act n a m + ungradedStasheffMul act' n a m := by
+  cases n with
+  | zero => simp
+  | succ n => simp [ungradedStasheffMul_succ, Finset.sum_add_distrib]
+
+end StasheffTermsApply
+
+/-! ### The relations as multilinear maps -/
+
+section StasheffMultilinear
+
+variable (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M))
+  (d : A →ₗ[R] A)
+
+/-- The **composite terms** of the `A∞` relation of length `n`,
+`∑_{i + j = n} m_{j+1}(m_{i+1}(·, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, as a multilinear map in the algebra
+inputs (`TauCeti.ungradedStasheffCompMultilinear_apply`). -/
+noncomputable def ungradedStasheffCompMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ k : Fin (n + 1), (act (n - k)).compSplit (act k) (by omega)
+
+@[simp]
+theorem ungradedStasheffCompMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffCompMultilinear act n a m = ungradedStasheffComp act n a m := by
+  simp only [ungradedStasheffCompMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.compSplit_apply, ungradedStasheffComp_def]
+
+/-- The **differential terms** of the `A∞` relation of length `n`,
+`∑_l m_{n+1}(·, a₁, …, d aₗ, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffDiffMultilinear_apply`). -/
+noncomputable def ungradedStasheffDiffMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ l : Fin n, (act n).compLinearMap (Function.update (fun _ => LinearMap.id) l d)
+
+@[simp]
+theorem ungradedStasheffDiffMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiffMultilinear act d n a m = ungradedStasheffDiff act d n a m := by
+  simp only [ungradedStasheffDiffMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.compLinearMap_apply, ungradedStasheffDiff_def]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  congr 2
+  funext i
+  by_cases h : i = l
+  · subst h; simp
+  · simp [h]
+
+/-- The **product terms** of the `A∞` relation of length `n`,
+`∑_l m_n(·, a₁, …, aₗ aₗ₊₁, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffMulMultilinear_apply`). -/
+noncomputable def ungradedStasheffMulMultilinear : (n : ℕ) →
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
+  | 0 => 0
+  | n + 1 => ∑ l : Fin n, (act n).compContractNth l
+
+@[simp]
+theorem ungradedStasheffMulMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMulMultilinear act n a m = ungradedStasheffMul act n a m := by
+  cases n with
+  | zero => simp [ungradedStasheffMulMultilinear]
+  | succ n =>
+    simp [ungradedStasheffMulMultilinear, ungradedStasheffMul_succ, _root_.sum_apply,
+      LinearMap.sum_apply]
+
+end StasheffMultilinear
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation
 `act n` is `m_{n+1} : M ⊗ A^{⊗ n} → M`, multilinear in the algebra inputs and linear in the module
@@ -219,7 +339,8 @@ variable {d : A →ₗ[R] A} (Mm : UngradedAInfinityRightModule d M)
 theorem act_zero_act_zero (a b : Fin 0 → A) (m : M) : Mm.act 0 a (Mm.act 0 b m) = 0 := by
   have h := Mm.stasheff 0 a m
   rw [ungradedStasheffComp, Fin.sum_univ_one] at h
-  simp only [ungradedStasheffDiff, Fin.sum_univ_zero, ungradedStasheffMul_zero, add_zero] at h
+  simp only [ungradedStasheffDiff_apply, Fin.sum_univ_zero, ungradedStasheffMul_zero_apply,
+    add_zero] at h
   convert h using 2
   · exact congrArg (Mm.act 0) (Subsingleton.elim _ _)
   · exact congrArg (fun c => Mm.act 0 c m) (Subsingleton.elim _ _)
@@ -268,16 +389,16 @@ private theorem sum_sum_act_act_const [CharP R 2] (β : A) (N : ℕ) (m : M) :
     Fin.sum_univ_eq_sum_range (fun k => Mm.act (n - k) (fun _ => β) (Mm.act k (fun _ => β) m))
       (n + 1)
   have hdiff (n : ℕ) : ungradedStasheffDiff Mm.act d n (fun _ => β) m = D n := by
-    simp only [ungradedStasheffDiff, hD]
+    simp only [ungradedStasheffDiff_apply, hD]
   have hmul (n : ℕ) : ungradedStasheffMul Mm.act (n + 1) (fun _ => β) m = P n := by
-    simp only [ungradedStasheffMul_succ, Fin.contractNth_castSucc_const, hP]
+    simp only [ungradedStasheffMul_succ_apply, Fin.contractNth_castSucc_const, hP]
   have hDP : ∑ n ∈ range N, ∑ l : Fin n,
       Mm.act n (Function.update (fun _ => β) l (d β + β * β)) m =
         ∑ n ∈ range N, D n + ∑ n ∈ range N, P n := by
     rw [← sum_add_distrib]
     refine sum_congr rfl fun n _ => ?_
     simp only [hD, hP, ← sum_add_distrib, MultilinearMap.map_update_add, LinearMap.add_apply]
-  simp only [hcomp, hdiff, hmul, ungradedStasheffMul_zero, add_zero] at h
+  simp only [hcomp, hdiff, hmul, ungradedStasheffMul_zero_apply, add_zero] at h
   rw [hDP]
   refine (add_eq_zero_iff_eq_of_charTwo R).mp ?_
   rw [← h]
@@ -381,8 +502,8 @@ then `m₂(m₁ m, e) = m₁ (m₂(m, e))`: this is the relation of length one. 
 theorem act_one_act_zero [CharP R 2] {e : A} (he : d e = 0) (a : Fin 0 → A) (m : M) :
     Mm.act 1 (fun _ => e) (Mm.act 0 a m) = Mm.act 0 a (Mm.act 1 (fun _ => e) m) := by
   have h := Mm.stasheff 1 (fun _ => e) m
-  rw [ungradedStasheffComp, ungradedStasheffDiff, ungradedStasheffMul_succ, Fin.sum_univ_succ,
-    Fin.sum_univ_one, Fin.sum_univ_one, Fin.sum_univ_zero, add_zero] at h
+  rw [ungradedStasheffComp, ungradedStasheffDiff_apply, ungradedStasheffMul_succ_apply,
+    Fin.sum_univ_succ, Fin.sum_univ_one, Fin.sum_univ_one, Fin.sum_univ_zero, add_zero] at h
   rw [(Mm.act 1).map_coord_zero 0 (by simp [he]), LinearMap.zero_apply, add_zero] at h
   obtain rfl : a = fun _ => e := Subsingleton.elim _ _
   exact (add_eq_zero_iff_eq_of_charTwo R).mp h
@@ -427,6 +548,7 @@ theorem IsStrictlyUnital.act_one_act [CharP R 2] (hMm : Mm.IsStrictlyUnital ι) 
     · simp
   -- The differential terms vanish: `d (ι s) = 0`, and the unit remains in the other terms.
   have hdiff : ungradedStasheffDiff Mm.act d (n + 2) b m = 0 := by
+    rw [ungradedStasheffDiff_apply]
     refine Finset.sum_eq_zero fun l _ => ?_
     by_cases hl : l = Fin.last (n + 1)
     · subst hl
@@ -437,7 +559,7 @@ theorem IsStrictlyUnital.act_one_act [CharP R 2] (hMm : Mm.IsStrictlyUnital ι) 
   -- Among the product terms only the product `aₙ₊₁ * ι s` of the last two inputs survives.
   have hmul : ungradedStasheffMul Mm.act (n + 2) b m =
       Mm.act (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ι s)) m := by
-    rw [ungradedStasheffMul_succ, Finset.sum_eq_single (Fin.last n)]
+    rw [ungradedStasheffMul_succ_apply, Finset.sum_eq_single (Fin.last n)]
     · congr 2
       funext k
       by_cases hk : k = Fin.last n
@@ -513,6 +635,17 @@ theorem matrixAct_apply (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z
     Function.comp_apply, LinearMap.lcomp_apply, LinearMap.llcomp_apply, LinearMap.coe_single,
     LinearMap.coe_proj, Function.eval, Matrix.entryLinearMap_apply, Pi.single_apply, eq_comm]
 
+/-- The `z`-component of `m_{n+1}(φ, F₁, …, Fₙ)` in the matrix module, for a row vector `φ`
+concentrated at `x₀`, is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem matrixAct_single_apply (n : ℕ) (F : Fin n → Matrix X X A) (x₀ : X) (φ : M) (z : X) :
+    Mm.matrixAct X n F (Pi.single x₀ φ) z = ∑ x : Fin (n + 1) → X,
+      if x 0 = x₀ ∧ x (Fin.last n) = z then Mm.act n (fun l => F l (x l.castSucc) (x l.succ)) φ
+      else 0 := by
+  rw [matrixAct_apply]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  by_cases hx0 : x 0 = x₀ <;> simp [hx0]
+
 /-- If the operation `m_{n+1}` of `M` vanishes, so does that of the matrix module. -/
 theorem matrixAct_eq_zero_of_act_eq_zero {n : ℕ} (h : Mm.act n = 0) : Mm.matrixAct X n = 0 := by
   refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_
@@ -532,10 +665,7 @@ theorem matrixAct_eq_zero_of_lt (h : X → ℕ) {n : ℕ} (hn : univ.sup h < n)
     by_contra hne
     push Not at hne
     have hx : StrictMono (h ∘ x) := Fin.strictMono_iff_lt_succ.mpr fun l => hF l _ _ (hne l)
-    have := hx.add_sub_le_nat (Fin.zero_le (Fin.last n))
-    simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
-    have := le_sup (f := h) (mem_univ (x (Fin.last n)))
-    omega
+    exact hn.not_ge hx.le_univ_sup_nat
   rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply, ite_self]
 
 /-- **Composing operations of the matrix module.** The `z`-component of
@@ -550,23 +680,8 @@ theorem matrixAct_matrixAct_apply {i j n : ℕ} (h : i + j = n) (G : Fin j → M
           (Mm.act i (fun l => F l (w ⟨l, by have := l.isLt; omega⟩)
             (w ⟨l + 1, by have := l.isLt; omega⟩)) (φ (w 0)))
       else 0 := by
-  have hy (y : Fin (j + 1) → X) :
-      (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-        (Mm.matrixAct X i F φ (y 0)) else 0) =
-      ∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
-        (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-          (Mm.act i (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))) else 0) else 0 := by
-    split_ifs with hyz
-    · simp only [matrixAct_apply, map_sum]
-      exact sum_congr rfl fun x _ => by split_ifs <;> simp
-    · simp
-  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm,
-    Fin.sum_sum_ite_apply_last_eq_apply_zero h]
-  refine sum_congr rfl fun w _ => ?_
-  have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
-    congrArg w (Fin.ext (by simp [h]))
-  have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+  simp only [matrixAct_apply]
+  exact MultilinearMap.sum_ite_apply_sum_ite_eq_sum h (Mm.act j) (Mm.act i) G F φ z
 
 /-- The composite terms of the matrix module are sums over paths. -/
 private theorem stasheffComp_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
@@ -588,13 +703,8 @@ private theorem stasheffDiff_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (�
       ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
         ungradedStasheffDiff Mm.act d n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))
       else 0 := by
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X) (l : Fin n) (G : Matrix X X A) :
-      (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (G : Matrix X X A) => G (x t.castSucc) (x t.succ)) F l G)
-  simp only [ungradedStasheffDiff, Finset.sum_apply, matrixAct_apply, hupd,
-    LinearMap.mapMatrix_apply, Matrix.map_apply]
+  simp only [ungradedStasheffDiff_apply, Finset.sum_apply, matrixAct_apply,
+    Matrix.update_apply_path, LinearMap.mapMatrix_apply, Matrix.map_apply]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs <;> simp
@@ -608,7 +718,7 @@ private theorem stasheffMul_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ
   cases n with
   | zero => simp
   | succ n =>
-    simp only [ungradedStasheffMul_succ, Finset.sum_apply, matrixAct_apply]
+    simp only [ungradedStasheffMul_succ_apply, Finset.sum_apply, matrixAct_apply]
     have hR (w : Fin (n + 2) → X) :
         (if w (Fin.last (n + 1)) = z then ∑ l : Fin n,
           Mm.act n (Fin.contractNth l.castSucc (· * ·) fun k => F k (w k.castSucc) (w k.succ))
@@ -663,6 +773,13 @@ noncomputable def matrix :
 @[simp]
 theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
+
+/-- The operation `m₁` of the matrix module acts componentwise. -/
+theorem matrixAct_zero_apply (F : Fin 0 → Matrix X X A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 0 F φ z = Mm.act 0 (fun l => l.elim0) (φ z) := by
+  rw [matrixAct_apply, Fintype.sum_eq_single (fun _ => z) fun x hx => ite_eq_right fun h =>
+    hx (funext fun t => by rw [Fin.fin_one_eq_zero t]; exact h), ite_eq_left rfl]
+  exact congrArg (fun t => Mm.act 0 t (φ z)) (Subsingleton.elim _ _)
 
 /-- The `z`-component of the operation `m₂(φ, F)` of the matrix module is
 `∑ x, m₂(φ x, F x z)`. -/
@@ -845,13 +962,7 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
       Mm.matrixAct (X ⊕ Y) n (fun _ => Matrix.fromBlocks δ G 0 δ') (Sum.elim φ 0) (Sum.inr z) := by
   set C : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks δ F 0 δ'
   set E : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks 0 G 0 0
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X ⊕ Y) (l : Fin n) :
-      (fun t => Function.update (fun _ => C) l E t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => C (x t.castSucc) (x t.succ)) l (E (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (P : Matrix (X ⊕ Y) (X ⊕ Y) A) =>
-      P (x t.castSucc) (x t.succ)) (fun _ => C) l E)
-  simp only [matrixAct_apply, hupd]
+  simp only [matrixAct_apply, Matrix.update_apply_path]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs with hz
@@ -895,6 +1006,26 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
     obtain ⟨b, hb⟩ := Sum.isRight_iff.mp h₂
     simp [E, ha, hb]
   · rw [Function.update_of_ne ht, (hoff t ht).2]
+
+/-- **The matrix module of a product.** Row vectors on `Y × X` are row vectors on `X` with entries
+row vectors on `Y`, and matrices on `Y × X` are matrices on `X` with entries matrices on `Y`: a
+path in `Y × X` is a path in `X` together with a path in `Y`. So the operations of the matrix
+module of `Y × X` are those of the matrix module over `X` of the matrix module of `Y`. -/
+theorem matrixAct_prod_apply {n : ℕ} (F : Fin n → Matrix (Y × X) (Y × X) A) (φ : Y × X → M)
+    (y : Y) (z : X) :
+    Mm.matrixAct (Y × X) n F φ (y, z) =
+      (Mm.matrix Y).matrixAct X n (fun l => Matrix.of fun x x' => (F l).submatrix (·, x) (·, x'))
+        (fun x y => φ (y, x)) z y := by
+  rw [(Mm.matrix Y).matrixAct_apply, Mm.matrixAct_apply (Y × X), Finset.sum_apply,
+    ← (Equiv.arrowProdEquivProdArrow _ (fun _ => Y) (fun _ => X)).symm.sum_comp,
+    Fintype.sum_prod_type, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  split_ifs with hv
+  · rw [matrix_act, matrixAct_apply]
+    refine Finset.sum_congr rfl fun u _ => ?_
+    simp [Equiv.arrowProdEquivProdArrow, hv, Prod.ext_iff]
+  · refine Finset.sum_eq_zero fun u _ => ?_
+    simp [Equiv.arrowProdEquivProdArrow, hv, Prod.ext_iff]
 
 end Block
 
@@ -948,10 +1079,10 @@ noncomputable def toUngradedAInfinityRightModule [CharP R 2]
     have h2 (x : M) : x + x = 0 := add_self_eq_zero_of_charTwo R x
     match n with
     | 0 =>
-      simp [ungradedStasheffComp, ungradedStasheffDiff, dgAct_apply_of_eq_zero, hM.map_map]
+      simp [ungradedStasheffComp, ungradedStasheffDiff_apply, dgAct_apply_of_eq_zero, hM.map_map]
     | 1 =>
-      simp only [ungradedStasheffComp, ungradedStasheffDiff, Fin.sum_univ_succ,
-        Fin.sum_univ_zero, ungradedStasheffMul_succ, dgAct_apply_of_eq_zero,
+      simp only [ungradedStasheffComp, ungradedStasheffDiff_apply, Fin.sum_univ_succ,
+        Fin.sum_univ_zero, ungradedStasheffMul_succ_apply, dgAct_apply_of_eq_zero,
         dgAct_apply_of_eq_one, Fin.val_zero, Fin.val_succ, Nat.sub_zero, Nat.sub_self, add_zero,
         Fin.zero_eta, Function.update_self, hM.map_smul, Fin.isValue]
       calc _ = (op (a 0) • dM m + op (a 0) • dM m) + (op (d (a 0)) • m + op (d (a 0)) • m) := by
@@ -960,8 +1091,8 @@ noncomputable def toUngradedAInfinityRightModule [CharP R 2]
     | 2 =>
       have hmul : Fin.contractNth 0 (· * ·) a 0 = a 0 * a 1 := by
         rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.castSucc_zero, Fin.succ_zero_eq_one]
-      simp only [ungradedStasheffComp, ungradedStasheffDiff, Fin.sum_univ_succ,
-        Fin.sum_univ_zero, ungradedStasheffMul_succ, dgAct_apply_of_eq_zero,
+      simp only [ungradedStasheffComp, ungradedStasheffDiff_apply, Fin.sum_univ_succ,
+        Fin.sum_univ_zero, ungradedStasheffMul_succ_apply, dgAct_apply_of_eq_zero,
         dgAct_apply_of_eq_one, Fin.val_zero, Fin.val_succ, Nat.sub_zero, Fin.isValue,
         dgAct_apply_of_two_le dM (le_refl 2), map_zero, add_zero, zero_add, Fin.zero_eta, hmul,
         Fin.castSucc_zero, Fin.mk_one]
@@ -971,10 +1102,11 @@ noncomputable def toUngradedAInfinityRightModule [CharP R 2]
         rcases le_or_gt 2 (k : ℕ) with hk | hk
         · rw [dgAct_apply_of_two_le dM hk, map_zero]
         · exact dgAct_apply_of_two_le dM (by omega) _ _
-      have hdiff : ungradedStasheffDiff (dgAct dM) d (n + 3) a m = 0 :=
-        sum_eq_zero fun l _ => dgAct_apply_of_two_le dM (by omega) _ _
+      have hdiff : ungradedStasheffDiff (dgAct dM) d (n + 3) a m = 0 := by
+        rw [ungradedStasheffDiff_apply]
+        exact sum_eq_zero fun l _ => dgAct_apply_of_two_le dM (by omega) _ _
       have hmul : ungradedStasheffMul (dgAct dM) (n + 3) a m = 0 := by
-        rw [ungradedStasheffMul_succ]
+        rw [ungradedStasheffMul_succ_apply]
         exact sum_eq_zero fun l _ => dgAct_apply_of_two_le dM (by omega) _ _
       rw [hcomp, hdiff, hmul, add_zero, add_zero]
 
@@ -997,14 +1129,21 @@ theorem toUngradedAInfinityRightModule_act_add_two [CharP R 2]
     hM.toUngradedAInfinityRightModule.act (n + 2) = 0 :=
   (rfl)
 
+/-- The operations `m_{k+1}` of a differential module viewed as an `A∞` module vanish from arity
+`k = 2` on. -/
+theorem toUngradedAInfinityRightModule_act_eq_zero_of_two_le [CharP R 2]
+    (hM : IsUngradedDGRightModule d dM) {k : ℕ} (hk : 2 ≤ k) :
+    hM.toUngradedAInfinityRightModule.act k = 0 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  exact hM.toUngradedAInfinityRightModule_act_add_two n
+
 /-- A differential module viewed as an `A∞` module is strictly unital for every family of
 elements: its operations `m_{n+1}`, `n ≥ 2`, vanish. -/
 theorem isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2]
     (hM : IsUngradedDGRightModule d dM) {S : Type*} (ι : S → A) :
     hM.toUngradedAInfinityRightModule.IsStrictlyUnital ι := by
   refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a _ _ _ => ?_
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
+  rw [hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le hn, zero_apply]
 
 end IsUngradedDGRightModule
 

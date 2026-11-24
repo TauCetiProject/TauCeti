@@ -19,13 +19,15 @@ For a smooth almost complex structure `J` on a finite-dimensional manifold, the 
 expression on vector fields is
 `N_J(X, Y) = [JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]`,
 with Mathlib's Lie bracket `VectorField.mlieBracket`. It is linear over differentiable functions
-in each argument, so it is a tensor: its value at `x` depends only on `X x` and `Y x`. This file
-constructs that tensor as a continuous bilinear map on each tangent space, through Mathlib's
-tensoriality criterion `TensorialAt.mkHom₂`, and proves its basic algebraic identities. The
-construction follows Mathlib's torsion tensor `IsCovariantDerivativeOn.torsion`.
+in each argument, so on vector fields differentiable at `x` it is a tensor: its value at `x`
+depends only on `X x` and `Y x`. This file constructs that tensor as a continuous bilinear map on
+each tangent space, through Mathlib's tensoriality criterion `TensorialAt.mkHom₂`, and proves its
+basic algebraic identities. The construction follows Mathlib's torsion tensor
+`IsCovariantDerivativeOn.torsion`.
 
 The Nijenhuis tensor is the obstruction to integrability of `J`: the Newlander–Nirenberg
-theorem says that `J` comes from a complex atlas exactly when it vanishes. Its vanishing is
+theorem says that, on a manifold without boundary, `J` comes from a complex atlas exactly when it
+vanishes. Its vanishing is
 equivalent to involutivity of the `±i` eigenbundles of `J` in the complexified tangent bundle,
 and it controls the components of the exterior derivative outside the bidegrees `(1,0)` and
 `(0,1)`. The identities `N_J(Jv, w) = -J N_J(v, w)` proved here are the real form of the type
@@ -76,9 +78,12 @@ The tensor is normalised as `N_J(X, Y) = [JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]
 `1/4` (some sources use `N_J / 4` instead). The normalisation and the overall sign vary between
 sources. Kobayashi and Nomizu define `N(X, Y) = 2 {[JX, JY] - [X, Y] - J[X, JY] - J[JX, Y]}`, which
 is twice `N_J` here, and the opposite overall sign `[X, Y] + J[JX, Y] + J[X, JY] - [JX, JY]` is also
-in common use. Statements about `N_J` here (for instance that the `(0,2)`-part of `dα` is
-`α ∘ N_J / 4`) refer to this normalisation and change accordingly under the others. The vanishing
-of the tensor does not depend on the convention.
+in common use. Statements about `N_J`, in this file and downstream, refer to this normalisation and
+change accordingly under the others: for instance, for a one-form `α` of type `(1,0)`, the
+`(0,2)`-part of `dα` is `α ∘ N_J / 4`
+(`TauCeti.SmoothForm.IsOfType.typeProjection_zero_two_mextDerivₗ_apply`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis`). The vanishing of the tensor does not
+depend on the convention.
 
 ## References
 
@@ -90,7 +95,7 @@ of the tensor does not depend on the convention.
 
 public noncomputable section
 
-open Bundle FiberBundle VectorField
+open FiberBundle VectorField
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti

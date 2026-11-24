@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.LinearAlgebra.Matrix.Trace.IsIntegral
 
@@ -24,11 +25,17 @@ matrix algebras, by a dual lattice.
 ## Main results
 
 * `Algebra.regularTraceForm_eq_traceForm`: for commutative `S` it is `Algebra.traceForm R S`.
+* `Algebra.regularTraceForm_isSymm`: the regular trace form is symmetric, by cyclicity of the
+  trace.
+* `Algebra.regularTraceForm_baseChange`: for `S` finite free over `R`, the regular trace form of
+  `A ⊗[R] S` over a commutative `R`-algebra `A` is the base change of that of `S`.
 * `Algebra.isIntegral_trace_lmul`: over a field `K` which is an `R`-algebra, the regular trace of an
   element integral over `R` is integral over `R`.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace Algebra
 
@@ -53,6 +60,21 @@ theorem regularTraceForm_eq_traceForm (S : Type*) [CommRing S] [Algebra R S] :
     regularTraceForm R S = traceForm R S := by
   ext x y
   rw [regularTraceForm_apply, traceForm_apply, trace_apply]
+
+/-- The regular trace form is symmetric: `tr(L_{xy}) = tr(L_x L_y) = tr(L_y L_x) = tr(L_{yx})`. -/
+theorem regularTraceForm_isSymm : (regularTraceForm R S).IsSymm :=
+  ⟨fun x y => by
+    simp only [regularTraceForm_apply, map_mul]
+    exact trace_mul_comm R _ _⟩
+
+/-- **The regular trace form commutes with base change.** For an `R`-algebra `S`, finite free over
+`R`, and a commutative `R`-algebra `A`, the regular trace form of `A ⊗[R] S` over `A` is the base
+change of the regular trace form of `S`. -/
+@[simp]
+theorem regularTraceForm_baseChange [Module.Free R S] [Module.Finite R S] (A : Type*) [CommRing A]
+    [Algebra R A] : regularTraceForm A (A ⊗[R] S) = (regularTraceForm R S).baseChange A := by
+  ext x y
+  simp [← Algebra.baseChange_lmul, Algebra.algebraMap_eq_smul_one]
 
 /-- **The regular trace of an integral element is integral.** Let `K` be a field which is an
 `R`-algebra and `E` a finite-dimensional `K`-algebra, not necessarily commutative. If `x : E` is

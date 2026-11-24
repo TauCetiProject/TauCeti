@@ -27,6 +27,9 @@ computed as `(ℤ/5)ˣ`.
 `Polynomial.cyclotomic_thirty` expand `Φ₁₂`, `Φ₁₈` and `Φ₃₀` in the same way, which is what is
 needed to check that these polynomials annihilate an explicit matrix.
 
+Over a nonzero ring, `Polynomial.cyclotomic_ne_one` records that a cyclotomic polynomial of
+positive order is not `1`.
+
 Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
@@ -97,6 +100,11 @@ theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
   rw [natDegree_comp_eq_of_mul_ne_zero (by simp [(cyclotomic.monic n R).leadingCoeff, h1]),
     natDegree_cyclotomic]
   simp
+
+/-- Over a nonzero ring, a cyclotomic polynomial of positive order is not `1`, as it has positive
+degree. -/
+theorem cyclotomic_ne_one [Nontrivial R] {n : ℕ} (hn : 0 < n) : cyclotomic n R ≠ 1 := fun h ↦ by
+  simpa [h] using degree_cyclotomic_pos n R hn
 
 /-- `Φ_n(X + 1)` is monic. -/
 theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by

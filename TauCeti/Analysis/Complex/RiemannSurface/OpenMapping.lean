@@ -60,7 +60,7 @@ theorem nhds_le_map_nhds_of_not_eventuallyConst {x : X}
   obtain ⟨U, -, hUs, V, hV, -, hfib⟩ :=
     exists_nhds_localMultiplicity_fiber_sum hf hne (mem_map.1 hs)
   refine mem_of_superset hV fun y' hy' ↦ ?_
-  obtain ⟨x', hx'⟩ := nonempty_iff_ne_empty.2 (hfib y' hy').1
+  obtain ⟨x', hx'⟩ := ne_empty_iff_nonempty.1 (hfib y' hy').1
   have hfx' : f x' = y' := hx'.1
   exact hfx' ▸ hUs hx'.2
 

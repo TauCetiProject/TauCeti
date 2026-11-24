@@ -29,7 +29,7 @@ theorem val_mem_unattach_iff (a : Subtype p) (l : List (Subtype p)) :
   · rintro ⟨_, h⟩
     simpa using h
   · intro h
-    exact ⟨a.2, h⟩
+    exact ⟨a.property, h⟩
 
 /-- Forgetting membership proofs preserves and reflects duplicate-freeness. -/
 @[simp]

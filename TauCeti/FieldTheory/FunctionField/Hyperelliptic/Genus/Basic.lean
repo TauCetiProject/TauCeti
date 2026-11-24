@@ -316,19 +316,23 @@ theorem Place.ramificationIdx_eq_one_of_restrict_eq (h2 : (2 : k) ≠ 0) {f : k[
   omega
 
 /-- **The degree of the different of `y ^ 2 = f`**: for a squarefree polynomial `f` of degree
-`m ≥ 1`, the different of `F / k(x)` has degree `m + (m mod 2)`, the number of branch points
+`m`, the different of `F / k(x)` has degree `m + (m mod 2)`, the number of branch points
 counted with their degrees. -/
 theorem degree_different_ratFunc_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f)
-    (hdeg : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     Divisor.degree (Divisor.different k F (IsFunctionField.ratFunc k)) =
       f.natDegree + f.natDegree % 2 := by
   have h := Divisor.finrank_mul_degree_conorm_of_isSeparable (k' := k) (F' := F)
     (branchDivisor hf.ne_zero)
   rw [conorm_branchDivisor h2 hf hgen hy, Divisor.degree_zsmul, degree_branchDivisor,
-    Module.finrank_self, finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy] at h
-  push_cast at h
-  linarith
+    Module.finrank_self] at h
+  rcases Nat.eq_zero_or_pos f.natDegree with hdeg | hdeg
+  · rw [hdeg] at h ⊢
+    simpa using h
+  · rw [finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy] at h
+    push_cast at h
+    linarith
 
 end Different
 
@@ -357,7 +361,7 @@ theorem genus_eq_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f)
   obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy
   have h := hurwitz_genus_formula_ratFunc (isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy)
   rw [finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy,
-    degree_different_ratFunc_of_sq_eq h2 hf hdeg hgen hy] at h
+    degree_different_ratFunc_of_sq_eq h2 hf hgen hy] at h
   push_cast at h
   omega
 

@@ -316,13 +316,14 @@ private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero
     levelRaise_mem_cuspFormsNewAt hq h1M hqML
       (cuspFormsNew_le_cuspFormsNewAt hq.ne_one g.isNew)
   have hp : ∀ p : {p // p ∈ L.primeFactors},
-      haveI : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
-      ℓ (P (CuspForm.levelRaise p.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd
-        (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.2)).dvd) (Fp p))) = 0 := fun p ↦
-    have : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
+      haveI : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
+      ℓ (P (CuspForm.levelRaise p.val (Gamma1_map_le_conjAct_scaleGL_of_dvd
+        (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.property)).dvd) (Fp p))) = 0 := fun p ↦
+    have : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
     (CuspForm.qExpansionCoeffₗ_apply _ _ _ _).trans
-      (qExpansion_coeff_one_projection_levelRaise_eq_zero (Nat.prime_of_mem_primeFactors p.2) hq
-        (Nat.dvd_of_mem_primeFactors p.2) _)
+      (qExpansion_coeff_one_projection_levelRaise_eq_zero (Nat.prime_of_mem_primeFactors p.property)
+          hq
+        (Nat.dvd_of_mem_primeFactors p.property) _)
   have hℓG : ℓ G = 1 := (hcoeff h1M _).trans g.isNorm
   have key := congrArg (fun x ↦ ℓ (P x)) hsum
   simp only [hD, map_sub, hF, hG, map_sum, hp, Finset.sum_const_zero, zero_sub, map_neg, hℓG,
@@ -465,21 +466,19 @@ theorem Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq {M M' : ℕ} [NeZero M] 
 
 variable (N k) in
 /-- **Cross-level injectivity of good-prime Hecke eigenvalues at a fixed nebentypus.** Distinct
-pairs `(M, g)` of a divisor level `M ∣ N` and a newform `g` of level `M` whose nebentypus pulls back
-to `χ` have distinct eigenvalue systems at the primes `p ∤ N`. -/
+pairs `(M, g)` of a positive divisor `M ∣ N` and a newform `g` of level `M` whose nebentypus pulls
+back to `χ` have distinct eigenvalue systems at the primes `p ∤ N`. -/
 theorem Newform.eigenvalue_injective_of_comp_unitsMap_eq (χ : (ZMod N)ˣ →* ℂˣ) :
     Function.Injective
-      (fun (mg : Σ M : {M : ℕ // M ∣ N},
-          letI : NeZero M.1 := NeZero.of_dvd M.2
-          {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ})
+      (fun (mg : Σ M : {M : ℕ+ // (M : ℕ) ∣ N},
+          {g : Newform M.val k // g.χ.comp (ZMod.unitsMap M.property) = χ})
         (p : {p : ℕ // p.Prime ∧ Nat.Coprime p N}) ↦
-        letI : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
-        mg.2.1.eigenvalue ⟨p.1, p.2.1.pos⟩ (p.2.2.coprime_dvd_right mg.1.2)) := by
+        mg.2.val.eigenvalue ⟨p.val, p.property.1.pos⟩
+          (p.property.2.coprime_dvd_right mg.1.property)) := by
   rintro ⟨⟨M₁, hM₁⟩, g₁, hg₁⟩ ⟨⟨M₂, hM₂⟩, g₂, hg₂⟩ h
-  have : NeZero M₁ := NeZero.of_dvd hM₁
-  have : NeZero M₂ := NeZero.of_dvd hM₂
-  obtain ⟨rfl, hcoe⟩ := Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ hg₁ hg₂
+  obtain ⟨hM, hcoe⟩ := Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ hg₁ hg₂
     (S := ∅) fun p hp hpN _ ↦ congr_fun h ⟨p, hp, hpN⟩
+  obtain rfl : M₁ = M₂ := PNat.eq hM
   have hg : g₁ = g₂ := Newform.ext (DFunLike.coe_injective hcoe)
   subst hg
   rfl

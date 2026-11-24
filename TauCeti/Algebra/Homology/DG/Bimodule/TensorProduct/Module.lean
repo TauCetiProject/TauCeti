@@ -76,6 +76,14 @@ theorem tmul_mem_tensorBimoduleObj_grading {p q : ℤ} {m : M} {n : N}
     tmul R B m n ∈ (tensorBimoduleObj M N).grading (p + q) :=
   DGBimoduleCat.tmul_mem_tensorObj_grading hm hn
 
+/-- Tensoring with the zero module gives the zero module. -/
+instance [Subsingleton M] : Subsingleton (tensorBimoduleObj M N) :=
+  inferInstanceAs (Subsingleton (BalancedTensorProduct R B M N))
+
+/-- Tensoring with the zero bimodule gives the zero module. -/
+instance [Subsingleton N] : Subsingleton (tensorBimoduleObj M N) :=
+  inferInstanceAs (Subsingleton (BalancedTensorProduct R B M N))
+
 /-- The tensor map induced by a right-module morphism and a bimodule morphism. -/
 abbrev tensorBimoduleMap (f : M ⟶ M') (g : N ⟶ N') :
     tensorBimoduleObj M N ⟶ tensorBimoduleObj M' N' :=
