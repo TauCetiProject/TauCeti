@@ -606,17 +606,15 @@ theorem leftSymbol_ofRight_ofSpatial [CompleteSpace V] [CompleteSpace W]
       Symbol.ofSpatial f hf := by
   refine Symbol.ext (coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq _
     fun u _ ↦ funext fun x ↦ ?_).symm
-  have hc : (Symbol.ofSpatial f hf).coefficient = fun p ↦ f p.1 :=
-    Symbol.coefficient_ofSpatial_eq f hf
   have hg : HasCompactSupport fun y ↦ f y (u y) :=
     hfs.mono fun y hy h ↦ hy (by simp [h])
   have hsm : ContDiff ℝ ∞ fun y ↦ f y (u y) := by
     have h := (Symbol.ofSpatial f hf).contDiff_quantizeSchwartzValue u
-    rwa [hc, funext (quantizeSchwartzValue_comp_fst f u)] at h
+    rwa [funext (Symbol.quantizeSchwartzValue_ofSpatial f hf u)] at h
   set g := hg.toSchwartzMap hsm
   have hgu : ⇑g = fun y ↦ f y (u y) := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [hc, quantizeSchwartzValue_comp_fst, quantizeAmplitudeValue_def]
-  simp only [coefficient_ofRight, hc]
+  rw [Symbol.quantizeSchwartzValue_ofSpatial, quantizeAmplitudeValue_def]
+  simp only [coefficient_ofRight, Symbol.coefficient_ofSpatial]
   rw [← hgu, ← SchwartzMap.fourier_coe, ← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe,
     fourierInv_fourier_eq, hgu]
 

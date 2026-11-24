@@ -52,6 +52,8 @@ are only real-linear.
   two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
+* `inner_quadraticTwoFormPolar_eq_re_inner`: `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2` for every
+  two-form `x`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
@@ -222,17 +224,14 @@ theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHal
     ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
       (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
   have hstar := o.hodgeStar_hodgeStar_of_even even_two hkl ω
-  -- The self-dual part of `ω`, and the vanishing of `C` on the anti-self-dual part.
+  -- The self-dual part of `ω`, on which `C` acts as on `ω`.
   have hplus : o.hodgeStar hkl ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       (2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω) := by
     rw [map_smul, map_add, hstar, add_comm]
-  have hminus : cliffordRestriction o ρ (ω - o.hodgeStar hkl ω) = 0 :=
-    cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by rw [map_sub, hstar, neg_sub])
   have hC : cliffordRestriction o ρ ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
       cliffordRestriction o ρ ω := by
-    rw [map_sub, sub_eq_zero] at hminus
-    rw [map_smul, map_add, ← hminus, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero,
-      one_smul]
+    rw [map_smul, map_add, cliffordRestriction_hodgeStar o ρ hQ hkl, ← two_smul ℝ, smul_smul,
+      inv_mul_cancel₀ two_ne_zero, one_smul]
   have hq := o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl (quadraticTwoForm o ρ hkl ψ)) ω
   have h := inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self o ρ hQ hkl hplus ψ
@@ -308,6 +307,32 @@ theorem quadraticTwoForm_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hkl (ψ + φ) = quadraticTwoForm o ρ hkl ψ +
       quadraticTwoForm o ρ hkl φ + quadraticTwoFormPolar o ρ hkl ψ φ := by
   simp [quadraticTwoForm_def, quadraticTwoFormPolar_apply, quadraticEnd_add]
+
+include hQ in
+variable {ρ} in
+/-- **The pairing of the polarization of `q` with a two-form**:
+`⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`. This polarizes
+`⟪q(ψ), x⟫ = Re⟪ψ, C(i x) ψ⟫ / 4` (`inner_quadraticTwoForm_eq_re_inner`), using that `C(i x)` is
+self-adjoint. -/
+theorem inner_quadraticTwoFormPolar_eq_re_inner
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (x : ⋀[ℝ]^2 V)
+    (ψ φ : positiveHalfSpinors o ρ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ =
+      (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re / 2 := by
+  have hpol : ⟪(quadraticTwoForm o ρ hkl (ψ + φ) : ⋀[ℝ]^2 V), x⟫ =
+      ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), x⟫ + ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), x⟫ +
+        ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ := by
+    rw [quadraticTwoForm_add, Submodule.coe_add, Submodule.coe_add, inner_add_left,
+      inner_add_left]
+  have hsymm := (isSelfAdjoint_cliffordRestriction o hρ x).isSymmetric φ ψ
+  simp only [ContinuousLinearMap.coe_coe] at hsymm
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl,
+    inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, map_add, inner_add_left, inner_add_right,
+    inner_add_right] at hpol
+  have hre : (⟪ψ, cliffordRestriction o ρ x φ⟫_ℂ).re = (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re := by
+    rw [← hsymm, ← inner_conj_symm, Complex.conj_re]
+  simp only [Complex.add_re] at hpol
+  linarith
 
 /-- `q'(ψ, c ψ) = 2 Re(c) q(ψ)`. In particular the derivative of `q` vanishes along the
 infinitesimal gauge directions `ξ ψ` with `ξ` imaginary. -/

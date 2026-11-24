@@ -29,6 +29,7 @@ elements are Frobenius groups; their Frobenius kernels are identified in
 * `TauCeti.affineAction`: multiplication by a unit on the additive group of a ring.
 * `TauCeti.AffineGroup`: the semidirect product `F ⋊ Fˣ` for this action, acting faithfully on
   `F` by affine maps (`TauCeti.AffineGroup.smul_def`).
+* `TauCeti.AffineGroup.map`: the homomorphism of affine groups induced by a ring homomorphism.
 * `TauCeti.affineTranslationSubgroup` and `TauCeti.affineLinearSubgroup`: the two canonical
   factors.
 * `TauCeti.isComplement'_affineTranslationSubgroup_affineLinearSubgroup`: the two factors are
@@ -79,6 +80,12 @@ theorem AffineGroup.smul_def {F : Type*} [Ring F] (g : AffineGroup F) (x : F) :
     g • x = g.left.toAdd + (g.right : F) * x :=
   (rfl)
 
+/-- Two elements of the affine group are equal when their translation and linear parts agree. -/
+@[ext]
+theorem AffineGroup.ext {F : Type*} [Ring F] {g g' : AffineGroup F}
+    (h₁ : g.left.toAdd = g'.left.toAdd) (h₂ : (g.right : F) = g'.right) : g = g' :=
+  SemidirectProduct.ext (Multiplicative.toAdd.injective h₁) (Units.ext h₂)
+
 /-- The affine group acts on its ring by affine maps. -/
 instance {F : Type*} [Ring F] : MulAction (AffineGroup F) F where
   one_smul x := by simp [AffineGroup.smul_def]
@@ -92,7 +99,41 @@ instance {F : Type*} [Ring F] : FaithfulSMul (AffineGroup F) F where
     have h1 := hgh 1
     simp only [AffineGroup.smul_def, mul_zero, add_zero, mul_one] at h0 h1
     rw [h0, add_right_inj] at h1
-    exact SemidirectProduct.ext (Multiplicative.ext h0) (Units.ext h1)
+    exact AffineGroup.ext h0 h1
+
+/-- A ring homomorphism `f : F →+* E` induces the homomorphism of affine groups
+`(b, a) ↦ (f b, f a)`. -/
+def AffineGroup.map {F E : Type*} [Ring F] [Ring E] (f : F →+* E) :
+    AffineGroup F →* AffineGroup E :=
+  SemidirectProduct.map (AddMonoidHom.toMultiplicative (f : F →+ E)) (Units.map (f : F →* E))
+    fun u ↦ by
+      ext x
+      simp
+
+/-- The translation part of `AffineGroup.map f g` is the image of that of `g`. -/
+@[simp]
+theorem AffineGroup.toAdd_map_left {F E : Type*} [Ring F] [Ring E] (f : F →+* E)
+    (g : AffineGroup F) : (AffineGroup.map f g).left.toAdd = f g.left.toAdd :=
+  (rfl)
+
+/-- The linear part of `AffineGroup.map f g` is the image of that of `g`. -/
+@[simp]
+theorem AffineGroup.coe_map_right {F E : Type*} [Ring F] [Ring E] (f : F →+* E)
+    (g : AffineGroup F) : ((AffineGroup.map f g).right : E) = f g.right :=
+  (rfl)
+
+/-- The homomorphism of affine groups induced by an injective ring homomorphism is injective. -/
+theorem AffineGroup.map_injective {F E : Type*} [Ring F] [Ring E] {f : F →+* E}
+    (hf : Function.Injective f) : Function.Injective (AffineGroup.map f) := by
+  intro g h hgh
+  ext
+  · exact hf (by simpa using congrArg (fun k : AffineGroup E ↦ k.left.toAdd) hgh)
+  · exact hf (by simpa using congrArg (fun k : AffineGroup E ↦ (k.right : E)) hgh)
+
+/-- A ring homomorphism intertwines the affine actions: `map f g • f x = f (g • x)`. -/
+theorem AffineGroup.map_smul {F E : Type*} [Ring F] [Ring E] (f : F →+* E) (g : AffineGroup F)
+    (x : F) : AffineGroup.map f g • f x = f (g • x) := by
+  simp [AffineGroup.smul_def]
 
 /-- The normal subgroup of translations in the affine group. -/
 def affineTranslationSubgroup (F : Type*) [Ring F] : Subgroup (AffineGroup F) :=
