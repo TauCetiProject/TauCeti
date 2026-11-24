@@ -10,6 +10,11 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.SimpleRing.Defs
+public import TauCeti.Algebra.Module.Generator
+-- Private: `isSimpleRing_iff_isTwoSided_imp` is used only inside the proof of
+-- `TauCeti.Module.IsGenerator.of_isSimpleRing`.
+import Mathlib.RingTheory.SimpleRing.Congr
 
 /-!
 # Simple and semisimple modules: commuting scalars, products, linear maps, idempotents
@@ -51,6 +56,8 @@ finite-generation hypothesis.
   action back along a surjective ring map.
 * `TauCeti.isSemisimpleRing_range_lsmul`: the image of an algebra in the endomorphisms of a finite
   semisimple module is a semisimple ring.
+* `TauCeti.Module.IsGenerator.of_isSimpleRing`: every nontrivial module over a simple semisimple
+  ring is a generator of the module category.
 -/
 
 public section
@@ -153,6 +160,31 @@ theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisi
     (fun a ha => (he a).1 ha)
   have he0 : e = 0 := by simpa only [h.elim f 0, LinearMap.zero_apply] using hf.symm
   simpa only [he0, zero_smul] using hex.symm
+
+/-- **Every nontrivial module over a simple semisimple ring is a generator.** Its trace ideal
+`⨆ f : M →ₗ[R] R, range f` is a nonzero two-sided ideal of `R` (by
+`IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`), hence equals `⊤` by simplicity of `R`.
+-/
+instance Module.IsGenerator.of_isSimpleRing [IsSimpleRing R] [IsSemisimpleRing R] [Nontrivial M] :
+    Module.IsGenerator R M := by
+  rw [Module.isGenerator_iff_iSup_range_eq_top]
+  let I : Ideal R := ⨆ f : M →ₗ[R] R, LinearMap.range f
+  have htwo : I.IsTwoSided := ⟨fun b ha ↦
+    Submodule.iSup_induction (p := fun f : M →ₗ[R] R ↦ LinearMap.range f)
+      (motive := fun y ↦ y * b ∈ I) ha
+      (fun f _ ⟨m, hm⟩ ↦ hm ▸ Submodule.mem_iSup_of_mem ((LinearMap.mulRight R b).comp f) ⟨m, rfl⟩)
+      (by rw [zero_mul]; exact I.zero_mem)
+      (fun _ _ h₁ h₂ ↦ by rw [add_mul]; exact I.add_mem h₁ h₂)⟩
+  have hne : I ≠ ⊥ := by
+    intro hbot
+    have hsub : Subsingleton (M →ₗ[R] R) := subsingleton_of_forall_eq 0 fun f ↦ by
+      ext m
+      have hf : f m ∈ I :=
+        Submodule.mem_iSup_of_mem (p := fun g : M →ₗ[R] R ↦ LinearMap.range g) f ⟨m, rfl⟩
+      rw [hbot] at hf
+      exact Ideal.mem_bot.mp hf
+    exact not_subsingleton M (IsSemisimpleRing.subsingleton_of_subsingleton_linearMap hsub)
+  exact ((isSimpleRing_iff_isTwoSided_imp.mp ‹_›).2 I htwo).resolve_left hne
 
 /-! ### Semisimplicity along a surjective ring map -/
 

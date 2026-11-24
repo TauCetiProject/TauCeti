@@ -245,13 +245,13 @@ theorem isCartanWeightVector_weylWordLatticeEquiv (l : List (Fin t.rank)) {μ : 
     {m : D.lattice}
     (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
     IsCartanWeightVector (t.lieBasis ht).h D.representation
-      (t.geckWeylWordProd ht l • μ) (D.weylWordLatticeEquiv l m : D.carrier) := by
+      (t.simplyConnectedWeylWordProd ht l • μ) (D.weylWordLatticeEquiv l m : D.carrier) := by
   induction l generalizing μ m with
   | nil => simpa only [weylWordLatticeEquiv_nil, one_apply_eq_self,
-      geckWeylWordProd_nil, one_smul] using hm
+      simplyConnectedWeylWordProd_nil, one_smul] using hm
   | cons i l ih =>
       simpa only [weylWordLatticeEquiv_cons, mul_apply_eq_comp,
-        geckWeylWordProd_cons, mul_smul] using
+        simplyConnectedWeylWordProd_cons, mul_smul] using
         D.isCartanWeightVector_simpleWeylLatticeEquiv i (ih hm)
 
 /-- An inverse lattice Weyl word transports a Cartan weight vector by the inverse
@@ -260,14 +260,15 @@ theorem isCartanWeightVector_weylWordLatticeEquiv_symm (l : List (Fin t.rank))
     {μ : Fin t.rank → ℤ} {m : D.lattice}
     (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
     IsCartanWeightVector (t.lieBasis ht).h D.representation
-      ((t.geckWeylWordProd ht l)⁻¹ • μ) ((D.weylWordLatticeEquiv l).symm m : D.carrier) := by
+      ((t.simplyConnectedWeylWordProd ht l)⁻¹ • μ)
+      ((D.weylWordLatticeEquiv l).symm m : D.carrier) := by
   simp_rw [← LinearEquiv.coe_inv]
   induction l generalizing μ m with
   | nil => simpa only [weylWordLatticeEquiv_nil, inv_one, one_apply_eq_self,
-      geckWeylWordProd_nil, one_smul] using hm
+      simplyConnectedWeylWordProd_nil, one_smul] using hm
   | cons i l ih =>
       simpa only [weylWordLatticeEquiv_cons, mul_inv_rev, mul_apply_eq_comp,
-        geckWeylWordProd_cons, RootPairing.weylGroup.ofIdx_inv_eq, mul_smul,
+        simplyConnectedWeylWordProd_cons, RootPairing.weylGroup.ofIdx_inv_eq, mul_smul,
         LinearEquiv.coe_inv] using
         ih (D.isCartanWeightVector_simpleWeylLatticeEquiv_symm i hm)
 

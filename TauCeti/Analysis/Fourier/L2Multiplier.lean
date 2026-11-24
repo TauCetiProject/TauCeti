@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+public import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
@@ -81,6 +82,8 @@ defined, it agrees with Mathlib's multipliers.
   `L²` whenever `𝓕 h = a • 𝓕 f`. With `a = 1` this differentiates multiplier families
   applied to arbitrary `f ∈ L²`; with `a` the symbol of a differential operator `P`, it
   differentiates them applied to `f` with `P f = h ∈ L²`.
+* `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`: `T_m D_r = D_r T_{m (r⁻¹ • ·)}` for the
+  normalized dilation `D_r` of `L²`: conjugating a multiplier by a dilation dilates its symbol.
 
 ## Kernels of multipliers
 
@@ -590,6 +593,43 @@ theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
     simp only [slope_def_module] at this
     rw [hξ, smul_smul, mul_comm]
     exact this
+
+/-! ### Dilations -/
+
+section Dilation
+
+open Measure
+
+/-- The Fourier-side identity behind `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`. -/
+private theorem coeFn_fourier_dilateLp_aux {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    ⇑(m • dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr)
+        (dilateLp volume ℝ ∞ r hr m • 𝓕 f : Lp F 2 (volume : Measure E)) := by
+  filter_upwards [coeFn_lpSMul (r := 2) m (dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f)),
+    coeFn_dilateLp (μ := volume) (𝕜 := ℝ) (p := 2) (inv_pos.2 hr) (𝓕 f),
+    coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) (inv_pos.2 hr)
+      (coeFn_lpSMul (r := 2) (dilateLp volume ℝ ∞ r hr m) (𝓕 f)),
+    (quasiMeasurePreserving_smul (volume : Measure E) (inv_ne_zero (inv_pos.2 hr).ne')).ae_eq_comp
+      (coeFn_dilateLp_top (μ := volume) (𝕜 := ℝ) hr m)] with ξ h₁ h₂ h₃ h₄
+  simp only [Function.comp_apply] at h₄
+  rw [h₁, Pi.smul_apply', h₂, h₃, Pi.smul_apply', h₄, inv_inv, inv_smul_smul₀ hr.ne', smul_comm]
+
+/-- **Conjugating a Fourier multiplier by a dilation dilates its symbol.** For `r > 0`, the
+multiplier with symbol `m` applied after the normalized dilation `D_r` of `L²` is `D_r` applied
+after the multiplier with the dilated symbol `m (r⁻¹ • ·)`, the dilation by `r` on `L^∞`. -/
+theorem fourierMultiplierCLM_dilateLp {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    fourierMultiplierCLM F m (dilateLp volume ℝ 2 r hr f) =
+      dilateLp volume ℝ 2 r hr (fourierMultiplierCLM F (dilateLp volume ℝ ∞ r hr m) f) := by
+  have key : 𝓕 (fourierMultiplierCLM F m (dilateLp volume ℝ 2 r hr f)) =
+      𝓕 (dilateLp volume ℝ 2 r hr (fourierMultiplierCLM F (dilateLp volume ℝ ∞ r hr m) f)) := by
+    rw [fourier_fourierMultiplierCLM, fourier_dilateLp, fourier_dilateLp,
+      fourier_fourierMultiplierCLM]
+    exact Lp.ext (coeFn_fourier_dilateLp_aux hr m f)
+  exact (fourierTransformₗᵢ E F).injective key
+
+end Dilation
 
 end MeasureTheory.Lp
 
