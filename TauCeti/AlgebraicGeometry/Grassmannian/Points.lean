@@ -30,6 +30,10 @@ morphism over `Spec R` lands in a chart over each basic open of a cover of `Spec
 it classifies there glue along the Zariski cover
 (`Module.Grassmannian.exists_map_eq_of_isLocalized_span`).
 
+Consequently, a map on points natural in the algebra is induced by a morphism of schemes out of
+`G(k, M)` (`Module.Grassmannian.homOfPoints`), glued over the affine points
+(`AlgebraicGeometry.Scheme.homOfAffinePoints`).
+
 ## Main definitions
 
 * `Module.Grassmannian.toSchemeHom N`: the morphism `Spec A ⟶ G(k, M)` classifying a point `N`.
@@ -54,6 +58,8 @@ it classifies there glue along the Zariski cover
   once it holds for the morphisms `toSchemeHom N`.
 * `Module.Grassmannian.scheme_hom_ext` and `Module.Grassmannian.toSchemeHom_comp_homOfPoints`:
   morphisms out of `G(k, M)` are determined by, and can be built from, their points.
+* `Module.Grassmannian.eq_homOfPoints`: `homOfPoints F hF` is the unique morphism inducing `F`
+  on points.
 * `Module.Grassmannian.isEmpty_scheme_of_rankAtStalk_lt`, `Module.Grassmannian.isIso_toSpec_zero`,
   and `Module.Grassmannian.isIso_toSpec_of_rankAtStalk_eq`: extreme-dimension Grassmannian schemes.
 
@@ -572,6 +578,18 @@ theorem toSchemeHom_comp_homOfPoints
     {A : Type u} [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)) :
     toSchemeHom N ≫ homOfPoints F hF = F A N :=
   (Scheme.comp_homOfAffinePoints _ _ _).trans (homOfPointsPoint_toSchemeHom F N)
+
+/-- **Uniqueness of `homOfPoints`.** A morphism `g : G(k, M) ⟶ X` with `toSchemeHom N ≫ g = F A N`
+for every point `N` over every `R`-algebra `A` is `homOfPoints F hF`. -/
+theorem eq_homOfPoints
+    (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
+    (hF : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)),
+      F B (map f N) = Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ F A N)
+    {g : scheme R M k ⟶ X}
+    (hg : ∀ (A : Type u) [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] M; A)),
+      toSchemeHom N ≫ g = F A N) : g = homOfPoints F hF :=
+  scheme_hom_ext fun A _ _ N ↦ (hg A N).trans (toSchemeHom_comp_homOfPoints F hF N).symm
 
 end HomOfPoints
 

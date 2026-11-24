@@ -25,6 +25,8 @@ assumes a finite-dimensional codomain.
   seminorm on `E →ₗ[𝕜] F`.
 * `TauCeti.UnitarilyInvariantSeminorm.opNorm_apply`: its value is the operator norm of the
   associated continuous linear map.
+* `TauCeti.UnitarilyInvariantSeminorm.opNorm_apply_adjoint_comp_self`: the C⋆-identity
+  `‖A† A‖ = ‖A‖²`.
 * `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_twoSidedOrthogonal`: for
   finite-dimensional source and target, if `A† B = 0` and `A B† = 0`, then
   `‖A + B‖ = max ‖A‖ ‖B‖`.
@@ -62,6 +64,16 @@ map. -/
 @[simp]
 theorem opNorm_apply (A : E →ₗ[𝕜] F) : opNorm 𝕜 E F A = ‖LinearMap.toContinuousLinearMap A‖ :=
   (rfl)
+
+/-- The operator norm of the Gram operator `A† A` is the square of the operator norm of `A`. -/
+theorem opNorm_apply_adjoint_comp_self [FiniteDimensional 𝕜 F] (A : E →ₗ[𝕜] F) :
+    opNorm 𝕜 E E (LinearMap.adjoint A ∘ₗ A) = opNorm 𝕜 E F A ^ 2 := by
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
+  have h : LinearMap.toContinuousLinearMap (LinearMap.adjoint A ∘ₗ A) =
+      (LinearMap.toContinuousLinearMap A).adjoint ∘L LinearMap.toContinuousLinearMap A :=
+    ContinuousLinearMap.ext fun x ↦ by simp [LinearMap.adjoint_eq_toCLM_adjoint]
+  rw [opNorm_apply, opNorm_apply, h, ContinuousLinearMap.norm_adjoint_comp_self, sq]
 
 open scoped InnerProductSpace in
 /-- **Orthogonal maximality of the operator norm**: between finite-dimensional inner product
