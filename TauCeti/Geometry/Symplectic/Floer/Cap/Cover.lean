@@ -619,18 +619,6 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
       SphericalPeriodGroup.area_ofHomotopyGroup, SphericalPeriodGroup.chern_ofHomotopyGroup,
       toMul_ofMul, hmap, htorus]
 
-/-- Every sphere at `x` is the class of a double loop at the constant loop. -/
-private theorem exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq (a : Additive (π_ 2 X x)) :
-    ∃ β : Ω (Ω X x) (Path.refl x), Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) = a := by
-  -- An element of the fundamental group is `FundamentalGroup.fromPath` of its `toPath` by
-  -- structure eta for `CategoryTheory.End.of`.
-  have hfrom : Function.Surjective (FundamentalGroup.fromPath (x := (Path.refl x : Ω X x))) :=
-    fun g ↦ ⟨g.toPath, rfl⟩
-  exact Additive.ofMul.surjective.comp
-    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.surjective.comp
-      (hfrom.comp Path.Homotopic.Quotient.mk_surjective)) a
-
 /-- Gluing a sphere, the class of a double loop `β`, to a disc `p` moves the point of the cap
 cover of `p` by the loop of contractible free loops traced by `β`, acting on the universal cover. -/
 private theorem RawCap.toCapCover_vadd_mk (β : Ω (Ω X x) (Path.refl x))
@@ -659,7 +647,8 @@ the cap cover. -/
 private theorem RawCap.toCapCover_vadd_of_mem_ker {a : Additive (π_ 2 X x)}
     (ha : a ∈ (SphericalPeriodGroup.ofHomotopyGroup ω c x).ker) (D : RawCap γ) :
     (a +ᵥ D).toCapCover ω c = D.toCapCover ω c := by
-  obtain ⟨β, rfl⟩ := exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq a
+  obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
+  obtain ⟨β, rfl⟩ := HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk_surjective a
   obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective D
   rw [RawCap.toCapCover_vadd_mk, RawCap.toCapCover_mk]
   refine Quotient.sound ⟨⟨_, ?_⟩, rfl⟩
@@ -701,7 +690,8 @@ the class of `a` in the spherical period group. -/
 theorem RawCap.toCapCover_vadd (a : Additive (π_ 2 X x)) (D : RawCap γ) :
     (a +ᵥ D).toCapCover ω c =
       SphericalPeriodGroup.ofHomotopyGroup ω c x a +ᵥ D.toCapCover ω c := by
-  obtain ⟨β, rfl⟩ := exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq a
+  obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
+  obtain ⟨β, rfl⟩ := HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk_surjective a
   obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective D
   rw [RawCap.toCapCover_vadd_mk, RawCap.toCapCover_mk,
     ← ofContractibleLoopsHomotopyGroup_sphereLoopPath, ofContractibleLoopsHomotopyGroup_vadd_mk,
