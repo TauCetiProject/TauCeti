@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
@@ -125,13 +126,7 @@ theorem multivariateGaussianPDFReal_smul (c : ℝ) (m x : EuclideanSpace ℝ ι)
     multivariateGaussianPDFReal m (c • S) x =
       (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * (c ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) *
         exp (-(c⁻¹ * ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫) / 2) := by
-  -- `c • S` is `algebraMap c * S`; the inverse of a product reverses unconditionally, and the
-  -- inverse of the scalar matrix `algebraMap c` is `algebraMap c⁻¹`, also for `c = 0`.
-  have hinv : (c • S)⁻¹ = c⁻¹ • S⁻¹ := by
-    rw [Algebra.smul_def, Matrix.mul_inv_rev,
-      Matrix.nonsing_inv_eq_ringInverse (algebraMap ℝ _ c), ← map_inv_eq_ringInverse_map,
-      ← Algebra.commutes, ← Algebra.smul_def]
-  rw [multivariateGaussianPDFReal_def, Matrix.det_smul, hinv]
+  rw [multivariateGaussianPDFReal_def, Matrix.det_smul, Matrix.nonsing_inv_smul]
   simp [inner_smul_right]
 
 /-- The density is positive wherever the determinant is, in particular at a positive-definite

@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Def
 public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import TauCeti.Probability.Distributions.Gaussian.Independence
 
@@ -309,12 +310,13 @@ theorem gaussian_integration_by_parts {v : ℝ} (hv : 0 ≤ v) {θ : EuclideanSp
       v * ∫ x, fderiv ℝ g x (EuclideanSpace.single i 1) i
         ∂multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) := by
   have hd (x : EuclideanSpace ℝ ι) : fderiv ℝ (fun y ↦ g y i) x (EuclideanSpace.single i 1) =
-      fderiv ℝ g x (EuclideanSpace.single i 1) i :=
-    congrArg (· (EuclideanSpace.single i 1))
-      ((EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp x (hg x).hasFDerivAt).fderiv
+      fderiv ℝ g x (EuclideanSpace.single i 1) i := by
+    have h := (PiLp.hasFDerivAt_apply 2 (g x) i).comp x (hg x).hasFDerivAt
+    rw [Function.comp_def] at h
+    rw [h.fderiv, ContinuousLinearMap.comp_apply, PiLp.proj_apply]
   simp_rw [← hd] at hdi ⊢
   exact integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian hv
-    (fun x ↦ (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp x (hg x)) i
+    ((differentiable_piLp 2).1 hg i) i
     (integrable_sub_mul_apply_of_memLp hg2 θ i) hdi
 
 end Isotropic
