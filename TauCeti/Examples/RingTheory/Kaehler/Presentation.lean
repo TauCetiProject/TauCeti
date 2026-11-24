@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Kaehler.Presentation
-import Mathlib.RingTheory.AdjoinRoot
 
 /-!
 # The pullback of `Ω[K⁄k]` does not generate `Ω[X'⁄k]` for an inseparable extension
@@ -25,24 +24,6 @@ open KaehlerDifferential MvPolynomial
 
 namespace TauCeti.Examples
 
-/-- Over a nontrivial ring `k`, with `p ≠ 0`, the ring `k[Xᵢ] ⧸ (Xᵢ ^ p - t)` is nontrivial: it
-maps to `k[X] ⧸ (X ^ p - t)` by `Xᵢ ↦ X`. -/
-private theorem nontrivial_powSubCQuotient {k : Type*} [CommRing k] [Nontrivial k] {p : ℕ}
-    (hp : p ≠ 0) (σ : Type*) (t : k) : Nontrivial (PowSubCQuotient k p fun _ : σ ↦ t) := by
-  have hdeg : 0 < (Polynomial.X ^ p - Polynomial.C t).degree := by
-    rw [Polynomial.degree_X_pow_sub_C (Nat.pos_of_ne_zero hp)]
-    exact_mod_cast Nat.pos_of_ne_zero hp
-  have := (AdjoinRoot.nontrivial_iff_of_monic (Polynomial.monic_X_pow_sub_C t hp)).2 hdeg
-  let f : MvPolynomial σ k →ₐ[k] AdjoinRoot (Polynomial.X ^ p - Polynomial.C t) :=
-    aeval fun _ ↦ AdjoinRoot.root _
-  refine (Ideal.Quotient.lift _ f.toRingHom ?_).domain_nontrivial
-  intro a ha
-  refine (Ideal.span_le (I := RingHom.ker f.toRingHom)).2 ?_ ha
-  rintro _ ⟨i, rfl⟩
-  have hroot := AdjoinRoot.eval₂_root (Polynomial.X ^ p - Polynomial.C t)
-  simp only [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C] at hroot
-  simpa [f, ← AdjoinRoot.algebraMap_eq] using hroot
-
 /-- **`dy` does not span `Ω[X'⁄k]`.** Over a nontrivial ring `k` of
 characteristic `p ≠ 0` and for `t : k`, the differentials of
 `X' = k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)` are free on `dτ, dy`
@@ -52,7 +33,7 @@ theorem span_D_ne_top_powSubCQuotient {k : Type*} [CommRing k] [Nontrivial k] {p
     [CharP k p] (hp : p ≠ 0) (t : k) :
     Submodule.span (PowSubCQuotient k p fun _ : Fin 2 ↦ t)
         {D k (PowSubCQuotient k p fun _ : Fin 2 ↦ t) (Ideal.Quotient.mk _ (X 1))} ≠ ⊤ := by
-  have := nontrivial_powSubCQuotient hp (Fin 2) t
+  have : Nontrivial (PowSubCQuotient k p fun _ : Fin 2 ↦ t) := PowSubCQuotient.nontrivial hp
   set b := kaehlerDifferentialBasisPowSubC k p fun _ : Fin 2 ↦ t
   intro htop
   have hmem : b 0 ∈ Submodule.span (PowSubCQuotient k p fun _ : Fin 2 ↦ t) {b 1} := by

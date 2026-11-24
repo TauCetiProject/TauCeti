@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Presentation.Differentials
 public import Mathlib.RingTheory.MvPolynomial.Basic
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
 /-!
 # Differentials of a presentation whose relations have zero differential
@@ -28,6 +29,7 @@ the `dxᵢ`. For instance, over a field `k` of characteristic `p` such as `𝔽_
 * `Algebra.Presentation.differentialsBasis`: if the partial derivatives of every relation of a
   presentation vanish, the differentials of the generators form a basis of `Ω[S⁄R]`.
 * `TauCeti.PowSubCQuotient k p t`: the quotient `k[Xᵢ] ⧸ (Xᵢ ^ p - tᵢ)`.
+* `TauCeti.PowSubCQuotient.nontrivial`: it is nontrivial over a nontrivial ring `k` when `p ≠ 0`.
 * `TauCeti.kaehlerDifferentialBasisPowSubC`: the basis `(dxᵢ)` of its differentials in
   characteristic `p`.
 -/
@@ -94,6 +96,23 @@ variable (k : Type*) [CommRing k] (p : ℕ) {σ : Type*} (t : σ → k)
 /-- The quotient `k[Xᵢ] ⧸ (Xᵢ ^ p - tᵢ)` of the polynomial ring by the relations `Xᵢ ^ p = tᵢ`. -/
 abbrev PowSubCQuotient : Type _ :=
   MvPolynomial σ k ⧸ Ideal.span (Set.range fun i ↦ X i ^ p - C (t i))
+
+variable {k p t} in
+/-- Over a nontrivial ring `k`, with `p ≠ 0`, the ring `k[Xᵢ] ⧸ (Xᵢ ^ p - tᵢ)` is nontrivial: it
+maps to an algebraic closure of a residue field of `k`, sending each `Xᵢ` to a `p`-th root of
+`tᵢ`. -/
+theorem PowSubCQuotient.nontrivial [Nontrivial k] (hp : p ≠ 0) :
+    Nontrivial (PowSubCQuotient k p t) := by
+  obtain ⟨m, hm⟩ := Ideal.exists_maximal k
+  let := Ideal.Quotient.field m
+  let f : k →+* AlgebraicClosure (k ⧸ m) := (algebraMap _ _).comp (Ideal.Quotient.mk m)
+  choose r hr using fun i ↦ IsAlgClosed.exists_pow_nat_eq (f (t i)) (Nat.pos_of_ne_zero hp)
+  refine (Ideal.Quotient.lift _ (eval₂Hom f r) ?_).domain_nontrivial
+  intro a ha
+  refine (Ideal.span_le (I := RingHom.ker (eval₂Hom f r))).2 ?_ ha
+  rintro _ ⟨i, rfl⟩
+  simp only [SetLike.mem_coe, RingHom.mem_ker, map_sub, map_pow, eval₂Hom_X', eval₂Hom_C, hr,
+    sub_self]
 
 variable [CharP k p]
 
