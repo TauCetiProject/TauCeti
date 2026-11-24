@@ -55,7 +55,7 @@ theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K)
     TensorProduct.lift.tmul, LieHom.coe_toLinearMap, LieAlgebra.ad_apply]
 
 /-- Swapping the tensor factors negates the alternating intertwiner. -/
-theorem alternatingProductMap_comm
+theorem alternatingProductMap_comm_eq_neg
     (T : LieAlgebra.SpecialLinear.sl (Fin n) K ⊗[K]
       LieAlgebra.SpecialLinear.sl (Fin n) K) :
     alternatingProductMap K n (TensorProduct.comm K _ _ T) =

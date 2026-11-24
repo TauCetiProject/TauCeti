@@ -20,22 +20,22 @@ namespace TauCeti.AdjointSquare
 
 open scoped TensorProduct
 
-variable {K : Type*} [Field K] [NeZero (3 : K)]
+variable {K : Type*} [Field K] {n : ℕ} [NeZero (n : K)]
 
-local notation "V" => LieAlgebra.SpecialLinear.sl (Fin 3) K
+local notation "V" => LieAlgebra.SpecialLinear.sl (Fin n) K
 
 /-- The tensor flip negates the image of the transposed Lie bracket. -/
 theorem comm_alternatingEmbeddingMap (X : V) :
-    TensorProduct.comm K V V (alternatingEmbeddingMap K X) = -alternatingEmbeddingMap K X := by
+    TensorProduct.comm K V V (alternatingEmbeddingMap K n X) = -alternatingEmbeddingMap K n X := by
   apply squareTrace.injective
   apply LinearMap.ext
   intro t
   simp only [squareTrace_comm, alternatingEmbeddingMap_pairing,
-    alternatingProductMap_comm, map_neg, LinearMap.neg_apply]
+    alternatingProductMap_comm_eq_neg, map_neg, LinearMap.neg_apply]
 
 /-- The tensor flip fixes the image of the transposed symmetric product. -/
 theorem comm_symmetricEmbeddingMap (X : V) :
-    TensorProduct.comm K V V (symmetricEmbeddingMap K X) = symmetricEmbeddingMap K X := by
+    TensorProduct.comm K V V (symmetricEmbeddingMap K n X) = symmetricEmbeddingMap K n X := by
   apply squareTrace.injective
   apply LinearMap.ext
   intro t

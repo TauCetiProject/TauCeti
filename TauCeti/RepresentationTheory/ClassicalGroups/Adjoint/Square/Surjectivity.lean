@@ -10,12 +10,14 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Products
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import Mathlib.Data.Fin.Basic
 
 /-! # Surjectivity of the two adjoint-square contractions
 
-The Lie-bracket contraction onto trace-zero three-by-three matrices is surjective over any
-commutative ring. The traceless symmetric contraction is surjective over a field when
-three is nonzero. These results give the injectivity of the two trace-transpose embeddings.
+For matrix size at least three, the Lie-bracket contraction onto trace-zero matrices is
+surjective over any commutative ring. The traceless symmetric contraction is surjective
+over a field in which the size is nonzero. These results give the injectivity of the two
+trace-transpose embeddings.
 -/
 
 public section
@@ -23,23 +25,24 @@ namespace TauCeti.AdjointSquare
 open Matrix
 open scoped TensorProduct
 attribute [local instance 100] LieRing.ofAssociativeRing
-variable {K : Type*}
+variable {K : Type*} {n : ℕ}
 variable [CommRing K]
-local notation "𝔰" => LieAlgebra.SpecialLinear.sl (Fin 3)
+local notation "𝔰" => LieAlgebra.SpecialLinear.sl (Fin n)
 
 open LieAlgebra.SpecialLinear (single val_single)
 
 
-private def pair (i j k l : Fin 3) (h : i ≠ j) (h' : k ≠ l) (c : K) : 𝔰 K ⊗[K] 𝔰 K :=
+private def pair (i j k l : Fin n) (h : i ≠ j) (h' : k ≠ l) (c : K) : 𝔰 K ⊗[K] 𝔰 K :=
   single i j h c ⊗ₜ[K] single k l h' 1
 
-private theorem exists_third (i j : Fin 3) : ∃ k, i ≠ k ∧ k ≠ j := by
-  decide +revert
+private theorem exists_third (i j : Fin n) (hn : 3 ≤ n) : ∃ k, i ≠ k ∧ k ≠ j := by
+  obtain ⟨k, hik, hkj⟩ := Fin.exists_ne_and_ne_of_two_lt i j hn
+  exact ⟨k, hik.symm, hkj⟩
 
 /-- The matrix-unit spanning lemma reduces surjectivity to finding preimages of two families. -/
 private theorem surjective_of_units (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K)
-    (off : ∀ i j : Fin 3, i ≠ j → ∀ c : K, ∃ t, (f t).val = Matrix.single i j c)
-    (diag : ∀ i j : Fin 3, i ≠ j → ∀ c : K, ∃ t,
+    (off : ∀ i j : Fin n, i ≠ j → ∀ c : K, ∃ t, (f t).val = Matrix.single i j c)
+    (diag : ∀ i j : Fin n, i ≠ j → ∀ c : K, ∃ t,
       (f t).val = Matrix.single i i c - Matrix.single j j c) :
     Function.Surjective f := by
   intro X
@@ -62,48 +65,49 @@ private theorem surjective_of_units (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K
   refine ⟨t, Subtype.ext ?_⟩
   simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht
 
-private theorem alternating_chain (i k j : Fin 3) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j)
-    (c : K) : (alternatingProductMap K 3 (pair i k k j hik hkj c)).val = Matrix.single i j c := by
+private theorem alternating_chain (i k j : Fin n) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j)
+    (c : K) : (alternatingProductMap K n (pair i k k j hik hkj c)).val = Matrix.single i j c := by
   simp [pair, hij.symm]
 
-private theorem alternating_cycle (i j : Fin 3) (h : i ≠ j) (c : K) :
-    (alternatingProductMap K 3 (pair i j j i h h.symm c)).val =
+private theorem alternating_cycle (i j : Fin n) (h : i ≠ j) (c : K) :
+    (alternatingProductMap K n (pair i j j i h h.symm c)).val =
       Matrix.single i i c - Matrix.single j j c := by
   simp [pair]
 
-/-- The Lie-bracket contraction onto the trace-zero three-by-three matrices is surjective
-over any commutative ring. -/
-theorem alternatingProductMap_surjective (K : Type*) [CommRing K] :
-    Function.Surjective (alternatingProductMap K 3) := by
-  apply surjective_of_units (alternatingProductMap K 3).toLinearMap
+/-- The Lie-bracket contraction onto trace-zero matrices is surjective over any commutative
+ring when the matrix size is at least three. -/
+theorem alternatingProductMap_surjective (K : Type*) [CommRing K] (n : ℕ) (hn : 3 ≤ n) :
+    Function.Surjective (alternatingProductMap K n) := by
+  apply surjective_of_units (alternatingProductMap K n).toLinearMap
   · intro i j hij c
-    obtain ⟨k, hik, hkj⟩ := exists_third i j
+    obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, alternating_chain i k j hik hkj hij c⟩
   · intro i j h c
     exact ⟨_, alternating_cycle i j h c⟩
 
-private theorem symmetric_chain {K : Type*} [Field K] [NeZero (3 : K)]
-    (i k j : Fin 3) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j) (c : K) :
-    (symmetricProductMap K 3 (pair i k k j hik hkj c)).val = Matrix.single i j c := by
+private theorem symmetric_chain {K : Type*} [Field K] [NeZero (n : K)]
+    (i k j : Fin n) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j) (c : K) :
+    (symmetricProductMap K n (pair i k k j hik hkj c)).val = Matrix.single i j c := by
   simp [pair, coe_symmetricProduct, tracelessAnticommutator_def, hij.symm, hij]
 
-private theorem symmetric_cycle {K : Type*} [Field K] [NeZero (3 : K)]
-    (i k : Fin 3) (h : i ≠ k) (c : K) :
-    (symmetricProductMap K 3 (pair i k k i h h.symm c)).val =
+private theorem symmetric_cycle {K : Type*} [Field K] [NeZero (n : K)]
+    (i k : Fin n) (h : i ≠ k) (c : K) :
+    (symmetricProductMap K n (pair i k k i h h.symm c)).val =
       Matrix.single i i c + Matrix.single k k c -
-        ((2 / 3 : K) * c) • 1 := by
+        ((2 / n : K) * c) • 1 := by
   simp [pair, coe_symmetricProduct, tracelessAnticommutator_def]
 
-/-- The traceless symmetric contraction onto the trace-zero three-by-three matrices is
-surjective when three is nonzero in the scalar field. -/
-theorem symmetricProductMap_surjective (K : Type*) [Field K] [NeZero (3 : K)] :
-    Function.Surjective (symmetricProductMap K 3) := by
-  apply surjective_of_units (symmetricProductMap K 3).toLinearMap
+/-- The traceless symmetric contraction onto trace-zero matrices is surjective for sizes
+at least three that are nonzero in the scalar field. -/
+theorem symmetricProductMap_surjective (K : Type*) [Field K] (n : ℕ) [NeZero (n : K)]
+    (hn : 3 ≤ n) :
+    Function.Surjective (symmetricProductMap K n) := by
+  apply surjective_of_units (symmetricProductMap K n).toLinearMap
   · intro i j hij c
-    obtain ⟨k, hik, hkj⟩ := exists_third i j
+    obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, symmetric_chain i k j hik hkj hij c⟩
   · intro i j _ c
-    obtain ⟨k, hik, hkj⟩ := exists_third i j
+    obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     refine ⟨pair i k k i hik hik.symm c - pair j k k j hkj.symm hkj c, ?_⟩
     rw [Representation.IntertwiningMap.toLinearMap_apply, map_sub]
     rw [Submodule.coe_sub, symmetric_cycle, symmetric_cycle]

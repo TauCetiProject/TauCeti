@@ -25,10 +25,10 @@ public section
 namespace TauCeti.AdjointSquare
 
 open scoped TensorProduct
-variable {K : Type*} [Field K] [NeZero (3 : K)]
-local notation "V" => LieAlgebra.SpecialLinear.sl (Fin 3) K
+variable {K : Type*} [Field K] {n : ℕ} [NeZero (n : K)]
+local notation "V" => LieAlgebra.SpecialLinear.sl (Fin n) K
 local notation "T" => V ⊗[K] V
-local notation "ρ" => SLAdjoint.adjointRep K 3
+local notation "ρ" => SLAdjoint.adjointRep K n
 local notation "σ" => Representation.tprod ρ ρ
 
 private noncomputable def liftMap (f : Representation.IntertwiningMap σ ρ) :
@@ -36,11 +36,11 @@ private noncomputable def liftMap (f : Representation.IntertwiningMap σ ρ) :
   let hf : Representation.IsIntertwiningMap σ ρ f.toLinearMap := ⟨f.isIntertwining⟩
   squareTraceEquiv.symm.toIntertwiningMap.comp
     ((f.toLinearMap.dualMap.intertwiningMap_of_isIntertwiningMap _ _ hf.dualMap.isIntertwining).comp
-      (SLAdjoint.traceDualEquiv K 3).toIntertwiningMap)
+      (SLAdjoint.traceDualEquiv K n).toIntertwiningMap)
 
 private theorem liftMap_apply (f : Representation.IntertwiningMap σ ρ) (x : V) :
     liftMap f x =
-      squareTraceEquiv.symm (f.toLinearMap.dualMap (SLAdjoint.traceDualEquiv K 3 x)) := by
+      squareTraceEquiv.symm (f.toLinearMap.dualMap (SLAdjoint.traceDualEquiv K n x)) := by
   simp only [liftMap, Representation.IntertwiningMap.comp_apply,
     Representation.Equiv.coe_toIntertwiningMap, LinearMap.toIntertwiningMap]
 
@@ -48,48 +48,50 @@ private theorem liftMap_injective (f : Representation.IntertwiningMap σ ρ)
     (hf : Function.Surjective f) : Function.Injective (liftMap f) := by
   intro x y h
   simp only [liftMap_apply] at h
-  exact (SLAdjoint.traceDualEquiv K 3).toLinearEquiv.injective
+  exact (SLAdjoint.traceDualEquiv K n).toLinearEquiv.injective
     (LinearMap.dualMap_injective_of_surjective hf (squareTraceEquiv.symm.toLinearEquiv.injective h))
 
 private theorem liftMap_pairing (f : Representation.IntertwiningMap σ ρ) (x : V) (t : T) :
-    squareTrace (liftMap f x) t = (SLAdjoint.traceDualEquiv K 3 x) (f t) := by
+    squareTrace (liftMap f x) t = (SLAdjoint.traceDualEquiv K n x) (f t) := by
   rw [← squareTraceEquiv_apply, liftMap_apply, Representation.Equiv.apply_symm_apply,
     LinearMap.dualMap_apply, Representation.IntertwiningMap.toLinearMap_apply]
 
-variable (K)
+variable (K n)
 
 /-- The trace transpose of the Lie bracket as an equivariant map into the tensor square. -/
 noncomputable def alternatingEmbeddingMap : Representation.IntertwiningMap ρ σ :=
-  liftMap (alternatingProductMap (K := K) (n := 3))
+  liftMap (alternatingProductMap K n)
 
-/-- The alternating product is surjective, so its trace transpose is injective. -/
-theorem alternatingEmbeddingMap_injective : Function.Injective (alternatingEmbeddingMap K) :=
-  liftMap_injective _ (alternatingProductMap_surjective K)
+/-- For sizes at least three, the transpose of the Lie-bracket contraction is injective. -/
+theorem alternatingEmbeddingMap_injective (hn : 3 ≤ n) :
+    Function.Injective (alternatingEmbeddingMap K n) :=
+  liftMap_injective _ (alternatingProductMap_surjective K n hn)
 
-variable {K}
+variable {K n}
 
 /-- The trace pairing on the tensor square characterizes the alternating embedding. -/
 theorem alternatingEmbeddingMap_pairing (x : V) (t : T) :
-    squareTrace (alternatingEmbeddingMap K x) t =
-      (SLAdjoint.traceDualEquiv K 3 x) (alternatingProductMap K 3 t) :=
+    squareTrace (alternatingEmbeddingMap K n x) t =
+      (SLAdjoint.traceDualEquiv K n x) (alternatingProductMap K n t) :=
   liftMap_pairing _ x t
 
-variable (K)
+variable (K n)
 
 /-- The trace transpose of the traceless symmetric product into the tensor square. -/
 noncomputable def symmetricEmbeddingMap : Representation.IntertwiningMap ρ σ :=
-  liftMap (symmetricProductMap K 3)
+  liftMap (symmetricProductMap K n)
 
-/-- The symmetric product is surjective, so its trace transpose is injective. -/
-theorem symmetricEmbeddingMap_injective : Function.Injective (symmetricEmbeddingMap K) :=
-  liftMap_injective _ (symmetricProductMap_surjective K)
+/-- For sizes at least three, the transpose of the symmetric contraction is injective. -/
+theorem symmetricEmbeddingMap_injective (hn : 3 ≤ n) :
+    Function.Injective (symmetricEmbeddingMap K n) :=
+  liftMap_injective _ (symmetricProductMap_surjective K n hn)
 
-variable {K}
+variable {K n}
 
 /-- The trace pairing on the tensor square characterizes the symmetric embedding. -/
 theorem symmetricEmbeddingMap_pairing (x : V) (t : T) :
-    squareTrace (symmetricEmbeddingMap K x) t =
-      (SLAdjoint.traceDualEquiv K 3 x) (symmetricProductMap K 3 t) :=
+    squareTrace (symmetricEmbeddingMap K n x) t =
+      (SLAdjoint.traceDualEquiv K n x) (symmetricProductMap K n t) :=
   liftMap_pairing _ x t
 
 end TauCeti.AdjointSquare
