@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Stable.Pair
 public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
+import TauCeti.Data.Set.Card
 
 /-!
 # Signed counts for a Morse–Smale pair of pseudo-gradients
@@ -324,12 +325,10 @@ theorem intCast_signedPairCount (h : IsMorseSmalePair hX₀ hX₁) (h₀ : hX₀
     (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁) :
     (hX₀.signedPairCount hX₁ φp φq op oq hpq : ZMod 2) =
       ((hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet q).ncard : ZMod 2) := by
-  have hfin := h.finite_unstableSet_inter_stableSet h₀ h₁ hf₀ hf₁ hpq.le
-  rw [signedPairCount_def, finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum,
-    ncard_eq_toFinset_card _ hfin, Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun y hy ↦ ?_
-  rw [Finite.mem_toFinset] at hy
-  rcases pairSign_eq_one_or_eq_neg_one hφp hφq h hf₀ hy with h | h <;> rw [h] <;> decide
+  rw [signedPairCount_def]
+  exact intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (h.finite_unstableSet_inter_stableSet h₀ h₁ hf₀ hf₁ hpq.le) fun _ hy ↦
+      pairSign_eq_one_or_eq_neg_one hφp hφq h hf₀ hy
 
 end Sign
 

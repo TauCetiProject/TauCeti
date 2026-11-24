@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Data.Set.Card
 import TauCeti.Data.Nat.Set
 import TauCeti.Data.Set.Prod
 import TauCeti.Logic.Function.Fiber
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
@@ -66,6 +68,9 @@ of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` 
 `P i` holds and `0` otherwise, and `b i` likewise (`Set.finsum_mem_setOf_and_and_mem_and_mem`);
 this is the coefficient of a composite of two matrices whose entries are weighted counts, such as
 signed counts.
+A sum of signs `±1` over a finite set, read in a ring of characteristic two, is the number of
+elements of the set (`Set.intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one`): modulo two, a
+signed count is a count.
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -241,6 +246,20 @@ theorem finsum_mem_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι]
     · obtain ⟨hmem, rfl⟩ := Finset.mem_filter.1 hx
       rw [Finite.mem_toFinset] at hmem
       exact ⟨hmem.1, hmem.2.1⟩
+
+/-- **A signed count reduces to the number of elements in characteristic two.** If `w` takes the
+values `±1` on a finite set `s`, then the integer sum of `w` over `s`, read in a ring `R` of
+characteristic two such as `ZMod 2`, is the number of elements of `s`. -/
+theorem intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one {α R : Type*}
+    [AddCommGroupWithOne R] [CharP R 2] {s : Set α} (hs : s.Finite) {w : α → ℤ}
+    (hw : ∀ x ∈ s, w x = 1 ∨ w x = -1) :
+    ((∑ᶠ x ∈ s, w x : ℤ) : R) = s.ncard := by
+  rw [finsum_mem_eq_finite_toFinset_sum _ hs, Int.cast_sum, ncard_eq_toFinset_card _ hs,
+    Finset.card_eq_sum_ones, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rcases hw x (hs.mem_toFinset.1 hx) with h | h
+  · rw [h, Int.cast_one, Nat.cast_one]
+  · rw [h, Int.cast_neg, Int.cast_one, CharTwo.neg_one_eq_one, Nat.cast_one]
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/

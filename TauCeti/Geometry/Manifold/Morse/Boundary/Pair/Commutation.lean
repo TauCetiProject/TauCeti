@@ -441,13 +441,10 @@ theorem intCast_finsum_mem_sourceBrokenPairSign (p : criticalPoints 𝓘(ℝ, E)
     (r : criticalPoints 𝓘(ℝ, E) f₁) :
     ((∑ᶠ x ∈ hX₀.morseSourceBrokenPairSet hX₁ p r,
       hX₀.sourceBrokenPairSign hX₁ 𝔬₀ 𝔬₁ p r x : ℤ) : ZMod 2) =
-        ((hX₀.morseSourceBrokenPairSet hX₁ p r).ncard : ZMod 2) := by
-  have hfin := h.finite_morseSourceBrokenPairSet h₀ h₁ hf₀ hf₁ p r
-  rw [finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum, ncard_eq_toFinset_card _ hfin,
-    Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun x hx ↦ ?_
-  rw [Finite.mem_toFinset] at hx
-  rcases h.sourceBrokenPairSign_eq_one_or_eq_neg_one h₀ hf₀ hx with h' | h' <;> rw [h'] <;> decide
+        ((hX₀.morseSourceBrokenPairSet hX₁ p r).ncard : ZMod 2) :=
+  intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (h.finite_morseSourceBrokenPairSet h₀ h₁ hf₀ hf₁ p r) fun _ hx ↦
+      h.sourceBrokenPairSign_eq_one_or_eq_neg_one h₀ hf₀ hx
 
 /-- **The signed count of the configurations broken at the target reduces to their number modulo
 two.** -/
@@ -455,14 +452,10 @@ theorem intCast_finsum_mem_targetBrokenPairSign (p : criticalPoints 𝓘(ℝ, E)
     (r : criticalPoints 𝓘(ℝ, E) f₁) :
     ((∑ᶠ x ∈ hX₀.morseTargetBrokenPairSet hX₁ p r,
       hX₀.targetBrokenPairSign hX₁ 𝔬₀ 𝔬₁ p r x : ℤ) : ZMod 2) =
-        ((hX₀.morseTargetBrokenPairSet hX₁ p r).ncard : ZMod 2) := by
-  have hfin := h.finite_morseTargetBrokenPairSet h₀ h₁ hf₀ hf₁ p r
-  rw [finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum, ncard_eq_toFinset_card _ hfin,
-    Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun x hx ↦ ?_
-  rw [Finite.mem_toFinset] at hx
-  rcases h.targetBrokenPairSign_eq_one_or_eq_neg_one h₁ hf₀ hf₁ hx with h' | h' <;> rw [h'] <;>
-    decide
+        ((hX₀.morseTargetBrokenPairSet hX₁ p r).ncard : ZMod 2) :=
+  intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (h.finite_morseTargetBrokenPairSet h₀ h₁ hf₀ hf₁ p r) fun _ hx ↦
+      h.targetBrokenPairSign_eq_one_or_eq_neg_one h₁ hf₀ hf₁ hx
 
 end IsMorseSmalePair
 
