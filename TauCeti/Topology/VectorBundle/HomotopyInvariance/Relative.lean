@@ -36,10 +36,12 @@ open neighbourhood `W`. By the generalized tube lemma on compact `I` and Urysohn
 
 ## References
 
-* A. Hatcher, *Vector Bundles and K-Theory*, §1.2, Proposition 1.7, for relative cylinder extension
-  and relative homotopy invariance of pullbacks over paracompact bases.
-* M. F. Atiyah, *K-Theory*, §1.4, Lemma 1.4.3, for extension of bundle isomorphisms from closed
-  subsets.
+* A. Hatcher, *Vector Bundles and K-Theory*, §1.2, Theorem 1.6 and Proposition 1.7, for the
+  absolute cylinder trivialization over paracompact bases (`exists_continuous_hom_bundle_cylinder`
+  in `TauCeti.Topology.VectorBundle.HomotopyInvariance.Basic`).
+* M. F. Atiyah, *K-Theory*, §1.4, Lemma 1.4.1 and Lemma 1.4.2, for extending sections and bundle
+  isomorphisms from a closed subspace to an open neighbourhood (combined here with the tube lemma
+  and Urysohn compression to obtain relative cylinder extension and relative homotopy invariance).
 -/
 
 public section
@@ -148,8 +150,21 @@ private theorem exists_compressed_transition_equiv [CompleteSpace F]
     if hq : q.1 ∈ s then
       ((Ψ₁ q).symm : E q →L[𝕜] E (q.1, 0)).comp (Φ₀ (⟨q.1, hq⟩, q.2) : E (q.1, 0) →L[𝕜] E q)
     else ContinuousLinearMap.id 𝕜 (E (q.1, 0))
+  have hαs (x : s) (t : I) : α (x.val, t) =
+      ((Ψ₁ (x.val, t)).symm : E (x.val, t) →L[𝕜] E (x.val, 0)).comp
+        (Φ₀ (x, t) : E (x.val, 0) →L[𝕜] E (x.val, t)) :=
+    -- `((cylinderZero X : X × I → X × I) *ᵖ E) (x.val, t)` is definitionally `E (x.val, 0)`,
+    -- so `dite_eq_left` unfolds the `if` branch on `x.val ∈ s`.
+    dite_eq_left x.property
   have hα0 (x : X) : α (x, 0) = ContinuousLinearMap.id 𝕜 (E (x, 0)) := by
-    by_cases hx : x ∈ s <;> simp [α, hx, hΨ₁0, hΦ₀0] <;> rfl
+    by_cases hx : x ∈ s
+    · simp only [hαs ⟨x, hx⟩ 0, hΨ₁0 x, hΦ₀0 ⟨x, hx⟩, ContinuousLinearEquiv.refl_symm,
+        ContinuousLinearEquiv.coe_refl, ContinuousLinearMap.id_comp]
+      -- `((cylinderZero X : X × I → X × I) *ᵖ E) (x, 0)` is definitionally `E (x, 0)` with
+      -- `Bundle.Pullback` instance synonyms.
+      rfl
+    · -- Off `s`, `α` is the identity on `E (x, 0)`, matching `((cylinderZero X : _) *ᵖ E) (x, 0)`.
+      exact dite_eq_right hx
   have : ∀ z : X × I, @ContinuousConstSMul 𝕜 (((cylinderZero X : X × I → X × I) *ᵖ E) z) _
       (inferInstance : Module 𝕜 (((cylinderZero X : X × I → X × I) *ᵖ E) z)).toSMul := fun z ↦
     @ContinuousSMul.continuousConstSMul _ _ _ _ _
@@ -160,13 +175,11 @@ private theorem exists_compressed_transition_equiv [CompleteSpace F]
       ((cylinderZero X : X × I → X × I) *ᵖ E) z →L[𝕜]
       ((cylinderZero X : X × I → X × I) *ᵖ E) z)
     ((hs.prod isClosed_univ).union (isClosed_univ.prod isClosed_singleton))
-    (continuousOn_transition_union hs hΨ₁ hΦ₀
-      (α := α) (fun x t ↦ by simp only [α, x.property, ↓reduceDIte]; rfl) hα0)
+    (continuousOn_transition_union hs hΨ₁ hΦ₀ (α := α) hαs hα0)
   obtain ⟨r, hr₁, hrW, hr0, hrs⟩ := exists_continuousMap_cylinder_compression hs
     hβ.isOpen_setOf_clm_bundle_isInvertible
     (fun q hq ↦ by
-      rw [mem_ofPred_eq, hβα q (Or.inl hq)]
-      simp only [α, hq.1, ↓reduceDIte]
+      rw [mem_ofPred_eq, hβα q (Or.inl hq), hαs ⟨q.1, hq.1⟩ q.2]
       exact ⟨(Φ₀ (⟨q.1, hq.1⟩, q.2)).trans (Ψ₁ q).symm, rfl⟩)
     (fun ⟨x, t⟩ ⟨hx, ht⟩ ↦ by
       obtain rfl : t = 0 := ht
@@ -187,7 +200,8 @@ private theorem exists_compressed_transition_equiv [CompleteSpace F]
   · exact ContinuousLinearEquiv.coe_injective ((hγ' (x.val, t)).trans
       ((ContinuousLinearMap.eqRec_section (hrs x.val x.property t) (h0 (x.val, t)) β).trans
         ((hβα (x.val, t) (Or.inl ⟨x.property, mem_univ t⟩)).trans
-          (by simp only [α, x.property, ↓reduceDIte]; rfl))))
+          ((hαs x t).trans (ContinuousLinearMap.ext fun v ↦
+            ((Φ₀ (x, t)).trans_apply (Ψ₁ (x.val, t)).symm v).symm)))))
 
 /-- **Relative homotopy invariance of vector bundles over a cylinder.** Over a paracompact R₁
 base `X`, let `E` be a Banach vector bundle over `X × I` whose model endomorphism space

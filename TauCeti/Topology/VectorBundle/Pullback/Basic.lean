@@ -194,12 +194,16 @@ theorem inCoordinates_pullback (f : K) (g : L) (x₀ x y₀ y : X)
       (trivializationAt G W (g y₀)).continuousLinearMapAt 𝕜 (g y) := by
     simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
       Trivialization.continuousLinearMapAt_pullback]
+    -- `(g *ᵖ W) y` is definitionally `W (g y)` with `Bundle.Pullback` instance synonyms.
     rfl
   have h2 : (trivializationAt F ((f : X → B) *ᵖ V) x₀).symmL 𝕜 x =
       (trivializationAt F V (f x₀)).symmL 𝕜 (f x) := by
     simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
       Trivialization.symmL_pullback]
+    -- `(f *ᵖ V) x` is definitionally `V (f x)` with `Bundle.Pullback` instance synonyms.
     rfl
+  -- The pullback fibres inherit `Bundle.Pullback` module/topology instances that are synonyms
+  -- of the original fibre instances on `V (f x)` and `W (g y)`; `erw` resolves these synonyms.
   erw [inCoordinates, inCoordinates, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply]

@@ -219,6 +219,33 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
 @[simp] theorem pullback_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z)) :
     (A.pullback g).pullback f = A.pullback (g.comp f) := (rfl)
 
+/-- An `eqToHom` between two pullbacks of the same core acts as the identity on every fibre,
+since both pullbacks have the same rank definitionally. -/
+@[simp] theorem fiberMap_eqToHom_pullback {A : FiniteRankBundleCore 𝕜 Y} {f g : C(X, Y)}
+    (h : A.pullback f = A.pullback g) (x : X) :
+    (eqToHom h).fiberMap x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+  ext v i
+  -- `rank_pullback` identifies both pullback ranks with `A.rank` definitionally, so `Fin.cast`
+  -- collapses to the identity.
+  simpa only [Fin.cast_eq_self] using (fiberMap_eqToHom_apply h x v i).trans
+    (congrFun (ContinuousLinearMap.id_apply (R₁ := 𝕜) (M₁ := Fin A.rank → 𝕜) v).symm i)
+
+/-- Specialized `fiberMap_eqToHom_pullback` for an iterated pullback on the left, enabling
+syntactic `simp` matching before unfolding `pullback`. -/
+@[simp] theorem fiberMap_eqToHom_pullback_comp {A : FiniteRankBundleCore 𝕜 Z}
+    {f : C(X, Y)} {g : C(Y, Z)} {k : C(X, Z)} (h : (A.pullback g).pullback f = A.pullback k)
+    (x : X) :
+    (eqToHom h).fiberMap x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+  fiberMap_eqToHom_pullback (A := A) (f := g.comp f) (g := k) h x
+
+/-- Specialized `fiberMap_eqToHom_pullback` for an iterated pullback on the right, enabling
+syntactic `simp` matching before unfolding `pullback`. -/
+@[simp] theorem fiberMap_eqToHom_comp_pullback {A : FiniteRankBundleCore 𝕜 Z}
+    {f : C(X, Y)} {g : C(Y, Z)} {k : C(X, Z)} (h : A.pullback k = (A.pullback g).pullback f)
+    (x : X) :
+    (eqToHom h).fiberMap x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+  fiberMap_eqToHom_pullback (A := A) (f := k) (g := g.comp f) h x
+
 /-- Pullback by the identity is the identity functor, including on morphisms. -/
 @[simp] theorem pullbackFunctor_id :
     pullbackFunctor (𝕜 := 𝕜) (ContinuousMap.id Y) = 𝟭 (FiniteRankBundleCore 𝕜 Y) := by
