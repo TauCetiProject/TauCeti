@@ -315,6 +315,7 @@ theorem ramificationIdx_mul_inertiaDeg :
       (maximalIdeal (valuation K d).valuationSubring).inertiaDeg
         (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring =
       finrank K⸨X⸩ (Level K d) := by
-  rw [ramificationIdx_maximalIdeal, inertiaDeg_maximalIdeal, mul_one, finrank_eq K d]
+  rw [ramificationIdx_maximalIdeal, inertiaDeg_maximalIdeal, mul_one,
+    finrank_eq_card_basis (basis K d), Fintype.card_fin]
 
 end TauCeti.LaurentSeries.Level

@@ -193,7 +193,7 @@ theorem finiteDimensional_iff_exists_eq_level
     FiniteDimensional K⸨X⸩ E ↔ ∃ n : ℕ+, E = level K n := by
   refine ⟨fun _ ↦ ⟨_, eq_level_of_finrank_eq (PNat.toPNat'_coe finrank_pos).symm⟩, ?_⟩
   rintro ⟨n, rfl⟩
-  exact inferInstance
+  exact (levelPowerBasis K n).finite
 
 end IntermediateField
 

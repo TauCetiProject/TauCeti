@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Residue
 
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 import TauCeti.RingTheory.Derivation.Determinant
-import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
 # Differential traces and residues on formally étale Laurent extensions
@@ -333,18 +332,6 @@ theorem residue_inv_smul_D {F' : Type*} [Field F'] [Algebra K⸨X⸩ F'] [Algebr
     · simp [Algebra.norm_eq_one_of_not_module_finite hF]
   · simpa [Units.val_inv_eq_inv_val] using residue_units_inv_smul_D (K := K) (Units.mk0 x hx)
 
-variable (K L) in
-/-- The `K`-linear residue on a formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology
-is continuous for every topology on `K`. -/
-@[fun_prop]
-theorem continuous_residue [TopologicalSpace K] [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
-    Continuous (residue K L) :=
-  ((_root_.LaurentSeries.continuous_coeff (-1)).comp
-    ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous.comp
-      (continuous_trace K L))).congr fun ω ↦ by
-    rw [Function.comp_apply, Function.comp_apply,
-      ← TauCeti.ContinuousKaehlerDifferential.residue_apply, ← residue_apply]
-
 end TraceAndResidue
 
 /-! ### Transitivity in towers -/
@@ -414,25 +401,6 @@ theorem trace_traceTower [Module.Free M L] (ω : ContinuousKaehlerDifferential K
 theorem residue_traceTower [Module.Free M L] (ω : ContinuousKaehlerDifferential K L) :
     residue K M (traceTower K M L ω) = residue K L ω := by
   rw [residue_apply, residue_apply, trace_traceTower]
-
-/-- On a tower `K⸨X⸩ → M → L` where `L` carries the `K⸨X⸩`-module topology with continuous
-multiplication and scalar multiplication by `K⸨X⸩` on `M` is continuous, the relative differential
-trace is continuous. -/
-@[fun_prop]
-theorem continuous_traceTower [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
-    [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] [ContinuousMul L] :
-    Continuous (traceTower K M L) := by
-  let _ : IsTopologicalAddGroup L := IsModuleTopology.isTopologicalAddGroup K⸨X⸩ L
-  have : IsTopologicalSemiring L :=
-    { toContinuousAdd := inferInstance, toContinuousMul := inferInstance }
-  have : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K M) :=
-    IsScalarTower.continuousSMul M
-  have hlin : Continuous
-      (((equivSelf K M).symm.toLinearMap ∘ₗ Algebra.trace M L).restrictScalars K⸨X⸩) :=
-    IsModuleTopology.continuous_of_linearMap _
-  refine (hlin.comp continuous_equivSelf).congr fun ω ↦ ?_
-  simp only [Function.comp_apply, LinearMap.coe_restrictScalars, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, ← equivSelf_traceTower ω, LinearEquiv.symm_apply_apply]
 
 end Tower
 
