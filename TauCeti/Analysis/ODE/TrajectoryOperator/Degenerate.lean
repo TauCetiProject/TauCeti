@@ -114,8 +114,8 @@ private theorem two_mul_sq_le_norm_prev_sub_sq (he : Continuous e) {m : ℝ} (hm
     rw [hs, Pi.sub_apply, hs1, hs2, ← sub_smul, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
     linear_combination (-2 * ‖e s‖ ^ 2) * hdisj s
   have hg : Continuous fun s ↦ ‖e s‖ ^ 2 := by fun_prop
-  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
-  have hintψ := hψ.continuous.integrable_sq_of_hasCompactSupport hψc
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hφc
+  have hintψ := hψ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hψc
   rw [integral_congr_ae hae, Opens.coe_top, Measure.restrict_univ]
   calc 2 * m ^ 2 = ∫ s, (φ s ^ 2 * m ^ 2 + ψ s ^ 2 * m ^ 2) := by
         rw [integral_add (hint.mul_const _) (hintψ.mul_const _), integral_mul_const,
@@ -137,8 +137,8 @@ private theorem norm_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1 e) {M : ℝ} (hup 
     ‖u‖ ^ 2 ≤ 3 * M ^ 2 + 2 * M ^ 2 * ∫ s, deriv φ s ^ 2 := by
   rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, norm_prev_sq_eq_integral hu,
     norm_weakFDeriv_sq_eq_integral (contDiff_profile_smul hφ he) hu]
-  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
-  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport hφc (by simp)
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hφc
+  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport (μ := volume) hφc (by simp)
   have h₁ : ∫ s, ‖φ s • e s‖ ^ 2 ≤ M ^ 2 := by
     calc _ ≤ ∫ s, M ^ 2 * φ s ^ 2 :=
           integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
@@ -175,8 +175,8 @@ private theorem norm_trajectoryOperator_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ φ s • e s) :
     ‖trajectoryOperator AL u‖ ^ 2 ≤ 2 * M ^ 2 * (∫ s, deriv φ s ^ 2) + 2 * ε ^ 2 := by
   rw [norm_trajectoryOperator_sq_eq_integral (contDiff_profile_smul hφ he) hu AL hAL]
-  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
-  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport hφc (by simp)
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hφc
+  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport (μ := volume) hφc (by simp)
   calc _ ≤ ∫ s, (2 * M ^ 2 * deriv φ s ^ 2 + 2 * ε ^ 2 * φ s ^ 2) :=
         integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
           ((hintd.const_mul _).add (hint.const_mul _)) (.of_forall fun s ↦ ?_)

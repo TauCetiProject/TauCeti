@@ -97,8 +97,10 @@ private theorem norm_familyDomainTrajectoryOperator_smulRightBaseW1pL_sq_le
     ‖familyDomainTrajectoryOperator ι AL
         (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 φ))‖ ^ 2 ≤
       2 * ‖ι a‖ ^ 2 * (∫ s, deriv φ s ^ 2) + 2 * ε ^ 2 * ∫ s, φ s ^ 2 := by
-  have hint := φ.continuous.integrable_sq_of_hasCompactSupport φ.hasCompactSupport
-  have hintd := φ.contDiff.integrable_deriv_sq_of_hasCompactSupport φ.hasCompactSupport (by simp)
+  have hint :=
+    φ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) φ.hasCompactSupport
+  have hintd := φ.contDiff.integrable_deriv_sq_of_hasCompactSupport (μ := volume)
+    φ.hasCompactSupport (by simp)
   have hle : ∀ᵐ s ∂μ₀, ‖familyDomainTrajectoryOperator ι AL
       (smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)) s‖ ^ 2 ≤
         2 * ‖ι a‖ ^ 2 * deriv φ s ^ 2 + 2 * ε ^ 2 * φ s ^ 2 := by
