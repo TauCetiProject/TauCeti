@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Rat.Init
 public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.Algebra.Group.Subgroup.Centralizer
 public import TauCeti.RepresentationTheory.GroupAlgebra.BrauerProjection
 
 /-!
@@ -42,12 +43,6 @@ abbrev s : Equiv.Perm (Fin 3) := Equiv.swap 0 1
 /-- The subgroup `P = ⟨s⟩` of order `2`. -/
 abbrev P : Subgroup (Equiv.Perm (Fin 3)) := Subgroup.zpowers s
 
-/-- An element of `S₃` not commuting with `a` is not in the centralizer of `⟨a⟩`. -/
-private theorem notMem_centralizer_zpowers {a g : Equiv.Perm (Fin 3)} (hg : g * a ≠ a * g) :
-    g ∉ Subgroup.centralizer (Subgroup.zpowers a : Set (Equiv.Perm (Fin 3))) := by
-  rwa [Subgroup.zpowers_eq_closure, Subgroup.centralizer_closure,
-    Subgroup.mem_centralizer_singleton_iff, commute_iff_eq]
-
 section Coefficients
 
 variable (R : Type) [CommRing R]
@@ -63,10 +58,10 @@ theorem x_mem_conjInvariants : x R ∈ conjInvariants R P := by
 
 /-- `r` and `r²` are not in the centralizer of `P`. -/
 private theorem r_notMem : r ∉ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) :=
-  notMem_centralizer_zpowers (by decide)
+  mt Subgroup.mem_centralizer_zpowers_iff.1 (by decide)
 
 private theorem r_sq_notMem : r * r ∉ Subgroup.centralizer (P : Set (Equiv.Perm (Fin 3))) :=
-  notMem_centralizer_zpowers (by decide)
+  mt Subgroup.mem_centralizer_zpowers_iff.1 (by decide)
 
 /-- `Br_P(x) = 0`, since neither `r` nor `r²` centralizes `P`. -/
 theorem brauerProjection_x : brauerProjection P (x R) = 0 := by
@@ -133,7 +128,8 @@ is `1 + r + r²`. -/
 example : brauerProjection C3 t = 0 ∧ (brauerProjection C3 (t * t)).coeff 1 = 1 := by
   refine ⟨?_, ?_⟩
   · have h (g : Equiv.Perm (Fin 3)) (hg : g * r ≠ r * g) :=
-      brauerProjection_single_of_notMem C3 (notMem_centralizer_zpowers hg) (1 : ZMod 2)
+      brauerProjection_single_of_notMem C3 (mt Subgroup.mem_centralizer_zpowers_iff.1 hg)
+        (1 : ZMod 2)
     rw [map_add, map_add, h (Equiv.swap 0 1) (by decide), h (Equiv.swap 0 2) (by decide),
       h (Equiv.swap 1 2) (by decide), add_zero, add_zero]
   · rw [coeff_brauerProjection, OneMemClass.coe_one]
