@@ -44,8 +44,9 @@ formula gives
 
 `DG (x₀, λᵢ) (v, s) = ∏_{j ≠ i} (λᵢ - d j) * (s - Re (Uᴴ (DM (x₀) v) U)ᵢᵢ)`.
 
-Its zeros come from `Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`, and at a simple
-eigenvalue the gap product is nonzero (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
+That each ordered eigenvalue is a zero of `G (x, ·)` is
+`Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`, and at a simple eigenvalue the gap
+product is nonzero (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
 Simplicity makes the partial derivative in `μ` invertible, so over a complete parameter space the
 implicit function theorem produces a `C^k` function `ψ` whose graph is the zero set of `G` near
 `(x₀, λᵢ)`. Since `x ↦ λᵢ (M x)` is continuous and takes values in that zero set, it agrees with

@@ -34,8 +34,9 @@ drift `∑_{j ≠ i} (λᵢ - λⱼ)⁻¹` of Dyson's eigenvalue equation.
 
 ## Implementation notes
 
-A simple eigenvalue has a differentiable curve of eigenvectors through `u`
-(`Matrix.exists_eigenvector_curve`), namely a scalar multiple of `adjugate (λᵢ (t) - M t) *ᵥ u`:
+A simple eigenvalue has a differentiable curve solving the eigenvalue equation and passing through
+`u` at `t₀` (`Matrix.exists_eigenvector_curve`), namely a scalar multiple of
+`adjugate (λᵢ (t) - M t) *ᵥ u`:
 the adjugate of a singular matrix maps into its kernel, and at `t₀` it acts on `u` by the nonzero
 product `∏_{k ≠ i} (λᵢ - λₖ)` (`Matrix.IsHermitian.adjugate_scalar_sub_mulVec_eq_prod_smul`).
 Along this curve `w`, the first variation formula writes `λᵢ'` as the Rayleigh quotient
@@ -113,13 +114,14 @@ private theorem re_star_dotProduct_sub_smul_eq_sum {A B : Matrix n n 𝕜} (hA :
 
 variable {M : ℝ → Matrix n n 𝕜}
 
-/-- Through a unit eigenvector `u` of a simple eigenvalue `λᵢ (t₀)` passes a curve `w` of
-eigenvectors, `M t *ᵥ w t = λᵢ (t) • w t` for every `t`, which is differentiable at `t₀` when the
-entries of `M` are. It is a fixed multiple of `adjugate (λᵢ (t) - M t) *ᵥ u`. -/
+/-- Let `u` solve `M t₀ *ᵥ u = λᵢ (t₀) • u` for a simple eigenvalue `λᵢ (t₀)`; it need not be
+normalized. Then some curve `w` with `w t₀ = u` solves the eigenvalue equation
+`M t *ᵥ w t = λᵢ (t) • w t` for every `t`, and is differentiable at `t₀` when the entries of `M`
+are. The statement does not assert that `w t` is nonzero for `t ≠ t₀`. -/
 theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ : ℝ}
     (hMd : ∀ a b, DifferentiableAt ℝ (fun s ↦ M s a b) t₀) {i : Fin (Fintype.card n)}
     (hi : ∀ j ≠ i, (hM t₀).eigenvalues₀ j ≠ (hM t₀).eigenvalues₀ i) {u : n → 𝕜}
-    (hu : M t₀ *ᵥ u = ((hM t₀).eigenvalues₀ i : 𝕜) • u) (hu1 : star u ⬝ᵥ u = 1) :
+    (hu : M t₀ *ᵥ u = ((hM t₀).eigenvalues₀ i : 𝕜) • u) :
     ∃ w : ℝ → n → 𝕜, w t₀ = u ∧ DifferentiableAt ℝ w t₀ ∧
       ∀ t, M t *ᵥ w t = ((hM t).eigenvalues₀ i : 𝕜) • w t := by
   set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
@@ -137,8 +139,13 @@ theorem exists_eigenvector_curve (hM : ∀ t, (M t).IsHermitian) {t₀ : ℝ}
     rw [he] at h
     dsimp only
     rw [h, smul_smul, inv_mul_cancel₀ hp, one_smul]
-  · have hlam : DifferentiableAt ℝ (fun t ↦ (hM t).eigenvalues₀ i) t₀ :=
-      (hasFDerivAt_eigenvalues₀ hM hMd hi hu hu1).differentiableAt
+  · -- `λᵢ` is differentiable by the first variation formula at a unit eigenvector of `M t₀`.
+    have hlam : DifferentiableAt ℝ (fun t ↦ (hM t).eigenvalues₀ i) t₀ := by
+      have hv := (hM t₀).mulVec_eigenvectorBasis (e i)
+      rw [(hM t₀).eigenvalues_apply_equivOfCardEq, RCLike.real_smul_eq_coe_smul (K := 𝕜)] at hv
+      refine (hasFDerivAt_eigenvalues₀ hM hMd hi hv ?_).differentiableAt
+      rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K,
+        (hM t₀).eigenvectorBasis.orthonormal.1, RCLike.ofReal_one, one_pow]
     -- Each entry of the adjugate is the determinant of a matrix with differentiable entries.
     have hadj (a b : n) : DifferentiableAt ℝ
         (fun t ↦ adjugate (scalar n ((hM t).eigenvalues₀ i : 𝕜) - M t) a b) t₀ := by
@@ -218,7 +225,7 @@ theorem hasDerivAt_deriv_eigenvalues₀ (hM : ∀ t, (M t).IsHermitian) {t₀ : 
   have hu0 : u ≠ 0 := by
     rintro rfl
     simp at hu1
-  obtain ⟨w, hw₀, hwd, hweig⟩ := exists_eigenvector_curve hM hMd₀ hi hu hu1
+  obtain ⟨w, hw₀, hwd, hweig⟩ := exists_eigenvector_curve hM hMd₀ hi hu
   have hw' := hwd.hasDerivAt
   -- `λᵢ'` is the Rayleigh quotient of `M'` along `w`, near `t₀`.
   have hev : (deriv fun t ↦ (hM t).eigenvalues₀ i) =ᶠ[𝓝 t₀] fun t ↦
