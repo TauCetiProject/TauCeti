@@ -35,6 +35,7 @@ are also those of the DG right modules of chains of a space with a right action 
   chain `[g]` is a cycle of degree `0`.
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
+* `TauCeti.cubicalChainSumMap_cubicalChainPoint`: the push-forward sends `[x]` to `[f x]`.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
 
@@ -301,6 +302,13 @@ theorem cubicalChainSumMap_comp (g : C(Y, Z)) (f : C(X, Y)) :
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, cubicalChainSumMap_lof,
       cubicalChainSumMap_lof, cubicalChainSumMap_lof, NormalizedCubicalChain.map_comp,
       LinearMap.comp_apply]
+
+/-- The push-forward sends the point chain `[x]` to `[f x]`. -/
+@[simp]
+theorem cubicalChainSumMap_cubicalChainPoint (f : C(X, Y)) (x : X) :
+    cubicalChainSumMap R f (cubicalChainPoint X R x) = cubicalChainPoint Y R (f x) := by
+  rw [cubicalChainPoint_def, cubicalChainPoint_def, cubicalChainSumMap_lof, map_ofCube,
+    SingularCube.comp_point]
 
 /-- The push-forward preserves the cohomological degree. -/
 theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
