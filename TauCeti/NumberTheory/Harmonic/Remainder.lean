@@ -60,7 +60,8 @@ the remainder is `-log X - γ` and is bounded by elementary inequalities for the
 * O. Ramaré, *On Šnirel'man's constant*, Ann. Scuola Norm. Sup. Pisa 22 (1995), Lemma 3.3 (the
   bound `0.9105 t^{-1/3}`).
 * C.-P. Chen, *Inequalities for the Euler–Mascheroni constant*, Appl. Math. Lett. 23 (2010)
-  (the lower bound `1 / (2n + 2/5)`).
+  (the sharp lower bound `1 / (2n + 1/(1-γ) - 2) ≤ harmonic n - log n - γ`; the lower bound
+  `1 / (2n + 2/5)` proved here is a weakening of it, since `1/(1-γ) - 2 < 2/5`).
 -/
 
 public section
