@@ -192,14 +192,14 @@ theorem IsMultiplicative.apply_bot {f : GraphParam} (hmul : IsMultiplicative f)
   induction n with
   | zero =>
       have h := hmul 0 1 (⊥ : SimpleGraph (Fin 0)) (⊥ : SimpleGraph (Fin 1))
-      rw [SimpleGraph.sum_bot_bot,
+      rw [sum_bot_bot,
         GaloisConnection.l_bot (u := SimpleGraph.comap finSumFinEquiv.toEmbedding)
           fun _ _ => SimpleGraph.map_le_iff_le_comap,
         hnorm, mul_one] at h
       simpa using h.symm
   | succ n ih =>
       have h := hmul n 1 (⊥ : SimpleGraph (Fin n)) (⊥ : SimpleGraph (Fin 1))
-      rw [SimpleGraph.sum_bot_bot,
+      rw [sum_bot_bot,
         GaloisConnection.l_bot (u := SimpleGraph.comap finSumFinEquiv.toEmbedding)
           fun _ _ => SimpleGraph.map_le_iff_le_comap,
         ih, hnorm, mul_one] at h

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.Data.Int.Order.Units
 
 /-!
@@ -20,6 +21,8 @@ ring squares to `1`.
 * `Int.units_eq_iff_mul_eq_one`: `u = v ↔ u * v = 1` for signs `u v : ℤˣ`.
 * `Int.units_eq_iff_eq_of_mul_eq_mul`: if `u * v = u' * v'` then `u = v ↔ u' = v'`.
 * `Int.cast_units_sq`: the square of a sign, cast to any ring, is `1`.
+* `Int.unitsMap_castRingHom_eq_one_iff`: the image of a sign `u` in a ring `R` is `1` exactly when
+  `u = 1` or `2 = 0` in `R`.
 * `Int.exists_apply_eq_and_apply_eq`: two `ℤ`-valued functions that take all four pairs of signs at
   four points take every pair of signs.
 -/
@@ -42,6 +45,14 @@ theorem units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v = u' * v') 
 @[simp]
 theorem cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
   rcases Int.units_eq_one_or u with rfl | rfl <;> simp
+
+/-- The image of a sign `u : ℤˣ` in the units of a ring `R` is `1` exactly when `u = 1` or
+`2 = 0` in `R`. -/
+theorem unitsMap_castRingHom_eq_one_iff {R : Type*} [Ring R] (u : ℤˣ) :
+    Units.map (Int.castRingHom R).toMonoidHom u = 1 ↔ u = 1 ∨ (2 : R) = 0 := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two]
 
 /-- Two `ℤ`-valued functions that take the four sign pairs at four points take every pair of
 signs. -/

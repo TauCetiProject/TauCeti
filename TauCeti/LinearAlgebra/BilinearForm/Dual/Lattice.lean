@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Module.Lattice
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Dual submodules of lattices
@@ -109,7 +110,8 @@ theorem dualSubmoduleToDual_surjective
   -- A linear form on the lattice extends to the fraction field, where nondegeneracy represents it
   -- by an ambient vector; that vector lies in the dual lattice and maps to the form.
   have := Module.Finite.of_isFullLattice (A := K) N
-  have := Submodule.IsLattice.isLocalizedModule_subtype K N Submodule.IsFullLattice.span_eq_top
+  have := N.isLocalizedModule_subtype_of_span_eq_top (nonZeroDivisors R)
+    (Submodule.IsFullLattice.span_eq_top (A := K))
   intro f
   let fK : Module.Dual K V :=
     IsLocalizedModule.mapExtendScalars (nonZeroDivisors R) N.subtype (Algebra.linearMap R K) K f

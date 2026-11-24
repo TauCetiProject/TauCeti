@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -42,6 +44,12 @@ sequences (`max (-Re a, -Re b) < σ < min (Re c, Re d)`).
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
+  the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
+* `Complex.hasMellin_one_add_mul_cpow_neg`: the dilated form, the Mellin transform of
+  `(1 + x t)^{-a}` for `t > 0` is `t^{-s} Γ(s) Γ(a - s) / Γ(a)`.
+* `Complex.integral_norm_cpow_mul_one_add_mul_cpow_neg`: the norm of the Mellin integrand of
+  `(1 + x t)^{-a}` integrates to `t^{-Re s} ‖Γ(Re s) Γ(Re a - Re s) / Γ(Re a)‖`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
@@ -70,52 +78,11 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- Under the chart `u ↦ u / (1 - u)` of `(0, 1)` onto `(0, ∞)`, the Mellin integrand of
-`(1 + t)^{-a}` at `s` becomes the integrand of the Beta integral with parameters `s` and
-`a - s`. -/
-private lemma abs_deriv_smul_cpow_mul_one_add_cpow (s a : ℂ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    |((1 - u) ^ 2)⁻¹| • (((u / (1 - u) : ℝ) : ℂ) ^ (s - 1) • (1 + ((u / (1 - u) : ℝ) : ℂ)) ^ (-a)) =
-      (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1) := by
-  obtain ⟨hu0, hu1⟩ := hu
-  have h1u : 0 < 1 - u := by linarith
-  -- every power below has a positive real base, so it is `exp (Real.log x * w)`
-  have hexp {x : ℝ} (hx : 0 < x) (w : ℂ) : (x : ℂ) ^ w = cexp (Real.log x * w) := by
-    rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), ofReal_log hx.le]
-  have hbase : 1 + ((u / (1 - u) : ℝ) : ℂ) = (((1 - u)⁻¹ : ℝ) : ℂ) := by
-    have hr : 1 + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
-    rw [← hr]
-    push_cast
-    ring
-  have hsub : (1 - (u : ℂ)) = ((1 - u : ℝ) : ℂ) := by push_cast; ring
-  have hfac : ((|((1 - u) ^ 2)⁻¹| : ℝ) : ℂ) = cexp (-(2 * Real.log (1 - u))) := by
-    have hr : |((1 - u) ^ 2)⁻¹| = Real.exp (-(2 * Real.log (1 - u))) := by
-      rw [abs_of_nonneg (by positivity), Real.exp_neg,
-        show 2 * Real.log (1 - u) = Real.log ((1 - u) ^ 2) by rw [Real.log_pow]; norm_num,
-        Real.exp_log (by positivity)]
-    rw [hr, ofReal_exp]
-    push_cast
-    ring_nf
-  rw [real_smul, smul_eq_mul, hbase, hsub, hfac,
-    hexp (div_pos hu0 h1u), hexp (inv_pos.mpr h1u), hexp hu0, hexp h1u,
-    Real.log_div hu0.ne' h1u.ne',
-    Real.log_inv, ← Complex.exp_add, ← Complex.exp_add, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
 /-- **Euler's Beta integral of the second kind** (DLMF 5.12.3). For `0 < Re s < Re a` the Mellin
 transform of `t ↦ (1 + t)^{-a}` converges at `s` and equals `Γ(s) Γ(a - s) / Γ(a)`. -/
 theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
     HasMellin (fun t : ℝ ↦ (1 + (t : ℂ)) ^ (-a)) s (Gamma s * Gamma (a - s) / Gamma a) := by
   have has : 0 < (a - s).re := by simpa using hsa
-  have hchart : (fun u : ℝ ↦ u / (1 - u)) '' Ioo 0 1 = Ioi 0 := by
-    rw [TauCeti.image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  have hderiv : ∀ u ∈ Ioo (0 : ℝ) 1,
-      HasDerivWithinAt (fun u : ℝ ↦ u / (1 - u)) ((1 - u) ^ 2)⁻¹ (Ioo 0 1) u :=
-    fun u hu ↦ (TauCeti.hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt
-  have hinj : InjOn (fun u : ℝ ↦ u / (1 - u)) (Ioo 0 1) :=
-    TauCeti.strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self
   -- the Beta integrand on `(0, 1)`, as an integrable function on `Ioo 0 1`
   have hbeta : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1))
       (Ioo 0 1) := by
@@ -123,29 +90,82 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at h
     exact h.mono_set Ioo_subset_Ioc_self
   refine ⟨?_, ?_⟩
-  · rw [MellinConvergent, ← hchart,
-      integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo hderiv hinj]
-    exact hbeta.congr_fun (fun u hu ↦ (abs_deriv_smul_cpow_mul_one_add_cpow s a hu).symm)
-      measurableSet_Ioo
-  · rw [mellin, ← hchart,
-      integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv hinj,
-      setIntegral_congr_fun measurableSet_Ioo
-        fun u hu ↦ abs_deriv_smul_cpow_mul_one_add_cpow s a hu,
+  · rw [MellinConvergent]
+    have hchart := (TauCeti.integrableOn_Ioi_iff_integrableOn_div_one_sub
+      (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a))
+      (ρ := 0) zero_lt_one).2
+    simpa only [zero_div] using
+      hchart (hbeta.congr_fun
+        (fun u hu ↦ (inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2).symm) measurableSet_Ioo)
+  · rw [mellin]
+    have hchart := TauCeti.integral_Ioi_eq_integral_div_one_sub
+      (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a)) (ρ := 0) zero_lt_one
+    simp only [zero_div] at hchart
+    rw [hchart, setIntegral_congr_fun measurableSet_Ioo
+      (fun u hu ↦ inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2),
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
+
+/-- For `0 < Re s < Re a`, the integrand `u^{s - 1} (1 + u)^{-a}` of Euler's Beta integral of the
+second kind is integrable on `(0, ∞)`. -/
+theorem integrableOn_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)) (Ioi 0) := by
+  simpa [MellinConvergent] using (hasMellin_one_add_cpow_neg hs hsa).1
+
+/-- **Euler's Beta integral of the second kind** (DLMF 5.12.3), as a set integral: for
+`0 < Re s < Re a`, `∫₀^∞ u^{s - 1} (1 + u)^{-a} du = Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a) =
+      Gamma s * Gamma (a - s) / Gamma a := by
+  simpa [mellin] using (hasMellin_one_add_cpow_neg hs hsa).2
+
+/-- The scaled Beta integral of the second kind: for `t > 0` and `0 < Re s < Re a`, the Mellin
+transform of `x ↦ (1 + x t)^{-a}` at `s` is `t^{-s} Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem hasMellin_one_add_mul_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re)
+    {t : ℝ} (ht : 0 < t) :
+    HasMellin (fun x : ℝ ↦ (1 + (x : ℂ) * t) ^ (-a)) s
+      ((t : ℂ) ^ (-s) * (Gamma s * Gamma (a - s) / Gamma a)) := by
+  simpa only [ofReal_mul, smul_eq_mul] using (hasMellin_one_add_cpow_neg hs hsa).comp_mul_right ht
+
+/-- The norm of the scaled Mellin integrand of `(1 + x t)^{-a}` integrates to
+`t^{-Re s} ‖Γ(Re s) Γ(Re a - Re s) / Γ(Re a)‖`, by the same Beta integral at the real parts. -/
+theorem integral_norm_cpow_mul_one_add_mul_cpow_neg {s a : ℂ} (hs : 0 < s.re)
+    (hsa : s.re < a.re) {t : ℝ} (ht : 0 < t) :
+    ∫ x : ℝ in Ioi 0, ‖(x : ℂ) ^ (s - 1) * (1 + (x : ℂ) * t) ^ (-a)‖ =
+      t ^ (-s.re) * ‖Gamma s.re * Gamma (a.re - s.re) / Gamma a.re‖ := by
+  -- the real integrand `x^{Re s - 1} (1 + x t)^{-Re a}`
+  set r : ℝ → ℝ := fun x ↦ x ^ (s.re - 1) * (1 + x * t) ^ (-a.re)
+  have hnorm : ∀ x ∈ Ioi (0 : ℝ),
+      ‖(x : ℂ) ^ (s - 1) * (1 + (x : ℂ) * t) ^ (-a)‖ = r x := fun x hx ↦ by
+    have hbase : (1 + (x : ℂ) * t) = ((1 + x * t : ℝ) : ℂ) := by push_cast; ring
+    rw [norm_mul, hbase, norm_cpow_eq_rpow_re_of_pos hx,
+      norm_cpow_eq_rpow_re_of_pos (by have := mul_pos (show (0 : ℝ) < x from hx) ht; linarith)]
+    simp [r]
+  have hreal : ∀ x ∈ Ioi (0 : ℝ),
+      (x : ℂ) ^ ((s.re : ℂ) - 1) • (1 + (x : ℂ) * t) ^ (-(a.re : ℂ)) = ((r x : ℝ) : ℂ) :=
+    fun x hx ↦ by
+      have hx0 : (0 : ℝ) ≤ x := le_of_lt hx
+      have h1 : (0 : ℝ) ≤ 1 + x * t := by positivity
+      simp only [r, smul_eq_mul, ofReal_mul, ofReal_cpow hx0, ofReal_cpow h1]
+      push_cast
+      ring_nf
+  obtain ⟨-, hval⟩ := hasMellin_one_add_mul_cpow_neg (s := s.re) (a := a.re) (by simpa)
+    (by simpa) ht
+  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hreal, integral_complex_ofReal] at hval
+  have hr0 : 0 ≤ ∫ x : ℝ in Ioi 0, r x :=
+    setIntegral_nonneg measurableSet_Ioi fun x hx ↦ by
+      have := mul_pos (show (0 : ℝ) < x from hx) ht
+      exact mul_nonneg (rpow_nonneg (le_of_lt hx) _) (rpow_nonneg (by linarith) _)
+  rw [setIntegral_congr_fun measurableSet_Ioi hnorm, ← abs_of_nonneg hr0, ← Real.norm_eq_abs,
+    ← norm_real, hval, norm_mul, norm_cpow_eq_rpow_re_of_pos ht]
+  simp
 
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
-    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ := by
-  have hsub (y : ℝ) : a - (σ + y * I) = ↑(a.re - σ) + ↑(a.im - y) * I := by
-    apply Complex.ext <;> simp
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
-  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
-    (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
-  simpa only [sub_add_eq_sub_sub] using
-    (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa using haσ)).aestronglyMeasurable
+    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ :=
+  (verticalIntegrable_Gamma hσ).mul_Gamma_comp haσ (by fun_prop) fun y ↦ by simp
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
@@ -261,8 +281,8 @@ private theorem integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 
   have hf₁ : Integrable
       (fun u : ℝ ↦ ‖(u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c))‖)
       (volume.restrict (Ioi (0 : ℝ))) := by
-    have hm := (hasMellin_one_add_cpow_neg (s := c) (a := a + c) hc (by simp; linarith)).1.norm
-    simpa only [IntegrableOn, smul_eq_mul] using hm
+    exact (integrableOn_cpow_mul_one_add_cpow_neg (s := c) (a := a + c) hc
+      (by simp; linarith)).norm
   have hf₂ : Integrable (fun y : ℝ ↦ ‖Gamma (b + y * I) * Gamma (d - y * I)‖) :=
     (integrable_Gamma_add_mul_Gamma_sub
       (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])

@@ -147,6 +147,14 @@ def endCenter : Puncture → ℂ
 
 @[simp] theorem endCenter_one : one.endCenter = 1 := (rfl)
 
+/-- A nonzero complex number is the center `1` of the end at `1` or a point of the thrice-punctured
+sphere `ℂ ∖ {0, 1}`. -/
+theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
+    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
+  rcases eq_or_ne w 1 with h | h
+  · exact Or.inl (by simpa using h)
+  · exact Or.inr ⟨hw, h⟩
+
 @[simp] theorem endCenter_inf : inf.endCenter = 0 := (rfl)
 
 /-- The scale of an end lift: `cylindricalEndLift q z = q.endCenter + q.endScale * exp (-2πz)`. -/
@@ -880,6 +888,14 @@ theorem measurableSet_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
 /-- The truncations of the thrice-punctured sphere increase with the cutoff. -/
 theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
   ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans hRR'⟩
+
+/-- For `R ≤ R'`, the points of norm greater than `2 exp (2πR')` lie outside the truncation
+`S_R`. -/
+theorem notMem_truncation_of_lt_norm {R R' : ℝ} (hR : R ≤ R') {w : ℂ}
+    (hw : 2 * Real.exp (2 * π * R') < ‖w‖) : w ∉ truncation R := fun hmem => by
+  have h := (truncation_subset_closedBall_sdiff_ball _ (truncation_mono hR hmem)).1
+  rw [Metric.mem_closedBall, dist_zero_right] at h
+  linarith
 
 /-- The poles `0` and `1` lie outside every truncation. -/
 theorem notMem_truncation_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) (R : ℝ) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Units of the profinite integers
@@ -33,6 +34,8 @@ finite-level characters are continuous.
 * `TauCeti.zHat.map_toZMod_unitsLift`, `TauCeti.zHat.unitsLift_unique`: the characterizing
   property of the assembled character.
 * `TauCeti.zHat.continuous_unitsLift`: continuity is detected at the finite levels.
+* `TauCeti.zHat.unitsMap_toZMod_surjective`: reduction of profinite units modulo every positive
+  integer `n` is surjective onto `(ZMod n)ˣ`.
 * `TauCeti.zHat.surjective_of_forall_surjective_unitsMap_toZMod`: a continuous map from a compact
   space into `(Additive zHat)ˣ` is surjective when it is surjective at every finite level.
 
@@ -195,6 +198,29 @@ theorem continuous_unitsLift [TopologicalSpace G]
         congrArg Units.val (congrArg Inv.inv (map_toZMod_unitsLift χ hχ n g).symm)
 
 end UnitsLift
+
+/-- **Reduction of profinite units modulo `n` is surjective.** Every unit of `ℤ/nℤ` lifts to a
+unit of `ℤ̂`: lifting the residue representative `a ∈ ℕ` coprime to `n` to `a` in each `ℓ`-adic
+factor with `ℓ ∣ n` and to `1` in all other factors produces a profinite unit reducing to it. -/
+theorem unitsMap_toZMod_surjective (n : ℕ+) :
+    Function.Surjective (Units.map (toZMod.{u} n).toMonoidHom) := fun v ↦ by
+  classical
+  let a : ℕ := (v : ZMod n).val
+  have hcop : a.Coprime n := ZMod.val_coe_unit_coprime v
+  have hunit (ℓ : Nat.Primes) (hℓ : (ℓ : ℕ) ∣ n) : IsUnit (a : ℤ_[ℓ]) := by
+    have : Fact (ℓ : ℕ).Prime := ⟨ℓ.property⟩
+    exact PadicInt.isUnit_natCast_of_coprime (hcop.symm.coprime_dvd_left hℓ)
+  let f : ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ := fun ℓ ↦
+    if hℓ : (ℓ : ℕ) ∣ n then (hunit ℓ hℓ).unit else 1
+  refine ⟨unitsEquivPiPadicInt.symm f, Units.ext ?_⟩
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+  refine ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd fun p k hp hk hpk ↦ ?_
+  have : Fact p.Prime := ⟨hp⟩
+  have hpn : p ∣ n := (dvd_pow_self p hk).trans hpk
+  rw [cast_toZMod_eq_toZModPow_component n hpk,
+    component_unitsEquivPiPadicInt_symm f ⟨p, hp⟩]
+  simp only [f, hpn, ↓reduceDIte, IsUnit.unit_spec, map_natCast, a]
+  rw [← ZMod.cast_natCast hpk, ZMod.natCast_zmod_val]
 
 /-- **Surjectivity onto the profinite units is detected at the finite levels.** A continuous map
 from a compact space into `(Additive zHat)ˣ` is surjective once each of its reductions onto

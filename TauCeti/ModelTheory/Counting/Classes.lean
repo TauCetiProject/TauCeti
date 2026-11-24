@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
+public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.Data.Setoid.Cardinal
@@ -103,17 +103,11 @@ variable {L : Language.{u, v}} [L.IsRelational] {ι : Type uι}
 
 variable (V : Type w) in
 /-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
-models of `φ`. Its classes are the isomorphism classes of the models of `φ` with carrier `V`.
-It is an abbreviation, so results stated for the restriction of `isoSetoid L V` to an arbitrary
-set of configurations apply to it. -/
+models of `φ`: isomorphism on the class `modelsOf φ`. Its classes are the isomorphism classes of
+the models of `φ` with carrier `V`. It is an abbreviation, so results stated for `classIso` apply
+to it. -/
 abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
-  (isoSetoid L V).comap Subtype.val
-
-/-- Two models of `φ` are related exactly when their decoded structures are isomorphic. -/
-@[simp]
-theorem isoSetoidOn_apply {V : Type w} {φ : L.SentenceInf ι} {c d : modelsOf (V := V) φ} :
-    isoSetoidOn V φ c d ↔ isoSetoid L V c d :=
-  Iff.rfl
+  classIso (modelsOf φ)
 
 /-- On a countable carrier, in a language with countably many relation symbols of each arity,
 the models of a sentence have at most continuum many isomorphism classes. -/
