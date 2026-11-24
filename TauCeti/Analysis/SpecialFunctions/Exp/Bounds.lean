@@ -63,6 +63,8 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg`: exact norm
+  `‖exp (-c * t) / (1 - exp (-t))‖ = exp (-c.re * t) / (1 - exp (-t))` for `0 < t`.
 * `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
   `exp (-c * t) / (1 - exp (-t))` on `0 < T ≤ t`.
 * `TauCeti.rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
@@ -389,19 +391,29 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
   calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
     _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
+/-- For `0 < t` and any `c : ℂ`,
+`‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ = Real.exp (-c.re * t) / (1 - Real.exp (-t))`. -/
+theorem norm_exp_neg_mul_div_one_sub_exp_neg {t : ℝ} (ht : 0 < t) (c : ℂ) :
+    ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ =
+      Real.exp (-c.re * t) / (1 - Real.exp (-t)) := by
+  have h1e : 0 ≤ 1 - Real.exp (-t) := by
+    linarith [Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr ht)]
+  have hden : ‖1 - Complex.exp (-(t : ℂ))‖ = 1 - Real.exp (-t) := by
+    rw [← Complex.ofReal_neg, ← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub,
+      Complex.norm_real, Real.norm_of_nonneg h1e]
+  have hre : (-c * (t : ℂ)).re = -c.re * t := by simp
+  rw [norm_div, Complex.norm_exp, hre, hden]
+
 /-- For `0 < T ≤ t` and any `c : ℂ`, `‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖` is
 bounded by `(1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t)`. -/
 theorem norm_exp_neg_mul_div_one_sub_exp_neg_le {T t : ℝ} (hT : 0 < T) (ht : T ≤ t) (c : ℂ) :
     ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ ≤
       (1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t) := by
+  have ht0 : 0 < t := hT.trans_le ht
   have hpos : 0 < 1 - Real.exp (-T) := by linarith [Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr hT)]
-  have hlow : 1 - Real.exp (-T) ≤ ‖1 - Complex.exp (-(t : ℂ))‖ := by
-    have h1 := norm_sub_norm_le (1 : ℂ) (Complex.exp (-(t : ℂ)))
-    rw [norm_one, Complex.norm_exp, Complex.neg_re, Complex.ofReal_re] at h1
+  have hlow : 1 - Real.exp (-T) ≤ 1 - Real.exp (-t) := by
     linarith [Real.exp_le_exp.mpr (neg_le_neg ht)]
-  rw [norm_div, Complex.norm_exp]
-  have hre : (-c * (t : ℂ)).re = -c.re * t := by simp
-  rw [hre, div_eq_mul_inv, mul_comm]
+  rw [norm_exp_neg_mul_div_one_sub_exp_neg ht0 c, div_eq_mul_inv, mul_comm]
   exact mul_le_mul_of_nonneg_right (inv_anti₀ hpos hlow) (Real.exp_pos _).le
 
 /-- For `0 < T ≤ t` with `1 ≤ t`, `a ≤ A`, and `η ≤ c.re`,

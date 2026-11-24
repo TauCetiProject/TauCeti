@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
-public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Comparison
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel
-public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
-import TauCeti.Analysis.Complex.HalfPlaneIdentity
+import TauCeti.Analysis.Complex.Identity
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Joint meromorphic continuation and Bernoulli values of the complex Hurwitz zeta function
@@ -35,10 +34,10 @@ Consecutive stages agree identically on overlapping half-planes, gluing into can
 `s ≠ 1`, and nonpositive integer special values
 `complexHurwitzZeta (-m) c = -B_{m + 1}(c) / (m + 1)`.
 
-Analytic continuation off `s = 1` extends the `c ↦ c + 1` shift identity and the comparisons with
-`HurwitzZeta.hurwitzZeta` on `(0, 1]` and `riemannZeta` at `c = 1` and `c = 1 / 2` (with finite
-periodic and Dirichlet L-function decompositions in
-`TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
+Analytic continuation off `s = 1` extends the `c ↦ c + 1` shift identity; comparisons with
+`HurwitzZeta.hurwitzZeta` on `(0, 1]` and `riemannZeta` at `c = 1` and `c = 1 / 2` live in
+`TauCeti.NumberTheory.LSeries.HurwitzZeta.ZetaComparison` (with finite periodic and Dirichlet
+L-function decompositions in `TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
 `TauCeti.NumberTheory.LSeries.HurwitzZeta.LFunction`, and
 `TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod`).
 
@@ -47,7 +46,7 @@ periodic and Dirichlet L-function decompositions in
 * `TauCeti.hurwitzHeadIntegral`, `TauCeti.hurwitzStageCore`:
   stage-`M` Taylor-subtracted head integral and combined holomorphic core (pairing
   `hurwitzHeadIntegral` with `TauCeti.hurwitzTailIntegral` from
-  `TauCeti.Analysis.MellinTransform.ExpKernel`), with integrand convergence
+  `TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel`), with integrand convergence
   (`integrableOn_hurwitzHeadIntegrand`), joint analyticity (`analyticOnNhd_hurwitzHeadIntegral`,
   `analyticOnNhd_hurwitzStageCore`), and overlap identities (`hurwitzHeadIntegral_eq_add_succ`,
   `hurwitzStageCore_succ_eq`, `hurwitzStageCore_eq_of_le`).
@@ -85,10 +84,8 @@ periodic and Dirichlet L-function decompositions in
   `TauCeti.eq_complexHurwitzZeta₁_of_eqOn_re_gt`: packaged existence (leaving `H (1, c)`
   unconstrained) and uniqueness on `0 < c.re`, where `complexHurwitzZeta` is unique off `s = 1` and
   `complexHurwitzZeta₁` is unique across the pole.
-* `TauCeti.complexHurwitzZeta_add_one_right`, `TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta`,
-  `TauCeti.complexHurwitzZeta_one_right`, `TauCeti.complexHurwitzZeta_one_half_right`, and
-  `HurwitzZeta.hurwitzZeta_apply_zero_of_mem_Ioc`: shift identity, `c = 1` and `c = 1 / 2`
-  specializations, and endpoint evaluation of `HurwitzZeta.hurwitzZeta` at `s = 0`.
+* `TauCeti.complexHurwitzZeta_add_one_right`: analytic continuation of the `c ↦ c + 1` shift
+  identity to `s ≠ 1` and `0 < c.re`.
 
 ## References
 
@@ -138,7 +135,8 @@ private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) 
 `t ↦ t ^ (s + M - 1) * hurwitzTaylorQuot M c t` is integrable on `Ioc 0 1`. -/
 theorem integrableOn_hurwitzHeadIntegrand (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t) (Ioc 0 1) := by
-  obtain ⟨B, _, hB⟩ := exists_norm_hurwitzTaylorQuot_le_Icc (isCompact_singleton (x := c)) M
+  obtain ⟨B, _, hB⟩ :=
+    exists_norm_hurwitzTaylorQuot_le_of_mem_Icc (isCompact_singleton (x := c)) M
   have hint : IntegrableOn (fun t : ℝ => B * t ^ (s.re + M - 1)) (Ioc 0 1) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B
@@ -159,7 +157,8 @@ theorem analyticOnNhd_hurwitzHeadIntegral (M : ℕ) :
     rw [mem_ofPred_eq] at hp₀
     let δ := (p₀.1.re + (M : ℝ)) / 2
     have hδ : 0 < δ := by dsimp [δ]; linarith
-    obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le_Icc (isCompact_closedBall p₀.2 1) M
+    obtain ⟨B, hB0, hB⟩ :=
+      exists_norm_hurwitzTaylorQuot_le_of_mem_Icc (isCompact_closedBall p₀.2 1) M
     refine ⟨{p | δ - M < p.1.re} ∩ (Prod.snd ⁻¹' closedBall p₀.2 1),
       Filter.inter_mem ((isOpen_lt continuous_const (continuous_re.comp continuous_fst)).mem_nhds
         (by dsimp [δ]; linarith)) (continuous_snd.continuousAt.preimage_mem_nhds
@@ -223,12 +222,14 @@ theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s
   have hcongr : EqOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
       (fun t : ℝ => hurwitzBernoulliCoeff (M + 1) c * (t : ℂ) ^ (s + M - 1) +
         (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) * hurwitzTaylorQuot (M + 1) c t)
-      (Ioc 0 1) := fun t ht => by
+      (Ioc 0 1) := fun t _ => by
     dsimp only
     have hpow : (t : ℂ) ^ (s + M - 1) * (t : ℂ) =
         (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) := by
+      have hne : (s + M - 1) + 1 ≠ 0 := fun h0 => by
+        have hre := congrArg Complex.re h0; simp at hre; linarith
       have hexp : s + ((M + 1 : ℕ) : ℂ) - 1 = (s + M - 1) + 1 := by push_cast; ring
-      rw [hexp, Complex.cpow_add _ _ (ofReal_ne_zero.mpr ht.1.ne'), Complex.cpow_one]
+      rw [hexp, TauCeti.cpow_add_one' hne]
     rw [hurwitzTaylorQuot_eq_add_mul_succ M c t, mul_add, mul_comm ((t : ℂ) ^ _),
       ← mul_assoc ((t : ℂ) ^ _), hpow]
   unfold hurwitzHeadIntegral
@@ -471,7 +472,7 @@ theorem tendsto_sub_one_mul_complexHurwitzZeta {c : ℂ} (hc : 0 < c.re) :
 
 /-! ### Mellin–Laplace integral representation and agreement with `complexHurwitzSeries` -/
 
-private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
+private theorem eqOn_hurwitzStageZero_add_cpow {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     EqOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * hurwitzTaylorQuot 0 c t + (t : ℂ) ^ (s - 2))
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))))
       (Ioc 0 1) := fun t ht => by
@@ -481,8 +482,10 @@ private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
   simp only [Finset.range_one, Finset.sum_singleton, hurwitzBernoulliCoeff_zero, pow_zero,
     mul_one, zero_add, pow_one] at hdecomp
   have hpow : (t : ℂ) ^ (s - 1) = (t : ℂ) ^ (s - 2) * (t : ℂ) := by
+    have hne : (s - 2) + 1 ≠ 0 := fun h0 => by
+      have hre := congrArg Complex.re h0; simp at hre; linarith
     have hexp : s - 1 = (s - 2) + 1 := by ring
-    rw [hexp, Complex.cpow_add _ _ ht_ne, Complex.cpow_one]
+    rw [hexp, TauCeti.cpow_add_one' hne]
   rw [hpow, mul_assoc, ← hdecomp, hurwitzKernel_of_ne_zero c ht_ne]
   ring
 
@@ -499,7 +502,7 @@ private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (
     (intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1) (r := s - 2)
       (by simp; linarith)).1]
   exact setIntegral_congr_fun measurableSet_Ioc fun t ht => by
-    simpa using eqOn_hurwitzStageZero_add_cpow s c ht
+    simpa using eqOn_hurwitzStageZero_add_cpow hs c ht
 
 /-- **Mellin–Laplace integral representation of the complex Hurwitz zeta function.** For
 `1 < s.re` and `0 < c.re`, `complexHurwitzZeta s c` equals `(Gamma s)⁻¹` times the integral of
@@ -644,7 +647,7 @@ theorem eq_complexHurwitzZeta₁_of_eqOn_re_gt {c : ℂ} (hc : 0 < c.re) {H R : 
   eq_complexHurwitzZeta₁_of_eq_sub_one_mul hc hRc
     (fun hs => by rw [hrel hs, eq_complexHurwitzZeta_of_eqOn_re_gt hc hH hagree hs]) s
 
-/-! ### Analytic continuation of the shift and circle comparison -/
+/-! ### Analytic continuation of the shift identity -/
 
 /-- The `c ↦ c + 1` shift identity extends to all `s ≠ 1` and `0 < c.re`. -/
 theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.re) :
@@ -660,47 +663,6 @@ theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.
     rw [complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc,
       complexHurwitzSeries_add_one_right hz1 hc_ne]) hs).symm
 
-/-- For real `x ∈ (0, 1]` and `s ≠ 1`, `complexHurwitzZeta s x` agrees with Mathlib's
-`HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`. -/
-theorem complexHurwitzZeta_ofReal_eq_hurwitzZeta {s : ℂ} {x : ℝ} (hs : s ≠ 1)
-    (hx : x ∈ Ioc 0 1) :
-    complexHurwitzZeta s x = HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s := by
-  have hx_re : 0 < (x : ℂ).re := by simp [hx.1]
-  have hdg : DifferentiableOn ℂ (HurwitzZeta.hurwitzZeta (x : UnitAddCircle))
-      ({1}ᶜ : Set ℂ) :=
-    fun _ hz => (HurwitzZeta.differentiableAt_hurwitzZeta _ hz).differentiableWithinAt
-  exact (eq_complexHurwitzZeta_of_eqOn_re_gt hx_re (b := 1) hdg (fun z hz => by
-    have hz1 : 1 < z.re := by simpa using hz
-    exact (complexHurwitzSeries_ofReal_eq_hurwitzZeta hz1 hx).symm) hs).symm
-
-/-- At `c = 1` and `s ≠ 1`, `complexHurwitzZeta s 1 = riemannZeta s`. -/
-theorem complexHurwitzZeta_one_right {s : ℂ} (hs : s ≠ 1) :
-    complexHurwitzZeta s 1 = riemannZeta s := by
-  have h := complexHurwitzZeta_ofReal_eq_hurwitzZeta (x := 1) hs (right_mem_Ioc.mpr zero_lt_one)
-  rwa [ofReal_one, AddCircle.coe_period, HurwitzZeta.hurwitzZeta_zero] at h
-
-/-- At `c = 1 / 2` and `s ≠ 1`, `complexHurwitzZeta s (1 / 2) = (2 ^ s - 1) * riemannZeta s`. -/
-theorem complexHurwitzZeta_one_half_right {s : ℂ} (hs : s ≠ 1) :
-    complexHurwitzZeta s (1 / 2) = ((2 : ℂ) ^ s - 1) * riemannZeta s := by
-  have hhalf_re : 0 < (1 / 2 : ℂ).re := by norm_num
-  have hdg : DifferentiableOn ℂ (fun z => ((2 : ℂ) ^ z - 1) * riemannZeta z) ({1}ᶜ) :=
-    fun _ hz => (((differentiableAt_id.const_cpow (Or.inl two_ne_zero)).sub
-      (differentiableAt_const 1)).mul (differentiableAt_riemannZeta hz)).differentiableWithinAt
-  exact (eq_complexHurwitzZeta_of_eqOn_re_gt hhalf_re (b := 1) hdg (fun z hz => by
-    have hz1 : 1 < z.re := by simpa using hz
-    exact (complexHurwitzSeries_one_half_right hz1).symm) hs).symm
-
 end TauCeti
-
-namespace HurwitzZeta
-
-/-- For `x ∈ (0, 1]`, `hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x`. -/
-@[simp]
-theorem hurwitzZeta_apply_zero_of_mem_Ioc {x : ℝ} (hx : x ∈ Ioc 0 1) :
-    hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x := by
-  rw [← TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta zero_ne_one hx,
-    TauCeti.complexHurwitzZeta_zero_left]
-
-end HurwitzZeta
 
 end

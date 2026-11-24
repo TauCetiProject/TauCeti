@@ -45,7 +45,7 @@ theorem taylorSeries_exp_const_mul_at_zero (a : 𝕜) :
       ((expSeries 𝕜 𝕜).compContinuousLinearMap (a • ContinuousLinearMap.id 𝕜 𝕜)) 0 := by
     have h0 : HasFPowerSeriesAt (NormedSpace.exp : 𝕜 → 𝕜) (expSeries 𝕜 𝕜)
         ((a • ContinuousLinearMap.id 𝕜 𝕜) 0) := by
-      simpa using hasFPowerSeriesAt_exp_zero_of_radius_pos (expSeries_radius_pos 𝕜 𝕜)
+      simpa using (exp_hasFPowerSeriesAt_zero : HasFPowerSeriesAt exp (expSeries 𝕜 𝕜) 0)
     simpa [Function.comp_def, smul_eq_mul] using h0.compContinuousLinearMap
   ext n
   rw [hexp.coeff_taylorSeries n, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
@@ -67,7 +67,7 @@ theorem taylorSeries_exp_sub_one_at_zero :
   have hfn : (fun z : 𝕜 => NormedSpace.exp z - 1) =
       (NormedSpace.exp : 𝕜 → 𝕜) - fun _ : 𝕜 => (1 : 𝕜) := rfl
   have hexp : AnalyticAt 𝕜 (NormedSpace.exp : 𝕜 → 𝕜) 0 :=
-    (hasFPowerSeriesAt_exp_zero_of_radius_pos (expSeries_radius_pos 𝕜 𝕜)).analyticAt
+    (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕜) (𝔸 := 𝕜)).analyticAt
   rw [hfn, TauCeti.taylorSeries_sub hexp analyticAt_const,
     taylorSeries_exp_at_zero, TauCeti.taylorSeries_const, map_one]
 

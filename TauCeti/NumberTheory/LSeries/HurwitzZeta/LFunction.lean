@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Continuation
 public import TauCeti.NumberTheory.LSeries.ZMod.LFunction
+import TauCeti.NumberTheory.LSeries.HurwitzZeta.ZetaComparison
 
 /-!
 # Finite complex-Hurwitz decomposition of continued periodic L-functions

@@ -103,28 +103,16 @@ theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
 integer multiple of `2 * π * I`. -/
 theorem dslope_exp_eq_zero_iff {a b : ℂ} :
     dslope exp a b = 0 ↔ ∃ k : ℤ, k ≠ 0 ∧ b - a = k * (2 * Real.pi * I) := by
-  rw [dslope_exp_eq_exp_mul_dslope_zero, mul_eq_zero, or_iff_right (exp_ne_zero a)]
-  set z := b - a
-  have hmul : z * dslope exp 0 z = exp z - 1 := by
-    simpa [exp_zero] using sub_smul_dslope exp 0 z
-  constructor
-  · intro h0
-    rcases eq_or_ne z 0 with hz0 | hzne
-    · simp [hz0] at h0
-    · have hexp : exp z = 1 := by
-        have h := hmul
-        rw [h0, mul_zero] at h
-        exact eq_of_sub_eq_zero h.symm
-      obtain ⟨k, hk⟩ := exp_eq_one_iff.mp hexp
-      exact ⟨k, fun h => hzne (by simpa [h] using hk), hk⟩
-  · rintro ⟨k, hkne, hk⟩
-    have hzne : z ≠ 0 := by
-      rw [hk]
-      exact mul_ne_zero (Int.cast_ne_zero.mpr hkne) (by simp [Real.pi_ne_zero, I_ne_zero])
-    have hexp : exp z = 1 := exp_eq_one_iff.mpr ⟨k, hk⟩
-    have h := hmul
-    rw [hexp, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_left hzne
+  by_cases hab : b = a
+  · subst hab
+    simp [dslope_same, deriv_exp, exp_ne_zero]
+  · rw [dslope_of_ne _ hab, slope_eq_zero_iff, eq_comm, Complex.exp_eq_exp_iff_exists_int]
+    constructor
+    · rintro ⟨k, hk⟩
+      refine ⟨k, fun hk0 => hab ?_, by linear_combination hk⟩
+      simpa [hk0] using hk
+    · rintro ⟨k, _, hk⟩
+      exact ⟨k, by linear_combination hk⟩
 
 /-- On the horizontal strip `|(b - a).im| < 2 * π`, `dslope Complex.exp a b` does not vanish. -/
 theorem dslope_exp_ne_zero_of_abs_im_sub_lt {a b : ℂ} (h : |(b - a).im| < 2 * Real.pi) :

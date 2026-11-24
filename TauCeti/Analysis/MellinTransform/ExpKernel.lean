@@ -5,19 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
-import TauCeti.Analysis.MellinTransform.Growth
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
-import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Mellin–Laplace exponential kernels
@@ -30,9 +26,7 @@ compact subset of `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}` admits a common
 
 Termwise integration of `exp ((1 - c) * t) / (exp t - 1) = ∑_{k ≥ 0} exp (-(k + c) * t)` gives the
 infinite series representation `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`, and specializing
-to `c = 1` yields `TauCeti.integrableOn_cpow_div_exp_sub_one`. Splitting off the exponential tail
-on `(1, ∞)` gives `TauCeti.hurwitzTailIntegral`, which converges for all `s : ℂ` when `0 < Re c`
-and is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`.
+to `c = 1` yields `TauCeti.integrableOn_cpow_div_exp_sub_one`.
 
 ## Main results
 
@@ -46,9 +40,6 @@ and is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`.
   `1 < s.re` and `0 < c.re`.
 * `TauCeti.integrableOn_cpow_div_exp_sub_one`: integrability of `t ↦ t^{s−1}/(e^t − 1)` on
   `(0, ∞)` for `1 < Re s`.
-* `TauCeti.hurwitzTailIntegral`, `TauCeti.hurwitzTailIntegral_def`,
-  `TauCeti.integrableOn_hurwitzTailIntegrand`, and `TauCeti.analyticOnNhd_hurwitzTailIntegral`:
-  the exponential tail integral on `(1, ∞)` and its joint analyticity on `{p : ℂ × ℂ | 0 < p.2.re}`.
 -/
 
 public section
@@ -77,11 +68,11 @@ theorem integrableOn_hurwitzMellinIntegrand {s c : ℂ} (hs : 1 < s.re) (hc : 0 
   have ht0 : (0 : ℝ) < t := ht
   calc
     ‖(t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))‖
-        = t ^ (s.re - 1) * ‖cexp (-c * t) / (1 - cexp (-t))‖ := by
-          rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, sub_re, one_re]
-    _ ≤ t ^ (s.re - 1) * ((1 - Real.exp (-t))⁻¹ * Real.exp (-c.re * t)) :=
-        mul_le_mul_of_nonneg_left (norm_exp_neg_mul_div_one_sub_exp_neg_le ht0 le_rfl c)
-          (Real.rpow_nonneg ht0.le _)
+        = t ^ (s.re - 1) * (Real.exp (-c.re * t) / (1 - Real.exp (-t))) := by
+          rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, sub_re, one_re,
+            norm_exp_neg_mul_div_one_sub_exp_neg ht0 c]
+    _ = t ^ (s.re - 1) * ((1 - Real.exp (-t))⁻¹ * Real.exp (-c.re * t)) := by
+        rw [div_eq_mul_inv, mul_comm (Real.exp (-c.re * t))]
     _ ≤ t ^ (s.re - 1) * ((1 + t⁻¹) * Real.exp (-c.re * t)) := by
         gcongr
         exact inv_one_sub_exp_neg_le ht0
@@ -133,11 +124,8 @@ theorem exists_integrableOn_norm_hurwitzMellinIntegrand_le {K : Set (ℂ × ℂ)
   have hnorm (s c : ℂ) :
       ‖(t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))‖ =
         t ^ (s.re - 1) * (Real.exp (-c.re * t) / (1 - Real.exp (-t))) := by
-    have hden : ‖1 - cexp (-(t : ℂ))‖ = 1 - Real.exp (-t) := by
-      rw [← ofReal_neg, ← ofReal_exp, ← ofReal_one, ← ofReal_sub, norm_real,
-        Real.norm_of_nonneg h1e.le]
-    rw [norm_mul, norm_div, hden, norm_cpow_eq_rpow_re_of_pos ht0, sub_re, one_re, norm_exp]
-    simp
+    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, sub_re, one_re,
+      norm_exp_neg_mul_div_one_sub_exp_neg ht0 c]
   have hexp : Real.exp (-p.2.re * t) / (1 - Real.exp (-t)) ≤
       Real.exp (-η * t) / (1 - Real.exp (-t)) := by
     gcongr
@@ -202,57 +190,6 @@ theorem integrableOn_cpow_div_exp_sub_one {s : ℂ} (hs : 1 < s.re) :
   refine (integrableOn_hurwitzMellinIntegrand (c := 1) hs one_pos).congr_fun
     (fun t _ => ?_) measurableSet_Ioi
   simp only [neg_one_mul, Complex.exp_neg_div_one_sub_exp_neg, ← div_eq_mul_inv]
-
-/-- The exponential tail integral on `(1, ∞)`,
-`∫ t in Ioi 1, (t : ℂ) ^ (s - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t)))`. -/
-noncomputable def hurwitzTailIntegral (s c : ℂ) : ℂ :=
-  ∫ t in Ioi (1 : ℝ), (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))
-
-/-- Defining equation for `hurwitzTailIntegral`. -/
-theorem hurwitzTailIntegral_def (s c : ℂ) :
-    hurwitzTailIntegral s c =
-      ∫ t in Ioi (1 : ℝ), (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))) := (rfl)
-
-private theorem aestronglyMeasurable_hurwitzTailIntegrand (s c : ℂ) :
-    AEStronglyMeasurable
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))))
-      (volume.restrict (Ioi 1)) :=
-  Measurable.aestronglyMeasurable (by fun_prop)
-
-/-- For `0 < c.re`, the tail integrand `t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))`
-is integrable on `Ioi 1`. -/
-theorem integrableOn_hurwitzTailIntegrand (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
-    IntegrableOn
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi 1) :=
-  integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc one_pos
-    (Measurable.aestronglyMeasurable (by fun_prop))
-    (fun _ ht => by
-      simpa only [Real.rpow_one] using norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht.le c) s
-
-/-- The exponential tail integral is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
-theorem analyticOnNhd_hurwitzTailIntegral :
-    AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzTailIntegral p.1 p.2) {p | 0 < p.2.re} := by
-  refine TauCeti.analyticOnNhd_integral_of_dominated
-    (isOpen_lt continuous_const (continuous_re.comp continuous_snd))
-    (fun p _ => aestronglyMeasurable_hurwitzTailIntegrand p.1 p.2) ?_ ?_
-  · intro p₀ hp₀
-    rw [mem_ofPred_eq] at hp₀
-    let η := p₀.2.re / 2
-    have hη : 0 < η := by dsimp [η]; linarith
-    refine ⟨{p : ℂ × ℂ | p.1.re < p₀.1.re + 1 ∧ η < p.2.re},
-      ((isOpen_lt (continuous_re.comp continuous_fst) continuous_const).inter
-        (isOpen_lt continuous_const (continuous_re.comp continuous_snd))).mem_nhds
-        ⟨lt_add_one _, by dsimp [η]; linarith⟩,
-      fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ p₀.1.re * Real.exp (-η * t)),
-      (integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos one_pos (Or.inl hη)).const_mul _, ?_⟩
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht p ⟨hp1, hp2⟩
-    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht), sub_re, one_re]
-    exact rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht.le ht.le
-      (by linarith [hp1]) hp2.le
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht p _
-    refine DifferentiableAt.differentiableWithinAt ?_
-    exact (DifferentiableAt.const_cpow (by fun_prop)
-      (Or.inl (ofReal_ne_zero.mpr (zero_lt_one.trans ht).ne'))).mul (by fun_prop)
 
 end TauCeti
 

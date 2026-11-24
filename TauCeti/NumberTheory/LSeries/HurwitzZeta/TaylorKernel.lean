@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import TauCeti.Analysis.Analytic.TaylorSeries
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
@@ -64,9 +65,12 @@ bounds on `‖∂_c^d (hurwitzTaylorQuot M c z)‖` and Taylor remainder bounds
   `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`, and
   `TauCeti.analyticAt_hurwitzTaylorQuot_ofReal`: jointly analytic iterated-`dslope` remainder
   quotient, away-from-zero quotient formula, exact Taylor decomposition, and real-axis analyticity.
+* `TauCeti.abs_im_snd_lt_subset_dslope_exp_neg_ne_zero`: inclusion of the horizontal strip
+  `{p : ℂ × ℂ | |p.2.im| < 2 * π}` into the nonvanishing locus
+  `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`.
 * `TauCeti.exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le`,
   `TauCeti.exists_norm_hurwitzTaylorQuot_le`,
-  `TauCeti.exists_norm_hurwitzTaylorQuot_le_Icc`,
+  `TauCeti.exists_norm_hurwitzTaylorQuot_le_of_mem_Icc`,
   `TauCeti.exists_norm_iteratedDeriv_left_hurwitzKernel_sub_sum_le`, and
   `TauCeti.exists_norm_hurwitzKernel_sub_sum_le`: compact-uniform Taylor quotient and remainder
   estimates on compact subsets of `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}` and
@@ -330,23 +334,27 @@ theorem exists_norm_hurwitzTaylorQuot_le {S : Set (ℂ × ℂ)} (hS : IsCompact 
   obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le hS hS_sub M 0
   exact ⟨B, hB0, fun p hp => by simpa using hB p hp⟩
 
-private theorem ofReal_snd_mem_dslope_exp_ne_zero (c : ℂ) (t : ℝ) :
-    (c, (t : ℂ)) ∈ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
-  simpa using Complex.dslope_exp_ofReal_ne_zero 0 (-t)
+/-- Every point `(c, z)` with `|z.im| < 2 * π` (in particular, `ℂ ×ˢ Metric.ball 0 (2 * π)` or
+`ℂ ×ˢ (Complex.ofReal '' Set.univ)`) lies in the nonvanishing locus
+`{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
+theorem abs_im_snd_lt_subset_dslope_exp_neg_ne_zero :
+    {p : ℂ × ℂ | |p.2.im| < 2 * π} ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} :=
+  fun _ hp => Complex.dslope_exp_ne_zero_of_abs_im_sub_lt (by simpa using hp)
 
 /-- At any `(c, (t : ℂ))` with real `t`, `hurwitzTaylorQuot M` is jointly analytic. -/
 theorem analyticAt_hurwitzTaylorQuot_ofReal (M : ℕ) (c : ℂ) (t : ℝ) :
     AnalyticAt ℂ (fun p : ℂ × ℂ => hurwitzTaylorQuot M p.1 p.2) (c, t) :=
-  analyticOnNhd_hurwitzTaylorQuot M (c, t) (ofReal_snd_mem_dslope_exp_ne_zero c t)
+  analyticOnNhd_hurwitzTaylorQuot M (c, t)
+    (abs_im_snd_lt_subset_dslope_exp_neg_ne_zero (by simp [Real.pi_pos]))
 
 /-- Uniform bound for `‖hurwitzTaylorQuot M c t‖` on `K × [0, 1]` for any compact `K ⊆ ℂ`. -/
-theorem exists_norm_hurwitzTaylorQuot_le_Icc {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
+theorem exists_norm_hurwitzTaylorQuot_le_of_mem_Icc {K : Set ℂ} (hK : IsCompact K) (M : ℕ) :
     ∃ B ≥ 0, ∀ c ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, ‖hurwitzTaylorQuot M c t‖ ≤ B := by
   let S : Set (ℂ × ℂ) := K ×ˢ (Complex.ofReal '' Icc (0 : ℝ) 1)
   have hS_comp : IsCompact S := hK.prod (isCompact_Icc.image continuous_ofReal)
-  have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} := by
-    rintro ⟨c, _⟩ ⟨_, t, _, rfl⟩
-    exact ofReal_snd_mem_dslope_exp_ne_zero c t
+  have hS_sub : S ⊆ {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} :=
+    (by rintro ⟨_, _⟩ ⟨_, _, _, rfl⟩; simp [Real.pi_pos] :
+      S ⊆ {p : ℂ × ℂ | |p.2.im| < 2 * π}).trans abs_im_snd_lt_subset_dslope_exp_neg_ne_zero
   obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le hS_comp hS_sub M
   exact ⟨B, hB0, fun c hc t ht => hB (c, t) ⟨hc, t, ht, rfl⟩⟩
 
