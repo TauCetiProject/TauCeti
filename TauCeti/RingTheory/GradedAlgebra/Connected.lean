@@ -77,13 +77,21 @@ def connectedAugmentation [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) : A →ₐ[R] R :=
   (gradeZeroAlgEquiv hzero).symm.toAlgHom.comp (projZeroAlgHom hneg)
 
+/-- Evaluating `connectedAugmentation` applies `(gradeZeroAlgEquiv hzero).symm` to
+`projZeroAlgHom hneg a`. -/
+theorem connectedAugmentation_apply [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) (a : A) :
+    connectedAugmentation hneg hzero a =
+      (gradeZeroAlgEquiv hzero).symm (projZeroAlgHom hneg a) := by
+  rw [connectedAugmentation, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+
 /-- Embedding `connectedAugmentation hneg hzero a` back into `A` recovers the degree-zero
 component `decompose 𝒜 a 0`. -/
 theorem algebraMap_connectedAugmentation [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) (a : A) :
     algebraMap R A (connectedAugmentation hneg hzero a) = decompose 𝒜 a 0 := by
-  rw [← coe_gradeZeroAlgEquiv_apply hzero, connectedAugmentation, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply, coe_projZeroAlgHom_apply]
+  rw [← coe_gradeZeroAlgEquiv_apply hzero]
+  simp [connectedAugmentation_apply]
 
 /-- On degree-zero elements, `connectedAugmentation` inverts `algebraMap R A`. -/
 @[simp]
@@ -97,15 +105,13 @@ theorem algebraMap_connectedAugmentation_of_mem_zero [FaithfulSMul R A] (hneg : 
 theorem connectedAugmentation_eq_zero_of_mem_pos [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) {i : ℤ} (hi : 0 < i)
     {a : A} (ha : a ∈ 𝒜 i) : connectedAugmentation hneg hzero a = 0 := by
-  rw [connectedAugmentation, AlgHom.comp_apply, projZeroAlgHom_eq_zero_of_mem_pos hneg hi ha,
-    map_zero]
+  simp only [connectedAugmentation_apply, projZeroAlgHom_eq_zero_of_mem_pos hneg hi ha, map_zero]
 
 /-- The kernel of `connectedAugmentation` is the positive-degree submodule `⨆ i > 0, 𝒜 i`. -/
 theorem connectedAugmentation_eq_zero_iff [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) {a : A} :
     connectedAugmentation hneg hzero a = 0 ↔ a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  unfold connectedAugmentation
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+  simp only [connectedAugmentation_apply,
     _root_.map_eq_zero_iff _ (gradeZeroAlgEquiv hzero).symm.injective,
     projZeroAlgHom_eq_zero_iff]
 

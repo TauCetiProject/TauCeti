@@ -200,9 +200,9 @@ private theorem freeLift_pieceQuotient_comp_equivFun
   let Φ : free 𝒜 d' ⟶ M := freeLift g'
   let e_q := retractHeadFiberEquiv ev q'
   refine LinearMap.pi_ext fun u c ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    freePieceQuotientEquiv_symm_single, map_smul, LinearMap.restrictScalars_apply,
-    pieceQuotientHom_apply]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, freePieceQuotientEquiv_symm_single,
+    map_smul, LinearMap.restrictScalars_apply]
+  rw [pieceQuotientHom_apply]
   have hev : ev u.val.down = ⟨q', e_q u⟩ :=
     (Equiv.ulift.trans ev).eq_symm_apply.mp (congrArg Subtype.val (e_q.symm_apply_apply u).symm)
   have hgen : Φ.hom (freeGenerator u.val) = (liftGen q' (e_q u)).val := by
@@ -217,14 +217,9 @@ private theorem freeLift_pieceQuotient_comp_equivFun
       pieceSubmodule M q'.val) =
       ⟨(liftGen q' (e_q u)).val, mem_pieceSubmodule.mpr (liftGen q' (e_q u)).property⟩ :=
     Subtype.ext hgen
-  rw [hsub, hliftGen, LinearEquiv.coe_coe, LinearEquiv.piCongrLeft_single, map_smul]
+  rw [hsub, hliftGen, LinearEquiv.piCongrLeft_single]
   ext t
-  simp only [Pi.smul_apply, Module.Basis.equivFun_self, smul_eq_mul, Pi.single_apply]
-  split_ifs with h1 h2 h2
-  · simp
-  · exact absurd h1.symm h2
-  · exact absurd h2.symm h1
-  · simp
+  simp [e_q, Pi.single_apply, Finsupp.single_apply, eq_comm]
 
 /-- Evaluating in `PieceQuotient M q` on `Φ.hom z = 0` isolates the fiber of basis lifts of
 degree `q` and shows that every shift-`q` head coordinate of `z` vanishes. -/

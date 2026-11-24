@@ -187,10 +187,8 @@ theorem freePieceQuotientEquiv_mk (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (x : pieceSubmodule (free 𝒜 s) q) :
     freePieceQuotientEquiv hneg hzero s q (Submodule.Quotient.mk x) =
       freeHeadCoord hneg hzero s q ⟨x.val, mem_pieceSubmodule.mp x.property⟩ := by
-  rw [freePieceQuotientEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
-    LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, pieceSubmoduleEquiv_apply]
+  simpa [freePieceQuotientEquiv] using
+    congrArg (freeHeadCoord hneg hzero s q) (pieceSubmoduleEquiv_apply (free 𝒜 s) q x)
 
 /-- Applying `(freePieceQuotientEquiv hneg hzero s q).symm` to `Pi.single u c` gives the
 `c`-multiple of the quotient class of the `u`-th free generator. -/

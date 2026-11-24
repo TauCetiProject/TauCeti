@@ -324,10 +324,10 @@ open TauCeti TauCeti.GradedModuleCat
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-/-- An `A`-basis of `M` consisting of homogeneous elements of degrees `d` induces an isomorphism
-`free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`. -/
-def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
-    (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) : free 𝒜 d ≅ M := by
+private theorem isIso_freeLift_of_basis {I : Type uI} {d : I → ℤ}
+    {M : GradedModuleCat.{max uA uI} 𝒜} (b : Module.Basis I A M)
+    (hb : ∀ i, b i ∈ M.grading.piece (d i)) :
+    IsIso (freeLift (fun i ↦ (⟨b i, hb i⟩ : M.grading.piece (d i)))) := by
   classical
   let x : ∀ i, M.grading.piece (d i) := fun i ↦ ⟨b i, hb i⟩
   have hfun : ((freeLift x).hom ∘ ⇑(finsuppLequivDFinsupp A)) = ⇑b.repr.symm := funext fun v ↦
@@ -336,8 +336,21 @@ def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI}
   have hbij : Function.Bijective (freeLift x).hom := by
     rw [← (finsuppLequivDFinsupp A).bijective.of_comp_iff, hfun]
     exact b.repr.symm.bijective
-  have : IsIso (freeLift x) := (isIso_iff_bijective (freeLift x)).mpr hbij
-  exact asIso (freeLift x)
+  exact (isIso_iff_bijective (freeLift x)).mpr hbij
+
+/-- An `A`-basis of `M` consisting of homogeneous elements of degrees `d` induces an isomorphism
+`free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`. -/
+def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) : free 𝒜 d ≅ M :=
+  haveI := isIso_freeLift_of_basis b hb
+  asIso (freeLift (fun i ↦ (⟨b i, hb i⟩ : M.grading.piece (d i))))
+
+/-- The forward morphism of `b.isoGradedFree hb` is `freeLift`. -/
+theorem hom_isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) :
+    (b.isoGradedFree hb).hom = freeLift (fun i ↦ (⟨b i, hb i⟩ : M.grading.piece (d i))) := by
+  rw [isoGradedFree]
+  rfl
 
 /-- `b.isoGradedFree hb` sends the `i`th free generator to `b i`. -/
 @[simp]
@@ -345,7 +358,7 @@ theorem isoGradedFree_hom_freeGenerator {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (b : Module.Basis I A M)
     (hb : ∀ i, b i ∈ M.grading.piece (d i)) (i : I) :
     (b.isoGradedFree hb).hom.hom (freeGenerator i) = b i := by
-  simp [isoGradedFree]
+  rw [hom_isoGradedFree, freeLift_generator]
 
 end Module.Basis
 
