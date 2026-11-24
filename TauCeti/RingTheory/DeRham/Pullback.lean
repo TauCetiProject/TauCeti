@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DeRham.Complex
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.LinearAlgebra.Alternating.RestrictScalars
 
 /-!
 # Functorial pullback on ordinary algebraic differential forms and de Rham complexes
@@ -25,8 +26,8 @@ statements survive outside the local instance scope.
 
 We prove that `pullback f n` sends elementary forms `c · Dv₁ ∧ ⋯ ∧ Dvₙ` to
 `f c · D (f v₁) ∧ ⋯ ∧ D (f vₙ)` (`pullback_elementary`), is uniquely determined by this rule
-(`pullback_unique`), identifies with `f` in degree `0` (`pullback_zero_degree`) and with
-`KaehlerDifferential.mapSemilinear f` in degree `1` (`pullback_one_degree`), commutes with the
+(`pullback_unique`), identifies with `f` in degree `0` (`zeroEquiv_pullback_zeroEquiv_symm`) and
+with `KaehlerDifferential.mapSemilinear f` in degree `1` (`oneEquiv_pullback`), commutes with the
 de Rham differential (`pullback_d`), preserves wedge products (`pullback_wedge`), and is functorial
 in `f` (`pullback_id`, `pullback_comp`). Packaging `pullback f n` as `A`-linear maps yields the
 morphism of cochain complexes `TauCeti.DeRham.complexMap f : complex A B ⟶ complex A C`, which
@@ -51,7 +52,9 @@ preserves identities and composition.
 ## References
 
 * [Stacks Project, Tag 0FKE](https://stacks.math.columbia.edu/tag/0FKE), Section 10.132.
-* Joël Riou's presentation design for the algebraic de Rham complex.
+* Joël Riou, *feat(AlgebraicGeometry): the algebraic De Rham complex*, Mathlib proposal at commit
+  [`5888c0081ba867ede5c60d3060f2d674d932b53c`](https://github.com/leanprover-community/mathlib4/blob/5888c0081ba867ede5c60d3060f2d674d932b53c/Mathlib/RingTheory/DeRham/Basic.lean#L285-L432),
+  `Mathlib/RingTheory/DeRham/Basic.lean`, lines 285–432.
 -/
 
 public section
@@ -67,32 +70,18 @@ section Pullback
 variable {A B C E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing E]
   [Algebra A B] [Algebra A C] [Algebra A E]
 
-/-- Scalar restriction of `exteriorPower.ιMulti C n` to `B`. -/
-private def ιMultiRestrictScalars (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
-    [Algebra A B] [Algebra A C] [Algebra B C] [IsScalarTower A B C] (n : ℕ) :
-    AlternatingMap B (KaehlerDifferential A C) (Forms A C n) (Fin n) :=
-  { (exteriorPower.ιMulti C n (M := KaehlerDifferential A C)).toMultilinearMap.restrictScalars
-      B with
-    map_eq_zero_of_eq' := fun v _ _ hv hij =>
-      (exteriorPower.ιMulti C n).map_eq_zero_of_eq v hv hij }
-
-private theorem ιMultiRestrictScalars_apply [Algebra B C] [IsScalarTower A B C] (n : ℕ)
-    (v : Fin n → KaehlerDifferential A C) :
-    ιMultiRestrictScalars A B C n v = exteriorPower.ιMulti C n v :=
-  rfl
-
 /-- The alternating `B`-multilinear map `(Fin n → Ω[B⁄A]) → Forms A C n` under a `B`-algebra
 structure on `C` compatible with `A`. -/
 private def pullbackAlt (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
     [Algebra A B] [Algebra A C] [Algebra B C] [IsScalarTower A B C] (n : ℕ) :
     AlternatingMap B (KaehlerDifferential A B) (Forms A C n) (Fin n) :=
-  (ιMultiRestrictScalars A B C n).compLinearMap (KaehlerDifferential.map A A B C)
+  ((exteriorPower.ιMulti C n).restrictScalars B).compLinearMap (KaehlerDifferential.map A A B C)
 
 private theorem pullbackAlt_apply [Algebra B C] [IsScalarTower A B C] (n : ℕ)
     (ω : Fin n → KaehlerDifferential A B) :
     pullbackAlt A B C n ω =
       exteriorPower.ιMulti C n (fun i => KaehlerDifferential.map A A B C (ω i)) := by
-  rw [pullbackAlt, AlternatingMap.compLinearMap_apply, ιMultiRestrictScalars_apply]
+  rw [pullbackAlt, AlternatingMap.compLinearMap_apply, AlternatingMap.restrictScalars_apply]
 
 /-- **Pullback of ordinary algebraic differential `n`-forms** along an `A`-algebra homomorphism
 `f : B →ₐ[A] C`, extending `KaehlerDifferential.mapSemilinear f` to `n`-th exterior powers. It is
@@ -176,7 +165,7 @@ theorem pullback_unique (f : B →ₐ[A] C) (n : ℕ) {φ : Forms A B n →ₛ�
 
 /-- In degree `0`, `pullback f 0` identifies with `f` via `exteriorPower.zeroEquiv`. -/
 @[simp]
-theorem pullback_zero_degree (f : B →ₐ[A] C) (b : B) :
+theorem zeroEquiv_pullback_zeroEquiv_symm (f : B →ₐ[A] C) (b : B) :
     exteriorPower.zeroEquiv C (KaehlerDifferential A C)
         (pullback f 0 ((exteriorPower.zeroEquiv B (KaehlerDifferential A B)).symm b)) =
       f b := by
@@ -185,7 +174,7 @@ theorem pullback_zero_degree (f : B →ₐ[A] C) (b : B) :
 /-- In degree `1`, `pullback f 1` identifies with `KaehlerDifferential.mapSemilinear f` via
 `exteriorPower.oneEquiv`. -/
 @[simp]
-theorem pullback_one_degree (f : B →ₐ[A] C) (ω : Forms A B 1) :
+theorem oneEquiv_pullback (f : B →ₐ[A] C) (ω : Forms A B 1) :
     exteriorPower.oneEquiv C (KaehlerDifferential A C) (pullback f 1 ω) =
       KaehlerDifferential.mapSemilinear f
         (exteriorPower.oneEquiv B (KaehlerDifferential A B) ω) :=
