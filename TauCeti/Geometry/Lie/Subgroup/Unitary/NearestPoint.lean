@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.TangentSpace
 import TauCeti.Geometry.Lie.Subgroup.Embedded
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
+import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NearestPoint
 import TauCeti.Topology.Algebra.Star.Unitary
 
@@ -178,12 +179,13 @@ private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n �
     mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k
   have htan (u) : D u ∈ G.matrixTangentSpace g := by
-    have hd := ((G.contMDiff_coeUnits.mdifferentiableAt (x := k) (by simp)).hasMFDerivAt).2
-    simp only [modelWithCornersSelf_coe, range_id, hasFDerivWithinAt_univ] at hd
-    have hu := hd.hasFDerivWithinAt.mapsTo_tangent_cone (s := univ)
-      (by rw [tangentConeAt_univ]; exact mem_univ u)
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, image_univ,
-      PartialEquiv.refl_coe, Function.id_comp, Function.comp_apply, extChartAt_to_inv] at hu
+    have hmaps := HasMFDerivWithinAt.mapsTo_mtangentConeAt (s := univ)
+      (G.contMDiff_coeUnits.mdifferentiableAt (x := k) (by simp)).hasMFDerivAt.hasMFDerivWithinAt
+    have hu := hmaps (x := u) <| by
+      simp only [TauCeti.mtangentConeAt_def, preimage_univ, univ_inter, modelWithCornersSelf_coe,
+        range_id, tangentConeAt_univ]
+      exact mem_univ _
+    rw [image_univ, TauCeti.mtangentConeAt_eq_tangentConeAt] at hu
     rw [← SetLike.mem_coe, ← tangentConeAt_eq_matrixTangentSpace]
     refine tangentConeAt_mono ?_ hu
     rintro _ ⟨y, rfl⟩
