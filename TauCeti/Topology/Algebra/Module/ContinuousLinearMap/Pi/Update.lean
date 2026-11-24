@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.LinearAlgebra.Transvection.Basic
 import TauCeti.LinearAlgebra.Pi.Coordinates
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Replacing one coordinate by a continuous linear functional
