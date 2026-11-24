@@ -19,6 +19,7 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.LocallyConstant.Fiber
 import TauCeti.Topology.VectorBundle.IsEmpty
 import TauCeti.Topology.VectorBundle.Smul
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -191,18 +192,10 @@ rank stratum is continuous into the corresponding stratum vector-bundle total sp
 theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, E.Fiber (b y)) :
     Continuous (fun y ↦ (⟨b y, s y⟩ : TotalSpace Unit E.Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // E.rank (b y) = n} ↦
-        (⟨⟨b y.val, y.property⟩, s y.val⟩ : TotalSpace (Fin n → 𝕜) (E.StratumFiber n))) where
-  mp hs n := (IsEmbedding.sigmaMk (σ := fun n ↦
-      TotalSpace (Fin n → 𝕜) (E.StratumFiber n))).continuous_iff.2 <|
-    (E.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtypeVal)).congr
-      fun ⟨_, hy⟩ ↦ by cases hy; simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply]
-  mpr hs := continuous_of_cover_nhds (s := fun n : ℕ ↦ {y : Y | E.rank (b y) = n})
-    (fun y ↦ ⟨E.rank (b y), ((E.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩)
-    fun n ↦ continuousOn_iff_continuous_domRestrict.2 <|
-      (E.totalSpaceHomeomorph.continuous.comp (continuous_sigmaMk.comp (hs n))).congr
-        fun ⟨_, hy⟩ ↦ by
-          cases hy
-          simp only [Set.domRestrict_apply, Function.comp_apply, totalSpaceHomeomorph_apply]
+        (⟨⟨b y.val, y.property⟩, s y.val⟩ : TotalSpace (Fin n → 𝕜) (E.StratumFiber n))) := by
+  rw [E.totalSpaceHomeomorph.symm.isInducing.continuous_iff]
+  exact (E.rank.isLocallyConstant.comp_continuous hb).continuous_iff_of_eq_sigmaMk _
+    fun n ⟨y, hy⟩ ↦ by cases hy; rfl
 
 /-- The zero section of a variable-rank vector bundle is continuous. -/
 @[fun_prop] theorem continuous_zeroSection :
@@ -721,6 +714,8 @@ noncomputable def zero : FiniteRankBundle.{w} 𝕜 X :=
   ofBundle 𝕜 0 fun _ : X ↦ PUnit.{w + 1}
 
 @[simp] theorem rank_zero : (zero.{w} 𝕜 X).rank = LocallyConstant.const X 0 := (rfl)
+
+@[simp] theorem fiber_zero (x : X) : (zero.{w} 𝕜 X).Fiber x = PUnit.{w + 1} := (rfl)
 
 /-- The canonical rank-zero bundle `zero 𝕜 X` is a zero object in `FiniteRankBundle.{w} 𝕜 X`. -/
 theorem isZero_zero : IsZero (zero.{w} 𝕜 X) := isZero_of_rank_eq_zero _ fun _ ↦ by simp

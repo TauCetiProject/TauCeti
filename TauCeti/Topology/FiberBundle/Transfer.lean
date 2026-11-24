@@ -25,7 +25,7 @@ to a fibrewise homeomorphic family `E'`.
 
 The trivialization pullback adapts Mathlib's `Bundle.Trivialization.compHomeomorph`. For the linear
 specialization to `VectorBundle` see `TauCeti.Topology.VectorBundle.Transfer`, and for empty base
-strata see `TauCeti.Topology.FiberBundle.IsEmpty`.
+strata see `TauCeti.Topology.FiberBundle.Empty`.
 -/
 
 public section

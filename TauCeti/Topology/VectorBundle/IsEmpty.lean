@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
-public import TauCeti.Topology.FiberBundle.IsEmpty
+public import TauCeti.Topology.FiberBundle.Empty
 
 /-!
 # Vector bundles over an empty base
 
 Any `FiberBundle F E` of topological modules over an empty base `B` (`[IsEmpty B]`) is vacuously a
 `VectorBundle 𝕜 F E` (`VectorBundle.ofIsEmpty`). Together with `FiberBundle.ofIsEmpty` from
-`TauCeti.Topology.FiberBundle.IsEmpty`, this equips empty rank strata of variable-rank vector
+`TauCeti.Topology.FiberBundle.Empty`, this equips empty rank strata of variable-rank vector
 bundles with `FiberBundle` and `VectorBundle` instances.
 -/
 

@@ -27,7 +27,7 @@ fibrewise continuous linear equivalences `e : ∀ b : B, E' b ≃L[𝕜] E b`:
 
 This adapts the bundle-transport pattern in
 `TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Euclidean` (for empty base
-strata see `TauCeti.Topology.FiberBundle.IsEmpty` and `TauCeti.Topology.VectorBundle.IsEmpty`).
+strata see `TauCeti.Topology.FiberBundle.Empty` and `TauCeti.Topology.VectorBundle.IsEmpty`).
 -/
 
 public section

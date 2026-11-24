@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import Mathlib.CategoryTheory.EssentialImage
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Basic
 
 /-!
 # Coordinate morphisms, strata, and constant-rank comparison for bundle atlases
@@ -125,7 +125,7 @@ theorem stratumFiberCLM_apply_apply {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (
   simp
 
 /-- `stratumFiberCLM f x` is bijective iff `f.fiberMap x.val` is bijective. -/
-theorem bijective_stratumFiberCLM_iff {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
+theorem stratumFiberCLM_bijective_iff {A D : FiniteRankAtlas 𝕜 X} {m n : ℕ} (f : A ⟶ D)
     (x : StratumPair A D m n) :
     Function.Bijective (stratumFiberCLM f x) ↔ Function.Bijective (f.fiberMap x.val) := by
   have h : (stratumFiberCLM f x : (Fin m → 𝕜) → (Fin n → 𝕜)) =
@@ -260,13 +260,22 @@ private theorem continuous_inv_of_bijective {A D : FiniteRankAtlas 𝕜 X}
       (fiberMap_toStratumCoordinateHom f n m ⟨y.val, y.property.2, y.property.1⟩)
   have hbij (m n : ℕ) (y : StratumPair D A m n) : Function.Bijective ((fwd m n).fiberMap y) := by
     rw [hfwd]
-    exact (bijective_stratumFiberCLM_iff f ⟨y.val, y.property.2, y.property.1⟩).2 (hf y.val)
-  refine (ofStratumCoordinateHom fun m n ↦
-      CoordinateHom.invOfBijectivePi _ _ (fwd m n) (hbij m n)).continuous_totalSpaceMap.congr
-    fun p ↦ congrArg (TotalSpace.mk p.proj) ?_
-  apply (LinearEquiv.ofBijective (f.fiberMap p.proj) (hf p.proj)).injective
-  simpa [hfwd] using
-    ((f.fiberCLM p.proj).isInvertible_of_bijective_pi (hf' p.proj)).self_apply_inverse p.snd
+    exact (stratumFiberCLM_bijective_iff f ⟨y.val, y.property.2, y.property.1⟩).2 (hf y.val)
+  let invHom : D ⟶ A := ofStratumCoordinateHom fun m n ↦
+    (fwd m n).invOfIsInvertible fun y ↦
+      ((fwd m n).fiberMap y).isInvertible_of_bijective_pi (hbij m n y)
+  have hinv (x : X) (v : D.Fiber x) :
+      invHom.fiberMap x v = (LinearEquiv.ofBijective (f.fiberMap x) (hf x)).symm v := by
+    apply (LinearEquiv.ofBijective (f.fiberMap x) (hf x)).injective
+    rw [LinearEquiv.apply_symm_apply]
+    have hmap : invHom.fiberMap x = ((f.fiberCLM x).inverse).toLinearMap := by
+      dsimp only [invHom]
+      rw [fiberMap_ofStratumCoordinateHom, CoordinateHom.fiberMap_invOfIsInvertible, hfwd,
+        stratumFiberCLM_self]
+    rw [hmap, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe, ← f.fiberCLM_apply]
+    exact ((f.fiberCLM x).isInvertible_of_bijective_pi (hf' x)).self_apply_inverse v
+  exact invHom.continuous_totalSpaceMap.congr fun p ↦
+    congrArg (TotalSpace.mk p.proj) (hinv p.proj p.snd)
 
 /-- A morphism in `FiniteRankAtlas 𝕜 X` is an isomorphism iff it is bijective on every fibre. -/
 theorem isIso_iff_bijective {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) :

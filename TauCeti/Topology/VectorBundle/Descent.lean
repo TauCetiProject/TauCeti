@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Topology.ContinuousMap.Algebra
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Basic
 
 /-!
 # Descent of vector-bundle maps from coordinates
@@ -37,8 +37,7 @@ when the source model is a finite coordinate space `α → 𝕜`,
 `CoordinateHom.ofContinuousTotalSpacePi` extracts the chart operators directly from a continuous
 total-space map without assuming `CompleteSpace 𝕜`.
 `CoordinateHom.invOfIsInvertible` inverts any coordinate morphism whose descended fibre maps are
-invertible as continuous linear maps, and `CoordinateHom.invOfBijectivePi` specializes this to
-fibrewise bijective coordinate morphisms into a finite coordinate model `β → 𝕜`.
+invertible as continuous linear maps.
 `CoordinateHom.comp` composes coordinate morphisms; in charts it multiplies the chart
 operators through any intermediate chart (`CoordinateHom.operator_comp`), and it is
 associative and unital for `CoordinateHom.id`.
@@ -376,8 +375,11 @@ theorem comp_add (b : CoordinateHom W V) (a c : CoordinateHom Z W) :
   funext x
   simp only [fiberMap_comp, fiberMap_add, ContinuousLinearMap.comp_add]
 
-/-- When the source model is `α → 𝕜` with `[Fintype α]`, any fibrewise continuous linear map
-inducing a continuous total-space map defines a coordinate morphism without `CompleteSpace 𝕜`. -/
+/-- When the source model is `α → 𝕜` with `[Fintype α]` (required by `VectorBundleCore 𝕜 B (α → 𝕜)`
+via Mathlib's `Pi.normedAddCommGroup`), any fibrewise continuous linear map inducing a continuous
+total-space map defines a coordinate morphism without `CompleteSpace 𝕜`. -/
+-- `[Fintype α]` cannot be weakened to `[Finite α]` because `VectorBundleCore 𝕜 B (α → 𝕜) ι`
+-- requires `NormedAddCommGroup (α → 𝕜)`, which Mathlib only provides via `Pi.normedAddCommGroup`.
 def ofContinuousTotalSpacePi {α : Type*} [Fintype α] (Z : VectorBundleCore 𝕜 B (α → 𝕜) ι)
     (W : VectorBundleCore 𝕜 B G κ) (f : B → (α → 𝕜) →L[𝕜] G)
     (hf : Continuous fun p : Z.TotalSpace ↦ (⟨p.proj, f p.proj p.snd⟩ : W.TotalSpace)) :
@@ -489,54 +491,6 @@ theorem operator_invOfIsInvertible_apply {Z : VectorBundleCore 𝕜 B F ι}
     (ha : ∀ x, (a.fiberMap x).IsInvertible) :
     (a.invOfIsInvertible ha).comp a = id Z :=
   fiberMap_injective <| funext fun x ↦ by simp [(ha x).inverse_comp_self]
-
-/-- Any bijective descended fibre map of a coordinate morphism into a finite-coordinate bundle core
-is invertible as a continuous linear map. -/
-theorem isInvertible_fiberMap_of_bijective_pi {β : Type*} [Fintype β]
-    {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B (β → 𝕜) κ}
-    (a : CoordinateHom Z W) {x : B} (ha : Function.Bijective (a.fiberMap x)) :
-    (a.fiberMap x).IsInvertible :=
-  (a.fiberMap x).isInvertible_of_bijective_pi ha
-
-/-- Invert a fibrewise bijective coordinate morphism into a finite-coordinate bundle core without
-assuming `CompleteSpace 𝕜` or `CompleteSpace F`. -/
-noncomputable def invOfBijectivePi {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) : CoordinateHom W Z :=
-  a.invOfIsInvertible fun x ↦ a.isInvertible_fiberMap_of_bijective_pi (ha x)
-
-@[simp] theorem operator_invOfBijectivePi {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) (i : κ) (j : ι) :
-    (invOfBijectivePi Z W a ha).operator i j =
-      ⟨fun z ↦ (a.operator j i ⟨z.val, z.property.2, z.property.1⟩).inverse,
-        a.continuous_operator_inverse
-          (fun x ↦ a.isInvertible_fiberMap_of_bijective_pi (ha x)) i j⟩ := (rfl)
-
-theorem operator_invOfBijectivePi_apply {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x))
-    (i : κ) (j : ι) (z : ↥(W.baseSet i ∩ Z.baseSet j)) :
-    (invOfBijectivePi Z W a ha).operator i j z =
-      (a.operator j i ⟨z.val, z.property.2, z.property.1⟩).inverse :=
-  (rfl)
-
-@[simp] theorem fiberMap_invOfBijectivePi {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) (x : B) :
-    (invOfBijectivePi Z W a ha).fiberMap x = (a.fiberMap x).inverse := (rfl)
-
-@[simp] theorem comp_invOfBijectivePi {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) :
-    a.comp (invOfBijectivePi Z W a ha) = id W :=
-  comp_invOfIsInvertible a _
-
-@[simp] theorem invOfBijectivePi_comp {β : Type*} [Fintype β]
-    (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B (β → 𝕜) κ)
-    (a : CoordinateHom Z W) (ha : ∀ x, Function.Bijective (a.fiberMap x)) :
-    (invOfBijectivePi Z W a ha).comp a = id Z :=
-  invOfIsInvertible_comp a _
 
 end CoordinateHom
 end VectorBundleCore
