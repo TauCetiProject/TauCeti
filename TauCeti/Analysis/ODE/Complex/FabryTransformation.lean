@@ -178,26 +178,35 @@ theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
     deriv (deriv (fabryTransform c w)) t =
       Complex.exp (c * t ^ 2 / 2) * ((c + c ^ 2 * t ^ 2) * w (t ^ 2) +
         (2 + 4 * c * t ^ 2) * deriv w (t ^ 2) + 4 * t ^ 2 * deriv (deriv w) (t ^ 2)) := by
-  -- `fabryTransform c w` is `p · (w ∘ φ)` with `p s = exp (c s² / 2)` and `φ s = s²`.
-  have hW : fabryTransform c w = fun s => Complex.exp (c * s ^ 2 / 2) * w (s ^ 2) :=
+  -- `fabryTransform c w` is `p • (w ∘ φ)` with `p s = exp (c s² / 2)` and `φ s = s²`.
+  have hW : fabryTransform c w = fun s => Complex.exp (c * s ^ 2 / 2) • w (s ^ 2) :=
     funext (fabryTransform_apply c w)
+  -- `p` is Fabry's rescaling of the constant `1`, which gives its analyticity and `p′`.
+  have h1 : fabryTransform c (fun _ => (1 : ℂ)) = fun s => Complex.exp (c * s ^ 2 / 2) :=
+    funext fun s => by rw [fabryTransform_apply, mul_one]
   have hsq : AnalyticAt ℂ (fun s : ℂ => s ^ 2) t := analyticAt_id.pow 2
   have hexp : AnalyticAt ℂ (fun s : ℂ => Complex.exp (c * s ^ 2 / 2)) t :=
-    ((analyticAt_const.mul hsq).div_const).cexp
+    h1 ▸ analyticAt_fabryTransform c (w := fun _ => (1 : ℂ)) analyticAt_const
   -- `p` has logarithmic derivative `s ↦ c * s`, which gives `p′` and `p′′`.
   have hp1 : ∀ s : ℂ, HasDerivAt (fun s : ℂ => Complex.exp (c * s ^ 2 / 2))
-      (Complex.exp (c * s ^ 2 / 2) * (c * s)) s := fun s =>
-    (((hasDerivAt_pow 2 s).const_mul c).div_const 2).cexp.congr_deriv (by ring)
+      ((c * s) • Complex.exp (c * s ^ 2 / 2)) s := fun s => by
+    have h := hasDerivAt_fabryTransform c (w := fun _ => (1 : ℂ)) (t := s)
+      (differentiableAt_const _)
+    rw [h1] at h
+    refine h.congr_deriv ?_
+    simp only [deriv_const, mul_one, mul_zero, add_zero, smul_eq_mul]
+    ring
   have hp' : deriv (fun s : ℂ => Complex.exp (c * s ^ 2 / 2)) =
-      fun s => Complex.exp (c * s ^ 2 / 2) * (c * s) :=
+      fun s => (c * s) • Complex.exp (c * s ^ 2 / 2) :=
     funext fun s => (hp1 s).deriv
-  have hp'' := hasDerivAt_deriv_of_eventually_hasDerivAt_mul (ℓ := fun s => c * s)
+  have hp'' := hasDerivAt_deriv_of_eventually_hasDerivAt_smul (ℓ := fun s => c * s)
     (Filter.Eventually.of_forall hp1) ((hasDerivAt_id' t).const_mul c)
   -- The first and second derivatives of `φ`.
   have hφ' : deriv (fun s : ℂ => s ^ 2) = fun s => 2 * s :=
     funext fun s => by simp
   have hφ'' : deriv (fun s : ℂ => 2 * s) t = 2 := deriv_const_mul_id (x := t) 2
-  rw [hW, (hexp.hasDerivAt_deriv_mul_comp hsq hw).deriv, hp''.deriv, hp', hφ', hφ'']
+  rw [hW, (hexp.hasDerivAt_deriv_smul_comp hsq hw).deriv, hp''.deriv, hp', hφ', hφ'']
+  simp only [smul_eq_mul]
   ring
 
 /-- The operator identity behind Fabry's transformation: for `t ≠ 0` and `w` holomorphic near

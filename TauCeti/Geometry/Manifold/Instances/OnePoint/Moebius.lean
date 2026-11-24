@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # Möbius transformations of the projective line are analytic
@@ -255,11 +256,8 @@ theorem mfderiv_smul_coe_apply (g : GL (Fin 2) ℂ) {z : ℂ} (hz : g 1 0 * z + 
     filter_upwards [hq.eventually_ne hz] with w hw
     simp [smul_some_eq_ite, hw]
   have hd : HasDerivAt (fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
-      ((g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2) z := by
-    refine ((((hasDerivAt_id' z).const_mul (g 0 0)).add_const (g 0 1)).div
-      (((hasDerivAt_id' z).const_mul (g 1 0)).add_const (g 1 1)) hz).congr_deriv ?_
-    rw [det_fin_two]
-    ring
+      ((g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2) z :=
+    (TauCeti.hasDerivAt_mul_add_div_mul_add hz).congr_deriv (by rw [det_fin_two])
   have hF := (hd.hasFDerivAt.restrictScalars ℝ).congr_of_eventuallyEq hev
   have hgz : g • (z : OnePoint ℂ) =
       (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : ℂ) : OnePoint ℂ) := by

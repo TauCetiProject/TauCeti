@@ -41,12 +41,12 @@ The Möbius variable is the cross-ratio `crossRatio z β α γ`.
 
 ## Implementation notes
 
-Write `w = P · (u ∘ T)` with the prefactor `P` and the Möbius variable `T`. The second-order
-product and chain rule `AnalyticAt.hasDerivAt_deriv_mul_comp` expresses `w′′` and `w′` through
+Write `w = P • (u ∘ T)` with the prefactor `P` and the Möbius variable `T`. The second-order
+product and chain rule `AnalyticAt.hasDerivAt_deriv_smul_comp` expresses `w′′` and `w′` through
 `P, P′, P′′`, `T′, T′′` and `u, u′, u′′` at `T z`. The prefactor has logarithmic derivative
 `L = a₁ (1/(z − α) − 1/(z − γ)) + b₁ (1/(z − β) − 1/(z − γ))`, so `P′ = P L` and
 `P′′ = P (L ^ 2 + L′)` (`TauCeti.hasDerivAt_sub_div_sub_cpow`,
-`TauCeti.hasDerivAt_deriv_of_eventually_hasDerivAt_mul`), and `T` is the cross-ratio in its
+`TauCeti.hasDerivAt_deriv_of_eventually_hasDerivAt_smul`), and `T` is the cross-ratio in its
 first point (`TauCeti.hasDerivAt_crossRatio_first`, `TauCeti.hasDerivAt_deriv_crossRatio_first`).
 After these substitutions Riemann's operator at `z` is a multiple of the hypergeometric operator
 at `T z`, which clearing denominators verifies.
@@ -105,16 +105,20 @@ private theorem hasDerivAt_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const) hzγ
   have hev := ((hc α).eventually_mem (isOpen_slitPlane.mem_nhds hA)).and
     ((hc β).eventually_mem (isOpen_slitPlane.mem_nhds hB))
-  refine hasDerivAt_deriv_of_eventually_hasDerivAt_mul
-    (ℓ := fun w => a₁ * ((w - α)⁻¹ - (w - γ)⁻¹) + b₁ * ((w - β)⁻¹ - (w - γ)⁻¹))
-    (hev.mono fun w hw => hasDerivAt_riemannPrefactor hw.1 hw.2) ?_
   -- The derivative of the logarithmic derivative `L`.
-  refine (((((hasDerivAt_id z).sub_const α).inv hzα).sub
-    (((hasDerivAt_id z).sub_const γ).inv hzγ)).const_mul a₁ |>.add
-    (((((hasDerivAt_id z).sub_const β).inv hzβ).sub
-    (((hasDerivAt_id z).sub_const γ).inv hzγ)).const_mul b₁)).congr_deriv ?_
-  simp only [id]
-  ring
+  have hL : HasDerivAt (fun w => a₁ * ((w - α)⁻¹ - (w - γ)⁻¹) + b₁ * ((w - β)⁻¹ - (w - γ)⁻¹))
+      (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) + b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))
+      z := by
+    refine (((((hasDerivAt_id z).sub_const α).inv hzα).sub
+      (((hasDerivAt_id z).sub_const γ).inv hzγ)).const_mul a₁ |>.add
+      (((((hasDerivAt_id z).sub_const β).inv hzβ).sub
+      (((hasDerivAt_id z).sub_const γ).inv hzγ)).const_mul b₁)).congr_deriv ?_
+    simp only [id]
+    ring
+  refine (hasDerivAt_deriv_of_eventually_hasDerivAt_smul
+    (hev.mono fun w hw => (hasDerivAt_riemannPrefactor hw.1 hw.2).congr_deriv
+      (by rw [smul_eq_mul, mul_comm])) hL).congr_deriv ?_
+  rw [smul_eq_mul, mul_comm]
 
 /-- **The operator identity behind DLMF 15.11.7.** Let
 `w(x) = ((x − α)/(x − γ))^{a₁} ((x − β)/(x − γ))^{b₁} u(ζ(x))` with the Möbius variable
@@ -142,10 +146,10 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
             deriv u (crossRatio z β α γ) -
           (a₁ + b₁ + c₁) * (a₁ + b₁ + c₂) * u (crossRatio z β α γ)) := by
   intro w
-  -- `w = P · (u ∘ T)`, with the Möbius variable `T` and the prefactor `P`.
+  -- `w = P • (u ∘ T)`, with the Möbius variable `T` and the prefactor `P`.
   set T : ℂ → ℂ := fun x => crossRatio x β α γ with hTdef
   set P : ℂ → ℂ := fun x => ((x - α) / (x - γ)) ^ a₁ * ((x - β) / (x - γ)) ^ b₁ with hPdef
-  have hw : w = fun x => P x * u (T x) := rfl
+  have hw : w = fun x => P x • u (T x) := rfl
   obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp (slitPlane_ne_zero hA)
   have hzβ : z - β ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero hB)).1
   -- Analyticity of the prefactor and of the Möbius variable, for the product and chain rules.
@@ -159,11 +163,11 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
   have hPdd : deriv (deriv P) z = P z * (L ^ 2 + (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
       b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) :=
     (hasDerivAt_deriv_riemannPrefactor hA hB).deriv
-  rw [hw, (hPa.hasDerivAt_deriv_mul_comp hTa hu).deriv,
-    (hPa.deriv_mul_comp_eventuallyEq hTa hu).eq_of_nhds, hPdd, hPd,
+  rw [hw, (hPa.hasDerivAt_deriv_smul_comp hTa hu).deriv,
+    (hPa.deriv_smul_comp_eventuallyEq hTa hu).eq_of_nhds, hPdd, hPd,
     (hasDerivAt_deriv_crossRatio_first (sub_ne_zero.mp hzγ)).deriv,
     (hasDerivAt_crossRatio_first (sub_ne_zero.mp hzγ)).deriv]
-  beta_reduce
+  simp only [smul_eq_mul]
   -- Riemann's operator at `z` is now the multiplier times the hypergeometric operator at `T z`,
   -- which clearing denominators verifies.
   have hc2 : c₂ = 1 - a₁ - a₂ - b₁ - b₂ - c₁ := by linear_combination hsum
