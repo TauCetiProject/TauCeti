@@ -116,33 +116,28 @@ theorem hasSum_localFourier_compCLMOfOpenPartialHomeomorph [MeasurableSpace E] [
     obtain ⟨x, hx, rfl⟩ := (tsupport_pushforwardCLM_subset ψ).trans (image_mono hψs)
       (subset_tsupport _ hy)
     exact hχ x hx
-  have hgK : support g ⊆ K := fun y hy ↦
-    χ.support_subset (by simp [show χ y = 1 from hg1 hy])
-  set gK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset g.contDiff hgK
-  have hgK' : ofSupportedIn hKΩ gK = g := by
-    ext y
-    simp [gK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have h := hasSum_localFourier_ofSupportedIn T hKΩ L hL (φ := gK) (χ := χ)
-    (fun y hy ↦ hg1 (by simpa [gK, ContDiffMapSupportedIn.coe_of_support_subset] using hy)) 0
   -- The pairing of `e^* T` with `φ e_ξ` is the pairing of `T` with `g`.
-  have h0 : T.localFourier (ofSupportedIn hKΩ gK) 0 =
+  have h0 : T.complexPairing g =
       (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).localFourier φ ξ := by
-    rw [hgK', localFourier_eq T g (ψ := g) fun y ↦ by simp, localFourier_def,
-      complexPairing_compCLMOfOpenPartialHomeomorph]
+    rw [localFourier_def, complexPairing_compCLMOfOpenPartialHomeomorph]
   -- The Fourier coefficients of `g`, by changing variables `y = e x`.
-  have hF (m : E) : 𝓕 (gK : E → ℂ) m = ∫ x, φ x * 𝐞 (⟪e x, -m⟫ - ⟪x, ξ⟫) := by
+  have hF (m : E) : 𝓕 (g : E → ℂ) m = ∫ x, φ x * 𝐞 (⟪e x, -m⟫ - ⟪x, ξ⟫) := by
     rw [Real.fourier_eq]
-    calc ∫ v, 𝐞 (-⟪v, m⟫) • gK v = ∫ v, g v • (𝐞 (-⟪v, m⟫) : ℂ) := by
+    calc ∫ v, 𝐞 (-⟪v, m⟫) • g v = ∫ v, g v • (𝐞 (-⟪v, m⟫) : ℂ) := by
           refine integral_congr_ae (Eventually.of_forall fun v ↦ ?_)
-          simp [gK, ContDiffMapSupportedIn.coe_of_support_subset, Circle.smul_def, mul_comm]
+          simp [Circle.smul_def, mul_comm]
       _ = ∫ x, ψ x • (𝐞 (-⟪e x, m⟫) : ℂ) := integral_pushforwardCLM_smul volume ψ _
       _ = _ := by
           refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
           simp only [hψ, smul_eq_mul, inner_neg_right, sub_eq_add_neg, AddChar.map_add_eq_mul,
             Circle.coe_mul]
           ring
+  have h := hasSum_fourier_mul_localFourier T (ofSupportedIn hKΩ χ) L
+    (fun y hy ℓ hℓ h ↦ congrArg Subtype.val
+      (hL y (χ.tsupport_subset hy) ⟨ℓ, hℓ⟩ (χ.tsupport_subset h)))
+    (φ := g) fun y hy ↦ by simpa using hg1 hy
   rw [← h0]
-  simpa only [hF, zero_sub] using h
+  simpa only [hF, smul_eq_mul] using h
 
 /-- The localized Fourier transform of the pullback `e^* T` with cutoff `φ` at `ζ` is that of `T`
 at `Bᵀ ζ` with the cutoff `G = (e_* φ) 𝐞(⟪·, Bᵀ ζ⟫ - ⟪σ ·, ζ⟫)`, for any `σ` agreeing with `e⁻¹` on

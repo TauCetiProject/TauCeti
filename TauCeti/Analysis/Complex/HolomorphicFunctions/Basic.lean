@@ -18,7 +18,8 @@ in particular, extension by zero outside `U` gives the same condition. The topol
 uniformity are inherited from continuous maps, so convergence means locally uniform
 convergence. This subalgebra is closed and complete, and both restriction to a smaller open
 set and precomposition along a holomorphic map into another open set are continuous algebra
-homomorphisms.
+homomorphisms, and `HolomorphicFunctions.vanishingAt` cuts out the nonunital subalgebra of
+holomorphic functions vanishing at a marked point.
 
 These algebras provide domains for continuous holomorphic functional calculi without
 choosing a supremum norm on a possibly noncompact open set.
@@ -290,6 +291,70 @@ theorem continuous_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V
     (ContinuousMap.mk
       (fun z : U => (⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ : V))
       (f.val.continuous.subtype_mk _))).comp continuous_subtypeVal |>.subtype_mk _
+
+/-- Point evaluation of a holomorphic function on `U` at `x ∈ U`. -/
+noncomputable def eval (x : ℂ) (hx : x ∈ U) : holomorphicFunctions U →ₐ[ℂ] ℂ :=
+  (ContinuousMap.evalAlgHom ℂ ℂ (⟨x, hx⟩ : U)).comp (holomorphicFunctions U).val
+
+@[simp]
+theorem eval_apply (x : ℂ) (hx : x ∈ U) (f : holomorphicFunctions U) :
+    eval x hx f = f.val ⟨x, hx⟩ := (rfl)
+
+/-- The nonunital complex subalgebra of `holomorphicFunctions U` consisting of functions
+vanishing at a marked point `x ∈ U`. -/
+noncomputable def vanishingAt (U : Opens ℂ) (x : ℂ) (hx : x ∈ U) :
+    NonUnitalSubalgebra ℂ (holomorphicFunctions U) :=
+  NonUnitalAlgHom.equalizer (eval x hx).toNonUnitalAlgHom 0
+
+/-- Membership in `HolomorphicFunctions.vanishingAt U x hx` means vanishing at `⟨x, hx⟩`. -/
+@[simp]
+theorem mem_vanishingAt_iff {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} {f : holomorphicFunctions U} :
+    f ∈ vanishingAt U x hx ↔ f.val ⟨x, hx⟩ = 0 := by
+  simp [vanishingAt, NonUnitalAlgHom.mem_equalizer]
+
+/-- Pointwise evaluation of a function in `HolomorphicFunctions.vanishingAt U x hx` at `⟨x, hx⟩`
+vanishes. -/
+@[simp]
+theorem apply_coe_vanishingAt {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} (f : vanishingAt U x hx) :
+    (f : holomorphicFunctions U).val ⟨x, hx⟩ = 0 :=
+  mem_vanishingAt_iff.mp f.property
+
+/-- Restriction of holomorphic functions vanishing at `x` along an inclusion of open domains. -/
+noncomputable def restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    vanishingAt U x (h hx) →ₙₐ[ℂ] vanishingAt V x hx :=
+  ((restrict h).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt U x (h hx)))).codRestrict
+      (vanishingAt V x hx) fun f => mem_vanishingAt_iff.mpr (by simp)
+
+/-- Coercing `restrictVanishingAt` back to `holomorphicFunctions V` recovers `restrict`. -/
+@[simp]
+theorem coe_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V)
+    (f : vanishingAt U x (h hx)) :
+    (restrictVanishingAt h hx f : holomorphicFunctions V) = restrict h f.val := (rfl)
+
+/-- Restricting `vanishingAt` along `le_refl` is the identity homomorphism. -/
+@[simp]
+theorem restrictVanishingAt_refl {x : ℂ} (hx : x ∈ U) :
+    restrictVanishingAt (le_refl U) hx = NonUnitalAlgHom.id ℂ (vanishingAt U x hx) := by
+  ext f
+  simp
+
+/-- Successive restrictions of `vanishingAt` compose to restriction along the composite
+inclusion. -/
+@[simp]
+theorem restrictVanishingAt_comp_restrictVanishingAt {x : ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (hx : x ∈ W) :
+    (restrictVanishingAt hWV hx).comp (restrictVanishingAt hVU (hWV hx)) =
+      restrictVanishingAt (hWV.trans hVU) hx := by
+  ext f
+  simp [← AlgHom.comp_apply]
+
+/-- Restriction on `HolomorphicFunctions.vanishingAt` is continuous for the compact-open
+topology. -/
+@[continuity]
+theorem continuous_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    Continuous (restrictVanishingAt h hx) :=
+  ((continuous_restrict h).comp continuous_subtypeVal).subtype_mk _
 
 end HolomorphicFunctions
 
