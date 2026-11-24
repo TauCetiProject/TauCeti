@@ -269,10 +269,9 @@ theorem finiteDimensional_span_of_finrank_pos
     (M : Submodule R V) (K : Type*) [DivisionRing K] [SMulWithZero R K] [FaithfulSMul R K]
     [IsScalarTower R K K] [Module K V] [IsScalarTower R K V]
     (hM : 0 < Module.finrank R M) :
-    FiniteDimensional K (span K (M : Set V)) := by
-  refine Module.rank_lt_aleph0_iff.mp ((Submodule.rank_span_le_rank M).trans_lt ?_)
-  by_contra! h
-  simp [Module.finrank, Cardinal.toNat_apply_of_aleph0_le h] at hM
+    FiniteDimensional K (span K (M : Set V)) :=
+  Module.rank_lt_aleph0_iff.mp
+    ((Submodule.rank_span_le_rank M).trans_lt (Cardinal.toNat_pos.1 hM).2)
 
 /-- The dimension of a submodule `p` pulled back to `q` via `q.subtype` equals the dimension of the
 intersection `p ⊓ q`. -/

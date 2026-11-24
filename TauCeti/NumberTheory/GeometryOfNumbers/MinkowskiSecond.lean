@@ -501,12 +501,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The theorem in coordinates `φ` in which `L` is `ℤⁿ`: if the `j`-th coordinate vanishes on
 every `v ∈ L` with `gauge K v < g j`, then `(∏ i, g i) * vol (φ '' (½ • interior K)) ≤ 1`. -/
-private theorem prod_mul_volume_image_le_one [FiniteDimensional ℝ E] {L : Submodule ℤ E}
+private theorem prod_mul_volume_image_le_one {L : Submodule ℤ E}
     {K : Set E} (hK : Convex ℝ K) (hKs : ∀ x ∈ K, -x ∈ K) (hKabs : Absorbent ℝ K) {n : ℕ}
     (φ : E ≃ₗ[ℝ] (Fin n → ℝ)) (hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ))
     {g : Fin n → ℝ} (hg0 : ∀ i, 0 < g i) (hg : Monotone g)
     (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → φ v j = 0) :
     ENNReal.ofReal (∏ i, g i) * volume (φ '' ((1 / 2 : ℝ) • interior K)) ≤ 1 := by
+  have := FiniteDimensional.of_injective φ.toLinearMap φ.injective
   have hCopen : IsOpen (φ '' ((1 / 2 : ℝ) • interior K)) :=
     φ.toContinuousLinearEquiv.toHomeomorph.isOpenMap _ (isOpen_interior.smul₀ (by norm_num))
   let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
@@ -655,14 +656,11 @@ theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodul
     [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
     {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) :
     (∏ i, successiveMin L K i) * μ.real K ≤ 2 ^ finrank ℝ E * ZLattice.covolume L μ := by
-  by_cases hμ : μ K = 0
-  · simp [measureReal_def, hμ]
-  have := μ.finiteDimensional_of_isCompact_measure_ne_zero ℝ K.isCompact hμ
   have h := ENNReal.toReal_mono (by finiteness)
     (prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs)
   rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
     (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
-    (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
+    (ZLattice.covolume_nonneg L μ), ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
 
 /-- **Minkowski's second theorem for bodies of measure at least `2ⁿ`.** For a full lattice `L` in
 a real normed space `E`, an additive Haar measure `μ` on `E`, and a convex body `K` symmetric about

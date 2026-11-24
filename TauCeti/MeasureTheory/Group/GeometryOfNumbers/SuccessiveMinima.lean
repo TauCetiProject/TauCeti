@@ -186,7 +186,9 @@ theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : �
   rw [successiveMin_def] at hr
   obtain ⟨r₀, hr₀⟩ := exists_lt_setFinrank_smul_inter hs hi
   obtain ⟨r', hr', hr'r⟩ := exists_lt_of_csInf_lt ⟨r₀, hr₀⟩ hr
-  refine hr'.trans_le (finrank_mono (span_mono (Set.inter_subset_inter_left _ ?_)))
+  refine hr'.trans_le ?_
+  rw [Set.finrank, Set.finrank]
+  refine finrank_mono (span_mono (Set.inter_subset_inter_left _ ?_))
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨y, hy, hyx⟩ := hsc.smul_mono r'.property hr'r.le ⟨x, hx, rfl⟩
   exact ⟨y, hy, by simpa [NNReal.smul_def] using hyx⟩
@@ -201,9 +203,9 @@ theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : �
     ∃ v : Fin (i + 1) → L, (∀ j, (v j : E) ∈ r • s ∩ L) ∧ LinearIndependent ℤ v := by
   have hri := lt_setFinrank_smul_inter_of_successiveMin_lt
     (hsc.starConvex (mem_of_mem_nhds hs₀)) (absorbent_nhds_zero hs₀) hi hr
+  rw [Set.finrank] at hri
   have : FiniteDimensional ℝ (span ℝ ((r • s ∩ L) : Set E)) :=
     Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hri)
-  rw [Set.finrank] at hri
   obtain ⟨f, hfli, hf⟩ := le_finrank_span_iff_exists_linearIndependent.mp hri
   refine ⟨fun j ↦ ⟨f j, (hf j).2⟩, hf, ?_⟩
   rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
