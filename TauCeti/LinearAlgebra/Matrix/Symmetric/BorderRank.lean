@@ -70,11 +70,26 @@ theorem IsSymm.mem_range_mulVecLin_iff (hS : S.IsSymm) (v : n → K) :
   simp_rw [mem_range_mulVecLin_iff_forall_vecMul_eq_zero, LinearMap.mem_ker, mulVecLin_apply,
     ← mulVec_transpose, hS.eq, dotProduct_comm v]
 
-/-- Rank-nullity for a matrix on `n ⊕ Unit`. -/
-private theorem rank_add_finrank_ker_sum_unit (B : Matrix (n ⊕ Unit) (n ⊕ Unit) K) :
-    B.rank + Module.finrank K (LinearMap.ker B.mulVecLin) = Fintype.card n + 1 := by
+/-- The splitting of a vector on `n ⊕ Unit` into its restriction to `n` and its last coordinate. -/
+private def sumUnitSplit : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K :=
+  (LinearEquiv.sumArrowLequivProdArrow n Unit K K).trans
+    ((LinearEquiv.refl K _).prodCongr (LinearEquiv.funUnique Unit K K))
+
+omit [Fintype n] in
+private theorem sumUnitSplit_symm_apply (p : (n → K) × K) :
+    sumUnitSplit.symm p = Sum.elim p.1 fun _ => p.2 := by
+  ext (_ | _) <;> simp [sumUnitSplit]
+
+/-- Rank-nullity for a matrix `B` on `n ⊕ Unit` whose kernel a linear equivalence carries onto a
+product `W × U`. -/
+private theorem rank_add_finrank_add_finrank_eq {B : Matrix (n ⊕ Unit) (n ⊕ Unit) K}
+    (Φ : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K) {W : Submodule K (n → K)} {U : Submodule K K}
+    (hmap : (LinearMap.ker B.mulVecLin).map (Φ : (n ⊕ Unit → K) →ₗ[K] (n → K) × K) = W.prod U) :
+    B.rank + (Module.finrank K W + Module.finrank K U) = Fintype.card n + 1 := by
+  have hker := (Φ.ofSubmodules _ _ hmap).finrank_eq
+  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod] at hker
   have h := B.rank_le_card_width
-  rw [finrank_ker_mulVecLin, Fintype.card_sum, Fintype.card_unit] at *
+  rw [← hker, finrank_ker_mulVecLin, Fintype.card_sum, Fintype.card_unit] at *
   omega
 
 /-- **Bordering a symmetric matrix by a column in its range.** If `S` is symmetric, bordering it by
@@ -86,21 +101,24 @@ theorem IsSymm.rank_fromBlocks_mulVec [DecidableEq K] (hS : S.IsSymm) (x : n →
   set B := Matrix.fromBlocks S (replicateCol Unit (S *ᵥ x)) (replicateRow Unit (S *ᵥ x))
     (of fun _ _ => a)
   set c := a - x ⬝ᵥ S *ᵥ x
-  -- The shear `(y, t) ↦ (y + t x, t)` carries `ker B` onto `ker S × {t | c t = 0}`.
-  let Φ : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K :=
-    { toFun w := (w ∘ Sum.inl + w (Sum.inr ()) • x, w (Sum.inr ()))
-      invFun p := Sum.elim (p.1 - p.2 • x) fun _ => p.2
-      map_add' w w' := by ext <;> simp [add_smul]; abel
-      map_smul' r w := by ext <;> simp [smul_smul]
-      left_inv w := by ext (i | i) <;> simp
+  -- The splitting `w ↦ (y, t)` followed by the shear `(y, t) ↦ (y + t x, t)` carries `ker B` onto
+  -- `ker S × {t | c t = 0}`.
+  let shear : ((n → K) × K) ≃ₗ[K] (n → K) × K :=
+    { toFun p := (p.1 + p.2 • x, p.2)
+      invFun p := (p.1 - p.2 • x, p.2)
+      map_add' p p' := by ext <;> simp [add_smul]; abel
+      map_smul' r p := by ext <;> simp [smul_smul]
+      left_inv p := by ext <;> simp
       right_inv p := by ext <;> simp }
+  let Φ := sumUnitSplit.trans shear
   have hmap : (LinearMap.ker B.mulVecLin).map (Φ : (n ⊕ Unit → K) →ₗ[K] (n → K) × K) =
       (LinearMap.ker S.mulVecLin).prod (LinearMap.ker (c • LinearMap.id)) := by
     ext ⟨y, t⟩
     rw [Submodule.mem_map_equiv]
     simp only [Submodule.mem_prod, LinearMap.mem_ker, mulVecLin_apply, B,
-      fromBlocks_replicateCol_replicateRow_mulVec, Φ, LinearEquiv.coe_symm_mk', Sum.elim_comp_inl,
-      Sum.elim_inr, mulVec_sub, mulVec_smul, sub_add_cancel]
+      fromBlocks_replicateCol_replicateRow_mulVec, Φ, shear, LinearEquiv.symm_trans_apply,
+      LinearEquiv.coe_symm_mk', sumUnitSplit_symm_apply, Sum.elim_comp_inl, Sum.elim_inr,
+      mulVec_sub, mulVec_smul, sub_add_cancel]
     rw [← Sum.elim_zero_zero, Sum.elim_eq_iff]
     refine and_congr_right fun hy => ?_
     rw [dotProduct_sub, dotProduct_smul, dotProduct_comm, ← hS.dotProduct_mulVec_comm, hy,
@@ -108,18 +126,17 @@ theorem IsSymm.rank_fromBlocks_mulVec [DecidableEq K] (hS : S.IsSymm) (x : n →
     simp only [Pi.zero_apply, LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul, c,
       dotProduct_comm x]
     exact ⟨fun h => by linear_combination h (), fun h _ => by linear_combination h⟩
-  have hker := (Φ.ofSubmodules _ _ hmap).finrank_eq
-  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_ker_mulVecLin S] at hker
   have hc : Module.finrank K (LinearMap.ker (c • LinearMap.id : K →ₗ[K] K)) =
       if a = x ⬝ᵥ S *ᵥ x then 1 else 0 := by
     split_ifs with h
     · rw [show c = 0 from sub_eq_zero.mpr h, zero_smul, LinearMap.ker_zero, finrank_top,
         Module.finrank_self]
     · rw [LinearMap.ker_smul _ _ (sub_ne_zero.mpr h), LinearMap.ker_id, finrank_bot]
-  have h1 := rank_add_finrank_ker_sum_unit B
-  have h2 := S.rank_le_card_width
-  rw [hc] at hker
-  split_ifs at hker ⊢ <;> omega
+  have h1 := rank_add_finrank_add_finrank_eq Φ hmap
+  have h2 := finrank_ker_mulVecLin S
+  have h3 := S.rank_le_card_width
+  rw [hc] at h1
+  split_ifs at h1 ⊢ <;> omega
 
 /-- **Bordering a symmetric matrix by a column outside its range.** If `S` is symmetric and `v` is
 not in its range, bordering `S` by the column `v`, its transpose and any corner raises the rank by
@@ -131,13 +148,7 @@ theorem IsSymm.rank_fromBlocks_of_notMem_range (hS : S.IsSymm) {v : n → K}
   classical
   set B := Matrix.fromBlocks S (replicateCol Unit v) (replicateRow Unit v) (of fun _ _ => a)
   set φ := dotProductEquiv K n v
-  let Φ : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K :=
-    { toFun w := (w ∘ Sum.inl, w (Sum.inr ()))
-      invFun p := Sum.elim p.1 fun _ => p.2
-      map_add' w w' := by ext <;> simp
-      map_smul' r w := by ext <;> simp
-      left_inv w := by ext (_ | _) <;> simp
-      right_inv p := by ext <;> simp }
+  let Φ : (n ⊕ Unit → K) ≃ₗ[K] (n → K) × K := sumUnitSplit
   -- A kernel vector of `B` has vanishing last coordinate, since `v` is not in the range of `S`.
   have hmap : (LinearMap.ker B.mulVecLin).map (Φ : (n ⊕ Unit → K) →ₗ[K] (n → K) × K) =
       (LinearMap.ker φ ⊓ LinearMap.ker S.mulVecLin).prod ⊥ := by
@@ -145,7 +156,7 @@ theorem IsSymm.rank_fromBlocks_of_notMem_range (hS : S.IsSymm) {v : n → K}
     rw [Submodule.mem_map_equiv]
     simp only [Submodule.mem_prod, Submodule.mem_inf, Submodule.mem_bot,
       LinearMap.mem_ker, mulVecLin_apply, B, fromBlocks_replicateCol_replicateRow_mulVec, Φ, φ,
-      LinearEquiv.coe_symm_mk', Sum.elim_comp_inl, Sum.elim_inr, dotProductEquiv_apply_apply,
+      sumUnitSplit_symm_apply, Sum.elim_comp_inl, Sum.elim_inr, dotProductEquiv_apply_apply,
       funext_iff, Sum.forall, Sum.elim_inl, Pi.zero_apply, forall_const]
     refine ⟨fun ⟨h₁, h₂⟩ => ?_, fun ⟨_, ht⟩ => ?_⟩
     · obtain rfl : t = 0 := by
@@ -162,9 +173,8 @@ theorem IsSymm.rank_fromBlocks_of_notMem_range (hS : S.IsSymm) {v : n → K}
     exact hv ((hS.mem_range_mulVecLin_iff v).mpr h)
   have hcodim := Module.Dual.finrank_ker_inf_add_one (f := φ) fun h =>
     hvz (by simpa [φ] using h hz)
-  have hker := (Φ.ofSubmodules _ _ hmap).finrank_eq
-  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_bot, add_zero] at hker
-  have h1 := rank_add_finrank_ker_sum_unit B
+  have h1 := rank_add_finrank_add_finrank_eq Φ hmap
+  rw [finrank_bot, add_zero] at h1
   have h2 := finrank_ker_mulVecLin S
   have h3 := S.rank_le_card_width
   omega

@@ -37,6 +37,8 @@ recurrence and the same initial row, so `N(s, k) = P(s, k)` for all `s` and `k`.
 
 * `Matrix.IsSymm.natCard_rank_fromBlocks_eq`: the number of borders `(v, a)` of a symmetric `S`
   giving each rank.
+* `Matrix.natCard_isSymm_rank_congr`: the number of symmetric matrices of each rank is invariant
+  under relabelling the indices.
 * `Matrix.natCard_isSymm_rank_sum_unit` and `Matrix.natCard_isSymm_rank_succ`: the recurrence for
   the number of symmetric matrices of each rank.
 * `TauCeti.prod_mul_prod_pow_sub_one_succ_eq_sum`: MacWilliams's product satisfies the same
@@ -125,6 +127,12 @@ theorem IsSymm.natCard_rank_fromBlocks_eq (hS : S.IsSymm) (k : ℕ) :
 
 end Finite
 
+/-- The number of symmetric matrices of rank `k` is invariant under relabelling the indices. -/
+theorem natCard_isSymm_rank_congr (R : Type*) {ι κ : Type*} [Semiring R] (e : ι ≃ κ) (k : ℕ) :
+    Nat.card {M : Matrix ι ι R // M.IsSymm ∧ M.rank = k} =
+      Nat.card {M : Matrix κ κ R // M.IsSymm ∧ M.rank = k} :=
+  Nat.card_congr <| (reindex e e).subtypeEquiv fun M => by rw [isSymm_reindex_iff, rank_reindex]
+
 section Count
 
 variable (F : Type*) [Field F]
@@ -188,9 +196,8 @@ theorem natCard_isSymm_rank_succ (n k : ℕ) :
   have h := natCard_isSymm_rank_sum_unit F (Fin n) k
   rw [Fintype.card_fin] at h
   rw [← h]
-  let e : Fin (n + 1) ≃ Fin n ⊕ Unit := finSumFinEquiv.symm.trans (.sumCongr (.refl _) finOneEquiv)
-  exact Nat.card_congr <| (reindex e e).subtypeEquiv fun M => by
-    rw [isSymm_reindex_iff, rank_reindex]
+  exact natCard_isSymm_rank_congr F
+    (finSumFinEquiv.symm.trans (.sumCongr (.refl _) finOneEquiv)) k
 
 end Count
 
@@ -305,8 +312,9 @@ theorem prod_mul_prod_pow_sub_one_succ_eq_sum {q : ℕ} (hq : 2 ≤ q) (n k : �
         ∏ i ∈ range t, ((q : ℚ) ^ (s - i) - 1)
     P (n + 1) k = ∑ r ∈ range (n + 1), P n r * ((if k = r then q ^ r
       else if k = r + 1 then (q - 1) * q ^ r
-      else if k = r + 2 then q ^ (n + 1) - q ^ (r + 1) else 0 : ℕ) : ℚ) :=
-  symmRankProd_succ_eq_sum hq n k
+      else if k = r + 2 then q ^ (n + 1) - q ^ (r + 1) else 0 : ℕ) : ℚ) := by
+  intro P
+  simpa only [P, symmRankProd] using symmRankProd_succ_eq_sum hq n k
 
 end Product
 
@@ -336,7 +344,10 @@ private theorem natCard_isSymm_rank_eq_prod_fin (F : Type*) [Field F] [Finite F]
   | succ s ih =>
     rw [natCard_isSymm_rank_succ, Nat.cast_sum]
     simp_rw [Nat.cast_mul, ih]
-    exact (TauCeti.prod_mul_prod_pow_sub_one_succ_eq_sum Finite.one_lt_card s k).symm
+    -- Unfold the `let`-bound product in the statement of the product recurrence.
+    have h := TauCeti.prod_mul_prod_pow_sub_one_succ_eq_sum (Finite.one_lt_card (α := F)) s k
+    simp only at h
+    exact h.symm
 
 /-- **MacWilliams's formula.** Over a finite field with `q` elements, the number of symmetric
 `ι × ι` matrices of rank `k`, where `ι` has `s` elements, is
@@ -347,9 +358,6 @@ theorem natCard_isSymm_rank_eq_prod (F ι : Type*) [Field F] [Finite F] [Fintype
       (∏ i ∈ range (k / 2), (Nat.card F : ℚ) ^ (2 * (i + 1)) /
         ((Nat.card F : ℚ) ^ (2 * (i + 1)) - 1)) *
         ∏ i ∈ range k, ((Nat.card F : ℚ) ^ (Fintype.card ι - i) - 1) := by
-  rw [← natCard_isSymm_rank_eq_prod_fin]
-  let e := Fintype.equivFin ι
-  exact congrArg _ <| Nat.card_congr <| (reindex e e).subtypeEquiv fun M => by
-    rw [isSymm_reindex_iff, rank_reindex]
+  rw [← natCard_isSymm_rank_eq_prod_fin, natCard_isSymm_rank_congr F (Fintype.equivFin ι)]
 
 end Matrix
