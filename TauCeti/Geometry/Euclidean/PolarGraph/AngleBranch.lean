@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import TauCeti.Analysis.Complex.LogDeriv
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 
@@ -20,8 +20,8 @@ the unrestricted polar angle on a sector of angular width less than a full turn.
 
 We compute the first derivative, Hessian, Cartesian coordinate entries and gradient throughout
 the rotated slit plane. The Laplacian and the Hessian on two copies of the gradient vanish
-there. Consequently `nondivergenceOperator_const_mul_angleBranch` shows that every real multiple
-of the branch satisfies the minimal graph equation, giving the helicoid height for any pitch.
+there. The minimal graph equation for real multiples of this branch is established in
+`TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Helicoid`.
 -/
 
 public noncomputable section
@@ -82,18 +82,6 @@ theorem differentiableAt_fderiv_angleBranch (p : PolarPoint) (x : Plane)
   ((contDiffAt_angleBranch p x (n := 2) hx).fderiv_right (m := 1)
     (by norm_num)).differentiableAt (by norm_num)
 
-private theorem hasDerivAt_rotatedLog (p : PolarPoint) (z : ℂ)
-    (hz : z / projection p ∈ Complex.slitPlane) :
-    HasDerivAt (fun w : ℂ ↦ Complex.log (w / projection p)) z⁻¹ z := by
-  have h : HasDerivAt (fun w : ℂ ↦ w / projection p)
-      (1 / projection p) z :=
-    (hasDerivAt_id z).div_const (projection p)
-  have hs : z ≠ 0 := by
-    intro hz0
-    simp [hz0] at hz
-  convert h.clog hz using 1
-  field_simp [projection_ne_zero p, hs]
-
 /-- The Cartesian first derivative of the angle is the imaginary part of division by the
 point, throughout the rotated slit plane. -/
 theorem fderiv_angleBranch_apply (p : PolarPoint) (x v : Plane)
@@ -101,7 +89,7 @@ theorem fderiv_angleBranch_apply (p : PolarPoint) (x v : Plane)
     fderiv ℝ (angleBranch p) x v =
       (Complex.orthonormalBasisOneI.repr.symm v /
         Complex.orthonormalBasisOneI.repr.symm x).im := by
-  have hcomplex := (hasDerivAt_rotatedLog p _ hx).complexToReal_fderiv
+  have hcomplex := (Complex.hasDerivAt_log_div_const _ hx).complexToReal_fderiv
   have hplane := hcomplex.comp x
     Complex.orthonormalBasisOneI.repr.symm.hasFDerivAt
   have him := Complex.imCLM.hasFDerivAt.comp _ hplane
@@ -188,21 +176,6 @@ theorem fderiv_angleBranch_y (p : PolarPoint) (x : Plane)
   simpa [Complex.div_im] using
     fderiv_angleBranch_apply p x (EuclideanSpace.single 1 1) hx
 
-private theorem angleHessian_complex_xx (z : ℂ) :
-    -((1 : ℂ) / z ^ 2).im = 2 * z.re * z.im / Complex.normSq z ^ 2 := by
-  simp [pow_two, Complex.mul_im]
-  ring
-
-private theorem angleHessian_complex_xy (z : ℂ) :
-    -(Complex.I / z ^ 2).im = (z.im ^ 2 - z.re ^ 2) / Complex.normSq z ^ 2 := by
-  simp [Complex.div_im, pow_two, Complex.normSq_mul, Complex.mul_re]
-  ring
-
-private theorem angleHessian_complex_yy (z : ℂ) :
-    -((-1 : ℂ) / z ^ 2).im = -(2 * z.re * z.im) / Complex.normSq z ^ 2 := by
-  simpa only [neg_div, Complex.neg_im, neg_neg] using
-    congrArg Neg.neg (angleHessian_complex_xx z)
-
 /-- The `xx` Hessian entry of the angle on its slit domain. -/
 theorem fderiv_fderiv_angleBranch_xx (p : PolarPoint) (x : Plane)
     (hx : Complex.orthonormalBasisOneI.repr.symm x / projection p ∈ Complex.slitPlane) :
@@ -217,7 +190,7 @@ theorem fderiv_fderiv_angleBranch_xx (p : PolarPoint) (x : Plane)
   calc
     _ = -((1 : ℂ) / (Complex.orthonormalBasisOneI.repr.symm x) ^ 2).im := by
       simpa using h
-    _ = _ := angleHessian_complex_xx (Complex.orthonormalBasisOneI.repr.symm x)
+    _ = _ := Complex.neg_im_one_div_sq (Complex.orthonormalBasisOneI.repr.symm x)
 
 /-- The `xy` Hessian entry of the angle on its slit domain. -/
 theorem fderiv_fderiv_angleBranch_xy (p : PolarPoint) (x : Plane)
@@ -233,7 +206,7 @@ theorem fderiv_fderiv_angleBranch_xy (p : PolarPoint) (x : Plane)
   calc
     _ = -(Complex.I / (Complex.orthonormalBasisOneI.repr.symm x) ^ 2).im := by
       simpa using h
-    _ = _ := angleHessian_complex_xy (Complex.orthonormalBasisOneI.repr.symm x)
+    _ = _ := Complex.neg_im_I_div_sq (Complex.orthonormalBasisOneI.repr.symm x)
 
 /-- The `yy` Hessian entry of the angle on its slit domain. -/
 theorem fderiv_fderiv_angleBranch_yy (p : PolarPoint) (x : Plane)
@@ -249,7 +222,7 @@ theorem fderiv_fderiv_angleBranch_yy (p : PolarPoint) (x : Plane)
   calc
     _ = -((-1 : ℂ) / (Complex.orthonormalBasisOneI.repr.symm x) ^ 2).im := by
       simpa using h
-    _ = _ := angleHessian_complex_yy (Complex.orthonormalBasisOneI.repr.symm x)
+    _ = _ := Complex.neg_im_neg_one_div_sq (Complex.orthonormalBasisOneI.repr.symm x)
 
 /-- The Cartesian gradient of the angle is the ninety-degree rotation of the radial
 vector, divided by squared radius. -/
@@ -322,36 +295,5 @@ theorem fderiv_fderiv_angleBranch_gradient_gradient_eq_zero (p : PolarPoint) (x 
     simp [Complex.I_sq]
   rw [h]
   simp [pow_two, Complex.mul_im]
-
-/-- Every pitched logarithmic angle branch solves the native minimal graph equation on its
-slit domain. The pitch may vanish. -/
-theorem nondivergenceOperator_const_mul_angleBranch (c : ℝ) (p : PolarPoint) (x : Plane)
-    (hx : Complex.orthonormalBasisOneI.repr.symm x / projection p ∈ Complex.slitPlane) :
-    MinimalGraph.nondivergenceOperator
-      (fun x : EuclideanSpace ℝ (Fin 2) ↦ c * angleBranch p x)
-      x = 0 := by
-  let x₀ := x
-  have hsmul : (fun y : Plane ↦ c * angleBranch p y) = c • angleBranch p :=
-    funext fun _ ↦ (smul_eq_mul ..).symm
-  rw [hsmul]
-  rw [MinimalGraph.nondivergenceOperator_eq]
-  rw [InnerProductSpace.laplacian_smul c (contDiffAt_angleBranch p x hx)]
-  rw [laplacian_angleBranch p x hx]
-  simp only [smul_zero, mul_zero, zero_sub]
-  have hg : ∇ (c • angleBranch p) x₀ = c • ∇ (angleBranch p) x₀ := by
-    simpa using (TauCeti.gradient_const_smul (f := angleBranch p) (x := x₀) c)
-  rw [hg]
-  rw [fderiv_const_smul_field]
-  rw [fderiv_const_smul (differentiableAt_fderiv_angleBranch p x hx) c]
-  simp only [smul_apply, map_smul]
-  rw [fderiv_fderiv_angleBranch_gradient_gradient_eq_zero p x hx]
-  ring
-
-/-- At every polar point, the centered branch gives a minimal graph for every real pitch. -/
-theorem nondivergenceOperator_const_mul_angleBranch_repr_projection (c : ℝ) (p : PolarPoint) :
-    MinimalGraph.nondivergenceOperator (fun x : Plane ↦ c * angleBranch p x)
-      (Complex.orthonormalBasisOneI.repr (projection p)) = 0 := by
-  apply nondivergenceOperator_const_mul_angleBranch
-  simp [projection_ne_zero]
 
 end TauCeti.PolarGraph
