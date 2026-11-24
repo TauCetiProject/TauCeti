@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Basic
 
+import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Topology.VectorBundle.Smul
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -40,7 +41,9 @@ by a single global continuous section. This is how continuous fibre metrics, and
 fibrewise-convex structures on bundles over paracompact bases, are constructed.
 Its affine counterpart `TauCeti.exists_continuous_section_map_eq_of_local` solves a fibrewise
 linear equation `A x (s x) = c x` globally once it is solvable locally; it applies to bundles over
-any field containing `ℝ`, in particular to complex bundles.
+any normed `ℝ`-algebra, in particular to complex bundles. Local solutions can be built from
+single vectors with `FiberBundle.continuousOn_extend`: Mathlib's extension `FiberBundle.extend` of
+a vector of a fibre is a section continuous near its base point.
 
 The statements and proofs are the continuous counterparts of Mathlib's smooth section API
 `ContMDiffWithinAt.add_section`, `ContMDiffOn.smul_section_of_tsupport` and
@@ -251,6 +254,23 @@ theorem Bundle.Trivialization.continuousOn_mk_symmL (e : Trivialization F (π F 
 
 end Operations
 
+namespace FiberBundle
+
+variable {B : Type*} (F : Type*) [TopologicalSpace B] [TopologicalSpace F] {E : B → Type*}
+  [∀ x, Zero (E x)] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E]
+
+/-- The extension `FiberBundle.extend F v₀` of a vector `v₀ ∈ E x₀`, which has constant coordinates
+in the trivialization at `x₀`, is a section continuous on the base set of that trivialization, an
+open neighbourhood of `x₀` (`FiberBundle.mem_baseSet_trivializationAt'`). -/
+theorem continuousOn_extend {x₀ : B} (v₀ : E x₀) :
+    ContinuousOn (fun x ↦ TotalSpace.mk' F x (extend F v₀ x)) (trivializationAt F E x₀).baseSet :=
+  (trivializationAt F E x₀).continuousOn_symm_prodMk_left.congr fun x hx ↦ by
+    rw [extend]
+    exact (trivializationAt F E x₀).mk_symm hx _
+
+end FiberBundle
+
 namespace TauCeti
 
 section ConvexGluing
@@ -289,40 +309,29 @@ variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ �
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
   [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
-  {G : B → Type*} [∀ x, AddCommGroup (G x)] [∀ x, Module 𝕜 (G x)]
+  {G : B → Type*} [∀ x, AddCommMonoid (G x)] [∀ x, Module 𝕜 (G x)]
 
 /-- Let `A x : E x → G x` be a family of linear maps out of the fibres of a vector bundle over a
 normal paracompact space, and `c x ∈ G x`. If near each point the equation `A x (s x) = c x` has
 a solution `s` which is a section continuous there, then it has a global continuous solution.
-The solutions in each fibre form an affine subspace, so local solutions glue along a partition of
-unity. The scalars only need to contain `ℝ`, so this applies to complex bundles. -/
+The scalar field `𝕜` may be any normed `ℝ`-algebra, for instance `ℝ` or `ℂ`. -/
 theorem exists_continuous_section_map_eq_of_local (A : ∀ x, E x →ₗ[𝕜] G x) (c : ∀ x, G x)
     (H : ∀ x₀ : B, ∃ U ∈ 𝓝 x₀, ∃ s : ∀ x, E x,
       ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) U ∧ ∀ y ∈ U, A y (s y) = c y) :
     ∃ s : ∀ x, E x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧ ∀ x, A x (s x) = c x := by
-  choose U hU s hsc hst using H
-  obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate isClosed_univ (fun x ↦ interior (U x))
-    (fun x ↦ isOpen_interior) fun x _ ↦ mem_iUnion.2 ⟨x, mem_interior_iff_mem_nhds.2 (hU x)⟩
-  have hρs : ∀ i x, ρ i x ≠ 0 → x ∈ U i := fun i x hx ↦
-    interior_subset (hρ i (subset_closure hx))
-  refine ⟨fun x ↦ ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • s i x, ?_, fun x ↦ ?_⟩
-  · refine Continuous.finsum_section_of_locallyFinite 𝕜
-      (ρ.locallyFinite.subset fun i x (hx : algebraMap ℝ 𝕜 (ρ i x) • s i x ≠ 0) ↦ ?_) fun i ↦ ?_
-    · exact fun h ↦ hx (by simp [show ρ i x = 0 from h])
-    · exact ContinuousOn.smul_section_of_tsupport
-        ((continuous_algebraMap ℝ 𝕜).comp (ρ i).continuous) isOpen_interior
-        ((tsupport_comp_subset (map_zero _) _).trans (hρ i)) ((hsc i).mono interior_subset)
-  · have hfin := ρ.locallyFinite.point_finite x
-    rw [map_finsum (A x) (hfin.subset fun i hi h ↦ hi (by simp [show ρ i x = 0 from h]))]
-    simp_rw [map_smul]
-    calc ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • A x (s i x)
-        = ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • c x := finsum_congr fun i ↦ by
-          by_cases h : ρ i x = 0
-          · simp [h]
-          · rw [hst i x (hρs i x h)]
-      _ = c x := by
-        rw [← finsum_smul, ← map_finsum (algebraMap ℝ 𝕜) hfin, ρ.sum_eq_one (mem_univ x),
-          map_one, one_smul]
+  -- Restrict the scalars of `F`, `E` and `G` to `ℝ` and glue along the convex sets of solutions.
+  -- The `ℝ`-actions are defined through `algebraMap ℝ 𝕜`, so the scalar towers hold by `rfl`.
+  let : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
+  have : IsScalarTower ℝ 𝕜 F := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let (x : B) : Module ℝ (E x) := Module.compHom (E x) (algebraMap ℝ 𝕜)
+  have (x : B) : IsScalarTower ℝ 𝕜 (E x) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let (x : B) : Module ℝ (G x) := Module.compHom (G x) (algebraMap ℝ 𝕜)
+  have (x : B) : IsScalarTower ℝ 𝕜 (G x) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ 𝕜 F E
+  simpa only [mem_preimage, mem_singleton_iff] using
+    exists_continuous_section_forall_mem_convex_of_local (fun x ↦ A x ⁻¹' {c x})
+      (fun x ↦ (convex_singleton (c x)).linear_preimage ((A x).restrictScalars ℝ))
+      (by simpa only [mem_preimage, mem_singleton_iff] using H)
 
 end AffineGluing
 
