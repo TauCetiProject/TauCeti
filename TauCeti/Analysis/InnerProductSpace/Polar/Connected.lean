@@ -102,34 +102,26 @@ namespace ContinuousLinearMap
 
 /-- Explicit operator-norm continuous path in `{A : E →L[ℂ] F // A.IsInvertible}` joining any two
 invertible bounded operators `S, T : E →L[ℂ] F` from a complex Hilbert space `E` to a complex
-seminormed space `F`, obtained by transporting `Units.borelPolarPathToOne` for the unit
-`S.inverse ∘L T : (E →L[ℂ] E)ˣ` along left composition with `S`. -/
+seminormed space `F`, obtained by transporting `Units.borelPolarPathToOne` for
+`hS.transitionUnit hT : (E →L[ℂ] E)ˣ` along left composition with `S`. -/
 def IsInvertible.borelPolarPath {S T : E →L[ℂ] F}
     (hS : S.IsInvertible) (hT : T.IsInvertible) :
-    Path (⟨S, hS⟩ : {A : E →L[ℂ] F // A.IsInvertible}) ⟨T, hT⟩ where
-  toFun t :=
-    let u : (E →L[ℂ] E)ˣ := (isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit
-    ⟨S ∘L (u.borelPolarPathToOne t : E →L[ℂ] E),
-      hS.comp (isInvertible_iff_isUnit.2 (u.borelPolarPathToOne t).isUnit)⟩
-  continuous_toFun := by
-    let u : (E →L[ℂ] E)ˣ := (isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit
-    exact Continuous.subtype_mk
-      (continuous_const.clm_comp (Units.continuous_val.comp u.borelPolarPathToOne.continuous)) _
-  source' := Subtype.ext <| by
-    simp only [Path.source, Units.val_one, one_def, comp_id]
-  target' := Subtype.ext <| by
-    have hu : (((isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit : (E →L[ℂ] E)ˣ) :
-        E →L[ℂ] E) = S.inverse ∘L T := IsUnit.unit_spec _
-    simp only [Path.target, hu, ← comp_assoc, hS.self_comp_inverse, id_comp]
+    Path (⟨S, hS⟩ : {A : E →L[ℂ] F // A.IsInvertible}) ⟨T, hT⟩ :=
+  ((hS.transitionUnit hT).borelPolarPathToOne.map
+      (Continuous.subtype_mk (continuous_const.clm_comp Units.continuous_val) _ :
+        Continuous fun g : (E →L[ℂ] E)ˣ ↦
+          (⟨S ∘L (g : E →L[ℂ] E), hS.comp (isInvertible_iff_isUnit.2 g.isUnit)⟩ :
+            {A : E →L[ℂ] F // A.IsInvertible}))).cast
+    (Subtype.ext <| by simp [one_def])
+    (Subtype.ext <| by simp [← comp_assoc, hS.self_comp_inverse])
 
-/-- Evaluating `hS.borelPolarPath hT` at `t` gives `S` composed with `borelPolarPathToOne` for the
-transition unit `S.inverse ∘L T`. -/
+/-- Evaluating `hS.borelPolarPath hT` at `t` gives `S` composed with `borelPolarPathToOne` for
+`hS.transitionUnit hT`. -/
 @[simp]
 theorem IsInvertible.coe_borelPolarPath_apply {S T : E →L[ℂ] F}
     (hS : S.IsInvertible) (hT : T.IsInvertible) (t : I) :
     (hS.borelPolarPath hT t : E →L[ℂ] F) =
-      S ∘L (((isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit).borelPolarPathToOne t :
-        E →L[ℂ] E) :=
+      S ∘L ((hS.transitionUnit hT).borelPolarPathToOne t : E →L[ℂ] E) :=
   (rfl)
 
 /-- Any two invertible bounded operators `S, T : E →L[ℂ] F` from a complex Hilbert space `E` to a

@@ -282,6 +282,12 @@ theorem integral_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
       ∑ c ∈ s.range, c • P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) :=
   (P.integral_ofSimpleFunc_eq_simpleIntegral s).trans (P.simpleIntegral_apply s)
 
+/-- Integrating a constant scalar symbol gives the corresponding scalar multiple of the identity. -/
+@[simp]
+theorem integral_algebraMap (P : ProjValMeasure X H) (c : ℂ) :
+    P.integral (algebraMap ℂ (BoundedBorelFunction X) c) = c • (1 : H →L[ℂ] H) := by
+  rw [AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
+
 /-- The integral of the indicator of a measurable set `B` is the projection `P(B)`. -/
 @[simp]
 theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) :

@@ -71,7 +71,7 @@ theorem smul_one_le_integral_ofRealFunction (P : ProjValMeasure X H) {g : X → 
       P.integral (BoundedBorelFunction.ofRealFunction (fun x ↦ g x - m)
         (hg.sub measurable_const) hsub_bound) := by
     have := congrArg P.integral hsym
-    rwa [map_sub, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one, Complex.coe_smul] at this
+    simpa using this
   rw [hop]
   exact P.integral_ofRealFunction_nonneg _ hsub_bound fun x ↦ sub_nonneg.2 (hm x)
 

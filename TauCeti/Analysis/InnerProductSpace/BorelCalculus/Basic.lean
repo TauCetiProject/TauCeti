@@ -134,6 +134,14 @@ theorem borelCalculus_restrict_id :
       ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))) = a := by
   rw [borelCalculus_ofContinuousMap, cfcHom_id]
 
+/-- Evaluating the Borel functional calculus at a constant scalar symbol gives that scalar
+multiple of the identity. -/
+@[simp]
+theorem borelCalculus_algebraMap (c : ℂ) :
+    a.borelCalculus (algebraMap ℂ (BoundedBorelFunction (spectrum ℂ a)) c) =
+      c • (1 : H →L[ℂ] H) := by
+  rw [← a.integral_spectralPVM, ProjValMeasure.integral_algebraMap]
+
 /-- The Borel calculus of the indicator of a Borel set `B` is the spectral projection `P(B)`. -/
 @[simp]
 theorem borelCalculus_indicator {B : Set (spectrum ℂ a)} (hB : MeasurableSet B) :

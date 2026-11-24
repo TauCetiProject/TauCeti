@@ -214,7 +214,7 @@ theorem borelArg_neg_one :
   ext1
   nontriviality (H →L[ℂ] H)
   have hspec : spectrum ℂ ((-1 : unitary (H →L[ℂ] H)) : H →L[ℂ] H) = {-1} := by
-    rw [coe_neg, OneMemClass.coe_one, ← spectrum.neg_eq, spectrum.one_eq, Set.neg_singleton]
+    simp [coe_neg, OneMemClass.coe_one, ← spectrum.neg_eq, spectrum.one_eq]
   have hsym : borelArgSymbol (-1 : unitary (H →L[ℂ] H)) =
       algebraMap ℂ (BoundedBorelFunction (spectrum ℂ ((-1 : unitary (H →L[ℂ] H)) : H →L[ℂ] H)))
         π := by
@@ -222,8 +222,7 @@ theorem borelArg_neg_one :
     rw [hspec, Set.mem_singleton_iff] at hz
     subst hz
     simp
-  rw [borelArg_coe, hsym, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one, Complex.coe_smul,
-    selfAdjoint.val_smul, selfAdjoint.val_one]
+  simp [hsym]
 
 /-- The canonical norm-continuous path `t ↦ expUnitary (t • borelArg u)` from `1` to `u` in
 `unitary (H →L[ℂ] H)`. -/
@@ -242,8 +241,8 @@ theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :
     ‖((borelPathToOne u t : unitary (H →L[ℂ] H)) - 1 : H →L[ℂ] H)‖ ≤
       ‖(u - 1 : H →L[ℂ] H)‖ := by
   have ht : ‖(t : ℝ) • borelArg u‖ ≤ ‖borelArg u‖ := by
-    change ‖(t : ℝ) • (borelArg u : H →L[ℂ] H)‖ ≤ ‖(borelArg u : H →L[ℂ] H)‖
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.property.left]
+    rw [AddSubgroup.coe_norm (s := selfAdjoint _), AddSubgroup.coe_norm (s := selfAdjoint _),
+      selfAdjoint.val_smul, norm_smul, Real.norm_eq_abs, abs_of_nonneg t.property.left]
     exact mul_le_of_le_one_left (norm_nonneg _) t.property.right
   have hsq : ‖(selfAdjoint.expUnitary ((t : ℝ) • borelArg u) - 1 : H →L[ℂ] H)‖ ^ 2 =
       2 * (1 - Real.cos ‖(t : ℝ) • borelArg u‖) :=

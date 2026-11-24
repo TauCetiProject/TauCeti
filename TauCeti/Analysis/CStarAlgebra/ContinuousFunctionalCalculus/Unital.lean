@@ -46,11 +46,7 @@ theorem starModule_of_cfc {p : A → Prop} [ContinuousFunctionalCalculus R A p] 
     ContinuousFunctionalCalculus.exists_cfc_of_predicate (R := R) (0 : A) (cfc_predicate_zero R)
   have hstar (r : R) : star (algebraMap R A r) = algebraMap R A (star r) := by
     have h := map_star φ (algebraMap R C(spectrum R (0 : A), R) r)
-    have hc : star (algebraMap R C(spectrum R (0 : A), R) r) =
-        algebraMap R C(spectrum R (0 : A), R) (star r) := by
-      ext x
-      rfl
-    simpa only [AlgHomClass.commutes, hc] using h.symm
+    simpa only [AlgHomClass.commutes, ← algebraMap_star_comm] using h.symm
   exact ⟨fun r a ↦ by
     rw [Algebra.smul_def, star_mul, hstar, ← Algebra.commutes, ← Algebra.smul_def]⟩
 
