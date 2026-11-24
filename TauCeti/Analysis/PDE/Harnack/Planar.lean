@@ -37,10 +37,6 @@ Chapter 2, Section 2.2.
 Each has a counterpart in the `InnerProductSpace.HarmonicContOnCl` namespace, with suffix
 `_of_nonneg_on_sphere`, for a function continuous on the closed disk and nonnegative only on its
 boundary circle.
-
-Separately, `TauCeti.circleAverage_le_of_harmonic_majorant` uses Mathlib's mean value property to
-bound the interior circle means of a continuous function on the unit disk by the value at the
-origin of any harmonic majorant.
 -/
 
 public section
@@ -57,24 +53,6 @@ private lemma le_harnack_factor_mul_of_mul_le {R d a b : ℝ} (hd : 0 ≤ d) (hd
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)] at h
   rw [div_mul_eq_mul_div, le_div_iff₀ (by linarith)]
   linarith
-
-/-- A real harmonic majorant `u` of a continuous real function `g` on the open unit disk bounds
-each interior circle mean of `g` by its value at the origin. No boundary regularity of the majorant
-is required. -/
-theorem circleAverage_le_of_harmonic_majorant {g : ℂ → ℝ}
-    (hg : ContinuousOn g (Metric.ball 0 1)) {u : ℂ → ℝ}
-    (hu : InnerProductSpace.HarmonicOnNhd u (Metric.ball 0 1))
-    (hmajor : ∀ w ∈ Metric.ball (0 : ℂ) 1, g w ≤ u w) {r : ℝ} (hr : |r| < 1) :
-    Real.circleAverage g 0 r ≤ u 0 := by
-  have hsub : Metric.closedBall (0 : ℂ) |r| ⊆ Metric.ball 0 1 :=
-    Metric.closedBall_subset_ball hr
-  have hus := hu.mono hsub
-  rw [← hus.circleAverage_eq (R := r)]
-  apply Real.circleAverage_mono
-  · exact (hg.mono (Metric.sphere_subset_closedBall.trans hsub)).circleIntegrable'
-  · exact (hus.continuousOn.mono Metric.sphere_subset_closedBall).circleIntegrable'
-  · intro w hw
-    exact hmajor w (hsub (Metric.sphere_subset_closedBall hw))
 
 variable {f : ℂ → ℝ} {c w : ℂ} {R : ℝ}
 

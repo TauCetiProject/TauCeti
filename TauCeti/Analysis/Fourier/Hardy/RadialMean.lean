@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.DiskFunction
-public import TauCeti.Analysis.PDE.Harnack.Planar
+public import TauCeti.Analysis.Complex.Harmonic.MeanValue
 
 /-!
 # Radial means and harmonic majorants of Hardy functions
