@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 import Mathlib.Algebra.DirectSum.Internal
 import TauCeti.RingTheory.DividedPowers.DPMorphism
+import TauCeti.RingTheory.DividedPowers.SubDPIdeal
 
 /-!
 # The divided power filtration of a divided power ideal
@@ -188,7 +189,7 @@ theorem dpow_mem_pdFiltration {n : ℕ} {x : R} (hx : x ∈ I) :
 `hI.pdFiltration n ≤ hI.pdFiltration m`. -/
 theorem pdFiltration_antitone : Antitone hI.pdFiltration := by
   intro m n hmn
-  rw [pdFiltration_def, pdFiltration_def]
+  rw [pdFiltration, pdFiltration]
   exact hI.span_words_antitone (I : Set R) hmn
 
 /-- For `x ∈ I` and `n ≤ m`, `hI.dpow m x` belongs to `hI.pdFiltration n`. -/
@@ -199,7 +200,7 @@ theorem dpow_mem_pdFiltration_of_le {m n : ℕ} (hmn : n ≤ m) {x : R} (hx : x 
 /-- The zeroth divided power filtration step is the unit ideal `⊤`. -/
 @[simp]
 theorem pdFiltration_zero : hI.pdFiltration 0 = ⊤ := by
-  rw [pdFiltration_def]
+  rw [pdFiltration]
   exact hI.span_words_zero (I : Set R)
 
 /-- The first divided power filtration step is `I` itself. -/
@@ -222,7 +223,7 @@ theorem pdFiltration_le_self {n : ℕ} (hn : n ≠ 0) : hI.pdFiltration n ≤ I 
 /-- The divided power filtration is multiplicative: `Fᵐ · Fⁿ ≤ Fᵐ⁺ⁿ`. -/
 theorem pdFiltration_mul_le (m n : ℕ) :
     hI.pdFiltration m * hI.pdFiltration n ≤ hI.pdFiltration (m + n) := by
-  rw [pdFiltration_def, pdFiltration_def, pdFiltration_def]
+  rw [pdFiltration, pdFiltration, pdFiltration]
   exact hI.span_words_mul_le (I : Set R) m n
 
 /-- The divided power filtration is multiplicatively graded by `ℕ`. -/
@@ -289,36 +290,13 @@ private theorem dpow_list_prod_mem_pdFiltration_mul {m : ℕ} (l : List (ℕ × 
   rw [hI.dpow_comp hi0 hiI]
   exact Ideal.mul_mem_left _ _ (hI.dpow_mem_pdFiltration hiI)
 
-private theorem dpow_mem_of_mem_span {A : ℕ → Ideal R} (hA0 : A 0 = ⊤)
-    (hAmul : ∀ i j, A i * A j ≤ A (i + j)) {S : Set R} (hSI : S ⊆ (I : Set R))
-    (hgen : ∀ s ∈ S, ∀ k : ℕ, hI.dpow k s ∈ A k) {x : R} (hx : x ∈ Ideal.span S) (k : ℕ) :
-    hI.dpow k x ∈ A k := by
-  have hspanI : Ideal.span S ≤ I := Ideal.span_le.mpr hSI
-  revert k
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hx
-  · exact fun s hs k ↦ hgen s hs k
-  · intro k
-    rcases eq_or_ne k 0 with rfl | hk
-    · rw [hI.dpow_zero I.zero_mem, hA0]
-      exact Submodule.mem_top
-    · rw [hI.dpow_eval_zero hk]
-      exact Ideal.zero_mem _
-  · intro a b ha hb iha ihb k
-    rw [hI.dpow_add (hspanI ha) (hspanI hb)]
-    refine Submodule.sum_mem _ fun p hp ↦ ?_
-    rw [← Finset.mem_antidiagonal.mp hp]
-    exact hAmul p.1 p.2 (Ideal.mul_mem_mul (iha p.1) (ihb p.2))
-  · intro c a ha iha k
-    rw [smul_eq_mul, hI.dpow_mul (hspanI ha)]
-    exact (A k).mul_mem_left (c ^ k) (iha k)
-
 /-- For `n ≠ 0` and `x ∈ hI.pdFiltration n`, its `m`-th divided power lies in
 `hI.pdFiltration (m * n)`. -/
 theorem dpow_mem_pdFiltration_mul {m n : ℕ} (hn : n ≠ 0) {x : R}
     (hx : x ∈ hI.pdFiltration n) :
     hI.dpow m x ∈ hI.pdFiltration (m * n) := by
   rw [pdFiltration] at hx
-  refine hI.dpow_mem_of_mem_span (A := fun k ↦ hI.pdFiltration (k * n))
+  refine hI.dpow_mem_of_mem_span_of_mul_le (A := fun k ↦ hI.pdFiltration (k * n))
     (by simp) (fun i j ↦ by rw [add_mul]; exact hI.pdFiltration_mul_le _ _) ?_ ?_ hx m
   · rintro r ⟨l, hl, hsum, rfl⟩
     have hpos : (l.map Prod.fst).sum ≠ 0 := by omega
@@ -345,7 +323,7 @@ variable {R : Type*} [CommSemiring R] {I : Ideal R} (hI : DividedPowers I)
 private theorem dpow_mem_span_words {S : Set R} (hS : I = Ideal.span S) {x : R} (hx : x ∈ I)
     (e : ℕ) :
     hI.dpow e x ∈ Ideal.span (hI.wordSet S e) :=
-  hI.dpow_mem_of_mem_span (hI.span_words_zero S) (hI.span_words_mul_le S)
+  hI.dpow_mem_of_mem_span_of_mul_le (hI.span_words_zero S) (hI.span_words_mul_le S)
     (hS ▸ Ideal.subset_span)
     (fun s hs k ↦ Ideal.subset_span ⟨[(k, s)], by simpa using hs, by simp, by simp⟩)
     (hS ▸ hx) e
