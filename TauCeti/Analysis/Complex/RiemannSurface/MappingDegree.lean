@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.FundamentalClass
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Automorphism
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.Perfect
 
 /-!
 # The mapping degree of a holomorphic map between compact Riemann surfaces
@@ -178,7 +179,8 @@ theorem degree_reindex_complexManifoldOrientation_eq_one_iff [Nonempty X]
   -- In either direction `f` is not constant: a degree-one map is not constant, and a bijection out
   -- of a Riemann surface, which has more than one point, is not constant.
   have hne_of_injective (hinj : Injective f) : ∃ x x', f x ≠ f x' := by
-    have := ChartedSpace.nontrivial (H := ℂ) (X := X)
+    have := ChartedSpace.perfectSpace (H := ℂ) (X := X)
+    have := PerfectSpace.nontrivial X
     obtain ⟨x, x', hxx'⟩ := exists_pair_ne X
     exact ⟨x, x', hinj.ne hxx'⟩
   constructor

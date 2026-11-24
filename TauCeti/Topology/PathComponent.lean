@@ -18,10 +18,12 @@ gives local path connectedness of the subspace.
 
 ## Main declarations
 
-* `TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`: path homotopies
-  reflect along the inclusion of a subspace containing the path component of their source.
+* `TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`: path homotopies reflect along
+  the inclusion of a path component.
 * Instances making `↥(pathComponent x₀)` path connected and locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
+* `ZerothHomotopy.mk_eq_mk_iff`: two points have the same path component exactly when they are
+  joined by a path.
 * `Joined.eq_of_totallyDisconnectedSpace` and
   `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
   the path components are the points.
@@ -30,6 +32,8 @@ gives local path connectedness of the subspace.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
   `TauCeti.PathComponentBasepoints.choose` giving one. Each chosen basepoint is joined to the
   points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
+* `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
+  continuous map is a union of path components.
 * `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
   of their source are the paths in the ambient space. In particular the loop space of a path
   component, at any of its points, is the loop space of the ambient space at that point.
@@ -44,22 +48,31 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 
-/-- Two paths in a subspace `S` containing the path component of their source which are
-homotopic in the ambient space are already homotopic in `S`. -/
+/-- Two paths in a subspace `S` containing the path component of their source, which are homotopic
+in the ambient space, are already homotopic in `S`: the homotopy never leaves the path component. -/
 theorem homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset {S : Set X} {a b : S}
     (hS : pathComponent (a : X) ⊆ S) {γ δ : Path a b}
-    (h : (γ.map continuous_subtypeVal).Homotopic
-      (δ.map continuous_subtypeVal)) :
+    (h : (γ.map continuous_subtypeVal).Homotopic (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hmem : ∀ p : I × I, H p ∈ S := fun p =>
-    hS <| Joined.mem_pathComponent
+  have hmem : ∀ p : I × I, H p ∈ S := fun p => hS <|
+    Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)
       (H.map_zero_left p.2 ▸ (γ.map continuous_subtypeVal).mem_pathComponent p.2)
   exact Path.homotopic_of_continuous_square (fun p => ⟨H p, hmem p⟩)
     (H.continuous.subtype_mk hmem) (fun t => Subtype.ext (H.map_zero_left t))
     (fun t => Subtype.ext (H.map_one_left t)) (fun t => Subtype.ext (H.source t))
     (fun t => Subtype.ext (H.target t))
+
+/-- Two paths in a path component which are homotopic in the ambient space are already
+homotopic in the path component. -/
+theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
+    {a b : pathComponent x₀} {γ δ : Path a b}
+    (h : (γ.map continuous_subtypeVal).Homotopic
+      (δ.map continuous_subtypeVal)) :
+    γ.Homotopic δ :=
+  homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset
+    (pathComponent_congr a.property).subset h
 
 /-- The path component of a point, as a subspace, is path connected. -/
 instance instPathConnectedSpaceSubtypePathComponent :
@@ -75,6 +88,12 @@ instance instLocallyPathConnectedSpaceSubtypePathComponent [LocallyPathConnected
 /-- The basepoint of `X`, viewed as a point of its own path component. -/
 abbrev pathComponentSelf : (pathComponent x₀ : Set X) :=
   ⟨x₀, mem_pathComponent_self x₀⟩
+
+/-- Two points lie in the same path component exactly when they are joined by a path. -/
+@[simp]
+theorem _root_.ZerothHomotopy.mk_eq_mk_iff {x y : X} :
+    ZerothHomotopy.mk x = ZerothHomotopy.mk y ↔ Joined x y :=
+  ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩
 
 /-- In a totally disconnected space, points joined by a path are equal. -/
 theorem _root_.Joined.eq_of_totallyDisconnectedSpace [TotallyDisconnectedSpace X] {x y : X}
@@ -148,6 +167,14 @@ theorem PathComponentBasepoints.mk_apply_point_mk {Y : Type*} [TopologicalSpace 
   Quotient.sound ((β.joined_point_mk y).map hf)
 
 end TauCeti
+
+/-- **The preimage of a union of path components is a union of path components.** A continuous map
+sends the path component of `x` into the path component of its image. -/
+theorem Continuous.pathComponent_subset_preimage {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {t : Set Y} {f : X → Y} (hf : Continuous f)
+    (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X} (hx : x ∈ f ⁻¹' t) :
+    pathComponent x ⊆ f ⁻¹' t :=
+  fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
 
 namespace Path
 

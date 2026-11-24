@@ -174,6 +174,16 @@ theorem norm_fst_mul_norm_snd_splitQuadraticFlow (t : ℝ) (z : WithLp 2 (Eₛ �
   rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, Real.exp_neg]
   field_simp
 
+/-- An orbit starting with `‖x‖ ≤ ε` and with `‖y‖ ≤ ε` at the time `T` stays in the box
+`‖x‖ ≤ ε, ‖y‖ ≤ ε` over the time interval `[0, T]`. -/
+theorem norm_fst_le_and_norm_snd_le_splitQuadraticFlow {T s : ℝ} (hz : ‖z.fst‖ ≤ ε)
+    (hT : ‖(splitQuadraticFlow T z).snd‖ ≤ ε) (hs : s ∈ Icc 0 T) :
+    ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε := by
+  rw [norm_snd_splitQuadraticFlow] at hT
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
+  exact ⟨(mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (by linarith [hs.1]))).trans
+    hz, (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hs.2) (norm_nonneg _)).trans hT⟩
+
 /-! ### Entry and exit along an orbit -/
 
 /-- The first coordinate of the orbit of `z` has norm at most `ε` exactly from the entry time on. -/

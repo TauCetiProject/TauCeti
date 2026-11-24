@@ -56,6 +56,8 @@ orientation is used, and `M` may have boundary or corners.
   absolute value of its determinant.
 * `TauCeti.riemannianJacobian_eq_normDet`: for an orthonormal basis, the Jacobian is the norm
   determinant of the differential.
+* `TauCeti.riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv`: for an orthonormal basis, the
+  Jacobian of a map whose differential multiplies inner products by `c` is `√c ^ n`.
 * `TauCeti.setLIntegral_riemannianJacobian_changeBasis`: the Jacobian-weighted coordinate integral
   does not depend on the basis.
 * `Module.Basis.setLIntegral_riemannianVolume_image_of_injOn`: nonnegative change of variables
@@ -206,6 +208,29 @@ theorem riemannianJacobian_eq_normDet {V : Type*} [NormedAddCommGroup V] [InnerP
   refine Eq.trans ?_ (Real.sqrt_sq (LinearMap.normDet_nonneg (U := V) _))
   rw [h, riemannianJacobian_eq_sqrt_det_gram, OrthonormalBasis.coe_toBasis]
   rfl
+
+/-- **The Riemannian Jacobian of a conformal map.** If the differential of `f` at `x` multiplies
+the inner product of an inner product space by a factor `c`, then the Riemannian Jacobian of `f`
+at `x`, for an orthonormal basis, is `√c ^ n`, where `n` is the dimension. -/
+theorem riemannianJacobian_eq_sqrt_pow_of_inner_mfderiv {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (b : OrthonormalBasis ι ℝ V) {f : V → M} {x : V} {c : ℝ}
+    (hf : ∀ a a' : V, ⟪mfderiv 𝓘(ℝ, V) I f x a, mfderiv 𝓘(ℝ, V) I f x a'⟫_ℝ = c * ⟪a, a'⟫_ℝ) :
+    riemannianJacobian (I := I) b.toBasis f x = Real.sqrt c ^ Fintype.card ι := by
+  have hgram : Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, V) I f x (b.toBasis i)) =
+      c • (1 : Matrix ι ι ℝ) := by
+    ext i j
+    rw [Matrix.gram_apply, OrthonormalBasis.coe_toBasis, hf, orthonormal_iff_ite.1 b.orthonormal,
+      Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
+  rw [riemannianJacobian_eq_sqrt_det_gram, hgram, Matrix.det_smul, Matrix.det_one, mul_one]
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · simp
+  -- The factor is nonnegative, since it is the squared length of the image of a unit vector.
+  have hc : 0 ≤ c := by
+    have h := hf (b i) (b i)
+    rw [real_inner_self_eq_norm_sq (b i), b.orthonormal.1 i, one_pow, mul_one] at h
+    exact h ▸ real_inner_self_nonneg
+  rw [← Real.sqrt_sq (pow_nonneg (Real.sqrt_nonneg c) _), ← pow_mul, mul_comm, pow_mul,
+    Real.sq_sqrt hc]
 
 end Jacobian
 

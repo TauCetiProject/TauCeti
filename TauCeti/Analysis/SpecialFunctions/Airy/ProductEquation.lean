@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.SpecialFunctions.Airy.Equation
 import Mathlib.Analysis.Complex.TaylorSeries
 
 /-!
@@ -55,12 +53,8 @@ theorem productEquation_mul_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable
     (hge : ∀ z, deriv^[2] g z = z * g z) (z : ℂ) :
     deriv^[3] (fun t => f t * g t) z - 4 * z * deriv (fun t => f t * g t) z -
       2 * (f z * g z) = 0 := by
-  have hf' (t : ℂ) : HasDerivAt (deriv f) (t * f t) t := by
-    rw [← hfe t, Function.iterate_succ_apply, Function.iterate_one]
-    exact (hf.deriv t).hasDerivAt
-  have hg' (t : ℂ) : HasDerivAt (deriv g) (t * g t) t := by
-    rw [← hge t, Function.iterate_succ_apply, Function.iterate_one]
-    exact (hg.deriv t).hasDerivAt
+  have hf' := hasDerivAt_deriv_of_airy_ode hf hfe
+  have hg' := hasDerivAt_deriv_of_airy_ode hg hge
   have hd1 : deriv (fun t => f t * g t) = fun t => deriv f t * g t + f t * deriv g t :=
     funext fun t => ((hf t).hasDerivAt.mul (hg t).hasDerivAt).deriv
   have hd2 : deriv (deriv fun t => f t * g t) =
