@@ -22,11 +22,21 @@ terms are flasque: the Čech side by dimension shifting along the long exact Če
 flasque-resolution comparison (`TauCeti.Topology.rightDerivedΓIsoGodement`). The first
 identification is natural in the sheaf (`TauCeti.Topology.cechCohomologyIsoGodement`), and the
 comparison is the composite of the two (`TauCeti.Topology.cechCohomologyIsoRightDerivedΓ_hom_app`).
+In degree `0` it is compatible with the descriptions of both sides by global sections
+(`TauCeti.Topology.sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app`).
 
 ## Main definitions
 
 * `TauCeti.Topology.cechCohomologyIsoGodement`: `Hⁿ(X, F) ≅ Hⁿ(Γ(G•(F)))`, naturally in `F`.
 * `TauCeti.Topology.cechCohomologyIsoRightDerivedΓ`: `Hⁿ(X, F) ≅ RⁿΓ(F)`, naturally in `F`.
+
+## Main results
+
+* `TauCeti.Topology.sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app`: in
+  degree `0`, the comparison turns the identification of `H⁰(X, F)` with `Γ(F)` into Mathlib's
+  canonical map `Γ(F) ⟶ R⁰Γ(F)`;
+* `TauCeti.Topology.cechCohomologyIsoRightDerivedΓ_hom_app_comp_rightDerivedZeroIsoSelf_hom`: the
+  same statement through Mathlib's isomorphism `R⁰Γ(F) ≅ Γ(F)`.
 
 ## References
 
@@ -99,5 +109,41 @@ lemma cechCohomologyIsoRightDerivedΓ_hom_app (n : ℕ)
     (cechCohomologyIsoRightDerivedΓ n).hom.app F =
       (cechCohomologyIsoGodement n).hom.app F ≫ (rightDerivedΓIsoGodement n).inv.app F := by
   rw [cechCohomologyIsoRightDerivedΓ, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app]
+
+/-- **Degree-zero normalization of the Čech/derived comparison.** In degree `0` the comparison
+`H⁰(X, F) ≅ R⁰Γ(F)` matches the descriptions of both sides by global sections: preceded by the
+identification `TauCeti.Topology.sectionsIsoCechZero` of `Γ(F)` with `H⁰(X, F)`, it is Mathlib's
+canonical map `Γ(F) ⟶ R⁰Γ(F)`. -/
+@[reassoc (attr := simp)]
+theorem sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (sectionsIsoCechZero F).hom ≫ (cechCohomologyIsoRightDerivedΓ 0).hom.app F =
+      (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F := by
+  rw [cechCohomologyIsoRightDerivedΓ_hom_app,
+    ← cancel_mono ((rightDerivedΓIsoGodement 0).hom.app F), Category.assoc, Category.assoc,
+    Iso.inv_hom_id_app, Category.comp_id, ← Iso.app_hom, ← Iso.app_hom,
+    cechCohomologyIsoGodement_app, rightDerivedΓIsoGodement_app, sectionsIsoCechZero_hom,
+    Category.assoc, cechCohomologyObjIsoOfIsFlasque_zero_hom,
+    Sheaf.toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom]
+  -- both sides are now the map `Γ(F) ⟶ H⁰(Γ(G•(F)))` sending a section to the class of its image;
+  -- they differ only in writing the degree `0` component of the augmentation as
+  -- `(fromSingle₀Equiv _ _ ι).val` or `ι.f 0`, which agree by definition of `fromSingle₀Equiv`;
+  -- Mathlib states no lemma for this
+  rfl
+
+/-- **The Čech/derived comparison in degree zero.** Followed by Mathlib's identification
+`R⁰Γ(F) ≅ Γ(F)` of the zeroth derived functor of the left exact functor `Γ`, the comparison
+`H⁰(X, F) ≅ R⁰Γ(F)` is the inverse of the identification
+`TauCeti.Topology.sectionsIsoCechZero` of `H⁰(X, F)` with the global sections of `F`. -/
+@[simp]
+theorem cechCohomologyIsoRightDerivedΓ_hom_app_comp_rightDerivedZeroIsoSelf_hom
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (cechCohomologyIsoRightDerivedΓ 0).hom.app F ≫
+        (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerivedZeroIsoSelf.hom.app
+          F =
+      (sectionsIsoCechZero F).inv := by
+  rw [← cancel_epi (sectionsIsoCechZero F).hom, Iso.hom_inv_id,
+    sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app_assoc,
+    Functor.rightDerivedZeroIsoSelf_inv_hom_id_app]
 
 end TauCeti.Topology

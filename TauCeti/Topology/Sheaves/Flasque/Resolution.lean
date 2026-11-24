@@ -32,6 +32,8 @@ argument.
 * `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque`: `RⁿΓ(F) ≅ Hⁿ(Γ(K))` for a flasque
   resolution `K` of `F`, characterized through any injective resolution and comparison map by
   `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap`.
+* `CategoryTheory.Sheaf.toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom`: in
+  degree `0`, the comparison is compatible with the canonical map `Γ(F) ⟶ R⁰Γ(F)`.
 * `CategoryTheory.Sheaf.rightDerivedΓIsoOfIsFlasque`: the natural isomorphism for a functorial
   flasque resolution.
 
@@ -109,6 +111,22 @@ lemma rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap (n : ℕ) (I : Inject
           (I.isoRightDerivedObj (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)) n).hom :=
   Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap _ _ _ _ _ ι
     (fun n ↦ isFlasque_iff.mpr (hK n)) n I φ hφ
+
+/-- In degree `0`, `rightDerivedΓObjIsoOfIsFlasque` sends the canonical map `Γ(F) ⟶ R⁰Γ(F)` to
+the map `Γ(F) ⟶ H⁰(Γ(K))` taking a global section of `F` to the cohomology class of its image in
+`Γ(K⁰)`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom :
+    (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F ≫
+        (rightDerivedΓObjIsoOfIsFlasque ι hK 0).hom =
+      (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+        K).liftCycles ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map (ι.f 0)) 1
+          (by simp) (by rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp,
+            ι.comm 0 1, HomologicalComplex.single_obj_d, zero_comp, Functor.map_zero]) ≫
+        (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+          K).homologyπ 0 :=
+  Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom _ _ _ _ _ ι
+    (fun n ↦ isFlasque_iff.mpr (hK n))
 
 /-- A functorial flasque resolution computes the native right derived functors of global
 sections, naturally in the sheaf. No injectivity of the terms of the resolution is assumed. -/
