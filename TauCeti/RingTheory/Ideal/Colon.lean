@@ -144,8 +144,7 @@ theorem le_colon_singleton_mul {I J K : Ideal R} {r s : R} (hIJ : I ≤ J.colon 
 /-- For `x ∈ I` and `i ≤ j`, multiplication by `x ^ (j - i)` carries `I ^ i` into `I ^ j`. -/
 theorem pow_le_colon_singleton_pow {x : R} (hx : x ∈ I) {i j : ℕ} (hij : i ≤ j) :
     I ^ i ≤ (I ^ j).colon {x ^ (j - i)} := fun a ha ↦ by
-  rw [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm, ← Nat.sub_add_cancel hij, pow_add,
-    Nat.add_sub_cancel]
-  exact mul_mem_mul (pow_mem_pow hx _) ha
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hij
+  simpa [Submodule.mem_colon_singleton, pow_add, mul_comm] using mul_mem_mul (pow_mem_pow hx k) ha
 
 end Ideal
