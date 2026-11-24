@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 public import TauCeti.RingTheory.GradedAlgebra.Localization.Away
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 
 /-!
 # Graded rings of sections over basic opens
@@ -172,17 +173,18 @@ restriction of sections. Its gradings are compared in
 def _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv (hU : IsAffineOpen U)
     (f : Γ(X, U)) : Localization.Away (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f) ≃+*
       ⨁ n, Γ(A.X n, X.basicOpen f) :=
+  letI := (A.restrictGradedSections (homOfLE (X.basicOpen_le f))).toAlgebra
+  haveI hloc := A.isLocalization_gradedSections_basicOpen hU f
   RingEquiv.ofBijective _ (GradedAlgebra.awayLift_bijective
     (coarsenGrading (A.gradedSectionsGrading U) (Nat.castAddMonoidHom ℤ))
     (SetLike.algebraMap_mem_graded _ f)
     ((A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))).coarsenGrading _)
     (by
-      rw [GradedRingHom.coe_coarsenGrading, CommMon.restrictGradedSectionsGradedHom_apply,
-        CommMon.restrictGradedSections_algebraMap]
-      exact (X.toRingedSpace.isUnit_res_basicOpen f).map _)
+      rw [GradedRingHom.coe_coarsenGrading, CommMon.restrictGradedSectionsGradedHom_apply]
+      exact IsLocalization.Away.algebraMap_isUnit _)
     (by
       rw [GradedRingHom.toRingHom_coarsenGrading, CommMon.restrictGradedSectionsGradedHom_toRingHom]
-      exact A.isLocalization_gradedSections_basicOpen hU f))
+      exact hloc))
 
 /-- `CommMon.awayGradedSectionsBasicOpenEquiv` extends the restriction of sections. -/
 @[simp]
@@ -206,8 +208,10 @@ theorem _root_.CategoryTheory.CommMon.awayGradedSectionsBasicOpenEquiv_mem_coars
         coarsenGrading (A.gradedSectionsGrading (X.basicOpen f)) (Nat.castAddMonoidHom ℤ) d ↔
       x ∈ GradedAlgebra.awayGrading
         (coarsenGrading (A.gradedSectionsGrading U) (Nat.castAddMonoidHom ℤ))
-        (SetLike.algebraMap_mem_graded _ f) d :=
-  GradedAlgebra.awayLift_mem_iff _ _ _ _ (A.awayGradedSectionsBasicOpenEquiv hU f).injective
+        (SetLike.algebraMap_mem_graded _ f) d := by
+  have h := (A.awayGradedSectionsBasicOpenEquiv hU f).injective
+  rw [CommMon.awayGradedSectionsBasicOpenEquiv, RingEquiv.coe_ofBijective] at h ⊢
+  exact Graded.map_mem_iff_of_injective _ h
 
 /-- In degree `n`, `CommMon.awayGradedSectionsBasicOpenEquiv` identifies the degree-`n` part of
 the localization `Localization.Away f` of `⨁ n, Γ(Aₙ, U)`, graded by
