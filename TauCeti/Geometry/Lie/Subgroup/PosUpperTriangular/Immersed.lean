@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.PosUpperTriangular.Exponential
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Exponential
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
-import Mathlib.Analysis.Convex.Contractible
 
 /-!
 # Connected subgroups of the positive triangular group
@@ -123,7 +122,7 @@ theorem isClosedEmbedding_toHom_of_posUpperTriangular {K : Subgroup AN}
 theorem contractibleSpace_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     ContractibleSpace d.X :=
-  d.posUpperTriangularLieExpDiffeomorph.toHomeomorph.symm.contractibleSpace
+  d.contractibleSpace_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 end ImmersedLieSubgroupData
 
